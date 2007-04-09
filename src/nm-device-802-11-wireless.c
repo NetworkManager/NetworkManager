@@ -54,8 +54,6 @@ struct _Supplicant
 	GSource *			status;
 	struct wpa_ctrl *	ctrl;
 	GSource *			timeout;
-
-	GSource *			stdout;
 };
 
 struct _NMDevice80211WirelessPrivate
@@ -2452,11 +2450,6 @@ supplicant_cleanup (NMDevice80211Wireless *self)
 		wpa_ctrl_close (self->priv->supplicant.ctrl);
 		self->priv->supplicant.ctrl = NULL;
 	}
-	if (self->priv->supplicant.stdout)
-	{
-		g_source_destroy (self->priv->supplicant.stdout);
-		self->priv->supplicant.stdout = NULL;
-	}
 
 	supplicant_remove_timeout (self);
 	remove_link_timeout (self);
@@ -2704,90 +2697,6 @@ supplicant_timeout_cb (gpointer user_data)
 	return FALSE;
 }
 
-
-static void
-supplicant_log_stdout_done (gpointer user_data)
-{
-	NMDevice80211Wireless *device = NM_DEVICE_802_11_WIRELESS (user_data);
-
-	device->priv->supplicant.stdout = NULL;
-}
-
-
-/*
- * supplicant_log_stdout
- *
- * Read text from a GIOChannel that's hooked up to the stdout of
- * wpa_supplicant, then write that text to NM's syslog service.
- * Adapted from Gnome's bug-buddy.
- *
- */
-static gboolean
-supplicant_log_stdout (GIOChannel *ioc, GIOCondition condition, gpointer data)
-{
-	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (data);
-	gboolean retval = FALSE;
-	char *buf;
-	gsize len;
-	GIOStatus io_status;
-	GTimeVal start_time, cur_time;
-
-	#define LINE_SIZE 1024
-	buf = g_malloc0 (LINE_SIZE);
-	g_get_current_time (&start_time);
- try_read:
-	io_status = g_io_channel_read_chars (ioc, buf, LINE_SIZE-1, &len, NULL);
-	switch (io_status)
-	{
-		case G_IO_STATUS_AGAIN:
-			g_usleep (G_USEC_PER_SEC / 60);
-			/* Only wait for data for 1/2 a second */
-			g_get_current_time (&cur_time);
-			/* Subtract 1/2 second from current time so we don't have
-			 * to modify start_time.
-			 */
-			g_time_val_add (&cur_time, -1 * (G_USEC_PER_SEC / 2));
-			/* Compare times.  If cur_time is less, keep trying to read */
-			if ((cur_time.tv_sec < start_time.tv_sec)
-				|| ((cur_time.tv_sec == start_time.tv_sec)
-					&& (cur_time.tv_usec < start_time.tv_usec)))
-				goto try_read;
-			nm_warning ("Waited too long for wpa_supplicant output, some may be lost.");
-			break;
-		case G_IO_STATUS_ERROR:
-			nm_warning ("Error reading wpa_supplicant output.");
-			break;
-		case G_IO_STATUS_NORMAL:
-			retval = TRUE;
-			break;
-		default:
-			break;
-	}
-
-	if (len > 0)
-	{
-		char *end;
-		char *start;
-
-		/* Log each line separately; sometimes we get a couple lines at a time */
-		buf[LINE_SIZE-1] = '\0';
-		start = end = &buf[0];
-		while (*end != '\0')
-		{
-			if (*end == '\n')
-			{
-				*end = '\0';
-				nm_info ("wpa_supplicant(%d): %s", self->priv->supplicant.pid, start);
-				start = end + 1;
-			}
-			end++;
-		}
-	}
-	g_free (buf);
-
-	return retval;
-}
-
 /*
  * supplicant_child_setup
  *
@@ -2809,16 +2718,14 @@ supplicant_exec (NMDevice80211Wireless *self)
 	char *	argv[4];
 	GError *	error = NULL;
 	GPid		pid = -1;
-	int		sup_stdout;
 
 	argv[0] = WPA_SUPPLICANT_BIN;
 	argv[1] = "-g";
 	argv[2] = WPA_SUPPLICANT_GLOBAL_SOCKET;
 	argv[3] = NULL;
 
-	success = g_spawn_async_with_pipes ("/", argv, NULL, 0,
-	                    &supplicant_child_setup, NULL, &pid, NULL, &sup_stdout,
-	                    NULL, &error);
+	success = g_spawn_async ("/", argv, NULL, 0, &supplicant_child_setup, NULL,
+	                         &pid, &error);
 	if (!success)
 	{
 		if (error)
@@ -2832,24 +2739,6 @@ supplicant_exec (NMDevice80211Wireless *self)
 	}
 	else
 	{
-		GIOChannel *	channel;
-		const char *	charset = NULL;
-
-		/* Monitor output from supplicant and redirect to syslog */
-		channel = g_io_channel_unix_new (sup_stdout);
-		g_io_channel_set_flags (channel, G_IO_FLAG_NONBLOCK, NULL);
-		g_get_charset (&charset);
-		g_io_channel_set_encoding (channel, charset, NULL);
-		self->priv->supplicant.stdout = g_io_create_watch (channel, G_IO_IN | G_IO_ERR);
-		g_io_channel_unref (channel);
-		g_source_set_priority (self->priv->supplicant.stdout, G_PRIORITY_LOW);
-		g_source_set_callback (self->priv->supplicant.stdout,
-							   (GSourceFunc) supplicant_log_stdout,
-							   self,
-							   supplicant_log_stdout_done);
-		g_source_attach (self->priv->supplicant.stdout, nm_device_get_main_context (NM_DEVICE (self)));
-		g_source_unref (self->priv->supplicant.stdout);
-
 		/* Monitor the child process so we know when it stops */
 		self->priv->supplicant.pid = pid;
 		if (self->priv->supplicant.watch)
@@ -3105,16 +2994,16 @@ real_act_stage2_config (NMDevice *dev,
 			iface);
 		goto out;
 	}
-	if (!supplicant_send_network_config (self, req))
-	{
-		nm_warning ("Activation (%s/wireless): couldn't send wireless configuration"
-			" to the supplicant.", iface);
-		goto out;
-	}
 	if (!supplicant_monitor_start (self))
 	{
 		nm_warning ("Activation (%s/wireless): couldn't monitor the supplicant.",
 			iface);
+		goto out;
+	}
+	if (!supplicant_send_network_config (self, req))
+	{
+		nm_warning ("Activation (%s/wireless): couldn't send wireless configuration"
+			" to the supplicant.", iface);
 		goto out;
 	}
 
