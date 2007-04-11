@@ -1,0 +1,242 @@
+# translation of NetworkManager-vpnc.po to TAMIL
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+#
+# Dr.T.Vasudevan <agnihot3@gmail.com>, 2007.
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager-vpnc\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2007-01-30 19:19+0000\n"
+"PO-Revision-Date: 2007-04-11 14:39+0530\n"
+"Last-Translator: Dr.T.Vasudevan <agnihot3@gmail.com>\n"
+"Language-Team: TAMIL <ubuntu-l10n-tam@lists.ubuntu.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.4\n"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:144
+msgid "_Secondary Password:"
+msgstr "_இரண்டாம் கடவுச் சொல்:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:258
+msgid "_Username:"
+msgstr "_பயனீட்டாளர் பெயர்:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:260
+msgid "_Domain:"
+msgstr "_களம்:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:262
+msgid "_Password:"
+msgstr "_கடவுச்சொல்:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:351
+msgid "Connect _anonymously"
+msgstr "பெயரில்லாமல் _இணை"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:356
+msgid "Connect as _user:"
+msgstr "இந்த _பயனருக்கு இணைக்க:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:465
+msgid "_Remember passwords for this session"
+msgstr "_ந இந்த அமர்விற்கு கடவுச்சொற்களை நினைவு கொள்ளவும்"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:467
+msgid "_Save passwords in keyring"
+msgstr "_க கீரிங்கில் கடவுச் சொல்லை சேமிக்கவும்"
+
+#: ../auth-dialog/main.c:161
+#, c-format
+msgid "You need to authenticate to access the Virtual Private Network '%s'."
+msgstr "மெய் நிகர் தனியார் வலைப்பின்னல் '%s' ஐ அணுக உண்மைப் படுத்த வேண்டும்."
+
+#: ../auth-dialog/main.c:162
+msgid "Authenticate VPN"
+msgstr "விபிஎன் ஐ உண்மைப் படுத்துக"
+
+#: ../auth-dialog/main.c:169
+msgid "_Group Password:"
+msgstr "_ழ குழு கடவுச்சொல்:"
+
+#: ../nm-vpnc.desktop.in.h:1
+msgid "Add, Remove, and Edit VPN Connections"
+msgstr "விபிஎன் இணைப்புகளை சேர்க்க, நீக்க மற்றும் திருத்த"
+
+#: ../nm-vpnc.desktop.in.h:2
+msgid "VPN Connection Manager (vpnc)"
+msgstr "விபிஎன் இணைப்பு மேலாளர் (விபிஎன்சி)"
+
+#: ../properties/nm-vpnc.c:84
+msgid "Compatible Cisco VPN client (vpnc)"
+msgstr "இசைவாகும் சிஸ்கோ விபிஎன் சார்ந்தோன் (விபிஎன்சி)"
+
+#: ../properties/nm-vpnc.c:448
+msgid "The following vpnc VPN connection will be created:"
+msgstr "கீழ் கண்ட விபிஎன்சி விபிஎன் இணப்புகள் உருவாக்கப் படும்:"
+
+#: ../properties/nm-vpnc.c:450
+#, c-format
+msgid "Name:  %s"
+msgstr "பெயர்:  %s"
+
+#: ../properties/nm-vpnc.c:453
+#, c-format
+msgid "Gateway:  %s"
+msgstr "நுழைவாயில் %s"
+
+#: ../properties/nm-vpnc.c:455
+#, c-format
+msgid "Group Name:  %s"
+msgstr "குழு பெயர் %s"
+
+#: ../properties/nm-vpnc.c:459
+#, c-format
+msgid "Username:  %s"
+msgstr "பயனர் பெயர்:  %s"
+
+#: ../properties/nm-vpnc.c:464
+#, c-format
+msgid "Domain:  %s"
+msgstr "களம்: %s"
+
+#: ../properties/nm-vpnc.c:469
+#, c-format
+msgid "Routes:  %s"
+msgstr "பாதைகள்:  %s"
+
+#: ../properties/nm-vpnc.c:473
+msgid "The connection details can be changed using the \"Edit\" button."
+msgstr "இணப்பு விவரங்களை \"திருத்து.\" பொத்தானை இயக்கி மாற்றலாம்."
+
+#: ../properties/nm-vpnc.c:542
+msgid "TCP tunneling not supported"
+msgstr "டிசிபி (TCP) டன்னலிங்குக்கு ஆதரவில்லை"
+
+#: ../properties/nm-vpnc.c:544
+#, c-format
+msgid ""
+"The VPN settings file '%s' specifies that VPN traffic should be tunneled "
+"through TCP which is currently not supported in the vpnc software.\n"
+"\n"
+"The connection can still be created, with TCP tunneling disabled, however it "
+"may not work as expected."
+msgstr ""
+"விபிஎன் அமைப்பு கோப்பு '%s'  விபிஎன் போக்குவரத்து டிசிபி வழியாக டன்னல் செய்யப் பட வேண்டுமென்றாலும் விபிஎன்சி மென் பொருள் இப்போது அதை ஆதரிக்கவில்லை.\n"
+"\n"
+"அந்த இணைப்பை டிசிபி வழியாக டன்னல் செயலிழப்புடன் உருவாக்கலாம். ஆனால் அது எதிர்பார்த்தபடி வேலை செய்யாமல் போகலாம். "
+
+#: ../properties/nm-vpnc.c:565
+msgid "Cannot import settings"
+msgstr "வடிவமைப்பை இறக்குமதி செய்ய முடியவில்லை"
+
+#: ../properties/nm-vpnc.c:567
+#, c-format
+msgid "The VPN settings file '%s' does not contain valid data."
+msgstr "விபிஎன் வடிவமைப்பு கோப்பு '%s'  இல் செல்லுபடியாகும் தரவு இல்லை."
+
+#: ../properties/nm-vpnc.c:584
+msgid "Select file to import"
+msgstr "இறக்குமதி செய்ய கோப்பை தேர்ந்தெடு"
+
+#. printf ("in impl_export\n");
+#: ../properties/nm-vpnc.c:744
+msgid "Save as..."
+msgstr "எனச்சேமி..."
+
+#: ../properties/nm-vpnc.c:774
+#, c-format
+msgid "A file named \"%s\" already exists."
+msgstr "\"%s\" எனப் பெயரிட்ட  கோப்பு ஏற்கெனெவே உள்ளது."
+
+#: ../properties/nm-vpnc.c:777
+msgid "Do you want to replace it with the one you are saving?"
+msgstr "அதை நீங்கள் சேமிக்கும் ஒன்றால் மாற்ற விரும்புகிறீர்களா?"
+
+#: ../properties/nm-vpnc.c:791
+msgid "Failed to export configuration"
+msgstr "வடிவமைப்பை ஏற்றுமதி செய்தல் தோல்வியுற்றது"
+
+#: ../properties/nm-vpnc.c:793
+#, c-format
+msgid "Failed to save file %s"
+msgstr "கோப்பு %s ஐ சேமித்தல் தோல்வியுற்றது"
+
+#: ../properties/nm-vpnc-dialog.glade.h:1
+msgid "<b>Connection Name</b>"
+msgstr "<b>இணைப்பு பெயர்</b>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:2
+msgid "<b>Required Information</b>"
+msgstr "<b>தேவையான தகவல்</b>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:3
+msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+msgstr "<i>உதாரணம்: 172.16.0.0/16 10.11.12.0/24</i>"
+
+#: ../properties/nm-vpnc-dialog.glade.h:4
+msgid "G_roup Name:"
+msgstr "_ழ குழுப்பெயர்:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:5
+msgid "O_ptional Information"
+msgstr "_வ விருப்பத் தகவல்"
+
+#: ../properties/nm-vpnc-dialog.glade.h:6
+msgid "Override _user name"
+msgstr "மீறுகை _பயனர் பெயர்"
+
+#: ../properties/nm-vpnc-dialog.glade.h:7
+msgid ""
+"Please enter the information provided by your system administrator below. Do "
+"not enter your password here as you will be prompted when connecting."
+msgstr "உங்கள் கணினி மேலாளரால் தரப் பட்ட விவரங்களை கீழே உள்ளீடு செய்க. உங்கள் கடவுச்சொல்லை இங்கு உள்ளிட வேண்டாம். இணைப்பின் போது அது கேட்கப் படும். "
+
+#: ../properties/nm-vpnc-dialog.glade.h:8
+msgid "Use _domain for authentication"
+msgstr "களப் பெயரை உண்மைப்படுத்தலுக்கு பயன்படுத்து"
+
+#: ../properties/nm-vpnc-dialog.glade.h:9
+msgid "_Gateway:"
+msgstr "_ந நுழைவாயில்:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:10
+msgid "_Import Saved Configuration..."
+msgstr "சேமிக்கப்பட்ட அமைப்பை _இறக்குமதி செய்க..."
+
+#: ../properties/nm-vpnc-dialog.glade.h:11
+msgid ""
+"_Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
+msgstr "தனியார் வலைப்பின்னலுக்கான இணப்பை அடையாளங்காண பயன்படும் பெயர், எ-டு \"Campus VPN\" அல்லது \"Corporate Network\""
+
+#: ../properties/nm-vpnc-dialog.glade.h:12
+msgid "_Only use VPN connection for these addresses"
+msgstr "இந்த முகவரிகளுக்கு இணைக்க விபிஎன் இணப்பை மட்டும் பயன் படுத்துக."
+
+#: ../src/nm-vpnc-service.c:117
+msgid "The VPN login failed because the user name and password were not accepted."
+msgstr "விபிஎன் உள்நுழைவு தோல்வியுற்றது. ஏனெனில் பயனர் பெயரும் கடவுச்சொல்லும் ஏற்கப்படவில்லை."
+
+#: ../src/nm-vpnc-service.c:119
+msgid "The VPN login failed because the VPN program could not be started."
+msgstr "விபிஎன் உள்நுழைவு தோல்வியுற்றது. ஏனெனில் விபிஎன் நிரலை துவக்க முடியவில்லை."
+
+#: ../src/nm-vpnc-service.c:121
+msgid ""
+"The VPN login failed because the VPN program could not connect to the VPN "
+"server."
+msgstr "விபிஎன் உள்நுழைவு தோல்வியுற்றது. ஏனெனில் விபிஎன் நிரல் விபிஎன் சேவையகத்துடன் இணக்க முடியவில்லை."
+
+#: ../src/nm-vpnc-service.c:123
+msgid "The VPN login failed because the VPN configuration options were invalid."
+msgstr "விபிஎன் உள்நுழைவு தோல்வியுற்றது. ஏனெனில் விபிஎன் தேர்வுகள் செல்லுபடியாகாதவை."
+
+#: ../src/nm-vpnc-service.c:125
+msgid ""
+"The VPN login failed because the VPN program received an invalid "
+"configuration from the VPN server."
+msgstr "விபிஎன் உள்நுழைவு தோல்வியுற்றது. ஏனெனில் விபிஎன் நிரல் விபிஎன் சேவையகத்திலிருந்து செல்லுபடியாகாத வடிவமைப்பை பெற்றது."
+
