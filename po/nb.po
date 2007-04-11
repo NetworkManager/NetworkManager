@@ -200,7 +200,7 @@ msgstr "Ingen nettverksforbindelse"
 
 #: ../gnome/applet/applet.c:1093
 msgid "Wired network connection"
-msgstr "Trådløs nettverkforbindelse"
+msgstr "Kablet nettverkforbindelse"
 
 #: ../gnome/applet/applet.c:1097
 msgid "Connected to an Ad-Hoc wireless network"
