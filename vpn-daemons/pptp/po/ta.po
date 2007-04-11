@@ -1,0 +1,569 @@
+# translation of NetworkManager-pptp.po to TAMIL
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+#
+# Dr.T.Vasudevan <agnihot3@gmail.com>, 2007.
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager-pptp\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2007-01-30 19:19+0000\n"
+"PO-Revision-Date: 2007-04-11 14:15+0530\n"
+"Last-Translator: Dr.T.Vasudevan <agnihot3@gmail.com>\n"
+"Language-Team: TAMIL <ubuntu-l10n-tam@lists.ubuntu.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.4\n"
+
+#: ../auth-dialog-general/gnome-generic-auth-dialog.c:792
+msgid "Authentication Type:"
+msgstr "அங்கீகார வகை:"
+
+#: ../auth-dialog-general/gnome-generic-auth-dialog.c:857
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:11
+msgid "_Remember for this session"
+msgstr "இந்த _அமர்வுக்கு நினைவு கொள்"
+
+#: ../auth-dialog-general/gnome-generic-auth-dialog.c:859
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:13
+msgid "_Save in keyring"
+msgstr "_ச கீரிங்கில் சேமிக்கவும்"
+
+#: ../auth-dialog-general/main.c:48 ../auth-dialog/main.c:140
+#, c-format
+msgid "You need to authenticate to access '%s'."
+msgstr "நீங்கள் '%s'. அணுக உறுதிப்படுத்த வேண்டும்"
+
+#: ../auth-dialog-general/main.c:51 ../auth-dialog/main.c:141
+msgid "Authenticate Connection"
+msgstr "இணைப்பை உறுதிப்படுத்துக"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:2
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Authentication Information</span>\n"
+"\n"
+"The connection '%s' may need some form of authentication.\n"
+"\n"
+"Please select an appropriate authentication type and provide the necessary "
+"credentials below:\n"
+msgstr ""
+"<span weight=\"bold\" size=\"larger\"> உண்மைப்படுத்தல் தகவல்</span> \n"
+"\n"
+"'%s' இணப்புக்கு ஏதோ ஒருவித உண்மைப்படுத்தல் தேவை\n"
+"\n"
+"தகுந்த உண்மைப்படுத்தல் வகையை தேர்ந்தெடுத்து தேவையான சான்றுகளை கீழே தருக:\n"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:8
+msgid "Authentication Required"
+msgstr "உண்மைப்படுத்தல் வேண்டும்"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:9
+msgid "_Authentication Type:"
+msgstr "_உண்மைப்படுத்தல் வகை:"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:10
+#: ../auth-dialog/gnome-two-password-dialog.c:272
+msgid "_Password:"
+msgstr "__கடவுச்சொல்:"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:12
+msgid "_Remote name:"
+msgstr "_த தொலைவு பெயர்:"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:14
+#: ../auth-dialog/gnome-two-password-dialog.c:268
+msgid "_Username:"
+msgstr "_பயனீட்டாளர் பெயர்:"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:15
+msgid "auth-chap-window"
+msgstr "உண்மைப்படுத்தல் சாப் (auth-chap) சாளரம்"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:16
+msgid "auth-mschapv2-window"
+msgstr "auth-mschapv2 சாளரம்"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:17
+msgid "auth-none-window"
+msgstr "உண்மைப்படுத்தல் எதுவும் இல்லை (auth-none-) சாளரம்"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:147
+msgid "_Secondary Password:"
+msgstr "_இரண்டாம் கடவுச் சொல்:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:270
+msgid "_Domain:"
+msgstr "_களம்:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:355
+msgid "Connect _anonymously"
+msgstr "பெயரில்லாமல் _இணை"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:360
+msgid "Connect as _user:"
+msgstr "இந்த _பயனருக்கு இணைக்க:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:466
+msgid "_Remember password for this session"
+msgstr "_ந இந்த அமர்விற்கு கடவுச்சொல்லை நினைவு கொள்ளவும்"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:468
+msgid "_Save password in keyring"
+msgstr "_க கீரிங்கில் கடவுச் சொல்லை சேமிக்கவும்"
+
+#: ../nm-ppp.desktop.in.h:1
+msgid "Add, Remove, and Edit VPN Connections"
+msgstr "விபிஎன் இணைப்புகளை சேர்க்க, நீக்க மற்றும் திருத்த"
+
+#: ../nm-ppp.desktop.in.h:2
+msgid "VPN Connection Manager (PPP generic)"
+msgstr "இணைப்பு மேலாளர் (PPP பொதுப்படையான)"
+
+#: ../properties/nm-ppp-dialog.glade.h:1
+msgid "00:00:00:00"
+msgstr "00:00:00:00"
+
+#: ../properties/nm-ppp-dialog.glade.h:2
+msgid "<b>Compression</b>"
+msgstr "<b>இறுக்கம்</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:3
+msgid "<b>Connection Name</b>"
+msgstr "<b>இணைப்பு பெயர்</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:4
+msgid "<b>Delays and TImeouts</b>"
+msgstr "<b>தாமதங்கள் மற்றும் நேரம் கடந்தவை</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:5
+msgid "<b>Encryption</b>"
+msgstr "<b>மறையாக்கம்</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:6
+msgid "<b>IP Options</b>"
+msgstr "<b>ஐபி தேர்வுகள்</b> "
+
+#: ../properties/nm-ppp-dialog.glade.h:7
+msgid "<b>Packet Parameters</b>"
+msgstr "<b>பொட்டலம் அளவுருக்கள்</b>"
+
+#: ../properties/nm-ppp-dialog.glade.h:8
+msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+msgstr "<i>உதாரணம்: 172.16.0.0/16 10.11.12.0/24</i>"
+
+#: ../properties/nm-ppp-dialog.glade.h:9
+msgid "A list of extra options to pppd as would be typed on the command line"
+msgstr "பிபிபிடி (pppd) க்கு கூடுதல் தேர்வுகள் பட்டியல். கட்டளை வரியில் பயன் படுத்துமாறு"
+
+#: ../properties/nm-ppp-dialog.glade.h:10
+msgid "Allow BSD Compression"
+msgstr "பிஎஸ்டி (BSD) இறுக்கத்தை அனுமதி"
+
+#: ../properties/nm-ppp-dialog.glade.h:11
+msgid "Allow Deflate compression"
+msgstr "டீப்லேட் விரிவாக்கத்தை அனுமதி"
+
+#: ../properties/nm-ppp-dialog.glade.h:12
+msgid "Authenticate Peer"
+msgstr "ஒப்பானவரை உறுதிப்படுத்துக"
+
+#: ../properties/nm-ppp-dialog.glade.h:13
+msgid "Authentication"
+msgstr "உறுதிப்படுத்தல்"
+
+#: ../properties/nm-ppp-dialog.glade.h:14
+msgid "Compression & Encryption"
+msgstr "இறுக்கமும் மறையாக்கமும்"
+
+#: ../properties/nm-ppp-dialog.glade.h:15
+msgid "Connection"
+msgstr "இணைப்பு"
+
+#: ../properties/nm-ppp-dialog.glade.h:16
+msgid "Debug Output"
+msgstr "வெளியீட்டை பிழைநீக்குகிறது"
+
+#: ../properties/nm-ppp-dialog.glade.h:17
+msgid "Disconnect after this many LCP echo requests fail"
+msgstr "இத்தனை எதிரொலி வேண்டுதல்கள் தோல்வியுற்றால் துண்டிக்கவும்"
+
+#: ../properties/nm-ppp-dialog.glade.h:18
+#: ../properties/nm-ppp-properties.c:216
+msgid "Enable stateful MPPE"
+msgstr "stateful MPPE ஐ செயல்படுத்துக"
+
+#: ../properties/nm-ppp-dialog.glade.h:19
+msgid "Exclusive device access (UUCP-style lock)"
+msgstr "தனித்த சாதன அணுகல் (யுயுசிபி முறை பூட்டு)"
+
+#: ../properties/nm-ppp-dialog.glade.h:20
+msgid "Find Device"
+msgstr "சாதனத்தை தேடுக"
+
+#: ../properties/nm-ppp-dialog.glade.h:21
+msgid ""
+"For security reasons, options entered in the box above are checked against a "
+"list of allowed options before a connection is established.  Currently there "
+"are no options on the list."
+msgstr "பாதுகாப்பு கருதி மேலேயுள்ள பெட்டியில் உள்ளிட்ட தேர்வுகள் இணைப்பு ஏற்படுத்தப்படும் முன் அனுமதிக்கப் பட்ட தேர்வுகள் பட்டியலுடன் சரி பார்க்கப் படும். தற்போது அத்தகைய தேர்வுகள் ஏதும் பட்டியலில் இல்லை."
+
+#: ../properties/nm-ppp-dialog.glade.h:22
+msgid "GPRS Options"
+msgstr "ஜிபிஆர்எஸ் தேர்வுகள்"
+
+#: ../properties/nm-ppp-dialog.glade.h:23
+msgid "Hardware RTS/CTS"
+msgstr "வன்பொருள் ஆர்டிஎஸ்/சிடிஎஸ் (RTS/CTS)"
+
+#: ../properties/nm-ppp-dialog.glade.h:24
+msgid "Host name or IP address of the PPTP server"
+msgstr "புரவலன் பெயர் அல்லது பிபிடிபி சேவையகத்தின் ஐபி முகவரி"
+
+#: ../properties/nm-ppp-dialog.glade.h:25
+msgid "If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
+msgstr "பிஎஸ்டி (BSD) இறுக்கத்துக்கு அனுமதி இல்லையானால் 'nobsdcomp'  தேர்வு பிபிபிடி க்கு அனுப்பப்படும். "
+
+#: ../properties/nm-ppp-dialog.glade.h:26
+msgid "If Deflate compression is not allowed the 'nodefate' option is passed to pppd"
+msgstr "டீப்லேட் இறுக்கத்துக்கு அனுமதி இல்லையானால் 'nodeflate தேர்வு பிபிபிடி க்கு அனுப்பப்படும். "
+
+#: ../properties/nm-ppp-dialog.glade.h:27
+msgid "Maximum Receive Unit"
+msgstr "அதிகபட்சம் பெறு அலகு"
+
+#: ../properties/nm-ppp-dialog.glade.h:28
+msgid "Maximum Transmit Unit"
+msgstr "அதிகபட்ச அனுப்பு அலகு"
+
+#: ../properties/nm-ppp-dialog.glade.h:29
+msgid "Modem Connection"
+msgstr "மோடம் இணைப்பு"
+
+#: ../properties/nm-ppp-dialog.glade.h:30
+msgid "PPP Options"
+msgstr "PPP தேர்வுகள்"
+
+#: ../properties/nm-ppp-dialog.glade.h:31
+msgid "Peer DNS through tunnel"
+msgstr "ஒப்பான டன்னல் வழி டிஎன் எஸ் (DNS)"
+
+#: ../properties/nm-ppp-dialog.glade.h:32
+#: ../properties/nm-ppp-properties.c:251
+msgid "Refuse CHAP"
+msgstr "CHAP ஐ ஏற்றுக் கொள்ளாதே"
+
+#: ../properties/nm-ppp-dialog.glade.h:33
+#: ../properties/nm-ppp-properties.c:246
+msgid "Refuse EAP"
+msgstr "EAP ஐ ஏற்றுக் கொள்ளாதே"
+
+#: ../properties/nm-ppp-dialog.glade.h:34
+msgid "Refuse MS CHAP"
+msgstr "MS CHAP ஐ ஏற்றுக் கொள்ளாதே"
+
+#: ../properties/nm-ppp-dialog.glade.h:35
+msgid "Require 128 bit MPPE encryption"
+msgstr "128 பிட் எம்பிபிஈ குறியாக்கம் தேவை"
+
+#: ../properties/nm-ppp-dialog.glade.h:36
+msgid "Require Explicit IP Addr"
+msgstr "தெளிவான ஐபி முகவரி தேவை"
+
+#: ../properties/nm-ppp-dialog.glade.h:37
+msgid "Require MPPC Compression"
+msgstr "எம்பிபிசி இறுக்கம் தேவை"
+
+#: ../properties/nm-ppp-dialog.glade.h:38
+msgid "Require MPPE encryption"
+msgstr "எம்பிபிஈ குறியாக்கம் தேவை "
+
+#: ../properties/nm-ppp-dialog.glade.h:39
+msgid "Requires existing network connection"
+msgstr "முன்னிருப்பில் வலை இணப்பு தேவை"
+
+#: ../properties/nm-ppp-dialog.glade.h:40
+msgid "Routing"
+msgstr "திசைவித்தல்"
+
+#: ../properties/nm-ppp-dialog.glade.h:41
+msgid "Serial Options"
+msgstr "தொடர் தேர்வுகள்"
+
+#: ../properties/nm-ppp-dialog.glade.h:42
+msgid "Service providers GPRS access point from device config"
+msgstr "சாதனத்திலிருந்து சேவை தருவோரின் ஜிபிஆர்எஸ் அணுகு புள்ளி"
+
+#: ../properties/nm-ppp-dialog.glade.h:43
+msgid "Service providers IP address"
+msgstr "சேவை தருவோரின் ஐபி முகவரி"
+
+#: ../properties/nm-ppp-dialog.glade.h:44
+msgid "Telephone number to dial"
+msgstr "தொடர்பு கொள்ள தொலைபேசி எண்"
+
+#: ../properties/nm-ppp-dialog.glade.h:45
+msgid ""
+"This is the friendly name that will be used to identify this network "
+"connection, \n"
+"e.g. \"Campus VPN\" or \"Corporate Network\""
+msgstr ""
+"இது இந்த வலையமைப்பை இனம் காண சுருக்கப் பெயர் \n"
+"எ-டு \"Campus VPN\" அல்லது \"Corporate Network\""
+
+#: ../properties/nm-ppp-dialog.glade.h:47
+msgid "Time in seconds between echo requests"
+msgstr "எதிரொலி அழைப்புகள் இடையே நேர இடைவெளி நொடிகளில்"
+
+#: ../properties/nm-ppp-dialog.glade.h:48
+msgid "Type:"
+msgstr "வகை:"
+
+#: ../properties/nm-ppp-dialog.glade.h:49
+#: ../properties/nm-ppp-properties.c:201
+msgid "Use Peer DNS"
+msgstr "ஒப்பானவர் டிஎன்எஸ் ஐ பயன்படுத்துக"
+
+#: ../properties/nm-ppp-dialog.glade.h:50
+msgid "When checked the \"refuse-chap\" option is passed to pppd."
+msgstr "தேர்விருந்தால் \"refuse-chap\" தேர்வு பிபிபிடி க்கு அனுப்பப்படும்"
+
+#: ../properties/nm-ppp-dialog.glade.h:51
+msgid "When checked the \"refuse-eap\" option is passed to pppd."
+msgstr "தேர்விருந்தால் \"refuse-eap\" தேர்வு பிபிபிடி க்கு அனுப்பப்படும்."
+
+#: ../properties/nm-ppp-dialog.glade.h:52
+msgid "When checked the \"refuse-mschap\" option is passed to pppd."
+msgstr "தேர்விருந்தால் \"refuse-mschap\" தேர்வு பிபிபிடி க்கு அனுப்பப்படும்"
+
+#: ../properties/nm-ppp-dialog.glade.h:53
+msgid "When checked the 'lock' option is passed to pppd"
+msgstr "தேர்விருந்தால் 'lock'  தேர்வு பிபிபிடி க்கு அனுப்பப்படும்"
+
+#: ../properties/nm-ppp-dialog.glade.h:54
+msgid "When checked the 'require-mppc' option is passed to pppd"
+msgstr "தேர்விருந்தால் 'require-mppc' தேர்வு பிபிபிடி க்கு அனுப்பப்படும்"
+
+#: ../properties/nm-ppp-dialog.glade.h:55
+msgid ""
+"When checked this sets the pppd 'debug' option and adds some extra "
+"information from the NetworkManager plugin"
+msgstr "தேர்விருந்தால் பிபிபிடி 'debug' தேர்வை அமைக்கிறது. வலையமைப்பு மேலாளர் செருகியிலிருந்து சில கூடுதல் தகவல்களை சேர்க்கிறது."
+
+#: ../properties/nm-ppp-dialog.glade.h:56
+msgid "When checked this sets the pppd 'noipdefault' option"
+msgstr "தேர்விருந்தால் பிபிபிடி  'noipdefault' தேர்வை அமைக்கிறது."
+
+#: ../properties/nm-ppp-dialog.glade.h:57
+msgid "When checked this sets the pppd 'usepeerdns' option"
+msgstr "தேர்விருந்தால் பிபிபிடி  'usepeerdns' தேர்வை அமைக்கிறது."
+
+#: ../properties/nm-ppp-dialog.glade.h:58
+msgid "When this check box is cleared the \"noauth\" option is passed to pppd."
+msgstr "தேர்வு பெட்டி காலியாக இருந்தால் \"noauth\" தேர்வு பிபிபிடி க்கு அனுப்பப்படும்"
+
+#: ../properties/nm-ppp-dialog.glade.h:59
+msgid "_Access Point Name:"
+msgstr "அணுகல் புள்ளி பெயர்:"
+
+#: ../properties/nm-ppp-dialog.glade.h:60
+msgid "_Channel:"
+msgstr "_வாய்க்கால்:"
+
+#: ../properties/nm-ppp-dialog.glade.h:61
+msgid "_Context Num"
+msgstr "சூழல் Num"
+
+#: ../properties/nm-ppp-dialog.glade.h:62
+msgid "_Custom PPP options:"
+msgstr "தனிப்பயன் பிபிபி (PPP) விருப்பங்கள்:"
+
+#: ../properties/nm-ppp-dialog.glade.h:63
+msgid "_Device Address:"
+msgstr "சாதன முகவரி:"
+
+#: ../properties/nm-ppp-dialog.glade.h:64
+msgid "_Gateway:"
+msgstr "நுழைவாயில்:"
+
+#: ../properties/nm-ppp-dialog.glade.h:65
+msgid "_IP Address:"
+msgstr "ஐபி முகவரி:"
+
+#: ../properties/nm-ppp-dialog.glade.h:66
+msgid "_Import Saved Configuration..."
+msgstr "சேமிக்கப்பட்ட அமைப்பை இறக்குமதி செய்க..."
+
+#: ../properties/nm-ppp-dialog.glade.h:67
+msgid "_Only use VPN connection for these addresses"
+msgstr "இந்த முகவரிகளுக்கு இணைக்க விபிஎன் இணப்பை மட்டும் பயன் படுத்துக."
+
+#: ../properties/nm-ppp-dialog.glade.h:68
+msgid "_Packet Type"
+msgstr "பொட்டலம் வகை"
+
+#: ../properties/nm-ppp-dialog.glade.h:69
+msgid "_Telephone Number:"
+msgstr "தொலைபேசி எண்:"
+
+#: ../properties/nm-ppp-dialog.glade.h:70
+msgid "connect-delay"
+msgstr "இணைப்பு-தாமதம்"
+
+#: ../properties/nm-ppp-properties.c:45
+msgid "pppd tunnel (PPTP, BTGPRS, Dialup)"
+msgstr "பிபிபிடி டன்னல் (PPTP, BTGPRS, Dialup)"
+
+#: ../properties/nm-ppp-properties.c:134
+msgid "Name"
+msgstr "பெயர்"
+
+#: ../properties/nm-ppp-properties.c:146
+msgid "PPTP Server"
+msgstr "பிபிடிபி சேவையகம்"
+
+#: ../properties/nm-ppp-properties.c:151
+msgid "Telephone Number"
+msgstr "தொலைபேசி எண்"
+
+#: ../properties/nm-ppp-properties.c:156
+msgid "Bluetooth Address"
+msgstr "ப்ளூடூத் முகவரி"
+
+#: ../properties/nm-ppp-properties.c:161
+msgid "Bluetooth Channel"
+msgstr "ப்ளூடூத் தடம்"
+
+#: ../properties/nm-ppp-properties.c:166
+msgid "GPRS APN"
+msgstr "ஜிபிஆஎஸ் ஏபிஎன்"
+
+#: ../properties/nm-ppp-properties.c:171
+msgid "GPRS IP"
+msgstr "ஜிபிஆஎஸ் ஐபி"
+
+#: ../properties/nm-ppp-properties.c:176
+msgid "GPRS Context No."
+msgstr "ஜிபிஆஎஸ் சூழல் எண்"
+
+#: ../properties/nm-ppp-properties.c:181
+msgid "GPRS Packet Type"
+msgstr "ஜிபிஆஎஸ் பொட்டலம் வகை"
+
+#: ../properties/nm-ppp-properties.c:186
+msgid "Use CTS/RTS flow control"
+msgstr "சிடிஎஸ்/ஆர்டிஎஸ் ஒழுக்கு கட்டுப்பாடை பயன்படுத்துக"
+
+#: ../properties/nm-ppp-properties.c:191
+msgid "Connect via a modem"
+msgstr "மோடம் வழியாக இணைக்கவும்"
+
+#: ../properties/nm-ppp-properties.c:196
+msgid "Require IP to be provided"
+msgstr "தேவையான ஐபி தரப்பட வேண்டும்"
+
+#: ../properties/nm-ppp-properties.c:206
+msgid "Use MPPE encryption"
+msgstr "எம்பிபிஈ குறியாக்கத்தை பயன்படுத்துக"
+
+#: ../properties/nm-ppp-properties.c:211
+msgid "Use 128 bit MPPE encryption"
+msgstr "128 பிட் எம்பிபிஈ குறியாக்கத்தை பயன்படுத்துக"
+
+#: ../properties/nm-ppp-properties.c:221
+msgid "Use MPPC compression"
+msgstr "எம்பிபிஈ இறுக்கத்தை பயன்படுத்துக"
+
+#: ../properties/nm-ppp-properties.c:226
+msgid "Do not use deflate compression"
+msgstr "டீப்லேட் இறுக்கத்தை பயன்படுத்த வேண்டாம்."
+
+#: ../properties/nm-ppp-properties.c:231
+msgid "Do not use BSD compression"
+msgstr "பிஎஸ்டி (BSD) இறுக்கத்தை பயன்படுத்த வேண்டாம்."
+
+#: ../properties/nm-ppp-properties.c:236
+msgid "Exclusive device access by pppd"
+msgstr "பிபிபிடி யால் தனித்த சாதன அணுகல்"
+
+#: ../properties/nm-ppp-properties.c:241
+msgid "Authenticate remote peer"
+msgstr "தொலைநிலை ஒப்பான செயலியை உறுதிப்படுத்துக"
+
+#: ../properties/nm-ppp-properties.c:256
+msgid "Refuse MSCHAP"
+msgstr "MSCHAP ஐ ஏற்றுக் கொள்ளாதே"
+
+#: ../properties/nm-ppp-properties.c:261
+msgid "Maximum transmit unit (in bytes)"
+msgstr "அதிகபட்சம் அனுப்பும் அலகு (பைட்டுகளில்)"
+
+#: ../properties/nm-ppp-properties.c:266
+msgid "Maximum receive unit (in bytes)"
+msgstr "அதிகபட்சம் பெறும் அலகு (பைட்டுகளில்)"
+
+#: ../properties/nm-ppp-properties.c:271
+msgid "Number of failed LCP echos to cause disconnect"
+msgstr "இணப்பை துண்டிக்க தோல்வியடைந்த எல்சிபி எதிரொலிகளின் எண்ணிக்கை"
+
+#: ../properties/nm-ppp-properties.c:276
+msgid "Interval (in seconds) at which to issue LCP echos"
+msgstr "எல்சிபி எதிரொலிகள் அனுப்ப இடைவேளை (நொடிகளில்)"
+
+#: ../properties/nm-ppp-properties.c:281
+msgid "Interval (in milliseconds) to wait before connecting."
+msgstr "இணைக்கு முன் தாமதிக்க வேண்டிய இடைவேளை (மில்லிவிநாடிகளில்)"
+
+#: ../properties/nm-ppp-properties.c:286
+msgid "Custom PPP options"
+msgstr "தனிப்பயன் PPP விருப்பங்கள்"
+
+#: ../properties/nm-ppp-properties.c:296
+msgid "Use Peer DNS over the Tunnel"
+msgstr "டன்னலில் ஒப்பான டிஎன்எஸ் ஐ பயன் படுத்துக"
+
+#: ../properties/nm-ppp-properties.c:302
+msgid "Specific networks available"
+msgstr "கிடைப்பில் உள்ள குறிப்பான வலையமைப்புகள்"
+
+#: ../properties/nm-ppp-properties.c:308
+msgid "Limit to specific networks"
+msgstr "குறிப்பான வலையமைப்புகளை வரையறை செய்க"
+
+#: ../properties/vpnui_impl.c:229
+#, c-format
+msgid "The following '%s' connection will be created:"
+msgstr "பின்வரும் '%s'  இணைப்பு உருவாக்கப் படும்:"
+
+#: ../properties/vpnui_impl.c:242
+#, c-format
+msgid "\t%s:  %s\n"
+msgstr "\t%s:  %s\n"
+
+#: ../properties/vpnui_impl.c:245
+msgid "The connection details can be changed using the \"Back\" button."
+msgstr "இணப்பு விவரங்கள் \"Back\" பொத்தானை பயன் படுத்தி மாற்ற இயலும்."
+
+#: ../properties/vpnui_impl.c:317
+msgid "Select file to import"
+msgstr "இறக்குமதி செய்ய கோப்பை தேர்ந்தெடு"
+
+#. printf ("in impl_export\n");
+#: ../properties/vpnui_impl.c:462
+msgid "Save as..."
+msgstr "எனச்சேமி..."
+
+#: ../properties/vpnui_impl.c:491
+#, c-format
+msgid "A file named \"%s\" already exists."
+msgstr "\"%s\" எனப் பெயரிட்ட கோப்பு ஏற்கெனெவே உள்ளது."
+
+#: ../properties/vpnui_impl.c:494
+msgid "Do you want to replace it with the one you are saving?"
+msgstr "அதை நீங்கள் சேமிக்கும் ஒன்றால் மாற்ற விரும்புகிறீர்களா?"
+
+#: ../src/nm-ppp-starter.c:140
+msgid "VPN Connection failed"
+msgstr "விபிஎன் இணைப்பு தோல்வியுற்றது"
+
