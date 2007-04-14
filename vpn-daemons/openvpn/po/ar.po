@@ -9,14 +9,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Project\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-03-20 12:36+0000\n"
+"POT-Creation-Date: 2007-04-14 15:53+0100\n"
 "PO-Revision-Date: 2007-03-20 12:40+0100\n"
 "Last-Translator: Djihed Afifi <djihed@gmail.com>\n"
 "Language-Team: Arabic <doc@arabeyes.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: Plural-Forms: nplurals=4; plural=n==1 ? 0 : n==2 ? 1 : n>=3 && n<=10 ? 2 : 3\n"
+"Plural-Forms: Plural-Forms: nplurals=4; plural=n==1 ? 0 : n==2 ? 1 : n>=3 && "
+"n<=10 ? 2 : 3\n"
 "X-Poedit-Language: Arabic\n"
 "X-Generator: KBabel 1.11.4\n"
 
@@ -94,21 +95,18 @@ msgstr "الإسم: %s"
 msgid "Connection Type: X.509 Certificates"
 msgstr "نوع الإتصال: X.509 Certificates"
 
-#: ../properties/nm-openvpn.c:816
-#: ../properties/nm-openvpn.c:843
+#: ../properties/nm-openvpn.c:816 ../properties/nm-openvpn.c:843
 #: ../properties/nm-openvpn.c:855
 #, c-format
 msgid "CA:  %s"
 msgstr "CA:  %s"
 
-#: ../properties/nm-openvpn.c:819
-#: ../properties/nm-openvpn.c:858
+#: ../properties/nm-openvpn.c:819 ../properties/nm-openvpn.c:858
 #, c-format
 msgid "Cert:  %s"
 msgstr "شهادة:  %s"
 
-#: ../properties/nm-openvpn.c:822
-#: ../properties/nm-openvpn.c:861
+#: ../properties/nm-openvpn.c:822 ../properties/nm-openvpn.c:861
 #, c-format
 msgid "Key:  %s"
 msgstr "مفتاح: %s"
@@ -136,8 +134,7 @@ msgstr "IP بعيد:  %s"
 msgid "Connection Type: Password"
 msgstr "نوع الإتصال: كلمة سّر"
 
-#: ../properties/nm-openvpn.c:846
-#: ../properties/nm-openvpn.c:864
+#: ../properties/nm-openvpn.c:846 ../properties/nm-openvpn.c:864
 #, c-format
 msgid "Username:  %s"
 msgstr "اسم المستخدم:  %s"
@@ -227,19 +224,16 @@ msgstr "لا يحتوي ملف اعدادات VPN '%s' على بيانات صا�
 msgid "Select file to import"
 msgstr "انتقِ ملفّ للإستيراد"
 
-#: ../properties/nm-openvpn.c:1232
-#: ../properties/nm-openvpn.c:1244
+#: ../properties/nm-openvpn.c:1232 ../properties/nm-openvpn.c:1244
 #: ../properties/nm-openvpn.c:1247
 msgid "Select CA to use"
 msgstr "انتقِ CA ليُستخدم"
 
-#: ../properties/nm-openvpn.c:1235
-#: ../properties/nm-openvpn.c:1250
+#: ../properties/nm-openvpn.c:1235 ../properties/nm-openvpn.c:1250
 msgid "Select certificate to use"
 msgstr "انتقِ شهادة لتُستخدم"
 
-#: ../properties/nm-openvpn.c:1238
-#: ../properties/nm-openvpn.c:1253
+#: ../properties/nm-openvpn.c:1238 ../properties/nm-openvpn.c:1253
 msgid "Select key to use"
 msgstr "انتقِ مفتاحا ليُستخدم"
 
@@ -279,138 +273,123 @@ msgid "(Default: 1194)"
 msgstr "(افتراضي: 1194)"
 
 #: ../properties/nm-openvpn-dialog.glade.h:2
-msgid "0"
-msgstr "0"
-
-#: ../properties/nm-openvpn-dialog.glade.h:3
-msgid "1"
-msgstr "1"
-
-#: ../properties/nm-openvpn-dialog.glade.h:4
 msgid "65536"
 msgstr "65536"
 
-#: ../properties/nm-openvpn-dialog.glade.h:5
-msgid "<b>Connection Information</b>"
-msgstr "<b>معلومات الإتصال</b>"
-
-#: ../properties/nm-openvpn-dialog.glade.h:6
-msgid "<b>Connection Name</b>"
-msgstr "<b>اسم الإتصال</b>"
-
-#: ../properties/nm-openvpn-dialog.glade.h:7
+#: ../properties/nm-openvpn-dialog.glade.h:3
 msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
 msgstr "<i>مثال: 172.16.0.0/16 10.11.12.0/24</i>"
 
-#: ../properties/nm-openvpn-dialog.glade.h:8
-msgid "Advanced"
+#: ../properties/nm-openvpn-dialog.glade.h:4
+#, fuzzy
+msgid "Ad_vanced"
 msgstr "متقدم"
 
-#: ../properties/nm-openvpn-dialog.glade.h:9
-msgid "CA file:"
+#: ../properties/nm-openvpn-dialog.glade.h:5
+#, fuzzy
+msgid "C_A file:"
 msgstr "ملفّ CA:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:10
-msgid "Certificate:"
+#: ../properties/nm-openvpn-dialog.glade.h:6
+#, fuzzy
+msgid "C_ertificate:"
 msgstr "شهادة:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:11
-msgid "Connection Name"
-msgstr "<b>اسم الإتصال</b>"
-
-#: ../properties/nm-openvpn-dialog.glade.h:12
-msgid "Connection Type:"
+#: ../properties/nm-openvpn-dialog.glade.h:7
+#, fuzzy
+msgid "Co_nnection type:"
 msgstr "نوع الإتصال:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:13
+#: ../properties/nm-openvpn-dialog.glade.h:8
+#, fuzzy
+msgid "Connection na_me:"
+msgstr "<b>اسم الإتصال</b>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:9
 msgid "Direction:"
 msgstr "الإتجاه:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:14
-msgid "Gateway _Port:"
-msgstr "ال_بوّابة:"
+#: ../properties/nm-openvpn-dialog.glade.h:10
+#, fuzzy
+msgid "Import _Saved Configuration..."
+msgstr "ا_ستورد اعدادات محفوظة..."
 
-#: ../properties/nm-openvpn-dialog.glade.h:15
-msgid "Key:"
-msgstr "مفتاح:"
+#: ../properties/nm-openvpn-dialog.glade.h:11
+msgid ""
+"Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
+msgstr ""
+"الإ_سم المستخدم لتعريف الإتصال للشبكة الخاصة، مثلا: \"Campus VPN\" أو "
+"\"Corporate Network\""
 
-#: ../properties/nm-openvpn-dialog.glade.h:16
-msgid "Local IP:"
-msgstr "IP محلًي:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:17
-msgid "Name used to identify the connection to the private network, e.g. \"Campus VPN\" or \"Corporate Network\""
-msgstr "الإ_سم المستخدم لتعريف الإتصال للشبكة الخاصة، مثلا: \"Campus VPN\" أو \"Corporate Network\""
-
-#: ../properties/nm-openvpn-dialog.glade.h:18
+#: ../properties/nm-openvpn-dialog.glade.h:12
 msgid "Network"
 msgstr "شبكة"
 
-#: ../properties/nm-openvpn-dialog.glade.h:19
+#: ../properties/nm-openvpn-dialog.glade.h:13
+#, fuzzy
+msgid "Only use _VPN connection for these addresses:"
+msgstr "استخدم _فقط اتصالات VPN لهذه العناوين"
+
+#: ../properties/nm-openvpn-dialog.glade.h:14
 msgid "OpenVPN Advanced Options"
 msgstr "خيارات OpenVPN متقدمة"
 
-#: ../properties/nm-openvpn-dialog.glade.h:20
+#: ../properties/nm-openvpn-dialog.glade.h:15
 msgid "OpenVPN Configuration"
 msgstr "اعدادات OpenVPN"
 
-#: ../properties/nm-openvpn-dialog.glade.h:21
-msgid "Password"
-msgstr "كلمة السّر"
+#: ../properties/nm-openvpn-dialog.glade.h:16
+msgid ""
+"Please enter the information provided by your system administrator below. Do "
+"not enter your password here as you will be prompted when connecting."
+msgstr ""
+"من فضلك أدخل المعلومات التي وفرها مدير نظامك بأسفل. لا تدخل كلمة السر هنا "
+"حيث أنك ستسأل عنها عند الإتصال."
 
-#: ../properties/nm-openvpn-dialog.glade.h:22
-msgid "Please enter the information provided by your system administrator below. Do not enter your password here as you will be prompted when connecting."
-msgstr "من فضلك أدخل المعلومات التي وفرها مدير نظامك بأسفل. لا تدخل كلمة السر هنا حيث أنك ستسأل عنها عند الإتصال."
+#: ../properties/nm-openvpn-dialog.glade.h:17
+msgid ""
+"Please note that the file you import is not an OpenVPN configuration file. "
+"Ask your administrator for the file."
+msgstr ""
+"من فضلك لا حظ أن الملف الذي استوردته ليس ملف إعدادات OpenVPN. اسأل مدير "
+"نظامك عن الملف."
 
-#: ../properties/nm-openvpn-dialog.glade.h:23
-msgid "Please note that the file you import is not an OpenVPN configuration file. Ask your administrator for the file."
-msgstr "من فضلك لا حظ أن الملف الذي استوردته ليس ملف إعدادات OpenVPN. اسأل مدير نظامك عن الملف."
-
-#: ../properties/nm-openvpn-dialog.glade.h:24
-msgid "Remote IP:"
-msgstr "IPعن بعد:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:25
-msgid "Shared Key:"
-msgstr "مفتاح مشترَك:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:26
-msgid "Shared key"
+#: ../properties/nm-openvpn-dialog.glade.h:18
+#, fuzzy
+msgid "Shared _key:"
 msgstr "مفتاح مشترَك"
 
-#: ../properties/nm-openvpn-dialog.glade.h:27
+#: ../properties/nm-openvpn-dialog.glade.h:19
 msgid "TLS-Auth"
 msgstr "TLS-Auth"
 
-#: ../properties/nm-openvpn-dialog.glade.h:28
-msgid "Use LZO compression"
+#: ../properties/nm-openvpn-dialog.glade.h:20
+#, fuzzy
+msgid "Use L_ZO compression"
 msgstr "استعمل ضغط LZO"
 
-#: ../properties/nm-openvpn-dialog.glade.h:29
-msgid "Use TAP device"
+#: ../properties/nm-openvpn-dialog.glade.h:21
+#, fuzzy
+msgid "Use TA_P device"
 msgstr "استخدم جهاز TAP"
 
-#: ../properties/nm-openvpn-dialog.glade.h:30
-msgid "Use TCP connection"
+#: ../properties/nm-openvpn-dialog.glade.h:22
+#, fuzzy
+msgid "Use _TCP connection"
 msgstr "استخدم اتصال TCP"
 
-#: ../properties/nm-openvpn-dialog.glade.h:31
-msgid "Use TLS auth:"
+#: ../properties/nm-openvpn-dialog.glade.h:23
+#, fuzzy
+msgid "Use _TLS auth:"
 msgstr "استخدم توثيق TLS:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:32
-msgid "Use cipher:"
+#: ../properties/nm-openvpn-dialog.glade.h:24
+#, fuzzy
+msgid "Use cip_her:"
 msgstr "استخدم الشيفرة:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:33
-msgid "Username:"
-msgstr "اسم المستخدم:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:34
-msgid "X.509"
-msgstr "X.509"
-
-#: ../properties/nm-openvpn-dialog.glade.h:35
+#: ../properties/nm-openvpn-dialog.glade.h:25
 msgid ""
 "X.509 Certificates\n"
 "Pre-shared key\n"
@@ -422,54 +401,110 @@ msgstr ""
 "توثيق بكلمة سر\n"
 "X.509 مع توثيق بكلمة سر"
 
-#: ../properties/nm-openvpn-dialog.glade.h:39
-msgid "X.509/Pass"
-msgstr "X.509/Pass"
+#: ../properties/nm-openvpn-dialog.glade.h:29
+#, fuzzy
+msgid "_0"
+msgstr "0"
 
-#: ../properties/nm-openvpn-dialog.glade.h:40
-msgid "_Gateway Address:"
+#: ../properties/nm-openvpn-dialog.glade.h:30
+#, fuzzy
+msgid "_1"
+msgstr "1"
+
+#: ../properties/nm-openvpn-dialog.glade.h:31
+#, fuzzy
+msgid "_Gateway address:"
 msgstr "عنوان ال_بوّابة:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:41
-msgid "_Import Saved Configuration..."
-msgstr "ا_ستورد اعدادات محفوظة..."
+#: ../properties/nm-openvpn-dialog.glade.h:32
+#, fuzzy
+msgid "_Gateway port:"
+msgstr "ال_بوّابة:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:42
-msgid "_Only use VPN connection for these addresses"
-msgstr "استخدم _فقط اتصالات VPN لهذه العناوين"
+#: ../properties/nm-openvpn-dialog.glade.h:33
+#, fuzzy
+msgid "_Key:"
+msgstr "مفتاح:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:43
-msgid "none"
+#: ../properties/nm-openvpn-dialog.glade.h:34
+#, fuzzy
+msgid "_Local IP:"
+msgstr "IP محلًي:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:35
+#, fuzzy
+msgid "_Remote IP:"
+msgstr "IPعن بعد:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:36
+#, fuzzy
+msgid "_User name:"
+msgstr "ا_سم المستخدم:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:37
+#, fuzzy
+msgid "_none"
 msgstr "لا شيء"
 
 #: ../src/nm-openvpn-service.c:127
-msgid "The VPN login failed because the user name and password were not accepted or the certificate password was wrong."
-msgstr "فشل ولوج VPN لأن اسم المستخدم أو كلمة السر لم تُقبل أو أن كلمة سر الشهادة كانت خطأ."
+msgid ""
+"The VPN login failed because the user name and password were not accepted or "
+"the certificate password was wrong."
+msgstr ""
+"فشل ولوج VPN لأن اسم المستخدم أو كلمة السر لم تُقبل أو أن كلمة سر الشهادة "
+"كانت خطأ."
 
 #: ../src/nm-openvpn-service.c:129
 msgid "The VPN login failed because the VPN program could not be started."
 msgstr "فشل ولوج VPN لأن برنامج VPN لا يمكن بدأه."
 
 #: ../src/nm-openvpn-service.c:131
-msgid "The VPN login failed because the VPN program could not connect to the VPN server."
+msgid ""
+"The VPN login failed because the VPN program could not connect to the VPN "
+"server."
 msgstr "فشل ولوج VPN لأن برنامج VPN لا يمكنه الإتصال بخادم VPN."
 
 #: ../src/nm-openvpn-service.c:133
-msgid "The VPN login failed because the VPN configuration options were invalid."
+msgid ""
+"The VPN login failed because the VPN configuration options were invalid."
 msgstr "فشل ولوج VPN لأن خيارات اعدادات VPN غير صالحة."
 
 #: ../src/nm-openvpn-service.c:135
-msgid "The VPN login failed because the VPN program received an invalid configuration from the VPN server."
+msgid ""
+"The VPN login failed because the VPN program received an invalid "
+"configuration from the VPN server."
 msgstr "فشل ولوج VPN لأن برنامج VPN لم يتلقى اعدادات صالحة من خادم VPN."
 
 #: ../src/nm-openvpn-service.c:137
 msgid "VPN connection failed"
 msgstr "فشل اتصال VPN"
 
+#~ msgid "<b>Connection Information</b>"
+#~ msgstr "<b>معلومات الإتصال</b>"
+
+#~ msgid "<b>Connection Name</b>"
+#~ msgstr "<b>اسم الإتصال</b>"
+
+#~ msgid "Password"
+#~ msgstr "كلمة السّر"
+
+#~ msgid "Shared Key:"
+#~ msgstr "مفتاح مشترَك:"
+
+#~ msgid "Username:"
+#~ msgstr "اسم المستخدم:"
+
+#~ msgid "X.509"
+#~ msgstr "X.509"
+
+#~ msgid "X.509/Pass"
+#~ msgstr "X.509/Pass"
+
 #~ msgid "<b>Required</b>"
 #~ msgstr "<b>مطلوب</b>"
+
 #~ msgid "CA  file:"
 #~ msgstr "ملفّ  CA:"
+
 #~ msgid "Optional"
 #~ msgstr "خياري"
-
