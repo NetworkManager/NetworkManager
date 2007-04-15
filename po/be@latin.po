@@ -1,0 +1,238 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: network-manager-ui\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2007-04-15 22:24+0300\n"
+"PO-Revision-Date: 2007-04-15 22:23+0300\n"
+"Last-Translator: Ihar Hrachyshka <ihar.hrachyshka@gmail.com>\n"
+"Language-Team: Belarusian Latin <i18n@mova.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%"
+"10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"X-Poedit-Language: Belarusian\n"
+"X-Poedit-Country: BELARUS\n"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:405
+msgid "Cannot add VPN connection"
+msgstr "Niemahčyma dadać spałučeńnie VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:407
+msgid ""
+"No suitable VPN software was found on your system. Contact your system "
+"administrator."
+msgstr ""
+"Na hetaj systemie nia znojdzienaja prahrama dla VPN. Źviažysia z systemnym "
+"administrataram."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:457
+msgid "Cannot import VPN connection"
+msgstr "Niemahčyma impartavać spałučeńnie VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:459
+#, c-format
+msgid ""
+"Cannot find suitable software for VPN connection type '%s' to import the "
+"file '%s'. Contact your system administrator."
+msgstr ""
+"Na hetaj systemie nia znojdzienaja prahrama dla spałučeńnia VPN typu '%s', "
+"kab impartavać fajł '%s'. Źviažysia z systemnym administrataram."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:596
+#, c-format
+msgid "Error retrieving VPN connection '%s'"
+msgstr "Pamyłka atrymańnia spałučeńnia VPN '%s'"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:599
+#, c-format
+msgid ""
+"Could not find the UI files for VPN connection type '%s'. Contact your "
+"system administrator."
+msgstr ""
+"Niemahčyma znajści fajły UI dla typu '%s' spałučeńniaŭ VPN. Źviažysia z "
+"systemnym administrataram."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:746
+#, c-format
+msgid "Delete VPN connection \"%s\"?"
+msgstr "Vydalić spałučeńnie VPN \"%s\"?"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:749
+#, c-format
+msgid ""
+"All information about the VPN connection \"%s\" will be lost and you may "
+"need your system administrator to provide information to create a new "
+"connection."
+msgstr ""
+"Usie źviestki pra spałučeńnie VPN \"%s\" źniknuć, i tabie mohuć spatrebicca "
+"źviestki ad systemnaha administratara pra toje, jak stvaryć novaje "
+"spałučeńnie."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:963
+msgid "Unable to load"
+msgstr "Niemahčyma adčytać"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:965
+msgid "Cannot find some needed resources (the glade file)!"
+msgstr "Niemahčyma znajści niekatoryja patrebnyja resursy (fajł glade)!"
+
+#. Edit dialog
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1084
+msgid "Edit VPN Connection"
+msgstr "Redahuj spałučeńnie VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:1
+msgid "Add a new VPN connection"
+msgstr "Dadaj novaje spałučeńnie VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
+msgid "Choose which type of VPN connection you wish to create."
+msgstr "Abiary typ stvaranaha spałučeńnia VPN."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
+msgid "Connect to:"
+msgstr "Złučajsia z:"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
+msgid "Create VPN Connection"
+msgstr "Stvary spałučeńnie VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
+msgid "Create VPN Connection - 1 of 2"
+msgstr "Stvary spałučeńnie VPN - 1 z 2"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
+msgid "Create VPN Connection - 2 of 2"
+msgstr "Stvary spałučeńnie VPN - 2 z 2"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
+msgid "Delete the selected VPN connection"
+msgstr "Vydal abranaje spałučeńnie VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
+msgid "E_xport"
+msgstr "E_kspartuj"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:9
+msgid "Edit the selected VPN connection"
+msgstr "Redahuj abranaje spałučeńnie VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:10
+msgid "Export the VPN settings to a file"
+msgstr "Ekspartuj nałady VPN u fajł"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:11
+msgid "Export the selected VPN connection to a file"
+msgstr "Ekspartuj abranaje spałučeńnie VPN u fajł"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:12
+msgid "Finish Creating VPN Connection"
+msgstr "Skonč stvareńnie spałučeńnia VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:13
+msgid "Manage Virtual Private Network Connections"
+msgstr "Kiruj spałučeńniami ź virtualnaj pryvatnaj sietkaj (VPN)"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:14
+msgid ""
+"This assistant will guide you through the creation of a connection to a "
+"Virtual Private Network (VPN).\n"
+"\n"
+"It will require some information, such as IP addresses and secrets.  Please "
+"see your system administrator to obtain this information."
+msgstr ""
+"Hety pamočnik dapamoža stvaryć spałučeńnie ź virtualnaj pryvatnaj sietkaj "
+"(VPN).\n"
+"\n"
+"Treba viedać peŭnyja źviestki, a mienavita adrasy IP i sakrety. Źviažysia z "
+"systemnym administrataram, kab atrymać źviestki."
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:17
+msgid "VPN Connections"
+msgstr "Spałučeńni VPN"
+
+#: ../src/nm-ap-security-wep.c:52
+msgid "40-bit WEP"
+msgstr "40-bitny WEP"
+
+#: ../src/nm-ap-security-wep.c:54
+msgid "104-bit WEP"
+msgstr "104-bitny WEP"
+
+#: ../src/nm-ap-security-wpa-psk.c:50
+msgid "WPA TKIP"
+msgstr "WPA TKIP"
+
+#: ../src/nm-ap-security-wpa-psk.c:52
+msgid "WPA CCMP"
+msgstr "WPA CCMP"
+
+#: ../src/nm-ap-security-wpa-psk.c:54
+msgid "WPA Automatic"
+msgstr "Aŭtamatyčny WPA"
+
+#: ../src/nm-ap-security-wpa-psk.c:59
+msgid "WPA2 TKIP"
+msgstr "WPA2 TKIP"
+
+#: ../src/nm-ap-security-wpa-psk.c:61
+msgid "WPA2 CCMP"
+msgstr "WPA2 CCMP"
+
+#: ../src/nm-ap-security-wpa-psk.c:63
+msgid "WPA2 Automatic"
+msgstr "Aŭtamatyčny WPA2"
+
+#: ../src/nm-ap-security.c:338
+msgid "none"
+msgstr "niama"
+
+#: ../src/nm-netlink-monitor.c:170
+#, c-format
+msgid ""
+"unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgstr ""
+"niemahčyma stvaryć sietkavy sokiet, kab nazirać za pravodnymi sietkavymi "
+"pryładami - %s"
+
+#: ../src/nm-netlink-monitor.c:188
+#, c-format
+msgid ""
+"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgstr ""
+"niemahčyma dałučycca da sietkavaha sokieta, kab nazirać za pravodnymi "
+"sietkavymi pryładami - %s"
+
+#: ../src/nm-netlink-monitor.c:426
+msgid "operation took too long"
+msgstr "aperacyja vykkonvałasia nadta doŭha"
+
+#: ../src/nm-netlink-monitor.c:523
+msgid "received data from wrong type of sender"
+msgstr "atrymanyja źviestki ad adpraŭnika niapravilnaha typu"
+
+#: ../src/nm-netlink-monitor.c:536
+msgid "received data from unexpected sender"
+msgstr "atrymanyja źviestki ad niečakanaha adpraŭnika"
+
+#: ../src/nm-netlink-monitor.c:665
+msgid "too much data was sent over socket and some of it was lost"
+msgstr ""
+"praz sokiet dasłana nadta šmat źviestak, i tamu niekatoryja ź ich zhubilisia"
+
+#: ../src/nm-netlink-monitor.c:775
+msgid "error occurred while waiting for data on socket"
+msgstr "pry čakańni źviestak na sokiecie adbyłasia pamyłka"
+
+#: ../src/nm-ap-security-wpa-eap.c:96 ../src/nm-ap-security-wpa-eap.c:120
+msgid "WPA2 Enterprise"
+msgstr "WPA2 Enterprise"
+
+#: ../src/nm-ap-security-wpa-eap.c:98 ../src/nm-ap-security-wpa-eap.c:125
+msgid "WPA Enterprise"
+msgstr "WPA Enterprise"
+
+#: ../src/nm-ap-security-leap.c:66 ../src/nm-ap-security-leap.c:82
+msgid "LEAP"
+msgstr "LEAP"

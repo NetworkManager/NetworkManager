@@ -1,3 +1,7 @@
+2007-04-16  Ihar Hrachyshka <iharh@gnome.org>
+
+	* configure.in: Added 'be@latin' to ALL_LINGUAS.
+
 2007-04-09  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-11-wireless.c
