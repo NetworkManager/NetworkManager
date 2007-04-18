@@ -96,7 +96,15 @@ static void nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall, NMActRe
 	dbus_message_iter_init (reply, &iter);
 	if ((security = nm_ap_security_new_deserialize (&iter)))
 	{
+		NMAccessPoint *allowed_ap;
+
 		nm_ap_set_security (ap, security);
+
+		/* Since we got a new security info, update the copy in allowed_ap_list */
+		allowed_ap = nm_ap_list_get_ap_by_essid (data->allowed_ap_list, nm_ap_get_essid (ap));
+		if (allowed_ap)
+			nm_ap_set_security (allowed_ap, security);
+
 		g_object_unref (G_OBJECT (security));	/* set_security copies the object */
 		nm_device_activate_schedule_stage1_device_prepare (req);
 	}

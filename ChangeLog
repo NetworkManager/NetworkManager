@@ -1,3 +1,11 @@
+2007-04-18  Tambet Ingo  <tambet@ximian.com>
+
+	* src/nm-dbus-nmi.c (nm_dbus_get_user_key_for_network_cb): Update the security
+	in allowed_ap_list AP. When a wireless device starts the connection, wpa_supplicant
+	initiates a scan, so we always get scan results while activating. That in turn
+	merges scan results with the ones from allowed_ap_list, loosing the security
+	information from the user.
+
 2007-04-16  Ihar Hrachyshka <iharh@gnome.org>
 
 	* configure.in: Added 'be@latin' to ALL_LINGUAS.
