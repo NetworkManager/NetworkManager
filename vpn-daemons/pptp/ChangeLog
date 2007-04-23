@@ -1,3 +1,7 @@
+2007-04-23  Luca Ferretti  <elle.uca@libero.it>
+
+	* configure.in: Added 'it' to ALL_LINGUAS.
+
 2007-04-16  Ihar Hrachyshka <iharh@gnome.org>
 
 	* configure.in: Added 'be@latin' to ALL_LINGUAS.
