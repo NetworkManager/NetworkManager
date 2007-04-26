@@ -1,3 +1,8 @@
+2007-04-25  Dan Williams  <dcbw@redhat.com>
+
+	* initscript/RedHat/NetworkManager.in: remove trailing backslash
+		(gnome.org #432401)
+
 2007-04-18  Tambet Ingo  <tambet@ximian.com>
 
 	* src/nm-dbus-nmi.c (nm_dbus_get_user_key_for_network_cb): Update the security

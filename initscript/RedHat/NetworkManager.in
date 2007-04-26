@@ -4,7 +4,7 @@
 #
 # chkconfig: - 98 02
 # description:  This is a daemon for automatically switching network \
-#               connections to the best available connection. \
+#               connections to the best available connection.
 #
 # processname: NetworkManager
 # pidfile: /var/run/NetworkManager/NetworkManager.pid
