@@ -1,3 +1,9 @@
+2007-05-01  Mohammad DAMT  <mdamt@gnome.org>
+
+	* id.po: Added Indonesian language by Andika Triwidada
+	<andika@gmail.com>
+	* LINGUAS: Added id.
+
 2007-04-16  Ihar Hrachyshka <iharh@gnome.org>
 
 	* be@latin.po: Added Belarusian Latin translation.
