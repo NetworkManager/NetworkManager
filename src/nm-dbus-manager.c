@@ -160,16 +160,14 @@ nm_dbus_manager_class_init (NMDBusManagerClass *klass)
 		              G_STRUCT_OFFSET (NMDBusManagerClass, dbus_connection_changed),
 		              NULL, NULL, nm_marshal_VOID__POINTER,
 		              G_TYPE_NONE, 1, G_TYPE_POINTER);
-	klass->dbus_connection_changed = NULL;
 
 	nm_dbus_manager_signals[NAME_OWNER_CHANGED] =
 		g_signal_new ("name-owner-changed",
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMDBusManagerClass, name_owner_changed),
-		              NULL, NULL, nm_marshal_VOID__POINTER_STRING_STRING_STRING,
-		              G_TYPE_NONE, 4, G_TYPE_POINTER, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
-	klass->name_owner_changed = NULL;
+		              NULL, NULL, nm_marshal_VOID__STRING_STRING_STRING,
+		              G_TYPE_NONE, 3, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
 
 	g_type_class_add_private (klass, sizeof (NMDBusManagerPrivate));
 }
@@ -545,10 +543,9 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 		}
 	}
 
-	g_signal_emit (G_OBJECT (self), 
+	g_signal_emit (self, 
 				   nm_dbus_manager_signals[NAME_OWNER_CHANGED],
 				   0,
-				   NM_DBUS_MANAGER_GET_PRIVATE (self)->connection,
 				   name, old_owner, new_owner);
 }
 

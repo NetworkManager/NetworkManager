@@ -43,7 +43,6 @@ G_DEFINE_TYPE (NMSupplicantManager, nm_supplicant_manager, G_TYPE_OBJECT)
 
 
 static void nm_supplicant_manager_name_owner_changed (NMDBusManager *dbus_mgr,
-                                                      DBusConnection *connection,
                                                       const char *name,
                                                       const char *old,
                                                       const char *new,
@@ -146,19 +145,16 @@ nm_supplicant_manager_class_init (NMSupplicantManagerClass *klass)
 
 static void
 nm_supplicant_manager_name_owner_changed (NMDBusManager *dbus_mgr,
-                                          DBusConnection *connection,
                                           const char *name,
-                                          const char *old,
-                                          const char *new,
+										  const char *old_owner,
+										  const char *new_owner,
                                           gpointer user_data)
 {
 	NMSupplicantManager * self = (NMSupplicantManager *) user_data;
-	gboolean		old_owner_good = (old && strlen (old));
-	gboolean		new_owner_good = (new && strlen (new));
+	gboolean old_owner_good = (old_owner && strlen (old_owner));
+	gboolean new_owner_good = (new_owner && strlen (new_owner));
 
-	g_return_if_fail (connection != NULL);
-
-		/* Can't handle the signal if its not from the supplicant service */
+	/* Can't handle the signal if its not from the supplicant service */
 	if (strcmp (WPAS_DBUS_SERVICE, name) != 0)
 		return;
 

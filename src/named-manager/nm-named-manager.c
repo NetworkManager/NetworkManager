@@ -98,7 +98,6 @@ nm_named_manager_error_quark (void)
  */
 static void
 nm_named_manager_name_owner_changed (NMDBusManager *dbus_mgr,
-                                     DBusConnection *connection,
                                      const char *name,
                                      const char *old,
                                      const char *new,

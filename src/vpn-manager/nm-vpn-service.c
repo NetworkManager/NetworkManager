@@ -73,7 +73,6 @@ static gboolean nm_vpn_service_process_signal (DBusConnection *connection,
                                                gpointer user_data);
 
 static void nm_vpn_service_name_owner_changed (NMDBusManager *mgr,
-                                               DBusConnection *connection,
                                                const char *name,
                                                const char *old,
                                                const char *new,
@@ -1215,7 +1214,6 @@ nm_vpn_service_dbus_connection_changed (NMDBusManager *mgr,
 
 static void
 nm_vpn_service_name_owner_changed (NMDBusManager *mgr,
-                                   DBusConnection *connection,
                                    const char *name,
                                    const char *old,
                                    const char *new,

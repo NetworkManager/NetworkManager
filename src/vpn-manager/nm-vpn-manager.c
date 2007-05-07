@@ -51,7 +51,6 @@ static void load_services (NMVPNManager *manager, GHashTable *table);
 
 static void
 nm_name_owner_changed_handler (NMDBusManager *mgr,
-                               DBusConnection *connection,
                                const char *name,
                                const char *old,
                                const char *new,

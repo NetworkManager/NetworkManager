@@ -367,7 +367,6 @@ hal_deinit (NMHalManager *manager)
 
 static void
 name_owner_changed (NMDBusManager *dbus_mgr,
-					DBusGConnection *connection,
 					const char *name,
 					const char *old,
 					const char *new,

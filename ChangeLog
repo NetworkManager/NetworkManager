@@ -1,5 +1,30 @@
 2007-05-07  Tambet Ingo  <tambet@ximian.com>
 
+	* src/nm-dbus-manager.c
+	(proxy_name_owner_changed, nm_dbus_manager_class_init): Remove the
+	DbusConnection argument from 'name-owner-changed' signal. The manager
+	is already passed as a first argument to the signal and the connection
+	is easy enough to get from it.
+
+	* src/vpn-manager/nm-vpn-service.c (nm_vpn_service_name_owner_changed):
+	Update the signature of the function.
+
+	* src/vpn-manager/nm-vpn-manager.c (nm_name_owner_changed_handler):
+	Ditto.
+
+	* src/NetworkManager.c: Ditto.
+
+	* src/named-manager/nm-named-manager.c
+	(nm_named_manager_name_owner_changed): Ditto.
+
+	* src/supplicant-manager/nm-supplicant-manager.c
+	(nm_supplicant_manager_name_owner_changed): Ditto.
+
+	* src/nm-hal-manager.c (name_owner_changed): Ditto.
+
+	* src/dhcp-manager/nm-dhcp-manager.c
+	(nm_dhcp_manager_name_owner_changed): Ditto.
+
 	* src/nm-hal-manager.c: Add a list of device detectors and creators
 	to make it easier to add new devices. Each device type has it's own
 	entry in the table so adding new device types is only a matter of

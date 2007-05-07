@@ -72,7 +72,6 @@ static void nm_dhcp_manager_cancel_transaction_real (NMDHCPManager *manager,
 													 gboolean blocking);
 
 static void nm_dhcp_manager_name_owner_changed (NMDBusManager *dbus_mgr,
-                                                DBusConnection *connection,
                                                 const char *name,
                                                 const char *old,
                                                 const char *new,
@@ -859,7 +858,6 @@ out:
  */
 static void
 nm_dhcp_manager_name_owner_changed (NMDBusManager *dbus_mgr,
-                                    DBusConnection *connection,
                                     const char *name,
                                     const char *old,
                                     const char *new,
