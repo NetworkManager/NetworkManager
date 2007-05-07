@@ -2,6 +2,10 @@
 #include "nm-device-interface.h"
 #include "nm-ip4-config.h"
 
+static gboolean impl_device_activate (NMDeviceInterface *device,
+									  GHashTable *connection_hash,
+									  GError **err);
+
 static gboolean impl_device_deactivate (NMDeviceInterface *device, GError **err);
 
 #include "nm-device-interface-glue.h"
@@ -139,6 +143,31 @@ nm_device_interface_get_type (void)
 	}
 
 	return device_interface_type;
+}
+
+void
+nm_device_interface_activate (NMDeviceInterface *device,
+							  NMConnection *connection,
+							  gboolean user_requested)
+{
+	g_return_if_fail (NM_IS_DEVICE_INTERFACE (device));
+	g_return_if_fail (connection != NULL);
+
+	NM_DEVICE_INTERFACE_GET_INTERFACE (device)->activate (device, connection, user_requested);
+}
+
+static gboolean
+impl_device_activate (NMDeviceInterface *device,
+					  GHashTable *connection_hash,
+					  GError **err)
+{
+	NMConnection *connection;
+
+	connection = nm_connection_new_from_hash (connection_hash);
+
+	nm_device_interface_activate (device, connection, TRUE);
+
+	return TRUE;
 }
 
 void

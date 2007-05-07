@@ -273,25 +273,6 @@ nm_device_802_11_wireless_get_networks (NMDevice80211Wireless *device)
 	return list;
 }
 
-void
-nm_device_802_11_wireless_activate (NMDevice80211Wireless *device,
-									NMAccessPoint *ap,
-									gboolean user_requested)
-{
-	GError *err = NULL;
-
-	g_return_if_fail (NM_IS_DEVICE_802_11_WIRELESS (device));
-	g_return_if_fail (NM_IS_ACCESS_POINT (ap));
-
-	if (!org_freedesktop_NetworkManager_Device_Wireless_activate
-		(NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device)->wireless_proxy,
-		 dbus_g_proxy_get_path (DBUS_G_PROXY (ap)), user_requested, &err)) {
-
-		g_warning ("Error in wireless_activate: %s", err->message);
-		g_error_free (err);
-	}
-}
-
 static void
 network_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 {

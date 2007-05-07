@@ -219,6 +219,22 @@ nm_device_new (DBusGConnection *connection, const char *path)
 }
 
 void
+nm_device_activate (NMDevice *device, NMConnection *connection)
+{
+	GError *err = NULL;
+
+	g_return_if_fail (NM_IS_DEVICE (device));
+	g_return_if_fail (connection != NULL);
+
+	if (!org_freedesktop_NetworkManager_Device_activate (NM_DEVICE_GET_PRIVATE (device)->device_proxy,
+														 nm_connection_to_hash (connection),
+														 &err)) {
+		g_warning ("Cannot deactivate device: %s", err->message);
+		g_error_free (err);
+	}
+}
+
+void
 nm_device_deactivate (NMDevice *device)
 {
 	GError *err = NULL;

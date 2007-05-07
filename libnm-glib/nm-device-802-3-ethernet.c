@@ -102,18 +102,3 @@ nm_device_802_3_ethernet_get_hw_address (NMDevice8023Ethernet *device)
 	return nm_dbus_get_string_property (nm_device_get_properties_proxy (NM_DEVICE (device)),
 										NM_DBUS_INTERFACE_DEVICE_WIRED, "HwAddress");
 }
-
-void
-nm_device_802_3_ethernet_activate (NMDevice8023Ethernet *device, gboolean user_requested)
-{
-	GError *err = NULL;
-
-	g_return_if_fail (NM_IS_DEVICE_802_3_ETHERNET (device));
-
-	if (!org_freedesktop_NetworkManager_Device_Wired_activate
-		(NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (device)->ethernet_proxy, user_requested, &err)) {
-
-		g_warning ("Activation failed: %s", err->message);
-		g_error_free (err);
-	}
-}

@@ -1,4 +1,4 @@
-INCLUDES = -I$(top_srcdir)/include
+INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/libnm-util
 
 BUILT_SOURCES = \
 	nm-client-bindings.h \
@@ -39,7 +39,7 @@ libnm_glib_la_SOURCES = \
 	nm-vpn-connection.c	\
 	nm-marshal-main.c
 
-libnm_glib_la_LDFLAGS = $(GLIB_LIBS) $(DBUS_LIBS)
+libnm_glib_la_LDFLAGS = $(GLIB_LIBS) $(DBUS_LIBS) $(top_srcdir)/libnm-util/libnm-util.la
 
 noinst_PROGRAMS = libnm-glib-test
 

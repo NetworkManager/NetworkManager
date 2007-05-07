@@ -4,6 +4,7 @@
 
 #include <glib-object.h>
 #include "NetworkManager.h"
+#include "nm-connection.h"
 
 #define NM_TYPE_DEVICE_INTERFACE      (nm_device_interface_get_type ())
 #define NM_DEVICE_INTERFACE(obj)      (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE_INTERFACE, NMDeviceInterface))
@@ -42,6 +43,7 @@ struct _NMDeviceInterface {
 	GTypeInterface g_iface;
 
 	/* Methods */
+	void (*activate) (NMDeviceInterface *device, NMConnection *connection, gboolean user_requested);
 	void (*deactivate) (NMDeviceInterface *device);
 
 	/* Signals */
@@ -50,6 +52,10 @@ struct _NMDeviceInterface {
 };
 
 GType nm_device_interface_get_type (void);
+
+void nm_device_interface_activate   (NMDeviceInterface *device,
+								     NMConnection *connection,
+									 gboolean user_requested);
 
 void nm_device_interface_deactivate (NMDeviceInterface *device);
 

@@ -1,5 +1,50 @@
 2007-05-07  Tambet Ingo  <tambet@ximian.com>
 
+	* libnm-glib/Makefile.am: Link with libnm-util to gain access to
+	NMConnection.
+
+	* libnm-glib/nm-device-802-11-wireless.c:
+	(nm_device_802_3_ethernet_activate): Remove.
+
+	* libnm-glib/nm-device-802-3-ethernet.c
+	(nm_device_802_3_ethernet_activate): Remove.
+
+	* libnm-glib/nm-device.c (nm_device_activate): Implement.
+
+	* src/nm-device-802-3-ethernet.c: Implement the new activation using
+	NMConnection.
+
+	* src/nm-device-802-11-wireless.c: Store an activation AP once the
+	activation has started.
+	Implement the new activation using NMConnection.
+
+	* src/nm-activation-request.c: Store a generic connection object instead
+	of a wireless-specific AP.
+
+	* src/NetworkManagerPolicy.c (create_connection): Implement. Depending
+	on device type, create a device specific connection object suitable for
+	device activation.
+
+	* src/nm-device.c (nm_device_activate): Re-implement. Call the device
+	specific check to validate the connection and on success start the
+	activation.
+
+	* src/nm-device-interface.h: Add a activate virtual function to the
+	interface definition.
+
+	* src/nm-device-interface.c (nm_device_interface_activate): Implement.
+	(impl_device_activate): Implement.
+
+	* introspection/nm-device.xml: Add a generic device activation interface
+	that accepts an abstract NMConnection structure that has device-specific
+	information in it.
+
+	* introspection/nm-device-802-3-ethernet.xml: Remove the wired-specific
+	activation interface.
+
+	* introspection/nm-device-802-11-wireless.xml: Remove the wireless-specific
+	activation interface.
+
 	* libnm-util/nm-connection.c: 
 	* libnm-util/nm-connection.h: 
 	* libnm-util/nm-setting.c:

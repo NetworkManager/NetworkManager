@@ -48,11 +48,6 @@
 #include "cipher.h"
 #include "dbus-dict-helpers.h"
 
-static gboolean impl_device_activate (NMDevice80211Wireless *device,
-									  const char *ap_path,
-									  gboolean user_requested,
-									  GError **err);
-
 static gboolean impl_device_get_active_networks (NMDevice80211Wireless *device,
 												 GPtrArray **networks,
 												 GError **err);
@@ -134,6 +129,9 @@ struct _NMDevice80211WirelessPrivate
 	guint               periodic_source_id;
 	guint               link_timeout_id;
 
+	/* Set when activating or activated */
+	NMAccessPoint *activation_ap;
+
 	/* Static options from driver */
 	guint8			we_version;
 	guint32			capabilities;
@@ -200,7 +198,6 @@ network_removed (NMDevice80211Wireless *device, NMAccessPoint *ap)
 {
 	g_signal_emit (device, signals[NETWORK_REMOVED], 0, ap);
 }
-
 
 /*
  * nm_device_802_11_wireless_update_bssid
@@ -543,21 +540,17 @@ out:
 static gboolean
 nm_device_802_11_periodic_update (gpointer data)
 {
-	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (data);
+	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (data);
 
 	/* BSSID and signal strength have meaningful values only if the device
 	   is activated and not scanning */
 	if (nm_device_get_state (NM_DEVICE (self)) == NM_DEVICE_STATE_ACTIVATED &&
 		!NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self)->scanning) {
 
-		NMActRequest *req;
-		NMAccessPoint *ap;
+		NMAccessPoint *ap = nm_device_802_11_wireless_get_activation_ap (self);
 
-		req = nm_device_get_act_request (NM_DEVICE (self));
-		if (req && (ap = nm_act_request_get_ap (req))) {
-			nm_device_802_11_wireless_update_signal_strength (self, ap);
-			nm_device_802_11_wireless_update_bssid (self, ap);
-		}
+		nm_device_802_11_wireless_update_signal_strength (self, ap);
+		nm_device_802_11_wireless_update_bssid (self, ap);
 	}
 
 	return TRUE;
@@ -638,7 +631,6 @@ real_deactivate_quickly (NMDevice *dev)
 	nm_device_802_11_wireless_disable_encryption (self);
 }
 
-
 static void
 real_deactivate (NMDevice *dev)
 {
@@ -649,48 +641,11 @@ real_deactivate (NMDevice *dev)
 /* 	nm_device_802_11_wireless_set_scan_interval (app_data, self, NM_WIRELESS_SCAN_INTERVAL_ACTIVE); */
 }
 
-
-void
-nm_device_802_11_wireless_activate (NMDevice80211Wireless *self,
-									NMAccessPoint *ap,
-									gboolean user_requested)
-{
-	NMDevice *device;
-	NMActRequest *req;
-
-	g_return_if_fail (NM_IS_DEVICE_802_11_WIRELESS (self));
-	g_return_if_fail (ap != NULL);
-
-	device = NM_DEVICE (self);
-	req = nm_act_request_new (device,
-							  ap,
-							  user_requested);
-
-	nm_device_activate (device, req);
-	nm_act_request_unref (req);
-}
-
-
 static gboolean
-impl_device_activate (NMDevice80211Wireless *device,
-					  const char *ap_path,
-					  gboolean user_requested,
-					  GError **err)
+real_check_connection (NMDevice *dev, NMConnection *connection)
 {
-	NMAccessPoint *ap;
-
-	ap = nm_device_802_11_wireless_ap_list_get_ap_by_obj_path (device, ap_path);
-	if (!ap) {
-		g_set_error (err, 0, 0, /* FIXME */
-					 "Invalid Access Point");
-		return FALSE;
-	}
-
-	nm_device_802_11_wireless_activate (device, ap, user_requested);
-
 	return TRUE;
 }
-
 
 /*
  * nm_device_copy_allowed_to_dev_list
@@ -918,7 +873,7 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 	 */
 	if ((req = nm_device_get_act_request (NM_DEVICE (self))))
 	{
-		if ((cur_ap = nm_act_request_get_ap (req)))
+		if ((cur_ap = nm_device_802_11_wireless_get_activation_ap (self)))
 		{
 			const char *	essid = nm_ap_get_essid (cur_ap);
 			gboolean		keep = FALSE;
@@ -982,25 +937,14 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 	return best_ap;
 }
 
-
-/*
- * nm_device_802_11_wireless_get_activation_ap
- *
- * Return an access point suitable for use in the device activation
- * request.
- *
- */
-NMAccessPoint *
-nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wireless *self,
+static gboolean
+nm_device_802_11_wireless_set_activation_ap (NMDevice80211Wireless *self,
                                              const char *essid,
                                              NMAPSecurity *security)
 {
 	NMAccessPoint		*ap = NULL;
 	NMData *			app_data;
 	NMAccessPointList *	dev_ap_list;
-
-	g_return_val_if_fail (self != NULL, NULL);
-	g_return_val_if_fail (essid != NULL, NULL);
 
 	app_data = nm_device_get_app_data (NM_DEVICE (self));
 	g_assert (app_data);
@@ -1020,7 +964,7 @@ nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wireless *self,
 		{
 			nm_warning ("%s: tried to manually connect to network '%s' without "
 						"providing security information!", __func__, essid);
-			return NULL;
+			return FALSE;
 		}
 
 		/* User chose a network we haven't seen in a scan, so create a
@@ -1053,7 +997,9 @@ nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wireless *self,
 	nm_ap_set_security (ap, security);
 	nm_ap_add_capabilities_from_security (ap, security);
 
-	return ap;
+	NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self)->activation_ap = ap;
+
+	return TRUE;
 }
 
 
@@ -1184,13 +1130,8 @@ impl_device_get_active_networks (NMDevice80211Wireless *device,
 			NMAccessPoint *ap;
 
 			while ((ap = nm_ap_list_iter_next (list_iter))) {
-				if (nm_ap_get_essid (ap)) {
-					/* FIXME: In theory, it should be possible to use something like:
-					   g_ptr_array_add (*networks, ap);
-					   and let dbus-glib get the already registered object path, but it crashes
-					   NM currently. Figure it out. */
-					g_ptr_array_add (*networks, g_strdup (g_object_get_data (ap, "dbus_glib_object_path")));
-				}
+				if (nm_ap_get_essid (ap))
+					g_ptr_array_add (*networks, g_strdup (nm_ap_get_dbus_path (ap)));
 			}
 			nm_ap_list_iter_free (list_iter);
 		}
@@ -2206,8 +2147,7 @@ link_timeout_cb (gpointer user_data)
 	}
 
 	req = nm_device_get_act_request (dev);
-	if (req)
-		ap = nm_act_request_get_ap (req);
+	ap = nm_device_802_11_wireless_get_activation_ap (self);
 	if (req == NULL || ap == NULL) {
 		nm_warning ("couldn't get activation request or activation AP.");
 		nm_device_set_active_link (dev, FALSE);
@@ -2360,7 +2300,7 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 		 * schedule the next activation stage.
 		 */
 		if (nm_device_get_state (dev) == NM_DEVICE_STATE_CONFIG) {
-			NMAccessPoint * ap = nm_act_request_get_ap (req);
+			NMAccessPoint *ap = nm_device_802_11_wireless_get_activation_ap (self);
 
 			nm_info ("Activation (%s/wireless) Stage 2 of 5 (Device Configure) "
 			         "successful.  Connected to wireless network '%s'.",
@@ -2593,10 +2533,8 @@ supplicant_connection_timeout_cb (gpointer user_data)
 	NMDevice *              dev = NM_DEVICE (user_data);
 	NMDevice80211Wireless * self = NM_DEVICE_802_11_WIRELESS (user_data);
 	NMActRequest *          req = nm_device_get_act_request (dev);
-	NMAccessPoint *         ap = nm_act_request_get_ap (req);
+	NMAccessPoint *         ap = nm_device_802_11_wireless_get_activation_ap (self);
 	gboolean                has_key;
-
-	g_assert (self);
 		
 	cleanup_association_attempt (self, TRUE);
 
@@ -2672,7 +2610,7 @@ build_supplicant_config (NMDevice80211Wireless *self,
 	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (req != NULL, NULL);
 
-	ap = nm_act_request_get_ap (req);
+	ap = nm_device_802_11_wireless_get_activation_ap (self);
 	g_assert (ap);
 
 	config = nm_supplicant_config_new (nm_device_get_iface (NM_DEVICE (self)));
@@ -2741,11 +2679,28 @@ real_set_hw_address (NMDevice *dev)
 
 
 static NMActStageReturn
+real_act_stage1_prepare (NMDevice *dev,
+						 NMActRequest *req)
+{
+	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
+	NMSettingWireless *setting;
+	gboolean success;
+
+	setting = (NMSettingWireless *) nm_connection_get_setting (nm_act_request_get_connection (req),
+															   "802-11-wireless");
+	g_assert (setting);
+	success = nm_device_802_11_wireless_set_activation_ap (self, setting->ssid, NULL);
+
+	return success ? NM_ACT_STAGE_RETURN_SUCCESS : NM_ACT_STAGE_RETURN_FAILURE;
+}
+
+
+static NMActStageReturn
 real_act_stage2_config (NMDevice *dev,
                         NMActRequest *req)
 {
 	NMDevice80211Wireless * self = NM_DEVICE_802_11_WIRELESS (dev);
-	NMAccessPoint *         ap = nm_act_request_get_ap (req);
+	NMAccessPoint *         ap = nm_device_802_11_wireless_get_activation_ap (self);
 	NMActStageReturn        ret = NM_ACT_STAGE_RETURN_FAILURE;
 	const char *            iface = nm_device_get_iface (dev);
 	gboolean                ask_user = FALSE;
@@ -2809,7 +2764,7 @@ real_act_stage3_ip_config_start (NMDevice *dev,
                                  NMActRequest *req)
 {
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
-	NMAccessPoint *		ap = nm_act_request_get_ap (req);
+	NMAccessPoint *		ap = nm_device_802_11_wireless_get_activation_ap (self);
 	NMActStageReturn		ret = NM_ACT_STAGE_RETURN_FAILURE;
 
 	g_assert (ap);
@@ -2840,7 +2795,7 @@ real_act_stage4_get_ip4_config (NMDevice *dev,
                                 NMIP4Config **config)
 {
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
-	NMAccessPoint *		ap = nm_act_request_get_ap (req);
+	NMAccessPoint *		ap = nm_device_802_11_wireless_get_activation_ap (self);
 	NMActStageReturn		ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMIP4Config *			real_config = NULL;
 
@@ -2875,7 +2830,7 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
                                    NMIP4Config **config)
 {
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
-	NMAccessPoint *		ap = nm_act_request_get_ap (req);
+	NMAccessPoint *		ap = nm_device_802_11_wireless_get_activation_ap (self);
 	NMActStageReturn		ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMIP4Config *			real_config = NULL;
 	NMAPSecurity *			security;
@@ -2934,7 +2889,7 @@ activation_success_handler (NMDevice *dev)
 	gboolean			automatic;
 
 	req = nm_device_get_act_request (dev);
-	ap = nm_act_request_get_ap (req);
+	ap = nm_device_802_11_wireless_get_activation_ap (self);
 
 	/* Cache details in the info-daemon since the connect was successful */
 	automatic = !nm_act_request_get_user_requested (req);
@@ -2967,7 +2922,7 @@ activation_failure_handler (NMDevice *dev)
 	app_data = nm_device_get_app_data (dev);
 	g_assert (app_data);
 
-	if ((ap = nm_act_request_get_ap (req)))
+	if ((ap = nm_device_802_11_wireless_get_activation_ap (self)))
 	{
 		if (nm_ap_get_artificial (ap))
 		{
@@ -3061,8 +3016,6 @@ get_property (GObject *object, guint prop_id,
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device);
 	struct ether_addr hw_addr;
 	char hw_addr_buf[20];
-	NMAccessPoint *ap;
-	NMActRequest *req;
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
@@ -3081,13 +3034,8 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->capabilities);
 		break;
 	case PROP_ACTIVE_NETWORK:
-		req = nm_device_get_act_request (NM_DEVICE (device));
-		if (req && (ap = nm_act_request_get_ap (req))) {
-			NMAccessPoint *tmp_ap;
-
-			if ((tmp_ap = nm_device_802_11_wireless_ap_list_get_ap_by_essid (device, nm_ap_get_essid (ap))))
-				g_value_set_object (value, tmp_ap);
-		}
+		if (priv->activation_ap)
+			g_value_set_object (value, priv->activation_ap);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -3114,7 +3062,9 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 	parent_class->bring_down = real_bring_down;
 	parent_class->update_link = real_update_link;
 	parent_class->set_hw_address = real_set_hw_address;
+	parent_class->check_connection = real_check_connection;
 
+	parent_class->act_stage1_prepare = real_act_stage1_prepare;
 	parent_class->act_stage2_config = real_act_stage2_config;
 	parent_class->act_stage3_ip_config_start = real_act_stage3_ip_config_start;
 	parent_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
@@ -3198,6 +3148,8 @@ state_changed_cb (NMDevice *device, NMDeviceState state, gpointer user_data)
 	case NM_DEVICE_STATE_FAILED:
 		activation_failure_handler (device);
 		break;
+	case NM_DEVICE_STATE_DISCONNECTED:
+		NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device)->activation_ap = NULL;
 	default:
 		break;
 	}
@@ -3231,4 +3183,12 @@ nm_device_802_11_wireless_new (const char *iface,
 
 	return NM_DEVICE_802_11_WIRELESS (obj);
 
+}
+
+NMAccessPoint *
+nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wireless *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_802_11_WIRELESS (self), NULL);
+
+	return NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self)->activation_ap;
 }

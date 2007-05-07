@@ -34,7 +34,7 @@ struct NMActRequest
 {
 	int				refcount;
 	NMDevice *		dev;
-	NMAccessPoint *	ap;
+	NMConnection *connection;
 	NMIP4Config *		ip4_config;
 
 	gboolean			user_requested;
@@ -42,22 +42,18 @@ struct NMActRequest
 	DBusPendingCall *	user_key_pcall;
 };
 
-
-NMActRequest * nm_act_request_new (NMDevice *dev, NMAccessPoint *ap, gboolean user_requested)
+NMActRequest * nm_act_request_new (NMDevice *dev, NMConnection *connection, gboolean user_requested)
 {
 	NMActRequest *	req;
 
 	g_return_val_if_fail (dev != NULL, NULL);
+	g_return_val_if_fail (connection != NULL, NULL);
 
-	if (NM_IS_DEVICE_802_11_WIRELESS (dev))
-		g_return_val_if_fail (ap != NULL, NULL);
-
-	req = g_malloc0 (sizeof (NMActRequest));
+	req = g_slice_new0 (NMActRequest);
 	req->refcount = 1;
 
-	g_object_ref (G_OBJECT (dev));
-	req->dev = dev;
-	req->ap = ap ? g_object_ref (ap) : NULL;
+	req->dev = g_object_ref (G_OBJECT (dev));
+	req->connection = connection;
 	req->user_requested = user_requested;
 
 	return req;
@@ -78,11 +74,8 @@ void nm_act_request_unref (NMActRequest *req)
 	req->refcount--;
 	if (req->refcount <= 0) {
 		g_object_unref (G_OBJECT (req->dev));
-		if (req->ap)
-			g_object_unref (req->ap);
-
-		memset (req, 0, sizeof (NMActRequest));
-		g_free (req);
+		/* FIXME: destroy connection? */
+		g_slice_free (NMActRequest, req);
 	}
 }
 
@@ -94,11 +87,11 @@ NMDevice * nm_act_request_get_dev (NMActRequest *req)
 }
 
 
-NMAccessPoint * nm_act_request_get_ap (NMActRequest *req)
+NMConnection * nm_act_request_get_connection (NMActRequest *req)
 {
 	g_return_val_if_fail (req != NULL, NULL);
 
-	return req->ap;
+	return req->connection;
 }
 
 

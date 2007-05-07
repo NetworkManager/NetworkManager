@@ -83,10 +83,6 @@ NMDevice80211Wireless *nm_device_802_11_wireless_new (const char *iface,
 													  gboolean test_dev,
 													  NMData *app_data);
 
-void nm_device_802_11_wireless_activate (NMDevice80211Wireless *device,
-										 NMAccessPoint *ap,
-										 gboolean user_requested);
-
 void			nm_device_802_11_wireless_set_essid (NMDevice80211Wireless *self,
 										  const char *essid);
 
@@ -104,11 +100,7 @@ gboolean		nm_device_802_11_wireless_set_mode (NMDevice80211Wireless *self,
 int			nm_device_802_11_wireless_get_bitrate (NMDevice80211Wireless *self);
 
 NMAccessPoint *	nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *dev);
-
-NMAccessPoint *	nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wireless *dev,
-													const char *essid,
-													NMAPSecurity *security);
-
+NMAccessPoint *	nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wireless *dev);
 void			nm_device_802_11_wireless_reset_scan_interval (NMDevice80211Wireless *dev);
 
 void	nm_device_802_11_wireless_copy_allowed_to_dev_list (NMDevice80211Wireless *self,

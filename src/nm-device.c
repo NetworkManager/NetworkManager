@@ -25,8 +25,8 @@
 #include <netinet/in.h>
 #include <string.h>
 
-#include "nm-device.h"
 #include "nm-device-interface.h"
+#include "nm-device.h"
 #include "nm-device-private.h"
 #include "NetworkManagerDbus.h"
 #include "NetworkManagerPolicy.h"
@@ -74,7 +74,11 @@ struct _NMDevicePrivate
 	gulong              dhcp_signal_id;
 };
 
-static void		nm_device_activate_schedule_stage5_ip_config_commit (NMActRequest *req);
+static void nm_device_activate (NMDeviceInterface *device,
+								NMConnection *connection,
+								gboolean user_requested);
+
+static void	nm_device_activate_schedule_stage5_ip_config_commit (NMActRequest *req);
 static void nm_device_deactivate (NMDeviceInterface *device);
 
 static void
@@ -88,6 +92,7 @@ static void
 device_interface_init (NMDeviceInterface *device_interface_class)
 {
 	/* interface implementation */
+	device_interface_class->activate = nm_device_activate;
 	device_interface_class->deactivate = nm_device_deactivate;
 }
 
@@ -345,35 +350,6 @@ nm_device_set_active_link (NMDevice *self,
 		priv->link_active = link_active;
 		g_signal_emit_by_name (self, "carrier-changed", link_active);
 	}
-}
-
-
-/*
- * nm_device_activation_start
- *
- * Tell the device to begin activation.
- */
-void
-nm_device_activate (NMDevice *device,
-					NMActRequest *req)
-{
-	NMDevicePrivate *priv;
-
-	g_return_if_fail (NM_IS_DEVICE (device));
-	g_return_if_fail (req != NULL);
-
-	priv = NM_DEVICE_GET_PRIVATE (device);
-
-	if (priv->state != NM_DEVICE_STATE_DISCONNECTED)
-		/* Already activating or activated */
-		return;
-
-	nm_info ("Activation (%s) started...", nm_device_get_iface (device));
-
-	nm_act_request_ref (req);
-	priv->act_request = req;
-
-	nm_device_activate_schedule_stage1_device_prepare (req);
 }
 
 
@@ -1071,6 +1047,26 @@ nm_device_deactivate (NMDeviceInterface *device)
 	nm_device_state_changed (self, NM_DEVICE_STATE_DISCONNECTED);
 }
 
+static void
+nm_device_activate (NMDeviceInterface *device,
+					NMConnection *connection,
+					gboolean user_requested)
+{
+	NMDevice *self = NM_DEVICE (device);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->state != NM_DEVICE_STATE_DISCONNECTED)
+		/* Already activating or activated */
+		return;
+
+	if (!NM_DEVICE_GET_CLASS (self)->check_connection (self, connection))
+		/* connection is invalid */
+		return;
+
+	nm_info ("Activating device %s", nm_device_get_iface (self));
+	priv->act_request = nm_act_request_new (self, connection, user_requested);
+	nm_device_activate_schedule_stage1_device_prepare (priv->act_request);
+}
 
 /*
  * nm_device_is_activating

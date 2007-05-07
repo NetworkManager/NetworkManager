@@ -156,6 +156,44 @@ static NMDevice * nm_policy_auto_get_best_device (NMPolicy *policy, NMAccessPoin
 	return highest_priority_dev;
 }
 
+static NMConnection *
+create_connection (NMDevice *device, NMAccessPoint *ap)
+{
+	NMConnection *connection = NULL;
+	NMSetting *setting = NULL;
+	
+	if (NM_IS_DEVICE_802_3_ETHERNET (device)) {
+		nm_info ("Will activate connection '%s'.", nm_device_get_iface (device));
+		setting = nm_setting_wired_new ();
+	} else if (NM_IS_DEVICE_802_11_WIRELESS (device) && ap) {
+		NMSettingWireless *wireless;
+
+		nm_info ("Will activate connection '%s/%s'.",
+				 nm_device_get_iface (device),
+				 nm_ap_get_essid (ap));
+
+		setting = nm_setting_wireless_new ();
+		wireless = (NMSettingWireless *) setting;
+
+		wireless->ssid = g_strdup (nm_ap_get_essid (ap));
+		wireless->mode = 1;
+	} else
+		nm_warning ("Unhandled device type '%s'", G_OBJECT_CLASS_NAME (device));
+
+	if (setting) {
+		NMSettingInfo *info;
+
+		connection = nm_connection_new ();
+		nm_connection_add_setting (connection, setting);
+
+		info = (NMSettingInfo *) nm_setting_info_new ();
+		info->name = g_strdup ("Auto");
+		info->devtype = g_strdup (setting->name);
+		nm_connection_add_setting (connection, (NMSetting *) info);
+	}
+
+	return connection;
+}
 
 /*
  * nm_policy_device_change_check
@@ -251,7 +289,7 @@ nm_policy_device_change_check (gpointer user_data)
 		} else if (NM_IS_DEVICE_802_11_WIRELESS (old_dev)) {
 			/* Only switch if the old device's wireless config is invalid */
 			if (NM_IS_DEVICE_802_11_WIRELESS (new_dev)) {
-				NMAccessPoint *old_ap = nm_act_request_get_ap (old_act_req);
+				NMAccessPoint *old_ap = nm_device_802_11_wireless_get_activation_ap (NM_DEVICE_802_11_WIRELESS (old_dev));
 				const char *	old_essid = nm_ap_get_essid (old_ap);
 				int			old_mode = nm_ap_get_mode (old_ap);
 				const char *	new_essid = nm_ap_get_essid (ap);
@@ -290,17 +328,12 @@ nm_policy_device_change_check (gpointer user_data)
 	}
 
 	if (do_switch) {
-		if (NM_IS_DEVICE_802_3_ETHERNET (new_dev)) {
-			nm_info ("Will activate connection '%s'.",
-					 nm_device_get_iface (new_dev));
-			nm_device_802_3_ethernet_activate (NM_DEVICE_802_3_ETHERNET (new_dev), FALSE);
-		} else if (NM_IS_DEVICE_802_11_WIRELESS (new_dev) && ap) {
-			nm_info ("Will activate connection '%s/%s'.",
-					 nm_device_get_iface (new_dev),
-					 nm_ap_get_essid (ap));
-			nm_device_802_11_wireless_activate (NM_DEVICE_802_11_WIRELESS (new_dev), ap, FALSE);
-		} else
-			nm_warning ("Unhandled device activation");
+		NMConnection *connection;
+
+		connection = create_connection (new_dev, ap);
+		if (connection)
+			nm_device_interface_activate (NM_DEVICE_INTERFACE (new_dev),
+										  connection, FALSE);
 	}
 
 	if (ap)
@@ -532,6 +565,14 @@ state_changed (NMManager *manager, NMState state, gpointer user_data)
 	}
 }
 
+static void
+connections_changed (NMManager *manager, GSList *connections, gpointer user_data)
+{
+	NMPolicy *policy = (NMPolicy *) user_data;
+
+	nm_info ("policy got %d connections", g_slist_length (connections));
+}
+
 NMPolicy *
 nm_policy_new (NMManager *manager)
 {
@@ -552,6 +593,9 @@ nm_policy_new (NMManager *manager)
 
 	g_signal_connect (manager, "state-change",
 					  G_CALLBACK (state_changed), policy);
+
+	g_signal_connect (manager, "connections-changed",
+					  G_CALLBACK (connections_changed), policy);
 
 	global_policy = policy;
 

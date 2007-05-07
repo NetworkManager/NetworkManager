@@ -6,6 +6,7 @@
 #include <dbus/dbus-glib.h>
 #include "NetworkManager.h"
 #include "nm-ip4-config.h"
+#include "nm-connection.h"
 
 #define NM_TYPE_DEVICE            (nm_device_get_type ())
 #define NM_DEVICE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE, NMDevice))
@@ -31,7 +32,8 @@ typedef struct {
 GType nm_device_get_type (void);
 
 NMDevice *nm_device_new (DBusGConnection *connection, const char *path);
- 
+
+void      nm_device_activate (NMDevice *device, NMConnection *connection);
 void      nm_device_deactivate (NMDevice *device);
 
 char     *nm_device_get_iface (NMDevice *device);

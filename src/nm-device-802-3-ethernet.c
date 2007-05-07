@@ -35,10 +35,6 @@
 #include "nm-netlink-monitor.h"
 #include "nm-utils.h"
 
-static gboolean impl_device_802_3_ethernet_activate (NMDevice8023Ethernet *device,
-													 gboolean user_requested,
-													 GError **err);
-
 #include "nm-device-802-3-ethernet-glue.h"
 
 
@@ -258,36 +254,6 @@ nm_device_802_3_ethernet_new (const char *iface,
 }
 
 
-void
-nm_device_802_3_ethernet_activate (NMDevice8023Ethernet *self,
-								   gboolean user_requested)
-{
-	NMDevice *device;
-	NMActRequest *req;
-
-	g_return_if_fail (NM_IS_DEVICE_802_3_ETHERNET (self));
-
-	device = NM_DEVICE (self);
-	req = nm_act_request_new (device,
-							  NULL,
-							  user_requested);
-
-	nm_device_activate (device, req);
-	nm_act_request_unref (req);
-}
-
-
-static gboolean
-impl_device_802_3_ethernet_activate (NMDevice8023Ethernet *device,
-									 gboolean user_requested,
-									 GError **err)
-{
-	nm_device_802_3_ethernet_activate (device, user_requested);
-
-	return TRUE;
-}
-
-
 /*
  * nm_device_802_3_ethernet_get_address
  *
@@ -362,6 +328,12 @@ real_can_interrupt_activation (NMDevice *dev)
 	return interrupt;
 }
 
+static gboolean
+real_check_connection (NMDevice *dev, NMConnection *connection)
+{
+	return TRUE;
+}
+
 static void
 nm_device_802_3_ethernet_finalize (GObject *object)
 {
@@ -417,6 +389,7 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 	parent_class->update_link = real_update_link;
 	parent_class->can_interrupt_activation = real_can_interrupt_activation;
 	parent_class->set_hw_address = real_set_hw_address;
+	parent_class->check_connection = real_check_connection;
 
 	/* properties */
 	g_object_class_install_property

@@ -2,13 +2,6 @@
 
 <node name="/">
   <interface name="org.freedesktop.NetworkManager.Device.Wireless">
-
-    <method name="Activate">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_activate"/>
-      <arg name="access_point" type="o" direction="in"/>
-      <arg name="user_requested" type="b" direction="in"/>
-    </method>
-
     <method name="GetActiveNetworks">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_get_active_networks"/>
       <arg name="networks" type="ao" direction="out"/>

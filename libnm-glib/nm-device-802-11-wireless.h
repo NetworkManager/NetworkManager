@@ -38,8 +38,5 @@ NMAccessPoint        *nm_device_802_11_wireless_get_network_by_path (NMDevice802
 																	 const char *object_path);
 
 GSList               *nm_device_802_11_wireless_get_networks (NMDevice80211Wireless *device);
-void                  nm_device_802_11_wireless_activate     (NMDevice80211Wireless *device,
-															  NMAccessPoint *ap,
-															  gboolean user_requested);
 
 #endif /* NM_DEVICE_802_11_WIRELESS_H */

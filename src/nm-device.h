@@ -28,6 +28,7 @@
 
 #include "NetworkManager.h"
 #include "nm-ip4-config.h"
+#include "nm-connection.h"
 
 #if 0
 # define IOCTL_DEBUG 1
@@ -88,6 +89,8 @@ struct _NMDeviceClass
 
 	guint32		(* get_type_capabilities)	(NMDevice *self);
 	guint32		(* get_generic_capabilities)	(NMDevice *self);
+
+	gboolean    (* check_connection) (NMDevice *self, NMConnection *connection);
 
 	NMActStageReturn	(* act_stage1_prepare)	(NMDevice *self, struct NMActRequest *req);
 	NMActStageReturn	(* act_stage2_config)	(NMDevice *self, struct NMActRequest *req);

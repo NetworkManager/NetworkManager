@@ -273,31 +273,6 @@ device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 	}
 }
 
-static gboolean
-do_stuff (gpointer user_data)
-{
-	NMClient *client = NM_CLIENT (user_data);
-	GSList *list, *iter;
-
-	list = nm_client_get_devices (client);
-	for (iter = list; iter; iter = iter->next) {
-		if (NM_IS_DEVICE_802_3_ETHERNET (iter->data)) {
-			NMDevice8023Ethernet *device = NM_DEVICE_802_3_ETHERNET (iter->data);
-
-			g_signal_connect (device, "state-changed",
-							  G_CALLBACK (device_state_changed),
-							  NULL);
-
-			nm_device_802_3_ethernet_activate (device, TRUE);
-			break;
-		}
-	}
-
-	g_slist_free (list);
-
-	return FALSE;
-}
-
 static void
 manager_running (NMClient *client, gboolean running, gpointer user_data)
 {
@@ -306,8 +281,6 @@ manager_running (NMClient *client, gboolean running, gpointer user_data)
 		/* 	test_wireless_enabled (client); */
 		test_get_state (client);
 		test_devices (client);
-
-		/* 	g_idle_add (do_stuff, client); */
 	} else
 		g_print ("NM disappeared\n");
 }

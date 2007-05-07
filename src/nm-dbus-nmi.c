@@ -58,7 +58,7 @@ nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall,
 	data = nm_device_get_app_data (dev);
 	g_assert (data);
 
-	ap = nm_act_request_get_ap (req);
+	ap = nm_device_802_11_wireless_get_activation_ap (NM_DEVICE_802_11_WIRELESS (dev));
 	g_assert (ap);
 
 	nm_dbus_send_with_callback_replied (pcall, __func__);
@@ -105,8 +105,8 @@ nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall,
 
 	dbus_message_iter_init (reply, &iter);
 	if ((security = nm_ap_security_new_deserialize (&iter))) {
-		nm_ap_set_security (ap, security);	
-		nm_device_activate_schedule_stage1_device_prepare (req);
+		nm_ap_set_security (ap, security);
+		nm_device_activate_schedule_stage2_device_config (req);
 	}
 	nm_act_request_set_user_key_pending_call (req, NULL);
 
@@ -151,7 +151,7 @@ nm_dbus_get_user_key_for_network (NMActRequest *req,
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
 
-	ap = nm_act_request_get_ap (req);
+	ap = nm_device_802_11_wireless_get_activation_ap (NM_DEVICE_802_11_WIRELESS (dev));
 	g_assert (ap);
 
 	essid = nm_ap_get_essid (ap);
