@@ -1,5 +1,12 @@
 2007-05-07  Tambet Ingo  <tambet@ximian.com>
 
+	* libnm-util/nm-connection.c: 
+	* libnm-util/nm-connection.h: 
+	* libnm-util/nm-setting.c:
+	* libnm-util/nm-setting.h: Add.
+
+	* libnm-util/Makefile.am: Build the added files.
+
 	* src/nm-dbus-manager.c
 	(proxy_name_owner_changed, nm_dbus_manager_class_init): Remove the
 	DbusConnection argument from 'name-owner-changed' signal. The manager
