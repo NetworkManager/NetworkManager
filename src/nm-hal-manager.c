@@ -12,52 +12,63 @@ struct _NMHalManager {
 	NMDBusManager *dbus_mgr;
 	NMManager *nm_manager;
 	NMData *nm_data;
+	GSList *device_creators;
 
 	gboolean nm_sleeping;
 };
+
+/* Device creators */
+
+typedef NMDevice *(*NMDeviceCreatorFn) (NMHalManager *manager,
+										const char *udi);
+
+typedef struct {
+	char *capability_str;
+	gboolean (*is_device_fn) (NMHalManager *manager, const char *udi);
+	NMDeviceCreatorFn creator_fn;
+} DeviceCreator;
+
+static NMDeviceCreatorFn
+get_creator (NMHalManager *manager, const char *udi)
+{
+	DeviceCreator *creator;
+	GSList *iter;
+
+	for (iter = manager->device_creators; iter; iter = iter->next) {
+		creator = (DeviceCreator *) iter->data;
+
+		if (creator->is_device_fn (manager, udi))
+			return creator->creator_fn;
+	}
+
+	return NULL;
+}
+
+/* end of device creators */
+
+/* Common helpers for built-in device creators */
 
 static char *
 get_device_interface_from_hal (LibHalContext *ctx, const char *udi)
 {
 	char *iface = NULL;
 
-	if (libhal_device_property_exists (ctx, udi, "net.interface", NULL)) {
-		/* Only use Ethernet and Wireless devices at the moment */
-		if (libhal_device_property_exists (ctx, udi, "info.category", NULL)) {
-			char *category = libhal_device_get_property_string (ctx, udi, "info.category", NULL);
-			if (category && (!strcmp (category, "net.80203") || !strcmp (category, "net.80211"))) {
-				char *temp = libhal_device_get_property_string (ctx, udi, "net.interface", NULL);
-				iface = g_strdup (temp);
-				libhal_free_string (temp);
-			}
-			libhal_free_string (category);
+	if (libhal_device_property_exists (ctx, udi, "net.interface", NULL) && 
+		libhal_device_property_exists (ctx, udi, "info.category", NULL)) {
+
+		char *category = libhal_device_get_property_string (ctx, udi, "info.category", NULL);
+		if (category && (!strcmp (category, "net.80203") || !strcmp (category, "net.80211"))) {
+			char *temp = libhal_device_get_property_string (ctx, udi, "net.interface", NULL);
+			iface = g_strdup (temp);
+			libhal_free_string (temp);
 		}
+
+		libhal_free_string (category);
 	}
 
 	return iface;
 }
 
-static NMDeviceType
-discover_device_type (LibHalContext *ctx, const char *udi)
-{
-	char *category = NULL;
-
-	if (libhal_device_property_exists (ctx, udi, "info.category", NULL))
-		category = libhal_device_get_property_string (ctx, udi, "info.category", NULL);
-	if (category && (!strcmp (category, "net.80211")))
-		return DEVICE_TYPE_802_11_WIRELESS;
-	else if (category && (!strcmp (category, "net.80203")))
-		return DEVICE_TYPE_802_3_ETHERNET;
-
-	return DEVICE_TYPE_UNKNOWN;
-}
-
-/*
- * nm_get_device_driver_name
- *
- * Get the device's driver name from HAL.
- *
- */
 static char *
 nm_get_device_driver_name (LibHalContext *ctx, const char *udi)
 {
@@ -75,45 +86,112 @@ nm_get_device_driver_name (LibHalContext *ctx, const char *udi)
 	return driver_name;
 }
 
-static NMDevice *
-create_nm_device (LibHalContext *ctx,
-				  NMData *nm_data,
-				  const char *iface,
-				  const char *udi)
+/* Wired device creator */
+
+static gboolean
+is_wired_device (NMHalManager *manager, const char *udi)
 {
-	NMDevice *dev;
-	char *driver;
-	NMDeviceType type;
+	char *category;
+	gboolean is_wired = FALSE;
 
-	type = discover_device_type (ctx, udi);
-	driver = nm_get_device_driver_name (ctx, udi);
+	if (libhal_device_property_exists (manager->hal_ctx, udi, "net.interface", NULL) &&
+		libhal_device_property_exists (manager->hal_ctx, udi, "info.category", NULL)) {
 
-	switch (type) {
-	case DEVICE_TYPE_802_11_WIRELESS:
-		dev = (NMDevice *) nm_device_802_11_wireless_new (iface, udi, driver, FALSE, nm_data);
-		break;
-	case DEVICE_TYPE_802_3_ETHERNET:
-		dev = (NMDevice *) nm_device_802_3_ethernet_new (iface, udi, driver, FALSE, nm_data);
-		break;
-
-	default:
-		g_assert_not_reached ();
+		category = libhal_device_get_property_string (manager->hal_ctx, udi, "info.category", NULL);
+		if (category) {
+			is_wired = strcmp (category, "net.80203") == 0;
+			libhal_free_string (category);
+		}
 	}
 
+	return is_wired;
+}
+
+NMDevice *
+wired_device_creator (NMHalManager *manager, const char *udi)
+{
+	NMDevice *device;
+	char *iface;
+	char *driver;
+
+	iface = get_device_interface_from_hal (manager->hal_ctx, udi);
+	driver = nm_get_device_driver_name (manager->hal_ctx, udi);
+	device = (NMDevice *) nm_device_802_3_ethernet_new (iface, udi, driver, FALSE, manager->nm_data);
+
+	g_free (iface);
 	g_free (driver);
 
-	return dev;
+	return device;
+}
+
+/* Wireless device creator */
+
+static gboolean
+is_wireless_device (NMHalManager *manager, const char *udi)
+{
+	char *category;
+	gboolean is_wireless = FALSE;
+
+	if (libhal_device_property_exists (manager->hal_ctx, udi, "net.interface", NULL) &&
+		libhal_device_property_exists (manager->hal_ctx, udi, "info.category", NULL)) {
+
+		category = libhal_device_get_property_string (manager->hal_ctx, udi, "info.category", NULL);
+		if (category) {
+			is_wireless = strcmp (category, "net.80211") == 0;
+			libhal_free_string (category);
+		}
+	}
+
+	return is_wireless;
+}
+
+NMDevice *
+wireless_device_creator (NMHalManager *manager, const char *udi)
+{
+	NMDevice *device;
+	char *iface;
+	char *driver;
+
+	iface = get_device_interface_from_hal (manager->hal_ctx, udi);
+	driver = nm_get_device_driver_name (manager->hal_ctx, udi);
+	device = (NMDevice *) nm_device_802_11_wireless_new (iface, udi, driver, FALSE, manager->nm_data);
+
+	g_free (iface);
+	g_free (driver);
+
+	return device;
+}
+
+static void
+register_built_in_creators (NMHalManager *manager)
+{
+	DeviceCreator *creator;
+
+	/* Wired device */
+	creator = g_slice_new0 (DeviceCreator);
+	creator->capability_str = g_strdup ("net");
+	creator->is_device_fn = is_wired_device;
+	creator->creator_fn = wired_device_creator;
+	manager->device_creators = g_slist_append (manager->device_creators, creator);
+
+	/* Wireless device */
+	creator = g_slice_new0 (DeviceCreator);
+	creator->capability_str = g_strdup ("net");
+	creator->is_device_fn = is_wireless_device;
+	creator->creator_fn = wireless_device_creator;
+	manager->device_creators = g_slist_append (manager->device_creators, creator);
 }
 
 static NMDevice *
-create_device_and_add_to_list (NMHalManager *manager, const char *udi, const char *iface,
-							   gboolean test_device, NMDeviceType test_device_type)
+create_device_and_add_to_list (NMHalManager *manager,
+							   NMDeviceCreatorFn creator_fn,
+							   const char *udi)
 {
 	NMDevice *dev = NULL;
 	char *usb_test = NULL;
 
 	/* Make sure the device is not already in the device list */
-	if ((dev = nm_manager_get_device_by_iface (manager->nm_manager, iface)))
+	if ((dev = nm_manager_get_device_by_udi (manager->nm_manager, udi)))
 		return NULL;
 
 	/* Ignore Ethernet-over-USB devices too for the moment (Red Hat #135722) */
@@ -124,7 +202,8 @@ create_device_and_add_to_list (NMHalManager *manager, const char *udi, const cha
 		return NULL;
 	}
 
-	if ((dev = create_nm_device (manager->hal_ctx, manager->nm_data, iface, udi))) {
+	dev = creator_fn (manager, udi);
+	if (dev) {
 		nm_info ("Now managing %s device '%s'.",
 				 NM_IS_DEVICE_802_11_WIRELESS (dev) ? "wireless (802.11)" : "wired Ethernet (802.3)",
 				 nm_device_get_iface (dev));
@@ -140,7 +219,7 @@ static void
 device_added (LibHalContext *ctx, const char *udi)
 {
 	NMHalManager *manager = (NMHalManager *) libhal_ctx_get_user_data (ctx);
-	char *iface;
+	NMDeviceCreatorFn creator_fn;
 
 	nm_debug ("New device added (hal udi is '%s').", udi );
 
@@ -148,10 +227,9 @@ device_added (LibHalContext *ctx, const char *udi)
 	 * so this call will fail, and it will actually be added when hal sets the device's
 	 * capabilities a bit later on.
 	 */
-	if ((iface = get_device_interface_from_hal (manager->hal_ctx, udi))) {
-		create_device_and_add_to_list (manager, udi, iface, FALSE, DEVICE_TYPE_UNKNOWN);
-		g_free (iface);
-	}
+	creator_fn = get_creator (manager, udi);
+	if (creator_fn)
+		create_device_and_add_to_list (manager, creator_fn, udi);
 }
 
 static void
@@ -170,47 +248,48 @@ static void
 device_new_capability (LibHalContext *ctx, const char *udi, const char *capability)
 {
 	NMHalManager *manager = (NMHalManager *) libhal_ctx_get_user_data (ctx);
+	NMDeviceCreatorFn creator_fn;
 
 	/*nm_debug ("nm_hal_device_new_capability() called with udi = %s, capability = %s", udi, capability );*/
 
-	if (capability && ((strcmp (capability, "net.80203") == 0) || (strcmp (capability, "net.80211") == 0))) {
-		char *iface;
-
-		if ((iface = get_device_interface_from_hal (manager->hal_ctx, udi))) {
-			create_device_and_add_to_list (manager, udi, iface, FALSE, DEVICE_TYPE_UNKNOWN);
-			g_free (iface);
-		}
-	}
+	creator_fn = get_creator (manager, udi);
+	if (creator_fn)
+		create_device_and_add_to_list (manager, creator_fn, udi);
 }
 
 static void
 add_initial_devices (NMHalManager *manager)
 {
-	char **net_devices;
-	int num_net_devices;
+	DeviceCreator *creator;
+	GSList *iter;
+	char **devices;
+	int num_devices;
 	int i;
-	DBusError error;
+	DBusError err;
 
-	dbus_error_init (&error);
-	/* Grab a list of network devices */
-	net_devices = libhal_find_device_by_capability (manager->hal_ctx, "net", &num_net_devices, &error);
-	if (dbus_error_is_set (&error)) {
-		nm_warning ("could not find existing networking devices: %s", error.message);
-		dbus_error_free (&error);
-	}
+	for (iter = manager->device_creators; iter; iter = iter->next) {
+		creator = (DeviceCreator *) iter->data;
 
-	if (net_devices) {
-		for (i = 0; i < num_net_devices; i++) {
-			char *iface;
+		dbus_error_init (&err);
+		devices = libhal_find_device_by_capability (manager->hal_ctx,
+													creator->capability_str,
+													&num_devices,
+													&err);
 
-			if ((iface = get_device_interface_from_hal (manager->hal_ctx, net_devices[i]))) {
-				create_device_and_add_to_list (manager, net_devices[i], iface, FALSE, DEVICE_TYPE_UNKNOWN);
-				g_free (iface);
+		if (dbus_error_is_set (&err)) {
+			nm_warning ("could not find existing devices: %s", err.message);
+			dbus_error_free (&err);
+		}
+
+		if (devices) {
+			for (i = 0; i < num_devices; i++) {
+				if (creator->is_device_fn (manager, devices[i]))
+					create_device_and_add_to_list (manager, creator->creator_fn, devices[i]);
 			}
 		}
-	}
 
-	libhal_free_string_array (net_devices);
+		libhal_free_string_array (devices);
+	}
 }
 
 static gboolean
@@ -366,6 +445,8 @@ nm_hal_manager_new (NMManager *nm_manager, NMData *nm_data)
 	manager->dbus_mgr = dbus_mgr;
 	manager->nm_data = nm_data;
 
+	register_built_in_creators (manager);
+
 	g_signal_connect (manager->dbus_mgr,
 	                  "name-owner-changed",
 	                  G_CALLBACK (name_owner_changed),
@@ -386,10 +467,20 @@ nm_hal_manager_new (NMManager *nm_manager, NMData *nm_data)
 	return manager;
 }
 
+static void
+destroy_creator (gpointer data, gpointer user_data)
+{
+	g_free (((DeviceCreator *) data)->capability_str);
+	g_slice_free (DeviceCreator, data);
+}
+
 void
 nm_hal_manager_destroy (NMHalManager *manager)
 {
 	if (manager) {
+		g_slist_foreach (manager->device_creators, destroy_creator, NULL);
+		g_slist_free (manager->device_creators);
+
 		hal_deinit (manager);
 		g_object_unref (manager->nm_manager);
 		g_slice_free (NMHalManager, manager);

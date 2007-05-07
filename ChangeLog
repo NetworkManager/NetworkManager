@@ -1,3 +1,11 @@
+2007-05-07  Tambet Ingo  <tambet@ximian.com>
+
+	* src/nm-hal-manager.c: Add a list of device detectors and creators
+	to make it easier to add new devices. Each device type has it's own
+	entry in the table so adding new device types is only a matter of
+	implementing a couple of functions, one for device detection and the
+	other for device creation.
+
 2007-04-25  Dan Williams  <dcbw@redhat.com>
 
 	* initscript/RedHat/NetworkManager.in: remove trailing backslash
