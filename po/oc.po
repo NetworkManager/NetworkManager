@@ -1,0 +1,212 @@
+# French translation of NetworkManager.
+# Copyright (C) 2004-2007 The GNOME Foundation.
+# This file is distributed under the same license as the NetworkManager package.
+#
+# Raphaël Tournoy <lexpas@free.fr>, 2004.
+# Stéphane Raimbault <stephae.raimbault@free.fr>, 2006.
+# Jonathan Ernst <jonathan@ernstfamily.ch>, 2007.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager 0.7.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2007-02-11 05:01+0100\n"
+"PO-Revision-Date: 2007-05-17 15:29+0200\n"
+"Last-Translator: Jonathan Ernst <jonathan@ernstfamily.ch>\n"
+"Language-Team: GNOME French Team <gnomefr@traduc.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n>1;"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:417
+msgid "Cannot add VPN connection"
+msgstr "Impossible d'apondre una connexion VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:419
+msgid ""
+"No suitable VPN software was found on your system. Contact your system "
+"administrator."
+msgstr ""
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:461
+msgid "Cannot import VPN connection"
+msgstr "Impossible d'importar una connexion VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:463
+#, c-format
+msgid ""
+"Cannot find suitable software for VPN connection type '%s' to import the "
+"file '%s'. Contact your system administrator."
+msgstr ""
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:580
+#, c-format
+msgid "Error retrieving VPN connection '%s'"
+msgstr ""
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:583
+#, c-format
+msgid ""
+"Could not find the UI files for VPN connection type '%s'. Contact your "
+"system administrator."
+msgstr ""
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:727
+#, c-format
+msgid "Delete VPN connection \"%s\"?"
+msgstr "Suprimir la connexion VPN \"%s\" ?"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:730
+#, c-format
+msgid ""
+"All information about the VPN connection \"%s\" will be lost and you may "
+"need your system administrator to provide information to create a new "
+"connection."
+msgstr ""
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:924
+msgid "Unable to load"
+msgstr "Impossible de cargar"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.c:926
+msgid "Cannot find some needed resources (the glade file)!"
+msgstr ""
+
+#. druid_window = GTK_DIALOG (gtk_dialog_new_with_buttons (_("Create VPN Connection"),
+#. NULL,
+#. GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
+#. GTK_STOCK_CANCEL,
+#. GTK_RESPONSE_REJECT,
+#. GTK_STOCK_APPLY,
+#. GTK_RESPONSE_ACCEPT,
+#. NULL));
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1081
+msgid "Create VPN Connection"
+msgstr "Crear una connexion VPN"
+
+#. gtk_container_add (GTK_CONTAINER (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")));
+#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(druid), TRUE,TRUE,0);
+#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")), TRUE,TRUE,0);
+#. toplevel = gtk_widget_get_toplevel (GTK_WIDGET (druid));
+#. gtk_signal_connect (GTK_OBJECT (toplevel), "delete_event", GTK_SIGNAL_FUNC (vpn_window_close), NULL);
+#. make the druid window modal wrt. our main window
+#. gtk_window_set_modal (druid_window, TRUE);
+#. gtk_window_set_transient_for (GTK_WINDOW(druid_window), GTK_WINDOW (dialog));
+#. Edit dialog
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1099
+msgid "Edit VPN Connection"
+msgstr "Modificar la connexion VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:1
+msgid "Add a new VPN connection"
+msgstr "Apondre una novèla connexion VPN"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
+msgid "Delete the selected VPN connection"
+msgstr ""
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
+msgid "E_xport"
+msgstr "E_xportar"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
+msgid "Edit the selected VPN connection"
+msgstr ""
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
+msgid "Export the VPN settings to a file"
+msgstr "Exportar los paramètres VPN dins un fichièr"
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
+msgid "Export the selected VPN connection to a file"
+msgstr ""
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
+msgid "Manage Virtual Private Network Connections"
+msgstr ""
+
+#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
+msgid "VPN Connections"
+msgstr "Connexions VPN"
+
+#: ../src/nm-ap-security-wep.c:52
+msgid "40-bit WEP"
+msgstr "WEP 40 bits"
+
+#: ../src/nm-ap-security-wep.c:54
+msgid "104-bit WEP"
+msgstr "WEP 104 bits"
+
+#: ../src/nm-ap-security-wpa-psk.c:51
+msgid "WPA TKIP"
+msgstr "WPA TKIP"
+
+#: ../src/nm-ap-security-wpa-psk.c:53
+msgid "WPA CCMP"
+msgstr "WPA CCMP"
+
+#: ../src/nm-ap-security-wpa-psk.c:55
+msgid "WPA Automatic"
+msgstr "WPA automatic"
+
+#: ../src/nm-ap-security-wpa-psk.c:60
+msgid "WPA2 TKIP"
+msgstr "WPA2 TKIP"
+
+#: ../src/nm-ap-security-wpa-psk.c:62
+msgid "WPA2 CCMP"
+msgstr "WPA2 CCMP"
+
+#: ../src/nm-ap-security-wpa-psk.c:64
+msgid "WPA2 Automatic"
+msgstr "WPA2 automatic"
+
+#: ../src/nm-ap-security.c:334
+msgid "none"
+msgstr "pas cap"
+
+#: ../src/nm-netlink-monitor.c:174
+#, c-format
+msgid ""
+"unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgstr ""
+
+#: ../src/nm-netlink-monitor.c:192
+#, c-format
+msgid ""
+"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgstr ""
+
+#: ../src/nm-netlink-monitor.c:427
+msgid "operation took too long"
+msgstr ""
+
+#: ../src/nm-netlink-monitor.c:524
+msgid "received data from wrong type of sender"
+msgstr ""
+
+#: ../src/nm-netlink-monitor.c:537
+msgid "received data from unexpected sender"
+msgstr ""
+
+#: ../src/nm-netlink-monitor.c:666
+msgid "too much data was sent over socket and some of it was lost"
+msgstr ""
+
+#: ../src/nm-netlink-monitor.c:774
+msgid "error occurred while waiting for data on socket"
+msgstr ""
+
+#: ../src/nm-ap-security-wpa-eap.c:93 ../src/nm-ap-security-wpa-eap.c:117
+msgid "WPA2 Enterprise"
+msgstr "WPA2 Enterprise"
+
+#: ../src/nm-ap-security-wpa-eap.c:95 ../src/nm-ap-security-wpa-eap.c:122
+msgid "WPA Enterprise"
+msgstr "WPA Enterprise"
+
+#: ../src/nm-ap-security-leap.c:66 ../src/nm-ap-security-leap.c:82
+msgid "LEAP"
+msgstr ""
+
