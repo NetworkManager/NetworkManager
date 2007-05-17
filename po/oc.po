@@ -11,7 +11,7 @@ msgstr ""
 "Project-Id-Version: NetworkManager 0.7.0\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2007-02-11 05:01+0100\n"
-"PO-Revision-Date: 2007-05-17 15:29+0200\n"
+"PO-Revision-Date: 2007-05-17 15:32+0200\n"
 "Last-Translator: Jonathan Ernst <jonathan@ernstfamily.ch>\n"
 "Language-Team: GNOME French Team <gnomefr@traduc.org>\n"
 "MIME-Version: 1.0\n"
@@ -104,7 +104,7 @@ msgstr "Apondre una novèla connexion VPN"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
 msgid "Delete the selected VPN connection"
-msgstr ""
+msgstr "Suprimir la connexion VPN seleccionada"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
 msgid "E_xport"
@@ -112,7 +112,7 @@ msgstr "E_xportar"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
 msgid "Edit the selected VPN connection"
-msgstr ""
+msgstr "Modificar la connexion VPN seleccionada"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
 msgid "Export the VPN settings to a file"
