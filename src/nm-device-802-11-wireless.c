@@ -939,15 +939,19 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 
 static gboolean
 nm_device_802_11_wireless_set_activation_ap (NMDevice80211Wireless *self,
-                                             const char *essid,
+                                             GByteArray *ssid,
                                              NMAPSecurity *security)
 {
 	NMAccessPoint		*ap = NULL;
 	NMData *			app_data;
 	NMAccessPointList *	dev_ap_list;
+	char *essid;
 
 	app_data = nm_device_get_app_data (NM_DEVICE (self));
 	g_assert (app_data);
+
+	/* FIXME: handle essid everywhere as GByteArray */
+	essid = (char *) ssid->data;
 
 	nm_debug ("Forcing AP '%s'", essid);
 

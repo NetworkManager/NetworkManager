@@ -164,6 +164,7 @@ impl_device_activate (NMDeviceInterface *device,
 	NMConnection *connection;
 
 	connection = nm_connection_new_from_hash (connection_hash);
+	nm_connection_dump (connection);
 
 	nm_device_interface_activate (device, connection, TRUE);
 

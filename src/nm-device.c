@@ -152,7 +152,6 @@ constructor (GType type,
 
 	/* Grab IP config data for this device from the system configuration files */
 	priv->system_config_data = nm_system_device_get_system_config (dev, priv->app_data);
-	nm_device_set_use_dhcp (dev, nm_system_device_get_use_dhcp (dev));
 
 	/* Allow distributions to flag devices as disabled */
 	if (nm_system_device_get_disabled (dev))
@@ -516,15 +515,19 @@ nm_device_activate_schedule_stage2_device_config (NMActRequest *req)
 static NMActStageReturn
 real_act_stage3_ip_config_start (NMDevice *self,
                                  NMActRequest *req)
-{	
-	NMActStageReturn	ret = NM_ACT_STAGE_RETURN_SUCCESS;
+{
+	NMSettingIP4Config *setting;
+	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
 
-	/* DHCP devices try DHCP, non-DHCP default to SUCCESS */
-	if (nm_device_get_use_dhcp (self))
-	{
+	setting = (NMSettingIP4Config *) nm_connection_get_setting (nm_act_request_get_connection (req), "ipv4");
+
+	/* If we did not receive IP4 configuration information, default to DHCP */
+	if (!setting || setting->manual == FALSE) {
 		/* Begin a DHCP transaction on the interface */
 		NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 		gboolean success;
+
+		nm_device_set_use_dhcp (self, TRUE);
 
 		/* DHCP manager will cancel any transaction already in progress and we do not
 		   want to cancel this activation if we get "down" state from that. */
@@ -653,6 +656,7 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 {
 	NMIP4Config *		real_config = NULL;
 	NMActStageReturn	ret = NM_ACT_STAGE_RETURN_FAILURE;
+	NMSettingIP4Config *setting;
 
 	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
@@ -666,16 +670,25 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 		if (real_config && nm_ip4_config_get_mtu (real_config) == 0)
 			/* If the DHCP server doesn't set the MTU, get it from backend. */
 			nm_ip4_config_set_mtu (real_config, nm_system_get_mtu (self));
-	} else
-		real_config = nm_system_device_new_ip4_system_config (self);
+	} else {
+		real_config = nm_ip4_config_new ();
+	}
 
-	if (real_config)
-	{
+	setting = (NMSettingIP4Config *) nm_connection_get_setting (nm_act_request_get_connection (req), "ipv4");
+
+	if (real_config && setting) {
+		/* If settings are provided, use them, even if it means overriding the values we got from DHCP */
+		nm_ip4_config_set_address (real_config, setting->address);
+		nm_ip4_config_set_netmask (real_config, setting->netmask);
+
+		if (setting->gateway)
+			nm_ip4_config_set_gateway (real_config, setting->gateway);
+	}
+
+	if (real_config) {
 		*config = real_config;
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
-	}
-	else
-	{
+	} else {
 		/* Make sure device is up even if config fails */
 		if (!nm_device_bring_up (self, FALSE))
 			ret = NM_ACT_STAGE_RETURN_FAILURE;
@@ -929,10 +942,13 @@ real_activation_cancel_handler (NMDevice *self,
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (req != NULL);
 
-	if (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG)
+	if (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG  &&
+		nm_device_get_use_dhcp (self)) {
+
 		nm_dhcp_manager_cancel_transaction (NM_DEVICE_GET_PRIVATE (self)->dhcp_manager,
 											nm_device_get_iface (self),
 											TRUE);
+	}
 }
 
 
@@ -994,8 +1010,9 @@ nm_device_deactivate_quickly (NMDevice *self)
 	/* Tear down an existing activation request, which may not have happened
 	 * in nm_device_activation_cancel() above, for various reasons.
 	 */
-	if ((act_request = nm_device_get_act_request (self)))
-	{
+	if ((act_request = nm_device_get_act_request (self)) &&
+		nm_device_get_use_dhcp (self)) {
+
 		nm_dhcp_manager_cancel_transaction (NM_DEVICE_GET_PRIVATE (self)->dhcp_manager,
 											nm_device_get_iface (self),
 											FALSE);

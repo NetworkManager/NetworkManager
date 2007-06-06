@@ -1,3 +1,31 @@
+2007-06-06  Tambet Ingo  <tambet@ximian.com>
+
+	* libnm-util/nm-setting.c: Get rid of dump virtual functions, that can happen
+	automagically.
+	Implement NMSettingIP4Config.
+	Finish NMSettingWired by adding all known members.
+	(setting_wired_verify): Implement.
+	Finish NMSettingWireless by adding all known members.
+	(setting_wireless_verify): Implement.
+
+	* libnm-util/nm-connection.c: Register "ipv4" setting.
+	(nm_connection_dump): Implement. Instead of requiring every NMSetting to implement
+	dump function, we can introspect the GHashTable which is used for sending connections
+	over dbus.
+
+	* src/nm-device-802-11-wireless.c (nm_device_802_11_wireless_set_activation_ap):
+	Take GByteArray for essid, it's really not a string.
+
+	* src/nm-device.c (real_act_stage3_ip_config_start): Get information from NMSettings.
+	Start DHCP request if setting is not passed or if it states that DHCP should be used.
+	(real_act_stage4_get_ip4_config): If settings are provided, use them, even if it
+	means overriding the values we got from DHCP.
+	(real_activation_cancel_handler): Cancel DHCP transaction only if it has started, doh.
+	(nm_device_deactivate_quickly): Ditto.
+
+	* src/nm-device-interface.c (impl_device_activate): Dump the connection structure
+	for debugging.
+
 2007-05-07  Tambet Ingo  <tambet@ximian.com>
 
 	* libnm-glib/Makefile.am: Link with libnm-util to gain access to

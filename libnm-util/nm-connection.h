@@ -17,6 +17,7 @@ NMSetting    *nm_connection_get_setting   (NMConnection *connection,
 										   const char   *setting_name);
 
 GHashTable   *nm_connection_to_hash       (NMConnection *connection);
+void          nm_connection_dump          (NMConnection *connection);
 void          nm_connection_destroy       (NMConnection *connection);
 
 
