@@ -2981,6 +2981,9 @@ real_act_stage2_config (NMDevice *dev,
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	}
 
+	/* Some cards are dumb.  Wait a second */
+	sleep (1);
+
 	iface = nm_device_get_iface (dev);
 	if (!supplicant_exec (self))
 	{
