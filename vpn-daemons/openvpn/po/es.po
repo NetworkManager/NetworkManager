@@ -1,68 +1,76 @@
-# translation of NetworkManager-openvpn.HEAD.po to
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# Spanish message file for YaST2 (@memory@).
+# Copyright (C) 2005 SUSE Linux Products GmbH.
+# Copyright (C) 2002, 2003 SuSE Linux AG.
+# Copyright (C) 1999, 2000, 2001 SuSE GmbH.
 #
+# Ibán josé García Castillo <Iban.Garcia@alufis35.uv.es>, 2000.
+# Javier Moreno <javier.moreno@alufis35.uv.es>, 2000.
+# Jordi Jaen Pallares <jordi@suse.de>, 1999, 2000, 2001.
+# Pablo Iranzo Gómez <Pablo.Iranzo@uv.es>, 2000.
+# Jorge González <jorgegonz@svn.gnome.org>, 2007.
 msgid ""
 msgstr ""
-"Project-Id-Version: NetworkManager-openvpn.HEAD\n"
+"Project-Id-Version: NetworkManager-openvpn.NETWORKMANAGER_0_6_0_RELEASE.es\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-12-09 22:07+0100\n"
-"PO-Revision-Date: 2006-12-09 22:08+0100\n"
-"Last-Translator: \n"
-"Language-Team:  <es@li.org>\n"
+"POT-Creation-Date: 2007-03-16 03:27+0000\n"
+"PO-Revision-Date: 2007-06-07 22:44+0200\n"
+"Last-Translator: Jorge González <jorgegonz@svn.gnome.org>\n"
+"Language-Team: Spanish <traductores@es.gnome.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: KBabel 1.11.2\n"
+"Plural-Forms:  nplurals=2; plural=(n != 1);\n"
+"X-Generator: KBabel 1.11.4\n"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:145
+#: ../auth-dialog/gnome-two-password-dialog.c:148
 msgid "_Password:"
 msgstr "_Contraseña:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:146
+#: ../auth-dialog/gnome-two-password-dialog.c:149
 msgid "_Secondary Password:"
 msgstr "Contraseña _secundaria:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:263
+#: ../auth-dialog/gnome-two-password-dialog.c:272
 msgid "_Username:"
-msgstr "_Usuario:"
+msgstr "Nombre de _usuario:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:265
+#: ../auth-dialog/gnome-two-password-dialog.c:274
 msgid "_Domain:"
 msgstr "_Dominio:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:357
+# include/printconf/dialogs.ycp:150
+#: ../auth-dialog/gnome-two-password-dialog.c:360
 msgid "Connect _anonymously"
-msgstr "Conectar como -anónimo"
+msgstr "Conectar _anónimamente"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:362
+# include/scanner/scanner_overview.ycp:85
+# include/scanner/scanner_overview.ycp:85
+# include/scanner/scanner_overview.ycp:85
+#: ../auth-dialog/gnome-two-password-dialog.c:365
 msgid "Connect as _user:"
 msgstr "Conectar como _usuario:"
 
+# include/partitioning/custom_part_dialogs.ycp:67
+# include/partitioning/custom_part_dialogs.ycp:67
+# include/partitioning/custom_part_dialogs.ycp:67 include/partitioning/custom_part_dialogs.ycp:197
 #: ../auth-dialog/gnome-two-password-dialog.c:471
 msgid "_Remember password for this session"
-msgstr "_Recordar la contraseña durante esta sesión"
+msgstr "_Recordar la contraseña para esta sesión"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:473
 msgid "_Save password in keyring"
-msgstr "_Guardar la contraseña en el llavero"
+msgstr "_Guardar la contraseña en el depósito de claves"
 
 #: ../auth-dialog/main.c:214
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
-msgstr ""
-"Necesita autenticarse para acceder a la red privada virtual (VPN) «%s»."
+msgstr "Debe autenticarse para acceder a la red privada virtual «%s»."
 
 #: ../auth-dialog/main.c:215
 msgid "Authenticate VPN"
-msgstr "Autenticar VPN"
+msgstr "Autenticación VPN"
 
-#: ../auth-dialog/main.c:227
-msgid "Certificate pass_word:"
-msgstr "_Contraseña del certificado:"
-
-#: ../auth-dialog/main.c:252
+#: ../auth-dialog/main.c:227 ../auth-dialog/main.c:252
 msgid "Certificate password:"
 msgstr "Contraseña del certificado:"
 
@@ -70,305 +78,400 @@ msgstr "Contraseña del certificado:"
 msgid "Add, Remove, and Edit VPN Connections"
 msgstr "Añadir, eliminar y editar conexiones VPN"
 
+# include/network/modem/dialogs.ycp:400
 #: ../nm-openvpn.desktop.in.h:2
 msgid "VPN Connection Manager (OpenVPN)"
 msgstr "Gestor de conexiones VPN (OpenVPN)"
 
-#: ../properties/nm-openvpn.c:130
+#: ../properties/nm-openvpn.c:146
 msgid "OpenVPN Client"
 msgstr "Cliente OpenVPN"
 
-#: ../properties/nm-openvpn.c:729
+#
+# include/printconf/dialogs.ycp:1787
+#: ../properties/nm-openvpn.c:803
 msgid "The following OpenVPN connection will be created:"
 msgstr "Se creará la siguiente conexión OpenVPN:"
 
-#: ../properties/nm-openvpn.c:731
+#: ../properties/nm-openvpn.c:805
 #, c-format
 msgid "Name:  %s"
 msgstr "Nombre: %s"
 
-#: ../properties/nm-openvpn.c:739
+#: ../properties/nm-openvpn.c:813
 msgid "Connection Type: X.509 Certificates"
 msgstr "Tipo de conexión: Certificados X.509"
 
-#: ../properties/nm-openvpn.c:742 ../properties/nm-openvpn.c:769
-#: ../properties/nm-openvpn.c:781
+#: ../properties/nm-openvpn.c:816 ../properties/nm-openvpn.c:843
+#: ../properties/nm-openvpn.c:855
 #, c-format
 msgid "CA:  %s"
-msgstr "CA: %s"
+msgstr "CA:  %s"
 
-#: ../properties/nm-openvpn.c:745 ../properties/nm-openvpn.c:784
+# clients/inst_custom_part.ycp:2337
+# clients/inst_custom_part.ycp:2336
+# clients/inst_custom_part.ycp:2350
+#: ../properties/nm-openvpn.c:819 ../properties/nm-openvpn.c:858
 #, c-format
 msgid "Cert:  %s"
-msgstr "Cert: %s"
+msgstr "Cert:  %s"
 
-#: ../properties/nm-openvpn.c:748 ../properties/nm-openvpn.c:787
+#: ../properties/nm-openvpn.c:822 ../properties/nm-openvpn.c:861
 #, c-format
 msgid "Key:  %s"
 msgstr "Clave: %s"
 
-#: ../properties/nm-openvpn.c:752
+# include/mail/ui.ycp:354
+# include/mail/ui.ycp:371
+#: ../properties/nm-openvpn.c:826
 msgid "Connection Type: Shared Key"
 msgstr "Tipo de conexión: Clave compartida"
 
-#: ../properties/nm-openvpn.c:755
+#: ../properties/nm-openvpn.c:829
 #, c-format
 msgid "Shared Key:  %s"
 msgstr "Clave compartida: %s"
 
-#: ../properties/nm-openvpn.c:758
+# include/network/isdn/complex.ycp:195 include/network/lan/dialogs.ycp:145
+# include/network/modem/complex.ycp:196
+#: ../properties/nm-openvpn.c:832
 #, c-format
 msgid "Local IP:  %s"
-msgstr "IP local: %s"
+msgstr "Dirección IP local: %s"
 
-#: ../properties/nm-openvpn.c:761
+#
+# include/network/isdn/ip.ycp:72 include/network/isdn/ip.ycp:98
+#: ../properties/nm-openvpn.c:835
 #, c-format
 msgid "Remote IP:  %s"
-msgstr "IP remota: %s"
+msgstr "Dirección IP remota: %s"
 
-#: ../properties/nm-openvpn.c:766
+# include/mail/ui.ycp:354
+# include/mail/ui.ycp:371
+#: ../properties/nm-openvpn.c:840
 msgid "Connection Type: Password"
 msgstr "Tipo de conexión: Contraseña"
 
-#: ../properties/nm-openvpn.c:772 ../properties/nm-openvpn.c:790
+#
+# include/network/providers.ycp:498 include/network/providers.ycp:681
+#: ../properties/nm-openvpn.c:846 ../properties/nm-openvpn.c:864
 #, c-format
 msgid "Username:  %s"
-msgstr "Usuario: %s"
+msgstr "Nombre de usuario: %s"
 
-#: ../properties/nm-openvpn.c:778
+#: ../properties/nm-openvpn.c:852
 msgid "Connection Type: X.509 with Password Authentication"
 msgstr "Tipo de conexión: X.509 con autenticación por contraseña"
 
-#: ../properties/nm-openvpn.c:796
+# modules/inst_video_data.ycp:68 modules/inst_video_data.ycp:206
+# include/cups/ui.ycp:2328
+# include/cups/ui.ycp:2025
+#: ../properties/nm-openvpn.c:870
 #, c-format
 msgid "Remote:  %s"
-msgstr "Remoto: %s"
+msgstr "Remota: %s"
 
-#: ../properties/nm-openvpn.c:799
+# clients/inst_custom_part.ycp:2337
+# clients/inst_custom_part.ycp:2336
+# clients/inst_custom_part.ycp:2350
+#: ../properties/nm-openvpn.c:873
+#, c-format
+msgid "Port:  %s"
+msgstr "Puerto: %s"
+
+# include/partitioning/lvm_ui_lib.ycp:351
+# include/partitioning/lvm_ui_lib.ycp:351
+# include/partitioning/lvm_ui_lib.ycp:377
+#: ../properties/nm-openvpn.c:876
 #, c-format
 msgid "Device: %s"
 msgstr "Dispositivo: %s"
 
-#: ../properties/nm-openvpn.c:799
+#: ../properties/nm-openvpn.c:876
 msgid "TAP"
 msgstr "TAP"
 
-#: ../properties/nm-openvpn.c:799
+#: ../properties/nm-openvpn.c:876
 msgid "TUN"
 msgstr "TUN"
 
-#: ../properties/nm-openvpn.c:802
+# include/mail/ui.ycp:720
+# include/mail/ui.ycp:747
+# include/mail/ui.ycp:819
+# include/mail/ui.ycp:1013
+#: ../properties/nm-openvpn.c:879
 #, c-format
 msgid "Protocol: %s"
 msgstr "Protocolo: %s"
 
-#: ../properties/nm-openvpn.c:802
+# clients/online_update.ycp:251
+#: ../properties/nm-openvpn.c:879
 msgid "TCP"
 msgstr "TCP"
 
-#: ../properties/nm-openvpn.c:802
+#: ../properties/nm-openvpn.c:879
 msgid "UDP"
 msgstr "UDP"
 
-#: ../properties/nm-openvpn.c:806
+#: ../properties/nm-openvpn.c:883
 #, c-format
 msgid "Routes:  %s"
 msgstr "Rutas: %s"
 
-#: ../properties/nm-openvpn.c:810
+#: ../properties/nm-openvpn.c:887
 #, c-format
 msgid "Use LZO Compression: %s"
 msgstr "Usar compresión LZO: %s"
 
-#: ../properties/nm-openvpn.c:810
+#: ../properties/nm-openvpn.c:887
 msgid "Yes"
 msgstr "Sí"
 
-#: ../properties/nm-openvpn.c:810
+#: ../properties/nm-openvpn.c:887
 msgid "No"
 msgstr "No"
 
-#: ../properties/nm-openvpn.c:814
+# clients/inst_custom_part.ycp:2337
+# clients/inst_custom_part.ycp:2336
+# clients/inst_custom_part.ycp:2350
+#: ../properties/nm-openvpn.c:891
 #, c-format
 msgid "Cipher:  %s"
-msgstr "Cifra: %s"
+msgstr "Cifrado: %s"
 
-#: ../properties/nm-openvpn.c:819
+#: ../properties/nm-openvpn.c:896
 #, c-format
 msgid "TLS auth:  %s %s"
-msgstr "TLS auth:  %s %s"
+msgstr "Autenticación TLS: %s %s"
 
-#: ../properties/nm-openvpn.c:823
+#: ../properties/nm-openvpn.c:900
 msgid "The connection details can be changed using the \"Edit\" button."
-msgstr ""
-"Los detalles de la conexión se pueden modificar mediante el botón «Editar»."
+msgstr "Los detalles de la conexión se pueden cambiar usando el botón «Editar»."
 
-#: ../properties/nm-openvpn.c:1003
+#: ../properties/nm-openvpn.c:1124
 msgid "Cannot import settings"
 msgstr "No se pueden importar los ajustes"
 
-#: ../properties/nm-openvpn.c:1005
+#: ../properties/nm-openvpn.c:1126
 #, c-format
 msgid "The VPN settings file '%s' does not contain valid data."
-msgstr "El archivo de ajustes «%s» no contiene datos válidos."
+msgstr "El archivo de ajustes VPN «%s» no contiene datos válidos."
 
-#: ../properties/nm-openvpn.c:1042
+#: ../properties/nm-openvpn.c:1173
 msgid "Select file to import"
-msgstr "Seleccione un archivo para importar"
+msgstr "Seleccione el archivo a importar"
 
-#: ../properties/nm-openvpn.c:1122 ../properties/nm-openvpn.c:1134
+#
+# include/cups/ui.ycp:1323
+# include/cups/ui.ycp:1058
+#: ../properties/nm-openvpn.c:1232 ../properties/nm-openvpn.c:1244
+#: ../properties/nm-openvpn.c:1247
 msgid "Select CA to use"
-msgstr "Seleccione la CA que desea utilizar"
+msgstr "Seleccionar el CA a usar"
 
-#: ../properties/nm-openvpn.c:1125
+#: ../properties/nm-openvpn.c:1235 ../properties/nm-openvpn.c:1250
 msgid "Select certificate to use"
-msgstr "Seleccione el certificado que desea utilizar"
+msgstr "Seleccionar el certificado a usar"
 
-#: ../properties/nm-openvpn.c:1128
+#
+# include/tv/ui.ycp:529
+#: ../properties/nm-openvpn.c:1238 ../properties/nm-openvpn.c:1253
 msgid "Select key to use"
-msgstr "Seleccione la clave que desea utilizar"
+msgstr "Seleccionar la clave a usar"
 
-#: ../properties/nm-openvpn.c:1131
+#: ../properties/nm-openvpn.c:1241
 msgid "Select shared key to use"
-msgstr "Seleccione la clave compartida que desea utilizar"
+msgstr "Seleccionar la clave compartida a usar"
 
-#: ../properties/nm-openvpn.c:1137
+#
+# include/cups/ui.ycp:1323
+# include/cups/ui.ycp:1058
+#: ../properties/nm-openvpn.c:1256
 msgid "Select TA to use"
-msgstr "Seleccione la TA que desea utilizar"
+msgstr "Seleccionar un TA a usar"
 
 #. printf ("in impl_export\n");
-#: ../properties/nm-openvpn.c:1326
+#: ../properties/nm-openvpn.c:1450
 msgid "Save as..."
 msgstr "Guardar como..."
 
-#: ../properties/nm-openvpn.c:1356
+#: ../properties/nm-openvpn.c:1480
 #, c-format
 msgid "A file named \"%s\" already exists."
 msgstr "Ya existe un archivo llamado «%s»."
 
-#: ../properties/nm-openvpn.c:1359
+# clients/inst_sw_select.ycp:360
+# clients/inst_sw_select.ycp:436
+#: ../properties/nm-openvpn.c:1483
 msgid "Do you want to replace it with the one you are saving?"
-msgstr "¿Desea reemplazarlo con el archivo que está guardando?"
+msgstr "¿Desea reemplazarlo con el que está guardando?"
 
-#: ../properties/nm-openvpn.c:1373
+#: ../properties/nm-openvpn.c:1497
 msgid "Failed to export configuration"
-msgstr "Ha fallado la exportación de la configuración"
+msgstr "Fallo al exportar la configuración"
 
-#: ../properties/nm-openvpn.c:1375
+#: ../properties/nm-openvpn.c:1499
 #, c-format
 msgid "Failed to save file %s"
-msgstr "Ha ocurrido un error al guardar el archivo %s"
+msgstr "Fallo al guardar el archivo %s"
 
 #: ../properties/nm-openvpn-dialog.glade.h:1
+msgid "(Default: 1194)"
+msgstr "(Predeterminado: 1194)"
+
+#: ../properties/nm-openvpn-dialog.glade.h:2
 msgid "0"
 msgstr "0"
 
-#: ../properties/nm-openvpn-dialog.glade.h:2
+#: ../properties/nm-openvpn-dialog.glade.h:3
 msgid "1"
 msgstr "1"
 
-#: ../properties/nm-openvpn-dialog.glade.h:3
+#: ../properties/nm-openvpn-dialog.glade.h:4
+msgid "65536"
+msgstr "65536"
+
+# clients/online_update_details.ycp:113
+#: ../properties/nm-openvpn-dialog.glade.h:5
+msgid "<b>Connection Information</b>"
+msgstr "<b>Información de la conexión</b>                 <b>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:6
 msgid "<b>Connection Name</b>"
 msgstr "<b>Nombre de la conexión</b>"
 
-#: ../properties/nm-openvpn-dialog.glade.h:4
-msgid "<b>Optional Information</b>"
-msgstr "<b>Información opcional</b>"
-
-#: ../properties/nm-openvpn-dialog.glade.h:5
-msgid "<b>Required Information</b>"
-msgstr "<b>Información obligatoria</b>"
-
-#: ../properties/nm-openvpn-dialog.glade.h:6
-msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
-msgstr "<i>por ejemplo: 172.16.0.0/16 10.11.12.0/24</i>"
-
 #: ../properties/nm-openvpn-dialog.glade.h:7
-msgid "CA  file:"
-msgstr "Archivo CA:"
+msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+msgstr "<i>ejemplo: 172.16.0.0/16 10.11.12.0/24</i>"
 
 #: ../properties/nm-openvpn-dialog.glade.h:8
+msgid "Advanced"
+msgstr "Avanzado"
+
+#: ../properties/nm-openvpn-dialog.glade.h:9
+msgid "CA file:"
+msgstr "Archivo CA:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:10
 msgid "Certificate:"
 msgstr "Certificado:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:9
+#: ../properties/nm-openvpn-dialog.glade.h:11
+msgid "Connection Name"
+msgstr "Nombre de la conexión"
+
+# include/mail/ui.ycp:354
+# include/mail/ui.ycp:371
+#: ../properties/nm-openvpn-dialog.glade.h:12
 msgid "Connection Type:"
 msgstr "Tipo de conexión:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:10
+#: ../properties/nm-openvpn-dialog.glade.h:13
 msgid "Direction:"
 msgstr "Dirección:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:11
+#: ../properties/nm-openvpn-dialog.glade.h:14
+msgid "Gateway _Port:"
+msgstr "_Puerto de la pasarela:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:15
 msgid "Key:"
 msgstr "Clave:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:12
+# include/mail/ui.ycp:562 include/mail/ui.ycp:720
+# include/mail/ui.ycp:592 include/mail/ui.ycp:747
+# include/mail/ui.ycp:664 include/mail/ui.ycp:819
+# include/mail/ui.ycp:727 include/mail/ui.ycp:1013
+#: ../properties/nm-openvpn-dialog.glade.h:16
 msgid "Local IP:"
-msgstr "IP Local:"
+msgstr "IP local:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:13
+#: ../properties/nm-openvpn-dialog.glade.h:17
+msgid ""
+"Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
+msgstr ""
+
+#: ../properties/nm-openvpn-dialog.glade.h:18
+msgid "Network"
+msgstr "Red"
+
+#: ../properties/nm-openvpn-dialog.glade.h:19
+msgid "OpenVPN Advanced Options"
+msgstr "Opciones avanzadas de OpenVPN"
+
+#: ../properties/nm-openvpn-dialog.glade.h:20
+msgid "OpenVPN Configuration"
+msgstr "Configuración OpenVPN"
+
+#: ../properties/nm-openvpn-dialog.glade.h:21
 msgid "Password"
 msgstr "Contraseña"
 
-#: ../properties/nm-openvpn-dialog.glade.h:14
+#: ../properties/nm-openvpn-dialog.glade.h:22
 msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
 msgstr ""
-"Introduzca la información proporcionada por su administrador de sistemas "
-"aquí abajo. No introduzca su contraseña, puesto que se le pedirá cuando "
-"conecte."
 
-#: ../properties/nm-openvpn-dialog.glade.h:15
+#: ../properties/nm-openvpn-dialog.glade.h:23
 msgid ""
 "Please note that the file you import is not an OpenVPN configuration file. "
 "Ask your administrator for the file."
 msgstr ""
-"Fíjese en que el archivo que está importando no es un archivo de "
-"configuración OpenVPN. Pida este archivo a su administrador."
 
-#: ../properties/nm-openvpn-dialog.glade.h:16
+# include/partitioning/lvm_ui_lib.ycp:363 include/partitioning/raid_ui.ycp:349
+# include/partitioning/lvm_ui_lib.ycp:363 include/partitioning/raid_ui.ycp:349
+# include/partitioning/lvm_ui_lib.ycp:389 include/partitioning/raid_ui.ycp:349
+#: ../properties/nm-openvpn-dialog.glade.h:24
 msgid "Remote IP:"
 msgstr "IP remota:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:17
+#: ../properties/nm-openvpn-dialog.glade.h:25
 msgid "Shared Key:"
 msgstr "Clave compartida:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:18
+#: ../properties/nm-openvpn-dialog.glade.h:26
 msgid "Shared key"
 msgstr "Clave compartida"
 
-#: ../properties/nm-openvpn-dialog.glade.h:19
+#: ../properties/nm-openvpn-dialog.glade.h:27
+msgid "TLS-Auth"
+msgstr "Autenticación -TLS"
+
+#: ../properties/nm-openvpn-dialog.glade.h:28
 msgid "Use LZO compression"
 msgstr "Usar compresión LZO"
 
-#: ../properties/nm-openvpn-dialog.glade.h:20
+# include/scanner/scanner_usb.ycp:47
+# include/scanner/scanner_usb.ycp:47
+# include/scanner/scanner_usb.ycp:47
+#: ../properties/nm-openvpn-dialog.glade.h:29
 msgid "Use TAP device"
 msgstr "Usar dispositivo TAP"
 
-#: ../properties/nm-openvpn-dialog.glade.h:21
+# include/printconf/dialogs.ycp:150
+#: ../properties/nm-openvpn-dialog.glade.h:30
 msgid "Use TCP connection"
 msgstr "Usar conexión TCP"
 
-#: ../properties/nm-openvpn-dialog.glade.h:22
+#: ../properties/nm-openvpn-dialog.glade.h:31
 msgid "Use TLS auth:"
-msgstr "Usar aut TLS:"
+msgstr "Usar autenticación TLS:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:23
+#: ../properties/nm-openvpn-dialog.glade.h:32
 msgid "Use cipher:"
-msgstr "Use cifra:"
+msgstr "Usar cifrado:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:24
+#: ../properties/nm-openvpn-dialog.glade.h:33
 msgid "Username:"
-msgstr "Usuario:"
+msgstr "Nombre de usuario:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:25
+#: ../properties/nm-openvpn-dialog.glade.h:34
 msgid "X.509"
 msgstr "X.509"
 
-#: ../properties/nm-openvpn-dialog.glade.h:26
+#: ../properties/nm-openvpn-dialog.glade.h:35
 msgid ""
 "X.509 Certificates\n"
 "Pre-shared key\n"
@@ -376,70 +479,58 @@ msgid ""
 "X.509 with Password Authentication"
 msgstr ""
 "Certificados X.509\n"
-"Clave pre.compartida\n"
+"Clave precompartida\n"
 "Autenticación por contraseña\n"
 "X.509 con autenticación por contraseña"
 
-#: ../properties/nm-openvpn-dialog.glade.h:30
-msgid "_Gateway:"
-msgstr "_Pasarela:"
+#: ../properties/nm-openvpn-dialog.glade.h:39
+msgid "X.509/Pass"
+msgstr "X.509/Pass"
 
-#: ../properties/nm-openvpn-dialog.glade.h:31
+#: ../properties/nm-openvpn-dialog.glade.h:40
+msgid "_Gateway Address:"
+msgstr "Dirección de la pa_sarela"
+
+#: ../properties/nm-openvpn-dialog.glade.h:41
 msgid "_Import Saved Configuration..."
 msgstr "_Importar configuración guardada..."
 
-#: ../properties/nm-openvpn-dialog.glade.h:32
-msgid ""
-"_Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
-msgstr ""
-"El _nombre utilizado para identificar la conexión a la red privada, por "
-"ejemplo: «VPN del campus» o «Red corporativa»"
-
-#: ../properties/nm-openvpn-dialog.glade.h:33
+#: ../properties/nm-openvpn-dialog.glade.h:42
 msgid "_Only use VPN connection for these addresses"
-msgstr "_Sólamente utilizar la conexión VPN para estas direcciones"
+msgstr "_Usar sólo conexiones VPN para estas direcciones"
 
-#: ../properties/nm-openvpn-dialog.glade.h:34
+#: ../properties/nm-openvpn-dialog.glade.h:43
 msgid "none"
-msgstr "ninguno"
+msgstr "ninguna"
 
 #: ../src/nm-openvpn-service.c:127
 msgid ""
 "The VPN login failed because the user name and password were not accepted or "
 "the certificate password was wrong."
 msgstr ""
-"El acceso VPN ha fallado porque el nombre de usuario y la contraseña no "
-"fueron aceptadas o la contraseña del certificado es errónea."
 
 #: ../src/nm-openvpn-service.c:129
 msgid "The VPN login failed because the VPN program could not be started."
 msgstr ""
-"El acceso VPN ha fallado porque no se ha podido iniciar el programa VPN."
 
 #: ../src/nm-openvpn-service.c:131
 msgid ""
 "The VPN login failed because the VPN program could not connect to the VPN "
 "server."
 msgstr ""
-"El acceso VPN ha fallado porque el programa VPN no ha podido conectar con el "
-"servidor VPN."
 
 #: ../src/nm-openvpn-service.c:133
-msgid ""
-"The VPN login failed because the VPN configuration options were invalid."
+msgid "The VPN login failed because the VPN configuration options were invalid."
 msgstr ""
-"El acceso VPN ha fallado porque las opciones de configuración de VPN eran "
-"incorrectas."
 
 #: ../src/nm-openvpn-service.c:135
 msgid ""
 "The VPN login failed because the VPN program received an invalid "
 "configuration from the VPN server."
 msgstr ""
-"El acceso VPN ha fallado porque el programa VPN recibió una configuración "
-"incorrecta del servidor VPN."
 
+# clients/rc_config_step1.ycp:296
 #: ../src/nm-openvpn-service.c:137
 msgid "VPN connection failed"
 msgstr "La conexión VPN ha fallado"
+
