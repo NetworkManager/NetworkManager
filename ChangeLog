@@ -1,3 +1,12 @@
+2007-06-07  Dan Williams  <dcbw@redhat.com>
+
+	* (nm_device_802_3_ethernet_link_activated,
+	   nm_device_802_3_ethernet_link_deactivated): fix ethernet link detection
+		behavior due to races between the netlink code and when the
+		device thread recognizes the change.  Checking the link state
+		before scheduling the change even on the device thread is wrong.
+		(gnome.org #354565, rh #194124)
+
 2007-04-25  Dan Williams  <dcbw@redhat.com>
 
 	* initscript/RedHat/NetworkManager.in: remove trailing backslash

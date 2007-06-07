@@ -108,18 +108,16 @@ nm_device_802_3_ethernet_link_activated (NmNetlinkMonitor *monitor,
                                          GObject *obj,
                                          NMDevice8023Ethernet *self)
 {
+	GSource * source;
+
 	/* Make sure signal is for us */
 	if (NM_DEVICE (self) != NM_DEVICE (obj))
 		return;
 
-	if (!nm_device_has_active_link (NM_DEVICE (self)))
-	{
-		GSource *	source = g_idle_source_new ();
-
-		g_source_set_callback (source, (GSourceFunc) link_activated_helper, self, NULL);
-		g_source_attach (source, nm_device_get_main_context (NM_DEVICE (self)));
-		g_source_unref (source);
-	}
+	source = g_idle_source_new ();
+	g_source_set_callback (source, (GSourceFunc) link_activated_helper, self, NULL);
+	g_source_attach (source, nm_device_get_main_context (NM_DEVICE (self)));
+	g_source_unref (source);
 }
 
 
@@ -135,18 +133,16 @@ nm_device_802_3_ethernet_link_deactivated (NmNetlinkMonitor *monitor,
                                            GObject *obj,
                                            NMDevice8023Ethernet *self)
 {
+	GSource * source;
+
 	/* Make sure signal is for us */
 	if (NM_DEVICE (self) != NM_DEVICE (obj))
 		return;
 
-	if (nm_device_has_active_link (NM_DEVICE (self)))
-	{
-		GSource *	source = g_idle_source_new ();
-
-		g_source_set_callback (source, (GSourceFunc) link_deactivated_helper, self, NULL);
-		g_source_attach (source, nm_device_get_main_context (NM_DEVICE (self)));
-		g_source_unref (source);
-	}
+	source = g_idle_source_new ();
+	g_source_set_callback (source, (GSourceFunc) link_deactivated_helper, self, NULL);
+	g_source_attach (source, nm_device_get_main_context (NM_DEVICE (self)));
+	g_source_unref (source);
 }
 
 static void
