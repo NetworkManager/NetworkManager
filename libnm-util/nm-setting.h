@@ -91,4 +91,48 @@ typedef struct {
 NMSetting *nm_setting_wireless_new (void);
 NMSetting *nm_setting_wireless_new_from_hash (GHashTable *settings);
 
+/* Wireless security */
+
+typedef struct {
+	NMSetting parent;
+
+	char *key_mgmt;
+	guint8 wep_tx_keyidx;
+	char *auth_alg;
+	char *proto;
+	GSList *pairwise; /* GSList of strings */
+	GSList *group; /* GSList of strings */
+	GSList *eap; /* GSList of strings */
+	char *identity;
+	char *anonymous_identity;
+	GByteArray *ca_cert;
+	char *ca_path;
+	GByteArray *client_cert;
+	GByteArray *private_key;
+	char *phase1_peapver;
+	char *phase1_peaplabel;
+	char *phase1_fast_provisioning;
+	char *phase2_auth;
+	char *phase2_autheap;
+	GByteArray *phase2_ca_cert;
+	char *phase2_ca_path;
+	GByteArray *phase2_client_cert;
+	GByteArray *phase2_private_key;
+	char *nai;
+	char *wep_key0;
+	char *wep_key1;
+	char *wep_key2;
+	char *wep_key3;
+	char *psk;
+	char *password;
+	char *pin;
+	char *eappsk;
+	char *private_key_passwd;
+	char *phase2_private_key_passwd;
+} NMSettingWirelessSecurity;
+
+NMSetting *nm_setting_wireless_security_new (void);
+NMSetting *nm_setting_wireless_security_new_from_hash (GHashTable *settings);
+
+
 #endif /* NM_SETTING_H */

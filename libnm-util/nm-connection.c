@@ -16,6 +16,7 @@ register_default_creators (void)
 		{ "802-3-ethernet",  nm_setting_wired_new_from_hash     },
 		{ "802-11-wireless", nm_setting_wireless_new_from_hash  },
 		{ "ipv4",            nm_setting_ip4_config_new_from_hash },
+		{ "802-11-wireless-security", nm_setting_wireless_security_new_from_hash  },
 		{ NULL, NULL}
 	};
 
@@ -183,6 +184,8 @@ gvalue_to_string (GValue *val)
 {
 	char *ret;
 	GType type;
+	GString *str;
+	gboolean need_comma = FALSE;
 
 	type = G_VALUE_TYPE (val);
 	switch (type) {
@@ -198,17 +201,33 @@ gvalue_to_string (GValue *val)
 	case G_TYPE_BOOLEAN:
 		ret = g_strdup_printf ("%s", g_value_get_boolean (val) ? "True" : "False");
 		break;
+	case G_TYPE_UCHAR:
+		ret = g_strdup_printf ("%d", g_value_get_uchar (val));
+		break;
 
 	default:
 		/* These return dynamic values and thus can't be 'case's */
 		if (type == DBUS_TYPE_G_UCHAR_ARRAY)
 			ret = garray_to_string ((GArray *) g_value_get_boxed (val));
-		else if (type == dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_UCHAR_ARRAY)) {
+		else if (type == dbus_g_type_get_collection ("GSList", G_TYPE_STRING)) {
+			GSList *iter;
+
+			str = g_string_new ("[");
+			for (iter = g_value_get_boxed (val); iter; iter = iter->next) {
+				if (need_comma)
+					g_string_append (str, ", ");
+				else
+					need_comma = TRUE;
+
+				g_string_append (str, (char *) iter->data);
+			}
+			g_string_append (str, "]");
+
+			ret = g_string_free (str, FALSE);
+		} else if (type == dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_UCHAR_ARRAY)) {
 			/* Array of arrays of chars, like wireless seen-bssids for example */
-			GString *str;
 			int i;
 			GPtrArray *ptr_array;
-			gboolean need_comma = FALSE;
 
 			str = g_string_new ("[");
 

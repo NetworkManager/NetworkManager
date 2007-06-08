@@ -1,3 +1,11 @@
+2007-06-08  Tambet Ingo  <tambet@ximian.com>
+
+	* libnm-util/nm-setting.c: Implement NMSettingWirelessSecurity.
+
+	* libnm-util/nm-connection.c (register_default_creators): Register wireless security
+	setting.
+	(gvalue_to_string): Recognize G_TYPE_UCHAR and GSList.
+
 2007-06-06  Tambet Ingo  <tambet@ximian.com>
 
 	* libnm-util/nm-setting.c: Get rid of dump virtual functions, that can happen

@@ -134,6 +134,18 @@ uint_to_gvalue (guint32 i)
 }
 
 static GValue *
+byte_to_gvalue (guchar c)
+{
+	GValue *val;
+
+	val = g_slice_new0 (GValue);
+	g_value_init (val, G_TYPE_UCHAR);
+	g_value_set_uchar (val, c);
+
+	return val;
+}
+
+static GValue *
 byte_array_to_gvalue (GByteArray *array)
 {
 	GValue *val;
@@ -141,6 +153,18 @@ byte_array_to_gvalue (GByteArray *array)
 	val = g_slice_new0 (GValue);
 	g_value_init (val, DBUS_TYPE_G_UCHAR_ARRAY);
 	g_value_set_boxed (val, array);
+
+	return val;
+}
+
+static GValue *
+slist_to_gvalue (GSList *list, GType type)
+{
+	GValue *val;
+
+	val = g_slice_new0 (GValue);
+	g_value_init (val, dbus_g_type_get_collection ("GSList", type));
+	g_value_set_boxed (val, list);
 
 	return val;
 }
@@ -154,6 +178,43 @@ convert_array_to_byte_array (GArray *array)
 	g_byte_array_append (byte_array, (const guint8 *) array->data, array->len);
 
 	return byte_array;
+}
+
+static GSList *
+convert_strv_to_slist (char **str)
+{
+	GSList *list = NULL;
+	guint i = 0;
+
+	while (str[i])
+		list = g_slist_prepend (list, str[i++]);
+
+	return g_slist_reverse (list);
+}
+
+static gboolean
+string_in_list (const char *str, const char **valid_strings)
+{
+	int i;
+
+	for (i = 0; valid_strings[i]; i++)
+		if (strcmp (str, valid_strings[i]) == 0)
+			break;
+
+	return valid_strings[i] != NULL;
+}
+
+static gboolean
+string_slist_validate (GSList *list, const char **valid_values)
+{
+	GSList *iter;
+
+	for (iter = list; iter; iter = iter->next) {
+		if (!string_in_list ((char *) iter->data, valid_values))
+			return FALSE;
+	}
+
+	return TRUE;
 }
 
 /***********************************************************************/
@@ -347,23 +408,15 @@ static gboolean
 setting_wired_verify (NMSetting *setting, GHashTable *all_settings)
 {
 	NMSettingWired *self = (NMSettingWired *) setting;
+	const char *valid_ports[] = { "tp", "aui", "bnc", "mii", NULL };
+	const char *valid_duplex[] = { "half", "full", NULL };
 
-	if (self->port) {
-		char *valid_ports[] = { "tp", "aui", "bnc", "mii", NULL };
-		int i;
-
-		for (i = 0; valid_ports[i]; i++) {
-			if (strcmp (self->port, valid_ports[i]) == 0)
-				break;
-		}
-
-		if (valid_ports[i] == NULL) {
-			g_warning ("Invalid port");
-			return FALSE;
-		}
+	if (self->port && !string_in_list (self->port, valid_ports)) {
+		g_warning ("Invalid port");
+		return FALSE;
 	}
 
-	if (self->duplex && strcmp (self->duplex, "half") && strcmp (self->duplex, "full")) {
+	if (self->duplex && !string_in_list (self->duplex, valid_duplex)) {
 		g_warning ("Invalid duplex");
 		return FALSE;
 	}
@@ -467,6 +520,8 @@ static gboolean
 setting_wireless_verify (NMSetting *setting, GHashTable *all_settings)
 {
 	NMSettingWireless *self = (NMSettingWireless *) setting;
+	const char *valid_modes[] = { "infrastructure", "adhoc", NULL };
+	const char *valid_bands[] = { "a", "bg", NULL };
 	GSList *iter;
 
 	if (!self->ssid || self->ssid->len < 1 || self->ssid->len > 32) {
@@ -474,12 +529,12 @@ setting_wireless_verify (NMSetting *setting, GHashTable *all_settings)
 		return FALSE;
 	}
 
-	if (self->mode && strcmp (self->mode, "infrastructure") && strcmp (self->mode, "adhoc")) {
+	if (self->mode && !string_in_list (self->mode, valid_modes)) {
 		g_warning ("Invalid mode. Should be either 'infrastructure' or 'adhoc'");
 		return FALSE;
 	}
 
-	if (self->band && strcmp (self->band, "a") && strcmp (self->band, "bg")) {
+	if (self->band && !string_in_list (self->band, valid_bands)) {
 		g_warning ("Invalid band. Should be either 'a' or 'bg'");
 		return FALSE;
 	}
@@ -526,6 +581,11 @@ setting_wireless_verify (NMSetting *setting, GHashTable *all_settings)
 			g_warning ("Invalid bssid");
 			return FALSE;
 		}
+	}
+
+	if (self->security && !g_hash_table_lookup (all_settings, self->security)) {
+		g_warning ("Invalid or missing security");
+		return FALSE;
 	}
 
 	return TRUE;
@@ -703,4 +763,387 @@ nm_setting_wireless_new_from_hash (GHashTable *settings)
 	setting_wireless_destroy (setting);
 
 	return NULL;
+}
+
+/* Wireless security */
+
+static gboolean
+setting_wireless_security_verify (NMSetting *setting, GHashTable *all_settings)
+{
+	NMSettingWirelessSecurity *self = (NMSettingWirelessSecurity *) setting;
+	const char *valid_key_mgmt[] = { "none", "ieee8021x", "wpa-none", "wpa-psk", "wpa-eap", NULL };
+	const char *valid_auth_algs[] = { "open", "shared", "leap", NULL };
+	const char *valid_protos[] = { "wpa", "rsn", NULL };
+	const char *valid_pairwise[] = { "tkip", "ccmp", NULL };
+	const char *valid_groups[] = { "wep40", "wep104", "tkip", "ccmp", NULL };
+	const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "sim", "psk", "fast", NULL };
+	const char *valid_phase1_peapver[] = { "0", "1", NULL };
+	const char *valid_phase2_autheap[] = { "md5", "mschapv2", "otp", "gtc", "tls", "sim", NULL };
+
+	if (self->key_mgmt && !string_in_list (self->key_mgmt, valid_key_mgmt)) {
+		g_warning ("Invalid key management");
+		return FALSE;
+	}
+
+	if (self->wep_tx_keyidx > 3) {
+		g_warning ("Invalid WEP key index");
+		return FALSE;
+	}
+
+	if (self->auth_alg && !string_in_list (self->auth_alg, valid_auth_algs)) {
+		g_warning ("Invalid authentication algorithm");
+		return FALSE;
+	}
+
+	if (self->proto && !string_in_list (self->proto, valid_protos)) {
+		g_warning ("Invalid authentication protocol");
+		return FALSE;
+	}
+
+	if (self->pairwise && !string_slist_validate (self->pairwise, valid_pairwise)) {
+		g_warning ("Invalid pairwise");
+		return FALSE;
+	}
+
+	if (self->group && !string_slist_validate (self->group, valid_groups)) {
+		g_warning ("Invalid group");
+		return FALSE;
+	}
+
+	if (self->eap && !string_slist_validate (self->eap, valid_eap)) {
+		g_warning ("Invalid eap");
+		return FALSE;
+	}
+
+	if (self->phase1_peapver && !string_in_list (self->phase1_peapver, valid_phase1_peapver)) {
+		g_warning ("Invalid phase1 peapver");
+		return FALSE;
+	}
+
+	if (self->phase1_peaplabel && strcmp (self->phase1_peaplabel, "1")) {
+		g_warning ("Invalid phase1 peaplabel");
+		return FALSE;
+	}
+
+	if (self->phase1_fast_provisioning && strcmp (self->phase1_fast_provisioning, "1")) {
+		g_warning ("Invalid phase1 fast provisioning");
+		return FALSE;
+	}
+
+	if (self->phase2_auth && strcmp (self->phase2_auth, "mschapv2")) {
+		g_warning ("Invalid phase2 authentication");
+		return FALSE;
+	}
+
+	if (self->phase2_autheap && !string_in_list (self->phase2_autheap, valid_phase2_autheap)) {
+		g_warning ("Invalid phase2 autheap");
+		return FALSE;
+	}
+
+	/* FIXME: finish */
+
+	return TRUE;
+}
+
+static GHashTable *
+setting_wireless_security_hash (NMSetting *setting)
+{
+	NMSettingWirelessSecurity *self = (NMSettingWirelessSecurity *) setting;
+	GHashTable *hash;
+
+	hash = setting_hash_new ();
+
+	if (self->key_mgmt)
+		g_hash_table_insert (hash, "key-mgmt", string_to_gvalue (self->key_mgmt));
+ 	if (self->wep_tx_keyidx)
+ 		g_hash_table_insert (hash, "wep-tx-keyidx", byte_to_gvalue (self->wep_tx_keyidx));
+	if (self->auth_alg)
+		g_hash_table_insert (hash, "auth-alg", string_to_gvalue (self->auth_alg));
+	if (self->proto)
+		g_hash_table_insert (hash, "proto", string_to_gvalue (self->proto));
+	if (self->pairwise)
+		g_hash_table_insert (hash, "pairwise", slist_to_gvalue (self->pairwise, G_TYPE_STRING));
+	if (self->group)
+		g_hash_table_insert (hash, "group", slist_to_gvalue (self->group, G_TYPE_STRING));
+	if (self->eap)
+		g_hash_table_insert (hash, "eap", slist_to_gvalue (self->eap, G_TYPE_STRING));
+	if (self->identity)
+		g_hash_table_insert (hash, "identity", string_to_gvalue (self->identity));
+	if (self->anonymous_identity)
+		g_hash_table_insert (hash, "anonymous-identity", string_to_gvalue (self->anonymous_identity));
+	if (self->ca_cert)
+		g_hash_table_insert (hash, "ca-cert", byte_array_to_gvalue (self->ca_cert));
+	if (self->ca_path)
+		g_hash_table_insert (hash, "ca-path", string_to_gvalue (self->ca_path));
+	if (self->client_cert)
+		g_hash_table_insert (hash, "client-cert", byte_array_to_gvalue (self->client_cert));
+	if (self->private_key)
+		g_hash_table_insert (hash, "private-key", byte_array_to_gvalue (self->private_key));
+	if (self->phase1_peapver)
+		g_hash_table_insert (hash, "phase1-peapver", string_to_gvalue (self->phase1_peapver));
+	if (self->phase1_peaplabel)
+		g_hash_table_insert (hash, "phase1-peaplabel", string_to_gvalue (self->phase1_peaplabel));
+	if (self->phase1_fast_provisioning)
+		g_hash_table_insert (hash, "phase1-fast-provisioning", string_to_gvalue (self->phase1_fast_provisioning));
+	if (self->phase2_auth)
+		g_hash_table_insert (hash, "phase2-auth", string_to_gvalue (self->phase2_auth));
+	if (self->phase2_autheap)
+		g_hash_table_insert (hash, "phase2-autheap", string_to_gvalue (self->phase2_autheap));
+	if (self->phase2_ca_cert)
+		g_hash_table_insert (hash, "phase2-ca-cert", byte_array_to_gvalue (self->phase2_ca_cert));
+	if (self->phase2_ca_path)
+		g_hash_table_insert (hash, "phase2-ca-path", string_to_gvalue (self->phase2_ca_path));
+	if (self->phase2_client_cert)
+		g_hash_table_insert (hash, "phase2-client-cert", byte_array_to_gvalue (self->phase2_client_cert));
+	if (self->phase2_private_key)
+		g_hash_table_insert (hash, "phase2-private-key", byte_array_to_gvalue (self->phase2_private_key));
+	if (self->nai)
+		g_hash_table_insert (hash, "nai", string_to_gvalue (self->nai));
+	if (self->wep_key0)
+		g_hash_table_insert (hash, "wep_key0", string_to_gvalue (self->wep_key0));
+	if (self->wep_key1)
+		g_hash_table_insert (hash, "wep_key1", string_to_gvalue (self->wep_key1));
+	if (self->wep_key2)
+		g_hash_table_insert (hash, "wep_key2", string_to_gvalue (self->wep_key2));
+	if (self->wep_key3)
+		g_hash_table_insert (hash, "wep_key3", string_to_gvalue (self->wep_key3));
+	if (self->psk)
+		g_hash_table_insert (hash, "psk", string_to_gvalue (self->psk));
+	if (self->password)
+		g_hash_table_insert (hash, "password", string_to_gvalue (self->password));
+	if (self->pin)
+		g_hash_table_insert (hash, "pin", string_to_gvalue (self->pin));
+	if (self->eappsk)
+		g_hash_table_insert (hash, "eappsk", string_to_gvalue (self->eappsk));
+	if (self->private_key_passwd)
+		g_hash_table_insert (hash, "private-key-passwd", string_to_gvalue (self->private_key_passwd));
+	if (self->phase2_private_key_passwd)
+		g_hash_table_insert (hash, "phase2-private-key-passwd", string_to_gvalue (self->phase2_private_key_passwd));
+
+	return hash;
+}
+
+
+static void
+setting_wireless_security_destroy (NMSetting *setting)
+{
+	NMSettingWirelessSecurity *self = (NMSettingWirelessSecurity *) setting;
+
+	/* Strings first. g_free() already checks for NULLs so we don't have to */
+
+	g_free (self->key_mgmt);
+	g_free (self->auth_alg);
+	g_free (self->proto);
+	g_free (self->identity);
+	g_free (self->anonymous_identity);
+	g_free (self->ca_path);
+	g_free (self->phase1_peapver);
+	g_free (self->phase1_peaplabel);
+	g_free (self->phase1_fast_provisioning);
+	g_free (self->phase2_auth);
+	g_free (self->phase2_autheap);
+	g_free (self->phase2_ca_path);
+	g_free (self->nai);
+	g_free (self->wep_key0);
+	g_free (self->wep_key1);
+	g_free (self->wep_key2);
+	g_free (self->wep_key3);
+	g_free (self->psk);
+	g_free (self->password);
+	g_free (self->pin);
+	g_free (self->eappsk);
+	g_free (self->private_key_passwd);
+	g_free (self->phase2_private_key_passwd);
+
+	if (self->pairwise) {
+		g_slist_foreach (self->pairwise, (GFunc) g_free, NULL);
+		g_slist_free (self->pairwise);
+	}
+
+	if (self->group) {
+		g_slist_foreach (self->group, (GFunc) g_free, NULL);
+		g_slist_free (self->group);
+	}
+
+	if (self->eap) {
+		g_slist_foreach (self->eap, (GFunc) g_free, NULL);
+		g_slist_free (self->eap);
+	}
+
+	if (self->ca_cert)
+		g_byte_array_free (self->ca_cert, TRUE);
+	if (self->client_cert)
+		g_byte_array_free (self->client_cert, TRUE);
+	if (self->private_key)
+		g_byte_array_free (self->private_key, TRUE);
+	if (self->phase2_ca_cert)
+		g_byte_array_free (self->phase2_ca_cert, TRUE);
+	if (self->phase2_client_cert)
+		g_byte_array_free (self->phase2_client_cert, TRUE);
+	if (self->phase2_private_key)
+		g_byte_array_free (self->phase2_private_key, TRUE);
+
+	g_slice_free (NMSettingWirelessSecurity, self);
+}
+
+NMSetting *
+nm_setting_wireless_security_new (void)
+{
+	NMSetting *setting;
+
+	setting = (NMSetting *) g_slice_new0 (NMSettingWirelessSecurity);
+
+	setting->name = g_strdup ("802-11-wireless-security");
+	setting->verify_fn = setting_wireless_security_verify;
+	setting->hash_fn = setting_wireless_security_hash;
+	setting->destroy_fn = setting_wireless_security_destroy;
+
+	return setting;
+}
+
+NMSetting *
+nm_setting_wireless_security_new_from_hash (GHashTable *settings)
+{
+	NMSettingWirelessSecurity *self;
+	NMSetting *setting;
+	GValue *value;
+
+	g_return_val_if_fail (settings != NULL, NULL);
+
+	setting = nm_setting_wireless_security_new ();
+	self = (NMSettingWirelessSecurity *) setting;
+
+	value = (GValue *) g_hash_table_lookup (settings, "key-mgmt");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		self->key_mgmt = g_strdup (g_value_get_string (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "wep-tx-keyidx");
+	if (value && G_VALUE_HOLDS_UCHAR (value))
+		self->wep_tx_keyidx = g_value_get_uchar (value);
+
+	value = (GValue *) g_hash_table_lookup (settings, "auth-alg");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		self->auth_alg = g_strdup (g_value_get_string (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "proto");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		self->proto = g_strdup (g_value_get_string (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "pairwise");
+	if (value && G_VALUE_HOLDS_BOXED (value))
+		self->pairwise = convert_strv_to_slist ((char **) g_value_get_boxed (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "group");
+	if (value && G_VALUE_HOLDS_BOXED (value))
+		self->group = convert_strv_to_slist ((char **) g_value_get_boxed (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "eap");
+	if (value && G_VALUE_HOLDS_BOXED (value))
+		self->eap = convert_strv_to_slist ((char **) g_value_get_boxed (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "identity");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		self->identity = g_strdup (g_value_get_string (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "anonymous-identity");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		self->anonymous_identity = g_strdup (g_value_get_string (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "ca-cert");
+	if (value && G_VALUE_HOLDS_BOXED (value))
+		self->ca_cert = convert_array_to_byte_array ((GArray *) g_value_get_boxed (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "ca-path");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		self->ca_path = g_strdup (g_value_get_string (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "client-cert");
+	if (value && G_VALUE_HOLDS_BOXED (value))
+		self->client_cert = convert_array_to_byte_array ((GArray *) g_value_get_boxed (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "private-key");
+	if (value && G_VALUE_HOLDS_BOXED (value))
+		self->private_key = convert_array_to_byte_array ((GArray *) g_value_get_boxed (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "phase1-peapver");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		self->phase1_peapver = g_strdup (g_value_get_string (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "phase1-peaplabel");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		self->phase1_peaplabel = g_strdup (g_value_get_string (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "phase1-fast-provisioning");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		self->phase1_fast_provisioning = g_strdup (g_value_get_string (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "phase2-auth");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		self->phase2_auth = g_strdup (g_value_get_string (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "phase2-autheap");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		self->phase2_autheap = g_strdup (g_value_get_string (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "phase2-ca-cert");
+	if (value && G_VALUE_HOLDS_BOXED (value))
+		self->phase2_ca_cert = convert_array_to_byte_array ((GArray *) g_value_get_boxed (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "phase2-ca-path");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		self->phase2_ca_path = g_strdup (g_value_get_string (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "phase2-client-cert");
+	if (value && G_VALUE_HOLDS_BOXED (value))
+		self->phase2_client_cert = convert_array_to_byte_array ((GArray *) g_value_get_boxed (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "phase2-private-key");
+	if (value && G_VALUE_HOLDS_BOXED (value))
+		self->phase2_private_key = convert_array_to_byte_array ((GArray *) g_value_get_boxed (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "nai");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		self->nai = g_strdup (g_value_get_string (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "wep_key0");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		self->wep_key0 = g_strdup (g_value_get_string (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "wep_key1");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		self->wep_key1 = g_strdup (g_value_get_string (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "wep_key2");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		self->wep_key2 = g_strdup (g_value_get_string (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "wep_key3");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		self->wep_key3 = g_strdup (g_value_get_string (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "psk");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		self->psk = g_strdup (g_value_get_string (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "password");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		self->password = g_strdup (g_value_get_string (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "pin");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		self->pin = g_strdup (g_value_get_string (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "eappsk");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		self->eappsk = g_strdup (g_value_get_string (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "private-key-passwd");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		self->private_key_passwd = g_strdup (g_value_get_string (value));
+
+	value = (GValue *) g_hash_table_lookup (settings, "phase2-private-key-passwd");
+	if (value && G_VALUE_HOLDS_STRING (value))
+		self->phase2_private_key_passwd = g_strdup (g_value_get_string (value));
+
+	return setting;
 }
