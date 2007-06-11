@@ -27,6 +27,7 @@
 #include <netinet/in.h>
 
 #include "NetworkManager.h"
+#include "nm-activation-request.h"
 #include "nm-ip4-config.h"
 #include "nm-connection.h"
 
@@ -73,7 +74,6 @@ struct _NMDevice
 };
 
 struct NMData;
-struct NMActRequest;
 
 struct _NMDeviceClass
 {
@@ -92,21 +92,17 @@ struct _NMDeviceClass
 
 	gboolean    (* check_connection) (NMDevice *self, NMConnection *connection);
 
-	NMActStageReturn	(* act_stage1_prepare)	(NMDevice *self, struct NMActRequest *req);
-	NMActStageReturn	(* act_stage2_config)	(NMDevice *self, struct NMActRequest *req);
-	NMActStageReturn	(* act_stage3_ip_config_start)(NMDevice *self,
-											 struct NMActRequest *req);
+	NMActStageReturn	(* act_stage1_prepare)	(NMDevice *self);
+	NMActStageReturn	(* act_stage2_config)	(NMDevice *self);
+	NMActStageReturn	(* act_stage3_ip_config_start) (NMDevice *self);
 	NMActStageReturn	(* act_stage4_get_ip4_config)	(NMDevice *self,
-											 struct NMActRequest *req,
-											 NMIP4Config **config);
+														 NMIP4Config **config);
 	NMActStageReturn	(* act_stage4_ip_config_timeout)	(NMDevice *self,
-												 struct NMActRequest *req,
 												 NMIP4Config **config);
 	void			(* deactivate)			(NMDevice *self);
 	void			(* deactivate_quickly)	(NMDevice *self);
 
-	void			(* activation_cancel_handler)		(NMDevice *self,
-											 struct NMActRequest *req);
+	void			(* activation_cancel_handler)		(NMDevice *self);
 
 	gboolean		(* can_interrupt_activation)		(NMDevice *self);
 };
@@ -146,13 +142,13 @@ void			nm_device_bring_down (NMDevice *dev, gboolean wait);
 
 void *		nm_device_get_system_config_data	(NMDevice *dev);
 
-struct NMActRequest *	nm_device_get_act_request	(NMDevice *dev);
+NMActRequest *	nm_device_get_act_request	(NMDevice *dev);
 
 
-void			nm_device_activate_schedule_stage1_device_prepare		(struct NMActRequest *req);
-void			nm_device_activate_schedule_stage2_device_config		(struct NMActRequest *req);
-void			nm_device_activate_schedule_stage4_ip_config_get		(struct NMActRequest *req);
-void			nm_device_activate_schedule_stage4_ip_config_timeout	(struct NMActRequest *req);
+void			nm_device_activate_schedule_stage1_device_prepare		(NMDevice *device);
+void			nm_device_activate_schedule_stage2_device_config		(NMDevice *device);
+void			nm_device_activate_schedule_stage4_ip_config_get		(NMDevice *device);
+void			nm_device_activate_schedule_stage4_ip_config_timeout	(NMDevice *device);
 gboolean		nm_device_deactivate_quickly	(NMDevice *dev);
 gboolean		nm_device_is_activating		(NMDevice *dev);
 void			nm_device_activation_cancel	(NMDevice *dev);

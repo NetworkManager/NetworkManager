@@ -38,6 +38,8 @@
 #include "nm-utils.h"
 #include "autoip.h"
 
+#define NM_ACT_REQUEST_IP4_CONFIG "nm-act-request-ip4-config"
+
 static void device_interface_init (NMDeviceInterface *device_interface_class);
 
 G_DEFINE_TYPE_EXTENDED (NMDevice, nm_device, G_TYPE_OBJECT,
@@ -78,7 +80,7 @@ static void nm_device_activate (NMDeviceInterface *device,
 								NMConnection *connection,
 								gboolean user_requested);
 
-static void	nm_device_activate_schedule_stage5_ip_config_commit (NMActRequest *req);
+static void	nm_device_activate_schedule_stage5_ip_config_commit (NMDevice *self);
 static void nm_device_deactivate (NMDeviceInterface *device);
 
 static void
@@ -361,15 +363,9 @@ nm_device_set_active_link (NMDevice *self,
 static gboolean
 nm_device_activate_stage1_device_prepare (gpointer user_data)
 {
-	NMActRequest *   req = (NMActRequest *) user_data;
-	NMDevice *       self;
+	NMDevice *self = NM_DEVICE (user_data);
 	const char *     iface;
 	NMActStageReturn ret;
-
-	g_return_val_if_fail (req != NULL, FALSE);
-
-	self = nm_act_request_get_dev (req);
-	g_assert (self);
 
 	/* Clear the activation source ID now that this stage has run */
 	if (self->priv->act_source_id > 0)
@@ -379,7 +375,7 @@ nm_device_activate_stage1_device_prepare (gpointer user_data)
 	nm_info ("Activation (%s) Stage 1 of 5 (Device Prepare) started...", iface);
 	nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE);
 
-	ret = NM_DEVICE_GET_CLASS (self)->act_stage1_prepare (self, req);
+	ret = NM_DEVICE_GET_CLASS (self)->act_stage1_prepare (self);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
 		goto out;
 	} else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
@@ -388,7 +384,7 @@ nm_device_activate_stage1_device_prepare (gpointer user_data)
 	}
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
 
-	nm_device_activate_schedule_stage2_device_config (req);
+	nm_device_activate_schedule_stage2_device_config (self);
 
 out:
 	nm_info ("Activation (%s) Stage 1 of 5 (Device Prepare) complete.", iface);
@@ -403,32 +399,30 @@ out:
  *
  */
 void
-nm_device_activate_schedule_stage1_device_prepare (NMActRequest *req)
+nm_device_activate_schedule_stage1_device_prepare (NMDevice *self)
 {
-	NMDevice * self = NULL;
-	guint      id;
+	NMDevicePrivate *priv;
 
-	g_return_if_fail (req != NULL);
+	g_return_if_fail (NM_IS_DEVICE (self));
 
-	self = nm_act_request_get_dev (req);
-	g_assert (self);
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	g_return_if_fail (priv->act_request);
 
-	id = g_idle_add (nm_device_activate_stage1_device_prepare, req);
-	self->priv->act_source_id = id;
+	priv->act_source_id = g_idle_add (nm_device_activate_stage1_device_prepare, self);
 
 	nm_info ("Activation (%s) Stage 1 of 5 (Device Prepare) scheduled...",
 	         nm_device_get_iface (self));
 }
 
 static NMActStageReturn
-real_act_stage1_prepare (NMDevice *dev, NMActRequest *req)
+real_act_stage1_prepare (NMDevice *dev)
 {
 	/* Nothing to do */
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
 static NMActStageReturn
-real_act_stage2_config (NMDevice *dev, NMActRequest *req)
+real_act_stage2_config (NMDevice *dev)
 {
 	/* Nothing to do */
 	return NM_ACT_STAGE_RETURN_SUCCESS;
@@ -444,15 +438,9 @@ real_act_stage2_config (NMDevice *dev, NMActRequest *req)
 static gboolean
 nm_device_activate_stage2_device_config (gpointer user_data)
 {
-	NMActRequest *   req = (NMActRequest *) user_data;
-	NMDevice *       self;
+	NMDevice *self = NM_DEVICE (user_data);
 	const char *     iface;
 	NMActStageReturn ret;
-
-	g_return_val_if_fail (req != NULL, FALSE);
-
-	self = nm_act_request_get_dev (req);
-	g_assert (self);
 
 	/* Clear the activation source ID now that this stage has run */
 	if (self->priv->act_source_id > 0)
@@ -467,7 +455,7 @@ nm_device_activate_stage2_device_config (gpointer user_data)
 		goto out;
 	}
 
-	ret = NM_DEVICE_GET_CLASS (self)->act_stage2_config (self, req);
+	ret = NM_DEVICE_GET_CLASS (self)->act_stage2_config (self);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
 		goto out;
 	else if (ret == NM_ACT_STAGE_RETURN_FAILURE)
@@ -479,7 +467,7 @@ nm_device_activate_stage2_device_config (gpointer user_data)
 
 	nm_info ("Activation (%s) Stage 2 of 5 (Device Configure) successful.", iface);
 
-	nm_device_activate_schedule_stage3_ip_config_start (req);
+	nm_device_activate_schedule_stage3_ip_config_start (self);
 
 out:
 	nm_info ("Activation (%s) Stage 2 of 5 (Device Configure) complete.", iface);
@@ -494,18 +482,16 @@ out:
  *
  */
 void
-nm_device_activate_schedule_stage2_device_config (NMActRequest *req)
+nm_device_activate_schedule_stage2_device_config (NMDevice *self)
 {
-	NMDevice * self = NULL;
-	guint      id;
+	NMDevicePrivate *priv;
 
-	g_return_if_fail (req != NULL);
+	g_return_if_fail (NM_IS_DEVICE (self));
 
-	self = nm_act_request_get_dev (req);
-	g_assert (self);
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	g_return_if_fail (priv->act_request);
 
-	id = g_idle_add (nm_device_activate_stage2_device_config, req);
-	self->priv->act_source_id = id;
+	priv->act_source_id = g_idle_add (nm_device_activate_stage2_device_config, self);
 
 	nm_info ("Activation (%s) Stage 2 of 5 (Device Configure) scheduled...",
 	         nm_device_get_iface (self));
@@ -513,12 +499,13 @@ nm_device_activate_schedule_stage2_device_config (NMActRequest *req)
 
 
 static NMActStageReturn
-real_act_stage3_ip_config_start (NMDevice *self,
-                                 NMActRequest *req)
+real_act_stage3_ip_config_start (NMDevice *self)
 {
 	NMSettingIP4Config *setting;
+	NMActRequest *req;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
 
+	req = nm_device_get_act_request (self);
 	setting = (NMSettingIP4Config *) nm_connection_get_setting (nm_act_request_get_connection (req), "ipv4");
 
 	/* If we did not receive IP4 configuration information, default to DHCP */
@@ -560,15 +547,9 @@ real_act_stage3_ip_config_start (NMDevice *self,
 static gboolean
 nm_device_activate_stage3_ip_config_start (gpointer user_data)
 {
-	NMActRequest *   req = (NMActRequest *) user_data;
-	NMDevice *       self = NULL;
+	NMDevice *self = NM_DEVICE (user_data);
 	const char *     iface;
 	NMActStageReturn ret;
-
-	g_return_val_if_fail (req != NULL, FALSE);
-
-	self = nm_act_request_get_dev (req);
-	g_assert (self);
 
 	/* Clear the activation source ID now that this stage has run */
 	if (self->priv->act_source_id > 0)
@@ -578,7 +559,7 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 	nm_info ("Activation (%s) Stage 3 of 5 (IP Configure Start) started...", iface);
 	nm_device_state_changed (self, NM_DEVICE_STATE_IP_CONFIG);
 
-	ret = NM_DEVICE_GET_CLASS (self)->act_stage3_ip_config_start (self, req);
+	ret = NM_DEVICE_GET_CLASS (self)->act_stage3_ip_config_start (self);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
 		goto out;
 	else if (ret == NM_ACT_STAGE_RETURN_FAILURE)
@@ -588,7 +569,7 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 	}
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);	
 
-	nm_device_activate_schedule_stage4_ip_config_get (req);
+	nm_device_activate_schedule_stage4_ip_config_get (self);
 
 out:
 	nm_info ("Activation (%s) Stage 3 of 5 (IP Configure Start) complete.", iface);
@@ -602,18 +583,16 @@ out:
  * Schedule IP configuration start
  */
 void
-nm_device_activate_schedule_stage3_ip_config_start (NMActRequest *req)
+nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 {
-	NMDevice * self = NULL;
-	guint      id;
+	NMDevicePrivate *priv;
 
-	g_return_if_fail (req != NULL);
+	g_return_if_fail (NM_IS_DEVICE (self));
 
-	self = nm_act_request_get_dev (req);
-	g_assert (self);
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	g_return_if_fail (priv->act_request);
 
-	id = g_idle_add (nm_device_activate_stage3_ip_config_start, req);
-	self->priv->act_source_id = id;
+	self->priv->act_source_id = g_idle_add (nm_device_activate_stage3_ip_config_start, self);
 
 	nm_info ("Activation (%s) Stage 3 of 5 (IP Configure Start) scheduled.",
 	         nm_device_get_iface (self));
@@ -651,17 +630,15 @@ nm_device_new_ip4_autoip_config (NMDevice *self)
 
 static NMActStageReturn
 real_act_stage4_get_ip4_config (NMDevice *self,
-                                NMActRequest *req,
                                 NMIP4Config **config)
 {
+	NMActRequest *req;
 	NMIP4Config *		real_config = NULL;
 	NMActStageReturn	ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMSettingIP4Config *setting;
 
 	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
-
-	g_assert (req);
 
 	if (nm_device_get_use_dhcp (self)) {
 		real_config = nm_dhcp_manager_get_ip4_config (NM_DEVICE_GET_PRIVATE (self)->dhcp_manager,
@@ -674,6 +651,7 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 		real_config = nm_ip4_config_new ();
 	}
 
+	req = nm_device_get_act_request (self);
 	setting = (NMSettingIP4Config *) nm_connection_get_setting (nm_act_request_get_connection (req), "ipv4");
 
 	if (real_config && setting) {
@@ -707,16 +685,10 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 static gboolean
 nm_device_activate_stage4_ip_config_get (gpointer user_data)
 {
-	NMActRequest *   req = (NMActRequest *) user_data;
-	NMDevice *       self = NULL;
+	NMDevice *self = NM_DEVICE (user_data);
 	NMIP4Config *    ip4_config = NULL;
 	NMActStageReturn ret;
 	const char *     iface = NULL;
-
-	g_return_val_if_fail (req != NULL, FALSE);
-
-	self = nm_act_request_get_dev (req);
-	g_assert (self);
 
 	/* Clear the activation source ID now that this stage has run */
 	if (self->priv->act_source_id > 0)
@@ -725,7 +697,7 @@ nm_device_activate_stage4_ip_config_get (gpointer user_data)
 	iface = nm_device_get_iface (self);
 	nm_info ("Activation (%s) Stage 4 of 5 (IP Configure Get) started...", iface);
 
-	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_get_ip4_config (self, req, &ip4_config);
+	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_get_ip4_config (self, &ip4_config);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
 		goto out;
 	else if (!ip4_config || (ret == NM_ACT_STAGE_RETURN_FAILURE))
@@ -735,8 +707,10 @@ nm_device_activate_stage4_ip_config_get (gpointer user_data)
 	}
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);	
 
-	nm_act_request_set_ip4_config (req, ip4_config);
-	nm_device_activate_schedule_stage5_ip_config_commit (req);
+	g_object_set_data (G_OBJECT (nm_device_get_act_request (self)),
+					   NM_ACT_REQUEST_IP4_CONFIG, ip4_config);
+
+	nm_device_activate_schedule_stage5_ip_config_commit (self);
 
 out:
 	nm_info ("Activation (%s) Stage 4 of 5 (IP Configure Get) complete.", iface);
@@ -751,18 +725,16 @@ out:
  *
  */
 void
-nm_device_activate_schedule_stage4_ip_config_get (NMActRequest *req)
+nm_device_activate_schedule_stage4_ip_config_get (NMDevice *self)
 {
-	NMDevice * self = NULL;
-	guint      id;
+	NMDevicePrivate *priv;
 
-	g_return_if_fail (req != NULL);
+	g_return_if_fail (NM_IS_DEVICE (self));
 
-	self = nm_act_request_get_dev (req);
-	g_assert (self);
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	g_return_if_fail (priv->act_request);
 
-	id = g_idle_add (nm_device_activate_stage4_ip_config_get, req);
-	self->priv->act_source_id = id;
+	priv->act_source_id = g_idle_add (nm_device_activate_stage4_ip_config_get, self);
 
 	nm_info ("Activation (%s) Stage 4 of 5 (IP Configure Get) scheduled...",
 	         nm_device_get_iface (self));
@@ -771,13 +743,10 @@ nm_device_activate_schedule_stage4_ip_config_get (NMActRequest *req)
 
 static NMActStageReturn
 real_act_stage4_ip_config_timeout (NMDevice *self,
-                                   NMActRequest *req,
                                    NMIP4Config **config)
 {
 	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
-
-	g_assert (req);
 
 	/* Wired network, no DHCP reply.  Let's get an IP via Zeroconf. */
 	nm_info ("No DHCP reply received.  Automatically obtaining IP via Zeroconf.");
@@ -796,16 +765,10 @@ real_act_stage4_ip_config_timeout (NMDevice *self,
 static gboolean
 nm_device_activate_stage4_ip_config_timeout (gpointer user_data)
 {
-	NMActRequest *   req = (NMActRequest *) user_data;
-	NMDevice *       self = NULL;
+	NMDevice *self = NM_DEVICE (user_data);
 	NMIP4Config *    ip4_config = NULL;
 	const char *     iface;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
-
-	g_return_val_if_fail (req != NULL, FALSE);
-
-	self = nm_act_request_get_dev (req);
-	g_assert (self);
 
 	/* Clear the activation source ID now that this stage has run */
 	if (self->priv->act_source_id > 0)
@@ -814,7 +777,7 @@ nm_device_activate_stage4_ip_config_timeout (gpointer user_data)
 	iface = nm_device_get_iface (self);
 	nm_info ("Activation (%s) Stage 4 of 5 (IP Configure Timeout) started...", iface);
 
-	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_ip_config_timeout (self, req, &ip4_config);
+	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_ip_config_timeout (self, &ip4_config);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
 		goto out;
 	} else if (!ip4_config || (ret == NM_ACT_STAGE_RETURN_FAILURE)) {
@@ -824,8 +787,10 @@ nm_device_activate_stage4_ip_config_timeout (gpointer user_data)
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);	
 	g_assert (ip4_config);
 
-	nm_act_request_set_ip4_config (req, ip4_config);
-	nm_device_activate_schedule_stage5_ip_config_commit (req);
+	g_object_set_data (G_OBJECT (nm_device_get_act_request (self)),
+					   NM_ACT_REQUEST_IP4_CONFIG, ip4_config);
+
+	nm_device_activate_schedule_stage5_ip_config_commit (self);
 
 out:
 	nm_info ("Activation (%s) Stage 4 of 5 (IP Configure Timeout) complete.", iface);
@@ -840,18 +805,16 @@ out:
  *
  */
 void
-nm_device_activate_schedule_stage4_ip_config_timeout (NMActRequest *req)
+nm_device_activate_schedule_stage4_ip_config_timeout (NMDevice *self)
 {
-	NMDevice * self = NULL;
-	guint      id;
+	NMDevicePrivate *priv;
 
-	g_return_if_fail (req != NULL);
+	g_return_if_fail (NM_IS_DEVICE (self));
 
-	self = nm_act_request_get_dev (req);
-	g_assert (self);
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	g_return_if_fail (priv->act_request);
 
-	id = g_idle_add (nm_device_activate_stage4_ip_config_timeout, req);
-	self->priv->act_source_id = id;
+	priv->act_source_id = g_idle_add (nm_device_activate_stage4_ip_config_timeout, self);
 
 	nm_info ("Activation (%s) Stage 4 of 5 (IP Configure Timeout) scheduled...",
 	         nm_device_get_iface (self));
@@ -867,17 +830,12 @@ nm_device_activate_schedule_stage4_ip_config_timeout (NMActRequest *req)
 static gboolean
 nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 {
-	NMActRequest * req = (NMActRequest *) user_data;
-	NMDevice *     self = NULL;
+	NMDevice *self = NM_DEVICE (user_data);
 	NMIP4Config *  ip4_config = NULL;
 	const char *   iface;
 
-	g_return_val_if_fail (req != NULL, FALSE);
-
-	self = nm_act_request_get_dev (req);
-	g_assert (self);
-
-	ip4_config = nm_act_request_get_ip4_config (req);
+	ip4_config = g_object_get_data (G_OBJECT (nm_device_get_act_request (self)),
+									NM_ACT_REQUEST_IP4_CONFIG);
 	g_assert (ip4_config);
 
 	/* Clear the activation source ID now that this stage has run */
@@ -917,18 +875,16 @@ nm_device_activate_stage5_ip_config_commit (gpointer user_data)
  * Schedule commit of the IP config
  */
 static void
-nm_device_activate_schedule_stage5_ip_config_commit (NMActRequest *req)
+nm_device_activate_schedule_stage5_ip_config_commit (NMDevice *self)
 {
-	NMDevice * self = NULL;
-	guint      id;
+	NMDevicePrivate *priv;
 
-	g_return_if_fail (req != NULL);
+	g_return_if_fail (NM_IS_DEVICE (self));
 
-	self = nm_act_request_get_dev (req);
-	g_assert (self);
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	g_return_if_fail (priv->act_request);
 
-	id = g_idle_add (nm_device_activate_stage5_ip_config_commit, req);
-	self->priv->act_source_id = id;
+	priv->act_source_id = g_idle_add (nm_device_activate_stage5_ip_config_commit, self);
 
 	nm_info ("Activation (%s) Stage 5 of 5 (IP Configure Commit) scheduled...",
 	         nm_device_get_iface (self));
@@ -936,12 +892,8 @@ nm_device_activate_schedule_stage5_ip_config_commit (NMActRequest *req)
 
 
 static void
-real_activation_cancel_handler (NMDevice *self,
-                                NMActRequest *req)
+real_activation_cancel_handler (NMDevice *self)
 {
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (req != NULL);
-
 	if (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG  &&
 		nm_device_get_use_dhcp (self)) {
 
@@ -978,9 +930,9 @@ nm_device_activation_cancel (NMDevice *self)
 
 	klass = NM_DEVICE_CLASS (g_type_class_peek (NM_TYPE_DEVICE));
 	if (klass->activation_cancel_handler)
-		klass->activation_cancel_handler (self, self->priv->act_request);
+		klass->activation_cancel_handler (self);
 
-	nm_act_request_unref (self->priv->act_request);
+	g_object_unref (self->priv->act_request);
 	self->priv->act_request = NULL;
 
 	nm_info ("Activation (%s): cancelled.", nm_device_get_iface (self));
@@ -1016,7 +968,7 @@ nm_device_deactivate_quickly (NMDevice *self)
 		nm_dhcp_manager_cancel_transaction (NM_DEVICE_GET_PRIVATE (self)->dhcp_manager,
 											nm_device_get_iface (self),
 											FALSE);
-		nm_act_request_unref (act_request);
+		g_object_unref (act_request);
 		self->priv->act_request = NULL;
 	}
 
@@ -1081,8 +1033,8 @@ nm_device_activate (NMDeviceInterface *device,
 		return;
 
 	nm_info ("Activating device %s", nm_device_get_iface (self));
-	priv->act_request = nm_act_request_new (self, connection, user_requested);
-	nm_device_activate_schedule_stage1_device_prepare (priv->act_request);
+	priv->act_request = nm_act_request_new (connection, user_requested);
+	nm_device_activate_schedule_stage1_device_prepare (self);
 }
 
 /*
@@ -1132,10 +1084,8 @@ dhcp_state_changed (NMDHCPManager *dhcp_manager,
 					gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
-	NMActRequest *req;
 
-	req = nm_device_get_act_request (device);
-	if (!req)
+	if (!nm_device_get_act_request (device))
 		return;
 
 	if (!strcmp (nm_device_get_iface (device), iface) && nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG) {
@@ -1144,10 +1094,10 @@ dhcp_state_changed (NMDHCPManager *dhcp_manager,
 		case DHCDBD_RENEW:	/* lease renewed */
 		case DHCDBD_REBOOT:	/* have valid lease, but now obtained a different one */
 		case DHCDBD_REBIND:	/* new, different lease */
-			nm_device_activate_schedule_stage4_ip_config_get (req);
+			nm_device_activate_schedule_stage4_ip_config_get (device);
 			break;
 		case DHCDBD_TIMEOUT: /* timed out contacting DHCP server */
-			nm_device_activate_schedule_stage4_ip_config_timeout (req);
+			nm_device_activate_schedule_stage4_ip_config_timeout (device);
 			break;
 		case DHCDBD_FAIL: /* all attempts to contact server timed out, sleeping */
 		case DHCDBD_ABEND: /* dhclient exited abnormally */
@@ -1396,7 +1346,7 @@ nm_device_dispose (GObject *object)
 
 	if (self->priv->act_request)
 	{
-		nm_act_request_unref (self->priv->act_request);
+		g_object_unref (self->priv->act_request);
 		self->priv->act_request = NULL;
 	}
 

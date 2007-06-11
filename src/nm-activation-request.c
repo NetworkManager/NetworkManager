@@ -20,124 +20,74 @@
  */
 
 
-#include <glib.h>
-#include <string.h>
-#include <dbus/dbus.h>
 #include "nm-activation-request.h"
-#include "nm-device.h"
-#include "NetworkManagerDbus.h"
-#include "nm-dbus-manager.h"
-#include "nm-utils.h"
 
+G_DEFINE_TYPE (NMActRequest, nm_act_request, G_TYPE_OBJECT)
 
-struct NMActRequest
-{
-	int				refcount;
-	NMDevice *		dev;
+#define NM_ACT_REQUEST_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_ACT_REQUEST, NMActRequestPrivate))
+
+typedef struct {
 	NMConnection *connection;
-	NMIP4Config *		ip4_config;
+	gboolean user_requested;
+} NMActRequestPrivate;
 
-	gboolean			user_requested;
-
-	DBusPendingCall *	user_key_pcall;
-};
-
-NMActRequest * nm_act_request_new (NMDevice *dev, NMConnection *connection, gboolean user_requested)
+static void
+nm_act_request_init (NMActRequest *req)
 {
-	NMActRequest *	req;
+}
 
-	g_return_val_if_fail (dev != NULL, NULL);
+static void
+finalize (GObject *object)
+{
+	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (object);
+
+	nm_connection_destroy (priv->connection);
+
+	G_OBJECT_CLASS (nm_act_request_parent_class)->finalize (object);
+}
+
+static void
+nm_act_request_class_init (NMActRequestClass *req_class)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
+
+	g_type_class_add_private (req_class, sizeof (NMActRequestPrivate));
+
+	object_class->finalize = finalize;
+}
+
+NMActRequest *
+nm_act_request_new (NMConnection *connection, gboolean user_requested)
+{
+	GObject *obj;
+	NMActRequestPrivate *priv;
+
 	g_return_val_if_fail (connection != NULL, NULL);
 
-	req = g_slice_new0 (NMActRequest);
-	req->refcount = 1;
+	obj = g_object_new (NM_TYPE_ACT_REQUEST, NULL);
+	if (!obj)
+		return NULL;
 
-	req->dev = g_object_ref (G_OBJECT (dev));
-	req->connection = connection;
-	req->user_requested = user_requested;
+	priv = NM_ACT_REQUEST_GET_PRIVATE (obj);
 
-	return req;
+	priv->connection = connection;
+	priv->user_requested = user_requested;
+
+	return NM_ACT_REQUEST (obj);
 }
 
-void nm_act_request_ref (NMActRequest *req)
+NMConnection *
+nm_act_request_get_connection (NMActRequest *req)
 {
-	g_return_if_fail (req != NULL);
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), NULL);
 
-	req->refcount++;
+	return NM_ACT_REQUEST_GET_PRIVATE (req)->connection;
 }
 
-
-void nm_act_request_unref (NMActRequest *req)
+gboolean
+nm_act_request_get_user_requested (NMActRequest *req)
 {
-	g_return_if_fail (req != NULL);
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
 
-	req->refcount--;
-	if (req->refcount <= 0) {
-		g_object_unref (G_OBJECT (req->dev));
-		/* FIXME: destroy connection? */
-		g_slice_free (NMActRequest, req);
-	}
-}
-
-NMDevice * nm_act_request_get_dev (NMActRequest *req)
-{
-	g_return_val_if_fail (req != NULL, NULL);
-
-	return req->dev;
-}
-
-
-NMConnection * nm_act_request_get_connection (NMActRequest *req)
-{
-	g_return_val_if_fail (req != NULL, NULL);
-
-	return req->connection;
-}
-
-
-gboolean nm_act_request_get_user_requested (NMActRequest *req)
-{
-	g_return_val_if_fail (req != NULL, FALSE);
-
-	return req->user_requested;
-}
-
-
-NMIP4Config * nm_act_request_get_ip4_config (NMActRequest *req)
-{
-	g_return_val_if_fail (req != NULL, NULL);
-
-	return req->ip4_config;
-}
-
-void nm_act_request_set_ip4_config (NMActRequest *req, NMIP4Config *ip4_config)
-{
-	g_return_if_fail (req != NULL);
-
-	if (req->ip4_config)
-	{
-		g_object_unref (req->ip4_config);
-		req->ip4_config = NULL;
-	}
-
-	if (ip4_config)
-		req->ip4_config = g_object_ref (ip4_config);
-}
-
-DBusPendingCall * nm_act_request_get_user_key_pending_call (NMActRequest *req)
-{
-	g_return_val_if_fail (req != NULL, NULL);
-
-	return req->user_key_pcall;
-}
-
-void nm_act_request_set_user_key_pending_call (NMActRequest *req, DBusPendingCall *pcall)
-{
-	g_return_if_fail (req != NULL);
-
-	if (req->user_key_pcall)
-		dbus_pending_call_unref (req->user_key_pcall);
-	req->user_key_pcall = pcall;
-	if (req->user_key_pcall)
-		dbus_pending_call_ref (req->user_key_pcall);
+	return NM_ACT_REQUEST_GET_PRIVATE (req)->user_requested;
 }

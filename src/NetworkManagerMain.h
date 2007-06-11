@@ -29,7 +29,6 @@
 #include "nm-named-manager.h"
 
 
-typedef struct NMActRequest NMActRequest;
 typedef struct NMVPNActRequest NMVPNActRequest;
 typedef struct NMVPNManager NMVPNManager;
 

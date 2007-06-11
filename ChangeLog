@@ -1,3 +1,11 @@
+2007-06-11  Tambet Ingo  <tambet@ximian.com>
+
+	* src/nm-device.c: Make the activation stage virtual functions take NMDevice
+	argument. The activation request is easy to retrieve.
+
+	* src/nm-activation-request.c: Convert to GObject. Do not include half of NM headers
+	just to be a convenient location for devices to store random stuff.
+
 2007-06-11  Christopher Aillon  <caillon@redhat.com>
 
 	Patch from Alex Smith <alex@alex-smith.me.uk>

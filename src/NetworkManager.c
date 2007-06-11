@@ -403,7 +403,7 @@ main (int argc, char *argv[])
 					  nm_data);
 
 	manager = nm_manager_new ();
-	g_object_set_data (manager, "NM_DATA_HACK", nm_data);
+	g_object_set_data (G_OBJECT (manager), "NM_DATA_HACK", nm_data);
 	policy = nm_policy_new (manager);
 
 	nm_dbus_manager_register_signal_handler (dbus_mgr,

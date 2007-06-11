@@ -30,6 +30,25 @@
 #include "nm-utils.h"
 #include "nm-dbus-manager.h"
 
+#define NM_ACT_REQUEST_PENDING_CALL "nm-act-request-pending-call"
+
+typedef struct {
+	NMDevice *device;
+	NMActRequest *req;
+} UserKeyInfo;
+
+static void
+user_key_info_destroy (gpointer data)
+{
+	UserKeyInfo *info = (UserKeyInfo *) data;
+
+	g_object_set_data (G_OBJECT (info->req), NM_ACT_REQUEST_PENDING_CALL, NULL);
+
+	g_object_unref (info->device);
+	g_object_unref (info->req);
+
+	g_slice_free (UserKeyInfo, info);
+}
 
 /*
  * nm_dbus_get_user_key_for_network_cb
@@ -40,20 +59,21 @@
  */
 static void
 nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall,
-                                     NMActRequest *req)
+                                     UserKeyInfo *info)
 {
 	DBusMessage *		reply = NULL;
 	NMData *			data;
 	NMDevice *		dev;
+	NMActRequest *req;
 	NMAccessPoint *	ap;
 	NMAPSecurity *		security;
 	DBusMessageIter	iter;
 
 	g_return_if_fail (pcall != NULL);
-	g_return_if_fail (req != NULL);
+	g_return_if_fail (info != NULL);
 
-	dev = nm_act_request_get_dev (req);
-	g_assert (dev);
+	dev = info->device;
+	req = info->req;
 
 	data = nm_device_get_app_data (dev);
 	g_assert (data);
@@ -106,14 +126,13 @@ nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall,
 	dbus_message_iter_init (reply, &iter);
 	if ((security = nm_ap_security_new_deserialize (&iter))) {
 		nm_ap_set_security (ap, security);
-		nm_device_activate_schedule_stage2_device_config (req);
+		nm_device_activate_schedule_stage2_device_config (dev);
 	}
-	nm_act_request_set_user_key_pending_call (req, NULL);
 
 out:
 	if (reply)
 		dbus_message_unref (reply);
-	nm_act_request_unref (req);
+	g_object_unref (req);
 	dbus_pending_call_unref (pcall);
 }
 
@@ -125,20 +144,22 @@ out:
  *
  */
 void
-nm_dbus_get_user_key_for_network (NMActRequest *req,
+nm_dbus_get_user_key_for_network (NMDevice *dev,
+								  NMActRequest *req,
                                   const gboolean new_key)
 {
 	NMDBusManager *	dbus_mgr = NULL;
 	DBusConnection *dbus_connection;
 	DBusMessage *		message;
 	DBusPendingCall *	pcall;
-	NMDevice *		dev;
+	UserKeyInfo *info;
 	NMAccessPoint *	ap;
 	gint32			attempt = 1;
 	char *			dev_path;
 	char *			net_path;
 	const char *		essid;
 
+	g_return_if_fail (NM_IS_DEVICE (dev));
 	g_return_if_fail (req != NULL);
 
 	dbus_mgr = nm_dbus_manager_get ();
@@ -147,9 +168,6 @@ nm_dbus_get_user_key_for_network (NMActRequest *req,
 		nm_warning ("could not get the dbus connection.");
 		goto out;
 	}
-
-	dev = nm_act_request_get_dev (req);
-	g_assert (dev);
 
 	ap = nm_device_802_11_wireless_get_activation_ap (NM_DEVICE_802_11_WIRELESS (dev));
 	g_assert (ap);
@@ -177,16 +195,19 @@ nm_dbus_get_user_key_for_network (NMActRequest *req,
 									DBUS_TYPE_INT32, &attempt,
 									DBUS_TYPE_BOOLEAN, &new_key,
 									DBUS_TYPE_INVALID);
+
+		info = g_slice_new (UserKeyInfo);
+		info->device = g_object_ref (dev);
+		info->req = g_object_ref (req);
+
 		pcall = nm_dbus_send_with_callback (dbus_connection,
 		                                    message,
 		                                    (DBusPendingCallNotifyFunction) nm_dbus_get_user_key_for_network_cb,
 		                                    req,
-		                                    NULL,
+		                                    user_key_info_destroy,
 		                                    __func__);
-		if (pcall) {
-			nm_act_request_ref (req);
-			nm_act_request_set_user_key_pending_call (req, pcall);
-		}
+		if (pcall)
+			g_object_set_data (G_OBJECT (req), NM_ACT_REQUEST_PENDING_CALL, pcall);
 	} else {
 		nm_warning ("bad object path data");
 	}
@@ -228,7 +249,8 @@ nm_dbus_cancel_get_user_key_for_network (NMActRequest *req)
 		goto out;
 	}
 
-	if ((pcall = nm_act_request_get_user_key_pending_call (req)))
+	pcall = (DBusPendingCall *) g_object_get_data (G_OBJECT (req), NM_ACT_REQUEST_PENDING_CALL);
+	if (pcall)
 		dbus_pending_call_cancel (pcall);
 
 	message = dbus_message_new_method_call (NMI_DBUS_SERVICE,

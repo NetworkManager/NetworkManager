@@ -22,26 +22,31 @@
 #ifndef NM_ACTIVATION_REQUEST_H
 #define NM_ACTIVATION_REQUEST_H
 
-#include <glib.h>
-#include <dbus/dbus.h>
-#include "NetworkManager.h"
-#include "NetworkManagerMain.h"
-#include "nm-device.h"
-#include "nm-ip4-config.h"
+#include <glib/gtypes.h>
+#include <glib-object.h>
 #include "nm-connection.h"
 
-NMActRequest *		nm_act_request_new				(NMDevice *dev, NMConnection *connection, gboolean user_requested);
-void				nm_act_request_ref				(NMActRequest *req);
-void				nm_act_request_unref			(NMActRequest *req);
+#define NM_TYPE_ACT_REQUEST            (nm_act_request_get_type ())
+#define NM_ACT_REQUEST(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_ACT_REQUEST, NMActRequest))
+#define NM_ACT_REQUEST_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_ACT_REQUEST, NMActRequestClass))
+#define NM_IS_ACT_REQUEST(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_ACT_REQUEST))
+#define NM_IS_ACT_REQUEST_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_ACT_REQUEST))
+#define NM_ACT_REQUEST_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_ACT_REQUEST, NMActRequestClass))
 
-NMDevice *		nm_act_request_get_dev			(NMActRequest *req);
-NMConnection *	nm_act_request_get_connection	(NMActRequest *req);
-gboolean			nm_act_request_get_user_requested	(NMActRequest *req);
+typedef struct {
+	GObject parent;
+} NMActRequest;
 
-NMIP4Config *		nm_act_request_get_ip4_config		(NMActRequest *req);
-void				nm_act_request_set_ip4_config		(NMActRequest *req, NMIP4Config *ip4_config);
+typedef struct {
+	GObjectClass parent;
+} NMActRequestClass;
 
-DBusPendingCall *	nm_act_request_get_user_key_pending_call	(NMActRequest *req);
-void				nm_act_request_set_user_key_pending_call	(NMActRequest *req, DBusPendingCall *pcall);
+GType nm_act_request_get_type (void);
 
-#endif
+NMActRequest *nm_act_request_new			    (NMConnection *connection,
+												 gboolean user_requested);
+
+NMConnection *nm_act_request_get_connection     (NMActRequest *req);
+gboolean      nm_act_request_get_user_requested (NMActRequest *req);
+
+#endif /* NM_ACTIVATION_REQUEST_H */

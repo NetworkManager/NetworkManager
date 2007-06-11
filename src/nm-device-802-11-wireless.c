@@ -2173,7 +2173,7 @@ link_timeout_cb (gpointer user_data)
 		         " asking for new key.", nm_device_get_iface (dev));
 		cleanup_association_attempt (self, TRUE);
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
-		nm_dbus_get_user_key_for_network (req, TRUE);
+		nm_dbus_get_user_key_for_network (dev, req, TRUE);
 	} else {
 		nm_info ("%s: link timed out.", nm_device_get_iface (dev));
 		nm_device_set_active_link (dev, FALSE);
@@ -2276,7 +2276,6 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 	struct state_cb_data *  cb_data = (struct state_cb_data *) user_data;
 	NMDevice80211Wireless * self;
 	NMDevice *              dev;
-	NMActRequest *          req;
 	guint32                 new_state, old_state;
 
 	g_return_val_if_fail (cb_data != NULL, FALSE);
@@ -2286,14 +2285,13 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 	new_state = cb_data->new_state;
 	old_state = cb_data->old_state;
 
-	req = nm_device_get_act_request (NM_DEVICE (self));
-	if (!req) {
+	if (!nm_device_get_act_request (NM_DEVICE (self))) {
 		/* The device is not activating or already activated; do nothing. */
 		goto out;
 	}
 
 	nm_debug ("(%s) Supplicant interface state change: %d -> %d",
-	          nm_device_get_iface (NM_DEVICE (self)), old_state, new_state);
+	          nm_device_get_iface (dev), old_state, new_state);
 
 	if (new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_COMPLETED) {
 		remove_supplicant_interface_connection_error_handler (self);
@@ -2308,9 +2306,9 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 
 			nm_info ("Activation (%s/wireless) Stage 2 of 5 (Device Configure) "
 			         "successful.  Connected to wireless network '%s'.",
-			         nm_device_get_iface (NM_DEVICE (self)),
+			         nm_device_get_iface (dev),
 			         nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
-			nm_device_activate_schedule_stage3_ip_config_start (req);
+			nm_device_activate_schedule_stage3_ip_config_start (dev);
 		}
 	} else if (new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED) {
 		if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED || nm_device_is_activating (dev)) {
@@ -2462,12 +2460,10 @@ supplicant_iface_connection_error_cb_handler (gpointer user_data)
 {
 	struct iface_con_error_cb_data * cb_data = (struct iface_con_error_cb_data *) user_data;
 	NMDevice80211Wireless *          self;
-	NMActRequest *                   req;
 
 	g_return_val_if_fail (cb_data != NULL, FALSE);
 
 	self = cb_data->self;
-	req = nm_device_get_act_request (NM_DEVICE (self));
 
 	if (!nm_device_is_activating (NM_DEVICE (self)))
 		goto out;
@@ -2536,7 +2532,6 @@ supplicant_connection_timeout_cb (gpointer user_data)
 {
 	NMDevice *              dev = NM_DEVICE (user_data);
 	NMDevice80211Wireless * self = NM_DEVICE_802_11_WIRELESS (user_data);
-	NMActRequest *          req = nm_device_get_act_request (dev);
 	NMAccessPoint *         ap = nm_device_802_11_wireless_get_activation_ap (self);
 	gboolean                has_key;
 		
@@ -2554,7 +2549,7 @@ supplicant_connection_timeout_cb (gpointer user_data)
 		         nm_device_get_iface (dev));
 
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
-		nm_dbus_get_user_key_for_network (req, TRUE);
+		nm_dbus_get_user_key_for_network (dev, nm_device_get_act_request (dev), TRUE);
 	} else {
 		if (nm_device_is_activating (dev)) {
 			nm_info ("Activation (%s/wireless): association took too long, "
@@ -2603,8 +2598,7 @@ remove_supplicant_timeouts (NMDevice80211Wireless *self)
 
 
 static NMSupplicantConfig *
-build_supplicant_config (NMDevice80211Wireless *self,
-                         NMActRequest *req)
+build_supplicant_config (NMDevice80211Wireless *self)
 {
 	NMSupplicantConfig * config = NULL;
 	NMAccessPoint *      ap = NULL;
@@ -2612,7 +2606,6 @@ build_supplicant_config (NMDevice80211Wireless *self,
 	gboolean             is_adhoc;
 
 	g_return_val_if_fail (self != NULL, NULL);
-	g_return_val_if_fail (req != NULL, NULL);
 
 	ap = nm_device_802_11_wireless_get_activation_ap (self);
 	g_assert (ap);
@@ -2683,13 +2676,14 @@ real_set_hw_address (NMDevice *dev)
 
 
 static NMActStageReturn
-real_act_stage1_prepare (NMDevice *dev,
-						 NMActRequest *req)
+real_act_stage1_prepare (NMDevice *dev)
 {
 	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
+	NMActRequest *req;
 	NMSettingWireless *setting;
 	gboolean success;
 
+	req = nm_device_get_act_request (dev);
 	setting = (NMSettingWireless *) nm_connection_get_setting (nm_act_request_get_connection (req),
 															   "802-11-wireless");
 	g_assert (setting);
@@ -2700,8 +2694,7 @@ real_act_stage1_prepare (NMDevice *dev,
 
 
 static NMActStageReturn
-real_act_stage2_config (NMDevice *dev,
-                        NMActRequest *req)
+real_act_stage2_config (NMDevice *dev)
 {
 	NMDevice80211Wireless * self = NM_DEVICE_802_11_WIRELESS (dev);
 	NMAccessPoint *         ap = nm_device_802_11_wireless_get_activation_ap (self);
@@ -2718,11 +2711,11 @@ real_act_stage2_config (NMDevice *dev,
 	/* If we need an encryption key, get one */
 	if (ap_need_key (self, ap, &ask_user)) {
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
-		nm_dbus_get_user_key_for_network (req, ask_user);
+		nm_dbus_get_user_key_for_network (dev, nm_device_get_act_request (dev), ask_user);
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	}
 
-	config = build_supplicant_config (self, req);
+	config = build_supplicant_config (self);
 	if (config == NULL) {
 		nm_warning ("Activation (%s/wireless): couldn't build wireless "
 			"configuration.", iface);
@@ -2764,8 +2757,7 @@ out:
 
 
 static NMActStageReturn
-real_act_stage3_ip_config_start (NMDevice *dev,
-                                 NMActRequest *req)
+real_act_stage3_ip_config_start (NMDevice *dev)
 {
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
 	NMAccessPoint *		ap = nm_device_802_11_wireless_get_activation_ap (self);
@@ -2784,7 +2776,7 @@ real_act_stage3_ip_config_start (NMDevice *dev,
 		/* Chain up to parent */
 		klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (self);
 		parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
-		ret = parent_class->act_stage3_ip_config_start (dev, req);
+		ret = parent_class->act_stage3_ip_config_start (dev);
 	}
 	else
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
@@ -2795,7 +2787,6 @@ real_act_stage3_ip_config_start (NMDevice *dev,
 
 static NMActStageReturn
 real_act_stage4_get_ip4_config (NMDevice *dev,
-                                NMActRequest *req,
                                 NMIP4Config **config)
 {
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
@@ -2820,7 +2811,7 @@ real_act_stage4_get_ip4_config (NMDevice *dev,
 		/* Chain up to parent */
 		klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (self);
 		parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
-		ret = parent_class->act_stage4_get_ip4_config (dev, req, &real_config);
+		ret = parent_class->act_stage4_get_ip4_config (dev, &real_config);
 	}
 	*config = real_config;
 
@@ -2830,7 +2821,6 @@ real_act_stage4_get_ip4_config (NMDevice *dev,
 
 static NMActStageReturn
 real_act_stage4_ip_config_timeout (NMDevice *dev,
-                                   NMActRequest *req,
                                    NMIP4Config **config)
 {
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
@@ -2858,7 +2848,7 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 		nm_debug ("Activation (%s/wireless): could not get IP configuration info for '%s', asking for new key.",
 				nm_device_get_iface (dev), nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
-		nm_dbus_get_user_key_for_network (req, TRUE);
+		nm_dbus_get_user_key_for_network (dev, nm_device_get_act_request (dev), TRUE);
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	}
 	else if (nm_ap_get_mode (ap) == IW_MODE_ADHOC)
@@ -2869,7 +2859,7 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 		/* For Ad-Hoc networks, chain up to parent to get a Zeroconf IP */
 		klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (self);
 		parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
-		ret = parent_class->act_stage4_ip_config_timeout (dev, req, &real_config);
+		ret = parent_class->act_stage4_ip_config_timeout (dev, &real_config);
 	}
 	else
 	{
@@ -2887,16 +2877,14 @@ static void
 activation_success_handler (NMDevice *dev)
 {
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
-	NMActRequest *req;
 	struct ether_addr	addr;
 	NMAccessPoint *	ap;
 	gboolean			automatic;
 
-	req = nm_device_get_act_request (dev);
 	ap = nm_device_802_11_wireless_get_activation_ap (self);
 
 	/* Cache details in the info-daemon since the connect was successful */
-	automatic = !nm_act_request_get_user_requested (req);
+	automatic = !nm_act_request_get_user_requested (nm_device_get_act_request (dev));
 
 	/* If it's a user-created ad-hoc network, add it to the device's scan list */
 	if (!automatic && (nm_ap_get_mode (ap) == IW_MODE_ADHOC) && nm_ap_get_user_created (ap))
@@ -2919,10 +2907,8 @@ activation_failure_handler (NMDevice *dev)
 {
 	NMData *			app_data;
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
-	NMActRequest *req;
 	NMAccessPoint *	ap;
 
-	req = nm_device_get_act_request (dev);
 	app_data = nm_device_get_app_data (dev);
 	g_assert (app_data);
 
@@ -2954,8 +2940,7 @@ activation_failure_handler (NMDevice *dev)
 }
 
 static void
-real_activation_cancel_handler (NMDevice *dev,
-                                NMActRequest *req)
+real_activation_cancel_handler (NMDevice *dev)
 {
 	NMDevice80211Wireless *		self = NM_DEVICE_802_11_WIRELESS (dev);
 	NMDevice80211WirelessClass *	klass;
@@ -2964,10 +2949,10 @@ real_activation_cancel_handler (NMDevice *dev,
 	/* Chain up to parent first */
 	klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (self);
 	parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
-	parent_class->activation_cancel_handler (dev, req);
+	parent_class->activation_cancel_handler (dev);
 
 	if (nm_device_get_state (dev) == NM_DEVICE_STATE_NEED_AUTH)
-		nm_dbus_cancel_get_user_key_for_network (req);
+		nm_dbus_cancel_get_user_key_for_network (nm_device_get_act_request (dev));
 
 	cleanup_association_attempt (self, TRUE);
 }

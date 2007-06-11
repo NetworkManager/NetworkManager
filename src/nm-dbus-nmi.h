@@ -25,7 +25,9 @@
 #include "NetworkManager.h"
 #include "NetworkManagerAP.h"
 
-void			nm_dbus_get_user_key_for_network		(NMActRequest *req, const gboolean new_key);
+void			nm_dbus_get_user_key_for_network		(NMDevice *dev,
+														 NMActRequest *req,
+														 const gboolean new_key);
 
 void			nm_dbus_cancel_get_user_key_for_network	(NMActRequest *req);
 
