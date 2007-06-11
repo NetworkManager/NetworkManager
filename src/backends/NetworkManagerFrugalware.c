@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <signal.h>
+#include <arpa/inet.h>
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device.h"
@@ -78,7 +79,7 @@ void nm_system_device_flush_routes_with_iface (const char *iface)
 	g_return_if_fail (iface != NULL);
 
 	/* Remove routing table entries */
-	buf = g_strdup_printf ("/sbin/ip route flush dev %s", iface);
+	buf = g_strdup_printf ("/usr/sbin/ip route flush dev %s", iface);
 	nm_spawn_process (buf);
 	g_free (buf);
 }
@@ -110,24 +111,9 @@ void nm_system_device_flush_addresses_with_iface (const char *iface)
 	g_return_if_fail (iface != NULL);
 
 	/* Remove all IP addresses for a device */
-	buf = g_strdup_printf ("/sbin/ip addr flush dev %s", iface);
+	buf = g_strdup_printf ("/usr/sbin/ip addr flush dev %s", iface);
 	nm_spawn_process (buf);
 	g_free (buf);
-}
-
-/*
- * nm_system_device_setup_static_ip4_config
- *
- * Set up the device with a particular IPv4 address/netmask/gateway.
- *
- * Returns:	TRUE	on success
- *			FALSE on error
- *
- */
-gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
-{
-	nm_warning ("nm_system_device_setup_static_ip4_config() is not implemented yet for this distribution.\n");
-	return FALSE;
 }
 
 /*
@@ -163,7 +149,7 @@ void nm_system_enable_loopback (void)
  */
 void nm_system_delete_default_route (void)
 {
-	nm_spawn_process ("/sbin/ip route del default");
+	nm_spawn_process ("/usr/sbin/ip route del default");
 }
 
 
@@ -175,7 +161,7 @@ void nm_system_delete_default_route (void)
  */
 void nm_system_kill_all_dhcp_daemons (void)
 {
-	nm_spawn_process ("/bin/killall -q dhclient");
+	nm_spawn_process ("/usr/bin/killall -q dhclient");
 }
 
 
@@ -203,7 +189,7 @@ void nm_system_restart_mdns_responder (void)
 	/* Check if the daemon was already running - do not start a new instance */
 	if (g_file_test("/var/run/avahi-daemon/pid", G_FILE_TEST_EXISTS))
 	{
-		nm_spawn_process ("/etc/rc.d/avahi-daemon restart");
+		nm_spawn_process ("/etc/rc.d/rc.avahi-daemon restart");
 	}
 }
 
@@ -232,7 +218,7 @@ void nm_system_device_add_ip6_link_address (NMDevice *dev)
 	eui[0] ^= 2;
 
 	/* Add the default link-local IPv6 address to a device */
-	buf = g_strdup_printf ("/sbin/ip -6 addr add fe80::%x%02x:%x%02x:%x%02x:%x%02x/64 dev %s",
+	buf = g_strdup_printf ("/usr/sbin/ip -6 addr add fe80::%x%02x:%x%02x:%x%02x:%x%02x/64 dev %s",
 	                       eui[0], eui[1], eui[2], eui[3], eui[4], eui[5],
 	                       eui[6], eui[7], nm_device_get_iface (dev));
 	nm_spawn_process (buf);
@@ -252,7 +238,7 @@ void nm_system_device_add_route_via_device_with_iface (const char *iface, const 
 	g_return_if_fail (iface != NULL);
 
 	/* Add default gateway */
-	buf = g_strdup_printf ("/sbin/ip route add %s dev %s", route, iface);
+	buf = g_strdup_printf ("/usr/sbin/ip route add %s dev %s", route, iface);
 	nm_spawn_process (buf);
 	g_free (buf);
 }
@@ -283,7 +269,7 @@ void nm_system_device_add_default_route_via_device_with_iface (const char *iface
 	g_return_if_fail (iface != NULL);
 
 	/* Add default gateway */
-	buf = g_strdup_printf ("/sbin/ip route add default dev %s", iface);
+	buf = g_strdup_printf ("/usr/sbin/ip route add default dev %s", iface);
 	nm_spawn_process (buf);
 	g_free (buf);
 }
@@ -310,7 +296,7 @@ void nm_system_flush_loopback_routes (void)
  */
 void nm_system_flush_arp_cache (void)
 {
-	nm_spawn_process ("/sbin/ip neigh flush all");
+	nm_spawn_process ("/usr/sbin/ip neigh flush all");
 }
 
 void nm_system_deactivate_all_dialup (GSList *list)
@@ -453,9 +439,12 @@ void *nm_system_device_get_system_config (NMDevice *dev, NMData *app_data)
 	fwnet_interface_t *interface;
 	FWDeviceConfigData *sys_data = NULL;
 	int dhcp, i;
-	char *buf = NULL;
 	char *data = NULL;
 	gboolean error = FALSE;
+	char ip[15];
+	char netmask[15];
+	char mybroadcast[15];
+	int ret;
 	
 	sys_data = g_malloc0 (sizeof (FWDeviceConfigData));
 	sys_data->use_dhcp = TRUE;
@@ -486,27 +475,23 @@ void *nm_system_device_get_system_config (NMDevice *dev, NMData *app_data)
 	{
 		data = g_list_nth_data(interface->options, 0);
 		
-		if ((buf = strsep(&data, " ")))
+		ret = sscanf(data, "%s netmask %s broadcast %s", ip, netmask, mybroadcast);
+		
+		if (ret >= 1)
 		{
-			nm_ip4_config_set_address (sys_data->config, inet_addr (buf));
-			free (buf);
+			nm_ip4_config_set_address (sys_data->config, inet_addr (ip));
 		}
 		else
 		{
 			nm_warning ("Network configuration for device '%s' was invalid (non-DHCP configuration, "
-						"but no IP address specified.  Will use DHCP instead.", nm_device_get_iface (dev));
+						"but could not split options.  Will use DHCP instead.", nm_device_get_iface (dev));
 			error = TRUE;
 			goto out;
 		}
 		
-		// This is just to get rid of the 'netmask' string from the options line
-		buf = strsep(&data, " ");
-		free (buf);
-		
-		if ((buf = strsep(&data, " ")))
+		if (ret >= 2)
 		{
-			nm_ip4_config_set_netmask (sys_data->config, inet_addr (buf));
-			free (buf);
+			nm_ip4_config_set_netmask (sys_data->config, inet_addr (netmask));
 		}
 		else
 		{
@@ -521,14 +506,9 @@ void *nm_system_device_get_system_config (NMDevice *dev, NMData *app_data)
 				nm_ip4_config_set_netmask (sys_data->config, htonl (0xFFFFFF00));
 		}
 		
-		// This is just to get rid of the 'broadcast' string from the options line
-		buf = strsep(&data, " ");
-		free (buf);
-		
-		if ((buf = strsep(&data, " ")))
+		if (ret >= 3)
 		{
-			nm_ip4_config_set_broadcast (sys_data->config, inet_addr (buf));
-			free (buf);
+			nm_ip4_config_set_broadcast (sys_data->config, inet_addr (mybroadcast));
 		}
 		else
 		{
@@ -550,14 +530,14 @@ void *nm_system_device_get_system_config (NMDevice *dev, NMData *app_data)
 		}
 	}
 	
-//#if 0
+#if 0
 	nm_debug ("------ Config (%s)", nm_device_get_iface (dev));
 	nm_debug ("    DHCP=%d\n", sys_data->use_dhcp);
 	nm_debug ("    ADDR=%d\n", nm_ip4_config_get_address (sys_data->config));
 	nm_debug ("    GW=%d\n", nm_ip4_config_get_gateway (sys_data->config));
 	nm_debug ("    NM=%d\n", nm_ip4_config_get_netmask (sys_data->config));
 	nm_debug ("---------------------\n");
-//#endif
+#endif
 	
 out:
 	if (error)

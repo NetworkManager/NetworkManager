@@ -1,3 +1,10 @@
+2007-06-11  Christopher Aillon  <caillon@redhat.com>
+
+	Patch from Alex Smith <alex@alex-smith.me.uk>
+
+	* src/backends/NetworkManagerFrugalware.c:
+	Update the FrugalWare backend to fix a few segfaults. (#392642)
+
 2007-06-08  Tambet Ingo  <tambet@ximian.com>
 
 	* libnm-util/nm-setting.c: Implement NMSettingWirelessSecurity.
