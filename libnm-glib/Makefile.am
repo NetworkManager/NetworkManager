@@ -11,7 +11,7 @@ BUILT_SOURCES = \
 
 lib_LTLIBRARIES = libnm-glib.la
 
-libnm_glib_la_CPPFLAGS = \
+libnm_glib_la_CFLAGS = \
 	$(GLIB_CFLAGS)	\
 	$(DBUS_CFLAGS)
 
@@ -39,14 +39,16 @@ libnm_glib_la_SOURCES = \
 	nm-vpn-connection.c	\
 	nm-marshal-main.c
 
-libnm_glib_la_LDFLAGS = $(GLIB_LIBS) $(DBUS_LIBS) $(top_srcdir)/libnm-util/libnm-util.la
+libnm_glib_la_LIBADD = \
+	$(top_builddir)/libnm-util/libnm-util.la	\
+	$(GLIB_LIBS)					\
+	$(DBUS_LIBS)
 
 noinst_PROGRAMS = libnm-glib-test
 
-AM_CPPFLAGS = $(GLIB_CFLAGS) $(DBUS_CFLAGS)
-
 libnm_glib_test_SOURCES = libnm-glib-test.c
-libnm_glib_test_LDADD = $(GLIB_LIBS) $(DBUS_LIBS) $(top_builddir)/libnm-glib/libnm-glib.la
+libnm_glib_test_CFLAGS = $(GLIB_CFLAGS) $(DBUS_CFLAGS)
+libnm_glib_test_LDADD = libnm-glib.la $(top_builddir)/libnm-util/libnm-util.la $(GLIB_LIBS) $(DBUS_LIBS)
 
 nm-marshal.h: Makefile.am nm-marshal.list
 	$(GLIB_GENMARSHAL) --prefix=nm_marshal $(srcdir)/nm-marshal.list --header > \

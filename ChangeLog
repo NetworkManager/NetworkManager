@@ -1,3 +1,11 @@
+2007-06-11  Christopher Aillon  <caillon@redhat.com>
+
+	Patch from Christian Persch <chpe@gnome.org>
+
+	* libnm-glib/Makefile.am:
+	* dispatcher-daemon/Makefile.am:
+	Use the correct variables, the correct paths, and correct ordering. (446315)
+
 2007-06-11  Tambet Ingo  <tambet@ximian.com>
 
 	* src/nm-device.c: Make the activation stage virtual functions take NMDevice
