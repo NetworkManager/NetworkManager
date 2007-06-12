@@ -9,8 +9,14 @@ endif
 dbusservicedir = $(sysconfdir)/dbus-1/system.d
 dbusservice_DATA = nm-ppp-starter.conf
 
+nmvpnservice_in_files = nm-ppp-starter.name.in
 nmvpnservicedir = $(sysconfdir)/NetworkManager/VPN
-nmvpnservice_DATA = nm-ppp-starter.name
+nmvpnservice_DATA = $(nmvpnservice_in_files:.name.in=.name)
+
+%.name: %.name.in Makefile
+	@sed -e "s|%bindir%|$(bindir)|g" \
+	     -e "s|%libdir%|$(libdir)|g" \
+	     -e "s|%libexecdir%|$(libexecdir)|g" $< > $@
 
 if WITH_GNOME
 desktopdir = $(datadir)/applications
@@ -22,13 +28,14 @@ icondir = $(datadir)/icons/hicolor/48x48/apps
 icon_DATA = gnome-mime-application-x-pptp-settings.png
 endif
 
-EXTRA_DIST = $(nmvpnservice_DATA) \
-             $(dbusservice_DATA)  \
-             $(desktop_in_files)  \
-             $(icon_DATA)         \
-             intltool-extract.in  \
-             intltool-merge.in    \
-             intltool-update.in
+EXTRA_DIST =\
+	$(nmvpnservice_in_files)	\
+	$(dbusservice_DATA)		\
+	$(desktop_in_files)		\
+	$(icon_DATA)			\
+	intltool-extract.in		\
+	intltool-merge.in		\
+	intltool-update.in
 
-CLEANFILES = $(desktop_DATA) *~
+CLEANFILES = $(desktop_DATA) $(nmvpnservice_DATA) *~
 DISTCLEANFILES = intltool-extract intltool-merge intltool-update
