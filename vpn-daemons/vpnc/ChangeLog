@@ -1,3 +1,8 @@
+2007-06-11  Christopher Aillon  <caillon@redhat.com>
+
+	* properties/nm-vpnc-dialog.glade:
+	Fix casing of the disable NAT checkbox
+
 2007-04-04  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Denis Leroy <denis@poolshark.org>
