@@ -1521,6 +1521,8 @@ nm_device_state_changed (NMDevice *device, NMDeviceState state)
 	old_state = device->priv->state;
 	device->priv->state = state;
 
+	g_signal_emit_by_name (device, "state-changed", state);
+
 	switch (state) {
 	case NM_DEVICE_STATE_DOWN:
 		if (old_state == NM_DEVICE_STATE_ACTIVATED)
@@ -1536,8 +1538,6 @@ nm_device_state_changed (NMDevice *device, NMDeviceState state)
 	default:
 		break;
 	}
-
-	g_signal_emit_by_name (device, "state-changed", state);
 }
 
 

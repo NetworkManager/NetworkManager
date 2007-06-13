@@ -1,3 +1,21 @@
+2007-06-13  Tambet Ingo  <tambet@ximian.com>
+
+	* src/nm-device.c (nm_device_state_changed): Emit the signal before handling it
+	because the handling code will cause the next state change and signal listeners
+	get the signals in wrong order.
+
+	* src/NetworkManagerPolicy.c (nm_policy_device_change_check): Get the "old_dev"
+	correctly in case of pending activation.
+
+	* src/nm-device-802-11-wireless.c (nm_device_802_11_wireless_set_activation_ap):
+	Convert the essid byte array to string correctly, including the terminating NULL.
+
+	* src/NetworkManagerPolicy.c (create_connection): Create wireless ssid and
+	mode with correct types.
+
+	* src/nm-dbus-nmi.c (nm_dbus_get_user_key_for_network): Fix a typo, pass the
+	constructed info to dbus call instead of the activation request.
+
 2007-06-11  Christopher Aillon  <caillon@redhat.com>
 
 	Patch from Christian Persch <chpe@gnome.org>

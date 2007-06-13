@@ -214,12 +214,27 @@ static gboolean
 nm_policy_device_change_check (gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
+	GSList *iter;
 	NMAccessPoint * ap = NULL;
 	NMDevice *      new_dev;
-	NMDevice *      old_dev;
+	NMDevice *      old_dev = NULL;
 	gboolean        do_switch = FALSE;
 
-	old_dev = nm_manager_get_active_device (policy->manager);
+	switch (nm_manager_get_state (policy->manager)) {
+	case NM_STATE_CONNECTED:
+		old_dev = nm_manager_get_active_device (policy->manager);
+		break;
+	case NM_STATE_CONNECTING:
+		for (iter = nm_manager_get_devices (policy->manager); iter; iter = iter->next) {
+			if (nm_device_is_activating (NM_DEVICE (iter->data))) {
+				old_dev = NM_DEVICE (iter->data);
+				break;
+			}
+		}
+		break;
+	default:
+		break;
+	}
 
 	if (old_dev) {
 		guint32 caps = nm_device_get_capabilities (old_dev);
