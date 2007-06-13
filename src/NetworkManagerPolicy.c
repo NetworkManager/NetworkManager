@@ -167,6 +167,7 @@ create_connection (NMDevice *device, NMAccessPoint *ap)
 		setting = nm_setting_wired_new ();
 	} else if (NM_IS_DEVICE_802_11_WIRELESS (device) && ap) {
 		NMSettingWireless *wireless;
+		const char *ssid;
 
 		nm_info ("Will activate connection '%s/%s'.",
 				 nm_device_get_iface (device),
@@ -175,8 +176,11 @@ create_connection (NMDevice *device, NMAccessPoint *ap)
 		setting = nm_setting_wireless_new ();
 		wireless = (NMSettingWireless *) setting;
 
-		wireless->ssid = g_strdup (nm_ap_get_essid (ap));
-		wireless->mode = 1;
+		ssid = nm_ap_get_essid (ap);
+		wireless->ssid = g_byte_array_sized_new (strlen (ssid));
+		g_byte_array_append (wireless->ssid, (guint8 *) ssid, strlen (ssid));
+
+		wireless->mode = g_strdup ("infrastructure");
 	} else
 		nm_warning ("Unhandled device type '%s'", G_OBJECT_CLASS_NAME (device));
 

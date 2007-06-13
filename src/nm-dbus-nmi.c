@@ -203,7 +203,7 @@ nm_dbus_get_user_key_for_network (NMDevice *dev,
 		pcall = nm_dbus_send_with_callback (dbus_connection,
 		                                    message,
 		                                    (DBusPendingCallNotifyFunction) nm_dbus_get_user_key_for_network_cb,
-		                                    req,
+		                                    info,
 		                                    user_key_info_destroy,
 		                                    __func__);
 		if (pcall)

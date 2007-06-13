@@ -951,7 +951,11 @@ nm_device_802_11_wireless_set_activation_ap (NMDevice80211Wireless *self,
 	g_assert (app_data);
 
 	/* FIXME: handle essid everywhere as GByteArray */
-	essid = (char *) ssid->data;
+	{
+		essid = g_new (char, ssid->len + 1);
+		memcpy (essid, ssid->data, ssid->len);
+		essid[ssid->len] = '\0';
+	}
 
 	nm_debug ("Forcing AP '%s'", essid);
 
@@ -997,6 +1001,9 @@ nm_device_802_11_wireless_set_activation_ap (NMDevice80211Wireless *self,
 			security = nm_ap_security_new (nm_ap_get_capabilities (ap),
 										   nm_ap_get_encrypted (ap));
 	}
+
+	g_free (essid);
+
 	g_assert (security);
 	nm_ap_set_security (ap, security);
 	nm_ap_add_capabilities_from_security (ap, security);
