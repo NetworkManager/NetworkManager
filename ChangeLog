@@ -1,3 +1,10 @@
+2007-06-12  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device.c
+		- (real_act_stage3_ip_config_start): sometimes the device gets downed
+			during the wpa_supplicant association.  Ensure the device is up
+			before it's used for IP configuration.
+
 2007-06-07  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Jon Nettleton <jon.nettleton@gmail.com>
