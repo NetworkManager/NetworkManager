@@ -1,5 +1,8 @@
 2007-06-13  Tambet Ingo  <tambet@ximian.com>
 
+	* src/NetworkManagerAP.c (foreach_property_cb): Set WEP capabilities too!
+	(0 & 0 == 0, doh)
+
 	* src/nm-device.c (nm_device_state_changed): Emit the signal before handling it
 	because the handling code will cause the next state change and signal listeners
 	get the signals in wrong order.

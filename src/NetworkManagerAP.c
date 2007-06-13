@@ -470,7 +470,7 @@ foreach_property_cb (gpointer key, gpointer value, gpointer user_data)
 				guint cur_caps;
 
 				cur_caps = nm_ap_get_capabilities (ap);
-				if (cur_caps & NM_802_11_CAP_NONE || cur_caps & NM_802_11_CAP_PROTO_NONE)
+				if (cur_caps == NM_802_11_CAP_NONE || cur_caps & NM_802_11_CAP_PROTO_NONE)
 					nm_ap_add_capabilities_for_wep (ap);
 			}
 		}
