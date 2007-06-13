@@ -1,3 +1,10 @@
+2007-06-13  Christopher Aillon  <caillon@redhat.com>
+
+	Patch from Christian Persch <chpe@gnome.org>
+
+	* vpn-daemons/pptp/auth-dialog/gnome-two-password-dialog.c:
+	HIGify the auth dialog; matches changes to libgnomeui
+
 2007-06-11  Christopher Aillon  <caillon@redhat.com>
 
 	Patch from Christian Persch <chpe@gnome.org>
