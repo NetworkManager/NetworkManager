@@ -1,3 +1,8 @@
+2007-06-21  Christopher Aillon  <caillon@redhat.com>
+
+	* nm-ppp-starter.name.in:
+	Make the properties library path multilib friendly (#447577)
+
 2007-06-13  Christopher Aillon  <caillon@redhat.com>
 
 	Patch from Christian Persch <chpe@gnome.org>

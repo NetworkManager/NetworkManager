@@ -1,3 +1,8 @@
+2007-06-21  Christopher Aillon  <caillon@redhat.com>
+
+	* nm-openvpn-service.name.in:
+	Make the properties library path multilib friendly (#447577)
+
 2007-04-02  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Christian Persch <chpe@gnome.org>
