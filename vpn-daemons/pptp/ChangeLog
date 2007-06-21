@@ -1,3 +1,8 @@
+2007-06-21  Christopher Aillon  <caillon@redhat.com>
+
+	* nm-pptp-service.name.in:
+	Make the properties library path multilib friendly (#447577)
+
 2007-04-23  Luca Ferretti  <elle.uca@libero.it>
 
 	* configure.in: Added 'it' to ALL_LINGUAS.

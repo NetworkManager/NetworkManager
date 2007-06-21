@@ -1,3 +1,8 @@
+2007-06-21  Christopher Aillon  <caillon@redhat.com>
+
+	* nm-vpnc-service.name.in:
+	Make the properties library path multilib friendly (#447577)
+
 2007-03-21  Pema Geyleg  <pema.geyleg@gmail.com>
 
 	* configure.in: Added 'dz' to ALL_LINGUAS
