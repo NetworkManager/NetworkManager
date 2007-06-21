@@ -1,5 +1,23 @@
 2007-06-21  Dan Williams  <dcbw@redhat.com>
 
+	More fixes for Fedora #194124, gnome.org #354565
+
+	* src/nm-device-802-3-ethernet.c
+		- (real_act_stage1_prepare): new function; fail activation if device
+			doesn't have a link
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_activation_finish): ensure device is actually activated
+			before sending out signals.  Fixes a race where device cancellation
+			would be processed right after finish was scheduled, but not run.
+		- (nm_policy_device_change_check, nm_policy_schedule_device_change_check):
+			ensure device change check GSource ID is locked across threads;
+			allow interruption of activation of 802.3 ethernet devices that no
+			longer have an active link, and ensure that 802.3 ethernet devices
+			have an active link before starting activation
+
+2007-06-21  Dan Williams  <dcbw@redhat.com>
+
 	Add HAL-based rfkill support, based on a patch from Benjamin Kahn.
 
 	* src/NetworkManagerDbus.[ch]

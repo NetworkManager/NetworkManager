@@ -207,6 +207,26 @@ real_get_generic_capabilities (NMDevice *dev)
 	return caps;
 }
 
+
+static NMActStageReturn
+real_act_stage1_prepare (NMDevice *dev, NMActRequest *req)
+{
+	NMDevice8023Ethernet * self = NM_DEVICE_802_3_ETHERNET (dev);
+	NMDevice8023EthernetClass *	klass;
+	NMDeviceClass * parent_class;
+
+	/* Ensure ethernet devices have a link before going further with activation,
+	 * partially works around Fedora #194124.
+	 */
+	if (!nm_device_has_active_link (dev))
+		return NM_ACT_STAGE_RETURN_FAILURE;
+
+	/* Chain up to parent */
+	klass = NM_DEVICE_802_3_ETHERNET_GET_CLASS (self);
+	parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
+	return parent_class->act_stage1_prepare (dev, req);
+}
+
 static void
 nm_device_802_3_ethernet_dispose (GObject *object)
 {
@@ -271,6 +291,7 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 	parent_class->get_generic_capabilities = real_get_generic_capabilities;
 	parent_class->init = real_init;
 	parent_class->update_link = real_update_link;
+	parent_class->act_stage1_prepare = real_act_stage1_prepare;
 
 	g_type_class_add_private (object_class, sizeof (NMDevice8023EthernetPrivate));
 }

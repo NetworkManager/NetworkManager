@@ -52,6 +52,7 @@ static gboolean nm_policy_activation_finish (NMActRequest *req)
 	NMDevice			*dev = NULL;
 	NMData			*data = NULL;
 	NMAccessPoint *	ap = NULL;
+	NMActRequest * dev_req;
 
 	g_return_val_if_fail (req != NULL, FALSE);
 
@@ -60,6 +61,13 @@ static gboolean nm_policy_activation_finish (NMActRequest *req)
 
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
+
+	/* Ensure that inactive devices don't get the activated signal
+	 * sent due to race conditions.
+	 */
+	dev_req = nm_device_get_act_request (dev);
+	if (!dev_req || (dev_req != req))
+		return FALSE;
 
     if (nm_device_is_802_11_wireless (dev))
         ap = nm_act_request_get_ap (req);
@@ -265,13 +273,15 @@ static NMDevice * nm_policy_auto_get_best_device (NMData *data, NMAccessPoint **
 	}
 
 #if 0
-	nm_info ("AUTO: Best wired device = %s, best wireless device = %s (%s)", best_wired_dev ? nm_device_get_iface (best_wired_dev) : "(null)",
-			best_wireless_dev ? nm_device_get_iface (best_wireless_dev) : "(null)", (best_wireless_dev && *ap) ? nm_ap_get_essid (*ap) : "null" );
+	nm_info ("AUTO: Best wired device = %s, best wireless device = %s (%s)", best_wired_dev ? nm_device_get_iface (NM_DEVICE (best_wired_dev)) : "(null)",
+			best_wireless_dev ? nm_device_get_iface (NM_DEVICE (best_wireless_dev)) : "(null)", (best_wireless_dev && *ap) ? nm_ap_get_essid (*ap) : "null" );
 #endif
 
 	return highest_priority_dev;
 }
 
+
+static GStaticMutex dcc_mutex = G_STATIC_MUTEX_INIT;
 
 /*
  * nm_policy_device_change_check
@@ -294,7 +304,9 @@ nm_policy_device_change_check (NMData *data)
 
 	g_return_val_if_fail (data != NULL, FALSE);
 
+	g_static_mutex_lock (&dcc_mutex);
 	data->dev_change_check_idle_id = 0;
+	g_static_mutex_unlock (&dcc_mutex);
 
 	old_dev = nm_get_active_device (data);
 
@@ -303,11 +315,19 @@ nm_policy_device_change_check (NMData *data)
 
 	if (old_dev)
 	{
+		gboolean has_link = TRUE;
 		guint32 caps = nm_device_get_capabilities (old_dev);
+
+		/* Ensure ethernet devices have a link before starting activation,
+		 * partially works around Fedora #194124.
+		 */
+		if (nm_device_is_802_3_ethernet (old_dev))
+			has_link = nm_device_has_active_link (old_dev);
 
 		/* Don't interrupt a currently activating device. */
 		if (   nm_device_is_activating (old_dev)
-		    && !nm_device_can_interrupt_activation (old_dev))
+		    && !nm_device_can_interrupt_activation (old_dev)
+		    && has_link)
 		{
 			nm_info ("Old device '%s' activating, won't change.", nm_device_get_iface (old_dev));
 			goto out;
@@ -425,12 +445,35 @@ nm_policy_device_change_check (NMData *data)
 	if (do_switch && (nm_device_is_802_3_ethernet (new_dev) || (nm_device_is_802_11_wireless (new_dev) && ap)))
 	{
 		NMActRequest *	act_req = NULL;
+		gboolean has_link = TRUE;
 
-		if ((act_req = nm_act_request_new (data, new_dev, ap, FALSE)))
+		/* Ensure ethernet devices have a link before starting activation,
+		 * partially works around Fedora #194124.
+		 */
+		if (nm_device_is_802_3_ethernet (new_dev))
+			has_link = nm_device_has_active_link (new_dev);
+
+		if (has_link)
 		{
-			nm_info ("Will activate connection '%s%s%s'.", nm_device_get_iface (new_dev), ap ? "/" : "", ap ? nm_ap_get_essid (ap) : "");
-			nm_policy_schedule_device_activation (act_req);
-			nm_act_request_unref (act_req);
+			if ((act_req = nm_act_request_new (data, new_dev, ap, FALSE)))
+			{
+				nm_info ("Will activate connection '%s%s%s'.",
+				         nm_device_get_iface (new_dev),
+				         ap ? "/" : "",
+				         ap ? nm_ap_get_essid (ap) : "");
+				nm_policy_schedule_device_activation (act_req);
+				nm_act_request_unref (act_req);
+			}
+			else
+			{
+				nm_info ("Error creating activation request for %s",
+				         nm_device_get_iface (new_dev));
+			}
+		}
+		else
+		{
+			nm_info ("Won't activate %s because it no longer has a link.",
+			         nm_device_get_iface (new_dev));
 		}
 	}
 
@@ -452,11 +495,9 @@ out:
  */
 void nm_policy_schedule_device_change_check (NMData *data)
 {
-	static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
-
 	g_return_if_fail (data != NULL);
 
-	g_static_mutex_lock (&mutex);
+	g_static_mutex_lock (&dcc_mutex);
 
 	if (data->dev_change_check_idle_id == 0)
 	{
@@ -466,8 +507,7 @@ void nm_policy_schedule_device_change_check (NMData *data)
 		data->dev_change_check_idle_id = g_source_attach (source, data->main_context);
 		g_source_unref (source);
 	}
-
-	g_static_mutex_unlock (&mutex);
+	g_static_mutex_unlock (&dcc_mutex);
 }
 
 
