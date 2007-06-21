@@ -57,7 +57,6 @@ nm_ap_security_wpa_eap_new_deserialize (DBusMessageIter *iter)
 	NMAPSecurityWPA_EAP *	security = NULL;
 	int					eap_method;
 	int					key_type;
-	int					phase2_type;
 	int					wpa_version;
 	char *				identity = NULL;
 	char *				passwd = NULL;

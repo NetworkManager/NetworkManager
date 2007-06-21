@@ -443,7 +443,7 @@ void nm_dbus_signal_wireless_enabled (NMData * data)
 
 	if (!(message = dbus_message_new_signal (NM_DBUS_PATH, NM_DBUS_INTERFACE, "WirelessEnabled")))
 	{
-		nm_warning ("%s(): Not enough memory for new dbus message!");
+		nm_warning ("%s(): Not enough memory for new dbus message!", __func__);
 		return;
 	}
 
@@ -452,7 +452,7 @@ void nm_dbus_signal_wireless_enabled (NMData * data)
 	                          DBUS_TYPE_BOOLEAN, &data->hw_rf_enabled,
 	                          DBUS_TYPE_INVALID);
 	if (!dbus_connection_send (data->dbus_connection, message, NULL))
-		nm_warning ("%s(): Could not emit the WirelessEnabled signal!");
+		nm_warning ("%s(): Could not emit the WirelessEnabled signal!", __func__);
 
 	dbus_message_unref (message);
 }

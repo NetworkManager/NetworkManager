@@ -280,7 +280,6 @@ static void handle_killswitch_pcall_done (NMData *data, DBusPendingCall * pcall)
 	GSource * source;
 	gboolean now_enabled = FALSE;
 	gboolean now_disabled = FALSE;
-	gboolean old_hw_rf_enabled = data->hw_rf_enabled;
 
 	data->ks_pcall_list = g_slist_remove (data->ks_pcall_list, pcall);
 	if (g_slist_length (data->ks_pcall_list) > 0)
@@ -832,7 +831,6 @@ void nm_hal_init (NMData *data)
 void nm_hal_deinit (NMData *data)
 {
 	DBusError error;
-	GSList * elt;
 
 	g_return_if_fail (data != NULL);
 

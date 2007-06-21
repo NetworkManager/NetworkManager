@@ -3449,10 +3449,9 @@ process_scan_results (NMDevice80211Wireless *dev,
 	char *genie, *gpos, *gend, *custom;
 	NMAccessPoint *ap = NULL;
 	size_t clen;
-	int maxrate;
+	int maxrate = 0;
 	struct iw_event iwe_buf, *iwe = &iwe_buf;
 	struct stream_descr	stream;
-	struct wireless_scan *	wscan = NULL;
 	int			ret;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
