@@ -67,6 +67,7 @@ static NMData		*nm_data = NULL;
 
 static gboolean sigterm_pipe_handler (GIOChannel *src, GIOCondition condition, gpointer data);
 static void nm_data_free (NMData *data);
+static gboolean nm_poll_killswitches(gpointer user_data);
 
 /*
  * nm_get_device_interface_from_hal
@@ -274,6 +275,184 @@ static void nm_hal_device_removed (LibHalContext *ctx, const char *udi)
 }
 
 
+static void handle_killswitch_pcall_done (NMData *data, DBusPendingCall * pcall)
+{
+	GSource * source;
+	gboolean now_enabled = FALSE;
+	gboolean now_disabled = FALSE;
+	gboolean old_hw_rf_enabled = data->hw_rf_enabled;
+
+	data->ks_pcall_list = g_slist_remove (data->ks_pcall_list, pcall);
+	if (g_slist_length (data->ks_pcall_list) > 0)
+		return;  /* not done with all killswitches yet */
+
+	if (data->hw_rf_enabled != data->tmp_hw_rf_enabled) {
+		nm_info ("Wireless now %s by radio killswitch",
+		         data->tmp_hw_rf_enabled ? "enabled" : "disabled");
+		if (data->tmp_hw_rf_enabled)
+			now_enabled = TRUE;
+		else
+			now_disabled = TRUE;
+
+		data->hw_rf_enabled = data->tmp_hw_rf_enabled;
+	}
+
+	if (data->hw_rf_enabled == data->wireless_enabled)
+		goto out;
+
+	/* Only re-enabled wireless if killswitch just changed, otherwise
+	 * ignore hardware rf enabled state.
+	 */
+	if (now_enabled && !data->wireless_enabled) {
+		data->wireless_enabled = TRUE;
+		nm_policy_schedule_device_change_check (data);
+		nm_dbus_signal_wireless_enabled (data);
+	} else if (!data->hw_rf_enabled && data->wireless_enabled) {
+		GSList * elt;
+
+		/* Deactivate all wireless devices and force them down so they
+		 * turn off their radios.
+		 */
+		nm_lock_mutex (data->dev_list_mutex, __FUNCTION__);
+		for (elt = data->dev_list; elt; elt = g_slist_next (elt)) {
+			NMDevice * dev = (NMDevice *) elt->data;
+			if (nm_device_is_802_11_wireless (dev)) {
+				nm_device_deactivate (dev);
+				nm_device_bring_down (dev);
+			}
+		}
+		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
+
+		data->wireless_enabled = FALSE;
+		nm_policy_schedule_device_change_check (data);
+		nm_dbus_signal_wireless_enabled (data);
+	}
+
+out:
+	/* Schedule another killswitch poll */
+	source = g_timeout_source_new (6000);
+	g_source_set_callback (source, nm_poll_killswitches, data, NULL);
+	g_source_attach (source, data->main_context);
+	g_source_unref (source);
+}
+
+static void nm_killswitch_getpower_reply_cb (DBusPendingCall *pcall, NMData * data)
+{
+	DBusError		err;
+	DBusMessage *	reply = NULL;
+	guint32			status;
+
+	g_return_if_fail (pcall != NULL);
+	g_return_if_fail (data != NULL);
+
+	if (!dbus_pending_call_get_completed (pcall))
+		goto out;
+
+	if (!(reply = dbus_pending_call_steal_reply (pcall)))
+		goto out;
+
+	if (message_is_error (reply)) {
+		dbus_error_init (&err);
+		dbus_set_error_from_message (&err, reply);
+		nm_info ("Error getting killswitch power: %s - %s", err.name, err.message);
+		dbus_error_free (&err);
+		goto out;
+	}
+
+	if (!dbus_message_get_args (reply, &err, DBUS_TYPE_UINT32, &status, DBUS_TYPE_INVALID)) {
+		nm_info ("Error getting killswitch power arguments: %s - %s", err.name, err.message);
+		dbus_error_free (&err);
+		goto out;
+	}
+
+	if (status == 0)
+		data->tmp_hw_rf_enabled = FALSE;
+
+out:
+	if (reply)
+		dbus_message_unref (reply);
+
+	handle_killswitch_pcall_done (data, pcall);
+	dbus_pending_call_unref (pcall);
+}
+
+
+static gboolean nm_poll_killswitches (gpointer user_data)
+{
+	NMData * data = (NMData *) user_data;
+	DBusConnection * connection = data->dbus_connection;
+	GSList * elt;
+
+	g_return_val_if_fail (data != NULL, FALSE);
+
+	data->tmp_hw_rf_enabled = TRUE;
+
+	for (elt = data->killswitch_list; elt; elt = g_slist_next (elt))
+	{
+		DBusPendingCall * pcall;
+		DBusMessage * message;
+
+		message = dbus_message_new_method_call ("org.freedesktop.Hal",
+		                                        elt->data,
+		                                        "org.freedesktop.Hal.Device.KillSwitch",
+		                                        "GetPower");
+		if (!dbus_connection_send_with_reply (connection, message, &pcall, 5000)) {
+			nm_warning ("%s(): could not send dbus message", __func__);
+		} else if (!pcall) {
+			nm_warning ("%s(): could not send dbus message; pcall was NULL", __func__);
+		} else {
+			dbus_pending_call_set_notify (pcall,
+			                              (DBusPendingCallNotifyFunction) nm_killswitch_getpower_reply_cb,
+			                              data,
+			                              NULL);
+			data->ks_pcall_list = g_slist_append (data->ks_pcall_list, pcall);
+		}
+		dbus_message_unref (message);
+	}
+	return FALSE;
+}
+
+
+/*
+ * nm_add_killswitch_device
+ *
+ * Adds a killswitch device to the list
+ *
+ */
+static void nm_add_killswitch_device (NMData * data, const char * udi)
+{
+	char * type;
+	GSList * elt;
+
+	type = libhal_device_get_property_string (data->hal_ctx, udi, "killswitch.type", NULL);
+	if (!type)
+		return;
+
+	if (strcmp (type, "wlan") != 0)
+		goto out;
+
+	/* see if it's already in the list */
+	for (elt = data->killswitch_list; elt; elt = g_slist_next (elt)) {
+		const char * list_udi = (const char *) elt->data;
+		if (strcmp (list_udi, udi) == 0)
+			goto out;
+	}
+
+	/* Start polling switches if this is the first switch we've found */
+	if (g_slist_length (data->killswitch_list) == 0) {
+		GSource * source = g_idle_source_new ();
+		g_source_set_callback (source, nm_poll_killswitches, data, NULL);
+		g_source_attach (source, data->main_context);
+		g_source_unref (source);
+	}
+
+	data->killswitch_list = g_slist_append (data->killswitch_list, g_strdup (udi));
+	nm_info ("Found radio killswitch %s", udi);
+
+out:
+	libhal_free_string (type);
+}
+
 /*
  * nm_hal_device_new_capability
  *
@@ -283,10 +462,9 @@ static void nm_hal_device_new_capability (LibHalContext *ctx, const char *udi, c
 	NMData	*data = (NMData *)libhal_ctx_get_user_data (ctx);
 
 	g_return_if_fail (data != NULL);
+	g_return_if_fail (capability != NULL);
 
-	/*nm_debug ("nm_hal_device_new_capability() called with udi = %s, capability = %s", udi, capability );*/
-
-	if (capability && ((strcmp (capability, "net.80203") == 0) || (strcmp (capability, "net.80211") == 0)))
+	if (((strcmp (capability, "net.80203") == 0) || (strcmp (capability, "net.80211") == 0)))
 	{
 		char *iface;
 
@@ -295,6 +473,10 @@ static void nm_hal_device_new_capability (LibHalContext *ctx, const char *udi, c
 			nm_create_device_and_add_to_list (data, udi, iface, FALSE, DEVICE_TYPE_UNKNOWN);
 			g_free (iface);
 		}
+	}
+	else if (strcmp (capability, "killswitch") == 0)
+	{
+		nm_add_killswitch_device (data, udi);
 	}
 }
 
@@ -338,6 +520,30 @@ void nm_add_initial_devices (NMData *data)
 	}
 
 	libhal_free_string_array (net_devices);
+}
+
+void nm_add_initial_killswitch_devices (NMData * data)
+{
+	char ** udis;
+	int		num_udis, i;
+	DBusError	error;
+
+	g_return_if_fail (data != NULL);
+
+	dbus_error_init (&error);
+	udis = libhal_find_device_by_capability (data->hal_ctx, "killswitch", &num_udis, &error);
+	if (!udis)
+		return;
+
+	if (dbus_error_is_set (&error)) {
+		nm_warning("Could not find killswitch devices: %s", error.message);
+		dbus_error_free (&error);
+		return;
+	}
+
+	for (i = 0; i < num_udis; i++)
+		nm_add_killswitch_device (data, udis[i]);
+	libhal_free_string_array (udis);
 }
 
 
@@ -616,28 +822,36 @@ void nm_hal_init (NMData *data)
 	g_return_if_fail (data != NULL);
 
 	if ((data->hal_ctx = nm_get_hal_ctx (data)))
+	{
+		nm_add_initial_killswitch_devices (data);
 		nm_add_initial_devices (data);
+	}
 }
 
 
 void nm_hal_deinit (NMData *data)
 {
+	DBusError error;
+	GSList * elt;
+
 	g_return_if_fail (data != NULL);
 
-	if (data->hal_ctx)
-	{
-		DBusError error;
+	if (!data->hal_ctx)
+		return;
 
-		dbus_error_init (&error);
-		libhal_ctx_shutdown (data->hal_ctx, &error);
-		if (dbus_error_is_set (&error))
-		{
-			nm_warning ("libhal shutdown failed - %s", error.message);
-			dbus_error_free (&error);
-		}
-		libhal_ctx_free (data->hal_ctx);
-		data->hal_ctx = NULL;
+	g_slist_foreach (data->killswitch_list, (GFunc) g_free, NULL);
+	g_slist_free (data->killswitch_list);
+	data->killswitch_list = NULL;
+
+	dbus_error_init (&error);
+	libhal_ctx_shutdown (data->hal_ctx, &error);
+	if (dbus_error_is_set (&error))
+	{
+		nm_warning ("libhal shutdown failed - %s", error.message);
+		dbus_error_free (&error);
 	}
+	libhal_ctx_free (data->hal_ctx);
+	data->hal_ctx = NULL;
 }
 
 

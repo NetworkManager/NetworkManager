@@ -483,52 +483,83 @@ static DBusMessage *nm_dbus_nm_remove_test_device (DBusConnection *connection, D
 	return (reply);
 }
 
-static DBusMessage *nm_dbus_nm_set_wireless_enabled (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
+static DBusMessage *nm_dbus_nm_set_wireless_enabled (DBusConnection *connection, DBusMessage *message, NMDbusCBData *cb_data)
 {
 	gboolean	enabled = FALSE;
 	DBusError	err;
-	NMData	*app_data;
+	NMData	*	data;
+	DBusMessage * ret = NULL;
 
-	g_return_val_if_fail (data && data->data && connection && message, NULL);
+	g_return_val_if_fail (cb_data && cb_data->data && connection && message, NULL);
 
 	dbus_error_init (&err);
 	if (!dbus_message_get_args (message, &err, DBUS_TYPE_BOOLEAN, &enabled, DBUS_TYPE_INVALID))
-		return NULL;
+		goto out;
 
-	app_data = data->data;
-	app_data->wireless_enabled = enabled;
+	data = cb_data->data;
+	if (enabled == data->wireless_enabled)
+		goto out;
 
-	if (!enabled)
-	{
-		GSList	*elt;
+	/* Hardware rfkill overrides whatever user wants */
+	if (!data->hw_rf_enabled) {
+		nm_info ("User request to %s wireless overridden by radio killswitch.",
+		         enabled ? "enable" : "disable");
 
-		/* Physically down all wireless devices */
-		nm_lock_mutex (app_data->dev_list_mutex, __FUNCTION__);
-		for (elt = app_data->dev_list; elt; elt = g_slist_next (elt))
-		{
-			NMDevice	*dev = (NMDevice *)(elt->data);
-			if (nm_device_is_802_11_wireless (dev))
-			{
+		/* Return error if user tries to re-enable wireless, or just ignore
+		 * a disable wireless request when wireless is already disabled.
+		 */
+		if (enabled) {
+			ret = nm_dbus_create_error_message (message,
+			                                    NM_DBUS_INTERFACE,
+			                                    "DisabledBySystem",
+			                                    "Wireless disabled by hardware switch.");
+		}
+		goto out;
+	}
+
+	nm_info ("User request to %s wireless.", enabled ? "enable" : "disable");
+
+	data->wireless_enabled = enabled;
+	if (!data->wireless_enabled) {
+		GSList * elt;
+
+		/* Deactivate all wireless devices and force them down so they
+		 * turn off their radios.
+		 */
+		nm_lock_mutex (data->dev_list_mutex, __FUNCTION__);
+		for (elt = data->dev_list; elt; elt = g_slist_next (elt)) {
+			NMDevice * dev = (NMDevice *) elt->data;
+			if (nm_device_is_802_11_wireless (dev)) {
 				nm_device_deactivate (dev);
 				nm_device_bring_down (dev);
 			}
 		}
-		nm_unlock_mutex (app_data->dev_list_mutex, __FUNCTION__);
+		nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
 	}
 
-	nm_policy_schedule_device_change_check (data->data);
+	nm_policy_schedule_device_change_check (data);
+	nm_dbus_signal_wireless_enabled (data);
 
-	return NULL;
+out:
+	return ret;
 }
 
-static DBusMessage *nm_dbus_nm_get_wireless_enabled (DBusConnection *connection, DBusMessage *message, NMDbusCBData *data)
+static DBusMessage *nm_dbus_nm_get_wireless_enabled (DBusConnection *connection, DBusMessage *message, NMDbusCBData *cb_data)
 {
+	NMData * data;
 	DBusMessage	*reply = NULL;
 
-	g_return_val_if_fail (data && data->data && connection && message, NULL);
+	g_return_val_if_fail (cb_data && connection && message, NULL);
 
-	if ((reply = dbus_message_new_method_return (message)))
-		dbus_message_append_args (reply, DBUS_TYPE_BOOLEAN, &data->data->wireless_enabled, DBUS_TYPE_INVALID);
+	data = cb_data->data;
+	g_return_val_if_fail (data != NULL, NULL);
+
+	if ((reply = dbus_message_new_method_return (message))) {
+		dbus_message_append_args (reply,
+		                          DBUS_TYPE_BOOLEAN, &data->wireless_enabled,
+		                          DBUS_TYPE_BOOLEAN, &data->hw_rf_enabled,
+		                          DBUS_TYPE_INVALID);
+	}
 
 	return reply;
 }

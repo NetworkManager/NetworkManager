@@ -1,3 +1,32 @@
+2007-06-21  Dan Williams  <dcbw@redhat.com>
+
+	Add HAL-based rfkill support, based on a patch from Benjamin Kahn.
+
+	* src/NetworkManagerDbus.[ch]
+		- (nm_dbus_signal_wireless_enabled): new function, emit signals when
+			wireless enabled status changes
+
+	* src/nm-dbus-nm.c
+		- (nm_dbus_nm_set_wireless_enabled): handle hardware rfkill correctly;
+			send errors when hardware switch overrides user request, and send
+			signals when wireless enabled state changes
+		- (nm_dbus_nm_get_wireless_enabled): send additional 'hardware rf enabled'
+			argument in method reply
+
+	* src/NetworkManager.c
+		- (handle_killswitch_pcall_done, nm_killswitch_getpower_reply_cb,
+		   nm_poll_killswitches, nm_add_killswitch_device,
+		   nm_add_initial_killswitch_devices): new functions; detect and handle
+			hardware killswitches exported by HAL.  Unfortunately we have to
+			poll the switches because HAL doesn't support signals for killswitches
+			yet.
+		- (nm_hal_device_new_capability): detect killswitches added asynchronously
+		- (nm_hal_init): look for killswitches when connecting to HAL
+		- (nm_hal_deinit): dispose of killswitches when deiniting HAL data
+
+	* src/NetworkManagerMain.h
+		- Add bits to track killswitches
+
 2007-06-12  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device.c

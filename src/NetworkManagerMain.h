@@ -82,6 +82,7 @@ typedef struct NMData
 	GSList *				dev_list;
 	GMutex *				dev_list_mutex;
 
+	gboolean				hw_rf_enabled;
 	gboolean				wireless_enabled;
 	gboolean				modem_active;
 	gboolean				asleep;
@@ -89,6 +90,10 @@ typedef struct NMData
 
 	GSList *				dialup_list;
 	GMutex *				dialup_list_mutex;
+
+	GSList *				killswitch_list;
+	GSList *				ks_pcall_list; /* track killswitch D-Bus pending calls */
+	gboolean				tmp_hw_rf_enabled;
 
 	struct NMAccessPointList	*allowed_ap_list;
 	struct NMAccessPointList	*invalid_ap_list;
