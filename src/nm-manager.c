@@ -13,11 +13,13 @@ static gboolean impl_manager_sleep (NMManager *manager, gboolean sleep, GError *
 
 #include "nm-manager-glue.h"
 
+static void nm_manager_connections_destroy (NMManager *manager);
 static void manager_state_changed (NMManager *manager);
 static void manager_set_wireless_enabled (NMManager *manager, gboolean enabled);
 
 typedef struct {
 	GSList *devices;
+	GSList *connections;
 	gboolean wireless_enabled;
 	gboolean sleeping;
 } NMManagerPrivate;
@@ -30,6 +32,8 @@ enum {
 	DEVICE_ADDED,
 	DEVICE_REMOVED,
 	STATE_CHANGE,
+	CONNECTION_ADDED,
+	CONNECTION_REMOVED,
 
 	LAST_SIGNAL
 };
@@ -58,6 +62,8 @@ finalize (GObject *object)
 {
 	NMManager *manager = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+
+	nm_manager_connections_destroy (manager);
 
 	while (g_slist_length (priv->devices))
 		nm_manager_remove_device (manager, NM_DEVICE (priv->devices->data));
@@ -158,6 +164,26 @@ nm_manager_class_init (NMManagerClass *manager_class)
 					  G_TYPE_NONE, 1,
 					  G_TYPE_UINT);
 
+	signals[CONNECTION_ADDED] =
+		g_signal_new ("connection-added",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMManagerClass, connection_added),
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__POINTER,
+					  G_TYPE_NONE, 1,
+					  G_TYPE_POINTER);
+
+	signals[CONNECTION_REMOVED] =
+		g_signal_new ("connection-removed",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMManagerClass, connection_removed),
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__POINTER,
+					  G_TYPE_NONE, 1,
+					  G_TYPE_POINTER);
+
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (manager_class),
 									 &dbus_glib_nm_manager_object_info);
 }
@@ -176,6 +202,16 @@ nm_manager_new (void)
 										 object);
 
 	return (NMManager *) object;
+}
+
+static void
+nm_manager_connections_destroy (NMManager *manager)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+
+	g_slist_foreach (priv->connections, (GFunc) nm_connection_destroy, NULL);
+	g_slist_free (priv->connections);
+	priv->connections = NULL;
 }
 
 static void
@@ -435,4 +471,27 @@ nm_manager_get_active_device (NMManager *manager)
 	}
 
 	return NULL;
+}
+
+/* Connections */
+
+GSList *
+nm_manager_get_connections (NMManager *manager)
+{
+	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
+
+	return NM_MANAGER_GET_PRIVATE (manager)->connections;
+}
+
+void
+nm_manager_update_connections (NMManager *manager,
+							   GSList *connections,
+							   gboolean reset)
+{
+	g_return_if_fail (NM_IS_MANAGER (manager));
+
+	if (reset)
+		nm_manager_connections_destroy (manager);
+
+	
 }

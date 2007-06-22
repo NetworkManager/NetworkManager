@@ -122,6 +122,20 @@ nm_connection_get_setting (NMConnection *connection, const char *setting_name)
 	return (NMSetting *) g_hash_table_lookup (connection->settings, setting_name);
 }
 
+gboolean
+nm_connection_compare (NMConnection *connection, NMConnection *other)
+{
+	if (!connection && !other)
+		return TRUE;
+
+	if (!connection || !other)
+		return FALSE;
+
+	/* FIXME: Implement */
+
+	return FALSE;
+}
+
 static void
 add_one_setting_to_hash (gpointer key, gpointer data, gpointer user_data)
 {

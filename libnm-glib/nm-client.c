@@ -3,17 +3,17 @@
 #include "nm-client.h"
 #include "nm-device-802-3-ethernet.h"
 #include "nm-device-802-11-wireless.h"
-#include "nm-utils.h"
 #include "nm-device-private.h"
 #include "nm-marshal.h"
 
 #include "nm-client-bindings.h"
 
-G_DEFINE_TYPE (NMClient, nm_client, DBUS_TYPE_G_PROXY)
+G_DEFINE_TYPE (NMClient, nm_client, NM_TYPE_OBJECT)
 
 #define NM_CLIENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CLIENT, NMClientPrivate))
 
 typedef struct {
+	DBusGProxy *client_proxy;
 	DBusGProxy *bus_proxy;
 	gboolean manager_running;
 	NMState state;
@@ -66,11 +66,86 @@ nm_client_init (NMClient *client)
 	priv->vpn_state = NM_VPN_ACT_STAGE_UNKNOWN;
 }
 
+static GObject*
+constructor (GType type,
+			 guint n_construct_params,
+			 GObjectConstructParam *construct_params)
+{
+	NMObject *object;
+	DBusGConnection *connection;
+	NMClientPrivate *priv;
+	GError *err = NULL;
+
+	object = (NMObject *) G_OBJECT_CLASS (nm_client_parent_class)->constructor (type,
+																				n_construct_params,
+																				construct_params);
+	if (!object)
+		return NULL;
+
+	priv = NM_CLIENT_GET_PRIVATE (object);
+	connection = nm_object_get_connection (object);
+
+	priv->client_proxy = dbus_g_proxy_new_for_name (connection,
+													NM_DBUS_SERVICE,
+													nm_object_get_path (object),
+													NM_DBUS_INTERFACE);
+
+	dbus_g_proxy_add_signal (priv->client_proxy, "StateChange", G_TYPE_UINT, G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->client_proxy,
+								 "StateChange",
+								 G_CALLBACK (client_state_change_proxy),
+								 object,
+								 NULL);
+
+	dbus_g_proxy_add_signal (priv->client_proxy, "DeviceAdded", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->client_proxy,
+								 "DeviceAdded",
+								 G_CALLBACK (client_device_added_proxy),
+								 object,
+								 NULL);
+
+	dbus_g_proxy_add_signal (priv->client_proxy, "DeviceRemoved", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->client_proxy,
+								 "DeviceRemoved",
+								 G_CALLBACK (client_device_removed_proxy),
+								 object,
+								 NULL);
+
+	setup_vpn_proxy (NM_CLIENT (object), connection);
+
+	priv->bus_proxy = dbus_g_proxy_new_for_name (connection,
+												 "org.freedesktop.DBus",
+												 "/org/freedesktop/DBus",
+												 "org.freedesktop.DBus");
+
+	dbus_g_proxy_add_signal (priv->bus_proxy, "NameOwnerChanged",
+							 G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+							 G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->bus_proxy,
+								 "NameOwnerChanged",
+								 G_CALLBACK (proxy_name_owner_changed),
+								 object, NULL);
+
+	if (!dbus_g_proxy_call (priv->bus_proxy,
+							"NameHasOwner", &err,
+							G_TYPE_STRING, NM_DBUS_SERVICE,
+							G_TYPE_INVALID,
+							G_TYPE_BOOLEAN, &priv->manager_running,
+							G_TYPE_INVALID)) {
+		g_warning ("Error on NameHasOwner DBUS call: %s", err->message);
+		g_error_free (err);
+	}
+
+	return G_OBJECT (object);
+}
+
 static void
 finalize (GObject *object)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
 
+	g_object_unref (priv->vpn_proxy);
+	g_object_unref (priv->client_proxy);
 	g_object_unref (priv->bus_proxy);
 	g_hash_table_destroy (priv->devices);
 }
@@ -95,6 +170,7 @@ nm_client_class_init (NMClientClass *client_class)
 	g_type_class_add_private (client_class, sizeof (NMClientPrivate));
 
 	/* virtual methods */
+	object_class->constructor = constructor;
 	object_class->finalize = finalize;
 
 	client_class->manager_running = manager_running;
@@ -170,42 +246,10 @@ nm_client_class_init (NMClientClass *client_class)
 					  G_TYPE_UINT);
 }
 
-static void
-setup_bus_listener (NMClient *client, DBusGConnection *connection)
-{
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
-	GError *err = NULL;
-
-	priv->bus_proxy = dbus_g_proxy_new_for_name (connection,
-												 "org.freedesktop.DBus",
-												 "/org/freedesktop/DBus",
-												 "org.freedesktop.DBus");
-
-	dbus_g_proxy_add_signal (priv->bus_proxy, "NameOwnerChanged",
-							 G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
-							 G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->bus_proxy,
-								 "NameOwnerChanged",
-								 G_CALLBACK (proxy_name_owner_changed),
-								 client, NULL);
-
-	if (!dbus_g_proxy_call (priv->bus_proxy,
-							"NameHasOwner", &err,
-							G_TYPE_STRING, NM_DBUS_SERVICE,
-							G_TYPE_INVALID,
-							G_TYPE_BOOLEAN, &priv->manager_running,
-							G_TYPE_INVALID)) {
-		g_warning ("Error on NameHasOwner DBUS call: %s", err->message);
-		g_error_free (err);
-	}
-}
-
 NMClient *
 nm_client_new (void)
 {
 	DBusGConnection *connection;
-	DBusGProxy *proxy;
-	NMClient *client;
 	GError *err = NULL;
 
 	connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &err);
@@ -215,40 +259,10 @@ nm_client_new (void)
 		return NULL;
 	}
 
-	client = (NMClient *) g_object_new (NM_TYPE_CLIENT,
-										"name", NM_DBUS_SERVICE,
-										"path", NM_DBUS_PATH,
-										"interface", NM_DBUS_INTERFACE,
-										"connection", connection,
-										NULL);
-
-	proxy = DBUS_G_PROXY (client);
-
-	dbus_g_proxy_add_signal (proxy, "StateChange", G_TYPE_UINT, G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (proxy,
-								 "StateChange",
-								 G_CALLBACK (client_state_change_proxy),
-								 NULL,
-								 NULL);
-
-	dbus_g_proxy_add_signal (proxy, "DeviceAdded", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (proxy,
-								 "DeviceAdded",
-								 G_CALLBACK (client_device_added_proxy),
-								 NULL,
-								 NULL);
-
-	dbus_g_proxy_add_signal (proxy, "DeviceRemoved", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (proxy,
-								 "DeviceRemoved",
-								 G_CALLBACK (client_device_removed_proxy),
-								 NULL,
-								 NULL);
-
-	setup_vpn_proxy (client, connection);
-	setup_bus_listener (client, connection);
-
-	return client;
+	return (NMClient *) g_object_new (NM_TYPE_CLIENT,
+									  NM_OBJECT_CONNECTION, connection,
+									  NM_OBJECT_PATH, NM_DBUS_PATH,
+									  NULL);
 }
 
 static void
@@ -273,7 +287,7 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 static void
 client_state_change_proxy (DBusGProxy *proxy, guint state, gpointer user_data)
 {
-	NMClient *client = NM_CLIENT (proxy);
+	NMClient *client = NM_CLIENT (user_data);
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
 
 	if (priv->state != state) {
@@ -290,10 +304,10 @@ get_device (NMClient *client, const char *path, gboolean create_if_not_found)
 
 	device = g_hash_table_lookup (priv->devices, path);
 	if (!device && create_if_not_found) {
-		DBusGConnection *connection = NULL;
+		DBusGConnection *connection;
 		NMDeviceType type;
 
-		g_object_get (client, "connection", &connection, NULL);
+		connection = nm_object_get_connection (NM_OBJECT (client));
 		type = nm_device_type_for_path (connection, path);
 
 		switch (type) {
@@ -317,7 +331,7 @@ get_device (NMClient *client, const char *path, gboolean create_if_not_found)
 static void
 client_device_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 {
-	NMClient *client = NM_CLIENT (proxy);
+	NMClient *client = NM_CLIENT (user_data);
 	NMDevice *device;
 
 	device = get_device (client, path, TRUE);
@@ -328,7 +342,7 @@ client_device_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 static void
 client_device_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 {
-	NMClient *client = NM_CLIENT (proxy);
+	NMClient *client = NM_CLIENT (user_data);
 	NMDevice *device;
 
 	device = get_device (client, path, FALSE);
@@ -371,7 +385,7 @@ nm_client_get_devices (NMClient *client)
 		return list;
 	}
 
-	if (!org_freedesktop_NetworkManager_get_devices (DBUS_G_PROXY (client), &array, &err)) {
+	if (!org_freedesktop_NetworkManager_get_devices (priv->client_proxy, &array, &err)) {
 		g_warning ("Error in get_devices: %s", err->message);
 		g_error_free (err);
 	} else {
@@ -405,7 +419,7 @@ nm_client_get_device_by_path (NMClient *client, const char *object_path)
 
 	devices = nm_client_get_devices (client);
 	for (iter = devices; iter; iter = iter->next) {
-		if (!strcmp (nm_device_get_path (NM_DEVICE (iter->data)), object_path)) {
+		if (!strcmp (nm_object_get_path (NM_OBJECT (iter->data)), object_path)) {
 			device = NM_DEVICE (iter->data);
 			break;
 		}
@@ -418,18 +432,9 @@ nm_client_get_device_by_path (NMClient *client, const char *object_path)
 gboolean
 nm_client_wireless_get_enabled (NMClient *client)
 {
-	GValue value = {0,};
-	gboolean enabled = FALSE;
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
-	g_return_val_if_fail (NM_IS_CLIENT (client), enabled);
-
-	if (nm_dbus_get_property (DBUS_G_PROXY (client),
-							  NM_DBUS_INTERFACE,
-							  "WirelessEnabled",
-							  &value))
-		enabled = g_value_get_boolean (&value);
-
-	return enabled;
+	return nm_object_get_boolean_property (NM_OBJECT (client), NM_DBUS_INTERFACE, "WirelessEnabled");
 }
 
 void
@@ -441,10 +446,11 @@ nm_client_wireless_set_enabled (NMClient *client, gboolean enabled)
 
 	g_value_init (&value, G_TYPE_BOOLEAN);
 	g_value_set_boolean (&value, enabled);
-	nm_dbus_set_property (DBUS_G_PROXY (client),
-						  NM_DBUS_INTERFACE,
-						  "WirelessEnabled",
-						  &value);
+
+	nm_object_set_property (NM_OBJECT (client),
+							NM_DBUS_INTERFACE,
+							"WirelessEnabled",
+							&value);
 }
 
 NMState
@@ -456,15 +462,8 @@ nm_client_get_state (NMClient *client)
 
 	priv = NM_CLIENT_GET_PRIVATE (client);
 
-	if (priv->state == NM_STATE_UNKNOWN) {
-		GValue value = {0,};
-
-		if (nm_dbus_get_property (DBUS_G_PROXY (client),
-								  NM_DBUS_INTERFACE,
-								  "State",
-								  &value))
-			priv->state = g_value_get_uint (&value);
-	}
+	if (priv->state == NM_STATE_UNKNOWN)
+		priv->state = nm_object_get_uint_property (NM_OBJECT (client), NM_DBUS_INTERFACE, "State");
 
 	return priv->state;
 }
@@ -476,7 +475,7 @@ nm_client_sleep (NMClient *client, gboolean sleep)
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 
-	if (!org_freedesktop_NetworkManager_sleep (DBUS_G_PROXY (client), sleep, &err)) {
+	if (!org_freedesktop_NetworkManager_sleep (NM_CLIENT_GET_PRIVATE (client)->client_proxy, sleep, &err)) {
 		g_warning ("Error in sleep: %s", err->message);
 		g_error_free (err);
 	}

@@ -18,6 +18,7 @@ libnm_glib_la_CFLAGS = \
 libnmincludedir = $(includedir)/libnm-glib
 
 libnminclude_HEADERS = \
+	nm-object.h		\
 	nm-client.h		\
 	nm-device.h		\
 	nm-device-802-3-ethernet.h \
@@ -27,6 +28,7 @@ libnminclude_HEADERS = \
 	nm-vpn-connection.h
 
 libnm_glib_la_SOURCES = \
+	nm-object.c		\
 	nm-client.c		\
 	nm-device.c		\
 	nm-device-private.h	\
@@ -34,8 +36,6 @@ libnm_glib_la_SOURCES = \
 	nm-device-802-11-wireless.c \
 	nm-access-point.c	\
 	nm-ip4-config.c		\
-	nm-utils.c		\
-	nm-utils.h		\
 	nm-vpn-connection.c	\
 	nm-marshal-main.c
 

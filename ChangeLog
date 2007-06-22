@@ -1,3 +1,47 @@
+2007-06-21  Tambet Ingo  <tambet@ximian.com>
+
+	* libnm-glib/Makefile.am: Add NMObject to build, remove nm-utils.[ch].
+
+	* nm-utils.[ch]: Remove.
+
+	* libnm-glib/nm-object.c: Implement a base class for all libnm-glib dbus-aware
+	objects for easy property access and dbus connection handling.
+
+	* libnm-glib/nm-client.c: Derive from NMObject.
+
+	* libnm-glib/nm-device.c: Ditto.
+
+	* libnm-glib/nm-device-802-3-ethernet.c: Changes for being based on NMObject.
+
+	* libnm-glib/nm-device-802-11-wireless.c: Ditto.
+
+	* libnm-glib/nm-ip4-config.c: Ditto.
+
+	* libnm-glib/nm-access-point.c: Ditto.
+
+	* libnm-util/nm-connection.c (nm_connection_compare): Add a stub for connection
+	comparision. Currently used by the device activation code to determine if the new
+	activation is the same as the old one.
+
+	* src/nm-dbus-nmi.c (nm_dbus_get_user_key_for_network): Don't use the obsolete and
+	wrong way of getting the dbus path for AP. Fixes the issue where the applet isn't
+	able to ask password for the AP.
+
+	* src/nm-device.c (nm_device_activate): Change the logic here - instead of giving
+	up if the device is already connected, tear down it's connection (if it isn't the
+	same as new one) and start the activation.
+
+	* src/nm-manager.c: Add the beginnings of NMConnection storage and signals.
+
+	* src/NetworkManagerAP.c (nm_ap_init): Set the default values to AP memebers, fixes
+	the issue where all APs are always listed as encrypted.
+
+	* src/NetworkManagerDbus.c (nm_dbus_get_object_path_for_network): Remove. APs have
+	their own registered paths.
+
+	* test/nm-tool.c (detail_device): Don't try to get active network from wireless
+	device if it's not connected - dbus-glib will happily crash trying to marshal NULL.
+
 2007-06-13  Tambet Ingo  <tambet@ximian.com>
 
 	* src/NetworkManagerAP.c (foreach_property_cb): Set WEP capabilities too!

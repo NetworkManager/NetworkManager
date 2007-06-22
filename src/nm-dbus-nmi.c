@@ -156,7 +156,7 @@ nm_dbus_get_user_key_for_network (NMDevice *dev,
 	NMAccessPoint *	ap;
 	gint32			attempt = 1;
 	char *			dev_path;
-	char *			net_path;
+	const char *	net_path;
 	const char *		essid;
 
 	g_return_if_fail (NM_IS_DEVICE (dev));
@@ -187,7 +187,7 @@ nm_dbus_get_user_key_for_network (NMDevice *dev,
 	}
 
 	dev_path = nm_dbus_get_object_path_for_device (dev);
-	net_path = nm_dbus_get_object_path_for_network (dev, ap);
+	net_path = nm_ap_get_dbus_path (ap);
 	if (dev_path && strlen (dev_path) && net_path && strlen (net_path)) {
 		dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path,
 									DBUS_TYPE_OBJECT_PATH, &net_path,
@@ -211,7 +211,6 @@ nm_dbus_get_user_key_for_network (NMDevice *dev,
 	} else {
 		nm_warning ("bad object path data");
 	}
-	g_free (net_path);
 	g_free (dev_path);
 
 	/* FIXME: figure out how to deal with a failure here, otherwise

@@ -110,6 +110,9 @@ nm_ap_init (NMAccessPoint *ap)
 	static guint32 counter = 0;
 
 	priv->dbus_path = g_strdup_printf (NM_DBUS_PATH_ACCESS_POINT "/%d", counter++);
+	priv->mode = IW_MODE_INFRA;
+	priv->capabilities = NM_802_11_CAP_PROTO_NONE;
+	priv->broadcast = TRUE;
 }
 
 static void

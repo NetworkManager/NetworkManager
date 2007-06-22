@@ -1,14 +1,14 @@
 #include "nm-access-point.h"
 #include "NetworkManager.h"
-#include "nm-utils.h"
 
 #include "nm-access-point-bindings.h"
 
-G_DEFINE_TYPE (NMAccessPoint, nm_access_point, DBUS_TYPE_G_PROXY)
+G_DEFINE_TYPE (NMAccessPoint, nm_access_point, NM_TYPE_OBJECT)
 
 #define NM_ACCESS_POINT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_ACCESS_POINT, NMAccessPointPrivate))
 
 typedef struct {
+	DBusGProxy *ap_proxy;
 	int strength;
 } NMAccessPointPrivate;
 
@@ -27,12 +27,46 @@ nm_access_point_init (NMAccessPoint *ap)
 {
 }
 
+static GObject*
+constructor (GType type,
+			 guint n_construct_params,
+			 GObjectConstructParam *construct_params)
+{
+	NMObject *object;
+	NMAccessPointPrivate *priv;
+
+	object = (NMObject *) G_OBJECT_CLASS (nm_access_point_parent_class)->constructor (type,
+																					  n_construct_params,
+																					  construct_params);
+	if (!object)
+		return NULL;
+
+	priv = NM_ACCESS_POINT_GET_PRIVATE (object);
+
+	priv->ap_proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (object),
+												NM_DBUS_SERVICE,
+												nm_object_get_path (object),
+												NM_DBUS_INTERFACE_DEVICE);
+
+	dbus_g_proxy_add_signal (priv->ap_proxy, "StrengthChanged", G_TYPE_UCHAR, G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->ap_proxy,
+								 "StrengthChanged",
+								 G_CALLBACK (strength_changed_proxy),
+								 NULL,
+								 NULL);
+	return G_OBJECT (object);
+}
+
+
 static void
 nm_access_point_class_init (NMAccessPointClass *ap_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ap_class);
 
 	g_type_class_add_private (ap_class, sizeof (NMAccessPointPrivate));
+
+	/* virtual methods */
+	object_class->constructor = constructor;
 
 	/* signals */
 	signals[STRENGTH_CHANGED] =
@@ -50,23 +84,10 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 NMAccessPoint *
 nm_access_point_new (DBusGConnection *connection, const char *path)
 {
-	NMAccessPoint *ap;
-
-	ap = (NMAccessPoint *) g_object_new (NM_TYPE_ACCESS_POINT,
-										 "name", NM_DBUS_SERVICE,
-										 "path", path, 
-										 "interface", NM_DBUS_INTERFACE_ACCESS_POINT,
-										 "connection", connection,
-										 NULL);
-
-	dbus_g_proxy_add_signal (DBUS_G_PROXY (ap), "StrengthChanged", G_TYPE_UCHAR, G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (DBUS_G_PROXY (ap),
-								 "StrengthChanged",
-								 G_CALLBACK (strength_changed_proxy),
-								 NULL,
-								 NULL);
-
-	return ap;
+	return (NMAccessPoint *) g_object_new (NM_TYPE_ACCESS_POINT,
+										   NM_OBJECT_CONNECTION, connection,
+										   NM_OBJECT_PATH, path,
+										   NULL);
 }
 
 static void
@@ -83,121 +104,57 @@ strength_changed_proxy (NMAccessPoint *ap, guchar strength)
 guint32
 nm_access_point_get_capabilities (NMAccessPoint *ap)
 {
-	GValue value = {0,};
-	guint32 caps = 0;
-
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), 0);
 
-	if (nm_dbus_get_property (DBUS_G_PROXY (ap),
-							  NM_DBUS_INTERFACE_ACCESS_POINT,
-							  "Capabilities",
-							  &value))
-		caps = g_value_get_uint (&value);
-
-	return caps;
+	return nm_object_get_uint_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "Capabilities");
 }
 
 gboolean
 nm_access_point_is_encrypted (NMAccessPoint *ap)
 {
-	GValue value = {0,};
-	int encrypted = FALSE;
-
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), FALSE);
 
-	if (nm_dbus_get_property (DBUS_G_PROXY (ap),
-							  NM_DBUS_INTERFACE_ACCESS_POINT,
-							  "Encrypted",
-							  &value))
-		encrypted = g_value_get_boolean (&value);
-
-	return encrypted;
+	return nm_object_get_boolean_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "Encrypted");
 }
 
 char *
 nm_access_point_get_essid (NMAccessPoint *ap)
 {
-	GValue value = {0,};
-	char *essid = NULL;
-
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), NULL);
 
-	if (nm_dbus_get_property (DBUS_G_PROXY (ap),
-							  NM_DBUS_INTERFACE_ACCESS_POINT,
-							  "Essid",
-							  &value))
-		essid = g_strdup (g_value_get_string (&value));
-
-	return essid;
+	return nm_object_get_string_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "Essid");
 }
 
 gdouble
 nm_access_point_get_frequency (NMAccessPoint *ap)
 {
-	GValue value = {0,};
-	double freq = 0.0;
+	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), 0);
 
-	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), freq);
-
-	if (nm_dbus_get_property (DBUS_G_PROXY (ap),
-							  NM_DBUS_INTERFACE_ACCESS_POINT,
-							  "Frequency",
-							  &value))
-		freq = g_value_get_double (&value);
-
-	return freq;
-
+	return nm_object_get_double_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "Frequency");
 }
 
 char *
 nm_access_point_get_hw_address (NMAccessPoint *ap)
 {
-	GValue value = {0,};
-	char *address = NULL;
-
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), NULL);
 
-	if (nm_dbus_get_property (DBUS_G_PROXY (ap),
-							  NM_DBUS_INTERFACE_ACCESS_POINT,
-							  "HwAddress",
-							  &value))
-		address = g_strdup (g_value_get_string (&value));
-
-	return address;
+	return nm_object_get_string_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "HwAddress");
 }
 
 int
 nm_access_point_get_mode (NMAccessPoint *ap)
 {
-	GValue value = {0,};
-	int mode = 0;
-
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), 0);
 
-	if (nm_dbus_get_property (DBUS_G_PROXY (ap),
-							  NM_DBUS_INTERFACE_ACCESS_POINT,
-							  "Mode",
-							  &value))
-		mode = g_value_get_int (&value);
-
-	return mode;
+	return nm_object_get_int_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "Mode");
 }
 
 guint32
 nm_access_point_get_rate (NMAccessPoint *ap)
 {
-	GValue value = {0,};
-	guint32 rate = 0;
-
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), 0);
 
-	if (nm_dbus_get_property (DBUS_G_PROXY (ap),
-							  NM_DBUS_INTERFACE_ACCESS_POINT,
-							  "Rate",
-							  &value))
-		rate = g_value_get_uint (&value);
-
-	return rate;
+	return nm_object_get_uint_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "Rate");
 }
 
 int
@@ -209,15 +166,8 @@ nm_access_point_get_strength (NMAccessPoint *ap)
 
 	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
 
-	if (priv->strength == 0) {
-		GValue value = {0,};
-	
-		if (nm_dbus_get_property (DBUS_G_PROXY (ap),
-								  NM_DBUS_INTERFACE_ACCESS_POINT,
-								  "Strength",
-								  &value))
-			priv->strength = g_value_get_int (&value);
-	}
+	if (priv->strength == 0)
+		priv->strength = nm_object_get_int_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "Strength");
 
 	return priv->strength;
 }

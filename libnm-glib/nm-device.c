@@ -1,18 +1,14 @@
 #include "nm-device.h"
 #include "nm-device-private.h"
-#include "nm-utils.h"
 
 #include "nm-device-bindings.h"
 
-G_DEFINE_TYPE (NMDevice, nm_device, G_TYPE_OBJECT)
+G_DEFINE_TYPE (NMDevice, nm_device, NM_TYPE_OBJECT)
 
 #define NM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE, NMDevicePrivate))
 
 typedef struct {
-	DBusGConnection *connection;
-	char *path;
 	DBusGProxy *device_proxy;
-	DBusGProxy *properties_proxy;
 	NMDeviceState state;
 
 	gboolean disposed;
@@ -52,39 +48,27 @@ constructor (GType type,
 			 guint n_construct_params,
 			 GObjectConstructParam *construct_params)
 {
-	GObject *object;
+	NMObject *object;
 	NMDevicePrivate *priv;
 
-	object = G_OBJECT_CLASS (nm_device_parent_class)->constructor (type,
-																   n_construct_params,
-																   construct_params);
+	object = (NMObject *) G_OBJECT_CLASS (nm_device_parent_class)->constructor (type,
+																				n_construct_params,
+																				construct_params);
 	if (!object)
 		return NULL;
 
 	priv = NM_DEVICE_GET_PRIVATE (object);
 
-	if (priv->connection == NULL || priv->path == NULL) {
-		g_warning ("Connection or path not received.");
-		g_object_unref (object);
-		return NULL;
-	}
-
-	priv->device_proxy = dbus_g_proxy_new_for_name (priv->connection,
+	priv->device_proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (object),
 													NM_DBUS_SERVICE,
-													priv->path,
+													nm_object_get_path (object),
 													NM_DBUS_INTERFACE_DEVICE);
 
 	dbus_g_proxy_add_signal (priv->device_proxy, "StateChanged", G_TYPE_UINT, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->device_proxy, "StateChanged",
 								 G_CALLBACK (device_state_change_proxy),
 								 object, NULL);
-	
-	priv->properties_proxy = dbus_g_proxy_new_for_name (priv->connection,
-														NM_DBUS_SERVICE,
-														priv->path,
-														"org.freedesktop.DBus.Properties");
-
-	return object;
+	return G_OBJECT (object);
 }
 
 static void
@@ -98,60 +82,8 @@ dispose (GObject *object)
 	priv->disposed = TRUE;
 
 	g_object_unref (priv->device_proxy);
-	g_object_unref (priv->properties_proxy);
-	dbus_g_connection_unref (priv->connection);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
-}
-
-static void
-finalize (GObject *object)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
-
-	g_free (priv->path);
-
-	G_OBJECT_CLASS (nm_device_parent_class)->finalize (object);
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-			  const GValue *value, GParamSpec *pspec)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_CONNECTION:
-		/* Construct only */
-		priv->connection = dbus_g_connection_ref ((DBusGConnection *) g_value_get_boxed (value));
-		break;
-	case PROP_PATH:
-		/* Construct only */
-		priv->path = g_strdup (g_value_get_string (value));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-get_property (GObject *object, guint prop_id,
-			  GValue *value, GParamSpec *pspec)
-{
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_CONNECTION:
-		g_value_set_boxed (value, priv->connection);
-		break;
-	case PROP_PATH:
-		g_value_set_string (value, priv->path);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
 }
 
 static void
@@ -163,27 +95,7 @@ nm_device_class_init (NMDeviceClass *device_class)
 
 	/* virtual methods */
 	object_class->constructor = constructor;
-	object_class->set_property = set_property;
-	object_class->get_property = get_property;
 	object_class->dispose = dispose;
-	object_class->finalize = finalize;
-
-	/* porperties */
-	g_object_class_install_property
-		(object_class, PROP_CONNECTION,
-		 g_param_spec_boxed (NM_DEVICE_CONNECTION,
-							 "Connection",
-							 "Connection",
-							 DBUS_TYPE_G_CONNECTION,
-							 G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-
-	g_object_class_install_property
-		(object_class, PROP_PATH,
-		 g_param_spec_string (NM_DEVICE_PATH,
-							  "Object Path",
-							  "DBus Object Path",
-							  NULL,
-							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	/* signals */
 	signals[STATE_CHANGED] =
@@ -213,8 +125,8 @@ NMDevice *
 nm_device_new (DBusGConnection *connection, const char *path)
 {
 	return (NMDevice *) g_object_new (NM_TYPE_DEVICE,
-									  NM_DEVICE_CONNECTION, connection,
-									  NM_DEVICE_PATH, path,
+									  NM_OBJECT_CONNECTION, connection,
+									  NM_OBJECT_PATH, path,
 									  NULL);
 }
 
@@ -252,8 +164,7 @@ nm_device_get_iface (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	return nm_dbus_get_string_property (NM_DEVICE_GET_PRIVATE (device)->properties_proxy,
-										NM_DBUS_INTERFACE_DEVICE, "Interface");
+	return nm_object_get_string_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Interface");
 }
 
 char *
@@ -261,8 +172,7 @@ nm_device_get_udi (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	return nm_dbus_get_string_property (NM_DEVICE_GET_PRIVATE (device)->properties_proxy,
-										NM_DBUS_INTERFACE_DEVICE, "Udi");
+	return nm_object_get_string_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Udi");
 }
 
 char *
@@ -270,8 +180,7 @@ nm_device_get_driver (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	return nm_dbus_get_string_property (NM_DEVICE_GET_PRIVATE (device)->properties_proxy,
-										NM_DBUS_INTERFACE_DEVICE, "Driver");
+	return nm_object_get_string_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Driver");
 }
 
 guint32
@@ -279,8 +188,7 @@ nm_device_get_capabilities (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), 0);
 
-	return nm_dbus_get_uint_property (NM_DEVICE_GET_PRIVATE (device)->properties_proxy,
-									  NM_DBUS_INTERFACE_DEVICE, "Capabilities");
+	return nm_object_get_uint_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Capabilities");
 }
 
 guint32
@@ -288,25 +196,21 @@ nm_device_get_ip4_address (NMDevice *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (device), 0);
 
-	return nm_dbus_get_uint_property (NM_DEVICE_GET_PRIVATE (device)->properties_proxy,
-									  NM_DBUS_INTERFACE_DEVICE, "Ip4Address");
+	return nm_object_get_uint_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Ip4Address");
 }
 
 NMIP4Config *
 nm_device_get_ip4_config (NMDevice *device)
 {
-	NMDevicePrivate *priv;
 	char *path;
 	NMIP4Config *config = NULL;
 
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	priv = NM_DEVICE_GET_PRIVATE (device);
-	path = nm_dbus_get_object_path_property (priv->properties_proxy,
-											 NM_DBUS_INTERFACE_DEVICE,
-											 "Ip4Config");
+	path = nm_object_get_object_path_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Ip4Config");
+
 	if (path) {
-		config = nm_ip4_config_new (priv->connection, path);
+		config = nm_ip4_config_new (nm_object_get_connection (NM_OBJECT (device)), path);
 		g_free (path);
 	}
 
@@ -323,7 +227,7 @@ nm_device_get_state (NMDevice *device)
 	priv = NM_DEVICE_GET_PRIVATE (device);
 
 	if (priv->state == NM_DEVICE_STATE_UNKNOWN)
-		priv->state = nm_dbus_get_uint_property (priv->properties_proxy, NM_DBUS_INTERFACE_DEVICE, "State");
+		priv->state = nm_object_get_uint_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "State");
 
 	return priv->state;
 }
@@ -344,7 +248,7 @@ nm_device_get_description (NMDevice *device)
 	/* First, get the physical device info */
 
 	udi = nm_device_get_udi (device);
-	proxy = dbus_g_proxy_new_for_name (nm_device_get_connection (device),
+	proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (device)),
 									   "org.freedesktop.Hal",
 									   udi,
 									   "org.freedesktop.Hal.Device");
@@ -363,7 +267,7 @@ nm_device_get_description (NMDevice *device)
 
 	/* Now get the vendor and product info from the physical device */
 
-	proxy = dbus_g_proxy_new_for_name (nm_device_get_connection (device),
+	proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (device)),
 									   "org.freedesktop.Hal",
 									   physical_device_udi,
 									   "org.freedesktop.Hal.Device");
@@ -399,36 +303,13 @@ nm_device_get_description (NMDevice *device)
 	return description;
 }
 
-DBusGConnection *
-nm_device_get_connection (NMDevice *device)
-{
-	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
-
-	return NM_DEVICE_GET_PRIVATE (device)->connection;
-}
-
-const char *
-nm_device_get_path (NMDevice *device)
-{
-	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
-
-	return NM_DEVICE_GET_PRIVATE (device)->path;
-}
-
-DBusGProxy *
-nm_device_get_properties_proxy (NMDevice *device)
-{
-	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
-
-	return NM_DEVICE_GET_PRIVATE (device)->properties_proxy;
-}
-
 
 NMDeviceType
 nm_device_type_for_path (DBusGConnection *connection,
 						 const char *path)
 {
 	DBusGProxy *proxy;
+	GError *err = NULL;
 	GValue value = {0,};
 	NMDeviceType type = DEVICE_TYPE_UNKNOWN;
 
@@ -438,13 +319,20 @@ nm_device_type_for_path (DBusGConnection *connection,
 	proxy = dbus_g_proxy_new_for_name (connection,
 									   NM_DBUS_SERVICE,
 									   path,
-									   NM_DBUS_INTERFACE_DEVICE);
+									   "org.freedesktop.DBus.Properties");
 
-	if (nm_dbus_get_property (proxy,
-							  NM_DBUS_INTERFACE_DEVICE,
-							  "DeviceType",
-							  &value))
+	if (dbus_g_proxy_call (proxy,
+						   "Get", &err,
+						   G_TYPE_STRING, NM_DBUS_INTERFACE_DEVICE,
+						   G_TYPE_STRING, "DeviceType",
+						   G_TYPE_INVALID,
+						   G_TYPE_VALUE, &value,
+						   G_TYPE_INVALID)) {
 		type = (NMDeviceType) g_value_get_uint (&value);
+	} else {
+		g_warning ("Error in get_property: %s\n", err->message);
+		g_error_free (err);
+	}
 
 	g_object_unref (proxy);
 

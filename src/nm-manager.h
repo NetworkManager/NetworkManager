@@ -28,21 +28,35 @@ typedef struct {
 	void (*device_removed) (NMManager *manager, NMDevice *device);
 	void (*state_change) (NMManager *manager, guint state);
 
+	void (*connection_added) (NMManager *manager, NMConnection *connection);
+	void (*connection_removed) (NMManager *manager, NMConnection *connection);
 } NMManagerClass;
 
 GType nm_manager_get_type (void);
 
 NMManager *nm_manager_new (void);
 
+/* Device handling */
+
 void nm_manager_add_device (NMManager *manager, NMDevice *device);
 void nm_manager_remove_device (NMManager *manager, NMDevice *device);
 GSList *nm_manager_get_devices (NMManager *manager);
 NMDevice *nm_manager_get_device_by_iface (NMManager *manager, const char *iface);
 NMDevice *nm_manager_get_device_by_udi (NMManager *manager, const char *udi);
+
+NMDevice *nm_manager_get_active_device (NMManager *manager);
+
+/* State handling */
+
 NMState nm_manager_get_state (NMManager *manager);
 gboolean nm_manager_wireless_enabled (NMManager *manager);
 void nm_manager_sleep (NMManager *manager, gboolean sleep);
 
-NMDevice *nm_manager_get_active_device (NMManager *manager);
+/* Connections */
+
+GSList *nm_manager_get_connections    (NMManager *manager);
+void    nm_manager_update_connections (NMManager *manager,
+									   GSList *connections,
+									   gboolean reset);
 
 #endif /* NM_MANAGER_H */

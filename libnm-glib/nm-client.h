@@ -7,6 +7,7 @@
 #include <dbus/dbus-glib.h>
 #include <NetworkManager.h>
 #include <NetworkManagerVPN.h>
+#include "nm-object.h"
 #include "nm-device.h"
 #include "nm-vpn-connection.h"
 
@@ -18,11 +19,11 @@
 #define NM_CLIENT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_CLIENT, NMClientClass))
 
 typedef struct {
-	DBusGProxy parent;
+	NMObject parent;
 } NMClient;
 
 typedef struct {
-	DBusGProxyClass parent;
+	NMObjectClass parent;
 
 	/* Signals */
 	void (*manager_running) (NMClient *client, gboolean running);

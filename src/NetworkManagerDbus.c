@@ -102,30 +102,6 @@ char * nm_dbus_get_object_path_for_device (NMDevice *dev)
 }
 
 
-/*
- * nm_dbus_get_object_path_for_network
- *
- * Copies the object path for a network object.  Caller must free returned string.
- *
- */
-char * nm_dbus_get_object_path_for_network (NMDevice *dev, NMAccessPoint *ap)
-{
-	char *object_path, *escaped_object_path;
-
-	g_return_val_if_fail (dev != NULL, NULL);
-	g_return_val_if_fail (ap != NULL, NULL);
-
-	if (!nm_ap_get_essid (ap))
-		return NULL;
-
-	object_path = g_strdup_printf ("%s/%s/Networks/%s", NM_DBUS_PATH_DEVICE, nm_device_get_iface (dev), nm_ap_get_essid (ap));
-	escaped_object_path = nm_dbus_escape_object_path (object_path);
-	g_free (object_path);
-
-	return escaped_object_path;
-}
-
-
 /*-------------------------------------------------------------*/
 /* Handler code */
 /*-------------------------------------------------------------*/

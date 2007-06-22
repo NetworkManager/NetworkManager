@@ -1024,13 +1024,21 @@ nm_device_activate (NMDeviceInterface *device,
 	NMDevice *self = NM_DEVICE (device);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->state != NM_DEVICE_STATE_DISCONNECTED)
-		/* Already activating or activated */
-		return;
-
 	if (!NM_DEVICE_GET_CLASS (self)->check_connection (self, connection))
 		/* connection is invalid */
 		return;
+
+	if (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED || nm_device_is_activating (self)) {
+		NMConnection *current_connection;
+
+		current_connection = nm_act_request_get_connection (nm_device_get_act_request (self));
+
+		if (nm_connection_compare (connection, current_connection))
+			/* Already activating or activated with the same connection */
+			return;
+
+		nm_device_deactivate (device);
+	}
 
 	nm_info ("Activating device %s", nm_device_get_iface (self));
 	priv->act_request = nm_act_request_new (connection, user_requested);

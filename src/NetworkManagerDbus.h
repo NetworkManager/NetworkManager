@@ -40,7 +40,6 @@ static inline gboolean message_is_error (DBusMessage *msg)
 }
 
 char *		nm_dbus_get_object_path_for_device		(NMDevice *dev);
-char *		nm_dbus_get_object_path_for_network	(NMDevice *dev, NMAccessPoint *ap);
 
 DBusMessage *	nm_dbus_create_error_message			(DBusMessage *message, const char *exception_namespace, const char *exception, const char *format, ...);
 

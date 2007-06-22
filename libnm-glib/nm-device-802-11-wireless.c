@@ -1,6 +1,5 @@
 #include "nm-device-802-11-wireless.h"
 #include "nm-device-private.h"
-#include "nm-utils.h"
 
 #include "nm-device-802-11-wireless-bindings.h"
 
@@ -55,9 +54,9 @@ constructor (GType type,
 
 	priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (object);
 
-	priv->wireless_proxy = dbus_g_proxy_new_for_name (nm_device_get_connection (NM_DEVICE (object)),
+	priv->wireless_proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
 													  NM_DBUS_SERVICE,
-													  nm_device_get_path (NM_DEVICE (object)),
+													  nm_object_get_path (NM_OBJECT (object)),
 													  NM_DBUS_INTERFACE_DEVICE_WIRELESS);
 
 	dbus_g_proxy_add_signal (priv->wireless_proxy, "NetworkAdded", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
@@ -69,7 +68,7 @@ constructor (GType type,
 	dbus_g_proxy_connect_signal (priv->wireless_proxy, "NetworkRemoved",
 								 G_CALLBACK (network_removed_proxy),
 								 object, NULL);
-	
+
 	return object;
 }
 
@@ -121,7 +120,7 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *device_class)
 					  G_TYPE_NONE, 1,
 					  G_TYPE_OBJECT);
 
-	signals[NETWORK_ADDED] =
+	signals[NETWORK_REMOVED] =
 		g_signal_new ("network-removed",
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
@@ -139,8 +138,8 @@ nm_device_802_11_wireless_new (DBusGConnection *connection, const char *path)
 	g_return_val_if_fail (path != NULL, NULL);
 
 	return (NMDevice80211Wireless *) g_object_new (NM_TYPE_DEVICE_802_11_WIRELESS,
-												   NM_DEVICE_CONNECTION, connection,
-												   NM_DEVICE_PATH, path,
+												   NM_OBJECT_CONNECTION, connection,
+												   NM_OBJECT_PATH, path,
 												   NULL);
 }
 
@@ -149,8 +148,7 @@ nm_device_802_11_wireless_get_hw_address (NMDevice80211Wireless *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_802_11_WIRELESS (device), NULL);
 
-	return nm_dbus_get_string_property (nm_device_get_properties_proxy (NM_DEVICE (device)),
-										NM_DBUS_INTERFACE_DEVICE_WIRELESS, "HwAddress");
+	return nm_object_get_string_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE_WIRELESS, "HwAddress");
 }
 
 int
@@ -158,8 +156,7 @@ nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_802_11_WIRELESS (device), 0);
 
-	return nm_dbus_get_int_property (nm_device_get_properties_proxy (NM_DEVICE (device)),
-									 NM_DBUS_INTERFACE_DEVICE_WIRELESS, "Mode");
+	return nm_object_get_int_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE_WIRELESS, "Mode");
 }
 
 int
@@ -167,8 +164,7 @@ nm_device_802_11_wireless_get_bitrate (NMDevice80211Wireless *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_802_11_WIRELESS (device), 0);
 
-	return nm_dbus_get_int_property (nm_device_get_properties_proxy (NM_DEVICE (device)),
-									 NM_DBUS_INTERFACE_DEVICE_WIRELESS, "Bitrate");
+	return nm_object_get_int_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE_WIRELESS, "Bitrate");
 }
 
 guint32
@@ -176,8 +172,7 @@ nm_device_802_11_wireless_get_capabilities (NMDevice80211Wireless *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_802_11_WIRELESS (device), 0);
 
-	return nm_dbus_get_uint_property (nm_device_get_properties_proxy (NM_DEVICE (device)),
-									  NM_DBUS_INTERFACE_DEVICE_WIRELESS, "WirelessCapabilities");
+	return nm_object_get_uint_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE_WIRELESS, "WirelessCapabilities");
 }
 
 static NMAccessPoint *
@@ -188,7 +183,7 @@ get_network (NMDevice80211Wireless *device, const char *path, gboolean create_if
 
 	ap = g_hash_table_lookup (priv->networks, path);
 	if (!ap && create_if_not_found) {
-		ap = nm_access_point_new (nm_device_get_connection (NM_DEVICE (device)), path);
+		ap = nm_access_point_new (nm_object_get_connection (NM_OBJECT (device)), path);
 		if (ap)
 			g_hash_table_insert (priv->networks, g_strdup (path), ap);
 	}
@@ -204,9 +199,7 @@ nm_device_802_11_wireless_get_active_network (NMDevice80211Wireless *device)
 
 	g_return_val_if_fail (NM_IS_DEVICE_802_11_WIRELESS (device), NULL);
 
-	path = nm_dbus_get_object_path_property (nm_device_get_properties_proxy (NM_DEVICE (device)),
-											 NM_DBUS_INTERFACE_DEVICE_WIRELESS,
-											 "ActiveNetwork");
+	path = nm_object_get_object_path_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE_WIRELESS, "ActiveNetwork");
 	if (path) {
 		ap = get_network (device, path, TRUE);
 		g_free (path);

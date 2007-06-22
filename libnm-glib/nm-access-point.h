@@ -10,14 +10,14 @@
 
 #include <glib/gtypes.h>
 #include <glib-object.h>
-#include <dbus/dbus-glib.h>
+#include "nm-object.h"
 
 typedef struct {
-	DBusGProxy parent;
+	NMObject parent;
 } NMAccessPoint;
 
 typedef struct {
-	DBusGProxyClass parent;
+	NMObjectClass parent;
 
 	/* Signals */
 	void (*strength_changed) (NMAccessPoint *ap, gint8 strength);
