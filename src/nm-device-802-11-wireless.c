@@ -190,14 +190,12 @@ static void cleanup_supplicant_interface (NMDevice80211Wireless * self);
 static void
 network_added (NMDevice80211Wireless *device, NMAccessPoint *ap)
 {
-	nm_debug ("Network added: %s", nm_ap_get_essid (ap));
 	g_signal_emit (device, signals[NETWORK_ADDED], 0, ap);
 }
 
 static void
 network_removed (NMDevice80211Wireless *device, NMAccessPoint *ap)
 {
-	nm_debug ("Network removed: %s", nm_ap_get_essid (ap));
 	g_signal_emit (device, signals[NETWORK_REMOVED], 0, ap);
 }
 
