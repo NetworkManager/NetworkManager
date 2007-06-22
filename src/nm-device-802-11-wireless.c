@@ -190,12 +190,14 @@ static void cleanup_supplicant_interface (NMDevice80211Wireless * self);
 static void
 network_added (NMDevice80211Wireless *device, NMAccessPoint *ap)
 {
+	nm_debug ("Network added: %s", nm_ap_get_essid (ap));
 	g_signal_emit (device, signals[NETWORK_ADDED], 0, ap);
 }
 
 static void
 network_removed (NMDevice80211Wireless *device, NMAccessPoint *ap)
 {
+	nm_debug ("Network removed: %s", nm_ap_get_essid (ap));
 	g_signal_emit (device, signals[NETWORK_REMOVED], 0, ap);
 }
 
@@ -1880,8 +1882,6 @@ merge_scanned_ap (NMDevice80211Wireless *dev,
 	
 	NMAccessPointList *list;
 	NMAccessPoint *list_ap = NULL;
-	gboolean strength_changed = FALSE;
-	gboolean new = FALSE;
 	const struct ether_addr *merge_bssid;
 
 	list = nm_device_802_11_wireless_ap_list_get (dev);
@@ -1899,18 +1899,8 @@ merge_scanned_ap (NMDevice80211Wireless *dev,
 		const char *merge_essid = nm_ap_get_essid (merge_ap);
 		const glong	merge_ap_seen = nm_ap_get_last_seen (merge_ap);
 
-		/* Did the AP's name change? */
-		if (!devlist_essid || !merge_essid || nm_null_safe_strcmp (devlist_essid, merge_essid)) {
-			network_removed (dev, list_ap);
-			new = TRUE;
-		}
-
 		nm_ap_set_capabilities (list_ap, nm_ap_get_capabilities (merge_ap));
-		if (nm_ap_get_strength (merge_ap) != nm_ap_get_strength (list_ap)) {
-			nm_ap_set_strength (list_ap, nm_ap_get_strength (merge_ap));
-			strength_changed = TRUE;
-		}
-
+		nm_ap_set_strength (list_ap, nm_ap_get_strength (merge_ap));
 		nm_ap_set_last_seen (list_ap, merge_ap_seen);
 		nm_ap_set_broadcast (list_ap, nm_ap_get_broadcast (merge_ap));
 
@@ -1919,12 +1909,12 @@ merge_scanned_ap (NMDevice80211Wireless *dev,
 		 */
 		nm_ap_set_artificial (list_ap, FALSE);
 
-		/* Have to change AP's name _after_ dbus signal for old network name
-		 * has gone out.
-		 */
-		nm_ap_set_essid (list_ap, merge_essid);
-
-		network_added (dev, list_ap);
+		/* Did the AP's name change? */
+		if (!devlist_essid || !merge_essid || nm_null_safe_strcmp (devlist_essid, merge_essid)) {
+			network_removed (dev, list_ap);
+			nm_ap_set_essid (list_ap, merge_essid);
+			network_added (dev, list_ap);
+		}
 	}
 	else if ((list_ap = nm_ap_list_get_ap_by_essid (list, nm_ap_get_essid (merge_ap))))
 	{
@@ -1961,7 +1951,6 @@ merge_scanned_ap (NMDevice80211Wireless *dev,
 		nm_ap_list_append_ap (list, merge_ap);
 		network_added (dev, merge_ap);
 		list_ap = merge_ap;
-		new = TRUE;
 	}
 }
 

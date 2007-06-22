@@ -1,3 +1,8 @@
+2007-06-22  Tambet Ingo  <tambet@ximian.com>
+
+	* src/nm-device-802-11-wireless.c (merge_scanned_ap): Don't advertise constantly
+	that we got a new AP when we just update existing AP properties.
+
 2007-06-21  Tambet Ingo  <tambet@ximian.com>
 
 	* libnm-glib/Makefile.am: Add NMObject to build, remove nm-utils.[ch].
