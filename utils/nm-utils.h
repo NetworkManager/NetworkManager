@@ -129,7 +129,7 @@ G_STMT_START								\
 gchar *nm_dbus_escape_object_path (const gchar *utf8_string);
 gchar *nm_dbus_unescape_object_path (const gchar *object_path);
 
-char *nm_utils_essid_to_utf8 (const char *orig_essid);
+char *nm_utils_ssid_to_utf8 (const char *ssid, guint32 len);
 
 /* #define DBUS_PENDING_CALL_DEBUG */
 

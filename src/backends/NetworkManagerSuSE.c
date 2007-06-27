@@ -393,9 +393,14 @@ found:
 		NMAccessPoint *	list_ap;
 		char *			key;
 		char *			mode;
+		GByteArray *	ssid;
 
 		ap = nm_ap_new ();
-		nm_ap_set_essid (ap, buf);
+
+		ssid = g_byte_array_sized_new (strlen (buf));
+		g_byte_array_append (ssid, buf, strlen (buf));
+		nm_ap_set_ssid (ap, ssid);
+
 		nm_ap_set_timestamp (ap, time (NULL), 0);
 		nm_ap_set_fallback (ap, TRUE);
 
@@ -495,9 +500,9 @@ found:
 			g_object_unref (G_OBJECT (security));
 		}
 
-		if ((list_ap = nm_ap_list_get_ap_by_essid (app_data->allowed_ap_list, buf)))
+		if ((list_ap = nm_ap_list_get_ap_by_ssid (app_data->allowed_ap_list, ssid)))
 		{
-			nm_ap_set_essid (list_ap, nm_ap_get_essid (ap));
+			nm_ap_set_ssid (list_ap, nm_ap_get_ssid (ap));
 			nm_ap_set_timestamp_via_timestamp (list_ap, nm_ap_get_timestamp (ap));
 			nm_ap_set_fallback (list_ap, TRUE);
 			nm_ap_set_security (list_ap, nm_ap_get_security (ap));
@@ -507,6 +512,7 @@ found:
 			/* New AP, just add it to the list */
 			nm_ap_list_append_ap (app_data->allowed_ap_list, ap);
 		}
+		g_byte_array_free (ssid, TRUE);
 		g_object_unref (ap);
 
 		nm_debug ("Adding '%s' to the list of trusted networks", buf);

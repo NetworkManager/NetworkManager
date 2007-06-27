@@ -38,7 +38,7 @@
 
 #define NM_AP_CAPABILITIES "capabilities"
 #define NM_AP_ENCRYPTED "encrypted"
-#define NM_AP_ESSID "essid"
+#define NM_AP_SSID "ssid"
 #define NM_AP_FREQUENCY "frequency"
 #define NM_AP_HW_ADDRESS "hw-address"
 #define NM_AP_MODE "mode"
@@ -67,10 +67,8 @@ const GTimeVal *	nm_ap_get_timestamp				(const NMAccessPoint *ap);
 void				nm_ap_set_timestamp				(NMAccessPoint *ap, glong sec, glong usec);
 void				nm_ap_set_timestamp_via_timestamp	(NMAccessPoint *ap, const GTimeVal *timestamp);
 
-const char *		nm_ap_get_essid		(const NMAccessPoint *ap);
-void				nm_ap_set_essid		(NMAccessPoint *ap, const char *essid);
-/* Get essid in original over-the-air form */
-const char *		nm_ap_get_orig_essid	(const NMAccessPoint *ap);
+const GByteArray *	nm_ap_get_ssid (const NMAccessPoint * ap);
+void				nm_ap_set_ssid (NMAccessPoint * ap, const GByteArray * ssid);
 
 guint32			nm_ap_get_capabilities	(NMAccessPoint *ap);
 void				nm_ap_set_capabilities	(NMAccessPoint *ap, guint32 capabilities);
@@ -125,6 +123,6 @@ void				nm_ap_add_capabilities_for_wep (NMAccessPoint *ap);
  * This is not intended to return true for all APs with manufacturer defaults.  It is intended to return true for
  * only the MOST COMMON manufacturing defaults.
  */
-gboolean			nm_ap_has_manufacturer_default_essid	(NMAccessPoint *ap);
+gboolean			nm_ap_has_manufacturer_default_ssid	(NMAccessPoint *ap);
 
 #endif /* NM_ACCESS_POINT_H */

@@ -432,7 +432,7 @@ real_act_stage2_config (NMDevice *dev)
  * nm_device_activate_stage2_device_config
  *
  * Determine device parameters and set those on the device, ie
- * for wireless devices, set essid, keys, etc.
+ * for wireless devices, set SSID, keys, etc.
  *
  */
 static gboolean

@@ -158,22 +158,23 @@ void nm_ap_list_remove_ap (NMAccessPointList *list, NMAccessPoint *ap)
 
 
 /*
- * nm_ap_list_remove_ap_by_essid
+ * nm_ap_list_remove_ap_by_ssid
  *
- * Helper to remove an AP from an AP list by the AP's ESSID.
+ * Helper to remove an AP from an AP list by the AP's SSID.
  *
  */
-void nm_ap_list_remove_ap_by_essid (NMAccessPointList *list, const char *network)
+void
+nm_ap_list_remove_ap_by_ssid (NMAccessPointList *list, const GByteArray * ssid)
 {
-	GSList		*elt = NULL;
+	GSList * elt = NULL;
 
 	g_return_if_fail (list != NULL);
-	g_return_if_fail (network != NULL);
+	g_return_if_fail (ssid != NULL);
 
 	for (elt = list->ap_list; elt; elt = g_slist_next (elt)) {
 		NMAccessPoint * list_ap = (NMAccessPoint *) elt->data;
 
-		if (nm_null_safe_strcmp (nm_ap_get_essid (list_ap), network) == 0) {
+		if (nm_utils_same_ssid (nm_ap_get_ssid (list_ap), ssid)) {
 			list->ap_list = g_slist_remove_link (list->ap_list, elt);
 			g_object_unref (list_ap);
 			g_slist_free (elt);
@@ -182,10 +183,10 @@ void nm_ap_list_remove_ap_by_essid (NMAccessPointList *list, const char *network
 	}
 }
 
-/* nm_ap_list_remove_duplicate_essids
+/* nm_ap_list_remove_duplicate_ssids
  *
  */
-void    nm_ap_list_remove_duplicate_essids (NMAccessPointList *list)
+void    nm_ap_list_remove_duplicate_ssids (NMAccessPointList *list)
 {
 	NMAccessPoint   *removal_ap;
 	NMAccessPoint   *list_ap_max;
@@ -201,12 +202,14 @@ void    nm_ap_list_remove_duplicate_essids (NMAccessPointList *list)
 
 	for (elt_i = list->ap_list; elt_i; elt_i = g_slist_next (elt_i)) {
 		NMAccessPoint * list_ap_i = (NMAccessPoint *) elt_i->data;
+		const GByteArray * list_ap_i_ssid = nm_ap_get_ssid (list_ap_i);
 		gboolean        found = FALSE;
 
 		for (elt_j = list->ap_list; elt_j < elt_i; elt_j = g_slist_next (elt_j)) {
-			NMAccessPoint   *list_ap_j = (NMAccessPoint *) elt_j->data;
+			NMAccessPoint * list_ap_j = (NMAccessPoint *) elt_j->data;
+			const GByteArray * list_ap_j_ssid = nm_ap_get_ssid (list_ap_j);
 
-			if ((found = (nm_null_safe_strcmp (nm_ap_get_essid (list_ap_i), nm_ap_get_essid (list_ap_j)) == 0)))
+			if ((found = nm_utils_same_ssid (list_ap_i_ssid, list_ap_j_ssid)))
 				break;
 		}
 
@@ -219,9 +222,10 @@ void    nm_ap_list_remove_duplicate_essids (NMAccessPointList *list)
 
 		for (elt_j = g_slist_next (elt_i); elt_j; elt_j = g_slist_next (elt_j)) {
 			NMAccessPoint   *list_ap_j = (NMAccessPoint *) elt_j->data;
+			const GByteArray * list_ap_j_ssid = nm_ap_get_ssid (list_ap_j);
 
 			strengthj = nm_ap_get_strength (list_ap_j);
-			if (nm_null_safe_strcmp (nm_ap_get_essid (list_ap_i), nm_ap_get_essid (list_ap_j)) == 0) {
+			if (nm_utils_same_ssid (list_ap_i_ssid, list_ap_j_ssid)) {
 				if (strengthj > max_strength) {
 					removal_list = g_slist_append (removal_list, list_ap_max);
 					list_ap_max = list_ap_j;
@@ -242,38 +246,35 @@ void    nm_ap_list_remove_duplicate_essids (NMAccessPointList *list)
 
 
 /*
- * nm_ap_list_get_ap_by_essid
+ * nm_ap_list_get_ap_by_ssid
  *
  * Search through an access point list and return the access point
- * that has a given essid.
+ * that has a given SSID.
  *
  */
-NMAccessPoint *nm_ap_list_get_ap_by_essid (NMAccessPointList *list, const char *network)
+NMAccessPoint *
+nm_ap_list_get_ap_by_ssid (NMAccessPointList *list, const GByteArray * ssid)
 {
 	NMAccessPoint	*ap;
 	NMAccessPoint	*found_ap = NULL;
 	NMAPListIter	*iter;
 
-	if (!network)
-		return (NULL);
-
-	if (!list)
-		return (NULL);
+	if (!ssid || !list)
+		return NULL;
 
 	if (!(iter = nm_ap_list_iter_new (list)))
-		return (NULL);
+		return NULL;
 
-	while ((ap = nm_ap_list_iter_next (iter)))
-	{
-		if (nm_ap_get_essid (ap) && (nm_null_safe_strcmp (nm_ap_get_essid (ap), network) == 0))
-		{
+	while ((ap = nm_ap_list_iter_next (iter))) {
+		const GByteArray * ap_ssid = nm_ap_get_ssid (ap);
+		if (ap_ssid && nm_utils_same_ssid (ap_ssid, ssid)) {
 			found_ap = ap;
 			break;
 		}
 	}
 	nm_ap_list_iter_free (iter);
 
-	return (found_ap);
+	return found_ap;
 }
 
 
@@ -362,7 +363,7 @@ void nm_ap_list_copy_properties (NMAccessPointList *dest, NMAccessPointList *sou
 	{
 		NMAccessPoint	*src_ap = NULL;
 
-		if ((src_ap = nm_ap_list_get_ap_by_essid (source, nm_ap_get_essid (dest_ap))))
+		if ((src_ap = nm_ap_list_get_ap_by_ssid (source, nm_ap_get_ssid (dest_ap))))
 		{
 			nm_ap_set_invalid (dest_ap, nm_ap_get_invalid (src_ap));
 			nm_ap_set_security (dest_ap, nm_ap_get_security (src_ap));
@@ -374,45 +375,45 @@ void nm_ap_list_copy_properties (NMAccessPointList *dest, NMAccessPointList *sou
 
 
 /*
- * nm_ap_list_copy_one_essid_by_address
+ * nm_ap_list_copy_one_ssid_by_address
  *
- * If the access point doesn't have an ESSID, search through a list of access points
+ * If the access point doesn't have an SSID, search through a list of access points
  * and find one (if any) that has the MAC address of the access point we're looking for.
- * If one is found, copy the essid over to the original access point.
+ * If one is found, copy the SSID over to the original access point.
  *
  */
 void
-nm_ap_list_copy_one_essid_by_address (NMAccessPoint *ap,
-                                      NMAccessPointList *search_list)
+nm_ap_list_copy_one_ssid_by_address (NMAccessPoint *ap,
+                                     NMAccessPointList *search_list)
 {
-	NMAccessPoint *found_ap;
-	const char *essid;
+	NMAccessPoint * found_ap;
+	const GByteArray * ssid;
 
 	g_return_if_fail (ap != NULL);
 
-	/* Ignore APs that already have an ESSID */
-	if (!search_list || nm_ap_get_essid (ap))
+	/* Ignore APs that already have an SSID */
+	if (!search_list || nm_ap_get_ssid (ap))
 		return;
 
 	found_ap = nm_ap_list_get_ap_by_address (search_list, nm_ap_get_address (ap));
-	essid = found_ap ? nm_ap_get_essid (found_ap) : NULL; 
+	ssid = found_ap ? nm_ap_get_ssid (found_ap) : NULL; 
 
-	if (essid)
-		nm_ap_set_essid (ap, essid);
+	if (ssid)
+		nm_ap_set_ssid (ap, ssid);
 }
 
 
 /*
- * nm_ap_list_copy_essids_by_address
+ * nm_ap_list_copy_ssids_by_address
  *
- * For each blank-essid access point in the destination list, try to find
+ * For each blank-SSID access point in the destination list, try to find
  * an access point in the source list that has the same MAC address, and if
- * its found, copy the source access point's essid to the dest access point.
+ * its found, copy the source access point's SSID to the dest access point.
  *
  */
 void
-nm_ap_list_copy_essids_by_address (NMAccessPointList *dest,
-                                   NMAccessPointList *source)
+nm_ap_list_copy_ssids_by_address (NMAccessPointList *dest,
+                                  NMAccessPointList *source)
 {
 	NMAPListIter	*iter;
 	NMAccessPoint	*dest_ap;
@@ -424,7 +425,7 @@ nm_ap_list_copy_essids_by_address (NMAccessPointList *dest,
 		return;
 
 	while ((dest_ap = nm_ap_list_iter_next (iter)))
-		nm_ap_list_copy_one_essid_by_address (dest_ap, source);
+		nm_ap_list_copy_one_ssid_by_address (dest_ap, source);
 	nm_ap_list_iter_free (iter);
 }
 
@@ -532,6 +533,7 @@ void nm_ap_list_print_members (NMAccessPointList *list, const char *name)
 		const struct ether_addr * eth_addr = nm_ap_get_address (ap);
 		char             addr[ETH_ALEN];
 		double           freq = nm_ap_get_freq (ap);
+		const GByteArray * ssid = nm_ap_get_ssid (ap);
 
 		if (security)
 			key = nm_ap_security_get_key (security);
@@ -541,7 +543,7 @@ void nm_ap_list_print_members (NMAccessPointList *list, const char *name)
 		nm_info ("%d)\t'%s' (%p) stamp=%ld enc=%d addr=" MAC_FMT " strength=%d "
 		         "freq=[%f/%d] rate=%d inval=%d mode=%d seen=%ld",
 		         i,
-		         nm_ap_get_essid (ap),
+		         ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
 		         ap,
 		         timestamp->tv_sec,
 		         nm_ap_get_encrypted (ap),

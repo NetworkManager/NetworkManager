@@ -83,8 +83,8 @@ NMDevice80211Wireless *nm_device_802_11_wireless_new (const char *iface,
 													  gboolean test_dev,
 													  NMData *app_data);
 
-void			nm_device_802_11_wireless_set_essid (NMDevice80211Wireless *self,
-										  const char *essid);
+void			nm_device_802_11_wireless_set_ssid (NMDevice80211Wireless *self,
+										  const GByteArray * ssid);
 
 void nm_device_802_11_wireless_get_address (NMDevice80211Wireless *dev,
 								   struct ether_addr *addr);
@@ -92,7 +92,7 @@ void nm_device_802_11_wireless_get_address (NMDevice80211Wireless *dev,
 void			nm_device_802_11_wireless_get_bssid (NMDevice80211Wireless *dev,
                                                     struct ether_addr *bssid);
 
-const char *	nm_device_802_11_wireless_get_essid (NMDevice80211Wireless *self);
+const GByteArray *	nm_device_802_11_wireless_get_ssid (NMDevice80211Wireless *self);
 
 gboolean		nm_device_802_11_wireless_set_mode (NMDevice80211Wireless *self,
 										 const int mode);
@@ -114,8 +114,8 @@ NMAccessPoint *	nm_device_802_11_wireless_ap_list_get_ap_by_obj_path (NMDevice80
 NMAccessPoint *	nm_device_802_11_wireless_ap_list_get_ap_by_bssid (NMDevice80211Wireless *dev,
 													const struct ether_addr *bssid);
 
-NMAccessPoint *	nm_device_802_11_wireless_ap_list_get_ap_by_essid (NMDevice80211Wireless *dev,
-													const char *essid);
+NMAccessPoint *	nm_device_802_11_wireless_ap_list_get_ap_by_ssid (NMDevice80211Wireless *dev,
+													const GByteArray * ssid);
 
 int		nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *self);
 

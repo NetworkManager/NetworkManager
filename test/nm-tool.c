@@ -37,6 +37,47 @@
 #include <nm-device-802-3-ethernet.h>
 #include <nm-device-802-11-wireless.h>
 
+/* Shamelessly ripped from the Linux kernel ieee80211 stack */
+static gboolean
+nm_utils_is_empty_ssid (const char * ssid, int len)
+{
+        /* Single white space is for Linksys APs */
+        if (len == 1 && ssid[0] == ' ')
+                return TRUE;
+
+        /* Otherwise, if the entire ssid is 0, we assume it is hidden */
+        while (len--) {
+                if (ssid[len] != '\0')
+                        return FALSE;
+        }
+        return TRUE;
+}
+
+static const char *
+nm_utils_escape_ssid (const char * ssid, guint32 len)
+{
+	static char escaped[IW_ESSID_MAX_SIZE * 2 + 1];
+	const char *s = ssid;
+	char *d = escaped;
+
+	if (nm_utils_is_empty_ssid (ssid, len)) {
+		memcpy (escaped, "<hidden>", sizeof ("<hidden>"));
+		return escaped;
+	}
+
+	len = MIN (len, (guint32) IW_ESSID_MAX_SIZE);
+	while (len--) {
+		if (*s == '\0') {
+			*d++ = '\\';
+			*d++ = '0';
+			s++;
+		} else {
+			*d++ = *s++;
+		}
+	}
+	*d = '\0';
+	return escaped;
+}
 
 
 static gboolean
@@ -107,7 +148,7 @@ detail_network (gpointer data, gpointer user_data)
 	GString *str;
 	gboolean active = FALSE;
 	guint32 capabilities;
-	char *essid;
+	GByteArray * ssid;
 	char *tmp;
 
 	capabilities = nm_access_point_get_capabilities (ap);
@@ -142,9 +183,10 @@ detail_network (gpointer data, gpointer user_data)
 
 	/* FIXME: broadcast/hidden */
 
-	essid = nm_access_point_get_essid (ap);
-	tmp = g_strdup_printf ("  %s%s", active ? "*" : "", essid);
-	g_free (essid);
+	ssid = nm_access_point_get_ssid (ap);
+	tmp = g_strdup_printf ("  %s%s", active ? "*" : "",
+	                       ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
+	g_byte_array_free (ssid, TRUE);
 
 	print_string (tmp, str->str);
 

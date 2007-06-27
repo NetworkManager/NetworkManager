@@ -27,13 +27,13 @@ GType nm_access_point_get_type (void);
 
 NMAccessPoint *nm_access_point_new (DBusGConnection *connection, const char *path);
 
-guint32   nm_access_point_get_capabilities (NMAccessPoint *ap);
-gboolean  nm_access_point_is_encrypted     (NMAccessPoint *ap);
-char     *nm_access_point_get_essid        (NMAccessPoint *ap);
-gdouble   nm_access_point_get_frequency    (NMAccessPoint *ap);
-char     *nm_access_point_get_hw_address   (NMAccessPoint *ap);
-int       nm_access_point_get_mode         (NMAccessPoint *ap);
-guint32   nm_access_point_get_rate         (NMAccessPoint *ap);
-int       nm_access_point_get_strength     (NMAccessPoint *ap);
+guint32      nm_access_point_get_capabilities (NMAccessPoint *ap);
+gboolean     nm_access_point_is_encrypted     (NMAccessPoint *ap);
+GByteArray * nm_access_point_get_ssid         (NMAccessPoint *ap);
+gdouble      nm_access_point_get_frequency    (NMAccessPoint *ap);
+char *       nm_access_point_get_hw_address   (NMAccessPoint *ap);
+int          nm_access_point_get_mode         (NMAccessPoint *ap);
+guint32      nm_access_point_get_rate         (NMAccessPoint *ap);
+int          nm_access_point_get_strength     (NMAccessPoint *ap);
 
 #endif /* NM_ACCESS_POINT_H */

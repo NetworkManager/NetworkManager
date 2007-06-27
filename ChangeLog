@@ -1,3 +1,9 @@
+2007-06-27  Dan Williams  <dcbw@redhat.com>
+
+	* Make SSIDs GByteArrays everywhere
+	* Rename "essid" -> "ssid" everywhere that's appropriate
+	* Refcount activation_ap member of the 802.11 wireless device class
+
 2007-06-27  Tambet Ingo  <tambet@ximian.com>
 
 	* libnm-glib/nm-object.[ch]: Add these to the SVN, oops.

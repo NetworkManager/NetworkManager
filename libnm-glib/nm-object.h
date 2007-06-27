@@ -64,5 +64,9 @@ gdouble nm_object_get_double_property (NMObject *object,
 									   const char *interface,
 									   const char *prop_name);
 
+GByteArray *nm_object_get_byte_array_property (NMObject *object,
+											   const char *interface,
+											   const char *prop_name);
+
 
 #endif /* NM_OBJECT_H */

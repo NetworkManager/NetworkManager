@@ -582,3 +582,57 @@ int nm_utils_ip4_netmask_to_prefix (guint32 ip4_netmask)
 	return (32 - (i-1));
 }
 
+/* Shamelessly ripped from the Linux kernel ieee80211 stack */
+gboolean
+nm_utils_is_empty_ssid (const char * ssid, int len)
+{
+        /* Single white space is for Linksys APs */
+        if (len == 1 && ssid[0] == ' ')
+                return TRUE;
+
+        /* Otherwise, if the entire ssid is 0, we assume it is hidden */
+        while (len--) {
+                if (ssid[len] != '\0')
+                        return FALSE;
+        }
+        return TRUE;
+}
+
+const char *
+nm_utils_escape_ssid (const char * ssid, guint32 len)
+{
+	static char escaped[IW_ESSID_MAX_SIZE * 2 + 1];
+	const char *s = ssid;
+	char *d = escaped;
+
+	if (nm_utils_is_empty_ssid (ssid, len)) {
+		memcpy (escaped, "<hidden>", sizeof ("<hidden>"));
+		return escaped;
+	}
+
+	len = MIN (len, (guint32) IW_ESSID_MAX_SIZE);
+	while (len--) {
+		if (*s == '\0') {
+			*d++ = '\\';
+			*d++ = '0';
+			s++;
+		} else {
+			*d++ = *s++;
+		}
+	}
+	*d = '\0';
+	return escaped;
+}
+
+gboolean
+nm_utils_same_ssid (const GByteArray * ssid1, const GByteArray * ssid2)
+{
+	if (ssid1 == ssid2)
+		return TRUE;
+	if ((ssid1 && !ssid2) || (!ssid1 && ssid2))
+		return FALSE;
+	if (ssid1->len != ssid2->len)
+		return FALSE;
+
+	return memcmp (ssid1->data, ssid2->data, ssid1->len) == 0 ? TRUE : FALSE;
+}

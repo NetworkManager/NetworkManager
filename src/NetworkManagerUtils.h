@@ -106,4 +106,9 @@ struct nl_addr *	nm_utils_ip4_addr_to_nl_addr (guint32 ip4_addr);
 
 int				nm_utils_ip4_netmask_to_prefix (guint32 ip4_netmask);
 
+gboolean		nm_utils_is_empty_ssid (const char * ssid, int len);
+const char *	nm_utils_escape_ssid (const char *ssid, guint32 len);
+
+gboolean		nm_utils_same_ssid (const GByteArray * ssid1, const GByteArray * ssid2);
+
 #endif

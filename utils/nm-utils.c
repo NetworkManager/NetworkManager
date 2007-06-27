@@ -23,6 +23,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <iwlib.h>
+#include <wireless.h>
 
 #include <glib.h>
 #include <dbus/dbus.h>
@@ -299,55 +301,53 @@ get_encodings_for_lang (const char *lang,
 
 
 char *
-nm_utils_essid_to_utf8 (const char *orig_essid)
+nm_utils_ssid_to_utf8 (const char *ssid, guint32 len)
 {
-	char *new_essid = NULL;
+	char * new_ssid = NULL;
+	char buf[IW_ESSID_MAX_SIZE + 1];
+	guint32 buf_len = MIN (sizeof (buf) - 1, len);
+	char * lang;
+	char *e1 = NULL, *e2 = NULL, *e3 = NULL;
 
-	g_return_val_if_fail (orig_essid != NULL, NULL);
+	g_return_val_if_fail (ssid != NULL, NULL);
 
-	if (g_utf8_validate (orig_essid, -1, NULL)) 
-		new_essid = g_strdup (orig_essid);
-	else
-	{
-		char * lang;
-		char *e1 = NULL, *e2 = NULL, *e3 = NULL;
+	memset (buf, 0, sizeof (buf));
+	memcpy (buf, ssid, buf_len);
 
-		/* Even if the local encoding is UTF-8, LANG may give
-		 * us a clue as to what encoding ESSIDs are more likely to be in.
-		 */
-		g_get_charset ((const char **)(&e1));
-		if ((lang = getenv ("LANG")))
-		{
-			char * dot;
-
-			lang = g_ascii_strdown (lang, -1);
-			if ((dot = strchr (lang, '.')))
-				*dot = '\0';
-
-			get_encodings_for_lang (lang, &e1, &e2, &e3);
-			g_free (lang);
-		}
-
-		new_essid = g_convert (orig_essid, -1, "UTF-8", e1, NULL, NULL, NULL);
-		if (!new_essid && e2)
-		{
-			new_essid = g_convert (orig_essid, -1, "UTF-8", e2,
-		                NULL, NULL, NULL);
-		}
-		if (!new_essid && e3)
-		{
-			new_essid = g_convert (orig_essid, -1, "UTF-8", e3,
-		                NULL, NULL, NULL);
-		}
-
-		if (!new_essid)
-		{
-			new_essid = g_convert_with_fallback (orig_essid, -1, "UTF-8", e1,
-		                "?", NULL, NULL, NULL);
-		}
+	if (g_utf8_validate (buf, buf_len, NULL)) {
+		new_ssid = g_strdup (buf);
+		goto out;
 	}
 
-	return new_essid;
+	/* Even if the local encoding is UTF-8, LANG may give
+	 * us a clue as to what encoding SSIDs are more likely to be in.
+	 */
+	g_get_charset ((const char **)(&e1));
+	if ((lang = getenv ("LANG"))) {
+		char * dot;
+
+		lang = g_ascii_strdown (lang, -1);
+		if ((dot = strchr (lang, '.')))
+			*dot = '\0';
+
+		get_encodings_for_lang (lang, &e1, &e2, &e3);
+		g_free (lang);
+	}
+
+	new_ssid = g_convert (buf, buf_len, "UTF-8", e1, NULL, NULL, NULL);
+	if (!new_ssid && e2) {
+		new_ssid = g_convert (buf, buf_len, "UTF-8", e2, NULL, NULL, NULL);
+	}
+	if (!new_ssid && e3) {
+		new_ssid = g_convert (buf, buf_len, "UTF-8", e3, NULL, NULL, NULL);
+	}
+	if (!new_ssid) {
+		new_ssid = g_convert_with_fallback (buf, buf_len, "UTF-8", e1,
+	                "?", NULL, NULL, NULL);
+	}
+
+out:
+	return new_ssid;
 }
 
 

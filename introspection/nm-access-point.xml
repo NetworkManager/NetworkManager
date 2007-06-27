@@ -4,7 +4,7 @@
   <interface name="org.freedesktop.NetworkManager.AccessPoint">
     <property name="Capabilities" type="u" access="read"/>
     <property name="Encrypted" type="b" access="read"/>
-    <property name="Essid" type="s" access="read"/>
+    <property name="Ssid" type="ay" access="read"/>
     <property name="Frequency" type="d" access="read"/>
     <property name="HwAddress" type="s" access="read"/>
     <property name="Mode" type="i" access="read"/>

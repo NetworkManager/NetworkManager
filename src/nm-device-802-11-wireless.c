@@ -109,7 +109,7 @@ struct _NMDevice80211WirelessPrivate
 
 	struct ether_addr	hw_addr;
 
-	char *			cur_essid;
+	GByteArray *	ssid;
 	gint8			invalid_strength_counter;
 	iwqual			max_qual;
 	iwqual			avg_qual;
@@ -212,19 +212,19 @@ nm_device_802_11_wireless_update_bssid (NMDevice80211Wireless *self,
 {
 	struct ether_addr		new_bssid;
 	const struct ether_addr	*old_bssid;
-	const char *		new_essid;
-	const char *		old_essid;
+	const GByteArray *		new_ssid;
+	const GByteArray *		old_ssid;
 
 	/* Get the current BSSID.  If it is valid but does not match the stored value,
-	 * and the ESSID is the same as what we think its supposed to be, update it. */
+	 * and the SSID is the same as what we think its supposed to be, update it. */
 	nm_device_802_11_wireless_get_bssid (self, &new_bssid);
 	old_bssid = nm_ap_get_address (ap);
-	new_essid = nm_device_802_11_wireless_get_essid (self);
-	old_essid = nm_ap_get_essid (ap);
+	new_ssid = nm_device_802_11_wireless_get_ssid (self);
+	old_ssid = nm_ap_get_ssid (ap);
 	if (     nm_ethernet_address_is_valid (&new_bssid)
 		&&  nm_ethernet_address_is_valid (old_bssid)
 		&& !nm_ethernet_addresses_are_equal (&new_bssid, old_bssid)
-		&& !nm_null_safe_strcmp (old_essid, new_essid))
+		&& nm_utils_same_ssid (old_ssid, new_ssid))
 	{
 		gboolean	automatic;
 		gchar	new_addr[20];
@@ -234,7 +234,10 @@ nm_device_802_11_wireless_update_bssid (NMDevice80211Wireless *self,
 		memset (old_addr, '\0', sizeof (old_addr));
 		iw_ether_ntop (&new_bssid, new_addr);
 		iw_ether_ntop (old_bssid, old_addr);
-		nm_debug ("Roamed from BSSID %s to %s on wireless network '%s'", old_addr, new_addr, nm_ap_get_essid (ap));
+		nm_debug ("Roamed from BSSID %s to %s on wireless network '%s'",
+		          old_addr,
+		          new_addr,
+		          nm_utils_escape_ssid (old_ssid->data, old_ssid->len));
 
 		nm_ap_set_address (ap, &new_bssid);
 
@@ -623,12 +626,18 @@ static void
 real_deactivate_quickly (NMDevice *dev)
 {
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
+	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 
 	cleanup_association_attempt (self, TRUE);
 
 	/* Clean up stuff, don't leave the card associated */
-	nm_device_802_11_wireless_set_essid (self, "");
+	nm_device_802_11_wireless_set_ssid (self, NULL);
 	nm_device_802_11_wireless_disable_encryption (self);
+
+	if (priv->activation_ap) {
+		g_object_unref (priv->activation_ap);
+		priv->activation_ap = NULL;
+	}
 }
 
 static void
@@ -717,11 +726,10 @@ link_to_specific_ap (NMDevice80211Wireless *self,
 
 	if (is_associated (self))
 	{
-		const char *	dev_essid = nm_device_802_11_wireless_get_essid (self);
-		const char *	ap_essid = nm_ap_get_essid (ap);
+		const GByteArray * dev_ssid = nm_device_802_11_wireless_get_ssid (self);
+		const GByteArray * ap_ssid = nm_ap_get_ssid (ap);
 
-		if (dev_essid && ap_essid && !strcmp (dev_essid, ap_essid))
-		{
+		if (dev_ssid && ap_ssid && nm_utils_same_ssid (dev_ssid, ap_ssid)) {
 			self->priv->failed_link_count = 0;
 			have_link = TRUE;
 		}
@@ -743,7 +751,7 @@ get_ap_blacklisted (NMAccessPoint *ap, GSList *addrs)
 {
 	gboolean blacklisted;
 
-	blacklisted = nm_ap_has_manufacturer_default_essid (ap);
+	blacklisted = nm_ap_has_manufacturer_default_ssid (ap);
 	if (blacklisted)
 	{
 		GSList *elt;
@@ -794,7 +802,7 @@ get_best_fallback_ap (NMDevice80211Wireless *self)
 
 	while ((allowed_ap = nm_ap_list_iter_next (iter)))
 	{
-		const char *		essid;
+		const GByteArray *	ssid;
 		GSList *			user_addrs;
 		const GTimeVal *	curtime;
 		gboolean			blacklisted;
@@ -812,8 +820,8 @@ get_best_fallback_ap (NMDevice80211Wireless *self)
 			continue;
 
 		/* No fallback to networks on the invalid list -- we probably already tried them and failed */
-		essid = nm_ap_get_essid (allowed_ap);
-		if (nm_ap_list_get_ap_by_essid (app_data->invalid_ap_list, essid))
+		ssid = nm_ap_get_ssid (allowed_ap);
+		if (nm_ap_list_get_ap_by_ssid (app_data->invalid_ap_list, ssid))
 			continue;
 
 		curtime = nm_ap_get_timestamp (allowed_ap);
@@ -825,10 +833,13 @@ get_best_fallback_ap (NMDevice80211Wireless *self)
 	}
 	nm_ap_list_iter_free (iter);
 
-	if (best_ap)
-	{
+	if (best_ap) {
+		const GByteArray * ssid;
+
 		nm_ap_set_broadcast (best_ap, FALSE);
-		nm_info ("Attempting to fallback to wireless network '%s'", nm_ap_get_essid (best_ap));
+		ssid = nm_ap_get_ssid (best_ap);
+		nm_info ("Attempting to fallback to wireless network '%s'",
+		         ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
 	}
 
 	return best_ap;
@@ -871,11 +882,9 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 	/* We prefer the currently selected access point if its user-chosen or if there
 	 * is still a hardware link to it.
 	 */
-	if ((req = nm_device_get_act_request (NM_DEVICE (self))))
-	{
-		if ((cur_ap = nm_device_802_11_wireless_get_activation_ap (self)))
-		{
-			const char *	essid = nm_ap_get_essid (cur_ap);
+	if ((req = nm_device_get_act_request (NM_DEVICE (self)))) {
+		if ((cur_ap = nm_device_802_11_wireless_get_activation_ap (self))) {
+			const GByteArray * ssid = nm_ap_get_ssid (cur_ap);
 			gboolean		keep = FALSE;
 
 			if (nm_ap_get_user_created (cur_ap))
@@ -887,8 +896,8 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 
 			/* Only keep if its not in the invalid list and its _is_ in our scanned list */
 			if ( keep
-				&& !nm_ap_list_get_ap_by_essid (app_data->invalid_ap_list, essid)
-				&& nm_device_802_11_wireless_ap_list_get_ap_by_essid (self, essid))
+				&& !nm_ap_list_get_ap_by_ssid (app_data->invalid_ap_list, ssid)
+				&& nm_device_802_11_wireless_ap_list_get_ap_by_ssid (self, ssid))
 			{
 				return (NMAccessPoint *) g_object_ref (cur_ap);
 			}
@@ -897,16 +906,15 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 
 	if (!(iter = nm_ap_list_iter_new (ap_list)))
 		return NULL;
-	while ((scan_ap = nm_ap_list_iter_next (iter)))
-	{
+	while ((scan_ap = nm_ap_list_iter_next (iter))) {
 		NMAccessPoint *tmp_ap;
-		const char *	ap_essid = nm_ap_get_essid (scan_ap);
+		const GByteArray * ap_ssid = nm_ap_get_ssid (scan_ap);
 
 		/* Access points in the "invalid" list cannot be used */
-		if (nm_ap_list_get_ap_by_essid (app_data->invalid_ap_list, ap_essid))
+		if (nm_ap_list_get_ap_by_ssid (app_data->invalid_ap_list, ap_ssid))
 			continue;
 
-		if ((tmp_ap = nm_ap_list_get_ap_by_essid (app_data->allowed_ap_list, ap_essid)))
+		if ((tmp_ap = nm_ap_list_get_ap_by_ssid (app_data->allowed_ap_list, ap_ssid)))
 		{
 			const GTimeVal *	curtime = nm_ap_get_timestamp (tmp_ap);
 			gboolean			blacklisted;
@@ -918,8 +926,7 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 			g_slist_foreach (user_addrs, (GFunc) g_free, NULL);
 			g_slist_free (user_addrs);
 
-			if (!blacklisted && (curtime->tv_sec > best_timestamp.tv_sec))
-			{
+			if (!blacklisted && (curtime->tv_sec > best_timestamp.tv_sec)) {
 				best_timestamp = *nm_ap_get_timestamp (tmp_ap);
 				best_ap = scan_ap;
 				nm_ap_set_security (best_ap, nm_ap_get_security (tmp_ap));
@@ -930,7 +937,6 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 
 	if (!best_ap)
 		best_ap = get_best_fallback_ap (self);
-
 	if (best_ap)
 		g_object_ref (best_ap);
 
@@ -942,36 +948,28 @@ nm_device_802_11_wireless_set_activation_ap (NMDevice80211Wireless *self,
                                              GByteArray *ssid,
                                              NMAPSecurity *security)
 {
+	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 	NMAccessPoint		*ap = NULL;
 	NMData *			app_data;
 	NMAccessPointList *	dev_ap_list;
-	char *essid;
 
 	app_data = nm_device_get_app_data (NM_DEVICE (self));
 	g_assert (app_data);
 
-	/* FIXME: handle essid everywhere as GByteArray */
-	{
-		essid = g_new (char, ssid->len + 1);
-		memcpy (essid, ssid->data, ssid->len);
-		essid[ssid->len] = '\0';
-	}
-
-	nm_debug ("Forcing AP '%s'", essid);
+	nm_debug ("Forcing AP '%s'", nm_utils_escape_ssid (ssid->data, ssid->len));
 
 	/* Find the AP in our card's scan list first.
 	 * If its not there, create an entirely new AP.
 	 */
 	dev_ap_list = nm_device_802_11_wireless_ap_list_get (self);
-	if (!(ap = nm_ap_list_get_ap_by_essid (dev_ap_list, essid)))
-	{
+	if (!(ap = nm_ap_list_get_ap_by_ssid (dev_ap_list, ssid))) {
 		/* We need security information from the user if the network they
 		 * request isn't in our scan list.
 		 */
-		if (!security)
-		{
+		if (!security) {
 			nm_warning ("%s: tried to manually connect to network '%s' without "
-						"providing security information!", __func__, essid);
+						"providing security information!", __func__,
+						nm_utils_escape_ssid (ssid->data, ssid->len));
 			return FALSE;
 		}
 
@@ -979,7 +977,7 @@ nm_device_802_11_wireless_set_activation_ap (NMDevice80211Wireless *self,
 		 * "fake" access point and add it to the scan list.
 		 */
 		ap = nm_ap_new ();
-		nm_ap_set_essid (ap, essid);
+		nm_ap_set_ssid (ap, ssid);
 		nm_ap_set_artificial (ap, TRUE);
 		nm_ap_set_broadcast (ap, FALSE);
 		/* Ensure the AP has some capabilities.  They will get overwritten
@@ -994,7 +992,8 @@ nm_device_802_11_wireless_set_activation_ap (NMDevice80211Wireless *self,
 		/* If the AP is in the ignore list, we have to remove it since
 		 * the User Knows What's Best.
 		 */
-		nm_ap_list_remove_ap_by_essid (app_data->invalid_ap_list, nm_ap_get_essid (ap));
+		nm_ap_list_remove_ap_by_ssid (app_data->invalid_ap_list,
+		                              nm_ap_get_ssid (ap));
 
 		/* If we didn't get any security info, make some up. */
 		if (!security)
@@ -1002,13 +1001,17 @@ nm_device_802_11_wireless_set_activation_ap (NMDevice80211Wireless *self,
 										   nm_ap_get_encrypted (ap));
 	}
 
-	g_free (essid);
-
 	g_assert (security);
 	nm_ap_set_security (ap, security);
 	nm_ap_add_capabilities_from_security (ap, security);
 
-	NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self)->activation_ap = ap;
+	if (priv->activation_ap) {
+		g_object_unref (priv->activation_ap);
+		priv->activation_ap = NULL;
+	}
+
+	g_object_ref (ap);
+	priv->activation_ap = ap;
 
 	return TRUE;
 }
@@ -1034,22 +1037,22 @@ nm_device_802_11_wireless_ap_list_clear (NMDevice80211Wireless *self)
 
 
 /*
- * nm_device_ap_list_get_ap_by_essid
+ * nm_device_ap_list_get_ap_by_ssid
  *
- * Get the access point for a specific essid
+ * Get the access point for a specific SSID
  *
  */
 NMAccessPoint *
-nm_device_802_11_wireless_ap_list_get_ap_by_essid (NMDevice80211Wireless *self,
-                                                   const char *essid)
+nm_device_802_11_wireless_ap_list_get_ap_by_ssid (NMDevice80211Wireless *self,
+                                                  const GByteArray * ssid)
 {
 	g_return_val_if_fail (self != NULL, NULL);
-	g_return_val_if_fail (essid != NULL, NULL);
+	g_return_val_if_fail (ssid != NULL, NULL);
 
 	if (!self->priv->ap_list)
 		return NULL;
 
-	return nm_ap_list_get_ap_by_essid (self->priv->ap_list, essid);
+	return nm_ap_list_get_ap_by_ssid (self->priv->ap_list, ssid);
 }
 
 
@@ -1141,7 +1144,7 @@ impl_device_get_active_networks (NMDevice80211Wireless *device,
 			NMAccessPoint *ap;
 
 			while ((ap = nm_ap_list_iter_next (list_iter))) {
-				if (nm_ap_get_essid (ap))
+				if (nm_ap_get_ssid (ap))
 					g_ptr_array_add (*networks, g_strdup (nm_ap_get_dbus_path (ap)));
 			}
 			nm_ap_list_iter_free (list_iter);
@@ -1394,109 +1397,129 @@ max_qual->updated);
 
 
 /*
- * nm_device_get_essid
+ * nm_device_802_11_wireless_get_ssid
  *
- * If a device is wireless, return the essid that it is attempting
+ * If a device is wireless, return the ssid that it is attempting
  * to use.
- *
- * Returns:	allocated string containing essid.  Must be freed by caller.
- *
  */
-const char *
-nm_device_802_11_wireless_get_essid (NMDevice80211Wireless *self)
+const GByteArray *
+nm_device_802_11_wireless_get_ssid (NMDevice80211Wireless *self)
 {
-	NMSock *		sk;
-	int			err;
-	const char *	iface;
+	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
+	const char * iface;
+	int	err, sk;
+	struct iwreq wrq;
+	char ssid[IW_ESSID_MAX_SIZE + 1];
+	guint32 len;
 
 	g_return_val_if_fail (self != NULL, NULL);	
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
-	if ((sk = nm_dev_sock_open (iface, DEV_WIRELESS, __FUNCTION__, NULL)))
-	{
-		wireless_config	info;
-
-		nm_ioctl_info ("%s: About to GET 'basic config' for ESSID.", iface);
-
-		err = iw_get_basic_config (nm_dev_sock_get_fd (sk), iface, &info);
-		if (err >= 0)
-		{
-			if (self->priv->cur_essid)
-				g_free (self->priv->cur_essid);
-			self->priv->cur_essid = g_strdup (info.essid);
-		}
-		else
-		{
-			nm_warning ("error getting ESSID for device %s: %s",
-					iface, strerror (errno));
-		}
-
-		nm_dev_sock_close (sk);
+	sk = socket (AF_INET, SOCK_DGRAM, 0);
+	if (!sk) {
+		nm_error ("Couldn't create socket: %d.", errno);
+		return NULL;
 	}
 
-	return self->priv->cur_essid;
+	wrq.u.essid.pointer = (caddr_t) &ssid;
+	wrq.u.essid.length = sizeof (ssid);
+	wrq.u.essid.flags = 0;
+	if (iw_get_ext (sk, iface, SIOCGIWESSID, &wrq) < 0) {
+		nm_error ("Couldn't get SSID: %d", errno);
+		goto out;
+    }
+
+	if (priv->ssid) {
+		g_byte_array_free (priv->ssid, TRUE);
+		priv->ssid = NULL;
+	}
+
+	len = wrq.u.essid.length;
+	if (!nm_utils_is_empty_ssid (ssid, len)) {
+		/* Some drivers include nul termination in the SSID, so let's
+		 * remove it here before further processing. WE-21 changes this
+		 * to explicitly require the length _not_ to include nul
+		 * termination. */
+		if (len > 0 && ssid[len - 1] == '\0' && priv->we_version < 21)
+			len--;
+
+		priv->ssid = g_byte_array_sized_new (len);
+		g_byte_array_append (priv->ssid, ssid, len);
+	}
+
+out:
+	close (sk);
+	return self->priv->ssid;
 }
 
 
 /*
- * nm_device_802_11_wireless_set_essid
+ * nm_device_802_11_wireless_set_ssid
  *
- * If a device is wireless, set the essid that it should use.
+ * If a device is wireless, set the SSID that it should use.
  */
 void
-nm_device_802_11_wireless_set_essid (NMDevice80211Wireless *self,
-                                     const char *essid)
+nm_device_802_11_wireless_set_ssid (NMDevice80211Wireless *self,
+                                    const GByteArray * ssid)
 {
-	NMSock*		sk;
-	int			err;
-	struct iwreq	wreq;
-	char *		safe_essid;
-	const char *	iface;
-	const char *	driver;
-	gint			len = 0;
+	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
+	int sk, err;
+	struct iwreq wrq;
+	const char * iface;
+	const char * driver;
+	guint32 len = 0;
+	char buf[IW_ESSID_MAX_SIZE + 1];
 
 	g_return_if_fail (self != NULL);
 
-	safe_essid = g_malloc0 (IW_ESSID_MAX_SIZE + 1);
-
-	if (essid)
-	{
-		len = MIN(IW_ESSID_MAX_SIZE, strlen (essid));
-		if (len <= 0)
-			len = 0;
-		strncpy (safe_essid, essid, len);
+	sk = socket (AF_INET, SOCK_DGRAM, 0);
+	if (!sk) {
+		nm_error ("Couldn't create socket: %d.", errno);
+		return;
 	}
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
-	if ((sk = nm_dev_sock_open (iface, DEV_WIRELESS, __FUNCTION__, NULL)))
-	{
-		wreq.u.essid.pointer = (caddr_t) safe_essid;
-		wreq.u.essid.length	 = len + 1;
-		wreq.u.essid.flags	 = (len > 0) ? 1 : 0; /* 1=enable ESSID, 0=disable/any */
 
-		nm_ioctl_info ("%s: About to SET IWESSID.", iface);
-
-		if ((err = iw_set_ext (nm_dev_sock_get_fd (sk), iface, SIOCSIWESSID, &wreq)) == -1)
-		{
-			if (errno != ENODEV)
-			{
-				nm_warning ("error setting ESSID to '%s' for device %s: %s",
-						safe_essid, iface, strerror (errno));
-			}
-		}
-
-		nm_dev_sock_close (sk);
-
-		/* Orinoco cards seem to need extra time here to not screw
-		 * up the firmware, which reboots when you set the ESSID.
-		 * Unfortunately, there's no way to know when the card is back up
-		 * again.  Sigh...
-		 */
-		driver = nm_device_get_driver (NM_DEVICE (self));
-		if (!driver || !strcmp (driver, "orinoco"))
-			sleep (2);
+	memset (buf, 0, sizeof (buf));
+	if (ssid) {
+		len = ssid->len;
+		memcpy (buf, ssid->data, MIN (sizeof (buf) - 1, len));
 	}
-	g_free (safe_essid);
+ 	wrq.u.essid.pointer = (caddr_t) buf;
+
+	if (priv->we_version < 21) {
+		/* For historic reasons, set SSID length to include one extra
+		 * character, C string nul termination, even though SSID is
+		 * really an octet string that should not be presented as a C
+		 * string. Some Linux drivers decrement the length by one and
+		 * can thus end up missing the last octet of the SSID if the
+		 * length is not incremented here. WE-21 changes this to
+		 * explicitly require the length _not_ to include nul
+		 * termination. */
+		if (len)
+			len++;
+	}
+	wrq.u.essid.length = len;
+	wrq.u.essid.flags = (len > 0) ? 1 : 0; /* 1=enable SSID, 0=disable/any */
+
+	if (iw_get_ext (sk, iface, SIOCSIWESSID, &wrq) < 0) {
+		if (errno != ENODEV) {
+			nm_warning ("error setting SSID to '%s' for device %s: %s",
+			            nm_utils_escape_ssid (ssid->data, ssid->len),
+			            iface, strerror (errno));
+		}
+    }
+
+	/* Orinoco cards seem to need extra time here to not screw
+	 * up the firmware, which reboots when you set the SSID.
+	 * Unfortunately, there's no way to know when the card is back up
+	 * again.  Sigh...
+	 */
+	driver = nm_device_get_driver (NM_DEVICE (self));
+	if (!driver || !strcmp (driver, "orinoco"))
+		sleep (2);
+
+	close (sk);
 }
 
 
@@ -1744,16 +1767,20 @@ ap_need_key (NMDevice80211Wireless *self,
              NMAccessPoint *ap,
              gboolean *ask_user)
 {
-	const char *	essid;
+	const GByteArray *	ssid;
 	gboolean		need_key = FALSE;
 	NMAPSecurity *	security;
 	const char *	iface;
 	int			we_cipher;
+	const char * esc_ssid = NULL;
 
 	g_return_val_if_fail (ap != NULL, FALSE);
 	g_return_val_if_fail (ask_user != NULL, FALSE);
 
-	essid = nm_ap_get_essid (ap);
+	ssid = nm_ap_get_ssid (ap);
+	if (ssid)
+		esc_ssid = nm_utils_escape_ssid (ssid->data, ssid->len);
+
 	security = nm_ap_get_security (ap);
 	g_assert (security);
 	we_cipher = nm_ap_security_get_we_cipher (security);
@@ -1763,7 +1790,7 @@ ap_need_key (NMDevice80211Wireless *self,
 	if (!nm_ap_get_encrypted (ap))
 	{
 		nm_info ("Activation (%s/wireless): access point '%s' is unencrypted, no key needed.", 
-			 iface, essid ? essid : "(null)");
+			 iface, esc_ssid ? esc_ssid : "(null)");
 
 		/* If the user-specified security info doesn't overlap the
 		 * scanned access point's info, create new info from the scanned
@@ -1781,7 +1808,7 @@ ap_need_key (NMDevice80211Wireless *self,
 		{
 			nm_info ("Activation (%s/wireless): access point '%s' "
 				 "is encrypted, but NO valid key exists.  New key needed.",
-				 iface, essid ? essid : "(null)");
+				 iface, esc_ssid ? esc_ssid : "(null)");
 			need_key = TRUE;
 
 			/* If the user-specified security info doesn't overlap the
@@ -1795,7 +1822,7 @@ ap_need_key (NMDevice80211Wireless *self,
 		{
 			nm_info ("Activation (%s/wireless): access point '%s' "
 				 "is encrypted, and a key exists.  No new key needed.",
-			  	 iface, essid ? essid : "(null)");
+			  	 iface, esc_ssid ? esc_ssid : "(null)");
 		}
 	}
 
@@ -1876,8 +1903,7 @@ ap_is_auth_required (NMAccessPoint *ap, gboolean *has_key)
 static void
 merge_scanned_ap (NMDevice80211Wireless *dev,
 				  NMAccessPoint *merge_ap)
-{
-	
+{	
 	NMAccessPointList *list;
 	NMAccessPoint *list_ap = NULL;
 	const struct ether_addr *merge_bssid;
@@ -1885,16 +1911,16 @@ merge_scanned_ap (NMDevice80211Wireless *dev,
 	list = nm_device_802_11_wireless_ap_list_get (dev);
 
 	merge_bssid = nm_ap_get_address (merge_ap);
-	if (nm_ethernet_address_is_valid (merge_bssid) && (list_ap = nm_ap_list_get_ap_by_address (list, merge_bssid)))
-	{
+	if (   nm_ethernet_address_is_valid (merge_bssid)
+	    && (list_ap = nm_ap_list_get_ap_by_address (list, merge_bssid))) {
 		/* First, we check for an address match.  If the merge AP has a valid
 		 * BSSID and the same address as a list AP, then the merge AP and
 		 * the list AP must be the same physical AP. The list AP properties must
 		 * be from a previous scan so the time_last_seen's are not equal.  Update
 		 * encryption, authentication method, strength, and the time_last_seen. */
 
-		const char *devlist_essid = nm_ap_get_essid (list_ap);
-		const char *merge_essid = nm_ap_get_essid (merge_ap);
+		const GByteArray * devlist_ssid = nm_ap_get_ssid (list_ap);
+		const GByteArray * merge_ssid = nm_ap_get_ssid (merge_ap);
 		const glong	merge_ap_seen = nm_ap_get_last_seen (merge_ap);
 
 		nm_ap_set_capabilities (list_ap, nm_ap_get_capabilities (merge_ap));
@@ -1908,16 +1934,16 @@ merge_scanned_ap (NMDevice80211Wireless *dev,
 		nm_ap_set_artificial (list_ap, FALSE);
 
 		/* Did the AP's name change? */
-		if (!devlist_essid || !merge_essid || nm_null_safe_strcmp (devlist_essid, merge_essid)) {
+		if (   !devlist_ssid
+		    || !merge_ssid
+		    || !nm_utils_same_ssid (devlist_ssid, merge_ssid)) {
 			network_removed (dev, list_ap);
-			nm_ap_set_essid (list_ap, merge_essid);
+			nm_ap_set_ssid (list_ap, merge_ssid);
 			network_added (dev, list_ap);
 		}
-	}
-	else if ((list_ap = nm_ap_list_get_ap_by_essid (list, nm_ap_get_essid (merge_ap))))
-	{
-		/* Second, we check for an ESSID match. In this case,
-		 * a list AP has the same non-NULL ESSID as the merge AP. Update the
+	} else if ((list_ap = nm_ap_list_get_ap_by_ssid (list, nm_ap_get_ssid (merge_ap)))) {
+		/* Second, we check for an SSID match. In this case,
+		 * a list AP has the same non-NULL SSID as the merge AP. Update the
 		 * encryption and authentication method. Update the strength and address
 		 * except when the time_last_seen of the list AP is the same as the
 		 * time_last_seen of the merge AP and the strength of the list AP is greater
@@ -1932,8 +1958,7 @@ merge_scanned_ap (NMDevice80211Wireless *dev,
 		nm_ap_set_capabilities (list_ap, nm_ap_get_capabilities (merge_ap));
 
 		if (!((list_ap_seen == merge_ap_seen)
-			&& (nm_ap_get_strength (list_ap) >= merge_ap_strength)))
-		{
+			&& (nm_ap_get_strength (list_ap) >= merge_ap_strength))) {
 			nm_ap_set_strength (list_ap, merge_ap_strength);
 			nm_ap_set_address (list_ap, nm_ap_get_address (merge_ap));
 		}
@@ -1980,14 +2005,14 @@ cull_scan_list (NMDevice80211Wireless * self)
 		const glong  ap_time = nm_ap_get_last_seen (outdated_ap);
 		gboolean     keep_around = FALSE;
 		guint        prune_interval_s;
-		const char * ssid;
+		const GByteArray * ssid;
+		const GByteArray * cur_ssid;
 
 		/* Don't ever prune the AP we're currently associated with */
-		ssid = nm_ap_get_essid (outdated_ap);
-		if (ssid && cur_ap) {
-			if (nm_null_safe_strcmp (nm_ap_get_essid (cur_ap), ssid) == 0)
-				keep_around = TRUE;
-		}
+		ssid = nm_ap_get_ssid (outdated_ap);
+		cur_ssid = cur_ap ? nm_ap_get_ssid (cur_ap) : NULL;
+		if (ssid && nm_utils_same_ssid (cur_ssid, ssid))
+			keep_around = TRUE;
 
 		prune_interval_s = SCAN_INTERVAL_MAX * 3;
 
@@ -2065,12 +2090,12 @@ supplicant_iface_scanned_ap_cb (NMSupplicantInterface * iface,
 
 	set_ap_strength_from_properties (self, ap, properties);
 
-	/* If the AP is not broadcasting its ESSID, try to fill it in here from our
-	 * allowed list where we cache known MAC->ESSID associations.
+	/* If the AP is not broadcasting its SSID, try to fill it in here from our
+	 * allowed list where we cache known MAC->SSID associations.
 	 */
-	if (!nm_ap_get_essid (ap)) {
+	if (!nm_ap_get_ssid (ap)) {
 		nm_ap_set_broadcast (ap, FALSE);
-		nm_ap_list_copy_one_essid_by_address (ap, app_data->allowed_ap_list);
+		nm_ap_list_copy_one_ssid_by_address (ap, app_data->allowed_ap_list);
 	}
 
 	/* Add the AP to the device's AP list */
@@ -2297,11 +2322,12 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 		 */
 		if (nm_device_get_state (dev) == NM_DEVICE_STATE_CONFIG) {
 			NMAccessPoint *ap = nm_device_802_11_wireless_get_activation_ap (self);
+			const GByteArray * ssid = nm_ap_get_ssid (ap);
 
 			nm_info ("Activation (%s/wireless) Stage 2 of 5 (Device Configure) "
 			         "successful.  Connected to wireless network '%s'.",
 			         nm_device_get_iface (dev),
-			         nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
+			         ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
 			nm_device_activate_schedule_stage3_ip_config_start (dev);
 		}
 	} else if (new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED) {
@@ -2595,9 +2621,9 @@ static NMSupplicantConfig *
 build_supplicant_config (NMDevice80211Wireless *self)
 {
 	NMSupplicantConfig * config = NULL;
-	NMAccessPoint *      ap = NULL;
-	const char *         essid;
-	gboolean             is_adhoc;
+	NMAccessPoint * 	ap = NULL;
+	const GByteArray *	ssid;
+	gboolean			is_adhoc;
 
 	g_return_val_if_fail (self != NULL, NULL);
 
@@ -2614,8 +2640,12 @@ build_supplicant_config (NMDevice80211Wireless *self)
 		nm_supplicant_config_set_ap_scan (config, 2);
 	}
 
-	essid = nm_ap_get_orig_essid (ap);
-	nm_supplicant_config_add_option (config, "ssid", essid, -1);
+	ssid = nm_ap_get_ssid (ap);
+	if (!ssid) {
+		nm_warning ("can't add null ssid to config.");
+		goto error;
+	}
+	nm_supplicant_config_add_option (config, "ssid", ssid->data, ssid->len);
 
 	/* For non-broadcast networks, we need to set "scan_ssid 1" to scan with probe request frames.
 	 * However, don't try to probe Ad-Hoc networks.
@@ -2838,9 +2868,12 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 	 */
 	if (!ap_is_auth_required (ap, &has_key) && has_key)
 	{
+		const GByteArray * ssid = nm_ap_get_ssid (ap);
+
 		/* Activation failed, we must have bad encryption key */
 		nm_debug ("Activation (%s/wireless): could not get IP configuration info for '%s', asking for new key.",
-				nm_device_get_iface (dev), nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
+		          nm_device_get_iface (dev),
+		          ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
 		nm_dbus_get_user_key_for_network (dev, nm_device_get_act_request (dev), TRUE);
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
@@ -2884,7 +2917,7 @@ activation_success_handler (NMDevice *dev)
 	if (!automatic && (nm_ap_get_mode (ap) == IW_MODE_ADHOC) && nm_ap_get_user_created (ap))
 	{
 		NMAccessPointList *ap_list = nm_device_802_11_wireless_ap_list_get (self);
-		if (!nm_ap_list_get_ap_by_essid (ap_list, nm_ap_get_essid (ap)))
+		if (!nm_ap_list_get_ap_by_ssid (ap_list, nm_ap_get_ssid (ap)))
 			nm_ap_list_append_ap (ap_list, ap);
 	}
 
@@ -2902,6 +2935,7 @@ activation_failure_handler (NMDevice *dev)
 	NMData *			app_data;
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
 	NMAccessPoint *	ap;
+	const GByteArray * ssid;
 
 	app_data = nm_device_get_app_data (dev);
 	g_assert (app_data);
@@ -2929,8 +2963,10 @@ activation_failure_handler (NMDevice *dev)
 		}
 	}
 
-	nm_info ("Activation (%s) failed for access point (%s)", nm_device_get_iface (dev),
-			ap ? nm_ap_get_essid (ap) : "(none)");
+	ssid = nm_ap_get_ssid (ap);
+	nm_info ("Activation (%s) failed for access point (%s)",
+	         nm_device_get_iface (dev),
+	         ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
 }
 
 static void
@@ -3124,6 +3160,9 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 static void
 state_changed_cb (NMDevice *device, NMDeviceState state, gpointer user_data)
 {
+	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (device);
+	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
+
 	switch (state) {
 	case NM_DEVICE_STATE_ACTIVATED:
 		activation_success_handler (device);
@@ -3132,7 +3171,11 @@ state_changed_cb (NMDevice *device, NMDeviceState state, gpointer user_data)
 		activation_failure_handler (device);
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
-		NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device)->activation_ap = NULL;
+		if (priv->activation_ap) {
+nm_info ("%s(): clearing activation AP", __func__);
+			g_object_unref (priv->activation_ap);
+			priv->activation_ap = NULL;
+		}
 	default:
 		break;
 	}

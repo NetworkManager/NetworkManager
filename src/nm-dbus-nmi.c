@@ -68,6 +68,7 @@ nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall,
 	NMAccessPoint *	ap;
 	NMAPSecurity *		security;
 	DBusMessageIter	iter;
+	const GByteArray * ssid;
 
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (info != NULL);
@@ -80,6 +81,7 @@ nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall,
 
 	ap = nm_device_802_11_wireless_get_activation_ap (NM_DEVICE_802_11_WIRELESS (dev));
 	g_assert (ap);
+	ssid = nm_ap_get_ssid (ap);
 
 	nm_dbus_send_with_callback_replied (pcall, __func__);
 
@@ -99,7 +101,7 @@ nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall,
 			nm_info ("Activation (%s) New wireless user key request for network"
 			         " '%s' was canceled.",
 			         nm_device_get_iface (dev),
-			         nm_ap_get_essid (ap));
+			         ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
 		} else {
 			nm_warning ("dbus returned an error.\n  (%s) %s\n",
 			            err.name,
@@ -121,7 +123,7 @@ nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall,
 
 	nm_info ("Activation (%s) New wireless user key for network '%s' received.",
 	         nm_device_get_iface (dev),
-	         nm_ap_get_essid (ap));
+	         ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
 
 	dbus_message_iter_init (reply, &iter);
 	if ((security = nm_ap_security_new_deserialize (&iter))) {
@@ -157,7 +159,7 @@ nm_dbus_get_user_key_for_network (NMDevice *dev,
 	gint32			attempt = 1;
 	char *			dev_path;
 	const char *	net_path;
-	const char *		essid;
+	const GByteArray * ssid;
 
 	g_return_if_fail (NM_IS_DEVICE (dev));
 	g_return_if_fail (req != NULL);
@@ -172,10 +174,10 @@ nm_dbus_get_user_key_for_network (NMDevice *dev,
 	ap = nm_device_802_11_wireless_get_activation_ap (NM_DEVICE_802_11_WIRELESS (dev));
 	g_assert (ap);
 
-	essid = nm_ap_get_essid (ap);
+	ssid = nm_ap_get_ssid (ap);
 	nm_info ("Activation (%s) New wireless user key requested for network '%s'.",
 	         nm_device_get_iface (dev),
-	         essid);
+	         ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
 
 	message = dbus_message_new_method_call (NMI_DBUS_SERVICE,
 	                                        NMI_DBUS_PATH,
@@ -189,9 +191,14 @@ nm_dbus_get_user_key_for_network (NMDevice *dev,
 	dev_path = nm_dbus_get_object_path_for_device (dev);
 	net_path = nm_ap_get_dbus_path (ap);
 	if (dev_path && strlen (dev_path) && net_path && strlen (net_path)) {
+		char buf[IW_ESSID_MAX_SIZE + 1];
+		char * ptr = &buf[0];
+
+		memset (buf, 0, sizeof (buf));
+		memcpy (buf, ssid->data, MIN (ssid->len, sizeof (buf) - 1));
 		dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path,
 									DBUS_TYPE_OBJECT_PATH, &net_path,
-									DBUS_TYPE_STRING, &essid,
+									DBUS_TYPE_STRING, &ptr,
 									DBUS_TYPE_INT32, &attempt,
 									DBUS_TYPE_BOOLEAN, &new_key,
 									DBUS_TYPE_INVALID);
@@ -283,11 +290,13 @@ nm_dbus_update_network_info (NMAccessPoint *ap,
 	DBusConnection *	dbus_connection;
 	DBusMessage *		message;
 	gboolean			fallback;
-	const char *		essid;
+	const GByteArray *	ssid;
 	gchar *			char_bssid;
 	NMAPSecurity *		security;
 	const struct ether_addr *addr;
 	DBusMessageIter	iter;
+	char buf[IW_ESSID_MAX_SIZE + 1];
+	char * ptr = &buf[0];
 
 	g_return_if_fail (ap != NULL);
 
@@ -297,8 +306,6 @@ nm_dbus_update_network_info (NMAccessPoint *ap,
 		nm_warning ("could not get the dbus connection.");
 		goto out;
 	}
-
-	essid = nm_ap_get_essid (ap);
 
 	message = dbus_message_new_method_call (NMI_DBUS_SERVICE,
 	                                        NMI_DBUS_PATH,
@@ -312,7 +319,10 @@ nm_dbus_update_network_info (NMAccessPoint *ap,
 	dbus_message_iter_init_append (message, &iter);
 
 	/* First argument: ESSID (STRING) */
-	dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &essid);
+	ssid = nm_ap_get_ssid (ap);
+	memset (buf, 0, sizeof (buf));
+	memcpy (buf, ssid->data, MIN (ssid->len, IW_ESSID_MAX_SIZE));
+	dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &ptr);
 
 	/* Second argument: Automatic or user-driven connection? (BOOLEAN) */
 	dbus_message_iter_append_basic (&iter, DBUS_TYPE_BOOLEAN, &automatic);
@@ -404,13 +414,15 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 	DBusMessage *			reply = NULL;
 	DBusMessageIter		iter;
 	DBusMessageIter		subiter;
-	const char *			essid = NULL;
+	const char *			tmp_ssid = NULL;
+	guint32					tmp_ssid_len;
 	gint					timestamp_secs = -1;
 	gboolean				fallback = FALSE;
 	GSList *				addr_list = NULL;
 	NMAPSecurity *			security;
 	NMAccessPoint *		ap;
 	NMAccessPoint *		list_ap;
+	GByteArray *		ssid;
 
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (cb_data != NULL);
@@ -425,19 +437,23 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
 
-	if (dbus_message_is_error (reply, "BadNetworkData"))
-	{
-		nm_ap_list_remove_ap_by_essid (cb_data->list, cb_data->network);
+	if (dbus_message_is_error (reply, "BadNetworkData")) {
+		guint32 rmv_len = strlen (cb_data->network);
+		GByteArray * rmv_ssid;
+
+		rmv_ssid = g_byte_array_sized_new (rmv_len);
+		g_byte_array_append (rmv_ssid, cb_data->network, rmv_len);
+		nm_ap_list_remove_ap_by_ssid (cb_data->list, rmv_ssid);
+		g_byte_array_free (rmv_ssid, TRUE);
 		goto out;
 	}
 
-	if (message_is_error (reply))
-	{
+	if (message_is_error (reply)) {
 		DBusError err;
 
 		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
-		nm_warning ("nm_dbus_get_network_data_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+		nm_warning ("dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 		dbus_error_free (&err);
 		goto out;
 	}
@@ -447,10 +463,10 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 	/* First arg: ESSID (STRING) */
 	if (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING)
 	{
-		nm_warning ("a message argument (essid) was invalid.");
+		nm_warning ("a message argument (SSID) was invalid.");
 		goto out;
 	}
-	dbus_message_iter_get_basic (&iter, &essid);
+	dbus_message_iter_get_basic (&iter, &tmp_ssid);
 
 	/* Second arg: Timestamp (INT32) */
 	if (!dbus_message_iter_next (&iter)
@@ -505,7 +521,12 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 
 	/* Construct the new access point */
 	ap = nm_ap_new ();
-	nm_ap_set_essid (ap, essid);
+
+	tmp_ssid_len = MIN (strlen (tmp_ssid), IW_ESSID_MAX_SIZE);
+	ssid = g_byte_array_sized_new (tmp_ssid_len);
+	g_byte_array_append (ssid, tmp_ssid, tmp_ssid_len);
+	nm_ap_set_ssid (ap, ssid);
+
 	nm_ap_set_security (ap, security);
 	nm_ap_add_capabilities_from_security (ap, security);
 	g_object_unref (G_OBJECT (security));	/* set_security copies the object */
@@ -515,9 +536,9 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 	nm_ap_set_fallback (ap, fallback);
 	nm_ap_set_user_addresses (ap, addr_list);
 
-	if ((list_ap = nm_ap_list_get_ap_by_essid (cb_data->list, essid)))
+	if ((list_ap = nm_ap_list_get_ap_by_ssid (cb_data->list, ssid)))
 	{
-		nm_ap_set_essid (list_ap, nm_ap_get_essid (ap));
+		nm_ap_set_ssid (list_ap, nm_ap_get_ssid (ap));
 		nm_ap_set_timestamp_via_timestamp (list_ap, nm_ap_get_timestamp (ap));
 		nm_ap_set_fallback (list_ap, nm_ap_get_fallback (ap));
 		nm_ap_set_security (list_ap, nm_ap_get_security (ap));
@@ -528,6 +549,7 @@ static void nm_dbus_get_network_data_cb (DBusPendingCall *pcall, void *user_data
 		/* New AP, just add it to the list */
 		nm_ap_list_append_ap (cb_data->list, ap);
 	}
+	g_byte_array_free (ssid, TRUE);
 	g_object_unref (ap);
 
 	/* Ensure all devices get new information copied into their device lists */

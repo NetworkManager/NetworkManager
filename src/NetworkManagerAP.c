@@ -30,7 +30,7 @@
 #include "nm-access-point-glue.h"
 
 /* This is a controlled list.  Want to add to it?  Stop.  Ask first. */
-static const char * default_essid_list[] =
+static const char * default_ssid_list[] =
 {
 	"linksys",
 	"linksys-a",
@@ -49,8 +49,7 @@ typedef struct
 	char *dbus_path;
 
 	/* Scanned or cached values */
-	char *			essid;
-	char *			orig_essid;
+	GByteArray *	ssid;
 	struct ether_addr	address;
 	int				mode;		/* from IW_MODE_* in wireless.h */
 	gint8			strength;
@@ -93,15 +92,15 @@ enum {
 	PROP_0,
 	PROP_CAPABILITIES,
 	PROP_ENCRYPTED,
-	PROP_ESSID,
+	PROP_SSID,
 	PROP_FREQUENCY,
 	PROP_HW_ADDRESS,
 	PROP_MODE,
 	PROP_RATE,
 	PROP_STRENGTH,
-
 	LAST_PROP
 };
+
 
 static void
 nm_ap_init (NMAccessPoint *ap)
@@ -121,8 +120,7 @@ finalize (GObject *object)
 	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (object);
 
 	g_free (priv->dbus_path);
-	g_free (priv->essid);
-	g_free (priv->orig_essid);
+	g_byte_array_free (priv->ssid, TRUE);
 	g_slist_foreach (priv->user_addresses, (GFunc)g_free, NULL);
 	g_slist_free (priv->user_addresses);
 
@@ -137,28 +135,28 @@ set_property (GObject *object, guint prop_id,
 			  const GValue *value, GParamSpec *pspec)
 {
 	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (object);
-	const char *essid;
+	GArray * ssid;
 	int mode;
 
 	switch (prop_id) {
 	case PROP_CAPABILITIES:
 		priv->capabilities = g_value_get_uint (value);
 		break;
-	case PROP_ESSID:
-		essid = g_value_get_string (value);
-
-		if (priv->essid) {
-			g_free (priv->essid);
-			g_free (priv->orig_essid);
-			priv->essid = NULL;
-			priv->orig_essid = NULL;
+	case PROP_SSID:
+		ssid = g_value_get_boxed (value);
+		if (priv->ssid) {
+			g_byte_array_free (priv->ssid, TRUE);
+			priv->ssid = NULL;
 		}
-
-		if (essid) {
-			priv->orig_essid = g_strdup (essid);
-			priv->essid = nm_utils_essid_to_utf8 (essid);
+		if (ssid) {
+			int i;
+			unsigned char byte;
+			priv->ssid = g_byte_array_sized_new (ssid->len);
+			for (i = 0; i < ssid->len; i++) {
+				byte = g_array_index (ssid, unsigned char, i);
+				g_byte_array_append (priv->ssid, &byte, 1);
+			}
 		}
-
 		break;
 	case PROP_FREQUENCY:
 		priv->freq = g_value_get_double (value);
@@ -189,6 +187,8 @@ get_property (GObject *object, guint prop_id,
 {
 	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (object);
 	char hw_addr_buf[20];
+	GArray * ssid;
+	int i;
 
 	switch (prop_id) {
 	case PROP_CAPABILITIES:
@@ -197,8 +197,12 @@ get_property (GObject *object, guint prop_id,
 	case PROP_ENCRYPTED:
 		g_value_set_boolean (value, !(priv->capabilities & NM_802_11_CAP_PROTO_NONE));
 		break;
-	case PROP_ESSID:
-		g_value_set_string (value, priv->essid);
+	case PROP_SSID:
+		ssid = g_array_sized_new (FALSE, TRUE, sizeof (unsigned char), priv->ssid->len);
+		for (i = 0; i < priv->ssid->len; i++)
+			g_array_append_val (ssid, priv->ssid->data[i]);
+		g_value_set_boxed (value, ssid);
+		g_array_free (ssid, TRUE);
 		break;
 	case PROP_FREQUENCY:
 		g_value_set_double (value, priv->freq);
@@ -273,12 +277,12 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 							   G_PARAM_READABLE));
 
 	g_object_class_install_property
-		(object_class, PROP_ESSID,
-		 g_param_spec_string (NM_AP_ESSID,
-							  "ESSID",
-							  "ESSID",
-							  NULL,
-							  G_PARAM_READWRITE));
+		(object_class, PROP_SSID,
+	     g_param_spec_boxed (NM_AP_SSID,
+	                         "SSID",
+	                         "SSID",
+	                         DBUS_TYPE_G_UCHAR_ARRAY,
+	                         G_PARAM_READWRITE));
 
 	g_object_class_install_property
 		(object_class, PROP_FREQUENCY,
@@ -381,10 +385,11 @@ nm_ap_new_from_ap (NMAccessPoint *src_ap)
 	src_priv = NM_AP_GET_PRIVATE (src_ap);
 	new_priv = NM_AP_GET_PRIVATE (new_ap);
 
-	if (src_priv->essid && (strlen (src_priv->essid) > 0))
-	{
-		new_priv->essid = g_strdup (src_priv->essid);
-		new_priv->orig_essid = g_strdup (src_priv->orig_essid);
+	if (src_priv->ssid) {
+		new_priv->ssid = g_byte_array_sized_new (src_priv->ssid->len);
+		g_byte_array_append (new_priv->ssid,
+		                     src_priv->ssid->data,
+		                     src_priv->ssid->len);
 	}
 	memcpy (&new_priv->address, &src_priv->address, sizeof (struct ether_addr));
 	new_priv->mode = src_priv->mode;
@@ -416,21 +421,18 @@ foreach_property_cb (gpointer key, gpointer value, gpointer user_data)
 		GArray *array = g_value_get_boxed (variant);
 
 		if (!strcmp (key, "ssid")) {
-			char ssid[33];
-			int ssid_len = sizeof (ssid);
+			guint32 len = MIN (IW_ESSID_MAX_SIZE, array->len);
+			GByteArray * ssid;
 
-			if (array->len < sizeof (ssid))
-				ssid_len = array->len;
-			if (ssid_len <= 0)
-				return;
 			/* Stupid ieee80211 layer uses <hidden> */
-			if (((ssid_len == 8) || (ssid_len == 9))
+			if (((len == 8) || (len == 9))
 				&& (memcmp (array->data, "<hidden>", 8) == 0))
 				return;
-			memset (&ssid, 0, sizeof (ssid));
-			memcpy (&ssid, array->data, ssid_len);
-			ssid[32] = '\0';
-			nm_ap_set_essid (ap, ssid);
+
+			ssid = g_byte_array_sized_new (len);
+			g_byte_array_append (ssid, array->data, len);
+			nm_ap_set_ssid (ap, ssid);
+			g_byte_array_free (ssid, TRUE);
 		} else if (!strcmp (key, "bssid")) {
 			struct ether_addr addr;
 
@@ -496,7 +498,7 @@ nm_ap_new_from_properties (GHashTable *properties)
 	g_get_current_time (&cur_time);
 	nm_ap_set_last_seen (ap, cur_time.tv_sec);
 
-	if (!nm_ap_get_essid (ap))
+	if (!nm_ap_get_ssid (ap))
 		nm_ap_set_broadcast (ap, FALSE);
 
 	return ap;
@@ -542,28 +544,21 @@ void nm_ap_set_timestamp_via_timestamp (NMAccessPoint *ap, const GTimeVal *times
 }
 
 /*
- * Get/set functions for essid
+ * Get/set functions for ssid
  *
  */
-const char * nm_ap_get_essid (const NMAccessPoint *ap)
+const GByteArray * nm_ap_get_ssid (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (NM_IS_AP (ap), NULL);
 
-	return NM_AP_GET_PRIVATE (ap)->essid;
+	return NM_AP_GET_PRIVATE (ap)->ssid;
 }
 
-const char * nm_ap_get_orig_essid (const NMAccessPoint *ap)
-{
-	g_return_val_if_fail (NM_IS_AP (ap), NULL);
-
-	return NM_AP_GET_PRIVATE (ap)->orig_essid;
-}
-
-void nm_ap_set_essid (NMAccessPoint *ap, const char * essid)
+void nm_ap_set_ssid (NMAccessPoint *ap, const GByteArray * ssid)
 {
 	g_return_if_fail (NM_IS_AP (ap));
 
-	g_object_set (ap, NM_AP_ESSID, essid, NULL);
+	g_object_set (ap, NM_AP_SSID, ssid, NULL);
 }
 
 
@@ -926,18 +921,20 @@ void nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list)
 }
 
 
-gboolean nm_ap_has_manufacturer_default_essid (NMAccessPoint *ap)
+gboolean nm_ap_has_manufacturer_default_ssid (NMAccessPoint *ap)
 {
-	const char **default_essid = default_essid_list;
-	const char *this_essid;
+	const char **default_ssid = default_ssid_list;
+	const GByteArray * this_ssid;
 
 	g_return_val_if_fail (NM_IS_AP (ap), FALSE);
-	this_essid = NM_AP_GET_PRIVATE (ap)->essid;
+	this_ssid = NM_AP_GET_PRIVATE (ap)->ssid;
 
-	while (*default_essid)
-	{
-		if (!strcmp (*(default_essid++), this_essid))
-			return TRUE;
+	while (*default_ssid) {
+		if (this_ssid->len == strlen (*default_ssid)) {
+			if (!memcmp (*default_ssid, this_ssid->data, this_ssid->len))
+				return TRUE;
+		}
+		default_ssid++;
 	}
 
 	return FALSE;

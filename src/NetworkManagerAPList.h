@@ -39,15 +39,15 @@ gboolean			nm_ap_list_is_empty				(NMAccessPointList *list);
 
 void				nm_ap_list_append_ap			(NMAccessPointList *list, NMAccessPoint *ap);
 void				nm_ap_list_remove_ap			(NMAccessPointList *list, NMAccessPoint *ap);
-void				nm_ap_list_remove_ap_by_essid		(NMAccessPointList *list, const char *network);
-void				nm_ap_list_remove_duplicate_essids	(NMAccessPointList *list);
+void				nm_ap_list_remove_ap_by_ssid		(NMAccessPointList *list, const GByteArray * ssid);
+void				nm_ap_list_remove_duplicate_ssids	(NMAccessPointList *list);
 
-NMAccessPoint *	nm_ap_list_get_ap_by_essid		(NMAccessPointList *list, const char *network);
+NMAccessPoint *	nm_ap_list_get_ap_by_ssid		(NMAccessPointList *list, const GByteArray * ssid);
 NMAccessPoint *	nm_ap_list_get_ap_by_address		(NMAccessPointList *list, const struct ether_addr *addr);
 
 void				nm_ap_list_copy_properties		(NMAccessPointList *dest, NMAccessPointList *source);
-void				nm_ap_list_copy_essids_by_address	(NMAccessPointList *dest, NMAccessPointList *source);
-void				nm_ap_list_copy_one_essid_by_address	(NMAccessPoint *ap, NMAccessPointList *search_list);
+void				nm_ap_list_copy_ssids_by_address	(NMAccessPointList *dest, NMAccessPointList *source);
+void				nm_ap_list_copy_one_ssid_by_address	(NMAccessPoint *ap, NMAccessPointList *search_list);
 
 NMNetworkType		nm_ap_list_get_type				(NMAccessPointList *list);
 

@@ -117,12 +117,12 @@ nm_access_point_is_encrypted (NMAccessPoint *ap)
 	return nm_object_get_boolean_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "Encrypted");
 }
 
-char *
-nm_access_point_get_essid (NMAccessPoint *ap)
+GByteArray *
+nm_access_point_get_ssid (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), NULL);
 
-	return nm_object_get_string_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "Essid");
+	return nm_object_get_byte_array_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "Ssid");
 }
 
 gdouble

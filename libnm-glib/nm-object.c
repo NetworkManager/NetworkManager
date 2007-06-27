@@ -301,3 +301,27 @@ nm_object_get_double_property (NMObject *object,
 
 	return d;
 }
+
+GByteArray *
+nm_object_get_byte_array_property (NMObject *object,
+								   const char *interface,
+								   const char *prop_name)
+{
+	GByteArray * array = NULL;
+	GValue value = {0,};
+
+	if (nm_object_get_property (object, interface, prop_name, &value)) {
+		GArray * tmp = g_value_get_boxed (&value);
+		int i;
+		unsigned char byte;
+
+		array = g_byte_array_sized_new (tmp->len);
+		for (i = 0; i < tmp->len; i++) {
+			byte = g_array_index (tmp, unsigned char, i);
+			g_byte_array_append (array, &byte, 1);
+		}
+	}
+
+	return array;
+}
+

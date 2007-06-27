@@ -148,10 +148,14 @@ static NMDevice * nm_policy_auto_get_best_device (NMPolicy *policy, NMAccessPoin
 			highest_priority_dev = NM_DEVICE (best_wireless_dev);
 	}
 
-#if 0
-	nm_info ("AUTO: Best wired device = %s, best wireless device = %s (%s)", best_wired_dev ? nm_device_get_iface (best_wired_dev) : "(null)",
-			best_wireless_dev ? nm_device_get_iface (best_wireless_dev) : "(null)", (best_wireless_dev && *ap) ? nm_ap_get_essid (*ap) : "null" );
-#endif
+	if (FALSE) {
+		const GByteArray * ssid = (best_wireless_dev && *ap) ? nm_ap_get_ssid (*ap) : NULL;
+
+		nm_info ("AUTO: Best wired device = %s, best wireless device = %s (%s)",
+		         best_wired_dev ? nm_device_get_iface (NM_DEVICE (best_wired_dev)) : "(null)",
+		         best_wireless_dev ? nm_device_get_iface (NM_DEVICE (best_wireless_dev)) : "(null)",
+		         ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "null" );
+	}
 
 	return highest_priority_dev;
 }
@@ -161,28 +165,28 @@ create_connection (NMDevice *device, NMAccessPoint *ap)
 {
 	NMConnection *connection = NULL;
 	NMSetting *setting = NULL;
-	
+
 	if (NM_IS_DEVICE_802_3_ETHERNET (device)) {
 		nm_info ("Will activate connection '%s'.", nm_device_get_iface (device));
 		setting = nm_setting_wired_new ();
 	} else if (NM_IS_DEVICE_802_11_WIRELESS (device) && ap) {
 		NMSettingWireless *wireless;
-		const char *ssid;
+		const GByteArray * ssid = nm_ap_get_ssid (ap);
 
 		nm_info ("Will activate connection '%s/%s'.",
 				 nm_device_get_iface (device),
-				 nm_ap_get_essid (ap));
+		         ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
 
 		setting = nm_setting_wireless_new ();
 		wireless = (NMSettingWireless *) setting;
 
-		ssid = nm_ap_get_essid (ap);
-		wireless->ssid = g_byte_array_sized_new (strlen (ssid));
-		g_byte_array_append (wireless->ssid, (guint8 *) ssid, strlen (ssid));
+		wireless->ssid = g_byte_array_sized_new (ssid->len);
+		g_byte_array_append (wireless->ssid, ssid->data, ssid->len);
 
 		wireless->mode = g_strdup ("infrastructure");
-	} else
+	} else {
 		nm_warning ("Unhandled device type '%s'", G_OBJECT_CLASS_NAME (device));
+	}
 
 	if (setting) {
 		NMSettingInfo *info;
@@ -216,7 +220,7 @@ nm_policy_device_change_check (gpointer user_data)
 	NMPolicy *policy = (NMPolicy *) user_data;
 	GSList *iter;
 	NMAccessPoint * ap = NULL;
-	NMDevice *      new_dev;
+	NMDevice *      new_dev = NULL;
 	NMDevice *      old_dev = NULL;
 	gboolean        do_switch = FALSE;
 
@@ -309,9 +313,9 @@ nm_policy_device_change_check (gpointer user_data)
 			/* Only switch if the old device's wireless config is invalid */
 			if (NM_IS_DEVICE_802_11_WIRELESS (new_dev)) {
 				NMAccessPoint *old_ap = nm_device_802_11_wireless_get_activation_ap (NM_DEVICE_802_11_WIRELESS (old_dev));
-				const char *	old_essid = nm_ap_get_essid (old_ap);
+				const GByteArray * old_ssid = nm_ap_get_ssid (old_ap);
 				int			old_mode = nm_ap_get_mode (old_ap);
-				const char *	new_essid = nm_ap_get_essid (ap);
+				const GByteArray * new_ssid = nm_ap_get_ssid (ap);
 				gboolean		same_request = FALSE;
 
 				/* Schedule new activation if the currently associated
@@ -319,23 +323,32 @@ nm_policy_device_change_check (gpointer user_data)
 				 * link to the old access point.  We don't switch away
 				 * from Ad-Hoc APs either.
 				 */
-				gboolean same_essid = (nm_null_safe_strcmp (old_essid, new_essid) == 0);
+				gboolean same_ssid = nm_utils_same_ssid (old_ssid, new_ssid);
 
-				/* If the "best" AP's essid is the same as the current activation
-				 * request's essid, but the current activation request isn't
+				/* If the "best" AP's SSID is the same as the current activation
+				 * request's SSID, but the current activation request isn't
 				 * done yet, don't switch.  This prevents multiple requests for the
 				 * AP's password on startup.
 				 */
-				if ((old_dev == new_dev) && nm_device_is_activating (new_dev) && same_essid)
+				if ((old_dev == new_dev) && nm_device_is_activating (new_dev) && same_ssid)
 					same_request = TRUE;
 
-				if (!same_request && (!same_essid || !old_has_link) && (old_mode != IW_MODE_ADHOC)) {
+				if (!same_request && (!same_ssid || !old_has_link) && (old_mode != IW_MODE_ADHOC)) {
+					char * new_esc_ssid;
+					char * old_esc_ssid;
+
+					new_esc_ssid = g_strdup (new_ssid ? nm_utils_escape_ssid (new_ssid->data, new_ssid->len) : "(none)");
+					old_esc_ssid = g_strdup (old_ssid ? nm_utils_escape_ssid (old_ssid->data, old_ssid->len) : "(none)");
 					nm_info ("SWITCH: found better connection '%s/%s'"
 					         " than current connection '%s/%s'.  "
 					         "same_ssid=%d, have_link=%d",
-					         nm_device_get_iface (new_dev),	new_essid,
-					         nm_device_get_iface (old_dev), old_essid,
-					         same_essid, old_has_link);
+					         nm_device_get_iface (new_dev),
+					         new_esc_ssid,
+					         nm_device_get_iface (old_dev),
+					         old_esc_ssid,
+					         same_ssid, old_has_link);
+					g_free (new_esc_ssid);
+					g_free (old_esc_ssid);
 					do_switch = TRUE;
 				}
 			} else if (NM_IS_DEVICE_802_3_ETHERNET (new_dev)) {
@@ -346,7 +359,7 @@ nm_policy_device_change_check (gpointer user_data)
 		}
 	}
 
-	if (do_switch) {
+	if (do_switch && new_dev) {
 		NMConnection *connection;
 
 		connection = create_connection (new_dev, ap);
@@ -446,11 +459,11 @@ nm_policy_device_list_update_from_allowed_list (gpointer user_data)
 		wdev = NM_DEVICE_802_11_WIRELESS (dev);
 		if (nm_device_get_capabilities (dev) & NM_DEVICE_CAP_WIRELESS_SCAN) {
 			/* Once we have the list, copy in any relevant information from our
-			 * Allowed list and fill in the ESSID of base stations that aren't
-			 * broadcasting their ESSID, if we have their MAC address in our
+			 * Allowed list and fill in the SSID of base stations that aren't
+			 * broadcasting their SSID, if we have their MAC address in our
 			 * allowed list.
 			 */
-			nm_ap_list_copy_essids_by_address (nm_device_802_11_wireless_ap_list_get (wdev),
+			nm_ap_list_copy_ssids_by_address (nm_device_802_11_wireless_ap_list_get (wdev),
 			                                   data->allowed_ap_list);
 			nm_ap_list_copy_properties (nm_device_802_11_wireless_ap_list_get (wdev),
 			                            data->allowed_ap_list);
@@ -458,7 +471,7 @@ nm_policy_device_list_update_from_allowed_list (gpointer user_data)
 			nm_device_802_11_wireless_copy_allowed_to_dev_list (wdev, data->allowed_ap_list);
 		}
 
-		nm_ap_list_remove_duplicate_essids (nm_device_802_11_wireless_ap_list_get (wdev));
+		nm_ap_list_remove_duplicate_ssids (nm_device_802_11_wireless_ap_list_get (wdev));
 	}
 
 	schedule_change_check ((gpointer) global_policy);
