@@ -825,6 +825,10 @@ void nm_hal_init (NMData *data)
 		nm_add_initial_killswitch_devices (data);
 		nm_add_initial_devices (data);
 	}
+
+	/* If there weren't any killswitches, mark hardware RF to on */
+	if (g_slist_length (data->killswitch_list) == 0)
+		data->hw_rf_enabled = TRUE;
 }
 
 

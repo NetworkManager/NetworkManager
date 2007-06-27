@@ -1,3 +1,9 @@
+2007-06-27  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManager.c
+		- (nm_hal_init): set hardware RF to enabled if no killswitches are found
+			after the initial discovery
+
 2007-06-21  Dan Williams  <dcbw@redhat.com>
 
 	More fixes for Fedora #194124, gnome.org #354565
