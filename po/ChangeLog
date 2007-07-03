@@ -1,3 +1,7 @@
+2007-07-03  Takeshi AIHANA <takeshi.aihana@gmail.com>
+
+	* ja.po: Fixed #Bug 453314.
+
 2007-06-04  Kjartan Maraas  <kmaraas@gnome.org>
 
 	* nb.po: Update Norwegian bokmål translation.

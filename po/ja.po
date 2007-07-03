@@ -204,7 +204,7 @@ msgstr "ネットワーク接続なし"
 
 #: ../gnome/applet/applet.c:1093
 msgid "Wired network connection"
-msgstr "無線ネットワーク接続"
+msgstr "有線ネットワーク接続"
 
 #: ../gnome/applet/applet.c:1097
 msgid "Connected to an Ad-Hoc wireless network"
@@ -382,7 +382,7 @@ msgstr "トレイの向き"
 #: ../gnome/applet/menu-items.c:88
 #, c-format
 msgid "Wired Network (%s)"
-msgstr "無線ネットワーク (%s)"
+msgstr "有線ネットワーク (%s)"
 
 #: ../gnome/applet/menu-items.c:91
 msgid "_Wired Network"
