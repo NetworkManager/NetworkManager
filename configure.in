@@ -383,6 +383,7 @@ initscript/Arch/networkmanager-dispatcher
 initscript/paldo/Makefile
 initscript/paldo/NetworkManager
 initscript/paldo/NetworkManagerDispatcher
+introspection/Makefile
 man/Makefile
 man/NetworkManager.8
 man/NetworkManagerDispatcher.8

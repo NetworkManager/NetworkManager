@@ -9,7 +9,8 @@ SUBDIRS = 				\
 	   test				\
 	   po				\
 	   man				\
-	   include
+	   include			\
+	   introspection
 
 EXTRA_DIST =				\
 	CONTRIBUTING			\
