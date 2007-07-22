@@ -1,41 +1,41 @@
 # Japanese message catalog for NetworkManager-openvpn
 # Copyright (C) 2006 THE NetworkManager-openvpn's COPYRIGHT HOLDER
 # This file is distributed under the same license as the NetworkManager-openvpn package.
-# Satoru SATOH <ss@gnome.gr.jp>, 2006.
+# Satoru SATOH <ss@gnome.gr.jp>, 2006, 2007.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-07-19 00:42+0900\n"
-"PO-Revision-Date: 2006-07-19 01:42+0900\n"
+"POT-Creation-Date: 2007-07-23 00:35+0900\n"
+"PO-Revision-Date: 2007-07-23 00:56+0900\n"
 "Last-Translator: Satoru SATOH <ss@gnome.gr.jp>\n"
 "Language-Team: Japanese <gnome-translation@gnome.gr.jp>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:148
+#: ../auth-dialog/gnome-two-password-dialog.c:145
 msgid "_Password:"
 msgstr "パスワード(_P):"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:149
+#: ../auth-dialog/gnome-two-password-dialog.c:146
 msgid "_Secondary Password:"
 msgstr "第二パスワード(_S):"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:272
+#: ../auth-dialog/gnome-two-password-dialog.c:263
 msgid "_Username:"
 msgstr "ユーザ名(_U):"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:274
+#: ../auth-dialog/gnome-two-password-dialog.c:265
 msgid "_Domain:"
 msgstr "ドメイン(_D):"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:360
+#: ../auth-dialog/gnome-two-password-dialog.c:357
 msgid "Connect _anonymously"
 msgstr "匿名で接続(_A)"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:365
+#: ../auth-dialog/gnome-two-password-dialog.c:362
 msgid "Connect as _user:"
 msgstr "ユーザで接続(_U):"
 
@@ -56,7 +56,11 @@ msgstr "仮想プライベートネットワーク '%s' にアクセスするに
 msgid "Authenticate VPN"
 msgstr "VPN 認証"
 
-#: ../auth-dialog/main.c:227 ../auth-dialog/main.c:252
+#: ../auth-dialog/main.c:227
+msgid "Certificate pass_word:"
+msgstr "証明パスワード(_W):"
+
+#: ../auth-dialog/main.c:252
 msgid "Certificate password:"
 msgstr "証明パスワード:"
 
@@ -68,297 +72,305 @@ msgstr "VPN 接続を追加、削除または編集"
 msgid "VPN Connection Manager (OpenVPN)"
 msgstr "VPN 接続マネージャ (OpenVPN)"
 
-#: ../properties/nm-openvpn.c:130
+#: ../properties/nm-openvpn.c:146
 msgid "OpenVPN Client"
 msgstr "OpenVPN クライアント"
 
-#: ../properties/nm-openvpn.c:729
+#: ../properties/nm-openvpn.c:803
 msgid "The following OpenVPN connection will be created:"
 msgstr "次の OpenVPN 接続を作成します:"
 
-#: ../properties/nm-openvpn.c:731
+#: ../properties/nm-openvpn.c:805
 #, c-format
 msgid "Name:  %s"
 msgstr "名前:  %s"
 
-#: ../properties/nm-openvpn.c:739
+#: ../properties/nm-openvpn.c:813
 msgid "Connection Type: X.509 Certificates"
 msgstr "接続タイプ: X.509 証明"
 
-#: ../properties/nm-openvpn.c:742 ../properties/nm-openvpn.c:769
-#: ../properties/nm-openvpn.c:781
+#: ../properties/nm-openvpn.c:816 ../properties/nm-openvpn.c:843
+#: ../properties/nm-openvpn.c:855
 #, c-format
 msgid "CA:  %s"
 msgstr "認証局:  %s"
 
-#: ../properties/nm-openvpn.c:745 ../properties/nm-openvpn.c:784
+#: ../properties/nm-openvpn.c:819 ../properties/nm-openvpn.c:858
 #, c-format
 msgid "Cert:  %s"
 msgstr "証明:  %s"
 
-#: ../properties/nm-openvpn.c:748 ../properties/nm-openvpn.c:787
+#: ../properties/nm-openvpn.c:822 ../properties/nm-openvpn.c:861
 #, c-format
 msgid "Key:  %s"
 msgstr "鍵:   %s"
 
-#: ../properties/nm-openvpn.c:752
+#: ../properties/nm-openvpn.c:826
 msgid "Connection Type: Shared Key"
 msgstr "接続タイプ: 共有鍵"
 
-#: ../properties/nm-openvpn.c:755
+#: ../properties/nm-openvpn.c:829
 #, c-format
 msgid "Shared Key:  %s"
 msgstr "共有鍵:      %s"
 
-#: ../properties/nm-openvpn.c:758
+#: ../properties/nm-openvpn.c:832
 #, c-format
 msgid "Local IP:  %s"
 msgstr "ローカル IP:  %s"
 
-#: ../properties/nm-openvpn.c:761
+#: ../properties/nm-openvpn.c:835
 #, c-format
 msgid "Remote IP:  %s"
 msgstr "リモート IP:  %s"
 
-#: ../properties/nm-openvpn.c:766
+#: ../properties/nm-openvpn.c:840
 msgid "Connection Type: Password"
 msgstr "接続タイプ: パスワード"
 
-#: ../properties/nm-openvpn.c:772 ../properties/nm-openvpn.c:790
+#: ../properties/nm-openvpn.c:846 ../properties/nm-openvpn.c:864
 #, c-format
 msgid "Username:  %s"
 msgstr "ユーザ名:  %s"
 
-#: ../properties/nm-openvpn.c:778
+#: ../properties/nm-openvpn.c:852
 msgid "Connection Type: X.509 with Password Authentication"
 msgstr "接続タイプ: X.509 + パスワード認証"
 
-#: ../properties/nm-openvpn.c:796
+#: ../properties/nm-openvpn.c:870
 #, c-format
 msgid "Remote:  %s"
 msgstr "リモート:   %s"
 
-#: ../properties/nm-openvpn.c:799
+#: ../properties/nm-openvpn.c:873
+#, c-format
+msgid "Port:  %s"
+msgstr "ポート:  %s"
+
+#: ../properties/nm-openvpn.c:876
 #, c-format
 msgid "Device: %s"
 msgstr "デバイス: %s"
 
-#: ../properties/nm-openvpn.c:799
+#: ../properties/nm-openvpn.c:876
 msgid "TAP"
 msgstr "TAP"
 
-#: ../properties/nm-openvpn.c:799
+#: ../properties/nm-openvpn.c:876
 msgid "TUN"
 msgstr "TUN"
 
-#: ../properties/nm-openvpn.c:802
+#: ../properties/nm-openvpn.c:879
 #, c-format
 msgid "Protocol: %s"
 msgstr "プロトコル: %s"
 
-#: ../properties/nm-openvpn.c:802
+#: ../properties/nm-openvpn.c:879
 msgid "TCP"
 msgstr "TCP"
 
-#: ../properties/nm-openvpn.c:802
+#: ../properties/nm-openvpn.c:879
 msgid "UDP"
 msgstr "UDP"
 
-#: ../properties/nm-openvpn.c:806
+#: ../properties/nm-openvpn.c:883
 #, c-format
 msgid "Routes:  %s"
 msgstr "ルート:  %s"
 
-#: ../properties/nm-openvpn.c:810
+#: ../properties/nm-openvpn.c:887
 #, c-format
 msgid "Use LZO Compression: %s"
 msgstr "LZO 圧縮の使用: %s"
 
-#: ../properties/nm-openvpn.c:810
+#: ../properties/nm-openvpn.c:887
 msgid "Yes"
 msgstr "はい"
 
-#: ../properties/nm-openvpn.c:810
+#: ../properties/nm-openvpn.c:887
 msgid "No"
 msgstr "いいえ"
 
-#: ../properties/nm-openvpn.c:814
+#: ../properties/nm-openvpn.c:891
 #, c-format
 msgid "Cipher:  %s"
 msgstr "暗号:    %s"
 
-#: ../properties/nm-openvpn.c:819
+#: ../properties/nm-openvpn.c:896
 #, c-format
 msgid "TLS auth:  %s %s"
 msgstr "TLS 認証:  %s %s"
 
-#: ../properties/nm-openvpn.c:823
+#: ../properties/nm-openvpn.c:900
 msgid "The connection details can be changed using the \"Edit\" button."
 msgstr "接続の詳細は\"編集\"ボタンで変更できます。"
 
-#: ../properties/nm-openvpn.c:1003
+#: ../properties/nm-openvpn.c:1124
 msgid "Cannot import settings"
 msgstr "設定をインポートできません"
 
-#: ../properties/nm-openvpn.c:1005
+#: ../properties/nm-openvpn.c:1126
 #, c-format
 msgid "The VPN settings file '%s' does not contain valid data."
 msgstr "VPN 設定ファイル '%s' には適切なデータが含まれていません。"
 
-#: ../properties/nm-openvpn.c:1042
+#: ../properties/nm-openvpn.c:1173
 msgid "Select file to import"
 msgstr "インポートするファイルを選択"
 
-#: ../properties/nm-openvpn.c:1122 ../properties/nm-openvpn.c:1134
+#: ../properties/nm-openvpn.c:1232 ../properties/nm-openvpn.c:1244
+#: ../properties/nm-openvpn.c:1247
 msgid "Select CA to use"
 msgstr "利用する認証局を選択"
 
-#: ../properties/nm-openvpn.c:1125
+#: ../properties/nm-openvpn.c:1235 ../properties/nm-openvpn.c:1250
 msgid "Select certificate to use"
 msgstr "利用する証明を選択"
 
-#: ../properties/nm-openvpn.c:1128
+#: ../properties/nm-openvpn.c:1238 ../properties/nm-openvpn.c:1253
 msgid "Select key to use"
 msgstr "利用する鍵を選択"
 
-#: ../properties/nm-openvpn.c:1131
+#: ../properties/nm-openvpn.c:1241
 msgid "Select shared key to use"
 msgstr "利用する共有鍵を選択"
 
-#: ../properties/nm-openvpn.c:1137
+#: ../properties/nm-openvpn.c:1256
 msgid "Select TA to use"
 msgstr "利用する TA を選択"
 
 #. printf ("in impl_export\n");
-#: ../properties/nm-openvpn.c:1326
+#: ../properties/nm-openvpn.c:1450
 msgid "Save as..."
 msgstr "別名で保存..."
 
-#: ../properties/nm-openvpn.c:1356
+#: ../properties/nm-openvpn.c:1480
 #, c-format
 msgid "A file named \"%s\" already exists."
 msgstr "ファイル \"%s\" は既にあります。"
 
-#: ../properties/nm-openvpn.c:1359
+#: ../properties/nm-openvpn.c:1483
 msgid "Do you want to replace it with the one you are saving?"
 msgstr "保存しようとしているファイルで上書きしますか?"
 
-#: ../properties/nm-openvpn.c:1373
+#: ../properties/nm-openvpn.c:1497
 msgid "Failed to export configuration"
 msgstr "設定のエクスポートに失敗"
 
-#: ../properties/nm-openvpn.c:1375
+#: ../properties/nm-openvpn.c:1499
 #, c-format
 msgid "Failed to save file %s"
 msgstr "ファイル %s の保存に失敗"
 
 #: ../properties/nm-openvpn-dialog.glade.h:1
-msgid "0"
-msgstr "0"
+msgid "(Default: 1194)"
+msgstr "(デフォルト: 1194)"
 
 #: ../properties/nm-openvpn-dialog.glade.h:2
-msgid "1"
-msgstr "1"
+msgid "65536"
+msgstr "65536"
 
 #: ../properties/nm-openvpn-dialog.glade.h:3
-msgid "<b>Connection Name</b>"
-msgstr "<b>接続名</b>"
-
-#: ../properties/nm-openvpn-dialog.glade.h:4
-msgid "<b>Optional Information</b>"
-msgstr "<b>オプション情報</b>"
-
-#: ../properties/nm-openvpn-dialog.glade.h:5
-msgid "<b>Required Information</b>"
-msgstr "<b>必須情報</b>"
-
-#: ../properties/nm-openvpn-dialog.glade.h:6
 msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
 msgstr "<i>例: 172.16.0.0/16 10.11.12.0/24</i>"
 
+#: ../properties/nm-openvpn-dialog.glade.h:4
+msgid "Ad_vanced"
+msgstr "詳細(_V)"
+
+#: ../properties/nm-openvpn-dialog.glade.h:5
+msgid "C_A file:"
+msgstr "認証局ファイル(_A):"
+
+#: ../properties/nm-openvpn-dialog.glade.h:6
+msgid "C_ertificate:"
+msgstr "証明書(_E):"
+
 #: ../properties/nm-openvpn-dialog.glade.h:7
-msgid "CA  file:"
-msgstr "認証局ファイル:"
+msgid "Co_nnection type:"
+msgstr "接続タイプ(_N):"
 
 #: ../properties/nm-openvpn-dialog.glade.h:8
-msgid "Certificate:"
-msgstr "証明:"
+msgid "Connection na_me:"
+msgstr "接続名(_M):"
 
 #: ../properties/nm-openvpn-dialog.glade.h:9
-msgid "Connection Type:"
-msgstr "接続タイプ:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:10
 msgid "Direction:"
 msgstr "方向:"
 
+#: ../properties/nm-openvpn-dialog.glade.h:10
+msgid "Import _Saved Configuration..."
+msgstr "保存した設定をインポート(_S)..."
+
 #: ../properties/nm-openvpn-dialog.glade.h:11
-msgid "Key:"
-msgstr "鍵:"
+msgid ""
+"Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
+msgstr ""
+"プライベートネットワークへの接続を識別する名前。例えば\"キャンパス VPN\" や"
+" \"社内ネットワーク\" など。"
 
 #: ../properties/nm-openvpn-dialog.glade.h:12
-msgid "Local IP:"
-msgstr "ローカル IP:"
+msgid "Network"
+msgstr "ネットワーク"
 
 #: ../properties/nm-openvpn-dialog.glade.h:13
-msgid "Password"
-msgstr "パスワード"
+msgid "Only use _VPN connection for these addresses:"
+msgstr "これらのアドレスについてのみ VPN 接続を利用(_V)"
 
 #: ../properties/nm-openvpn-dialog.glade.h:14
+msgid "OpenVPN Advanced Options"
+msgstr "Options の詳細オプション"
+
+#: ../properties/nm-openvpn-dialog.glade.h:15
+msgid "OpenVPN Configuration"
+msgstr "OpenVPN 設定"
+
+#: ../properties/nm-openvpn-dialog.glade.h:16
 msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
-msgstr "システム管理者が提供した情報を下に入力してください。"
-"接続時にきかれるまではパスワードは入力しないでください。"
-
-#: ../properties/nm-openvpn-dialog.glade.h:15
-msgid ""
-"Please note that the file you import is not an OpenVPN configuration file. "
-"Ask your adminstrator for the file."
-msgstr "インポートしたファイルは OpenVPN の設定ファイルではありません。"
-"システム管理者にファイルについて聞いてください。"
-
-#: ../properties/nm-openvpn-dialog.glade.h:16
-msgid "Remote IP:"
-msgstr "リモート IP:"
+msgstr ""
+"システム管理者が提供した情報を下に入力してください。接続時にきかれるまではパ"
+"スワードは入力しないでください。"
 
 #: ../properties/nm-openvpn-dialog.glade.h:17
-msgid "Shared Key:"
-msgstr "共有鍵:"
+msgid ""
+"Please note that the file you import is not an OpenVPN configuration file. "
+"Ask your administrator for the file."
+msgstr ""
+"インポートしたファイルは OpenVPN の設定ファイルではありません。"
+"システム管理者にファイルについて尋ねてください。"
 
 #: ../properties/nm-openvpn-dialog.glade.h:18
-msgid "Shared key"
-msgstr "共有鍵"
+msgid "Shared _key:"
+msgstr "共有鍵(_K):"
 
 #: ../properties/nm-openvpn-dialog.glade.h:19
-msgid "Use LZO compression"
-msgstr "LZO 圧縮を使用"
+msgid "TLS-Auth"
+msgstr "TLS 認証"
 
 #: ../properties/nm-openvpn-dialog.glade.h:20
-msgid "Use TAP device"
-msgstr "TAP デバイスを使用"
+msgid "Use L_ZO compression"
+msgstr "LZO 圧縮を使用(_Z)"
 
 #: ../properties/nm-openvpn-dialog.glade.h:21
-msgid "Use TCP connection"
-msgstr "TCP 接続を使用"
+msgid "Use TA_P device"
+msgstr "TAP デバイスを使用 (_P)"
 
 #: ../properties/nm-openvpn-dialog.glade.h:22
-msgid "Use TLS auth:"
-msgstr "TLS 認証を使用"
+msgid "Use _TCP connection"
+msgstr "TCP 接続を使用 (_T)"
 
 #: ../properties/nm-openvpn-dialog.glade.h:23
-msgid "Use cipher:"
-msgstr "暗号を使用:"
+msgid "Use _TLS auth:"
+msgstr "TLS 認証を使用 (_T):"
 
 #: ../properties/nm-openvpn-dialog.glade.h:24
-msgid "Username:"
-msgstr "ユーザ名:"
+msgid "Use cip_her:"
+msgstr "暗号を使用 (_H):"
 
 #: ../properties/nm-openvpn-dialog.glade.h:25
-msgid "X.509"
-msgstr "X.509"
-
-#: ../properties/nm-openvpn-dialog.glade.h:26
 msgid ""
 "X.509 Certificates\n"
 "Pre-shared key\n"
@@ -370,35 +382,49 @@ msgstr ""
 "パスワード認証\n"
 "X.509 + パスワード認証"
 
+#: ../properties/nm-openvpn-dialog.glade.h:29
+msgid "_0"
+msgstr "0(_0)"
+
 #: ../properties/nm-openvpn-dialog.glade.h:30
-msgid "_Gateway:"
-msgstr "ゲートウェイ(_G):"
+msgid "_1"
+msgstr "1(_1)"
 
 #: ../properties/nm-openvpn-dialog.glade.h:31
-msgid "_Import Saved Configuration..."
-msgstr "保存されている設定をインポート(_I)..."
+msgid "_Gateway address:"
+msgstr "ゲートウェイアドレス (_G):"
 
 #: ../properties/nm-openvpn-dialog.glade.h:32
-msgid ""
-"_Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
-msgstr "プライベートネットワークへの接続を識別する名前。例えば"
-"\"キャンパス VPN\" または \"社内ネットワーク\" など。"
+msgid "_Gateway port:"
+msgstr "ゲートウェイポート (_G):"
 
 #: ../properties/nm-openvpn-dialog.glade.h:33
-msgid "_Only use VPN connection for these addresses"
-msgstr "これらのアドレスについてのみ VPN 接続を利用(_O)"
+msgid "_Key:"
+msgstr "鍵(_K):"
 
 #: ../properties/nm-openvpn-dialog.glade.h:34
-msgid "none"
-msgstr "なし"
+msgid "_Local IP:"
+msgstr "ローカル IP (_L):"
+
+#: ../properties/nm-openvpn-dialog.glade.h:35
+msgid "_Remote IP:"
+msgstr "リモート IP (_R):"
+
+#: ../properties/nm-openvpn-dialog.glade.h:36
+msgid "_User name:"
+msgstr "ユーザ名 (_U):"
+
+#: ../properties/nm-openvpn-dialog.glade.h:37
+msgid "_none"
+msgstr "なし (_N)"
 
 #: ../src/nm-openvpn-service.c:127
 msgid ""
 "The VPN login failed because the user name and password were not accepted or "
 "the certificate password was wrong."
-msgstr "VPN ログインに失敗。ユーザ名、パスワードあるいは証明パスワードが"
-"間違っています。"
+msgstr ""
+"VPN ログインに失敗。ユーザ名、パスワードあるいは証明パスワードが間違っていま"
+"す。"
 
 #: ../src/nm-openvpn-service.c:129
 msgid "The VPN login failed because the VPN program could not be started."
@@ -408,7 +434,8 @@ msgstr "VPN ログインに失敗。VPN プログラムを起動できません�
 msgid ""
 "The VPN login failed because the VPN program could not connect to the VPN "
 "server."
-msgstr "VPN ログインに失敗。VPN プログラムは VPN サーバに接続できませんでした。"
+msgstr ""
+"VPN ログインに失敗。VPN プログラムは VPN サーバに接続できませんでした。"
 
 #: ../src/nm-openvpn-service.c:133
 msgid ""
@@ -419,9 +446,31 @@ msgstr "VPN ログインに失敗。VPN 設定オプションが間違ってい�
 msgid ""
 "The VPN login failed because the VPN program received an invalid "
 "configuration from the VPN server."
-msgstr "VPN ログインに失敗。VPN プログラムが VPN サーバから受け取った"
-"設定は適切なものではありません。"
+msgstr ""
+"VPN ログインに失敗。VPN プログラムが VPN サーバから受け取った設定は適切なもの"
+"ではありません。"
 
 #: ../src/nm-openvpn-service.c:137
 msgid "VPN connection failed"
 msgstr "VPN 接続に失敗"
+
+#~ msgid "<b>Connection Name</b>"
+#~ msgstr "<b>接続名</b>"
+
+#~ msgid "<b>Optional Information</b>"
+#~ msgstr "<b>オプション情報</b>"
+
+#~ msgid "<b>Required Information</b>"
+#~ msgstr "<b>必須情報</b>"
+
+#~ msgid "Password"
+#~ msgstr "パスワード"
+
+#~ msgid "Shared Key:"
+#~ msgstr "共有鍵:"
+
+#~ msgid "Username:"
+#~ msgstr "ユーザ名:"
+
+#~ msgid "X.509"
+#~ msgstr "X.509"
