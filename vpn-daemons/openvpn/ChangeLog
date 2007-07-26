@@ -1,3 +1,10 @@
+2007-07-26  Dan Williams  <dcbw@redhat.com>
+
+    Patch from Robert Buchholz <rbu@gentoo.org>
+
+    * configure.in
+        - Find & link against libnm-util too (#454739)
+
 2007-06-21  Christopher Aillon  <caillon@redhat.com>
 
 	* nm-openvpn-service.name.in:
