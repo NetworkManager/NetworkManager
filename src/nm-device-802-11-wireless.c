@@ -617,7 +617,10 @@ real_start (NMDevice *dev)
 	/* Start the scanning timeout for devices that can do scanning */
 	if (nm_device_get_capabilities (dev) & NM_DEVICE_CAP_WIRELESS_SCAN)
 	{
-		self->priv->pending_scan = g_idle_source_new ();
+		/* Stupid orinoco has problems scanning immediately after being up,
+		 * so wait a bit before triggering a scan.
+		 */
+		self->priv->pending_scan = g_timeout_source_new (600);
 		g_source_set_callback (self->priv->pending_scan,
 							   nm_device_802_11_wireless_scan,
 							   self,

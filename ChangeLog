@@ -1,3 +1,9 @@
+2007-07-26  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.c
+		- (real_start): I hate orinoco; apparently has trouble scanning too soon
+			after being brought up, so do the initial scan a bit later.
+
 2007-06-27  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManager.c
