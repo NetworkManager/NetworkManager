@@ -31,11 +31,18 @@ nm_ppp_starter_SOURCES =			\
 				nm-ppp-starter.h	\
 				nm-utils.c			\
 				nm-utils.h			\
-				pppd/fsm.h			\
-				pppd/ipcp.h			\
-				pppd/patchlevel.h 	\
-				pppd/pppd.h
-
+				external/2.4.3/pppd/patchlevel.h \
+				external/2.4.3/pppd/ipcp.h \
+				external/2.4.3/pppd/pppd.h \
+				external/2.4.3/pppd/fsm.h \
+				external/2.4.4/pppd/patchlevel.h \
+				external/2.4.4/pppd/ipcp.h \
+				external/2.4.4/pppd/pppd.h \
+				external/2.4.4/pppd/fsm.h \
+				external/2.4.4b1/pppd/patchlevel.h \
+				external/2.4.4b1/pppd/ipcp.h \
+				external/2.4.4b1/pppd/pppd.h \
+				external/2.4.4b1/pppd/fsm.h
 
 nm_ppp_starter_LDADD = 				\
 				$(DBUS_LIBS)		\
