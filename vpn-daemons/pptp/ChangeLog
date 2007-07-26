@@ -1,5 +1,12 @@
 2007-07-26  Dan Williams  <dcbw@redhat.com>
 
+    Patch from Kelemen Gábor <kelemeng@gnome.hu>
+
+    * auth-dialog-general/nm-ppp-auth.glade
+        - Mark non-translated strings as non-translatable (#411875)
+
+2007-07-26  Dan Williams  <dcbw@redhat.com>
+
     Patch from Robert Buchholz <rbu@gentoo.org>
 
     * src/Makefile.am

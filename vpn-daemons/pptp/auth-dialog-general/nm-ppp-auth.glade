@@ -254,7 +254,7 @@ Please select an appropriate authentication type and provide the necessary crede
   <property name="border_width">2</property>
   <property name="width_request">82</property>
   <property name="height_request">116</property>
-  <property name="title" translatable="yes">auth-none-window</property>
+  <property name="title">auth-none-window</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>
@@ -285,7 +285,7 @@ Please select an appropriate authentication type and provide the necessary crede
 
 <widget class="GtkWindow" id="auth-chap-window">
   <property name="border_width">12</property>
-  <property name="title" translatable="yes">auth-chap-window</property>
+  <property name="title">auth-chap-window</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>
@@ -415,7 +415,7 @@ Please select an appropriate authentication type and provide the necessary crede
 </widget>
 
 <widget class="GtkWindow" id="auth-mschapv2-window">
-  <property name="title" translatable="yes">auth-mschapv2-window</property>
+  <property name="title">auth-mschapv2-window</property>
   <property name="type">GTK_WINDOW_TOPLEVEL</property>
   <property name="window_position">GTK_WIN_POS_NONE</property>
   <property name="modal">False</property>
