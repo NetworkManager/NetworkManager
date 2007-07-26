@@ -14,7 +14,8 @@ AM_CPPFLAGS =							\
 	-DLIBDIR=\""$(libdir)"\"				\
 	-DLIBEXECDIR=\""$(libexecdir)"\"			\
 	-DLOCALSTATEDIR=\""$(localstatedir)"\"		 	\
-	-DDATADIR=\"$(datadir)\"
+	-DDATADIR=\"$(datadir)\"				\
+	-fPIC
 
 bin_PROGRAMS = nm-pptp-service nm-pptp-service-pppd-plugin.so
 
