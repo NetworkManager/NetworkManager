@@ -1,5 +1,12 @@
 2007-07-26  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Kelemen Gábor <kelemeng@gnome.hu>
+
+	* gnome/vpn-properties/nm-vpn-properties.c
+		- Fix translatable strings (#445865)
+
+2007-07-26  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Andreas Hanke <andreas.hanke@gmx-topmail.de>
 
 	* configure.in

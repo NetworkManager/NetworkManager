@@ -1022,40 +1022,63 @@ init_app (void)
     gdk_color_parse("#7590AE",&druid_color);
 
     /* Druid Page 1 - Create VPN Connection */
+    gchar *msg1 = g_strdup(_("This assistant will guide you through the creation of a connection to a Virtual Private Network (VPN)."));
+    gchar *msg2 = g_strdup(_("It will require some information, such as IP addresses and secrets.  Please see your system administrator to obtain this information.")); 
+    gchar *msg = g_strdup_printf("%s\n\n%s", msg1, msg2); 
+
     druid_start_page = GNOME_DRUID_PAGE_EDGE (
                    gnome_druid_page_edge_new_with_vals(
-         GNOME_EDGE_START, TRUE, "Create VPN Connection",
-     "This assistant will guide you through the creation of a connection to "
+         GNOME_EDGE_START, TRUE, _("Create VPN Connection"),
+/*     _("This assistant will guide you through the creation of a connection to "
      "a Virtual Private Network (VPN).\n\nIt will require some information, "
      "such as IP addresses and secrets.  Please see your system administrator "
-     "to obtain this information.", NULL, NULL, NULL));
+     "to obtain this information."), */ 
+	msg, NULL, NULL, NULL));
     gnome_druid_page_edge_set_bg_color(druid_start_page,&druid_color);
     gnome_druid_page_edge_set_logo_bg_color(druid_start_page,&druid_color);
 
+    g_free(msg1);
+    g_free(msg2);
+    g_free(msg);
+
     /* Druid Page 2 - Select Connection Type */
+    /*Translators: this will be "Create VPN Connection - [1|2] of 2"*/
+    msg = g_strdup(_("Create VPN Connection"));  
+    /*Translators: this will be "Create VPN Connection - 1 of 2"*/
+    gchar *firstpage = g_strdup(_("1 of 2")); 
+    gchar *head = g_strdup_printf("%s%s", msg, firstpage);
+
     druid_conn_type_page = GNOME_DRUID_PAGE_STANDARD (
-                   gnome_druid_page_standard_new_with_vals("Create VPN Connection - 1 of 2",NULL, NULL));
+                   gnome_druid_page_standard_new_with_vals(head, NULL, NULL));
     gnome_druid_page_standard_set_background(druid_conn_type_page,&druid_color);
     gnome_druid_page_standard_set_logo_background(druid_conn_type_page,&druid_color);
     gnome_druid_page_standard_append_item(druid_conn_type_page,
-            "Choose which type of VPN connection you wish to create:",
+            _("Choose which type of VPN connection you wish to create:"),
             GTK_WIDGET(vpn_type_combo_box), NULL);
 	gtk_signal_connect_after (GTK_OBJECT (druid_conn_type_page), "next", GTK_SIGNAL_FUNC (vpn_druid_vpn_type_page_next), NULL);
+    g_free(firstpage); 
+    g_free(head);
 
     /* Druid Page 3 - Connection Details */
+    /*Translators: this will be "Create VPN Connection - [1|2] of 2"*/
+    gchar *secondpage = g_strdup(_("2 of 2")); 
+    head = g_strdup_printf("%s%s", msg, secondpage);
     druid_details_page = GNOME_DRUID_PAGE_STANDARD (
-                   gnome_druid_page_standard_new_with_vals("Create VPN Connection - 2 of 2",NULL, NULL));
+                   gnome_druid_page_standard_new_with_vals(head, NULL, NULL));
     gnome_druid_page_standard_set_background(druid_details_page,&druid_color);
     gnome_druid_page_standard_set_logo_background(druid_details_page,&druid_color);
 	gtk_signal_connect_after (GTK_OBJECT (druid_details_page), "prepare", GTK_SIGNAL_FUNC (vpn_druid_vpn_details_page_prepare), NULL);
 	gtk_signal_connect_after (GTK_OBJECT (druid_details_page), "next", GTK_SIGNAL_FUNC (vpn_druid_vpn_details_page_next), NULL);
 	vpn_type_details = GTK_VBOX(druid_details_page->vbox);
     gtk_widget_show(GTK_WIDGET(vpn_type_details));
+    g_free(secondpage);
+    g_free(head);
+    g_free(msg);
 
     /* Druid Page 4 - FInished Create VPN Connection */
     druid_confirm_page = GNOME_DRUID_PAGE_EDGE (
                    gnome_druid_page_edge_new_with_vals(
-         GNOME_EDGE_FINISH, TRUE, "Finished Create VPN Connection",
+         GNOME_EDGE_FINISH, TRUE, _("Finished Create VPN Connection"),
          "", NULL, NULL, NULL));
     gnome_druid_page_edge_set_bg_color(druid_confirm_page,&druid_color);
     gnome_druid_page_edge_set_logo_bg_color(druid_confirm_page,&druid_color);
@@ -1121,8 +1144,8 @@ main (int argc, char *argv[])
 	gchar *import_svc = NULL;
 	gchar *import_file = NULL;
 	GOptionEntry entries[] =  {
-		{ "import-service", 's', 0, G_OPTION_ARG_STRING, &import_svc, "VPN Service for importing", NULL},
-		{ "import-file", 'f', 0, G_OPTION_ARG_FILENAME, &import_file, "File to import", NULL},
+		{ "import-service", 's', 0, G_OPTION_ARG_STRING, &import_svc, N_("VPN Service for importing"), NULL},
+		{ "import-file", 'f', 0, G_OPTION_ARG_FILENAME, &import_file, N_("File to import"), NULL},
 		{ NULL }
 	};
 
@@ -1130,8 +1153,10 @@ main (int argc, char *argv[])
 	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
 	textdomain (GETTEXT_PACKAGE);
 
-	context = g_option_context_new ("- NetworkManager VPN properties");
+	/*Translators: this is the description seen when running nm-vpn-properties --help*/
+	context = g_option_context_new (N_("- NetworkManager VPN properties"));
 	g_option_context_add_main_entries (context, entries, GETTEXT_PACKAGE);
+	g_option_context_set_translation_domain(context, GETTEXT_PACKAGE);
 
 #ifdef HAVE_LIBGNOME_2_14
 	gnome_program_init ("nm-vpn-properties", VERSION, LIBGNOMEUI_MODULE, argc, argv,
