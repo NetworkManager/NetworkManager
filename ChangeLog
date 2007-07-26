@@ -1,3 +1,10 @@
+2007-07-26  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Andreas Hanke <andreas.hanke@gmx-topmail.de>
+
+	* configure.in
+		- Remove useless junk (#412530)
+
 2007-07-10  Christopher Aillon  <caillon@redhat.com>
 
 	Patch from Robert Buchholz <rbu@gentoo.org>:
