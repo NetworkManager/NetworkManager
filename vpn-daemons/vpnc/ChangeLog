@@ -1,3 +1,12 @@
+2007-07-26  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Andreas Hanke <andreas.hanke@gmx-topmail.de>
+
+	* configure.in
+	  acinclude.m4
+	  Makefile.am
+		- remove broken usage of AS_AC_EXPAND (#413323)
+
 2007-06-21  Christopher Aillon  <caillon@redhat.com>
 
 	* nm-vpnc-service.name.in:

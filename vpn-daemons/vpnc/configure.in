@@ -90,14 +90,6 @@ PKG_CHECK_MODULES(NM_UTILS, NetworkManager)
 AC_SUBST(NM_UTILS_CFLAGS)
 AC_SUBST(NM_UTILS_LIBS)
 
-AS_AC_EXPAND(LOCALSTATEDIR, $localstatedir)
-AS_AC_EXPAND(SYSCONFDIR, $sysconfdir)
-AS_AC_EXPAND(DATADIR, $datadir)
-AS_AC_EXPAND(BINDIR, $bindir)
-AS_AC_EXPAND(SBINDIR, $sbindir)
-AS_AC_EXPAND(LIBDIR, $libdir)
-AS_AC_EXPAND(LIBEXECDIR, $libexecdir)
-
 AC_ARG_ENABLE(more-warnings,
 AC_HELP_STRING([--enable-more-warnings], [Maximum compiler warnings]),
 set_more_warnings="$enableval",[
@@ -137,5 +129,4 @@ src/Makefile
 auth-dialog/Makefile
 properties/Makefile
 po/Makefile.in
-nm-vpnc-service.name
 ])
