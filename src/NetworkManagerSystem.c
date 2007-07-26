@@ -64,6 +64,7 @@ static gboolean nm_system_device_set_ip4_route (NMDevice *dev, int ip4_gateway, 
 	struct sockaddr_in *p;
 	const char *		iface;
 	int				err;
+	NMIP4Config * config = NULL;
 
 	iface = nm_device_get_iface (dev);
 
@@ -73,6 +74,15 @@ static gboolean nm_system_device_set_ip4_route (NMDevice *dev, int ip4_gateway, 
 	 * caller flushed the routes, first.
 	 */
 	if (ip4_gateway == 0)
+		return TRUE;
+
+	/*
+	 * Do not add the route if the destination is on the same subnet.
+	 */
+	config = nm_device_get_ip4_config(dev);
+	if (config &&
+	    ((guint32)ip4_dest & nm_ip4_config_get_netmask(config)) ==
+	        (nm_ip4_config_get_address(config) & nm_ip4_config_get_netmask(config)))
 		return TRUE;
 
 	if ((sk = nm_dev_sock_open (dev, NETWORK_CONTROL, __FUNCTION__, NULL)) == NULL)
