@@ -68,6 +68,7 @@ nm_system_device_set_ip4_route (NMDevice *dev,
 	struct rtentry		rtent;
 	struct sockaddr_in *p;
 	const char *		iface;
+	NMIP4Config * config = NULL;
 	int				err;
 	struct rtentry	rtent2;
 
@@ -80,6 +81,16 @@ nm_system_device_set_ip4_route (NMDevice *dev,
 		return TRUE;
 
 	iface = nm_device_get_iface (dev);
+
+	/*
+	 * Do not add the route if the destination is on the same subnet.
+	 */
+	config = nm_device_get_ip4_config(dev);
+	if (config &&
+	    ((guint32)ip4_dest & nm_ip4_config_get_netmask(config)) ==
+	        (nm_ip4_config_get_address(config) & nm_ip4_config_get_netmask(config)))
+		return TRUE;
+
 
 	if ((sk = nm_dev_sock_open (iface, NETWORK_CONTROL, __func__, NULL)) == NULL)
 		return FALSE;

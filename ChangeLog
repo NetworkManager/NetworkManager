@@ -1,5 +1,13 @@
 2007-07-26  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Bernhard Miklautz <bernhard.miklautz@shacknet.at>
+
+	* src/NetworkManagerSystem.c
+		- (nm_system_device_set_ip4_route): don't add the route if it's on the
+			same subnet (#437396)
+
+2007-07-26  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Kelemen Gábor <kelemeng@gnome.hu>
 
 	* gnome/vpn-properties/nm-vpn-properties.c
