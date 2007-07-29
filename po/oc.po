@@ -1,4 +1,4 @@
-# French translation of NetworkManager.
+# Occitan translation of NetworkManager.
 # Copyright (C) 2004-2007 The GNOME Foundation.
 # This file is distributed under the same license as the NetworkManager package.
 #
