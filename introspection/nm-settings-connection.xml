@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/">
+
+  <interface name="org.freedesktop.NetworkManager.Settings.Connection">
+
+    <method name="GetID">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_connection_settings_get_id"/>
+      <arg name="id" type="s" direction="out"/>
+    </method>
+
+    <method name="GetSettings">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_connection_settings_get_settings"/>
+      <arg name="settings" type="a{sa{sv}}" direction="out"/>
+    </method>
+
+    <method name="GetSecrets">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_connection_settings_get_secrets"/>
+      <arg name="setting_name" type="s" direction="in"/>
+      <arg name="secrets" type="a{sv}" direction="out"/>
+    </method>
+
+    <signal name="Updated">
+      <arg name="settings" type="a{sa{sv}}"/>
+    </signal>
+
+    <signal name="Removed">
+    </signal>
+
+  </interface>
+
+</node>

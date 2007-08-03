@@ -4,4 +4,6 @@ EXTRA_DIST =						\
 	nm-device-802-3-ethernet.xml	\
 	nm-device.xml					\
 	nm-ip4-config.xml				\
-	nm-manager.xml
+	nm-manager.xml					\
+	nm-settings.xml					\
+	nm-settings-connection.xml

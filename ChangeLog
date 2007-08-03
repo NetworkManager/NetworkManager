@@ -1,3 +1,13 @@
+2007-08-03  Rodrigo Moya <rodrigo@gnome-db.org>
+
+	* introspection/Makefile.am:
+	* introspection/nm-settings.xml:
+	* introspection/nm-settings-connection.xml: added Settings interfaces.
+
+	* libnm-glib/nm-settings.[ch]:
+	* libnm-glib/Makefile.am: added abstract class for Settings interfaces
+	containing the DBus implementation.
+
 2007-07-26  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Bernhard Miklautz <bernhard.miklautz@shacknet.at>
