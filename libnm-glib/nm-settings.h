@@ -4,6 +4,8 @@
 
 #include <glib-object.h>
 
+G_BEGIN_DECLS
+
 #define NM_TYPE_CONNECTION_SETTINGS            (nm_connection_settings_get_type ())
 #define NM_CONNECTION_SETTINGS(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_CONNECTION_SETTINGS, NMConnectionSettings))
 #define NM_CONNECTION_SETTINGS_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_CONNECTION_SETTINGS, NMConnectionSettingsClass))
@@ -52,5 +54,7 @@ typedef struct {
 } NMSettingsClass;
 
 GType nm_settings_get_type (void);
+
+G_END_DECLS
 
 #endif

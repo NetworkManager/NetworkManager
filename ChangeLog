@@ -1,3 +1,32 @@
+2007-08-09  Tambet Ingo  <tambet@gmail.com>
+
+	[Based on patch by Helmut Schaa <hschaa@suse.de>]
+
+	* libnm-glib/nm-client.h:
+	* libnm-glib/nm-object.h:
+	* libnm-glib/nm-vpn-connection.h:
+	* libnm-glib/nm-settings.h:
+	* libnm-glib/nm-device.h:
+	* libnm-glib/nm-ip4-config.h:
+	* libnm-glib/nm-access-point.h:
+	* libnm-glib/nm-device-802-3-ethernet.h:
+	* libnm-util/nm-setting.h: 
+	* libnm-util/nm-connection.h: Add G_BEGIN_DECLS / G_END_DECLS to support C++.
+
+	* libnm-glib/nm-object.c (nm_object_get_byte_property): Implement.
+
+	* libnm-glib/nm-access-point.c: Strength has type char.
+
+	* gnome/vpn-properties/Makefile.am: Remove GNOME_DISABLE_DEPRECTATED for now
+	to fix build. GnomeDruid is deprecated in recent libgnomeui.
+
+	* introspection/nm-access-point.xml: Strength property is char, not int.
+
+	* src/NetworkManagerAP.c (set_property): Set strength from char.
+	(get_property): Handle hidden APs (with empty SSID).
+	Get strength value from char.
+	(nm_ap_class_init): Strength property has char type.
+
 2007-08-03  Rodrigo Moya <rodrigo@gnome-db.org>
 
 	* introspection/Makefile.am:

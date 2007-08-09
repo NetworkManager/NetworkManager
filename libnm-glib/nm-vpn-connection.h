@@ -27,6 +27,8 @@
 #include <dbus/dbus-glib.h>
 #include "NetworkManagerVPN.h"
 
+G_BEGIN_DECLS
+
 #define NM_TYPE_VPN_CONNECTION            (nm_vpn_connection_get_type ())
 #define NM_VPN_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VPN_CONNECTION, NMVPNConnection))
 #define NM_VPN_CONNECTION_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_VPN_CONNECTION, NMVPNConnectionClass))
@@ -64,5 +66,7 @@ gboolean nm_vpn_connection_activate   (NMVPNConnection *vpn,
 gboolean nm_vpn_connection_deactivate (NMVPNConnection *vpn);
 
 void nm_vpn_connection_set_state (NMVPNConnection *vpn, NMVPNActStage state);
+
+G_END_DECLS
 
 #endif /* NM_VPN_CONNECTION_H */

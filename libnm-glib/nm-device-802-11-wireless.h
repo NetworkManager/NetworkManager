@@ -4,6 +4,8 @@
 #include "nm-device.h"
 #include "nm-access-point.h"
 
+G_BEGIN_DECLS
+
 #define NM_TYPE_DEVICE_802_11_WIRELESS            (nm_device_802_11_wireless_get_type ())
 #define NM_DEVICE_802_11_WIRELESS(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE_802_11_WIRELESS, NMDevice80211Wireless))
 #define NM_DEVICE_802_11_WIRELESS_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DEVICE_802_11_WIRELESS, NMDevice80211WirelessClass))
@@ -38,5 +40,7 @@ NMAccessPoint        *nm_device_802_11_wireless_get_network_by_path (NMDevice802
 																	 const char *object_path);
 
 GSList               *nm_device_802_11_wireless_get_networks (NMDevice80211Wireless *device);
+
+G_END_DECLS
 
 #endif /* NM_DEVICE_802_11_WIRELESS_H */

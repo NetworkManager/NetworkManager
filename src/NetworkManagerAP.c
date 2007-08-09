@@ -173,7 +173,7 @@ set_property (GObject *object, guint prop_id,
 		priv->rate = g_value_get_uint (value);
 		break;
 	case PROP_STRENGTH:
-		nm_ap_set_strength (NM_AP (object), g_value_get_int (value));
+		nm_ap_set_strength (NM_AP (object), g_value_get_char (value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -188,6 +188,7 @@ get_property (GObject *object, guint prop_id,
 	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (object);
 	char hw_addr_buf[20];
 	GArray * ssid;
+	int len;
 	int i;
 
 	switch (prop_id) {
@@ -198,8 +199,9 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boolean (value, !(priv->capabilities & NM_802_11_CAP_PROTO_NONE));
 		break;
 	case PROP_SSID:
-		ssid = g_array_sized_new (FALSE, TRUE, sizeof (unsigned char), priv->ssid->len);
-		for (i = 0; i < priv->ssid->len; i++)
+		len = priv->ssid ? priv->ssid->len : 0;
+		ssid = g_array_sized_new (FALSE, TRUE, sizeof (unsigned char), len);
+		for (i = 0; i < len; i++)
 			g_array_append_val (ssid, priv->ssid->data[i]);
 		g_value_set_boxed (value, ssid);
 		g_array_free (ssid, TRUE);
@@ -219,7 +221,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->rate);
 		break;
 	case PROP_STRENGTH:
-		g_value_set_int (value, priv->strength);
+		g_value_set_char (value, priv->strength);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -318,11 +320,11 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 
 	g_object_class_install_property
 		(object_class, PROP_STRENGTH,
-		 g_param_spec_int (NM_AP_STRENGTH,
-						   "Strength",
-						   "Strength",
-						   G_MININT8, G_MAXINT8, 0,
-						   G_PARAM_READWRITE));
+		 g_param_spec_char (NM_AP_STRENGTH,
+							"Strength",
+							"Strength",
+							G_MININT8, G_MAXINT8, 0,
+							G_PARAM_READWRITE));
 
 	/* Signals */
 	signals[STRENGTH_CHANGED] =

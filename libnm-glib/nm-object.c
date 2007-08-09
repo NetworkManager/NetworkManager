@@ -288,6 +288,20 @@ nm_object_get_boolean_property (NMObject *object,
 	return b;
 }
 
+gint8
+nm_object_get_byte_property (NMObject *object,
+							 const char *interface,
+							 const char *prop_name)
+{
+	gint8 b;
+	GValue value = {0,};
+
+	if (nm_object_get_property (object, interface, prop_name, &value))
+		b = g_value_get_uchar (&value);
+
+	return b;
+}
+
 gdouble
 nm_object_get_double_property (NMObject *object,
 							   const char *interface,

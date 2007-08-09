@@ -4,6 +4,8 @@
 #include <glib.h>
 #include "nm-setting.h"
 
+G_BEGIN_DECLS
+
 typedef struct {
 	GHashTable *settings;
 } NMConnection;
@@ -28,5 +30,7 @@ void nm_setting_parser_register   (const char *name,
 								   NMSettingCreateFn creator);
 
 void nm_setting_parser_unregister (const char *name);
+
+G_END_DECLS
 
 #endif /* NM_CONNECTION_H */

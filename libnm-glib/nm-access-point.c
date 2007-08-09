@@ -9,7 +9,7 @@ G_DEFINE_TYPE (NMAccessPoint, nm_access_point, NM_TYPE_OBJECT)
 
 typedef struct {
 	DBusGProxy *ap_proxy;
-	int strength;
+	gint8 strength;
 } NMAccessPointPrivate;
 
 enum {
@@ -157,7 +157,7 @@ nm_access_point_get_rate (NMAccessPoint *ap)
 	return nm_object_get_uint_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "Rate");
 }
 
-int
+gint8
 nm_access_point_get_strength (NMAccessPoint *ap)
 {
 	NMAccessPointPrivate *priv;
@@ -167,7 +167,7 @@ nm_access_point_get_strength (NMAccessPoint *ap)
 	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
 
 	if (priv->strength == 0)
-		priv->strength = nm_object_get_int_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "Strength");
+		priv->strength = nm_object_get_byte_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "Strength");
 
 	return priv->strength;
 }

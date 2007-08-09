@@ -3,6 +3,8 @@
 
 #include <glib.h>
 
+G_BEGIN_DECLS
+
 typedef struct _NMSetting NMSetting;
 
 typedef NMSetting *(*NMSettingCreateFn)  (GHashTable *settings);
@@ -134,5 +136,6 @@ typedef struct {
 NMSetting *nm_setting_wireless_security_new (void);
 NMSetting *nm_setting_wireless_security_new_from_hash (GHashTable *settings);
 
+G_END_DECLS
 
 #endif /* NM_SETTING_H */

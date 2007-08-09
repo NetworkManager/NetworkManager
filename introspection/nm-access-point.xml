@@ -9,7 +9,7 @@
     <property name="HwAddress" type="s" access="read"/>
     <property name="Mode" type="i" access="read"/>
     <property name="Rate" type="u" access="read"/>
-    <property name="Strength" type="i" access="read"/>
+    <property name="Strength" type="y" access="read"/>
 
     <signal name="StrengthChanged">
       <arg name="strength" type="y"/>

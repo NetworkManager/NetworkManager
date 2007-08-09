@@ -9,6 +9,8 @@
 #include "nm-ip4-config.h"
 #include "nm-connection.h"
 
+G_BEGIN_DECLS
+
 #define NM_TYPE_DEVICE            (nm_device_get_type ())
 #define NM_DEVICE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE, NMDevice))
 #define NM_DEVICE_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DEVICE, NMDeviceClass))
@@ -48,5 +50,7 @@ char         *nm_device_get_description  (NMDevice *device);
 
 NMDeviceType  nm_device_type_for_path    (DBusGConnection *connection,
 										  const char *path);
+
+G_END_DECLS
 
 #endif /* NM_DEVICE_H */

@@ -5,6 +5,8 @@
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
 
+G_BEGIN_DECLS
+
 #define NM_TYPE_OBJECT            (nm_object_get_type ())
 #define NM_OBJECT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_OBJECT, NMObject))
 #define NM_OBJECT_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_OBJECT, NMObjectClass))
@@ -60,6 +62,10 @@ gboolean nm_object_get_boolean_property (NMObject *object,
 										const char *interface,
 										const char *prop_name);
 
+gint8 nm_object_get_byte_property (NMObject *object,
+								   const char *interface,
+								   const char *prop_name);
+
 gdouble nm_object_get_double_property (NMObject *object,
 									   const char *interface,
 									   const char *prop_name);
@@ -68,5 +74,7 @@ GByteArray *nm_object_get_byte_array_property (NMObject *object,
 											   const char *interface,
 											   const char *prop_name);
 
+
+G_END_DECLS
 
 #endif /* NM_OBJECT_H */

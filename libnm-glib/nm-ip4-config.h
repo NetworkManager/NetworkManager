@@ -6,6 +6,8 @@
 #include <dbus/dbus-glib.h>
 #include "nm-object.h"
 
+G_BEGIN_DECLS
+
 #define NM_TYPE_IP4_CONFIG            (nm_ip4_config_get_type ())
 #define NM_IP4_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_IP4_CONFIG, NMIP4Config))
 #define NM_IP4_CONFIG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_IP4_CONFIG, NMIP4ConfigClass))
@@ -36,5 +38,6 @@ char   **nm_ip4_config_get_domains     (NMIP4Config *config);
 char    *nm_ip4_config_get_nis_domain  (NMIP4Config *config);
 GArray  *nm_ip4_config_get_nis_servers (NMIP4Config *config);
 
+G_END_DECLS
 
 #endif /* NM_IP4_CONFIG_H */

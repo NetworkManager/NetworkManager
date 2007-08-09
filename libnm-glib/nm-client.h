@@ -11,6 +11,8 @@
 #include "nm-device.h"
 #include "nm-vpn-connection.h"
 
+G_BEGIN_DECLS
+
 #define NM_TYPE_CLIENT            (nm_client_get_type ())
 #define NM_CLIENT(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_CLIENT, NMClient))
 #define NM_CLIENT_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_CLIENT, NMClientClass))
@@ -61,5 +63,7 @@ void      nm_client_remove_vpn_connection (NMClient *client,
 										   NMVPNConnection *connection);
 
 NMVPNActStage nm_client_get_vpn_state    (NMClient *client);
+
+G_END_DECLS
 
 #endif /* NM_CLIENT_H */
