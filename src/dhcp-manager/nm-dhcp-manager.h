@@ -32,23 +32,31 @@
 #define NM_IS_DHCP_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_DHCP_MANAGER))
 #define NM_DHCP_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_MANAGER, NMDHCPManagerClass))
 
+#define NM_DHCP_MANAGER_RUN_DIR		"/var/run"
+
+#define NM_DHCP_MANAGER_PID_FILENAME	"dhclient"
+#define NM_DHCP_MANAGER_PID_FILE_EXT	"pid"
+
+#define NM_DHCP_MANAGER_LEASE_FILENAME	"dhclient"
+#define NM_DHCP_MANAGER_LEASE_FILE_EXT	"lease"
+
 typedef enum {
-	DHCDBD_NBI=0,		/* no broadcast interfaces found */
-	DHCDBD_PREINIT,	/* configuration started */
-	DHCDBD_BOUND,		/* lease obtained */
-	DHCDBD_RENEW,		/* lease renewed */
-	DHCDBD_REBOOT,		/* have valid lease, but now obtained a different one */
-	DHCDBD_REBIND,		/* new, different lease */
-	DHCDBD_STOP,		/* remove old lease */
-	DHCDBD_MEDIUM,		/* media selection begun */
-	DHCDBD_TIMEOUT,	/* timed out contacting DHCP server */
-	DHCDBD_FAIL,		/* all attempts to contact server timed out, sleeping */
-	DHCDBD_EXPIRE,		/* lease has expired, renewing */
-	DHCDBD_RELEASE,	/* releasing lease */
-	DHCDBD_START,		/* sent when dhclient started OK */
-	DHCDBD_ABEND,		/* dhclient exited abnormally */
-	DHCDBD_END,		/* dhclient exited normally */
-	DHCDBD_END_OPTIONS,	/* last option in subscription sent */
+	DHC_NBI=0,		/* no broadcast interfaces found */
+	DHC_PREINIT,		/* configuration started */
+	DHC_BOUND,		/* lease obtained */
+	DHC_RENEW,		/* lease renewed */
+	DHC_REBOOT,		/* have valid lease, but now obtained a different one */
+	DHC_REBIND,		/* new, different lease */
+	DHC_STOP,		/* remove old lease */
+	DHC_MEDIUM,		/* media selection begun */
+	DHC_TIMEOUT,		/* timed out contacting DHCP server */
+	DHC_FAIL,		/* all attempts to contact server timed out, sleeping */
+	DHC_EXPIRE,		/* lease has expired, renewing */
+	DHC_RELEASE,		/* releasing lease */
+	DHC_START,		/* sent when dhclient started OK */
+	DHC_ABEND,		/* dhclient exited abnormally */
+	DHC_END,		/* dhclient exited normally */
+	DHC_END_OPTIONS,	/* last option in subscription sent */
 } NMDHCPState;
 
 typedef struct {
@@ -66,11 +74,14 @@ typedef struct {
 GType nm_dhcp_manager_get_type (void);
 
 NMDHCPManager *nm_dhcp_manager_get                  (void);
-gboolean       nm_dhcp_manager_begin_transaction    (NMDHCPManager *manager, const char *iface);
+gboolean       nm_dhcp_manager_begin_transaction    (NMDHCPManager *manager,
+                                                     const char *iface,
+                                                     guint32 timeout);
 void           nm_dhcp_manager_cancel_transaction   (NMDHCPManager *manager,
-													 const char *iface,
-													 gboolean blocking);
-NMIP4Config   *nm_dhcp_manager_get_ip4_config       (NMDHCPManager *manager, const char *iface);
+                                                     const char *iface);
+NMIP4Config *  nm_dhcp_manager_get_ip4_config       (NMDHCPManager *manager, const char *iface);
 NMDHCPState    nm_dhcp_manager_get_state_for_device (NMDHCPManager *manager, const char *iface);
+
+gboolean       nm_dhcp_manager_process_signal       (NMDHCPManager *manager, DBusMessage *message);
 
 #endif /* NM_DHCP_MANAGER_H */

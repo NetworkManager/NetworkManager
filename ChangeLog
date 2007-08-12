@@ -1,5 +1,19 @@
 2007-08-12  Dan Williams  <dcbw@redhat.com>
 
+	Kill dhcdbd until it's dead, dead, dead.  Based on a patch from
+	Robert Frank <rfrank@redhat.com>
+
+	* src/dhcp-manager/nm-dhcp-manager.c
+	  src/dhcp-manager/nm-dhcp-manager.c
+	  src/nm-device.c
+		- Spawn and communicate with dhclient directly, through means of a
+		custom dhclient callout script.  Process callout D-Bus signals
+		with dbus-glib instead of hand-rolled dbus.  DHCP timeouts are now
+		sent via gobject signals rather than being driven by the dhcp manager
+		directly.
+
+2007-08-12  Dan Williams  <dcbw@redhat.com>
+
 	* callouts/nm-dhcp-client-action.c
 		- (build_message): ignore non-DHCP-related environment variables
 

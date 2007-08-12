@@ -73,7 +73,8 @@ struct _NMDevicePrivate
 	void *			system_config_data;	/* Distro-specific config data (parsed config file, etc) */
 	NMIP4Config *		ip4_config;			/* Config from DHCP, PPP, or system config files */
 	NMDHCPManager *     dhcp_manager;
-	gulong              dhcp_signal_id;
+	gulong              dhcp_state_sigid;
+	gulong              dhcp_timeout_sigid;
 };
 
 static void nm_device_activate (NMDeviceInterface *device,
@@ -518,12 +519,13 @@ real_act_stage3_ip_config_start (NMDevice *self)
 
 		/* DHCP manager will cancel any transaction already in progress and we do not
 		   want to cancel this activation if we get "down" state from that. */
-		g_signal_handler_block (priv->dhcp_manager, priv->dhcp_signal_id);
+		g_signal_handler_block (priv->dhcp_manager, priv->dhcp_state_sigid);
 
 		success = nm_dhcp_manager_begin_transaction (priv->dhcp_manager,
-													 nm_device_get_iface (self));
+													 nm_device_get_iface (self),
+													 45);
 
-		g_signal_handler_unblock (priv->dhcp_manager, priv->dhcp_signal_id);
+		g_signal_handler_unblock (priv->dhcp_manager, priv->dhcp_state_sigid);
 
 		if (success) {
 			/* DHCP devices will be notified by the DHCP manager when
@@ -898,8 +900,7 @@ real_activation_cancel_handler (NMDevice *self)
 		nm_device_get_use_dhcp (self)) {
 
 		nm_dhcp_manager_cancel_transaction (NM_DEVICE_GET_PRIVATE (self)->dhcp_manager,
-											nm_device_get_iface (self),
-											TRUE);
+											nm_device_get_iface (self));
 	}
 }
 
@@ -966,8 +967,7 @@ nm_device_deactivate_quickly (NMDevice *self)
 		nm_device_get_use_dhcp (self)) {
 
 		nm_dhcp_manager_cancel_transaction (NM_DEVICE_GET_PRIVATE (self)->dhcp_manager,
-											nm_device_get_iface (self),
-											FALSE);
+											nm_device_get_iface (self));
 		g_object_unref (act_request);
 		self->priv->act_request = NULL;
 	}
@@ -1091,31 +1091,55 @@ dhcp_state_changed (NMDHCPManager *dhcp_manager,
 					NMDHCPState state,
 					gpointer user_data)
 {
-	NMDevice *device = NM_DEVICE (user_data);
+	NMDevice * device = NM_DEVICE (user_data);
+
+	if (strcmp (nm_device_get_iface (device), iface) != 0)
+		return;
 
 	if (!nm_device_get_act_request (device))
 		return;
 
-	if (!strcmp (nm_device_get_iface (device), iface) && nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG) {
-		switch (state) {
-		case DHCDBD_BOUND:	/* lease obtained */
-		case DHCDBD_RENEW:	/* lease renewed */
-		case DHCDBD_REBOOT:	/* have valid lease, but now obtained a different one */
-		case DHCDBD_REBIND:	/* new, different lease */
+	switch (state) {
+	case DHC_BOUND:	/* lease obtained */
+	case DHC_RENEW:	/* lease renewed */
+	case DHC_REBOOT:	/* have valid lease, but now obtained a different one */
+	case DHC_REBIND:	/* new, different lease */
+		if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG)
 			nm_device_activate_schedule_stage4_ip_config_get (device);
-			break;
-		case DHCDBD_TIMEOUT: /* timed out contacting DHCP server */
+		break;
+	case DHC_TIMEOUT: /* timed out contacting DHCP server */
+		if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG)
 			nm_device_activate_schedule_stage4_ip_config_timeout (device);
-			break;
-		case DHCDBD_FAIL: /* all attempts to contact server timed out, sleeping */
-		case DHCDBD_ABEND: /* dhclient exited abnormally */
-		case DHCDBD_END: /* dhclient exited normally */
+		break;
+	case DHC_FAIL: /* all attempts to contact server timed out, sleeping */
+	case DHC_ABEND: /* dhclient exited abnormally */
+	case DHC_END: /* dhclient exited normally */
+		if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG) {
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED);
-			break;
-		default:
-			break;
+		} else if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
+			if (nm_device_get_use_dhcp (device)) {
+				/* dhclient quit and therefore can't renew our lease, kill the conneciton */
+				nm_device_deactivate (device);
+			}
 		}
+		break;
+	default:
+		break;
 	}
+}
+
+static void
+dhcp_timeout (NMDHCPManager *dhcp_manager,
+              const char *iface,
+              gpointer user_data)
+{
+	NMDevice * device = NM_DEVICE (user_data);
+
+	if (strcmp (nm_device_get_iface (device), iface) != 0)
+		return;
+
+	if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG)
+			nm_device_activate_schedule_stage4_ip_config_timeout (device);
 }
 
 gboolean
@@ -1139,12 +1163,20 @@ nm_device_set_use_dhcp (NMDevice *self,
 	if (use_dhcp) {
 		if (!priv->dhcp_manager) {
 			priv->dhcp_manager = nm_dhcp_manager_get ();
-			priv->dhcp_signal_id = g_signal_connect (priv->dhcp_manager, "state-changed",
-													 G_CALLBACK (dhcp_state_changed),
-													 self);
+			priv->dhcp_state_sigid = g_signal_connect (priv->dhcp_manager,
+			                                           "state-changed",
+			                                           G_CALLBACK (dhcp_state_changed),
+			                                           self);
+			priv->dhcp_timeout_sigid = g_signal_connect (priv->dhcp_manager,
+			                                             "timeout",
+			                                             G_CALLBACK (dhcp_timeout),
+			                                             self);
 		}
 	} else if (priv->dhcp_manager) {
-		g_signal_handler_disconnect (priv->dhcp_manager, priv->dhcp_signal_id);
+		g_signal_handler_disconnect (priv->dhcp_manager, priv->dhcp_state_sigid);
+		priv->dhcp_state_sigid = 0;
+		g_signal_handler_disconnect (priv->dhcp_manager, priv->dhcp_timeout_sigid);
+		priv->dhcp_timeout_sigid = 0;
 		g_object_unref (priv->dhcp_manager);
 		priv->dhcp_manager = NULL;
 	}
