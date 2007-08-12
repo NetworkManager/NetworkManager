@@ -176,11 +176,14 @@ dbus_bool_t wpa_dbus_dict_append_byte_array(DBusMessageIter *iter_dict,
 }
 
 
+const char ** ignore[] = {"PATH", "SHLVL", "_", "PWD", "dhc_dbus", NULL};
+
 dbus_bool_t
 build_message (DBusMessage * message)
 {
 	char ** env = NULL;
 	char ** item;
+	char ** p;
 	dbus_bool_t success = FALSE;
 	DBusMessageIter iter, iter_dict;
 
@@ -191,7 +194,16 @@ build_message (DBusMessage * message)
 	/* List environment and format for dbus dict */
 	env = g_listenv ();
 	for (item = env; *item; item++) {
+		gboolean ignore_item = FALSE;
 		const char * val = g_getenv (*item);
+
+		/* Ignore non-DCHP-related environment variables */
+		for (p = (char **) ignore; *p && !ignore_item; p++) {
+			if (strncmp (*item, *p, strlen (*p)) == 0)
+				ignore_item = TRUE;
+		}
+		if (ignore_item)
+			continue;
 
 		/* Value passed as a byte array rather than a string, because there are
 		 * no character encoding guarantees with DHCP, and D-Bus requires

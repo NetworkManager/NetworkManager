@@ -1,5 +1,10 @@
 2007-08-12  Dan Williams  <dcbw@redhat.com>
 
+	* callouts/nm-dhcp-client-action.c
+		- (build_message): ignore non-DHCP-related environment variables
+
+2007-08-12  Dan Williams  <dcbw@redhat.com>
+
 	* Makefile.am
 	  configure.in
 	  callouts/Makefile.am
