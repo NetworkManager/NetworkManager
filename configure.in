@@ -323,6 +323,7 @@ libnm-util/libnm-util.pc
 libnm-util/Makefile
 libnm-glib/libnm-glib.pc
 libnm-glib/Makefile
+callouts/Makefile
 dispatcher-daemon/Makefile
 gnome/Makefile
 gnome/libnm_glib/libnm_glib.pc

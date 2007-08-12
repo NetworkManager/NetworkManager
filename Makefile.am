@@ -10,7 +10,8 @@ SUBDIRS = 				\
 	   po				\
 	   man				\
 	   include			\
-	   introspection
+	   introspection	\
+	   callouts
 
 EXTRA_DIST =				\
 	CONTRIBUTING			\

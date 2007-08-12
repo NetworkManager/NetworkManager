@@ -1,3 +1,14 @@
+2007-08-12  Dan Williams  <dcbw@redhat.com>
+
+	* Makefile.am
+	  configure.in
+	  callouts/Makefile.am
+	  callouts/nm-dhcp-client-action.c
+	  callouts/nm-dhcp-client.conf
+		- Add dhclient-executed callout that takes the place of dhclient-script
+		and dhcdbd, pushing DHCP options out to the system bus as a signal that
+		NM then listens for
+
 2007-08-09  Tambet Ingo  <tambet@gmail.com>
 
 	[Based on patch by Helmut Schaa <hschaa@suse.de>]
