@@ -120,7 +120,8 @@ finalize (GObject *object)
 	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (object);
 
 	g_free (priv->dbus_path);
-	g_byte_array_free (priv->ssid, TRUE);
+	if (priv->ssid)
+		g_byte_array_free (priv->ssid, TRUE);
 	g_slist_foreach (priv->user_addresses, (GFunc)g_free, NULL);
 	g_slist_free (priv->user_addresses);
 

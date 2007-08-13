@@ -1,3 +1,9 @@
+2007-08-13  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerAP.c
+		- (finalize): don't try to g_array_free (NULL, ...), which happened
+			when the AP wasn't broadcasting it's SSID
+
 2007-08-13  Rodrigo Moya <rodrigo@gnome-db.org>
 
 	* include/NetworkManager.h: added DBus path for connection settings.
