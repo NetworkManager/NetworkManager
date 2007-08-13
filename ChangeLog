@@ -1,5 +1,8 @@
 2007-08-13  Tambet Ingo  <tambet@gmail.com>
 
+	* gnome/*: Remove. The nm-vpn-properties directory is now part of nm-applet,
+	libnm_glib directory got merged with libnm-glib/.
+
 	* libnm-glib/libnm-glib.pc.in: Rename to libnm_glib.pc.in.
 
 	* libnm-glib/Makefile.am: Add legacy libnm_glib.[ch] to the build.
