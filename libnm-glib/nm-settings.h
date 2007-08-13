@@ -30,7 +30,11 @@ typedef struct {
 	void (* removed) (NMConnectionSettings *connection);
 } NMConnectionSettingsClass;
 
-GType nm_connection_settings_get_type (void);
+GType  nm_connection_settings_get_type (void);
+gchar *nm_connection_settings_get_dbus_object_path (NMConnectionSettings *connection);
+
+void   nm_connection_settings_signal_updated (NMConnectionSettings *connection, GHashTable *settings);
+void   nm_connection_settings_signal_removed (NMConnectionSettings *connection);
 
 #define NM_TYPE_SETTINGS            (nm_settings_get_type ())
 #define NM_SETTINGS(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTINGS, NMSettings))
@@ -54,6 +58,8 @@ typedef struct {
 } NMSettingsClass;
 
 GType nm_settings_get_type (void);
+
+void  nm_settings_signal_new_connection (NMSettings *settings, NMConnectionSettings *connection);
 
 G_END_DECLS
 

@@ -1,3 +1,5 @@
+#include <NetworkManager.h>
+#include <nm-utils.h>
 #include "nm-settings.h"
 
 static GError *
@@ -94,6 +96,15 @@ nm_settings_class_init (NMSettingsClass *settings_class)
 					 &dbus_glib_nm_settings_object_info);
 }
 
+void
+nm_settings_signal_new_connection (NMSettings *settings, NMConnectionSettings *connection)
+{
+	g_return_if_fail (NM_IS_SETTINGS (settings));
+	g_return_if_fail (NM_IS_CONNECTION_SETTINGS (connection));
+
+	g_signal_emit (settings, settings_signals[S_NEW_CONNECTION], 0, connection);
+}
+
 /*
  * NMConnectionSettings implementation
  */
@@ -179,6 +190,22 @@ impl_connection_settings_get_secrets (NMConnectionSettings *connection,
 static void
 nm_connection_settings_init (NMConnectionSettings *connection)
 {
+	DBusGConnection *bus_connection;
+	GError *error = NULL;
+
+	/* register object with DBus */
+	bus_connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
+	if (!bus_connection) {
+		g_warning ("Couldn't connect to session bus: %s", error->message);
+		g_error_free (error);
+	} else {
+		gchar *path;
+
+		path = nm_connection_settings_get_dbus_object_path (connection);
+		dbus_g_connection_register_g_object (bus_connection, path, G_OBJECT (connection));
+
+		g_free (path);
+	}
 }
 
 static void
@@ -220,4 +247,40 @@ nm_connection_settings_class_init (NMConnectionSettingsClass *connection_setting
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (connection_settings_class),
 					 &dbus_glib_nm_connection_settings_object_info);
+}
+
+gchar *
+nm_connection_settings_get_dbus_object_path (NMConnectionSettings *connection)
+{
+	gchar *object_path, *escaped_object_path, *id;
+
+	g_return_val_if_fail (NM_IS_CONNECTION_SETTINGS (connection), NULL);
+
+	if (!CONNECTION_SETTINGS_CLASS (connection)->get_id)
+		return NULL;
+
+	id = CONNECTION_SETTINGS_CLASS (connection)->get_id (connection);
+	object_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_CONNECTION_SETTINGS, id);
+	escaped_object_path = nm_dbus_escape_object_path ((const gchar *) object_path);
+
+	g_free (object_path);
+	g_free (id);
+
+	return escaped_object_path;
+} 
+
+void
+nm_connection_settings_signal_updated (NMConnectionSettings *connection, GHashTable *settings)
+{
+	g_return_if_fail (NM_IS_CONNECTION_SETTINGS (connection));
+
+	g_signal_emit (connection, connection_signals[CS_UPDATED], 0, settings);
+}
+
+void
+nm_connection_settings_signal_removed (NMConnectionSettings *connection)
+{
+	g_return_if_fail (NM_IS_CONNECTION_SETTINGS (connection));
+
+	g_signal_emit (connection, connection_signals[CS_REMOVED], 0);
 }

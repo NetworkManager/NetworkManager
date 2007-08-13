@@ -1,4 +1,4 @@
-INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/libnm-util
+INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/utils -I$(top_srcdir)/libnm-util
 
 BUILT_SOURCES = \
 	nm-access-point-bindings.h \
@@ -49,6 +49,7 @@ libnm_glib_la_SOURCES = \
 	nm-marshal-main.c
 
 libnm_glib_la_LIBADD = \
+	$(top_builddir)/utils/libnmutils.la		\
 	$(top_builddir)/libnm-util/libnm-util.la	\
 	$(GLIB_LIBS)					\
 	$(GTHREAD_LIBS)					\

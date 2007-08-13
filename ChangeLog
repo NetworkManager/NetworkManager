@@ -1,3 +1,16 @@
+2007-08-13  Rodrigo Moya <rodrigo@gnome-db.org>
+
+	* include/NetworkManager.h: added DBus path for connection settings.
+
+	* libnm-glib/nm-settings.[ch] (nm_settings_signal_new_connection,
+	nm_connection_settings_signal_updated,
+	nm_connection_settings_signal_removed): new functions to wrap the
+	objects' signals.
+	(nm_connection_settings_init): register GObject with DBus.
+	(nm_connection_settings_get_dbus_object_path): new function.
+
+	* libnm-glib/Makefile.am: added libnmutil to link flags.
+
 2007-08-13  Tambet Ingo  <tambet@gmail.com>
 
 	* configure.in: Remove checks for dhcdbd as it's killed! killed! killed!
