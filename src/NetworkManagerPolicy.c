@@ -598,11 +598,23 @@ state_changed (NMManager *manager, NMState state, gpointer user_data)
 }
 
 static void
-connections_changed (NMManager *manager, GSList *connections, gpointer user_data)
+connection_added (NMManager *manager,
+                  NMConnection *connection,
+                  gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
 
-	nm_info ("policy got %d connections", g_slist_length (connections));
+	nm_info ("connection %p added", connection);
+}
+
+static void
+connection_removed (NMManager *manager,
+                    NMConnection *connection,
+                    gpointer user_data)
+{
+	NMPolicy *policy = (NMPolicy *) user_data;
+
+	nm_info ("connection %p removed", connection);
 }
 
 NMPolicy *
@@ -626,8 +638,11 @@ nm_policy_new (NMManager *manager)
 	g_signal_connect (manager, "state-change",
 					  G_CALLBACK (state_changed), policy);
 
-	g_signal_connect (manager, "connections-changed",
-					  G_CALLBACK (connections_changed), policy);
+	g_signal_connect (manager, "connection-added",
+					  G_CALLBACK (connection_added), policy);
+
+	g_signal_connect (manager, "connection-removed",
+					  G_CALLBACK (connection_removed), policy);
 
 	global_policy = policy;
 

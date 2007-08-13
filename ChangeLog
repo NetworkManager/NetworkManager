@@ -1,5 +1,11 @@
 2007-08-12  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_new): hook up to connection-added / connection-removed
+			signals instead of connections-changed
+
+2007-08-12  Dan Williams  <dcbw@redhat.com>
+
 	Kill dhcdbd until it's dead, dead, dead.  Based on a patch from
 	Robert Frank <rfrank@redhat.com>
 
