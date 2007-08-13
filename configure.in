@@ -202,19 +202,6 @@ else
 fi
 AC_SUBST(DBUS_SYS_DIR)
 
-# dhcdbd binary path
-AC_ARG_WITH(dhcdbd, AC_HELP_STRING([--with-dhcdbd=/path/to/dhcdbd], [path to dhcdbd])) 
-if test "x${with_dhcdbd}" = x; then
-  AC_PATH_PROG(DHCDBD_BINARY_PATH, dhcdbd, [], $PATH:/sbin:/usr/sbin)
-  if ! test -x "$DHCDBD_BINARY_PATH"; then
-	AC_MSG_ERROR(dhcdbd was not installed.  See http://people.redhat.com/jvdias/dhcdbd)
-  fi
-else
-  DHCDBD_BINARY_PATH="$with_dhcdbd"
-fi
-AC_DEFINE_UNQUOTED(DHCDBD_BINARY_PATH, "$DHCDBD_BINARY_PATH", [Define to path of dhcdbd binary])
-AC_SUBST(DHCDBD_BINARY_PATH)
-
 # ip binary path
 AC_ARG_WITH(ip, AC_HELP_STRING([--with-ip=/path/to/ip], [path to ip])) 
 if test "x${with_ip}" = x; then

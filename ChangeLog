@@ -1,5 +1,7 @@
 2007-08-13  Tambet Ingo  <tambet@gmail.com>
 
+	* configure.in: Remove checks for dhcdbd as it's killed! killed! killed!
+
 	* gnome/*: Remove. The nm-vpn-properties directory is now part of nm-applet,
 	libnm_glib directory got merged with libnm-glib/.
 
