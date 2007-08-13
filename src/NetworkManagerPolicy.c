@@ -290,7 +290,6 @@ nm_policy_device_change_check (gpointer user_data)
 	} else if (old_dev && !new_dev) {
 		/* Terminate current connection */
 		nm_info ("SWITCH: terminating current connection '%s' because it's no longer valid.", nm_device_get_iface (old_dev));
-		nm_device_interface_deactivate (NM_DEVICE_INTERFACE (old_dev));
 		do_switch = TRUE;
 	} else if (old_dev && new_dev) {
 		NMActRequest *	old_act_req = nm_device_get_act_request (old_dev);
@@ -359,13 +358,19 @@ nm_policy_device_change_check (gpointer user_data)
 		}
 	}
 
-	if (do_switch && new_dev) {
-		NMConnection *connection;
+	if (do_switch) {
+		if (old_dev) {
+			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (old_dev));
+		}
 
-		connection = create_connection (new_dev, ap);
-		if (connection)
-			nm_device_interface_activate (NM_DEVICE_INTERFACE (new_dev),
-										  connection, FALSE);
+		if (new_dev) {
+	 		NMConnection *connection;
+
+			connection = create_connection (new_dev, ap);
+			if (connection)
+				nm_device_interface_activate (NM_DEVICE_INTERFACE (new_dev),
+											  connection, FALSE);
+		}
 	}
 
 	if (ap)

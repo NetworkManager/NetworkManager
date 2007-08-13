@@ -1,6 +1,13 @@
 2007-08-12  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerPolicy.c
+		- (nm_policy_device_change_check): fix policy to deactivate old device
+			before activating new one, at least until the multiple active
+			device support lands
+
+2007-08-12  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerPolicy.c
 		- (nm_policy_new): hook up to connection-added / connection-removed
 			signals instead of connections-changed
 
