@@ -28,7 +28,7 @@ NetworkManagerDispatcher_CFLAGS = 		\
 NetworkManagerDispatcher_LDADD =		\
 	$(top_builddir)/utils/libnmutils.la	\
 	$(top_builddir)/libnm-util/libnm-util.la\
-	$(top_builddir)/libnm-glib/libnm-glib.la\
+	$(top_builddir)/libnm-glib/libnm_glib.la\
 	$(DBUS_LIBS)				\
 	$(GTHREAD_LIBS)				\
 	$(NULL)

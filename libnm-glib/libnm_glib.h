@@ -22,11 +22,11 @@
 #ifndef _LIB_NM_H_
 #define _LIB_NM_H_
 
+#ifndef NM_DISABLE_DEPRECATED
+
 #include <glib.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+G_BEGIN_DECLS
 
 typedef enum libnm_glib_state
 {
@@ -51,8 +51,8 @@ libnm_glib_state	 libnm_glib_get_network_state		(const libnm_glib_ctx *ctx);
 guint				 libnm_glib_register_callback		(libnm_glib_ctx *ctx, libnm_glib_callback_func func, gpointer user_data, GMainContext *g_main_ctx);
 void				 libnm_glib_unregister_callback	(libnm_glib_ctx *ctx, guint id);
 
-#ifdef __cplusplus
-}
-#endif
+G_END_DECLS
 
-#endif
+#endif /* NM_DISABLE_DEPRECATED */
+
+#endif /* _LIB_NM_H_ */

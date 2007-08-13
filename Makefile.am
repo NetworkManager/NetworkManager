@@ -4,7 +4,6 @@ SUBDIRS = 				\
 	   libnm-glib			\
 	   src				\
 	   dispatcher-daemon	\
-	   gnome				\
 	   initscript			\
 	   test				\
 	   po				\
@@ -19,7 +18,7 @@ EXTRA_DIST =				\
 	intltool-extract.in		\
 	intltool-merge.in		\
 	intltool-update.in		
-	
+
 DISTCLEANFILES = intltool-extract intltool-merge intltool-update
 
 pkgconfigdir = $(libdir)/pkgconfig

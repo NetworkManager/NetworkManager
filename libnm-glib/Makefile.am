@@ -11,10 +11,11 @@ BUILT_SOURCES = \
 	nm-settings-connection-glue.h \
 	nm-settings-glue.h
 
-lib_LTLIBRARIES = libnm-glib.la
+lib_LTLIBRARIES = libnm_glib.la
 
 libnm_glib_la_CFLAGS = 		\
 	$(GLIB_CFLAGS)		\
+	$(GTHREAD_CFLAGS)	\
 	$(DBUS_CFLAGS)		\
 	$(GCONF_CFLAGS)		\
 	$(GNOME_KEYRING_CFLAGS)
@@ -22,6 +23,7 @@ libnm_glib_la_CFLAGS = 		\
 libnmincludedir = $(includedir)/libnm-glib
 
 libnminclude_HEADERS = \
+	libnm_glib.h		\
 	nm-object.h		\
 	nm-client.h		\
 	nm-device.h		\
@@ -33,6 +35,7 @@ libnminclude_HEADERS = \
 	nm-vpn-connection.h
 
 libnm_glib_la_SOURCES = \
+	libnm_glib.c		\
 	nm-object.c		\
 	nm-client.c		\
 	nm-device.c		\
@@ -48,6 +51,7 @@ libnm_glib_la_SOURCES = \
 libnm_glib_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la	\
 	$(GLIB_LIBS)					\
+	$(GTHREAD_LIBS)					\
 	$(DBUS_LIBS)					\
 	$(GCONF_LIBS)					\
 	$(GNOME_KEYRING_LIBS)
@@ -56,7 +60,7 @@ noinst_PROGRAMS = libnm-glib-test
 
 libnm_glib_test_SOURCES = libnm-glib-test.c
 libnm_glib_test_CFLAGS = $(GLIB_CFLAGS) $(DBUS_CFLAGS)
-libnm_glib_test_LDADD = libnm-glib.la $(top_builddir)/libnm-util/libnm-util.la $(GLIB_LIBS) $(DBUS_LIBS)
+libnm_glib_test_LDADD = libnm_glib.la $(top_builddir)/libnm-util/libnm-util.la $(GLIB_LIBS) $(DBUS_LIBS)
 
 nm-marshal.h: Makefile.am nm-marshal.list
 	$(GLIB_GENMARSHAL) --prefix=nm_marshal $(srcdir)/nm-marshal.list --header > \
@@ -94,11 +98,11 @@ nm-settings-connection-glue.h: $(top_srcdir)/introspection/nm-settings-connectio
 	dbus-binding-tool --prefix=nm_connection_settings --mode=glib-server --output=nm-settings-connection-glue.h $(top_srcdir)/introspection/nm-settings-connection.xml
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = libnm-glib.pc
+pkgconfig_DATA = libnm_glib.pc
 
-DISTCLEANFILES = libnm-glib.pc
+DISTCLEANFILES = libnm_glib.pc
 
-EXTRA_DIST = libnm-glib.pc.in nm-marshal.list
+EXTRA_DIST = libnm_glib.pc.in nm-marshal.list
 
 CLEANFILES = \
 	$(BUILT_SOURCES)

@@ -8,6 +8,6 @@ Description: Convenience library for clients of NetworkManager
 Version: @VERSION@
 Requires: NetworkManager >= 0.7.0 
 Cflags: -I${includedir}/libnm-glib
-Libs: -L${libdir} -lnm-glib
+Libs: -L${libdir} -lnm_glib
 
 

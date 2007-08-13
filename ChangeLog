@@ -1,3 +1,27 @@
+2007-08-13  Tambet Ingo  <tambet@gmail.com>
+
+	* libnm-glib/libnm-glib.pc.in: Rename to libnm_glib.pc.in.
+
+	* libnm-glib/Makefile.am: Add legacy libnm_glib.[ch] to the build.
+	Rename the library from libnm-glib to libnm_glib to maintain the library API
+	compatibility with 0.6 branch.
+
+	* Makefile.am: Remove gnome/ SUBDIR.
+
+	* gnome/libnm_glib/libnm_glib.[ch]: Move to libnm-glib/.
+
+	* src/Makefile.am: Remove the WPA_SUPPLICANT_BIN define.
+
+	* dispatcher-daemon/Makefile.am: Link the binary with libnm_glib.
+
+	* configure.in: Remove GNOME checks, NetworkManager does not need any of these
+	anymore.
+	Remove checks for wpa_supplicant binary, it's used over dbus.
+	Remove gnome/ directory files form AC_OUTPUT, that directory is getting moved.
+
+	* test/Makefile.am: Remove define WPA_SUPPLICANT_BIN.
+	Link the binaries with libnm_glib.la.
+
 2007-08-12  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerPolicy.c

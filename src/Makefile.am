@@ -126,7 +126,6 @@ NetworkManager_CPPFLAGS = 							\
 	$(HAL_CFLAGS)									\
 	$(OPENSSL_CFLAGS)								\
 	$(LIBNL_CFLAGS)								\
-	-DWPA_SUPPLICANT_BIN=\"$(WPA_SUPPLICANT_BINARY_PATH)\"	\
 	-DDBUS_API_SUBJECT_TO_CHANGE						\
 	-DG_DISABLE_DEPRECATED							\
 	-DBINDIR=\"$(bindir)\"							\

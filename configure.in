@@ -44,12 +44,6 @@ AC_FUNC_MEMCMP
 AC_CHECK_FUNCS(select socket uname)
 
 dnl
-dnl GNOME support
-dnl
-AC_ARG_WITH(gnome, AC_HELP_STRING([--without-gnome], [Build NetworkManager without GNOME support, e.g. daemon only]))
-AM_CONDITIONAL(WITH_GNOME, test x"$with_gnome" != xno)
-
-dnl
 dnl translation support
 dnl
 GETTEXT_PACKAGE=NetworkManager
@@ -170,33 +164,6 @@ PKG_CHECK_MODULES(HAL, hal >= 0.5.0)
 AC_SUBST(HAL_CFLAGS)
 AC_SUBST(HAL_LIBS)
 
-if test x"$with_gnome" != xno; then
-	PKG_CHECK_MODULES(GTK, gtk+-2.0)
-	AC_SUBST(GTK_CFLAGS)
-	AC_SUBST(GTK_LIBS)
-
-	PKG_CHECK_MODULES(GLADE, libglade-2.0)
-	AC_SUBST(GLADE_CFLAGS)
-	AC_SUBST(GLADE_LIBS)
-
-	PKG_CHECK_MODULES(GCONF, gconf-2.0)
-	AC_SUBST(GCONF_CFLAGS)
-	AC_SUBST(GCONF_LIBS)
-
-	PKG_CHECK_MODULES(GNOME_KEYRING, gnome-keyring-1)
-	AC_SUBST(GNOME_KEYRING_CFLAGS)
-	AC_SUBST(GNOME_KEYRING_LIBS)
-
-	PKG_CHECK_MODULES(LIBGNOMEUI, libgnomeui-2.0)
-	AC_SUBST(LIBGNOMEUI_CFLAGS)
-	AC_SUBST(LIBGNOMEUI_LIBS)
-
-	PKG_CHECK_EXISTS([libgnome-2.0 >= 2.14.0],[have_libgnome_2_14=yes],[have_libgnome_2_14=no])
-	if test "$have_libgnome_2_14" = "yes"; then
-		AC_DEFINE([HAVE_LIBGNOME_2_14],[1],[Define if we have libgnome 2.14])
-	fi
-fi
-
 PKG_CHECK_MODULES(LIBNL, libnl-1)
 AC_SUBST(LIBNL_CFLAGS)
 AC_SUBST(LIBNL_LIBS)
@@ -247,19 +214,6 @@ else
 fi
 AC_DEFINE_UNQUOTED(DHCDBD_BINARY_PATH, "$DHCDBD_BINARY_PATH", [Define to path of dhcdbd binary])
 AC_SUBST(DHCDBD_BINARY_PATH)
-
-# wpa_supplicant binary path
-AC_ARG_WITH(wpa_supplicant, AC_HELP_STRING([--with-wpa_supplicant=/path/to/wpa_supplicant], [path to wpa_supplicant]))
-if test "x${with_wpa_supplicant}" = x; then
-  AC_PATH_PROG(WPA_SUPPLICANT_BINARY_PATH, wpa_supplicant, [], $PATH:/sbin:/usr/sbin)
-  if ! test -x "$WPA_SUPPLICANT_BINARY_PATH"; then
-        AC_MSG_ERROR(wpa_supplicant is not installed.  See http://hostap.epitest.fi/wpa_supplicant/)
-  fi
-else
-  WPA_SUPPLICANT_BINARY_PATH="$with_wpa_supplicant"
-fi
-AC_DEFINE_UNQUOTED(WPA_SUPPLICANT_BINARY_PATH, "$WPA_SUPPLICANT_BINARY_PATH", [Define to path of wpa_supplicant binary])
-AC_SUBST(WPA_SUPPLICANT_BINARY_PATH)
 
 # ip binary path
 AC_ARG_WITH(ip, AC_HELP_STRING([--with-ip=/path/to/ip], [path to ip])) 
@@ -321,14 +275,10 @@ src/supplicant-manager/Makefile
 src/backends/Makefile
 libnm-util/libnm-util.pc
 libnm-util/Makefile
-libnm-glib/libnm-glib.pc
+libnm-glib/libnm_glib.pc
 libnm-glib/Makefile
 callouts/Makefile
 dispatcher-daemon/Makefile
-gnome/Makefile
-gnome/libnm_glib/libnm_glib.pc
-gnome/libnm_glib/Makefile
-gnome/vpn-properties/Makefile
 test/Makefile
 test/test-common/Makefile
 test/libnm-util/Makefile
