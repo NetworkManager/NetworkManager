@@ -81,6 +81,8 @@ static NMDHCPManager *nm_dhcp_manager_new (void);
 
 static void nm_dhcp_manager_cancel_transaction_real (NMDHCPDevice *device, gboolean blocking);
 
+static void stop_dhclient (const char * iface, const pid_t pid, gboolean blocking);
+
 static char *
 get_pidfile_for_iface (const char * iface)
 {
@@ -626,6 +628,7 @@ dhclient_run (NMDHCPDevice *device, gchar *xtra_arg)
 	char *			pidfile = NULL;
 	char *			leasefile = NULL;
 	gboolean		success = FALSE;
+	char *			pid_contents = NULL;
 
 	/* Find dhclient */
 	dhclient_binary = dhclient_binary_paths;
@@ -652,7 +655,14 @@ dhclient_run (NMDHCPDevice *device, gchar *xtra_arg)
 		goto out;
 	}
 
-	// FIXME: look for existing pidfile and kill dhclient
+	/* Kill any existing dhclient bound to this interface */
+	if (g_file_get_contents (pidfile, &pid_contents, NULL, NULL)) {
+		unsigned long int tmp = strtoul (pid_contents, NULL, 10);
+
+		if (!((tmp == ULONG_MAX) && (errno == ERANGE)))
+			stop_dhclient (device->iface, (pid_t) tmp, TRUE);
+		remove (pidfile);
+	}
 
 	dhclient_argv = g_ptr_array_new ();
 	g_ptr_array_add (dhclient_argv, (gpointer) (*dhclient_binary));
@@ -691,6 +701,7 @@ dhclient_run (NMDHCPDevice *device, gchar *xtra_arg)
 	success = TRUE;
 
 out:
+	g_free (pid_contents);
 	g_free (leasefile);
 	g_free (pidfile);
 	g_ptr_array_free (dhclient_argv, TRUE);
@@ -735,22 +746,19 @@ nm_dhcp_manager_begin_transaction (NMDHCPManager *manager,
 }
 
 static void
-nm_dhcp_manager_cancel_transaction_real (NMDHCPDevice *device, gboolean blocking)
+stop_dhclient (const char * iface,
+               pid_t pid,
+               gboolean blocking)
 {
 	int i = 20; /* 4 seconds */
-	char * pidfile;
-	char * leasefile;
 
-	if (!device->dhclient_pid)
-		return;
+	/* Tell it to quit */
+	kill (pid, SIGTERM);
 
-	kill (device->dhclient_pid, SIGTERM);
-
-	/* Yes, the state has to reach DHC_END. */
 	while (blocking && i-- > 0) {
 		gint child_status;
 		int ret;
-		ret = waitpid (device->dhclient_pid, &child_status, WNOHANG);
+		ret = waitpid (pid, &child_status, WNOHANG);
 		if (ret > 0) {
 			break;
 		} else if (ret == -1) {
@@ -765,10 +773,22 @@ nm_dhcp_manager_cancel_transaction_real (NMDHCPDevice *device, gboolean blocking
 	}
 
 	if (i <= 0) {
-		nm_warning ("%s: dhclient pid %d didn't exit, will kill it.",
-		            device->iface, device->dhclient_pid);
-		kill (device->dhclient_pid, SIGKILL);
+		nm_warning ("%s: dhclient pid %d didn't exit, will kill it.", iface, pid);
+		kill (pid, SIGKILL);
 	}
+}
+
+static void
+nm_dhcp_manager_cancel_transaction_real (NMDHCPDevice *device, gboolean blocking)
+{
+	char * pidfile;
+	char * leasefile;
+
+	if (!device->dhclient_pid)
+		return;
+
+	stop_dhclient (device->iface, device->dhclient_pid, blocking);
+
 	nm_info ("%s: canceled DHCP transaction, dhclient pid %d",
 	         device->iface,
 	         device->dhclient_pid);

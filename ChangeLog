@@ -1,5 +1,12 @@
 2007-08-13  Dan Williams  <dcbw@redhat.com>
 
+	* src/dhcp-manager/nm-dhcp-manager.c
+		- Stop any dhclient instance that might be already running for a
+			particular interface before starting an NM spawned dhclient.  Fixes
+			dhclient processes left over if NM crashes, stuff like that.
+
+2007-08-13  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerAP.c
 		- (finalize): don't try to g_array_free (NULL, ...), which happened
 			when the AP wasn't broadcasting it's SSID
