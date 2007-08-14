@@ -1,5 +1,13 @@
 2007-08-13  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Michael Biebl <biebl@debian.org>
+
+	* po/POTFILES.in
+	  po/POTFILES.skip
+		- Update for vpn-properties move
+
+2007-08-13  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/nm-client.c
 		- Convert internal VPN connection tracking from a list to a hash table
 			to easily avoid duplicates
