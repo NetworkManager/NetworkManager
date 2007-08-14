@@ -37,6 +37,16 @@
 #define NM_DHCP_CLIENT_DBUS_SERVICE "org.freedesktop.nm_dhcp_client"
 #define NM_DHCP_CLIENT_DBUS_IFACE   "org.freedesktop.nm_dhcp_client"
 
+#define NM_DHCP_MANAGER_RUN_DIR		LOCALSTATEDIR "/run"
+
+#define NM_DHCP_MANAGER_PID_FILENAME	"dhclient"
+#define NM_DHCP_MANAGER_PID_FILE_EXT	"pid"
+
+#define NM_DHCP_MANAGER_LEASE_FILENAME	"dhclient"
+#define NM_DHCP_MANAGER_LEASE_FILE_EXT	"lease"
+
+#define ACTION_SCRIPT_PATH	LIBEXECDIR "/nm-dhcp-client.action"
+
 #define NM_DHCP_TIMEOUT   	45 /* DHCP timeout, in seconds */
 
 static const char *dhclient_binary_paths[] =
@@ -662,7 +672,7 @@ dhclient_run (NMDHCPDevice *device)
 #endif
 
 	g_ptr_array_add (dhclient_argv, (gpointer) "-sf");	/* Set script file */
-	g_ptr_array_add (dhclient_argv, (gpointer) SYSCONFDIR "/NetworkManager/callouts/nm-dhcp-client.action" );
+	g_ptr_array_add (dhclient_argv, (gpointer) ACTION_SCRIPT_PATH );
 
 	g_ptr_array_add (dhclient_argv, (gpointer) "-pf");	/* Set pid file */
 	g_ptr_array_add (dhclient_argv, (gpointer) pidfile);

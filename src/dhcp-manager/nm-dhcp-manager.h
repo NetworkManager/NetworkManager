@@ -32,14 +32,6 @@
 #define NM_IS_DHCP_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_DHCP_MANAGER))
 #define NM_DHCP_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DHCP_MANAGER, NMDHCPManagerClass))
 
-#define NM_DHCP_MANAGER_RUN_DIR		"/var/run"
-
-#define NM_DHCP_MANAGER_PID_FILENAME	"dhclient"
-#define NM_DHCP_MANAGER_PID_FILE_EXT	"pid"
-
-#define NM_DHCP_MANAGER_LEASE_FILENAME	"dhclient"
-#define NM_DHCP_MANAGER_LEASE_FILE_EXT	"lease"
-
 typedef enum {
 	DHC_NBI=0,		/* no broadcast interfaces found */
 	DHC_PREINIT,		/* configuration started */

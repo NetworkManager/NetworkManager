@@ -25,7 +25,9 @@ libdhcp_manager_la_CPPFLAGS =	$(DBUS_CFLAGS)					\
 						-DG_DISABLE_DEPRECATED			\
 						-DBINDIR=\"$(bindir)\"			\
 						-DDATADIR=\"$(datadir)\"			\
-						-DSYSCONFDIR=\"$(sysconfdir)\"
+						-DSYSCONFDIR=\"$(sysconfdir)\"	\
+						-DLIBEXECDIR=\"$(libexecdir)\"	\
+						-DLOCALSTATEDIR=\"$(localstatedir)\"
 
 
 libdhcp_manager_la_LIBADD = $(DBUS_LIBS) $(GTHREAD_LIBS)
