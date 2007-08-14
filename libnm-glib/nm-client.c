@@ -22,8 +22,8 @@ typedef struct {
 
 	DBusGProxy *vpn_proxy;
 	NMVPNActStage vpn_state;
-	gboolean have_vpn_connection_list;
-	GSList *vpn_connection_list;
+	gboolean have_vpn_connections;
+	GHashTable *vpn_connections;
 } NMClientPrivate;
 
 enum {
@@ -52,6 +52,7 @@ static void client_device_added_proxy (DBusGProxy *proxy, char *path, gpointer u
 static void client_device_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data);
 
 static void setup_vpn_proxy (NMClient *client, DBusGConnection *connection);
+static void clear_vpn_connections (NMClient * client);
 
 static void
 nm_client_init (NMClient *client)
@@ -62,6 +63,11 @@ nm_client_init (NMClient *client)
 	priv->devices = g_hash_table_new_full (g_str_hash, g_str_equal,
 										   (GDestroyNotify) g_free,
 										   (GDestroyNotify) g_object_unref);
+
+	priv->vpn_connections = g_hash_table_new_full (g_str_hash,
+	                                               g_str_equal,
+	                                               (GDestroyNotify) g_free,
+	                                               (GDestroyNotify) g_object_unref);
 
 	priv->vpn_state = NM_VPN_ACT_STAGE_UNKNOWN;
 }
@@ -148,6 +154,7 @@ finalize (GObject *object)
 	g_object_unref (priv->client_proxy);
 	g_object_unref (priv->bus_proxy);
 	g_hash_table_destroy (priv->devices);
+	g_hash_table_destroy (priv->vpn_connections);
 }
 
 static void
@@ -159,6 +166,9 @@ manager_running (NMClient *client, gboolean running)
 		priv->state = NM_STATE_UNKNOWN;
 		g_hash_table_remove_all (priv->devices);
 		priv->have_device_list = FALSE;
+
+		clear_vpn_connections (client);
+		priv->have_vpn_connections = FALSE;
 	}
 }
 
@@ -531,11 +541,20 @@ proxy_vpn_connection_added (DBusGProxy *proxy, char *name, gpointer user_data)
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
 	NMVPNConnection *connection;
 
+	if (g_hash_table_lookup (priv->vpn_connections, name))
+		return;
+
 	connection = nm_vpn_connection_new (proxy, name);
-	if (connection) {
-		priv->vpn_connection_list = g_slist_append (priv->vpn_connection_list, connection);
-		g_signal_emit (client, signals[VPN_CONNECTION_ADDED], 0, connection);
+	if (connection == NULL) {
+		g_log (G_LOG_DOMAIN,
+		       G_LOG_LEVEL_WARNING,
+		       "Warning: out of memory creating NMVPNConnection for '%s'\n",
+		       name);
+		return;
 	}
+
+	g_hash_table_insert (priv->vpn_connections, name, connection);
+	g_signal_emit (client, signals[VPN_CONNECTION_ADDED], 0, connection);
 }
 
 static void
@@ -618,42 +637,101 @@ get_connections (NMClient *client)
 	g_strfreev (vpn_names);
 }
 
+static void
+clear_one_vpn_connection (gpointer data,
+                          gpointer user_data)
+{
+	NMClient * client = NM_CLIENT (user_data);
+	NMVPNConnection * connection = NM_VPN_CONNECTION (data);
+
+	g_signal_emit (client, signals[VPN_CONNECTION_REMOVED], 0, connection);
+}
+
+static void
+clear_vpn_connections (NMClient * client)
+{
+	NMClientPrivate * priv;
+	GSList * list;
+	
+	g_return_if_fail (NM_IS_CLIENT (client));
+
+	priv = NM_CLIENT_GET_PRIVATE (client);
+
+	list = nm_client_get_vpn_connections (client);
+	g_hash_table_steal_all (priv->vpn_connections);
+
+	g_slist_foreach (list, clear_one_vpn_connection, client);
+	g_slist_foreach (list, (GFunc) g_object_unref, NULL);
+	g_slist_free (list);
+}
+
+static void
+vpn_connections_to_slist (gpointer key, gpointer value, gpointer user_data)
+{
+	GSList **list = (GSList **) user_data;
+
+	*list = g_slist_prepend (*list, value);
+}
+
 GSList *
 nm_client_get_vpn_connections (NMClient *client)
 {
 	NMClientPrivate *priv;
+	GSList * list = NULL;
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
 	priv = NM_CLIENT_GET_PRIVATE (client);
 
-	if (!priv->have_vpn_connection_list) {
+	if (!priv->have_vpn_connections) {
 		get_connections (client);
-		priv->have_vpn_connection_list = TRUE;
+		priv->have_vpn_connections = TRUE;
 	}
 
-	return priv->vpn_connection_list;
+	g_hash_table_foreach (priv->vpn_connections,
+	                      vpn_connections_to_slist,
+	                      &list);
+	return list;
 }
 
 NMVPNConnection *
 nm_client_get_vpn_connection_by_name (NMClient *client, const char *name)
 {
-	GSList *iter;
+	NMClientPrivate *priv;
+	GSList * list;
+	
+	g_return_if_fail (NM_IS_CLIENT (client));
 
-	for (iter = nm_client_get_vpn_connections (client); iter; iter = iter->next) {
-		NMVPNConnection *connection = NM_VPN_CONNECTION (iter->data);
+	priv = NM_CLIENT_GET_PRIVATE (client);
 
-		if (!strcmp (nm_vpn_connection_get_name (connection), name))
-			return connection;
-	}
+	/* Ensure list of VPN connections is current */
+	list = nm_client_get_vpn_connections (client);
+	g_slist_free (list);
 
-	return NULL;
+	return g_hash_table_lookup (priv->vpn_connections, name);
+}
+
+struct find_info {
+	char * found_key;
+	NMVPNConnection * connection;
+};
+
+static void
+find_connection (gpointer key,
+                 gpointer value,
+                 gpointer user_data)
+{
+	struct find_info * info = (struct find_info *) user_data;
+
+	if (info->connection == value)
+		info->found_key = key;
 }
 
 void
 nm_client_remove_vpn_connection (NMClient *client, NMVPNConnection *connection)
 {
 	NMClientPrivate *priv;
+	struct find_info info = { NULL, NULL };
 	
 	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (NM_IS_VPN_CONNECTION (connection));
@@ -663,7 +741,17 @@ nm_client_remove_vpn_connection (NMClient *client, NMVPNConnection *connection)
 
 	priv = NM_CLIENT_GET_PRIVATE (client);
 
-	priv->vpn_connection_list = g_slist_remove (priv->vpn_connection_list, connection);
+	info.connection = connection;
+	g_hash_table_foreach (priv->vpn_connections, find_connection, &info);
+	if (!info.found_key) {
+		g_log (G_LOG_DOMAIN,
+		       G_LOG_LEVEL_WARNING,
+		       "Warning: tried to remove unknown NMVPNConnection object %p\n",
+		       connection);
+		return;
+	}
+
+	g_hash_table_steal (priv->vpn_connections, info.found_key);
 	g_signal_emit (client, signals[VPN_CONNECTION_REMOVED], 0, connection);
 	g_object_unref (connection);
 }

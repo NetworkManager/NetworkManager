@@ -1,5 +1,18 @@
 2007-08-13  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/nm-client.c
+		- Convert internal VPN connection tracking from a list to a hash table
+			to easily avoid duplicates
+		- (nm_client_get_vpn_connections): now returns an allocated GSList that
+			must be freed by the caller, like nm_client_get_devices()
+		- (nm_client_remove_vpn_connection): don't let the removal signal
+			leak through for NMVPNConnection objects that aren't actually
+			tracked.
+		- (manager_running): throw away VPN connection list when NM goes away,
+			like with the device list
+
+2007-08-13  Dan Williams  <dcbw@redhat.com>
+
 	* src/dhcp-manager/nm-dhcp-manager.c
 		- Stop any dhclient instance that might be already running for a
 			particular interface before starting an NM spawned dhclient.  Fixes
