@@ -35,7 +35,7 @@ typedef struct {
 
 	void (*vpn_connection_added) (NMClient *client, NMVPNConnection *connection);
 	void (*vpn_connection_removed) (NMClient *client, NMVPNConnection *connection);
-	void (*vpn_state_change) (NMClient *client, NMVPNActStage state);
+	void (*vpn_state_change) (NMClient *client, NMVPNConnectionState state);
 } NMClientClass;
 
 GType nm_client_get_type (void);
@@ -62,7 +62,7 @@ NMVPNConnection *nm_client_get_vpn_connection_by_name (NMClient *client,
 void      nm_client_remove_vpn_connection (NMClient *client,
 										   NMVPNConnection *connection);
 
-NMVPNActStage nm_client_get_vpn_state    (NMClient *client);
+NMVPNConnectionState nm_client_get_vpn_state    (NMClient *client);
 
 G_END_DECLS
 

@@ -54,7 +54,7 @@ struct NMVPNService
 	char *			name;
 	char *			service;
 	char *			program;
-	NMVPNState		state;
+	NMVPNServiceState	state;
 };
 
 
@@ -100,7 +100,7 @@ NMVPNService *nm_vpn_service_new (NMVPNManager *manager, NMData *app_data)
 	NMVPNService *service = g_malloc0 (sizeof (NMVPNService));
 
 	service->refcount = 1;
-	service->state = NM_VPN_STATE_SHUTDOWN;
+	service->state = NM_VPN_SERVICE_STATE_SHUTDOWN;
 	service->app_data = app_data;
 	service->manager = manager;
 	service->dbus_mgr = nm_dbus_manager_get ();
@@ -192,15 +192,18 @@ void nm_vpn_service_set_program (NMVPNService *service, const char *program)
 }
 
 
-NMVPNState nm_vpn_service_get_state (NMVPNService *service)
+NMVPNServiceState
+nm_vpn_service_get_state (NMVPNService *service)
 {
-	g_return_val_if_fail (service != NULL, NM_VPN_STATE_UNKNOWN);
+	g_return_val_if_fail (service != NULL, NM_VPN_SERVICE_STATE_UNKNOWN);
 
 	return service->state;
 }
 
 
-static void nm_vpn_service_set_state (NMVPNService *service, const NMVPNState state)
+static void
+nm_vpn_service_set_state (NMVPNService *service,
+                          const NMVPNServiceState state)
 {
 	g_return_if_fail (service != NULL);
 
@@ -243,8 +246,9 @@ static char *construct_op_from_service_name (const char *service_name)
  * has failed.
  *
  */
-static void nm_vpn_service_act_request_failed (NMVPNService *service,
-								       NMVPNActRequest *req)
+static void
+nm_vpn_service_act_request_failed (NMVPNService *service,
+                                   NMVPNActRequest *req)
 {
 	NMVPNConnection *vpn;
 
@@ -260,7 +264,7 @@ static void nm_vpn_service_act_request_failed (NMVPNService *service,
 
 	nm_vpn_service_cancel_callback (service, req);
 
-	nm_vpn_act_request_set_stage (req, NM_VPN_ACT_STAGE_FAILED);
+	nm_vpn_act_request_set_state (req, NM_VPN_CONNECTION_STATE_FAILED);
 	nm_info ("VPN Activation (%s) failed.", nm_vpn_connection_get_name (vpn));
 
 	nm_vpn_act_request_unref (req);
@@ -268,7 +272,9 @@ static void nm_vpn_service_act_request_failed (NMVPNService *service,
 }
 
 
-static void nm_vpn_service_activation_success (NMVPNService *service, NMVPNActRequest *req)
+static void
+nm_vpn_service_activation_success (NMVPNService *service,
+                                   NMVPNActRequest *req)
 {
 	NMVPNConnection *	vpn = NULL;
 
@@ -280,7 +286,7 @@ static void nm_vpn_service_activation_success (NMVPNService *service, NMVPNActRe
 
 	nm_vpn_service_cancel_callback (service, req);
 
-	nm_vpn_act_request_set_stage (req, NM_VPN_ACT_STAGE_ACTIVATED);
+	nm_vpn_act_request_set_state (req, NM_VPN_CONNECTION_STATE_ACTIVATED);
 	nm_info ("VPN Activation (%s) successful.", nm_vpn_connection_get_name (vpn));
 }
 
@@ -291,12 +297,14 @@ static void nm_vpn_service_activation_success (NMVPNService *service, NMVPNActRe
  * Kick off the VPN connection process.
  *
  */
-void nm_vpn_service_start_connection (NMVPNService *service, NMVPNActRequest *req)
+void
+nm_vpn_service_start_connection (NMVPNService *service,
+                                 NMVPNActRequest *req)
 {
 	g_return_if_fail (service != NULL);
 	g_return_if_fail (req != NULL);
 
-	nm_vpn_act_request_set_stage (req, NM_VPN_ACT_STAGE_PREPARE);
+	nm_vpn_act_request_set_state (req, NM_VPN_CONNECTION_STATE_PREPARE);
 	nm_vpn_service_add_watch (service);
 
 	/* Start the daemon if it's not already running */
@@ -387,7 +395,9 @@ out:
 }
 
 
-static void nm_vpn_service_schedule_stage1_daemon_exec (NMVPNService *service, NMVPNActRequest *req)
+static void
+nm_vpn_service_schedule_stage1_daemon_exec (NMVPNService *service,
+                                            NMVPNActRequest *req)
 {
 	NMVPNConnection * vpn = NULL;
 	guint             id;
@@ -398,8 +408,8 @@ static void nm_vpn_service_schedule_stage1_daemon_exec (NMVPNService *service, N
 	vpn = nm_vpn_act_request_get_connection (req);
 	g_assert (vpn);
 
-	nm_vpn_act_request_set_stage (req, NM_VPN_ACT_STAGE_PREPARE);
-	nm_vpn_service_set_state (service, NM_VPN_STATE_SHUTDOWN);
+	nm_vpn_act_request_set_state (req, NM_VPN_CONNECTION_STATE_PREPARE);
+	nm_vpn_service_set_state (service, NM_VPN_SERVICE_STATE_SHUTDOWN);
 
 	id = g_idle_add (nm_vpn_service_stage1_daemon_exec, req);
 	nm_vpn_act_request_set_callback_id (req, id);
@@ -414,7 +424,8 @@ static void nm_vpn_service_schedule_stage1_daemon_exec (NMVPNService *service, N
  * Wait until the VPN daemon has become active.
  *
  */
-static gboolean nm_vpn_service_stage2_daemon_wait (gpointer user_data)
+static gboolean
+nm_vpn_service_stage2_daemon_wait (gpointer user_data)
 {
 	NMVPNActRequest *	req = (NMVPNActRequest *) user_data;
 	NMVPNService *		service;
@@ -436,27 +447,26 @@ static gboolean nm_vpn_service_stage2_daemon_wait (gpointer user_data)
 
 	service_exists = nm_dbus_manager_name_has_owner (service->dbus_mgr,
 	                                                 service->service);
-	if (service_exists && (service->state == NM_VPN_STATE_STOPPED))
-	{
+	if (service_exists && (service->state == NM_VPN_SERVICE_STATE_STOPPED)) {
 		nm_info ("VPN Activation (%s) Stage 2 of 4 (Connection Prepare Wait) "
 				"complete.", nm_vpn_connection_get_name (vpn));
 		nm_vpn_service_schedule_stage3_connect (service, req);
-	}
-	else if (nm_vpn_act_request_get_daemon_wait_count (req) > 10)
-	{
+	} else if (nm_vpn_act_request_get_daemon_wait_count (req) > 10) {
 		/* We only wait 2s (10 * 200 milliseconds) for the service to
 		 * become available.
 		 */
 		nm_vpn_service_act_request_failed (service, req);
-	}
-	else
+	} else {
 		nm_vpn_service_schedule_stage2_daemon_wait (service, req);
+	}
 
 	return FALSE;
 }
 
 
-static void nm_vpn_service_schedule_stage2_daemon_wait (NMVPNService *service, NMVPNActRequest *req)
+static void
+nm_vpn_service_schedule_stage2_daemon_wait (NMVPNService *service,
+                                            NMVPNActRequest *req)
 {
 	NMVPNConnection * vpn = NULL;
 	guint             id;
@@ -467,7 +477,7 @@ static void nm_vpn_service_schedule_stage2_daemon_wait (NMVPNService *service, N
 	vpn = nm_vpn_act_request_get_connection (req);
 	g_assert (vpn);
 
-	nm_vpn_act_request_set_stage (req, NM_VPN_ACT_STAGE_PREPARE);
+	nm_vpn_act_request_set_state (req, NM_VPN_CONNECTION_STATE_PREPARE);
 
 	nm_vpn_act_request_set_daemon_wait_count (req, nm_vpn_act_request_get_daemon_wait_count (req) + 1);
 
@@ -479,7 +489,9 @@ static void nm_vpn_service_schedule_stage2_daemon_wait (NMVPNService *service, N
 }
 
 
-static void nm_vpn_service_stage3_connect_cb (DBusPendingCall *pcall, void *user_data)
+static void
+nm_vpn_service_stage3_connect_cb (DBusPendingCall *pcall,
+                                  void *user_data)
 {
 	DBusMessage *		reply;
 	NMVPNActRequest *	req = (NMVPNActRequest *) user_data;
@@ -498,16 +510,14 @@ static void nm_vpn_service_stage3_connect_cb (DBusPendingCall *pcall, void *user
 	nm_info ("VPN Activation (%s) Stage 3 of 4 (Connect) reply received.",
 			nm_vpn_connection_get_name (vpn));
 
-	if (!(reply = dbus_pending_call_steal_reply (pcall)))
-	{
+	if (!(reply = dbus_pending_call_steal_reply (pcall))) {
 		nm_warning ("(VPN Service %s): could not obtain VPN service's reply.",
 				service->service);
 		nm_vpn_service_act_request_failed (service, req);
 		goto out;
 	}
 
-	if (message_is_error (reply))
-	{
+	if (message_is_error (reply)) {
 		const char *member = dbus_message_get_member (reply);
 		char *message;
 
@@ -517,10 +527,8 @@ static void nm_vpn_service_stage3_connect_cb (DBusPendingCall *pcall, void *user
 		nm_warning ("(VPN Service %s): could not start the VPN '%s'.  dbus says: '%s'  '%s'.", 
 					service->service, nm_vpn_connection_get_name (vpn), member, message);
 		nm_vpn_service_act_request_failed (service, req);
-	}
-	else
-	{
-		nm_vpn_act_request_set_stage (req, NM_VPN_ACT_STAGE_IP_CONFIG_GET);
+	} else {
+		nm_vpn_act_request_set_state (req, NM_VPN_CONNECTION_STATE_IP_CONFIG_GET);
 		nm_vpn_service_schedule_stage4_ip_config_get_timeout (service, req);
 		nm_info ("VPN Activation (%s) Stage 3 of 4 (Connect) complete, "
 				"waiting for IP configuration...", nm_vpn_connection_get_name (vpn));
@@ -641,7 +649,9 @@ out:
 }
 
 
-static void nm_vpn_service_schedule_stage3_connect (NMVPNService *service, NMVPNActRequest *req)
+static void
+nm_vpn_service_schedule_stage3_connect (NMVPNService *service,
+                                        NMVPNActRequest *req)
 {
 	NMVPNConnection * vpn = NULL;
 	guint             id;
@@ -652,7 +662,7 @@ static void nm_vpn_service_schedule_stage3_connect (NMVPNService *service, NMVPN
 	vpn = nm_vpn_act_request_get_connection (req);
 	g_assert (vpn);
 
-	nm_vpn_act_request_set_stage (req, NM_VPN_ACT_STAGE_CONNECT);
+	nm_vpn_act_request_set_state (req, NM_VPN_CONNECTION_STATE_CONNECT);
 
 	id = g_idle_add (nm_vpn_service_stage3_connect, req);
 	nm_vpn_act_request_set_callback_id (req, id);
@@ -661,7 +671,8 @@ static void nm_vpn_service_schedule_stage3_connect (NMVPNService *service, NMVPN
 }
 
 
-static gboolean nm_vpn_service_stage4_ip_config_get_timeout (gpointer user_data)
+static gboolean
+nm_vpn_service_stage4_ip_config_get_timeout (gpointer user_data)
 {
 	NMVPNActRequest *	req = (NMVPNActRequest *) user_data;
 	NMVPNService *		service;
@@ -680,9 +691,10 @@ static gboolean nm_vpn_service_stage4_ip_config_get_timeout (gpointer user_data)
 	/* If the activation request's state is still IP_CONFIG_GET and we're
 	 * in this timeout, cancel activation because it's taken too long.
 	 */
-	if (nm_vpn_act_request_get_stage (req) == NM_VPN_ACT_STAGE_IP_CONFIG_GET)
-	{
-		nm_info ("VPN Activation (%s) Stage 4 of 4 (IP Config Get) timeout exceeded.", nm_vpn_connection_get_name (vpn));
+	if (nm_vpn_act_request_get_state (req) == NM_VPN_CONNECTION_STATE_IP_CONFIG_GET) {
+		nm_info ("VPN Activation (%s) Stage 4 of 4 (IP Config Get) timeout "
+		         "exceeded.",
+		         nm_vpn_connection_get_name (vpn));
 		nm_vpn_service_act_request_failed (service, req);
 	}
 
@@ -690,7 +702,9 @@ static gboolean nm_vpn_service_stage4_ip_config_get_timeout (gpointer user_data)
 }
 
 
-static void nm_vpn_service_schedule_stage4_ip_config_get_timeout (NMVPNService *service, NMVPNActRequest *req)
+static void
+nm_vpn_service_schedule_stage4_ip_config_get_timeout (NMVPNService *service,
+                                                      NMVPNActRequest *req)
 {
 	NMVPNConnection * vpn = NULL;
 	guint             id;
@@ -701,7 +715,7 @@ static void nm_vpn_service_schedule_stage4_ip_config_get_timeout (NMVPNService *
 	vpn = nm_vpn_act_request_get_connection (req);
 	g_assert (vpn);
 
-	nm_vpn_act_request_set_stage (req, NM_VPN_ACT_STAGE_IP_CONFIG_GET);
+	nm_vpn_act_request_set_state (req, NM_VPN_CONNECTION_STATE_IP_CONFIG_GET);
 
 	/* 20 second timeout waiting for IP config signal from VPN service */
 	id = g_timeout_add (20000, nm_vpn_service_stage4_ip_config_get_timeout, req);
@@ -1103,7 +1117,9 @@ nm_vpn_service_stop_connection_internal (NMVPNService *service)
 }
 
 
-void nm_vpn_service_stop_connection (NMVPNService *service, NMVPNActRequest *req)
+void
+nm_vpn_service_stop_connection (NMVPNService *service,
+                                NMVPNActRequest *req)
 {
 	NMVPNConnection *vpn;
 
@@ -1114,18 +1130,21 @@ void nm_vpn_service_stop_connection (NMVPNService *service, NMVPNActRequest *req
 	g_assert (vpn);
 
 	nm_vpn_service_cancel_callback (service, req);
-	nm_vpn_act_request_set_stage (req, NM_VPN_ACT_STAGE_DISCONNECTED);
+	nm_vpn_act_request_set_state (req, NM_VPN_CONNECTION_STATE_DISCONNECTED);
 
 	/* Ensure we can stop the connection in this state */
-	if ((service->state != NM_VPN_STATE_STARTED) && (service->state != NM_VPN_STATE_STARTING))
-	{
-		nm_warning ("(VPN Service %s): could not stop connection '%s' because service was %d.", 
-					service->service, nm_vpn_connection_get_name (vpn), service->state);
+	if (   (service->state != NM_VPN_SERVICE_STATE_STARTED)
+	    && (service->state != NM_VPN_SERVICE_STATE_STARTING)) {
+		nm_warning ("(VPN Service %s): could not stop connection '%s' because "
+		            " service was %d.", 
+		            service->service,
+					nm_vpn_connection_get_name (vpn),
+					service->state);
 		return;
 	}
 
 	nm_vpn_service_stop_connection_internal (service);
-	nm_vpn_service_set_state (service, NM_VPN_STATE_STOPPED);
+	nm_vpn_service_set_state (service, NM_VPN_SERVICE_STATE_STOPPED);
 }
 
 
@@ -1198,7 +1217,7 @@ nm_vpn_service_dbus_connection_changed (NMDBusManager *mgr,
 		gboolean			valid_vpn = FALSE;
 
 		/* Kill the VPN service since we can't talk to it anymore anyway */
-		nm_vpn_service_set_state (service, NM_VPN_STATE_SHUTDOWN);
+		nm_vpn_service_set_state (service, NM_VPN_SERVICE_STATE_SHUTDOWN);
 		nm_vpn_service_remove_watch (service);
 
 		req = nm_vpn_manager_get_vpn_act_request (service->manager);
@@ -1238,10 +1257,10 @@ nm_vpn_service_name_owner_changed (NMDBusManager *mgr,
 	if (!old_owner_good && new_owner_good) {
 		/* VPN service started. */
 		nm_vpn_service_add_watch (service);
-		nm_vpn_service_set_state (service, NM_VPN_STATE_INIT);
+		nm_vpn_service_set_state (service, NM_VPN_SERVICE_STATE_INIT);
 	} else if (old_owner_good && !new_owner_good) {
 		/* VPN service went away. */
-		nm_vpn_service_set_state (service, NM_VPN_STATE_SHUTDOWN);
+		nm_vpn_service_set_state (service, NM_VPN_SERVICE_STATE_SHUTDOWN);
 		nm_vpn_service_remove_watch (service);
 
 		if (valid_vpn) {
@@ -1307,8 +1326,8 @@ nm_vpn_service_process_signal (DBusConnection *connection,
 		                           DBUS_TYPE_UINT32, &old_state_int,
 		                           DBUS_TYPE_UINT32, &new_state_int,
 		                           DBUS_TYPE_INVALID)) {
-			NMVPNState	old_state = (NMVPNState) old_state_int;
-			NMVPNState	new_state = (NMVPNState) new_state_int;
+			NMVPNServiceState old_state = (NMVPNServiceState) old_state_int;
+			NMVPNServiceState new_state = (NMVPNServiceState) new_state_int;
 
 			nm_info ("VPN service '%s' signaled state change %d -> %d.",
 			         service->service,
@@ -1319,11 +1338,11 @@ nm_vpn_service_process_signal (DBusConnection *connection,
 			/* If the VPN daemon state is now stopped and it was starting, 
 			 * clear the active connection.
 			 */
-			if (   (   (new_state == NM_VPN_STATE_STOPPED)
-			        || (new_state == NM_VPN_STATE_SHUTDOWN)
-			        || (new_state == NM_VPN_STATE_STOPPING))
-			    && (   (old_state == NM_VPN_STATE_STARTED)
-			        || (old_state == NM_VPN_STATE_STARTING))
+			if (   (   (new_state == NM_VPN_SERVICE_STATE_STOPPED)
+			        || (new_state == NM_VPN_SERVICE_STATE_SHUTDOWN)
+			        || (new_state == NM_VPN_SERVICE_STATE_STOPPING))
+			    && (   (old_state == NM_VPN_SERVICE_STATE_STARTED)
+			        || (old_state == NM_VPN_SERVICE_STATE_STARTING))
 				&& valid_vpn) {
 				nm_vpn_act_request_unref (req);
 				nm_vpn_manager_schedule_vpn_connection_died (service->manager, req);

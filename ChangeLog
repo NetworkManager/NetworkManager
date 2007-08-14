@@ -1,3 +1,29 @@
+2007-08-14  Dan Williams  <dcbw@redhat.com>
+
+	* include/NetworkManagerVPN.h
+	  src/vpn-manager/nm-dbus-vpn.c
+	  src/vpn-manager/nm-dbus-vpn.h
+	  src/vpn-manager/nm-vpn-act-request.c
+	  src/vpn-manager/nm-vpn-act-request.h
+	  src/vpn-manager/nm-vpn-service.c
+	  src/vpn-manager/nm-vpn-service.h
+	  libnm-glib/nm-vpn-connection.c
+	  libnm-glib/nm-vpn-connection.h
+	  libnm-glib/nm-client.h
+		- Rename NM_VPN_STATE_* -> NM_VPN_SERVICE_STATE_* and NMVPNState -> 
+			NMVPNServiceState to clarify what they apply to
+		- Rename NM_VPN_ACT_STAGE_* -> NM_VPN_CONNECTION_STATE_* and
+			NMVPNActStage -> NMVPNConnectionState for the same reason
+
+	* libnm-glib/nm-client.c
+		- Constant + type renames from above
+		- Properly handle NameOwnerChanged/manager_running signals
+			for NM service; only emit when state really changes
+		- Use hash tables correctly so that the key (which was previously owned
+			by the D-Bus message) now has the same lifetime as the value, since
+			the key is now taken from the the NMVPNConnection itself.  This
+			really fixes the double-VPN names in the applet
+
 2007-08-13  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Michael Biebl <biebl@debian.org>

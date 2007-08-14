@@ -50,8 +50,8 @@ const char **		nm_vpn_act_request_get_user_routes	(NMVPNActRequest *req, guint *
 void				nm_vpn_act_request_cancel		(NMVPNActRequest *req);
 gboolean			nm_vpn_act_request_should_cancel	(NMVPNActRequest *req);
 
-NMVPNActStage		nm_vpn_act_request_get_stage		(NMVPNActRequest *req);
-void				nm_vpn_act_request_set_stage		(NMVPNActRequest *req, NMVPNActStage stage);
+NMVPNConnectionState	nm_vpn_act_request_get_state		(NMVPNActRequest *req);
+void				nm_vpn_act_request_set_state		(NMVPNActRequest *req, NMVPNConnectionState state);
 
 guint			nm_vpn_act_request_get_daemon_wait_count	(NMVPNActRequest *req);
 void				nm_vpn_act_request_set_daemon_wait_count	(NMVPNActRequest *req, guint count);

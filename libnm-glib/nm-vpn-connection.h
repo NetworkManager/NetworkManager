@@ -45,7 +45,7 @@ typedef struct {
 
 	/* Signals */
 	void (*updated) (NMVPNConnection *connection);
-	void (*state_changed) (NMVPNConnection *connection, NMVPNActStage state);
+	void (*state_changed) (NMVPNConnection *connection, NMVPNConnectionState state);
 } NMVPNConnectionClass;
 
 GType nm_vpn_connection_get_type (void);
@@ -57,7 +57,7 @@ gboolean       nm_vpn_connection_update (NMVPNConnection *vpn);
 const char *nm_vpn_connection_get_name (NMVPNConnection *vpn);
 const char *nm_vpn_connection_get_user_name (NMVPNConnection *vpn);
 const char *nm_vpn_connection_get_service (NMVPNConnection *vpn);
-NMVPNActStage nm_vpn_connection_get_state (NMVPNConnection *vpn);
+NMVPNConnectionState nm_vpn_connection_get_state (NMVPNConnection *vpn);
 gboolean nm_vpn_connection_is_activating (NMVPNConnection *vpn);
 
 gboolean nm_vpn_connection_activate   (NMVPNConnection *vpn,
@@ -65,7 +65,7 @@ gboolean nm_vpn_connection_activate   (NMVPNConnection *vpn,
 
 gboolean nm_vpn_connection_deactivate (NMVPNConnection *vpn);
 
-void nm_vpn_connection_set_state (NMVPNConnection *vpn, NMVPNActStage state);
+void nm_vpn_connection_set_state (NMVPNConnection *vpn, NMVPNConnectionState state);
 
 G_END_DECLS
 

@@ -31,7 +31,7 @@
 struct NMVPNActRequest
 {
 	guint			refcount;
-	NMVPNActStage		stage;
+	NMVPNConnectionState state;
 
 	NMDevice *		parent_dev;
 	NMVPNManager *		manager;
@@ -51,9 +51,17 @@ struct NMVPNActRequest
 };
 
 
-NMVPNActRequest *nm_vpn_act_request_new (NMVPNManager *manager, NMVPNService *service, NMVPNConnection *vpn,
-								 NMDevice *parent_dev, char **password_items, int password_count,
-								  char **data_items, int data_count, char **user_routes, int user_routes_count)
+NMVPNActRequest *
+nm_vpn_act_request_new (NMVPNManager *manager,
+                        NMVPNService *service,
+                        NMVPNConnection *vpn,
+                        NMDevice *parent_dev,
+                        char **password_items,
+                        int password_count,
+                        char **data_items,
+                        int data_count,
+                        char **user_routes,
+                        int user_routes_count)
 {
 	NMVPNActRequest	*req;
 
@@ -66,7 +74,7 @@ NMVPNActRequest *nm_vpn_act_request_new (NMVPNManager *manager, NMVPNService *se
 
 	req = g_malloc0 (sizeof (NMVPNActRequest));
 	req->refcount = 1;
-	req->stage = NM_VPN_ACT_STAGE_PREPARE;
+	req->state = NM_VPN_CONNECTION_STATE_PREPARE;
 
 	req->manager = manager;
 	g_object_ref (G_OBJECT (parent_dev));
@@ -114,17 +122,17 @@ void nm_vpn_act_request_unref (NMVPNActRequest *req)
 	}
 }
 
-gboolean nm_vpn_act_request_is_activating (NMVPNActRequest *req)
+gboolean
+nm_vpn_act_request_is_activating (NMVPNActRequest *req)
 {
 	gboolean	activating = FALSE;
 
 	g_return_val_if_fail (req != NULL, FALSE);
 
-	switch (req->stage)
-	{
-		case NM_VPN_ACT_STAGE_PREPARE:
-		case NM_VPN_ACT_STAGE_CONNECT:
-		case NM_VPN_ACT_STAGE_IP_CONFIG_GET:
+	switch (req->state) {
+		case NM_VPN_CONNECTION_STATE_PREPARE:
+		case NM_VPN_CONNECTION_STATE_CONNECT:
+		case NM_VPN_CONNECTION_STATE_IP_CONFIG_GET:
 			activating = TRUE;
 			break;
 
@@ -139,14 +147,14 @@ gboolean nm_vpn_act_request_is_activated (NMVPNActRequest *req)
 {
 	g_return_val_if_fail (req != NULL, FALSE);
 	
-	return (req->stage == NM_VPN_ACT_STAGE_ACTIVATED) ? TRUE : FALSE;
+	return (req->state == NM_VPN_CONNECTION_STATE_ACTIVATED) ? TRUE : FALSE;
 }
 
 gboolean nm_vpn_act_request_is_failed (NMVPNActRequest *req)
 {
 	g_return_val_if_fail (req != NULL, FALSE);
 	
-	return (req->stage == NM_VPN_ACT_STAGE_FAILED) ? TRUE : FALSE;
+	return (req->state == NM_VPN_CONNECTION_STATE_FAILED) ? TRUE : FALSE;
 }
 
 NMVPNManager *nm_vpn_act_request_get_manager (NMVPNActRequest *req)
@@ -219,32 +227,34 @@ gboolean nm_vpn_act_request_should_cancel (NMVPNActRequest *req)
 	return req->canceled;
 }
 
-NMVPNActStage nm_vpn_act_request_get_stage (NMVPNActRequest *req)
+NMVPNConnectionState
+nm_vpn_act_request_get_state (NMVPNActRequest *req)
 {
-	g_return_val_if_fail (req != NULL, NM_VPN_ACT_STAGE_UNKNOWN);
+	g_return_val_if_fail (req != NULL, NM_VPN_CONNECTION_STATE_UNKNOWN);
 
-	return req->stage;
+	return req->state;
 }
 
-void nm_vpn_act_request_set_stage (NMVPNActRequest *req, NMVPNActStage stage)
+void
+nm_vpn_act_request_set_state (NMVPNActRequest *req,
+                              NMVPNConnectionState state)
 {
-	NMVPNActStage	old_stage;
+	NMVPNConnectionState old_state;
 
 	g_return_if_fail (req != NULL);
 
-	old_stage = req->stage;
-	if (old_stage != stage)
-	{
+	old_state = req->state;
+	if (old_state != state) {
 		NMDBusManager *dbus_mgr;
 		DBusConnection *dbus_connection;
 
 		dbus_mgr = nm_dbus_manager_get ();
 		dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
 		if (dbus_connection) {
-			req->stage = stage;
+			req->state = state;
 			nm_dbus_vpn_signal_vpn_connection_state_change (dbus_connection,
 			                                                req->vpn,
-			                                                req->stage);
+			                                                req->state);
 		} else {
 			nm_warning ("could not get dbus connection.");
 		}

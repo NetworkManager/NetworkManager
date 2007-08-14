@@ -85,11 +85,11 @@ nm_dbus_vpn_signal_vpn_connection_update (DBusConnection *connection,
 void
 nm_dbus_vpn_signal_vpn_connection_state_change (DBusConnection *connection,
                                                 NMVPNConnection *vpn,
-                                                NMVPNActStage new_stage)
+                                                NMVPNConnectionState new_state)
 {
 	DBusMessage *	message;
 	const char *	vpn_name;
-	dbus_uint32_t	int_stage = (dbus_uint32_t) new_stage;
+	dbus_uint32_t	int_state = (dbus_uint32_t) new_state;
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (vpn != NULL);
@@ -105,7 +105,7 @@ nm_dbus_vpn_signal_vpn_connection_state_change (DBusConnection *connection,
 	vpn_name = nm_vpn_connection_get_name (vpn);
 	dbus_message_append_args (message,
 	                          DBUS_TYPE_STRING, &vpn_name,
-	                          DBUS_TYPE_UINT32, &int_stage,
+	                          DBUS_TYPE_UINT32, &int_state,
 	                          DBUS_TYPE_INVALID);
 	dbus_connection_send (connection, message, NULL);
 	dbus_message_unref (message);
@@ -753,7 +753,7 @@ nm_dbus_vpn_get_vpn_connection_properties (DBusConnection *connection,
 	const char *		service_name;
 	NMVPNService *		service;
 	NMVPNActRequest *	req;
-	dbus_uint32_t		stage;
+	dbus_uint32_t		state;
 
 	g_return_val_if_fail (vpn_mgr != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
@@ -780,14 +780,14 @@ nm_dbus_vpn_get_vpn_connection_properties (DBusConnection *connection,
 		goto out;
 
 	req = nm_vpn_manager_get_vpn_act_request (vpn_mgr);
-	stage = (dbus_uint32_t) NM_VPN_ACT_STAGE_DISCONNECTED;
+	state = (dbus_uint32_t) NM_VPN_CONNECTION_STATE_DISCONNECTED;
 	if (req && (nm_vpn_act_request_get_connection (req) == vpn))
-		stage = nm_vpn_act_request_get_stage (req);
+		state = nm_vpn_act_request_get_state (req);
 
 	dbus_message_append_args (reply, DBUS_TYPE_STRING, &name,
 	                                 DBUS_TYPE_STRING, &user_name,
 	                                 DBUS_TYPE_STRING, &service_name,
-	                                 DBUS_TYPE_UINT32, &stage,
+	                                 DBUS_TYPE_UINT32, &state,
 	                                 DBUS_TYPE_INVALID);
 	success = TRUE;
 

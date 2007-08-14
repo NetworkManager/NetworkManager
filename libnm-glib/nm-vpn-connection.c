@@ -31,7 +31,7 @@ typedef struct {
 	char *name;
 	char *user_name;
 	char *service;
-	NMVPNActStage state;
+	NMVPNConnectionState state;
 } NMVPNConnectionPrivate;
 
 enum {
@@ -48,7 +48,7 @@ nm_vpn_connection_init (NMVPNConnection *connection)
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
-	priv->state = NM_VPN_ACT_STAGE_UNKNOWN;
+	priv->state = NM_VPN_CONNECTION_STATE_UNKNOWN;
 }
 
 static void
@@ -99,7 +99,7 @@ update_properties (NMVPNConnection *connection)
 	char *name = NULL;
 	char *user_name = NULL;
 	char *service = NULL;
-	NMVPNActStage state;
+	NMVPNConnectionState state;
 	GError *err = NULL;
 
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
@@ -125,7 +125,7 @@ update_properties (NMVPNConnection *connection)
 	priv->user_name = user_name;
 	priv->service = service;
 	
-	nm_vpn_connection_set_state (connection, (NMVPNActStage) state);
+	nm_vpn_connection_set_state (connection, (NMVPNConnectionState) state);
 
 	return TRUE;
 }
@@ -192,16 +192,16 @@ nm_vpn_connection_get_service (NMVPNConnection *vpn)
 	return NM_VPN_CONNECTION_GET_PRIVATE (vpn)->service;
 }
 
-NMVPNActStage
+NMVPNConnectionState
 nm_vpn_connection_get_state (NMVPNConnection *vpn)
 {
-	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), NM_VPN_ACT_STAGE_UNKNOWN);
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), NM_VPN_CONNECTION_STATE_UNKNOWN);
 
 	return NM_VPN_CONNECTION_GET_PRIVATE (vpn)->state;
 }
 
 void
-nm_vpn_connection_set_state (NMVPNConnection *vpn, NMVPNActStage state)
+nm_vpn_connection_set_state (NMVPNConnection *vpn, NMVPNConnectionState state)
 {
 	NMVPNConnectionPrivate *priv;
 
@@ -217,14 +217,14 @@ nm_vpn_connection_set_state (NMVPNConnection *vpn, NMVPNActStage state)
 gboolean
 nm_vpn_connection_is_activating (NMVPNConnection *vpn)
 {
-	NMVPNActStage state;
+	NMVPNConnectionState state;
 
 	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), FALSE);
 
 	state = nm_vpn_connection_get_state (vpn);
-	if (state == NM_VPN_ACT_STAGE_PREPARE ||
-		state == NM_VPN_ACT_STAGE_CONNECT ||
-		state == NM_VPN_ACT_STAGE_IP_CONFIG_GET)
+	if (state == NM_VPN_CONNECTION_STATE_PREPARE ||
+		state == NM_VPN_CONNECTION_STATE_CONNECT ||
+		state == NM_VPN_CONNECTION_STATE_IP_CONFIG_GET)
 		return TRUE;
 
 	return FALSE;
@@ -240,7 +240,7 @@ nm_vpn_connection_activate (NMVPNConnection *vpn, GSList *passwords)
 	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), FALSE);
 	g_return_val_if_fail (passwords != NULL, FALSE);
 
-	if (nm_vpn_connection_get_state (vpn) != NM_VPN_ACT_STAGE_DISCONNECTED) {
+	if (nm_vpn_connection_get_state (vpn) != NM_VPN_CONNECTION_STATE_DISCONNECTED) {
 		g_warning ("VPN connection is already connected or connecting");
 		return FALSE;
 	}
@@ -269,7 +269,7 @@ nm_vpn_connection_deactivate (NMVPNConnection *vpn)
 {
 	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), FALSE);
 
-	if (nm_vpn_connection_get_state (vpn) != NM_VPN_ACT_STAGE_ACTIVATED &&
+	if (nm_vpn_connection_get_state (vpn) != NM_VPN_CONNECTION_STATE_ACTIVATED &&
 		!nm_vpn_connection_is_activating (vpn)) {
 		g_warning ("VPN connection isn't activated");
 		return FALSE;

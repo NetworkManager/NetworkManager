@@ -21,7 +21,7 @@ typedef struct {
 	GHashTable *devices;
 
 	DBusGProxy *vpn_proxy;
-	NMVPNActStage vpn_state;
+	NMVPNConnectionState vpn_state;
 	gboolean have_vpn_connections;
 	GHashTable *vpn_connections;
 } NMClientPrivate;
@@ -64,12 +64,9 @@ nm_client_init (NMClient *client)
 										   (GDestroyNotify) g_free,
 										   (GDestroyNotify) g_object_unref);
 
-	priv->vpn_connections = g_hash_table_new_full (g_str_hash,
-	                                               g_str_equal,
-	                                               (GDestroyNotify) g_free,
-	                                               (GDestroyNotify) g_object_unref);
+	priv->vpn_connections = g_hash_table_new (g_str_hash, g_str_equal);
 
-	priv->vpn_state = NM_VPN_ACT_STAGE_UNKNOWN;
+	priv->vpn_state = NM_VPN_CONNECTION_STATE_UNKNOWN;
 }
 
 static GObject*
@@ -284,13 +281,22 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 {
 	if (name && !strcmp (name, NM_DBUS_SERVICE)) {
 		NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (user_data);
+		gboolean old_good = (old_owner && strlen (old_owner));
+		gboolean new_good = (new_owner && strlen (new_owner));
+		gboolean new_running = FALSE;
 
-		if (new_owner && strlen (new_owner) > 0)
-			priv->manager_running = TRUE;
-		else
-			priv->manager_running = FALSE;
+		if (!old_good && new_good)
+			new_running = TRUE;
+		else if (old_good && !new_good)
+			new_running = FALSE;
 
-		g_signal_emit (NM_CLIENT (user_data), signals[MANAGER_RUNNING], 0, priv->manager_running);
+		if (new_running != priv->manager_running) {
+			priv->manager_running = new_running;
+			g_signal_emit (NM_CLIENT (user_data),
+			               signals[MANAGER_RUNNING],
+			               0,
+			               priv->manager_running);
+		}
 	}
 }
 
@@ -499,16 +505,16 @@ nm_client_sleep (NMClient *client, gboolean sleep)
  * For the exact state, each connection has it's own state which' changes
  * are also signalled.
  */
-static NMVPNActStage
+static NMVPNConnectionState
 nm_client_get_best_vpn_state (NMClient *client)
 {
 	GSList *iter;
-	NMVPNActStage state;
-	NMVPNActStage best_state = NM_VPN_ACT_STAGE_UNKNOWN;
+	NMVPNConnectionState state;
+	NMVPNConnectionState best_state = NM_VPN_CONNECTION_STATE_UNKNOWN;
 
 	for (iter = nm_client_get_vpn_connections (client); iter; iter = iter->next) {
 		state = nm_vpn_connection_get_state (NM_VPN_CONNECTION (iter->data));
-		if (state > best_state && state < NM_VPN_ACT_STAGE_FAILED)
+		if (state > best_state && state < NM_VPN_CONNECTION_STATE_FAILED)
 			best_state = state;
 	}
 
@@ -516,12 +522,15 @@ nm_client_get_best_vpn_state (NMClient *client)
 }
 
 static void
-proxy_vpn_state_change (DBusGProxy *proxy, char *connection_name, NMVPNActStage state, gpointer user_data)
+proxy_vpn_state_change (DBusGProxy *proxy,
+                        char *connection_name,
+                        NMVPNConnectionState state,
+                        gpointer user_data)
 {
 	NMClient *client = NM_CLIENT (user_data);
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
 	NMVPNConnection *connection;
-	NMVPNActStage best_state;
+	NMVPNConnectionState best_state;
 
 	connection = nm_client_get_vpn_connection_by_name (client, connection_name);
 	if (connection)
@@ -540,6 +549,7 @@ proxy_vpn_connection_added (DBusGProxy *proxy, char *name, gpointer user_data)
 	NMClient *client = NM_CLIENT (user_data);
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
 	NMVPNConnection *connection;
+	const char * vpn_name;
 
 	if (g_hash_table_lookup (priv->vpn_connections, name))
 		return;
@@ -553,7 +563,11 @@ proxy_vpn_connection_added (DBusGProxy *proxy, char *name, gpointer user_data)
 		return;
 	}
 
-	g_hash_table_insert (priv->vpn_connections, name, connection);
+	/* Use the vpn connection object's name to insert into the hash table
+	 * so that it's lifetime is the same as the vpn connection object.
+	 */
+	vpn_name = nm_vpn_connection_get_name (connection);
+	g_hash_table_insert (priv->vpn_connections, (char *) vpn_name, connection);
 	g_signal_emit (client, signals[VPN_CONNECTION_ADDED], 0, connection);
 }
 
@@ -638,8 +652,8 @@ get_connections (NMClient *client)
 }
 
 static void
-clear_one_vpn_connection (gpointer data,
-                          gpointer user_data)
+signal_one_vpn_connection_removed (gpointer data,
+                                   gpointer user_data)
 {
 	NMClient * client = NM_CLIENT (user_data);
 	NMVPNConnection * connection = NM_VPN_CONNECTION (data);
@@ -658,9 +672,9 @@ clear_vpn_connections (NMClient * client)
 	priv = NM_CLIENT_GET_PRIVATE (client);
 
 	list = nm_client_get_vpn_connections (client);
-	g_hash_table_steal_all (priv->vpn_connections);
+	g_hash_table_remove_all (priv->vpn_connections);
 
-	g_slist_foreach (list, clear_one_vpn_connection, client);
+	g_slist_foreach (list, signal_one_vpn_connection_removed, client);
 	g_slist_foreach (list, (GFunc) g_object_unref, NULL);
 	g_slist_free (list);
 }
@@ -751,21 +765,21 @@ nm_client_remove_vpn_connection (NMClient *client, NMVPNConnection *connection)
 		return;
 	}
 
-	g_hash_table_steal (priv->vpn_connections, info.found_key);
+	g_hash_table_remove (priv->vpn_connections, info.found_key);
 	g_signal_emit (client, signals[VPN_CONNECTION_REMOVED], 0, connection);
 	g_object_unref (connection);
 }
 
-NMVPNActStage
+NMVPNConnectionState
 nm_client_get_vpn_state (NMClient *client)
 {
 	NMClientPrivate *priv;
 
-	g_return_val_if_fail (NM_IS_CLIENT (client), NM_VPN_ACT_STAGE_UNKNOWN);
+	g_return_val_if_fail (NM_IS_CLIENT (client), NM_VPN_CONNECTION_STATE_UNKNOWN);
 
 	priv = NM_CLIENT_GET_PRIVATE (client);
 
-	if (priv->vpn_state == NM_VPN_ACT_STAGE_UNKNOWN)
+	if (priv->vpn_state == NM_VPN_CONNECTION_STATE_UNKNOWN)
 		priv->vpn_state = nm_client_get_best_vpn_state (client);
 
 	return priv->vpn_state;

@@ -46,7 +46,7 @@ void			nm_vpn_service_set_service_name	(NMVPNService *service, const char *name)
 const char *	nm_vpn_service_get_program		(NMVPNService *service);
 void			nm_vpn_service_set_program		(NMVPNService *service, const char *program);
 
-NMVPNState		nm_vpn_service_get_state		(NMVPNService *service);
+NMVPNServiceState	nm_vpn_service_get_state	(NMVPNService *service);
 
 void			nm_vpn_service_start_connection	(NMVPNService *service, NMVPNActRequest *req);
 void			nm_vpn_service_stop_connection	(NMVPNService *service, NMVPNActRequest *req);
