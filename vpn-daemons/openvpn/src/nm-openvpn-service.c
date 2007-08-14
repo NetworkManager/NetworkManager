@@ -68,7 +68,7 @@ typedef struct NmOpenVPNData
 {
   GMainLoop            *loop;
   DBusConnection       *con;
-  NMVPNState		state;
+  NMVPNServiceState		state;
   GPid			pid;
   guint			quit_timer;
   guint			helper_timer;
@@ -160,7 +160,7 @@ nm_openvpn_dbus_signal_failure (NmOpenVPNData *data, const char *signal)
  *
  */
 static void
-nm_openvpn_dbus_signal_state_change (NmOpenVPNData *data, NMVPNState old_state)
+nm_openvpn_dbus_signal_state_change (NmOpenVPNData *data, NMVPNServiceState old_state)
 {
   DBusMessage	*message;
 
@@ -188,9 +188,9 @@ nm_openvpn_dbus_signal_state_change (NmOpenVPNData *data, NMVPNState old_state)
  *
  */
 static void
-nm_openvpn_set_state (NmOpenVPNData *data, NMVPNState new_state)
+nm_openvpn_set_state (NmOpenVPNData *data, NMVPNServiceState new_state)
 {
-  NMVPNState	old_state;
+  NMVPNServiceState	old_state;
 
   g_return_if_fail (data != NULL);
 
@@ -565,7 +565,7 @@ openvpn_watch_cb (GPid pid, gint status, gpointer user_data)
       break;
     }
 
-  nm_openvpn_set_state (data, NM_VPN_STATE_STOPPED);
+  nm_openvpn_set_state (data, NM_VPN_SERVICE_STATE_STOPPED);
   nm_openvpn_schedule_quit_timer (data, 10000);
 }
 
@@ -1027,7 +1027,7 @@ nm_openvpn_dbus_handle_start_vpn (DBusMessage *message, NmOpenVPNData *data)
   g_return_val_if_fail (message != NULL, FALSE);
   g_return_val_if_fail (data != NULL, FALSE);
 
-  nm_openvpn_set_state (data, NM_VPN_STATE_STARTING);
+  nm_openvpn_set_state (data, NM_VPN_SERVICE_STATE_STARTING);
 
   dbus_error_init (&error);
   if (!dbus_message_get_args (message, &error,
@@ -1062,7 +1062,7 @@ out:
   dbus_free_string_array (password_items);
   dbus_free_string_array (user_routes);
   if (!success)
-    nm_openvpn_set_state (data, NM_VPN_STATE_STOPPED);
+    nm_openvpn_set_state (data, NM_VPN_SERVICE_STATE_STOPPED);
   return success;
 }
 
@@ -1079,13 +1079,13 @@ static gboolean nm_openvpn_dbus_handle_stop_vpn (NmOpenVPNData *data)
 
   if (data->pid > 0)
     {
-      nm_openvpn_set_state (data, NM_VPN_STATE_STOPPING);
+      nm_openvpn_set_state (data, NM_VPN_SERVICE_STATE_STOPPING);
 
       kill (data->pid, SIGINT);
       nm_info ("Terminated openvpn daemon with PID %d.", data->pid);
       data->pid = 0;
 
-      nm_openvpn_set_state (data, NM_VPN_STATE_STOPPED);
+      nm_openvpn_set_state (data, NM_VPN_SERVICE_STATE_STOPPED);
       nm_openvpn_schedule_quit_timer (data, 10000);
     }
 
@@ -1110,22 +1110,22 @@ nm_openvpn_dbus_start_vpn (DBusConnection *con, DBusMessage *message, NmOpenVPND
 
   switch (data->state)
     {
-    case NM_VPN_STATE_STARTING:
+    case NM_VPN_SERVICE_STATE_STARTING:
       reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE_OPENVPN, NM_DBUS_VPN_STARTING_IN_PROGRESS,
 					    "Could not process the request because the VPN connection is already being started.");
       break;
 
-    case NM_VPN_STATE_STARTED:
+    case NM_VPN_SERVICE_STATE_STARTED:
       reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE_OPENVPN, NM_DBUS_VPN_ALREADY_STARTED,
 					    "Could not process the request because a VPN connection was already active.");
       break;
 
-    case NM_VPN_STATE_STOPPING:
+    case NM_VPN_SERVICE_STATE_STOPPING:
       reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE_OPENVPN, NM_DBUS_VPN_STOPPING_IN_PROGRESS,
 					    "Could not process the request because the VPN connection is being stopped.");
       break;
 
-    case NM_VPN_STATE_STOPPED:
+    case NM_VPN_SERVICE_STATE_STOPPED:
       nm_openvpn_cancel_quit_timer (data);
       nm_openvpn_dbus_handle_start_vpn (message, data);
       reply = dbus_message_new_method_return (message);
@@ -1157,18 +1157,18 @@ nm_openvpn_dbus_stop_vpn (DBusConnection *con, DBusMessage *message, NmOpenVPNDa
   
   switch (data->state)
     {
-    case NM_VPN_STATE_STOPPING:
+    case NM_VPN_SERVICE_STATE_STOPPING:
       reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE_OPENVPN, NM_DBUS_VPN_STOPPING_IN_PROGRESS,
 					    "Could not process the request because the VPN connection is already being stopped.");
       break;
 
-    case NM_VPN_STATE_STOPPED:
+    case NM_VPN_SERVICE_STATE_STOPPED:
       reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE_OPENVPN, NM_DBUS_VPN_ALREADY_STOPPED,
 					    "Could not process the request because no VPN connection was active.");
       break;
 
-    case NM_VPN_STATE_STARTING:
-    case NM_VPN_STATE_STARTED:
+    case NM_VPN_SERVICE_STATE_STARTING:
+    case NM_VPN_SERVICE_STATE_STARTED:
       nm_openvpn_dbus_handle_stop_vpn (data);
       reply = dbus_message_new_method_return (message);
       break;
@@ -1221,7 +1221,7 @@ nm_openvpn_dbus_process_helper_config_error (DBusConnection *con, DBusMessage *m
   g_return_if_fail (message != NULL);
 
   /* Only accept the config info if we're in STARTING state */
-  if (data->state != NM_VPN_STATE_STARTING)
+  if (data->state != NM_VPN_SERVICE_STATE_STARTING)
     return;
 
   if (dbus_message_get_args (message, NULL, DBUS_TYPE_STRING, &error_item, DBUS_TYPE_INVALID))
@@ -1262,7 +1262,7 @@ nm_openvpn_dbus_process_helper_ip4_config (DBusConnection *con, DBusMessage *mes
   g_return_if_fail (message != NULL);
   
   /* Only accept the config info if we're in STARTING state */
-  if (data->state != NM_VPN_STATE_STARTING)
+  if (data->state != NM_VPN_SERVICE_STATE_STARTING)
     return;
 
   nm_openvpn_cancel_helper_timer (data);
@@ -1350,7 +1350,7 @@ nm_openvpn_dbus_process_helper_ip4_config (DBusConnection *con, DBusMessage *mes
 	}
 
       dbus_message_unref (signal);
-      nm_openvpn_set_state (data, NM_VPN_STATE_STARTED);
+      nm_openvpn_set_state (data, NM_VPN_SERVICE_STATE_STARTED);
       success = TRUE;
     }
 
@@ -1388,7 +1388,7 @@ nm_openvpn_dbus_message_handler (DBusConnection *con, DBusMessage *message, void
   /* nm_info ("nm_openvpn_dbus_message_handler() got method '%s' for path '%s'.", method, path); */
 
   /* If we aren't ready to accept dbus messages, don't */
-  if ((data->state == NM_VPN_STATE_INIT) || (data->state == NM_VPN_STATE_SHUTDOWN))
+  if ((data->state == NM_VPN_SERVICE_STATE_INIT) || (data->state == NM_VPN_SERVICE_STATE_SHUTDOWN))
     {
       nm_warning ("Received dbus messages but couldn't handle them due to INIT or SHUTDOWN states.");
       reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE_OPENVPN, NM_DBUS_VPN_WRONG_STATE,
@@ -1570,7 +1570,7 @@ main( int argc, char *argv[] )
 
   vpn_data = g_malloc0 (sizeof (NmOpenVPNData));
 
-  vpn_data->state = NM_VPN_STATE_INIT;
+  vpn_data->state = NM_VPN_SERVICE_STATE_INIT;
 
   vpn_data->loop = g_main_loop_new (NULL, FALSE);
 
@@ -1587,7 +1587,7 @@ main( int argc, char *argv[] )
   sigaction (SIGINT, &action, NULL);
   sigaction (SIGTERM, &action, NULL);
 
-  nm_openvpn_set_state (vpn_data, NM_VPN_STATE_STOPPED);
+  nm_openvpn_set_state (vpn_data, NM_VPN_SERVICE_STATE_STOPPED);
   g_main_loop_run (vpn_data->loop);
 
   nm_openvpn_dbus_handle_stop_vpn (vpn_data);
