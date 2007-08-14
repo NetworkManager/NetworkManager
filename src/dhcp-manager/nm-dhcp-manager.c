@@ -570,19 +570,6 @@ error:
 
 
 /*
- * nm_dhcp_manager_get_option
- *
- * Return the requested dhcp item for the given interface
- *
- */
-static gpointer
-nm_dhcp_manager_get_option (NMDHCPDevice *device, const char *key)
-{
-	return g_hash_table_lookup (device->options, key);
-}
-
-
-/*
  * dhclient_watch_cb
  *
  * Watch our child dhclient process and get notified of events from it.
@@ -619,7 +606,7 @@ dhclient_child_setup (gpointer user_data G_GNUC_UNUSED)
 }
 
 static gboolean
-dhclient_run (NMDHCPDevice *device, gchar *xtra_arg)
+dhclient_run (NMDHCPDevice *device)
 {
 	const char **	dhclient_binary = NULL;
 	GPtrArray *		dhclient_argv = NULL;
@@ -668,10 +655,11 @@ dhclient_run (NMDHCPDevice *device, gchar *xtra_arg)
 	g_ptr_array_add (dhclient_argv, (gpointer) (*dhclient_binary));
 
 	g_ptr_array_add (dhclient_argv, (gpointer) "-d");
-	g_ptr_array_add (dhclient_argv, (gpointer) "-x");
 
-	if (xtra_arg != NULL)
-		g_ptr_array_add (dhclient_argv, (gpointer) xtra_arg);
+#if 0
+	/* Disable until we figure out what is really needed here */
+	g_ptr_array_add (dhclient_argv, (gpointer) "-x");
+#endif
 
 	g_ptr_array_add (dhclient_argv, (gpointer) "-sf");	/* Set script file */
 	g_ptr_array_add (dhclient_argv, (gpointer) SYSCONFDIR "/NetworkManager/callouts/nm-dhcp-client.action" );
@@ -740,7 +728,7 @@ nm_dhcp_manager_begin_transaction (NMDHCPManager *manager,
 	                                    nm_dhcp_manager_handle_timeout,
 	                                    device);
 
-	dhclient_run (device, NULL);
+	dhclient_run (device);
 
 	return TRUE;
 }
