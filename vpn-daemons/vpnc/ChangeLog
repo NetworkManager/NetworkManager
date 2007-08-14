@@ -1,3 +1,9 @@
+2007-08-14  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-openvpn-service.c
+		- Handle NM_VPN_STATE_* -> NM_VPN_SERVICE_STATE_* and NMVPNState -> 
+			NMVPNServiceState renames
+
 2007-07-26  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Andreas Hanke <andreas.hanke@gmx-topmail.de>
