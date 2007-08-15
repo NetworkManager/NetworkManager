@@ -1,19 +1,19 @@
-# translation of el.po to Greek
+# translation of NetworkManager-openvpn.NETWORKMANAGER_0_6_0_RELEASE.po to Greek
 # Copyright (C) 2007 THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Kostas Papadimas <pkst@gnome.org>, 2007.
 msgid ""
 msgstr ""
-"Project-Id-Version: el\n"
+"Project-Id-Version: NetworkManager-openvpn.NETWORKMANAGER_0_6_0_RELEASE\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-01-13 10:19+0200\n"
-"PO-Revision-Date: 2007-01-13 11:04+0200\n"
+"POT-Creation-Date: 2007-08-15 13:01+0300\n"
+"PO-Revision-Date: 2007-08-15 13:01+0300\n"
 "Last-Translator: Kostas Papadimas <pkst@gnome.org>\n"
 "Language-Team: Greek <team@gnome.gr>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
-"Content-Transfer-Encoding: 8bit"
+"Content-Transfer-Encoding: 8bit\n"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:145
 msgid "_Password:"
@@ -21,7 +21,7 @@ msgstr "_Κωδικός:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:146
 msgid "_Secondary Password:"
-msgstr "Δευτερεύων κωδικός πρόσβασης:"
+msgstr "_Δευτερεύων κωδικός πρόσβασης:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:263
 msgid "_Username:"
@@ -45,12 +45,14 @@ msgstr "Απομνη_μόνευση κωδικού για αυτή τη συνε
 
 #: ../auth-dialog/gnome-two-password-dialog.c:473
 msgid "_Save password in keyring"
-msgstr "Αποθήκευση κωδικού πρόσβασης στο keyring"
+msgstr "Αποθήκευ_ση κωδικού πρόσβασης στο keyring"
 
 #: ../auth-dialog/main.c:214
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
-msgstr "Χρειάζεστε πιστοποίηση για να έχετε πρόσβαση στο Ιδιωτικό Εικονικό Δίκτυο (VPN) '%s'."
+msgstr ""
+"Χρειάζεστε πιστοποίηση για να έχετε πρόσβαση στο Ιδιωτικό Εικονικό Δίκτυο "
+"(VPN) '%s'."
 
 #: ../auth-dialog/main.c:215
 msgid "Authenticate VPN"
@@ -58,7 +60,7 @@ msgstr "Πιστοποίηση VPN"
 
 #: ../auth-dialog/main.c:227
 msgid "Certificate pass_word:"
-msgstr "Κω_δικός πιστοποιητικού:"
+msgstr "Κωδικός πιστοποιητικού:"
 
 #: ../auth-dialog/main.c:252
 msgid "Certificate password:"
@@ -72,299 +74,308 @@ msgstr "Προσθήκη, απομάκρυνση και επεξεργασία �
 msgid "VPN Connection Manager (OpenVPN)"
 msgstr "Διαχείριση σύνδεσης VPN (OpenVPN)"
 
-#: ../properties/nm-openvpn.c:130
+#: ../properties/nm-openvpn.c:146
 msgid "OpenVPN Client"
 msgstr "OpenVPN Client"
 
-#: ../properties/nm-openvpn.c:729
+#: ../properties/nm-openvpn.c:803
 msgid "The following OpenVPN connection will be created:"
 msgstr "Θα δημιουργηθεί η ακόλουθη σύνδεση OpenVPN:"
 
-#: ../properties/nm-openvpn.c:731
+#: ../properties/nm-openvpn.c:805
 #, c-format
 msgid "Name:  %s"
 msgstr "Όνομα:  %s"
 
-#: ../properties/nm-openvpn.c:739
+#: ../properties/nm-openvpn.c:813
 msgid "Connection Type: X.509 Certificates"
 msgstr "Τύπος σύνδεσης: Πιστοποιητικό X.509"
 
-#: ../properties/nm-openvpn.c:742 ../properties/nm-openvpn.c:769
-#: ../properties/nm-openvpn.c:781
+#: ../properties/nm-openvpn.c:816 ../properties/nm-openvpn.c:843
+#: ../properties/nm-openvpn.c:855
 #, c-format
 msgid "CA:  %s"
 msgstr "CA:  %s"
 
-#: ../properties/nm-openvpn.c:745 ../properties/nm-openvpn.c:784
+#: ../properties/nm-openvpn.c:819 ../properties/nm-openvpn.c:858
 #, c-format
 msgid "Cert:  %s"
 msgstr "Πιστοπ.:  %s"
 
-#: ../properties/nm-openvpn.c:748 ../properties/nm-openvpn.c:787
+#: ../properties/nm-openvpn.c:822 ../properties/nm-openvpn.c:861
 #, c-format
 msgid "Key:  %s"
 msgstr "Κλειδί:  %s"
 
-#: ../properties/nm-openvpn.c:752
+#: ../properties/nm-openvpn.c:826
 msgid "Connection Type: Shared Key"
 msgstr "Τύπος σύνδεσης: Κοινόχρηστο κλειδί"
 
-#: ../properties/nm-openvpn.c:755
+#: ../properties/nm-openvpn.c:829
 #, c-format
 msgid "Shared Key:  %s"
 msgstr "Κοινόχρηστο κλειδί:  %s"
 
-#: ../properties/nm-openvpn.c:758
+#: ../properties/nm-openvpn.c:832
 #, c-format
 msgid "Local IP:  %s"
-msgstr "Τοπικό IP :  %s"
+msgstr "Τοπική IP :  %s"
 
-#: ../properties/nm-openvpn.c:761
+#: ../properties/nm-openvpn.c:835
 #, c-format
 msgid "Remote IP:  %s"
-msgstr "Απομακρυσμένο IP:  %s"
+msgstr "Απομακρυσμένη IP:  %s"
 
-#: ../properties/nm-openvpn.c:766
+#: ../properties/nm-openvpn.c:840
 msgid "Connection Type: Password"
 msgstr "Τύπος σύνδεσης: Κωδικός πρόσβασης"
 
-#: ../properties/nm-openvpn.c:772 ../properties/nm-openvpn.c:790
+#: ../properties/nm-openvpn.c:846 ../properties/nm-openvpn.c:864
 #, c-format
 msgid "Username:  %s"
 msgstr "Όνομα Χρήστη:  %s"
 
-#: ../properties/nm-openvpn.c:778
+#: ../properties/nm-openvpn.c:852
 msgid "Connection Type: X.509 with Password Authentication"
 msgstr "Τύπος σύνδεσης:  X.509 με πιστοποίηση πιστοποιητικού"
 
-#: ../properties/nm-openvpn.c:796
+#: ../properties/nm-openvpn.c:870
 #, c-format
 msgid "Remote:  %s"
 msgstr "Απομακρυσμένο: %s"
 
-#: ../properties/nm-openvpn.c:799
+#: ../properties/nm-openvpn.c:873
+#, c-format
+msgid "Port:  %s"
+msgstr "Θύρα:  %s"
+
+#: ../properties/nm-openvpn.c:876
 #, c-format
 msgid "Device: %s"
 msgstr "Συσκευή: %s"
 
-#: ../properties/nm-openvpn.c:799
+#: ../properties/nm-openvpn.c:876
 msgid "TAP"
 msgstr "TAP"
 
-#: ../properties/nm-openvpn.c:799
+#: ../properties/nm-openvpn.c:876
 msgid "TUN"
 msgstr "TUN"
 
-#: ../properties/nm-openvpn.c:802
+#: ../properties/nm-openvpn.c:879
 #, c-format
 msgid "Protocol: %s"
 msgstr "Πρωτόκολλο: %s"
 
-#: ../properties/nm-openvpn.c:802
+#: ../properties/nm-openvpn.c:879
 msgid "TCP"
 msgstr "TCP"
 
-#: ../properties/nm-openvpn.c:802
+#: ../properties/nm-openvpn.c:879
 msgid "UDP"
 msgstr "UDP"
 
-#: ../properties/nm-openvpn.c:806
+#: ../properties/nm-openvpn.c:883
 #, c-format
 msgid "Routes:  %s"
 msgstr "Διαδρομές:  %s"
 
-#: ../properties/nm-openvpn.c:810
+#: ../properties/nm-openvpn.c:887
 #, c-format
 msgid "Use LZO Compression: %s"
 msgstr "Χρήση συμπίεσης LZO: %s"
 
-#: ../properties/nm-openvpn.c:810
+#: ../properties/nm-openvpn.c:887
 msgid "Yes"
 msgstr "Ναι"
 
-#: ../properties/nm-openvpn.c:810
+#: ../properties/nm-openvpn.c:887
 msgid "No"
 msgstr "Όχι"
 
-#: ../properties/nm-openvpn.c:814
+#: ../properties/nm-openvpn.c:891
 #, c-format
 msgid "Cipher:  %s"
 msgstr "Αποτύπωμα:  %s"
 
-#: ../properties/nm-openvpn.c:819
+#: ../properties/nm-openvpn.c:896
 #, c-format
 msgid "TLS auth:  %s %s"
 msgstr "TLS auth:  %s %s"
 
-#: ../properties/nm-openvpn.c:823
+#: ../properties/nm-openvpn.c:900
 msgid "The connection details can be changed using the \"Edit\" button."
-msgstr "Οι ρυθμίσεις σύνδεσης μπορούν να τροποποιηθούν με τη χρήση του κουμπιού \"Επεξεργασία\"."
+msgstr ""
+"Οι ρυθμίσεις σύνδεσης μπορούν να τροποποιηθούν με τη χρήση του κουμπιού "
+"\"Επεξεργασία\"."
 
-#: ../properties/nm-openvpn.c:1003
+#: ../properties/nm-openvpn.c:1124
 msgid "Cannot import settings"
-msgstr "Αδυναμία εισαγωγής ρυθμίοσεων"
+msgstr "Αδυναμία εισαγωγής ρυθμίσεων"
 
-#: ../properties/nm-openvpn.c:1005
+#: ../properties/nm-openvpn.c:1126
 #, c-format
 msgid "The VPN settings file '%s' does not contain valid data."
 msgstr "Το αρχείο ρυθμίσεων VPN '%s' δεν περιέχει έγκυρα δεδομένα."
 
-#: ../properties/nm-openvpn.c:1042
+#: ../properties/nm-openvpn.c:1173
 msgid "Select file to import"
 msgstr "Επιλογή αρχείου για εισαγωγή"
 
-#: ../properties/nm-openvpn.c:1122 ../properties/nm-openvpn.c:1134
+#: ../properties/nm-openvpn.c:1232 ../properties/nm-openvpn.c:1244
+#: ../properties/nm-openvpn.c:1247
 msgid "Select CA to use"
 msgstr "Επιλογή CA για χρήση"
 
-#: ../properties/nm-openvpn.c:1125
+#: ../properties/nm-openvpn.c:1235 ../properties/nm-openvpn.c:1250
 msgid "Select certificate to use"
 msgstr "Επιλογή πιστοποιητικού για χρήση"
 
-#: ../properties/nm-openvpn.c:1128
+#: ../properties/nm-openvpn.c:1238 ../properties/nm-openvpn.c:1253
 msgid "Select key to use"
 msgstr "Επιλογή κλειδιού για χρήση"
 
-#: ../properties/nm-openvpn.c:1131
+#: ../properties/nm-openvpn.c:1241
 msgid "Select shared key to use"
 msgstr "Επιλογή κοινόχρηστου κλειδιού για χρήση"
 
-#: ../properties/nm-openvpn.c:1137
+#: ../properties/nm-openvpn.c:1256
 msgid "Select TA to use"
 msgstr "Επιλογή TA για χρήση"
 
 #. printf ("in impl_export\n");
-#: ../properties/nm-openvpn.c:1326
+#: ../properties/nm-openvpn.c:1450
 msgid "Save as..."
 msgstr "Αποθήκευση ως..."
 
-#: ../properties/nm-openvpn.c:1356
+#: ../properties/nm-openvpn.c:1480
 #, c-format
 msgid "A file named \"%s\" already exists."
 msgstr "Ένα αρχείο με το όνομα \"%s\" υπάρχει ήδη."
 
-#: ../properties/nm-openvpn.c:1359
+#: ../properties/nm-openvpn.c:1483
 msgid "Do you want to replace it with the one you are saving?"
 msgstr "Θέλετε να το αντικαταστήσετε με αυτό που αποθηκεύετε;"
 
-#: ../properties/nm-openvpn.c:1373
+#: ../properties/nm-openvpn.c:1497
 msgid "Failed to export configuration"
 msgstr "Αποτυχία εξαγωγής ρύθμισης"
 
-#: ../properties/nm-openvpn.c:1375
+#: ../properties/nm-openvpn.c:1499
 #, c-format
 msgid "Failed to save file %s"
 msgstr "Αποτυχία αποθήκευσης αρχείου %s"
 
 #: ../properties/nm-openvpn-dialog.glade.h:1
-msgid "0"
-msgstr "0"
+msgid "(Default: 1194)"
+msgstr "(Προεπιλογή: 1194)"
 
 #: ../properties/nm-openvpn-dialog.glade.h:2
-msgid "1"
-msgstr "1"
+msgid "65536"
+msgstr "65536"
 
 #: ../properties/nm-openvpn-dialog.glade.h:3
-msgid "<b>Connection Name</b>"
-msgstr "<b>Όνομα σύνδεσης</b>"
-""
-
-#: ../properties/nm-openvpn-dialog.glade.h:4
-msgid "<b>Optional Information</b>"
-msgstr "<b>Προαιρετικές πληροφορίες</b>"
-
-#: ../properties/nm-openvpn-dialog.glade.h:5
-msgid "<b>Required Information</b>"
-msgstr "<b>Απαιτούμενες πληροφορίες</b>"
-
-#: ../properties/nm-openvpn-dialog.glade.h:6
 msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
 msgstr "<i>παράδειγμα: 172.16.0.0/16 10.11.12.0/24</i>"
 
+#: ../properties/nm-openvpn-dialog.glade.h:4
+msgid "Ad_vanced"
+msgstr "Για προ_χωρημένους"
+
+#: ../properties/nm-openvpn-dialog.glade.h:5
+msgid "C_A file:"
+msgstr "Αρχείο C_A:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:6
+msgid "C_ertificate:"
+msgstr "Πι_στοποιητικό:"
+
 #: ../properties/nm-openvpn-dialog.glade.h:7
-msgid "CA  file:"
-msgstr "Αρχείο CA:"
+msgid "Co_nnection type:"
+msgstr "Τύ_πος σύνδεσης:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:8
-msgid "Certificate:"
-msgstr "Πιστοποιητικό:"
+msgid "Connection na_me:"
+msgstr "Ό_νομα σύνδεσης"
 
 #: ../properties/nm-openvpn-dialog.glade.h:9
-msgid "Connection Type:"
-msgstr "Τύπος σύνδεσης:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:10
 msgid "Direction:"
 msgstr "Κατεύθυνση:"
 
+#: ../properties/nm-openvpn-dialog.glade.h:10
+msgid "Import _Saved Configuration..."
+msgstr "Ε_ισαγωγή αποθηκευμένης ρύθμισης..."
+
 #: ../properties/nm-openvpn-dialog.glade.h:11
-msgid "Key:"
-msgstr "Κλειδί:"
+msgid ""
+"Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
+msgstr ""
+"Όνομα που χρησιμοποιείται για την αναγνώριση της σύνδεσης στο ιδιωτικό "
+"δίκτυο, π.χ \"Campus VPN\" ή \"Corporate Network\""
 
 #: ../properties/nm-openvpn-dialog.glade.h:12
-msgid "Local IP:"
-msgstr "Τοπικό  IP:"
+msgid "Network"
+msgstr "Δίκτυο"
 
 #: ../properties/nm-openvpn-dialog.glade.h:13
-msgid "Password"
-msgstr "Κωδικός πρόσβασης"
+msgid "Only use _VPN connection for these addresses:"
+msgstr "Να γίνεται _χρήση σύνδεσης VPN μόνο για αυτές τις διευθύνσεις"
 
 #: ../properties/nm-openvpn-dialog.glade.h:14
+msgid "OpenVPN Advanced Options"
+msgstr "Προχωρημένες επιλογές OpenVPN"
+
+#: ../properties/nm-openvpn-dialog.glade.h:15
+msgid "OpenVPN Configuration"
+msgstr "Ρύθμιση OpenVPN"
+
+#: ../properties/nm-openvpn-dialog.glade.h:16
 msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
 msgstr ""
-"Παρακαλώ εισάγετε παρακάτω τις πληροφορίες που σας παρέχονται από τον διαχειριστή του συστήματος σας. "
-"Μην εισάγετε τον κωδικό σας εδώ αλλά όταν σας ζητηθεί."
+"Παρακαλώ εισάγετε παρακάτω τις πληροφορίες που σας παρέχονται από τον "
+"διαχειριστή του συστήματος σας. Μην εισάγετε τον κωδικό σας εδώ αλλά όταν "
+"σας ζητηθεί."
 
-#: ../properties/nm-openvpn-dialog.glade.h:15
+#: ../properties/nm-openvpn-dialog.glade.h:17
 msgid ""
 "Please note that the file you import is not an OpenVPN configuration file. "
 "Ask your administrator for the file."
-msgstr "Παρακαλώ σημειώστε ότι το αρχείο που εισάγετε δεν είναι ένα αρχείο ρύθμισης OpenVPN. "
-"Ρωτήστε το διαχειριστή του συστήματος σας για αυτό το αρχείο."
-
-#: ../properties/nm-openvpn-dialog.glade.h:16
-msgid "Remote IP:"
-msgstr "Απομακρυσμένο IP:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:17
-msgid "Shared Key:"
-msgstr "Κοινόχρηστο κλειδί:"
+msgstr ""
+"Παρακαλώ σημειώστε ότι το αρχείο που εισάγετε δεν είναι ένα αρχείο ρύθμισης "
+"OpenVPN. Ρωτήστε το διαχειριστή του συστήματος σας για αυτό το αρχείο."
 
 #: ../properties/nm-openvpn-dialog.glade.h:18
-msgid "Shared key"
-msgstr "Κοινόχρηστο κλειδί"
+msgid "Shared _key:"
+msgstr "Κοινό_χρηστο κλειδί"
 
 #: ../properties/nm-openvpn-dialog.glade.h:19
-msgid "Use LZO compression"
-msgstr "Χρήση συμπίεσης LZO"
+msgid "TLS-Auth"
+msgstr "TLS-Auth"
 
 #: ../properties/nm-openvpn-dialog.glade.h:20
-msgid "Use TAP device"
-msgstr "Χρήση συσκευής TAP"
+msgid "Use L_ZO compression"
+msgstr "Χρήση συμπίεσης L_ZO"
 
 #: ../properties/nm-openvpn-dialog.glade.h:21
-msgid "Use TCP connection"
-msgstr "Χρήση σύνδεσης TCP"
+msgid "Use TA_P device"
+msgstr "Χρήση συσκευής TA_P"
 
 #: ../properties/nm-openvpn-dialog.glade.h:22
-msgid "Use TLS auth:"
-msgstr "Χρήση πιστοποίησης TLS:"
+msgid "Use _TCP connection"
+msgstr "Χρήση σύνδεσης _TCP"
 
 #: ../properties/nm-openvpn-dialog.glade.h:23
-msgid "Use cipher:"
-msgstr "Χρήση αποτυπώματος:"
+msgid "Use _TLS auth:"
+msgstr "Χρήση πιστοποίησης _TLS:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:24
-msgid "Username:"
-msgstr "Όνομα χρήστη:"
+msgid "Use cip_her:"
+msgstr "Χρήση απο_τυπώματος:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:25
-msgid "X.509"
-msgstr "X.509"
-
-#: ../properties/nm-openvpn-dialog.glade.h:26
 msgid ""
 "X.509 Certificates\n"
 "Pre-shared key\n"
@@ -376,57 +387,99 @@ msgstr ""
 "Πιστοποίηση κωδικού\n"
 "X.509 με πιστοποίηση πιστοποιητικού"
 
+#: ../properties/nm-openvpn-dialog.glade.h:29
+msgid "_0"
+msgstr "_0"
+
 #: ../properties/nm-openvpn-dialog.glade.h:30
-msgid "_Gateway:"
-msgstr "_Gateway:"
+msgid "_1"
+msgstr "_1"
 
 #: ../properties/nm-openvpn-dialog.glade.h:31
-msgid "_Import Saved Configuration..."
-msgstr "Ε_ισαγωγή αποθηκευμένης ρύθμισης..."
+msgid "_Gateway address:"
+msgstr "Διεύθυνση _Gateway:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:32
-msgid ""
-"_Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
-msgstr ""
-"Το ό_νομα που χρησιμοποιείται για την ταυτοποίηση της σύνδεσης στο ιδιωτικό δίκτυο, π.χ. \"Campus "
-"VPN\" ή \"Corporate Network\""
+msgid "_Gateway port:"
+msgstr "Θύρα _Gateway:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:33
-msgid "_Only use VPN connection for these addresses"
-msgstr "Να γίνεται _χρήση σύνδεσης VPN μόνο για αυτές τις διευθύνσεις"
+msgid "_Key:"
+msgstr "_Κλειδί:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:34
-msgid "none"
-msgstr "κανένα"
+msgid "_Local IP:"
+msgstr "_Τοπική  IP:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:35
+msgid "_Remote IP:"
+msgstr "Απομακ_ρυσμένη IP:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:36
+msgid "_User name:"
+msgstr "Ό_νομα χρήστη:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:37
+msgid "_none"
+msgstr "κα_νένα"
 
 #: ../src/nm-openvpn-service.c:127
 msgid ""
 "The VPN login failed because the user name and password were not accepted or "
 "the certificate password was wrong."
-msgstr "Αποτυχία σύνδεσης VPN λόγω του ότι δεν έγινε δεκτό το όνομα χρήστη και ο κωδικός ή λόγω του ότι ο κωδικός συνθηματικού ήταν λανθασμένος."
+msgstr ""
+"Αποτυχία σύνδεσης VPN λόγω του ότι δεν έγινε δεκτό το όνομα χρήστη και ο "
+"κωδικός ή λόγω του ότι ο κωδικός συνθηματικού ήταν λανθασμένος."
 
 #: ../src/nm-openvpn-service.c:129
 msgid "The VPN login failed because the VPN program could not be started."
-msgstr "Αποτυχία σύνδεσης VPN λόγω του ότι το πρόγραμμα δεν μπορεί να ξεκινήσει."
+msgstr ""
+"Αποτυχία σύνδεσης VPN λόγω του ότι το πρόγραμμα δεν μπορεί να ξεκινήσει."
 
 #: ../src/nm-openvpn-service.c:131
 msgid ""
 "The VPN login failed because the VPN program could not connect to the VPN "
 "server."
-msgstr "Αποτυχία σύνδεσης VPN λόγω του ότι το πρόγραμμα δεν μπορεί να συνδεθεί με τον εξυπηρετητή VPN."
+msgstr ""
+"Αποτυχία σύνδεσης VPN λόγω του ότι το πρόγραμμα δεν μπορεί να συνδεθεί με "
+"τον εξυπηρετητή VPN."
 
 #: ../src/nm-openvpn-service.c:133
-msgid "The VPN login failed because the VPN configuration options were invalid."
-msgstr "Αποτυχία σύνδεσης VPN λόγω του ότι οι ρυθμίσεις επιλογών VPN δεν είναι έγκυρες."
+msgid ""
+"The VPN login failed because the VPN configuration options were invalid."
+msgstr ""
+"Αποτυχία σύνδεσης VPN λόγω του ότι οι ρυθμίσεις επιλογών VPN δεν είναι "
+"έγκυρες."
 
 #: ../src/nm-openvpn-service.c:135
 msgid ""
 "The VPN login failed because the VPN program received an invalid "
 "configuration from the VPN server."
-msgstr "Αποτυχία σύνδεσης VPN λόγω του ότι το πρόγραμμα VPN έλαβε μια μη έγκυρη ρύθμιση από τον εξυπηρετητή VPN."
+msgstr ""
+"Αποτυχία σύνδεσης VPN λόγω του ότι το πρόγραμμα VPN έλαβε μια μη έγκυρη "
+"ρύθμιση από τον εξυπηρετητή VPN."
 
 #: ../src/nm-openvpn-service.c:137
 msgid "VPN connection failed"
 msgstr "Αποτυχία σύνδεσης VPN"
 
+#~ msgid "<b>Connection Information</b>"
+#~ msgstr "<b>Πληροφορίες σύνδεσης</b>"
+
+#~ msgid "<b>Connection Name</b>"
+#~ msgstr "<b>Όνομα σύνδεσης</b>"
+
+#~ msgid "Password"
+#~ msgstr "Κωδικός πρόσβασης"
+
+#~ msgid "Shared Key:"
+#~ msgstr "Κοινόχρηστο κλειδί:"
+
+#~ msgid "Username:"
+#~ msgstr "Όνομα χρήστη:"
+
+#~ msgid "X.509"
+#~ msgstr "X.509"
+
+#~ msgid "X.509/Pass"
+#~ msgstr "X.509/Pass"
