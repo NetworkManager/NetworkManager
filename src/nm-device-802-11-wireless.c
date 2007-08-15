@@ -2309,8 +2309,8 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 		goto out;
 	}
 
-	nm_debug ("(%s) Supplicant interface state change: %d -> %d",
-	          nm_device_get_iface (dev), old_state, new_state);
+	nm_info ("(%s) Supplicant interface state change: %d -> %d",
+	         nm_device_get_iface (dev), old_state, new_state);
 
 	if (new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_COMPLETED) {
 		remove_supplicant_interface_connection_error_handler (self);
