@@ -1,3 +1,22 @@
+2007-08-14  Tambet Ingo  <tambet@gmail.com>
+
+	* libnm-glib/Makefile.am: Use nm-manager-client.xml to produce nm-client-bindings.
+
+	* introspection/nm-manager-client.xml: Add a horrible horrbile hack to work around
+	an issue with dbus-glib bindings generator. The issue is, the generated C caller
+	functions for dbus methods "Sleep(bool)" and "sleep()" both have the same function
+	name and different arguments and it won't compile anymore. To fix this, we now have
+	two copies of nm-manager.xml file. nm-manager.xml contains the actual interface,
+	that is new API + compatibility API and used by the daemon. The other, 
+	nm-manager-client.xml is only the new API without compatibility bits and is used
+	by libnm-glib to make it compile.
+
+	* introspection/nm-manager.xml: Define compatibility methods (sleep, wake, state).
+
+	* src/nm-manager.c (impl_manager_legacy_sleep)
+	(impl_manager_legacy_wake, impl_manager_legacy_state): Implement the compatibility
+	interface functions for 0.6 branch.
+
 2007-08-14  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerAP.c

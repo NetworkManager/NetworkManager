@@ -1,3 +1,5 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+
 #include <string.h>
 
 #include "nm-manager.h"
@@ -10,6 +12,12 @@
 
 static gboolean impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err);
 static gboolean impl_manager_sleep (NMManager *manager, gboolean sleep, GError **err);
+
+/* Legacy 0.6 compatibility interface */
+
+static gboolean impl_manager_legacy_sleep (NMManager *manager, GError **err);
+static gboolean impl_manager_legacy_wake  (NMManager *manager, GError **err);
+static gboolean impl_manager_legacy_state (NMManager *manager, GError **err);
 
 #include "nm-manager-glue.h"
 
@@ -472,6 +480,27 @@ nm_manager_get_active_device (NMManager *manager)
 
 	return NULL;
 }
+
+/* Legacy 0.6 compatibility interface */
+
+static gboolean
+impl_manager_legacy_sleep (NMManager *manager, GError **err)
+{
+	return impl_manager_sleep (manager, TRUE, err);
+}
+
+static gboolean
+impl_manager_legacy_wake  (NMManager *manager, GError **err)
+{
+	return impl_manager_sleep (manager, FALSE, err);
+}
+
+static gboolean
+impl_manager_legacy_state (NMManager *manager, GError **err)
+{
+	return nm_manager_get_state (manager);
+}
+
 
 /* Connections */
 

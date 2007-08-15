@@ -3,8 +3,8 @@
 <!-- 
   READ ME! READ ME! READ ME! READ ME! READ ME!
 
-  This file needs to be kept in sync with nm-manager-client.xml with the exception of
-  the legacy methods at the end of this file.
+  This file needs to be kept in sync with nm-manager.xml with the exception of
+  the legacy methods at the end of nm-manager.xml.
 -->
 
 <node name="/">
@@ -33,20 +33,6 @@
     <signal name="DeviceRemoved">
       <arg name="state" type="o"/>
     </signal>
-
-    <!-- Legacy methods to maintain backwards compatibility for 0.6 branch. -->
-
-    <method name="sleep">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_legacy_sleep"/>
-    </method>
-
-    <method name="wake">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_legacy_wake"/>
-    </method>
-
-    <method name="state">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_legacy_state"/>
-    </method>
 
   </interface>
 </node>

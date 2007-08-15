@@ -77,8 +77,8 @@ nm-marshal.c: Makefile.am nm-marshal.list
 
 nm-marshal-main.c: nm-marshal.c nm-marshal.h
 
-nm-client-bindings.h: $(top_srcdir)/introspection/nm-manager.xml
-	dbus-binding-tool --prefix=nm_client --mode=glib-client --output=nm-client-bindings.h $(top_srcdir)/introspection/nm-manager.xml
+nm-client-bindings.h: $(top_srcdir)/introspection/nm-manager-client.xml
+	dbus-binding-tool --prefix=nm_client --mode=glib-client --output=nm-client-bindings.h $(top_srcdir)/introspection/nm-manager-client.xml
 
 nm-device-bindings.h: $(top_srcdir)/introspection/nm-device.xml
 	dbus-binding-tool --prefix=nm_device --mode=glib-client --output=nm-device-bindings.h $(top_srcdir)/introspection/nm-device.xml
