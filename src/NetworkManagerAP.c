@@ -503,8 +503,8 @@ nm_ap_new_from_properties (GHashTable *properties)
 
 	/* ignore APs with invalid BSSIDs */
 	addr = nm_ap_get_address (ap);
-	if (   (memcmp (addr->ether_addr_octet, bad_bssid1, ETH_ALEN))
-	    || (memcmp (addr->ether_addr_octet, bad_bssid2, ETH_ALEN))) {
+	if (   !(memcmp (addr->ether_addr_octet, bad_bssid1, ETH_ALEN))
+	    || !(memcmp (addr->ether_addr_octet, bad_bssid2, ETH_ALEN))) {
 		g_object_unref (ap);
 		return NULL;
 	}

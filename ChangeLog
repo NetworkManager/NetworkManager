@@ -1,5 +1,11 @@
 2007-08-14  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerAP.c
+		- (nm_ap_new_from_properties): fix mistaken check of return value
+			from memcmp (should expect 0)
+
+2007-08-14  Dan Williams  <dcbw@redhat.com>
+
 	(force-commit to fix wrong comment and partial commit of r2685; this
 	 commit actually applies to r2685)
 
