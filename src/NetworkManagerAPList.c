@@ -174,7 +174,7 @@ nm_ap_list_remove_ap_by_ssid (NMAccessPointList *list, const GByteArray * ssid)
 	for (elt = list->ap_list; elt; elt = g_slist_next (elt)) {
 		NMAccessPoint * list_ap = (NMAccessPoint *) elt->data;
 
-		if (nm_utils_same_ssid (nm_ap_get_ssid (list_ap), ssid)) {
+		if (nm_utils_same_ssid (nm_ap_get_ssid (list_ap), ssid, TRUE)) {
 			list->ap_list = g_slist_remove_link (list->ap_list, elt);
 			g_object_unref (list_ap);
 			g_slist_free (elt);
@@ -209,7 +209,7 @@ void    nm_ap_list_remove_duplicate_ssids (NMAccessPointList *list)
 			NMAccessPoint * list_ap_j = (NMAccessPoint *) elt_j->data;
 			const GByteArray * list_ap_j_ssid = nm_ap_get_ssid (list_ap_j);
 
-			if ((found = nm_utils_same_ssid (list_ap_i_ssid, list_ap_j_ssid)))
+			if ((found = nm_utils_same_ssid (list_ap_i_ssid, list_ap_j_ssid, TRUE)))
 				break;
 		}
 
@@ -225,7 +225,7 @@ void    nm_ap_list_remove_duplicate_ssids (NMAccessPointList *list)
 			const GByteArray * list_ap_j_ssid = nm_ap_get_ssid (list_ap_j);
 
 			strengthj = nm_ap_get_strength (list_ap_j);
-			if (nm_utils_same_ssid (list_ap_i_ssid, list_ap_j_ssid)) {
+			if (nm_utils_same_ssid (list_ap_i_ssid, list_ap_j_ssid, TRUE)) {
 				if (strengthj > max_strength) {
 					removal_list = g_slist_append (removal_list, list_ap_max);
 					list_ap_max = list_ap_j;
@@ -267,7 +267,7 @@ nm_ap_list_get_ap_by_ssid (NMAccessPointList *list, const GByteArray * ssid)
 
 	while ((ap = nm_ap_list_iter_next (iter))) {
 		const GByteArray * ap_ssid = nm_ap_get_ssid (ap);
-		if (ap_ssid && nm_utils_same_ssid (ap_ssid, ssid)) {
+		if (ap_ssid && nm_utils_same_ssid (ap_ssid, ssid, TRUE)) {
 			found_ap = ap;
 			break;
 		}

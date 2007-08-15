@@ -322,7 +322,7 @@ nm_policy_device_change_check (gpointer user_data)
 				 * link to the old access point.  We don't switch away
 				 * from Ad-Hoc APs either.
 				 */
-				gboolean same_ssid = nm_utils_same_ssid (old_ssid, new_ssid);
+				gboolean same_ssid = nm_utils_same_ssid (old_ssid, new_ssid, TRUE);
 
 				/* If the "best" AP's SSID is the same as the current activation
 				 * request's SSID, but the current activation request isn't

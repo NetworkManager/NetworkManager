@@ -625,14 +625,28 @@ nm_utils_escape_ssid (const char * ssid, guint32 len)
 }
 
 gboolean
-nm_utils_same_ssid (const GByteArray * ssid1, const GByteArray * ssid2)
+nm_utils_same_ssid (const GByteArray * ssid1,
+                    const GByteArray * ssid2,
+                    gboolean ignore_trailing_null)
 {
+	guint32 ssid1_len, ssid2_len;
+
 	if (ssid1 == ssid2)
 		return TRUE;
 	if ((ssid1 && !ssid2) || (!ssid1 && ssid2))
 		return FALSE;
-	if (ssid1->len != ssid2->len)
+
+	ssid1_len = ssid1->len;
+	ssid2_len = ssid2->len;
+	if (ssid1_len && ssid2_len && ignore_trailing_null) {
+		if (ssid1->data[ssid1_len - 1] == '\0')
+			ssid1_len--;
+		if (ssid2->data[ssid2_len - 1] == '\0')
+			ssid2_len--;
+	}
+
+	if (ssid1_len != ssid2_len)
 		return FALSE;
 
-	return memcmp (ssid1->data, ssid2->data, ssid1->len) == 0 ? TRUE : FALSE;
+	return memcmp (ssid1->data, ssid2->data, ssid1_len) == 0 ? TRUE : FALSE;
 }

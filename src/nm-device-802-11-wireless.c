@@ -224,7 +224,7 @@ nm_device_802_11_wireless_update_bssid (NMDevice80211Wireless *self,
 	if (     nm_ethernet_address_is_valid (&new_bssid)
 		&&  nm_ethernet_address_is_valid (old_bssid)
 		&& !nm_ethernet_addresses_are_equal (&new_bssid, old_bssid)
-		&& nm_utils_same_ssid (old_ssid, new_ssid))
+		&& nm_utils_same_ssid (old_ssid, new_ssid, TRUE))
 	{
 		gboolean	automatic;
 		gchar	new_addr[20];
@@ -729,7 +729,7 @@ link_to_specific_ap (NMDevice80211Wireless *self,
 		const GByteArray * dev_ssid = nm_device_802_11_wireless_get_ssid (self);
 		const GByteArray * ap_ssid = nm_ap_get_ssid (ap);
 
-		if (dev_ssid && ap_ssid && nm_utils_same_ssid (dev_ssid, ap_ssid)) {
+		if (dev_ssid && ap_ssid && nm_utils_same_ssid (dev_ssid, ap_ssid, TRUE)) {
 			self->priv->failed_link_count = 0;
 			have_link = TRUE;
 		}
@@ -1936,7 +1936,7 @@ merge_scanned_ap (NMDevice80211Wireless *dev,
 		/* Did the AP's name change? */
 		if (   !devlist_ssid
 		    || !merge_ssid
-		    || !nm_utils_same_ssid (devlist_ssid, merge_ssid)) {
+		    || !nm_utils_same_ssid (devlist_ssid, merge_ssid, TRUE)) {
 			network_removed (dev, list_ap);
 			nm_ap_set_ssid (list_ap, merge_ssid);
 			network_added (dev, list_ap);
@@ -2011,7 +2011,7 @@ cull_scan_list (NMDevice80211Wireless * self)
 		/* Don't ever prune the AP we're currently associated with */
 		ssid = nm_ap_get_ssid (outdated_ap);
 		cur_ssid = cur_ap ? nm_ap_get_ssid (cur_ap) : NULL;
-		if (ssid && nm_utils_same_ssid (cur_ssid, ssid))
+		if (ssid && nm_utils_same_ssid (cur_ssid, ssid, TRUE))
 			keep_around = TRUE;
 
 		prune_interval_s = SCAN_INTERVAL_MAX * 3;
