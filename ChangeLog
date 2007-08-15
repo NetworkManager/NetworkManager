@@ -1,5 +1,15 @@
 2007-08-15  Dan Williams  <dcbw@redhat.com>
 
+	* src/supplicant-manager/nm-supplicant-interface.c
+		- (try_remove_iface): new function, ask wpa_supplicant to remove
+			an interface
+		- (nm_supplicant_interface_dispose): call try_remove_iface() when
+			disposing of the NMSupplicantInterface.  Otherwise weird stuff
+			happens on hotplug if wpa_supplicant doesn't tear down and readd
+			the interface internally
+
+2007-08-15  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 		- (real_bring_down): move most of this function into device_cleanup()
 			so that it can be called from elsewhere

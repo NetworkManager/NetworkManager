@@ -102,6 +102,7 @@ typedef struct
 	char *                dev;
 	gboolean              is_wireless;
 
+	char *                object_path;
 	guint32               state;
 	NMCallStore *         assoc_pcalls;
 	NMCallStore *         other_pcalls;
@@ -280,9 +281,29 @@ nm_supplicant_interface_get_property (GObject *     object,
 }
 
 static void
+try_remove_iface (DBusGConnection * g_connection,
+                  const char * path)
+{
+	DBusGProxy * proxy;
+
+	proxy = dbus_g_proxy_new_for_name (g_connection,
+									   WPAS_DBUS_SERVICE,
+									   WPAS_DBUS_PATH,
+									   WPAS_DBUS_INTERFACE);
+	if (!proxy)
+		return;
+
+	dbus_g_proxy_call_no_reply (proxy, "removeInterface", 
+								DBUS_TYPE_G_OBJECT_PATH, path,
+								G_TYPE_INVALID);
+	g_object_unref (proxy);
+}
+
+static void
 nm_supplicant_interface_dispose (GObject *object)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (object);
+	guint32 sm_state;
 
 	if (priv->dispose_has_run) {
 		/* If dispose did already run, return. */
@@ -298,6 +319,13 @@ nm_supplicant_interface_dispose (GObject *object)
 	 * the most simple solution is to unref all members on which you own a 
 	 * reference.
 	 */
+
+	/* Ask wpa_supplicant to remove this interface */
+	sm_state = nm_supplicant_manager_get_state (priv->smgr);
+	if (sm_state == NM_SUPPLICANT_MANAGER_STATE_IDLE) {
+		try_remove_iface (nm_dbus_manager_get_connection (priv->dbus_mgr),
+		                  priv->object_path);
+	}
 
 	if (priv->iface_proxy)
 		g_object_unref (priv->iface_proxy);
@@ -328,6 +356,8 @@ nm_supplicant_interface_dispose (GObject *object)
 
 	if (priv->cfg)
 		g_object_unref (priv->cfg);
+
+	g_free (priv->object_path);
 
 	/* Chain up to the parent class */
 	G_OBJECT_CLASS (nm_supplicant_interface_parent_class)->dispose (object);
@@ -676,6 +706,8 @@ nm_supplicant_interface_add_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpoi
 		g_error_free (err);
 	} else {
 		NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (info->interface);
+
+		priv->object_path = g_strdup (path);
 
 		priv->iface_proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (priv->dbus_mgr),
 													   WPAS_DBUS_SERVICE,
