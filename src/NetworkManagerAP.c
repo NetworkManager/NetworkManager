@@ -491,12 +491,23 @@ nm_ap_new_from_properties (GHashTable *properties)
 {
 	NMAccessPoint *ap;
 	GTimeVal cur_time;
+	const struct ether_addr * addr;
+	const char bad_bssid1[ETH_ALEN] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+	const char bad_bssid2[ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
 	g_return_val_if_fail (properties != NULL, NULL);
 
 	ap = nm_ap_new ();
 
 	g_hash_table_foreach (properties, foreach_property_cb, ap);
+
+	/* ignore APs with invalid BSSIDs */
+	addr = nm_ap_get_address (ap);
+	if (   (memcmp (addr->ether_addr_octet, bad_bssid1, ETH_ALEN))
+	    || (memcmp (addr->ether_addr_octet, bad_bssid2, ETH_ALEN))) {
+		g_object_unref (ap);
+		return NULL;
+	}
 
 	g_get_current_time (&cur_time);
 	nm_ap_set_last_seen (ap, cur_time.tv_sec);

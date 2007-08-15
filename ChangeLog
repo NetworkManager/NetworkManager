@@ -1,5 +1,13 @@
 2007-08-14  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerAP.c
+		- (nm_ap_new_from_properties): ignore BSSs with invalid BSSIDs.  Today
+			I encountered a BSS that wasn't just hiding it's ESSID, it was
+			setting the BSSID to all 0s.  That confused the heck out of NM,
+			plus it's useless and probably out-of-spec.
+
+2007-08-14  Dan Williams  <dcbw@redhat.com>
+
 	* callouts/Makefile.am
 	  src/dhcp-manager/nm-dhcp-manager.c
 	  src/dhcp-manager/nm-dhcp-manager.h
