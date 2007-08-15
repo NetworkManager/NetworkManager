@@ -1,5 +1,15 @@
 2007-08-15  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-11-wireless.c
+		- (real_bring_down): move most of this function into device_cleanup()
+			so that it can be called from elsewhere
+		- (nm_device_802_11_wireless_dispose): clean up device periodic timers
+			and stuff on dispose.  These would normally get cleaned up when
+			the device is marked down and deactivated, but when the device is
+			hot-unplugged, it's already down and real_down() never gets run
+
+2007-08-15  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-dbus-nmi.c
 		- (nm_dbus_get_user_key_for_network_cb): fix incorrect refcounting that
 			caused a reference leak on device for which NM requested a key

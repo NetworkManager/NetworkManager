@@ -186,6 +186,8 @@ static void supplicant_mgr_state_cb (NMSupplicantInterface * iface,
 
 static void cleanup_supplicant_interface (NMDevice80211Wireless * self);
 
+static void device_cleanup (NMDevice80211Wireless *self);
+
 
 static void
 network_added (NMDevice80211Wireless *device, NMAccessPoint *ap)
@@ -592,9 +594,8 @@ real_bring_up (NMDevice *dev)
 }
 
 static void
-real_bring_down (NMDevice *dev)
+device_cleanup (NMDevice80211Wireless *self)
 {
-	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 
 	if (priv->periodic_source_id) {
@@ -620,6 +621,14 @@ real_bring_down (NMDevice *dev)
 		g_object_unref (priv->supplicant.mgr);
 		priv->supplicant.mgr = NULL;
 	}
+}
+
+static void
+real_bring_down (NMDevice *dev)
+{
+	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
+
+	device_cleanup (self);
 }
 
 static void
@@ -3023,6 +3032,8 @@ nm_device_802_11_wireless_dispose (GObject *object)
 	nm_device_802_11_wireless_ap_list_clear (self);
 	if (priv->ap_list)
 		nm_ap_list_unref (priv->ap_list);
+
+	device_cleanup (self);
 
 	G_OBJECT_CLASS (nm_device_802_11_wireless_parent_class)->dispose (object);
 }
