@@ -1,5 +1,11 @@
 2007-08-15  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-dbus-nmi.c
+		- (nm_dbus_get_user_key_for_network_cb): fix incorrect refcounting that
+			caused a reference leak on device for which NM requested a key
+
+2007-08-15  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/nm-client.c
 		- (nm_client_get_best_vpn_state): fix leakage of the vpn connection list
 

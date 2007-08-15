@@ -85,8 +85,6 @@ nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall,
 
 	nm_dbus_send_with_callback_replied (pcall, __func__);
 
-	dbus_pending_call_ref (pcall);
-
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
 
@@ -134,7 +132,6 @@ nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall,
 out:
 	if (reply)
 		dbus_message_unref (reply);
-	g_object_unref (req);
 	dbus_pending_call_unref (pcall);
 }
 
