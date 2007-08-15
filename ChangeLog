@@ -1,3 +1,8 @@
+2007-08-15  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-glib/nm-client.c
+		- (nm_client_get_best_vpn_state): fix leakage of the vpn connection list
+
 2007-08-15  Tambet Ingo  <tambet@gmail.com>
 
 	* src/ppp-manager: Implement ppp-manager. It's sort of dead code for now since

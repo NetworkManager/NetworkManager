@@ -508,15 +508,17 @@ nm_client_sleep (NMClient *client, gboolean sleep)
 static NMVPNConnectionState
 nm_client_get_best_vpn_state (NMClient *client)
 {
-	GSList *iter;
+	GSList *iter, *list;
 	NMVPNConnectionState state;
 	NMVPNConnectionState best_state = NM_VPN_CONNECTION_STATE_UNKNOWN;
 
-	for (iter = nm_client_get_vpn_connections (client); iter; iter = iter->next) {
+	list = nm_client_get_vpn_connections (client);
+	for (iter = list; iter; iter = iter->next) {
 		state = nm_vpn_connection_get_state (NM_VPN_CONNECTION (iter->data));
 		if (state > best_state && state < NM_VPN_CONNECTION_STATE_FAILED)
 			best_state = state;
 	}
+	g_slist_free (list);
 
 	return best_state;
 }
