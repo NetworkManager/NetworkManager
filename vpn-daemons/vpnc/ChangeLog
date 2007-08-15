@@ -1,3 +1,13 @@
+2007-08-15  Tambet Ingo  <tambet@gmail.com>
+
+	* nm-vpnc-service.name.in: Use upper-case macro names as that's what the
+	sed script from Makefile is trying to replace.
+
+	* src/Makefile.am: Link to $NM_UTILS_LIBS.
+
+	* configure.in: Update required NetworkManager version to 0.7.0.
+	Clean up the double-check to NetworkManager.pc.
+
 2007-08-14  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-openvpn-service.c

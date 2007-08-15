@@ -15,7 +15,7 @@ libnm_vpnc_properties_la_CFLAGS =                          \
         $(GTK_CFLAGS)                                   \
         $(GCONF_CFLAGS)                                 \
         $(LIBGNOMEUI_CFLAGS)                            \
-        $(NETWORK_MANAGER_CFLAGS)                       \
+        $(NM_UTILS_CFLAGS)                              \
         -DICONDIR=\""$(datadir)/pixmaps"\"              \
         -DGLADEDIR=\""$(gladedir)"\"                    \
         -DG_DISABLE_DEPRECATED                          \

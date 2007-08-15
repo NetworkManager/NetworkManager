@@ -56,9 +56,6 @@ PKG_CHECK_MODULES(DBUS, dbus-glib-1 >= 0.30)
 AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
 
-PKG_CHECK_MODULES(NETWORK_MANAGER, NetworkManager >= 0.4.1)
-AC_SUBST(NETWORK_MANAGER_CFLAGS)
-
 if test x"$with_gnome" != xno; then
 	PKG_CHECK_MODULES(GTK, gtk+-2.0 >= 2.6)
 	AC_SUBST(GTK_CFLAGS)
@@ -85,8 +82,7 @@ if test x"$with_gnome" != xno; then
 	AC_SUBST(GNOMEKEYRING_LIBS)
 fi
 
-AC_CHECK_LIB(nm-util, nmu_dbus_dict_append_string_array)
-PKG_CHECK_MODULES(NM_UTILS, NetworkManager)
+PKG_CHECK_MODULES(NM_UTILS, NetworkManager >= 0.7.0 libnm-util)
 AC_SUBST(NM_UTILS_CFLAGS)
 AC_SUBST(NM_UTILS_LIBS)
 
