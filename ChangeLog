@@ -1,3 +1,7 @@
+2007-08-15  Tambet Ingo  <tambet@gmail.com>
+
+	* introspection/Makefile.am: Add nm-manager-client.xml to EXTRA_DIST.
+
 2007-08-14  Tambet Ingo  <tambet@gmail.com>
 
 	* libnm-glib/Makefile.am: Use nm-manager-client.xml to produce nm-client-bindings.

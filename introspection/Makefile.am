@@ -5,5 +5,6 @@ EXTRA_DIST =						\
 	nm-device.xml					\
 	nm-ip4-config.xml				\
 	nm-manager.xml					\
+	nm-manager-client.xml				\
 	nm-settings.xml					\
 	nm-settings-connection.xml
