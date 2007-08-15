@@ -650,3 +650,4 @@ nm_utils_same_ssid (const GByteArray * ssid1,
 
 	return memcmp (ssid1->data, ssid2->data, ssid1_len) == 0 ? TRUE : FALSE;
 }
+

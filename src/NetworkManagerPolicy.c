@@ -664,3 +664,4 @@ nm_policy_destroy (NMPolicy *policy)
 
 	global_policy = NULL;
 }
+

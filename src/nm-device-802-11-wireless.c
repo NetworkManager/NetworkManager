@@ -3218,3 +3218,4 @@ nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wireless *self)
 
 	return NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self)->activation_ap;
 }
+

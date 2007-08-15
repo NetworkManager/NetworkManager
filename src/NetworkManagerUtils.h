@@ -114,3 +114,4 @@ gboolean		nm_utils_same_ssid (const GByteArray * ssid1,
                                     gboolean ignore_trailing_null);
 
 #endif
+

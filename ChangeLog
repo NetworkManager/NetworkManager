@@ -1,5 +1,27 @@
 2007-08-14  Dan Williams  <dcbw@redhat.com>
 
+	(force-commit to fix wrong comment and partial commit of r2685; this
+	 commit actually applies to r2685)
+
+	* src/NetworkManagerUtils.c
+		- (nm_utils_same_ssid): add "ignore_trailing_null" parameter which
+			ignores trailing nulls in the SSID to work around mismatches in
+			expectations between WEXT and what the info-daemon passes back.  The
+			info-daemon would pass back the correct length, but due to the
+			ESSID length issues with WEXT 22 and greater and wpa_supplicant,
+			the device would always have an SSID + 1 depending on what versions
+			of wpa_supplicant, the kernel, and NM you have.  This was most often
+			visible by just quitting the applet and relaunching, which caused
+			NM to reassociated to the same network over again when reloading
+			the save networks.
+
+	* src/NetworkManagerPolicy.c
+	  src/NetworkManagerUtils.h
+	  src/nm-device-802-11-wireless.c
+		- Update for new parameter to nm_utils_same_ssid()
+
+2007-08-14  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerAP.c
 		- (nm_ap_new_from_properties): ignore BSSs with invalid BSSIDs.  Today
 			I encountered a BSS that wasn't just hiding it's ESSID, it was

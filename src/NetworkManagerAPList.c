@@ -560,3 +560,4 @@ void nm_ap_list_print_members (NMAccessPointList *list, const char *name)
 	nm_info ("AP_LIST_PRINT: done");
 	nm_ap_list_iter_free (iter);
 }
+
