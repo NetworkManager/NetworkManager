@@ -1,5 +1,18 @@
 2007-08-15  Tambet Ingo  <tambet@gmail.com>
 
+	* src/ppp-manager: Implement ppp-manager. It's sort of dead code for now since
+	nothing is using it at the moment, but it'll be all useful and stuff later on.
+
+	* libnm-util/nm-setting.h: Define NMSettingPPP.
+
+	* libnm-util/nm-setting.c: Implement NMSettingPPP.
+
+	* libnm-util/nm-connection.c (register_default_creators): Register ppp setting.
+
+	* src/Makefile.am: Add ppp-manager to SUBDIRS.
+
+	* configure.in: Require ppp headers. Build Makefile for ppp-manager.
+
 	* introspection/Makefile.am: Add nm-manager-client.xml to EXTRA_DIST.
 
 2007-08-14  Tambet Ingo  <tambet@gmail.com>

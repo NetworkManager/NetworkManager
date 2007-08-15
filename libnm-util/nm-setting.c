@@ -1,3 +1,5 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
 #include <string.h>
@@ -1144,6 +1146,152 @@ nm_setting_wireless_security_new_from_hash (GHashTable *settings)
 	value = (GValue *) g_hash_table_lookup (settings, "phase2-private-key-passwd");
 	if (value && G_VALUE_HOLDS_STRING (value))
 		self->phase2_private_key_passwd = g_strdup (g_value_get_string (value));
+
+	return setting;
+}
+
+/* PPP */
+
+static gboolean
+setting_ppp_verify (NMSetting *setting, GHashTable *all_settings)
+{
+	/* FIXME: Do we even want this or can we just let pppd evaluate the options? */
+	return TRUE;
+}
+
+static GHashTable *
+setting_ppp_hash (NMSetting *setting)
+{
+	NMSettingPPP *self = (NMSettingPPP *) setting;
+	GHashTable *hash;
+
+	hash = setting_hash_new ();
+
+	g_hash_table_insert (hash, "noauth",           boolean_to_gvalue (self->noauth));
+	g_hash_table_insert (hash, "refuse-eap",       boolean_to_gvalue (self->refuse_eap));
+	g_hash_table_insert (hash, "refuse-chap",      boolean_to_gvalue (self->refuse_chap));
+	g_hash_table_insert (hash, "refuse-mschap",    boolean_to_gvalue (self->refuse_mschap));
+	g_hash_table_insert (hash, "nobsdcomp",        boolean_to_gvalue (self->nobsdcomp));
+	g_hash_table_insert (hash, "nodeflate",        boolean_to_gvalue (self->nodeflate));
+	g_hash_table_insert (hash, "require-mppe",     boolean_to_gvalue (self->require_mppe));
+	g_hash_table_insert (hash, "require-mppe-128", boolean_to_gvalue (self->require_mppe_128));
+	g_hash_table_insert (hash, "mppe-stateful",    boolean_to_gvalue (self->mppe_stateful));
+	g_hash_table_insert (hash, "require-mppc",     boolean_to_gvalue (self->require_mppc));
+	g_hash_table_insert (hash, "crtscts",          boolean_to_gvalue (self->crtscts));
+	g_hash_table_insert (hash, "usepeerdns",       boolean_to_gvalue (self->usepeerdns));
+
+	g_hash_table_insert (hash, "baud",              int_to_gvalue (self->baud));
+	g_hash_table_insert (hash, "mru",               int_to_gvalue (self->mru));
+	g_hash_table_insert (hash, "mtu",               int_to_gvalue (self->mtu));
+	g_hash_table_insert (hash, "lcp-echo-failure",  int_to_gvalue (self->lcp_echo_failure));
+	g_hash_table_insert (hash, "lcp-echo-interval", int_to_gvalue (self->lcp_echo_interval));
+
+	return hash;
+}
+
+
+static void
+setting_ppp_destroy (NMSetting *setting)
+{
+	NMSettingPPP *self = (NMSettingPPP *) setting;
+
+	g_slice_free (NMSettingPPP, self);
+}
+
+NMSetting *
+nm_setting_ppp_new (void)
+{
+	NMSetting *setting;
+
+	setting = (NMSetting *) g_slice_new0 (NMSettingPPP);
+
+	setting->name = g_strdup ("ppp");
+	setting->verify_fn = setting_ppp_verify;
+	setting->hash_fn = setting_ppp_hash;
+	setting->destroy_fn = setting_ppp_destroy;
+
+	return setting;
+}
+
+NMSetting *
+nm_setting_ppp_new_from_hash (GHashTable *settings)
+{
+	NMSettingPPP *self;
+	NMSetting *setting;
+	GValue *value;
+
+	g_return_val_if_fail (settings != NULL, NULL);
+
+	setting = nm_setting_ppp_new ();
+	self = (NMSettingPPP *) setting;
+
+	value = (GValue *) g_hash_table_lookup (settings, "noauth");
+	if (value && G_VALUE_HOLDS_BOOLEAN (value))
+		self->noauth = g_value_get_boolean (value);
+
+	value = (GValue *) g_hash_table_lookup (settings, "refuse-eap");
+	if (value && G_VALUE_HOLDS_BOOLEAN (value))
+		self->refuse_eap = g_value_get_boolean (value);
+
+	value = (GValue *) g_hash_table_lookup (settings, "refuse-chap");
+	if (value && G_VALUE_HOLDS_BOOLEAN (value))
+		self->refuse_chap = g_value_get_boolean (value);
+
+	value = (GValue *) g_hash_table_lookup (settings, "refuse-mschap");
+	if (value && G_VALUE_HOLDS_BOOLEAN (value))
+		self->refuse_mschap = g_value_get_boolean (value);
+
+	value = (GValue *) g_hash_table_lookup (settings, "nobsdcomp");
+	if (value && G_VALUE_HOLDS_BOOLEAN (value))
+		self->nobsdcomp = g_value_get_boolean (value);
+
+	value = (GValue *) g_hash_table_lookup (settings, "nodeflate");
+	if (value && G_VALUE_HOLDS_BOOLEAN (value))
+		self->nodeflate = g_value_get_boolean (value);
+
+	value = (GValue *) g_hash_table_lookup (settings, "require-mppe");
+	if (value && G_VALUE_HOLDS_BOOLEAN (value))
+		self->require_mppe = g_value_get_boolean (value);
+
+	value = (GValue *) g_hash_table_lookup (settings, "require-mppe-128");
+	if (value && G_VALUE_HOLDS_BOOLEAN (value))
+		self->require_mppe_128 = g_value_get_boolean (value);
+
+	value = (GValue *) g_hash_table_lookup (settings, "mppe-stateful");
+	if (value && G_VALUE_HOLDS_BOOLEAN (value))
+		self->mppe_stateful = g_value_get_boolean (value);
+
+	value = (GValue *) g_hash_table_lookup (settings, "require-mppc");
+	if (value && G_VALUE_HOLDS_BOOLEAN (value))
+		self->require_mppc = g_value_get_boolean (value);
+
+	value = (GValue *) g_hash_table_lookup (settings, "crtscts");
+	if (value && G_VALUE_HOLDS_BOOLEAN (value))
+		self->crtscts = g_value_get_boolean (value);
+
+	value = (GValue *) g_hash_table_lookup (settings, "usepeerdns");
+	if (value && G_VALUE_HOLDS_BOOLEAN (value))
+		self->usepeerdns = g_value_get_boolean (value);
+
+	value = (GValue *) g_hash_table_lookup (settings, "baud");
+	if (value && G_VALUE_HOLDS_INT (value))
+		self->baud = g_value_get_int (value);
+
+	value = (GValue *) g_hash_table_lookup (settings, "mru");
+	if (value && G_VALUE_HOLDS_INT (value))
+		self->mru = g_value_get_int (value);
+
+	value = (GValue *) g_hash_table_lookup (settings, "mtu");
+	if (value && G_VALUE_HOLDS_INT (value))
+		self->mtu = g_value_get_int (value);
+
+	value = (GValue *) g_hash_table_lookup (settings, "lcp-echo-failure");
+	if (value && G_VALUE_HOLDS_INT (value))
+		self->lcp_echo_failure = g_value_get_int (value);
+
+	value = (GValue *) g_hash_table_lookup (settings, "lcp-echo-interval");
+	if (value && G_VALUE_HOLDS_INT (value))
+		self->lcp_echo_interval = g_value_get_int (value);
 
 	return setting;
 }

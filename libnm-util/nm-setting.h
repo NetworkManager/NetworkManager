@@ -1,3 +1,5 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+
 #ifndef NM_SETTING_H
 #define NM_SETTING_H
 
@@ -135,6 +137,34 @@ typedef struct {
 
 NMSetting *nm_setting_wireless_security_new (void);
 NMSetting *nm_setting_wireless_security_new_from_hash (GHashTable *settings);
+
+/* PPP */
+
+typedef struct {
+	NMSetting parent;
+
+	gboolean noauth;
+	gboolean refuse_eap;
+	gboolean refuse_chap;
+	gboolean refuse_mschap;
+	gboolean nobsdcomp;
+	gboolean nodeflate;
+	gboolean require_mppe;
+	gboolean require_mppe_128;
+	gboolean mppe_stateful;
+	gboolean require_mppc;
+	gboolean crtscts;
+	gboolean usepeerdns;
+
+	gint32 baud;
+	gint32 mru;
+	gint32 mtu;
+	gint32 lcp_echo_failure;
+	gint32 lcp_echo_interval;
+} NMSettingPPP;
+
+NMSetting *nm_setting_ppp_new (void);
+NMSetting *nm_setting_ppp_new_from_hash (GHashTable *settings);
 
 G_END_DECLS
 

@@ -17,6 +17,7 @@ register_default_creators (void)
 		{ "802-11-wireless", nm_setting_wireless_new_from_hash  },
 		{ "ipv4",            nm_setting_ip4_config_new_from_hash },
 		{ "802-11-wireless-security", nm_setting_wireless_security_new_from_hash  },
+		{ "ppp",             nm_setting_ppp_new_from_hash       },
 		{ NULL, NULL}
 	};
 
