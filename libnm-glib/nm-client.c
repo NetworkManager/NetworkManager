@@ -64,7 +64,9 @@ nm_client_init (NMClient *client)
 										   (GDestroyNotify) g_free,
 										   (GDestroyNotify) g_object_unref);
 
-	priv->vpn_connections = g_hash_table_new (g_str_hash, g_str_equal);
+	priv->vpn_connections = g_hash_table_new_full (g_str_hash, g_str_equal,
+	                                               (GDestroyNotify) g_free,
+	                                               NULL);
 
 	priv->vpn_state = NM_VPN_CONNECTION_STATE_UNKNOWN;
 }
@@ -551,7 +553,6 @@ proxy_vpn_connection_added (DBusGProxy *proxy, char *name, gpointer user_data)
 	NMClient *client = NM_CLIENT (user_data);
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
 	NMVPNConnection *connection;
-	const char * vpn_name;
 
 	if (g_hash_table_lookup (priv->vpn_connections, name))
 		return;
@@ -565,11 +566,7 @@ proxy_vpn_connection_added (DBusGProxy *proxy, char *name, gpointer user_data)
 		return;
 	}
 
-	/* Use the vpn connection object's name to insert into the hash table
-	 * so that it's lifetime is the same as the vpn connection object.
-	 */
-	vpn_name = nm_vpn_connection_get_name (connection);
-	g_hash_table_insert (priv->vpn_connections, (char *) vpn_name, connection);
+	g_hash_table_insert (priv->vpn_connections, g_strdup (name), connection);
 	g_signal_emit (client, signals[VPN_CONNECTION_ADDED], 0, connection);
 }
 

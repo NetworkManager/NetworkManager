@@ -1,3 +1,14 @@
+2007-08-16  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-glib/nm-client.c
+		- (nm_client_init): create VPN connections hash table with key free
+			function
+		- (proxy_vpn_connection_added): VPN connections hash table key should
+			be a duplicated value, not the same memory address as the VPN
+			connection name.  This is because the VPN connection name could
+			potentially be freed and set to something else during the lifetime
+			of the NMVPNConnection object.
+
 2007-08-16  Tambet Ingo  <tambet@gmail.com>
 
 	* src/ppp-manager/nm-ppp-manager.c (pppd_child_setup): Implement.
