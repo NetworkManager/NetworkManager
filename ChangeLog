@@ -1,3 +1,10 @@
+2007-08-16  Tambet Ingo  <tambet@gmail.com>
+
+	* src/ppp-manager/nm-ppp-manager.c (pppd_child_setup): Implement.
+	(nm_ppp_manager_start): Use g_spawn_async() since we're not doing anything
+	with the file descriptors. Send a child setup function to change the pppd
+	progress group.
+
 2007-08-15  Dan Williams  <dcbw@redhat.com>
 
 	* src/supplicant-manager/nm-supplicant-interface.c

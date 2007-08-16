@@ -508,6 +508,14 @@ create_pppd_cmd_line (NMSettingPPP *setting, const char *device, GError **err)
 	return cmd;
 }
 
+static void
+pppd_child_setup (gpointer user_data G_GNUC_UNUSED)
+{
+	/* We are in the child process at this point */
+	pid_t pid = getpid ();
+	setpgid (pid, pid);
+}
+
 gboolean
 nm_ppp_manager_start (NMPPPManager *manager,
 				  const char *device,
@@ -518,9 +526,6 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	NMCmdLine *ppp_cmd;
 	char *cmd_str;
 	GPid pid;
-	int stdin_fd;
-	int stdout_fd;
-	int stderr_fd;
 	GSource *ppp_watch;
 
 	g_return_val_if_fail (NM_IS_PPP_MANAGER (manager), FALSE);
@@ -543,9 +548,10 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	nm_debug ("Command line: %s", cmd_str);
 	g_free (cmd_str);
 
-	if (!g_spawn_async_with_pipes (NULL, (char **) ppp_cmd->array->pdata, NULL,
-							 G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &priv->pid,
-							 &stdin_fd, &stdout_fd, &stderr_fd, err)) {
+	if (!g_spawn_async (NULL, (char **) ppp_cmd->array->pdata, NULL,
+					G_SPAWN_DO_NOT_REAP_CHILD,
+					pppd_child_setup,
+					NULL, &priv->pid, err)) {
 		goto out;
 	}
 
