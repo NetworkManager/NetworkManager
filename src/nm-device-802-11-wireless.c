@@ -605,12 +605,11 @@ device_cleanup (NMDevice80211Wireless *self)
 
 	cancel_pending_scan (self);
 
-	cleanup_supplicant_interface (self);
-
-	if (priv->supplicant.iface) {
+	/* Tell the supplicant to disconnect from the current AP */
+	if (priv->supplicant.iface)
 		nm_supplicant_interface_disconnect (priv->supplicant.iface);
-		priv->supplicant.iface = NULL;
-	}
+
+	cleanup_supplicant_interface (self);
 
 	if (priv->supplicant.mgr_state_id) {
 		g_signal_handler_disconnect (priv->supplicant.mgr, priv->supplicant.mgr_state_id);
