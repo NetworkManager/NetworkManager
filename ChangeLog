@@ -1,5 +1,11 @@
 2007-08-17  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-3-ethernet.c
+		- (real_bring_down): don't try to dispose of stuff that might not
+			exist
+
+2007-08-17  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerAP.c
 		- (nm_ap_set_user_addresses): uppercase any BSSID passed in from the
 			applet.  This ensures that the case between the seen-bssids and

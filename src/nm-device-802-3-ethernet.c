@@ -216,15 +216,21 @@ real_bring_down (NMDevice *dev)
 	NMNetlinkMonitor *monitor;
 
 	sup_mgr = nm_supplicant_manager_get ();
-	nm_supplicant_manager_release_iface (sup_mgr, priv->sup_iface);
-	priv->sup_iface = NULL;
+	if (priv->sup_iface) {
+		nm_supplicant_manager_release_iface (sup_mgr, priv->sup_iface);
+		priv->sup_iface = NULL;
+	}
 	g_object_unref (sup_mgr);
 
 	monitor = nm_netlink_monitor_get ();
-	g_signal_handler_disconnect (monitor, priv->link_connected_id);
-	priv->link_connected_id = 0;
-	g_signal_handler_disconnect (monitor, priv->link_disconnected_id);
-	priv->link_disconnected_id = 0;
+	if (priv->link_connected_id) {
+		g_signal_handler_disconnect (monitor, priv->link_connected_id);
+		priv->link_connected_id = 0;
+	}
+	if (priv->link_disconnected_id) {
+		g_signal_handler_disconnect (monitor, priv->link_disconnected_id);
+		priv->link_disconnected_id = 0;
+	}
 	g_object_unref (monitor);
 }
 
