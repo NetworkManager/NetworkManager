@@ -1,5 +1,12 @@
 2007-08-17  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerAP.c
+		- (nm_ap_set_user_addresses): uppercase any BSSID passed in from the
+			applet.  This ensures that the case between the seen-bssids and
+			the bssids reported by the driver match.
+
+2007-08-17  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 		- (device_cleanup): disconnect the interface in wpa_supplicant before
 			we dispose of the interface proxy in NM

@@ -928,7 +928,7 @@ void nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list)
 	for (elt = list; elt; elt = g_slist_next (elt))
 	{
 		if (elt->data)
-			new = g_slist_append (new, g_strdup (elt->data));
+			new = g_slist_append (new, g_ascii_strup (elt->data, -1));
 	}
 
 	priv->user_addresses = new;
