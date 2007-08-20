@@ -6,15 +6,14 @@ msgid ""
 msgstr ""
 "Project-Id-Version: YaST (@memory@)\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-06-11 00:19+0200\n"
-"PO-Revision-Date: 2007-06-10 16:25+0100\n"
-"Last-Translator: Tomasz Dominikowski <dominikowski@gmail.com>\n"
+"POT-Creation-Date: 2007-08-20 21:32+0200\n"
+"PO-Revision-Date: 2007-08-20 21:33+0100\n"
+"Last-Translator: wadim dziedzic <nikdo@aviary.pl>\n"
 "Language-Team: Polish <i18n@suse.de>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
-"|| n%100>=20) ? 1 : 2;\n"
+"Plural-Forms: nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:144
 msgid "_Secondary Password:"
@@ -51,9 +50,7 @@ msgstr "_Zapamiętaj hasła"
 #: ../auth-dialog/main.c:161
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
-msgstr ""
-"Aby uzyskać dostęp do Wirtualnej Sieci Prywatnej '%s', należy wykonać "
-"uwierzytelnianie."
+msgstr "Aby uzyskać dostęp do Wirtualnej Sieci Prywatnej '%s', należy wykonać uwierzytelnianie."
 
 #: ../auth-dialog/main.c:162
 msgid "Authenticate VPN"
@@ -133,14 +130,11 @@ msgstr "Tunelowanie TCP nie jest obsługiwane"
 #: ../properties/nm-vpnc.c:627
 #, c-format
 msgid ""
-"The VPN settings file '%s' specifies that VPN traffic should be tunneled "
-"through TCP which is currently not supported in the vpnc software.\n"
+"The VPN settings file '%s' specifies that VPN traffic should be tunneled through TCP which is currently not supported in the vpnc software.\n"
 "\n"
-"The connection can still be created, with TCP tunneling disabled, however it "
-"may not work as expected."
+"The connection can still be created, with TCP tunneling disabled, however it may not work as expected."
 msgstr ""
-"Plik ustawień VPN '%s' określa, że ruch VPN ma być tunelowany poprzez TCP. "
-"Opcja nie jest jednak obsługiwana przez program vpnc\n"
+"Plik ustawień VPN '%s' określa, że ruch VPN ma być tunelowany poprzez TCP. Opcja nie jest jednak obsługiwana przez program vpnc\n"
 "\n"
 "Połączenie z wyłączonym tunelowaniem TCP może nie działać poprawnie."
 
@@ -189,7 +183,7 @@ msgid "Connection na_me:"
 msgstr "_Nazwa połączenia"
 
 #: ../properties/nm-vpnc-dialog.glade.h:3
-msgid "Disable NAT _Traversal"
+msgid "Disable NAT _traversal"
 msgstr "Wyłącz pomijanie NA_T"
 
 #: ../properties/nm-vpnc-dialog.glade.h:4
@@ -209,12 +203,8 @@ msgid "Interval:"
 msgstr "Interwał:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:8
-msgid ""
-"Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
-msgstr ""
-"Nazwa identyfikująca połączenie do sieci prywatnej. Np. \"VPN kampusu\" lub "
-"\"Sieć firmowa\""
+msgid "Name used to identify the connection to the private network, e.g. \"Campus VPN\" or \"Corporate Network\""
+msgstr "Nazwa identyfikująca połączenie do sieci prywatnej. Np. \"VPN kampusu\" lub \"Sieć firmowa\""
 
 #: ../properties/nm-vpnc-dialog.glade.h:9
 msgid "Optional"
@@ -225,20 +215,12 @@ msgid "Override _user name"
 msgstr "Wymuś _nazwę użytkownika"
 
 #: ../properties/nm-vpnc-dialog.glade.h:11
-msgid ""
-"Please enter the information provided by your system administrator below. Do "
-"not enter your password here as you will be prompted when connecting."
-msgstr ""
-"Proszę podać poniżej informacje dostarczone przez administratora. Hasło "
-"należy podać później, podczas łączenia."
+msgid "Please enter the information provided by your system administrator below. Do not enter your password here as you will be prompted when connecting."
+msgstr "Proszę podać poniżej informacje dostarczone przez administratora. Hasło należy podać później, podczas łączenia."
 
 #: ../properties/nm-vpnc-dialog.glade.h:12
-msgid ""
-"Please note that the file you import is not a Cisco VPN or VPNC "
-"configuration file. Ask your adminstrator for the file."
-msgstr ""
-"Uwaga: importowany plik nie jest plikiem konfiguracyjnym Cisco VPN ani VPNC. "
-"Proszę poprosić administratora o poprawny plik."
+msgid "Please note that the file you import is not a Cisco VPN or VPNC configuration file. Ask your adminstrator for the file."
+msgstr "Uwaga: importowany plik nie jest plikiem konfiguracyjnym Cisco VPN ani VPNC. Proszę poprosić administratora o poprawny plik."
 
 #: ../properties/nm-vpnc-dialog.glade.h:13
 msgid "Required"
@@ -261,46 +243,29 @@ msgid "_Only use VPN connection for these addresses"
 msgstr "_Używaj połączeń VPN tylko dla tych adresów"
 
 #: ../src/nm-vpnc-service.c:119
-msgid ""
-"The VPN login failed because the user name and password were not accepted."
-msgstr ""
-"Logowanie VPN zakończone niepowodzeniem z powodu błędnego użytkownika i "
-"hasła."
+msgid "The VPN login failed because the user name and password were not accepted."
+msgstr "Logowanie VPN zakończone niepowodzeniem z powodu błędnego użytkownika i hasła."
 
 #: ../src/nm-vpnc-service.c:121
 msgid "The VPN login failed because the VPN program could not be started."
-msgstr ""
-"Logowanie VPN zakończone niepowodzeniem z powodu niemożności uruchomienia "
-"programu VPN."
+msgstr "Logowanie VPN zakończone niepowodzeniem z powodu niemożności uruchomienia programu VPN."
 
 #: ../src/nm-vpnc-service.c:123
-msgid ""
-"The VPN login failed because the VPN program could not connect to the VPN "
-"server."
-msgstr ""
-"Logowanie VPN zakończone niepowodzeniem z powodu braku połączenia z serwerem "
-"VPN."
+msgid "The VPN login failed because the VPN program could not connect to the VPN server."
+msgstr "Logowanie VPN zakończone niepowodzeniem z powodu braku połączenia z serwerem VPN."
 
 #: ../src/nm-vpnc-service.c:125
-msgid ""
-"The VPN login failed because the VPN configuration options were invalid."
-msgstr ""
-"Logowanie VPN zakończone niepowodzeniem z powodu błędnych opcji "
-"konfiguracyjnych."
+msgid "The VPN login failed because the VPN configuration options were invalid."
+msgstr "Logowanie VPN zakończone niepowodzeniem z powodu błędnych opcji konfiguracyjnych."
 
 #: ../src/nm-vpnc-service.c:127
-msgid ""
-"The VPN login failed because the VPN program received an invalid "
-"configuration from the VPN server."
-msgstr ""
-"Logowanie VPN zakończone niepowodzeniem z powodu otrzymania od serwera VPN "
-"błędnej konfiguracji."
+msgid "The VPN login failed because the VPN program received an invalid configuration from the VPN server."
+msgstr "Logowanie VPN zakończone niepowodzeniem z powodu otrzymania od serwera VPN błędnej konfiguracji."
 
 #~ msgid "<b>Connection Information</b>"
 #~ msgstr "<b>Informacje o połączeniu</b>"
-
 #~ msgid "<b>Connection Name</b>"
 #~ msgstr "<b>Nazwa połączenia</b>"
-
 #~ msgid "O_ptional Information"
 #~ msgstr "Informacje _dodatkowe"
+
