@@ -1,6 +1,14 @@
 2007-08-20  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-11-wireless.c
+		- (nm_device_802_11_wireless_get_ssid): don't traceback and die when
+			the SSID isn't available; this can happen when the card is pulled
+			or the module unloaded, during the post-removal deactivation
+			paths, when the ioctl returns ENODEV
+
+2007-08-20  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.c
 		- (merge_scanned_ap): only merge the AP with another if the SSID, BSSID,
 			frequency, and mode match.  Applets are now responsible for grouping
 			access points

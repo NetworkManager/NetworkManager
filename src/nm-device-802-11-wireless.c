@@ -1433,7 +1433,7 @@ nm_device_802_11_wireless_get_ssid (NMDevice80211Wireless *self)
 	wrq.u.essid.length = sizeof (ssid);
 	wrq.u.essid.flags = 0;
 	if (iw_get_ext (sk, iface, SIOCGIWESSID, &wrq) < 0) {
-		nm_error ("Couldn't get SSID: %d", errno);
+		nm_warning ("Couldn't get SSID: %d", errno);
 		goto out;
     }
 
