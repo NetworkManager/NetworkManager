@@ -1,5 +1,14 @@
 2007-08-20  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-manager.c
+		- (nm_manager_remove_device): bring device down before disconnecting
+			signal handlers, so that the 'state' signal will get broadcast when
+			the device enters the DOWN state
+		- (manager_device_state_changed): add NM_DEVICE_STATE_DOWN to the list
+			of states that cause the NMManager to recheck its state
+
+2007-08-20  Dan Williams  <dcbw@redhat.com>
+
 	* src/supplicant-manager/nm-supplicant-interface.c
 		- (interface_disconnect_done): don't try to dispose of the net proxy
 			when it may already have been disposed of

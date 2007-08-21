@@ -262,10 +262,17 @@ manager_device_state_changed (NMDevice *device, NMDeviceState state, gpointer us
 	NMManager *manager = NM_MANAGER (user_data);
 
 	/* Only these state changes can modify the manager state */
-	if (state == NM_DEVICE_STATE_ACTIVATED || state == NM_DEVICE_STATE_FAILED ||
-		state == NM_DEVICE_STATE_CANCELLED || state == NM_DEVICE_STATE_DISCONNECTED)
-
-		manager_state_changed (manager);
+	switch (state) {
+		case NM_DEVICE_STATE_ACTIVATED:
+		case NM_DEVICE_STATE_FAILED:
+		case NM_DEVICE_STATE_CANCELLED:
+		case NM_DEVICE_STATE_DOWN:
+		case NM_DEVICE_STATE_DISCONNECTED:
+			manager_state_changed (manager);
+			break;
+	    default:
+	        break;
+	}
 }
 
 void
@@ -315,9 +322,10 @@ nm_manager_remove_device (NMManager *manager, NMDevice *device)
 		if (iter->data == device) {
 			priv->devices = g_slist_delete_link (priv->devices, iter);
 
+			nm_device_bring_down (device, FALSE);
+
 			g_signal_handlers_disconnect_by_func (device, manager_device_state_changed, manager);
 
-			nm_device_bring_down (device, FALSE);
 			manager_device_removed (manager, device);
 			g_object_unref (device);
 			break;
