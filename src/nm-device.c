@@ -199,9 +199,9 @@ real_is_up (NMDevice *self)
 	if (!err)
 		return (!((ifr.ifr_flags^IFF_UP) & IFF_UP));
 
-	if (errno != ENODEV)
-	{
-		nm_warning ("nm_device_is_up() could not get flags for device %s.  errno = %d", iface, errno);
+	if (errno != ENODEV) {
+		nm_warning ("%s: could not get flags for device %s.  errno = %d", 
+		            __func__, iface, errno);
 	}
 
 	return FALSE;
