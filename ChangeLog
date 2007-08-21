@@ -1,5 +1,14 @@
 2007-08-20  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-11-wireless.c
+	  src/nm-device-802-3-ethernet.c
+		- (real_is_up): move device-specific tests before generic IFF_UP test,
+			because when the card is pulled or the module removed, the device
+			is already !IFF_UP and then device-specific cleanup (removing
+			the supplicant interface, periodic checks, etc) never gets done
+
+2007-08-20  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-manager.c
 		- (nm_manager_remove_device): bring device down before disconnecting
 			signal handlers, so that the 'state' signal will get broadcast when

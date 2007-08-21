@@ -157,10 +157,11 @@ out:
 static gboolean
 real_is_up (NMDevice *device)
 {
-	if (!NM_DEVICE_CLASS (nm_device_802_3_ethernet_parent_class)->is_up (device))
-		return FALSE;
+	/* Try device-specific tests first */
+	if (NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (device)->sup_iface)
+		return TRUE;
 
-	return !!NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (device)->sup_iface;
+	return NM_DEVICE_CLASS (nm_device_802_3_ethernet_parent_class)->is_up (device);
 }
 
 static gboolean

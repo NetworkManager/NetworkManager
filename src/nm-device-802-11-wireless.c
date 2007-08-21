@@ -564,10 +564,11 @@ nm_device_802_11_periodic_update (gpointer data)
 static gboolean
 real_is_up (NMDevice *device)
 {
-	if (!NM_DEVICE_CLASS (nm_device_802_11_wireless_parent_class)->is_up (device))
-		return FALSE;
+	/* Try device-specific tests first */
+	if (NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device)->periodic_source_id)
+		return TRUE;
 
-	return NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device)->periodic_source_id != 0;
+	return NM_DEVICE_CLASS (nm_device_802_11_wireless_parent_class)->is_up (device);
 }
 
 static gboolean
