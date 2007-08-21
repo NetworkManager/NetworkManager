@@ -518,6 +518,36 @@ nm_ap_new_from_properties (GHashTable *properties)
 	return ap;
 }
 
+#define MAC_FMT "%02x:%02x:%02x:%02x:%02x:%02x"
+#define MAC_ARG(x) ((guint8*)(x))[0],((guint8*)(x))[1],((guint8*)(x))[2],((guint8*)(x))[3],((guint8*)(x))[4],((guint8*)(x))[5]
+
+void
+nm_ap_print_self (NMAccessPoint *ap,
+                  const char * prefix)
+{
+	NMAccessPointPrivate *priv;
+
+	g_return_if_fail (NM_IS_AP (ap));
+
+	priv = NM_AP_GET_PRIVATE (ap);
+
+	nm_info ("%s'%s' (%p) stamp=%ld caps=0x%X bssid=" MAC_FMT " strength=%d "
+	         "freq=[%f/%d] rate=%d inval=%d mode=%d seen=%ld",
+	         prefix,
+	         priv->ssid ? nm_utils_escape_ssid (priv->ssid->data, priv->ssid->len) : "(none)",
+	         ap,
+	         priv->timestamp.tv_sec,
+	         priv->capabilities,
+	         MAC_ARG (priv->address.ether_addr_octet),
+	         priv->strength,
+	         (priv->freq > 20) ? priv->freq : 0,
+	         (priv->freq < 20) ? (int) priv->freq : 0,
+	         priv->rate,
+	         priv->invalid,
+	         priv->mode,
+	         priv->last_seen);
+}
+
 const char *
 nm_ap_get_dbus_path (NMAccessPoint *ap)
 {

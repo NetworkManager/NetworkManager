@@ -1,3 +1,13 @@
+2007-08-20  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerAP.c
+	* src/NetworkManagerAP.h
+		- (nm_ap_print_self): new function
+
+	* src/NetworkManagerAPList.c
+		- (nm_ap_list_print_members): call nm_ap_print_self() rather than trying
+			to do it all here
+	
 2007-08-17  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-3-ethernet.c

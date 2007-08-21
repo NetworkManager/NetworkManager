@@ -118,6 +118,8 @@ void				nm_ap_add_capabilities_from_security (NMAccessPoint *ap, NMAPSecurity *s
 void				nm_ap_add_capabilities_from_ie (NMAccessPoint *ap, const guint8 *wpa_ie, guint32 length);
 void				nm_ap_add_capabilities_for_wep (NMAccessPoint *ap);
 
+void				nm_ap_print_self (NMAccessPoint *ap, const char * prefix);
+
 /* 
  * NOTE:
  * This is not intended to return true for all APs with manufacturer defaults.  It is intended to return true for
