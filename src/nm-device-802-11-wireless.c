@@ -1902,86 +1902,84 @@ ap_is_auth_required (NMAccessPoint *ap, gboolean *has_key)
 /*
  * merge_scanned_ap
  *
- * Given an AP list and an access point, merge the access point into the list.
- * If the AP is already in the list, merge just the /attributes/ together for that
- * AP, if its not already in the list then just add it.  This doesn't merge all
- * attributes, just ones that are likely to be new from the scan.
+ * If there is already an entry that matches the BSSID and ESSID of the
+ * AP to merge, replace that entry with the scanned AP.  Otherwise, add
+ * the scanned AP to the list.
+ *
+ * TODO: possibly need to differentiate entries based on security too; i.e. if
+ * there are two scan results with the same BSSID and SSID but different
+ * security options?
  *
  */
 static void
 merge_scanned_ap (NMDevice80211Wireless *dev,
 				  NMAccessPoint *merge_ap)
 {	
-	NMAccessPointList *list;
-	NMAccessPoint *list_ap = NULL;
-	const struct ether_addr *merge_bssid;
+	NMAccessPointList * list;
+	NMAPListIter * iter;
+	NMAccessPoint * list_ap = NULL;
+	NMAccessPoint * found_ap = NULL;
 
 	list = nm_device_802_11_wireless_ap_list_get (dev);
+	g_assert (list);
 
-	merge_bssid = nm_ap_get_address (merge_ap);
-	if (   nm_ethernet_address_is_valid (merge_bssid)
-	    && (list_ap = nm_ap_list_get_ap_by_address (list, merge_bssid))) {
-		/* First, we check for an address match.  If the merge AP has a valid
-		 * BSSID and the same address as a list AP, then the merge AP and
-		 * the list AP must be the same physical AP. The list AP properties must
-		 * be from a previous scan so the time_last_seen's are not equal.  Update
-		 * encryption, authentication method, strength, and the time_last_seen. */
+	iter = nm_ap_list_iter_new (list);
+	if (iter == NULL)
+		return;
 
-		const GByteArray * devlist_ssid = nm_ap_get_ssid (list_ap);
+	while ((list_ap = nm_ap_list_iter_next (iter))) {
+		const GByteArray * list_ssid = nm_ap_get_ssid (list_ap);
+		const struct ether_addr * list_addr = nm_ap_get_address (list_ap);
+		int list_mode = nm_ap_get_mode (list_ap);
+		double list_freq = nm_ap_get_freq (list_ap);
+
 		const GByteArray * merge_ssid = nm_ap_get_ssid (merge_ap);
-		const glong	merge_ap_seen = nm_ap_get_last_seen (merge_ap);
+		const struct ether_addr * merge_addr = nm_ap_get_address (merge_ap);
+		int merge_mode = nm_ap_get_mode (merge_ap);
+		double merge_freq = nm_ap_get_freq (merge_ap);
 
-		nm_ap_set_capabilities (list_ap, nm_ap_get_capabilities (merge_ap));
-		nm_ap_set_strength (list_ap, nm_ap_get_strength (merge_ap));
-		nm_ap_set_last_seen (list_ap, merge_ap_seen);
-		nm_ap_set_broadcast (list_ap, nm_ap_get_broadcast (merge_ap));
-
-		/* If the AP is noticed in a scan, it's automatically no longer
-		 * artificial, since it clearly exists somewhere.
-		 */
-		nm_ap_set_artificial (list_ap, FALSE);
-
-		/* Did the AP's name change? */
-		if (   !devlist_ssid
+		/* SSID match */
+		if (   !list_ssid
 		    || !merge_ssid
-		    || !nm_utils_same_ssid (devlist_ssid, merge_ssid, TRUE)) {
-			network_removed (dev, list_ap);
-			nm_ap_set_ssid (list_ap, merge_ssid);
-			network_added (dev, list_ap);
+		    || !nm_utils_same_ssid (list_ssid, merge_ssid, TRUE))
+			continue;
+
+		/* BSSID match */
+		if (   nm_ethernet_address_is_valid (list_addr)
+		    && memcmp (list_addr->ether_addr_octet, 
+		               merge_addr->ether_addr_octet,
+		               ETH_ALEN) != 0) {
+			continue;
 		}
-	} else if ((list_ap = nm_ap_list_get_ap_by_ssid (list, nm_ap_get_ssid (merge_ap)))) {
-		/* Second, we check for an SSID match. In this case,
-		 * a list AP has the same non-NULL SSID as the merge AP. Update the
-		 * encryption and authentication method. Update the strength and address
-		 * except when the time_last_seen of the list AP is the same as the
-		 * time_last_seen of the merge AP and the strength of the list AP is greater
-		 * than or equal to the strength of the merge AP. If the time_last_seen's are
-		 * equal, the merge AP and the list AP come from the same scan.
-		 * Update the time_last_seen. */
 
-		const glong merge_ap_seen = nm_ap_get_last_seen (merge_ap);
-		const glong list_ap_seen = nm_ap_get_last_seen (list_ap);
-		const int	merge_ap_strength = nm_ap_get_strength (merge_ap);
+		/* mode match */
+		if (list_mode != merge_mode)
+			continue;
 
-		nm_ap_set_capabilities (list_ap, nm_ap_get_capabilities (merge_ap));
+		/* Frequency match */
+		if (list_freq != merge_freq)
+			continue;
 
-		if (!((list_ap_seen == merge_ap_seen)
-			&& (nm_ap_get_strength (list_ap) >= merge_ap_strength))) {
-			nm_ap_set_strength (list_ap, merge_ap_strength);
-			nm_ap_set_address (list_ap, nm_ap_get_address (merge_ap));
-		}
-		nm_ap_set_last_seen (list_ap, merge_ap_seen);
-		nm_ap_set_broadcast (list_ap, nm_ap_get_broadcast (merge_ap));
+		found_ap = list_ap;
+		break;
+	}
+	nm_ap_list_iter_free (iter);
+
+	if (found_ap) {
+		nm_ap_set_capabilities (found_ap, nm_ap_get_capabilities (merge_ap));
+		nm_ap_set_strength (found_ap, nm_ap_get_strength (merge_ap));
+		nm_ap_set_last_seen (found_ap, nm_ap_get_last_seen (merge_ap));
+		nm_ap_set_broadcast (found_ap, nm_ap_get_broadcast (merge_ap));
+		nm_ap_set_capabilities (found_ap, nm_ap_get_capabilities (merge_ap));
 
 		/* If the AP is noticed in a scan, it's automatically no longer
 		 * artificial, since it clearly exists somewhere.
 		 */
-		nm_ap_set_artificial (list_ap, FALSE);
+		nm_ap_set_artificial (found_ap, FALSE);
 	} else {
-		/* Add the merge AP to the list. */
+		/* New entry in the list */
 		nm_ap_list_append_ap (list, merge_ap);
 		network_added (dev, merge_ap);
-		list_ap = merge_ap;
 	}
 }
 
