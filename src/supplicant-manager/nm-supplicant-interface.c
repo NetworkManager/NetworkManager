@@ -917,8 +917,10 @@ interface_disconnect_done (gpointer data)
 	NMSupplicantInfo *info = (NMSupplicantInfo *) data;
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (info->interface);
 
-	g_object_unref (priv->net_proxy);
-	priv->net_proxy = NULL;
+	if (priv->net_proxy) {
+		g_object_unref (priv->net_proxy);
+		priv->net_proxy = NULL;
+	}
 
 	nm_supplicant_info_destroy (data);
 }
