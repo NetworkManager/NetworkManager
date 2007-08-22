@@ -1,0 +1,214 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+#
+# Jorge González <jorgegonz@svn.gnome.org>, 2007.
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager-pptp.NETWORKMANAGER_0_6_0_RELEASE.es\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2007-08-22 03:35+0100\n"
+"PO-Revision-Date: 2007-08-22 15:52+0200\n"
+"Last-Translator: Jorge González <jorgegonz@svn.gnome.org>\n"
+"Language-Team: Spanish <traductores@es.gnome.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.4\n"
+"Plural-Forms:  nplurals=2; plural=(n != 1);\n"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:147
+msgid "_Secondary Password:"
+msgstr "Contraseña _secundaria:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:268
+msgid "_Username:"
+msgstr "_Usuario:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:270
+msgid "_Domain:"
+msgstr "_Dominio:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:272
+msgid "_Password:"
+msgstr "_Contraseña:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:355
+msgid "Connect _anonymously"
+msgstr "Conectar _anónimamente"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:360
+msgid "Connect as _user:"
+msgstr "Conectar como _usuario:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:466
+msgid "_Remember password for this session"
+msgstr "_Recordar la contraseña para esta sesión"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:468
+msgid "_Save password in keyring"
+msgstr "_Guardar la contraseña en el depósito de claves"
+
+#: ../auth-dialog/main.c:161
+#, c-format
+msgid "You need to authenticate to access the Virtual Private Network '%s'."
+msgstr "Debe autenticarse para acceder a la Red Privada Virtual «%s». "
+
+#: ../auth-dialog/main.c:162
+msgid "Authenticate PPTP VPN"
+msgstr "Autenticación PPTP VPN"
+
+#: ../nm-pptp.desktop.in.h:1
+msgid "Add, Remove, and Edit VPN Connections"
+msgstr "Añadir, quitar y editar conexiones VPN"
+
+#: ../nm-pptp.desktop.in.h:2
+msgid "VPN Connection Manager (PPTP)"
+msgstr "Gestor de conexiones VPN (PPTP)"
+
+#: ../properties/nm-pptp.c:79
+msgid "PPTP Client"
+msgstr "Cliente PPTP"
+
+#: ../properties/nm-pptp.c:387
+msgid "The following PPTP connection will be created:"
+msgstr "Se creará la siguiente conexión PPTP:"
+
+#: ../properties/nm-pptp.c:389
+#, c-format
+msgid "Name:  %s"
+msgstr "Nombre: %s"
+
+#: ../properties/nm-pptp.c:392
+#, c-format
+msgid "Remote:  %s"
+msgstr "Remoto: %s"
+
+#: ../properties/nm-pptp.c:395
+#, c-format
+msgid "Username:  %s"
+msgstr "Usuario: %s"
+
+#: ../properties/nm-pptp.c:399
+#, c-format
+msgid "Routes:  %s"
+msgstr "Rutas: %s"
+
+#: ../properties/nm-pptp.c:403
+#, c-format
+msgid "Use MPPC Compression: %s"
+msgstr "Usar compresión MPPC: %s"
+
+#: ../properties/nm-pptp.c:403 ../properties/nm-pptp.c:405
+msgid "Yes"
+msgstr "Sí"
+
+#: ../properties/nm-pptp.c:403 ../properties/nm-pptp.c:405
+msgid "No"
+msgstr "No"
+
+#: ../properties/nm-pptp.c:405
+#, c-format
+msgid "Use MPPE Encryption: %s"
+msgstr "Usar cifrado MPPE: %s"
+
+#: ../properties/nm-pptp.c:408
+msgid "The connection details can be changed using the \"Edit\" button."
+msgstr "Se pueden cambiar los detalles de la conexión usando el botón «Editar»."
+
+#: ../properties/nm-pptp.c:484
+msgid "Cannot import settings"
+msgstr "No se pueden importar los ajustes"
+
+#: ../properties/nm-pptp.c:486
+#, c-format
+msgid "The VPN settings file '%s' does not contain valid data."
+msgstr "El archivo de ajustes VPN «%s» no contiene datos válidos."
+
+#: ../properties/nm-pptp.c:504
+msgid "Select file to import"
+msgstr "Seleccione el archivo a importar"
+
+#. printf ("in impl_export\n");
+#: ../properties/nm-pptp.c:626
+msgid "Save as..."
+msgstr "Guardar como…"
+
+#: ../properties/nm-pptp.c:656
+#, c-format
+msgid "A file named \"%s\" already exists."
+msgstr "Ya existe un archivo llamado «%s»."
+
+#: ../properties/nm-pptp.c:659
+msgid "Do you want to replace it with the one you are saving?"
+msgstr "¿Desea reemplazarla con la que está guardando?"
+
+#: ../properties/nm-pptp-dialog.glade.h:1
+msgid "<b>Connection Name</b>"
+msgstr "<b>Nombre de la conexión</b>"
+
+#: ../properties/nm-pptp-dialog.glade.h:2
+msgid "<b>Required Information</b>"
+msgstr "<b>Información requerida</b>"
+
+#: ../properties/nm-pptp-dialog.glade.h:3
+msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+msgstr "<i>ejemplo: 172.16.0.0/16 10.11.12.0/24</i>"
+
+#: ../properties/nm-pptp-dialog.glade.h:4
+msgid "MS CHAP-v1/v2"
+msgstr "MS CHAP-v1/v2"
+
+#: ../properties/nm-pptp-dialog.glade.h:5
+msgid ""
+"Please enter the information provided by your system administrator below. Do "
+"not enter your password here as you will be prompted when connecting."
+msgstr ""
+"Introduzca debajo la información proporcionada por el administrador de su sistema. No "
+"introduzca aquí su contraseña ya que se le preguntará al conectar."
+
+#: ../properties/nm-pptp-dialog.glade.h:6
+msgid "Require MPPE encryption"
+msgstr "Requerir cifrado MPPE"
+
+#: ../properties/nm-pptp-dialog.glade.h:7
+msgid "Use MPPC compression"
+msgstr "Usar compresión MPPC"
+
+#: ../properties/nm-pptp-dialog.glade.h:8
+msgid "Username:"
+msgstr "Usuario:"
+
+#: ../properties/nm-pptp-dialog.glade.h:9
+msgid ""
+"Your password must be defined \n"
+"in /etc/ppp/chap-secrets"
+msgstr ""
+"Su contraseña debe estar definida \n"
+"en /etc/ppp/chap-secrets"
+
+#: ../properties/nm-pptp-dialog.glade.h:11
+msgid "_Gateway:"
+msgstr "Puerta de _enlace:"
+
+#: ../properties/nm-pptp-dialog.glade.h:12
+msgid "_Import Saved Configuration..."
+msgstr "_Importar configuración guardada..."
+
+#: ../properties/nm-pptp-dialog.glade.h:13
+msgid ""
+"_Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
+msgstr ""
+"_Nombre a usar para identificar la conexión con la red privada, ej: «Campus VPN» "
+"o «Red de la empresa»"
+
+#: ../properties/nm-pptp-dialog.glade.h:14
+msgid "_Only use VPN connection for these addresses"
+msgstr "Sól_o usar conexiones VPN para estas direcciones"
+
+#. No sophisticated error message for now
+#: ../src/nm-pptp-service.c:126
+msgid "VPN Connection failed"
+msgstr "Falló la conexión VPN"
+
