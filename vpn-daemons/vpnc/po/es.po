@@ -12,8 +12,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-vpnc.NETWORKMANAGER_0_6_0_RELEASE.es\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-03-03 03:27+0000\n"
-"PO-Revision-Date: 2007-06-07 22:44+0200\n"
+"POT-Creation-Date: 2007-06-18 03:38+0100\n"
+"PO-Revision-Date: 2007-08-22 15:12+0200\n"
 "Last-Translator: Jorge González <jorgegonz@svn.gnome.org>\n"
 "Language-Team: Spanish <traductores@es.gnome.org>\n"
 "MIME-Version: 1.0\n"
@@ -134,7 +134,7 @@ msgstr "Los detalles de la conexión se pueden cambiar usando el botón «Editar
 
 #: ../properties/nm-vpnc.c:542
 msgid "TCP tunneling not supported"
-msgstr ""
+msgstr "No se soporta el túnel por TCP"
 
 #: ../properties/nm-vpnc.c:544
 #, c-format
@@ -145,6 +145,11 @@ msgid ""
 "The connection can still be created, with TCP tunneling disabled, however it "
 "may not work as expected."
 msgstr ""
+"El archivo de ajustes para VPN «%s» especifica que el tráfico VPN se debería usar "
+"un túnel a través de TCP lo que actualmente no está soportado en el software VPNC.\n"
+"\n"
+"Aún se puede crear la conexión con el túnel TCP deshabilitado, no obstante puede "
+"que no funcione como se esperaba."
 
 #: ../properties/nm-vpnc.c:565
 msgid "Cannot import settings"
@@ -222,6 +227,8 @@ msgid ""
 "Name used to identify the connection to the private network, e.g. \"Campus "
 "VPN\" or \"Corporate Network\""
 msgstr ""
+"Nombre a usar para identificar la conexión con la red privada, ej: «Campus VPN» "
+"o «Red de la empresa»"
 
 #: ../properties/nm-vpnc-dialog.glade.h:8
 msgid "Optional"
@@ -238,12 +245,16 @@ msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
 msgstr ""
+"Introduzca debajo la información proporcionada por el administrador de su sistema. No "
+"introduzca aquí su contraseña ya que se le preguntará al conectar."
 
 #: ../properties/nm-vpnc-dialog.glade.h:11
 msgid ""
 "Please note that the file you import is not a Cisco VPN or VPNC "
 "configuration file. Ask your adminstrator for the file."
 msgstr ""
+"Note que el archivo que está importando no es un archivo de configuración "
+"Cisco VPN o VPNC. Pregunte a su administrador acerca del archivo."
 
 #: ../properties/nm-vpnc-dialog.glade.h:12
 msgid "Use _domain for authentication"
@@ -263,24 +274,29 @@ msgstr "Usar _sólo usar conexiones VPN para estas direcciones"
 
 #: ../src/nm-vpnc-service.c:118
 msgid "The VPN login failed because the user name and password were not accepted."
-msgstr ""
+msgstr "El registro en la red VPN falló porque no se aceptaron el nombre de usuario y la contraseña."
 
 #: ../src/nm-vpnc-service.c:120
 msgid "The VPN login failed because the VPN program could not be started."
-msgstr ""
+msgstr "El registro en la red VPN falló porque el programa VPN no pudo iniciarse."
 
 #: ../src/nm-vpnc-service.c:122
 msgid ""
 "The VPN login failed because the VPN program could not connect to the VPN "
 "server."
 msgstr ""
+"El registro en la red VPN falló porque el programa VPN no pudo conectarse al servidor "
+"VPN."
 
 #: ../src/nm-vpnc-service.c:124
 msgid "The VPN login failed because the VPN configuration options were invalid."
-msgstr ""
+msgstr "El registro en la red VPN falló porque las opciones de configuración VPN no son válidas."
 
 #: ../src/nm-vpnc-service.c:126
 msgid ""
 "The VPN login failed because the VPN program received an invalid "
 "configuration from the VPN server."
 msgstr ""
+"El registro en la red VPN falló porque el programa VPN recibió una configuración "
+"no válida del servidor VPN."
+
