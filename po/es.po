@@ -2,735 +2,30 @@
 # Traducción de NetworkManager al español.
 # Copyright (C) Spanish translation for NetworkManager
 # This file is distributed under the same license as the NetworkManager package.
+#
 # Antonio Ognio <antonio@linux.org.pe>, 2004.
 # Francisco Javier F. Serrador <serrador@cvs.gnome.org>, 2004, 2005.
 # Lucas Vieites Fariña <lucas@asixinformatica.com>, 2005, 2006.
-#
+# Jorge González <jorgegonz@svn.gnome.org>, 2007.
 msgid ""
 msgstr ""
-"Project-Id-Version: NetworkManager.HEAD\n"
+"Project-Id-Version: NetworkManager.NETWORKMANAGER_0_6_0_RELEASE.es\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-05-29 18:33+0200\n"
-"PO-Revision-Date: 2006-05-16 13:58\n"
-"Last-Translator: Novell Language <language@novell.com>\n"
-"Language-Team: Novell Language <language@novell.com>\n"
+"POT-Creation-Date: 2007-03-03 03:27+0000\n"
+"PO-Revision-Date: 2007-08-22 14:57+0200\n"
+"Last-Translator: Jorge González <jorgegonz@svn.gnome.org>\n"
+"Language-Team: Spanish <traductores@es.gnome.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: KBabel 1.11\n"
+"X-Generator: KBabel 1.11.4\n"
 "Plural-Forms:  nplurals=2; plural=(n != 1);\n"
 
-#: ../gnome/applet/applet-compat.c:171 ../gnome/applet/applet-dbus-info.c:919
-#, c-format
-msgid "Passphrase for wireless network %s"
-msgstr "Frase de paso para la red inalámbrica %s"
-
-#: ../gnome/applet/applet-dbus.c:265
-#, c-format
-msgid "Connection to the wireless network '%s' failed."
-msgstr "La conexión a la red inalámbrica «%s» ha fallado."
-
-#: ../gnome/applet/applet-dbus.c:270
-msgid "Connection to the wired network failed."
-msgstr "La conexión a la red cableada ha fallado."
-
-#: ../gnome/applet/applet.c:184
-msgid "Error displaying connection information:"
-msgstr "Ha ocurrido un error al mostrar información de conexión:"
-
-#: ../gnome/applet/applet.c:202
-msgid "Could not find some required resources (the glade file)!"
-msgstr ""
-"No se han podido encontrar algunos recursos necesarios (el archivo glade)."
-
-#: ../gnome/applet/applet.c:213
-msgid "No active connections!"
-msgstr "No hay conexiones activas."
-
-#: ../gnome/applet/applet.c:234
-#, c-format
-msgid "Wired Ethernet (%s)"
-msgstr "Red Ethernet cableada (%s)"
-
-#: ../gnome/applet/applet.c:236
-#, c-format
-msgid "Wireless Ethernet (%s)"
-msgstr "Red Ethernet inalámbrica (%s)"
-
-#: ../gnome/applet/applet.c:337 ../gnome/applet/applet.c:362
-msgid "NetworkManager Applet"
-msgstr "Miniaplicación NetworkManager"
-
-#: ../gnome/applet/applet.c:339 ../gnome/applet/applet.c:364
-msgid "Copyright © 2004-2005 Red Hat, Inc."
-msgstr "Copyright © 2004-2005 Red Hat, Inc."
-
-#: ../gnome/applet/applet.c:340 ../gnome/applet/applet.c:365
-msgid ""
-"Notification area applet for managing your network devices and connections."
-msgstr ""
-"Miniaplicación del área de notificación para administrar sus dispositivos de "
-"red y conexiones."
-
-#: ../gnome/applet/applet.c:343 ../gnome/applet/applet.c:370
-msgid "translator-credits"
-msgstr "Lucas Vieites <lucas@asixinformatica.com>, 2005"
-
-#: ../gnome/applet/applet.c:426
-msgid "VPN Login Failure"
-msgstr "Error de acceso de VPN"
-
-#: ../gnome/applet/applet.c:427
-#, c-format
-msgid "Could not start the VPN connection '%s' due to a login failure."
-msgstr "No se pudo iniciar la conexión VPN «%s» debido a un error de acceso."
-
-#: ../gnome/applet/applet.c:431
-msgid "VPN Start Failure"
-msgstr "Error de inicio de VPN"
-
-#: ../gnome/applet/applet.c:432
-#, c-format
-msgid ""
-"Could not start the VPN connection '%s' due to a failure launching the VPN "
-"program."
-msgstr ""
-"No se pudo iniciar la conexión VPN «%s» debido a un error al iniciar el "
-"programa VPN."
-
-#: ../gnome/applet/applet.c:436 ../gnome/applet/applet.c:446
-msgid "VPN Connect Failure"
-msgstr "Error de conexión VPN"
-
-#: ../gnome/applet/applet.c:437
-#, c-format
-msgid "Could not start the VPN connection '%s' due to a connection error."
-msgstr ""
-"No se puede iniciar la conexión VPN «%s» debido a un error de conexión."
-
-#: ../gnome/applet/applet.c:441
-msgid "VPN Configuration Error"
-msgstr "Error de configuración VPN"
-
-#: ../gnome/applet/applet.c:442
-#, c-format
-msgid "The VPN connection '%s' was not correctly configured."
-msgstr "La conexión VPN «%s» no estaba configurada correctamente."
-
-#: ../gnome/applet/applet.c:447
-#, c-format
-msgid ""
-"Could not start the VPN connection '%s' because the VPN server did not "
-"return an adequate network configuration."
-msgstr ""
-"No se pudo iniciar la conexión VPN «%s» porque el servidor VPN no ha "
-"devuelto una configuración de red adecuada."
-
-#: ../gnome/applet/applet.c:517
-msgid "VPN Login Message"
-msgstr "Mensaje de acceso VPN"
-
-#: ../gnome/applet/applet.c:741 ../gnome/applet/applet.c:2508
-#: ../gnome/applet/other-network-dialog.c:453
-#: ../gnome/applet/passphrase-dialog.c:228
-msgid ""
-"The NetworkManager Applet could not find some required resources (the glade "
-"file was not found)."
-msgstr ""
-"La miniaplicación NetworkManager no pudo encontrar algunos archivos de "
-"recursos (No se encontró el archivo de glade)."
-
-#: ../gnome/applet/applet.c:753
-#, c-format
-msgid "The network device \"%s (%s)\" does not support wireless scanning."
-msgstr ""
-"El dispositivo de red «%s (%s)» no puede inspeccionar redes inalámbricas."
-
-#: ../gnome/applet/applet.c:761
-#, c-format
-msgid "The network device \"%s (%s)\" does not support link detection."
-msgstr ""
-"El dispositivo de red \"%s (%s)\" no puede realizar detección de enlaces."
-
-#: ../gnome/applet/applet.c:908
-#, c-format
-msgid "Preparing device %s for the wired network..."
-msgstr "Preparando el dispositivo %s para la red cableada..."
-
-#: ../gnome/applet/applet.c:910
-#, c-format
-msgid "Preparing device %s for the wireless network '%s'..."
-msgstr "Preparando el dispositivo %s para la red inalámbrica «%s»..."
-
-#: ../gnome/applet/applet.c:918
-#, c-format
-msgid "Configuring device %s for the wired network..."
-msgstr "Configurando el dispositivo %s para la red cableada..."
-
-#: ../gnome/applet/applet.c:920
-#, c-format
-msgid "Attempting to join the wireless network '%s'..."
-msgstr "Intentando conectar con la red inalámbrica «%s»..."
-
-#: ../gnome/applet/applet.c:928
-#, c-format
-msgid "Waiting for Network Key for the wireless network '%s'..."
-msgstr "Esperando la contraseña de red para la red inalámbrica «%s»..."
-
-#: ../gnome/applet/applet.c:936 ../gnome/applet/applet.c:946
-msgid "Requesting a network address from the wired network..."
-msgstr "Solicitando una dirección de red a la red cableada..."
-
-#: ../gnome/applet/applet.c:938 ../gnome/applet/applet.c:948
-#, c-format
-msgid "Requesting a network address from the wireless network '%s'..."
-msgstr "Solicitando una dirección de red a la red inalámbrica «%s»..."
-
-#: ../gnome/applet/applet.c:956
-msgid "Finishing connection to the wired network..."
-msgstr "Deteniendo la conexión a la red cableada..."
-
-#: ../gnome/applet/applet.c:958
-#, c-format
-msgid "Finishing connection to the wireless network '%s'..."
-msgstr "Deteniendo la conexión a la red inalámbrica «%s»..."
-
-#: ../gnome/applet/applet.c:1075
-msgid "NetworkManager is not running"
-msgstr "NetworkManager no se está ejecutando"
-
-#: ../gnome/applet/applet.c:1083 ../gnome/applet/applet.c:1828
-msgid "Networking disabled"
-msgstr "Red desactivada"
-
-#: ../gnome/applet/applet.c:1088
-msgid "No network connection"
-msgstr "Sin conexión de red"
-
-#: ../gnome/applet/applet.c:1093
-msgid "Wired network connection"
-msgstr "Conexión de red cableada"
-
-#: ../gnome/applet/applet.c:1097
-msgid "Connected to an Ad-Hoc wireless network"
-msgstr "Conectado con una red inalámbrica Ad-Hoc"
-
-#: ../gnome/applet/applet.c:1099
-#, c-format
-msgid "Wireless network connection to '%s' (%d%%)"
-msgstr "Conexión de red inalámbrica a «%s» (%d%%)"
-
-#: ../gnome/applet/applet.c:1120
-#, c-format
-msgid "VPN connection to '%s'"
-msgstr "Conexión VPN a «%s»"
-
-#: ../gnome/applet/applet.c:1128
-#, c-format
-msgid "VPN connecting to '%s'"
-msgstr "VPN conectando a «%s»"
-
-#: ../gnome/applet/applet.c:1541
-msgid "_Connect to Other Wireless Network..."
-msgstr "_Conectar a otra red inalámbrica..."
-
-#: ../gnome/applet/applet.c:1562
-msgid "Create _New Wireless Network..."
-msgstr "Crear una red inalámbrica _nueva..."
-
-#: ../gnome/applet/applet.c:1685
-msgid "_VPN Connections"
-msgstr "Conexiones _VPN"
-
-#: ../gnome/applet/applet.c:1730
-msgid "_Configure VPN..."
-msgstr "_Configurar VPN..."
-
-#: ../gnome/applet/applet.c:1734
-msgid "_Disconnect VPN..."
-msgstr "_Desconectar VPN..."
-
-#: ../gnome/applet/applet.c:1756
-msgid "_Dial Up Connections"
-msgstr "Conexiones de _marcado"
-
-#. FIXME: We should save and then check the state of the devices and show Connect _or_ Disconnect for each item
-#: ../gnome/applet/applet.c:1767
-#, c-format
-msgid "Connect to %s..."
-msgstr "Conectar a %s..."
-
-#: ../gnome/applet/applet.c:1773
-#, c-format
-msgid "Disconnect from %s..."
-msgstr "Desconectar de %s..."
-
-#: ../gnome/applet/applet.c:1822
-msgid "No network devices have been found"
-msgstr "No se ha encontrado ningún dispositivo de red"
-
-#: ../gnome/applet/applet.c:2014
-msgid "NetworkManager is not running..."
-msgstr "NetworkManager no se está ejecutando..."
-
-#. 'Enable Networking' item
-#: ../gnome/applet/applet.c:2170
-msgid "Enable _Networking"
-msgstr "Activar _red"
-
-#. 'Enable Wireless' item
-#: ../gnome/applet/applet.c:2176
-msgid "Enable _Wireless"
-msgstr "Activar _inalámbrico"
-
-#. 'Connection Information' item
-#: ../gnome/applet/applet.c:2182
-msgid "Connection _Information"
-msgstr "_Información de la conexión"
-
-#. Help item
-#: ../gnome/applet/applet.c:2193
-msgid "_Help"
-msgstr "A_yuda"
-
-#. About item
-#: ../gnome/applet/applet.c:2202
-msgid "_About"
-msgstr "A_cerca de"
-
-#: ../gnome/applet/applet.c:2667
-msgid ""
-"The NetworkManager applet could not find some required resources.  It cannot "
-"continue.\n"
-msgstr ""
-"La miniaplicación NetworkManager no pudo encontrar algunos recursos "
-"necesarios. No se puede continuar.\n"
-
-#: ../gnome/applet/wireless-security-option.c:157
-msgid "Open System"
-msgstr "Sistema abierto"
-
-#: ../gnome/applet/wireless-security-option.c:160
-msgid "Shared Key"
-msgstr "Clave compartida"
-
-#: ../gnome/applet/wireless-security-option.c:208
-msgid "Automatic (Default)"
-msgstr "Automático (Predeterminado)"
-
-#: ../gnome/applet/wireless-security-option.c:215
-msgid "AES-CCMP"
-msgstr "AES-CCMP"
-
-#: ../gnome/applet/wireless-security-option.c:223
-msgid "TKIP"
-msgstr "TKIP"
-
-#: ../gnome/applet/wireless-security-option.c:231
-msgid "Dynamic WEP"
-msgstr "WEP dinámico"
-
-#: ../gnome/applet/wso-none.c:53
-msgid "None"
-msgstr "Ninguno"
-
-#: ../gnome/applet/wso-wep-ascii.c:138
-msgid "WEP 64/128-bit ASCII"
-msgstr "ASCII WEP de 64/128 bits"
-
-#: ../gnome/applet/wso-wep-hex.c:135
-msgid "WEP 64/128-bit Hex"
-msgstr "Hexadecimal WEP de 64/128 bits"
-
-#: ../gnome/applet/wso-wep-passphrase.c:135
-msgid "WEP 128-bit Passphrase"
-msgstr "Frase de contraseña WEP de 128 bits"
-
-#: ../gnome/applet/wso-wpa-eap.c:237
-msgid "PEAP"
-msgstr "PEAP"
-
-#: ../gnome/applet/wso-wpa-eap.c:238
-msgid "TLS"
-msgstr "TLS"
-
-#: ../gnome/applet/wso-wpa-eap.c:239
-msgid "TTLS"
-msgstr "TTLS"
-
-#: ../gnome/applet/wso-wpa-eap.c:247 ../src/nm-ap-security-wpa-eap.c:92
-#: ../src/nm-ap-security-wpa-eap.c:116
-msgid "WPA2 Enterprise"
-msgstr "WPA2 empresarial"
-
-#: ../gnome/applet/wso-wpa-eap.c:249 ../src/nm-ap-security-wpa-eap.c:94
-#: ../src/nm-ap-security-wpa-eap.c:121
-msgid "WPA Enterprise"
-msgstr "WPA empresarial"
-
-#: ../gnome/applet/wso-wpa-psk.c:178
-msgid "WPA2 Personal"
-msgstr "WPA2 Personal"
-
-#: ../gnome/applet/wso-wpa-psk.c:180
-msgid "WPA Personal"
-msgstr "WPA Personal"
-
-#: ../gnome/applet/eggtrayicon.c:134
-msgid "Orientation"
-msgstr "Orientación"
-
-#: ../gnome/applet/eggtrayicon.c:135
-msgid "The orientation of the tray."
-msgstr "La orientación del área de notificación."
-
-#: ../gnome/applet/menu-items.c:88
-#, c-format
-msgid "Wired Network (%s)"
-msgstr "Red cableada (%s)"
-
-#: ../gnome/applet/menu-items.c:91
-msgid "_Wired Network"
-msgstr "Red _cableada"
-
-#: ../gnome/applet/menu-items.c:162
-#, c-format
-msgid "Wireless Network (%s)"
-msgid_plural "Wireless Networks (%s)"
-msgstr[0] "Red inalámbrica (%s)"
-msgstr[1] "Redes inalámbricas (%s)"
-
-#: ../gnome/applet/menu-items.c:164
-msgid "Wireless Network"
-msgid_plural "Wireless Networks"
-msgstr[0] "Red inalámbrica"
-msgstr[1] "Redes inalámbricas"
-
-#: ../gnome/applet/menu-items.c:343
-msgid " (invalid Unicode)"
-msgstr " (Unicode inválido)"
-
-#: ../gnome/applet/other-network-dialog.c:352
-#, c-format
-msgid ""
-"By default, the wireless network's name is set to your computer's name, %s, "
-"with no encryption enabled"
-msgstr ""
-"Por omisión, el nombre de la red inalámbrica se establece al nombre de su "
-"equipo, %s, sin ninguna encriptación activada"
-
-#: ../gnome/applet/other-network-dialog.c:358
-msgid "Create new wireless network"
-msgstr "Crea una red inalámbricas nueva"
-
-#: ../gnome/applet/other-network-dialog.c:359
-msgid ""
-"Enter the name and security settings of the wireless network you wish to "
-"create."
-msgstr ""
-"Introduzca el nombre y las opciones de seguridad de la red inalámbrica que "
-"quiere crear."
-
-#: ../gnome/applet/other-network-dialog.c:363
-msgid "Create New Wireless Network"
-msgstr "Crear una red inalámbrica nueva"
-
-#: ../gnome/applet/other-network-dialog.c:368
-msgid "Existing wireless network"
-msgstr "Red inalámbrica existente"
-
-#: ../gnome/applet/other-network-dialog.c:369
-msgid "Enter the name of the wireless network to which you wish to connect."
-msgstr ""
-"Introduzca el nombre de la red inalámbrica con la que quiere conectarse."
-
-#: ../gnome/applet/other-network-dialog.c:371
-msgid "Connect to Other Wireless Network"
-msgstr "Conectar a otra red inalámbrica"
-
-#: ../gnome/applet/passphrase-dialog.c:215
-msgid "Error connecting to wireless network"
-msgstr "Error al conectar a la red inalámbrica"
-
-#: ../gnome/applet/passphrase-dialog.c:216
-msgid ""
-"The requested wireless network requires security capabilities unsupported by "
-"your hardware."
-msgstr ""
-"La red inalámbrica solicitada requiere capacidades de seguridad que su "
-"hardware no proporciona."
-
-#: ../gnome/applet/vpn-password-dialog.c:151
-#: ../gnome/applet/vpn-password-dialog.c:188
-#, c-format
-msgid "Cannot start VPN connection '%s'"
-msgstr "No se puede iniciar la conexión VPN «%s»"
-
-#: ../gnome/applet/vpn-password-dialog.c:154
-#, c-format
-msgid ""
-"Could not find the authentication dialog for VPN connection type '%s'. "
-"Contact your system administrator."
-msgstr ""
-"No se ha podido encontrar el diálogo de autenticación para el tipo de "
-"conexión VPN «%s». Póngase en contacto con su administrador de sistemas."
-
-#: ../gnome/applet/vpn-password-dialog.c:191
-#, c-format
-msgid ""
-"There was a problem launching the authentication dialog for VPN connection "
-"type '%s'. Contact your system administrator."
-msgstr ""
-"Ha habido un problema al iniciar el diálogo de autenticación para el tipo de "
-"conexión VPN «%s». Póngase en contacto con su administrador de sistemas."
-
-#: ../gnome/applet/applet.glade.h:1
-msgid " "
-msgstr " "
-
-#: ../gnome/applet/applet.glade.h:2
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">Información de la conexión activa</"
-"span>"
-
-#: ../gnome/applet/applet.glade.h:4
-#, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
-"Network</span>\n"
-"\n"
-"A passphrase or encryption key is required to access the wireless network '%"
-"s'."
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">Contraseña requerida por red "
-"inalámbrica</span>\n"
-"\n"
-"Se requiere una frase de paso o clave de encriptación para acceder a la red "
-"inalámbrica «%s»."
-
-#: ../gnome/applet/applet.glade.h:8
-#, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
-"\n"
-"%s  It will not be completely functional."
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">Funcionalidad de red reducida</span>\n"
-"\n"
-"%s No será completamente funcional."
-
-#: ../gnome/applet/applet.glade.h:12
-#, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
-"span>\n"
-"\n"
-"You have chosen to log in to the wireless network '%s'.  If you are sure "
-"that this wireless network is secure, click the checkbox below and "
-"NetworkManager will not require confirmation on subsequent log ins."
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">Confirmación de entrada a la red "
-"inalámbrica</span>\n"
-"\n"
-"Ha escogido entrar en la red inalámbrica «%s».  Si está seguro de que esta "
-"red es segura, marque la casilla de abajo y NetworkManager no le volverá a "
-"solicitar confirmación en los siguientes accesos."
-
-#: ../gnome/applet/applet.glade.h:15
-msgid "Anonymous Identity:"
-msgstr "Identidad anónima:"
-
-#: ../gnome/applet/applet.glade.h:16
-msgid "Authentication:"
-msgstr "Autenticación:"
-
-#: ../gnome/applet/applet.glade.h:17
-msgid "Broadcast Address:"
-msgstr "Dirección de difusión:"
-
-#: ../gnome/applet/applet.glade.h:18
-msgid "CA Certificate File:"
-msgstr "Archivo de certificado de CA:"
-
-#: ../gnome/applet/applet.glade.h:19
-msgid "C_onnect"
-msgstr "_Conectar"
-
-#: ../gnome/applet/applet.glade.h:20
-msgid "Client Certificate File:"
-msgstr "Archivo de certificado de cliente:"
-
-#: ../gnome/applet/applet.glade.h:21
-msgid "Connection Information"
-msgstr "Información de la conexión"
-
-#: ../gnome/applet/applet.glade.h:22
-msgid "Default Route:"
-msgstr "Ruta predeterminada:"
-
-#: ../gnome/applet/applet.glade.h:23
-msgid "Destination Address:"
-msgstr "Dirección de destino:"
-
-#: ../gnome/applet/applet.glade.h:24
-msgid "Driver:"
-msgstr "Controlador:"
-
-#: ../gnome/applet/applet.glade.h:25
-msgid "EAP Method:"
-msgstr "Método EAP:"
-
-#: ../gnome/applet/applet.glade.h:26
-msgid "Hardware Address:"
-msgstr "Dirección hardware:"
-
-#: ../gnome/applet/applet.glade.h:27
-msgid "IP Address:"
-msgstr "Dirección IP:"
-
-#: ../gnome/applet/applet.glade.h:28
-msgid "Identity:"
-msgstr "Identidad:"
-
-#: ../gnome/applet/applet.glade.h:29
-msgid "Interface:"
-msgstr "Interfaz:"
-
-#: ../gnome/applet/applet.glade.h:30
-msgid "Key Type:"
-msgstr "Tipo de clave:"
-
-#: ../gnome/applet/applet.glade.h:31
-msgid "Key:"
-msgstr "Clave:"
-
-#: ../gnome/applet/applet.glade.h:32
-msgid ""
-"None\n"
-"WEP 128-bit Passphrase\n"
-"WEP 64/128-bit Hex\n"
-"WEP 64/128-bit ASCII\n"
-msgstr ""
-"Ninguna\n"
-"Frase de contraseña WEP de 128 bits\n"
-"Hexadecimal WEP de 64/128 bits\n"
-"ASCII WEP de 64/128 bits\n"
-
-#: ../gnome/applet/applet.glade.h:37
-msgid ""
-"Open System\n"
-"Shared Key"
-msgstr ""
-"Sistema abierto\n"
-"Clave compartida"
-
-#: ../gnome/applet/applet.glade.h:39
-msgid "Other Wireless Network..."
-msgstr "Otras redes inalámbricas..."
-
-#: ../gnome/applet/applet.glade.h:40
-msgid "Passphrase:"
-msgstr "Contraseña:"
-
-#: ../gnome/applet/applet.glade.h:41
-msgid "Password:"
-msgstr "Contraseña:"
-
-#: ../gnome/applet/applet.glade.h:42
-msgid "Primary DNS:"
-msgstr "DNS primario:"
-
-#: ../gnome/applet/applet.glade.h:43
-msgid "Private Key File:"
-msgstr "Archivo de clave privada:"
-
-#: ../gnome/applet/applet.glade.h:44
-msgid "Private Key Password:"
-msgstr "Contraseña de clave privada:"
-
-#: ../gnome/applet/applet.glade.h:45
-msgid "Secondary DNS:"
-msgstr "DNS secundario:"
-
-#: ../gnome/applet/applet.glade.h:46
-msgid "Select the CA Certificate File"
-msgstr "Seleccione el archivo de certificado de CA"
-
-#: ../gnome/applet/applet.glade.h:47
-msgid "Select the Client Certificate File"
-msgstr "Seleccione el archivo de certificado de cliente"
-
-#: ../gnome/applet/applet.glade.h:48
-msgid "Select the Private Key File"
-msgstr "Seleccione el archivo de clave privada"
-
-#: ../gnome/applet/applet.glade.h:49
-msgid "Show key"
-msgstr "Mostrar clave"
-
-#: ../gnome/applet/applet.glade.h:50
-msgid "Show passphrase"
-msgstr "Mostrar frase de contraseña"
-
-#: ../gnome/applet/applet.glade.h:51
-msgid "Show password"
-msgstr "Mostrar contraseña"
-
-#: ../gnome/applet/applet.glade.h:52
-msgid "Show passwords"
-msgstr "Mostrar contraseñas"
-
-#: ../gnome/applet/applet.glade.h:53
-msgid "Speed:"
-msgstr "Velocidad:"
-
-#: ../gnome/applet/applet.glade.h:54
-msgid "Subnet Mask:"
-msgstr "Máscara de subred:"
-
-#: ../gnome/applet/applet.glade.h:55
-msgid "Type:"
-msgstr "Tipo:"
-
-#: ../gnome/applet/applet.glade.h:56
-msgid "User Name:"
-msgstr "Nombre de usuario:"
-
-#: ../gnome/applet/applet.glade.h:57
-msgid "Wireless Network Key Required"
-msgstr "Clave requerida para la red inalámbrica"
-
-#: ../gnome/applet/applet.glade.h:58
-msgid "Wireless _adapter:"
-msgstr "_Adaptador inalámbrico:"
-
-#: ../gnome/applet/applet.glade.h:59
-msgid "_Always Trust this Wireless Network"
-msgstr "_Siempre confiar en esta red inalámbrica"
-
-#: ../gnome/applet/applet.glade.h:60
-msgid "_Don't remind me again"
-msgstr "_No volver a recordar"
-
-#: ../gnome/applet/applet.glade.h:61
-msgid "_Login to Network"
-msgstr "_Entrar en la red"
-
-#: ../gnome/applet/applet.glade.h:62
-msgid "_Network Name:"
-msgstr "Nombre de _red:"
-
-#: ../gnome/applet/applet.glade.h:63
-msgid "_Wireless Security:"
-msgstr "_Seguridad inalámbrica:"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:383
+#: ../gnome/vpn-properties/nm-vpn-properties.c:405
 msgid "Cannot add VPN connection"
 msgstr "No se puede añadir una conexión VPN"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:385
+#: ../gnome/vpn-properties/nm-vpn-properties.c:407
 msgid ""
 "No suitable VPN software was found on your system. Contact your system "
 "administrator."
@@ -738,11 +33,11 @@ msgstr ""
 "No se ha encontrado software VPN adecuado en su sistema. Póngase en contacto "
 "con su administrador de sistemas."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:437
+#: ../gnome/vpn-properties/nm-vpn-properties.c:457
 msgid "Cannot import VPN connection"
 msgstr "No se puede importar la conexión VPN"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:439
+#: ../gnome/vpn-properties/nm-vpn-properties.c:459
 #, c-format
 msgid ""
 "Cannot find suitable software for VPN connection type '%s' to import the "
@@ -752,12 +47,12 @@ msgstr ""
 "s» para importar el archivo «%s». Póngase en contacto con su administrador "
 "de sistemas."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:579
+#: ../gnome/vpn-properties/nm-vpn-properties.c:596
 #, c-format
 msgid "Error retrieving VPN connection '%s'"
 msgstr "Ha ocurrido un error al recuperar la conexión VPN «%s»"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:582
+#: ../gnome/vpn-properties/nm-vpn-properties.c:599
 #, c-format
 msgid ""
 "Could not find the UI files for VPN connection type '%s'. Contact your "
@@ -766,12 +61,12 @@ msgstr ""
 "No se han encontrado los archivos de la IU para la conexión VPN de tipo «%"
 "s». Póngase en contacto con su administrador de sistemas."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:739
+#: ../gnome/vpn-properties/nm-vpn-properties.c:746
 #, c-format
 msgid "Delete VPN connection \"%s\"?"
 msgstr "¿Desea eliminar la conexión VPN «%s»?"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:742
+#: ../gnome/vpn-properties/nm-vpn-properties.c:749
 #, c-format
 msgid ""
 "All information about the VPN connection \"%s\" will be lost and you may "
@@ -781,16 +76,16 @@ msgstr ""
 "Se perderá toda la información de la conexión VPN «%s» y necesitará que su "
 "administrador de sistemas le proporcione información para crear una conexión."
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:959
+#: ../gnome/vpn-properties/nm-vpn-properties.c:963
 msgid "Unable to load"
 msgstr "No se puede cargar"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:961
+#: ../gnome/vpn-properties/nm-vpn-properties.c:965
 msgid "Cannot find some needed resources (the glade file)!"
 msgstr "No se pueden encontrar algunos recursos necesarios (el archivo glade)."
 
 #. Edit dialog
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1071
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1084
 msgid "Edit VPN Connection"
 msgstr "Editar conexión VPN"
 
@@ -896,105 +191,53 @@ msgstr "WPA2 CCMP"
 msgid "WPA2 Automatic"
 msgstr "WPA2 automática"
 
-#: ../src/nm-ap-security.c:320
+#: ../src/nm-ap-security.c:338
 msgid "none"
 msgstr "ninguna"
 
-#: ../src/nm-netlink-monitor.c:154
+#: ../src/nm-netlink-monitor.c:170
 #, c-format
-msgid ""
-"unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgid "unable to create netlink socket for monitoring wired ethernet devices - %s"
 msgstr ""
 "no puede crear un socket netlink para monitorizar dispositivos ethernet con "
 "cable - %s"
 
-#: ../src/nm-netlink-monitor.c:172
+#: ../src/nm-netlink-monitor.c:188
 #, c-format
-msgid ""
-"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgid "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
 msgstr ""
 "no se puede asociar al socket netlink para monitorizar dispositivos ethernet "
 "con cable - %s"
 
-#: ../src/nm-netlink-monitor.c:405
+#: ../src/nm-netlink-monitor.c:426
 msgid "operation took too long"
 msgstr "la operación duró demasiado"
 
-#: ../src/nm-netlink-monitor.c:502
+#: ../src/nm-netlink-monitor.c:523
 msgid "received data from wrong type of sender"
 msgstr "se han recibido datos con un tipo de emisor incorrecto"
 
-#: ../src/nm-netlink-monitor.c:515
+#: ../src/nm-netlink-monitor.c:536
 msgid "received data from unexpected sender"
 msgstr "se han recibido datos de un emisor inesperado"
 
-#: ../src/nm-netlink-monitor.c:646
+#: ../src/nm-netlink-monitor.c:665
 msgid "too much data was sent over socket and some of it was lost"
-msgstr ""
-"se han enviado demasiados datos a través del socket y algunos de perdieron"
+msgstr "se han enviado demasiados datos a través del socket y algunos de perdieron"
 
-#: ../src/nm-netlink-monitor.c:735
+#: ../src/nm-netlink-monitor.c:775
 msgid "error occurred while waiting for data on socket"
 msgstr "ha ocurrido un error mientras esperaban datos en un socket"
 
-#: ../gnome/applet/applet-dbus-devices.c:898
-#, c-format
-msgid "You are now connected to the Ad-Hoc wireless network '%s'."
-msgstr "Ahora está conectado a la red inalámbrica Ad Hoc %s."
+#: ../src/nm-ap-security-wpa-eap.c:96 ../src/nm-ap-security-wpa-eap.c:120
+msgid "WPA2 Enterprise"
+msgstr "WPA2 empresarial"
 
-#: ../gnome/applet/applet-dbus-devices.c:903
-#, c-format
-msgid "You are now connected to the wireless network '%s'."
-msgstr "Ahora está conectado a la red inalámbrica %s."
+#: ../src/nm-ap-security-wpa-eap.c:98 ../src/nm-ap-security-wpa-eap.c:125
+msgid "WPA Enterprise"
+msgstr "WPA empresarial"
 
-#: ../gnome/applet/applet-dbus-devices.c:910
-msgid "You are now connected to the wired network."
-msgstr "Ahora está conectado a la red fija."
+#: ../src/nm-ap-security-leap.c:66 ../src/nm-ap-security-leap.c:82
+msgid "LEAP"
+msgstr "LEAP"
 
-#: ../gnome/applet/applet-dbus-devices.c:916
-msgid "Connection Established"
-msgstr "Conexión establecida"
-
-#: ../gnome/applet/applet-dbus-devices.c:959
-msgid "Disconnected"
-msgstr "Desconectado"
-
-#: ../gnome/applet/applet-dbus-devices.c:960
-msgid "The network connection has been disconnected."
-msgstr "La conexión de red se ha desconectado."
-
-#~ msgid "Stop automatically running the networking applet?"
-#~ msgstr "¿Desea detener la ejecución automática del applet de red?"
-
-#~ msgid ""
-#~ "The networking applet will now terminate, but will automatically launch "
-#~ "the next time you login.  Would you like to stop automatically running "
-#~ "the networking applet on login?"
-#~ msgstr ""
-#~ "El applet de red se cerrará ahora, pero se iniciará automáticamente la "
-#~ "próxima vez que inicie sesión. ¿Desea detener la ejecución automática del "
-#~ "applet de red al inicio de sesión?"
-
-#~ msgid "_Remove"
-#~ msgstr "_Eliminar"
-
-#~ msgid "VPN Error"
-#~ msgstr "Error de VPN"
-
-#~ msgid "The VPN service said: \"%s\""
-#~ msgstr "El servicio VPN ha devuelto el mensaje:«%s»"
-
-#~ msgid "VPN connection '%s' said:"
-#~ msgstr "La conexión VPN «%s» ha devuelto el siguiente mensaje:"
-
-#~ msgid "leap_subwindow"
-#~ msgstr "leap_subwindow"
-
-#~ msgid "wep_key_subwindow"
-#~ msgstr "wep_key_subwindow"
-
-#~ msgid "wep_passphrase_subwindow"
-#~ msgstr "wep_passphrase_subwindow"
-
-#~ msgid "wpa_psk_subwindow"
-#~ msgstr "wpa_psk_subwindow"
