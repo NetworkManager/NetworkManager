@@ -284,9 +284,6 @@ detail_device (gpointer data, gpointer user_data)
 
 		printf ("\n  Wireless Settings\n");
 
-		if (caps & NM_DEVICE_CAP_WIRELESS_SCAN)
-			print_string ("  Scanning", "yes");
-
 		wireless_caps = nm_device_802_11_wireless_get_capabilities (NM_DEVICE_802_11_WIRELESS (device));
 
 		if (wireless_caps & NM_802_11_CAP_PROTO_WEP)

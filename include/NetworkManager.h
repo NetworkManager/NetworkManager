@@ -77,7 +77,6 @@ typedef enum NMDeviceType
 #define NM_DEVICE_CAP_NONE			0x00000000
 #define NM_DEVICE_CAP_NM_SUPPORTED		0x00000001
 #define NM_DEVICE_CAP_CARRIER_DETECT	0x00000002
-#define NM_DEVICE_CAP_WIRELESS_SCAN	0x00000004
 
 
 /* 802.11 wireless-specific device capability bits */

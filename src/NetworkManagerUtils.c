@@ -311,13 +311,7 @@ void nm_print_device_capabilities (NMDevice *dev)
 	}
 	else if (NM_IS_DEVICE_802_11_WIRELESS (dev))
 	{
-		if (!(caps & NM_DEVICE_CAP_WIRELESS_SCAN))
-		{
-			nm_info ("%s: Driver '%s' does not support wireless scanning.\n"
-					"\tSome features will not be available.",
-						nm_device_get_iface (dev), driver);
-			full_support = FALSE;
-		}
+		/* Print out WPA support */
 	}
 
 	if (full_support)

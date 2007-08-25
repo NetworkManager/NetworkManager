@@ -1,3 +1,15 @@
+2007-08-25  Dan Williams  <dcbw@redhat.com>
+
+	It's 2007. Remove support for drivers that don't support wireless scanning.
+
+	* test/nm-tool.c
+	  include/NetworkManager.h
+	  src/NetworkManagerUtils.c
+	  src/NetworkManagerPolicy.c
+	  src/nm-device-802-11-wireless.c
+		- Remove special handling for non-scanning devices and mark them
+			as unsupported/unhandled
+
 2007-08-20  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-11-wireless.c

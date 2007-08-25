@@ -321,10 +321,11 @@ real_get_generic_capabilities (NMDevice *dev)
 	else
 		caps |= NM_DEVICE_CAP_NM_SUPPORTED;
 
+	/* Card's that don't scan aren't supported */
 	memset (&wrq, 0, sizeof (struct iwreq));
 	err = iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWSCAN, &wrq);
 	if (!((err == -1) && (errno == EOPNOTSUPP)))
-		caps |= NM_DEVICE_CAP_WIRELESS_SCAN;
+		caps = NM_DEVICE_CAP_NONE;
 
 out:
 	if (sk)
@@ -402,7 +403,6 @@ constructor (GType type,
 	NMDevice80211WirelessPrivate *priv;
 	NMData *app_data;
 	const char *iface;
-	guint32 caps;
 	NMSock *sk;
 
 	object = G_OBJECT_CLASS (nm_device_802_11_wireless_parent_class)->constructor (type,
@@ -415,14 +415,6 @@ constructor (GType type,
 	priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 
 	app_data = nm_device_get_app_data (NM_DEVICE (self));
-
-	/* Non-scanning devices show the entire allowed AP list as their
-	 * available networks.
-	 */
-	caps = nm_device_get_capabilities (NM_DEVICE (self));
-	if (!(caps & NM_DEVICE_CAP_WIRELESS_SCAN))
-		nm_device_802_11_wireless_copy_allowed_to_dev_list (self, app_data->allowed_ap_list);
-
 	iface = nm_device_get_iface (NM_DEVICE (self));
 
 	if ((sk = nm_dev_sock_open (iface, DEV_WIRELESS, __FUNCTION__, NULL))) {
@@ -877,13 +869,6 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 
 	app_data = nm_device_get_app_data (NM_DEVICE (self));
 	g_assert (app_data);
-
-	/* Devices that can't scan don't do anything automatic.
-	 * The user must choose the access point from the menu.
-	 */
-	if (    !(nm_device_get_capabilities (NM_DEVICE (self)) & NM_DEVICE_CAP_WIRELESS_SCAN)
-		&& !nm_device_has_active_link (NM_DEVICE (self)))
-		return NULL;
 
 	if (!(ap_list = nm_device_802_11_wireless_ap_list_get (self)))
 		return NULL;
@@ -2264,11 +2249,8 @@ supplicant_iface_state_cb_handler (gpointer user_data)
              old_state);
 
 	if (new_state == NM_SUPPLICANT_INTERFACE_STATE_READY) {
-		/* Schedule scanning for devices that can do scanning */
-		if (nm_device_get_capabilities (NM_DEVICE (self)) & NM_DEVICE_CAP_WIRELESS_SCAN) {
-			nm_device_802_11_wireless_reset_scan_interval (self);
-			schedule_scan (self);
-		}
+		nm_device_802_11_wireless_reset_scan_interval (self);
+		schedule_scan (self);
 	} else if (new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
 		cancel_pending_scan (self);
 		cleanup_association_attempt (self, FALSE);

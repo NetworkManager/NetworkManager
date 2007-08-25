@@ -111,10 +111,6 @@ static NMDevice * nm_policy_auto_get_best_device (NMPolicy *policy, NMAccessPoin
 		}
 		else if (NM_IS_DEVICE_802_11_WIRELESS (dev) &&
 				 nm_manager_wireless_enabled (policy->manager)) {
-			/* Don't automatically choose a device that doesn't support wireless scanning */
-			if (!(caps & NM_DEVICE_CAP_WIRELESS_SCAN))
-				continue;
-
 			/* Bump by 1 so that _something_ gets chosen every time */
 			prio += 1;
 
@@ -250,13 +246,15 @@ nm_policy_device_change_check (gpointer user_data)
 			goto out;
 		}
 
-		/* Don't interrupt semi-supported devices either.  If the user chose one, they must
-		 * explicitly choose to move to another device, we're not going to move for them.
+		/* Don't interrupt semi-supported devices either.  If the user chose
+		 * one, they must explicitly choose to move to another device, we're not
+		 * going to move for them.
 		 */
-		if ((NM_IS_DEVICE_802_3_ETHERNET (old_dev) && !(caps & NM_DEVICE_CAP_CARRIER_DETECT))
-			|| (NM_IS_DEVICE_802_11_WIRELESS (old_dev) && !(caps & NM_DEVICE_CAP_WIRELESS_SCAN))) {
-			nm_info ("Old device '%s' was semi-supported and user chosen, won't change unless told to.",
-				nm_device_get_iface (old_dev));
+		if (    (NM_IS_DEVICE_802_3_ETHERNET (old_dev)
+		    && !(caps & NM_DEVICE_CAP_CARRIER_DETECT))) {
+			nm_info ("Old device '%s' was semi-supported and user chosen, won't"
+			         " change unless told to.",
+			         nm_device_get_iface (old_dev));
 			goto out;
 		}
 	}
@@ -462,19 +460,15 @@ nm_policy_device_list_update_from_allowed_list (gpointer user_data)
 			continue;
 
 		wdev = NM_DEVICE_802_11_WIRELESS (dev);
-		if (nm_device_get_capabilities (dev) & NM_DEVICE_CAP_WIRELESS_SCAN) {
-			/* Once we have the list, copy in any relevant information from our
-			 * Allowed list and fill in the SSID of base stations that aren't
-			 * broadcasting their SSID, if we have their MAC address in our
-			 * allowed list.
-			 */
-			nm_ap_list_copy_ssids_by_address (nm_device_802_11_wireless_ap_list_get (wdev),
-			                                   data->allowed_ap_list);
-			nm_ap_list_copy_properties (nm_device_802_11_wireless_ap_list_get (wdev),
-			                            data->allowed_ap_list);
-		} else {
-			nm_device_802_11_wireless_copy_allowed_to_dev_list (wdev, data->allowed_ap_list);
-		}
+		/* Once we have the list, copy in any relevant information from our
+		 * Allowed list and fill in the SSID of base stations that aren't
+		 * broadcasting their SSID, if we have their MAC address in our
+		 * allowed list.
+		 */
+		nm_ap_list_copy_ssids_by_address (nm_device_802_11_wireless_ap_list_get (wdev),
+		                                   data->allowed_ap_list);
+		nm_ap_list_copy_properties (nm_device_802_11_wireless_ap_list_get (wdev),
+		                            data->allowed_ap_list);
 
 		nm_ap_list_remove_duplicate_ssids (nm_device_802_11_wireless_ap_list_get (wdev));
 	}
