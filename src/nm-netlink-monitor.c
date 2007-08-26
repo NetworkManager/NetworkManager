@@ -79,7 +79,6 @@ enum
 {
   INTERFACE_CONNECTED = 0,
   INTERFACE_DISCONNECTED,
-  WIRELESS_EVENT,
   ERROR,
 
   LAST_SIGNAL
@@ -131,14 +130,6 @@ nm_netlink_monitor_class_init (NMNetlinkMonitorClass *monitor_class)
 					  G_STRUCT_OFFSET (NMNetlinkMonitorClass, interface_disconnected),
 					  NULL, NULL, g_cclosure_marshal_VOID__STRING,
 					  G_TYPE_NONE, 1, G_TYPE_STRING);
-
-	signals[WIRELESS_EVENT] =
-		g_signal_new ("wireless-event",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_LAST,
-					  G_STRUCT_OFFSET (NMNetlinkMonitorClass, wireless_event),
-					  NULL, NULL, nm_marshal_VOID__STRING_POINTER_INT,
-					  G_TYPE_NONE, 3, G_TYPE_STRING, G_TYPE_POINTER, G_TYPE_INT);
 
 	signals[ERROR] =
 		g_signal_new ("error",
@@ -717,17 +708,6 @@ nm_netlink_monitor_event_handler (GIOChannel       *channel,
 								       signals[INTERFACE_DISCONNECTED],
 								       0, iface);
 					}
-				}
-				g_free (iface);
-			} else if (attribute->rta_type == IFLA_WIRELESS) {
-				char * iface = nm_system_get_iface_from_rtnl_index (interface_info->ifi_index);
-				if (iface != NULL) {
-					char * data = g_malloc0 (data_len);
-					memcpy (data, RTA_DATA (attribute), data_len);
-					g_signal_emit (G_OBJECT (monitor), 
-							       signals[WIRELESS_EVENT],
-							       0, iface, data, data_len);
-					g_free (data);
 				}
 				g_free (iface);
 			}

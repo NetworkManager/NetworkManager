@@ -1,3 +1,10 @@
+2007-08-26  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-netlink-monitor.c
+		- (nm_netlink_monitor_class_init, nm_netlink_monitor_event_handler):
+			don't need the 'wireless-event' signal anymore since that's all
+			handled by wpa_supplicant
+
 2007-08-25  Dan Williams  <dcbw@redhat.com>
 
 	It's 2007. Remove support for drivers that don't support wireless scanning.
