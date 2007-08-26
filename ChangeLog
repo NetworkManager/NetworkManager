@@ -1,5 +1,13 @@
 2007-08-26  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-3-ethernet.c
+		- (constructor): move connection of interface-connected/disconnected
+			signals here from real_bring_up().  Should be listening to netlink
+			for carrier events no matter what the initial state of the device
+			is.
+
+2007-08-26  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-netlink-monitor.c
 		- (nm_netlink_monitor_class_init): fix marshalling types for
 			interface-connected/interface-disconnected

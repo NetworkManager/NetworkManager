@@ -70,12 +70,39 @@ static void supplicant_iface_state_cb (NMSupplicantInterface * iface,
                                        NMDevice80211Wireless *self);
 
 
+static void
+nm_device_802_3_ethernet_link_activated (NMNetlinkMonitor *monitor,
+                                         int index,
+                                         gpointer user_data)
+{
+	NMDevice *dev = NM_DEVICE (user_data);
+
+	/* Make sure signal is for us */
+	if (nm_device_get_index (dev) == index)
+		nm_device_set_active_link (dev, TRUE);
+}
+
+static void
+nm_device_802_3_ethernet_link_deactivated (NMNetlinkMonitor *monitor,
+                                           int index,
+                                           gpointer user_data)
+{
+	NMDevice *dev = NM_DEVICE (user_data);
+
+	/* Make sure signal is for us */
+	if (nm_device_get_index (dev) == index)
+		nm_device_set_active_link (dev, FALSE);
+}
+
 static GObject*
 constructor (GType type,
 			 guint n_construct_params,
 			 GObjectConstructParam *construct_params)
 {
 	GObject *object;
+	NMDevice8023EthernetPrivate * priv;
+	NMDevice * dev;
+	guint32 caps;
 
 	object = G_OBJECT_CLASS (nm_device_802_3_ethernet_parent_class)->constructor (type,
 																				  n_construct_params,
@@ -83,8 +110,28 @@ constructor (GType type,
 	if (!object)
 		return NULL;
 
-	NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (object)->carrier_file_path =
-		g_strdup_printf ("/sys/class/net/%s/carrier", nm_device_get_iface (NM_DEVICE (object)));
+	dev = NM_DEVICE (object);
+	priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (dev);
+	priv->carrier_file_path = g_strdup_printf ("/sys/class/net/%s/carrier",
+	                                           nm_device_get_iface (dev));
+
+	caps = nm_device_get_capabilities (dev);
+	if (caps & NM_DEVICE_CAP_CARRIER_DETECT) {
+		/* Only listen to netlink for cards that support carrier detect */
+		NMNetlinkMonitor * monitor = nm_netlink_monitor_get ();
+
+		priv->link_connected_id = g_signal_connect (monitor, "interface-connected",
+													G_CALLBACK (nm_device_802_3_ethernet_link_activated),
+													dev);
+		priv->link_disconnected_id = g_signal_connect (monitor, "interface-disconnected",
+													   G_CALLBACK (nm_device_802_3_ethernet_link_deactivated),
+													   dev);
+		g_object_unref (monitor);
+	} else {
+		priv->link_connected_id = 0;
+		priv->link_disconnected_id = 0;
+		nm_device_set_active_link (dev, TRUE);
+	}
 
 	return object;
 }
@@ -99,31 +146,6 @@ nm_device_802_3_ethernet_init (NMDevice8023Ethernet * self)
 	memset (&(priv->hw_addr), 0, sizeof (struct ether_addr));
 
 	nm_device_set_device_type (NM_DEVICE (self), DEVICE_TYPE_802_3_ETHERNET);
-}
-
-static void
-nm_device_802_3_ethernet_link_activated (NMNetlinkMonitor *monitor,
-                                         int index,
-                                         gpointer user_data)
-{
-	NMDevice *dev = NM_DEVICE (user_data);
-
-	/* Make sure signal is for us */
-	if (nm_device_get_index (dev) == index)
-		nm_device_set_active_link (dev, TRUE);
-}
-
-
-static void
-nm_device_802_3_ethernet_link_deactivated (NMNetlinkMonitor *monitor,
-                                           int index,
-                                           gpointer user_data)
-{
-	NMDevice *dev = NM_DEVICE (user_data);
-
-	/* Make sure signal is for us */
-	if (nm_device_get_index (dev) == index)
-		nm_device_set_active_link (dev, FALSE);
 }
 
 static void
@@ -170,7 +192,6 @@ real_bring_up (NMDevice *dev)
 	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (dev);
 	NMSupplicantManager *sup_mgr;
 	const char *iface;
-	guint32 caps;
 
 	iface = nm_device_get_iface (dev);
 	sup_mgr = nm_supplicant_manager_get ();
@@ -187,23 +208,6 @@ real_bring_up (NMDevice *dev)
 	                  dev);
 
 	g_object_unref (sup_mgr);
-
-	caps = nm_device_get_capabilities (dev);
-	if (caps & NM_DEVICE_CAP_CARRIER_DETECT) {
-		/* Only listen to netlink for cards that support carrier detect */
-		NMNetlinkMonitor * monitor = nm_netlink_monitor_get ();
-		priv->link_connected_id = g_signal_connect (monitor, "interface-connected",
-													G_CALLBACK (nm_device_802_3_ethernet_link_activated),
-													dev);
-		priv->link_disconnected_id = g_signal_connect (monitor, "interface-disconnected",
-													   G_CALLBACK (nm_device_802_3_ethernet_link_deactivated),
-													   dev);
-		g_object_unref (monitor);
-	} else {
-		priv->link_connected_id = 0;
-		priv->link_disconnected_id = 0;
-		nm_device_set_active_link (dev, TRUE);
-	}
 
 	return TRUE;
 }
