@@ -55,10 +55,6 @@ typedef struct {
 	/* Signals */
 	void (*interface_connected)    (NMNetlinkMonitor *monitor, const char *iface);
 	void (*interface_disconnected) (NMNetlinkMonitor *monitor, const char *iface);
-	void (*wireless_event)         (NMNetlinkMonitor *monitor,
-									const char *iface,
-									const gchar *data,
-									int data_len);
 
 	void (*error)                  (NMNetlinkMonitor *monitor,
 									GError *error);

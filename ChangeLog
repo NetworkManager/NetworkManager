@@ -1,5 +1,10 @@
 2007-08-26  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-netlink-monitor.h
+		- Remove one last bit of wireless-event signal
+
+2007-08-26  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-netlink-monitor.c
 		- (nm_netlink_monitor_class_init, nm_netlink_monitor_event_handler):
 			don't need the 'wireless-event' signal anymore since that's all
