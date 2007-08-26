@@ -1,3 +1,8 @@
+2007-08-26  Satoru SATOH <ss@svn.gnome.org>
+
+	* ja.po: Added Japanese translation from trunk.
+	* configure.in: Added ja to LINGUAS
+
 2007-08-22  Jorge Gonzalez <jorgegonz@svn.gnome.org>
 
 	* es.po: Added Spanish translation.
