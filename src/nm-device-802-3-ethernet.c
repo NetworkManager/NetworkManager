@@ -67,7 +67,7 @@ static gboolean supports_ethtool_carrier_detect (NMDevice8023Ethernet *dev);
 static void supplicant_iface_state_cb (NMSupplicantInterface * iface,
                                        guint32 new_state,
                                        guint32 old_state,
-                                       NMDevice80211Wireless *self);
+                                       NMDevice8023Ethernet *self);
 
 
 static void
@@ -434,7 +434,7 @@ static void
 supplicant_iface_state_cb (NMSupplicantInterface * iface,
                            guint32 new_state,
                            guint32 old_state,
-                           NMDevice80211Wireless *self)
+                           NMDevice8023Ethernet *self)
 {
 	g_return_if_fail (self != NULL);
 
