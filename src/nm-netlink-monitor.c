@@ -120,7 +120,7 @@ nm_netlink_monitor_class_init (NMNetlinkMonitorClass *monitor_class)
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_LAST,
 					  G_STRUCT_OFFSET (NMNetlinkMonitorClass, interface_connected),
-					  NULL, NULL, g_cclosure_marshal_VOID__STRING,
+					  NULL, NULL, g_cclosure_marshal_VOID__INT,
 					  G_TYPE_NONE, 1, G_TYPE_INT);
 
 	signals[INTERFACE_DISCONNECTED] =
@@ -128,7 +128,7 @@ nm_netlink_monitor_class_init (NMNetlinkMonitorClass *monitor_class)
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_LAST,
 					  G_STRUCT_OFFSET (NMNetlinkMonitorClass, interface_disconnected),
-					  NULL, NULL, g_cclosure_marshal_VOID__STRING,
+					  NULL, NULL, g_cclosure_marshal_VOID__INT,
 					  G_TYPE_NONE, 1, G_TYPE_INT);
 
 	signals[ERROR] =
@@ -692,10 +692,7 @@ nm_netlink_monitor_event_handler (GIOChannel       *channel,
 			int data_len = RTA_PAYLOAD (attribute);
 
 			if (attribute->rta_type == IFLA_IFNAME) {
-				/* The !! weirdness is to cannonicalize the value to 0 or 1. */
-				gboolean is_connected = !!((gboolean) (interface_info->ifi_flags & IFF_RUNNING));
-
-				if (is_connected) {
+				if (interface_info->ifi_flags & IFF_RUNNING) {
 					g_signal_emit (G_OBJECT (monitor), 
 							       signals[INTERFACE_CONNECTED],
 							       0, interface_info->ifi_index);

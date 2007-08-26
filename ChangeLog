@@ -1,5 +1,13 @@
 2007-08-26  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-netlink-monitor.c
+		- (nm_netlink_monitor_class_init): fix marshalling types for
+			interface-connected/interface-disconnected
+		- (nm_netlink_monitor_event_handler): clean up carrier on/off
+			check
+
+2007-08-26  Dan Williams  <dcbw@redhat.com>
+
 	Convert to using interface indexes as the primary method of identifying
 	devices inside NetworkManager.  Indexes are (?) stable, but devices can
 	be renamed at any time.  Device object paths now refer to the device
