@@ -42,6 +42,7 @@ void nm_manager_add_device (NMManager *manager, NMDevice *device);
 void nm_manager_remove_device (NMManager *manager, NMDevice *device);
 GSList *nm_manager_get_devices (NMManager *manager);
 NMDevice *nm_manager_get_device_by_iface (NMManager *manager, const char *iface);
+NMDevice *nm_manager_get_device_by_index (NMManager *manager, int idx);
 NMDevice *nm_manager_get_device_by_udi (NMManager *manager, const char *udi);
 
 NMDevice *nm_manager_get_active_device (NMManager *manager);

@@ -209,7 +209,7 @@ nm_manager_new (void)
 										 NM_DBUS_PATH,
 										 object);
 
-	return (NMManager *) object;
+	return NM_MANAGER (object);
 }
 
 static void
@@ -350,7 +350,7 @@ impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err)
 	*devices = g_ptr_array_sized_new (g_slist_length (priv->devices));
 
 	for (iter = priv->devices; iter; iter = iter->next)
-		g_ptr_array_add (*devices, nm_dbus_get_object_path_for_device (NM_DEVICE (iter->data)));
+		g_ptr_array_add (*devices, nm_device_get_dbus_path (NM_DEVICE (iter->data)));
 
 	return TRUE;
 }
@@ -371,6 +371,24 @@ nm_manager_get_device_by_iface (NMManager *manager, const char *iface)
 
 	return NULL;
 }
+
+NMDevice *
+nm_manager_get_device_by_index (NMManager *manager, int idx)
+{
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
+
+	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
+		NMDevice *device = NM_DEVICE (iter->data);
+
+		if (nm_device_get_index (device) == idx)
+			return device;
+	}
+
+	return NULL;
+}
+
 
 NMDevice *
 nm_manager_get_device_by_udi (NMManager *manager, const char *udi)

@@ -1,5 +1,15 @@
 2007-08-26  Dan Williams  <dcbw@redhat.com>
 
+	Convert to using interface indexes as the primary method of identifying
+	devices inside NetworkManager.  Indexes are (?) stable, but devices can
+	be renamed at any time.  Device object paths now refer to the device
+	index rather than the name, and you can map those two manually if you like
+	by looking in the /sys/class/net/<name>/ifindex file.  Also moves most
+	netlink-related code to nm-netlink.c, and cleans up nm-netlink-monitor.c
+	to use interface indexes rather than names.
+
+2007-08-26  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-netlink-monitor.h
 		- Remove one last bit of wireless-event signal
 

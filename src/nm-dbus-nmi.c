@@ -154,7 +154,7 @@ nm_dbus_get_user_key_for_network (NMDevice *dev,
 	UserKeyInfo *info;
 	NMAccessPoint *	ap;
 	gint32			attempt = 1;
-	char *			dev_path;
+	const char *	dev_path;
 	const char *	net_path;
 	const GByteArray * ssid;
 
@@ -185,7 +185,7 @@ nm_dbus_get_user_key_for_network (NMDevice *dev,
 		goto out;
 	}
 
-	dev_path = nm_dbus_get_object_path_for_device (dev);
+	dev_path = nm_device_get_dbus_path (dev);
 	net_path = nm_ap_get_dbus_path (ap);
 	if (dev_path && strlen (dev_path) && net_path && strlen (net_path)) {
 		char buf[IW_ESSID_MAX_SIZE + 1];
@@ -215,7 +215,6 @@ nm_dbus_get_user_key_for_network (NMDevice *dev,
 	} else {
 		nm_warning ("bad object path data");
 	}
-	g_free (dev_path);
 
 	/* FIXME: figure out how to deal with a failure here, otherwise
 	 * we just hang in the activation process and nothing happens

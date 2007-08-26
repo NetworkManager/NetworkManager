@@ -37,6 +37,7 @@
 #include "nm-dbus-nmi.h"
 #include "nm-utils.h"
 #include "autoip.h"
+#include "nm-netlink.h"
 
 #define NM_ACT_REQUEST_IP4_CONFIG "nm-act-request-ip4-config"
 
@@ -52,11 +53,14 @@ G_DEFINE_TYPE_EXTENDED (NMDevice, nm_device, G_TYPE_OBJECT,
 struct _NMDevicePrivate
 {
 	gboolean	dispose_has_run;
+	gboolean	initialized;
 
 	NMDeviceState state;
 
+	char *			dbus_path;
 	char *			udi;
-	char *			iface;
+	int				index;   /* Should always stay the same over lifetime of device */
+	char *			iface;   /* may change, could be renamed by user */
 	NMDeviceType		type;
 	guint32			capabilities;
 	char *			driver;
@@ -105,8 +109,10 @@ nm_device_init (NMDevice * self)
 {
 	self->priv = NM_DEVICE_GET_PRIVATE (self);
 	self->priv->dispose_has_run = FALSE;
+	self->priv->initialized = FALSE;
 	self->priv->udi = NULL;
 	self->priv->iface = NULL;
+	self->priv->index = G_MAXUINT32;
 	self->priv->type = DEVICE_TYPE_UNKNOWN;
 	self->priv->capabilities = NM_DEVICE_CAP_NONE;
 	self->priv->driver = NULL;
@@ -134,45 +140,66 @@ constructor (GType type,
 	NMDevice *dev;
 	NMDevicePrivate *priv;
 	NMDBusManager *manager;
-	char *path;
 
 	object = G_OBJECT_CLASS (nm_device_parent_class)->constructor (type,
 																   n_construct_params,
 																   construct_params);
-
 	if (!object)
 		return NULL;
 
 	dev = NM_DEVICE (object);
 	priv = NM_DEVICE_GET_PRIVATE (dev);
 
+	if (priv->index == G_MAXUINT32) {
+		nm_warning ("Interface index is a required constructor property.");
+		goto error;
+	}
+
+	priv->iface = nm_netlink_index_to_iface (priv->index);
+	if (priv->iface == NULL) {
+		nm_warning ("(%d): Couldn't get interface name for device, ignoring.",
+		            nm_device_get_index (dev));
+		goto error;
+	}
+
 	priv->capabilities |= NM_DEVICE_GET_CLASS (dev)->get_generic_capabilities (dev);
-	if (!(priv->capabilities & NM_DEVICE_CAP_NM_SUPPORTED))
-	{
-		g_object_unref (G_OBJECT (dev));
-		return NULL;
+	if (!(priv->capabilities & NM_DEVICE_CAP_NM_SUPPORTED)) {
+		nm_warning ("(%s): Device unsupported, ignoring.",
+		            nm_device_get_iface (dev));
+		goto error;
 	}
 
 	/* Grab IP config data for this device from the system configuration files */
 	priv->system_config_data = nm_system_device_get_system_config (dev, priv->app_data);
 
 	/* Allow distributions to flag devices as disabled */
-	if (nm_system_device_get_disabled (dev))
-	{
-		g_object_unref (G_OBJECT (dev));
-		return NULL;
+	if (nm_system_device_get_disabled (dev)) {
+		nm_warning ("(%s): Device otherwise managed, ignoring.",
+		            nm_device_get_iface (dev));
+		goto error;
 	}
 
 	nm_print_device_capabilities (dev);
 
 	manager = nm_dbus_manager_get ();
+	priv->dbus_path = g_strdup_printf ("%s/%d",
+	                                   NM_DBUS_PATH_DEVICE,
+	                                   nm_device_get_index (dev));
+	if (priv->dbus_path == NULL) {
+		nm_warning ("(%s): Not enough memory to initialize device.",
+		            nm_device_get_iface (dev));
+		goto error;
+	}
 
-	path = nm_dbus_get_object_path_for_device (dev);
 	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (manager),
-										 path, object);
-	g_free (path);
-
+										 nm_device_get_dbus_path (dev),
+										 object);
+	priv->initialized = TRUE;
 	return object;
+
+error:
+	g_object_unref (dev);
+	return NULL;
 }
 
 
@@ -214,15 +241,28 @@ real_get_generic_capabilities (NMDevice *dev)
 }
 
 
-/*
- * Get/set functions for UDI
- */
+const char *
+nm_device_get_dbus_path (NMDevice *self)
+{
+	g_return_val_if_fail (self != NULL, NULL);
+
+	return self->priv->dbus_path;
+}
+
 const char *
 nm_device_get_udi (NMDevice *self)
 {
 	g_return_val_if_fail (self != NULL, NULL);
 
 	return self->priv->udi;
+}
+
+guint32
+nm_device_get_index (NMDevice *self)
+{
+	g_return_val_if_fail (self != NULL, G_MAXUINT32);
+
+	return self->priv->index;
 }
 
 /*
@@ -1119,7 +1159,7 @@ dhcp_state_changed (NMDHCPManager *dhcp_manager,
 		} else if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
 			if (nm_device_get_use_dhcp (device)) {
 				/* dhclient quit and therefore can't renew our lease, kill the conneciton */
-				nm_device_deactivate (device);
+				nm_device_deactivate (NM_DEVICE_INTERFACE (device));
 			}
 		}
 		break;
@@ -1365,9 +1405,15 @@ nm_device_dispose (GObject *object)
 {
 	NMDevice *self = NM_DEVICE (object);
 
-	if (self->priv->dispose_has_run)
-		/* If dispose did already run, return. */
+	if (self->priv->dispose_has_run) {
+		/* If dispose already ran, return. */
 		return;
+	}
+
+	if (!self->priv->initialized) {
+		/* Don't tear down stuff that might not yet be set up */
+		goto out;
+	}
 
 	/* Make sure dispose does not run twice. */
 	self->priv->dispose_has_run = TRUE;
@@ -1397,6 +1443,7 @@ nm_device_dispose (GObject *object)
 
 	nm_device_set_use_dhcp (self, FALSE);
 
+out:
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
 }
 
@@ -1424,8 +1471,8 @@ set_property (GObject *object, guint prop_id,
 		/* construct-only */
 		priv->udi = g_strdup (g_value_get_string (value));
 		break;
-	case NM_DEVICE_INTERFACE_PROP_IFACE:
-		priv->iface = g_strdup (g_value_get_string (value));
+	case NM_DEVICE_INTERFACE_PROP_INDEX:
+		priv->index = g_value_get_uint (value);
 		break;
 	case NM_DEVICE_INTERFACE_PROP_DRIVER:
 		priv->driver = g_strdup (g_value_get_string (value));
@@ -1454,6 +1501,9 @@ get_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case NM_DEVICE_INTERFACE_PROP_UDI:
 		g_value_set_string (value, priv->udi);
+		break;
+	case NM_DEVICE_INTERFACE_PROP_INDEX:
+		g_value_set_uint (value, priv->index);
 		break;
 	case NM_DEVICE_INTERFACE_PROP_IFACE:
 		g_value_set_string (value, priv->iface);
@@ -1515,6 +1565,10 @@ nm_device_class_init (NMDeviceClass *klass)
 	g_object_class_override_property (object_class,
 									  NM_DEVICE_INTERFACE_PROP_UDI,
 									  NM_DEVICE_INTERFACE_UDI);
+
+	g_object_class_override_property (object_class,
+									  NM_DEVICE_INTERFACE_PROP_INDEX,
+									  NM_DEVICE_INTERFACE_INDEX);
 
 	g_object_class_override_property (object_class,
 									  NM_DEVICE_INTERFACE_PROP_IFACE,

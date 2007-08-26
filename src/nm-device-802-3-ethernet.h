@@ -52,7 +52,7 @@ typedef struct {
 GType nm_device_802_3_ethernet_get_type (void);
 
 
-NMDevice8023Ethernet *nm_device_802_3_ethernet_new (const char *iface,
+NMDevice8023Ethernet *nm_device_802_3_ethernet_new (int index,
 													const char *udi,
 													const char *driver,
 													gboolean test_dev,

@@ -110,10 +110,10 @@ struct _NMDeviceClass
 
 GType nm_device_get_type (void);
 
+const char *	nm_device_get_dbus_path	(NMDevice *dev);
 const char *	nm_device_get_udi		(NMDevice *dev);
-
+guint32			nm_device_get_index		(NMDevice *dev);
 const char *	nm_device_get_iface		(NMDevice *dev);
-
 const char *	nm_device_get_driver	(NMDevice *dev);
 
 NMDeviceType	nm_device_get_device_type	(NMDevice *dev);

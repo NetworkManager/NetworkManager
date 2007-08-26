@@ -45,6 +45,7 @@
 #include "nm-device.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
+#include "nm-netlink.h"
 
 #include <netlink/route/addr.h>
 #include <netlink/netlink.h>
@@ -179,117 +180,6 @@ out:
 }
 
 
-static struct nl_cache * get_link_cache (struct nl_handle *nlh)
-{
-	static struct nl_cache * link_cache = NULL;
-
-	if (!link_cache)
-		link_cache = rtnl_link_alloc_cache (nlh);
-	if (!link_cache)
-		nm_warning ("couldn't allocate rtnl link cache!");
-	else
-		nl_cache_update (nlh, link_cache);
-
-	return link_cache;
-}
-
-
-static void iface_to_rtnl_index (const char *iface, struct nl_handle *nlh, struct rtnl_addr *addr)
-{
-	struct nl_cache *	cache = NULL;
-	int				i;
-
-	g_return_if_fail (iface != NULL);
-	g_return_if_fail (nlh != NULL);
-	g_return_if_fail (addr != NULL);
-
-	if ((cache = get_link_cache (nlh)))
-	{
-		i = rtnl_link_name2i (cache, iface);
-		if (RTNL_LINK_NOT_FOUND != i)
-			rtnl_addr_set_ifindex (addr, i);
-	}
-	else
-		nm_warning ("couldn't allocate link cache.");
-}
-
-
-static struct rtnl_link * iface_to_rtnl_link (const char *iface, struct nl_handle *nlh)
-{
-	struct nl_cache *	cache = NULL;
-	struct rtnl_link *	have_link = NULL;
-
-	g_return_val_if_fail (iface != NULL, NULL);
-	g_return_val_if_fail (nlh != NULL, NULL);
-
-	if ((cache = get_link_cache (nlh)))
-		have_link = rtnl_link_get_by_name (cache, iface);
-	else
-		nm_warning ("couldn't allocate link cache.");
-
-	return have_link;
-}
-
-
-static struct nl_handle * new_nl_handle (void)
-{
-	struct nl_handle *	nlh = NULL;
-
-	nlh = nl_handle_alloc_nondefault(NL_CB_VERBOSE);
-	nl_handle_set_pid (nlh, (pthread_self() << 16 | getpid()));
-	if (nl_connect(nlh, NETLINK_ROUTE) < 0)
-	{
-		nm_warning("couldn't connect to netlink: %s\n", nl_geterror());
-		nl_handle_destroy (nlh);
-		nlh = NULL;
-	}
-
-	return nlh;
-}
-
-
-int
-nm_system_get_rtnl_index_from_iface (const char *iface)
-{
-	struct nl_handle *	nlh = NULL;
-	struct nl_cache *	cache = NULL;
-	int				i = RTNL_LINK_NOT_FOUND;
-
-	nlh = new_nl_handle ();
-	if (nlh && (cache = get_link_cache (nlh)))
-		i = rtnl_link_name2i (cache, iface);
-	nl_close (nlh);
-	nl_handle_destroy (nlh);
-
-	return i;
-}
-
-
-#define MAX_IFACE_LEN	32
-char *
-nm_system_get_iface_from_rtnl_index (int rtnl_index)
-{
-	struct nl_handle *	nlh = NULL;
-	struct nl_cache *	cache = NULL;
-	char *			buf = NULL;
-
-	nlh = new_nl_handle ();
-	if (nlh && (cache = get_link_cache (nlh)))
-	{
-		buf = g_malloc0 (MAX_IFACE_LEN);
-		if (!rtnl_link_i2name (cache, rtnl_index, buf, MAX_IFACE_LEN - 1))
-		{
-			g_free (buf);
-			buf = NULL;
-		}
-	}
-	nl_close (nlh);
-	nl_handle_destroy (nlh);
-
-	return buf;
-}
-
-
 /*
  * nm_system_device_set_from_ip4_config
  *
@@ -317,20 +207,17 @@ gboolean nm_system_device_set_from_ip4_config (NMDevice *dev)
 	nm_system_device_flush_routes (dev);
 	nm_system_flush_arp_cache ();
 
-	nlh = new_nl_handle ();
+	nlh = nm_netlink_get_default_handle ();
 
 	if ((addr = nm_ip4_config_to_rtnl_addr (config, NM_RTNL_ADDR_DEFAULT)))
 	{
-		iface_to_rtnl_index (nm_device_get_iface (dev), nlh, addr);
+		rtnl_addr_set_ifindex (addr, nm_device_get_index (dev));
 		if ((err = rtnl_addr_add (nlh, addr, 0)) < 0)
 			nm_warning ("(%s) error %d returned from rtnl_addr_add():\n%s", nm_device_get_iface (dev), err, nl_geterror());
 		rtnl_addr_put (addr);
 	}
 	else
 		nm_warning ("couldn't create rtnl address!\n");
-
-	nl_close (nlh);
-	nl_handle_destroy (nlh);
 
 	sleep (1);
 	nm_system_device_set_ip4_route (dev, nm_ip4_config_get_gateway (config), 0, 0, nm_ip4_config_get_mss (config));
@@ -452,12 +339,12 @@ nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named,
 	{
 		nm_system_device_set_up_down_with_iface (iface, TRUE);
 
-		nlh = new_nl_handle ();
+		nlh = nm_netlink_get_default_handle ();
 
 		if ((addr = nm_ip4_config_to_rtnl_addr (config, NM_RTNL_ADDR_PTP_DEFAULT)))
 		{
 			int err = 0;
-			iface_to_rtnl_index (iface, nlh, addr);
+			rtnl_addr_set_ifindex (addr, nm_device_get_index (active_device));
 			if ((err = rtnl_addr_add (nlh, addr, 0)) < 0)
 				nm_warning ("error %d returned from rtnl_addr_add():\n%s", err, nl_geterror());
 			rtnl_addr_put (addr);
@@ -471,7 +358,7 @@ nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named,
 			struct rtnl_link * old;
 			guint32 mtu;
 
-			old = iface_to_rtnl_link (iface, nlh);
+			old = nm_netlink_index_to_rtnl_link (nm_device_get_index (active_device));
 			mtu = nm_ip4_config_get_mtu (config);
 			if (mtu == 0)
 				mtu = 1412;  /* Default to 1412 (vpnc) */
@@ -481,9 +368,6 @@ nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named,
 			rtnl_link_put (old);
 			rtnl_link_put (request);
 		}
-
-		nl_close (nlh);
-		nl_handle_destroy (nlh);
 
 		sleep (1);
 
@@ -557,14 +441,11 @@ gboolean nm_system_device_set_up_down (NMDevice *dev, gboolean up)
 gboolean nm_system_device_set_up_down_with_iface (const char *iface, gboolean up)
 {
 	gboolean success = FALSE;
-	struct nl_handle *	nlh = NULL;
+	guint32 index;
 	struct rtnl_link *	request = NULL;
 	struct rtnl_link *	old = NULL;
 
 	g_return_val_if_fail (iface != NULL, FALSE);
-
-	if (!(nlh = new_nl_handle ()))
-		return FALSE;
 
 	if (!(request = rtnl_link_alloc ()))
 		goto out;
@@ -574,19 +455,18 @@ gboolean nm_system_device_set_up_down_with_iface (const char *iface, gboolean up
 	else
 		rtnl_link_unset_flags (request, IFF_UP);
 
-	old = iface_to_rtnl_link (iface, nlh);
-	if (old)
+	index = nm_netlink_iface_to_index (iface);
+	old = nm_netlink_index_to_rtnl_link (index);
+	if (old) {
+		struct nl_handle * nlh = nm_netlink_get_default_handle ();
 		rtnl_link_change (nlh, old, request, 0);
+	}
 
 	rtnl_link_put (old);
 	rtnl_link_put (request);
-
 	success = TRUE;
 
 out:
-	nl_close (nlh);
-	nl_handle_destroy (nlh);
-
 	return success;
 }
 
@@ -608,27 +488,22 @@ void nm_system_set_mtu (NMDevice *dev)
 	if (!mtu)
 		return;
 
-	nlh = new_nl_handle ();
-	if (!nlh)
-		return;
-
 	request = rtnl_link_alloc ();
 	if (!request)
-		goto out_nl_close;
+		return;
 
-	iface = nm_device_get_iface (dev);
-	old = iface_to_rtnl_link (iface, nlh);
+	old = nm_netlink_index_to_rtnl_link (nm_device_get_index (dev));
 	if (!old)
 		goto out_request;
 
-	nm_info ("Setting MTU of interface '%s' to %ld", iface, mtu);
+	nm_info ("Setting MTU of interface '%s' to %ld",
+	         nm_device_get_iface (dev),
+	         mtu);
 	rtnl_link_set_mtu (request, mtu);
+	nlh = nm_netlink_get_default_handle ();
 	rtnl_link_change (nlh, old, request, 0);
 
 	rtnl_link_put (old);
 out_request:
 	rtnl_link_put (request);
-out_nl_close:
-	nl_close (nlh);
-	nl_handle_destroy (nlh);
 }

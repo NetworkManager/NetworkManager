@@ -53,8 +53,8 @@ typedef struct {
 	GObjectClass parent_class;
 
 	/* Signals */
-	void (*interface_connected)    (NMNetlinkMonitor *monitor, const char *iface);
-	void (*interface_disconnected) (NMNetlinkMonitor *monitor, const char *iface);
+	void (*interface_connected)    (NMNetlinkMonitor *monitor, int index);
+	void (*interface_disconnected) (NMNetlinkMonitor *monitor, int index);
 
 	void (*error)                  (NMNetlinkMonitor *monitor,
 									GError *error);

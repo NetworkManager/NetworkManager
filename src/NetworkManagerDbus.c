@@ -81,27 +81,6 @@ nm_dbus_new_invalid_args_error (DBusMessage *replyto,
 		                                 "Invalid method arguments.");
 }
 
-
-/*
- * nm_dbus_get_object_path_for_device
- *
- * Copies the object path for a device object.  Caller must free returned string.
- *
- */
-char * nm_dbus_get_object_path_for_device (NMDevice *dev)
-{
-	char *object_path, *escaped_object_path;
-
-	g_return_val_if_fail (dev != NULL, NULL);
-
-	object_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICE, nm_device_get_iface (dev));
-	escaped_object_path = nm_dbus_escape_object_path (object_path);
-	g_free (object_path);
-
-	return escaped_object_path;
-}
-
-
 /*-------------------------------------------------------------*/
 /* Handler code */
 /*-------------------------------------------------------------*/

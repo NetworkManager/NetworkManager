@@ -121,7 +121,7 @@ nm_netlink_monitor_class_init (NMNetlinkMonitorClass *monitor_class)
 					  G_SIGNAL_RUN_LAST,
 					  G_STRUCT_OFFSET (NMNetlinkMonitorClass, interface_connected),
 					  NULL, NULL, g_cclosure_marshal_VOID__STRING,
-					  G_TYPE_NONE, 1, G_TYPE_STRING);
+					  G_TYPE_NONE, 1, G_TYPE_INT);
 
 	signals[INTERFACE_DISCONNECTED] =
 		g_signal_new ("interface-disconnected",
@@ -129,7 +129,7 @@ nm_netlink_monitor_class_init (NMNetlinkMonitorClass *monitor_class)
 					  G_SIGNAL_RUN_LAST,
 					  G_STRUCT_OFFSET (NMNetlinkMonitorClass, interface_disconnected),
 					  NULL, NULL, g_cclosure_marshal_VOID__STRING,
-					  G_TYPE_NONE, 1, G_TYPE_STRING);
+					  G_TYPE_NONE, 1, G_TYPE_INT);
 
 	signals[ERROR] =
 		g_signal_new ("error",
@@ -690,26 +690,20 @@ nm_netlink_monitor_event_handler (GIOChannel       *channel,
 		     attribute = RTA_NEXT (attribute, num_attribute_bytes_to_process))
 		{
 			int data_len = RTA_PAYLOAD (attribute);
-			
-			if (attribute->rta_type == IFLA_IFNAME) {
-				char * iface = g_malloc0 (data_len + 1);
-				memcpy (iface, RTA_DATA (attribute), data_len);
-				if (strlen (iface))
-				{
-					/* The !! weirdness is to cannonicalize the value to 0 or 1. */
-					gboolean is_connected = !!((gboolean) (interface_info->ifi_flags & IFF_RUNNING));
 
-					if (is_connected) {
-						g_signal_emit (G_OBJECT (monitor), 
-								       signals[INTERFACE_CONNECTED],
-								       0, iface);
-					} else {
-						g_signal_emit (G_OBJECT (monitor), 
-								       signals[INTERFACE_DISCONNECTED],
-								       0, iface);
-					}
+			if (attribute->rta_type == IFLA_IFNAME) {
+				/* The !! weirdness is to cannonicalize the value to 0 or 1. */
+				gboolean is_connected = !!((gboolean) (interface_info->ifi_flags & IFF_RUNNING));
+
+				if (is_connected) {
+					g_signal_emit (G_OBJECT (monitor), 
+							       signals[INTERFACE_CONNECTED],
+							       0, interface_info->ifi_index);
+				} else {
+					g_signal_emit (G_OBJECT (monitor), 
+							       signals[INTERFACE_DISCONNECTED],
+							       0, interface_info->ifi_index);
 				}
-				g_free (iface);
 			}
 		}
 	}

@@ -77,7 +77,7 @@ struct _NMDevice80211WirelessClass
 
 GType nm_device_802_11_wireless_get_type (void);
 
-NMDevice80211Wireless *nm_device_802_11_wireless_new (const char *iface,
+NMDevice80211Wireless *nm_device_802_11_wireless_new (int index,
 													  const char *udi,
 													  const char *driver,
 													  gboolean test_dev,

@@ -39,8 +39,6 @@ static inline gboolean message_is_error (DBusMessage *msg)
 	return (dbus_message_get_type (msg) == DBUS_MESSAGE_TYPE_ERROR);
 }
 
-char *		nm_dbus_get_object_path_for_device		(NMDevice *dev);
-
 DBusMessage *	nm_dbus_create_error_message			(DBusMessage *message, const char *exception_namespace, const char *exception, const char *format, ...);
 
 DBusMessage *	nm_dbus_new_invalid_args_error (DBusMessage *replyto, const char *namespace);

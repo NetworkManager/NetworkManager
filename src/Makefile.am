@@ -72,7 +72,9 @@ NetworkManager_SOURCES =				\
 		nm-marshal-main.c		\
 		kernel-types.h			\
 		wpa.c				\
-		wpa.h
+		wpa.h				\
+		nm-netlink.c			\
+		nm-netlink.h
 
 nm-marshal.h: Makefile.am nm-marshal.list
 	$(GLIB_GENMARSHAL) --prefix=nm_marshal $(srcdir)/nm-marshal.list --header > \

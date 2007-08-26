@@ -48,25 +48,22 @@ get_creator (NMHalManager *manager, const char *udi)
 
 /* Common helpers for built-in device creators */
 
-static char *
-get_device_interface_from_hal (LibHalContext *ctx, const char *udi)
+static int
+get_device_index_from_hal (LibHalContext *ctx, const char *udi)
 {
-	char *iface = NULL;
+	int idx = -1;
 
-	if (libhal_device_property_exists (ctx, udi, "net.interface", NULL) && 
+	if (libhal_device_property_exists (ctx, udi, "net.linux.ifindex", NULL) && 
 		libhal_device_property_exists (ctx, udi, "info.category", NULL)) {
 
 		char *category = libhal_device_get_property_string (ctx, udi, "info.category", NULL);
 		if (category && (!strcmp (category, "net.80203") || !strcmp (category, "net.80211"))) {
-			char *temp = libhal_device_get_property_string (ctx, udi, "net.interface", NULL);
-			iface = g_strdup (temp);
-			libhal_free_string (temp);
+			idx = libhal_device_get_property_int (ctx, udi, "net.linux.ifindex", NULL);
 		}
-
 		libhal_free_string (category);
 	}
 
-	return iface;
+	return idx;
 }
 
 static char *
@@ -94,7 +91,7 @@ is_wired_device (NMHalManager *manager, const char *udi)
 	char *category;
 	gboolean is_wired = FALSE;
 
-	if (libhal_device_property_exists (manager->hal_ctx, udi, "net.interface", NULL) &&
+	if (libhal_device_property_exists (manager->hal_ctx, udi, "net.linux.ifindex", NULL) &&
 		libhal_device_property_exists (manager->hal_ctx, udi, "info.category", NULL)) {
 
 		category = libhal_device_get_property_string (manager->hal_ctx, udi, "info.category", NULL);
@@ -111,14 +108,17 @@ NMDevice *
 wired_device_creator (NMHalManager *manager, const char *udi)
 {
 	NMDevice *device;
-	char *iface;
+	int idx;
 	char *driver;
 
-	iface = get_device_interface_from_hal (manager->hal_ctx, udi);
-	driver = nm_get_device_driver_name (manager->hal_ctx, udi);
-	device = (NMDevice *) nm_device_802_3_ethernet_new (iface, udi, driver, FALSE, manager->nm_data);
+	idx = get_device_index_from_hal (manager->hal_ctx, udi);
+	if (idx < 0) {
+		nm_warning ("Couldn't get interface index for %s, ignoring.", udi);
+		return NULL;
+	}
 
-	g_free (iface);
+	driver = nm_get_device_driver_name (manager->hal_ctx, udi);
+	device = (NMDevice *) nm_device_802_3_ethernet_new (idx, udi, driver, FALSE, manager->nm_data);
 	g_free (driver);
 
 	return device;
@@ -132,7 +132,7 @@ is_wireless_device (NMHalManager *manager, const char *udi)
 	char *category;
 	gboolean is_wireless = FALSE;
 
-	if (libhal_device_property_exists (manager->hal_ctx, udi, "net.interface", NULL) &&
+	if (libhal_device_property_exists (manager->hal_ctx, udi, "net.linux.ifindex", NULL) &&
 		libhal_device_property_exists (manager->hal_ctx, udi, "info.category", NULL)) {
 
 		category = libhal_device_get_property_string (manager->hal_ctx, udi, "info.category", NULL);
@@ -149,14 +149,17 @@ NMDevice *
 wireless_device_creator (NMHalManager *manager, const char *udi)
 {
 	NMDevice *device;
-	char *iface;
+	int idx;
 	char *driver;
 
-	iface = get_device_interface_from_hal (manager->hal_ctx, udi);
-	driver = nm_get_device_driver_name (manager->hal_ctx, udi);
-	device = (NMDevice *) nm_device_802_11_wireless_new (iface, udi, driver, FALSE, manager->nm_data);
+	idx = get_device_index_from_hal (manager->hal_ctx, udi);
+	if (idx < 0) {
+		nm_warning ("Couldn't get interface index for %s, ignoring.", udi);
+		return NULL;
+	}
 
-	g_free (iface);
+	driver = nm_get_device_driver_name (manager->hal_ctx, udi);
+	device = (NMDevice *) nm_device_802_11_wireless_new (idx, udi, driver, FALSE, manager->nm_data);
 	g_free (driver);
 
 	return device;

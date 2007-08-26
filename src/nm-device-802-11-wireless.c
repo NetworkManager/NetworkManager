@@ -313,18 +313,18 @@ real_get_generic_capabilities (NMDevice *dev)
 	if (iw_get_range_info (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), &range) < 0)
 		goto out;
 
-	if (range.we_version_compiled < 16)
-	{
-		nm_warning ("%s: driver's Wireless Extensions version (%d) is too old.  Can't use device.",
+	if (range.we_version_compiled < 16) {
+		nm_warning ("%s: driver's Wireless Extensions version (%d) is too old.",
 					iface, range.we_version_compiled);
-	}
-	else
+		goto out;
+	} else {
 		caps |= NM_DEVICE_CAP_NM_SUPPORTED;
+	}
 
 	/* Card's that don't scan aren't supported */
 	memset (&wrq, 0, sizeof (struct iwreq));
 	err = iw_set_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (dev), SIOCSIWSCAN, &wrq);
-	if (!((err == -1) && (errno == EOPNOTSUPP)))
+	if ((err == -1) && (errno == EOPNOTSUPP))
 		caps = NM_DEVICE_CAP_NONE;
 
 out:
@@ -3174,7 +3174,7 @@ nm_info ("%s(): clearing activation AP", __func__);
 
 
 NMDevice80211Wireless *
-nm_device_802_11_wireless_new (const char *iface,
+nm_device_802_11_wireless_new (int index,
 							   const char *udi,
 							   const char *driver,
 							   gboolean test_dev,
@@ -3182,17 +3182,19 @@ nm_device_802_11_wireless_new (const char *iface,
 {
 	GObject *obj;
 
-	g_return_val_if_fail (iface != NULL, NULL);
+	g_return_val_if_fail (index >= 0, NULL);
 	g_return_val_if_fail (udi != NULL, NULL);
 	g_return_val_if_fail (driver != NULL, NULL);
 	g_return_val_if_fail (app_data != NULL, NULL);
 
 	obj = g_object_new (NM_TYPE_DEVICE_802_11_WIRELESS,
 						NM_DEVICE_INTERFACE_UDI, udi,
-						NM_DEVICE_INTERFACE_IFACE, iface,
+						NM_DEVICE_INTERFACE_INDEX, index,
 						NM_DEVICE_INTERFACE_DRIVER, driver,
 						NM_DEVICE_INTERFACE_APP_DATA, app_data,
 						NULL);
+	if (obj == NULL)
+		return NULL;
 
 	g_signal_connect (obj, "state-changed",
 					  G_CALLBACK (state_changed_cb),
