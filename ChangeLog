@@ -1,5 +1,10 @@
 2007-08-26  Dan Williams  <dcbw@redhat.com>
 
+	* introspection/nm-device.xml
+		- Add 'Index' property on NMDevice objects (forgot to do this earlier)
+
+2007-08-26  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-3-ethernet.c
 		- (constructor): move connection of interface-connected/disconnected
 			signals here from real_bring_up().  Should be listening to netlink
