@@ -350,7 +350,7 @@ impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err)
 	*devices = g_ptr_array_sized_new (g_slist_length (priv->devices));
 
 	for (iter = priv->devices; iter; iter = iter->next)
-		g_ptr_array_add (*devices, nm_device_get_dbus_path (NM_DEVICE (iter->data)));
+		g_ptr_array_add (*devices, g_strdup (nm_device_get_dbus_path (NM_DEVICE (iter->data))));
 
 	return TRUE;
 }

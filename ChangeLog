@@ -1,3 +1,8 @@
+2007-08-27  Tambet Ingo  <tambet@gmail.com>
+
+	* src/nm-manager.c (impl_manager_get_devices): Duplicate the device path, 
+	dbus-glib frees it when the call is done.
+
 2007-08-26  Dan Williams  <dcbw@redhat.com>
 
 	* introspection/nm-device.xml
