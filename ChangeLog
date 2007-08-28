@@ -1,5 +1,11 @@
 2007-08-28  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-interface.c
+	  src/nm-device-interface.h
+		- Kill one more bit of NMData
+
+2007-08-28  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerSystem.h
 	  src/nm-device.c
 	  src/nm-device.h

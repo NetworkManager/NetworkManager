@@ -63,13 +63,6 @@ nm_device_interface_init (gpointer g_iface)
 
 	g_object_interface_install_property
 		(g_iface,
-		 g_param_spec_pointer (NM_DEVICE_INTERFACE_APP_DATA,
-							   "AppData",
-							   "AppData",
-							   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-
-	g_object_interface_install_property
-		(g_iface,
 		 g_param_spec_uint (NM_DEVICE_INTERFACE_IP4_ADDRESS,
 							"IP4 address",
 							"IP4 address",
