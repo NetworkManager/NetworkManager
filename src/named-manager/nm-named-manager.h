@@ -62,7 +62,7 @@ typedef struct {
 
 GType nm_named_manager_get_type (void);
 
-NMNamedManager * nm_named_manager_new (void);
+NMNamedManager * nm_named_manager_get (void);
 
 gboolean nm_named_manager_add_ip4_config (NMNamedManager *mgr, NMIP4Config *config);
 

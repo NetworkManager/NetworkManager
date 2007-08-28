@@ -34,6 +34,7 @@
 #include "NetworkManagerSystem.h"
 #include "nm-dhcp-manager.h"
 #include "nm-dbus-manager.h"
+#include "nm-named-manager.h"
 #include "nm-utils.h"
 #include "autoip.h"
 #include "nm-netlink.h"
@@ -1030,6 +1031,7 @@ nm_device_deactivate (NMDeviceInterface *device)
 {
 	NMDevice *self = NM_DEVICE (device);
 	NMIP4Config *	config;
+	NMNamedManager * named_mgr;
 
 	g_return_if_fail (self != NULL);
 
@@ -1038,10 +1040,11 @@ nm_device_deactivate (NMDeviceInterface *device)
 	nm_device_deactivate_quickly (self);
 
 	/* Remove any device nameservers and domains */
-	if ((config = nm_device_get_ip4_config (self)))
-	{
-		nm_named_manager_remove_ip4_config (self->priv->app_data->named_manager, config);
+	if ((config = nm_device_get_ip4_config (self))) {
+		named_mgr = nm_named_manager_get ();
+		nm_named_manager_remove_ip4_config (named_mgr, config);
 		nm_device_set_ip4_config (self, NULL);
+		g_object_unref (named_mgr);
 	}
 
 	/* Take out any entries in the routing table and any IP address the device had. */

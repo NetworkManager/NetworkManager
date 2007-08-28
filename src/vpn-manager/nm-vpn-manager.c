@@ -23,6 +23,7 @@
 #include <string.h>
 #include <dbus/dbus.h>
 #include "nm-vpn-manager.h"
+#include "nm-named-manager.h"
 #include "NetworkManager.h"
 #include "NetworkManagerMain.h"
 #include "NetworkManagerDbus.h"
@@ -248,6 +249,7 @@ nm_vpn_manager_add_connection (NMVPNManager *manager,
 	NMVPNService *		service;
 	DBusConnection *	dbus_connection;
 	NMDBusManager *		dbus_mgr = NULL;
+	NMNamedManager *	named_mgr = NULL;
 	GSList	*			elt;
 
 	g_return_val_if_fail (manager != NULL, NULL);
@@ -266,10 +268,12 @@ nm_vpn_manager_add_connection (NMVPNManager *manager,
 		goto out;
 	}
 
+	named_mgr = nm_named_manager_get ();
 	connection = nm_vpn_connection_new (name,
 	                                    user_name,
 	                                    service_name,
-	                                    manager->app_data->named_manager);
+	                                    named_mgr);
+	g_object_unref (named_mgr);
 	if (!connection) {
 		nm_warning ("couldn't create VPN connecton for '%s (%s).",
 		            name,

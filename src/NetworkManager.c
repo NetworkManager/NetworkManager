@@ -147,8 +147,6 @@ static void nm_data_free (NMData *data)
 	nm_ap_list_unref (data->allowed_ap_list);
 	nm_ap_list_unref (data->invalid_ap_list);
 
-	g_object_unref (data->named_manager);
-
 	g_slice_free (NMData, data);
 }
 
@@ -303,6 +301,7 @@ main (int argc, char *argv[])
 	NMPolicy *policy;
 	NMHalManager *hal_manager = NULL;
 	NMVPNManager *vpn_manager = NULL;
+	NMNamedManager *named_mgr = NULL;
 	NMDBusManager *	dbus_mgr;
 	DBusConnection *dbus_connection;
 	NMSupplicantManager * sup_mgr = NULL;
@@ -425,8 +424,8 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	nm_data->named_manager = nm_named_manager_new ();
-	if (!nm_data->named_manager) {
+	named_mgr = nm_named_manager_get ();
+	if (!named_mgr) {
 		nm_warning ("Failed to start the named manager.");
 		goto done;
 	}

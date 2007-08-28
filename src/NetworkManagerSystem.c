@@ -188,16 +188,13 @@ out:
  */
 gboolean nm_system_device_set_from_ip4_config (NMDevice *dev)
 {
-	NMData *			app_data;
+	NMNamedManager * named_mgr;
 	NMIP4Config *		config;
 	struct nl_handle *	nlh = NULL;
 	struct rtnl_addr *	addr = NULL;
 	int				err;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
-
-	app_data = nm_device_get_app_data (dev);
-	g_return_val_if_fail (app_data != NULL, FALSE);
 
 	config = nm_device_get_ip4_config (dev);
 	g_return_val_if_fail (config != NULL, FALSE);
@@ -222,7 +219,9 @@ gboolean nm_system_device_set_from_ip4_config (NMDevice *dev)
 	sleep (1);
 	nm_system_device_set_ip4_route (dev, nm_ip4_config_get_gateway (config), 0, 0, nm_ip4_config_get_mss (config));
 
-	nm_named_manager_add_ip4_config (app_data->named_manager, config);
+	named_mgr = nm_named_manager_get ();
+	nm_named_manager_add_ip4_config (named_mgr, config);
+	g_object_unref (named_mgr);
 
 	return TRUE;
 }

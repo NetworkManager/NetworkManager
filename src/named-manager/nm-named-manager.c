@@ -79,6 +79,22 @@ struct NMNamedManagerPrivate {
 };
 
 
+NMNamedManager *
+nm_named_manager_get (void)
+{
+	static NMNamedManager * singleton = NULL;
+
+	if (!singleton) {
+		singleton = NM_NAMED_MANAGER (g_object_new (NM_TYPE_NAMED_MANAGER, NULL));
+	} else {
+		g_object_ref (singleton);
+	}
+
+	g_assert (singleton);
+	return singleton;
+}
+
+
 GQuark
 nm_named_manager_error_quark (void)
 {

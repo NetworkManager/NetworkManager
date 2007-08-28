@@ -1,5 +1,18 @@
 2007-08-28  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device.c
+	  src/named-manager/nm-named-manager.c
+	  src/named-manager/nm-named-manager.h
+	  src/NetworkManager.c
+	  src/vpn-manager/nm-vpn-manager.c
+	  src/NetworkManagerMain.h
+	  src/NetworkManagerSystem.c
+		- Remove the named-manager object from NMData structure in preparation
+		for NMData's timely death.  Make the NMNamedManager the singleton that
+		it really is
+
+2007-08-28  Dan Williams  <dcbw@redhat.com>
+
 	Remove NMAPSecurity objects, they are replaced with flags on the APs for
 	each AP's capabilities, and by NMConnection/NMSettings objects for user
 	defined connections.
