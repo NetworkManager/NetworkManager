@@ -120,14 +120,6 @@ static NMData *nm_data_new (void)
 
 	data = g_slice_new0 (NMData);
 
-	/* Initialize the access point lists */
-	data->invalid_ap_list = nm_ap_list_new (NETWORK_TYPE_INVALID);
-	if (!data->invalid_ap_list) {
-		nm_data_free (data);
-		nm_warning ("could not create access point lists.");
-		return NULL;
-	}
-
 	return data;
 }
 
@@ -141,8 +133,6 @@ static NMData *nm_data_new (void)
 static void nm_data_free (NMData *data)
 {
 	g_return_if_fail (data != NULL);
-
-	nm_ap_list_unref (data->invalid_ap_list);
 
 	g_slice_free (NMData, data);
 }

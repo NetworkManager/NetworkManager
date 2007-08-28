@@ -831,7 +831,7 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 
 			/* Only keep if its not in the invalid list and its _is_ in our scanned list */
 			if ( keep
-				&& !nm_ap_list_get_ap_by_ssid (app_data->invalid_ap_list, ssid)
+				&& !nm_ap_get_invalid (cur_ap)
 				&& nm_device_802_11_wireless_ap_list_get_ap_by_ssid (self, ssid))
 			{
 				return (NMAccessPoint *) g_object_ref (cur_ap);
@@ -846,7 +846,7 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 		const GByteArray * ap_ssid = nm_ap_get_ssid (scan_ap);
 
 		/* Access points in the "invalid" list cannot be used */
-		if (nm_ap_list_get_ap_by_ssid (app_data->invalid_ap_list, ap_ssid))
+		if (nm_ap_get_invalid (scan_ap))
 			continue;
 
 		// FIXME: match up an NMConnection with some NMAccessPoint for the
@@ -2865,7 +2865,6 @@ activation_failure_handler (NMDevice *dev)
 		{
 			/* Add the AP to the invalid list */
 			nm_ap_set_invalid (ap, TRUE);
-			nm_ap_list_append_ap (app_data->invalid_ap_list, ap);
 		}
 	}
 

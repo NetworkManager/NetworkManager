@@ -1,5 +1,15 @@
 2007-08-28  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerMain.h
+	  src/nm-device-802-11-wireless.c
+	  src/NetworkManager.c
+		- Remove invalid AP list from NMData; need to rework this somewhat, but
+		for now we should set the 'invalid' property on individual APs, and when
+		we need to invalidate a whole ESS, set the 'invalid' on every member of
+		that ESS
+
+2007-08-28  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerAP.c
 	  src/NetworkManagerAP.h
 		- Remove 'fallback' tag, to be replaced by NMConnection/NMSettings
