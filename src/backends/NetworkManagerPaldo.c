@@ -406,7 +406,7 @@ static NMIP4Config *netdevice_file_get_ip4_config (GKeyFile *file)
  * Read in the config file for a device.
  *
  */
-void *nm_system_device_get_system_config (NMDevice *dev, NMData *app_data)
+void *nm_system_device_get_system_config (NMDevice *dev)
 {
 	PaldoSystemConfigData	*sys_data = NULL;
 	GKeyFile				*file;

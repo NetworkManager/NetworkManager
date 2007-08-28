@@ -32,7 +32,7 @@
 typedef struct NMVPNService NMVPNService;
 
 
-NMVPNService *	nm_vpn_service_new				(NMVPNManager *manager, NMData *app_data);
+NMVPNService *	nm_vpn_service_new				(NMVPNManager *manager);
 
 void			nm_vpn_service_ref				(NMVPNService *service);
 void			nm_vpn_service_unref			(NMVPNService *service);

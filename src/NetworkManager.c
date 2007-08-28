@@ -65,9 +65,6 @@
  */
 static NMManager *manager = NULL;
 static GMainLoop *main_loop = NULL;
-static NMData *nm_data = NULL;
-
-static void nm_data_free (NMData *data);
 
 static void
 nm_error_monitoring_device_link_state (NMNetlinkMonitor *monitor,
@@ -108,35 +105,6 @@ nm_monitor_setup (void)
 	return TRUE;
 }
 
-/*
- * nm_data_new
- *
- * Create data structure used in callbacks from libhal.
- *
- */
-static NMData *nm_data_new (void)
-{
-	NMData * data;
-
-	data = g_slice_new0 (NMData);
-
-	return data;
-}
-
-
-/*
- * nm_data_free
- *
- *   Free data structure used in callbacks.
- *
- */
-static void nm_data_free (NMData *data)
-{
-	g_return_if_fail (data != NULL);
-
-	g_slice_free (NMData, data);
-}
-
 static void
 nm_name_owner_changed_handler (NMDBusManager *mgr,
                                const char *name,
@@ -144,7 +112,6 @@ nm_name_owner_changed_handler (NMDBusManager *mgr,
                                const char *new,
                                gpointer user_data)
 {
-	NMData * data = (NMData *) user_data;
 	gboolean old_owner_good = (old && (strlen (old) > 0));
 	gboolean new_owner_good = (new && (strlen (new) > 0));
 
@@ -286,11 +253,11 @@ main (int argc, char *argv[])
 	gboolean		show_usage = FALSE;
 	char *		pidfile = NULL;
 	char *		user_pidfile = NULL;
-	NMPolicy *policy;
+	NMPolicy *policy = NULL;
 	NMHalManager *hal_manager = NULL;
 	NMVPNManager *vpn_manager = NULL;
 	NMNamedManager *named_mgr = NULL;
-	NMDBusManager *	dbus_mgr;
+	NMDBusManager *	dbus_mgr = NULL;
 	DBusConnection *dbus_connection;
 	NMSupplicantManager * sup_mgr = NULL;
 	int			exit_status = EXIT_FAILURE;
@@ -362,13 +329,6 @@ main (int argc, char *argv[])
 	nm_system_init ();
 	main_loop = g_main_loop_new (NULL, FALSE);
 
-	/* Initialize our instance data */
-	nm_data = nm_data_new ();
-	if (!nm_data) {
-		nm_error ("Failed to initialize.");
-		goto pidfile;
-	}
-
 	/* Create watch functions that monitor cards for link status. */
 	if (!nm_monitor_setup ())
 		goto done;
@@ -387,11 +347,19 @@ main (int argc, char *argv[])
 	g_signal_connect (dbus_mgr,
 					  "name-owner-changed",
 	                  G_CALLBACK (nm_name_owner_changed_handler),
-					  nm_data);
+					  NULL);
 
 	manager = nm_manager_new ();
-	g_object_set_data (G_OBJECT (manager), "NM_DATA_HACK", nm_data);
+	if (manager == NULL) {
+		nm_error ("Failed to initialize the network manager.");
+		goto done;
+	}
+
 	policy = nm_policy_new (manager);
+	if (policy == NULL) {
+		nm_error ("Failed to initialize the policy.");
+		goto done;
+	}
 
 	nm_dbus_manager_register_signal_handler (dbus_mgr,
 											 NMI_DBUS_INTERFACE,
@@ -406,7 +374,7 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	vpn_manager = nm_vpn_manager_new (manager, nm_data);
+	vpn_manager = nm_vpn_manager_new (manager);
 	if (!vpn_manager) {
 		nm_warning ("Failed to start the VPN manager.");
 		goto done;
@@ -424,7 +392,7 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	hal_manager = nm_hal_manager_new (manager, nm_data);
+	hal_manager = nm_hal_manager_new (manager);
 	if (!hal_manager)
 		goto done;
 
@@ -454,8 +422,6 @@ done:
 	if (manager)
 		g_object_unref (manager);
 
-	nm_data_free (nm_data);
-
 	if (sup_mgr)
 		g_object_unref (sup_mgr);
 
@@ -465,7 +431,6 @@ done:
 	g_object_unref (dbus_mgr);
 	nm_logging_shutdown ();
 
-pidfile:
 	if (pidfile)
 		unlink (pidfile);
 	g_free (pidfile);

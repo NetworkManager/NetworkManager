@@ -40,7 +40,6 @@
 struct NMVPNManager
 {
 	NMManager *         nm_manager;
-	NMData *			app_data;
 	GHashTable *		service_table;
 	GSList *			connections;
 
@@ -103,17 +102,15 @@ nm_dbus_nmi_vpn_signal_handler (DBusConnection *connection,
  * Create a new VPN manager instance.
  *
  */
-NMVPNManager *nm_vpn_manager_new (NMManager *nm_manager, NMData *app_data)
+NMVPNManager *nm_vpn_manager_new (NMManager *nm_manager)
 {
 	NMVPNManager *	manager;
 	NMDBusManager *	dbus_mgr;
 
 	g_return_val_if_fail (NM_IS_MANAGER (nm_manager), NULL);
-	g_return_val_if_fail (app_data != NULL, NULL);
 
 	manager = g_slice_new0 (NMVPNManager);
 	manager->nm_manager = g_object_ref (nm_manager);
-	manager->app_data = app_data;
 
 	manager->service_table = g_hash_table_new_full (g_str_hash,
 	                                                g_str_equal,
@@ -680,7 +677,7 @@ load_services (NMVPNManager *manager, GHashTable *table)
 		if (!lines)
 			goto free_file_path;
  
-		service = nm_vpn_service_new (manager, manager->app_data);
+		service = nm_vpn_service_new (manager);
 		success = set_service_from_contents (lines, service, &err);
 		g_strfreev (lines);
 

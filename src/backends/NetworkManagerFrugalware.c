@@ -433,7 +433,7 @@ guint32 nm_system_get_mtu (NMDevice *dev)
  * Read in the config file for a device.
  *
  */
-void *nm_system_device_get_system_config (NMDevice *dev, NMData *app_data)
+void *nm_system_device_get_system_config (NMDevice *dev)
 {
 	fwnet_profile_t *profile;
 	fwnet_interface_t *interface;

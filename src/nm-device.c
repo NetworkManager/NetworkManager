@@ -68,7 +68,6 @@ struct _NMDevicePrivate
 	gboolean			link_active;
 	guint32			ip4_address;
 	struct in6_addr	ip6_address;
-	NMData *			app_data;
 
 	NMActRequest *		act_request;
 	guint           act_source_id;
@@ -121,7 +120,6 @@ nm_device_init (NMDevice * self)
 	self->priv->link_active = FALSE;
 	self->priv->ip4_address = 0;
 	memset (&self->priv->ip6_address, 0, sizeof (struct in6_addr));
-	self->priv->app_data = NULL;
 
 	self->priv->act_source_id = 0;
 
@@ -171,7 +169,7 @@ constructor (GType type,
 	}
 
 	/* Grab IP config data for this device from the system configuration files */
-	priv->system_config_data = nm_system_device_get_system_config (dev, priv->app_data);
+	priv->system_config_data = nm_system_device_get_system_config (dev);
 
 	/* Allow distributions to flag devices as disabled */
 	if (nm_system_device_get_disabled (dev)) {
@@ -338,19 +336,6 @@ static guint32
 real_get_type_capabilities (NMDevice *self)
 {
 	return NM_DEVICE_CAP_NONE;
-}
-
-
-/*
- * nm_device_get_app_data
- *
- */
-struct NMData *
-nm_device_get_app_data (NMDevice *self)
-{
-	g_return_val_if_fail (self != NULL, FALSE);
-
-	return self->priv->app_data;
 }
 
 
@@ -1481,9 +1466,6 @@ set_property (GObject *object, guint prop_id,
 	case NM_DEVICE_INTERFACE_PROP_DRIVER:
 		priv->driver = g_strdup (g_value_get_string (value));
 		break;
-	case NM_DEVICE_INTERFACE_PROP_APP_DATA:
-		priv->app_data = g_value_get_pointer (value);
-		break;
 	case NM_DEVICE_INTERFACE_PROP_CAPABILITIES:
 		priv->capabilities = g_value_get_uint (value);
 		break;
@@ -1514,9 +1496,6 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case NM_DEVICE_INTERFACE_PROP_DRIVER:
 		g_value_set_string (value, priv->driver);
-		break;
-	case NM_DEVICE_INTERFACE_PROP_APP_DATA:
-		g_value_set_pointer (value, priv->app_data);
 		break;
 	case NM_DEVICE_INTERFACE_PROP_CAPABILITIES:
 		g_value_set_uint (value, priv->capabilities);
@@ -1597,10 +1576,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	g_object_class_override_property (object_class,
 									  NM_DEVICE_INTERFACE_PROP_STATE,
 									  NM_DEVICE_INTERFACE_STATE);
-
-	g_object_class_override_property (object_class,
-									  NM_DEVICE_INTERFACE_PROP_APP_DATA,
-									  NM_DEVICE_INTERFACE_APP_DATA);
 
 	g_object_class_override_property (object_class,
 									  NM_DEVICE_INTERFACE_PROP_DEVICE_TYPE,

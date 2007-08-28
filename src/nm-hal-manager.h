@@ -6,7 +6,7 @@
 
 typedef struct _NMHalManager NMHalManager;
 
-NMHalManager *nm_hal_manager_new (NMManager *nm_manager, NMData *nm_data);
+NMHalManager *nm_hal_manager_new (NMManager *nm_manager);
 void nm_hal_manager_destroy (NMHalManager *manager);
 
 #endif /* NM_HAL_MANAGER_H */

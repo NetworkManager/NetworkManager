@@ -29,8 +29,6 @@
 #include "nm-ip4-config.h"
 #include "nm-named-manager.h"
 
-struct NMData;
-
 /* Prototypes for system/distribution dependent functions,
  * implemented in the backend files in backends/ directory
  */
@@ -59,7 +57,7 @@ void			nm_generic_restart_mdns_responder			(void);
 void			nm_generic_device_add_ip6_link_address 		(NMDevice *dev);
 
 void			nm_generic_set_ip4_config_from_resolv_conf (const char *filename, NMIP4Config *ip4_config);
-void *		nm_generic_device_get_system_config			(NMDevice *dev, struct NMData *data);
+void *		nm_generic_device_get_system_config			(NMDevice *dev);
 void			nm_generic_device_free_system_config		(NMDevice *dev, void *system_config_data);
 NMIP4Config *	nm_generic_device_new_ip4_system_config		(NMDevice *dev);
 

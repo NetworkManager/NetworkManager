@@ -364,7 +364,7 @@ out:
  * info before setting stuff too.
  *
  */
-void* nm_generic_device_get_system_config (NMDevice *dev, NMData *app_data)
+void* nm_generic_device_get_system_config (NMDevice *dev)
 {
 	return NULL;
 }

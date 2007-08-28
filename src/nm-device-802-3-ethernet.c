@@ -244,21 +244,18 @@ NMDevice8023Ethernet *
 nm_device_802_3_ethernet_new (int index,
 							  const char *udi,
 							  const char *driver,
-							  gboolean test_dev,
-							  NMData *app_data)
+							  gboolean test_dev)
 {
 	GObject *obj;
 
 	g_return_val_if_fail (index >= 0, NULL);
 	g_return_val_if_fail (udi != NULL, NULL);
 	g_return_val_if_fail (driver != NULL, NULL);
-	g_return_val_if_fail (app_data != NULL, NULL);
 
 	obj = g_object_new (NM_TYPE_DEVICE_802_3_ETHERNET,
 						NM_DEVICE_INTERFACE_UDI, udi,
 						NM_DEVICE_INTERFACE_INDEX, index,
 						NM_DEVICE_INTERFACE_DRIVER, driver,
-						NM_DEVICE_INTERFACE_APP_DATA, app_data,
 						NULL);
 	if (obj == NULL)
 		return NULL;

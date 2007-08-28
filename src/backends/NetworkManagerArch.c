@@ -527,7 +527,7 @@ typedef struct ArchSystemConfigData
  * info before setting stuff too.
  *
  */
-void* nm_system_device_get_system_config (NMDevice * dev, NMData *app_data)
+void* nm_system_device_get_system_config (NMDevice * dev)
 {
 
 	GHashTable* ifh;

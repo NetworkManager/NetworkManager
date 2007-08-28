@@ -11,7 +11,6 @@ struct _NMHalManager {
 	LibHalContext *hal_ctx;
 	NMDBusManager *dbus_mgr;
 	NMManager *nm_manager;
-	NMData *nm_data;
 	GSList *device_creators;
 
 	gboolean nm_sleeping;
@@ -118,7 +117,7 @@ wired_device_creator (NMHalManager *manager, const char *udi)
 	}
 
 	driver = nm_get_device_driver_name (manager->hal_ctx, udi);
-	device = (NMDevice *) nm_device_802_3_ethernet_new (idx, udi, driver, FALSE, manager->nm_data);
+	device = (NMDevice *) nm_device_802_3_ethernet_new (idx, udi, driver, FALSE);
 	g_free (driver);
 
 	return device;
@@ -159,7 +158,7 @@ wireless_device_creator (NMHalManager *manager, const char *udi)
 	}
 
 	driver = nm_get_device_driver_name (manager->hal_ctx, udi);
-	device = (NMDevice *) nm_device_802_11_wireless_new (idx, udi, driver, FALSE, manager->nm_data);
+	device = (NMDevice *) nm_device_802_11_wireless_new (idx, udi, driver, FALSE);
 	g_free (driver);
 
 	return device;
@@ -429,7 +428,7 @@ nm_manager_state_changed (NMManager *nm_manager, NMState state, gpointer user_da
 }
 
 NMHalManager *
-nm_hal_manager_new (NMManager *nm_manager, NMData *nm_data)
+nm_hal_manager_new (NMManager *nm_manager)
 {
 	NMHalManager *manager;
 	NMDBusManager *dbus_mgr;
@@ -445,7 +444,6 @@ nm_hal_manager_new (NMManager *nm_manager, NMData *nm_data)
 	manager = g_slice_new0 (NMHalManager);
 	manager->nm_manager = g_object_ref (nm_manager);
 	manager->dbus_mgr = dbus_mgr;
-	manager->nm_data = nm_data;
 
 	register_built_in_creators (manager);
 

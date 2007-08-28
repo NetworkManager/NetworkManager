@@ -55,8 +55,7 @@ GType nm_device_802_3_ethernet_get_type (void);
 NMDevice8023Ethernet *nm_device_802_3_ethernet_new (int index,
 													const char *udi,
 													const char *driver,
-													gboolean test_dev,
-													NMData *app_data);
+													gboolean test_dev);
 
 void nm_device_802_3_ethernet_get_address (NMDevice8023Ethernet *dev,
 								   struct ether_addr *addr);

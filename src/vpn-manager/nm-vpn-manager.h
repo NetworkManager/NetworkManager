@@ -27,7 +27,7 @@
 #include "nm-vpn-service.h"
 
 
-NMVPNManager *		nm_vpn_manager_new						(NMManager *nm_manager, NMData *app_data);
+NMVPNManager *		nm_vpn_manager_new						(NMManager *nm_manager);
 NMVPNConnection *	nm_vpn_manager_add_connection				(NMVPNManager *manager, const char *name, const char *service_name, const char *user_name);
 void				nm_vpn_manager_remove_connection			(NMVPNManager *manager, NMVPNConnection *vpn);
 char	**			nm_vpn_manager_get_connection_names		(NMVPNManager *manager);

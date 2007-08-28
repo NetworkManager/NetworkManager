@@ -286,7 +286,7 @@ typedef struct SuSEDeviceConfigData
  * SuSE stores this information in /etc/sysconfig/network/ifcfg-*-<MAC address>
  *
  */
-void *nm_system_device_get_system_config (NMDevice *dev, NMData *app_data)
+void *nm_system_device_get_system_config (NMDevice *dev)
 {
 	char *cfg_file_path = NULL;
 	char mac[18];

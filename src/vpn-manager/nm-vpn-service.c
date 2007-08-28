@@ -44,7 +44,6 @@ struct NMVPNService
 {
 	int				refcount;
 	NMVPNManager *	manager;
-	NMData *		app_data;
 	GPid			pid;
 	guint32         sig_handler_id;
 	gulong			watch_id;
@@ -95,13 +94,12 @@ static void print_vpn_config (NMIP4Config *config,
  * Create a new VPNService object
  *
  */
-NMVPNService *nm_vpn_service_new (NMVPNManager *manager, NMData *app_data)
+NMVPNService *nm_vpn_service_new (NMVPNManager *manager)
 {
 	NMVPNService *service = g_malloc0 (sizeof (NMVPNService));
 
 	service->refcount = 1;
 	service->state = NM_VPN_SERVICE_STATE_SHUTDOWN;
-	service->app_data = app_data;
 	service->manager = manager;
 	service->dbus_mgr = nm_dbus_manager_get ();
 

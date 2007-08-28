@@ -120,8 +120,6 @@ NMDeviceType	nm_device_get_device_type	(NMDevice *dev);
 guint32		nm_device_get_capabilities	(NMDevice *dev);
 guint32		nm_device_get_type_capabilities	(NMDevice *dev);
 
-struct NMData *	nm_device_get_app_data	(NMDevice *dev);
-
 gboolean		nm_device_has_active_link	(NMDevice *dev);
 guint32			nm_device_get_ip4_address	(NMDevice *dev);
 void				nm_device_update_ip4_address	(NMDevice *dev);

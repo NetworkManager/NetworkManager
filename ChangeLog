@@ -1,5 +1,34 @@
 2007-08-28  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerSystem.h
+	  src/nm-device.c
+	  src/nm-device.h
+	  src/nm-hal-manager.c
+	  src/NetworkManager.c
+	  src/nm-device-802-11-wireless.c
+	  src/nm-hal-manager.h
+	  src/nm-device-802-3-ethernet.c
+	  src/vpn-manager/nm-vpn-service.h
+	  src/vpn-manager/nm-vpn-manager.c
+	  src/vpn-manager/nm-vpn-manager.h
+	  src/vpn-manager/nm-vpn-service.c
+	  src/nm-device-802-11-wireless.h
+	  src/NetworkManagerMain.h
+	  src/nm-device-802-3-ethernet.h
+	  src/backends/NetworkManagerGentoo.c
+	  src/backends/NetworkManagerPaldo.c
+	  src/backends/NetworkManagerFrugalware.c
+	  src/backends/NetworkManagerRedHat.c
+	  src/backends/NetworkManagerSlackware.c
+	  src/backends/NetworkManagerGeneric.c
+	  src/backends/NetworkManagerArch.c
+	  src/backends/NetworkManagerSuSE.c
+	  src/backends/NetworkManagerGeneric.h
+	  src/backends/NetworkManagerDebian.c
+		- Kill NMData
+
+2007-08-28  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerMain.h
 	  src/nm-device-802-11-wireless.c
 	  src/NetworkManager.c

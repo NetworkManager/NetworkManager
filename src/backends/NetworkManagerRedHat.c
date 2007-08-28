@@ -314,7 +314,7 @@ static char *get_current_profile_name (void)
  * Read in the config file for a device.
  *
  */
-void *nm_system_device_get_system_config (NMDevice *dev, NMData *app_data)
+void *nm_system_device_get_system_config (NMDevice *dev)
 {
 	char *				cfg_file_path = NULL;
 	shvarFile *			file;

@@ -32,8 +32,4 @@
 typedef struct NMVPNActRequest NMVPNActRequest;
 typedef struct NMVPNManager NMVPNManager;
 
-typedef struct NMData
-{
-} NMData;
-
 #endif

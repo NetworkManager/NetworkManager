@@ -411,7 +411,6 @@ constructor (GType type,
 	GObject *object;
 	NMDevice80211Wireless *self;
 	NMDevice80211WirelessPrivate *priv;
-	NMData *app_data;
 	const char *iface;
 	NMSock *sk;
 
@@ -424,7 +423,6 @@ constructor (GType type,
 	self = NM_DEVICE_802_11_WIRELESS (object);
 	priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 
-	app_data = nm_device_get_app_data (NM_DEVICE (self));
 	iface = nm_device_get_iface (NM_DEVICE (self));
 
 	if ((sk = nm_dev_sock_open (iface, DEV_WIRELESS, __FUNCTION__, NULL))) {
@@ -804,12 +802,8 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 	NMAccessPoint *	cur_ap = NULL;
 	NMActRequest *		req = NULL;
 	GTimeVal		 	best_timestamp = {0, 0};
-	NMData *			app_data;
 
 	g_return_val_if_fail (self != NULL, NULL);
-
-	app_data = nm_device_get_app_data (NM_DEVICE (self));
-	g_assert (app_data);
 
 	if (!(ap_list = nm_device_802_11_wireless_ap_list_get (self)))
 		return NULL;
@@ -887,11 +881,7 @@ nm_device_802_11_wireless_set_activation_ap (NMDevice80211Wireless *self,
 {
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 	NMAccessPoint		*ap = NULL;
-	NMData *			app_data;
 	NMAccessPointList *	dev_ap_list;
-
-	app_data = nm_device_get_app_data (NM_DEVICE (self));
-	g_assert (app_data);
 
 	nm_debug ("Forcing AP '%s'", nm_utils_escape_ssid (ssid->data, ssid->len));
 
@@ -1978,14 +1968,10 @@ supplicant_iface_scanned_ap_cb (NMSupplicantInterface * iface,
                                 NMDevice80211Wireless * self)
 {
 	NMAccessPoint *ap;
-	NMData *app_data;
 
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (properties != NULL);
 	g_return_if_fail (iface != NULL);
-
-	if (!(app_data = nm_device_get_app_data (NM_DEVICE (self))))
-		return;
 
 	ap = nm_ap_new_from_properties (properties);
 	if (!ap)
@@ -2838,13 +2824,9 @@ activation_success_handler (NMDevice *dev)
 static void
 activation_failure_handler (NMDevice *dev)
 {
-	NMData *			app_data;
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
 	NMAccessPoint *	ap;
 	const GByteArray * ssid;
-
-	app_data = nm_device_get_app_data (dev);
-	g_assert (app_data);
 
 	if ((ap = nm_device_802_11_wireless_get_activation_ap (self)))
 	{
@@ -3090,21 +3072,18 @@ NMDevice80211Wireless *
 nm_device_802_11_wireless_new (int index,
 							   const char *udi,
 							   const char *driver,
-							   gboolean test_dev,
-							   NMData *app_data)
+							   gboolean test_dev)
 {
 	GObject *obj;
 
 	g_return_val_if_fail (index >= 0, NULL);
 	g_return_val_if_fail (udi != NULL, NULL);
 	g_return_val_if_fail (driver != NULL, NULL);
-	g_return_val_if_fail (app_data != NULL, NULL);
 
 	obj = g_object_new (NM_TYPE_DEVICE_802_11_WIRELESS,
 						NM_DEVICE_INTERFACE_UDI, udi,
 						NM_DEVICE_INTERFACE_INDEX, index,
 						NM_DEVICE_INTERFACE_DRIVER, driver,
-						NM_DEVICE_INTERFACE_APP_DATA, app_data,
 						NULL);
 	if (obj == NULL)
 		return NULL;
