@@ -121,10 +121,8 @@ static NMData *nm_data_new (void)
 	data = g_slice_new0 (NMData);
 
 	/* Initialize the access point lists */
-	data->allowed_ap_list = nm_ap_list_new (NETWORK_TYPE_ALLOWED);
 	data->invalid_ap_list = nm_ap_list_new (NETWORK_TYPE_INVALID);
-	if (!data->allowed_ap_list || !data->invalid_ap_list)
-	{
+	if (!data->invalid_ap_list) {
 		nm_data_free (data);
 		nm_warning ("could not create access point lists.");
 		return NULL;
@@ -144,7 +142,6 @@ static void nm_data_free (NMData *data)
 {
 	g_return_if_fail (data != NULL);
 
-	nm_ap_list_unref (data->allowed_ap_list);
 	nm_ap_list_unref (data->invalid_ap_list);
 
 	g_slice_free (NMData, data);
@@ -162,9 +159,10 @@ nm_name_owner_changed_handler (NMDBusManager *mgr,
 	gboolean new_owner_good = (new && (strlen (new) > 0));
 
 	if (strcmp (name, NMI_DBUS_SERVICE) == 0) {
-		if (!old_owner_good && new_owner_good)
+		if (!old_owner_good && new_owner_good) {
 			/* NMI appeared, update stuff */
-			nm_policy_schedule_allowed_ap_list_update (data);
+// FIXME: grab NMConnections from the info-daemon
+		}
 	}
 }
 
@@ -441,13 +439,11 @@ main (int argc, char *argv[])
 		goto done;
 
 	/* If NMI is running, grab allowed wireless network lists from it ASAP */
+#if 0
+// FIXME: grab NMConnections instead
 	if (nm_dbus_manager_name_has_owner (dbus_mgr, NMI_DBUS_SERVICE))
 		nm_policy_schedule_allowed_ap_list_update (nm_data);
-
-	/* We run dhclient when we need to, and we don't want any stray ones
-	 * lying around upon launch.
-	 */
-//	nm_system_kill_all_dhcp_daemons ();
+#endif
 
 	/* Bring up the loopback interface. */
 	nm_system_enable_loopback ();

@@ -72,7 +72,6 @@ typedef struct
 	glong				last_seen;	/* Last time the AP was seen in a scan in seconds */
 
 	/* Things from user prefs/NetworkManagerInfo */
-	gboolean			fallback;
 	GTimeVal			timestamp;
 	GSList *			user_addresses;
 } NMAccessPointPrivate;
@@ -829,26 +828,6 @@ void nm_ap_set_invalid (NMAccessPoint *ap, gboolean invalid)
 	g_return_if_fail (NM_IS_AP (ap));
 
 	NM_AP_GET_PRIVATE (ap)->invalid = invalid;
-}
-
-
-/*
- * Get/Set functions to indicate that an access point is
- * 'fallback'
- *
- */
-gboolean nm_ap_get_fallback (const NMAccessPoint *ap)
-{
-	g_return_val_if_fail (NM_IS_AP (ap), FALSE);
-
-	return NM_AP_GET_PRIVATE (ap)->fallback;
-}
-
-void nm_ap_set_fallback (NMAccessPoint *ap, gboolean fallback)
-{
-	g_return_if_fail (NM_IS_AP (ap));
-
-	NM_AP_GET_PRIVATE (ap)->fallback = fallback;
 }
 
 

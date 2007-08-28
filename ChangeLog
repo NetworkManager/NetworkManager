@@ -1,5 +1,23 @@
 2007-08-28  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerAP.c
+	  src/NetworkManagerAP.h
+		- Remove 'fallback' tag, to be replaced by NMConnection/NMSettings
+			'autoconnect' property instead
+
+	* src/NetworkManager.c
+	  src/NetworkManagerMain.h
+	  src/NetworkManagerPolicy.c
+	  src/NetworkManagerPolicy.h
+		- Remove the 'allowed_ap_list', which should be replaced by 
+			NMConnection/NMSettings instead, since _those_ are the allowed
+			things that NM can connect to
+
+	* src/nm-device-802-11-wireless.c
+		- Remove both allowed_ap_list usage and 'fallback' checking
+
+2007-08-28  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device.c
 	  src/named-manager/nm-named-manager.c
 	  src/named-manager/nm-named-manager.h

@@ -789,75 +789,6 @@ get_ap_blacklisted (NMAccessPoint *ap, GSList *addrs)
 
 
 /*
- * get_best_fallback_ap
- *
- * Find and return the most suitable "fallback" network, if any.  We "fall back"
- * on these networks and attempt a brute-force connection, given no better options.
- */
-static NMAccessPoint *
-get_best_fallback_ap (NMDevice80211Wireless *self)
-{
-	NMAccessPointList *	allowed_list;
-	NMAccessPoint *	best_ap = NULL;
-	NMAccessPoint *	allowed_ap;
-	GTimeVal		 	best_timestamp = {0, 0};
-	NMAPListIter *		iter;
-	NMData *			app_data;
-
-	app_data = nm_device_get_app_data (NM_DEVICE (self));
-	allowed_list = app_data->allowed_ap_list;
-
-	iter = nm_ap_list_iter_new (allowed_list);
-	if (!iter)
-		return NULL;
-
-	while ((allowed_ap = nm_ap_list_iter_next (iter)))
-	{
-		const GByteArray *	ssid;
-		GSList *			user_addrs;
-		const GTimeVal *	curtime;
-		gboolean			blacklisted;
-
-		/* Only designated fallback networks, natch */
-		if (!nm_ap_get_fallback (allowed_ap))
-			continue;
-
-		/* Only connect to a blacklisted AP if the user has connected to this specific AP before */
-		user_addrs = nm_ap_get_user_addresses (allowed_ap);
-		blacklisted = get_ap_blacklisted (allowed_ap, user_addrs);
-		g_slist_foreach (user_addrs, (GFunc) g_free, NULL);
-		g_slist_free (user_addrs);
-		if (blacklisted)
-			continue;
-
-		/* No fallback to networks on the invalid list -- we probably already tried them and failed */
-		ssid = nm_ap_get_ssid (allowed_ap);
-		if (nm_ap_list_get_ap_by_ssid (app_data->invalid_ap_list, ssid))
-			continue;
-
-		curtime = nm_ap_get_timestamp (allowed_ap);
-		if (curtime->tv_sec > best_timestamp.tv_sec)
-		{
-			best_timestamp = *nm_ap_get_timestamp (allowed_ap);
-			best_ap = allowed_ap;
-		}
-	}
-	nm_ap_list_iter_free (iter);
-
-	if (best_ap) {
-		const GByteArray * ssid;
-
-		nm_ap_set_broadcast (best_ap, FALSE);
-		ssid = nm_ap_get_ssid (best_ap);
-		nm_info ("Attempting to fallback to wireless network '%s'",
-		         ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
-	}
-
-	return best_ap;
-}
-
-
-/*
  * nm_device_update_best_ap
  *
  * Recalculate the "best" access point we should be associating with.
@@ -918,6 +849,9 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 		if (nm_ap_list_get_ap_by_ssid (app_data->invalid_ap_list, ap_ssid))
 			continue;
 
+		// FIXME: match up an NMConnection with some NMAccessPoint for the
+		// best_ap
+#if 0
 		if ((tmp_ap = nm_ap_list_get_ap_by_ssid (app_data->allowed_ap_list, ap_ssid)))
 		{
 			const GTimeVal *	curtime = nm_ap_get_timestamp (tmp_ap);
@@ -935,11 +869,10 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 				best_ap = scan_ap;
 			}
 		}
+#endif
 	}
 	nm_ap_list_iter_free (iter);
 
-	if (!best_ap)
-		best_ap = get_best_fallback_ap (self);
 	if (best_ap)
 		g_object_ref (best_ap);
 
@@ -2065,15 +1998,12 @@ supplicant_iface_scanned_ap_cb (NMSupplicantInterface * iface,
 	 */
 	if (!nm_ap_get_ssid (ap)) {
 		nm_ap_set_broadcast (ap, FALSE);
-		nm_ap_list_copy_one_ssid_by_address (ap, app_data->allowed_ap_list);
+// FIXME: get the saved BSSID from NMConnection/NMSettings 
+//		nm_ap_list_copy_one_ssid_by_address (ap, app_data->allowed_ap_list);
 	}
 
 	/* Add the AP to the device's AP list */
 	merge_scanned_ap (self, ap);
-
-	/* Once we have the list, copy in any relevant information from our Allowed list. */
-	nm_ap_list_copy_properties (nm_device_802_11_wireless_ap_list_get (self),
-								app_data->allowed_ap_list);
 
 	/* Remove outdated access points */
 	cull_scan_list (self);

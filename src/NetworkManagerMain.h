@@ -34,7 +34,6 @@ typedef struct NMVPNManager NMVPNManager;
 
 typedef struct NMData
 {
-	struct NMAccessPointList	*allowed_ap_list;
 	struct NMAccessPointList	*invalid_ap_list;
 } NMData;
 
