@@ -1,12 +1,12 @@
-# translation of NetworkManager_0_6_0_branch.po to Georgian
+# translation of ka.po to Georgian
 # Vladimer Sichinava ვლადიმერ სიჭინავა <vsichi@gnome.org>, 2007.
 # Malkhaz Barkalaya მალზახ ბარკალაია <malxaz@gmail.com>
 msgid ""
 msgstr ""
-"Project-Id-Version: NetworkManager_0_6_0_branch\n"
+"Project-Id-Version: ka\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2007-01-03 18:02+0200\n"
-"PO-Revision-Date: 2007-03-10 14:43+0100\n"
+"PO-Revision-Date: 2007-08-28 02:51+0200\n"
 "Last-Translator: Vladimer Sichinava ვლადიმერ სიჭინავა <vsichi@gnome.org>\n"
 "Language-Team: Georgian <http://mail.gnome.org/mailman/listinfo/gnome-ge-list>\n"
 "MIME-Version: 1.0\n"
@@ -153,8 +153,7 @@ msgid ""
 "The NetworkManager Applet could not find some required resources (the glade "
 "file was not found)."
 msgstr ""
-"აპლეტი NetworkManager ვერ პოულობს "
-"საჭირო რესურსებს (ვერ "
+"აპლეტი NetworkManager ვერ პოულობს საჭირო რესურსებს (ვერ "
 "მოინახა ფაილი glade)."
 
 #: ../gnome/applet/applet.c:749
@@ -208,9 +207,7 @@ msgstr ""
 #: ../gnome/applet/applet.c:931
 #, c-format
 msgid "Waiting for Network Key for the wireless network '%s'..."
-msgstr ""
-"ველოდებით ქსელურ გასაღებს "
-"უკაბელო ქსელისათვის '%s'..."
+msgstr "ველოდები ქსელურ გასაღებს უკაბელო ქსელისათვის '%s'..."
 
 #: ../gnome/applet/applet.c:939 ../gnome/applet/applet.c:949
 msgid "Requesting a network address from the wired network..."
@@ -246,9 +243,7 @@ msgstr "NetworkManager არ არის გაშვებული"
 
 #: ../gnome/applet/applet.c:1086 ../gnome/applet/applet.c:1843
 msgid "Networking disabled"
-msgstr ""
-"ქსელური საშუალებები "
-"გამორთულია"
+msgstr "ქსელური საშუალებები გამორთულია"
 
 #: ../gnome/applet/applet.c:1091
 msgid "No network connection"
