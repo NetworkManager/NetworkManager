@@ -4,6 +4,7 @@
 
 static gboolean impl_device_activate (NMDeviceInterface *device,
 									  GHashTable *connection_hash,
+									  const char *specific_object,
 									  GError **err);
 
 static gboolean impl_device_deactivate (NMDeviceInterface *device, GError **err);
@@ -156,17 +157,22 @@ nm_device_interface_get_type (void)
 void
 nm_device_interface_activate (NMDeviceInterface *device,
 							  NMConnection *connection,
+							  const char *specific_object,
 							  gboolean user_requested)
 {
 	g_return_if_fail (NM_IS_DEVICE_INTERFACE (device));
 	g_return_if_fail (connection != NULL);
 
-	NM_DEVICE_INTERFACE_GET_INTERFACE (device)->activate (device, connection, user_requested);
+	NM_DEVICE_INTERFACE_GET_INTERFACE (device)->activate (device,
+	                                                      connection,
+	                                                      specific_object,
+	                                                      user_requested);
 }
 
 static gboolean
 impl_device_activate (NMDeviceInterface *device,
 					  GHashTable *connection_hash,
+					  const char *specific_object,
 					  GError **err)
 {
 	NMConnection *connection;
@@ -174,7 +180,7 @@ impl_device_activate (NMDeviceInterface *device,
 	connection = nm_connection_new_from_hash (connection_hash);
 	nm_connection_dump (connection);
 
-	nm_device_interface_activate (device, connection, TRUE);
+	nm_device_interface_activate (device, connection, specific_object, TRUE);
 
 	return TRUE;
 }

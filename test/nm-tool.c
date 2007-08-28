@@ -147,11 +147,13 @@ detail_network (gpointer data, gpointer user_data)
 	const char *active_bssid = (const char *) user_data;
 	GString *str;
 	gboolean active = FALSE;
-	guint32 capabilities;
+	guint32 flags, wpa_flags, rsn_flags;
 	GByteArray * ssid;
 	char *tmp;
 
-	capabilities = nm_access_point_get_capabilities (ap);
+	flags = nm_access_point_get_flags (ap);
+	wpa_flags = nm_access_point_get_wpa_flags (ap);
+	rsn_flags = nm_access_point_get_rsn_flags (ap);
 
 	if (active_bssid) {
 		char *current_bssid = nm_access_point_get_hw_address (ap);
@@ -169,16 +171,21 @@ detail_network (gpointer data, gpointer user_data)
 							nm_access_point_get_rate (ap) / 1024,
 							nm_access_point_get_strength (ap));
 
-	if (nm_access_point_is_encrypted (ap))
+	if (   !(flags & NM_802_11_AP_FLAGS_PRIVACY)
+	    &&  (wpa_flags != NM_802_11_AP_SEC_NONE)
+	    &&  (rsn_flags != NM_802_11_AP_SEC_NONE))
 		g_string_append (str, ", Encrypted: ");
 
-	if (capabilities & NM_802_11_CAP_PROTO_WEP)
+	if (   (flags & NM_802_11_AP_FLAGS_PRIVACY)
+	    && (wpa_flags == NM_802_11_AP_SEC_NONE)
+	    && (rsn_flags == NM_802_11_AP_SEC_NONE))
 		g_string_append (str, " WEP");
-	if (capabilities & NM_802_11_CAP_PROTO_WPA)
+	if (wpa_flags != NM_802_11_AP_SEC_NONE)
 		g_string_append (str, " WPA");
-	if (capabilities & NM_802_11_CAP_PROTO_WPA2)
+	if (rsn_flags != NM_802_11_AP_SEC_NONE)
 		g_string_append (str, " WPA2");
-	if (capabilities & NM_802_11_CAP_KEY_MGMT_802_1X)
+	if (   (wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
+	    || (rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X))
 		g_string_append (str, " Enterprise");
 
 	/* FIXME: broadcast/hidden */
@@ -277,20 +284,20 @@ detail_device (gpointer data, gpointer user_data)
 
 	/* Wireless specific information */
 	if ((NM_IS_DEVICE_802_11_WIRELESS (device))) {
-		guint32 wireless_caps;
+		guint32 wcaps;
 		NMAccessPoint *active_ap = NULL;
 		char *active_bssid = NULL;
 		GSList *networks;
 
 		printf ("\n  Wireless Settings\n");
 
-		wireless_caps = nm_device_802_11_wireless_get_capabilities (NM_DEVICE_802_11_WIRELESS (device));
+		wcaps = nm_device_802_11_wireless_get_capabilities (NM_DEVICE_802_11_WIRELESS (device));
 
-		if (wireless_caps & NM_802_11_CAP_PROTO_WEP)
+		if (wcaps & (NM_802_11_DEVICE_CAP_CIPHER_WEP40 | NM_802_11_DEVICE_CAP_CIPHER_WEP104))
 			print_string ("  WEP Encryption", "yes");
-		if (wireless_caps & NM_802_11_CAP_PROTO_WPA)
+		if (wcaps & NM_802_11_DEVICE_CAP_WPA)
 			print_string ("  WPA Encryption", "yes");
-		if (wireless_caps & NM_802_11_CAP_PROTO_WPA2)
+		if (wcaps & NM_802_11_DEVICE_CAP_RSN)
 			print_string ("  WPA2 Encryption", "yes");
 
 		if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {

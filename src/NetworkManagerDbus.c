@@ -36,7 +36,6 @@
 #include "NetworkManagerAP.h"
 #include "NetworkManagerAPList.h"
 #include "NetworkManagerPolicy.h"
-#include "nm-dbus-nmi.h"
 #include "nm-utils.h"
 #include "nm-dhcp-manager.h"
 #include "nm-dbus-manager.h"
@@ -111,8 +110,7 @@ nm_dbus_nmi_signal_handler (DBusConnection *connection,
 		                           DBUS_TYPE_INVALID)) {
 			/* Update a single wireless network's data */
 			nm_debug ("NetworkManagerInfo triggered update of wireless network '%s'", network);
-			nm_dbus_update_one_allowed_network (network,
-												(NMData *) g_object_get_data (G_OBJECT (manager), "NM_DATA_HACK"));
+			// FIXME: convert to connection update signal
 			handled = TRUE;
 		}
 	} else if (dbus_message_is_signal (message, NMI_DBUS_INTERFACE, "UserInterfaceActivated")) {

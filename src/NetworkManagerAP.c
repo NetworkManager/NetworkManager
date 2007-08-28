@@ -22,7 +22,6 @@
 #include "NetworkManagerAP.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
-#include "nm-ap-security.h"
 #include "nm-dbus-manager.h"
 #include <wireless.h>
 #include "wpa.h"
@@ -55,7 +54,10 @@ typedef struct
 	gint8			strength;
 	double			freq;
 	guint16			rate;
-	guint32			capabilities;
+
+	guint32			flags;		/* General flags */
+	guint32			wpa_flags;	/* WPA-related flags */
+	guint32			rsn_flags;	/* RSN (WPA2) -related flags */
 
 	/* Non-scanned attributes */
 	gboolean			invalid;
@@ -71,7 +73,6 @@ typedef struct
 
 	/* Things from user prefs/NetworkManagerInfo */
 	gboolean			fallback;
-	NMAPSecurity *		security;
 	GTimeVal			timestamp;
 	GSList *			user_addresses;
 } NMAccessPointPrivate;
@@ -90,8 +91,9 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 enum {
 	PROP_0,
-	PROP_CAPABILITIES,
-	PROP_ENCRYPTED,
+	PROP_FLAGS,
+	PROP_WPA_FLAGS,
+	PROP_RSN_FLAGS,
 	PROP_SSID,
 	PROP_FREQUENCY,
 	PROP_HW_ADDRESS,
@@ -110,7 +112,9 @@ nm_ap_init (NMAccessPoint *ap)
 
 	priv->dbus_path = g_strdup_printf (NM_DBUS_PATH_ACCESS_POINT "/%d", counter++);
 	priv->mode = IW_MODE_INFRA;
-	priv->capabilities = NM_802_11_CAP_PROTO_NONE;
+	priv->flags = NM_802_11_AP_FLAGS_NONE;
+	priv->wpa_flags = NM_802_11_AP_SEC_NONE;
+	priv->rsn_flags = NM_802_11_AP_SEC_NONE;
 	priv->broadcast = TRUE;
 }
 
@@ -125,9 +129,6 @@ finalize (GObject *object)
 	g_slist_foreach (priv->user_addresses, (GFunc)g_free, NULL);
 	g_slist_free (priv->user_addresses);
 
-	if (priv->security)
-		g_object_unref (G_OBJECT (priv->security));
-
 	G_OBJECT_CLASS (nm_ap_parent_class)->finalize (object);
 }
 
@@ -140,8 +141,14 @@ set_property (GObject *object, guint prop_id,
 	int mode;
 
 	switch (prop_id) {
-	case PROP_CAPABILITIES:
-		priv->capabilities = g_value_get_uint (value);
+	case PROP_FLAGS:
+		priv->flags = g_value_get_uint (value);
+		break;
+	case PROP_WPA_FLAGS:
+		priv->wpa_flags = g_value_get_uint (value);
+		break;
+	case PROP_RSN_FLAGS:
+		priv->rsn_flags = g_value_get_uint (value);
 		break;
 	case PROP_SSID:
 		ssid = g_value_get_boxed (value);
@@ -193,11 +200,14 @@ get_property (GObject *object, guint prop_id,
 	int i;
 
 	switch (prop_id) {
-	case PROP_CAPABILITIES:
-		g_value_set_uint (value, priv->capabilities);
+	case PROP_FLAGS:
+		g_value_set_uint (value, priv->flags);
 		break;
-	case PROP_ENCRYPTED:
-		g_value_set_boolean (value, !(priv->capabilities & NM_802_11_CAP_PROTO_NONE));
+	case PROP_WPA_FLAGS:
+		g_value_set_uint (value, priv->wpa_flags);
+		break;
+	case PROP_RSN_FLAGS:
+		g_value_set_uint (value, priv->rsn_flags);
 		break;
 	case PROP_SSID:
 		len = priv->ssid ? priv->ssid->len : 0;
@@ -234,7 +244,7 @@ static void
 nm_ap_class_init (NMAccessPointClass *ap_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ap_class);
-	guint32 all_caps;
+	guint32 all_sec_flags;
 
 	g_type_class_add_private (ap_class, sizeof (NMAccessPointPrivate));
 
@@ -245,39 +255,47 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 
 	/* properties */
 
-	all_caps =   NM_802_11_CAP_NONE
-	           | NM_802_11_CAP_PROTO_NONE
-	           | NM_802_11_CAP_PROTO_WEP
-	           | NM_802_11_CAP_PROTO_WPA
-	           | NM_802_11_CAP_PROTO_WPA2
-	           | NM_802_11_CAP_RESERVED1
-	           | NM_802_11_CAP_RESERVED2
-	           | NM_802_11_CAP_KEY_MGMT_PSK
-	           | NM_802_11_CAP_KEY_MGMT_802_1X
-	           | NM_802_11_CAP_RESERVED3
-	           | NM_802_11_CAP_RESERVED4
-	           | NM_802_11_CAP_RESERVED5
-	           | NM_802_11_CAP_RESERVED6
-	           | NM_802_11_CAP_CIPHER_WEP40
-	           | NM_802_11_CAP_CIPHER_WEP104
-	           | NM_802_11_CAP_CIPHER_TKIP
-	           | NM_802_11_CAP_CIPHER_CCMP;
+	all_sec_flags =   NM_802_11_AP_SEC_NONE
+	                | NM_802_11_AP_SEC_PAIR_WEP40
+	                | NM_802_11_AP_SEC_PAIR_WEP104
+	                | NM_802_11_AP_SEC_PAIR_TKIP
+	                | NM_802_11_AP_SEC_PAIR_CCMP
+	                | NM_802_11_AP_SEC_GROUP_WEP40
+	                | NM_802_11_AP_SEC_GROUP_WEP104
+	                | NM_802_11_AP_SEC_GROUP_TKIP
+	                | NM_802_11_AP_SEC_GROUP_CCMP
+	                | NM_802_11_AP_SEC_KEY_MGMT_PSK
+	                | NM_802_11_AP_SEC_KEY_MGMT_802_1X;
 
 	g_object_class_install_property
-		(object_class, PROP_CAPABILITIES,
-		 g_param_spec_uint (NM_AP_CAPABILITIES,
-							"Capabilities",
-							"Capabilities",
-							NM_802_11_CAP_NONE, all_caps, NM_802_11_CAP_PROTO_NONE,
+		(object_class, PROP_FLAGS,
+		 g_param_spec_uint (NM_AP_FLAGS,
+							"Flags",
+							"Flags",
+							NM_802_11_AP_FLAGS_NONE,
+							NM_802_11_AP_FLAGS_PRIVACY,
+							NM_802_11_AP_FLAGS_NONE,
 							G_PARAM_READWRITE));
 
 	g_object_class_install_property
-		(object_class, PROP_ENCRYPTED,
-		 g_param_spec_boolean (NM_AP_ENCRYPTED,
-							   "Encrypted",
-							   "Is encrypted",
-							   FALSE,
-							   G_PARAM_READABLE));
+		(object_class, PROP_WPA_FLAGS,
+		 g_param_spec_uint (NM_AP_WPA_FLAGS,
+							"WPA Flags",
+							"WPA Flags",
+							NM_802_11_AP_SEC_NONE,
+							all_sec_flags,
+							NM_802_11_AP_SEC_NONE,
+							G_PARAM_READWRITE));
+
+	g_object_class_install_property
+		(object_class, PROP_RSN_FLAGS,
+		 g_param_spec_uint (NM_AP_RSN_FLAGS,
+							"RSN Flags",
+							"RSN Flags",
+							NM_802_11_AP_SEC_NONE,
+							all_sec_flags,
+							NM_802_11_AP_SEC_NONE,
+							G_PARAM_READWRITE));
 
 	g_object_class_install_property
 		(object_class, PROP_SSID,
@@ -399,12 +417,11 @@ nm_ap_new_from_ap (NMAccessPoint *src_ap)
 	new_priv->strength = src_priv->strength;
 	new_priv->freq = src_priv->freq;
 	new_priv->rate = src_priv->rate;
-	new_priv->capabilities = src_priv->capabilities;
 	new_priv->artificial = src_priv->artificial;
 	new_priv->broadcast = src_priv->broadcast;
-
-	if (src_priv->security)
-		new_priv->security = nm_ap_security_new_copy (src_priv->security);
+	new_priv->flags = src_priv->flags;
+	new_priv->wpa_flags = src_priv->wpa_flags;
+	new_priv->rsn_flags = src_priv->rsn_flags;
 
 	return new_ap;
 }
@@ -446,14 +463,20 @@ foreach_property_cb (gpointer key, gpointer value, gpointer user_data)
 			nm_ap_set_address (ap, &addr);
 		} else if (!strcmp (key, "wpaie")) {
 			guint8 * ie = (guint8 *) array->data;
+			guint32 flags = nm_ap_get_wpa_flags (ap);
+
 			if (array->len <= 0 || array->len > WPA_MAX_IE_LEN)
 				return;
-			nm_ap_add_capabilities_from_ie (ap, ie, array->len);
+			flags = nm_ap_add_security_from_ie (flags, ie, array->len);
+			nm_ap_set_wpa_flags (ap, flags);
 		} else if (!strcmp (key, "rsnie")) {
 			guint8 * ie = (guint8 *) array->data;
+			guint32 flags = nm_ap_get_rsn_flags (ap);
+
 			if (array->len <= 0 || array->len > WPA_MAX_IE_LEN)
 				return;
-			nm_ap_add_capabilities_from_ie (ap, ie, array->len);
+			flags = nm_ap_add_security_from_ie (flags, ie, array->len);
+			nm_ap_set_rsn_flags (ap, flags);
 		}
 	} else if (G_VALUE_HOLDS_INT (variant)) {
 		gint32 int_val = g_value_get_int (variant);
@@ -475,11 +498,8 @@ foreach_property_cb (gpointer key, gpointer value, gpointer user_data)
 			}
 
 			if (val & IEEE80211_CAP_PRIVACY) {
-				guint cur_caps;
-
-				cur_caps = nm_ap_get_capabilities (ap);
-				if (cur_caps == NM_802_11_CAP_NONE || cur_caps & NM_802_11_CAP_PROTO_NONE)
-					nm_ap_add_capabilities_for_wep (ap);
+				guint32 flags = nm_ap_get_flags (ap);
+				nm_ap_set_flags (ap, flags | NM_802_11_AP_FLAGS_PRIVACY);
 			}
 		}
 	}
@@ -531,13 +551,16 @@ nm_ap_print_self (NMAccessPoint *ap,
 
 	priv = NM_AP_GET_PRIVATE (ap);
 
-	nm_info ("%s'%s' (%p) stamp=%ld caps=0x%X bssid=" MAC_FMT " strength=%d "
-	         "freq=[%f/%d] rate=%d inval=%d mode=%d seen=%ld",
+	nm_info ("%s'%s' (%p) stamp=%ld flags=0x%X wpa-flags=0x%X rsn-flags=0x%x "
+	         "bssid=" MAC_FMT " strength=%d freq=[%f/%d] rate=%d inval=%d "
+	         "mode=%d seen=%ld",
 	         prefix,
 	         priv->ssid ? nm_utils_escape_ssid (priv->ssid->data, priv->ssid->len) : "(none)",
 	         ap,
 	         priv->timestamp.tv_sec,
-	         priv->capabilities,
+	         priv->flags,
+	         priv->wpa_flags,
+	         priv->rsn_flags,
 	         MAC_ARG (priv->address.ether_addr_octet),
 	         priv->strength,
 	         (priv->freq > 20) ? priv->freq : 0,
@@ -606,71 +629,68 @@ void nm_ap_set_ssid (NMAccessPoint *ap, const GByteArray * ssid)
 }
 
 
-guint32 nm_ap_get_capabilities (NMAccessPoint *ap)
+guint32
+nm_ap_get_flags (NMAccessPoint *ap)
 {
-	guint32 caps;
+	guint32 flags;
 
-	g_return_val_if_fail (NM_IS_AP (ap), NM_802_11_CAP_NONE);
+	g_return_val_if_fail (NM_IS_AP (ap), NM_802_11_AP_FLAGS_NONE);
 
-	g_object_get (ap, NM_AP_CAPABILITIES, &caps, NULL);
+	g_object_get (ap, NM_AP_FLAGS, &flags, NULL);
 
-	return caps;
+	return flags;
 }
 
 
-void nm_ap_set_capabilities (NMAccessPoint *ap, guint32 capabilities)
+void
+nm_ap_set_flags (NMAccessPoint *ap, guint32 flags)
 {
 	g_return_if_fail (NM_IS_AP (ap));
 
-	g_object_set (ap, NM_AP_CAPABILITIES, capabilities, NULL);
+	g_object_set (ap, NM_AP_FLAGS, flags, NULL);
+}
+
+guint32
+nm_ap_get_wpa_flags (NMAccessPoint *ap)
+{
+	guint32 flags;
+
+	g_return_val_if_fail (NM_IS_AP (ap), NM_802_11_AP_SEC_NONE);
+
+	g_object_get (ap, NM_AP_WPA_FLAGS, &flags, NULL);
+
+	return flags;
 }
 
 
-/*
- * Accessor function for encrypted flag
- *
- */
-gboolean nm_ap_get_encrypted (NMAccessPoint *ap)
+void
+nm_ap_set_wpa_flags (NMAccessPoint *ap, guint32 flags)
 {
-	gboolean encrypted;
-
-	g_return_val_if_fail (NM_IS_AP (ap), FALSE);
-
-	g_object_get (ap, NM_AP_ENCRYPTED, &encrypted, NULL);
-
-	return encrypted;
-}
-
-
-/*
- * Accessors for AP security info
- *
- */
-NMAPSecurity * nm_ap_get_security (const NMAccessPoint *ap)
-{
-	g_return_val_if_fail (NM_IS_AP (ap), NULL);
-
-	return NM_AP_GET_PRIVATE (ap)->security;
-}
-
-void nm_ap_set_security (NMAccessPoint *ap, NMAPSecurity *security)
-{
-	NMAccessPointPrivate *priv;
-
 	g_return_if_fail (NM_IS_AP (ap));
 
-	priv = NM_AP_GET_PRIVATE (ap);
-
-	if (priv->security)
-	{
-		g_object_unref (G_OBJECT (priv->security));
-		priv->security = NULL;
-	}
-
-	if (security)
-		priv->security = nm_ap_security_new_copy (security);
+	g_object_set (ap, NM_AP_WPA_FLAGS, flags, NULL);
 }
 
+guint32
+nm_ap_get_rsn_flags (NMAccessPoint *ap)
+{
+	guint32 flags;
+
+	g_return_val_if_fail (NM_IS_AP (ap), NM_802_11_AP_SEC_NONE);
+
+	g_object_get (ap, NM_AP_RSN_FLAGS, &flags, NULL);
+
+	return flags;
+}
+
+
+void
+nm_ap_set_rsn_flags (NMAccessPoint *ap, guint32 flags)
+{
+	g_return_if_fail (NM_IS_AP (ap));
+
+	g_object_set (ap, NM_AP_RSN_FLAGS, flags, NULL);
+}
 
 /*
  * Get/set functions for address
@@ -984,117 +1004,42 @@ gboolean nm_ap_has_manufacturer_default_ssid (NMAccessPoint *ap)
 	return FALSE;
 }
 
-
-static guint32 add_capabilities_from_cipher (guint32 caps, int cipher)
+guint32
+nm_ap_add_security_from_ie (guint32 flags,
+                            const guint8 *wpa_ie,
+                            guint32 length)
 {
-	if (cipher & IW_AUTH_CIPHER_WEP40)
-	{
-		caps |= NM_802_11_CAP_PROTO_WEP;
-		caps |= NM_802_11_CAP_CIPHER_WEP40;
-		caps &= ~NM_802_11_CAP_PROTO_NONE;
-	}
-	if (cipher & IW_AUTH_CIPHER_WEP104)
-	{
-		caps |= NM_802_11_CAP_PROTO_WEP;
-		caps |= NM_802_11_CAP_CIPHER_WEP104;
-		caps &= ~NM_802_11_CAP_PROTO_NONE;
-	}
-	if (cipher & IW_AUTH_CIPHER_TKIP)
-	{
-		caps |= NM_802_11_CAP_CIPHER_TKIP;
-		caps &= ~NM_802_11_CAP_PROTO_NONE;
-	}
-	if (cipher & IW_AUTH_CIPHER_CCMP)
-	{
-		caps |= NM_802_11_CAP_CIPHER_CCMP;
-		caps &= ~NM_802_11_CAP_PROTO_NONE;
-	}
-
-	if (cipher == NM_AUTH_TYPE_WPA_PSK_AUTO)
-	{
-		caps &= ~NM_802_11_CAP_PROTO_NONE;
-	}
-
-	if (cipher == NM_AUTH_TYPE_WPA_EAP)
-	{
-		caps |= NM_802_11_CAP_KEY_MGMT_802_1X;
-		caps &= ~NM_802_11_CAP_PROTO_NONE;
-	}
-	if (cipher == NM_AUTH_TYPE_LEAP)
-	{
-		caps &= ~NM_802_11_CAP_PROTO_NONE;
-	}
-	return caps;
-}
-
-/*
- * nm_ap_add_capabilities_from_cipher
- *
- * Update a given AP's capabilities via a wireless extension cipher integer
- *
- */
-void nm_ap_add_capabilities_from_security (NMAccessPoint *ap, NMAPSecurity *security)
-{
-	guint32 caps;
-	int cipher;
-
-	g_return_if_fail (NM_IS_AP (ap));
-	g_return_if_fail (security != NULL);
-
-	cipher = nm_ap_security_get_we_cipher (security);
-	caps = nm_ap_get_capabilities (ap);
-	caps = add_capabilities_from_cipher (caps, cipher);
-	nm_ap_set_capabilities (ap, caps);
-}
-
-void nm_ap_add_capabilities_from_ie (NMAccessPoint *ap, const guint8 *wpa_ie, guint32 length)
-{
-	wpa_ie_data *	cap_data;
-	guint32		caps;
-
-	g_return_if_fail (NM_IS_AP (ap));
+	wpa_ie_data * cap_data;
 
 	if (!(cap_data = wpa_parse_wpa_ie (wpa_ie, length)))
-		return;
+		return NM_802_11_AP_SEC_NONE;
 
-	caps = nm_ap_get_capabilities (ap);
+	/* Pairwise cipher flags */
+	if (cap_data->pairwise_cipher & IW_AUTH_CIPHER_WEP40)
+		flags |= NM_802_11_AP_SEC_PAIR_WEP40;
+	if (cap_data->pairwise_cipher & IW_AUTH_CIPHER_WEP104)
+		flags |= NM_802_11_AP_SEC_PAIR_WEP104;
+	if (cap_data->pairwise_cipher & IW_AUTH_CIPHER_TKIP)
+		flags |= NM_802_11_AP_SEC_PAIR_TKIP;
+	if (cap_data->pairwise_cipher & IW_AUTH_CIPHER_CCMP)
+		flags |= NM_802_11_AP_SEC_PAIR_CCMP;
 
-	/* Mark WEP as unsupported, if it's supported it will be added below */
-	caps &= ~NM_802_11_CAP_PROTO_WEP;
-
-	if (cap_data->proto & IW_AUTH_WPA_VERSION_WPA)
-	{
-		caps |= NM_802_11_CAP_PROTO_WPA;
-		caps &= ~NM_802_11_CAP_PROTO_NONE;
-	}
-	if (cap_data->proto & IW_AUTH_WPA_VERSION_WPA2)
-	{
-		caps |= NM_802_11_CAP_PROTO_WPA2;
-		caps &= ~NM_802_11_CAP_PROTO_NONE;
-	}
-
-	caps = add_capabilities_from_cipher (caps, cap_data->pairwise_cipher);
-	caps = add_capabilities_from_cipher (caps, cap_data->group_cipher);
+	/* Group cipher flags */
+	if (cap_data->group_cipher & IW_AUTH_CIPHER_WEP40)
+		flags |= NM_802_11_AP_SEC_GROUP_WEP40;
+	if (cap_data->group_cipher & IW_AUTH_CIPHER_WEP104)
+		flags |= NM_802_11_AP_SEC_GROUP_WEP104;
+	if (cap_data->group_cipher & IW_AUTH_CIPHER_TKIP)
+		flags |= NM_802_11_AP_SEC_GROUP_TKIP;
+	if (cap_data->group_cipher & IW_AUTH_CIPHER_CCMP)
+		flags |= NM_802_11_AP_SEC_GROUP_CCMP;
 
 	if (cap_data->key_mgmt & IW_AUTH_KEY_MGMT_802_1X)
-		caps |= NM_802_11_CAP_KEY_MGMT_802_1X;
+		flags |= NM_802_11_AP_SEC_KEY_MGMT_802_1X;
 	if (cap_data->key_mgmt & IW_AUTH_KEY_MGMT_PSK)
-		caps |= NM_802_11_CAP_KEY_MGMT_PSK;
-
-	nm_ap_set_capabilities (ap, caps);
+		flags |= NM_802_11_AP_SEC_KEY_MGMT_PSK;
 
 	g_slice_free (wpa_ie_data, cap_data);
+	return flags;
 }
 
-
-void nm_ap_add_capabilities_for_wep (NMAccessPoint *ap)
-{
-	NMAccessPointPrivate *priv;
-
-	g_return_if_fail (NM_IS_AP (ap));
-
-	priv = NM_AP_GET_PRIVATE (ap);
-
-	priv->capabilities |= (NM_802_11_CAP_PROTO_WEP | NM_802_11_CAP_CIPHER_WEP40 | NM_802_11_CAP_CIPHER_WEP104);
-	priv->capabilities &= ~NM_802_11_CAP_PROTO_NONE;
-}

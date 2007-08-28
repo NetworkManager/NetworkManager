@@ -177,8 +177,9 @@ dump_access_point (NMAccessPoint *ap)
 	g_print ("\tMAC Address: %s\n", str);
 	g_free (str);
 
-	g_print ("\tCapabilities: %d\n", nm_access_point_get_capabilities (ap));
-	g_print ("\tEncrypted: %d\n", nm_access_point_is_encrypted (ap));
+	g_print ("\tFlags: 0x%X\n", nm_access_point_get_flags (ap));
+	g_print ("\tWPA Flags: 0x%X\n", nm_access_point_get_wpa_flags (ap));
+	g_print ("\tRSN Flags: 0x%X\n", nm_access_point_get_rsn_flags (ap));
 	g_print ("\tFrequency: %f\n", nm_access_point_get_frequency (ap));
 
 	g_print ("\tMode: %d\n", nm_access_point_get_mode (ap));

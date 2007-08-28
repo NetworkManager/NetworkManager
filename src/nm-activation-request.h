@@ -44,9 +44,11 @@ typedef struct {
 GType nm_act_request_get_type (void);
 
 NMActRequest *nm_act_request_new			    (NMConnection *connection,
-												 gboolean user_requested);
+                                                 const char *specific_object,
+                                                 gboolean user_requested);
 
 NMConnection *nm_act_request_get_connection     (NMActRequest *req);
+const char *  nm_act_request_get_specific_object(NMActRequest *req);
 gboolean      nm_act_request_get_user_requested (NMActRequest *req);
 
 #endif /* NM_ACTIVATION_REQUEST_H */

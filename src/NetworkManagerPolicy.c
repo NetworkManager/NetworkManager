@@ -35,11 +35,11 @@
 #include "NetworkManagerDbus.h"
 #include "nm-activation-request.h"
 #include "nm-utils.h"
-#include "nm-dbus-nmi.h"
 #include "nm-device-interface.h"
 #include "nm-device-802-11-wireless.h"
 #include "nm-device-802-3-ethernet.h"
 #include "nm-dbus-manager.h"
+#include "nm-setting.h"
 
 struct NMPolicy {
 	NMManager *manager;
@@ -367,7 +367,7 @@ nm_policy_device_change_check (gpointer user_data)
 			connection = create_connection (new_dev, ap);
 			if (connection)
 				nm_device_interface_activate (NM_DEVICE_INTERFACE (new_dev),
-											  connection, FALSE);
+											  connection, NULL, FALSE);
 		}
 	}
 
@@ -399,11 +399,8 @@ nm_policy_allowed_ap_list_update (gpointer user_data)
 
 	nm_info ("Updating allowed wireless network lists.");
 
-	/* Query info daemon for network lists if its now running */
-	if (data->allowed_ap_list)
-		nm_ap_list_unref (data->allowed_ap_list);
-	if ((data->allowed_ap_list = nm_ap_list_new (NETWORK_TYPE_ALLOWED)))
-		nm_dbus_update_allowed_networks (data->allowed_ap_list, data);
+	// FIXME: convert to getting connections instead
+
 	return FALSE;
 }
 

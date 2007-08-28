@@ -45,7 +45,10 @@ struct _NMDeviceInterface {
 	GTypeInterface g_iface;
 
 	/* Methods */
-	void (*activate) (NMDeviceInterface *device, NMConnection *connection, gboolean user_requested);
+	void (*activate) (NMDeviceInterface *device,
+	                  NMConnection *connection,
+	                  const char *specific_object,
+	                  gboolean user_requested);
 	void (*deactivate) (NMDeviceInterface *device);
 
 	/* Signals */
@@ -57,6 +60,7 @@ GType nm_device_interface_get_type (void);
 
 void nm_device_interface_activate   (NMDeviceInterface *device,
 								     NMConnection *connection,
+								     const char *specific_object,
 									 gboolean user_requested);
 
 void nm_device_interface_deactivate (NMDeviceInterface *device);

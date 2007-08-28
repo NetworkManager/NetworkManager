@@ -2,8 +2,9 @@
 
 <node name="/">
   <interface name="org.freedesktop.NetworkManager.AccessPoint">
-    <property name="Capabilities" type="u" access="read"/>
-    <property name="Encrypted" type="b" access="read"/>
+    <property name="Flags" type="u" access="read"/>
+    <property name="WPAFlags" type="u" access="read"/>
+    <property name="RSNFlags" type="u" access="read"/>
     <property name="Ssid" type="ay" access="read"/>
     <property name="Frequency" type="d" access="read"/>
     <property name="HwAddress" type="s" access="read"/>

@@ -29,8 +29,9 @@ GType nm_access_point_get_type (void);
 
 NMAccessPoint *nm_access_point_new (DBusGConnection *connection, const char *path);
 
-guint32      nm_access_point_get_capabilities (NMAccessPoint *ap);
-gboolean     nm_access_point_is_encrypted     (NMAccessPoint *ap);
+guint32      nm_access_point_get_flags        (NMAccessPoint *ap);
+guint32      nm_access_point_get_wpa_flags    (NMAccessPoint *ap);
+guint32      nm_access_point_get_rsn_flags    (NMAccessPoint *ap);
 GByteArray * nm_access_point_get_ssid         (NMAccessPoint *ap);
 gdouble      nm_access_point_get_frequency    (NMAccessPoint *ap);
 char *       nm_access_point_get_hw_address   (NMAccessPoint *ap);

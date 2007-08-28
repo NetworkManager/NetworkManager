@@ -366,7 +366,9 @@ void nm_ap_list_copy_properties (NMAccessPointList *dest, NMAccessPointList *sou
 		if ((src_ap = nm_ap_list_get_ap_by_ssid (source, nm_ap_get_ssid (dest_ap))))
 		{
 			nm_ap_set_invalid (dest_ap, nm_ap_get_invalid (src_ap));
-			nm_ap_set_security (dest_ap, nm_ap_get_security (src_ap));
+			nm_ap_set_flags (dest_ap, nm_ap_get_flags (src_ap));
+			nm_ap_set_wpa_flags (dest_ap, nm_ap_get_wpa_flags (src_ap));
+			nm_ap_set_rsn_flags (dest_ap, nm_ap_get_rsn_flags (src_ap));
 			nm_ap_set_timestamp_via_timestamp (dest_ap, nm_ap_get_timestamp (src_ap));
 		}
 	}

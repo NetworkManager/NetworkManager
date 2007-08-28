@@ -28,6 +28,30 @@
 extern "C" {
 #endif
 
+/*
+ * NM-supported Authentication Methods
+ */
+#define NM_AUTH_TYPE_WPA_PSK_AUTO		0x00000000
+#define NM_AUTH_TYPE_NONE			0x00000001
+#define NM_AUTH_TYPE_WEP40			0x00000002
+#define NM_AUTH_TYPE_WPA_PSK_TKIP		0x00000004
+#define NM_AUTH_TYPE_WPA_PSK_CCMP		0x00000008
+#define NM_AUTH_TYPE_WEP104			0x00000010
+#define NM_AUTH_TYPE_WPA_EAP			0x00000020
+#define NM_AUTH_TYPE_LEAP			0x00000040
+
+/*
+ * EAP Methods
+ */
+#define NM_EAP_METHOD_MD5			0x00000001	/* EAP-MD5 */
+#define NM_EAP_METHOD_MSCHAP			0x00000002	/* EAP-MSCHAPv2 */
+#define NM_EAP_METHOD_OTP			0x00000004	/* EAP-OTP */
+#define NM_EAP_METHOD_GTC			0x00000008	/* EAP-GTC */
+#define NM_EAP_METHOD_PEAP			0x00000010	/* EAP-PEAP */
+#define NM_EAP_METHOD_TLS			0x00000020	/* EAP-TLS */
+#define NM_EAP_METHOD_TTLS			0x00000040	/* EAP-TTLS */
+
+
 typedef struct IEEE_802_11_Cipher IEEE_802_11_Cipher;
 
 void          ieee_802_11_cipher_ref (IEEE_802_11_Cipher *cipher);

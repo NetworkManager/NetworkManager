@@ -102,19 +102,27 @@ strength_changed_proxy (NMAccessPoint *ap, guchar strength)
 }
 
 guint32
-nm_access_point_get_capabilities (NMAccessPoint *ap)
+nm_access_point_get_flags (NMAccessPoint *ap)
 {
-	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), 0);
+	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), NM_802_11_AP_FLAGS_NONE);
 
-	return nm_object_get_uint_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "Capabilities");
+	return nm_object_get_uint_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "Flags");
 }
 
-gboolean
-nm_access_point_is_encrypted (NMAccessPoint *ap)
+guint32
+nm_access_point_get_wpa_flags (NMAccessPoint *ap)
 {
-	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), FALSE);
+	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), NM_802_11_AP_SEC_NONE);
 
-	return nm_object_get_boolean_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "Encrypted");
+	return nm_object_get_uint_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "WPAFlags");
+}
+
+guint32
+nm_access_point_get_rsn_flags (NMAccessPoint *ap)
+{
+	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), NM_802_11_AP_SEC_NONE);
+
+	return nm_object_get_uint_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "RSNFlags");
 }
 
 GByteArray *

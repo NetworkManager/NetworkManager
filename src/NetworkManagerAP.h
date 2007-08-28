@@ -27,7 +27,6 @@
 #include <glib-object.h>
 #include <time.h>
 #include "NetworkManager.h"
-#include "nm-ap-security.h"
 
 #define NM_TYPE_AP            (nm_ap_get_type ())
 #define NM_AP(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_AP, NMAccessPoint))
@@ -36,8 +35,9 @@
 #define NM_IS_AP_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_AP))
 #define NM_AP_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_AP, NMAccessPointClass))
 
-#define NM_AP_CAPABILITIES "capabilities"
-#define NM_AP_ENCRYPTED "encrypted"
+#define NM_AP_FLAGS "flags"
+#define NM_AP_WPA_FLAGS "wpa-flags"
+#define NM_AP_RSN_FLAGS "rsn-flags"
 #define NM_AP_SSID "ssid"
 #define NM_AP_FREQUENCY "frequency"
 #define NM_AP_HW_ADDRESS "hw-address"
@@ -70,13 +70,14 @@ void				nm_ap_set_timestamp_via_timestamp	(NMAccessPoint *ap, const GTimeVal *ti
 const GByteArray *	nm_ap_get_ssid (const NMAccessPoint * ap);
 void				nm_ap_set_ssid (NMAccessPoint * ap, const GByteArray * ssid);
 
-guint32			nm_ap_get_capabilities	(NMAccessPoint *ap);
-void				nm_ap_set_capabilities	(NMAccessPoint *ap, guint32 capabilities);
+guint32			nm_ap_get_flags	(NMAccessPoint *ap);
+void				nm_ap_set_flags	(NMAccessPoint *ap, guint32 flags);
 
-gboolean			nm_ap_get_encrypted		(NMAccessPoint *ap);
+guint32			nm_ap_get_wpa_flags	(NMAccessPoint *ap);
+void				nm_ap_set_wpa_flags	(NMAccessPoint *ap, guint32 flags);
 
-NMAPSecurity *		nm_ap_get_security		(const NMAccessPoint *ap);
-void				nm_ap_set_security		(NMAccessPoint *ap, NMAPSecurity *security);
+guint32			nm_ap_get_rsn_flags	(NMAccessPoint *ap);
+void				nm_ap_set_rsn_flags	(NMAccessPoint *ap, guint32 flags);
 
 const struct ether_addr * nm_ap_get_address	(const NMAccessPoint *ap);
 void				nm_ap_set_address		(NMAccessPoint *ap, const struct ether_addr *addr);
@@ -114,9 +115,9 @@ void				nm_ap_set_user_created	(NMAccessPoint *ap, gboolean user_created);
 GSList *			nm_ap_get_user_addresses	(const NMAccessPoint *ap);
 void				nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list);
 
-void				nm_ap_add_capabilities_from_security (NMAccessPoint *ap, NMAPSecurity *security);
-void				nm_ap_add_capabilities_from_ie (NMAccessPoint *ap, const guint8 *wpa_ie, guint32 length);
-void				nm_ap_add_capabilities_for_wep (NMAccessPoint *ap);
+guint32				nm_ap_add_security_from_ie (guint32 flags,
+                                                const guint8 *wpa_ie,
+                                                guint32 length);
 
 void				nm_ap_print_self (NMAccessPoint *ap, const char * prefix);
 

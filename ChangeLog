@@ -1,3 +1,82 @@
+2007-08-28  Dan Williams  <dcbw@redhat.com>
+
+	Remove NMAPSecurity objects, they are replaced with flags on the APs for
+	each AP's capabilities, and by NMConnection/NMSettings objects for user
+	defined connections.
+
+	* include/NetworkManager.h
+		- Redefine 802.11 security properties.  There are now device capabilities
+			and AP flags and AP security flags.  It was way to unclear before.
+
+	* src/Makefile.am
+	  src/nm-ap-security-leap.h
+	  src/nm-ap-security-leap.c
+	  src/nm-ap-security-wpa-eap.c
+	  src/nm-ap-security-wpa-eap.h
+	  src/nm-ap-security-private.h
+	  src/nm-ap-security-wpa-psk.c
+	  src/nm-ap-security-wpa-psk.h
+	  src/nm-ap-security-wep.c
+	  src/nm-ap-security-wep.h
+	  src/nm-ap-security.c
+	  src/nm-ap-security.h
+		- Removed, to be replaced with NMConnection/NMSettings objects
+
+	* src/nm-dbus-nmi.c
+	  src/nm-dbus-nmi.h
+		- Removed, to be replaced by code that talks to the new info daemon
+			interface and gets NMConnection/NMSettings objects
+
+	* src/backends/NetworkManagerSuSE.c
+		- Remove usage of NMAPSecurity; should be replaced by a system-level
+			info-daemon that does the same thing but talks the new info-daemon
+			D-Bus interface
+
+	* src/NetworkManagerAP.h
+	  src/NetworkManagerAP.c
+	  src/NetworkManagerAPList.c
+	  libnm-glib/libnm-glib-test.c
+		- Remove usage of NMAPSecurity objects and adjust to new flags for
+			WPA/RSN
+
+	* libnm-glib/nm-access-point.c
+	  libnm-glib/nm-access-point.h
+	  introspection/nm-access-point.xml
+	  test/nm-tool.c
+		- Adjust to new flags for AP security
+
+	* utils/nm-utils.c
+	  utils/nm-utils.h
+	  src/vpn-manager/nm-dbus-vpn.c
+		- Remove D-Bus pending call stuff from nm-utils and put it in the VPN
+			stuff which is the only place it's used
+
+	* src/nm-device-interface.c
+	  src/nm-device-interface.h
+	  introspection/nm-device.xml
+	  src/nm-activation-request.c
+	  src/nm-activation-request.h
+	  src/nm-device.c
+		- Add a new 'specific_object' argument that hints to NM what actual
+			AP or other device-specific thing the connection should apply to.
+			NMConnection objects can apply to more than one actual device/AP.
+
+	* libnm-util/nm-connection.c
+	* libnm-util/nm-connection.h
+		- Add 'have_secrets" call stubs
+
+	* libnm-util/cipher.h
+		- Move NM_AUTH_TYPE_* defines here for now
+
+	* src/nm-device-802-11-wireless.c
+		- Remove usage of NMAPSecurity, to be replaced with NMConnection/
+			NMSettings objects
+
+	* src/NetworkManagerDbus.c
+	* src/NetworkManagerPolicy.c
+		- Remove usage of update_allowed_networks, should be pushing data in
+			a different manner
+
 2007-08-27  Tambet Ingo  <tambet@gmail.com>
 
 	* src/nm-manager.c (impl_manager_get_devices): Duplicate the device path, 

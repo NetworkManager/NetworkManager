@@ -28,6 +28,7 @@ G_DEFINE_TYPE (NMActRequest, nm_act_request, G_TYPE_OBJECT)
 
 typedef struct {
 	NMConnection *connection;
+	char *specific_object;
 	gboolean user_requested;
 } NMActRequestPrivate;
 
@@ -43,6 +44,8 @@ finalize (GObject *object)
 
 	nm_connection_destroy (priv->connection);
 
+	g_free (priv->specific_object);
+
 	G_OBJECT_CLASS (nm_act_request_parent_class)->finalize (object);
 }
 
@@ -57,7 +60,9 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 }
 
 NMActRequest *
-nm_act_request_new (NMConnection *connection, gboolean user_requested)
+nm_act_request_new (NMConnection *connection,
+                    const char *specific_object,
+                    gboolean user_requested)
 {
 	GObject *obj;
 	NMActRequestPrivate *priv;
@@ -72,6 +77,8 @@ nm_act_request_new (NMConnection *connection, gboolean user_requested)
 
 	priv->connection = connection;
 	priv->user_requested = user_requested;
+	if (specific_object)
+		priv->specific_object = g_strdup (specific_object);
 
 	return NM_ACT_REQUEST (obj);
 }
@@ -82,6 +89,14 @@ nm_act_request_get_connection (NMActRequest *req)
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), NULL);
 
 	return NM_ACT_REQUEST_GET_PRIVATE (req)->connection;
+}
+
+const char *
+nm_act_request_get_specific_object (NMActRequest *req)
+{
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), NULL);
+
+	return NM_ACT_REQUEST_GET_PRIVATE (req)->specific_object;
 }
 
 gboolean

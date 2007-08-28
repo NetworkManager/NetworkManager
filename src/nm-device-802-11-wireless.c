@@ -41,7 +41,6 @@
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerPolicy.h"
 #include "nm-activation-request.h"
-#include "nm-dbus-nmi.h"
 #include "nm-supplicant-manager.h"
 #include "nm-supplicant-interface.h"
 #include "nm-supplicant-config.h"
@@ -244,7 +243,7 @@ nm_device_802_11_wireless_update_bssid (NMDevice80211Wireless *self,
 		nm_ap_set_address (ap, &new_bssid);
 
 		automatic = !nm_act_request_get_user_requested (nm_device_get_act_request (NM_DEVICE (self)));
-		nm_dbus_update_network_info (ap, automatic);
+		// FIXME: push new BSSID to the info-daemon
 	}
 }
 
@@ -333,43 +332,54 @@ out:
 	return caps;
 }
 
+#define WPA_CAPS (NM_802_11_DEVICE_CAP_CIPHER_TKIP | \
+                  NM_802_11_DEVICE_CAP_CIPHER_CCMP | \
+                  NM_802_11_DEVICE_CAP_WPA | \
+                  NM_802_11_DEVICE_CAP_RSN)
+
 static guint32
 get_wireless_capabilities (NMDevice80211Wireless *self,
                            iwrange * range,
                            guint32 data_len)
 {
 	guint32	minlen;
-	guint32	caps = NM_802_11_CAP_NONE;
+	guint32	caps = NM_802_11_DEVICE_CAP_NONE;
 
-	g_return_val_if_fail (self != NULL, NM_802_11_CAP_NONE);
-	g_return_val_if_fail (range != NULL, NM_802_11_CAP_NONE);
+	g_return_val_if_fail (self != NULL, NM_802_11_DEVICE_CAP_NONE);
+	g_return_val_if_fail (range != NULL, NM_802_11_DEVICE_CAP_NONE);
 
 	minlen = ((char *) &range->enc_capa) - (char *) range + sizeof (range->enc_capa);
 
 	/* All drivers should support WEP by default */
-	caps |= (NM_802_11_CAP_CIPHER_WEP40 | NM_802_11_CAP_CIPHER_WEP104);
-	/* All drivers should support no encryption by default */
-	caps |= (NM_802_11_CAP_PROTO_NONE | NM_802_11_CAP_PROTO_WEP);
+	caps |= NM_802_11_DEVICE_CAP_CIPHER_WEP40 | NM_802_11_DEVICE_CAP_CIPHER_WEP104;
 
-	if ((data_len >= minlen) && range->we_version_compiled >= 18)
-	{
-		if (range->enc_capa & IW_ENC_CAPA_WPA)
-		{
-			caps |= (NM_802_11_CAP_PROTO_WPA
-				  | NM_802_11_CAP_KEY_MGMT_PSK
-				  | NM_802_11_CAP_KEY_MGMT_802_1X);
-		}
-		if (range->enc_capa & IW_ENC_CAPA_WPA2)
-		{
-			caps |= (NM_802_11_CAP_PROTO_WPA2
-				  | NM_802_11_CAP_KEY_MGMT_PSK
-				  | NM_802_11_CAP_KEY_MGMT_802_1X);
-		}
-
+	if ((data_len >= minlen) && range->we_version_compiled >= 18) {
 		if (range->enc_capa & IW_ENC_CAPA_CIPHER_TKIP)
-			caps |= NM_802_11_CAP_CIPHER_TKIP;
+			caps |= NM_802_11_DEVICE_CAP_CIPHER_TKIP;
+
 		if (range->enc_capa & IW_ENC_CAPA_CIPHER_CCMP)
-			caps |= NM_802_11_CAP_CIPHER_CCMP;
+			caps |= NM_802_11_DEVICE_CAP_CIPHER_CCMP;
+
+		if (range->enc_capa & IW_ENC_CAPA_WPA)
+			caps |= NM_802_11_DEVICE_CAP_WPA;
+
+		if (range->enc_capa & IW_ENC_CAPA_WPA2)
+			caps |= NM_802_11_DEVICE_CAP_RSN;
+
+		/* Check for cipher support but not WPA support */
+		if (    (caps & (NM_802_11_DEVICE_CAP_CIPHER_TKIP | NM_802_11_DEVICE_CAP_CIPHER_CCMP))
+		    && !(caps & (NM_802_11_DEVICE_CAP_WPA | NM_802_11_DEVICE_CAP_RSN))) {
+			nm_warning ("%s: device supports WPA ciphers but not WPA protocol; "
+			            "WPA unavailable.");
+			caps &= ~WPA_CAPS;
+		}
+
+		/* Check for WPA support but not cipher support */
+		if (    (caps & (NM_802_11_DEVICE_CAP_WPA | NM_802_11_DEVICE_CAP_RSN))
+		    && !(caps & (NM_802_11_DEVICE_CAP_CIPHER_TKIP | NM_802_11_DEVICE_CAP_CIPHER_CCMP)))
+			nm_warning ("%s: device supports WPA protocol but not WPA ciphers; "
+			            "WPA unavailable.");
+			caps &= ~WPA_CAPS;
 	}
 
 	return caps;
@@ -923,7 +933,6 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 			if (!blacklisted && (curtime->tv_sec > best_timestamp.tv_sec)) {
 				best_timestamp = *nm_ap_get_timestamp (tmp_ap);
 				best_ap = scan_ap;
-				nm_ap_set_security (best_ap, nm_ap_get_security (tmp_ap));
 			}
 		}
 	}
@@ -937,6 +946,7 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 	return best_ap;
 }
 
+#if 0
 static gboolean
 nm_device_802_11_wireless_set_activation_ap (NMDevice80211Wireless *self,
                                              GByteArray *ssid,
@@ -1009,7 +1019,7 @@ nm_device_802_11_wireless_set_activation_ap (NMDevice80211Wireless *self,
 
 	return TRUE;
 }
-
+#endif
 
 /*
  * nm_device_802_11_wireless_ap_list_clear
@@ -1757,66 +1767,50 @@ out:
 
 
 static gboolean
-ap_need_key (NMDevice80211Wireless *self,
-             NMAccessPoint *ap,
-             gboolean *ask_user)
+ap_need_secrets (NMDevice80211Wireless *self,
+                 NMAccessPoint *ap,
+                 NMConnection *connection,
+                 gboolean *ask_user)
 {
-	const GByteArray *	ssid;
-	gboolean		need_key = FALSE;
-	NMAPSecurity *	security;
-	const char *	iface;
-	int			we_cipher;
-	const char * esc_ssid = NULL;
+	const GByteArray * ssid;
+	gboolean need_key = FALSE;
+	const char * iface;
+	const char * esc_ssid;
+	guint32 flags, wpa_flags, rsn_flags;
 
+	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (ap != NULL, FALSE);
+	g_return_val_if_fail (connection != NULL, FALSE);
 	g_return_val_if_fail (ask_user != NULL, FALSE);
-
-	ssid = nm_ap_get_ssid (ap);
-	if (ssid)
-		esc_ssid = nm_utils_escape_ssid (ssid->data, ssid->len);
-
-	security = nm_ap_get_security (ap);
-	g_assert (security);
-	we_cipher = nm_ap_security_get_we_cipher (security);
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
 
-	if (!nm_ap_get_encrypted (ap))
-	{
-		nm_info ("Activation (%s/wireless): access point '%s' is unencrypted, no key needed.", 
-			 iface, esc_ssid ? esc_ssid : "(null)");
+	ssid = nm_ap_get_ssid (ap);
+	esc_ssid = ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(null)";
 
-		/* If the user-specified security info doesn't overlap the
-		 * scanned access point's info, create new info from the scanned
-		 * characteristics of the access point.  Can happen if the AP's
-		 * settings were changed.
-		 */
-		if (we_cipher != IW_AUTH_CIPHER_NONE)
-			nm_ap_set_security (ap, nm_ap_security_new (nm_ap_get_capabilities (ap),
-														nm_ap_get_encrypted (ap)));
-	}
-	else
-	{
-		if (   !nm_ap_security_get_key (security)
-		    || (we_cipher == IW_AUTH_CIPHER_NONE))
-		{
-			nm_info ("Activation (%s/wireless): access point '%s' "
-				 "is encrypted, but NO valid key exists.  New key needed.",
-				 iface, esc_ssid ? esc_ssid : "(null)");
+	flags = nm_ap_get_flags (ap);
+	wpa_flags = nm_ap_get_wpa_flags (ap);
+	rsn_flags = nm_ap_get_rsn_flags (ap);
+	if (  !(flags & NM_802_11_AP_FLAGS_PRIVACY)
+	    && (wpa_flags == NM_802_11_AP_SEC_NONE)
+	    && (rsn_flags == NM_802_11_AP_SEC_NONE)) {
+		nm_info ("Activation (%s/wireless): access point '%s' has no security, "
+		         "no key needed.",
+		         iface, esc_ssid);
+	} else {
+		if (nm_connection_have_secrets (connection)) {
+			nm_info ("Activation (%s/wireless): access point '%s' has security"
+			         ", and secrets exist.  No new secrets needed.",
+			         iface, esc_ssid ? esc_ssid : "(null)");
+		} else {
+			nm_info ("Activation (%s/wireless): access point '%s' has security,"
+			         " but secrets are required.",
+			         iface, esc_ssid);
 			need_key = TRUE;
 
-			/* If the user-specified security info doesn't overlap the
-			 * scanned access point's info, ask the user for a completely
-			 * new key.
+			/* FIXME: how to determine when to explicitly ask the user for
+			 * secrets...
 			 */
-			if (we_cipher == IW_AUTH_CIPHER_NONE)
-				*ask_user = TRUE;
-		}
-		else
-		{
-			nm_info ("Activation (%s/wireless): access point '%s' "
-				 "is encrypted, and a key exists.  No new key needed.",
-			  	 iface, esc_ssid ? esc_ssid : "(null)");
 		}
 	}
 
@@ -1825,7 +1819,7 @@ ap_need_key (NMDevice80211Wireless *self,
 
 
 /*
- * ap_is_auth_required
+ * ap_auth_enforced
  *
  * Checks whether or not there is an encryption key present for
  * this connection, and whether or not the authentication method
@@ -1835,48 +1829,31 @@ ap_need_key (NMDevice80211Wireless *self,
  * Similarly, Open System WEP access points don't reject a station
  * when the key is wrong.  Shared Key WEP access points will.
  *
- * Theory of operation here is that if:
- * (a) the NMAPSecurity object specifies that authentication is
- *     required, and the AP rejects our authentication attempt during
- *     connection (which shows up as a wpa_supplicant disconnection
- *     event); or
- * (b) the NMAPSecurity object specifies that no authentiation is
- *     required, and either DHCP times out or wpa_supplicant times out;
- *
- * then we need a new key from the user because our currenty key
- * and/or authentication method is likely wrong.
- *
  */
 static gboolean
-ap_is_auth_required (NMAccessPoint *ap, gboolean *has_key)
+ap_auth_enforced (NMAccessPoint *ap)
 {
-	NMAPSecurity *security;
-	int we_cipher;
-	gboolean auth_required = FALSE;
+	guint32 flags, wpa_flags, rsn_flags;
 
 	g_return_val_if_fail (ap != NULL, FALSE);
-	g_return_val_if_fail (has_key != NULL, FALSE);
 
-	*has_key = FALSE;
-
-	/* Ad Hoc mode doesn't have any master station to validate
-	 * security credentials, so no auth can possibly be required.
-	 */
-	if (nm_ap_get_mode(ap) == IW_MODE_ADHOC)
+	if (nm_ap_get_mode (ap) == IW_MODE_ADHOC)
 		return FALSE;
 
-	/* No encryption obviously means no possiblity of auth
-	 * rejection due to a wrong encryption key.
-	 */
-	security = nm_ap_get_security (ap);
-	we_cipher = nm_ap_security_get_we_cipher (security);
-	if (we_cipher == IW_AUTH_CIPHER_NONE)
-		return FALSE;
+	flags = nm_ap_get_flags (ap);
+	wpa_flags = nm_ap_get_wpa_flags (ap);
+	rsn_flags = nm_ap_get_rsn_flags (ap);
 
-	auth_required = nm_ap_security_get_authentication_required (security);
-	*has_key = TRUE;
+	if (flags & NM_802_11_AP_FLAGS_PRIVACY)
+		return TRUE;
 
-	return auth_required;
+	if (wpa_flags != NM_802_11_AP_SEC_NONE)
+		return TRUE;
+
+	if (rsn_flags != NM_802_11_AP_SEC_NONE)
+		return TRUE;
+
+	return FALSE;
 }
 
 
@@ -1952,11 +1929,12 @@ merge_scanned_ap (NMDevice80211Wireless *dev,
 	nm_ap_list_iter_free (iter);
 
 	if (found_ap) {
-		nm_ap_set_capabilities (found_ap, nm_ap_get_capabilities (merge_ap));
+		nm_ap_set_flags (found_ap, nm_ap_get_flags (merge_ap));
+		nm_ap_set_wpa_flags (found_ap, nm_ap_get_wpa_flags (merge_ap));
+		nm_ap_set_rsn_flags (found_ap, nm_ap_get_rsn_flags (merge_ap));
 		nm_ap_set_strength (found_ap, nm_ap_get_strength (merge_ap));
 		nm_ap_set_last_seen (found_ap, nm_ap_get_last_seen (merge_ap));
 		nm_ap_set_broadcast (found_ap, nm_ap_get_broadcast (merge_ap));
-		nm_ap_set_capabilities (found_ap, nm_ap_get_capabilities (merge_ap));
 
 		/* If the AP is noticed in a scan, it's automatically no longer
 		 * artificial, since it clearly exists somewhere.
@@ -2178,13 +2156,13 @@ link_timeout_cb (gpointer user_data)
 	 * another one.
 	 */
 	if ((nm_device_get_state (dev) == NM_DEVICE_STATE_CONFIG)
-	    && (ap_is_auth_required (ap, &has_key) && has_key)) {
+	    && ap_auth_enforced (ap)) {
 		/* Association/authentication failed, we must have bad encryption key */
 		nm_info ("Activation (%s/wireless): disconnected during association,"
 		         " asking for new key.", nm_device_get_iface (dev));
 		cleanup_association_attempt (self, TRUE);
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
-		nm_dbus_get_user_key_for_network (dev, req, TRUE);
+		// FIXME: get secrets from the info-daemon
 	} else {
 		nm_info ("%s: link timed out.", nm_device_get_iface (dev));
 		nm_device_set_active_link (dev, FALSE);
@@ -2546,27 +2524,28 @@ supplicant_connection_timeout_cb (gpointer user_data)
 		
 	cleanup_association_attempt (self, TRUE);
 
-	/* Timed out waiting for authentication success; if the security method
-	 * in use does not require access point side authentication (Open System
+	/* Timed out waiting for authentication success; if the security in use
+	 * does not require access point side authentication (Open System
 	 * WEP, for example) then we are likely using the wrong authentication
 	 * algorithm or key.  Request new one from the user.
 	 */
-	if (!ap_is_auth_required (ap, &has_key) && has_key) {
-		/* Activation failed, we must have bad encryption key */
-		nm_info ("Activation (%s/wireless): association took too long, "
-		         "asking for new key.",
-		         nm_device_get_iface (dev));
-
-		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
-		nm_dbus_get_user_key_for_network (dev, nm_device_get_act_request (dev), TRUE);
-	} else {
+	if (ap_auth_enforced (ap)) {
 		if (nm_device_is_activating (dev)) {
+			/* Kicked off by the authenticator most likely */
 			nm_info ("Activation (%s/wireless): association took too long, "
 			         "failing activation.",
 			         nm_device_get_iface (dev));
 
 			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
 		}
+	} else {
+		/* Activation failed, encryption key is probably bad */
+		nm_info ("Activation (%s/wireless): association took too long, "
+		         "asking for new key.",
+		         nm_device_get_iface (dev));
+
+		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
+		// FIXME: get secrets from the info-daemon
 	}
 
 	return FALSE;
@@ -2650,10 +2629,14 @@ build_supplicant_config (NMDevice80211Wireless *self)
 			goto error;
 	}
 
+#if 0
+	// FIXME: send nm-802-11-wireless & nm-802-11-wireless-security
+	// settings objects to the supplicant
 	if (!nm_ap_security_write_supplicant_config (nm_ap_get_security (ap),
 	                                             config,
 	                                             is_adhoc))
 		goto error;
+#endif
 
 out:
 	return config;
@@ -2700,7 +2683,11 @@ real_act_stage1_prepare (NMDevice *dev)
 	setting = (NMSettingWireless *) nm_connection_get_setting (nm_act_request_get_connection (req),
 															   "802-11-wireless");
 	g_assert (setting);
+#if 0
 	success = nm_device_802_11_wireless_set_activation_ap (self, setting->ssid, NULL);
+#endif
+	/* FIXME: match up 802-11-wireless and 802-11-wireless-security to an AP */
+	success = NM_ACT_STAGE_RETURN_SUCCESS;
 
 	return success ? NM_ACT_STAGE_RETURN_SUCCESS : NM_ACT_STAGE_RETURN_FAILURE;
 }
@@ -2710,21 +2697,30 @@ static NMActStageReturn
 real_act_stage2_config (NMDevice *dev)
 {
 	NMDevice80211Wireless * self = NM_DEVICE_802_11_WIRELESS (dev);
-	NMAccessPoint *         ap = nm_device_802_11_wireless_get_activation_ap (self);
 	NMActStageReturn        ret = NM_ACT_STAGE_RETURN_FAILURE;
 	const char *            iface = nm_device_get_iface (dev);
 	gboolean                ask_user = FALSE;
+	NMAccessPoint *         ap;
 	NMSupplicantConfig *	config = NULL;
 	gulong                  id = 0;
-
-	g_assert (ap);
+	NMActRequest *          req;
+	NMConnection *          connection;
 
 	remove_supplicant_timeouts (self);
 
-	/* If we need an encryption key, get one */
-	if (ap_need_key (self, ap, &ask_user)) {
+	ap = nm_device_802_11_wireless_get_activation_ap (self);
+	g_assert (ap);
+
+	req = nm_device_get_act_request (dev);
+	g_assert (req);
+
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+
+	/* If we need secrets, get them */
+	if (ap_need_secrets (self, ap, connection, &ask_user)) {
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
-		nm_dbus_get_user_key_for_network (dev, nm_device_get_act_request (dev), ask_user);
+		// FIXME: get secrets from info-daemon
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	}
 
@@ -2840,7 +2836,6 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 	NMAccessPoint *		ap = nm_device_802_11_wireless_get_activation_ap (self);
 	NMActStageReturn		ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMIP4Config *			real_config = NULL;
-	NMAPSecurity *			security;
 	gboolean		has_key;
 
 	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
@@ -2848,15 +2843,11 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 
 	g_assert (ap);
 
-	security = nm_ap_get_security (ap);
-	g_assert (security);
-
-	/* If the security credentials' validity was not checked by any
-	 * peer during authentication process, and DHCP times out, then
+	/* If nothing checks the security authentication information (as in
+	 * Open System WEP for example), and DHCP times out, then
 	 * the encryption key is likely wrong.  Ask the user for a new one.
 	 */
-	if (!ap_is_auth_required (ap, &has_key) && has_key)
-	{
+	if (!ap_auth_enforced (ap)) {
 		const GByteArray * ssid = nm_ap_get_ssid (ap);
 
 		/* Activation failed, we must have bad encryption key */
@@ -2864,11 +2855,9 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 		          nm_device_get_iface (dev),
 		          ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
-		nm_dbus_get_user_key_for_network (dev, nm_device_get_act_request (dev), TRUE);
+		// FIXME: request new secrets from info-daemon
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
-	}
-	else if (nm_ap_get_mode (ap) == IW_MODE_ADHOC)
-	{
+	} else if (nm_ap_get_mode (ap) == IW_MODE_ADHOC) {
 		NMDevice80211WirelessClass *	klass;
 		NMDeviceClass * parent_class;
 
@@ -2876,9 +2865,7 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 		klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (self);
 		parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
 		ret = parent_class->act_stage4_ip_config_timeout (dev, &real_config);
-	}
-	else
-	{
+	} else {
 		/* Non-encrypted network and IP configure failed.  Alert the user. */
 		ret = NM_ACT_STAGE_RETURN_FAILURE;
 	}
@@ -2914,7 +2901,7 @@ activation_success_handler (NMDevice *dev)
 	if (!nm_ap_get_address (ap) || !nm_ethernet_address_is_valid (nm_ap_get_address (ap)))
 		nm_ap_set_address (ap, &addr);
 
-	nm_dbus_update_network_info (ap, automatic);
+	// FIXME: send connection + new BSSID to info-daemon
 }
 
 
@@ -2969,9 +2956,6 @@ real_activation_cancel_handler (NMDevice *dev)
 	klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (self);
 	parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
 	parent_class->activation_cancel_handler (dev);
-
-	if (nm_device_get_state (dev) == NM_DEVICE_STATE_NEED_AUTH)
-		nm_dbus_cancel_get_user_key_for_network (nm_device_get_act_request (dev));
 
 	cleanup_association_attempt (self, TRUE);
 }
@@ -3119,7 +3103,7 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 		 g_param_spec_uint (NM_DEVICE_802_11_WIRELESS_CAPABILITIES,
 							"Wireless Capabilities",
 							"Wireless Capabilities",
-							0, G_MAXUINT32, NM_802_11_CAP_NONE,
+							0, G_MAXUINT32, NM_802_11_DEVICE_CAP_NONE,
 							G_PARAM_READABLE));
 
 	/* Signals */

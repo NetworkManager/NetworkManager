@@ -34,8 +34,6 @@ NetworkManager_SOURCES =				\
 		NetworkManagerDbusUtils.h	\
 		nm-dbus-manager.h			\
 		nm-dbus-manager.c			\
-		nm-dbus-nmi.c				\
-		nm-dbus-nmi.h				\
 		nm-hal-manager.c			\
 		nm-hal-manager.h			\
 		nm-ip4-config.c			\
@@ -58,17 +56,6 @@ NetworkManager_SOURCES =				\
 		nm-activation-request.h		\
 		autoip.c					\
 		autoip.h					\
-		nm-ap-security.c			\
-		nm-ap-security.h			\
-		nm-ap-security-private.h		\
-		nm-ap-security-wep.c		\
-		nm-ap-security-wep.h		\
-		nm-ap-security-wpa-eap.c	\
-		nm-ap-security-wpa-eap.h	\
-		nm-ap-security-wpa-psk.c	\
-		nm-ap-security-wpa-psk.h	\
-		nm-ap-security-leap.c   	\
-		nm-ap-security-leap.h   	\
 		nm-marshal-main.c		\
 		kernel-types.h			\
 		wpa.c				\

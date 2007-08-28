@@ -137,6 +137,15 @@ nm_connection_compare (NMConnection *connection, NMConnection *other)
 	return FALSE;
 }
 
+gboolean
+nm_connection_have_secrets  (NMConnection *connection)
+{
+	/* FIXME: go through Settings objects and determine if there are any
+	 * secrets required.
+	 */
+	return FALSE;
+}
+
 static void
 add_one_setting_to_hash (gpointer key, gpointer data, gpointer user_data)
 {

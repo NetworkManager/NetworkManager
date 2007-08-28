@@ -34,7 +34,6 @@
 #include "NetworkManagerSystem.h"
 #include "nm-dhcp-manager.h"
 #include "nm-dbus-manager.h"
-#include "nm-dbus-nmi.h"
 #include "nm-utils.h"
 #include "autoip.h"
 #include "nm-netlink.h"
@@ -83,6 +82,7 @@ struct _NMDevicePrivate
 
 static void nm_device_activate (NMDeviceInterface *device,
 								NMConnection *connection,
+								const char *specific_object,
 								gboolean user_requested);
 
 static void	nm_device_activate_schedule_stage5_ip_config_commit (NMDevice *self);
@@ -1059,6 +1059,7 @@ nm_device_deactivate (NMDeviceInterface *device)
 static void
 nm_device_activate (NMDeviceInterface *device,
 					NMConnection *connection,
+					const char *specific_object,
 					gboolean user_requested)
 {
 	NMDevice *self = NM_DEVICE (device);
@@ -1081,7 +1082,7 @@ nm_device_activate (NMDeviceInterface *device,
 	}
 
 	nm_info ("Activating device %s", nm_device_get_iface (self));
-	priv->act_request = nm_act_request_new (connection, user_requested);
+	priv->act_request = nm_act_request_new (connection, specific_object, user_requested);
 	nm_device_activate_schedule_stage1_device_prepare (self);
 }
 
