@@ -12,7 +12,7 @@ register_default_creators (void)
 		const char *name;
 		NMSettingCreateFn fn;
 	} default_map[] = {
-		{ "info",            nm_setting_info_new_from_hash      },
+		{ "connection",      nm_setting_connection_new_from_hash      },
 		{ "802-3-ethernet",  nm_setting_wired_new_from_hash     },
 		{ "802-11-wireless", nm_setting_wireless_new_from_hash  },
 		{ "ipv4",            nm_setting_ip4_config_new_from_hash },

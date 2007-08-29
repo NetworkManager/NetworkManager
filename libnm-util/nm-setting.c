@@ -221,12 +221,12 @@ string_slist_validate (GSList *list, const char **valid_values)
 
 /***********************************************************************/
 
-/* Info */
+/* Connection */
 
 static gboolean
-setting_info_verify (NMSetting *setting, GHashTable *all_settings)
+setting_connection_verify (NMSetting *setting, GHashTable *all_settings)
 {
-	NMSettingInfo *self = (NMSettingInfo *) setting;
+	NMSettingConnection *self = (NMSettingConnection *) setting;
 
 	/* Make sure the corresponding 'devtype' item is present */
 	if (!g_hash_table_lookup (all_settings, self->devtype))
@@ -236,9 +236,9 @@ setting_info_verify (NMSetting *setting, GHashTable *all_settings)
 }
 
 static GHashTable *
-setting_info_hash (NMSetting *setting)
+setting_connection_hash (NMSetting *setting)
 {
-	NMSettingInfo *self = (NMSettingInfo *) setting;
+	NMSettingConnection *self = (NMSettingConnection *) setting;
 	GHashTable *hash;
 
 	hash = setting_hash_new ();
@@ -250,48 +250,48 @@ setting_info_hash (NMSetting *setting)
 }
 
 static void
-setting_info_destroy (NMSetting *setting)
+setting_connection_destroy (NMSetting *setting)
 {
-	NMSettingInfo *self = (NMSettingInfo *) setting;
+	NMSettingConnection *self = (NMSettingConnection *) setting;
 
 	g_free (self->name);
 	g_free (self->devtype);
 
-	g_slice_free (NMSettingInfo, self);
+	g_slice_free (NMSettingConnection, self);
 }
 
 NMSetting *
-nm_setting_info_new (void)
+nm_setting_connection_new (void)
 {
 	NMSetting *setting;
 
-	setting = (NMSetting *) g_slice_new0 (NMSettingInfo);
+	setting = (NMSetting *) g_slice_new0 (NMSettingConnection);
 
-	setting->name = g_strdup ("info");
-	setting->verify_fn = setting_info_verify;
-	setting->hash_fn = setting_info_hash;
-	setting->destroy_fn = setting_info_destroy;
+	setting->name = g_strdup ("connection");
+	setting->verify_fn = setting_connection_verify;
+	setting->hash_fn = setting_connection_hash;
+	setting->destroy_fn = setting_connection_destroy;
 
 	return setting;
 }
 
 NMSetting *
-nm_setting_info_new_from_hash (GHashTable *settings)
+nm_setting_connection_new_from_hash (GHashTable *settings)
 {
-	NMSettingInfo *self;
+	NMSettingConnection *self;
 	NMSetting *setting;
 	GValue *value;
 
 	g_return_val_if_fail (settings != NULL, NULL);
 
-	setting = nm_setting_info_new ();
-	self = (NMSettingInfo *) setting;
+	setting = nm_setting_connection_new ();
+	self = (NMSettingConnection *) setting;
 
 	value = (GValue *) g_hash_table_lookup (settings, "name");
 	if (value && G_VALUE_HOLDS_STRING (value))
 		self->name = g_strdup (g_value_get_string (value));
 	else {
-		g_warning ("Missing or invalid info name");
+		g_warning ("Missing or invalid connection name");
 		goto err;
 	}
 
@@ -310,7 +310,7 @@ nm_setting_info_new_from_hash (GHashTable *settings)
 	return setting;
 
  err:
-	setting_info_destroy (setting);
+	setting_connection_destroy (setting);
 
 	return NULL;
 }

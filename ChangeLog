@@ -1,5 +1,14 @@
 2007-08-29  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting.h
+	  libnm-util/nm-setting.c
+	  libnm-util/nm-connection.c
+	  src/NetworkManagerPolicy.c
+		- 'info' settings object should be 'connection' says the spec
+		at NetworkManagerConfigurationSpecification
+
+2007-08-29  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/nm-settings.c
 	  libnm-glib/nm-settings.h
 		- make the dbus path a property of the object, and autogenerate it.

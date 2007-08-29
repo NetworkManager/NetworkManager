@@ -31,7 +31,7 @@ void        nm_setting_destroy (NMSetting *setting);
 
 /* Default, built-in settings */
 
-/* Info */
+/* Connection */
 
 typedef struct {
 	NMSetting parent;
@@ -39,10 +39,10 @@ typedef struct {
 	char *name;
 	char *devtype;
 	gboolean autoconnect;
-} NMSettingInfo;
+} NMSettingConnection;
 
-NMSetting *nm_setting_info_new (void);
-NMSetting *nm_setting_info_new_from_hash (GHashTable *settings);
+NMSetting *nm_setting_connection_new (void);
+NMSetting *nm_setting_connection_new_from_hash (GHashTable *settings);
 
 /* IP4 config */
 

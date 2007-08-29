@@ -185,15 +185,15 @@ create_connection (NMDevice *device, NMAccessPoint *ap)
 	}
 
 	if (setting) {
-		NMSettingInfo *info;
+		NMSettingConnection *scon;
 
 		connection = nm_connection_new ();
 		nm_connection_add_setting (connection, setting);
 
-		info = (NMSettingInfo *) nm_setting_info_new ();
-		info->name = g_strdup ("Auto");
-		info->devtype = g_strdup (setting->name);
-		nm_connection_add_setting (connection, (NMSetting *) info);
+		scon = (NMSettingConnection *) nm_setting_connection_new ();
+		scon->name = g_strdup ("Auto");
+		scon->devtype = g_strdup (setting->name);
+		nm_connection_add_setting (connection, (NMSetting *) scon);
 	}
 
 	return connection;
