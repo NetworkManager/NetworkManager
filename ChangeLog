@@ -1,3 +1,11 @@
+2007-08-29  Dan Williams  <dcbw@redhat.com>
+
+	* introspection/nm-settings-connection.xml
+	  introspection/nm-settings.xml
+		- Service name -> NetworkManagerUserSettings because two services
+		can't share part of the same path.  I'm not really sure how we'll use
+		the same code with the system-settings daemon...
+
 2007-08-28  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-interface.c
