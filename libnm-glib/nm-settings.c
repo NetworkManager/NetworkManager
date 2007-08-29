@@ -187,11 +187,17 @@ impl_connection_settings_get_secrets (NMConnectionSettings *connection,
 	return TRUE;
 }
 
+static guint32 cs_counter = 0;
+
 static void
 nm_connection_settings_init (NMConnectionSettings *connection)
 {
 	DBusGConnection *bus_connection;
 	GError *error = NULL;
+
+	connection->dbus_path = g_strdup_printf ("%s/%u",
+		                                     NM_DBUS_PATH_CONNECTION_SETTINGS,
+		                                     cs_counter++);
 
 	/* register object with DBus */
 	bus_connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
@@ -199,12 +205,20 @@ nm_connection_settings_init (NMConnectionSettings *connection)
 		g_warning ("Couldn't connect to session bus: %s", error->message);
 		g_error_free (error);
 	} else {
-		gchar *path;
+		dbus_g_connection_register_g_object (bus_connection,
+		                                     connection->dbus_path,
+		                                     G_OBJECT (connection));
+	}
+}
 
-		path = nm_connection_settings_get_dbus_object_path (connection);
-		dbus_g_connection_register_g_object (bus_connection, path, G_OBJECT (connection));
+static void
+nm_connection_settings_dispose (GObject *object)
+{
+	NMConnectionSettings * self = NM_CONNECTION_SETTINGS (object);
 
-		g_free (path);
+	if (self->dbus_path) {
+		g_free (self->dbus_path);
+		self->dbus_path = NULL;
 	}
 }
 
@@ -221,6 +235,7 @@ nm_connection_settings_class_init (NMConnectionSettingsClass *connection_setting
 
 	/* virtual methods */
 	object_class->finalize = nm_connection_settings_finalize;
+	object_class->dispose = nm_connection_settings_dispose;
 
 	connection_settings_class->get_id = NULL;
 	connection_settings_class->get_settings = NULL;
@@ -249,24 +264,12 @@ nm_connection_settings_class_init (NMConnectionSettingsClass *connection_setting
 					 &dbus_glib_nm_connection_settings_object_info);
 }
 
-gchar *
+const char *
 nm_connection_settings_get_dbus_object_path (NMConnectionSettings *connection)
 {
-	gchar *object_path, *escaped_object_path, *id;
-
 	g_return_val_if_fail (NM_IS_CONNECTION_SETTINGS (connection), NULL);
 
-	if (!CONNECTION_SETTINGS_CLASS (connection)->get_id)
-		return NULL;
-
-	id = CONNECTION_SETTINGS_CLASS (connection)->get_id (connection);
-	object_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_CONNECTION_SETTINGS, id);
-	escaped_object_path = nm_dbus_escape_object_path ((const gchar *) object_path);
-
-	g_free (object_path);
-	g_free (id);
-
-	return escaped_object_path;
+	return connection->dbus_path;
 } 
 
 void

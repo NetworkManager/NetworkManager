@@ -15,6 +15,9 @@ G_BEGIN_DECLS
 
 typedef struct {
 	GObject parent;
+
+	/* private */
+	char * dbus_path;
 } NMConnectionSettings;
 
 typedef struct {
@@ -31,7 +34,7 @@ typedef struct {
 } NMConnectionSettingsClass;
 
 GType  nm_connection_settings_get_type (void);
-gchar *nm_connection_settings_get_dbus_object_path (NMConnectionSettings *connection);
+const char *nm_connection_settings_get_dbus_object_path (NMConnectionSettings *connection);
 
 void   nm_connection_settings_signal_updated (NMConnectionSettings *connection, GHashTable *settings);
 void   nm_connection_settings_signal_removed (NMConnectionSettings *connection);

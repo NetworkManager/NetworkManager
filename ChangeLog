@@ -1,5 +1,13 @@
 2007-08-29  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/nm-settings.c
+	  libnm-glib/nm-settings.h
+		- make the dbus path a property of the object, and autogenerate it.
+		It can't be composed of the 'id' field becuase that's not available
+		yet during the GObject creation in nm_connection_settings_init()
+
+2007-08-29  Dan Williams  <dcbw@redhat.com>
+
 	* introspection/nm-settings-connection.xml
 	  introspection/nm-settings.xml
 		- Service name -> NetworkManagerUserSettings because two services
