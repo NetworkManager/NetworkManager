@@ -417,7 +417,8 @@ done:
 		nm_vpn_manager_dispose (vpn_manager);
 
 	nm_hal_manager_destroy (hal_manager);
-	nm_policy_destroy (policy);
+	if (policy)
+		nm_policy_destroy (policy);
 
 	if (manager)
 		g_object_unref (manager);

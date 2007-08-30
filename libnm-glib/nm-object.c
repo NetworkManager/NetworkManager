@@ -279,7 +279,7 @@ nm_object_get_boolean_property (NMObject *object,
 								const char *interface,
 								const char *prop_name)
 {
-	gboolean b;
+	gboolean b = FALSE;  // FIXME: somehow convey failure if needed
 	GValue value = {0,};
 
 	if (nm_object_get_property (object, interface, prop_name, &value))
@@ -293,7 +293,7 @@ nm_object_get_byte_property (NMObject *object,
 							 const char *interface,
 							 const char *prop_name)
 {
-	gint8 b;
+	gint8 b = G_MAXINT8;
 	GValue value = {0,};
 
 	if (nm_object_get_property (object, interface, prop_name, &value))
@@ -307,7 +307,7 @@ nm_object_get_double_property (NMObject *object,
 							   const char *interface,
 							   const char *prop_name)
 {
-	gdouble d;
+	gdouble d = G_MAXDOUBLE;
 	GValue value = {0,};
 
 	if (nm_object_get_property (object, interface, prop_name, &value))

@@ -23,6 +23,8 @@
 #include "nm-utils.h"
 
 #include <glib.h>
+#include <pthread.h>
+#include <unistd.h>
 
 static struct nl_cache * link_cache = NULL;
 static struct nl_handle * def_nl_handle = NULL;
@@ -68,8 +70,6 @@ int
 nm_netlink_iface_to_index (const char *iface)
 {
 	struct nl_cache * cache;
-	struct nl_handle * nlh;
-	int i;
 
 	g_return_val_if_fail (iface != NULL, -1);
 

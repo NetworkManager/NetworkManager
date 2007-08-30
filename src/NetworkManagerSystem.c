@@ -481,7 +481,6 @@ void nm_system_set_mtu (NMDevice *dev)
 	struct rtnl_link *	old;
 	unsigned long		mtu;
 	struct nl_handle *	nlh;
-	const char *		iface;
 
 	mtu = nm_system_get_mtu (dev);
 	if (!mtu)

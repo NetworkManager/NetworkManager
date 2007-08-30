@@ -4,6 +4,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "nm-ppp-manager.h"
 #include "nm-dbus-manager.h"
@@ -548,6 +549,7 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	nm_debug ("Command line: %s", cmd_str);
 	g_free (cmd_str);
 
+    priv->pid = 0;
 	if (!g_spawn_async (NULL, (char **) ppp_cmd->array->pdata, NULL,
 					G_SPAWN_DO_NOT_REAP_CHILD,
 					pppd_child_setup,
