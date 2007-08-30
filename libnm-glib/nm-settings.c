@@ -198,17 +198,6 @@ nm_connection_settings_init (NMConnectionSettings *connection)
 	connection->dbus_path = g_strdup_printf ("%s/%u",
 		                                     NM_DBUS_PATH_CONNECTION_SETTINGS,
 		                                     cs_counter++);
-
-	/* register object with DBus */
-	bus_connection = dbus_g_bus_get (DBUS_BUS_SESSION, &error);
-	if (!bus_connection) {
-		g_warning ("Couldn't connect to session bus: %s", error->message);
-		g_error_free (error);
-	} else {
-		dbus_g_connection_register_g_object (bus_connection,
-		                                     connection->dbus_path,
-		                                     G_OBJECT (connection));
-	}
 }
 
 static void
@@ -220,6 +209,8 @@ nm_connection_settings_dispose (GObject *object)
 		g_free (self->dbus_path);
 		self->dbus_path = NULL;
 	}
+
+	G_OBJECT_CLASS (nm_connection_settings_parent_class)->dispose (object);
 }
 
 static void
@@ -262,6 +253,18 @@ nm_connection_settings_class_init (NMConnectionSettingsClass *connection_setting
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (connection_settings_class),
 					 &dbus_glib_nm_connection_settings_object_info);
+}
+
+void
+nm_connection_settings_register_object (NMConnectionSettings *connection,
+                                        DBusGConnection *dbus_connection)
+{
+	g_return_if_fail (NM_IS_CONNECTION_SETTINGS (connection));
+	g_return_if_fail (dbus_connection != NULL);
+
+	dbus_g_connection_register_g_object (dbus_connection,
+	                                     connection->dbus_path,
+	                                     G_OBJECT (connection));
 }
 
 const char *

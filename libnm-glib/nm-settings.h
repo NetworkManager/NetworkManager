@@ -34,7 +34,11 @@ typedef struct {
 } NMConnectionSettingsClass;
 
 GType  nm_connection_settings_get_type (void);
+void
+nm_connection_settings_register_object (NMConnectionSettings *connection,
+                                        DBusGConnection *dbus_connection);
 const char *nm_connection_settings_get_dbus_object_path (NMConnectionSettings *connection);
+
 
 void   nm_connection_settings_signal_updated (NMConnectionSettings *connection, GHashTable *settings);
 void   nm_connection_settings_signal_removed (NMConnectionSettings *connection);

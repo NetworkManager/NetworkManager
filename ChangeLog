@@ -1,5 +1,17 @@
 2007-08-29  Dan Williams  <dcbw@redhat.com>
 
+	* include/NetworkManager.h
+		- Keep NMConnection object path in sync
+
+	* libnm-glib/nm-settings.c
+	  libnm-glib/nm-settings.h
+		- Break D-Bus object registration out of the init function, because
+		every object that's exported over D-Bus needs to use the _same_
+		DBusConnection.  Otherwise, each object would get a different object
+		path tree and wouldn't be callable.
+
+2007-08-29  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting.h
 	  libnm-util/nm-setting.c
 	  libnm-util/nm-connection.c

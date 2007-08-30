@@ -36,7 +36,7 @@
 #define NM_DBUS_PATH_ACCESS_POINT "/org/freedesktop/NetworkManager/AccessPoint"
 #define NM_DBUS_INTERFACE_ACCESS_POINT "org.freedesktop.NetworkManager.AccessPoint"
 
-#define NM_DBUS_PATH_CONNECTION_SETTINGS        "/org/freedesktop/NetworkManager/Settings/Connection"
+#define NM_DBUS_PATH_CONNECTION_SETTINGS        "/org/freedesktop/NetworkManagerUserSettings/Connection"
 
 #define	NMI_DBUS_SERVICE			"org.freedesktop.NetworkManagerInfo"
 #define	NMI_DBUS_PATH				"/org/freedesktop/NetworkManagerInfo"
