@@ -1,3 +1,8 @@
+2007-08-30  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/sha1.c
+		- Include config.h to get defines for endiannes (gnome.org #420216)
+
 2007-07-26  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Bernhard Miklautz <bernhard.miklautz@shacknet.at>
