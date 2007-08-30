@@ -241,9 +241,14 @@ setting_connection_hash (NMSetting *setting)
 	NMSettingConnection *self = (NMSettingConnection *) setting;
 	GHashTable *hash;
 
+	g_return_val_if_fail (self->name != NULL, NULL);
+	g_return_val_if_fail (self->devtype != NULL, NULL);
+
 	hash = setting_hash_new ();
 	g_hash_table_insert (hash, "name", string_to_gvalue (self->name));
 	g_hash_table_insert (hash, "devtype", string_to_gvalue (self->devtype));
+	// FIXME: autoconnect is optional, need to differentiate between TRUE/FALSE
+	// and "not present"
 	g_hash_table_insert (hash, "autoconnect", boolean_to_gvalue (self->autoconnect));
 
 	return hash;
