@@ -604,6 +604,8 @@ setting_wireless_hash (NMSetting *setting)
 	NMSettingWireless *self = (NMSettingWireless *) setting;
 	GHashTable *hash;
 
+	g_return_val_if_fail (self->ssid != NULL, NULL);
+
 	hash = setting_hash_new ();
 	g_hash_table_insert (hash, "ssid", byte_array_to_gvalue (self->ssid));
 
