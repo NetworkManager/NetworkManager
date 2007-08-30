@@ -189,6 +189,8 @@ garray_to_string (GArray *array)
 	int i;
 	char c;
 
+	g_return_val_if_fail (array != NULL, NULL);
+
 	str = g_string_sized_new (array->len);
 	for (i = 0; i < array->len; i++) {
 		c = array->data[i];
@@ -283,7 +285,7 @@ dump_setting_member (gpointer key, gpointer value, gpointer user_data)
 	char *val_as_str;
 
 	val_as_str = gvalue_to_string ((GValue *) value);
-	g_message ("\t%s : '%s'", (char *) key, val_as_str);
+	g_message ("\t%s : '%s'", (char *) key, val_as_str ? val_as_str : "(null)");
 	g_free (val_as_str);
 }
 
