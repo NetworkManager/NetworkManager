@@ -1,3 +1,10 @@
+2007-08-30  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Philip Withnall <bugzilla@tecnocode.co.uk>
+
+	* src/ppp-manager/Makefile.am
+		- use -fPIC (gnome.org #471825)
+
 2007-08-29  Dan Williams  <dcbw@redhat.com>
 
 	* include/NetworkManager.h

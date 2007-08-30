@@ -33,7 +33,7 @@ nm_pppd_plugin_so_SOURCES = \
 	nm-pppd-plugin.h	\
 	nm-ppp-status.h
 
-nm_pppd_plugin_so_CPPFLAGS = $(DBUS_CFLAGS)	$(GLIB_CFLAGS)
+nm_pppd_plugin_so_CPPFLAGS = $(DBUS_CFLAGS)	$(GLIB_CFLAGS) -fPIC
 
 nm_pppd_plugin_so_LDFLAGS =	-shared
 nm_pppd_plugin_so_LDADD = \
