@@ -259,7 +259,7 @@ main (int argc, char *argv[])
 	NMDBusManager *	dbus_mgr = NULL;
 	DBusConnection *dbus_connection;
 	NMSupplicantManager * sup_mgr = NULL;
-	int			exit_status = EXIT_FAILURE;
+	int exit_status = 1;
 
 	GOptionEntry options[] = {
 		{"no-daemon", 0, 0, G_OPTION_ARG_NONE, &become_daemon, "Don't become a daemon", NULL},
@@ -285,7 +285,7 @@ main (int argc, char *argv[])
 
 	if (show_usage == TRUE) {
 		nm_print_usage();
-		exit_status = EXIT_SUCCESS;
+		exit_status = 0;
 		goto exit;
 	}
 
@@ -400,7 +400,7 @@ main (int argc, char *argv[])
 	nm_system_enable_loopback ();
 
 	/* Run the main loop */
-	exit_status = EXIT_SUCCESS;
+	exit_status = 0;
 	g_main_loop_run (main_loop);
 
 done:

@@ -386,7 +386,7 @@ name_owner_changed (NMDBusManager *dbus_mgr,
 	if (!old_owner_good && new_owner_good) {
 		/* HAL just appeared */
 		if (!hal_init (manager))
-			exit (EXIT_FAILURE);
+			exit (1);
 	} else if (old_owner_good && !new_owner_good) {
 		/* HAL went away. Bad HAL. */
 		hal_deinit (manager);
@@ -408,7 +408,7 @@ connection_changed (NMDBusManager *dbus_mgr,
 
 	if ((owner = nm_dbus_manager_get_name_owner (dbus_mgr, "org.freedesktop.Hal"))) {
 		if (!hal_init (manager))
-			exit (EXIT_FAILURE);
+			exit (1);
 		g_free (owner);
 	}
 }
