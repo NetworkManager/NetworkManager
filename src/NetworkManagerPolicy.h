@@ -25,7 +25,6 @@
 #include "NetworkManager.h"
 #include "nm-manager.h"
 #include "nm-device.h"
-#include "NetworkManagerDbus.h"
 #include "nm-activation-request.h"
 
 typedef struct NMPolicy NMPolicy;

@@ -25,7 +25,6 @@
 #include "NetworkManagerAP.h"
 #include "NetworkManagerAPList.h"
 #include "NetworkManagerUtils.h"
-#include "NetworkManagerDbus.h"
 #include "nm-utils.h"
 #include "nm-dbus-manager.h"
 

@@ -36,7 +36,6 @@
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
 #include "NetworkManagerAPList.h"
-#include "NetworkManagerDbus.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerPolicy.h"

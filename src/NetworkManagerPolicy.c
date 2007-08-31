@@ -32,7 +32,6 @@
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerAP.h"
 #include "NetworkManagerAPList.h"
-#include "NetworkManagerDbus.h"
 #include "nm-activation-request.h"
 #include "nm-utils.h"
 #include "nm-device-interface.h"

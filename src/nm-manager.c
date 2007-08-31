@@ -8,7 +8,6 @@
 #include "nm-device-interface.h"
 #include "nm-device-802-11-wireless.h"
 #include "NetworkManagerSystem.h"
-#include "NetworkManagerDbus.h"
 
 static gboolean impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err);
 static gboolean impl_manager_sleep (NMManager *manager, gboolean sleep, GError **err);

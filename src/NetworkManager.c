@@ -47,7 +47,6 @@
 #include "nm-device-802-3-ethernet.h"
 #include "nm-device-802-11-wireless.h"
 #include "NetworkManagerPolicy.h"
-#include "NetworkManagerDbus.h"
 #include "NetworkManagerAP.h"
 #include "NetworkManagerAPList.h"
 #include "NetworkManagerSystem.h"
@@ -360,12 +359,6 @@ main (int argc, char *argv[])
 		nm_error ("Failed to initialize the policy.");
 		goto done;
 	}
-
-	nm_dbus_manager_register_signal_handler (dbus_mgr,
-											 NMI_DBUS_INTERFACE,
-											 NULL,
-											 nm_dbus_nmi_signal_handler,
-											 manager);
 
 	/* Initialize the supplicant manager */
 	sup_mgr = nm_supplicant_manager_get ();

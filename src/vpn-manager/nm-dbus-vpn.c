@@ -23,7 +23,6 @@
 #include <dbus/dbus.h>
 #include "NetworkManagerMain.h"
 #include "nm-device.h"
-#include "NetworkManagerDbus.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerVPN.h"
 #include "nm-dbus-vpn.h"
@@ -33,6 +32,46 @@
 #include "nm-vpn-act-request.h"
 #include "nm-utils.h"
 #include "nm-dbus-manager.h"
+
+/*
+ * nm_dbus_create_error_message
+ *
+ * Make a DBus error message
+ *
+ */
+DBusMessage *
+nm_dbus_create_error_message (DBusMessage *message,
+                              const char *exception_namespace,
+                              const char *exception,
+                              const char *format,
+                              ...)
+{
+	char *exception_text;
+	DBusMessage	*reply_message;
+	va_list		 args;
+	char			 error_text[512];
+
+	va_start (args, format);
+	vsnprintf (error_text, 512, format, args);
+	va_end (args);
+
+	exception_text = g_strdup_printf ("%s.%s", exception_namespace, exception);
+	reply_message = dbus_message_new_error (message, exception_text, error_text);
+	g_free (exception_text);
+
+	return (reply_message);
+}
+
+
+DBusMessage *
+nm_dbus_new_invalid_args_error (DBusMessage *replyto,
+                                const char *namespace)
+{
+	return nm_dbus_create_error_message (replyto,
+		                                 namespace,
+		                                 "InvalidArguments",
+		                                 "Invalid method arguments.");
+}
 
 /*
  * Pending Call Debug stuff
@@ -647,7 +686,7 @@ nm_dbus_vpn_connections_update_cb (DBusPendingCall *pcall,
 	if (!(reply = dbus_pending_call_steal_reply (pcall)))
 		goto out;
 
-	if (message_is_error (reply))
+	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR)
 		goto unref_reply;
 
 	nm_info ("Updating VPN Connections...");

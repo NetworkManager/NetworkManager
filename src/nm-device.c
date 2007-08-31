@@ -28,7 +28,6 @@
 #include "nm-device-interface.h"
 #include "nm-device.h"
 #include "nm-device-private.h"
-#include "NetworkManagerDbus.h"
 #include "NetworkManagerPolicy.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerSystem.h"

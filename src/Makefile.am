@@ -27,11 +27,9 @@ NetworkManager_SOURCES =				\
 		NetworkManagerAP.h			\
 		NetworkManagerAPList.c		\
 		NetworkManagerAPList.h		\
-		NetworkManagerDbus.c		\
-		NetworkManagerDbus.h		\
 		NetworkManagerDbusUtils.c	\
-		NetworkManagerDialup.h		\
 		NetworkManagerDbusUtils.h	\
+		NetworkManagerDialup.h		\
 		nm-dbus-manager.h			\
 		nm-dbus-manager.c			\
 		nm-hal-manager.c			\

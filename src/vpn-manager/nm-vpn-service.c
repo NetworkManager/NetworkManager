@@ -29,7 +29,6 @@
 #include <signal.h>
 #include <unistd.h>
 
-#include "NetworkManagerDbus.h"
 #include "nm-dbus-vpn.h"
 #include "nm-vpn-service.h"
 #include "nm-vpn-act-request.h"
@@ -515,7 +514,7 @@ nm_vpn_service_stage3_connect_cb (DBusPendingCall *pcall,
 		goto out;
 	}
 
-	if (message_is_error (reply)) {
+	if (dbus_message_get_type (reply) == DBUS_MESSAGE_TYPE_ERROR) {
 		const char *member = dbus_message_get_member (reply);
 		char *message;
 

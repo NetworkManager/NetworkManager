@@ -26,7 +26,6 @@
 #include "nm-named-manager.h"
 #include "NetworkManager.h"
 #include "NetworkManagerMain.h"
-#include "NetworkManagerDbus.h"
 #include "NetworkManagerSystem.h"
 #include "nm-vpn-act-request.h"
 #include "nm-vpn-connection.h"
