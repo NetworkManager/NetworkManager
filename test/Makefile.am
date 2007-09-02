@@ -18,7 +18,6 @@ AM_CPPFLAGS =						\
 
 noinst_PROGRAMS = nm-tool \
                   nm-online \
-                  nminfotest \
                   nmtestdevices \
                   libnm_glib_test
 
@@ -30,10 +29,6 @@ nm_tool_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS) $(HAL_LIBS)	\
 nm_online_SOURCES = nm-online.c
 nm_online_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS) $(HAL_LIBS)	\
 		$(top_builddir)/utils/libnmutils.la
-
-nminfotest_SOURCES = nminfotest.c
-nminfotest_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS)	\
-			$(top_builddir)/utils/libnmutils.la
 
 nmtestdevices_SOURCES = nmtestdevices.c
 nmtestdevices_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS)	\
