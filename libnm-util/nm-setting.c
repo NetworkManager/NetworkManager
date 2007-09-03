@@ -28,10 +28,10 @@ nm_settings_verify (GHashTable *all_settings)
 	gpointer p;
 	VerifySettingsInfo info;
 
-	/* First, make sure there's at least 'info' setting */
-	p = g_hash_table_lookup (all_settings, "info");
+	/* First, make sure there's at least 'connection' setting */
+	p = g_hash_table_lookup (all_settings, "connection");
 	if (!p) {
-		g_warning ("'info' setting not present.");
+		g_warning ("'connection' setting not present.");
 		return FALSE;
 	}
 
@@ -643,7 +643,7 @@ setting_wireless_hash (NMSetting *setting)
 	}
 
 	if (self->security)
-		g_hash_table_insert (hash, "security", string_to_gvalue (self->mode));
+		g_hash_table_insert (hash, "security", string_to_gvalue (self->security));
 
 	return hash;
 }
@@ -864,7 +864,7 @@ setting_wireless_security_hash (NMSetting *setting)
 
 	if (self->key_mgmt)
 		g_hash_table_insert (hash, "key-mgmt", string_to_gvalue (self->key_mgmt));
- 	if (self->wep_tx_keyidx)
+	if (self->wep_tx_keyidx)
  		g_hash_table_insert (hash, "wep-tx-keyidx", byte_to_gvalue (self->wep_tx_keyidx));
 	if (self->auth_alg)
 		g_hash_table_insert (hash, "auth-alg", string_to_gvalue (self->auth_alg));

@@ -1,5 +1,11 @@
 2007-09-02  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting.c
+		- (nm_settings_verify): correct setting name is 'connection', not 'info'
+		- (setting_wireless_hash): set the right value on the item
+
+2007-09-02  Dan Williams  <dcbw@redhat.com>
+
 	* test/Makefile.am
 	  test/nminfotest.c
 		- Remove, no longer useful
