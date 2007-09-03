@@ -48,6 +48,8 @@ endif
 
 libnm_util_la_LDFLAGS= $(GLIB_LIBS) $(DBUS_LIBS)
 
+libnm_util_la_CFLAGS=-fPIC
+
 if WITH_GCRYPT
 libnm_util_la_LDFLAGS += $(LIBGCRYPT_LIBS)
 endif
