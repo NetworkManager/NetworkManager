@@ -2,13 +2,27 @@
 #define NM_CONNECTION_H
 
 #include <glib.h>
+#include <glib-object.h>
 #include "nm-setting.h"
 
 G_BEGIN_DECLS
 
+#define NM_TYPE_CONNECTION            (nm_connection_get_type ())
+#define NM_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_CONNECTION, NMConnection))
+#define NM_CONNECTION_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_CONNECTION, NMConnectionClass))
+#define NM_IS_CONNECTION(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_CONNECTION))
+#define NM_IS_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_CONNECTION))
+#define NM_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_CONNECTION, NMConnectionClass))
+
 typedef struct {
-	GHashTable *settings;
+	GObject parent;
 } NMConnection;
+
+typedef struct {
+	GObjectClass parent;
+} NMConnectionClass;
+
+GType nm_connection_get_type (void);
 
 NMConnection *nm_connection_new           (void);
 NMConnection *nm_connection_new_from_hash (GHashTable *hash);
@@ -25,7 +39,6 @@ gboolean      nm_connection_have_secrets  (NMConnection *connection);
 
 GHashTable   *nm_connection_to_hash       (NMConnection *connection);
 void          nm_connection_dump          (NMConnection *connection);
-void          nm_connection_destroy       (NMConnection *connection);
 
 
 void nm_setting_parser_register   (const char *name,

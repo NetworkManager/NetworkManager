@@ -105,24 +105,6 @@ nm_monitor_setup (void)
 }
 
 static void
-nm_name_owner_changed_handler (NMDBusManager *mgr,
-                               const char *name,
-                               const char *old,
-                               const char *new,
-                               gpointer user_data)
-{
-	gboolean old_owner_good = (old && (strlen (old) > 0));
-	gboolean new_owner_good = (new && (strlen (new) > 0));
-
-	if (strcmp (name, NMI_DBUS_SERVICE) == 0) {
-		if (!old_owner_good && new_owner_good) {
-			/* NMI appeared, update stuff */
-// FIXME: grab NMConnections from the info-daemon
-		}
-	}
-}
-
-static void
 nm_signal_handler (int signo)
 {
 	static int in_fatal = 0;
@@ -343,11 +325,6 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	g_signal_connect (dbus_mgr,
-					  "name-owner-changed",
-	                  G_CALLBACK (nm_name_owner_changed_handler),
-					  NULL);
-
 	manager = nm_manager_new ();
 	if (manager == NULL) {
 		nm_error ("Failed to initialize the network manager.");
@@ -388,13 +365,6 @@ main (int argc, char *argv[])
 	hal_manager = nm_hal_manager_new (manager);
 	if (!hal_manager)
 		goto done;
-
-	/* If NMI is running, grab allowed wireless network lists from it ASAP */
-#if 0
-// FIXME: grab NMConnections instead
-	if (nm_dbus_manager_name_has_owner (dbus_mgr, NMI_DBUS_SERVICE))
-		nm_policy_schedule_allowed_ap_list_update (nm_data);
-#endif
 
 	/* Bring up the loopback interface. */
 	nm_system_enable_loopback ();

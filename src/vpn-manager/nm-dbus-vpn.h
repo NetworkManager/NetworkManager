@@ -26,6 +26,10 @@
 #include "nm-vpn-manager.h"
 #include "nm-vpn-connection.h"
 
+#define	NMI_DBUS_SERVICE			"org.freedesktop.NetworkManagerInfo"
+#define	NMI_DBUS_PATH				"/org/freedesktop/NetworkManagerInfo"
+#define	NMI_DBUS_INTERFACE			"org.freedesktop.NetworkManagerInfo"
+
 void	nm_dbus_vpn_schedule_vpn_connections_update (NMVPNManager *manager);
 
 void	nm_dbus_vpn_update_one_vpn_connection       (DBusConnection *connection,

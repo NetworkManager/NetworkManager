@@ -55,9 +55,14 @@ void nm_manager_sleep (NMManager *manager, gboolean sleep);
 
 /* Connections */
 
-GSList *nm_manager_get_connections    (NMManager *manager);
-void    nm_manager_update_connections (NMManager *manager,
-									   GSList *connections,
-									   gboolean reset);
+GSList *nm_manager_get_user_connections    (NMManager *manager);
+void    nm_manager_update_user_connections (NMManager *manager,
+                                            GSList *connections,
+                                            gboolean reset);
+
+GSList *nm_manager_get_system_connections    (NMManager *manager);
+void    nm_manager_update_system_connections (NMManager *manager,
+                                              GSList *connections,
+                                              gboolean reset);
 
 #endif /* NM_MANAGER_H */

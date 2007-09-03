@@ -2,6 +2,14 @@
 #include <dbus/dbus-glib.h>
 #include "nm-connection.h"
 
+typedef struct {
+	GHashTable *settings;
+} NMConnectionPrivate;
+
+#define NM_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CONNECTION, NMConnectionPrivate))
+
+G_DEFINE_TYPE (NMConnection, nm_connection, G_TYPE_OBJECT)
+
 static GHashTable *registered_setting_creators = NULL;
 
 static void
@@ -64,63 +72,28 @@ parse_one_setting (gpointer key, gpointer value, gpointer user_data)
 		g_warning ("Unknown setting '%s'", (char *) key);
 }
 
-NMConnection *
-nm_connection_new (void)
-{
-	NMConnection *connection;
-
-	if (!registered_setting_creators)
-		register_default_creators ();
-
-	connection = g_slice_new0 (NMConnection);
-	connection->settings = g_hash_table_new (g_str_hash, g_str_equal);
-
-	return connection;
-}
-
-NMConnection *
-nm_connection_new_from_hash (GHashTable *hash)
-{
-	NMConnection *connection;
-
-	g_return_val_if_fail (hash != NULL, NULL);
-
-	if (!registered_setting_creators)
-		register_default_creators ();
-
-	connection = nm_connection_new ();
-	g_hash_table_foreach (hash, parse_one_setting, connection);
-
-	if (g_hash_table_size (connection->settings) < 1) {
-		g_warning ("No settings found.");
-		nm_connection_destroy (connection);
-		return NULL;
-	}
-
-	if (!nm_settings_verify (connection->settings)) {
-		nm_connection_destroy (connection);
-		return NULL;
-	}
-
-	return connection;
-}
-
 void
 nm_connection_add_setting (NMConnection *connection, NMSetting *setting)
 {
-	g_return_if_fail (connection != NULL);
+	NMConnectionPrivate *priv;
+
+	g_return_if_fail (NM_IS_CONNECTION (connection));
 	g_return_if_fail (setting != NULL);
 
-	g_hash_table_insert (connection->settings, setting->name, setting);
+	priv = NM_CONNECTION_GET_PRIVATE (connection);
+	g_hash_table_insert (priv->settings, setting->name, setting);
 }
 
 NMSetting *
 nm_connection_get_setting (NMConnection *connection, const char *setting_name)
 {
-	g_return_val_if_fail (connection != NULL, NULL);
+	NMConnectionPrivate *priv;
+
+	g_return_if_fail (NM_IS_CONNECTION (connection));
 	g_return_val_if_fail (setting_name != NULL, NULL);
 
-	return (NMSetting *) g_hash_table_lookup (connection->settings, setting_name);
+	priv = NM_CONNECTION_GET_PRIVATE (connection);
+	return (NMSetting *) g_hash_table_lookup (priv->settings, setting_name);
 }
 
 gboolean
@@ -163,15 +136,17 @@ add_one_setting_to_hash (gpointer key, gpointer data, gpointer user_data)
 GHashTable *
 nm_connection_to_hash (NMConnection *connection)
 {
+	NMConnectionPrivate *priv;
 	GHashTable *connection_hash;
 
-	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	connection_hash = g_hash_table_new_full (g_str_hash, g_str_equal,
 											 (GDestroyNotify) g_free,
 											 (GDestroyNotify) g_hash_table_destroy);
 
-	g_hash_table_foreach (connection->settings, add_one_setting_to_hash, connection_hash);
+	priv = NM_CONNECTION_GET_PRIVATE (connection);
+	g_hash_table_foreach (priv->settings, add_one_setting_to_hash, connection_hash);
 
 	/* Don't send empty hashes */
 	if (g_hash_table_size (connection_hash) < 1) {
@@ -302,7 +277,7 @@ nm_connection_dump (NMConnection *connection)
 {
 	GHashTable *hash;
 
-	g_return_if_fail (connection != NULL);
+	g_return_if_fail (NM_IS_CONNECTION (connection));
 
 	/* Convert the connection to hash so that we can introspect it */
 	hash = nm_connection_to_hash (connection);
@@ -310,11 +285,75 @@ nm_connection_dump (NMConnection *connection)
 	g_hash_table_destroy (hash);
 }
 
-void
-nm_connection_destroy (NMConnection *connection)
+NMConnection *
+nm_connection_new (void)
 {
-	g_return_if_fail (connection != NULL);
+	GObject *object;
 
-	g_hash_table_destroy (connection->settings);
-	g_slice_free (NMConnection, connection);
+	if (!registered_setting_creators)
+		register_default_creators ();
+
+	object = g_object_new (NM_TYPE_CONNECTION, NULL);
+
+	return NM_CONNECTION (object);
 }
+
+NMConnection *
+nm_connection_new_from_hash (GHashTable *hash)
+{
+	NMConnection *connection;
+	NMConnectionPrivate *priv;
+
+	g_return_val_if_fail (hash != NULL, NULL);
+
+	connection = nm_connection_new ();
+	g_hash_table_foreach (hash, parse_one_setting, connection);
+nm_connection_dump (connection);
+
+	priv = NM_CONNECTION_GET_PRIVATE (connection);
+
+	if (g_hash_table_size (priv->settings) < 1) {
+		g_warning ("No settings found.");
+		g_object_unref (connection);
+		return NULL;
+	}
+
+	if (!nm_settings_verify (priv->settings)) {
+		g_object_unref (connection);
+		return NULL;
+	}
+
+	return connection;
+}
+
+static void
+nm_connection_init (NMConnection *connection)
+{
+	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (connection);
+
+	priv->settings = g_hash_table_new (g_str_hash, g_str_equal);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMConnection *connection = NM_CONNECTION (object);
+	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (connection);
+
+	g_hash_table_destroy (priv->settings);
+	priv->settings = NULL;
+
+	G_OBJECT_CLASS (nm_connection_parent_class)->finalize (object);
+}
+
+static void
+nm_connection_class_init (NMConnectionClass *klass)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+	g_type_class_add_private (klass, sizeof (NMConnectionPrivate));
+
+	/* virtual methods */
+	object_class->finalize = finalize;
+}
+

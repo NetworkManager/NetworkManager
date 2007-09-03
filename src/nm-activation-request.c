@@ -42,7 +42,7 @@ finalize (GObject *object)
 {
 	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (object);
 
-	nm_connection_destroy (priv->connection);
+	g_object_unref (priv->connection);
 
 	g_free (priv->specific_object);
 
@@ -75,7 +75,7 @@ nm_act_request_new (NMConnection *connection,
 
 	priv = NM_ACT_REQUEST_GET_PRIVATE (obj);
 
-	priv->connection = connection;
+	priv->connection = g_object_ref (connection);
 	priv->user_requested = user_requested;
 	if (specific_object)
 		priv->specific_object = g_strdup (specific_object);

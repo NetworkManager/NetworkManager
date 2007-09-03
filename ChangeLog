@@ -1,5 +1,27 @@
 2007-09-02  Dan Williams  <dcbw@redhat.com>
 
+	* include/NetworkManager.h
+	  libnm-glib/nm-settings.c
+		- defines for the user settings daemon D-Bus bits
+
+	* src/NetworkManager.c
+		- Remove stuff that referred to the old NetworkManagerInfo service
+
+	* src/vpn-manager/nm-dbus-vpn.h
+		- Move old NMI defines to the only place they are used still
+
+	* libnm-util/nm-connection.c
+	  libnm-util/nm-connection.h
+	  src/nm-activation-request.c
+		- Make NMConnection a GObject subclass so we can do spiffy stuff with it
+
+	* src/nm-manager.c
+	  src/nm-manager.h
+		- Get connections and their settings from the user settings daemon
+			at the appropriate times
+
+2007-09-02  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting.c
 		- (nm_settings_verify): correct setting name is 'connection', not 'info'
 		- (setting_wireless_hash): set the right value on the item
