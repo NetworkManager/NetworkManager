@@ -226,8 +226,10 @@ nm_object_get_string_property (NMObject *object,
 	char *str = NULL;
 	GValue value = {0,};
 
-	if (nm_object_get_property (object, interface, prop_name, &value))
+	if (nm_object_get_property (object, interface, prop_name, &value)) {
 		str = g_strdup (g_value_get_string (&value));
+		g_value_unset (&value);
+	}
 
 	return str;
 }
@@ -240,8 +242,10 @@ nm_object_get_object_path_property (NMObject *object,
 	char *path = NULL;
 	GValue value = {0,};
 
-	if (nm_object_get_property (object, interface, prop_name, &value))
+	if (nm_object_get_property (object, interface, prop_name, &value)) {
 		path = g_strdup (g_value_get_boxed (&value));
+		g_value_unset (&value);
+	}
 
 	return path;
 }
@@ -254,8 +258,10 @@ nm_object_get_int_property (NMObject *object,
 	gint32 i = 0;
 	GValue value = {0,};
 
-	if (nm_object_get_property (object, interface, prop_name, &value))
+	if (nm_object_get_property (object, interface, prop_name, &value)) {
 		i = g_value_get_int (&value);
+		g_value_unset (&value);
+	}
 
 	return i;
 }
@@ -268,8 +274,10 @@ nm_object_get_uint_property (NMObject *object,
 	guint32 i = 0;
 	GValue value = {0,};
 
-	if (nm_object_get_property (object, interface, prop_name, &value))
+	if (nm_object_get_property (object, interface, prop_name, &value)) {
 		i = g_value_get_uint (&value);
+		g_value_unset (&value);
+	}
 
 	return i;
 }
@@ -282,8 +290,10 @@ nm_object_get_boolean_property (NMObject *object,
 	gboolean b = FALSE;  // FIXME: somehow convey failure if needed
 	GValue value = {0,};
 
-	if (nm_object_get_property (object, interface, prop_name, &value))
+	if (nm_object_get_property (object, interface, prop_name, &value)) {
 		b = g_value_get_boolean (&value);
+		g_value_unset (&value);
+	}
 
 	return b;
 }
@@ -296,8 +306,10 @@ nm_object_get_byte_property (NMObject *object,
 	gint8 b = G_MAXINT8;
 	GValue value = {0,};
 
-	if (nm_object_get_property (object, interface, prop_name, &value))
+	if (nm_object_get_property (object, interface, prop_name, &value)) {
 		b = g_value_get_uchar (&value);
+		g_value_unset (&value);
+	}
 
 	return b;
 }
@@ -310,8 +322,10 @@ nm_object_get_double_property (NMObject *object,
 	gdouble d = G_MAXDOUBLE;
 	GValue value = {0,};
 
-	if (nm_object_get_property (object, interface, prop_name, &value))
+	if (nm_object_get_property (object, interface, prop_name, &value)) {
 		d = g_value_get_double (&value);
+		g_value_unset (&value);
+	}
 
 	return d;
 }
@@ -334,6 +348,7 @@ nm_object_get_byte_array_property (NMObject *object,
 			byte = g_array_index (tmp, unsigned char, i);
 			g_byte_array_append (array, &byte, 1);
 		}
+		g_value_unset (&value);
 	}
 
 	return array;

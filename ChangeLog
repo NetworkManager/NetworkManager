@@ -1,5 +1,16 @@
 2007-09-06  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/nm-object.c
+		- (nm_object_get_string_property, nm_object_get_object_path_property,
+		   nm_object_get_int_property, nm_object_get_uint_property,
+		   nm_object_get_boolean_property, nm_object_get_byte_property,
+		   nm_object_get_double_property, nm_object_get_byte_array_property):
+			clear GValues after copying their contents, fixes memory leaks
+			after every property access because dbus-glib copies the values
+			from the DBusMessage into the GValue already.
+
+2007-09-06  Dan Williams  <dcbw@redhat.com>
+
 	* introspection/nm-access-point.xml
 		- Fix WpaFlags and RsnFlags property names to be what dbus-glib expects
 			them to be.  There's some magic property name parsing going on in
