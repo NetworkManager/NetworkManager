@@ -77,6 +77,8 @@ finalize (GObject *object)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
 	nm_manager_user_connections_destroy (manager);
+	g_hash_table_destroy (priv->user_connections);
+	priv->user_connections = NULL;
 
 	while (g_slist_length (priv->devices))
 		nm_manager_remove_device (manager, NM_DEVICE (priv->devices->data));
@@ -506,10 +508,8 @@ nm_manager_user_connections_destroy (NMManager *manager)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
-	if (priv->user_connections) {
-		g_hash_table_destroy (priv->user_connections);
-		priv->user_connections = NULL;
-	}
+	if (priv->user_connections)
+		g_hash_table_remove_all (priv->user_connections);
 
 	if (priv->user_proxy) {
 		g_object_unref (priv->user_proxy);

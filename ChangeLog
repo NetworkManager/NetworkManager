@@ -1,3 +1,10 @@
+2007-09-06  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-manager.c
+		- (nm_manager_user_connections_destroy): clear the user connections hash
+			table, don't destroy it
+		- (finalize): only destroy the hash table on NMManager finalization
+
 2007-09-02  Dan Williams  <dcbw@redhat.com>
 
 	* include/NetworkManager.h
