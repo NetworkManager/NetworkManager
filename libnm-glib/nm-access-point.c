@@ -114,7 +114,7 @@ nm_access_point_get_wpa_flags (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), NM_802_11_AP_SEC_NONE);
 
-	return nm_object_get_uint_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "WPAFlags");
+	return nm_object_get_uint_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "WpaFlags");
 }
 
 guint32
@@ -122,7 +122,7 @@ nm_access_point_get_rsn_flags (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), NM_802_11_AP_SEC_NONE);
 
-	return nm_object_get_uint_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "RSNFlags");
+	return nm_object_get_uint_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "RsnFlags");
 }
 
 GByteArray *

@@ -1,5 +1,17 @@
 2007-09-06  Dan Williams  <dcbw@redhat.com>
 
+	* introspection/nm-access-point.xml
+		- Fix WpaFlags and RsnFlags property names to be what dbus-glib expects
+			them to be.  There's some magic property name parsing going on in
+			dbus-glib that breaks up property names based on studly-caps and
+			puts - between words.
+
+	* libnm-glib/nm-access-point.c
+		- (nm_access_point_get_wpa_flags, nm_access_point_get_rsn_flags):
+			Fix property names
+
+2007-09-06  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-manager.c
 		- (nm_manager_user_connections_destroy): clear the user connections hash
 			table, don't destroy it
