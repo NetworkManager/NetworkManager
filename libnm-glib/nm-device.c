@@ -139,9 +139,9 @@ nm_device_activate (NMDevice *device, NMConnection *connection)
 	g_return_if_fail (connection != NULL);
 
 	if (!org_freedesktop_NetworkManager_Device_activate (NM_DEVICE_GET_PRIVATE (device)->device_proxy,
-														 nm_connection_to_hash (connection),
-														 &err)) {
-		g_warning ("Cannot deactivate device: %s", err->message);
+	                                                     nm_connection_to_hash (connection),
+	                                                     &err)) {
+		g_warning ("Cannot activate device: %s", err->message);
 		g_error_free (err);
 	}
 }
