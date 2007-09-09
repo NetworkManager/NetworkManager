@@ -325,7 +325,7 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	manager = nm_manager_new ();
+	manager = nm_manager_get ();
 	if (manager == NULL) {
 		nm_error ("Failed to initialize the network manager.");
 		goto done;

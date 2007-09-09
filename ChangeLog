@@ -1,5 +1,45 @@
 2007-09-09  Dan Williams  <dcbw@redhat.com>
 
+	* introspection/nm-device.xml
+		- The 'Activate' method now takes 3 arguments, a service name for the
+		settings service (user or system), the object path of the connection
+		to activate, and the specific object to activate, if any
+
+	* src/nm-device-interface.c
+		- (nm_device_interface_error_quark, nm_device_interface_error_get_type):
+		Add error bits
+		- (impl_device_activate): adapt to new Activate arguments; validate
+		the service name and get the Connection object from the NMManager
+		before starting to activate the device with the specified connection
+
+	* src/nm-device-802-3-ethernet.c
+		- (real_get_best_connection): find the best connection, or create a
+		default one if no existing connections can be used
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_auto_get_best_device): Get the device's best connection
+		and only pick the device if it has one
+		- (nm_policy_device_change_check): disable wireless bits for now until
+		wireless get_best_connection() can be implemented (replacing "best_ap");
+		don't create a default connection here as the device subclass will do
+		that if needed
+
+	* src/nm-manager.h
+	  src/nm-manager.c
+		- (nm_manager_get): make NMManager a singleton and expose the getter
+		internally
+		- Rework internal NMManager connection handling to use the same
+		routines for both the system and user settings services.  Most calls
+		take a new NMConnectionType argument specifying either system or user
+		connections
+		- (nm_manager_get_connection_by_object_path): new function; get a
+		connection keyed on its object path
+
+	* src/NetworkManager.c
+		- (main): use nm_manager_get()
+
+2007-09-09  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device.h
 	  src/nm-device.c
 		- (nm_device_get_best_connection): new function; get best connection

@@ -34,7 +34,7 @@ typedef struct {
 
 GType nm_manager_get_type (void);
 
-NMManager *nm_manager_new (void);
+NMManager *nm_manager_get (void);
 
 /* Device handling */
 
@@ -54,15 +54,19 @@ gboolean nm_manager_wireless_enabled (NMManager *manager);
 void nm_manager_sleep (NMManager *manager, gboolean sleep);
 
 /* Connections */
+typedef enum {
+	NM_CONNECTION_TYPE_SYSTEM = 0,
+	NM_CONNECTION_TYPE_USER,
+} NMConnectionType;
 
-GSList *nm_manager_get_user_connections    (NMManager *manager);
-void    nm_manager_update_user_connections (NMManager *manager,
-                                            GSList *connections,
-                                            gboolean reset);
+GSList *nm_manager_get_connections    (NMManager *manager, NMConnectionType type);
+void    nm_manager_update_connections (NMManager *manager,
+                                       NMConnectionType type,
+                                       GSList *connections,
+                                       gboolean reset);
 
-GSList *nm_manager_get_system_connections    (NMManager *manager);
-void    nm_manager_update_system_connections (NMManager *manager,
-                                              GSList *connections,
-                                              gboolean reset);
+NMConnection * nm_manager_get_connection_by_object_path (NMManager *manager,
+                                                         NMConnectionType type,
+                                                         const char *path);
 
 #endif /* NM_MANAGER_H */

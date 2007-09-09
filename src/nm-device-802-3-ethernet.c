@@ -34,6 +34,7 @@
 #include "nm-supplicant-manager.h"
 #include "nm-netlink-monitor.h"
 #include "nm-utils.h"
+#include "nm-manager.h"
 
 #include "nm-device-802-3-ethernet-glue.h"
 
@@ -344,6 +345,95 @@ real_check_connection (NMDevice *dev, NMConnection *connection)
 	return TRUE;
 }
 
+typedef struct BestConnectionInfo {
+	NMDevice8023Ethernet * self;
+	NMConnection * found;
+} BestConnectionInfo;
+
+static void
+find_best_connection (gpointer data, gpointer user_data)
+{
+	BestConnectionInfo * info = (BestConnectionInfo *) user_data;
+	NMConnection *connection = NM_CONNECTION (data);
+	NMSettingConnection * s_con;
+	NMSettingWired * s_wired;
+
+	if (info->found)
+		return;
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, "connection");
+	if (s_con == NULL)
+		return;
+	if (strcmp (s_con->devtype, "802-3-ethernet"))
+		return;
+	if (!s_con->autoconnect)
+		return;
+
+	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, "802-3-ethernet");
+	if (s_wired == NULL)
+		return;
+
+	info->found = connection;
+}
+
+static NMConnection *
+real_get_best_connection (NMDevice *dev)
+{
+	NMDevice8023Ethernet * self = NM_DEVICE_802_3_ETHERNET (dev);
+	NMManager *manager = nm_manager_get ();
+	GSList *connections = NULL;
+	BestConnectionInfo find_info;
+	guint32 caps;
+	gboolean link_active;
+
+	caps = nm_device_get_capabilities (dev);
+
+	/* FIXME: for now, non-carrier-detect devices don't have a best connection,
+	 * the user needs to pick one.  In the near-future, we want to instead
+	 * honor the first 'autoconnect':True connection we find that applies
+	 * to this device.
+	 */
+	if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
+		return NULL;
+
+	/* System connections first */
+	connections = nm_manager_get_connections (manager, NM_CONNECTION_TYPE_SYSTEM);
+	memset (&find_info, 0, sizeof (BestConnectionInfo));
+	find_info.self = self;
+	g_slist_foreach (connections, find_best_connection, &find_info);
+	g_slist_free (connections);
+
+	/* Then user connections */
+	if (!find_info.found) {
+		connections = nm_manager_get_connections (manager, NM_CONNECTION_TYPE_USER);
+		find_info.self = self;
+		g_slist_foreach (connections, find_best_connection, &find_info);
+		g_slist_free (connections);
+	}
+
+	/* Wired devices autoconnect with DHCP by default if they have a link */
+	link_active = nm_device_has_active_link (dev);
+	if (!find_info.found && link_active) {
+		NMConnection *connection;
+		NMSetting *setting;
+		NMSettingConnection *scon;
+
+		connection = nm_connection_new ();
+		setting = nm_setting_wired_new ();
+		nm_connection_add_setting (connection, setting);
+
+		scon = (NMSettingConnection *) nm_setting_connection_new ();
+		scon->name = g_strdup ("Auto");
+		scon->devtype = g_strdup (setting->name);
+		nm_connection_add_setting (connection, (NMSetting *) scon);
+
+		find_info.found = connection;
+	}
+
+	return find_info.found;
+}
+
+
 static void
 nm_device_802_3_ethernet_finalize (GObject *object)
 {
@@ -400,6 +490,7 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 	parent_class->can_interrupt_activation = real_can_interrupt_activation;
 	parent_class->set_hw_address = real_set_hw_address;
 	parent_class->check_connection = real_check_connection;
+	parent_class->get_best_connection = real_get_best_connection;
 
 	/* properties */
 	g_object_class_install_property

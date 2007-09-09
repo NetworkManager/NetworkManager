@@ -64,48 +64,50 @@ static NMPolicy *global_policy;
  * "locked" on one device at this time.
  *
  */
-static NMDevice * nm_policy_auto_get_best_device (NMPolicy *policy, NMAccessPoint **ap)
+static NMDevice *
+nm_policy_auto_get_best_device (NMPolicy *policy,
+                                NMConnection **connection)
 {
 	GSList *				elt;
 	NMDevice8023Ethernet *	best_wired_dev = NULL;
 	guint				best_wired_prio = 0;
+	NMConnection * best_wired_connection = NULL;
 	NMDevice80211Wireless *	best_wireless_dev = NULL;
 	guint				best_wireless_prio = 0;
+	NMConnection * best_wireless_connection = NULL;
 	NMDevice *			highest_priority_dev = NULL;
 
-	g_return_val_if_fail (ap != NULL, NULL);
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (*connection == NULL, NULL);
 
 	if (nm_manager_get_state (policy->manager) == NM_STATE_ASLEEP)
 		return NULL;
 
 	for (elt = nm_manager_get_devices (policy->manager); elt; elt = elt->next) {
-		gboolean		link_active;
-		guint		prio = 0;
-		NMDevice *	dev = (NMDevice *)(elt->data);
-		guint32		caps;
+		NMConnection *tmp_con = NULL;
+		gboolean link_active;
+		guint prio = 0;
+		NMDevice * dev = (NMDevice *)(elt->data);
+		guint32 caps;
 
 		link_active = nm_device_has_active_link (dev);
 		caps = nm_device_get_capabilities (dev);
 
-		/* Don't use devices that SUCK */
-		if (!(caps & NM_DEVICE_CAP_NM_SUPPORTED))
+		tmp_con = nm_device_get_best_connection (dev);
+		if (tmp_con == NULL)
 			continue;
 
 		if (NM_IS_DEVICE_802_3_ETHERNET (dev)) {
-			/* We never automatically choose devices that don't support carrier detect */
-			if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
-				continue;
-
 			if (link_active)
 				prio += 1;
 
 			if (nm_device_get_act_request (dev) && link_active)
 				prio += 1;
 
-			if (prio > best_wired_prio)
-			{
+			if (prio > best_wired_prio) {
 				best_wired_dev = NM_DEVICE_802_3_ETHERNET (dev);
 				best_wired_prio = prio;
+				best_wired_connection = tmp_con;
 			}
 		}
 		else if (NM_IS_DEVICE_802_11_WIRELESS (dev) &&
@@ -119,40 +121,46 @@ static NMDevice * nm_policy_auto_get_best_device (NMPolicy *policy, NMAccessPoin
 			if (nm_device_get_act_request (dev) && link_active)
 				prio += 3;
 
-			if (prio > best_wireless_prio)
-			{
+			if (prio > best_wireless_prio) {
 				best_wireless_dev = NM_DEVICE_802_11_WIRELESS (dev);
 				best_wireless_prio = prio;
+				best_wireless_connection = tmp_con;
 			}
 		}
 	}
 
-	if (best_wired_dev)
+	if (best_wired_dev) {
 		highest_priority_dev = NM_DEVICE (best_wired_dev);
-	else if (best_wireless_dev)
-	{
+		*connection = best_wired_connection;
+	} else if (best_wireless_dev) {
 		gboolean can_activate;
 
 		can_activate = nm_device_802_11_wireless_can_activate (best_wireless_dev);
-
-		*ap = nm_device_802_11_wireless_get_best_ap (best_wireless_dev);
-		/* If the device doesn't have a "best" ap, then we can't use it */
-		if (!*ap)
-			highest_priority_dev = NULL;
-		else if (can_activate == TRUE)
+		if (can_activate) {
 			highest_priority_dev = NM_DEVICE (best_wireless_dev);
+			*connection = best_wireless_connection;
+		}
 	}
 
+out:
 	if (FALSE) {
-		const GByteArray * ssid = (best_wireless_dev && *ap) ? nm_ap_get_ssid (*ap) : NULL;
+		char * con_name = g_strdup ("(none)");
 
-		nm_info ("AUTO: Best wired device = %s, best wireless device = %s (%s)",
+		if (*connection) {
+			NMSettingConnection * s_con;
+
+			s_con = (NMSettingConnection *) nm_connection_get_setting (*connection, "connection");
+			con_name = g_strdup (s_con->name);
+		}
+
+		nm_info ("AUTO: Best wired device = %s, best wireless device = %s, best connection name = '%s'",
 		         best_wired_dev ? nm_device_get_iface (NM_DEVICE (best_wired_dev)) : "(null)",
 		         best_wireless_dev ? nm_device_get_iface (NM_DEVICE (best_wireless_dev)) : "(null)",
-		         ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "null" );
+		         con_name);
+		g_free (con_name);
 	}
 
-	return highest_priority_dev;
+	return *connection ? highest_priority_dev : NULL;
 }
 
 static NMConnection *
@@ -214,10 +222,10 @@ nm_policy_device_change_check (gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
 	GSList *iter;
-	NMAccessPoint * ap = NULL;
-	NMDevice *      new_dev = NULL;
-	NMDevice *      old_dev = NULL;
-	gboolean        do_switch = FALSE;
+	NMConnection * connection = NULL;
+	NMDevice * new_dev = NULL;
+	NMDevice * old_dev = NULL;
+	gboolean do_switch = FALSE;
 
 	switch (nm_manager_get_state (policy->manager)) {
 	case NM_STATE_CONNECTED:
@@ -258,7 +266,7 @@ nm_policy_device_change_check (gpointer user_data)
 		}
 	}
 
-	new_dev = nm_policy_auto_get_best_device (policy, &ap);
+	new_dev = nm_policy_auto_get_best_device (policy, &connection);
 
 	/* Four cases here:
 	 *
@@ -306,6 +314,7 @@ nm_policy_device_change_check (gpointer user_data)
 				do_switch = TRUE;
 			}
 		} else if (NM_IS_DEVICE_802_11_WIRELESS (old_dev)) {
+#if 0
 			/* Only switch if the old device's wireless config is invalid */
 			if (NM_IS_DEVICE_802_11_WIRELESS (new_dev)) {
 				NMAccessPoint *old_ap = nm_device_802_11_wireless_get_activation_ap (NM_DEVICE_802_11_WIRELESS (old_dev));
@@ -352,6 +361,7 @@ nm_policy_device_change_check (gpointer user_data)
  				if (!old_user_requested)
 					do_switch = TRUE;
 			}
+#endif
 		}
 	}
 
@@ -361,17 +371,10 @@ nm_policy_device_change_check (gpointer user_data)
 		}
 
 		if (new_dev) {
-	 		NMConnection *connection;
-
-			connection = create_connection (new_dev, ap);
-			if (connection)
-				nm_device_interface_activate (NM_DEVICE_INTERFACE (new_dev),
-											  connection, NULL, FALSE);
+			nm_device_interface_activate (NM_DEVICE_INTERFACE (new_dev),
+										  connection, NULL, FALSE);
 		}
 	}
-
-	if (ap)
-		g_object_unref (ap);
 
 out:
 	return FALSE;

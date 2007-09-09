@@ -1,15 +1,45 @@
 
 #include "nm-device-interface.h"
 #include "nm-ip4-config.h"
+#include "nm-manager.h"
 
 static gboolean impl_device_activate (NMDeviceInterface *device,
-									  GHashTable *connection_hash,
-									  const char *specific_object,
-									  GError **err);
+                                      const char *service_name,
+                                      const char *connection_path,
+                                      const char *specific_object,
+                                      GError **err);
 
 static gboolean impl_device_deactivate (NMDeviceInterface *device, GError **err);
 
 #include "nm-device-interface-glue.h"
+
+GQuark
+nm_device_interface_error_quark (void)
+{
+  static GQuark quark = 0;
+  if (!quark)
+    quark = g_quark_from_static_string ("nm_device_interface_error");
+  return quark;
+}
+
+/* This should really be standard. */
+#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
+
+GType
+nm_device_interface_error_get_type (void)
+{
+	static GType etype = 0;
+
+	if (etype == 0) {
+		static const GEnumValue values[] = {
+			ENUM_ENTRY (NM_DEVICE_INTERFACE_ERROR_UNKNOWN_CONNECTION, "UnknownConnection"),
+			{ 0, 0, 0 }
+		};
+		etype = g_enum_register_static ("NMDeviceInterfaceError", values);
+	}
+	return etype;
+}
+
 
 static void
 nm_device_interface_init (gpointer g_iface)
@@ -164,18 +194,41 @@ nm_device_interface_activate (NMDeviceInterface *device,
 
 static gboolean
 impl_device_activate (NMDeviceInterface *device,
-					  GHashTable *connection_hash,
-					  const char *specific_object,
-					  GError **err)
+                      const char *service_name,
+                      const char *connection_path,
+                      const char *specific_object,
+                      GError **err)
 {
+	NMManager *manager;
 	NMConnection *connection;
+	gboolean success = FALSE;
 
-	connection = nm_connection_new_from_hash (connection_hash);
+	manager = nm_manager_get ();
+	if (!strcmp (service_name, NM_DBUS_SERVICE_USER_SETTINGS)) {
+		connection = nm_manager_get_connection_by_object_path (manager,
+		                                                       NM_CONNECTION_TYPE_USER,
+		                                                       connection_path);
+	} else if (!strcmp (service_name, NM_DBUS_SERVICE_USER_SETTINGS)) {
+		connection = nm_manager_get_connection_by_object_path (manager,
+		                                                       NM_CONNECTION_TYPE_SYSTEM,
+		                                                       connection_path);
+	}
+
+	if (connection == NULL) {
+		g_set_error (err,
+		             NM_DEVICE_INTERFACE_ERROR,
+		             NM_DEVICE_INTERFACE_ERROR_UNKNOWN_CONNECTION,
+		             "%s",
+		             "Connection object or service unknown");
+		goto out;
+	}
+
 	nm_connection_dump (connection);
-
 	nm_device_interface_activate (device, connection, specific_object, TRUE);
+	success = TRUE;
 
-	return TRUE;
+out:
+	return success;
 }
 
 void

@@ -4,7 +4,7 @@
   <interface name="org.freedesktop.NetworkManager.Device">
     <method name="Activate">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_activate"/>
-      <arg name="connection" type="a{sa{sv}}o" direction="in"/>
+      <arg name="connection" type="soo" direction="in"/>
     </method>
     <method name="Deactivate">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_deactivate"/>
