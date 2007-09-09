@@ -37,11 +37,12 @@
 #define NM_DBUS_INTERFACE_ACCESS_POINT "org.freedesktop.NetworkManager.AccessPoint"
 
 #define NM_DBUS_SERVICE_USER_SETTINGS     "org.freedesktop.NetworkManagerUserSettings"
-#define NM_DBUS_IFACE_USER_SETTINGS       "org.freedesktop.NetworkManagerUserSettings"
-#define NM_DBUS_PATH_USER_SETTINGS        "/org/freedesktop/NetworkManagerUserSettings"
+#define NM_DBUS_SERVICE_SYSTEM_SETTINGS   "org.freedesktop.NetworkManagerSystemSettings"
+#define NM_DBUS_IFACE_SETTINGS            "org.freedesktop.NetworkManagerSettings"
+#define NM_DBUS_PATH_SETTINGS             "/org/freedesktop/NetworkManagerSettings"
 
-#define NM_DBUS_IFACE_USER_SETTINGS_CONNECTION "org.freedesktop.NetworkManagerUserSettings.Connection"
-#define NM_DBUS_PATH_USER_SETTINGS_CONNECTION  "/org/freedesktop/NetworkManagerUserSettings/Connection"
+#define NM_DBUS_IFACE_SETTINGS_CONNECTION "org.freedesktop.NetworkManagerSettings.Connection"
+#define NM_DBUS_PATH_SETTINGS_CONNECTION  "/org/freedesktop/NetworkManagerSettings/Connection"
 
 #define NMI_DBUS_USER_KEY_CANCELED_ERROR	"org.freedesktop.NetworkManagerInfo.CanceledError"
 

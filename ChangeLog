@@ -1,3 +1,18 @@
+2007-09-09  Dan Williams  <dcbw@redhat.com>
+
+	Stupid mistake on my part; object path and interface for settings service
+	and connection objects can be the same, only the service name must be
+	different for the system and user settings services.
+
+	* include/NetworkManager.h
+	  src/nm-manager.c
+	  introspection/nm-settings-connection.xml
+	  introspection/nm-settings.xml
+	  libnm-glib/nm-settings.c
+		- (nm_connection_settings_init, query_user_connections,
+		   new_connection_cb): Unify NetworkManagerSettings and Connection
+		   interface name and object path
+
 2007-09-06  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-glib/nm-object.c

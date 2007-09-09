@@ -2,7 +2,7 @@
 
 <node name="/">
 
-  <interface name="org.freedesktop.NetworkManagerUserSettings.Connection">
+  <interface name="org.freedesktop.NetworkManagerSettings.Connection">
 
     <method name="GetID">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_connection_settings_get_id"/>

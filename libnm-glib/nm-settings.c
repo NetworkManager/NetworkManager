@@ -196,7 +196,7 @@ nm_connection_settings_init (NMConnectionSettings *connection)
 	GError *error = NULL;
 
 	connection->dbus_path = g_strdup_printf ("%s/%u",
-		                                     NM_DBUS_PATH_USER_SETTINGS,
+		                                     NM_DBUS_PATH_SETTINGS,
 		                                     cs_counter++);
 }
 

@@ -340,7 +340,7 @@ new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
 	con_proxy = dbus_g_proxy_new_for_name (g_connection,
 	                                       NM_DBUS_SERVICE_USER_SETTINGS,
 	                                       path,
-	                                       NM_DBUS_IFACE_USER_SETTINGS_CONNECTION);
+	                                       NM_DBUS_IFACE_SETTINGS_CONNECTION);
 	g_object_unref (dbus_mgr);
 	if (!con_proxy) {
 		nm_warning ("Error: could not init user connection proxy");
@@ -416,8 +416,8 @@ query_user_connections (NMManager *manager)
 		g_connection = nm_dbus_manager_get_connection (dbus_mgr);
 		priv->user_proxy = dbus_g_proxy_new_for_name (g_connection,
 		                                              NM_DBUS_SERVICE_USER_SETTINGS,
-		                                              NM_DBUS_PATH_USER_SETTINGS,
-		                                              NM_DBUS_IFACE_USER_SETTINGS);
+		                                              NM_DBUS_PATH_SETTINGS,
+		                                              NM_DBUS_IFACE_SETTINGS);
 		g_object_unref (dbus_mgr);
 		if (!priv->user_proxy) {
 			nm_warning ("Error: could not init user settings proxy");
