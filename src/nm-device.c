@@ -380,6 +380,24 @@ nm_device_set_active_link (NMDevice *self,
 }
 
 
+NMConnection *
+nm_device_get_best_connection (NMDevice *dev)
+{
+	guint32 caps;
+
+	g_return_val_if_fail (NM_IS_DEVICE (dev), NULL);
+
+	caps = nm_device_get_capabilities (dev);
+	/* Don't use devices that SUCK */
+	if (!(caps & NM_DEVICE_CAP_NM_SUPPORTED))
+		return NULL;
+
+	if (!NM_DEVICE_GET_CLASS (dev)->get_best_connection)
+		return NULL;
+
+	return NM_DEVICE_GET_CLASS (dev)->get_best_connection (dev);
+}
+
 /*
  * nm_device_activate_stage1_device_prepare
  *
