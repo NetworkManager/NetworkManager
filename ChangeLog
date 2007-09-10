@@ -1,3 +1,13 @@
+2007-09-10  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-manager.c
+		- (query_connections): fix uninitialized variable problem that caused
+			segfault
+		- (nm_manager_add_device): take devices down on startup so that we can
+			be assured that nm_device_is_up() won't short-circuit the init
+			process.  Hack until the is_up check gets split into two pieces
+			that aren't behaviorally confusing.
+
 2007-09-09  Dan Williams  <dcbw@redhat.com>
 
 	* introspection/nm-device.xml

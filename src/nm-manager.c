@@ -424,6 +424,7 @@ query_connections (NMManager *manager,
 
 	g_return_if_fail (NM_IS_MANAGER (manager));
 
+	priv = NM_MANAGER_GET_PRIVATE (manager);
 	if (type == NM_CONNECTION_TYPE_USER) {
 		proxy = &priv->user_proxy;
 		service = NM_DBUS_SERVICE_USER_SETTINGS;
@@ -435,7 +436,6 @@ query_connections (NMManager *manager,
 		return;
 	}
 
-	priv = NM_MANAGER_GET_PRIVATE (manager);
 	if (!*proxy) {
 		NMDBusManager * dbus_mgr;
 		DBusGConnection * g_connection;
@@ -654,8 +654,10 @@ nm_manager_add_device (NMManager *manager, NMDevice *device)
 					  manager);
 
 	if (!priv->sleeping) {
-		if (!NM_IS_DEVICE_802_11_WIRELESS (device) || priv->wireless_enabled)
+		if (!NM_IS_DEVICE_802_11_WIRELESS (device) || priv->wireless_enabled) {
+			nm_device_bring_down (device, TRUE);
 			nm_device_bring_up (device, TRUE);
+		}
 	}
 
 	nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
