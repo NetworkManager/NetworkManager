@@ -345,7 +345,6 @@ new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
 	DBusGProxy *con_proxy;
 	NMDBusManager * dbus_mgr;
 	DBusGConnection * g_connection;
-	NMConnection *connection;
 	DBusGProxyCall *call;
 	struct GetSettingsInfo *info;
 
@@ -501,7 +500,7 @@ nm_manager_name_owner_changed (NMDBusManager *mgr,
 	}
 }
 
-gboolean
+static gboolean
 initial_get_connections (gpointer user_data)
 {
 	NMManager * manager = NM_MANAGER (user_data);

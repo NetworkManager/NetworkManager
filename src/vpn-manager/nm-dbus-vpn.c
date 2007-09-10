@@ -39,7 +39,7 @@
  * Make a DBus error message
  *
  */
-DBusMessage *
+static DBusMessage *
 nm_dbus_create_error_message (DBusMessage *message,
                               const char *exception_namespace,
                               const char *exception,
@@ -63,7 +63,7 @@ nm_dbus_create_error_message (DBusMessage *message,
 }
 
 
-DBusMessage *
+static DBusMessage *
 nm_dbus_new_invalid_args_error (DBusMessage *replyto,
                                 const char *namespace)
 {
@@ -91,7 +91,7 @@ static guint32		pcall_gid = 0;
 static guint32		pcall_pending = 0;
 
 
-DBusPendingCall *
+static DBusPendingCall *
 nm_dbus_send_with_callback (DBusConnection *connection,
                             DBusMessage *msg, 
                             DBusPendingCallNotifyFunction func,
@@ -150,7 +150,7 @@ nm_dbus_send_with_callback (DBusConnection *connection,
 	return pcall;
 }
 
-void
+static void
 nm_dbus_send_with_callback_replied (DBusPendingCall *pcall,
                                     const char *caller)
 {

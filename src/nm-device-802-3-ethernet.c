@@ -73,25 +73,25 @@ static void supplicant_iface_state_cb (NMSupplicantInterface * iface,
 
 static void
 nm_device_802_3_ethernet_link_activated (NMNetlinkMonitor *monitor,
-                                         int index,
+                                         int idx,
                                          gpointer user_data)
 {
 	NMDevice *dev = NM_DEVICE (user_data);
 
 	/* Make sure signal is for us */
-	if (nm_device_get_index (dev) == index)
+	if (nm_device_get_index (dev) == idx)
 		nm_device_set_active_link (dev, TRUE);
 }
 
 static void
 nm_device_802_3_ethernet_link_deactivated (NMNetlinkMonitor *monitor,
-                                           int index,
+                                           int idx,
                                            gpointer user_data)
 {
 	NMDevice *dev = NM_DEVICE (user_data);
 
 	/* Make sure signal is for us */
-	if (nm_device_get_index (dev) == index)
+	if (nm_device_get_index (dev) == idx)
 		nm_device_set_active_link (dev, FALSE);
 }
 
@@ -242,20 +242,20 @@ real_bring_down (NMDevice *dev)
 
 
 NMDevice8023Ethernet *
-nm_device_802_3_ethernet_new (int index,
+nm_device_802_3_ethernet_new (int idx,
 							  const char *udi,
 							  const char *driver,
 							  gboolean test_dev)
 {
 	GObject *obj;
 
-	g_return_val_if_fail (index >= 0, NULL);
+	g_return_val_if_fail (idx >= 0, NULL);
 	g_return_val_if_fail (udi != NULL, NULL);
 	g_return_val_if_fail (driver != NULL, NULL);
 
 	obj = g_object_new (NM_TYPE_DEVICE_802_3_ETHERNET,
 						NM_DEVICE_INTERFACE_UDI, udi,
-						NM_DEVICE_INTERFACE_INDEX, index,
+						NM_DEVICE_INTERFACE_INDEX, idx,
 						NM_DEVICE_INTERFACE_DRIVER, driver,
 						NULL);
 	if (obj == NULL)

@@ -151,7 +151,6 @@ nm_policy_auto_get_best_device (NMPolicy *policy,
 		}
 	}
 
-out:
 	if (FALSE) {
 		char * con_name = g_strdup ("(none)");
 
@@ -449,8 +448,6 @@ connection_added (NMManager *manager,
                   NMConnection *connection,
                   gpointer user_data)
 {
-	NMPolicy *policy = (NMPolicy *) user_data;
-
 	nm_info ("connection %p added", connection);
 }
 
@@ -459,8 +456,6 @@ connection_removed (NMManager *manager,
                     NMConnection *connection,
                     gpointer user_data)
 {
-	NMPolicy *policy = (NMPolicy *) user_data;
-
 	nm_info ("connection %p removed", connection);
 }
 

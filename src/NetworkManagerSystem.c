@@ -440,7 +440,7 @@ gboolean nm_system_device_set_up_down (NMDevice *dev, gboolean up)
 gboolean nm_system_device_set_up_down_with_iface (const char *iface, gboolean up)
 {
 	gboolean success = FALSE;
-	guint32 index;
+	guint32 idx;
 	struct rtnl_link *	request = NULL;
 	struct rtnl_link *	old = NULL;
 
@@ -454,8 +454,8 @@ gboolean nm_system_device_set_up_down_with_iface (const char *iface, gboolean up
 	else
 		rtnl_link_unset_flags (request, IFF_UP);
 
-	index = nm_netlink_iface_to_index (iface);
-	old = nm_netlink_index_to_rtnl_link (index);
+	idx = nm_netlink_iface_to_index (iface);
+	old = nm_netlink_index_to_rtnl_link (idx);
 	if (old) {
 		struct nl_handle * nlh = nm_netlink_get_default_handle ();
 		rtnl_link_change (nlh, old, request, 0);

@@ -49,6 +49,10 @@ static gboolean impl_device_get_active_networks (NMDevice80211Wireless *device,
 												 GPtrArray **networks,
 												 GError **err);
 
+#if DEBUG
+static void nm_device_802_11_wireless_ap_list_print (NMDevice80211Wireless *self);
+#endif
+
 #include "nm-device-802-11-wireless-glue.h"
 
 
@@ -140,12 +144,6 @@ static int	wireless_qual_to_percent (const struct iw_quality *qual,
                                          const struct iw_quality *max_qual,
                                          const struct iw_quality *avg_qual);
 
-static gboolean	is_associated (NMDevice80211Wireless *self);
-
-static gboolean	link_to_specific_ap (NMDevice80211Wireless *self,
-								 NMAccessPoint *ap,
-								 gboolean default_link);
-
 static void cleanup_association_attempt (NMDevice80211Wireless * self,
                                          gboolean disconnect);
 
@@ -231,7 +229,7 @@ nm_device_802_11_wireless_update_bssid (NMDevice80211Wireless *self,
 		nm_debug ("Roamed from BSSID %s to %s on wireless network '%s'",
 		          old_addr,
 		          new_addr,
-		          nm_utils_escape_ssid ((const char *) old_ssid->data, old_ssid->len));
+		          nm_utils_escape_ssid (old_ssid->data, old_ssid->len));
 
 		nm_ap_set_address (ap, &new_bssid);
 
@@ -630,7 +628,6 @@ static void
 real_deactivate_quickly (NMDevice *dev)
 {
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
-	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 
 	cleanup_association_attempt (self, TRUE);
 
@@ -706,8 +703,6 @@ real_get_best_connection (NMDevice *dev,
 	NMManager *manager = nm_manager_get ();
 	GSList *connections = NULL;
 	BestConnectionInfo find_info;
-	guint32 caps;
-	gboolean link_active;
 
 	/* System connections first */
 	connections = nm_manager_get_connections (manager, NM_CONNECTION_TYPE_SYSTEM);
@@ -745,7 +740,7 @@ nm_device_802_11_wireless_get_address (NMDevice80211Wireless *self,
 	memcpy (addr, &(self->priv->hw_addr), sizeof (struct ether_addr));
 }
 
-
+#if 0
 static gboolean
 link_to_specific_ap (NMDevice80211Wireless *self,
                      NMAccessPoint *ap,
@@ -780,7 +775,6 @@ link_to_specific_ap (NMDevice80211Wireless *self,
 	return have_link;
 }
 
-
 static gboolean
 get_ap_blacklisted (NMAccessPoint *ap, GSList *addrs)
 {
@@ -811,7 +805,6 @@ get_ap_blacklisted (NMAccessPoint *ap, GSList *addrs)
 	return blacklisted;
 }
 
-#if 0
 /*
  * nm_device_update_best_ap
  *
@@ -904,8 +897,6 @@ static NMAccessPoint *
 ap_list_get_ap_by_ssid (GSList *list,
                         const GByteArray * ssid)
 {
-	NMAccessPoint * ap;
-	NMAccessPoint * found_ap = NULL;
 	GSList * elt;
 
 	for (elt = list; elt; elt = g_slist_next (elt)) {
@@ -919,7 +910,8 @@ ap_list_get_ap_by_ssid (GSList *list,
 	return NULL;
 }
 
-void
+#if DEBUG
+static void
 nm_device_802_11_wireless_ap_list_print (NMDevice80211Wireless *self)
 {
 	GSList * elt;
@@ -934,6 +926,7 @@ nm_device_802_11_wireless_ap_list_print (NMDevice80211Wireless *self)
 	}
 	nm_info ("AP_LIST_PRINT: done");
 }
+#endif
 
 /*
  * nm_device_802_11_wireless_ap_list_get_ap_by_ssid
@@ -1246,7 +1239,7 @@ nm_device_802_11_wireless_get_ssid (NMDevice80211Wireless *self)
 {
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 	const char * iface;
-	int	err, sk;
+	int	sk;
 	struct iwreq wrq;
 	char ssid[IW_ESSID_MAX_SIZE + 1];
 	guint32 len;
@@ -1283,7 +1276,7 @@ nm_device_802_11_wireless_get_ssid (NMDevice80211Wireless *self)
 			len--;
 
 		priv->ssid = g_byte_array_sized_new (len);
-		g_byte_array_append (priv->ssid, ssid, len);
+		g_byte_array_append (priv->ssid, (const guint8 *) ssid, len);
 	}
 
 out:
@@ -1302,7 +1295,7 @@ nm_device_802_11_wireless_set_ssid (NMDevice80211Wireless *self,
                                     const GByteArray * ssid)
 {
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
-	int sk, err;
+	int sk;
 	struct iwreq wrq;
 	const char * iface;
 	const char * driver;
@@ -1548,6 +1541,7 @@ cancel_pending_scan (NMDevice80211Wireless *self)
 }
 
 
+#if 0
 /*
  * is_associated
  *
@@ -1599,6 +1593,7 @@ out:
 
 	return associated;
 }
+#endif
 
 /*
  * ap_auth_enforced
@@ -1694,7 +1689,7 @@ merge_scanned_ap (NMDevice80211Wireless *self,
 			continue;
 
 		/* Frequency match */
-		if (list_freq != merge_freq)
+		if ((int) list_freq != (int) merge_freq)
 			continue;
 
 		found_ap = list_ap;
@@ -1726,7 +1721,6 @@ static void
 cull_scan_list (NMDevice80211Wireless * self)
 {
 	GTimeVal        cur_time;
-	NMAccessPoint * outdated_ap;
 	GSList *        outdated_list = NULL;
 	GSList *        elt;
 	NMAccessPoint * cur_ap = NULL;
@@ -1759,7 +1753,8 @@ cull_scan_list (NMDevice80211Wireless * self)
 
 	/* Remove outdated APs */
 	for (elt = outdated_list; elt; elt = g_slist_next (elt)) {
-		outdated_ap = NM_AP (elt->data);
+		NMAccessPoint * outdated_ap = NM_AP (elt->data);
+
 		network_removed (self, outdated_ap);
 		self->priv->ap_list = g_slist_remove (self->priv->ap_list, outdated_ap);
 		g_object_unref (outdated_ap);
@@ -1890,7 +1885,6 @@ link_timeout_cb (gpointer user_data)
 	NMDevice80211Wireless * self = NM_DEVICE_802_11_WIRELESS (user_data);	
 	NMActRequest *          req = NULL;
 	NMAccessPoint *         ap = NULL;
-	gboolean                has_key;
 
 	g_assert (dev);
 
@@ -2279,7 +2273,6 @@ supplicant_connection_timeout_cb (gpointer user_data)
 	NMDevice *              dev = NM_DEVICE (user_data);
 	NMDevice80211Wireless * self = NM_DEVICE_802_11_WIRELESS (user_data);
 	NMAccessPoint *         ap = nm_device_802_11_wireless_get_activation_ap (self);
-	gboolean                has_key;
 		
 	cleanup_association_attempt (self, TRUE);
 
@@ -2372,7 +2365,7 @@ build_supplicant_config (NMDevice80211Wireless *self)
 		nm_warning ("can't add null ssid to config.");
 		goto error;
 	}
-	nm_supplicant_config_add_option (config, "ssid", ssid->data, ssid->len);
+	nm_supplicant_config_add_option (config, "ssid", (const char *) ssid->data, ssid->len);
 
 	/* For non-broadcast networks, we need to set "scan_ssid 1" to scan with probe request frames.
 	 * However, don't try to probe Ad-Hoc networks.
@@ -2451,7 +2444,6 @@ real_act_stage2_config (NMDevice *dev)
 	NMDevice80211Wireless * self = NM_DEVICE_802_11_WIRELESS (dev);
 	NMActStageReturn        ret = NM_ACT_STAGE_RETURN_FAILURE;
 	const char *            iface = nm_device_get_iface (dev);
-	gboolean                ask_user = FALSE;
 	NMSupplicantConfig *	config = NULL;
 	gulong                  id = 0;
 	NMActRequest *          req;
@@ -2596,7 +2588,6 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 	NMAccessPoint *		ap = nm_device_802_11_wireless_get_activation_ap (self);
 	NMActStageReturn		ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMIP4Config *			real_config = NULL;
-	gboolean		has_key;
 
 	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
@@ -2732,7 +2723,6 @@ nm_device_802_11_wireless_dispose (GObject *object)
 {
 	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (object);
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
-	GSList * elt;
 
 	/* Make sure dispose does not run twice. */
 	if (priv->dispose_has_run)
@@ -2885,9 +2875,6 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 static void
 state_changed_cb (NMDevice *device, NMDeviceState state, gpointer user_data)
 {
-	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (device);
-	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
-
 	switch (state) {
 	case NM_DEVICE_STATE_ACTIVATED:
 		activation_success_handler (device);
@@ -2905,7 +2892,7 @@ state_changed_cb (NMDevice *device, NMDeviceState state, gpointer user_data)
 
 
 NMDevice80211Wireless *
-nm_device_802_11_wireless_new (int index,
+nm_device_802_11_wireless_new (int idx,
 							   const char *udi,
 							   const char *driver,
 							   gboolean test_dev)

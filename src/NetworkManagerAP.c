@@ -449,7 +449,7 @@ foreach_property_cb (gpointer key, gpointer value, gpointer user_data)
 				return;
 
 			ssid = g_byte_array_sized_new (len);
-			g_byte_array_append (ssid, array->data, len);
+			g_byte_array_append (ssid, (const guint8 *) array->data, len);
 			nm_ap_set_ssid (ap, ssid);
 			g_byte_array_free (ssid, TRUE);
 		} else if (!strcmp (key, "bssid")) {
@@ -1202,7 +1202,7 @@ nm_ap_check_compatible (NMAccessPoint *self,
 
 struct cf_pair {
 	guint32 chan;
-	double freq;
+	guint32 freq;
 };
 
 static struct cf_pair cf_table[46] = {
@@ -1257,7 +1257,7 @@ static struct cf_pair cf_table[46] = {
 };
 
 guint32
-freq_to_channel (double freq)
+freq_to_channel (guint32 freq)
 {
 	int i = 0;
 
@@ -1266,7 +1266,7 @@ freq_to_channel (double freq)
 	return cf_table[i].chan;
 }
 
-double
+guint32
 channel_to_freq (guint32 channel)
 {
 	int i = 0;

@@ -104,7 +104,7 @@ is_wired_device (NMHalManager *manager, const char *udi)
 	return is_wired;
 }
 
-NMDevice *
+static NMDevice *
 wired_device_creator (NMHalManager *manager, const char *udi)
 {
 	NMDevice *device;
@@ -145,7 +145,7 @@ is_wireless_device (NMHalManager *manager, const char *udi)
 	return is_wireless;
 }
 
-NMDevice *
+static NMDevice *
 wireless_device_creator (NMHalManager *manager, const char *udi)
 {
 	NMDevice *device;

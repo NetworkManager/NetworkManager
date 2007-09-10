@@ -129,7 +129,7 @@ void				nm_ap_print_self (NMAccessPoint *ap, const char * prefix);
  */
 gboolean			nm_ap_has_manufacturer_default_ssid	(NMAccessPoint *ap);
 
-guint32 freq_to_channel (double freq);
-double  channel_to_freq (guint32 channel);
+guint32 freq_to_channel (guint32 freq);
+guint32  channel_to_freq (guint32 channel);
 
 #endif /* NM_ACCESS_POINT_H */

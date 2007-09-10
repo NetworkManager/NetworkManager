@@ -593,13 +593,13 @@ nm_utils_is_empty_ssid (const char * ssid, int len)
 }
 
 const char *
-nm_utils_escape_ssid (const char * ssid, guint32 len)
+nm_utils_escape_ssid (const guint8 * ssid, guint32 len)
 {
 	static char escaped[IW_ESSID_MAX_SIZE * 2 + 1];
-	const char *s = ssid;
+	const guint8 *s = ssid;
 	char *d = escaped;
 
-	if (nm_utils_is_empty_ssid (ssid, len)) {
+	if (nm_utils_is_empty_ssid ((const char *) ssid, len)) {
 		memcpy (escaped, "<hidden>", sizeof ("<hidden>"));
 		return escaped;
 	}

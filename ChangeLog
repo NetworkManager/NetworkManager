@@ -1,5 +1,20 @@
 2007-09-10  Dan Williams  <dcbw@redhat.com>
 
+	* NetworkManagerAP.c
+	  NetworkManagerAP.h
+	  NetworkManagerPolicy.c
+	  NetworkManagerSystem.c
+	  NetworkManagerUtils.c
+	  NetworkManagerUtils.h
+	  nm-device-802-11-wireless.c
+	  nm-device-802-3-ethernet.c
+	  nm-hal-manager.c
+	  nm-manager.c
+	  vpn-manager/nm-dbus-vpn.c
+		- Warning fixes; casts and removal of unused variables
+
+2007-09-10  Dan Williams  <dcbw@redhat.com>
+
 	* include/NetworkManager.h
 		- Kill NMNetworkType; AP types don't matter any more
 
