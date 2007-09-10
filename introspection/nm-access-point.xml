@@ -6,7 +6,7 @@
     <property name="WpaFlags" type="u" access="read"/>
     <property name="RsnFlags" type="u" access="read"/>
     <property name="Ssid" type="ay" access="read"/>
-    <property name="Frequency" type="d" access="read"/>
+    <property name="Frequency" type="u" access="read"/>
     <property name="HwAddress" type="s" access="read"/>
     <property name="Mode" type="i" access="read"/>
     <property name="Rate" type="u" access="read"/>

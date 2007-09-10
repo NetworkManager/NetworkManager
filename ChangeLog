@@ -1,5 +1,13 @@
 2007-09-10  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerAP.c
+	  src/NetworkManagerAP.h
+	  introspection/nm-access-point.xml
+		- Change 'freq' property to a guint32 instead of a double since we
+			weren't using the floating point bits anyway
+
+2007-09-10  Dan Williams  <dcbw@redhat.com>
+
 	* NetworkManagerAP.c
 	  NetworkManagerAP.h
 	  NetworkManagerPolicy.c

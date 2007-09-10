@@ -52,7 +52,7 @@ typedef struct
 	struct ether_addr	address;
 	int				mode;		/* from IW_MODE_* in wireless.h */
 	gint8			strength;
-	double			freq;
+	guint32			freq;		/* Frequency in GHz * 1000; ie 2.412 == 2412 */
 	guint16			rate;
 
 	guint32			flags;		/* General flags */
@@ -166,7 +166,7 @@ set_property (GObject *object, guint prop_id,
 		}
 		break;
 	case PROP_FREQUENCY:
-		priv->freq = g_value_get_double (value);
+		priv->freq = g_value_get_uint (value);
 		break;
 	case PROP_MODE:
 		mode = g_value_get_int (value);
@@ -217,7 +217,7 @@ get_property (GObject *object, guint prop_id,
 		g_array_free (ssid, TRUE);
 		break;
 	case PROP_FREQUENCY:
-		g_value_set_double (value, priv->freq);
+		g_value_set_uint (value, priv->freq);
 		break;
 	case PROP_HW_ADDRESS:
 		memset (hw_addr_buf, 0, 20);
@@ -306,11 +306,11 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 
 	g_object_class_install_property
 		(object_class, PROP_FREQUENCY,
-		 g_param_spec_double (NM_AP_FREQUENCY,
-							  "Frequency",
-							  "Frequency",
-							  0.0, 10000.0, 0.0, /* FIXME */
-							  G_PARAM_READWRITE));
+		 g_param_spec_uint (NM_AP_FREQUENCY,
+							"Frequency",
+							"Frequency",
+							0, 10000, 0,
+							G_PARAM_READWRITE));
 
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,
@@ -481,8 +481,7 @@ foreach_property_cb (gpointer key, gpointer value, gpointer user_data)
 		gint32 int_val = g_value_get_int (variant);
 
 		if (!strcmp (key, "frequency")) {
-			double freq = (double) int_val;
-			nm_ap_set_freq (ap, freq);
+			nm_ap_set_freq (ap, (guint32) int_val);
 		} else if (!strcmp (key, "maxrate")) {
 			nm_ap_set_rate (ap, int_val);
 		}
@@ -551,7 +550,7 @@ nm_ap_print_self (NMAccessPoint *ap,
 	priv = NM_AP_GET_PRIVATE (ap);
 
 	nm_info ("%s'%s' (%p) stamp=%ld flags=0x%X wpa-flags=0x%X rsn-flags=0x%x "
-	         "bssid=" MAC_FMT " strength=%d freq=[%f/%d] rate=%d inval=%d "
+	         "bssid=" MAC_FMT " strength=%d freq=%d rate=%d inval=%d "
 	         "mode=%d seen=%ld",
 	         prefix,
 	         priv->ssid ? nm_utils_escape_ssid (priv->ssid->data, priv->ssid->len) : "(none)",
@@ -562,8 +561,7 @@ nm_ap_print_self (NMAccessPoint *ap,
 	         priv->rsn_flags,
 	         MAC_ARG (priv->address.ether_addr_octet),
 	         priv->strength,
-	         (priv->freq > 20) ? priv->freq : 0,
-	         (priv->freq < 20) ? (int) priv->freq : 0,
+	         priv->freq,
 	         priv->rate,
 	         priv->invalid,
 	         priv->mode,
@@ -768,9 +766,10 @@ void nm_ap_set_strength (NMAccessPoint *ap, const gint8 strength)
  * Get/set functions for frequency
  *
  */
-double nm_ap_get_freq (NMAccessPoint *ap)
+guint32
+nm_ap_get_freq (NMAccessPoint *ap)
 {
-	double freq;
+	guint32 freq;
 
 	g_return_val_if_fail (NM_IS_AP (ap), 0);
 
@@ -779,7 +778,9 @@ double nm_ap_get_freq (NMAccessPoint *ap)
 	return freq;
 }
 
-void nm_ap_set_freq (NMAccessPoint *ap, const double freq)
+void
+nm_ap_set_freq (NMAccessPoint *ap,
+                const guint32 freq)
 {
 	g_return_if_fail (NM_IS_AP (ap));
 

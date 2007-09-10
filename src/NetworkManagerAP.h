@@ -89,8 +89,8 @@ void				nm_ap_set_mode			(NMAccessPoint *ap, const int mode);
 gint8			nm_ap_get_strength		(NMAccessPoint *ap);
 void				nm_ap_set_strength		(NMAccessPoint *ap, gint8 strength);
 
-double			nm_ap_get_freq			(NMAccessPoint *ap);
-void				nm_ap_set_freq			(NMAccessPoint *ap, double freq);
+guint32			nm_ap_get_freq			(NMAccessPoint *ap);
+void				nm_ap_set_freq			(NMAccessPoint *ap, guint32 freq);
 
 guint16			nm_ap_get_rate			(NMAccessPoint *ap);
 void				nm_ap_set_rate			(NMAccessPoint *ap, guint16 rate);
