@@ -1,5 +1,6 @@
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
+#include <string.h>
 #include "nm-connection.h"
 
 typedef struct {
@@ -89,7 +90,7 @@ nm_connection_get_setting (NMConnection *connection, const char *setting_name)
 {
 	NMConnectionPrivate *priv;
 
-	g_return_if_fail (NM_IS_CONNECTION (connection));
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (setting_name != NULL, NULL);
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
@@ -110,13 +111,93 @@ nm_connection_compare (NMConnection *connection, NMConnection *other)
 	return FALSE;
 }
 
-gboolean
-nm_connection_have_secrets  (NMConnection *connection)
+static GPtrArray *
+wireless_sec_need_secrets (NMSettingWirelessSecurity *sec)
 {
-	/* FIXME: go through Settings objects and determine if there are any
-	 * secrets required.
-	 */
-	return FALSE;
+	GPtrArray * secrets;
+
+	secrets = g_ptr_array_sized_new (4);
+	if (!secrets) {
+		g_warning ("Not enough memory to create required secrets array.");
+		return NULL;
+	}
+
+	/* Static WEP */
+	if (strcmp (sec->key_mgmt, "none") == 0) {
+		if (!sec->wep_key0) {
+			g_ptr_array_add (secrets, "wep_key0");
+			return secrets;
+		}
+		if (sec->wep_tx_keyidx == 1 && !sec->wep_key1) {
+			g_ptr_array_add (secrets, "wep_key1");
+			return secrets;
+		}
+		if (sec->wep_tx_keyidx == 2 && !sec->wep_key2) {
+			g_ptr_array_add (secrets, "wep_key2");
+			return secrets;
+		}
+		if (sec->wep_tx_keyidx == 3 && !sec->wep_key3) {
+			g_ptr_array_add (secrets, "wep_key3");
+			return secrets;
+		}
+		goto no_secrets;
+	}
+
+	if (   (strcmp (sec->key_mgmt, "wpa-none") == 0)
+	    || (strcmp (sec->key_mgmt, "wpa-psk") == 0)) {
+		if (!sec->psk) {
+			g_ptr_array_add (secrets, "psk");
+			return secrets;
+		}
+		goto no_secrets;
+	}
+
+	if (strcmp (sec->key_mgmt, "wpa-eap") == 0) {
+		// FIXME: implement
+		goto no_secrets;
+	}
+
+no_secrets:
+	if (secrets)
+		g_ptr_array_free (secrets, TRUE);
+	return NULL;
+}
+
+const char *
+nm_connection_need_secrets  (NMConnection *connection)
+{
+	NMSettingConnection *s_connection;
+
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	s_connection = (NMSettingConnection *) nm_connection_get_setting (connection, "connection");
+	if (!s_connection)
+		return NULL;
+
+	/* Wireless */
+	if (strcmp (s_connection->devtype, "802-11-wireless") == 0) {
+		NMSettingWireless *s_wireless;
+		NMSettingWirelessSecurity *s_wireless_sec;
+		GPtrArray * secrets = NULL;
+
+		s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, "802-11-wireless");
+		if (!s_wireless || !s_wireless->security)
+			return NULL;
+
+		s_wireless_sec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, "802-11-wireless-security");
+		if (!s_wireless_sec)
+			return NULL;
+
+		secrets = wireless_sec_need_secrets (s_wireless_sec);
+		if (secrets) {
+			// FIXME: modify NeedSecrets message to include the actual secrets
+			// required rather than just requesting all secrets for the setting
+			g_ptr_array_free (secrets, TRUE);
+			return "802-11-wireless-security";
+		}
+	}
+
+	return NULL;
 }
 
 static void

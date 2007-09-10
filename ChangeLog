@@ -1,5 +1,63 @@
 2007-09-10  Dan Williams  <dcbw@redhat.com>
 
+	* include/NetworkManager.h
+		- Kill NMNetworkType; AP types don't matter any more
+
+	* src/NetworkManagerAPList.c
+	  src/NetworkManagerAPList.h
+	  src/Makefile.am
+		- Kill; NMAccessPointList has outlived it's usefulness
+
+	* src/NetworkManagerAP.c
+	  src/NetworkManagerAP.h
+		- (match_cipher, security_compatible, nm_ap_check_compatible): new
+			functions; check if an NMConnection object is compatible with the
+			settings of this AP
+		- (freq_to_channel, channel_to_freq): utility functions for
+			channel <-> frequency conversion
+
+	* src/nm-device.c
+	  src/nm-device.h
+		- (nm_device_get_best_connection): pass the specific object around
+			 (which might be the object path of a specific AP to connect to).
+			 The get_best_connection() call should populate this on return
+			 if needed (wireless does).
+
+	* src/nm-device-802-3-ethernet.c
+		- (real_get_best_connection): handle specific_object argument
+
+	* src/NetworkManager.c
+	  src/NetworkManagerMain.h
+		- Remove unused includes
+
+	* src/nm-device-802-11-wireless.c
+	  src/nm-device-802-11-wireless.h
+		- Convert the ap_list into a GSList from an NMAccessPointList
+		- No need for caching the 'activation_ap' since this is now determined
+			from the specific_object of the activation request, which is
+			populated from the get_best_connection() call or from a user request
+		- (nm_device_802_11_wireless_update_bssid): fix warning
+		- (get_wireless_capabilities): fix error message format arguments
+		- (nm_device_802_11_wireless_copy_allowed_to_dev_list): remove, unused
+		- (find_best_connection, real_get_best_connection): implement
+		- (ap_list_get_ap_by_ssid, nm_device_802_11_wireless_ap_list_print):
+			move here from NetworkManagerAPList
+		- (ap_need_secrets): remove; moved to nm-connection.c where it belongs
+		- (real_act_stage1_prepare): just ensure an AP exists, connection is
+			already verified earlier
+		- (real_act_stage2_config): use nm_connection_need_secrets()
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_auto_get_best_device): handle specific objects
+		- (create_connection): remove; automatic connection creation functionality
+			is handled by the Connection objects
+		- (nm_policy_device_change_check): handle specific_object
+
+	* libnm-util/nm-connection.c
+		- (wireless_sec_need_secrets, nm_connection_need_secrets): implement
+
+2007-09-10  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-manager.c
 		- (query_connections): fix uninitialized variable problem that caused
 			segfault

@@ -22,13 +22,6 @@
 #ifndef NETWORK_MANAGER_MAIN_H
 #define NETWORK_MANAGER_MAIN_H
 
-#include <glib.h>
-#include <glib/gthread.h>
-#include <dbus/dbus.h>
-#include "NetworkManagerAPList.h"
-#include "nm-named-manager.h"
-
-
 typedef struct NMVPNActRequest NMVPNActRequest;
 typedef struct NMVPNManager NMVPNManager;
 

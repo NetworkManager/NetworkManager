@@ -1022,3 +1022,257 @@ nm_ap_add_security_from_ie (guint32 flags,
 	return flags;
 }
 
+static gboolean
+match_cipher (const char * cipher,
+              const char * expected,
+              guint32 wpa_flags,
+              guint32 rsn_flags,
+              guint32 flag)
+{
+	if (strcmp (cipher, expected) != 0)
+		return FALSE;
+
+	if (!(wpa_flags & flag) && !(rsn_flags & flag))
+		return FALSE;
+
+	return TRUE;
+}
+
+static gboolean
+security_compatible (NMAccessPoint *self,
+                     NMConnection *connection,
+                     NMSettingWireless *s_wireless)
+{
+	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (self);
+	NMSettingWirelessSecurity *s_wireless_sec;
+	guint32 flags = priv->flags;
+	guint32 wpa_flags = priv->wpa_flags;
+	guint32 rsn_flags = priv->rsn_flags;
+	
+	if (!s_wireless->security) {
+		if (   (flags & NM_802_11_AP_FLAGS_PRIVACY)
+		    || (wpa_flags != NM_802_11_AP_SEC_NONE)
+		    || (rsn_flags != NM_802_11_AP_SEC_NONE))
+			return FALSE;
+		return TRUE;
+	}
+
+	if (strcmp (s_wireless->security, "802-11-wireless-security") != 0)
+		return FALSE;
+
+	s_wireless_sec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, "802-11-wireless-security");
+	if (s_wireless_sec == NULL || !s_wireless_sec->key_mgmt)
+		return FALSE;
+
+	/* Static WEP */
+	if (!strcmp (s_wireless_sec->key_mgmt, "none")) {
+		if (   !(flags & NM_802_11_AP_FLAGS_PRIVACY)
+		    || (wpa_flags != NM_802_11_AP_SEC_NONE)
+		    || (rsn_flags != NM_802_11_AP_SEC_NONE))
+			return FALSE;
+		return TRUE;
+	}
+
+	/* Adhoc WPA */
+	if (!strcmp (s_wireless_sec->key_mgmt, "wpa-none")) {
+		if (priv->mode != IW_MODE_ADHOC)
+			return FALSE;
+		// FIXME: validate ciphers if the BSSID actually puts WPA/RSN IE in
+		// it's beacon
+		return TRUE;
+	}
+
+	/* Stuff after this point requires infrastructure */
+	if (priv->mode != IW_MODE_INFRA)
+		return FALSE;
+
+	/* Dynamic WEP or LEAP/Network EAP */
+	if (!strcmp (s_wireless_sec->key_mgmt, "ieee8021x")) {
+		// FIXME: should we allow APs that advertise WPA/RSN support here?
+		if (   !(flags & NM_802_11_AP_FLAGS_PRIVACY)
+		    || (wpa_flags != NM_802_11_AP_SEC_NONE)
+		    || (rsn_flags != NM_802_11_AP_SEC_NONE))
+			return FALSE;
+		return TRUE;
+	}
+
+	/* WPA[2]-PSK */
+	if (!strcmp (s_wireless_sec->key_mgmt, "wpa-psk")) {
+		GSList * elt;
+		gboolean found = FALSE;
+
+		if (!s_wireless_sec->pairwise || !s_wireless_sec->group)
+			return FALSE;
+
+		if (   !(wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
+		    && !(rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK))
+			return FALSE;
+
+		// FIXME: should handle WPA and RSN separately here to ensure that
+		// if the Connection only uses WPA we don't match a cipher against
+		// the AP's RSN IE instead
+
+		/* Match at least one pairwise cipher with AP's capability */
+		for (elt = s_wireless_sec->pairwise; elt; elt = g_slist_next (elt)) {
+			if ((found = match_cipher (elt->data, "tkip", wpa_flags, rsn_flags, NM_802_11_AP_SEC_PAIR_TKIP)))
+				break;
+			if ((found = match_cipher (elt->data, "ccmp", wpa_flags, rsn_flags, NM_802_11_AP_SEC_PAIR_CCMP)))
+				break;
+		}
+		if (!found)
+			return FALSE;
+
+		/* Match at least one group cipher with AP's capability */
+		for (elt = s_wireless_sec->group; elt; elt = g_slist_next (elt)) {
+			if ((found = match_cipher (elt->data, "wep40", wpa_flags, rsn_flags, NM_802_11_AP_SEC_GROUP_WEP40)))
+				break;
+			if ((found = match_cipher (elt->data, "wep104", wpa_flags, rsn_flags, NM_802_11_AP_SEC_GROUP_WEP104)))
+				break;
+			if ((found = match_cipher (elt->data, "tkip", wpa_flags, rsn_flags, NM_802_11_AP_SEC_GROUP_TKIP)))
+				break;
+			if ((found = match_cipher (elt->data, "ccmp", wpa_flags, rsn_flags, NM_802_11_AP_SEC_GROUP_CCMP)))
+				break;
+		}
+		if (!found)
+			return FALSE;
+
+		return TRUE;
+	}
+
+	if (!strcmp (s_wireless_sec->key_mgmt, "wpa-eap")) {
+		// FIXME: implement
+	}
+
+	return FALSE;
+}
+
+gboolean
+nm_ap_check_compatible (NMAccessPoint *self,
+                        NMConnection *connection)
+{
+	NMAccessPointPrivate *priv;
+	NMSettingWireless *s_wireless;
+
+	g_return_val_if_fail (NM_IS_AP (self), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+
+	priv = NM_AP_GET_PRIVATE (self);
+
+	s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, "802-11-wireless");
+	if (s_wireless == NULL)
+		return FALSE;
+	
+	if (!nm_utils_same_ssid (s_wireless->ssid, priv->ssid, TRUE))
+		return FALSE;
+
+	if (s_wireless->bssid) {
+		if (memcmp (s_wireless->bssid->data, &priv->address, ETH_ALEN))
+			return FALSE;
+	}
+
+	if (s_wireless->mode) {
+		if (   !strcmp (s_wireless->mode, "infrastructure")
+		    && (priv->mode != IW_MODE_INFRA))
+			return FALSE;
+		if (   !strcmp (s_wireless->mode, "adhoc")
+		    && (priv->mode != IW_MODE_ADHOC))
+			return FALSE;
+	}
+
+	if (s_wireless->band) {
+		if (!strcmp (s_wireless->band, "a")) {
+			if (priv->freq < 5170 || priv->freq > 5825)
+				return FALSE;
+		} else if (!strcmp (s_wireless->band, "bg")) {
+			if (priv->freq < 2412 || priv->freq > 2472)
+				return FALSE;
+		}
+	}
+
+	if (s_wireless->channel) {
+		guint32 ap_chan = freq_to_channel (priv->freq);
+
+		if (s_wireless->channel != ap_chan)
+			return FALSE;
+	}
+
+	return security_compatible (self, connection, s_wireless);
+}
+
+
+struct cf_pair {
+	guint32 chan;
+	double freq;
+};
+
+static struct cf_pair cf_table[46] = {
+	/* B/G band */
+	{ 1, 2412 },
+	{ 2, 2417 },
+	{ 3, 2422 },
+	{ 4, 2427 },
+	{ 5, 2432 },
+	{ 6, 2437 },
+	{ 7, 2442 },
+	{ 8, 2447 },
+	{ 9, 2452 },
+	{ 10, 2457 },
+	{ 11, 2462 },
+	{ 12, 2467 },
+	{ 13, 2472 },
+	/* A band */
+	{ 34, 5170 },
+	{ 36, 5180 },
+	{ 38, 5190 },
+	{ 40, 5200 },
+	{ 42, 5210 },
+	{ 44, 5220 },
+	{ 46, 5230 },
+	{ 48, 5240 },
+	{ 50, 5250 },
+	{ 52, 5260 },
+	{ 56, 5280 },
+	{ 58, 5290 },
+	{ 60, 5300 },
+	{ 64, 5320 },
+	{ 100, 5500 },
+	{ 104, 5520 },
+	{ 108, 5540 },
+	{ 112, 5560 },
+	{ 116, 5580 },
+	{ 120, 5600 },
+	{ 124, 5620 },
+	{ 128, 5640 },
+	{ 132, 5660 },
+	{ 136, 5680 },
+	{ 140, 5700 },
+	{ 149, 5745 },
+	{ 152, 5760 },
+	{ 153, 5765 },
+	{ 157, 5785 },
+	{ 160, 5800 },
+	{ 161, 5805 },
+	{ 165, 5825 },
+	{ 0, -1 }
+};
+
+guint32
+freq_to_channel (double freq)
+{
+	int i = 0;
+
+	while (cf_table[i].chan && (cf_table[i].freq != freq))
+		i++;
+	return cf_table[i].chan;
+}
+
+double
+channel_to_freq (guint32 channel)
+{
+	int i = 0;
+
+	while (cf_table[i].chan && (cf_table[i].chan != channel))
+		i++;
+	return cf_table[i].freq;
+}
+

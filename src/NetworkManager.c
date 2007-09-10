@@ -47,8 +47,6 @@
 #include "nm-device-802-3-ethernet.h"
 #include "nm-device-802-11-wireless.h"
 #include "NetworkManagerPolicy.h"
-#include "NetworkManagerAP.h"
-#include "NetworkManagerAPList.h"
 #include "NetworkManagerSystem.h"
 #include "nm-named-manager.h"
 #include "nm-dbus-vpn.h"

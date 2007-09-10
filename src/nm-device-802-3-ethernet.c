@@ -377,7 +377,8 @@ find_best_connection (gpointer data, gpointer user_data)
 }
 
 static NMConnection *
-real_get_best_connection (NMDevice *dev)
+real_get_best_connection (NMDevice *dev,
+                          char **specific_object)
 {
 	NMDevice8023Ethernet * self = NM_DEVICE_802_3_ETHERNET (dev);
 	NMManager *manager = nm_manager_get ();

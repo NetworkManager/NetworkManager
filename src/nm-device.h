@@ -90,7 +90,8 @@ struct _NMDeviceClass
 	guint32		(* get_type_capabilities)	(NMDevice *self);
 	guint32		(* get_generic_capabilities)	(NMDevice *self);
 
-	NMConnection * (* get_best_connection) (NMDevice *self);
+	NMConnection * (* get_best_connection) (NMDevice *self,
+	                                        char **specific_object);
 
 	gboolean    (* check_connection) (NMDevice *self, NMConnection *connection);
 
@@ -144,7 +145,8 @@ void *		nm_device_get_system_config_data	(NMDevice *dev);
 
 NMActRequest *	nm_device_get_act_request	(NMDevice *dev);
 
-NMConnection * nm_device_get_best_connection (NMDevice *dev);
+NMConnection * nm_device_get_best_connection (NMDevice *dev,
+                                              char **specific_object);
 
 void			nm_device_activate_schedule_stage1_device_prepare		(NMDevice *device);
 void			nm_device_activate_schedule_stage2_device_config		(NMDevice *device);

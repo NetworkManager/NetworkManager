@@ -31,7 +31,6 @@
 #include "NetworkManagerPolicy.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerAP.h"
-#include "NetworkManagerAPList.h"
 #include "nm-activation-request.h"
 #include "nm-utils.h"
 #include "nm-device-interface.h"
@@ -66,25 +65,31 @@ static NMPolicy *global_policy;
  */
 static NMDevice *
 nm_policy_auto_get_best_device (NMPolicy *policy,
-                                NMConnection **connection)
+                                NMConnection **connection,
+                                char **specific_object)
 {
 	GSList *				elt;
 	NMDevice8023Ethernet *	best_wired_dev = NULL;
 	guint				best_wired_prio = 0;
 	NMConnection * best_wired_connection = NULL;
+	char * best_wired_specific_object = NULL;
 	NMDevice80211Wireless *	best_wireless_dev = NULL;
 	guint				best_wireless_prio = 0;
 	NMConnection * best_wireless_connection = NULL;
+	char * best_wireless_specific_object = NULL;
 	NMDevice *			highest_priority_dev = NULL;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (*connection == NULL, NULL);
+	g_return_val_if_fail (specific_object != NULL, NULL);
+	g_return_val_if_fail (*specific_object == NULL, NULL);
 
 	if (nm_manager_get_state (policy->manager) == NM_STATE_ASLEEP)
 		return NULL;
 
 	for (elt = nm_manager_get_devices (policy->manager); elt; elt = elt->next) {
 		NMConnection *tmp_con = NULL;
+		char *tmp_obj = NULL;
 		gboolean link_active;
 		guint prio = 0;
 		NMDevice * dev = (NMDevice *)(elt->data);
@@ -93,7 +98,7 @@ nm_policy_auto_get_best_device (NMPolicy *policy,
 		link_active = nm_device_has_active_link (dev);
 		caps = nm_device_get_capabilities (dev);
 
-		tmp_con = nm_device_get_best_connection (dev);
+		tmp_con = nm_device_get_best_connection (dev, &tmp_obj);
 		if (tmp_con == NULL)
 			continue;
 
@@ -108,6 +113,7 @@ nm_policy_auto_get_best_device (NMPolicy *policy,
 				best_wired_dev = NM_DEVICE_802_3_ETHERNET (dev);
 				best_wired_prio = prio;
 				best_wired_connection = tmp_con;
+				best_wired_specific_object = tmp_obj;
 			}
 		}
 		else if (NM_IS_DEVICE_802_11_WIRELESS (dev) &&
@@ -125,6 +131,7 @@ nm_policy_auto_get_best_device (NMPolicy *policy,
 				best_wireless_dev = NM_DEVICE_802_11_WIRELESS (dev);
 				best_wireless_prio = prio;
 				best_wireless_connection = tmp_con;
+				best_wireless_specific_object = tmp_obj;
 			}
 		}
 	}
@@ -132,6 +139,7 @@ nm_policy_auto_get_best_device (NMPolicy *policy,
 	if (best_wired_dev) {
 		highest_priority_dev = NM_DEVICE (best_wired_dev);
 		*connection = best_wired_connection;
+		*specific_object = best_wired_specific_object;
 	} else if (best_wireless_dev) {
 		gboolean can_activate;
 
@@ -139,6 +147,7 @@ nm_policy_auto_get_best_device (NMPolicy *policy,
 		if (can_activate) {
 			highest_priority_dev = NM_DEVICE (best_wireless_dev);
 			*connection = best_wireless_connection;
+			*specific_object = best_wireless_specific_object;
 		}
 	}
 
@@ -163,49 +172,6 @@ out:
 	return *connection ? highest_priority_dev : NULL;
 }
 
-static NMConnection *
-create_connection (NMDevice *device, NMAccessPoint *ap)
-{
-	NMConnection *connection = NULL;
-	NMSetting *setting = NULL;
-
-	if (NM_IS_DEVICE_802_3_ETHERNET (device)) {
-		nm_info ("Will activate connection '%s'.", nm_device_get_iface (device));
-		setting = nm_setting_wired_new ();
-	} else if (NM_IS_DEVICE_802_11_WIRELESS (device) && ap) {
-		NMSettingWireless *wireless;
-		const GByteArray * ssid = nm_ap_get_ssid (ap);
-
-		nm_info ("Will activate connection '%s/%s'.",
-				 nm_device_get_iface (device),
-		         ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
-
-		setting = nm_setting_wireless_new ();
-		wireless = (NMSettingWireless *) setting;
-
-		wireless->ssid = g_byte_array_sized_new (ssid->len);
-		g_byte_array_append (wireless->ssid, ssid->data, ssid->len);
-
-		wireless->mode = g_strdup ("infrastructure");
-	} else {
-		nm_warning ("Unhandled device type '%s'", G_OBJECT_CLASS_NAME (device));
-	}
-
-	if (setting) {
-		NMSettingConnection *scon;
-
-		connection = nm_connection_new ();
-		nm_connection_add_setting (connection, setting);
-
-		scon = (NMSettingConnection *) nm_setting_connection_new ();
-		scon->name = g_strdup ("Auto");
-		scon->devtype = g_strdup (setting->name);
-		nm_connection_add_setting (connection, (NMSetting *) scon);
-	}
-
-	return connection;
-}
-
 /*
  * nm_policy_device_change_check
  *
@@ -223,6 +189,7 @@ nm_policy_device_change_check (gpointer user_data)
 	NMPolicy *policy = (NMPolicy *) user_data;
 	GSList *iter;
 	NMConnection * connection = NULL;
+	char * specific_object = NULL;
 	NMDevice * new_dev = NULL;
 	NMDevice * old_dev = NULL;
 	gboolean do_switch = FALSE;
@@ -266,7 +233,7 @@ nm_policy_device_change_check (gpointer user_data)
 		}
 	}
 
-	new_dev = nm_policy_auto_get_best_device (policy, &connection);
+	new_dev = nm_policy_auto_get_best_device (policy, &connection, &specific_object);
 
 	/* Four cases here:
 	 *
@@ -372,7 +339,7 @@ nm_policy_device_change_check (gpointer user_data)
 
 		if (new_dev) {
 			nm_device_interface_activate (NM_DEVICE_INTERFACE (new_dev),
-										  connection, NULL, FALSE);
+										  connection, specific_object, FALSE);
 		}
 	}
 

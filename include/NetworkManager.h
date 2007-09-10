@@ -118,18 +118,6 @@ typedef enum NMDeviceType
 
 
 /*
- * Wireless network types
- */
-typedef enum NMNetworkType
-{
-	NETWORK_TYPE_UNKNOWN = 0,
-	NETWORK_TYPE_ALLOWED,
-	NETWORK_TYPE_INVALID,
-	NETWORK_TYPE_DEVICE
-} NMNetworkType;
-
-
-/*
  * Device states. Will obsolete NMActStage soon.
  */
 typedef enum

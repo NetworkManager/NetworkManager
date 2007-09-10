@@ -25,8 +25,6 @@ NetworkManager_SOURCES =				\
 		nm-device-802-11-wireless.h	\
 		NetworkManagerAP.c			\
 		NetworkManagerAP.h			\
-		NetworkManagerAPList.c		\
-		NetworkManagerAPList.h		\
 		NetworkManagerDbusUtils.c	\
 		NetworkManagerDbusUtils.h	\
 		NetworkManagerDialup.h		\

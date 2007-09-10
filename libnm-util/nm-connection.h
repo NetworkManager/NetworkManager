@@ -35,7 +35,7 @@ NMSetting    *nm_connection_get_setting   (NMConnection *connection,
 gboolean      nm_connection_compare       (NMConnection *connection,
 										   NMConnection *other);
 
-gboolean      nm_connection_have_secrets  (NMConnection *connection);
+const char *  nm_connection_need_secrets  (NMConnection *connection);
 
 GHashTable   *nm_connection_to_hash       (NMConnection *connection);
 void          nm_connection_dump          (NMConnection *connection);

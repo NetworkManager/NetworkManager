@@ -35,7 +35,6 @@
 #include "nm-device-802-11-wireless.h"
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
-#include "NetworkManagerAPList.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerPolicy.h"
@@ -116,7 +115,7 @@ struct _NMDevice80211WirelessPrivate
 	double			freqs[IW_MAX_FREQUENCIES];
 
 	gboolean			scanning;
-	NMAccessPointList *	ap_list;
+	GSList *        ap_list;
 	GTimeVal			scheduled_scan_time;
 	guint8			scan_interval; /* seconds */
 	guint               pending_scan_id;
@@ -127,16 +126,11 @@ struct _NMDevice80211WirelessPrivate
 	guint               periodic_source_id;
 	guint               link_timeout_id;
 
-	/* Set when activating or activated */
-	NMAccessPoint *activation_ap;
-
 	/* Static options from driver */
 	guint8			we_version;
 	guint32			capabilities;
 };
 
-
-static void	nm_device_802_11_wireless_ap_list_clear (NMDevice80211Wireless *self);
 
 static void	schedule_scan (NMDevice80211Wireless *self);
 
@@ -237,7 +231,7 @@ nm_device_802_11_wireless_update_bssid (NMDevice80211Wireless *self,
 		nm_debug ("Roamed from BSSID %s to %s on wireless network '%s'",
 		          old_addr,
 		          new_addr,
-		          nm_utils_escape_ssid (old_ssid->data, old_ssid->len));
+		          nm_utils_escape_ssid ((const char *) old_ssid->data, old_ssid->len));
 
 		nm_ap_set_address (ap, &new_bssid);
 
@@ -343,9 +337,12 @@ get_wireless_capabilities (NMDevice80211Wireless *self,
 {
 	guint32	minlen;
 	guint32	caps = NM_802_11_DEVICE_CAP_NONE;
+	const char * iface;
 
 	g_return_val_if_fail (self != NULL, NM_802_11_DEVICE_CAP_NONE);
 	g_return_val_if_fail (range != NULL, NM_802_11_DEVICE_CAP_NONE);
+
+	iface = nm_device_get_iface (NM_DEVICE (self));
 
 	minlen = ((char *) &range->enc_capa) - (char *) range + sizeof (range->enc_capa);
 
@@ -369,7 +366,7 @@ get_wireless_capabilities (NMDevice80211Wireless *self,
 		if (    (caps & (NM_802_11_DEVICE_CAP_CIPHER_TKIP | NM_802_11_DEVICE_CAP_CIPHER_CCMP))
 		    && !(caps & (NM_802_11_DEVICE_CAP_WPA | NM_802_11_DEVICE_CAP_RSN))) {
 			nm_warning ("%s: device supports WPA ciphers but not WPA protocol; "
-			            "WPA unavailable.");
+			            "WPA unavailable.", iface);
 			caps &= ~WPA_CAPS;
 		}
 
@@ -377,7 +374,7 @@ get_wireless_capabilities (NMDevice80211Wireless *self,
 		if (    (caps & (NM_802_11_DEVICE_CAP_WPA | NM_802_11_DEVICE_CAP_RSN))
 		    && !(caps & (NM_802_11_DEVICE_CAP_CIPHER_TKIP | NM_802_11_DEVICE_CAP_CIPHER_CCMP)))
 			nm_warning ("%s: device supports WPA protocol but not WPA ciphers; "
-			            "WPA unavailable.");
+			            "WPA unavailable.", iface);
 			caps &= ~WPA_CAPS;
 	}
 
@@ -394,7 +391,7 @@ nm_device_802_11_wireless_init (NMDevice80211Wireless * self)
 	priv->dispose_has_run = FALSE;
 	priv->supplicant.iface_error_id = 0;
 	priv->scanning = FALSE;
-	priv->ap_list = nm_ap_list_new (NETWORK_TYPE_DEVICE);
+	priv->ap_list = NULL;
 	priv->we_version = 0;
 
 	memset (&(self->priv->hw_addr), 0, sizeof (struct ether_addr));
@@ -550,7 +547,6 @@ nm_device_802_11_periodic_update (gpointer data)
 	   is activated and not scanning */
 	if (nm_device_get_state (NM_DEVICE (self)) == NM_DEVICE_STATE_ACTIVATED &&
 		!NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self)->scanning) {
-
 		NMAccessPoint *ap = nm_device_802_11_wireless_get_activation_ap (self);
 
 		nm_device_802_11_wireless_update_signal_strength (self, ap);
@@ -641,11 +637,6 @@ real_deactivate_quickly (NMDevice *dev)
 	/* Clean up stuff, don't leave the card associated */
 	nm_device_802_11_wireless_set_ssid (self, NULL);
 	nm_device_802_11_wireless_disable_encryption (self);
-
-	if (priv->activation_ap) {
-		g_object_unref (priv->activation_ap);
-		priv->activation_ap = NULL;
-	}
 }
 
 static void
@@ -664,43 +655,79 @@ real_check_connection (NMDevice *dev, NMConnection *connection)
 	return TRUE;
 }
 
-/*
- * nm_device_copy_allowed_to_dev_list
- *
- * For devices that don't support wireless scanning, copy
- * the allowed AP list to the device's ap list.
- *
- */
-void
-nm_device_802_11_wireless_copy_allowed_to_dev_list (NMDevice80211Wireless *self,
-                                                    NMAccessPointList *allowed_list)
+typedef struct BestConnectionInfo {
+	NMDevice80211Wireless * self;
+	NMConnection * found;
+	NMAccessPoint * found_ap;
+} BestConnectionInfo;
+
+static void
+find_best_connection (gpointer data, gpointer user_data)
 {
-	NMAPListIter		*iter;
-	NMAccessPoint		*src_ap;
-	NMAccessPointList	*dev_list;
+	BestConnectionInfo * info = (BestConnectionInfo *) user_data;
+	NMConnection *connection = NM_CONNECTION (data);
+	NMSettingConnection * s_con;
+	NMSettingWireless * s_wireless;
+	GSList * elt;
 
-	g_return_if_fail (self != NULL);
-
-	if (allowed_list == NULL)
+	if (info->found)
 		return;
 
-	nm_device_802_11_wireless_ap_list_clear (self);
-	self->priv->ap_list = nm_ap_list_new (NETWORK_TYPE_ALLOWED);
-
-	if (!(iter = nm_ap_list_iter_new (allowed_list)))
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, "connection");
+	if (s_con == NULL)
+		return;
+fprintf (stderr, "%s: looking at connection %s\n", __func__, s_con->name);
+	if (strcmp (s_con->devtype, "802-11-wireless"))
+		return;
+	if (!s_con->autoconnect)
 		return;
 
-	dev_list = nm_device_802_11_wireless_ap_list_get (self);
-	while ((src_ap = nm_ap_list_iter_next (iter)))
-	{
-		NMAccessPoint *	dst_ap = nm_ap_new_from_ap (src_ap);
+	s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, "802-11-wireless");
+	if (s_wireless == NULL)
+		return;
 
-		nm_ap_list_append_ap (dev_list, dst_ap);
-		g_object_unref (dst_ap);
+	for (elt = info->self->priv->ap_list; elt; elt = g_slist_next (elt)) {
+		NMAccessPoint *ap = NM_AP (elt->data);
+
+		if (nm_ap_check_compatible (ap, connection)) {
+			/* All good; connection is usable */
+			info->found = connection;
+			info->found_ap = ap;
+			break;
+		}
 	}
-	nm_ap_list_iter_free (iter);
 }
 
+static NMConnection *
+real_get_best_connection (NMDevice *dev,
+                          char **specific_object)
+{
+	NMDevice80211Wireless * self = NM_DEVICE_802_11_WIRELESS (dev);
+	NMManager *manager = nm_manager_get ();
+	GSList *connections = NULL;
+	BestConnectionInfo find_info;
+	guint32 caps;
+	gboolean link_active;
+
+	/* System connections first */
+	connections = nm_manager_get_connections (manager, NM_CONNECTION_TYPE_SYSTEM);
+	memset (&find_info, 0, sizeof (BestConnectionInfo));
+	find_info.self = self;
+	g_slist_foreach (connections, find_best_connection, &find_info);
+	g_slist_free (connections);
+
+	/* Then user connections */
+	if (!find_info.found) {
+		connections = nm_manager_get_connections (manager, NM_CONNECTION_TYPE_USER);
+		find_info.self = self;
+		g_slist_foreach (connections, find_best_connection, &find_info);
+		g_slist_free (connections);
+	}
+
+	if (find_info.found)
+		*specific_object = (char *) nm_ap_get_dbus_path (find_info.found_ap);
+	return find_info.found;
+}
 
 /*
  * nm_device_802_11_wireless_get_address
@@ -784,7 +811,7 @@ get_ap_blacklisted (NMAccessPoint *ap, GSList *addrs)
 	return blacklisted;
 }
 
-
+#if 0
 /*
  * nm_device_update_best_ap
  *
@@ -871,99 +898,45 @@ nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
 
 	return best_ap;
 }
-
-#if 0
-static gboolean
-nm_device_802_11_wireless_set_activation_ap (NMDevice80211Wireless *self,
-                                             GByteArray *ssid,
-                                             NMAPSecurity *security)
-{
-	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
-	NMAccessPoint		*ap = NULL;
-	NMAccessPointList *	dev_ap_list;
-
-	nm_debug ("Forcing AP '%s'", nm_utils_escape_ssid (ssid->data, ssid->len));
-
-	/* Find the AP in our card's scan list first.
-	 * If its not there, create an entirely new AP.
-	 */
-	dev_ap_list = nm_device_802_11_wireless_ap_list_get (self);
-	if (!(ap = nm_ap_list_get_ap_by_ssid (dev_ap_list, ssid))) {
-		/* We need security information from the user if the network they
-		 * request isn't in our scan list.
-		 */
-		if (!security) {
-			nm_warning ("%s: tried to manually connect to network '%s' without "
-						"providing security information!", __func__,
-						nm_utils_escape_ssid (ssid->data, ssid->len));
-			return FALSE;
-		}
-
-		/* User chose a network we haven't seen in a scan, so create a
-		 * "fake" access point and add it to the scan list.
-		 */
-		ap = nm_ap_new ();
-		nm_ap_set_ssid (ap, ssid);
-		nm_ap_set_artificial (ap, TRUE);
-		nm_ap_set_broadcast (ap, FALSE);
-		/* Ensure the AP has some capabilities.  They will get overwritten
-		 * with the correct ones next time the AP is seen in a scan.
-		 */
-		nm_ap_set_capabilities (ap, nm_ap_security_get_default_capabilities (security));
-		nm_ap_list_append_ap (dev_ap_list, ap);
-		g_object_unref (ap);
-	}
-	else
-	{
-		/* If the AP is in the ignore list, we have to remove it since
-		 * the User Knows What's Best.
-		 */
-		nm_ap_list_remove_ap_by_ssid (app_data->invalid_ap_list,
-		                              nm_ap_get_ssid (ap));
-
-		/* If we didn't get any security info, make some up. */
-		if (!security)
-			security = nm_ap_security_new (nm_ap_get_capabilities (ap),
-										   nm_ap_get_encrypted (ap));
-	}
-
-	g_assert (security);
-	nm_ap_set_security (ap, security);
-	nm_ap_add_capabilities_from_security (ap, security);
-
-	if (priv->activation_ap) {
-		g_object_unref (priv->activation_ap);
-		priv->activation_ap = NULL;
-	}
-
-	g_object_ref (ap);
-	priv->activation_ap = ap;
-
-	return TRUE;
-}
 #endif
 
-/*
- * nm_device_802_11_wireless_ap_list_clear
- *
- * Clears out the device's internal list of available access points.
- *
- */
-static void
-nm_device_802_11_wireless_ap_list_clear (NMDevice80211Wireless *self)
+static NMAccessPoint *
+ap_list_get_ap_by_ssid (GSList *list,
+                        const GByteArray * ssid)
 {
-	g_return_if_fail (self != NULL);
+	NMAccessPoint * ap;
+	NMAccessPoint * found_ap = NULL;
+	GSList * elt;
 
-	if (!self->priv->ap_list)
-		return;
+	for (elt = list; elt; elt = g_slist_next (elt)) {
+		NMAccessPoint * ap = NM_AP (elt->data);
+		const GByteArray * ap_ssid = nm_ap_get_ssid (ap);
 
-	nm_ap_list_unref (self->priv->ap_list);
-	self->priv->ap_list = NULL;
+		if (ap_ssid && nm_utils_same_ssid (ap_ssid, ssid, TRUE))
+			return ap;
+	}
+
+	return NULL;
 }
 
+void
+nm_device_802_11_wireless_ap_list_print (NMDevice80211Wireless *self)
+{
+	GSList * elt;
+	int i = 0;
+
+	g_return_if_fail (NM_IS_DEVICE_802_11_WIRELESS (self));
+
+	nm_info ("AP_LIST_PRINT:");
+	for (elt = self->priv->ap_list; elt; elt = g_slist_next (elt), i++) {
+		NMAccessPoint * ap = NM_AP (elt->data);
+		nm_ap_print_self (ap, "::\t");
+	}
+	nm_info ("AP_LIST_PRINT: done");
+}
 
 /*
- * nm_device_ap_list_get_ap_by_ssid
+ * nm_device_802_11_wireless_ap_list_get_ap_by_ssid
  *
  * Get the access point for a specific SSID
  *
@@ -975,30 +948,7 @@ nm_device_802_11_wireless_ap_list_get_ap_by_ssid (NMDevice80211Wireless *self,
 	g_return_val_if_fail (self != NULL, NULL);
 	g_return_val_if_fail (ssid != NULL, NULL);
 
-	if (!self->priv->ap_list)
-		return NULL;
-
-	return nm_ap_list_get_ap_by_ssid (self->priv->ap_list, ssid);
-}
-
-
-/*
- * nm_device_ap_list_get_ap_by_bssid
- *
- * Get the access point for a specific BSSID
- *
- */
-NMAccessPoint *
-nm_device_802_11_wireless_ap_list_get_ap_by_bssid (NMDevice80211Wireless *self,
-                                                   const struct ether_addr *bssid)
-{
-	g_return_val_if_fail (self != NULL, NULL);
-	g_return_val_if_fail (bssid != NULL, NULL);
-
-	if (!self->priv->ap_list)
-		return NULL;
-
-	return nm_ap_list_get_ap_by_address (self->priv->ap_list, bssid);
+	return ap_list_get_ap_by_ssid (self->priv->ap_list, ssid);
 }
 
 
@@ -1013,70 +963,33 @@ NMAccessPoint *
 nm_device_802_11_wireless_ap_list_get_ap_by_obj_path (NMDevice80211Wireless *self,
                                                       const char *obj_path)
 {
-	NMAccessPointList *ap_list;
-	NMAccessPoint *ap = NULL;
+	GSList * elt;
 
-	ap_list = nm_device_802_11_wireless_ap_list_get (self);
-	if (ap_list) {
-		NMAPListIter *list_iter;
+	for (elt = self->priv->ap_list; elt; elt = g_slist_next (elt)) {
+		NMAccessPoint *ap = NM_AP (elt->data);
 
-		if ((list_iter = nm_ap_list_iter_new (ap_list))) {
-			gboolean found = FALSE;
-
-			while (!found && (ap = nm_ap_list_iter_next (list_iter))) {
-				if (!strcmp (obj_path, nm_ap_get_dbus_path (ap)))
-					found = TRUE;
-			}
-			nm_ap_list_iter_free (list_iter);
-
-			if (!found)
-				ap = NULL;
-		}
+		if (!strcmp (obj_path, nm_ap_get_dbus_path (ap)))
+			return ap;
 	}
 
-	return ap;
+	return NULL;
 }
-
-
-/*
- * nm_device_ap_list_get
- *
- * Return a pointer to the AP list
- *
- */
-NMAccessPointList *
-nm_device_802_11_wireless_ap_list_get (NMDevice80211Wireless *self)
-{
-	g_return_val_if_fail (self != NULL, NULL);
-
-	return self->priv->ap_list;
-}
-
 
 static gboolean
-impl_device_get_active_networks (NMDevice80211Wireless *device,
+impl_device_get_active_networks (NMDevice80211Wireless *self,
 								 GPtrArray **networks,
 								 GError **err)
 {
-	NMAccessPointList *ap_list;
+	GSList *elt;
 
 	*networks = g_ptr_array_new ();
 
-	ap_list = nm_device_802_11_wireless_ap_list_get (device);
-	if (ap_list) {
-		NMAPListIter *list_iter;
+	for (elt = self->priv->ap_list; elt; elt = g_slist_next (elt)) {
+		NMAccessPoint * ap = NM_AP (elt->data);
 
-		if ((list_iter = nm_ap_list_iter_new (ap_list))) {
-			NMAccessPoint *ap;
-
-			while ((ap = nm_ap_list_iter_next (list_iter))) {
-				if (nm_ap_get_ssid (ap))
-					g_ptr_array_add (*networks, g_strdup (nm_ap_get_dbus_path (ap)));
-			}
-			nm_ap_list_iter_free (list_iter);
-		}
+		if (nm_ap_get_ssid (ap))
+			g_ptr_array_add (*networks, g_strdup (nm_ap_get_dbus_path (ap)));
 	}
-
 	return TRUE;
 }
 
@@ -1687,59 +1600,6 @@ out:
 	return associated;
 }
 
-
-static gboolean
-ap_need_secrets (NMDevice80211Wireless *self,
-                 NMAccessPoint *ap,
-                 NMConnection *connection,
-                 gboolean *ask_user)
-{
-	const GByteArray * ssid;
-	gboolean need_key = FALSE;
-	const char * iface;
-	const char * esc_ssid;
-	guint32 flags, wpa_flags, rsn_flags;
-
-	g_return_val_if_fail (self != NULL, FALSE);
-	g_return_val_if_fail (ap != NULL, FALSE);
-	g_return_val_if_fail (connection != NULL, FALSE);
-	g_return_val_if_fail (ask_user != NULL, FALSE);
-
-	iface = nm_device_get_iface (NM_DEVICE (self));
-
-	ssid = nm_ap_get_ssid (ap);
-	esc_ssid = ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(null)";
-
-	flags = nm_ap_get_flags (ap);
-	wpa_flags = nm_ap_get_wpa_flags (ap);
-	rsn_flags = nm_ap_get_rsn_flags (ap);
-	if (  !(flags & NM_802_11_AP_FLAGS_PRIVACY)
-	    && (wpa_flags == NM_802_11_AP_SEC_NONE)
-	    && (rsn_flags == NM_802_11_AP_SEC_NONE)) {
-		nm_info ("Activation (%s/wireless): access point '%s' has no security, "
-		         "no key needed.",
-		         iface, esc_ssid);
-	} else {
-		if (nm_connection_have_secrets (connection)) {
-			nm_info ("Activation (%s/wireless): access point '%s' has security"
-			         ", and secrets exist.  No new secrets needed.",
-			         iface, esc_ssid ? esc_ssid : "(null)");
-		} else {
-			nm_info ("Activation (%s/wireless): access point '%s' has security,"
-			         " but secrets are required.",
-			         iface, esc_ssid);
-			need_key = TRUE;
-
-			/* FIXME: how to determine when to explicitly ask the user for
-			 * secrets...
-			 */
-		}
-	}
-
-	return need_key;
-}
-
-
 /*
  * ap_auth_enforced
  *
@@ -1797,22 +1657,14 @@ ap_auth_enforced (NMAccessPoint *ap)
  *
  */
 static void
-merge_scanned_ap (NMDevice80211Wireless *dev,
+merge_scanned_ap (NMDevice80211Wireless *self,
 				  NMAccessPoint *merge_ap)
 {	
-	NMAccessPointList * list;
-	NMAPListIter * iter;
-	NMAccessPoint * list_ap = NULL;
+	GSList * elt;
 	NMAccessPoint * found_ap = NULL;
 
-	list = nm_device_802_11_wireless_ap_list_get (dev);
-	g_assert (list);
-
-	iter = nm_ap_list_iter_new (list);
-	if (iter == NULL)
-		return;
-
-	while ((list_ap = nm_ap_list_iter_next (iter))) {
+	for (elt = self->priv->ap_list; elt; elt = g_slist_next (elt)) {
+		NMAccessPoint * list_ap = NM_AP (elt->data);
 		const GByteArray * list_ssid = nm_ap_get_ssid (list_ap);
 		const struct ether_addr * list_addr = nm_ap_get_address (list_ap);
 		int list_mode = nm_ap_get_mode (list_ap);
@@ -1848,7 +1700,6 @@ merge_scanned_ap (NMDevice80211Wireless *dev,
 		found_ap = list_ap;
 		break;
 	}
-	nm_ap_list_iter_free (iter);
 
 	if (found_ap) {
 		nm_ap_set_flags (found_ap, nm_ap_get_flags (merge_ap));
@@ -1864,61 +1715,54 @@ merge_scanned_ap (NMDevice80211Wireless *dev,
 		nm_ap_set_artificial (found_ap, FALSE);
 	} else {
 		/* New entry in the list */
-		nm_ap_list_append_ap (list, merge_ap);
-		network_added (dev, merge_ap);
+		// FIXME: figure out if reference counts are correct here for AP objects
+		g_object_ref (merge_ap);
+		self->priv->ap_list = g_slist_append (self->priv->ap_list, merge_ap);
+		network_added (self, merge_ap);
 	}
 }
 
 static void
 cull_scan_list (NMDevice80211Wireless * self)
 {
-	GTimeVal            cur_time;
-	NMAccessPointList * ap_list;
-	NMAccessPoint *     outdated_ap;
-	GSList *            outdated_list = NULL;
-	GSList *            elt;
-	NMAccessPoint *     cur_ap = NULL;
-	NMAPListIter *      iter = NULL;
+	GTimeVal        cur_time;
+	NMAccessPoint * outdated_ap;
+	GSList *        outdated_list = NULL;
+	GSList *        elt;
+	NMAccessPoint * cur_ap = NULL;
 
 	g_return_if_fail (self != NULL);
 
 	g_get_current_time (&cur_time);
 
-	if (!(ap_list = nm_device_802_11_wireless_ap_list_get (self)))
-		return;
-
-	if (!(iter = nm_ap_list_iter_new (ap_list)))
-		return;
-
 	/* Walk the access point list and remove any access points older than
-	 * thrice the inactive scan interval.
+	 * three times the inactive scan interval.
 	 */
-	while ((outdated_ap = nm_ap_list_iter_next (iter))) {
+	for (elt = self->priv->ap_list; elt; elt = g_slist_next (elt)) {
+		NMAccessPoint * outdated_ap = NM_AP (elt->data);
 		const glong  ap_time = nm_ap_get_last_seen (outdated_ap);
 		gboolean     keep_around = FALSE;
-		guint        prune_interval_s;
+		guint        prune_interval_s = SCAN_INTERVAL_MAX * 3;
 		const GByteArray * ssid;
 		const GByteArray * cur_ssid;
 
 		/* Don't ever prune the AP we're currently associated with */
 		ssid = nm_ap_get_ssid (outdated_ap);
+		// FIXME: get cur_ap somehow
 		cur_ssid = cur_ap ? nm_ap_get_ssid (cur_ap) : NULL;
 		if (ssid && nm_utils_same_ssid (cur_ssid, ssid, TRUE))
 			keep_around = TRUE;
 
-		prune_interval_s = SCAN_INTERVAL_MAX * 3;
-
 		if (!keep_around && (ap_time + prune_interval_s < cur_time.tv_sec))
 			outdated_list = g_slist_append (outdated_list, outdated_ap);
 	}
-	nm_ap_list_iter_free (iter);
 
 	/* Remove outdated APs */
 	for (elt = outdated_list; elt; elt = g_slist_next (elt)) {
-		if (!(outdated_ap = (NMAccessPoint *)(elt->data)))
-			continue;
+		outdated_ap = NM_AP (elt->data);
 		network_removed (self, outdated_ap);
-		nm_ap_list_remove_ap (nm_device_802_11_wireless_ap_list_get (self), outdated_ap);
+		self->priv->ap_list = g_slist_remove (self->priv->ap_list, outdated_ap);
+		g_object_unref (outdated_ap);
 	}
 	g_slist_free (outdated_list);
 }
@@ -2590,21 +2434,14 @@ static NMActStageReturn
 real_act_stage1_prepare (NMDevice *dev)
 {
 	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
-	NMActRequest *req;
-	NMSettingWireless *setting;
-	gboolean success;
+	NMAccessPoint *ap;
 
-	req = nm_device_get_act_request (dev);
-	setting = (NMSettingWireless *) nm_connection_get_setting (nm_act_request_get_connection (req),
-															   "802-11-wireless");
-	g_assert (setting);
-#if 0
-	success = nm_device_802_11_wireless_set_activation_ap (self, setting->ssid, NULL);
-#endif
-	/* FIXME: match up 802-11-wireless and 802-11-wireless-security to an AP */
-	success = NM_ACT_STAGE_RETURN_SUCCESS;
+	/* Make sure we've got an AP to connect to */
+	ap = nm_device_802_11_wireless_get_activation_ap (self);
+	if (!ap)
+		return NM_ACT_STAGE_RETURN_FAILURE;
 
-	return success ? NM_ACT_STAGE_RETURN_SUCCESS : NM_ACT_STAGE_RETURN_FAILURE;
+	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
 
@@ -2615,16 +2452,13 @@ real_act_stage2_config (NMDevice *dev)
 	NMActStageReturn        ret = NM_ACT_STAGE_RETURN_FAILURE;
 	const char *            iface = nm_device_get_iface (dev);
 	gboolean                ask_user = FALSE;
-	NMAccessPoint *         ap;
 	NMSupplicantConfig *	config = NULL;
 	gulong                  id = 0;
 	NMActRequest *          req;
 	NMConnection *          connection;
+	NMSettingConnection *	s_connection;
 
 	remove_supplicant_timeouts (self);
-
-	ap = nm_device_802_11_wireless_get_activation_ap (self);
-	g_assert (ap);
 
 	req = nm_device_get_act_request (dev);
 	g_assert (req);
@@ -2632,11 +2466,22 @@ real_act_stage2_config (NMDevice *dev)
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
 
+	s_connection = (NMSettingConnection *) nm_connection_get_setting (connection, "connection");
+	g_assert (s_connection);
+
 	/* If we need secrets, get them */
-	if (ap_need_secrets (self, ap, connection, &ask_user)) {
+	if (nm_connection_need_secrets (connection)) {
+		nm_info ("Activation (%s/wireless): access point '%s' has security,"
+		         " but secrets are required.",
+		         iface, s_connection->name);
+
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
 		// FIXME: get secrets from info-daemon
 		return NM_ACT_STAGE_RETURN_POSTPONE;
+	} else {
+		nm_info ("Activation (%s/wireless): connection '%s' has security"
+		         ", and secrets exist.  No new secrets needed.",
+		         iface, s_connection->name);
 	}
 
 	config = build_supplicant_config (self);
@@ -2805,11 +2650,9 @@ activation_success_handler (NMDevice *dev)
 	automatic = !nm_act_request_get_user_requested (nm_device_get_act_request (dev));
 
 	/* If it's a user-created ad-hoc network, add it to the device's scan list */
-	if (!automatic && (nm_ap_get_mode (ap) == IW_MODE_ADHOC) && nm_ap_get_user_created (ap))
-	{
-		NMAccessPointList *ap_list = nm_device_802_11_wireless_ap_list_get (self);
-		if (!nm_ap_list_get_ap_by_ssid (ap_list, nm_ap_get_ssid (ap)))
-			nm_ap_list_append_ap (ap_list, ap);
+	if (!automatic && (nm_ap_get_mode (ap) == IW_MODE_ADHOC) && nm_ap_get_user_created (ap)) {
+		if (!ap_list_get_ap_by_ssid (self->priv->ap_list, nm_ap_get_ssid (ap)))
+			self->priv->ap_list = g_slist_append (self->priv->ap_list, ap);
 	}
 
 	nm_device_802_11_wireless_get_bssid (self, &addr);
@@ -2827,23 +2670,17 @@ activation_failure_handler (NMDevice *dev)
 	NMAccessPoint *	ap;
 	const GByteArray * ssid;
 
-	if ((ap = nm_device_802_11_wireless_get_activation_ap (self)))
-	{
-		if (nm_ap_get_artificial (ap))
-		{
-			NMAccessPointList *	dev_list;
-
+	if ((ap = nm_device_802_11_wireless_get_activation_ap (self))) {
+		if (nm_ap_get_artificial (ap)) {
 			/* Artificial APs are ones that don't show up in scans,
 			 * but which the user explicitly attempted to connect to.
 			 * However, if we fail on one of these, remove it from the
 			 * list because we don't have any scan or capability info
 			 * for it, and they are pretty much useless.
 			 */
-			dev_list = nm_device_802_11_wireless_ap_list_get (self);
-			nm_ap_list_remove_ap (dev_list, ap);
-		}
-		else
-		{
+			self->priv->ap_list = g_slist_remove (self->priv->ap_list, ap);
+			g_object_unref (ap);
+		} else {
 			/* Add the AP to the invalid list */
 			nm_ap_set_invalid (ap, TRUE);
 		}
@@ -2895,6 +2732,7 @@ nm_device_802_11_wireless_dispose (GObject *object)
 {
 	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (object);
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
+	GSList * elt;
 
 	/* Make sure dispose does not run twice. */
 	if (priv->dispose_has_run)
@@ -2903,9 +2741,9 @@ nm_device_802_11_wireless_dispose (GObject *object)
 	priv->dispose_has_run = TRUE;
 
 	/* General cleanup, free references to other objects */
-	nm_device_802_11_wireless_ap_list_clear (self);
-	if (priv->ap_list)
-		nm_ap_list_unref (priv->ap_list);
+	g_slist_foreach (self->priv->ap_list, (GFunc) g_object_unref, NULL);
+	g_slist_free (self->priv->ap_list);
+	self->priv->ap_list = NULL;
 
 	device_cleanup (self);
 
@@ -2918,6 +2756,7 @@ get_property (GObject *object, guint prop_id,
 {
 	NMDevice80211Wireless *device = NM_DEVICE_802_11_WIRELESS (object);
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device);
+	NMAccessPoint *ap;
 	struct ether_addr hw_addr;
 	char hw_addr_buf[20];
 
@@ -2938,8 +2777,8 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->capabilities);
 		break;
 	case PROP_ACTIVE_NETWORK:
-		if (priv->activation_ap)
-			g_value_set_object (value, priv->activation_ap);
+		if ((ap = nm_device_802_11_wireless_get_activation_ap (device)))
+			g_value_set_object (value, ap);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -2967,6 +2806,7 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 	parent_class->update_link = real_update_link;
 	parent_class->set_hw_address = real_set_hw_address;
 	parent_class->check_connection = real_check_connection;
+	parent_class->get_best_connection = real_get_best_connection;
 
 	parent_class->act_stage1_prepare = real_act_stage1_prepare;
 	parent_class->act_stage2_config = real_act_stage2_config;
@@ -3056,11 +2896,8 @@ state_changed_cb (NMDevice *device, NMDeviceState state, gpointer user_data)
 		activation_failure_handler (device);
 		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
-		if (priv->activation_ap) {
-nm_info ("%s(): clearing activation AP", __func__);
-			g_object_unref (priv->activation_ap);
-			priv->activation_ap = NULL;
-		}
+		// FIXME: ensure that the activation request is destroyed
+		break;
 	default:
 		break;
 	}
@@ -3098,8 +2935,19 @@ nm_device_802_11_wireless_new (int index,
 NMAccessPoint *
 nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wireless *self)
 {
+	NMActRequest *req;
+	const char *ap_path;
+
 	g_return_val_if_fail (NM_IS_DEVICE_802_11_WIRELESS (self), NULL);
 
-	return NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self)->activation_ap;
+	req = nm_device_get_act_request (NM_DEVICE (self));
+	if (!req)
+		return NULL;
+
+	ap_path = nm_act_request_get_specific_object (req);
+	if (!ap_path)
+		return NULL;
+
+	return nm_device_802_11_wireless_ap_list_get_ap_by_obj_path (self, ap_path);
 }
 

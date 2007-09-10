@@ -27,6 +27,7 @@
 #include <glib-object.h>
 #include <time.h>
 #include "NetworkManager.h"
+#include "nm-connection.h"
 
 #define NM_TYPE_AP            (nm_ap_get_type ())
 #define NM_AP(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_AP, NMAccessPoint))
@@ -116,6 +117,9 @@ guint32				nm_ap_add_security_from_ie (guint32 flags,
                                                 const guint8 *wpa_ie,
                                                 guint32 length);
 
+gboolean			nm_ap_check_compatible (NMAccessPoint *self,
+                                            NMConnection *connection);
+
 void				nm_ap_print_self (NMAccessPoint *ap, const char * prefix);
 
 /* 
@@ -124,5 +128,8 @@ void				nm_ap_print_self (NMAccessPoint *ap, const char * prefix);
  * only the MOST COMMON manufacturing defaults.
  */
 gboolean			nm_ap_has_manufacturer_default_ssid	(NMAccessPoint *ap);
+
+guint32 freq_to_channel (double freq);
+double  channel_to_freq (guint32 channel);
 
 #endif /* NM_ACCESS_POINT_H */
