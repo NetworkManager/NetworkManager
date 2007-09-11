@@ -1,5 +1,10 @@
 2007-09-11  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-activation-request.c
+		- (connection_secrets_updated_cb): fix c&p error in signal emission
+
+2007-09-11  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 		- (real_connection_secrets_updated): fix erroneous check
 

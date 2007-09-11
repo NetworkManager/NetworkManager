@@ -127,7 +127,7 @@ connection_secrets_updated_cb (NMConnection *connection,
 	g_return_if_fail (setting_name != NULL);
 	g_return_if_fail (self != NULL);
 
-	g_signal_emit (connection, signals[CONNECTION_SECRETS_UPDATED], 0, connection, setting_name);
+	g_signal_emit (self, signals[CONNECTION_SECRETS_UPDATED], 0, connection, setting_name);
 }
 
 NMConnection *
