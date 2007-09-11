@@ -1,5 +1,20 @@
 2007-09-11  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-connection.c
+		- (nm_connection_update_secrets, need_secrets_check): move
+			802-11-wireless-security need_secrets checks to the setting object
+			itself, where it belongs
+
+	* libnm-util/nm-setting.c
+	  libnm-util/nm-setting.h
+		- (nm_setting_need_secrets): new function
+		- (setting_wireless_security_verify,
+		   nm_setting_wireless_security_new_from_hash): make 'key-mgmt' required
+		- (setting_wireless_security_need_secrets): mostly copy code over
+			from nm-connection.c
+
+2007-09-11  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting.c
 	  libnm-util/nm-setting.h
 		- (nm_setting_update_secrets): new function; add a virtual function that

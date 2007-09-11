@@ -18,6 +18,8 @@ typedef GHashTable *(*NMSettingToHashFn) (NMSetting *setting);
 typedef gboolean   (*NMSettingUpdateSecretsFn) (NMSetting *setting,
                                                 GHashTable *secrets);
 
+typedef GPtrArray *(*NMSettingNeedSecretsFn) (NMSetting *setting);
+
 typedef void       (*NMSettingDestroyFn) (NMSetting *setting);
 
 struct _NMSetting {
@@ -26,12 +28,14 @@ struct _NMSetting {
 	NMSettingVerifyFn verify_fn;
 	NMSettingToHashFn hash_fn;
 	NMSettingUpdateSecretsFn update_secrets_fn;
+	NMSettingNeedSecretsFn need_secrets_fn;
 	NMSettingDestroyFn destroy_fn;
 };
 
 gboolean    nm_settings_verify (GHashTable *all_settings);
 GHashTable *nm_setting_to_hash (NMSetting *setting);
 gboolean    nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets);
+GPtrArray * nm_setting_need_secrets (NMSetting *setting);
 void        nm_setting_destroy (NMSetting *setting);
 
 /* Default, built-in settings */

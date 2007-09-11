@@ -64,6 +64,16 @@ nm_setting_update_secrets (NMSetting *setting,
 	return TRUE;
 }
 
+GPtrArray *
+nm_setting_need_secrets (NMSetting *setting)
+{
+	g_return_val_if_fail (setting != NULL, NULL);
+
+	if (setting->need_secrets_fn)
+		return setting->need_secrets_fn (setting);
+	return NULL;
+}
+
 void
 nm_setting_destroy (NMSetting *setting)
 {
@@ -801,8 +811,8 @@ setting_wireless_security_verify (NMSetting *setting, GHashTable *all_settings)
 	const char *valid_phase1_peapver[] = { "0", "1", NULL };
 	const char *valid_phase2_autheap[] = { "md5", "mschapv2", "otp", "gtc", "tls", "sim", NULL };
 
-	if (self->key_mgmt && !string_in_list (self->key_mgmt, valid_key_mgmt)) {
-		g_warning ("Invalid key management");
+	if (!self->key_mgmt || !string_in_list (self->key_mgmt, valid_key_mgmt)) {
+		g_warning ("Missing or invalid key management");
 		return FALSE;
 	}
 
@@ -1080,6 +1090,63 @@ setting_wireless_security_update_secrets (NMSetting *setting,
 	return TRUE;
 }
 
+static GPtrArray *
+setting_wireless_security_need_secrets (NMSetting *setting)
+{
+	NMSettingWirelessSecurity *self = (NMSettingWirelessSecurity *) setting;
+	GPtrArray *secrets;
+
+	secrets = g_ptr_array_sized_new (4);
+	if (!secrets) {
+		g_warning ("Not enough memory to create required secrets array.");
+		return NULL;
+	}
+
+	g_assert (self->key_mgmt);
+
+	/* Static WEP */
+	if (strcmp (self->key_mgmt, "none") == 0) {
+		if (!self->wep_key0) {
+			g_ptr_array_add (secrets, "wep_key0");
+			return secrets;
+		}
+		if (self->wep_tx_keyidx == 1 && !self->wep_key1) {
+			g_ptr_array_add (secrets, "wep_key1");
+			return secrets;
+		}
+		if (self->wep_tx_keyidx == 2 && !self->wep_key2) {
+			g_ptr_array_add (secrets, "wep_key2");
+			return secrets;
+		}
+		if (self->wep_tx_keyidx == 3 && !self->wep_key3) {
+			g_ptr_array_add (secrets, "wep_key3");
+			return secrets;
+		}
+		goto no_secrets;
+	}
+
+	if (   (strcmp (self->key_mgmt, "wpa-none") == 0)
+	    || (strcmp (self->key_mgmt, "wpa-psk") == 0)) {
+		if (!self->psk) {
+			g_ptr_array_add (secrets, "psk");
+			return secrets;
+		}
+		goto no_secrets;
+	}
+
+	if (strcmp (self->key_mgmt, "wpa-eap") == 0) {
+		// FIXME: implement
+		goto no_secrets;
+	}
+
+	return secrets;
+
+no_secrets:
+	if (secrets)
+		g_ptr_array_free (secrets, TRUE);
+	return NULL;
+}
+
 NMSetting *
 nm_setting_wireless_security_new (void)
 {
@@ -1090,8 +1157,9 @@ nm_setting_wireless_security_new (void)
 	setting->name = g_strdup ("802-11-wireless-security");
 	setting->verify_fn = setting_wireless_security_verify;
 	setting->hash_fn = setting_wireless_security_hash;
-	setting->destroy_fn = setting_wireless_security_destroy;
 	setting->update_secrets_fn = setting_wireless_security_update_secrets;
+	setting->need_secrets_fn = setting_wireless_security_need_secrets;
+	setting->destroy_fn = setting_wireless_security_destroy;
 
 	return setting;
 }
@@ -1109,8 +1177,12 @@ nm_setting_wireless_security_new_from_hash (GHashTable *settings)
 	self = (NMSettingWirelessSecurity *) setting;
 
 	value = (GValue *) g_hash_table_lookup (settings, "key-mgmt");
-	if (value && G_VALUE_HOLDS_STRING (value))
+	if (value && G_VALUE_HOLDS_STRING (value)) {
 		self->key_mgmt = g_strdup (g_value_get_string (value));
+	} else {
+		g_warning ("Missing or invalid key-mgmt");
+		goto err;
+	}
 
 	value = (GValue *) g_hash_table_lookup (settings, "wep-tx-keyidx");
 	if (value && G_VALUE_HOLDS_UCHAR (value))
@@ -1203,6 +1275,10 @@ nm_setting_wireless_security_new_from_hash (GHashTable *settings)
 	setting_wireless_security_update_secrets (setting, settings);
 
 	return setting;
+
+err:
+	setting_wireless_security_destroy (setting);
+	return NULL;
 }
 
 /* PPP */

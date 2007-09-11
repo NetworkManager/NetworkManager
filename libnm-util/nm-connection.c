@@ -119,58 +119,6 @@ nm_connection_compare (NMConnection *connection, NMConnection *other)
 	return FALSE;
 }
 
-static GPtrArray *
-wireless_sec_need_secrets (NMSettingWirelessSecurity *sec)
-{
-	GPtrArray * secrets;
-
-	secrets = g_ptr_array_sized_new (4);
-	if (!secrets) {
-		g_warning ("Not enough memory to create required secrets array.");
-		return NULL;
-	}
-
-	/* Static WEP */
-	if (strcmp (sec->key_mgmt, "none") == 0) {
-		if (!sec->wep_key0) {
-			g_ptr_array_add (secrets, "wep_key0");
-			return secrets;
-		}
-		if (sec->wep_tx_keyidx == 1 && !sec->wep_key1) {
-			g_ptr_array_add (secrets, "wep_key1");
-			return secrets;
-		}
-		if (sec->wep_tx_keyidx == 2 && !sec->wep_key2) {
-			g_ptr_array_add (secrets, "wep_key2");
-			return secrets;
-		}
-		if (sec->wep_tx_keyidx == 3 && !sec->wep_key3) {
-			g_ptr_array_add (secrets, "wep_key3");
-			return secrets;
-		}
-		goto no_secrets;
-	}
-
-	if (   (strcmp (sec->key_mgmt, "wpa-none") == 0)
-	    || (strcmp (sec->key_mgmt, "wpa-psk") == 0)) {
-		if (!sec->psk) {
-			g_ptr_array_add (secrets, "psk");
-			return secrets;
-		}
-		goto no_secrets;
-	}
-
-	if (strcmp (sec->key_mgmt, "wpa-eap") == 0) {
-		// FIXME: implement
-		goto no_secrets;
-	}
-
-no_secrets:
-	if (secrets)
-		g_ptr_array_free (secrets, TRUE);
-	return NULL;
-}
-
 void
 nm_connection_update_secrets (NMConnection *connection,
                               const char *setting_name,
@@ -196,38 +144,44 @@ nm_connection_update_secrets (NMConnection *connection,
 	g_signal_emit (connection, signals[SECRETS_UPDATED], 0, setting_name);
 }
 
+typedef struct NeedSecretsInfo {
+	GPtrArray * secrets;
+	char * setting_name;
+} NeedSecretsInfo;
+
+static void
+need_secrets_check (gpointer key, gpointer data, gpointer user_data)
+{
+	NMSetting *setting = (NMSetting *) data;
+	NeedSecretsInfo * info = (NeedSecretsInfo *) user_data;
+
+	// FIXME: allow more than one setting to say it needs secrets
+	if (info->secrets)
+		return;
+
+	info->secrets = nm_setting_need_secrets (setting);
+	if (info->secrets)
+		info->setting_name = key;
+}
+
 const char *
 nm_connection_need_secrets (NMConnection *connection)
 {
+	NMConnectionPrivate *priv;
 	NMSettingConnection *s_connection;
+	NeedSecretsInfo info = { NULL, NULL };
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	s_connection = (NMSettingConnection *) nm_connection_get_setting (connection, "connection");
-	if (!s_connection)
-		return NULL;
+	priv = NM_CONNECTION_GET_PRIVATE (connection);
+	g_hash_table_foreach (priv->settings, need_secrets_check, &info);
 
-	/* Wireless */
-	if (strcmp (s_connection->devtype, "802-11-wireless") == 0) {
-		NMSettingWireless *s_wireless;
-		NMSettingWirelessSecurity *s_wireless_sec;
-		GPtrArray * secrets = NULL;
-
-		s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, "802-11-wireless");
-		if (!s_wireless || !s_wireless->security)
-			return NULL;
-
-		s_wireless_sec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, "802-11-wireless-security");
-		if (!s_wireless_sec)
-			return NULL;
-
-		secrets = wireless_sec_need_secrets (s_wireless_sec);
-		if (secrets) {
-			// FIXME: modify NeedSecrets message to include the actual secrets
-			// required rather than just requesting all secrets for the setting
-			g_ptr_array_free (secrets, TRUE);
-			return "802-11-wireless-security";
-		}
+	// FIXME: do something with requested secrets rather than asking for
+	// all of them.  Maybe make info.secrets a hash table mapping
+	// settings name :: [list of secrets key names].
+	if (info.secrets) {
+		g_ptr_array_free (info.secrets, TRUE);
+		return info.setting_name;
 	}
 
 	return NULL;
