@@ -33,7 +33,7 @@ guint32      nm_access_point_get_flags        (NMAccessPoint *ap);
 guint32      nm_access_point_get_wpa_flags    (NMAccessPoint *ap);
 guint32      nm_access_point_get_rsn_flags    (NMAccessPoint *ap);
 GByteArray * nm_access_point_get_ssid         (NMAccessPoint *ap);
-gdouble      nm_access_point_get_frequency    (NMAccessPoint *ap);
+guint32      nm_access_point_get_frequency    (NMAccessPoint *ap);
 char *       nm_access_point_get_hw_address   (NMAccessPoint *ap);
 int          nm_access_point_get_mode         (NMAccessPoint *ap);
 guint32      nm_access_point_get_rate         (NMAccessPoint *ap);

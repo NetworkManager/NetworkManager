@@ -133,12 +133,12 @@ nm_access_point_get_ssid (NMAccessPoint *ap)
 	return nm_object_get_byte_array_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "Ssid");
 }
 
-gdouble
+guint32
 nm_access_point_get_frequency (NMAccessPoint *ap)
 {
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), 0);
 
-	return nm_object_get_double_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "Frequency");
+	return nm_object_get_uint_property (NM_OBJECT (ap), NM_DBUS_INTERFACE_ACCESS_POINT, "Frequency");
 }
 
 char *

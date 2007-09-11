@@ -1,5 +1,12 @@
 2007-09-11  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/nm-access-point.c
+	  libnm-glib/nm-access-point.c
+		- (nm_access_point_get_frequency): now returns guint32 to match
+			property change on 2007-09-10
+
+2007-09-11  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 		- (nm_device_802_11_wireless_new): s/index/idx, stupid system header
 			somewhere defines 'index' and I missed this one when I fixed the
