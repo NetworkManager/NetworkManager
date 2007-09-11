@@ -156,8 +156,8 @@ constructor (GType type,
 
 	priv->iface = nm_netlink_index_to_iface (priv->index);
 	if (priv->iface == NULL) {
-		nm_warning ("(%d): Couldn't get interface name for device, ignoring.",
-		            nm_device_get_index (dev));
+		nm_warning ("(%u): Couldn't get interface name for device, ignoring.",
+		            priv->index);
 		goto error;
 	}
 
