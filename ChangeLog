@@ -1,5 +1,11 @@
 2007-09-11  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerPolicy.c
+		- (connection_added, connection_removed): trigger device change checks
+			on connection changes
+
+2007-09-11  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-activation-request.c
 		- (connection_secrets_updated_cb): fix c&p error in signal emission
 

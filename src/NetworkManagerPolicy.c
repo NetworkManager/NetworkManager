@@ -448,7 +448,9 @@ connection_added (NMManager *manager,
                   NMConnection *connection,
                   gpointer user_data)
 {
-	nm_info ("connection %p added", connection);
+	NMPolicy *policy = (NMPolicy *) user_data;
+
+	schedule_change_check (policy);
 }
 
 static void
@@ -456,7 +458,9 @@ connection_removed (NMManager *manager,
                     NMConnection *connection,
                     gpointer user_data)
 {
-	nm_info ("connection %p removed", connection);
+	NMPolicy *policy = (NMPolicy *) user_data;
+
+	schedule_change_check (policy);
 }
 
 NMPolicy *
