@@ -38,7 +38,6 @@
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerMain.h"
 #include "nm-device.h"
-#include "NetworkManagerAPList.h"
 #include "NetworkManagerPolicy.h"
 #include "nm-device-802-3-ethernet.h"
 #include "nm-device-802-11-wireless.h"
