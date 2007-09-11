@@ -1,5 +1,12 @@
 2007-09-11  Dan Williams  <dcbw@redhat.com>
 
+	* introspection/nm-device.xml
+	  libnm-glib/nm-device.c
+	  libnm-glib/nm-device.c
+		- Fix Activate call argument borkage; Activate takes 3 arguments
+
+2007-09-11  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/nm-access-point.c
 	  libnm-glib/nm-access-point.c
 		- (nm_access_point_get_frequency): now returns guint32 to match
