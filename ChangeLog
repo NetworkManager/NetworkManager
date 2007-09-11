@@ -1,5 +1,16 @@
 2007-09-11  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-manager.c
+		- (connection_get_settings_cb): emit connection-added signal
+		- (connection_removed_cb): uncomment bits for system settings service,
+			send connection-removed when appropriate
+		- (nm_manager_get_connection_secrets, get_secrets_cb): don't clobber
+			the stack by trying to g_object_set_data() on something that's
+			not a GObject; handle case where settings service returns
+			empty settings hash table
+
+2007-09-11  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerPolicy.c
 		- (connection_added, connection_removed): trigger device change checks
 			on connection changes

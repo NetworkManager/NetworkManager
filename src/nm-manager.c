@@ -295,6 +295,8 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 			                     g_strdup (path),
 			                     connection);
 		}			
+
+		g_signal_emit (manager, signals[CONNECTION_ADDED], 0, connection);
 	} else {
 		// FIXME: merge settings? or just replace?
 		nm_warning ("%s (#%d): implement merge settings", __func__, __LINE__);
@@ -318,8 +320,8 @@ connection_removed_cb (DBusGProxy *proxy, gpointer user_data)
 
 	if (strcmp (bus_name, NM_DBUS_SERVICE_USER_SETTINGS) == 0) {
 		hash = priv->user_connections;
-//	} else if (strcmp (bus_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS) == 0) {
-//		hash = priv->system_connections;
+	} else if (strcmp (bus_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS) == 0) {
+		hash = priv->system_connections;
 	}			
 
 	if (hash == NULL)
@@ -331,7 +333,10 @@ connection_removed_cb (DBusGProxy *proxy, gpointer user_data)
 		 * weak reference notify function placed on the connection when it
 		 * was created.
 		 */
+		g_object_ref (connection);
 		g_hash_table_remove (hash, path);
+		g_signal_emit (manager, signals[CONNECTION_REMOVED], 0, connection);
+		g_object_unref (connection);
 	}
 
 out:
@@ -956,19 +961,34 @@ nm_manager_update_connections (NMManager *manager,
 		nm_manager_connections_destroy (manager, type);
 }
 
+typedef struct GetSecretsInfo {
+	NMManager *manager;
+	NMConnection *connection;
+	char *setting_name;
+} GetSecretsInfo;
+
+static void
+free_get_secrets_info (gpointer data)
+{
+	GetSecretsInfo * info = (GetSecretsInfo *) data;
+
+	g_free (info->setting_name);
+	if (info->connection)
+		g_object_unref (info->connection);
+	g_slice_free (GetSecretsInfo, info);
+}
+
 static void
 get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 {
-	NMManager *manager = NM_MANAGER (user_data);
+	GetSecretsInfo *info = (GetSecretsInfo *) user_data;
 	GError *err = NULL;
 	GHashTable *secrets = NULL;
-	char *setting_name = NULL;
-	NMConnection *connection;
 
-	connection = g_object_get_data (G_OBJECT (call), "connection");
-	g_assert (connection);
-
-	setting_name = g_object_get_data (G_OBJECT (call), "setting-name");
+	g_return_if_fail (info != NULL);
+	g_return_if_fail (info->manager);
+	g_return_if_fail (info->connection);
+	g_return_if_fail (info->setting_name);
 
 	if (!dbus_g_proxy_end_call (proxy, call, &err,
 								dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE), &secrets,
@@ -978,57 +998,64 @@ get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 		// FIXME: do we need to propagate the error back up to the device?
 		// Otherwise device spins in the NEED_AUTH state until something
 		// kicks it or it gets a different activation
-		goto out;
+		return;
 	}
 
-	nm_connection_update_secrets (connection, setting_name, secrets);
-	g_hash_table_destroy (secrets);
+	if (g_hash_table_size (secrets) > 0) {
+		nm_connection_update_secrets (info->connection, info->setting_name, secrets);
+		// FIXME: some better way to handle invalid message?
+	} else {
+		nm_warning ("GetSecrets call returned but no secrets were found.");
+	}
 
-out:
-	g_object_unref (connection);
-	g_free (setting_name);
+	g_hash_table_destroy (secrets);
 }
 
 void
 nm_manager_get_connection_secrets (NMManager *manager,
                                    NMConnection *connection,
-                                   const char * setting_name)
+                                   const char *setting_name)
 {
 	DBusGProxy *proxy;
-	DBusGProxyCall *call;
-	char * dup_name;
+	GetSecretsInfo *info = NULL;
 
 	g_return_if_fail (NM_IS_MANAGER (manager));
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 
-	dup_name = g_strdup (setting_name);
-	if (!dup_name) {
-		nm_warning ("Not enough memory to get secrets");
-		return;
-	}
-
 	proxy = g_object_get_data (G_OBJECT (connection), "dbus-proxy");
-	if (!proxy) {
+	if (!DBUS_IS_G_PROXY (proxy)) {
 		nm_warning ("Couldn't get dbus proxy for connection.");
 		goto error;
 	}
 
-	call = dbus_g_proxy_begin_call (proxy, "GetSecrets",
-	                                get_secrets_cb,
-	                                manager,
-	                                NULL,
-	                                G_TYPE_STRING, setting_name,
-	                                G_TYPE_INVALID);
-	if (!call) {
+	info = g_slice_new0 (GetSecretsInfo);
+	if (!info) {
+		nm_warning ("Not enough memory to get secrets");
 		goto error;
 	}
 
-	g_object_ref (connection);
-	g_object_set_data (G_OBJECT (call), "connection", connection);
-	g_object_set_data (G_OBJECT (call), "setting-name", dup_name);
+	info->setting_name = g_strdup (setting_name);
+	if (!info->setting_name) {
+		nm_warning ("Not enough memory to get secrets");
+		goto error;
+	}
+
+	info->connection = g_object_ref (connection);
+	info->manager = manager;
+
+	if (!dbus_g_proxy_begin_call (proxy, "GetSecrets",
+	                              get_secrets_cb,
+	                              info,
+	                              free_get_secrets_info,
+	                              G_TYPE_STRING, setting_name,
+	                              G_TYPE_INVALID)) {
+		nm_warning ("Could not call GetSecrets");
+		goto error;
+	}
 	return;
 
 error:
-	g_free (dup_name);
+	if (info)
+		free_get_secrets_info (info);
 }
 
