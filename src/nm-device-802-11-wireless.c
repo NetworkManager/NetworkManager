@@ -2457,7 +2457,7 @@ real_connection_secrets_updated (NMDevice *dev,
 	req = nm_device_get_act_request (dev);
 	g_assert (req);
 
-	g_return_if_fail (nm_act_request_get_connection (req) != connection);
+	g_return_if_fail (nm_act_request_get_connection (req) == connection);
 
 	nm_device_activate_schedule_stage1_device_prepare (dev);
 }

@@ -1,5 +1,10 @@
 2007-09-11  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-11-wireless.c
+		- (real_connection_secrets_updated): fix erroneous check
+
+2007-09-11  Dan Williams  <dcbw@redhat.com>
+
 	* introspection/nm-device.xml
 	  libnm-glib/nm-device.c
 	  libnm-glib/nm-device.c
