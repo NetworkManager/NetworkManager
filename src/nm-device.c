@@ -949,7 +949,7 @@ clear_act_request (NMDevice *self)
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (priv->act_request)
+	if (!priv->act_request)
 		return;
 
 	g_signal_handler_disconnect (priv->act_request,
