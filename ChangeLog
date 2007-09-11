@@ -1,3 +1,49 @@
+2007-09-11  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-setting.c
+	  libnm-util/nm-setting.h
+		- (nm_setting_update_secrets): new function; add a virtual function that
+			subclasses can implement to update their secrets
+		- (setting_wireless_security_update_secrets): implement that function
+			for the 802-11-wireless-security subclass
+
+	* libnm-util/nm-connection.c
+	  libnm-util/nm-connection.h
+		- (nm_connection_update_secrets): update secrets for a Setting and
+			emit a signal on success
+
+	* src/nm-manager.c
+	  src/nm-manager.h
+	  src/nm-marshal.list
+		- (connection_get_settings_cb): enable system settings bits
+		- (nm_manager_get_connection_secrets, get_secrets_cb): add function
+			to request secrets from the settings dbus service and to
+			push those secrets to the NMConnection itself
+
+	* src/nm-activation-request.c
+	  src/nm-activation-request.h
+		- Attach to the 'secrets-updated' signal of the NMConnection that's
+			currently being activated, and proxy that signal to other listeners.
+			Goes through the activation request because the activation request
+			is the thing that manages the lifetime of the NMConnection that's
+			being activated.
+
+	* src/nm-device-802-11-wireless.c
+		- (real_connection_secrets_updated): implement the connection secrets
+			updated notification and restart activation when secrets are
+			received
+		- (real_act_stage2_config): request secrets from the settings dbus
+			service if secrets are needed
+
+	* src/nm-device.c
+	  src/nm-device.h
+		- (clear_act_request, nm_device_activation_cancel,
+		   nm_device_deactivate_quickly, nm_device_dispose): consolidate places
+			where the activation request is cleared
+		- (nm_device_activate, connection_secrets_updated_cb): attach to the
+			updated secrets signal of activation request and add a function
+			that subclasses can override to handle it easily
+
 2007-09-11  Tambet Ingo  <tambet@gmail.com>
 
 	* src/backends/NetworkManagerSuSE.c: Fix a build issue caused by the

@@ -52,6 +52,18 @@ nm_setting_to_hash (NMSetting *setting)
 	return setting->hash_fn (setting);
 }
 
+gboolean
+nm_setting_update_secrets (NMSetting *setting,
+                           GHashTable *secrets)
+{
+	g_return_val_if_fail (setting != NULL, FALSE);
+	g_return_val_if_fail (secrets != NULL, FALSE);
+
+	if (setting->update_secrets_fn)
+		return setting->update_secrets_fn (setting, secrets);
+	return TRUE;
+}
+
 void
 nm_setting_destroy (NMSetting *setting)
 {
@@ -995,6 +1007,79 @@ setting_wireless_security_destroy (NMSetting *setting)
 	g_slice_free (NMSettingWirelessSecurity, self);
 }
 
+static gboolean
+setting_wireless_security_update_secrets (NMSetting *setting,
+                                          GHashTable *secrets)
+{
+	NMSettingWirelessSecurity *self = (NMSettingWirelessSecurity *) setting;
+	GValue *value;
+
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (secrets != NULL, FALSE);
+
+	value = (GValue *) g_hash_table_lookup (secrets, "wep_key0");
+	if (value && G_VALUE_HOLDS_STRING (value)) {
+		g_free (self->wep_key0);
+		self->wep_key0 = g_strdup (g_value_get_string (value));
+	}
+
+	value = (GValue *) g_hash_table_lookup (secrets, "wep_key1");
+	if (value && G_VALUE_HOLDS_STRING (value)) {
+		g_free (self->wep_key1);
+		self->wep_key1 = g_strdup (g_value_get_string (value));
+	}
+
+	value = (GValue *) g_hash_table_lookup (secrets, "wep_key2");
+	if (value && G_VALUE_HOLDS_STRING (value)) {
+		g_free (self->wep_key2);
+		self->wep_key2 = g_strdup (g_value_get_string (value));
+	}
+
+	value = (GValue *) g_hash_table_lookup (secrets, "wep_key3");
+	if (value && G_VALUE_HOLDS_STRING (value)) {
+		g_free (self->wep_key3);
+		self->wep_key3 = g_strdup (g_value_get_string (value));
+	}
+
+	value = (GValue *) g_hash_table_lookup (secrets, "psk");
+	if (value && G_VALUE_HOLDS_STRING (value)) {
+		g_free (self->psk);
+		self->psk = g_strdup (g_value_get_string (value));
+	}
+
+	value = (GValue *) g_hash_table_lookup (secrets, "password");
+	if (value && G_VALUE_HOLDS_STRING (value)) {
+		g_free (self->password);
+		self->password = g_strdup (g_value_get_string (value));
+	}
+
+	value = (GValue *) g_hash_table_lookup (secrets, "pin");
+	if (value && G_VALUE_HOLDS_STRING (value)) {
+		g_free (self->pin);
+		self->pin = g_strdup (g_value_get_string (value));
+	}
+
+	value = (GValue *) g_hash_table_lookup (secrets, "eappsk");
+	if (value && G_VALUE_HOLDS_STRING (value)) {
+		g_free (self->eappsk);
+		self->eappsk = g_strdup (g_value_get_string (value));
+	}
+
+	value = (GValue *) g_hash_table_lookup (secrets, "private-key-passwd");
+	if (value && G_VALUE_HOLDS_STRING (value)) {
+		g_free (self->private_key_passwd);
+		self->private_key_passwd = g_strdup (g_value_get_string (value));
+	}
+
+	value = (GValue *) g_hash_table_lookup (secrets, "phase2-private-key-passwd");
+	if (value && G_VALUE_HOLDS_STRING (value)) {
+		g_free (self->phase2_private_key_passwd);
+		self->phase2_private_key_passwd = g_strdup (g_value_get_string (value));
+	}
+
+	return TRUE;
+}
+
 NMSetting *
 nm_setting_wireless_security_new (void)
 {
@@ -1006,6 +1091,7 @@ nm_setting_wireless_security_new (void)
 	setting->verify_fn = setting_wireless_security_verify;
 	setting->hash_fn = setting_wireless_security_hash;
 	setting->destroy_fn = setting_wireless_security_destroy;
+	setting->update_secrets_fn = setting_wireless_security_update_secrets;
 
 	return setting;
 }
@@ -1114,45 +1200,7 @@ nm_setting_wireless_security_new_from_hash (GHashTable *settings)
 	if (value && G_VALUE_HOLDS_STRING (value))
 		self->nai = g_strdup (g_value_get_string (value));
 
-	value = (GValue *) g_hash_table_lookup (settings, "wep_key0");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->wep_key0 = g_strdup (g_value_get_string (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "wep_key1");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->wep_key1 = g_strdup (g_value_get_string (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "wep_key2");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->wep_key2 = g_strdup (g_value_get_string (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "wep_key3");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->wep_key3 = g_strdup (g_value_get_string (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "psk");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->psk = g_strdup (g_value_get_string (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "password");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->password = g_strdup (g_value_get_string (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "pin");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->pin = g_strdup (g_value_get_string (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "eappsk");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->eappsk = g_strdup (g_value_get_string (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "private-key-passwd");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->private_key_passwd = g_strdup (g_value_get_string (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "phase2-private-key-passwd");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->phase2_private_key_passwd = g_strdup (g_value_get_string (value));
+	setting_wireless_security_update_secrets (setting, settings);
 
 	return setting;
 }

@@ -93,6 +93,10 @@ struct _NMDeviceClass
 	NMConnection * (* get_best_connection) (NMDevice *self,
 	                                        char **specific_object);
 
+	void        (* connection_secrets_updated) (NMDevice *self,
+	                                            NMConnection *connection,
+	                                            const char *setting_name);
+
 	gboolean    (* check_connection) (NMDevice *self, NMConnection *connection);
 
 	NMActStageReturn	(* act_stage1_prepare)	(NMDevice *self);

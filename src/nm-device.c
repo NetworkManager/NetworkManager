@@ -70,6 +70,7 @@ struct _NMDevicePrivate
 
 	NMActRequest *		act_request;
 	guint           act_source_id;
+	gulong          secrets_updated_id;
 
 	/* IP configuration info */
 	void *			system_config_data;	/* Distro-specific config data (parsed config file, etc) */
@@ -940,6 +941,26 @@ nm_device_activate_schedule_stage5_ip_config_commit (NMDevice *self)
 
 
 static void
+clear_act_request (NMDevice *self)
+{
+	NMDevicePrivate * priv;
+
+	g_return_if_fail (self != NULL);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->act_request)
+		return;
+
+	g_signal_handler_disconnect (priv->act_request,
+	                             priv->secrets_updated_id);
+	priv->secrets_updated_id = 0;
+
+	g_object_unref (priv->act_request);
+	priv->act_request = NULL;
+}
+
+static void
 real_activation_cancel_handler (NMDevice *self)
 {
 	if (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG  &&
@@ -979,8 +1000,7 @@ nm_device_activation_cancel (NMDevice *self)
 	if (klass->activation_cancel_handler)
 		klass->activation_cancel_handler (self);
 
-	g_object_unref (self->priv->act_request);
-	self->priv->act_request = NULL;
+	clear_act_request (self);
 
 	nm_info ("Activation (%s): cancelled.", nm_device_get_iface (self));
 }
@@ -1006,17 +1026,16 @@ nm_device_deactivate_quickly (NMDevice *self)
 	if (nm_device_is_activating (self))
 		nm_device_activation_cancel (self);
 
+	/* Stop any ongoing DHCP transaction on this device */
+	if (nm_device_get_act_request (self) && nm_device_get_use_dhcp (self)) {
+		nm_dhcp_manager_cancel_transaction (NM_DEVICE_GET_PRIVATE (self)->dhcp_manager,
+											nm_device_get_iface (self));		
+	}
+
 	/* Tear down an existing activation request, which may not have happened
 	 * in nm_device_activation_cancel() above, for various reasons.
 	 */
-	if ((act_request = nm_device_get_act_request (self)) &&
-		nm_device_get_use_dhcp (self)) {
-
-		nm_dhcp_manager_cancel_transaction (NM_DEVICE_GET_PRIVATE (self)->dhcp_manager,
-											nm_device_get_iface (self));
-		g_object_unref (act_request);
-		self->priv->act_request = NULL;
-	}
+	clear_act_request (self);
 
 	/* Call device type-specific deactivation */
 	if (NM_DEVICE_GET_CLASS (self)->deactivate_quickly)
@@ -1065,6 +1084,18 @@ nm_device_deactivate (NMDeviceInterface *device)
 }
 
 static void
+connection_secrets_updated_cb (NMActRequest *req,
+                               NMConnection *connection,
+                               const char *setting_name,
+                               gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+
+	if (NM_DEVICE_GET_CLASS (self)->connection_secrets_updated)
+		NM_DEVICE_GET_CLASS (self)->connection_secrets_updated (self, connection, setting_name);
+}
+
+static void
 nm_device_activate (NMDeviceInterface *device,
 					NMConnection *connection,
 					const char *specific_object,
@@ -1072,6 +1103,7 @@ nm_device_activate (NMDeviceInterface *device,
 {
 	NMDevice *self = NM_DEVICE (device);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gulong id;
 
 	if (!NM_DEVICE_GET_CLASS (self)->check_connection (self, connection))
 		/* connection is invalid */
@@ -1091,6 +1123,12 @@ nm_device_activate (NMDeviceInterface *device,
 
 	nm_info ("Activating device %s", nm_device_get_iface (self));
 	priv->act_request = nm_act_request_new (connection, specific_object, user_requested);
+	id = g_signal_connect (priv->act_request,
+	                       "connection-secrets-updated",
+	                       G_CALLBACK (connection_secrets_updated_cb),
+	                       self);
+	priv->secrets_updated_id = id;
+
 	nm_device_activate_schedule_stage1_device_prepare (self);
 }
 
@@ -1439,11 +1477,7 @@ nm_device_dispose (GObject *object)
 	nm_system_device_free_system_config (self, self->priv->system_config_data);
 	nm_device_set_ip4_config (self, NULL);
 
-	if (self->priv->act_request)
-	{
-		g_object_unref (self->priv->act_request);
-		self->priv->act_request = NULL;
-	}
+	clear_act_request (self);
 
 	if (self->priv->act_source_id) {
 		g_source_remove (self->priv->act_source_id);

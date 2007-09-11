@@ -11,6 +11,14 @@ typedef struct {
 
 G_DEFINE_TYPE (NMConnection, nm_connection, G_TYPE_OBJECT)
 
+enum {
+	SECRETS_UPDATED,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
+
 static GHashTable *registered_setting_creators = NULL;
 
 static void
@@ -163,8 +171,33 @@ no_secrets:
 	return NULL;
 }
 
+void
+nm_connection_update_secrets (NMConnection *connection,
+                              const char *setting_name,
+                              GHashTable *secrets)
+{
+	NMSetting *setting;
+
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+	g_return_if_fail (setting_name != NULL);
+	g_return_if_fail (secrets != NULL);
+
+	setting = nm_connection_get_setting (connection, setting_name);
+	if (!setting) {
+		g_warning ("Unhandled settings object for secrets update.");
+		return;
+	}
+
+	if (!nm_setting_update_secrets (setting, secrets)) {
+		g_warning ("Error updating secrets for setting '%s'", setting_name);
+		return;
+	}
+
+	g_signal_emit (connection, signals[SECRETS_UPDATED], 0, setting_name);
+}
+
 const char *
-nm_connection_need_secrets  (NMConnection *connection)
+nm_connection_need_secrets (NMConnection *connection)
 {
 	NMSettingConnection *s_connection;
 
@@ -436,5 +469,16 @@ nm_connection_class_init (NMConnectionClass *klass)
 
 	/* virtual methods */
 	object_class->finalize = finalize;
+
+	/* Signals */
+	signals[SECRETS_UPDATED] =
+		g_signal_new ("secrets-updated",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMConnectionClass, secrets_updated),
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__STRING,
+					  G_TYPE_NONE, 1,
+					  G_TYPE_STRING);
 }
 

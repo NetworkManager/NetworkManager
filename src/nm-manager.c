@@ -290,10 +290,10 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 			g_hash_table_insert (priv->user_connections,
 			                     g_strdup (path),
 			                     connection);
-//		} else if (strcmp (bus_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS) == 0) {
-//			g_hash_table_insert (priv->system_connections,
-//			                     g_strdup (path),
-//			                     connection);
+		} else if (strcmp (bus_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS) == 0) {
+			g_hash_table_insert (priv->system_connections,
+			                     g_strdup (path),
+			                     connection);
 		}			
 	} else {
 		// FIXME: merge settings? or just replace?
@@ -954,5 +954,81 @@ nm_manager_update_connections (NMManager *manager,
 
 	if (reset)
 		nm_manager_connections_destroy (manager, type);
+}
+
+static void
+get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
+{
+	NMManager *manager = NM_MANAGER (user_data);
+	GError *err = NULL;
+	GHashTable *secrets = NULL;
+	char *setting_name = NULL;
+	NMConnection *connection;
+
+	connection = g_object_get_data (G_OBJECT (call), "connection");
+	g_assert (connection);
+
+	setting_name = g_object_get_data (G_OBJECT (call), "setting-name");
+
+	if (!dbus_g_proxy_end_call (proxy, call, &err,
+								dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE), &secrets,
+								G_TYPE_INVALID)) {
+		nm_warning ("Couldn't get connection secrets: %s.", err->message);
+		g_error_free (err);
+		// FIXME: do we need to propagate the error back up to the device?
+		// Otherwise device spins in the NEED_AUTH state until something
+		// kicks it or it gets a different activation
+		goto out;
+	}
+
+	nm_connection_update_secrets (connection, setting_name, secrets);
+	g_hash_table_destroy (secrets);
+
+out:
+	g_object_unref (connection);
+	g_free (setting_name);
+}
+
+void
+nm_manager_get_connection_secrets (NMManager *manager,
+                                   NMConnection *connection,
+                                   const char * setting_name)
+{
+	DBusGProxy *proxy;
+	DBusGProxyCall *call;
+	char * dup_name;
+
+	g_return_if_fail (NM_IS_MANAGER (manager));
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+
+	dup_name = g_strdup (setting_name);
+	if (!dup_name) {
+		nm_warning ("Not enough memory to get secrets");
+		return;
+	}
+
+	proxy = g_object_get_data (G_OBJECT (connection), "dbus-proxy");
+	if (!proxy) {
+		nm_warning ("Couldn't get dbus proxy for connection.");
+		goto error;
+	}
+
+	call = dbus_g_proxy_begin_call (proxy, "GetSecrets",
+	                                get_secrets_cb,
+	                                manager,
+	                                NULL,
+	                                G_TYPE_STRING, setting_name,
+	                                G_TYPE_INVALID);
+	if (!call) {
+		goto error;
+	}
+
+	g_object_ref (connection);
+	g_object_set_data (G_OBJECT (call), "connection", connection);
+	g_object_set_data (G_OBJECT (call), "setting-name", dup_name);
+	return;
+
+error:
+	g_free (dup_name);
 }
 

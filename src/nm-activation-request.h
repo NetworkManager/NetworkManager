@@ -39,6 +39,11 @@ typedef struct {
 
 typedef struct {
 	GObjectClass parent;
+
+	/* Signals */
+	void (*connection_secrets_updated) (NMActRequest *req,
+	                                    NMConnection *connection,
+	                                    const char * setting);
 } NMActRequestClass;
 
 GType nm_act_request_get_type (void);

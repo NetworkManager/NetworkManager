@@ -69,4 +69,8 @@ NMConnection * nm_manager_get_connection_by_object_path (NMManager *manager,
                                                          NMConnectionType type,
                                                          const char *path);
 
+void nm_manager_get_connection_secrets (NMManager *manager,
+                                        NMConnection *connection,
+                                        const char * setting_name);
+
 #endif /* NM_MANAGER_H */

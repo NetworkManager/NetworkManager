@@ -2438,6 +2438,25 @@ real_act_stage1_prepare (NMDevice *dev)
 }
 
 
+static void
+real_connection_secrets_updated (NMDevice *dev,
+                                 NMConnection *connection,
+                                 const char *setting_name)
+{
+	NMDevice80211Wireless * self = NM_DEVICE_802_11_WIRELESS (dev);
+	NMActRequest *req;
+
+	if (nm_device_get_state (dev) != NM_DEVICE_STATE_NEED_AUTH)
+		return;
+
+	req = nm_device_get_act_request (dev);
+	g_assert (req);
+
+	g_return_if_fail (nm_act_request_get_connection (req) != connection);
+
+	nm_device_activate_schedule_stage1_device_prepare (dev);
+}
+
 static NMActStageReturn
 real_act_stage2_config (NMDevice *dev)
 {
@@ -2449,6 +2468,7 @@ real_act_stage2_config (NMDevice *dev)
 	NMActRequest *          req;
 	NMConnection *          connection;
 	NMSettingConnection *	s_connection;
+	const char *			setting_name;
 
 	remove_supplicant_timeouts (self);
 
@@ -2462,13 +2482,16 @@ real_act_stage2_config (NMDevice *dev)
 	g_assert (s_connection);
 
 	/* If we need secrets, get them */
-	if (nm_connection_need_secrets (connection)) {
+	setting_name = nm_connection_need_secrets (connection);
+	if (setting_name) {
+		NMManager * manager = nm_manager_get ();
+
 		nm_info ("Activation (%s/wireless): access point '%s' has security,"
 		         " but secrets are required.",
 		         iface, s_connection->name);
 
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
-		// FIXME: get secrets from info-daemon
+		nm_manager_get_connection_secrets (manager, connection, setting_name);
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	} else {
 		nm_info ("Activation (%s/wireless): connection '%s' has security"
@@ -2797,6 +2820,7 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 	parent_class->set_hw_address = real_set_hw_address;
 	parent_class->check_connection = real_check_connection;
 	parent_class->get_best_connection = real_get_best_connection;
+	parent_class->connection_secrets_updated = real_connection_secrets_updated;
 
 	parent_class->act_stage1_prepare = real_act_stage1_prepare;
 	parent_class->act_stage2_config = real_act_stage2_config;

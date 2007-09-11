@@ -20,6 +20,9 @@ typedef struct {
 
 typedef struct {
 	GObjectClass parent;
+
+	/* Signals */
+	void (*secrets_updated) (NMConnection *connection, const char * setting);
 } NMConnectionClass;
 
 GType nm_connection_get_type (void);
@@ -36,6 +39,10 @@ gboolean      nm_connection_compare       (NMConnection *connection,
 										   NMConnection *other);
 
 const char *  nm_connection_need_secrets  (NMConnection *connection);
+
+void          nm_connection_update_secrets (NMConnection *connection,
+                                            const char *setting_name,
+                                            GHashTable *secrets);
 
 GHashTable   *nm_connection_to_hash       (NMConnection *connection);
 void          nm_connection_dump          (NMConnection *connection);

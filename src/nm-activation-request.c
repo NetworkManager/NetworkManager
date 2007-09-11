@@ -21,15 +21,31 @@
 
 
 #include "nm-activation-request.h"
+#include "nm-marshal.h"
 
 G_DEFINE_TYPE (NMActRequest, nm_act_request, G_TYPE_OBJECT)
 
 #define NM_ACT_REQUEST_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_ACT_REQUEST, NMActRequestPrivate))
 
+enum {
+	CONNECTION_SECRETS_UPDATED,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
+
+
+static void connection_secrets_updated_cb (NMConnection *connection,
+                                           const char *setting_name,
+                                           NMActRequest *self);
+
 typedef struct {
 	NMConnection *connection;
 	char *specific_object;
 	gboolean user_requested;
+
+	gulong secrets_updated_id;
 } NMActRequestPrivate;
 
 static void
@@ -42,6 +58,8 @@ finalize (GObject *object)
 {
 	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (object);
 
+	g_signal_handler_disconnect (priv->connection,
+	                             priv->secrets_updated_id);
 	g_object_unref (priv->connection);
 
 	g_free (priv->specific_object);
@@ -57,6 +75,17 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 	g_type_class_add_private (req_class, sizeof (NMActRequestPrivate));
 
 	object_class->finalize = finalize;
+
+	/* Signals */
+	signals[CONNECTION_SECRETS_UPDATED] =
+		g_signal_new ("connection-secrets-updated",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMConnectionClass, secrets_updated),
+					  NULL, NULL,
+					  nm_marshal_VOID__OBJECT_STRING,
+					  G_TYPE_NONE, 2,
+					  G_TYPE_OBJECT, G_TYPE_STRING);
 }
 
 NMActRequest *
@@ -66,6 +95,7 @@ nm_act_request_new (NMConnection *connection,
 {
 	GObject *obj;
 	NMActRequestPrivate *priv;
+	gulong id;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 
@@ -80,7 +110,24 @@ nm_act_request_new (NMConnection *connection,
 	if (specific_object)
 		priv->specific_object = g_strdup (specific_object);
 
+	id = g_signal_connect (priv->connection,
+	                       "secrets-updated",
+	                       G_CALLBACK (connection_secrets_updated_cb),
+	                       NM_ACT_REQUEST (obj));
+	priv->secrets_updated_id = id;
+
 	return NM_ACT_REQUEST (obj);
+}
+
+static void
+connection_secrets_updated_cb (NMConnection *connection,
+                               const char *setting_name,
+                               NMActRequest *self)
+{
+	g_return_if_fail (setting_name != NULL);
+	g_return_if_fail (self != NULL);
+
+	g_signal_emit (connection, signals[CONNECTION_SECRETS_UPDATED], 0, connection, setting_name);
 }
 
 NMConnection *
