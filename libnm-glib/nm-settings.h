@@ -3,6 +3,7 @@
 #define NM_SETTINGS_H 1
 
 #include <glib-object.h>
+#include <dbus/dbus-glib.h>
 
 G_BEGIN_DECLS
 

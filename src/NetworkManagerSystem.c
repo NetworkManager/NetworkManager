@@ -43,6 +43,7 @@
 #include <pthread.h>
 #include "NetworkManagerSystem.h"
 #include "nm-device.h"
+#include "nm-named-manager.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-netlink.h"
@@ -310,17 +311,17 @@ out:
  *
  */
 gboolean
-nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named,
-                                          NMDevice *active_device,
+nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
                                           const char *iface,
                                           NMIP4Config *config,
-                                          char **routes,
-                                          int num_routes)
+                                          char **routes)
 {
 	NMIP4Config *		ad_config = NULL;
 	struct nl_handle *	nlh = NULL;
 	struct rtnl_addr *	addr = NULL;
 	struct rtnl_link *	request = NULL;
+	int num_routes;
+	NMNamedManager *named_mgr;
 
 	g_return_val_if_fail (config != NULL, FALSE);
 
@@ -370,7 +371,10 @@ nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named,
 
 		sleep (1);
 
+		num_routes = g_strv_length (routes);
 		nm_system_device_flush_routes_with_iface (iface);
+
+
 		if (num_routes <= 0)
 		{
 			nm_system_delete_default_route ();
@@ -400,7 +404,9 @@ nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named,
 		}
 	}
 
-	nm_named_manager_add_ip4_config (named, config);
+	named_mgr = nm_named_manager_get ();
+	nm_named_manager_add_ip4_config (named_mgr, config);
+	g_object_unref (named_mgr);
 
 	return TRUE;
 }
@@ -412,13 +418,16 @@ nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named,
  * Unset an IPv4 configuration of a VPN device from an NMIP4Config object.
  *
  */
-gboolean nm_system_vpn_device_unset_from_ip4_config (NMNamedManager *named, NMDevice *active_device, const char *iface, NMIP4Config *config)
+gboolean nm_system_vpn_device_unset_from_ip4_config (NMDevice *active_device, const char *iface, NMIP4Config *config)
 {
-	g_return_val_if_fail (named != NULL, FALSE);
+	NMNamedManager *named_mgr;
+
 	g_return_val_if_fail (active_device != NULL, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
 
-	nm_named_manager_remove_ip4_config (named, config);
+	named_mgr = nm_named_manager_get ();
+	nm_named_manager_remove_ip4_config (named_mgr, config);
+	g_object_unref (named_mgr);
 
 	return TRUE;
 }

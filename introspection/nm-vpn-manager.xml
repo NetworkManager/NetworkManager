@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/">
+  <interface name="org.freedesktop.NetworkManager.VPN.Manager">
+    <method name="Connect">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_manager_connect"/>
+      <arg name="type" type="s" direction="in"/>
+      <arg name="name" type="s" direction="in"/>
+      <arg name="properties" type="a{sv}" direction="in"/>
+      <arg name="device" type="o" direction="in"/>
+      <arg name="routes" type="as" direction="in"/>
+      <arg name="connection" type="o" direction="out"/>
+    </method>
+
+    <method name="ListConnections">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_manager_get_connections"/>
+      <arg name="connections" type="ao" direction="out"/>
+    </method>
+
+  </interface>
+</node>
+

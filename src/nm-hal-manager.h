@@ -2,7 +2,6 @@
 #define NM_HAL_MANAGER_H
 
 #include "nm-manager.h"
-#include "NetworkManagerMain.h"
 
 typedef struct _NMHalManager NMHalManager;
 

@@ -6,7 +6,6 @@ INCLUDES = -I${top_srcdir}                   \
            -I${top_srcdir}/src/vpn-manager   \
            -I${top_srcdir}/src/dhcp-manager  \
            -I${top_srcdir}/src/supplicant-manager  \
-           -I${top_srcdir}/utils			\
            -I${top_srcdir}/libnm-util
 
 sbin_PROGRAMS = NetworkManager
@@ -35,7 +34,6 @@ NetworkManager_SOURCES =				\
 		nm-ip4-config.c			\
 		nm-ip4-config.h			\
 		NetworkManager.c			\
-		NetworkManagerMain.h		\
 		NetworkManagerPolicy.c		\
 		NetworkManagerPolicy.h		\
 		NetworkManagerUtils.c		\
@@ -129,7 +127,6 @@ NetworkManager_LDADD = 							\
 			$(HAL_LIBS)						\
 			$(IWLIB)							\
 			$(LIBNL_LIBS)						\
-			$(top_builddir)/utils/libnmutils.la	\
 			./named-manager/libnamed-manager.la	\
 			./vpn-manager/libvpn-manager.la		\
 			./dhcp-manager/libdhcp-manager.la		\

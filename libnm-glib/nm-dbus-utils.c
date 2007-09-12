@@ -1,4 +1,4 @@
-#include "nm-utils.h"
+#include "nm-dbus-utils.h"
 
 char *
 nm_dbus_get_string_property (DBusGProxy *proxy,

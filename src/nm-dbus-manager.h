@@ -52,7 +52,6 @@ typedef struct {
 	                                 DBusConnection *connection);
 
 	void (*name_owner_changed)      (NMDBusManager *mgr,
-	                                 DBusConnection *connection,
 	                                 const char *name,
 	                                 const char *old_owner,
 	                                 const char *new_owner);

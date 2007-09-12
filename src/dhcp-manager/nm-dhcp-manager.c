@@ -289,30 +289,6 @@ string_to_state (const char *state)
 }
 
 static char *
-garray_to_string (GArray *array)
-{
-	GString *str;
-	int i;
-	char c;
-
-	str = g_string_sized_new (array->len + 1);
-	if (str == NULL)
-		return NULL;
-
-	for (i = 0; i < array->len; i++) {
-		c = array->data[i];
-
-		/* Convert NULLs to spaces to increase the readability. */
-		if (c == '\0')
-			c = ' ';
-		str = g_string_append_c (str, c);
-	}
-	str = g_string_append_c (str, '\0');
-
-	return g_string_free (str, FALSE);
-}
-
-static char *
 get_option (GHashTable * hash,
             gpointer key)
 {
@@ -329,7 +305,7 @@ get_option (GHashTable * hash,
 		return NULL;
 	}
 
-	return garray_to_string ((GArray *) g_value_get_boxed (value));
+	return nm_utils_garray_to_string ((GArray *) g_value_get_boxed (value));
 }
 
 static void
@@ -352,7 +328,7 @@ copy_option (gpointer key,
 		goto error;
 	}
 
-	dup_value = garray_to_string ((GArray *) g_value_get_boxed (value));
+	dup_value = nm_utils_garray_to_string ((GArray *) g_value_get_boxed (value));
 	if (!dup_value)
 		goto error;
 

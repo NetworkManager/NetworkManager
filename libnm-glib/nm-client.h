@@ -6,10 +6,8 @@
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
 #include <NetworkManager.h>
-#include <NetworkManagerVPN.h>
 #include "nm-object.h"
 #include "nm-device.h"
-#include "nm-vpn-connection.h"
 
 G_BEGIN_DECLS
 
@@ -32,10 +30,6 @@ typedef struct {
 	void (*device_added) (NMClient *client, NMDevice *device);
 	void (*device_removed) (NMClient *client, NMDevice *device);
 	void (*state_change) (NMClient *client, NMState state);
-
-	void (*vpn_connection_added) (NMClient *client, NMVPNConnection *connection);
-	void (*vpn_connection_removed) (NMClient *client, NMVPNConnection *connection);
-	void (*vpn_state_change) (NMClient *client, NMVPNConnectionState state);
 } NMClientClass;
 
 GType nm_client_get_type (void);
@@ -52,17 +46,6 @@ gboolean  nm_client_wireless_get_enabled (NMClient *client);
 void      nm_client_wireless_set_enabled (NMClient *client, gboolean enabled);
 NMState   nm_client_get_state            (NMClient *client);
 void      nm_client_sleep                (NMClient *client, gboolean sleep);
-
-/* VPN */
-
-GSList   *nm_client_get_vpn_connections  (NMClient *client);
-NMVPNConnection *nm_client_get_vpn_connection_by_name (NMClient *client,
-													   const char *name);
-
-void      nm_client_remove_vpn_connection (NMClient *client,
-										   NMVPNConnection *connection);
-
-NMVPNConnectionState nm_client_get_vpn_state    (NMClient *client);
 
 G_END_DECLS
 

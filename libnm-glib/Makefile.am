@@ -1,4 +1,4 @@
-INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/utils -I$(top_srcdir)/libnm-util
+INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/libnm-util
 
 BUILT_SOURCES = \
 	nm-access-point-bindings.h \
@@ -9,9 +9,12 @@ BUILT_SOURCES = \
 	nm-marshal.h \
 	nm-marshal.c \
 	nm-settings-connection-glue.h \
-	nm-settings-glue.h
+	nm-settings-glue.h \
+	nm-vpn-manager-bindings.h \
+	nm-vpn-connection-bindings.h \
+	nm-vpn-plugin-glue.h
 
-lib_LTLIBRARIES = libnm_glib.la
+lib_LTLIBRARIES = libnm_glib.la libnm_glib_vpn.la
 
 libnm_glib_la_CFLAGS = 		\
 	$(GLIB_CFLAGS)		\
@@ -32,12 +35,16 @@ libnminclude_HEADERS = \
 	nm-access-point.h \
 	nm-ip4-config.h \
 	nm-settings.h \
-	nm-vpn-connection.h
+	nm-vpn-connection.h \
+	nm-vpn-manager.h \
+	nm-vpn-plugin.h
 
 libnm_glib_la_SOURCES = \
 	libnm_glib.c		\
 	nm-object.c		\
 	nm-client.c		\
+	nm-dbus-utils.c		\
+	nm-dbus-utils.h		\
 	nm-device.c		\
 	nm-device-private.h	\
 	nm-device-802-3-ethernet.c \
@@ -46,10 +53,10 @@ libnm_glib_la_SOURCES = \
 	nm-ip4-config.c		\
 	nm-settings.c		\
 	nm-vpn-connection.c	\
+	nm-vpn-manager.c	\
 	nm-marshal-main.c
 
 libnm_glib_la_LIBADD = \
-	$(top_builddir)/utils/libnmutils.la		\
 	$(top_builddir)/libnm-util/libnm-util.la	\
 	$(GLIB_LIBS)					\
 	$(GTHREAD_LIBS)					\
@@ -62,6 +69,11 @@ noinst_PROGRAMS = libnm-glib-test
 libnm_glib_test_SOURCES = libnm-glib-test.c
 libnm_glib_test_CFLAGS = $(GLIB_CFLAGS) $(DBUS_CFLAGS)
 libnm_glib_test_LDADD = libnm_glib.la $(top_builddir)/libnm-util/libnm-util.la $(GLIB_LIBS) $(DBUS_LIBS)
+
+libnm_glib_vpn_la_SOURCES = nm-vpn-plugin.c
+libnm_glib_vpn_la_CFLAGS = $(GLIB_CFLAGS) $(DBUS_CFLAGS)
+libnm_glib_vpn_la_LIBADD = $(top_builddir)/libnm-util/libnm-util.la $(GLIB_LIBS) $(DBUS_LIBS)
+
 
 nm-marshal.h: Makefile.am nm-marshal.list
 	$(GLIB_GENMARSHAL) --prefix=nm_marshal $(srcdir)/nm-marshal.list --header > \
@@ -97,6 +109,15 @@ nm-settings-glue.h: $(top_srcdir)/introspection/nm-settings.xml
 
 nm-settings-connection-glue.h: $(top_srcdir)/introspection/nm-settings-connection.xml
 	dbus-binding-tool --prefix=nm_connection_settings --mode=glib-server --output=nm-settings-connection-glue.h $(top_srcdir)/introspection/nm-settings-connection.xml
+
+nm-vpn-manager-bindings.h: $(top_srcdir)/introspection/nm-vpn-manager.xml
+	dbus-binding-tool --prefix=nm_vpn_manager --mode=glib-client --output=nm-vpn-manager-bindings.h $(top_srcdir)/introspection/nm-vpn-manager.xml
+
+nm-vpn-connection-bindings.h: $(top_srcdir)/introspection/nm-vpn-connection.xml
+	dbus-binding-tool --prefix=nm_vpn_connection --mode=glib-client --output=nm-vpn-connection-bindings.h $(top_srcdir)/introspection/nm-vpn-connection.xml
+
+nm-vpn-plugin-glue.h: $(top_srcdir)/introspection/nm-vpn-plugin.xml
+	dbus-binding-tool --prefix=nm_vpn_plugin --mode=glib-server --output=nm-vpn-plugin-glue.h $(top_srcdir)/introspection/nm-vpn-plugin.xml
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libnm_glib.pc

@@ -1,12 +1,18 @@
 /* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
 #ifndef NM_VPN_MANAGER_H
-#define NM_VPN_MANAGER_H
+#define NM_VPN_MANAGER_H 1
 
 #include <glib/gtypes.h>
 #include <glib-object.h>
+#include <dbus/dbus-glib.h>
+#include <NetworkManager.h>
+#include <NetworkManagerVPN.h>
+#include "nm-object.h"
+#include "nm-device.h"
 #include "nm-vpn-connection.h"
-#include "nm-manager.h"
+
+G_BEGIN_DECLS
 
 #define NM_TYPE_VPN_MANAGER            (nm_vpn_manager_get_type ())
 #define NM_VPN_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VPN_MANAGER, NMVPNManager))
@@ -16,25 +22,26 @@
 #define NM_VPN_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_VPN_MANAGER, NMVPNManagerClass))
 
 typedef struct {
-	GObject parent;
+	NMObject parent;
 } NMVPNManager;
 
 typedef struct {
-	GObjectClass parent;
+	NMObjectClass parent;
 } NMVPNManagerClass;
 
 GType nm_vpn_manager_get_type (void);
 
-NMVPNManager *nm_vpn_manager_new (NMManager *nm_manager);
 
+NMVPNManager    *nm_vpn_manager_new     (void);
 NMVPNConnection *nm_vpn_manager_connect (NMVPNManager *manager,
-								 const char *type,
-								 const char *name,
-								 NMDevice *device,
-								 GHashTable *properties,
-								 char **routes);
+								 const char   *type,
+								 const char   *name,
+								 GHashTable   *properties,
+								 NMDevice     *device,
+								 char        **routes);
 
-GSList *nm_vpn_manager_get_connections (NMVPNManager *manager);
+GSList *nm_vpn_manager_get_connections  (NMVPNManager *manager);
 
+G_END_DECLS
 
-#endif /* NM_VPN_VPN_MANAGER_H */
+#endif /* NM_MANAGER_H */

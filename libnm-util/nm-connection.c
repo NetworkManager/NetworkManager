@@ -226,29 +226,6 @@ nm_connection_to_hash (NMConnection *connection)
 }
 
 static char *
-garray_to_string (GArray *array)
-{
-	GString *str;
-	int i;
-	char c;
-
-	g_return_val_if_fail (array != NULL, NULL);
-
-	str = g_string_sized_new (array->len);
-	for (i = 0; i < array->len; i++) {
-		c = array->data[i];
-
-		/* Convert NULLs to spaces to increase the readability. */
-		if (c == '\0')
-			c = ' ';
-		str = g_string_append_c (str, c);
-	}
-	str = g_string_append_c (str, '\0');
-
-	return g_string_free (str, FALSE);
-}
-
-static char *
 gvalue_to_string (GValue *val)
 {
 	char *ret;
@@ -277,7 +254,7 @@ gvalue_to_string (GValue *val)
 	default:
 		/* These return dynamic values and thus can't be 'case's */
 		if (type == DBUS_TYPE_G_UCHAR_ARRAY)
-			ret = garray_to_string ((GArray *) g_value_get_boxed (val));
+			ret = nm_utils_garray_to_string ((GArray *) g_value_get_boxed (val));
 		else if (type == dbus_g_type_get_collection ("GSList", G_TYPE_STRING)) {
 			GSList *iter;
 
@@ -302,7 +279,7 @@ gvalue_to_string (GValue *val)
 
 			ptr_array = (GPtrArray *) g_value_get_boxed (val);
 			for (i = 0; i < ptr_array->len; i++) {
-				ret = garray_to_string ((GArray *) g_ptr_array_index (ptr_array, i));
+				ret = nm_utils_garray_to_string ((GArray *) g_ptr_array_index (ptr_array, i));
 
 				if (need_comma)
 					g_string_append (str, ", ");

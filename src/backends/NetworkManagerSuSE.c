@@ -36,7 +36,6 @@
 #include "NetworkManagerGeneric.h"
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"
-#include "NetworkManagerMain.h"
 #include "nm-device.h"
 #include "NetworkManagerPolicy.h"
 #include "nm-device-802-3-ethernet.h"

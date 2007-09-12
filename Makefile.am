@@ -1,5 +1,4 @@
 SUBDIRS = 				\
-	   utils				\
 	   libnm-util			\
 	   libnm-glib			\
 	   src				\

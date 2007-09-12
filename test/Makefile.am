@@ -4,7 +4,6 @@ INCLUDES = -I${top_srcdir}                    \
            -I${top_srcdir}/libnm-util         \
            -I${top_srcdir}/libnm-glib         \
            -I${top_srcdir}/gnome/libnm_glib   \
-           -I${top_srcdir}/utils              \
            -I${top_srcdir}/include
 
 AM_CPPFLAGS =						\
@@ -28,16 +27,15 @@ nm_tool_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS) $(HAL_LIBS)	\
 
 nm_online_SOURCES = nm-online.c
 nm_online_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS) $(HAL_LIBS)	\
-		$(top_builddir)/utils/libnmutils.la
+		$(top_builddir)/libnm-util/libnm-util.la
 
 nmtestdevices_SOURCES = nmtestdevices.c
 nmtestdevices_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS)	\
-			$(top_builddir)/utils/libnmutils.la
+			$(top_builddir)/libnm-util/libnm-util.la
 
 libnm_glib_test_SOURCES = libnm_glib_test.c
 libnm_glib_test_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS) \
 			$(top_builddir)/libnm-glib/libnm_glib.la \
-			$(top_builddir)/utils/libnmutils.la \
 			$(top_builddir)/libnm-util/libnm-util.la
 
 nm_supplicant_test_SOURCES = nm-supplicant-test.c

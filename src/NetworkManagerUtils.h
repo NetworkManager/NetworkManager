@@ -31,7 +31,6 @@
 #include <stdarg.h>
 
 #include "NetworkManager.h"
-#include "NetworkManagerMain.h"
 #include "nm-device.h"
 
 typedef enum SockType

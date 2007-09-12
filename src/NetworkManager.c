@@ -49,10 +49,10 @@
 #include "NetworkManagerPolicy.h"
 #include "NetworkManagerSystem.h"
 #include "nm-named-manager.h"
-#include "nm-dbus-vpn.h"
 #include "nm-dbus-manager.h"
 #include "nm-supplicant-manager.h"
 #include "nm-netlink-monitor.h"
+#include "nm-vpn-manager.h"
 #include "nm-logging.h"
 
 #define NM_DEFAULT_PID_FILE	LOCALSTATEDIR"/run/NetworkManager.pid"
@@ -375,7 +375,7 @@ done:
 	nm_print_open_socks ();
 
 	if (vpn_manager)
-		nm_vpn_manager_dispose (vpn_manager);
+		g_object_unref (vpn_manager);
 
 	nm_hal_manager_destroy (hal_manager);
 	if (policy)

@@ -25,9 +25,14 @@
 /*
  * dbus services details
  */
-#define	NM_DBUS_PATH_VPN			"/org/freedesktop/NetworkManager/VPNConnections"
-#define	NM_DBUS_INTERFACE_VPN		"org.freedesktop.NetworkManager.VPNConnections"
+#define	NM_DBUS_PATH_VPN                  "/org/freedesktop/NetworkManager/VPN/Manager"
+#define	NM_DBUS_INTERFACE_VPN             "org.freedesktop.NetworkManager.VPN.Manager"
 
+#define	NM_DBUS_PATH_VPN_CONNECTION       "/org/freedesktop/NetworkManager/VPN/Connection"
+#define	NM_DBUS_INTERFACE_VPN_CONNECTION  "org.freedesktop.NetworkManager.VPN.Connection"
+
+#define NM_VPN_DBUS_PLUGIN_PATH           "/org/freedesktop/NetworkManager/VPN/Plugin"
+#define NM_VPN_DBUS_PLUGIN_INTERFACE      "org.freedesktop.NetworkManager.VPN.Plugin"
 
 /*
  * VPN Errors
@@ -77,14 +82,25 @@ typedef enum NMVPNServiceState
 typedef enum NMVPNConnectionState
 {
 	NM_VPN_CONNECTION_STATE_UNKNOWN = 0,
-	NM_VPN_CONNECTION_STATE_DISCONNECTED,
 	NM_VPN_CONNECTION_STATE_PREPARE,
 	NM_VPN_CONNECTION_STATE_CONNECT,
 	NM_VPN_CONNECTION_STATE_IP_CONFIG_GET,
 	NM_VPN_CONNECTION_STATE_ACTIVATED,
 	NM_VPN_CONNECTION_STATE_FAILED,
-	NM_VPN_CONNECTION_STATE_CANCELED
+	NM_VPN_CONNECTION_STATE_DISCONNECTED,
 } NMVPNConnectionState;
 
+
+#define NM_VPN_PLUGIN_IP4_CONFIG_GATEWAY "gateway"
+#define NM_VPN_PLUGIN_IP4_CONFIG_ADDRESS "address"
+#define NM_VPN_PLUGIN_IP4_CONFIG_PTP     "ptp"
+#define NM_VPN_PLUGIN_IP4_CONFIG_NETMASK "netmask"
+#define NM_VPN_PLUGIN_IP4_CONFIG_DNS     "dns"
+#define NM_VPN_PLUGIN_IP4_CONFIG_NBNS    "nbns"
+#define NM_VPN_PLUGIN_IP4_CONFIG_MSS     "mss"
+#define NM_VPN_PLUGIN_IP4_CONFIG_MTU     "mtu"
+#define NM_VPN_PLUGIN_IP4_CONFIG_TUNDEV  "tundev"
+#define NM_VPN_PLUGIN_IP4_CONFIG_DOMAIN  "domain"
+#define NM_VPN_PLUGIN_IP4_CONFIG_BANNER  "banner"
 
 #endif /* NETWORK_MANAGER_VPN_H */

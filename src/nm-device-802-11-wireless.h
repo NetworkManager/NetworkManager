@@ -29,7 +29,6 @@
 
 #include "nm-device.h"
 #include "NetworkManagerAP.h"
-#include "NetworkManagerMain.h"
 
 struct NMAccessPointList;
 

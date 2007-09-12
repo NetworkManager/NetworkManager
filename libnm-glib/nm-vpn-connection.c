@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 /* NetworkManager Wireless Applet -- Display wireless access points and allow user control
  *
  * Dan Williams <dcbw@redhat.com>
@@ -21,21 +22,21 @@
 
 #include <string.h>
 #include "nm-vpn-connection.h"
+#include "NetworkManager.h"
+#include "nm-utils.h"
+#include "nm-vpn-connection-bindings.h"
 
-G_DEFINE_TYPE (NMVPNConnection, nm_vpn_connection, G_TYPE_OBJECT)
+G_DEFINE_TYPE (NMVPNConnection, nm_vpn_connection, NM_TYPE_OBJECT)
 
 #define NM_VPN_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_VPN_CONNECTION, NMVPNConnectionPrivate))
 
 typedef struct {
 	DBusGProxy *proxy;
 	char *name;
-	char *user_name;
-	char *service;
 	NMVPNConnectionState state;
 } NMVPNConnectionPrivate;
 
 enum {
-	UPDATED,
 	STATE_CHANGED,
 
 	LAST_SIGNAL
@@ -43,153 +44,39 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-static void
-nm_vpn_connection_init (NMVPNConnection *connection)
-{
-	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
-
-	priv->state = NM_VPN_CONNECTION_STATE_UNKNOWN;
-}
-
-static void
-finalize (GObject *object)
-{
-	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
-
-	g_free (priv->name);
-	g_free (priv->user_name);
-	g_free (priv->service);
-}
-
-static void
-nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
-{
-	GObjectClass *object_class = G_OBJECT_CLASS (connection_class);
-
-	g_type_class_add_private (connection_class, sizeof (NMVPNConnectionPrivate));
-
-	/* virtual methods */
-	object_class->finalize = finalize;
-
-	/* signals */
-	signals[UPDATED] =
-		g_signal_new ("updated",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMVPNConnectionClass, updated),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__VOID,
-					  G_TYPE_NONE, 0);
-	signals[STATE_CHANGED] =
-		g_signal_new ("state-changed",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMVPNConnectionClass, state_changed),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__UINT,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_UINT);
-
-}
-
-static gboolean
-update_properties (NMVPNConnection *connection)
-{
-	NMVPNConnectionPrivate *priv;
-	char *name = NULL;
-	char *user_name = NULL;
-	char *service = NULL;
-	NMVPNConnectionState state;
-	GError *err = NULL;
-
-	priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
-
-	if (!dbus_g_proxy_call (priv->proxy, "getVPNConnectionProperties", &err,
-							G_TYPE_STRING, priv->name,
-							G_TYPE_INVALID,
-							G_TYPE_STRING, &name,
-							G_TYPE_STRING, &user_name,
-							G_TYPE_STRING, &service,
-							G_TYPE_UINT, &state,
-							G_TYPE_INVALID)) {
-		g_warning ("Error while updating VPN connection: %s", err->message);
-		g_error_free (err);
-		return FALSE;
-	}
-
-	g_free (priv->name);
-	g_free (priv->user_name);
-	g_free (priv->service);
-
-	priv->name = name;
-	priv->user_name = user_name;
-	priv->service = service;
-	
-	nm_vpn_connection_set_state (connection, (NMVPNConnectionState) state);
-
-	return TRUE;
-}
 
 NMVPNConnection *
-nm_vpn_connection_new (DBusGProxy *proxy, const char *name)
+nm_vpn_connection_new (DBusGConnection *dbus_connection,
+				   const char *path)
 {
-	GObject *object;
-	NMVPNConnectionPrivate *priv;
+	NMVPNConnection *connection;
 
-	g_return_val_if_fail (DBUS_IS_G_PROXY (proxy), NULL);
-	g_return_val_if_fail (name != NULL, NULL);
+	g_return_val_if_fail (dbus_connection != NULL, NULL);
+	g_return_val_if_fail (path != NULL, NULL);
 
-	object = g_object_new (NM_TYPE_VPN_CONNECTION, NULL);
-	if (!object)
-		return NULL;
+	connection = (NMVPNConnection *) g_object_new (NM_TYPE_VPN_CONNECTION, 
+										  NM_OBJECT_CONNECTION, dbus_connection,
+										  NM_OBJECT_PATH, path,
+										  NULL);
 
-	priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
-	priv->proxy = proxy;
-	priv->name = g_strdup (name);
+	nm_vpn_connection_get_name (connection);
 
-	if (!update_properties ((NMVPNConnection *) object)) {
-		g_object_unref (object);
-		return NULL;
-	}
-
-	return (NMVPNConnection *) object;
-}
-
-gboolean
-nm_vpn_connection_update (NMVPNConnection *vpn)
-{
-	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), FALSE);
-
-	if (update_properties (vpn)) {
-		g_signal_emit (vpn, signals[UPDATED], 0);
-		return TRUE;
-	}
-
-	return FALSE;
+	return connection;
 }
 
 const char *
 nm_vpn_connection_get_name (NMVPNConnection *vpn)
 {
+	NMVPNConnectionPrivate *priv;
+
 	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), NULL);
 
-	return NM_VPN_CONNECTION_GET_PRIVATE (vpn)->name;
-}
-
-const char *
-nm_vpn_connection_get_user_name (NMVPNConnection *vpn)
-{
-	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), NULL);
-
-	return NM_VPN_CONNECTION_GET_PRIVATE (vpn)->user_name;
-}
-
-const char *
-nm_vpn_connection_get_service (NMVPNConnection *vpn)
-{
-	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), NULL);
-
-	return NM_VPN_CONNECTION_GET_PRIVATE (vpn)->service;
+	priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn);
+	if (!priv->name)
+		priv->name = nm_object_get_string_property (NM_OBJECT (vpn),
+										    NM_DBUS_INTERFACE_VPN_CONNECTION,
+										    "Name");
+	return priv->name;
 }
 
 NMVPNConnectionState
@@ -200,83 +87,99 @@ nm_vpn_connection_get_state (NMVPNConnection *vpn)
 	return NM_VPN_CONNECTION_GET_PRIVATE (vpn)->state;
 }
 
-void
-nm_vpn_connection_set_state (NMVPNConnection *vpn, NMVPNConnectionState state)
+static void
+state_changed_proxy (DBusGProxy *proxy, NMVPNConnectionState state, gpointer user_data)
 {
-	NMVPNConnectionPrivate *priv;
+	NMVPNConnection *connection = NM_VPN_CONNECTION (user_data);
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+
+	if (priv->state != state) {
+		priv->state = state;
+		g_signal_emit (connection, signals[STATE_CHANGED], 0, state);
+	}
+}
+
+void
+nm_vpn_connection_disconnect (NMVPNConnection *vpn)
+{
+	GError *err = NULL;
 
 	g_return_if_fail (NM_IS_VPN_CONNECTION (vpn));
 
-	priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn);
-	if (priv->state != state) {
-		priv->state = state;
-		g_signal_emit (vpn, signals[STATE_CHANGED], 0, state);
+	org_freedesktop_NetworkManager_VPN_Connection_disconnect (NM_VPN_CONNECTION_GET_PRIVATE (vpn)->proxy, &err);
+	if (err) {
+		nm_warning ("Error in VPN disconnect: %s", err->message);
+		g_error_free (err);
 	}
 }
 
-gboolean
-nm_vpn_connection_is_activating (NMVPNConnection *vpn)
+/*****************************************************************************/
+
+static void
+nm_vpn_connection_init (NMVPNConnection *connection)
 {
-	NMVPNConnectionState state;
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
-	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), FALSE);
-
-	state = nm_vpn_connection_get_state (vpn);
-	if (state == NM_VPN_CONNECTION_STATE_PREPARE ||
-		state == NM_VPN_CONNECTION_STATE_CONNECT ||
-		state == NM_VPN_CONNECTION_STATE_IP_CONFIG_GET)
-		return TRUE;
-
-	return FALSE;
+	priv->state = NM_VPN_CONNECTION_STATE_UNKNOWN;
 }
 
-gboolean
-nm_vpn_connection_activate (NMVPNConnection *vpn, GSList *passwords)
+static GObject*
+constructor (GType type,
+		   guint n_construct_params,
+		   GObjectConstructParam *construct_params)
 {
-	char **password_strings;
-	GSList *iter;
-	int i;
+	NMObject *object;
+	NMVPNConnectionPrivate *priv;
 
-	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), FALSE);
-	g_return_val_if_fail (passwords != NULL, FALSE);
+	object = (NMObject *) G_OBJECT_CLASS (nm_vpn_connection_parent_class)->constructor (type,
+																	    n_construct_params,
+																	    construct_params);
+	if (!object)
+		return NULL;
 
-	if (nm_vpn_connection_get_state (vpn) != NM_VPN_CONNECTION_STATE_DISCONNECTED) {
-		g_warning ("VPN connection is already connected or connecting");
-		return FALSE;
-	}
+	priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
 
-	i = 0;
-	password_strings = g_new (char *, g_slist_length (passwords) + 1);
-	for (iter = passwords; iter; iter = iter->next)
-		password_strings[i++] = iter->data;
-	password_strings[i] = NULL;
+	priv->proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (object),
+									 NM_DBUS_SERVICE,
+									 nm_object_get_path (object),
+									 NM_DBUS_INTERFACE_VPN_CONNECTION);
 
-	/* FIXME: This has to be ASYNC for now since NM will call back to get routes.
-	   We should just pass the routes along with this call */
-	dbus_g_proxy_call_no_reply (NM_VPN_CONNECTION_GET_PRIVATE (vpn)->proxy,
-								"activateVPNConnection",
-								G_TYPE_STRING, nm_vpn_connection_get_name (vpn),
-								G_TYPE_STRV, password_strings,
-								G_TYPE_INVALID,
-								G_TYPE_INVALID);
-	g_free (password_strings);
-
-	return TRUE;
+	dbus_g_proxy_add_signal (priv->proxy, "StateChanged", G_TYPE_UINT, G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->proxy,
+						    "StateChanged",
+						    G_CALLBACK (state_changed_proxy),
+						    object,
+						    NULL);
+	return G_OBJECT (object);
 }
 
-gboolean
-nm_vpn_connection_deactivate (NMVPNConnection *vpn)
+static void
+finalize (GObject *object)
 {
-	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), FALSE);
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
 
-	if (nm_vpn_connection_get_state (vpn) != NM_VPN_CONNECTION_STATE_ACTIVATED &&
-		!nm_vpn_connection_is_activating (vpn)) {
-		g_warning ("VPN connection isn't activated");
-		return FALSE;
-	}
-	
-	dbus_g_proxy_call_no_reply (NM_VPN_CONNECTION_GET_PRIVATE (vpn)->proxy,
-								"deactivateVPNConnection",
-								G_TYPE_INVALID, G_TYPE_INVALID);
-	return TRUE;
+	g_object_unref (priv->proxy);
+}
+
+static void
+nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (connection_class);
+
+	g_type_class_add_private (connection_class, sizeof (NMVPNConnectionPrivate));
+
+	/* virtual methods */
+	object_class->constructor = constructor;
+	object_class->finalize = finalize;
+
+	/* signals */
+	signals[STATE_CHANGED] =
+		g_signal_new ("state-changed",
+				    G_OBJECT_CLASS_TYPE (object_class),
+				    G_SIGNAL_RUN_FIRST,
+				    G_STRUCT_OFFSET (NMVPNConnectionClass, state_changed),
+				    NULL, NULL,
+				    g_cclosure_marshal_VOID__UINT,
+				    G_TYPE_NONE, 1,
+				    G_TYPE_UINT);
 }

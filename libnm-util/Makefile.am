@@ -40,7 +40,9 @@ libnm_util_la_SOURCES=			\
 	nm-connection.c			\
 	nm-connection.h			\
 	nm-setting.c			\
-	nm-setting.h
+	nm-setting.h			\
+	nm-utils.c			\
+	nm-utils.h
 
 if !WITH_GCRYPT
 libnm_util_la_SOURCES += gnome-keyring-md5.c gnome-keyring-md5.h
@@ -67,7 +69,8 @@ libnm_util_include_HEADERS = 		\
 	dbus-method-dispatcher.h	\
 	dbus-dict-helpers.h		\
 	nm-connection.h			\
-	nm-setting.h
+	nm-setting.h			\
+	nm-utils.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libnm-util.pc

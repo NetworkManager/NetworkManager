@@ -30,7 +30,6 @@
 
 #include "nm-logging.h"
 #include "nm-utils.h"
-#include "NetworkManagerMain.h"
 
 static void
 fallback_get_backtrace (void)

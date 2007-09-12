@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 /* NetworkManager Wireless Applet -- Display wireless access points and allow user control
  *
  * Dan Williams <dcbw@redhat.com>
@@ -25,6 +26,7 @@
 #include <glib/gtypes.h>
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
+#include "nm-object.h"
 #include "NetworkManagerVPN.h"
 
 G_BEGIN_DECLS
@@ -37,35 +39,26 @@ G_BEGIN_DECLS
 #define NM_VPN_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_VPN_CONNECTION, NMVPNConnectionClass))
 
 typedef struct {
-	GObject parent;
+	NMObject parent;
 } NMVPNConnection;
 
 typedef struct {
-	GObjectClass parent;
+	NMObjectClass parent;
 
 	/* Signals */
-	void (*updated) (NMVPNConnection *connection);
 	void (*state_changed) (NMVPNConnection *connection, NMVPNConnectionState state);
 } NMVPNConnectionClass;
 
 GType nm_vpn_connection_get_type (void);
 
 
-NMVPNConnection *nm_vpn_connection_new (DBusGProxy *proxy, const char *name);
-gboolean       nm_vpn_connection_update (NMVPNConnection *vpn);
+NMVPNConnection      *nm_vpn_connection_new       (DBusGConnection *dbus_connection,
+										 const char *path);
 
-const char *nm_vpn_connection_get_name (NMVPNConnection *vpn);
-const char *nm_vpn_connection_get_user_name (NMVPNConnection *vpn);
-const char *nm_vpn_connection_get_service (NMVPNConnection *vpn);
-NMVPNConnectionState nm_vpn_connection_get_state (NMVPNConnection *vpn);
-gboolean nm_vpn_connection_is_activating (NMVPNConnection *vpn);
+const char           *nm_vpn_connection_get_name  (NMVPNConnection *vpn);
+NMVPNConnectionState  nm_vpn_connection_get_state (NMVPNConnection *vpn);
 
-gboolean nm_vpn_connection_activate   (NMVPNConnection *vpn,
-									   GSList *passwords);
-
-gboolean nm_vpn_connection_deactivate (NMVPNConnection *vpn);
-
-void nm_vpn_connection_set_state (NMVPNConnection *vpn, NMVPNConnectionState state);
+void                  nm_vpn_connection_disconnect (NMVPNConnection *vpn);
 
 G_END_DECLS
 

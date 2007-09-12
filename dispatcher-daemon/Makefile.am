@@ -8,7 +8,6 @@ NetworkManagerDispatcher_SOURCES =		\
 
 NetworkManagerDispatcher_CPPFLAGS = 		\
 	-I$(top_srcdir)				\
-	-I$(top_srcdir)/utils			\
 	-I$(top_srcdir)/include			\
 	-I$(top_srcdir)/libnm-util		\
 	-I$(top_srcdir)/libnm-glib		\
@@ -26,7 +25,6 @@ NetworkManagerDispatcher_CFLAGS = 		\
 	$(NULL)
 
 NetworkManagerDispatcher_LDADD =		\
-	$(top_builddir)/utils/libnmutils.la	\
 	$(top_builddir)/libnm-util/libnm-util.la\
 	$(top_builddir)/libnm-glib/libnm_glib.la\
 	$(DBUS_LIBS)				\

@@ -26,7 +26,6 @@
 #include <net/ethernet.h>
 
 #include "nm-device.h"
-#include "NetworkManagerMain.h"
 
 G_BEGIN_DECLS
 

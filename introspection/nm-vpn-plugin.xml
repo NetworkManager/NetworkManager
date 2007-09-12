@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/">
+  <interface name="org.freedesktop.NetworkManager.VPN.Plugin">
+    <method name="Connect">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_connect"/>
+      <arg name="connection" type="a{sv}" direction="in"/>
+      <arg name="routes" type="as" direction="in"/>
+    </method>
+
+    <method name="Disconnect">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_disconnect"/>
+    </method>
+
+    <method name="SetIp4Config">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_set_ip4_config"/>
+      <arg name="config" type="a{sv}" direction="in"/>
+    </method>
+
+    <method name="SetFailure">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_set_failure"/>
+      <arg name="reason" type="s" direction="in"/>
+    </method>
+
+    <property name="State" type="u" access="read"/>
+
+    <signal name="StateChanged">
+      <arg name="state" type="u"/>
+    </signal>
+
+    <signal name="Ip4Config">
+      <arg name="ip4config" type="a{sv}"/>
+    </signal>
+
+    <signal name="LoginBanner">
+      <arg name="banner" type="s"/>
+    </signal>
+
+    <signal name="Failure">
+      <arg name="reason" type="u"/>
+    </signal>
+
+  </interface>
+</node>

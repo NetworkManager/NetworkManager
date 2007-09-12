@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/">
+  <interface name="org.freedesktop.NetworkManager.VPN.Connection">
+    <method name="Disconnect">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_connection_disconnect"/>
+    </method>
+
+    <property name="Name" type="s" access="read"/>
+    <property name="State" type="u" access="read"/>
+
+    <signal name="StateChanged">
+      <arg name="state" type="u"/>
+    </signal>
+  </interface>
+</node>
+
