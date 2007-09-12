@@ -1,5 +1,12 @@
 2007-09-12  Dan Williams  <dcbw@redhat.com>
 
+	* src/supplicant-manager/nm-supplicant-interface.c
+	  src/supplicant-manager/nm-supplicant-marshal.list
+		- (nm_supplicant_interface_class_init): fix stupid mistake, the
+			"connection-error" signal arguments should be STRING not CHAR
+
+2007-09-12  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerUtils.c
 	  src/NetworkManagerUtils.h
 		- (nm_utils_hexstr2bin): new function

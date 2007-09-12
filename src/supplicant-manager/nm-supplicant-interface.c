@@ -453,8 +453,8 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, connection_error),
 		              NULL, NULL,
-		              nm_supplicant_marshal_VOID__CHAR_CHAR,
-		              G_TYPE_NONE, 2, G_TYPE_CHAR, G_TYPE_CHAR);
+		              nm_supplicant_marshal_VOID__STRING_STRING,
+		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
 }
 
 static void
