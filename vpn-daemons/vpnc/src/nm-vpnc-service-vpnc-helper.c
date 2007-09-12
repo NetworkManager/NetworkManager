@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 /* nm-vpnc-service - vpnc integration with NetworkManager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -34,170 +35,136 @@
 #include "nm-vpnc-service.h"
 #include "nm-utils.h"
 
-
-/*
- * send_config_error
- *
- * Notify nm-vpnc-service of a config error from 'vpnc'.
- *
- */
-static void send_config_error (DBusConnection *con, const char *item)
+static void
+helper_failed (DBusGConnection *connection, const char *reason)
 {
-	DBusMessage		*message;
+	DBusGProxy *proxy;
+	GError *err = NULL;
 
-	g_return_if_fail (con != NULL);
-	g_return_if_fail (item != NULL);
+	nm_warning ("nm-nvpnc-service-vpnc-helper did not receive a valid %s from vpnc", reason);
 
-	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE_VPNC, NM_DBUS_PATH_VPNC, NM_DBUS_INTERFACE_VPNC, "signalConfigError")))
-	{
-		nm_warning ("send_config_error(): Couldn't allocate the dbus message");
-		return;
+	proxy = dbus_g_proxy_new_for_name (connection,
+								NM_DBUS_SERVICE_VPNC,
+								NM_VPN_DBUS_PLUGIN_PATH,
+								NM_VPN_DBUS_PLUGIN_INTERFACE);
+
+	dbus_g_proxy_call (proxy, "SetFailure", &err,
+				    G_TYPE_STRING, reason,
+				    G_TYPE_INVALID,
+				    G_TYPE_INVALID);
+
+	if (err) {
+		nm_warning ("Could not send failure information: %s", err->message);
+		g_error_free (err);
 	}
 
-	dbus_message_append_args (message, DBUS_TYPE_STRING, &item, DBUS_TYPE_INVALID);
-	if (!dbus_connection_send (con, message, NULL))
-		nm_warning ("send_config_error(): could not send dbus message");
+	g_object_unref (proxy);
 
-	dbus_message_unref (message);
+	exit (1);
 }
 
-
-/*
- * send_config_info
- *
- * Send IP config info to nm-vpnc-service
- *
- */
-static gboolean send_config_info (DBusConnection *con, const char *str_vpn_gateway,
-										 const char *tundev,
-										 const char *str_internal_ip4_address,
-										 const char *str_internal_ip4_netmask,
-										 const char *str_internal_ip4_dns,
-										 const char *str_internal_ip4_nbns,
-										 const char *cisco_def_domain,
-										 const char *cisco_banner)
+static void
+send_ip4_config (DBusGConnection *connection, GHashTable *config)
 {
-	DBusMessage *	message;
+	DBusGProxy *proxy;
+	GError *err = NULL;
+
+	proxy = dbus_g_proxy_new_for_name (connection,
+								NM_DBUS_SERVICE_VPNC,
+								NM_VPN_DBUS_PLUGIN_PATH,
+								NM_VPN_DBUS_PLUGIN_INTERFACE);
+
+	dbus_g_proxy_call (proxy, "SetIp4Config", &err,
+				    dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
+				    config,
+				    G_TYPE_INVALID,
+				    G_TYPE_INVALID);
+
+	if (err) {
+		nm_warning ("Could not send failure information: %s", err->message);
+		g_error_free (err);
+	}
+
+	g_object_unref (proxy);
+}
+
+static GValue *
+str_to_gvalue (const char *str, gboolean try_convert)
+{
+	GValue *val;
+
+	/* Empty */
+	if (!str || strlen (str) < 1)
+		return NULL;
+
+	if (!g_utf8_validate (str, -1, NULL)) {
+		if (try_convert && !(str = g_convert (str, -1, "ISO-8859-1", "UTF-8", NULL, NULL, NULL)))
+			str = g_convert (str, -1, "C", "UTF-8", NULL, NULL, NULL);
+
+		if (!str)
+			/* Invalid */
+			return NULL;
+	}
+
+	val = g_new (GValue, 1);
+	g_value_init (val, G_TYPE_STRING);
+	g_value_set_string (val, str);
+
+	return val;
+}
+
+static GValue *
+addr_to_gvalue (const char *str)
+{
 	struct in_addr	temp_addr;
-	guint32		uint_vpn_gateway = 0;
-	guint32		uint_internal_ip4_address = 0;
-	guint32		uint_internal_ip4_netmask = 0xFFFFFFFF; /* Default mask of 255.255.255.255 */
-	guint32 *		uint_internal_ip4_dns = NULL;
-	guint32		uint_internal_ip4_dns_len = 0;
-	guint32 *		uint_internal_ip4_nbns = NULL;
-	guint32		uint_internal_ip4_nbns_len = 0;
-	char **		split;
-	char **		item;
-	guint32		num_valid = 0, i;
-	gboolean		success = FALSE;
+	GValue *val;
 
-	g_return_val_if_fail (con != NULL, FALSE);
+	/* Empty */
+	if (!str || strlen (str) < 1)
+		return NULL;
 
-	if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE_VPNC, NM_DBUS_PATH_VPNC, NM_DBUS_INTERFACE_VPNC, "signalIP4Config")))
-	{
-		nm_warning ("send_config_error(): Couldn't allocate the dbus message");
-		return FALSE;
-	}
+	if (!inet_aton (str, &temp_addr))
+		return NULL;
 
-	/* Convert IPv4 address arguments from strings into numbers */
-	if (!inet_aton (str_vpn_gateway, &temp_addr))
-	{
-		nm_warning ("nm-vpnc-service-vpnc-helper didn't receive a valid VPN Gateway from vpnc.");
-		send_config_error (con, "VPN Gateway");
-		goto out;
-	}
-	uint_vpn_gateway = temp_addr.s_addr;
+	val = g_new (GValue, 1);
+	g_value_init (val, G_TYPE_UINT);
+	g_value_set_uint (val, temp_addr.s_addr);
 
-	if (!inet_aton (str_internal_ip4_address, &temp_addr))
-	{
-		nm_warning ("nm-vpnc-service-vpnc-helper didn't receive a valid Internal IP4 Address from vpnc.");
-		send_config_error (con, "IP4 Address");
-		goto out;
-	}
-	uint_internal_ip4_address = temp_addr.s_addr;
-
-	if (strlen (str_internal_ip4_netmask) && inet_aton (str_internal_ip4_netmask, &temp_addr))
-		uint_internal_ip4_netmask = temp_addr.s_addr;
-
-	if (strlen (str_internal_ip4_dns))
-	{
-		if ((split = g_strsplit (str_internal_ip4_dns, " ", -1)))
-		{
-			/* Pass over the array first to determine how many valid entries there are */
-			num_valid = 0;
-			for (item = split; *item; item++)
-				if (inet_aton (*item, &temp_addr))
-					num_valid++;
-
-			/* Do the actual string->int conversion and assign to the array. */
-			if (num_valid > 0)
-			{
-				uint_internal_ip4_dns = g_new0 (guint32, num_valid);
-				for (item = split, i = 0; *item; item++, i++)
-					if (inet_aton (*item, &temp_addr))
-						uint_internal_ip4_dns[i] = temp_addr.s_addr;
-			}
-
-			g_strfreev (split);
-			uint_internal_ip4_dns_len = num_valid;
-		}		
-	}
-	if (!uint_internal_ip4_dns)
-	{
-		uint_internal_ip4_dns = g_malloc0 (sizeof (guint32));
-		uint_internal_ip4_dns[0] = 0;
-		uint_internal_ip4_dns_len = 1;
-	}
-
-	if (strlen (str_internal_ip4_nbns))
-	{
-		if ((split = g_strsplit (str_internal_ip4_nbns, " ", -1)))
-		{
-			/* Pass over the array first to determine how many valid entries there are */
-			num_valid = 0;
-			for (item = split; *item; item++)
-				if (inet_aton (*item, &temp_addr))
-					num_valid++;
-
-			/* Do the actual string->int conversion and assign to the array. */
-			if (num_valid > 0)
-			{
-				uint_internal_ip4_nbns = g_new0 (guint32, num_valid);
-				for (item = split, i = 0; *item; item++, i++)
-					if (inet_aton (*item, &temp_addr))
-						uint_internal_ip4_nbns[i] = temp_addr.s_addr;
-			}
-
-			g_strfreev (split);
-			uint_internal_ip4_nbns_len = num_valid;
-		}		
-	}
-	if (!uint_internal_ip4_nbns)
-	{
-		uint_internal_ip4_nbns = g_malloc0 (sizeof (guint32));
-		uint_internal_ip4_nbns[0] = 0;
-		uint_internal_ip4_nbns_len = 1;
-	}
-
-	dbus_message_append_args (message, DBUS_TYPE_UINT32, &uint_vpn_gateway,
-								DBUS_TYPE_STRING, &tundev,
-								DBUS_TYPE_UINT32, &uint_internal_ip4_address,
-								DBUS_TYPE_UINT32, &uint_internal_ip4_netmask,
-								DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &uint_internal_ip4_dns, uint_internal_ip4_dns_len,
-								DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &uint_internal_ip4_nbns, uint_internal_ip4_nbns_len,
-								DBUS_TYPE_STRING, &cisco_def_domain,
-								DBUS_TYPE_STRING, &cisco_banner, DBUS_TYPE_INVALID);
-	if (dbus_connection_send (con, message, NULL))
-		success = TRUE;
-	else
-		nm_warning ("send_config_error(): could not send dbus message");
-
-	dbus_message_unref (message);
-
-out:
-	return success;
+	return val;
 }
 
+static GValue *
+addr_list_to_gvalue (const char *str)
+{
+	GValue *val;
+	char **split;
+	int i;
+	struct in_addr	temp_addr;
+	GSList *list = NULL;
+
+	/* Empty */
+	if (!str || strlen (str) < 1)
+		return NULL;
+
+	split = g_strsplit (str, " ", -1);
+	for (i = 0; split[i]; i++) {
+		if (inet_aton (split[i], &temp_addr))
+			list = g_slist_append (list, GUINT_TO_POINTER (temp_addr.s_addr));
+		else {
+			g_strfreev (split);
+			g_slist_free (list);
+			return NULL;
+		}
+	}
+
+	g_strfreev (split);
+
+	val = g_new0 (GValue, 1);
+	g_value_init (val, dbus_g_type_get_collection ("GSList", G_TYPE_UINT));
+	g_value_set_boxed (val, list);
+
+	return val;
+}
 
 /*
  * Environment variables passed back from 'vpnc':
@@ -212,119 +179,80 @@ out:
  * CISCO_BANNER           -- banner from server
  *
  */
-
-/*
- * main
- *
- */
-int main( int argc, char *argv[] )
+int 
+main (int argc, char *argv[])
 {
-	DBusConnection *	con;
-	DBusError			error;
-	char *			reason = NULL;
-	char *			vpn_gateway = NULL;
-	char *			tundev = NULL;
-	char *			internal_ip4_address = NULL;
-	char *			internal_ip4_netmask = NULL;
-	char *			internal_ip4_dns = NULL;
-	char *			internal_ip4_nbns = NULL;
-	char *			cisco_def_domain = NULL;
-	char *			cisco_banner = NULL;
+	DBusGConnection *connection;
+	char *tmp;
+	GHashTable *config;
+	GValue *val;
+	GError *err = NULL;
 
 	g_type_init ();
-	if (!g_thread_supported ())
-		g_thread_init (NULL);
-
-	dbus_error_init (&error);
-	con = dbus_bus_get (DBUS_BUS_SYSTEM, &error);
-	if ((con == NULL) || dbus_error_is_set (&error))
-	{
-		nm_warning ("Could not get the system bus.  Make sure the message bus daemon is running?");
-		exit (1);
-	}
-	dbus_connection_set_exit_on_disconnect (con, FALSE);
 
 	/* vpnc 0.3.3 gives us a "reason" code.  If we are given one,
 	 * don't proceed unless its "connect".
 	 */
-	reason = getenv ("reason");
-	if (reason && strcmp (reason, "connect") != 0)
+	tmp = getenv ("reason");
+	if (tmp && strcmp (tmp, "connect") != 0)
 		exit (0);
 
-	vpn_gateway = getenv ("VPNGATEWAY");
-	tundev = getenv ("TUNDEV");
-	internal_ip4_address = getenv ("INTERNAL_IP4_ADDRESS");
-	internal_ip4_netmask = getenv ("INTERNAL_IP4_NETMASK");
-	internal_ip4_dns = getenv ("INTERNAL_IP4_DNS");
-	internal_ip4_nbns = getenv ("INTERNAL_IP4_NBNS");
-	cisco_def_domain = getenv ("CISCO_DEF_DOMAIN");
-	cisco_banner = getenv ("CISCO_BANNER");
-
-#if 0
-	{
-		FILE *file = fopen ("/tmp/vpnstuff", "w");
-		fprintf (file, "VPNGATEWAY: '%s'\n", vpn_gateway);
-		fprintf (file, "TUNDEF: '%s'\n", tundev);
-		fprintf (file, "INTERNAL_IP4_ADDRESS: '%s'\n", internal_ip4_address);
-		fprintf (file, "INTERNAL_IP4_NETMASK: '%s'\n", internal_ip4_netmask);
-		fprintf (file, "INTERNAL_IP4_DNS: '%s'\n", internal_ip4_dns);
-		fprintf (file, "INTERNAL_IP4_NBNS: '%s'\n", internal_ip4_nbns);
-		fprintf (file, "CISCO_DEF_DOMAIN: '%s'\n", cisco_def_domain);
-		fprintf (file, "CISCO_BANNER: '%s'\n", cisco_banner);
-		fclose (file);
-	}
-#endif
-
-	if (!vpn_gateway)
-	{
-		nm_warning ("nm-vpnc-service-vpnc-helper didn't receive a VPN Gateway from vpnc.");
-		send_config_error (con, "VPN Gateway");
-		exit (1);
-	}
-	if (!tundev || !g_utf8_validate (tundev, -1, NULL))
-	{
-		nm_warning ("nm-vpnc-service-vpnc-helper didn't receive a Tunnel Device from vpnc, or the tunnel device was not valid UTF-8.");
-		send_config_error (con, "Tunnel Device");
-		exit (1);
-	}
-	if (!internal_ip4_address)
-	{
-		nm_warning ("nm-vpnc-service-vpnc-helper didn't receive an Internal IP4 Address from vpnc.");
-		send_config_error (con, "IP4 Address");
+	connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &err);
+	if (!connection) {
+		nm_warning ("Could not get the system bus: %s", err->message);
 		exit (1);
 	}
 
-	if (!internal_ip4_netmask)
-		internal_ip4_netmask = g_strdup ("");
-	if (!internal_ip4_dns)
-		internal_ip4_dns = g_strdup ("");
-	if (!internal_ip4_nbns)
-		internal_ip4_nbns = g_strdup ("");
+	config = g_hash_table_new (g_str_hash, g_str_equal);
 
-	/* Ensure strings from network are UTF-8 */
-	if (cisco_def_domain && !g_utf8_validate (cisco_def_domain, -1, NULL))
-	{
-		if (!(cisco_def_domain = g_convert (cisco_def_domain, -1, "ISO-8859-1", "UTF-8", NULL, NULL, NULL)))
-			cisco_def_domain = g_convert (cisco_def_domain, -1, "C", "UTF-8", NULL, NULL, NULL);
-	}
-	if (!cisco_def_domain)
-		cisco_def_domain = g_strdup ("");
+	/* Gateway */
+	val = addr_to_gvalue (getenv ("VPNGATEWAY"));
+	if (val)
+		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_GATEWAY, val);
+	else
+		helper_failed (connection, "VPN Gateway");
 
-	if (cisco_banner && !g_utf8_validate (cisco_banner, -1, NULL))
-	{
-		if (!(cisco_banner = g_convert (cisco_banner, -1, "ISO-8859-1", "UTF-8", NULL, NULL, NULL)))
-			cisco_banner = g_convert (cisco_banner, -1, "C", "UTF-8", NULL, NULL, NULL);
-	}
-	if (!cisco_banner)
-		cisco_banner = g_strdup ("");
+	/* Tunnel device */
+	val = str_to_gvalue (getenv ("TUNDEV"), FALSE);
+	if (val)
+		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_TUNDEV, val);
+	else
+		helper_failed (connection, "Tunnel Device");
+
+	/* IP address */
+	val = addr_to_gvalue (getenv ("INTERNAL_IP4_ADDRESS"));
+	if (val)
+		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_ADDRESS, val);
+	else
+		helper_failed (connection, "IP4 Address");
+
+	/* Netmask */
+	val = addr_to_gvalue (getenv ("INTERNAL_IP4_NETMASK"));
+	if (val)
+		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_NETMASK, val);
+
+	/* DNS */
+	val = addr_list_to_gvalue (getenv ("INTERNAL_IP4_DNS"));
+	if (val)
+		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_DNS, val);
+
+	/* WINS servers */
+	val = addr_list_to_gvalue (getenv ("INTERNAL_IP4_NBNS"));
+	if (val)
+		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_NBNS, val);
+
+	/* Default domain */
+	val = str_to_gvalue (getenv ("CISCO_DEF_DOMAIN"), TRUE);
+	if (val)
+		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_DOMAIN, val);
+
+	/* Banner */
+	val = str_to_gvalue (getenv ("CISCO_BANNER"), TRUE);
+	if (val)
+		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_BANNER, val);
 
 	/* Send the config info to nm-vpnc-service */
-	if (!send_config_info (con, vpn_gateway, tundev, internal_ip4_address, internal_ip4_netmask,
-						internal_ip4_dns, internal_ip4_nbns, cisco_def_domain, cisco_banner))
-	{
-		exit (1);
-	}
+	send_ip4_config (connection, config);
 
 	exit (0);
 }
-

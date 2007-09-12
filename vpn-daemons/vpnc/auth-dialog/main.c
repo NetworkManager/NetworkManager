@@ -29,9 +29,8 @@
 #include <libgnomeui/libgnomeui.h>
 #include <gnome-keyring.h>
 
+#include "../src/nm-vpnc-service.h"
 #include "gnome-two-password-dialog.h"
-
-#define VPN_SERVICE "org.freedesktop.NetworkManager.vpnc"
 
 static GSList *
 lookup_pass (const char *vpn_name, const char *vpn_service, gboolean *is_session)
@@ -222,12 +221,10 @@ get_passwords (const char *vpn_name, const char *vpn_service, gboolean retry)
 int 
 main (int argc, char *argv[])
 {
-	GSList *i;
 	GSList *passwords;
 	static gboolean retry = FALSE;
 	static gchar *vpn_name = NULL;
 	static gchar *vpn_service = NULL;
-	GError *error = NULL;
 	GOptionContext *context;
 	GnomeProgram *program;
 	GOptionEntry entries[] =
@@ -260,8 +257,8 @@ main (int argc, char *argv[])
 		goto out;
 	}
 
-	if (strcmp (vpn_service, VPN_SERVICE) != 0) {
-		fprintf (stderr, "This dialog only works with the '%s' service\n", VPN_SERVICE);
+	if (strcmp (vpn_service, NM_DBUS_SERVICE_VPNC) != 0) {
+		fprintf (stderr, "This dialog only works with the '%s' service\n", NM_DBUS_SERVICE_VPNC);
 		goto out;		
 	}
 
@@ -270,11 +267,11 @@ main (int argc, char *argv[])
 		goto out;
 
 	/* dump the passwords to stdout */
-	for (i = passwords; i != NULL; i = g_slist_next (i)) {
-		char *password = (char *) i->data;
-		printf ("%s\n", password);
-	}
+
+	printf ("%s\n%s\n", NM_VPNC_KEY_SECRET, (char *) passwords->data);
+	printf ("%s\n%s\n", NM_VPNC_KEY_XAUTH_PASSWORD, (char *) passwords->next->data);
 	printf ("\n\n");
+
 	/* for good measure, flush stdout since Kansas is going Bye-Bye */
 	fflush (stdout);
 

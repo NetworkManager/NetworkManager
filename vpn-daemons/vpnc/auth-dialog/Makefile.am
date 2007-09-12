@@ -3,6 +3,7 @@ INCLUDES = -I${top_srcdir} -I${top_srcdir}/utils
 libexec_PROGRAMS = nm-vpnc-auth-dialog
 
 nm_vpnc_auth_dialog_CPPFLAGS =			\
+	$(NM_UTILS_CFLAGS)			\
 	$(GTHREAD_CFLAGS)			\
 	$(GTK_CFLAGS)				\
 	$(LIBGNOMEUI_CFLAGS)			\

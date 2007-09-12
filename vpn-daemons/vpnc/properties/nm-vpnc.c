@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 /***************************************************************************
  * CVSID: $Id$
  *
@@ -25,6 +26,7 @@
 #include <config.h>
 #endif
 
+#include <stdlib.h>
 #include <glib/gi18n-lib.h>
 #include <string.h>
 #include <glade/glade.h>
@@ -32,6 +34,7 @@
 #define NM_VPN_API_SUBJECT_TO_CHANGE
 
 #include <nm-vpn-ui-interface.h>
+#include "../src/nm-vpnc-service.h"
 #include "pcf-file.h"
 
 typedef struct _NetworkManagerVpnUIImpl NetworkManagerVpnUIImpl;
@@ -97,47 +100,49 @@ impl_get_service_name (NetworkManagerVpnUI *self)
 	return "org.freedesktop.NetworkManager.vpnc";
 }
 
-static GtkWidget *
-impl_get_widget (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, const char *connection_name)
+static void
+set_property (gpointer key, gpointer val, gpointer user_data)
 {
-	GSList *i;
+	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) user_data;
+	const char *name = (const char *) key;
+	GValue *value = (GValue *) val;
+
+	if (!strcmp (name, NM_VPNC_KEY_GATEWAY)) {
+		gtk_entry_set_text (impl->w_gateway, g_value_get_string (value));		
+	} else if (!strcmp (name, NM_VPNC_KEY_ID)) {
+		gtk_entry_set_text (impl->w_group_name, g_value_get_string (value));
+	} else if (!strcmp (name, NM_VPNC_KEY_XAUTH_USER)) {
+		gtk_entry_set_text (impl->w_username, g_value_get_string (value));
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_alternate_username), TRUE);
+		gtk_widget_set_sensitive (GTK_WIDGET (impl->w_username), TRUE);
+	} else if (!strcmp (name, NM_VPNC_KEY_DOMAIN)) {
+		gtk_entry_set_text (impl->w_domain, g_value_get_string (value));
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_domain), TRUE);
+		gtk_widget_set_sensitive (GTK_WIDGET (impl->w_domain), TRUE);
+	} else if (!strcmp (name, NM_VPNC_KEY_NAT_KEEPALIVE)) {
+		gtk_entry_set_text (impl->w_keepalive, g_value_get_string (value));
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_keepalive), TRUE);
+		gtk_widget_set_sensitive (GTK_WIDGET (impl->w_keepalive), TRUE);
+	} else if (!strcmp (name, NM_VPNC_KEY_DISABLE_NAT)) {
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_disable_natt), g_value_get_boolean (value));
+	} else if (!strcmp (name, NM_VPNC_KEY_SINGLE_DES)) {
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_enable_singledes), g_value_get_boolean (value));
+	}
+}
+
+static GtkWidget *
+impl_get_widget (NetworkManagerVpnUI *self, GHashTable *properties, GSList *routes, const char *connection_name)
+{
 	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) self->data;
+	GSList *i;
 
 	vpnc_clear_widget (impl);
 
 	if (connection_name != NULL)
 		gtk_entry_set_text (impl->w_connection_name, connection_name);
 
-	for (i = properties; i != NULL && g_slist_next (i) != NULL; i = g_slist_next (g_slist_next (i))) {
-		const char *key;
-		const char *value;
-
-		key = i->data;
-		value = (g_slist_next (i))->data;
-
-		if (strcmp (key, "IPSec gateway") == 0) {
-			gtk_entry_set_text (impl->w_gateway, value);		
-		} else if (strcmp (key, "IPSec ID") == 0) {
-			gtk_entry_set_text (impl->w_group_name, value);
-		} else if (strcmp (key, "Xauth username") == 0) {
-			gtk_entry_set_text (impl->w_username, value);
-			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_alternate_username), TRUE);
-			gtk_widget_set_sensitive (GTK_WIDGET (impl->w_username), TRUE);
-		} else if (strcmp (key, "Domain") == 0) {
-			gtk_entry_set_text (impl->w_domain, value);
-			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_domain), TRUE);
-			gtk_widget_set_sensitive (GTK_WIDGET (impl->w_domain), TRUE);
-		} else if (strcmp (key, "NAT-Keepalive packet interval") == 0) {
-			gtk_entry_set_text (impl->w_keepalive, value);
-			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_keepalive), TRUE);
-			gtk_widget_set_sensitive (GTK_WIDGET (impl->w_keepalive), TRUE);
-		} else if (strcmp (key, "Disable NAT Traversal") == 0) {
-			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_disable_natt), TRUE);
-		} else if (strcmp (key, "Enable Single DES") == 0) {
-			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_enable_singledes), TRUE);
-		}
-	}
-
+	if (properties)
+		g_hash_table_foreach (properties, set_property, self);
 
 	if (routes != NULL) {
 		GString *route_str;
@@ -164,15 +169,36 @@ impl_get_widget (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, 
 	return impl->widget;
 }
 
-static GSList *
-impl_get_properties (NetworkManagerVpnUI *self)
+static GValue *
+str_to_gvalue (const char *str)
 {
-	GSList *data;
+	GValue *value;
+
+	value = g_slice_new0 (GValue);
+	g_value_init (value, G_TYPE_STRING);
+	g_value_set_string (value, str);
+
+	return value;
+}
+
+static GValue *
+bool_to_gvalue (gboolean b)
+{
+	GValue *value;
+
+	value = g_slice_new0 (GValue);
+	g_value_init (value, G_TYPE_BOOLEAN);
+	g_value_set_boolean (value, b);
+
+	return value;
+}
+
+static gboolean
+impl_get_properties (NetworkManagerVpnUI *self, GHashTable *properties)
+{
 	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) self->data;
-	const char *connectionname;
 	const char *gateway;
 	const char *groupname;
-	const char *secret;
 	gboolean use_alternate_username;
 	const char *username;
 	gboolean use_keepalive;
@@ -182,7 +208,6 @@ impl_get_properties (NetworkManagerVpnUI *self)
 	gboolean enable_singledes;
 	const char *domain;
 
-	connectionname         = gtk_entry_get_text (impl->w_connection_name);
 	gateway                = gtk_entry_get_text (impl->w_gateway);
 	groupname              = gtk_entry_get_text (impl->w_group_name);
 	use_alternate_username = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_alternate_username));
@@ -194,33 +219,21 @@ impl_get_properties (NetworkManagerVpnUI *self)
 	enable_singledes       = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_enable_singledes));
 	domain                 = gtk_entry_get_text (impl->w_domain);
 
-	data = NULL;
-	data = g_slist_append (data, g_strdup ("IPSec gateway"));
-	data = g_slist_append (data, g_strdup (gateway));
-	data = g_slist_append (data, g_strdup ("IPSec ID"));
-	data = g_slist_append (data, g_strdup (groupname));
-	if (use_alternate_username) {
-		data = g_slist_append (data, g_strdup ("Xauth username"));
-		data = g_slist_append (data, g_strdup (username));
-	}
-	if (use_domain) {
-		data = g_slist_append (data, g_strdup ("Domain"));
-		data = g_slist_append (data, g_strdup (domain));
-	}
-	if (use_keepalive) {
-		data = g_slist_append (data, g_strdup ("NAT-Keepalive packet interval"));
-		data = g_slist_append (data, g_strdup (keepalive));
-	}
-	if (enable_singledes) {
-		data = g_slist_append (data, g_strdup ("Enable Single DES"));
-		data = g_slist_append (data, g_strdup (""));
-	}
-	if (disable_natt) {
-		data = g_slist_append (data, g_strdup ("Disable NAT Traversal"));
-		data = g_slist_append (data, g_strdup (""));
-	}
+	g_hash_table_insert (properties, NM_VPNC_KEY_GATEWAY, str_to_gvalue (gateway));
+	g_hash_table_insert (properties, NM_VPNC_KEY_ID, str_to_gvalue (groupname));
 
-	return data;
+	if (use_alternate_username)
+		g_hash_table_insert (properties, NM_VPNC_KEY_XAUTH_USER, str_to_gvalue (username));
+	if (use_domain)
+		g_hash_table_insert (properties, NM_VPNC_KEY_DOMAIN, str_to_gvalue (domain));
+	if (use_keepalive)
+		g_hash_table_insert (properties, NM_VPNC_KEY_NAT_KEEPALIVE, str_to_gvalue (keepalive));
+	if (enable_singledes)
+		g_hash_table_insert (properties, NM_VPNC_KEY_SINGLE_DES, bool_to_gvalue (TRUE));
+	if (disable_natt)
+		g_hash_table_insert (properties, NM_VPNC_KEY_DISABLE_NAT, bool_to_gvalue (TRUE));
+
+	return TRUE;
 }
 
 static GSList *
@@ -702,10 +715,14 @@ impl_import_file (NetworkManagerVpnUI *self, const char *path)
 }
 
 static gboolean
-export_to_file (NetworkManagerVpnUIImpl *impl, const char *path, 
-		GSList *properties, GSList *routes, const char *connection_name)
+export_to_file (NetworkManagerVpnUIImpl *impl,
+			 const char *path,
+			 GHashTable *properties,
+			 GSList *routes,
+			 const char *connection_name)
 {
 	FILE *f;
+	GValue *val;
 	GSList *i;
 	const char *gateway = NULL;
 	const char *keepalive = "0";
@@ -719,30 +736,33 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
 
 	/*printf ("in export_to_file; path='%s'\n", path);*/
 
-	for (i = properties; i != NULL && g_slist_next (i) != NULL; i = g_slist_next (g_slist_next (i))) {
-		const char *key;
-		const char *value;
+	val = (GValue *) g_hash_table_lookup (properties, NM_VPNC_KEY_GATEWAY);
+	if (val)
+		gateway = g_value_get_string (val);
 
-		key = i->data;
-		value = (g_slist_next (i))->data;
+	val = (GValue *) g_hash_table_lookup (properties, NM_VPNC_KEY_ID);
+	if (val)
+		groupname = g_value_get_string (val);
 
-		if (strcmp (key, "IPSec gateway") == 0) {
-			gateway = value;
-		} else if (strcmp (key, "IPSec ID") == 0) {
-			groupname = value;
-		} else if (strcmp (key, "Xauth username") == 0) {
-			username = value;
-		} else if (strcmp (key, "Domain") == 0) {
-			domain = value;
-		} else if (strcmp (key, "Disable NAT Traversal") == 0) {
-			enablenat = "0";
-		} else if (strcmp (key, "Enable Single DES") == 0) {
-			singledes = "1";
-		} else if (strcmp (key, "NAT-Keepalive packet interval") == 0) {
-			keepalive = value;
-		}
-	}
+	val = (GValue *) g_hash_table_lookup (properties, NM_VPNC_KEY_XAUTH_USER);
+	if (val)
+		username = g_value_get_string (val);
 
+	val = (GValue *) g_hash_table_lookup (properties, NM_VPNC_KEY_DOMAIN);
+	if (val)
+		domain = g_value_get_string (val);
+
+	val = (GValue *) g_hash_table_lookup (properties, NM_VPNC_KEY_DISABLE_NAT);
+	if (val)
+		enablenat = g_value_get_boolean (val) ? "0" : "1";
+
+	val = (GValue *) g_hash_table_lookup (properties, NM_VPNC_KEY_SINGLE_DES);
+	if (val)
+		singledes = g_value_get_boolean (val) ? "1" : "0";
+
+	val = (GValue *) g_hash_table_lookup (properties, NM_VPNC_KEY_NAT_KEEPALIVE);
+	if (val)
+		keepalive = g_value_get_string (val);
 
 	if (routes != NULL) {
 		GString *str;
@@ -828,7 +848,7 @@ out:
 
 
 static gboolean 
-impl_export (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, const char *connection_name)
+impl_export (NetworkManagerVpnUI *self, GHashTable *properties, GSList *routes, const char *connection_name)
 {
 	char *suggested_name;
 	char *path = NULL;

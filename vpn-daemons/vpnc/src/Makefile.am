@@ -1,4 +1,4 @@
-INCLUDES = -I${top_srcdir} -I${top_srcdir}/utils -I${top_srcdir}/vpn-daemons/vpnc
+INCLUDES = -I${top_srcdir} 
 
 AM_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
@@ -20,15 +20,14 @@ bin_PROGRAMS = nm-vpnc-service nm-vpnc-service-vpnc-helper
 
 nm_vpnc_service_SOURCES = \
 				nm-vpnc-service.c \
-				nm-vpnc-service.h \
-				nm-utils.c \
-				nm-utils.h
+				nm-vpnc-service.h
 
 
 nm_vpnc_service_LDADD = \
 				$(DBUS_LIBS) \
 				$(GTHREAD_LIBS) \
-				$(NM_UTILS_LIBS)
+				$(NM_UTILS_LIBS) \
+				-lnm_glib_vpn
 
 
 nm_vpnc_service_vpnc_helper_SOURCES = \

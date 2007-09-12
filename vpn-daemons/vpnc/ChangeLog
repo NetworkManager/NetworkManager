@@ -1,3 +1,17 @@
+2007-09-12  Tambet Ingo  <tambet@gmail.com>
+
+	* src/nm-vpnc-service.[ch]: Rewrite. Derive from NMVPNPlugin.
+
+	* src/nm-vpnc-service-vpnc-helper.c: Rewrite using dbus-glib.
+
+	* auth-dialog/main.c: Populate the properties hash with the passwords.
+
+	* properties/nm-vpnc.c: The VPN connection properties are all hash tables now.
+
+	* src/nm-utils.[ch]: Remove. Use the same things from libnm-util.
+
+	* configure.in: Check libnm_glib module as well now that we use NMVPNPlugin.
+
 2007-08-15  Tambet Ingo  <tambet@gmail.com>
 
 	* nm-vpnc-service.name.in: Use upper-case macro names as that's what the
