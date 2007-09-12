@@ -1,3 +1,9 @@
+2007-09-12  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerUtils.c
+	  src/NetworkManagerUtils.h
+		- (nm_utils_hexstr2bin): new function
+
 2007-09-11  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-manager.c

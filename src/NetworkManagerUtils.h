@@ -113,5 +113,7 @@ gboolean		nm_utils_same_ssid (const GByteArray * ssid1,
                                     const GByteArray * ssid2,
                                     gboolean ignore_trailing_null);
 
+char *          nm_utils_hexstr2bin (const char *hex, size_t len);
+
 #endif
 
