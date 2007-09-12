@@ -1723,32 +1723,32 @@ cull_scan_list (NMDevice80211Wireless * self)
 	GTimeVal        cur_time;
 	GSList *        outdated_list = NULL;
 	GSList *        elt;
-	NMAccessPoint * cur_ap = NULL;
+	NMActRequest *  req;
+	const char *    cur_ap_path = NULL;
 
 	g_return_if_fail (self != NULL);
 
 	g_get_current_time (&cur_time);
 
+	req = nm_device_get_act_request (NM_DEVICE (self));
+	if (req)
+		cur_ap_path = nm_act_request_get_specific_object (req);
+
 	/* Walk the access point list and remove any access points older than
 	 * three times the inactive scan interval.
 	 */
 	for (elt = self->priv->ap_list; elt; elt = g_slist_next (elt)) {
-		NMAccessPoint * outdated_ap = NM_AP (elt->data);
-		const glong  ap_time = nm_ap_get_last_seen (outdated_ap);
-		gboolean     keep_around = FALSE;
-		guint        prune_interval_s = SCAN_INTERVAL_MAX * 3;
-		const GByteArray * ssid;
-		const GByteArray * cur_ssid;
+		NMAccessPoint * ap = NM_AP (elt->data);
+		const glong     ap_time = nm_ap_get_last_seen (ap);
+		gboolean        keep = FALSE;
+		const guint     prune_interval_s = SCAN_INTERVAL_MAX * 3;
 
 		/* Don't ever prune the AP we're currently associated with */
-		ssid = nm_ap_get_ssid (outdated_ap);
-		// FIXME: get cur_ap somehow
-		cur_ssid = cur_ap ? nm_ap_get_ssid (cur_ap) : NULL;
-		if (ssid && nm_utils_same_ssid (cur_ssid, ssid, TRUE))
-			keep_around = TRUE;
+		if (cur_ap_path && !strcmp (cur_ap_path, nm_ap_get_dbus_path (ap)))
+			keep = TRUE;
 
-		if (!keep_around && (ap_time + prune_interval_s < cur_time.tv_sec))
-			outdated_list = g_slist_append (outdated_list, outdated_ap);
+		if (!keep && (ap_time + prune_interval_s < cur_time.tv_sec))
+			outdated_list = g_slist_append (outdated_list, ap);
 	}
 
 	/* Remove outdated APs */
@@ -2336,61 +2336,41 @@ remove_supplicant_timeouts (NMDevice80211Wireless *self)
 	remove_link_timeout (self);
 }
 
-
 static NMSupplicantConfig *
-build_supplicant_config (NMDevice80211Wireless *self)
+build_supplicant_config (NMDevice80211Wireless *self,
+                         NMConnection *connection,
+                         NMAccessPoint *ap)
 {
 	NMSupplicantConfig * config = NULL;
-	NMAccessPoint * 	ap = NULL;
 	const GByteArray *	ssid;
-	gboolean			is_adhoc;
+	gboolean			is_adhoc = FALSE;
+	NMSettingWireless * s_wireless;
+	NMSettingWirelessSecurity *s_wireless_sec;
 
 	g_return_val_if_fail (self != NULL, NULL);
 
-	ap = nm_device_802_11_wireless_get_activation_ap (self);
-	g_assert (ap);
+	s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, "802-11-wireless");
+	g_return_val_if_fail (s_wireless != NULL, NULL);
 
-	config = nm_supplicant_config_new (nm_device_get_iface (NM_DEVICE (self)));
-	if (config == NULL)
-		goto out;
+	config = nm_supplicant_config_new ();
+	if (!config)
+		return NULL;
 
-	/* Use "AP_SCAN 2" if the wireless network is non-broadcast or Ad-Hoc */
-	is_adhoc = (nm_ap_get_mode(ap) == IW_MODE_ADHOC);
-	if (!nm_ap_get_broadcast (ap) || is_adhoc) {
-		nm_supplicant_config_set_ap_scan (config, 2);
-	}
-
-	ssid = nm_ap_get_ssid (ap);
-	if (!ssid) {
-		nm_warning ("can't add null ssid to config.");
+	if (!nm_supplicant_config_add_setting_wireless (config,
+	                                                s_wireless,
+	                                                nm_ap_get_broadcast (ap))) {
+		nm_warning ("Couldn't add 802-11-wireless setting to supplicant config.");
 		goto error;
 	}
-	nm_supplicant_config_add_option (config, "ssid", (const char *) ssid->data, ssid->len);
 
-	/* For non-broadcast networks, we need to set "scan_ssid 1" to scan with probe request frames.
-	 * However, don't try to probe Ad-Hoc networks.
-	 */
-	if (!nm_ap_get_broadcast (ap) && !is_adhoc) {
-		if (!nm_supplicant_config_add_option (config, "scan_ssid", "1", -1))
-			goto error;
-	}
-
-	/* Ad-Hoc ? */
-	if (is_adhoc) {
-		if (!nm_supplicant_config_add_option (config, "mode", "1", -1))
-			goto error;
-	}
-
-#if 0
-	// FIXME: send nm-802-11-wireless & nm-802-11-wireless-security
-	// settings objects to the supplicant
-	if (!nm_ap_security_write_supplicant_config (nm_ap_get_security (ap),
-	                                             config,
-	                                             is_adhoc))
+	s_wireless_sec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, "802-11-wireless-security");
+	if (   s_wireless_sec
+	    && !nm_supplicant_config_add_setting_wireless_security (config,
+	                                                            s_wireless_sec)) {
+		nm_warning ("Couldn't add 802-11-wireless-security setting to supplicant config.");
 		goto error;
-#endif
+	}
 
-out:
 	return config;
 
 error:
@@ -2471,6 +2451,7 @@ real_act_stage2_config (NMDevice *dev)
 	NMSupplicantConfig *	config = NULL;
 	gulong                  id = 0;
 	NMActRequest *          req;
+	NMAccessPoint *         ap;
 	NMConnection *          connection;
 	NMSettingConnection *	s_connection;
 	const char *			setting_name;
@@ -2479,6 +2460,9 @@ real_act_stage2_config (NMDevice *dev)
 
 	req = nm_device_get_act_request (dev);
 	g_assert (req);
+
+	ap = nm_device_802_11_wireless_get_activation_ap (self);
+	g_assert (ap);
 
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
@@ -2504,7 +2488,7 @@ real_act_stage2_config (NMDevice *dev)
 		         iface, s_connection->name);
 	}
 
-	config = build_supplicant_config (self);
+	config = build_supplicant_config (self, connection, ap);
 	if (config == NULL) {
 		nm_warning ("Activation (%s/wireless): couldn't build wireless "
 			"configuration.", iface);

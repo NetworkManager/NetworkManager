@@ -24,6 +24,7 @@
 
 #include <glib-object.h>
 #include "nm-supplicant-types.h"
+#include "nm-setting.h"
 
 G_BEGIN_DECLS
 
@@ -47,7 +48,7 @@ typedef struct
 
 GType nm_supplicant_config_get_type (void);
 
-NMSupplicantConfig * nm_supplicant_config_new (const char *ifname);
+NMSupplicantConfig * nm_supplicant_config_new (void);
 
 gboolean nm_supplicant_config_add_option (NMSupplicantConfig *scfg,
                                           const char * key,
@@ -63,6 +64,13 @@ void nm_supplicant_config_set_ap_scan (NMSupplicantConfig * self,
                                        guint32 ap_scan);
 
 GHashTable *nm_supplicant_config_get_hash (NMSupplicantConfig * self);
+
+gboolean nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
+                                                    NMSettingWireless * setting,
+                                                    gboolean is_broadcast);
+
+gboolean nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig * self,
+                                                             NMSettingWirelessSecurity * setting);
 
 G_END_DECLS
 
