@@ -36,7 +36,7 @@ NMDevice    *nm_device_new               (DBusGConnection *connection,
 
 void         nm_device_activate          (NMDevice *device,
                                           const char *service_name,
-                                          NMConnection *connection,
+                                          const char *connection_path,
                                           const char *specific_object);
 
 void         nm_device_deactivate        (NMDevice *device);

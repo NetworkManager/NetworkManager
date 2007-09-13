@@ -133,19 +133,19 @@ nm_device_new (DBusGConnection *connection, const char *path)
 void
 nm_device_activate (NMDevice *device,
                     const char *service_name,
-                    NMConnection *connection,
+                    const char *connection_path,
                     const char *specific_object)
 {
 	GError *err = NULL;
 
 	g_return_if_fail (NM_IS_DEVICE (device));
 	g_return_if_fail (service_name != NULL);
-	g_return_if_fail (connection != NULL);
+	g_return_if_fail (connection_path != NULL);
 
 	if (!org_freedesktop_NetworkManager_Device_activate (NM_DEVICE_GET_PRIVATE (device)->device_proxy,
 	                                                     service_name,
-	                                                     nm_connection_to_hash (connection),
-	                                                     specific_object,
+	                                                     connection_path,
+	                                                     specific_object ? specific_object : "/",
 	                                                     &err)) {
 		g_warning ("Cannot activate device: %s", err->message);
 		g_error_free (err);

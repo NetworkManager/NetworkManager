@@ -1,5 +1,13 @@
 2007-09-13  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/nm-device.c
+	  libnm-glib/nm-device.h
+		- (nm_device_activate): take a connection object path rather than an
+			NMConnection because NMConnection isn't exported over D-Bus and
+			therefore it dbus-glib can't automatically get an object path from it
+
+2007-09-13  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting.c
 		- (nm_setting_wired_new): set autonegotiate to TRUE by default
 
