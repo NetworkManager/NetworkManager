@@ -493,13 +493,17 @@ NMSetting *
 nm_setting_wired_new (void)
 {
 	NMSetting *setting;
+	NMSettingWired *s_wired;
 
-	setting = (NMSetting *) g_slice_new0 (NMSettingWired);
+	s_wired = g_slice_new0 (NMSettingWired);
+	setting = (NMSetting *) s_wired;
 
 	setting->name = g_strdup ("802-3-ethernet");
 	setting->verify_fn = setting_wired_verify;
 	setting->hash_fn = setting_wired_hash;
 	setting->destroy_fn = setting_wired_destroy;
+
+	s_wired->auto_negotiate = TRUE;
 
 	return setting;
 }
