@@ -1,5 +1,13 @@
 2007-09-13  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-3-ethernet.c
+		- (real_bring_down, nm_device_802_3_ethernet_dispose): disconnect from
+			netlink monitor carrier signals on dispose, not bring down.  The
+			carrier signals should be handled over the entire lifetime of the
+			device anyway, not created/destroyed on up or down.
+
+2007-09-13  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/nm-device.c
 	  libnm-glib/nm-device.h
 		- (nm_device_activate): take a connection object path rather than an

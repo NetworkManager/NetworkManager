@@ -219,7 +219,6 @@ real_bring_down (NMDevice *dev)
 {
 	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (dev);
 	NMSupplicantManager *sup_mgr;
-	NMNetlinkMonitor *monitor;
 
 	sup_mgr = nm_supplicant_manager_get ();
 	if (priv->sup_iface) {
@@ -227,17 +226,6 @@ real_bring_down (NMDevice *dev)
 		priv->sup_iface = NULL;
 	}
 	g_object_unref (sup_mgr);
-
-	monitor = nm_netlink_monitor_get ();
-	if (priv->link_connected_id) {
-		g_signal_handler_disconnect (monitor, priv->link_connected_id);
-		priv->link_connected_id = 0;
-	}
-	if (priv->link_disconnected_id) {
-		g_signal_handler_disconnect (monitor, priv->link_disconnected_id);
-		priv->link_disconnected_id = 0;
-	}
-	g_object_unref (monitor);
 }
 
 
@@ -436,6 +424,26 @@ real_get_best_connection (NMDevice *dev,
 
 
 static void
+nm_device_802_3_ethernet_dispose (GObject *object)
+{
+	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (object);
+	NMNetlinkMonitor *monitor;
+
+	monitor = nm_netlink_monitor_get ();
+	if (priv->link_connected_id) {
+		g_signal_handler_disconnect (monitor, priv->link_connected_id);
+		priv->link_connected_id = 0;
+	}
+	if (priv->link_disconnected_id) {
+		g_signal_handler_disconnect (monitor, priv->link_disconnected_id);
+		priv->link_disconnected_id = 0;
+	}
+	g_object_unref (monitor);
+
+	G_OBJECT_CLASS (nm_device_802_3_ethernet_parent_class)->dispose (object);
+}
+
+static void
 nm_device_802_3_ethernet_finalize (GObject *object)
 {
 	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (object);
@@ -480,6 +488,7 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 
 	/* virtual methods */
 	object_class->constructor = constructor;
+	object_class->dispose = nm_device_802_3_ethernet_dispose;
 	object_class->get_property = get_property;
 	object_class->finalize = nm_device_802_3_ethernet_finalize;
 
