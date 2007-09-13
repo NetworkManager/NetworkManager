@@ -38,7 +38,7 @@ NMVPNConnection *nm_vpn_manager_connect (NMVPNManager *manager,
 								 const char   *name,
 								 GHashTable   *properties,
 								 NMDevice     *device,
-								 char        **routes);
+								 GSList       *routes);
 
 GSList *nm_vpn_manager_get_connections  (NMVPNManager *manager);
 

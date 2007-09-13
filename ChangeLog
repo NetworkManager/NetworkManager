@@ -1,5 +1,11 @@
 2007-09-13  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/nm-vpn-manager.h
+	  libnm-glib/nm-vpn-manager.c
+		- (nm_vpn_manager_connect): take routes as a GSList, not a char **
+
+2007-09-13  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-3-ethernet.c
 		- (real_bring_down, nm_device_802_3_ethernet_dispose): disconnect from
 			netlink monitor carrier signals on dispose, not bring down.  The
