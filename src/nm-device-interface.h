@@ -51,6 +51,8 @@ struct _NMDeviceInterface {
 
 	/* Methods */
 	void (*activate) (NMDeviceInterface *device,
+	                  const char *service_name,
+	                  const char *connection_path,
 	                  NMConnection *connection,
 	                  const char *specific_object,
 	                  gboolean user_requested);
@@ -66,10 +68,12 @@ GType nm_device_interface_error_get_type (void);
 
 GType nm_device_interface_get_type (void);
 
-void nm_device_interface_activate   (NMDeviceInterface *device,
-								     NMConnection *connection,
-								     const char *specific_object,
-									 gboolean user_requested);
+void nm_device_interface_activate (NMDeviceInterface *device,
+                                   const char *service_name,
+                                   const char *connection_path,
+                                   NMConnection *connection,
+                                   const char *specific_object,
+                                   gboolean user_requested);
 
 void nm_device_interface_deactivate (NMDeviceInterface *device);
 

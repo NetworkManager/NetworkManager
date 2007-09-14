@@ -69,6 +69,8 @@ struct _NMDevicePrivate
 	struct in6_addr	ip6_address;
 
 	NMActRequest *		act_request;
+	gulong          act_deferred_timeout_id;
+	gulong          act_deferred_start_id;
 	guint           act_source_id;
 	gulong          secrets_updated_id;
 
@@ -81,9 +83,11 @@ struct _NMDevicePrivate
 };
 
 static void nm_device_activate (NMDeviceInterface *device,
-								NMConnection *connection,
-								const char *specific_object,
-								gboolean user_requested);
+                                const char *service_name,
+                                const char *connection_path,
+                                NMConnection *connection,
+                                const char *specific_object,
+                                gboolean user_requested);
 
 static void	nm_device_activate_schedule_stage5_ip_config_commit (NMDevice *self);
 static void nm_device_deactivate (NMDeviceInterface *device);
@@ -121,6 +125,8 @@ nm_device_init (NMDevice * self)
 	self->priv->ip4_address = 0;
 	memset (&self->priv->ip6_address, 0, sizeof (struct in6_addr));
 
+	self->priv->act_deferred_timeout_id = 0;
+	self->priv->act_deferred_start_id = 0;
 	self->priv->act_source_id = 0;
 
 	self->priv->system_config_data = NULL;
@@ -952,9 +958,23 @@ clear_act_request (NMDevice *self)
 	if (!priv->act_request)
 		return;
 
-	g_signal_handler_disconnect (priv->act_request,
-	                             priv->secrets_updated_id);
-	priv->secrets_updated_id = 0;
+	if (priv->act_deferred_timeout_id) {
+		g_signal_handler_disconnect (priv->act_request,
+		                             priv->act_deferred_timeout_id);
+		priv->act_deferred_timeout_id = 0;
+	}
+
+	if (priv->act_deferred_start_id) {
+		g_signal_handler_disconnect (priv->act_request,
+		                             priv->act_deferred_start_id);
+		priv->act_deferred_start_id = 0;
+	}
+
+	if (priv->secrets_updated_id) {
+		g_signal_handler_disconnect (priv->act_request,
+		                             priv->secrets_updated_id);
+		priv->secrets_updated_id = 0;
+	}
 
 	g_object_unref (priv->act_request);
 	priv->act_request = NULL;
@@ -1096,33 +1116,53 @@ connection_secrets_updated_cb (NMActRequest *req,
 }
 
 static void
-nm_device_activate (NMDeviceInterface *device,
-					NMConnection *connection,
-					const char *specific_object,
-					gboolean user_requested)
+deferred_activation_timeout_cb (NMActRequest *req, gpointer user_data)
 {
-	NMDevice *self = NM_DEVICE (device);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-	gulong id;
+	NMDevice *self = NM_DEVICE (user_data);
+
+	if (nm_device_get_act_request (self) != req)
+		return;
+
+	nm_info ("%s: didn't receive connection details soon enough for activation.",
+	         nm_device_get_iface (self));
+
+	clear_act_request (self);
+	nm_device_state_changed (self, NM_DEVICE_STATE_DISCONNECTED);
+}
+
+static gboolean
+device_activation_precheck (NMDevice *self, NMConnection *connection)
+{
+	NMConnection *current_connection;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
 	if (!NM_DEVICE_GET_CLASS (self)->check_connection (self, connection))
 		/* connection is invalid */
-		return;
+		return FALSE;
 
-	if (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED || nm_device_is_activating (self)) {
-		NMConnection *current_connection;
+	if (nm_device_get_state (self) != NM_DEVICE_STATE_ACTIVATED)
+		return TRUE;
 
-		current_connection = nm_act_request_get_connection (nm_device_get_act_request (self));
+	if (!nm_device_is_activating (self))
+		return TRUE;
 
-		if (nm_connection_compare (connection, current_connection))
-			/* Already activating or activated with the same connection */
-			return;
+	current_connection = nm_act_request_get_connection (nm_device_get_act_request (self));
+	if (nm_connection_compare (connection, current_connection))
+		/* Already activating or activated with the same connection */
+		return FALSE;
 
-		nm_device_deactivate (device);
-	}
+	return TRUE;
+}
 
-	nm_info ("Activating device %s", nm_device_get_iface (self));
-	priv->act_request = nm_act_request_new (connection, specific_object, user_requested);
+static void
+device_activation_go (NMDevice *self)
+{
+	NMDevicePrivate * priv;
+	gulong id;
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
 	id = g_signal_connect (priv->act_request,
 	                       "connection-secrets-updated",
 	                       G_CALLBACK (connection_secrets_updated_cb),
@@ -1130,6 +1170,90 @@ nm_device_activate (NMDeviceInterface *device,
 	priv->secrets_updated_id = id;
 
 	nm_device_activate_schedule_stage1_device_prepare (self);
+}
+
+static void
+deferred_activation_start_cb (NMActRequest *req, gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+	NMDevicePrivate * priv;
+	NMConnection *connection;
+
+	if (nm_device_get_act_request (self) != req)
+		return;
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	g_signal_handler_disconnect (priv->act_request,
+	                             priv->act_deferred_start_id);
+	priv->act_deferred_start_id = 0;
+
+	connection = nm_act_request_get_connection (req);
+	if (device_activation_precheck (self, connection) == FALSE)
+		return;
+
+	nm_info ("%s: connection details received, will start activation.",
+	         nm_device_get_iface (self));
+
+	device_activation_go (self);
+}
+
+static void
+nm_device_activate (NMDeviceInterface *device,
+					const char *service_name,
+					const char *connection_path,
+					NMConnection *connection,
+					const char *specific_object,
+					gboolean user_requested)
+{
+	NMDevice *self = NM_DEVICE (device);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	/* Only one of:
+	 *    - connection
+	 *    - service_name AND connection_path
+	 * is valid.
+	 */
+	if (!connection) {
+		g_return_if_fail (service_name != NULL);
+		g_return_if_fail (connection_path != NULL);
+	} else if (connection) {
+		g_return_if_fail (service_name == NULL);
+		g_return_if_fail (connection_path == NULL);
+	}
+
+	nm_info ("Activating device %s", nm_device_get_iface (self));
+	if (connection) {
+		if (device_activation_precheck (self, connection) == FALSE)
+			return;
+
+		priv->act_request = nm_act_request_new (connection,
+		                                        specific_object,
+		                                        user_requested);
+		device_activation_go (self);
+	} else {
+		gulong id;
+
+		/* Don't have the connection quite yet, probably created by
+		 * the client on-the-fly.  Defer the activation until we have it
+		 */
+		priv->act_request = nm_act_request_new_deferred (service_name,
+		                                                 connection_path,
+		                                                 specific_object,
+		                                                 user_requested);
+
+		id = g_signal_connect (priv->act_request, "deferred-activation-timeout",
+		                       G_CALLBACK (deferred_activation_timeout_cb),
+		                       self);
+		priv->act_deferred_timeout_id = id;
+
+		id = g_signal_connect (priv->act_request, "deferred-activation-start",
+		                       G_CALLBACK (deferred_activation_start_cb),
+		                       self);
+		priv->act_deferred_start_id = id;
+
+		nm_info ("%s: Deferring activation until connection information is "
+		         "received.", nm_device_get_iface (self));
+	}
 }
 
 /*

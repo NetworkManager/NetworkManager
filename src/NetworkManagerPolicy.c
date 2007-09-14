@@ -338,7 +338,11 @@ nm_policy_device_change_check (gpointer user_data)
 
 		if (new_dev) {
 			nm_device_interface_activate (NM_DEVICE_INTERFACE (new_dev),
-										  connection, specific_object, FALSE);
+			                              NULL,
+			                              NULL,
+			                              connection,
+			                              specific_object,
+			                              FALSE);
 		}
 	}
 

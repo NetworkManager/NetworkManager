@@ -177,16 +177,22 @@ nm_device_interface_get_type (void)
 	return device_interface_type;
 }
 
+/* Pass _either_ connection_path or connection.  Passing 'connection' is
+ * meant for internal use only.
+ */
 void
 nm_device_interface_activate (NMDeviceInterface *device,
-							  NMConnection *connection,
-							  const char *specific_object,
-							  gboolean user_requested)
+                              const char *service_name,
+                              const char *connection_path,
+                              NMConnection *connection,
+                              const char *specific_object,
+                              gboolean user_requested)
 {
 	g_return_if_fail (NM_IS_DEVICE_INTERFACE (device));
-	g_return_if_fail (connection != NULL);
 
 	NM_DEVICE_INTERFACE_GET_INTERFACE (device)->activate (device,
+	                                                      service_name,
+	                                                      connection_path,
 	                                                      connection,
 	                                                      specific_object,
 	                                                      user_requested);
@@ -199,36 +205,13 @@ impl_device_activate (NMDeviceInterface *device,
                       const char *specific_object,
                       GError **err)
 {
-	NMManager *manager;
-	NMConnection *connection;
-	gboolean success = FALSE;
-
-	manager = nm_manager_get ();
-	if (!strcmp (service_name, NM_DBUS_SERVICE_USER_SETTINGS)) {
-		connection = nm_manager_get_connection_by_object_path (manager,
-		                                                       NM_CONNECTION_TYPE_USER,
-		                                                       connection_path);
-	} else if (!strcmp (service_name, NM_DBUS_SERVICE_USER_SETTINGS)) {
-		connection = nm_manager_get_connection_by_object_path (manager,
-		                                                       NM_CONNECTION_TYPE_SYSTEM,
-		                                                       connection_path);
-	}
-
-	if (connection == NULL) {
-		g_set_error (err,
-		             NM_DEVICE_INTERFACE_ERROR,
-		             NM_DEVICE_INTERFACE_ERROR_UNKNOWN_CONNECTION,
-		             "%s",
-		             "Connection object or service unknown");
-		goto out;
-	}
-
-	nm_connection_dump (connection);
-	nm_device_interface_activate (device, connection, specific_object, TRUE);
-	success = TRUE;
-
-out:
-	return success;
+	nm_device_interface_activate (device,
+	                              service_name,
+	                              connection_path,
+	                              NULL,
+	                              specific_object,
+	                              TRUE);
+	return TRUE;
 }
 
 void

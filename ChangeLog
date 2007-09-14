@@ -1,5 +1,35 @@
 2007-09-14  Dan Williams  <dcbw@redhat.com>
 
+	Implement deferred activation support in the device class.
+
+	* src/nm-device-interface.c
+	  src/nm-device-interface.h
+		- (nm_device_interface_activate): take more arguments to support
+			deferred activation; callers must pass one of (connection) OR
+			(service_name, connection_path)
+		- (impl_device_activate): connection validation is punted to the device
+			to be able to handle deferred activation.  Yes, this means errors
+			don't get returned from the Activate() dbus call, and yes, that
+			should be fixed somehow later.
+
+	* src/nm-device.c
+	  src/nm-device.h
+		- (clear_act_request): clear additional deferred activation stuff too
+		- (deferred_activation_timeout_cb): new function; clean up when
+			deferred activation times out.
+		- (deferred_activation_start_cb): new function; when the connection
+			finally becomes available, start device activation
+		- (nm_device_activate): attach to the right signals of the activation
+			request if we need to defer activation until the connection is valid
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_device_change_check): update for additional arguments
+			required for nm_device_interface_activate().  Pass NULL for these
+			though because this function already knows exactly which
+			NMConnection to use
+
+2007-09-14  Dan Williams  <dcbw@redhat.com>
+
 	Implement deferred activation handling in the NMActRequest class.  When a
 	client wants to activate a device but must create the NMConnection details
 	on the fly, there likely hasn't been enough time yet for NM to receive the
