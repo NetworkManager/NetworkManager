@@ -2,6 +2,7 @@
 #include <dbus/dbus-glib.h>
 #include <string.h>
 #include "nm-connection.h"
+#include "nm-utils.h"
 
 typedef struct {
 	GHashTable *settings;
@@ -193,6 +194,9 @@ add_one_setting_to_hash (gpointer key, gpointer data, gpointer user_data)
 	NMSetting *setting = (NMSetting *) data;
 	GHashTable *connection_hash = (GHashTable *) user_data;
 	GHashTable *setting_hash;
+
+	g_return_if_fail (setting != NULL);
+	g_return_if_fail (connection_hash != NULL);
 
 	setting_hash = nm_setting_to_hash (setting);
 	if (setting_hash)
