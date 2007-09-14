@@ -1,5 +1,22 @@
 2007-09-14  Dan Williams  <dcbw@redhat.com>
 
+	Implement deferred activation handling in the NMActRequest class.  When a
+	client wants to activate a device but must create the NMConnection details
+	on the fly, there likely hasn't been enough time yet for NM to receive the
+	new connection signal and grab all the connection details.  So the
+	activation is deferred (and bounded by a timer) for a while, and if the
+	connection appears within the window, it is activated.
+
+	* src/nm-activation-request.c
+	  src/nm-activation-request.h
+		- (nm_act_request_class_init): two new signals to support deferred
+			activation, to allow the listener to handle both timeout and success
+		- (nm_act_request_new_deferred): new function, starts the deferred
+			activation timeout handler and listens to the NMManager for
+			new-connection signals to notice when the connection comes in
+
+2007-09-14  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-manager.h
 	  src/nm-manager.c
 		- (nm_manager_get_connection_service_name,
