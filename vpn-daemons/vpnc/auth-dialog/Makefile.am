@@ -1,4 +1,4 @@
-INCLUDES = -I${top_srcdir} -I${top_srcdir}/utils
+INCLUDES = -I${top_srcdir}
 
 libexec_PROGRAMS = nm-vpnc-auth-dialog
 

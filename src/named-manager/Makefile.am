@@ -1,4 +1,4 @@
-INCLUDES = -I${top_srcdir}/utils -I${top_srcdir}/libnm-util -I${top_srcdir}/src -I${top_srcdir}/include
+INCLUDES = -I${top_srcdir}/libnm-util -I${top_srcdir}/src -I${top_srcdir}/include
 
 noinst_LTLIBRARIES = libnamed-manager.la
 

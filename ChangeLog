@@ -1,3 +1,18 @@
+2007-09-14  Dan Williams  <dcbw@redhat.com>
+
+	* utils/Makefile.am
+	  utils/nm-utils.c
+	  utils/nm-utils.h
+	  src/supplicant-manager/Makefile.am
+	  src/dhcp-manager/Makefile.am
+	  src/backends/Makefile.am
+	  src/named-manager/Makefile.am
+	  src/ppp-manager/Makefile.am
+	  src/vpn-manager/Makefile.am
+	  test/libnm-util/Makefile.am
+	  test/test-common/Makefile.am
+		- Remove utils/; it was unused
+
 2007-09-13  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-glib/nm-vpn-manager.h
