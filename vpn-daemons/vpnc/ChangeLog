@@ -1,3 +1,7 @@
+2007-09-14   Clytie Siddall <clytie@riverland.net.au>
+
+	* configure.in: Added "vi" to ALL_LINGUAS.
+
 2007-06-21  Christopher Aillon  <caillon@redhat.com>
 
 	* nm-vpnc-service.name.in:
