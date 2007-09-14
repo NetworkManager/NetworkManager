@@ -1,5 +1,17 @@
 2007-09-14  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-manager.h
+	  src/nm-manager.c
+		- (nm_manager_get_connection_service_name,
+		   nm_manager_get_connection_dbus_path): get details about a connection
+			known internally by the NMManager
+		- (nm_manager_class_init): fix connection add/remove signal marshalers
+			because NMConnection is now a GObject subclass
+		- Use constant for the gobject data tag used on NMConnection objects for
+			storing the associated DBusGProxy
+
+2007-09-14  Dan Williams  <dcbw@redhat.com>
+
 	* utils/Makefile.am
 	  utils/nm-utils.c
 	  utils/nm-utils.h

@@ -61,6 +61,8 @@ enum {
 	LAST_PROP
 };
 
+#define CONNECTION_PROXY_TAG "dbus-proxy"
+
 static void
 nm_manager_init (NMManager *manager)
 {
@@ -199,9 +201,9 @@ nm_manager_class_init (NMManagerClass *manager_class)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMManagerClass, connection_added),
 					  NULL, NULL,
-					  g_cclosure_marshal_VOID__POINTER,
+					  g_cclosure_marshal_VOID__OBJECT,
 					  G_TYPE_NONE, 1,
-					  G_TYPE_POINTER);
+					  G_TYPE_OBJECT);
 
 	signals[CONNECTION_REMOVED] =
 		g_signal_new ("connection-removed",
@@ -209,9 +211,9 @@ nm_manager_class_init (NMManagerClass *manager_class)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMManagerClass, connection_removed),
 					  NULL, NULL,
-					  g_cclosure_marshal_VOID__POINTER,
+					  g_cclosure_marshal_VOID__OBJECT,
 					  G_TYPE_NONE, 1,
-					  G_TYPE_POINTER);
+					  G_TYPE_OBJECT);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (manager_class),
 									 &dbus_glib_nm_manager_object_info);
@@ -282,7 +284,7 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 		if (connection == NULL)
 			goto out;
 
-		g_object_set_data (G_OBJECT (connection), "dbus-proxy", proxy);
+		g_object_set_data (G_OBJECT (connection), CONNECTION_PROXY_TAG, proxy);
 		g_object_weak_ref (G_OBJECT (connection), destroy_connection_proxy, proxy);
 
 		priv = NM_MANAGER_GET_PRIVATE (manager);
@@ -294,7 +296,10 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 			g_hash_table_insert (priv->system_connections,
 			                     g_strdup (path),
 			                     connection);
-		}			
+		} else {
+			nm_warning ("Connection wasn't a user connection or a system connection.");
+			g_assert_not_reached ();
+		}
 
 		g_signal_emit (manager, signals[CONNECTION_ADDED], 0, connection);
 	} else {
@@ -949,6 +954,42 @@ nm_manager_get_connection_by_object_path (NMManager *manager,
 	return connection;
 }
 
+const char *
+nm_manager_get_connection_service_name (NMManager *manager,
+                                        NMConnection *connection)
+{
+	DBusGProxy *proxy;
+
+	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	proxy = g_object_get_data (G_OBJECT (connection), CONNECTION_PROXY_TAG);
+	if (!DBUS_IS_G_PROXY (proxy)) {
+		nm_warning ("Couldn't get dbus proxy for connection.");
+		return NULL;
+	}
+
+	return dbus_g_proxy_get_bus_name (proxy);
+}
+
+const char *
+nm_manager_get_connection_dbus_path (NMManager *manager,
+                                     NMConnection *connection)
+{
+	DBusGProxy *proxy;
+
+	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	proxy = g_object_get_data (G_OBJECT (connection), CONNECTION_PROXY_TAG);
+	if (!DBUS_IS_G_PROXY (proxy)) {
+		nm_warning ("Couldn't get dbus proxy for connection.");
+		return NULL;
+	}
+
+	return dbus_g_proxy_get_path (proxy);
+}
+
 void
 nm_manager_update_connections (NMManager *manager,
                                NMConnectionType type,
@@ -1022,7 +1063,7 @@ nm_manager_get_connection_secrets (NMManager *manager,
 	g_return_if_fail (NM_IS_MANAGER (manager));
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 
-	proxy = g_object_get_data (G_OBJECT (connection), "dbus-proxy");
+	proxy = g_object_get_data (G_OBJECT (connection), CONNECTION_PROXY_TAG);
 	if (!DBUS_IS_G_PROXY (proxy)) {
 		nm_warning ("Couldn't get dbus proxy for connection.");
 		goto error;
