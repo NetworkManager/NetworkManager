@@ -357,7 +357,6 @@ nm_connection_new_from_hash (GHashTable *hash)
 
 	connection = nm_connection_new ();
 	g_hash_table_foreach (hash, parse_one_setting, connection);
-nm_connection_dump (connection);
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
 
