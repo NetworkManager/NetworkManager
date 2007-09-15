@@ -1,5 +1,11 @@
 2007-09-14  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/dbus-method-dispatcher.c
+	  libnm-util/dbus-method-dispatcher.h
+		- Remove, unused
+
+2007-09-14  Dan Williams  <dcbw@redhat.com>
+
 	Implement deferred activation support in the device class.
 
 	* src/nm-device-interface.c
