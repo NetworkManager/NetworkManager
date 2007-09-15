@@ -168,28 +168,6 @@ PKG_CHECK_MODULES(LIBNL, libnl-1)
 AC_SUBST(LIBNL_CFLAGS)
 AC_SUBST(LIBNL_LIBS)
 
-AC_ARG_WITH(gcrypt, AC_HELP_STRING([--with-gcrypt], [Use gcrypt library]), ac_gcrypt=$withval, ac_gcrypt=auto)
-if test x"$ac_gcrypt" != xno; then
-  AC_PATH_PROG(LIBGCRYPT_CONFIG, libgcrypt-config, no)
-else
-  LIBGCRYPT_CONFIG=no
-fi 
-if test x"$LIBGCRYPT_CONFIG" = xno; then
-   if test x"$ac_gcrypt" = xyes; then
-      AC_MSG_ERROR([gcrypt explicitly requested but not found on system])
-   fi
-   ac_gcrypt=no
-else
-   if test x"$ac_gcrypt" != xno; then
-     AC_DEFINE(HAVE_GCRYPT, 1, [Define if you have libgcrypt])
-     LIBGCRYPT_CFLAGS=`$LIBGCRYPT_CONFIG --cflags`
-     LIBGCRYPT_LIBS=`$LIBGCRYPT_CONFIG --libs`
-     AC_SUBST(LIBGCRYPT_CFLAGS)
-     AC_SUBST(LIBGCRYPT_LIBS)
-   fi
-fi
-AM_CONDITIONAL(WITH_GCRYPT, test x"$ac_gcrypt" != xno)
-
 GLIB_GENMARSHAL=`pkg-config --variable=glib_genmarshal glib-2.0`
 AC_SUBST(GLIB_GENMARSHAL)
 

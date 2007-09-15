@@ -1,5 +1,37 @@
 2007-09-14  Dan Williams  <dcbw@redhat.com>
 
+	Remove unused stuff in libnm-util
+
+	* configure.in
+	  libnm-util/Makefile.am
+	  libnm-util/cipher-private.h
+	  libnm-util/cipher-wep-ascii.c
+	  libnm-util/cipher-wep-ascii.h
+	  libnm-util/cipher-wep-hex.c
+	  libnm-util/cipher-wep-hex.h
+	  libnm-util/cipher-wep-passphrase.c
+	  libnm-util/cipher-wep-passphrase.h
+	  libnm-util/cipher-wpa-psk-hex.c
+	  libnm-util/cipher-wpa-psk-hex.h
+	  libnm-util/cipher-wpa-psk-passphrase.c
+	  libnm-util/cipher-wpa-psk-passphrase.h
+	  libnm-util/cipher.c
+	  libnm-util/cipher.h
+	  libnm-util/dbus-helpers.c
+	  libnm-util/dbus-helpers.h
+	  libnm-util/gnome-keyring-md5.c
+	  libnm-util/gnome-keyring-md5.h
+	  libnm-util/sha1.c
+	  libnm-util/sha1.h
+	  src/nm-device-802-11-wireless.c
+	  test/libnm-util/Makefile.am
+	  test/libnm-util/test-ciphers.c
+	  test/libnm-util/test-dbus-helpers.c
+	  test/libnm-util/test-inputs.h
+		- Removed
+
+2007-09-14  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/dbus-method-dispatcher.c
 	  libnm-util/dbus-method-dispatcher.h
 		- Remove, unused

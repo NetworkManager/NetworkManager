@@ -11,28 +11,7 @@ libnm_util_la_CPPFLAGS =				\
 	-DGNOME_DISABLE_DEPRECATED		\
 	-DGNOMELOCALEDIR=\"$(datadir)/locale\"
 
-if WITH_GCRYPT
-libnm_util_la_CPPFLAGS += $(LIBGCRYPT_CFLAGS)
-endif
-
 libnm_util_la_SOURCES=			\
-	cipher.c					\
-	cipher.h					\
-	cipher-private.h			\
-	cipher-wep-hex.c			\
-	cipher-wep-hex.h			\
-	cipher-wep-passphrase.c		\
-	cipher-wep-passphrase.h		\
-	cipher-wep-ascii.c			\
-	cipher-wep-ascii.h			\
-	cipher-wpa-psk-hex.c		\
-	cipher-wpa-psk-hex.h		\
-	cipher-wpa-psk-passphrase.c	\
-	cipher-wpa-psk-passphrase.h	\
-	dbus-helpers.c				\
-	dbus-helpers.h				\
-	sha1.c					\
-	sha1.h					\
 	dbus-dict-helpers.c			\
 	dbus-dict-helpers.h		\
 	nm-connection.c			\
@@ -42,29 +21,13 @@ libnm_util_la_SOURCES=			\
 	nm-utils.c			\
 	nm-utils.h
 
-if !WITH_GCRYPT
-libnm_util_la_SOURCES += gnome-keyring-md5.c gnome-keyring-md5.h
-endif
-
 libnm_util_la_LDFLAGS= $(GLIB_LIBS) $(DBUS_LIBS)
 
 libnm_util_la_CFLAGS=-fPIC
 
-if WITH_GCRYPT
-libnm_util_la_LDFLAGS += $(LIBGCRYPT_LIBS)
-endif
-
 libnm_util_includedir=$(includedir)/NetworkManager
 
 libnm_util_include_HEADERS = 		\
-	cipher.h					\
-	cipher-wep-hex.h			\
-	cipher-wep-passphrase.h		\
-	cipher-wep-ascii.h			\
-	cipher-wpa-psk-hex.h		\
-	cipher-wpa-psk-passphrase.h	\
-	dbus-helpers.h				\
-	dbus-method-dispatcher.h	\
 	dbus-dict-helpers.h		\
 	nm-connection.h			\
 	nm-setting.h			\

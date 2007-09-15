@@ -42,8 +42,6 @@
 #include "nm-supplicant-manager.h"
 #include "nm-supplicant-interface.h"
 #include "nm-supplicant-config.h"
-#include "cipher.h"
-#include "dbus-dict-helpers.h"
 
 static gboolean impl_device_get_active_networks (NMDevice80211Wireless *device,
 												 GPtrArray **networks,
