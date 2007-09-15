@@ -33,8 +33,6 @@ libnm_util_la_SOURCES=			\
 	dbus-helpers.h				\
 	sha1.c					\
 	sha1.h					\
-	dbus-method-dispatcher.c		\
-	dbus-method-dispatcher.h		\
 	dbus-dict-helpers.c			\
 	dbus-dict-helpers.h		\
 	nm-connection.c			\
