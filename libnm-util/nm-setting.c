@@ -6,6 +6,9 @@
 
 #include "nm-setting.h"
 
+static GHashTable * nm_setting_hash (NMSetting *setting);
+
+
 typedef struct {
 	gboolean success;
 	GHashTable *all_settings;
@@ -41,6 +44,12 @@ nm_settings_verify (GHashTable *all_settings)
 	g_hash_table_foreach (all_settings, verify_one_setting, &info);
 
 	return info.success;
+}
+
+static GHashTable *
+default_setting_hash (NMSetting *setting)
+{
+	return nm_setting_hash (setting);
 }
 
 GHashTable *
@@ -87,6 +96,24 @@ nm_setting_destroy (NMSetting *setting)
 		setting->destroy_fn (setting);
 
 	g_free (name);
+}
+
+void
+nm_setting_enumerate_values (NMSetting *setting,
+                             NMSettingValueIterFn func,
+                             gpointer user_data)
+{
+	SettingMember *m;
+
+	g_return_if_fail (setting != NULL);
+	g_return_if_fail (func != NULL);
+
+	m = setting->_members;
+	while (m->key) {
+		void *val = G_STRUCT_MEMBER_P (setting, m->offset);
+		(*func) (setting, m->key, m->type, val, m->secret, user_data);
+		m++;
+	};
 }
 
 /***********************************************************************/
@@ -243,6 +270,95 @@ string_slist_validate (GSList *list, const char **valid_values)
 
 /***********************************************************************/
 
+static gboolean
+nm_setting_populate_from_hash (NMSetting *setting, GHashTable *table)
+{
+	SettingMember *m;
+
+	g_return_val_if_fail (setting != NULL, FALSE);
+	g_return_val_if_fail (table != NULL, FALSE);
+
+	m = setting->_members;
+	while (m->key) {
+		GValue *value;
+
+		value = (GValue *) g_hash_table_lookup (table, m->key);
+		if (!value && m->required) {
+			g_warning ("Missing required value '%s'.", m->key);
+			return FALSE;
+		} else if (!value) {
+			goto next;
+		}
+
+		if ((m->type == NM_S_TYPE_STRING) && G_VALUE_HOLDS_STRING (value)) {
+			char **val = (char **) G_STRUCT_MEMBER_P (setting, m->offset);
+			*val = g_strdup (g_value_get_string (value));
+		} else if ((m->type == NM_S_TYPE_BOOL) && G_VALUE_HOLDS_BOOLEAN (value)) {
+			gboolean *val = (gboolean *) G_STRUCT_MEMBER_P (setting, m->offset);
+			*val = g_value_get_boolean (value);
+		} else if ((m->type == NM_S_TYPE_UINT32) && G_VALUE_HOLDS_UINT (value)) {
+			guint32 *val = (guint32 *) G_STRUCT_MEMBER_P (setting, m->offset);
+			*val = g_value_get_uint (value);
+		} else if ((m->type == NM_S_TYPE_BYTE_ARRAY) && G_VALUE_HOLDS_BOXED (value)) {
+			GByteArray **val = (GByteArray **) G_STRUCT_MEMBER_P (setting, m->offset);
+			*val = convert_array_to_byte_array ((GArray *) g_value_get_boxed (value));
+		} else if ((m->type == NM_S_TYPE_STRING_ARRAY) && G_VALUE_HOLDS_BOXED (value)) {
+			GSList **val = (GSList **) G_STRUCT_MEMBER_P (setting, m->offset);
+			*val = convert_strv_to_slist ((char **) g_value_get_boxed (value));
+		}
+
+next:
+		m++;
+	};
+
+	return TRUE;
+}
+
+#define ADD_MEMBER(nmtype, ctype, key, func) \
+	case nmtype: { \
+		ctype* val = (ctype*) G_STRUCT_MEMBER_P (setting, m->offset); \
+		if (*val || (nmtype == NM_S_TYPE_BOOL) || m->required) { \
+			g_hash_table_insert (hash, (char *) key, func (*val)); \
+		} \
+		break; \
+	}
+
+#define ADD_MEMBER_EXTRA(nmtype, ctype, key, func, extra) \
+	case nmtype: { \
+		ctype* val = (ctype*) G_STRUCT_MEMBER_P (setting, m->offset); \
+		if (*val || (nmtype == NM_S_TYPE_BOOL) || m->required) { \
+			g_hash_table_insert (hash, (char *) key, func (*val, extra)); \
+		} \
+		break; \
+	}
+
+static GHashTable *
+nm_setting_hash (NMSetting *setting)
+{
+	GHashTable *hash;
+	SettingMember *m;
+
+	g_return_val_if_fail (setting != NULL, NULL);
+
+	hash = setting_hash_new ();
+
+	m = setting->_members;
+	while (m->key) {
+		switch (m->type) {
+			ADD_MEMBER(NM_S_TYPE_STRING, char *, m->key, string_to_gvalue)
+			ADD_MEMBER(NM_S_TYPE_BOOL, gboolean, m->key, boolean_to_gvalue)
+			ADD_MEMBER(NM_S_TYPE_UINT32, guint32, m->key, uint_to_gvalue)
+			ADD_MEMBER(NM_S_TYPE_BYTE_ARRAY, GByteArray *, m->key, byte_array_to_gvalue)
+			ADD_MEMBER_EXTRA(NM_S_TYPE_STRING_ARRAY, GSList *, m->key, slist_to_gvalue, G_TYPE_STRING)
+			default:
+				break;
+		}
+		m++;
+	}
+	return hash;
+}
+
+
 /* Connection */
 
 static gboolean
@@ -257,25 +373,6 @@ setting_connection_verify (NMSetting *setting, GHashTable *all_settings)
 	return TRUE;
 }
 
-static GHashTable *
-setting_connection_hash (NMSetting *setting)
-{
-	NMSettingConnection *self = (NMSettingConnection *) setting;
-	GHashTable *hash;
-
-	g_return_val_if_fail (self->name != NULL, NULL);
-	g_return_val_if_fail (self->devtype != NULL, NULL);
-
-	hash = setting_hash_new ();
-	g_hash_table_insert (hash, "name", string_to_gvalue (self->name));
-	g_hash_table_insert (hash, "devtype", string_to_gvalue (self->devtype));
-	// FIXME: autoconnect is optional, need to differentiate between TRUE/FALSE
-	// and "not present"
-	g_hash_table_insert (hash, "autoconnect", boolean_to_gvalue (self->autoconnect));
-
-	return hash;
-}
-
 static void
 setting_connection_destroy (NMSetting *setting)
 {
@@ -287,6 +384,13 @@ setting_connection_destroy (NMSetting *setting)
 	g_slice_free (NMSettingConnection, self);
 }
 
+static SettingMember con_table[] = {
+	{ "name", NM_S_TYPE_STRING, G_STRUCT_OFFSET (NMSettingConnection, name), TRUE, FALSE },
+	{ "devtype", NM_S_TYPE_STRING, G_STRUCT_OFFSET (NMSettingConnection, devtype), TRUE, FALSE },
+	{ "autoconnect", NM_S_TYPE_BOOL, G_STRUCT_OFFSET (NMSettingConnection, autoconnect), FALSE, FALSE },
+	{ NULL, 0, 0 },
+};
+
 NMSetting *
 nm_setting_connection_new (void)
 {
@@ -295,8 +399,9 @@ nm_setting_connection_new (void)
 	setting = (NMSetting *) g_slice_new0 (NMSettingConnection);
 
 	setting->name = g_strdup ("connection");
+	setting->_members = con_table;
 	setting->verify_fn = setting_connection_verify;
-	setting->hash_fn = setting_connection_hash;
+	setting->hash_fn = default_setting_hash;
 	setting->destroy_fn = setting_connection_destroy;
 
 	return setting;
@@ -307,39 +412,18 @@ nm_setting_connection_new_from_hash (GHashTable *settings)
 {
 	NMSettingConnection *self;
 	NMSetting *setting;
-	GValue *value;
 
 	g_return_val_if_fail (settings != NULL, NULL);
 
 	setting = nm_setting_connection_new ();
 	self = (NMSettingConnection *) setting;
 
-	value = (GValue *) g_hash_table_lookup (settings, "name");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->name = g_strdup (g_value_get_string (value));
-	else {
-		g_warning ("Missing or invalid connection name");
-		goto err;
+	if (!nm_setting_populate_from_hash (setting, settings)) {
+		setting_connection_destroy (setting);
+		return NULL;
 	}
-
-	value = (GValue *) g_hash_table_lookup (settings, "devtype");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->devtype = g_strdup (g_value_get_string (value));
-	else {
-		g_warning ("Missing or invalid devtype");
-		goto err;
-	}
-
-	value = (GValue *) g_hash_table_lookup (settings, "autoconnect");
-	if (value && G_VALUE_HOLDS_BOOLEAN (value))
-		self->autoconnect = g_value_get_boolean (value);
 
 	return setting;
-
- err:
-	setting_connection_destroy (setting);
-
-	return NULL;
 }
 
 /* IP4 config */
@@ -362,21 +446,6 @@ setting_ip4_config_verify (NMSetting *setting, GHashTable *all_settings)
 	return TRUE;
 }
 
-static GHashTable *
-setting_ip4_config_hash (NMSetting *setting)
-{
-	NMSettingIP4Config *self = (NMSettingIP4Config *) setting;
-	GHashTable *hash;
-
-	hash = setting_hash_new ();
-	g_hash_table_insert (hash, "manual", boolean_to_gvalue (self->manual));
-	g_hash_table_insert (hash, "address", uint_to_gvalue (self->address));
-	g_hash_table_insert (hash, "netmask", uint_to_gvalue (self->netmask));
-	g_hash_table_insert (hash, "gateway", uint_to_gvalue (self->gateway));
-
-	return hash;
-}
-
 static void
 setting_ip4_config_destroy (NMSetting *setting)
 {
@@ -384,6 +453,14 @@ setting_ip4_config_destroy (NMSetting *setting)
 
 	g_slice_free (NMSettingIP4Config, self);
 }
+
+static SettingMember ip4_config_table[] = {
+	{ "manual", NM_S_TYPE_BOOL, G_STRUCT_OFFSET (NMSettingIP4Config, manual), FALSE, FALSE },
+	{ "address", NM_S_TYPE_UINT32, G_STRUCT_OFFSET (NMSettingIP4Config, address), FALSE, FALSE },
+	{ "netmask", NM_S_TYPE_UINT32, G_STRUCT_OFFSET (NMSettingIP4Config, netmask), FALSE, FALSE },
+	{ "gateway", NM_S_TYPE_UINT32, G_STRUCT_OFFSET (NMSettingIP4Config, gateway), FALSE, FALSE },
+	{ NULL, 0, 0 },
+};
 
 NMSetting *
 nm_setting_ip4_config_new (void)
@@ -393,8 +470,9 @@ nm_setting_ip4_config_new (void)
 	setting = (NMSetting *) g_slice_new0 (NMSettingIP4Config);
 
 	setting->name = g_strdup ("ipv4");
+	setting->_members = ip4_config_table;
 	setting->verify_fn = setting_ip4_config_verify;
-	setting->hash_fn = setting_ip4_config_hash;
+	setting->hash_fn = default_setting_hash;
 	setting->destroy_fn = setting_ip4_config_destroy;
 
 	return setting;
@@ -412,21 +490,10 @@ nm_setting_ip4_config_new_from_hash (GHashTable *settings)
 	setting = nm_setting_ip4_config_new ();
 	self = (NMSettingIP4Config *) setting;
 
-	value = (GValue *) g_hash_table_lookup (settings, "manual");
-	if (value && G_VALUE_HOLDS_BOOLEAN (value))
-		self->manual = g_value_get_boolean (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "address");
-	if (value && G_VALUE_HOLDS_UINT (value))
-		self->address = g_value_get_uint (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "netmask");
-	if (value && G_VALUE_HOLDS_UINT (value))
-		self->netmask = g_value_get_uint (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "gateway");
-	if (value && G_VALUE_HOLDS_UINT (value))
-		self->gateway = g_value_get_uint (value);
+	if (!nm_setting_populate_from_hash (setting, settings)) {
+		setting_connection_destroy (setting);
+		return NULL;
+	}
 
 	return setting;
 }
@@ -458,23 +525,6 @@ setting_wired_verify (NMSetting *setting, GHashTable *all_settings)
 	return TRUE;
 }
 
-static GHashTable *
-setting_wired_hash (NMSetting *setting)
-{
-	NMSettingWired *self = (NMSettingWired *) setting;
-	GHashTable *hash;
-
-	hash = setting_hash_new ();
-	g_hash_table_insert (hash, "port", string_to_gvalue (self->port));
-	g_hash_table_insert (hash, "speed", uint_to_gvalue (self->speed));
-	g_hash_table_insert (hash, "duplex", string_to_gvalue (self->duplex));
-	g_hash_table_insert (hash, "auto-negotiate", boolean_to_gvalue (self->auto_negotiate));
-	g_hash_table_insert (hash, "mac-address", byte_array_to_gvalue (self->mac_address));
-	g_hash_table_insert (hash, "mtu", uint_to_gvalue (self->mtu));
-
-	return hash;
-}
-
 static void
 setting_wired_destroy (NMSetting *setting)
 {
@@ -489,6 +539,16 @@ setting_wired_destroy (NMSetting *setting)
 	g_slice_free (NMSettingWired, self);
 }
 
+static SettingMember wired_table[] = {
+	{ "port", NM_S_TYPE_STRING, G_STRUCT_OFFSET (NMSettingWired, port), FALSE, FALSE },
+	{ "speed", NM_S_TYPE_UINT32, G_STRUCT_OFFSET (NMSettingWired, speed), FALSE, FALSE },
+	{ "duplex", NM_S_TYPE_STRING, G_STRUCT_OFFSET (NMSettingWired, duplex), FALSE, FALSE },
+	{ "auto-negotiate", NM_S_TYPE_BOOL, G_STRUCT_OFFSET (NMSettingWired, auto_negotiate), FALSE, FALSE },
+	{ "mac-address", NM_S_TYPE_BYTE_ARRAY, G_STRUCT_OFFSET (NMSettingWired, mac_address), FALSE, FALSE },
+	{ "mtu", NM_S_TYPE_UINT32, G_STRUCT_OFFSET (NMSettingWired, mtu), FALSE, FALSE },
+	{ NULL, 0, 0 },
+};
+
 NMSetting *
 nm_setting_wired_new (void)
 {
@@ -499,8 +559,9 @@ nm_setting_wired_new (void)
 	setting = (NMSetting *) s_wired;
 
 	setting->name = g_strdup ("802-3-ethernet");
+	setting->_members = wired_table;
 	setting->verify_fn = setting_wired_verify;
-	setting->hash_fn = setting_wired_hash;
+	setting->hash_fn = default_setting_hash;
 	setting->destroy_fn = setting_wired_destroy;
 
 	s_wired->auto_negotiate = TRUE;
@@ -513,36 +574,16 @@ nm_setting_wired_new_from_hash (GHashTable *settings)
 {
 	NMSettingWired *self;
 	NMSetting *setting;
-	GValue *value;
 
 	g_return_val_if_fail (settings != NULL, NULL);
 
 	setting = nm_setting_wired_new ();
 	self = (NMSettingWired *) setting;
 
-	value = (GValue *) g_hash_table_lookup (settings, "port");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->port = g_strdup (g_value_get_string (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "speed");
-	if (value && G_VALUE_HOLDS_UINT (value))
-		self->speed = g_value_get_uint (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "duplex");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->duplex = g_strdup (g_value_get_string (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "auto-negotiate");
-	if (value && G_VALUE_HOLDS_BOOLEAN (value))
-		self->auto_negotiate = g_value_get_boolean (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "mac-address");
-	if (value && G_VALUE_HOLDS_BOXED (value))
-		self->mac_address = convert_array_to_byte_array ((GArray *) g_value_get_boxed (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "mtu");
-	if (value && G_VALUE_HOLDS_UINT (value))
-		self->mtu = g_value_get_uint (value);
+	if (!nm_setting_populate_from_hash (setting, settings)) {
+		setting_connection_destroy (setting);
+		return NULL;
+	}
 
 	return setting;
 }
@@ -624,57 +665,6 @@ setting_wireless_verify (NMSetting *setting, GHashTable *all_settings)
 	return TRUE;
 }
 
-static GHashTable *
-setting_wireless_hash (NMSetting *setting)
-{
-	NMSettingWireless *self = (NMSettingWireless *) setting;
-	GHashTable *hash;
-
-	g_return_val_if_fail (self->ssid != NULL, NULL);
-
-	hash = setting_hash_new ();
-	g_hash_table_insert (hash, "ssid", byte_array_to_gvalue (self->ssid));
-
-	if (self->mode)
-		g_hash_table_insert (hash, "mode", string_to_gvalue (self->mode));
-	if (self->band)
-		g_hash_table_insert (hash, "band", string_to_gvalue (self->band));
-	if (self->channel)
-		g_hash_table_insert (hash, "channel", uint_to_gvalue (self->channel));
-	if (self->bssid)
-		g_hash_table_insert (hash, "bssid", byte_array_to_gvalue (self->bssid));
-	if (self->rate)
-		g_hash_table_insert (hash, "channel", uint_to_gvalue (self->rate));
-	if (self->tx_power)
-		g_hash_table_insert (hash, "tx-power", uint_to_gvalue (self->tx_power));
-	if (self->mac_address)
-		g_hash_table_insert (hash, "mac-address", byte_array_to_gvalue (self->mac_address));
-	if (self->mtu)
-		g_hash_table_insert (hash, "mtu", uint_to_gvalue (self->mtu));
-
-	if (self->seen_bssids) {
-		GArray *seen_bssids;
-		GValue *seen_bssids_value;
-		GSList *iter;
-
-		seen_bssids = g_array_new (FALSE, FALSE, sizeof (gint));
-		for (iter = self->seen_bssids; iter; iter = iter->next)
-			g_array_append_val (seen_bssids, iter->data);
-
-		seen_bssids_value = g_slice_new0 (GValue);
-		g_value_init (seen_bssids_value, dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_UCHAR_ARRAY));
-		g_value_set_boxed (seen_bssids_value, seen_bssids);
-
-		g_hash_table_insert (hash, "seen-bssids", seen_bssids_value);
-	}
-
-	if (self->security)
-		g_hash_table_insert (hash, "security", string_to_gvalue (self->security));
-
-	return hash;
-}
-
-
 static void
 setting_wireless_destroy (NMSetting *setting)
 {
@@ -702,6 +692,20 @@ setting_wireless_destroy (NMSetting *setting)
 	g_slice_free (NMSettingWireless, self);
 }
 
+static SettingMember wireless_table[] = {
+	{ "ssid", NM_S_TYPE_BYTE_ARRAY, G_STRUCT_OFFSET (NMSettingWireless, ssid), TRUE, FALSE },
+	{ "mode", NM_S_TYPE_STRING, G_STRUCT_OFFSET (NMSettingWireless, mode), FALSE, FALSE },
+	{ "band", NM_S_TYPE_STRING, G_STRUCT_OFFSET (NMSettingWireless, band), FALSE, FALSE },
+	{ "channel", NM_S_TYPE_UINT32, G_STRUCT_OFFSET (NMSettingWireless, channel), FALSE, FALSE },
+	{ "bssid", NM_S_TYPE_BYTE_ARRAY, G_STRUCT_OFFSET (NMSettingWireless, bssid), FALSE, FALSE },
+	{ "rate", NM_S_TYPE_UINT32, G_STRUCT_OFFSET (NMSettingWireless, rate), FALSE, FALSE },
+	{ "tx-power", NM_S_TYPE_UINT32, G_STRUCT_OFFSET (NMSettingWireless, tx_power), FALSE, FALSE },
+	{ "mac-address", NM_S_TYPE_BYTE_ARRAY, G_STRUCT_OFFSET (NMSettingWireless, mac_address), FALSE, FALSE },
+	{ "mtu", NM_S_TYPE_UINT32, G_STRUCT_OFFSET (NMSettingWireless, mtu), FALSE, FALSE },
+	{ "security", NM_S_TYPE_STRING, G_STRUCT_OFFSET (NMSettingWireless, security), FALSE, FALSE },
+	{ NULL, 0, 0 },
+};
+
 NMSetting *
 nm_setting_wireless_new (void)
 {
@@ -710,8 +714,9 @@ nm_setting_wireless_new (void)
 	setting = (NMSetting *) g_slice_new0 (NMSettingWireless);
 
 	setting->name = g_strdup ("802-11-wireless");
+	setting->_members = wireless_table;
 	setting->verify_fn = setting_wireless_verify;
-	setting->hash_fn = setting_wireless_hash;
+	setting->hash_fn = default_setting_hash;
 	setting->destroy_fn = setting_wireless_destroy;
 
 	return setting;
@@ -722,82 +727,18 @@ nm_setting_wireless_new_from_hash (GHashTable *settings)
 {
 	NMSettingWireless *self;
 	NMSetting *setting;
-	GValue *value;
 
 	g_return_val_if_fail (settings != NULL, NULL);
 
 	setting = nm_setting_wireless_new ();
 	self = (NMSettingWireless *) setting;
 
-	value = (GValue *) g_hash_table_lookup (settings, "ssid");
-	if (value && G_VALUE_HOLDS_BOXED (value)) {
-		GArray *array;
-
-		array = (GArray *) g_value_get_boxed (value);
-
-		self->ssid = g_byte_array_sized_new (array->len);
-		g_byte_array_append (self->ssid, (const guint8 *) array->data, array->len);
-	}else {
-		g_warning ("Missing or invalid ssid");
-		goto err;
+	if (!nm_setting_populate_from_hash (setting, settings)) {
+		setting_connection_destroy (setting);
+		return NULL;
 	}
-
-	value = (GValue *) g_hash_table_lookup (settings, "mode");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->mode = g_strdup (g_value_get_string (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "band");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->band = g_strdup (g_value_get_string (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "channel");
-	if (value && G_VALUE_HOLDS_UINT (value))
-		self->channel = g_value_get_uint (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "bssid");
-	if (value && G_VALUE_HOLDS_BOXED (value))
-		self->bssid = (GByteArray *) g_value_get_boxed (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "rate");
-	if (value && G_VALUE_HOLDS_UINT (value))
-		self->rate = g_value_get_uint (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "tx-power");
-	if (value && G_VALUE_HOLDS_UINT (value))
-		self->tx_power = g_value_get_uint (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "mac-address");
-	if (value && G_VALUE_HOLDS_BOXED (value))
-		self->mac_address = convert_array_to_byte_array ((GArray *) g_value_get_boxed (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "mtu");
-	if (value && G_VALUE_HOLDS_UINT (value))
-		self->mtu = g_value_get_uint (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "seen-bssids");
-	if (value) {
-		int i;
-		GPtrArray *ptr_array;
-
-		ptr_array = (GPtrArray *) g_value_get_boxed (value);
-		for (i = 0; i < ptr_array->len; i++) {
-			self->seen_bssids = g_slist_prepend (self->seen_bssids,
-												 convert_array_to_byte_array ((GArray *) g_ptr_array_index (ptr_array, i)));
-		}
-
-		self->seen_bssids = g_slist_reverse (self->seen_bssids);
-	}
-
-	value = (GValue *) g_hash_table_lookup (settings, "security");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->security = g_strdup (g_value_get_string (value));
 
 	return setting;
-
- err:
-	setting_wireless_destroy (setting);
-
-	return NULL;
 }
 
 /* Wireless security */
@@ -880,85 +821,6 @@ setting_wireless_security_verify (NMSetting *setting, GHashTable *all_settings)
 	return TRUE;
 }
 
-static GHashTable *
-setting_wireless_security_hash (NMSetting *setting)
-{
-	NMSettingWirelessSecurity *self = (NMSettingWirelessSecurity *) setting;
-	GHashTable *hash;
-
-	hash = setting_hash_new ();
-
-	if (self->key_mgmt)
-		g_hash_table_insert (hash, "key-mgmt", string_to_gvalue (self->key_mgmt));
-	if (self->wep_tx_keyidx)
- 		g_hash_table_insert (hash, "wep-tx-keyidx", byte_to_gvalue (self->wep_tx_keyidx));
-	if (self->auth_alg)
-		g_hash_table_insert (hash, "auth-alg", string_to_gvalue (self->auth_alg));
-	if (self->proto)
-		g_hash_table_insert (hash, "proto", string_to_gvalue (self->proto));
-	if (self->pairwise)
-		g_hash_table_insert (hash, "pairwise", slist_to_gvalue (self->pairwise, G_TYPE_STRING));
-	if (self->group)
-		g_hash_table_insert (hash, "group", slist_to_gvalue (self->group, G_TYPE_STRING));
-	if (self->eap)
-		g_hash_table_insert (hash, "eap", slist_to_gvalue (self->eap, G_TYPE_STRING));
-	if (self->identity)
-		g_hash_table_insert (hash, "identity", string_to_gvalue (self->identity));
-	if (self->anonymous_identity)
-		g_hash_table_insert (hash, "anonymous-identity", string_to_gvalue (self->anonymous_identity));
-	if (self->ca_cert)
-		g_hash_table_insert (hash, "ca-cert", byte_array_to_gvalue (self->ca_cert));
-	if (self->ca_path)
-		g_hash_table_insert (hash, "ca-path", string_to_gvalue (self->ca_path));
-	if (self->client_cert)
-		g_hash_table_insert (hash, "client-cert", byte_array_to_gvalue (self->client_cert));
-	if (self->private_key)
-		g_hash_table_insert (hash, "private-key", byte_array_to_gvalue (self->private_key));
-	if (self->phase1_peapver)
-		g_hash_table_insert (hash, "phase1-peapver", string_to_gvalue (self->phase1_peapver));
-	if (self->phase1_peaplabel)
-		g_hash_table_insert (hash, "phase1-peaplabel", string_to_gvalue (self->phase1_peaplabel));
-	if (self->phase1_fast_provisioning)
-		g_hash_table_insert (hash, "phase1-fast-provisioning", string_to_gvalue (self->phase1_fast_provisioning));
-	if (self->phase2_auth)
-		g_hash_table_insert (hash, "phase2-auth", string_to_gvalue (self->phase2_auth));
-	if (self->phase2_autheap)
-		g_hash_table_insert (hash, "phase2-autheap", string_to_gvalue (self->phase2_autheap));
-	if (self->phase2_ca_cert)
-		g_hash_table_insert (hash, "phase2-ca-cert", byte_array_to_gvalue (self->phase2_ca_cert));
-	if (self->phase2_ca_path)
-		g_hash_table_insert (hash, "phase2-ca-path", string_to_gvalue (self->phase2_ca_path));
-	if (self->phase2_client_cert)
-		g_hash_table_insert (hash, "phase2-client-cert", byte_array_to_gvalue (self->phase2_client_cert));
-	if (self->phase2_private_key)
-		g_hash_table_insert (hash, "phase2-private-key", byte_array_to_gvalue (self->phase2_private_key));
-	if (self->nai)
-		g_hash_table_insert (hash, "nai", string_to_gvalue (self->nai));
-	if (self->wep_key0)
-		g_hash_table_insert (hash, "wep_key0", string_to_gvalue (self->wep_key0));
-	if (self->wep_key1)
-		g_hash_table_insert (hash, "wep_key1", string_to_gvalue (self->wep_key1));
-	if (self->wep_key2)
-		g_hash_table_insert (hash, "wep_key2", string_to_gvalue (self->wep_key2));
-	if (self->wep_key3)
-		g_hash_table_insert (hash, "wep_key3", string_to_gvalue (self->wep_key3));
-	if (self->psk)
-		g_hash_table_insert (hash, "psk", string_to_gvalue (self->psk));
-	if (self->password)
-		g_hash_table_insert (hash, "password", string_to_gvalue (self->password));
-	if (self->pin)
-		g_hash_table_insert (hash, "pin", string_to_gvalue (self->pin));
-	if (self->eappsk)
-		g_hash_table_insert (hash, "eappsk", string_to_gvalue (self->eappsk));
-	if (self->private_key_passwd)
-		g_hash_table_insert (hash, "private-key-passwd", string_to_gvalue (self->private_key_passwd));
-	if (self->phase2_private_key_passwd)
-		g_hash_table_insert (hash, "phase2-private-key-passwd", string_to_gvalue (self->phase2_private_key_passwd));
-
-	return hash;
-}
-
-
 static void
 setting_wireless_security_destroy (NMSetting *setting)
 {
@@ -1026,69 +888,67 @@ setting_wireless_security_update_secrets (NMSetting *setting,
                                           GHashTable *secrets)
 {
 	NMSettingWirelessSecurity *self = (NMSettingWirelessSecurity *) setting;
-	GValue *value;
+	SettingMember *m;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (secrets != NULL, FALSE);
 
-	value = (GValue *) g_hash_table_lookup (secrets, "wep_key0");
-	if (value && G_VALUE_HOLDS_STRING (value)) {
-		g_free (self->wep_key0);
-		self->wep_key0 = g_strdup (g_value_get_string (value));
+	m = setting->_members;
+	while (m->key) {
+		GValue *value;
+
+		if (m->secret == FALSE)
+			goto next;
+
+		value = (GValue *) g_hash_table_lookup (secrets, m->key);
+		if (value && G_VALUE_HOLDS_STRING (value)) {
+			char **val = (char **) G_STRUCT_MEMBER_P (setting, m->offset);
+			g_free (*val);
+			*val = g_strdup (g_value_get_string (value));
+		}
+
+next:
+		m++;
 	}
 
-	value = (GValue *) g_hash_table_lookup (secrets, "wep_key1");
-	if (value && G_VALUE_HOLDS_STRING (value)) {
-		g_free (self->wep_key1);
-		self->wep_key1 = g_strdup (g_value_get_string (value));
+	return TRUE;
+}
+
+static gboolean
+verify_wep_key (const char *key)
+{
+	int keylen, i;
+
+	if (!key)
+		return FALSE;
+
+	keylen = strlen (key);
+	if (keylen != 13 && keylen != 26)
+		return FALSE;
+
+	for (i = 0; i < keylen; i++) {
+		if (!isxdigit (key[i]))
+			return FALSE;
 	}
 
-	value = (GValue *) g_hash_table_lookup (secrets, "wep_key2");
-	if (value && G_VALUE_HOLDS_STRING (value)) {
-		g_free (self->wep_key2);
-		self->wep_key2 = g_strdup (g_value_get_string (value));
-	}
+	return TRUE;
+}
 
-	value = (GValue *) g_hash_table_lookup (secrets, "wep_key3");
-	if (value && G_VALUE_HOLDS_STRING (value)) {
-		g_free (self->wep_key3);
-		self->wep_key3 = g_strdup (g_value_get_string (value));
-	}
+static gboolean
+verify_wpa_psk (const char *psk)
+{
+	int psklen, i;
 
-	value = (GValue *) g_hash_table_lookup (secrets, "psk");
-	if (value && G_VALUE_HOLDS_STRING (value)) {
-		g_free (self->psk);
-		self->psk = g_strdup (g_value_get_string (value));
-	}
+	if (!psk)
+		return FALSE;
 
-	value = (GValue *) g_hash_table_lookup (secrets, "password");
-	if (value && G_VALUE_HOLDS_STRING (value)) {
-		g_free (self->password);
-		self->password = g_strdup (g_value_get_string (value));
-	}
+	psklen = strlen (psk);
+	if (psklen != 64)
+		return FALSE;
 
-	value = (GValue *) g_hash_table_lookup (secrets, "pin");
-	if (value && G_VALUE_HOLDS_STRING (value)) {
-		g_free (self->pin);
-		self->pin = g_strdup (g_value_get_string (value));
-	}
-
-	value = (GValue *) g_hash_table_lookup (secrets, "eappsk");
-	if (value && G_VALUE_HOLDS_STRING (value)) {
-		g_free (self->eappsk);
-		self->eappsk = g_strdup (g_value_get_string (value));
-	}
-
-	value = (GValue *) g_hash_table_lookup (secrets, "private-key-passwd");
-	if (value && G_VALUE_HOLDS_STRING (value)) {
-		g_free (self->private_key_passwd);
-		self->private_key_passwd = g_strdup (g_value_get_string (value));
-	}
-
-	value = (GValue *) g_hash_table_lookup (secrets, "phase2-private-key-passwd");
-	if (value && G_VALUE_HOLDS_STRING (value)) {
-		g_free (self->phase2_private_key_passwd);
-		self->phase2_private_key_passwd = g_strdup (g_value_get_string (value));
+	for (i = 0; i < psklen; i++) {
+		if (!isxdigit (psk[i]))
+			return FALSE;
 	}
 
 	return TRUE;
@@ -1109,21 +969,22 @@ setting_wireless_security_need_secrets (NMSetting *setting)
 	g_assert (self->key_mgmt);
 
 	/* Static WEP */
+	// FIXME: check key length too
 	if (strcmp (self->key_mgmt, "none") == 0) {
-		if (!self->wep_key0) {
-			g_ptr_array_add (secrets, "wep_key0");
+		if (!verify_wep_key (self->wep_key0)) {
+			g_ptr_array_add (secrets, "wep-key0");
 			return secrets;
 		}
-		if (self->wep_tx_keyidx == 1 && !self->wep_key1) {
-			g_ptr_array_add (secrets, "wep_key1");
+		if (self->wep_tx_keyidx == 1 && !verify_wep_key (self->wep_key1)) {
+			g_ptr_array_add (secrets, "wep-key1");
 			return secrets;
 		}
-		if (self->wep_tx_keyidx == 2 && !self->wep_key2) {
-			g_ptr_array_add (secrets, "wep_key2");
+		if (self->wep_tx_keyidx == 2 && !verify_wep_key (self->wep_key2)) {
+			g_ptr_array_add (secrets, "wep-key2");
 			return secrets;
 		}
-		if (self->wep_tx_keyidx == 3 && !self->wep_key3) {
-			g_ptr_array_add (secrets, "wep_key3");
+		if (self->wep_tx_keyidx == 3 && !verify_wep_key (self->wep_key3)) {
+			g_ptr_array_add (secrets, "wep-key3");
 			return secrets;
 		}
 		goto no_secrets;
@@ -1131,7 +992,7 @@ setting_wireless_security_need_secrets (NMSetting *setting)
 
 	if (   (strcmp (self->key_mgmt, "wpa-none") == 0)
 	    || (strcmp (self->key_mgmt, "wpa-psk") == 0)) {
-		if (!self->psk) {
+		if (!verify_wpa_psk (self->psk)) {
 			g_ptr_array_add (secrets, "psk");
 			return secrets;
 		}
@@ -1151,6 +1012,43 @@ no_secrets:
 	return NULL;
 }
 
+static SettingMember wireless_sec_table[] = {
+	{ "key-mgmt",                  NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, key_mgmt),                  TRUE, FALSE },
+	{ "wep-tx-keyidx",             NM_S_TYPE_UINT32,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, wep_tx_keyidx),             FALSE, FALSE },
+	{ "auth-alg",                  NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, auth_alg),                  FALSE, FALSE },
+	{ "proto",                     NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, proto),                     FALSE, FALSE },
+	{ "pairwise",                  NM_S_TYPE_STRING_ARRAY, G_STRUCT_OFFSET (NMSettingWirelessSecurity, pairwise),                  FALSE, FALSE },
+	{ "group",                     NM_S_TYPE_STRING_ARRAY, G_STRUCT_OFFSET (NMSettingWirelessSecurity, group),                     FALSE, FALSE },
+	{ "eap",                       NM_S_TYPE_STRING_ARRAY, G_STRUCT_OFFSET (NMSettingWirelessSecurity, eap),                       FALSE, FALSE },
+	{ "identity",                  NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, identity),                  FALSE, FALSE },
+	{ "anonymous-identity",        NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, anonymous_identity),        FALSE, FALSE },
+	{ "ca-cert",                   NM_S_TYPE_BYTE_ARRAY,   G_STRUCT_OFFSET (NMSettingWirelessSecurity, ca_cert),                   FALSE, FALSE },
+	{ "ca-path",                   NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, ca_path),                   FALSE, FALSE },
+	{ "client-cert",               NM_S_TYPE_BYTE_ARRAY,   G_STRUCT_OFFSET (NMSettingWirelessSecurity, client_cert),               FALSE, FALSE },
+	{ "private-key",               NM_S_TYPE_BYTE_ARRAY,   G_STRUCT_OFFSET (NMSettingWirelessSecurity, private_key),               FALSE, FALSE },
+	{ "phase1-peapver",            NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, phase1_peapver),            FALSE, FALSE },
+	{ "phase1-peaplabel",          NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, phase1_peaplabel),          FALSE, FALSE },
+	{ "phase1-fast-provisioning",  NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, phase1_fast_provisioning),  FALSE, FALSE },
+	{ "phase2-auth",               NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, phase2_auth),               FALSE, FALSE },
+	{ "phase2-autheap",            NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, phase2_autheap),            FALSE, FALSE },
+	{ "phase2-ca-cert",            NM_S_TYPE_BYTE_ARRAY,   G_STRUCT_OFFSET (NMSettingWirelessSecurity, phase2_ca_cert),            FALSE, FALSE },
+	{ "phase2-ca-path",            NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, phase2_ca_path),            FALSE, FALSE },
+	{ "phase2-client-cert",        NM_S_TYPE_BYTE_ARRAY,   G_STRUCT_OFFSET (NMSettingWirelessSecurity, phase2_client_cert),        FALSE, FALSE },
+	{ "phase2-private-key",        NM_S_TYPE_BYTE_ARRAY,   G_STRUCT_OFFSET (NMSettingWirelessSecurity, phase2_private_key),        FALSE, FALSE },
+	{ "nai",                       NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, nai),                       FALSE, FALSE },
+	{ "wep-key0",                  NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, wep_key0),                  FALSE, TRUE },
+	{ "wep-key1",                  NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, wep_key1),                  FALSE, TRUE },
+	{ "wep-key2",                  NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, wep_key2),                  FALSE, TRUE },
+	{ "wep-key3",                  NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, wep_key3),                  FALSE, TRUE },
+	{ "psk",                       NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, psk),                       FALSE, TRUE },
+	{ "password",                  NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, password),                  FALSE, TRUE },
+	{ "pin",                       NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, pin),                       FALSE, TRUE },
+	{ "eappsk",                    NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, eappsk),                    FALSE, TRUE },
+	{ "private-key-passwd",        NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, private_key_passwd),        FALSE, TRUE },
+	{ "phase2-private-key-passwd", NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, phase2_private_key_passwd), FALSE, TRUE },
+	{ NULL, 0, 0 },
+};
+
 NMSetting *
 nm_setting_wireless_security_new (void)
 {
@@ -1159,8 +1057,9 @@ nm_setting_wireless_security_new (void)
 	setting = (NMSetting *) g_slice_new0 (NMSettingWirelessSecurity);
 
 	setting->name = g_strdup ("802-11-wireless-security");
+	setting->_members = wireless_sec_table;
 	setting->verify_fn = setting_wireless_security_verify;
-	setting->hash_fn = setting_wireless_security_hash;
+	setting->hash_fn = default_setting_hash;
 	setting->update_secrets_fn = setting_wireless_security_update_secrets;
 	setting->need_secrets_fn = setting_wireless_security_need_secrets;
 	setting->destroy_fn = setting_wireless_security_destroy;
@@ -1173,116 +1072,18 @@ nm_setting_wireless_security_new_from_hash (GHashTable *settings)
 {
 	NMSettingWirelessSecurity *self;
 	NMSetting *setting;
-	GValue *value;
 
 	g_return_val_if_fail (settings != NULL, NULL);
 
 	setting = nm_setting_wireless_security_new ();
 	self = (NMSettingWirelessSecurity *) setting;
 
-	value = (GValue *) g_hash_table_lookup (settings, "key-mgmt");
-	if (value && G_VALUE_HOLDS_STRING (value)) {
-		self->key_mgmt = g_strdup (g_value_get_string (value));
-	} else {
-		g_warning ("Missing or invalid key-mgmt");
-		goto err;
+	if (!nm_setting_populate_from_hash (setting, settings)) {
+		setting_connection_destroy (setting);
+		return NULL;
 	}
 
-	value = (GValue *) g_hash_table_lookup (settings, "wep-tx-keyidx");
-	if (value && G_VALUE_HOLDS_UCHAR (value))
-		self->wep_tx_keyidx = g_value_get_uchar (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "auth-alg");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->auth_alg = g_strdup (g_value_get_string (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "proto");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->proto = g_strdup (g_value_get_string (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "pairwise");
-	if (value && G_VALUE_HOLDS_BOXED (value))
-		self->pairwise = convert_strv_to_slist ((char **) g_value_get_boxed (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "group");
-	if (value && G_VALUE_HOLDS_BOXED (value))
-		self->group = convert_strv_to_slist ((char **) g_value_get_boxed (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "eap");
-	if (value && G_VALUE_HOLDS_BOXED (value))
-		self->eap = convert_strv_to_slist ((char **) g_value_get_boxed (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "identity");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->identity = g_strdup (g_value_get_string (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "anonymous-identity");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->anonymous_identity = g_strdup (g_value_get_string (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "ca-cert");
-	if (value && G_VALUE_HOLDS_BOXED (value))
-		self->ca_cert = convert_array_to_byte_array ((GArray *) g_value_get_boxed (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "ca-path");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->ca_path = g_strdup (g_value_get_string (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "client-cert");
-	if (value && G_VALUE_HOLDS_BOXED (value))
-		self->client_cert = convert_array_to_byte_array ((GArray *) g_value_get_boxed (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "private-key");
-	if (value && G_VALUE_HOLDS_BOXED (value))
-		self->private_key = convert_array_to_byte_array ((GArray *) g_value_get_boxed (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "phase1-peapver");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->phase1_peapver = g_strdup (g_value_get_string (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "phase1-peaplabel");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->phase1_peaplabel = g_strdup (g_value_get_string (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "phase1-fast-provisioning");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->phase1_fast_provisioning = g_strdup (g_value_get_string (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "phase2-auth");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->phase2_auth = g_strdup (g_value_get_string (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "phase2-autheap");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->phase2_autheap = g_strdup (g_value_get_string (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "phase2-ca-cert");
-	if (value && G_VALUE_HOLDS_BOXED (value))
-		self->phase2_ca_cert = convert_array_to_byte_array ((GArray *) g_value_get_boxed (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "phase2-ca-path");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->phase2_ca_path = g_strdup (g_value_get_string (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "phase2-client-cert");
-	if (value && G_VALUE_HOLDS_BOXED (value))
-		self->phase2_client_cert = convert_array_to_byte_array ((GArray *) g_value_get_boxed (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "phase2-private-key");
-	if (value && G_VALUE_HOLDS_BOXED (value))
-		self->phase2_private_key = convert_array_to_byte_array ((GArray *) g_value_get_boxed (value));
-
-	value = (GValue *) g_hash_table_lookup (settings, "nai");
-	if (value && G_VALUE_HOLDS_STRING (value))
-		self->nai = g_strdup (g_value_get_string (value));
-
-	setting_wireless_security_update_secrets (setting, settings);
-
 	return setting;
-
-err:
-	setting_wireless_security_destroy (setting);
-	return NULL;
 }
 
 /* PPP */
@@ -1294,37 +1095,6 @@ setting_ppp_verify (NMSetting *setting, GHashTable *all_settings)
 	return TRUE;
 }
 
-static GHashTable *
-setting_ppp_hash (NMSetting *setting)
-{
-	NMSettingPPP *self = (NMSettingPPP *) setting;
-	GHashTable *hash;
-
-	hash = setting_hash_new ();
-
-	g_hash_table_insert (hash, "noauth",           boolean_to_gvalue (self->noauth));
-	g_hash_table_insert (hash, "refuse-eap",       boolean_to_gvalue (self->refuse_eap));
-	g_hash_table_insert (hash, "refuse-chap",      boolean_to_gvalue (self->refuse_chap));
-	g_hash_table_insert (hash, "refuse-mschap",    boolean_to_gvalue (self->refuse_mschap));
-	g_hash_table_insert (hash, "nobsdcomp",        boolean_to_gvalue (self->nobsdcomp));
-	g_hash_table_insert (hash, "nodeflate",        boolean_to_gvalue (self->nodeflate));
-	g_hash_table_insert (hash, "require-mppe",     boolean_to_gvalue (self->require_mppe));
-	g_hash_table_insert (hash, "require-mppe-128", boolean_to_gvalue (self->require_mppe_128));
-	g_hash_table_insert (hash, "mppe-stateful",    boolean_to_gvalue (self->mppe_stateful));
-	g_hash_table_insert (hash, "require-mppc",     boolean_to_gvalue (self->require_mppc));
-	g_hash_table_insert (hash, "crtscts",          boolean_to_gvalue (self->crtscts));
-	g_hash_table_insert (hash, "usepeerdns",       boolean_to_gvalue (self->usepeerdns));
-
-	g_hash_table_insert (hash, "baud",              int_to_gvalue (self->baud));
-	g_hash_table_insert (hash, "mru",               int_to_gvalue (self->mru));
-	g_hash_table_insert (hash, "mtu",               int_to_gvalue (self->mtu));
-	g_hash_table_insert (hash, "lcp-echo-failure",  int_to_gvalue (self->lcp_echo_failure));
-	g_hash_table_insert (hash, "lcp-echo-interval", int_to_gvalue (self->lcp_echo_interval));
-
-	return hash;
-}
-
-
 static void
 setting_ppp_destroy (NMSetting *setting)
 {
@@ -1332,6 +1102,27 @@ setting_ppp_destroy (NMSetting *setting)
 
 	g_slice_free (NMSettingPPP, self);
 }
+
+static SettingMember ppp_table[] = {
+	{ "noauth", NM_S_TYPE_BOOL, G_STRUCT_OFFSET (NMSettingPPP, noauth), FALSE, FALSE },
+	{ "refuse-eap", NM_S_TYPE_BOOL, G_STRUCT_OFFSET (NMSettingPPP, refuse_eap), FALSE, FALSE },
+	{ "refuse-chap", NM_S_TYPE_BOOL, G_STRUCT_OFFSET (NMSettingPPP, refuse_chap), FALSE, FALSE },
+	{ "refuse-mschap", NM_S_TYPE_BOOL, G_STRUCT_OFFSET (NMSettingPPP, refuse_mschap), FALSE, FALSE },
+	{ "nobsdcomp", NM_S_TYPE_BOOL, G_STRUCT_OFFSET (NMSettingPPP, nobsdcomp), FALSE, FALSE },
+	{ "nodeflate", NM_S_TYPE_BOOL, G_STRUCT_OFFSET (NMSettingPPP, nodeflate), FALSE, FALSE },
+	{ "require-mppe", NM_S_TYPE_BOOL, G_STRUCT_OFFSET (NMSettingPPP, require_mppe), FALSE, FALSE },
+	{ "require-mppe-128", NM_S_TYPE_BOOL, G_STRUCT_OFFSET (NMSettingPPP, require_mppe_128), FALSE, FALSE },
+	{ "mppe-stateful", NM_S_TYPE_BOOL, G_STRUCT_OFFSET (NMSettingPPP, mppe_stateful), FALSE, FALSE },
+	{ "require-mppc", NM_S_TYPE_BOOL, G_STRUCT_OFFSET (NMSettingPPP, require_mppc), FALSE, FALSE },
+	{ "crtscts", NM_S_TYPE_BOOL, G_STRUCT_OFFSET (NMSettingPPP, crtscts), FALSE, FALSE },
+	{ "usepeerdns", NM_S_TYPE_BOOL, G_STRUCT_OFFSET (NMSettingPPP, usepeerdns), FALSE, FALSE },
+	{ "baud", NM_S_TYPE_UINT32, G_STRUCT_OFFSET (NMSettingPPP, baud), FALSE, FALSE },
+	{ "mru", NM_S_TYPE_UINT32, G_STRUCT_OFFSET (NMSettingPPP, mru), FALSE, FALSE },
+	{ "mtu", NM_S_TYPE_UINT32, G_STRUCT_OFFSET (NMSettingPPP, mtu), FALSE, FALSE },
+	{ "lcp-echo-failure", NM_S_TYPE_UINT32, G_STRUCT_OFFSET (NMSettingPPP, lcp_echo_failure), FALSE, FALSE },
+	{ "lcp-echo-interval", NM_S_TYPE_UINT32, G_STRUCT_OFFSET (NMSettingPPP, lcp_echo_interval), FALSE, FALSE },
+	{ NULL, 0, 0 },
+};
 
 NMSetting *
 nm_setting_ppp_new (void)
@@ -1341,8 +1132,9 @@ nm_setting_ppp_new (void)
 	setting = (NMSetting *) g_slice_new0 (NMSettingPPP);
 
 	setting->name = g_strdup ("ppp");
+	setting->_members = ppp_table;
 	setting->verify_fn = setting_ppp_verify;
-	setting->hash_fn = setting_ppp_hash;
+	setting->hash_fn = default_setting_hash;
 	setting->destroy_fn = setting_ppp_destroy;
 
 	return setting;
@@ -1360,73 +1152,10 @@ nm_setting_ppp_new_from_hash (GHashTable *settings)
 	setting = nm_setting_ppp_new ();
 	self = (NMSettingPPP *) setting;
 
-	value = (GValue *) g_hash_table_lookup (settings, "noauth");
-	if (value && G_VALUE_HOLDS_BOOLEAN (value))
-		self->noauth = g_value_get_boolean (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "refuse-eap");
-	if (value && G_VALUE_HOLDS_BOOLEAN (value))
-		self->refuse_eap = g_value_get_boolean (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "refuse-chap");
-	if (value && G_VALUE_HOLDS_BOOLEAN (value))
-		self->refuse_chap = g_value_get_boolean (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "refuse-mschap");
-	if (value && G_VALUE_HOLDS_BOOLEAN (value))
-		self->refuse_mschap = g_value_get_boolean (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "nobsdcomp");
-	if (value && G_VALUE_HOLDS_BOOLEAN (value))
-		self->nobsdcomp = g_value_get_boolean (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "nodeflate");
-	if (value && G_VALUE_HOLDS_BOOLEAN (value))
-		self->nodeflate = g_value_get_boolean (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "require-mppe");
-	if (value && G_VALUE_HOLDS_BOOLEAN (value))
-		self->require_mppe = g_value_get_boolean (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "require-mppe-128");
-	if (value && G_VALUE_HOLDS_BOOLEAN (value))
-		self->require_mppe_128 = g_value_get_boolean (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "mppe-stateful");
-	if (value && G_VALUE_HOLDS_BOOLEAN (value))
-		self->mppe_stateful = g_value_get_boolean (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "require-mppc");
-	if (value && G_VALUE_HOLDS_BOOLEAN (value))
-		self->require_mppc = g_value_get_boolean (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "crtscts");
-	if (value && G_VALUE_HOLDS_BOOLEAN (value))
-		self->crtscts = g_value_get_boolean (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "usepeerdns");
-	if (value && G_VALUE_HOLDS_BOOLEAN (value))
-		self->usepeerdns = g_value_get_boolean (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "baud");
-	if (value && G_VALUE_HOLDS_INT (value))
-		self->baud = g_value_get_int (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "mru");
-	if (value && G_VALUE_HOLDS_INT (value))
-		self->mru = g_value_get_int (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "mtu");
-	if (value && G_VALUE_HOLDS_INT (value))
-		self->mtu = g_value_get_int (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "lcp-echo-failure");
-	if (value && G_VALUE_HOLDS_INT (value))
-		self->lcp_echo_failure = g_value_get_int (value);
-
-	value = (GValue *) g_hash_table_lookup (settings, "lcp-echo-interval");
-	if (value && G_VALUE_HOLDS_INT (value))
-		self->lcp_echo_interval = g_value_get_int (value);
+	if (!nm_setting_populate_from_hash (setting, settings)) {
+		setting_connection_destroy (setting);
+		return NULL;
+	}
 
 	return setting;
 }

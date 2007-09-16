@@ -22,8 +22,30 @@ typedef GPtrArray *(*NMSettingNeedSecretsFn) (NMSetting *setting);
 
 typedef void       (*NMSettingDestroyFn) (NMSetting *setting);
 
+typedef void   (*NMSettingValueIterFn) (NMSetting *setting,
+                                        const char *key,
+                                        guint32 type,
+                                        void *value,
+                                        gboolean secret,
+                                        gpointer user_data);
+
+#define NM_S_TYPE_STRING         1
+#define NM_S_TYPE_UINT32         2
+#define NM_S_TYPE_BOOL           3
+#define NM_S_TYPE_BYTE_ARRAY     4
+#define NM_S_TYPE_STRING_ARRAY   5
+
+typedef struct SettingMember {
+	const char *key;
+	guint32 type;
+	gulong offset;
+	gboolean required;
+	gboolean secret;
+} SettingMember;
+
 struct _NMSetting {
 	char *name;
+	SettingMember *_members;  /* Private */
 
 	NMSettingVerifyFn verify_fn;
 	NMSettingToHashFn hash_fn;
@@ -37,6 +59,9 @@ GHashTable *nm_setting_to_hash (NMSetting *setting);
 gboolean    nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets);
 GPtrArray * nm_setting_need_secrets (NMSetting *setting);
 void        nm_setting_destroy (NMSetting *setting);
+void        nm_setting_enumerate_values (NMSetting *setting,
+                                         NMSettingValueIterFn func,
+                                         gpointer user_data);
 
 /* Default, built-in settings */
 
@@ -110,7 +135,7 @@ typedef struct {
 	NMSetting parent;
 
 	char *key_mgmt;
-	guint8 wep_tx_keyidx;
+	guint32 wep_tx_keyidx;
 	char *auth_alg;
 	char *proto;
 	GSList *pairwise; /* GSList of strings */

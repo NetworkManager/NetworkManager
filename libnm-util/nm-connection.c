@@ -229,6 +229,46 @@ nm_connection_to_hash (NMConnection *connection)
 	return connection_hash;
 }
 
+typedef struct ForEachValueInfo {
+	NMSettingValueIterFn func;
+	gpointer user_data;
+} ForEachValueInfo;
+
+static void
+for_each_setting (gpointer key, gpointer value, gpointer user_data)
+{
+	ForEachValueInfo *info = (ForEachValueInfo *) user_data;
+	NMSetting *setting = (NMSetting *) value;
+
+	nm_setting_enumerate_values (setting, info->func, info->user_data);
+}
+
+void
+nm_connection_for_each_setting_value (NMConnection *connection,
+                                       NMSettingValueIterFn func,
+                                       gpointer user_data)
+{
+	NMConnectionPrivate *priv;
+	ForEachValueInfo *info;
+
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+	g_return_if_fail (func != NULL);
+
+	priv = NM_CONNECTION_GET_PRIVATE (connection);
+
+	info = g_slice_new0 (ForEachValueInfo);
+	if (!info) {
+		g_warning ("Not enough memory to enumerate values.");
+		return;
+	}
+	info->func = func;
+	info->user_data = user_data;
+
+	g_hash_table_foreach (priv->settings, for_each_setting, info);
+
+	g_slice_free (ForEachValueInfo, info);
+}
+
 static char *
 gvalue_to_string (GValue *val)
 {

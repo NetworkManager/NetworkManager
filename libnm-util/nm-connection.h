@@ -44,6 +44,10 @@ void          nm_connection_update_secrets (NMConnection *connection,
                                             const char *setting_name,
                                             GHashTable *secrets);
 
+void          nm_connection_for_each_setting_value (NMConnection *connection,
+                                                     NMSettingValueIterFn func,
+                                                     gpointer user_data);
+
 GHashTable   *nm_connection_to_hash       (NMConnection *connection);
 void          nm_connection_dump          (NMConnection *connection);
 

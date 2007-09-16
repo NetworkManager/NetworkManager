@@ -1,3 +1,25 @@
+2007-09-16  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-connection.c
+	  libnm-util/nm-connection.h
+		- (nm_connection_for_each_setting_value): new function; iterate over
+			each setting's value and call a user-provided function with details
+			about that value
+
+	* libnm-util/nm-setting.c
+	  libnm-util/nm-setting.h
+		- (nm_setting_enumerate_values): new function; enumerate the values
+			of a specific NMSetting subclass for a user-provided function with
+			details about that value
+		- Change wep_tx_keyidx to a uint32
+		- Create settings value tables for each setting defining their type,
+			key name, offset into the NMSetting subclass' structure, and whether
+			they are required and/or a secret
+		- (nm_setting_populate_from_hash): generic function to populate an
+			NMSetting from a GHash table, make all settings use it
+		- (nm_setting_hash): generic function to derive a GHashTable from
+			an NMSetting object, make all settings use it
+
 2007-09-14  Dan Williams  <dcbw@redhat.com>
 
 	Remove unused stuff in libnm-util
