@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-OpenVPN 0.6\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-04-23 16:32+0200\n"
-"PO-Revision-Date: 2007-04-23 16:33+0200\n"
+"POT-Creation-Date: 2007-09-17 10:52+0200\n"
+"PO-Revision-Date: 2007-08-26 17:28+0200\n"
 "Last-Translator: Francesco Marletta <francesco.marletta@tiscali.it>\n"
 "Language-Team: italian <tp@lists.linux.it>\n"
 "MIME-Version: 1.0\n"
@@ -38,7 +38,7 @@ msgstr "Connessione _anonima"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:365
 msgid "Connect as _user:"
-msgstr "Connesione come _utente:"
+msgstr "Connessione come _utente:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:471
 msgid "_Remember password for this session"
@@ -276,7 +276,7 @@ msgstr "1"
 
 #: ../properties/nm-openvpn-dialog.glade.h:4
 msgid "65536"
-msgstr ""
+msgstr "65536"
 
 #: ../properties/nm-openvpn-dialog.glade.h:5
 msgid "<b>Connection Information</b>"
@@ -290,9 +290,10 @@ msgstr "<b>Nome connessione</b>"
 msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
 msgstr "<i>esempio: 172.16.0.0/16 10.11.12.0/24</i>"
 
+# [NdT] ho messo il femminile poiché si tratta di impostazioni avanzate
 #: ../properties/nm-openvpn-dialog.glade.h:8
 msgid "Advanced"
-msgstr ""
+msgstr "Avanzate"
 
 #: ../properties/nm-openvpn-dialog.glade.h:9
 msgid "CA file:"
@@ -336,11 +337,11 @@ msgstr ""
 
 #: ../properties/nm-openvpn-dialog.glade.h:18
 msgid "Network"
-msgstr ""
+msgstr "Rete"
 
 #: ../properties/nm-openvpn-dialog.glade.h:19
 msgid "OpenVPN Advanced Options"
-msgstr ""
+msgstr "Opzioni avanzate OpenVPN"
 
 #: ../properties/nm-openvpn-dialog.glade.h:20
 msgid "OpenVPN Configuration"
@@ -381,7 +382,7 @@ msgstr "Chiave condivisa"
 
 #: ../properties/nm-openvpn-dialog.glade.h:27
 msgid "TLS-Auth"
-msgstr ""
+msgstr "Auth-TLS"
 
 #: ../properties/nm-openvpn-dialog.glade.h:28
 msgid "Use LZO compression"
@@ -482,9 +483,3 @@ msgstr ""
 #: ../src/nm-openvpn-service.c:137
 msgid "VPN connection failed"
 msgstr "Connessione VPN fallita"
-
-#~ msgid "<b>Required</b>"
-#~ msgstr "<b>Richiesto</b>"
-
-#~ msgid "Optional"
-#~ msgstr "Opzionale"
