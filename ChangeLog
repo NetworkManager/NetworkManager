@@ -1,3 +1,25 @@
+2007-09-19  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerAP.c
+	  src/NetworkManagerAP.h
+	  introspection/nm-access-point.xml
+		- Change strength-changed signal into a properties-changed signal
+			for all properties, not just strength.  Export that signal over dbus
+			so listeners don't have to poll NM for changes.
+		- (nm_ap_export_to_dbus, nm_ap_new): not every NMAccessPoint should
+			get exported over D-Bus, so break up the logic and let other bits
+			decided when to export the AP
+		- (nm_ap_new_from_ap): remove, unused
+
+	* src/nm-device-802-11-wireless.c
+		- (merge_scanned_ap): only export APs that are actually on the device
+			list, not every AP created internally
+
+	* libnm-glib/nm-access-point.c
+	  libnm-glib/nm-access-point.h
+		- Cache properties internally and only hit DBus when needed.  Get
+			property updates from NM signals
+
 2007-09-16  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/nm-connection.c

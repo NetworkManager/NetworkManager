@@ -12,10 +12,9 @@
     <property name="Rate" type="u" access="read"/>
     <property name="Strength" type="y" access="read"/>
 
-    <signal name="StrengthChanged">
-      <arg name="strength" type="y"/>
+    <signal name="PropertiesChanged">
+      <arg name="properties" type="a{sv}"/>
     </signal>
-
   </interface>
 </node>
 

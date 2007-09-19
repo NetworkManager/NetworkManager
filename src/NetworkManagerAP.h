@@ -54,14 +54,14 @@ typedef struct {
 	GObjectClass parent;
 
 	/* Signals */
-	void (*strength_changed) (NMAccessPoint *ap, gint8 strength);
+	void (*properties_changed) (NMAccessPoint *ap, GHashTable *properties);
 } NMAccessPointClass;
 
 GType nm_ap_get_type (void);
 
 NMAccessPoint *	nm_ap_new				(void);
-NMAccessPoint *	nm_ap_new_from_ap		(NMAccessPoint *ap);
 NMAccessPoint * nm_ap_new_from_properties (GHashTable *properties);
+void            nm_ap_export_to_dbus    (NMAccessPoint *ap);
 
 const char *		nm_ap_get_dbus_path (NMAccessPoint *ap);
 const GTimeVal *	nm_ap_get_timestamp				(const NMAccessPoint *ap);

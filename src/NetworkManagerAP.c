@@ -81,7 +81,7 @@ typedef struct
 G_DEFINE_TYPE (NMAccessPoint, nm_ap, G_TYPE_OBJECT)
 
 enum {
-	STRENGTH_CHANGED,
+	PROPERTIES_CHANGED,
 
 	LAST_SIGNAL
 };
@@ -102,14 +102,22 @@ enum {
 	LAST_PROP
 };
 
+#define DBUS_PROP_FLAGS "Flags"
+#define DBUS_PROP_WPA_FLAGS "WpaFlags"
+#define DBUS_PROP_RSN_FLAGS "RsnFlags"
+#define DBUS_PROP_SSID "Ssid"
+#define DBUS_PROP_FREQUENCY "Frequency"
+#define DBUS_PROP_HW_ADDRESS "HwAddress"
+#define DBUS_PROP_MODE "Mode"
+#define DBUS_PROP_RATE "Rate"
+#define DBUS_PROP_STRENGTH "Strength"
 
 static void
 nm_ap_init (NMAccessPoint *ap)
 {
 	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (ap);
-	static guint32 counter = 0;
 
-	priv->dbus_path = g_strdup_printf (NM_DBUS_PATH_ACCESS_POINT "/%d", counter++);
+	priv->dbus_path = NULL;
 	priv->mode = IW_MODE_INFRA;
 	priv->flags = NM_802_11_AP_FLAGS_NONE;
 	priv->wpa_flags = NM_802_11_AP_SEC_NONE;
@@ -138,18 +146,23 @@ set_property (GObject *object, guint prop_id,
 	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (object);
 	GArray * ssid;
 	int mode;
+	char *dbus_prop = NULL;
 
 	switch (prop_id) {
 	case PROP_FLAGS:
+		dbus_prop = DBUS_PROP_FLAGS;
 		priv->flags = g_value_get_uint (value);
 		break;
 	case PROP_WPA_FLAGS:
+		dbus_prop = DBUS_PROP_WPA_FLAGS;
 		priv->wpa_flags = g_value_get_uint (value);
 		break;
 	case PROP_RSN_FLAGS:
+		dbus_prop = DBUS_PROP_RSN_FLAGS;
 		priv->rsn_flags = g_value_get_uint (value);
 		break;
 	case PROP_SSID:
+		dbus_prop = DBUS_PROP_SSID;
 		ssid = g_value_get_boxed (value);
 		if (priv->ssid) {
 			g_byte_array_free (priv->ssid, TRUE);
@@ -166,9 +179,11 @@ set_property (GObject *object, guint prop_id,
 		}
 		break;
 	case PROP_FREQUENCY:
+		dbus_prop = DBUS_PROP_FREQUENCY;
 		priv->freq = g_value_get_uint (value);
 		break;
 	case PROP_MODE:
+		dbus_prop = DBUS_PROP_MODE;
 		mode = g_value_get_int (value);
 
 		if (mode == IW_MODE_ADHOC || mode == IW_MODE_INFRA)
@@ -177,14 +192,25 @@ set_property (GObject *object, guint prop_id,
 			g_warning ("Invalid mode");
 		break;
 	case PROP_RATE:
+		dbus_prop = DBUS_PROP_RATE;
 		priv->rate = g_value_get_uint (value);
 		break;
 	case PROP_STRENGTH:
-		nm_ap_set_strength (NM_AP (object), g_value_get_char (value));
+		dbus_prop = DBUS_PROP_STRENGTH;
+		priv->strength = g_value_get_char (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
+	}
+
+	if (dbus_prop) {
+		GHashTable * hash;
+
+		hash = g_hash_table_new (g_str_hash, g_str_equal);
+		g_hash_table_insert (hash, dbus_prop, (gpointer) value);
+		g_signal_emit (object, signals[PROPERTIES_CHANGED], 0, hash);
+		g_hash_table_destroy (hash);
 	}
 }
 
@@ -345,18 +371,46 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 							G_PARAM_READWRITE));
 
 	/* Signals */
-	signals[STRENGTH_CHANGED] =
-		g_signal_new ("strength_changed",
+	signals[PROPERTIES_CHANGED] =
+		g_signal_new ("properties_changed",
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMAccessPointClass, strength_changed),
+					  G_STRUCT_OFFSET (NMAccessPointClass, properties_changed),
 					  NULL, NULL,
-					  g_cclosure_marshal_VOID__CHAR,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_CHAR);
+					  g_cclosure_marshal_VOID__BOXED,
+					  G_TYPE_NONE, 1, dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE));
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (ap_class),
 									 &dbus_glib_nm_access_point_object_info);
+}
+
+void
+nm_ap_export_to_dbus (NMAccessPoint *ap)
+{
+	NMAccessPointPrivate *priv;
+	NMDBusManager *mgr;
+	DBusGConnection *g_connection;
+	static guint32 counter = 0;
+
+	g_return_if_fail (NM_IS_AP (ap));
+
+	priv = NM_AP_GET_PRIVATE (ap);
+
+	if (priv->dbus_path) {
+		nm_warning ("Tried to export AP %s twice.", priv->dbus_path);
+		return;
+	}
+
+	mgr = nm_dbus_manager_get ();
+	g_assert (mgr);
+
+	g_connection = nm_dbus_manager_get_connection (mgr);
+	g_assert (g_connection);
+
+	priv->dbus_path = g_strdup_printf (NM_DBUS_PATH_ACCESS_POINT "/%d", counter++);
+	dbus_g_connection_register_g_object (g_connection, priv->dbus_path, G_OBJECT (ap));
+
+	g_object_unref (mgr);
 }
 
 /*
@@ -373,56 +427,7 @@ NMAccessPoint *nm_ap_new (void)
 	if (!object)
 		return NULL;
 
-	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (nm_dbus_manager_get ()),
-										 nm_ap_get_dbus_path (NM_AP (object)),
-										 object);
-
 	return (NMAccessPoint *) object;
-}
-
-
-/*
- * nm_ap_new_from_ap
- *
- * Create a new user access point info structure, duplicating an existing one
- *
- */
-NMAccessPoint *
-nm_ap_new_from_ap (NMAccessPoint *src_ap)
-{
-	NMAccessPoint *	new_ap;
-	NMAccessPointPrivate *src_priv;
-	NMAccessPointPrivate *new_priv;
-
-	g_return_val_if_fail (NM_IS_AP (src_ap), NULL);
-
-	if (!(new_ap = nm_ap_new ()))
-	{
-		nm_warning ("nm_ap_new_from_uap() could not allocate a new user access point structure.  Not enough memory?");
-		return NULL;
-	}
-
-	src_priv = NM_AP_GET_PRIVATE (src_ap);
-	new_priv = NM_AP_GET_PRIVATE (new_ap);
-
-	if (src_priv->ssid) {
-		new_priv->ssid = g_byte_array_sized_new (src_priv->ssid->len);
-		g_byte_array_append (new_priv->ssid,
-		                     src_priv->ssid->data,
-		                     src_priv->ssid->len);
-	}
-	memcpy (&new_priv->address, &src_priv->address, sizeof (struct ether_addr));
-	new_priv->mode = src_priv->mode;
-	new_priv->strength = src_priv->strength;
-	new_priv->freq = src_priv->freq;
-	new_priv->rate = src_priv->rate;
-	new_priv->artificial = src_priv->artificial;
-	new_priv->broadcast = src_priv->broadcast;
-	new_priv->flags = src_priv->flags;
-	new_priv->wpa_flags = src_priv->wpa_flags;
-	new_priv->rsn_flags = src_priv->rsn_flags;
-
-	return new_ap;
 }
 
 
@@ -620,7 +625,20 @@ const GByteArray * nm_ap_get_ssid (const NMAccessPoint *ap)
 
 void nm_ap_set_ssid (NMAccessPoint *ap, const GByteArray * ssid)
 {
+	NMAccessPointPrivate *priv;
+
 	g_return_if_fail (NM_IS_AP (ap));
+
+	priv = NM_AP_GET_PRIVATE (ap);
+
+	if ((ssid == priv->ssid) && ssid == NULL)
+		return;
+
+	/* same SSID */
+	if ((ssid && priv->ssid) && (ssid->len == priv->ssid->len)) {
+		if (!memcmp (ssid->data, priv->ssid->data, ssid->len))
+			return;
+	}
 
 	g_object_set (ap, NM_AP_SSID, ssid, NULL);
 }
@@ -642,9 +660,14 @@ nm_ap_get_flags (NMAccessPoint *ap)
 void
 nm_ap_set_flags (NMAccessPoint *ap, guint32 flags)
 {
+	NMAccessPointPrivate *priv;
+
 	g_return_if_fail (NM_IS_AP (ap));
 
-	g_object_set (ap, NM_AP_FLAGS, flags, NULL);
+	priv = NM_AP_GET_PRIVATE (ap);
+
+	if (priv->flags != flags)
+		g_object_set (ap, NM_AP_FLAGS, flags, NULL);
 }
 
 guint32
@@ -663,9 +686,14 @@ nm_ap_get_wpa_flags (NMAccessPoint *ap)
 void
 nm_ap_set_wpa_flags (NMAccessPoint *ap, guint32 flags)
 {
+	NMAccessPointPrivate *priv;
+
 	g_return_if_fail (NM_IS_AP (ap));
 
-	g_object_set (ap, NM_AP_WPA_FLAGS, flags, NULL);
+	priv = NM_AP_GET_PRIVATE (ap);
+
+	if (priv->wpa_flags != flags)
+		g_object_set (ap, NM_AP_WPA_FLAGS, flags, NULL);
 }
 
 guint32
@@ -684,9 +712,14 @@ nm_ap_get_rsn_flags (NMAccessPoint *ap)
 void
 nm_ap_set_rsn_flags (NMAccessPoint *ap, guint32 flags)
 {
+	NMAccessPointPrivate *priv;
+
 	g_return_if_fail (NM_IS_AP (ap));
 
-	g_object_set (ap, NM_AP_RSN_FLAGS, flags, NULL);
+	priv = NM_AP_GET_PRIVATE (ap);
+
+	if (priv->rsn_flags != flags)
+		g_object_set (ap, NM_AP_RSN_FLAGS, flags, NULL);
 }
 
 /*
@@ -702,10 +735,31 @@ const struct ether_addr * nm_ap_get_address (const NMAccessPoint *ap)
 
 void nm_ap_set_address (NMAccessPoint *ap, const struct ether_addr * addr)
 {
+	NMAccessPointPrivate *priv;
+
 	g_return_if_fail (NM_IS_AP (ap));
 	g_return_if_fail (addr != NULL);
 
-	memcpy (&NM_AP_GET_PRIVATE (ap)->address, addr, sizeof (struct ether_addr));
+	priv = NM_AP_GET_PRIVATE (ap);
+
+	if (memcmp (addr, &priv->address, sizeof (priv->address))) {
+		GHashTable * hash;
+		char buf[20];
+		GValue value = {0,};
+
+		memcpy (&NM_AP_GET_PRIVATE (ap)->address, addr, sizeof (struct ether_addr));
+
+		hash = g_hash_table_new (g_str_hash, g_str_equal);
+
+		memset (buf, 0, sizeof (buf));
+		iw_ether_ntop (&priv->address, buf);
+		g_value_init (&value, G_TYPE_STRING);
+		g_value_set_string (&value, &buf[0]);
+
+		g_hash_table_insert (hash, DBUS_PROP_HW_ADDRESS, (gpointer) &value);
+		g_signal_emit (ap, signals[PROPERTIES_CHANGED], 0, hash);
+		g_hash_table_destroy (hash);
+	}
 }
 
 
@@ -726,9 +780,14 @@ int nm_ap_get_mode (NMAccessPoint *ap)
 
 void nm_ap_set_mode (NMAccessPoint *ap, const int mode)
 {
+	NMAccessPointPrivate *priv;
+
 	g_return_if_fail (NM_IS_AP (ap));
 
-	g_object_set (ap, NM_AP_MODE, mode, NULL);
+	priv = NM_AP_GET_PRIVATE (ap);
+
+	if (priv->mode != mode)
+		g_object_set (ap, NM_AP_MODE, mode, NULL);
 }
 
 
@@ -755,10 +814,8 @@ void nm_ap_set_strength (NMAccessPoint *ap, const gint8 strength)
 
 	priv = NM_AP_GET_PRIVATE (ap);
 
-	if (priv->strength != strength) {
-		priv->strength = strength;
-		g_signal_emit (ap, signals[STRENGTH_CHANGED], 0, strength);
-	}
+	if (priv->strength != strength)
+		g_object_set (ap, NM_AP_STRENGTH, strength, NULL);
 }
 
 

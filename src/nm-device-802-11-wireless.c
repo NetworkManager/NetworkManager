@@ -1711,6 +1711,7 @@ merge_scanned_ap (NMDevice80211Wireless *self,
 		// FIXME: figure out if reference counts are correct here for AP objects
 		g_object_ref (merge_ap);
 		self->priv->ap_list = g_slist_append (self->priv->ap_list, merge_ap);
+		nm_ap_export_to_dbus (merge_ap);
 		network_added (self, merge_ap);
 	}
 }
