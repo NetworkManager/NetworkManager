@@ -5,6 +5,7 @@
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
 #include "nm-device.h"
+#include "nm-device-interface.h"
 
 #define NM_TYPE_MANAGER            (nm_manager_get_type ())
 #define NM_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_MANAGER, NMManager))
@@ -77,6 +78,7 @@ const char * nm_manager_get_connection_dbus_path (NMManager *manager,
                                                   NMConnection *connection);
 
 void nm_manager_get_connection_secrets (NMManager *manager,
+                                        NMDeviceInterface *device,
                                         NMConnection *connection,
                                         const char * setting_name);
 

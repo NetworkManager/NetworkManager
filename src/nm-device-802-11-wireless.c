@@ -2478,7 +2478,10 @@ real_act_stage2_config (NMDevice *dev)
 		         iface, s_connection->name);
 
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
-		nm_manager_get_connection_secrets (manager, connection, setting_name);
+		nm_manager_get_connection_secrets (manager,
+		                                   NM_DEVICE_INTERFACE (self),
+		                                   connection,
+		                                   setting_name);
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	} else {
 		nm_info ("Activation (%s/wireless): connection '%s' has security"

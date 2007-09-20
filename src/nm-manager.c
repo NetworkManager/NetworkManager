@@ -1005,6 +1005,7 @@ nm_manager_update_connections (NMManager *manager,
 typedef struct GetSecretsInfo {
 	NMManager *manager;
 	NMConnection *connection;
+	NMDeviceInterface *device;
 	char *setting_name;
 } GetSecretsInfo;
 
@@ -1016,6 +1017,7 @@ free_get_secrets_info (gpointer data)
 	g_free (info->setting_name);
 	if (info->connection)
 		g_object_unref (info->connection);
+	g_object_unref (info->device);
 	g_slice_free (GetSecretsInfo, info);
 }
 
@@ -1030,15 +1032,14 @@ get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	g_return_if_fail (info->manager);
 	g_return_if_fail (info->connection);
 	g_return_if_fail (info->setting_name);
+	g_return_if_fail (info->device);
 
 	if (!dbus_g_proxy_end_call (proxy, call, &err,
 								dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE), &secrets,
 								G_TYPE_INVALID)) {
 		nm_warning ("Couldn't get connection secrets: %s.", err->message);
 		g_error_free (err);
-		// FIXME: do we need to propagate the error back up to the device?
-		// Otherwise device spins in the NEED_AUTH state until something
-		// kicks it or it gets a different activation
+		nm_device_interface_deactivate (info->device);
 		return;
 	}
 
@@ -1054,6 +1055,7 @@ get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 
 void
 nm_manager_get_connection_secrets (NMManager *manager,
+                                   NMDeviceInterface *device,
                                    NMConnection *connection,
                                    const char *setting_name)
 {
@@ -1083,6 +1085,7 @@ nm_manager_get_connection_secrets (NMManager *manager,
 
 	info->connection = g_object_ref (connection);
 	info->manager = manager;
+	info->device = g_object_ref (device);
 
 	if (!dbus_g_proxy_begin_call (proxy, "GetSecrets",
 	                              get_secrets_cb,
