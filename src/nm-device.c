@@ -1037,8 +1037,6 @@ nm_device_activation_cancel (NMDevice *self)
 gboolean
 nm_device_deactivate_quickly (NMDevice *self)
 {
-	NMActRequest *	act_request;
-
 	g_return_val_if_fail (self != NULL, FALSE);
 
 	nm_system_shutdown_nis ();

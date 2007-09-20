@@ -689,8 +689,6 @@ nm_netlink_monitor_event_handler (GIOChannel       *channel,
 		     RTA_OK (attribute, num_attribute_bytes_to_process);
 		     attribute = RTA_NEXT (attribute, num_attribute_bytes_to_process))
 		{
-			int data_len = RTA_PAYLOAD (attribute);
-
 			if (attribute->rta_type == IFLA_IFNAME) {
 				if (interface_info->ifi_flags & IFF_RUNNING) {
 					g_signal_emit (G_OBJECT (monitor), 

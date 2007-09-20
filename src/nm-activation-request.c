@@ -19,7 +19,7 @@
  * (C) Copyright 2005 Red Hat, Inc.
  */
 
-
+#include <string.h>
 #include "nm-activation-request.h"
 #include "nm-marshal.h"
 #include "nm-manager.h"

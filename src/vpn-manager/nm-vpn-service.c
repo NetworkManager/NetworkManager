@@ -98,7 +98,7 @@ NMVPNService *
 nm_vpn_service_new (const char *name)
 {
 	GKeyFile *key_file;
-	NMVPNService *service;
+	NMVPNService *service = NULL;
 	NMVPNServicePrivate *priv;
 	char *dbus_service = NULL;
 	char *program = NULL;

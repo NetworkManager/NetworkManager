@@ -192,13 +192,10 @@ impl_connection_settings_get_secrets (NMConnectionSettings *connection,
 	CONNECTION_SETTINGS_CLASS (connection)->get_secrets (connection, setting_name, context);
 }
 
-static guint32 cs_counter = 0;
-
 static void
 nm_connection_settings_init (NMConnectionSettings *connection)
 {
-	DBusGConnection *bus_connection;
-	GError *error = NULL;
+	static guint32 cs_counter = 0;
 
 	connection->dbus_path = g_strdup_printf ("%s/%u",
 		                                     NM_DBUS_PATH_SETTINGS,

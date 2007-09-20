@@ -3,6 +3,7 @@
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "nm-setting.h"
 #include "nm-utils.h"

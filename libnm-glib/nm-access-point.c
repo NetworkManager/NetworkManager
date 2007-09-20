@@ -348,7 +348,6 @@ properties_changed_proxy (DBusGProxy *proxy,
                           gpointer user_data)
 {
 	NMAccessPoint *ap = NM_ACCESS_POINT (user_data);
-	NMAccessPointPrivate *priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
 
 	g_hash_table_foreach (properties, handle_property_changed, ap);
 }

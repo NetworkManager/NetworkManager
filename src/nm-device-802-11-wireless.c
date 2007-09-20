@@ -2340,8 +2340,6 @@ build_supplicant_config (NMDevice80211Wireless *self,
                          NMAccessPoint *ap)
 {
 	NMSupplicantConfig * config = NULL;
-	const GByteArray *	ssid;
-	gboolean			is_adhoc = FALSE;
 	NMSettingWireless * s_wireless;
 	NMSettingWirelessSecurity *s_wireless_sec;
 
@@ -2421,7 +2419,6 @@ real_connection_secrets_updated (NMDevice *dev,
                                  NMConnection *connection,
                                  const char *setting_name)
 {
-	NMDevice80211Wireless * self = NM_DEVICE_802_11_WIRELESS (dev);
 	NMActRequest *req;
 
 	if (nm_device_get_state (dev) != NM_DEVICE_STATE_NEED_AUTH)
