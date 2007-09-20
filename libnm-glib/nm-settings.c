@@ -115,10 +115,9 @@ static gboolean impl_connection_settings_get_id (NMConnectionSettings *connectio
 static gboolean impl_connection_settings_get_settings (NMConnectionSettings *connection,
 						       GHashTable **settings,
 						       GError **error);
-static gboolean impl_connection_settings_get_secrets (NMConnectionSettings *connection,
+static void impl_connection_settings_get_secrets (NMConnectionSettings *connection,
 						      const gchar *setting_name,
-						      GHashTable **secrets,
-						      GError **error);
+						      DBusGMethodInvocation *context);
 
 #include "nm-settings-connection-glue.h"
 
@@ -169,22 +168,28 @@ impl_connection_settings_get_settings (NMConnectionSettings *connection,
 	return TRUE;
 }
 
-static gboolean
+static void
 impl_connection_settings_get_secrets (NMConnectionSettings *connection,
-				      const gchar *setting_name,
-				      GHashTable **secrets,
-				      GError **error)
+                                      const gchar *setting_name,
+                                      DBusGMethodInvocation *context)
 {
-	g_return_val_if_fail (NM_IS_CONNECTION_SETTINGS (connection), FALSE);
+	GError *error = NULL;
 
-	if (!CONNECTION_SETTINGS_CLASS (connection)->get_secrets) {
-		*error = new_error ("%s.%d - Missing implementation for ConnectionSettings::get_secret.", __FILE__, __LINE__);
-		return FALSE;
+	if (!NM_IS_CONNECTION_SETTINGS (connection)) {
+		error = new_error ("%s.%d - Invalid connection in ConnectionSettings::get_secret.", __FILE__, __LINE__);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
 	}
 
-	*secrets = CONNECTION_SETTINGS_CLASS (connection)->get_secrets (connection, setting_name);
+	if (!CONNECTION_SETTINGS_CLASS (connection)->get_secrets) {
+		error = new_error ("%s.%d - Missing implementation for ConnectionSettings::get_secret.", __FILE__, __LINE__);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
 
-	return TRUE;
+	CONNECTION_SETTINGS_CLASS (connection)->get_secrets (connection, setting_name, context);
 }
 
 static guint32 cs_counter = 0;

@@ -1,5 +1,12 @@
 2007-09-20  Dan Williams  <dcbw@redhat.com>
 
+	* introspection/nm-settings-connection.xml
+	  libnm-glib/nm-settings.c
+	  libnm-glib/nm-settings.h
+		- Make GetSecrets asynchronous on the server side
+
+2007-09-20  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-manager.h
 	  src/nm-device.c
 		- (nm_device_activate): actually check if a given connection

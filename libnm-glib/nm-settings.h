@@ -27,7 +27,9 @@ typedef struct {
 	/* virtual methods */
 	gchar * (* get_id) (NMConnectionSettings *connection);
 	GHashTable * (* get_settings) (NMConnectionSettings *connection);
-	GHashTable * (* get_secrets) (NMConnectionSettings *connection, const gchar *setting_name);
+	void         (* get_secrets) (NMConnectionSettings *connection,
+	                              const gchar *setting_name,
+	                              DBusGMethodInvocation *context);
 
 	/* signals */
 	void (* updated) (NMConnectionSettings *connection, GHashTable *settings);
