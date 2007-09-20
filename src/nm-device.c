@@ -1221,6 +1221,21 @@ nm_device_activate (NMDeviceInterface *device,
 		g_return_if_fail (connection_path == NULL);
 	}
 
+	if (!connection) {
+		NMManager *mgr = nm_manager_get ();
+		NMConnectionType type = NM_CONNECTION_TYPE_UNKNOWN;
+
+		if (!strcmp (service_name, NM_DBUS_SERVICE_USER_SETTINGS))
+			type = NM_CONNECTION_TYPE_USER;
+		else if (!strcmp (service_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS))
+			type = NM_CONNECTION_TYPE_SYSTEM;
+
+		if (type != NM_CONNECTION_TYPE_UNKNOWN)
+			connection = nm_manager_get_connection_by_object_path (mgr, type, connection_path);
+
+		g_object_unref (mgr);
+	}
+
 	nm_info ("Activating device %s", nm_device_get_iface (self));
 	if (connection) {
 		if (device_activation_precheck (self, connection) == FALSE)

@@ -55,7 +55,8 @@ void nm_manager_sleep (NMManager *manager, gboolean sleep);
 
 /* Connections */
 typedef enum {
-	NM_CONNECTION_TYPE_SYSTEM = 0,
+	NM_CONNECTION_TYPE_UNKNOWN = 0,
+	NM_CONNECTION_TYPE_SYSTEM,
 	NM_CONNECTION_TYPE_USER,
 } NMConnectionType;
 

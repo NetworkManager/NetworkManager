@@ -1,3 +1,10 @@
+2007-09-20  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-manager.h
+	  src/nm-device.c
+		- (nm_device_activate): actually check if a given connection
+			exists before assuming it doesn't
+
 2007-09-20  Tambet Ingo  <tambet@gmail.com>
 
 	* libnm-util/nm-connection.c (register_default_creators): Use defined
