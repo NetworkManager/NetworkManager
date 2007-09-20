@@ -671,7 +671,6 @@ find_best_connection (gpointer data, gpointer user_data)
 	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_SETTING_CONNECTION);
 	if (s_con == NULL)
 		return;
-fprintf (stderr, "%s: looking at connection %s\n", __func__, s_con->name);
 	if (strcmp (s_con->type, NM_SETTING_WIRELESS))
 		return;
 	if (!s_con->autoconnect)
