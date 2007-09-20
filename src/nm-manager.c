@@ -245,14 +245,6 @@ free_get_settings_info (gpointer data)
 }
 
 static void
-destroy_connection_proxy (gpointer data, GObject *object)
-{
-	DBusGProxy *proxy = DBUS_G_PROXY (data);
-
-	g_object_unref (proxy);
-}
-
-static void
 connection_get_settings_cb  (DBusGProxy *proxy,
                              DBusGProxyCall *call_id,
                              gpointer user_data)
@@ -284,8 +276,8 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 		if (connection == NULL)
 			goto out;
 
-		g_object_set_data (G_OBJECT (connection), CONNECTION_PROXY_TAG, proxy);
-		g_object_weak_ref (G_OBJECT (connection), destroy_connection_proxy, proxy);
+		g_object_set_data_full (G_OBJECT (connection), CONNECTION_PROXY_TAG, proxy,
+						    (GDestroyNotify) g_object_unref);
 
 		priv = NM_MANAGER_GET_PRIVATE (manager);
 		if (strcmp (bus_name, NM_DBUS_SERVICE_USER_SETTINGS) == 0) {

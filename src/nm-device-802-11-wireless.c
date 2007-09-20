@@ -2427,7 +2427,7 @@ real_connection_secrets_updated (NMDevice *dev,
 	if (nm_device_get_state (dev) != NM_DEVICE_STATE_NEED_AUTH)
 		return;
 
-	if (strcmp (setting_name, "802-11-wireless-security") != 0) {
+	if (strcmp (setting_name, NM_SETTING_WIRELESS_SECURITY) != 0) {
 		nm_warning ("Ignoring updated secrets for setting '%s'.", setting_name);
 		return;
 	}
@@ -2465,7 +2465,7 @@ real_act_stage2_config (NMDevice *dev)
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
 
-	s_connection = (NMSettingConnection *) nm_connection_get_setting (connection, "connection");
+	s_connection = (NMSettingConnection *) nm_connection_get_setting (connection, NM_SETTING_CONNECTION);
 	g_assert (s_connection);
 
 	/* If we need secrets, get them */

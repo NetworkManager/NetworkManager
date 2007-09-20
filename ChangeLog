@@ -1,3 +1,21 @@
+2007-09-20  Tambet Ingo  <tambet@gmail.com>
+
+	* libnm-util/nm-setting.h: Change the type of NMSettingVPN->routes to
+	GSList.
+
+	* libnm-util/nm-setting.c (setting_vpn_destroy): Free routes too.
+
+	* src/nm-manager.c (connection_get_settings_cb): No need to use weakref,
+	just use (g_object_set_data_full).
+
+	* src/vpn-manager/nm-vpn-connection.c (nm_vpn_connection_get_routes): Now
+	that NMSettingVPN->routes is a GSList, convert it to char **.
+	(nm_vpn_connection_ip4_config_get): Free routes when done.
+	(nm_vpn_connection_activate): Ditto.
+
+	* src/nm-device-802-11-wireless.c (real_connection_secrets_updated)
+	(real_act_stage2_config): Use defined setting names.
+
 2007-09-20  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-11-wireless.c

@@ -1167,6 +1167,11 @@ setting_vpn_destroy (NMSetting *setting)
 
 	g_free (self->service_type);
 
+	if (self->routes) {
+		g_slist_foreach (self->routes, (GFunc) g_free, NULL);
+		g_slist_free (self->routes);
+	}
+
 	g_slice_free (NMSettingVPN, self);
 }
 

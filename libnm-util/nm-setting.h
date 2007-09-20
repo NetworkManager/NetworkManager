@@ -221,7 +221,7 @@ typedef struct {
 	NMSetting parent;
 
 	char *service_type;
-	char **routes;
+	GSList *routes;
 } NMSettingVPN;
 
 NMSetting *nm_setting_vpn_new (void);
