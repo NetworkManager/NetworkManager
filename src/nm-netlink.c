@@ -23,6 +23,7 @@
 #include "nm-utils.h"
 
 #include <glib.h>
+#include <signal.h>
 #include <pthread.h>
 #include <unistd.h>
 
