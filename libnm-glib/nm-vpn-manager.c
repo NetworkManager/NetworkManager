@@ -37,49 +37,30 @@ nm_vpn_manager_new (void)
 
 NMVPNConnection *
 nm_vpn_manager_connect (NMVPNManager *manager,
-				    const char   *type,
-				    const char   *name,
-				    GHashTable   *properties,
-				    NMDevice     *device,
-				    GSList       *routes)
+				    const char   *connection_type,
+				    const char   *connection_path,
+				    NMDevice     *device)
 {
-	char *connection_path = NULL;
+	char *vpn_connection = NULL;
 	GError *err = NULL;
-	char **routes_array = NULL;
-	GSList *elt;
-	int i, size;
 
 	g_return_val_if_fail (NM_IS_VPN_MANAGER (manager), NULL);
-	g_return_val_if_fail (type != NULL, NULL);
-	g_return_val_if_fail (name != NULL, NULL);
-	g_return_val_if_fail (properties != NULL, NULL);
+	g_return_val_if_fail (connection_type != NULL, NULL);
+	g_return_val_if_fail (connection_path, NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	size = sizeof (char *) * (g_slist_length (routes) + 1);
-	routes_array = g_slice_alloc0 (size);
-	if (!routes_array) {
-		g_warning ("Couldn't allocate string list.");
-		return NULL;
-	}
-
-	for (elt = routes, i = 0; elt; elt = g_slist_next (elt))
-		routes_array[i++] = elt->data;
-
 	if (!org_freedesktop_NetworkManager_VPN_Manager_connect (NM_VPN_MANAGER_GET_PRIVATE (manager)->manager_proxy,
-												  type, name,
-												  properties,
+												  connection_type,
+												  connection_path,
 												  nm_object_get_path (NM_OBJECT (device)),
-												  (const char **) routes_array,
-												  &connection_path,
+												  &vpn_connection,
 												  &err)) {
 		g_warning ("Error in VPN Connect: %s", err->message);
 		g_error_free (err);
-		g_slice_free1 (size, routes_array);
 		return NULL;
 	}
 
-	g_slice_free1 (size, routes_array);
-	return nm_vpn_connection_new (nm_object_get_connection (NM_OBJECT (manager)), connection_path);
+	return nm_vpn_connection_new (nm_object_get_connection (NM_OBJECT (manager)), vpn_connection);
 }
 
 GSList *

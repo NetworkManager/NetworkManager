@@ -34,6 +34,7 @@ typedef void   (*NMSettingValueIterFn) (NMSetting *setting,
 #define NM_S_TYPE_BOOL           3
 #define NM_S_TYPE_BYTE_ARRAY     4
 #define NM_S_TYPE_STRING_ARRAY   5
+#define NM_S_TYPE_GVALUE_HASH    6
 
 typedef struct SettingMember {
 	const char *key;
@@ -67,11 +68,13 @@ void        nm_setting_enumerate_values (NMSetting *setting,
 
 /* Connection */
 
+#define NM_SETTING_CONNECTION "connection"
+
 typedef struct {
 	NMSetting parent;
 
 	char *name;
-	char *devtype;
+	char *type;
 	gboolean autoconnect;
 } NMSettingConnection;
 
@@ -79,6 +82,8 @@ NMSetting *nm_setting_connection_new (void);
 NMSetting *nm_setting_connection_new_from_hash (GHashTable *settings);
 
 /* IP4 config */
+
+#define NM_SETTING_IP4_CONFIG "ipv4"
 
 typedef struct {
 	NMSetting parent;
@@ -93,6 +98,8 @@ NMSetting *nm_setting_ip4_config_new (void);
 NMSetting *nm_setting_ip4_config_new_from_hash (GHashTable *settings);
 
 /* Wired device */
+
+#define NM_SETTING_WIRED "802-3-ethernet"
 
 typedef struct {
 	NMSetting parent;
@@ -109,6 +116,8 @@ NMSetting *nm_setting_wired_new (void);
 NMSetting *nm_setting_wired_new_from_hash (GHashTable *settings);
 
 /* Wireless device */
+
+#define NM_SETTING_WIRELESS "802-11-wireless"
 
 typedef struct {
 	NMSetting parent;
@@ -130,6 +139,8 @@ NMSetting *nm_setting_wireless_new (void);
 NMSetting *nm_setting_wireless_new_from_hash (GHashTable *settings);
 
 /* Wireless security */
+
+#define NM_SETTING_WIRELESS_SECURITY "802-11-wireless-security"
 
 typedef struct {
 	NMSetting parent;
@@ -174,6 +185,8 @@ NMSetting *nm_setting_wireless_security_new_from_hash (GHashTable *settings);
 
 /* PPP */
 
+#define NM_SETTING_PPP "ppp"
+
 typedef struct {
 	NMSetting parent;
 
@@ -199,6 +212,33 @@ typedef struct {
 
 NMSetting *nm_setting_ppp_new (void);
 NMSetting *nm_setting_ppp_new_from_hash (GHashTable *settings);
+
+/* VPN */
+
+#define NM_SETTING_VPN "vpn"
+
+typedef struct {
+	NMSetting parent;
+
+	char *service_type;
+	char **routes;
+} NMSettingVPN;
+
+NMSetting *nm_setting_vpn_new (void);
+NMSetting *nm_setting_vpn_new_from_hash (GHashTable *hash);
+
+/* VPN properties */
+
+#define NM_SETTING_VPN_PROPERTIES "vpn-properties"
+
+typedef struct {
+	NMSetting parent;
+
+	GHashTable *data;
+} NMSettingVPNProperties;
+
+NMSetting *nm_setting_vpn_properties_new (void);
+NMSetting *nm_setting_vpn_properties_new_from_hash (GHashTable *hash);
 
 G_END_DECLS
 

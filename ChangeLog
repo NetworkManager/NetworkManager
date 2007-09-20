@@ -1,3 +1,34 @@
+2007-09-20  Tambet Ingo  <tambet@gmail.com>
+
+	* libnm-util/nm-connection.c (register_default_creators): Use defined
+	setting names. Register NMSettingVPN and NMSettingVPNProperties.
+
+	* libnm-util/nm-setting.c: Define property name strings, use them.
+	Implement NMSettingVPN and NMSettingVPNProperties settings.
+	Implement NM_S_TYPE_GVALUE_HASH.
+	(nm_setting_populate_from_hash): Handle NM_S_TYPE_GVALUE_HASH.
+	(setting_connection_verify): Rename 'devtype' property to 'type'.
+
+	* introspection/nm-vpn-manager.xml: Use NMConnection for VPN service
+	properties.
+
+	* src/vpn-manager/nm-vpn-service.c: Ditto.
+
+	* src/vpn-manager/nm-vpn-connection.c: Ditto.
+
+	* src/vpn-manager/nm-vpn-manager.c (nm_vpn_manager_connect): Ditto.
+	(nm_vpn_manager_new): Remove NMManager argument, it's easy enough to get.
+
+	* src/nm-device-802-11-wireless.c (find_best_connection): Use defined setting
+	names. NMSettingConnection->devtype got renamed to 'type'.
+
+	* src/nm-device-802-3-ethernet.c (find_best_connection):
+	(real_get_best_connection): Ditto.
+
+	* src/NetworkManager.c (main): Update the vpn manager creation arguments.
+
+	* libnm-glib/nm-vpn-manager.[ch]: Update.
+
 2007-09-19  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerAP.c

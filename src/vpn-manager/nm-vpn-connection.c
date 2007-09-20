@@ -41,10 +41,7 @@ static gboolean impl_vpn_connection_disconnect (NMVPNConnection *connection, GEr
 G_DEFINE_TYPE (NMVPNConnection, nm_vpn_connection, G_TYPE_OBJECT)
 
 typedef struct {
-	char *name;
-	char *dbus_service;
-	GHashTable *properties;
-	char **routes;
+	NMConnection *connection;
 	NMDevice *parent_dev;
 	char *object_path;
 	
@@ -103,34 +100,57 @@ device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 }
 
 NMVPNConnection *
-nm_vpn_connection_new (const char *name,
-				   const char *dbus_service,
-				   NMDevice *parent_device,
-				   GHashTable *properties,
-				   char **routes)
+nm_vpn_connection_new (NMConnection *connection,
+				   NMDevice *parent_device)
 {
-	NMVPNConnection *connection;
+	NMVPNConnection *vpn_connection;
 
-	g_return_val_if_fail (name != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (parent_device), NULL);
-	g_return_val_if_fail (properties != NULL, NULL);
 
-	connection = (NMVPNConnection *) g_object_new (NM_TYPE_VPN_CONNECTION, NULL);
-	if (connection) {
-		NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	vpn_connection = (NMVPNConnection *) g_object_new (NM_TYPE_VPN_CONNECTION, NULL);
+	if (vpn_connection) {
+		NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn_connection);
 
-		priv->name = g_strdup (name);
-		priv->dbus_service = g_strdup (dbus_service);
+		priv->connection = connection;
 		priv->parent_dev = g_object_ref (parent_device);
-		priv->properties = properties;
-		priv->routes = routes;
 
 		priv->device_monitor = g_signal_connect (parent_device, "state-changed",
 										 G_CALLBACK (device_state_changed),
-										 connection);
+										 vpn_connection);
 	}
 
-	return connection;
+	return vpn_connection;
+}
+
+static char *
+nm_vpn_connection_get_service (NMVPNConnection *connection)
+{
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMSettingVPN *setting;
+
+	setting = (NMSettingVPN *) nm_connection_get_setting (priv->connection, NM_SETTING_VPN);
+	return setting->service_type;
+}
+
+static char **
+nm_vpn_connection_get_routes (NMVPNConnection *connection)
+{
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMSettingVPN *setting;
+
+	setting = (NMSettingVPN *) nm_connection_get_setting (priv->connection, NM_SETTING_VPN);
+	return setting->routes;
+}
+
+static GHashTable *
+nm_vpn_connection_get_vpn_data (NMVPNConnection *connection)
+{
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMSettingVPNProperties *setting;
+
+	setting = (NMSettingVPNProperties *) nm_connection_get_setting (priv->connection, NM_SETTING_VPN_PROPERTIES);
+	return setting->data;
 }
 
 static void
@@ -280,7 +300,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	if (nm_system_vpn_device_set_from_ip4_config (priv->parent_dev,
 										 priv->tundev,
 										 priv->ip4_config,
-										 priv->routes)) {
+										 nm_vpn_connection_get_routes (connection))) {
 		nm_info ("VPN connection '%s' (IP Config Get) complete.",
 			    nm_vpn_connection_get_name (connection));
 		nm_vpn_connection_set_state (connection, NM_VPN_CONNECTION_STATE_ACTIVATED);
@@ -346,7 +366,7 @@ nm_vpn_connection_activate (NMVPNConnection *connection)
 	dbus_mgr = nm_dbus_manager_get ();
 
 	priv->proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (dbus_mgr),
-									 priv->dbus_service,
+									 nm_vpn_connection_get_service (connection),
 									 NM_VPN_DBUS_PLUGIN_PATH,
 									 NM_VPN_DBUS_PLUGIN_INTERFACE);
 	g_object_unref (dbus_mgr);
@@ -368,8 +388,8 @@ nm_vpn_connection_activate (NMVPNConnection *connection)
 						    connection, NULL);
 
 	org_freedesktop_NetworkManager_VPN_Plugin_connect_async (priv->proxy,
-												  priv->properties,
-												  priv->routes,
+												  nm_vpn_connection_get_vpn_data (connection),
+												  nm_vpn_connection_get_routes (connection),
 												  nm_vpn_connection_connect_cb,
 												  connection);
 
@@ -387,9 +407,15 @@ nm_vpn_connection_get_object_path (NMVPNConnection *connection)
 const char *
 nm_vpn_connection_get_name (NMVPNConnection *connection)
 {
+	NMVPNConnectionPrivate *priv;
+	NMSettingConnection *setting;
+
 	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), NULL);
 
-	return NM_VPN_CONNECTION_GET_PRIVATE (connection)->name;
+	priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	setting = (NMSettingConnection *) nm_connection_get_setting (priv->connection, NM_SETTING_CONNECTION);
+
+	return setting->name;
 }
 
 NMVPNConnectionState
@@ -507,10 +533,8 @@ finalize (GObject *object)
 	if (priv->proxy)
 		g_object_unref (priv->proxy);
 
-	g_free (priv->name);
-	g_free (priv->dbus_service);
-	g_hash_table_unref (priv->properties);
-	g_strfreev (priv->routes);
+	g_object_unref (priv->connection);
+
 	g_free (priv->object_path);
 
 	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->finalize (object);

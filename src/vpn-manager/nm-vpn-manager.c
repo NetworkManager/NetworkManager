@@ -5,16 +5,15 @@
 #include "nm-vpn-manager.h"
 #include "nm-vpn-service.h"
 #include "nm-vpn-connection.h"
+#include "nm-manager.h"
 #include "nm-dbus-manager.h"
 #include "NetworkManagerVPN.h"
 #include "nm-utils.h"
 
 static gboolean impl_vpn_manager_connect (NMVPNManager *manager,
-								  const char *type,
-								  const char *name,
-								  GHashTable *properties,
+								  const char *connection_type,
+								  const char *connection_path,
 								  const char *device_path,
-								  char **routes,
 								  char **connection,
 								  GError **err);
 
@@ -27,7 +26,6 @@ static gboolean impl_vpn_manager_get_connections (NMVPNManager *manager,
 G_DEFINE_TYPE (NMVPNManager, nm_vpn_manager, G_TYPE_OBJECT)
 
 typedef struct {
-	NMManager *nm_mgr;
 	NMDBusManager *dbus_mgr;
 	GSList *services;
 } NMVPNManagerPrivate;
@@ -68,32 +66,32 @@ nm_vpn_manager_add_service (NMVPNManager *manager, NMVPNService *service)
 
 NMVPNConnection *
 nm_vpn_manager_connect (NMVPNManager *manager,
-				    const char *type,
-				    const char *name,
-				    NMDevice *device,
-				    GHashTable *properties,
-				    char **routes)
+				    NMConnection *connection,
+				    NMDevice *device)
 {
+	NMSettingVPN *vpn_setting;
 	NMVPNService *service;
 
 	g_return_val_if_fail (NM_IS_VPN_MANAGER (manager), NULL);
-	g_return_val_if_fail (type != NULL, NULL);
-	g_return_val_if_fail (name != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
-	g_return_val_if_fail (properties != NULL, NULL);
 
 	if (nm_device_get_state (device) != NM_DEVICE_STATE_ACTIVATED)
 		return NULL;
 
-	service = nm_vpn_manager_get_service (manager, type);
+	vpn_setting = (NMSettingVPN *) nm_connection_get_setting (connection, NM_SETTING_VPN);
+	if (!vpn_setting)
+		return NULL;
+
+	service = nm_vpn_manager_get_service (manager, vpn_setting->service_type);
 	if (!service) {
-		service = nm_vpn_service_new (type);
+		service = nm_vpn_service_new (vpn_setting->service_type);
 		if (service)
 			nm_vpn_manager_add_service (manager, service);
 	}
 
 	if (service)
-		return nm_vpn_service_activate (service, name, device, properties, routes);
+		return nm_vpn_service_activate (service, connection, device);
 
 	return NULL;
 }
@@ -101,10 +99,14 @@ nm_vpn_manager_connect (NMVPNManager *manager,
 static NMDevice *
 find_device (NMVPNManager *manager, const char *device_path)
 {
+	NMManager *nm_manager;
 	GSList *devices;
 	GSList *iter;
 
-	devices = nm_manager_get_devices (NM_VPN_MANAGER_GET_PRIVATE (manager)->nm_mgr);
+	nm_manager = nm_manager_get ();
+	devices = nm_manager_get_devices (nm_manager);
+	g_object_unref (nm_manager);
+
 	for (iter = devices; iter; iter = iter->next) {
 		NMDevice *device = NM_DEVICE (iter->data);
 
@@ -117,39 +119,52 @@ find_device (NMVPNManager *manager, const char *device_path)
 
 static gboolean
 impl_vpn_manager_connect (NMVPNManager *manager,
-					 const char *type,
-					 const char *name,
-					 GHashTable *properties,
+					 const char *connection_type,
+					 const char *connection_path,
 					 const char *device_path,
-					 char **routes,
-					 char **connection_path,
+					 char **vpn_connection_path,
 					 GError **err)
 {
+	NMManager *nm_manager;
 	NMDevice *device;
-	NMVPNConnection *connection;
-	GHashTable *properties_dup;
-	char **routes_dup;
+	NMConnection *connection;
+	NMVPNConnection *vpn_connection;
+
+	*vpn_connection_path = NULL;
 
 	device = find_device (manager, device_path);
-	if (!device)
-		return FALSE;
-
-	properties_dup = nm_utils_gvalue_hash_dup (properties);
-	routes_dup = g_strdupv (routes);
-
-	connection = nm_vpn_manager_connect (manager,
-								  type, name,
-								  device,
-								  properties_dup,
-								  routes_dup);
-	if (connection)
-		*connection_path = g_strdup (nm_vpn_connection_get_object_path (connection));
-	else {
-		g_hash_table_destroy (properties_dup);
-		g_strfreev (routes_dup);
+	if (!device) {
+		/* FIXME: set error */
+		goto out;
 	}
 
-	return *connection_path != NULL;
+	nm_manager = nm_manager_get ();
+
+	if (!strcmp (connection_type, NM_DBUS_SERVICE_USER_SETTINGS))
+		connection = nm_manager_get_connection_by_object_path (nm_manager,
+		                                                       NM_CONNECTION_TYPE_USER,
+		                                                       connection_path);
+	else if (!strcmp (connection_type, NM_DBUS_SERVICE_USER_SETTINGS))
+		connection = nm_manager_get_connection_by_object_path (nm_manager,
+		                                                       NM_CONNECTION_TYPE_SYSTEM,
+		                                                       connection_path);
+	g_object_unref (nm_manager);
+
+	if (connection == NULL) {
+		/* FIXME: set error */
+		goto out;
+	}
+
+	vpn_connection = nm_vpn_manager_connect (manager, connection, device);
+	if (vpn_connection)
+		*vpn_connection_path = g_strdup (nm_vpn_connection_get_object_path (vpn_connection));
+	else {
+		/* FIXME: set error */
+		g_object_unref (connection);
+	}
+
+ out:
+	return *vpn_connection_path != NULL;
 }
 
 static void
@@ -192,15 +207,11 @@ impl_vpn_manager_get_connections (NMVPNManager *manager, GPtrArray **connections
 }
 
 NMVPNManager *
-nm_vpn_manager_new (NMManager *nm_manager)
+nm_vpn_manager_new (void)
 {
 	NMVPNManager *manager;
 
-	g_return_val_if_fail (NM_IS_MANAGER (nm_manager), NULL);
-
 	manager = (NMVPNManager *) g_object_new (NM_TYPE_VPN_MANAGER, NULL);
-	if (manager)
-		NM_VPN_MANAGER_GET_PRIVATE (manager)->nm_mgr = g_object_ref (nm_manager);
 
 	return manager;
 }
@@ -225,7 +236,6 @@ finalize (GObject *object)
 
 	g_slist_foreach (priv->services, (GFunc) g_object_unref, NULL);
 	g_object_unref (priv->dbus_mgr);
-	g_object_unref (priv->nm_mgr);
 
 	G_OBJECT_CLASS (nm_vpn_manager_parent_class)->finalize (object);
 }
@@ -242,4 +252,5 @@ nm_vpn_manager_class_init (NMVPNManagerClass *manager_class)
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (manager_class),
 							   &dbus_glib_nm_vpn_manager_object_info);
+
 }

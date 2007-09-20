@@ -299,36 +299,33 @@ connection_state_changed (NMVPNConnection *connection, NMVPNConnectionState stat
 
 NMVPNConnection *
 nm_vpn_service_activate (NMVPNService *service,
-					const char *name,
-					NMDevice *device,
-					GHashTable *properties,
-					char **routes)
+					NMConnection *connection,
+					NMDevice *device)
 {
-	NMVPNConnection *connection;
+	NMVPNConnection *vpn_connection;
 	NMVPNServicePrivate *priv;
 
 	g_return_val_if_fail (NM_IS_VPN_SERVICE (service), NULL);
-	g_return_val_if_fail (name != NULL, NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
-	g_return_val_if_fail (properties != NULL, NULL);
 
 	priv = NM_VPN_SERVICE_GET_PRIVATE (service);
 
-	connection = nm_vpn_connection_new (name, priv->dbus_service, device, properties, routes);
-	g_signal_connect (connection, "state-changed",
+	vpn_connection = nm_vpn_connection_new (connection, device);
+	g_signal_connect (vpn_connection, "state-changed",
 				   G_CALLBACK (connection_state_changed),
 				   service);
 
-	priv->connections = g_slist_prepend (priv->connections, connection);
+	priv->connections = g_slist_prepend (priv->connections, vpn_connection);
 
 	if (nm_dbus_manager_name_has_owner (priv->dbus_mgr, priv->dbus_service))
-		nm_vpn_connection_activate (connection);
+		nm_vpn_connection_activate (vpn_connection);
 	else if (priv->service_start_timeout == 0) {
 		nm_info ("VPN service '%s' exec scheduled...", nm_vpn_service_get_name (service));
 		g_idle_add (nm_vpn_service_daemon_exec, service);
 	}
 
-	return connection;
+	return vpn_connection;
 }
 
 GSList *

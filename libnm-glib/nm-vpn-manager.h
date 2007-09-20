@@ -10,6 +10,7 @@
 #include <NetworkManagerVPN.h>
 #include "nm-object.h"
 #include "nm-device.h"
+#include "nm-connection.h"
 #include "nm-vpn-connection.h"
 
 G_BEGIN_DECLS
@@ -34,11 +35,9 @@ GType nm_vpn_manager_get_type (void);
 
 NMVPNManager    *nm_vpn_manager_new     (void);
 NMVPNConnection *nm_vpn_manager_connect (NMVPNManager *manager,
-								 const char   *type,
-								 const char   *name,
-								 GHashTable   *properties,
-								 NMDevice     *device,
-								 GSList       *routes);
+								 const char   *connection_type,
+								 const char   *connection_path,
+								 NMDevice     *device);
 
 GSList *nm_vpn_manager_get_connections  (NMVPNManager *manager);
 

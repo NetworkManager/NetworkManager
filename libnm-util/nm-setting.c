@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "nm-setting.h"
+#include "nm-utils.h"
 
 static GHashTable * nm_setting_hash (NMSetting *setting);
 
@@ -282,6 +283,12 @@ nm_setting_populate_from_hash (NMSetting *setting, GHashTable *table)
 	while (m->key) {
 		GValue *value;
 
+		if (m->type == NM_S_TYPE_GVALUE_HASH) {
+			GHashTable **val = (GHashTable **) G_STRUCT_MEMBER_P (setting, m->offset);
+			*val = nm_utils_gvalue_hash_dup (table);
+			break;
+		}
+
 		value = (GValue *) g_hash_table_lookup (table, m->key);
 		if (!value && m->required) {
 			g_warning ("Missing required value '%s'.", m->key);
@@ -305,7 +312,7 @@ nm_setting_populate_from_hash (NMSetting *setting, GHashTable *table)
 		} else if ((m->type == NM_S_TYPE_STRING_ARRAY) && G_VALUE_HOLDS_BOXED (value)) {
 			GSList **val = (GSList **) G_STRUCT_MEMBER_P (setting, m->offset);
 			*val = convert_strv_to_slist ((char **) g_value_get_boxed (value));
-		}
+		} 
 
 next:
 		m++;
@@ -366,8 +373,8 @@ setting_connection_verify (NMSetting *setting, GHashTable *all_settings)
 {
 	NMSettingConnection *self = (NMSettingConnection *) setting;
 
-	/* Make sure the corresponding 'devtype' item is present */
-	if (!g_hash_table_lookup (all_settings, self->devtype))
+	/* Make sure the corresponding 'type' item is present */
+	if (!g_hash_table_lookup (all_settings, self->type))
 		return FALSE;
 
 	return TRUE;
@@ -379,14 +386,14 @@ setting_connection_destroy (NMSetting *setting)
 	NMSettingConnection *self = (NMSettingConnection *) setting;
 
 	g_free (self->name);
-	g_free (self->devtype);
+	g_free (self->type);
 
 	g_slice_free (NMSettingConnection, self);
 }
 
 static SettingMember con_table[] = {
 	{ "name", NM_S_TYPE_STRING, G_STRUCT_OFFSET (NMSettingConnection, name), TRUE, FALSE },
-	{ "devtype", NM_S_TYPE_STRING, G_STRUCT_OFFSET (NMSettingConnection, devtype), TRUE, FALSE },
+	{ "type", NM_S_TYPE_STRING, G_STRUCT_OFFSET (NMSettingConnection, type), TRUE, FALSE },
 	{ "autoconnect", NM_S_TYPE_BOOL, G_STRUCT_OFFSET (NMSettingConnection, autoconnect), FALSE, FALSE },
 	{ NULL, 0, 0 },
 };
@@ -398,7 +405,7 @@ nm_setting_connection_new (void)
 
 	setting = (NMSetting *) g_slice_new0 (NMSettingConnection);
 
-	setting->name = g_strdup ("connection");
+	setting->name = g_strdup (NM_SETTING_CONNECTION);
 	setting->_members = con_table;
 	setting->verify_fn = setting_connection_verify;
 	setting->hash_fn = default_setting_hash;
@@ -408,17 +415,14 @@ nm_setting_connection_new (void)
 }
 
 NMSetting *
-nm_setting_connection_new_from_hash (GHashTable *settings)
+nm_setting_connection_new_from_hash (GHashTable *hash)
 {
-	NMSettingConnection *self;
 	NMSetting *setting;
 
-	g_return_val_if_fail (settings != NULL, NULL);
+	g_return_val_if_fail (hash != NULL, NULL);
 
 	setting = nm_setting_connection_new ();
-	self = (NMSettingConnection *) setting;
-
-	if (!nm_setting_populate_from_hash (setting, settings)) {
+	if (!nm_setting_populate_from_hash (setting, hash)) {
 		setting_connection_destroy (setting);
 		return NULL;
 	}
@@ -469,7 +473,7 @@ nm_setting_ip4_config_new (void)
 
 	setting = (NMSetting *) g_slice_new0 (NMSettingIP4Config);
 
-	setting->name = g_strdup ("ipv4");
+	setting->name = g_strdup (NM_SETTING_IP4_CONFIG);
 	setting->_members = ip4_config_table;
 	setting->verify_fn = setting_ip4_config_verify;
 	setting->hash_fn = default_setting_hash;
@@ -479,18 +483,14 @@ nm_setting_ip4_config_new (void)
 }
 
 NMSetting *
-nm_setting_ip4_config_new_from_hash (GHashTable *settings)
+nm_setting_ip4_config_new_from_hash (GHashTable *hash)
 {
-	NMSettingIP4Config*self;
 	NMSetting *setting;
-	GValue *value;
 
-	g_return_val_if_fail (settings != NULL, NULL);
+	g_return_val_if_fail (hash != NULL, NULL);
 
 	setting = nm_setting_ip4_config_new ();
-	self = (NMSettingIP4Config *) setting;
-
-	if (!nm_setting_populate_from_hash (setting, settings)) {
+	if (!nm_setting_populate_from_hash (setting, hash)) {
 		setting_connection_destroy (setting);
 		return NULL;
 	}
@@ -558,7 +558,7 @@ nm_setting_wired_new (void)
 	s_wired = g_slice_new0 (NMSettingWired);
 	setting = (NMSetting *) s_wired;
 
-	setting->name = g_strdup ("802-3-ethernet");
+	setting->name = g_strdup (NM_SETTING_WIRED);
 	setting->_members = wired_table;
 	setting->verify_fn = setting_wired_verify;
 	setting->hash_fn = default_setting_hash;
@@ -570,17 +570,14 @@ nm_setting_wired_new (void)
 }
 
 NMSetting *
-nm_setting_wired_new_from_hash (GHashTable *settings)
+nm_setting_wired_new_from_hash (GHashTable *hash)
 {
-	NMSettingWired *self;
 	NMSetting *setting;
 
-	g_return_val_if_fail (settings != NULL, NULL);
+	g_return_val_if_fail (hash != NULL, NULL);
 
 	setting = nm_setting_wired_new ();
-	self = (NMSettingWired *) setting;
-
-	if (!nm_setting_populate_from_hash (setting, settings)) {
+	if (!nm_setting_populate_from_hash (setting, hash)) {
 		setting_connection_destroy (setting);
 		return NULL;
 	}
@@ -713,7 +710,7 @@ nm_setting_wireless_new (void)
 
 	setting = (NMSetting *) g_slice_new0 (NMSettingWireless);
 
-	setting->name = g_strdup ("802-11-wireless");
+	setting->name = g_strdup (NM_SETTING_WIRELESS);
 	setting->_members = wireless_table;
 	setting->verify_fn = setting_wireless_verify;
 	setting->hash_fn = default_setting_hash;
@@ -723,17 +720,14 @@ nm_setting_wireless_new (void)
 }
 
 NMSetting *
-nm_setting_wireless_new_from_hash (GHashTable *settings)
+nm_setting_wireless_new_from_hash (GHashTable *hash)
 {
-	NMSettingWireless *self;
 	NMSetting *setting;
 
-	g_return_val_if_fail (settings != NULL, NULL);
+	g_return_val_if_fail (hash != NULL, NULL);
 
 	setting = nm_setting_wireless_new ();
-	self = (NMSettingWireless *) setting;
-
-	if (!nm_setting_populate_from_hash (setting, settings)) {
+	if (!nm_setting_populate_from_hash (setting, hash)) {
 		setting_connection_destroy (setting);
 		return NULL;
 	}
@@ -1056,7 +1050,7 @@ nm_setting_wireless_security_new (void)
 
 	setting = (NMSetting *) g_slice_new0 (NMSettingWirelessSecurity);
 
-	setting->name = g_strdup ("802-11-wireless-security");
+	setting->name = g_strdup (NM_SETTING_WIRELESS_SECURITY);
 	setting->_members = wireless_sec_table;
 	setting->verify_fn = setting_wireless_security_verify;
 	setting->hash_fn = default_setting_hash;
@@ -1068,17 +1062,14 @@ nm_setting_wireless_security_new (void)
 }
 
 NMSetting *
-nm_setting_wireless_security_new_from_hash (GHashTable *settings)
+nm_setting_wireless_security_new_from_hash (GHashTable *hash)
 {
-	NMSettingWirelessSecurity *self;
 	NMSetting *setting;
 
-	g_return_val_if_fail (settings != NULL, NULL);
+	g_return_val_if_fail (hash != NULL, NULL);
 
 	setting = nm_setting_wireless_security_new ();
-	self = (NMSettingWirelessSecurity *) setting;
-
-	if (!nm_setting_populate_from_hash (setting, settings)) {
+	if (!nm_setting_populate_from_hash (setting, hash)) {
 		setting_connection_destroy (setting);
 		return NULL;
 	}
@@ -1131,7 +1122,7 @@ nm_setting_ppp_new (void)
 
 	setting = (NMSetting *) g_slice_new0 (NMSettingPPP);
 
-	setting->name = g_strdup ("ppp");
+	setting->name = g_strdup (NM_SETTING_PPP);
 	setting->_members = ppp_table;
 	setting->verify_fn = setting_ppp_verify;
 	setting->hash_fn = default_setting_hash;
@@ -1141,19 +1132,147 @@ nm_setting_ppp_new (void)
 }
 
 NMSetting *
-nm_setting_ppp_new_from_hash (GHashTable *settings)
+nm_setting_ppp_new_from_hash (GHashTable *hash)
 {
-	NMSettingPPP *self;
 	NMSetting *setting;
-	GValue *value;
 
-	g_return_val_if_fail (settings != NULL, NULL);
+	g_return_val_if_fail (hash != NULL, NULL);
 
 	setting = nm_setting_ppp_new ();
-	self = (NMSettingPPP *) setting;
-
-	if (!nm_setting_populate_from_hash (setting, settings)) {
+	if (!nm_setting_populate_from_hash (setting, hash)) {
 		setting_connection_destroy (setting);
+		return NULL;
+	}
+
+	return setting;
+}
+
+/* vpn setting */
+
+static gboolean
+setting_vpn_verify (NMSetting *setting, GHashTable *all_settings)
+{
+	NMSettingVPN *self = (NMSettingVPN *) setting;
+
+	if (!self->service_type)
+		return FALSE;
+
+	return TRUE;
+}
+
+static void
+setting_vpn_destroy (NMSetting *setting)
+{
+	NMSettingVPN *self = (NMSettingVPN *) setting;
+
+	g_free (self->service_type);
+
+	g_slice_free (NMSettingVPN, self);
+}
+
+static SettingMember vpn_table[] = {
+	{ "service_type", NM_S_TYPE_STRING, G_STRUCT_OFFSET (NMSettingVPN, service_type), TRUE, FALSE },
+	{ "routes", NM_S_TYPE_STRING_ARRAY, G_STRUCT_OFFSET (NMSettingVPN, routes), FALSE, FALSE },
+	{ NULL, 0, 0 },
+};
+
+NMSetting *
+nm_setting_vpn_new (void)
+{
+	NMSetting *setting;
+
+	setting = (NMSetting *) g_slice_new0 (NMSettingVPN);
+
+	setting->name = g_strdup (NM_SETTING_VPN);
+	setting->_members = vpn_table;
+	setting->verify_fn = setting_vpn_verify;
+	setting->hash_fn = default_setting_hash;
+	setting->destroy_fn = setting_vpn_destroy;
+
+	return setting;
+}
+
+NMSetting *
+nm_setting_vpn_new_from_hash (GHashTable *hash)
+{
+	NMSetting *setting;
+
+	g_return_val_if_fail (hash != NULL, NULL);
+
+	setting = nm_setting_vpn_new ();
+	if (!nm_setting_populate_from_hash (setting, hash)) {
+		setting_vpn_destroy (setting);
+		return NULL;
+	}
+
+	return setting;
+}
+
+/* vpn-properties setting */
+
+static gboolean
+setting_vpn_properties_verify (NMSetting *setting, GHashTable *all_settings)
+{
+	NMSettingVPNProperties *self = (NMSettingVPNProperties *) setting;
+
+	if (!self->data)
+		return FALSE;
+
+	/* FIXME: actually check the data as well */
+
+	return TRUE;
+}
+
+static GHashTable *
+setting_vpn_properties_hash (NMSetting *setting)
+{
+	NMSettingVPNProperties *self = (NMSettingVPNProperties *) setting;
+
+	g_return_val_if_fail (self->data != NULL, NULL);
+
+	return nm_utils_gvalue_hash_dup (self->data);
+}
+
+static void
+setting_vpn_properties_destroy (NMSetting *setting)
+{
+	NMSettingVPNProperties *self = (NMSettingVPNProperties *) setting;
+
+	g_hash_table_destroy (self->data);
+	g_slice_free (NMSettingVPNProperties, self);
+}
+
+static SettingMember vpn_properties_table[] = {
+	{ "data", NM_S_TYPE_GVALUE_HASH, G_STRUCT_OFFSET (NMSettingVPNProperties, data), TRUE, FALSE },
+	{ NULL, 0, 0 },
+};
+
+NMSetting *
+nm_setting_vpn_properties_new (void)
+{
+	NMSetting *setting;
+
+	setting = (NMSetting *) g_slice_new0 (NMSettingVPNProperties);
+
+	setting->name = g_strdup (NM_SETTING_VPN_PROPERTIES);
+	setting->_members = vpn_properties_table;
+	setting->verify_fn = setting_vpn_properties_verify;
+	setting->hash_fn = setting_vpn_properties_hash;
+	setting->destroy_fn = setting_vpn_properties_destroy;
+
+	return setting;
+}
+
+NMSetting *
+nm_setting_vpn_properties_new_from_hash (GHashTable *hash)
+{
+	NMSetting *setting;
+
+	g_return_val_if_fail (hash != NULL, NULL);
+
+	setting = nm_setting_vpn_properties_new ();
+	if (!nm_setting_populate_from_hash (setting, hash)) {
+		setting_vpn_destroy (setting);
 		return NULL;
 	}
 

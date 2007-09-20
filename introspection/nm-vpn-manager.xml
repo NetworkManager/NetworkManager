@@ -4,12 +4,10 @@
   <interface name="org.freedesktop.NetworkManager.VPN.Manager">
     <method name="Connect">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_manager_connect"/>
-      <arg name="type" type="s" direction="in"/>
-      <arg name="name" type="s" direction="in"/>
-      <arg name="properties" type="a{sv}" direction="in"/>
+      <arg name="connection_type" type="s" direction="in"/>
+      <arg name="connection" type="o" direction="in"/>
       <arg name="device" type="o" direction="in"/>
-      <arg name="routes" type="as" direction="in"/>
-      <arg name="connection" type="o" direction="out"/>
+      <arg name="vpn_connection" type="o" direction="out"/>
     </method>
 
     <method name="ListConnections">

@@ -349,15 +349,15 @@ find_best_connection (gpointer data, gpointer user_data)
 	if (info->found)
 		return;
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, "connection");
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_SETTING_CONNECTION);
 	if (s_con == NULL)
 		return;
-	if (strcmp (s_con->devtype, "802-3-ethernet"))
+	if (strcmp (s_con->type, NM_SETTING_WIRED))
 		return;
 	if (!s_con->autoconnect)
 		return;
 
-	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, "802-3-ethernet");
+	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_SETTING_WIRED);
 	if (s_wired == NULL)
 		return;
 
@@ -413,7 +413,7 @@ real_get_best_connection (NMDevice *dev,
 
 		scon = (NMSettingConnection *) nm_setting_connection_new ();
 		scon->name = g_strdup ("Auto");
-		scon->devtype = g_strdup (setting->name);
+		scon->type = g_strdup (setting->name);
 		nm_connection_add_setting (connection, (NMSetting *) scon);
 
 		find_info.found = connection;

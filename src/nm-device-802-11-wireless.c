@@ -668,16 +668,16 @@ find_best_connection (gpointer data, gpointer user_data)
 	if (info->found)
 		return;
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, "connection");
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_SETTING_CONNECTION);
 	if (s_con == NULL)
 		return;
 fprintf (stderr, "%s: looking at connection %s\n", __func__, s_con->name);
-	if (strcmp (s_con->devtype, "802-11-wireless"))
+	if (strcmp (s_con->type, NM_SETTING_WIRELESS))
 		return;
 	if (!s_con->autoconnect)
 		return;
 
-	s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, "802-11-wireless");
+	s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_SETTING_WIRELESS);
 	if (s_wireless == NULL)
 		return;
 

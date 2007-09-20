@@ -51,11 +51,8 @@ typedef struct {
 
 GType nm_vpn_connection_get_type (void);
 
-NMVPNConnection     *nm_vpn_connection_new             (const char *name,
-											 const char *dbus_service,
-											 NMDevice *parent_device,
-											 GHashTable *properties,
-											 char **routes);
+NMVPNConnection     *nm_vpn_connection_new             (NMConnection *connection,
+											 NMDevice *parent_device);
 
 void                 nm_vpn_connection_activate        (NMVPNConnection *connection);
 const char          *nm_vpn_connection_get_object_path (NMVPNConnection *connection);

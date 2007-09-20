@@ -30,12 +30,14 @@ register_default_creators (void)
 		const char *name;
 		NMSettingCreateFn fn;
 	} default_map[] = {
-		{ "connection",      nm_setting_connection_new_from_hash      },
-		{ "802-3-ethernet",  nm_setting_wired_new_from_hash     },
-		{ "802-11-wireless", nm_setting_wireless_new_from_hash  },
-		{ "ipv4",            nm_setting_ip4_config_new_from_hash },
-		{ "802-11-wireless-security", nm_setting_wireless_security_new_from_hash  },
-		{ "ppp",             nm_setting_ppp_new_from_hash       },
+		{ NM_SETTING_CONNECTION,        nm_setting_connection_new_from_hash      },
+		{ NM_SETTING_WIRED,             nm_setting_wired_new_from_hash     },
+		{ NM_SETTING_WIRELESS,          nm_setting_wireless_new_from_hash  },
+		{ NM_SETTING_IP4_CONFIG,        nm_setting_ip4_config_new_from_hash },
+		{ NM_SETTING_WIRELESS_SECURITY, nm_setting_wireless_security_new_from_hash  },
+		{ NM_SETTING_PPP,               nm_setting_ppp_new_from_hash       },
+		{ NM_SETTING_VPN,               nm_setting_vpn_new_from_hash },
+		{ NM_SETTING_VPN_PROPERTIES,    nm_setting_vpn_properties_new_from_hash },
 		{ NULL, NULL}
 	};
 

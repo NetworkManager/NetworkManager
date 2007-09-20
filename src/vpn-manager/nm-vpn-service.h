@@ -29,10 +29,8 @@ NMVPNService    *nm_vpn_service_new      (const char *service_name);
 const char      *nm_vpn_service_get_name (NMVPNService *service);
 
 NMVPNConnection *nm_vpn_service_activate (NMVPNService *service,
-								  const char *name,
-								  NMDevice *device,
-								  GHashTable *properties,
-								  char **routes);
+								  NMConnection *connection,
+								  NMDevice *device);
 
 GSList   *nm_vpn_service_get_connections (NMVPNService *service);
 
