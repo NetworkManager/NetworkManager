@@ -78,11 +78,12 @@ nm_supplicant_config_init (NMSupplicantConfig * self)
 	priv->dispose_has_run = FALSE;
 }
 
-gboolean
+static gboolean
 nm_supplicant_config_add_option (NMSupplicantConfig *self,
                                  const char * key,
                                  const char * value,
-                                 gint32 len)
+                                 gint32 len,
+                                 gboolean secret)
 {
 	NMSupplicantConfigPrivate *priv;
 	ConfigOption *old_opt;
@@ -134,14 +135,14 @@ nm_supplicant_config_add_option (NMSupplicantConfig *self,
 char buf[255];
 memset (&buf[0], 0, sizeof (buf));
 memcpy (&buf[0], opt->value, opt->len > 254 ? 254 : opt->len);
-nm_info ("Config: added '%s' value '%s'", key, &buf[0]);
+nm_info ("Config: added '%s' value '%s'", key, secret ? "<omitted>" : &buf[0]);
 }
 	g_hash_table_insert (priv->config, g_strdup (key), opt);
 
 	return TRUE;
 }
 
-gboolean
+static gboolean
 nm_supplicant_config_remove_option (NMSupplicantConfig *self,
                                     const char * key)
 {
@@ -267,13 +268,14 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 
 	if (!nm_supplicant_config_add_option (self, "ssid",
  	                                     setting->ssid->data,
- 	                                     setting->ssid->len)) {
+ 	                                     setting->ssid->len,
+ 	                                     FALSE)) {
 		nm_warning ("Error adding SSID to supplicant config.");
 		return FALSE;
 	}
 
 	if (is_adhoc) {
-		if (!nm_supplicant_config_add_option (self, "mode", "1", -1)) {
+		if (!nm_supplicant_config_add_option (self, "mode", "1", -1, FALSE)) {
 			nm_warning ("Error adding mode to supplicant config.");
 			return FALSE;
 		}
@@ -283,14 +285,15 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 	 * probe request frames. However, don't try to probe Ad-Hoc networks.
 	 */
 	if (!is_broadcast && !is_adhoc) {
-		if (!nm_supplicant_config_add_option (self, "scan_ssid", "1", -1))
+		if (!nm_supplicant_config_add_option (self, "scan_ssid", "1", -1, FALSE))
 			return FALSE;
 	}
 
 	if (setting->bssid) {
 		if (!nm_supplicant_config_add_option (self, "bssid",
 	 	                                     setting->bssid->data,
-	 	                                     setting->bssid->len)) {
+	 	                                     setting->bssid->len,
+	 	                                     FALSE)) {
 			nm_warning ("Error adding BSSID to supplicant config.");
 			return FALSE;
 		}
@@ -301,7 +304,7 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 	return TRUE;
 }
 
-#define ADD_STRING_VAL(field, name, ucase, unhexify) \
+#define ADD_STRING_VAL(field, name, ucase, unhexify, secret) \
 	if (field) { \
 		if (ucase) \
 			value = g_ascii_strup (field, -1); \
@@ -309,7 +312,7 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 			value = nm_utils_hexstr2bin (field, strlen (field)); \
 		} else \
 			value = g_strdup (field); \
-		success = nm_supplicant_config_add_option (self, name, value, -1); \
+		success = nm_supplicant_config_add_option (self, name, value, -1, secret); \
 		g_free (value); \
 		if (!success) { \
 			nm_warning ("Error adding %s to supplicant config.", name); \
@@ -317,7 +320,7 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 		} \
 	}
 
-#define ADD_STRING_LIST_VAL(field, name, ucase) \
+#define ADD_STRING_LIST_VAL(field, name, ucase, secret) \
 	if (field) { \
 		GSList *elt; \
 		GString *str = g_string_new (NULL); \
@@ -333,7 +336,7 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 		if (ucase) \
 			value = g_ascii_strup (str->str, -1); \
 		g_string_free (str, TRUE); \
-		success = nm_supplicant_config_add_option (self, name, value, -1); \
+		success = nm_supplicant_config_add_option (self, name, value, -1, secret); \
 		g_free (value); \
 		if (!success) { \
 			nm_warning ("Error adding %s to supplicant config.", name); \
@@ -354,33 +357,35 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig * self,
 
 	priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
 
-	ADD_STRING_VAL (setting->key_mgmt, "key_mgmt", TRUE, FALSE);
-	ADD_STRING_VAL (setting->auth_alg, "auth_alg", TRUE, FALSE);
-	ADD_STRING_VAL (setting->proto, "proto", TRUE, FALSE);
-	ADD_STRING_VAL (setting->identity, "identity", FALSE, FALSE);
-	ADD_STRING_VAL (setting->anonymous_identity, "anonymous_identity", FALSE, FALSE);
-	ADD_STRING_VAL (setting->nai, "nai", FALSE, FALSE);
-	ADD_STRING_VAL (setting->wep_key0, "wep_key0", FALSE, TRUE);
-	ADD_STRING_VAL (setting->wep_key1, "wep_key1", FALSE, TRUE);
-	ADD_STRING_VAL (setting->wep_key2, "wep_key2", FALSE, TRUE);
-	ADD_STRING_VAL (setting->wep_key3, "wep_key3", FALSE, TRUE);
-	ADD_STRING_VAL (setting->psk, "psk", FALSE, TRUE);
-	ADD_STRING_VAL (setting->password, "password", FALSE, TRUE);
-	ADD_STRING_VAL (setting->pin, "pin", FALSE, FALSE);
-	ADD_STRING_VAL (setting->eappsk, "eappsk", FALSE, TRUE);
-	ADD_STRING_VAL (setting->private_key_passwd, "private_key_passwd", FALSE, FALSE);
-	ADD_STRING_VAL (setting->phase2_private_key_passwd, "phase2_private_key_passwd", FALSE, FALSE);
+	ADD_STRING_VAL (setting->key_mgmt, "key_mgmt", TRUE, FALSE, FALSE);
+	ADD_STRING_VAL (setting->auth_alg, "auth_alg", TRUE, FALSE, FALSE);
+	ADD_STRING_VAL (setting->proto, "proto", TRUE, FALSE, FALSE);
+	ADD_STRING_VAL (setting->identity, "identity", FALSE, FALSE, FALSE);
+	ADD_STRING_VAL (setting->anonymous_identity, "anonymous_identity", FALSE, FALSE, FALSE);
+	ADD_STRING_VAL (setting->nai, "nai", FALSE, FALSE, FALSE);
+	ADD_STRING_VAL (setting->wep_key0, "wep_key0", FALSE, TRUE, TRUE);
+	ADD_STRING_VAL (setting->wep_key1, "wep_key1", FALSE, TRUE, TRUE);
+	ADD_STRING_VAL (setting->wep_key2, "wep_key2", FALSE, TRUE, TRUE);
+	ADD_STRING_VAL (setting->wep_key3, "wep_key3", FALSE, TRUE, TRUE);
+	ADD_STRING_VAL (setting->psk, "psk", FALSE, TRUE, TRUE);
+	ADD_STRING_VAL (setting->password, "password", FALSE, TRUE, TRUE);
+	ADD_STRING_VAL (setting->pin, "pin", FALSE, FALSE, TRUE);
+	ADD_STRING_VAL (setting->eappsk, "eappsk", FALSE, TRUE, TRUE);
+	ADD_STRING_VAL (setting->private_key_passwd, "private_key_passwd", FALSE, FALSE, TRUE);
+	ADD_STRING_VAL (setting->phase2_private_key_passwd, "phase2_private_key_passwd", FALSE, FALSE, TRUE);
 
-	ADD_STRING_LIST_VAL (setting->pairwise, "pairwise", TRUE);
-	ADD_STRING_LIST_VAL (setting->group, "group", TRUE);
-	ADD_STRING_LIST_VAL (setting->eap, "eap", TRUE);
+	ADD_STRING_LIST_VAL (setting->pairwise, "pairwise", TRUE, FALSE);
+	ADD_STRING_LIST_VAL (setting->group, "group", TRUE, FALSE);
+	ADD_STRING_LIST_VAL (setting->eap, "eap", TRUE, FALSE);
 
-	value = g_strdup_printf ("%d", setting->wep_tx_keyidx);
-	success = nm_supplicant_config_add_option (self, "wep_tx_keyidx", value, -1);
-	g_free (value);
-	if (!success) {
-		nm_warning ("Error adding wep_tx_keyidx to supplicant config.");
-		return FALSE;
+	if (setting->wep_key0 || setting->wep_key1 || setting->wep_key2 || setting->wep_key3) {
+		value = g_strdup_printf ("%d", setting->wep_tx_keyidx);
+		success = nm_supplicant_config_add_option (self, "wep_tx_keyidx", value, -1, FALSE);
+		g_free (value);
+		if (!success) {
+			nm_warning ("Error adding wep_tx_keyidx to supplicant config.");
+			return FALSE;
+		}
 	}
 
 	return TRUE;

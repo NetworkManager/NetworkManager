@@ -50,14 +50,6 @@ GType nm_supplicant_config_get_type (void);
 
 NMSupplicantConfig * nm_supplicant_config_new (void);
 
-gboolean nm_supplicant_config_add_option (NMSupplicantConfig *scfg,
-                                          const char * key,
-                                          const char * value,
-                                          gint32 len);
-
-gboolean nm_supplicant_config_remove_option (NMSupplicantConfig *self,
-                                             const char * key);
-
 guint32 nm_supplicant_config_get_ap_scan (NMSupplicantConfig * self);
 
 void nm_supplicant_config_set_ap_scan (NMSupplicantConfig * self,

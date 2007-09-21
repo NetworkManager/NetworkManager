@@ -1,5 +1,11 @@
 2007-09-20  Dan Williams  <dcbw@redhat.com>
 
+	* src/supplicant-manager/nm-supplicant-config.c
+	  src/supplicant-manager/nm-supplicant-config.h
+		- (nm_supplicant_config_add_option): hide secrets from system logs
+
+2007-09-20  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerPolicy.c
 		- (nm_policy_device_change_check): re-enable the wireless device change
 			checking code; insted of checking for SSIDs, check for the same
