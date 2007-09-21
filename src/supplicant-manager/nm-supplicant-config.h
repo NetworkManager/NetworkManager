@@ -55,6 +55,12 @@ guint32 nm_supplicant_config_get_ap_scan (NMSupplicantConfig * self);
 void nm_supplicant_config_set_ap_scan (NMSupplicantConfig * self,
                                        guint32 ap_scan);
 
+gboolean nm_supplicant_config_add_option (NMSupplicantConfig *self,
+                                          const char * key,
+                                          const char * value,
+                                          gint32 len,
+                                          gboolean secret);
+
 GHashTable *nm_supplicant_config_get_hash (NMSupplicantConfig * self);
 
 gboolean nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,

@@ -78,7 +78,7 @@ nm_supplicant_config_init (NMSupplicantConfig * self)
 	priv->dispose_has_run = FALSE;
 }
 
-static gboolean
+gboolean
 nm_supplicant_config_add_option (NMSupplicantConfig *self,
                                  const char * key,
                                  const char * value,
