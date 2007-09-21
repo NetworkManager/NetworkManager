@@ -1278,6 +1278,8 @@ nm_device_activate (NMDeviceInterface *device,
 gboolean
 nm_device_is_activating (NMDevice *device)
 {
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 
 	switch (nm_device_get_state (device)) {
@@ -1290,6 +1292,14 @@ nm_device_is_activating (NMDevice *device)
 	default:
 		break;
 	}
+
+	/* There's a small race between the time when stage 1 is scheduled
+	 * and when the device actually sets STATE_PREPARE when the activation
+	 * handler is actually run.  If there's an activation handler scheduled
+	 * we're activating anyway.
+	 */
+	if (priv->act_source_id)
+		return TRUE;
 
 	return FALSE;
 }

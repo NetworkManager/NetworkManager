@@ -1,5 +1,11 @@
 2007-09-20  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device.c
+		- (nm_device_is_activating): work around a race between auto-activation
+			and the user activating the same device that is being auto-activated
+
+2007-09-20  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-interface.c
 		- (impl_device_activate): until multiple active device support lands,
 			ensure only one device can be active at a time
