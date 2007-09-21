@@ -207,7 +207,7 @@ impl_device_activate (NMDeviceInterface *device,
                       GError **err)
 {
 	NMManager *manager = nm_manager_get ();
-	NMDevice *old_dev;
+	NMDevice *old_dev = NULL;
 	GSList *iter;
 
 	// FIXME: remove when multiple active device support has landed
