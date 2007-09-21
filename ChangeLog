@@ -1,5 +1,11 @@
 2007-09-20  Dan Williams  <dcbw@redhat.com>
 
+	* src/supplicant-manager/nm-supplicant-config.c
+		- (nm_supplicant_config_add_setting_wireless_security): uppercase
+			string list keywords too since that's what wpa_supplicant wants
+
+2007-09-20  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting.c
 		- (convert_strv_to_slist): dupe the values in the list because since
 			the list is a boxed value, it'll get destroyed when it's container

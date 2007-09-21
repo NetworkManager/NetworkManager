@@ -317,7 +317,7 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 		} \
 	}
 
-#define ADD_STRING_LIST_VAL(field, name) \
+#define ADD_STRING_LIST_VAL(field, name, ucase) \
 	if (field) { \
 		GSList *elt; \
 		GString *str = g_string_new (NULL); \
@@ -329,8 +329,12 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 				g_string_append (str, elt->data); \
 			} \
 		} \
-		success = nm_supplicant_config_add_option (self, name, str->str, -1); \
+		value = g_strdup (str->str); \
+		if (ucase) \
+			value = g_ascii_strup (str->str, -1); \
 		g_string_free (str, TRUE); \
+		success = nm_supplicant_config_add_option (self, name, value, -1); \
+		g_free (value); \
 		if (!success) { \
 			nm_warning ("Error adding %s to supplicant config.", name); \
 			return FALSE; \
@@ -367,9 +371,9 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig * self,
 	ADD_STRING_VAL (setting->private_key_passwd, "private_key_passwd", FALSE, FALSE);
 	ADD_STRING_VAL (setting->phase2_private_key_passwd, "phase2_private_key_passwd", FALSE, FALSE);
 
-	ADD_STRING_LIST_VAL (setting->pairwise, "pairwise");
-	ADD_STRING_LIST_VAL (setting->group, "group");
-	ADD_STRING_LIST_VAL (setting->eap, "eap");
+	ADD_STRING_LIST_VAL (setting->pairwise, "pairwise", TRUE);
+	ADD_STRING_LIST_VAL (setting->group, "group", TRUE);
+	ADD_STRING_LIST_VAL (setting->eap, "eap", TRUE);
 
 	value = g_strdup_printf ("%d", setting->wep_tx_keyidx);
 	success = nm_supplicant_config_add_option (self, "wep_tx_keyidx", value, -1);
