@@ -240,7 +240,7 @@ convert_strv_to_slist (char **str)
 	guint i = 0;
 
 	while (str[i])
-		list = g_slist_prepend (list, str[i++]);
+		list = g_slist_prepend (list, g_strdup (str[i++]));
 
 	return g_slist_reverse (list);
 }

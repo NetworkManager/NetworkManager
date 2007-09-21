@@ -1,3 +1,10 @@
+2007-09-20  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-setting.c
+		- (convert_strv_to_slist): dupe the values in the list because since
+			the list is a boxed value, it'll get destroyed when it's container
+			(like a hash table or whatever) gets destroyed
+
 2007-09-20  Tambet Ingo  <tambet@gmail.com>
 
 	* libnm-util/nm-setting.h: Change the type of NMSettingVPN->routes to
