@@ -1,5 +1,10 @@
 2007-09-20  Dan Williams  <dcbw@redhat.com>
 
+	* initscript/RedHat/NetworkManager.in
+		- dhcdbd is no longer used, so don't try to start it from the initscripts
+
+2007-09-20  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device.c
 		- (nm_device_is_activating): work around a race between auto-activation
 			and the user activating the same device that is being auto-activated
