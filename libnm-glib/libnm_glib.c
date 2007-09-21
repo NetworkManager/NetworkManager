@@ -232,6 +232,7 @@ libnm_glib_dbus_filter (DBusConnection *connection,
 	{
 		/* Try to reactivate our connection to dbus on the next pass through the event loop */
 		ctx->nm_state = LIBNM_NO_DBUS;
+		dbus_connection_close (ctx->dbus_con);
 		dbus_connection_unref (ctx->dbus_con);
 		ctx->dbus_con = NULL;
 		libnm_glib_schedule_dbus_watcher (ctx);
@@ -448,6 +449,7 @@ libnm_glib_ctx_free (libnm_glib_ctx *ctx)
 
 	if (ctx->dbus_con)
 	{
+		dbus_connection_close (ctx->dbus_con);
 		dbus_connection_unref (ctx->dbus_con);
 		ctx->dbus_con = NULL;
 	}
