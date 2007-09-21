@@ -2050,12 +2050,9 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 		}
 	} else if (new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED) {
 		if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED || nm_device_is_activating (dev)) {
-			gboolean has_link = nm_device_has_active_link (NM_DEVICE (self));
-
 			/* Start the link timeout so we allow some time for reauthentication */
-			if (!has_link && (self->priv->link_timeout_id == 0) && !self->priv->scanning) {
+			if ((self->priv->link_timeout_id == 0) && !self->priv->scanning)
 				self->priv->link_timeout_id = g_timeout_add (12000, link_timeout_cb, self);
-			}
 		} else {
 			nm_device_set_active_link (dev, FALSE);
 		}

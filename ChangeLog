@@ -1,5 +1,14 @@
 2007-09-20  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-11-wireless.c
+		- (supplicant_iface_connection_state_cb_handler): don't use the card's
+			composite link state when determining when to start the disconnection
+			timer; that link state is already based on the supplicant interface's
+			status which is exactly what's already being examined, plus the link
+			state is a conglomeration of various things that we don't want here
+
+2007-09-20  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/nm-access-point.c
 		- (handle_property_changed): strength is a UCHAR
 
