@@ -38,5 +38,3 @@ libnm_glib_test_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS) \
 			$(top_builddir)/libnm-glib/libnm_glib.la \
 			$(top_builddir)/libnm-util/libnm-util.la
 
-nm_supplicant_test_SOURCES = nm-supplicant-test.c
-nm_supplicant_test_LDADD = $(GLIB_LIBS) $(GTHREAD_LIBS)

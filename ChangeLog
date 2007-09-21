@@ -1,5 +1,11 @@
 2007-09-21  Dan Williams  <dcbw@redhat.com>
 
+	* test/nm-supplicant-test.c
+	  test/Makefile.am
+		- Remove supplicant test binary; no longer applicable
+
+2007-09-21  Dan Williams  <dcbw@redhat.com>
+
 	* src/supplicant-manager/nm-supplicant-manager.c
 		- (nm_supplicant_manager_init): poke the supplicant at startup to
 			activate it on the system bus
