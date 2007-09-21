@@ -387,9 +387,6 @@ done:
 	if (sup_mgr)
 		g_object_unref (sup_mgr);
 
-	/* nm_data_free needs the dbus connection, so must kill the
-	 * dbus manager after that.
-	 */
 	g_object_unref (dbus_mgr);
 	nm_logging_shutdown ();
 
