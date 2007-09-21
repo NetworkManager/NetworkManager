@@ -331,8 +331,8 @@ handle_property_changed (gpointer key, gpointer data, gpointer user_data)
 			priv->rate = g_value_get_uint (value);
 	} else if (!strcmp (key, DBUS_PROP_STRENGTH)) {
 		g_propname = NM_ACCESS_POINT_STRENGTH;
-		if (G_VALUE_HOLDS_CHAR (value))
-			priv->strength = g_value_get_char (value);
+		if (G_VALUE_HOLDS_UCHAR (value))
+			priv->strength = g_value_get_uchar (value);
 	} else {
 		success = FALSE;
 	}

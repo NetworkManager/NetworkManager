@@ -1,5 +1,10 @@
 2007-09-20  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/nm-access-point.c
+		- (handle_property_changed): strength is a UCHAR
+
+2007-09-20  Dan Williams  <dcbw@redhat.com>
+
 	* src/supplicant-manager/nm-supplicant-config.c
 		- (nm_supplicant_config_add_setting_wireless_security): uppercase
 			string list keywords too since that's what wpa_supplicant wants
