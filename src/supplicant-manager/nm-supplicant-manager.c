@@ -27,6 +27,7 @@
 #include "nm-supplicant-interface.h"
 #include "nm-dbus-manager.h"
 #include "nm-supplicant-marshal.h"
+#include "nm-utils.h"
 
 typedef struct {
 	NMDBusManager *	dbus_mgr;
@@ -77,11 +78,21 @@ nm_supplicant_manager_get (void)
 	return singleton;
 }
 
+static void
+poke_supplicant_cb  (DBusGProxy *proxy,
+                     DBusGProxyCall *call_id,
+                     gpointer user_data)
+{
+	/* Ignore the response, just trying to service-activate the supplicant */
+}
 
 static void
 nm_supplicant_manager_init (NMSupplicantManager * self)
 {
 	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
+	NMDBusManager *dbus_mgr;
+	DBusGConnection *g_connection;
+	DBusGProxy *proxy;
 
 	priv->dispose_has_run = FALSE;
 	priv->state = NM_SUPPLICANT_MANAGER_STATE_DOWN;
@@ -93,6 +104,30 @@ nm_supplicant_manager_init (NMSupplicantManager * self)
 	                  "name-owner-changed",
 	                  G_CALLBACK (nm_supplicant_manager_name_owner_changed),
 	                  self);
+
+	/* Poke the supplicant so that it gets activated by dbus system bus
+	 * activation.
+	 */
+	dbus_mgr = nm_dbus_manager_get ();
+	g_connection = nm_dbus_manager_get_connection (dbus_mgr);
+	proxy = dbus_g_proxy_new_for_name (g_connection,
+	                                   WPAS_DBUS_SERVICE,
+	                                   WPAS_DBUS_PATH,
+	                                   WPAS_DBUS_INTERFACE);
+	if (!proxy) {
+		nm_warning ("Error: could not init wpa_supplicant proxy");
+	} else {
+		DBusGProxyCall *call;
+		const char *tmp = "ignore";
+
+		call = dbus_g_proxy_begin_call (proxy, "getInterface",
+		                                poke_supplicant_cb,
+		                                NULL,
+		                                NULL,
+		                                G_TYPE_STRING, tmp,
+		                                G_TYPE_INVALID);
+	}
+	g_object_unref (dbus_mgr);
 }
 
 static void

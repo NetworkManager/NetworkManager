@@ -1,3 +1,9 @@
+2007-09-21  Dan Williams  <dcbw@redhat.com>
+
+	* src/supplicant-manager/nm-supplicant-manager.c
+		- (nm_supplicant_manager_init): poke the supplicant at startup to
+			activate it on the system bus
+
 2007-09-20  Dan Williams  <dcbw@redhat.com>
 
 	* initscript/RedHat/NetworkManager.in
