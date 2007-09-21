@@ -2,6 +2,7 @@
 #include "nm-device-interface.h"
 #include "nm-ip4-config.h"
 #include "nm-manager.h"
+#include "nm-utils.h"
 
 static gboolean impl_device_activate (NMDeviceInterface *device,
                                       const char *service_name,
@@ -205,6 +206,33 @@ impl_device_activate (NMDeviceInterface *device,
                       const char *specific_object,
                       GError **err)
 {
+	NMManager *manager = nm_manager_get ();
+	NMDevice *old_dev;
+	GSList *iter;
+
+	// FIXME: remove when multiple active device support has landed
+	switch (nm_manager_get_state (manager)) {
+	case NM_STATE_CONNECTED:
+		old_dev = nm_manager_get_active_device (manager);
+		break;
+	case NM_STATE_CONNECTING:
+		for (iter = nm_manager_get_devices (manager); iter; iter = iter->next) {
+			if (nm_device_is_activating (NM_DEVICE (iter->data))) {
+				old_dev = NM_DEVICE (iter->data);
+				break;
+			}
+		}
+		break;
+	default:
+		break;
+	}
+	g_object_unref (manager);
+
+	nm_info ("User request for activation of %s.", nm_device_get_iface (NM_DEVICE (device)));
+
+	if (old_dev)
+		nm_device_interface_deactivate (NM_DEVICE_INTERFACE (old_dev));
+
 	nm_device_interface_activate (device,
 	                              service_name,
 	                              connection_path,

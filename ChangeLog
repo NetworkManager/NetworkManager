@@ -1,5 +1,11 @@
 2007-09-20  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-interface.c
+		- (impl_device_activate): until multiple active device support lands,
+			ensure only one device can be active at a time
+
+2007-09-20  Dan Williams  <dcbw@redhat.com>
+
 	* src/supplicant-manager/nm-supplicant-config.c
 	  src/supplicant-manager/nm-supplicant-config.h
 		- (nm_supplicant_config_add_option): hide secrets from system logs
