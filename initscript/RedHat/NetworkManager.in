@@ -38,7 +38,7 @@ start()
 	sysctl -e -p /etc/sysctl.conf >/dev/null 2>&1
 
 	if [ ! -e /var/lock/subsys/named ]; then
-		service named start
+		service named start >/dev/null 2>&1
 	fi
 
 	echo -n $"Starting NetworkManager daemon: "
