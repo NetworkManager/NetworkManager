@@ -280,46 +280,33 @@ nm_policy_device_change_check (gpointer user_data)
 				do_switch = TRUE;
 			}
 		} else if (NM_IS_DEVICE_802_11_WIRELESS (old_dev)) {
-#if 0
 			/* Only switch if the old device's wireless config is invalid */
 			if (NM_IS_DEVICE_802_11_WIRELESS (new_dev)) {
+				NMConnection *old_connection = nm_act_request_get_connection (old_act_req);
 				NMAccessPoint *old_ap = nm_device_802_11_wireless_get_activation_ap (NM_DEVICE_802_11_WIRELESS (old_dev));
-				const GByteArray * old_ssid = nm_ap_get_ssid (old_ap);
-				int			old_mode = nm_ap_get_mode (old_ap);
-				const GByteArray * new_ssid = nm_ap_get_ssid (ap);
-				gboolean		same_request = FALSE;
+				int old_mode = nm_ap_get_mode (old_ap);
+				gboolean same_request = FALSE;
 
-				/* Schedule new activation if the currently associated
-				 * access point is not the "best" one or we've lost the
-				 * link to the old access point.  We don't switch away
-				 * from Ad-Hoc APs either.
+				/* Don't try to re-activate the same connection if it's not
+				 * failed yet.
 				 */
-				gboolean same_ssid = nm_utils_same_ssid (old_ssid, new_ssid, TRUE);
-
-				/* If the "best" AP's SSID is the same as the current activation
-				 * request's SSID, but the current activation request isn't
-				 * done yet, don't switch.  This prevents multiple requests for the
-				 * AP's password on startup.
-				 */
-				if ((old_dev == new_dev) && nm_device_is_activating (new_dev) && same_ssid)
+				if (   (old_dev == new_dev)
+				    && nm_device_is_activating (new_dev)
+				    && (old_connection == connection))
 					same_request = TRUE;
 
-				if (!same_request && (!same_ssid || !old_has_link) && (old_mode != IW_MODE_ADHOC)) {
-					char * new_esc_ssid;
-					char * old_esc_ssid;
+				if (!same_request && !old_has_link && (old_mode != IW_MODE_ADHOC)) {
+					NMSettingConnection * new_sc = (NMSettingConnection *) nm_connection_get_setting (connection, NM_SETTING_CONNECTION);
+					NMSettingConnection * old_sc = (NMSettingConnection *) nm_connection_get_setting (old_connection, NM_SETTING_CONNECTION);
 
-					new_esc_ssid = g_strdup (new_ssid ? nm_utils_escape_ssid (new_ssid->data, new_ssid->len) : "(none)");
-					old_esc_ssid = g_strdup (old_ssid ? nm_utils_escape_ssid (old_ssid->data, old_ssid->len) : "(none)");
 					nm_info ("SWITCH: found better connection '%s/%s'"
 					         " than current connection '%s/%s'.  "
-					         "same_ssid=%d, have_link=%d",
+					         "have_link=%d",
 					         nm_device_get_iface (new_dev),
-					         new_esc_ssid,
+					         new_sc->name,
 					         nm_device_get_iface (old_dev),
-					         old_esc_ssid,
-					         same_ssid, old_has_link);
-					g_free (new_esc_ssid);
-					g_free (old_esc_ssid);
+					         old_sc->name,
+					         old_has_link);
 					do_switch = TRUE;
 				}
 			} else if (NM_IS_DEVICE_802_3_ETHERNET (new_dev)) {
@@ -327,7 +314,6 @@ nm_policy_device_change_check (gpointer user_data)
  				if (!old_user_requested)
 					do_switch = TRUE;
 			}
-#endif
 		}
 	}
 

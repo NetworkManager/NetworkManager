@@ -1,5 +1,12 @@
 2007-09-20  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_device_change_check): re-enable the wireless device change
+			checking code; insted of checking for SSIDs, check for the same
+			connection instead
+
+2007-09-20  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 		- (supplicant_iface_connection_state_cb_handler): don't use the card's
 			composite link state when determining when to start the disconnection
