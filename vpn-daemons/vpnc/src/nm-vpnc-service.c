@@ -95,7 +95,7 @@ vpnc_watch_cb (GPid pid, gint status, gpointer user_data)
 {
 	NMVPNCPlugin *plugin = NM_VPNC_PLUGIN (user_data);
 	NMVPNCPluginPrivate *priv = NM_VPNC_PLUGIN_GET_PRIVATE (plugin);
-	guint error;
+	guint error = 0;
 
 	if (WIFEXITED (status)) {
 		error = WEXITSTATUS (status);
