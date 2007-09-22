@@ -1,5 +1,12 @@
 2007-09-21  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-11-wireless.c
+		- (build_supplicant_config): wpa_supplicant requires the option
+			key_mgmt=NONE for unencrypted networks
+		- (real_act_stage2_config): clarify log message on activation
+
+2007-09-21  Dan Williams  <dcbw@redhat.com>
+
 	* test/nm-supplicant-test.c
 	  test/Makefile.am
 		- Remove supplicant test binary; no longer applicable

@@ -2357,11 +2357,20 @@ build_supplicant_config (NMDevice80211Wireless *self,
 	}
 
 	s_wireless_sec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, "802-11-wireless-security");
-	if (   s_wireless_sec
-	    && !nm_supplicant_config_add_setting_wireless_security (config,
-	                                                            s_wireless_sec)) {
-		nm_warning ("Couldn't add 802-11-wireless-security setting to supplicant config.");
-		goto error;
+	if (s_wireless_sec) {
+		if (!nm_supplicant_config_add_setting_wireless_security (config,
+	                                                             s_wireless_sec)) {
+			nm_warning ("Couldn't add 802-11-wireless-security setting to "
+			            "supplicant config.");
+			goto error;
+		}
+	} else {
+		/* Unencrypted, wpa_supplicant needs key_mgmt=NONE here */
+		if (!nm_supplicant_config_add_option (config, "key_mgmt", "NONE", -1, FALSE)) {
+			nm_warning ("Couldn't add 802-11-wireless (no security) setting to"
+			            " supplicant config.");
+			goto error;
+		}
 	}
 
 	return config;
@@ -2478,9 +2487,17 @@ real_act_stage2_config (NMDevice *dev)
 		                                   setting_name);
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	} else {
-		nm_info ("Activation (%s/wireless): connection '%s' has security"
-		         ", and secrets exist.  No new secrets needed.",
-		         iface, s_connection->name);
+		NMSettingWireless *s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_SETTING_WIRELESS);
+
+		if (s_wireless->security) {
+			nm_info ("Activation (%s/wireless): connection '%s' has security"
+			         ", and secrets exist.  No new secrets needed.",
+			         iface, s_connection->name);
+		} else {
+			nm_info ("Activation (%s/wireless): connection '%s' requires no "
+			         "security.  No secrets needed.",
+			         iface, s_connection->name);
+		}
 	}
 
 	config = build_supplicant_config (self, connection, ap);
