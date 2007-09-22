@@ -53,8 +53,6 @@ typedef struct
 NMSupplicantConfig *
 nm_supplicant_config_new (void)
 {
-	NMSupplicantConfig * scfg;
-
 	return g_object_new (NM_TYPE_SUPPLICANT_CONFIG, NULL);
 }
 

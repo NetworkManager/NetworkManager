@@ -171,7 +171,6 @@ const char *
 nm_connection_need_secrets (NMConnection *connection)
 {
 	NMConnectionPrivate *priv;
-	NMSettingConnection *s_connection;
 	NeedSecretsInfo info = { NULL, NULL };
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
