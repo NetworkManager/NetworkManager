@@ -531,7 +531,7 @@ out:
 /*
  * nm_device_802_11_periodic_update
  *
- * Periodically update device statistics and link state.
+ * Periodically update device statistics.
  *
  */
 static gboolean
@@ -579,8 +579,8 @@ real_bring_up (NMDevice *dev)
 		init_supplicant_interface (self);
 	}
 
-	/* Peridoically update link status and signal strength */
-	priv->periodic_source_id = g_timeout_add (2000, nm_device_802_11_periodic_update, self);
+	/* Peridoically update signal strength */
+	priv->periodic_source_id = g_timeout_add (6000, nm_device_802_11_periodic_update, self);
 
 	return TRUE;
 }

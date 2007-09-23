@@ -1,3 +1,9 @@
+2007-09-22  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.c
+		- (real_bring_up): update signal strength every 6 seconds, not 2.  No
+			real reason to do it so often, and reduces wakeups for clients.
+
 2007-09-21  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-11-wireless.c
