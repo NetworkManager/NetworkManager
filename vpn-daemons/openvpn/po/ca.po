@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-03-16 07:51+0100\n"
-"PO-Revision-Date: 2007-03-16 07:51+0100\n"
+"POT-Creation-Date: 2007-09-23 14:23+0200\n"
+"PO-Revision-Date: 2007-09-23 07:51+0100\n"
 "Last-Translator: Gil Forcada <gilforcada@guifi.net>\n"
 "Language-Team: Catalan <tradgnome@softcatala.org>\n"
 "MIME-Version: 1.0\n"
@@ -358,13 +358,12 @@ msgstr ""
 "hi entreu la vostra contrasenya, ja es demanarà en connectar."
 
 #: ../properties/nm-openvpn-dialog.glade.h:23
-#, fuzzy
 msgid ""
 "Please note that the file you import is not an OpenVPN configuration file. "
 "Ask your administrator for the file."
 msgstr ""
-"El fitxer que heu importat no és un fitxer de configuració VPN. Demaneu-li "
-"al vostre administrador."
+"El fitxer que heu importat no és un fitxer de configuració OpenVPN. Demaneu-"
+"li el fitxer a l'administrador."
 
 #: ../properties/nm-openvpn-dialog.glade.h:24
 msgid "Remote IP:"
@@ -380,7 +379,7 @@ msgstr "Clau compartida"
 
 #: ../properties/nm-openvpn-dialog.glade.h:27
 msgid "TLS-Auth"
-msgstr ""
+msgstr "Autenticació TLS"
 
 #: ../properties/nm-openvpn-dialog.glade.h:28
 msgid "Use LZO compression"
