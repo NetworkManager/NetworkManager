@@ -2,14 +2,14 @@
 # Copyright © 2005 The Free Software Foundation, Inc.
 # This file is distributed under the same license as the
 #   NetworkManager-pptp package.
-# Gil Forcada <gilforcada@guifi.net>, 2006.
+# Gil Forcada <gilforcada@guifi.net>, 2006, 2007.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-pptp\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-03-16 07:52+0100\n"
-"PO-Revision-Date: 2007-03-16 07:54+0100\n"
+"POT-Creation-Date: 2007-09-23 14:29+0200\n"
+"PO-Revision-Date: 2007-09-23 07:54+0100\n"
 "Last-Translator: Gil Forcada <gilforcada@guifi.net>\n"
 "Language-Team: Catalan <tradgnome@softcatala.org>\n"
 "MIME-Version: 1.0\n"
@@ -49,14 +49,14 @@ msgid "_Save password in keyring"
 msgstr "_Desa la contrasenya a l'anell de claus"
 
 #: ../auth-dialog/main.c:161
-#, fuzzy, c-format
+#, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
-msgstr "Us heu d'autenticar per poder accedir a «%s»."
+msgstr ""
+"Us heu d'autenticar per a poder accedir a la xarxa privada virtual «%s»."
 
 #: ../auth-dialog/main.c:162
-#, fuzzy
 msgid "Authenticate PPTP VPN"
-msgstr "Autentica l'igual"
+msgstr "Autentica la VPN PPTP"
 
 #: ../nm-pptp.desktop.in.h:1
 msgid "Add, Remove, and Edit VPN Connections"
@@ -82,7 +82,7 @@ msgstr "Nom:  %s"
 #: ../properties/nm-pptp.c:392
 #, c-format
 msgid "Remote:  %s"
-msgstr ""
+msgstr "Remot: %s"
 
 #: ../properties/nm-pptp.c:395
 #, c-format
@@ -95,9 +95,9 @@ msgid "Routes:  %s"
 msgstr "Rutes:  %s"
 
 #: ../properties/nm-pptp.c:403
-#, fuzzy, c-format
+#, c-format
 msgid "Use MPPC Compression: %s"
-msgstr "Utilitza compressió MPPC"
+msgstr "Utilitza la compressió MPPC: %s"
 
 #: ../properties/nm-pptp.c:403 ../properties/nm-pptp.c:405
 msgid "Yes"
@@ -118,12 +118,12 @@ msgstr "Els detalls de la connexió es poden canviar amb el botó «Edita»."
 
 #: ../properties/nm-pptp.c:484
 msgid "Cannot import settings"
-msgstr ""
+msgstr "No s'han pogut importar els paràmetres"
 
 #: ../properties/nm-pptp.c:486
 #, c-format
 msgid "The VPN settings file '%s' does not contain valid data."
-msgstr ""
+msgstr "Les dades del fitxer dels paràmetres VPN «%s» no són vàlides."
 
 #: ../properties/nm-pptp.c:504
 msgid "Select file to import"
@@ -157,13 +157,16 @@ msgstr "<i>exemple: 172.16.0.0/16 10.11.12.0/24</i>"
 
 #: ../properties/nm-pptp-dialog.glade.h:4
 msgid "MS CHAP-v1/v2"
-msgstr ""
+msgstr "MS CHAP-v1/v2"
 
 #: ../properties/nm-pptp-dialog.glade.h:5
 msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
 msgstr ""
+"Introduïu la informació proporcionada pel vostre administrador de sistemes "
+"aquí sota. No hi introduïu la contrasenya, ja se us preguntarà quan us "
+"connecteu."
 
 #: ../properties/nm-pptp-dialog.glade.h:6
 msgid "Require MPPE encryption"
@@ -182,6 +185,8 @@ msgid ""
 "Your password must be defined \n"
 "in /etc/ppp/chap-secrets"
 msgstr ""
+"La contrasenya ha d'estar definida \n"
+"a /etc/ppp/chap-secrets"
 
 #: ../properties/nm-pptp-dialog.glade.h:11
 msgid "_Gateway:"
@@ -192,13 +197,11 @@ msgid "_Import Saved Configuration..."
 msgstr "_Importa la configuració desada..."
 
 #: ../properties/nm-pptp-dialog.glade.h:13
-#, fuzzy
 msgid ""
 "_Name used to identify the connection to the private network, e.g. \"Campus "
 "VPN\" or \"Corporate Network\""
 msgstr ""
-"Aquest serà el nom que es farà servir per identificar aquesta connexió de "
-"xarxa, \n"
+"El _nom que es farà servir per a identificar la connexió a la xarxa privada, "
 "per exemple: «VPN del Campus» o «Xarxa corporativa»"
 
 #: ../properties/nm-pptp-dialog.glade.h:14
