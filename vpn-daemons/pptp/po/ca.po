@@ -2,14 +2,14 @@
 # Copyright © 2005 The Free Software Foundation, Inc.
 # This file is distributed under the same license as the
 #   NetworkManager-pptp package.
-# Gil Forcada <gilforcada@guifi.net>, 2006.
+# Gil Forcada <gilforcada@guifi.net>, 2006, 2007.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-pptp\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-01-21 10:29+0100\n"
-"PO-Revision-Date: 2007-01-17 03:13+0100\n"
+"POT-Creation-Date: 2007-09-23 14:31+0200\n"
+"PO-Revision-Date: 2007-09-23 07:54+0100\n"
 "Last-Translator: Gil Forcada <gilforcada@guifi.net>\n"
 "Language-Team: Catalan <tradgnome@softcatala.org>\n"
 "MIME-Version: 1.0\n"
@@ -31,9 +31,10 @@ msgid "_Save in keyring"
 msgstr "_Desa-la a l'anell de claus"
 
 #: ../auth-dialog-general/main.c:48 ../auth-dialog/main.c:140
-#, c-format
+#, fuzzy, c-format
 msgid "You need to authenticate to access '%s'."
-msgstr "Us heu d'autenticar per poder accedir a «%s»."
+msgstr ""
+"Us heu d'autenticar per a poder accedir a la xarxa privada virtual «%s»."
 
 #: ../auth-dialog-general/main.c:51 ../auth-dialog/main.c:141
 msgid "Authenticate Connection"
@@ -65,7 +66,7 @@ msgid "_Authentication Type:"
 msgstr "Tipus d'_autenticació:"
 
 #: ../auth-dialog-general/nm-ppp-auth.glade.h:10
-#: ../auth-dialog/gnome-two-password-dialog.c:272
+#: ../auth-dialog/gnome-two-password-dialog.c:263
 msgid "_Password:"
 msgstr "_Contrasenya:"
 
@@ -74,35 +75,23 @@ msgid "_Remote name:"
 msgstr "Nom _remot:"
 
 #: ../auth-dialog-general/nm-ppp-auth.glade.h:14
-#: ../auth-dialog/gnome-two-password-dialog.c:268
+#: ../auth-dialog/gnome-two-password-dialog.c:259
 msgid "_Username:"
 msgstr "Nom d'_usuari:"
 
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:15
-msgid "auth-chap-window"
-msgstr "auth-chap-window"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:16
-msgid "auth-mschapv2-window"
-msgstr "auth-mschapv2-window"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:17
-msgid "auth-none-window"
-msgstr "auth-none-window"
-
-#: ../auth-dialog/gnome-two-password-dialog.c:147
+#: ../auth-dialog/gnome-two-password-dialog.c:144
 msgid "_Secondary Password:"
 msgstr "Contrasenya _secundària:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:270
+#: ../auth-dialog/gnome-two-password-dialog.c:261
 msgid "_Domain:"
 msgstr "_Domini:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:355
+#: ../auth-dialog/gnome-two-password-dialog.c:352
 msgid "Connect _anonymously"
 msgstr "Connecta _anònimament"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:360
+#: ../auth-dialog/gnome-two-password-dialog.c:357
 msgid "Connect as _user:"
 msgstr "Connecta com a _usuari:"
 
@@ -119,8 +108,9 @@ msgid "Add, Remove, and Edit VPN Connections"
 msgstr "Afegiu, suprimiu, i editeu connexions VPN"
 
 #: ../nm-ppp.desktop.in.h:2
+#, fuzzy
 msgid "VPN Connection Manager (PPP generic)"
-msgstr "Gestor de connexions VPN (genèric PPP)"
+msgstr "Gestor de connexions VPN (PPTP)"
 
 #: ../properties/nm-ppp-dialog.glade.h:1
 msgid "00:00:00:00"
@@ -131,50 +121,56 @@ msgid "<b>Compression</b>"
 msgstr "<b>Compressió</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:3
-msgid "<b>Connection Name</b>"
-msgstr "<b>Nom de la connexió</b>"
-
-#: ../properties/nm-ppp-dialog.glade.h:4
-msgid "<b>Delays and TImeouts</b>"
+#, fuzzy
+msgid "<b>Delays &amp; Timeouts</b>"
 msgstr "<b>Retards i temps d'espera</b>"
 
-#: ../properties/nm-ppp-dialog.glade.h:5
+#: ../properties/nm-ppp-dialog.glade.h:4
 msgid "<b>Encryption</b>"
 msgstr "<b>Xifratge</b>"
 
-#: ../properties/nm-ppp-dialog.glade.h:6
+#: ../properties/nm-ppp-dialog.glade.h:5
 msgid "<b>IP Options</b>"
 msgstr "<b>Opcions d'IP</b>"
 
-#: ../properties/nm-ppp-dialog.glade.h:7
+#: ../properties/nm-ppp-dialog.glade.h:6
 msgid "<b>Packet Parameters</b>"
 msgstr "<b>Paràmetres dels paquets</b>"
 
-#: ../properties/nm-ppp-dialog.glade.h:8
-msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+#: ../properties/nm-ppp-dialog.glade.h:7
+#, fuzzy
+msgid "<i>Example: 172.16.0.0/16 10.11.12.0/24</i>"
 msgstr "<i>exemple: 172.16.0.0/16 10.11.12.0/24</i>"
 
-#: ../properties/nm-ppp-dialog.glade.h:9
+#: ../properties/nm-ppp-dialog.glade.h:8
 msgid "A list of extra options to pppd as would be typed on the command line"
 msgstr ""
 "Una llista d'opcions extra per al pppd, com si s'haguessin escrit a la línia "
 "d'ordres"
 
-#: ../properties/nm-ppp-dialog.glade.h:10
-msgid "Allow BSD Compression"
+#: ../properties/nm-ppp-dialog.glade.h:9
+#, fuzzy
+msgid "Allow B_SD Compression"
 msgstr "Permet la compressió BSD"
 
-#: ../properties/nm-ppp-dialog.glade.h:11
-msgid "Allow Deflate compression"
+#: ../properties/nm-ppp-dialog.glade.h:10
+#, fuzzy
+msgid "Allow _Deflate compression"
 msgstr "Permet la compressió desinflada"
 
-#: ../properties/nm-ppp-dialog.glade.h:12
-msgid "Authenticate Peer"
-msgstr "Autentica l'igual"
-
-#: ../properties/nm-ppp-dialog.glade.h:13
+#: ../properties/nm-ppp-dialog.glade.h:11
 msgid "Authentication"
 msgstr "Autenticació"
+
+#: ../properties/nm-ppp-dialog.glade.h:12
+#, fuzzy
+msgid "C_hannel:"
+msgstr "_Canal:"
+
+#: ../properties/nm-ppp-dialog.glade.h:13
+#, fuzzy
+msgid "Co_nnect delay:"
+msgstr "retard de connexió"
 
 #: ../properties/nm-ppp-dialog.glade.h:14
 msgid "Compression & Encryption"
@@ -185,29 +181,46 @@ msgid "Connection"
 msgstr "Connexió"
 
 #: ../properties/nm-ppp-dialog.glade.h:16
-msgid "Debug Output"
-msgstr "Sortida detallada"
+#, fuzzy
+msgid "Connection na_me:"
+msgstr "Connexió"
 
 #: ../properties/nm-ppp-dialog.glade.h:17
+#, fuzzy
+msgid "Context _number:"
+msgstr "Número de _context"
+
+#: ../properties/nm-ppp-dialog.glade.h:18
+#, fuzzy
+msgid "Custom _PPP options:"
+msgstr "_Opcions personalitzades del PPP:"
+
+#: ../properties/nm-ppp-dialog.glade.h:19
+#, fuzzy
+msgid "Debug _output"
+msgstr "Sortida detallada"
+
+#: ../properties/nm-ppp-dialog.glade.h:20
 msgid "Disconnect after this many LCP echo requests fail"
 msgstr ""
 "Desconnecta si es produeixen aquesta quantitat d'errades en sol·licituds "
 "d'eco LCP"
 
-#: ../properties/nm-ppp-dialog.glade.h:18
-#: ../properties/nm-ppp-properties.c:216
-msgid "Enable stateful MPPE"
-msgstr "Habilita el MPPE d'estats"
-
-#: ../properties/nm-ppp-dialog.glade.h:19
-msgid "Exclusive device access (UUCP-style lock)"
+#: ../properties/nm-ppp-dialog.glade.h:21
+#, fuzzy
+msgid "E_xclusive device access (UUCP-style lock)"
 msgstr "Accés exclusiu al dispositiu (bloqueig a l'estil UUCP)"
 
-#: ../properties/nm-ppp-dialog.glade.h:20
+#: ../properties/nm-ppp-dialog.glade.h:22
+#, fuzzy
+msgid "Enable stateful _MPPE"
+msgstr "Habilita el MPPE d'estats"
+
+#: ../properties/nm-ppp-dialog.glade.h:23
 msgid "Find Device"
 msgstr "Cerca un dispositiu"
 
-#: ../properties/nm-ppp-dialog.glade.h:21
+#: ../properties/nm-ppp-dialog.glade.h:24
 msgid ""
 "For security reasons, options entered in the box above are checked against a "
 "list of allowed options before a connection is established.  Currently there "
@@ -217,80 +230,73 @@ msgstr ""
 "la caixa de sobre són comparades amb una llista d'opcions permeses. "
 "Actualment no hi ha opcions a la llista."
 
-#: ../properties/nm-ppp-dialog.glade.h:22
+#: ../properties/nm-ppp-dialog.glade.h:25
 msgid "GPRS Options"
 msgstr "Opcions GPRS"
 
-#: ../properties/nm-ppp-dialog.glade.h:23
-msgid "Hardware RTS/CTS"
-msgstr "Maquinari RTS/CTS"
-
-#: ../properties/nm-ppp-dialog.glade.h:24
+#: ../properties/nm-ppp-dialog.glade.h:26
 msgid "Host name or IP address of the PPTP server"
 msgstr "Nom de la màquina o adreça IP del servidor PPTP"
 
-#: ../properties/nm-ppp-dialog.glade.h:25
+#: ../properties/nm-ppp-dialog.glade.h:27
+#, fuzzy
+msgid "IP a_ddress:"
+msgstr "Adreça _IP:"
+
+#: ../properties/nm-ppp-dialog.glade.h:28
 msgid ""
 "If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
 msgstr ""
 "Si no està permesa la compressió BSD, es passarà l'opció «nobsdcomp» al pppd"
 
-#: ../properties/nm-ppp-dialog.glade.h:26
+#: ../properties/nm-ppp-dialog.glade.h:29
 msgid ""
 "If Deflate compression is not allowed the 'nodefate' option is passed to pppd"
 msgstr ""
 "Si no està permesa la compressió desinflada, es passarà l'opció «nodefate» "
 "al pppd"
 
-#: ../properties/nm-ppp-dialog.glade.h:27
+#: ../properties/nm-ppp-dialog.glade.h:30
 msgid "Maximum Receive Unit"
 msgstr "Unitat màxima de recepció"
 
-#: ../properties/nm-ppp-dialog.glade.h:28
+#: ../properties/nm-ppp-dialog.glade.h:31
 msgid "Maximum Transmit Unit"
 msgstr "Unitat màxima d'enviament"
 
-#: ../properties/nm-ppp-dialog.glade.h:29
-msgid "Modem Connection"
-msgstr "Connexió amb mòdem"
-
-#: ../properties/nm-ppp-dialog.glade.h:30
+#: ../properties/nm-ppp-dialog.glade.h:32
 msgid "PPP Options"
 msgstr "Opcions PPP"
 
-#: ../properties/nm-ppp-dialog.glade.h:31
-msgid "Peer DNS through tunnel"
-msgstr "DNS a iguals a través del túnel"
-
-#: ../properties/nm-ppp-dialog.glade.h:32
-#: ../properties/nm-ppp-properties.c:251
-msgid "Refuse CHAP"
+#: ../properties/nm-ppp-dialog.glade.h:33
+#, fuzzy
+msgid "Refuse C_HAP"
 msgstr "Rebutja CHAP"
 
-#: ../properties/nm-ppp-dialog.glade.h:33
-#: ../properties/nm-ppp-properties.c:246
-msgid "Refuse EAP"
+#: ../properties/nm-ppp-dialog.glade.h:34
+#, fuzzy
+msgid "Refuse _EAP"
 msgstr "Rebutja EAP"
 
-#: ../properties/nm-ppp-dialog.glade.h:34
-msgid "Refuse MS CHAP"
+#: ../properties/nm-ppp-dialog.glade.h:35
+#, fuzzy
+msgid "Refuse _MS CHAP"
 msgstr "Rebutja MS CHAP"
 
-#: ../properties/nm-ppp-dialog.glade.h:35
-msgid "Require 128 bit MPPE encryption"
+#: ../properties/nm-ppp-dialog.glade.h:36
+#, fuzzy
+msgid "Require 128 bit M_PPE encryption"
 msgstr "Requereix el xifratge MPPE de 128 bits"
 
-#: ../properties/nm-ppp-dialog.glade.h:36
-msgid "Require Explicit IP Addr"
-msgstr "Requereix l'adreça IP explícitament"
-
 #: ../properties/nm-ppp-dialog.glade.h:37
-msgid "Require MPPC Compression"
-msgstr "Requereix la compressió MPPC"
+#, fuzzy
+msgid "Require MPPE _encryption"
+msgstr "Requereix el xifratge MPPE"
 
 #: ../properties/nm-ppp-dialog.glade.h:38
-msgid "Require MPPE encryption"
-msgstr "Requereix el xifratge MPPE"
+#, fuzzy
+msgid "Require explicit IP _address"
+msgstr "Requereix l'adreça IP explícitament"
 
 #: ../properties/nm-ppp-dialog.glade.h:39
 msgid "Requires existing network connection"
@@ -315,17 +321,18 @@ msgid "Service providers IP address"
 msgstr "Adreça IP del proveïdor del servei"
 
 #: ../properties/nm-ppp-dialog.glade.h:44
-msgid "Telephone number to dial"
-msgstr "Número de telèfon al que trucar"
+#, fuzzy
+msgid "Telep_hone number:"
+msgstr "Número de _telèfon:"
 
 #: ../properties/nm-ppp-dialog.glade.h:45
+#, fuzzy
 msgid ""
 "This is the friendly name that will be used to identify this network "
 "connection, \n"
 "e.g. \"Campus VPN\" or \"Corporate Network\""
 msgstr ""
-"Aquest serà el nom que es farà servir per identificar aquesta connexió de "
-"xarxa, \n"
+"El _nom que es farà servir per a identificar la connexió a la xarxa privada, "
 "per exemple: «VPN del Campus» o «Xarxa corporativa»"
 
 #: ../properties/nm-ppp-dialog.glade.h:47
@@ -333,13 +340,14 @@ msgid "Time in seconds between echo requests"
 msgstr "Temps en segons entre sol·licituds d'eco"
 
 #: ../properties/nm-ppp-dialog.glade.h:48
-msgid "Type:"
+#, fuzzy
+msgid "Typ_e:"
 msgstr "Tipus:"
 
 # FIXME
 #: ../properties/nm-ppp-dialog.glade.h:49
-#: ../properties/nm-ppp-properties.c:201
-msgid "Use Peer DNS"
+#, fuzzy
+msgid "Use peer _DNS"
 msgstr "Utilitza un DNS a iguals"
 
 #: ../properties/nm-ppp-dialog.glade.h:50
@@ -383,60 +391,67 @@ msgid "When this check box is cleared the \"noauth\" option is passed to pppd."
 msgstr "Quan aquesta caixa està buida es passa l'opció «noauth» al pppd."
 
 #: ../properties/nm-ppp-dialog.glade.h:59
-msgid "_Access Point Name:"
+#, fuzzy
+msgid "_Access point name:"
 msgstr "Nom del punt d'_accés:"
 
+# FIXME
 #: ../properties/nm-ppp-dialog.glade.h:60
-msgid "_Channel:"
-msgstr "_Canal:"
+#, fuzzy
+msgid "_Authenticate peer"
+msgstr "Autentica l'igual remot"
 
 #: ../properties/nm-ppp-dialog.glade.h:61
-msgid "_Context Num"
-msgstr "Número de _context"
-
-#: ../properties/nm-ppp-dialog.glade.h:62
-msgid "_Custom PPP options:"
-msgstr "_Opcions personalitzades del PPP:"
-
-#: ../properties/nm-ppp-dialog.glade.h:63
-msgid "_Device Address:"
+#, fuzzy
+msgid "_Device address:"
 msgstr "Adreça del _dispositiu:"
 
-#: ../properties/nm-ppp-dialog.glade.h:64
+#: ../properties/nm-ppp-dialog.glade.h:62
 msgid "_Gateway:"
 msgstr "_Pasarel·la:"
 
-#: ../properties/nm-ppp-dialog.glade.h:65
-msgid "_IP Address:"
-msgstr "Adreça _IP:"
+#: ../properties/nm-ppp-dialog.glade.h:63
+#, fuzzy
+msgid "_Hardware RTS/CTS"
+msgstr "Maquinari RTS/CTS"
 
-#: ../properties/nm-ppp-dialog.glade.h:66
+#: ../properties/nm-ppp-dialog.glade.h:64
 msgid "_Import Saved Configuration..."
 msgstr "_Importa la configuració desada..."
 
-#: ../properties/nm-ppp-dialog.glade.h:67
-msgid "_Only use VPN connection for these addresses"
+#: ../properties/nm-ppp-dialog.glade.h:65
+#, fuzzy
+msgid "_Modem connection"
+msgstr "Connexió amb mòdem"
+
+#: ../properties/nm-ppp-dialog.glade.h:66
+#, fuzzy
+msgid "_Only use VPN connection for these addresses:"
 msgstr "_Fes servir només la connexió VPN per aquestes adreces"
 
-#: ../properties/nm-ppp-dialog.glade.h:68
-msgid "_Packet Type"
+#: ../properties/nm-ppp-dialog.glade.h:67
+#, fuzzy
+msgid "_Packet type:"
 msgstr "Tipus de _paquet"
 
-#: ../properties/nm-ppp-dialog.glade.h:69
-msgid "_Telephone Number:"
-msgstr "Número de _telèfon:"
+#: ../properties/nm-ppp-dialog.glade.h:68
+#, fuzzy
+msgid "_Peer DNS through tunnel"
+msgstr "DNS a iguals a través del túnel"
 
-#: ../properties/nm-ppp-dialog.glade.h:70
-msgid "connect-delay"
-msgstr "retard de connexió"
+#: ../properties/nm-ppp-dialog.glade.h:69
+#, fuzzy
+msgid "_Require MPPC compression"
+msgstr "Requereix la compressió MPPC"
 
 #: ../properties/nm-ppp-properties.c:45
 msgid "pppd tunnel (PPTP, BTGPRS, Dialup)"
 msgstr "túnel pppd (PPTP, BGTPRS, Dialup)"
 
 #: ../properties/nm-ppp-properties.c:134
+#, fuzzy
 msgid "Name"
-msgstr "Nom"
+msgstr "Nom:  %s"
 
 #: ../properties/nm-ppp-properties.c:146
 msgid "PPTP Server"
@@ -482,13 +497,23 @@ msgstr "Connecta a través de mòdem"
 msgid "Require IP to be provided"
 msgstr "Requereix que es proporcioni la IP"
 
+# FIXME
+#: ../properties/nm-ppp-properties.c:201
+msgid "Use Peer DNS"
+msgstr "Utilitza un DNS a iguals"
+
 #: ../properties/nm-ppp-properties.c:206
+#, fuzzy
 msgid "Use MPPE encryption"
-msgstr "Utilitza xifratge MPPE"
+msgstr "Utilitza el xifratge MPPE: %s"
 
 #: ../properties/nm-ppp-properties.c:211
 msgid "Use 128 bit MPPE encryption"
 msgstr "Utilitza xifratge MPPE de 128 bits"
+
+#: ../properties/nm-ppp-properties.c:216
+msgid "Enable stateful MPPE"
+msgstr "Habilita el MPPE d'estats"
 
 #: ../properties/nm-ppp-properties.c:221
 msgid "Use MPPC compression"
@@ -510,6 +535,14 @@ msgstr "Accés exclusiu al dispositiu pel pppd"
 #: ../properties/nm-ppp-properties.c:241
 msgid "Authenticate remote peer"
 msgstr "Autentica l'igual remot"
+
+#: ../properties/nm-ppp-properties.c:246
+msgid "Refuse EAP"
+msgstr "Rebutja EAP"
+
+#: ../properties/nm-ppp-properties.c:251
+msgid "Refuse CHAP"
+msgstr "Rebutja CHAP"
 
 #: ../properties/nm-ppp-properties.c:256
 msgid "Refuse MSCHAP"
@@ -553,18 +586,19 @@ msgid "Limit to specific networks"
 msgstr "Límit de xarxes disponibles"
 
 #: ../properties/vpnui_impl.c:229
-#, c-format
+#, fuzzy, c-format
 msgid "The following '%s' connection will be created:"
-msgstr "Es crearà la següent connexió «%s»:"
+msgstr "Es crearà la següent connexió PPTP:"
 
 #: ../properties/vpnui_impl.c:242
-#, c-format
+#, fuzzy, c-format
 msgid "\t%s:  %s\n"
-msgstr "\t%s:  %s\n"
+msgstr "Rutes:  %s"
 
 #: ../properties/vpnui_impl.c:245
+#, fuzzy
 msgid "The connection details can be changed using the \"Back\" button."
-msgstr "Els detalls de la connexió es poden canviar amb el botó «Enrere»."
+msgstr "Els detalls de la connexió es poden canviar amb el botó «Edita»."
 
 #: ../properties/vpnui_impl.c:317
 msgid "Select file to import"
@@ -587,3 +621,69 @@ msgstr "Voleu reemplaçar-lo amb el que voleu desar?"
 #: ../src/nm-ppp-starter.c:140
 msgid "VPN Connection failed"
 msgstr "Ha fallat la connexió VPN"
+
+#~ msgid "Authenticate PPTP VPN"
+#~ msgstr "Autentica la VPN PPTP"
+
+#~ msgid "PPTP Client"
+#~ msgstr "Client PPTP"
+
+#~ msgid "Remote:  %s"
+#~ msgstr "Remot: %s"
+
+#~ msgid "Username:  %s"
+#~ msgstr "Nom d'usuari:  %s"
+
+#~ msgid "Use MPPC Compression: %s"
+#~ msgstr "Utilitza la compressió MPPC: %s"
+
+#~ msgid "Yes"
+#~ msgstr "Sí"
+
+#~ msgid "No"
+#~ msgstr "No"
+
+#~ msgid "Cannot import settings"
+#~ msgstr "No s'han pogut importar els paràmetres"
+
+#~ msgid "The VPN settings file '%s' does not contain valid data."
+#~ msgstr "Les dades del fitxer dels paràmetres VPN «%s» no són vàlides."
+
+#~ msgid "<b>Connection Name</b>"
+#~ msgstr "<b>Nom de la connexió</b>"
+
+#~ msgid "<b>Required Information</b>"
+#~ msgstr "<b>Informació requerida</b>"
+
+#~ msgid "MS CHAP-v1/v2"
+#~ msgstr "MS CHAP-v1/v2"
+
+#~ msgid ""
+#~ "Please enter the information provided by your system administrator below. "
+#~ "Do not enter your password here as you will be prompted when connecting."
+#~ msgstr ""
+#~ "Introduïu la informació proporcionada pel vostre administrador de "
+#~ "sistemes aquí sota. No hi introduïu la contrasenya, ja se us preguntarà "
+#~ "quan us connecteu."
+
+#~ msgid "Username:"
+#~ msgstr "Nom d'usuari:"
+
+#~ msgid ""
+#~ "Your password must be defined \n"
+#~ "in /etc/ppp/chap-secrets"
+#~ msgstr ""
+#~ "La contrasenya ha d'estar definida \n"
+#~ "a /etc/ppp/chap-secrets"
+
+#~ msgid "auth-chap-window"
+#~ msgstr "auth-chap-window"
+
+#~ msgid "auth-mschapv2-window"
+#~ msgstr "auth-mschapv2-window"
+
+#~ msgid "auth-none-window"
+#~ msgstr "auth-none-window"
+
+#~ msgid "Telephone number to dial"
+#~ msgstr "Número de telèfon al que trucar"
