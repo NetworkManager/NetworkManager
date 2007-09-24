@@ -1,3 +1,11 @@
+2007-09-23  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-setting.c
+		- (property_value_destroy, nm_setting_vpn_properties_new): initialize
+			the hash table in a standard manner.  Clients of libnm-util should
+			only call g_hash_table_remove_all(), never destroy the hash table
+			and recreate it.
+
 2007-09-22  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-11-wireless.c

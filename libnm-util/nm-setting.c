@@ -1248,6 +1248,15 @@ setting_vpn_properties_destroy (NMSetting *setting)
 	g_slice_free (NMSettingVPNProperties, self);
 }
 
+static void
+property_value_destroy (gpointer data)
+{
+	GValue *value = (GValue *) data;
+
+	g_value_unset (value);
+	g_slice_free (GValue, data);
+}
+
 static SettingMember vpn_properties_table[] = {
 	{ "data", NM_S_TYPE_GVALUE_HASH, G_STRUCT_OFFSET (NMSettingVPNProperties, data), TRUE, FALSE },
 	{ NULL, 0, 0 },
@@ -1257,6 +1266,7 @@ NMSetting *
 nm_setting_vpn_properties_new (void)
 {
 	NMSetting *setting;
+	NMSettingVPNProperties *s_vpn_props;
 
 	setting = (NMSetting *) g_slice_new0 (NMSettingVPNProperties);
 
@@ -1265,6 +1275,11 @@ nm_setting_vpn_properties_new (void)
 	setting->verify_fn = setting_vpn_properties_verify;
 	setting->hash_fn = setting_vpn_properties_hash;
 	setting->destroy_fn = setting_vpn_properties_destroy;
+
+	s_vpn_props = (NMSettingVPNProperties *) setting;
+	s_vpn_props->data = g_hash_table_new_full (g_str_hash, g_str_equal,
+	                                           (GDestroyNotify) g_free,
+	                                           property_value_destroy);
 
 	return setting;
 }
