@@ -131,17 +131,6 @@ gchar *nm_dbus_unescape_object_path (const gchar *object_path);
 
 char *nm_utils_ssid_to_utf8 (const char *ssid, guint32 len);
 
-/* #define DBUS_PENDING_CALL_DEBUG */
-
-DBusPendingCall * nm_dbus_send_with_callback (DBusConnection *connection,
-                                              DBusMessage *msg, 
-                                              DBusPendingCallNotifyFunction func,
-                                              gpointer data,
-                                              DBusFreeFunction free_func,
-                                              const char *caller);
-void nm_dbus_send_with_callback_replied (DBusPendingCall *pcall,
-                                         const char *caller);
-
 GHashTable *nm_utils_gvalue_hash_dup  (GHashTable *hash);
 char       *nm_utils_garray_to_string (GArray *array);
 

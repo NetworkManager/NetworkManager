@@ -1,3 +1,10 @@
+2007-09-24  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-utils.h
+	  libnm-util/nm-utils.c
+		- (nm_dbus_send_with_callback_replied, nm_dbus_send_with_callback):
+			remove, unused
+
 2007-09-23  Dan Williams  <dcbw@redhat.com>
 
 	* vpn-daemons/vpnc/properties/nm-vpnc.c
