@@ -15,8 +15,9 @@ AM_CPPFLAGS =						\
 	-DNM_RUN_DIR=\"$(rundir)\" \
 	-DDATADIR=\"$(datadir)\"
 
-noinst_PROGRAMS = nm-tool \
-                  nm-online \
+bin_PROGRAMS = nm-tool
+
+noinst_PROGRAMS = nm-online \
                   nmtestdevices \
                   libnm_glib_test
 
