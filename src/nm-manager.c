@@ -1080,12 +1080,13 @@ nm_manager_get_connection_secrets (NMManager *manager,
 	info->manager = manager;
 	info->device = g_object_ref (device);
 
-	if (!dbus_g_proxy_begin_call (proxy, "GetSecrets",
-	                              get_secrets_cb,
-	                              info,
-	                              free_get_secrets_info,
-	                              G_TYPE_STRING, setting_name,
-	                              G_TYPE_INVALID)) {
+	if (!dbus_g_proxy_begin_call_with_timeout (proxy, "GetSecrets",
+	                                           get_secrets_cb,
+	                                           info,
+	                                           free_get_secrets_info,
+	                                           G_MAXINT32,
+	                                           G_TYPE_STRING, setting_name,
+	                                           G_TYPE_INVALID)) {
 		nm_warning ("Could not call GetSecrets");
 		goto error;
 	}

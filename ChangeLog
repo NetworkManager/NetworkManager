@@ -1,5 +1,12 @@
 2007-09-24  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-manager.c
+		- (nm_manager_get_connection_secrets): Add a long timeout so the user
+			actually has some time to enter a key before the GetSecrets call
+			times out
+
+2007-09-24  Dan Williams  <dcbw@redhat.com>
+
 	* introspection/nm-manager.xml
 	  src/nm-manager.c
 		- (impl_manager_legacy_state): fix 'state' method call return value
