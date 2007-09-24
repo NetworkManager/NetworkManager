@@ -1,5 +1,14 @@
 2007-09-24  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_auto_get_best_device): don't interrupt activation of a
+			device by deactivating it because it doesn't have a "best connection".
+			Since autoconnect=False connections aren't automatically chosen,
+			NM would interrupt activation of such a connection because it
+			would never be "best" due to autoconnect=False.
+
+2007-09-24  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-manager.c
 		- (nm_manager_get_connection_secrets): Add a long timeout so the user
 			actually has some time to enter a key before the GetSecrets call

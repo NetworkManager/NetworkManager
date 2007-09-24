@@ -99,8 +99,18 @@ nm_policy_auto_get_best_device (NMPolicy *policy,
 		caps = nm_device_get_capabilities (dev);
 
 		tmp_con = nm_device_get_best_connection (dev, &tmp_obj);
-		if (tmp_con == NULL)
-			continue;
+		if (tmp_con == NULL) {
+			NMActRequest *req = nm_device_get_act_request (dev);
+
+			/* If the device is activating, the NMConnection it's got is the
+			 * best one.  In other words, follow activation of a particular
+			 * NMConnection through to success/failure rather than cutting it
+			 * off if it becomes invalid
+			 */
+			tmp_con = req ? nm_act_request_get_connection (req) : NULL;
+			if (!tmp_con)
+				continue;
+		}
 
 		if (NM_IS_DEVICE_802_3_ETHERNET (dev)) {
 			if (link_active)
@@ -115,9 +125,8 @@ nm_policy_auto_get_best_device (NMPolicy *policy,
 				best_wired_connection = tmp_con;
 				best_wired_specific_object = tmp_obj;
 			}
-		}
-		else if (NM_IS_DEVICE_802_11_WIRELESS (dev) &&
-				 nm_manager_wireless_enabled (policy->manager)) {
+		} else if (   NM_IS_DEVICE_802_11_WIRELESS (dev)
+		           && nm_manager_wireless_enabled (policy->manager)) {
 			/* Bump by 1 so that _something_ gets chosen every time */
 			prio += 1;
 
