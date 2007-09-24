@@ -424,7 +424,7 @@ nm_setting_connection_new_from_hash (GHashTable *hash)
 
 	setting = nm_setting_connection_new ();
 	if (!nm_setting_populate_from_hash (setting, hash)) {
-		setting_connection_destroy (setting);
+		nm_setting_destroy (setting);
 		return NULL;
 	}
 
@@ -492,7 +492,7 @@ nm_setting_ip4_config_new_from_hash (GHashTable *hash)
 
 	setting = nm_setting_ip4_config_new ();
 	if (!nm_setting_populate_from_hash (setting, hash)) {
-		setting_connection_destroy (setting);
+		nm_setting_destroy (setting);
 		return NULL;
 	}
 
@@ -579,7 +579,7 @@ nm_setting_wired_new_from_hash (GHashTable *hash)
 
 	setting = nm_setting_wired_new ();
 	if (!nm_setting_populate_from_hash (setting, hash)) {
-		setting_connection_destroy (setting);
+		nm_setting_destroy (setting);
 		return NULL;
 	}
 
@@ -729,7 +729,7 @@ nm_setting_wireless_new_from_hash (GHashTable *hash)
 
 	setting = nm_setting_wireless_new ();
 	if (!nm_setting_populate_from_hash (setting, hash)) {
-		setting_connection_destroy (setting);
+		nm_setting_destroy (setting);
 		return NULL;
 	}
 
@@ -1071,7 +1071,7 @@ nm_setting_wireless_security_new_from_hash (GHashTable *hash)
 
 	setting = nm_setting_wireless_security_new ();
 	if (!nm_setting_populate_from_hash (setting, hash)) {
-		setting_connection_destroy (setting);
+		nm_setting_destroy (setting);
 		return NULL;
 	}
 
@@ -1141,7 +1141,7 @@ nm_setting_ppp_new_from_hash (GHashTable *hash)
 
 	setting = nm_setting_ppp_new ();
 	if (!nm_setting_populate_from_hash (setting, hash)) {
-		setting_connection_destroy (setting);
+		nm_setting_destroy (setting);
 		return NULL;
 	}
 
@@ -1207,7 +1207,7 @@ nm_setting_vpn_new_from_hash (GHashTable *hash)
 
 	setting = nm_setting_vpn_new ();
 	if (!nm_setting_populate_from_hash (setting, hash)) {
-		setting_vpn_destroy (setting);
+		nm_setting_destroy (setting);
 		return NULL;
 	}
 
@@ -1293,7 +1293,7 @@ nm_setting_vpn_properties_new_from_hash (GHashTable *hash)
 
 	setting = nm_setting_vpn_properties_new ();
 	if (!nm_setting_populate_from_hash (setting, hash)) {
-		setting_vpn_destroy (setting);
+		nm_setting_destroy (setting);
 		return NULL;
 	}
 
