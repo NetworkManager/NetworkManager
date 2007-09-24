@@ -1,5 +1,16 @@
 2007-09-24  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Ross Burton <ross@burtonini.com>
+
+	* test/nm-tool.c
+	  callouts/nm-dhcp-client-action.c
+	  src/nm-netlink.c
+	  src/vpn-manager/nm-vpn-connection.c
+	  libnm-glib/libnm-glib-test.c
+		- warning fixes
+
+2007-09-24  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-utils.h
 	  libnm-util/nm-utils.c
 		- (nm_dbus_send_with_callback_replied, nm_dbus_send_with_callback):

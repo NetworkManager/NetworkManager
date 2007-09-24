@@ -406,7 +406,7 @@ nm_vpn_connection_activate (NMVPNConnection *connection)
 	routes = nm_vpn_connection_get_routes (connection);
 	org_freedesktop_NetworkManager_VPN_Plugin_connect_async (priv->proxy,
 												  nm_vpn_connection_get_vpn_data (connection),
-												  routes,
+												  (const char**)routes,
 												  nm_vpn_connection_connect_cb,
 												  connection);
 

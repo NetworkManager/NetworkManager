@@ -19,6 +19,7 @@
  * (C) Copyright 2007 Red Hat, Inc.
  */
 
+#include <asm/types.h>
 #include "nm-netlink.h"
 #include "nm-utils.h"
 

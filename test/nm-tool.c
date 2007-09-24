@@ -148,7 +148,7 @@ detail_network (gpointer data, gpointer user_data)
 	GString *str;
 	gboolean active = FALSE;
 	guint32 flags, wpa_flags, rsn_flags;
-	GByteArray * ssid;
+	const GByteArray * ssid;
 	char *tmp;
 
 	flags = nm_access_point_get_flags (ap);
@@ -193,7 +193,6 @@ detail_network (gpointer data, gpointer user_data)
 	ssid = nm_access_point_get_ssid (ap);
 	tmp = g_strdup_printf ("  %s%s", active ? "*" : "",
 	                       ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
-	g_byte_array_free (ssid, TRUE);
 
 	print_string (tmp, str->str);
 

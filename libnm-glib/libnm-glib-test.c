@@ -165,13 +165,12 @@ dump_ip4_config (NMIP4Config *cfg)
 static void
 dump_access_point (NMAccessPoint *ap)
 {
-	GByteArray * ssid;
+	const GByteArray * ssid;
 	char * str;
 
 	ssid = nm_access_point_get_ssid (ap);
 	g_print ("\tSsid: %s\n",
 	         ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
-	g_byte_array_free (ssid, TRUE);
 
 	str = nm_access_point_get_hw_address (ap);
 	g_print ("\tMAC Address: %s\n", str);

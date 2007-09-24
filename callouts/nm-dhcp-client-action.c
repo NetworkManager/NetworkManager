@@ -176,7 +176,7 @@ dbus_bool_t wpa_dbus_dict_append_byte_array(DBusMessageIter *iter_dict,
 }
 
 
-const char ** ignore[] = {"PATH", "SHLVL", "_", "PWD", "dhc_dbus", NULL};
+static const char * ignore[] = {"PATH", "SHLVL", "_", "PWD", "dhc_dbus", NULL};
 
 dbus_bool_t
 build_message (DBusMessage * message)
