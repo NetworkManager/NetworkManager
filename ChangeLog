@@ -1,5 +1,12 @@
 2007-09-23  Dan Williams  <dcbw@redhat.com>
 
+	* vpn-daemons/vpnc/properties/nm-vpnc.c
+		- Update for new VPN properties API bits; instead of passing around
+			a lot of random things, everything goes into the NMConnection
+			object.
+
+2007-09-23  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting.c
 		- Correctly dispose of settings objects if creating them from a hash
 			table fails

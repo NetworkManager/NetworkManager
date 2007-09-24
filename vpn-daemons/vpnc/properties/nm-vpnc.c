@@ -100,142 +100,6 @@ impl_get_service_name (NetworkManagerVpnUI *self)
 	return "org.freedesktop.NetworkManager.vpnc";
 }
 
-static void
-set_property (gpointer key, gpointer val, gpointer user_data)
-{
-	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) user_data;
-	const char *name = (const char *) key;
-	GValue *value = (GValue *) val;
-
-	if (!strcmp (name, NM_VPNC_KEY_GATEWAY)) {
-		gtk_entry_set_text (impl->w_gateway, g_value_get_string (value));		
-	} else if (!strcmp (name, NM_VPNC_KEY_ID)) {
-		gtk_entry_set_text (impl->w_group_name, g_value_get_string (value));
-	} else if (!strcmp (name, NM_VPNC_KEY_XAUTH_USER)) {
-		gtk_entry_set_text (impl->w_username, g_value_get_string (value));
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_alternate_username), TRUE);
-		gtk_widget_set_sensitive (GTK_WIDGET (impl->w_username), TRUE);
-	} else if (!strcmp (name, NM_VPNC_KEY_DOMAIN)) {
-		gtk_entry_set_text (impl->w_domain, g_value_get_string (value));
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_domain), TRUE);
-		gtk_widget_set_sensitive (GTK_WIDGET (impl->w_domain), TRUE);
-	} else if (!strcmp (name, NM_VPNC_KEY_NAT_KEEPALIVE)) {
-		gtk_entry_set_text (impl->w_keepalive, g_value_get_string (value));
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_keepalive), TRUE);
-		gtk_widget_set_sensitive (GTK_WIDGET (impl->w_keepalive), TRUE);
-	} else if (!strcmp (name, NM_VPNC_KEY_DISABLE_NAT)) {
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_disable_natt), g_value_get_boolean (value));
-	} else if (!strcmp (name, NM_VPNC_KEY_SINGLE_DES)) {
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_enable_singledes), g_value_get_boolean (value));
-	}
-}
-
-static GtkWidget *
-impl_get_widget (NetworkManagerVpnUI *self, GHashTable *properties, GSList *routes, const char *connection_name)
-{
-	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) self->data;
-	GSList *i;
-
-	vpnc_clear_widget (impl);
-
-	if (connection_name != NULL)
-		gtk_entry_set_text (impl->w_connection_name, connection_name);
-
-	if (properties)
-		g_hash_table_foreach (properties, set_property, self);
-
-	if (routes != NULL) {
-		GString *route_str;
-		char *str;
-
-		route_str = g_string_new ("");
-		for (i = routes; i != NULL; i = g_slist_next (i)) {
-			const char *route;
-			
-			if (i != routes)
-				g_string_append_c (route_str, ' ');
-			
-			route = (const char *) i->data;
-			g_string_append (route_str, route);
-		}
-
-		str = g_string_free (route_str, FALSE);
-		gtk_entry_set_text (impl->w_routes, str);
-		g_free (str);
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_routes), TRUE);
-		gtk_widget_set_sensitive (GTK_WIDGET (impl->w_routes), TRUE);
-	}
-
-	return impl->widget;
-}
-
-static GValue *
-str_to_gvalue (const char *str)
-{
-	GValue *value;
-
-	value = g_slice_new0 (GValue);
-	g_value_init (value, G_TYPE_STRING);
-	g_value_set_string (value, str);
-
-	return value;
-}
-
-static GValue *
-bool_to_gvalue (gboolean b)
-{
-	GValue *value;
-
-	value = g_slice_new0 (GValue);
-	g_value_init (value, G_TYPE_BOOLEAN);
-	g_value_set_boolean (value, b);
-
-	return value;
-}
-
-static gboolean
-impl_get_properties (NetworkManagerVpnUI *self, GHashTable *properties)
-{
-	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) self->data;
-	const char *gateway;
-	const char *groupname;
-	gboolean use_alternate_username;
-	const char *username;
-	gboolean use_keepalive;
-	const char *keepalive;
-	gboolean use_domain;
-	gboolean disable_natt;
-	gboolean enable_singledes;
-	const char *domain;
-
-	gateway                = gtk_entry_get_text (impl->w_gateway);
-	groupname              = gtk_entry_get_text (impl->w_group_name);
-	use_alternate_username = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_alternate_username));
-	username               = gtk_entry_get_text (impl->w_username);
-	use_domain             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_domain));
-	keepalive              = gtk_entry_get_text (impl->w_keepalive);
-	use_keepalive          = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_keepalive));
-	disable_natt           = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_disable_natt));
-	enable_singledes       = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_enable_singledes));
-	domain                 = gtk_entry_get_text (impl->w_domain);
-
-	g_hash_table_insert (properties, NM_VPNC_KEY_GATEWAY, str_to_gvalue (gateway));
-	g_hash_table_insert (properties, NM_VPNC_KEY_ID, str_to_gvalue (groupname));
-
-	if (use_alternate_username)
-		g_hash_table_insert (properties, NM_VPNC_KEY_XAUTH_USER, str_to_gvalue (username));
-	if (use_domain)
-		g_hash_table_insert (properties, NM_VPNC_KEY_DOMAIN, str_to_gvalue (domain));
-	if (use_keepalive)
-		g_hash_table_insert (properties, NM_VPNC_KEY_NAT_KEEPALIVE, str_to_gvalue (keepalive));
-	if (enable_singledes)
-		g_hash_table_insert (properties, NM_VPNC_KEY_SINGLE_DES, bool_to_gvalue (TRUE));
-	if (disable_natt)
-		g_hash_table_insert (properties, NM_VPNC_KEY_DISABLE_NAT, bool_to_gvalue (TRUE));
-
-	return TRUE;
-}
-
 static GSList *
 get_routes (NetworkManagerVpnUIImpl *impl)
 {
@@ -268,26 +132,185 @@ out:
 	return routes;
 }
 
-static GSList *
-impl_get_routes (NetworkManagerVpnUI *self)
+static GValue *
+str_to_gvalue (const char *str)
 {
-	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) self->data;
+	GValue *value;
 
-	return get_routes (impl);
+	value = g_slice_new0 (GValue);
+	g_value_init (value, G_TYPE_STRING);
+	g_value_set_string (value, str);
+
+	return value;
 }
 
-
-static char *
-impl_get_connection_name (NetworkManagerVpnUI *self)
+static GValue *
+bool_to_gvalue (gboolean b)
 {
-	const char *name;
-	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) self->data;
+	GValue *value;
 
+	value = g_slice_new0 (GValue);
+	g_value_init (value, G_TYPE_BOOLEAN);
+	g_value_set_boolean (value, b);
+
+	return value;
+}
+
+static void
+impl_fill_connection (NetworkManagerVpnUI *self, NMConnection *connection)
+{
+	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) self->data;
+	NMSettingConnection *s_con;
+	NMSettingVPN *s_vpn;
+	NMSettingVPNProperties *s_vpn_props;
+	const char *name;
+	const char *gateway;
+	const char *groupname;
+	gboolean use_alternate_username;
+	const char *username;
+	gboolean use_keepalive;
+	const char *keepalive;
+	gboolean use_domain;
+	gboolean disable_natt;
+	gboolean enable_singledes;
+	const char *domain;
+
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_SETTING_CONNECTION);
+	g_assert (s_vpn);
+
+	s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_SETTING_VPN);
+	g_assert (s_vpn);
+
+	s_vpn_props = (NMSettingVPNProperties *) nm_connection_get_setting (connection, NM_SETTING_VPN_PROPERTIES);
+	g_assert (s_vpn_props);
+
+	/* Connection name */
 	name = gtk_entry_get_text (impl->w_connection_name);
-	if (name != NULL)
-		return g_strdup (name);
-	else
-		return NULL;
+	g_assert (name);
+	s_con->name = g_strdup (name);
+
+	/* Populate routes */
+	if (s_vpn->routes) {
+		g_slist_foreach (s_vpn->routes, (GFunc) g_free, NULL);
+		g_slist_free (s_vpn->routes);
+	}
+	s_vpn->routes = get_routes (impl);
+
+	/* vpnc specific properties */
+	gateway                = gtk_entry_get_text (impl->w_gateway);
+	groupname              = gtk_entry_get_text (impl->w_group_name);
+	use_alternate_username = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_alternate_username));
+	username               = gtk_entry_get_text (impl->w_username);
+	use_domain             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_domain));
+	keepalive              = gtk_entry_get_text (impl->w_keepalive);
+	use_keepalive          = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_keepalive));
+	disable_natt           = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_disable_natt));
+	enable_singledes       = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_enable_singledes));
+	domain                 = gtk_entry_get_text (impl->w_domain);
+
+	if (s_vpn_props->data)
+		g_hash_table_remove_all (s_vpn_props->data);
+
+	g_hash_table_insert (s_vpn_props->data, NM_VPNC_KEY_GATEWAY, str_to_gvalue (gateway));
+	g_hash_table_insert (s_vpn_props->data, NM_VPNC_KEY_ID, str_to_gvalue (groupname));
+
+	if (use_alternate_username)
+		g_hash_table_insert (s_vpn_props->data, NM_VPNC_KEY_XAUTH_USER, str_to_gvalue (username));
+	if (use_domain)
+		g_hash_table_insert (s_vpn_props->data, NM_VPNC_KEY_DOMAIN, str_to_gvalue (domain));
+	if (use_keepalive)
+		g_hash_table_insert (s_vpn_props->data, NM_VPNC_KEY_NAT_KEEPALIVE, str_to_gvalue (keepalive));
+	if (enable_singledes)
+		g_hash_table_insert (s_vpn_props->data, NM_VPNC_KEY_SINGLE_DES, bool_to_gvalue (TRUE));
+	if (disable_natt)
+		g_hash_table_insert (s_vpn_props->data, NM_VPNC_KEY_DISABLE_NAT, bool_to_gvalue (TRUE));
+}
+
+static void
+set_property (gpointer key, gpointer val, gpointer user_data)
+{
+	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) user_data;
+	const char *name = (const char *) key;
+	GValue *value = (GValue *) val;
+
+	if (!strcmp (name, NM_VPNC_KEY_GATEWAY)) {
+		gtk_entry_set_text (impl->w_gateway, g_value_get_string (value));		
+	} else if (!strcmp (name, NM_VPNC_KEY_ID)) {
+		gtk_entry_set_text (impl->w_group_name, g_value_get_string (value));
+	} else if (!strcmp (name, NM_VPNC_KEY_XAUTH_USER)) {
+		gtk_entry_set_text (impl->w_username, g_value_get_string (value));
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_alternate_username), TRUE);
+		gtk_widget_set_sensitive (GTK_WIDGET (impl->w_username), TRUE);
+	} else if (!strcmp (name, NM_VPNC_KEY_DOMAIN)) {
+		gtk_entry_set_text (impl->w_domain, g_value_get_string (value));
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_domain), TRUE);
+		gtk_widget_set_sensitive (GTK_WIDGET (impl->w_domain), TRUE);
+	} else if (!strcmp (name, NM_VPNC_KEY_NAT_KEEPALIVE)) {
+		gtk_entry_set_text (impl->w_keepalive, g_value_get_string (value));
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_keepalive), TRUE);
+		gtk_widget_set_sensitive (GTK_WIDGET (impl->w_keepalive), TRUE);
+	} else if (!strcmp (name, NM_VPNC_KEY_DISABLE_NAT)) {
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_disable_natt), g_value_get_boolean (value));
+	} else if (!strcmp (name, NM_VPNC_KEY_SINGLE_DES)) {
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_enable_singledes), g_value_get_boolean (value));
+	}
+}
+
+static GtkWidget *
+impl_get_widget (NetworkManagerVpnUI *self, NMConnection *connection)
+{
+	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) self->data;
+	NMSettingConnection *s_con;
+	NMSettingVPN *s_vpn;
+	NMSettingVPNProperties *s_vpn_props;
+
+	vpnc_clear_widget (impl);
+
+	if (!connection)
+		goto out;
+
+	/* Populate UI bits from the NMConnection */
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_SETTING_CONNECTION);
+	g_assert (s_con);
+	g_assert (s_con->name);
+	gtk_entry_set_text (impl->w_connection_name, s_con->name);
+
+	s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_SETTING_VPN);
+	g_assert (s_vpn);
+
+	s_vpn_props = (NMSettingVPNProperties *) nm_connection_get_setting (connection, NM_SETTING_VPN_PROPERTIES);
+	g_assert (s_vpn_props);
+
+	if (s_vpn_props->data)
+		g_hash_table_foreach (s_vpn_props->data, set_property, self);
+
+	if (s_vpn->routes != NULL) {
+		GSList *i;
+		GString *route_str;
+		char *str;
+
+		route_str = g_string_new ("");
+		for (i = s_vpn->routes; i != NULL; i = g_slist_next (i)) {
+			const char *route;
+			
+			if (i != s_vpn->routes)
+				g_string_append_c (route_str, ' ');
+			
+			route = (const char *) i->data;
+			g_string_append (route_str, route);
+		}
+
+		str = g_string_free (route_str, FALSE);
+		gtk_entry_set_text (impl->w_routes, str);
+		g_free (str);
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_routes), TRUE);
+		gtk_widget_set_sensitive (GTK_WIDGET (impl->w_routes), TRUE);
+	}
+
+out:
+	return impl->widget;
 }
 
 static gboolean
@@ -358,14 +381,9 @@ impl_is_valid (NetworkManagerVpnUI *self)
 
 		routes = get_routes (impl);
 
-		//if (routes != NULL)
-		//	printf ("routes:\n");
-
 		for (i = routes; i != NULL; i = g_slist_next (i)) {
 			int d1, d2, d3, d4, mask;
-
 			const char *route = (const char *) i->data;
-			//printf ("route = '%s'\n", route);
 
 			if (sscanf (route, "%d.%d.%d.%d/%d", &d1, &d2, &d3, &d4, &mask) != 5) {
 				is_valid = FALSE;
@@ -383,8 +401,6 @@ impl_is_valid (NetworkManagerVpnUI *self)
 			}
 
 		}
-		//if (routes != NULL)
-		//	printf ("\n");
 
 		if (routes != NULL) {
 			g_slist_foreach (routes, (GFunc)g_free, NULL);
@@ -564,8 +580,11 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
 }
 
 static gboolean
-import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
+import_from_file (NetworkManagerVpnUI *self,
+                  const char *path,
+                  NMConnection *connection)
 {
+	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) self->data;
 	GHashTable *pcf;
 	const char *buf;
 	gboolean have_value;
@@ -643,6 +662,9 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 		}
 	}
 
+	if (connection)
+		impl_fill_connection (self, connection);
+
 	success = TRUE;
 
  error:	
@@ -675,7 +697,8 @@ import_button_clicked (GtkButton *button, gpointer user_data)
 {
 	char *filename = NULL;
 	GtkWidget *dialog;
-	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) user_data;
+	NetworkManagerVpnUI *self = (NetworkManagerVpnUI *) user_data;
+	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) self->data;
 
 	dialog = gtk_file_chooser_dialog_new (_("Select file to import"),
 					      NULL,
@@ -685,17 +708,12 @@ import_button_clicked (GtkButton *button, gpointer user_data)
 					      NULL);
 
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
-	{
-		
 		filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-		/*printf ("User selected '%s'\n", filename);*/
-
-	}
 	
 	gtk_widget_destroy (dialog);
 
 	if (filename != NULL) {
-		import_from_file (impl, filename);
+		import_from_file (self, filename, NULL);
 		g_free (filename);
 	}      
 }
@@ -707,23 +725,23 @@ impl_can_export (NetworkManagerVpnUI *self)
 }
 
 static gboolean 
-impl_import_file (NetworkManagerVpnUI *self, const char *path)
+impl_import_file (NetworkManagerVpnUI *self,
+                  const char *path,
+                  NMConnection *connection)
 {
-	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) self->data;
-
-	return import_from_file (impl, path);
+	return import_from_file (self, path, connection);
 }
 
 static gboolean
 export_to_file (NetworkManagerVpnUIImpl *impl,
-			 const char *path,
-			 GHashTable *properties,
-			 GSList *routes,
-			 const char *connection_name)
+                const char *path,
+                NMConnection *connection)
 {
+	NMSettingConnection *s_con;
+	NMSettingVPN *s_vpn;
+	NMSettingVPNProperties *s_vpn_props;
 	FILE *f;
 	GValue *val;
-	GSList *i;
 	const char *gateway = NULL;
 	const char *keepalive = "0";
 	const char *enablenat = "1";
@@ -734,44 +752,52 @@ export_to_file (NetworkManagerVpnUIImpl *impl,
 	char *routes_str = NULL;
 	gboolean ret = TRUE;
 
-	/*printf ("in export_to_file; path='%s'\n", path);*/
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_SETTING_CONNECTION);
+	g_assert (s_con);
 
-	val = (GValue *) g_hash_table_lookup (properties, NM_VPNC_KEY_GATEWAY);
+	s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_SETTING_VPN);
+	g_assert (s_vpn);
+
+	s_vpn_props = (NMSettingVPNProperties *) nm_connection_get_setting (connection, NM_SETTING_VPN_PROPERTIES);
+	g_assert (s_vpn_props);
+
+	val = (GValue *) g_hash_table_lookup (s_vpn_props->data, NM_VPNC_KEY_GATEWAY);
 	if (val)
 		gateway = g_value_get_string (val);
 
-	val = (GValue *) g_hash_table_lookup (properties, NM_VPNC_KEY_ID);
+	val = (GValue *) g_hash_table_lookup (s_vpn_props->data, NM_VPNC_KEY_ID);
 	if (val)
 		groupname = g_value_get_string (val);
 
-	val = (GValue *) g_hash_table_lookup (properties, NM_VPNC_KEY_XAUTH_USER);
+	val = (GValue *) g_hash_table_lookup (s_vpn_props->data, NM_VPNC_KEY_XAUTH_USER);
 	if (val)
 		username = g_value_get_string (val);
 
-	val = (GValue *) g_hash_table_lookup (properties, NM_VPNC_KEY_DOMAIN);
+	val = (GValue *) g_hash_table_lookup (s_vpn_props->data, NM_VPNC_KEY_DOMAIN);
 	if (val)
 		domain = g_value_get_string (val);
 
-	val = (GValue *) g_hash_table_lookup (properties, NM_VPNC_KEY_DISABLE_NAT);
+	val = (GValue *) g_hash_table_lookup (s_vpn_props->data, NM_VPNC_KEY_DISABLE_NAT);
 	if (val)
 		enablenat = g_value_get_boolean (val) ? "0" : "1";
 
-	val = (GValue *) g_hash_table_lookup (properties, NM_VPNC_KEY_SINGLE_DES);
+	val = (GValue *) g_hash_table_lookup (s_vpn_props->data, NM_VPNC_KEY_SINGLE_DES);
 	if (val)
 		singledes = g_value_get_boolean (val) ? "1" : "0";
 
-	val = (GValue *) g_hash_table_lookup (properties, NM_VPNC_KEY_NAT_KEEPALIVE);
+	val = (GValue *) g_hash_table_lookup (s_vpn_props->data, NM_VPNC_KEY_NAT_KEEPALIVE);
 	if (val)
 		keepalive = g_value_get_string (val);
 
-	if (routes != NULL) {
+	if (s_vpn->routes != NULL) {
+		GSList *i;
 		GString *str;
 
 		str = g_string_new ("X-NM-Routes=");
-		for (i = routes; i != NULL; i = g_slist_next (i)) {
+		for (i = s_vpn->routes; i != NULL; i = g_slist_next (i)) {
 			const char *route;
 			
-			if (i != routes)
+			if (i != s_vpn->routes)
 				g_string_append_c (str, ' ');
 			
 			route = (const char *) i->data;
@@ -829,7 +855,7 @@ export_to_file (NetworkManagerVpnUIImpl *impl,
 		 "SingleDES=%s\n"
 		 "SPPhonebook=\n"
 		 "%s",
-		 /* Description */ connection_name,
+		 /* Description */ s_con->name,
 		 /* Host */        gateway,
 		 /* GroupName */   groupname,
 		 /* Username */    username != NULL ? username : "",
@@ -848,14 +874,13 @@ out:
 
 
 static gboolean 
-impl_export (NetworkManagerVpnUI *self, GHashTable *properties, GSList *routes, const char *connection_name)
+impl_export (NetworkManagerVpnUI *self, NMConnection *connection)
 {
+	NMSettingConnection *s_con;
 	char *suggested_name;
 	char *path = NULL;
 	GtkWidget *dialog;
 	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) self->data;
-
-	/*printf ("in impl_export\n");*/
 
 	dialog = gtk_file_chooser_dialog_new (_("Save as..."),
 					      NULL,
@@ -864,17 +889,16 @@ impl_export (NetworkManagerVpnUI *self, GHashTable *properties, GSList *routes, 
 					      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 					      NULL);
 
-	suggested_name = g_strdup_printf ("%s.pcf", connection_name);
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_SETTING_CONNECTION);
+	g_assert (s_con);
+	g_assert (s_con->name);
+
+	suggested_name = g_strdup_printf ("%s.pcf", s_con->name);
 	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog), suggested_name);
 	g_free (suggested_name);
 
 	if (gtk_dialog_run (GTK_DIALOG (dialog)) == GTK_RESPONSE_ACCEPT)
-	{
-		
 		path = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (dialog));
-		/*printf ("User selected '%s'\n", path);*/
-
-	}
 
 	gtk_widget_destroy (dialog);
 
@@ -897,7 +921,7 @@ impl_export (NetworkManagerVpnUI *self, GHashTable *properties, GSList *routes, 
 				goto out;
 		}
 
-		if (!export_to_file (impl, path, properties, routes, connection_name)) {
+		if (!export_to_file (impl, path, connection)) {
 			GtkWidget *dialog;
 
 			dialog = gtk_message_dialog_new (NULL,
@@ -927,7 +951,6 @@ impl_get_object (void)
 	impl = g_new0 (NetworkManagerVpnUIImpl, 1);
 
 	glade_file = g_strdup_printf ("%s/%s", GLADEDIR, "nm-vpnc-dialog.glade");
-	//glade_file = g_strdup ("nm-vpnc-dialog.glade");
 	impl->xml = glade_xml_new (glade_file, NULL, GETTEXT_PACKAGE);
 	g_free (glade_file);
 	if (impl->xml == NULL)
@@ -979,7 +1002,8 @@ impl_get_object (void)
 			    "changed", GTK_SIGNAL_FUNC (editable_changed), impl);
 
 	gtk_signal_connect (GTK_OBJECT (impl->w_import_button), 
-			    "clicked", GTK_SIGNAL_FUNC (import_button_clicked), impl);
+			    "clicked", GTK_SIGNAL_FUNC (import_button_clicked),
+			    &(impl->parent));
 
 	/* make the widget reusable */
 	gtk_signal_connect (GTK_OBJECT (impl->widget), "delete-event", 
@@ -989,10 +1013,8 @@ impl_get_object (void)
 
 	impl->parent.get_display_name              = impl_get_display_name;
 	impl->parent.get_service_name              = impl_get_service_name;
+	impl->parent.fill_connection               = impl_fill_connection;
 	impl->parent.get_widget                    = impl_get_widget;
-	impl->parent.get_connection_name           = impl_get_connection_name;
-	impl->parent.get_properties                = impl_get_properties;
-	impl->parent.get_routes                    = impl_get_routes;
 	impl->parent.set_validity_changed_callback = impl_set_validity_changed_callback;
 	impl->parent.is_valid                      = impl_is_valid;
 	impl->parent.get_confirmation_details      = impl_get_confirmation_details;
