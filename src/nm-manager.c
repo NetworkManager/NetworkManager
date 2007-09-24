@@ -16,7 +16,7 @@ static gboolean impl_manager_sleep (NMManager *manager, gboolean sleep, GError *
 
 static gboolean impl_manager_legacy_sleep (NMManager *manager, GError **err);
 static gboolean impl_manager_legacy_wake  (NMManager *manager, GError **err);
-static gboolean impl_manager_legacy_state (NMManager *manager, GError **err);
+static gboolean impl_manager_legacy_state (NMManager *manager, guint32 *state, GError **err);
 
 #include "nm-manager-glue.h"
 
@@ -887,9 +887,10 @@ impl_manager_legacy_wake  (NMManager *manager, GError **err)
 }
 
 static gboolean
-impl_manager_legacy_state (NMManager *manager, GError **err)
+impl_manager_legacy_state (NMManager *manager, guint32 *state, GError **err)
 {
-	return nm_manager_get_state (manager);
+	*state = nm_manager_get_state (manager);
+	return TRUE;
 }
 
 

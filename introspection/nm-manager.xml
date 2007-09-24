@@ -46,6 +46,7 @@
 
     <method name="state">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_legacy_state"/>
+      <arg name="state" type="u" direction="out"/>
     </method>
 
   </interface>
