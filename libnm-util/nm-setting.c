@@ -918,7 +918,7 @@ verify_wep_key (const char *key)
 		return FALSE;
 
 	keylen = strlen (key);
-	if (keylen != 13 && keylen != 26)
+	if (keylen != 10 && keylen != 26)
 		return FALSE;
 
 	for (i = 0; i < keylen; i++) {

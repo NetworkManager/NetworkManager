@@ -1,5 +1,10 @@
 2007-09-24  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting.c
+		- (verify_wep_key): 40-bit WEP keys are 10 bytes long, not 13
+
+2007-09-24  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerPolicy.c
 		- (nm_policy_auto_get_best_device): don't interrupt activation of a
 			device by deactivating it because it doesn't have a "best connection".
