@@ -98,8 +98,14 @@ dispose (GObject *object)
 		priv->secrets_updated_id = 0;
 	}
 
-	if (priv->connection)
+	if (priv->connection) {
+		NMManager *manager = nm_manager_get ();
+
+		nm_manager_cancel_get_connection_secrets (manager, priv->connection);
+		g_object_unref (manager);
+
 		g_object_unref (priv->connection);
+	}
 }
 
 static void

@@ -83,4 +83,7 @@ gboolean nm_manager_get_connection_secrets (NMManager *manager,
                                             const char * setting_name,
                                             gboolean request_new);
 
+void nm_manager_cancel_get_connection_secrets (NMManager *manager,
+                                               NMConnection *connection);
+
 #endif /* NM_MANAGER_H */

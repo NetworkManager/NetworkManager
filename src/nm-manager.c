@@ -62,6 +62,7 @@ enum {
 };
 
 #define CONNECTION_PROXY_TAG "dbus-proxy"
+#define CONNECTION_GET_SECRETS_CALL_TAG "get-secrets-call"
 
 static void
 nm_manager_init (NMManager *manager)
@@ -1027,6 +1028,8 @@ get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	g_return_if_fail (info->setting_name);
 	g_return_if_fail (info->device);
 
+	g_object_set_data (G_OBJECT (info->connection), CONNECTION_GET_SECRETS_CALL_TAG, NULL);
+
 	if (!dbus_g_proxy_end_call (proxy, call, &err,
 								dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE), &secrets,
 								G_TYPE_INVALID)) {
@@ -1055,6 +1058,7 @@ nm_manager_get_connection_secrets (NMManager *manager,
 {
 	DBusGProxy *proxy;
 	GetSecretsInfo *info = NULL;
+	DBusGProxyCall *call;
 
 	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
@@ -1081,22 +1085,47 @@ nm_manager_get_connection_secrets (NMManager *manager,
 	info->manager = manager;
 	info->device = g_object_ref (device);
 
-	if (!dbus_g_proxy_begin_call_with_timeout (proxy, "GetSecrets",
-	                                           get_secrets_cb,
-	                                           info,
-	                                           free_get_secrets_info,
-	                                           G_MAXINT32,
-	                                           G_TYPE_STRING, setting_name,
-	                                           G_TYPE_BOOLEAN, request_new,
-	                                           G_TYPE_INVALID)) {
+	call = dbus_g_proxy_begin_call_with_timeout (proxy, "GetSecrets",
+	                                             get_secrets_cb,
+	                                             info,
+	                                             free_get_secrets_info,
+	                                             G_MAXINT32,
+	                                             G_TYPE_STRING, setting_name,
+	                                             G_TYPE_BOOLEAN, request_new,
+	                                             G_TYPE_INVALID);
+	if (!call) {
 		nm_warning ("Could not call GetSecrets");
 		goto error;
 	}
+
+	g_object_set_data (G_OBJECT (connection), CONNECTION_GET_SECRETS_CALL_TAG, call);
 	return TRUE;
 
 error:
 	if (info)
 		free_get_secrets_info (info);
 	return FALSE;
+}
+
+void
+nm_manager_cancel_get_connection_secrets (NMManager *manager,
+                                          NMConnection *connection)
+{
+	DBusGProxyCall *call;
+	DBusGProxy *proxy;
+
+	g_return_if_fail (NM_IS_MANAGER (manager));
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+
+	proxy = g_object_get_data (G_OBJECT (connection), CONNECTION_PROXY_TAG);
+	if (!DBUS_IS_G_PROXY (proxy))
+		return;
+
+	call = g_object_get_data (G_OBJECT (connection), CONNECTION_GET_SECRETS_CALL_TAG);
+	if (!call)
+		return;
+
+	dbus_g_proxy_cancel_call (proxy, call);
+	g_object_set_data (G_OBJECT (connection), CONNECTION_GET_SECRETS_CALL_TAG, NULL);
 }
 

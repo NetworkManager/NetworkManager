@@ -1,5 +1,23 @@
 2007-09-25  Dan Williams  <dcbw@redhat.com>
 
+	Ensure that old activation requests are forgotten about; previously
+	hitting Cancel in the password dialog would deactivate whatever device
+	that password was requested for, even if that wasn't the currently
+	activating connection.
+
+	* src/nm-manager.c
+	  src/nm-manager.h
+		- (nm_manager_get_connection_secrets): track the pending call
+			object so it can be canceled later if needed
+		- (nm_manager_cancel_get_connection_secrets): cancel a pending
+			GetSecrets call for a particular connection
+
+	* src/nm-activation-request.c
+		- (dispose): cancel any outstanding GetSecrets calls on the
+			connection
+
+2007-09-25  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerPolicy.c
 		- (nm_policy_device_change_check): handle devices that have a
 			deferred activation.  These devices are not really active _yet_,
