@@ -29,6 +29,7 @@ typedef struct {
 	GHashTable * (* get_settings) (NMConnectionSettings *connection);
 	void         (* get_secrets) (NMConnectionSettings *connection,
 	                              const gchar *setting_name,
+	                              gboolean request_new,
 	                              DBusGMethodInvocation *context);
 
 	/* signals */

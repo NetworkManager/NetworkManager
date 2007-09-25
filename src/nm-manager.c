@@ -1046,17 +1046,18 @@ get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	g_hash_table_destroy (secrets);
 }
 
-void
+gboolean
 nm_manager_get_connection_secrets (NMManager *manager,
                                    NMDeviceInterface *device,
                                    NMConnection *connection,
-                                   const char *setting_name)
+                                   const char *setting_name,
+                                   gboolean request_new)
 {
 	DBusGProxy *proxy;
 	GetSecretsInfo *info = NULL;
 
-	g_return_if_fail (NM_IS_MANAGER (manager));
-	g_return_if_fail (NM_IS_CONNECTION (connection));
+	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
 	proxy = g_object_get_data (G_OBJECT (connection), CONNECTION_PROXY_TAG);
 	if (!DBUS_IS_G_PROXY (proxy)) {
@@ -1086,14 +1087,16 @@ nm_manager_get_connection_secrets (NMManager *manager,
 	                                           free_get_secrets_info,
 	                                           G_MAXINT32,
 	                                           G_TYPE_STRING, setting_name,
+	                                           G_TYPE_BOOLEAN, request_new,
 	                                           G_TYPE_INVALID)) {
 		nm_warning ("Could not call GetSecrets");
 		goto error;
 	}
-	return;
+	return TRUE;
 
 error:
 	if (info)
 		free_get_secrets_info (info);
+	return FALSE;
 }
 

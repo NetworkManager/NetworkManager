@@ -1,5 +1,32 @@
 2007-09-25  Dan Williams  <dcbw@redhat.com>
 
+	Properly re-query secrets from the settings daemon when stuff fails.
+
+	* src/nm-device-802-11-wireless.c
+		- (ap_auth_enforced): handle static WEP correctly here by differentiating
+			between Shared Key and Open System auth modes
+		- (link_timeout_cb, supplicant_connection_timeout_cb,
+		   real_act_stage4_ip_config_timeout): clear existing secrets and
+			request new ones when something fails due to a suspected wrong key
+		- (real_act_stage2_config): fix for new request_new argument to
+			nm_manager_get_connection_secrets()
+
+	* src/nm-manager.c
+	  src/nm-manager.h
+		- (nm_manager_get_connection_secrets): return error status; pass
+			new request_new argument on to the settings daemon
+
+	* introspection/nm-settings-connection.xml
+		- New 'request_new' argument to the GetSecrets call that hints to the
+			settings daemon to ask the user for completely new secrets
+
+	* libnm-glib/nm-settings.c
+	  libnm-glib/nm-settings.h
+		- (impl_connection_settings_get_secrets): handle new 'request_new'
+			argument
+
+2007-09-25  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-connection.c
 	  libnm-util/nm-connection.h
 		- (nm_connection_clear_secrets): new function; clear secrets out of

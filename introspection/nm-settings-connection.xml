@@ -18,6 +18,7 @@
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_connection_settings_get_secrets"/>
       <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <arg name="setting_name" type="s" direction="in"/>
+      <arg name="request_new" type="b" direction="in"/>
       <arg name="secrets" type="a{sv}" direction="out"/>
     </method>
 

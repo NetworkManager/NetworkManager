@@ -1605,11 +1605,12 @@ out:
  *
  */
 static gboolean
-ap_auth_enforced (NMAccessPoint *ap)
+ap_auth_enforced (NMConnection *connection, NMAccessPoint *ap)
 {
 	guint32 flags, wpa_flags, rsn_flags;
 
-	g_return_val_if_fail (ap != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_AP (ap), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
 	if (nm_ap_get_mode (ap) == IW_MODE_ADHOC)
 		return FALSE;
@@ -1618,15 +1619,33 @@ ap_auth_enforced (NMAccessPoint *ap)
 	wpa_flags = nm_ap_get_wpa_flags (ap);
 	rsn_flags = nm_ap_get_rsn_flags (ap);
 
-	if (flags & NM_802_11_AP_FLAGS_PRIVACY)
-		return TRUE;
+	/* Static WEP */
+	if (   (flags & NM_802_11_AP_FLAGS_PRIVACY)
+        && (wpa_flags == NM_802_11_AP_SEC_NONE)
+        && (rsn_flags == NM_802_11_AP_SEC_NONE)) {
+		NMSettingWirelessSecurity *s_wireless_sec;
 
+		/* No way to tell if the key is wrong with Open System
+		 * auth mode in WEP.  Auth is not enforced like Shared Key.
+		 */
+		s_wireless_sec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_SETTING_WIRELESS_SECURITY);
+		if (s_wireless_sec &&
+		    (!s_wireless_sec->auth_alg ||
+		     !strcmp (s_wireless_sec->auth_alg, "open")))
+			return FALSE;
+
+		return TRUE;
+	}
+
+	/* WPA */
 	if (wpa_flags != NM_802_11_AP_SEC_NONE)
 		return TRUE;
 
+	/* WPA2 */
 	if (rsn_flags != NM_802_11_AP_SEC_NONE)
 		return TRUE;
 
+	/* No encryption */
 	return FALSE;
 }
 
@@ -1883,12 +1902,14 @@ link_timeout_cb (gpointer user_data)
 	NMDevice80211Wireless * self = NM_DEVICE_802_11_WIRELESS (user_data);	
 	NMActRequest *          req = NULL;
 	NMAccessPoint *         ap = NULL;
+	NMConnection *          connection;
+	NMManager *             manager;
+	const char *            setting_name;
 
 	g_assert (dev);
 
-	if (self->priv->link_timeout_id) {
+	if (self->priv->link_timeout_id)
 		self->priv->link_timeout_id = 0;
-	}
 
 	req = nm_device_get_act_request (dev);
 	ap = nm_device_802_11_wireless_get_activation_ap (self);
@@ -1906,19 +1927,42 @@ link_timeout_cb (gpointer user_data)
 	 * ARE checked - we are likely to have wrong key.  Ask the user for
 	 * another one.
 	 */
-	if ((nm_device_get_state (dev) == NM_DEVICE_STATE_CONFIG)
-	    && ap_auth_enforced (ap)) {
-		/* Association/authentication failed, we must have bad encryption key */
-		nm_info ("Activation (%s/wireless): disconnected during association,"
-		         " asking for new key.", nm_device_get_iface (dev));
-		cleanup_association_attempt (self, TRUE);
-		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
-		// FIXME: get secrets from the info-daemon
-	} else {
-		nm_info ("%s: link timed out.", nm_device_get_iface (dev));
-		nm_device_set_active_link (dev, FALSE);
-	}
+	if (nm_device_get_state (dev) != NM_DEVICE_STATE_CONFIG)
+		goto time_out;
 
+	connection = nm_act_request_get_connection (req);
+	if (!connection)
+		goto time_out;
+
+	if (!ap_auth_enforced (connection, ap))
+		goto time_out;
+
+	nm_connection_clear_secrets (connection);
+	setting_name = nm_connection_need_secrets (connection);
+	if (!setting_name)
+		goto time_out;
+
+	/* Association/authentication failed during association, probably have a 
+	 * bad encryption key and the authenticating entity (AP, RADIUS server, etc)
+	 * denied the association due to bad credentials.
+	 */
+	nm_info ("Activation (%s/wireless): disconnected during association,"
+	         " asking for new key.", nm_device_get_iface (dev));
+	cleanup_association_attempt (self, TRUE);
+	nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
+
+	manager = nm_manager_get ();
+ 	nm_manager_get_connection_secrets (manager,
+	                                   NM_DEVICE_INTERFACE (self),
+	                                   connection,
+	                                   setting_name,
+	                                   TRUE);
+	g_object_unref (manager);
+	return FALSE;
+
+time_out:
+	nm_info ("%s: link timed out.", nm_device_get_iface (dev));
+	nm_device_set_active_link (dev, FALSE);
 	return FALSE;
 }
 
@@ -2268,7 +2312,9 @@ supplicant_connection_timeout_cb (gpointer user_data)
 	NMDevice *              dev = NM_DEVICE (user_data);
 	NMDevice80211Wireless * self = NM_DEVICE_802_11_WIRELESS (user_data);
 	NMAccessPoint *         ap = nm_device_802_11_wireless_get_activation_ap (self);
-		
+	NMActRequest *          req = nm_device_get_act_request (dev);
+	NMConnection *          connection = NULL;
+
 	cleanup_association_attempt (self, TRUE);
 
 	/* Timed out waiting for authentication success; if the security in use
@@ -2276,7 +2322,10 @@ supplicant_connection_timeout_cb (gpointer user_data)
 	 * WEP, for example) then we are likely using the wrong authentication
 	 * algorithm or key.  Request new one from the user.
 	 */
-	if (ap_auth_enforced (ap)) {
+	if (req)
+		connection = nm_act_request_get_connection (req);
+
+	if (!connection || ap_auth_enforced (connection, ap)) {
 		if (nm_device_is_activating (dev)) {
 			/* Kicked off by the authenticator most likely */
 			nm_info ("Activation (%s/wireless): association took too long, "
@@ -2286,13 +2335,20 @@ supplicant_connection_timeout_cb (gpointer user_data)
 			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
 		}
 	} else {
+		NMManager *manager = nm_manager_get ();
+
 		/* Activation failed, encryption key is probably bad */
 		nm_info ("Activation (%s/wireless): association took too long, "
 		         "asking for new key.",
 		         nm_device_get_iface (dev));
 
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
-		// FIXME: get secrets from the info-daemon
+		nm_manager_get_connection_secrets (manager,
+		                                   NM_DEVICE_INTERFACE (self),
+		                                   connection,
+		                                   NM_SETTING_WIRELESS_SECURITY,
+		                                   TRUE);
+		g_object_unref (manager);
 	}
 
 	return FALSE;
@@ -2484,7 +2540,8 @@ real_act_stage2_config (NMDevice *dev)
 		nm_manager_get_connection_secrets (manager,
 		                                   NM_DEVICE_INTERFACE (self),
 		                                   connection,
-		                                   setting_name);
+		                                   setting_name,
+		                                   FALSE);
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	} else {
 		NMSettingWireless *s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_SETTING_WIRELESS);
@@ -2612,6 +2669,8 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 	NMAccessPoint *		ap = nm_device_802_11_wireless_get_activation_ap (self);
 	NMActStageReturn		ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMIP4Config *			real_config = NULL;
+	NMActRequest *          req = nm_device_get_act_request (dev);
+	NMConnection *          connection;
 
 	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
@@ -2622,15 +2681,23 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 	 * Open System WEP for example), and DHCP times out, then
 	 * the encryption key is likely wrong.  Ask the user for a new one.
 	 */
-	if (!ap_auth_enforced (ap)) {
+	connection = nm_act_request_get_connection (req);
+	if (!ap_auth_enforced (connection, ap)) {
+		NMManager *manager = nm_manager_get ();
 		const GByteArray * ssid = nm_ap_get_ssid (ap);
 
 		/* Activation failed, we must have bad encryption key */
-		nm_debug ("Activation (%s/wireless): could not get IP configuration info for '%s', asking for new key.",
+		nm_debug ("Activation (%s/wireless): could not get IP configuration "
+		          "info for '%s', asking for new key.",
 		          nm_device_get_iface (dev),
 		          ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
-		// FIXME: request new secrets from info-daemon
+		nm_manager_get_connection_secrets (manager,
+		                                   NM_DEVICE_INTERFACE (self),
+		                                   connection,
+		                                   NM_SETTING_WIRELESS_SECURITY,
+		                                   TRUE);
+		g_object_unref (manager);
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else if (nm_ap_get_mode (ap) == IW_MODE_ADHOC) {
 		NMDevice80211WirelessClass *	klass;
