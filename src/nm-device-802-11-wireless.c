@@ -1592,6 +1592,19 @@ out:
 }
 #endif
 
+static gboolean
+is_encrypted (guint32 flags, guint32 wpa_flags, guint32 rsn_flags)
+{
+	if (flags & NM_802_11_AP_FLAGS_PRIVACY)
+		return TRUE;
+	if (wpa_flags & (NM_802_11_AP_SEC_KEY_MGMT_PSK | NM_802_11_AP_SEC_KEY_MGMT_802_1X))
+		return TRUE;
+	if (rsn_flags & (NM_802_11_AP_SEC_KEY_MGMT_PSK | NM_802_11_AP_SEC_KEY_MGMT_802_1X))
+		return TRUE;
+
+	return FALSE;
+}
+
 /*
  * ap_auth_enforced
  *
@@ -1605,19 +1618,23 @@ out:
  *
  */
 static gboolean
-ap_auth_enforced (NMConnection *connection, NMAccessPoint *ap)
+ap_auth_enforced (NMConnection *connection,
+                  NMAccessPoint *ap,
+                  gboolean *encrypted)
 {
 	guint32 flags, wpa_flags, rsn_flags;
+	gboolean enforced = FALSE;
 
 	g_return_val_if_fail (NM_IS_AP (ap), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
-
-	if (nm_ap_get_mode (ap) == IW_MODE_ADHOC)
-		return FALSE;
+	g_return_val_if_fail (encrypted != NULL, FALSE);
 
 	flags = nm_ap_get_flags (ap);
 	wpa_flags = nm_ap_get_wpa_flags (ap);
 	rsn_flags = nm_ap_get_rsn_flags (ap);
+
+	if (nm_ap_get_mode (ap) == IW_MODE_ADHOC)
+		goto out;
 
 	/* Static WEP */
 	if (   (flags & NM_802_11_AP_FLAGS_PRIVACY)
@@ -1632,21 +1649,18 @@ ap_auth_enforced (NMConnection *connection, NMAccessPoint *ap)
 		if (s_wireless_sec &&
 		    (!s_wireless_sec->auth_alg ||
 		     !strcmp (s_wireless_sec->auth_alg, "open")))
-			return FALSE;
+			goto out;
 
-		return TRUE;
+		enforced = TRUE;
+	} else if (wpa_flags != NM_802_11_AP_SEC_NONE) { /* WPA */
+		enforced = TRUE;
+	} else if (rsn_flags != NM_802_11_AP_SEC_NONE) { /* WPA2 */
+		enforced = TRUE;
 	}
 
-	/* WPA */
-	if (wpa_flags != NM_802_11_AP_SEC_NONE)
-		return TRUE;
-
-	/* WPA2 */
-	if (rsn_flags != NM_802_11_AP_SEC_NONE)
-		return TRUE;
-
-	/* No encryption */
-	return FALSE;
+out:
+	*encrypted = is_encrypted (flags, wpa_flags, rsn_flags);
+	return enforced;
 }
 
 
@@ -1905,6 +1919,7 @@ link_timeout_cb (gpointer user_data)
 	NMConnection *          connection;
 	NMManager *             manager;
 	const char *            setting_name;
+	gboolean                auth_enforced, encrypted = FALSE;
 
 	g_assert (dev);
 
@@ -1934,7 +1949,8 @@ link_timeout_cb (gpointer user_data)
 	if (!connection)
 		goto time_out;
 
-	if (!ap_auth_enforced (connection, ap))
+	auth_enforced = ap_auth_enforced (connection, ap, &encrypted);
+	if (!encrypted || !auth_enforced)
 		goto time_out;
 
 	nm_connection_clear_secrets (connection);
@@ -2311,33 +2327,41 @@ supplicant_connection_timeout_cb (gpointer user_data)
 {
 	NMDevice *              dev = NM_DEVICE (user_data);
 	NMDevice80211Wireless * self = NM_DEVICE_802_11_WIRELESS (user_data);
-	NMAccessPoint *         ap = nm_device_802_11_wireless_get_activation_ap (self);
-	NMActRequest *          req = nm_device_get_act_request (dev);
+	NMAccessPoint *         ap;
+	NMActRequest *          req;
 	NMConnection *          connection = NULL;
+	gboolean                auth_enforced = FALSE, encrypted = FALSE;
 
 	cleanup_association_attempt (self, TRUE);
+
+	if (!nm_device_is_activating (dev))
+		return FALSE;
 
 	/* Timed out waiting for authentication success; if the security in use
 	 * does not require access point side authentication (Open System
 	 * WEP, for example) then we are likely using the wrong authentication
 	 * algorithm or key.  Request new one from the user.
 	 */
-	if (req)
-		connection = nm_act_request_get_connection (req);
 
-	if (!connection || ap_auth_enforced (connection, ap)) {
-		if (nm_device_is_activating (dev)) {
-			/* Kicked off by the authenticator most likely */
-			nm_info ("Activation (%s/wireless): association took too long, "
-			         "failing activation.",
-			         nm_device_get_iface (dev));
+	req = nm_device_get_act_request (dev);
+	g_assert (req);
 
-			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
-		}
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+
+	ap = nm_device_802_11_wireless_get_activation_ap (self);
+	g_assert (ap);
+
+	auth_enforced = ap_auth_enforced (connection, ap, &encrypted);
+	if (!encrypted) {
+		nm_info ("Activation (%s/wireless): association took too long, "
+		         "failing activation.",
+		         nm_device_get_iface (dev));
+		nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
 	} else {
 		NMManager *manager = nm_manager_get ();
 
-		/* Activation failed, encryption key is probably bad */
+		/* Authentication failed, encryption key is probably bad */
 		nm_info ("Activation (%s/wireless): association took too long, "
 		         "asking for new key.",
 		         nm_device_get_iface (dev));
@@ -2671,6 +2695,7 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 	NMIP4Config *			real_config = NULL;
 	NMActRequest *          req = nm_device_get_act_request (dev);
 	NMConnection *          connection;
+	gboolean                auth_enforced = FALSE, encrypted = FALSE;
 
 	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
@@ -2680,9 +2705,11 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 	/* If nothing checks the security authentication information (as in
 	 * Open System WEP for example), and DHCP times out, then
 	 * the encryption key is likely wrong.  Ask the user for a new one.
+	 * Otherwise the failure likely happened after a successful authentication.
 	 */
 	connection = nm_act_request_get_connection (req);
-	if (!ap_auth_enforced (connection, ap)) {
+	auth_enforced = ap_auth_enforced (connection, ap, &encrypted);
+	if (encrypted && !auth_enforced) {
 		NMManager *manager = nm_manager_get ();
 		const GByteArray * ssid = nm_ap_get_ssid (ap);
 
@@ -2708,7 +2735,10 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 		parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
 		ret = parent_class->act_stage4_ip_config_timeout (dev, &real_config);
 	} else {
-		/* Non-encrypted network and IP configure failed.  Alert the user. */
+		/* Non-encrypted network or authentication is enforced by some
+		 * entity (AP, RADIUS server, etc), but IP configure failed.  Alert
+		 * the user.
+		 */
 		ret = NM_ACT_STAGE_RETURN_FAILURE;
 	}
 

@@ -1,5 +1,16 @@
 2007-09-25  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-11-wireless.c
+		- (ap_auth_enforced): also return the encryption status of the AP so
+			that callers can differentiate easily between unencrypted APs
+			and encrypted ones, in addition to whether the AP has an
+			authenticator
+		- (link_timeout_cb, supplicant_connection_timeout_cb,
+		   real_act_stage4_ip_config_timeout): handle unencrypted APs better,
+			previously would request secrets from unencrypted APs at times
+
+2007-09-25  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-manager.c
 		- (nm_manager_update_state): new function; updates state and emits
 			appropriate signals ensuring a state-change signal for the same state
