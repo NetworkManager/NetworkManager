@@ -128,7 +128,7 @@ impl_vpn_manager_connect (NMVPNManager *manager,
 	NMManager *nm_manager;
 	NMDevice *device;
 	NMConnection *connection;
-	NMVPNConnection *vpn_connection;
+	NMVPNConnection *vpn_connection = NULL;
 
 	*vpn_connection_path = NULL;
 
