@@ -1167,6 +1167,13 @@ device_activation_go (NMDevice *self)
 	                       self);
 	priv->secrets_updated_id = id;
 
+	/* HACK: update the state a bit early to avoid a race between the 
+	 * scheduled stage1 handler and nm_policy_device_change_check() thinking
+	 * that the activation request isn't deferred because the deferred bit
+	 * gets cleared a bit too early, when the connection becomes valid.
+	 */
+	nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE);
+
 	nm_device_activate_schedule_stage1_device_prepare (self);
 }
 

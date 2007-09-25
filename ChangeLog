@@ -1,5 +1,11 @@
 2007-09-25  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device.c
+		- (device_activation_go): small hack to work around race when
+			activating deferred connections; should solve this in a better way
+
+2007-09-25  Dan Williams  <dcbw@redhat.com>
+
 	* introspection/nm-device.xml
 	  libnm-glib/nm-device.c
 	  libnm-glib/nm-device.h
