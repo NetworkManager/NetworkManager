@@ -2,23 +2,23 @@
 #include <nm-utils.h>
 #include "nm-settings.h"
 
-static GError *
-new_error (const gchar *format, ...)
+
+GError *
+nm_settings_new_error (const gchar *format, ...)
 {
 	GError *err;
 	va_list args;
 	gchar *msg;
 	static GQuark domain_quark = 0;
 
+	if (domain_quark == 0)
+		domain_quark = g_quark_from_static_string ("nm_settings_error");
+
 	va_start (args, format);
 	msg = g_strdup_vprintf (format, args);
 	va_end (args);
 
-	if (domain_quark == 0) {
-		domain_quark = g_quark_from_static_string ("nm-settings-error-quark");
-	}
-
-	err = g_error_new_literal (domain_quark, -1, (const gchar *) msg);
+	err = g_error_new_literal (domain_quark, 1, (const gchar *) msg);
 
 	g_free (msg);
 
@@ -51,7 +51,9 @@ impl_settings_list_connections (NMSettings *settings, GPtrArray **connections, G
 	g_return_val_if_fail (NM_IS_SETTINGS (settings), FALSE);
 
 	if (!SETTINGS_CLASS (settings)->list_connections) {
-		*error = new_error ("%s.%d - Missing implementation for Settings::list_connections.", __FILE__, __LINE__);
+		*error = nm_settings_new_error ("%s.%d - Missing implementation for "
+		                                "Settings::list_connections.",
+		                                __FILE__, __LINE__);
 		return FALSE;
 	}
 
@@ -143,7 +145,9 @@ impl_connection_settings_get_id (NMConnectionSettings *connection,
 	g_return_val_if_fail (NM_IS_CONNECTION_SETTINGS (connection), FALSE);
 
 	if (!CONNECTION_SETTINGS_CLASS (connection)->get_id) {
-		*error = new_error ("%s.%d - Missing implementation for ConnectionSettings::get_id.", __FILE__, __LINE__);
+		*error = nm_settings_new_error ("%s.%d - Missing implementation for "
+		                                "ConnectionSettings::get_id.",
+		                                __FILE__, __LINE__);
 		return FALSE;
 	}
 
@@ -160,7 +164,9 @@ impl_connection_settings_get_settings (NMConnectionSettings *connection,
 	g_return_val_if_fail (NM_IS_CONNECTION_SETTINGS (connection), FALSE);
 
 	if (!CONNECTION_SETTINGS_CLASS (connection)->get_settings) {
-		*error = new_error ("%s.%d - Missing implementation for ConnectionSettings::get_settings.", __FILE__, __LINE__);
+		*error = nm_settings_new_error ("%s.%d - Missing implementation for "
+		                                "ConnectionSettings::get_settings.",
+		                                __FILE__, __LINE__);
 		return FALSE;
 	}
 
@@ -178,14 +184,18 @@ impl_connection_settings_get_secrets (NMConnectionSettings *connection,
 	GError *error = NULL;
 
 	if (!NM_IS_CONNECTION_SETTINGS (connection)) {
-		error = new_error ("%s.%d - Invalid connection in ConnectionSettings::get_secret.", __FILE__, __LINE__);
+		error = nm_settings_new_error ("%s.%d - Invalid connection in "
+		                               "ConnectionSettings::get_secrets.",
+		                               __FILE__, __LINE__);
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
 		return;
 	}
 
 	if (!CONNECTION_SETTINGS_CLASS (connection)->get_secrets) {
-		error = new_error ("%s.%d - Missing implementation for ConnectionSettings::get_secret.", __FILE__, __LINE__);
+		error = nm_settings_new_error ("%s.%d - Missing implementation for "
+		                               "ConnectionSettings::get_secrets.",
+		                               __FILE__, __LINE__);
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
 		return;

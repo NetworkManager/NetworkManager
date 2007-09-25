@@ -1,5 +1,18 @@
 2007-09-25  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/nm-settings.c
+	  libnm-glib/nm-settings.h
+		- (new_error -> nm_settings_new_error): make public so that subclasses
+			can use the same error domain.  Also pass a valid error code to
+			g_error_new_literal() so that libdbus doesn't assert when converting
+			the GError into a DBusError
+		- (impl_settings_list_connections, impl_connection_settings_get_id,
+		   impl_connection_settings_get_settings,
+		   impl_connection_settings_get_secrets): use new error creator
+			function
+
+2007-09-25  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManager.c
 		- (nm_signal_handler, main): don't ignore SIGTERM/SIGINT during startup
 

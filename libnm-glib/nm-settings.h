@@ -72,6 +72,8 @@ GType nm_settings_get_type (void);
 
 void  nm_settings_signal_new_connection (NMSettings *settings, NMConnectionSettings *connection);
 
+GError * nm_settings_new_error (const gchar *format, ...);
+
 G_END_DECLS
 
 #endif
