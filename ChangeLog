@@ -1,5 +1,10 @@
 2007-09-25  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManager.c
+		- (nm_signal_handler, main): don't ignore SIGTERM/SIGINT during startup
+
+2007-09-25  Dan Williams  <dcbw@redhat.com>
+
 	* src/supplicant-manager/nm-supplicant-manager.c
 		- (poke_supplicant_cb, nm_supplicant_manager_init,
 		   nm_supplicant_manager_dispose, nm_supplicant_manager_name_owner_changed,

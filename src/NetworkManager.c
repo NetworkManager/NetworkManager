@@ -102,6 +102,8 @@ nm_monitor_setup (void)
 	return TRUE;
 }
 
+static gboolean quit_early = FALSE;
+
 static void
 nm_signal_handler (int signo)
 {
@@ -139,6 +141,7 @@ nm_signal_handler (int signo)
 			--in_fatal;
 
 			nm_warning ("Caught signal %d, shutting down normally.", signo);
+			quit_early = TRUE;
 			g_main_loop_quit (main_loop);
 			break;
 
@@ -366,6 +369,10 @@ main (int argc, char *argv[])
 
 	/* Bring up the loopback interface. */
 	nm_system_enable_loopback ();
+
+	/* Told to quit before getting to the mainloop by the signal handler */
+	if (quit_early == TRUE)
+		goto done;
 
 	/* Run the main loop */
 	exit_status = 0;
