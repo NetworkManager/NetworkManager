@@ -282,6 +282,18 @@ nm_act_request_new_deferred (const char *service_name,
 	return NM_ACT_REQUEST (obj);
 }
 
+gboolean
+nm_act_request_is_deferred (NMActRequest *req)
+{
+	NMActRequestPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
+
+	priv = NM_ACT_REQUEST_GET_PRIVATE (req);
+
+	return priv->deferred_connection_path ? TRUE : FALSE;
+}
+
 static void
 connection_secrets_updated_cb (NMConnection *connection,
                                const char *setting_name,

@@ -1,3 +1,9 @@
+2007-09-25  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-activation-request.c
+	  src/nm-activation-request.h
+		- (nm_act_request_is_deferred): new function
+
 2007-09-24  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-11-wireless.c

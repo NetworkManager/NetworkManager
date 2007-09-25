@@ -59,6 +59,8 @@ NMActRequest *nm_act_request_new_deferred (const char *service_name,
                                            const char *specific_object,
                                            gboolean user_requested);
 
+gboolean      nm_act_request_is_deferred  (NMActRequest *req);
+
 NMConnection *nm_act_request_get_connection     (NMActRequest *req);
 const char *  nm_act_request_get_specific_object(NMActRequest *req);
 gboolean      nm_act_request_get_user_requested (NMActRequest *req);
