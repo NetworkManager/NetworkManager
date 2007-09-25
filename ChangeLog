@@ -1,5 +1,14 @@
 2007-09-25  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-manager.c
+		- (nm_manager_update_state): new function; updates state and emits
+			appropriate signals ensuring a state-change signal for the same state
+			never gets emitted twice in a row.
+		- (manager_device_state_changed): handle more device state to get a
+			better picture of the overall NM state
+
+2007-09-25  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/nm-settings.c
 	  libnm-glib/nm-settings.h
 		- (new_error -> nm_settings_new_error): make public so that subclasses

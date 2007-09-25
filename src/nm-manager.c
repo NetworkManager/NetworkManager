@@ -21,11 +21,11 @@ static gboolean impl_manager_legacy_state (NMManager *manager, guint32 *state, G
 #include "nm-manager-glue.h"
 
 static void nm_manager_connections_destroy (NMManager *manager, NMConnectionType type);
-static void manager_state_changed (NMManager *manager);
 static void manager_set_wireless_enabled (NMManager *manager, gboolean enabled);
 
 typedef struct {
 	GSList *devices;
+	NMState state;
 
 	GHashTable *user_connections;
 	DBusGProxy *user_proxy;
@@ -71,6 +71,7 @@ nm_manager_init (NMManager *manager)
 
 	priv->wireless_enabled = TRUE;
 	priv->sleeping = FALSE;
+	priv->state = NM_STATE_DISCONNECTED;
 
 	priv->user_connections = g_hash_table_new_full (g_str_hash,
 	                                                g_str_equal,
@@ -81,6 +82,47 @@ nm_manager_init (NMManager *manager)
 	                                                g_str_equal,
 	                                                g_free,
 	                                                g_object_unref);
+}
+
+NMState
+nm_manager_get_state (NMManager *manager)
+{
+	g_return_val_if_fail (NM_IS_MANAGER (manager), NM_STATE_UNKNOWN);
+
+	return NM_MANAGER_GET_PRIVATE (manager)->state;
+}
+
+static void
+nm_manager_update_state (NMManager *manager)
+{
+	NMManagerPrivate *priv;
+	NMState new_state = NM_STATE_DISCONNECTED;
+
+	g_return_if_fail (NM_IS_MANAGER (manager));
+
+	priv = NM_MANAGER_GET_PRIVATE (manager);
+
+	if (priv->sleeping) {
+		new_state = NM_STATE_ASLEEP;
+	} else {
+		GSList *iter;
+
+		for (iter = priv->devices; iter; iter = iter->next) {
+			NMDevice *dev = NM_DEVICE (iter->data);
+
+			if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED) {
+				new_state = NM_STATE_CONNECTED;
+				break;
+			} else if (nm_device_is_activating (dev)) {
+				new_state = NM_STATE_CONNECTING;
+			}
+		}
+	}
+
+	if (priv->state != new_state) {
+		priv->state = new_state;
+		g_signal_emit (manager, signals[STATE_CHANGE], 0, priv->state);
+	}
 }
 
 static void
@@ -125,7 +167,8 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_STATE:
-		g_value_set_uint (value, nm_manager_get_state (NM_MANAGER (object)));
+		nm_manager_update_state (NM_MANAGER (object));
+		g_value_set_uint (value, priv->state);
 		break;
 	case PROP_WIRELESS_ENABLED:
 		g_value_set_boolean (value, priv->wireless_enabled);
@@ -587,12 +630,6 @@ nm_manager_connections_destroy (NMManager *manager,
 }
 
 static void
-manager_state_changed (NMManager *manager)
-{
-	g_signal_emit (manager, signals[STATE_CHANGE], 0, nm_manager_get_state (manager));
-}
-
-static void
 manager_set_wireless_enabled (NMManager *manager, gboolean enabled)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
@@ -625,18 +662,7 @@ manager_device_state_changed (NMDevice *device, NMDeviceState state, gpointer us
 {
 	NMManager *manager = NM_MANAGER (user_data);
 
-	/* Only these state changes can modify the manager state */
-	switch (state) {
-		case NM_DEVICE_STATE_ACTIVATED:
-		case NM_DEVICE_STATE_FAILED:
-		case NM_DEVICE_STATE_CANCELLED:
-		case NM_DEVICE_STATE_DOWN:
-		case NM_DEVICE_STATE_DISCONNECTED:
-			manager_state_changed (manager);
-			break;
-		default:
-			break;
-	}
+	nm_manager_update_state (manager);
 }
 
 void
@@ -773,33 +799,6 @@ nm_manager_get_device_by_udi (NMManager *manager, const char *udi)
 	return NULL;
 }
 
-NMState
-nm_manager_get_state (NMManager *manager)
-{
-	NMManagerPrivate *priv;
-	GSList *iter;
-	NMState state = NM_STATE_DISCONNECTED;
-
-	g_return_val_if_fail (NM_IS_MANAGER (manager), NM_STATE_UNKNOWN);
-
-	priv = NM_MANAGER_GET_PRIVATE (manager);
-
-	if (priv->sleeping)
-		return NM_STATE_ASLEEP;
-
-	for (iter = priv->devices; iter; iter = iter->next) {
-		NMDevice *dev = NM_DEVICE (iter->data);
-
-		if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED)
-			return NM_STATE_CONNECTED;
-
-		if (nm_device_is_activating (dev))
-			state = NM_STATE_CONNECTING;
-	}
-
-	return state;
-}
-
 gboolean
 nm_manager_wireless_enabled (NMManager *manager)
 {
@@ -845,7 +844,7 @@ nm_manager_sleep (NMManager *manager, gboolean sleep)
 		priv->devices = NULL;
 	}
 
-	manager_state_changed (manager);
+	nm_manager_update_state (manager);
 }
 
 static gboolean
@@ -890,7 +889,10 @@ impl_manager_legacy_wake  (NMManager *manager, GError **err)
 static gboolean
 impl_manager_legacy_state (NMManager *manager, guint32 *state, GError **err)
 {
-	*state = nm_manager_get_state (manager);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+
+	nm_manager_update_state (manager);
+	*state = priv->state;
 	return TRUE;
 }
 
