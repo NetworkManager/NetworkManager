@@ -223,6 +223,17 @@ impl_device_activate (NMDeviceInterface *device,
 			}
 		}
 		break;
+	case NM_STATE_DISCONNECTED:
+		/* Check for devices that have deferred activation requests */
+		for (iter = nm_manager_get_devices (manager); iter; iter = iter->next) {
+			NMActRequest *req = nm_device_get_act_request (NM_DEVICE (iter->data));
+
+			if (req && nm_act_request_is_deferred (req)) {
+				old_dev = NM_DEVICE (iter->data);
+				break;
+			}
+		}
+		break;
 	default:
 		break;
 	}

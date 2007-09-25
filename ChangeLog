@@ -1,5 +1,21 @@
 2007-09-25  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_device_change_check): handle devices that have a
+			deferred activation.  These devices are not really active _yet_,
+			but need to be treated as such here.  Don't interrupt them
+			automatically.
+
+	* src/nm-device-interface.c
+		- (impl_device_activate): handle devices that have a deferred activation
+			like activating or active devices.  When multiple active devices
+			get committed, the device shouldn't be deactivated until the
+			connection details are available to avoid DoS and such.  Currently,
+			any active, activating, or deferred activation device is deactivated
+			here before starting the new activation request.
+
+2007-09-25  Dan Williams  <dcbw@redhat.com>
+
 	Properly re-query secrets from the settings daemon when stuff fails.
 
 	* src/nm-device-802-11-wireless.c

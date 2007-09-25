@@ -214,17 +214,31 @@ nm_policy_device_change_check (gpointer user_data)
 			}
 		}
 		break;
+	case NM_STATE_DISCONNECTED:
+		/* Check for devices that have deferred activation requests */
+		for (iter = nm_manager_get_devices (policy->manager); iter; iter = iter->next) {
+			NMActRequest *req = nm_device_get_act_request (NM_DEVICE (iter->data));
+
+			if (req && nm_act_request_is_deferred (req)) {
+				old_dev = NM_DEVICE (iter->data);
+				break;
+			}
+		}
+		break;
 	default:
 		break;
 	}
 
 	if (old_dev) {
 		guint32 caps = nm_device_get_capabilities (old_dev);
+		NMActRequest *req = nm_device_get_act_request (old_dev);
 
-		/* Don't interrupt a currently activating device. */
-		if (   nm_device_is_activating (old_dev)
-		    && !nm_device_can_interrupt_activation (old_dev)) {
-			nm_info ("Old device '%s' activating, won't change.", nm_device_get_iface (old_dev));
+		/* Don't interrupt a currently activating device automatically. */
+		if (   (nm_device_is_activating (old_dev)
+		        && !nm_device_can_interrupt_activation (old_dev))
+		    || nm_act_request_is_deferred (req)) {
+			nm_info ("Old device '%s' activating, won't change.",
+			         nm_device_get_iface (old_dev));
 			goto out;
 		}
 
@@ -294,17 +308,21 @@ nm_policy_device_change_check (gpointer user_data)
 				NMConnection *old_connection = nm_act_request_get_connection (old_act_req);
 				NMAccessPoint *old_ap = nm_device_802_11_wireless_get_activation_ap (NM_DEVICE_802_11_WIRELESS (old_dev));
 				int old_mode = nm_ap_get_mode (old_ap);
-				gboolean same_request = FALSE;
+				gboolean same_activating = FALSE;
 
-				/* Don't try to re-activate the same connection if it's not
-				 * failed yet.
+				/* Don't interrupt activation of a wireless device by
+				 * trying to auto-activate any connection on that device.
 				 */
-				if (   (old_dev == new_dev)
-				    && nm_device_is_activating (new_dev)
-				    && (old_connection == connection))
-					same_request = TRUE;
+				if (old_dev == new_dev) {
+					NMActRequest *req = nm_device_get_act_request (new_dev);
 
-				if (!same_request && !old_has_link && (old_mode != IW_MODE_ADHOC)) {
+					if (nm_device_is_activating (new_dev))
+						same_activating = TRUE;
+					else if (req && nm_act_request_is_deferred (req))
+						same_activating = TRUE;
+ 				}
+
+				if (!same_activating && !old_has_link && (old_mode != IW_MODE_ADHOC)) {
 					NMSettingConnection * new_sc = (NMSettingConnection *) nm_connection_get_setting (connection, NM_SETTING_CONNECTION);
 					NMSettingConnection * old_sc = (NMSettingConnection *) nm_connection_get_setting (old_connection, NM_SETTING_CONNECTION);
 
