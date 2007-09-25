@@ -2674,6 +2674,8 @@ activation_success_handler (NMDevice *dev)
 	if (!nm_ap_get_address (ap) || !nm_ethernet_address_is_valid (nm_ap_get_address (ap)))
 		nm_ap_set_address (ap, &addr);
 
+	nm_device_802_11_wireless_update_signal_strength (self, ap);
+
 	// FIXME: send connection + new BSSID to info-daemon
 }
 
