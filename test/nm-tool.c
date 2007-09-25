@@ -165,9 +165,9 @@ detail_network (gpointer data, gpointer user_data)
 
 	str = g_string_new (NULL);
 	g_string_append_printf (str,
-							"%s Mode, Freq %.3f MHz, Rate %d Mb/s, Strength %d",
+							"%s Mode, Freq %d MHz, Rate %d Mb/s, Strength %d",
 							(nm_access_point_get_mode (ap) == IW_MODE_INFRA) ? "Infrastructure" : "Ad-Hoc",
-							nm_access_point_get_frequency (ap) / 1000000000,
+							nm_access_point_get_frequency (ap),
 							nm_access_point_get_rate (ap) / 1024,
 							nm_access_point_get_strength (ap));
 
