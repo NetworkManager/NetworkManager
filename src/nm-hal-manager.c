@@ -224,7 +224,7 @@ device_added (LibHalContext *ctx, const char *udi)
 	NMHalManager *manager = (NMHalManager *) libhal_ctx_get_user_data (ctx);
 	NMDeviceCreatorFn creator_fn;
 
-	nm_debug ("New device added (hal udi is '%s').", udi );
+//	nm_debug ("New device added (hal udi is '%s').", udi );
 
 	/* Sometimes the device's properties (like net.interface) are not set up yet,
 	 * so this call will fail, and it will actually be added when hal sets the device's
@@ -241,7 +241,7 @@ device_removed (LibHalContext *ctx, const char *udi)
 	NMHalManager *manager = (NMHalManager *) libhal_ctx_get_user_data (ctx);
 	NMDevice *dev;
 
-	nm_debug ("Device removed (hal udi is '%s').", udi );
+//	nm_debug ("Device removed (hal udi is '%s').", udi );
 
 	if ((dev = nm_manager_get_device_by_udi (manager->nm_manager, udi)))
 		nm_manager_remove_device (manager->nm_manager, dev);
