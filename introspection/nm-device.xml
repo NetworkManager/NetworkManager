@@ -20,6 +20,7 @@
     <property name="Ip4Address" type="i" access="read"/>
     <property name="State" type="u" access="read"/>
     <property name="Ip4Config" type="o" access="read"/>
+    <property name="Carrier" type="b" access="read"/>
 
     <!-- Ugh, but I see no other way of getting the type on the caller
          based on dbus object path only -->

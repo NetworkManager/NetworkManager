@@ -1713,6 +1713,9 @@ get_property (GObject *object, guint prop_id,
 	case NM_DEVICE_INTERFACE_PROP_DEVICE_TYPE:
 		g_value_set_uint (value, priv->type);
 		break;
+	case NM_DEVICE_INTERFACE_PROP_CARRIER:
+		g_value_set_boolean (value, priv->link_active);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1781,6 +1784,10 @@ nm_device_class_init (NMDeviceClass *klass)
 	g_object_class_override_property (object_class,
 									  NM_DEVICE_INTERFACE_PROP_DEVICE_TYPE,
 									  NM_DEVICE_INTERFACE_DEVICE_TYPE);
+
+	g_object_class_override_property (object_class,
+									  NM_DEVICE_INTERFACE_PROP_CARRIER,
+									  NM_DEVICE_INTERFACE_CARRIER);
 }
 
 void

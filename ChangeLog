@@ -1,5 +1,17 @@
 2007-09-25  Dan Williams  <dcbw@redhat.com>
 
+	* introspection/nm-device.xml
+	  libnm-glib/nm-device.c
+	  libnm-glib/nm-device.h
+		- Add 'Carrier' property to exported NMDevice objects
+
+	* src/nm-device-interface.h
+	  src/nm-device-interface.c
+	  src/nm-device.c
+		- Add a 'carrier' property to internal NMDevice objects
+
+2007-09-25  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 		- (ap_auth_enforced): also return the encryption status of the AP so
 			that callers can differentiate easily between unencrypted APs
