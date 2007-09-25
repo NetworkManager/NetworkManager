@@ -1485,8 +1485,8 @@ request_wireless_scan (gpointer user_data)
 	gboolean success = TRUE;
 
 	if (can_scan (self)) {
-		nm_debug ("Starting wireless scan for device %s.",
-				  nm_device_get_iface (NM_DEVICE (user_data)));
+//		nm_debug ("Starting wireless scan for device %s.",
+//				  nm_device_get_iface (NM_DEVICE (user_data)));
 
 		success = nm_supplicant_interface_request_scan (priv->supplicant.iface);
 		if (success)
