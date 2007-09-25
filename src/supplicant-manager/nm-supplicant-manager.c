@@ -29,11 +29,14 @@
 #include "nm-supplicant-marshal.h"
 #include "nm-utils.h"
 
+#define SUPPLICANT_POKE_INTERVAL 6000
+
 typedef struct {
 	NMDBusManager *	dbus_mgr;
 	guint32         state;
 	GSList *        ifaces;
 	gboolean        dispose_has_run;
+	guint			poke_id;
 } NMSupplicantManagerPrivate;
 
 #define NM_SUPPLICANT_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
@@ -52,7 +55,7 @@ static void nm_supplicant_manager_name_owner_changed (NMDBusManager *dbus_mgr,
 static void nm_supplicant_manager_set_state (NMSupplicantManager * self,
                                              guint32 new_state);
 
-static void nm_supplicant_manager_startup (NMSupplicantManager * self);
+static gboolean nm_supplicant_manager_startup (NMSupplicantManager * self);
 
 
 /* Signals */
@@ -78,56 +81,58 @@ nm_supplicant_manager_get (void)
 	return singleton;
 }
 
-static void
-poke_supplicant_cb  (DBusGProxy *proxy,
-                     DBusGProxyCall *call_id,
-                     gpointer user_data)
+static gboolean
+poke_supplicant_cb (gpointer user_data)
 {
-	/* Ignore the response, just trying to service-activate the supplicant */
-}
-
-static void
-nm_supplicant_manager_init (NMSupplicantManager * self)
-{
+	NMSupplicantManager *self = NM_SUPPLICANT_MANAGER (user_data);
 	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
-	NMDBusManager *dbus_mgr;
 	DBusGConnection *g_connection;
 	DBusGProxy *proxy;
+	const char *tmp = "ignoreme";
 
-	priv->dispose_has_run = FALSE;
-	priv->state = NM_SUPPLICANT_MANAGER_STATE_DOWN;
-	priv->dbus_mgr = nm_dbus_manager_get ();
-
-	nm_supplicant_manager_startup (self);
-
-	g_signal_connect (priv->dbus_mgr,
-	                  "name-owner-changed",
-	                  G_CALLBACK (nm_supplicant_manager_name_owner_changed),
-	                  self);
-
-	/* Poke the supplicant so that it gets activated by dbus system bus
-	 * activation.
-	 */
-	dbus_mgr = nm_dbus_manager_get ();
-	g_connection = nm_dbus_manager_get_connection (dbus_mgr);
+	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
 	proxy = dbus_g_proxy_new_for_name (g_connection,
 	                                   WPAS_DBUS_SERVICE,
 	                                   WPAS_DBUS_PATH,
 	                                   WPAS_DBUS_INTERFACE);
 	if (!proxy) {
 		nm_warning ("Error: could not init wpa_supplicant proxy");
-	} else {
-		DBusGProxyCall *call;
-		const char *tmp = "ignore";
-
-		call = dbus_g_proxy_begin_call (proxy, "getInterface",
-		                                poke_supplicant_cb,
-		                                NULL,
-		                                NULL,
-		                                G_TYPE_STRING, tmp,
-		                                G_TYPE_INVALID);
+		return TRUE;
 	}
-	g_object_unref (dbus_mgr);
+
+	nm_info ("Trying to start the supplicant...");
+	dbus_g_proxy_call_no_reply (proxy, "getInterface", G_TYPE_STRING, tmp, G_TYPE_INVALID);
+	g_object_unref (proxy);
+
+	return TRUE;
+}
+
+static void
+nm_supplicant_manager_init (NMSupplicantManager * self)
+{
+	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
+	gboolean running;
+
+	priv->dispose_has_run = FALSE;
+	priv->state = NM_SUPPLICANT_MANAGER_STATE_DOWN;
+	priv->dbus_mgr = nm_dbus_manager_get ();
+	priv->poke_id = 0;
+
+	running = nm_supplicant_manager_startup (self);
+
+	g_signal_connect (priv->dbus_mgr,
+	                  "name-owner-changed",
+	                  G_CALLBACK (nm_supplicant_manager_name_owner_changed),
+	                  self);
+
+	if (!running) {
+		/* Poke the supplicant so that it gets activated by dbus system bus
+		 * activation.
+		 */
+		priv->poke_id = g_timeout_add (SUPPLICANT_POKE_INTERVAL,
+		                               poke_supplicant_cb,
+		                               (gpointer) self);
+	}
 }
 
 static void
@@ -142,6 +147,11 @@ nm_supplicant_manager_dispose (GObject *object)
 
 	/* Make sure dispose does not run twice. */
 	priv->dispose_has_run = TRUE;
+
+	if (priv->poke_id) {
+		g_source_remove (priv->poke_id);
+		priv->poke_id = 0;
+	}
 
 	/* 
 	 * In dispose, you are supposed to free all types referenced from this
@@ -186,6 +196,7 @@ nm_supplicant_manager_name_owner_changed (NMDBusManager *dbus_mgr,
                                           gpointer user_data)
 {
 	NMSupplicantManager * self = (NMSupplicantManager *) user_data;
+	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (self);
 	gboolean old_owner_good = (old_owner && strlen (old_owner));
 	gboolean new_owner_good = (new_owner && strlen (new_owner));
 
@@ -194,9 +205,25 @@ nm_supplicant_manager_name_owner_changed (NMDBusManager *dbus_mgr,
 		return;
 
 	if (!old_owner_good && new_owner_good) {
-		nm_supplicant_manager_startup (self);
+		gboolean running;
+
+		running = nm_supplicant_manager_startup (self);
+
+		if (running && priv->poke_id) {
+			g_source_remove (priv->poke_id);
+			priv->poke_id = 0;
+		}
 	} else if (old_owner_good && !new_owner_good) {
 		nm_supplicant_manager_set_state (self, NM_SUPPLICANT_MANAGER_STATE_DOWN);
+
+		if (!priv->poke_id) {
+			/* Poke the supplicant so that it gets activated by dbus system bus
+			 * activation.
+			 */
+			priv->poke_id = g_timeout_add (SUPPLICANT_POKE_INTERVAL,
+			                               poke_supplicant_cb,
+			                               (gpointer) self);
+		}
 	}
 }
 
@@ -227,7 +254,7 @@ nm_supplicant_manager_set_state (NMSupplicantManager * self, guint32 new_state)
 	               old_state);
 }
 
-static void
+static gboolean
 nm_supplicant_manager_startup (NMSupplicantManager * self)
 {
 	gboolean running;
@@ -235,9 +262,10 @@ nm_supplicant_manager_startup (NMSupplicantManager * self)
 	/* FIXME: convert to pending call */
 	running = nm_dbus_manager_name_has_owner (NM_SUPPLICANT_MANAGER_GET_PRIVATE (self)->dbus_mgr,
 	                                          WPAS_DBUS_SERVICE);
-	if (running) {
+	if (running)
 		nm_supplicant_manager_set_state (self, NM_SUPPLICANT_MANAGER_STATE_IDLE);
-	}
+
+	return running;
 }
 
 NMSupplicantInterface *

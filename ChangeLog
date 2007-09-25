@@ -1,5 +1,15 @@
 2007-09-25  Dan Williams  <dcbw@redhat.com>
 
+	* src/supplicant-manager/nm-supplicant-manager.c
+		- (poke_supplicant_cb, nm_supplicant_manager_init,
+		   nm_supplicant_manager_dispose, nm_supplicant_manager_name_owner_changed,
+		   nm_supplicant_manager_startup): when the supplicant isn't running,
+			try to start it periodically via system bus activation.  Fixes
+			a problem where if wpa_supplicant goes away, NM gets stuck waiting
+			for the supplicant to come back
+
+2007-09-25  Dan Williams  <dcbw@redhat.com>
+
 	Ensure that old activation requests are forgotten about; previously
 	hitting Cancel in the password dialog would deactivate whatever device
 	that password was requested for, even if that wasn't the currently
