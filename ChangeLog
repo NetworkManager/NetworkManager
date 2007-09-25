@@ -1,5 +1,22 @@
 2007-09-25  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-connection.c
+	  libnm-util/nm-connection.h
+		- (nm_connection_clear_secrets): new function; clear secrets out of
+			each NMSetting in an NMConnection
+
+	* libnm-util/nm-setting.h
+	  libnm-util/nm-setting.c
+		- (nm_setting_clear_secrets, default_setting_clear_secrets): clear 
+			secrets out of an NMSetting
+		- (nm_setting_connection_new, nm_setting_ip4_config_new, 
+		   nm_setting_wired_new, nm_setting_wireless_new,
+		   nm_setting_wireless_security_new, nm_setting_ppp_new,
+		   nm_setting_vpn_new, nm_setting_vpn_properties_new): set clear_secrets
+			to default handler default_setting_clear_secrets()
+
+2007-09-25  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-activation-request.c
 	  src/nm-activation-request.h
 		- (nm_act_request_is_deferred): new function

@@ -190,6 +190,25 @@ nm_connection_need_secrets (NMConnection *connection)
 }
 
 static void
+clear_setting_secrets (gpointer key, gpointer data, gpointer user_data)
+{
+	NMSetting *setting = (NMSetting *) data;
+
+	nm_setting_clear_secrets (setting);
+}
+
+void
+nm_connection_clear_secrets (NMConnection *connection)
+{
+	NMConnectionPrivate *priv;
+
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+
+	priv = NM_CONNECTION_GET_PRIVATE (connection);
+	g_hash_table_foreach (priv->settings, clear_setting_secrets, NULL);
+}
+
+static void
 add_one_setting_to_hash (gpointer key, gpointer data, gpointer user_data)
 {
 	NMSetting *setting = (NMSetting *) data;

@@ -75,6 +75,15 @@ nm_setting_update_secrets (NMSetting *setting,
 	return TRUE;
 }
 
+void
+nm_setting_clear_secrets (NMSetting *setting)
+{
+	g_return_if_fail (setting != NULL);
+
+	if (setting->clear_secrets_fn)
+		return setting->clear_secrets_fn (setting);
+}
+
 GPtrArray *
 nm_setting_need_secrets (NMSetting *setting)
 {
@@ -366,6 +375,60 @@ nm_setting_hash (NMSetting *setting)
 	return hash;
 }
 
+static void
+default_setting_clear_secrets (NMSetting *setting)
+{
+	SettingMember *m;
+
+	g_return_if_fail (setting != NULL);
+
+	m = setting->_members;
+	while (m->key) {
+		if (m->secret == FALSE)
+			goto next;
+
+		switch (m->type) {
+			case NM_S_TYPE_GVALUE_HASH: {
+				GHashTable **val = (GHashTable **) G_STRUCT_MEMBER_P (setting, m->offset);
+				g_hash_table_remove_all (*val);
+				break;
+			}
+			case NM_S_TYPE_STRING: {
+				char **val = (char **) G_STRUCT_MEMBER_P (setting, m->offset);
+				g_free (*val);
+				*val = NULL;
+				break;
+			}
+			case NM_S_TYPE_BOOL: {
+				gboolean *val = (gboolean *) G_STRUCT_MEMBER_P (setting, m->offset);
+				*val = FALSE;
+				break;
+			}
+			case NM_S_TYPE_UINT32: {
+				guint32 *val = (guint32 *) G_STRUCT_MEMBER_P (setting, m->offset);
+				*val = 0;
+				break;
+			}
+			case NM_S_TYPE_BYTE_ARRAY: {
+				GByteArray **val = (GByteArray **) G_STRUCT_MEMBER_P (setting, m->offset);
+				g_byte_array_free (*val, TRUE);
+				*val = NULL;
+				break;
+			}
+			case NM_S_TYPE_STRING_ARRAY: {
+				GSList **val = (GSList **) G_STRUCT_MEMBER_P (setting, m->offset);
+				g_slist_foreach (*val, (GFunc) g_free, NULL);
+				g_slist_free (*val);
+				*val = NULL;
+				break;
+			}
+		}
+
+next:
+		m++;
+	}
+}
+
 
 /* Connection */
 
@@ -410,6 +473,7 @@ nm_setting_connection_new (void)
 	setting->_members = con_table;
 	setting->verify_fn = setting_connection_verify;
 	setting->hash_fn = default_setting_hash;
+	setting->clear_secrets_fn = default_setting_clear_secrets;
 	setting->destroy_fn = setting_connection_destroy;
 
 	return setting;
@@ -478,6 +542,7 @@ nm_setting_ip4_config_new (void)
 	setting->_members = ip4_config_table;
 	setting->verify_fn = setting_ip4_config_verify;
 	setting->hash_fn = default_setting_hash;
+	setting->clear_secrets_fn = default_setting_clear_secrets;
 	setting->destroy_fn = setting_ip4_config_destroy;
 
 	return setting;
@@ -563,6 +628,7 @@ nm_setting_wired_new (void)
 	setting->_members = wired_table;
 	setting->verify_fn = setting_wired_verify;
 	setting->hash_fn = default_setting_hash;
+	setting->clear_secrets_fn = default_setting_clear_secrets;
 	setting->destroy_fn = setting_wired_destroy;
 
 	s_wired->auto_negotiate = TRUE;
@@ -715,6 +781,7 @@ nm_setting_wireless_new (void)
 	setting->_members = wireless_table;
 	setting->verify_fn = setting_wireless_verify;
 	setting->hash_fn = default_setting_hash;
+	setting->clear_secrets_fn = default_setting_clear_secrets;
 	setting->destroy_fn = setting_wireless_destroy;
 
 	return setting;
@@ -1057,6 +1124,7 @@ nm_setting_wireless_security_new (void)
 	setting->hash_fn = default_setting_hash;
 	setting->update_secrets_fn = setting_wireless_security_update_secrets;
 	setting->need_secrets_fn = setting_wireless_security_need_secrets;
+	setting->clear_secrets_fn = default_setting_clear_secrets;
 	setting->destroy_fn = setting_wireless_security_destroy;
 
 	return setting;
@@ -1127,6 +1195,7 @@ nm_setting_ppp_new (void)
 	setting->_members = ppp_table;
 	setting->verify_fn = setting_ppp_verify;
 	setting->hash_fn = default_setting_hash;
+	setting->clear_secrets_fn = default_setting_clear_secrets;
 	setting->destroy_fn = setting_ppp_destroy;
 
 	return setting;
@@ -1193,6 +1262,7 @@ nm_setting_vpn_new (void)
 	setting->_members = vpn_table;
 	setting->verify_fn = setting_vpn_verify;
 	setting->hash_fn = default_setting_hash;
+	setting->clear_secrets_fn = default_setting_clear_secrets;
 	setting->destroy_fn = setting_vpn_destroy;
 
 	return setting;
@@ -1274,6 +1344,7 @@ nm_setting_vpn_properties_new (void)
 	setting->_members = vpn_properties_table;
 	setting->verify_fn = setting_vpn_properties_verify;
 	setting->hash_fn = setting_vpn_properties_hash;
+	setting->clear_secrets_fn = default_setting_clear_secrets;
 	setting->destroy_fn = setting_vpn_properties_destroy;
 
 	s_vpn_props = (NMSettingVPNProperties *) setting;

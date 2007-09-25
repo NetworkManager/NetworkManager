@@ -40,6 +40,8 @@ gboolean      nm_connection_compare       (NMConnection *connection,
 
 const char *  nm_connection_need_secrets  (NMConnection *connection);
 
+void          nm_connection_clear_secrets (NMConnection *connection);
+
 void          nm_connection_update_secrets (NMConnection *connection,
                                             const char *setting_name,
                                             GHashTable *secrets);
