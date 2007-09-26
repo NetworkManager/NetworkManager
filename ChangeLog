@@ -1,3 +1,13 @@
+2007-09-26  Tambet Ingo  <tambet@gmail.com>
+
+	* src/nm-device-802-3-ethernet.c (real_get_best_connection): Don't leak NMManager.
+	The problem with leaking NMManager is that on shutdown, it doesn't get destroyed,
+	which means none of the devices get brought down properly, which in turn leaves
+	DHCP client running.
+
+	* src/nm-device-802-11-wireless.c (real_get_best_connection): Ditto.
+	(supplicant_connection_timeout_cb): Ditto.
+
 2007-09-25  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device.c

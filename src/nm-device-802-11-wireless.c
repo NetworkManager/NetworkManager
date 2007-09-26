@@ -716,6 +716,8 @@ real_get_best_connection (NMDevice *dev,
 		g_slist_free (connections);
 	}
 
+	g_object_unref (manager);
+
 	if (find_info.found)
 		*specific_object = (char *) nm_ap_get_dbus_path (find_info.found_ap);
 	return find_info.found;
@@ -2566,6 +2568,8 @@ real_act_stage2_config (NMDevice *dev)
 		                                   connection,
 		                                   setting_name,
 		                                   FALSE);
+		g_object_unref (manager);
+
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	} else {
 		NMSettingWireless *s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_SETTING_WIRELESS);

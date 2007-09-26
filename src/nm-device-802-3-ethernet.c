@@ -369,7 +369,7 @@ real_get_best_connection (NMDevice *dev,
                           char **specific_object)
 {
 	NMDevice8023Ethernet * self = NM_DEVICE_802_3_ETHERNET (dev);
-	NMManager *manager = nm_manager_get ();
+	NMManager *manager;
 	GSList *connections = NULL;
 	BestConnectionInfo find_info;
 	guint32 caps;
@@ -385,6 +385,8 @@ real_get_best_connection (NMDevice *dev,
 	if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
 		return NULL;
 
+	manager = nm_manager_get ();
+
 	/* System connections first */
 	connections = nm_manager_get_connections (manager, NM_CONNECTION_TYPE_SYSTEM);
 	memset (&find_info, 0, sizeof (BestConnectionInfo));
@@ -399,6 +401,8 @@ real_get_best_connection (NMDevice *dev,
 		g_slist_foreach (connections, find_best_connection, &find_info);
 		g_slist_free (connections);
 	}
+
+	g_object_unref (manager);
 
 	/* Wired devices autoconnect with DHCP by default if they have a link */
 	link_active = nm_device_has_active_link (dev);
