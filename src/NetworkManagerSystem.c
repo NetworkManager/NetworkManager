@@ -314,13 +314,12 @@ gboolean
 nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
                                           const char *iface,
                                           NMIP4Config *config,
-                                          char **routes)
+                                          GSList *routes)
 {
 	NMIP4Config *		ad_config = NULL;
 	struct nl_handle *	nlh = NULL;
 	struct rtnl_addr *	addr = NULL;
 	struct rtnl_link *	request = NULL;
-	int num_routes;
 	NMNamedManager *named_mgr;
 
 	g_return_val_if_fail (config != NULL, FALSE);
@@ -371,20 +370,18 @@ nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
 
 		sleep (1);
 
-		num_routes = g_strv_length (routes);
 		nm_system_device_flush_routes_with_iface (iface);
 
-
-		if (num_routes <= 0)
+		if (g_slist_length (routes) == 0)
 		{
 			nm_system_delete_default_route ();
 			nm_system_device_add_default_route_via_device_with_iface (iface);
 		}
 		else
 		{
-			int i;
-			for (i = 0; i < num_routes; i++)
-			{
+		  GSList *iter;
+
+		  for (iter = routes; iter; iter = iter->next) {
 				char *valid_ip4_route;
 
 				/* Make sure the route is valid, otherwise it's a security risk as the route
@@ -395,7 +392,7 @@ nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
 				 *
 				 * where `rm -rf /` was the route text.  As UID 0 (root), we have to be careful.
 				 */
-				if ((valid_ip4_route = validate_ip4_route (routes[i])))
+				if ((valid_ip4_route = validate_ip4_route ((char *) iter->data)))
 				{
 					nm_system_device_add_route_via_device_with_iface (iface, valid_ip4_route);
 					g_free (valid_ip4_route);

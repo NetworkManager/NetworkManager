@@ -4,8 +4,7 @@
   <interface name="org.freedesktop.NetworkManager.VPN.Plugin">
     <method name="Connect">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_connect"/>
-      <arg name="connection" type="a{sv}" direction="in"/>
-      <arg name="routes" type="as" direction="in"/>
+      <arg name="connection" type="a{sa{sv}}" direction="in"/>
     </method>
 
     <method name="Disconnect">

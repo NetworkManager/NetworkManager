@@ -6,7 +6,6 @@
 
 static gboolean impl_vpn_plugin_connect    (NMVPNPlugin *plugin,
 								    GHashTable *connection,
-								    char **routes,
 								    GError **err);
 
 static gboolean impl_vpn_plugin_disconnect (NMVPNPlugin *plugin,
@@ -247,8 +246,7 @@ quit_timer_expired (gpointer data)
 
 static gboolean
 nm_vpn_plugin_connect (NMVPNPlugin *plugin,
-				   GHashTable *properties,
-				   char **routes,
+				   NMConnection *connection,
 				   GError **err)
 {
 	gboolean ret = FALSE;
@@ -282,7 +280,7 @@ nm_vpn_plugin_connect (NMVPNPlugin *plugin,
 	case NM_VPN_SERVICE_STATE_STOPPED:
 	case NM_VPN_SERVICE_STATE_INIT:
 		nm_vpn_plugin_set_state (plugin, NM_VPN_SERVICE_STATE_STARTING);
-		ret = NM_VPN_PLUGIN_GET_CLASS (plugin)->connect (plugin, properties, routes, err);
+		ret = NM_VPN_PLUGIN_GET_CLASS (plugin)->connect (plugin, connection, err);
 		if (!ret)
 			nm_vpn_plugin_set_state (plugin, NM_VPN_SERVICE_STATE_STOPPED);
 		break;
@@ -311,10 +309,16 @@ nm_vpn_plugin_set_ip4_config (NMVPNPlugin *plugin,
 static gboolean
 impl_vpn_plugin_connect (NMVPNPlugin *plugin,
 					GHashTable *properties,
-					char **routes,
 					GError **err)
 {
-	return nm_vpn_plugin_connect (plugin, properties, routes, err);
+	NMConnection *connection;
+	gboolean success;
+
+	connection = nm_connection_new_from_hash (properties);
+	success = nm_vpn_plugin_connect (plugin, connection, err);
+	g_object_unref (connection);
+
+	return success;
 }
 
 static gboolean

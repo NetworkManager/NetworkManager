@@ -1,5 +1,22 @@
 2007-09-26  Tambet Ingo  <tambet@gmail.com>
 
+	* libnm-glib/nm-vpn-plugin.c (nm_vpn_plugin_connect): Update the plugin activation
+	method.
+	(impl_vpn_plugin_connect): Convert properties hash to NMConnection, activate, and
+	unreference the connection.
+
+	* introspection/nm-vpn-plugin.xml: Modify the 'Connect' method arguments: instead of
+	passing properties hash and routes string list, pass NMConnection (in hashed form).
+
+	* src/vpn-manager/nm-vpn-connection.c (nm_vpn_connection_get_routes): Return routes
+	as GSList, no need to copy stuff around anymore.
+	(nm_vpn_connection_activate): Update the plugin activation method.
+
+	* src/NetworkManagerSystem.c (nm_system_vpn_device_set_from_ip4_config): Convert
+	routes argument to GSList.
+
+2007-09-26  Tambet Ingo  <tambet@gmail.com>
+
 	* src/nm-manager.c (manager_device_state_changed): Listen to device' NEED_AUTH
 	state and try to get the secrets.
 

@@ -7,6 +7,7 @@
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
 #include <NetworkManagerVPN.h>
+#include <nm-connection.h>
 
 G_BEGIN_DECLS
 
@@ -49,8 +50,7 @@ typedef struct {
 
 	/* virtual methods */
 	gboolean (*connect)    (NMVPNPlugin   *plugin,
-					    GHashTable    *properties,
-					    char         **routes,
+					    NMConnection  *connection,
 					    GError       **err);
 
 	gboolean (*disconnect) (NMVPNPlugin   *plugin,

@@ -133,36 +133,15 @@ nm_vpn_connection_get_service (NMVPNConnection *connection)
 	return setting->service_type;
 }
 
-static char **
+static GSList *
 nm_vpn_connection_get_routes (NMVPNConnection *connection)
 {
-	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 	NMSettingVPN *setting;
-	char **routes;
-	int i;
-	GSList *iter;
 
-	setting = (NMSettingVPN *) nm_connection_get_setting (priv->connection, NM_SETTING_VPN);
+	setting = (NMSettingVPN *) nm_connection_get_setting (NM_VPN_CONNECTION_GET_PRIVATE (connection)->connection,
+											    NM_SETTING_VPN);
 
-	routes = g_new (gchar*, g_slist_length (setting->routes) + 1);
-
-	i = 0;
-	for (iter = setting->routes; iter; iter = iter->next)
-		routes[i++] = g_strdup (iter->data);
-
-	routes[i] = NULL;
-
-	return routes;
-}
-
-static GHashTable *
-nm_vpn_connection_get_vpn_data (NMVPNConnection *connection)
-{
-	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
-	NMSettingVPNProperties *setting;
-
-	setting = (NMSettingVPNProperties *) nm_connection_get_setting (priv->connection, NM_SETTING_VPN_PROPERTIES);
-	return setting->data;
+	return setting->routes;
 }
 
 static void
@@ -238,7 +217,6 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	NMIP4Config *config;
 	GValue *val;
 	const char *banner = NULL;
-	char **routes;
 	int i;
 
 	nm_info ("VPN connection '%s' (IP Config Get) reply received.",
@@ -310,9 +288,8 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 	priv->ip4_config = config;
 
-	routes = nm_vpn_connection_get_routes (connection);
-
-	if (nm_system_vpn_device_set_from_ip4_config (priv->parent_dev, priv->tundev, priv->ip4_config, routes)) {
+	if (nm_system_vpn_device_set_from_ip4_config (priv->parent_dev, priv->tundev, priv->ip4_config,
+										 nm_vpn_connection_get_routes (connection))) {
 		nm_info ("VPN connection '%s' (IP Config Get) complete.",
 			    nm_vpn_connection_get_name (connection));
 		nm_vpn_connection_set_state (connection, NM_VPN_CONNECTION_STATE_ACTIVATED);
@@ -321,9 +298,6 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 				  nm_vpn_connection_get_name (connection));
 		nm_vpn_connection_set_state (connection, NM_VPN_CONNECTION_STATE_FAILED);
 	}
-
-	if (routes)
-		g_strfreev (routes);
 }
 
 static gboolean
@@ -373,7 +347,6 @@ nm_vpn_connection_activate (NMVPNConnection *connection)
 {
 	NMVPNConnectionPrivate *priv;
 	NMDBusManager *dbus_mgr;
-	char **routes;
 
 	g_return_if_fail (NM_IS_VPN_CONNECTION (connection));
 	g_return_if_fail (nm_vpn_connection_get_state (connection) == NM_VPN_CONNECTION_STATE_PREPARE);
@@ -403,15 +376,10 @@ nm_vpn_connection_activate (NMVPNConnection *connection)
 						    G_CALLBACK (nm_vpn_connection_ip4_config_get),
 						    connection, NULL);
 
-	routes = nm_vpn_connection_get_routes (connection);
 	org_freedesktop_NetworkManager_VPN_Plugin_connect_async (priv->proxy,
-												  nm_vpn_connection_get_vpn_data (connection),
-												  (const char**)routes,
+												  nm_connection_to_hash (priv->connection),
 												  nm_vpn_connection_connect_cb,
 												  connection);
-
-	if (routes)
-		g_strfreev (routes);
 
 	nm_vpn_connection_set_state (connection, NM_VPN_CONNECTION_STATE_CONNECT);
 }

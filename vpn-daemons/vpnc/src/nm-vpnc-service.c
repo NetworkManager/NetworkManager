@@ -240,13 +240,14 @@ nm_vpnc_config_write (gint vpnc_fd, GHashTable *properties)
 
 static gboolean
 real_connect (NMVPNPlugin   *plugin,
-		    GHashTable    *properties,
-		    char         **routes,
+		    NMConnection  *connection,
 		    GError       **err)
 {
+	NMSettingVPNProperties *properties;
 	gint vpnc_fd;
 
-	if (!nm_vpnc_properties_validate (properties)) {
+	properties = (NMSettingVPNProperties *) nm_connection_get_setting (connection, NM_SETTING_VPN_PROPERTIES);
+	if (!properties || !nm_vpnc_properties_validate (properties->data)) {
 		g_set_error (err,
 				   NM_VPN_PLUGIN_ERROR,
 				   NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
@@ -256,7 +257,7 @@ real_connect (NMVPNPlugin   *plugin,
 	}
 
 	if ((vpnc_fd = nm_vpnc_start_vpnc_binary (NM_VPNC_PLUGIN (plugin))) >= 0)
-		nm_vpnc_config_write (vpnc_fd, properties);
+		nm_vpnc_config_write (vpnc_fd, properties->data);
 	else {
 		g_set_error (err,
 				   NM_VPN_PLUGIN_ERROR,
