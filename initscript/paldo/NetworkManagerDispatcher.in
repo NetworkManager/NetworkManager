@@ -8,6 +8,9 @@
 ### END INIT INFO
 . /lib/lsb/init-functions
 
+[ -e /etc/default/NetworkManager ] && source /etc/default/NetworkManager
+[ $(/usr/bin/tty -s; echo $?) -gt 0 -o  "$(/usr/bin/tty)" == "/dev/console" ] && [ "$START_NETWORK_MANAGER" != "TRUE" ] && exit 0
+
 prefix=@prefix@
 exec_prefix=@prefix@
 sbindir=@sbindir@

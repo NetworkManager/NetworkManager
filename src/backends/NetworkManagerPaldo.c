@@ -156,8 +156,7 @@ void nm_system_device_flush_addresses_with_iface (const char *iface)
  */
 void nm_system_enable_loopback (void)
 {
-	nm_system_device_set_up_down_with_iface ("lo", TRUE);
-	nm_spawn_process (IP_BINARY_PATH " addr add 127.0.0.1/8 brd 127.255.255.255 dev lo scope host label loopback");
+	nm_generic_enable_loopback ();
 }
 
 
@@ -170,7 +169,7 @@ void nm_system_enable_loopback (void)
  */
 void nm_system_flush_loopback_routes (void)
 {
-	nm_system_device_flush_routes_with_iface ("lo");
+	nm_generic_flush_loopback_routes ();
 }
 
 

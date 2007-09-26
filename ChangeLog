@@ -1,3 +1,10 @@
+2007-09-26  Jürg Billeter  <j@bitron.ch>
+
+	* initscript/paldo/NetworkManager.in:
+	* initscript/paldo/NetworkManagerDispatcher.in:
+	* src/backends/NetworkManagerPaldo.c: (nm_system_enable_loopback),
+	(nm_system_flush_loopback_routes): update paldo backend
+
 2007-09-26  Tambet Ingo  <tambet@gmail.com>
 
 	* src/nm-device-802-3-ethernet.c (real_get_best_connection): Don't leak NMManager.
