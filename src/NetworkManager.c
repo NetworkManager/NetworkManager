@@ -345,7 +345,7 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	vpn_manager = nm_vpn_manager_new ();
+	vpn_manager = nm_vpn_manager_new (manager);
 	if (!vpn_manager) {
 		nm_warning ("Failed to start the VPN manager.");
 		goto done;

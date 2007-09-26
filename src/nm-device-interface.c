@@ -1,7 +1,7 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
 #include "nm-device-interface.h"
 #include "nm-ip4-config.h"
-#include "nm-manager.h"
 #include "nm-utils.h"
 
 static gboolean impl_device_activate (NMDeviceInterface *device,
@@ -207,6 +207,19 @@ nm_device_interface_activate (NMDeviceInterface *device,
 	                                                      user_requested);
 }
 
+/* FIXME: This should be public and nm_device_get_iface() should be removed. */
+static const char *
+nm_device_interface_get_iface (NMDeviceInterface *device)
+{
+	const char *iface = NULL;
+
+	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), NULL);
+
+	g_object_get (device, NM_DEVICE_INTERFACE_IFACE, &iface, NULL);
+
+	return iface;
+}
+
 static gboolean
 impl_device_activate (NMDeviceInterface *device,
                       const char *service_name,
@@ -214,44 +227,7 @@ impl_device_activate (NMDeviceInterface *device,
                       const char *specific_object,
                       GError **err)
 {
-	NMManager *manager = nm_manager_get ();
-	NMDevice *old_dev = NULL;
-	GSList *iter;
-
-	// FIXME: remove when multiple active device support has landed
-	switch (nm_manager_get_state (manager)) {
-	case NM_STATE_CONNECTED:
-		old_dev = nm_manager_get_active_device (manager);
-		break;
-	case NM_STATE_CONNECTING:
-		for (iter = nm_manager_get_devices (manager); iter; iter = iter->next) {
-			if (nm_device_is_activating (NM_DEVICE (iter->data))) {
-				old_dev = NM_DEVICE (iter->data);
-				break;
-			}
-		}
-		break;
-	case NM_STATE_DISCONNECTED:
-		/* Check for devices that have deferred activation requests */
-		for (iter = nm_manager_get_devices (manager); iter; iter = iter->next) {
-			NMActRequest *req = nm_device_get_act_request (NM_DEVICE (iter->data));
-
-			if (req && nm_act_request_is_deferred (req)) {
-				old_dev = NM_DEVICE (iter->data);
-				break;
-			}
-		}
-		break;
-	default:
-		break;
-	}
-	g_object_unref (manager);
-
-	nm_info ("User request for activation of %s.", nm_device_get_iface (NM_DEVICE (device)));
-
-	if (old_dev)
-		nm_device_interface_deactivate (NM_DEVICE_INTERFACE (old_dev));
-
+	nm_info ("User request for activation of %s.", nm_device_interface_get_iface (device));
 	nm_device_interface_activate (device,
 	                              service_name,
 	                              connection_path,

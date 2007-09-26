@@ -91,6 +91,7 @@ struct _NMDeviceClass
 	guint32		(* get_generic_capabilities)	(NMDevice *self);
 
 	NMConnection * (* get_best_connection) (NMDevice *self,
+						GSList *connections,
 	                                        char **specific_object);
 
 	void        (* connection_secrets_updated) (NMDevice *self,
@@ -150,6 +151,7 @@ void *		nm_device_get_system_config_data	(NMDevice *dev);
 NMActRequest *	nm_device_get_act_request	(NMDevice *dev);
 
 NMConnection * nm_device_get_best_connection (NMDevice *dev,
+					      GSList *connections,
                                               char **specific_object);
 
 void			nm_device_activate_schedule_stage1_device_prepare		(NMDevice *device);

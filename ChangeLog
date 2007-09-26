@@ -1,3 +1,32 @@
+2007-09-26  Tambet Ingo  <tambet@gmail.com>
+
+	* src/nm-manager.c (manager_device_state_changed): Listen to device' NEED_AUTH
+	state and try to get the secrets.
+
+	* src/NetworkManagerPolicy.c (nm_policy_auto_get_best_device): Get the list of
+	connections from NMManager and let the device to choose the best from the list.
+	Since the connection list is sorted by system ones first and user ones later,
+	the devices still prefer system connections like they did before.
+	(deactivate_old_device): Implement. When a device starts activation, we have a
+	policy (for now at least) to deactivate any other device that might be either
+	active or still activating.
+
+	* src/vpn-manager/nm-vpn-manager.c: Add NMManager back to the private structure.
+	It's set on construction, there will be no other way to access it.
+
+	* src/nm-device-802-11-wireless.c: Don't touch NMManager, NMManager can listen to
+	device events and drive the device, not the other way around.
+
+	* src/nm-device-802-3-ethernet.c: Ditto.
+
+	* src/nm-device.c (nm_device_get_best_connection): The connections list is now
+	sent along, pass it on to virtual functions.
+
+	* src/nm-device-interface.c (nm_device_interface_get_iface): Implement. It's static
+	for now, but should really be public instead of nm_device_get_iface() since iface
+	is a property of the DeviceInterface, not Device.
+	(impl_device_activate): Don't touch NMManager!
+
 2007-09-26  Jürg Billeter  <j@bitron.ch>
 
 	* initscript/paldo/NetworkManager.in:

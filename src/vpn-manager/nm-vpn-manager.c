@@ -26,6 +26,7 @@ static gboolean impl_vpn_manager_get_connections (NMVPNManager *manager,
 G_DEFINE_TYPE (NMVPNManager, nm_vpn_manager, G_TYPE_OBJECT)
 
 typedef struct {
+	NMManager *nm_manager;
 	NMDBusManager *dbus_mgr;
 	GSList *services;
 } NMVPNManagerPrivate;
@@ -99,13 +100,10 @@ nm_vpn_manager_connect (NMVPNManager *manager,
 static NMDevice *
 find_device (NMVPNManager *manager, const char *device_path)
 {
-	NMManager *nm_manager;
 	GSList *devices;
 	GSList *iter;
 
-	nm_manager = nm_manager_get ();
-	devices = nm_manager_get_devices (nm_manager);
-	g_object_unref (nm_manager);
+	devices = nm_manager_get_devices (NM_VPN_MANAGER_GET_PRIVATE (manager)->nm_manager);
 
 	for (iter = devices; iter; iter = iter->next) {
 		NMDevice *device = NM_DEVICE (iter->data);
@@ -125,7 +123,6 @@ impl_vpn_manager_connect (NMVPNManager *manager,
 					 char **vpn_connection_path,
 					 GError **err)
 {
-	NMManager *nm_manager;
 	NMDevice *device;
 	NMConnection *connection = NULL;
 	NMVPNConnection *vpn_connection = NULL;
@@ -138,18 +135,14 @@ impl_vpn_manager_connect (NMVPNManager *manager,
 		goto out;
 	}
 
-	nm_manager = nm_manager_get ();
-
 	if (!strcmp (connection_type, NM_DBUS_SERVICE_USER_SETTINGS))
-		connection = nm_manager_get_connection_by_object_path (nm_manager,
+		connection = nm_manager_get_connection_by_object_path (NM_VPN_MANAGER_GET_PRIVATE (manager)->nm_manager,
 		                                                       NM_CONNECTION_TYPE_USER,
 		                                                       connection_path);
 	else if (!strcmp (connection_type, NM_DBUS_SERVICE_USER_SETTINGS))
-		connection = nm_manager_get_connection_by_object_path (nm_manager,
+		connection = nm_manager_get_connection_by_object_path (NM_VPN_MANAGER_GET_PRIVATE (manager)->nm_manager,
 		                                                       NM_CONNECTION_TYPE_SYSTEM,
 		                                                       connection_path);
-	g_object_unref (nm_manager);
-
 	if (connection == NULL) {
 		/* FIXME: set error */
 		goto out;
@@ -207,11 +200,15 @@ impl_vpn_manager_get_connections (NMVPNManager *manager, GPtrArray **connections
 }
 
 NMVPNManager *
-nm_vpn_manager_new (void)
+nm_vpn_manager_new (NMManager *nm_manager)
 {
 	NMVPNManager *manager;
 
+	g_return_val_if_fail (NM_IS_MANAGER (nm_manager), NULL);
+
 	manager = (NMVPNManager *) g_object_new (NM_TYPE_VPN_MANAGER, NULL);
+	if (manager)
+		NM_VPN_MANAGER_GET_PRIVATE (manager)->nm_manager = g_object_ref (nm_manager);
 
 	return manager;
 }
@@ -236,6 +233,7 @@ finalize (GObject *object)
 
 	g_slist_foreach (priv->services, (GFunc) g_object_unref, NULL);
 	g_object_unref (priv->dbus_mgr);
+	g_object_unref (priv->nm_manager);
 
 	G_OBJECT_CLASS (nm_vpn_manager_parent_class)->finalize (object);
 }

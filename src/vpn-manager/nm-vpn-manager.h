@@ -5,6 +5,7 @@
 
 #include <glib/gtypes.h>
 #include <glib-object.h>
+#include "nm-manager.h"
 #include "nm-vpn-connection.h"
 
 #define NM_TYPE_VPN_MANAGER            (nm_vpn_manager_get_type ())
@@ -24,7 +25,7 @@ typedef struct {
 
 GType nm_vpn_manager_get_type (void);
 
-NMVPNManager *nm_vpn_manager_new (void);
+NMVPNManager *nm_vpn_manager_new (NMManager *nm_manager);
 
 NMVPNConnection *nm_vpn_manager_connect (NMVPNManager *manager,
 								 NMConnection *connection,

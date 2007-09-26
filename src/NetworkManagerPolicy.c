@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 /* NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -68,6 +69,7 @@ nm_policy_auto_get_best_device (NMPolicy *policy,
                                 NMConnection **connection,
                                 char **specific_object)
 {
+	GSList *connections;
 	GSList *				elt;
 	NMDevice8023Ethernet *	best_wired_dev = NULL;
 	guint				best_wired_prio = 0;
@@ -87,6 +89,10 @@ nm_policy_auto_get_best_device (NMPolicy *policy,
 	if (nm_manager_get_state (policy->manager) == NM_STATE_ASLEEP)
 		return NULL;
 
+	/* System connections first, then user connections */
+	connections = nm_manager_get_connections (policy->manager, NM_CONNECTION_TYPE_SYSTEM);
+	connections = g_slist_concat (connections, nm_manager_get_connections (policy->manager, NM_CONNECTION_TYPE_USER));
+
 	for (elt = nm_manager_get_devices (policy->manager); elt; elt = elt->next) {
 		NMConnection *tmp_con = NULL;
 		char *tmp_obj = NULL;
@@ -98,7 +104,7 @@ nm_policy_auto_get_best_device (NMPolicy *policy,
 		link_active = nm_device_has_active_link (dev);
 		caps = nm_device_get_capabilities (dev);
 
-		tmp_con = nm_device_get_best_connection (dev, &tmp_obj);
+		tmp_con = nm_device_get_best_connection (dev, connections, &tmp_obj);
 		if (tmp_con == NULL) {
 			NMActRequest *req = nm_device_get_act_request (dev);
 
@@ -144,6 +150,8 @@ nm_policy_auto_get_best_device (NMPolicy *policy,
 			}
 		}
 	}
+
+	g_slist_free (connections);
 
 	if (best_wired_dev) {
 		highest_priority_dev = NM_DEVICE (best_wired_dev);
@@ -385,12 +393,41 @@ schedule_change_check (NMPolicy *policy)
 															device_change_check_done);
 }
 
+/* FIXME: remove when multiple active device support has landed */
+static void
+deactivate_old_device (NMPolicy *policy, NMDevice *new_device)
+{
+	GSList *iter;
+
+	for (iter = nm_manager_get_devices (policy->manager); iter; iter = iter->next) {
+		NMDevice *dev = NM_DEVICE (iter->data);
+
+		if (dev == new_device)
+			continue;
+
+		switch (nm_device_get_state (dev)) {
+		case NM_DEVICE_STATE_PREPARE:
+		case NM_DEVICE_STATE_CONFIG:
+		case NM_DEVICE_STATE_NEED_AUTH:
+		case NM_DEVICE_STATE_IP_CONFIG:
+		case NM_DEVICE_STATE_ACTIVATED:
+			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (dev));
+			break;
+		default:
+			break;
+		}
+	}
+}
+
 static void
 device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
 
-	if (state == NM_DEVICE_STATE_FAILED || state == NM_DEVICE_STATE_CANCELLED)
+	if (state == NM_DEVICE_STATE_PREPARE)
+		deactivate_old_device (policy, device); /* FIXME: remove when multiple active device support has landed */
+
+	else if (state == NM_DEVICE_STATE_FAILED || state == NM_DEVICE_STATE_CANCELLED)
 		schedule_change_check (policy);
 }
 

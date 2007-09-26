@@ -658,11 +658,26 @@ manager_device_added (NMManager *manager, NMDevice *device)
 }
 
 static void
-manager_device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
+manager_device_state_changed (NMDeviceInterface *device, NMDeviceState state, gpointer user_data)
 {
 	NMManager *manager = NM_MANAGER (user_data);
 
 	nm_manager_update_state (manager);
+
+	if (state == NM_DEVICE_STATE_NEED_AUTH) {
+		NMActRequest *req;
+		NMConnection *connection;
+
+		req = nm_device_get_act_request (NM_DEVICE (device));
+		/* When device needs an auth it must be activating and thus have an act request. */
+		g_assert (req);
+		connection = nm_act_request_get_connection (req);
+
+		nm_manager_get_connection_secrets (manager, device,
+									connection,
+									nm_connection_need_secrets (connection),
+									TRUE);
+	}
 }
 
 void

@@ -389,6 +389,7 @@ nm_device_set_active_link (NMDevice *self,
 
 NMConnection *
 nm_device_get_best_connection (NMDevice *dev,
+			       GSList *connections,
                                char **specific_object)
 {
 	guint32 caps;
@@ -405,7 +406,7 @@ nm_device_get_best_connection (NMDevice *dev,
 	if (!NM_DEVICE_GET_CLASS (dev)->get_best_connection)
 		return NULL;
 
-	return NM_DEVICE_GET_CLASS (dev)->get_best_connection (dev, specific_object);
+	return NM_DEVICE_GET_CLASS (dev)->get_best_connection (dev, connections, specific_object);
 }
 
 /*

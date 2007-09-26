@@ -694,32 +694,19 @@ find_best_connection (gpointer data, gpointer user_data)
 
 static NMConnection *
 real_get_best_connection (NMDevice *dev,
+			  GSList *connections,
                           char **specific_object)
 {
 	NMDevice80211Wireless * self = NM_DEVICE_802_11_WIRELESS (dev);
-	NMManager *manager = nm_manager_get ();
-	GSList *connections = NULL;
 	BestConnectionInfo find_info;
 
-	/* System connections first */
-	connections = nm_manager_get_connections (manager, NM_CONNECTION_TYPE_SYSTEM);
 	memset (&find_info, 0, sizeof (BestConnectionInfo));
 	find_info.self = self;
 	g_slist_foreach (connections, find_best_connection, &find_info);
-	g_slist_free (connections);
-
-	/* Then user connections */
-	if (!find_info.found) {
-		connections = nm_manager_get_connections (manager, NM_CONNECTION_TYPE_USER);
-		find_info.self = self;
-		g_slist_foreach (connections, find_best_connection, &find_info);
-		g_slist_free (connections);
-	}
-
-	g_object_unref (manager);
 
 	if (find_info.found)
 		*specific_object = (char *) nm_ap_get_dbus_path (find_info.found_ap);
+	
 	return find_info.found;
 }
 
@@ -1919,7 +1906,6 @@ link_timeout_cb (gpointer user_data)
 	NMActRequest *          req = NULL;
 	NMAccessPoint *         ap = NULL;
 	NMConnection *          connection;
-	NMManager *             manager;
 	const char *            setting_name;
 	gboolean                auth_enforced, encrypted = FALSE;
 
@@ -1969,13 +1955,6 @@ link_timeout_cb (gpointer user_data)
 	cleanup_association_attempt (self, TRUE);
 	nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
 
-	manager = nm_manager_get ();
- 	nm_manager_get_connection_secrets (manager,
-	                                   NM_DEVICE_INTERFACE (self),
-	                                   connection,
-	                                   setting_name,
-	                                   TRUE);
-	g_object_unref (manager);
 	return FALSE;
 
 time_out:
@@ -2361,20 +2340,12 @@ supplicant_connection_timeout_cb (gpointer user_data)
 		         nm_device_get_iface (dev));
 		nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
 	} else {
-		NMManager *manager = nm_manager_get ();
-
 		/* Authentication failed, encryption key is probably bad */
 		nm_info ("Activation (%s/wireless): association took too long, "
 		         "asking for new key.",
 		         nm_device_get_iface (dev));
 
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
-		nm_manager_get_connection_secrets (manager,
-		                                   NM_DEVICE_INTERFACE (self),
-		                                   connection,
-		                                   NM_SETTING_WIRELESS_SECURITY,
-		                                   TRUE);
-		g_object_unref (manager);
 	}
 
 	return FALSE;
@@ -2556,20 +2527,11 @@ real_act_stage2_config (NMDevice *dev)
 	/* If we need secrets, get them */
 	setting_name = nm_connection_need_secrets (connection);
 	if (setting_name) {
-		NMManager * manager = nm_manager_get ();
-
 		nm_info ("Activation (%s/wireless): access point '%s' has security,"
 		         " but secrets are required.",
 		         iface, s_connection->name);
 
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
-		nm_manager_get_connection_secrets (manager,
-		                                   NM_DEVICE_INTERFACE (self),
-		                                   connection,
-		                                   setting_name,
-		                                   FALSE);
-		g_object_unref (manager);
-
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	} else {
 		NMSettingWireless *s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_SETTING_WIRELESS);
@@ -2714,7 +2676,6 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 	connection = nm_act_request_get_connection (req);
 	auth_enforced = ap_auth_enforced (connection, ap, &encrypted);
 	if (encrypted && !auth_enforced) {
-		NMManager *manager = nm_manager_get ();
 		const GByteArray * ssid = nm_ap_get_ssid (ap);
 
 		/* Activation failed, we must have bad encryption key */
@@ -2723,12 +2684,6 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 		          nm_device_get_iface (dev),
 		          ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
-		nm_manager_get_connection_secrets (manager,
-		                                   NM_DEVICE_INTERFACE (self),
-		                                   connection,
-		                                   NM_SETTING_WIRELESS_SECURITY,
-		                                   TRUE);
-		g_object_unref (manager);
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else if (nm_ap_get_mode (ap) == IW_MODE_ADHOC) {
 		NMDevice80211WirelessClass *	klass;
