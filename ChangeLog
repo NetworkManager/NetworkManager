@@ -1,5 +1,15 @@
 2007-09-26  Dan Williams  <dcbw@redhat.com>
 
+	* src/vpn-manager/nm-vpn-connection.c
+		- (nm_vpn_connection_set_state, clear_need_auth, finalize,
+		   connection_secrets_updated_cb, get_secrets_cb): don't need to attach
+			to the secrets-updated signal of the NMConnection since updating
+			the secrets is done within the scope of the NMVPNConnection object
+			already
+		- (get_connection_secrets): fix an uninialized variable usage error
+
+2007-09-26  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting.c
 		- (setting_vpn_properties_update_secrets): implement so VPN secrets
 			actually get updated when the user enters them
