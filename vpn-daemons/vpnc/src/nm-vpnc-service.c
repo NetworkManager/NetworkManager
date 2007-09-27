@@ -268,6 +268,7 @@ real_connect (NMVPNPlugin   *plugin,
 		return FALSE;
 	}
 
+	close (vpnc_fd);
 	return TRUE;
 }
 

@@ -1,5 +1,11 @@
 2007-09-27  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-vpnc-service.c
+		- (real_connect): close vpnc's stdin so it can actually go ahead and
+			connect
+
+2007-09-27  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-vpnc-service-helper.c
 		- (str_to_gvalue, addr_to_gvalue): ensure the GValues are zeroed when
 			allocated so that they can be assigned a type later
