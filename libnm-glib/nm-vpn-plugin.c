@@ -342,6 +342,7 @@ impl_vpn_plugin_need_secrets (NMVPNPlugin *plugin,
 	NMConnection *connection;
 	char *sn = NULL;
 	GError *ns_err = NULL;
+	gboolean needed = FALSE;
 
 	g_return_val_if_fail (NM_IS_VPN_PLUGIN (plugin), FALSE);
 	g_return_val_if_fail (properties != NULL, FALSE);
@@ -362,14 +363,20 @@ impl_vpn_plugin_need_secrets (NMVPNPlugin *plugin,
 		goto out;
 	}
 
-	if (NM_VPN_PLUGIN_GET_CLASS (plugin)->need_secrets (plugin, connection, &sn, &ns_err)) {
-		g_assert (sn);
-		*setting_name = g_strdup (sn);
-		ret = TRUE;
-	} else {
-		g_assert (ns_err);
+	needed = NM_VPN_PLUGIN_GET_CLASS (plugin)->need_secrets (plugin, connection, &sn, &ns_err);
+	if (ns_err) {
 		*err = g_error_copy (ns_err);
 		g_error_free (ns_err);
+		goto out;
+	}
+
+	ret = TRUE;
+	if (needed) {
+		g_assert (sn);
+		*setting_name = g_strdup (sn);
+	} else {
+		/* No secrets required */
+		*setting_name = g_strdup ("");
 	}
 
 out:

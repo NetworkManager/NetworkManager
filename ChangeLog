@@ -1,5 +1,10 @@
 2007-09-26  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/nm-vpn-plugin.c
+		- (impl_vpn_plugin_need_secrets): fix logic when no secrets are needed
+
+2007-09-26  Dan Williams  <dcbw@redhat.com>
+
 	* include/NetworkManagerVPN.h
 		- Add a NEED_AUTH state
 
