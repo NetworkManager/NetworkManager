@@ -1,5 +1,10 @@
 2007-09-26  Dan Williams  <dcbw@redhat.com>
 
+	* src/vpn-manager/nm-vpn-manager.c
+		- (new_vpn_error, impl_vpn_manager_connect): set errors
+
+2007-09-26  Dan Williams  <dcbw@redhat.com>
+
 	* introspection/nm-vpn-plugin.xml
 	  libnm-glib/nm-vpn-plugin.c
 	  libnm-glib/nm-vpn-plugin.h

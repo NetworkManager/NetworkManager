@@ -115,6 +115,28 @@ find_device (NMVPNManager *manager, const char *device_path)
 	return NULL;
 }
 
+static GError *
+new_vpn_error (const gchar *format, ...)
+{
+	GError *err;
+	va_list args;
+	gchar *msg;
+	static GQuark domain_quark = 0;
+
+	if (domain_quark == 0)
+		domain_quark = g_quark_from_static_string ("nm_vpn_error");
+
+	va_start (args, format);
+	msg = g_strdup_vprintf (format, args);
+	va_end (args);
+
+	err = g_error_new_literal (domain_quark, 1, (const gchar *) msg);
+
+	g_free (msg);
+
+	return err;
+}
+
 static gboolean
 impl_vpn_manager_connect (NMVPNManager *manager,
 					 const char *connection_type,
@@ -131,7 +153,8 @@ impl_vpn_manager_connect (NMVPNManager *manager,
 
 	device = find_device (manager, device_path);
 	if (!device) {
-		/* FIXME: set error */
+		*err = new_vpn_error ("%s.%d: No active device was found.",
+		                      __FILE__, __LINE__);
 		goto out;
 	}
 
@@ -144,7 +167,8 @@ impl_vpn_manager_connect (NMVPNManager *manager,
 		                                                       NM_CONNECTION_TYPE_SYSTEM,
 		                                                       connection_path);
 	if (connection == NULL) {
-		/* FIXME: set error */
+		*err = new_vpn_error ("%s.%d: VPN connection could not be found.",
+		                      __FILE__, __LINE__);
 		goto out;
 	}
 
@@ -152,8 +176,8 @@ impl_vpn_manager_connect (NMVPNManager *manager,
 	if (vpn_connection)
 		*vpn_connection_path = g_strdup (nm_vpn_connection_get_object_path (vpn_connection));
 	else {
-		/* FIXME: set error */
-		g_object_unref (connection);
+		*err = new_vpn_error ("%s.%d: VPN connection could not be started.",
+		                      __FILE__, __LINE__);
 	}
 
  out:
