@@ -272,6 +272,41 @@ real_connect (NMVPNPlugin   *plugin,
 }
 
 static gboolean
+real_need_secrets (NMVPNPlugin *plugin,
+                   NMConnection *connection,
+                   char **setting_name,
+                   GError **error)
+{
+	NMSettingVPNProperties *s_vpn_props;
+
+	g_return_val_if_fail (NM_IS_VPN_PLUGIN (plugin), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+
+	s_vpn_props = (NMSettingVPNProperties *) nm_connection_get_setting (connection, NM_SETTING_VPN_PROPERTIES);
+	if (!s_vpn_props) {
+        g_set_error (error,
+		             NM_VPN_PLUGIN_ERROR,
+		             NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID,
+		             "%s",
+		             "Could not process the request because the VPN connection settings were invalid.");
+		return FALSE;
+	}
+
+	// FIXME: there are some configurations where both passwords are not
+	// required.  Make sure they work somehow.
+	if (!g_hash_table_lookup (s_vpn_props->data, NM_VPNC_KEY_SECRET)) {
+		*setting_name = NM_SETTING_VPN_PROPERTIES;
+		return TRUE;
+	}
+	if (!g_hash_table_lookup (s_vpn_props->data, NM_VPNC_KEY_XAUTH_PASSWORD)) {
+		*setting_name = NM_SETTING_VPN_PROPERTIES;
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+static gboolean
 real_disconnect (NMVPNPlugin   *plugin,
 			  GError       **err)
 {
@@ -301,6 +336,7 @@ nm_vpnc_plugin_class_init (NMVPNCPluginClass *vpnc_class)
 
 	/* virtual methods */
 	parent_class->connect    = real_connect;
+	parent_class->need_secrets = real_need_secrets;
 	parent_class->disconnect = real_disconnect;
 }
 
