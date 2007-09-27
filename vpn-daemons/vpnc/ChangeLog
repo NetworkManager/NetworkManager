@@ -1,3 +1,11 @@
+2007-09-27  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-vpnc-service-helper.c
+		- (str_to_gvalue, addr_to_gvalue): ensure the GValues are zeroed when
+			allocated so that they can be assigned a type later
+		- (addr_list_to_gvalue): use a GArray rather than a GSList, dbus-glib
+			seems ignorant of GSLists with G_TYPE_UINT elements
+
 2007-09-26  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-vpnc-service.c

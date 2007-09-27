@@ -106,7 +106,7 @@ str_to_gvalue (const char *str, gboolean try_convert)
 			return NULL;
 	}
 
-	val = g_new (GValue, 1);
+	val = g_slice_new0 (GValue);
 	g_value_init (val, G_TYPE_STRING);
 	g_value_set_string (val, str);
 
@@ -126,7 +126,7 @@ addr_to_gvalue (const char *str)
 	if (!inet_aton (str, &temp_addr))
 		return NULL;
 
-	val = g_new (GValue, 1);
+	val = g_slice_new0 (GValue);
 	g_value_init (val, G_TYPE_UINT);
 	g_value_set_uint (val, temp_addr.s_addr);
 
@@ -139,29 +139,34 @@ addr_list_to_gvalue (const char *str)
 	GValue *val;
 	char **split;
 	int i;
-	struct in_addr	temp_addr;
-	GSList *list = NULL;
+	GArray *array;
 
 	/* Empty */
 	if (!str || strlen (str) < 1)
 		return NULL;
 
 	split = g_strsplit (str, " ", -1);
+	if (g_strv_length (split) == 0)
+		return NULL;
+
+	array = g_array_sized_new (FALSE, TRUE, sizeof (GValue *), g_strv_length (split));
 	for (i = 0; split[i]; i++) {
-		if (inet_aton (split[i], &temp_addr))
-			list = g_slist_append (list, GUINT_TO_POINTER (temp_addr.s_addr));
-		else {
+		GValue * addr_val = addr_to_gvalue (split[i]);
+
+		if (addr_val) {
+			g_array_append_val (array, addr_val);
+		} else {
 			g_strfreev (split);
-			g_slist_free (list);
+			g_array_free (array, TRUE);
 			return NULL;
 		}
 	}
 
 	g_strfreev (split);
 
-	val = g_new0 (GValue, 1);
-	g_value_init (val, dbus_g_type_get_collection ("GSList", G_TYPE_UINT));
-	g_value_set_boxed (val, list);
+	val = g_slice_new0 (GValue);
+	g_value_init (val, DBUS_TYPE_G_UINT_ARRAY);
+	g_value_set_boxed (val, array);
 
 	return val;
 }
