@@ -3,9 +3,15 @@
 #include <signal.h>
 #include "nm-vpn-plugin.h"
 #include "nm-utils.h"
+#include "nm-connection.h"
 
 static gboolean impl_vpn_plugin_connect    (NMVPNPlugin *plugin,
 								    GHashTable *connection,
+								    GError **err);
+
+static gboolean impl_vpn_plugin_need_secrets (NMVPNPlugin *plugin,
+								    GHashTable *connection,
+								    char **service_name,
 								    GError **err);
 
 static gboolean impl_vpn_plugin_disconnect (NMVPNPlugin *plugin,
@@ -94,6 +100,7 @@ nm_vpn_plugin_error_get_type (void)
 			ENUM_ENTRY (NM_VPN_PLUGIN_ERROR_WRONG_STATE,          "WrongState"),
 			ENUM_ENTRY (NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,        "BadArguments"),
 			ENUM_ENTRY (NM_VPN_PLUGIN_ERROR_LAUNCH_FAILED,        "LaunchFailed"),
+			ENUM_ENTRY (NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID,   "ConnectionInvalid"),
 			{ 0, 0, 0 }
 		};
 
@@ -203,8 +210,12 @@ nm_vpn_plugin_disconnect (NMVPNPlugin *plugin, GError **err)
 		ret = NM_VPN_PLUGIN_GET_CLASS (plugin)->disconnect (plugin, err);
 		nm_vpn_plugin_set_state (plugin, NM_VPN_SERVICE_STATE_STOPPED);
 		break;
+	case NM_VPN_SERVICE_STATE_INIT:
+		ret = TRUE;
+		break;
 
 	default:
+		g_warning ("Unhandled VPN service state %d", state);
 		g_assert_not_reached ();
 		break;
 	}
@@ -319,6 +330,50 @@ impl_vpn_plugin_connect (NMVPNPlugin *plugin,
 	g_object_unref (connection);
 
 	return success;
+}
+
+static gboolean
+impl_vpn_plugin_need_secrets (NMVPNPlugin *plugin,
+                              GHashTable *properties,
+                              char **setting_name,
+                              GError **err)
+{
+	gboolean ret = FALSE;
+	NMConnection *connection;
+	char *sn = NULL;
+	GError *ns_err = NULL;
+
+	g_return_val_if_fail (NM_IS_VPN_PLUGIN (plugin), FALSE);
+	g_return_val_if_fail (properties != NULL, FALSE);
+
+	connection = nm_connection_new_from_hash (properties);
+	if (!connection) {
+		g_set_error (err,
+		             NM_VPN_PLUGIN_ERROR,
+		             NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID,
+		             "%s",
+		             "The connection information was invalid.");
+		return FALSE;
+	}
+
+	if (!NM_VPN_PLUGIN_GET_CLASS (plugin)->need_secrets) {
+		*setting_name = "";
+		ret = TRUE;
+		goto out;
+	}
+
+	if (NM_VPN_PLUGIN_GET_CLASS (plugin)->need_secrets (plugin, connection, &sn, &ns_err)) {
+		g_assert (sn);
+		*setting_name = g_strdup (sn);
+		ret = TRUE;
+	} else {
+		g_assert (ns_err);
+		*err = g_error_copy (ns_err);
+		g_error_free (ns_err);
+	}
+
+out:
+	return ret;
 }
 
 static gboolean

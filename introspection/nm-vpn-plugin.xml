@@ -7,6 +7,12 @@
       <arg name="connection" type="a{sa{sv}}" direction="in"/>
     </method>
 
+    <method name="NeedSecrets">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_need_secrets"/>
+      <arg name="settings" type="a{sa{sv}}" direction="in"/>
+      <arg name="setting_name" type="s" direction="out"/>
+    </method>
+
     <method name="Disconnect">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_disconnect"/>
     </method>

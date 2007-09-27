@@ -30,6 +30,7 @@ typedef enum {
 	NM_VPN_PLUGIN_ERROR_WRONG_STATE,
 	NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
 	NM_VPN_PLUGIN_ERROR_LAUNCH_FAILED,
+	NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID,
 } NMVPNPluginError;
 
 #define NM_VPN_PLUGIN_ERROR      (nm_vpn_plugin_error_quark ())
@@ -52,6 +53,11 @@ typedef struct {
 	gboolean (*connect)    (NMVPNPlugin   *plugin,
 					    NMConnection  *connection,
 					    GError       **err);
+
+	gboolean (*need_secrets) (NMVPNPlugin *plugin,
+	                              NMConnection *connection,
+	                              char **setting_name,
+	                              GError **error);
 
 	gboolean (*disconnect) (NMVPNPlugin   *plugin,
 					    GError       **err);
