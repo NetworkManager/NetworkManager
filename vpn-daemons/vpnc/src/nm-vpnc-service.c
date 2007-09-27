@@ -190,7 +190,6 @@ write_config_option (int fd, const char *format, ...)
 
 	va_start (args, format);
 	string = g_strdup_vprintf (format, args);
-	g_print ("|%s|\n", string);
 	x = write (fd, string, strlen (string));
 	g_free (string);
 	va_end (args);
