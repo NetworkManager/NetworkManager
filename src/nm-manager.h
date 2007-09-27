@@ -79,7 +79,4 @@ const char * nm_manager_get_connection_service_name (NMManager *manager,
 const char * nm_manager_get_connection_dbus_path (NMManager *manager,
                                                   NMConnection *connection);
 
-void nm_manager_cancel_get_connection_secrets (NMManager *manager,
-                                               NMConnection *connection);
-
 #endif /* NM_MANAGER_H */

@@ -1954,6 +1954,7 @@ link_timeout_cb (gpointer user_data)
 	         " asking for new key.", nm_device_get_iface (dev));
 	cleanup_association_attempt (self, TRUE);
 	nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
+	nm_act_request_request_connection_secrets (req, setting_name, TRUE);	
 
 	return FALSE;
 
@@ -2340,12 +2341,19 @@ supplicant_connection_timeout_cb (gpointer user_data)
 		         nm_device_get_iface (dev));
 		nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
 	} else {
+		const char *setting_name;
+
 		/* Authentication failed, encryption key is probably bad */
 		nm_info ("Activation (%s/wireless): association took too long, "
 		         "asking for new key.",
 		         nm_device_get_iface (dev));
 
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
+
+		nm_connection_clear_secrets (connection);
+		setting_name = nm_connection_need_secrets (connection);
+		if (setting_name)
+			nm_act_request_request_connection_secrets (req, setting_name, TRUE);
 	}
 
 	return FALSE;
@@ -2532,6 +2540,7 @@ real_act_stage2_config (NMDevice *dev)
 		         iface, s_connection->name);
 
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
+		nm_act_request_request_connection_secrets (req, setting_name, FALSE);
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	} else {
 		NMSettingWireless *s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_SETTING_WIRELESS);
@@ -2677,6 +2686,7 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 	auth_enforced = ap_auth_enforced (connection, ap, &encrypted);
 	if (encrypted && !auth_enforced) {
 		const GByteArray * ssid = nm_ap_get_ssid (ap);
+		const char *setting_name;
 
 		/* Activation failed, we must have bad encryption key */
 		nm_debug ("Activation (%s/wireless): could not get IP configuration "
@@ -2684,6 +2694,12 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 		          nm_device_get_iface (dev),
 		          ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
+
+		nm_connection_clear_secrets (connection);
+		setting_name = nm_connection_need_secrets (connection);
+		if (setting_name)
+			nm_act_request_request_connection_secrets (req, setting_name, TRUE);
+
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else if (nm_ap_get_mode (ap) == IW_MODE_ADHOC) {
 		NMDevice80211WirelessClass *	klass;

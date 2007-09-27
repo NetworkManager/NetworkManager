@@ -22,11 +22,6 @@ static gboolean impl_manager_legacy_state (NMManager *manager, guint32 *state, G
 
 static void nm_manager_connections_destroy (NMManager *manager, NMConnectionType type);
 static void manager_set_wireless_enabled (NMManager *manager, gboolean enabled);
-static gboolean get_connection_secrets (NMManager *manager,
-                                        NMDeviceInterface *device,
-                                        NMConnection *connection,
-                                        const char *setting_name,
-                                        gboolean request_new);
 
 typedef struct {
 	GSList *devices;
@@ -65,8 +60,6 @@ enum {
 
 	LAST_PROP
 };
-
-#define CONNECTION_GET_SECRETS_CALL_TAG "get-secrets-call"
 
 static void
 nm_manager_init (NMManager *manager)
@@ -669,21 +662,6 @@ manager_device_state_changed (NMDeviceInterface *device, NMDeviceState state, gp
 	NMManager *manager = NM_MANAGER (user_data);
 
 	nm_manager_update_state (manager);
-
-	if (state == NM_DEVICE_STATE_NEED_AUTH) {
-		NMActRequest *req;
-		NMConnection *connection;
-
-		req = nm_device_get_act_request (NM_DEVICE (device));
-		/* When device needs an auth it must be activating and thus have an act request. */
-		g_assert (req);
-		connection = nm_act_request_get_connection (req);
-
-		get_connection_secrets (manager, device,
-		                        connection,
-		                        nm_connection_need_secrets (connection),
-		                        TRUE);
-	}
 }
 
 void
@@ -1017,140 +995,5 @@ nm_manager_update_connections (NMManager *manager,
 
 	if (reset)
 		nm_manager_connections_destroy (manager, type);
-}
-
-typedef struct GetSecretsInfo {
-	NMManager *manager;
-	NMConnection *connection;
-	NMDeviceInterface *device;
-	char *setting_name;
-} GetSecretsInfo;
-
-static void
-free_get_secrets_info (gpointer data)
-{
-	GetSecretsInfo * info = (GetSecretsInfo *) data;
-
-	g_free (info->setting_name);
-	if (info->connection)
-		g_object_unref (info->connection);
-	if (info->device)
-		g_object_unref (info->device);
-	g_slice_free (GetSecretsInfo, info);
-}
-
-static void
-get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
-{
-	GetSecretsInfo *info = (GetSecretsInfo *) user_data;
-	GError *err = NULL;
-	GHashTable *secrets = NULL;
-
-	g_return_if_fail (info != NULL);
-	g_return_if_fail (info->manager);
-	g_return_if_fail (info->connection);
-	g_return_if_fail (info->setting_name);
-	g_return_if_fail (info->device);
-
-	g_object_set_data (G_OBJECT (info->connection), CONNECTION_GET_SECRETS_CALL_TAG, NULL);
-
-	if (!dbus_g_proxy_end_call (proxy, call, &err,
-								dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE), &secrets,
-								G_TYPE_INVALID)) {
-		nm_warning ("Couldn't get connection secrets: %s.", err->message);
-		g_error_free (err);
-		nm_device_interface_deactivate (info->device);
-		return;
-	}
-
-	if (g_hash_table_size (secrets) > 0) {
-		nm_connection_update_secrets (info->connection, info->setting_name, secrets);
-		// FIXME: some better way to handle invalid message?
-	} else {
-		nm_warning ("GetSecrets call returned but no secrets were found.");
-	}
-
-	g_hash_table_destroy (secrets);
-}
-
-static gboolean
-get_connection_secrets (NMManager *manager,
-                        NMDeviceInterface *device,
-                        NMConnection *connection,
-                        const char *setting_name,
-                        gboolean request_new)
-{
-	DBusGProxy *proxy;
-	GetSecretsInfo *info = NULL;
-	DBusGProxyCall *call;
-
-	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
-	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), FALSE);
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
-
-	proxy = g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_PROXY_TAG);
-	if (!DBUS_IS_G_PROXY (proxy)) {
-		nm_warning ("Couldn't get dbus proxy for connection.");
-		goto error;
-	}
-
-	info = g_slice_new0 (GetSecretsInfo);
-	if (!info) {
-		nm_warning ("Not enough memory to get secrets");
-		goto error;
-	}
-
-	info->setting_name = g_strdup (setting_name);
-	if (!info->setting_name) {
-		nm_warning ("Not enough memory to get secrets");
-		goto error;
-	}
-
-	info->connection = g_object_ref (connection);
-	info->manager = manager;
-	info->device = g_object_ref (device);
-
-	call = dbus_g_proxy_begin_call_with_timeout (proxy, "GetSecrets",
-	                                             get_secrets_cb,
-	                                             info,
-	                                             free_get_secrets_info,
-	                                             G_MAXINT32,
-	                                             G_TYPE_STRING, setting_name,
-	                                             G_TYPE_BOOLEAN, request_new,
-	                                             G_TYPE_INVALID);
-	if (!call) {
-		nm_warning ("Could not call GetSecrets");
-		goto error;
-	}
-
-	g_object_set_data (G_OBJECT (connection), CONNECTION_GET_SECRETS_CALL_TAG, call);
-	return TRUE;
-
-error:
-	if (info)
-		free_get_secrets_info (info);
-	return FALSE;
-}
-
-void
-nm_manager_cancel_get_connection_secrets (NMManager *manager,
-                                          NMConnection *connection)
-{
-	DBusGProxyCall *call;
-	DBusGProxy *proxy;
-
-	g_return_if_fail (NM_IS_MANAGER (manager));
-	g_return_if_fail (NM_IS_CONNECTION (connection));
-
-	proxy = g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_PROXY_TAG);
-	if (!DBUS_IS_G_PROXY (proxy))
-		return;
-
-	call = g_object_get_data (G_OBJECT (connection), CONNECTION_GET_SECRETS_CALL_TAG);
-	if (!call)
-		return;
-
-	dbus_g_proxy_cancel_call (proxy, call);
-	g_object_set_data (G_OBJECT (connection), CONNECTION_GET_SECRETS_CALL_TAG, NULL);
 }
 

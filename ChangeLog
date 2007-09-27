@@ -1,5 +1,25 @@
 2007-09-26  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-manager.c
+	  src/nm-manager.h
+	  src/nm-activation-request.c
+	  src/nm-activation-request.h
+		- Move the GetSecrets stuff out of the NMManager instance because it
+			doesn't really need to be there and complicates things
+
+	* src/nm-device.c
+		- (connection_secrets_failed_cb, device_activation_go): connect to the
+			connection-secrets-failed signal and deactivate the device if
+			the GetSecrets call fails
+
+	* src/nm-device-802-11-wireless.c
+		- (link_timeout_cb, supplicant_connection_timeout_cb,
+		   real_act_stage2_config, real_act_stage4_ip_config_timeout): request
+			secrets and give correct hints about whether new secrets should be
+			asked for by the client or not
+
+2007-09-26  Dan Williams  <dcbw@redhat.com>
+
 	* src/vpn-manager/nm-vpn-connection.c
 		- (nm_vpn_connection_set_state, clear_need_auth, finalize,
 		   connection_secrets_updated_cb, get_secrets_cb): don't need to attach

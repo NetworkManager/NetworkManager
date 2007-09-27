@@ -73,6 +73,7 @@ struct _NMDevicePrivate
 	gulong          act_deferred_start_id;
 	guint           act_source_id;
 	gulong          secrets_updated_id;
+	gulong          secrets_failed_id;
 
 	/* IP configuration info */
 	void *			system_config_data;	/* Distro-specific config data (parsed config file, etc) */
@@ -977,6 +978,12 @@ clear_act_request (NMDevice *self)
 		priv->secrets_updated_id = 0;
 	}
 
+	if (priv->secrets_failed_id) {
+		g_signal_handler_disconnect (priv->act_request,
+		                             priv->secrets_failed_id);
+		priv->secrets_failed_id = 0;
+	}
+
 	g_object_unref (priv->act_request);
 	priv->act_request = NULL;
 }
@@ -1115,6 +1122,17 @@ connection_secrets_updated_cb (NMActRequest *req,
 }
 
 static void
+connection_secrets_failed_cb (NMActRequest *req,
+                              NMConnection *connection,
+                              const char *setting_name,
+                              gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+
+	nm_device_interface_deactivate (NM_DEVICE_INTERFACE (self));
+}
+
+static void
 deferred_activation_timeout_cb (NMActRequest *req, gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
@@ -1167,6 +1185,12 @@ device_activation_go (NMDevice *self)
 	                       G_CALLBACK (connection_secrets_updated_cb),
 	                       self);
 	priv->secrets_updated_id = id;
+
+	id = g_signal_connect (priv->act_request,
+	                       "connection-secrets-failed",
+	                       G_CALLBACK (connection_secrets_failed_cb),
+	                       self);
+	priv->secrets_failed_id = id;
 
 	/* HACK: update the state a bit early to avoid a race between the 
 	 * scheduled stage1 handler and nm_policy_device_change_check() thinking

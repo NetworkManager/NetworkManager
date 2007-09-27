@@ -44,6 +44,9 @@ typedef struct {
 	void (*connection_secrets_updated)  (NMActRequest *req,
 	                                     NMConnection *connection,
 	                                     const char * setting);
+	void (*connection_secrets_failed)   (NMActRequest *req,
+	                                     NMConnection *connection,
+	                                     const char * setting);
 	void (*deferred_activation_timeout) (NMActRequest *req);
 	void (*deferred_activation_start)   (NMActRequest *req);
 } NMActRequestClass;
@@ -62,6 +65,9 @@ NMActRequest *nm_act_request_new_deferred (const char *service_name,
 gboolean      nm_act_request_is_deferred  (NMActRequest *req);
 
 NMConnection *nm_act_request_get_connection     (NMActRequest *req);
+gboolean      nm_act_request_request_connection_secrets (NMActRequest *req,
+                                                         const char *setting_name,
+                                                         gboolean request_new);
 const char *  nm_act_request_get_specific_object(NMActRequest *req);
 gboolean      nm_act_request_get_user_requested (NMActRequest *req);
 
