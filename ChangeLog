@@ -1,5 +1,15 @@
 2007-09-26  Dan Williams  <dcbw@redhat.com>
 
+	* include/NetworkManagerVPN.h
+		- Add a NEED_AUTH state
+
+	* src/vpn-manager/nm-vpn-connection.c
+		- Implement the NEED_AUTH state.  First ask the VPN service plugin if
+			the connection needs secrets, and if so, then ask the settings
+			service to fill in the secrets.  Then start the connection.
+
+2007-09-26  Dan Williams  <dcbw@redhat.com>
+
 	* src/vpn-manager/nm-vpn-manager.c
 		- (new_vpn_error, impl_vpn_manager_connect): set errors
 

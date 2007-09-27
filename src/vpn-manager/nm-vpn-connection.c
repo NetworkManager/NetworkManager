@@ -30,11 +30,14 @@
 
 #include "nm-vpn-connection.h"
 #include "nm-dbus-manager.h"
+#include "nm-manager.h"
 #include "NetworkManagerSystem.h"
 #include "nm-utils.h"
 #include "nm-vpn-plugin-bindings.h"
 
 static gboolean impl_vpn_connection_disconnect (NMVPNConnection *connection, GError **err);
+
+#define CONNECTION_GET_SECRETS_CALL_TAG "get-secrets-call"
 
 #include "nm-vpn-connection-glue.h"
 
@@ -42,6 +45,7 @@ G_DEFINE_TYPE (NMVPNConnection, nm_vpn_connection, G_TYPE_OBJECT)
 
 typedef struct {
 	NMConnection *connection;
+	gulong secrets_updated_id;
 	NMDevice *parent_dev;
 	char *object_path;
 	
@@ -81,13 +85,23 @@ nm_vpn_connection_set_state (NMVPNConnection *connection,
 
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
-	if (state != priv->state) {
-		priv->state = state;
+	if (state == priv->state)
+		return;
 
-		g_object_ref (connection);
-		g_signal_emit (connection, signals[STATE_CHANGED], 0, state);
-		g_object_unref (connection);
+	/* If transitioning away from the NEED_AUTH state, clean up */
+	if (priv->state == NM_VPN_CONNECTION_STATE_NEED_AUTH) {
+		if (priv->secrets_updated_id) {
+			g_signal_handler_disconnect (priv->connection,
+			                             priv->secrets_updated_id);
+			priv->secrets_updated_id = 0;
+		}
 	}
+
+	priv->state = state;
+
+	g_object_ref (connection);
+	g_signal_emit (connection, signals[STATE_CHANGED], 0, state);
+	g_object_unref (connection);
 }
 
 static void
@@ -104,22 +118,24 @@ nm_vpn_connection_new (NMConnection *connection,
 				   NMDevice *parent_device)
 {
 	NMVPNConnection *vpn_connection;
+	NMVPNConnectionPrivate *priv;
+	gulong id;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (parent_device), NULL);
 
 	vpn_connection = (NMVPNConnection *) g_object_new (NM_TYPE_VPN_CONNECTION, NULL);
-	if (vpn_connection) {
-		NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn_connection);
+	if (!vpn_connection)
+		return NULL;
 
-		priv->connection = connection;
-		priv->parent_dev = g_object_ref (parent_device);
+	priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn_connection);
 
-		priv->device_monitor = g_signal_connect (parent_device, "state-changed",
-										 G_CALLBACK (device_state_changed),
-										 vpn_connection);
-	}
+	priv->connection = g_object_ref (connection);
+	priv->parent_dev = g_object_ref (parent_device);
 
+	priv->device_monitor = g_signal_connect (parent_device, "state-changed",
+									 G_CALLBACK (device_state_changed),
+									 vpn_connection);
 	return vpn_connection;
 }
 
@@ -332,7 +348,6 @@ nm_vpn_connection_connect_cb (DBusGProxy *proxy, GError *err, gpointer user_data
 	if (err) {
 		nm_warning ("(VPN connection '%s' could not start.  dbus says: '%s'.", 
 				  nm_vpn_connection_get_name (connection), err->message);
-		g_error_free (err);
 		nm_vpn_connection_set_state (connection, NM_VPN_CONNECTION_STATE_FAILED);
 	} else {
 		nm_vpn_connection_set_state (connection, NM_VPN_CONNECTION_STATE_IP_CONFIG_GET);
@@ -342,29 +357,15 @@ nm_vpn_connection_connect_cb (DBusGProxy *proxy, GError *err, gpointer user_data
 	}
 }
 
-void
-nm_vpn_connection_activate (NMVPNConnection *connection)
+static void
+really_activate (NMVPNConnection *connection)
 {
 	NMVPNConnectionPrivate *priv;
-	NMDBusManager *dbus_mgr;
 
 	g_return_if_fail (NM_IS_VPN_CONNECTION (connection));
-	g_return_if_fail (nm_vpn_connection_get_state (connection) == NM_VPN_CONNECTION_STATE_PREPARE);
+	g_return_if_fail (nm_vpn_connection_get_state (connection) == NM_VPN_CONNECTION_STATE_NEED_AUTH);
 
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
-	dbus_mgr = nm_dbus_manager_get ();
-
-	priv->proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (dbus_mgr),
-									 nm_vpn_connection_get_service (connection),
-									 NM_VPN_DBUS_PLUGIN_PATH,
-									 NM_VPN_DBUS_PLUGIN_INTERFACE);
-	g_object_unref (dbus_mgr);
-
-	/* StateChanges signal */
-	dbus_g_proxy_add_signal (priv->proxy, "StateChanged", G_TYPE_UINT, G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->proxy, "StateChanged",
-						    G_CALLBACK (plugin_state_changed),
-						    connection, NULL);
 
 	/* Ip4Config signal */
 	dbus_g_object_register_marshaller (g_cclosure_marshal_VOID__BOXED,
@@ -382,6 +383,33 @@ nm_vpn_connection_activate (NMVPNConnection *connection)
 												  connection);
 
 	nm_vpn_connection_set_state (connection, NM_VPN_CONNECTION_STATE_CONNECT);
+}
+
+void
+nm_vpn_connection_activate (NMVPNConnection *connection)
+{
+	NMVPNConnectionPrivate *priv;
+	NMDBusManager *dbus_mgr;
+
+	g_return_if_fail (NM_IS_VPN_CONNECTION (connection));
+	g_return_if_fail (nm_vpn_connection_get_state (connection) == NM_VPN_CONNECTION_STATE_PREPARE);
+
+	priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+
+	dbus_mgr = nm_dbus_manager_get ();
+	priv->proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (dbus_mgr),
+	                                         nm_vpn_connection_get_service (connection),
+	                                         NM_VPN_DBUS_PLUGIN_PATH,
+	                                         NM_VPN_DBUS_PLUGIN_INTERFACE);
+	g_object_unref (dbus_mgr);
+
+	/* StateChanged signal */
+	dbus_g_proxy_add_signal (priv->proxy, "StateChanged", G_TYPE_UINT, G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->proxy, "StateChanged",
+						    G_CALLBACK (plugin_state_changed),
+						    connection, NULL);
+
+	nm_vpn_connection_set_state (connection, NM_VPN_CONNECTION_STATE_NEED_AUTH);
 }
 
 const char *
@@ -441,11 +469,225 @@ impl_vpn_connection_disconnect (NMVPNConnection *connection, GError **err)
 /******************************************************************************/
 
 static void
+clear_need_auth (NMVPNConnection *vpn_connection)
+{
+	NMVPNConnectionPrivate *priv;
+	DBusGProxy *proxy;
+	DBusGProxyCall *call;
+	NMConnection *connection;
+
+	g_return_if_fail (vpn_connection != NULL);
+
+	priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn_connection);
+	if (priv->secrets_updated_id) {
+		g_signal_handler_disconnect (priv->connection,
+		                             priv->secrets_updated_id);
+		priv->secrets_updated_id = 0;
+	}
+
+	g_assert (priv->connection);
+
+	proxy = g_object_get_data (G_OBJECT (priv->connection), NM_MANAGER_CONNECTION_PROXY_TAG);
+	if (!proxy || !DBUS_IS_G_PROXY (proxy))
+		return;
+
+	call = g_object_get_data (G_OBJECT (vpn_connection), CONNECTION_GET_SECRETS_CALL_TAG);
+	if (!call)
+		return;
+
+	dbus_g_proxy_cancel_call (proxy, call);
+	g_object_set_data (G_OBJECT (vpn_connection), CONNECTION_GET_SECRETS_CALL_TAG, NULL);
+}
+
+static void
+connection_secrets_updated_cb (NMConnection *connection,
+                               const char *setting_name,
+                               NMVPNConnection *self)
+{
+	NMVPNConnectionPrivate *priv;
+
+	g_return_if_fail (setting_name != NULL);
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_VPN_CONNECTION (self));
+
+	priv = NM_VPN_CONNECTION_GET_PRIVATE (self);
+	if (priv->state == NM_VPN_CONNECTION_STATE_NEED_AUTH)
+		really_activate (self);
+}
+
+typedef struct GetSecretsInfo {
+	NMVPNConnection *vpn_connection;
+	char *setting_name;
+} GetSecretsInfo;
+
+static void
+free_get_secrets_info (gpointer data)
+{
+	GetSecretsInfo * info = (GetSecretsInfo *) data;
+
+	g_free (info->setting_name);
+	if (info->vpn_connection)
+		g_object_unref (info->vpn_connection);
+	g_slice_free (GetSecretsInfo, info);
+}
+
+static void
+get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
+{
+	GetSecretsInfo *info = (GetSecretsInfo *) user_data;
+	NMVPNConnectionPrivate *priv;
+	GError *err = NULL;
+	GHashTable *secrets = NULL;
+	NMConnection *connection;
+	gulong id;
+
+	if (!info || !info->vpn_connection || !info->setting_name)
+		goto error;
+
+	g_object_set_data (G_OBJECT (info->vpn_connection), CONNECTION_GET_SECRETS_CALL_TAG, NULL);
+
+	if (!dbus_g_proxy_end_call (proxy, call, &err,
+								dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE), &secrets,
+								G_TYPE_INVALID)) {
+		nm_warning ("Couldn't get connection secrets: %s.", err->message);
+		g_error_free (err);
+		goto error;
+	}
+
+	if (g_hash_table_size (secrets) == 0) {
+		// FIXME: some better way to handle invalid message?
+		nm_warning ("GetSecrets call returned but no secrets were found.");
+		goto error;
+	}
+
+	priv = NM_VPN_CONNECTION_GET_PRIVATE (info->vpn_connection);
+	id = g_signal_connect (priv->connection,
+	                       "secrets-updated",
+	                       G_CALLBACK (connection_secrets_updated_cb),
+	                       info->vpn_connection);
+	priv->secrets_updated_id = id;
+
+	nm_connection_update_secrets (priv->connection, info->setting_name, secrets);
+	g_hash_table_destroy (secrets);
+	return;
+
+error:
+	nm_vpn_connection_fail (info->vpn_connection);
+}
+
+static gboolean
+get_connection_secrets (NMVPNConnection *vpn_connection,
+                        const char *setting_name,
+                        gboolean request_new)
+{
+	NMVPNConnectionPrivate *priv;
+	DBusGProxy *con_proxy;
+	GetSecretsInfo *info = NULL;
+	DBusGProxyCall *call;
+	NMConnection *connection;
+
+	g_return_val_if_fail (vpn_connection != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn_connection), FALSE);
+	g_return_val_if_fail (setting_name != NULL, FALSE);
+
+	priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn_connection);
+	g_assert (priv->connection);
+
+	con_proxy = g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_PROXY_TAG);
+	g_return_val_if_fail (con_proxy && DBUS_IS_G_PROXY (con_proxy), FALSE);
+
+	info = g_slice_new0 (GetSecretsInfo);
+	g_return_val_if_fail (info != NULL, FALSE);
+
+	info->setting_name = g_strdup (setting_name);
+	if (!info->setting_name) {
+		nm_warning ("Not enough memory to get secrets");
+		goto error;
+	}
+
+	info->vpn_connection = g_object_ref (vpn_connection);
+
+	/* use ..._with_timeout to give the user time to enter secrets */
+	call = dbus_g_proxy_begin_call_with_timeout (con_proxy, "GetSecrets",
+	                                             get_secrets_cb,
+	                                             info,
+	                                             free_get_secrets_info,
+	                                             G_MAXINT32,
+	                                             G_TYPE_STRING, setting_name,
+	                                             G_TYPE_BOOLEAN, request_new,
+	                                             G_TYPE_INVALID);
+	if (!call) {
+		nm_warning ("Could not call GetSecrets");
+		goto error;
+	}
+
+	g_object_set_data (G_OBJECT (vpn_connection),
+	                   CONNECTION_GET_SECRETS_CALL_TAG,
+	                   call);
+	return TRUE;
+
+error:
+	if (info)
+		free_get_secrets_info (info);
+	return FALSE;
+}
+
+static void
+connection_need_secrets_cb  (DBusGProxy *proxy,
+                             char *setting_name,
+                             GError *error,
+                             gpointer user_data)
+{
+	NMVPNConnection *vpn_connection = NM_VPN_CONNECTION (user_data);
+
+	g_object_set_data (G_OBJECT (vpn_connection),
+	                   CONNECTION_GET_SECRETS_CALL_TAG,
+	                   NULL);
+
+	if (error) {
+		g_warning ("%s.%d: NeedSecrets failed: %d %s",
+		           __FILE__, __LINE__,
+		           g_quark_to_string (error->domain), error->message);
+		nm_vpn_connection_fail (vpn_connection);
+		return;
+	}
+
+	if (setting_name && strlen (setting_name)) {
+		if (!get_connection_secrets (vpn_connection, setting_name, TRUE))
+			nm_vpn_connection_fail (vpn_connection);
+	} else {
+		/* No secrets needed */
+		really_activate (vpn_connection);
+	}
+}
+
+static void
+call_need_secrets (NMVPNConnection *vpn_connection)
+{
+	NMVPNConnectionPrivate *priv;
+	const char *setting_name;
+	GHashTable *settings;
+
+	priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn_connection);
+	settings = nm_connection_to_hash (priv->connection);
+	org_freedesktop_NetworkManager_VPN_Plugin_need_secrets_async (priv->proxy,
+	                         settings,
+	                         connection_need_secrets_cb,
+	                         vpn_connection);
+	g_hash_table_destroy (settings);
+}
+
+static void
 connection_state_changed (NMVPNConnection *connection, NMVPNConnectionState state)
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
+	clear_need_auth (connection);
+
 	switch (state) {
+	case NM_VPN_CONNECTION_STATE_NEED_AUTH:
+		call_need_secrets (connection);
+		break;
 	case NM_VPN_CONNECTION_STATE_DISCONNECTED:
 	case NM_VPN_CONNECTION_STATE_FAILED:
 		if (priv->proxy) {
@@ -474,7 +716,6 @@ connection_state_changed (NMVPNConnection *connection, NMVPNConnectionState stat
 			/* Reset routes, nameservers, and domains of the currently active device */
 			nm_system_device_set_from_ip4_config (priv->parent_dev);
 		}
-
 		break;
 	default:
 		break;
@@ -502,6 +743,12 @@ static void
 finalize (GObject *object)
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
+
+	if (priv->secrets_updated_id) {
+		g_signal_handler_disconnect (priv->connection,
+		                             priv->secrets_updated_id);
+		priv->secrets_updated_id = 0;
+	}
 
 	if (priv->parent_dev) {
 		if (priv->device_monitor)
