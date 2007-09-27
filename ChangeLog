@@ -1,5 +1,11 @@
 2007-09-26  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting.c
+		- (setting_vpn_properties_update_secrets): implement so VPN secrets
+			actually get updated when the user enters them
+
+2007-09-26  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/nm-vpn-plugin.c
 		- (impl_vpn_plugin_need_secrets): fix logic when no secrets are needed
 

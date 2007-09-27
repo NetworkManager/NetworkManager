@@ -1327,6 +1327,38 @@ property_value_destroy (gpointer data)
 	g_slice_free (GValue, data);
 }
 
+static void
+add_one_secret (gpointer key, gpointer value, gpointer user_data)
+{
+	NMSettingVPNProperties *self = (NMSettingVPNProperties *) user_data;
+	GValue * new_value;
+
+	if (!value || !G_VALUE_HOLDS_STRING (value))
+		return;
+
+	new_value = g_slice_new0 (GValue);
+	if (!new_value)
+		return;
+
+	g_value_init (new_value, G_TYPE_STRING);
+	g_value_copy (value, new_value);
+	g_hash_table_insert (self->data, g_strdup (key), new_value);
+}
+
+static gboolean
+setting_vpn_properties_update_secrets (NMSetting *setting,
+                                       GHashTable *secrets)
+{
+	NMSettingVPNProperties *self = (NMSettingVPNProperties *) setting;
+	SettingMember *m;
+
+	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (secrets != NULL, FALSE);
+
+	g_hash_table_foreach (secrets, add_one_secret, self);
+	return TRUE;
+}
+
 static SettingMember vpn_properties_table[] = {
 	{ "data", NM_S_TYPE_GVALUE_HASH, G_STRUCT_OFFSET (NMSettingVPNProperties, data), TRUE, FALSE },
 	{ NULL, 0, 0 },
@@ -1344,6 +1376,7 @@ nm_setting_vpn_properties_new (void)
 	setting->_members = vpn_properties_table;
 	setting->verify_fn = setting_vpn_properties_verify;
 	setting->hash_fn = setting_vpn_properties_hash;
+	setting->update_secrets_fn = setting_vpn_properties_update_secrets;
 	setting->clear_secrets_fn = default_setting_clear_secrets;
 	setting->destroy_fn = setting_vpn_properties_destroy;
 
