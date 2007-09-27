@@ -17,6 +17,8 @@
 #define NM_MANAGER_STATE "state"
 #define NM_MANAGER_WIRELESS_ENABLED "wireless-enabled"
 
+#define NM_MANAGER_CONNECTION_PROXY_TAG "dbus-proxy"
+
 typedef struct {
 	GObject parent;
 } NMManager;
@@ -76,12 +78,6 @@ const char * nm_manager_get_connection_service_name (NMManager *manager,
 
 const char * nm_manager_get_connection_dbus_path (NMManager *manager,
                                                   NMConnection *connection);
-
-gboolean nm_manager_get_connection_secrets (NMManager *manager,
-                                            NMDeviceInterface *device,
-                                            NMConnection *connection,
-                                            const char * setting_name,
-                                            gboolean request_new);
 
 void nm_manager_cancel_get_connection_secrets (NMManager *manager,
                                                NMConnection *connection);

@@ -22,6 +22,11 @@ static gboolean impl_manager_legacy_state (NMManager *manager, guint32 *state, G
 
 static void nm_manager_connections_destroy (NMManager *manager, NMConnectionType type);
 static void manager_set_wireless_enabled (NMManager *manager, gboolean enabled);
+static gboolean get_connection_secrets (NMManager *manager,
+                                        NMDeviceInterface *device,
+                                        NMConnection *connection,
+                                        const char *setting_name,
+                                        gboolean request_new);
 
 typedef struct {
 	GSList *devices;
@@ -61,7 +66,6 @@ enum {
 	LAST_PROP
 };
 
-#define CONNECTION_PROXY_TAG "dbus-proxy"
 #define CONNECTION_GET_SECRETS_CALL_TAG "get-secrets-call"
 
 static void
@@ -320,8 +324,10 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 		if (connection == NULL)
 			goto out;
 
-		g_object_set_data_full (G_OBJECT (connection), CONNECTION_PROXY_TAG, proxy,
-						    (GDestroyNotify) g_object_unref);
+		g_object_set_data_full (G_OBJECT (connection),
+		                        NM_MANAGER_CONNECTION_PROXY_TAG,
+		                        proxy,
+		                        (GDestroyNotify) g_object_unref);
 
 		priv = NM_MANAGER_GET_PRIVATE (manager);
 		if (strcmp (bus_name, NM_DBUS_SERVICE_USER_SETTINGS) == 0) {
@@ -673,10 +679,10 @@ manager_device_state_changed (NMDeviceInterface *device, NMDeviceState state, gp
 		g_assert (req);
 		connection = nm_act_request_get_connection (req);
 
-		nm_manager_get_connection_secrets (manager, device,
-									connection,
-									nm_connection_need_secrets (connection),
-									TRUE);
+		get_connection_secrets (manager, device,
+		                        connection,
+		                        nm_connection_need_secrets (connection),
+		                        TRUE);
 	}
 }
 
@@ -974,7 +980,7 @@ nm_manager_get_connection_service_name (NMManager *manager,
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	proxy = g_object_get_data (G_OBJECT (connection), CONNECTION_PROXY_TAG);
+	proxy = g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_PROXY_TAG);
 	if (!DBUS_IS_G_PROXY (proxy)) {
 		nm_warning ("Couldn't get dbus proxy for connection.");
 		return NULL;
@@ -992,7 +998,7 @@ nm_manager_get_connection_dbus_path (NMManager *manager,
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	proxy = g_object_get_data (G_OBJECT (connection), CONNECTION_PROXY_TAG);
+	proxy = g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_PROXY_TAG);
 	if (!DBUS_IS_G_PROXY (proxy)) {
 		nm_warning ("Couldn't get dbus proxy for connection.");
 		return NULL;
@@ -1028,7 +1034,8 @@ free_get_secrets_info (gpointer data)
 	g_free (info->setting_name);
 	if (info->connection)
 		g_object_unref (info->connection);
-	g_object_unref (info->device);
+	if (info->device)
+		g_object_unref (info->device);
 	g_slice_free (GetSecretsInfo, info);
 }
 
@@ -1066,21 +1073,22 @@ get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	g_hash_table_destroy (secrets);
 }
 
-gboolean
-nm_manager_get_connection_secrets (NMManager *manager,
-                                   NMDeviceInterface *device,
-                                   NMConnection *connection,
-                                   const char *setting_name,
-                                   gboolean request_new)
+static gboolean
+get_connection_secrets (NMManager *manager,
+                        NMDeviceInterface *device,
+                        NMConnection *connection,
+                        const char *setting_name,
+                        gboolean request_new)
 {
 	DBusGProxy *proxy;
 	GetSecretsInfo *info = NULL;
 	DBusGProxyCall *call;
 
 	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
+	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
-	proxy = g_object_get_data (G_OBJECT (connection), CONNECTION_PROXY_TAG);
+	proxy = g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_PROXY_TAG);
 	if (!DBUS_IS_G_PROXY (proxy)) {
 		nm_warning ("Couldn't get dbus proxy for connection.");
 		goto error;
@@ -1134,7 +1142,7 @@ nm_manager_cancel_get_connection_secrets (NMManager *manager,
 	g_return_if_fail (NM_IS_MANAGER (manager));
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 
-	proxy = g_object_get_data (G_OBJECT (connection), CONNECTION_PROXY_TAG);
+	proxy = g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_PROXY_TAG);
 	if (!DBUS_IS_G_PROXY (proxy))
 		return;
 
