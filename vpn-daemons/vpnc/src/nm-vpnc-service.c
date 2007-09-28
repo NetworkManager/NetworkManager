@@ -226,15 +226,19 @@ static void
 nm_vpnc_config_write (gint vpnc_fd, GHashTable *properties)
 {
 	write_config_option (vpnc_fd, "Script " NM_VPNC_HELPER_PATH "\n");
+
+	/* Thankfully vpnc ignores options it does not understand... */
+
+	/* Options for vpnc 0.3.x */
 	write_config_option (vpnc_fd, "UDP Encapsulate\n");
 	write_config_option (vpnc_fd, "UDP Encapsulation Port %d\n", NM_VPNC_UDP_ENCAPSULATION_PORT);
-
-	g_hash_table_foreach (properties, write_one_property, GINT_TO_POINTER (vpnc_fd));
-
-#if 0
 	if (!g_hash_table_lookup (properties, "Rekeying interval"))
 		write_config_option (vpnc_fd, "Rekeying interval %d\n", NM_VPNC_REKEYING_INTERVAL);
-#endif
+
+	// FIXME: do we need to enable Cisco UDP encapsulation here?
+	/* 0.4.x rekeys automatically */
+
+	g_hash_table_foreach (properties, write_one_property, GINT_TO_POINTER (vpnc_fd));
 }
 
 static gboolean

@@ -1,5 +1,11 @@
 2007-09-27  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-vpnc-service.c
+		- (nm_vpnc_config_write): turn back on various options that the vpnc
+			plugin had before that are used with vpnc 0.3.x
+
+2007-09-27  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-vpnc-service-vpnc-helper.c
 		- (addr_list_to_gvalue): list should contain straight guint32s, not
 			GValues containing guint32s
