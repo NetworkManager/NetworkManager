@@ -179,38 +179,37 @@ print_vpn_config (NMIP4Config *config,
 			   const char *tundev,
 			   const char *login_banner)
 {
-        struct in_addr  temp_addr;
-        char *          dns_domain = NULL;
-        guint32         num;
-        guint32                 i;
+	struct in_addr temp_addr;
+	char *         dns_domain = NULL;
+	guint32        num;
+	guint32        i;
 
-        g_return_if_fail (config != NULL);
+	g_return_if_fail (config != NULL);
 
-        temp_addr.s_addr = nm_ip4_config_get_gateway (config);
-        nm_info ("VPN Gateway: %s", inet_ntoa (temp_addr));
-        nm_info ("Tunnel Device: %s", tundev);
-        temp_addr.s_addr = nm_ip4_config_get_address (config);
-        nm_info ("Internal IP4 Address: %s", inet_ntoa (temp_addr));
-        temp_addr.s_addr = nm_ip4_config_get_netmask (config);
-        nm_info ("Internal IP4 Netmask: %s", inet_ntoa (temp_addr));
-        temp_addr.s_addr = nm_ip4_config_get_ptp_address (config);
-        nm_info ("Internal IP4 Point-to-Point Address: %s", inet_ntoa (temp_addr));
-        nm_info ("Maximum Segment Size (MSS): %d", nm_ip4_config_get_mss (config));
+	temp_addr.s_addr = nm_ip4_config_get_gateway (config);
+	nm_info ("VPN Gateway: %s", inet_ntoa (temp_addr));
+	nm_info ("Tunnel Device: %s", tundev);
+	temp_addr.s_addr = nm_ip4_config_get_address (config);
+	nm_info ("Internal IP4 Address: %s", inet_ntoa (temp_addr));
+	temp_addr.s_addr = nm_ip4_config_get_netmask (config);
+	nm_info ("Internal IP4 Netmask: %s", inet_ntoa (temp_addr));
+	temp_addr.s_addr = nm_ip4_config_get_ptp_address (config);
+	nm_info ("Internal IP4 Point-to-Point Address: %s", inet_ntoa (temp_addr));
+	nm_info ("Maximum Segment Size (MSS): %d", nm_ip4_config_get_mss (config));
 
-        num = nm_ip4_config_get_num_nameservers (config);
-        for (i = 1; i <= num; i++)
-        {
-                temp_addr.s_addr = nm_ip4_config_get_nameserver (config, i);
-                nm_info ("Internal IP4 DNS: %s", inet_ntoa (temp_addr));
-        }
+	num = nm_ip4_config_get_num_nameservers (config);
+	for (i = 0; i < num; i++) {
+		temp_addr.s_addr = nm_ip4_config_get_nameserver (config, i);
+		nm_info ("Internal IP4 DNS: %s", inet_ntoa (temp_addr));
+	}
 
-        if (nm_ip4_config_get_num_domains (config) > 0)
-                dns_domain = (char *) nm_ip4_config_get_domain (config, 1);
-        nm_info ("DNS Domain: '%s'", dns_domain ? dns_domain : "(none)");
-        nm_info ("Login Banner:");
-        nm_info ("-----------------------------------------");
-        nm_info ("%s", login_banner);
-        nm_info ("-----------------------------------------");
+	if (nm_ip4_config_get_num_domains (config) > 0)
+		dns_domain = (char *) nm_ip4_config_get_domain (config, 0);
+	nm_info ("DNS Domain: '%s'", dns_domain ? dns_domain : "(none)");
+	nm_info ("Login Banner:");
+	nm_info ("-----------------------------------------");
+	nm_info ("%s", login_banner);
+	nm_info ("-----------------------------------------");
 }
 
 static void
