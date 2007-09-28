@@ -30,7 +30,7 @@
 #define NM_VPNC_KEY_PERFECT_FORWARD "Perfect Forward Secrecy"
 #define NM_VPNC_KEY_APP_VERSION "Application Version"
 #define NM_VPNC_KEY_REKEYING "Rekeying interval"
-#define NM_VPNC_KEY_NAT_KEEPALIVE "NAT-Keepalive package interval"
+#define NM_VPNC_KEY_NAT_KEEPALIVE "NAT-Keepalive packet interval"
 #define NM_VPNC_KEY_DISABLE_NAT "Disable NAT Traversal"
 #define NM_VPNC_KEY_SINGLE_DES "Enable Single DES"
 
