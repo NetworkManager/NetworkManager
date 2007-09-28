@@ -178,7 +178,6 @@ nm_act_request_new (NMConnection *connection,
 {
 	GObject *obj;
 	NMActRequestPrivate *priv;
-	gulong id;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
@@ -218,7 +217,6 @@ connection_added_cb (NMManager *manager,
 	NMActRequestPrivate *priv;
 	const char *service_name;
 	const char *path;
-	gulong id;
 
 	g_return_if_fail (NM_IS_ACT_REQUEST (user_data));
 	g_return_if_fail (NM_IS_CONNECTION (connection));

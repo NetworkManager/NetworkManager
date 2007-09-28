@@ -109,7 +109,6 @@ nm_vpn_connection_new (NMConnection *connection,
 {
 	NMVPNConnection *vpn_connection;
 	NMVPNConnectionPrivate *priv;
-	gulong id;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (parent_device), NULL);
@@ -504,7 +503,6 @@ get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	NMVPNConnectionPrivate *priv;
 	GError *err = NULL;
 	GHashTable *secrets = NULL;
-	NMConnection *connection;
 
 	if (!info || !info->vpn_connection || !info->setting_name)
 		goto error;
@@ -605,7 +603,7 @@ connection_need_secrets_cb  (DBusGProxy *proxy,
 	                   NULL);
 
 	if (error) {
-		g_warning ("%s.%d: NeedSecrets failed: %d %s",
+		g_warning ("%s.%d: NeedSecrets failed: %s %s",
 		           __FILE__, __LINE__,
 		           g_quark_to_string (error->domain), error->message);
 		nm_vpn_connection_fail (vpn_connection);
@@ -625,7 +623,6 @@ static void
 call_need_secrets (NMVPNConnection *vpn_connection)
 {
 	NMVPNConnectionPrivate *priv;
-	const char *setting_name;
 	GHashTable *settings;
 
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn_connection);

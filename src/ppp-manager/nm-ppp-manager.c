@@ -526,7 +526,6 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	NMPPPManagerPrivate *priv;
 	NMCmdLine *ppp_cmd;
 	char *cmd_str;
-	GPid pid;
 	GSource *ppp_watch;
 
 	g_return_val_if_fail (NM_IS_PPP_MANAGER (manager), FALSE);
@@ -559,7 +558,7 @@ nm_ppp_manager_start (NMPPPManager *manager,
 
 	nm_debug ("ppp started with pid %d", priv->pid);
 
-	ppp_watch = g_child_watch_source_new (pid);
+	ppp_watch = g_child_watch_source_new (priv->pid);
 	g_source_set_callback (ppp_watch, (GSourceFunc) ppp_watch_cb, manager, NULL);
 	g_source_attach (ppp_watch, NULL);
 	g_source_unref (ppp_watch);
