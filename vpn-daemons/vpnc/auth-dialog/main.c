@@ -32,96 +32,106 @@
 #include "../src/nm-vpnc-service.h"
 #include "gnome-two-password-dialog.h"
 
+static char *
+find_one_password (const char *vpn_name,
+                   const char *vpn_service,
+                   const char *secret_name,
+                   gboolean *is_session)
+{
+	GList *found_list = NULL;
+	GnomeKeyringResult ret;
+	GnomeKeyringFound *found;
+	char *secret;
+
+	ret = gnome_keyring_find_itemsv_sync (GNOME_KEYRING_ITEM_GENERIC_SECRET,
+	                                      &found_list,
+	                                      "connection-name",
+	                                      GNOME_KEYRING_ATTRIBUTE_TYPE_STRING,
+	                                      vpn_name,
+	                                      "setting-name",
+	                                      GNOME_KEYRING_ATTRIBUTE_TYPE_STRING,
+	                                      NM_SETTING_VPN_PROPERTIES,
+	                                      "setting-key",
+	                                      GNOME_KEYRING_ATTRIBUTE_TYPE_STRING,
+	                                      secret_name,
+	                                      NULL);
+	if ((ret != GNOME_KEYRING_RESULT_OK) || (g_list_length (found_list) == 0))
+		return NULL;
+
+	found = (GnomeKeyringFound *) found_list->data;
+
+	if (strcmp (found->keyring, "session") == 0)
+		*is_session = TRUE;
+	else
+		*is_session = FALSE;
+
+	secret = found->secret ? g_strdup (found->secret) : NULL;
+	gnome_keyring_found_list_free (found_list);
+
+	return secret;
+}
+
 static GSList *
 lookup_pass (const char *vpn_name, const char *vpn_service, gboolean *is_session)
 {
-	GSList *passwords;
-	GList *keyring_result;
+	GSList *passwords = NULL;
+	char *password;
+	char *group_password;
 
-	passwords = NULL;
+	password = find_one_password (vpn_name, vpn_service, "password", is_session);
+	if (!password)
+		return NULL;
 
-	if (gnome_keyring_find_network_password_sync (g_get_user_name (),     /* user */
-						      NULL,                   /* domain */
-						      vpn_name,               /* server */
-						      NULL,                   /* object */
-						      vpn_service,            /* protocol */
-						      NULL,                   /* authtype */
-						      0,                      /* port */
-						      &keyring_result) != GNOME_KEYRING_RESULT_OK)
-		return FALSE;
-
-	if (keyring_result != NULL && g_list_length (keyring_result) == 2) {
-		char *password;
-		char *group_password;
-		GnomeKeyringNetworkPasswordData *data1 = keyring_result->data;
-		GnomeKeyringNetworkPasswordData *data2 = (g_list_next (keyring_result))->data;
-
-		password = NULL;
-		group_password = NULL;
-
-		if (strcmp (data1->object, "group_password") == 0) {
-			group_password = data1->password;
-		} else if (strcmp (data1->object, "password") == 0) {
-			password = data1->password;
-		}
-
-		if (strcmp (data2->object, "group_password") == 0) {
-			group_password = data2->password;
-		} else if (strcmp (data2->object, "password") == 0) {
-			password = data2->password;
-		}
-
-		if (password != NULL && group_password != NULL) {
-			passwords = g_slist_append (passwords, g_strdup (group_password));
-			passwords = g_slist_append (passwords, g_strdup (password));
-			if (strcmp (data1->keyring, "session") == 0)
-				*is_session = TRUE;
-			else
-				*is_session = FALSE;
-		}
-
-		gnome_keyring_network_password_list_free (keyring_result);
+	group_password = find_one_password (vpn_name, vpn_service, "group-password", is_session);
+	if (!group_password) {
+		g_free (password);
+		return NULL;
 	}
 
+	/* Group password first */
+	passwords = g_slist_append (passwords, group_password);
+	passwords = g_slist_append (passwords, password);
 	return passwords;
 }
 
-static void save_vpn_password (const char *vpn_name, const char *vpn_service, const char *keyring, 
-			       const char *password, const char *group_password)
+static void
+save_vpn_password (const char *vpn_name,
+                   const char *vpn_service,
+                   const char *keyring,
+                   const char *secret_name,
+                   const char *secret)
 {
+	char *display_name;
 	guint32 item_id;
-	GnomeKeyringResult keyring_result;
+	GnomeKeyringResult ret;
+	GnomeKeyringAttributeList *attrs = NULL;
+	guint32 id = 0;
 
-	keyring_result = gnome_keyring_set_network_password_sync (keyring,
-								  g_get_user_name (),
-								  NULL,
-								  vpn_name,
-								  "password",
-								  vpn_service,
-								  NULL,
-								  0,
-								  password,
-								  &item_id);
-	if (keyring_result != GNOME_KEYRING_RESULT_OK)
-	{
-		g_warning ("Couldn't store password in keyring, code %d", (int) keyring_result);
-	}
+	display_name = g_strdup_printf ("VPN %s secret for %s/%s/" NM_SETTING_VPN_PROPERTIES,
+	                                secret_name,
+	                                vpn_name,
+	                                vpn_service);
 
-	keyring_result = gnome_keyring_set_network_password_sync (keyring,
-								  g_get_user_name (),
-								  NULL,
-								  vpn_name,
-								  "group_password",
-								  vpn_service,
-								  NULL,
-								  0,
-								  group_password,
-								  &item_id);
+	attrs = gnome_keyring_attribute_list_new ();
+	gnome_keyring_attribute_list_append_string (attrs,
+	                                            "connection-name",
+	                                            vpn_name);
+	gnome_keyring_attribute_list_append_string (attrs,
+	                                            "setting-name",
+	                                            NM_SETTING_VPN_PROPERTIES);
+	gnome_keyring_attribute_list_append_string (attrs,
+	                                            "setting-key",
+	                                            secret_name);
 
-	if (keyring_result != GNOME_KEYRING_RESULT_OK)
-	{
-		g_warning ("Couldn't store password in keyring, code %d", (int) keyring_result);
-	}
+	ret = gnome_keyring_item_create_sync (keyring,
+	                                      GNOME_KEYRING_ITEM_GENERIC_SECRET,
+	                                      display_name,
+	                                      attrs,
+	                                      secret,
+	                                      TRUE,
+	                                      &id);
+	gnome_keyring_attribute_list_free (attrs);
+	g_free (display_name);
 }
 
 static GSList *
@@ -199,10 +209,12 @@ get_passwords (const char *vpn_name, const char *vpn_service, gboolean retry)
 		switch (gnome_two_password_dialog_get_remember (GNOME_TWO_PASSWORD_DIALOG (dialog)))
 		{
 			case GNOME_TWO_PASSWORD_DIALOG_REMEMBER_SESSION:
-				save_vpn_password (vpn_name, vpn_service, "session", password, group_password);
+				save_vpn_password (vpn_name, vpn_service, "session", "password", password);
+				save_vpn_password (vpn_name, vpn_service, "session", "group-password", group_password);
 				break;
 			case GNOME_TWO_PASSWORD_DIALOG_REMEMBER_FOREVER:
-				save_vpn_password (vpn_name, vpn_service, NULL, password, group_password);
+				save_vpn_password (vpn_name, vpn_service, NULL, "password", password);
+				save_vpn_password (vpn_name, vpn_service, NULL, "group-password", group_password);
 				break;
 			default:
 				break;

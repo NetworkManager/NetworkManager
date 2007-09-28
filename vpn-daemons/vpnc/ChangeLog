@@ -1,5 +1,12 @@
 2007-09-27  Dan Williams  <dcbw@redhat.com>
 
+	* auth-dialog/main.c
+		- Rework password storage to match the GConf semantics of nm-applet
+			better.  Also, use generic secrets, not keyring network passwords.
+			Keyring network passwords are inappropriate for our usage here.
+
+2007-09-27  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-vpnc-service.c
 		- (nm_vpnc_config_write): turn back on various options that the vpnc
 			plugin had before that are used with vpnc 0.3.x
