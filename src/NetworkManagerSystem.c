@@ -321,12 +321,12 @@ nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
 	struct rtnl_addr *	addr = NULL;
 	struct rtnl_link *	request = NULL;
 	NMNamedManager *named_mgr;
+	int iface_idx;
 
 	g_return_val_if_fail (config != NULL, FALSE);
 
 	/* Set up a route to the VPN gateway through the real network device */
-	if (active_device && (ad_config = nm_device_get_ip4_config (active_device)))
-	{
+	if (active_device && (ad_config = nm_device_get_ip4_config (active_device))) {
 		nm_system_device_set_ip4_route (active_device,
 				nm_ip4_config_get_gateway (ad_config),
 				nm_ip4_config_get_gateway (config),
@@ -334,73 +334,68 @@ nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
 				nm_ip4_config_get_mss (config));
 	}
 
-	if (iface != NULL && strlen (iface))
-	{
-		nm_system_device_set_up_down_with_iface (iface, TRUE);
+	if (!iface || !strlen (iface))
+		goto out;
 
-		nlh = nm_netlink_get_default_handle ();
+	nm_system_device_set_up_down_with_iface (iface, TRUE);
 
-		if ((addr = nm_ip4_config_to_rtnl_addr (config, NM_RTNL_ADDR_PTP_DEFAULT)))
-		{
-			int err = 0;
-			rtnl_addr_set_ifindex (addr, nm_device_get_index (active_device));
-			if ((err = rtnl_addr_add (nlh, addr, 0)) < 0)
-				nm_warning ("error %d returned from rtnl_addr_add():\n%s", err, nl_geterror());
-			rtnl_addr_put (addr);
-		}
-		else
-			nm_warning ("couldn't create rtnl address!\n");
+	iface_idx = nm_netlink_iface_to_index (iface);
 
-		/* Set the MTU */
-		if ((request = rtnl_link_alloc ()))
-		{
-			struct rtnl_link * old;
-			guint32 mtu;
+	nlh = nm_netlink_get_default_handle ();
+	if ((addr = nm_ip4_config_to_rtnl_addr (config, NM_RTNL_ADDR_PTP_DEFAULT))) {
+		int err = 0;
+		rtnl_addr_set_ifindex (addr, iface_idx);
+		if ((err = rtnl_addr_add (nlh, addr, 0)) < 0)
+			nm_warning ("error %d returned from rtnl_addr_add():\n%s", err, nl_geterror());
+		rtnl_addr_put (addr);
+	} else
+		nm_warning ("couldn't create rtnl address!\n");
 
-			old = nm_netlink_index_to_rtnl_link (nm_device_get_index (active_device));
-			mtu = nm_ip4_config_get_mtu (config);
-			if (mtu == 0)
-				mtu = 1412;  /* Default to 1412 (vpnc) */
-			rtnl_link_set_mtu (request, mtu);
-			rtnl_link_change (nlh, old, request, 0);
+	/* Set the MTU */
+	if ((request = rtnl_link_alloc ())) {
+		struct rtnl_link * old;
+		guint32 mtu;
 
-			rtnl_link_put (old);
-			rtnl_link_put (request);
-		}
+		old = nm_netlink_index_to_rtnl_link (iface_idx);
+		mtu = nm_ip4_config_get_mtu (config);
+		if (mtu == 0)
+			mtu = 1412;  /* Default to 1412 (vpnc) */
+		rtnl_link_set_mtu (request, mtu);
+		rtnl_link_change (nlh, old, request, 0);
 
-		sleep (1);
+		rtnl_link_put (old);
+		rtnl_link_put (request);
+	}
 
-		nm_system_device_flush_routes_with_iface (iface);
+	sleep (1);
 
-		if (g_slist_length (routes) == 0)
-		{
-			nm_system_delete_default_route ();
-			nm_system_device_add_default_route_via_device_with_iface (iface);
-		}
-		else
-		{
-		  GSList *iter;
+	nm_system_device_flush_routes_with_iface (iface);
 
-		  for (iter = routes; iter; iter = iter->next) {
-				char *valid_ip4_route;
+	if (g_slist_length (routes) == 0) {
+		nm_system_delete_default_route ();
+		nm_system_device_add_default_route_via_device_with_iface (iface);
+	} else {
+		GSList *iter;
 
-				/* Make sure the route is valid, otherwise it's a security risk as the route
-				 * text is simply taken from the user, and passed directly to system().  If
-				 * we did not check the route, think of:
-				 *
-				 *     system("/sbin/ip route add `rm -rf /` dev eth0")
-				 *
-				 * where `rm -rf /` was the route text.  As UID 0 (root), we have to be careful.
-				 */
-				if ((valid_ip4_route = validate_ip4_route ((char *) iter->data)))
-				{
-					nm_system_device_add_route_via_device_with_iface (iface, valid_ip4_route);
-					g_free (valid_ip4_route);
-				}
+		for (iter = routes; iter; iter = iter->next) {
+			char *valid_ip4_route;
+
+			/* Make sure the route is valid, otherwise it's a security risk as the route
+			 * text is simply taken from the user, and passed directly to system().  If
+			 * we did not check the route, think of:
+			 *
+			 *     system("/sbin/ip route add `rm -rf /` dev eth0")
+			 *
+			 * where `rm -rf /` was the route text.  As UID 0 (root), we have to be careful.
+			 */
+			if ((valid_ip4_route = validate_ip4_route ((char *) iter->data))) {
+				nm_system_device_add_route_via_device_with_iface (iface, valid_ip4_route);
+				g_free (valid_ip4_route);
 			}
 		}
 	}
 
+out:
 	named_mgr = nm_named_manager_get ();
 	nm_named_manager_add_ip4_config (named_mgr, config);
 	g_object_unref (named_mgr);
