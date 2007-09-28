@@ -1,5 +1,13 @@
 2007-09-27  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-vpnc-service-vpnc-helper.c
+		- (addr_list_to_gvalue): list should contain straight guint32s, not
+			GValues containing guint32s
+		- (main): For Cisco/vpnc, the IP4 PTP address needs to be the same as
+			the internal IP4 address
+
+2007-09-27  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-vpnc-service.c
 		- (real_connect): close vpnc's stdin so it can actually go ahead and
 			connect

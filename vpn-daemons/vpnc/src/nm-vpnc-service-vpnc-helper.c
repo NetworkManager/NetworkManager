@@ -149,12 +149,12 @@ addr_list_to_gvalue (const char *str)
 	if (g_strv_length (split) == 0)
 		return NULL;
 
-	array = g_array_sized_new (FALSE, TRUE, sizeof (GValue *), g_strv_length (split));
+	array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), g_strv_length (split));
 	for (i = 0; split[i]; i++) {
-		GValue * addr_val = addr_to_gvalue (split[i]);
+		struct in_addr addr;
 
-		if (addr_val) {
-			g_array_append_val (array, addr_val);
+		if (inet_aton (split[i], &addr)) {
+			g_array_append_val (array, addr.s_addr);
 		} else {
 			g_strfreev (split);
 			g_array_free (array, TRUE);
@@ -230,6 +230,13 @@ main (int argc, char *argv[])
 		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_ADDRESS, val);
 	else
 		helper_failed (connection, "IP4 Address");
+
+	/* PTP address; for vpnc PTP address == internal IP4 address */
+	val = addr_to_gvalue (getenv ("INTERNAL_IP4_ADDRESS"));
+	if (val)
+		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_PTP, val);
+	else
+		helper_failed (connection, "IP4 PTP Address");
 
 	/* Netmask */
 	val = addr_to_gvalue (getenv ("INTERNAL_IP4_NETMASK"));
