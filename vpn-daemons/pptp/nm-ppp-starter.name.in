@@ -1,8 +1,8 @@
 [VPN Connection]
 name=ppp
 service=org.freedesktop.NetworkManager.ppp_starter
-program=@bindir@/nm-ppp-starter
+program=@BINDIR@/nm-ppp-starter
 
 [GNOME]
-auth-dialog=@libexecdir@/nm-ppp-auth-dialog
-properties=@prefix@/${LIB}/libnm-ppp-properties
+auth-dialog=@LIBEXECDIR@/nm-ppp-auth-dialog
+properties=@PREFIX@/${LIB}/libnm-ppp-properties

@@ -5,4 +5,4 @@ program=@BINDIR@/nm-vpnc-service
 
 [GNOME]
 auth-dialog=@LIBEXECDIR@/nm-vpnc-auth-dialog
-properties=@LIBDIR@/libnm-vpnc-properties
+properties=@PREFIX@/${LIB}/libnm-vpnc-properties
