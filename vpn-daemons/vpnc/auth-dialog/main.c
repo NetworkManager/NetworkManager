@@ -102,7 +102,6 @@ save_vpn_password (const char *vpn_name,
                    const char *secret)
 {
 	char *display_name;
-	guint32 item_id;
 	GnomeKeyringResult ret;
 	GnomeKeyringAttributeList *attrs = NULL;
 	guint32 id = 0;

@@ -178,7 +178,7 @@ impl_fill_connection (NetworkManagerVpnUI *self, NMConnection *connection)
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 
 	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_SETTING_CONNECTION);
-	g_assert (s_vpn);
+	g_assert (s_con);
 
 	s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_SETTING_VPN);
 	g_assert (s_vpn);
@@ -698,7 +698,6 @@ import_button_clicked (GtkButton *button, gpointer user_data)
 	char *filename = NULL;
 	GtkWidget *dialog;
 	NetworkManagerVpnUI *self = (NetworkManagerVpnUI *) user_data;
-	NetworkManagerVpnUIImpl *impl = (NetworkManagerVpnUIImpl *) self->data;
 
 	dialog = gtk_file_chooser_dialog_new (_("Select file to import"),
 					      NULL,
