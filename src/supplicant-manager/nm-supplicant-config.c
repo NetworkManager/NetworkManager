@@ -310,7 +310,7 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 			value = nm_utils_hexstr2bin (field, strlen (field)); \
 		} else \
 			value = g_strdup (field); \
-		success = nm_supplicant_config_add_option (self, name, value, -1, secret); \
+		success = nm_supplicant_config_add_option (self, name, value, unhexify ? (strlen (field) / 2) : -1, secret); \
 		g_free (value); \
 		if (!success) { \
 			nm_warning ("Error adding %s to supplicant config.", name); \
