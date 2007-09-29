@@ -82,9 +82,17 @@ nm_vpn_connection_get_name (NMVPNConnection *vpn)
 NMVPNConnectionState
 nm_vpn_connection_get_state (NMVPNConnection *vpn)
 {
+	NMVPNConnectionPrivate *priv;
+
 	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), NM_VPN_CONNECTION_STATE_UNKNOWN);
 
-	return NM_VPN_CONNECTION_GET_PRIVATE (vpn)->state;
+	priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn);
+	if (priv->state == NM_VPN_CONNECTION_STATE_UNKNOWN) {
+		priv->state = nm_object_get_uint_property (NM_OBJECT (vpn),
+		                                           NM_DBUS_INTERFACE_VPN_CONNECTION,
+		                                           "State");
+	}
+	return priv->state;
 }
 
 static void
