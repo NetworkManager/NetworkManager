@@ -150,14 +150,24 @@ nm_vpn_service_get_name (NMVPNService *service)
 }
 
 static void
-nm_vpn_service_connections_stop (NMVPNService *service, gboolean fail)
+nm_vpn_service_connections_stop (NMVPNService *service,
+                                 gboolean fail,
+                                 NMVPNConnectionStateReason reason)
 {
 	NMVPNServicePrivate *priv = NM_VPN_SERVICE_GET_PRIVATE (service);
-	GSList *iter;
+	GSList *iter, *copy;
 
-	for (iter = priv->connections; iter; iter = iter->next)
-		fail ? nm_vpn_connection_fail (NM_VPN_CONNECTION (iter->data)) 
-			: nm_vpn_connection_disconnect (NM_VPN_CONNECTION (iter->data));
+	/* Copy because stopping the connection may remove it from the list
+	 * in the the NMVPNService objects' VPN connection state handler.
+	 */
+	copy = g_slist_copy (priv->connections);
+	for (iter = copy; iter; iter = iter->next) {
+		if (fail)
+			nm_vpn_connection_fail (NM_VPN_CONNECTION (iter->data), reason);
+		else
+			nm_vpn_connection_disconnect (NM_VPN_CONNECTION (iter->data), reason);
+	}
+	g_slist_free (copy);
 }
 
 /*
@@ -200,7 +210,7 @@ vpn_service_watch_cb (GPid pid, gint status, gpointer user_data)
 	waitpid (pid, NULL, WNOHANG);
 	priv->pid = 0;
 
-	nm_vpn_service_connections_stop (service, TRUE);
+	nm_vpn_service_connections_stop (service, TRUE, NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
 }
 
 static gboolean
@@ -212,7 +222,7 @@ nm_vpn_service_timeout (gpointer data)
 		    nm_vpn_service_get_name (service));
 
 	NM_VPN_SERVICE_GET_PRIVATE (service)->service_start_timeout = 0;
-	nm_vpn_service_connections_stop (service, TRUE);
+	nm_vpn_service_connections_stop (service, TRUE, NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT);
 
 	return FALSE;
 }
@@ -260,7 +270,7 @@ nm_vpn_service_daemon_exec (gpointer user_data)
 		            nm_vpn_service_get_name (service), err->message);
 		g_error_free (err);
 
-		nm_vpn_service_connections_stop (service, TRUE);
+		nm_vpn_service_connections_stop (service, TRUE, NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_FAILED);
 	}
 
 	return FALSE;
@@ -275,15 +285,17 @@ destroy_service (gpointer data)
 }
 
 static void
-connection_state_changed (NMVPNConnection *connection, NMVPNConnectionState state, gpointer user_data)
+connection_state_changed (NMVPNConnection *connection,
+                          NMVPNConnectionState state,
+                          NMVPNConnectionStateReason reason,
+                          gpointer user_data)
 {
-	NMVPNServicePrivate *priv;
+	NMVPNServicePrivate *priv = NM_VPN_SERVICE_GET_PRIVATE (user_data);
 
 	switch (state) {
 	case NM_VPN_CONNECTION_STATE_FAILED:
 	case NM_VPN_CONNECTION_STATE_DISCONNECTED:
 		/* Remove the connection from our list */
-		priv = NM_VPN_SERVICE_GET_PRIVATE (user_data);
 		priv->connections = g_slist_remove (priv->connections, connection);
 		g_object_unref (connection);
 
@@ -374,7 +386,7 @@ nm_vpn_service_name_owner_changed (NMDBusManager *mgr,
 		/* service went away */
 		nm_info ("VPN service '%s' disappeared, cancelling connections",
 			    nm_vpn_service_get_name (service));
-		nm_vpn_service_connections_stop (service, TRUE);
+		nm_vpn_service_connections_stop (service, TRUE, NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
 	}
 }
 
@@ -400,7 +412,9 @@ finalize (GObject *object)
 	if (priv->service_start_timeout)
 		g_source_remove (priv->service_start_timeout);
 
-	nm_vpn_service_connections_stop (NM_VPN_SERVICE (object), FALSE);
+	nm_vpn_service_connections_stop (NM_VPN_SERVICE (object),
+	                                 FALSE,
+	                                 NM_VPN_CONNECTION_STATE_REASON_UNKNOWN);
 
 	g_signal_handler_disconnect (priv->dbus_mgr, priv->name_owner_id);
 	g_object_unref (priv->dbus_mgr);

@@ -1,3 +1,40 @@
+2007-10-01  Dan Williams  <dcbw@redhat.com>
+
+	* include/NetworkManagerVPN.h
+		- define VPN connection state change reason codes
+
+	* src/vpn-manager/Makefile.am
+	  src/vpn-manager/nm-vpn-marshal.list
+	  src/vpn-manager/nm-vpn-marshal-main.c
+		- Add marshallers for StateChanged signal
+
+	* introspection/nm-vpn-connection.xml
+		- New Banner property
+		- StateChanged signal now includes a 'reason' argument
+
+	* src/vpn-manager/nm-vpn-connection.c
+	  src/vpn-manager/nm-vpn-connection.h
+		- Add a "Banner" property that contains the returned VPN server login
+			banner (if any); valid only in the ACTIVATED state
+		- (nm_vpn_connection_set_state, nm_vpn_connection_disconnect): now takes
+			a 'reason' argument and emits that reason along with the
+			state-changed signal
+		- Fix up calls to nm_vpn_connection_set_state() to include a reason
+		- (nm_vpn_connection_ip4_config_get): save banner for later
+		- (nm_vpn_connection_get_banner, get_property,
+		   nm_vpn_connection_class_init): implement Banner property
+
+	* src/vpn-manager/nm-vpn-service.c
+		- (nm_vpn_service_connections_stop): take a reason argument; copy the
+			connection list because elements may get added/removed from it
+			while iterating over the list
+		- (connection_state_changed): signal now includes the 'reason' argument
+
+	* libnm-glib/nm-vpn-connection.c
+	  libnm-glib/nm-vpn-connection.h
+		- (nm_vpn_connection_get_banner): new function
+		- (state_changed_proxy): handle reason argument
+
 2007-09-28  Tambet Ingo  <tambet@gmail.com>
 
 	* src/nm-manager.c:

@@ -8,9 +8,11 @@
 
     <property name="Name" type="s" access="read"/>
     <property name="State" type="u" access="read"/>
+    <property name="Banner" type="s" access="read"/>
 
     <signal name="StateChanged">
       <arg name="state" type="u"/>
+      <arg name="reason" type="u"/>
     </signal>
   </interface>
 </node>

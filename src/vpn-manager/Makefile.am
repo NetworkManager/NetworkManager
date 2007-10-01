@@ -14,7 +14,22 @@ libvpn_manager_la_SOURCES =	\
 	nm-vpn-service.c	\
 	nm-vpn-service.h	\
 	nm-vpn-connection.c	\
-	nm-vpn-connection.h
+	nm-vpn-connection.h \
+	nm-vpn-marshal-main.c
+
+nm-vpn-marshal.h: Makefile.am nm-vpn-marshal.list
+	$(GLIB_GENMARSHAL) --prefix=nm_vpn_marshal $(srcdir)/nm-vpn-marshal.list --header > \
+		xgen-gmh \
+	&& (cmp -s xgen-gmh nm-vpn-marshal.h || cp xgen-gmh nm-vpn-marshal.h) \
+	&& rm -f xgen-gmh xgen-gmh~
+
+nm-vpn-marshal.c: Makefile.am nm-vpn-marshal.list
+	$(GLIB_GENMARSHAL) --prefix=nm_vpn_marshal $(srcdir)/nm-vpn-marshal.list --body > \
+		xgen-gmc \
+	&& cp xgen-gmc nm-vpn-marshal.c \
+	&& rm -f xgen-gmc xgen-gmc~
+
+nm-vpn-marshal-main.c: nm-vpn-marshal.c nm-vpn-marshal.h
 
 libvpn_manager_la_CPPFLAGS =	\
 	$(DBUS_CFLAGS)		\
@@ -38,8 +53,13 @@ nm-vpn-plugin-bindings.h: $(top_srcdir)/introspection/nm-vpn-plugin.xml
 built_sources = \
 	nm-vpn-manager-glue.h \
 	nm-vpn-connection-glue.h \
-	nm-vpn-plugin-bindings.h
+	nm-vpn-plugin-bindings.h \
+	nm-vpn-marshal.h \
+	nm-vpn-marshal.c
 
 $(libvpn_manager_la_OBJECTS): $(built_sources)
 
 CLEANFILES = $(built_sources)
+
+EXTRA_DIST = nm-vpn-marshal.list
+

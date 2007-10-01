@@ -37,6 +37,7 @@
 
 #define NM_VPN_CONNECTION_NAME "name"
 #define NM_VPN_CONNECTION_STATE "state"
+#define NM_VPN_CONNECTION_BANNER "banner"
 
 typedef struct {
 	GObject parent;
@@ -46,7 +47,9 @@ typedef struct {
 	GObjectClass parent;
 
 	/* Signals */
-	void (*state_changed) (NMVPNConnection *connection, NMVPNConnectionState state);
+	void (*state_changed) (NMVPNConnection *connection,
+	                       NMVPNConnectionState state,
+	                       NMVPNConnectionStateReason reason);
 } NMVPNConnectionClass;
 
 GType nm_vpn_connection_get_type (void);
@@ -58,8 +61,10 @@ void                 nm_vpn_connection_activate        (NMVPNConnection *connect
 const char          *nm_vpn_connection_get_object_path (NMVPNConnection *connection);
 const char          *nm_vpn_connection_get_name        (NMVPNConnection *connection);
 NMVPNConnectionState nm_vpn_connection_get_state       (NMVPNConnection *connection);
-void                 nm_vpn_connection_fail            (NMVPNConnection *connection);
-void                 nm_vpn_connection_disconnect      (NMVPNConnection *connection);
+void                 nm_vpn_connection_fail            (NMVPNConnection *connection,
+                                                        NMVPNConnectionStateReason reason);
+void                 nm_vpn_connection_disconnect      (NMVPNConnection *connection,
+                                                        NMVPNConnectionStateReason reason);
 
 
 #endif /* NM_VPN_CONNECTION_H */
