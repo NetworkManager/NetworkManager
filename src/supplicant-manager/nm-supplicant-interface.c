@@ -26,7 +26,7 @@
 #include "nm-supplicant-interface.h"
 #include "nm-supplicant-manager.h"
 #include "nm-utils.h"
-#include "nm-supplicant-marshal.h"
+#include "nm-marshal.h"
 #include "nm-supplicant-config.h"
 #include "nm-dbus-manager.h"
 #include "dbus-dict-helpers.h"
@@ -408,7 +408,7 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, state),
 		              NULL, NULL,
-		              nm_supplicant_marshal_VOID__UINT_UINT,
+		              nm_marshal_VOID__UINT_UINT,
 		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 
 	nm_supplicant_interface_signals[REMOVED] =
@@ -444,7 +444,7 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, connection_state),
 		              NULL, NULL,
-		              nm_supplicant_marshal_VOID__UINT_UINT,
+		              nm_marshal_VOID__UINT_UINT,
 		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 
 	nm_supplicant_interface_signals[CONNECTION_ERROR] =
@@ -453,7 +453,7 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, connection_error),
 		              NULL, NULL,
-		              nm_supplicant_marshal_VOID__STRING_STRING,
+		              nm_marshal_VOID__STRING_STRING,
 		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
 }
 
@@ -716,8 +716,10 @@ nm_supplicant_interface_add_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpoi
 
 		dbus_g_proxy_add_signal (priv->iface_proxy, "ScanResultsAvailable", G_TYPE_INVALID);
 
-		dbus_g_object_register_marshaller (nm_supplicant_marshal_VOID__STRING_STRING,
-										   G_TYPE_NONE, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INVALID);
+		dbus_g_object_register_marshaller (nm_marshal_VOID__STRING_STRING,
+										   G_TYPE_NONE,
+										   G_TYPE_STRING, G_TYPE_STRING,
+										   G_TYPE_INVALID);
 
 		dbus_g_proxy_add_signal (priv->iface_proxy, "StateChange", G_TYPE_STRING, G_TYPE_STRING, G_TYPE_INVALID);
 

@@ -35,7 +35,7 @@
 #include "NetworkManagerSystem.h"
 #include "nm-utils.h"
 #include "nm-vpn-plugin-bindings.h"
-#include "nm-vpn-marshal.h"
+#include "nm-marshal.h"
 
 static gboolean impl_vpn_connection_disconnect (NMVPNConnection *connection, GError **err);
 
@@ -847,7 +847,7 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 				    G_SIGNAL_RUN_FIRST,
 				    G_STRUCT_OFFSET (NMVPNConnectionClass, state_changed),
 				    NULL, NULL,
-				    nm_vpn_marshal_VOID__UINT_UINT,
+				    nm_marshal_VOID__UINT_UINT,
 				    G_TYPE_NONE, 2,
 				    G_TYPE_UINT, G_TYPE_UINT);
 

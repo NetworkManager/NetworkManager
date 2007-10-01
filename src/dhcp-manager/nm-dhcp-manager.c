@@ -29,7 +29,7 @@
 #include <string.h>
 
 #include "nm-dhcp-manager.h"
-#include "nm-dhcp-marshal.h"
+#include "nm-marshal.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-dbus-manager.h"
@@ -157,7 +157,7 @@ nm_dhcp_manager_class_init (NMDHCPManagerClass *manager_class)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMDHCPManagerClass, state_changed),
 					  NULL, NULL,
-					  nm_dhcp_marshal_VOID__STRING_UCHAR,
+					  nm_marshal_VOID__STRING_UCHAR,
 					  G_TYPE_NONE, 2,
 					  G_TYPE_STRING,
 					  G_TYPE_UCHAR);

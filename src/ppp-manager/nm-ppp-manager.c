@@ -10,7 +10,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-utils.h"
 #include "dbus-dict-helpers.h"
-#include "nm-ppp-marshal.h"
+#include "nm-marshal.h"
 
 #define NM_PPPD_PLUGIN LIBDIR "/nm-pppd-plugin.so"
 #define NM_PPP_WAIT_PPPD 10000 /* 10 seconds */
@@ -87,7 +87,7 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 				    G_SIGNAL_RUN_FIRST,
 				    G_STRUCT_OFFSET (NMPPPManagerClass, ip4_config),
 				    NULL, NULL,
-				    nm_ppp_marshal_VOID__STRING_OBJECT,
+				    nm_marshal_VOID__STRING_OBJECT,
 				    G_TYPE_NONE, 2,
 				    G_TYPE_STRING,
 				    G_TYPE_OBJECT);

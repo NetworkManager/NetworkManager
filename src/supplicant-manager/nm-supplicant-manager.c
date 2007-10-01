@@ -26,7 +26,7 @@
 #include "nm-supplicant-manager.h"
 #include "nm-supplicant-interface.h"
 #include "nm-dbus-manager.h"
-#include "nm-supplicant-marshal.h"
+#include "nm-marshal.h"
 #include "nm-utils.h"
 
 #define SUPPLICANT_POKE_INTERVAL 6000
@@ -184,7 +184,7 @@ nm_supplicant_manager_class_init (NMSupplicantManagerClass *klass)
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMSupplicantManagerClass, state),
 		              NULL, NULL,
-		              nm_supplicant_marshal_VOID__UINT_UINT,
+		              nm_marshal_VOID__UINT_UINT,
 		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 }
 

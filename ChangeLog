@@ -1,5 +1,37 @@
 2007-10-01  Dan Williams  <dcbw@redhat.com>
 
+	* configure.in
+	  src/marshallers/Makefile.am
+	  src/marshallers/nm-marshal.list
+	  src/marshallers/nm-marshal-main.c
+		- Consolidate glib marshallers into one place
+
+	* src/dhcp-manager/Makefile.am
+	  src/dhcp-manager/nm-dhcp-manager.c
+	  src/supplicant-manager/Makefile.am
+	  src/supplicant-manager/nm-supplicant-manager.c
+	  src/supplicant-manager/nm-supplicant-interface.c
+	  src/ppp-manager/Makefile.am
+	  src/ppp-manager/nm-ppp-manager.c
+	  src/vpn-manager/Makefile.am
+	  src/vpn-manager/nm-vpn-connection.c
+	  src/Makefile.am
+		- Use consolidated marshallers
+
+	* src/dhcp-manager/nm-dhcp-marshal.list
+	  src/dhcp-manager/nm-dhcp-marshal-main.c
+	  src/supplicant-manager/nm-supplicant-marshal-main.c
+	  src/supplicant-manager/nm-supplicant-marshal.list
+	  src/nm-marshal-main.c
+	  src/nm-marshal.list
+	  src/ppp-manager/nm-ppp-marshal-main.c
+	  src/ppp-manager/nm-ppp-marshal.list
+	  src/vpn-manager/nm-vpn-marshal-main.c
+	  src/vpn-manager/nm-vpn-marshal.list
+		- Remove
+
+2007-10-01  Dan Williams  <dcbw@redhat.com>
+
 	* include/NetworkManagerVPN.h
 		- define VPN connection state change reason codes
 

@@ -237,6 +237,7 @@ AC_OUTPUT([
 Makefile
 include/Makefile
 src/Makefile
+src/marshallers/Makefile
 src/named-manager/Makefile
 src/vpn-manager/Makefile
 src/dhcp-manager/Makefile

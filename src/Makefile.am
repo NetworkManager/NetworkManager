@@ -1,7 +1,15 @@
-SUBDIRS=named-manager vpn-manager dhcp-manager supplicant-manager ppp-manager backends
+SUBDIRS= \
+	marshallers \
+	named-manager \
+	vpn-manager \
+	dhcp-manager \
+	supplicant-manager \
+	ppp-manager \
+	backends
 
 INCLUDES = -I${top_srcdir}                   \
            -I${top_srcdir}/include           \
+           -I${top_builddir}/src/marshallers   \
            -I${top_srcdir}/src/named-manager \
            -I${top_srcdir}/src/vpn-manager   \
            -I${top_srcdir}/src/dhcp-manager  \
@@ -50,26 +58,11 @@ NetworkManager_SOURCES =				\
 		nm-activation-request.h		\
 		autoip.c					\
 		autoip.h					\
-		nm-marshal-main.c		\
 		kernel-types.h			\
 		wpa.c				\
 		wpa.h				\
 		nm-netlink.c			\
 		nm-netlink.h
-
-nm-marshal.h: Makefile.am nm-marshal.list
-	$(GLIB_GENMARSHAL) --prefix=nm_marshal $(srcdir)/nm-marshal.list --header > \
-		xgen-gmh \
-	&& (cmp -s xgen-gmh nm-marshal.h || cp xgen-gmh nm-marshal.h) \
-	&& rm -f xgen-gmh xgen-gmh~
-
-nm-marshal.c: Makefile.am nm-marshal.list
-	$(GLIB_GENMARSHAL) --prefix=nm_marshal $(srcdir)/nm-marshal.list --body > \
-		xgen-gmc \
-	&& cp xgen-gmc nm-marshal.c \
-	&& rm -f xgen-gmc xgen-gmc~
-
-nm-marshal-main.c: nm-marshal.c nm-marshal.h
 
 nm-access-point-glue.h: $(top_srcdir)/introspection/nm-access-point.xml
 	dbus-binding-tool --prefix=nm_access_point --mode=glib-server --output=nm-access-point-glue.h $(top_srcdir)/introspection/nm-access-point.xml
@@ -91,8 +84,6 @@ nm-ip4-config-glue.h: $(top_srcdir)/introspection/nm-ip4-config.xml
 
 
 built_sources = 					\
-	nm-marshal.h					\
-	nm-marshal.c					\
 	nm-access-point-glue.h				\
 	nm-manager-glue.h				\
 	nm-device-interface-glue.h			\
@@ -127,6 +118,7 @@ NetworkManager_LDADD = 							\
 			$(HAL_LIBS)						\
 			$(IWLIB)							\
 			$(LIBNL_LIBS)						\
+			./marshallers/libmarshallers.la	\
 			./named-manager/libnamed-manager.la	\
 			./vpn-manager/libvpn-manager.la		\
 			./dhcp-manager/libdhcp-manager.la		\
@@ -157,8 +149,7 @@ dbusservice_DATA = NetworkManager.conf
 
 EXTRA_DIST = \
 	$(dbusservice_DATA) \
-	$(NetworkManager_DATA) \
-	nm-marshal.list
+	$(NetworkManager_DATA)
 
 rundir=$(localstatedir)/run/NetworkManager
 dispatcherdir=$(sysconfdir)/NetworkManager/dispatcher.d
