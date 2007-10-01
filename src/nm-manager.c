@@ -8,8 +8,16 @@
 #include "nm-device-interface.h"
 #include "nm-device-802-11-wireless.h"
 #include "NetworkManagerSystem.h"
+#include "nm-marshal.h"
 
 static gboolean impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err);
+static void impl_manager_activate_device (NMManager *manager,
+								  char *device_path,
+								  char *service_name,
+								  char *connection_path,
+								  char *specific_object_path,
+								  DBusGMethodInvocation *context);
+
 static gboolean impl_manager_sleep (NMManager *manager, gboolean sleep, GError **err);
 
 /* Legacy 0.6 compatibility interface */
@@ -23,6 +31,20 @@ static gboolean impl_manager_legacy_state (NMManager *manager, guint32 *state, G
 static void nm_manager_connections_destroy (NMManager *manager, NMConnectionType type);
 static void manager_set_wireless_enabled (NMManager *manager, gboolean enabled);
 
+static void connection_added_default_handler (NMManager *manager,
+									 NMConnection *connection,
+									 NMConnectionType connection_type);
+
+
+typedef struct {
+	DBusGMethodInvocation *context;
+	NMDevice *device;
+	NMConnectionType connection_type;
+	char *connection_path;
+	char *specific_object_path;
+	guint timeout_id;
+} PendingConnectionInfo;
+
 typedef struct {
 	GSList *devices;
 	NMState state;
@@ -33,6 +55,7 @@ typedef struct {
 	GHashTable *system_connections;
 	DBusGProxy *system_proxy;
 
+	PendingConnectionInfo *pending_connection_info;
 	gboolean wireless_enabled;
 	gboolean sleeping;
 } NMManagerPrivate;
@@ -123,10 +146,32 @@ nm_manager_update_state (NMManager *manager)
 }
 
 static void
+pending_connection_info_destroy (NMManager *manager)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	PendingConnectionInfo *info = priv->pending_connection_info;
+
+	if (!info)
+		return;
+
+	if (info->timeout_id)
+		g_source_remove (info->timeout_id);
+
+	g_free (info->connection_path);
+	g_free (info->specific_object_path);
+	g_object_unref (info->device);
+
+	g_slice_free (PendingConnectionInfo, info);
+	priv->pending_connection_info = NULL;
+}
+
+static void
 finalize (GObject *object)
 {
 	NMManager *manager = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+
+	pending_connection_info_destroy (manager);
 
 	nm_manager_connections_destroy (manager, NM_CONNECTION_TYPE_USER);
 	g_hash_table_destroy (priv->user_connections);
@@ -184,6 +229,8 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	g_type_class_add_private (manager_class, sizeof (NMManagerPrivate));
 
 	/* virtual methods */
+	manager_class->connection_added = connection_added_default_handler;
+
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize = finalize;
@@ -242,9 +289,9 @@ nm_manager_class_init (NMManagerClass *manager_class)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMManagerClass, connection_added),
 					  NULL, NULL,
-					  g_cclosure_marshal_VOID__OBJECT,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_OBJECT);
+				    nm_marshal_VOID__OBJECT_UINT,
+					  G_TYPE_NONE, 2,
+				    G_TYPE_OBJECT, G_TYPE_UINT);
 
 	signals[CONNECTION_REMOVED] =
 		g_signal_new ("connection-removed",
@@ -252,9 +299,9 @@ nm_manager_class_init (NMManagerClass *manager_class)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMManagerClass, connection_removed),
 					  NULL, NULL,
-					  g_cclosure_marshal_VOID__OBJECT,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_OBJECT);
+				    nm_marshal_VOID__OBJECT_UINT,
+					  G_TYPE_NONE, 2,
+				    G_TYPE_OBJECT, G_TYPE_UINT);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (manager_class),
 									 &dbus_glib_nm_manager_object_info);
@@ -294,6 +341,7 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 	GError *err = NULL;
 	GHashTable *settings = NULL;
 	NMConnection *connection;
+	NMConnectionType connection_type;
 	NMManager *manager;
 
 	g_return_if_fail (info != NULL);
@@ -324,10 +372,12 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 
 		priv = NM_MANAGER_GET_PRIVATE (manager);
 		if (strcmp (bus_name, NM_DBUS_SERVICE_USER_SETTINGS) == 0) {
+			connection_type = NM_CONNECTION_TYPE_USER;
 			g_hash_table_insert (priv->user_connections,
 			                     g_strdup (path),
 			                     connection);
 		} else if (strcmp (bus_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS) == 0) {
+			connection_type = NM_CONNECTION_TYPE_SYSTEM;
 			g_hash_table_insert (priv->system_connections,
 			                     g_strdup (path),
 			                     connection);
@@ -336,7 +386,7 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 			g_assert_not_reached ();
 		}
 
-		g_signal_emit (manager, signals[CONNECTION_ADDED], 0, connection);
+		g_signal_emit (manager, signals[CONNECTION_ADDED], 0, connection, connection_type);
 	} else {
 		// FIXME: merge settings? or just replace?
 		nm_warning ("%s (#%d): implement merge settings", __func__, __LINE__);
@@ -355,12 +405,15 @@ connection_removed_cb (DBusGProxy *proxy, gpointer user_data)
 	const char *path = dbus_g_proxy_get_path (proxy);
 	const char *bus_name = dbus_g_proxy_get_bus_name (proxy);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	NMConnectionType connection_type;
 	NMConnection *connection = NULL;
 	GHashTable *hash = NULL;
 
 	if (strcmp (bus_name, NM_DBUS_SERVICE_USER_SETTINGS) == 0) {
+		connection_type = NM_CONNECTION_TYPE_USER;
 		hash = priv->user_connections;
 	} else if (strcmp (bus_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS) == 0) {
+		connection_type = NM_CONNECTION_TYPE_SYSTEM;
 		hash = priv->system_connections;
 	}			
 
@@ -375,7 +428,7 @@ connection_removed_cb (DBusGProxy *proxy, gpointer user_data)
 		 */
 		g_object_ref (connection);
 		g_hash_table_remove (hash, path);
-		g_signal_emit (manager, signals[CONNECTION_REMOVED], 0, connection);
+		g_signal_emit (manager, signals[CONNECTION_REMOVED], 0, connection, connection_type);
 		g_object_unref (connection);
 	}
 
@@ -562,7 +615,7 @@ initial_get_connections (gpointer user_data)
 }
 
 
-static NMManager *
+NMManager *
 nm_manager_new (void)
 {
 	GObject *object;
@@ -585,20 +638,6 @@ nm_manager_new (void)
 	g_idle_add ((GSourceFunc) initial_get_connections, NM_MANAGER (object));
 
 	return NM_MANAGER (object);
-}
-
-NMManager *
-nm_manager_get (void)
-{
-	static NMManager *singleton = NULL;
-
-	if (!singleton)
-		singleton = nm_manager_new ();
-	else
-		g_object_ref (singleton);
-
-	g_assert (singleton);
-	return singleton;
 }
 
 static void
@@ -747,39 +786,22 @@ impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err)
 }
 
 NMDevice *
-nm_manager_get_device_by_iface (NMManager *manager, const char *iface)
+nm_manager_get_device_by_path (NMManager *manager, const char *path)
 {
 	GSList *iter;
 
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
+	g_return_val_if_fail (path != NULL, NULL);
 
 	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
 		NMDevice *device = NM_DEVICE (iter->data);
 
-		if (!strcmp (nm_device_get_iface (device), iface))
+		if (!strcmp (nm_device_get_dbus_path (device), path))
 			return device;
 	}
 
 	return NULL;
 }
-
-NMDevice *
-nm_manager_get_device_by_index (NMManager *manager, int idx)
-{
-	GSList *iter;
-
-	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
-
-	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
-		NMDevice *device = NM_DEVICE (iter->data);
-
-		if (nm_device_get_index (device) == idx)
-			return device;
-	}
-
-	return NULL;
-}
-
 
 NMDevice *
 nm_manager_get_device_by_udi (NMManager *manager, const char *udi)
@@ -796,6 +818,170 @@ nm_manager_get_device_by_udi (NMManager *manager, const char *udi)
 	}
 
 	return NULL;
+}
+
+gboolean
+nm_manager_activate_device (NMManager *manager,
+					   NMDevice *device,
+					   NMConnection *connection,
+					   const char *specific_object,
+					   gboolean user_requested)
+{
+	NMActRequest *req;
+	gboolean success;
+
+	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+
+	req = nm_act_request_new (connection, specific_object, user_requested);
+	success = nm_device_interface_activate (NM_DEVICE_INTERFACE (device), req);
+	g_object_unref (req);
+
+	return success;
+}
+
+gboolean
+nm_manager_activation_pending (NMManager *manager)
+{
+	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
+
+	return NM_MANAGER_GET_PRIVATE (manager)->pending_connection_info != NULL;
+}
+
+static GError *
+nm_manager_error_new (const gchar *format, ...)
+{
+	GError *err;
+	va_list args;
+	gchar *msg;
+	static GQuark domain_quark = 0;
+
+	if (domain_quark == 0)
+		domain_quark = g_quark_from_static_string ("nm_manager_error");
+
+	va_start (args, format);
+	msg = g_strdup_vprintf (format, args);
+	va_end (args);
+
+	err = g_error_new_literal (domain_quark, 1, (const gchar *) msg);
+
+	g_free (msg);
+
+	return err;
+}
+
+static gboolean
+wait_for_connection_expired (gpointer data)
+{
+	NMManager *manager = NM_MANAGER (data);
+	PendingConnectionInfo *info = NM_MANAGER_GET_PRIVATE (manager)->pending_connection_info;
+	GError *err;
+
+	nm_info ("%s: didn't receive connection details soon enough for activation.",
+	         nm_device_get_iface (info->device));
+
+	err = nm_manager_error_new ("Could not find connection");
+	dbus_g_method_return_error (info->context, err);
+	g_error_free (err);
+
+	info->timeout_id = 0;
+	pending_connection_info_destroy (manager);
+
+	return FALSE;
+}
+
+static void
+connection_added_default_handler (NMManager *manager,
+						    NMConnection *connection,
+						    NMConnectionType connection_type)
+{
+	PendingConnectionInfo *info;
+	const char *path;
+
+	if (!nm_manager_activation_pending (manager))
+		return;
+
+	info = NM_MANAGER_GET_PRIVATE (manager)->pending_connection_info;
+	if (connection_type != info->connection_type)
+		return;
+
+	path = nm_manager_get_connection_dbus_path (manager, connection);
+	if (strcmp (info->connection_path, path))
+		return;
+
+	if (nm_manager_activate_device (manager, info->device, connection, info->specific_object_path, TRUE)) {
+		dbus_g_method_return (info->context, TRUE);
+	} else {
+		GError *err;
+
+		err = nm_manager_error_new ("Error in device activation");
+		dbus_g_method_return_error (info->context, err);
+		g_error_free (err);
+	}
+
+	pending_connection_info_destroy (manager);
+}
+
+static void
+impl_manager_activate_device (NMManager *manager,
+						char *device_path,
+						char *service_name,
+						char *connection_path,
+						char *specific_object_path,
+						DBusGMethodInvocation *context)
+{
+	NMDevice *device;
+	NMConnectionType connection_type;
+	NMConnection *connection;
+	GError *err = NULL;
+
+	device = nm_manager_get_device_by_path (manager, device_path);
+	if (!device) {
+		err = nm_manager_error_new ("Could not find device");
+		goto err;
+	}
+
+	nm_info ("User request for activation of %s.", nm_device_get_iface (device));
+
+	if (!strcmp (service_name, NM_DBUS_SERVICE_USER_SETTINGS))
+		connection_type = NM_CONNECTION_TYPE_USER;
+	else if (!strcmp (service_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS))
+		connection_type = NM_CONNECTION_TYPE_SYSTEM;
+	else {
+		err = nm_manager_error_new ("Invalid service name");
+		goto err;
+	}
+
+	connection = nm_manager_get_connection_by_object_path (manager, connection_type, connection_path);
+	if (connection) {
+		if (!nm_manager_activate_device (manager, device, connection, specific_object_path, TRUE)) {
+			err = nm_manager_error_new ("Error in device activation");
+			goto err;
+		}
+	} else {
+		PendingConnectionInfo *info;
+
+		/* Don't have the connection quite yet, probably created by
+		 * the client on-the-fly.  Defer the activation until we have it
+		 */
+
+		info = g_slice_new0 (PendingConnectionInfo);
+		info->context = context;
+		info->device = g_object_ref (device);
+		info->connection_type = connection_type;
+		info->connection_path = g_strdup (connection_path);
+		info->specific_object_path = g_strdup (specific_object_path);
+		info->timeout_id = g_timeout_add (5000, wait_for_connection_expired, manager);
+
+		NM_MANAGER_GET_PRIVATE (manager)->pending_connection_info = info;
+	}
+
+ err:
+	if (err) {
+		dbus_g_method_return_error (context, err);
+		g_error_free (err);
+	}
 }
 
 gboolean
@@ -947,24 +1133,6 @@ nm_manager_get_connection_by_object_path (NMManager *manager,
 	else
 		nm_warning ("Unknown NMConnectionType %d", type);
 	return connection;
-}
-
-const char *
-nm_manager_get_connection_service_name (NMManager *manager,
-                                        NMConnection *connection)
-{
-	DBusGProxy *proxy;
-
-	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
-
-	proxy = g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_PROXY_TAG);
-	if (!DBUS_IS_G_PROXY (proxy)) {
-		nm_warning ("Couldn't get dbus proxy for connection.");
-		return NULL;
-	}
-
-	return dbus_g_proxy_get_bus_name (proxy);
 }
 
 const char *

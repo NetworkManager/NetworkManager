@@ -1,3 +1,5 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+
 #include <dbus/dbus-glib.h>
 #include <string.h>
 #include "nm-client.h"
@@ -5,6 +7,7 @@
 #include "nm-device-802-11-wireless.h"
 #include "nm-device-private.h"
 #include "nm-marshal.h"
+#include <nm-utils.h>
 
 #include "nm-client-bindings.h"
 
@@ -390,6 +393,55 @@ nm_client_get_device_by_path (NMClient *client, const char *object_path)
 	g_slist_free (devices);
 
 	return device;
+}
+
+typedef struct {
+	NMClientActivateDeviceFn fn;
+	gpointer user_data;
+} ActivateDeviceInfo;
+
+static void
+activate_cb (DBusGProxy *proxy, GError *err, gpointer user_data)
+{
+	ActivateDeviceInfo *info = (ActivateDeviceInfo *) user_data;
+
+	if (info->fn)
+		info->fn (info->user_data, err);
+	else
+		nm_warning ("Device activation failed: %s", err->message);
+
+	/* FIXME: Free err as well? */
+
+	g_slice_free (ActivateDeviceInfo, info);
+}
+
+void
+nm_client_activate_device (NMClient *client,
+					  NMDevice *device,
+					  const char *service_name,
+					  const char *connection_path,
+					  const char *specific_object,
+					  NMClientActivateDeviceFn callback,
+					  gpointer user_data)
+{
+	ActivateDeviceInfo *info;
+
+	g_return_if_fail (NM_IS_CLIENT (client));
+	g_return_if_fail (NM_IS_DEVICE (device));
+	g_return_if_fail (service_name != NULL);
+	g_return_if_fail (connection_path != NULL);
+
+	info = g_slice_new (ActivateDeviceInfo);
+	info->fn = callback;
+	info->user_data = user_data;
+
+	org_freedesktop_NetworkManager_activate_device_async (NM_CLIENT_GET_PRIVATE (client)->client_proxy,
+											    nm_object_get_path (NM_OBJECT (device)),
+											    service_name,
+											    connection_path,
+											    specific_object,
+											    activate_cb,
+											    info);
 }
 
 gboolean

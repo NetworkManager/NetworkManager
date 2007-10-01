@@ -19,6 +19,12 @@
 
 #define NM_MANAGER_CONNECTION_PROXY_TAG "dbus-proxy"
 
+typedef enum {
+	NM_CONNECTION_TYPE_UNKNOWN = 0,
+	NM_CONNECTION_TYPE_SYSTEM,
+	NM_CONNECTION_TYPE_USER,
+} NMConnectionType;
+
 typedef struct {
 	GObject parent;
 } NMManager;
@@ -30,25 +36,36 @@ typedef struct {
 	void (*device_added) (NMManager *manager, NMDevice *device);
 	void (*device_removed) (NMManager *manager, NMDevice *device);
 	void (*state_change) (NMManager *manager, guint state);
+	void (*connection_added) (NMManager *manager,
+				  NMConnection *connection,
+				  NMConnectionType connection_type);
 
-	void (*connection_added) (NMManager *manager, NMConnection *connection);
-	void (*connection_removed) (NMManager *manager, NMConnection *connection);
+	void (*connection_removed) (NMManager *manager,
+				    NMConnection *connection,
+				    NMConnectionType connection_type);
 } NMManagerClass;
 
 GType nm_manager_get_type (void);
 
-NMManager *nm_manager_get (void);
+NMManager *nm_manager_new (void);
 
 /* Device handling */
 
 void nm_manager_add_device (NMManager *manager, NMDevice *device);
 void nm_manager_remove_device (NMManager *manager, NMDevice *device);
 GSList *nm_manager_get_devices (NMManager *manager);
-NMDevice *nm_manager_get_device_by_iface (NMManager *manager, const char *iface);
-NMDevice *nm_manager_get_device_by_index (NMManager *manager, int idx);
+NMDevice *nm_manager_get_device_by_path (NMManager *manager, const char *path);
 NMDevice *nm_manager_get_device_by_udi (NMManager *manager, const char *udi);
 
 NMDevice *nm_manager_get_active_device (NMManager *manager);
+
+gboolean  nm_manager_activate_device (NMManager *manager,
+				      NMDevice *device,
+				      NMConnection *connection,
+				      const char *specific_object,
+				      gboolean user_requested);
+
+gboolean  nm_manager_activation_pending (NMManager *manager);
 
 /* State handling */
 
@@ -57,11 +74,6 @@ gboolean nm_manager_wireless_enabled (NMManager *manager);
 void nm_manager_sleep (NMManager *manager, gboolean sleep);
 
 /* Connections */
-typedef enum {
-	NM_CONNECTION_TYPE_UNKNOWN = 0,
-	NM_CONNECTION_TYPE_SYSTEM,
-	NM_CONNECTION_TYPE_USER,
-} NMConnectionType;
 
 GSList *nm_manager_get_connections    (NMManager *manager, NMConnectionType type);
 void    nm_manager_update_connections (NMManager *manager,
@@ -72,9 +84,6 @@ void    nm_manager_update_connections (NMManager *manager,
 NMConnection * nm_manager_get_connection_by_object_path (NMManager *manager,
                                                          NMConnectionType type,
                                                          const char *path);
-
-const char * nm_manager_get_connection_service_name (NMManager *manager,
-                                                     NMConnection *connection);
 
 const char * nm_manager_get_connection_dbus_path (NMManager *manager,
                                                   NMConnection *connection);

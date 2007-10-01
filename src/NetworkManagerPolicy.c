@@ -204,6 +204,7 @@ nm_policy_device_change_check (gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
 	GSList *iter;
+	guint32 caps;
 	NMConnection * connection = NULL;
 	char * specific_object = NULL;
 	NMDevice * new_dev = NULL;
@@ -213,54 +214,40 @@ nm_policy_device_change_check (gpointer user_data)
 	switch (nm_manager_get_state (policy->manager)) {
 	case NM_STATE_CONNECTED:
 		old_dev = nm_manager_get_active_device (policy->manager);
-		break;
-	case NM_STATE_CONNECTING:
-		for (iter = nm_manager_get_devices (policy->manager); iter; iter = iter->next) {
-			if (nm_device_is_activating (NM_DEVICE (iter->data))) {
-				old_dev = NM_DEVICE (iter->data);
-				break;
-			}
-		}
-		break;
-	case NM_STATE_DISCONNECTED:
-		/* Check for devices that have deferred activation requests */
-		for (iter = nm_manager_get_devices (policy->manager); iter; iter = iter->next) {
-			NMActRequest *req = nm_device_get_act_request (NM_DEVICE (iter->data));
+		caps = nm_device_get_capabilities (old_dev);
 
-			if (req && nm_act_request_is_deferred (req)) {
-				old_dev = NM_DEVICE (iter->data);
-				break;
-			}
-		}
-		break;
-	default:
-		break;
-	}
-
-	if (old_dev) {
-		guint32 caps = nm_device_get_capabilities (old_dev);
-		NMActRequest *req = nm_device_get_act_request (old_dev);
-
-		/* Don't interrupt a currently activating device automatically. */
-		if (   (nm_device_is_activating (old_dev)
-		        && !nm_device_can_interrupt_activation (old_dev))
-		    || nm_act_request_is_deferred (req)) {
-			nm_info ("Old device '%s' activating, won't change.",
-			         nm_device_get_iface (old_dev));
-			goto out;
-		}
-
-		/* Don't interrupt semi-supported devices either.  If the user chose
+		/* Don't interrupt semi-supported devices.  If the user chose
 		 * one, they must explicitly choose to move to another device, we're not
 		 * going to move for them.
 		 */
-		if (    (NM_IS_DEVICE_802_3_ETHERNET (old_dev)
-		    && !(caps & NM_DEVICE_CAP_CARRIER_DETECT))) {
+		if ((NM_IS_DEVICE_802_3_ETHERNET (old_dev) && !(caps & NM_DEVICE_CAP_CARRIER_DETECT))) {
 			nm_info ("Old device '%s' was semi-supported and user chosen, won't"
 			         " change unless told to.",
 			         nm_device_get_iface (old_dev));
 			goto out;
 		}
+		break;
+	case NM_STATE_CONNECTING:
+		for (iter = nm_manager_get_devices (policy->manager); iter; iter = iter->next) {
+			NMDevice *d = NM_DEVICE (iter->data);
+
+			if (nm_device_is_activating (d)) {
+				if (nm_device_can_interrupt_activation (d)) {
+					old_dev = d;
+					break;
+				} else
+					goto out;
+			}
+		}
+		break;
+	case NM_STATE_DISCONNECTED:
+		if (nm_manager_activation_pending (policy->manager)) {
+			nm_info ("There is a pending activation, won't change.");
+			goto out;
+		}
+		break;
+	default:
+		break;
 	}
 
 	new_dev = nm_policy_auto_get_best_device (policy, &connection, &specific_object);
@@ -321,14 +308,8 @@ nm_policy_device_change_check (gpointer user_data)
 				/* Don't interrupt activation of a wireless device by
 				 * trying to auto-activate any connection on that device.
 				 */
-				if (old_dev == new_dev) {
-					NMActRequest *req = nm_device_get_act_request (new_dev);
-
-					if (nm_device_is_activating (new_dev))
-						same_activating = TRUE;
-					else if (req && nm_act_request_is_deferred (req))
-						same_activating = TRUE;
- 				}
+				if (old_dev == new_dev && nm_device_is_activating (new_dev))
+					same_activating = TRUE;
 
 				if (!same_activating && !old_has_link && (old_mode != IW_MODE_ADHOC)) {
 					NMSettingConnection * new_sc = (NMSettingConnection *) nm_connection_get_setting (connection, NM_SETTING_CONNECTION);
@@ -358,12 +339,7 @@ nm_policy_device_change_check (gpointer user_data)
 		}
 
 		if (new_dev) {
-			nm_device_interface_activate (NM_DEVICE_INTERFACE (new_dev),
-			                              NULL,
-			                              NULL,
-			                              connection,
-			                              specific_object,
-			                              FALSE);
+			nm_manager_activate_device (policy->manager, new_dev, connection, specific_object, FALSE);
 		}
 	}
 
@@ -500,6 +476,7 @@ state_changed (NMManager *manager, NMState state, gpointer user_data)
 static void
 connection_added (NMManager *manager,
                   NMConnection *connection,
+			   NMConnectionType connection_type,
                   gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
@@ -510,6 +487,7 @@ connection_added (NMManager *manager,
 static void
 connection_removed (NMManager *manager,
                     NMConnection *connection,
+				NMConnectionType connection_type,
                     gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;

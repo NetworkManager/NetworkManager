@@ -20,10 +20,12 @@
  */
 
 #include <string.h>
+#include <dbus/dbus-glib.h>
 #include "nm-activation-request.h"
 #include "nm-marshal.h"
-#include "nm-manager.h"
 #include "nm-utils.h"
+
+#include "nm-manager.h" /* FIXME! */
 
 #define CONNECTION_GET_SECRETS_CALL_TAG "get-secrets-call"
 
@@ -34,8 +36,6 @@ G_DEFINE_TYPE (NMActRequest, nm_act_request, G_TYPE_OBJECT)
 enum {
 	CONNECTION_SECRETS_UPDATED,
 	CONNECTION_SECRETS_FAILED,
-	DEFERRED_ACTIVATION_TIMEOUT,
-	DEFERRED_ACTIVATION_START,
 
 	LAST_SIGNAL
 };
@@ -44,11 +44,6 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 
 typedef struct {
-	char *deferred_service_name;
-	char *deferred_connection_path;
-	gulong deferred_connection_id;
-	guint32 deferred_timeout_id;
-
 	NMConnection *connection;
 	char *specific_object;
 	gboolean user_requested;
@@ -60,34 +55,10 @@ nm_act_request_init (NMActRequest *req)
 }
 
 static void
-clear_deferred_stuff (NMActRequest *req)
-{
-	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (req);
-
-	g_free (priv->deferred_service_name);
-	priv->deferred_service_name = NULL;
-	g_free (priv->deferred_connection_path);
-	priv->deferred_connection_path = NULL;
-
-	if (priv->deferred_connection_id) {
-		NMManager *manager = nm_manager_get ();
-		g_signal_handler_disconnect (manager, priv->deferred_connection_id);
-		g_object_unref (manager);
-		priv->deferred_connection_id = 0;
-	}
-
-	if (priv->deferred_timeout_id) {
-		g_source_remove (priv->deferred_timeout_id);
-		priv->deferred_timeout_id = 0;
-	}
-}
-
-static void
 dispose (GObject *object)
 {
 	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (object);
 
-	clear_deferred_stuff (NM_ACT_REQUEST (object));
 
 	if (priv->connection) {
 		DBusGProxy *proxy;
@@ -112,8 +83,6 @@ finalize (GObject *object)
 {
 	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (object);
 
-	g_free (priv->deferred_service_name);
-	g_free (priv->deferred_connection_path);
 	g_free (priv->specific_object);
 
 	G_OBJECT_CLASS (nm_act_request_parent_class)->finalize (object);
@@ -149,26 +118,6 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 					  nm_marshal_VOID__OBJECT_STRING,
 					  G_TYPE_NONE, 2,
 					  G_TYPE_OBJECT, G_TYPE_STRING);
-
-	signals[DEFERRED_ACTIVATION_TIMEOUT] =
-		g_signal_new ("deferred-activation-timeout",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMActRequestClass, deferred_activation_timeout),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__VOID,
-					  G_TYPE_NONE, 0,
-					  G_TYPE_NONE);
-
-	signals[DEFERRED_ACTIVATION_START] =
-		g_signal_new ("deferred-activation-start",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMActRequestClass, deferred_activation_start),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__VOID,
-					  G_TYPE_NONE, 0,
-					  G_TYPE_NONE);
 }
 
 NMActRequest *
@@ -193,106 +142,6 @@ nm_act_request_new (NMConnection *connection,
 		priv->specific_object = g_strdup (specific_object);
 
 	return NM_ACT_REQUEST (obj);
-}
-
-static gboolean
-deferred_timeout_cb (gpointer data)
-{
-	NMActRequest *self = NM_ACT_REQUEST (data);
-	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
-
-	priv->deferred_timeout_id = 0;
-	clear_deferred_stuff (self);
-
-	g_signal_emit (self, signals[DEFERRED_ACTIVATION_TIMEOUT], 0);
-	return FALSE;
-}
-
-static void
-connection_added_cb (NMManager *manager,
-                     NMConnection *connection,
-                     gpointer user_data)
-{
-	NMActRequest *self;
-	NMActRequestPrivate *priv;
-	const char *service_name;
-	const char *path;
-
-	g_return_if_fail (NM_IS_ACT_REQUEST (user_data));
-	g_return_if_fail (NM_IS_CONNECTION (connection));
-	g_return_if_fail (NM_IS_MANAGER (manager));
-
-	self = NM_ACT_REQUEST (user_data);
-
-	service_name = nm_manager_get_connection_service_name (manager, connection);
-	path = nm_manager_get_connection_dbus_path (manager, connection);
-	if (!service_name || !path) {
-		nm_warning ("Couldn't get connection service name or path (%s, %s)",
-		            service_name, path);
-		return;
-	}
-
-	priv = NM_ACT_REQUEST_GET_PRIVATE (self);
-	if (   strcmp (service_name, priv->deferred_service_name)
-	    || strcmp (path, priv->deferred_connection_path))
-		return;
-
-	clear_deferred_stuff (self);
-	priv->connection = g_object_ref (connection);
-
-	g_signal_emit (self, signals[DEFERRED_ACTIVATION_START], 0);
-}
-
-NMActRequest *
-nm_act_request_new_deferred (const char *service_name,
-                             const char *connection_path,
-                             const char *specific_object,
-                             gboolean user_requested)
-{
-	GObject *obj;
-	NMManager *manager;
-	NMActRequestPrivate *priv;
-	gulong id;
-
-	g_return_val_if_fail (service_name != NULL, NULL);
-	g_return_val_if_fail (connection_path != NULL, NULL);
-
-	obj = g_object_new (NM_TYPE_ACT_REQUEST, NULL);
-	if (!obj)
-		return NULL;
-
-	priv = NM_ACT_REQUEST_GET_PRIVATE (obj);
-
-	priv->deferred_service_name = g_strdup (service_name);
-	priv->deferred_connection_path = g_strdup (connection_path);
-	priv->user_requested = user_requested;
-	if (specific_object)
-		priv->specific_object = g_strdup (specific_object);
-
-	id = g_timeout_add (5000, deferred_timeout_cb, NM_ACT_REQUEST (obj));
-	priv->deferred_timeout_id = id;
-
-	manager = nm_manager_get ();
-	id = g_signal_connect (manager,
-	                       "connection-added",
-	                       G_CALLBACK (connection_added_cb),
-	                       NM_ACT_REQUEST (obj));
-	priv->deferred_connection_id = id;
-	g_object_unref (manager);
-
-	return NM_ACT_REQUEST (obj);
-}
-
-gboolean
-nm_act_request_is_deferred (NMActRequest *req)
-{
-	NMActRequestPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
-
-	priv = NM_ACT_REQUEST_GET_PRIVATE (req);
-
-	return priv->deferred_connection_path ? TRUE : FALSE;
 }
 
 typedef struct GetSecretsInfo {

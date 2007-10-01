@@ -2,12 +2,6 @@
 
 <node name="/">
   <interface name="org.freedesktop.NetworkManager.Device">
-    <method name="Activate">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_activate"/>
-      <arg name="service_name" type="s" direction="in"/>
-      <arg name="connection" type="o" direction="in"/>
-      <arg name="specific_object" type="o" direction="in"/>
-    </method>
     <method name="Deactivate">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_deactivate"/>
     </method>

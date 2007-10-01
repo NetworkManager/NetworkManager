@@ -14,6 +14,15 @@
       <arg name="devices" type="ao" direction="out"/>
     </method>
 
+    <method name="ActivateDevice">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_activate_device"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+      <arg name="device" type="o" direction="in"/>
+      <arg name="service_name" type="s" direction="in"/>
+      <arg name="connection" type="o" direction="in"/>
+      <arg name="specific_object" type="o" direction="in"/>
+    </method>
+
     <method name="Sleep">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_sleep"/>
       <arg name="sleep" type="b" direction="in"/>

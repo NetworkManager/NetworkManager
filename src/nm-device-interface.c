@@ -4,12 +4,6 @@
 #include "nm-ip4-config.h"
 #include "nm-utils.h"
 
-static gboolean impl_device_activate (NMDeviceInterface *device,
-                                      const char *service_name,
-                                      const char *connection_path,
-                                      const char *specific_object,
-                                      GError **err);
-
 static gboolean impl_device_deactivate (NMDeviceInterface *device, GError **err);
 
 #include "nm-device-interface-glue.h"
@@ -186,27 +180,6 @@ nm_device_interface_get_type (void)
 	return device_interface_type;
 }
 
-/* Pass _either_ connection_path or connection.  Passing 'connection' is
- * meant for internal use only.
- */
-void
-nm_device_interface_activate (NMDeviceInterface *device,
-                              const char *service_name,
-                              const char *connection_path,
-                              NMConnection *connection,
-                              const char *specific_object,
-                              gboolean user_requested)
-{
-	g_return_if_fail (NM_IS_DEVICE_INTERFACE (device));
-
-	NM_DEVICE_INTERFACE_GET_INTERFACE (device)->activate (device,
-	                                                      service_name,
-	                                                      connection_path,
-	                                                      connection,
-	                                                      specific_object,
-	                                                      user_requested);
-}
-
 /* FIXME: This should be public and nm_device_get_iface() should be removed. */
 static const char *
 nm_device_interface_get_iface (NMDeviceInterface *device)
@@ -220,21 +193,15 @@ nm_device_interface_get_iface (NMDeviceInterface *device)
 	return iface;
 }
 
-static gboolean
-impl_device_activate (NMDeviceInterface *device,
-                      const char *service_name,
-                      const char *connection_path,
-                      const char *specific_object,
-                      GError **err)
+gboolean
+nm_device_interface_activate (NMDeviceInterface *device,
+						NMActRequest *req)
 {
-	nm_info ("User request for activation of %s.", nm_device_interface_get_iface (device));
-	nm_device_interface_activate (device,
-	                              service_name,
-	                              connection_path,
-	                              NULL,
-	                              specific_object,
-	                              TRUE);
-	return TRUE;
+	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), FALSE);
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
+
+	nm_info ("Activating device %s", nm_device_interface_get_iface (device));
+	return NM_DEVICE_INTERFACE_GET_INTERFACE (device)->activate (device, req);
 }
 
 void

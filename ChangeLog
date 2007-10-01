@@ -1,3 +1,46 @@
+2007-09-28  Tambet Ingo  <tambet@gmail.com>
+
+	* src/nm-manager.c:
+	* src/nm-manager.h:
+	Implement device activation through NMManager.
+	Implement "pending device activation" here - If the connection isn't found,
+	we try to wait for up to 5 seconds for the connection to be provided.
+	Add NMConnectionType argument to "connection-added" and "connection-removed"
+	signals.
+	(nm_manager_get): Remove. Finally.
+
+	* src/nm-activation-request.c: 
+	* src/nm-activation-request.h: 
+	Remove all the deferred activation code.
+
+	* src/nm-device.c: Remove all the deferred activation code. Once the device
+	activation is started, it's started. Update the activation virtual function
+	signature.
+
+	* src/nm-device-interface.c:
+	* src/nm-device-interface.h:
+	Device activation now takes only NMActRequest argument.
+	Don't expose device activation directly on dbus, it's supposed to go through
+	NMManager now.
+
+	* src/NetworkManagerPolicy.c (nm_policy_device_change_check): Make the code
+	a bit more compact.
+	Use the new device activation methods through NMManager.
+
+	* introspection/nm-manager-client.xml: 
+	* introspection/nm-manager.xml: 
+	* libnm-glib/nm-client.c:
+	* libnm-glib/nm-client.h:
+	Add device activation method.
+	
+	* libnm-glib/nm-device.c: 
+	* libnm-glib/nm-device.h: 
+	* introspection/nm-device.xml: 
+	Remove device activation method. It's done through NMManager now.
+
+	* src/vpn-manager/nm-vpn-manager.c (impl_vpn_manager_connect): Use the shiny
+	new (nm_manager_get_device_by_path) function, get rid of our own )find_device).
+
 2007-09-28  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-glib/nm-vpn-connection.c

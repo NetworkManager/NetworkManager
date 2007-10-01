@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
 #ifndef NM_CLIENT_H
 #define NM_CLIENT_H 1
@@ -40,7 +41,17 @@ NMClient *nm_client_new                  (void);
 gboolean  nm_client_manager_is_running   (NMClient *client);
 GSList   *nm_client_get_devices          (NMClient *client);
 NMDevice *nm_client_get_device_by_path   (NMClient *client,
-										  const char *object_path);
+								  const char *object_path);
+
+typedef void (*NMClientActivateDeviceFn) (gpointer user_data, GError *error);
+
+void nm_client_activate_device (NMClient *client,
+						  NMDevice *device,
+						  const char *service_name,
+						  const char *connection_path,
+						  const char *specific_object,
+						  NMClientActivateDeviceFn callback,
+						  gpointer user_data);
 
 gboolean  nm_client_wireless_get_enabled (NMClient *client);
 void      nm_client_wireless_set_enabled (NMClient *client, gboolean enabled);

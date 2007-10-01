@@ -97,24 +97,6 @@ nm_vpn_manager_connect (NMVPNManager *manager,
 	return NULL;
 }
 
-static NMDevice *
-find_device (NMVPNManager *manager, const char *device_path)
-{
-	GSList *devices;
-	GSList *iter;
-
-	devices = nm_manager_get_devices (NM_VPN_MANAGER_GET_PRIVATE (manager)->nm_manager);
-
-	for (iter = devices; iter; iter = iter->next) {
-		NMDevice *device = NM_DEVICE (iter->data);
-
-		if (!strcmp (device_path, nm_device_get_dbus_path	(device)))
-			return device;
-	}
-
-	return NULL;
-}
-
 static GError *
 new_vpn_error (const gchar *format, ...)
 {
@@ -151,7 +133,7 @@ impl_vpn_manager_connect (NMVPNManager *manager,
 
 	*vpn_connection_path = NULL;
 
-	device = find_device (manager, device_path);
+	device = nm_manager_get_device_by_path (manager, device_path);
 	if (!device) {
 		*err = new_vpn_error ("%s.%d: No active device was found.",
 		                      __FILE__, __LINE__);

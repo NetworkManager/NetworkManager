@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 /* NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -69,8 +70,6 @@ struct _NMDevicePrivate
 	struct in6_addr	ip6_address;
 
 	NMActRequest *		act_request;
-	gulong          act_deferred_timeout_id;
-	gulong          act_deferred_start_id;
 	guint           act_source_id;
 	gulong          secrets_updated_id;
 	gulong          secrets_failed_id;
@@ -83,12 +82,8 @@ struct _NMDevicePrivate
 	gulong              dhcp_timeout_sigid;
 };
 
-static void nm_device_activate (NMDeviceInterface *device,
-                                const char *service_name,
-                                const char *connection_path,
-                                NMConnection *connection,
-                                const char *specific_object,
-                                gboolean user_requested);
+static gboolean nm_device_activate (NMDeviceInterface *device,
+							 NMActRequest *req);
 
 static void	nm_device_activate_schedule_stage5_ip_config_commit (NMDevice *self);
 static void nm_device_deactivate (NMDeviceInterface *device);
@@ -126,8 +121,6 @@ nm_device_init (NMDevice * self)
 	self->priv->ip4_address = 0;
 	memset (&self->priv->ip6_address, 0, sizeof (struct in6_addr));
 
-	self->priv->act_deferred_timeout_id = 0;
-	self->priv->act_deferred_start_id = 0;
 	self->priv->act_source_id = 0;
 
 	self->priv->system_config_data = NULL;
@@ -960,18 +953,6 @@ clear_act_request (NMDevice *self)
 	if (!priv->act_request)
 		return;
 
-	if (priv->act_deferred_timeout_id) {
-		g_signal_handler_disconnect (priv->act_request,
-		                             priv->act_deferred_timeout_id);
-		priv->act_deferred_timeout_id = 0;
-	}
-
-	if (priv->act_deferred_start_id) {
-		g_signal_handler_disconnect (priv->act_request,
-		                             priv->act_deferred_start_id);
-		priv->act_deferred_start_id = 0;
-	}
-
 	if (priv->secrets_updated_id) {
 		g_signal_handler_disconnect (priv->act_request,
 		                             priv->secrets_updated_id);
@@ -1132,21 +1113,6 @@ connection_secrets_failed_cb (NMActRequest *req,
 	nm_device_interface_deactivate (NM_DEVICE_INTERFACE (self));
 }
 
-static void
-deferred_activation_timeout_cb (NMActRequest *req, gpointer user_data)
-{
-	NMDevice *self = NM_DEVICE (user_data);
-
-	if (nm_device_get_act_request (self) != req)
-		return;
-
-	nm_info ("%s: didn't receive connection details soon enough for activation.",
-	         nm_device_get_iface (self));
-
-	clear_act_request (self);
-	nm_device_state_changed (self, NM_DEVICE_STATE_DISCONNECTED);
-}
-
 static gboolean
 device_activation_precheck (NMDevice *self, NMConnection *connection)
 {
@@ -1173,24 +1139,25 @@ device_activation_precheck (NMDevice *self, NMConnection *connection)
 	return TRUE;
 }
 
-static void
-device_activation_go (NMDevice *self)
+static gboolean
+nm_device_activate (NMDeviceInterface *device,
+				NMActRequest *req)
 {
-	NMDevicePrivate * priv;
-	gulong id;
+	NMDevice *self = NM_DEVICE (device);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	priv = NM_DEVICE_GET_PRIVATE (self);
-	id = g_signal_connect (priv->act_request,
-	                       "connection-secrets-updated",
-	                       G_CALLBACK (connection_secrets_updated_cb),
-	                       self);
-	priv->secrets_updated_id = id;
+	if (!device_activation_precheck (self, nm_act_request_get_connection (req)))
+		return FALSE;
 
-	id = g_signal_connect (priv->act_request,
-	                       "connection-secrets-failed",
-	                       G_CALLBACK (connection_secrets_failed_cb),
-	                       self);
-	priv->secrets_failed_id = id;
+	priv->act_request = g_object_ref (req);
+	priv->secrets_updated_id = g_signal_connect (req,
+										"connection-secrets-updated",
+										G_CALLBACK (connection_secrets_updated_cb),
+										device);
+	priv->secrets_failed_id = g_signal_connect (req,
+									    "connection-secrets-failed",
+									    G_CALLBACK (connection_secrets_failed_cb),
+									    device);
 
 	/* HACK: update the state a bit early to avoid a race between the 
 	 * scheduled stage1 handler and nm_policy_device_change_check() thinking
@@ -1198,107 +1165,9 @@ device_activation_go (NMDevice *self)
 	 * gets cleared a bit too early, when the connection becomes valid.
 	 */
 	nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE);
-
 	nm_device_activate_schedule_stage1_device_prepare (self);
-}
 
-static void
-deferred_activation_start_cb (NMActRequest *req, gpointer user_data)
-{
-	NMDevice *self = NM_DEVICE (user_data);
-	NMDevicePrivate * priv;
-	NMConnection *connection;
-
-	if (nm_device_get_act_request (self) != req)
-		return;
-
-	priv = NM_DEVICE_GET_PRIVATE (self);
-	g_signal_handler_disconnect (priv->act_request,
-	                             priv->act_deferred_start_id);
-	priv->act_deferred_start_id = 0;
-
-	connection = nm_act_request_get_connection (req);
-	if (device_activation_precheck (self, connection) == FALSE)
-		return;
-
-	nm_info ("%s: connection details received, will start activation.",
-	         nm_device_get_iface (self));
-
-	device_activation_go (self);
-}
-
-static void
-nm_device_activate (NMDeviceInterface *device,
-					const char *service_name,
-					const char *connection_path,
-					NMConnection *connection,
-					const char *specific_object,
-					gboolean user_requested)
-{
-	NMDevice *self = NM_DEVICE (device);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
-
-	/* Only one of:
-	 *    - connection
-	 *    - service_name AND connection_path
-	 * is valid.
-	 */
-	if (!connection) {
-		g_return_if_fail (service_name != NULL);
-		g_return_if_fail (connection_path != NULL);
-	} else if (connection) {
-		g_return_if_fail (service_name == NULL);
-		g_return_if_fail (connection_path == NULL);
-	}
-
-	if (!connection) {
-		NMManager *mgr = nm_manager_get ();
-		NMConnectionType type = NM_CONNECTION_TYPE_UNKNOWN;
-
-		if (!strcmp (service_name, NM_DBUS_SERVICE_USER_SETTINGS))
-			type = NM_CONNECTION_TYPE_USER;
-		else if (!strcmp (service_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS))
-			type = NM_CONNECTION_TYPE_SYSTEM;
-
-		if (type != NM_CONNECTION_TYPE_UNKNOWN)
-			connection = nm_manager_get_connection_by_object_path (mgr, type, connection_path);
-
-		g_object_unref (mgr);
-	}
-
-	nm_info ("Activating device %s", nm_device_get_iface (self));
-	if (connection) {
-		if (device_activation_precheck (self, connection) == FALSE)
-			return;
-
-		priv->act_request = nm_act_request_new (connection,
-		                                        specific_object,
-		                                        user_requested);
-		device_activation_go (self);
-	} else {
-		gulong id;
-
-		/* Don't have the connection quite yet, probably created by
-		 * the client on-the-fly.  Defer the activation until we have it
-		 */
-		priv->act_request = nm_act_request_new_deferred (service_name,
-		                                                 connection_path,
-		                                                 specific_object,
-		                                                 user_requested);
-
-		id = g_signal_connect (priv->act_request, "deferred-activation-timeout",
-		                       G_CALLBACK (deferred_activation_timeout_cb),
-		                       self);
-		priv->act_deferred_timeout_id = id;
-
-		id = g_signal_connect (priv->act_request, "deferred-activation-start",
-		                       G_CALLBACK (deferred_activation_start_cb),
-		                       self);
-		priv->act_deferred_start_id = id;
-
-		nm_info ("%s: Deferring activation until connection information is "
-		         "received.", nm_device_get_iface (self));
-	}
+	return TRUE;
 }
 
 /*
