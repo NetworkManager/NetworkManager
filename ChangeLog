@@ -1,5 +1,11 @@
 2007-10-01  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/nm-device.c
+		- (nm_device_class_init): actually tell glib about the carrier-changed
+			signal
+
+2007-10-01  Dan Williams  <dcbw@redhat.com>
+
 	* configure.in
 	  src/marshallers/Makefile.am
 	  src/marshallers/nm-marshal.list
