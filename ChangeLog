@@ -1,5 +1,11 @@
 2007-10-01  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-manager.c
+		- (impl_manager_activate_device): ensure the D-Bus method sends a return
+			value when the connection can be activated immediately
+
+2007-10-01  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/nm-device.c
 		- (nm_device_class_init): actually tell glib about the carrier-changed
 			signal

@@ -955,7 +955,9 @@ impl_manager_activate_device (NMManager *manager,
 
 	connection = nm_manager_get_connection_by_object_path (manager, connection_type, connection_path);
 	if (connection) {
-		if (!nm_manager_activate_device (manager, device, connection, specific_object_path, TRUE)) {
+		if (nm_manager_activate_device (manager, device, connection, specific_object_path, TRUE)) {
+			dbus_g_method_return (context, TRUE);
+		} else {
 			err = nm_manager_error_new ("Error in device activation");
 			goto err;
 		}
