@@ -130,10 +130,12 @@ impl_vpn_manager_connect (NMVPNManager *manager,
 	NMDevice *device;
 	NMConnection *connection = NULL;
 	NMVPNConnection *vpn_connection = NULL;
+	NMVPNManagerPrivate *priv;
 
 	*vpn_connection_path = NULL;
 
-	device = nm_manager_get_device_by_path (manager, device_path);
+	priv = NM_VPN_MANAGER_GET_PRIVATE (manager);
+	device = nm_manager_get_device_by_path (priv->nm_manager, device_path);
 	if (!device) {
 		*err = new_vpn_error ("%s.%d: No active device was found.",
 		                      __FILE__, __LINE__);
