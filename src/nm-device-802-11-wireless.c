@@ -401,14 +401,17 @@ constructor (GType type,
 			 GObjectConstructParam *construct_params)
 {
 	GObject *object;
+	GObjectClass *klass;
 	NMDevice80211Wireless *self;
 	NMDevice80211WirelessPrivate *priv;
 	const char *iface;
-	NMSock *sk;
+	NMSock *sk = NULL;
+	struct iw_range range;
+	struct iwreq wrq;
+	int i;
 
-	object = G_OBJECT_CLASS (nm_device_802_11_wireless_parent_class)->constructor (type,
-																				   n_construct_params,
-																				   construct_params);
+	klass = G_OBJECT_CLASS (nm_device_802_11_wireless_parent_class);
+	object = klass->constructor (type, n_construct_params, construct_params);
 	if (!object)
 		return NULL;
 
@@ -416,44 +419,45 @@ constructor (GType type,
 	priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
+	sk = nm_dev_sock_open (iface, DEV_WIRELESS, __FUNCTION__, NULL);
+	if (!sk)
+		goto error;
 
-	if ((sk = nm_dev_sock_open (iface, DEV_WIRELESS, __FUNCTION__, NULL))) {
-		struct iw_range range;
-		struct iwreq wrq;
+	memset (&wrq, 0, sizeof (struct iwreq));
+	memset (&range, 0, sizeof (struct iw_range));
+	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
+	wrq.u.data.pointer = (caddr_t) &range;
+	wrq.u.data.length = sizeof (struct iw_range);
 
-		memset (&wrq, 0, sizeof (struct iwreq));
-		memset (&range, 0, sizeof (struct iw_range));
-		strncpy (wrq.ifr_name, iface, IFNAMSIZ);
-		wrq.u.data.pointer = (caddr_t) &range;
-		wrq.u.data.length = sizeof (struct iw_range);
+	if (ioctl (nm_dev_sock_get_fd (sk), SIOCGIWRANGE, &wrq) < 0)
+		goto error;
 
-		if (ioctl (nm_dev_sock_get_fd (sk), SIOCGIWRANGE, &wrq) >= 0)
-		{
-			int i;
+	priv->max_qual.qual = range.max_qual.qual;
+	priv->max_qual.level = range.max_qual.level;
+	priv->max_qual.noise = range.max_qual.noise;
+	priv->max_qual.updated = range.max_qual.updated;
 
-			priv->max_qual.qual = range.max_qual.qual;
-			priv->max_qual.level = range.max_qual.level;
-			priv->max_qual.noise = range.max_qual.noise;
-			priv->max_qual.updated = range.max_qual.updated;
+	priv->avg_qual.qual = range.avg_qual.qual;
+	priv->avg_qual.level = range.avg_qual.level;
+	priv->avg_qual.noise = range.avg_qual.noise;
+	priv->avg_qual.updated = range.avg_qual.updated;
 
-			priv->avg_qual.qual = range.avg_qual.qual;
-			priv->avg_qual.level = range.avg_qual.level;
-			priv->avg_qual.noise = range.avg_qual.noise;
-			priv->avg_qual.updated = range.avg_qual.updated;
+	priv->num_freqs = MIN (range.num_frequency, IW_MAX_FREQUENCIES);
+	for (i = 0; i < priv->num_freqs; i++)
+		priv->freqs[i] = iw_freq2float (&(range.freq[i]));
 
-			priv->num_freqs = MIN (range.num_frequency, IW_MAX_FREQUENCIES);
-			for (i = 0; i < priv->num_freqs; i++)
-				priv->freqs[i] = iw_freq2float (&(range.freq[i]));
+	priv->we_version = range.we_version_compiled;
 
-			priv->we_version = range.we_version_compiled;
-
-			/* 802.11 wireless-specific capabilities */
-			priv->capabilities = get_wireless_capabilities (self, &range, wrq.u.data.length);
-		}
-		nm_dev_sock_close (sk);
-	}
+	/* 802.11 wireless-specific capabilities */
+	priv->capabilities = get_wireless_capabilities (self, &range, wrq.u.data.length);
 
 	return object;
+
+error:
+	if (sk)
+		nm_dev_sock_close (sk);
+	g_object_unref (object);
+	return NULL;
 }
 
 static void
