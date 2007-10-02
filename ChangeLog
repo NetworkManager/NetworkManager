@@ -1,5 +1,17 @@
 2007-10-01  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting.h
+		- Add a 'timestamp' option to NMSettingConnection
+		- Add a UINT64 type
+
+	* libnm-util/nm-setting.c
+		- (uint64_to_gvalue): new function
+		- (nm_setting_populate_from_hash, nm_setting_hash,
+		   default_setting_clear_secrets): handle UINT64 type
+		- con_table: add 'timestamp' member
+
+2007-10-01  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-manager.c
 		- (impl_manager_activate_device): ensure the D-Bus method sends a return
 			value when the connection can be activated immediately

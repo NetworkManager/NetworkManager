@@ -196,6 +196,18 @@ uint_to_gvalue (guint32 i)
 }
 
 static GValue *
+uint64_to_gvalue (guint64 i)
+{
+	GValue *val;
+
+	val = g_slice_new0 (GValue);
+	g_value_init (val, G_TYPE_UINT64);
+	g_value_set_uint64 (val, i);
+
+	return val;
+}
+
+static GValue *
 byte_to_gvalue (guchar c)
 {
 	GValue *val;
@@ -316,6 +328,9 @@ nm_setting_populate_from_hash (NMSetting *setting, GHashTable *table)
 		} else if ((m->type == NM_S_TYPE_UINT32) && G_VALUE_HOLDS_UINT (value)) {
 			guint32 *val = (guint32 *) G_STRUCT_MEMBER_P (setting, m->offset);
 			*val = g_value_get_uint (value);
+		} else if ((m->type == NM_S_TYPE_UINT64) && G_VALUE_HOLDS_UINT64 (value)) {
+			guint64 *val = (guint64 *) G_STRUCT_MEMBER_P (setting, m->offset);
+			*val = g_value_get_uint64 (value);
 		} else if ((m->type == NM_S_TYPE_BYTE_ARRAY) && G_VALUE_HOLDS_BOXED (value)) {
 			GByteArray **val = (GByteArray **) G_STRUCT_MEMBER_P (setting, m->offset);
 			*val = convert_array_to_byte_array ((GArray *) g_value_get_boxed (value));
@@ -365,6 +380,7 @@ nm_setting_hash (NMSetting *setting)
 			ADD_MEMBER(NM_S_TYPE_STRING, char *, m->key, string_to_gvalue)
 			ADD_MEMBER(NM_S_TYPE_BOOL, gboolean, m->key, boolean_to_gvalue)
 			ADD_MEMBER(NM_S_TYPE_UINT32, guint32, m->key, uint_to_gvalue)
+			ADD_MEMBER(NM_S_TYPE_UINT64, guint64, m->key, uint64_to_gvalue)
 			ADD_MEMBER(NM_S_TYPE_BYTE_ARRAY, GByteArray *, m->key, byte_array_to_gvalue)
 			ADD_MEMBER_EXTRA(NM_S_TYPE_STRING_ARRAY, GSList *, m->key, slist_to_gvalue, G_TYPE_STRING)
 			default:
@@ -406,6 +422,11 @@ default_setting_clear_secrets (NMSetting *setting)
 			}
 			case NM_S_TYPE_UINT32: {
 				guint32 *val = (guint32 *) G_STRUCT_MEMBER_P (setting, m->offset);
+				*val = 0;
+				break;
+			}
+			case NM_S_TYPE_UINT64: {
+				guint64 *val = (guint64 *) G_STRUCT_MEMBER_P (setting, m->offset);
 				*val = 0;
 				break;
 			}
@@ -459,6 +480,7 @@ static SettingMember con_table[] = {
 	{ "name", NM_S_TYPE_STRING, G_STRUCT_OFFSET (NMSettingConnection, name), TRUE, FALSE },
 	{ "type", NM_S_TYPE_STRING, G_STRUCT_OFFSET (NMSettingConnection, type), TRUE, FALSE },
 	{ "autoconnect", NM_S_TYPE_BOOL, G_STRUCT_OFFSET (NMSettingConnection, autoconnect), FALSE, FALSE },
+	{ "timestamp", NM_S_TYPE_UINT64, G_STRUCT_OFFSET (NMSettingConnection, timestamp), FALSE, FALSE },
 	{ NULL, 0, 0 },
 };
 

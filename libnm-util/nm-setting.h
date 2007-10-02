@@ -37,6 +37,7 @@ typedef void   (*NMSettingValueIterFn) (NMSetting *setting,
 #define NM_S_TYPE_BYTE_ARRAY     4
 #define NM_S_TYPE_STRING_ARRAY   5
 #define NM_S_TYPE_GVALUE_HASH    6
+#define NM_S_TYPE_UINT64         7
 
 typedef struct SettingMember {
 	const char *key;
@@ -80,6 +81,7 @@ typedef struct {
 	char *name;
 	char *type;
 	gboolean autoconnect;
+	guint64 timestamp;
 } NMSettingConnection;
 
 NMSetting *nm_setting_connection_new (void);
