@@ -116,8 +116,10 @@ struct _NMDevice80211WirelessPrivate
 	gint8			num_freqs;
 	double			freqs[IW_MAX_FREQUENCIES];
 
-	gboolean			scanning;
 	GSList *        ap_list;
+	NMAccessPoint * current_ap;
+	
+	gboolean			scanning;
 	GTimeVal			scheduled_scan_time;
 	guint8			scan_interval; /* seconds */
 	guint               pending_scan_id;
@@ -188,54 +190,6 @@ network_removed (NMDevice80211Wireless *device, NMAccessPoint *ap)
 {
 	g_signal_emit (device, signals[NETWORK_REMOVED], 0, ap);
 }
-
-/*
- * nm_device_802_11_wireless_update_bssid
- *
- * Update the current wireless network's BSSID, presumably in response to
- * roaming.
- *
- */
-static void
-nm_device_802_11_wireless_update_bssid (NMDevice80211Wireless *self,
-										NMAccessPoint *ap)
-{
-	struct ether_addr		new_bssid;
-	const struct ether_addr	*old_bssid;
-	const GByteArray *		new_ssid;
-	const GByteArray *		old_ssid;
-
-	/* Get the current BSSID.  If it is valid but does not match the stored value,
-	 * and the SSID is the same as what we think its supposed to be, update it. */
-	nm_device_802_11_wireless_get_bssid (self, &new_bssid);
-	old_bssid = nm_ap_get_address (ap);
-	new_ssid = nm_device_802_11_wireless_get_ssid (self);
-	old_ssid = nm_ap_get_ssid (ap);
-	if (     nm_ethernet_address_is_valid (&new_bssid)
-		&&  nm_ethernet_address_is_valid (old_bssid)
-		&& !nm_ethernet_addresses_are_equal (&new_bssid, old_bssid)
-		&& nm_utils_same_ssid (old_ssid, new_ssid, TRUE))
-	{
-		gboolean	automatic;
-		gchar	new_addr[20];
-		gchar	old_addr[20];
-
-		memset (new_addr, '\0', sizeof (new_addr));
-		memset (old_addr, '\0', sizeof (old_addr));
-		iw_ether_ntop (&new_bssid, new_addr);
-		iw_ether_ntop (old_bssid, old_addr);
-		nm_debug ("Roamed from BSSID %s to %s on wireless network '%s'",
-		          old_addr,
-		          new_addr,
-		          nm_utils_escape_ssid (old_ssid->data, old_ssid->len));
-
-		nm_ap_set_address (ap, &new_bssid);
-
-		automatic = !nm_act_request_get_user_requested (nm_device_get_act_request (NM_DEVICE (self)));
-		// FIXME: push new BSSID to the info-daemon
-	}
-}
-
 
 /*
  * nm_device_802_11_wireless_update_signal_strength
@@ -531,6 +485,32 @@ out:
 	nm_device_set_active_link (NM_DEVICE (self), new_link);
 }
 
+static NMAccessPoint *
+get_active_ap (NMDevice80211Wireless *self)
+{
+	struct ether_addr bssid;
+	const GByteArray *ssid;
+	GSList *iter;
+
+	nm_device_802_11_wireless_get_bssid (self, &bssid);
+	if (!nm_ethernet_address_is_valid (&bssid))
+		return NULL;
+
+	ssid = nm_device_802_11_wireless_get_ssid (self);
+
+	/* Find this SSID + BSSID in the device's AP list */
+	for (iter = self->priv->ap_list; iter; iter = g_slist_next (iter)) {
+		NMAccessPoint *ap = NM_AP (iter->data);
+		const struct ether_addr	*ap_bssid = nm_ap_get_address (ap);
+		const GByteArray *ap_ssid = nm_ap_get_ssid (ap);
+
+		if (   nm_ethernet_addresses_are_equal (&bssid, ap_bssid)
+		    && nm_utils_same_ssid (ssid, ap_ssid, TRUE))
+			return ap;
+	}
+
+	return NULL;
+}
 
 /*
  * nm_device_802_11_periodic_update
@@ -542,15 +522,51 @@ static gboolean
 nm_device_802_11_periodic_update (gpointer data)
 {
 	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (data);
+	NMDeviceState state;
+	NMAccessPoint *old_ap;
+	NMAccessPoint *new_ap;
 
 	/* BSSID and signal strength have meaningful values only if the device
 	   is activated and not scanning */
-	if (nm_device_get_state (NM_DEVICE (self)) == NM_DEVICE_STATE_ACTIVATED &&
-		!NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self)->scanning) {
-		NMAccessPoint *ap = nm_device_802_11_wireless_get_activation_ap (self);
+	state = nm_device_get_state (NM_DEVICE (self));
+	if (   (state != NM_DEVICE_STATE_ACTIVATED)
+	    || NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self)->scanning)
+		return TRUE;
 
-		nm_device_802_11_wireless_update_signal_strength (self, ap);
-		nm_device_802_11_wireless_update_bssid (self, ap);
+	new_ap = get_active_ap (self);
+	if (new_ap)
+		nm_device_802_11_wireless_update_signal_strength (self, new_ap);
+
+	old_ap = nm_device_802_11_wireless_get_activation_ap (self);
+	if ((new_ap || old_ap) && (new_ap != old_ap)) {
+		const struct ether_addr *new_bssid = NULL;
+		const GByteArray *new_ssid = NULL;
+		const struct ether_addr *old_bssid = NULL;
+		const GByteArray *old_ssid = NULL;
+		gchar new_addr[20];
+		gchar old_addr[20];
+
+		memset (new_addr, '\0', sizeof (new_addr));
+		if (new_ap) {
+			new_bssid = nm_ap_get_address (new_ap);
+			iw_ether_ntop (new_bssid, new_addr);
+			new_ssid = nm_ap_get_ssid (new_ap);
+		}
+
+		memset (old_addr, '\0', sizeof (old_addr));
+		if (old_ap) {
+			old_bssid = nm_ap_get_address (old_ap);
+			iw_ether_ntop (old_bssid, old_addr);
+			old_ssid = nm_ap_get_ssid (old_ap);
+		}
+
+		nm_debug ("Roamed from BSSID %s (%s) to %s (%s)",
+		          old_bssid ? old_addr : "(none)",
+		          old_ssid ? nm_utils_escape_ssid (old_ssid->data, old_ssid->len) : "(none)",
+		          new_bssid ? new_addr : "(none)",
+		          new_ssid ? nm_utils_escape_ssid (new_ssid->data, new_ssid->len) : "(none)");
+
+		// FIXME: emit PropertiesChanged for active network
 	}
 
 	return TRUE;

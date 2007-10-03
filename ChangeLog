@@ -1,3 +1,12 @@
+2007-10-03  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.c
+		- (nm_device_802_11_wireless_update_bssid): remove
+		- (get_active_ap): new function; find the AP in the scan list which
+			matches the current BSSID and SSID of the wireless device
+		- (nm_device_802_11_periodic_update): get current AP using
+			get_active_ap() and print AP roam messages
+
 2007-10-01  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/nm-setting.h
