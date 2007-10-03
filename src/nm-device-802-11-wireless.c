@@ -43,9 +43,9 @@
 #include "nm-supplicant-interface.h"
 #include "nm-supplicant-config.h"
 
-static gboolean impl_device_get_active_networks (NMDevice80211Wireless *device,
-												 GPtrArray **networks,
-												 GError **err);
+static gboolean impl_device_get_access_points (NMDevice80211Wireless *device,
+                                               GPtrArray **aps,
+                                               GError **err);
 
 #if DEBUG
 static void nm_device_802_11_wireless_ap_list_print (NMDevice80211Wireless *self);
@@ -72,15 +72,15 @@ enum {
 	PROP_HW_ADDRESS,
 	PROP_MODE,
 	PROP_BITRATE,
-	PROP_ACTIVE_NETWORK,
+	PROP_ACTIVE_ACCESS_POINT,
 	PROP_CAPABILITIES,
 
 	LAST_PROP
 };
 
 enum {
-	NETWORK_ADDED,
-	NETWORK_REMOVED,
+	ACCESS_POINT_ADDED,
+	ACCESS_POINT_REMOVED,
 
 	LAST_SIGNAL
 };
@@ -180,15 +180,15 @@ static void device_cleanup (NMDevice80211Wireless *self);
 
 
 static void
-network_added (NMDevice80211Wireless *device, NMAccessPoint *ap)
+access_point_added (NMDevice80211Wireless *device, NMAccessPoint *ap)
 {
-	g_signal_emit (device, signals[NETWORK_ADDED], 0, ap);
+	g_signal_emit (device, signals[ACCESS_POINT_ADDED], 0, ap);
 }
 
 static void
-network_removed (NMDevice80211Wireless *device, NMAccessPoint *ap)
+access_point_removed (NMDevice80211Wireless *device, NMAccessPoint *ap)
 {
-	g_signal_emit (device, signals[NETWORK_REMOVED], 0, ap);
+	g_signal_emit (device, signals[ACCESS_POINT_REMOVED], 0, ap);
 }
 
 /*
@@ -566,7 +566,7 @@ nm_device_802_11_periodic_update (gpointer data)
 		          new_bssid ? new_addr : "(none)",
 		          new_ssid ? nm_utils_escape_ssid (new_ssid->data, new_ssid->len) : "(none)");
 
-		// FIXME: emit PropertiesChanged for active network
+		// FIXME: emit PropertiesChanged for active AP
 	}
 
 	return TRUE;
@@ -975,19 +975,19 @@ nm_device_802_11_wireless_ap_list_get_ap_by_obj_path (NMDevice80211Wireless *sel
 }
 
 static gboolean
-impl_device_get_active_networks (NMDevice80211Wireless *self,
-								 GPtrArray **networks,
-								 GError **err)
+impl_device_get_access_points (NMDevice80211Wireless *self,
+                               GPtrArray **aps,
+                               GError **err)
 {
 	GSList *elt;
 
-	*networks = g_ptr_array_new ();
+	*aps = g_ptr_array_new ();
 
 	for (elt = self->priv->ap_list; elt; elt = g_slist_next (elt)) {
 		NMAccessPoint * ap = NM_AP (elt->data);
 
 		if (nm_ap_get_ssid (ap))
-			g_ptr_array_add (*networks, g_strdup (nm_ap_get_dbus_path (ap)));
+			g_ptr_array_add (*aps, g_strdup (nm_ap_get_dbus_path (ap)));
 	}
 	return TRUE;
 }
@@ -1753,7 +1753,7 @@ merge_scanned_ap (NMDevice80211Wireless *self,
 		g_object_ref (merge_ap);
 		self->priv->ap_list = g_slist_append (self->priv->ap_list, merge_ap);
 		nm_ap_export_to_dbus (merge_ap);
-		network_added (self, merge_ap);
+		access_point_added (self, merge_ap);
 	}
 }
 
@@ -1795,7 +1795,7 @@ cull_scan_list (NMDevice80211Wireless * self)
 	for (elt = outdated_list; elt; elt = g_slist_next (elt)) {
 		NMAccessPoint * outdated_ap = NM_AP (elt->data);
 
-		network_removed (self, outdated_ap);
+		access_point_removed (self, outdated_ap);
 		self->priv->ap_list = g_slist_remove (self->priv->ap_list, outdated_ap);
 		g_object_unref (outdated_ap);
 	}
@@ -2884,7 +2884,7 @@ get_property (GObject *object, guint prop_id,
 	case PROP_CAPABILITIES:
 		g_value_set_uint (value, priv->capabilities);
 		break;
-	case PROP_ACTIVE_NETWORK:
+	case PROP_ACTIVE_ACCESS_POINT:
 		if ((ap = nm_device_802_11_wireless_get_activation_ap (device)))
 			g_value_set_object (value, ap);
 		break;
@@ -2951,10 +2951,10 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 						   0, G_MAXINT32, 0,
 						   G_PARAM_READABLE));
 	g_object_class_install_property
-		(object_class, PROP_ACTIVE_NETWORK,
-		 g_param_spec_object (NM_DEVICE_802_11_WIRELESS_ACTIVE_NETWORK,
-							  "Active network",
-							  "Currently active network",
+		(object_class, PROP_ACTIVE_ACCESS_POINT,
+		 g_param_spec_object (NM_DEVICE_802_11_WIRELESS_ACTIVE_ACCESS_POINT,
+							  "Active access point",
+							  "Currently active access point",
 							  G_TYPE_OBJECT,
 							  G_PARAM_READABLE));
 	g_object_class_install_property
@@ -2966,21 +2966,21 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 							G_PARAM_READABLE));
 
 	/* Signals */
-	signals[NETWORK_ADDED] =
-		g_signal_new ("network-added",
+	signals[ACCESS_POINT_ADDED] =
+		g_signal_new ("access-point-added",
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMDevice80211WirelessClass, network_added),
+					  G_STRUCT_OFFSET (NMDevice80211WirelessClass, access_point_added),
 					  NULL, NULL,
 					  g_cclosure_marshal_VOID__OBJECT,
 					  G_TYPE_NONE, 1,
 					  G_TYPE_OBJECT);
 
-	signals[NETWORK_REMOVED] =
-		g_signal_new ("network-removed",
+	signals[ACCESS_POINT_REMOVED] =
+		g_signal_new ("access-point-removed",
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMDevice80211WirelessClass, network_removed),
+					  G_STRUCT_OFFSET (NMDevice80211WirelessClass, access_point_removed),
 					  NULL, NULL,
 					  g_cclosure_marshal_VOID__OBJECT,
 					  G_TYPE_NONE, 1,

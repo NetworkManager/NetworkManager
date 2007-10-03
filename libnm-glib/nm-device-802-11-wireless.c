@@ -9,23 +9,23 @@ G_DEFINE_TYPE (NMDevice80211Wireless, nm_device_802_11_wireless, NM_TYPE_DEVICE)
 
 typedef struct {
 	DBusGProxy *wireless_proxy;
-	gboolean have_network_list;
-	GHashTable *networks;
+	gboolean have_ap_list;
+	GHashTable *aps;
 
 	gboolean disposed;
 } NMDevice80211WirelessPrivate;
 
 enum {
-	NETWORK_ADDED,
-	NETWORK_REMOVED,
+	ACCESS_POINT_ADDED,
+	ACCESS_POINT_REMOVED,
 
 	LAST_SIGNAL
 };
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-static void network_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data);
-static void network_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data);
+static void access_point_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data);
+static void access_point_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data);
 
 static void
 nm_device_802_11_wireless_init (NMDevice80211Wireless *device)
@@ -33,9 +33,9 @@ nm_device_802_11_wireless_init (NMDevice80211Wireless *device)
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device);
 
 	priv->disposed = FALSE;
-	priv->networks = g_hash_table_new_full (g_str_hash, g_str_equal,
-											(GDestroyNotify) g_free,
-											(GDestroyNotify) g_object_unref);
+	priv->aps = g_hash_table_new_full (g_str_hash, g_str_equal,
+	                                   (GDestroyNotify) g_free,
+	                                   (GDestroyNotify) g_object_unref);
 }
 
 static GObject*
@@ -59,14 +59,14 @@ constructor (GType type,
 													  nm_object_get_path (NM_OBJECT (object)),
 													  NM_DBUS_INTERFACE_DEVICE_WIRELESS);
 
-	dbus_g_proxy_add_signal (priv->wireless_proxy, "NetworkAdded", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->wireless_proxy, "NetworkAdded",
-								 G_CALLBACK (network_added_proxy),
+	dbus_g_proxy_add_signal (priv->wireless_proxy, "AccessPointAdded", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->wireless_proxy, "AccessPointAdded",
+								 G_CALLBACK (access_point_added_proxy),
 								 object, NULL);
 
-	dbus_g_proxy_add_signal (priv->wireless_proxy, "NetworkRemoved", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->wireless_proxy, "NetworkRemoved",
-								 G_CALLBACK (network_removed_proxy),
+	dbus_g_proxy_add_signal (priv->wireless_proxy, "AccessPointRemoved", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->wireless_proxy, "AccessPointRemoved",
+								 G_CALLBACK (access_point_removed_proxy),
 								 object, NULL);
 
 	return object;
@@ -92,7 +92,7 @@ finalize (GObject *object)
 {
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (object);
 
-	g_hash_table_destroy (priv->networks);
+	g_hash_table_destroy (priv->aps);
 
 	G_OBJECT_CLASS (nm_device_802_11_wireless_parent_class)->finalize (object);
 }
@@ -110,21 +110,21 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *device_class)
 	object_class->finalize = finalize;
 
 	/* signals */
-	signals[NETWORK_ADDED] =
-		g_signal_new ("network-added",
+	signals[ACCESS_POINT_ADDED] =
+		g_signal_new ("access-point-added",
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMDevice80211WirelessClass, network_added),
+					  G_STRUCT_OFFSET (NMDevice80211WirelessClass, access_point_added),
 					  NULL, NULL,
 					  g_cclosure_marshal_VOID__OBJECT,
 					  G_TYPE_NONE, 1,
 					  G_TYPE_OBJECT);
 
-	signals[NETWORK_REMOVED] =
-		g_signal_new ("network-removed",
+	signals[ACCESS_POINT_REMOVED] =
+		g_signal_new ("access-point-removed",
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMDevice80211WirelessClass, network_removed),
+					  G_STRUCT_OFFSET (NMDevice80211WirelessClass, access_point_removed),
 					  NULL, NULL,
 					  g_cclosure_marshal_VOID__OBJECT,
 					  G_TYPE_NONE, 1,
@@ -176,32 +176,32 @@ nm_device_802_11_wireless_get_capabilities (NMDevice80211Wireless *device)
 }
 
 static NMAccessPoint *
-get_network (NMDevice80211Wireless *device, const char *path, gboolean create_if_not_found)
+get_access_point (NMDevice80211Wireless *device, const char *path, gboolean create_if_not_found)
 {
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device);
 	NMAccessPoint *ap;
 
-	ap = g_hash_table_lookup (priv->networks, path);
+	ap = g_hash_table_lookup (priv->aps, path);
 	if (!ap && create_if_not_found) {
 		ap = nm_access_point_new (nm_object_get_connection (NM_OBJECT (device)), path);
 		if (ap)
-			g_hash_table_insert (priv->networks, g_strdup (path), ap);
+			g_hash_table_insert (priv->aps, g_strdup (path), ap);
 	}
 
 	return ap;
 }
 
 NMAccessPoint *
-nm_device_802_11_wireless_get_active_network (NMDevice80211Wireless *device)
+nm_device_802_11_wireless_get_active_access_point (NMDevice80211Wireless *device)
 {
 	char *path;
 	NMAccessPoint *ap = NULL;
 
 	g_return_val_if_fail (NM_IS_DEVICE_802_11_WIRELESS (device), NULL);
 
-	path = nm_object_get_object_path_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE_WIRELESS, "ActiveNetwork");
+	path = nm_object_get_object_path_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE_WIRELESS, "ActiveAccessPoint");
 	if (path) {
-		ap = get_network (device, path, TRUE);
+		ap = get_access_point (device, path, TRUE);
 		g_free (path);
 	}
 
@@ -209,17 +209,17 @@ nm_device_802_11_wireless_get_active_network (NMDevice80211Wireless *device)
 }
 
 NMAccessPoint *
-nm_device_802_11_wireless_get_network_by_path (NMDevice80211Wireless *device,
-											   const char *object_path)
+nm_device_802_11_wireless_get_access_point_by_path (NMDevice80211Wireless *device,
+											        const char *object_path)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_802_11_WIRELESS (device), NULL);
 	g_return_val_if_fail (object_path != NULL, NULL);
 
-	return get_network (device, object_path, TRUE);
+	return get_access_point (device, object_path, TRUE);
 }
 
 static void
-networks_to_slist (gpointer key, gpointer value, gpointer user_data)
+access_points_to_slist (gpointer key, gpointer value, gpointer user_data)
 {
 	GSList **list = (GSList **) user_data;
 
@@ -227,7 +227,7 @@ networks_to_slist (gpointer key, gpointer value, gpointer user_data)
 }
 
 GSList *
-nm_device_802_11_wireless_get_networks (NMDevice80211Wireless *device)
+nm_device_802_11_wireless_get_access_points (NMDevice80211Wireless *device)
 {
 	NMDevice80211WirelessPrivate *priv;
 	GSList *list = NULL;
@@ -238,21 +238,21 @@ nm_device_802_11_wireless_get_networks (NMDevice80211Wireless *device)
 
 	priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device);
 
-	if (priv->have_network_list) {
-		g_hash_table_foreach (priv->networks, networks_to_slist, &list);
+	if (priv->have_ap_list) {
+		g_hash_table_foreach (priv->aps, access_points_to_slist, &list);
 		return list;
 	}
 
-	if (!org_freedesktop_NetworkManager_Device_Wireless_get_active_networks
+	if (!org_freedesktop_NetworkManager_Device_Wireless_get_access_points
 		(NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device)->wireless_proxy, &array, &err)) {
 
-		g_warning ("Error in get_networks: %s", err->message);
+		g_warning ("Error in get_access_points: %s", err->message);
 		g_error_free (err);
 	} else {
 		int i;
 
 		for (i = 0; i < array->len; i++) {
-			NMAccessPoint *ap = get_network (device, (const char *) g_ptr_array_index (array, i), TRUE);
+			NMAccessPoint *ap = get_access_point (device, (const char *) g_ptr_array_index (array, i), TRUE);
 			if (ap)
 				list = g_slist_prepend (list, ap);
 		}
@@ -260,32 +260,32 @@ nm_device_802_11_wireless_get_networks (NMDevice80211Wireless *device)
 		g_ptr_array_free (array, TRUE);
 		list = g_slist_reverse (list);
 
-		priv->have_network_list = TRUE;
+		priv->have_ap_list = TRUE;
 	}
 
 	return list;
 }
 
 static void
-network_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
+access_point_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 {
 	NMDevice80211Wireless *device = NM_DEVICE_802_11_WIRELESS (user_data);
 	NMAccessPoint *ap;
 
-	ap = get_network (device, path, TRUE);
+	ap = get_access_point (device, path, TRUE);
 	if (device)
-		g_signal_emit (device, signals[NETWORK_ADDED], 0, ap);
+		g_signal_emit (device, signals[ACCESS_POINT_ADDED], 0, ap);
 }
 
 static void
-network_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
+access_point_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 {
 	NMDevice80211Wireless *device = NM_DEVICE_802_11_WIRELESS (user_data);
 	NMAccessPoint *ap;
 
-	ap = get_network (device, path, FALSE);
+	ap = get_access_point (device, path, FALSE);
 	if (device) {
-		g_signal_emit (device, signals[NETWORK_REMOVED], 0, ap);
-		g_hash_table_remove (NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device)->networks, path);
+		g_signal_emit (device, signals[ACCESS_POINT_REMOVED], 0, ap);
+		g_hash_table_remove (NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device)->aps, path);
 	}
 }

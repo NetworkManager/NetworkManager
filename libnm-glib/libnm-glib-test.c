@@ -191,7 +191,7 @@ dump_wireless (NMDevice80211Wireless *device)
 {
 	char *str;
 	GSList *iter;
-	GSList *networks;
+	GSList *aps;
 
 	g_print ("Mode: %d\n", nm_device_802_11_wireless_get_mode (device));
 	g_print ("Bitrate: %d\n", nm_device_802_11_wireless_get_bitrate (device));
@@ -200,15 +200,15 @@ dump_wireless (NMDevice80211Wireless *device)
 	g_print ("MAC: %s\n", str);
 	g_free (str);
 
-	g_print ("Networks:\n");
-	networks = nm_device_802_11_wireless_get_networks (device);
-	for (iter = networks; iter; iter = iter->next) {
+	g_print ("AccessPoints:\n");
+	aps = nm_device_802_11_wireless_get_access_points (device);
+	for (iter = aps; iter; iter = iter->next) {
 		dump_access_point (NM_ACCESS_POINT (iter->data));
 		g_print ("\n");
 	}
 
-	g_slist_foreach (networks, (GFunc) g_object_unref, NULL);
-	g_slist_free (networks);
+	g_slist_foreach (aps, (GFunc) g_object_unref, NULL);
+	g_slist_free (aps);
 }
 
 static void

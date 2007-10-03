@@ -45,7 +45,7 @@ G_BEGIN_DECLS
 #define NM_DEVICE_802_11_WIRELESS_HW_ADDRESS "hw-address"
 #define NM_DEVICE_802_11_WIRELESS_MODE "mode"
 #define NM_DEVICE_802_11_WIRELESS_BITRATE "bitrate"
-#define NM_DEVICE_802_11_WIRELESS_ACTIVE_NETWORK "active-network"
+#define NM_DEVICE_802_11_WIRELESS_ACTIVE_ACCESS_POINT "active-access-point"
 #define NM_DEVICE_802_11_WIRELESS_CAPABILITIES "wireless-capabilities"
 
 #ifndef NM_DEVICE_802_11_WIRELESS_DEFINED
@@ -69,8 +69,8 @@ struct _NMDevice80211WirelessClass
 	NMDeviceClass parent;
 
 	/* Signals */
-	void (*network_added) (NMDevice80211Wireless *device, NMAccessPoint *ap);
-	void (*network_removed) (NMDevice80211Wireless *device, NMAccessPoint *ap);
+	void (*access_point_added) (NMDevice80211Wireless *device, NMAccessPoint *ap);
+	void (*access_point_removed) (NMDevice80211Wireless *device, NMAccessPoint *ap);
 };
 
 

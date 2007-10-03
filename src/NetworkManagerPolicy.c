@@ -437,10 +437,10 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 					  policy);
 
 	if (NM_IS_DEVICE_802_11_WIRELESS (device)) {
-		g_signal_connect (device, "network-added",
+		g_signal_connect (device, "access-point-added",
 						  G_CALLBACK (wireless_networks_changed),
 						  policy);
-		g_signal_connect (device, "network-removed",
+		g_signal_connect (device, "access-point-removed",
 						  G_CALLBACK (wireless_networks_changed),
 						  policy);
 	}

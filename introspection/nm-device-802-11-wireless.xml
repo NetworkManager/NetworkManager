@@ -2,23 +2,23 @@
 
 <node name="/">
   <interface name="org.freedesktop.NetworkManager.Device.Wireless">
-    <method name="GetActiveNetworks">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_get_active_networks"/>
-      <arg name="networks" type="ao" direction="out"/>
+    <method name="GetAccessPoints">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_get_access_points"/>
+      <arg name="access_points" type="ao" direction="out"/>
     </method>
 
     <property name="HwAddress" type="s" access="read"/>
     <property name="Mode" type="i" access="read"/>
     <property name="Bitrate" type="i" access="read"/>
-    <property name="ActiveNetwork" type="o" access="read"/>
+    <property name="ActiveAccessPoint" type="o" access="read"/>
     <property name="WirelessCapabilities" type="u" access="read"/>
 
-    <signal name="NetworkAdded">
-      <arg name="network" type="o"/>
+    <signal name="AccessPointAdded">
+      <arg name="access_point" type="o"/>
     </signal>
 
-    <signal name="NetworkRemoved">
-      <arg name="network" type="o"/>
+    <signal name="AccessPointRemoved">
+      <arg name="access_point" type="o"/>
     </signal>
 
   </interface>

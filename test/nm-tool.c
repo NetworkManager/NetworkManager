@@ -141,7 +141,7 @@ print_string (const char *label, const char *data)
 
 
 static void
-detail_network (gpointer data, gpointer user_data)
+detail_access_point (gpointer data, gpointer user_data)
 {
 	NMAccessPoint *ap = NM_ACCESS_POINT (data);
 	const char *active_bssid = (const char *) user_data;
@@ -286,7 +286,7 @@ detail_device (gpointer data, gpointer user_data)
 		guint32 wcaps;
 		NMAccessPoint *active_ap = NULL;
 		char *active_bssid = NULL;
-		GSList *networks;
+		GSList *aps;
 
 		printf ("\n  Wireless Settings\n");
 
@@ -300,16 +300,16 @@ detail_device (gpointer data, gpointer user_data)
 			print_string ("  WPA2 Encryption", "yes");
 
 		if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
-			active_ap = nm_device_802_11_wireless_get_active_network (NM_DEVICE_802_11_WIRELESS (device));
+			active_ap = nm_device_802_11_wireless_get_active_access_point (NM_DEVICE_802_11_WIRELESS (device));
 			active_bssid = active_ap ? nm_access_point_get_hw_address (active_ap) : NULL;
 		}
 
-		printf ("\n  Wireless Networks%s\n", active_ap ? "(* = Current Network)" : "");
+		printf ("\n  Wireless Access Points%s\n", active_ap ? "(* = Current AP)" : "");
 
-		networks = nm_device_802_11_wireless_get_networks (NM_DEVICE_802_11_WIRELESS (device));
-		g_slist_foreach (networks, detail_network, active_bssid);
+		aps = nm_device_802_11_wireless_get_access_points (NM_DEVICE_802_11_WIRELESS (device));
+		g_slist_foreach (aps, detail_access_point, active_bssid);
 		g_free (active_bssid);
-		g_slist_free (networks);
+		g_slist_free (aps);
 	} else if (NM_IS_DEVICE_802_3_ETHERNET (device)) {
 		printf ("\n  Wired Settings\n");
 		/* FIXME */
