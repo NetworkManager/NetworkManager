@@ -38,10 +38,20 @@ GType nm_client_get_type (void);
 
 NMClient *nm_client_new                  (void);
 
-gboolean  nm_client_manager_is_running   (NMClient *client);
-GSList   *nm_client_get_devices          (NMClient *client);
-NMDevice *nm_client_get_device_by_path   (NMClient *client,
-								  const char *object_path);
+gboolean  nm_client_manager_is_running    (NMClient *client);
+GSList   *nm_client_get_devices           (NMClient *client);
+NMDevice *nm_client_get_device_by_path    (NMClient *client,
+                                           const char *object_path);
+
+typedef struct NMClientActiveConnection {
+	char *service_name;
+	char *connection_path;
+	char *specific_object;
+	GSList *devices;        /* list of NMDevice objects */
+} NMClientActiveConnection;
+
+GSList *  nm_client_get_active_connections (NMClient *client);
+void      nm_client_free_active_connection_element (NMClientActiveConnection *elt);
 
 typedef void (*NMClientActivateDeviceFn) (gpointer user_data, GError *error);
 

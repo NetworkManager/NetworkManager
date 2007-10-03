@@ -23,6 +23,18 @@
       <arg name="specific_object" type="o" direction="in"/>
     </method>
 
+    <method name="GetActiveConnections">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_get_active_connections"/>
+      <!-- 'connections' is an array of structs
+           consisting of the following elements:
+               service name
+               connection object path
+               specific object
+               array of (device object path)
+      -->
+      <arg name="connections" type="a(sooao)" direction="out"/>
+    </method>
+
     <method name="Sleep">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_sleep"/>
       <arg name="sleep" type="b" direction="in"/>

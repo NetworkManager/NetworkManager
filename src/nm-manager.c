@@ -18,6 +18,10 @@ static void impl_manager_activate_device (NMManager *manager,
 								  char *specific_object_path,
 								  DBusGMethodInvocation *context);
 
+static gboolean impl_manager_get_active_connections (NMManager *manager,
+                                                     GPtrArray **connections,
+                                                     GError **err);
+
 static gboolean impl_manager_sleep (NMManager *manager, gboolean sleep, GError **err);
 
 /* Legacy 0.6 compatibility interface */
@@ -385,6 +389,10 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 			nm_warning ("Connection wasn't a user connection or a system connection.");
 			g_assert_not_reached ();
 		}
+
+		g_object_set_data (G_OBJECT (connection),
+		                   NM_MANAGER_CONNECTION_TYPE_TAG,
+		                   GUINT_TO_POINTER (connection_type));
 
 		g_signal_emit (manager, signals[CONNECTION_ADDED], 0, connection, connection_type);
 	} else {
@@ -984,6 +992,106 @@ impl_manager_activate_device (NMManager *manager,
 		dbus_g_method_return_error (context, err);
 		g_error_free (err);
 	}
+}
+
+static GValueArray *
+add_one_connection_element (NMManager *manager,
+                            NMDevice *device)
+{
+	GValueArray *elt;
+	static GType type = 0, ao_type = 0;
+	GValue entry = {0, };
+	GPtrArray *dev_array = NULL;
+	NMActRequest *req;
+	const char *service_name;
+	NMConnection *connection;
+	const char *specific_object;
+	gpointer type_ptr;
+
+	req = nm_device_get_act_request (device);
+ 	g_assert (req);
+
+	connection = nm_act_request_get_connection (req);
+	type_ptr = g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_TYPE_TAG);
+	g_return_val_if_fail (type_ptr != NULL, NULL);
+
+	switch ((NMConnectionType) GPOINTER_TO_UINT (type_ptr)) {
+		case NM_CONNECTION_TYPE_USER:
+			service_name = NM_DBUS_SERVICE_USER_SETTINGS;
+			break;
+		case NM_CONNECTION_TYPE_SYSTEM:
+			service_name = NM_DBUS_SERVICE_SYSTEM_SETTINGS;
+			break;
+		default:
+			g_assert_not_reached ();
+			break;
+	}
+
+	specific_object = nm_act_request_get_specific_object (req);
+
+	/* dbus signature "sooao" */
+	if (G_UNLIKELY (ao_type) == 0)
+		ao_type = dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_OBJECT_PATH);
+	if (G_UNLIKELY (type) == 0) {
+		type = dbus_g_type_get_struct ("GValueArray",
+		                               G_TYPE_STRING,
+		                               DBUS_TYPE_G_OBJECT_PATH,
+		                               DBUS_TYPE_G_OBJECT_PATH,
+		                               ao_type,
+		                               G_TYPE_INVALID);
+	}
+
+	dev_array = g_ptr_array_sized_new (1);
+	if (!dev_array)
+		return NULL;
+	g_ptr_array_add (dev_array, g_strdup (nm_device_get_dbus_path (device)));
+
+	g_value_init (&entry, type);
+	g_value_take_boxed (&entry, dbus_g_type_specialized_construct (type));
+	dbus_g_type_struct_set (&entry,
+	                        0, service_name,
+	                        1, nm_manager_get_connection_dbus_path (manager, connection),
+	                        2, specific_object ? specific_object : "/",
+	                        3, dev_array,
+	                        G_MAXUINT);
+	return g_value_get_boxed (&entry);
+}
+
+static gboolean
+impl_manager_get_active_connections (NMManager *manager,
+                                     GPtrArray **connections,
+                                     GError **err)
+{
+	NMManagerPrivate *priv;
+	GType type, aoao_type, ao_type;
+	DBusGTypeSpecializedAppendContext ctx;
+	GValue val = {0, };
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
+
+	priv = NM_MANAGER_GET_PRIVATE (manager);
+
+	// GPtrArray of GValueArrays of (gchar * and GPtrArray of gchar *)
+	*connections = g_ptr_array_sized_new (1);
+
+	// FIXME: this assumes one active device per connection
+	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *dev = NM_DEVICE (iter->data);
+		GValueArray *item;
+
+		if (   (nm_device_get_state (dev) != NM_DEVICE_STATE_ACTIVATED)
+		    && !nm_device_is_activating (dev))
+			continue;
+
+		item = add_one_connection_element (manager, dev);
+		if (!item)
+			continue;
+
+		g_ptr_array_add (*connections, item);
+	}
+
+	return TRUE;
 }
 
 gboolean

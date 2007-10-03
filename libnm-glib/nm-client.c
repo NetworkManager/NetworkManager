@@ -359,10 +359,12 @@ nm_client_get_devices (NMClient *client)
 
 		for (i = 0; i < array->len; i++) {
 			NMDevice *device;
+			char *path = g_ptr_array_index (array, i);
 
-			device = get_device (client, (const char *) g_ptr_array_index (array, i), TRUE);
+			device = get_device (client, (const char *) path, TRUE);
 			if (device)
 				list = g_slist_append (list, device);
+			g_free (path);
 		}
 
 		g_ptr_array_free (array, TRUE);
@@ -443,6 +445,105 @@ nm_client_activate_device (NMClient *client,
 											    activate_cb,
 											    info);
 }
+
+
+GSList * 
+nm_client_get_active_connections (NMClient *client)
+{
+	NMClientPrivate *priv;
+	GSList *connections = NULL;
+	GPtrArray *array = NULL;
+	GError *err;
+	int i, j;
+	static GType type = 0, ao_type = 0;
+
+	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
+
+	priv = NM_CLIENT_GET_PRIVATE (client);
+	if (!org_freedesktop_NetworkManager_get_active_connections (priv->client_proxy, &array, &err)) {
+		g_warning ("Error in get_active_connections: %s", err->message);
+		g_error_free (err);
+		return NULL;
+	}
+
+	/* dbus signature "sooao" */
+	if (G_UNLIKELY (ao_type) == 0)
+		ao_type = dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_OBJECT_PATH);
+	if (G_UNLIKELY (type) == 0) {
+		type = dbus_g_type_get_struct ("GValueArray",
+		                               G_TYPE_STRING,
+		                               DBUS_TYPE_G_OBJECT_PATH,
+		                               DBUS_TYPE_G_OBJECT_PATH,
+		                               ao_type,
+		                               G_TYPE_INVALID);
+	}
+
+	for (i = 0; i < array->len; i++) {
+		NMClientActiveConnection *ac_elt;
+		GValue val = {0, };
+		GPtrArray *devices = NULL;
+
+		ac_elt = g_slice_new0 (NMClientActiveConnection);
+		if (!ac_elt) {
+			g_warning ("Error in get_active_connections: not enough memory.");
+			continue;
+		}
+
+		g_value_init (&val, type);
+		g_value_take_boxed (&val, g_ptr_array_index (array, i));
+		dbus_g_type_struct_get (&val,
+		                        0, &(ac_elt->service_name),
+		                        1, &(ac_elt->connection_path),
+		                        2, &(ac_elt->specific_object),
+		                        3, &devices,
+		                        G_MAXUINT);
+		g_value_unset (&val);
+
+		if (devices == NULL || (devices->len == 0)) {
+			g_warning ("Error in get_active_connections: no devices returned.");
+			nm_client_free_active_connection_element (ac_elt);
+			continue;
+		}
+
+		if (!strcmp (ac_elt->specific_object, "/")) {
+			g_free (ac_elt->specific_object);
+			ac_elt->specific_object = NULL;
+		}
+
+		for (j = 0; j < devices->len; j++) {
+			NMDevice *device;
+			char *path = g_ptr_array_index (devices, j);
+
+			device = get_device (client, (const char *) path, TRUE);
+			ac_elt->devices = g_slist_append (ac_elt->devices, g_object_ref (device));
+			g_free (path);
+		}
+		g_ptr_array_free (devices, TRUE);
+
+		connections = g_slist_append (connections, ac_elt);
+	}
+
+	g_ptr_array_free (array, TRUE);
+	return connections;
+}
+
+void
+nm_client_free_active_connection_element (NMClientActiveConnection *elt)
+{
+	GSList *iter;
+
+	g_return_if_fail (elt != NULL);
+
+	g_free (elt->service_name);
+	g_free (elt->connection_path);
+	g_free (elt->specific_object);
+
+	g_slist_foreach (elt->devices, (GFunc) g_object_unref, NULL);
+	g_slist_free (elt->devices);
+
+	g_slice_free (NMClientActiveConnection, elt);
+}
+
 
 gboolean
 nm_client_wireless_get_enabled (NMClient *client)

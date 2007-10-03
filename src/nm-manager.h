@@ -18,6 +18,7 @@
 #define NM_MANAGER_WIRELESS_ENABLED "wireless-enabled"
 
 #define NM_MANAGER_CONNECTION_PROXY_TAG "dbus-proxy"
+#define NM_MANAGER_CONNECTION_TYPE_TAG "service-type"
 
 typedef enum {
 	NM_CONNECTION_TYPE_UNKNOWN = 0,

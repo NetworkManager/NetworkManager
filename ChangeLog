@@ -1,5 +1,27 @@
 2007-10-03  Dan Williams  <dcbw@redhat.com>
 
+	Add a GetActiveConnections() method on the Manager object.
+
+	* src/nm-manager.c
+	  src/nm-manager.h
+	  introspection/nm-manager.xml
+		- (connection_get_settings_cb): keep connection type around too
+		- (impl_manager_get_active_connections, add_one_connection_element):
+			implement; returns all active connections and what devices they
+			apply to
+
+	* libnm-glib/nm-client.c
+	  libnm-glib/nm-client.h
+	  introspection/nm-manager-client.xml
+		- (nm_client_get_devices): GPtrArray elements are allocated and owned
+			by the caller; free here to avoid memory leak
+		- (nm_client_get_active_connections): implement; return the list of
+			active connections
+		- (nm_client_free_active_connection_element): implement; free an element
+			of the GSList returned by nm_client_get_active_connections()
+
+2007-10-03  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 		- (nm_device_802_11_wireless_update_bssid): remove
 		- (get_active_ap): new function; find the AP in the scan list which
