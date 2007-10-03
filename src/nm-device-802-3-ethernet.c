@@ -386,26 +386,6 @@ real_get_best_connection (NMDevice *dev,
 	memset (&find_info, 0, sizeof (BestConnectionInfo));
 	find_info.self = self;
 	g_slist_foreach (connections, find_best_connection, &find_info);
-
-	/* Wired devices autoconnect with DHCP by default if they have a link */
-	link_active = nm_device_has_active_link (dev);
-	if (!find_info.found && link_active) {
-		NMConnection *connection;
-		NMSetting *setting;
-		NMSettingConnection *scon;
-
-		connection = nm_connection_new ();
-		setting = nm_setting_wired_new ();
-		nm_connection_add_setting (connection, setting);
-
-		scon = (NMSettingConnection *) nm_setting_connection_new ();
-		scon->name = g_strdup ("Auto");
-		scon->type = g_strdup (setting->name);
-		nm_connection_add_setting (connection, (NMSetting *) scon);
-
-		find_info.found = connection;
-	}
-
 	return find_info.found;
 }
 

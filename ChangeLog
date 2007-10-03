@@ -1,5 +1,15 @@
 2007-10-03  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-3-ethernet.c
+		- (real_get_best_connection): don't create automatic connections
+			internally; clients should provide a setting that applies to
+			the device with 'autoconnect: True'.  Problem was that these
+			internally auto-created connections don't have a proxy or service
+			name becuase they weren't created by a settings daemon, and therefore
+			clients have no idea what to do with them.
+
+2007-10-03  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 	  src/nm-device-802-11-wireless.h
 	  introspection/nm-device-802-11-wireless.xml
