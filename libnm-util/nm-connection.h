@@ -38,6 +38,8 @@ NMSetting    *nm_connection_get_setting   (NMConnection *connection,
 gboolean      nm_connection_compare       (NMConnection *connection,
 										   NMConnection *other);
 
+gboolean      nm_connection_verify        (NMConnection *connection);
+
 const char *  nm_connection_need_secrets  (NMConnection *connection);
 
 void          nm_connection_clear_secrets (NMConnection *connection);

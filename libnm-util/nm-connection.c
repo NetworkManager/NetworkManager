@@ -122,6 +122,17 @@ nm_connection_compare (NMConnection *connection, NMConnection *other)
 	return FALSE;
 }
 
+gboolean
+nm_connection_verify (NMConnection *connection)
+{
+	NMConnectionPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+
+	priv = NM_CONNECTION_GET_PRIVATE (connection);
+	return nm_settings_verify (priv->settings);
+}
+
 void
 nm_connection_update_secrets (NMConnection *connection,
                               const char *setting_name,
