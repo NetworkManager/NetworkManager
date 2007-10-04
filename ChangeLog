@@ -1,5 +1,12 @@
 2007-10-04  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting.c
+		- (nm_settings_verify): use #defines when possible rather than strings
+		- (setting_connection_verify): ensure that 'name' and 'type' are valid
+		- (setting_vpn_verify): tighter validity check on 'service_type'
+
+2007-10-04  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/nm-settings.c
 		- (nm_connection_settings_class_init): provide correct type for argument
 			to the Updated signal so that dbus-glib knows how to marshal it

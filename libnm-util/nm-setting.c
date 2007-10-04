@@ -34,7 +34,7 @@ nm_settings_verify (GHashTable *all_settings)
 	VerifySettingsInfo info;
 
 	/* First, make sure there's at least 'connection' setting */
-	p = g_hash_table_lookup (all_settings, "connection");
+	p = g_hash_table_lookup (all_settings, NM_SETTING_CONNECTION);
 	if (!p) {
 		g_warning ("'connection' setting not present.");
 		return FALSE;
@@ -457,6 +457,12 @@ static gboolean
 setting_connection_verify (NMSetting *setting, GHashTable *all_settings)
 {
 	NMSettingConnection *self = (NMSettingConnection *) setting;
+
+	if (!self->name || !strlen (self->name))
+		return FALSE;
+
+	if (!self->type || !strlen (self->type))
+		return FALSE;
 
 	/* Make sure the corresponding 'type' item is present */
 	if (!g_hash_table_lookup (all_settings, self->type))
@@ -1246,7 +1252,7 @@ setting_vpn_verify (NMSetting *setting, GHashTable *all_settings)
 {
 	NMSettingVPN *self = (NMSettingVPN *) setting;
 
-	if (!self->service_type)
+	if (!self->service_type || !strlen (self->service_type))
 		return FALSE;
 
 	return TRUE;
