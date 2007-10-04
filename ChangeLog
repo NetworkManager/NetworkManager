@@ -1,5 +1,34 @@
 2007-10-04  Dan Williams  <dcbw@redhat.com>
 
+	* introspection/nm-device-802-11-wireless.xml
+	  src/nm-device-802-11-wireless.h
+	  src/nm-device-802-11-wireless.c
+		- Add a PropertiesChanged signal for wireless device
+		- Store currently associated access point
+		- (periodic_update): generalize; update rate here too and emit the
+			correct PropertiesChanged signal when stuff changes
+		- (real_deactivate_quickly, nm_device_802_11_wireless_dispose,
+		   real_activation_cancel_handler): clear current_ap when device is
+			deactivated
+		- (link_to_specific_ap, get_ap_blacklisted,
+		   nm_device_802_11_wireless_get_best_ap): remove obsolete and unused
+			code
+		- (nm_device_802_11_wireless_get_bitrate): make static; unused anywhere
+			outside this file
+		- (real_set_hw_address): emit property changed signal if the card's
+			MAC address changes
+		- (real_act_stage1_prepare): set the initial current_ap to the AP
+			the card is supposed to be connecting to
+		- (activation_success_handler): send out property updates on successful
+			activation
+		- (get_property): pull bitrate from cached value; use OBJECT_PATH type
+			for ACTIVE_ACCESS_POINT property because sometimes there won't be
+			one and dbus-glib doesn't like marshalling NULL G_TYPE_OBJECTs
+		- (nm_device_802_11_wireless_class_init): ACTIVE_ACCESS_POINT property
+			is now boxed; add PropertiesChanged signal
+
+2007-10-04  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-connection.c
 	  libnm-util/nm-connection.h
 		- (nm_connection_verify): new function

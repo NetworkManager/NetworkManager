@@ -13,6 +13,10 @@
     <property name="ActiveAccessPoint" type="o" access="read"/>
     <property name="WirelessCapabilities" type="u" access="read"/>
 
+    <signal name="PropertiesChanged">
+      <arg name="properties" type="a{sv}"/>
+    </signal>
+
     <signal name="AccessPointAdded">
       <arg name="access_point" type="o"/>
     </signal>

@@ -78,9 +78,16 @@ enum {
 	LAST_PROP
 };
 
+#define DBUS_PROP_HW_ADDRESS "HwAddress"
+#define DBUS_PROP_MODE "Mode"
+#define DBUS_PROP_BITRATE "Bitrate"
+#define DBUS_PROP_ACTIVE_ACCESS_POINT "ActiveAccessPoint"
+#define DBUS_PROP_WIRELESS_CAPABILITIES "WirelessCapabilities"
+
 enum {
 	ACCESS_POINT_ADDED,
 	ACCESS_POINT_REMOVED,
+	PROPERTIES_CHANGED,
 
 	LAST_SIGNAL
 };
@@ -118,6 +125,7 @@ struct _NMDevice80211WirelessPrivate
 
 	GSList *        ap_list;
 	NMAccessPoint * current_ap;
+	int				rate;
 	
 	gboolean			scanning;
 	GTimeVal			scheduled_scan_time;
@@ -177,6 +185,8 @@ static void supplicant_mgr_state_cb (NMSupplicantInterface * iface,
 static void cleanup_supplicant_interface (NMDevice80211Wireless * self);
 
 static void device_cleanup (NMDevice80211Wireless *self);
+
+static int nm_device_802_11_wireless_get_bitrate (NMDevice80211Wireless *self);
 
 
 static void
@@ -415,6 +425,19 @@ error:
 }
 
 static void
+emit_one_property_changed_signal (NMDevice80211Wireless *self,
+                                  const char *dbus_property,
+                                  GValue *value)
+{
+	GHashTable * hash;
+
+	hash = g_hash_table_new (g_str_hash, g_str_equal);
+	g_hash_table_insert (hash, (char *) dbus_property, (gpointer) value);
+	g_signal_emit (self, signals[PROPERTIES_CHANGED], 0, hash);
+	g_hash_table_destroy (hash);
+}
+
+static void
 init_supplicant_interface (NMDevice80211Wireless * self)
 {
 	Supplicant * sup;
@@ -512,33 +535,29 @@ get_active_ap (NMDevice80211Wireless *self)
 	return NULL;
 }
 
-/*
- * nm_device_802_11_periodic_update
- *
- * Periodically update device statistics.
- *
- */
-static gboolean
-nm_device_802_11_periodic_update (gpointer data)
+static void
+periodic_update (NMDevice80211Wireless *self, gboolean honor_scan)
 {
-	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (data);
+	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 	NMDeviceState state;
-	NMAccessPoint *old_ap;
 	NMAccessPoint *new_ap;
+	int new_rate;
+	GValue value = {0, };
 
 	/* BSSID and signal strength have meaningful values only if the device
 	   is activated and not scanning */
 	state = nm_device_get_state (NM_DEVICE (self));
-	if (   (state != NM_DEVICE_STATE_ACTIVATED)
-	    || NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self)->scanning)
-		return TRUE;
+	if (state != NM_DEVICE_STATE_ACTIVATED)
+		return;
+
+	if (honor_scan && priv->scanning)
+		return;
 
 	new_ap = get_active_ap (self);
 	if (new_ap)
 		nm_device_802_11_wireless_update_signal_strength (self, new_ap);
 
-	old_ap = nm_device_802_11_wireless_get_activation_ap (self);
-	if ((new_ap || old_ap) && (new_ap != old_ap)) {
+	if ((new_ap || priv->current_ap) && (new_ap != priv->current_ap)) {
 		const struct ether_addr *new_bssid = NULL;
 		const GByteArray *new_ssid = NULL;
 		const struct ether_addr *old_bssid = NULL;
@@ -554,10 +573,10 @@ nm_device_802_11_periodic_update (gpointer data)
 		}
 
 		memset (old_addr, '\0', sizeof (old_addr));
-		if (old_ap) {
-			old_bssid = nm_ap_get_address (old_ap);
+		if (priv->current_ap) {
+			old_bssid = nm_ap_get_address (priv->current_ap);
 			iw_ether_ntop (old_bssid, old_addr);
-			old_ssid = nm_ap_get_ssid (old_ap);
+			old_ssid = nm_ap_get_ssid (priv->current_ap);
 		}
 
 		nm_debug ("Roamed from BSSID %s (%s) to %s (%s)",
@@ -566,9 +585,46 @@ nm_device_802_11_periodic_update (gpointer data)
 		          new_bssid ? new_addr : "(none)",
 		          new_ssid ? nm_utils_escape_ssid (new_ssid->data, new_ssid->len) : "(none)");
 
-		// FIXME: emit PropertiesChanged for active AP
+		if (priv->current_ap) {
+			g_object_unref (priv->current_ap);
+			priv->current_ap = NULL;
+		}
+
+		g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
+		if (new_ap) {
+			priv->current_ap = g_object_ref (new_ap);
+			g_value_set_boxed (&value, nm_ap_get_dbus_path (priv->current_ap));
+		} else {
+			g_value_set_boxed (&value, "/");
+		}
+
+		emit_one_property_changed_signal (self, DBUS_PROP_ACTIVE_ACCESS_POINT, &value);
+		g_value_unset (&value);
 	}
 
+	new_rate = nm_device_802_11_wireless_get_bitrate (self);
+	if (new_rate != priv->rate) {
+		priv->rate = new_rate;
+
+		g_value_init (&value, G_TYPE_INT);
+		g_value_set_int (&value, priv->rate);
+		emit_one_property_changed_signal (self, DBUS_PROP_BITRATE, &value);
+		g_value_unset (&value);
+	}
+}
+
+/*
+ * nm_device_802_11_periodic_update
+ *
+ * Periodically update device statistics.
+ *
+ */
+static gboolean
+nm_device_802_11_periodic_update (gpointer data)
+{
+	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (data);
+
+	periodic_update (self, TRUE);
 	return TRUE;
 }
 
@@ -646,8 +702,15 @@ static void
 real_deactivate_quickly (NMDevice *dev)
 {
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
+	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 
 	cleanup_association_attempt (self, TRUE);
+
+	if (priv->current_ap) {
+		g_object_unref (priv->current_ap);
+		priv->current_ap = NULL;
+	}
+	priv->rate = 0;
 
 	/* Clean up stuff, don't leave the card associated */
 	nm_device_802_11_wireless_set_ssid (self, NULL);
@@ -745,159 +808,6 @@ nm_device_802_11_wireless_get_address (NMDevice80211Wireless *self,
 
 	memcpy (addr, &(self->priv->hw_addr), sizeof (struct ether_addr));
 }
-
-#if 0
-static gboolean
-link_to_specific_ap (NMDevice80211Wireless *self,
-                     NMAccessPoint *ap,
-                     gboolean default_link)
-{
-	gboolean have_link = FALSE;
-
-	/* Fake a link if we're scanning, we'll drop it later
-	 * if it's really dead.
-	 */
-	if (self->priv->scanning)
-		return TRUE;
-
-	if (is_associated (self))
-	{
-		const GByteArray * dev_ssid = nm_device_802_11_wireless_get_ssid (self);
-		const GByteArray * ap_ssid = nm_ap_get_ssid (ap);
-
-		if (dev_ssid && ap_ssid && nm_utils_same_ssid (dev_ssid, ap_ssid, TRUE)) {
-			self->priv->failed_link_count = 0;
-			have_link = TRUE;
-		}
-	}
-
-	if (!have_link)
-	{
-		self->priv->failed_link_count++;
-		if (self->priv->failed_link_count <= 6)
-			have_link = default_link;
-	}
-
-	return have_link;
-}
-
-static gboolean
-get_ap_blacklisted (NMAccessPoint *ap, GSList *addrs)
-{
-	gboolean blacklisted;
-
-	blacklisted = nm_ap_has_manufacturer_default_ssid (ap);
-	if (blacklisted)
-	{
-		GSList *elt;
-		const struct ether_addr *ap_addr;
-		char char_addr[20];
-
-		ap_addr = nm_ap_get_address (ap);
-
-		memset (&char_addr[0], 0, 20);
-		iw_ether_ntop (ap_addr, &char_addr[0]);
-
-		for (elt = addrs; elt; elt = g_slist_next (elt))
-		{
-			if (elt->data && !strcmp (elt->data, &char_addr[0]))
-			{
-				blacklisted = FALSE;
-				break;
-			}
-		}
-	}
-
-	return blacklisted;
-}
-
-/*
- * nm_device_update_best_ap
- *
- * Recalculate the "best" access point we should be associating with.
- *
- */
-NMAccessPoint *
-nm_device_802_11_wireless_get_best_ap (NMDevice80211Wireless *self)
-{
-	NMAccessPointList *	ap_list;
-	NMAPListIter *		iter;
-	NMAccessPoint *	scan_ap = NULL;
-	NMAccessPoint *	best_ap = NULL;
-	NMAccessPoint *	cur_ap = NULL;
-	NMActRequest *		req = NULL;
-	GTimeVal		 	best_timestamp = {0, 0};
-
-	g_return_val_if_fail (self != NULL, NULL);
-
-	if (!(ap_list = nm_device_802_11_wireless_ap_list_get (self)))
-		return NULL;
-
-	/* We prefer the currently selected access point if its user-chosen or if there
-	 * is still a hardware link to it.
-	 */
-	if ((req = nm_device_get_act_request (NM_DEVICE (self)))) {
-		if ((cur_ap = nm_device_802_11_wireless_get_activation_ap (self))) {
-			const GByteArray * ssid = nm_ap_get_ssid (cur_ap);
-			gboolean		keep = FALSE;
-
-			if (nm_ap_get_user_created (cur_ap))
-				keep = TRUE;
-			else if (nm_act_request_get_user_requested (req))
-				keep = TRUE;
-			else if (link_to_specific_ap (self, cur_ap, TRUE))
-				keep = TRUE;
-
-			/* Only keep if its not in the invalid list and its _is_ in our scanned list */
-			if ( keep
-				&& !nm_ap_get_invalid (cur_ap)
-				&& nm_device_802_11_wireless_ap_list_get_ap_by_ssid (self, ssid))
-			{
-				return (NMAccessPoint *) g_object_ref (cur_ap);
-			}
-		}
-	}
-
-	if (!(iter = nm_ap_list_iter_new (ap_list)))
-		return NULL;
-	while ((scan_ap = nm_ap_list_iter_next (iter))) {
-		NMAccessPoint *tmp_ap;
-		const GByteArray * ap_ssid = nm_ap_get_ssid (scan_ap);
-
-		/* Access points in the "invalid" list cannot be used */
-		if (nm_ap_get_invalid (scan_ap))
-			continue;
-
-		// FIXME: match up an NMConnection with some NMAccessPoint for the
-		// best_ap
-#if 0
-		if ((tmp_ap = nm_ap_list_get_ap_by_ssid (app_data->allowed_ap_list, ap_ssid)))
-		{
-			const GTimeVal *	curtime = nm_ap_get_timestamp (tmp_ap);
-			gboolean			blacklisted;
-			GSList *			user_addrs;
-
-			/* Only connect to a blacklisted AP if the user has connected to this specific AP before */
-			user_addrs = nm_ap_get_user_addresses (tmp_ap);
-			blacklisted = get_ap_blacklisted (scan_ap, user_addrs);
-			g_slist_foreach (user_addrs, (GFunc) g_free, NULL);
-			g_slist_free (user_addrs);
-
-			if (!blacklisted && (curtime->tv_sec > best_timestamp.tv_sec)) {
-				best_timestamp = *nm_ap_get_timestamp (tmp_ap);
-				best_ap = scan_ap;
-			}
-		}
-#endif
-	}
-	nm_ap_list_iter_free (iter);
-
-	if (best_ap)
-		g_object_ref (best_ap);
-
-	return best_ap;
-}
-#endif
 
 static NMAccessPoint *
 ap_list_get_ap_by_ssid (GSList *list,
@@ -1362,25 +1272,24 @@ nm_device_802_11_wireless_set_ssid (NMDevice80211Wireless *self,
 
 
 /*
- * nm_device_get_bitrate
+ * nm_device_802_11_wireless_get_bitrate
  *
  * For wireless devices, get the bitrate to broadcast/receive at.
  * Returned value is rate in Mb/s.
  *
  */
-int
+static int
 nm_device_802_11_wireless_get_bitrate (NMDevice80211Wireless *self)
 {
-	NMSock *		sk;
-	int			err = -1;
-	struct iwreq	wrq;
-	const char *	iface;
+	NMSock *sk;
+	int err = -1;
+	struct iwreq wrq;
+	const char *iface;
 
 	g_return_val_if_fail (self != NULL, 0);
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
-	if ((sk = nm_dev_sock_open (iface, DEV_WIRELESS, __FUNCTION__, NULL)))
-	{
+	if ((sk = nm_dev_sock_open (iface, DEV_WIRELESS, __FUNCTION__, NULL))) {
 		nm_ioctl_info ("%s: About to GET IWRATE.", iface);
 		err = iw_get_ext (nm_dev_sock_get_fd (sk), iface, SIOCGIWRATE, &wrq);
 		nm_dev_sock_close (sk);
@@ -2469,6 +2378,8 @@ real_set_hw_address (NMDevice *dev)
 	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
 	struct ifreq req;
 	NMSock *sk;
+	char hw_addr_buf[20];
+	GValue value = {0, };
 	int ret;
 
 	sk = nm_dev_sock_open (nm_device_get_iface (dev), DEV_GENERAL, __FUNCTION__, NULL);
@@ -2479,9 +2390,23 @@ real_set_hw_address (NMDevice *dev)
 	strncpy (req.ifr_name, nm_device_get_iface (dev), sizeof (req.ifr_name) - 1);
 
 	ret = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFHWADDR, &req);
-	if (ret == 0)
-		memcpy (&(self->priv->hw_addr), &(req.ifr_hwaddr.sa_data), sizeof (struct ether_addr));
+	if (ret)
+		goto out;
 
+	if (memcmp (&(self->priv->hw_addr), &(req.ifr_hwaddr.sa_data), sizeof (struct ether_addr)) == 0)
+		goto out;
+
+	memcpy (&(self->priv->hw_addr), &(req.ifr_hwaddr.sa_data), sizeof (struct ether_addr));
+
+	memset (hw_addr_buf, 0, 20);
+	iw_ether_ntop (&(self->priv->hw_addr), hw_addr_buf);
+
+	g_value_init (&value, G_TYPE_STRING);
+	g_value_set_string (&value, &hw_addr_buf[0]);
+	emit_one_property_changed_signal (self, DBUS_PROP_HW_ADDRESS, &value);
+	g_value_unset (&value);
+
+out:
 	nm_dev_sock_close (sk);
 }
 
@@ -2490,12 +2415,18 @@ static NMActStageReturn
 real_act_stage1_prepare (NMDevice *dev)
 {
 	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
+	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 	NMAccessPoint *ap;
 
 	/* Make sure we've got an AP to connect to */
 	ap = nm_device_802_11_wireless_get_activation_ap (self);
 	if (!ap)
 		return NM_ACT_STAGE_RETURN_FAILURE;
+
+	if (priv->current_ap)
+		g_object_unref (priv->current_ap);
+
+	priv->current_ap = g_object_ref (ap);
 
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
@@ -2762,13 +2693,7 @@ activation_success_handler (NMDevice *dev)
 			self->priv->ap_list = g_slist_append (self->priv->ap_list, ap);
 	}
 
-	nm_device_802_11_wireless_get_bssid (self, &addr);
-	if (!nm_ap_get_address (ap) || !nm_ethernet_address_is_valid (nm_ap_get_address (ap)))
-		nm_ap_set_address (ap, &addr);
-
-	nm_device_802_11_wireless_update_signal_strength (self, ap);
-
-	// FIXME: send connection + new BSSID to info-daemon
+	periodic_update (self, FALSE);
 }
 
 
@@ -2804,9 +2729,10 @@ activation_failure_handler (NMDevice *dev)
 static void
 real_activation_cancel_handler (NMDevice *dev)
 {
-	NMDevice80211Wireless *		self = NM_DEVICE_802_11_WIRELESS (dev);
-	NMDevice80211WirelessClass *	klass;
-	NMDeviceClass * 			parent_class;
+	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
+	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
+	NMDevice80211WirelessClass *klass;
+	NMDeviceClass *parent_class;
 
 	/* Chain up to parent first */
 	klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (self);
@@ -2814,6 +2740,12 @@ real_activation_cancel_handler (NMDevice *dev)
 	parent_class->activation_cancel_handler (dev);
 
 	cleanup_association_attempt (self, TRUE);
+
+	if (priv->current_ap) {
+		g_object_unref (priv->current_ap);
+		priv->current_ap = NULL;
+	}
+	priv->rate = 0;
 }
 
 
@@ -2855,6 +2787,11 @@ nm_device_802_11_wireless_dispose (GObject *object)
 
 	device_cleanup (self);
 
+	if (priv->current_ap) {
+		g_object_unref (priv->current_ap);
+		priv->current_ap = NULL;
+	}
+
 	G_OBJECT_CLASS (nm_device_802_11_wireless_parent_class)->dispose (object);
 }
 
@@ -2879,14 +2816,16 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_int (value, nm_device_802_11_wireless_get_mode (device));
 		break;
 	case PROP_BITRATE:
-		g_value_set_int (value, nm_device_802_11_wireless_get_bitrate (device));
+		g_value_set_int (value, priv->rate);
 		break;
 	case PROP_CAPABILITIES:
 		g_value_set_uint (value, priv->capabilities);
 		break;
 	case PROP_ACTIVE_ACCESS_POINT:
-		if ((ap = nm_device_802_11_wireless_get_activation_ap (device)))
-			g_value_set_object (value, ap);
+		if (priv->current_ap)
+			g_value_set_boxed (value, nm_ap_get_dbus_path (priv->current_ap));
+		else
+			g_value_set_boxed (value, "/");
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -2952,10 +2891,10 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 						   G_PARAM_READABLE));
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_ACCESS_POINT,
-		 g_param_spec_object (NM_DEVICE_802_11_WIRELESS_ACTIVE_ACCESS_POINT,
+		 g_param_spec_boxed (NM_DEVICE_802_11_WIRELESS_ACTIVE_ACCESS_POINT,
 							  "Active access point",
 							  "Currently active access point",
-							  G_TYPE_OBJECT,
+							  DBUS_TYPE_G_OBJECT_PATH,
 							  G_PARAM_READABLE));
 	g_object_class_install_property
 		(object_class, PROP_CAPABILITIES,
@@ -2985,6 +2924,15 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 					  g_cclosure_marshal_VOID__OBJECT,
 					  G_TYPE_NONE, 1,
 					  G_TYPE_OBJECT);
+
+	signals[PROPERTIES_CHANGED] =
+		g_signal_new ("properties_changed",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMDevice80211WirelessClass, properties_changed),
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__BOXED,
+					  G_TYPE_NONE, 1, dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE));
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
 									 &dbus_glib_nm_device_802_11_wireless_object_info);

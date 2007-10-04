@@ -71,6 +71,7 @@ struct _NMDevice80211WirelessClass
 	/* Signals */
 	void (*access_point_added) (NMDevice80211Wireless *device, NMAccessPoint *ap);
 	void (*access_point_removed) (NMDevice80211Wireless *device, NMAccessPoint *ap);
+	void (*properties_changed) (NMDevice80211Wireless *device, GHashTable *properties);
 };
 
 
@@ -94,8 +95,6 @@ const GByteArray *	nm_device_802_11_wireless_get_ssid (NMDevice80211Wireless *se
 
 gboolean		nm_device_802_11_wireless_set_mode (NMDevice80211Wireless *self,
 										 const int mode);
-
-int			nm_device_802_11_wireless_get_bitrate (NMDevice80211Wireless *self);
 
 void			nm_device_802_11_wireless_reset_scan_interval (NMDevice80211Wireless *dev);
 
