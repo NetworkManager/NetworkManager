@@ -453,7 +453,7 @@ nm_client_get_active_connections (NMClient *client)
 	NMClientPrivate *priv;
 	GSList *connections = NULL;
 	GPtrArray *array = NULL;
-	GError *err;
+	GError *err = NULL;
 	int i, j;
 	static GType type = 0, ao_type = 0;
 
