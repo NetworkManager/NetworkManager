@@ -233,6 +233,9 @@ nm_connection_settings_finalize (GObject *object)
 	G_OBJECT_CLASS (nm_connection_settings_parent_class)->finalize (object);
 }
 
+#define DBUS_TYPE_G_STRING_VARIANT_HASHTABLE (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE))
+#define DBUS_TYPE_G_DICT_OF_DICTS (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, DBUS_TYPE_G_STRING_VARIANT_HASHTABLE))
+
 static void
 nm_connection_settings_class_init (NMConnectionSettingsClass *connection_settings_class)
 {
@@ -255,7 +258,7 @@ nm_connection_settings_class_init (NMConnectionSettingsClass *connection_setting
 			      NULL, NULL,
 			      g_cclosure_marshal_VOID__POINTER,
 			      G_TYPE_NONE, 1,
-			      G_TYPE_POINTER);
+			      DBUS_TYPE_G_DICT_OF_DICTS);
 	connection_signals[CS_REMOVED] =
 		g_signal_new ("removed",
 			      G_OBJECT_CLASS_TYPE (object_class),

@@ -1,3 +1,9 @@
+2007-10-04  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-glib/nm-settings.c
+		- (nm_connection_settings_class_init): provide correct type for argument
+			to the Updated signal so that dbus-glib knows how to marshal it
+
 2007-10-03  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-3-ethernet.c
