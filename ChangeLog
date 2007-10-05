@@ -1,5 +1,13 @@
 2007-10-05  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-11-wireless.c
+		- (set_current_ap): consolidate current_ap handling code into one place
+			to ensure that PropertiesChanged signals are emitted in all cases
+		- (periodic_update, real_deactivate_quickly, real_act_stage1_prepare,
+		   nm_device_802_11_wireless_dispose): use set_current_ap()
+
+2007-10-05  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/nm-access-point.c
 	  libnm-glib/nm-access-point.h
 		- (nm_access_point_get_hw_address): return 'const char *', not 'char *'

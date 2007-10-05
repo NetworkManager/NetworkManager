@@ -536,6 +536,40 @@ get_active_ap (NMDevice80211Wireless *self)
 }
 
 static void
+set_current_ap (NMDevice80211Wireless *self, NMAccessPoint *new_ap)
+{
+	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
+	GValue value = {0, };
+	gboolean changed;
+	char *old_path = NULL;
+
+	g_return_if_fail (NM_IS_DEVICE_802_11_WIRELESS (self));
+
+	if (priv->current_ap) {
+		old_path = g_strdup (nm_ap_get_dbus_path (priv->current_ap));
+		g_object_unref (priv->current_ap);
+		priv->current_ap = NULL;
+	}
+
+	g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
+	if (new_ap) {
+		priv->current_ap = g_object_ref (new_ap);
+		g_value_set_boxed (&value, nm_ap_get_dbus_path (new_ap));
+	} else {
+		g_value_set_boxed (&value, "/");
+	}
+
+	/* Only emit if it's really changed */
+	if (   (!old_path && new_ap)
+	    || (old_path && !new_ap)
+	    || (old_path && new_ap && strcmp (old_path, nm_ap_get_dbus_path (new_ap))))
+		emit_one_property_changed_signal (self, DBUS_PROP_ACTIVE_ACCESS_POINT, &value);
+
+	g_value_unset (&value);
+	g_free (old_path);
+}
+
+static void
 periodic_update (NMDevice80211Wireless *self, gboolean honor_scan)
 {
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
@@ -585,21 +619,7 @@ periodic_update (NMDevice80211Wireless *self, gboolean honor_scan)
 		          new_bssid ? new_addr : "(none)",
 		          new_ssid ? nm_utils_escape_ssid (new_ssid->data, new_ssid->len) : "(none)");
 
-		if (priv->current_ap) {
-			g_object_unref (priv->current_ap);
-			priv->current_ap = NULL;
-		}
-
-		g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
-		if (new_ap) {
-			priv->current_ap = g_object_ref (new_ap);
-			g_value_set_boxed (&value, nm_ap_get_dbus_path (priv->current_ap));
-		} else {
-			g_value_set_boxed (&value, "/");
-		}
-
-		emit_one_property_changed_signal (self, DBUS_PROP_ACTIVE_ACCESS_POINT, &value);
-		g_value_unset (&value);
+		set_current_ap (self, new_ap);
 	}
 
 	new_rate = nm_device_802_11_wireless_get_bitrate (self);
@@ -706,10 +726,7 @@ real_deactivate_quickly (NMDevice *dev)
 
 	cleanup_association_attempt (self, TRUE);
 
-	if (priv->current_ap) {
-		g_object_unref (priv->current_ap);
-		priv->current_ap = NULL;
-	}
+	set_current_ap (self, NULL);
 	priv->rate = 0;
 
 	/* Clean up stuff, don't leave the card associated */
@@ -2423,10 +2440,7 @@ real_act_stage1_prepare (NMDevice *dev)
 	if (!ap)
 		return NM_ACT_STAGE_RETURN_FAILURE;
 
-	if (priv->current_ap)
-		g_object_unref (priv->current_ap);
-
-	priv->current_ap = g_object_ref (ap);
+	set_current_ap (self, ap);
 
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
@@ -2741,10 +2755,7 @@ real_activation_cancel_handler (NMDevice *dev)
 
 	cleanup_association_attempt (self, TRUE);
 
-	if (priv->current_ap) {
-		g_object_unref (priv->current_ap);
-		priv->current_ap = NULL;
-	}
+	set_current_ap (self, NULL);
 	priv->rate = 0;
 }
 
@@ -2787,10 +2798,7 @@ nm_device_802_11_wireless_dispose (GObject *object)
 
 	device_cleanup (self);
 
-	if (priv->current_ap) {
-		g_object_unref (priv->current_ap);
-		priv->current_ap = NULL;
-	}
+	set_current_ap (self, NULL);
 
 	G_OBJECT_CLASS (nm_device_802_11_wireless_parent_class)->dispose (object);
 }
