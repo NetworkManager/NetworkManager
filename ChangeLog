@@ -1,5 +1,10 @@
 2007-10-05  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/nm-device-802-11-wireless.c
+		- Cache properties and update cached properties on D-Bus signals from NM
+
+2007-10-05  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 		- (set_current_ap): consolidate current_ap handling code into one place
 			to ensure that PropertiesChanged signals are emitted in all cases
