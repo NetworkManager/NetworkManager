@@ -22,16 +22,6 @@ typedef struct {
 	NMObjectClass parent;
 } NMAccessPointClass;
 
-#define NM_ACCESS_POINT_FLAGS "flags"
-#define NM_ACCESS_POINT_WPA_FLAGS "wpa_flags"
-#define NM_ACCESS_POINT_RSN_FLAGS "rsn_flags"
-#define NM_ACCESS_POINT_SSID "ssid"
-#define NM_ACCESS_POINT_FREQUENCY "frequency"
-#define NM_ACCESS_POINT_HW_ADDRESS "hw_address"
-#define NM_ACCESS_POINT_MODE "mode"
-#define NM_ACCESS_POINT_RATE "rate"
-#define NM_ACCESS_POINT_STRENGTH "strength"
-
 GType nm_access_point_get_type (void);
 
 NMAccessPoint *nm_access_point_new (DBusGConnection *connection, const char *path);
@@ -41,7 +31,7 @@ guint32      nm_access_point_get_wpa_flags    (NMAccessPoint *ap);
 guint32      nm_access_point_get_rsn_flags    (NMAccessPoint *ap);
 const GByteArray * nm_access_point_get_ssid   (NMAccessPoint *ap);
 guint32      nm_access_point_get_frequency    (NMAccessPoint *ap);
-char *       nm_access_point_get_hw_address   (NMAccessPoint *ap);
+const char * nm_access_point_get_hw_address   (NMAccessPoint *ap);
 int          nm_access_point_get_mode         (NMAccessPoint *ap);
 guint32      nm_access_point_get_rate         (NMAccessPoint *ap);
 gint8        nm_access_point_get_strength     (NMAccessPoint *ap);

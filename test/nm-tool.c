@@ -156,11 +156,9 @@ detail_access_point (gpointer data, gpointer user_data)
 	rsn_flags = nm_access_point_get_rsn_flags (ap);
 
 	if (active_bssid) {
-		char *current_bssid = nm_access_point_get_hw_address (ap);
+		const char *current_bssid = nm_access_point_get_hw_address (ap);
 		if (current_bssid && !strcmp (current_bssid, active_bssid))
 			active = TRUE;
-
-		g_free (current_bssid);
 	}
 
 	str = g_string_new (NULL);
@@ -285,7 +283,7 @@ detail_device (gpointer data, gpointer user_data)
 	if ((NM_IS_DEVICE_802_11_WIRELESS (device))) {
 		guint32 wcaps;
 		NMAccessPoint *active_ap = NULL;
-		char *active_bssid = NULL;
+		const char *active_bssid = NULL;
 		GSList *aps;
 
 		printf ("\n  Wireless Settings\n");
@@ -307,8 +305,7 @@ detail_device (gpointer data, gpointer user_data)
 		printf ("\n  Wireless Access Points%s\n", active_ap ? "(* = Current AP)" : "");
 
 		aps = nm_device_802_11_wireless_get_access_points (NM_DEVICE_802_11_WIRELESS (device));
-		g_slist_foreach (aps, detail_access_point, active_bssid);
-		g_free (active_bssid);
+		g_slist_foreach (aps, detail_access_point, (gpointer) active_bssid);
 		g_slist_free (aps);
 	} else if (NM_IS_DEVICE_802_3_ETHERNET (device)) {
 		printf ("\n  Wired Settings\n");

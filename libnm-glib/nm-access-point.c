@@ -38,6 +38,16 @@ enum {
 	LAST_PROP
 };
 
+#define NM_ACCESS_POINT_FLAGS "flags"
+#define NM_ACCESS_POINT_WPA_FLAGS "wpa_flags"
+#define NM_ACCESS_POINT_RSN_FLAGS "rsn_flags"
+#define NM_ACCESS_POINT_SSID "ssid"
+#define NM_ACCESS_POINT_FREQUENCY "frequency"
+#define NM_ACCESS_POINT_HW_ADDRESS "hw_address"
+#define NM_ACCESS_POINT_MODE "mode"
+#define NM_ACCESS_POINT_RATE "rate"
+#define NM_ACCESS_POINT_STRENGTH "strength"
+
 #define DBUS_PROP_FLAGS "Flags"
 #define DBUS_PROP_WPA_FLAGS "WpaFlags"
 #define DBUS_PROP_RSN_FLAGS "RsnFlags"
@@ -437,7 +447,7 @@ nm_access_point_get_frequency (NMAccessPoint *ap)
 	return priv->frequency;
 }
 
-char *
+const char *
 nm_access_point_get_hw_address (NMAccessPoint *ap)
 {
 	NMAccessPointPrivate *priv;

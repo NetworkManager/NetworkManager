@@ -166,7 +166,7 @@ static void
 dump_access_point (NMAccessPoint *ap)
 {
 	const GByteArray * ssid;
-	char * str;
+	const char * str;
 
 	ssid = nm_access_point_get_ssid (ap);
 	g_print ("\tSsid: %s\n",
@@ -174,7 +174,6 @@ dump_access_point (NMAccessPoint *ap)
 
 	str = nm_access_point_get_hw_address (ap);
 	g_print ("\tMAC Address: %s\n", str);
-	g_free (str);
 
 	g_print ("\tFlags: 0x%X\n", nm_access_point_get_flags (ap));
 	g_print ("\tWPA Flags: 0x%X\n", nm_access_point_get_wpa_flags (ap));

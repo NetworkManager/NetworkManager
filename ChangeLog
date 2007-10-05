@@ -1,3 +1,16 @@
+2007-10-05  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-glib/nm-access-point.c
+	  libnm-glib/nm-access-point.h
+		- (nm_access_point_get_hw_address): return 'const char *', not 'char *'
+			because the value is cached internally now.  Callers should not
+			free the internal value.
+		- Make signal name defines private
+
+	* test/nm-tool.c
+	  libnm-glib/libnm-glib-test.c
+		- Don't free value returned from nm_access_point_get_hw_address()
+
 2007-10-04  Dan Williams  <dcbw@redhat.com>
 
 	* introspection/nm-device-802-11-wireless.xml
