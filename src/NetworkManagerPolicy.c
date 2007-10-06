@@ -485,6 +485,17 @@ connection_added (NMManager *manager,
 }
 
 static void
+connection_updated (NMManager *manager,
+                    NMConnection *connection,
+                    NMConnectionType connection_type,
+                    gpointer user_data)
+{
+	NMPolicy *policy = (NMPolicy *) user_data;
+
+	schedule_change_check (policy);
+}
+
+static void
 connection_removed (NMManager *manager,
                     NMConnection *connection,
                     NMConnectionType connection_type,
@@ -533,6 +544,9 @@ nm_policy_new (NMManager *manager)
 
 	g_signal_connect (manager, "connection-added",
 					  G_CALLBACK (connection_added), policy);
+
+	g_signal_connect (manager, "connection-updated",
+					  G_CALLBACK (connection_updated), policy);
 
 	g_signal_connect (manager, "connection-removed",
 					  G_CALLBACK (connection_removed), policy);
