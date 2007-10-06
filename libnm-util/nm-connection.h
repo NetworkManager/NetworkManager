@@ -35,6 +35,9 @@ void          nm_connection_add_setting   (NMConnection *connection,
 NMSetting    *nm_connection_get_setting   (NMConnection *connection,
 										   const char   *setting_name);
 
+gboolean      nm_connection_replace_settings (NMConnection *connection,
+										      GHashTable *new_settings);
+
 gboolean      nm_connection_compare       (NMConnection *connection,
 										   NMConnection *other);
 

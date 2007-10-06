@@ -109,6 +109,33 @@ nm_connection_get_setting (NMConnection *connection, const char *setting_name)
 }
 
 gboolean
+nm_connection_replace_settings (NMConnection *connection,
+                                GHashTable *new_settings)
+{
+	NMConnectionPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (new_settings != NULL, FALSE);
+
+	priv = NM_CONNECTION_GET_PRIVATE (connection);
+	g_hash_table_remove_all (priv->settings);
+
+	g_hash_table_foreach (new_settings, parse_one_setting, connection);
+
+	if (g_hash_table_size (priv->settings) < 1) {
+		g_warning ("No settings found.");
+		return FALSE;
+	}
+
+	if (!nm_settings_verify (priv->settings)) {
+		g_warning ("Settings invalid.");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+gboolean
 nm_connection_compare (NMConnection *connection, NMConnection *other)
 {
 	if (!connection && !other)
