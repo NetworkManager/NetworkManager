@@ -1,5 +1,10 @@
 2007-10-06  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerPolicy.c
+		- (connection_removed): deactivate removed connections
+
+2007-10-06  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-connection.c
 	  libnm-util/nm-connection.h
 		- (nm_connection_replace_settings): new function

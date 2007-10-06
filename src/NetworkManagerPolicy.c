@@ -476,7 +476,7 @@ state_changed (NMManager *manager, NMState state, gpointer user_data)
 static void
 connection_added (NMManager *manager,
                   NMConnection *connection,
-			   NMConnectionType connection_type,
+                  NMConnectionType connection_type,
                   gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
@@ -487,10 +487,25 @@ connection_added (NMManager *manager,
 static void
 connection_removed (NMManager *manager,
                     NMConnection *connection,
-				NMConnectionType connection_type,
+                    NMConnectionType connection_type,
                     gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
+	GSList *iter;
+
+	/* If the connection just removed was active, deactive it */
+	for (iter = nm_manager_get_devices (manager); iter; iter = g_slist_next (iter)) {
+		NMDevice *device = (NMDevice *) iter->data;
+		NMActRequest *req = nm_device_get_act_request (device);
+		NMConnection *dev_connection;
+
+		if (!req)
+			continue;
+
+		dev_connection = nm_act_request_get_connection (req);
+		if (dev_connection == connection)
+			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
+	}
 
 	schedule_change_check (policy);
 }
