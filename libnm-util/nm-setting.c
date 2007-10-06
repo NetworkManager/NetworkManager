@@ -4,6 +4,7 @@
 #include <dbus/dbus-glib.h>
 #include <string.h>
 #include <ctype.h>
+#include <netinet/ether.h>
 
 #include "nm-setting.h"
 #include "nm-utils.h"
@@ -742,8 +743,9 @@ setting_wireless_verify (NMSetting *setting, GHashTable *all_settings)
 	}
 
 	for (iter = self->seen_bssids; iter; iter = iter->next) {
-		GByteArray *bssid = (GByteArray *) iter->data;
-		if (bssid->len != 6) {
+		struct ether_addr addr;
+
+		if (!ether_aton_r (iter->data, &addr)) {
 			g_warning ("Invalid bssid");
 			return FALSE;
 		}
@@ -775,8 +777,7 @@ setting_wireless_destroy (NMSetting *setting)
 		g_byte_array_free (self->mac_address, TRUE);
 
 	if (self->seen_bssids) {
-		for (iter = self->seen_bssids; iter; iter = iter->next)
-			g_byte_array_free ((GByteArray *) iter->data, TRUE);
+		g_slist_foreach (self->seen_bssids, (GFunc) g_free, NULL);
 		g_slist_free (self->seen_bssids);
 	}
 		
@@ -794,6 +795,7 @@ static SettingMember wireless_table[] = {
 	{ "tx-power", NM_S_TYPE_UINT32, G_STRUCT_OFFSET (NMSettingWireless, tx_power), FALSE, FALSE },
 	{ "mac-address", NM_S_TYPE_BYTE_ARRAY, G_STRUCT_OFFSET (NMSettingWireless, mac_address), FALSE, FALSE },
 	{ "mtu", NM_S_TYPE_UINT32, G_STRUCT_OFFSET (NMSettingWireless, mtu), FALSE, FALSE },
+	{ "seen-bssids", NM_S_TYPE_STRING_ARRAY, G_STRUCT_OFFSET (NMSettingWireless, seen_bssids), FALSE, FALSE },
 	{ "security", NM_S_TYPE_STRING, G_STRUCT_OFFSET (NMSettingWireless, security), FALSE, FALSE },
 	{ NULL, 0, 0 },
 };

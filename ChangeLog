@@ -1,5 +1,12 @@
 2007-10-05  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting.c
+		- (setting_wireless_verify, setting_wireless_destroy): add seen_bssids
+			to the NMSettingWireless table; it's now a string array not an array
+			of byte arrays
+
+2007-10-05  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/nm-device-802-11-wireless.c
 		- Cache properties and update cached properties on D-Bus signals from NM
 
