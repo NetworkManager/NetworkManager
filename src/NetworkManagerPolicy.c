@@ -151,11 +151,9 @@ nm_policy_auto_get_best_device (NMPolicy *policy,
 		}
 	}
 
-	g_slist_free (connections);
-
 	if (best_wired_dev) {
 		highest_priority_dev = NM_DEVICE (best_wired_dev);
-		*connection = best_wired_connection;
+		*connection = g_object_ref (best_wired_connection);
 		*specific_object = best_wired_specific_object;
 	} else if (best_wireless_dev) {
 		gboolean can_activate;
@@ -163,10 +161,13 @@ nm_policy_auto_get_best_device (NMPolicy *policy,
 		can_activate = nm_device_802_11_wireless_can_activate (best_wireless_dev);
 		if (can_activate) {
 			highest_priority_dev = NM_DEVICE (best_wireless_dev);
-			*connection = best_wireless_connection;
+			*connection = g_object_ref (best_wireless_connection);
 			*specific_object = best_wireless_specific_object;
 		}
 	}
+
+	g_slist_foreach (connections, (GFunc) g_object_unref, NULL);
+	g_slist_free (connections);
 
 	if (FALSE) {
 		char * con_name = g_strdup ("(none)");
@@ -334,16 +335,17 @@ nm_policy_device_change_check (gpointer user_data)
 	}
 
 	if (do_switch) {
-		if (old_dev) {
+		// FIXME: remove old_dev deactivation when multiple device support lands
+		if (old_dev)
 			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (old_dev));
-		}
 
-		if (new_dev) {
+		if (new_dev)
 			nm_manager_activate_device (policy->manager, new_dev, connection, specific_object, FALSE);
-		}
 	}
 
 out:
+	if (connection)
+		g_object_unref (connection);
 	return FALSE;
 }
 
