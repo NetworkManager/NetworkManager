@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-pptp HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-07-16 04:57+0200\n"
+"POT-Creation-Date: 2007-07-27 03:58+0100\n"
 "PO-Revision-Date: 2006-07-16 18:13+0800\n"
 "Last-Translator: Funda Wang <fundawang@linux.net.cn>\n"
 "Language-Team: zh_CN <i18n-translation@lists.linux.net.cn>\n"
@@ -15,27 +15,80 @@ msgstr ""
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:147
-msgid "_Secondary Password:"
-msgstr "次要密码(_S)："
+#: ../auth-dialog-general/gnome-generic-auth-dialog.c:792
+msgid "Authentication Type:"
+msgstr "身份验证类型："
 
-#: ../auth-dialog/gnome-two-password-dialog.c:268
-msgid "_Username:"
-msgstr "用户名(_U)："
+#: ../auth-dialog-general/gnome-generic-auth-dialog.c:857
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:11
+msgid "_Remember for this session"
+msgstr "本次会话记住(_R)"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:270
-msgid "_Domain:"
-msgstr "域(_D)："
+#: ../auth-dialog-general/gnome-generic-auth-dialog.c:859
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:13
+msgid "_Save in keyring"
+msgstr "在密钥环中保存(_S)"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:272
+#: ../auth-dialog-general/main.c:48 ../auth-dialog/main.c:140
+#, c-format
+msgid "You need to authenticate to access '%s'."
+msgstr "您需要进行身份验证才能访问“%s”。"
+
+#: ../auth-dialog-general/main.c:51 ../auth-dialog/main.c:141
+msgid "Authenticate Connection"
+msgstr "身份验证连接"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:2
+#, no-c-format
+msgid ""
+"<span weight=\"bold\" size=\"larger\">Authentication Information</span>\n"
+"\n"
+"The connection '%s' may need some form of authentication.\n"
+"\n"
+"Please select an appropriate authentication type and provide the necessary "
+"credentials below:\n"
+msgstr ""
+"<span weight=\"bold\" size=\"larger\">身份验证信息</span>\n"
+"\n"
+"连接“%s”可能需要某种形式的身份验证。\n"
+"\n"
+"请在下面选择适当的身份验证类型，并提供必要的信息：\n"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:8
+msgid "Authentication Required"
+msgstr "需要身份验证"
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:9
+msgid "_Authentication Type:"
+msgstr "身份验证连接(_A)："
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:10
+#: ../auth-dialog/gnome-two-password-dialog.c:263
 msgid "_Password:"
 msgstr "密码(_P)："
 
-#: ../auth-dialog/gnome-two-password-dialog.c:355
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:12
+msgid "_Remote name:"
+msgstr "远程名称(_U)："
+
+#: ../auth-dialog-general/nm-ppp-auth.glade.h:14
+#: ../auth-dialog/gnome-two-password-dialog.c:259
+msgid "_Username:"
+msgstr "用户名(_U)："
+
+#: ../auth-dialog/gnome-two-password-dialog.c:144
+msgid "_Secondary Password:"
+msgstr "次要密码(_S)："
+
+#: ../auth-dialog/gnome-two-password-dialog.c:261
+msgid "_Domain:"
+msgstr "域(_D)："
+
+#: ../auth-dialog/gnome-two-password-dialog.c:352
 msgid "Connect _anonymously"
 msgstr "匿名连接(_A)"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:360
+#: ../auth-dialog/gnome-two-password-dialog.c:357
 msgid "Connect as _user:"
 msgstr "以用户连接(_U)："
 
@@ -47,15 +100,6 @@ msgstr "本次会话记住密码(_R)"
 msgid "_Save password in keyring"
 msgstr "在密钥环中保存密码(_S)"
 
-#: ../auth-dialog/main.c:138
-#, c-format
-msgid "You need to authenticate to access '%s'."
-msgstr "您需要进行身份验证才能访问“%s”。"
-
-#: ../auth-dialog/main.c:139
-msgid "Authenticate Connection"
-msgstr "身份验证连接"
-
 #: ../nm-ppp.desktop.in.h:1
 msgid "Add, Remove, and Edit VPN Connections"
 msgstr "添加、删除及编辑 VPN 连接"
@@ -64,340 +108,456 @@ msgstr "添加、删除及编辑 VPN 连接"
 msgid "VPN Connection Manager (PPP generic)"
 msgstr "VPN 连接管理器(通用 PPP)"
 
-#: ../properties/nm-ppp-properties.c:45
-msgid "Tunnel via pppd"
-msgstr "通过 pppd 的隧道"
-
-#: ../properties/nm-ppp-properties.c:111
-msgid "Name"
-msgstr "名称"
-
-#: ../properties/nm-ppp-properties.c:123
-msgid "PPTP Server"
-msgstr "PPTP 服务器"
-
-#: ../properties/nm-ppp-properties.c:128
-msgid "Telephone Number"
-msgstr "电话号码"
-
-#: ../properties/nm-ppp-properties.c:133
-msgid "Bluetooth Address"
-msgstr "蓝牙地址"
-
-#: ../properties/nm-ppp-properties.c:138
-msgid "Bluetooth Channel"
-msgstr "蓝牙频道"
-
-#: ../properties/nm-ppp-properties.c:143
-msgid "GPRS APN"
-msgstr "GPRS APN"
-
-#: ../properties/nm-ppp-properties.c:148
-msgid "GPRS IP"
-msgstr "GPRS IP"
-
-#: ../properties/nm-ppp-properties.c:153
-msgid "GPRS Context No."
-msgstr "GPRS 环境编号"
-
-#: ../properties/nm-ppp-properties.c:158
-msgid "GPRS Packet Type"
-msgstr "GPRS 包类型"
-
-#: ../properties/nm-ppp-properties.c:163
-msgid "Use CTS/RTS flow control"
-msgstr "使用 CTS/RTS 流控制"
-
-#: ../properties/nm-ppp-properties.c:168
-msgid "Connect via a modem"
-msgstr "通过调制解调器连接"
-
-#: ../properties/nm-ppp-properties.c:173
-msgid "Require IP to be provided"
-msgstr "需要提供 IP"
-
-#: ../properties/nm-ppp-properties.c:178
-#: ../properties/nm-ppp-dialog.glade.h:35
-msgid "Use Peer DNS"
-msgstr "使用对端 DNS"
-
-#: ../properties/nm-ppp-properties.c:183
-msgid "Use MPPE encryption"
-msgstr "使用 MPPE 加密"
-
-#: ../properties/nm-ppp-properties.c:188
-msgid "Use MPPC compression"
-msgstr "使用 MPPC 压缩"
-
-#: ../properties/nm-ppp-properties.c:193
-msgid "Do not use deflate compression"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:198
-msgid "Do not use BSD compression"
-msgstr "不使用 BSD 压缩"
-
-#: ../properties/nm-ppp-properties.c:203
-msgid "Exclusive device access by pppd"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:208
-msgid "Authenticate remote peer"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:213
-msgid "Maximum transmit unit (in bytes)"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:218
-msgid "Maximum receive unit (in bytes)"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:223
-msgid "Number of failed LCP echos to cause disconnect"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:228
-msgid "Interval (in seconds) at which to issue LCP echos"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:233
-msgid "Interval (in milliseconds) to wait before connecting."
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:243
-msgid "Use Peer DNS over the Tunnel"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:249
-msgid "Specific networks available"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:254
-msgid "Limit to specific networks"
-msgstr ""
-
-#: ../properties/vpnui_impl.c:225
-#, c-format
-msgid "The following '%s' connection will be created:"
-msgstr ""
-
-#: ../properties/vpnui_impl.c:238
-#, c-format
-msgid ""
-"\t%s:  %s\n"
-"\n"
-msgstr ""
-
-#: ../properties/vpnui_impl.c:241
-msgid "The connection details can be changed using the \"Back\" button."
-msgstr ""
-
-#: ../properties/vpnui_impl.c:302
-msgid "Select file to import"
-msgstr ""
-
-#. printf ("in impl_export\n");
-#: ../properties/vpnui_impl.c:447
-msgid "Save as..."
-msgstr ""
-
-#: ../properties/vpnui_impl.c:476
-#, c-format
-msgid "A file named \"%s\" already exists."
-msgstr ""
-
-#: ../properties/vpnui_impl.c:479
-msgid "Do you want to replace it with the one you are saving?"
-msgstr ""
-
 #: ../properties/nm-ppp-dialog.glade.h:1
 msgid "00:00:00:00"
 msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:2
-msgid "<b>Bluetooth options</b>"
-msgstr ""
+msgid "<b>Compression</b>"
+msgstr "<b>压缩</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:3
-msgid "<b>Connection Name</b>"
-msgstr ""
+msgid "<b>Delays &amp; Timeouts</b>"
+msgstr "<b>延迟和超时</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:4
-msgid "<b>Dial-up options</b>"
-msgstr ""
+msgid "<b>Encryption</b>"
+msgstr "<b>加密</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:5
-msgid "<b>GPRS options</b>"
-msgstr ""
+msgid "<b>IP Options</b>"
+msgstr "<b>IP 选项</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:6
-msgid "<b>PPP options</b>"
-msgstr ""
+msgid "<b>Packet Parameters</b>"
+msgstr "<b>包选项</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:7
-msgid "<b>PPTP options</b>"
-msgstr ""
+msgid "<i>Example: 172.16.0.0/16 10.11.12.0/24</i>"
+msgstr "<i>如：172.16.0.0/16 10.11.12.0/24</i>"
 
 #: ../properties/nm-ppp-dialog.glade.h:8
-msgid "<b>Required Information</b>"
+msgid "A list of extra options to pppd as would be typed on the command line"
 msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:9
-msgid "<b>Routing options</b>"
-msgstr ""
+msgid "Allow B_SD Compression"
+msgstr "允许 B_SD 压缩"
 
 #: ../properties/nm-ppp-dialog.glade.h:10
-msgid "<b>Serial options</b>"
-msgstr ""
+#, fuzzy
+msgid "Allow _Deflate compression"
+msgstr "不使用 BSD 压缩"
 
 #: ../properties/nm-ppp-dialog.glade.h:11
-msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
-msgstr ""
+msgid "Authentication"
+msgstr "身份验证"
 
 #: ../properties/nm-ppp-dialog.glade.h:12
-msgid "Authenticate Peer"
-msgstr ""
+msgid "C_hannel:"
+msgstr "频道(_H)："
 
 #: ../properties/nm-ppp-dialog.glade.h:13
-msgid "BSD Compression"
-msgstr ""
+msgid "Co_nnect delay:"
+msgstr "连接延迟(_N)："
 
 #: ../properties/nm-ppp-dialog.glade.h:14
-msgid "Compression and encryption"
-msgstr ""
+msgid "Compression & Encryption"
+msgstr "压缩和加密"
 
 #: ../properties/nm-ppp-dialog.glade.h:15
-msgid "Connection Type:"
-msgstr ""
+msgid "Connection"
+msgstr "连接"
 
 #: ../properties/nm-ppp-dialog.glade.h:16
-msgid "Connection type"
-msgstr ""
+msgid "Connection na_me:"
+msgstr "连接名称(_M)："
 
 #: ../properties/nm-ppp-dialog.glade.h:17
-msgid "Debug Output"
-msgstr ""
+msgid "Context _number:"
+msgstr "环境号码(_N)："
 
 #: ../properties/nm-ppp-dialog.glade.h:18
-msgid "Deflate compression"
-msgstr ""
+msgid "Custom _PPP options:"
+msgstr "自定义 PPP 选项(_P)："
 
 #: ../properties/nm-ppp-dialog.glade.h:19
+msgid "Debug _output"
+msgstr "调试输出(_O)"
+
+#: ../properties/nm-ppp-dialog.glade.h:20
 msgid "Disconnect after this many LCP echo requests fail"
 msgstr ""
 
-#: ../properties/nm-ppp-dialog.glade.h:20
-msgid "Exclusive device access (UUCP-style lock)"
-msgstr ""
-
 #: ../properties/nm-ppp-dialog.glade.h:21
-msgid "Find Device"
-msgstr ""
+msgid "E_xclusive device access (UUCP-style lock)"
+msgstr "独占设备访问(UUCP 风格锁定)(_X)"
 
 #: ../properties/nm-ppp-dialog.glade.h:22
-msgid "Hardware RTS/CTS"
+msgid "Enable stateful _MPPE"
 msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:23
-msgid "Host name or IP address of the PPTP server"
-msgstr ""
+msgid "Find Device"
+msgstr "查找设备"
 
 #: ../properties/nm-ppp-dialog.glade.h:24
-msgid "MPPC Compression"
+msgid ""
+"For security reasons, options entered in the box above are checked against a "
+"list of allowed options before a connection is established.  Currently there "
+"are no options on the list."
 msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:25
-msgid "MPPE encryption"
-msgstr ""
+msgid "GPRS Options"
+msgstr "GPRS 选项"
 
 #: ../properties/nm-ppp-dialog.glade.h:26
-msgid "Maximum Receive Unit"
-msgstr ""
+msgid "Host name or IP address of the PPTP server"
+msgstr "此 PPTP 服务器的主机名或 IP 地址"
 
 #: ../properties/nm-ppp-dialog.glade.h:27
-msgid "Maximum Transmit Unit"
-msgstr ""
+msgid "IP a_ddress:"
+msgstr "IP 地址(_D)："
 
 #: ../properties/nm-ppp-dialog.glade.h:28
-msgid "Modem Connection"
+msgid ""
+"If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
 msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:29
-msgid "Numeric Tweaks"
+msgid ""
+"If Deflate compression is not allowed the 'nodefate' option is passed to pppd"
 msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:30
-msgid "Peer DNS through tunnel"
+msgid "Maximum Receive Unit"
 msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:31
-msgid ""
-"Please enter the information provided by your system administrator below. Do "
-"not enter your password here as you will be prompted when connecting."
+msgid "Maximum Transmit Unit"
 msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:32
-msgid "Require Explicit IP Addr"
-msgstr ""
+msgid "PPP Options"
+msgstr "PPP 选项"
 
 #: ../properties/nm-ppp-dialog.glade.h:33
-msgid "Show on connection on menu"
+msgid "Refuse C_HAP"
 msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:34
+msgid "Refuse _EAP"
+msgstr "拒绝 _EAP"
+
+#: ../properties/nm-ppp-dialog.glade.h:35
+msgid "Refuse _MS CHAP"
+msgstr "拒绝 _MS CHAP"
+
+#: ../properties/nm-ppp-dialog.glade.h:36
+msgid "Require 128 bit M_PPE encryption"
+msgstr "需要 128 位 MPPE 加密(_P)"
+
+#: ../properties/nm-ppp-dialog.glade.h:37
+msgid "Require MPPE _encryption"
+msgstr "使用 MPPE 加密(_E)"
+
+#: ../properties/nm-ppp-dialog.glade.h:38
+msgid "Require explicit IP _address"
+msgstr "需要显式 IP 地址(_A)"
+
+#: ../properties/nm-ppp-dialog.glade.h:39
+msgid "Requires existing network connection"
+msgstr "需要已有的网络连接"
+
+#: ../properties/nm-ppp-dialog.glade.h:40
+msgid "Routing"
+msgstr "路由"
+
+#: ../properties/nm-ppp-dialog.glade.h:41
+msgid "Serial Options"
+msgstr "串行选项"
+
+#: ../properties/nm-ppp-dialog.glade.h:42
+msgid "Service providers GPRS access point from device config"
+msgstr "设备配置的服务提供商 GPRS 访问点"
+
+#: ../properties/nm-ppp-dialog.glade.h:43
+msgid "Service providers IP address"
+msgstr "服务提供商 IP 地址"
+
+#: ../properties/nm-ppp-dialog.glade.h:44
+msgid "Telep_hone number:"
+msgstr "电话号码(_H)："
+
+#: ../properties/nm-ppp-dialog.glade.h:45
+msgid ""
+"This is the friendly name that will be used to identify this network "
+"connection, \n"
+"e.g. \"Campus VPN\" or \"Corporate Network\""
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:47
 msgid "Time in seconds between echo requests"
 msgstr ""
 
-#: ../properties/nm-ppp-dialog.glade.h:36
-msgid "_Access Point Name:"
+#: ../properties/nm-ppp-dialog.glade.h:48
+msgid "Typ_e:"
+msgstr "类型(_E)："
+
+#: ../properties/nm-ppp-dialog.glade.h:49
+msgid "Use peer _DNS"
+msgstr "使用对端 _DNS"
+
+#: ../properties/nm-ppp-dialog.glade.h:50
+msgid "When checked the \"refuse-chap\" option is passed to pppd."
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:51
+msgid "When checked the \"refuse-eap\" option is passed to pppd."
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:52
+msgid "When checked the \"refuse-mschap\" option is passed to pppd."
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:53
+msgid "When checked the 'lock' option is passed to pppd"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:54
+msgid "When checked the 'require-mppc' option is passed to pppd"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:55
+msgid ""
+"When checked this sets the pppd 'debug' option and adds some extra "
+"information from the NetworkManager plugin"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:56
+msgid "When checked this sets the pppd 'noipdefault' option"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:57
+msgid "When checked this sets the pppd 'usepeerdns' option"
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:58
+msgid "When this check box is cleared the \"noauth\" option is passed to pppd."
+msgstr ""
+
+#: ../properties/nm-ppp-dialog.glade.h:59
+msgid "_Access point name:"
 msgstr "接入点名称(_A)："
 
-#: ../properties/nm-ppp-dialog.glade.h:37
-msgid "_Channel:"
-msgstr "频道(_C)："
+#: ../properties/nm-ppp-dialog.glade.h:60
+msgid "_Authenticate peer"
+msgstr "身份验证端(_A)"
 
-#: ../properties/nm-ppp-dialog.glade.h:38
-msgid "_Context Num"
-msgstr "环境号码(_C)"
-
-#: ../properties/nm-ppp-dialog.glade.h:39
-msgid "_Device Address:"
+#: ../properties/nm-ppp-dialog.glade.h:61
+msgid "_Device address:"
 msgstr "设备地址(_D)："
 
-#: ../properties/nm-ppp-dialog.glade.h:40
+#: ../properties/nm-ppp-dialog.glade.h:62
 msgid "_Gateway:"
 msgstr "网关(_G)："
 
-#: ../properties/nm-ppp-dialog.glade.h:41
-msgid "_IP Address:"
-msgstr "IP 地址(_I)："
+#: ../properties/nm-ppp-dialog.glade.h:63
+msgid "_Hardware RTS/CTS"
+msgstr "硬件 RTS/CTS(_H)"
 
-#: ../properties/nm-ppp-dialog.glade.h:42
+#: ../properties/nm-ppp-dialog.glade.h:64
 msgid "_Import Saved Configuration..."
 msgstr "导入保存的配置(_I)..."
 
-#: ../properties/nm-ppp-dialog.glade.h:43
-msgid ""
-"_Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
+#: ../properties/nm-ppp-dialog.glade.h:65
+msgid "_Modem connection"
+msgstr "调制解调器连接(_M)"
+
+#: ../properties/nm-ppp-dialog.glade.h:66
+msgid "_Only use VPN connection for these addresses:"
+msgstr "只对这些地址使用 VPN 连接(_O)："
+
+#: ../properties/nm-ppp-dialog.glade.h:67
+msgid "_Packet type:"
+msgstr "包类型(_P)："
+
+#: ../properties/nm-ppp-dialog.glade.h:68
+msgid "_Peer DNS through tunnel"
 msgstr ""
 
-#: ../properties/nm-ppp-dialog.glade.h:44
-msgid "_Only use VPN connection for these addresses"
-msgstr "只对这些地址使用 VPN 连接(_O)"
+#: ../properties/nm-ppp-dialog.glade.h:69
+msgid "_Require MPPC compression"
+msgstr "需要 MPPC 压缩(_R)"
 
-#: ../properties/nm-ppp-dialog.glade.h:45
-msgid "_Packet Type"
-msgstr "包类型(_P)"
-
-#: ../properties/nm-ppp-dialog.glade.h:46
-msgid "_Telephone Number:"
-msgstr "电话号码(_T)："
-
-#: ../properties/nm-ppp-dialog.glade.h:47
-msgid "connect-delay"
+#: ../properties/nm-ppp-properties.c:45
+msgid "pppd tunnel (PPTP, BTGPRS, Dialup)"
 msgstr ""
+
+#: ../properties/nm-ppp-properties.c:134
+msgid "Name"
+msgstr "名称"
+
+#: ../properties/nm-ppp-properties.c:146
+msgid "PPTP Server"
+msgstr "PPTP 服务器"
+
+#: ../properties/nm-ppp-properties.c:151
+msgid "Telephone Number"
+msgstr "电话号码"
+
+#: ../properties/nm-ppp-properties.c:156
+msgid "Bluetooth Address"
+msgstr "蓝牙地址"
+
+#: ../properties/nm-ppp-properties.c:161
+msgid "Bluetooth Channel"
+msgstr "蓝牙频道"
+
+#: ../properties/nm-ppp-properties.c:166
+msgid "GPRS APN"
+msgstr "GPRS APN"
+
+#: ../properties/nm-ppp-properties.c:171
+msgid "GPRS IP"
+msgstr "GPRS IP"
+
+#: ../properties/nm-ppp-properties.c:176
+msgid "GPRS Context No."
+msgstr "GPRS 环境编号"
+
+#: ../properties/nm-ppp-properties.c:181
+msgid "GPRS Packet Type"
+msgstr "GPRS 包类型"
+
+#: ../properties/nm-ppp-properties.c:186
+msgid "Use CTS/RTS flow control"
+msgstr "使用 CTS/RTS 流控制"
+
+#: ../properties/nm-ppp-properties.c:191
+msgid "Connect via a modem"
+msgstr "通过调制解调器连接"
+
+#: ../properties/nm-ppp-properties.c:196
+msgid "Require IP to be provided"
+msgstr "需要提供 IP"
+
+#: ../properties/nm-ppp-properties.c:201
+msgid "Use Peer DNS"
+msgstr "使用对端 DNS"
+
+#: ../properties/nm-ppp-properties.c:206
+msgid "Use MPPE encryption"
+msgstr "使用 MPPE 加密"
+
+#: ../properties/nm-ppp-properties.c:211
+msgid "Use 128 bit MPPE encryption"
+msgstr "使用 128 位 MPPE 加密"
+
+#: ../properties/nm-ppp-properties.c:216
+msgid "Enable stateful MPPE"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:221
+msgid "Use MPPC compression"
+msgstr "使用 MPPC 压缩"
+
+#: ../properties/nm-ppp-properties.c:226
+msgid "Do not use deflate compression"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:231
+msgid "Do not use BSD compression"
+msgstr "不使用 BSD 压缩"
+
+#: ../properties/nm-ppp-properties.c:236
+msgid "Exclusive device access by pppd"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:241
+msgid "Authenticate remote peer"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:246
+msgid "Refuse EAP"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:251
+msgid "Refuse CHAP"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:256
+msgid "Refuse MSCHAP"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:261
+msgid "Maximum transmit unit (in bytes)"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:266
+msgid "Maximum receive unit (in bytes)"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:271
+msgid "Number of failed LCP echos to cause disconnect"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:276
+msgid "Interval (in seconds) at which to issue LCP echos"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:281
+msgid "Interval (in milliseconds) to wait before connecting."
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:286
+msgid "Custom PPP options"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:296
+msgid "Use Peer DNS over the Tunnel"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:302
+msgid "Specific networks available"
+msgstr ""
+
+#: ../properties/nm-ppp-properties.c:308
+msgid "Limit to specific networks"
+msgstr ""
+
+#: ../properties/vpnui_impl.c:229
+#, c-format
+msgid "The following '%s' connection will be created:"
+msgstr ""
+
+#: ../properties/vpnui_impl.c:242
+#, c-format
+msgid "\t%s:  %s\n"
+msgstr ""
+
+#: ../properties/vpnui_impl.c:245
+msgid "The connection details can be changed using the \"Back\" button."
+msgstr ""
+
+#: ../properties/vpnui_impl.c:317
+msgid "Select file to import"
+msgstr "选择要导入的文件"
+
+#. printf ("in impl_export\n");
+#: ../properties/vpnui_impl.c:462
+msgid "Save as..."
+msgstr "另存为..."
+
+#: ../properties/vpnui_impl.c:491
+#, c-format
+msgid "A file named \"%s\" already exists."
+msgstr "名为“%s”的文件已经存在。"
+
+#: ../properties/vpnui_impl.c:494
+msgid "Do you want to replace it with the one you are saving?"
+msgstr "您是否想要将其替换为您正在保存的文件？"
 
 #: ../src/nm-ppp-starter.c:140
 msgid "VPN Connection failed"
