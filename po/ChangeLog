@@ -1,3 +1,7 @@
+2007-10-06  Funda Wang  <fundawang@gmail.com>
+
+	* POTFILES.in: Removed non-exist files.
+
 2007-07-23  Satoru SATOH <ssato@redhat.com>
 
 	* ja.po: Updated Japanese translation.

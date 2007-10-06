@@ -1,9 +1,4 @@
 [encoding: UTF-8]
 # List of source files containing translatable strings.
 # Please keep this file sorted alphabetically.
-src/nm-ap-security-leap.c
-src/nm-ap-security-wep.c
-src/nm-ap-security-wpa-eap.c
-src/nm-ap-security-wpa-psk.c
-src/nm-ap-security.c
 src/nm-netlink-monitor.c
