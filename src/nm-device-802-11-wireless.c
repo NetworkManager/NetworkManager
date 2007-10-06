@@ -415,6 +415,7 @@ constructor (GType type,
 	/* 802.11 wireless-specific capabilities */
 	priv->capabilities = get_wireless_capabilities (self, &range, wrq.u.data.length);
 
+	nm_dev_sock_close (sk);
 	return object;
 
 error:

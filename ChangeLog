@@ -1,5 +1,10 @@
 2007-10-06  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-11-wireless.c
+		- (constructor): fix leaked socket
+
+2007-10-06  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerPolicy.c
 		- (nm_policy_auto_get_best_device): fix connection list reffing.  Each
 			connection in the list returned by nm_manager_get_connections() is
