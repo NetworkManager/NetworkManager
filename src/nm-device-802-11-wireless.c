@@ -794,7 +794,7 @@ find_best_connection (gpointer data, gpointer user_data)
 
 static NMConnection *
 real_get_best_connection (NMDevice *dev,
-			  GSList *connections,
+                          GSList *connections,
                           char **specific_object)
 {
 	NMDevice80211Wireless * self = NM_DEVICE_802_11_WIRELESS (dev);
@@ -802,6 +802,7 @@ real_get_best_connection (NMDevice *dev,
 
 	memset (&find_info, 0, sizeof (BestConnectionInfo));
 	find_info.self = self;
+	/* Assumes 'connections' list is already sorted according to timestamp */
 	g_slist_foreach (connections, find_best_connection, &find_info);
 
 	if (find_info.found)
