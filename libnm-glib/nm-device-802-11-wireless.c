@@ -495,10 +495,12 @@ nm_device_802_11_wireless_get_active_access_point (NMDevice80211Wireless *device
 		path = nm_object_get_object_path_property (NM_OBJECT (device),
 		                                           NM_DBUS_INTERFACE_DEVICE_WIRELESS,
 		                                           DBUS_PROP_ACTIVE_ACCESS_POINT);
-		priv->current_ap = get_access_point (device, path, TRUE);
-		if (priv->current_ap)
-			g_object_ref (priv->current_ap);
-		g_free (path);
+		if (path) {
+			priv->current_ap = get_access_point (device, path, TRUE);
+			if (priv->current_ap)
+				g_object_ref (priv->current_ap);
+			g_free (path);
+		}
 	}
 
 	return priv->current_ap;
