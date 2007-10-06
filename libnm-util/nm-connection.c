@@ -352,7 +352,9 @@ gvalue_to_string (GValue *val)
 	case G_TYPE_UCHAR:
 		ret = g_strdup_printf ("%d", g_value_get_uchar (val));
 		break;
-
+	case G_TYPE_UINT64:
+		ret = g_strdup_printf ("%llu", g_value_get_uint64 (val));
+		break;
 	default:
 		/* These return dynamic values and thus can't be 'case's */
 		if (type == DBUS_TYPE_G_UCHAR_ARRAY)
