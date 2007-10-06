@@ -1259,12 +1259,38 @@ impl_manager_legacy_state (NMManager *manager, guint32 *state, GError **err)
 
 /* Connections */
 
+static int
+connection_sort (gconstpointer pa, gconstpointer pb)
+{
+	NMConnection *a = NM_CONNECTION (pa);
+	NMSettingConnection *con_a;
+	NMConnection *b = NM_CONNECTION (pb);
+	NMSettingConnection *con_b;
+
+	con_a = (NMSettingConnection *) nm_connection_get_setting (a, NM_SETTING_CONNECTION);
+	g_assert (con_a);
+	con_b = (NMSettingConnection *) nm_connection_get_setting (b, NM_SETTING_CONNECTION);
+	g_assert (con_b);
+
+	if (con_a->autoconnect != con_b->autoconnect) {
+		if (con_a->autoconnect)
+			return -1;
+		return 1;
+	}
+
+	if (con_a->timestamp > con_b->timestamp)
+		return -1;
+	else if (con_a->timestamp == con_b->timestamp)
+		return 0;
+	return 1;
+}
+
 static void
 connections_to_slist (gpointer key, gpointer value, gpointer user_data)
 {
 	GSList **list = (GSList **) user_data;
 
-	*list = g_slist_prepend (*list, g_object_ref (value));
+	*list = g_slist_insert_sorted (*list, g_object_ref (value), connection_sort);
 }
 
 /* Returns a GSList of referenced NMConnection objects, caller must
@@ -1285,7 +1311,7 @@ nm_manager_get_connections (NMManager *manager,
 	else if (type == NM_CONNECTION_TYPE_SYSTEM)
 		g_hash_table_foreach (priv->system_connections, connections_to_slist, &list);
 	else
-		nm_warning ("Unknown NMConnectionType %d", type);
+		nm_warning ("Unknown NMConnectionType %d", type);	
 	return list;
 }
 

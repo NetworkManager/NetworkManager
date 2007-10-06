@@ -1,5 +1,11 @@
 2007-10-06  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-manager.c
+		- (connections_to_slist): sort connections first on autoconnect, then
+			on timestamp
+
+2007-10-06  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-connection.c
 		- (gvalue_to_string): handle UINT64
 
