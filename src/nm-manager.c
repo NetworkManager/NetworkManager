@@ -24,6 +24,9 @@ static gboolean impl_manager_get_active_connections (NMManager *manager,
 
 static gboolean impl_manager_sleep (NMManager *manager, gboolean sleep, GError **err);
 
+static const char * nm_manager_get_connection_dbus_path (NMManager *manager,
+                                                         NMConnection *connection);
+
 /* Legacy 0.6 compatibility interface */
 
 static gboolean impl_manager_legacy_sleep (NMManager *manager, GError **err);
@@ -73,6 +76,7 @@ enum {
 	DEVICE_REMOVED,
 	STATE_CHANGE,
 	CONNECTION_ADDED,
+	CONNECTION_UPDATED,
 	CONNECTION_REMOVED,
 
 	LAST_SIGNAL
@@ -297,6 +301,16 @@ nm_manager_class_init (NMManagerClass *manager_class)
 					  G_TYPE_NONE, 2,
 				    G_TYPE_OBJECT, G_TYPE_UINT);
 
+	signals[CONNECTION_UPDATED] =
+		g_signal_new ("connection-updated",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMManagerClass, connection_updated),
+					  NULL, NULL,
+				      nm_marshal_VOID__OBJECT_UINT,
+					  G_TYPE_NONE, 2,
+				      G_TYPE_OBJECT, G_TYPE_UINT);
+
 	signals[CONNECTION_REMOVED] =
 		g_signal_new ("connection-removed",
 					  G_OBJECT_CLASS_TYPE (object_class),
@@ -406,42 +420,93 @@ out:
 	return;
 }
 
+static NMConnection *
+get_connection_for_proxy (NMManager *manager,
+                          DBusGProxy *proxy,
+                          GHashTable **out_hash,
+                          const char **out_path)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	const char *path = dbus_g_proxy_get_path (proxy);
+	const char *bus_name = dbus_g_proxy_get_bus_name (proxy);
+
+	if (out_path)
+		*out_path = path;
+
+	if (strcmp (bus_name, NM_DBUS_SERVICE_USER_SETTINGS) == 0) {
+		*out_hash = priv->user_connections;
+		return g_hash_table_lookup (priv->user_connections, path);
+	} else if (strcmp (bus_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS) == 0) {
+		*out_hash = priv->system_connections;
+		return g_hash_table_lookup (priv->system_connections, path);
+	}
+	return NULL;
+}
+
+static void
+remove_connection (NMManager *manager,
+                   NMConnection *connection,
+                   GHashTable *hash,
+                   const char *path)
+{
+	NMConnectionType type = NM_CONNECTION_TYPE_UNKNOWN;
+
+	/* Destroys the connection, then associated DBusGProxy due to the
+	 * weak reference notify function placed on the connection when it
+	 * was created.
+	 */
+	g_object_ref (connection);
+	g_hash_table_remove (hash, path);
+	type = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_TYPE_TAG));
+	g_signal_emit (manager, signals[CONNECTION_REMOVED], 0, connection, type);
+	g_object_unref (connection);
+}
+
 static void
 connection_removed_cb (DBusGProxy *proxy, gpointer user_data)
 {
 	NMManager * manager = NM_MANAGER (user_data);
-	const char *path = dbus_g_proxy_get_path (proxy);
-	const char *bus_name = dbus_g_proxy_get_bus_name (proxy);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	NMConnectionType connection_type;
 	NMConnection *connection = NULL;
 	GHashTable *hash = NULL;
+	const char *path;
 
-	if (strcmp (bus_name, NM_DBUS_SERVICE_USER_SETTINGS) == 0) {
-		connection_type = NM_CONNECTION_TYPE_USER;
-		hash = priv->user_connections;
-	} else if (strcmp (bus_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS) == 0) {
-		connection_type = NM_CONNECTION_TYPE_SYSTEM;
-		hash = priv->system_connections;
-	}			
+	connection = get_connection_for_proxy (manager, proxy, &hash, &path);
+	if (connection)
+		remove_connection (manager, connection, hash, path);
+}
 
-	if (hash == NULL)
-		goto out;
+static void
+connection_updated_cb (DBusGProxy *proxy, GHashTable *settings, gpointer user_data)
+{
+	NMManager *manager = NM_MANAGER (user_data);
+	NMConnection *new_connection;
+	NMConnection *old_connection;
+	GHashTable *hash;
+	const char *path;
+	gboolean valid = FALSE;
 
-	connection = g_hash_table_lookup (hash, path);
-	if (connection != NULL) {
-		/* Destroys the connection, then associated DBusGProxy due to the
-		 * weak reference notify function placed on the connection when it
-		 * was created.
-		 */
-		g_object_ref (connection);
-		g_hash_table_remove (hash, path);
-		g_signal_emit (manager, signals[CONNECTION_REMOVED], 0, connection, connection_type);
-		g_object_unref (connection);
+	old_connection = get_connection_for_proxy (manager, proxy, &hash, &path);
+	if (!old_connection)
+		return;
+
+	new_connection = nm_connection_new_from_hash (settings);
+	if (!new_connection) {
+		/* New connection invalid, remove existing connection */
+		remove_connection (manager, old_connection, hash, path);
+		return;
 	}
+	g_object_unref (new_connection);
 
-out:
-	return;
+	valid = nm_connection_replace_settings (old_connection, settings);
+	if (valid) {
+		NMConnectionType type;
+
+		type = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (old_connection),
+		                                            NM_MANAGER_CONNECTION_TYPE_TAG));
+		g_signal_emit (manager, signals[CONNECTION_UPDATED], 0, old_connection, type);
+	} else {
+		remove_connection (manager, old_connection, hash, path);
+	}
 }
 
 static void
@@ -469,10 +534,10 @@ new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
 	dbus_g_proxy_add_signal (con_proxy, "Updated",
 	                         DBUS_TYPE_G_DICT_OF_DICTS,
 	                         G_TYPE_INVALID);
-//	dbus_g_proxy_connect_signal (con_proxy, "Updated",
-//	                             G_CALLBACK (connection_updated_cb),
-//	                             manager,
-//	                             NULL);
+	dbus_g_proxy_connect_signal (con_proxy, "Updated",
+	                             G_CALLBACK (connection_updated_cb),
+	                             manager,
+	                             NULL);
 
 	dbus_g_proxy_add_signal (con_proxy, "Removed", G_TYPE_INVALID, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (con_proxy, "Removed",
@@ -1245,7 +1310,7 @@ nm_manager_get_connection_by_object_path (NMManager *manager,
 	return connection;
 }
 
-const char *
+static const char *
 nm_manager_get_connection_dbus_path (NMManager *manager,
                                      NMConnection *connection)
 {
@@ -1261,17 +1326,5 @@ nm_manager_get_connection_dbus_path (NMManager *manager,
 	}
 
 	return dbus_g_proxy_get_path (proxy);
-}
-
-void
-nm_manager_update_connections (NMManager *manager,
-                               NMConnectionType type,
-                               GSList *connections,
-                               gboolean reset)
-{
-	g_return_if_fail (NM_IS_MANAGER (manager));
-
-	if (reset)
-		nm_manager_connections_destroy (manager, type);
 }
 

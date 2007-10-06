@@ -41,6 +41,10 @@ typedef struct {
 				  NMConnection *connection,
 				  NMConnectionType connection_type);
 
+	void (*connection_updated) (NMManager *manager,
+				  NMConnection *connection,
+				  NMConnectionType connection_type);
+
 	void (*connection_removed) (NMManager *manager,
 				    NMConnection *connection,
 				    NMConnectionType connection_type);
@@ -77,16 +81,9 @@ void nm_manager_sleep (NMManager *manager, gboolean sleep);
 /* Connections */
 
 GSList *nm_manager_get_connections    (NMManager *manager, NMConnectionType type);
-void    nm_manager_update_connections (NMManager *manager,
-                                       NMConnectionType type,
-                                       GSList *connections,
-                                       gboolean reset);
 
 NMConnection * nm_manager_get_connection_by_object_path (NMManager *manager,
                                                          NMConnectionType type,
                                                          const char *path);
-
-const char * nm_manager_get_connection_dbus_path (NMManager *manager,
-                                                  NMConnection *connection);
 
 #endif /* NM_MANAGER_H */

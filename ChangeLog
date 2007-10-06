@@ -1,5 +1,15 @@
 2007-10-06  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-manager.c
+	  src/nm-manager.h
+		- (nm_manager_get_connection_dbus_path): make static
+		- (nm_manager_update_connections): remove; unused
+		- Add a connection-updated signal
+		- (new_connection_cb, connection_updated_cb, nm_manager_class_init):
+			handle connection object updates
+
+2007-10-06  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerPolicy.c
 		- (connection_removed): deactivate removed connections
 
