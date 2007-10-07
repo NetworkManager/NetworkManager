@@ -476,6 +476,16 @@ state_changed (NMManager *manager, NMState state, gpointer user_data)
 }
 
 static void
+connections_added (NMManager *manager,
+                   NMConnectionType connection_type,
+                   gpointer user_data)
+{
+	NMPolicy *policy = (NMPolicy *) user_data;
+
+	schedule_change_check (policy);
+}
+
+static void
 connection_added (NMManager *manager,
                   NMConnection *connection,
                   NMConnectionType connection_type,
@@ -544,6 +554,13 @@ nm_policy_new (NMManager *manager)
 	g_signal_connect (manager, "state-change",
 					  G_CALLBACK (state_changed), policy);
 
+	/* Large batch of connections added, manager doesn't want us to
+	 * process each one individually.
+	 */
+	g_signal_connect (manager, "connections-added",
+					  G_CALLBACK (connections_added), policy);
+
+	/* Single connection added */
 	g_signal_connect (manager, "connection-added",
 					  G_CALLBACK (connection_added), policy);
 

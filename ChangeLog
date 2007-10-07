@@ -1,3 +1,30 @@
+2007-10-07  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-manager.c
+	  src/nm-manager.h
+		- Add a 'connections-added' signal to batch together updates of large
+			numbers of connections, like when reading from a settings service
+			the first time.  Otherwise, the policy would just activate the first
+			suitable connection it saw rather than waiting for the full list
+			to arrive.
+		- (nm_manager_class_init): register new signal
+		- (get_type_for_proxy, connection_get_settings_cb,
+		   get_connection_for_proxy): centralize places where a proxy's setting
+			service is determined
+		- (free_get_settings_info): if the call being freed is the last call
+			in a pending call group, fire off the connections-added signal
+		- (internal_new_connection_cb): add call to a pending call group if
+			requested
+		- (list_connections_cb): always create a call group here, because this
+			call results in a batch of new connections
+		- (initial_get_connections): start getting system connections first
+		- (nm_manager_connections_destroy, emit_removed): actually emit the
+			removed signal when destroying connections
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_new, connections_added): handle connections-added signal
+			from the manager
+
 2007-10-06  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-11-wireless.c

@@ -75,6 +75,7 @@ enum {
 	DEVICE_ADDED,
 	DEVICE_REMOVED,
 	STATE_CHANGE,
+	CONNECTIONS_ADDED,
 	CONNECTION_ADDED,
 	CONNECTION_UPDATED,
 	CONNECTION_REMOVED,
@@ -291,6 +292,16 @@ nm_manager_class_init (NMManagerClass *manager_class)
 					  G_TYPE_NONE, 1,
 					  G_TYPE_UINT);
 
+	signals[CONNECTIONS_ADDED] =
+		g_signal_new ("connections-added",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMManagerClass, connections_added),
+					  NULL, NULL,
+		              g_cclosure_marshal_VOID__UINT,
+					  G_TYPE_NONE, 1,
+		              G_TYPE_UINT);
+
 	signals[CONNECTION_ADDED] =
 		g_signal_new ("connection-added",
 					  G_OBJECT_CLASS_TYPE (object_class),
@@ -328,15 +339,45 @@ nm_manager_class_init (NMManagerClass *manager_class)
 #define DBUS_TYPE_G_STRING_VARIANT_HASHTABLE (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE))
 #define DBUS_TYPE_G_DICT_OF_DICTS (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, DBUS_TYPE_G_STRING_VARIANT_HASHTABLE))
 
+static NMConnectionType
+get_type_for_proxy (DBusGProxy *proxy)
+{
+	const char *bus_name = dbus_g_proxy_get_bus_name (proxy);
+
+	if (strcmp (bus_name, NM_DBUS_SERVICE_USER_SETTINGS) == 0)
+		return NM_CONNECTION_TYPE_USER;
+	else if (strcmp (bus_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS) == 0)
+		return NM_CONNECTION_TYPE_SYSTEM;
+
+	return NM_CONNECTION_TYPE_UNKNOWN;
+}
+
 typedef struct GetSettingsInfo {
 	NMManager *manager;
 	NMConnection *connection;
+	DBusGProxy *proxy;
+	DBusGProxyCall *call;
+	GSList **calls;
 } GetSettingsInfo;
 
 static void
 free_get_settings_info (gpointer data)
 {
 	GetSettingsInfo *info = (GetSettingsInfo *) data;
+
+	/* If this was the last pending call for a batch of GetSettings calls,
+	 * send out the connections-added signal.
+	 */
+	if (info->calls) {
+		*(info->calls) = g_slist_remove (*(info->calls), info->call);
+		if (g_slist_length (*(info->calls)) == 0) {
+			g_slist_free (*(info->calls));
+			g_signal_emit (info->manager,
+			               signals[CONNECTIONS_ADDED],
+			               0,
+			               get_type_for_proxy (info->proxy));
+		}
+	}
 
 	if (info->manager) {
 		g_object_unref (info->manager);
@@ -359,7 +400,7 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 	GError *err = NULL;
 	GHashTable *settings = NULL;
 	NMConnection *connection;
-	NMConnectionType connection_type;
+	NMConnectionType type;
 	NMManager *manager;
 
 	g_return_if_fail (info != NULL);
@@ -376,7 +417,6 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 	connection = info->connection;
  	if (connection == NULL) {
 		const char *path = dbus_g_proxy_get_path (proxy);
-		const char *bus_name = dbus_g_proxy_get_bus_name (proxy);
 		NMManagerPrivate *priv;
 
 		connection = nm_connection_new_from_hash (settings);
@@ -389,26 +429,33 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 		                        (GDestroyNotify) g_object_unref);
 
 		priv = NM_MANAGER_GET_PRIVATE (manager);
-		if (strcmp (bus_name, NM_DBUS_SERVICE_USER_SETTINGS) == 0) {
-			connection_type = NM_CONNECTION_TYPE_USER;
-			g_hash_table_insert (priv->user_connections,
-			                     g_strdup (path),
-			                     connection);
-		} else if (strcmp (bus_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS) == 0) {
-			connection_type = NM_CONNECTION_TYPE_SYSTEM;
-			g_hash_table_insert (priv->system_connections,
-			                     g_strdup (path),
-			                     connection);
-		} else {
-			nm_warning ("Connection wasn't a user connection or a system connection.");
-			g_assert_not_reached ();
+		type = get_type_for_proxy (proxy);
+		switch (type) {
+			case NM_CONNECTION_TYPE_USER:
+				g_hash_table_insert (priv->user_connections,
+				                     g_strdup (path),
+				                     connection);
+				break;
+			case NM_CONNECTION_TYPE_SYSTEM:
+				g_hash_table_insert (priv->system_connections,
+				                     g_strdup (path),
+				                     connection);
+				break;
+			default:
+				nm_warning ("Connection wasn't a user connection or a system connection.");
+				g_assert_not_reached ();
+				break;
 		}
 
 		g_object_set_data (G_OBJECT (connection),
 		                   NM_MANAGER_CONNECTION_TYPE_TAG,
-		                   GUINT_TO_POINTER (connection_type));
+		                   GUINT_TO_POINTER (type));
 
-		g_signal_emit (manager, signals[CONNECTION_ADDED], 0, connection, connection_type);
+		/* If the connection-added signal is supposed to be batched, don't
+		 * emit the single connection-added here.
+		 */
+		if (!info->calls)
+			g_signal_emit (manager, signals[CONNECTION_ADDED], 0, connection, type);
 	} else {
 		// FIXME: merge settings? or just replace?
 		nm_warning ("%s (#%d): implement merge settings", __func__, __LINE__);
@@ -427,20 +474,27 @@ get_connection_for_proxy (NMManager *manager,
                           const char **out_path)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	NMConnection *connection = NULL;
 	const char *path = dbus_g_proxy_get_path (proxy);
-	const char *bus_name = dbus_g_proxy_get_bus_name (proxy);
 
 	if (out_path)
 		*out_path = path;
 
-	if (strcmp (bus_name, NM_DBUS_SERVICE_USER_SETTINGS) == 0) {
-		*out_hash = priv->user_connections;
-		return g_hash_table_lookup (priv->user_connections, path);
-	} else if (strcmp (bus_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS) == 0) {
-		*out_hash = priv->system_connections;
-		return g_hash_table_lookup (priv->system_connections, path);
+	switch (get_type_for_proxy (proxy)) {
+		case NM_CONNECTION_TYPE_USER:
+			*out_hash = priv->user_connections;
+			connection = g_hash_table_lookup (priv->user_connections, path);
+			break;
+		case NM_CONNECTION_TYPE_SYSTEM:
+			*out_hash = priv->system_connections;
+			connection = g_hash_table_lookup (priv->system_connections, path);
+			break;
+		default:
+			nm_warning ("Connection wasn't a user connection or a system connection.");
+			g_assert_not_reached ();
+			break;
 	}
-	return NULL;
+	return connection;
 }
 
 static void
@@ -449,7 +503,7 @@ remove_connection (NMManager *manager,
                    GHashTable *hash,
                    const char *path)
 {
-	NMConnectionType type = NM_CONNECTION_TYPE_UNKNOWN;
+	NMConnectionType type;
 
 	/* Destroys the connection, then associated DBusGProxy due to the
 	 * weak reference notify function placed on the connection when it
@@ -510,19 +564,21 @@ connection_updated_cb (DBusGProxy *proxy, GHashTable *settings, gpointer user_da
 }
 
 static void
-new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
+internal_new_connection_cb (DBusGProxy *proxy,
+                            const char *path,
+                            NMManager *manager,
+                            GSList **calls)
 {
-	NMManager * manager = NM_MANAGER (user_data);
+	struct GetSettingsInfo *info;
 	DBusGProxy *con_proxy;
 	NMDBusManager * dbus_mgr;
 	DBusGConnection * g_connection;
 	DBusGProxyCall *call;
-	struct GetSettingsInfo *info;
 
 	dbus_mgr = nm_dbus_manager_get ();
 	g_connection = nm_dbus_manager_get_connection (dbus_mgr);
 	con_proxy = dbus_g_proxy_new_for_name (g_connection,
-	                                       NM_DBUS_SERVICE_USER_SETTINGS,
+	                                       dbus_g_proxy_get_bus_name (proxy),
 	                                       path,
 	                                       NM_DBUS_IFACE_SETTINGS_CONNECTION);
 	g_object_unref (dbus_mgr);
@@ -547,11 +603,16 @@ new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
 
 	info = g_slice_new0 (GetSettingsInfo);
 	info->manager = g_object_ref (manager);
+	info->calls = calls;
 	call = dbus_g_proxy_begin_call (con_proxy, "GetSettings",
 	                                connection_get_settings_cb,
 	                                info,
 	                                free_get_settings_info,
 	                                G_TYPE_INVALID);
+	info->call = call;
+	info->proxy = con_proxy;
+	if (info->calls)
+		*(info->calls) = g_slist_prepend (*(info->calls), call);
 }
 
 #define DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH (dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_OBJECT_PATH))
@@ -564,6 +625,7 @@ list_connections_cb  (DBusGProxy *proxy,
 	NMManager *manager = NM_MANAGER (user_data);
 	GError *err = NULL;
 	GPtrArray *ops;
+	GSList **calls = NULL;
 	int i;
 
 	if (!dbus_g_proxy_end_call (proxy, call_id, &err,
@@ -574,13 +636,28 @@ list_connections_cb  (DBusGProxy *proxy,
 		goto out;
 	}
 
-	for (i = 0; i < ops->len; i++)
-		new_connection_cb (proxy, g_ptr_array_index (ops, i), manager);
+	/* Keep track of all calls made here; don't want to emit connection-added for
+	 * each one, but emit connections-added when they are all done.
+	 */
+	calls = g_slice_new0 (GSList *);
+
+	for (i = 0; i < ops->len; i++) {
+		internal_new_connection_cb (proxy,
+		                            g_ptr_array_index (ops, i),
+		                            manager,
+		                            calls);
+	}
 
 	g_ptr_array_free (ops, TRUE);
 
 out:
 	return;
+}
+
+static void
+new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
+{
+	internal_new_connection_cb (proxy, path, NM_MANAGER (user_data), NULL);
 }
 
 static void
@@ -677,12 +754,12 @@ initial_get_connections (gpointer user_data)
 	NMManager * manager = NM_MANAGER (user_data);
 
 	if (nm_dbus_manager_name_has_owner (nm_dbus_manager_get (),
-	                                    NM_DBUS_SERVICE_USER_SETTINGS))
-		query_connections (manager, NM_CONNECTION_TYPE_USER);
-
-	if (nm_dbus_manager_name_has_owner (nm_dbus_manager_get (),
 	                                    NM_DBUS_SERVICE_SYSTEM_SETTINGS))
 		query_connections (manager, NM_CONNECTION_TYPE_SYSTEM);
+
+	if (nm_dbus_manager_name_has_owner (nm_dbus_manager_get (),
+	                                    NM_DBUS_SERVICE_USER_SETTINGS))
+		query_connections (manager, NM_CONNECTION_TYPE_USER);
 
 	return FALSE;
 }
@@ -714,22 +791,37 @@ nm_manager_new (void)
 }
 
 static void
+emit_removed (gpointer key, gpointer value, gpointer user_data)
+{
+	NMManager *manager = NM_MANAGER (user_data);
+	NMConnection *connection = NM_CONNECTION (value);
+	NMConnectionType type;
+
+	type = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_TYPE_TAG));
+	g_signal_emit (manager, signals[CONNECTION_REMOVED], 0, connection, type);
+}
+
+static void
 nm_manager_connections_destroy (NMManager *manager,
                                 NMConnectionType type)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
 	if (type == NM_CONNECTION_TYPE_USER) {
-		if (priv->user_connections)
+		if (priv->user_connections) {
+			g_hash_table_foreach (priv->user_connections, emit_removed, manager);
 			g_hash_table_remove_all (priv->user_connections);
+		}
 
 		if (priv->user_proxy) {
 			g_object_unref (priv->user_proxy);
 			priv->user_proxy = NULL;
 		}
 	} else if (type == NM_CONNECTION_TYPE_SYSTEM) {
-		if (priv->system_connections)
+		if (priv->system_connections) {
+			g_hash_table_foreach (priv->system_connections, emit_removed, manager);
 			g_hash_table_remove_all (priv->system_connections);
+		}
 
 		if (priv->system_proxy) {
 			g_object_unref (priv->system_proxy);

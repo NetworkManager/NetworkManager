@@ -37,6 +37,9 @@ typedef struct {
 	void (*device_added) (NMManager *manager, NMDevice *device);
 	void (*device_removed) (NMManager *manager, NMDevice *device);
 	void (*state_change) (NMManager *manager, guint state);
+
+	void (*connections_added) (NMManager *manager, NMConnectionType type);
+
 	void (*connection_added) (NMManager *manager,
 				  NMConnection *connection,
 				  NMConnectionType connection_type);
