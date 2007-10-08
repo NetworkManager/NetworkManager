@@ -28,18 +28,6 @@
 
 #include "nm-access-point-glue.h"
 
-/* This is a controlled list.  Want to add to it?  Stop.  Ask first. */
-static const char * default_ssid_list[] =
-{
-	"linksys",
-	"linksys-a",
-	"linksys-g",
-	"default",
-	"belkin54g",
-	"NETGEAR",
-	NULL
-};
-
 /*
  * Encapsulates Access Point information
  */
@@ -1021,25 +1009,6 @@ void nm_ap_set_user_addresses (NMAccessPoint *ap, GSList *list)
 	priv->user_addresses = new;
 }
 
-
-gboolean nm_ap_has_manufacturer_default_ssid (NMAccessPoint *ap)
-{
-	const char **default_ssid = default_ssid_list;
-	const GByteArray * this_ssid;
-
-	g_return_val_if_fail (NM_IS_AP (ap), FALSE);
-	this_ssid = NM_AP_GET_PRIVATE (ap)->ssid;
-
-	while (*default_ssid) {
-		if (this_ssid->len == strlen (*default_ssid)) {
-			if (!memcmp (*default_ssid, this_ssid->data, this_ssid->len))
-				return TRUE;
-		}
-		default_ssid++;
-	}
-
-	return FALSE;
-}
 
 guint32
 nm_ap_add_security_from_ie (guint32 flags,

@@ -1,5 +1,13 @@
 2007-10-08  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerAP.h
+	  src/NetworkManagerAP.c
+		- (nm_ap_has_manufacturer_default_ssid): remove, unused.  User clients
+			should handle default SSIDs and whether or not to autoconnect
+			to them
+
+2007-10-08  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerPolicy.c
 		- (nm_policy_device_change_check): print out connection name where
 			possible

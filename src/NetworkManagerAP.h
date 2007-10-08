@@ -122,13 +122,6 @@ gboolean			nm_ap_check_compatible (NMAccessPoint *self,
 
 void				nm_ap_print_self (NMAccessPoint *ap, const char * prefix);
 
-/* 
- * NOTE:
- * This is not intended to return true for all APs with manufacturer defaults.  It is intended to return true for
- * only the MOST COMMON manufacturing defaults.
- */
-gboolean			nm_ap_has_manufacturer_default_ssid	(NMAccessPoint *ap);
-
 guint32 freq_to_channel (guint32 freq);
 guint32  channel_to_freq (guint32 channel);
 
