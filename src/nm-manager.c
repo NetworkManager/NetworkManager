@@ -155,11 +155,8 @@ nm_manager_update_state (NMManager *manager)
 }
 
 static void
-pending_connection_info_destroy (NMManager *manager)
+pending_connection_info_destroy (PendingConnectionInfo *info)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	PendingConnectionInfo *info = priv->pending_connection_info;
-
 	if (!info)
 		return;
 
@@ -171,7 +168,6 @@ pending_connection_info_destroy (NMManager *manager)
 	g_object_unref (info->device);
 
 	g_slice_free (PendingConnectionInfo, info);
-	priv->pending_connection_info = NULL;
 }
 
 static void
@@ -180,7 +176,8 @@ finalize (GObject *object)
 	NMManager *manager = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
-	pending_connection_info_destroy (manager);
+	pending_connection_info_destroy (priv->pending_connection_info);
+	priv->pending_connection_info = NULL;
 
 	nm_manager_connections_destroy (manager, NM_CONNECTION_TYPE_USER);
 	g_hash_table_destroy (priv->user_connections);
@@ -1103,7 +1100,8 @@ static gboolean
 wait_for_connection_expired (gpointer data)
 {
 	NMManager *manager = NM_MANAGER (data);
-	PendingConnectionInfo *info = NM_MANAGER_GET_PRIVATE (manager)->pending_connection_info;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	PendingConnectionInfo *info = priv->pending_connection_info;
 	GError *err;
 
 	nm_info ("%s: didn't receive connection details soon enough for activation.",
@@ -1114,9 +1112,43 @@ wait_for_connection_expired (gpointer data)
 	g_error_free (err);
 
 	info->timeout_id = 0;
-	pending_connection_info_destroy (manager);
+	pending_connection_info_destroy (priv->pending_connection_info);
+	priv->pending_connection_info = NULL;
 
 	return FALSE;
+}
+
+/* ICK ICK ICK; should go away with multiple device support.  There is
+ * corresponding code in NetworkManagerPolicy.c that handles this for
+ * automatically activated connections.
+ */
+static void
+deactivate_old_device (NMManager *manager)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	NMDevice *device = NULL;
+	GSList *iter;
+
+	switch (priv->state) {
+	case NM_STATE_CONNECTED:
+		device = nm_manager_get_active_device (manager);
+		break;
+	case NM_STATE_CONNECTING:
+		for (iter = nm_manager_get_devices (manager); iter; iter = iter->next) {
+			NMDevice *d = NM_DEVICE (iter->data);
+
+			if (nm_device_is_activating (d)) {
+				device = d;
+				break;
+			}
+		}
+		break;
+	default:
+		break;
+	}
+
+	if (device)
+		nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
 }
 
 static void
@@ -1124,19 +1156,25 @@ connection_added_default_handler (NMManager *manager,
 						    NMConnection *connection,
 						    NMConnectionType connection_type)
 {
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	PendingConnectionInfo *info;
 	const char *path;
 
 	if (!nm_manager_activation_pending (manager))
 		return;
 
-	info = NM_MANAGER_GET_PRIVATE (manager)->pending_connection_info;
+	info = priv->pending_connection_info;
+	priv->pending_connection_info = NULL;
+
 	if (connection_type != info->connection_type)
 		return;
 
 	path = nm_manager_get_connection_dbus_path (manager, connection);
 	if (strcmp (info->connection_path, path))
 		return;
+
+	// FIXME: remove old_dev deactivation when multiple device support lands
+	deactivate_old_device (manager);
 
 	if (nm_manager_activate_device (manager, info->device, connection, info->specific_object_path, TRUE)) {
 		dbus_g_method_return (info->context, TRUE);
@@ -1148,7 +1186,7 @@ connection_added_default_handler (NMManager *manager,
 		g_error_free (err);
 	}
 
-	pending_connection_info_destroy (manager);
+	pending_connection_info_destroy (info);
 }
 
 static void
@@ -1183,6 +1221,9 @@ impl_manager_activate_device (NMManager *manager,
 
 	connection = nm_manager_get_connection_by_object_path (manager, connection_type, connection_path);
 	if (connection) {
+		// FIXME: remove old_dev deactivation when multiple device support lands
+		deactivate_old_device (manager);
+
 		if (nm_manager_activate_device (manager, device, connection, specific_object_path, TRUE)) {
 			dbus_g_method_return (context, TRUE);
 		} else {
@@ -1191,6 +1232,12 @@ impl_manager_activate_device (NMManager *manager,
 		}
 	} else {
 		PendingConnectionInfo *info;
+		NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+
+		if (priv->pending_connection_info) {
+			pending_connection_info_destroy (priv->pending_connection_info);
+			priv->pending_connection_info = NULL;
+		}
 
 		/* Don't have the connection quite yet, probably created by
 		 * the client on-the-fly.  Defer the activation until we have it
@@ -1204,6 +1251,7 @@ impl_manager_activate_device (NMManager *manager,
 		info->specific_object_path = g_strdup (specific_object_path);
 		info->timeout_id = g_timeout_add (5000, wait_for_connection_expired, manager);
 
+		// FIXME: should probably be per-device, not global to the manager
 		NM_MANAGER_GET_PRIVATE (manager)->pending_connection_info = info;
 	}
 

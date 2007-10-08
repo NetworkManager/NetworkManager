@@ -1,5 +1,27 @@
 2007-10-08  Dan Williams  <dcbw@redhat.com>
 
+	Fix problems with interrupted activation.  Previously, choosing an AP
+	from the menu, then choosing another one before the first connection was
+	successful wouldn't deactivate the device before starting the new connection
+	on that same device.
+
+	* src/NetworkManagerPolicy.c
+		- (deactivate_old_device, device_state_changed, state_changed,
+		   nm_policy_new): wrong place to deactivate old devices
+
+	* src/nm-manager.c
+		- (pending_connection_info_destroy, finalize,
+		   wait_for_connection_expired): decouple destruction of the pending
+			connection info from the manager device
+		- (connection_added_default_handler): deactivate any active or
+			activating device before starting a new activation
+		- (impl_manager_activate_device): deactivate any active or activating
+			device before starting a new activation; be sure not to leak
+			pending connection info if a new activation request arrives but
+			there's already a pending one in-process
+
+2007-10-08  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerAP.h
 	  src/NetworkManagerAP.c
 		- (nm_ap_has_manufacturer_default_ssid): remove, unused.  User clients

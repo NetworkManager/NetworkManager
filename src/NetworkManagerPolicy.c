@@ -387,41 +387,12 @@ schedule_change_check (NMPolicy *policy)
 															device_change_check_done);
 }
 
-/* FIXME: remove when multiple active device support has landed */
-static void
-deactivate_old_device (NMPolicy *policy, NMDevice *new_device)
-{
-	GSList *iter;
-
-	for (iter = nm_manager_get_devices (policy->manager); iter; iter = iter->next) {
-		NMDevice *dev = NM_DEVICE (iter->data);
-
-		if (dev == new_device)
-			continue;
-
-		switch (nm_device_get_state (dev)) {
-		case NM_DEVICE_STATE_PREPARE:
-		case NM_DEVICE_STATE_CONFIG:
-		case NM_DEVICE_STATE_NEED_AUTH:
-		case NM_DEVICE_STATE_IP_CONFIG:
-		case NM_DEVICE_STATE_ACTIVATED:
-			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (dev));
-			break;
-		default:
-			break;
-		}
-	}
-}
-
 static void
 device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
 
-	if (state == NM_DEVICE_STATE_PREPARE)
-		deactivate_old_device (policy, device); /* FIXME: remove when multiple active device support has landed */
-
-	else if (state == NM_DEVICE_STATE_FAILED || state == NM_DEVICE_STATE_CANCELLED)
+	if (state == NM_DEVICE_STATE_FAILED || state == NM_DEVICE_STATE_CANCELLED)
 		schedule_change_check (policy);
 }
 
@@ -472,23 +443,6 @@ device_removed (NMManager *manager, NMDevice *device, gpointer user_data)
 	NMPolicy *policy = (NMPolicy *) user_data;
 
 	schedule_change_check (policy);
-}
-
-static void
-state_changed (NMManager *manager, NMState state, gpointer user_data)
-{
-	NMPolicy *policy = (NMPolicy *) user_data;
-
-	if (state == NM_STATE_CONNECTING) {
-		/* A device starts activation, bring all devices down
-		 * Remove this when we support multiple active devices.
-		 */
-
-		NMDevice *old_dev;
-		
-		if ((old_dev = nm_manager_get_active_device (policy->manager)))
-			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (old_dev));
-	}
 }
 
 static void
@@ -566,9 +520,6 @@ nm_policy_new (NMManager *manager)
 
 	g_signal_connect (manager, "device-removed",
 					  G_CALLBACK (device_removed), policy);
-
-	g_signal_connect (manager, "state-change",
-					  G_CALLBACK (state_changed), policy);
 
 	/* Large batch of connections added, manager doesn't want us to
 	 * process each one individually.
