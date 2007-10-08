@@ -1,5 +1,3 @@
-INCLUDES = -I${top_srcdir} -I${top_srcdir}/utils
-
 libexec_PROGRAMS = nm-openvpn-auth-dialog
 
 nm_openvpn_auth_dialog_CPPFLAGS =			\
@@ -7,6 +5,7 @@ nm_openvpn_auth_dialog_CPPFLAGS =			\
 	$(GTK_CFLAGS)				\
 	$(LIBGNOMEUI_CFLAGS)			\
 	$(GNOMEKEYRING_CFLAGS)			\
+	$(NETWORK_MANAGER_CFLAGS)		\
 	-DICONDIR=\""$(datadir)/pixmaps"\"	\
 	-DGLADEDIR=\""$(gladedir)"\"		\
 	-DBINDIR=\""$(bindir)"\"		\

@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 /* nm-openvpn-service - openvpn integration with NetworkManager
  *
  * Tim Niemueller <tim@niemueller.de>
@@ -22,9 +23,20 @@
 #ifndef NM_OPENVPN_SERVICE_H
 #define NM_OPENVPN_SERVICE_H
 
-#define NM_DBUS_SERVICE_OPENVPN	"org.freedesktop.NetworkManager.openvpn"
-#define NM_DBUS_INTERFACE_OPENVPN	"org.freedesktop.NetworkManager.openvpn"
-#define NM_DBUS_PATH_OPENVPN	"/org/freedesktop/NetworkManager/openvpn"
+#include <glib/gtypes.h>
+#include <glib-object.h>
+#include <nm-vpn-plugin.h>
+
+#define NM_TYPE_OPENVPN_PLUGIN            (nm_openvpn_plugin_get_type ())
+#define NM_OPENVPN_PLUGIN(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_OPENVPN_PLUGIN, NMOpenvpnPlugin))
+#define NM_OPENVPN_PLUGIN_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_OPENVPN_PLUGIN, NMOpenvpnPluginClass))
+#define NM_IS_OPENVPN_PLUGIN(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_OPENVPN_PLUGIN))
+#define NM_IS_OPENVPN_PLUGIN_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_OPENVPN_PLUGIN))
+#define NM_OPENVPN_PLUGIN_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_OPENVPN_PLUGIN, NMOpenvpnPluginClass))
+
+#define NM_DBUS_SERVICE_OPENVPN    "org.freedesktop.NetworkManager.openvpn"
+#define NM_DBUS_INTERFACE_OPENVPN  "org.freedesktop.NetworkManager.openvpn"
+#define NM_DBUS_PATH_OPENVPN       "/org/freedesktop/NetworkManager/openvpn"
 
 /* Do not change numbers, only add if needed!
    See properties/nm-openvpn.c:connection_type_changed() for details
@@ -35,5 +47,36 @@
 #define NM_OPENVPN_CONTYPE_PASSWORD 2
 #define NM_OPENVPN_CONTYPE_X509USERPASS 3
 
+#define NM_OPENVPN_KEY_CA "ca"
+#define NM_OPENVPN_KEY_CERT "cert"
+#define NM_OPENVPN_KEY_CIPHER "cipher"
+#define NM_OPENVPN_KEY_COMP_LZO "comp-lzo"
+#define NM_OPENVPN_KEY_CONNECTION_TYPE "connection-type"
+#define NM_OPENVPN_KEY_TAP_DEV "dev"
+#define NM_OPENVPN_KEY_KEY "key"
+#define NM_OPENVPN_KEY_LOCAL_IP "local-ip"
+#define NM_OPENVPN_KEY_PROTO_TCP "proto"
+#define NM_OPENVPN_KEY_PORT "port"
+#define NM_OPENVPN_KEY_REMOTE "remote"
+#define NM_OPENVPN_KEY_REMOTE_IP "remote-ip"
+#define NM_OPENVPN_KEY_SHARED_KEY "shared-key"
+#define NM_OPENVPN_KEY_TA "ta"
+#define NM_OPENVPN_KEY_TA_DIR "ta-dir"
+#define NM_OPENVPN_KEY_USERNAME "username"
 
-#endif
+#define NM_OPENVPN_KEY_PASSWORD "password"
+#define NM_OPENVPN_KEY_CERTPASS "cert-pass"
+
+typedef struct {
+	NMVPNPlugin parent;
+} NMOpenvpnPlugin;
+
+typedef struct {
+	NMVPNPluginClass parent;
+} NMOpenvpnPluginClass;
+
+GType nm_openvpn_plugin_get_type (void);
+
+NMOpenvpnPlugin *nm_openvpn_plugin_new (void);
+
+#endif /* NM_OPENVPN_SERVICE_H */

@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 /* nm-openvpn-service-openvpn-helper - helper called after OpenVPN established
  * a connection, uses DBUS to send information back to nm-openvpn-service
  *
@@ -38,389 +39,226 @@
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
 #include <NetworkManager.h>
-#include <syslog.h>
 
 #include "nm-openvpn-service.h"
 #include "nm-utils.h"
 
 static void
-nm_log_handler (const gchar *    log_domain,
-                GLogLevelFlags   log_level,
-                const gchar *    message,
-                gpointer         ignored)
+helper_failed (DBusGConnection *connection, const char *reason)
 {
-  int syslog_priority;	
+	DBusGProxy *proxy;
+	GError *err = NULL;
 
-  switch (log_level)
-  {
-    case G_LOG_LEVEL_ERROR:
-      syslog_priority = LOG_CRIT;
-      break;
+	nm_warning ("nm-openvpn-service-openvpn-helper did not receive a valid %s from openvpn", reason);
 
-    case G_LOG_LEVEL_CRITICAL:
-      syslog_priority = LOG_ERR;
-      break;
+	proxy = dbus_g_proxy_new_for_name (connection,
+								NM_DBUS_SERVICE_OPENVPN,
+								NM_VPN_DBUS_PLUGIN_PATH,
+								NM_VPN_DBUS_PLUGIN_INTERFACE);
 
-    case G_LOG_LEVEL_WARNING:
-      syslog_priority = LOG_WARNING;
-      break;
+	dbus_g_proxy_call (proxy, "SetFailure", &err,
+				    G_TYPE_STRING, reason,
+				    G_TYPE_INVALID,
+				    G_TYPE_INVALID);
 
-    case G_LOG_LEVEL_MESSAGE:
-      syslog_priority = LOG_NOTICE;
-      break;
+	if (err) {
+		nm_warning ("Could not send failure information: %s", err->message);
+		g_error_free (err);
+	}
 
-    case G_LOG_LEVEL_DEBUG:
-      syslog_priority = LOG_DEBUG;
-      break;
+	g_object_unref (proxy);
 
-    case G_LOG_LEVEL_INFO:
-    default:
-      syslog_priority = LOG_INFO;
-      break;
-  }
-
-  syslog (syslog_priority, "%s", message);
+	exit (1);
 }
 
-void
-nm_logging_setup ()
-{
-  openlog (G_LOG_DOMAIN, LOG_CONS, LOG_DAEMON);
-  g_log_set_handler (G_LOG_DOMAIN, 
-                     G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
-                     nm_log_handler,
-                     NULL);
-}
-
-void
-nm_logging_shutdown (void)
-{
-  closelog ();
-}
-
-void 
-cleanup_and_exit(int n)
-{
-  nm_logging_shutdown();
-  exit(n);
-}
-/*
- * send_config_error
- *
- * Notify nm-openvpn-service of a config error from 'openvpn'.
- *
- */
-static void send_config_error (DBusConnection *con, const char *item)
-{
-  DBusMessage		*message;
-
-  g_return_if_fail (con != NULL);
-  g_return_if_fail (item != NULL);
-
-  if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE_OPENVPN, NM_DBUS_PATH_OPENVPN, NM_DBUS_INTERFACE_OPENVPN, "signalConfigError")))
-    {
-      nm_warning ("send_config_error(): Couldn't allocate the dbus message");
-      return;
-    }
-
-  dbus_message_append_args (message, DBUS_TYPE_STRING, &item, DBUS_TYPE_INVALID);
-  if (!dbus_connection_send (con, message, NULL))
-    nm_warning ("send_config_error(): could not send dbus message");
-  
-  dbus_message_unref (message);
-}
-
-
- /*
- * gpa_to_uint32arr
- *
- * Convert GPtrArray of uint32 to a uint32* array
- *
- */
 static void
-gpa_to_uint32arr (const GPtrArray *gpa,
-		  guint32 **uia,
-		  guint32  *uia_len)
+send_ip4_config (DBusGConnection *connection, GHashTable *config)
 {
-  
-  guint32		num_valid = 0, i = 0;
-  struct in_addr	temp_addr;
+	DBusGProxy *proxy;
+	GError *err = NULL;
 
-  *uia = NULL;
+	proxy = dbus_g_proxy_new_for_name (connection,
+								NM_DBUS_SERVICE_OPENVPN,
+								NM_VPN_DBUS_PLUGIN_PATH,
+								NM_VPN_DBUS_PLUGIN_INTERFACE);
 
-  if ( gpa->len > 0 ) {
-    /* Pass over the array first to determine how many valid entries there are */
-    num_valid = 0;
-    for (i = 0; i < gpa->len; ++i) {
-      if (inet_aton ((char *)gpa->pdata[i], &temp_addr)) {
-	num_valid++;
-      }
-    }
-    
-    /* Do the actual string->int conversion and assign to the array. */
-    if (num_valid > 0) {
-      *uia = g_new0 (guint32, num_valid);
-      for (i = 0; i < gpa->len; ++i) {
-	if (inet_aton ((char *)gpa->pdata[i], &temp_addr)) {
-	  (*uia)[i] = temp_addr.s_addr;
+	dbus_g_proxy_call (proxy, "SetIp4Config", &err,
+				    dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
+				    config,
+				    G_TYPE_INVALID,
+				    G_TYPE_INVALID);
+
+	if (err) {
+		nm_warning ("Could not send failure information: %s", err->message);
+		g_error_free (err);
 	}
-      }
-    }
-      
-    *uia_len = num_valid;
-  }
-  if (*uia == NULL) {
-    *uia     = g_malloc0 (sizeof (guint32));
-    *uia_len = 1;
-  }
+
+	g_object_unref (proxy);
 }
 
-static gboolean
-ipstr_to_uint32 (const char *ip_str, guint32 *ip)
+static GValue *
+str_to_gvalue (const char *str, gboolean try_convert)
 {
-  struct in_addr	temp_addr;
+	GValue *val;
 
-  /* Convert IPv4 address arguments from strings into numbers */
-  if (!inet_aton (ip_str, &temp_addr))
-    return FALSE;
-  *ip = temp_addr.s_addr;
-  return TRUE;
-}
+	/* Empty */
+	if (!str || strlen (str) < 1)
+		return NULL;
 
+	if (!g_utf8_validate (str, -1, NULL)) {
+		if (try_convert && !(str = g_convert (str, -1, "ISO-8859-1", "UTF-8", NULL, NULL, NULL)))
+			str = g_convert (str, -1, "C", "UTF-8", NULL, NULL, NULL);
 
-/*
- * send_config_info
- *
- * Send IP config info to nm-openvpn-service
- *
- */
-static gboolean
-send_config_info (DBusConnection *con,
-		  const char *str_vpn_gateway,
-		  const char *str_tundev,
-		  const char *str_ip4_address,
-		  const char *str_ip4_ptpaddr,
-		  const char *str_ip4_netmask,
-		  const GPtrArray *gpa_ip4_dns,
-		  const GPtrArray *gpa_ip4_nbns
-		  )
-{
-  DBusMessage *	message;
-  struct in_addr	temp_addr;
-  guint32		uint_vpn_gateway = 0;
-  guint32		uint_ip4_address = 0;
-  guint32		uint_ip4_ptpaddr = 0;
-  guint32		uint_ip4_netmask = 0xFFFFFFFF; /* Default mask of 255.255.255.255 */
-  guint32 *	        uint_ip4_dns = NULL;
-  guint32		uint_ip4_dns_len = 0;
-  guint32 *	        uint_ip4_nbns = NULL;
-  guint32		uint_ip4_nbns_len = 0;
-  gboolean        success = FALSE;
-
-  g_return_val_if_fail (con != NULL, FALSE);
-
-  if (!(message = dbus_message_new_method_call (NM_DBUS_SERVICE_OPENVPN, NM_DBUS_PATH_OPENVPN, NM_DBUS_INTERFACE_OPENVPN, "signalIP4Config")))
-    {
-      nm_warning ("send_config_error(): Couldn't allocate the dbus message");
-      return FALSE;
-    }
-
-  if (! ipstr_to_uint32 (str_vpn_gateway, &uint_vpn_gateway) ) {
-    nm_warning ("nm-openvpn-service-openvpn-helper didn't receive a valid VPN Gateway from openvpn.");
-    send_config_error (con, "VPN Gateway");
-    goto out;
-  }
-
-  if (! ipstr_to_uint32 (str_ip4_address, &uint_ip4_address) ) {
-    nm_warning ("nm-openvpn-service-openvpn-helper didn't receive a valid Internal IP4 Address from openvpn.");
-    send_config_error (con, "IP4 Address");
-    goto out;
-  }
-
-  if (str_ip4_ptpaddr && ! ipstr_to_uint32 (str_ip4_ptpaddr, &uint_ip4_ptpaddr) ) {
-    nm_warning ("nm-openvpn-service-openvpn-helper didn't receive a valid PtP IP4 Address from openvpn.");
-    send_config_error (con, "IP4 PtP Address");
-    goto out;
-  }
-
-  if (strlen (str_ip4_netmask) > 0) {
-    ipstr_to_uint32 (str_ip4_netmask, &uint_ip4_netmask);
-  }
-
-  gpa_to_uint32arr (gpa_ip4_dns, &uint_ip4_dns, &uint_ip4_dns_len);
-  gpa_to_uint32arr (gpa_ip4_nbns, &uint_ip4_nbns, &uint_ip4_nbns_len);
-
-  dbus_message_append_args (message, DBUS_TYPE_UINT32, &uint_vpn_gateway,
-			    DBUS_TYPE_STRING, &str_tundev,
-			    DBUS_TYPE_UINT32, &uint_ip4_address,
-			    DBUS_TYPE_UINT32, &uint_ip4_ptpaddr,
-			    DBUS_TYPE_UINT32, &uint_ip4_netmask,
-			    DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &uint_ip4_dns, uint_ip4_dns_len,
-			    DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32, &uint_ip4_nbns, uint_ip4_nbns_len,
-			    DBUS_TYPE_INVALID);
-  if (dbus_connection_send (con, message, NULL))
-    success = TRUE;
-  else
-    nm_warning ("send_config_error(): could not send dbus message");
-  
-  dbus_message_unref (message);
-  
-  g_free (uint_ip4_dns);
-  g_free (uint_ip4_nbns);
-
- out:
-  return success;
-}
-
-
-/*
- * See the OpenVPN man page for available environment variables.
- *
- *
- */
-
-#if 0	/* FIXME: Nothing uses this and it is static */
-/** Prints all environment variables to /tmp/environ
- */
-static void
-print_env()
-{
-  FILE *f = fopen("/tmp/environ", "w");
-  int env = 0;
-  while ( __environ[env] != NULL ) {
-    fprintf(f, "%s\n", __environ[env++]);
-  }
-  fclose(f);
-}
-#endif
-
-
-/*
- * main
- *
- */
-int main( int argc, char *argv[] )
-{
-  DBusConnection  *con;
-  DBusError        error;
-  char            *vpn_gateway = NULL;
-  char            *tundev = NULL;
-  char            *ip4_address = NULL;
-  char            *ip4_ptp = NULL;
-  char            *ip4_netmask = NULL;
-  GPtrArray       *ip4_dns = NULL;
-  GPtrArray       *ip4_nbns = NULL;
-  
-  char           **split = NULL;
-  char           **item;
-
-  char            *tmp;
-  // max(length(envname)) = length("foreign_option_") + length(to_string(MAX_INT)) + 1;
-  //                               = 15                     = 10 for 4 byte int
-  //                                                    (which should be enough for quite some time)
-  char             envname[26];
-  int              i = 1;
-  int              exit_code = 0;
-
-  g_type_init ();
-  if (!g_thread_supported ())
-    g_thread_init (NULL);
-
-  nm_logging_setup(); 	
- 
-  dbus_error_init (&error);
-  con = dbus_bus_get (DBUS_BUS_SYSTEM, &error);
-  if ((con == NULL) || dbus_error_is_set (&error))
-    {
-      nm_warning ("Could not get the system bus.  Make sure the message bus daemon is running?");
-      cleanup_and_exit (1);
-    }
-  dbus_connection_set_exit_on_disconnect (con, FALSE);
-
-  // print_env();
-
-  vpn_gateway = getenv( "trusted_ip" );
-  tundev      = getenv ("dev");
-  ip4_ptp     = getenv("ifconfig_remote");
-  ip4_address = getenv("ifconfig_local");
-  ip4_netmask = getenv("route_netmask_1");
-  
-  ip4_dns     = g_ptr_array_new();
-  ip4_nbns    = g_ptr_array_new();
-  
-  while (1) {
-    sprintf(envname, "foreign_option_%i", i++);
-    tmp = getenv( envname );
-    
-    if ( (tmp == NULL) || (strlen(tmp) == 0) ) {
-      break;
-    } else {
-      
-      if ((split = g_strsplit( tmp, " ", -1))) {
-	int size = 0;
-	for( item = split; *item; item++) {
-		++size;
+		if (!str)
+			/* Invalid */
+			return NULL;
 	}
-	if ( size != 3 ) continue;
-	
-	if (strcmp( split[0], "dhcp-option") == 0) {
-	  // Interesting, now check if DNS or NBNS/WINS
-	  if (strcmp( split[1], "DNS") == 0) {
-	    // DNS, push it!
-	    g_ptr_array_add( ip4_dns, (gpointer) split[2] );
-	  } else if (strcmp( split[1], "WINS") == 0) {
-	    // WINS, push it!
-	    g_ptr_array_add( ip4_nbns, (gpointer) split[2] );		  
-	  }
-	}
-      }
-    }      
-  }
 
-#if 0
-	{
-		FILE *file = fopen ("/tmp/vpnstuff", "w");
-		fprintf (file, "VPNGATEWAY: '%s'\n", vpn_gateway);
-		fprintf (file, "TUNDEV: '%s'\n", tundev);
-		fprintf (file, "IP4_ADDRESS: '%s'\n", ip4_address);
-		fprintf (file, "IP4_NETMASK: '%s'\n", ip4_netmask);
-		fclose (file);
-	}
-#endif
-  
-  if (!vpn_gateway) {
-    nm_warning ("nm-openvpn-service-openvpn-helper didn't receive a VPN Gateway from openvpn.");
-    send_config_error (con, "VPN Gateway");
-    exit (1);
-  }
-  if (!tundev || !g_utf8_validate (tundev, -1, NULL)) {
-    nm_warning ("nm-openvpn-service-openvpn-helper didn't receive a Tunnel Device from openvpn, or the tunnel device was not valid UTF-8.");
-    send_config_error (con, "Tunnel Device");
-    cleanup_and_exit (1);
-  }
-  if (!ip4_address) {
-    nm_warning ("nm-openvpn-service-openvpn-helper didn't receive an Internal IP4 Address from openvpn.");
-    send_config_error (con, "IP4 Address");
-    cleanup_and_exit (1);
-  }
+	val = g_slice_new0 (GValue);
+	g_value_init (val, G_TYPE_STRING);
+	g_value_set_string (val, str);
 
-  if (!ip4_netmask) {
-    ip4_netmask = g_strdup ("");
-  }
-
-  if (!send_config_info (con, vpn_gateway, tundev,
-			 ip4_address, ip4_ptp, ip4_netmask,
-			 ip4_dns, ip4_nbns)) {
-    exit_code = 1;
-  }
-  
-  g_strfreev( split );
-  g_ptr_array_free( ip4_dns, TRUE );
-  g_ptr_array_free( ip4_nbns, TRUE );
-  
-  cleanup_and_exit (exit_code);
-
-  // Dummy return; cleanup_and_exit() takes care of exit()
-  return 0;
+	return val;
 }
 
+static GValue *
+addr_to_gvalue (const char *str)
+{
+	struct in_addr	temp_addr;
+	GValue *val;
+
+	/* Empty */
+	if (!str || strlen (str) < 1)
+		return NULL;
+
+	if (!inet_aton (str, &temp_addr))
+		return NULL;
+
+	val = g_slice_new0 (GValue);
+	g_value_init (val, G_TYPE_UINT);
+	g_value_set_uint (val, temp_addr.s_addr);
+
+	return val;
+}
+
+static GValue *
+parse_addr_list (GValue *value_array, const char *str)
+{
+	char **split;
+	int i;
+	struct in_addr	temp_addr;
+	GArray *array;
+
+	/* Empty */
+	if (!str || strlen (str) < 1)
+		return value_array;
+
+	if (value_array)
+		array = (GArray *) g_value_get_boxed (value_array);
+	else
+		array = g_array_new (FALSE, FALSE, sizeof (guint));
+
+	split = g_strsplit (str, " ", -1);
+	for (i = 0; split[i]; i++) {
+		if (inet_aton (split[i], &temp_addr))
+			g_array_append_val (array, temp_addr.s_addr);
+	}
+
+	g_strfreev (split);
+
+	if (!value_array && array->len > 1) {
+		value_array = g_slice_new0 (GValue);
+		g_value_init (value_array, DBUS_TYPE_G_UINT_ARRAY);
+		g_value_set_boxed (value_array, array);
+	}
+
+	return value_array;
+}
+
+int
+main (int argc, char *argv[])
+{
+	DBusGConnection *connection;
+	GHashTable *config;
+	char *tmp;
+	GValue *val;
+	int i;
+	GError *err = NULL;
+	GValue *dns_list = NULL;
+	GValue *nbns_list = NULL;
+
+	g_type_init ();
+
+	connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &err);
+	if (!connection) {
+		nm_warning ("Could not get the system bus: %s", err->message);
+		exit (1);
+	}
+
+	config = g_hash_table_new (g_str_hash, g_str_equal);
+
+	/* Gateway */
+	val = addr_to_gvalue (getenv ("trusted_ip"));
+	if (val)
+		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_GATEWAY, val);
+	else
+		helper_failed (connection, "VPN Gateway");
+
+	/* Tunnel device */
+	val = str_to_gvalue (getenv ("dev"), FALSE);
+	if (val)
+		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_TUNDEV, val);
+	else
+		helper_failed (connection, "Tunnel Device");
+
+	/* IP address */
+	val = addr_to_gvalue (getenv ("ipconfig_local"));
+	if (val)
+		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_ADDRESS, val);
+	else
+		helper_failed (connection, "IP4 Address");
+
+	/* PTP address; for vpnc PTP address == internal IP4 address */
+	val = addr_to_gvalue (getenv ("ifconfig_remote"));
+	if (val)
+		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_PTP, val);
+	else
+		helper_failed (connection, "IP4 PTP Address");
+
+	/* Netmask */
+	val = addr_to_gvalue (getenv ("route_netmask_1"));
+	if (val)
+		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_NETMASK, val);
+
+    	/* DNS and WINS servers */
+	for (i = 1; i < 256; i++) {
+		char *env_name;
+
+		env_name = g_strdup_printf ("foreign_option_%d", i);
+		tmp = getenv (env_name);
+		g_free (env_name);
+
+		if (!tmp || strlen (tmp) < 1)
+			break;
+
+		if (!g_str_has_prefix (tmp, "dhcp-option "))
+			continue;
+
+		tmp += 12; /* strlen ("dhcp-option ") */
+
+		if (g_str_has_prefix (tmp, "DNS "))
+			dns_list = parse_addr_list (dns_list, tmp + 4);
+		else if (g_str_has_prefix (tmp, "WINS "))
+			nbns_list = parse_addr_list (nbns_list, tmp + 5);
+	}
+
+	if (dns_list)
+		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_DNS, dns_list);
+	if (nbns_list)
+		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_NBNS, nbns_list);
+
+	/* Send the config info to nm-openvpn-service */
+	send_ip4_config (connection, config);
+
+	return 0;
+}
