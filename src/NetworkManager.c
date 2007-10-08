@@ -204,25 +204,6 @@ write_pidfile (const char *pidfile)
 		nm_warning ("Closing %s failed: %s", pidfile, strerror (errno));
 }
 
-
-/*
- * nm_print_usage
- *
- * Prints program usage.
- *
- */
-static void nm_print_usage (void)
-{
-	fprintf (stderr,
-		"\n"
-		"NetworkManager monitors all network connections and automatically\n"
-		"chooses the best connection to use.  It also allows the user to\n"
-		"specify wireless access points which wireless cards in the computer\n"
-		"should associate with.\n"
-		"\n");
-}
-
-
 /*
  * main
  *
@@ -232,9 +213,9 @@ main (int argc, char *argv[])
 {
 	GOptionContext *opt_ctx = NULL;
 	gboolean		become_daemon = FALSE;
-	gboolean		show_usage = FALSE;
 	char *		pidfile = NULL;
 	char *		user_pidfile = NULL;
+	gboolean success;
 	NMPolicy *policy = NULL;
 	NMHalManager *hal_manager = NULL;
 	NMVPNManager *vpn_manager = NULL;
@@ -242,18 +223,16 @@ main (int argc, char *argv[])
 	NMDBusManager *	dbus_mgr = NULL;
 	DBusConnection *dbus_connection;
 	NMSupplicantManager * sup_mgr = NULL;
-	int exit_status = 1;
 
 	GOptionEntry options[] = {
 		{"no-daemon", 0, 0, G_OPTION_ARG_NONE, &become_daemon, "Don't become a daemon", NULL},
 		{"pid-file", 0, 0, G_OPTION_ARG_FILENAME, &user_pidfile, "Specify the location of a PID file", "filename"},
-		{"info", 0, 0, G_OPTION_ARG_NONE, &show_usage, "Show application information", NULL},
 		{NULL}
 	};
 
 	if (getuid () != 0) {
 		g_printerr ("You must be root to run NetworkManager!\n");
-		goto exit;
+		exit (1);
 	}
 
 	bindtextdomain (GETTEXT_PACKAGE, GNOMELOCALEDIR);
@@ -261,15 +240,21 @@ main (int argc, char *argv[])
 	textdomain (GETTEXT_PACKAGE);
 
 	/* Parse options */
-	opt_ctx = g_option_context_new("");
-	g_option_context_add_main_entries(opt_ctx, options, NULL);
-	g_option_context_parse(opt_ctx, &argc, &argv, NULL);
-	g_option_context_free(opt_ctx);
+	opt_ctx = g_option_context_new ("");
+	g_option_context_set_translation_domain (opt_ctx, "UTF-8");
+	g_option_context_set_ignore_unknown_options (opt_ctx, FALSE);
+	g_option_context_set_help_enabled (opt_ctx, TRUE);
+	g_option_context_add_main_entries (opt_ctx, options, NULL);
 
-	if (show_usage == TRUE) {
-		nm_print_usage();
-		exit_status = 0;
-		goto exit;
+	g_option_context_set_summary (opt_ctx,
+		"NetworkManager monitors all network connections and automatically\nchooses the best connection to use.  It also allows the user to\nspecify wireless access points which wireless cards in the computer\nshould associate with.");
+
+	success = g_option_context_parse (opt_ctx, &argc, &argv, NULL);
+	g_option_context_free (opt_ctx);
+
+	if (!success) {
+		fprintf (stderr, _("Invalid option.  Please use --help to see a list of valid options.\n"));
+		exit (1);
 	}
 
 	pidfile = g_strdup (user_pidfile ? user_pidfile : NM_DEFAULT_PID_FILE);
@@ -286,7 +271,7 @@ main (int argc, char *argv[])
 			nm_error ("Could not daemonize: %s [error %u]",
 			          g_strerror (saved_errno),
 			          saved_errno);
-			goto exit;
+			exit (1);
 		}
 		write_pidfile (pidfile);
 	}
@@ -374,8 +359,6 @@ main (int argc, char *argv[])
 	if (quit_early == TRUE)
 		goto done;
 
-	/* Run the main loop */
-	exit_status = 0;
 	g_main_loop_run (main_loop);
 
 done:
@@ -401,6 +384,5 @@ done:
 		unlink (pidfile);
 	g_free (pidfile);
 
-exit:
-	exit (exit_status);
+	exit (0);
 }

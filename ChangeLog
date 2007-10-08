@@ -1,5 +1,10 @@
 2007-10-08  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManager.c
+		- (main): error on unknown command-line options
+
+2007-10-08  Dan Williams  <dcbw@redhat.com>
+
 	Reimplement the invalid connection list.  Don't try to re-activate a
 	connection that just failed or was canceled.
 
