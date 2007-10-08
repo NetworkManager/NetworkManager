@@ -1,3 +1,17 @@
+2007-10-08  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.c
+	  src/nm-device-802-11-wireless.h
+		- (nm_device_802_11_wireless_class_init, merge_scanned_ap): new
+			'hidden-ap-found' signal (for internal use only) that allows the
+			NMManager to fill in the AP's SSID if a connection has that AP's
+			BSSID in its seen-bssids list
+
+	* src/nm-manager.c
+		- (manager_hidden_ap_found, nm_manager_add_device): attach to a
+			wireless device's hidden-ap-found signal and fill in the APs SSID
+			if possible
+
 2007-10-07  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-manager.c

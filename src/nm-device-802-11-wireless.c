@@ -87,6 +87,7 @@ enum {
 enum {
 	ACCESS_POINT_ADDED,
 	ACCESS_POINT_REMOVED,
+	HIDDEN_AP_FOUND,
 	PROPERTIES_CHANGED,
 
 	LAST_SIGNAL
@@ -188,12 +189,6 @@ static void device_cleanup (NMDevice80211Wireless *self);
 
 static int nm_device_802_11_wireless_get_bitrate (NMDevice80211Wireless *self);
 
-
-static void
-access_point_added (NMDevice80211Wireless *device, NMAccessPoint *ap)
-{
-	g_signal_emit (device, signals[ACCESS_POINT_ADDED], 0, ap);
-}
 
 static void
 access_point_removed (NMDevice80211Wireless *device, NMAccessPoint *ap)
@@ -1625,6 +1620,9 @@ merge_scanned_ap (NMDevice80211Wireless *self,
 	GSList * elt;
 	NMAccessPoint * found_ap = NULL;
 
+	/* Allow the manager to fill in the SSID if possible */
+	g_signal_emit (self, signals[HIDDEN_AP_FOUND], 0, merge_ap);
+
 	for (elt = self->priv->ap_list; elt; elt = g_slist_next (elt)) {
 		NMAccessPoint * list_ap = NM_AP (elt->data);
 		const GByteArray * list_ssid = nm_ap_get_ssid (list_ap);
@@ -1681,7 +1679,7 @@ merge_scanned_ap (NMDevice80211Wireless *self,
 		g_object_ref (merge_ap);
 		self->priv->ap_list = g_slist_append (self->priv->ap_list, merge_ap);
 		nm_ap_export_to_dbus (merge_ap);
-		access_point_added (self, merge_ap);
+		g_signal_emit (self, signals[ACCESS_POINT_ADDED], 0, merge_ap);
 	}
 }
 
@@ -2930,6 +2928,16 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMDevice80211WirelessClass, access_point_removed),
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__OBJECT,
+					  G_TYPE_NONE, 1,
+					  G_TYPE_OBJECT);
+
+	signals[HIDDEN_AP_FOUND] =
+		g_signal_new ("hidden-ap-found",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMDevice80211WirelessClass, hidden_ap_found),
 					  NULL, NULL,
 					  g_cclosure_marshal_VOID__OBJECT,
 					  G_TYPE_NONE, 1,

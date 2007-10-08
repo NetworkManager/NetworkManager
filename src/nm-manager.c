@@ -868,6 +868,60 @@ manager_device_state_changed (NMDeviceInterface *device, NMDeviceState state, gp
 	nm_manager_update_state (manager);
 }
 
+static void
+manager_hidden_ap_found (NMDeviceInterface *device,
+                         NMAccessPoint *ap,
+                         gpointer user_data)
+{
+	NMManager *manager = NM_MANAGER (user_data);
+	const struct ether_addr *ap_addr;
+	const GByteArray *ap_ssid;
+	GSList *iter;
+	GSList *connections;
+	gboolean done = FALSE;
+
+	ap_ssid = nm_ap_get_ssid (ap);
+	if (ap_ssid && ap_ssid->len)
+		return;
+
+	ap_addr = nm_ap_get_address (ap);
+	g_assert (ap_addr);
+
+	/* Look for this AP's BSSID in the seen-bssids list of a connection,
+	 * and if a match is found, copy over the SSID */
+	connections = nm_manager_get_connections (manager, NM_CONNECTION_TYPE_SYSTEM);
+	connections = g_slist_concat (connections,  nm_manager_get_connections (manager, NM_CONNECTION_TYPE_USER));
+
+	for (iter = connections; iter && !done; iter = g_slist_next (iter)) {
+		NMConnection *connection = NM_CONNECTION (iter->data);
+		NMSettingWireless *s_wireless;
+		GSList *seen_iter;
+		
+		s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_SETTING_WIRELESS);
+		if (!s_wireless || !s_wireless->seen_bssids)
+			goto next;
+		g_assert (s_wireless->ssid);
+
+		for (seen_iter = s_wireless->seen_bssids; seen_iter; seen_iter = g_slist_next (seen_iter)) {
+			struct ether_addr seen_addr;
+
+			if (!ether_aton_r ((char *) seen_iter->data, &seen_addr))
+				continue;
+
+			if (memcmp (ap_addr, &seen_addr, sizeof (struct ether_addr)))
+				continue;
+
+			/* Copy the SSID from the connection to the AP */
+			nm_ap_set_ssid (ap, s_wireless->ssid);
+			done = TRUE;
+		}
+
+next:
+		g_object_unref (connection);
+	}
+	g_slist_free (connections);
+}
+
 void
 nm_manager_add_device (NMManager *manager, NMDevice *device)
 {
@@ -883,6 +937,15 @@ nm_manager_add_device (NMManager *manager, NMDevice *device)
 	g_signal_connect (device, "state-changed",
 					  G_CALLBACK (manager_device_state_changed),
 					  manager);
+
+	/* Attach to the access-point-added signal so that the manager can fill
+	 * non-SSID-broadcasting APs with an SSID.
+	 */
+	if (NM_IS_DEVICE_802_11_WIRELESS (device)) {
+		g_signal_connect (device, "hidden-ap-found",
+						  G_CALLBACK (manager_hidden_ap_found),
+						  manager);
+	}
 
 	if (!priv->sleeping) {
 		if (!NM_IS_DEVICE_802_11_WIRELESS (device) || priv->wireless_enabled) {

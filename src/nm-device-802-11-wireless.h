@@ -69,9 +69,10 @@ struct _NMDevice80211WirelessClass
 	NMDeviceClass parent;
 
 	/* Signals */
-	void (*access_point_added) (NMDevice80211Wireless *device, NMAccessPoint *ap);
+	void (*access_point_added)   (NMDevice80211Wireless *device, NMAccessPoint *ap);
 	void (*access_point_removed) (NMDevice80211Wireless *device, NMAccessPoint *ap);
-	void (*properties_changed) (NMDevice80211Wireless *device, GHashTable *properties);
+	void (*hidden_ap_found)      (NMDevice80211Wireless *device, NMAccessPoint *ap);
+	void (*properties_changed)   (NMDevice80211Wireless *device, GHashTable *properties);
 };
 
 
