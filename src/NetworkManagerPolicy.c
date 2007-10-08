@@ -57,6 +57,19 @@ static void schedule_change_check (NMPolicy *policy);
 static NMPolicy *global_policy;
 
 
+static const char *
+get_connection_name (NMConnection *connection)
+{
+	NMSettingConnection *s_con;
+
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_SETTING_CONNECTION);
+	g_return_val_if_fail (s_con != NULL, NULL);
+
+	return s_con->name;
+}
+
 /*
  * nm_policy_auto_get_best_device
  *
@@ -170,20 +183,10 @@ nm_policy_auto_get_best_device (NMPolicy *policy,
 	g_slist_free (connections);
 
 	if (FALSE) {
-		char * con_name = g_strdup ("(none)");
-
-		if (*connection) {
-			NMSettingConnection * s_con;
-
-			s_con = (NMSettingConnection *) nm_connection_get_setting (*connection, "connection");
-			con_name = g_strdup (s_con->name);
-		}
-
 		nm_info ("AUTO: Best wired device = %s, best wireless device = %s, best connection name = '%s'",
 		         best_wired_dev ? nm_device_get_iface (NM_DEVICE (best_wired_dev)) : "(null)",
 		         best_wireless_dev ? nm_device_get_iface (NM_DEVICE (best_wireless_dev)) : "(null)",
-		         con_name);
-		g_free (con_name);
+		         *connection ? get_connection_name (*connection) : "(none)");
 	}
 
 	return *connection ? highest_priority_dev : NULL;
@@ -206,7 +209,9 @@ nm_policy_device_change_check (gpointer user_data)
 	NMPolicy *policy = (NMPolicy *) user_data;
 	GSList *iter;
 	guint32 caps;
-	NMConnection * connection = NULL;
+	NMConnection *connection = NULL;
+	NMConnection *old_connection = NULL;
+	NMActRequest *old_act_req = NULL;
 	char * specific_object = NULL;
 	NMDevice * new_dev = NULL;
 	NMDevice * old_dev = NULL;
@@ -253,6 +258,12 @@ nm_policy_device_change_check (gpointer user_data)
 
 	new_dev = nm_policy_auto_get_best_device (policy, &connection, &specific_object);
 
+	if (old_dev) {
+		old_act_req = nm_device_get_act_request (old_dev);
+		if (old_act_req)
+			old_connection = nm_act_request_get_connection (old_act_req);
+ 	}
+
 	/* Four cases here:
 	 *
 	 * 1) old device is NULL, new device is NULL - we aren't currently connected to anything, and we
@@ -275,16 +286,20 @@ nm_policy_device_change_check (gpointer user_data)
 		; /* Do nothing, wait for something like link-state to change, or an access point to be found */
 	} else if (!old_dev && new_dev) {
 		/* Activate new device */
-		nm_info ("SWITCH: no current connection, found better connection '%s'.", nm_device_get_iface (new_dev));
+		nm_info ("SWITCH: no current connection, found better connection '%s (%s)'.",
+		         connection ? get_connection_name (connection) : "(none)",
+		         nm_device_get_iface (new_dev));
 		do_switch = TRUE;
 	} else if (old_dev && !new_dev) {
 		/* Terminate current connection */
-		nm_info ("SWITCH: terminating current connection '%s' because it's no longer valid.", nm_device_get_iface (old_dev));
+		nm_info ("SWITCH: terminating current connection '%s (%s)' because it's"
+		         " no longer valid.",
+		         old_connection ? get_connection_name (old_connection) : "(none)",
+		         nm_device_get_iface (old_dev));
 		do_switch = TRUE;
 	} else if (old_dev && new_dev) {
-		NMActRequest *	old_act_req = nm_device_get_act_request (old_dev);
-		gboolean		old_user_requested = nm_act_request_get_user_requested (old_act_req);
-		gboolean		old_has_link = nm_device_has_active_link (old_dev);
+		gboolean old_user_requested = nm_act_request_get_user_requested (old_act_req);
+		gboolean old_has_link = nm_device_has_active_link (old_dev);
 
 		if (NM_IS_DEVICE_802_3_ETHERNET (old_dev)) {
 			/* Only switch if the old device was not user requested, and we are switching to
@@ -292,16 +307,17 @@ nm_policy_device_change_check (gpointer user_data)
 			 * above will prefer a wired device to a wireless device.
 			 */
 			if ((!old_user_requested || !old_has_link) && (new_dev != old_dev)) {
-				nm_info ("SWITCH: found better connection '%s' than current "
-				         "connection '%s'.",
+				nm_info ("SWITCH: found better connection '%s (%s)' than "
+				         " current connection '%s (%s)'.",
+				         connection ? get_connection_name (connection) : "(none)",
 				         nm_device_get_iface (new_dev),
+				         old_connection ? get_connection_name (old_connection) : "(none)",
 				         nm_device_get_iface (old_dev));
 				do_switch = TRUE;
 			}
 		} else if (NM_IS_DEVICE_802_11_WIRELESS (old_dev)) {
 			/* Only switch if the old device's wireless config is invalid */
 			if (NM_IS_DEVICE_802_11_WIRELESS (new_dev)) {
-				NMConnection *old_connection = nm_act_request_get_connection (old_act_req);
 				NMAccessPoint *old_ap = nm_device_802_11_wireless_get_activation_ap (NM_DEVICE_802_11_WIRELESS (old_dev));
 				int old_mode = nm_ap_get_mode (old_ap);
 				gboolean same_activating = FALSE;

@@ -1,5 +1,11 @@
 2007-10-08  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_device_change_check): print out connection name where
+			possible
+
+2007-10-08  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 	  src/nm-device-802-11-wireless.h
 		- (nm_device_802_11_wireless_class_init, merge_scanned_ap): new
