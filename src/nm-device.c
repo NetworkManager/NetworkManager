@@ -1110,7 +1110,7 @@ connection_secrets_failed_cb (NMActRequest *req,
 {
 	NMDevice *self = NM_DEVICE (user_data);
 
-	nm_device_interface_deactivate (NM_DEVICE_INTERFACE (self));
+	nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
 }
 
 static gboolean

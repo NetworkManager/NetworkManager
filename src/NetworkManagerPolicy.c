@@ -45,6 +45,8 @@ struct NMPolicy {
 	guint device_state_changed_idle_id;
 };
 
+#define INVALID_TAG "invalid"
+
 static void schedule_change_check (NMPolicy *policy);
 
 /* NMPolicy is supposed to be one of the highest classes of the
@@ -105,6 +107,20 @@ nm_policy_auto_get_best_device (NMPolicy *policy,
 	/* System connections first, then user connections */
 	connections = nm_manager_get_connections (policy->manager, NM_CONNECTION_TYPE_SYSTEM);
 	connections = g_slist_concat (connections, nm_manager_get_connections (policy->manager, NM_CONNECTION_TYPE_USER));
+
+	/* Remove connections that are in the invalid list. */
+	elt = connections;
+	while (elt) {
+		NMConnection *iter_connection = NM_CONNECTION (elt->data);
+		GSList *next = g_slist_next (elt);
+
+		if (g_object_get_data (G_OBJECT (iter_connection), INVALID_TAG)) {
+			connections = g_slist_remove_link (connections, elt);
+			g_object_unref (iter_connection);
+			g_slist_free (elt);
+		}
+		elt = next;
+	}
 
 	for (elt = nm_manager_get_devices (policy->manager); elt; elt = elt->next) {
 		NMConnection *tmp_con = NULL;
@@ -387,13 +403,38 @@ schedule_change_check (NMPolicy *policy)
 															device_change_check_done);
 }
 
+static NMConnection *
+get_device_connection (NMDevice *device)
+{
+	NMActRequest *req;
+	NMConnection *connection;
+
+	req = nm_device_get_act_request (device);
+	if (!req)
+		return NULL;
+
+	return nm_act_request_get_connection (req);
+}
+
 static void
 device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
+	NMConnection *connection = get_device_connection (device);
 
-	if (state == NM_DEVICE_STATE_FAILED || state == NM_DEVICE_STATE_CANCELLED)
+	if ((state == NM_DEVICE_STATE_FAILED) || (state == NM_DEVICE_STATE_CANCELLED)) {
 		schedule_change_check (policy);
+
+		/* Mark the connection invalid so it doesn't get automatically chosen */
+		if (connection) {
+			g_object_set_data (G_OBJECT (connection), INVALID_TAG, GUINT_TO_POINTER (TRUE));
+			nm_info ("Marking connection '%s' invalid.", get_connection_name (connection));
+		}
+	} else if (state == NM_DEVICE_STATE_ACTIVATED) {
+		/* Clear the invalid tag on the connection */
+		if (connection)
+			g_object_set_data (G_OBJECT (connection), INVALID_TAG, NULL);
+	}
 }
 
 static void

@@ -1,5 +1,21 @@
 2007-10-08  Dan Williams  <dcbw@redhat.com>
 
+	Reimplement the invalid connection list.  Don't try to re-activate a
+	connection that just failed or was canceled.
+
+	* src/nm-device.c
+		- (connection_secrets_failed_cb): fail device activation, don't just
+			deactivate the device.  Listeners have to know about the failure.
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_auto_get_best_device): exclude invalid connections from
+			the connection list given to a device's get_best_connection()
+			method
+		- (device_state_changed): tag failed connections as invalid; clear the
+			tag from successful connections
+
+2007-10-08  Dan Williams  <dcbw@redhat.com>
+
 	Fix problems with interrupted activation.  Previously, choosing an AP
 	from the menu, then choosing another one before the first connection was
 	successful wouldn't deactivate the device before starting the new connection
