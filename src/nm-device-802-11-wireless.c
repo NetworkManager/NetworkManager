@@ -1196,7 +1196,7 @@ nm_device_802_11_wireless_get_ssid (NMDevice80211Wireless *self)
 	}
 
 	len = wrq.u.essid.length;
-	if (!nm_utils_is_empty_ssid (ssid, len)) {
+	if (!nm_utils_is_empty_ssid ((guint8 *) ssid, len)) {
 		/* Some drivers include nul termination in the SSID, so let's
 		 * remove it here before further processing. WE-21 changes this
 		 * to explicitly require the length _not_ to include nul

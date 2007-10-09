@@ -128,11 +128,13 @@ G_STMT_START								\
 } G_STMT_END
 
 /* SSID helpers */
-gboolean    nm_utils_is_empty_ssid    (const char * ssid, int len);
+gboolean    nm_utils_is_empty_ssid    (const guint8 * ssid, int len);
 const char *nm_utils_escape_ssid      (const guint8 *ssid, guint32 len);
 gboolean    nm_utils_same_ssid        (const GByteArray * ssid1,
 							    const GByteArray * ssid2,
 							    gboolean ignore_trailing_null);
+
+char *nm_utils_ssid_to_utf8 (const char *ssid, guint32 len);
 
 GHashTable *nm_utils_gvalue_hash_dup  (GHashTable *hash);
 char       *nm_utils_garray_to_string (GArray *array);

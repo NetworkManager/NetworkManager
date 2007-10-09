@@ -1,5 +1,11 @@
 2007-10-09  Tambet Ingo  <tambet@gmail.com>
 
+	* libnm-util/nm-utils.c (nm_utils_is_empty_ssid): Convert the ssid type to
+	"guint8 *" since it's usually used with GByteArray->data.
+	(nm_utils_ssid_to_utf8): Add it back, the applet needs it.
+
+2007-10-09  Tambet Ingo  <tambet@gmail.com>
+
 	* src/NetworkManagerUtils.c
 	(nm_utils_is_empty_ssid):
 	(nm_utils_escape_ssid):

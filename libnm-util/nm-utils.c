@@ -31,9 +31,223 @@
 #include <dbus/dbus.h>
 #include "nm-utils.h"
 
+struct EncodingTriplet
+{
+	const char *encoding1;
+	const char *encoding2;
+	const char *encoding3;
+};
+
+struct IsoLangToEncodings
+{
+	const char *	lang;
+	struct EncodingTriplet encodings;
+};
+
+/* 5-letter language codes */
+static const struct IsoLangToEncodings isoLangEntries5[] =
+{
+	/* Simplified Chinese */
+	{ "zh_cn",	{"euc-cn",	"gb2312",			"gb18030"} },	/* PRC */
+	{ "zh_sg",	{"euc-cn",	"gb2312",			"gb18030"} },	/* Singapore */
+
+	/* Traditional Chinese */
+	{ "zh_tw",	{"big5",		"euc-tw",			NULL} },		/* Taiwan */
+	{ "zh_hk",	{"big5",		"euc-tw",			"big5-hkcs"} },/* Hong Kong */
+	{ "zh_mo",	{"big5",		"euc-tw",			NULL} },		/* Macau */
+
+	/* Table end */
+	{ NULL, {NULL, NULL, NULL} }
+};
+
+/* 2-letter language codes; we don't care about the other 3 in this table */
+static const struct IsoLangToEncodings isoLangEntries2[] =
+{
+	/* Japanese */
+	{ "ja",		{"euc-jp",	"shift_jis",		"iso-2022-jp"} },
+
+	/* Korean */
+	{ "ko",		{"euc-kr",	"iso-2022-kr",		"johab"} },
+
+	/* Thai */
+	{ "th",		{"iso-8859-11","windows-874",		NULL} },
+
+	/* Central European */
+	{ "hu",		{"iso-8859-2",	"windows-1250",	NULL} },	/* Hungarian */
+	{ "cs",		{"iso-8859-2",	"windows-1250",	NULL} },	/* Czech */
+	{ "hr",		{"iso-8859-2",	"windows-1250",	NULL} },	/* Croatian */
+	{ "pl",		{"iso-8859-2",	"windows-1250",	NULL} },	/* Polish */
+	{ "ro",		{"iso-8859-2",	"windows-1250",	NULL} },	/* Romanian */
+	{ "sk",		{"iso-8859-2",	"windows-1250",	NULL} },	/* Slovakian */
+	{ "sl",		{"iso-8859-2",	"windows-1250",	NULL} },	/* Slovenian */
+	{ "sh",		{"iso-8859-2",	"windows-1250",	NULL} },	/* Serbo-Croatian */
+
+	/* Cyrillic */
+	{ "ru",		{"koi8-r",	"windows-1251",	"iso-8859-5"} },	/* Russian */
+	{ "be",		{"koi8-r",	"windows-1251",	"iso-8859-5"} },	/* Belorussian */
+	{ "bg",		{"windows-1251","koi8-r",		"iso-8859-5"} },	/* Bulgarian */
+	{ "mk",		{"koi8-r",	"windows-1251",	"iso-8859-5"} },	/* Macedonian */
+	{ "sr",		{"koi8-r",	"windows-1251",	"iso-8859-5"} },	/* Serbian */
+	{ "uk",		{"koi8-u",	"koi8-r",			"windows-1251"} },	/* Ukranian */
+
+	/* Arabic */
+	{ "ar",		{"iso-8859-6",	"windows-1256",	NULL} },
+
+	/* Balitc */
+	{ "et",		{"iso-8859-4",	"windows-1257",	NULL} },	/* Estonian */
+	{ "lt",		{"iso-8859-4",	"windows-1257",	NULL} },	/* Lithuanian */
+	{ "lv",		{"iso-8859-4",	"windows-1257",	NULL} },	/* Latvian */
+
+	/* Greek */
+	{ "el",		{"iso-8859-7",	"windows-1253",	NULL} },
+
+	/* Hebrew */
+	{ "he",		{"iso-8859-8",	"windows-1255",	NULL} },
+	{ "iw",		{"iso-8859-8",	"windows-1255",	NULL} },
+
+	/* Turkish */
+	{ "tr",		{"iso-8859-9",	"windows-1254",	NULL} },
+
+	/* Table end */
+	{ NULL, {NULL, NULL, NULL} }
+};
+
+
+static GHashTable * langToEncodings5 = NULL;
+static GHashTable * langToEncodings2 = NULL;
+
+static void
+init_lang_to_encodings_hash (void)
+{
+	static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
+
+	g_static_mutex_lock (&mutex);
+	if (G_UNLIKELY (!langToEncodings5 || !langToEncodings2))
+	{
+		const struct IsoLangToEncodings *	enc = &isoLangEntries5[0];
+
+		/* Five-letter codes */
+		langToEncodings5 = g_hash_table_new (g_str_hash, g_str_equal);
+		while (enc->lang)
+		{
+			g_hash_table_insert (langToEncodings5, (gpointer) enc->lang,
+					(gpointer) &enc->encodings);
+			enc++;
+		}
+
+		/* Two-letter codes */
+		enc = &isoLangEntries2[0];
+		langToEncodings2 = g_hash_table_new (g_str_hash, g_str_equal);
+		while (enc->lang)
+		{
+			g_hash_table_insert (langToEncodings2, (gpointer) enc->lang,
+					(gpointer) &enc->encodings);
+			enc++;
+		}
+	}
+	g_static_mutex_unlock (&mutex);
+}
+
+
+static gboolean
+get_encodings_for_lang (const char *lang,
+                        char **encoding1,
+                        char **encoding2,
+                        char **encoding3)
+{
+	struct EncodingTriplet *	encodings;
+	gboolean				success = FALSE;
+	char *				tmp_lang;
+
+	g_return_val_if_fail (lang != NULL, FALSE);
+	g_return_val_if_fail (encoding1 != NULL, FALSE);
+	g_return_val_if_fail (encoding2 != NULL, FALSE);
+	g_return_val_if_fail (encoding3 != NULL, FALSE);
+
+	*encoding1 = "iso-8859-1";
+	*encoding2 = "windows-1251";
+	*encoding3 = NULL;
+
+	init_lang_to_encodings_hash ();
+
+	tmp_lang = g_strdup (lang);
+	if ((encodings = g_hash_table_lookup (langToEncodings5, tmp_lang)))
+	{
+		*encoding1 = (char *) encodings->encoding1;
+		*encoding2 = (char *) encodings->encoding2;
+		*encoding3 = (char *) encodings->encoding3;
+		success = TRUE;
+	}
+
+	/* Truncate tmp_lang to length of 2 */
+	if (strlen (tmp_lang) > 2)
+		tmp_lang[2] = '\0';
+	if (!success && (encodings = g_hash_table_lookup (langToEncodings2, tmp_lang)))
+	{
+		*encoding1 = (char *) encodings->encoding1;
+		*encoding2 = (char *) encodings->encoding2;
+		*encoding3 = (char *) encodings->encoding3;
+		success = TRUE;
+	}
+
+	g_free (tmp_lang);
+	return success;
+}
+
+
+char *
+nm_utils_ssid_to_utf8 (const char *ssid, guint32 len)
+{
+	char * new_ssid = NULL;
+	char buf[IW_ESSID_MAX_SIZE + 1];
+	guint32 buf_len = MIN (sizeof (buf) - 1, len);
+	char * lang;
+	char *e1 = NULL, *e2 = NULL, *e3 = NULL;
+
+	g_return_val_if_fail (ssid != NULL, NULL);
+
+	memset (buf, 0, sizeof (buf));
+	memcpy (buf, ssid, buf_len);
+
+	if (g_utf8_validate (buf, buf_len, NULL)) {
+		new_ssid = g_strdup (buf);
+		goto out;
+	}
+
+	/* Even if the local encoding is UTF-8, LANG may give
+	 * us a clue as to what encoding SSIDs are more likely to be in.
+	 */
+	g_get_charset ((const char **)(&e1));
+	if ((lang = getenv ("LANG"))) {
+		char * dot;
+
+		lang = g_ascii_strdown (lang, -1);
+		if ((dot = strchr (lang, '.')))
+			*dot = '\0';
+
+		get_encodings_for_lang (lang, &e1, &e2, &e3);
+		g_free (lang);
+	}
+
+	new_ssid = g_convert (buf, buf_len, "UTF-8", e1, NULL, NULL, NULL);
+	if (!new_ssid && e2) {
+		new_ssid = g_convert (buf, buf_len, "UTF-8", e2, NULL, NULL, NULL);
+	}
+	if (!new_ssid && e3) {
+		new_ssid = g_convert (buf, buf_len, "UTF-8", e3, NULL, NULL, NULL);
+	}
+	if (!new_ssid) {
+		new_ssid = g_convert_with_fallback (buf, buf_len, "UTF-8", e1,
+	                "?", NULL, NULL, NULL);
+	}
+
+out:
+	return new_ssid;
+}
+
 /* Shamelessly ripped from the Linux kernel ieee80211 stack */
 gboolean
-nm_utils_is_empty_ssid (const char * ssid, int len)
+nm_utils_is_empty_ssid (const guint8 * ssid, int len)
 {
         /* Single white space is for Linksys APs */
         if (len == 1 && ssid[0] == ' ')
@@ -54,7 +268,7 @@ nm_utils_escape_ssid (const guint8 * ssid, guint32 len)
 	const guint8 *s = ssid;
 	char *d = escaped;
 
-	if (nm_utils_is_empty_ssid ((const char *) ssid, len)) {
+	if (nm_utils_is_empty_ssid (ssid, len)) {
 		memcpy (escaped, "<hidden>", sizeof ("<hidden>"));
 		return escaped;
 	}
