@@ -1618,9 +1618,21 @@ merge_scanned_ap (NMDevice80211Wireless *self,
 {	
 	GSList * elt;
 	NMAccessPoint * found_ap = NULL;
+	const GByteArray *ssid;
 
-	/* Allow the manager to fill in the SSID if possible */
-	g_signal_emit (self, signals[HIDDEN_AP_FOUND], 0, merge_ap);
+	/* Let the manager try to fill in the SSID from seen-bssids lists
+	 * if it can
+	 */
+	ssid = nm_ap_get_ssid (merge_ap);
+	if (!ssid || !ssid->len)
+		g_signal_emit (self, signals[HIDDEN_AP_FOUND], 0, merge_ap);
+
+	/* If the AP is not broadcasting its SSID and matching the SSID with a
+	 * seen-bssids entry failed, mark the AP as non-broadcasting
+	 */
+	ssid = nm_ap_get_ssid (merge_ap);
+	if (!ssid || !ssid->len)
+		nm_ap_set_broadcast (merge_ap, FALSE);
 
 	for (elt = self->priv->ap_list; elt; elt = g_slist_next (elt)) {
 		NMAccessPoint * list_ap = NM_AP (elt->data);
@@ -1634,9 +1646,11 @@ merge_scanned_ap (NMDevice80211Wireless *self,
 		int merge_mode = nm_ap_get_mode (merge_ap);
 		double merge_freq = nm_ap_get_freq (merge_ap);
 
-		/* SSID match */
-		if (   !list_ssid
-		    || !merge_ssid
+		/* SSID match; if both APs are hiding their SSIDs,
+		 * let matching continue on BSSID and other properties
+		 */
+		if (   (!list_ssid && merge_ssid)
+		    || (list_ssid && !merge_ssid)
 		    || !nm_utils_same_ssid (list_ssid, merge_ssid, TRUE))
 			continue;
 
@@ -1656,6 +1670,8 @@ merge_scanned_ap (NMDevice80211Wireless *self,
 		if ((int) list_freq != (int) merge_freq)
 			continue;
 
+		// FIXME: make sure WPA AP doesn't get matched with WEP by taking
+		// flags into AP account
 		found_ap = list_ap;
 		break;
 	}
@@ -1781,15 +1797,6 @@ supplicant_iface_scanned_ap_cb (NMSupplicantInterface * iface,
 		return;
 
 	set_ap_strength_from_properties (self, ap, properties);
-
-	/* If the AP is not broadcasting its SSID, try to fill it in here from our
-	 * allowed list where we cache known MAC->SSID associations.
-	 */
-	if (!nm_ap_get_ssid (ap)) {
-		nm_ap_set_broadcast (ap, FALSE);
-// FIXME: get the saved BSSID from NMConnection/NMSettings 
-//		nm_ap_list_copy_one_ssid_by_address (ap, app_data->allowed_ap_list);
-	}
 
 	/* Add the AP to the device's AP list */
 	merge_scanned_ap (self, ap);

@@ -1,3 +1,11 @@
+2007-10-09  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.c
+		- (supplicant_iface_scanned_ap_cb): set the non-broadcast flag elsewhere
+		- (merge_scanned_ap): only have the manager fill the SSID if the AP
+			isn't broadcasting its SSID; set the non-broadcast flag here; fix
+			merging of non-SSID-broadcasting APs
+
 2007-10-09  Tambet Ingo  <tambet@gmail.com>
 
 	* libnm-util/nm-utils.c (nm_utils_is_empty_ssid): Convert the ssid type to
