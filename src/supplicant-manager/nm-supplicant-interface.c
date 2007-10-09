@@ -483,7 +483,8 @@ bssid_properties_cb  (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_
 	if (!dbus_g_proxy_end_call (proxy, call_id, &err,
 								dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE), &hash,
 								G_TYPE_INVALID)) {
-		nm_warning ("Couldn't retrieve BSSID properties: %s.", err->message);
+		if (!strstr (err->message, "The BSSID requested was invalid"))
+			nm_warning ("Couldn't retrieve BSSID properties: %s.", err->message);
 		g_error_free (err);
 	} else {
 		g_signal_emit (info->interface,
