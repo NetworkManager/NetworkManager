@@ -1,3 +1,18 @@
+2007-10-08  Tambet Ingo  <tambet@gmail.com>
+
+	* src/NetworkManager.c (main): When dbus manager doesn't want to start, complain
+	about dbus manager, not named manager.
+	Make sure hal_manager and dbus_mgr are created before trying to unreference.
+
+	* src/nm-dbus-manager.c: There was an issue with priv->proxy: We have a signal
+	handler for it's 'destroy' signal - we use it to catch disconnects from dbus.
+	However, the same signal is emitted when we destroy it and there's 
+	nm_dbus_manager_cleanup -> destroy_cb -> nm_dbus_manager_cleanup cycle.
+
+	(nm_dbus_manager_cleanup): Let go of the DBusGProxy before
+	releasing the DBusGConnection, since proxy needs a conneciton.
+	(destroy_cb): Set the private proxy to NULL before cleaning up the manager.
+
 2007-10-08  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManager.c

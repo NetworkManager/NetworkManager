@@ -344,7 +344,7 @@ main (int argc, char *argv[])
 
 	/* Start our DBus service */
 	if (!nm_dbus_manager_start_service (dbus_mgr)) {
-		nm_warning ("Failed to start the named manager.");
+		nm_warning ("Failed to start the dbus manager.");
 		goto done;
 	}
 
@@ -367,7 +367,9 @@ done:
 	if (vpn_manager)
 		g_object_unref (vpn_manager);
 
-	nm_hal_manager_destroy (hal_manager);
+	if (hal_manager)
+		nm_hal_manager_destroy (hal_manager);
+
 	if (policy)
 		nm_policy_destroy (policy);
 
@@ -377,7 +379,9 @@ done:
 	if (sup_mgr)
 		g_object_unref (sup_mgr);
 
-	g_object_unref (dbus_mgr);
+	if (dbus_mgr)
+		g_object_unref (dbus_mgr);
+
 	nm_logging_shutdown ();
 
 	if (pidfile)

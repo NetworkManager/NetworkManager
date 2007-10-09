@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 /*
  *  Copyright (C) 2006 Red Hat, Inc.
  *
@@ -179,15 +180,15 @@ nm_dbus_manager_cleanup (NMDBusManager *self)
 {
 	NMDBusManagerPrivate *priv = NM_DBUS_MANAGER_GET_PRIVATE (self);
 
+	if (priv->proxy) {
+		g_object_unref (priv->proxy);
+		priv->proxy = NULL;
+	}
+
 	if (priv->g_connection) {
 		dbus_g_connection_unref (priv->g_connection);
 		priv->g_connection = NULL;
 		priv->connection = NULL;
-	}
-
-	if (priv->proxy) {
-		g_object_unref (priv->proxy);
-		priv->proxy = NULL;
 	}
 
 	priv->started = FALSE;
@@ -556,6 +557,8 @@ destroy_cb (DBusGProxy *proxy, gpointer user_data)
 
 	/* Clean up existing connection */
 	nm_info ("disconnected by the system bus.");
+	NM_DBUS_MANAGER_GET_PRIVATE (self)->proxy = NULL;
+
 	nm_dbus_manager_cleanup (self);
 
 	g_signal_emit (G_OBJECT (self), 
@@ -687,8 +690,7 @@ nm_dbus_manager_start_service (NMDBusManager *self)
 	}
 
 	if (request_name_result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
-		nm_warning ("Could not acquire the NetworkManager service as it"
-		            "is already taken.  Return: %d",
+		nm_warning ("Could not acquire the NetworkManager service as it is already taken.",
 		            request_name_result);
 		goto out;
 	}
