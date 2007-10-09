@@ -138,11 +138,6 @@ nm_ip_up (void *data, int arg)
 	guint32 ip4_wins_2;
 	guint32 ip4_netmask = 0xFFFFFFFF; /* Default mask of 255.255.255.255 */
 
-	if (!ifname) {
-		g_warning ("Didn't receive a tunnel device name");
-		return;
-	}
-
 	ip4_address = ipcp_gotoptions[ifunit].ouraddr;
 	if (!ip4_address) {
 		g_warning ("Didn't receive an internal IP from pppd");

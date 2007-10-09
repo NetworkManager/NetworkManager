@@ -371,7 +371,6 @@ real_get_best_connection (NMDevice *dev,
 	NMDevice8023Ethernet * self = NM_DEVICE_802_3_ETHERNET (dev);
 	BestConnectionInfo find_info;
 	guint32 caps;
-	gboolean link_active;
 
 	caps = nm_device_get_capabilities (dev);
 

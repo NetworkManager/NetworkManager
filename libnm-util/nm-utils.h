@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 /* NetworkManager -- Network link manager
  *
  * Ray Strode <rstrode@redhat.com>
@@ -126,10 +127,12 @@ G_STMT_START								\
 	G_BREAKPOINT ();						\
 } G_STMT_END
 
-gchar *nm_dbus_escape_object_path (const gchar *utf8_string);
-gchar *nm_dbus_unescape_object_path (const gchar *object_path);
-
-char *nm_utils_ssid_to_utf8 (const char *ssid, guint32 len);
+/* SSID helpers */
+gboolean    nm_utils_is_empty_ssid    (const char * ssid, int len);
+const char *nm_utils_escape_ssid      (const guint8 *ssid, guint32 len);
+gboolean    nm_utils_same_ssid        (const GByteArray * ssid1,
+							    const GByteArray * ssid2,
+							    gboolean ignore_trailing_null);
 
 GHashTable *nm_utils_gvalue_hash_dup  (GHashTable *hash);
 char       *nm_utils_garray_to_string (GArray *array);

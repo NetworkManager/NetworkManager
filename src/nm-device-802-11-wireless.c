@@ -536,7 +536,6 @@ set_current_ap (NMDevice80211Wireless *self, NMAccessPoint *new_ap)
 {
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 	GValue value = {0, };
-	gboolean changed;
 	char *old_path = NULL;
 
 	g_return_if_fail (NM_IS_DEVICE_802_11_WIRELESS (self));
@@ -2432,7 +2431,6 @@ static NMActStageReturn
 real_act_stage1_prepare (NMDevice *dev)
 {
 	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
-	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 	NMAccessPoint *ap;
 
 	/* Make sure we've got an AP to connect to */
@@ -2692,7 +2690,6 @@ static void
 activation_success_handler (NMDevice *dev)
 {
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
-	struct ether_addr	addr;
 	NMAccessPoint *	ap;
 	gboolean			automatic;
 
@@ -2809,7 +2806,6 @@ get_property (GObject *object, guint prop_id,
 {
 	NMDevice80211Wireless *device = NM_DEVICE_802_11_WIRELESS (object);
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device);
-	NMAccessPoint *ap;
 	struct ether_addr hw_addr;
 	char hw_addr_buf[20];
 

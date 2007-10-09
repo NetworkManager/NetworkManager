@@ -530,8 +530,6 @@ nm_client_get_active_connections (NMClient *client)
 void
 nm_client_free_active_connection_element (NMClientActiveConnection *elt)
 {
-	GSList *iter;
-
 	g_return_if_fail (elt != NULL);
 
 	g_free (elt->service_name);

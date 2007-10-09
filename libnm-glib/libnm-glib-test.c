@@ -10,50 +10,9 @@
 #include "nm-device.h"
 #include "nm-device-802-3-ethernet.h"
 #include "nm-device-802-11-wireless.h"
+#include "nm-utils.h"
 
-
-/* Shamelessly ripped from the Linux kernel ieee80211 stack */
-static gboolean
-nm_utils_is_empty_ssid (const char * ssid, int len)
-{
-        /* Single white space is for Linksys APs */
-        if (len == 1 && ssid[0] == ' ')
-                return TRUE;
-
-        /* Otherwise, if the entire ssid is 0, we assume it is hidden */
-        while (len--) {
-                if (ssid[len] != '\0')
-                        return FALSE;
-        }
-        return TRUE;
-}
-
-static const char *
-nm_utils_escape_ssid (const char * ssid, guint32 len)
-{
-	static char escaped[IW_ESSID_MAX_SIZE * 2 + 1];
-	const char *s = ssid;
-	char *d = escaped;
-
-	if (nm_utils_is_empty_ssid (ssid, len)) {
-		memcpy (escaped, "<hidden>", sizeof ("<hidden>"));
-		return escaped;
-	}
-
-	len = MIN (len, (guint32) IW_ESSID_MAX_SIZE);
-	while (len--) {
-		if (*s == '\0') {
-			*d++ = '\\';
-			*d++ = '0';
-			s++;
-		} else {
-			*d++ = *s++;
-		}
-	}
-	*d = '\0';
-	return escaped;
-}
-
+#if 0
 static gboolean
 test_wireless_enabled (NMClient *client)
 {
@@ -71,6 +30,7 @@ test_wireless_enabled (NMClient *client)
 
 	return TRUE;
 }
+#endif
 
 static gboolean
 test_get_state (NMClient *client)
@@ -178,7 +138,7 @@ dump_access_point (NMAccessPoint *ap)
 	g_print ("\tFlags: 0x%X\n", nm_access_point_get_flags (ap));
 	g_print ("\tWPA Flags: 0x%X\n", nm_access_point_get_wpa_flags (ap));
 	g_print ("\tRSN Flags: 0x%X\n", nm_access_point_get_rsn_flags (ap));
-	g_print ("\tFrequency: %f\n", nm_access_point_get_frequency (ap));
+	g_print ("\tFrequency: %u\n", nm_access_point_get_frequency (ap));
 
 	g_print ("\tMode: %d\n", nm_access_point_get_mode (ap));
 	g_print ("\tRate: %d\n", nm_access_point_get_rate (ap));
@@ -291,7 +251,7 @@ device_removed_cb (NMClient *client, NMDevice *device, gpointer user_data)
 	dump_device (device);
 }
 
-
+#if 0
 static gboolean
 device_deactivate (gpointer user_data)
 {
@@ -318,6 +278,7 @@ device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 					   device);
 	}
 }
+#endif
 
 static void
 manager_running (NMClient *client, gboolean running, gpointer user_data)

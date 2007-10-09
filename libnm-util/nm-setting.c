@@ -172,6 +172,7 @@ boolean_to_gvalue (gboolean b)
 	return val;
 }
 
+#if 0
 static GValue *
 int_to_gvalue (int i)
 {
@@ -183,6 +184,7 @@ int_to_gvalue (int i)
 
 	return val;
 }
+#endif
 
 static GValue *
 uint_to_gvalue (guint32 i)
@@ -208,6 +210,7 @@ uint64_to_gvalue (guint64 i)
 	return val;
 }
 
+#if 0
 static GValue *
 byte_to_gvalue (guchar c)
 {
@@ -219,6 +222,7 @@ byte_to_gvalue (guchar c)
 
 	return val;
 }
+#endif
 
 static GValue *
 byte_array_to_gvalue (GByteArray *array)
@@ -763,7 +767,6 @@ static void
 setting_wireless_destroy (NMSetting *setting)
 {
 	NMSettingWireless *self = (NMSettingWireless *) setting;
-	GSList *iter;
 
 	g_free (self->mode);
 	g_free (self->band);
@@ -1380,7 +1383,6 @@ setting_vpn_properties_update_secrets (NMSetting *setting,
                                        GHashTable *secrets)
 {
 	NMSettingVPNProperties *self = (NMSettingVPNProperties *) setting;
-	SettingMember *m;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (secrets != NULL, FALSE);

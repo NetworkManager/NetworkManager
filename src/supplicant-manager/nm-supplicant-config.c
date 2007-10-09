@@ -140,16 +140,6 @@ nm_info ("Config: added '%s' value '%s'", key, secret ? "<omitted>" : &buf[0]);
 	return TRUE;
 }
 
-static gboolean
-nm_supplicant_config_remove_option (NMSupplicantConfig *self,
-                                    const char * key)
-{
-	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
-	g_return_val_if_fail (key != NULL, FALSE);
-
-	return g_hash_table_remove (NM_SUPPLICANT_CONFIG_GET_PRIVATE (self)->config, key);
-}
-
 static void
 nm_supplicant_config_finalize (GObject *object)
 {
@@ -265,8 +255,8 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 		priv->ap_scan = 2;
 
 	if (!nm_supplicant_config_add_option (self, "ssid",
- 	                                     setting->ssid->data,
- 	                                     setting->ssid->len,
+					      (char *) setting->ssid->data,
+					      setting->ssid->len,
  	                                     FALSE)) {
 		nm_warning ("Error adding SSID to supplicant config.");
 		return FALSE;
@@ -289,8 +279,8 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 
 	if (setting->bssid) {
 		if (!nm_supplicant_config_add_option (self, "bssid",
-	 	                                     setting->bssid->data,
-	 	                                     setting->bssid->len,
+						      (char *) setting->bssid->data,
+						      setting->bssid->len,
 	 	                                     FALSE)) {
 			nm_warning ("Error adding BSSID to supplicant config.");
 			return FALSE;

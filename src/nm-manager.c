@@ -1,5 +1,6 @@
 /* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
+#include <netinet/ether.h>
 #include <string.h>
 
 #include "nm-manager.h"
@@ -1266,7 +1267,6 @@ static GValueArray *
 add_one_connection_element (NMManager *manager,
                             NMDevice *device)
 {
-	GValueArray *elt;
 	static GType type = 0, ao_type = 0;
 	GValue entry = {0, };
 	GPtrArray *dev_array = NULL;
@@ -1331,9 +1331,6 @@ impl_manager_get_active_connections (NMManager *manager,
                                      GError **err)
 {
 	NMManagerPrivate *priv;
-	GType type, aoao_type, ao_type;
-	DBusGTypeSpecializedAppendContext ctx;
-	GValue val = {0, };
 	GSList *iter;
 
 	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);

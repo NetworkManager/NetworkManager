@@ -279,52 +279,6 @@ _nmu_dbus_add_dict_entry_uint32_array (DBusMessageIter *iter_dict,
 }
 
 
-static dbus_bool_t
-_nmu_dbus_add_dict_entry_string_array (DBusMessageIter *iter_dict,
-                                       const char *key,
-                                       const char **items,
-                                       const dbus_uint32_t num_items)
-{
-	DBusMessageIter iter_dict_entry, iter_dict_val, iter_array;
-	dbus_uint32_t i;
-
-	if (!_nmu_dbus_add_dict_entry_start (iter_dict,
-	                                     &iter_dict_entry,
-	                                     key,
-	                                     DBUS_TYPE_ARRAY))
-		return FALSE;
-
-	if (!dbus_message_iter_open_container (&iter_dict_entry,
-	                                       DBUS_TYPE_VARIANT,
-	                                       DBUS_TYPE_ARRAY_AS_STRING
-	                                       DBUS_TYPE_STRING_AS_STRING,
-	                                       &iter_dict_val))
-		return FALSE;
-
-	if (!dbus_message_iter_open_container (&iter_dict_val,
-	                                       DBUS_TYPE_ARRAY,
-	                                       DBUS_TYPE_BYTE_AS_STRING,
-	                                       &iter_array))
-		return FALSE;
-
-	for (i = 0; i < num_items; i++) {
-		if (!dbus_message_iter_append_basic (&iter_array,
-		                                     DBUS_TYPE_STRING,
-		                                     &(items[i])))
-			return FALSE;
-	}
-	
-	if (!dbus_message_iter_close_container (&iter_dict_val, &iter_array))
-		return FALSE;
-
-	if (!_nmu_dbus_add_dict_entry_end (iter_dict,
-	                                   &iter_dict_entry,
-	                                   &iter_dict_val))
-		return FALSE;
-
-	return TRUE;
-}
-
 /**
  * Add a string entry to the dict.
  *

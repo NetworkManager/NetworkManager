@@ -407,7 +407,6 @@ static NMConnection *
 get_device_connection (NMDevice *device)
 {
 	NMActRequest *req;
-	NMConnection *connection;
 
 	req = nm_device_get_act_request (device);
 	if (!req)

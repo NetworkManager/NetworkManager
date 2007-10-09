@@ -1,3 +1,69 @@
+2007-10-09  Tambet Ingo  <tambet@gmail.com>
+
+	* src/NetworkManagerUtils.c
+	(nm_utils_is_empty_ssid):
+	(nm_utils_escape_ssid):
+	(nm_utils_same_ssid): Remove. These functions are copied and pasted in a 
+	lot of places, so they belong to libnm-utils instead.
+
+	Now with 100% less compiler warnings:
+
+	* libnm-util/nm-utils.c (nm_dbus_escape_object_path): Remove, unused.
+	(nm_dbus_unescape_object_path): Ditto.
+	(nm_utils_ssid_to_utf8): Ditto.
+	(nm_utils_is_empty_ssid): Move here from src/NetworkManagerUtils.c
+	(nm_utils_escape_ssid): Ditto.
+	(nm_utils_same_ssid): Ditto.
+
+	* src/nm-manager.c: Include 'netinet/ether.h' for ether_aton_r.
+	(add_one_connection_element): Remove an unused variable.
+	(impl_manager_get_active_connections): Ditto.
+
+	* src/NetworkManagerPolicy.c (get_device_connection): Remove an unused
+	variable.
+
+	* src/nm-dbus-manager.c (nm_dbus_manager_start_service): Remove a leftover
+	from the previous commit.
+
+	* src/nm-device-802-11-wireless.c (set_current_ap): Remove unused variable.
+	(real_act_stage1_prepare): Ditto.
+	(activation_success_handler): Ditto.
+	(get_property): Ditto.
+
+	* src/nm-device-802-3-ethernet.c (real_get_best_connection): Remove unused
+	variable.
+
+	* src/ppp-manager/nm-pppd-plugin.c (nm_ip_up): Remove the check for 'ifname',
+	it's always set.
+
+	* src/supplicant-manager/nm-supplicant-config.c 
+	(nm_supplicant_config_add_setting_wireless): Cast the GByteArray's 'guint8 *'
+	to expected "char *".
+	(nm_supplicant_config_add_setting_wireless): Ditto.
+	(nm_supplicant_config_remove_option): Remove, not used.
+
+	* libnm-glib/libnm-glib-test.c (dump_access_point): Frequency is a guint32,
+	not double.
+	(test_wireless_enabled): Ifdef out unused function.
+	(device_deactivate): Ditto.
+	(device_state_changed): Ditto.
+	(nm_utils_is_empty_ssid): Remove, it's now in libnm-utils.
+	(nm_utils_escape_ssid): Ditto.
+
+	* test/nm-tool.c (nm_utils_escape_ssid): Remove, it's now in libnm-utils.
+	(nm_utils_is_empty_ssid): Ditto.
+
+	* libnm-glib/nm-client.c (nm_client_free_active_connection_element): Remove
+	unused variable.
+
+	* libnm-util/nm-setting.c (setting_wireless_destroy): Remove unused variable.
+	(setting_vpn_properties_update_secrets): Ditto.
+	(int_to_gvalue): Ifdef out for now, not used.
+	(byte_to_gvalue): Ditto.
+
+	* libnm-util/dbus-dict-helpers.c (_nmu_dbus_add_dict_entry_string_array): 
+	Unused, remove.
+
 2007-10-08  Tambet Ingo  <tambet@gmail.com>
 
 	* src/NetworkManager.c (main): When dbus manager doesn't want to start, complain
