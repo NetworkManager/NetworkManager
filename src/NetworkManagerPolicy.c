@@ -554,6 +554,7 @@ nm_policy_new (NMManager *manager)
 
 	policy = g_slice_new (NMPolicy);
 	policy->manager = g_object_ref (manager);
+	policy->device_state_changed_idle_id = 0;
 
 	g_signal_connect (manager, "device-added",
 					  G_CALLBACK (device_added), policy);
