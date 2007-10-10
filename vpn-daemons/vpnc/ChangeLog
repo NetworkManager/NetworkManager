@@ -1,3 +1,11 @@
+2007-10-10  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-vpnc-service.c
+		- (validate_one_property): print message about what properties fail
+			validation
+		- (real_connect, nm_vpnc_config_write): use default username from VPN
+			setting if no Xauth username is provided in custom properties
+
 2007-09-27  Dan Williams  <dcbw@redhat.com>
 
 	* auth-dialog/main.c

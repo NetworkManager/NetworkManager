@@ -74,6 +74,7 @@ validate_one_property (gpointer key, gpointer val, gpointer user_data)
 	}
 
 	/* Did not find the property from valid_properties or the type did not match */
+	g_warning ("VPN property '%s' failed validation.", (char *) key);
 	*failed = TRUE;
 }
 
@@ -215,28 +216,46 @@ write_one_property (gpointer key, gpointer val, gpointer user_data)
 		tmp = nm_utils_garray_to_string ((GArray *) g_value_get_boxed (value));
 		write_config_option (vpnc_fd, "%s %s\n", tmp);
 		g_free (tmp);
-	}
-
-	else
+	} else {
 		nm_warning ("Don't know how to write property '%s' with type %s",
 				  (char *) key, g_type_name (type));
+	}
 }
 
 static void
-nm_vpnc_config_write (gint vpnc_fd, GHashTable *properties)
+nm_vpnc_config_write (gint vpnc_fd,
+                      const char *default_user_name,
+                      GHashTable *properties)
 {
+	const char *props_user_name;
+
 	write_config_option (vpnc_fd, "Script " NM_VPNC_HELPER_PATH "\n");
 
 	/* Thankfully vpnc ignores options it does not understand... */
 
 	/* Options for vpnc 0.3.x */
-	write_config_option (vpnc_fd, "UDP Encapsulate\n");
-	write_config_option (vpnc_fd, "UDP Encapsulation Port %d\n", NM_VPNC_UDP_ENCAPSULATION_PORT);
-	if (!g_hash_table_lookup (properties, "Rekeying interval"))
-		write_config_option (vpnc_fd, "Rekeying interval %d\n", NM_VPNC_REKEYING_INTERVAL);
+	write_config_option (vpnc_fd, NM_VPNC_KEY_UDP_ENCAPS "\n");
+	write_config_option (vpnc_fd,
+	                     NM_VPNC_KEY_UDP_ENCAPS_PORT " %d\n",
+	                     NM_VPNC_UDP_ENCAPSULATION_PORT);
+	if (!g_hash_table_lookup (properties, NM_VPNC_KEY_REKEYING)) {
+		write_config_option (vpnc_fd,
+		                     NM_VPNC_KEY_REKEYING " %d\n",
+		                     NM_VPNC_REKEYING_INTERVAL);
+	}
 
 	// FIXME: do we need to enable Cisco UDP encapsulation here?
 	/* 0.4.x rekeys automatically */
+
+	/* Fill username if it's not present */
+	props_user_name = g_hash_table_lookup (properties, NM_VPNC_KEY_XAUTH_USER);
+	if (   default_user_name
+	    && strlen (default_user_name)
+	    && (!props_user_name || !strlen (props_user_name))) {
+		write_config_option (vpnc_fd,
+		                     NM_VPNC_KEY_XAUTH_USER " %s\n",
+		                     default_user_name);
+	}
 
 	g_hash_table_foreach (properties, write_one_property, GINT_TO_POINTER (vpnc_fd));
 }
@@ -246,6 +265,7 @@ real_connect (NMVPNPlugin   *plugin,
 		    NMConnection  *connection,
 		    GError       **err)
 {
+	NMSettingVPN *s_vpn;
 	NMSettingVPNProperties *properties;
 	gint vpnc_fd;
 
@@ -259,8 +279,11 @@ real_connect (NMVPNPlugin   *plugin,
 		return FALSE;
 	}
 
+	s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_SETTING_VPN);
+	g_assert (s_vpn);
+
 	if ((vpnc_fd = nm_vpnc_start_vpnc_binary (NM_VPNC_PLUGIN (plugin))) >= 0)
-		nm_vpnc_config_write (vpnc_fd, properties->data);
+		nm_vpnc_config_write (vpnc_fd, s_vpn->user_name, properties->data);
 	else {
 		g_set_error (err,
 				   NM_VPN_PLUGIN_ERROR,
