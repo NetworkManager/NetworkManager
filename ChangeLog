@@ -1,3 +1,11 @@
+2007-10-10  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.c
+		- (merge_scanned_ap): make sure non-SSID-broadcasting APs are marked
+			as such, because even if the manager fills in the SSID, NM still
+			has to indicate to wpa_supplicant that the AP isn't broadcasting
+			its SSID
+
 2007-10-10  Tambet Ingo  <tambet@gmail.com>
 
 	Move ppp-manager over to dbus-glib. The big deal is that it was the last piece of

@@ -1624,15 +1624,10 @@ merge_scanned_ap (NMDevice80211Wireless *self,
 	 * if it can
 	 */
 	ssid = nm_ap_get_ssid (merge_ap);
-	if (!ssid || !ssid->len)
+	if (!ssid || !ssid->len) {
 		g_signal_emit (self, signals[HIDDEN_AP_FOUND], 0, merge_ap);
-
-	/* If the AP is not broadcasting its SSID and matching the SSID with a
-	 * seen-bssids entry failed, mark the AP as non-broadcasting
-	 */
-	ssid = nm_ap_get_ssid (merge_ap);
-	if (!ssid || !ssid->len)
 		nm_ap_set_broadcast (merge_ap, FALSE);
+	}
 
 	for (elt = self->priv->ap_list; elt; elt = g_slist_next (elt)) {
 		NMAccessPoint * list_ap = NM_AP (elt->data);
