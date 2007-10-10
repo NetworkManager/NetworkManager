@@ -1260,6 +1260,10 @@ setting_vpn_verify (NMSetting *setting, GHashTable *all_settings)
 	if (!self->service_type || !strlen (self->service_type))
 		return FALSE;
 
+	/* default username can be NULL, but can't be zero-length */
+	if (self->user_name && !strlen (self->user_name))
+		return FALSE;
+
 	return TRUE;
 }
 
@@ -1269,6 +1273,7 @@ setting_vpn_destroy (NMSetting *setting)
 	NMSettingVPN *self = (NMSettingVPN *) setting;
 
 	g_free (self->service_type);
+	g_free (self->user_name);
 
 	if (self->routes) {
 		g_slist_foreach (self->routes, (GFunc) g_free, NULL);
@@ -1280,6 +1285,7 @@ setting_vpn_destroy (NMSetting *setting)
 
 static SettingMember vpn_table[] = {
 	{ "service_type", NM_S_TYPE_STRING, G_STRUCT_OFFSET (NMSettingVPN, service_type), TRUE, FALSE },
+	{ "user_name", NM_S_TYPE_STRING, G_STRUCT_OFFSET (NMSettingVPN, user_name), FALSE, FALSE },
 	{ "routes", NM_S_TYPE_STRING_ARRAY, G_STRUCT_OFFSET (NMSettingVPN, routes), FALSE, FALSE },
 	{ NULL, 0, 0 },
 };

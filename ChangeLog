@@ -1,5 +1,13 @@
 2007-10-10  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting.c
+	  libnm-util/nm-setting.h
+		- Add a default 'user_name' field to the VPN setting, which VPN plugins
+			can use if they choose.  Should be filled in by the settings service
+			on-the-fly with the currently logged in user's username
+
+2007-10-10  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 		- (merge_scanned_ap): make sure non-SSID-broadcasting APs are marked
 			as such, because even if the manager fills in the SSID, NM still
