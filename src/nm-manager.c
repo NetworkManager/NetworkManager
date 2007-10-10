@@ -1105,6 +1105,8 @@ wait_for_connection_expired (gpointer data)
 	PendingConnectionInfo *info = priv->pending_connection_info;
 	GError *err;
 
+	g_return_val_if_fail (info != NULL, FALSE);
+
 	nm_info ("%s: didn't receive connection details soon enough for activation.",
 	         nm_device_get_iface (info->device));
 
@@ -1158,14 +1160,11 @@ connection_added_default_handler (NMManager *manager,
 						    NMConnectionType connection_type)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	PendingConnectionInfo *info;
+	PendingConnectionInfo *info = priv->pending_connection_info;
 	const char *path;
 
-	if (!nm_manager_activation_pending (manager))
+	if (!info)
 		return;
-
-	info = priv->pending_connection_info;
-	priv->pending_connection_info = NULL;
 
 	if (connection_type != info->connection_type)
 		return;
@@ -1173,6 +1172,9 @@ connection_added_default_handler (NMManager *manager,
 	path = nm_manager_get_connection_dbus_path (manager, connection);
 	if (strcmp (info->connection_path, path))
 		return;
+
+	/* Will destroy below; can't be valid during the initial activation start */
+	priv->pending_connection_info = NULL;
 
 	// FIXME: remove old_dev deactivation when multiple device support lands
 	deactivate_old_device (manager);
