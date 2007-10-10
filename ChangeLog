@@ -1,5 +1,30 @@
 2007-10-10  Tambet Ingo  <tambet@gmail.com>
 
+	Move ppp-manager over to dbus-glib. The big deal is that it was the last piece of
+	code that used NM's own version of dbus signal handling and custom dictionary
+	marshalling/unmarshalling. With this change, all that obsolete code can disappear
+	and we get to maintain over 2000 lines less code.
+
+	* libnm-util/dbus-dict-helpers.c:
+	* libnm-util/dbus-dict-helpers.h: Remove.
+
+	* src/ppp-manager/nm-pppd-plugin.c: Convert it to use dbus-glib.
+
+	* src/ppp-manager/nm-pppd-plugin.xml: Implement.
+
+	* src/ppp-manager/nm-ppp-manager.c: Use dbus-glib instead of home-brewed dbus signal
+	handlers.
+
+	* src/nm-dbus-manager.c: Remove all the manual dbus signal handling.
+
+	* configure.in: Remove test/libnm-util/Makefile creation.
+
+	* test/Makefile.am: Remove libnm-util from SUBDIRS.
+
+	* test/libnm-util/: Remove the whole directory.
+
+2007-10-10  Tambet Ingo  <tambet@gmail.com>
+
 	* src/NetworkManagerPolicy.c (nm_policy_new): Initialize the 
 	device_state_changed_idle_id variable or it would contain some random value and the
 	schedule_change_check calls would not do anything.

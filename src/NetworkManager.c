@@ -221,7 +221,6 @@ main (int argc, char *argv[])
 	NMVPNManager *vpn_manager = NULL;
 	NMNamedManager *named_mgr = NULL;
 	NMDBusManager *	dbus_mgr = NULL;
-	DBusConnection *dbus_connection;
 	NMSupplicantManager * sup_mgr = NULL;
 
 	GOptionEntry options[] = {
@@ -302,14 +301,6 @@ main (int argc, char *argv[])
 
 	/* Initialize our DBus service & connection */
 	dbus_mgr = nm_dbus_manager_get ();
-	dbus_connection = nm_dbus_manager_get_dbus_connection (dbus_mgr);
-	if (!dbus_connection) {
-		nm_error ("Failed to initialize. "
-		          "Either dbus is not running, or the "
-		          "NetworkManager dbus security policy "
-		          "was not loaded.");
-		goto done;
-	}
 
 	manager = nm_manager_new ();
 	if (manager == NULL) {

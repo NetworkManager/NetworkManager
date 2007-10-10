@@ -1,4 +1,4 @@
-SUBDIRS=test-common libnm-util
+SUBDIRS=test-common
 
 INCLUDES = -I${top_srcdir}                    \
            -I${top_srcdir}/libnm-util         \

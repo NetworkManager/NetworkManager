@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/">
+  <interface name="org.freedesktop.NetworkManager.PPP">
+    <signal name="StateChanged">
+      <arg name="state" type="u"/>
+    </signal>
+
+    <signal name="Ip4Config">
+      <arg name="ip4config" type="a{sv}"/>
+    </signal>
+
+  </interface>
+</node>

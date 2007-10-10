@@ -252,7 +252,6 @@ callouts/Makefile
 dispatcher-daemon/Makefile
 test/Makefile
 test/test-common/Makefile
-test/libnm-util/Makefile
 initscript/Makefile
 initscript/RedHat/Makefile
 initscript/RedHat/NetworkManager

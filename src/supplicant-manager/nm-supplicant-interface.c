@@ -29,7 +29,6 @@
 #include "nm-marshal.h"
 #include "nm-supplicant-config.h"
 #include "nm-dbus-manager.h"
-#include "dbus-dict-helpers.h"
 #include "nm-call-store.h"
 
 #define WPAS_DBUS_IFACE_INTERFACE   WPAS_DBUS_INTERFACE ".Interface"

@@ -27,7 +27,6 @@
 #include "nm-supplicant-config.h"
 #include "nm-supplicant-settings-verify.h"
 #include "nm-utils.h"
-#include "dbus-dict-helpers.h"
 #include "nm-setting.h"
 #include "NetworkManagerUtils.h"
 

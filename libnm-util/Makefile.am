@@ -12,8 +12,6 @@ libnm_util_la_CPPFLAGS =				\
 	-DGNOMELOCALEDIR=\"$(datadir)/locale\"
 
 libnm_util_la_SOURCES=			\
-	dbus-dict-helpers.c			\
-	dbus-dict-helpers.h		\
 	nm-connection.c			\
 	nm-connection.h			\
 	nm-setting.c			\
@@ -28,7 +26,6 @@ libnm_util_la_CFLAGS=-fPIC
 libnm_util_includedir=$(includedir)/NetworkManager
 
 libnm_util_include_HEADERS = 		\
-	dbus-dict-helpers.h		\
 	nm-connection.h			\
 	nm-setting.h			\
 	nm-utils.h

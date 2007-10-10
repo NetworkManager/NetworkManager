@@ -9,7 +9,6 @@
 #include "nm-ppp-manager.h"
 #include "nm-dbus-manager.h"
 #include "nm-utils.h"
-#include "dbus-dict-helpers.h"
 #include "nm-marshal.h"
 
 #define NM_PPPD_PLUGIN LIBDIR "/nm-pppd-plugin.so"
@@ -18,8 +17,8 @@
 typedef struct {
 	GPid pid;
 	NMDBusManager *dbus_manager;
+	DBusGProxy *proxy;
 
-	guint32 signal_handler;
 	guint32 ppp_timeout_handler;
 	guint32 name_owner_changed_handler;
 } NMPPPManagerPrivate;
@@ -156,7 +155,8 @@ nm_cmd_line_add_int (NMCmdLine *cmd, int i)
 
 /*******************************************/
 
-static inline const char *nm_find_pppd (void)
+static inline const char *
+nm_find_pppd (void)
 {
 	static const char *pppd_binary_paths[] =
 		{
@@ -272,113 +272,6 @@ ppp_watch_cb (GPid pid, gint status, gpointer user_data)
 	priv->pid = 0;
 }
 
-#define HANDLE_DICT_ITEM(in_key, in_type, in_ary_type, op)			  \
-	if (!strcmp (entry.key, in_key)) {							  \
-		if (entry.type != in_type) {							  \
-			nm_warning (in_key "had invalid type in PPP IP Config message."); \
-		} else {											  \
-			if (in_type == DBUS_TYPE_ARRAY && entry.array_type != in_ary_type) { \
-				nm_warning (in_key "had invalid type in PPP IP Config message."); \
-			} else {										  \
-				op										  \
-					}									  \
-		}												  \
-		goto next;										  \
-	}
-
-static gboolean
-parse_ip4_config (DBusMessage *message, char **interface, NMIP4Config **config)
-{
-	DBusMessageIter	iter;
-	DBusMessageIter	iter_dict;
-	NMUDictEntry entry;
-	gboolean success = FALSE;
-
-	dbus_message_iter_init (message, &iter);
-	if (!nmu_dbus_dict_open_read (&iter, &iter_dict)) {
-		nm_warning ("Warning: couldn't get config dictionary from PPP IP Config message.");
-		goto out;
-	}
-
-	*config = nm_ip4_config_new ();
-
-	while (nmu_dbus_dict_has_dict_entry (&iter_dict)) {
-		int i;
-
-		if (!nmu_dbus_dict_get_entry (&iter_dict, &entry)) {
-			nm_warning ("Error: couldn't read dict entryfrom PPP IP Config message.");
-			goto out;
-		}
-
-		HANDLE_DICT_ITEM("interface", DBUS_TYPE_STRING, 0,
-					  { if (strlen (entry.str_value)) *interface = g_strdup (entry.str_value); });
-		/* IP specific options */
-		HANDLE_DICT_ITEM("address", DBUS_TYPE_UINT32, 0,
-					  { nm_ip4_config_set_address (*config, entry.uint32_value); });
-		HANDLE_DICT_ITEM("netmask", DBUS_TYPE_UINT32, 0,
-					  { nm_ip4_config_set_netmask (*config,  entry.uint32_value ? entry.uint32_value : 0x00FF); });
-		HANDLE_DICT_ITEM("gateway", DBUS_TYPE_UINT32, 0,
-					  { nm_ip4_config_set_gateway (*config, entry.uint32_value); });
-		
-		/* Multiple DNS servers are allowed */
-		HANDLE_DICT_ITEM("dns_server", DBUS_TYPE_ARRAY, DBUS_TYPE_UINT32,
-					  {
-						  for (i = 0; i < entry.array_len; i++)
-							  nm_ip4_config_add_nameserver (*config, entry.uint32array_value[i]);
-					  });
-
-		/* FIXME: Ignoring WINS servers for now since IP4Config doesn't have a place for it */
-		
-	next:
-		nmu_dbus_dict_entry_clear (&entry);
-	}
-
-	success = TRUE;
-
- out:
-	if (!success && *config) {
-		g_object_unref (*config);
-		*config = NULL;
-		g_free (*interface);
-		*interface = NULL;
-	}
-
-	return success;
-}
-
-static gboolean
-nm_ppp_manager_dbus_signal_handler (DBusConnection *connection,
-							 DBusMessage *message,
-							 gpointer user_data)
-{
-	NMPPPManager *manager = NM_PPP_MANAGER (user_data);
-	gboolean handled = FALSE;
-
-	if (dbus_message_is_signal (message, NM_DBUS_INTERFACE_PPP, "Status")) {
-		guint32 state;
-
-		if (dbus_message_get_args (message, NULL,
-							  DBUS_TYPE_UINT32, &state,
-							  DBUS_TYPE_INVALID)) {
-
-			g_signal_emit (manager, signals[STATE_CHANGED], 0, state);
-			handled = TRUE;
-		}
-	} else if (dbus_message_is_signal (message, NM_DBUS_INTERFACE_PPP, "IP4Config")) {
-		char *iface = NULL;
-		NMIP4Config *config = NULL;
-
-		if (parse_ip4_config (message, &iface, &config)) {
-			g_signal_emit (manager, signals[IP4_CONFIG], 0, iface, config);
-			g_free (iface);
-			g_object_unref (config);
-			handled = TRUE;
-		}
-	}
-
-	return handled;
-}
-
 static gboolean
 pppd_timed_out (gpointer data)
 {
@@ -388,6 +281,76 @@ pppd_timed_out (gpointer data)
 	nm_ppp_manager_stop (manager);
 
 	return FALSE;
+}
+
+static void
+ppp_status_changed (DBusGProxy *proxy,
+				guint32 status,
+				gpointer user_data)
+{
+	NMPPPManager *manager = NM_PPP_MANAGER (user_data);
+
+	g_signal_emit (manager, signals[STATE_CHANGED], 0, status);
+}
+
+static void
+ip4_config_get (DBusGProxy *proxy,
+			 GHashTable *config_hash,
+			 gpointer user_data)
+{
+	NMPPPManager *manager = NM_PPP_MANAGER (user_data);
+	NMIP4Config *config;
+	GValue *val;
+	const char *iface;
+	int i;
+
+	nm_info ("PPP manager(IP Config Get) reply received.");
+
+	/* FIXME */
+/* 	g_source_remove (priv->ipconfig_timeout); */
+/* 	priv->ipconfig_timeout = 0; */
+
+	config = nm_ip4_config_new ();
+	nm_ip4_config_set_secondary (config, TRUE);
+
+	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_GATEWAY);
+	if (val)
+		nm_ip4_config_set_gateway (config, g_value_get_uint (val));
+
+	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_ADDRESS);
+	if (val)
+		nm_ip4_config_set_address (config, g_value_get_uint (val));
+
+	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_NETMASK);
+	if (val)
+		nm_ip4_config_set_netmask (config, g_value_get_uint (val));
+	else
+		/* If no netmask, default to Class C address */
+		nm_ip4_config_set_netmask (config, 0x00FF);
+
+	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_DNS);
+	if (val) {
+		GArray *dns = (GArray *) g_value_get_boxed (val);
+
+		for (i = 0; i < dns->len; i++)
+			nm_ip4_config_add_nameserver (config, g_array_index (dns, guint, i));
+	}
+
+	/* FIXME: The plugin helpfully sends WINS servers as well
+	   and we're insensitive clods and ignore them. */
+
+	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_INTERFACE);
+	if (val)
+		iface = g_value_get_string (val);
+	else {
+		nm_warning ("No interface");
+		goto out;
+	}
+
+	g_signal_emit (manager, signals[IP4_CONFIG], 0, iface, config);
+
+ out:
+	g_object_unref (config);
 }
 
 static void
@@ -411,11 +374,27 @@ name_owner_changed (NMDBusManager *dbus_manager,
 			priv->ppp_timeout_handler = 0;
 		}
 
-		priv->signal_handler = nm_dbus_manager_register_signal_handler (priv->dbus_manager,
-														    NM_DBUS_INTERFACE_PPP,
-														    NM_DBUS_SERVICE_PPP,
-														    nm_ppp_manager_dbus_signal_handler,
-														    manager);
+		/* Work around the bug in dbus-glib where name-owner-changed signal is always emitted twice */
+		if (!priv->proxy) {
+			priv->proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (priv->dbus_manager),
+											 NM_DBUS_SERVICE_PPP,
+											 NM_DBUS_PATH_PPP,
+											 NM_DBUS_INTERFACE_PPP);
+
+			dbus_g_proxy_add_signal (priv->proxy, "Status", G_TYPE_UINT, G_TYPE_INVALID);
+			dbus_g_proxy_connect_signal (priv->proxy, "Status",
+								    G_CALLBACK (ppp_status_changed),
+								    manager, NULL);
+
+			dbus_g_object_register_marshaller (g_cclosure_marshal_VOID__BOXED,
+										G_TYPE_NONE, G_TYPE_VALUE, G_TYPE_INVALID);
+			dbus_g_proxy_add_signal (priv->proxy, "Ip4Config",
+								dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
+								G_TYPE_INVALID);
+			dbus_g_proxy_connect_signal (priv->proxy, "Ip4Config",
+								    G_CALLBACK (ip4_config_get),
+								    manager, NULL);
+		}
 	} else if (old_owner_good && !new_owner_good) {
 		nm_ppp_manager_stop (manager);
 	}
@@ -548,7 +527,7 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	nm_debug ("Command line: %s", cmd_str);
 	g_free (cmd_str);
 
-    priv->pid = 0;
+	priv->pid = 0;
 	if (!g_spawn_async (NULL, (char **) ppp_cmd->array->pdata, NULL,
 					G_SPAWN_DO_NOT_REAP_CHILD,
 					pppd_child_setup,
@@ -586,9 +565,9 @@ nm_ppp_manager_stop (NMPPPManager *manager)
 		priv->ppp_timeout_handler = 0;
 	}
 
-	if (priv->signal_handler) {
-		nm_dbus_manager_remove_signal_handler (priv->dbus_manager, priv->signal_handler);
-		priv->signal_handler = 0;
+	if (priv->proxy) {
+		g_object_unref (priv->proxy);
+		priv->proxy = NULL;
 	}
 
 	if (priv->dbus_manager) {
