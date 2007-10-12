@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 /* NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -25,6 +26,7 @@
 #include "nm-dbus-manager.h"
 #include <wireless.h>
 #include "wpa.h"
+#include "nm-properties-changed-signal.h"
 
 #include "nm-access-point-glue.h"
 
@@ -90,16 +92,6 @@ enum {
 	LAST_PROP
 };
 
-#define DBUS_PROP_FLAGS "Flags"
-#define DBUS_PROP_WPA_FLAGS "WpaFlags"
-#define DBUS_PROP_RSN_FLAGS "RsnFlags"
-#define DBUS_PROP_SSID "Ssid"
-#define DBUS_PROP_FREQUENCY "Frequency"
-#define DBUS_PROP_HW_ADDRESS "HwAddress"
-#define DBUS_PROP_MODE "Mode"
-#define DBUS_PROP_RATE "Rate"
-#define DBUS_PROP_STRENGTH "Strength"
-
 static void
 nm_ap_init (NMAccessPoint *ap)
 {
@@ -129,76 +121,38 @@ finalize (GObject *object)
 
 static void
 set_property (GObject *object, guint prop_id,
-			  const GValue *value, GParamSpec *pspec)
+		    const GValue *value, GParamSpec *pspec)
 {
-	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (object);
-	GArray * ssid;
-	int mode;
-	char *dbus_prop = NULL;
+	NMAccessPoint *ap = NM_AP (object);
 
 	switch (prop_id) {
 	case PROP_FLAGS:
-		dbus_prop = DBUS_PROP_FLAGS;
-		priv->flags = g_value_get_uint (value);
+		nm_ap_set_flags (ap, g_value_get_uint (value));
 		break;
 	case PROP_WPA_FLAGS:
-		dbus_prop = DBUS_PROP_WPA_FLAGS;
-		priv->wpa_flags = g_value_get_uint (value);
+		nm_ap_set_wpa_flags (ap, g_value_get_uint (value));
 		break;
 	case PROP_RSN_FLAGS:
-		dbus_prop = DBUS_PROP_RSN_FLAGS;
-		priv->rsn_flags = g_value_get_uint (value);
+		nm_ap_set_rsn_flags (ap, g_value_get_uint (value));
 		break;
 	case PROP_SSID:
-		dbus_prop = DBUS_PROP_SSID;
-		ssid = g_value_get_boxed (value);
-		if (priv->ssid) {
-			g_byte_array_free (priv->ssid, TRUE);
-			priv->ssid = NULL;
-		}
-		if (ssid) {
-			int i;
-			unsigned char byte;
-			priv->ssid = g_byte_array_sized_new (ssid->len);
-			for (i = 0; i < ssid->len; i++) {
-				byte = g_array_index (ssid, unsigned char, i);
-				g_byte_array_append (priv->ssid, &byte, 1);
-			}
-		}
+		nm_ap_set_ssid (ap, (GByteArray *) g_value_get_boxed (value));
 		break;
 	case PROP_FREQUENCY:
-		dbus_prop = DBUS_PROP_FREQUENCY;
-		priv->freq = g_value_get_uint (value);
+		nm_ap_set_freq (ap, g_value_get_uint (value));
 		break;
 	case PROP_MODE:
-		dbus_prop = DBUS_PROP_MODE;
-		mode = g_value_get_int (value);
-
-		if (mode == IW_MODE_ADHOC || mode == IW_MODE_INFRA)
-			priv->mode = mode;
-		else
-			g_warning ("Invalid mode");
+		nm_ap_set_mode (ap, g_value_get_int (value));
 		break;
 	case PROP_RATE:
-		dbus_prop = DBUS_PROP_RATE;
-		priv->rate = g_value_get_uint (value);
+		nm_ap_set_rate (ap, g_value_get_uint (value));
 		break;
 	case PROP_STRENGTH:
-		dbus_prop = DBUS_PROP_STRENGTH;
-		priv->strength = g_value_get_char (value);
+		nm_ap_set_strength (ap, g_value_get_char (value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
-	}
-
-	if (dbus_prop) {
-		GHashTable * hash;
-
-		hash = g_hash_table_new (g_str_hash, g_str_equal);
-		g_hash_table_insert (hash, dbus_prop, (gpointer) value);
-		g_signal_emit (object, signals[PROPERTIES_CHANGED], 0, hash);
-		g_hash_table_destroy (hash);
 	}
 }
 
@@ -359,17 +313,12 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 							G_PARAM_READWRITE));
 
 	/* Signals */
-	signals[PROPERTIES_CHANGED] =
-		g_signal_new ("properties_changed",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMAccessPointClass, properties_changed),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__BOXED,
-					  G_TYPE_NONE, 1, dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE));
+	signals[PROPERTIES_CHANGED] = 
+		nm_properties_changed_signal_new (object_class,
+								    G_STRUCT_OFFSET (NMAccessPointClass, properties_changed));
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (ap_class),
-									 &dbus_glib_nm_access_point_object_info);
+							   &dbus_glib_nm_access_point_object_info);
 }
 
 void
@@ -510,6 +459,7 @@ nm_ap_new_from_properties (GHashTable *properties)
 
 	ap = nm_ap_new ();
 
+	g_object_freeze_notify (G_OBJECT (ap));
 	g_hash_table_foreach (properties, foreach_property_cb, ap);
 
 	/* ignore APs with invalid BSSIDs */
@@ -525,6 +475,8 @@ nm_ap_new_from_properties (GHashTable *properties)
 
 	if (!nm_ap_get_ssid (ap))
 		nm_ap_set_broadcast (ap, FALSE);
+
+	g_object_thaw_notify (G_OBJECT (ap));
 
 	return ap;
 }
@@ -611,7 +563,8 @@ const GByteArray * nm_ap_get_ssid (const NMAccessPoint *ap)
 	return NM_AP_GET_PRIVATE (ap)->ssid;
 }
 
-void nm_ap_set_ssid (NMAccessPoint *ap, const GByteArray * ssid)
+void
+nm_ap_set_ssid (NMAccessPoint *ap, const GByteArray * ssid)
 {
 	NMAccessPointPrivate *priv;
 
@@ -628,7 +581,18 @@ void nm_ap_set_ssid (NMAccessPoint *ap, const GByteArray * ssid)
 			return;
 	}
 
-	g_object_set (ap, NM_AP_SSID, ssid, NULL);
+	if (priv->ssid) {
+		g_byte_array_free (priv->ssid, TRUE);
+		priv->ssid = NULL;
+	}
+
+	if (ssid) {
+		priv->ssid = g_byte_array_sized_new (ssid->len);
+		priv->ssid->len = ssid->len;
+		memcpy (priv->ssid->data, ssid->data, ssid->len);
+	}
+
+	g_object_notify (G_OBJECT (ap), NM_AP_SSID);
 }
 
 
@@ -654,8 +618,10 @@ nm_ap_set_flags (NMAccessPoint *ap, guint32 flags)
 
 	priv = NM_AP_GET_PRIVATE (ap);
 
-	if (priv->flags != flags)
-		g_object_set (ap, NM_AP_FLAGS, flags, NULL);
+	if (priv->flags != flags) {
+		priv->flags = flags;
+		g_object_notify (G_OBJECT (ap), NM_AP_FLAGS);
+	}
 }
 
 guint32
@@ -680,8 +646,10 @@ nm_ap_set_wpa_flags (NMAccessPoint *ap, guint32 flags)
 
 	priv = NM_AP_GET_PRIVATE (ap);
 
-	if (priv->wpa_flags != flags)
-		g_object_set (ap, NM_AP_WPA_FLAGS, flags, NULL);
+	if (priv->wpa_flags != flags) {
+		priv->wpa_flags = flags;
+		g_object_notify (G_OBJECT (ap), NM_AP_WPA_FLAGS);
+	}
 }
 
 guint32
@@ -706,8 +674,10 @@ nm_ap_set_rsn_flags (NMAccessPoint *ap, guint32 flags)
 
 	priv = NM_AP_GET_PRIVATE (ap);
 
-	if (priv->rsn_flags != flags)
-		g_object_set (ap, NM_AP_RSN_FLAGS, flags, NULL);
+	if (priv->rsn_flags != flags) {
+		priv->rsn_flags = flags;
+		g_object_notify (G_OBJECT (ap), NM_AP_RSN_FLAGS);
+	}
 }
 
 /*
@@ -731,22 +701,8 @@ void nm_ap_set_address (NMAccessPoint *ap, const struct ether_addr * addr)
 	priv = NM_AP_GET_PRIVATE (ap);
 
 	if (memcmp (addr, &priv->address, sizeof (priv->address))) {
-		GHashTable * hash;
-		char buf[20];
-		GValue value = {0,};
-
 		memcpy (&NM_AP_GET_PRIVATE (ap)->address, addr, sizeof (struct ether_addr));
-
-		hash = g_hash_table_new (g_str_hash, g_str_equal);
-
-		memset (buf, 0, sizeof (buf));
-		iw_ether_ntop (&priv->address, buf);
-		g_value_init (&value, G_TYPE_STRING);
-		g_value_set_string (&value, &buf[0]);
-
-		g_hash_table_insert (hash, DBUS_PROP_HW_ADDRESS, (gpointer) &value);
-		g_signal_emit (ap, signals[PROPERTIES_CHANGED], 0, hash);
-		g_hash_table_destroy (hash);
+		g_object_notify (G_OBJECT (ap), NM_AP_HW_ADDRESS);
 	}
 }
 
@@ -772,10 +728,15 @@ void nm_ap_set_mode (NMAccessPoint *ap, const int mode)
 
 	g_return_if_fail (NM_IS_AP (ap));
 
-	priv = NM_AP_GET_PRIVATE (ap);
+	if (mode == IW_MODE_ADHOC || mode == IW_MODE_INFRA) {
+		priv = NM_AP_GET_PRIVATE (ap);
 
-	if (priv->mode != mode)
-		g_object_set (ap, NM_AP_MODE, mode, NULL);
+		if (priv->mode != mode) {
+			priv->mode = mode;
+			g_object_notify (G_OBJECT (ap), NM_AP_MODE);
+		}
+	} else
+		nm_warning ("Invalid AP mode '%d'", mode);
 }
 
 
@@ -802,8 +763,10 @@ void nm_ap_set_strength (NMAccessPoint *ap, const gint8 strength)
 
 	priv = NM_AP_GET_PRIVATE (ap);
 
-	if (priv->strength != strength)
-		g_object_set (ap, NM_AP_STRENGTH, strength, NULL);
+	if (priv->strength != strength) {
+		priv->strength = strength;
+		g_object_notify (G_OBJECT (ap), NM_AP_STRENGTH);
+	}
 }
 
 
@@ -827,9 +790,16 @@ void
 nm_ap_set_freq (NMAccessPoint *ap,
                 const guint32 freq)
 {
+	NMAccessPointPrivate *priv;
+
 	g_return_if_fail (NM_IS_AP (ap));
 
-	g_object_set (ap, NM_AP_FREQUENCY, freq, NULL);
+	priv = NM_AP_GET_PRIVATE (ap);
+
+	if (priv->freq != freq) {
+		priv->freq = freq;
+		g_object_notify (G_OBJECT (ap), NM_AP_FREQUENCY);
+	}
 }
 
 
@@ -848,11 +818,19 @@ guint16 nm_ap_get_rate (NMAccessPoint *ap)
 	return rate;
 }
 
-void nm_ap_set_rate (NMAccessPoint *ap, guint16 rate)
+void
+nm_ap_set_rate (NMAccessPoint *ap, guint16 rate)
 {
+	NMAccessPointPrivate *priv;
+
 	g_return_if_fail (NM_IS_AP (ap));
 
-	g_object_set (ap, NM_AP_RATE, rate, NULL);
+	priv = NM_AP_GET_PRIVATE (ap);
+
+	if (priv->rate != rate) {
+		priv->rate = rate;
+		g_object_notify (G_OBJECT (ap), NM_AP_RATE);
+	}
 }
 
 

@@ -1,3 +1,21 @@
+2007-10-12  Tambet Ingo  <tambet@gmail.com>
+
+	Rework the "properties-changed" signal implementation.
+	In classes that need to use it, just emit "GObject::notify" and the new
+	framework takes care of the rest to make the signal available on dbus.
+	The framework queues the notifications and tries to send as many together
+	in one signal as possible.
+
+	* src/nm-properties-changed-signal.c:
+	* src/nm-properties-changed-signal.h: Implement.
+
+	* src/Makefile.am: Add new files to build.
+
+	* src/NetworkManagerAP.c: Use the general framework for properties-changed
+	signal.
+
+	* src/nm-device-802-11-wireless.c: Ditto.
+
 2007-10-10  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-manager.c

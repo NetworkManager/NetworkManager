@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 /* NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -42,6 +43,7 @@
 #include "nm-supplicant-manager.h"
 #include "nm-supplicant-interface.h"
 #include "nm-supplicant-config.h"
+#include "nm-properties-changed-signal.h"
 
 static gboolean impl_device_get_access_points (NMDevice80211Wireless *device,
                                                GPtrArray **aps,
@@ -77,12 +79,6 @@ enum {
 
 	LAST_PROP
 };
-
-#define DBUS_PROP_HW_ADDRESS "HwAddress"
-#define DBUS_PROP_MODE "Mode"
-#define DBUS_PROP_BITRATE "Bitrate"
-#define DBUS_PROP_ACTIVE_ACCESS_POINT "ActiveAccessPoint"
-#define DBUS_PROP_WIRELESS_CAPABILITIES "WirelessCapabilities"
 
 enum {
 	ACCESS_POINT_ADDED,
@@ -421,19 +417,6 @@ error:
 }
 
 static void
-emit_one_property_changed_signal (NMDevice80211Wireless *self,
-                                  const char *dbus_property,
-                                  GValue *value)
-{
-	GHashTable * hash;
-
-	hash = g_hash_table_new (g_str_hash, g_str_equal);
-	g_hash_table_insert (hash, (char *) dbus_property, (gpointer) value);
-	g_signal_emit (self, signals[PROPERTIES_CHANGED], 0, hash);
-	g_hash_table_destroy (hash);
-}
-
-static void
 init_supplicant_interface (NMDevice80211Wireless * self)
 {
 	Supplicant * sup;
@@ -535,7 +518,6 @@ static void
 set_current_ap (NMDevice80211Wireless *self, NMAccessPoint *new_ap)
 {
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
-	GValue value = {0, };
 	char *old_path = NULL;
 
 	g_return_if_fail (NM_IS_DEVICE_802_11_WIRELESS (self));
@@ -546,21 +528,15 @@ set_current_ap (NMDevice80211Wireless *self, NMAccessPoint *new_ap)
 		priv->current_ap = NULL;
 	}
 
-	g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
-	if (new_ap) {
+	if (new_ap)
 		priv->current_ap = g_object_ref (new_ap);
-		g_value_set_boxed (&value, nm_ap_get_dbus_path (new_ap));
-	} else {
-		g_value_set_boxed (&value, "/");
-	}
 
-	/* Only emit if it's really changed */
+	/* Only notify if it's really changed */
 	if (   (!old_path && new_ap)
 	    || (old_path && !new_ap)
 	    || (old_path && new_ap && strcmp (old_path, nm_ap_get_dbus_path (new_ap))))
-		emit_one_property_changed_signal (self, DBUS_PROP_ACTIVE_ACCESS_POINT, &value);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_802_11_WIRELESS_ACTIVE_ACCESS_POINT);
 
-	g_value_unset (&value);
 	g_free (old_path);
 }
 
@@ -571,7 +547,6 @@ periodic_update (NMDevice80211Wireless *self, gboolean honor_scan)
 	NMDeviceState state;
 	NMAccessPoint *new_ap;
 	int new_rate;
-	GValue value = {0, };
 
 	/* BSSID and signal strength have meaningful values only if the device
 	   is activated and not scanning */
@@ -620,11 +595,7 @@ periodic_update (NMDevice80211Wireless *self, gboolean honor_scan)
 	new_rate = nm_device_802_11_wireless_get_bitrate (self);
 	if (new_rate != priv->rate) {
 		priv->rate = new_rate;
-
-		g_value_init (&value, G_TYPE_INT);
-		g_value_set_int (&value, priv->rate);
-		emit_one_property_changed_signal (self, DBUS_PROP_BITRATE, &value);
-		g_value_unset (&value);
+		g_object_notify (G_OBJECT (self), NM_DEVICE_802_11_WIRELESS_BITRATE);
 	}
 }
 
@@ -2396,8 +2367,6 @@ real_set_hw_address (NMDevice *dev)
 	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
 	struct ifreq req;
 	NMSock *sk;
-	char hw_addr_buf[20];
-	GValue value = {0, };
 	int ret;
 
 	sk = nm_dev_sock_open (nm_device_get_iface (dev), DEV_GENERAL, __FUNCTION__, NULL);
@@ -2415,14 +2384,7 @@ real_set_hw_address (NMDevice *dev)
 		goto out;
 
 	memcpy (&(self->priv->hw_addr), &(req.ifr_hwaddr.sa_data), sizeof (struct ether_addr));
-
-	memset (hw_addr_buf, 0, 20);
-	iw_ether_ntop (&(self->priv->hw_addr), hw_addr_buf);
-
-	g_value_init (&value, G_TYPE_STRING);
-	g_value_set_string (&value, &hw_addr_buf[0]);
-	emit_one_property_changed_signal (self, DBUS_PROP_HW_ADDRESS, &value);
-	g_value_unset (&value);
+	g_object_notify (G_OBJECT (dev), NM_DEVICE_802_11_WIRELESS_HW_ADDRESS);
 
 out:
 	nm_dev_sock_close (sk);
@@ -2942,13 +2904,8 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 					  G_TYPE_OBJECT);
 
 	signals[PROPERTIES_CHANGED] =
-		g_signal_new ("properties_changed",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMDevice80211WirelessClass, properties_changed),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__BOXED,
-					  G_TYPE_NONE, 1, dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE));
+		nm_properties_changed_signal_new (object_class,
+								    G_STRUCT_OFFSET (NMDevice80211WirelessClass, properties_changed));
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
 									 &dbus_glib_nm_device_802_11_wireless_object_info);

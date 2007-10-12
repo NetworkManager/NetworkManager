@@ -56,6 +56,8 @@ NetworkManager_SOURCES =				\
 		nm-netlink-monitor.h		\
 		nm-activation-request.c		\
 		nm-activation-request.h		\
+		nm-properties-changed-signal.c	\
+		nm-properties-changed-signal.h	\
 		autoip.c					\
 		autoip.h					\
 		kernel-types.h			\
