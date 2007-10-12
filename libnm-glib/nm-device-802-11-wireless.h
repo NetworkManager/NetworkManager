@@ -13,6 +13,12 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_802_11_WIRELESS_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_DEVICE_802_11_WIRELESS))
 #define NM_DEVICE_802_11_WIRELESS_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE_802_11_WIRELESS, NMDevice80211WirelessClass))
 
+#define NM_DEVICE_802_11_WIRELESS_HW_ADDRESS          "hw-address"
+#define NM_DEVICE_802_11_WIRELESS_MODE                "mode"
+#define NM_DEVICE_802_11_WIRELESS_BITRATE             "bitrate"
+#define NM_DEVICE_802_11_WIRELESS_ACTIVE_ACCESS_POINT "active-access-point"
+#define NM_DEVICE_802_11_WIRELESS_CAPABILITIES        "wireless-capabilities"
+
 typedef struct {
 	NMDevice parent;
 } NMDevice80211Wireless;

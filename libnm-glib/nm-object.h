@@ -30,6 +30,9 @@ GType nm_object_get_type (void);
 DBusGConnection *nm_object_get_connection (NMObject *object);
 const char      *nm_object_get_path       (NMObject *object);
 
+void             nm_object_handle_properties_changed (NMObject *object,
+						      DBusGProxy *proxy);
+
 /* DBus property accessors */
 
 gboolean nm_object_get_property (NMObject *object,

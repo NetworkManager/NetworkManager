@@ -1,3 +1,6 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+
+#include <nm-utils.h>
 #include "nm-object.h"
 #include "NetworkManager.h"
 
@@ -168,6 +171,69 @@ nm_object_get_path (NMObject *object)
 	g_return_val_if_fail (NM_IS_OBJECT (object), NULL);
 
 	return NM_OBJECT_GET_PRIVATE (object)->path;
+}
+
+/* Stolen from dbus-glib */
+char*
+wincaps_to_uscore (const char *caps)
+{
+	const char *p;
+	GString *str;
+
+	str = g_string_new (NULL);
+	p = caps;
+	while (*p) {
+		if (g_ascii_isupper (*p)) {
+			if (str->len > 0 && (str->len < 2 || str->str[str->len-2] != '_'))
+				g_string_append_c (str, '_');
+			g_string_append_c (str, g_ascii_tolower (*p));
+		} else
+			g_string_append_c (str, *p);
+		++p;
+	}
+
+	return g_string_free (str, FALSE);
+}
+
+static void
+handle_property_changed (gpointer key, gpointer data, gpointer user_data)
+{
+	GObject *object = G_OBJECT (user_data);
+	char *prop_name;
+	GValue *value = (GValue *) data;
+
+	prop_name = wincaps_to_uscore ((char *) key);
+	if (g_object_class_find_property (G_OBJECT_GET_CLASS (object), prop_name))
+		g_object_set_property (object, prop_name, value);
+	else
+		nm_warning ("Property '%s' change detected but can't be set", prop_name);
+
+	g_free (prop_name);
+}
+
+static void
+properties_changed_proxy (DBusGProxy *proxy,
+                          GHashTable *properties,
+                          gpointer user_data)
+{
+	GObject *object = G_OBJECT (user_data);
+
+	g_object_freeze_notify (object);
+	g_hash_table_foreach (properties, handle_property_changed, object);
+	g_object_thaw_notify (object);
+}
+
+void
+nm_object_handle_properties_changed (NMObject *object, DBusGProxy *proxy)
+{
+	dbus_g_proxy_add_signal (proxy, "PropertiesChanged",
+	                         dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
+	                         G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (proxy,
+						    "PropertiesChanged",
+						    G_CALLBACK (properties_changed_proxy),
+						    object,
+						    NULL);
 }
 
 
@@ -353,4 +419,3 @@ nm_object_get_byte_array_property (NMObject *object,
 
 	return array;
 }
-

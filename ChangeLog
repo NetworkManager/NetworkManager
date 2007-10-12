@@ -1,5 +1,23 @@
 2007-10-12  Tambet Ingo  <tambet@gmail.com>
 
+	Rework the "properties-changed" signal listening implementation.
+	Add a generic implementation to NMObject class that listens for
+	the signal and calls property setters of the target NMObject.
+
+	* libnm-glib/nm-object.c (nm_object_handle_properties_changed): Implement.
+
+	* libnm-glib/nm-device-802-11-wireless.c: Move the GObject consturction
+	code to the end of file so that all the static functions are available
+	without extra declarations.
+	Remove the "properties-changed" signal handling and use the framework from
+	NMObject.
+	Implement property setters for properties that change with 
+	"properties-changed" signal.
+
+	* libnm-glib/nm-access-point.c: Ditto.
+
+2007-10-12  Tambet Ingo  <tambet@gmail.com>
+
 	Rework the "properties-changed" signal implementation.
 	In classes that need to use it, just emit "GObject::notify" and the new
 	framework takes care of the rest to make the signal available on dbus.

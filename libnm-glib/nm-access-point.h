@@ -14,6 +14,16 @@ G_BEGIN_DECLS
 #define NM_IS_ACCESS_POINT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_ACCESS_POINT))
 #define NM_ACCESS_POINT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_ACCESS_POINT, NMAccessPointClass))
 
+#define NM_ACCESS_POINT_FLAGS      "flags"
+#define NM_ACCESS_POINT_WPA_FLAGS  "wpa_flags"
+#define NM_ACCESS_POINT_RSN_FLAGS  "rsn_flags"
+#define NM_ACCESS_POINT_SSID       "ssid"
+#define NM_ACCESS_POINT_FREQUENCY  "frequency"
+#define NM_ACCESS_POINT_HW_ADDRESS "hw_address"
+#define NM_ACCESS_POINT_MODE       "mode"
+#define NM_ACCESS_POINT_RATE       "rate"
+#define NM_ACCESS_POINT_STRENGTH   "strength"
+
 typedef struct {
 	NMObject parent;
 } NMAccessPoint;
