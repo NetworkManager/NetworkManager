@@ -983,6 +983,19 @@ setting_wireless_security_destroy (NMSetting *setting)
 }
 
 static gboolean
+string_list_contains (GSList *list, const char *string)
+{
+	GSList *iter;
+
+	g_return_val_if_fail (string != NULL, FALSE);
+
+	for (iter = list; iter; iter = g_slist_next (iter))
+		if (!strcmp (iter->data, string))
+			return TRUE;
+	return FALSE;
+}
+
+static gboolean
 setting_wireless_security_update_secrets (NMSetting *setting,
                                           GHashTable *secrets)
 {
@@ -1068,7 +1081,6 @@ setting_wireless_security_need_secrets (NMSetting *setting)
 	g_assert (self->key_mgmt);
 
 	/* Static WEP */
-	// FIXME: check key length too
 	if (strcmp (self->key_mgmt, "none") == 0) {
 		if (!verify_wep_key (self->wep_key0)) {
 			g_ptr_array_add (secrets, "wep-key0");
@@ -1089,10 +1101,22 @@ setting_wireless_security_need_secrets (NMSetting *setting)
 		goto no_secrets;
 	}
 
+	/* WPA-PSK infrastructure and adhoc */
 	if (   (strcmp (self->key_mgmt, "wpa-none") == 0)
 	    || (strcmp (self->key_mgmt, "wpa-psk") == 0)) {
 		if (!verify_wpa_psk (self->psk)) {
 			g_ptr_array_add (secrets, "psk");
+			return secrets;
+		}
+		goto no_secrets;
+	}
+
+	/* LEAP */
+	if (   (strcmp (self->key_mgmt, "ieee8021x") == 0)
+	    && (strcmp (self->auth_alg, "leap") == 0)
+	    && (string_list_contains (self->eap, "leap"))) {
+		if (!self->password || !strlen (self->password)) {
+			g_ptr_array_add (secrets, "password");
 			return secrets;
 		}
 		goto no_secrets;

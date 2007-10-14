@@ -1,3 +1,8 @@
+2007-10-14  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-setting.c
+		- (setting_wireless_security_need_secrets): handle LEAP secrets
+
 2007-10-13  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/nm-setting.h
