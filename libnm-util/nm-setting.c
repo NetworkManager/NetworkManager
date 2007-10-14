@@ -866,7 +866,7 @@ setting_wireless_security_verify (NMSetting *setting, GHashTable *all_settings)
 		return FALSE;
 	}
 
-	if (self->proto && !string_in_list (self->proto, valid_protos)) {
+	if (self->proto && !string_slist_validate (self->proto, valid_protos)) {
 		g_warning ("Invalid authentication protocol");
 		return FALSE;
 	}
@@ -925,7 +925,6 @@ setting_wireless_security_destroy (NMSetting *setting)
 
 	g_free (self->key_mgmt);
 	g_free (self->auth_alg);
-	g_free (self->proto);
 	g_free (self->identity);
 	g_free (self->anonymous_identity);
 	g_free (self->ca_path);
@@ -946,6 +945,11 @@ setting_wireless_security_destroy (NMSetting *setting)
 	g_free (self->eappsk);
 	g_free (self->private_key_passwd);
 	g_free (self->phase2_private_key_passwd);
+
+	if (self->proto) {
+		g_slist_foreach (self->proto, (GFunc) g_free, NULL);
+		g_slist_free (self->proto);
+	}
 
 	if (self->pairwise) {
 		g_slist_foreach (self->pairwise, (GFunc) g_free, NULL);
@@ -1111,7 +1115,7 @@ static SettingMember wireless_sec_table[] = {
 	{ "key-mgmt",                  NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, key_mgmt),                  TRUE, FALSE },
 	{ "wep-tx-keyidx",             NM_S_TYPE_UINT32,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, wep_tx_keyidx),             FALSE, FALSE },
 	{ "auth-alg",                  NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, auth_alg),                  FALSE, FALSE },
-	{ "proto",                     NM_S_TYPE_STRING,       G_STRUCT_OFFSET (NMSettingWirelessSecurity, proto),                     FALSE, FALSE },
+	{ "proto",                     NM_S_TYPE_STRING_ARRAY, G_STRUCT_OFFSET (NMSettingWirelessSecurity, proto),                     FALSE, FALSE },
 	{ "pairwise",                  NM_S_TYPE_STRING_ARRAY, G_STRUCT_OFFSET (NMSettingWirelessSecurity, pairwise),                  FALSE, FALSE },
 	{ "group",                     NM_S_TYPE_STRING_ARRAY, G_STRUCT_OFFSET (NMSettingWirelessSecurity, group),                     FALSE, FALSE },
 	{ "eap",                       NM_S_TYPE_STRING_ARRAY, G_STRUCT_OFFSET (NMSettingWirelessSecurity, eap),                       FALSE, FALSE },

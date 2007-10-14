@@ -1,3 +1,11 @@
+2007-10-13  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-setting.h
+	  libnm-util/nm-setting.c
+	  src/supplicant-manager/nm-supplicant-config.c
+		- Make the 'proto' field of the 802-11-wireless-security field a
+			string list
+
 2007-10-12  Tambet Ingo  <tambet@gmail.com>
 
 	Rework the "properties-changed" signal listening implementation.

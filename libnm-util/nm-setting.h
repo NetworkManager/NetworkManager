@@ -154,7 +154,7 @@ typedef struct {
 	char *key_mgmt;
 	guint32 wep_tx_keyidx;
 	char *auth_alg;
-	char *proto;
+	GSList *proto; /* GSList of strings */
 	GSList *pairwise; /* GSList of strings */
 	GSList *group; /* GSList of strings */
 	GSList *eap; /* GSList of strings */
