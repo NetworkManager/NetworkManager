@@ -22,7 +22,18 @@ typedef struct {
 	NMState state;
 	gboolean have_device_list;
 	GHashTable *devices;
+
+	gboolean wireless_enabled;
+	gboolean wireless_hw_enabled;
 } NMClientPrivate;
+
+enum {
+	PROP_0,
+	PROP_WIRELESS_ENABLED,
+	PROP_WIRELESS_HARDWARE_ENABLED,
+
+	LAST_PROP
+};
 
 enum {
 	MANAGER_RUNNING,
@@ -58,8 +69,8 @@ nm_client_init (NMClient *client)
 
 static GObject*
 constructor (GType type,
-			 guint n_construct_params,
-			 GObjectConstructParam *construct_params)
+		   guint n_construct_params,
+		   GObjectConstructParam *construct_params)
 {
 	NMObject *object;
 	DBusGConnection *connection;
@@ -67,8 +78,8 @@ constructor (GType type,
 	GError *err = NULL;
 
 	object = (NMObject *) G_OBJECT_CLASS (nm_client_parent_class)->constructor (type,
-																				n_construct_params,
-																				construct_params);
+																 n_construct_params,
+																 construct_params);
 	if (!object)
 		return NULL;
 
@@ -76,50 +87,61 @@ constructor (GType type,
 	connection = nm_object_get_connection (object);
 
 	priv->client_proxy = dbus_g_proxy_new_for_name (connection,
-													NM_DBUS_SERVICE,
-													nm_object_get_path (object),
-													NM_DBUS_INTERFACE);
+										   NM_DBUS_SERVICE,
+										   nm_object_get_path (object),
+										   NM_DBUS_INTERFACE);
 
 	dbus_g_proxy_add_signal (priv->client_proxy, "StateChange", G_TYPE_UINT, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->client_proxy,
-								 "StateChange",
-								 G_CALLBACK (client_state_change_proxy),
-								 object,
-								 NULL);
+						    "StateChange",
+						    G_CALLBACK (client_state_change_proxy),
+						    object,
+						    NULL);
 
 	dbus_g_proxy_add_signal (priv->client_proxy, "DeviceAdded", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->client_proxy,
-								 "DeviceAdded",
-								 G_CALLBACK (client_device_added_proxy),
-								 object,
-								 NULL);
+						    "DeviceAdded",
+						    G_CALLBACK (client_device_added_proxy),
+						    object,
+						    NULL);
 
 	dbus_g_proxy_add_signal (priv->client_proxy, "DeviceRemoved", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->client_proxy,
-								 "DeviceRemoved",
-								 G_CALLBACK (client_device_removed_proxy),
-								 object,
-								 NULL);
+						    "DeviceRemoved",
+						    G_CALLBACK (client_device_removed_proxy),
+						    object,
+						    NULL);
+
+	nm_object_handle_properties_changed (NM_OBJECT (object), priv->client_proxy);
+
+	priv->wireless_enabled = nm_object_get_boolean_property (NM_OBJECT (object),
+												  NM_DBUS_INTERFACE,
+												  "WirelessEnabled");
+
+	priv->wireless_hw_enabled = priv->wireless_enabled ?
+		TRUE : nm_object_get_boolean_property (NM_OBJECT (object),
+									    NM_DBUS_INTERFACE,
+									    "WirelessHardwareEnabled");
 
 	priv->bus_proxy = dbus_g_proxy_new_for_name (connection,
-												 "org.freedesktop.DBus",
-												 "/org/freedesktop/DBus",
-												 "org.freedesktop.DBus");
+										"org.freedesktop.DBus",
+										"/org/freedesktop/DBus",
+										"org.freedesktop.DBus");
 
 	dbus_g_proxy_add_signal (priv->bus_proxy, "NameOwnerChanged",
-							 G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
-							 G_TYPE_INVALID);
+						G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+						G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->bus_proxy,
-								 "NameOwnerChanged",
-								 G_CALLBACK (proxy_name_owner_changed),
-								 object, NULL);
+						    "NameOwnerChanged",
+						    G_CALLBACK (proxy_name_owner_changed),
+						    object, NULL);
 
 	if (!dbus_g_proxy_call (priv->bus_proxy,
-							"NameHasOwner", &err,
-							G_TYPE_STRING, NM_DBUS_SERVICE,
-							G_TYPE_INVALID,
-							G_TYPE_BOOLEAN, &priv->manager_running,
-							G_TYPE_INVALID)) {
+					    "NameHasOwner", &err,
+					    G_TYPE_STRING, NM_DBUS_SERVICE,
+					    G_TYPE_INVALID,
+					    G_TYPE_BOOLEAN, &priv->manager_running,
+					    G_TYPE_INVALID)) {
 		g_warning ("Error on NameHasOwner DBUS call: %s", err->message);
 		g_error_free (err);
 	}
@@ -136,6 +158,56 @@ finalize (GObject *object)
 	g_object_unref (priv->bus_proxy);
 	g_hash_table_destroy (priv->devices);
 }
+
+static void
+set_property (GObject *object, guint prop_id,
+		    const GValue *value, GParamSpec *pspec)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
+	gboolean b;
+
+	switch (prop_id) {
+	case PROP_WIRELESS_ENABLED:
+		b = g_value_get_boolean (value);
+		if (priv->wireless_enabled != b) {
+			priv->wireless_enabled = b;
+			g_object_notify (object, NM_CLIENT_WIRELESS_ENABLED);
+		}
+		break;
+	case PROP_WIRELESS_HARDWARE_ENABLED:
+		b = g_value_get_boolean (value);
+		if (priv->wireless_hw_enabled != b) {
+			priv->wireless_hw_enabled = b;
+			g_object_notify (object, NM_CLIENT_WIRELESS_HARDWARE_ENABLED);
+		}
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+get_property (GObject *object,
+              guint prop_id,
+              GValue *value,
+              GParamSpec *pspec)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_WIRELESS_ENABLED:
+		g_value_set_boolean (value, priv->wireless_enabled);
+		break;
+	case PROP_WIRELESS_HARDWARE_ENABLED:
+		g_value_set_boolean (value, priv->wireless_hw_enabled);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
 
 static void
 manager_running (NMClient *client, gboolean running)
@@ -158,9 +230,28 @@ nm_client_class_init (NMClientClass *client_class)
 
 	/* virtual methods */
 	object_class->constructor = constructor;
+	object_class->set_property = set_property;
+	object_class->get_property = get_property;
 	object_class->finalize = finalize;
 
 	client_class->manager_running = manager_running;
+
+	/* properties */
+	g_object_class_install_property
+		(object_class, PROP_WIRELESS_ENABLED,
+		 g_param_spec_boolean (NM_CLIENT_WIRELESS_ENABLED,
+						   "WirelessEnabled",
+						   "Is wirless enabled",
+						   TRUE,
+						   G_PARAM_READWRITE));
+
+	g_object_class_install_property
+		(object_class, PROP_WIRELESS_HARDWARE_ENABLED,
+		 g_param_spec_boolean (NM_CLIENT_WIRELESS_HARDWARE_ENABLED,
+						   "WirelessHardwareEnabled",
+						   "Is wirless hardware enabled",
+						   TRUE,
+						   G_PARAM_READWRITE));
 
 	/* signals */
 	signals[MANAGER_RUNNING] =
@@ -548,7 +639,7 @@ nm_client_wireless_get_enabled (NMClient *client)
 {
 	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
 
-	return nm_object_get_boolean_property (NM_OBJECT (client), NM_DBUS_INTERFACE, "WirelessEnabled");
+	return NM_CLIENT_GET_PRIVATE (client)->wireless_enabled;
 }
 
 void
@@ -562,9 +653,17 @@ nm_client_wireless_set_enabled (NMClient *client, gboolean enabled)
 	g_value_set_boolean (&value, enabled);
 
 	nm_object_set_property (NM_OBJECT (client),
-							NM_DBUS_INTERFACE,
-							"WirelessEnabled",
-							&value);
+					    NM_DBUS_INTERFACE,
+					    "WirelessEnabled",
+					    &value);
+}
+
+gboolean
+nm_client_wireless_hardware_get_enabled (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+
+	return NM_CLIENT_GET_PRIVATE (client)->wireless_hw_enabled;
 }
 
 NMState

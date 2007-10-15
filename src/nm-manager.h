@@ -16,6 +16,7 @@
 
 #define NM_MANAGER_STATE "state"
 #define NM_MANAGER_WIRELESS_ENABLED "wireless-enabled"
+#define NM_MANAGER_WIRELESS_HARDWARE_ENABLED "wireless-hardware-enabled"
 
 #define NM_MANAGER_CONNECTION_PROXY_TAG "dbus-proxy"
 #define NM_MANAGER_CONNECTION_TYPE_TAG "service-type"
@@ -37,6 +38,7 @@ typedef struct {
 	void (*device_added) (NMManager *manager, NMDevice *device);
 	void (*device_removed) (NMManager *manager, NMDevice *device);
 	void (*state_change) (NMManager *manager, guint state);
+	void (*properties_changed) (NMManager *manager, GHashTable *properties);
 
 	void (*connections_added) (NMManager *manager, NMConnectionType type);
 
@@ -79,6 +81,9 @@ gboolean  nm_manager_activation_pending (NMManager *manager);
 
 NMState nm_manager_get_state (NMManager *manager);
 gboolean nm_manager_wireless_enabled (NMManager *manager);
+gboolean nm_manager_wireless_hardware_enabled (NMManager *manager);
+void nm_manager_set_wireless_hardware_enabled (NMManager *manager,
+					       gboolean enabled);
 void nm_manager_sleep (NMManager *manager, gboolean sleep);
 
 /* Connections */

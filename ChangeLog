@@ -1,3 +1,22 @@
+2007-10-15  Tambet Ingo  <tambet@gmail.com>
+
+	Implement killswitch polling through HAL.
+
+	* src/nm-manager.c: Add wireless hardware status property. Add 
+	'properties-changed' signal for changes in wireless and wireless hardware
+	state changes.
+
+	* src/nm-hal-manager.c: Poll hal for killswitch statuses in every 6 seconds
+	and update NMManager's wireless hardware state when it has changed.
+	(nm_hal_manager_new): Don't try to add initial devices here - (hal_init)
+	already does that.
+
+	* libnm-glib/nm-client.c: Add wireless hardware status property. Cache the
+	values of wireless state and wireless hardware state. Listen for the
+	'properties-changed' signals, update the cached values and emit notify.
+
+	* include/NetworkManager.h: Fix a typo in a comment.
+
 2007-10-14  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/nm-setting.c

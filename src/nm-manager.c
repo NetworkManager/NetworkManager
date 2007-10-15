@@ -9,6 +9,7 @@
 #include "nm-device-interface.h"
 #include "nm-device-802-11-wireless.h"
 #include "NetworkManagerSystem.h"
+#include "nm-properties-changed-signal.h"
 #include "nm-marshal.h"
 
 static gboolean impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err);
@@ -65,6 +66,7 @@ typedef struct {
 
 	PendingConnectionInfo *pending_connection_info;
 	gboolean wireless_enabled;
+	gboolean wireless_hw_enabled;
 	gboolean sleeping;
 } NMManagerPrivate;
 
@@ -76,6 +78,7 @@ enum {
 	DEVICE_ADDED,
 	DEVICE_REMOVED,
 	STATE_CHANGE,
+	PROPERTIES_CHANGED,
 	CONNECTIONS_ADDED,
 	CONNECTION_ADDED,
 	CONNECTION_UPDATED,
@@ -90,6 +93,7 @@ enum {
 	PROP_0,
 	PROP_STATE,
 	PROP_WIRELESS_ENABLED,
+	PROP_WIRELESS_HARDWARE_ENABLED,
 
 	LAST_PROP
 };
@@ -100,6 +104,7 @@ nm_manager_init (NMManager *manager)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
 	priv->wireless_enabled = TRUE;
+	priv->wireless_hw_enabled = TRUE;
 	priv->sleeping = FALSE;
 	priv->state = NM_STATE_DISCONNECTED;
 
@@ -202,6 +207,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_WIRELESS_ENABLED:
 		manager_set_wireless_enabled (NM_MANAGER (object), g_value_get_boolean (value));
 		break;
+	case PROP_WIRELESS_HARDWARE_ENABLED:
+		nm_manager_set_wireless_hardware_enabled (NM_MANAGER (object), g_value_get_boolean (value));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -221,6 +229,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_WIRELESS_ENABLED:
 		g_value_set_boolean (value, priv->wireless_enabled);
+		break;
+	case PROP_WIRELESS_HARDWARE_ENABLED:
+		g_value_set_boolean (value, priv->wireless_hw_enabled);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -259,6 +270,14 @@ nm_manager_class_init (NMManagerClass *manager_class)
 							   TRUE,
 							   G_PARAM_READWRITE));
 
+	g_object_class_install_property
+		(object_class, PROP_WIRELESS_HARDWARE_ENABLED,
+		 g_param_spec_boolean (NM_MANAGER_WIRELESS_HARDWARE_ENABLED,
+						   "WirelessHardwareEnabled",
+						   "RF kill state",
+						   TRUE,
+						   G_PARAM_READWRITE));
+
 	/* signals */
 	signals[DEVICE_ADDED] =
 		g_signal_new ("device-added",
@@ -289,6 +308,10 @@ nm_manager_class_init (NMManagerClass *manager_class)
 					  g_cclosure_marshal_VOID__UINT,
 					  G_TYPE_NONE, 1,
 					  G_TYPE_UINT);
+
+	signals[PROPERTIES_CHANGED] = 
+		nm_properties_changed_signal_new (object_class,
+								    G_STRUCT_OFFSET (NMManagerClass, properties_changed));
 
 	signals[CONNECTIONS_ADDED] =
 		g_signal_new ("connections-added",
@@ -841,6 +864,8 @@ manager_set_wireless_enabled (NMManager *manager, gboolean enabled)
 
 	priv->wireless_enabled = enabled;
 
+	g_object_notify (G_OBJECT (manager), NM_MANAGER_WIRELESS_ENABLED);
+
 	/* Tear down all wireless devices */
 	for (iter = priv->devices; iter; iter = iter->next) {
 		if (NM_IS_DEVICE_802_11_WIRELESS (iter->data)) {
@@ -1371,6 +1396,33 @@ nm_manager_wireless_enabled (NMManager *manager)
 	g_object_get (manager, NM_MANAGER_WIRELESS_ENABLED, &enabled, NULL);
 
 	return enabled;
+}
+
+gboolean
+nm_manager_wireless_hardware_enabled (NMManager *manager)
+{
+	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
+
+	return NM_MANAGER_GET_PRIVATE (manager)->wireless_hw_enabled;
+}
+
+void
+nm_manager_set_wireless_hardware_enabled (NMManager *manager,
+								  gboolean enabled)
+{
+	NMManagerPrivate *priv;
+
+	g_return_if_fail (NM_IS_MANAGER (manager));
+
+	priv = NM_MANAGER_GET_PRIVATE (manager);
+
+	if (priv->wireless_hw_enabled != enabled) {
+		nm_info ("Wireless now %s by radio killswitch", enabled ? "enabled" : "disabled");
+		priv->wireless_hw_enabled = enabled;
+		g_object_notify (G_OBJECT (manager), NM_MANAGER_WIRELESS_HARDWARE_ENABLED);
+
+		manager_set_wireless_enabled (manager, enabled);
+	}
 }
 
 void

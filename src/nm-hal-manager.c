@@ -1,3 +1,5 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
@@ -8,6 +10,9 @@
 #include "nm-device-802-11-wireless.h"
 #include "nm-device-802-3-ethernet.h"
 
+/* Killswitch poll frequency in seconds */
+#define NM_HAL_MANAGER_KILLSWITCH_POLL_FREQUENCY 6
+
 struct _NMHalManager {
 	LibHalContext *hal_ctx;
 	NMDBusManager *dbus_mgr;
@@ -15,6 +20,10 @@ struct _NMHalManager {
 	GSList *device_creators;
 
 	gboolean nm_sleeping;
+
+	/* Killswitch handling */
+	GSList *killswitch_list;
+	guint32 killswitch_poll_id;
 };
 
 /* Device creators */
@@ -295,6 +304,162 @@ add_initial_devices (NMHalManager *manager)
 	}
 }
 
+typedef struct {
+	NMHalManager *manager;
+	gboolean initial_state;
+	gboolean changed;
+	guint32 pending_polls;
+	GSList *proxies;
+} NMKillswitchPollInfo;
+
+static void
+killswitch_getpower_done (gpointer user_data)
+{
+	NMKillswitchPollInfo *info = (NMKillswitchPollInfo *) user_data;
+
+	info->pending_polls--;
+
+	if (info->pending_polls == 0) {
+		g_slist_foreach (info->proxies, (GFunc) g_object_unref, NULL);
+		g_slist_free (info->proxies);
+		info->proxies = NULL;
+
+		if (info->changed)
+			nm_manager_set_wireless_hardware_enabled (info->manager->nm_manager, !info->initial_state);
+	}
+}
+
+static void 
+killswitch_getpower_reply (DBusGProxy *proxy,
+					  DBusGProxyCall *call_id,
+					  gpointer user_data)
+{
+	NMKillswitchPollInfo *info = (NMKillswitchPollInfo *) user_data;
+	guint32 status;
+	GError *err = NULL;
+
+	if (dbus_g_proxy_end_call (proxy, call_id, &err,
+						  G_TYPE_UINT, &status,
+						  G_TYPE_INVALID)) {
+		if (!info->changed && info->initial_state != (status == 0) ? FALSE : TRUE)
+			info->changed = TRUE;
+	} else {
+		nm_warning ("Error getting killswitch power: %s.", err->message);
+		g_error_free (err);
+	}
+}
+
+static void
+poll_killswitches_real (gpointer data, gpointer user_data)
+{
+	NMKillswitchPollInfo *info = (NMKillswitchPollInfo *) user_data;
+	DBusGProxy *proxy;
+
+	proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (info->manager->dbus_mgr),
+								"org.freedesktop.Hal",
+								(char *) data,
+								"org.freedesktop.Hal.Device.KillSwitch");
+
+	dbus_g_proxy_begin_call (proxy, "GetPower",
+						killswitch_getpower_reply,
+						info,
+						killswitch_getpower_done,
+						G_TYPE_INVALID);
+	info->pending_polls++;
+	info->proxies = g_slist_prepend (info->proxies, proxy);
+}
+
+static gboolean
+poll_killswitches (gpointer user_data)
+{
+	NMKillswitchPollInfo *info = (NMKillswitchPollInfo *) user_data;
+
+	info->initial_state = nm_manager_wireless_hardware_enabled (info->manager->nm_manager);
+	info->changed = FALSE;
+	info->pending_polls = 0;
+
+	g_slist_foreach (info->manager->killswitch_list, poll_killswitches_real, info);
+	return TRUE;
+}
+
+static void
+killswitch_poll_destroy (gpointer data)
+{
+	NMKillswitchPollInfo *info = (NMKillswitchPollInfo *) data;
+
+	if (info->proxies) {
+		g_slist_foreach (info->proxies, (GFunc) g_object_unref, NULL);
+		g_slist_free (info->proxies);
+	}
+	g_slice_free (NMKillswitchPollInfo, info);
+}
+
+static void
+add_killswitch_device (NMHalManager *manager, const char *udi)
+{
+	char *type;
+	GSList *iter;
+
+	type = libhal_device_get_property_string (manager->hal_ctx, udi, "killswitch.type", NULL);
+	if (!type)
+		return;
+
+	if (strcmp (type, "wlan"))
+		goto out;
+
+	/* see if it's already in the list */
+	for (iter = manager->killswitch_list; iter; iter = iter->next) {
+		const char *list_udi = (const char *) iter->data;
+		if (!strcmp (list_udi, udi))
+			goto out;
+	}
+
+	/* Start polling switches if this is the first switch we've found */
+	if (!manager->killswitch_list) {
+		NMKillswitchPollInfo *info;
+
+		info = g_slice_new0 (NMKillswitchPollInfo);
+		info->manager = manager;
+
+		manager->killswitch_poll_id = g_timeout_add_full (G_PRIORITY_DEFAULT,
+												NM_HAL_MANAGER_KILLSWITCH_POLL_FREQUENCY * 1000,
+												poll_killswitches,
+												info,
+												killswitch_poll_destroy);
+	}
+
+	manager->killswitch_list = g_slist_append (manager->killswitch_list, g_strdup (udi));
+	nm_info ("Found radio killswitch %s", udi);
+
+out:
+	libhal_free_string (type);
+}
+
+static void
+add_killswitch_devices (NMHalManager *manager)
+{
+	char **udis;
+	int num_udis;
+	int i;
+	DBusError	err;
+
+	dbus_error_init (&err);
+	udis = libhal_find_device_by_capability (manager->hal_ctx, "killswitch", &num_udis, &err);
+	if (!udis)
+		return;
+
+	if (dbus_error_is_set (&err)) {
+		nm_warning ("Could not find killswitch devices: %s", err.message);
+		dbus_error_free (&err);
+		return;
+	}
+
+	for (i = 0; i < num_udis; i++)
+		add_killswitch_device (manager, udis[i]);
+
+	libhal_free_string_array (udis);
+}
+
 static gboolean
 hal_init (NMHalManager *manager)
 {
@@ -333,6 +498,7 @@ hal_init (NMHalManager *manager)
 	}
 
 	/* Add any devices we know about */
+	add_killswitch_devices (manager);
 	add_initial_devices (manager);
 	success = TRUE;
 
@@ -353,6 +519,17 @@ static void
 hal_deinit (NMHalManager *manager)
 {
 	DBusError error;
+
+	if (manager->killswitch_poll_id) {
+		g_source_remove (manager->killswitch_poll_id);
+		manager->killswitch_poll_id = 0;
+	}
+
+	if (manager->killswitch_list) {
+		g_slist_foreach (manager->killswitch_list, (GFunc) g_free, NULL);
+		g_slist_free (manager->killswitch_list);
+		manager->killswitch_list = NULL;
+	}
 
 	if (!manager->hal_ctx)
 		return;
@@ -463,7 +640,6 @@ nm_hal_manager_new (NMManager *nm_manager)
 					  manager);
 
 	hal_init (manager);
-	add_initial_devices (manager);
 
 	return manager;
 }

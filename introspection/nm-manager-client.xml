@@ -41,10 +41,15 @@
     </method>
 
     <property name="WirelessEnabled" type="b" access="readwrite"/>
+    <property name="WirelessHardwareEnabled" type="b" access="read"/>
     <property name="State" type="u" access="read"/>
 
     <signal name="StateChange">
       <arg name="state" type="u"/>
+    </signal>
+
+    <signal name="PropertiesChanged">
+      <arg name="properties" type="a{sv}"/>
     </signal>
 
     <signal name="DeviceAdded">

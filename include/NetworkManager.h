@@ -48,7 +48,7 @@
 
 
 /*
- * Types of NetworkManager devices
+ * Types of NetworkManager states
  */
 typedef enum NMState
 {

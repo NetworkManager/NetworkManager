@@ -19,6 +19,9 @@ G_BEGIN_DECLS
 #define NM_IS_CLIENT_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_CLIENT))
 #define NM_CLIENT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_CLIENT, NMClientClass))
 
+#define NM_CLIENT_WIRELESS_ENABLED "wireless_enabled"
+#define NM_CLIENT_WIRELESS_HARDWARE_ENABLED "wireless_hardware_enabled"
+
 typedef struct {
 	NMObject parent;
 } NMClient;
@@ -65,6 +68,7 @@ void nm_client_activate_device (NMClient *client,
 
 gboolean  nm_client_wireless_get_enabled (NMClient *client);
 void      nm_client_wireless_set_enabled (NMClient *client, gboolean enabled);
+gboolean  nm_client_wireless_hardware_get_enabled (NMClient *client);
 NMState   nm_client_get_state            (NMClient *client);
 void      nm_client_sleep                (NMClient *client, gboolean sleep);
 
