@@ -1,5 +1,12 @@
 2007-10-16  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-manager.c
+		- (manager_set_wireless_enabled): don't allow wireless to be enabled
+			if it's disabled in hardware; don't touch network devices while
+			NM is asleep
+
+2007-10-16  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-client.c
 		- (nm_client_activate_device): convert NULL specific_object to "/",
 			which is used in place of NULL

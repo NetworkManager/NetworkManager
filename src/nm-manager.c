@@ -862,9 +862,17 @@ manager_set_wireless_enabled (NMManager *manager, gboolean enabled)
 	if (priv->wireless_enabled == enabled)
 		return;
 
+	/* Can't set wireless enabled if it's disabled in hardware */
+	if (!priv->wireless_hw_enabled && enabled)
+		return;
+
 	priv->wireless_enabled = enabled;
 
 	g_object_notify (G_OBJECT (manager), NM_MANAGER_WIRELESS_ENABLED);
+
+	/* Don't touch devices if asleep/networking disabled */
+	if (priv->sleeping)
+		return;
 
 	/* Tear down all wireless devices */
 	for (iter = priv->devices; iter; iter = iter->next) {
