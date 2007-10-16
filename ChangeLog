@@ -1,5 +1,11 @@
 2007-10-16  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/nm-client.c
+		- (nm_client_activate_device): actually use the fixed-up specific
+			object path
+
+2007-10-16  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-hal-manager.c
 		- (killswitch_getpower_reply, nm_hal_manager_destroy): only print out
 			killswitch error messages once

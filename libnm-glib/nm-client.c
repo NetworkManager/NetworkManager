@@ -539,7 +539,7 @@ nm_client_activate_device (NMClient *client,
 											    nm_object_get_path (NM_OBJECT (device)),
 											    service_name,
 											    connection_path,
-											    specific_object,
+											    internal_so,
 											    activate_cb,
 											    info);
 }
