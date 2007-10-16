@@ -1,5 +1,27 @@
 2007-10-16  Tambet Ingo  <tambet@gmail.com>
 
+	Implement a generic NMSetting creator from setting name.
+	While at it, get rid of all nm_setting_foo_new_from_hash() functions and
+	add a virtual function 'populate_fn'.
+
+	* libnm-util/nm-connection.c (nm_connection_create_setting): Implement.
+	(register_default_creators): Register setting creators instead of functions
+	that create and then populate.
+	(parse_one_setting): Use the common setting creator and then setting specific
+	poplulation function.
+
+	* libnm-util/nm-setting.c: Get rid of nm_setting_foo_new_from_hash() functions,
+	they all looked exactly the same.
+	Add a 'populate_fn' virtual function to NMSetting.
+	Use default virtual functions in case they are not overriden.
+	(nm_setting_populate_from_hash): Implement.
+
+	* src/nm-device.c (real_act_stage3_ip_config_start): Don't hard code the setting
+	name, use a defined string.
+	(real_act_stage4_get_ip4_config): Ditto.
+
+2007-10-16  Tambet Ingo  <tambet@gmail.com>
+
 	* src/nm-hal-manager.c (killswitch_getpower_reply): The type returned from
 	HAL is int, not uint.
 

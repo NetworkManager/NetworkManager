@@ -9,9 +9,11 @@ G_BEGIN_DECLS
 
 typedef struct _NMSetting NMSetting;
 
-typedef NMSetting *(*NMSettingCreateFn)  (GHashTable *settings);
+typedef NMSetting *(*NMSettingCreateFn)  (void);
+typedef gboolean  (*NMSettingPopulateFn) (NMSetting *setting,
+								  GHashTable *hash);
 typedef gboolean   (*NMSettingVerifyFn)  (NMSetting *setting,
-										  GHashTable *all_settings);
+								  GHashTable *all_settings);
 
 typedef GHashTable *(*NMSettingToHashFn) (NMSetting *setting);
 
@@ -51,6 +53,7 @@ struct _NMSetting {
 	char *name;
 	SettingMember *_members;  /* Private */
 
+	NMSettingPopulateFn populate_fn;
 	NMSettingVerifyFn verify_fn;
 	NMSettingToHashFn hash_fn;
 	NMSettingUpdateSecretsFn update_secrets_fn;
@@ -59,6 +62,7 @@ struct _NMSetting {
 	NMSettingDestroyFn destroy_fn;
 };
 
+gboolean    nm_setting_populate_from_hash (NMSetting *setting, GHashTable *hash);
 gboolean    nm_settings_verify (GHashTable *all_settings);
 GHashTable *nm_setting_to_hash (NMSetting *setting);
 gboolean    nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets);
@@ -85,7 +89,6 @@ typedef struct {
 } NMSettingConnection;
 
 NMSetting *nm_setting_connection_new (void);
-NMSetting *nm_setting_connection_new_from_hash (GHashTable *settings);
 
 /* IP4 config */
 
@@ -101,7 +104,6 @@ typedef struct {
 } NMSettingIP4Config;
 
 NMSetting *nm_setting_ip4_config_new (void);
-NMSetting *nm_setting_ip4_config_new_from_hash (GHashTable *settings);
 
 /* Wired device */
 
@@ -119,7 +121,6 @@ typedef struct {
 } NMSettingWired;
 
 NMSetting *nm_setting_wired_new (void);
-NMSetting *nm_setting_wired_new_from_hash (GHashTable *settings);
 
 /* Wireless device */
 
@@ -142,7 +143,6 @@ typedef struct {
 } NMSettingWireless;
 
 NMSetting *nm_setting_wireless_new (void);
-NMSetting *nm_setting_wireless_new_from_hash (GHashTable *settings);
 
 /* Wireless security */
 
@@ -187,7 +187,6 @@ typedef struct {
 } NMSettingWirelessSecurity;
 
 NMSetting *nm_setting_wireless_security_new (void);
-NMSetting *nm_setting_wireless_security_new_from_hash (GHashTable *settings);
 
 /* PPP */
 
@@ -217,7 +216,6 @@ typedef struct {
 } NMSettingPPP;
 
 NMSetting *nm_setting_ppp_new (void);
-NMSetting *nm_setting_ppp_new_from_hash (GHashTable *settings);
 
 /* VPN */
 
@@ -232,7 +230,6 @@ typedef struct {
 } NMSettingVPN;
 
 NMSetting *nm_setting_vpn_new (void);
-NMSetting *nm_setting_vpn_new_from_hash (GHashTable *hash);
 
 /* VPN properties */
 
@@ -245,7 +242,6 @@ typedef struct {
 } NMSettingVPNProperties;
 
 NMSetting *nm_setting_vpn_properties_new (void);
-NMSetting *nm_setting_vpn_properties_new_from_hash (GHashTable *hash);
 
 G_END_DECLS
 

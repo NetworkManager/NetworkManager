@@ -555,7 +555,8 @@ real_act_stage3_ip_config_start (NMDevice *self)
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
 
 	req = nm_device_get_act_request (self);
-	setting = (NMSettingIP4Config *) nm_connection_get_setting (nm_act_request_get_connection (req), "ipv4");
+	setting = (NMSettingIP4Config *) nm_connection_get_setting (nm_act_request_get_connection (req),
+													NM_SETTING_IP4_CONFIG);
 
 	/* If we did not receive IP4 configuration information, default to DHCP */
 	if (!setting || setting->manual == FALSE) {
@@ -702,7 +703,8 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 	}
 
 	req = nm_device_get_act_request (self);
-	setting = (NMSettingIP4Config *) nm_connection_get_setting (nm_act_request_get_connection (req), "ipv4");
+	setting = (NMSettingIP4Config *) nm_connection_get_setting (nm_act_request_get_connection (req),
+													NM_SETTING_IP4_CONFIG);
 
 	if (real_config && setting) {
 		/* If settings are provided, use them, even if it means overriding the values we got from DHCP */

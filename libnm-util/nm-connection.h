@@ -58,6 +58,7 @@ void          nm_connection_for_each_setting_value (NMConnection *connection,
 GHashTable   *nm_connection_to_hash       (NMConnection *connection);
 void          nm_connection_dump          (NMConnection *connection);
 
+NMSetting    *nm_connection_create_setting (const char *name);
 
 void nm_setting_parser_register   (const char *name,
 								   NMSettingCreateFn creator);

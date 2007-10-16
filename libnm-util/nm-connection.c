@@ -1,3 +1,5 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
 #include <string.h>
@@ -30,15 +32,15 @@ register_default_creators (void)
 		const char *name;
 		NMSettingCreateFn fn;
 	} default_map[] = {
-		{ NM_SETTING_CONNECTION,        nm_setting_connection_new_from_hash      },
-		{ NM_SETTING_WIRED,             nm_setting_wired_new_from_hash     },
-		{ NM_SETTING_WIRELESS,          nm_setting_wireless_new_from_hash  },
-		{ NM_SETTING_IP4_CONFIG,        nm_setting_ip4_config_new_from_hash },
-		{ NM_SETTING_WIRELESS_SECURITY, nm_setting_wireless_security_new_from_hash  },
-		{ NM_SETTING_PPP,               nm_setting_ppp_new_from_hash       },
-		{ NM_SETTING_VPN,               nm_setting_vpn_new_from_hash },
-		{ NM_SETTING_VPN_PROPERTIES,    nm_setting_vpn_properties_new_from_hash },
-		{ NULL, NULL}
+		{ NM_SETTING_CONNECTION,        nm_setting_connection_new },
+		{ NM_SETTING_WIRED,             nm_setting_wired_new },
+		{ NM_SETTING_WIRELESS,          nm_setting_wireless_new },
+		{ NM_SETTING_IP4_CONFIG,        nm_setting_ip4_config_new },
+		{ NM_SETTING_WIRELESS_SECURITY, nm_setting_wireless_security_new },
+		{ NM_SETTING_PPP,               nm_setting_ppp_new },
+		{ NM_SETTING_VPN,               nm_setting_vpn_new },
+		{ NM_SETTING_VPN_PROPERTIES,    nm_setting_vpn_properties_new },
+		{ NULL, NULL }
 	};
 
 	for (i = 0; default_map[i].name; i++)
@@ -68,20 +70,38 @@ nm_setting_parser_unregister (const char *name)
 		g_hash_table_remove (registered_setting_creators, name);
 }
 
+NMSetting *
+nm_connection_create_setting (const char *name)
+{
+	NMSettingCreateFn fn;
+	NMSetting *setting;
+
+	g_return_val_if_fail (name != NULL, NULL);
+
+	fn = (NMSettingCreateFn) g_hash_table_lookup (registered_setting_creators, name);
+	if (fn)
+		setting = fn ();
+	else {
+		g_warning ("Unknown setting '%s'", name);
+		setting = NULL;
+	}
+
+	return setting;
+}
+
 static void
 parse_one_setting (gpointer key, gpointer value, gpointer user_data)
 {
 	NMConnection *connection = (NMConnection *) user_data;
-	NMSettingCreateFn fn;
 	NMSetting *setting;
 
-	fn = (NMSettingCreateFn) g_hash_table_lookup (registered_setting_creators, key);
-	if (fn) {
-		setting = fn ((GHashTable *) value);
-		if (setting)
+	setting = nm_connection_create_setting ((char *) key);
+	if (setting) {
+		if (nm_setting_populate_from_hash (setting, (GHashTable *) value))
 			nm_connection_add_setting (connection, setting);
-	} else
-		g_warning ("Unknown setting '%s'", (char *) key);
+		else
+			nm_setting_destroy (setting);
+	}
 }
 
 void
