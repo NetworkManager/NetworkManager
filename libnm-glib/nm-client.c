@@ -518,11 +518,18 @@ nm_client_activate_device (NMClient *client,
 					  gpointer user_data)
 {
 	ActivateDeviceInfo *info;
+	char *internal_so = (char *) specific_object;
 
 	g_return_if_fail (NM_IS_CLIENT (client));
 	g_return_if_fail (NM_IS_DEVICE (device));
 	g_return_if_fail (service_name != NULL);
 	g_return_if_fail (connection_path != NULL);
+
+	/* NULL specific object must be translated into "/" because D-Bus does
+	 * not have any idea of NULL object paths.
+	 */
+	if (internal_so == NULL)
+		internal_so = "/";
 
 	info = g_slice_new (ActivateDeviceInfo);
 	info->fn = callback;

@@ -1,3 +1,13 @@
+2007-10-16  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-client.c
+		- (nm_client_activate_device): convert NULL specific_object to "/",
+			which is used in place of NULL
+
+	* src/nm-manager.c
+		- (impl_manager_activate_device): convert "/" specific_object back into
+			NULL
+
 2007-10-16  Tambet Ingo  <tambet@gmail.com>
 
 	Implement a generic NMSetting creator from setting name.

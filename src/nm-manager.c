@@ -1229,6 +1229,7 @@ impl_manager_activate_device (NMManager *manager,
 	NMConnectionType connection_type;
 	NMConnection *connection;
 	GError *err = NULL;
+	char *real_sop = NULL;
 
 	device = nm_manager_get_device_by_path (manager, device_path);
 	if (!device) {
@@ -1247,12 +1248,16 @@ impl_manager_activate_device (NMManager *manager,
 		goto err;
 	}
 
+	/* "/" is special-cased to NULL to get through D-Bus */
+	if (specific_object_path && strcmp (specific_object_path, "/"))
+		real_sop = g_strdup (specific_object_path);
+
 	connection = nm_manager_get_connection_by_object_path (manager, connection_type, connection_path);
 	if (connection) {
 		// FIXME: remove old_dev deactivation when multiple device support lands
 		deactivate_old_device (manager);
 
-		if (nm_manager_activate_device (manager, device, connection, specific_object_path, TRUE)) {
+		if (nm_manager_activate_device (manager, device, connection, real_sop, TRUE)) {
 			dbus_g_method_return (context, TRUE);
 		} else {
 			err = nm_manager_error_new ("Error in device activation");
@@ -1276,7 +1281,7 @@ impl_manager_activate_device (NMManager *manager,
 		info->device = g_object_ref (device);
 		info->connection_type = connection_type;
 		info->connection_path = g_strdup (connection_path);
-		info->specific_object_path = g_strdup (specific_object_path);
+		info->specific_object_path = g_strdup (real_sop);
 		info->timeout_id = g_timeout_add (5000, wait_for_connection_expired, manager);
 
 		// FIXME: should probably be per-device, not global to the manager
@@ -1288,6 +1293,8 @@ impl_manager_activate_device (NMManager *manager,
 		dbus_g_method_return_error (context, err);
 		g_error_free (err);
 	}
+
+	g_free (real_sop);
 }
 
 static GValueArray *
