@@ -1,6 +1,14 @@
 2007-10-16  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-glib/nm-client.c
+		- (update_wireless_status): consolidate updates of wireless status
+		- (constructor): use update_wireless_status()
+		- (manager_running): set wireless status off when NM goes away; requery
+			the wireless status when NM comes back
+
+2007-10-16  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-glib/nm-client.c
 		- (nm_client_activate_device): actually use the fixed-up specific
 			object path
 

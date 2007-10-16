@@ -67,6 +67,21 @@ nm_client_init (NMClient *client)
 										   (GDestroyNotify) g_object_unref);
 }
 
+static void
+update_wireless_status (NMClient *client)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
+
+	priv->wireless_enabled = nm_object_get_boolean_property (NM_OBJECT (client),
+												  NM_DBUS_INTERFACE,
+												  "WirelessEnabled");
+
+	priv->wireless_hw_enabled = priv->wireless_enabled ?
+		TRUE : nm_object_get_boolean_property (NM_OBJECT (client),
+									    NM_DBUS_INTERFACE,
+									    "WirelessHardwareEnabled");
+}
+
 static GObject*
 constructor (GType type,
 		   guint n_construct_params,
@@ -114,14 +129,7 @@ constructor (GType type,
 
 	nm_object_handle_properties_changed (NM_OBJECT (object), priv->client_proxy);
 
-	priv->wireless_enabled = nm_object_get_boolean_property (NM_OBJECT (object),
-												  NM_DBUS_INTERFACE,
-												  "WirelessEnabled");
-
-	priv->wireless_hw_enabled = priv->wireless_enabled ?
-		TRUE : nm_object_get_boolean_property (NM_OBJECT (object),
-									    NM_DBUS_INTERFACE,
-									    "WirelessHardwareEnabled");
+	update_wireless_status (NM_CLIENT (object));
 
 	priv->bus_proxy = dbus_g_proxy_new_for_name (connection,
 										"org.freedesktop.DBus",
@@ -218,6 +226,10 @@ manager_running (NMClient *client, gboolean running)
 		priv->state = NM_STATE_UNKNOWN;
 		g_hash_table_remove_all (priv->devices);
 		priv->have_device_list = FALSE;
+		priv->wireless_enabled = FALSE;
+		priv->wireless_hw_enabled = FALSE;
+	} else {
+		update_wireless_status (client);
 	}
 }
 
