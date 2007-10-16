@@ -1,5 +1,11 @@
 2007-10-16  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-hal-manager.c
+		- (killswitch_getpower_reply, nm_hal_manager_destroy): only print out
+			killswitch error messages once
+
+2007-10-16  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-manager.c
 		- (manager_set_wireless_enabled): don't allow wireless to be enabled
 			if it's disabled in hardware; don't touch network devices while

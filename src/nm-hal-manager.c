@@ -24,6 +24,7 @@ struct _NMHalManager {
 	/* Killswitch handling */
 	GSList *killswitch_list;
 	guint32 killswitch_poll_id;
+	char *kswitch_err;
 };
 
 /* Device creators */
@@ -344,7 +345,15 @@ killswitch_getpower_reply (DBusGProxy *proxy,
 		if (!info->changed && info->initial_state != (status == 0) ? FALSE : TRUE)
 			info->changed = TRUE;
 	} else {
-		nm_warning ("Error getting killswitch power: %s.", err->message);
+		const char *prev_err = info->manager->kswitch_err;
+
+		/* Only print the error if we haven't seen it before */
+		if (   err->message
+		    && (!prev_err || strcmp (prev_err, err->message) != 0)) {
+			nm_warning ("Error getting killswitch power: %s.", err->message);
+			g_free (info->manager->kswitch_err);
+			info->manager->kswitch_err = g_strdup (err->message);
+		}
 		g_error_free (err);
 	}
 }
@@ -654,12 +663,15 @@ destroy_creator (gpointer data, gpointer user_data)
 void
 nm_hal_manager_destroy (NMHalManager *manager)
 {
-	if (manager) {
-		g_slist_foreach (manager->device_creators, destroy_creator, NULL);
-		g_slist_free (manager->device_creators);
+	if (!manager)
+		return;
 
-		hal_deinit (manager);
-		g_object_unref (manager->nm_manager);
-		g_slice_free (NMHalManager, manager);
-	}
+	g_free (manager->kswitch_err);
+
+	g_slist_foreach (manager->device_creators, destroy_creator, NULL);
+	g_slist_free (manager->device_creators);
+
+	hal_deinit (manager);
+	g_object_unref (manager->nm_manager);
+	g_slice_free (NMHalManager, manager);
 }
