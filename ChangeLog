@@ -1,3 +1,8 @@
+2007-10-16  Tambet Ingo  <tambet@gmail.com>
+
+	* src/nm-hal-manager.c (killswitch_getpower_reply): The type returned from
+	HAL is int, not uint.
+
 2007-10-15  Tambet Ingo  <tambet@gmail.com>
 
 	Implement killswitch polling through HAL.

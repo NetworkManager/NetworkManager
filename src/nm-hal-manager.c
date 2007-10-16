@@ -335,11 +335,11 @@ killswitch_getpower_reply (DBusGProxy *proxy,
 					  gpointer user_data)
 {
 	NMKillswitchPollInfo *info = (NMKillswitchPollInfo *) user_data;
-	guint32 status;
+	int status;
 	GError *err = NULL;
 
 	if (dbus_g_proxy_end_call (proxy, call_id, &err,
-						  G_TYPE_UINT, &status,
+						  G_TYPE_INT, &status,
 						  G_TYPE_INVALID)) {
 		if (!info->changed && info->initial_state != (status == 0) ? FALSE : TRUE)
 			info->changed = TRUE;
