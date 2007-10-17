@@ -62,7 +62,7 @@ NMManager *nm_manager_new (void);
 /* Device handling */
 
 void nm_manager_add_device (NMManager *manager, NMDevice *device);
-void nm_manager_remove_device (NMManager *manager, NMDevice *device);
+void nm_manager_remove_device (NMManager *manager, NMDevice *device, gboolean deactivate);
 GSList *nm_manager_get_devices (NMManager *manager);
 NMDevice *nm_manager_get_device_by_path (NMManager *manager, const char *path);
 NMDevice *nm_manager_get_device_by_udi (NMManager *manager, const char *udi);

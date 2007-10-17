@@ -254,7 +254,7 @@ device_removed (LibHalContext *ctx, const char *udi)
 //	nm_debug ("Device removed (hal udi is '%s').", udi );
 
 	if ((dev = nm_manager_get_device_by_udi (manager->nm_manager, udi)))
-		nm_manager_remove_device (manager->nm_manager, dev);
+		nm_manager_remove_device (manager->nm_manager, dev, TRUE);
 }
 
 static void

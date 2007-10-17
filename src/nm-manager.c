@@ -194,7 +194,7 @@ finalize (GObject *object)
 	priv->system_connections = NULL;
 
 	while (g_slist_length (priv->devices))
-		nm_manager_remove_device (manager, NM_DEVICE (priv->devices->data));
+		nm_manager_remove_device (manager, NM_DEVICE (priv->devices->data), TRUE);
 
 	G_OBJECT_CLASS (nm_manager_parent_class)->finalize (object);
 }
@@ -997,7 +997,7 @@ manager_device_removed (NMManager *manager, NMDevice *device)
 }
  
 void
-nm_manager_remove_device (NMManager *manager, NMDevice *device)
+nm_manager_remove_device (NMManager *manager, NMDevice *device, gboolean deactivate)
 {
 	NMManagerPrivate *priv;
 	GSList *iter;
@@ -1012,6 +1012,8 @@ nm_manager_remove_device (NMManager *manager, NMDevice *device)
 			priv->devices = g_slist_delete_link (priv->devices, iter);
 
 			nm_device_bring_down (device, FALSE);
+			if (deactivate)
+				nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
 
 			g_signal_handlers_disconnect_by_func (device, manager_device_state_changed, manager);
 
@@ -1468,7 +1470,7 @@ nm_manager_sleep (NMManager *manager, gboolean sleep)
 		nm_info  ("Waking up from sleep.");
 
 		while (g_slist_length (priv->devices))
-			nm_manager_remove_device (manager, NM_DEVICE (priv->devices->data));
+			nm_manager_remove_device (manager, NM_DEVICE (priv->devices->data), FALSE);
 
 		priv->devices = NULL;
 	}

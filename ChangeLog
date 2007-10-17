@@ -1,3 +1,13 @@
+2007-10-17  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-manager.h
+	  src/nm-manager.c
+	  src/nm-hal-manager.c
+		- (device_removed, finalize, nm_manager_remove_device,
+		   nm_manager_sleep): add a 'deactivate' argument to 
+		   nm_manager_remove_device() to fully deactivate devices when necessary
+		   (ie, always except when waking up)
+
 2007-10-16  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/nm-setting.c
