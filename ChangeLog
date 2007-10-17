@@ -1,5 +1,11 @@
 2007-10-17  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-11-wireless.c
+		- (get_wireless_capabilities): add missing braces so that WPA capabilities
+			don't get erroneously cleared
+
+2007-10-17  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-manager.h
 	  src/nm-manager.c
 	  src/nm-hal-manager.c

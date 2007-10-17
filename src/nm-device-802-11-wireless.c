@@ -323,10 +323,11 @@ get_wireless_capabilities (NMDevice80211Wireless *self,
 
 		/* Check for WPA support but not cipher support */
 		if (    (caps & (NM_802_11_DEVICE_CAP_WPA | NM_802_11_DEVICE_CAP_RSN))
-		    && !(caps & (NM_802_11_DEVICE_CAP_CIPHER_TKIP | NM_802_11_DEVICE_CAP_CIPHER_CCMP)))
+		    && !(caps & (NM_802_11_DEVICE_CAP_CIPHER_TKIP | NM_802_11_DEVICE_CAP_CIPHER_CCMP))) {
 			nm_warning ("%s: device supports WPA protocol but not WPA ciphers; "
 			            "WPA unavailable.", iface);
 			caps &= ~WPA_CAPS;
+		}
 	}
 
 	return caps;
