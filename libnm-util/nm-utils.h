@@ -139,4 +139,24 @@ char *nm_utils_ssid_to_utf8 (const char *ssid, guint32 len);
 GHashTable *nm_utils_gvalue_hash_dup  (GHashTable *hash);
 char       *nm_utils_garray_to_string (GArray *array);
 
+typedef enum {
+	NMU_SEC_INVALID = 0,
+	NMU_SEC_NONE,
+	NMU_SEC_STATIC_WEP,
+	NMU_SEC_LEAP,
+	NMU_SEC_DYNAMIC_WEP,
+	NMU_SEC_WPA_PSK,
+	NMU_SEC_WPA_ENTERPRISE,
+	NMU_SEC_WPA2_PSK,
+	NMU_SEC_WPA2_ENTERPRISE,
+} NMUtilsSecurityType;
+
+gboolean nm_utils_security_valid (NMUtilsSecurityType type,
+                                  guint32 dev_caps,
+                                  gboolean have_ap,
+                                  guint32 ap_flags,
+                                  guint32 ap_wpa,
+                                  guint32 ap_rsn);
+
+
 #endif /* NM_UTILS_H */

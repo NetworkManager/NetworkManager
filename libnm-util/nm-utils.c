@@ -30,6 +30,7 @@
 #include <glib-object.h>
 #include <dbus/dbus.h>
 #include "nm-utils.h"
+#include "NetworkManager.h"
 
 struct EncodingTriplet
 {
@@ -375,3 +376,173 @@ nm_utils_garray_to_string (GArray *array)
 
 	return g_string_free (str, FALSE);
 }
+
+static gboolean
+device_supports_ap_ciphers (guint32 dev_caps,
+                            guint32 ap_flags,
+                            gboolean static_wep)
+{
+	gboolean have_pair = FALSE;
+	gboolean have_group = FALSE;
+	/* Device needs to support at least one pairwise and one group cipher */
+
+	/* Pairwise */
+	if (static_wep) {
+		/* Static WEP only uses group ciphers */
+		have_pair = TRUE;
+	} else {
+		if (dev_caps & NM_802_11_DEVICE_CAP_CIPHER_WEP40)
+			if (ap_flags & NM_802_11_AP_SEC_PAIR_WEP40)
+				have_pair = TRUE;
+		if (dev_caps & NM_802_11_DEVICE_CAP_CIPHER_WEP104)
+			if (ap_flags & NM_802_11_AP_SEC_PAIR_WEP104)
+				have_pair = TRUE;
+		if (dev_caps & NM_802_11_DEVICE_CAP_CIPHER_TKIP)
+			if (ap_flags & NM_802_11_AP_SEC_PAIR_TKIP)
+				have_pair = TRUE;
+		if (dev_caps & NM_802_11_DEVICE_CAP_CIPHER_CCMP)
+			if (ap_flags & NM_802_11_AP_SEC_PAIR_CCMP)
+				have_pair = TRUE;
+	}
+
+	/* Group */
+	if (dev_caps & NM_802_11_DEVICE_CAP_CIPHER_WEP40)
+		if (ap_flags & NM_802_11_AP_SEC_GROUP_WEP40)
+			have_group = TRUE;
+	if (dev_caps & NM_802_11_DEVICE_CAP_CIPHER_WEP104)
+		if (ap_flags & NM_802_11_AP_SEC_GROUP_WEP104)
+			have_group = TRUE;
+	if (!static_wep) {
+		if (dev_caps & NM_802_11_DEVICE_CAP_CIPHER_TKIP)
+			if (ap_flags & NM_802_11_AP_SEC_GROUP_TKIP)
+				have_group = TRUE;
+		if (dev_caps & NM_802_11_DEVICE_CAP_CIPHER_CCMP)
+			if (ap_flags & NM_802_11_AP_SEC_GROUP_CCMP)
+				have_group = TRUE;
+	}
+
+	return (have_pair && have_group);
+}
+
+gboolean
+nm_utils_security_valid (NMUtilsSecurityType type,
+                         guint32 dev_caps,
+                         gboolean have_ap,
+                         guint32 ap_flags,
+                         guint32 ap_wpa,
+                         guint32 ap_rsn)
+{
+	gboolean good = TRUE;
+
+	if (!have_ap) {
+		if (type == NMU_SEC_NONE)
+			return TRUE;
+		if (   (type == NMU_SEC_STATIC_WEP)
+		    || (type == NMU_SEC_DYNAMIC_WEP)
+		    || (type == NMU_SEC_LEAP)) {
+			if (dev_caps & (NM_802_11_DEVICE_CAP_CIPHER_WEP40 | NM_802_11_DEVICE_CAP_CIPHER_WEP104))
+				return TRUE;
+		}
+	}
+
+	switch (type) {
+	case NMU_SEC_NONE:
+		g_assert (have_ap);
+		if (ap_flags & NM_802_11_AP_FLAGS_PRIVACY)
+			return FALSE;
+		if (ap_wpa || ap_rsn)
+			return FALSE;
+		break;
+	case NMU_SEC_LEAP: /* require PRIVACY bit for LEAP? */
+	case NMU_SEC_STATIC_WEP:
+		g_assert (have_ap);
+		if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
+			return FALSE;
+		if (ap_wpa || ap_rsn) {
+			if (!device_supports_ap_ciphers (dev_caps, ap_wpa, TRUE))
+				if (!device_supports_ap_ciphers (dev_caps, ap_rsn, TRUE))
+					return FALSE;
+		}
+		break;
+	case NMU_SEC_DYNAMIC_WEP:
+		g_assert (have_ap);
+		if (ap_rsn || !(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
+			return FALSE;
+		/* Some APs broadcast minimal WPA-enabled beacons that must be handled */
+		if (ap_wpa) {
+			if (!(ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_802_1X))
+				return FALSE;
+			if (!device_supports_ap_ciphers (dev_caps, ap_wpa, FALSE))
+				return FALSE;
+		}
+		break;
+	case NMU_SEC_WPA_PSK:
+		if (!(dev_caps & NM_802_11_DEVICE_CAP_WPA))
+			return FALSE;
+		if (have_ap) {
+			if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
+				return FALSE;
+
+			if (ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_PSK) {
+				if (   (ap_wpa & NM_802_11_AP_SEC_PAIR_TKIP)
+				    && (dev_caps & NM_802_11_DEVICE_CAP_CIPHER_TKIP))
+					return TRUE;
+				if (   (ap_wpa & NM_802_11_AP_SEC_PAIR_CCMP)
+				    && (dev_caps & NM_802_11_DEVICE_CAP_CIPHER_CCMP))
+					return TRUE;
+			}
+			return FALSE;
+		}
+		break;
+	case NMU_SEC_WPA2_PSK:
+		if (!(dev_caps & NM_802_11_DEVICE_CAP_RSN))
+			return FALSE;
+		if (have_ap) {
+			if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
+				return FALSE;
+
+			if (ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_PSK) {
+				if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_TKIP)
+				    && (dev_caps & NM_802_11_DEVICE_CAP_CIPHER_TKIP))
+					return TRUE;
+				if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_CCMP)
+				    && (dev_caps & NM_802_11_DEVICE_CAP_CIPHER_CCMP))
+					return TRUE;
+			}
+			return FALSE;
+		}
+		break;
+	case NMU_SEC_WPA_ENTERPRISE:
+		if (!(dev_caps & NM_802_11_DEVICE_CAP_WPA))
+			return FALSE;
+		if (have_ap) {
+			if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
+				return FALSE;
+			if (!(ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_802_1X))
+				return FALSE;
+			/* Ensure at least one WPA cipher is supported */
+			if (!device_supports_ap_ciphers (dev_caps, ap_wpa, FALSE))
+				return FALSE;
+		}
+		break;
+	case NMU_SEC_WPA2_ENTERPRISE:
+		if (!(dev_caps & NM_802_11_DEVICE_CAP_RSN))
+			return FALSE;
+		if (have_ap) {
+			if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
+				return FALSE;
+			if (!(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_802_1X))
+				return FALSE;
+			/* Ensure at least one WPA cipher is supported */
+			if (!device_supports_ap_ciphers (dev_caps, ap_rsn, FALSE))
+				return FALSE;
+		}
+		break;
+	default:
+		good = FALSE;
+		break;
+	}
+
+	return good;
+}
+

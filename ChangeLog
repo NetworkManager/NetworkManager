@@ -1,5 +1,12 @@
 2007-10-17  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-utils.h
+	  libnm-util/nm-utils.c
+		- (nm_utils_security_valid): common function to help find the intersection
+			of capabilities of devices and (optionally) access points
+
+2007-10-17  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 		- (get_wireless_capabilities): add missing braces so that WPA capabilities
 			don't get erroneously cleared
