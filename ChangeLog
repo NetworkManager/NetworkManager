@@ -1,5 +1,11 @@
 2007-10-16  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting.c
+		- (setting_wireless_security_verify): fix phase2_auth methods; 'sim'
+			also isn't valid phase2 autheap method
+
+2007-10-16  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/nm-client.c
 		- (update_wireless_status): consolidate updates of wireless status
 		- (constructor): use update_wireless_status()

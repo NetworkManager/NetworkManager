@@ -793,7 +793,8 @@ setting_wireless_security_verify (NMSetting *setting, GHashTable *all_settings)
 	const char *valid_groups[] = { "wep40", "wep104", "tkip", "ccmp", NULL };
 	const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "sim", "psk", "fast", NULL };
 	const char *valid_phase1_peapver[] = { "0", "1", NULL };
-	const char *valid_phase2_autheap[] = { "md5", "mschapv2", "otp", "gtc", "tls", "sim", NULL };
+	const char *valid_phase2_auth[] = { "pap", "chap", "mschap", "mschapv2", "gtc", "otp", "md5", "tls", NULL };
+	const char *valid_phase2_autheap[] = { "md5", "mschapv2", "otp", "gtc", "tls", NULL };
 
 	if (!self->key_mgmt || !string_in_list (self->key_mgmt, valid_key_mgmt)) {
 		g_warning ("Missing or invalid key management");
@@ -845,7 +846,7 @@ setting_wireless_security_verify (NMSetting *setting, GHashTable *all_settings)
 		return FALSE;
 	}
 
-	if (self->phase2_auth && strcmp (self->phase2_auth, "mschapv2")) {
+	if (self->phase2_auth && !string_in_list (self->phase2_auth, valid_phase2_auth)) {
 		g_warning ("Invalid phase2 authentication");
 		return FALSE;
 	}
