@@ -1,3 +1,9 @@
+2007-10-19  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device.c
+		- (constructor): add message about what path a device is exported as
+			to help in debugging rh #339011
+
 2007-10-17  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/nm-utils.h

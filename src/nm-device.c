@@ -190,6 +190,7 @@ constructor (GType type,
 		goto error;
 	}
 
+	nm_info ("(%s): exporting device as %s", nm_device_get_iface (dev), nm_device_get_dbus_path (dev));
 	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (manager),
 										 nm_device_get_dbus_path (dev),
 										 object);
