@@ -14,20 +14,28 @@
       <arg name="settings" type="a{sa{sv}}" direction="out"/>
     </method>
 
-    <method name="GetSecrets">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_connection_settings_get_secrets"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
-      <arg name="setting_name" type="s" direction="in"/>
-      <arg name="request_new" type="b" direction="in"/>
-      <arg name="secrets" type="a{sv}" direction="out"/>
-    </method>
-
     <signal name="Updated">
       <arg name="settings" type="a{sa{sv}}"/>
     </signal>
 
     <signal name="Removed">
     </signal>
+
+  </interface>
+
+  <!-- Secrets have a separate interface so that they can be locked down -->
+  <interface name="org.freedesktop.NetworkManagerSettings.Connection.Secrets">
+
+    <method name="GetSecrets">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_connection_settings_get_secrets"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+      <arg name="setting_name" type="s" direction="in"/>
+      <!-- Array of strings of key names in the Setting for which NM thinks
+           a secrets may be required. -->
+      <arg name="hints" type="as" direction="in"/>
+      <arg name="request_new" type="b" direction="in"/>
+      <arg name="secrets" type="a{sv}" direction="out"/>
+    </method>
 
   </interface>
 

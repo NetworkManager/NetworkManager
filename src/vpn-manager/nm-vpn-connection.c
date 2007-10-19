@@ -510,7 +510,7 @@ clear_need_auth (NMVPNConnection *vpn_connection)
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn_connection);
 	g_assert (priv->connection);
 
-	proxy = g_object_get_data (G_OBJECT (priv->connection), NM_MANAGER_CONNECTION_PROXY_TAG);
+	proxy = g_object_get_data (G_OBJECT (priv->connection), NM_MANAGER_CONNECTION_SECRETS_PROXY_TAG);
 	if (!proxy || !DBUS_IS_G_PROXY (proxy))
 		return;
 
@@ -576,15 +576,18 @@ error:
 	nm_vpn_connection_fail (info->vpn_connection, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
 }
 
+#define DBUS_TYPE_STRING_ARRAY   (dbus_g_type_get_collection ("GPtrArray", G_TYPE_STRING))
+
 static gboolean
 get_connection_secrets (NMVPNConnection *vpn_connection,
                         const char *setting_name,
                         gboolean request_new)
 {
 	NMVPNConnectionPrivate *priv;
-	DBusGProxy *con_proxy;
+	DBusGProxy *secrets_proxy;
 	GetSecretsInfo *info = NULL;
 	DBusGProxyCall *call;
+	GPtrArray *hints;
 
 	g_return_val_if_fail (vpn_connection != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn_connection), FALSE);
@@ -593,8 +596,9 @@ get_connection_secrets (NMVPNConnection *vpn_connection,
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn_connection);
 	g_assert (priv->connection);
 
-	con_proxy = g_object_get_data (G_OBJECT (priv->connection), NM_MANAGER_CONNECTION_PROXY_TAG);
-	g_return_val_if_fail (con_proxy && DBUS_IS_G_PROXY (con_proxy), FALSE);
+	secrets_proxy = g_object_get_data (G_OBJECT (priv->connection),
+	                                   NM_MANAGER_CONNECTION_SECRETS_PROXY_TAG);
+	g_return_val_if_fail (secrets_proxy && DBUS_IS_G_PROXY (secrets_proxy), FALSE);
 
 	info = g_slice_new0 (GetSecretsInfo);
 	g_return_val_if_fail (info != NULL, FALSE);
@@ -607,15 +611,20 @@ get_connection_secrets (NMVPNConnection *vpn_connection,
 
 	info->vpn_connection = g_object_ref (vpn_connection);
 
+	/* Empty for now... */
+	hints = g_ptr_array_new ();
+
 	/* use ..._with_timeout to give the user time to enter secrets */
-	call = dbus_g_proxy_begin_call_with_timeout (con_proxy, "GetSecrets",
+	call = dbus_g_proxy_begin_call_with_timeout (secrets_proxy, "GetSecrets",
 	                                             get_secrets_cb,
 	                                             info,
 	                                             free_get_secrets_info,
 	                                             G_MAXINT32,
 	                                             G_TYPE_STRING, setting_name,
+	                                             DBUS_TYPE_STRING_ARRAY, hints,
 	                                             G_TYPE_BOOLEAN, request_new,
 	                                             G_TYPE_INVALID);
+	g_ptr_array_free (hints, TRUE);
 	if (!call) {
 		nm_warning ("Could not call GetSecrets");
 		goto error;

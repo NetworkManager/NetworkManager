@@ -119,6 +119,7 @@ static gboolean impl_connection_settings_get_settings (NMConnectionSettings *con
 						       GError **error);
 static void impl_connection_settings_get_secrets (NMConnectionSettings *connection,
 						      const gchar *setting_name,
+						      const gchar **hints,
 						      gboolean request_new,
 						      DBusGMethodInvocation *context);
 
@@ -178,6 +179,7 @@ impl_connection_settings_get_settings (NMConnectionSettings *connection,
 static void
 impl_connection_settings_get_secrets (NMConnectionSettings *connection,
                                       const gchar *setting_name,
+                                      const gchar **hints,
                                       gboolean request_new,
                                       DBusGMethodInvocation *context)
 {
@@ -201,7 +203,7 @@ impl_connection_settings_get_secrets (NMConnectionSettings *connection,
 		return;
 	}
 
-	CONNECTION_SETTINGS_CLASS (connection)->get_secrets (connection, setting_name, request_new, context);
+	CONNECTION_SETTINGS_CLASS (connection)->get_secrets (connection, setting_name, hints, request_new, context);
 }
 
 static void

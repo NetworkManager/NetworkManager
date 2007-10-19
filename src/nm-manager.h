@@ -20,6 +20,7 @@
 
 #define NM_MANAGER_CONNECTION_PROXY_TAG "dbus-proxy"
 #define NM_MANAGER_CONNECTION_TYPE_TAG "service-type"
+#define NM_MANAGER_CONNECTION_SECRETS_PROXY_TAG "dbus-secrets-proxy"
 
 typedef enum {
 	NM_CONNECTION_TYPE_UNKNOWN = 0,

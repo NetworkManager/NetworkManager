@@ -201,6 +201,8 @@ get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	g_hash_table_destroy (secrets);
 }
 
+#define DBUS_TYPE_STRING_ARRAY   (dbus_g_type_get_collection ("GPtrArray", G_TYPE_STRING))
+
 gboolean
 nm_act_request_request_connection_secrets (NMActRequest *req,
                                            const char *setting_name,
@@ -210,12 +212,13 @@ nm_act_request_request_connection_secrets (NMActRequest *req,
 	DBusGProxyCall *call;
 	GetSecretsInfo *info = NULL;
 	NMActRequestPrivate *priv = NULL;
+	GPtrArray *hints = NULL;
 
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
 	g_return_val_if_fail (setting_name != NULL, FALSE);
 
 	priv = NM_ACT_REQUEST_GET_PRIVATE (req);
-	proxy = g_object_get_data (G_OBJECT (priv->connection), NM_MANAGER_CONNECTION_PROXY_TAG);
+	proxy = g_object_get_data (G_OBJECT (priv->connection), NM_MANAGER_CONNECTION_SECRETS_PROXY_TAG);
 	if (!DBUS_IS_G_PROXY (proxy)) {
 		nm_warning ("Couldn't get dbus proxy for connection.");
 		goto error;
@@ -233,6 +236,9 @@ nm_act_request_request_connection_secrets (NMActRequest *req,
 		goto error;
 	}
 
+	/* Empty for now */
+	hints = g_ptr_array_new ();
+
 	info->req = req;
 	call = dbus_g_proxy_begin_call_with_timeout (proxy, "GetSecrets",
 	                                             get_secrets_cb,
@@ -240,8 +246,10 @@ nm_act_request_request_connection_secrets (NMActRequest *req,
 	                                             free_get_secrets_info,
 	                                             G_MAXINT32,
 	                                             G_TYPE_STRING, setting_name,
+	                                             DBUS_TYPE_STRING_ARRAY, hints,
 	                                             G_TYPE_BOOLEAN, request_new,
 	                                             G_TYPE_INVALID);
+	g_ptr_array_free (hints, TRUE);
 	if (!call) {
 		nm_warning ("Could not call GetSecrets");
 		goto error;

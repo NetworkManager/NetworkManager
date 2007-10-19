@@ -378,6 +378,7 @@ typedef struct GetSettingsInfo {
 	NMConnection *connection;
 	DBusGProxy *proxy;
 	DBusGProxyCall *call;
+	DBusGProxy *secrets_proxy;
 	GSList **calls;
 } GetSettingsInfo;
 
@@ -447,6 +448,11 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 		g_object_set_data_full (G_OBJECT (connection),
 		                        NM_MANAGER_CONNECTION_PROXY_TAG,
 		                        proxy,
+		                        (GDestroyNotify) g_object_unref);
+
+		g_object_set_data_full (G_OBJECT (connection),
+		                        NM_MANAGER_CONNECTION_SECRETS_PROXY_TAG,
+		                        info->secrets_proxy,
 		                        (GDestroyNotify) g_object_unref);
 
 		priv = NM_MANAGER_GET_PRIVATE (manager);
@@ -595,6 +601,7 @@ internal_new_connection_cb (DBusGProxy *proxy,
 	NMDBusManager * dbus_mgr;
 	DBusGConnection * g_connection;
 	DBusGProxyCall *call;
+	DBusGProxy *secrets_proxy;
 
 	dbus_mgr = nm_dbus_manager_get ();
 	g_connection = nm_dbus_manager_get_connection (dbus_mgr);
@@ -602,9 +609,20 @@ internal_new_connection_cb (DBusGProxy *proxy,
 	                                       dbus_g_proxy_get_bus_name (proxy),
 	                                       path,
 	                                       NM_DBUS_IFACE_SETTINGS_CONNECTION);
-	g_object_unref (dbus_mgr);
 	if (!con_proxy) {
 		nm_warning ("Error: could not init user connection proxy");
+		g_object_unref (dbus_mgr);
+		return;
+	}
+
+	secrets_proxy = dbus_g_proxy_new_for_name (g_connection,
+	                                           dbus_g_proxy_get_bus_name (proxy),
+	                                           path,
+	                                           NM_DBUS_IFACE_SETTINGS_CONNECTION_SECRETS);
+	g_object_unref (dbus_mgr);
+	if (!secrets_proxy) {
+		nm_warning ("Error: could not init user connection secrets proxy");
+		g_object_unref (con_proxy);
 		return;
 	}
 
@@ -632,6 +650,7 @@ internal_new_connection_cb (DBusGProxy *proxy,
 	                                G_TYPE_INVALID);
 	info->call = call;
 	info->proxy = con_proxy;
+	info->secrets_proxy = secrets_proxy;
 	if (info->calls)
 		*(info->calls) = g_slist_prepend (*(info->calls), call);
 }

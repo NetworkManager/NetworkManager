@@ -1,5 +1,38 @@
 2007-10-19  Dan Williams  <dcbw@redhat.com>
 
+	Split the GetSecrets() call off to a separate D-Bus interface so that it
+	can be more easily locked down with D-Bus policy.  Only 'root' (ie, NM)
+	should be able to call GetSecrets().
+
+	* include/NetworkManager.h
+		- Define the connection secrets D-Bus interface
+
+	* src/vpn-manager/nm-vpn-connection.c
+		- (clear_need_auth): get the right proxy object for the connection
+			secrets interface
+		- (get_connection_secrets): use the connection secrets proxy; send
+			empty hints in get secrets request
+
+	* src/nm-activation-request.c
+		- (nm_act_request_request_connection_secrets): use the connection
+			secrets proxy; send empty hints in get secrets request
+
+	* src/nm-manager.c
+	  src/nm-manager.h
+		- (connection_get_settings_cb): set the connection secrets proxy on
+			the connection object too
+		- (internal_new_connection_cb): create the connection secrets proxy
+
+	* introspection/nm-settings-connection.xml
+		- Define Connection.Secrets interface and move GetSecrets there
+		- Add a 'hints' argument to GetSecrets
+
+	* libnm-glib/nm-settings.c
+	  libnm-glib/nm-settings.h
+		- (impl_connection_settings_get_secrets): add 'hints' argument
+
+2007-10-19  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device.c
 		- (constructor): add message about what path a device is exported as
 			to help in debugging rh #339011
