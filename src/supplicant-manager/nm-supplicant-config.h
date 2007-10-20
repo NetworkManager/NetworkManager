@@ -63,12 +63,15 @@ gboolean nm_supplicant_config_add_option (NMSupplicantConfig *self,
 
 GHashTable *nm_supplicant_config_get_hash (NMSupplicantConfig * self);
 
+GHashTable *nm_supplicant_config_get_blobs (NMSupplicantConfig * self);
+
 gboolean nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
                                                     NMSettingWireless * setting,
                                                     gboolean is_broadcast);
 
 gboolean nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig * self,
-                                                             NMSettingWirelessSecurity * setting);
+                                                             NMSettingWirelessSecurity * setting,
+                                                             const char *connection_uid);
 
 G_END_DECLS
 

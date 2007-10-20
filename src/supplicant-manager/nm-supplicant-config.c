@@ -45,6 +45,7 @@ typedef struct {
 typedef struct
 {
 	GHashTable *config;
+	GHashTable *blobs;
 	guint32    ap_scan;
 	gboolean   dispose_has_run;
 } NMSupplicantConfigPrivate;
@@ -63,6 +64,12 @@ config_option_free (ConfigOption *opt)
 }
 
 static void
+blob_free (GByteArray *array)
+{
+	g_byte_array_free (array, TRUE);
+}
+
+static void
 nm_supplicant_config_init (NMSupplicantConfig * self)
 {
 	NMSupplicantConfigPrivate *priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
@@ -70,7 +77,11 @@ nm_supplicant_config_init (NMSupplicantConfig * self)
 	priv->config = g_hash_table_new_full (g_str_hash, g_str_equal,
 										  (GDestroyNotify) g_free,
 										  (GDestroyNotify) config_option_free);
-										   
+
+	priv->blobs = g_hash_table_new_full (g_str_hash, g_str_equal,
+	                                     (GDestroyNotify) g_free,
+	                                     (GDestroyNotify) blob_free);
+
 	priv->ap_scan = 1;
 	priv->dispose_has_run = FALSE;
 }
@@ -139,11 +150,78 @@ nm_info ("Config: added '%s' value '%s'", key, secret ? "<omitted>" : &buf[0]);
 	return TRUE;
 }
 
+
+static gboolean
+nm_supplicant_config_add_blob (NMSupplicantConfig *self,
+                               const char *key,
+                               const GByteArray *value,
+                               const char *blobid)
+{
+	NMSupplicantConfigPrivate *priv;
+	ConfigOption *old_opt;
+	ConfigOption *opt;
+	OptType type;
+	GByteArray *blob;
+
+	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
+	g_return_val_if_fail (key != NULL, FALSE);
+	g_return_val_if_fail (value != NULL, FALSE);
+	g_return_val_if_fail (value->len > 0, FALSE);
+	g_return_val_if_fail (blobid != NULL, FALSE);
+
+	priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
+
+	type = nm_supplicant_settings_verify_setting (key, NULL, 0);
+	if (type == TYPE_INVALID) {
+		nm_debug ("Key '%s' and/or it's contained value is invalid.", key);
+		return FALSE;
+	}
+
+	old_opt = (ConfigOption *) g_hash_table_lookup (priv->config, key);
+	if (old_opt) {
+		nm_debug ("Key '%s' already in table.", key);
+		return FALSE;
+	}
+
+	blob = g_byte_array_sized_new (value->len);
+	if (!blob) {
+		nm_debug ("Couldn't allocate memory for new config blob.");
+		return FALSE;
+	}
+	g_byte_array_append (blob, value->data, value->len);
+
+	opt = g_slice_new0 (ConfigOption);
+	if (opt == NULL) {
+		nm_debug ("Couldn't allocate memory for new config option.");
+		g_byte_array_free (blob, TRUE);
+		return FALSE;
+	}
+
+	opt->value = g_strdup_printf ("blob://%s", blobid);
+	if (opt->value == NULL) {
+		nm_debug ("Couldn't allocate memory for new config option value.");
+		g_byte_array_free (blob, TRUE);
+		g_slice_free (ConfigOption, opt);
+		return FALSE;
+	}
+
+	opt->len = strlen (opt->value);
+	opt->type = type;	
+
+nm_info ("Config: added '%s' value '%s'", key, opt->value);
+
+	g_hash_table_insert (priv->config, g_strdup (key), opt);
+	g_hash_table_insert (priv->blobs, g_strdup (blobid), blob);
+
+	return TRUE;
+}
+
 static void
 nm_supplicant_config_finalize (GObject *object)
 {
 	/* Complete object destruction */
 	g_hash_table_destroy (NM_SUPPLICANT_CONFIG_GET_PRIVATE (object)->config);
+	g_hash_table_destroy (NM_SUPPLICANT_CONFIG_GET_PRIVATE (object)->blobs);
 
 	/* Chain up to the parent class */
 	G_OBJECT_CLASS (nm_supplicant_config_parent_class)->finalize (object);
@@ -234,6 +312,14 @@ nm_supplicant_config_get_hash (NMSupplicantConfig * self)
 						  get_hash_cb, hash);
 
 	return hash;
+}
+
+GHashTable *
+nm_supplicant_config_get_blobs (NMSupplicantConfig * self)
+{
+	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), NULL);
+
+	return NM_SUPPLICANT_CONFIG_GET_PRIVATE (self)->blobs;
 }
 
 gboolean
@@ -331,9 +417,33 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 		} \
 	}
 
+static char *
+get_blob_id (const char *name, const char *seed_uid)
+{
+	char *uid = g_strdup_printf ("%s-%s", seed_uid, name);
+	char *p = uid;
+	while (*p) {
+		if (*p == '/') *p = '-';
+		p++;
+	}
+	return uid;
+}
+
+#define ADD_BLOB_VAL(field, name, con_uid) \
+	if (field && field->len) { \
+		char *uid = get_blob_id (name, con_uid); \
+		success = nm_supplicant_config_add_blob (self, name, field, uid); \
+		g_free (uid); \
+		if (!success) { \
+			nm_warning ("Error adding %s to supplicant config.", name); \
+			return FALSE; \
+		} \
+	}
+
 gboolean
 nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig * self,
-                                                    NMSettingWirelessSecurity * setting)
+                                                    NMSettingWirelessSecurity * setting,
+                                                    const char *connection_uid)
 {
 	NMSupplicantConfigPrivate *priv;
 	char * value;
@@ -341,6 +451,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig * self,
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
 	g_return_val_if_fail (setting != NULL, FALSE);
+	g_return_val_if_fail (connection_uid != NULL, FALSE);
 
 	priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
 
@@ -364,6 +475,13 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig * self,
 	ADD_STRING_LIST_VAL (setting->pairwise, "pairwise", TRUE, FALSE);
 	ADD_STRING_LIST_VAL (setting->group, "group", TRUE, FALSE);
 	ADD_STRING_LIST_VAL (setting->eap, "eap", TRUE, FALSE);
+
+	ADD_BLOB_VAL (setting->ca_cert, "ca_cert", connection_uid);
+	ADD_BLOB_VAL (setting->client_cert, "client_cert", connection_uid);
+	ADD_BLOB_VAL (setting->private_key, "private_key", connection_uid);
+	ADD_BLOB_VAL (setting->phase2_ca_cert, "ca_cert2", connection_uid);
+	ADD_BLOB_VAL (setting->phase2_client_cert, "client_cert2", connection_uid);
+	ADD_BLOB_VAL (setting->phase2_private_key, "private_key2", connection_uid);
 
 	if (setting->wep_key0 || setting->wep_key1 || setting->wep_key2 || setting->wep_key3) {
 		value = g_strdup_printf ("%d", setting->wep_tx_keyidx);

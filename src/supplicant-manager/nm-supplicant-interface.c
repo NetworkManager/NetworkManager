@@ -1020,6 +1020,102 @@ set_network_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 }
 
 static void
+call_set_network (NMSupplicantInfo *info)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (info->interface);
+	GHashTable *config_hash;
+	DBusGProxyCall *call;
+
+	config_hash = nm_supplicant_config_get_hash (priv->cfg);
+	call = dbus_g_proxy_begin_call (priv->net_proxy, "set", set_network_cb,
+									info,
+									nm_supplicant_info_destroy,
+									dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE), config_hash,
+									G_TYPE_INVALID);
+	nm_supplicant_info_set_call (info, call);
+	g_hash_table_destroy (config_hash);
+}
+
+static void
+set_blobs_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
+{
+	NMSupplicantInfo *info = (NMSupplicantInfo *) user_data;
+	GError *err = NULL;
+	guint tmp;
+
+	if (!dbus_g_proxy_end_call (proxy, call_id, &err, G_TYPE_UINT, &tmp, G_TYPE_INVALID)) {
+		nm_warning ("Couldn't set network blobs: %s.", err->message);
+		emit_error_helper (info->interface, err);
+		g_error_free (err);
+	} else {
+		NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (info->interface);
+
+		info = nm_supplicant_info_new (info->interface, priv->iface_proxy,
+									   NM_SUPPLICANT_INTERFACE_GET_PRIVATE (info->interface)->assoc_pcalls);
+		call_set_network (info);
+	}
+}
+
+static GValue *
+byte_array_to_gvalue (const GByteArray *array)
+{
+	GValue *val;
+
+	val = g_slice_new0 (GValue);
+	g_value_init (val, DBUS_TYPE_G_UCHAR_ARRAY);
+	g_value_set_boxed (val, array);
+
+	return val;
+}
+
+static void
+blob_free (GByteArray *array)
+{
+	g_byte_array_free (array, TRUE);
+}
+
+static void
+convert_blob (const char *key, const GByteArray *value, GHashTable *hash)
+{
+	GValue *val;
+
+	val = byte_array_to_gvalue (value);
+	g_hash_table_insert (hash, g_strdup (key), val);
+}
+
+#define DBUS_TYPE_G_STRING_VARIANT_HASHTABLE (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE))
+
+static void
+call_set_blobs (NMSupplicantInfo *info, GHashTable *orig_blobs)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (info->interface);
+	DBusGProxyCall *call;
+	GHashTable *blobs;
+
+	blobs = g_hash_table_new_full (g_str_hash, g_str_equal,
+	                               (GDestroyNotify) g_free,
+	                               (GDestroyNotify) blob_free);
+	if (!blobs) {
+		const char *msg = "Not enough memory to create blob table.";
+		nm_warning ("%s", msg);
+		g_signal_emit (info->interface,
+		               nm_supplicant_interface_signals[CONNECTION_ERROR],
+		               0, "SendBlobError", msg);
+		return;
+	}
+
+	g_hash_table_foreach (orig_blobs, (GHFunc) convert_blob, blobs);
+
+	call = dbus_g_proxy_begin_call (priv->net_proxy, "setBlobs", set_blobs_cb,
+									info,
+									nm_supplicant_info_destroy,
+									DBUS_TYPE_G_STRING_VARIANT_HASHTABLE, blobs,
+									G_TYPE_INVALID);
+	nm_supplicant_info_set_call (info, call);
+	g_hash_table_destroy (blobs);
+}
+
+static void
 add_network_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 {
 	NMSupplicantInfo *info = (NMSupplicantInfo *) user_data;
@@ -1034,25 +1130,25 @@ add_network_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 		g_error_free (err);
 	} else {
 		NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (info->interface);
-		GHashTable *config_hash;
 		DBusGProxyCall *call;
-
-		config_hash = nm_supplicant_config_get_hash (priv->cfg);
+		GHashTable *blobs;
 
 		priv->net_proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (priv->dbus_mgr),
 													 WPAS_DBUS_SERVICE,
 													 path,
 													 WPAS_DBUS_IFACE_NETWORK);
 
-		info = nm_supplicant_info_new (info->interface, priv->net_proxy, priv->assoc_pcalls);
-		call = dbus_g_proxy_begin_call (priv->net_proxy, "set", set_network_cb,
-										info,
-										nm_supplicant_info_destroy,
-										dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE), config_hash,
-										G_TYPE_INVALID);
-		nm_supplicant_info_set_call (info, call);
-
-		g_hash_table_destroy (config_hash);
+		info = nm_supplicant_info_new (info->interface,
+		                               priv->net_proxy,
+		                               priv->assoc_pcalls);
+		/* Send any blobs first; if there aren't any jump to sending the
+		 * config settings.
+		 */
+		blobs = nm_supplicant_config_get_blobs (priv->cfg);
+		if (g_hash_table_size (blobs) > 0)
+			call_set_blobs (info, blobs);
+		else
+			call_set_network (info);
 	}
 }
 

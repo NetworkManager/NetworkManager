@@ -1,3 +1,24 @@
+2007-10-20  Dan Williams  <dcbw@redhat.com>
+
+	* src/supplicant-manager/nm-supplicant-config.h
+	  src/supplicant-manager/nm-supplicant-config.c
+		- (nm_supplicant_config_init, nm_supplicant_config_finalize): add a hash
+			table to store blobs
+		- (nm_supplicant_config_add_blob): new function; add blob to internal
+			blob hash table
+		- (nm_supplicant_config_get_blobs): new function; get stored blobs
+		- (nm_supplicant_config_add_setting_wireless_security): handle
+			options that use certificates (ie, blobs)
+
+	* src/nm-device-802-11-wireless.c
+		- (build_supplicant_config): pass a UID (just use the connection path)
+			to the supplicant config as now required
+
+	* src/supplicant-manager/nm-supplicant-interface.c
+		- (add_network_cb, call_set_blobs, set_blobs_cb, call_set_network): if
+			there are any blobs to send to wpa_supplicant, send those first
+			before sending the network configuration
+
 2007-10-19  Dan Williams  <dcbw@redhat.com>
 
 	Split the GetSecrets() call off to a separate D-Bus interface so that it

@@ -2338,8 +2338,12 @@ build_supplicant_config (NMDevice80211Wireless *self,
 
 	s_wireless_sec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, "802-11-wireless-security");
 	if (s_wireless_sec) {
+		DBusGProxy *proxy = g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_PROXY_TAG);
+		const char *con_path = dbus_g_proxy_get_path (proxy);
+
 		if (!nm_supplicant_config_add_setting_wireless_security (config,
-	                                                             s_wireless_sec)) {
+	                                                             s_wireless_sec,
+	                                                             con_path)) {
 			nm_warning ("Couldn't add 802-11-wireless-security setting to "
 			            "supplicant config.");
 			goto error;
