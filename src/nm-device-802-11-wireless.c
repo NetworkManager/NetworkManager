@@ -976,7 +976,6 @@ nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *self)
 		nm_dev_sock_close (sk);
 	}
 
-out:
 	return mode;
 }
 
@@ -1637,7 +1636,6 @@ static void
 merge_scanned_ap (NMDevice80211Wireless *self,
 				  NMAccessPoint *merge_ap)
 {	
-	GSList * elt;
 	NMAccessPoint * found_ap = NULL;
 	const GByteArray *ssid;
 
@@ -2727,7 +2725,6 @@ activation_success_handler (NMDevice *dev)
 	tmp_ap = get_active_ap (self, ap);
 	if (tmp_ap) {
 		NMActRequest *req = nm_device_get_act_request (NM_DEVICE (self));
-		GSList *elt;
 
 		/* Found a better match in the scan list than the fake AP.  Use it
 		 * instead.
