@@ -287,10 +287,12 @@ nm_act_request_set_specific_object (NMActRequest *req,
 	NMActRequestPrivate *priv;
 
 	g_return_if_fail (NM_IS_ACT_REQUEST (req));
+	g_return_if_fail (specific_object != NULL);
 
 	priv = NM_ACT_REQUEST_GET_PRIVATE (req);
-	g_return_if_fail (priv->specific_object == NULL);
 
+	if (priv->specific_object)
+		g_free (priv->specific_object);
 	priv->specific_object = g_strdup (specific_object);
 }
 
