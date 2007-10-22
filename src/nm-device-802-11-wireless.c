@@ -947,35 +947,29 @@ nm_device_802_11_wireless_reset_scan_interval (NMDevice80211Wireless *self)
 int
 nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *self)
 {
-	NMSock *	sk;
-	int		mode = IW_MODE_AUTO;
+	NMSock *sk;
+	int mode = IW_MODE_AUTO;
 	const char *iface;
+	struct iwreq wrq;
 
 	g_return_val_if_fail (self != NULL, -1);
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
+	sk = nm_dev_sock_open (iface, DEV_WIRELESS, __FUNCTION__, NULL);
+	if (!sk)
+		goto out;
 
-	/* Force the card into Managed/Infrastructure mode */
-	if ((sk = nm_dev_sock_open (iface, DEV_WIRELESS, __FUNCTION__, NULL)))
-	{
-		struct iwreq	wrq;
+	memset (&wrq, 0, sizeof (struct iwreq));
 
-		memset (&wrq, 0, sizeof (struct iwreq));
+	nm_ioctl_info ("%s: About to GET IWMODE.", iface);
+	if (iw_get_ext (nm_dev_sock_get_fd (sk), iface, SIOCGIWMODE, &wrq) == 0) {
+		if ((mode == IW_MODE_ADHOC) || (mode == IW_MODE_INFRA))
+			mode = wrq.u.mode;
+	} else
+		nm_warning ("error getting card mode on %s: %s", iface, strerror (errno));
+	nm_dev_sock_close (sk);
 
-		nm_ioctl_info ("%s: About to GET IWMODE.", iface);
-
-		if (iw_get_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (NM_DEVICE (self)), SIOCGIWMODE, &wrq) == 0)
-		{
-			if ((mode == IW_MODE_ADHOC) || (mode == IW_MODE_INFRA))
-				mode = wrq.u.mode;
-		}
-		else
-		{
-			nm_warning ("error getting card mode on %s: %s", iface, strerror (errno));
-		}
-		nm_dev_sock_close (sk);
-	}
-
+out:
 	return mode;
 }
 
@@ -990,9 +984,10 @@ gboolean
 nm_device_802_11_wireless_set_mode (NMDevice80211Wireless *self,
                                     const int mode)
 {
-	NMSock *	sk;
+	NMSock *sk;
 	const char *iface;
-	gboolean	success = FALSE;
+	gboolean success = FALSE;
+	struct iwreq wrq;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail ((mode == IW_MODE_INFRA) || (mode == IW_MODE_ADHOC) || (mode == IW_MODE_AUTO), FALSE);
@@ -1002,31 +997,26 @@ nm_device_802_11_wireless_set_mode (NMDevice80211Wireless *self,
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
 
-	/* Force the card into Managed/Infrastructure mode */
-	if ((sk = nm_dev_sock_open (iface, DEV_WIRELESS, __FUNCTION__, NULL)))
-	{
-		struct iwreq	wreq;
+	sk = nm_dev_sock_open (iface, DEV_WIRELESS, __FUNCTION__, NULL);
+	if (!sk)
+		goto out;
 
-		nm_ioctl_info ("%s: About to SET IWMODE.", iface);
+	nm_ioctl_info ("%s: About to SET IWMODE.", iface);
 
-		wreq.u.mode = mode;
-		if (iw_set_ext (nm_dev_sock_get_fd (sk), iface, SIOCSIWMODE, &wreq) == 0)
-			success = TRUE;
-		else
-		{
-			if (errno != ENODEV)
-			{
-				nm_warning ("error setting card %s to %s mode: %s",
-					iface,
-					mode == IW_MODE_INFRA ? "Infrastructure" : \
-						(mode == IW_MODE_ADHOC ? "Ad-Hoc" : \
-							(mode == IW_MODE_AUTO ? "Auto" : "unknown")),
-					strerror (errno));
-			}
+	memset (&wrq, 0, sizeof (struct iwreq));
+	wrq.u.mode = mode;
+
+	if (iw_set_ext (nm_dev_sock_get_fd (sk), iface, SIOCSIWMODE, &wrq) == 0)
+		success = TRUE;
+	else {
+		if (errno != ENODEV) {
+			nm_warning ("error setting card %s to mode %d: %s",
+			            iface, mode, strerror (errno));
 		}
-		nm_dev_sock_close (sk);
 	}
+	nm_dev_sock_close (sk);
 
+out:
 	return success;
 }
 
