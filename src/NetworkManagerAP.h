@@ -61,6 +61,7 @@ GType nm_ap_get_type (void);
 
 NMAccessPoint *	nm_ap_new				(void);
 NMAccessPoint * nm_ap_new_from_properties (GHashTable *properties);
+NMAccessPoint * nm_ap_new_fake_from_connection (NMConnection *connection);
 void            nm_ap_export_to_dbus    (NMAccessPoint *ap);
 
 const char *		nm_ap_get_dbus_path (NMAccessPoint *ap);
@@ -98,8 +99,8 @@ void				nm_ap_set_rate			(NMAccessPoint *ap, guint16 rate);
 gboolean			nm_ap_get_invalid		(const NMAccessPoint *ap);
 void				nm_ap_set_invalid		(NMAccessPoint *ap, gboolean invalid);
 
-gboolean			nm_ap_get_artificial	(const NMAccessPoint *ap);
-void				nm_ap_set_artificial	(NMAccessPoint *ap, gboolean artificial);
+gboolean			nm_ap_get_fake	(const NMAccessPoint *ap);
+void				nm_ap_set_fake	(NMAccessPoint *ap, gboolean fake);
 
 gboolean			nm_ap_get_broadcast		(NMAccessPoint *ap);
 void				nm_ap_set_broadcast		(NMAccessPoint *ap, gboolean broadcast);
@@ -119,6 +120,10 @@ guint32				nm_ap_add_security_from_ie (guint32 flags,
 
 gboolean			nm_ap_check_compatible (NMAccessPoint *self,
                                             NMConnection *connection);
+
+NMAccessPoint *     nm_ap_match_in_list (NMAccessPoint *find_ap,
+                                         GSList *ap_list,
+                                         gboolean strict_match);
 
 void				nm_ap_print_self (NMAccessPoint *ap, const char * prefix);
 

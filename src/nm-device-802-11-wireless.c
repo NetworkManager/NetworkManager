@@ -49,6 +49,8 @@ static gboolean impl_device_get_access_points (NMDevice80211Wireless *device,
                                                GPtrArray **aps,
                                                GError **err);
 
+static guint32 nm_device_802_11_wireless_get_frequency (NMDevice80211Wireless *self);
+
 #if DEBUG
 static void nm_device_802_11_wireless_ap_list_print (NMDevice80211Wireless *self);
 #endif
@@ -489,7 +491,8 @@ out:
 }
 
 static NMAccessPoint *
-get_active_ap (NMDevice80211Wireless *self)
+get_active_ap (NMDevice80211Wireless *self,
+               NMAccessPoint *ignore_ap)
 {
 	struct ether_addr bssid;
 	const GByteArray *ssid;
@@ -507,9 +510,21 @@ get_active_ap (NMDevice80211Wireless *self)
 		const struct ether_addr	*ap_bssid = nm_ap_get_address (ap);
 		const GByteArray *ap_ssid = nm_ap_get_ssid (ap);
 
-		if (   nm_ethernet_addresses_are_equal (&bssid, ap_bssid)
-		    && nm_utils_same_ssid (ssid, ap_ssid, TRUE))
-			return ap;
+		if (ignore_ap && (ap == ignore_ap))
+			continue;
+
+		if (   !nm_ethernet_addresses_are_equal (&bssid, ap_bssid)
+		    || !nm_utils_same_ssid (ssid, ap_ssid, TRUE))
+			continue;
+
+		if (nm_device_802_11_wireless_get_mode (self) != nm_ap_get_mode (ap))
+			continue;
+
+		if (nm_device_802_11_wireless_get_frequency (self) != nm_ap_get_freq (ap))
+			continue;
+
+		// FIXME: handle security settings here too
+		return ap;
 	}
 
 	return NULL;
@@ -558,7 +573,7 @@ periodic_update (NMDevice80211Wireless *self, gboolean honor_scan)
 	if (honor_scan && priv->scanning)
 		return;
 
-	new_ap = get_active_ap (self);
+	new_ap = get_active_ap (self, NULL);
 	if (new_ap)
 		nm_device_802_11_wireless_update_signal_strength (self, new_ap);
 
@@ -961,6 +976,7 @@ nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *self)
 		nm_dev_sock_close (sk);
 	}
 
+out:
 	return mode;
 }
 
@@ -1015,6 +1031,39 @@ nm_device_802_11_wireless_set_mode (NMDevice80211Wireless *self,
 	return success;
 }
 
+
+/*
+ * nm_device_802_11_wireless_get_frequency
+ *
+ * Get current frequency
+ *
+ */
+static guint32
+nm_device_802_11_wireless_get_frequency (NMDevice80211Wireless *self)
+{
+	NMSock *sk;
+	int err;
+	double freq = 0;
+	const char *iface;
+	struct iwreq wrq;
+
+	g_return_val_if_fail (self != NULL, 0);
+
+	iface = nm_device_get_iface (NM_DEVICE (self));
+	sk = nm_dev_sock_open (iface, DEV_WIRELESS, __FUNCTION__, NULL);
+	if (!sk)
+		return 0;
+
+	nm_ioctl_info ("%s: About to GET IWFREQ.", iface);
+	err = iw_get_ext (nm_dev_sock_get_fd (sk), iface, SIOCGIWFREQ, &wrq);
+	if (err >= 0)
+		freq = iw_freq2float (&wrq.u.freq);
+	else if (err == -1)
+		nm_warning ("(%s) error getting frequency: %s", iface, strerror (errno));
+
+	nm_dev_sock_close (sk);
+	return (guint32) (freq / 1000000);
+}
 
 /*
  * wireless_stats_to_percent
@@ -1601,48 +1650,7 @@ merge_scanned_ap (NMDevice80211Wireless *self,
 		nm_ap_set_broadcast (merge_ap, FALSE);
 	}
 
-	for (elt = self->priv->ap_list; elt; elt = g_slist_next (elt)) {
-		NMAccessPoint * list_ap = NM_AP (elt->data);
-		const GByteArray * list_ssid = nm_ap_get_ssid (list_ap);
-		const struct ether_addr * list_addr = nm_ap_get_address (list_ap);
-		int list_mode = nm_ap_get_mode (list_ap);
-		double list_freq = nm_ap_get_freq (list_ap);
-
-		const GByteArray * merge_ssid = nm_ap_get_ssid (merge_ap);
-		const struct ether_addr * merge_addr = nm_ap_get_address (merge_ap);
-		int merge_mode = nm_ap_get_mode (merge_ap);
-		double merge_freq = nm_ap_get_freq (merge_ap);
-
-		/* SSID match; if both APs are hiding their SSIDs,
-		 * let matching continue on BSSID and other properties
-		 */
-		if (   (!list_ssid && merge_ssid)
-		    || (list_ssid && !merge_ssid)
-		    || !nm_utils_same_ssid (list_ssid, merge_ssid, TRUE))
-			continue;
-
-		/* BSSID match */
-		if (   nm_ethernet_address_is_valid (list_addr)
-		    && memcmp (list_addr->ether_addr_octet, 
-		               merge_addr->ether_addr_octet,
-		               ETH_ALEN) != 0) {
-			continue;
-		}
-
-		/* mode match */
-		if (list_mode != merge_mode)
-			continue;
-
-		/* Frequency match */
-		if ((int) list_freq != (int) merge_freq)
-			continue;
-
-		// FIXME: make sure WPA AP doesn't get matched with WEP by taking
-		// flags into AP account
-		found_ap = list_ap;
-		break;
-	}
-
+	found_ap = nm_ap_match_in_list (merge_ap, self->priv->ap_list, TRUE);
 	if (found_ap) {
 		nm_ap_set_flags (found_ap, nm_ap_get_flags (merge_ap));
 		nm_ap_set_wpa_flags (found_ap, nm_ap_get_wpa_flags (merge_ap));
@@ -1650,11 +1658,12 @@ merge_scanned_ap (NMDevice80211Wireless *self,
 		nm_ap_set_strength (found_ap, nm_ap_get_strength (merge_ap));
 		nm_ap_set_last_seen (found_ap, nm_ap_get_last_seen (merge_ap));
 		nm_ap_set_broadcast (found_ap, nm_ap_get_broadcast (merge_ap));
+		nm_ap_set_freq (found_ap, nm_ap_get_freq (merge_ap));
 
 		/* If the AP is noticed in a scan, it's automatically no longer
-		 * artificial, since it clearly exists somewhere.
+		 * fake, since it clearly exists somewhere.
 		 */
-		nm_ap_set_artificial (found_ap, FALSE);
+		nm_ap_set_fake (found_ap, FALSE);
 	} else {
 		/* New entry in the list */
 		// FIXME: figure out if reference counts are correct here for AP objects
@@ -1693,6 +1702,8 @@ cull_scan_list (NMDevice80211Wireless * self)
 
 		/* Don't ever prune the AP we're currently associated with */
 		if (cur_ap_path && !strcmp (cur_ap_path, nm_ap_get_dbus_path (ap)))
+			keep = TRUE;
+		if (nm_ap_get_fake (ap))
 			keep = TRUE;
 
 		if (!keep && (ap_time + prune_interval_s < cur_time.tv_sec))
@@ -2400,12 +2411,49 @@ static NMActStageReturn
 real_act_stage1_prepare (NMDevice *dev)
 {
 	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
-	NMAccessPoint *ap;
+	NMAccessPoint *ap = NULL;
 
-	/* Make sure we've got an AP to connect to */
+	/* If the user is trying to connect to an AP that NM doesn't yet know about
+	 * (hidden network or something), create an fake AP from the security
+	 * settings in the connection to use until the AP is recognized from the
+	 * scan list, which should show up when the connection is successful.
+	 */
 	ap = nm_device_802_11_wireless_get_activation_ap (self);
-	if (!ap)
-		return NM_ACT_STAGE_RETURN_FAILURE;
+	if (!ap) {
+		NMActRequest *req;
+		NMConnection *connection;
+		GSList *iter;
+
+		req = nm_device_get_act_request (NM_DEVICE (self));
+		g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+		connection = nm_act_request_get_connection (req);
+		g_return_val_if_fail (connection != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+		/* Find a compatible AP in the scan list */
+		for (iter = self->priv->ap_list; iter; iter = g_slist_next (iter)) {
+			NMAccessPoint *candidate = NM_AP (iter->data);
+
+			if (nm_ap_check_compatible (candidate, connection)) {
+				ap = candidate;
+				break;
+			}
+		}
+
+		/* If no compatible AP was found, create a fake AP (network is likely
+		 * hidden) and try to use that.
+		 */
+		if (!ap) {
+			ap = nm_ap_new_fake_from_connection (connection);
+			g_return_val_if_fail (ap != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+			self->priv->ap_list = g_slist_append (self->priv->ap_list, ap);
+			nm_ap_export_to_dbus (ap);
+			g_signal_emit (self, signals[ACCESS_POINT_ADDED], 0, ap);
+		}
+
+		nm_act_request_set_specific_object (req, nm_ap_get_dbus_path (ap));
+	}
 
 	set_current_ap (self, ap);
 
@@ -2658,21 +2706,40 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 static void
 activation_success_handler (NMDevice *dev)
 {
-	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
-	NMAccessPoint *	ap;
-	gboolean			automatic;
+	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
+	NMAccessPoint *ap;
+	struct ether_addr bssid;
+	NMAccessPoint *tmp_ap;
 
 	ap = nm_device_802_11_wireless_get_activation_ap (self);
 
-	/* Cache details in the info-daemon since the connect was successful */
-	automatic = !nm_act_request_get_user_requested (nm_device_get_act_request (dev));
+	/* If the activate AP was fake, it probably won't have a BSSID at all.
+	 * But if activation was successful, the card will know the BSSID.  Grab
+	 * the BSSID off the card and fill in the BSSID of the activation AP.
+	 */
+	if (!nm_ap_get_fake (ap))
+		goto done;
 
-	/* If it's a user-created ad-hoc network, add it to the device's scan list */
-	if (!automatic && (nm_ap_get_mode (ap) == IW_MODE_ADHOC) && nm_ap_get_user_created (ap)) {
-		if (!ap_list_get_ap_by_ssid (self->priv->ap_list, nm_ap_get_ssid (ap)))
-			self->priv->ap_list = g_slist_append (self->priv->ap_list, ap);
+	nm_device_802_11_wireless_get_bssid (self, &bssid);
+	if (!nm_ethernet_address_is_valid (nm_ap_get_address (ap)))
+		nm_ap_set_address (ap, &bssid);
+
+	tmp_ap = get_active_ap (self, ap);
+	if (tmp_ap) {
+		NMActRequest *req = nm_device_get_act_request (NM_DEVICE (self));
+		GSList *elt;
+
+		/* Found a better match in the scan list than the fake AP.  Use it
+		 * instead.
+		 */
+		nm_act_request_set_specific_object (req, nm_ap_get_dbus_path (tmp_ap));
+
+		self->priv->ap_list = g_slist_remove (self->priv->ap_list, ap);
+		g_object_unref (ap);
+		ap = tmp_ap;
 	}
 
+done:
 	periodic_update (self, FALSE);
 }
 
@@ -2685,13 +2752,14 @@ activation_failure_handler (NMDevice *dev)
 	const GByteArray * ssid;
 
 	if ((ap = nm_device_802_11_wireless_get_activation_ap (self))) {
-		if (nm_ap_get_artificial (ap)) {
-			/* Artificial APs are ones that don't show up in scans,
+		if (nm_ap_get_fake (ap)) {
+			/* Fake APs are ones that don't show up in scans,
 			 * but which the user explicitly attempted to connect to.
 			 * However, if we fail on one of these, remove it from the
 			 * list because we don't have any scan or capability info
 			 * for it, and they are pretty much useless.
 			 */
+			access_point_removed (self, ap);
 			self->priv->ap_list = g_slist_remove (self->priv->ap_list, ap);
 			g_object_unref (ap);
 		} else {

@@ -51,7 +51,7 @@ typedef struct
 
 	/* Non-scanned attributes */
 	gboolean			invalid;
-	gboolean			artificial;	/* Whether or not the AP is from a scan */
+	gboolean			fake;	/* Whether or not the AP is from a scan */
 	gboolean			broadcast;	/* Whether or not the AP is broadcasting (hidden) */
 	gboolean			user_created;	/* Whether or not the AP was created
 										 * by the user with "Create network..."
@@ -481,6 +481,164 @@ nm_ap_new_from_properties (GHashTable *properties)
 	return ap;
 }
 
+static gboolean
+has_proto (NMSettingWirelessSecurity *sec, const char *proto)
+{
+	GSList *iter;
+
+	for (iter = sec->proto; iter; iter = g_slist_next (iter))
+		if (!strcmp (iter->data, proto))
+			return TRUE;
+	return FALSE;
+}
+
+static gboolean
+has_proto_wpa (NMSettingWirelessSecurity *sec)
+{
+	return has_proto (sec, "wpa");
+}
+
+static gboolean
+has_proto_rsn (NMSettingWirelessSecurity *sec)
+{
+	return has_proto (sec, "rsn");
+}
+
+static void
+add_ciphers (NMAccessPoint *ap, NMSettingWirelessSecurity *sec, gboolean group)
+{
+	GSList *iter;
+	GSList *ciphers = group ? sec->group : sec->pairwise;
+
+	for (iter = ciphers; iter; iter = g_slist_next (iter)) {
+		guint32 flags = NM_802_11_AP_SEC_NONE;
+		guint32 orig_flags;
+
+		if (!strcmp (iter->data, "wep40"))
+			flags |= group ? NM_802_11_AP_SEC_GROUP_WEP40 : NM_802_11_AP_SEC_PAIR_WEP40;
+		else if (!strcmp (iter->data, "wep104"))
+			flags |= group ? NM_802_11_AP_SEC_GROUP_WEP104 : NM_802_11_AP_SEC_PAIR_WEP104;
+		else if (!strcmp (iter->data, "tkip"))
+			flags |= group ? NM_802_11_AP_SEC_GROUP_TKIP : NM_802_11_AP_SEC_PAIR_TKIP;
+		else if (!strcmp (iter->data, "ccmp"))
+			flags |= group ? NM_802_11_AP_SEC_GROUP_CCMP : NM_802_11_AP_SEC_PAIR_CCMP;
+
+		if (has_proto_wpa (sec)) {
+			orig_flags = nm_ap_get_wpa_flags (ap);
+			nm_ap_set_wpa_flags (ap, orig_flags | flags);
+		}
+		if (has_proto_rsn (sec)) {
+			orig_flags = nm_ap_get_rsn_flags (ap);
+			nm_ap_set_rsn_flags (ap, orig_flags | flags);
+		}
+	}
+}
+
+NMAccessPoint *
+nm_ap_new_fake_from_connection (NMConnection *connection)
+{
+	NMAccessPoint *ap;
+	NMSettingWireless *s_wireless;
+	NMSettingWirelessSecurity *s_wireless_sec;
+	GByteArray *ssid;
+	guint32 len;
+	guint32 flags;
+
+	g_return_val_if_fail (connection != NULL, NULL);
+
+	s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_SETTING_WIRELESS);
+	g_return_val_if_fail (s_wireless != NULL, NULL);
+	g_return_val_if_fail (s_wireless->ssid != NULL, NULL);
+	g_return_val_if_fail (s_wireless->ssid->len > 0, NULL);
+
+	ap = nm_ap_new ();
+
+	len = s_wireless->ssid->len;
+	ssid = g_byte_array_sized_new (len);
+	g_byte_array_append (ssid, (const guint8 *) s_wireless->ssid->data, len);
+	nm_ap_set_ssid (ap, ssid);
+	g_byte_array_free (ssid, TRUE);
+
+	// FIXME: bssid too?
+
+	if (s_wireless->mode) {
+		if (!strcmp (s_wireless->mode, "infrastructure"))
+			nm_ap_set_mode (ap, IW_MODE_INFRA);
+		else if (!strcmp (s_wireless->mode, "adhoc"))
+			nm_ap_set_mode (ap, IW_MODE_ADHOC);
+		else
+			goto error;
+	} else {
+		nm_ap_set_mode (ap, IW_MODE_INFRA);
+	}
+
+	if (s_wireless->channel) {
+		guint32 freq = channel_to_freq (s_wireless->channel);
+
+		if (freq == -1)
+			goto error;
+
+		nm_ap_set_freq (ap, freq);
+	}
+
+	s_wireless_sec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_SETTING_WIRELESS_SECURITY);
+	if (!s_wireless_sec)
+		goto done;
+
+	flags = nm_ap_get_flags (ap);
+
+	/* Static WEP or no security */
+	if (!strcmp (s_wireless_sec->key_mgmt, "none")) {
+		/* static wep? */
+		if (   s_wireless_sec->wep_key0
+		    || s_wireless_sec->wep_key1
+		    || s_wireless_sec->wep_key2
+		    || s_wireless_sec->wep_key3)
+			nm_ap_set_flags (ap, flags | NM_802_11_AP_FLAGS_PRIVACY);		
+
+		goto done;
+	}
+
+	nm_ap_set_flags (ap, flags | NM_802_11_AP_FLAGS_PRIVACY);
+
+	if (   !strcmp (s_wireless_sec->key_mgmt, "wpa-psk")
+	    || !strcmp (s_wireless_sec->key_mgmt, "wpa-none")) {
+		if (has_proto_wpa (s_wireless_sec)) {
+			flags = nm_ap_get_wpa_flags (ap);
+			nm_ap_set_wpa_flags (ap, flags | NM_802_11_AP_SEC_KEY_MGMT_PSK);
+		}
+
+		if (has_proto_rsn (s_wireless_sec)) {
+			flags = nm_ap_get_rsn_flags (ap);
+			nm_ap_set_rsn_flags (ap, flags | NM_802_11_AP_SEC_KEY_MGMT_PSK);
+		}
+	}
+		
+	if (   !strcmp (s_wireless_sec->key_mgmt, "ieee8021x")
+	    || !strcmp (s_wireless_sec->key_mgmt, "wpa-eap")) {
+		if (has_proto_wpa (s_wireless_sec)) {
+			flags = nm_ap_get_wpa_flags (ap);
+			nm_ap_set_wpa_flags (ap, flags | NM_802_11_AP_SEC_KEY_MGMT_802_1X);
+		}
+
+		if (has_proto_rsn (s_wireless_sec)) {
+			flags = nm_ap_get_rsn_flags (ap);
+			nm_ap_set_rsn_flags (ap, flags | NM_802_11_AP_SEC_KEY_MGMT_802_1X);
+		}
+	}
+
+	add_ciphers (ap, s_wireless_sec, FALSE);
+	add_ciphers (ap, s_wireless_sec, TRUE);
+
+done:
+	return ap;
+
+error:
+	g_object_unref (ap);
+	return NULL;
+}
+
+
 #define MAC_FMT "%02x:%02x:%02x:%02x:%02x:%02x"
 #define MAC_ARG(x) ((guint8*)(x))[0],((guint8*)(x))[1],((guint8*)(x))[2],((guint8*)(x))[3],((guint8*)(x))[4],((guint8*)(x))[5]
 
@@ -856,29 +1014,26 @@ void nm_ap_set_invalid (NMAccessPoint *ap, gboolean invalid)
 
 
 /*
- * Get/Set functions to indicate that an access point is
- * 'artificial', ie whether or not it was actually scanned
- * by the card or not
- *
+ * Get/Set functions to indicate that an access point is 'fake', ie whether
+ * or not it was created from scan results
  */
-gboolean nm_ap_get_artificial (const NMAccessPoint *ap)
+gboolean nm_ap_get_fake (const NMAccessPoint *ap)
 {
 	g_return_val_if_fail (NM_IS_AP (ap), FALSE);
 
-	return NM_AP_GET_PRIVATE (ap)->artificial;
+	return NM_AP_GET_PRIVATE (ap)->fake;
 }
 
-void nm_ap_set_artificial (NMAccessPoint *ap, gboolean artificial)
+void nm_ap_set_fake (NMAccessPoint *ap, gboolean fake)
 {
 	g_return_if_fail (NM_IS_AP (ap));
 
-	NM_AP_GET_PRIVATE (ap)->artificial = artificial;
+	NM_AP_GET_PRIVATE (ap)->fake = fake;
 }
 
 
 /*
- * Get/Set functions to indicate whether an access point is broadcasting
- * (hidden).  This is a superset of artificial.
+ * Get/Set functions to indicate whether an AP broadcasts its SSID.
  */
 gboolean nm_ap_get_broadcast (NMAccessPoint *ap)
 {
@@ -1091,27 +1246,67 @@ security_compatible (NMAccessPoint *self,
 	if (priv->mode != IW_MODE_INFRA)
 		return FALSE;
 
-	/* Dynamic WEP or LEAP/Network EAP */
+	/* Dynamic WEP or LEAP */
 	if (!strcmp (s_wireless_sec->key_mgmt, "ieee8021x")) {
-		// FIXME: should we allow APs that advertise WPA/RSN support here?
-		if (   !(flags & NM_802_11_AP_FLAGS_PRIVACY)
-		    || (wpa_flags != NM_802_11_AP_SEC_NONE)
-		    || (rsn_flags != NM_802_11_AP_SEC_NONE))
+		if (!(flags & NM_802_11_AP_FLAGS_PRIVACY))
 			return FALSE;
+
+		/* If the AP is advertising a WPA IE, make sure it supports WEP ciphers */
+		if (wpa_flags != NM_802_11_AP_SEC_NONE) {
+			gboolean found = FALSE;
+			GSList *iter;
+
+			if (!(wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X))
+				return FALSE;
+
+			/* quick check; can't use AP if it doesn't support at least one
+			 * WEP cipher in both pairwise and group suites.
+			 */
+			if (   !(wpa_flags & (NM_802_11_AP_SEC_PAIR_WEP40 | NM_802_11_AP_SEC_PAIR_WEP104))
+			    || !(wpa_flags & (NM_802_11_AP_SEC_GROUP_WEP40 | NM_802_11_AP_SEC_GROUP_WEP104)))
+				return FALSE;
+
+			/* Match at least one pairwise cipher with AP's capability */
+			for (iter = s_wireless_sec->pairwise; iter; iter = g_slist_next (iter)) {
+				if ((found = match_cipher (iter->data, "wep40", wpa_flags, wpa_flags, NM_802_11_AP_SEC_PAIR_WEP40)))
+					break;
+				if ((found = match_cipher (iter->data, "wep104", wpa_flags, wpa_flags, NM_802_11_AP_SEC_PAIR_WEP104)))
+					break;
+			}
+			if (!found)
+				return FALSE;
+
+			/* Match at least one group cipher with AP's capability */
+			for (iter = s_wireless_sec->group; iter; iter = g_slist_next (iter)) {
+				if ((found = match_cipher (iter->data, "wep40", wpa_flags, wpa_flags, NM_802_11_AP_SEC_GROUP_WEP40)))
+					break;
+				if ((found = match_cipher (iter->data, "wep104", wpa_flags, wpa_flags, NM_802_11_AP_SEC_GROUP_WEP104)))
+					break;
+			}
+			if (!found)
+				return FALSE;
+		}
 		return TRUE;
 	}
 
-	/* WPA[2]-PSK */
-	if (!strcmp (s_wireless_sec->key_mgmt, "wpa-psk")) {
+	/* WPA[2]-PSK and WPA[2] Enterprise */
+	if (   !strcmp (s_wireless_sec->key_mgmt, "wpa-psk")
+	    || !strcmp (s_wireless_sec->key_mgmt, "wpa-eap")) {
 		GSList * elt;
 		gboolean found = FALSE;
 
 		if (!s_wireless_sec->pairwise || !s_wireless_sec->group)
 			return FALSE;
 
-		if (   !(wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
-		    && !(rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK))
-			return FALSE;
+		if (!strcmp (s_wireless_sec->key_mgmt, "wpa-psk")) {
+			if (   !(wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK)
+			    && !(rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_PSK))
+				return FALSE;
+		} else if (!strcmp (s_wireless_sec->key_mgmt, "wpa-eap")) {
+			if (   !(wpa_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
+			    && !(rsn_flags & NM_802_11_AP_SEC_KEY_MGMT_802_1X))
+				return FALSE;
+		}
 
 		// FIXME: should handle WPA and RSN separately here to ensure that
 		// if the Connection only uses WPA we don't match a cipher against
@@ -1142,10 +1337,6 @@ security_compatible (NMAccessPoint *self,
 			return FALSE;
 
 		return TRUE;
-	}
-
-	if (!strcmp (s_wireless_sec->key_mgmt, "wpa-eap")) {
-		// FIXME: implement
 	}
 
 	return FALSE;
@@ -1202,6 +1393,94 @@ nm_ap_check_compatible (NMAccessPoint *self,
 	}
 
 	return security_compatible (self, connection, s_wireless);
+}
+
+static gboolean
+capabilities_compatible (guint32 a_flags, guint32 b_flags)
+{
+	/* Make sure there's a common key management method */
+	if (!((a_flags & 0x300) & (b_flags & 0x300)))
+		return FALSE;
+
+	/* Ensure common pairwise ciphers */
+	if (!((a_flags & 0xF) & (b_flags & 0xF)))
+		return FALSE;
+
+	/* Ensure common group ciphers */
+	if (!((a_flags & 0xF0) & (b_flags & 0xF0)))
+		return FALSE;
+
+	return TRUE;
+}
+
+NMAccessPoint *
+nm_ap_match_in_list (NMAccessPoint *find_ap,
+                     GSList *ap_list,
+                     gboolean strict_match)
+{
+	GSList *iter;
+
+	g_return_val_if_fail (find_ap != NULL, NULL);
+
+	for (iter = ap_list; iter; iter = g_slist_next (iter)) {
+		NMAccessPoint * list_ap = NM_AP (iter->data);
+		const GByteArray * list_ssid = nm_ap_get_ssid (list_ap);
+		const struct ether_addr * list_addr = nm_ap_get_address (list_ap);
+
+		const GByteArray * find_ssid = nm_ap_get_ssid (find_ap);
+		const struct ether_addr * find_addr = nm_ap_get_address (find_ap);
+
+		/* SSID match; if both APs are hiding their SSIDs,
+		 * let matching continue on BSSID and other properties
+		 */
+		if (   (!list_ssid && find_ssid)
+		    || (list_ssid && !find_ssid)
+		    || !nm_utils_same_ssid (list_ssid, find_ssid, TRUE))
+			continue;
+
+		/* BSSID match */
+		if (   (strict_match || nm_ethernet_address_is_valid (find_addr))
+		    && nm_ethernet_address_is_valid (list_addr)
+		    && memcmp (list_addr->ether_addr_octet, 
+		               find_addr->ether_addr_octet,
+		               ETH_ALEN) != 0) {
+			continue;
+		}
+
+		/* mode match */
+		if (nm_ap_get_mode (list_ap) != nm_ap_get_mode (find_ap))
+			continue;
+
+		/* Frequency match */
+		if (nm_ap_get_freq (list_ap) != nm_ap_get_freq (find_ap))
+			continue;
+
+		/* AP flags */
+		if (nm_ap_get_flags (list_ap) != nm_ap_get_flags (find_ap))
+			continue;
+
+		if (strict_match) {
+			if (nm_ap_get_wpa_flags (list_ap) != nm_ap_get_wpa_flags (find_ap))
+				continue;
+
+			if (nm_ap_get_rsn_flags (list_ap) != nm_ap_get_rsn_flags (find_ap))
+				continue;
+		} else {
+			guint32 list_wpa_flags = nm_ap_get_wpa_flags (list_ap);
+			guint32 find_wpa_flags = nm_ap_get_wpa_flags (find_ap);
+			guint32 list_rsn_flags = nm_ap_get_rsn_flags (list_ap);
+			guint32 find_rsn_flags = nm_ap_get_rsn_flags (find_ap);
+
+			/* Just ensure that there is overlap in the capabilities */
+			if (   !capabilities_compatible (list_wpa_flags, find_wpa_flags)
+			    && !capabilities_compatible (list_rsn_flags, find_rsn_flags))
+				continue;
+		}
+
+		return list_ap;
+	}
+
+	return NULL;
 }
 
 

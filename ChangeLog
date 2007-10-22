@@ -1,5 +1,33 @@
 2007-10-21  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerAP.c
+	  src/NetworkManagerAP.h
+		- Rename 'articifical' -> 'fake' since that's what they are until
+			noticed in scans
+		- (nm_ap_new_fake_from_connection): new function to create a 'fake' AP
+			from the attributes in an NMConnection object
+		- (security_compatible): better handle Dynamic WEP and LEAP; handle
+			WPA Enterprise
+		- (nm_ap_match_in_list): find a matching AP in a scan list
+
+	* src/nm-device-802-11-wireless.c
+		- (get_active_ap): add an 'ignore_ap' argument to ignore a specific
+			AP when searching the scan list; match on frequency and mode too
+		- (nm_device_802_11_wireless_get_frequency): implement
+		- (merge_scanned_ap): replace duplicate matching logic with
+			nm_ap_match_in_list()
+		- (real_act_stage1_prepare): handle a NULL specific object; ie where
+			the user is trying to connect to a hidden network that is not yet
+			known from the scan list
+		- (activation_success_handler): now that the card knows the AP's BSSID,
+			there may already be a scanned AP in the scan list that is what
+			we really wanted to connect to, but didn't know at the time.  Use
+			that instead of the 'fake' AP created at activation start and get
+			rid of the 'fake' AP 
+		- (cull_scan_list): don't remove fake APs
+
+2007-10-21  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-activation-request.h
 	  src/nm-activation-request.c
 		- (nm_act_request_set_specific_object): new function; allow setting the
