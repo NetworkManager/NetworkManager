@@ -789,7 +789,7 @@ setting_wireless_security_verify (NMSetting *setting, GHashTable *all_settings)
 	const char *valid_key_mgmt[] = { "none", "ieee8021x", "wpa-none", "wpa-psk", "wpa-eap", NULL };
 	const char *valid_auth_algs[] = { "open", "shared", "leap", NULL };
 	const char *valid_protos[] = { "wpa", "rsn", NULL };
-	const char *valid_pairwise[] = { "tkip", "ccmp", NULL };
+	const char *valid_pairwise[] = { "wep40", "wep104", "tkip", "ccmp", NULL };
 	const char *valid_groups[] = { "wep40", "wep104", "tkip", "ccmp", NULL };
 	const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "sim", "psk", "fast", NULL };
 	const char *valid_phase1_peapver[] = { "0", "1", NULL };

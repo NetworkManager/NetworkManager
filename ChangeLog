@@ -1,3 +1,9 @@
+2007-10-22  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-setting.c
+		- (setting_wireless_security_verify): allow WEP-40 and WEP-104 as
+			pairwise cipher options for Dynamic WEP
+
 2007-10-21  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerAP.c
