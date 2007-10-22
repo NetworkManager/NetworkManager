@@ -1,3 +1,23 @@
+2007-10-22  Tambet Ingo  <tambet@gmail.com>
+
+	Implement support for static IP addresses, additional/overridden DNS and
+	DNS domain search lists.
+
+	* libnm-util/nm-setting.c (uint_array_to_gvalue): Implement.
+	(ip4_addresses_to_gvalue): Implement.
+	(convert_array_to_byte_array): Implement.
+	(nm_setting_populate_from_hash_default): Handle NM_S_TYPE_UINT_ARRAY and
+	NM_S_TYPE_IP4_ADDRESSES.
+	(nm_setting_hash): Ditto.
+	(default_setting_clear_secrets): Add a default case for the switch: IP address
+	shouldn't be secret, ever.
+	(setting_ip4_config_verify): Update, requires addresses in case of manual
+	configurations.
+	(setting_ip4_config_destroy): Free stuff.
+
+	* src/nm-device.c (merge_ip4_config): Implement.
+	(real_act_stage4_get_ip4_config): Merge IP4 configuration from NMConnection.
+
 2007-10-22  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/nm-setting.c

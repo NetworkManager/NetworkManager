@@ -253,6 +253,18 @@ byte_array_to_gvalue (GByteArray *array)
 }
 
 static GValue *
+uint_array_to_gvalue (GArray *array)
+{
+	GValue *val;
+
+	val = g_slice_new0 (GValue);
+	g_value_init (val, DBUS_TYPE_G_UINT_ARRAY);
+	g_value_set_boxed (val, array);
+
+	return val;
+}
+
+static GValue *
 slist_to_gvalue (GSList *list, GType type)
 {
 	GValue *val;
@@ -260,6 +272,36 @@ slist_to_gvalue (GSList *list, GType type)
 	val = g_slice_new0 (GValue);
 	g_value_init (val, dbus_g_type_get_collection ("GSList", type));
 	g_value_set_boxed (val, list);
+
+	return val;
+}
+
+static GValue *
+ip4_addresses_to_gvalue (GSList *list)
+{
+	GPtrArray *ptr_array;
+	GSList *iter;
+	GValue *val;
+
+	ptr_array = g_ptr_array_new ();
+
+	for (iter = list; iter; iter = iter->next) {
+		NMSettingIP4Address *ip4_addr = (NMSettingIP4Address *) iter->data;
+		GArray *array;
+
+		array = g_array_sized_new (FALSE, FALSE, sizeof (guint32), 3);
+		g_array_append_val (array, ip4_addr->address);
+		g_array_append_val (array, ip4_addr->netmask);
+
+		if (ip4_addr->gateway)
+			g_array_append_val (array, ip4_addr->gateway);
+
+		g_ptr_array_add (ptr_array, array);
+	}
+
+	val = g_slice_new0 (GValue);
+	g_value_init (val, dbus_g_type_get_collection ("GPtrArray", G_TYPE_VALUE_ARRAY));
+	g_value_set_boxed (val, ptr_array);
 
 	return val;
 }
@@ -283,6 +325,33 @@ convert_strv_to_slist (char **str)
 
 	while (str[i])
 		list = g_slist_prepend (list, g_strdup (str[i++]));
+
+	return g_slist_reverse (list);
+}
+
+static GSList *
+convert_ip4_addresses_to_slist (GPtrArray *array)
+{
+	int i;
+	GSList *list = NULL;
+
+	for (i = 0; i < array->len; i++) {
+		GValueArray *value_array = (GValueArray *) g_ptr_array_index (array, i);
+
+		if (value_array->n_values == 2 || value_array->n_values == 3) {
+			NMSettingIP4Address *ip4_addr;
+
+			ip4_addr = g_new0 (NMSettingIP4Address, 1);
+			ip4_addr->address = g_value_get_uint (g_value_array_get_nth (value_array, 0));
+			ip4_addr->netmask = g_value_get_uint (g_value_array_get_nth (value_array, 1));
+
+			if (value_array->n_values == 3)
+				ip4_addr->gateway = g_value_get_uint (g_value_array_get_nth (value_array, 2));
+
+			list = g_slist_prepend (list, ip4_addr);
+		} else
+			nm_warning ("Ignoring invalid IP4 address");
+	}
 
 	return g_slist_reverse (list);
 }
@@ -358,8 +427,16 @@ nm_setting_populate_from_hash_default (NMSetting *setting, GHashTable *table)
 		} else if ((m->type == NM_S_TYPE_STRING_ARRAY) && G_VALUE_HOLDS_BOXED (value)) {
 			GSList **val = (GSList **) G_STRUCT_MEMBER_P (setting, m->offset);
 			*val = convert_strv_to_slist ((char **) g_value_get_boxed (value));
-		} 
+		} else if ((m->type == NM_S_TYPE_UINT_ARRAY) && G_VALUE_HOLDS_BOXED (value)) {
+			GArray **val = (GArray **) G_STRUCT_MEMBER_P (setting, m->offset);
+			GArray *tmp = (GArray *) g_value_get_boxed (value);
 
+			*val = g_array_sized_new (FALSE, FALSE, sizeof (guint32), tmp->len);
+			g_array_append_vals (*val, tmp->data, tmp->len);
+		} else if ((m->type == NM_S_TYPE_IP4_ADDRESSES) && G_VALUE_HOLDS_BOXED (value)) {
+			GSList **val = (GSList **) G_STRUCT_MEMBER_P (setting, m->offset);
+			*val = convert_ip4_addresses_to_slist ((GPtrArray *) g_value_get_boxed (value));
+		}
 next:
 		m++;
 	};
@@ -403,7 +480,9 @@ nm_setting_hash (NMSetting *setting)
 			ADD_MEMBER(NM_S_TYPE_UINT32, guint32, m->key, uint_to_gvalue)
 			ADD_MEMBER(NM_S_TYPE_UINT64, guint64, m->key, uint64_to_gvalue)
 			ADD_MEMBER(NM_S_TYPE_BYTE_ARRAY, GByteArray *, m->key, byte_array_to_gvalue)
+			ADD_MEMBER(NM_S_TYPE_UINT_ARRAY, GArray *, m->key, uint_array_to_gvalue)
 			ADD_MEMBER_EXTRA(NM_S_TYPE_STRING_ARRAY, GSList *, m->key, slist_to_gvalue, G_TYPE_STRING)
+			ADD_MEMBER(NM_S_TYPE_IP4_ADDRESSES, GSList *, m->key, ip4_addresses_to_gvalue)
 			default:
 				break;
 		}
@@ -457,6 +536,12 @@ default_setting_clear_secrets (NMSetting *setting)
 				*val = NULL;
 				break;
 			}
+			case NM_S_TYPE_UINT_ARRAY: {
+				GArray **val = (GArray **) G_STRUCT_MEMBER_P (setting, m->offset);
+				g_array_free (*val, TRUE);
+				*val = NULL;
+				break;
+			}
 			case NM_S_TYPE_STRING_ARRAY: {
 				GSList **val = (GSList **) G_STRUCT_MEMBER_P (setting, m->offset);
 				g_slist_foreach (*val, (GFunc) g_free, NULL);
@@ -464,6 +549,9 @@ default_setting_clear_secrets (NMSetting *setting)
 				*val = NULL;
 				break;
 			}
+
+			default:
+				break;
 		}
 
 next:
@@ -533,14 +621,11 @@ setting_ip4_config_verify (NMSetting *setting, GHashTable *all_settings)
 {
 	NMSettingIP4Config *self = (NMSettingIP4Config *) setting;
 
-	if (!self->address) {
-		g_warning ("address is not provided");
-		return FALSE;
-	}
-
-	if (!self->netmask) {
-		g_warning ("netmask is not provided");
-		return FALSE;
+	if (self->manual) {
+		if (!self->addresses) {
+			g_warning ("address is not provided");
+			return FALSE;
+		}
 	}
 
 	return TRUE;
@@ -551,14 +636,27 @@ setting_ip4_config_destroy (NMSetting *setting)
 {
 	NMSettingIP4Config *self = (NMSettingIP4Config *) setting;
 
+	if (self->dns)
+		g_array_free (self->dns, TRUE);
+
+	if (self->dns_search)  {
+		g_slist_foreach (self->dns_search, (GFunc) g_free, NULL);
+		g_slist_free (self->dns_search);
+	}
+
+	if (self->addresses) {
+		g_slist_foreach (self->addresses, (GFunc) g_free, NULL);
+		g_slist_free (self->addresses);
+	}
+
 	g_slice_free (NMSettingIP4Config, self);
 }
 
 static SettingMember ip4_config_table[] = {
-	{ "manual", NM_S_TYPE_BOOL, G_STRUCT_OFFSET (NMSettingIP4Config, manual), FALSE, FALSE },
-	{ "address", NM_S_TYPE_UINT32, G_STRUCT_OFFSET (NMSettingIP4Config, address), FALSE, FALSE },
-	{ "netmask", NM_S_TYPE_UINT32, G_STRUCT_OFFSET (NMSettingIP4Config, netmask), FALSE, FALSE },
-	{ "gateway", NM_S_TYPE_UINT32, G_STRUCT_OFFSET (NMSettingIP4Config, gateway), FALSE, FALSE },
+	{ "manual",     NM_S_TYPE_BOOL,         G_STRUCT_OFFSET (NMSettingIP4Config, manual),     FALSE, FALSE },
+	{ "dns",        NM_S_TYPE_UINT_ARRAY,   G_STRUCT_OFFSET (NMSettingIP4Config, dns),        FALSE, FALSE },
+	{ "dns-search", NM_S_TYPE_STRING_ARRAY, G_STRUCT_OFFSET (NMSettingIP4Config, dns_search), FALSE, FALSE },
+	{ "addresses",  NM_S_TYPE_IP4_ADDRESSES,G_STRUCT_OFFSET (NMSettingIP4Config, addresses),  FALSE, FALSE },
 	{ NULL, 0, 0 },
 };
 

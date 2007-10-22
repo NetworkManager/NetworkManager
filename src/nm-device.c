@@ -680,21 +680,53 @@ nm_device_new_ip4_autoip_config (NMDevice *self)
 }
 
 
+static void
+merge_ip4_config (NMIP4Config *ip4_config, NMSettingIP4Config *setting)
+{
+	if (!setting)
+		return; /* Defaults are just fine */
+
+	if (setting->dns) {
+		int i;
+
+		for (i = 0; i < setting->dns->len; i++)
+			nm_ip4_config_add_nameserver (ip4_config, g_array_index (setting->dns, guint32, i));
+	}
+
+	if (setting->dns_search) {
+		GSList *iter;
+
+		for (iter = setting->dns_search; iter; iter = iter->next)
+			nm_ip4_config_add_domain (ip4_config, (char *) iter->data);
+	}
+
+	if (setting->addresses) {
+		/* FIXME; add support for more than one set of address/netmask/gateway for NMIP4Config */
+		if (setting->manual) {
+			NMSettingIP4Address *addr = (NMSettingIP4Address *) setting->addresses->data;
+
+			nm_ip4_config_set_address (ip4_config, addr->address);
+			nm_ip4_config_set_netmask (ip4_config, addr->netmask);
+
+			if (addr->gateway)
+				nm_ip4_config_set_gateway (ip4_config, addr->gateway);
+		}
+	}
+}
+
 static NMActStageReturn
 real_act_stage4_get_ip4_config (NMDevice *self,
                                 NMIP4Config **config)
 {
-	NMActRequest *req;
 	NMIP4Config *		real_config = NULL;
 	NMActStageReturn	ret = NM_ACT_STAGE_RETURN_FAILURE;
-	NMSettingIP4Config *setting;
 
 	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
 	if (nm_device_get_use_dhcp (self)) {
 		real_config = nm_dhcp_manager_get_ip4_config (NM_DEVICE_GET_PRIVATE (self)->dhcp_manager,
-													  nm_device_get_iface (self));
+											 nm_device_get_iface (self));
 
 		if (real_config && nm_ip4_config_get_mtu (real_config) == 0)
 			/* If the DHCP server doesn't set the MTU, get it from backend. */
@@ -703,20 +735,14 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 		real_config = nm_ip4_config_new ();
 	}
 
-	req = nm_device_get_act_request (self);
-	setting = (NMSettingIP4Config *) nm_connection_get_setting (nm_act_request_get_connection (req),
-													NM_SETTING_IP4_CONFIG);
-
-	if (real_config && setting) {
-		/* If settings are provided, use them, even if it means overriding the values we got from DHCP */
-		nm_ip4_config_set_address (real_config, setting->address);
-		nm_ip4_config_set_netmask (real_config, setting->netmask);
-
-		if (setting->gateway)
-			nm_ip4_config_set_gateway (real_config, setting->gateway);
-	}
-
 	if (real_config) {
+		NMActRequest *req;
+
+		req = nm_device_get_act_request (self);
+		merge_ip4_config (real_config, 
+					   (NMSettingIP4Config *) nm_connection_get_setting (nm_act_request_get_connection (req),
+															   NM_SETTING_IP4_CONFIG));
+
 		*config = real_config;
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	} else {
