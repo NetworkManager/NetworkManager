@@ -1286,7 +1286,7 @@ nm_device_802_11_wireless_set_ssid (NMDevice80211Wireless *self,
 	if (iw_get_ext (sk, iface, SIOCSIWESSID, &wrq) < 0) {
 		if (errno != ENODEV) {
 			nm_warning ("error setting SSID to '%s' for device %s: %s",
-			            nm_utils_escape_ssid (ssid->data, ssid->len),
+			            ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(null)",
 			            iface, strerror (errno));
 		}
     }
