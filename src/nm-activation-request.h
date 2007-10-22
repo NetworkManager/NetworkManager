@@ -59,7 +59,11 @@ NMConnection *nm_act_request_get_connection     (NMActRequest *req);
 gboolean      nm_act_request_request_connection_secrets (NMActRequest *req,
                                                          const char *setting_name,
                                                          gboolean request_new);
-const char *  nm_act_request_get_specific_object(NMActRequest *req);
+const char *  nm_act_request_get_specific_object (NMActRequest *req);
+
+void          nm_act_request_set_specific_object (NMActRequest *req,
+                                                  const char *specific_object);
+
 gboolean      nm_act_request_get_user_requested (NMActRequest *req);
 
 #endif /* NM_ACTIVATION_REQUEST_H */

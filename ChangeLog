@@ -1,3 +1,10 @@
+2007-10-21  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-activation-request.h
+	  src/nm-activation-request.c
+		- (nm_act_request_set_specific_object): new function; allow setting the
+			specific object if one isn't set yet
+
 2007-10-20  Dan Williams  <dcbw@redhat.com>
 
 	* src/supplicant-manager/nm-supplicant-config.h

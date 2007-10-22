@@ -280,6 +280,20 @@ nm_act_request_get_specific_object (NMActRequest *req)
 	return NM_ACT_REQUEST_GET_PRIVATE (req)->specific_object;
 }
 
+void
+nm_act_request_set_specific_object (NMActRequest *req,
+                                    const char *specific_object)
+{
+	NMActRequestPrivate *priv;
+
+	g_return_if_fail (NM_IS_ACT_REQUEST (req));
+
+	priv = NM_ACT_REQUEST_GET_PRIVATE (req);
+	g_return_if_fail (priv->specific_object == NULL);
+
+	priv->specific_object = g_strdup (specific_object);
+}
+
 gboolean
 nm_act_request_get_user_requested (NMActRequest *req)
 {
