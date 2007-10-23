@@ -471,10 +471,16 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig * self,
 	ADD_STRING_VAL (setting->private_key_passwd, "private_key_passwd", FALSE, FALSE, TRUE);
 	ADD_STRING_VAL (setting->phase2_private_key_passwd, "private_key2_passwd", FALSE, FALSE, TRUE);
 
-	ADD_STRING_LIST_VAL (setting->proto, "proto", TRUE, FALSE);
-	ADD_STRING_LIST_VAL (setting->pairwise, "pairwise", TRUE, FALSE);
-	ADD_STRING_LIST_VAL (setting->group, "group", TRUE, FALSE);
 	ADD_STRING_LIST_VAL (setting->eap, "eap", TRUE, FALSE);
+
+	/* Only WPA-specific things when using WPA */
+	if (   !strcmp (setting->key_mgmt, "wpa-none")
+	    || !strcmp (setting->key_mgmt, "wpa-psk")
+	    || !strcmp (setting->key_mgmt, "wpa-eap")) {
+		ADD_STRING_LIST_VAL (setting->proto, "proto", TRUE, FALSE);
+		ADD_STRING_LIST_VAL (setting->pairwise, "pairwise", TRUE, FALSE);
+		ADD_STRING_LIST_VAL (setting->group, "group", TRUE, FALSE);
+	}
 
 	ADD_BLOB_VAL (setting->ca_cert, "ca_cert", connection_uid);
 	ADD_BLOB_VAL (setting->client_cert, "client_cert", connection_uid);

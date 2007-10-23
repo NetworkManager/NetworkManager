@@ -1,6 +1,12 @@
 2007-10-23  Dan Williams  <dcbw@redhat.com>
 
 	* src/supplicant-manager/nm-supplicant-config.c
+		- (nm_supplicant_config_add_setting_wireless_security): only add
+			WPA-specific options when WPA is in use
+
+2007-10-23  Dan Williams  <dcbw@redhat.com>
+
+	* src/supplicant-manager/nm-supplicant-config.c
 		- (nm_supplicant_config_add_setting_wireless_security): 'password'
 			secret doesn't need to be unhexified
 
