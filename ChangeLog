@@ -1,5 +1,11 @@
 2007-10-23  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-11-wireless.c
+		- (real_act_stage2_config): use pre-increment on 'tries' to get the
+			desired behavior
+
+2007-10-23  Dan Williams  <dcbw@redhat.com>
+
 	* src/supplicant-manager/nm-supplicant-settings-verify.c
 		- eap_allowed, phase2_allowed: harmonize with allowed values from
 			nm-settings.c

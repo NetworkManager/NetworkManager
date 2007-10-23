@@ -2522,7 +2522,7 @@ real_act_stage2_config (NMDevice *dev)
 		}
 
 		nm_act_request_request_connection_secrets (req, setting_name, tries ? TRUE : FALSE);
-		g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, GUINT_TO_POINTER (tries++));
+		g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	} else {
 		NMSettingWireless *s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_SETTING_WIRELESS);
