@@ -1633,7 +1633,7 @@ merge_scanned_ap (NMDevice80211Wireless *self,
 	 * if it can
 	 */
 	ssid = nm_ap_get_ssid (merge_ap);
-	if (nm_utils_is_empty_ssid (ssid->data, ssid->len)) {
+	if (!ssid || nm_utils_is_empty_ssid (ssid->data, ssid->len)) {
 		g_signal_emit (self, signals[HIDDEN_AP_FOUND], 0, merge_ap);
 		nm_ap_set_broadcast (merge_ap, FALSE);
 	}
