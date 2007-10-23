@@ -1,5 +1,12 @@
 2007-10-23  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerAP.c
+		- (match_cipher, security_compatible): remove
+		- (nm_ap_check_compatible): use nm_utils_ap_security_compatible() from
+			libnm-util instead
+
+2007-10-23  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-utils.c
 	  libnm-util/nm-utils.h
 		- (nm_utils_ap_security_compatible): common function for checking
