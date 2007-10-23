@@ -469,7 +469,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig * self,
 	ADD_STRING_VAL (setting->pin, "pin", FALSE, FALSE, TRUE);
 	ADD_STRING_VAL (setting->eappsk, "eappsk", FALSE, TRUE, TRUE);
 	ADD_STRING_VAL (setting->private_key_passwd, "private_key_passwd", FALSE, FALSE, TRUE);
-	ADD_STRING_VAL (setting->phase2_private_key_passwd, "phase2_private_key_passwd", FALSE, FALSE, TRUE);
+	ADD_STRING_VAL (setting->phase2_private_key_passwd, "private_key2_passwd", FALSE, FALSE, TRUE);
 
 	ADD_STRING_LIST_VAL (setting->proto, "proto", TRUE, FALSE);
 	ADD_STRING_LIST_VAL (setting->pairwise, "pairwise", TRUE, FALSE);
