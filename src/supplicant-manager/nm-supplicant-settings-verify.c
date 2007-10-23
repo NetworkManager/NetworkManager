@@ -69,13 +69,17 @@ const char * proto_allowed[] =    { "WPA", "RSN", NULL };
 const char * key_mgmt_allowed[] = { "WPA-PSK", "WPA-EAP", "IEEE8021X",
                                     "NONE", NULL };
 const char * auth_alg_allowed[] = { "OPEN", "SHARED", "LEAP", NULL };
-const char * eap_allowed[] =      { "MD5", "TLS", "PEAP", "TTLS", "SIM",
-                                    "PSK", NULL };
+const char * eap_allowed[] =      { "LEAP", "MD5", "TLS", "PEAP", "TTLS", "SIM",
+                                    "PSK", "FAST", NULL };
+
 const char * phase1_allowed[] =   {"peapver=0", "peapver=1", "peaplabel=1",
                                     "peap_outer_success=0", "include_tls_length=1",
                                     "sim_min_num_chal=3", NULL };
-const char * phase2_allowed[] =   {"auth=MSCHAPV2", "auth=PAP", "autheap=TLS",
-                                   "autheap=MSCHAPV2", "autheap=MD5", NULL };
+const char * phase2_allowed[] =   {"auth=PAP", "auth=CHAP", "auth=MSCHAP",
+                                   "auth=MSCHAPV2", "auth=GTC", "auth=OTP",
+                                   "auth=MD5", "auth=TLS", "autheap=MD5",
+                                   "autheap=MSCHAPV2", "autheap=OTP",
+                                   "autheap=GTC", "autheap=TLS", NULL };
 
 static const struct Opt opt_table[] = {
 	{ "ssid",               TYPE_BYTES,   0, 32,FALSE,  NULL },
