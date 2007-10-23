@@ -1,5 +1,11 @@
 2007-10-23  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-activation-request.c
+		- (get_secrets_cb): handle getting a setting back that is more than
+			just secrets (ie, user changed auth or EAP method or something)
+
+2007-10-23  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting.c
 	  libnm-util/nm-setting.h
 		- (nm_setting_verify): new function; verify one setting

@@ -187,7 +187,21 @@ get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	}
 
 	if (g_hash_table_size (secrets) > 0) {
-		nm_connection_update_secrets (priv->connection, info->setting_name, secrets);
+		NMSetting *setting;
+
+		/* Check whether a complete & valid NMSetting object was returned.  If
+		 * yes, replace the setting object in the connection.  If not, just try
+		 * updating the secrets.
+		 */
+		setting = nm_setting_wireless_security_new ();
+		nm_setting_populate_from_hash (setting, secrets);
+		if (nm_setting_verify (setting))
+			nm_connection_add_setting (priv->connection, setting);
+		else {
+			nm_connection_update_secrets (priv->connection, info->setting_name, secrets);
+			nm_setting_destroy (setting);
+		}
+
 		g_signal_emit (info->req,
 		               signals[CONNECTION_SECRETS_UPDATED],
 		               0,
