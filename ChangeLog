@@ -1,5 +1,14 @@
 2007-10-23  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting.c
+		- (setting_wireless_security_need_secrets, need_secrets_phase2,
+		   need_secrets_tls, need_secrets_sim, need_secrets_eappsk,
+		   need_secrets_password, setting_wireless_security_verify): fix
+			need_secrets for IEEE 802.1x and WPA-EAP by implementing need
+			secrets logic for each supported EAP method
+
+2007-10-23  Dan Williams  <dcbw@redhat.com>
+
 	* src/supplicant-manager/nm-supplicant-config.c
 		- (nm_supplicant_config_add_setting_wireless_security): fix wpa_supplicant
 			config option name, should be "private_key2_passwd"

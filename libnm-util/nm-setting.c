@@ -889,8 +889,10 @@ setting_wireless_security_verify (NMSetting *setting, GHashTable *all_settings)
 	const char *valid_protos[] = { "wpa", "rsn", NULL };
 	const char *valid_pairwise[] = { "wep40", "wep104", "tkip", "ccmp", NULL };
 	const char *valid_groups[] = { "wep40", "wep104", "tkip", "ccmp", NULL };
-	const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "sim", "psk", "fast", NULL };
 	const char *valid_phase1_peapver[] = { "0", "1", NULL };
+
+	/* Every time a method gets added to the following, add one to EAPMethodNeedSecretsTable */
+	const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "sim", "psk", "fast", NULL };
 	const char *valid_phase2_auth[] = { "pap", "chap", "mschap", "mschapv2", "gtc", "otp", "md5", "tls", NULL };
 	const char *valid_phase2_autheap[] = { "md5", "mschapv2", "otp", "gtc", "tls", NULL };
 
@@ -1109,6 +1111,116 @@ verify_wpa_psk (const char *psk)
 	return TRUE;
 }
 
+static void
+need_secrets_password (NMSettingWirelessSecurity *self,
+                       GPtrArray *secrets,
+                       gboolean phase2)
+{
+	if (!self->password || !strlen (self->password))
+		g_ptr_array_add (secrets, "password");
+}
+
+static void
+need_secrets_eappsk (NMSettingWirelessSecurity *self,
+                     GPtrArray *secrets,
+                     gboolean phase2)
+{
+	if (!self->eappsk || !strlen (self->eappsk))
+		g_ptr_array_add (secrets, "eappsk");
+}
+
+static void
+need_secrets_sim (NMSettingWirelessSecurity *self,
+                  GPtrArray *secrets,
+                  gboolean phase2)
+{
+	if (!self->pin || !strlen (self->pin))
+		g_ptr_array_add (secrets, "eappsk");
+}
+
+static void
+need_secrets_tls (NMSettingWirelessSecurity *self,
+                  GPtrArray *secrets,
+                  gboolean phase2)
+{
+	if (phase2) {
+		if (!self->phase2_private_key_passwd || !strlen (self->phase2_private_key_passwd))
+			g_ptr_array_add (secrets, "phase2-private-key-passwd");
+	} else {
+		if (!self->private_key_passwd || !strlen (self->private_key_passwd))
+			g_ptr_array_add (secrets, "private-key-passwd");
+	}
+}
+
+/* Implemented below... */
+static void need_secrets_phase2 (NMSettingWirelessSecurity *self,
+                                 GPtrArray *secrets,
+                                 gboolean phase2);
+
+
+typedef void (*EAPMethodNeedSecretsFunc) (NMSettingWirelessSecurity *self,
+                                          GPtrArray *secrets,
+                                          gboolean phase2);
+
+typedef struct {
+	const char *method;
+	EAPMethodNeedSecretsFunc func;
+} EAPMethodNeedSecretsTable;
+
+static EAPMethodNeedSecretsTable eap_need_secrets_table[] = {
+	{ "leap", need_secrets_password },
+	{ "md5", need_secrets_password },
+	{ "pap", need_secrets_password },
+	{ "chap", need_secrets_password },
+	{ "mschap", need_secrets_password },
+	{ "mschapv2", need_secrets_password },
+	{ "fast", need_secrets_password },
+	{ "psk", need_secrets_eappsk },
+	{ "pax", need_secrets_eappsk },
+	{ "sake", need_secrets_eappsk },
+	{ "gpsk", need_secrets_eappsk },
+	{ "tls", need_secrets_tls },
+	{ "peap", need_secrets_phase2 },
+	{ "ttls", need_secrets_phase2 },
+	{ "sim", need_secrets_sim },
+	{ "gtc", NULL },  // FIXME: implement
+	{ "otp", NULL },  // FIXME: implement
+	{ NULL, NULL }
+};
+
+static void
+need_secrets_phase2 (NMSettingWirelessSecurity *self,
+                     GPtrArray *secrets,
+                     gboolean phase2)
+{
+	char *method = NULL;
+	int i;
+
+	g_return_if_fail (phase2 == FALSE);
+
+	/* Check phase2_auth and phase2_autheap */
+	method = self->phase2_auth;
+	if (!method && self->phase2_autheap)
+		method = self->phase2_autheap;
+
+	if (!method) {
+		g_warning ("Couldn't find EAP method.");
+		g_assert_not_reached();
+		return;
+	}
+
+	/* Ask the configured phase2 method if it needs secrets */
+	for (i = 0; eap_need_secrets_table[i].method; i++) {
+		if (eap_need_secrets_table[i].func == NULL)
+			continue;
+		if (strcmp (eap_need_secrets_table[i].method, method)) {
+			(*eap_need_secrets_table[i].func) (self, secrets, TRUE);
+			break;
+		}
+	}
+}
+
+
 static GPtrArray *
 setting_wireless_security_need_secrets (NMSetting *setting)
 {
@@ -1165,11 +1277,38 @@ setting_wireless_security_need_secrets (NMSetting *setting)
 		goto no_secrets;
 	}
 
-	if (strcmp (self->key_mgmt, "wpa-eap") == 0) {
-		// FIXME: implement
+	if (   (strcmp (self->key_mgmt, "ieee8021x") == 0)
+	    || (strcmp (self->key_mgmt, "wpa-eap") == 0)) {
+		GSList *iter;
+		gboolean eap_method_found = FALSE;
+
+		/* Ask each configured EAP method if it needs secrets */
+		for (iter = self->eap; iter && !eap_method_found; iter = g_slist_next (iter)) {
+			const char *method = (const char *) iter->data;
+			int i;
+
+			for (i = 0; eap_need_secrets_table[i].method; i++) {
+				if (eap_need_secrets_table[i].func == NULL)
+					continue;
+				if (strcmp (eap_need_secrets_table[i].method, method)) {
+					(*eap_need_secrets_table[i].func) (self, secrets, FALSE);
+
+					/* Only break out of the outer loop if this EAP method
+					 * needed secrets.
+					 */
+					if (secrets->len > 0)
+						eap_method_found = TRUE;
+					break;
+				}
+			}
+		}
+
+		if (secrets->len)
+			return secrets;
 		goto no_secrets;
 	}
 
+	g_assert_not_reached ();
 	return secrets;
 
 no_secrets:
