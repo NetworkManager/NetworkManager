@@ -2472,6 +2472,8 @@ real_connection_secrets_updated (NMDevice *dev,
 	nm_device_activate_schedule_stage1_device_prepare (dev);
 }
 
+#define WIRELESS_SECRETS_TRIES "wireless-secrets-tries"
+
 static NMActStageReturn
 real_act_stage2_config (NMDevice *dev)
 {
@@ -2503,12 +2505,24 @@ real_act_stage2_config (NMDevice *dev)
 	/* If we need secrets, get them */
 	setting_name = nm_connection_need_secrets (connection);
 	if (setting_name) {
+		guint32 tries;
+
 		nm_info ("Activation (%s/wireless): access point '%s' has security,"
 		         " but secrets are required.",
 		         iface, s_connection->name);
 
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
-		nm_act_request_request_connection_secrets (req, setting_name, FALSE);
+
+		/* Request new secrets if the connection failed to even associate */
+		tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES));
+		if (tries > 4) {
+			/* Make the user try again explicitly */
+			nm_ap_set_invalid (ap, TRUE);
+			return NM_ACT_STAGE_RETURN_FAILURE;
+		}
+
+		nm_act_request_request_connection_secrets (req, setting_name, tries ? TRUE : FALSE);
+		g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, GUINT_TO_POINTER (tries++));
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	} else {
 		NMSettingWireless *s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_SETTING_WIRELESS);
@@ -2569,10 +2583,22 @@ static NMActStageReturn
 real_act_stage3_ip_config_start (NMDevice *dev)
 {
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
-	NMAccessPoint *		ap = nm_device_802_11_wireless_get_activation_ap (self);
+	NMAccessPoint *		ap;
 	NMActStageReturn		ret = NM_ACT_STAGE_RETURN_FAILURE;
+	NMActRequest *          req;
+	NMConnection *          connection;
 
+	ap = nm_device_802_11_wireless_get_activation_ap (self);
 	g_assert (ap);
+
+	req = nm_device_get_act_request (dev);
+	g_assert (req);
+
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+
+	/* Clear wireless secrets tries once a successful association happens */
+	g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, NULL);
 
 	/* User-created access points (ie, Ad-Hoc networks) don't do DHCP,
 	 * everything else does.
@@ -2737,6 +2763,17 @@ activation_failure_handler (NMDevice *dev)
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
 	NMAccessPoint *	ap;
 	const GByteArray * ssid;
+	NMActRequest *req;
+	NMConnection *connection;
+
+	req = nm_device_get_act_request (dev);
+	g_assert (req);
+
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+
+	/* Clear wireless secrets tries on failure */
+	g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, NULL);
 
 	if ((ap = nm_device_802_11_wireless_get_activation_ap (self))) {
 		if (nm_ap_get_fake (ap)) {

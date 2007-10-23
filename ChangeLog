@@ -1,5 +1,15 @@
 2007-10-23  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-11-wireless.c
+		- (real_act_stage2_config): after the first association failure,
+			if the connection still needs secrets ask the user for them
+			explicitly.  After the fourth association failure due to bad
+			secrets, fail the connection entirely.  Handles the GetSecrets
+			loop that NM gets into when the provided secrets don't match up
+			with the connection details.
+
+2007-10-23  Dan Williams  <dcbw@redhat.com>
+
 	* src/supplicant-manager/nm-supplicant-config.c
 		- (nm_supplicant_config_add_setting_wireless_security): only add
 			WPA-specific options when WPA is in use
