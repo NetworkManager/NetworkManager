@@ -963,7 +963,7 @@ nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *self)
 
 	nm_ioctl_info ("%s: About to GET IWMODE.", iface);
 	if (iw_get_ext (nm_dev_sock_get_fd (sk), iface, SIOCGIWMODE, &wrq) == 0) {
-		if ((mode == IW_MODE_ADHOC) || (mode == IW_MODE_INFRA))
+		if ((wrq.u.mode == IW_MODE_ADHOC) || (wrq.u.mode == IW_MODE_INFRA))
 			mode = wrq.u.mode;
 	} else
 		nm_warning ("error getting card mode on %s: %s", iface, strerror (errno));
