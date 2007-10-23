@@ -155,18 +155,59 @@ nm_connection_replace_settings (NMConnection *connection,
 	return TRUE;
 }
 
+typedef struct {
+	NMConnection *other;
+	gboolean failed;
+} CompareConnectionInfo;
+
+static void
+compare_one_setting (gpointer key, gpointer value, gpointer user_data)
+{
+	NMSetting *setting = (NMSetting *) value;
+	CompareConnectionInfo *info = (CompareConnectionInfo *) user_data;
+	NMSetting *other_setting;
+	NMConnectionPrivate *other_priv;
+
+	if (info->failed)
+		return;
+
+	other_priv = NM_CONNECTION_GET_PRIVATE (info->other);
+	other_setting = g_hash_table_lookup (other_priv->settings, setting->name);
+	if (!other_setting)
+		goto failed;
+
+	info->failed = nm_setting_compare (setting, other_setting, FALSE) ? FALSE : TRUE;
+	return;
+
+failed:
+	info->failed = TRUE;
+}
+
 gboolean
 nm_connection_compare (NMConnection *connection, NMConnection *other)
 {
+	NMConnectionPrivate *priv;
+	CompareConnectionInfo info = { other, FALSE };
+
 	if (!connection && !other)
 		return TRUE;
 
 	if (!connection || !other)
 		return FALSE;
 
-	/* FIXME: Implement */
+	priv = NM_CONNECTION_GET_PRIVATE (connection);
+	g_hash_table_foreach (priv->settings, compare_one_setting, &info);
+	if (info.failed == FALSE) {
+		/* compare A to B, then if that is the same compare B to A to ensure
+		 * that keys that are in B but not A will make the comparison fail.
+		 */
+		info.failed = FALSE;
+		info.other = connection;
+		priv = NM_CONNECTION_GET_PRIVATE (other);
+		g_hash_table_foreach (priv->settings, compare_one_setting, &info);
+	}
 
-	return FALSE;
+	return info.failed ? FALSE : TRUE;
 }
 
 gboolean

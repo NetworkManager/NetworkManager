@@ -24,6 +24,10 @@ typedef GPtrArray *(*NMSettingNeedSecretsFn) (NMSetting *setting);
 
 typedef void       (*NMSettingClearSecretsFn) (NMSetting *setting);
 
+typedef gboolean   (*NMSettingCompareFn) (NMSetting *setting,
+                                          NMSetting *other,
+                                          gboolean two_way);
+
 typedef void       (*NMSettingDestroyFn) (NMSetting *setting);
 
 typedef void   (*NMSettingValueIterFn) (NMSetting *setting,
@@ -63,6 +67,7 @@ struct _NMSetting {
 	NMSettingUpdateSecretsFn update_secrets_fn;
 	NMSettingNeedSecretsFn need_secrets_fn;
 	NMSettingClearSecretsFn clear_secrets_fn;
+	NMSettingCompareFn compare_fn;
 	NMSettingDestroyFn destroy_fn;
 };
 
@@ -70,6 +75,7 @@ gboolean    nm_settings_verify_all (GHashTable *all_settings);
 
 gboolean    nm_setting_populate_from_hash (NMSetting *setting, GHashTable *hash);
 gboolean    nm_setting_verify (NMSetting *setting);
+gboolean    nm_setting_compare (NMSetting *setting, NMSetting *other, gboolean two_way);
 GHashTable *nm_setting_to_hash (NMSetting *setting);
 gboolean    nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets);
 GPtrArray * nm_setting_need_secrets (NMSetting *setting);

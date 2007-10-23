@@ -12,6 +12,7 @@
 static GHashTable * nm_setting_hash (NMSetting *setting);
 static gboolean nm_setting_populate_from_hash_default (NMSetting *setting, GHashTable *table);
 static void default_setting_clear_secrets (NMSetting *setting);
+static gboolean default_setting_compare_fn (NMSetting *setting, NMSetting *other, gboolean two_way);
 
 gboolean
 nm_setting_populate_from_hash (NMSetting *setting, GHashTable *hash)
@@ -153,6 +154,22 @@ nm_setting_enumerate_values (NMSetting *setting,
 		(*func) (setting, m->key, m->type, val, m->secret, user_data);
 		m++;
 	};
+}
+
+gboolean
+nm_setting_compare (NMSetting *setting, NMSetting *other, gboolean two_way)
+{
+	g_return_val_if_fail (setting != NULL, FALSE);
+	g_return_val_if_fail (other != NULL, FALSE);
+
+	g_return_val_if_fail (setting->name != NULL, FALSE);
+	g_return_val_if_fail (other->name != NULL, FALSE);
+
+	g_return_val_if_fail (strcmp (setting->name, other->name) == 0, FALSE);
+
+	if (!setting->compare_fn)
+		return default_setting_compare_fn (setting, other, two_way);
+	return setting->compare_fn (setting, other, two_way);
 }
 
 /***********************************************************************/
@@ -568,6 +585,219 @@ default_setting_clear_secrets (NMSetting *setting)
 next:
 		m++;
 	}
+}
+
+typedef struct {
+	GHashTable *other;
+	gboolean failed;
+} GValueHashCompareInfo;
+
+static void
+compare_one_hash_gvalue (gpointer key, gpointer value, gpointer user_data)
+{
+	GValueHashCompareInfo *info = (GValueHashCompareInfo *) user_data;
+	GValue *val = (GValue *) value;
+	GValue *other_val;
+
+	if (info->failed)
+		return;
+
+	other_val = g_hash_table_lookup (info->other, key);
+	if (!other_val)
+		goto failed;
+
+	if (G_VALUE_TYPE (val) != G_VALUE_TYPE (other_val))
+		goto failed;
+
+	switch (G_VALUE_TYPE (val)) {
+	case G_TYPE_STRING: {
+		const char *a_str = g_value_get_string (val);
+		const char *b_str = g_value_get_string (other_val);
+		if ((!a_str && b_str) || (a_str && !b_str))
+			goto failed;
+		if (!a_str && !b_str)
+			break;
+		if (strcmp (a_str, b_str) != 0)
+			goto failed;
+		break;
+	}
+	default:
+		g_warning ("%s: unhandled GValue type %s", __func__, G_VALUE_TYPE_NAME (val));
+		goto failed;
+		break;
+	}
+	return;
+
+failed:
+	info->failed = TRUE;
+}
+
+static gboolean
+compare_gvalue_hash (GHashTable *a, GHashTable *b)
+{
+	GValueHashCompareInfo info = { b, FALSE };
+
+	g_return_val_if_fail (a != NULL, FALSE);
+	g_return_val_if_fail (b != NULL, FALSE);
+
+	g_hash_table_foreach (a, compare_one_hash_gvalue, &info);
+	return info.failed ? FALSE : TRUE;
+}
+
+static gboolean
+do_one_compare (NMSetting *a, NMSetting *b)
+{
+	SettingMember *m;
+
+	g_return_if_fail (a != NULL);
+	g_return_if_fail (b != NULL);
+
+	m = a->_members;
+	while (m->key) {
+		/* Ignore secrets since they aren't always supposed to be in the setting */
+		if (m->secret == FALSE)
+			goto next;
+
+		switch (m->type) {
+			case NM_S_TYPE_STRING: {
+				char **a_val = (char **) G_STRUCT_MEMBER_P (a, m->offset);
+				char **b_val = (char **) G_STRUCT_MEMBER_P (b, m->offset);
+				if ((*a_val && !*b_val) || (!*a_val && *b_val))
+					return FALSE;
+				if (*a_val && *b_val && strcmp (*a_val, *b_val))
+					return FALSE;
+				break;
+			}
+			case NM_S_TYPE_BOOL: {
+				gboolean *a_val = (gboolean *) G_STRUCT_MEMBER_P (a, m->offset);
+				gboolean *b_val = (gboolean *) G_STRUCT_MEMBER_P (b, m->offset);
+				if (*a_val != *b_val)
+					return FALSE;
+				break;
+			}
+			case NM_S_TYPE_UINT32: {
+				guint32 *a_val = (guint32 *) G_STRUCT_MEMBER_P (a, m->offset);
+				guint32 *b_val = (guint32 *) G_STRUCT_MEMBER_P (b, m->offset);
+				if (*a_val != *b_val)
+					return FALSE;
+				break;
+			}
+			case NM_S_TYPE_UINT64: {
+				guint64 *a_val = (guint64 *) G_STRUCT_MEMBER_P (a, m->offset);
+				guint64 *b_val = (guint64 *) G_STRUCT_MEMBER_P (b, m->offset);
+				if (*a_val != *b_val)
+					return FALSE;
+				break;
+			}
+			case NM_S_TYPE_BYTE_ARRAY: {
+				GByteArray **a_val = (GByteArray **) G_STRUCT_MEMBER_P (a, m->offset);
+				GByteArray **b_val = (GByteArray **) G_STRUCT_MEMBER_P (b, m->offset);
+				if ((*a_val && !*b_val) || (!*a_val && *b_val))
+					return FALSE;
+				if (*a_val && *b_val) {
+					if ((*a_val)->len != (*b_val)->len)
+						return FALSE;
+					if (memcmp ((*a_val)->data, (*b_val)->data, (*a_val)->len))
+						return FALSE;
+				}
+				break;
+			}
+			case NM_S_TYPE_UINT_ARRAY: {
+				GArray **a_val = (GArray **) G_STRUCT_MEMBER_P (a, m->offset);
+				GArray **b_val = (GArray **) G_STRUCT_MEMBER_P (b, m->offset);
+				if ((*a_val && !*b_val) || (!*a_val && *b_val))
+					return FALSE;
+				if (*a_val && *b_val) {
+					if ((*a_val)->len != (*b_val)->len)
+						return FALSE;
+					if (memcmp ((*a_val)->data, (*b_val)->data, (*a_val)->len))
+						return FALSE;
+				}
+				break;
+			}
+			case NM_S_TYPE_STRING_ARRAY: {
+				GSList **a_val = (GSList **) G_STRUCT_MEMBER_P (a, m->offset);
+				GSList **b_val = (GSList **) G_STRUCT_MEMBER_P (b, m->offset);
+				GSList *a_iter;
+
+				for (a_iter = *a_val; a_iter; a_iter = g_slist_next (a_iter)) {
+					const char *a_str = a_iter->data;
+					GSList *b_iter;
+					gboolean found = FALSE;
+
+					for (b_iter = *b_val; b_iter; b_iter = g_slist_next (b_iter)) {
+						const char *b_str = b_iter->data;
+						if (!a_str && !b_str) {
+							found = TRUE;
+							break;
+						}
+						if (a_str && b_str && !strcmp (a_str, b_str)) {
+							found = TRUE;
+							break;
+						}
+					}
+					if (!found)
+						return FALSE;
+				}
+				break;
+			}
+			case NM_S_TYPE_IP4_ADDRESSES: {
+				GSList **a_val = (GSList **) G_STRUCT_MEMBER_P (a, m->offset);
+				GSList **b_val = (GSList **) G_STRUCT_MEMBER_P (b, m->offset);
+				GSList *a_iter;
+
+				for (a_iter = *a_val; a_iter; a_iter = g_slist_next (a_iter)) {
+					NMSettingIP4Address *a_addr = (NMSettingIP4Address *) a_iter->data;
+					GSList *b_iter;
+					gboolean found = FALSE;
+
+					g_assert (a_addr);
+					for (b_iter = *b_val; b_iter; b_iter = g_slist_next (b_iter)) {
+						NMSettingIP4Address *b_addr = (NMSettingIP4Address *) b_iter->data;
+
+						g_assert (b_addr);
+						if (   (a_addr->address == b_addr->address)
+						    && (a_addr->netmask == b_addr->netmask)
+						    && (a_addr->gateway == b_addr->gateway)) {
+							found = TRUE;
+							break;
+						}
+					}
+					if (!found)
+						return FALSE;
+				}
+				break;
+			}
+			case NM_S_TYPE_GVALUE_HASH: {
+				GHashTable **a_val = (GHashTable **) G_STRUCT_MEMBER_P (a, m->offset);
+				GHashTable **b_val = (GHashTable **) G_STRUCT_MEMBER_P (b, m->offset);
+				if (!compare_gvalue_hash (*a_val, *b_val))
+					return FALSE;
+				break;
+			}
+
+			default:
+				break;
+		}
+
+next:
+		m++;
+	}
+}
+
+static gboolean
+default_setting_compare_fn (NMSetting *setting, NMSetting *other, gboolean two_way)
+{
+	gboolean same;
+
+	same = do_one_compare (setting, other);
+
+	/* compare A to B, then if that is the same compare B to A to ensure
+	 * that keys that are in B but not A will make the comparison fail.
+	 */
+	if (two_way && (same == TRUE))
+		return do_one_compare (other, setting);
+	return same;
 }
 
 

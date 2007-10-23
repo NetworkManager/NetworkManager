@@ -1,5 +1,16 @@
 2007-10-23  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting.c
+	  libnm-util/nm-setting.c
+		- (nm_setting_compare): implement
+		- (default_setting_compare_fn, do_one_compare, compare_gvalue_hash,
+		   compare_one_hash_gvalue): compare the contents of a setting
+
+	* libnm-util/nm-connection.c
+		- (nm_connection_compare): implement
+
+2007-10-23  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-activation-request.c
 		- (get_secrets_cb): handle getting a setting back that is more than
 			just secrets (ie, user changed auth or EAP method or something)
