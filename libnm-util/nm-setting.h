@@ -66,8 +66,10 @@ struct _NMSetting {
 	NMSettingDestroyFn destroy_fn;
 };
 
+gboolean    nm_settings_verify_all (GHashTable *all_settings);
+
 gboolean    nm_setting_populate_from_hash (NMSetting *setting, GHashTable *hash);
-gboolean    nm_settings_verify (GHashTable *all_settings);
+gboolean    nm_setting_verify (NMSetting *setting);
 GHashTable *nm_setting_to_hash (NMSetting *setting);
 gboolean    nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets);
 GPtrArray * nm_setting_need_secrets (NMSetting *setting);

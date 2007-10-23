@@ -1,5 +1,18 @@
 2007-10-23  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting.c
+	  libnm-util/nm-setting.h
+		- (nm_setting_verify): new function; verify one setting
+		- (nm_settings_verify_all): rename from nm_settings_verify()
+		- (setting_connection_verify, setting_wireless_verify): allow NULL
+			all_settings
+
+	* libnm-util/nm-connection.c
+		- (nm_connection_replace_settings, nm_connection_verify,
+		   nm_connection_new_from_hash): handle nm_settings_verify() rename
+
+2007-10-23  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 		- (real_act_stage2_config): use pre-increment on 'tries' to get the
 			desired behavior

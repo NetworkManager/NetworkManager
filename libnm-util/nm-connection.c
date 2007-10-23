@@ -147,7 +147,7 @@ nm_connection_replace_settings (NMConnection *connection,
 		return FALSE;
 	}
 
-	if (!nm_settings_verify (priv->settings)) {
+	if (!nm_settings_verify_all (priv->settings)) {
 		g_warning ("Settings invalid.");
 		return FALSE;
 	}
@@ -177,7 +177,7 @@ nm_connection_verify (NMConnection *connection)
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
-	return nm_settings_verify (priv->settings);
+	return nm_settings_verify_all (priv->settings);
 }
 
 void
@@ -486,7 +486,7 @@ nm_connection_new_from_hash (GHashTable *hash)
 		return NULL;
 	}
 
-	if (!nm_settings_verify (priv->settings)) {
+	if (!nm_settings_verify_all (priv->settings)) {
 		g_object_unref (connection);
 		return NULL;
 	}

@@ -24,6 +24,15 @@ nm_setting_populate_from_hash (NMSetting *setting, GHashTable *hash)
 		return nm_setting_populate_from_hash_default (setting, hash);
 }
 
+gboolean
+nm_setting_verify (NMSetting *setting)
+{
+	g_return_val_if_fail (setting != NULL, FALSE);
+
+	if (setting->verify_fn)
+		return setting->verify_fn (setting, NULL);
+}
+
 typedef struct {
 	gboolean success;
 	GHashTable *all_settings;
@@ -41,10 +50,12 @@ verify_one_setting (gpointer key, gpointer value, gpointer user_data)
 }
 
 gboolean
-nm_settings_verify (GHashTable *all_settings)
+nm_settings_verify_all (GHashTable *all_settings)
 {
 	gpointer p;
 	VerifySettingsInfo info;
+
+	g_return_val_if_fail (all_settings != NULL, FALSE);
 
 	/* First, make sure there's at least 'connection' setting */
 	p = g_hash_table_lookup (all_settings, NM_SETTING_CONNECTION);
@@ -574,7 +585,7 @@ setting_connection_verify (NMSetting *setting, GHashTable *all_settings)
 		return FALSE;
 
 	/* Make sure the corresponding 'type' item is present */
-	if (!g_hash_table_lookup (all_settings, self->type))
+	if (all_settings && !g_hash_table_lookup (all_settings, self->type))
 		return FALSE;
 
 	return TRUE;
@@ -815,7 +826,9 @@ setting_wireless_verify (NMSetting *setting, GHashTable *all_settings)
 		}
 	}
 
-	if (self->security && !g_hash_table_lookup (all_settings, self->security)) {
+	if (   self->security
+	    && all_settings
+	    && !g_hash_table_lookup (all_settings, self->security)) {
 		g_warning ("Invalid or missing security");
 		return FALSE;
 	}
