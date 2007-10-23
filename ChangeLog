@@ -1,5 +1,11 @@
 2007-10-23  Dan Williams  <dcbw@redhat.com>
 
+	* src/supplicant-manager/nm-supplicant-config.c
+		- (nm_supplicant_config_add_setting_wireless_security): 'password'
+			secret doesn't need to be unhexified
+
+2007-10-23  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting.c
 		- (setting_wireless_security_need_secrets): ensure auth_alg is !NULL
 			before trying to do something with it

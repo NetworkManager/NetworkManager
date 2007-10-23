@@ -465,7 +465,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig * self,
 	ADD_STRING_VAL (setting->wep_key2, "wep_key2", FALSE, TRUE, TRUE);
 	ADD_STRING_VAL (setting->wep_key3, "wep_key3", FALSE, TRUE, TRUE);
 	ADD_STRING_VAL (setting->psk, "psk", FALSE, TRUE, TRUE);
-	ADD_STRING_VAL (setting->password, "password", FALSE, TRUE, TRUE);
+	ADD_STRING_VAL (setting->password, "password", FALSE, FALSE, TRUE);
 	ADD_STRING_VAL (setting->pin, "pin", FALSE, FALSE, TRUE);
 	ADD_STRING_VAL (setting->eappsk, "eappsk", FALSE, TRUE, TRUE);
 	ADD_STRING_VAL (setting->private_key_passwd, "private_key_passwd", FALSE, FALSE, TRUE);
