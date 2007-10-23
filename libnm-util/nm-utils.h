@@ -27,6 +27,8 @@
 #include <execinfo.h>
 #include <dbus/dbus.h>
 
+#include "nm-connection.h"
+
 #define nm_print_backtrace()						\
 G_STMT_START								\
 {									\
@@ -157,6 +159,12 @@ gboolean nm_utils_security_valid (NMUtilsSecurityType type,
                                   guint32 ap_flags,
                                   guint32 ap_wpa,
                                   guint32 ap_rsn);
+
+gboolean nm_utils_ap_security_compatible (NMConnection *connection,
+                                          guint32 ap_flags,
+                                          guint32 ap_wpa,
+                                          guint32 ap_rsn,
+                                          guint32 ap_mode);
 
 
 #endif /* NM_UTILS_H */

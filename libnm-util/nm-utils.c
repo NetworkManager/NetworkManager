@@ -546,3 +546,173 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 	return good;
 }
 
+
+static gboolean
+match_cipher (const char *cipher,
+              const char *expected,
+              guint32 wpa_flags,
+              guint32 rsn_flags,
+              guint32 flag)
+{
+	if (strcmp (cipher, expected) != 0)
+		return FALSE;
+
+	if (!(wpa_flags & flag) && !(rsn_flags & flag))
+		return FALSE;
+
+	return TRUE;
+}
+
+gboolean
+nm_utils_ap_security_compatible (NMConnection *connection,
+                                 guint32 ap_flags,
+                                 guint32 ap_wpa,
+                                 guint32 ap_rsn,
+                                 guint32 ap_mode)
+{
+	NMSettingWireless *s_wireless;
+	NMSettingWirelessSecurity *s_wireless_sec;
+
+	g_return_val_if_fail (connection != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+
+	s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_SETTING_WIRELESS);
+	if (!s_wireless)
+		return FALSE;
+
+	if (!s_wireless->security) {
+		if (   (ap_flags & NM_802_11_AP_FLAGS_PRIVACY)
+		    || (ap_wpa != NM_802_11_AP_SEC_NONE)
+		    || (ap_rsn != NM_802_11_AP_SEC_NONE))
+			return FALSE;
+		return TRUE;
+	}
+
+	if (strcmp (s_wireless->security, NM_SETTING_WIRELESS_SECURITY) != 0)
+		return FALSE;
+
+	s_wireless_sec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_SETTING_WIRELESS_SECURITY);
+	if (s_wireless_sec == NULL || !s_wireless_sec->key_mgmt)
+		return FALSE;
+
+	/* Static WEP */
+	if (!strcmp (s_wireless_sec->key_mgmt, "none")) {
+		if (   !(ap_flags & NM_802_11_AP_FLAGS_PRIVACY)
+		    || (ap_wpa != NM_802_11_AP_SEC_NONE)
+		    || (ap_rsn != NM_802_11_AP_SEC_NONE))
+			return FALSE;
+		return TRUE;
+	}
+
+	/* Adhoc WPA */
+	if (!strcmp (s_wireless_sec->key_mgmt, "wpa-none")) {
+		if (ap_mode != IW_MODE_ADHOC)
+			return FALSE;
+		// FIXME: validate ciphers if the BSSID actually puts WPA/RSN IE in
+		// it's beacon
+		return TRUE;
+	}
+
+	/* Stuff after this point requires infrastructure */
+	if (ap_mode != IW_MODE_INFRA)
+		return FALSE;
+
+	/* Dynamic WEP or LEAP */
+	if (!strcmp (s_wireless_sec->key_mgmt, "ieee8021x")) {
+		if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
+			return FALSE;
+
+		/* If the AP is advertising a WPA IE, make sure it supports WEP ciphers */
+		if (ap_wpa != NM_802_11_AP_SEC_NONE) {
+			gboolean found = FALSE;
+			GSList *iter;
+
+			if (!(ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_802_1X))
+				return FALSE;
+
+			/* quick check; can't use AP if it doesn't support at least one
+			 * WEP cipher in both pairwise and group suites.
+			 */
+			if (   !(ap_wpa & (NM_802_11_AP_SEC_PAIR_WEP40 | NM_802_11_AP_SEC_PAIR_WEP104))
+			    || !(ap_wpa & (NM_802_11_AP_SEC_GROUP_WEP40 | NM_802_11_AP_SEC_GROUP_WEP104)))
+				return FALSE;
+
+			/* Match at least one pairwise cipher with AP's capability */
+			for (iter = s_wireless_sec->pairwise; iter; iter = g_slist_next (iter)) {
+				if ((found = match_cipher (iter->data, "wep40", ap_wpa, ap_wpa, NM_802_11_AP_SEC_PAIR_WEP40)))
+					break;
+				if ((found = match_cipher (iter->data, "wep104", ap_wpa, ap_wpa, NM_802_11_AP_SEC_PAIR_WEP104)))
+					break;
+			}
+			if (!found)
+				return FALSE;
+
+			/* Match at least one group cipher with AP's capability */
+			for (iter = s_wireless_sec->group; iter; iter = g_slist_next (iter)) {
+				if ((found = match_cipher (iter->data, "wep40", ap_wpa, ap_wpa, NM_802_11_AP_SEC_GROUP_WEP40)))
+					break;
+				if ((found = match_cipher (iter->data, "wep104", ap_wpa, ap_wpa, NM_802_11_AP_SEC_GROUP_WEP104)))
+					break;
+			}
+			if (!found)
+				return FALSE;
+		}
+		return TRUE;
+	}
+
+	/* WPA[2]-PSK and WPA[2] Enterprise */
+	if (   !strcmp (s_wireless_sec->key_mgmt, "wpa-psk")
+	    || !strcmp (s_wireless_sec->key_mgmt, "wpa-eap")) {
+		GSList * elt;
+		gboolean found = FALSE;
+
+		if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
+			return FALSE;
+
+		if (!s_wireless_sec->pairwise || !s_wireless_sec->group)
+			return FALSE;
+
+		if (!strcmp (s_wireless_sec->key_mgmt, "wpa-psk")) {
+			if (   !(ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_PSK)
+			    && !(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_PSK))
+				return FALSE;
+		} else if (!strcmp (s_wireless_sec->key_mgmt, "wpa-eap")) {
+			if (   !(ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
+			    && !(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_802_1X))
+				return FALSE;
+		}
+
+		// FIXME: should handle WPA and RSN separately here to ensure that
+		// if the Connection only uses WPA we don't match a cipher against
+		// the AP's RSN IE instead
+
+		/* Match at least one pairwise cipher with AP's capability */
+		for (elt = s_wireless_sec->pairwise; elt; elt = g_slist_next (elt)) {
+			if ((found = match_cipher (elt->data, "tkip", ap_wpa, ap_rsn, NM_802_11_AP_SEC_PAIR_TKIP)))
+				break;
+			if ((found = match_cipher (elt->data, "ccmp", ap_wpa, ap_rsn, NM_802_11_AP_SEC_PAIR_CCMP)))
+				break;
+		}
+		if (!found)
+			return FALSE;
+
+		/* Match at least one group cipher with AP's capability */
+		for (elt = s_wireless_sec->group; elt; elt = g_slist_next (elt)) {
+			if ((found = match_cipher (elt->data, "wep40", ap_wpa, ap_rsn, NM_802_11_AP_SEC_GROUP_WEP40)))
+				break;
+			if ((found = match_cipher (elt->data, "wep104", ap_wpa, ap_rsn, NM_802_11_AP_SEC_GROUP_WEP104)))
+				break;
+			if ((found = match_cipher (elt->data, "tkip", ap_wpa, ap_rsn, NM_802_11_AP_SEC_GROUP_TKIP)))
+				break;
+			if ((found = match_cipher (elt->data, "ccmp", ap_wpa, ap_rsn, NM_802_11_AP_SEC_GROUP_CCMP)))
+				break;
+		}
+		if (!found)
+			return FALSE;
+
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
