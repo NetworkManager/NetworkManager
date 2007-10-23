@@ -1268,6 +1268,7 @@ setting_wireless_security_need_secrets (NMSetting *setting)
 
 	/* LEAP */
 	if (   (strcmp (self->key_mgmt, "ieee8021x") == 0)
+	    && self->auth_alg
 	    && (strcmp (self->auth_alg, "leap") == 0)
 	    && (string_list_contains (self->eap, "leap"))) {
 		if (!self->password || !strlen (self->password)) {

@@ -1,5 +1,11 @@
 2007-10-23  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting.c
+		- (setting_wireless_security_need_secrets): ensure auth_alg is !NULL
+			before trying to do something with it
+
+2007-10-23  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 		- (merge_scanned_ap): handle NULL ssids returned from nm_ap_get_ssid()
 
