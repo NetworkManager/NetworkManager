@@ -32,6 +32,7 @@ nm_setting_verify (NMSetting *setting)
 
 	if (setting->verify_fn)
 		return setting->verify_fn (setting, NULL);
+	return TRUE;
 }
 
 typedef struct {
@@ -649,8 +650,8 @@ do_one_compare (NMSetting *a, NMSetting *b)
 {
 	SettingMember *m;
 
-	g_return_if_fail (a != NULL);
-	g_return_if_fail (b != NULL);
+	g_return_val_if_fail (a != NULL, FALSE);
+	g_return_val_if_fail (b != NULL, FALSE);
 
 	m = a->_members;
 	while (m->key) {
@@ -783,6 +784,8 @@ do_one_compare (NMSetting *a, NMSetting *b)
 next:
 		m++;
 	}
+
+	return TRUE;
 }
 
 static gboolean
