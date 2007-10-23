@@ -1,5 +1,11 @@
 2007-10-23  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-11-wireless.c
+		- (merge_scanned_ap): use libnm-util empty SSID check to catch more
+			non-SSID-broadcasting APs
+
+2007-10-23  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerAP.c
 		- (match_cipher, security_compatible): remove
 		- (nm_ap_check_compatible): use nm_utils_ap_security_compatible() from
