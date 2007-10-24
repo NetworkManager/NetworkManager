@@ -1,5 +1,10 @@
 2007-10-24  Dan Williams  <dcbw@redhat.com>
 
+	* src/supplicant-manager/nm-supplicant-settings-verify.c
+		- (opt_table): max length for certificates should be 65536
+
+2007-10-24  Dan Williams  <dcbw@redhat.com>
+
 	* src/supplicant-manager/nm-supplicant-interface.c
 		- (blob_free): correctly free blob data after use
 		- (call_set_blobs): use the right D-Bus interfaace for setBlobs
