@@ -171,7 +171,7 @@ nm_supplicant_config_add_blob (NMSupplicantConfig *self,
 
 	priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
 
-	type = nm_supplicant_settings_verify_setting (key, NULL, 0);
+	type = nm_supplicant_settings_verify_setting (key, value->data, value->len);
 	if (type == TYPE_INVALID) {
 		nm_debug ("Key '%s' and/or it's contained value is invalid.", key);
 		return FALSE;
@@ -261,7 +261,7 @@ get_hash_cb (gpointer key, gpointer value, gpointer user_data)
 {
 	ConfigOption *opt = (ConfigOption *) value;
 	GValue *variant;
-	GArray *array;
+	GByteArray *array;
 
 	variant = g_slice_new0 (GValue);
 
@@ -271,10 +271,11 @@ get_hash_cb (gpointer key, gpointer value, gpointer user_data)
 		g_value_set_int (variant, atoi (opt->value));
 		break;
 	case TYPE_BYTES:
-		array = g_array_new (TRUE, TRUE, sizeof (char));
-		g_array_append_vals (array, opt->value, opt->len);
-		g_value_init (variant, dbus_g_type_get_collection ("GArray", G_TYPE_CHAR));
+		array = g_byte_array_sized_new (opt->len);
+		g_byte_array_append (array, opt->value, opt->len);
+		g_value_init (variant, DBUS_TYPE_G_UCHAR_ARRAY);
 		g_value_set_boxed (variant, array);
+		g_byte_array_free (array, TRUE);
 		break;
 	case TYPE_KEYWORD:
 		g_value_init (variant, G_TYPE_STRING);

@@ -1,5 +1,12 @@
 2007-10-24  Dan Williams  <dcbw@redhat.com>
 
+	* src/supplicant-manager/nm-supplicant-config.c
+		- (nm_supplicant_config_add_blob): pass blob data and length for
+			verification
+		- (get_hash_cb): use GByteArrays rather than GArrays; easier to follow
+
+2007-10-24  Dan Williams  <dcbw@redhat.com>
+
 	* src/supplicant-manager/nm-supplicant-settings-verify.c
 		- (opt_table): max length for certificates should be 65536
 
