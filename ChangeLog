@@ -1,5 +1,11 @@
 2007-10-24  Dan Williams  <dcbw@redhat.com>
 
+	* src/supplicant-manager/nm-supplicant-interface.c
+		- (blob_free): correctly free blob data after use
+		- (call_set_blobs): use the right D-Bus interfaace for setBlobs
+
+2007-10-24  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting.c
 		- (setting_wireless_security_need_secrets): Fix lookup table logic for
 			EAP method need secrets

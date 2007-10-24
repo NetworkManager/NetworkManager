@@ -1069,9 +1069,10 @@ byte_array_to_gvalue (const GByteArray *array)
 }
 
 static void
-blob_free (GByteArray *array)
+blob_free (GValue *val)
 {
-	g_byte_array_free (array, TRUE);
+	g_value_unset (val);
+	g_slice_free (GValue, val);
 }
 
 static void
@@ -1106,7 +1107,7 @@ call_set_blobs (NMSupplicantInfo *info, GHashTable *orig_blobs)
 
 	g_hash_table_foreach (orig_blobs, (GHFunc) convert_blob, blobs);
 
-	call = dbus_g_proxy_begin_call (priv->net_proxy, "setBlobs", set_blobs_cb,
+	call = dbus_g_proxy_begin_call (priv->iface_proxy, "setBlobs", set_blobs_cb,
 									info,
 									nm_supplicant_info_destroy,
 									DBUS_TYPE_G_STRING_VARIANT_HASHTABLE, blobs,
