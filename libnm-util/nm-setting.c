@@ -1537,7 +1537,7 @@ setting_wireless_security_need_secrets (NMSetting *setting)
 			for (i = 0; eap_need_secrets_table[i].method; i++) {
 				if (eap_need_secrets_table[i].func == NULL)
 					continue;
-				if (strcmp (eap_need_secrets_table[i].method, method)) {
+				if (!strcmp (eap_need_secrets_table[i].method, method)) {
 					(*eap_need_secrets_table[i].func) (self, secrets, FALSE);
 
 					/* Only break out of the outer loop if this EAP method

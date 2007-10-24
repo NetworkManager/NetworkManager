@@ -1,5 +1,11 @@
 2007-10-24  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting.c
+		- (setting_wireless_security_need_secrets): Fix lookup table logic for
+			EAP method need secrets
+
+2007-10-24  Dan Williams  <dcbw@redhat.com>
+
 	* src/backends/NetworkManagerRedHat.c
 		- (nm_system_update_dns): be a lot smarter about telling nscd to restart
 
