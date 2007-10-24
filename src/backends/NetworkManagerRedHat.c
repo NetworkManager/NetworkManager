@@ -228,15 +228,10 @@ void nm_system_kill_all_dhcp_daemons (void)
  */
 void nm_system_update_dns (void)
 {
-#ifdef NM_NO_NAMED
-	if (nm_spawn_process ("/etc/init.d/nscd status") != 0)
-		nm_spawn_process ("/etc/init.d/nscd restart");
-
-	nm_info ("Clearing nscd hosts cache.");
-	nm_spawn_process ("/usr/sbin/nscd -i hosts");
-#else
-	nm_spawn_process ("/usr/bin/killall -q nscd");
-#endif
+	if (g_file_test ("/usr/sbin/nscd", G_FILE_TEST_EXISTS | G_FILE_TEST_IS_EXECUTABLE | G_FILE_TEST_IS_REGULAR)) {
+		nm_spawn_process ("/etc/init.d/nscd condrestart");
+		nm_spawn_process ("/usr/sbin/nscd -i hosts");
+	}
 }
 
 

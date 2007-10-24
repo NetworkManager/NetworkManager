@@ -1,3 +1,8 @@
+2007-10-24  Dan Williams  <dcbw@redhat.com>
+
+	* src/backends/NetworkManagerRedHat.c
+		- (nm_system_update_dns): be a lot smarter about telling nscd to restart
+
 2007-10-23  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/nm-setting.c
