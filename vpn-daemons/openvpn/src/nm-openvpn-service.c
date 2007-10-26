@@ -281,7 +281,7 @@ openvpn_watch_cb (GPid pid, gint status, gpointer user_data)
 {
 	NMVPNPlugin *plugin = NM_VPN_PLUGIN (user_data);
 	NMOpenvpnPluginPrivate *priv = NM_OPENVPN_PLUGIN_GET_PRIVATE (plugin);
-	guint error;
+	guint error = 0;
 
 	if (WIFEXITED (status)) {
 		error = WEXITSTATUS (status);
