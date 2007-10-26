@@ -1,3 +1,9 @@
+2007-10-26  Dan Williams  <dcbw@redhat.com>
+
+	* properties/nm-vpnc.c
+		- (impl_get_object): use a glade root, and ensure widget is referenced
+			correctly
+
 2007-10-10  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-vpnc-service.c

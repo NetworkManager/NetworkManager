@@ -950,12 +950,13 @@ impl_get_object (void)
 	impl = g_new0 (NetworkManagerVpnUIImpl, 1);
 
 	glade_file = g_strdup_printf ("%s/%s", GLADEDIR, "nm-vpnc-dialog.glade");
-	impl->xml = glade_xml_new (glade_file, NULL, GETTEXT_PACKAGE);
+	impl->xml = glade_xml_new (glade_file, "nm-vpnc-widget", GETTEXT_PACKAGE);
 	g_free (glade_file);
 	if (impl->xml == NULL)
 		goto error;
 
 	impl->widget = glade_xml_get_widget (impl->xml, "nm-vpnc-widget");
+	g_object_ref_sink (impl->widget);
 
 	impl->w_connection_name        = GTK_ENTRY (glade_xml_get_widget (impl->xml, "vpnc-connection-name"));
 	impl->w_gateway                = GTK_ENTRY (glade_xml_get_widget (impl->xml, "vpnc-gateway"));
