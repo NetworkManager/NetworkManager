@@ -2,14 +2,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-pptp\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-04-15 21:26+0300\n"
+"POT-Creation-Date: 2007-10-27 02:19+0300\n"
 "PO-Revision-Date: 2007-04-15 22:03+0300\n"
 "Last-Translator: Ihar Hrachyshka <ihar.hrachyshka@gmail.com>\n"
 "Language-Team: Belarusian Latin <i18n@mova.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%"
+"10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 "X-Poedit-Language: Belarusian\n"
 "X-Poedit-Country: BELARUS\n"
 
@@ -27,14 +28,12 @@ msgstr "_Zapomni dla hetaj sesii"
 msgid "_Save in keyring"
 msgstr "_Zachavaj u klučnika"
 
-#: ../auth-dialog-general/main.c:48
-#: ../auth-dialog/main.c:140
+#: ../auth-dialog-general/main.c:48 ../auth-dialog/main.c:140
 #, c-format
 msgid "You need to authenticate to access '%s'."
 msgstr "Treba spraŭdzić asobu, kab atrymać dostup da '%s'."
 
-#: ../auth-dialog-general/main.c:51
-#: ../auth-dialog/main.c:141
+#: ../auth-dialog-general/main.c:51 ../auth-dialog/main.c:141
 msgid "Authenticate Connection"
 msgstr "Spraŭdź spałučeńnie"
 
@@ -45,13 +44,15 @@ msgid ""
 "\n"
 "The connection '%s' may need some form of authentication.\n"
 "\n"
-"Please select an appropriate authentication type and provide the necessary credentials below:\n"
+"Please select an appropriate authentication type and provide the necessary "
+"credentials below:\n"
 msgstr ""
 "<span weight=\"bold\" size=\"larger\">Źviestki spraŭdžańnia</span>\n"
 "\n"
 "Spałučeńnie '%s' moža patrabavać niejkaj formy spraŭdžańnia asoby.\n"
 "\n"
-"Kali łaska, abiary adpaviedny typ spraŭdžańnia i vyznač nižej patrebnyja źviestki:\n"
+"Kali łaska, abiary adpaviedny typ spraŭdžańnia i vyznač nižej patrebnyja "
+"źviestki:\n"
 
 #: ../auth-dialog-general/nm-ppp-auth.glade.h:8
 msgid "Authentication Required"
@@ -62,7 +63,7 @@ msgid "_Authentication Type:"
 msgstr "_Typ spraŭdžańnia:"
 
 #: ../auth-dialog-general/nm-ppp-auth.glade.h:10
-#: ../auth-dialog/gnome-two-password-dialog.c:272
+#: ../auth-dialog/gnome-two-password-dialog.c:263
 msgid "_Password:"
 msgstr "_Parol:"
 
@@ -71,35 +72,23 @@ msgid "_Remote name:"
 msgstr "_Addalenaja nazva:"
 
 #: ../auth-dialog-general/nm-ppp-auth.glade.h:14
-#: ../auth-dialog/gnome-two-password-dialog.c:268
+#: ../auth-dialog/gnome-two-password-dialog.c:259
 msgid "_Username:"
 msgstr "_Nazva karystalnika:"
 
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:15
-msgid "auth-chap-window"
-msgstr "auth-chap-akno"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:16
-msgid "auth-mschapv2-window"
-msgstr "auth-mschapv2-akno"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:17
-msgid "auth-none-window"
-msgstr "auth-niama-akno"
-
-#: ../auth-dialog/gnome-two-password-dialog.c:147
+#: ../auth-dialog/gnome-two-password-dialog.c:144
 msgid "_Secondary Password:"
 msgstr "_Druhi parol:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:270
+#: ../auth-dialog/gnome-two-password-dialog.c:261
 msgid "_Domain:"
 msgstr "_Domen:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:355
+#: ../auth-dialog/gnome-two-password-dialog.c:352
 msgid "Connect _anonymously"
 msgstr "Spałučysia _ananimna"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:360
+#: ../auth-dialog/gnome-two-password-dialog.c:357
 msgid "Connect as _user:"
 msgstr "Spałučysia jak _karystalnik:"
 
@@ -128,48 +117,50 @@ msgid "<b>Compression</b>"
 msgstr "<b>Kampresija</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:3
-msgid "<b>Connection Name</b>"
-msgstr "<b>Nazva spałučeńnia</b>"
+msgid "<b>Delays &amp; Timeouts</b>"
+msgstr "<b>Zatrymki j terminy čakańnia</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:4
-msgid "<b>Delays and TImeouts</b>"
-msgstr "<b>Zatrymki i terminy čakańnia</b>"
-
-#: ../properties/nm-ppp-dialog.glade.h:5
 msgid "<b>Encryption</b>"
 msgstr "<b>Šyfravańnie</b>"
 
-#: ../properties/nm-ppp-dialog.glade.h:6
+#: ../properties/nm-ppp-dialog.glade.h:5
 msgid "<b>IP Options</b>"
 msgstr "<b>Opcyi IP</b>"
 
-#: ../properties/nm-ppp-dialog.glade.h:7
+#: ../properties/nm-ppp-dialog.glade.h:6
 msgid "<b>Packet Parameters</b>"
 msgstr "<b>Parametry pakunkaŭ</b>"
 
+#: ../properties/nm-ppp-dialog.glade.h:7
+msgid "<i>Example: 172.16.0.0/16 10.11.12.0/24</i>"
+msgstr "<i>Prykład: 172.16.0.0/16 10.11.12.0/24</i>"
+
 #: ../properties/nm-ppp-dialog.glade.h:8
-msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
-msgstr "<i>prykład: 172.16.0.0/16 10.11.12.0/24</i>"
+msgid "A list of extra options to pppd as would be typed on the command line"
+msgstr ""
+"Śpis dadatkovych opcyj pppd, jakija buduć zadziejničany jak praciah "
+"zahadnaha radka"
 
 #: ../properties/nm-ppp-dialog.glade.h:9
-msgid "A list of extra options to pppd as would be typed on the command line"
-msgstr "Śpis dadatkovych opcyj pppd, jakija buduć zadziejničany jak praciah zahadnaha radka"
+msgid "Allow B_SD Compression"
+msgstr "Dazvol kampresiju _BSD"
 
 #: ../properties/nm-ppp-dialog.glade.h:10
-msgid "Allow BSD Compression"
-msgstr "Dazvol kampresiju BSD"
+msgid "Allow _Deflate compression"
+msgstr "Dazvol kampresiju _Deflate"
 
 #: ../properties/nm-ppp-dialog.glade.h:11
-msgid "Allow Deflate compression"
-msgstr "Dazvol kampresiju Deflate"
-
-#: ../properties/nm-ppp-dialog.glade.h:12
-msgid "Authenticate Peer"
-msgstr "Spraŭdź toj bok"
-
-#: ../properties/nm-ppp-dialog.glade.h:13
 msgid "Authentication"
 msgstr "Spraŭdžańnie"
+
+#: ../properties/nm-ppp-dialog.glade.h:12
+msgid "C_hannel:"
+msgstr "_Kanał:"
+
+#: ../properties/nm-ppp-dialog.glade.h:13
+msgid "Co_nnect delay:"
+msgstr "_Zatrymka spałučeńnia:"
 
 #: ../properties/nm-ppp-dialog.glade.h:14
 msgid "Compression & Encryption"
@@ -180,99 +171,108 @@ msgid "Connection"
 msgstr "Spałučeńnie"
 
 #: ../properties/nm-ppp-dialog.glade.h:16
-msgid "Debug Output"
-msgstr "Adładačnaje vyjście"
+msgid "Connection na_me:"
+msgstr "_Nazva spałučeńnia:"
 
 #: ../properties/nm-ppp-dialog.glade.h:17
+msgid "Context _number:"
+msgstr "Kantekstny _numar:"
+
+#: ../properties/nm-ppp-dialog.glade.h:18
+msgid "Custom _PPP options:"
+msgstr "Asablivyja opcyi _PPP:"
+
+#: ../properties/nm-ppp-dialog.glade.h:19
+msgid "Debug _output"
+msgstr "Debugavaje _vyjście"
+
+#: ../properties/nm-ppp-dialog.glade.h:20
 msgid "Disconnect after this many LCP echo requests fail"
 msgstr "Adklučysia paśla hetaj kolkaści pamyłkovych echa-zapytaŭ LCP"
 
-#: ../properties/nm-ppp-dialog.glade.h:18
-#: ../properties/nm-ppp-properties.c:216
-msgid "Enable stateful MPPE"
-msgstr "Uklučy stateful MPPE"
+#: ../properties/nm-ppp-dialog.glade.h:21
+msgid "E_xclusive device access (UUCP-style lock)"
+msgstr "_Ekskluziŭny dostup da pryłady (blakavańnie stylu UUCP)"
 
-#: ../properties/nm-ppp-dialog.glade.h:19
-msgid "Exclusive device access (UUCP-style lock)"
-msgstr "Ekskluziŭny dostup da pryłady (blakavańnie typu UUCP)"
+#: ../properties/nm-ppp-dialog.glade.h:22
+msgid "Enable stateful _MPPE"
+msgstr "Uklučy stateful _MPPE"
 
-#: ../properties/nm-ppp-dialog.glade.h:20
+#: ../properties/nm-ppp-dialog.glade.h:23
 msgid "Find Device"
 msgstr "Šukaj pryładu"
 
-#: ../properties/nm-ppp-dialog.glade.h:21
-msgid "For security reasons, options entered in the box above are checked against a list of allowed options before a connection is established.  Currently there are no options on the list."
-msgstr "Kab pavialičyć uzrovień biaśpieki systemy, opcyi, uviedzienyja ŭ vyšejšych palach, praviarajucca pa śpisie dazvolenych opcyj, da złučeńnia. Dziejna ŭ śpisie niama opcyj."
+#: ../properties/nm-ppp-dialog.glade.h:24
+msgid ""
+"For security reasons, options entered in the box above are checked against a "
+"list of allowed options before a connection is established.  Currently there "
+"are no options on the list."
+msgstr ""
+"Kab pavialičyć uzrovień biaśpieki systemy, opcyi, uviedzienyja ŭ vyšejšych "
+"palach, praviarajucca pa śpisie dazvolenych opcyj, da złučeńnia. Dziejna ŭ "
+"śpisie niama opcyj."
 
-#: ../properties/nm-ppp-dialog.glade.h:22
+#: ../properties/nm-ppp-dialog.glade.h:25
 msgid "GPRS Options"
 msgstr "Opcyi GPRS"
 
-#: ../properties/nm-ppp-dialog.glade.h:23
-msgid "Hardware RTS/CTS"
-msgstr "Aparatny RTS/CTS"
-
-#: ../properties/nm-ppp-dialog.glade.h:24
+#: ../properties/nm-ppp-dialog.glade.h:26
 msgid "Host name or IP address of the PPTP server"
 msgstr "Nazva hostu albo adras IP dla servera PPTP"
 
-#: ../properties/nm-ppp-dialog.glade.h:25
-msgid "If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
-msgstr "Kali kampresija BSD nie dazvolenaja, demanu pppd pieradajecca opcyja 'nobsdcomp'"
-
-#: ../properties/nm-ppp-dialog.glade.h:26
-msgid "If Deflate compression is not allowed the 'nodefate' option is passed to pppd"
-msgstr "Kali kampresija Deflate nie dazvolenaja, demanu pppd pieradajecca opcyja 'nodeflate'"
-
 #: ../properties/nm-ppp-dialog.glade.h:27
+msgid "IP a_ddress:"
+msgstr "_Adras IP:"
+
+#: ../properties/nm-ppp-dialog.glade.h:28
+msgid ""
+"If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
+msgstr ""
+"Kali kampresija BSD nie dazvolenaja, demanu pppd pieradajecca opcyja "
+"'nobsdcomp'"
+
+#: ../properties/nm-ppp-dialog.glade.h:29
+msgid ""
+"If Deflate compression is not allowed the 'nodefate' option is passed to pppd"
+msgstr ""
+"Kali kampresija Deflate nie dazvolenaja, demanu pppd pieradajecca opcyja "
+"'nodeflate'"
+
+#: ../properties/nm-ppp-dialog.glade.h:30
 msgid "Maximum Receive Unit"
 msgstr "Maksymalny blok dla atrymańnia"
 
-#: ../properties/nm-ppp-dialog.glade.h:28
+#: ../properties/nm-ppp-dialog.glade.h:31
 msgid "Maximum Transmit Unit"
 msgstr "Maksymalny blok dla pieradačy"
 
-#: ../properties/nm-ppp-dialog.glade.h:29
-msgid "Modem Connection"
-msgstr "Mademnaje spałučeńnie"
-
-#: ../properties/nm-ppp-dialog.glade.h:30
+#: ../properties/nm-ppp-dialog.glade.h:32
 msgid "PPP Options"
 msgstr "Opcyi PPP"
 
-#: ../properties/nm-ppp-dialog.glade.h:31
-msgid "Peer DNS through tunnel"
-msgstr "Dastupajsia da DNS praz tunel"
-
-#: ../properties/nm-ppp-dialog.glade.h:32
-#: ../properties/nm-ppp-properties.c:251
-msgid "Refuse CHAP"
-msgstr "Admaŭlaj CHAP"
-
 #: ../properties/nm-ppp-dialog.glade.h:33
-#: ../properties/nm-ppp-properties.c:246
-msgid "Refuse EAP"
-msgstr "Admaŭlaj EAP"
+msgid "Refuse C_HAP"
+msgstr "Admaŭlaj C_HAP"
 
 #: ../properties/nm-ppp-dialog.glade.h:34
-msgid "Refuse MS CHAP"
-msgstr "Admaŭlaj MS CHAP"
+msgid "Refuse _EAP"
+msgstr "Admaŭlaj _EAP"
 
 #: ../properties/nm-ppp-dialog.glade.h:35
-msgid "Require 128 bit MPPE encryption"
-msgstr "Vymahaje 128-bitnaha šyfravańnia MPPE"
+msgid "Refuse _MS CHAP"
+msgstr "Admaŭlaj _MS CHAP"
 
 #: ../properties/nm-ppp-dialog.glade.h:36
-msgid "Require Explicit IP Addr"
-msgstr "Patrebny specyjalny adras IP"
+msgid "Require 128 bit M_PPE encryption"
+msgstr "Vymahaj 128-bitnaha šyfravańnia M_PPE"
 
 #: ../properties/nm-ppp-dialog.glade.h:37
-msgid "Require MPPC Compression"
-msgstr "Vymahaje kampresii MPPC"
+msgid "Require MPPE _encryption"
+msgstr "Vymahaj _šyfravańnia MPPE"
 
 #: ../properties/nm-ppp-dialog.glade.h:38
-msgid "Require MPPE encryption"
-msgstr "Vymahaje šyfravańnia MPPE"
+msgid "Require explicit IP _address"
+msgstr "Vymahaj akreślenaha _adrasu IP"
 
 #: ../properties/nm-ppp-dialog.glade.h:39
 msgid "Requires existing network connection"
@@ -288,34 +288,37 @@ msgstr "Seryjalnyja opcyi"
 
 #: ../properties/nm-ppp-dialog.glade.h:42
 msgid "Service providers GPRS access point from device config"
-msgstr "Atrymaj punkt dostupu da GPRS ad pastaŭščyka pasłuh z kanfihuracyi pryłady"
+msgstr ""
+"Atrymaj punkt dostupu da GPRS ad pastaŭščyka pasłuh z kanfihuracyi pryłady"
 
 #: ../properties/nm-ppp-dialog.glade.h:43
 msgid "Service providers IP address"
 msgstr "Adras IP pastaŭščyka pasłuh"
 
 #: ../properties/nm-ppp-dialog.glade.h:44
-msgid "Telephone number to dial"
-msgstr "Telefonny numar dla naboru"
+msgid "Telep_hone number:"
+msgstr "Numar _telefonu:"
 
 #: ../properties/nm-ppp-dialog.glade.h:45
 msgid ""
-"This is the friendly name that will be used to identify this network connection, \n"
+"This is the friendly name that will be used to identify this network "
+"connection, \n"
 "e.g. \"Campus VPN\" or \"Corporate Network\""
-msgstr "Čytelnaja nazva, kab identyfikavać hetaje spałučeńnie ź sietkaj, napr., \"Chatni VPN\" albo \"Karparacyjnaja sietka\""
+msgstr ""
+"Čytelnaja nazva, kab identyfikavać hetaje spałučeńnie ź sietkaj, napr., "
+"\"Chatni VPN\" albo \"Karparacyjnaja sietka\""
 
 #: ../properties/nm-ppp-dialog.glade.h:47
 msgid "Time in seconds between echo requests"
 msgstr "Času ŭ sekundach pamiž echa-zapytami"
 
 #: ../properties/nm-ppp-dialog.glade.h:48
-msgid "Type:"
-msgstr "Typ:"
+msgid "Typ_e:"
+msgstr "_Typ:"
 
 #: ../properties/nm-ppp-dialog.glade.h:49
-#: ../properties/nm-ppp-properties.c:201
-msgid "Use Peer DNS"
-msgstr "Užyj DNS z taho kanca"
+msgid "Use peer _DNS"
+msgstr "Užyj roŭnievy peer _DNS"
 
 #: ../properties/nm-ppp-dialog.glade.h:50
 msgid "When checked the \"refuse-chap\" option is passed to pppd."
@@ -338,8 +341,12 @@ msgid "When checked the 'require-mppc' option is passed to pppd"
 msgstr "Kali ŭklučana, opcyja \"require-mppc\" pieradajecca demanu pppd."
 
 #: ../properties/nm-ppp-dialog.glade.h:55
-msgid "When checked this sets the pppd 'debug' option and adds some extra information from the NetworkManager plugin"
-msgstr "Kali ŭklučana, akreślivajecca opcyja \"debug\" i dadajecca dadatkovyja źviestki ad pluginu NetworkManager"
+msgid ""
+"When checked this sets the pppd 'debug' option and adds some extra "
+"information from the NetworkManager plugin"
+msgstr ""
+"Kali ŭklučana, akreślivajecca opcyja \"debug\" i dadajecca dadatkovyja "
+"źviestki ad pluginu NetworkManager"
 
 #: ../properties/nm-ppp-dialog.glade.h:56
 msgid "When checked this sets the pppd 'noipdefault' option"
@@ -351,55 +358,52 @@ msgstr "Kali ŭklučana, akreślivajecca opcyja \"usepeerdns\" demanu pppd."
 
 #: ../properties/nm-ppp-dialog.glade.h:58
 msgid "When this check box is cleared the \"noauth\" option is passed to pppd."
-msgstr "Kali hety punkt ačyščany, akreślivajecca opcyja \"noauth\" demanu pppd."
+msgstr ""
+"Kali hety punkt ačyščany, akreślivajecca opcyja \"noauth\" demanu pppd."
 
 #: ../properties/nm-ppp-dialog.glade.h:59
-msgid "_Access Point Name:"
+msgid "_Access point name:"
 msgstr "_Nazva punktu dostupu:"
 
 #: ../properties/nm-ppp-dialog.glade.h:60
-msgid "_Channel:"
-msgstr "_Kanał:"
+msgid "_Authenticate peer"
+msgstr "Aŭtaryzuj roŭniu"
 
 #: ../properties/nm-ppp-dialog.glade.h:61
-msgid "_Context Num"
-msgstr "_Numar kantekstu"
-
-#: ../properties/nm-ppp-dialog.glade.h:62
-msgid "_Custom PPP options:"
-msgstr "_Svaje opcyi PPP:"
-
-#: ../properties/nm-ppp-dialog.glade.h:63
-msgid "_Device Address:"
+msgid "_Device address:"
 msgstr "_Adras pryłady:"
 
-#: ../properties/nm-ppp-dialog.glade.h:64
+#: ../properties/nm-ppp-dialog.glade.h:62
 msgid "_Gateway:"
 msgstr "_Brama:"
 
-#: ../properties/nm-ppp-dialog.glade.h:65
-msgid "_IP Address:"
-msgstr "Adras _IP:"
+#: ../properties/nm-ppp-dialog.glade.h:63
+msgid "_Hardware RTS/CTS"
+msgstr "_Aparaturny RTS/CTS"
 
-#: ../properties/nm-ppp-dialog.glade.h:66
+#: ../properties/nm-ppp-dialog.glade.h:64
 msgid "_Import Saved Configuration..."
 msgstr "_Impartuj zapisanuju kanfihuracyju..."
 
+#: ../properties/nm-ppp-dialog.glade.h:65
+msgid "_Modem connection"
+msgstr "_Mademnaje spałučeńnie"
+
+#: ../properties/nm-ppp-dialog.glade.h:66
+msgid "_Only use VPN connection for these addresses:"
+msgstr "_Karystajsia spałučeńniem VPN tolki dla hetych adrasoŭ:"
+
 #: ../properties/nm-ppp-dialog.glade.h:67
-msgid "_Only use VPN connection for these addresses"
-msgstr "_Karystajsia spałučeńniem VPN tolki dla hetych adrasoŭ"
+msgid "_Packet type:"
+msgstr "Typ _pakunkaŭ:"
 
 #: ../properties/nm-ppp-dialog.glade.h:68
-msgid "_Packet Type"
-msgstr "Typ _Pakunkaŭ"
+msgid "_Peer DNS through tunnel"
+msgstr "_Roŭnievy peer DNS praz tunel"
 
 #: ../properties/nm-ppp-dialog.glade.h:69
-msgid "_Telephone Number:"
-msgstr "_Telefonny numar:"
-
-#: ../properties/nm-ppp-dialog.glade.h:70
-msgid "connect-delay"
-msgstr "zatrymka-spałučeńnia"
+msgid "_Require MPPC compression"
+msgstr "_Vymahaj kampresii MPPC"
 
 #: ../properties/nm-ppp-properties.c:45
 msgid "pppd tunnel (PPTP, BTGPRS, Dialup)"
@@ -453,6 +457,10 @@ msgstr "Spałučysia praz madem"
 msgid "Require IP to be provided"
 msgstr "Treba vyznačyć IP"
 
+#: ../properties/nm-ppp-properties.c:201
+msgid "Use Peer DNS"
+msgstr "Užyj DNS z taho kanca"
+
 #: ../properties/nm-ppp-properties.c:206
 msgid "Use MPPE encryption"
 msgstr "Užyj šyfravańnie MPPE"
@@ -460,6 +468,10 @@ msgstr "Užyj šyfravańnie MPPE"
 #: ../properties/nm-ppp-properties.c:211
 msgid "Use 128 bit MPPE encryption"
 msgstr "Užyj 128-bitnaje šyfravańnie MPPE"
+
+#: ../properties/nm-ppp-properties.c:216
+msgid "Enable stateful MPPE"
+msgstr "Uklučy stateful MPPE"
 
 #: ../properties/nm-ppp-properties.c:221
 msgid "Use MPPC compression"
@@ -480,6 +492,14 @@ msgstr "Ekskluziŭny dostup demana pppd da pryłady"
 #: ../properties/nm-ppp-properties.c:241
 msgid "Authenticate remote peer"
 msgstr "Spraŭdź addaleny bok"
+
+#: ../properties/nm-ppp-properties.c:246
+msgid "Refuse EAP"
+msgstr "Admaŭlaj EAP"
+
+#: ../properties/nm-ppp-properties.c:251
+msgid "Refuse CHAP"
+msgstr "Admaŭlaj CHAP"
 
 #: ../properties/nm-ppp-properties.c:256
 msgid "Refuse MSCHAP"
@@ -557,26 +577,51 @@ msgstr "Chočaš zamianić jaho na dziejnuju versiju?"
 msgid "VPN Connection failed"
 msgstr "Niemahčyma złučycca z VPN"
 
+#~ msgid "auth-chap-window"
+#~ msgstr "auth-chap-akno"
+
+#~ msgid "auth-mschapv2-window"
+#~ msgstr "auth-mschapv2-akno"
+
+#~ msgid "auth-none-window"
+#~ msgstr "auth-niama-akno"
+
+#~ msgid "<b>Connection Name</b>"
+#~ msgstr "<b>Nazva spałučeńnia</b>"
+
+#~ msgid "Telephone number to dial"
+#~ msgstr "Telefonny numar dla naboru"
+
 #~ msgid "PPTP Client"
 #~ msgstr "Klijent PPTP"
+
 #~ msgid "Remote:  %s"
 #~ msgstr "Addalena:  %s"
+
 #~ msgid "Username:  %s"
 #~ msgstr "Nazva karystalnika:  %s"
+
 #~ msgid "Use MPPC Compression: %s"
 #~ msgstr "Užyj kampresiju MPPC: %s"
+
 #~ msgid "Yes"
 #~ msgstr "Tak"
+
 #~ msgid "No"
 #~ msgstr "Nie"
+
 #~ msgid "Cannot import settings"
 #~ msgstr "Niemahčyma impartavać nałady"
+
 #~ msgid "The VPN settings file '%s' does not contain valid data."
 #~ msgstr "Fajł '%s' z naładami VPN nia ŭtrymlivaje karektnych źviestak."
+
 #~ msgid "<b>Required Information</b>"
 #~ msgstr "<b>Patrebnyja źviestki</b>"
+
 #~ msgid "MS CHAP-v1/v2"
 #~ msgstr "MS CHAP-v1/v2"
+
 #~ msgid ""
 #~ "Please enter the information provided by your system administrator below. "
 #~ "Do not enter your password here as you will be prompted when connecting."
@@ -584,12 +629,13 @@ msgstr "Niemahčyma złučycca z VPN"
 #~ "Kali łaska, uviadzi nižej źviestki, jakija tabie paviedamiŭ systemny "
 #~ "administratar. Nie vyznačaj tut parolu, bo ciabie spytajuć pry pieršym "
 #~ "złučeńni."
+
 #~ msgid "Username:"
 #~ msgstr "Nazva karystalnika:"
+
 #~ msgid ""
 #~ "Your password must be defined \n"
 #~ "in /etc/ppp/chap-secrets"
 #~ msgstr ""
 #~ "Treba vyznačyć parol \n"
 #~ "u /etc/ppp/chap-secrets"
-
