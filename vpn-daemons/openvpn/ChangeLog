@@ -1,3 +1,9 @@
+2007-10-26  Dan Williams  <dcbw@redhat.com>
+
+	* properties/nm-openvpn.c
+		- (impl_get_object): use a glade root, and ensure widget is referenced
+			correctly
+
 2007-10-08  Tambet Ingo  <tambet@gmail.com>
 
 	* Update everything to work with the 0.7 branch NetworkManager.

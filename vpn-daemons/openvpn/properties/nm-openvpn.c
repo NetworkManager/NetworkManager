@@ -1635,169 +1635,172 @@ impl_get_object (void)
 	impl->last_fc_dir = NULL;
 
 	glade_file = g_strdup_printf ("%s/%s", GLADEDIR, "nm-openvpn-dialog.glade");
-	impl->xml = glade_xml_new (glade_file, NULL, GETTEXT_PACKAGE);
+	impl->xml = glade_xml_new (glade_file, "nm-openvpn-widget", GETTEXT_PACKAGE);
 	g_free( glade_file );
-	if (impl->xml != NULL) {
+	if (impl->xml == NULL)
+		goto error;
 
-		impl->widget = glade_xml_get_widget(impl->xml, "nm-openvpn-widget");
-		impl->advanced = GTK_DIALOG (glade_xml_get_widget(impl->xml, "nm-openvpn-advanced-dialog"));
+	impl->widget = glade_xml_get_widget(impl->xml, "nm-openvpn-widget");
+	g_object_ref_sink (impl->widget);
 
-		impl->w_connection_name        = GTK_ENTRY (glade_xml_get_widget (impl->xml, "openvpn-connection-name"));
-		impl->w_remote                = GTK_ENTRY (glade_xml_get_widget (impl->xml, "openvpn-remote"));
-		impl->w_port                  = GTK_ENTRY (glade_xml_get_widget (impl->xml, "openvpn-port"));
-		impl->w_use_routes             = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-routes"));
-		impl->w_routes                 = GTK_ENTRY (glade_xml_get_widget (impl->xml, "openvpn-routes"));
-		impl->w_opt_info_expander      = GTK_EXPANDER (glade_xml_get_widget (impl->xml,
-															    "openvpn-optional-information-expander"));
-		impl->w_advanced_button          = GTK_BUTTON (glade_xml_get_widget (impl->xml,
-															    "openvpn-advanced-button"));
+	impl->advanced = GTK_DIALOG (glade_xml_get_widget(impl->xml, "nm-openvpn-advanced-dialog"));
 
-		impl->w_import_button          = GTK_BUTTON (glade_xml_get_widget (impl->xml,
-															  "openvpn-import-button"));
+	impl->w_connection_name        = GTK_ENTRY (glade_xml_get_widget (impl->xml, "openvpn-connection-name"));
+	impl->w_remote                = GTK_ENTRY (glade_xml_get_widget (impl->xml, "openvpn-remote"));
+	impl->w_port                  = GTK_ENTRY (glade_xml_get_widget (impl->xml, "openvpn-port"));
+	impl->w_use_routes             = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-routes"));
+	impl->w_routes                 = GTK_ENTRY (glade_xml_get_widget (impl->xml, "openvpn-routes"));
+	impl->w_opt_info_expander      = GTK_EXPANDER (glade_xml_get_widget (impl->xml,
+														    "openvpn-optional-information-expander"));
+	impl->w_advanced_button          = GTK_BUTTON (glade_xml_get_widget (impl->xml,
+														    "openvpn-advanced-button"));
 
-		impl->w_ca                     = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-ca" ) );
-		impl->w_cert                   = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-cert" ) );
-		impl->w_key                    = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-key" ) );
+	impl->w_import_button          = GTK_BUTTON (glade_xml_get_widget (impl->xml,
+														  "openvpn-import-button"));
 
-		impl->w_button_ca              = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-but-ca" ) );
-		impl->w_button_cert            = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-but-cert" ) );
-		impl->w_button_key             = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-but-key" ) );
+	impl->w_ca                     = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-ca" ) );
+	impl->w_cert                   = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-cert" ) );
+	impl->w_key                    = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-key" ) );
 
-		impl->w_use_lzo                = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-lzo"));
-		impl->w_use_tap                = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-tap"));
-		impl->w_use_tcp                = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-tcp"));
+	impl->w_button_ca              = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-but-ca" ) );
+	impl->w_button_cert            = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-but-cert" ) );
+	impl->w_button_key             = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-but-key" ) );
 
-		impl->w_connection_type        = GTK_COMBO_BOX (glade_xml_get_widget (impl->xml, "openvpn-connection-type"));
-		impl->w_settings_notebook      = GTK_NOTEBOOK (glade_xml_get_widget (impl->xml, "openvpn-settings"));
+	impl->w_use_lzo                = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-lzo"));
+	impl->w_use_tap                = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-tap"));
+	impl->w_use_tcp                = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-tcp"));
 
-		impl->w_button_shared_key      = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-but-shared-key" ) );
-		impl->w_shared_key             = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-shared-key" ) );
-		impl->w_local_ip               = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-local-ip" ) );
-		impl->w_remote_ip              = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-remote-ip" ) );
+	impl->w_connection_type        = GTK_COMBO_BOX (glade_xml_get_widget (impl->xml, "openvpn-connection-type"));
+	impl->w_settings_notebook      = GTK_NOTEBOOK (glade_xml_get_widget (impl->xml, "openvpn-settings"));
 
-		impl->w_username               = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-username" ) );
-		impl->w_password_ca            = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-password-ca" ) );
-		impl->w_button_password_ca     = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-password-but-ca" ) );
+	impl->w_button_shared_key      = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-but-shared-key" ) );
+	impl->w_shared_key             = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-shared-key" ) );
+	impl->w_local_ip               = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-local-ip" ) );
+	impl->w_remote_ip              = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-remote-ip" ) );
 
-		impl->w_x509userpass_ca                     = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-x509userpass-ca" ) );
-		impl->w_x509userpass_cert                   = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-x509userpass-cert" ) );
-		impl->w_x509userpass_key                    = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-x509userpass-key" ) );
-		impl->w_x509userpass_username               = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-x509userpass-username" ) );
+	impl->w_username               = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-username" ) );
+	impl->w_password_ca            = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-password-ca" ) );
+	impl->w_button_password_ca     = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-password-but-ca" ) );
 
-		impl->w_button_x509userpass_ca              = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-x509userpass-but-ca" ) );
-		impl->w_button_x509userpass_cert            = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-x509userpass-but-cert" ) );
-		impl->w_button_x509userpass_key             = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-x509userpass-but-key" ) );
+	impl->w_x509userpass_ca                     = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-x509userpass-ca" ) );
+	impl->w_x509userpass_cert                   = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-x509userpass-cert" ) );
+	impl->w_x509userpass_key                    = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-x509userpass-key" ) );
+	impl->w_x509userpass_username               = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-x509userpass-username" ) );
 
-		impl->w_use_cipher             = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-cipher"));
-		impl->w_cipher                 = GTK_COMBO_BOX( glade_xml_get_widget( impl->xml, "openvpn-cipher" ) );
-		populate_cipher(impl->w_cipher);
+	impl->w_button_x509userpass_ca              = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-x509userpass-but-ca" ) );
+	impl->w_button_x509userpass_cert            = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-x509userpass-but-cert" ) );
+	impl->w_button_x509userpass_key             = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-x509userpass-but-key" ) );
 
-		impl->w_use_ta                 = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-ta"));
-		impl->w_ta                     = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-ta" ) );
-		impl->w_button_ta              = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-but-ta" ) );
-		impl->w_ta_dir_label           = GTK_LABEL( glade_xml_get_widget( impl->xml, "openvpn-ta-dir-label" ) );
-		impl->w_ta_dir_none            = GTK_RADIO_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-ta-dir-none" ) );
-		impl->w_ta_dir_zero            = GTK_RADIO_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-ta-dir-zero" ) );
-		impl->w_ta_dir_one             = GTK_RADIO_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-ta-dir-one" ) );
+	impl->w_use_cipher             = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-cipher"));
+	impl->w_cipher                 = GTK_COMBO_BOX( glade_xml_get_widget( impl->xml, "openvpn-cipher" ) );
+	populate_cipher(impl->w_cipher);
 
-		impl->callback                 = NULL;
+	impl->w_use_ta                 = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-ta"));
+	impl->w_ta                     = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-ta" ) );
+	impl->w_button_ta              = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-but-ta" ) );
+	impl->w_ta_dir_label           = GTK_LABEL( glade_xml_get_widget( impl->xml, "openvpn-ta-dir-label" ) );
+	impl->w_ta_dir_none            = GTK_RADIO_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-ta-dir-none" ) );
+	impl->w_ta_dir_zero            = GTK_RADIO_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-ta-dir-zero" ) );
+	impl->w_ta_dir_one             = GTK_RADIO_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-ta-dir-one" ) );
+
+	impl->callback                 = NULL;
 
 
-		gtk_signal_connect (GTK_OBJECT (impl->w_use_routes),
-						"toggled", GTK_SIGNAL_FUNC (use_editable_toggled), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_use_cipher),
-						"toggled", GTK_SIGNAL_FUNC (use_editable_toggled), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_use_ta),
-						"toggled", GTK_SIGNAL_FUNC (use_editable_toggled), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_use_routes),
+					"toggled", GTK_SIGNAL_FUNC (use_editable_toggled), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_use_cipher),
+					"toggled", GTK_SIGNAL_FUNC (use_editable_toggled), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_use_ta),
+					"toggled", GTK_SIGNAL_FUNC (use_editable_toggled), impl);
 
-		gtk_signal_connect (GTK_OBJECT (impl->w_connection_name),
-						"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_remote),
-						"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_port),
-						"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_routes),
-						"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_ca),
-						"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_cert),
-						"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_key),
-						"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_shared_key),
-						"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_local_ip),
-						"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_remote_ip),
-						"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_username),
-						"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_password_ca),
-						"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_x509userpass_ca),
-						"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_x509userpass_cert),
-						"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_x509userpass_key),
-						"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_x509userpass_username),
-						"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_ta),
-						"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_connection_name),
+					"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_remote),
+					"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_port),
+					"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_routes),
+					"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_ca),
+					"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_cert),
+					"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_key),
+					"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_shared_key),
+					"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_local_ip),
+					"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_remote_ip),
+					"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_username),
+					"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_password_ca),
+					"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_x509userpass_ca),
+					"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_x509userpass_cert),
+					"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_x509userpass_key),
+					"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_x509userpass_username),
+					"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_ta),
+					"changed", GTK_SIGNAL_FUNC (editable_changed), impl);
 
-		gtk_signal_connect (GTK_OBJECT (impl->w_button_ca),
-						"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_button_cert),
-						"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_button_key),
-						"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_button_shared_key),
-						"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_button_password_ca),
-						"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_button_x509userpass_ca),
-						"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_button_x509userpass_cert),
-						"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_button_x509userpass_key),
-						"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
-		gtk_signal_connect (GTK_OBJECT (impl->w_button_ta),
-						"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_button_ca),
+					"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_button_cert),
+					"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_button_key),
+					"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_button_shared_key),
+					"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_button_password_ca),
+					"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_button_x509userpass_ca),
+					"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_button_x509userpass_cert),
+					"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_button_x509userpass_key),
+					"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_button_ta),
+					"clicked", GTK_SIGNAL_FUNC (open_button_clicked), impl);
 
-		gtk_signal_connect (GTK_OBJECT (impl->w_advanced_button),
-						"clicked", GTK_SIGNAL_FUNC (advanced_button_clicked), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_advanced_button),
+					"clicked", GTK_SIGNAL_FUNC (advanced_button_clicked), impl);
 
-		gtk_signal_connect (GTK_OBJECT (impl->w_import_button),
-						"clicked", GTK_SIGNAL_FUNC (import_button_clicked), &(impl->parent));
+	gtk_signal_connect (GTK_OBJECT (impl->w_import_button),
+					"clicked", GTK_SIGNAL_FUNC (import_button_clicked), &(impl->parent));
 
-		gtk_signal_connect (GTK_OBJECT (impl->w_connection_type),
-						"changed", GTK_SIGNAL_FUNC (connection_type_changed), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_connection_type),
+					"changed", GTK_SIGNAL_FUNC (connection_type_changed), impl);
 
-		/* make the widget reusable */
-		gtk_signal_connect (GTK_OBJECT (impl->widget), "delete-event",
-						GTK_SIGNAL_FUNC (gtk_widget_hide_on_delete), NULL);
-		gtk_signal_connect (GTK_OBJECT (impl->advanced), "delete-event",
-						GTK_SIGNAL_FUNC (gtk_widget_hide_on_delete), NULL);
+	/* make the widget reusable */
+	gtk_signal_connect (GTK_OBJECT (impl->widget), "delete-event",
+					GTK_SIGNAL_FUNC (gtk_widget_hide_on_delete), NULL);
+	gtk_signal_connect (GTK_OBJECT (impl->advanced), "delete-event",
+					GTK_SIGNAL_FUNC (gtk_widget_hide_on_delete), NULL);
 
-		openvpn_clear_widget (impl);
+	openvpn_clear_widget (impl);
 
-		impl->parent.get_display_name              = impl_get_display_name;
-		impl->parent.get_service_name              = impl_get_service_name;
-		impl->parent.fill_connection               = impl_fill_connection;
-		impl->parent.get_widget                    = impl_get_widget;
-		impl->parent.set_validity_changed_callback = impl_set_validity_changed_callback;
-		impl->parent.is_valid                      = impl_is_valid;
-		impl->parent.get_confirmation_details      = impl_get_confirmation_details;
-		impl->parent.can_export                    = impl_can_export;
-		impl->parent.import_file                   = impl_import_file;
-		impl->parent.export                        = impl_export;
-		impl->parent.data                          = impl;
+	impl->parent.get_display_name              = impl_get_display_name;
+	impl->parent.get_service_name              = impl_get_service_name;
+	impl->parent.fill_connection               = impl_fill_connection;
+	impl->parent.get_widget                    = impl_get_widget;
+	impl->parent.set_validity_changed_callback = impl_set_validity_changed_callback;
+	impl->parent.is_valid                      = impl_is_valid;
+	impl->parent.get_confirmation_details      = impl_get_confirmation_details;
+	impl->parent.can_export                    = impl_can_export;
+	impl->parent.import_file                   = impl_import_file;
+	impl->parent.export                        = impl_export;
+	impl->parent.data                          = impl;
 
-		return &(impl->parent);
-	} else {
-		g_free (impl);
-		return NULL;
-	}
+	return &(impl->parent);
+
+error:
+	g_free (impl);
+	return NULL;
 }
 
 NetworkManagerVpnUI*
