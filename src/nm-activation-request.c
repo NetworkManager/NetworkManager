@@ -58,24 +58,26 @@ static void
 dispose (GObject *object)
 {
 	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (object);
+	DBusGProxy *proxy;
+	DBusGProxyCall *call;
 
+	if (!priv->connection)
+		goto out;
 
-	if (priv->connection) {
-		DBusGProxy *proxy;
-		DBusGProxyCall *call;
+	proxy = g_object_get_data (G_OBJECT (priv->connection),
+	                           NM_MANAGER_CONNECTION_SECRETS_PROXY_TAG);
+	call = g_object_get_data (G_OBJECT (priv->connection),
+	                          CONNECTION_GET_SECRETS_CALL_TAG);
 
-		proxy = g_object_get_data (G_OBJECT (priv->connection),
-		                           NM_MANAGER_CONNECTION_PROXY_TAG);
-		call = g_object_get_data (G_OBJECT (priv->connection),
-		                          CONNECTION_GET_SECRETS_CALL_TAG);
+	if (proxy && call)
+		dbus_g_proxy_cancel_call (proxy, call);
 
-		if (proxy && call)
-			dbus_g_proxy_cancel_call (proxy, call);
+	g_object_set_data (G_OBJECT (priv->connection),
+	                   CONNECTION_GET_SECRETS_CALL_TAG, NULL);
+	g_object_unref (priv->connection);
 
-		g_object_set_data (G_OBJECT (priv->connection),
-		                   CONNECTION_GET_SECRETS_CALL_TAG, NULL);
-		g_object_unref (priv->connection);
-	}
+out:
+	G_OBJECT_CLASS (nm_act_request_parent_class)->dispose (object);
 }
 
 static void

@@ -1,3 +1,13 @@
+2007-10-26  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-activation-request.c
+		- (dispose): clean up indentation; get the right DBusGProxy object to
+			cancel the GetSecrets pending call on.  Need to use the Secrets
+			proxy, not the regular connection proxy.  Otherwise the GetSecrets
+			pending call doesn't get canceled, and pressing Cancel in the
+			applet's password dialog could cause get_secrets_cb() to be called
+			after the activation request has already been destroyed
+
 2007-10-24  Dan Williams  <dcbw@redhat.com>
 
 	* src/supplicant-manager/nm-supplicant-config.c
