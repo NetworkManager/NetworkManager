@@ -43,7 +43,7 @@ typedef struct
 	int				mode;		/* from IW_MODE_* in wireless.h */
 	gint8			strength;
 	guint32			freq;		/* Frequency in GHz * 1000; ie 2.412 == 2412 */
-	guint16			rate;
+	guint32			rate;
 
 	guint32			flags;		/* General flags */
 	guint32			wpa_flags;	/* WPA-related flags */
@@ -965,9 +965,9 @@ nm_ap_set_freq (NMAccessPoint *ap,
  * Get/set functions for rate
  *
  */
-guint16 nm_ap_get_rate (NMAccessPoint *ap)
+guint32 nm_ap_get_rate (NMAccessPoint *ap)
 {
-	guint16 rate;
+	guint32 rate;
 
 	g_return_val_if_fail (NM_IS_AP (ap), 0);
 
@@ -977,7 +977,7 @@ guint16 nm_ap_get_rate (NMAccessPoint *ap)
 }
 
 void
-nm_ap_set_rate (NMAccessPoint *ap, guint16 rate)
+nm_ap_set_rate (NMAccessPoint *ap, guint32 rate)
 {
 	NMAccessPointPrivate *priv;
 

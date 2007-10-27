@@ -9,7 +9,7 @@
 
     <property name="HwAddress" type="s" access="read"/>
     <property name="Mode" type="i" access="read"/>
-    <property name="Bitrate" type="i" access="read"/>
+    <property name="Bitrate" type="u" access="read"/>
     <property name="ActiveAccessPoint" type="o" access="read"/>
     <property name="WirelessCapabilities" type="u" access="read"/>
 

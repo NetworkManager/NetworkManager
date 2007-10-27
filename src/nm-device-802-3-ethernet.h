@@ -59,8 +59,6 @@ NMDevice8023Ethernet *nm_device_802_3_ethernet_new (int index,
 void nm_device_802_3_ethernet_get_address (NMDevice8023Ethernet *dev,
 								   struct ether_addr *addr);
 
-int nm_device_802_3_ethernet_get_speed (NMDevice8023Ethernet *self);
-
 G_END_DECLS
 
 #endif	/* NM_DEVICE_802_3_ETHERNET_H */

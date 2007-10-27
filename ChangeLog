@@ -1,5 +1,33 @@
 2007-10-26  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Helmut Schaa <hschaa@suse.de> (and more bits from me)
+
+	* src/NetworkManagerAP.c
+	  src/NetworkManagerAP.h
+	  libnm-glib/nm-access-point.c
+	  libnm-glib/nm-access-point.h
+		- Make 'rate' property a guint32 to better match with WEXT and
+			wpa_supplicant and to allow representation of higher bitrates
+
+	* src/nm-device-802-11-wireless.c
+	  introspection/nm-device-802-11-wireless.xml
+	  libnm-glib/nm-device-802-11-wireless.c
+	  libnm-glib/nm-device-802-11-wireless.h
+		- Make 'bitrate' property a guint32 to match AP 'rate' property type
+
+	* src/nm-device-802-3-ethernet.c
+	  src/nm-device-802-3-ethernet.h
+	  introspection/nm-device-802-3-ethernet.xml
+	  libnm-glib/nm-device-802-3-ethernet.c
+	  libnm-glib/nm-device-802-3-ethernet.h
+		- Make 'speed' property a guint32 to match other speed/rate types
+		- Make nm_device_802_3_ethernet_get_speed() static
+
+	* test/nm-tool.c
+		- Update for the changes above
+
+2007-10-26  Dan Williams  <dcbw@redhat.com>
+
 	* src/named-manager/nm-named-manager.c
 		- (rewrite_resolv_conf): clean up error handling to avoid double-free by
 		    not calling fclose() twice on some error conditions

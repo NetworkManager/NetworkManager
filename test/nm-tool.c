@@ -125,7 +125,7 @@ detail_access_point (gpointer data, gpointer user_data)
 							(nm_access_point_get_mode (ap) == IW_MODE_INFRA) ? "Infra" : "Ad-Hoc",
 							nm_access_point_get_hw_address (ap),
 							nm_access_point_get_frequency (ap),
-							nm_access_point_get_rate (ap) / 1024,
+							nm_access_point_get_rate (ap) / 1000000,
 							nm_access_point_get_strength (ap));
 
 	if (   !(flags & NM_802_11_AP_FLAGS_PRIVACY)
@@ -175,8 +175,8 @@ detail_device (gpointer data, gpointer user_data)
 	NMDevice *device = NM_DEVICE (data);
 	char *tmp;
 	NMDeviceState state;
-	int caps;
-	int speed;
+	guint32 caps;
+	guint32 speed;
 	GArray *array;
 
 	state = nm_device_get_state (device);
@@ -225,15 +225,19 @@ detail_device (gpointer data, gpointer user_data)
 		print_string ("  Carrier Detect", "yes");
 
 	speed = 0;
-	if (NM_IS_DEVICE_802_3_ETHERNET (device))
+	if (NM_IS_DEVICE_802_3_ETHERNET (device)) {
+		/* Speed in Mb/s */
 		speed = nm_device_802_3_ethernet_get_speed (NM_DEVICE_802_3_ETHERNET (device));
-	else if (NM_IS_DEVICE_802_11_WIRELESS (device))
+	} else if (NM_IS_DEVICE_802_11_WIRELESS (device)) {
+		/* Speed in b/s */
 		speed = nm_device_802_11_wireless_get_bitrate (NM_DEVICE_802_11_WIRELESS (device));
+		speed /= 1000000;
+	}
 
 	if (speed) {
 		char *speed_string;
 
-		speed_string = g_strdup_printf ("%d Mb/s", speed);
+		speed_string = g_strdup_printf ("%u Mb/s", speed);
 		print_string ("  Speed", speed_string);
 		g_free (speed_string);
 	}

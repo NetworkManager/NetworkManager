@@ -3,6 +3,6 @@
 <node name="/">
   <interface name="org.freedesktop.NetworkManager.Device.Wired">
     <property name="HwAddress" type="s" access="read"/>
-    <property name="Speed" type="i" access="read"/>
+    <property name="Speed" type="u" access="read"/>
   </interface>
 </node>

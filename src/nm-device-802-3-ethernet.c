@@ -61,6 +61,8 @@ enum {
 	LAST_PROP
 };
 
+static guint32 nm_device_802_3_ethernet_get_speed (NMDevice8023Ethernet *self);
+
 static gboolean supports_mii_carrier_detect (NMDevice8023Ethernet *dev);
 static gboolean supports_ethtool_carrier_detect (NMDevice8023Ethernet *dev);
 
@@ -435,7 +437,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, &hw_addr_buf[0]);
 		break;
 	case PROP_SPEED:
-		g_value_set_int (value, nm_device_802_3_ethernet_get_speed (device));
+		g_value_set_uint (value, nm_device_802_3_ethernet_get_speed (device));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -479,10 +481,10 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 
 	g_object_class_install_property
 		(object_class, PROP_SPEED,
-		 g_param_spec_int (NM_DEVICE_802_3_ETHERNET_SPEED,
+		 g_param_spec_uint (NM_DEVICE_802_3_ETHERNET_SPEED,
 						   "Speed",
 						   "Speed",
-						   0, G_MAXINT32, 0,
+						   0, G_MAXUINT32, 0,
 						   G_PARAM_READABLE));
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
@@ -551,14 +553,15 @@ out:
 }
 
 
-int
+/* Returns speed in Mb/s */
+static guint32
 nm_device_802_3_ethernet_get_speed (NMDevice8023Ethernet *self)
 {
 	NMSock *			sk;
 	struct ifreq		ifr;
 	struct ethtool_cmd	edata;
 	const char *		iface;
-	int				speed = 0;
+	guint32				speed = 0;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 
@@ -575,7 +578,7 @@ nm_device_802_3_ethernet_get_speed (NMDevice8023Ethernet *self)
 	ifr.ifr_data = (char *) &edata;
 	if (ioctl (nm_dev_sock_get_fd (sk), SIOCETHTOOL, &ifr) == -1)
 		goto out;
-	speed = edata.speed;
+	speed = edata.speed > 0 ? (guint32) edata.speed : 0;
 
 out:
 	nm_dev_sock_close (sk);

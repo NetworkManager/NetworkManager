@@ -17,7 +17,7 @@ typedef struct {
 
 	char * hw_address;
 	int mode;
-	int rate;
+	guint32 rate;
 	NMAccessPoint *current_ap;
 	guint32 wireless_caps;
 
@@ -117,7 +117,7 @@ nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *device)
 }
 
 static void
-nm_device_802_11_wireless_set_bitrate (NMDevice80211Wireless *self, int bitrate)
+nm_device_802_11_wireless_set_bitrate (NMDevice80211Wireless *self, guint32 bitrate)
 {
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 
@@ -127,7 +127,7 @@ nm_device_802_11_wireless_set_bitrate (NMDevice80211Wireless *self, int bitrate)
 	}
 }
 
-int
+guint32
 nm_device_802_11_wireless_get_bitrate (NMDevice80211Wireless *device)
 {
 	NMDevice80211WirelessPrivate *priv;
@@ -150,7 +150,7 @@ nm_device_802_11_wireless_get_bitrate (NMDevice80211Wireless *device)
 
 	priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device);
 	if (!priv->rate) {
-		priv->rate = nm_object_get_int_property (NM_OBJECT (device),
+		priv->rate = nm_object_get_uint_property (NM_OBJECT (device),
 		                                         NM_DBUS_INTERFACE_DEVICE_WIRELESS,
 		                                         DBUS_PROP_BITRATE);
 	}
@@ -371,7 +371,7 @@ set_property (GObject *object, guint prop_id,
 		nm_device_802_11_wireless_set_mode (device, g_value_get_int (value));
 		break;
 	case PROP_BITRATE:
-		nm_device_802_11_wireless_set_bitrate (device, g_value_get_int (value));
+		nm_device_802_11_wireless_set_bitrate (device, g_value_get_uint (value));
 		break;
 	case PROP_ACTIVE_ACCESS_POINT:
 		nm_device_802_11_wireless_set_active_ap (device, (char *) g_value_get_boxed (value));
@@ -401,7 +401,7 @@ get_property (GObject *object,
 		g_value_set_int (value, priv->mode);
 		break;
 	case PROP_BITRATE:
-		g_value_set_int (value, priv->rate);
+		g_value_set_uint (value, priv->rate);
 		break;
 	case PROP_ACTIVE_ACCESS_POINT:
 		g_value_set_boxed (value, priv->current_ap ? nm_object_get_path (NM_OBJECT (priv->current_ap)) : "/");
@@ -549,10 +549,10 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *device_class)
 
 	g_object_class_install_property
 		(object_class, PROP_BITRATE,
-		 g_param_spec_int (NM_DEVICE_802_11_WIRELESS_BITRATE,
+		 g_param_spec_uint (NM_DEVICE_802_11_WIRELESS_BITRATE,
 					    "Bit Rate",
 					    "Bit Rate",
-					    0, G_MAXINT32, 0,
+					    0, G_MAXUINT32, 0,
 					    G_PARAM_READWRITE));
 
 	g_object_class_install_property

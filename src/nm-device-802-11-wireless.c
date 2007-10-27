@@ -124,7 +124,7 @@ struct _NMDevice80211WirelessPrivate
 
 	GSList *        ap_list;
 	NMAccessPoint * current_ap;
-	int				rate;
+	guint32			rate;
 	
 	gboolean			scanning;
 	GTimeVal			scheduled_scan_time;
@@ -185,7 +185,7 @@ static void cleanup_supplicant_interface (NMDevice80211Wireless * self);
 
 static void device_cleanup (NMDevice80211Wireless *self);
 
-static int nm_device_802_11_wireless_get_bitrate (NMDevice80211Wireless *self);
+static guint32 nm_device_802_11_wireless_get_bitrate (NMDevice80211Wireless *self);
 
 
 static void
@@ -562,7 +562,7 @@ periodic_update (NMDevice80211Wireless *self, gboolean honor_scan)
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 	NMDeviceState state;
 	NMAccessPoint *new_ap;
-	int new_rate;
+	guint32 new_rate;
 
 	/* BSSID and signal strength have meaningful values only if the device
 	   is activated and not scanning */
@@ -1298,10 +1298,10 @@ nm_device_802_11_wireless_set_ssid (NMDevice80211Wireless *self,
  * nm_device_802_11_wireless_get_bitrate
  *
  * For wireless devices, get the bitrate to broadcast/receive at.
- * Returned value is rate in Mb/s.
+ * Returned value is rate in b/s.
  *
  */
-static int
+static guint32
 nm_device_802_11_wireless_get_bitrate (NMDevice80211Wireless *self)
 {
 	NMSock *sk;
@@ -1318,7 +1318,7 @@ nm_device_802_11_wireless_get_bitrate (NMDevice80211Wireless *self)
 		nm_dev_sock_close (sk);
 	}
 
-	return ((err >= 0) ? wrq.u.bitrate.value / 1000000 : 0);
+	return ((err >= 0) ? wrq.u.bitrate.value : 0);
 }
 
 /*
@@ -2881,7 +2881,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_int (value, nm_device_802_11_wireless_get_mode (device));
 		break;
 	case PROP_BITRATE:
-		g_value_set_int (value, priv->rate);
+		g_value_set_uint (value, priv->rate);
 		break;
 	case PROP_CAPABILITIES:
 		g_value_set_uint (value, priv->capabilities);
@@ -2949,10 +2949,10 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 						   G_PARAM_READABLE));
 	g_object_class_install_property
 		(object_class, PROP_BITRATE,
-		 g_param_spec_int (NM_DEVICE_802_11_WIRELESS_BITRATE,
+		 g_param_spec_uint (NM_DEVICE_802_11_WIRELESS_BITRATE,
 						   "Bitrate",
 						   "Bitrate",
-						   0, G_MAXINT32, 0,
+						   0, G_MAXUINT32, 0,
 						   G_PARAM_READABLE));
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_ACCESS_POINT,

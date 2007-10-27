@@ -84,12 +84,12 @@ nm_device_802_3_ethernet_new (DBusGConnection *connection, const char *path)
 												  NULL);
 }
 
-int
+guint32
 nm_device_802_3_ethernet_get_speed (NMDevice8023Ethernet *device)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_802_3_ETHERNET (device), 0);
 
-	return nm_object_get_int_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE_WIRED, "Speed");
+	return nm_object_get_uint_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE_WIRED, "Speed");
 }
 
 char *
