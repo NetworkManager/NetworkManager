@@ -1,3 +1,7 @@
+2007-10-28  Priit Laes  <plaes@svn.gnome.org>
+
+        * configure.in: Added "et" (Estonian) to ALL_LINGUAS.
+
 2007-08-30  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/sha1.c
