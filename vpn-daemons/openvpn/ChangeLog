@@ -1,3 +1,7 @@
+2007-10-28  Tim Niemueller <tim@niemueller.de>
+
+	* nm-openvpn.desktop.in: Added NoDisplay=true
+
 2007-10-26  Dan Williams  <dcbw@redhat.com>
 
 	* properties/nm-openvpn.c
