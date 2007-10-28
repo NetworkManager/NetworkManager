@@ -11,9 +11,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-pptp\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-10-16 03:38+0100\n"
-"PO-Revision-Date: 2007-10-17 03:31+0300\n"
-"Last-Translator: Mattias Põldaru <mahfiaz@gmail.com>\n"
+"POT-Creation-Date: 2007-10-28 16:03+0000\n"
+"PO-Revision-Date: 2007-10-28 18:00+0300\n"
+"Last-Translator: Priit Laes <amd@store20.com>\n"
 "Language-Team: Estonian <gnome-et@linux.ee>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -36,17 +36,14 @@ msgid "_Password:"
 msgstr "_Parool:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:355
-#, fuzzy
 msgid "Connect _anonymously"
 msgstr "Ühendu _anonüümselt"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:360
-#, fuzzy
 msgid "Connect as _user:"
 msgstr "Ühendu ka_sutajana:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:466
-#, fuzzy
 msgid "_Remember password for this session"
 msgstr "_Jäta parool selle sessiooni ajaks meelde"
 
@@ -104,13 +101,11 @@ msgstr "Marsruudid: %s"
 msgid "Use MPPC Compression: %s"
 msgstr "MPPC tihendamise kasutamine: %s"
 
-#: ../properties/nm-pptp.c:403
-#: ../properties/nm-pptp.c:405
+#: ../properties/nm-pptp.c:403 ../properties/nm-pptp.c:405
 msgid "Yes"
 msgstr "Jah"
 
-#: ../properties/nm-pptp.c:403
-#: ../properties/nm-pptp.c:405
+#: ../properties/nm-pptp.c:403 ../properties/nm-pptp.c:405
 msgid "No"
 msgstr "Ei"
 
@@ -142,14 +137,13 @@ msgid "Save as..."
 msgstr "Salvesta kui..."
 
 #: ../properties/nm-pptp.c:656
-#, fuzzy, c-format
+#, c-format
 msgid "A file named \"%s\" already exists."
 msgstr "Fail nimega \"%s\" on juba olemas."
 
 #: ../properties/nm-pptp.c:659
-#, fuzzy
 msgid "Do you want to replace it with the one you are saving?"
-msgstr "Kas sa soovid seda salvestatava failiga asendada?"
+msgstr "Kas soovid seda salvestatava failiga asendada?"
 
 #: ../properties/nm-pptp-dialog.glade.h:1
 msgid "<b>Connection Name</b>"
@@ -168,8 +162,12 @@ msgid "MS CHAP-v1/v2"
 msgstr "MS CHAP-v1/v2"
 
 #: ../properties/nm-pptp-dialog.glade.h:5
-msgid "Please enter the information provided by your system administrator below. Do not enter your password here as you will be prompted when connecting."
-msgstr "Palun sisesta all olevatele väljadele sind süsteemi administraatorilt saadud info. Ära sisesta siia parooli, seda küsitakse ühendumisel."
+msgid ""
+"Please enter the information provided by your system administrator below. Do "
+"not enter your password here as you will be prompted when connecting."
+msgstr ""
+"Palun sisesta all olevatele väljadele sind süsteemi administraatorilt saadud "
+"info. Ära sisesta siia parooli, seda küsitakse ühendumisel."
 
 #: ../properties/nm-pptp-dialog.glade.h:6
 msgid "Require MPPE encryption"
@@ -192,16 +190,17 @@ msgstr ""
 "failis /etc/ppp/chap-secrets"
 
 #: ../properties/nm-pptp-dialog.glade.h:11
-#, fuzzy
 msgid "_Gateway:"
-msgstr "Värav"
+msgstr "_Gateway:"
 
 #: ../properties/nm-pptp-dialog.glade.h:12
 msgid "_Import Saved Configuration..."
 msgstr "_Importi salvestatud seadistus..."
 
 #: ../properties/nm-pptp-dialog.glade.h:13
-msgid "_Name used to identify the connection to the private network, e.g. \"Campus VPN\" or \"Corporate Network\""
+msgid ""
+"_Name used to identify the connection to the private network, e.g. \"Campus "
+"VPN\" or \"Corporate Network\""
 msgstr "Eravõrgu eristamise _nimi, nt \"Kool\" või \"Ametivõrk\"."
 
 #: ../properties/nm-pptp-dialog.glade.h:14
@@ -212,222 +211,4 @@ msgstr "_Kasuta VPN-ühendust ainult neile aadressidele"
 #: ../src/nm-pptp-service.c:126
 msgid "VPN Connection failed"
 msgstr "VPN ühenduse loomine nurjus"
-
-#, fuzzy
-#~ msgid "Authentication Type:"
-#~ msgstr "Autentimise tüüp"
-
-#, fuzzy
-#~ msgid "_Remember for this session"
-#~ msgstr "Parooli meeldejätmine selle seansi ajaks"
-
-#, fuzzy
-#~ msgid "_Save in keyring"
-#~ msgstr "Parooli salvestamine võtmerõngasse"
-
-#, fuzzy
-#~ msgid "Authenticate Connection"
-#~ msgstr "Ühendus tühistatud"
-
-#, fuzzy
-#~ msgid "Authentication Required"
-#~ msgstr "Autentimine on vajalik"
-
-#, fuzzy
-#~ msgid "_Authentication Type:"
-#~ msgstr "Autentimise tüüp"
-
-#, fuzzy
-#~ msgid "_Remote name:"
-#~ msgstr "Nimi Puudub"
-
-#, fuzzy
-#~ msgid "auth-chap-window"
-#~ msgstr "Sulgeb käesoleva akna"
-
-#, fuzzy
-#~ msgid "auth-mschapv2-window"
-#~ msgstr "Sulgeb käesoleva akna"
-
-#, fuzzy
-#~ msgid "auth-none-window"
-#~ msgstr "Puudub (samasse aknasse)"
-#~ msgid "<b>Compression</b>"
-#~ msgstr "<b>Pakkimine:</b>"
-
-#, fuzzy
-#~ msgid "<b>Delays and TImeouts</b>"
-#~ msgstr "Fotod ja muusika"
-#~ msgid "<b>Encryption</b>"
-#~ msgstr "<b>Krüpteering</b>"
-
-#, fuzzy
-#~ msgid "<b>Packet Parameters</b>"
-#~ msgstr "Algoritmi parameetrid"
-#~ msgid "Allow BSD Compression"
-#~ msgstr "BSD-tihendus on lubatud"
-#~ msgid "Allow Deflate compression"
-#~ msgstr "Deflate-tihendus on lubatud"
-#~ msgid "Authentication"
-#~ msgstr "Autentimine"
-#~ msgid "Compression & Encryption"
-#~ msgstr "Tihendus ja krüptimine"
-
-#, fuzzy
-#~ msgid "Connection"
-#~ msgstr "Ühendus"
-
-#, fuzzy
-#~ msgid "Debug Output"
-#~ msgstr "# Väljundmuutujad"
-
-#, fuzzy
-#~ msgid "Enable stateful MPPE"
-#~ msgstr "Peitmisnuppude peitmine lubatud"
-
-#, fuzzy
-#~ msgid "Find Device"
-#~ msgstr "Võrguseade:\t%s\n"
-
-#, fuzzy
-#~ msgid "GPRS Options"
-#~ msgstr "GTK+ sätted"
-
-#, fuzzy
-#~ msgid "Hardware RTS/CTS"
-#~ msgstr "Riistvaraline seade"
-#~ msgid "Modem Connection"
-#~ msgstr "Modemiühendus"
-#~ msgid "PPP Options"
-#~ msgstr "PPP-valikud"
-
-#, fuzzy
-#~ msgid "Refuse MS CHAP"
-#~ msgstr "Keskmine aeg:\t%s ms\n"
-
-#, fuzzy
-#~ msgid "Require Explicit IP Addr"
-#~ msgstr "       AADR := { IP_AADRESS | any }\n"
-
-#, fuzzy
-#~ msgid "Require MPPC Compression"
-#~ msgstr "Tihenduse suhe %4.2f%%\n"
-
-#, fuzzy
-#~ msgid "Requires existing network connection"
-#~ msgstr "Kasutan ühendust serveriga %s:%d.\n"
-
-#, fuzzy
-#~ msgid "Routing"
-#~ msgstr "Ruutingutabeli hankimine"
-
-#, fuzzy
-#~ msgid "Serial Options"
-#~ msgstr "GTK+ sätted"
-
-#, fuzzy
-#~ msgid "Service providers IP address"
-#~ msgstr ""
-#~ "Staatiline IP aadress\n"
-#~ "DHCP"
-
-#, fuzzy
-#~ msgid "Telephone number to dial"
-#~ msgstr "Imporditavate ridade arv"
-
-#, fuzzy
-#~ msgid "Time in seconds between echo requests"
-#~ msgstr "Sekundites määratud ajavahemik olekuuenduste vahel"
-#~ msgid "Type:"
-#~ msgstr "Liik:"
-
-#, fuzzy
-#~ msgid "Use Peer DNS"
-#~ msgstr "    -d, --domain          DNS domeeni nimi\n"
-
-#, fuzzy
-#~ msgid "_Access Point Name:"
-#~ msgstr "Programmi <b>%(name)s</b> käivitamine (%(prog)s)"
-
-#, fuzzy
-#~ msgid "_Channel:"
-#~ msgstr "_Kanal:"
-
-#, fuzzy
-#~ msgid "_Context Num"
-#~ msgstr "arv,kümnendkohti"
-
-#, fuzzy
-#~ msgid "_Custom PPP options:"
-#~ msgstr "Bonobo aktiveerimisvõtmed"
-
-#, fuzzy
-#~ msgid "_Device Address:"
-#~ msgstr "Aadressi tüüp"
-
-#, fuzzy
-#~ msgid "_IP Address:"
-#~ msgstr "IP aadress"
-
-#, fuzzy
-#~ msgid "_Packet Type"
-#~ msgstr "tundmatu paketi tüüp"
-
-#, fuzzy
-#~ msgid "_Telephone Number:"
-#~ msgstr "Telefoninumber"
-
-#, fuzzy
-#~ msgid "connect-delay"
-#~ msgstr "sekundist viivitust"
-#~ msgid "PPTP Server"
-#~ msgstr "PPTP Server"
-#~ msgid "Telephone Number"
-#~ msgstr "Telefoninumber"
-
-#, fuzzy
-#~ msgid "Bluetooth Address"
-#~ msgstr "Aadressi tüüp"
-
-#, fuzzy
-#~ msgid "Bluetooth Channel"
-#~ msgstr "<b>Kanali nimi:</b> %s"
-
-#, fuzzy
-#~ msgid "GPRS IP"
-#~ msgstr "<b>IP andmed</b>"
-
-#, fuzzy
-#~ msgid "GPRS Context No."
-#~ msgstr "Allikas '%s' jaoks pole konteksti saadaval"
-
-#, fuzzy
-#~ msgid "GPRS Packet Type"
-#~ msgstr "tundmatu paketi tüüp"
-
-#, fuzzy
-#~ msgid "Connect via a modem"
-#~ msgstr "Modemi kaudu Internetti ühendumine"
-
-#, fuzzy
-#~ msgid "Do not use deflate compression"
-#~ msgstr "WINS serverit ei kasutata"
-
-#, fuzzy
-#~ msgid "Do not use BSD compression"
-#~ msgstr "WINS serverit ei kasutata"
-
-#, fuzzy
-#~ msgid "Authenticate remote peer"
-#~ msgstr "Ainult kaugfailid"
-#~ msgid "Custom PPP options"
-#~ msgstr "PPP kohandatud valikud"
-
-#, fuzzy
-#~ msgid "Specific networks available"
-#~ msgstr "Fail ei ole kättesaadav"
-
-#, fuzzy
-#~ msgid "Limit to specific networks"
-#~ msgstr "Paneeliga seotud rakendused"
 
