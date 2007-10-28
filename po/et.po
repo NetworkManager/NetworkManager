@@ -1,15 +1,18 @@
-# Networkmanageri osa tõlge
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
+# GNOME NetworkManager
+
+# Copyright (C) 2007 The GNOME Project.
+# This file is distributed under the same license as the NetworkManager package.
+
+# Priit Laes <amd@store20.com>, 2007.
 # Mattias Põldaru <mattias@gmail.com>, 2007.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
+"Project-Id-Version: NetworkManager 0.6\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2007-10-16 03:38+0100\n"
-"PO-Revision-Date: 2007-10-17 03:18+0300\n"
-"Last-Translator: Mattias Põldaru <mahfiaz@gmail.com>\n"
+"PO-Revision-Date: 2007-10-28 18:00+0300\n"
+"Last-Translator: Priit Laes <amd@store20.com>\n"
 "Language-Team: Estonian <gnome-et@linux.ee>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
@@ -40,7 +43,7 @@ msgstr "Viga VPN ühenduse '%s' otsimisel"
 #: ../gnome/vpn-properties/nm-vpn-properties.c:599
 #, c-format
 msgid "Could not find the UI files for VPN connection type '%s'. Contact your system administrator."
-msgstr "'%s' tüüpi VPN ühenduse jaoks ei leitud kasutajakeskkonna faile. Võta ühendust oma süsteemi administraatoriga."
+msgstr "'%s' tüüpi VPN ühenduse jaoks ei leitud kasutajaliidese faile. Võta ühendust oma süsteemi administraatoriga."
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:746
 #, c-format
@@ -200,12 +203,12 @@ msgstr "pesast info ootamisel tekkis viga"
 #: ../src/nm-ap-security-wpa-eap.c:95
 #: ../src/nm-ap-security-wpa-eap.c:119
 msgid "WPA2 Enterprise"
-msgstr "Ettevõtte WPA2"
+msgstr "Enterprise WPA2"
 
 #: ../src/nm-ap-security-wpa-eap.c:97
 #: ../src/nm-ap-security-wpa-eap.c:124
 msgid "WPA Enterprise"
-msgstr "Ettevõtte WPA"
+msgstr "Enterprise WPA"
 
 #: ../src/nm-ap-security-leap.c:66
 #: ../src/nm-ap-security-leap.c:82
