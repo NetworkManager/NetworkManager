@@ -257,7 +257,11 @@ nm_object_get_property (NMObject *object,
 							G_TYPE_INVALID,
 							G_TYPE_VALUE, value,
 							G_TYPE_INVALID)) {
-		g_warning ("Error in get_property: %s\n", err->message);
+		g_warning ("%s: Error getting '%s' for %s: %s\n",
+		           __func__,
+		           prop_name,
+		           nm_object_get_path (object),
+		           err->message);
 		g_error_free (err);
 		return FALSE;
 	}
