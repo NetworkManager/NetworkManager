@@ -236,6 +236,12 @@ device_added (LibHalContext *ctx, const char *udi)
 
 //	nm_debug ("New device added (hal udi is '%s').", udi );
 
+	/* Ignore device additions while asleep, all devices will
+	 * be found and set up again on wake.
+	 */
+	if (nm_manager_get_state (manager->nm_manager) == NM_STATE_ASLEEP)
+		return;
+
 	/* Sometimes the device's properties (like net.interface) are not set up yet,
 	 * so this call will fail, and it will actually be added when hal sets the device's
 	 * capabilities a bit later on.
@@ -264,6 +270,12 @@ device_new_capability (LibHalContext *ctx, const char *udi, const char *capabili
 	NMDeviceCreatorFn creator_fn;
 
 	/*nm_debug ("nm_hal_device_new_capability() called with udi = %s, capability = %s", udi, capability );*/
+
+	/* Ignore device additions while asleep, all devices will
+	 * be found and set up again on wake.
+	 */
+	if (nm_manager_get_state (manager->nm_manager) == NM_STATE_ASLEEP)
+		return;
 
 	creator_fn = get_creator (manager, udi);
 	if (creator_fn)

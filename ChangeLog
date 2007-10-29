@@ -1,3 +1,10 @@
+2007-10-29  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-hal-manager.c
+		- (device_added, device_new_capability): ignore device additions while
+			asleep.  Fixes crash caused when NM goes to sleep, a network device
+			kernel module is unloaded and reloaded and recognized by NM again.
+
 2007-10-26  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Helmut Schaa <hschaa@suse.de> (and more bits from me)
