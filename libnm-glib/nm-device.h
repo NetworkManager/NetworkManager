@@ -44,7 +44,8 @@ guint32       nm_device_get_capabilities (NMDevice *device);
 guint32       nm_device_get_ip4_address  (NMDevice *device);
 NMIP4Config  *nm_device_get_ip4_config   (NMDevice *device);
 NMDeviceState nm_device_get_state        (NMDevice *device);
-char         *nm_device_get_description  (NMDevice *device);
+char         *nm_device_get_product      (NMDevice *device);
+char         *nm_device_get_vendor       (NMDevice *device);
 gboolean      nm_device_get_carrier      (NMDevice *device);
 
 NMDeviceType  nm_device_type_for_path    (DBusGConnection *connection,

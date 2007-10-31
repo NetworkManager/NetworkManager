@@ -1,5 +1,14 @@
 2007-10-31  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/nm-device.h
+	  libnm-glib/nm-device.c
+		- (nm_device_get_description): remove
+		- (nm_device_get_product, nm_device_get_vendor): add
+		- (nm_device_update_description): new function (private); walk HAL
+			devices to get product and vendor IDs for a specific device
+
+2007-10-31  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 		- (nm_device_802_11_wireless_get_mode): ignore ENODEV errors
 

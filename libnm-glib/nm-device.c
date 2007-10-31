@@ -11,6 +11,9 @@ typedef struct {
 	DBusGProxy *device_proxy;
 	NMDeviceState state;
 
+	char *product;
+	char *vendor;
+
 	gboolean carrier;
 	gboolean carrier_valid;
 
@@ -48,6 +51,8 @@ nm_device_init (NMDevice *device)
 	priv->carrier = FALSE;
 	priv->carrier_valid = FALSE;
 	priv->disposed = FALSE;
+	priv->product = NULL;
+	priv->vendor = NULL;
 }
 
 static GObject*
@@ -99,6 +104,17 @@ dispose (GObject *object)
 }
 
 static void
+finalize (GObject *object)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
+
+	g_free (priv->product);
+	g_free (priv->vendor);
+
+	G_OBJECT_CLASS (nm_device_parent_class)->finalize (object);
+}
+
+static void
 nm_device_class_init (NMDeviceClass *device_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (device_class);
@@ -108,6 +124,7 @@ nm_device_class_init (NMDeviceClass *device_class)
 	/* virtual methods */
 	object_class->constructor = constructor;
 	object_class->dispose = dispose;
+	object_class->finalize = finalize;
 
 	/* signals */
 	signals[STATE_CHANGED] =
@@ -251,77 +268,150 @@ nm_device_get_state (NMDevice *device)
 	return priv->state;
 }
 
-char *
-nm_device_get_description (NMDevice *device)
+static char *
+get_product_and_vendor (DBusGConnection *connection,
+                        const char *udi,
+                        gboolean want_physdev,
+                        gboolean warn,
+                        char **product,
+                        char **vendor)
 {
 	DBusGProxy *proxy;
 	GError *err = NULL;
-	char *udi;
-	char *physical_device_udi = NULL;
-	char *vendor = NULL;
-	char *product = NULL;
-	char *description = NULL;
+	char *parent = NULL;
+	char *tmp_product = NULL;
+	char *tmp_vendor = NULL;
 
-	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (udi != NULL, NULL);
 
-	/* First, get the physical device info */
-
-	udi = nm_device_get_udi (device);
-	proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (device)),
-									   "org.freedesktop.Hal",
-									   udi,
-									   "org.freedesktop.Hal.Device");
-	g_free (udi);
-
-	if (!dbus_g_proxy_call (proxy, "GetPropertyString", &err,
-							G_TYPE_STRING, "net.physical_device",
-							G_TYPE_INVALID,
-							G_TYPE_STRING, &physical_device_udi,
-							G_TYPE_INVALID)) {
-		g_warning ("Error getting physical device info from HAL: %s", err->message);
-		g_error_free (err);
-		goto out;
-    }
-	g_object_unref (proxy);
-
-	/* Now get the vendor and product info from the physical device */
-
-	proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (device)),
-									   "org.freedesktop.Hal",
-									   physical_device_udi,
-									   "org.freedesktop.Hal.Device");
-
-	if (!dbus_g_proxy_call (proxy, "GetPropertyString", &err,
-							G_TYPE_STRING, "info.vendor",
-							G_TYPE_INVALID,
-							G_TYPE_STRING, &vendor,
-							G_TYPE_INVALID)) {
-		g_warning ("Error getting vendor info from HAL: %s", err->message);
-		g_error_free (err);
-		goto out;
-    }
+	proxy = dbus_g_proxy_new_for_name (connection, "org.freedesktop.Hal", udi, "org.freedesktop.Hal.Device");
+	if (!proxy)
+		return NULL;
 
 	if (!dbus_g_proxy_call (proxy, "GetPropertyString", &err,
 							G_TYPE_STRING, "info.product",
 							G_TYPE_INVALID,
-							G_TYPE_STRING, &product,
+							G_TYPE_STRING, &tmp_product,
 							G_TYPE_INVALID)) {
-		g_warning ("Error getting product info from HAL: %s", err->message);
+		if (warn)
+			g_warning ("Error getting device %s product from HAL: %s", udi, err->message);
 		g_error_free (err);
-		goto out;
+		err = NULL;
     }
 
-	description = g_strdup_printf ("%s %s", vendor, product);
+	if (!dbus_g_proxy_call (proxy, "GetPropertyString", &err,
+							G_TYPE_STRING, "info.vendor",
+							G_TYPE_INVALID,
+							G_TYPE_STRING, &tmp_vendor,
+							G_TYPE_INVALID)) {
+		if (warn)
+			g_warning ("Error getting device %s vendor from HAL: %s", udi, err->message);
+		g_error_free (err);
+		err = NULL;
+    }
 
- out:
+	if (!dbus_g_proxy_call (proxy, "GetPropertyString", &err,
+							G_TYPE_STRING, want_physdev ? "net.physical_device" : "info.parent",
+							G_TYPE_INVALID,
+							G_TYPE_STRING, &parent,
+							G_TYPE_INVALID)) {
+		g_warning ("Error getting physical device info from HAL: %s", err->message);
+		g_error_free (err);
+    }
+
+	if (parent && tmp_product && tmp_vendor) {
+		*product = tmp_product;
+		*vendor = tmp_vendor;
+	} else {
+		g_free (tmp_product);
+		g_free (tmp_vendor);
+	}
 	g_object_unref (proxy);
-	g_free (physical_device_udi);
-	g_free (vendor);
-	g_free (product);
 
-	return description;
+	return parent;
 }
 
+static void
+nm_device_update_description (NMDevice *device)
+{
+	NMDevicePrivate *priv;
+	DBusGConnection *connection;
+	char *udi;
+	char *physical_device_udi = NULL;
+	char *pd_parent_udi = NULL;
+	char *description = NULL;
+
+	g_return_if_fail (NM_IS_DEVICE (device));
+	priv = NM_DEVICE_GET_PRIVATE (device);
+
+	g_free (priv->product);
+	priv->product = NULL;
+	g_free (priv->vendor);
+	priv->vendor = NULL;
+
+	connection = nm_object_get_connection (NM_OBJECT (device));
+	g_return_if_fail (connection != NULL);
+
+	/* First, get the physical device info */
+	udi = nm_device_get_udi (device);
+	physical_device_udi = get_product_and_vendor (connection, udi, TRUE, FALSE, &priv->product, &priv->vendor);
+	g_free (udi);
+
+	/* Ignore product and vendor for the Network Interface */
+	if (priv->product || priv->vendor) {
+		g_free (priv->product);
+		priv->product = NULL;
+		g_free (priv->vendor);
+		priv->vendor = NULL;
+	}
+
+	/* Get product and vendor off the physical device if possible */
+	pd_parent_udi = get_product_and_vendor (connection,
+	                                        physical_device_udi,
+	                                        FALSE,
+	                                        FALSE,
+	                                        &priv->product,
+	                                        &priv->vendor);
+	g_free (physical_device_udi);
+
+	/* If one of the product/vendor isn't found on the physical device, try the
+	 * parent of the physical device.
+	 */
+	if (!priv->product || !priv->vendor) {
+		char *ignore;
+		ignore = get_product_and_vendor (connection, pd_parent_udi, FALSE, TRUE,
+		                                 &priv->product, &priv->vendor);
+		g_free (ignore);
+	}
+	g_free (pd_parent_udi);
+}
+
+char *
+nm_device_get_product (NMDevice *device)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+	if (!priv->product)
+		nm_device_update_description (device);
+	return priv->product;
+}
+
+char *
+nm_device_get_vendor (NMDevice *device)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+	if (!priv->vendor)
+		nm_device_update_description (device);
+	return priv->vendor;
+}
 
 gboolean
 nm_device_get_carrier (NMDevice *device)
