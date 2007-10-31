@@ -1,5 +1,10 @@
 2007-10-31  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-connection.c
+		- (gvalue_to_string): handle UINT32 arrays
+
+2007-10-31  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/nm-device.h
 	  libnm-glib/nm-device.c
 		- (nm_device_get_description): remove

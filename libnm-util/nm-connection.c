@@ -457,6 +457,28 @@ gvalue_to_string (GValue *val)
 
 			g_string_append (str, "]");
 			ret = g_string_free (str, FALSE);
+		} else if (type == dbus_g_type_get_collection ("GArray", G_TYPE_UINT)) {
+			GArray *array = g_value_get_boxed (val);
+			int i;
+
+			str = g_string_new ("[");
+
+			for (i = 0; i < array->len; i++) {
+				char *s;
+
+				if (need_comma)
+					g_string_append (str, ", ");
+				else
+					need_comma = TRUE;
+
+				s = g_strdup_printf ("%u", g_array_index (array, guint32, i));
+				g_string_append (str, s);
+				g_free (s);
+			}
+
+			g_string_append (str, "]");
+
+			ret = g_string_free (str, FALSE);
 		} else
 			ret = g_strdup_printf ("Value with type %s", g_type_name (type));
 	}
