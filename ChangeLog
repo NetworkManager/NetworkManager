@@ -1,3 +1,10 @@
+2007-10-31  Saleem Abdulrasool <compnerd@compnerd.org>
+
+	* configure.in:
+	* src/backends/NetworkManagerGentoo.c:
+	(nm_system_restart_mdns_responder): Implement restarts for other mdns
+	providers in Gentoo.
+
 2007-10-31  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/nm-connection.c

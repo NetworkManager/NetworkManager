@@ -94,6 +94,29 @@ AM_CONDITIONAL(TARGET_ARCH, test x"$with_distro" = xarch)
 AM_CONDITIONAL(TARGET_PALDO, test x"$with_distro" = xpaldo)
 AM_CONDITIONAL(TARGET_FRUGALWARE, test x"$with_distro" = xfrugalware)
 
+if test x"$with_distro" = xgentoo ; then
+	AC_ARG_WITH([mdns_provider],
+		    AC_HELP_STRING([--with-mdns-provider=PROVIDER], [Specify the mDNS implementation: Avahi, Howl, Bonjour]),,
+		    [with_mdns_provider=mDNSResponder])
+
+	with_mdns_provider=`echo ${with_mdns_provider} | tr '[[:upper:]]' '[[:lower:]]'`
+
+	case $with_mdns_provider in
+		avahi)
+			AC_DEFINE([MDNS_PROVIDER_AVAHI], [], [Use avahi for mDNS provider])
+		;;
+		howl)
+			AC_DEFINE([MDNS_PROVIDER_HOWL], [], [Use Howl mDNSResponder for mDNS provider])
+		;;
+		bonjour)
+			AC_DEFINE([MDNS_PROVIDER_BONJOUR], [], [Use Bonjour mDNSResponderPosix for mDNS provider])
+		;;
+		*)
+			AC_MSG_ERROR([invalid mdns implementation specified ($with_mdns_provider)])
+		;;
+	esac
+fi
+
 AC_MSG_CHECKING([for wireless-tools >= 28pre9])
 AC_TRY_COMPILE([#include <iwlib.h>],
                [#ifndef IWEVGENIE

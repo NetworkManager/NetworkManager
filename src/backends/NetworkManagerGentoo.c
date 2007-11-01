@@ -222,13 +222,30 @@ void nm_system_update_dns (void)
  */
 void nm_system_restart_mdns_responder (void)
 {
-        /* TODO Not only mDNSResponder is a possible mdns responder!
-         * As Avahi can become Gentoo's default, we could spawn a dbus signal here and let avahi listen for it? */
-        if (nm_spawn_process ("/etc/init.d/mDNSResponder status") == 0) {
-        	nm_spawn_process("/etc/init.d/mDNSResponder stop");
-	        nm_spawn_process("/etc/init.d/mDNSResponder zap");
-        	nm_spawn_process("/etc/init.d/mDNSResponder start");
-        }
+#if MDNS_PROVIDER_AVAHI
+	nm_info ("Restarting avahi-daemon");
+	if (g_file_test ("/var/run/avahi-daemon/pid", G_FILE_TEST_EXISTS))
+	{
+		nm_spawn_process ("/etc/init.d/avahi-daemon restart");
+	}
+#elif MDNS_PROVIDER_HOWL
+	if (g_file_text ("/var/run/mDNSResponder.pid", G_FILE_TEST_EXISTS))
+	{
+		nm_info ("Restarting mDNSResponder");
+		nm_spawn_process ("/etc/init.d/mDNSResponder stop");
+		nm_spawn_process ("/etc/init.d/mDNSResponder zap");
+		nm_spawn_process ("/etc/init.d/mDNSResponder start");
+	}
+#elif MDNS_PROVIDER_BONJOUR
+	if (g_file_test ("/var/run/mDNSResponderPosix.pid", G_FILE_TEST_EXISTS))
+	{
+		nm_info ("Restarting mDNSResponderPosix");
+		nm_spawn_process ("/etc/init.d/mDNSResponderPosix restart");
+	}
+#else
+	g_printerr("No mDNSResponder support enabled");
+	g_assert_not_reached();
+#endif
 }
 
 
