@@ -11,9 +11,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-10-28 14:31+0000\n"
-"PO-Revision-Date: 2007-10-28 18:00+0300\n"
-"Last-Translator: Priit Laes <amd@store20.com>\n"
+"POT-Creation-Date: 2007-10-28 16:38+0000\n"
+"PO-Revision-Date: 2007-10-31 22:45+0300\n"
+"Last-Translator: Mattias Põldaru <mahfiaz@gmail.com>\n"
 "Language-Team: Estonian <gnome-et@linux.ee>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -93,18 +93,21 @@ msgstr "Nimi:  %s"
 msgid "Connection Type: X.509 Certificates"
 msgstr "Ühenduse tüüp: X.509 Sertifikaadid"
 
-#: ../properties/nm-openvpn.c:834 ../properties/nm-openvpn.c:861
+#: ../properties/nm-openvpn.c:834
+#: ../properties/nm-openvpn.c:861
 #: ../properties/nm-openvpn.c:873
 #, c-format
 msgid "CA:  %s"
 msgstr "CA: %s"
 
-#: ../properties/nm-openvpn.c:837 ../properties/nm-openvpn.c:876
+#: ../properties/nm-openvpn.c:837
+#: ../properties/nm-openvpn.c:876
 #, c-format
 msgid "Cert:  %s"
 msgstr "Sertif.:  %s"
 
-#: ../properties/nm-openvpn.c:840 ../properties/nm-openvpn.c:879
+#: ../properties/nm-openvpn.c:840
+#: ../properties/nm-openvpn.c:879
 #, c-format
 msgid "Key:  %s"
 msgstr "Võti:  %s"
@@ -126,13 +129,14 @@ msgstr "Kohalik IP:  %s"
 #: ../properties/nm-openvpn.c:853
 #, c-format
 msgid "Remote IP:  %s"
-msgstr "Kauge IP:  %s"
+msgstr "Kaug-IP:  %s"
 
 #: ../properties/nm-openvpn.c:858
 msgid "Connection Type: Password"
 msgstr "Ühenduse tüüp: parooliga"
 
-#: ../properties/nm-openvpn.c:864 ../properties/nm-openvpn.c:882
+#: ../properties/nm-openvpn.c:864
+#: ../properties/nm-openvpn.c:882
 #, c-format
 msgid "Username:  %s"
 msgstr "Kasutajanimi:  %s"
@@ -216,22 +220,25 @@ msgstr "Sätteid ei saa importida"
 #: ../properties/nm-openvpn.c:1150
 #, c-format
 msgid "The VPN settings file '%s' does not contain valid data."
-msgstr "VPN-seadete fail '%s' ei sisalda sobivat infot."
+msgstr "VPN-seadete fail '%s' ei sisalda sobivat teavet."
 
 #: ../properties/nm-openvpn.c:1197
 msgid "Select file to import"
 msgstr "Vali imporditav fail"
 
-#: ../properties/nm-openvpn.c:1256 ../properties/nm-openvpn.c:1268
+#: ../properties/nm-openvpn.c:1256
+#: ../properties/nm-openvpn.c:1268
 #: ../properties/nm-openvpn.c:1271
 msgid "Select CA to use"
 msgstr "Vali kasutatav CA"
 
-#: ../properties/nm-openvpn.c:1259 ../properties/nm-openvpn.c:1274
+#: ../properties/nm-openvpn.c:1259
+#: ../properties/nm-openvpn.c:1274
 msgid "Select certificate to use"
 msgstr "Vali kasutatav sertifikaat"
 
-#: ../properties/nm-openvpn.c:1262 ../properties/nm-openvpn.c:1277
+#: ../properties/nm-openvpn.c:1262
+#: ../properties/nm-openvpn.c:1277
 msgid "Select key to use"
 msgstr "Vali võti"
 
@@ -307,9 +314,7 @@ msgid "Import _Saved Configuration..."
 msgstr "_Impordi salvestatud seaded..."
 
 #: ../properties/nm-openvpn-dialog.glade.h:11
-msgid ""
-"Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
+msgid "Name used to identify the connection to the private network, e.g. \"Campus VPN\" or \"Corporate Network\""
 msgstr "VPN-võrgu nimi, näiteks \"Kool\" või \"Ametivõrk\"."
 
 #: ../properties/nm-openvpn-dialog.glade.h:12
@@ -329,20 +334,12 @@ msgid "OpenVPN Configuration"
 msgstr "OpenVPN sätted"
 
 #: ../properties/nm-openvpn-dialog.glade.h:16
-msgid ""
-"Please enter the information provided by your system administrator below. Do "
-"not enter your password here as you will be prompted when connecting."
-msgstr ""
-"Palun sisesta süsteemi administraatorilt saadud info. Ära siia parooli "
-"sisesta, seda küsitakse ühendumisel."
+msgid "Please enter the information provided by your system administrator below. Do not enter your password here as you will be prompted when connecting."
+msgstr "Palun sisesta süsteemi administraatorilt saadud teave. Ära siia parooli sisesta, seda küsitakse ühendumisel."
 
 #: ../properties/nm-openvpn-dialog.glade.h:17
-msgid ""
-"Please note that the file you import is not an OpenVPN configuration file. "
-"Ask your administrator for the file."
-msgstr ""
-"Imporditav fail ei ole OpenVPN-i seadete fail. Küsi administraatorilt õiget "
-"faili."
+msgid "Please note that the file you import is not an OpenVPN configuration file. Ask your administrator for the file."
+msgstr "Imporditav fail ei ole OpenVPN-i seadete fail. Küsi administraatorilt õiget faili."
 
 #: ../properties/nm-openvpn-dialog.glade.h:18
 msgid "Shared _key:"
