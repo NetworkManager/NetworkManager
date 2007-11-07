@@ -1,9 +1,11 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+
 #ifndef NM_CONNECTION_H
 #define NM_CONNECTION_H
 
 #include <glib.h>
 #include <glib-object.h>
-#include "nm-setting.h"
+#include <nm-setting.h>
 
 G_BEGIN_DECLS
 
@@ -30,16 +32,19 @@ GType nm_connection_get_type (void);
 NMConnection *nm_connection_new           (void);
 NMConnection *nm_connection_new_from_hash (GHashTable *hash);
 void          nm_connection_add_setting   (NMConnection *connection,
-										   NMSetting    *setting);
+								   NMSetting    *setting);
 
 NMSetting    *nm_connection_get_setting   (NMConnection *connection,
-										   const char   *setting_name);
+								   GType         setting_type);
+
+NMSetting    *nm_connection_get_setting_by_name (NMConnection *connection,
+									    const char *name);
 
 gboolean      nm_connection_replace_settings (NMConnection *connection,
-										      GHashTable *new_settings);
+									 GHashTable *new_settings);
 
 gboolean      nm_connection_compare       (NMConnection *connection,
-										   NMConnection *other);
+								   NMConnection *other);
 
 gboolean      nm_connection_verify        (NMConnection *connection);
 
@@ -52,18 +57,18 @@ void          nm_connection_update_secrets (NMConnection *connection,
                                             GHashTable *secrets);
 
 void          nm_connection_for_each_setting_value (NMConnection *connection,
-                                                     NMSettingValueIterFn func,
-                                                     gpointer user_data);
+										  NMSettingValueIterFn func,
+										  gpointer user_data);
 
 GHashTable   *nm_connection_to_hash       (NMConnection *connection);
 void          nm_connection_dump          (NMConnection *connection);
 
 NMSetting    *nm_connection_create_setting (const char *name);
 
-void nm_setting_parser_register   (const char *name,
-								   NMSettingCreateFn creator);
+void nm_setting_register   (const char *name,
+					   GType type);
 
-void nm_setting_parser_unregister (const char *name);
+void nm_setting_unregister (const char *name);
 
 G_END_DECLS
 

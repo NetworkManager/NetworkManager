@@ -11,24 +11,40 @@ libnm_util_la_CPPFLAGS =				\
 	-DGNOME_DISABLE_DEPRECATED		\
 	-DGNOMELOCALEDIR=\"$(datadir)/locale\"
 
+libnm_util_include_HEADERS = 		\
+	nm-connection.h			\
+	nm-param-spec-specialized.h	\
+	nm-setting.h			\
+	nm-setting-connection.h		\
+	nm-setting-ip4-config.h		\
+	nm-setting-ppp.h		\
+	nm-setting-wired.h		\
+	nm-setting-wireless.h		\
+	nm-setting-wireless-security.h	\
+	nm-setting-vpn.h		\
+	nm-setting-vpn-properties.h	\
+	nm-utils.h
+
 libnm_util_la_SOURCES=			\
 	nm-connection.c			\
-	nm-connection.h			\
+	nm-param-spec-specialized.c	\
 	nm-setting.c			\
-	nm-setting.h			\
+	nm-setting-connection.c		\
+	nm-setting-ip4-config.c		\
+	nm-setting-ppp.c		\
+	nm-setting-wired.c		\
+	nm-setting-wireless.c		\
+	nm-setting-wireless-security.c	\
+	nm-setting-vpn.c		\
+	nm-setting-vpn-properties.c	\
 	nm-utils.c			\
-	nm-utils.h
+	$(libnm_util_include_HEADERS)
 
 libnm_util_la_LDFLAGS= $(GLIB_LIBS) $(DBUS_LIBS)
 
 libnm_util_la_CFLAGS=-fPIC
 
 libnm_util_includedir=$(includedir)/NetworkManager
-
-libnm_util_include_HEADERS = 		\
-	nm-connection.h			\
-	nm-setting.h			\
-	nm-utils.h
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libnm-util.pc

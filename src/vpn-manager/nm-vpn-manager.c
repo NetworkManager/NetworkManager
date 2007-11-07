@@ -5,6 +5,7 @@
 #include "nm-vpn-manager.h"
 #include "nm-vpn-service.h"
 #include "nm-vpn-connection.h"
+#include "nm-setting-vpn.h"
 #include "nm-manager.h"
 #include "nm-dbus-manager.h"
 #include "NetworkManagerVPN.h"
@@ -80,7 +81,7 @@ nm_vpn_manager_connect (NMVPNManager *manager,
 	if (nm_device_get_state (device) != NM_DEVICE_STATE_ACTIVATED)
 		return NULL;
 
-	vpn_setting = (NMSettingVPN *) nm_connection_get_setting (connection, NM_SETTING_VPN);
+	vpn_setting = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
 	if (!vpn_setting)
 		return NULL;
 

@@ -30,6 +30,8 @@
 
 #include "NetworkManagerVPN.h"
 #include "nm-vpn-connection.h"
+#include "nm-setting-connection.h"
+#include "nm-setting-vpn.h"
 #include "nm-dbus-manager.h"
 #include "nm-manager.h"
 #include "NetworkManagerSystem.h"
@@ -142,7 +144,7 @@ nm_vpn_connection_get_service (NMVPNConnection *connection)
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 	NMSettingVPN *setting;
 
-	setting = (NMSettingVPN *) nm_connection_get_setting (priv->connection, NM_SETTING_VPN);
+	setting = (NMSettingVPN *) nm_connection_get_setting (priv->connection, NM_TYPE_SETTING_VPN);
 	return setting->service_type;
 }
 
@@ -152,7 +154,7 @@ nm_vpn_connection_get_routes (NMVPNConnection *connection)
 	NMSettingVPN *setting;
 
 	setting = (NMSettingVPN *) nm_connection_get_setting (NM_VPN_CONNECTION_GET_PRIVATE (connection)->connection,
-											    NM_SETTING_VPN);
+											    NM_TYPE_SETTING_VPN);
 
 	return setting->routes;
 }
@@ -445,7 +447,7 @@ nm_vpn_connection_get_name (NMVPNConnection *connection)
 	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), NULL);
 
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
-	setting = (NMSettingConnection *) nm_connection_get_setting (priv->connection, NM_SETTING_CONNECTION);
+	setting = (NMSettingConnection *) nm_connection_get_setting (priv->connection, NM_TYPE_SETTING_CONNECTION);
 
 	return setting->name;
 }

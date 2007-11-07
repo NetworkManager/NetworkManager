@@ -44,6 +44,8 @@
 #include "nm-supplicant-interface.h"
 #include "nm-supplicant-config.h"
 #include "nm-properties-changed-signal.h"
+#include "nm-setting-connection.h"
+#include "nm-setting-wireless.h"
 
 static gboolean impl_device_get_access_points (NMDevice80211Wireless *device,
                                                GPtrArray **aps,
@@ -750,15 +752,15 @@ find_best_connection (gpointer data, gpointer user_data)
 	if (info->found)
 		return;
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_SETTING_CONNECTION);
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 	if (s_con == NULL)
 		return;
-	if (strcmp (s_con->type, NM_SETTING_WIRELESS))
+	if (strcmp (s_con->type, NM_SETTING_WIRELESS_SETTING_NAME))
 		return;
 	if (!s_con->autoconnect)
 		return;
 
-	s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_SETTING_WIRELESS);
+	s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
 	if (s_wireless == NULL)
 		return;
 
@@ -1588,7 +1590,8 @@ ap_auth_enforced (NMConnection *connection,
 		/* No way to tell if the key is wrong with Open System
 		 * auth mode in WEP.  Auth is not enforced like Shared Key.
 		 */
-		s_wireless_sec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_SETTING_WIRELESS_SECURITY);
+		s_wireless_sec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, 
+																    NM_TYPE_SETTING_WIRELESS_SECURITY);
 		if (s_wireless_sec &&
 		    (!s_wireless_sec->auth_alg ||
 		     !strcmp (s_wireless_sec->auth_alg, "open")))
@@ -2323,7 +2326,7 @@ build_supplicant_config (NMDevice80211Wireless *self,
 
 	g_return_val_if_fail (self != NULL, NULL);
 
-	s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, "802-11-wireless");
+	s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
 	g_return_val_if_fail (s_wireless != NULL, NULL);
 
 	config = nm_supplicant_config_new ();
@@ -2337,7 +2340,8 @@ build_supplicant_config (NMDevice80211Wireless *self,
 		goto error;
 	}
 
-	s_wireless_sec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, "802-11-wireless-security");
+	s_wireless_sec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection,
+															    NM_TYPE_SETTING_WIRELESS_SECURITY);
 	if (s_wireless_sec) {
 		DBusGProxy *proxy = g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_PROXY_TAG);
 		const char *con_path = dbus_g_proxy_get_path (proxy);
@@ -2461,7 +2465,7 @@ real_connection_secrets_updated (NMDevice *dev,
 	if (nm_device_get_state (dev) != NM_DEVICE_STATE_NEED_AUTH)
 		return;
 
-	if (strcmp (setting_name, NM_SETTING_WIRELESS_SECURITY) != 0) {
+	if (strcmp (setting_name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) != 0) {
 		nm_warning ("Ignoring updated secrets for setting '%s'.", setting_name);
 		return;
 	}
@@ -2501,7 +2505,7 @@ real_act_stage2_config (NMDevice *dev)
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
 
-	s_connection = (NMSettingConnection *) nm_connection_get_setting (connection, NM_SETTING_CONNECTION);
+	s_connection = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 	g_assert (s_connection);
 
 	/* If we need secrets, get them */
@@ -2527,7 +2531,8 @@ real_act_stage2_config (NMDevice *dev)
 		g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
 		return NM_ACT_STAGE_RETURN_POSTPONE;
 	} else {
-		NMSettingWireless *s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_SETTING_WIRELESS);
+		NMSettingWireless *s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, 
+																		 NM_TYPE_SETTING_WIRELESS);
 
 		if (s_wireless->security) {
 			nm_info ("Activation (%s/wireless): connection '%s' has security"

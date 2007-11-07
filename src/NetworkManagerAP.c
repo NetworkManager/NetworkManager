@@ -27,6 +27,7 @@
 #include <wireless.h>
 #include "wpa.h"
 #include "nm-properties-changed-signal.h"
+#include "nm-setting-wireless.h"
 
 #include "nm-access-point-glue.h"
 
@@ -546,7 +547,7 @@ nm_ap_new_fake_from_connection (NMConnection *connection)
 
 	g_return_val_if_fail (connection != NULL, NULL);
 
-	s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_SETTING_WIRELESS);
+	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
 	g_return_val_if_fail (s_wireless != NULL, NULL);
 	g_return_val_if_fail (s_wireless->ssid != NULL, NULL);
 	g_return_val_if_fail (s_wireless->ssid->len > 0, NULL);
@@ -581,7 +582,8 @@ nm_ap_new_fake_from_connection (NMConnection *connection)
 		nm_ap_set_freq (ap, freq);
 	}
 
-	s_wireless_sec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_SETTING_WIRELESS_SECURITY);
+	s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (nm_connection_get_setting (connection,
+															    NM_TYPE_SETTING_WIRELESS_SECURITY));
 	if (!s_wireless_sec)
 		goto done;
 
@@ -1188,13 +1190,14 @@ nm_ap_check_compatible (NMAccessPoint *self,
 {
 	NMAccessPointPrivate *priv;
 	NMSettingWireless *s_wireless;
+	NMSettingWirelessSecurity *s_wireless_sec;
 
 	g_return_val_if_fail (NM_IS_AP (self), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
 	priv = NM_AP_GET_PRIVATE (self);
 
-	s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, "802-11-wireless");
+	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
 	if (s_wireless == NULL)
 		return FALSE;
 	
@@ -1232,11 +1235,15 @@ nm_ap_check_compatible (NMAccessPoint *self,
 			return FALSE;
 	}
 
-	return nm_utils_ap_security_compatible (connection,
-	                                        nm_ap_get_flags (self),
-	                                        nm_ap_get_wpa_flags (self),
-	                                        nm_ap_get_rsn_flags (self),
-	                                        nm_ap_get_mode (self));
+	s_wireless_sec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection,
+															    NM_TYPE_SETTING_WIRELESS_SECURITY);
+
+	return nm_setting_wireless_ap_security_compatible (s_wireless,
+											 s_wireless_sec,
+											 nm_ap_get_flags (self),
+											 nm_ap_get_wpa_flags (self),
+											 nm_ap_get_rsn_flags (self),
+											 nm_ap_get_mode (self));
 }
 
 static gboolean

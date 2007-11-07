@@ -24,6 +24,7 @@
 #include "nm-activation-request.h"
 #include "nm-marshal.h"
 #include "nm-utils.h"
+#include "nm-setting-wireless.h"
 
 #include "nm-manager.h" /* FIXME! */
 
@@ -195,13 +196,12 @@ get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 		 * yes, replace the setting object in the connection.  If not, just try
 		 * updating the secrets.
 		 */
-		setting = nm_setting_wireless_security_new ();
-		nm_setting_populate_from_hash (setting, secrets);
-		if (nm_setting_verify (setting))
+		setting = nm_setting_from_hash (NM_TYPE_SETTING_WIRELESS, secrets);
+		if (nm_setting_verify (setting, NULL))
 			nm_connection_add_setting (priv->connection, setting);
 		else {
 			nm_connection_update_secrets (priv->connection, info->setting_name, secrets);
-			nm_setting_destroy (setting);
+			g_object_unref (setting);
 		}
 
 		g_signal_emit (info->req,

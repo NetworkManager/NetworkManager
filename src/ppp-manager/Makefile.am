@@ -13,10 +13,10 @@ libppp_manager_la_SOURCES = \
 	nm-ppp-status.h
 
 libppp_manager_la_CPPFLAGS = \
-	$(DBUS_CFLAGS)					\
-	$(HAL_CFLAGS)					\
-	-DG_DISABLE_DEPRECATED			\
-	-DSYSCONFDIR=\"$(sysconfdir)\"  \
+	$(DBUS_CFLAGS) \
+	$(HAL_CFLAGS) \
+	-DG_DISABLE_DEPRECATED \
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DLIBDIR=\"$(libdir)\"
 
 libppp_manager_la_LIBADD = \
@@ -24,18 +24,20 @@ libppp_manager_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(top_builddir)/src/marshallers/libmarshallers.la
 
-nm_pppd_plugindir = $(libdir)
-nm_pppd_plugin_PROGRAMS = nm-pppd-plugin.so
+lib_LTLIBRARIES = nm-pppd-plugin.la
 
-nm_pppd_plugin_so_SOURCES = \
-	nm-pppd-plugin.c	\
-	nm-pppd-plugin.h	\
+nm_pppd_plugin_la_SOURCES = \
+	nm-pppd-plugin.c \
+	nm-pppd-plugin.h \
 	nm-ppp-status.h
 
-nm_pppd_plugin_so_CPPFLAGS = $(DBUS_CFLAGS)	$(GLIB_CFLAGS) -fPIC
+nm_pppd_plugin_la_CPPFLAGS = \
+	$(DBUS_CFLAGS) \
+	$(GLIB_CFLAGS)
 
-nm_pppd_plugin_so_LDFLAGS =	-shared
-nm_pppd_plugin_so_LDADD = \
+nm_pppd_plugin_la_LDFLAGS = -module -avoid-version
+
+nm_pppd_plugin_la_LIBADD = \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
 	$(top_builddir)/libnm-util/libnm-util.la

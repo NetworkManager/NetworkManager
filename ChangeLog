@@ -1,3 +1,38 @@
+2007-11-07  Tambet Ingo  <tambet@gmail.com>
+
+	Rework NMSetting structures: Move each setting to it's own file.
+	Convert to GObject. Remove home grown setting types and use GTypes.
+	Use GObject property introspection for hash conversion, enumerating
+	properties, etc.
+
+	* libnm-util/nm-setting-connection.[ch]
+	* libnm-util/nm-setting-ip4-config.[ch]
+	* libnm-util/nm-setting-ppp.[ch]
+	* libnm-util/nm-setting-vpn.[ch]
+	* libnm-util/nm-setting-vpn-properties.[ch]
+	* libnm-util/nm-setting-wired.[ch]
+	* libnm-util/nm-setting-wireless.[ch]
+	* libnm-util/nm-setting-wireless-security.[ch]
+
+	New files, each containing a setting.
+
+	* libnm-util/nm-setting-template.[ch]: A template for creating new
+	settings. To use it, just replace 'template' with the new setting
+	name, and you're half-way done.
+
+	* libnm-util/nm-setting.c: Convert to GObject and use GObject
+	introspection instead of internal types and tables.
+
+	* libnm-util/nm-connection.c: Adapt the new NMSetting work.
+
+	* libnm-util/nm-param-spec-specialized.[ch]: Implement. Handles
+	GValue types defined by dbus-glib for composed types like collections,
+	structures and maps.
+
+	* src/*: The API of NMSetting and NMConnection changed a bit: Getting
+	a setting from connection takes the setting type now. Also, since
+	the settings are in multiple files, include relevant settings.
+
 2007-10-31  Saleem Abdulrasool <compnerd@compnerd.org>
 
 	* configure.in:

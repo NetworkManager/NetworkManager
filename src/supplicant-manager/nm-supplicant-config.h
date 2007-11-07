@@ -23,8 +23,8 @@
 #define NM_SUPPLICANT_CONFIG_H
 
 #include <glib-object.h>
+#include <nm-setting-wireless.h>
 #include "nm-supplicant-types.h"
-#include "nm-setting.h"
 
 G_BEGIN_DECLS
 

@@ -38,6 +38,7 @@
 #include "nm-utils.h"
 #include "autoip.h"
 #include "nm-netlink.h"
+#include "nm-setting-ip4-config.h"
 
 #define NM_ACT_REQUEST_IP4_CONFIG "nm-act-request-ip4-config"
 
@@ -192,8 +193,11 @@ constructor (GType type,
 
 	nm_info ("(%s): exporting device as %s", nm_device_get_iface (dev), nm_device_get_dbus_path (dev));
 	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (manager),
-										 nm_device_get_dbus_path (dev),
-										 object);
+								  nm_device_get_dbus_path (dev),
+								  object);
+
+	g_object_unref (manager);
+
 	priv->initialized = TRUE;
 	return object;
 
@@ -557,7 +561,7 @@ real_act_stage3_ip_config_start (NMDevice *self)
 
 	req = nm_device_get_act_request (self);
 	setting = (NMSettingIP4Config *) nm_connection_get_setting (nm_act_request_get_connection (req),
-													NM_SETTING_IP4_CONFIG);
+													NM_TYPE_SETTING_IP4_CONFIG);
 
 	/* If we did not receive IP4 configuration information, default to DHCP */
 	if (!setting || setting->manual == FALSE) {
@@ -741,7 +745,7 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 		req = nm_device_get_act_request (self);
 		merge_ip4_config (real_config, 
 					   (NMSettingIP4Config *) nm_connection_get_setting (nm_act_request_get_connection (req),
-															   NM_SETTING_IP4_CONFIG));
+															   NM_TYPE_SETTING_IP4_CONFIG));
 
 		*config = real_config;
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;

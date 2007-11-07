@@ -140,6 +140,19 @@ char *nm_utils_ssid_to_utf8 (const char *ssid, guint32 len);
 
 GHashTable *nm_utils_gvalue_hash_dup  (GHashTable *hash);
 char       *nm_utils_garray_to_string (GArray *array);
+void        nm_utils_slist_free       (GSList *list,
+							    GDestroyNotify elem_destroy_fn);
+
+gboolean    nm_utils_string_in_list   (const char *str,
+							    const char **valid_strings);
+
+gboolean    nm_utils_string_list_contains  (GSList *list, 
+								    const char *string);
+
+gboolean    nm_utils_string_slist_validate (GSList *list,
+								    const char **valid_values);
+
+void        nm_utils_register_value_transformations (void);
 
 typedef enum {
 	NMU_SEC_INVALID = 0,

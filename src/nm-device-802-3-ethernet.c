@@ -1,3 +1,5 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+
 /* NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -33,6 +35,9 @@
 #include "NetworkManagerUtils.h"
 #include "nm-supplicant-manager.h"
 #include "nm-netlink-monitor.h"
+#include "NetworkManagerSystem.h"
+#include "nm-setting-connection.h"
+#include "nm-setting-wired.h"
 #include "nm-utils.h"
 
 #include "nm-device-802-3-ethernet-glue.h"
@@ -107,8 +112,8 @@ constructor (GType type,
 	guint32 caps;
 
 	object = G_OBJECT_CLASS (nm_device_802_3_ethernet_parent_class)->constructor (type,
-																				  n_construct_params,
-																				  construct_params);
+																   n_construct_params,
+																   construct_params);
 	if (!object)
 		return NULL;
 
@@ -123,11 +128,12 @@ constructor (GType type,
 		NMNetlinkMonitor * monitor = nm_netlink_monitor_get ();
 
 		priv->link_connected_id = g_signal_connect (monitor, "interface-connected",
-													G_CALLBACK (nm_device_802_3_ethernet_link_activated),
-													dev);
+										    G_CALLBACK (nm_device_802_3_ethernet_link_activated),
+										    dev);
 		priv->link_disconnected_id = g_signal_connect (monitor, "interface-disconnected",
-													   G_CALLBACK (nm_device_802_3_ethernet_link_deactivated),
-													   dev);
+											  G_CALLBACK (nm_device_802_3_ethernet_link_deactivated),
+											  dev);
+
 		g_object_unref (monitor);
 	} else {
 		priv->link_connected_id = 0;
@@ -292,8 +298,6 @@ real_set_hw_address (NMDevice *dev)
 
 	nm_dev_sock_close (sk);
 }
-
-
 static guint32
 real_get_generic_capabilities (NMDevice *dev)
 {
@@ -350,15 +354,15 @@ find_best_connection (gpointer data, gpointer user_data)
 	if (info->found)
 		return;
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_SETTING_CONNECTION);
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 	if (s_con == NULL)
 		return;
-	if (strcmp (s_con->type, NM_SETTING_WIRED))
+	if (strcmp (s_con->type, NM_SETTING_WIRED_SETTING_NAME))
 		return;
 	if (!s_con->autoconnect)
 		return;
 
-	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_SETTING_WIRED);
+	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
 	if (s_wired == NULL)
 		return;
 
@@ -389,7 +393,6 @@ real_get_best_connection (NMDevice *dev,
 	g_slist_foreach (connections, find_best_connection, &find_info);
 	return find_info.found;
 }
-
 
 static void
 nm_device_802_3_ethernet_dispose (GObject *object)

@@ -38,7 +38,7 @@
 #include "nm-device-802-11-wireless.h"
 #include "nm-device-802-3-ethernet.h"
 #include "nm-dbus-manager.h"
-#include "nm-setting.h"
+#include "nm-setting-connection.h"
 
 struct NMPolicy {
 	NMManager *manager;
@@ -66,7 +66,7 @@ get_connection_name (NMConnection *connection)
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_SETTING_CONNECTION);
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 	g_return_val_if_fail (s_con != NULL, NULL);
 
 	return s_con->name;
@@ -345,8 +345,8 @@ nm_policy_device_change_check (gpointer user_data)
 					same_activating = TRUE;
 
 				if (!same_activating && !old_has_link && (old_mode != IW_MODE_ADHOC)) {
-					NMSettingConnection * new_sc = (NMSettingConnection *) nm_connection_get_setting (connection, NM_SETTING_CONNECTION);
-					NMSettingConnection * old_sc = (NMSettingConnection *) nm_connection_get_setting (old_connection, NM_SETTING_CONNECTION);
+					NMSettingConnection * new_sc = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+					NMSettingConnection * old_sc = (NMSettingConnection *) nm_connection_get_setting (old_connection, NM_TYPE_SETTING_CONNECTION);
 
 					nm_info ("SWITCH: found better connection '%s/%s'"
 					         " than current connection '%s/%s'.  "

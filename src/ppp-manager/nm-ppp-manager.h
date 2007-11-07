@@ -5,7 +5,7 @@
 #include <glib-object.h>
 
 #include "nm-ppp-status.h"
-#include "nm-setting.h"
+#include "nm-setting-ppp.h"
 #include "nm-ip4-config.h"
 #include "nm-pppd-plugin.h"
 

@@ -10,6 +10,8 @@
 #include "nm-device-802-11-wireless.h"
 #include "NetworkManagerSystem.h"
 #include "nm-properties-changed-signal.h"
+#include "nm-setting-connection.h"
+#include "nm-setting-wireless.h"
 #include "nm-marshal.h"
 
 static gboolean impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err);
@@ -947,7 +949,7 @@ manager_hidden_ap_found (NMDeviceInterface *device,
 		NMSettingWireless *s_wireless;
 		GSList *seen_iter;
 		
-		s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_SETTING_WIRELESS);
+		s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
 		if (!s_wireless || !s_wireless->seen_bssids)
 			goto next;
 		g_assert (s_wireless->ssid);
@@ -1557,9 +1559,9 @@ connection_sort (gconstpointer pa, gconstpointer pb)
 	NMConnection *b = NM_CONNECTION (pb);
 	NMSettingConnection *con_b;
 
-	con_a = (NMSettingConnection *) nm_connection_get_setting (a, NM_SETTING_CONNECTION);
+	con_a = (NMSettingConnection *) nm_connection_get_setting (a, NM_TYPE_SETTING_CONNECTION);
 	g_assert (con_a);
-	con_b = (NMSettingConnection *) nm_connection_get_setting (b, NM_SETTING_CONNECTION);
+	con_b = (NMSettingConnection *) nm_connection_get_setting (b, NM_TYPE_SETTING_CONNECTION);
 	g_assert (con_b);
 
 	if (con_a->autoconnect != con_b->autoconnect) {

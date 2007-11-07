@@ -6,6 +6,15 @@
 #include "nm-connection.h"
 #include "nm-utils.h"
 
+#include "nm-setting-connection.h"
+#include "nm-setting-ip4-config.h"
+#include "nm-setting-ppp.h"
+#include "nm-setting-wired.h"
+#include "nm-setting-wireless.h"
+#include "nm-setting-wireless-security.h"
+#include "nm-setting-vpn.h"
+#include "nm-setting-vpn-properties.h"
+
 typedef struct {
 	GHashTable *settings;
 } NMConnectionPrivate;
@@ -22,69 +31,87 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-static GHashTable *registered_setting_creators = NULL;
+static GHashTable *registered_settings = NULL;
 
 static void
-register_default_creators (void)
+register_default_settings (void)
 {
 	int i;
 	const struct {
 		const char *name;
-		NMSettingCreateFn fn;
+		GType type;
 	} default_map[] = {
-		{ NM_SETTING_CONNECTION,        nm_setting_connection_new },
-		{ NM_SETTING_WIRED,             nm_setting_wired_new },
-		{ NM_SETTING_WIRELESS,          nm_setting_wireless_new },
-		{ NM_SETTING_IP4_CONFIG,        nm_setting_ip4_config_new },
-		{ NM_SETTING_WIRELESS_SECURITY, nm_setting_wireless_security_new },
-		{ NM_SETTING_PPP,               nm_setting_ppp_new },
-		{ NM_SETTING_VPN,               nm_setting_vpn_new },
-		{ NM_SETTING_VPN_PROPERTIES,    nm_setting_vpn_properties_new },
-		{ NULL, NULL }
+		{ NM_SETTING_CONNECTION_SETTING_NAME,        NM_TYPE_SETTING_CONNECTION },
+		{ NM_SETTING_WIRED_SETTING_NAME,             NM_TYPE_SETTING_WIRED },
+		{ NM_SETTING_WIRELESS_SETTING_NAME,          NM_TYPE_SETTING_WIRELESS },
+		{ NM_SETTING_IP4_CONFIG_SETTING_NAME,        NM_TYPE_SETTING_IP4_CONFIG },
+		{ NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NM_TYPE_SETTING_WIRELESS_SECURITY },
+		{ NM_SETTING_PPP_SETTING_NAME,               NM_TYPE_SETTING_PPP },
+		{ NM_SETTING_VPN_SETTING_NAME,               NM_TYPE_SETTING_VPN },
+		{ NM_SETTING_VPN_PROPERTIES_SETTING_NAME,    NM_TYPE_SETTING_VPN_PROPERTIES },
+		{ NULL }
 	};
 
+	nm_utils_register_value_transformations ();
+
 	for (i = 0; default_map[i].name; i++)
-		nm_setting_parser_register (default_map[i].name, default_map[i].fn);
+		nm_setting_register (default_map[i].name, default_map[i].type);
 }
 
 void
-nm_setting_parser_register (const char *name, NMSettingCreateFn creator)
+nm_setting_register (const char *name, GType type)
 {
 	g_return_if_fail (name != NULL);
-	g_return_if_fail (creator != NULL);
-	
-	if (!registered_setting_creators)
-		registered_setting_creators = g_hash_table_new_full (g_str_hash, g_str_equal,
-															 (GDestroyNotify) g_free, NULL);
+	g_return_if_fail (G_TYPE_IS_INSTANTIATABLE (type));
 
-	if (g_hash_table_lookup (registered_setting_creators, name))
+	if (!registered_settings)
+		registered_settings = g_hash_table_new_full (g_str_hash, g_str_equal, 
+											(GDestroyNotify) g_free,
+											(GDestroyNotify) g_free);
+
+	if (g_hash_table_lookup (registered_settings, name))
 		g_warning ("Already have a creator function for '%s', overriding", name);
 
-	g_hash_table_insert (registered_setting_creators, g_strdup (name), creator);
+	g_hash_table_insert (registered_settings, g_strdup (name), g_strdup (g_type_name (type)));
 }
 
 void
-nm_setting_parser_unregister (const char *name)
+nm_setting_unregister (const char *name)
 {
-	if (registered_setting_creators)
-		g_hash_table_remove (registered_setting_creators, name);
+	if (registered_settings)
+		g_hash_table_remove (registered_settings, name);
+}
+
+static GType
+nm_connection_lookup_setting_type (const char *name)
+{
+	char *type_name;
+	GType type;
+
+	type_name = (char *) g_hash_table_lookup (registered_settings, name);
+	if (type_name) {
+		type = g_type_from_name (type_name);
+		if (!type)
+			g_warning ("Can not get type for '%s'.", type_name);
+	} else {
+		type = 0;
+		g_warning ("Unknown setting '%s'", name);
+	}
+
+	return type;
 }
 
 NMSetting *
 nm_connection_create_setting (const char *name)
 {
-	NMSettingCreateFn fn;
-	NMSetting *setting;
+	GType type;
+	NMSetting *setting = NULL;
 
 	g_return_val_if_fail (name != NULL, NULL);
 
-	fn = (NMSettingCreateFn) g_hash_table_lookup (registered_setting_creators, name);
-	if (fn)
-		setting = fn ();
-	else {
-		g_warning ("Unknown setting '%s'", name);
-		setting = NULL;
-	}
+	type = nm_connection_lookup_setting_type (name);
+	if (type)
+		setting = (NMSetting *) g_object_new (type, NULL);
 
 	return setting;
 }
@@ -93,61 +120,60 @@ static void
 parse_one_setting (gpointer key, gpointer value, gpointer user_data)
 {
 	NMConnection *connection = (NMConnection *) user_data;
-	NMSetting *setting;
+	GType type;
+	NMSetting *setting = NULL;
 
-	setting = nm_connection_create_setting ((char *) key);
-	if (setting) {
-		if (nm_setting_populate_from_hash (setting, (GHashTable *) value))
-			nm_connection_add_setting (connection, setting);
-		else
-			nm_setting_destroy (setting);
-	}
+	type = nm_connection_lookup_setting_type ((char *) key);
+	if (type)
+		setting = nm_setting_from_hash (type, (GHashTable *) value);
+	if (setting)
+		nm_connection_add_setting (connection, setting);
 }
 
 void
 nm_connection_add_setting (NMConnection *connection, NMSetting *setting)
 {
-	NMConnectionPrivate *priv;
-
 	g_return_if_fail (NM_IS_CONNECTION (connection));
-	g_return_if_fail (setting != NULL);
+	g_return_if_fail (NM_IS_SETTING (setting));
 
-	priv = NM_CONNECTION_GET_PRIVATE (connection);
-	g_hash_table_insert (priv->settings, setting->name, setting);
+	g_hash_table_insert (NM_CONNECTION_GET_PRIVATE (connection)->settings,
+					 g_strdup (G_OBJECT_TYPE_NAME (setting)), setting);
 }
 
 NMSetting *
-nm_connection_get_setting (NMConnection *connection, const char *setting_name)
+nm_connection_get_setting (NMConnection *connection, GType type)
 {
-	NMConnectionPrivate *priv;
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+	g_return_val_if_fail (g_type_is_a (type, NM_TYPE_SETTING), NULL);
+
+	return (NMSetting *) g_hash_table_lookup (NM_CONNECTION_GET_PRIVATE (connection)->settings,
+									  g_type_name (type));
+}
+
+NMSetting *
+nm_connection_get_setting_by_name (NMConnection *connection, const char *name)
+{
+	GType type;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
-	g_return_val_if_fail (setting_name != NULL, NULL);
+	g_return_val_if_fail (name != NULL, NULL);
 
-	priv = NM_CONNECTION_GET_PRIVATE (connection);
-	return (NMSetting *) g_hash_table_lookup (priv->settings, setting_name);
+	type = nm_connection_lookup_setting_type (name);
+
+	return type ? nm_connection_get_setting (connection, type) : NULL;
 }
 
 gboolean
 nm_connection_replace_settings (NMConnection *connection,
                                 GHashTable *new_settings)
 {
-	NMConnectionPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (new_settings != NULL, FALSE);
 
-	priv = NM_CONNECTION_GET_PRIVATE (connection);
-	g_hash_table_remove_all (priv->settings);
-
+	g_hash_table_remove_all (NM_CONNECTION_GET_PRIVATE (connection)->settings);
 	g_hash_table_foreach (new_settings, parse_one_setting, connection);
 
-	if (g_hash_table_size (priv->settings) < 1) {
-		g_warning ("No settings found.");
-		return FALSE;
-	}
-
-	if (!nm_settings_verify_all (priv->settings)) {
+	if (!nm_connection_verify (connection)) {
 		g_warning ("Settings invalid.");
 		return FALSE;
 	}
@@ -166,21 +192,15 @@ compare_one_setting (gpointer key, gpointer value, gpointer user_data)
 	NMSetting *setting = (NMSetting *) value;
 	CompareConnectionInfo *info = (CompareConnectionInfo *) user_data;
 	NMSetting *other_setting;
-	NMConnectionPrivate *other_priv;
 
 	if (info->failed)
 		return;
 
-	other_priv = NM_CONNECTION_GET_PRIVATE (info->other);
-	other_setting = g_hash_table_lookup (other_priv->settings, setting->name);
-	if (!other_setting)
-		goto failed;
-
-	info->failed = nm_setting_compare (setting, other_setting, FALSE) ? FALSE : TRUE;
-	return;
-
-failed:
-	info->failed = TRUE;
+	other_setting = nm_connection_get_setting (info->other, G_OBJECT_TYPE (setting));
+	if (other_setting)
+		info->failed = nm_setting_compare (setting, other_setting) ? FALSE : TRUE;
+	else
+		info->failed = TRUE;
 }
 
 gboolean
@@ -210,15 +230,56 @@ nm_connection_compare (NMConnection *connection, NMConnection *other)
 	return info.failed ? FALSE : TRUE;
 }
 
+typedef struct {
+	gboolean success;
+	GSList *all_settings;
+} VerifySettingsInfo;
+
+static void
+verify_one_setting (gpointer data, gpointer user_data)
+{
+	NMSetting *setting = NM_SETTING (data);
+	VerifySettingsInfo *info = (VerifySettingsInfo *) user_data;
+
+	if (info->success)
+		info->success = nm_setting_verify (setting, info->all_settings);
+}
+
+static void
+hash_values_to_slist (gpointer key, gpointer value, gpointer user_data)
+{
+	GSList **list = (GSList **) user_data;
+
+	*list = g_slist_prepend (*list, value);
+}
+
 gboolean
 nm_connection_verify (NMConnection *connection)
 {
 	NMConnectionPrivate *priv;
+	NMSetting *connection_setting;
+	VerifySettingsInfo info;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
-	return nm_settings_verify_all (priv->settings);
+
+	/* First, make sure there's at least 'connection' setting */
+	connection_setting = nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	if (!connection_setting) {
+		g_warning ("'connection' setting not present.");
+		return FALSE;
+	}
+
+	/* Now, run the verify function of each setting */
+	info.success = TRUE;
+	info.all_settings = NULL;
+	g_hash_table_foreach (priv->settings, hash_values_to_slist, &info.all_settings);
+
+	g_slist_foreach (info.all_settings, verify_one_setting, &info);
+	g_slist_free (info.all_settings);
+
+	return info.success;
 }
 
 void
@@ -232,30 +293,26 @@ nm_connection_update_secrets (NMConnection *connection,
 	g_return_if_fail (setting_name != NULL);
 	g_return_if_fail (secrets != NULL);
 
-	setting = nm_connection_get_setting (connection, setting_name);
+	setting = nm_connection_get_setting (connection, nm_connection_lookup_setting_type (setting_name));
 	if (!setting) {
 		g_warning ("Unhandled settings object for secrets update.");
 		return;
 	}
 
-	if (!nm_setting_update_secrets (setting, secrets)) {
-		g_warning ("Error updating secrets for setting '%s'", setting_name);
-		return;
-	}
-
+	nm_setting_update_secrets (setting, secrets);
 	g_signal_emit (connection, signals[SECRETS_UPDATED], 0, setting_name);
 }
 
 typedef struct NeedSecretsInfo {
-	GPtrArray * secrets;
-	char * setting_name;
+	GPtrArray *secrets;
+	NMSetting *setting;
 } NeedSecretsInfo;
 
 static void
 need_secrets_check (gpointer key, gpointer data, gpointer user_data)
 {
-	NMSetting *setting = (NMSetting *) data;
-	NeedSecretsInfo * info = (NeedSecretsInfo *) user_data;
+	NMSetting *setting = NM_SETTING (data);
+	NeedSecretsInfo *info = (NeedSecretsInfo *) user_data;
 
 	// FIXME: allow more than one setting to say it needs secrets
 	if (info->secrets)
@@ -263,7 +320,7 @@ need_secrets_check (gpointer key, gpointer data, gpointer user_data)
 
 	info->secrets = nm_setting_need_secrets (setting);
 	if (info->secrets)
-		info->setting_name = key;
+		info->setting = setting;
 }
 
 const char *
@@ -282,7 +339,7 @@ nm_connection_need_secrets (NMConnection *connection)
 	// settings name :: [list of secrets key names].
 	if (info.secrets) {
 		g_ptr_array_free (info.secrets, TRUE);
-		return info.setting_name;
+		return nm_setting_get_name (info.setting);
 	}
 
 	return NULL;
@@ -291,9 +348,7 @@ nm_connection_need_secrets (NMConnection *connection)
 static void
 clear_setting_secrets (gpointer key, gpointer data, gpointer user_data)
 {
-	NMSetting *setting = (NMSetting *) data;
-
-	nm_setting_clear_secrets (setting);
+	nm_setting_clear_secrets (NM_SETTING (data));
 }
 
 void
@@ -320,8 +375,8 @@ add_one_setting_to_hash (gpointer key, gpointer data, gpointer user_data)
 	setting_hash = nm_setting_to_hash (setting);
 	if (setting_hash)
 		g_hash_table_insert (connection_hash,
-							 g_strdup (setting->name),
-							 setting_hash);
+						 g_strdup (setting->name),
+						 setting_hash);
 }
 
 GHashTable *
@@ -333,8 +388,7 @@ nm_connection_to_hash (NMConnection *connection)
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	connection_hash = g_hash_table_new_full (g_str_hash, g_str_equal,
-											 (GDestroyNotify) g_free,
-											 (GDestroyNotify) g_hash_table_destroy);
+									 g_free, (GDestroyNotify) g_hash_table_destroy);
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
 	g_hash_table_foreach (priv->settings, add_one_setting_to_hash, connection_hash);
@@ -357,9 +411,8 @@ static void
 for_each_setting (gpointer key, gpointer value, gpointer user_data)
 {
 	ForEachValueInfo *info = (ForEachValueInfo *) user_data;
-	NMSetting *setting = (NMSetting *) value;
 
-	nm_setting_enumerate_values (setting, info->func, info->user_data);
+	nm_setting_enumerate_values (NM_SETTING (value), info->func, info->user_data);
 }
 
 void
@@ -388,120 +441,14 @@ nm_connection_for_each_setting_value (NMConnection *connection,
 	g_slice_free (ForEachValueInfo, info);
 }
 
-static char *
-gvalue_to_string (GValue *val)
-{
-	char *ret;
-	GType type;
-	GString *str;
-	gboolean need_comma = FALSE;
-
-	type = G_VALUE_TYPE (val);
-	switch (type) {
-	case G_TYPE_STRING:
-		ret = g_strdup (g_value_get_string (val));
-		break;
-	case G_TYPE_INT:
-		ret = g_strdup_printf ("%d", g_value_get_int (val));
-		break;
-	case G_TYPE_UINT:
-		ret = g_strdup_printf ("%u", g_value_get_uint (val));
-		break;
-	case G_TYPE_BOOLEAN:
-		ret = g_strdup_printf ("%s", g_value_get_boolean (val) ? "True" : "False");
-		break;
-	case G_TYPE_UCHAR:
-		ret = g_strdup_printf ("%d", g_value_get_uchar (val));
-		break;
-	case G_TYPE_UINT64:
-		ret = g_strdup_printf ("%llu", g_value_get_uint64 (val));
-		break;
-	default:
-		/* These return dynamic values and thus can't be 'case's */
-		if (type == DBUS_TYPE_G_UCHAR_ARRAY)
-			ret = nm_utils_garray_to_string ((GArray *) g_value_get_boxed (val));
-		else if (type == dbus_g_type_get_collection ("GSList", G_TYPE_STRING)) {
-			GSList *iter;
-
-			str = g_string_new ("[");
-			for (iter = g_value_get_boxed (val); iter; iter = iter->next) {
-				if (need_comma)
-					g_string_append (str, ", ");
-				else
-					need_comma = TRUE;
-
-				g_string_append (str, (char *) iter->data);
-			}
-			g_string_append (str, "]");
-
-			ret = g_string_free (str, FALSE);
-		} else if (type == dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_UCHAR_ARRAY)) {
-			/* Array of arrays of chars, like wireless seen-bssids for example */
-			int i;
-			GPtrArray *ptr_array;
-
-			str = g_string_new ("[");
-
-			ptr_array = (GPtrArray *) g_value_get_boxed (val);
-			for (i = 0; i < ptr_array->len; i++) {
-				ret = nm_utils_garray_to_string ((GArray *) g_ptr_array_index (ptr_array, i));
-
-				if (need_comma)
-					g_string_append (str, ", ");
-				else
-					need_comma = TRUE;
-
-				g_string_append (str, ret);
-				g_free (ret);
-			}
-
-			g_string_append (str, "]");
-			ret = g_string_free (str, FALSE);
-		} else if (type == dbus_g_type_get_collection ("GArray", G_TYPE_UINT)) {
-			GArray *array = g_value_get_boxed (val);
-			int i;
-
-			str = g_string_new ("[");
-
-			for (i = 0; i < array->len; i++) {
-				char *s;
-
-				if (need_comma)
-					g_string_append (str, ", ");
-				else
-					need_comma = TRUE;
-
-				s = g_strdup_printf ("%u", g_array_index (array, guint32, i));
-				g_string_append (str, s);
-				g_free (s);
-			}
-
-			g_string_append (str, "]");
-
-			ret = g_string_free (str, FALSE);
-		} else
-			ret = g_strdup_printf ("Value with type %s", g_type_name (type));
-	}
-
-	return ret;
-}
-
-static void
-dump_setting_member (gpointer key, gpointer value, gpointer user_data)
-{
-	char *val_as_str;
-
-	val_as_str = gvalue_to_string ((GValue *) value);
-	g_message ("\t%s : '%s'", (char *) key, val_as_str ? val_as_str : "(null)");
-	g_free (val_as_str);
-}
-
 static void
 dump_setting (gpointer key, gpointer value, gpointer user_data)
 {
-	g_message ("Setting '%s'", (char *) key);
-	g_hash_table_foreach ((GHashTable *) value, dump_setting_member, NULL);
-	g_message ("-------------------");
+	char *str;
+
+	str = nm_setting_to_string (NM_SETTING (value));
+	g_print ("%s\n", str);
+	g_free (str);
 }
 
 void
@@ -511,10 +458,7 @@ nm_connection_dump (NMConnection *connection)
 
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 
-	/* Convert the connection to hash so that we can introspect it */
-	hash = nm_connection_to_hash (connection);
-	g_hash_table_foreach (hash, dump_setting, NULL);
-	g_hash_table_destroy (hash);
+	g_hash_table_foreach (NM_CONNECTION_GET_PRIVATE (connection)->settings, dump_setting, NULL);
 }
 
 NMConnection *
@@ -522,8 +466,8 @@ nm_connection_new (void)
 {
 	GObject *object;
 
-	if (!registered_setting_creators)
-		register_default_creators ();
+	if (!registered_settings)
+		register_default_settings ();
 
 	object = g_object_new (NM_TYPE_CONNECTION, NULL);
 
@@ -543,13 +487,7 @@ nm_connection_new_from_hash (GHashTable *hash)
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
 
-	if (g_hash_table_size (priv->settings) < 1) {
-		g_warning ("No settings found.");
-		g_object_unref (connection);
-		return NULL;
-	}
-
-	if (!nm_settings_verify_all (priv->settings)) {
+	if (!nm_connection_verify (connection)) {
 		g_object_unref (connection);
 		return NULL;
 	}
@@ -562,7 +500,7 @@ nm_connection_init (NMConnection *connection)
 {
 	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (connection);
 
-	priv->settings = g_hash_table_new (g_str_hash, g_str_equal);
+	priv->settings = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
 }
 
 static void
