@@ -1,5 +1,11 @@
 /* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
+/* This file is just a template - it's not built nor included in the tarball.
+   It's sole purpose is to make the process of creating new settings easier.
+   Just replace 'template' with new setting name (preserving the case),
+   remove this comment, and you're almost done.
+*/
+
 #ifndef NM_SETTING_TEMPLATE_H
 #define NM_SETTING_TEMPLATE_H
 
