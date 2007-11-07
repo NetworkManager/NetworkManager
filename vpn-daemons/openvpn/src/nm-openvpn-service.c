@@ -47,6 +47,8 @@
 
 #include <NetworkManager.h>
 #include <NetworkManagerVPN.h>
+#include <nm-setting-vpn.h>
+#include <nm-setting-vpn-properties.h>
 
 #include "nm-openvpn-service.h"
 #include "nm-utils.h"
@@ -618,7 +620,7 @@ real_connect (NMVPNPlugin   *plugin,
 	gint fd;
 	gboolean success = FALSE;
 
-	properties = (NMSettingVPNProperties *) nm_connection_get_setting (connection, NM_SETTING_VPN_PROPERTIES);
+	properties = NM_SETTING_VPN_PROPERTIES (nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN_PROPERTIES));
 	if (!properties || !nm_openvpn_properties_validate (properties->data)) {
 		g_set_error (err,
 				   NM_VPN_PLUGIN_ERROR,
@@ -659,7 +661,7 @@ real_need_secrets (NMVPNPlugin *plugin,
 	g_return_val_if_fail (NM_IS_VPN_PLUGIN (plugin), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
-	s_vpn_props = (NMSettingVPNProperties *) nm_connection_get_setting (connection, NM_SETTING_VPN_PROPERTIES);
+	s_vpn_props = NM_SETTING_VPN_PROPERTIES (nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN_PROPERTIES));
 	if (!s_vpn_props) {
 		g_set_error (error,
 		             NM_VPN_PLUGIN_ERROR,
@@ -692,7 +694,7 @@ real_need_secrets (NMVPNPlugin *plugin,
 	}
 
 	if (need_secrets)
-		*setting_name = NM_SETTING_VPN_PROPERTIES;
+		*setting_name = NM_SETTING_VPN_PROPERTIES_SETTING_NAME;
 
 	return need_secrets;
 }

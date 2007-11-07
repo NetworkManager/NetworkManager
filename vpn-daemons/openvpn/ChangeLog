@@ -1,3 +1,9 @@
+2007-11-07  Dan Williams  <dcbw@redhat.com>
+
+	* properties/nm-openvpn.c
+	  src/nm-openvpn-service.c
+		- Fix for new NMSetting API changes
+
 2007-10-28  Tim Niemueller <tim@niemueller.de>
 
 	* nm-openvpn.desktop.in: Added NoDisplay=true
