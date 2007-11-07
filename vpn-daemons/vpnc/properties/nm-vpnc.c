@@ -34,6 +34,10 @@
 #define NM_VPN_API_SUBJECT_TO_CHANGE
 
 #include <nm-vpn-ui-interface.h>
+#include <nm-setting-vpn.h>
+#include <nm-setting-vpn-properties.h>
+#include <nm-setting-connection.h>
+
 #include "../src/nm-vpnc-service.h"
 #include "pcf-file.h"
 
@@ -177,13 +181,13 @@ impl_fill_connection (NetworkManagerVpnUI *self, NMConnection *connection)
 
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_SETTING_CONNECTION);
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_con);
 
-	s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_SETTING_VPN);
+	s_vpn = NM_SETTING_VPN (nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN));
 	g_assert (s_vpn);
 
-	s_vpn_props = (NMSettingVPNProperties *) nm_connection_get_setting (connection, NM_SETTING_VPN_PROPERTIES);
+	s_vpn_props = NM_SETTING_VPN_PROPERTIES (nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN_PROPERTIES));
 	g_assert (s_vpn_props);
 
 	/* Connection name */
@@ -272,15 +276,15 @@ impl_get_widget (NetworkManagerVpnUI *self, NMConnection *connection)
 		goto out;
 
 	/* Populate UI bits from the NMConnection */
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_SETTING_CONNECTION);
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_con);
 	g_assert (s_con->name);
 	gtk_entry_set_text (impl->w_connection_name, s_con->name);
 
-	s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_SETTING_VPN);
+	s_vpn = NM_SETTING_VPN (nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN));
 	g_assert (s_vpn);
 
-	s_vpn_props = (NMSettingVPNProperties *) nm_connection_get_setting (connection, NM_SETTING_VPN_PROPERTIES);
+	s_vpn_props = NM_SETTING_VPN_PROPERTIES (nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN_PROPERTIES));
 	g_assert (s_vpn_props);
 
 	if (s_vpn_props->data)
@@ -751,13 +755,13 @@ export_to_file (NetworkManagerVpnUIImpl *impl,
 	char *routes_str = NULL;
 	gboolean ret = TRUE;
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_SETTING_CONNECTION);
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_con);
 
-	s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_SETTING_VPN);
+	s_vpn = NM_SETTING_VPN (nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN));
 	g_assert (s_vpn);
 
-	s_vpn_props = (NMSettingVPNProperties *) nm_connection_get_setting (connection, NM_SETTING_VPN_PROPERTIES);
+	s_vpn_props = NM_SETTING_VPN_PROPERTIES (nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN_PROPERTIES));
 	g_assert (s_vpn_props);
 
 	val = (GValue *) g_hash_table_lookup (s_vpn_props->data, NM_VPNC_KEY_GATEWAY);
@@ -888,7 +892,7 @@ impl_export (NetworkManagerVpnUI *self, NMConnection *connection)
 					      GTK_STOCK_SAVE, GTK_RESPONSE_ACCEPT,
 					      NULL);
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_SETTING_CONNECTION);
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_con);
 	g_assert (s_con->name);
 

@@ -1,3 +1,10 @@
+2007-11-07  Dan Williams  <dcbw@redhat.com>
+
+	* auth-dialog/main.c
+	  properties/nm-vpnc.c
+	  src/nm-vpnc-service.c
+		- Fix for new NMSetting API changes
+
 2007-10-26  Dan Williams  <dcbw@redhat.com>
 
 	* properties/nm-vpnc.c
