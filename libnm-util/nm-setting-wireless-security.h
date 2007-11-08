@@ -29,6 +29,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_WIRELESS_SECURITY_CA_PATH "ca-path"
 #define NM_SETTING_WIRELESS_SECURITY_CLIENT_CERT "client-cert"
 #define NM_SETTING_WIRELESS_SECURITY_PRIVATE_KEY "private-key"
+#define NM_SETTING_WIRELESS_SECURITY_PRIVATE_KEY_DECRYPTED "private-key-decrypted"
 #define NM_SETTING_WIRELESS_SECURITY_PHASE1_PEAPVER "phase1-peapver"
 #define NM_SETTING_WIRELESS_SECURITY_PHASE1_PEAPLABEL "phase1-peaplabel"
 #define NM_SETTING_WIRELESS_SECURITY_PHASE1_FAST_PROVISIONING "phase1-fast-provisioning"
@@ -38,7 +39,8 @@ G_BEGIN_DECLS
 #define NM_SETTING_WIRELESS_SECURITY_PHASE2_CA_PATH "phase2-ca-path"
 #define NM_SETTING_WIRELESS_SECURITY_PHASE2_CLIENT_CERT "phase2-client-cert"
 #define NM_SETTING_WIRELESS_SECURITY_PHASE2_PRIVATE_KEY "phase2-private-key"
-#define NM_SETTING_WIRELESS_SECURITY_PHASE2_PRIVATE_KEY_PASSWD "phase2-private-key-passwd"
+#define NM_SETTING_WIRELESS_SECURITY_PHASE2_PRIVATE_KEY_DECRYPTED "phase2-private-key-passwd"
+#define NM_SETTING_WIRELESS_SECURITY_PHASE2_PRIVATE_KEY_PASSWD "phase2-private-key-decrypted"
 #define NM_SETTING_WIRELESS_SECURITY_NAI "nai"
 #define NM_SETTING_WIRELESS_SECURITY_WEP_KEY0 "wep-key0"
 #define NM_SETTING_WIRELESS_SECURITY_WEP_KEY1 "wep-key1"
@@ -66,6 +68,7 @@ typedef struct {
 	char *ca_path;
 	GByteArray *client_cert;
 	GByteArray *private_key;
+	gboolean private_key_decrypted;
 	char *phase1_peapver;
 	char *phase1_peaplabel;
 	char *phase1_fast_provisioning;
@@ -74,6 +77,7 @@ typedef struct {
 	GByteArray *phase2_ca_cert;
 	char *phase2_ca_path;
 	GByteArray *phase2_client_cert;
+	gboolean phase2_private_key_decrypted;
 	GByteArray *phase2_private_key;
 	char *nai;
 	char *wep_key0;

@@ -1,5 +1,17 @@
 2007-11-08  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting-wireless-security.h
+	  libnm-util/nm-setting-wireless-security.c
+		- Add 'private-key-decrypted' and 'phase2-private-key-decrypted'
+			members to 802-11-wireless-security structure.  This should be used
+			to indicate that the values in private-key and phase2-private-key
+			are already decrypted by the user agent, and that no
+			private-key-passwd or phase2-private-key-passwd should be expected.
+			It is not meant to be a stored configuration value, but meant to
+			be set when the conneciton is sent to NM over dbus.
+
+2007-11-08  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-connection.h
 	  libnm-util/nm-connection.c
 		- (nm_connection_need_secrets): add argument to return hints

@@ -24,6 +24,7 @@ enum {
 	PROP_CA_PATH,
 	PROP_CLIENT_CERT,
 	PROP_PRIVATE_KEY,
+	PROP_PRIVATE_KEY_DECRYPTED,
 	PROP_PHASE1_PEAPVER,
 	PROP_PHASE1_PEAPLABEL,
 	PROP_PHASE1_FAST_PROVISIONING,
@@ -33,6 +34,7 @@ enum {
 	PROP_PHASE2_CA_PATH,
 	PROP_PHASE2_CLIENT_CERT,
 	PROP_PHASE2_PRIVATE_KEY,
+	PROP_PHASE2_PRIVATE_KEY_DECRYPTED,
 	PROP_PHASE2_PRIVATE_KEY_PASSWD,
 	PROP_NAI,
 	PROP_WEP_KEY0,
@@ -500,6 +502,9 @@ set_property (GObject *object, guint prop_id,
 			g_byte_array_free (setting->private_key, TRUE);
 		setting->private_key = g_value_dup_boxed (value);
 		break;
+	case PROP_PRIVATE_KEY_DECRYPTED:
+		setting->private_key_decrypted = g_value_get_boolean (value);
+		break;
 	case PROP_PHASE1_PEAPVER:
 		g_free (setting->phase1_peapver);
 		setting->phase1_peapver = g_value_dup_string (value);
@@ -538,6 +543,9 @@ set_property (GObject *object, guint prop_id,
 		if (setting->phase2_private_key)
 			g_byte_array_free (setting->phase2_private_key, TRUE);
 		setting->phase2_private_key = g_value_dup_boxed (value);
+		break;
+	case PROP_PHASE2_PRIVATE_KEY_DECRYPTED:
+		setting->phase2_private_key_decrypted = g_value_get_boolean (value);
 		break;
 	case PROP_PHASE2_PRIVATE_KEY_PASSWD:
 		g_free (setting->phase2_private_key_passwd);
@@ -635,6 +643,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_PRIVATE_KEY:
 		g_value_set_boxed (value, setting->private_key);
 		break;
+	case PROP_PRIVATE_KEY_DECRYPTED:
+		g_value_set_boolean (value, setting->private_key_decrypted);
+		break;
 	case PROP_PHASE1_PEAPVER:
 		g_value_set_string (value, setting->phase1_peapver);
 		break;
@@ -661,6 +672,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PHASE2_PRIVATE_KEY:
 		g_value_set_boxed (value, setting->phase2_private_key);
+		break;
+	case PROP_PHASE2_PRIVATE_KEY_DECRYPTED:
+		g_value_set_boolean (value, setting->phase2_private_key_decrypted);
 		break;
 	case PROP_PHASE2_PRIVATE_KEY_PASSWD:
 		g_value_set_string (value, setting->phase2_private_key_passwd);
@@ -821,6 +835,14 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
+		(object_class, PROP_PRIVATE_KEY_DECRYPTED,
+		 g_param_spec_boolean (NM_SETTING_WIRELESS_SECURITY_PRIVATE_KEY_DECRYPTED,
+							   "Private key decrypted",
+							   "Private key decrypted",
+							   FALSE,
+							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	g_object_class_install_property
 		(object_class, PROP_PHASE1_PEAPVER,
 		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_PHASE1_PEAPVER,
 						  "Phase1 PEAPVER",
@@ -890,6 +912,14 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 							   "Phase2 private key",
 							   "Phase2 private key",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
+							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	g_object_class_install_property
+		(object_class, PROP_PHASE2_PRIVATE_KEY_DECRYPTED,
+		 g_param_spec_boolean (NM_SETTING_WIRELESS_SECURITY_PHASE2_PRIVATE_KEY_DECRYPTED,
+							   "Phase2 private key decrypted",
+							   "Phase2 private key decrypted",
+							   FALSE,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
