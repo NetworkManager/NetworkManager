@@ -324,7 +324,8 @@ need_secrets_check (gpointer key, gpointer data, gpointer user_data)
 }
 
 const char *
-nm_connection_need_secrets (NMConnection *connection)
+nm_connection_need_secrets (NMConnection *connection,
+                            GPtrArray **hints)
 {
 	NMConnectionPrivate *priv;
 	NeedSecretsInfo info = { NULL, NULL };
@@ -338,7 +339,11 @@ nm_connection_need_secrets (NMConnection *connection)
 	// all of them.  Maybe make info.secrets a hash table mapping
 	// settings name :: [list of secrets key names].
 	if (info.secrets) {
-		g_ptr_array_free (info.secrets, TRUE);
+		if (hints)
+			*hints = info.secrets;
+		else
+			g_ptr_array_free (info.secrets, TRUE);
+
 		return nm_setting_get_name (info.setting);
 	}
 

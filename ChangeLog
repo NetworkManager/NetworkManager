@@ -1,3 +1,14 @@
+2007-11-08  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-connection.h
+	  libnm-util/nm-connection.c
+		- (nm_connection_need_secrets): add argument to return hints
+
+	* src/nm-device-802-11-wireless.c
+		- (link_timeout_cb, supplicant_connection_timeout_cb,
+		   real_act_stage2_config, real_act_stage4_ip_config_timeout): handle
+			nm_connection_need_secrets() change
+
 2007-11-07  Tambet Ingo  <tambet@gmail.com>
 
 	Rework NMSetting structures: Move each setting to it's own file.

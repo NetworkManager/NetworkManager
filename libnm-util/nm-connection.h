@@ -48,7 +48,8 @@ gboolean      nm_connection_compare       (NMConnection *connection,
 
 gboolean      nm_connection_verify        (NMConnection *connection);
 
-const char *  nm_connection_need_secrets  (NMConnection *connection);
+const char *  nm_connection_need_secrets  (NMConnection *connection,
+                                           GPtrArray **hints);
 
 void          nm_connection_clear_secrets (NMConnection *connection);
 

@@ -1865,7 +1865,7 @@ link_timeout_cb (gpointer user_data)
 		goto time_out;
 
 	nm_connection_clear_secrets (connection);
-	setting_name = nm_connection_need_secrets (connection);
+	setting_name = nm_connection_need_secrets (connection, NULL);
 	if (!setting_name)
 		goto time_out;
 
@@ -2274,7 +2274,7 @@ supplicant_connection_timeout_cb (gpointer user_data)
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
 
 		nm_connection_clear_secrets (connection);
-		setting_name = nm_connection_need_secrets (connection);
+		setting_name = nm_connection_need_secrets (connection, NULL);
 		if (setting_name)
 			nm_act_request_request_connection_secrets (req, setting_name, TRUE);
 	}
@@ -2509,7 +2509,7 @@ real_act_stage2_config (NMDevice *dev)
 	g_assert (s_connection);
 
 	/* If we need secrets, get them */
-	setting_name = nm_connection_need_secrets (connection);
+	setting_name = nm_connection_need_secrets (connection, NULL);
 	if (setting_name) {
 		guint32 tries;
 
@@ -2697,7 +2697,7 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
 
 		nm_connection_clear_secrets (connection);
-		setting_name = nm_connection_need_secrets (connection);
+		setting_name = nm_connection_need_secrets (connection, NULL);
 		if (setting_name)
 			nm_act_request_request_connection_secrets (req, setting_name, TRUE);
 
