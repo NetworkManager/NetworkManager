@@ -469,8 +469,13 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig * self,
 	ADD_STRING_VAL (setting->password, "password", FALSE, FALSE, TRUE);
 	ADD_STRING_VAL (setting->pin, "pin", FALSE, FALSE, TRUE);
 	ADD_STRING_VAL (setting->eappsk, "eappsk", FALSE, TRUE, TRUE);
-	ADD_STRING_VAL (setting->private_key_passwd, "private_key_passwd", FALSE, FALSE, TRUE);
-	ADD_STRING_VAL (setting->phase2_private_key_passwd, "private_key2_passwd", FALSE, FALSE, TRUE);
+
+	/* Private key passwords are never passed to wpa_supplicant because the
+	 * user agent is responsible for decoding and decrypting the private key,
+	 * and file paths are never passed to wpa_supplicant to ensure that
+	 * the supplicant can be locked down and doesn't try to read stuff from
+	 * all over the drive.
+	 */
 
 	ADD_STRING_LIST_VAL (setting->eap, "eap", TRUE, FALSE);
 

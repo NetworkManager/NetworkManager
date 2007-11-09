@@ -1,3 +1,12 @@
+2007-11-09  Dan Williams  <dcbw@redhat.com>
+
+	* src/supplicant-manager/nm-supplicant-config.c
+		- (nm_supplicant_config_add_setting_wireless_security): private key
+			passwords are never sent to wpa_supplicant, because the supplicant
+			should never be reading random files from the disk.  Clients like
+			the applet are required to decrypt the private keys and send NM
+			the decrypted blobs.
+
 2007-11-08  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/nm-setting-wireless-security.h
