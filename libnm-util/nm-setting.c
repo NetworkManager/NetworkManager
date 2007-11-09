@@ -249,33 +249,41 @@ nm_setting_need_secrets (NMSetting *setting)
 }
 
 static void
-update_one_secret (gpointer key, gpointer val, gpointer user_data)
+update_one_secret (NMSetting *setting, const char *key, GValue *value)
 {
-	char *secret_key = (char *) key;
-	GValue *secret_value = (GValue *) val;
-	NMSetting *setting = (NMSetting *) user_data;
 	GParamSpec *prop_spec;
 	GValue transformed_value = { 0 };
 
-	prop_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), secret_key);
+	prop_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), key);
 	if (!prop_spec) {
-		nm_warning ("Ignoring invalid secret '%s'.", secret_key);
+		nm_warning ("Ignoring invalid secret '%s'.", key);
 		return;
 	}
 
 	if (!(prop_spec->flags & NM_SETTING_PARAM_SECRET)) {
-		nm_warning ("Ignoring secret '%s' as it's not marked as a secret.", secret_key);
+		nm_warning ("Ignoring secret '%s' as it's not marked as a secret.", key);
 		return;
 	}
 
-	if (g_value_type_compatible (G_VALUE_TYPE (secret_value), G_PARAM_SPEC_VALUE_TYPE (prop_spec)))
-		g_object_set_property (G_OBJECT (setting), prop_spec->name, secret_value);
-	else if (g_value_transform (secret_value, &transformed_value)) {
+	if (g_value_type_compatible (G_VALUE_TYPE (value), G_PARAM_SPEC_VALUE_TYPE (prop_spec)))
+		g_object_set_property (G_OBJECT (setting), prop_spec->name, value);
+	else if (g_value_transform (value, &transformed_value)) {
 		g_object_set_property (G_OBJECT (setting), prop_spec->name, &transformed_value);
 		g_value_unset (&transformed_value);
-	} else
+	} else {
 		nm_warning ("Ignoring secret property '%s' with invalid type (%s)",
-				  secret_key, G_VALUE_TYPE_NAME (secret_value));
+		            key, G_VALUE_TYPE_NAME (value));
+	}
+}
+
+static void
+update_one_cb (gpointer key, gpointer val, gpointer user_data)
+{
+	NMSetting *setting = (NMSetting *) user_data;
+	const char *secret_key = (const char *) key;
+	GValue *secret_value = (GValue *) val;
+
+	NM_SETTING_GET_CLASS (setting)->update_one_secret (setting, secret_key, secret_value);
 }
 
 void
@@ -284,7 +292,7 @@ nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets)
 	g_return_if_fail (NM_IS_SETTING (setting));
 	g_return_if_fail (secrets != NULL);
 
-	g_hash_table_foreach (secrets, update_one_secret, setting);
+	g_hash_table_foreach (secrets, update_one_cb, setting);
 }
 
 char *
@@ -425,6 +433,8 @@ nm_setting_class_init (NMSettingClass *setting_class)
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
+
+	setting_class->update_one_secret = update_one_secret;
 
 	/* Properties */
 	g_object_class_install_property

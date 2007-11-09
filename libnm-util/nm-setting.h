@@ -31,10 +31,14 @@ typedef struct {
 	GObjectClass parent;
 
 	/* Virtual functions */
-	gboolean    (*verify)         (NMSetting  *setting,
-							 GSList     *all_settings);
+	gboolean    (*verify)            (NMSetting  *setting,
+	                                  GSList     *all_settings);
 
-	GPtrArray  *(*need_secrets)   (NMSetting  *setting);
+	GPtrArray  *(*need_secrets)      (NMSetting  *setting);
+
+	void        (*update_one_secret) (NMSetting  *setting,
+	                                  const char *key,
+	                                  GValue     *value);
 } NMSettingClass;
 
 typedef void (*NMSettingValueIterFn) (NMSetting *setting,

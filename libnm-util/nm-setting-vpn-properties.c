@@ -33,6 +33,33 @@ verify (NMSetting *setting, GSList *all_settings)
 }
 
 static void
+nm_gvalue_destroy (gpointer data)
+{
+	GValue *value = (GValue *) data;
+
+	g_value_unset (value);
+	g_slice_free (GValue, value);
+}
+
+static void
+update_one_secret (NMSetting *setting, const char *key, GValue *value)
+{
+	NMSettingVPNProperties *self = NM_SETTING_VPN_PROPERTIES (setting);
+	GValue *copy_val;
+
+	g_return_if_fail (key != NULL);
+	g_return_if_fail (value != NULL);
+
+	/* Secrets are really only known to the VPNs themselves. */
+	if (!self->data)
+		self->data = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, nm_gvalue_destroy);
+	copy_val = g_slice_new0 (GValue);
+	g_value_init (copy_val, G_VALUE_TYPE (value));
+	g_value_copy (value, copy_val);
+	g_hash_table_insert (self->data, g_strdup (key), copy_val);
+}
+
+static void
 nm_setting_vpn_properties_init (NMSettingVPNProperties *setting)
 {
 	((NMSetting *) setting)->name = g_strdup (NM_SETTING_VPN_PROPERTIES_SETTING_NAME);
@@ -93,6 +120,7 @@ nm_setting_vpn_properties_class_init (NMSettingVPNPropertiesClass *setting_class
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 	parent_class->verify       = verify;
+	parent_class->update_one_secret = update_one_secret;
 
 	/* Properties */
 	g_object_class_install_property

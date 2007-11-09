@@ -1,5 +1,20 @@
 2007-11-09  Dan Williams  <dcbw@redhat.com>
 
+	Fix vpn-properties setting update_secrets call for new NMSetting stuff.
+	Since the vpn-properties are managed and known by the VPN daemons themselves,
+	libnm-util doesn't know what's secret and what's in the setting's 'data'
+	member.
+
+	* libnm-util/nm-setting.h
+	  libnm-util/nm-setting.c
+		- Add the ability for subclasses to override update_one_secret
+
+	* libnm-util/nm-setting-vpn-properties.c
+		- Override update_one_secret and just copy the values into the
+			internal table
+
+2007-11-09  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/nm-settings.h
 	  libnm-glib/nm-settings.c
 		- (nm_settings_new_error): remove
