@@ -1,5 +1,13 @@
 2007-11-09  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/nm-settings.h
+	  libnm-glib/nm-settings.c
+		- (nm_settings_new_error): remove
+		- (nm_settings_error_quark): add; instead of nm_settings_new_error,
+			clients should use g_set_error() with NM_SETTINGS_ERROR
+
+2007-11-09  Dan Williams  <dcbw@redhat.com>
+
 	* src/supplicant-manager/nm-supplicant-config.c
 		- (nm_supplicant_config_add_setting_wireless_security): private key
 			passwords are never sent to wpa_supplicant, because the supplicant
