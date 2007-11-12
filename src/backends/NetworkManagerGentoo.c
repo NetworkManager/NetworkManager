@@ -222,13 +222,13 @@ void nm_system_update_dns (void)
  */
 void nm_system_restart_mdns_responder (void)
 {
-#if MDNS_PROVIDER_AVAHI
+#if defined(MDNS_PROVIDER_AVAHI)
 	nm_info ("Restarting avahi-daemon");
 	if (g_file_test ("/var/run/avahi-daemon/pid", G_FILE_TEST_EXISTS))
 	{
 		nm_spawn_process ("/etc/init.d/avahi-daemon restart");
 	}
-#elif MDNS_PROVIDER_HOWL
+#elif defined(MDNS_PROVIDER_HOWL)
 	if (g_file_text ("/var/run/mDNSResponder.pid", G_FILE_TEST_EXISTS))
 	{
 		nm_info ("Restarting mDNSResponder");
@@ -236,7 +236,7 @@ void nm_system_restart_mdns_responder (void)
 		nm_spawn_process ("/etc/init.d/mDNSResponder zap");
 		nm_spawn_process ("/etc/init.d/mDNSResponder start");
 	}
-#elif MDNS_PROVIDER_BONJOUR
+#elif defined(MDNS_PROVIDER_BONJOUR)
 	if (g_file_test ("/var/run/mDNSResponderPosix.pid", G_FILE_TEST_EXISTS))
 	{
 		nm_info ("Restarting mDNSResponderPosix");
