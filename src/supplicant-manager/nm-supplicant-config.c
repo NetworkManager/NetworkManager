@@ -505,6 +505,12 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig * self,
 		}
 	}
 
+	if (   (strcmp (setting->key_mgmt, "ieee8021x") == 0)
+	    || (strcmp (setting->key_mgmt, "wpa-eap") == 0)) {
+			if (!nm_supplicant_config_add_option (self, "fragment_size", "1300", -1, FALSE))
+				return FALSE;
+	}
+
 	return TRUE;
 }
 

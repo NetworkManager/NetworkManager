@@ -1,5 +1,14 @@
 2007-11-12  Dan Williams  <dcbw@redhat.com>
 
+	* src/supplicant-manager/nm-supplicant-settings-verify.c
+		- Allow fragment_size option
+
+	* src/supplicant-manager/nm-supplicant-settings-verify.c
+		- (nm_supplicant_config_add_setting_wireless_security): use a lower
+			EAP fragment size than the default to help some TLS connections
+
+2007-11-12  Dan Williams  <dcbw@redhat.com>
+
 	Make certs actually work.  The private key is now a secret, and should be
 	decrypted when requested by NM.  The private key and phase2 private key
 	passwords are no longer interesting to NM because they should be used by
