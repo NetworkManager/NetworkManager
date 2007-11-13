@@ -148,7 +148,7 @@ dump_access_point (NMAccessPoint *ap)
 static void
 dump_wireless (NMDevice80211Wireless *device)
 {
-	char *str;
+	const char *str;
 	GSList *iter;
 	GSList *aps;
 
@@ -157,7 +157,6 @@ dump_wireless (NMDevice80211Wireless *device)
 
 	str = nm_device_802_11_wireless_get_hw_address (device);
 	g_print ("MAC: %s\n", str);
-	g_free (str);
 
 	g_print ("AccessPoints:\n");
 	aps = nm_device_802_11_wireless_get_access_points (device);

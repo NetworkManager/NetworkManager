@@ -207,7 +207,7 @@ detail_device (gpointer data, gpointer user_data)
 	if (NM_IS_DEVICE_802_3_ETHERNET (device))
 		tmp = nm_device_802_3_ethernet_get_hw_address (NM_DEVICE_802_3_ETHERNET (device));
 	else if (NM_IS_DEVICE_802_11_WIRELESS (device))
-		tmp = nm_device_802_11_wireless_get_hw_address (NM_DEVICE_802_11_WIRELESS (device));
+		tmp = g_strdup (nm_device_802_11_wireless_get_hw_address (NM_DEVICE_802_11_WIRELESS (device)));
 
 	if (tmp) {
 		print_string ("HW Address", tmp);

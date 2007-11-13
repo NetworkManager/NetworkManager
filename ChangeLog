@@ -1,3 +1,13 @@
+2007-11-13  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-glib/nm-device-802-11-wireless.h
+	  libnm-glib/nm-device-802-11-wireless.c
+		- (nm_device_802_11_wireless_get_hw_address): return should be const
+
+	* test/nm-tool.c
+	  libnm-glib/libnm-glib-test.c
+		- Fixes for above change
+
 2007-11-12  Dan Williams  <dcbw@redhat.com>
 
 	* src/supplicant-manager/nm-supplicant-settings-verify.c

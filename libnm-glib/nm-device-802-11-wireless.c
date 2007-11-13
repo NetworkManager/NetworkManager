@@ -73,7 +73,7 @@ nm_device_802_11_wireless_set_hw_address (NMDevice80211Wireless *self,
 	g_object_notify (G_OBJECT (self), NM_DEVICE_802_11_WIRELESS_HW_ADDRESS);
 }
 
-char *
+const char *
 nm_device_802_11_wireless_get_hw_address (NMDevice80211Wireless *device)
 {
 	NMDevice80211WirelessPrivate *priv;
