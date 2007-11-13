@@ -459,8 +459,6 @@ dump_setting (gpointer key, gpointer value, gpointer user_data)
 void
 nm_connection_dump (NMConnection *connection)
 {
-	GHashTable *hash;
-
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 
 	g_hash_table_foreach (NM_CONNECTION_GET_PRIVATE (connection)->settings, dump_setting, NULL);

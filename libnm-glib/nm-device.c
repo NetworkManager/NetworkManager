@@ -340,7 +340,6 @@ nm_device_update_description (NMDevice *device)
 	char *udi;
 	char *physical_device_udi = NULL;
 	char *pd_parent_udi = NULL;
-	char *description = NULL;
 
 	g_return_if_fail (NM_IS_DEVICE (device));
 	priv = NM_DEVICE_GET_PRIVATE (device);
