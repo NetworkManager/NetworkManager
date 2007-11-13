@@ -1,3 +1,26 @@
+2007-11-12  Dan Williams  <dcbw@redhat.com>
+
+	Make certs actually work.  The private key is now a secret, and should be
+	decrypted when requested by NM.  The private key and phase2 private key
+	passwords are no longer interesting to NM because they should be used by
+	the settings service to decrypt the private key itself before passing it
+	to NM, and hence have been removed as fields.
+
+	* libnm-util/nm-setting-wireless-security.h
+	  libnm-util/nm-setting-wireless-security.c
+		- Remove private-key-passwd and phase2-private-key-passwd from
+			properties
+		- (need_secrets_password, need_secrets_eappsk, need_secrets_sim,
+		   need_secrets): use property #defines instead strings to keep things
+			consistent
+		- (need_secrets_tls): if a client certificate is present but no
+			private key, request the private key
+		- (set_property, get_property, nm_setting_wireless_security_class_init):
+			remove private key password stuff, mark private keys as secret
+
+	* src/supplicant-manager/nm-supplicant-settings-verify.c
+		- Remove private_key_passwd and private_key2_passwd from opt_table
+
 2007-11-09  Dan Williams  <dcbw@redhat.com>
 
 	Fix vpn-properties setting update_secrets call for new NMSetting stuff.

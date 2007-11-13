@@ -23,8 +23,6 @@ enum {
 	PROP_CA_CERT,
 	PROP_CA_PATH,
 	PROP_CLIENT_CERT,
-	PROP_PRIVATE_KEY,
-	PROP_PRIVATE_KEY_DECRYPTED,
 	PROP_PHASE1_PEAPVER,
 	PROP_PHASE1_PEAPLABEL,
 	PROP_PHASE1_FAST_PROVISIONING,
@@ -33,8 +31,6 @@ enum {
 	PROP_PHASE2_CA_CERT,
 	PROP_PHASE2_CA_PATH,
 	PROP_PHASE2_CLIENT_CERT,
-	PROP_PHASE2_PRIVATE_KEY,
-	PROP_PHASE2_PRIVATE_KEY_DECRYPTED,
 	PROP_NAI,
 	PROP_WEP_KEY0,
 	PROP_WEP_KEY1,
@@ -44,8 +40,8 @@ enum {
 	PROP_PASSWORD,
 	PROP_PIN,
 	PROP_EAPPSK,
-	PROP_PRIVATE_KEY_PASSWD,
-	PROP_PHASE2_PRIVATE_KEY_PASSWD,
+	PROP_PRIVATE_KEY,
+	PROP_PHASE2_PRIVATE_KEY,
 
 	LAST_PROP
 };
@@ -183,7 +179,7 @@ need_secrets_password (NMSettingWirelessSecurity *self,
                        gboolean phase2)
 {
 	if (!self->password || !strlen (self->password))
-		g_ptr_array_add (secrets, "password");
+		g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_PASSWORD);
 }
 
 static void
@@ -192,7 +188,7 @@ need_secrets_eappsk (NMSettingWirelessSecurity *self,
                      gboolean phase2)
 {
 	if (!self->eappsk || !strlen (self->eappsk))
-		g_ptr_array_add (secrets, "eappsk");
+		g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_EAPPSK);
 }
 
 static void
@@ -201,7 +197,7 @@ need_secrets_sim (NMSettingWirelessSecurity *self,
                   gboolean phase2)
 {
 	if (!self->pin || !strlen (self->pin))
-		g_ptr_array_add (secrets, "eappsk");
+		g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_PIN);
 }
 
 static void
@@ -210,13 +206,13 @@ need_secrets_tls (NMSettingWirelessSecurity *self,
                   gboolean phase2)
 {
 	if (phase2) {
-		if (    !self->phase2_private_key_decrypted
-		    &&  ( !self->phase2_private_key_passwd || !strlen (self->phase2_private_key_passwd)))
-			g_ptr_array_add (secrets, "phase2-private-key-passwd");
+		if (   self->phase2_client_cert
+		    && (!self->phase2_private_key || !self->phase2_private_key->len))
+			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_PHASE2_PRIVATE_KEY);
 	} else {
-		if (   !self->private_key_decrypted
-		    && (!self->private_key_passwd || !strlen (self->private_key_passwd)))
-			g_ptr_array_add (secrets, "private-key-passwd");
+		if (self->client_cert
+		    && (!self->private_key || !self->private_key->len))
+			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_PRIVATE_KEY);
 	}
 }
 
@@ -306,19 +302,19 @@ need_secrets (NMSetting *setting)
 	/* Static WEP */
 	if (strcmp (self->key_mgmt, "none") == 0) {
 		if (!verify_wep_key (self->wep_key0)) {
-			g_ptr_array_add (secrets, "wep-key0");
+			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
 			return secrets;
 		}
 		if (self->wep_tx_keyidx == 1 && !verify_wep_key (self->wep_key1)) {
-			g_ptr_array_add (secrets, "wep-key1");
+			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY1);
 			return secrets;
 		}
 		if (self->wep_tx_keyidx == 2 && !verify_wep_key (self->wep_key2)) {
-			g_ptr_array_add (secrets, "wep-key2");
+			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY2);
 			return secrets;
 		}
 		if (self->wep_tx_keyidx == 3 && !verify_wep_key (self->wep_key3)) {
-			g_ptr_array_add (secrets, "wep-key3");
+			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
 			return secrets;
 		}
 		goto no_secrets;
@@ -328,7 +324,7 @@ need_secrets (NMSetting *setting)
 	if (   (strcmp (self->key_mgmt, "wpa-none") == 0)
 	    || (strcmp (self->key_mgmt, "wpa-psk") == 0)) {
 		if (!verify_wpa_psk (self->psk)) {
-			g_ptr_array_add (secrets, "psk");
+			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_PSK);
 			return secrets;
 		}
 		goto no_secrets;
@@ -340,7 +336,7 @@ need_secrets (NMSetting *setting)
 	    && (strcmp (self->auth_alg, "leap") == 0)
 	    && (nm_utils_string_list_contains (self->eap, "leap"))) {
 		if (!self->password || !strlen (self->password)) {
-			g_ptr_array_add (secrets, "password");
+			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_PASSWORD);
 			return secrets;
 		}
 		goto no_secrets;
@@ -419,8 +415,6 @@ finalize (GObject *object)
 	g_free (self->password);
 	g_free (self->pin);
 	g_free (self->eappsk);
-	g_free (self->private_key_passwd);
-	g_free (self->phase2_private_key_passwd);
 
 	nm_utils_slist_free (self->proto, g_free);
 	nm_utils_slist_free (self->pairwise, g_free);
@@ -499,14 +493,6 @@ set_property (GObject *object, guint prop_id,
 			g_byte_array_free (setting->client_cert, TRUE);
 		setting->client_cert = g_value_dup_boxed (value);
 		break;
-	case PROP_PRIVATE_KEY:
-		if (setting->private_key)
-			g_byte_array_free (setting->private_key, TRUE);
-		setting->private_key = g_value_dup_boxed (value);
-		break;
-	case PROP_PRIVATE_KEY_DECRYPTED:
-		setting->private_key_decrypted = g_value_get_boolean (value);
-		break;
 	case PROP_PHASE1_PEAPVER:
 		g_free (setting->phase1_peapver);
 		setting->phase1_peapver = g_value_dup_string (value);
@@ -540,14 +526,6 @@ set_property (GObject *object, guint prop_id,
 		if (setting->phase2_client_cert)
 			g_byte_array_free (setting->phase2_client_cert, TRUE);
 		setting->phase2_client_cert = g_value_dup_boxed (value);
-		break;
-	case PROP_PHASE2_PRIVATE_KEY:
-		if (setting->phase2_private_key)
-			g_byte_array_free (setting->phase2_private_key, TRUE);
-		setting->phase2_private_key = g_value_dup_boxed (value);
-		break;
-	case PROP_PHASE2_PRIVATE_KEY_DECRYPTED:
-		setting->phase2_private_key_decrypted = g_value_get_boolean (value);
 		break;
 	case PROP_NAI:
 		g_free (setting->nai);
@@ -585,13 +563,15 @@ set_property (GObject *object, guint prop_id,
 		g_free (setting->eappsk);
 		setting->eappsk = g_value_dup_string (value);
 		break;
-	case PROP_PRIVATE_KEY_PASSWD:
-		g_free (setting->private_key_passwd);
-		setting->private_key_passwd = g_value_dup_string (value);
+	case PROP_PRIVATE_KEY:
+		if (setting->private_key)
+			g_byte_array_free (setting->private_key, TRUE);
+		setting->private_key = g_value_dup_boxed (value);
 		break;
-	case PROP_PHASE2_PRIVATE_KEY_PASSWD:
-		g_free (setting->phase2_private_key_passwd);
-		setting->phase2_private_key_passwd = g_value_dup_string (value);
+	case PROP_PHASE2_PRIVATE_KEY:
+		if (setting->phase2_private_key)
+			g_byte_array_free (setting->phase2_private_key, TRUE);
+		setting->phase2_private_key = g_value_dup_boxed (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -642,12 +622,6 @@ get_property (GObject *object, guint prop_id,
 	case PROP_CLIENT_CERT:
 		g_value_set_boxed (value, setting->client_cert);
 		break;
-	case PROP_PRIVATE_KEY:
-		g_value_set_boxed (value, setting->private_key);
-		break;
-	case PROP_PRIVATE_KEY_DECRYPTED:
-		g_value_set_boolean (value, setting->private_key_decrypted);
-		break;
 	case PROP_PHASE1_PEAPVER:
 		g_value_set_string (value, setting->phase1_peapver);
 		break;
@@ -671,12 +645,6 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PHASE2_CLIENT_CERT:
 		g_value_set_boxed (value, setting->phase2_client_cert);
-		break;
-	case PROP_PHASE2_PRIVATE_KEY:
-		g_value_set_boxed (value, setting->phase2_private_key);
-		break;
-	case PROP_PHASE2_PRIVATE_KEY_DECRYPTED:
-		g_value_set_boolean (value, setting->phase2_private_key_decrypted);
 		break;
 	case PROP_NAI:
 		g_value_set_string (value, setting->nai);
@@ -705,11 +673,11 @@ get_property (GObject *object, guint prop_id,
 	case PROP_EAPPSK:
 		g_value_set_string (value, setting->eappsk);
 		break;
-	case PROP_PRIVATE_KEY_PASSWD:
-		g_value_set_string (value, setting->private_key_passwd);
+	case PROP_PRIVATE_KEY:
+		g_value_set_boxed (value, setting->private_key);
 		break;
-	case PROP_PHASE2_PRIVATE_KEY_PASSWD:
-		g_value_set_string (value, setting->phase2_private_key_passwd);
+	case PROP_PHASE2_PRIVATE_KEY:
+		g_value_set_boxed (value, setting->phase2_private_key);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -829,22 +797,6 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
-		(object_class, PROP_PRIVATE_KEY,
-		 nm_param_spec_specialized (NM_SETTING_WIRELESS_SECURITY_PRIVATE_KEY,
-							   "Private key",
-							   "Private key",
-							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
-
-	g_object_class_install_property
-		(object_class, PROP_PRIVATE_KEY_DECRYPTED,
-		 g_param_spec_boolean (NM_SETTING_WIRELESS_SECURITY_PRIVATE_KEY_DECRYPTED,
-							   "Private key decrypted",
-							   "Private key decrypted",
-							   FALSE,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
-
-	g_object_class_install_property
 		(object_class, PROP_PHASE1_PEAPVER,
 		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_PHASE1_PEAPVER,
 						  "Phase1 PEAPVER",
@@ -906,22 +858,6 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 							   "Phase2 client certificate",
 							   "Phase2 client certificate",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
-
-	g_object_class_install_property
-		(object_class, PROP_PHASE2_PRIVATE_KEY,
-		 nm_param_spec_specialized (NM_SETTING_WIRELESS_SECURITY_PHASE2_PRIVATE_KEY,
-							   "Phase2 private key",
-							   "Phase2 private key",
-							   DBUS_TYPE_G_UCHAR_ARRAY,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
-
-	g_object_class_install_property
-		(object_class, PROP_PHASE2_PRIVATE_KEY_DECRYPTED,
-		 g_param_spec_boolean (NM_SETTING_WIRELESS_SECURITY_PHASE2_PRIVATE_KEY_DECRYPTED,
-							   "Phase2 private key decrypted",
-							   "Phase2 private key decrypted",
-							   FALSE,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
@@ -997,19 +933,18 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
 
 	g_object_class_install_property
-		(object_class, PROP_PRIVATE_KEY_PASSWD,
-		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_PRIVATE_KEY_PASSWD,
-						  "Private key password",
-						  "Private key password",
-						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+		(object_class, PROP_PRIVATE_KEY,
+		 nm_param_spec_specialized (NM_SETTING_WIRELESS_SECURITY_PRIVATE_KEY,
+							   "Private key",
+							   "Private key",
+							   DBUS_TYPE_G_UCHAR_ARRAY,
+							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
 
 	g_object_class_install_property
-		(object_class, PROP_PHASE2_PRIVATE_KEY_PASSWD,
-		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_PHASE2_PRIVATE_KEY_PASSWD,
-						  "Phase2 private key password",
-						  "Phase2 private key password",
-						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
-
+		(object_class, PROP_PHASE2_PRIVATE_KEY,
+		 nm_param_spec_specialized (NM_SETTING_WIRELESS_SECURITY_PHASE2_PRIVATE_KEY,
+							   "Phase2 private key",
+							   "Phase2 private key",
+							   DBUS_TYPE_G_UCHAR_ARRAY,
+							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
 }
