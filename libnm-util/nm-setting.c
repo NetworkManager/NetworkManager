@@ -42,8 +42,7 @@ nm_setting_to_hash (NMSetting *setting)
 	for (i = 0; i < n_property_specs; i++) {
 		GParamSpec *prop_spec = property_specs[i];
 
-		if (   (prop_spec->flags & NM_SETTING_PARAM_SERIALIZE)
-		    || !strcmp (prop_spec->name, NM_SETTING_NAME)) {
+		if (prop_spec->flags & NM_SETTING_PARAM_SERIALIZE) {
 			GValue *value;
 
 			value = g_slice_new0 (GValue);
@@ -77,12 +76,6 @@ one_property_cb (gpointer key, gpointer val, gpointer user_data)
 	NMSettingFromHashInfo *info = (NMSettingFromHashInfo *) user_data;
 	GValue *dst_value = &info->params[info->n_params].value;
 	GParamSpec *param_spec;
-
-	/* 'name' is special; since the caller already has to know the type of 
-	 * the setting, 'name' gets ignored here.
-	 */
-	if (!strcmp (prop_name, NM_SETTING_NAME))
-		return;
 
 	param_spec = g_object_class_find_property (info->class, prop_name);
 	if (!param_spec || !(param_spec->flags & NM_SETTING_PARAM_SERIALIZE)) {

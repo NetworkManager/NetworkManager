@@ -168,6 +168,7 @@ get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	GError *err = NULL;
 	GHashTable *secrets = NULL;
 	NMActRequestPrivate *priv = NULL;
+	NMSetting *setting = NULL;
 
 	g_return_if_fail (info != NULL);
 	g_return_if_fail (info->req);
@@ -189,31 +190,38 @@ get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 		return;
 	}
 
-	if (g_hash_table_size (secrets) > 0) {
-		NMSetting *setting;
-
-		/* Check whether a complete & valid NMSetting object was returned.  If
-		 * yes, replace the setting object in the connection.  If not, just try
-		 * updating the secrets.
-		 */
-		setting = nm_setting_from_hash (NM_TYPE_SETTING_WIRELESS, secrets);
-		if (nm_setting_verify (setting, NULL))
-			nm_connection_add_setting (priv->connection, setting);
-		else {
-			nm_connection_update_secrets (priv->connection, info->setting_name, secrets);
-			g_object_unref (setting);
-		}
-
-		g_signal_emit (info->req,
-		               signals[CONNECTION_SECRETS_UPDATED],
-		               0,
-		               priv->connection,
-		               info->setting_name);
-	} else {
+	if (g_hash_table_size (secrets) == 0) {
 		// FIXME: some better way to handle invalid message?
 		nm_warning ("GetSecrets call returned but no secrets were found.");
+		goto out;
 	}
 
+	/* Check whether a complete & valid NMSetting object was returned.  If
+	 * yes, replace the setting object in the connection.  If not, just try
+	 * updating the secrets.
+	 */
+	if (!strcmp (info->setting_name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME))
+		setting = nm_setting_from_hash (NM_TYPE_SETTING_WIRELESS_SECURITY, secrets);
+
+	if (setting) {
+		if (!nm_setting_verify (setting, NULL)) {
+			g_object_unref (setting);
+			setting = NULL;
+		}
+	}
+
+	if (setting)
+		nm_connection_add_setting (priv->connection, setting);
+	else
+		nm_connection_update_secrets (priv->connection, info->setting_name, secrets);
+
+	g_signal_emit (info->req,
+	               signals[CONNECTION_SECRETS_UPDATED],
+	               0,
+	               priv->connection,
+	               info->setting_name);
+
+out:
 	g_hash_table_destroy (secrets);
 }
 

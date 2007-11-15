@@ -1,5 +1,15 @@
 2007-11-15  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting.c
+		- (nm_setting_to_hash, one_property_cb): revert previous commit, it's
+			unecessary to serialize 'name'
+
+	* src/nm-activation-request.c
+		- (get_secrets_cb): fix cases where a full NMSetting is returned from
+			the GetSecrets call
+
+2007-11-15  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting-connection.h
 	  libnm-util/nm-setting-connection.c
 		- Rename the 'name' property to 'id', because it conflicted with the
