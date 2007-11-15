@@ -496,7 +496,7 @@ static NMAccessPoint *
 get_active_ap (NMDevice80211Wireless *self,
                NMAccessPoint *ignore_ap)
 {
-	struct ether_addr bssid;
+	struct ether_addr bssid = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
 	const GByteArray *ssid;
 	GSList *iter;
 
@@ -1196,6 +1196,7 @@ nm_device_802_11_wireless_get_ssid (NMDevice80211Wireless *self)
 		return NULL;
 	}
 
+	memset (ssid, 0, sizeof (ssid));
 	wrq.u.essid.pointer = (caddr_t) &ssid;
 	wrq.u.essid.length = sizeof (ssid);
 	wrq.u.essid.flags = 0;
@@ -1316,11 +1317,14 @@ nm_device_802_11_wireless_get_bitrate (NMDevice80211Wireless *self)
 	g_return_val_if_fail (self != NULL, 0);
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
-	if ((sk = nm_dev_sock_open (iface, DEV_WIRELESS, __FUNCTION__, NULL))) {
-		nm_ioctl_info ("%s: About to GET IWRATE.", iface);
-		err = iw_get_ext (nm_dev_sock_get_fd (sk), iface, SIOCGIWRATE, &wrq);
-		nm_dev_sock_close (sk);
-	}
+	sk = nm_dev_sock_open (iface, DEV_WIRELESS, __func__, NULL);
+	if (!sk)
+		return 0;
+
+	nm_ioctl_info ("%s: About to GET IWRATE.", iface);
+	memset (&wrq, 0, sizeof (wrq));
+	err = iw_get_ext (nm_dev_sock_get_fd (sk), iface, SIOCGIWRATE, &wrq);
+	nm_dev_sock_close (sk);
 
 	return ((err >= 0) ? wrq.u.bitrate.value : 0);
 }
@@ -1338,6 +1342,7 @@ nm_device_802_11_wireless_get_bssid (NMDevice80211Wireless *self,
 	NMSock *		sk;
 	struct iwreq	wrq;
 	const char *	iface;
+	gboolean success = FALSE;
 
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (bssid != NULL);
@@ -1345,13 +1350,18 @@ nm_device_802_11_wireless_get_bssid (NMDevice80211Wireless *self,
 	memset (bssid, 0, sizeof (struct ether_addr));
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
-	if ((sk = nm_dev_sock_open (iface, DEV_WIRELESS, __FUNCTION__, NULL)))
-	{
-		nm_ioctl_info ("%s: About to GET IWAP.", iface);
-		if (iw_get_ext (nm_dev_sock_get_fd (sk), iface, SIOCGIWAP, &wrq) >= 0)
-			memcpy (bssid, &(wrq.u.ap_addr.sa_data), sizeof (struct ether_addr));
-		nm_dev_sock_close (sk);
+	sk = nm_dev_sock_open (iface, DEV_WIRELESS, __func__, NULL);
+	if (!sk) {
+		g_warning ("%s: failed to open device socket.", __func__);
+		return;
 	}
+
+	nm_ioctl_info ("%s: About to GET IWAP.", iface);
+	memset (&wrq, 0, sizeof (wrq));
+	if (iw_get_ext (nm_dev_sock_get_fd (sk), iface, SIOCGIWAP, &wrq) >= 0)
+		memcpy (bssid->ether_addr_octet, &(wrq.u.ap_addr.sa_data), ETH_ALEN);
+
+	nm_dev_sock_close (sk);
 }
 
 
@@ -2729,7 +2739,7 @@ activation_success_handler (NMDevice *dev)
 {
 	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
 	NMAccessPoint *ap;
-	struct ether_addr bssid;
+	struct ether_addr bssid = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
 	NMAccessPoint *tmp_ap;
 
 	ap = nm_device_802_11_wireless_get_activation_ap (self);

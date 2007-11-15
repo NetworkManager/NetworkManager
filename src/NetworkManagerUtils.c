@@ -202,25 +202,33 @@ int nm_null_safe_strcmp (const char *s1, const char *s2)
  * Compares an Ethernet address against known invalid addresses.
  *
  */
-gboolean nm_ethernet_address_is_valid (const struct ether_addr *test_addr)
+gboolean
+nm_ethernet_address_is_valid (const struct ether_addr *test_addr)
 {
-	gboolean			valid = FALSE;
-	struct ether_addr	invalid_addr1 = { {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF} };
-	struct ether_addr	invalid_addr2 = { {0x00, 0x00, 0x00, 0x00, 0x00, 0x00} };
-	struct ether_addr	invalid_addr3 = { {0x44, 0x44, 0x44, 0x44, 0x44, 0x44} };
-	struct ether_addr	invalid_addr4 = { {0x00, 0x30, 0xb4, 0x00, 0x00, 0x00} }; /* prism54 dummy MAC */
+	guint8 invalid_addr1[ETH_ALEN] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+	guint8 invalid_addr2[ETH_ALEN] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+	guint8 invalid_addr3[ETH_ALEN] = {0x44, 0x44, 0x44, 0x44, 0x44, 0x44};
+	guint8 invalid_addr4[ETH_ALEN] = {0x00, 0x30, 0xb4, 0x00, 0x00, 0x00}; /* prism54 dummy MAC */
 
 	g_return_val_if_fail (test_addr != NULL, FALSE);
 
 	/* Compare the AP address the card has with invalid ethernet MAC addresses. */
-	if (    (memcmp(test_addr, &invalid_addr1, sizeof(struct ether_addr)) != 0)
-		&& (memcmp(test_addr, &invalid_addr2, sizeof(struct ether_addr)) != 0)
-		&& (memcmp(test_addr, &invalid_addr3, sizeof(struct ether_addr)) != 0)
-		&& (memcmp(test_addr, &invalid_addr4, sizeof(struct ether_addr)) != 0)
-		&& ((test_addr->ether_addr_octet[0] & 1) == 0))			/* Multicast addresses */
-		valid = TRUE;
+	if (memcmp (test_addr->ether_addr_octet, &invalid_addr1, ETH_ALEN))
+		return FALSE;
 
-	return (valid);
+	if (memcmp (test_addr->ether_addr_octet, &invalid_addr2, ETH_ALEN))
+		return FALSE;
+
+	if (memcmp (test_addr->ether_addr_octet, &invalid_addr3, ETH_ALEN))
+		return FALSE;
+
+	if (memcmp (test_addr->ether_addr_octet, &invalid_addr4, ETH_ALEN))
+		return FALSE;
+
+	if (test_addr->ether_addr_octet[0] & 1)			/* Multicast addresses */
+		return FALSE;
+	
+	return TRUE;
 }
 
 
@@ -229,8 +237,12 @@ gboolean nm_ethernet_address_is_valid (const struct ether_addr *test_addr)
  *
  * Compare two Ethernet addresses and return TRUE if equal and FALSE if not.
  */
-gboolean nm_ethernet_addresses_are_equal (const struct ether_addr *a, const struct ether_addr *b)
+gboolean
+nm_ethernet_addresses_are_equal (const struct ether_addr *a, const struct ether_addr *b)
 {
+	g_return_val_if_fail (a != NULL, FALSE);
+	g_return_val_if_fail (b != NULL, FALSE);
+
 	if (memcmp (a, b, sizeof (struct ether_addr)))
 		return FALSE;
 	return TRUE;

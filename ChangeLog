@@ -1,5 +1,19 @@
 2007-11-15  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerUtils.c
+		- (nm_ethernet_address_is_valid): fix style, clarify
+		- (nm_ethernet_addresses_are_equal): don't try to memcmp NULLs
+
+	* src/nm-device-802-11-wireless.c
+		- (get_active_ap): handle failure from nm_device_802_11_wireless_get_bssid()
+		- (nm_device_802_11_wireless_get_ssid,
+		   nm_device_802_11_wireless_get_bssid,
+		   nm_device_802_11_wireless_get_bitrate): zero the wreq structure
+		   	before calling the ioctl; fixes valgrind-reported jump depends on
+			uninitialized value errors
+
+2007-11-15  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting.c
 		- (nm_setting_to_hash, one_property_cb): revert previous commit, it's
 			unecessary to serialize 'name'
