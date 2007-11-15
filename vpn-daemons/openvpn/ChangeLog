@@ -1,3 +1,8 @@
+2007-11-15  Dan Williams  <dcbw@redhat.com>
+
+	* properties/nm-vpnc.c
+		- Fixup for NMSettingConnection 'name' -> 'id' changes
+
 2007-11-07  Dan Williams  <dcbw@redhat.com>
 
 	* properties/nm-openvpn.c
