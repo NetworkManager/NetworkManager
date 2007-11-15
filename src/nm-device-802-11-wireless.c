@@ -496,7 +496,7 @@ static NMAccessPoint *
 get_active_ap (NMDevice80211Wireless *self,
                NMAccessPoint *ignore_ap)
 {
-	struct ether_addr bssid = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+	struct ether_addr bssid;
 	const GByteArray *ssid;
 	GSList *iter;
 
