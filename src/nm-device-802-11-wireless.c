@@ -2515,7 +2515,7 @@ real_act_stage2_config (NMDevice *dev)
 
 		nm_info ("Activation (%s/wireless): access point '%s' has security,"
 		         " but secrets are required.",
-		         iface, s_connection->name);
+		         iface, s_connection->id);
 
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
 
@@ -2537,11 +2537,11 @@ real_act_stage2_config (NMDevice *dev)
 		if (s_wireless->security) {
 			nm_info ("Activation (%s/wireless): connection '%s' has security"
 			         ", and secrets exist.  No new secrets needed.",
-			         iface, s_connection->name);
+			         iface, s_connection->id);
 		} else {
 			nm_info ("Activation (%s/wireless): connection '%s' requires no "
 			         "security.  No secrets needed.",
-			         iface, s_connection->name);
+			         iface, s_connection->id);
 		}
 	}
 

@@ -60,7 +60,7 @@ static NMPolicy *global_policy;
 
 
 static const char *
-get_connection_name (NMConnection *connection)
+get_connection_id (NMConnection *connection)
 {
 	NMSettingConnection *s_con;
 
@@ -69,7 +69,7 @@ get_connection_name (NMConnection *connection)
 	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 	g_return_val_if_fail (s_con != NULL, NULL);
 
-	return s_con->name;
+	return s_con->id;
 }
 
 /*
@@ -202,7 +202,7 @@ nm_policy_auto_get_best_device (NMPolicy *policy,
 		nm_info ("AUTO: Best wired device = %s, best wireless device = %s, best connection name = '%s'",
 		         best_wired_dev ? nm_device_get_iface (NM_DEVICE (best_wired_dev)) : "(null)",
 		         best_wireless_dev ? nm_device_get_iface (NM_DEVICE (best_wireless_dev)) : "(null)",
-		         *connection ? get_connection_name (*connection) : "(none)");
+		         *connection ? get_connection_id (*connection) : "(none)");
 	}
 
 	return *connection ? highest_priority_dev : NULL;
@@ -303,14 +303,14 @@ nm_policy_device_change_check (gpointer user_data)
 	} else if (!old_dev && new_dev) {
 		/* Activate new device */
 		nm_info ("SWITCH: no current connection, found better connection '%s (%s)'.",
-		         connection ? get_connection_name (connection) : "(none)",
+		         connection ? get_connection_id (connection) : "(none)",
 		         nm_device_get_iface (new_dev));
 		do_switch = TRUE;
 	} else if (old_dev && !new_dev) {
 		/* Terminate current connection */
 		nm_info ("SWITCH: terminating current connection '%s (%s)' because it's"
 		         " no longer valid.",
-		         old_connection ? get_connection_name (old_connection) : "(none)",
+		         old_connection ? get_connection_id (old_connection) : "(none)",
 		         nm_device_get_iface (old_dev));
 		do_switch = TRUE;
 	} else if (old_dev && new_dev) {
@@ -325,9 +325,9 @@ nm_policy_device_change_check (gpointer user_data)
 			if ((!old_user_requested || !old_has_link) && (new_dev != old_dev)) {
 				nm_info ("SWITCH: found better connection '%s (%s)' than "
 				         " current connection '%s (%s)'.",
-				         connection ? get_connection_name (connection) : "(none)",
+				         connection ? get_connection_id (connection) : "(none)",
 				         nm_device_get_iface (new_dev),
-				         old_connection ? get_connection_name (old_connection) : "(none)",
+				         old_connection ? get_connection_id (old_connection) : "(none)",
 				         nm_device_get_iface (old_dev));
 				do_switch = TRUE;
 			}
@@ -352,9 +352,9 @@ nm_policy_device_change_check (gpointer user_data)
 					         " than current connection '%s/%s'.  "
 					         "have_link=%d",
 					         nm_device_get_iface (new_dev),
-					         new_sc->name,
+					         new_sc->id,
 					         nm_device_get_iface (old_dev),
-					         old_sc->name,
+					         old_sc->id,
 					         old_has_link);
 					do_switch = TRUE;
 				}
@@ -427,7 +427,7 @@ device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 		/* Mark the connection invalid so it doesn't get automatically chosen */
 		if (connection) {
 			g_object_set_data (G_OBJECT (connection), INVALID_TAG, GUINT_TO_POINTER (TRUE));
-			nm_info ("Marking connection '%s' invalid.", get_connection_name (connection));
+			nm_info ("Marking connection '%s' invalid.", get_connection_id (connection));
 		}
 	} else if (state == NM_DEVICE_STATE_ACTIVATED) {
 		/* Clear the invalid tag on the connection */

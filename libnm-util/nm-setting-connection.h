@@ -16,7 +16,7 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_CONNECTION_SETTING_NAME "connection"
 
-#define NM_SETTING_CONNECTION_NAME        "name"
+#define NM_SETTING_CONNECTION_ID          "id"
 #define NM_SETTING_CONNECTION_TYPE        "type"
 #define NM_SETTING_CONNECTION_AUTOCONNECT "autoconnect"
 #define NM_SETTING_CONNECTION_TIMESTAMP   "timestamp"
@@ -24,7 +24,7 @@ G_BEGIN_DECLS
 typedef struct {
 	NMSetting parent;
 
-	char *name;
+	char *id;
 	char *type;
 	gboolean autoconnect;
 	guint64 timestamp;

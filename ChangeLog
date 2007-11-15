@@ -1,3 +1,19 @@
+2007-11-15  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-setting-connection.h
+	  libnm-util/nm-setting-connection.c
+		- Rename the 'name' property to 'id', because it conflicted with the
+			NMSetting superclass' 'name' property.
+
+	* libnm-util/nm-setting.c
+		- (nm_setting_to_hash): serialize the 'name' property
+		- (one_property_cb): ignore 'name' on deserialization of a connection
+
+	* src/nm-device-802-11-wireless.c
+	  src/vpn-manager/nm-vpn-connection.c
+	  src/NetworkManagerPolicy.c
+		- Fix up for NMSettingConnection 'name'->'id' changes
+
 2007-11-13  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-glib/nm-device-802-11-wireless.h

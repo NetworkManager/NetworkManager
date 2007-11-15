@@ -7,7 +7,7 @@ G_DEFINE_TYPE (NMSettingConnection, nm_setting_connection, NM_TYPE_SETTING)
 
 enum {
 	PROP_0,
-	PROP_NAME,
+	PROP_ID,
 	PROP_TYPE,
 	PROP_AUTOCONNECT,
 	PROP_TIMESTAMP,
@@ -34,7 +34,7 @@ verify (NMSetting *setting, GSList *all_settings)
 {
 	NMSettingConnection *self = NM_SETTING_CONNECTION (setting);
 
-	if (!self->name || !strlen (self->name))
+	if (!self->id || !strlen (self->id))
 		return FALSE;
 
 	if (!self->type || !strlen (self->type))
@@ -60,7 +60,7 @@ finalize (GObject *object)
 {
 	NMSettingConnection *self = NM_SETTING_CONNECTION (object);
 
-	g_free (self->name);
+	g_free (self->id);
 	g_free (self->type);
 
 	G_OBJECT_CLASS (nm_setting_connection_parent_class)->finalize (object);
@@ -73,9 +73,9 @@ set_property (GObject *object, guint prop_id,
 	NMSettingConnection *setting = NM_SETTING_CONNECTION (object);
 
 	switch (prop_id) {
-	case PROP_NAME:
-		g_free (setting->name);
-		setting->name = g_value_dup_string (value);
+	case PROP_ID:
+		g_free (setting->id);
+		setting->id = g_value_dup_string (value);
 		break;
 	case PROP_TYPE:
 		g_free (setting->type);
@@ -100,8 +100,8 @@ get_property (GObject *object, guint prop_id,
 	NMSettingConnection *setting = NM_SETTING_CONNECTION (object);
 
 	switch (prop_id) {
-	case PROP_NAME:
-		g_value_set_string (value, setting->name);
+	case PROP_ID:
+		g_value_set_string (value, setting->id);
 		break;
 	case PROP_TYPE:
 		g_value_set_string (value, setting->type);
@@ -132,10 +132,10 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 
 	/* Properties */
 	g_object_class_install_property
-		(object_class, PROP_NAME,
-		 g_param_spec_string (NM_SETTING_CONNECTION_NAME,
-						  "Name",
-						  "Connection name",
+		(object_class, PROP_ID,
+		 g_param_spec_string (NM_SETTING_CONNECTION_ID,
+						  "ID",
+						  "User-readable connection identifier/name",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 

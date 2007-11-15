@@ -449,7 +449,7 @@ nm_vpn_connection_get_name (NMVPNConnection *connection)
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 	setting = (NMSettingConnection *) nm_connection_get_setting (priv->connection, NM_TYPE_SETTING_CONNECTION);
 
-	return setting->name;
+	return setting->id;
 }
 
 NMVPNConnectionState
