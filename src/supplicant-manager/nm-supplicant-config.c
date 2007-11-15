@@ -507,8 +507,29 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig * self,
 
 	if (   (strcmp (setting->key_mgmt, "ieee8021x") == 0)
 	    || (strcmp (setting->key_mgmt, "wpa-eap") == 0)) {
+			char *phase1 = NULL;
+
 			if (!nm_supplicant_config_add_option (self, "fragment_size", "1300", -1, FALSE))
 				return FALSE;
+
+			if (setting->phase1_peapver) {
+				if (phase1)
+					phase1 = g_strdup_printf ("%s peapver=%s", phase1, setting->phase1_peapver);
+				else
+					phase1 = g_strdup_printf ("peapver=%s", setting->phase1_peapver);
+			}
+
+			if (setting->phase1_peaplabel) {
+				if (phase1)
+					phase1 = g_strdup_printf ("%s peaplabel=%s", phase1, setting->phase1_peaplabel);
+				else
+					phase1 = g_strdup_printf ("peaplabel=%s", setting->phase1_peaplabel);
+			}
+
+			if (phase1) {
+				ADD_STRING_VAL (phase1, "phase1", FALSE, FALSE, FALSE);
+				g_free (phase1);
+			}
 	}
 
 	return TRUE;

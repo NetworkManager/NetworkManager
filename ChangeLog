@@ -1,5 +1,11 @@
 2007-11-15  Dan Williams  <dcbw@redhat.com>
 
+	* src/supplicant-manager/nm-supplicant-config.c
+		- (nm_supplicant_config_add_setting_wireless_security): handle PEAP
+			options
+
+2007-11-15  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerUtils.c
 		- (nm_ethernet_address_is_valid): fix style, clarify
 		- (nm_ethernet_addresses_are_equal): don't try to memcmp NULLs
