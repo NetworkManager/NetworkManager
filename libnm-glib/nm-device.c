@@ -321,11 +321,8 @@ get_product_and_vendor (DBusGConnection *connection,
     }
 
 	if (parent && tmp_product && tmp_vendor) {
-		*product = tmp_product;
-		*vendor = tmp_vendor;
-	} else {
-		g_free (tmp_product);
-		g_free (tmp_vendor);
+		*product = g_strdup (tmp_product);
+		*vendor = g_strdup (tmp_vendor);
 	}
 	g_object_unref (proxy);
 

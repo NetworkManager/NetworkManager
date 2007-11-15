@@ -1,5 +1,11 @@
 2007-11-15  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/nm-device.c
+		- (get_product_and_vendor): don't try to free things that should be
+			freed
+
+2007-11-15  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerUtils.c
 		- (nm_ethernet_address_is_valid): unbreak previous fix
 
