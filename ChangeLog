@@ -1,5 +1,10 @@
 2007-11-15  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerUtils.c
+		- (nm_ethernet_address_is_valid): unbreak previous fix
+
+2007-11-15  Dan Williams  <dcbw@redhat.com>
+
 	* src/supplicant-manager/nm-supplicant-config.c
 		- (nm_supplicant_config_add_setting_wireless_security): handle PEAP
 			options

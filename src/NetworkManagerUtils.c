@@ -213,16 +213,16 @@ nm_ethernet_address_is_valid (const struct ether_addr *test_addr)
 	g_return_val_if_fail (test_addr != NULL, FALSE);
 
 	/* Compare the AP address the card has with invalid ethernet MAC addresses. */
-	if (memcmp (test_addr->ether_addr_octet, &invalid_addr1, ETH_ALEN))
+	if (!memcmp (test_addr->ether_addr_octet, &invalid_addr1, ETH_ALEN))
 		return FALSE;
 
-	if (memcmp (test_addr->ether_addr_octet, &invalid_addr2, ETH_ALEN))
+	if (!memcmp (test_addr->ether_addr_octet, &invalid_addr2, ETH_ALEN))
 		return FALSE;
 
-	if (memcmp (test_addr->ether_addr_octet, &invalid_addr3, ETH_ALEN))
+	if (!memcmp (test_addr->ether_addr_octet, &invalid_addr3, ETH_ALEN))
 		return FALSE;
 
-	if (memcmp (test_addr->ether_addr_octet, &invalid_addr4, ETH_ALEN))
+	if (!memcmp (test_addr->ether_addr_octet, &invalid_addr4, ETH_ALEN))
 		return FALSE;
 
 	if (test_addr->ether_addr_octet[0] & 1)			/* Multicast addresses */
