@@ -383,7 +383,7 @@ nm_device_update_description (NMDevice *device)
 	g_free (pd_parent_udi);
 }
 
-char *
+const char *
 nm_device_get_product (NMDevice *device)
 {
 	NMDevicePrivate *priv;
@@ -396,7 +396,7 @@ nm_device_get_product (NMDevice *device)
 	return priv->product;
 }
 
-char *
+const char *
 nm_device_get_vendor (NMDevice *device)
 {
 	NMDevicePrivate *priv;

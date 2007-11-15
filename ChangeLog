@@ -1,5 +1,12 @@
 2007-11-15  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/nm-device.h
+	  libnm-glib/nm-device.c
+		- (nm_device_get_product, nm_device_get_vendor): should be returning
+			const char *
+
+2007-11-15  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/nm-device.c
 		- (get_product_and_vendor): don't try to free things that should be
 			freed
