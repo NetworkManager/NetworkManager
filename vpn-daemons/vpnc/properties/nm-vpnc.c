@@ -167,7 +167,7 @@ impl_fill_connection (NetworkManagerVpnUI *self, NMConnection *connection)
 	NMSettingConnection *s_con;
 	NMSettingVPN *s_vpn;
 	NMSettingVPNProperties *s_vpn_props;
-	const char *name;
+	const char *id;
 	const char *gateway;
 	const char *groupname;
 	gboolean use_alternate_username;
@@ -191,9 +191,9 @@ impl_fill_connection (NetworkManagerVpnUI *self, NMConnection *connection)
 	g_assert (s_vpn_props);
 
 	/* Connection name */
-	name = gtk_entry_get_text (impl->w_connection_name);
-	g_assert (name);
-	s_con->name = g_strdup (name);
+	id = gtk_entry_get_text (impl->w_connection_name);
+	g_assert (id);
+	s_con->id = g_strdup (id);
 
 	/* Populate routes */
 	if (s_vpn->routes) {
@@ -278,8 +278,8 @@ impl_get_widget (NetworkManagerVpnUI *self, NMConnection *connection)
 	/* Populate UI bits from the NMConnection */
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_con);
-	g_assert (s_con->name);
-	gtk_entry_set_text (impl->w_connection_name, s_con->name);
+	g_assert (s_con->id);
+	gtk_entry_set_text (impl->w_connection_name, s_con->id);
 
 	s_vpn = NM_SETTING_VPN (nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN));
 	g_assert (s_vpn);
@@ -858,7 +858,7 @@ export_to_file (NetworkManagerVpnUIImpl *impl,
 		 "SingleDES=%s\n"
 		 "SPPhonebook=\n"
 		 "%s",
-		 /* Description */ s_con->name,
+		 /* Description */ s_con->id,
 		 /* Host */        gateway,
 		 /* GroupName */   groupname,
 		 /* Username */    username != NULL ? username : "",
@@ -894,9 +894,9 @@ impl_export (NetworkManagerVpnUI *self, NMConnection *connection)
 
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_con);
-	g_assert (s_con->name);
+	g_assert (s_con->id);
 
-	suggested_name = g_strdup_printf ("%s.pcf", s_con->name);
+	suggested_name = g_strdup_printf ("%s.pcf", s_con->id);
 	gtk_file_chooser_set_current_name (GTK_FILE_CHOOSER (dialog), suggested_name);
 	g_free (suggested_name);
 
