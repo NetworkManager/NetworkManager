@@ -128,7 +128,7 @@ nm_supplicant_config_add_option (NMSupplicantConfig *self,
 		return FALSE;
 	}
 
-	opt->value = g_malloc0 (sizeof (char) * len);
+	opt->value = g_malloc0 ((sizeof (char) * len) + 1);
 	if (opt->value == NULL) {
 		nm_debug ("Couldn't allocate memory for new config option value.");
 		g_slice_free (ConfigOption, opt);
