@@ -1342,7 +1342,6 @@ nm_device_802_11_wireless_get_bssid (NMDevice80211Wireless *self,
 	NMSock *		sk;
 	struct iwreq	wrq;
 	const char *	iface;
-	gboolean success = FALSE;
 
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (bssid != NULL);
@@ -2739,7 +2738,7 @@ activation_success_handler (NMDevice *dev)
 {
 	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
 	NMAccessPoint *ap;
-	struct ether_addr bssid = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0};
+	struct ether_addr bssid = { {0x0, 0x0, 0x0, 0x0, 0x0, 0x0} };
 	NMAccessPoint *tmp_ap;
 
 	ap = nm_device_802_11_wireless_get_activation_ap (self);
