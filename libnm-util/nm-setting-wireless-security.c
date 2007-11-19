@@ -53,87 +53,6 @@ nm_setting_wireless_security_new (void)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings)
-{
-	NMSettingWirelessSecurity *self = NM_SETTING_WIRELESS_SECURITY (setting);
-	const char *valid_key_mgmt[] = { "none", "ieee8021x", "wpa-none", "wpa-psk", "wpa-eap", NULL };
-	const char *valid_auth_algs[] = { "open", "shared", "leap", NULL };
-	const char *valid_protos[] = { "wpa", "rsn", NULL };
-	const char *valid_pairwise[] = { "wep40", "wep104", "tkip", "ccmp", NULL };
-	const char *valid_groups[] = { "wep40", "wep104", "tkip", "ccmp", NULL };
-	const char *valid_phase1_peapver[] = { "0", "1", NULL };
-
-	/* Every time a method gets added to the following, add one to EAPMethodNeedSecretsTable */
-	const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "sim", "psk", "fast", NULL };
-	const char *valid_phase2_auth[] = { "pap", "chap", "mschap", "mschapv2", "gtc", "otp", "md5", "tls", NULL };
-	const char *valid_phase2_autheap[] = { "md5", "mschapv2", "otp", "gtc", "tls", NULL };
-
-	if (!self->key_mgmt || !nm_utils_string_in_list (self->key_mgmt, valid_key_mgmt)) {
-		g_warning ("Missing or invalid key management");
-		return FALSE;
-	}
-
-	if (self->wep_tx_keyidx > 3) {
-		g_warning ("Invalid WEP key index");
-		return FALSE;
-	}
-
-	if (self->auth_alg && !nm_utils_string_in_list (self->auth_alg, valid_auth_algs)) {
-		g_warning ("Invalid authentication algorithm");
-		return FALSE;
-	}
-
-	if (self->proto && !nm_utils_string_slist_validate (self->proto, valid_protos)) {
-		g_warning ("Invalid authentication protocol");
-		return FALSE;
-	}
-
-	if (self->pairwise && !nm_utils_string_slist_validate (self->pairwise, valid_pairwise)) {
-		g_warning ("Invalid pairwise");
-		return FALSE;
-	}
-
-	if (self->group && !nm_utils_string_slist_validate (self->group, valid_groups)) {
-		g_warning ("Invalid group");
-		return FALSE;
-	}
-
-	if (self->eap && !nm_utils_string_slist_validate (self->eap, valid_eap)) {
-		g_warning ("Invalid eap");
-		return FALSE;
-	}
-
-	if (self->phase1_peapver && !nm_utils_string_in_list (self->phase1_peapver, valid_phase1_peapver)) {
-		g_warning ("Invalid phase1 peapver");
-		return FALSE;
-	}
-
-	if (self->phase1_peaplabel && strcmp (self->phase1_peaplabel, "1")) {
-		g_warning ("Invalid phase1 peaplabel");
-		return FALSE;
-	}
-
-	if (self->phase1_fast_provisioning && strcmp (self->phase1_fast_provisioning, "1")) {
-		g_warning ("Invalid phase1 fast provisioning");
-		return FALSE;
-	}
-
-	if (self->phase2_auth && !nm_utils_string_in_list (self->phase2_auth, valid_phase2_auth)) {
-		g_warning ("Invalid phase2 authentication");
-		return FALSE;
-	}
-
-	if (self->phase2_autheap && !nm_utils_string_in_list (self->phase2_autheap, valid_phase2_autheap)) {
-		g_warning ("Invalid phase2 autheap");
-		return FALSE;
-	}
-
-	/* FIXME: finish */
-
-	return TRUE;
-}
-
-static gboolean
 verify_wep_key (const char *key)
 {
 	int keylen, i;
@@ -216,6 +135,44 @@ need_secrets_tls (NMSettingWirelessSecurity *self,
 	}
 }
 
+static gboolean
+verify_tls (NMSettingWirelessSecurity *self, gboolean phase2)
+{
+	if (phase2) {
+		if (!self->phase2_client_cert || !self->phase2_client_cert->len)
+			return FALSE;
+	} else {
+		if (!self->client_cert || !self->client_cert->len)
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
+verify_ttls (NMSettingWirelessSecurity *self, gboolean phase2)
+{
+	if (!self->identity && !self->anonymous_identity)
+		return FALSE;
+
+	if (!self->phase2_auth && !self->phase2_autheap)
+		return FALSE;
+
+	return TRUE;
+}
+
+static gboolean
+verify_identity (NMSettingWirelessSecurity *self, gboolean phase2)
+{
+	return self->identity ? TRUE : FALSE;
+}
+
+static gboolean
+verify_nai (NMSettingWirelessSecurity *self, gboolean phase2)
+{
+	return self->nai ? TRUE : FALSE;
+}
+
 /* Implemented below... */
 static void need_secrets_phase2 (NMSettingWirelessSecurity *self,
                                  GPtrArray *secrets,
@@ -226,30 +183,34 @@ typedef void (*EAPMethodNeedSecretsFunc) (NMSettingWirelessSecurity *self,
                                           GPtrArray *secrets,
                                           gboolean phase2);
 
+typedef gboolean (*EAPMethodValidateFunc)(NMSettingWirelessSecurity *self,
+                                          gboolean phase2);
+
 typedef struct {
 	const char *method;
-	EAPMethodNeedSecretsFunc func;
-} EAPMethodNeedSecretsTable;
+	EAPMethodNeedSecretsFunc ns_func;
+	EAPMethodValidateFunc v_func;
+} EAPMethodsTable;
 
-static EAPMethodNeedSecretsTable eap_need_secrets_table[] = {
-	{ "leap", need_secrets_password },
-	{ "md5", need_secrets_password },
-	{ "pap", need_secrets_password },
-	{ "chap", need_secrets_password },
-	{ "mschap", need_secrets_password },
-	{ "mschapv2", need_secrets_password },
-	{ "fast", need_secrets_password },
-	{ "psk", need_secrets_eappsk },
-	{ "pax", need_secrets_eappsk },
-	{ "sake", need_secrets_eappsk },
-	{ "gpsk", need_secrets_eappsk },
-	{ "tls", need_secrets_tls },
-	{ "peap", need_secrets_phase2 },
-	{ "ttls", need_secrets_phase2 },
-	{ "sim", need_secrets_sim },
-	{ "gtc", NULL },  // FIXME: implement
-	{ "otp", NULL },  // FIXME: implement
-	{ NULL, NULL }
+static EAPMethodsTable eap_methods_table[] = {
+	{ "leap", need_secrets_password, verify_identity },
+	{ "md5", need_secrets_password, verify_identity },
+	{ "pap", need_secrets_password, verify_identity },
+	{ "chap", need_secrets_password, verify_identity },
+	{ "mschap", need_secrets_password, verify_identity },
+	{ "mschapv2", need_secrets_password, verify_identity },
+	{ "fast", need_secrets_password, verify_identity },
+	{ "psk", need_secrets_eappsk, verify_nai },
+	{ "pax", need_secrets_eappsk, NULL },
+	{ "sake", need_secrets_eappsk, verify_nai },
+	{ "gpsk", need_secrets_eappsk, verify_nai },
+	{ "tls", need_secrets_tls, verify_tls },
+	{ "peap", need_secrets_phase2, NULL },
+	{ "ttls", need_secrets_phase2, verify_ttls },
+	{ "sim", need_secrets_sim, NULL },
+	{ "gtc", NULL, NULL },  // FIXME: implement
+	{ "otp", NULL, NULL },  // FIXME: implement
+	{ NULL, NULL, NULL }
 };
 
 static void
@@ -274,11 +235,11 @@ need_secrets_phase2 (NMSettingWirelessSecurity *self,
 	}
 
 	/* Ask the configured phase2 method if it needs secrets */
-	for (i = 0; eap_need_secrets_table[i].method; i++) {
-		if (eap_need_secrets_table[i].func == NULL)
+	for (i = 0; eap_methods_table[i].method; i++) {
+		if (eap_methods_table[i].ns_func == NULL)
 			continue;
-		if (strcmp (eap_need_secrets_table[i].method, method)) {
-			(*eap_need_secrets_table[i].func) (self, secrets, TRUE);
+		if (strcmp (eap_methods_table[i].method, method)) {
+			(*eap_methods_table[i].ns_func) (self, secrets, TRUE);
 			break;
 		}
 	}
@@ -352,11 +313,11 @@ need_secrets (NMSetting *setting)
 			const char *method = (const char *) iter->data;
 			int i;
 
-			for (i = 0; eap_need_secrets_table[i].method; i++) {
-				if (eap_need_secrets_table[i].func == NULL)
+			for (i = 0; eap_methods_table[i].method; i++) {
+				if (eap_methods_table[i].ns_func == NULL)
 					continue;
-				if (!strcmp (eap_need_secrets_table[i].method, method)) {
-					(*eap_need_secrets_table[i].func) (self, secrets, FALSE);
+				if (!strcmp (eap_methods_table[i].method, method)) {
+					(*eap_methods_table[i].ns_func) (self, secrets, FALSE);
 
 					/* Only break out of the outer loop if this EAP method
 					 * needed secrets.
@@ -380,6 +341,107 @@ no_secrets:
 	if (secrets)
 		g_ptr_array_free (secrets, TRUE);
 	return NULL;
+}
+
+static gboolean
+verify (NMSetting *setting, GSList *all_settings)
+{
+	NMSettingWirelessSecurity *self = NM_SETTING_WIRELESS_SECURITY (setting);
+	const char *valid_key_mgmt[] = { "none", "ieee8021x", "wpa-none", "wpa-psk", "wpa-eap", NULL };
+	const char *valid_auth_algs[] = { "open", "shared", "leap", NULL };
+	const char *valid_protos[] = { "wpa", "rsn", NULL };
+	const char *valid_pairwise[] = { "wep40", "wep104", "tkip", "ccmp", NULL };
+	const char *valid_groups[] = { "wep40", "wep104", "tkip", "ccmp", NULL };
+	const char *valid_phase1_peapver[] = { "0", "1", NULL };
+
+	/* Every time a method gets added to the following, add one to EAPMethodNeedSecretsTable */
+	const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "sim", "psk", "fast", NULL };
+	const char *valid_phase2_auth[] = { "pap", "chap", "mschap", "mschapv2", "gtc", "otp", "md5", "tls", NULL };
+	const char *valid_phase2_autheap[] = { "md5", "mschapv2", "otp", "gtc", "tls", NULL };
+
+	if (!self->key_mgmt || !nm_utils_string_in_list (self->key_mgmt, valid_key_mgmt)) {
+		g_warning ("Missing or invalid key management");
+		return FALSE;
+	}
+
+	if (self->wep_tx_keyidx > 3) {
+		g_warning ("Invalid WEP key index");
+		return FALSE;
+	}
+
+	if (self->auth_alg && !nm_utils_string_in_list (self->auth_alg, valid_auth_algs)) {
+		g_warning ("Invalid authentication algorithm");
+		return FALSE;
+	}
+
+	if (self->proto && !nm_utils_string_slist_validate (self->proto, valid_protos)) {
+		g_warning ("Invalid authentication protocol");
+		return FALSE;
+	}
+
+	if (self->pairwise && !nm_utils_string_slist_validate (self->pairwise, valid_pairwise)) {
+		g_warning ("Invalid pairwise");
+		return FALSE;
+	}
+
+	if (self->group && !nm_utils_string_slist_validate (self->group, valid_groups)) {
+		g_warning ("Invalid group");
+		return FALSE;
+	}
+
+	if (self->eap) {
+		GSList *iter;
+
+		if (!nm_utils_string_slist_validate (self->eap, valid_eap)) {
+			g_warning ("Invalid eap");
+			return FALSE;
+		}
+
+		/* Ask each configured EAP method if its valid */
+		for (iter = self->eap; iter; iter = g_slist_next (iter)) {
+			const char *method = (const char *) iter->data;
+			int i;
+
+			for (i = 0; eap_methods_table[i].method; i++) {
+				if (eap_methods_table[i].v_func == NULL)
+					continue;
+				if (!strcmp (eap_methods_table[i].method, method)) {
+					if (!(*eap_methods_table[i].v_func) (self, FALSE))
+						return FALSE;
+					break;
+				}
+			}
+		}
+	}
+
+	if (self->phase1_peapver && !nm_utils_string_in_list (self->phase1_peapver, valid_phase1_peapver)) {
+		g_warning ("Invalid phase1 peapver");
+		return FALSE;
+	}
+
+	if (self->phase1_peaplabel && strcmp (self->phase1_peaplabel, "1")) {
+		g_warning ("Invalid phase1 peaplabel");
+		return FALSE;
+	}
+
+	if (self->phase1_fast_provisioning && strcmp (self->phase1_fast_provisioning, "1")) {
+		g_warning ("Invalid phase1 fast provisioning");
+		return FALSE;
+	}
+
+	if (self->phase2_auth && !nm_utils_string_in_list (self->phase2_auth, valid_phase2_auth)) {
+		g_warning ("Invalid phase2 authentication");
+		return FALSE;
+	}
+
+	if (self->phase2_autheap && !nm_utils_string_in_list (self->phase2_autheap, valid_phase2_autheap)) {
+		g_warning ("Invalid phase2 autheap");
+		return FALSE;
+	}
+
+	/* FIXME: finish */
+
+	return TRUE;
 }
 
 static void

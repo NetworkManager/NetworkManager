@@ -1,3 +1,10 @@
+2007-11-16  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-setting-wireless-security.c
+		- (verify_tls, verify_ttls, verify_identity, verify_nai): do some
+			minimal verification of EAP methods too
+		- (verify): verify phase1 eap methods too
+
 2007-11-15  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-glib/nm-device.h
