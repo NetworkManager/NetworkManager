@@ -1,5 +1,13 @@
 2007-11-20  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-utils.c
+		- (nm_utils_convert_strv_to_string, nm_utils_convert_uint_array_to_string,
+		   nm_utils_convert_ip4_addr_struct_array_to_string,
+		   nm_utils_register_value_transformations): print out the readable
+			values of more types of properties of NMSettings subclasses
+
+2007-11-20  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting-ip4-config.c
 		- (ip4_addresses_from_gvalue, ip4_addresses_to_gvalue,
 		   nm_setting_ip4_config_class_init): apparently dbus-glib can't

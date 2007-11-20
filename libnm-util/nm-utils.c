@@ -429,6 +429,9 @@ nm_utils_string_slist_validate (GSList *list, const char **valid_values)
 	return TRUE;
 }
 
+#define TYPE_GSLIST_OF_STRINGS dbus_g_type_get_collection ("GSList", G_TYPE_STRING)
+#define TYPE_ARRAY_OF_IP4ADDR_STRUCTS dbus_g_type_get_collection ("GPtrArray", dbus_g_type_get_collection ("GArray", G_TYPE_UINT))
+
 static void
 nm_utils_convert_strv_to_slist (const GValue *src_value, GValue *dest_value)
 {
@@ -443,7 +446,118 @@ nm_utils_convert_strv_to_slist (const GValue *src_value, GValue *dest_value)
 	while (str[i])
 		list = g_slist_prepend (list, g_strdup (str[i++]));
 
-	g_value_set_boxed (dest_value, g_slist_reverse (list));
+	g_value_take_boxed (dest_value, g_slist_reverse (list));
+}
+
+static void
+nm_utils_convert_strv_to_string (const GValue *src_value, GValue *dest_value)
+{
+	GSList *strings;
+	GString *printable;
+	GSList *iter;
+
+	g_return_if_fail (g_type_is_a (G_VALUE_TYPE (src_value), TYPE_GSLIST_OF_STRINGS));
+
+	strings = (GSList *) g_value_get_boxed (src_value);
+
+	printable = g_string_new ("[");
+	for (iter = strings; iter; iter = g_slist_next (iter)) {
+		if (iter != strings)
+			g_string_append (printable, ", '");
+		else
+			g_string_append_c (printable, '\'');
+		g_string_append (printable, iter->data);
+		g_string_append_c (printable, '\'');
+	}
+	g_string_append_c (printable, ']');
+
+	g_value_take_string (dest_value, printable->str);
+	g_string_free (printable, FALSE);
+}
+
+static void
+nm_utils_convert_uint_array_to_string (const GValue *src_value, GValue *dest_value)
+{
+	GArray *array;
+	GString *printable;
+	guint i = 0;
+
+	g_return_if_fail (g_type_is_a (G_VALUE_TYPE (src_value), DBUS_TYPE_G_UINT_ARRAY));
+
+	array = (GArray *) g_value_get_boxed (src_value);
+
+	printable = g_string_new ("[");
+	while (i < array->len) {
+		char buf[INET_ADDRSTRLEN + 1];
+		struct in_addr addr;
+
+		if (i > 0)
+			g_string_append (printable, ", ");
+
+		memset (buf, 0, sizeof (buf));
+		addr.s_addr = g_array_index (array, guint32, i++);
+		inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN);
+		g_string_append_printf (printable, "%u (%s)", addr.s_addr, buf);
+	}
+	g_string_append_c (printable, ']');
+
+	g_value_take_string (dest_value, printable->str);
+	g_string_free (printable, FALSE);
+}
+
+static void
+nm_utils_convert_ip4_addr_struct_array_to_string (const GValue *src_value, GValue *dest_value)
+{
+	GPtrArray *ptr_array;
+	GString *printable;
+	guint i = 0;
+
+	g_return_if_fail (g_type_is_a (G_VALUE_TYPE (src_value), TYPE_ARRAY_OF_IP4ADDR_STRUCTS));
+
+	ptr_array = (GPtrArray *) g_value_get_boxed (src_value);
+
+	printable = g_string_new ("[");
+	while (i < ptr_array->len) {
+		GArray *array;
+		char buf[INET_ADDRSTRLEN + 1];
+		struct in_addr addr;
+
+		if (i > 0)
+			g_string_append (printable, ", ");
+
+		g_string_append (printable, "{ ");
+		array = (GArray *) g_ptr_array_index (ptr_array, i++);
+		if (array->len < 2) {
+			g_string_append (printable, "invalid");
+			continue;
+		}
+
+		memset (buf, 0, sizeof (buf));
+		addr.s_addr = g_array_index (array, guint32, 0);
+		inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN);
+		g_string_append_printf (printable, "ip = %s", buf);
+		g_string_append (printable, ", ");
+
+		memset (buf, 0, sizeof (buf));
+		addr.s_addr = g_array_index (array, guint32, 1);
+		inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN);
+		g_string_append_printf (printable, "mask = %s", buf);
+
+		if (array->len > 2) {
+			g_string_append (printable, ", ");
+
+			memset (buf, 0, sizeof (buf));
+			addr.s_addr = g_array_index (array, guint32, 2);
+			inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN);
+			g_string_append_printf (printable, "gw = %s", buf);
+		}
+
+		g_string_append (printable, " }");
+	}
+	g_string_append_c (printable, ']');
+
+	g_value_take_string (dest_value, printable->str);
+	g_string_free (printable, FALSE);
 }
 
 void
@@ -453,8 +567,17 @@ nm_utils_register_value_transformations (void)
 
 	if (G_UNLIKELY (!registered)) {
 		g_value_register_transform_func (G_TYPE_STRV, 
-								   dbus_g_type_get_collection ("GSList", G_TYPE_STRING),
-								   nm_utils_convert_strv_to_slist);
+		                                 TYPE_GSLIST_OF_STRINGS,
+		                                 nm_utils_convert_strv_to_slist);
+		g_value_register_transform_func (TYPE_GSLIST_OF_STRINGS,
+		                                 G_TYPE_STRING, 
+		                                 nm_utils_convert_strv_to_string);
+		g_value_register_transform_func (DBUS_TYPE_G_UINT_ARRAY,
+		                                 G_TYPE_STRING, 
+		                                 nm_utils_convert_uint_array_to_string);
+		g_value_register_transform_func (TYPE_ARRAY_OF_IP4ADDR_STRUCTS,
+		                                 G_TYPE_STRING, 
+		                                 nm_utils_convert_ip4_addr_struct_array_to_string);
 		registered = TRUE;
 	}
 }
