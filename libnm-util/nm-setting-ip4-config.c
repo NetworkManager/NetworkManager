@@ -62,23 +62,23 @@ finalize (GObject *object)
 static GSList *
 ip4_addresses_from_gvalue (const GValue *value)
 {
-	GPtrArray *ptr_array;
+	GPtrArray *addresses;
 	int i;
 	GSList *list = NULL;
 
-	ptr_array = (GPtrArray *) g_value_get_boxed (value);
-	for (i = 0; i < ptr_array->len; i++) {
-		GValueArray *value_array = (GValueArray *) g_ptr_array_index (ptr_array, i);
+	addresses = (GPtrArray *) g_value_get_boxed (value);
+	for (i = 0; i < addresses->len; i++) {
+		GArray *array = (GArray *) g_ptr_array_index (addresses, i);
 
-		if (value_array->n_values == 2 || value_array->n_values == 3) {
+		if (array->len == 2 || array->len == 3) {
 			NMSettingIP4Address *ip4_addr;
 
 			ip4_addr = g_new0 (NMSettingIP4Address, 1);
-			ip4_addr->address = g_value_get_uint (g_value_array_get_nth (value_array, 0));
-			ip4_addr->netmask = g_value_get_uint (g_value_array_get_nth (value_array, 1));
+			ip4_addr->address = g_array_index (array, guint32, 0);
+			ip4_addr->netmask = g_array_index (array, guint32, 1);
 
-			if (value_array->n_values == 3)
-				ip4_addr->gateway = g_value_get_uint (g_value_array_get_nth (value_array, 2));
+			if (array->len == 3)
+				ip4_addr->gateway = g_array_index (array, guint32, 2);
 
 			list = g_slist_prepend (list, ip4_addr);
 		} else
@@ -91,26 +91,30 @@ ip4_addresses_from_gvalue (const GValue *value)
 static void
 ip4_addresses_to_gvalue (GSList *list, GValue *value)
 {
-	GPtrArray *ptr_array;
+	GPtrArray *addresses;
 	GSList *iter;
 
-	ptr_array = g_ptr_array_new ();
+	addresses = g_ptr_array_new ();
 
 	for (iter = list; iter; iter = iter->next) {
 		NMSettingIP4Address *ip4_addr = (NMSettingIP4Address *) iter->data;
 		GArray *array;
+		const guint32 empty_val = 0;
 
-		array = g_array_sized_new (FALSE, FALSE, sizeof (guint32), 3);
+		array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
+
 		g_array_append_val (array, ip4_addr->address);
 		g_array_append_val (array, ip4_addr->netmask);
 
 		if (ip4_addr->gateway)
 			g_array_append_val (array, ip4_addr->gateway);
+		else
+			g_array_append_val (array, empty_val);
 
-		g_ptr_array_add (ptr_array, array);
+		g_ptr_array_add (addresses, array);
 	}
 
-	g_value_take_boxed (value, ptr_array);
+	g_value_take_boxed (value, addresses);
 }
 
 static void
@@ -209,6 +213,6 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		 nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_ADDRESSES,
 							   "Addresses",
 							   "List of NMSettingIP4Addresses",
-							   dbus_g_type_get_collection ("GPtrArray", G_TYPE_VALUE_ARRAY),
+							   dbus_g_type_get_collection ("GPtrArray", dbus_g_type_get_collection ("GArray", G_TYPE_UINT)),
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 }

@@ -1,3 +1,11 @@
+2007-11-20  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-setting-ip4-config.c
+		- (ip4_addresses_from_gvalue, ip4_addresses_to_gvalue,
+		   nm_setting_ip4_config_class_init): apparently dbus-glib can't
+			marshal GValueArrays inside collections, so switch to types that it
+			can actually marshal/demarshal
+
 2007-11-16  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/nm-setting-wireless-security.c
