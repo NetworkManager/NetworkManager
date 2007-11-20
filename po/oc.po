@@ -1,23 +1,26 @@
+# translation of oc.po to Occitan
 # Occitan translation of NetworkManager.
 # Copyright (C) 2004-2007 The GNOME Foundation.
 # This file is distributed under the same license as the NetworkManager package.
 #
+#
 # Raphaël Tournoy <lexpas@free.fr>, 2004.
 # Stéphane Raimbault <stephae.raimbault@free.fr>, 2006.
 # Jonathan Ernst <jonathan@ernstfamily.ch>, 2007.
-#
+# Yannig Marchegay (Kokoyaya) <yannig@marchegay.org>, 2007.
 msgid ""
 msgstr ""
-"Project-Id-Version: NetworkManager 0.7.0\n"
+"Project-Id-Version: oc\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2007-02-11 05:01+0100\n"
-"PO-Revision-Date: 2007-05-17 15:32+0200\n"
-"Last-Translator: Jonathan Ernst <jonathan@ernstfamily.ch>\n"
-"Language-Team: GNOME French Team <gnomefr@traduc.org>\n"
+"PO-Revision-Date: 2007-11-20 14:32+0100\n"
+"Last-Translator: Yannig Marchegay (Kokoyaya) <yannig@marchegay.org>\n"
+"Language-Team: Occitan <ubuntu-l10n-oci@lists.ubuntu.com>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n>1;"
+"X-Generator: KBabel 1.11.4\n"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.c:417
 msgid "Cannot add VPN connection"
@@ -168,14 +171,12 @@ msgstr "pas cap"
 
 #: ../src/nm-netlink-monitor.c:174
 #, c-format
-msgid ""
-"unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgid "unable to create netlink socket for monitoring wired ethernet devices - %s"
 msgstr ""
 
 #: ../src/nm-netlink-monitor.c:192
 #, c-format
-msgid ""
-"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgid "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
 msgstr ""
 
 #: ../src/nm-netlink-monitor.c:427
