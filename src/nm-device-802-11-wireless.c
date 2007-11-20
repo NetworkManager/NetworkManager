@@ -1047,6 +1047,8 @@ nm_device_802_11_wireless_get_frequency (NMDevice80211Wireless *self)
 	if (!sk)
 		return 0;
 
+	memset (&wrq, 0, sizeof (struct iwreq));
+
 	nm_ioctl_info ("%s: About to GET IWFREQ.", iface);
 	err = iw_get_ext (nm_dev_sock_get_fd (sk), iface, SIOCGIWFREQ, &wrq);
 	if (err >= 0)
