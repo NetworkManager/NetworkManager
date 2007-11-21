@@ -76,6 +76,19 @@ finalize (GObject *object)
 }
 
 static void
+copy_hash (gpointer key, gpointer data, gpointer user_data)
+{
+	NMSettingVPNProperties *setting = NM_SETTING_VPN_PROPERTIES (user_data);
+	GValue *src_val = (GValue *) data;
+	GValue *copy_val;
+
+	copy_val = g_slice_new0 (GValue);
+	g_value_init (copy_val, G_VALUE_TYPE (src_val));
+	g_value_copy (src_val, copy_val);
+	g_hash_table_insert (setting->data, g_strdup (key), copy_val);
+}
+
+static void
 set_property (GObject *object, guint prop_id,
 		    const GValue *value, GParamSpec *pspec)
 {
@@ -85,7 +98,10 @@ set_property (GObject *object, guint prop_id,
 	case PROP_DATA:
 		if (setting->data)
 			g_hash_table_destroy (setting->data);
-		setting->data = g_value_dup_boxed (value);
+
+		/* Must make a deep copy of the hash table here... */
+		setting->data = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, nm_gvalue_destroy);
+		g_hash_table_foreach (g_value_get_boxed (value), copy_hash, setting);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

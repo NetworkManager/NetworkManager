@@ -1,5 +1,11 @@
 2007-11-21  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting-vpn-properties.c
+		- (set_property): must deep-copy the given settings hash, otherwise
+			double-free errors occur when the setting is disposed of
+
+2007-11-21  Dan Williams  <dcbw@redhat.com>
+
 	* src/vpn-manager/nm-vpn-act-request.h
 	  src/vpn-manager/nm-vpn-act-request.c
 		- Remove; unused
