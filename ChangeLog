@@ -1,3 +1,9 @@
+2007-11-21  Dan Williams  <dcbw@redhat.com>
+
+	* src/vpn-manager/nm-vpn-act-request.h
+	  src/vpn-manager/nm-vpn-act-request.c
+		- Remove; unused
+
 2007-11-20  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/nm-utils.c
