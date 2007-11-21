@@ -1158,21 +1158,27 @@ set_ap_scan_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 	NMSupplicantInfo *info = (NMSupplicantInfo *) user_data;
 	GError *err = NULL;
 	guint32 tmp;
+	DBusGProxyCall *call;
 
 	if (!dbus_g_proxy_end_call (proxy, call_id, &err, G_TYPE_UINT, &tmp, G_TYPE_INVALID)) {
 		nm_warning ("Couldn't send AP scan mode to the supplicant interface: %s.", err->message);
 		emit_error_helper (info->interface, err);
 		g_error_free (err);
-	} else {
-		DBusGProxyCall *call;
-
-		info = nm_supplicant_info_new (info->interface, proxy, info->store);
-		call = dbus_g_proxy_begin_call (proxy, "addNetwork", add_network_cb,
-										info,
-										nm_supplicant_info_destroy,
-										G_TYPE_INVALID);
-		nm_supplicant_info_set_call (info, call);
+		return;
 	}
+
+{
+NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (info->interface);
+int ap_scan = nm_supplicant_config_get_ap_scan (priv->cfg);
+nm_info ("Config: set interface ap_scan to %d", ap_scan);
+}
+
+	info = nm_supplicant_info_new (info->interface, proxy, info->store);
+	call = dbus_g_proxy_begin_call (proxy, "addNetwork", add_network_cb,
+									info,
+									nm_supplicant_info_destroy,
+									G_TYPE_INVALID);
+	nm_supplicant_info_set_call (info, call);
 }
 
 gboolean
