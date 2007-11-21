@@ -273,6 +273,7 @@ libnm-glib/libnm_glib.pc
 libnm-glib/Makefile
 callouts/Makefile
 dispatcher-daemon/Makefile
+system-settings/Makefile
 test/Makefile
 test/test-common/Makefile
 initscript/Makefile

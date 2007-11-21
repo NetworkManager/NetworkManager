@@ -1,5 +1,12 @@
 2007-11-21  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/*
+		- Add Soren's system settings service.  Needs work for distros other
+			than Fedora; the backends from NM should mostly migrate to here
+			and be converted to GObjects
+
+2007-11-21  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting-vpn-properties.c
 		- (set_property): must deep-copy the given settings hash, otherwise
 			double-free errors occur when the setting is disposed of

@@ -9,7 +9,8 @@ SUBDIRS = 				\
 	   man				\
 	   include			\
 	   introspection	\
-	   callouts
+	   callouts \
+	   system-settings
 
 EXTRA_DIST =				\
 	CONTRIBUTING			\
