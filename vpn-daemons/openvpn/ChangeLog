@@ -1,3 +1,8 @@
+2007-11-23  Tim Niemueller <tim@niemueller.de>
+
+	* configure.in: raise version number to 0.7.0 to reflect the
+	dependency on the new NM and to separate it from the 0.6 branch.
+
 2007-11-15  Dan Williams  <dcbw@redhat.com>
 
 	* properties/nm-vpnc.c
