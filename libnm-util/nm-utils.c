@@ -27,6 +27,7 @@
 #include <errno.h>
 #include <iwlib.h>
 #include <wireless.h>
+#include <arpa/inet.h>
 
 #include <glib.h>
 #include <glib-object.h>
@@ -329,7 +330,7 @@ value_destroy (gpointer data)
 static void
 value_dup (gpointer key, gpointer val, gpointer user_data)
 {
-	GHashTable *dup = (GHashTable *) user_data;
+	GHashTable *table = (GHashTable *) user_data;
 	GValue *value = (GValue *) val;
 	GValue *dup_value;
 
@@ -337,23 +338,23 @@ value_dup (gpointer key, gpointer val, gpointer user_data)
 	g_value_init (dup_value, G_VALUE_TYPE (val));
 	g_value_copy (value, dup_value);
 
-	g_hash_table_insert (dup, g_strdup ((char *) key), dup_value);
+	g_hash_table_insert (table, g_strdup ((char *) key), dup_value);
 }
 
 GHashTable *
 nm_utils_gvalue_hash_dup (GHashTable *hash)
 {
-	GHashTable *dup;
+	GHashTable *table;
 
 	g_return_val_if_fail (hash != NULL, NULL);
 
-	dup = g_hash_table_new_full (g_str_hash, g_str_equal,
+	table = g_hash_table_new_full (g_str_hash, g_str_equal,
 						    (GDestroyNotify) g_free,
 						    value_destroy);
 
-	g_hash_table_foreach (hash, value_dup, dup);
+	g_hash_table_foreach (hash, value_dup, table);
 
-	return dup;
+	return table;
 }
 
 char *

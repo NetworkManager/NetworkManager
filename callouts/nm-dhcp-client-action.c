@@ -43,7 +43,7 @@
  * @return TRUE on success, FALSE on failure
  *
  */
-dbus_bool_t wpa_dbus_dict_open_write(DBusMessageIter *iter,
+static dbus_bool_t wpa_dbus_dict_open_write(DBusMessageIter *iter,
 				     DBusMessageIter *iter_dict)
 {
 	dbus_bool_t result;
@@ -73,7 +73,7 @@ dbus_bool_t wpa_dbus_dict_open_write(DBusMessageIter *iter,
  * @return TRUE on success, FALSE on failure
  *
  */
-dbus_bool_t wpa_dbus_dict_close_write(DBusMessageIter *iter,
+static dbus_bool_t wpa_dbus_dict_close_write(DBusMessageIter *iter,
 				      DBusMessageIter *iter_dict)
 {
 	if (!iter || !iter_dict)
@@ -162,7 +162,7 @@ static dbus_bool_t _wpa_dbus_add_dict_entry_byte_array(
  * @return TRUE on success, FALSE on failure
  *
  */
-dbus_bool_t wpa_dbus_dict_append_byte_array(DBusMessageIter *iter_dict,
+static dbus_bool_t wpa_dbus_dict_append_byte_array(DBusMessageIter *iter_dict,
 					    const char *key,
 					    const char *value,
 					    const dbus_uint32_t value_len)
@@ -178,7 +178,7 @@ dbus_bool_t wpa_dbus_dict_append_byte_array(DBusMessageIter *iter_dict,
 
 static const char * ignore[] = {"PATH", "SHLVL", "_", "PWD", "dhc_dbus", NULL};
 
-dbus_bool_t
+static dbus_bool_t
 build_message (DBusMessage * message)
 {
 	char ** env = NULL;
@@ -229,7 +229,7 @@ out:
 	return success;
 }
 
-DBusConnection *
+static DBusConnection *
 dbus_init (void)
 {
 	DBusConnection * connection;

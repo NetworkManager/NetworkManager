@@ -61,6 +61,7 @@ void                 nm_vpn_connection_activate        (NMVPNConnection *connect
 const char          *nm_vpn_connection_get_object_path (NMVPNConnection *connection);
 const char          *nm_vpn_connection_get_name        (NMVPNConnection *connection);
 NMVPNConnectionState nm_vpn_connection_get_state       (NMVPNConnection *connection);
+const char *         nm_vpn_connection_get_banner      (NMVPNConnection *connection);
 void                 nm_vpn_connection_fail            (NMVPNConnection *connection,
                                                         NMVPNConnectionStateReason reason);
 void                 nm_vpn_connection_disconnect      (NMVPNConnection *connection,

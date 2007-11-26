@@ -171,7 +171,7 @@ nm_supplicant_config_add_blob (NMSupplicantConfig *self,
 
 	priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
 
-	type = nm_supplicant_settings_verify_setting (key, value->data, value->len);
+	type = nm_supplicant_settings_verify_setting (key, (const char *) value->data, value->len);
 	if (type == TYPE_INVALID) {
 		nm_debug ("Key '%s' and/or it's contained value is invalid.", key);
 		return FALSE;
@@ -272,7 +272,7 @@ get_hash_cb (gpointer key, gpointer value, gpointer user_data)
 		break;
 	case TYPE_BYTES:
 		array = g_byte_array_sized_new (opt->len);
-		g_byte_array_append (array, opt->value, opt->len);
+		g_byte_array_append (array, (const guint8 *) opt->value, opt->len);
 		g_value_init (variant, DBUS_TYPE_G_UCHAR_ARRAY);
 		g_value_set_boxed (variant, array);
 		g_byte_array_free (array, TRUE);

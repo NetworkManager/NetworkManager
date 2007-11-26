@@ -799,12 +799,6 @@ nm_named_manager_finalize (GObject *object)
 	G_OBJECT_CLASS (nm_named_manager_parent_class)->finalize (object);
 }
 
-NMNamedManager *
-nm_named_manager_new (void)
-{
-	return NM_NAMED_MANAGER (g_object_new (NM_TYPE_NAMED_MANAGER, NULL));
-}
-
 static void
 nm_named_manager_class_init (NMNamedManagerClass *klass)
 {

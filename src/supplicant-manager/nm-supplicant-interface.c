@@ -141,7 +141,7 @@ typedef struct {
 	DBusGProxyCall *call;
 } NMSupplicantInfo;
 
-NMSupplicantInfo *
+static NMSupplicantInfo *
 nm_supplicant_info_new (NMSupplicantInterface *interface,
 						DBusGProxy *proxy,
 						NMCallStore *store)

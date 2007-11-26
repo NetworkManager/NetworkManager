@@ -14,6 +14,9 @@
 #include "nm-ppp-status.h"
 #include "nm-pppd-plugin-glue.h"
 
+GType nm_pppd_plugin_get_type (void);
+int plugin_init (void);
+
 char pppd_version[] = VERSION;
 
 #define NM_TYPE_PPPD_PLUGIN            (nm_pppd_plugin_get_type ())
@@ -115,9 +118,9 @@ nm_pppd_plugin_new (DBusGConnection *bus)
 }
 
 static void
-nm_pppd_plugin_state_changed (NMPppdPlugin *plugin, NMPPPStatus status)
+nm_pppd_plugin_state_changed (NMPppdPlugin *plugin, NMPPPStatus ppp_status)
 {
-	g_signal_emit (plugin, signals[STATE_CHANGED], 0, status);
+	g_signal_emit (plugin, signals[STATE_CHANGED], 0, ppp_status);
 }
 
 static void
@@ -132,72 +135,72 @@ static void
 nm_phasechange (void *data, int arg)
 {
 	NMPppdPlugin *plugin = NM_PPPD_PLUGIN (data);
-	NMPPPStatus status = NM_PPP_STATUS_UNKNOWN;
-	char *phase;
+	NMPPPStatus ppp_status = NM_PPP_STATUS_UNKNOWN;
+	char *ppp_phase;
 
 	switch (arg) {
 	case PHASE_DEAD:
-		status = NM_PPP_STATUS_DEAD;
-		phase = "dead";
+		ppp_status = NM_PPP_STATUS_DEAD;
+		ppp_phase = "dead";
 		break;
 	case PHASE_INITIALIZE:
-		status = NM_PPP_STATUS_INITIALIZE;
-		phase = "initialize";
+		ppp_status = NM_PPP_STATUS_INITIALIZE;
+		ppp_phase = "initialize";
 		break;
 	case PHASE_SERIALCONN:
-		status = NM_PPP_STATUS_SERIALCONN;
-		phase = "serial connection";
+		ppp_status = NM_PPP_STATUS_SERIALCONN;
+		ppp_phase = "serial connection";
 		break;
 	case PHASE_DORMANT:
-		status = NM_PPP_STATUS_DORMANT;
-		phase = "dormant";
+		ppp_status = NM_PPP_STATUS_DORMANT;
+		ppp_phase = "dormant";
 		break;
 	case PHASE_ESTABLISH:
-		status = NM_PPP_STATUS_ESTABLISH;
-		phase = "establish";
+		ppp_status = NM_PPP_STATUS_ESTABLISH;
+		ppp_phase = "establish";
 		break;
 	case PHASE_AUTHENTICATE:
-		status = NM_PPP_STATUS_AUTHENTICATE;
-		phase = "authenticate";
+		ppp_status = NM_PPP_STATUS_AUTHENTICATE;
+		ppp_phase = "authenticate";
 		break;
 	case PHASE_CALLBACK:
-		status = NM_PPP_STATUS_CALLBACK;
-		phase = "callback";
+		ppp_status = NM_PPP_STATUS_CALLBACK;
+		ppp_phase = "callback";
 		break;
 	case PHASE_NETWORK:
-		status = NM_PPP_STATUS_NETWORK;
-		phase = "network";
+		ppp_status = NM_PPP_STATUS_NETWORK;
+		ppp_phase = "network";
 		break;
 	case PHASE_RUNNING:
-		status = NM_PPP_STATUS_RUNNING;
-		phase = "running";
+		ppp_status = NM_PPP_STATUS_RUNNING;
+		ppp_phase = "running";
 		break;
 	case PHASE_TERMINATE:
-		status = NM_PPP_STATUS_TERMINATE;
-		phase = "terminate";
+		ppp_status = NM_PPP_STATUS_TERMINATE;
+		ppp_phase = "terminate";
 		break;
 	case PHASE_DISCONNECT:
-		status = NM_PPP_STATUS_DISCONNECT;
-		phase = "disconnect";
+		ppp_status = NM_PPP_STATUS_DISCONNECT;
+		ppp_phase = "disconnect";
 		break;
 	case PHASE_HOLDOFF:
-		status = NM_PPP_STATUS_HOLDOFF;
-		phase = "holdoff";
+		ppp_status = NM_PPP_STATUS_HOLDOFF;
+		ppp_phase = "holdoff";
 		break;
 	case PHASE_MASTER:
-		status = NM_PPP_STATUS_MASTER;
-		phase = "master";
+		ppp_status = NM_PPP_STATUS_MASTER;
+		ppp_phase = "master";
 		break;
 
 	default:
-		phase = "unknown";
+		ppp_phase = "unknown";
 		break;
 	}
 
-	g_message ("pppd reported new phase: %s", phase);
+	g_message ("pppd reported new phase: %s", ppp_phase);
 
-	if (status != NM_PPP_STATUS_UNKNOWN)
-		nm_pppd_plugin_state_changed (plugin, status);
+	if (ppp_status != NM_PPP_STATUS_UNKNOWN)
+		nm_pppd_plugin_state_changed (plugin, ppp_status);
 }
 
 static GValue *

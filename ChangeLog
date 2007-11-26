@@ -1,3 +1,7 @@
+2007-11-26  Dan Williams  <dcbw@redhat.com>
+
+	* Fix warnings so everything compiles with --enable-more-warnings
+
 2007-11-25  Dan Williams  <dcbw@redhat.com>
 
 	* system-settings/*

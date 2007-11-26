@@ -174,7 +174,7 @@ nm_object_get_path (NMObject *object)
 }
 
 /* Stolen from dbus-glib */
-char*
+static char*
 wincaps_to_uscore (const char *caps)
 {
 	const char *p;
