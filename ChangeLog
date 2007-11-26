@@ -1,3 +1,9 @@
+2007-11-25  Dan Williams  <dcbw@redhat.com>
+
+	* system-settings/*
+		- Rework structure and code to use GModule-loaded plugins and a plugin
+			interface that plugins export to the system settings service
+
 2007-11-21  Dan Williams  <dcbw@redhat.com>
 
 	* system-settings/*

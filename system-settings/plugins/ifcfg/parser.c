@@ -27,39 +27,32 @@
 
 #include <glib.h>
 
-#include <dbus/dbus.h>
-#include <dbus/dbus-glib-lowlevel.h>
-
 #include <nm-connection.h>
-#include <nm-settings.h>
 #include <NetworkManager.h>
 #include <nm-setting-connection.h>
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-wired.h>
 
-#include "dbus-settings.h"
 #include "shvar.h"
+#include "parser.h"
+#include "plugin.h"
 
-#define SYSCONFDIR "/etc"
-#define PROFILE_DIR SYSCONFDIR "/sysconfig/networking/profiles/"
-
-typedef struct Application
+char *
+parser_get_current_profile_name (void)
 {
-	DBusConnection *connection;
-	DBusGConnection *g_connection;
-	DBusGProxy *bus_proxy;
-	gboolean started;
+	shvarFile *	file;
+	char *		buf;
 
-	NMSysconfigSettings *settings;
-	char *profile_path;
-	GMainLoop *loop;
-} Application;
+	if (!(file = svNewFile (SYSCONFDIR"/sysconfig/network")))
+		return NULL;
 
+	buf = svGetValue (file, "CURRENT_PROFILE");
+	if (!buf)
+		buf = strdup ("default");
+	svCloseFile (file);
 
-static gboolean dbus_init (Application *app);
-static void dbus_cleanup (Application *app);
-static gboolean start_dbus_service (Application *app);
-static void destroy_cb (DBusGProxy *proxy, gpointer user_data);
+	return buf;
+}
 
 static gboolean
 get_int (const char *str, int *value)
@@ -72,9 +65,6 @@ get_int (const char *str, int *value)
 
 	return TRUE;
 }
-
-#define IFCFG_TAG "ifcfg-"
-#define BAK_TAG ".bak"
 
 static NMSetting *
 make_connection_setting (const char *file, shvarFile *ifcfg, const char *type)
@@ -111,23 +101,6 @@ error:
 	return NULL;
 }
 
-static char *
-get_current_profile_name (void)
-{
-	shvarFile *	file;
-	char *		buf;
-
-	if (!(file = svNewFile (SYSCONFDIR"/sysconfig/network")))
-		return NULL;
-
-	buf = svGetValue (file, "CURRENT_PROFILE");
-	if (!buf)
-		buf = strdup ("default");
-	svCloseFile (file);
-
-	return buf;
-}
-
 #define SEARCH_TAG "search "
 #define NS_TAG "nameserver "
 
@@ -140,7 +113,7 @@ read_profile_resolv_conf (NMSettingIP4Config *s_ip4)
 	char **lines = NULL;
 	char **line;
 
-	profile = get_current_profile_name ();
+	profile = parser_get_current_profile_name ();
 	if (!profile)
 		return;
 
@@ -323,18 +296,15 @@ error:
 	return NULL;
 }
 	
-static NMSysconfigConnectionSettings *
-parse_file (Application *app,
-            const char *file,
-            char **err)
+NMConnection *
+parser_parse_file (const char *file,
+                   char **err)
 {
-	NMSysconfigConnectionSettings *sys_connection = NULL;
 	NMConnection *connection = NULL;
 	shvarFile *parsed;
 	char *type;
 	char *nmc = NULL;
 
-	g_return_val_if_fail (app != NULL, NULL);
 	g_return_val_if_fail (file != NULL, NULL);
 
 	parsed = svNewFile(file);
@@ -377,224 +347,10 @@ parse_file (Application *app,
 		s_ip4 = make_ip4_setting (parsed);
 		if (s_ip4)
 			nm_connection_add_setting (connection, s_ip4);
-
-nm_connection_dump (connection);
-		sys_connection = nm_sysconfig_connection_settings_new (connection, app->g_connection);
 	}
 
 done:
 	svCloseFile (parsed);
-	return sys_connection;
-}
-
-static gboolean
-parse_files (gpointer data)
-{
-	Application *app = data;
-	gboolean added = FALSE;
-	GDir *dir;
-	const char *item;
-
-	dir = g_dir_open (app->profile_path, 0, NULL);
-	if (!dir) {
-		g_warning ("Couldn't access network profile directory '%s'.", app->profile_path);
-		goto out;
-	}
-
-	while ((item = g_dir_read_name (dir))) {
-		NMSysconfigConnectionSettings *connection;
-		char *err = NULL;
-		char *filename;
-
-		if (strncmp (item, IFCFG_TAG, strlen (IFCFG_TAG)))
-			continue;
-
-		filename = g_build_filename (app->profile_path, item, NULL);
-		if (!filename)
-			continue;
-
-		g_print ("Parsing %s ... \n", filename);
-
-		if ((connection = parse_file (app, filename, &err))) {
-			NMSettingConnection *s_con;
-
-			s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection->connection, NM_TYPE_SETTING_CONNECTION));
-			g_assert (s_con);
-			g_assert (s_con->id);
-
-			g_print ("    adding connection '%s'\n", s_con->id);
-			nm_sysconfig_settings_add_connection (app->settings, connection);
-			added = TRUE;
-		} else {
-			g_print ("   error: %s\n", err ? err : "(unknown)");
-		}
-
-		g_free (filename);
-	}
-	g_dir_close (dir);
-
-out:
-	if (!added) {
-		g_print ("Warning: No useable configurations found\n");
-		g_main_loop_quit (app->loop);
-	}
-
-	return FALSE;
-}
-
-/* ------------------------------------------------------------------------- */
-
-static gboolean
-dbus_reconnect (gpointer user_data)
-{
-	Application *app = (Application *) user_data;
-
-	if (dbus_init (app)) {
-		if (start_dbus_service (app)) {
-			g_message ("reconnected to the system bus.");
-			return TRUE;
-		}
-	}
-
-	dbus_cleanup (app);
-	return FALSE;
-}
-
-static void
-dbus_cleanup (Application *app)
-{
-	if (app->g_connection) {
-		dbus_g_connection_unref (app->g_connection);
-		app->g_connection = NULL;
-		app->connection = NULL;
-	}
-
-	if (app->bus_proxy) {
-		g_signal_handlers_disconnect_by_func (app->bus_proxy, destroy_cb, app);
-		g_object_unref (app->bus_proxy);
-		app->bus_proxy = NULL;
-	}
-
-	app->started = FALSE;
-}
-
-static void
-destroy_cb (DBusGProxy *proxy, gpointer user_data)
-{
-	Application *app = (Application *) user_data;
-
-	/* Clean up existing connection */
-	g_warning ("disconnected by the system bus.");
-	dbus_cleanup (app);
-
-	g_timeout_add (3000, dbus_reconnect, app);
-}
-
-static gboolean
-start_dbus_service (Application *app)
-{
-	int request_name_result;
-	GError *err = NULL;
-
-	if (app->started) {
-		g_warning ("Service has already started.");
-		return FALSE;
-	}
-
-	if (!dbus_g_proxy_call (app->bus_proxy, "RequestName", &err,
-							G_TYPE_STRING, NM_DBUS_SERVICE_SYSTEM_SETTINGS,
-							G_TYPE_UINT, DBUS_NAME_FLAG_DO_NOT_QUEUE,
-							G_TYPE_INVALID,
-							G_TYPE_UINT, &request_name_result,
-							G_TYPE_INVALID)) {
-		g_warning ("Could not acquire the NetworkManagerSystemSettings service.\n"
-		           "  Message: '%s'", err->message);
-		g_error_free (err);
-		goto out;
-	}
-
-	if (request_name_result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
-		g_warning ("Could not acquire the NetworkManagerSystemSettings service "
-		           "as it is already taken.  Return: %d",
-		           request_name_result);
-		goto out;
-	}
-
-	app->started = TRUE;
-
-out:
-	if (!app->started)
-		dbus_cleanup (app);
-
-	return app->started;
-}
-
-static gboolean
-dbus_init (Application *app)
-{
-	GError *err = NULL;
-	
-	dbus_connection_set_change_sigpipe (TRUE);
-
-	app->g_connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &err);
-	if (!app->g_connection) {
-		g_warning ("Could not get the system bus.  Make sure "
-		           "the message bus daemon is running!  Message: %s",
-		           err->message);
-		g_error_free (err);
-		return FALSE;
-	}
-
-	app->connection = dbus_g_connection_get_connection (app->g_connection);
-	dbus_connection_set_exit_on_disconnect (app->connection, FALSE);
-
-	app->bus_proxy = dbus_g_proxy_new_for_name (app->g_connection,
-	                                            "org.freedesktop.DBus",
-	                                            "/org/freedesktop/DBus",
-	                                            "org.freedesktop.DBus");
-	if (!app->bus_proxy) {
-		g_warning ("Could not get the DBus object!");
-		goto error;
-	}
-
-	g_signal_connect (app->bus_proxy, "destroy", G_CALLBACK (destroy_cb), app);
-	return TRUE;
-
-error:	
-	dbus_cleanup (app);
-	return FALSE;
-}
-
-int
-main (int argc, char **argv)
-{
-	Application *app = g_new0 (Application, 1);
-	char *profile;
-
-	g_type_init ();
-
-	profile = get_current_profile_name ();
-	app->profile_path = g_strdup_printf (PROFILE_DIR "%s/", profile);
-	if (!app->profile_path) {
-		g_warning ("Current network profile directory '%s' not found.", profile);
-		g_free (profile);
-		return 1;
-	}
-	g_free (profile);
-
-	app->loop = g_main_loop_new (NULL, FALSE);
-
-	if (!dbus_init (app))
-		return -1;
-
-	if (!start_dbus_service (app))
-		return -1;
-
-	app->settings = nm_sysconfig_settings_new (app->g_connection);
-	g_idle_add (parse_files, app);
-
-	g_main_loop_run (app->loop);
-
-	return 0;
+	return connection;
 }
 

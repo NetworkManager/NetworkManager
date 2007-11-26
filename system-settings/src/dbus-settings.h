@@ -49,7 +49,7 @@ struct _NMSysconfigConnectionSettingsClass
     NMConnectionSettingsClass parent_class;
 };
 
-GType                 nm_sysconfig_connection_settings_get_type (void);
+GType nm_sysconfig_connection_settings_get_type (void);
 NMSysconfigConnectionSettings *nm_sysconfig_connection_settings_new (NMConnection *connection,
                                                                      DBusGConnection *g_conn);
 

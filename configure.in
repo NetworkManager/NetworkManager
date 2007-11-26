@@ -274,6 +274,9 @@ libnm-glib/Makefile
 callouts/Makefile
 dispatcher-daemon/Makefile
 system-settings/Makefile
+system-settings/src/Makefile
+system-settings/plugins/Makefile
+system-settings/plugins/ifcfg/Makefile
 test/Makefile
 test/test-common/Makefile
 initscript/Makefile
