@@ -6,7 +6,8 @@ libnm_settings_plugin_ifcfg_la_SOURCES = \
 	shvar.h \
 	parser.c \
 	parser.h \
-	plugin.c
+	plugin.c \
+	plugin.h
 
 libnm_settings_plugin_ifcfg_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
