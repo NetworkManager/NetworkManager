@@ -97,7 +97,7 @@ AM_CONDITIONAL(TARGET_FRUGALWARE, test x"$with_distro" = xfrugalware)
 if test x"$with_distro" = xgentoo ; then
 	AC_ARG_WITH([mdns_provider],
 		    AC_HELP_STRING([--with-mdns-provider=PROVIDER], [Specify the mDNS implementation: Avahi, Howl, Bonjour]),,
-		    [with_mdns_provider=mDNSResponder])
+		    [with_mdns_provider=avahi])
 
 	with_mdns_provider=`echo ${with_mdns_provider} | tr '[[:upper:]]' '[[:lower:]]'`
 
