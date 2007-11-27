@@ -22,6 +22,7 @@
 #include <NetworkManager.h>
 #include <nm-connection.h>
 #include <dbus/dbus.h>
+#include <string.h>
 
 #include <nm-setting-connection.h>
 
@@ -56,14 +57,105 @@ connection_settings_get_settings (NMConnectionSettings *connection)
 	return nm_connection_to_hash (c->connection);
 }
 
+static GValue *
+string_to_gvalue (const char *str)
+{
+	GValue *val;
+
+	val = g_slice_new0 (GValue);
+	g_value_init (val, G_TYPE_STRING);
+	g_value_set_string (val, str);
+
+	return val;
+}
+
 static void
-connection_settings_get_secrets (NMConnectionSettings *connection,
+destroy_gvalue (gpointer data)
+{
+	GValue *value = (GValue *) data;
+
+	g_value_unset (value);
+	g_slice_free (GValue, value);
+}
+
+static void
+add_one_secret_to_hash (NMSetting *setting,
+                        const char *key,
+                        const GValue *value,
+                        gboolean secret,
+                        gpointer user_data)
+{
+	GHashTable *secrets = (GHashTable *) user_data;
+	const char *str_val;
+
+	if (!secret)
+		return;
+
+	if (!G_VALUE_HOLDS (value, G_TYPE_STRING))
+		return;
+
+	str_val = g_object_get_data (G_OBJECT (setting), key);
+	if (!str_val)
+		return;
+
+	g_hash_table_insert (secrets, g_strdup (key), string_to_gvalue (str_val));
+}
+
+static void
+connection_settings_get_secrets (NMConnectionSettings *sys_connection,
 				 const gchar *setting_name,
 				 const gchar **hints,
 				 gboolean request_new,
 				 DBusGMethodInvocation *context)
 {
-	
+	NMConnection *connection = NM_SYSCONFIG_CONNECTION_SETTINGS (sys_connection)->connection;
+	GError *error = NULL;
+	GHashTable *secrets;
+	NMSettingConnection *s_con;
+	NMSetting *setting;
+
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+	g_return_if_fail (setting_name != NULL);
+
+	setting = nm_connection_get_setting_by_name (connection, setting_name);
+	if (!setting) {
+		g_set_error (&error, NM_SETTINGS_ERROR, 1,
+		             "%s.%d - Connection didn't have requested setting '%s'.",
+		             __FILE__, __LINE__, setting_name);
+		g_warning (error->message);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection,
+												   NM_TYPE_SETTING_CONNECTION));
+	if (!s_con || !s_con->id || !strlen (s_con->id) || !s_con->type) {
+		g_set_error (&error, NM_SETTINGS_ERROR, 1,
+		             "%s.%d - Connection didn't have required '"
+		             NM_SETTING_CONNECTION_SETTING_NAME
+		             "' setting , or the connection name was invalid.",
+		             __FILE__, __LINE__);
+		g_warning (error->message);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	secrets = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, destroy_gvalue);
+	nm_setting_enumerate_values (setting, add_one_secret_to_hash, secrets);
+	if (g_hash_table_size (secrets) == 0) {
+		g_set_error (&error, NM_SETTINGS_ERROR, 1,
+		             "%s.%d - Secrets were found for setting '%s' but none"
+		             " were valid.", __FILE__, __LINE__, setting_name);
+		g_warning (error->message);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+	} else {
+		dbus_g_method_return (context, secrets);
+	}
+
+	g_hash_table_destroy (secrets);
 }
 
 static void
@@ -111,7 +203,6 @@ nm_sysconfig_connection_settings_new (NMConnection *connection,
 /*
  * NMSettings
  */
-static GPtrArray *nm_sysconfig_settings_list_connections (NMSettings *settings);
 
 G_DEFINE_TYPE (NMSysconfigSettings, nm_sysconfig_settings, NM_TYPE_SETTINGS);
 

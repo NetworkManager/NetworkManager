@@ -40,6 +40,14 @@ G_BEGIN_DECLS
  */
 GObject * nm_system_config_factory (void);
 
+/* NOTE:
+ *   When passing NMConnection objects to NetworkManager, any properties
+ * of that NMConnection's NMSetting objects that are secrets must be set as
+ * GObject data items on the NMSetting object, _not_ inside the NMSetting
+ * object itself.  This is to ensure that the secrets are only given to
+ * NetworkManager itself and not exposed to clients like nm-applet that need
+ * connection details, but not secrets.
+ */
 
 #define NM_TYPE_SYSTEM_CONFIG_INTERFACE      (nm_system_config_interface_get_type ())
 #define NM_SYSTEM_CONFIG_INTERFACE(obj)      (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SYSTEM_CONFIG_INTERFACE, NMSystemConfigInterface))

@@ -1,5 +1,13 @@
 2007-11-27  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/src/nm-system-config-interface.h
+		- Note how to store secrets on NMSetting objects
+
+	* system-settings/src/dbus-settings.c
+		- (connection_settings_get_secrets): implement
+
+2007-11-27  Dan Williams  <dcbw@redhat.com>
+
 	* system-settings/plugins/ifcfg/Makefile.am
 	  system-settings/plugins/ifcfg/parser.c
 	  system-settings/plugins/ifcfg/parser.h
