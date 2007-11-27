@@ -4,6 +4,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <libhal.h>
+#include <dbus/dbus-glib.h>
+#include <dbus/dbus-glib-lowlevel.h>
+
 #include "nm-hal-manager.h"
 #include "nm-dbus-manager.h"
 #include "nm-utils.h"

@@ -1,5 +1,17 @@
 2007-11-27  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-dbus-manager.h
+	  src/nm-hal-manager.c
+		- Include the correct headers now that NetworkManagerDbusUtils.h doesn't
+			do it for them
+
+	* src/Makefile.am
+	  src/NetworkManagerDbusUtils.c
+	  src/NetworkManagerDbusUtils.h
+		- Remove these two source files; they are unused
+
+2007-11-27  Dan Williams  <dcbw@redhat.com>
+
 	* src/vpn-manager/nm-vpn-manager.c
 		- (impl_vpn_manager_connect): fix system settings check (found by
 			James M. Leddy)

@@ -23,9 +23,9 @@
 #define __NM_DBUS_MANAGER_H__
 
 #include "config.h"
-#include "NetworkManagerDbusUtils.h"
 #include <glib-object.h>
 #include <dbus/dbus.h>
+#include <dbus/dbus-glib.h>
 
 G_BEGIN_DECLS
 
