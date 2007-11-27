@@ -76,7 +76,7 @@ parse_files (gpointer data)
 
 	while ((item = g_dir_read_name (dir))) {
 		NMConnection *connection;
-		char *err = NULL;
+		GError *error = NULL;
 		char *filename;
 
 		if (strncmp (item, IFCFG_TAG, strlen (IFCFG_TAG)))
@@ -88,7 +88,7 @@ parse_files (gpointer data)
 
 		PLUGIN_PRINT (PLUGIN_NAME, "parsing %s ... ", filename);
 
-		if ((connection = parser_parse_file (filename, &err))) {
+		if ((connection = parser_parse_file (filename, &error))) {
 			NMSettingConnection *s_con;
 
 			s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
@@ -101,7 +101,9 @@ parse_files (gpointer data)
 			                       connection);			
 			added = TRUE;
 		} else {
-			PLUGIN_PRINT (PLUGIN_NAME, "   error: %s", err ? err : "(unknown)");
+			PLUGIN_PRINT (PLUGIN_NAME, "    error: %s",
+			              error->message ? error->message : "(unknown)");
+			g_clear_error (&error);
 		}
 
 		g_free (filename);

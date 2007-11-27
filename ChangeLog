@@ -1,5 +1,18 @@
 2007-11-27  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/plugins/ifcfg/Makefile.am
+	  system-settings/plugins/ifcfg/parser.c
+	  system-settings/plugins/ifcfg/parser.h
+	  system-settings/plugins/ifcfg/plugin.c
+		- Parse wireless connections too
+
+	* system-settings/src/dbus-settings.c
+	  system-settings/src/dbus-settings.h
+	  system-settings/src/main.c
+		- Handle connection update/removal if the plugin supports it
+
+2007-11-27  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-dbus-manager.h
 	  src/nm-hal-manager.c
 		- Include the correct headers now that NetworkManagerDbusUtils.h doesn't

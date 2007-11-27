@@ -182,13 +182,88 @@ nm_sysconfig_settings_new (DBusGConnection *g_conn)
 
 void
 nm_sysconfig_settings_add_connection (NMSysconfigSettings *settings,
-                                      NMSysconfigConnectionSettings *connection)
+                                      NMConnection *connection,
+                                      DBusGConnection *g_connection)
 {
-	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (settings));
-	g_return_if_fail (NM_IS_SYSCONFIG_CONNECTION_SETTINGS (connection));
+	NMSysconfigConnectionSettings *exported;
 
-	settings->connections = g_slist_append (settings->connections, connection);
+	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (settings));
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+
+	exported = nm_sysconfig_connection_settings_new (connection, g_connection);
+	if (!exported) {
+		g_warning ("%s: couldn't export the connection!", __func__);
+		return;
+	}
+
+	settings->connections = g_slist_append (settings->connections, exported);
 
 	nm_settings_signal_new_connection (NM_SETTINGS (settings),
-	                                   NM_CONNECTION_SETTINGS (connection));
+	                                   NM_CONNECTION_SETTINGS (exported));
 }
+
+static void
+remove_connection (NMSysconfigSettings *settings,
+                   NMConnection *connection)
+{
+	GSList *iter;
+
+	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (settings));
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+
+	for (iter = settings->connections; iter; iter = g_slist_next (iter)) {
+		NMSysconfigConnectionSettings *item = NM_SYSCONFIG_CONNECTION_SETTINGS (iter->data);
+
+		if (item->connection == connection) {
+			settings->connections = g_slist_remove (settings->connections, iter);
+			nm_connection_settings_signal_removed (NM_CONNECTION_SETTINGS (item));
+			g_object_unref (item);
+			g_slist_free (iter);
+			break;
+		}
+	}
+}
+
+void
+nm_sysconfig_settings_remove_connection (NMSysconfigSettings *settings,
+                                         NMConnection *connection)
+{
+	remove_connection (settings, connection);
+}
+
+void
+nm_sysconfig_settings_update_connection (NMSysconfigSettings *settings,
+                                         NMConnection *connection)
+{
+	GHashTable *hash;
+	GSList *iter;
+	NMSysconfigConnectionSettings *found = NULL;
+
+	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (settings));
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+
+	for (iter = settings->connections; iter; iter = g_slist_next (iter)) {
+		NMSysconfigConnectionSettings *item = NM_SYSCONFIG_CONNECTION_SETTINGS (iter->data);
+
+		if (item->connection == connection) {
+			found = item;
+			break;
+		}
+	}
+
+	if (!found) {
+		g_warning ("%s: cannot update unknown connection", __func__);
+		return;
+	}
+
+	/* If the connection is no longer valid, it gets removed */
+	if (!nm_connection_verify (connection)) {
+		remove_connection (settings, connection);
+		return;
+	}
+
+	hash = nm_connection_to_hash (connection);
+	nm_connection_settings_signal_updated (NM_CONNECTION_SETTINGS (found), hash);
+	g_hash_table_destroy (hash);
+}
+

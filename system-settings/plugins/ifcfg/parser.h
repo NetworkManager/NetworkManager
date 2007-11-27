@@ -28,7 +28,7 @@
 #define BAK_TAG ".bak"
 
 
-NMConnection * parser_parse_file (const char *file, char **err);
+NMConnection * parser_parse_file (const char *file, GError **error);
 
 char * parser_get_current_profile_name (void);
 

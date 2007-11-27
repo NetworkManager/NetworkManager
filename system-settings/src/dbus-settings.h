@@ -79,6 +79,16 @@ struct _NMSysconfigSettingsClass
 };
 
 GType nm_sysconfig_settings_get_type (void);
+
 NMSysconfigSettings *nm_sysconfig_settings_new (DBusGConnection *g_conn);
+
 void nm_sysconfig_settings_add_connection (NMSysconfigSettings *settings,
-					   NMSysconfigConnectionSettings *connection);
+                                           NMConnection *connection,
+                                           DBusGConnection *g_connection);
+
+void nm_sysconfig_settings_remove_connection (NMSysconfigSettings *settings,
+                                              NMConnection *connection);
+
+void nm_sysconfig_settings_update_connection (NMSysconfigSettings *settings,
+                                              NMConnection *connection);
+

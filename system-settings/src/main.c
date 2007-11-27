@@ -76,14 +76,7 @@ connection_added_cb (NMSystemConfigInterface *config,
                      NMConnection *connection,
                      Application *app)
 {
-	NMSysconfigConnectionSettings *exported;
-
-	exported = nm_sysconfig_connection_settings_new (connection, app->g_connection);
-	if (!exported) {
-		g_warning ("%s: couldn't export the connection!", __func__);
-		return;
-	}
-	nm_sysconfig_settings_add_connection (app->settings, exported);
+	nm_sysconfig_settings_add_connection (app->settings, connection, app->g_connection);
 }
 
 static void
@@ -91,6 +84,7 @@ connection_removed_cb (NMSystemConfigInterface *config,
                        NMConnection *connection,
                        Application *app)
 {
+	nm_sysconfig_settings_remove_connection (app->settings, connection);
 }
 
 static void
@@ -98,6 +92,7 @@ connection_updated_cb (NMSystemConfigInterface *config,
                        NMConnection *connection,
                        Application *app)
 {
+	nm_sysconfig_settings_update_connection (app->settings, connection);
 }
 
 static void
