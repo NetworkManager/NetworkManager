@@ -1,3 +1,9 @@
+2007-11-27  Dan Williams  <dcbw@redhat.com>
+
+	* src/vpn-manager/nm-vpn-manager.c
+		- (impl_vpn_manager_connect): fix system settings check (found by
+			James M. Leddy)
+
 2007-11-26  Dan Williams  <dcbw@redhat.com>
 
 	* Fix warnings so everything compiles with --enable-more-warnings

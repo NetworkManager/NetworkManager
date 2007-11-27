@@ -147,7 +147,7 @@ impl_vpn_manager_connect (NMVPNManager *manager,
 		connection = nm_manager_get_connection_by_object_path (NM_VPN_MANAGER_GET_PRIVATE (manager)->nm_manager,
 		                                                       NM_CONNECTION_TYPE_USER,
 		                                                       connection_path);
-	else if (!strcmp (connection_type, NM_DBUS_SERVICE_USER_SETTINGS))
+	else if (!strcmp (connection_type, NM_DBUS_SERVICE_SYSTEM_SETTINGS))
 		connection = nm_manager_get_connection_by_object_path (NM_VPN_MANAGER_GET_PRIVATE (manager)->nm_manager,
 		                                                       NM_CONNECTION_TYPE_SYSTEM,
 		                                                       connection_path);
