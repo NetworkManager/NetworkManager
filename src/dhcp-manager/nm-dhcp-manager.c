@@ -839,6 +839,7 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 	char *			nameservers = NULL;
 	char *			nis_domain = NULL;
 	char *			nis_servers = NULL;
+	char *			static_routes = NULL;
 	char *			ip = NULL;		//this is a general string that is used as a temporary place for ip(s)
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (manager), NULL);
@@ -909,7 +910,7 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 	domain_names = g_hash_table_lookup (device->options, "new_domain_name");
 	nis_domain = g_hash_table_lookup (device->options, "new_nis_domain");
 	nis_servers = g_hash_table_lookup (device->options, "new_nis_servers");
-
+	static_routes = g_hash_table_lookup (device->options, "new_static_routes");
 
 	if (nameservers) {
 		char **searches = g_strsplit (nameservers, " ", 0);
@@ -917,6 +918,7 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 		int ip4_nameserver;
 
 		for (s = searches; *s; s++) {
+			// FIXME: use inet_aton
 			ip4_nameserver = inet_addr (*s);
 			nm_ip4_config_add_nameserver (ip4_config, ip4_nameserver);
 			nm_info ("  nameserver '%s'", *s);
@@ -951,9 +953,41 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 		int ip4_nis_server;
 
 		for (s = searches; *s; s++) {
+			// FIXME: use inet_aton
 			ip4_nis_server = inet_addr (*s);
 			nm_ip4_config_add_nis_server (ip4_config, ip4_nis_server);
 			nm_info ("  nis server '%s'", *s);
+		}
+		g_strfreev (searches);
+	}
+
+	if (static_routes){
+		char **searches = g_strsplit (static_routes, " ", 0);
+
+		if ((g_strv_length (searches) % 2) == 0) {
+			char **s;
+
+			for (s = searches; *s; s += 2) {
+				struct in_addr addr;
+				struct in_addr route;
+
+				if (inet_aton (*s, &addr) == 0) {
+					nm_warning ("DHCP provided invalid static route address: '%s'", *s);
+					continue;
+				}
+				if (inet_aton (*(s + 1), &route) == 0) {
+					nm_warning ("DHCP provided invalid static route gateway: '%s'", *(s + 1));
+					continue;
+				}
+
+				// FIXME: ensure the IP addresse and route are sane
+				nm_ip4_config_add_static_route (ip4_config,
+				                                (guint32) addr.s_addr,
+				                                (guint32) route.s_addr);
+				nm_info ("  static route %s gw %s", *s, *(s + 1));
+			}
+		} else {
+			nm_info ("  static routes provided, but invalid");
 		}
 		g_strfreev (searches);
 	}

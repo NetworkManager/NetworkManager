@@ -55,6 +55,7 @@ typedef struct {
 	gchar *	hostname;
 	gchar *	nis_domain;
 	GArray *nis_servers;
+	GArray *static_routes;
 
 	/* If this is a VPN/etc config that requires
 	 * another device (like Ethernet) to already have
@@ -75,6 +76,7 @@ enum {
 	PROP_DOMAINS,
 	PROP_NIS_DOMAIN,
 	PROP_NIS_SERVERS,
+	PROP_STATIC_ROUTES,
 
 	LAST_PROP
 };
@@ -130,6 +132,14 @@ NMIP4Config *nm_ip4_config_copy (NMIP4Config *src_config)
 	len = nm_ip4_config_get_num_nis_servers (src_config);
 	for (i = 0; i < len; i++)
 		nm_ip4_config_add_nis_server (dst_config, nm_ip4_config_get_nis_server (src_config, i));
+
+	len = nm_ip4_config_get_num_static_routes (src_config);
+	for (i = 0; i < len; i++) {
+		guint32 addr = nm_ip4_config_get_static_route (src_config, i * 2);
+		guint32 route = nm_ip4_config_get_static_route (src_config, (i * 2) + 1);
+
+		nm_ip4_config_add_static_route (dst_config, addr, route);
+	}		
 
 	return dst_config;
 }
@@ -307,6 +317,28 @@ const char *nm_ip4_config_get_nis_domain (NMIP4Config *config)
 	return NM_IP4_CONFIG_GET_PRIVATE (config)->nis_domain;
 }
 
+void nm_ip4_config_add_static_route (NMIP4Config *config, guint32 host, guint32 gateway)
+{
+	g_return_if_fail (NM_IS_IP4_CONFIG (config));
+
+	g_array_append_val (NM_IP4_CONFIG_GET_PRIVATE (config)->static_routes, host);
+	g_array_append_val (NM_IP4_CONFIG_GET_PRIVATE (config)->static_routes, gateway);
+}
+
+guint32 nm_ip4_config_get_static_route (NMIP4Config *config, guint i)
+{
+	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), 0);
+
+	return g_array_index (NM_IP4_CONFIG_GET_PRIVATE (config)->static_routes, guint32, i);
+}
+
+guint32 nm_ip4_config_get_num_static_routes (NMIP4Config *config)
+{
+	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), 0);
+
+	return (NM_IP4_CONFIG_GET_PRIVATE (config)->static_routes->len) / 2;
+}
+
 const char *nm_ip4_config_get_domain (NMIP4Config *config, guint i)
 {
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
@@ -440,6 +472,7 @@ nm_ip4_config_init (NMIP4Config *config)
 
 	priv->nameservers = g_array_new (FALSE, TRUE, sizeof (guint32));
 	priv->nis_servers = g_array_new (FALSE, TRUE, sizeof (guint32));
+	priv->static_routes = g_array_new (FALSE, TRUE, sizeof (guint32));
 	priv->domains = g_ptr_array_new ();
 }
 
@@ -453,6 +486,7 @@ finalize (GObject *object)
 	g_array_free (priv->nameservers, TRUE);
 	g_ptr_array_free (priv->domains, TRUE);
 	g_array_free (priv->nis_servers, TRUE);
+	g_array_free (priv->static_routes, TRUE);
 }
 
 static void
@@ -488,6 +522,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_NIS_SERVERS:
 		g_value_set_boxed (value, priv->nis_servers);
+		break;
+	case PROP_STATIC_ROUTES:
+		g_value_set_boxed (value, priv->static_routes);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -568,6 +605,14 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 		 g_param_spec_boxed (NM_IP4_CONFIG_NIS_SERVERS,
 							 "NIS servers",
 							 "NIS servers",
+							 DBUS_TYPE_G_UINT_ARRAY,
+							 G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_STATIC_ROUTES,
+		 g_param_spec_boxed (NM_IP4_CONFIG_STATIC_ROUTES,
+							 "Static routes",
+							 "Sattic routes",
 							 DBUS_TYPE_G_UINT_ARRAY,
 							 G_PARAM_READABLE));
 

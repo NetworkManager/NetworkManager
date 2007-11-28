@@ -194,6 +194,7 @@ gboolean nm_system_device_set_from_ip4_config (NMDevice *dev)
 	struct nl_handle *	nlh = NULL;
 	struct rtnl_addr *	addr = NULL;
 	int				err;
+	int len, i;
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 
@@ -219,6 +220,15 @@ gboolean nm_system_device_set_from_ip4_config (NMDevice *dev)
 
 	sleep (1);
 	nm_system_device_set_ip4_route (dev, nm_ip4_config_get_gateway (config), 0, 0, nm_ip4_config_get_mss (config));
+
+	len = nm_ip4_config_get_num_static_routes (config);
+	for (i = 0; i < len; i++) {
+		guint32 mss = nm_ip4_config_get_mss (config);
+		guint32 route = nm_ip4_config_get_static_route (config, (i * 2) + 1);
+		guint32 saddr = nm_ip4_config_get_static_route (config, i * 2);
+
+		nm_system_device_set_ip4_route (dev, route, saddr, 0xffffffff, mss);
+	}		
 
 	named_mgr = nm_named_manager_get ();
 	nm_named_manager_add_ip4_config (named_mgr, config);

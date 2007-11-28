@@ -51,6 +51,7 @@ typedef struct {
 #define NM_IP4_CONFIG_DOMAINS "domains"
 #define NM_IP4_CONFIG_NIS_DOMAIN "nis-domain"
 #define NM_IP4_CONFIG_NIS_SERVERS "nis-servers"
+#define NM_IP4_CONFIG_STATIC_ROUTES "static-routes"
 
 GType nm_ip4_config_get_type (void);
 
@@ -83,6 +84,10 @@ guint32		nm_ip4_config_get_num_nameservers	(NMIP4Config *config);
 void			nm_ip4_config_add_nis_server		(NMIP4Config *config, guint32 nis_server);
 guint32		nm_ip4_config_get_nis_server		(NMIP4Config *config, guint i);
 guint32		nm_ip4_config_get_num_nis_servers	(NMIP4Config *config);
+
+void			nm_ip4_config_add_static_route		(NMIP4Config *config, guint32 addr, guint32 gateway);
+guint32		nm_ip4_config_get_static_route		(NMIP4Config *config, guint i);
+guint32		nm_ip4_config_get_num_static_routes	(NMIP4Config *config);
 
 void			nm_ip4_config_set_hostname		(NMIP4Config *config, const char *hostname);
 const char * 	nm_ip4_config_get_hostname		(NMIP4Config *config);
