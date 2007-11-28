@@ -2452,6 +2452,7 @@ real_act_stage1_prepare (NMDevice *dev)
 			ap = nm_ap_new_fake_from_connection (connection);
 			g_return_val_if_fail (ap != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
+			nm_ap_set_broadcast (ap, FALSE);
 			self->priv->ap_list = g_slist_append (self->priv->ap_list, ap);
 			nm_ap_export_to_dbus (ap);
 			g_signal_emit (self, signals[ACCESS_POINT_ADDED], 0, ap);

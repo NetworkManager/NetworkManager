@@ -1,3 +1,9 @@
+2007-11-28  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.c
+		- (real_act_stage1_prepare): mark APs created for hidden networks
+			as non-broadcasting
+
 2007-11-27  Dan Williams  <dcbw@redhat.com>
 
 	* system-settings/src/nm-system-config-interface.h
