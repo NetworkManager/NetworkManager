@@ -19,6 +19,7 @@ typedef struct {
 	NMDBusManager *dbus_manager;
 	DBusGProxy *proxy;
 
+	guint32 ppp_watch_id;
 	guint32 ppp_timeout_handler;
 	guint32 name_owner_changed_handler;
 } NMPPPManagerPrivate;
@@ -540,6 +541,7 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	ppp_watch = g_child_watch_source_new (priv->pid);
 	g_source_set_callback (ppp_watch, (GSourceFunc) ppp_watch_cb, manager, NULL);
 	g_source_attach (ppp_watch, NULL);
+	priv->ppp_watch_id = g_source_get_id (ppp_watch);
 	g_source_unref (ppp_watch);
 
 	start_dbus_watcher (manager);
@@ -574,6 +576,11 @@ nm_ppp_manager_stop (NMPPPManager *manager)
 		g_signal_handler_disconnect (priv->dbus_manager, priv->name_owner_changed_handler);
 		g_object_unref (priv->dbus_manager);
 		priv->dbus_manager = NULL;
+	}
+
+	if (priv->ppp_watch_id) {
+		g_source_remove (priv->ppp_watch_id);
+		priv->ppp_watch_id = 0;
 	}
 
 	if (priv->pid) {

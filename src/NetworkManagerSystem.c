@@ -210,9 +210,13 @@ gboolean nm_system_device_set_from_ip4_config (NMDevice *dev)
 
 	if ((addr = nm_ip4_config_to_rtnl_addr (config, NM_RTNL_ADDR_DEFAULT)))
 	{
-		rtnl_addr_set_ifindex (addr, nm_device_get_index (dev));
+		const char *iface;
+
+		iface = nm_device_get_iface (dev);
+		rtnl_addr_set_ifindex (addr, nm_netlink_iface_to_index (iface));
+
 		if ((err = rtnl_addr_add (nlh, addr, 0)) < 0)
-			nm_warning ("(%s) error %d returned from rtnl_addr_add():\n%s", nm_device_get_iface (dev), err, nl_geterror());
+			nm_warning ("(%s) error %d returned from rtnl_addr_add():\n%s", iface, err, nl_geterror());
 		rtnl_addr_put (addr);
 	}
 	else
@@ -492,6 +496,7 @@ void nm_system_set_mtu (NMDevice *dev)
 	struct rtnl_link *	old;
 	unsigned long		mtu;
 	struct nl_handle *	nlh;
+	guint32 idx;
 
 	mtu = nm_system_get_mtu (dev);
 	if (!mtu)
@@ -501,7 +506,8 @@ void nm_system_set_mtu (NMDevice *dev)
 	if (!request)
 		return;
 
-	old = nm_netlink_index_to_rtnl_link (nm_device_get_index (dev));
+	idx = nm_netlink_iface_to_index (nm_device_get_iface (dev));
+	old = nm_netlink_index_to_rtnl_link (idx);
 	if (!old)
 		goto out_request;
 

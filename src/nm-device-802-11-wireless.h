@@ -1,3 +1,5 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+
 /* NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -78,10 +80,9 @@ struct _NMDevice80211WirelessClass
 
 GType nm_device_802_11_wireless_get_type (void);
 
-NMDevice80211Wireless *nm_device_802_11_wireless_new (int index,
-													  const char *udi,
-													  const char *driver,
-													  gboolean test_dev);
+NMDevice80211Wireless *nm_device_802_11_wireless_new (const char *udi,
+										    const char *iface,
+										    const char *driver);
 
 void			nm_device_802_11_wireless_set_ssid (NMDevice80211Wireless *self,
 										  const GByteArray * ssid);

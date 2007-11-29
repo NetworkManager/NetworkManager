@@ -29,12 +29,12 @@
 
 #define	NM_DBUS_PATH				"/org/freedesktop/NetworkManager"
 #define	NM_DBUS_INTERFACE			"org.freedesktop.NetworkManager"
-#define	NM_DBUS_PATH_DEVICE			"/org/freedesktop/NetworkManager/Device"
 #define	NM_DBUS_INTERFACE_DEVICE	"org.freedesktop.NetworkManager.Device"
 #define NM_DBUS_INTERFACE_DEVICE_WIRED "org.freedesktop.NetworkManager.Device.Wired"
 #define NM_DBUS_INTERFACE_DEVICE_WIRELESS "org.freedesktop.NetworkManager.Device.Wireless"
 #define NM_DBUS_PATH_ACCESS_POINT "/org/freedesktop/NetworkManager/AccessPoint"
 #define NM_DBUS_INTERFACE_ACCESS_POINT "org.freedesktop.NetworkManager.AccessPoint"
+#define NM_DBUS_INTERFACE_UMTS_DEVICE "org.freedesktop.NetworkManager.Device.Umts"
 
 #define NM_DBUS_SERVICE_USER_SETTINGS     "org.freedesktop.NetworkManagerUserSettings"
 #define NM_DBUS_SERVICE_SYSTEM_SETTINGS   "org.freedesktop.NetworkManagerSystemSettings"
@@ -68,7 +68,8 @@ typedef enum NMDeviceType
 {
 	DEVICE_TYPE_UNKNOWN = 0,
 	DEVICE_TYPE_802_3_ETHERNET,
-	DEVICE_TYPE_802_11_WIRELESS
+	DEVICE_TYPE_802_11_WIRELESS,
+	DEVICE_TYPE_UMTS
 } NMDeviceType;
 
 

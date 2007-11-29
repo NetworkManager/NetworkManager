@@ -34,6 +34,7 @@
 #include "nm-activation-request.h"
 #include "NetworkManagerUtils.h"
 #include "nm-supplicant-manager.h"
+#include "nm-netlink.h"
 #include "nm-netlink-monitor.h"
 #include "NetworkManagerSystem.h"
 #include "nm-setting-connection.h"
@@ -85,7 +86,7 @@ nm_device_802_3_ethernet_link_activated (NMNetlinkMonitor *monitor,
 	NMDevice *dev = NM_DEVICE (user_data);
 
 	/* Make sure signal is for us */
-	if (nm_device_get_index (dev) == idx)
+	if (nm_netlink_iface_to_index (nm_device_get_iface (dev)) == idx)
 		nm_device_set_active_link (dev, TRUE);
 }
 
@@ -97,7 +98,7 @@ nm_device_802_3_ethernet_link_deactivated (NMNetlinkMonitor *monitor,
 	NMDevice *dev = NM_DEVICE (user_data);
 
 	/* Make sure signal is for us */
-	if (nm_device_get_index (dev) == idx)
+	if (nm_netlink_iface_to_index (nm_device_get_iface (dev)) == idx)
 		nm_device_set_active_link (dev, FALSE);
 }
 
@@ -119,6 +120,7 @@ constructor (GType type,
 
 	dev = NM_DEVICE (object);
 	priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (dev);
+
 	priv->carrier_file_path = g_strdup_printf ("/sys/class/net/%s/carrier",
 	                                           nm_device_get_iface (dev));
 
@@ -237,26 +239,21 @@ real_bring_down (NMDevice *dev)
 
 
 NMDevice8023Ethernet *
-nm_device_802_3_ethernet_new (int idx,
-							  const char *udi,
-							  const char *driver,
-							  gboolean test_dev)
+nm_device_802_3_ethernet_new (const char *udi,
+						const char *iface,
+						const char *driver)
 {
 	GObject *obj;
 
-	g_return_val_if_fail (idx >= 0, NULL);
 	g_return_val_if_fail (udi != NULL, NULL);
+	g_return_val_if_fail (iface != NULL, NULL);
 	g_return_val_if_fail (driver != NULL, NULL);
 
-	obj = g_object_new (NM_TYPE_DEVICE_802_3_ETHERNET,
-						NM_DEVICE_INTERFACE_UDI, udi,
-						NM_DEVICE_INTERFACE_INDEX, idx,
-						NM_DEVICE_INTERFACE_DRIVER, driver,
-						NULL);
-	if (obj == NULL)
-		return NULL;
-
-	return NM_DEVICE_802_3_ETHERNET (obj);
+	return (NMDevice8023Ethernet *) g_object_new (NM_TYPE_DEVICE_802_3_ETHERNET,
+										 NM_DEVICE_INTERFACE_UDI, udi,
+										 NM_DEVICE_INTERFACE_IFACE, iface,
+										 NM_DEVICE_INTERFACE_DRIVER, driver,
+										 NULL);
 }
 
 
@@ -426,7 +423,7 @@ nm_device_802_3_ethernet_finalize (GObject *object)
 
 static void
 get_property (GObject *object, guint prop_id,
-			  GValue *value, GParamSpec *pspec)
+		    GValue *value, GParamSpec *pspec)
 {
 	NMDevice8023Ethernet *device = NM_DEVICE_802_3_ETHERNET (object);
 	struct ether_addr hw_addr;

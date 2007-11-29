@@ -56,6 +56,10 @@ NetworkManager_SOURCES =				\
 		nm-activation-request.h		\
 		nm-properties-changed-signal.c	\
 		nm-properties-changed-signal.h	\
+		nm-serial-device.c		\
+		nm-serial-device.h		\
+		nm-umts-device.c		\
+		nm-umts-device.h		\
 		autoip.c					\
 		autoip.h					\
 		kernel-types.h			\
@@ -123,6 +127,7 @@ NetworkManager_LDADD = 							\
 			./vpn-manager/libvpn-manager.la		\
 			./dhcp-manager/libdhcp-manager.la		\
 			./supplicant-manager/libsupplicant-manager.la		\
+			./ppp-manager/libppp-manager.la		\
 			./backends/libnmbackend.la			\
 			$(top_builddir)/libnm-util/libnm-util.la
 

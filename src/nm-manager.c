@@ -1062,7 +1062,7 @@ impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err)
 	*devices = g_ptr_array_sized_new (g_slist_length (priv->devices));
 
 	for (iter = priv->devices; iter; iter = iter->next)
-		g_ptr_array_add (*devices, g_strdup (nm_device_get_dbus_path (NM_DEVICE (iter->data))));
+		g_ptr_array_add (*devices, g_strdup (nm_device_get_udi (NM_DEVICE (iter->data))));
 
 	return TRUE;
 }
@@ -1078,7 +1078,7 @@ nm_manager_get_device_by_path (NMManager *manager, const char *path)
 	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
 		NMDevice *device = NM_DEVICE (iter->data);
 
-		if (!strcmp (nm_device_get_dbus_path (device), path))
+		if (!strcmp (nm_device_get_udi (device), path))
 			return device;
 	}
 
@@ -1377,7 +1377,7 @@ add_one_connection_element (NMManager *manager,
 	dev_array = g_ptr_array_sized_new (1);
 	if (!dev_array)
 		return NULL;
-	g_ptr_array_add (dev_array, g_strdup (nm_device_get_dbus_path (device)));
+	g_ptr_array_add (dev_array, g_strdup (nm_device_get_udi (device)));
 
 	g_value_init (&entry, type);
 	g_value_take_boxed (&entry, dbus_g_type_specialized_construct (type));

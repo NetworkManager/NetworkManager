@@ -18,6 +18,8 @@ libnm_util_include_HEADERS = 		\
 	nm-setting-connection.h		\
 	nm-setting-ip4-config.h		\
 	nm-setting-ppp.h		\
+	nm-setting-serial.h		\
+	nm-setting-umts.h		\
 	nm-setting-wired.h		\
 	nm-setting-wireless.h		\
 	nm-setting-wireless-security.h	\
@@ -32,6 +34,8 @@ libnm_util_la_SOURCES=			\
 	nm-setting-connection.c		\
 	nm-setting-ip4-config.c		\
 	nm-setting-ppp.c		\
+	nm-setting-serial.c		\
+	nm-setting-umts.c		\
 	nm-setting-wired.c		\
 	nm-setting-wireless.c		\
 	nm-setting-wireless-security.c	\

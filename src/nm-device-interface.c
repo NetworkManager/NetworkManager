@@ -56,19 +56,11 @@ nm_device_interface_init (gpointer g_iface)
 
 	g_object_interface_install_property
 		(g_iface,
-		 g_param_spec_uint (NM_DEVICE_INTERFACE_INDEX,
-							"Index",
-							"Index",
-							0, G_MAXUINT32, 0, /* FIXME */
-							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-
-	g_object_interface_install_property
-		(g_iface,
 		 g_param_spec_string (NM_DEVICE_INTERFACE_IFACE,
 							  "Interface",
 							  "Interface",
 							  NULL,
-							  G_PARAM_READABLE));
+							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	g_object_interface_install_property
 		(g_iface,

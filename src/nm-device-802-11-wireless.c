@@ -3048,31 +3048,29 @@ state_changed_cb (NMDevice *device, NMDeviceState state, gpointer user_data)
 
 
 NMDevice80211Wireless *
-nm_device_802_11_wireless_new (int idx,
-							   const char *udi,
-							   const char *driver,
-							   gboolean test_dev)
+nm_device_802_11_wireless_new (const char *udi,
+						 const char *iface,
+						 const char *driver)
 {
 	GObject *obj;
 
-	g_return_val_if_fail (idx >= 0, NULL);
 	g_return_val_if_fail (udi != NULL, NULL);
+	g_return_val_if_fail (iface != NULL, NULL);
 	g_return_val_if_fail (driver != NULL, NULL);
 
 	obj = g_object_new (NM_TYPE_DEVICE_802_11_WIRELESS,
-						NM_DEVICE_INTERFACE_UDI, udi,
-						NM_DEVICE_INTERFACE_INDEX, idx,
-						NM_DEVICE_INTERFACE_DRIVER, driver,
-						NULL);
+					NM_DEVICE_INTERFACE_UDI, udi,
+					NM_DEVICE_INTERFACE_IFACE, iface,
+					NM_DEVICE_INTERFACE_DRIVER, driver,
+					NULL);
 	if (obj == NULL)
 		return NULL;
 
 	g_signal_connect (obj, "state-changed",
-					  G_CALLBACK (state_changed_cb),
-					  NULL);
+				   G_CALLBACK (state_changed_cb),
+				   NULL);
 
 	return NM_DEVICE_802_11_WIRELESS (obj);
-
 }
 
 NMAccessPoint *

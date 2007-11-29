@@ -58,9 +58,7 @@ struct _NMDevicePrivate
 
 	NMDeviceState state;
 
-	char *			dbus_path;
 	char *			udi;
-	int				index;   /* Should always stay the same over lifetime of device */
 	char *			iface;   /* may change, could be renamed by user */
 	NMDeviceType		type;
 	guint32			capabilities;
@@ -113,7 +111,6 @@ nm_device_init (NMDevice * self)
 	self->priv->initialized = FALSE;
 	self->priv->udi = NULL;
 	self->priv->iface = NULL;
-	self->priv->index = G_MAXUINT32;
 	self->priv->type = DEVICE_TYPE_UNKNOWN;
 	self->priv->capabilities = NM_DEVICE_CAP_NONE;
 	self->priv->driver = NULL;
@@ -142,30 +139,27 @@ constructor (GType type,
 	NMDBusManager *manager;
 
 	object = G_OBJECT_CLASS (nm_device_parent_class)->constructor (type,
-																   n_construct_params,
-																   construct_params);
+													   n_construct_params,
+													   construct_params);
 	if (!object)
 		return NULL;
 
 	dev = NM_DEVICE (object);
 	priv = NM_DEVICE_GET_PRIVATE (dev);
 
-	if (priv->index == G_MAXUINT32) {
-		nm_warning ("Interface index is a required constructor property.");
+	if (!priv->udi) {
+		nm_warning ("No device udi provided, ignoring");
 		goto error;
 	}
 
-	priv->iface = nm_netlink_index_to_iface (priv->index);
-	if (priv->iface == NULL) {
-		nm_warning ("(%u): Couldn't get interface name for device, ignoring.",
-		            priv->index);
+	if (!priv->iface) {
+		nm_warning ("No device interface provided, ignoring");
 		goto error;
 	}
 
 	priv->capabilities |= NM_DEVICE_GET_CLASS (dev)->get_generic_capabilities (dev);
 	if (!(priv->capabilities & NM_DEVICE_CAP_NM_SUPPORTED)) {
-		nm_warning ("(%s): Device unsupported, ignoring.",
-		            nm_device_get_iface (dev));
+		nm_warning ("(%s): Device unsupported, ignoring.", priv->iface);
 		goto error;
 	}
 
@@ -174,27 +168,17 @@ constructor (GType type,
 
 	/* Allow distributions to flag devices as disabled */
 	if (nm_system_device_get_disabled (dev)) {
-		nm_warning ("(%s): Device otherwise managed, ignoring.",
-		            nm_device_get_iface (dev));
+		nm_warning ("(%s): Device otherwise managed, ignoring.", priv->iface);
 		goto error;
 	}
 
 	nm_print_device_capabilities (dev);
 
 	manager = nm_dbus_manager_get ();
-	priv->dbus_path = g_strdup_printf ("%s/%d",
-	                                   NM_DBUS_PATH_DEVICE,
-	                                   nm_device_get_index (dev));
-	if (priv->dbus_path == NULL) {
-		nm_warning ("(%s): Not enough memory to initialize device.",
-		            nm_device_get_iface (dev));
-		goto error;
-	}
 
-	nm_info ("(%s): exporting device as %s", nm_device_get_iface (dev), nm_device_get_dbus_path (dev));
+	nm_info ("(%s): exporting device as %s", priv->iface, priv->udi);
 	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (manager),
-								  nm_device_get_dbus_path (dev),
-								  object);
+								  priv->udi, object);
 
 	g_object_unref (manager);
 
@@ -246,27 +230,11 @@ real_get_generic_capabilities (NMDevice *dev)
 
 
 const char *
-nm_device_get_dbus_path (NMDevice *self)
-{
-	g_return_val_if_fail (self != NULL, NULL);
-
-	return self->priv->dbus_path;
-}
-
-const char *
 nm_device_get_udi (NMDevice *self)
 {
 	g_return_val_if_fail (self != NULL, NULL);
 
 	return self->priv->udi;
-}
-
-guint32
-nm_device_get_index (NMDevice *self)
-{
-	g_return_val_if_fail (self != NULL, G_MAXUINT32);
-
-	return self->priv->index;
 }
 
 /*
@@ -1595,8 +1563,9 @@ set_property (GObject *object, guint prop_id,
 		/* construct-only */
 		priv->udi = g_strdup (g_value_get_string (value));
 		break;
-	case NM_DEVICE_INTERFACE_PROP_INDEX:
-		priv->index = g_value_get_uint (value);
+	case NM_DEVICE_INTERFACE_PROP_IFACE:
+		g_free (priv->iface);
+		priv->iface = g_value_dup_string (value);
 		break;
 	case NM_DEVICE_INTERFACE_PROP_DRIVER:
 		priv->driver = g_strdup (g_value_get_string (value));
@@ -1622,9 +1591,6 @@ get_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case NM_DEVICE_INTERFACE_PROP_UDI:
 		g_value_set_string (value, priv->udi);
-		break;
-	case NM_DEVICE_INTERFACE_PROP_INDEX:
-		g_value_set_uint (value, priv->index);
 		break;
 	case NM_DEVICE_INTERFACE_PROP_IFACE:
 		g_value_set_string (value, priv->iface);
@@ -1686,10 +1652,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	g_object_class_override_property (object_class,
 									  NM_DEVICE_INTERFACE_PROP_UDI,
 									  NM_DEVICE_INTERFACE_UDI);
-
-	g_object_class_override_property (object_class,
-									  NM_DEVICE_INTERFACE_PROP_INDEX,
-									  NM_DEVICE_INTERFACE_INDEX);
 
 	g_object_class_override_property (object_class,
 									  NM_DEVICE_INTERFACE_PROP_IFACE,
