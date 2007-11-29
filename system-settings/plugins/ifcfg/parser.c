@@ -40,17 +40,6 @@
 #include "parser.h"
 #include "plugin.h"
 
-static GQuark
-ifcfg_error_quark (void)
-{
-	static GQuark error_quark = 0;
-
-	if (G_UNLIKELY (error_quark == 0))
-		error_quark = g_quark_from_static_string ("ifcfg-plugin-error-quark");
-
-	return error_quark;
-}
-
 char *
 parser_get_current_profile_name (void)
 {
@@ -219,7 +208,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 		if (inet_pton (AF_INET, value, &ip4_addr))
 			tmp.address = ip4_addr.s_addr;
 		else {
-			g_set_error (error, ifcfg_error_quark (), 0,
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
 			             "Invalid IP4 address '%s'", value);
 			goto error;
 		}
@@ -232,7 +221,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 		if (inet_pton (AF_INET, value, &gw_addr))
 			tmp.gateway = gw_addr.s_addr;
 		else {
-			g_set_error (error, ifcfg_error_quark (), 0,
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
 			             "Invalid IP4 gateway '%s'", value);
 			goto error;
 		}
@@ -245,7 +234,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 		if (inet_pton (AF_INET, value, &mask_addr))
 			tmp.netmask = mask_addr.s_addr;
 		else {
-			g_set_error (error, ifcfg_error_quark (), 0,
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
 			             "Invalid IP4 netmask '%s'", value);
 			goto error;
 		}
@@ -327,7 +316,7 @@ get_one_wep_key (shvarFile *ifcfg, guint8 idx, GError **error)
 
 		while (*p) {
 			if (!g_ascii_isxdigit (*p)) {
-				g_set_error (error, ifcfg_error_quark (), 0,
+				g_set_error (error, ifcfg_plugin_error_quark (), 0,
 				             "Invalid hexadecimal WEP key.");
 				goto out;
 			}
@@ -340,7 +329,7 @@ get_one_wep_key (shvarFile *ifcfg, guint8 idx, GError **error)
 
 		while (*p) {
 			if (!isascii ((int) (*p))) {
-				g_set_error (error, ifcfg_error_quark (), 0,
+				g_set_error (error, ifcfg_plugin_error_quark (), 0,
 				             "Invalid ASCII WEP passphrase.");
 				goto out;
 			}
@@ -349,7 +338,7 @@ get_one_wep_key (shvarFile *ifcfg, guint8 idx, GError **error)
 
 		value = utils_bin2hexstr (value, strlen (value), strlen (value) * 2);
 	} else {
-		g_set_error (error, ifcfg_error_quark (), 0, "Invalid WEP key length.");
+		g_set_error (error, ifcfg_plugin_error_quark (), 0, "Invalid WEP key length.");
 	}
 
 out:
@@ -395,7 +384,7 @@ make_wireless_security_setting (shvarFile *ifcfg, GError **error)
 		if (success && (key_idx >= 0) && (key_idx <= 3))
 			s_wireless_sec->wep_tx_keyidx = key_idx;
 		else {
-			g_set_error (error, ifcfg_error_quark (), 0,
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
 			             "Invalid defualt WEP key '%s'", value);
 	 		g_free (value);
 			goto error;
@@ -415,7 +404,7 @@ make_wireless_security_setting (shvarFile *ifcfg, GError **error)
 		} else if (!strcmp (lcase, "restricted")) {
 			s_wireless_sec->auth_alg = g_strdup ("shared");
 		} else {
-			g_set_error (error, ifcfg_error_quark (), 0,
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
 			             "Invalid WEP authentication algoritm '%s'",
 			             lcase);
 			g_free (lcase);
@@ -451,7 +440,7 @@ make_wireless_setting (shvarFile *ifcfg,
 		gsize len = strlen (value);
 
 		if (len > 32 || len == 0) {
-			g_set_error (error, ifcfg_error_quark (), 0,
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
 			             "Invalid SSID '%s' (size %d not between 1 and 32 inclusive)",
 			             value, len);
 			goto error;
@@ -474,7 +463,7 @@ make_wireless_setting (shvarFile *ifcfg,
 		} else if (!strcmp (lcase, "managed")) {
 			s_wireless->mode = g_strdup ("infrastructure");
 		} else {
-			g_set_error (error, ifcfg_error_quark (), 0,
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
 			             "Invalid mode '%s' (not ad-hoc or managed)",
 			             lcase);
 			g_free (lcase);
@@ -513,7 +502,7 @@ wireless_connection_from_ifcfg (const char *file, shvarFile *ifcfg, GError **err
 
 	connection = nm_connection_new ();
 	if (!connection) {
-		g_set_error (error, ifcfg_error_quark (), 0,
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Failed to allocate new connection for %s.", file);
 		return NULL;
 	}
@@ -540,14 +529,14 @@ wireless_connection_from_ifcfg (const char *file, shvarFile *ifcfg, GError **err
 	                                       NM_SETTING_WIRELESS_SETTING_NAME,
 	                                       printable_ssid);
 	if (!con_setting) {
-		g_set_error (error, ifcfg_error_quark (), 0,
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Failed to create connection setting.");
 		goto error;
 	}
 	nm_connection_add_setting (connection, con_setting);
 
 	if (!nm_connection_verify (connection)) {
-		g_set_error (error, ifcfg_error_quark (), 0,
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Connection from %s was invalid.", file);
 		goto error;
 	}
@@ -579,7 +568,7 @@ make_wired_setting (shvarFile *ifcfg, GError **error)
 			if (mtu >= 0 && mtu < 65536)
 				s_wired->mtu = mtu;
 		} else {
-			g_set_error (error, ifcfg_error_quark (), 0,
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
 			             "Invalid MTU '%s'", value);
 			g_object_unref (s_wired);
 			s_wired = NULL;
@@ -602,14 +591,14 @@ wired_connection_from_ifcfg (const char *file, shvarFile *ifcfg, GError **error)
 
 	connection = nm_connection_new ();
 	if (!connection) {
-		g_set_error (error, ifcfg_error_quark (), 0,
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Failed to allocate new connection for %s.", file);
 		return NULL;
 	}
 
 	con_setting = make_connection_setting (file, ifcfg, NM_SETTING_WIRED_SETTING_NAME, NULL);
 	if (!con_setting) {
-		g_set_error (error, ifcfg_error_quark (), 0,
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Failed to create connection setting.");
 		goto error;
 	}
@@ -622,7 +611,7 @@ wired_connection_from_ifcfg (const char *file, shvarFile *ifcfg, GError **error)
 	nm_connection_add_setting (connection, wired_setting);
 
 	if (!nm_connection_verify (connection)) {
-		g_set_error (error, ifcfg_error_quark (), 0,
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Connection from %s was invalid.", file);
 		goto error;
 	}
@@ -651,14 +640,14 @@ parser_parse_file (const char *file,
 
 	parsed = svNewFile(file);
 	if (!parsed) {
-		g_set_error (error, ifcfg_error_quark (), 0,
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Couldn't parse file '%s'", file);
 		return NULL;
 	}
 
 	type = svGetValue (parsed, "TYPE");
 	if (!type) {
-		g_set_error (error, ifcfg_error_quark (), 0,
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "File '%s' didn't have a TYPE key.", file);
 		goto done;
 	}
@@ -683,7 +672,7 @@ parser_parse_file (const char *file,
 	else if (!strcmp (type, "Wireless"))
 		connection = wireless_connection_from_ifcfg (file, parsed, error);
 	else {
-		g_set_error (error, ifcfg_error_quark (), 0,
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Unknown connection type '%s'", type);
 	}
 

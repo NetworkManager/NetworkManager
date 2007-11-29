@@ -71,6 +71,10 @@ typedef struct _NMSystemConfigInterface NMSystemConfigInterface;
 struct _NMSystemConfigInterface {
 	GTypeInterface g_iface;
 
+	void     (*init) (NMSystemConfigInterface *config);
+
+	GSList * (*get_connections) (NMSystemConfigInterface *config);
+
 	/* Signals */
 	void (*connection_added)   (NMSystemConfigInterface *config, NMConnection *connection);
 	void (*connection_removed) (NMSystemConfigInterface *config, NMConnection *connection);
@@ -79,6 +83,9 @@ struct _NMSystemConfigInterface {
 
 GType nm_system_config_interface_get_type (void);
 
+void nm_system_config_interface_init (NMSystemConfigInterface *config);
+
+GSList * nm_system_config_interface_get_connections (NMSystemConfigInterface *config);
 
 G_END_DECLS
 

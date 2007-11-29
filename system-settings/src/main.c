@@ -40,8 +40,7 @@
 #include "dbus-settings.h"
 #include "nm-system-config-interface.h"
 
-typedef struct Application
-{
+typedef struct {
 	DBusConnection *connection;
 	DBusGConnection *g_connection;
 	DBusGProxy *bus_proxy;
@@ -50,7 +49,7 @@ typedef struct Application
 	NMSysconfigSettings *settings;
 	GMainLoop *loop;
 
-	GHashTable *plugins;
+	GSList *plugins;   /* In priority order */
 } Application;
 
 
@@ -101,20 +100,42 @@ register_plugin (Application *app, NMSystemConfigInterface *plugin)
 	g_signal_connect (plugin, "connection-added", (GCallback) connection_added_cb, app);
 	g_signal_connect (plugin, "connection-removed", (GCallback) connection_removed_cb, app);
 	g_signal_connect (plugin, "connection-updated", (GCallback) connection_updated_cb, app);
+
+	nm_system_config_interface_init (plugin);
 }
 
-static GHashTable *
+static GObject *
+find_plugin (GSList *list, const char *pname)
+{
+	GSList *iter;
+
+	g_return_val_if_fail (pname != NULL, FALSE);
+
+	for (iter = list; iter; iter = g_slist_next (iter)) {
+		NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (iter->data);
+		char *list_pname;
+
+		g_object_get (G_OBJECT (plugin),
+		              NM_SYSTEM_CONFIG_INTERFACE_NAME,
+		              &list_pname,
+		              NULL);
+		if (list_pname && !strcmp (pname, list_pname))
+			return G_OBJECT (plugin);
+	}
+
+	return NULL;
+}
+
+static GSList *
 load_plugins (Application *app, const char *plugins, GError **error)
 {
-	GHashTable *table;
+	GSList *list = NULL;
 	char **plist;
 	char **pname;
 
 	plist = g_strsplit (plugins, ",", 0);
 	if (!plist)
 		return NULL;
-
-	table = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
 
 	for (pname = plist; *pname; pname++) {
 		GModule *plugin;
@@ -123,7 +144,7 @@ load_plugins (Application *app, const char *plugins, GError **error)
 		GObject *obj;
 		GObject * (*factory_func) (void);
 
-		obj = g_hash_table_lookup (table, *pname);
+		obj = find_plugin (list, *pname);
 		if (obj)
 			continue;
 
@@ -159,19 +180,19 @@ load_plugins (Application *app, const char *plugins, GError **error)
 		}
 
 		g_module_make_resident (plugin);
-		g_object_set_data_full (obj, "plugin", plugin, (GDestroyNotify) g_module_close);
+		g_object_set_data_full (obj, "nm-ss-plugin", plugin, (GDestroyNotify) g_module_close);
 		register_plugin (app, NM_SYSTEM_CONFIG_INTERFACE (obj));
-		g_hash_table_insert (table, g_strdup (*pname), obj);
+		list = g_slist_append (list, obj);
 	}
 	
 	g_strfreev (plist);
-	return table;
+	return list;
 }
 
 static void
-print_plugin_info (gpointer key, gpointer data, gpointer user_data)
+print_plugin_info (gpointer item, gpointer user_data)
 {
-	NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (data);
+	NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (item);
 	char *pname;
 	char *pinfo;
 
@@ -189,6 +210,42 @@ print_plugin_info (gpointer key, gpointer data, gpointer user_data)
 	g_free (pname);
 	g_free (pinfo);
 }
+
+static void
+free_plugin_connections (gpointer data)
+{
+	GSList *connections = (GSList *) data;
+
+	g_slist_foreach (connections, (GFunc) g_object_unref, NULL);
+}
+
+static gboolean
+load_connections (gpointer user_data)
+{
+	Application *app = (Application *) user_data;
+	GSList *iter;
+
+	g_return_val_if_fail (app != NULL, FALSE);
+
+	for (iter = app->plugins; iter; iter = g_slist_next (iter)) {
+		NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (iter->data);
+		GSList *connections;
+
+		connections = nm_system_config_interface_get_connections (plugin);
+
+		// FIXME: ensure connections from plugins loaded with a lower priority
+		// get rejected when they conflict with connections from a higher
+		// priority plugin.
+
+		g_slist_foreach (connections, (GFunc) g_object_ref, NULL);
+		g_object_set_data_full (G_OBJECT (plugin), "connections",
+		                        connections, free_plugin_connections);
+	}
+
+	return FALSE;
+}
+
+/******************************************************************/
 
 static gboolean
 dbus_reconnect (gpointer user_data)
@@ -361,16 +418,22 @@ main (int argc, char **argv)
 	/* Load the plugins; fail if a plugin is not found. */
 	app->plugins = load_plugins (app, plugins, &error);
 	if (error) {
-		g_hash_table_destroy (app->plugins);
+		g_slist_foreach (app->plugins, (GFunc) g_object_unref, NULL);
+		g_slist_free (app->plugins);
 		g_warning ("Error: %d - %s", error->code, error->message);
 		return -1;
 	}
 	g_free (plugins);
 	g_print ("Loaded plugins:\n");
-	g_hash_table_foreach (app->plugins, print_plugin_info, NULL);
+	g_slist_foreach (app->plugins, print_plugin_info, NULL);
 	g_print ("\n");
 
+	g_idle_add (load_connections, app);
+
 	g_main_loop_run (app->loop);
+
+	g_slist_foreach (app->plugins, (GFunc) g_object_unref, NULL);
+	g_slist_free (app->plugins);
 
 	return 0;
 }

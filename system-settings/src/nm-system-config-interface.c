@@ -23,7 +23,7 @@
 #include "nm-system-config-interface.h"
 
 static void
-nm_system_config_interface_init (gpointer g_iface)
+interface_init (gpointer g_iface)
 {
 	GType iface_type = G_TYPE_FROM_INTERFACE (g_iface);
 	static gboolean initialized = FALSE;
@@ -88,7 +88,7 @@ nm_system_config_interface_get_type (void)
 	if (!system_config_interface_type) {
 		const GTypeInfo system_config_interface_info = {
 			sizeof (NMSystemConfigInterface), /* class_size */
-			nm_system_config_interface_init,   /* base_init */
+			interface_init,   /* base_init */
 			NULL,		/* base_finalize */
 			NULL,
 			NULL,		/* class_finalize */
@@ -107,5 +107,24 @@ nm_system_config_interface_get_type (void)
 	}
 
 	return system_config_interface_type;
+}
+
+void
+nm_system_config_interface_init (NMSystemConfigInterface *config)
+{
+	g_return_if_fail (config != NULL);
+
+	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->init)
+		NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->init (config);
+}
+
+GSList *
+nm_system_config_interface_get_connections (NMSystemConfigInterface *config)
+{
+	g_return_val_if_fail (config != NULL, NULL);
+
+	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->get_connections)
+		return NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->get_connections (config);
+	return NULL;
 }
 

@@ -1,3 +1,23 @@
+2007-11-29  Dan Williams  <dcbw@redhat.com>
+
+	* system-settings/src/nm-system-config-interface.h
+	  system-settings/src/nm-system-config-interface.c
+		- (nm_system_config_interface_init,
+		   nm_system_config_interface_get_connections): add
+
+	* system-settings/src/main.c
+		- (load_plugins, load_connections, main): use a GSList for plugins
+			to ensure priority ordering
+
+	* system-settings/plugins/ifcfg/parser.c
+		- (ifcfg_error_quark): move to plugin.c, and rename
+
+	* system-settings/plugins/ifcfg/plugin.h
+	  system-settings/plugins/ifcfg/plugin.c
+		- (ifcfg_plugin_error_quark): move here from parser.c
+		- rework connection loading and initialization
+		- Add preliminary inotify support for network profile config file
+
 2007-11-28  Tambet Ingo  <tambet@gmail.com>
 
 	Merge the beginnings of the new GSM card support.
