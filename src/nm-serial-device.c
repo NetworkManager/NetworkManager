@@ -1,5 +1,7 @@
 /* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
+#define _GNU_SOURCE  /* for strcasestr() */
+
 #include <termio.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -508,7 +510,7 @@ wait_for_reply_got_data (GIOChannel *source,
 	char buf[4096];
 	GIOStatus status;
 	gboolean done = FALSE;
-	int index = -1;
+	int idx = -1;
 	int i;
 
 	if (condition & G_IO_IN) {
@@ -531,7 +533,7 @@ wait_for_reply_got_data (GIOChannel *source,
 
 				for (i = 0; info->str_needles[i]; i++) {
 					if (strcasestr (buf, info->str_needles[i])) {
-						index = i;
+						idx = i;
 						done = TRUE;
 					}
 				}
@@ -543,7 +545,7 @@ wait_for_reply_got_data (GIOChannel *source,
 		done = TRUE;
 
 	if (done) {
-		info->callback (info->device, index, info->user_data);
+		info->callback (info->device, idx, info->user_data);
 
 		/* Clear the id - returning FALSE already removes it */
 		info->got_data_id = 0;

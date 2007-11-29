@@ -186,7 +186,7 @@ is_modem_device (NMHalManager *manager, const char *udi)
 	return is_modem;
 }
 
-NMDevice *
+static NMDevice *
 modem_device_creator (NMHalManager *manager, const char *udi)
 {
 	char *serial_device;

@@ -145,7 +145,7 @@ get_network_done (NMSerialDevice *device,
 static void
 automatic_registration_get_network (NMSerialDevice *device)
 {
-	char terminators[] = { '\r', '\n', NULL };
+	char terminators[] = { '\r', '\n', '\0' };
 
 	nm_serial_device_send_command_string (device, "AT+COPS?");
 	nm_serial_device_get_reply (device, 10, terminators, get_network_done, NULL);
@@ -355,7 +355,6 @@ nm_umts_device_init (NMUmtsDevice *self)
 static void
 nm_umts_device_class_init (NMUmtsDeviceClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
 	device_class->get_generic_capabilities = real_get_generic_capabilities;

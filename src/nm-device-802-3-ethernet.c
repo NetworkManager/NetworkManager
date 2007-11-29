@@ -243,8 +243,6 @@ nm_device_802_3_ethernet_new (const char *udi,
 						const char *iface,
 						const char *driver)
 {
-	GObject *obj;
-
 	g_return_val_if_fail (udi != NULL, NULL);
 	g_return_val_if_fail (iface != NULL, NULL);
 	g_return_val_if_fail (driver != NULL, NULL);
