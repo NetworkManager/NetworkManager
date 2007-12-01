@@ -1,5 +1,11 @@
 2007-12-01  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/src/main.c
+		- (load_connections, add_connection_to_settings): actually export
+			plugin-provided connections over D-Bus so NM can get them
+
+2007-12-01  Dan Williams  <dcbw@redhat.com>
+
 	* system-settings/plugins/ifcfg/parser.c
 	  system-settings/plugins/ifcfg/parser.h
 	  system-settings/plugins/ifcfg/plugin.c

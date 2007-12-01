@@ -219,6 +219,12 @@ free_plugin_connections (gpointer data)
 	g_slist_foreach (connections, (GFunc) g_object_unref, NULL);
 }
 
+static void
+add_connection_to_settings (gpointer data, gpointer user_data)
+{
+	connection_added_cb (NULL, NM_CONNECTION (data), (Application *) user_data);
+}
+
 static gboolean
 load_connections (gpointer user_data)
 {
@@ -238,6 +244,7 @@ load_connections (gpointer user_data)
 		// priority plugin.
 
 		g_slist_foreach (connections, (GFunc) g_object_ref, NULL);
+		g_slist_foreach (connections, (GFunc) add_connection_to_settings, app);
 		g_object_set_data_full (G_OBJECT (plugin), "connections",
 		                        connections, free_plugin_connections);
 	}
