@@ -1,3 +1,10 @@
+2007-12-01  Dan Williams  <dcbw@redhat.com>
+
+	* system-settings/plugins/ifcfg/parser.c
+	  system-settings/plugins/ifcfg/parser.h
+	  system-settings/plugins/ifcfg/plugin.c
+		- Hook up more inotify bits (untested)
+
 2007-11-29  Dan Williams  <dcbw@redhat.com>
 
 	* system-settings/src/nm-system-config-interface.h

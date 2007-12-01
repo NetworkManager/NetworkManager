@@ -22,14 +22,12 @@
 #ifndef _PARSER_H_
 #define _PARSER_H_
 
+#include <glib.h>
 #include <nm-connection.h>
 
 #define IFCFG_TAG "ifcfg-"
 #define BAK_TAG ".bak"
 
-
 NMConnection * parser_parse_file (const char *file, GError **error);
-
-char * parser_get_current_profile_name (void);
 
 #endif /* _PARSER_H_ */

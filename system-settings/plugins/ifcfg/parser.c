@@ -25,6 +25,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <ctype.h>
+#include <sys/inotify.h>
 
 #include <glib.h>
 
@@ -40,22 +41,6 @@
 #include "parser.h"
 #include "plugin.h"
 
-char *
-parser_get_current_profile_name (void)
-{
-	shvarFile *	file;
-	char *		buf;
-
-	if (!(file = svNewFile (SYSCONFDIR"/sysconfig/network")))
-		return NULL;
-
-	buf = svGetValue (file, "CURRENT_PROFILE");
-	if (!buf)
-		buf = strdup ("default");
-	svCloseFile (file);
-
-	return buf;
-}
 
 static gboolean
 get_int (const char *str, int *value)
@@ -126,22 +111,21 @@ error:
 #define NS_TAG "nameserver "
 
 static void
-read_profile_resolv_conf (NMSettingIP4Config *s_ip4)
+read_profile_resolv_conf (shvarFile *ifcfg, NMSettingIP4Config *s_ip4)
 {
-	char *file;
-	char *profile;
+	char *file = NULL;
+	char *dir = NULL;
 	char *contents = NULL;
 	char **lines = NULL;
 	char **line;
 
-	profile = parser_get_current_profile_name ();
-	if (!profile)
-		return;
+	dir = g_path_get_dirname (ifcfg->fileName);
+	if (!dir)
+		goto out;
 
-	file = g_strdup_printf ("/etc/sysconfig/networking/profiles/%s/resolv.conf", profile);
-	g_free (profile);
+	file = g_strdup_printf ("%s/resolv.conf", dir);
 	if (!file)
-		return;
+		goto out;
 
 	if (!g_file_get_contents (file, &contents, NULL, NULL))
 		goto out;
@@ -250,7 +234,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 		s_ip4->addresses = g_slist_append (s_ip4->addresses, addr);
 	}
 
-	read_profile_resolv_conf (s_ip4);
+	read_profile_resolv_conf (ifcfg, s_ip4);
 
 	return NM_SETTING (s_ip4);
 
@@ -628,8 +612,7 @@ error:
 }
 	
 NMConnection *
-parser_parse_file (const char *file,
-                   GError **error)
+parser_parse_file (const char *file, GError **error)
 {
 	NMConnection *connection = NULL;
 	shvarFile *parsed;
@@ -661,6 +644,7 @@ parser_parse_file (const char *file,
 
 		if (!strcmp (lower, "no") || !strcmp (lower, "n") || !strcmp (lower, "false")) {
 			g_free (lower);
+			// FIXME: actually ignore the device, not the connection
 			g_message ("Ignoring connection '%s' because NM_CONTROLLED was false", file);
 			goto done;
 		}
@@ -685,9 +669,17 @@ parser_parse_file (const char *file,
 		if (*error) {
 			g_object_unref (connection);
 			connection = NULL;
+			goto done;
 		} else if (s_ip4) {
 			nm_connection_add_setting (connection, s_ip4);
 		}
+	}
+
+	if (!nm_connection_verify (connection)) {
+		g_object_unref (connection);
+		connection = NULL;
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Connection was invalid");
 	}
 
 done:
