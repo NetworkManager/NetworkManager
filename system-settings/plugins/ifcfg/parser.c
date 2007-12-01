@@ -618,6 +618,7 @@ parser_parse_file (const char *file, GError **error)
 	shvarFile *parsed;
 	char *type;
 	char *nmc = NULL;
+	NMSetting *s_ip4;
 
 	g_return_val_if_fail (file != NULL, NULL);
 
@@ -662,17 +663,16 @@ parser_parse_file (const char *file, GError **error)
 
 	g_free (type);
 
-	if (connection) {
-		NMSetting *s_ip4;
+	if (!connection)
+		goto done;
 
-		s_ip4 = make_ip4_setting (parsed, error);
-		if (*error) {
-			g_object_unref (connection);
-			connection = NULL;
-			goto done;
-		} else if (s_ip4) {
-			nm_connection_add_setting (connection, s_ip4);
-		}
+	s_ip4 = make_ip4_setting (parsed, error);
+	if (*error) {
+		g_object_unref (connection);
+		connection = NULL;
+		goto done;
+	} else if (s_ip4) {
+		nm_connection_add_setting (connection, s_ip4);
 	}
 
 	if (!nm_connection_verify (connection)) {
