@@ -1144,7 +1144,7 @@ nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *self)
 #endif
 		if (iw_get_ext (nm_dev_sock_get_fd (sk), nm_device_get_iface (NM_DEVICE (self)), SIOCGIWMODE, &wrq) == 0)
 		{
-			if ((mode == IW_MODE_ADHOC) || (mode == IW_MODE_INFRA))
+			if ((wrq.u.mode == IW_MODE_ADHOC) || (wrq.u.mode == IW_MODE_INFRA))
 				mode = wrq.u.mode;
 		}
 		else
