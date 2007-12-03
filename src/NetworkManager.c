@@ -753,6 +753,9 @@ static void nm_data_free (NMData *data)
 
 	nm_hal_deinit (data);
 
+	if (data->dbus_connection)
+		dbus_connection_unref (data->dbus_connection);
+
 	memset (data, 0, sizeof (NMData));
 }
 
