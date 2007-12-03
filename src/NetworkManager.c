@@ -787,7 +787,7 @@ static LibHalContext *nm_get_hal_ctx (NMData *data)
 	nm_hal_mainloop_integration (ctx, data->dbus_connection); 
 	libhal_ctx_set_dbus_connection (ctx, data->dbus_connection);
 	dbus_error_init (&error);
-	if(!libhal_ctx_init (ctx, &error))
+	if (!libhal_ctx_init (ctx, &error))
 	{
 		nm_error ("libhal_ctx_init() failed: %s\n"
 			  "Make sure the hal daemon is running?", 
