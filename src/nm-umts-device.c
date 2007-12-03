@@ -1,5 +1,6 @@
 /* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
+#include <string.h>
 #include "nm-umts-device.h"
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
@@ -7,6 +8,21 @@
 #include "nm-utils.h"
 
 G_DEFINE_TYPE (NMUmtsDevice, nm_umts_device, NM_TYPE_SERIAL_DEVICE)
+
+typedef enum {
+	NM_UMTS_SECRET_NONE = 0,
+	NM_UMTS_SECRET_PIN,
+	NM_UMTS_SECRET_PUK
+} NMUmtsSecret;
+
+#define NM_UMTS_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_UMTS_DEVICE, NMUmtsDevicePrivate))
+
+typedef struct {
+	NMUmtsSecret need_secret;
+} NMUmtsDevicePrivate;
+
+
+static void enter_pin (NMSerialDevice *device, gboolean retry);
 
 NMUmtsDevice *
 nm_umts_device_new (const char *udi,
@@ -203,50 +219,85 @@ enter_pin_done (NMSerialDevice *device,
 			 int reply_index,
 			 gpointer user_data)
 {
+	NMSettingUmts *setting;
+	
 	switch (reply_index) {
 	case 0:
 		do_register (device);
 		break;
 	case -1:
-		nm_warning ("Did not receive response for entered PIN");
+		nm_warning ("Did not receive response for secret");
 		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
 		break;
 	default:
-		nm_warning ("Invalid PIN");
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		nm_warning ("Invalid secret");
+		setting = NM_SETTING_UMTS (umts_device_get_setting (NM_UMTS_DEVICE (device), NM_TYPE_SETTING_UMTS));
+
+		/* Make sure we don't use the invalid PIN/PUK again
+		    as it may lock up the SIM card */
+
+		switch (NM_UMTS_DEVICE_GET_PRIVATE (device)->need_secret) {
+		case NM_UMTS_SECRET_PIN:
+			g_free (setting->pin);
+			setting->pin = NULL;
+			break;
+		case NM_UMTS_SECRET_PUK:
+			g_free (setting->puk);
+			setting->puk = NULL;
+			break;
+		default:
+			break;
+		}
+
+		enter_pin (device, TRUE);
 		break;
 	}
 }
 
 static void
-enter_pin (NMSerialDevice *device)
+enter_pin (NMSerialDevice *device, gboolean retry)
 {
 	NMSettingUmts *setting;
-	char *command;
-	char *responses[] = { "OK", "ERROR", "ERR", NULL };
+	NMActRequest *req;
+	NMConnection *connection;
+	char *secret;
+	char *secret_setting_name;
 
-	setting = NM_SETTING_UMTS (umts_device_get_setting (NM_UMTS_DEVICE (device), NM_TYPE_SETTING_UMTS));
+	req = nm_device_get_act_request (NM_DEVICE (device));
+	g_assert (req);
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
 
-	if (!setting->pin) {
-		/* FIXME: Ask PIN */
-		nm_warning ("PIN required but not provided");
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+	setting = NM_SETTING_UMTS (nm_connection_get_setting (connection, NM_TYPE_SETTING_UMTS));
+
+	switch (NM_UMTS_DEVICE_GET_PRIVATE (device)->need_secret) {
+	case NM_UMTS_SECRET_PIN:
+		secret = setting->pin;
+		secret_setting_name = NM_SETTING_UMTS_PIN;
+		break;
+	case NM_UMTS_SECRET_PUK:
+		secret = setting->puk;
+		secret_setting_name = NM_SETTING_UMTS_PIN;
+		break;
+	default:
+		do_register (device);
 		return;
 	}
 
-	command = g_strdup_printf ("AT+CPIN=\"%s\"", setting->pin);
-	nm_serial_device_send_command_string (device, command);
-	g_free (command);
+	if (secret) {
+		char *command;
+		char *responses[] = { "OK", "ERROR", "ERR", NULL };
 
-	nm_serial_device_wait_for_reply (device, 3, responses, enter_pin_done, NULL);
-}
+		command = g_strdup_printf ("AT+CPIN=\"%s\"", secret);
+		nm_serial_device_send_command_string (device, command);
+		g_free (command);
 
-static void
-enter_puk (NMSerialDevice *device)
-{
-	/* FIXME */
-	nm_warning ("PUK entering not implemented at the moment");
-	nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		nm_serial_device_wait_for_reply (device, 3, responses, enter_pin_done, NULL);
+	} else {
+		nm_info ("%s required", secret_setting_name);
+		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_NEED_AUTH);
+		nm_act_request_request_connection_secrets (req, secret_setting_name, retry);
+	}
 }
 
 static void
@@ -259,10 +310,12 @@ check_pin_done (NMSerialDevice *device,
 		do_register (device);
 		break;
 	case 1:
-		enter_pin (device);
+		NM_UMTS_DEVICE_GET_PRIVATE (device)->need_secret = NM_UMTS_SECRET_PIN;
+		enter_pin (device, FALSE);
 		break;
 	case 2:
-		enter_puk (device);
+		NM_UMTS_DEVICE_GET_PRIVATE (device)->need_secret = NM_UMTS_SECRET_PUK;
+		enter_pin (device, FALSE);
 		break;
 	case -1:
 		nm_warning ("PIN checking timed out");
@@ -310,6 +363,8 @@ real_act_stage1_prepare (NMDevice *device)
 	NMSerialDevice *serial_device = NM_SERIAL_DEVICE (device);
 	char *responses[] = { "OK", "ERR", NULL };
 
+	NM_UMTS_DEVICE_GET_PRIVATE (serial_device)->need_secret = NM_UMTS_SECRET_NONE;
+
 	if (!nm_serial_device_open (NM_SERIAL_DEVICE (device)))
 		return NM_ACT_STAGE_RETURN_FAILURE;
 
@@ -344,6 +399,29 @@ real_check_connection (NMDevice *dev, NMConnection *connection)
 	return NM_DEVICE_CLASS (nm_umts_device_parent_class)->check_connection (dev, connection);
 }
 
+static void
+real_connection_secrets_updated (NMDevice *dev,
+                                 NMConnection *connection,
+                                 const char *setting_name)
+{
+	NMActRequest *req;
+
+	if (nm_device_get_state (dev) != NM_DEVICE_STATE_NEED_AUTH)
+		return;
+
+	if (strcmp (setting_name, NM_SETTING_UMTS_SETTING_NAME) != 0) {
+		nm_warning ("Ignoring updated secrets for setting '%s'.", setting_name);
+		return;
+	}
+
+	req = nm_device_get_act_request (dev);
+	g_assert (req);
+
+	g_return_if_fail (nm_act_request_get_connection (req) == connection);
+
+	nm_device_activate_schedule_stage1_device_prepare (dev);
+}
+
 /*****************************************************************************/
 
 static void
@@ -355,9 +433,13 @@ nm_umts_device_init (NMUmtsDevice *self)
 static void
 nm_umts_device_class_init (NMUmtsDeviceClass *klass)
 {
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
+
+	g_type_class_add_private (object_class, sizeof (NMUmtsDevicePrivate));
 
 	device_class->get_generic_capabilities = real_get_generic_capabilities;
 	device_class->check_connection = real_check_connection;
 	device_class->act_stage1_prepare = real_act_stage1_prepare;
+	device_class->connection_secrets_updated = real_connection_secrets_updated;
 }

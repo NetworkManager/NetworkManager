@@ -1,3 +1,15 @@
+2007-12-03  Tambet Ingo  <tambet@gmail.com>
+
+	Implement PIN and PUK requesting.
+
+	* src/nm-umts-device.c (enter_pin_done): Request the secret again if it failed.
+	(enter_pin): Handle PIN and PUK requests.
+	(real_act_stage1_prepare): Clear the secret type.
+	(real_connection_secrets_updated): Implement this class method to get
+	notified when new secrets arrive.
+	(nm_umts_device_class_init): Add private data back to the umts device class
+	to store the required secret type.
+
 2007-12-01  Dan Williams  <dcbw@redhat.com>
 
 	* system-settings/plugins/ifcfg/parser.c
