@@ -20,6 +20,13 @@ G_BEGIN_DECLS
 typedef struct {
 	NMSetting parent;
 
+	/* The hash table is created at setting object
+	 * init time and should not be replaced.  It is
+	 * a char * -> GValue * mapping, and both the key
+	 * and value are owned by the hash table.  GValues
+	 * inserted into the hash table must be allocated
+	 * with the g_slice_* functions.
+	 */
 	GHashTable *data;
 } NMSettingVPNProperties;
 

@@ -1,3 +1,14 @@
+2007-12-04  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-setting-vpn-properties.h
+		- Clarify usage of the 'data' member of the setting
+
+	* libnm-util/nm-setting-vpn-properties.c
+		- (nm_setting_vpn_properties_init): initialize the 'data' hash table
+		- (set_property): just remove all the settings; don't recreate the has
+		- (update_one_secret): don't need to create the hash table here since
+			it should always be present
+
 2007-12-03  Tambet Ingo  <tambet@gmail.com>
 
 	Implement PIN and PUK requesting.

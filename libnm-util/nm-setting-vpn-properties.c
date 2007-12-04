@@ -24,8 +24,7 @@ verify (NMSetting *setting, GSList *all_settings)
 {
 	NMSettingVPNProperties *self = NM_SETTING_VPN_PROPERTIES (setting);
 
-	if (!self->data)
-		return FALSE;
+	g_return_val_if_fail (self->data != NULL, FALSE);
 
 	/* FIXME: actually check the data as well */
 
@@ -51,8 +50,6 @@ update_one_secret (NMSetting *setting, const char *key, GValue *value)
 	g_return_if_fail (value != NULL);
 
 	/* Secrets are really only known to the VPNs themselves. */
-	if (!self->data)
-		self->data = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, nm_gvalue_destroy);
 	copy_val = g_slice_new0 (GValue);
 	g_value_init (copy_val, G_VALUE_TYPE (value));
 	g_value_copy (value, copy_val);
@@ -60,9 +57,11 @@ update_one_secret (NMSetting *setting, const char *key, GValue *value)
 }
 
 static void
-nm_setting_vpn_properties_init (NMSettingVPNProperties *setting)
+nm_setting_vpn_properties_init (NMSettingVPNProperties *self)
 {
-	((NMSetting *) setting)->name = g_strdup (NM_SETTING_VPN_PROPERTIES_SETTING_NAME);
+	g_object_set (NM_SETTING (self), "name", NM_SETTING_VPN_PROPERTIES_SETTING_NAME, NULL);
+
+	self->data = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, nm_gvalue_destroy);
 }
 
 static void
@@ -78,14 +77,14 @@ finalize (GObject *object)
 static void
 copy_hash (gpointer key, gpointer data, gpointer user_data)
 {
-	NMSettingVPNProperties *setting = NM_SETTING_VPN_PROPERTIES (user_data);
+	GHashTable *hash = (GHashTable *) user_data;
 	GValue *src_val = (GValue *) data;
 	GValue *copy_val;
 
 	copy_val = g_slice_new0 (GValue);
 	g_value_init (copy_val, G_VALUE_TYPE (src_val));
 	g_value_copy (src_val, copy_val);
-	g_hash_table_insert (setting->data, g_strdup (key), copy_val);
+	g_hash_table_insert (hash, g_strdup (key), copy_val);
 }
 
 static void
@@ -96,12 +95,9 @@ set_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_DATA:
-		if (setting->data)
-			g_hash_table_destroy (setting->data);
-
 		/* Must make a deep copy of the hash table here... */
-		setting->data = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, nm_gvalue_destroy);
-		g_hash_table_foreach (g_value_get_boxed (value), copy_hash, setting);
+		g_hash_table_remove_all (setting->data);
+		g_hash_table_foreach (g_value_get_boxed (value), copy_hash, setting->data);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
