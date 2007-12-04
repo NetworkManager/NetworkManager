@@ -425,7 +425,7 @@ make_wireless_setting (shvarFile *ifcfg,
 
 		if (len > 32 || len == 0) {
 			g_set_error (error, ifcfg_plugin_error_quark (), 0,
-			             "Invalid SSID '%s' (size %d not between 1 and 32 inclusive)",
+			             "Invalid SSID '%s' (size %zu not between 1 and 32 inclusive)",
 			             value, len);
 			goto error;
 		}

@@ -380,13 +380,15 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 
 #define ADD_STRING_VAL(field, name, ucase, unhexify, secret) \
 	if (field) { \
+		int len = -1; \
 		if (ucase) \
 			value = g_ascii_strup (field, -1); \
 		else if (unhexify) { \
 			value = nm_utils_hexstr2bin (field, strlen (field)); \
+			len = strlen (field) / 2; \
 		} else \
 			value = g_strdup (field); \
-		success = nm_supplicant_config_add_option (self, name, value, unhexify ? (strlen (field) / 2) : -1, secret); \
+		success = nm_supplicant_config_add_option (self, name, value, len, secret); \
 		g_free (value); \
 		if (!success) { \
 			nm_warning ("Error adding %s to supplicant config.", name); \

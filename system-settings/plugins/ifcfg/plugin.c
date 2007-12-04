@@ -217,8 +217,8 @@ release_one_connection (gpointer item, gpointer user_data)
 static void
 free_watch (gpointer key, gpointer value, gpointer user_data)
 {
-	int ifd = (int) user_data;
-	int wd = (int) value;
+	int ifd = GPOINTER_TO_INT (user_data);
+	int wd = GPOINTER_TO_INT (value);
 
 	if (inotify_rm_watch (ifd, wd) != 0)
 		PLUGIN_WARN (PLUGIN_NAME, "error removing inotify watch on %s", (char *) key);
