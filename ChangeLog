@@ -1,5 +1,10 @@
 2007-12-04  Dan Williams  <dcbw@redhat.com>
 
+	* initscript/RedHat/NetworkManager.in
+		- No longer start named; it's D-Bus interface is going away
+
+2007-12-04  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Michael Biebl <biebl@debian.org>
 
 	* system-settings/plugins/ifcfg/Makefile.am
