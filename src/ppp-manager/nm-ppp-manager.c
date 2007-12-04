@@ -11,7 +11,7 @@
 #include "nm-utils.h"
 #include "nm-marshal.h"
 
-#define NM_PPPD_PLUGIN LIBDIR "/nm-pppd-plugin.so"
+#define NM_PPPD_PLUGIN PLUGINDIR "/nm-pppd-plugin.so"
 #define NM_PPP_WAIT_PPPD 10000 /* 10 seconds */
 
 typedef struct {

@@ -149,7 +149,7 @@ load_plugins (Application *app, const char *plugins, GError **error)
 			continue;
 
 		full_name = g_strdup_printf ("nm-settings-plugin-%s", *pname);
-		path = g_module_build_path (NULL, full_name);
+		path = g_module_build_path (PLUGINDIR, full_name);
 
 		plugin = g_module_open (path, G_MODULE_BIND_LOCAL);
 		if (!plugin) {

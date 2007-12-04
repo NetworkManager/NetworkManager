@@ -1,5 +1,5 @@
 
-lib_LTLIBRARIES = libnm-settings-plugin-ifcfg.la
+pkglib_LTLIBRARIES = libnm-settings-plugin-ifcfg.la
 
 libnm_settings_plugin_ifcfg_la_SOURCES = \
 	shvar.c \
@@ -19,6 +19,7 @@ libnm_settings_plugin_ifcfg_la_CPPFLAGS = \
 	-I$(top_srcdir)/libnm-util \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
 
+libnm_settings_plugin_ifcfg_la_LDFLAGS = -module -avoid-version
 libnm_settings_plugin_ifcfg_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(GMODULE_LIBS) \

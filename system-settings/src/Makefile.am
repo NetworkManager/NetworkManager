@@ -13,18 +13,19 @@ nm_system_settings_SOURCES = \
 	nm-system-config-interface.h
 
 nm_system_settings_CPPFLAGS = \
-	$(DBUS_CFLAGS)									\
-	$(GTHREAD_CFLAGS)								\
+	$(DBUS_CFLAGS) \
+	$(GTHREAD_CFLAGS) \
 	$(GMODULE_CFLAGS) \
-	-DDBUS_API_SUBJECT_TO_CHANGE						\
-	-DG_DISABLE_DEPRECATED							\
-	-DBINDIR=\"$(bindir)\"							\
-	-DSBINDIR=\"$(sbindir)\"							\
-	-DLIBEXECDIR=\"$(libexecdir)\"					\
-	-DDATADIR=\"$(datadir)\"							\
-	-DSYSCONFDIR=\"$(sysconfdir)\"					\
-	-DLOCALSTATEDIR=\"$(localstatedir)\"				\
-	-DGNOMELOCALEDIR=\"$(datadir)/locale\"
+	-DDBUS_API_SUBJECT_TO_CHANGE \
+	-DG_DISABLE_DEPRECATED	\
+	-DBINDIR=\"$(bindir)\" \
+	-DSBINDIR=\"$(sbindir)\" \
+	-DLIBEXECDIR=\"$(libexecdir)\" \
+	-DDATADIR=\"$(datadir)\" \
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
+	-DLOCALSTATEDIR=\"$(localstatedir)\" \
+	-DGNOMELOCALEDIR=\"$(datadir)/locale\" \
+	-DPLUGINDIR=\"$(pkglibdir)\"
 
 nm_system_settings_LDADD = \
 	$(DBUS_LIBS) \

@@ -17,14 +17,15 @@ libppp_manager_la_CPPFLAGS = \
 	$(HAL_CFLAGS) \
 	-DG_DISABLE_DEPRECATED \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
-	-DLIBDIR=\"$(libdir)\"
+	-DLIBDIR=\"$(libdir)\" \
+	-DPLUGINDIR=\"$(pkglibdir)\"
 
 libppp_manager_la_LIBADD = \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
 	$(top_builddir)/src/marshallers/libmarshallers.la
 
-lib_LTLIBRARIES = nm-pppd-plugin.la
+pkglib_LTLIBRARIES = nm-pppd-plugin.la
 
 nm_pppd_plugin_la_SOURCES = \
 	nm-pppd-plugin.c \

@@ -1,5 +1,18 @@
 2007-12-04  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Michael Biebl <biebl@debian.org>
+
+	* system-settings/plugins/ifcfg/Makefile.am
+	  system-settings/src/main.c
+	  system-settings/src/Makefile.am
+		- Put system settings plugins in NM plugins dir
+
+	* src/ppp-manager/Makefile.am
+	  src/ppp-manager/nm-ppp-manager.c
+		- Move pppd plugin to NM plugins dir
+
+2007-12-04  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting-vpn-properties.h
 		- Clarify usage of the 'data' member of the setting
 
