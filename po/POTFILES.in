@@ -2,3 +2,4 @@
 # List of source files containing translatable strings.
 # Please keep this file sorted alphabetically.
 src/nm-netlink-monitor.c
+src/NetworkManager.c
