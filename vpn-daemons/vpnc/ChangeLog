@@ -1,3 +1,8 @@
+2007-12-05  Dan Williams  <dcbw@redhat.com>
+
+	* properties/nm-vpnc.c
+		- (impl_get_widget): be more robust about bad connections
+
 2007-11-15  Dan Williams  <dcbw@redhat.com>
 
 	* properties/nm-vpnc.c

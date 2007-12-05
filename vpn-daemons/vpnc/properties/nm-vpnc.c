@@ -275,17 +275,17 @@ impl_get_widget (NetworkManagerVpnUI *self, NMConnection *connection)
 	if (!connection)
 		goto out;
 
-	/* Populate UI bits from the NMConnection */
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-	g_assert (s_con);
-	g_assert (s_con->id);
-	gtk_entry_set_text (impl->w_connection_name, s_con->id);
-
 	s_vpn = NM_SETTING_VPN (nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN));
-	g_assert (s_vpn);
+	g_return_val_if_fail (s_vpn != NULL, NULL);
 
 	s_vpn_props = NM_SETTING_VPN_PROPERTIES (nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN_PROPERTIES));
-	g_assert (s_vpn_props);
+	g_return_val_if_fail (s_vpn_props != NULL, NULL);
+
+	/* Populate UI bits from the NMConnection */
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	g_return_val_if_fail (s_con != NULL, NULL);
+	g_assert (s_con->id);
+	gtk_entry_set_text (impl->w_connection_name, s_con->id);
 
 	if (s_vpn_props->data)
 		g_hash_table_foreach (s_vpn_props->data, set_property, self);
