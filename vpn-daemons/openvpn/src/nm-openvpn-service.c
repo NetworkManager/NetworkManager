@@ -99,6 +99,8 @@ static ValidProperty valid_properties[] = {
 	{ NM_OPENVPN_KEY_TA,              G_TYPE_STRING },
 	{ NM_OPENVPN_KEY_TA_DIR,          G_TYPE_STRING },
 	{ NM_OPENVPN_KEY_USERNAME,        G_TYPE_STRING },
+	{ NM_OPENVPN_KEY_PASSWORD,        G_TYPE_STRING },
+	{ NM_OPENVPN_KEY_CERTPASS,        G_TYPE_STRING },
 	{ NULL,                           G_TYPE_NONE }
 };
 
@@ -386,7 +388,7 @@ nm_openvpn_start_openvpn_binary (NMOpenvpnPlugin *plugin, GHashTable *properties
 	tmp = g_hash_table_lookup (properties, NM_OPENVPN_KEY_REMOTE);
 	if (tmp) {
 		g_ptr_array_add (openvpn_argv, (gpointer) "--remote");
-		g_ptr_array_add (openvpn_argv, tmp);
+		g_ptr_array_add (openvpn_argv, (gpointer) g_value_get_string ((GValue *) tmp));
 	}
 
 	tmp = g_hash_table_lookup (properties, NM_OPENVPN_KEY_COMP_LZO);
@@ -635,7 +637,7 @@ real_connect (NMVPNPlugin   *plugin,
 				   NM_VPN_PLUGIN_ERROR,
 				   NM_VPN_PLUGIN_ERROR_LAUNCH_FAILED,
 				   "%s",
-				   "Could not start vpnc binary.");
+				   "Could not start openvpn binary.");
 		goto out;
 	}
 

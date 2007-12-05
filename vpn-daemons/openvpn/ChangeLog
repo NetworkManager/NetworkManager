@@ -1,3 +1,13 @@
+2007-12-05  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Casey Harkins <caseyharkins@gmail.com>
+
+	* src/nm-openvpn-service-openvpn-helper.c
+	  src/nm-openvpn-service.c
+	  properties/nm-openvpn.c
+	  auth-dialog/main.c
+		- Fix up so it mostly works
+
 2007-11-23  Tim Niemueller <tim@niemueller.de>
 
 	* configure.in: raise version number to 0.7.0 to reflect the

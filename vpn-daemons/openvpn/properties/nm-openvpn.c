@@ -331,7 +331,7 @@ impl_fill_connection (NetworkManagerVpnUI *self, NMConnection *connection)
 		else
 			dir = "";
 
-		g_hash_table_insert (properties, NM_OPENVPN_KEY_TA, str_to_gvalue (dir));
+		g_hash_table_insert (properties, NM_OPENVPN_KEY_TA_DIR, str_to_gvalue (dir));
 	}
 }
 
@@ -1637,6 +1637,36 @@ impl_get_object (void)
 
 	impl->last_fc_dir = NULL;
 
+	/* advanced settings */
+	glade_file = g_strdup_printf ("%s/%s", GLADEDIR, "nm-openvpn-dialog.glade");
+	impl->xml = glade_xml_new (glade_file, "nm-openvpn-advanced-dialog", GETTEXT_PACKAGE);
+	g_free( glade_file );
+	if (impl->xml == NULL)
+		goto error;
+
+	impl->advanced = GTK_DIALOG (glade_xml_get_widget(impl->xml, "nm-openvpn-advanced-dialog"));
+
+	impl->w_port                  = GTK_ENTRY (glade_xml_get_widget (impl->xml, "openvpn-port"));
+	impl->w_use_routes             = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-routes"));
+	impl->w_routes                 = GTK_ENTRY (glade_xml_get_widget (impl->xml, "openvpn-routes"));
+
+	impl->w_use_lzo                = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-lzo"));
+	impl->w_use_tap                = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-tap"));
+	impl->w_use_tcp                = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-tcp"));
+
+	impl->w_use_cipher             = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-cipher"));
+	impl->w_cipher                 = GTK_COMBO_BOX( glade_xml_get_widget( impl->xml, "openvpn-cipher" ) );
+	populate_cipher(impl->w_cipher);
+
+	impl->w_use_ta                 = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-ta"));
+	impl->w_ta                     = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-ta" ) );
+	impl->w_button_ta              = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-but-ta" ) );
+	impl->w_ta_dir_label           = GTK_LABEL( glade_xml_get_widget( impl->xml, "openvpn-ta-dir-label" ) );
+	impl->w_ta_dir_none            = GTK_RADIO_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-ta-dir-none" ) );
+	impl->w_ta_dir_zero            = GTK_RADIO_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-ta-dir-zero" ) );
+	impl->w_ta_dir_one             = GTK_RADIO_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-ta-dir-one" ) );
+
+	/* normal settings */
 	glade_file = g_strdup_printf ("%s/%s", GLADEDIR, "nm-openvpn-dialog.glade");
 	impl->xml = glade_xml_new (glade_file, "nm-openvpn-widget", GETTEXT_PACKAGE);
 	g_free( glade_file );
@@ -1646,18 +1676,13 @@ impl_get_object (void)
 	impl->widget = glade_xml_get_widget(impl->xml, "nm-openvpn-widget");
 	g_object_ref_sink (impl->widget);
 
-	impl->advanced = GTK_DIALOG (glade_xml_get_widget(impl->xml, "nm-openvpn-advanced-dialog"));
-
 	impl->w_connection_name        = GTK_ENTRY (glade_xml_get_widget (impl->xml, "openvpn-connection-name"));
 	impl->w_remote                = GTK_ENTRY (glade_xml_get_widget (impl->xml, "openvpn-remote"));
-	impl->w_port                  = GTK_ENTRY (glade_xml_get_widget (impl->xml, "openvpn-port"));
-	impl->w_use_routes             = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-routes"));
-	impl->w_routes                 = GTK_ENTRY (glade_xml_get_widget (impl->xml, "openvpn-routes"));
 	impl->w_opt_info_expander      = GTK_EXPANDER (glade_xml_get_widget (impl->xml,
 														    "openvpn-optional-information-expander"));
 	impl->w_advanced_button          = GTK_BUTTON (glade_xml_get_widget (impl->xml,
 														    "openvpn-advanced-button"));
-
+	
 	impl->w_import_button          = GTK_BUTTON (glade_xml_get_widget (impl->xml,
 														  "openvpn-import-button"));
 
@@ -1668,10 +1693,6 @@ impl_get_object (void)
 	impl->w_button_ca              = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-but-ca" ) );
 	impl->w_button_cert            = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-but-cert" ) );
 	impl->w_button_key             = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-but-key" ) );
-
-	impl->w_use_lzo                = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-lzo"));
-	impl->w_use_tap                = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-tap"));
-	impl->w_use_tcp                = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-tcp"));
 
 	impl->w_connection_type        = GTK_COMBO_BOX (glade_xml_get_widget (impl->xml, "openvpn-connection-type"));
 	impl->w_settings_notebook      = GTK_NOTEBOOK (glade_xml_get_widget (impl->xml, "openvpn-settings"));
@@ -1693,18 +1714,6 @@ impl_get_object (void)
 	impl->w_button_x509userpass_ca              = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-x509userpass-but-ca" ) );
 	impl->w_button_x509userpass_cert            = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-x509userpass-but-cert" ) );
 	impl->w_button_x509userpass_key             = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-x509userpass-but-key" ) );
-
-	impl->w_use_cipher             = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-cipher"));
-	impl->w_cipher                 = GTK_COMBO_BOX( glade_xml_get_widget( impl->xml, "openvpn-cipher" ) );
-	populate_cipher(impl->w_cipher);
-
-	impl->w_use_ta                 = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "openvpn-use-ta"));
-	impl->w_ta                     = GTK_ENTRY( glade_xml_get_widget( impl->xml, "openvpn-ta" ) );
-	impl->w_button_ta              = GTK_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-but-ta" ) );
-	impl->w_ta_dir_label           = GTK_LABEL( glade_xml_get_widget( impl->xml, "openvpn-ta-dir-label" ) );
-	impl->w_ta_dir_none            = GTK_RADIO_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-ta-dir-none" ) );
-	impl->w_ta_dir_zero            = GTK_RADIO_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-ta-dir-zero" ) );
-	impl->w_ta_dir_one             = GTK_RADIO_BUTTON( glade_xml_get_widget( impl->xml, "openvpn-ta-dir-one" ) );
 
 	impl->callback                 = NULL;
 

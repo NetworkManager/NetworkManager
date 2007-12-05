@@ -264,7 +264,7 @@ get_password_types (PasswordsInfo *info)
 		return FALSE;
 
 	for (iter = conf_list; iter; iter = iter->next) {
-		key = g_strconcat ((char *) iter->data, "connection/type", NULL);
+		key = g_strconcat ((char *) iter->data, "/connection/type", NULL);
 		str = gconf_client_get_string (gconf_client, key, NULL);
 		g_free (key);
 
@@ -273,7 +273,7 @@ get_password_types (PasswordsInfo *info)
 			continue;
 		}
 
-		key = g_strconcat ((char *) iter->data, "connection/name", NULL);
+		key = g_strconcat ((char *) iter->data, "/connection/id", NULL);
 		str = gconf_client_get_string (gconf_client, key, NULL);
 		g_free (key);
 
@@ -293,7 +293,7 @@ get_password_types (PasswordsInfo *info)
 	if (connection_path) {
 		int connection_type;
 
-		key = g_strconcat (connection_path, "vpn-properties/connection-type", NULL);
+		key = g_strconcat (connection_path, "/vpn-properties/connection-type", NULL);
 		connection_type = gconf_client_get_int (gconf_client, key, NULL);
 		g_free (key);
 
@@ -304,7 +304,7 @@ get_password_types (PasswordsInfo *info)
 		case NM_OPENVPN_CONTYPE_X509:
 			success = TRUE;
 
-			key = g_strconcat (connection_path, "vpn-properties/", NM_OPENVPN_KEY_KEY, NULL);
+			key = g_strconcat (connection_path, "/vpn-properties/", NM_OPENVPN_KEY_KEY, NULL);
 			str = gconf_client_get_string (gconf_client, key, NULL);
 			g_free (key);
 			if (str) {
@@ -323,9 +323,6 @@ get_password_types (PasswordsInfo *info)
 			/* Invalid connection type */
 			break;
 		}
-
-		info->need_password = TRUE;
-		info->need_certpass = TRUE;
 
 		g_free (connection_path);
 	}
@@ -394,9 +391,9 @@ main (int argc, char *argv[])
 
 	if (get_passwords (&info, retry)) {
 		if (info.need_password)
-			printf ("%s\n", info.password);
+			printf ("%s\n%s\n", NM_OPENVPN_KEY_PASSWORD, info.password);
 		if (info.need_certpass)
-			printf ("%s\n", info.certpass);
+			printf ("%s\n%s\n", NM_OPENVPN_KEY_CERTPASS, info.certpass);
 	}
 	printf ("\n\n");
 	/* for good measure, flush stdout since Kansas is going Bye-Bye */

@@ -212,7 +212,7 @@ main (int argc, char *argv[])
 		helper_failed (connection, "Tunnel Device");
 
 	/* IP address */
-	val = addr_to_gvalue (getenv ("ipconfig_local"));
+	val = addr_to_gvalue (getenv ("ifconfig_local"));
 	if (val)
 		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_ADDRESS, val);
 	else
