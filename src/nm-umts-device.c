@@ -80,10 +80,10 @@ dial_done (NMSerialDevice *device,
 		nm_warning ("No carrier");
 		break;
 	case -1:
-		nm_warning ("Manual registration timed out");
+		nm_warning ("Dialing timed out");
 		break;
 	default:
-		nm_warning ("Manual registration failed");
+		nm_warning ("Dialing failed");
 		break;
 	}
 
@@ -151,7 +151,7 @@ get_network_done (NMSerialDevice *device,
 			   gpointer user_data)
 {
 	if (response)
-		nm_info ("Associated with network: %s\n", response);
+		nm_info ("Associated with network: %s", response);
 	else
 		nm_warning ("Couldn't read active network name");
 
@@ -161,7 +161,7 @@ get_network_done (NMSerialDevice *device,
 static void
 automatic_registration_get_network (NMSerialDevice *device)
 {
-	char terminators[] = { '\r', '\n', '\0' };
+	const char terminators[] = { '\r', '\n', '\0' };
 
 	nm_serial_device_send_command_string (device, "AT+COPS?");
 	nm_serial_device_get_reply (device, 10, terminators, get_network_done, NULL);
@@ -368,8 +368,8 @@ real_act_stage1_prepare (NMDevice *device)
 	if (!nm_serial_device_open (NM_SERIAL_DEVICE (device)))
 		return NM_ACT_STAGE_RETURN_FAILURE;
 
-	nm_serial_device_send_command_string (serial_device, "ATZ");
-	nm_serial_device_wait_for_reply (serial_device, 3, responses, init_done, NULL);
+	nm_serial_device_send_command_string (serial_device, "ATZ E0");
+	nm_serial_device_wait_for_reply (serial_device, 10, responses, init_done, NULL);
 
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }

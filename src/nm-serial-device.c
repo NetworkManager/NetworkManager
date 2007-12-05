@@ -13,6 +13,7 @@
 #include <glib.h>
 
 #include "nm-serial-device.h"
+#include "nm-device-interface.h"
 #include "nm-device-private.h"
 #include "ppp-manager/nm-ppp-manager.h"
 #include "nm-setting-serial.h"
@@ -24,9 +25,11 @@ G_DEFINE_TYPE (NMSerialDevice, nm_serial_device, NM_TYPE_DEVICE)
 #define NM_SERIAL_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SERIAL_DEVICE, NMSerialDevicePrivate))
 
 typedef struct {
+	char *serial_iface;
 	int fd;
 	GIOChannel *channel;
 	NMPPPManager *ppp_manager;
+	NMIP4Config  *pending_ip4_config;
 	struct termios old_t;
 } NMSerialDevicePrivate;
 
@@ -326,7 +329,7 @@ nm_serial_device_send_command_string (NMSerialDevice *device, const char *str)
 
 	command = g_byte_array_new ();
 	g_byte_array_append (command, (guint8 *) str, strlen (str));
-	g_byte_array_append (command, (guint8 *) "\r\n", 2);
+	g_byte_array_append (command, (guint8 *) "\r", 1);
 
 	ret = nm_serial_device_send_command (device, command);
 	g_byte_array_free (command, TRUE);
@@ -760,10 +763,12 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 			 NMIP4Config *config,
 			 gpointer user_data)
 {
-	nm_debug ("got ipconfig from pppd: %s", iface);
-	/* FIXME */
+	NMDevice *device = NM_DEVICE (user_data);
 
-	nm_device_state_changed (NM_DEVICE (user_data), NM_DEVICE_STATE_ACTIVATED);
+	g_object_set (device, NM_DEVICE_INTERFACE_IFACE, iface, NULL);
+
+	NM_SERIAL_DEVICE_GET_PRIVATE (device)->pending_ip4_config = g_object_ref (config);
+	nm_device_activate_schedule_stage4_ip_config_get (device);
 }
 
 static NMActStageReturn
@@ -802,11 +807,31 @@ real_act_stage2_config (NMDevice *device)
 	return ret;
 }
 
+static NMActStageReturn
+real_act_stage4_get_ip4_config (NMDevice *device, NMIP4Config **config)
+{
+	NMSerialDevicePrivate *priv = NM_SERIAL_DEVICE_GET_PRIVATE (device);
+
+	*config = priv->pending_ip4_config;
+	priv->pending_ip4_config = NULL;
+
+	return NM_ACT_STAGE_RETURN_SUCCESS;
+}
+
 static void
 real_deactivate_quickly (NMDevice *device)
 {
 	NMSerialDevice *self = NM_SERIAL_DEVICE (device);
 	NMSerialDevicePrivate *priv = NM_SERIAL_DEVICE_GET_PRIVATE (device);
+
+	/* Restore the iface (ttyUSB0 vs ppp0) */
+	if (!strcmp (nm_device_get_iface (device), priv->serial_iface))
+		g_object_set (device, NM_DEVICE_INTERFACE_IFACE, priv->serial_iface, NULL);
+
+	if (priv->pending_ip4_config) {
+		g_object_unref (priv->pending_ip4_config);
+		priv->pending_ip4_config = NULL;
+	}
 
 	if (priv->ppp_manager) {
 		g_object_unref (priv->ppp_manager);
@@ -844,12 +869,32 @@ nm_serial_device_init (NMSerialDevice *self)
 {
 }
 
+static GObject*
+constructor (GType type,
+		   guint n_construct_params,
+		   GObjectConstructParam *construct_params)
+{
+	GObject *object;
+
+	object = G_OBJECT_CLASS (nm_serial_device_parent_class)->constructor (type,
+															n_construct_params,
+															construct_params);
+	if (!object)
+		return NULL;
+
+	NM_SERIAL_DEVICE_GET_PRIVATE (object)->serial_iface = g_strdup (nm_device_get_iface (NM_DEVICE (object)));
+
+	return object;
+}
+
 static void
 finalize (GObject *object)
 {
 	NMSerialDevice *self = NM_SERIAL_DEVICE (object);
+	NMSerialDevicePrivate *priv = NM_SERIAL_DEVICE_GET_PRIVATE (self);
 
 	nm_serial_device_close (self);
+	g_free (priv->serial_iface);
 
 	G_OBJECT_CLASS (nm_serial_device_parent_class)->finalize (object);
 }
@@ -863,9 +908,11 @@ nm_serial_device_class_init (NMSerialDeviceClass *klass)
 	g_type_class_add_private (object_class, sizeof (NMSerialDevicePrivate));
 
 	/* Virtual methods */
+	object_class->constructor = constructor;
 	object_class->finalize = finalize;
 
 	parent_class->check_connection = real_check_connection;
 	parent_class->act_stage2_config = real_act_stage2_config;
+	parent_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 	parent_class->deactivate_quickly = real_deactivate_quickly;
 }

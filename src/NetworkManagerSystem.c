@@ -1,3 +1,5 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+
 /* NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -47,6 +49,9 @@
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-netlink.h"
+
+/* FIXME: Remove this */
+#include "nm-serial-device.h"
 
 #include <netlink/route/addr.h>
 #include <netlink/netlink.h>
@@ -223,7 +228,13 @@ gboolean nm_system_device_set_from_ip4_config (NMDevice *dev)
 		nm_warning ("couldn't create rtnl address!\n");
 
 	sleep (1);
-	nm_system_device_set_ip4_route (dev, nm_ip4_config_get_gateway (config), 0, 0, nm_ip4_config_get_mss (config));
+
+	/* FIXME: This is wrong wrong wrong. But I don't know how to fix it. A virtual function to NMDevice class? */
+	if (NM_IS_SERIAL_DEVICE (dev))
+		nm_system_device_add_default_route_via_device_with_iface (nm_device_get_iface (dev));
+	else
+		nm_system_device_set_ip4_route (dev, nm_ip4_config_get_gateway (config), 0, 0, 
+								  nm_ip4_config_get_mss (config));
 
 	len = nm_ip4_config_get_num_static_routes (config);
 	for (i = 0; i < len; i++) {

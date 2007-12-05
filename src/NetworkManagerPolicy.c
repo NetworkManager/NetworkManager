@@ -236,6 +236,11 @@ nm_policy_device_change_check (gpointer user_data)
 	switch (nm_manager_get_state (policy->manager)) {
 	case NM_STATE_CONNECTED:
 		old_dev = nm_manager_get_active_device (policy->manager);
+
+		/* Don't touch devices that are not upped/downed automatically */
+		if (!NM_IS_DEVICE_802_3_ETHERNET (old_dev) && !NM_IS_DEVICE_802_11_WIRELESS (old_dev))
+			goto out;
+
 		caps = nm_device_get_capabilities (old_dev);
 
 		/* Don't interrupt semi-supported devices.  If the user chose

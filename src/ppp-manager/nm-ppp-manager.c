@@ -312,7 +312,6 @@ ip4_config_get (DBusGProxy *proxy,
 /* 	priv->ipconfig_timeout = 0; */
 
 	config = nm_ip4_config_new ();
-	nm_ip4_config_set_secondary (config, TRUE);
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_GATEWAY);
 	if (val)
@@ -516,8 +515,6 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	if (!ppp_cmd)
 		return FALSE;
 
-	/* FIXME: This should come from NMSettingIP4Config */
-	nm_cmd_line_add_string (ppp_cmd, "defaultroute");
 	g_ptr_array_add (ppp_cmd->array, NULL);
 
 	priv = NM_PPP_MANAGER_GET_PRIVATE (manager);

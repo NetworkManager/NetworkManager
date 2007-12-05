@@ -52,7 +52,8 @@ get_creator (NMHalManager *manager, const char *udi)
 	for (iter = manager->device_creators; iter; iter = iter->next) {
 		creator = (DeviceCreator *) iter->data;
 
-		if (creator->is_device_fn (manager, udi))
+		if (libhal_device_query_capability (manager->hal_ctx, udi, creator->capability_str, NULL) && 
+		    creator->is_device_fn (manager, udi))
 			return creator;
 	}
 
