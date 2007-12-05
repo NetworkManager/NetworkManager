@@ -593,26 +593,30 @@ import_from_file (NetworkManagerVpnUI *self,
 	const char *buf;
 	gboolean have_value;
 	char *basename = NULL;
-	gboolean success = FALSE;
+	gboolean complete = TRUE;
+	GtkWidget *dialog;
 
 	pcf = pcf_file_load (path);
 	if (pcf == NULL)
-		return FALSE;
+		goto error;
 
 	/* Connection name */
-	if ((buf = pcf_file_lookup_value (pcf, "main", "Description")) == NULL || strlen (buf) < 1)
-		goto error;
-	gtk_entry_set_text (impl->w_connection_name, buf);
+	if ((buf = pcf_file_lookup_value (pcf, "main", "Description")))
+		gtk_entry_set_text (impl->w_connection_name, buf);
+	else
+		complete = FALSE;
 
 	/* Gateway */
-	if ((buf = pcf_file_lookup_value (pcf, "main", "Host")) == NULL || strlen (buf) < 1)
-		goto error;
-	gtk_entry_set_text (impl->w_gateway, buf);
+	if ((buf = pcf_file_lookup_value (pcf, "main", "Host")))
+		gtk_entry_set_text (impl->w_gateway, buf);
+	else
+		complete = FALSE;
 
 	/* Group name */
-	if ((buf = pcf_file_lookup_value (pcf, "main", "GroupName")) == NULL || strlen (buf) < 1)
-		goto error;
-	gtk_entry_set_text (impl->w_group_name, buf);
+	if ((buf = pcf_file_lookup_value (pcf, "main", "GroupName")))
+		gtk_entry_set_text (impl->w_group_name, buf);
+	else
+		complete = FALSE;
 
 	/* Optional settings */
 
@@ -669,13 +673,9 @@ import_from_file (NetworkManagerVpnUI *self,
 	if (connection)
 		impl_fill_connection (self, connection);
 
-	success = TRUE;
-
- error:	
 	g_hash_table_destroy (pcf);
 
-	if (!success) {
-		GtkWidget *dialog;
+	if (!complete) {
 
 		if (!basename)
 			basename = g_path_get_basename (path);
@@ -684,16 +684,36 @@ import_from_file (NetworkManagerVpnUI *self,
 						 GTK_DIALOG_DESTROY_WITH_PARENT,
 						 GTK_MESSAGE_WARNING,
 						 GTK_BUTTONS_CLOSE,
-						 _("Cannot import settings"));
+						 _("Settings import incomplete"));
 		gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
-							  _("The VPN settings file '%s' does not contain valid data."), basename);
+							  _("The VPN settings file '%s' is incomplete. You may not be able to connect without providing further information."), basename);
 		gtk_dialog_run (GTK_DIALOG (dialog));
 		gtk_widget_destroy (dialog);
+	} else {
+
 	}
 
-	g_free (basename);
+	if (basename)
+		g_free (basename);
 
-	return success;
+	return TRUE;
+
+error:
+	if (!basename)
+		basename = g_path_get_basename (path);
+
+	dialog = gtk_message_dialog_new (NULL,
+							   GTK_DIALOG_DESTROY_WITH_PARENT,
+							   GTK_MESSAGE_ERROR,
+							   GTK_BUTTONS_CLOSE,
+							   _("Cannot import settings"));
+	gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (dialog),
+							  _("The VPN settings file '%s' could not be read or is invalid."),
+									  basename);
+	gtk_dialog_run (GTK_DIALOG (dialog));
+	gtk_widget_destroy (dialog);
+	g_free (basename);
+	return FALSE;
 }
 
 static void

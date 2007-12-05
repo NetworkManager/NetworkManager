@@ -1,5 +1,13 @@
 2007-12-05  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Denis Leroy <denis@poolshark.org>
+
+	* properties/nm-vpnc.c
+		- (import_from_file): allow import of incomplete .pcf files
+			(gnome.org #498758, rh #241774)
+
+2007-12-05  Dan Williams  <dcbw@redhat.com>
+
 	* properties/nm-vpnc.c
 		- (impl_get_widget): be more robust about bad connections
 
