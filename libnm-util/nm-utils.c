@@ -432,6 +432,7 @@ nm_utils_string_slist_validate (GSList *list, const char **valid_values)
 
 #define TYPE_GSLIST_OF_STRINGS dbus_g_type_get_collection ("GSList", G_TYPE_STRING)
 #define TYPE_ARRAY_OF_IP4ADDR_STRUCTS dbus_g_type_get_collection ("GPtrArray", dbus_g_type_get_collection ("GArray", G_TYPE_UINT))
+#define TYPE_HASH_OF_GVALUES dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE)
 
 static void
 nm_utils_convert_strv_to_slist (const GValue *src_value, GValue *dest_value)
@@ -561,6 +562,35 @@ nm_utils_convert_ip4_addr_struct_array_to_string (const GValue *src_value, GValu
 	g_string_free (printable, FALSE);
 }
 
+static void
+convert_one_hash_entry (gpointer key, gpointer value, gpointer user_data)
+{
+	GString *printable = (GString *) user_data;
+	char *value_as_string;
+
+	value_as_string = g_strdup_value_contents ((GValue *) value);
+	g_string_append_printf (printable, " { '%s': %s },", (const char *) key, value_as_string);
+	g_free (value_as_string);
+}
+
+static void
+nm_utils_convert_gvalue_hash_to_string (const GValue *src_value, GValue *dest_value)
+{
+	GHashTable *hash;
+	GString *printable;
+
+	g_return_if_fail (g_type_is_a (G_VALUE_TYPE (src_value), TYPE_HASH_OF_GVALUES));
+
+	hash = (GHashTable *) g_value_get_boxed (src_value);
+
+	printable = g_string_new ("[");
+	g_hash_table_foreach (hash, convert_one_hash_entry, printable);
+	g_string_append (printable, " ]");
+
+	g_value_take_string (dest_value, printable->str);
+	g_string_free (printable, FALSE);
+}
+
 void
 nm_utils_register_value_transformations (void)
 {
@@ -579,6 +609,9 @@ nm_utils_register_value_transformations (void)
 		g_value_register_transform_func (TYPE_ARRAY_OF_IP4ADDR_STRUCTS,
 		                                 G_TYPE_STRING, 
 		                                 nm_utils_convert_ip4_addr_struct_array_to_string);
+		g_value_register_transform_func (TYPE_HASH_OF_GVALUES,
+		                                 G_TYPE_STRING, 
+		                                 nm_utils_convert_gvalue_hash_to_string);
 		registered = TRUE;
 	}
 }

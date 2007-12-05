@@ -1,3 +1,10 @@
+2007-12-05  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-utils.c
+		- (nm_utils_register_value_transformations,
+		   nm_utils_convert_gvalue_hash_to_string): better debug output of
+			GHashTables of GValues too
+
 2007-12-04  Dan Williams  <dcbw@redhat.com>
 
 	* initscript/RedHat/NetworkManager.in
