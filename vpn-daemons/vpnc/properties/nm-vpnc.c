@@ -182,13 +182,13 @@ impl_fill_connection (NetworkManagerVpnUI *self, NMConnection *connection)
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-	g_assert (s_con);
+	g_return_if_fail (s_con != NULL);
 
 	s_vpn = NM_SETTING_VPN (nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN));
-	g_assert (s_vpn);
+	g_return_if_fail (s_vpn != NULL);
 
 	s_vpn_props = NM_SETTING_VPN_PROPERTIES (nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN_PROPERTIES));
-	g_assert (s_vpn_props);
+	g_return_if_fail (s_vpn_props != NULL);
 
 	/* Connection name */
 	id = gtk_entry_get_text (impl->w_connection_name);
