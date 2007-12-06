@@ -32,8 +32,11 @@ nm_setting_to_hash (NMSetting *setting)
 	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
 
 	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_property_specs);
-	if (!property_specs)
+	if (!property_specs) {
+		g_warning ("%s: couldn't find property specs for object of type '%s'",
+		           __func__, g_type_name (G_OBJECT_TYPE (setting)));
 		return NULL;
+	}
 
 	hash = g_hash_table_new_full (g_str_hash, g_str_equal,
 							(GDestroyNotify) g_free,
