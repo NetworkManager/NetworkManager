@@ -1,6 +1,10 @@
+2007-12-06  Jakub Friedl  <jfriedl@suse.cz>
+
+	* cs.po: Added 'cs' to linguas.
+
 2007-12-06  Jorge Gonzalez  <jorgegonz@svn.gnome.org>
 
-        * es.po: Updated Spanish translation.
+	* es.po: Updated Spanish translation.
 
 2007-12-03  Jovan Naumovski  <jovan@lugola.net>
 
@@ -32,7 +36,7 @@
 
 2007-10-26  Jorge Gonzalez  <jorgegonz@svn.gnome.org>
 
-        * es.po: Updated Spanish translation.
+	* es.po: Updated Spanish translation.
 
 2007-09-15  Leonardo Ferreira Fontenelle  <leonardof@svn.gnome.org>
 
