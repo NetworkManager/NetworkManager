@@ -12,8 +12,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-vpnc.HEAD.es\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-09-13 03:41+0100\n"
-"PO-Revision-Date: 2007-10-26 20:21+0200\n"
+"POT-Creation-Date: 2007-12-05 22:06+0000\n"
+"PO-Revision-Date: 2007-12-06 16:55+0100\n"
 "Last-Translator: Jorge González <jorgegonz@svn.gnome.org>\n"
 "Language-Team: Spanish <traductores@es.gnome.org>\n"
 "MIME-Version: 1.0\n"
@@ -61,16 +61,16 @@ msgstr "_Recordar contraseñas para esta sesión"
 msgid "_Save passwords in keyring"
 msgstr "_Guardar contraseñas en el depósito de claves"
 
-#: ../auth-dialog/main.c:160
+#: ../auth-dialog/main.c:172
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Debe autenticarse para acceder a la red privada virtual «%s»."
 
-#: ../auth-dialog/main.c:161
+#: ../auth-dialog/main.c:173
 msgid "Authenticate VPN"
 msgstr "Autenticación VPN"
 
-#: ../auth-dialog/main.c:168
+#: ../auth-dialog/main.c:180
 msgid "_Group Password:"
 msgstr "Contraseña del _grupo:"
 
@@ -83,22 +83,22 @@ msgstr "Añadir, eliminar y editar conexiones VPN"
 msgid "VPN Connection Manager (vpnc)"
 msgstr "Gestor de conexiones VPN (vpnc)"
 
-#: ../properties/nm-vpnc.c:94
+#: ../properties/nm-vpnc.c:98
 msgid "Compatible Cisco VPN client (vpnc)"
 msgstr "Cliente para Compatible Cisco VPN (vpnc)"
 
 #
 # include/printconf/dialogs.ycp:1787
-#: ../properties/nm-vpnc.c:523
+#: ../properties/nm-vpnc.c:543
 msgid "The following vpnc VPN connection will be created:"
 msgstr "Se creará la siguiente conexión VPN vpnc:"
 
-#: ../properties/nm-vpnc.c:525
+#: ../properties/nm-vpnc.c:545
 #, c-format
 msgid "Name:  %s"
 msgstr "Nombre: %s"
 
-#: ../properties/nm-vpnc.c:528
+#: ../properties/nm-vpnc.c:548
 #, c-format
 msgid "Gateway:  %s"
 msgstr "Pasarela: %s"
@@ -106,50 +106,50 @@ msgstr "Pasarela: %s"
 # clients/lan_dns.ycp:280
 # clients/lan_dns.ycp:269
 # include/users/ui.ycp:1021
-#: ../properties/nm-vpnc.c:530
+#: ../properties/nm-vpnc.c:550
 #, c-format
 msgid "Group Name:  %s"
 msgstr "Nombre del grupo: %s"
 
 #
 # include/network/providers.ycp:498 include/network/providers.ycp:681
-#: ../properties/nm-vpnc.c:534
+#: ../properties/nm-vpnc.c:554
 #, c-format
 msgid "Username:  %s"
 msgstr "Nombre de usuario: %s"
 
-#: ../properties/nm-vpnc.c:539
+#: ../properties/nm-vpnc.c:559
 #, c-format
 msgid "Domain:  %s"
 msgstr "Dominio: %s"
 
-#: ../properties/nm-vpnc.c:544
+#: ../properties/nm-vpnc.c:564
 #, c-format
 msgid "Routes:  %s"
 msgstr "Rutas: %s"
 
-#: ../properties/nm-vpnc.c:548
+#: ../properties/nm-vpnc.c:568
 #, c-format
 msgid "NAT-Keepalive packet interval:  %s"
 msgstr "Intervalo de paquetes NAT-keepalive: %s"
 
-#: ../properties/nm-vpnc.c:552
+#: ../properties/nm-vpnc.c:572
 msgid "Enable Single DES"
 msgstr "Activar DES único"
 
-#: ../properties/nm-vpnc.c:556
+#: ../properties/nm-vpnc.c:576
 msgid "Disable NAT Traversal"
-msgstr ""
+msgstr "Deshabilitar NAT transversal"
 
-#: ../properties/nm-vpnc.c:560
+#: ../properties/nm-vpnc.c:580
 msgid "The connection details can be changed using the \"Edit\" button."
 msgstr "Los detalles de la conexión se pueden cambiar usando el botón «Editar»."
 
-#: ../properties/nm-vpnc.c:638
+#: ../properties/nm-vpnc.c:665
 msgid "TCP tunneling not supported"
 msgstr "No se soporta el túnel por TCP"
 
-#: ../properties/nm-vpnc.c:640
+#: ../properties/nm-vpnc.c:667
 #, c-format
 msgid ""
 "The VPN settings file '%s' specifies that VPN traffic should be tunneled "
@@ -158,46 +158,59 @@ msgid ""
 "The connection can still be created, with TCP tunneling disabled, however it "
 "may not work as expected."
 msgstr ""
-"El archivo de ajustes para VPN «%s» especifica que el tráfico VPN se debería usar "
-"un túnel a través de TCP lo que actualmente no está soportado en el software VPNC.\n"
+"El archivo de ajustes para VPN «%s» especifica que el tráfico VPN se debería "
+"usar un túnel a través de TCP lo que actualmente no está soportado en el "
+"software VPNC.\n"
 "\n"
-"Aún se puede crear la conexión con el túnel TCP deshabilitado, no obstante puede "
-"que no funcione como se esperaba."
+"Aún se puede crear la conexión con el túnel TCP deshabilitado, no obstante "
+"puede que no funcione como se esperaba."
 
-#: ../properties/nm-vpnc.c:661
+#: ../properties/nm-vpnc.c:687
+msgid "Settings import incomplete"
+msgstr "La importación de los ajustes está incompleta"
+
+#: ../properties/nm-vpnc.c:689
+#, c-format
+msgid ""
+"The VPN settings file '%s' is incomplete. You may not be able to connect "
+"without providing further information."
+msgstr ""
+"El archivo de ajustes VPN «%s» está incompleto. Puede que no se pueda conectar "
+"sin proporcionar más información."
+
+#: ../properties/nm-vpnc.c:709
 msgid "Cannot import settings"
 msgstr "No se pueden importar los ajustes"
 
-#: ../properties/nm-vpnc.c:663
+#: ../properties/nm-vpnc.c:711
 #, c-format
-msgid "The VPN settings file '%s' does not contain valid data."
-msgstr "El archivo de ajustes VPN «%s» no contiene datos válidos."
+msgid "The VPN settings file '%s' could not be read or is invalid."
+msgstr "El archivo de ajustes VPN «%s» no se pudo leer o no es válido."
 
-#: ../properties/nm-vpnc.c:680
+#: ../properties/nm-vpnc.c:726
 msgid "Select file to import"
 msgstr "Seleccione el archivo a importar"
 
-#. printf ("in impl_export\n");
-#: ../properties/nm-vpnc.c:860
+#: ../properties/nm-vpnc.c:908
 msgid "Save as..."
 msgstr "Guardar como..."
 
-#: ../properties/nm-vpnc.c:890
+#: ../properties/nm-vpnc.c:937
 #, c-format
 msgid "A file named \"%s\" already exists."
 msgstr "Ya existe un archivo llamado «%s»."
 
 # clients/inst_sw_select.ycp:360
 # clients/inst_sw_select.ycp:436
-#: ../properties/nm-vpnc.c:893
+#: ../properties/nm-vpnc.c:940
 msgid "Do you want to replace it with the one you are saving?"
 msgstr "¿Desea reemplazarlo con el que está guardando?"
 
-#: ../properties/nm-vpnc.c:907
+#: ../properties/nm-vpnc.c:954
 msgid "Failed to export configuration"
 msgstr "Fallo al exportar la configuración"
 
-#: ../properties/nm-vpnc.c:909
+#: ../properties/nm-vpnc.c:956
 #, c-format
 msgid "Failed to save file %s"
 msgstr "Fallo al guardar el archivo %s"
@@ -212,7 +225,7 @@ msgstr "No_mbre de la conexión:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:3
 msgid "Disable NAT _traversal"
-msgstr ""
+msgstr "Deshabilitar NAT _transversal"
 
 #: ../properties/nm-vpnc-dialog.glade.h:4
 msgid "Enable _weak single DES encryption"
@@ -238,8 +251,8 @@ msgid ""
 "Name used to identify the connection to the private network, e.g. \"Campus "
 "VPN\" or \"Corporate Network\""
 msgstr ""
-"Nombre a usar para identificar la conexión con la red privada, ej: «Campus VPN» "
-"o «Red de la empresa»"
+"Nombre a usar para identificar la conexión con la red privada, ej: «Campus "
+"VPN» o «Red de la empresa»"
 
 #: ../properties/nm-vpnc-dialog.glade.h:9
 msgid "Optional"
@@ -256,8 +269,9 @@ msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
 msgstr ""
-"Introduzca debajo la información proporcionada por el administrador de su sistema. No "
-"introduzca aquí su contraseña ya que se le preguntará al conectar."
+"Introduzca debajo la información proporcionada por el administrador de su "
+"sistema. No introduzca aquí su contraseña ya que se le preguntará al "
+"conectar."
 
 #: ../properties/nm-vpnc-dialog.glade.h:12
 msgid ""
