@@ -460,13 +460,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig * self,
 
 	ADD_STRING_VAL (setting->key_mgmt, "key_mgmt", TRUE, FALSE, FALSE);
 	ADD_STRING_VAL (setting->auth_alg, "auth_alg", TRUE, FALSE, FALSE);
-	ADD_STRING_VAL (setting->identity, "identity", FALSE, FALSE, FALSE);
-	ADD_STRING_VAL (setting->anonymous_identity, "anonymous_identity", FALSE, FALSE, FALSE);
 	ADD_STRING_VAL (setting->nai, "nai", FALSE, FALSE, FALSE);
-	ADD_STRING_VAL (setting->wep_key0, "wep_key0", FALSE, TRUE, TRUE);
-	ADD_STRING_VAL (setting->wep_key1, "wep_key1", FALSE, TRUE, TRUE);
-	ADD_STRING_VAL (setting->wep_key2, "wep_key2", FALSE, TRUE, TRUE);
-	ADD_STRING_VAL (setting->wep_key3, "wep_key3", FALSE, TRUE, TRUE);
 	ADD_STRING_VAL (setting->psk, "psk", FALSE, TRUE, TRUE);
 	ADD_STRING_VAL (setting->password, "password", FALSE, FALSE, TRUE);
 	ADD_STRING_VAL (setting->pin, "pin", FALSE, FALSE, TRUE);
@@ -490,48 +484,76 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig * self,
 		ADD_STRING_LIST_VAL (setting->group, "group", TRUE, FALSE);
 	}
 
-	ADD_BLOB_VAL (setting->ca_cert, "ca_cert", connection_uid);
-	ADD_BLOB_VAL (setting->client_cert, "client_cert", connection_uid);
-	ADD_BLOB_VAL (setting->private_key, "private_key", connection_uid);
-	ADD_BLOB_VAL (setting->phase2_ca_cert, "ca_cert2", connection_uid);
-	ADD_BLOB_VAL (setting->phase2_client_cert, "client_cert2", connection_uid);
-	ADD_BLOB_VAL (setting->phase2_private_key, "private_key2", connection_uid);
+	/* WEP keys if required */
+	if (!strcmp (setting->key_mgmt, "none")) {
+		ADD_STRING_VAL (setting->wep_key0, "wep_key0", FALSE, TRUE, TRUE);
+		ADD_STRING_VAL (setting->wep_key1, "wep_key1", FALSE, TRUE, TRUE);
+		ADD_STRING_VAL (setting->wep_key2, "wep_key2", FALSE, TRUE, TRUE);
+		ADD_STRING_VAL (setting->wep_key3, "wep_key3", FALSE, TRUE, TRUE);
 
-	if (setting->wep_key0 || setting->wep_key1 || setting->wep_key2 || setting->wep_key3) {
-		value = g_strdup_printf ("%d", setting->wep_tx_keyidx);
-		success = nm_supplicant_config_add_option (self, "wep_tx_keyidx", value, -1, FALSE);
-		g_free (value);
-		if (!success) {
-			nm_warning ("Error adding wep_tx_keyidx to supplicant config.");
-			return FALSE;
+		if (setting->wep_key0 || setting->wep_key1 || setting->wep_key2 || setting->wep_key3) {
+			value = g_strdup_printf ("%d", setting->wep_tx_keyidx);
+			success = nm_supplicant_config_add_option (self, "wep_tx_keyidx", value, -1, FALSE);
+			g_free (value);
+			if (!success) {
+				nm_warning ("Error adding wep_tx_keyidx to supplicant config.");
+				return FALSE;
+			}
 		}
 	}
 
+	/* 802.1 stuff for Dynamic WEP and WPA-Enterprise */
 	if (   (strcmp (setting->key_mgmt, "ieee8021x") == 0)
 	    || (strcmp (setting->key_mgmt, "wpa-eap") == 0)) {
-			char *phase1 = NULL;
+		GString *phase1, *phase2;
+		char *tmp;
 
-			if (!nm_supplicant_config_add_option (self, "fragment_size", "1300", -1, FALSE))
-				return FALSE;
+		/* Drop the fragment size a bit for better compatibility */
+		if (!nm_supplicant_config_add_option (self, "fragment_size", "1300", -1, FALSE))
+			return FALSE;
 
-			if (setting->phase1_peapver) {
-				if (phase1)
-					phase1 = g_strdup_printf ("%s peapver=%s", phase1, setting->phase1_peapver);
-				else
-					phase1 = g_strdup_printf ("peapver=%s", setting->phase1_peapver);
-			}
+		phase1 = g_string_new (NULL);
+		if (setting->phase1_peapver)
+			g_string_append_printf (phase1, "peapver=%s", setting->phase1_peapver);
 
-			if (setting->phase1_peaplabel) {
-				if (phase1)
-					phase1 = g_strdup_printf ("%s peaplabel=%s", phase1, setting->phase1_peaplabel);
-				else
-					phase1 = g_strdup_printf ("peaplabel=%s", setting->phase1_peaplabel);
-			}
+		if (setting->phase1_peaplabel) {
+			if (phase1->len)
+				g_string_append_c (phase1, ' ');
+			g_string_append_printf (phase1, "peaplabel=%s", setting->phase1_peaplabel);
+		}
 
-			if (phase1) {
-				ADD_STRING_VAL (phase1, "phase1", FALSE, FALSE, FALSE);
-				g_free (phase1);
-			}
+		if (phase1->len)
+			ADD_STRING_VAL (phase1->str, "phase1", FALSE, FALSE, FALSE);
+		g_string_free (phase1, TRUE);
+
+		phase2 = g_string_new (NULL);
+		if (setting->phase2_auth) {
+			tmp = g_ascii_strup (setting->phase2_auth, -1);
+			g_string_append_printf (phase2, "auth=%s", tmp);
+			g_free (tmp);
+		}
+
+		if (setting->phase2_autheap) {
+			if (phase2->len)
+				g_string_append_c (phase2, ' ');
+			tmp = g_ascii_strup (setting->phase2_autheap, -1);
+			g_string_append_printf (phase2, "autheap=%s", tmp);
+			g_free (tmp);
+		}
+
+		if (phase2->len)
+			ADD_STRING_VAL (phase2->str, "phase2", FALSE, FALSE, FALSE);
+		g_string_free (phase2, TRUE);
+
+		ADD_BLOB_VAL (setting->ca_cert, "ca_cert", connection_uid);
+		ADD_BLOB_VAL (setting->client_cert, "client_cert", connection_uid);
+		ADD_BLOB_VAL (setting->private_key, "private_key", connection_uid);
+		ADD_BLOB_VAL (setting->phase2_ca_cert, "ca_cert2", connection_uid);
+		ADD_BLOB_VAL (setting->phase2_client_cert, "client_cert2", connection_uid);
+		ADD_BLOB_VAL (setting->phase2_private_key, "private_key2", connection_uid);
+
+		ADD_STRING_VAL (setting->identity, "identity", FALSE, FALSE, FALSE);
+		ADD_STRING_VAL (setting->anonymous_identity, "anonymous_identity", FALSE, FALSE, FALSE);
 	}
 
 	return TRUE;
