@@ -1,3 +1,16 @@
+2007-12-06  Tambet Ingo  <tambet@gmail.com>
+
+	* src/nm-umts-device.c (real_act_stage1_prepare): Flash the modem (drop DTR)
+	before doing anything else.
+	(init_modem): Move modem initialization here.
+
+	* src/nm-serial-device.c (ppp_state_changed): React on pppd state changes.
+	(nm_serial_device_flash): Implement.
+
+	* src/ppp-manager/nm-ppp-manager.c (name_owner_changed): Fix the typoes: the state
+	changes signal is "StateChanged" and not "Status".
+	(ppp_exit_code, ppp_status_changed): Remove the debug output, it's working fine now.
+
 2007-12-06  Dan Williams  <dcbw@redhat.com>
 
 	* src/supplicant-manager/nm-supplicant-config.c

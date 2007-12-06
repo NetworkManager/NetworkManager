@@ -697,67 +697,93 @@ nm_serial_device_wait_quiet (NMSerialDevice *device,
 								    wait_quiet_info_destroy);
 }
 
+#endif
+
 typedef struct {
 	NMSerialDevice *device;
-	int current_speed;
+	speed_t current_speed;
 	NMSerialFlashFn callback;
 	gpointer user_data;
 } FlashInfo;
 
-static gboolean
-flash_done (gpointer user_data)
+static speed_t
+get_speed (NMSerialDevice *device)
 {
-	FlashInfo *info = (FlashInfo *) user_data;
+	struct termios options;
 
-	/* FIXME: Restore the speed */
-	info->current_speed;
+	tcgetattr (NM_SERIAL_DEVICE_GET_PRIVATE (device)->fd, &options);
 
+	return cfgetospeed (&options);
+}
+
+static void
+set_speed (NMSerialDevice *device, speed_t speed)
+{
+	struct termios options;
+	int fd;
+
+	fd = NM_SERIAL_DEVICE_GET_PRIVATE (device)->fd;
+	tcgetattr (fd, &options);
+
+	cfsetispeed (&options, speed);
+	cfsetospeed (&options, speed);
+
+	options.c_cflag |= (CLOCAL | CREAD);
+	tcsetattr (fd, TCSANOW, &options);
+}
+
+static gboolean
+flash_done (gpointer data)
+{
+	FlashInfo *info = (FlashInfo *) data;
+
+	set_speed (info->device, info->current_speed);
 	info->callback (info->device, info->user_data);
 
 	return FALSE;
 }
 
-void
+guint
 nm_serial_device_flash (NMSerialDevice *device,
 				    guint32 flash_time,
 				    NMSerialFlashFn callback,
 				    gpointer user_data)
 {
-	int fd;
-	struct termio stbuf;
-	int speed;
 	FlashInfo *info;
 
-	g_return_if_fail (NM_IS_SERIAL_DEVICE (device));
-	g_return_if_fail (callback != NULL);
-
-	fd = NM_SERIAL_DEVICE_GET_PRIVATE (device)->fd;
-
-	ioctl (fd, TCGETA, &stbuf);
-	speed = stbuf.c_cflags & CBAUD;
-
-	/* FIXME: Set speed to 0 */
+	g_return_val_if_fail (NM_IS_SERIAL_DEVICE (device), 0);
+	g_return_val_if_fail (callback != NULL, 0);
 
 	info = g_new (FlashInfo, 1);
 	info->device = device;
-	info->current_speed = speed;
+	info->current_speed = get_speed (device);
 	info->callback = callback;
 	info->user_data = user_data;
 
-	g_timeout_add_full (G_PRIORITY_DEFAULT,
-					flash_time,
-					flash_done,
-					info,
-					g_free);
-}
+	set_speed (device, B0);
 
-#endif
+	return g_timeout_add_full (G_PRIORITY_DEFAULT,
+						  flash_time,
+						  flash_done,
+						  info,
+						  g_free);
+}
 
 static void
 ppp_state_changed (NMPPPManager *ppp_manager, NMPPPStatus status, gpointer user_data)
 {
-	nm_debug ("ppp state changed: %d", status);
-	/* FIXME */
+	NMDevice *device = NM_DEVICE (user_data);
+
+	switch (status) {
+	case NM_PPP_STATUS_NETWORK:
+		nm_device_state_changed (device, NM_DEVICE_STATE_IP_CONFIG);
+		break;
+	case NM_PPP_STATUS_DISCONNECT:
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED);
+		break;
+	default:
+		break;
+	}
 }
 
 static void

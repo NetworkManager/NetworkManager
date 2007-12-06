@@ -381,8 +381,8 @@ name_owner_changed (NMDBusManager *dbus_manager,
 											 NM_DBUS_PATH_PPP,
 											 NM_DBUS_INTERFACE_PPP);
 
-			dbus_g_proxy_add_signal (priv->proxy, "Status", G_TYPE_UINT, G_TYPE_INVALID);
-			dbus_g_proxy_connect_signal (priv->proxy, "Status",
+			dbus_g_proxy_add_signal (priv->proxy, "StateChanged", G_TYPE_UINT, G_TYPE_INVALID);
+			dbus_g_proxy_connect_signal (priv->proxy, "StateChanged",
 								    G_CALLBACK (ppp_status_changed),
 								    manager, NULL);
 

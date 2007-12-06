@@ -197,8 +197,6 @@ nm_phasechange (void *data, int arg)
 		break;
 	}
 
-	g_message ("pppd reported new phase: %s", ppp_phase);
-
 	if (ppp_status != NM_PPP_STATUS_UNKNOWN)
 		nm_pppd_plugin_state_changed (plugin, ppp_status);
 }
@@ -301,7 +299,6 @@ nm_exit_notify (void *data, int arg)
 {
 	NMPppdPlugin *plugin = NM_PPPD_PLUGIN (data);
 
-	g_message ("exiting");
 	g_object_unref (plugin);
 }
 

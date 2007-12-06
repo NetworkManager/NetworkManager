@@ -67,7 +67,7 @@ void     nm_serial_device_wait_quiet          (NMSerialDevice *device,
 									  NMSerialWaitQuietFn callback,
 									  gpointer user_data);
 
-void     nm_serial_device_flash               (NMSerialDevice *device,
+guint    nm_serial_device_flash               (NMSerialDevice *device,
 									  guint32 flash_time,
 									  NMSerialFlashFn callback,
 									  gpointer user_data);

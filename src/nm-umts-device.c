@@ -421,20 +421,33 @@ init_done (NMSerialDevice *device,
 	}
 }
 
+static void
+init_modem (NMSerialDevice *device, gpointer user_data)
+{
+	guint id;
+	char *responses[] = { "OK", "ERR", NULL };
+
+	nm_serial_device_send_command_string (device, "ATZ E0");
+	id = nm_serial_device_wait_for_reply (device, 10, responses, init_done, NULL);
+
+	if (id)
+		umts_device_set_pending (NM_UMTS_DEVICE (device), id);
+	else
+		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+}
+
 static NMActStageReturn
 real_act_stage1_prepare (NMDevice *device)
 {
 	NMUmtsDevicePrivate *priv = NM_UMTS_DEVICE_GET_PRIVATE (device);
 	NMSerialDevice *serial_device = NM_SERIAL_DEVICE (device);
-	char *responses[] = { "OK", "ERR", NULL };
 
 	priv->need_secret = NM_UMTS_SECRET_NONE;
 
-	if (!nm_serial_device_open (NM_SERIAL_DEVICE (device)))
+	if (!nm_serial_device_open (serial_device))
 		return NM_ACT_STAGE_RETURN_FAILURE;
 
-	nm_serial_device_send_command_string (serial_device, "ATZ E0");
-	priv->pending_id = nm_serial_device_wait_for_reply (serial_device, 10, responses, init_done, NULL);
+	priv->pending_id = nm_serial_device_flash (serial_device, 100, init_modem, NULL);
 
 	return priv->pending_id ? NM_ACT_STAGE_RETURN_POSTPONE : NM_ACT_STAGE_RETURN_FAILURE;
 }
