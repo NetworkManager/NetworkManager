@@ -1,3 +1,7 @@
+2007-12-06  Jakub Friedl  <jfriedl@suse.cz>
+
+	* cs.po: Added 'cs' to linguas.
+
 2007-12-03  Changwoo Ryu  <cwryu@debian.org>
 
 	* LINGUAS: Added 'ko'. Bug #501020.
