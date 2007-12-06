@@ -1,3 +1,43 @@
+2007-12-06  Tambet Ingo  <tambet@gmail.com>
+
+	* src/NetworkManagerSystem.c (nm_system_device_set_from_ip4_config): Change the
+	arguments: This whole file shouldn't really know anything about NMDevices, it
+	should deal only with device interfaces. Devices might have different ifaces for
+	different stuff and this place shouldn't know anything about it.
+
+	* src/NetworkManagerPolicy.c: Get rid of leftover global variable global_policy.
+	(global_state_changed): Implement. In the current NM it's not really important,
+	but will be required in the case of multiple active devices. (Or even better,
+	if stuff like that gets moved out from NM).
+
+	* src/vpn-manager/nm-vpn-connection.c (connection_state_changed): Don't call
+	nm_system_device_set_from_ip4_config() directly, use nm_device_set_ip4_config() 
+	instead.
+
+	* src/nm-device.c: Add a ip_face protected member. It's used for 'multi-interface'
+	devices like serial devices (ttyS0 and ppp0 for example).
+	(nm_device_get_ip_iface): Implement. Default to the device iface if ip_iface is not
+	set.
+	(nm_device_set_ip_iface): Implement.
+	(nm_device_activate_stage5_ip_config_commit): Move all the extra actions that happen
+	after setting ip4_config from here ...
+	(nm_device_set_ip4_config): ... to here. The reason behind it is that no other code
+	than this function should call nm_system_device_set_from_ip4_config() because no
+	other code has enough information on which arguments to use. So instead, other code
+	could just set the new ip4 config using this function and everyone is happy.
+
+	* src/nm-umts-device.c: Store the pending ids so that we can remove pending actions
+	if we happen to get deactivated while something is pending.
+	(automatic_registration): Handle the response that indicates pending network
+	registration and wait until the pending registration is done.
+	(real_deactivate_quickly): If there's a pending operation, cancel it.
+
+	* src/nm-serial-device.c (ppp_ip4_config): Set the ip_iface when the iface is up ...
+	(real_deactivate_quickly): ... and remove it when it's down.
+	(nm_serial_device_get_reply): Return the timeout id so that the callers can remove
+	it if needed.
+	(nm_serial_device_wait_for_reply): Ditto.
+
 2007-12-05  Tambet Ingo  <tambet@gmail.com>
 
 	* src/nm-umts-device.c (dial_done): Fix the typoes in warnings.

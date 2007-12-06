@@ -39,6 +39,7 @@
 #include "nm-device-802-3-ethernet.h"
 #include "nm-dbus-manager.h"
 #include "nm-setting-connection.h"
+#include "NetworkManagerSystem.h"
 
 struct NMPolicy {
 	NMManager *manager;
@@ -48,16 +49,6 @@ struct NMPolicy {
 #define INVALID_TAG "invalid"
 
 static void schedule_change_check (NMPolicy *policy);
-
-/* NMPolicy is supposed to be one of the highest classes of the
-   NM class hierarchy and the only public API it needs is:
-   NMPolicy *nm_policy_new (NMManager *manager);
-   void nm_policy_destroy (NMPolicy *policy);
-
-   Until this hasn't fixed, keep the global policy around.
-*/
-static NMPolicy *global_policy;
-
 
 static const char *
 get_connection_id (NMConnection *connection)
@@ -390,6 +381,13 @@ out:
 /*****************************************************************************/
 
 static void
+global_state_changed (NMManager *manager, NMState state, gpointer user_data)
+{
+	if (state == NM_STATE_CONNECTED)
+		nm_system_restart_mdns_responder ();
+}
+
+static void
 device_change_check_done (gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
@@ -552,14 +550,16 @@ NMPolicy *
 nm_policy_new (NMManager *manager)
 {
 	NMPolicy *policy;
+	static gboolean initialized = FALSE;
 
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
-
-	g_assert (global_policy == NULL);
+	g_return_val_if_fail (initialized == FALSE, NULL);
 
 	policy = g_slice_new (NMPolicy);
 	policy->manager = g_object_ref (manager);
 	policy->device_state_changed_idle_id = 0;
+
+	g_signal_connect (manager, "state-change", G_CALLBACK (global_state_changed), policy);
 
 	g_signal_connect (manager, "device-added",
 					  G_CALLBACK (device_added), policy);
@@ -583,8 +583,6 @@ nm_policy_new (NMManager *manager)
 	g_signal_connect (manager, "connection-removed",
 					  G_CALLBACK (connection_removed), policy);
 
-	global_policy = policy;
-
 	return policy;
 }
 
@@ -595,7 +593,5 @@ nm_policy_destroy (NMPolicy *policy)
 		g_object_unref (policy->manager);
 		g_slice_free (NMPolicy, policy);
 	}
-
-	global_policy = NULL;
 }
 

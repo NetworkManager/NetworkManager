@@ -24,6 +24,7 @@
 
 #include "nm-device.h"
 
+void			nm_device_set_ip_iface (NMDevice *self, const char *iface);
 void			nm_device_set_device_type (NMDevice *dev, NMDeviceType type);
 void			nm_device_set_active_link	(NMDevice *dev, const gboolean active);
 NMIP4Config *	nm_device_new_ip4_autoip_config (NMDevice *self);

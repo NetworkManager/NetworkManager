@@ -50,9 +50,6 @@
 #include "nm-utils.h"
 #include "nm-netlink.h"
 
-/* FIXME: Remove this */
-#include "nm-serial-device.h"
-
 #include <netlink/route/addr.h>
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
@@ -64,7 +61,8 @@
  *
  */
 static gboolean
-nm_system_device_set_ip4_route (NMDevice *dev,
+nm_system_device_set_ip4_route (const char *iface,
+						  NMIP4Config *iface_config,
                                 int ip4_gateway,
                                 int ip4_dest,
                                 int ip4_netmask,
@@ -74,8 +72,6 @@ nm_system_device_set_ip4_route (NMDevice *dev,
 	gboolean			success = FALSE;
 	struct rtentry		rtent;
 	struct sockaddr_in *p;
-	const char *		iface;
-	NMIP4Config * config = NULL;
 	int				err;
 	struct rtentry	rtent2;
 
@@ -87,15 +83,12 @@ nm_system_device_set_ip4_route (NMDevice *dev,
 	if (ip4_gateway == 0)
 		return TRUE;
 
-	iface = nm_device_get_iface (dev);
-
 	/*
 	 * Do not add the route if the destination is on the same subnet.
 	 */
-	config = nm_device_get_ip4_config(dev);
-	if (config &&
-	    ((guint32)ip4_dest & nm_ip4_config_get_netmask(config)) ==
-	        (nm_ip4_config_get_address(config) & nm_ip4_config_get_netmask(config)))
+	if (iface_config &&
+	    ((guint32)ip4_dest & nm_ip4_config_get_netmask (iface_config)) ==
+	        (nm_ip4_config_get_address (iface_config) & nm_ip4_config_get_netmask (iface_config)))
 		return TRUE;
 
 
@@ -192,32 +185,29 @@ out:
  * Set IPv4 configuration of the device from an NMIP4Config object.
  *
  */
-gboolean nm_system_device_set_from_ip4_config (NMDevice *dev)
+gboolean
+nm_system_device_set_from_ip4_config (const char *iface,
+							   NMIP4Config *config,
+							   gboolean route_to_iface)
 {
 	NMNamedManager * named_mgr;
-	NMIP4Config *		config;
 	struct nl_handle *	nlh = NULL;
 	struct rtnl_addr *	addr = NULL;
 	int				err;
 	int len, i;
 
-	g_return_val_if_fail (dev != NULL, FALSE);
-
-	config = nm_device_get_ip4_config (dev);
+	g_return_val_if_fail (iface != NULL, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
 
 	nm_system_delete_default_route ();
-	nm_system_device_flush_addresses (dev);
-	nm_system_device_flush_routes (dev);
+	nm_system_device_flush_addresses_with_iface (iface);
+	nm_system_device_flush_routes_with_iface (iface);
 	nm_system_flush_arp_cache ();
 
 	nlh = nm_netlink_get_default_handle ();
 
 	if ((addr = nm_ip4_config_to_rtnl_addr (config, NM_RTNL_ADDR_DEFAULT)))
 	{
-		const char *iface;
-
-		iface = nm_device_get_iface (dev);
 		rtnl_addr_set_ifindex (addr, nm_netlink_iface_to_index (iface));
 
 		if ((err = rtnl_addr_add (nlh, addr, 0)) < 0)
@@ -229,11 +219,11 @@ gboolean nm_system_device_set_from_ip4_config (NMDevice *dev)
 
 	sleep (1);
 
-	/* FIXME: This is wrong wrong wrong. But I don't know how to fix it. A virtual function to NMDevice class? */
-	if (NM_IS_SERIAL_DEVICE (dev))
-		nm_system_device_add_default_route_via_device_with_iface (nm_device_get_iface (dev));
+	if (route_to_iface)
+		nm_system_device_add_default_route_via_device_with_iface (iface);
 	else
-		nm_system_device_set_ip4_route (dev, nm_ip4_config_get_gateway (config), 0, 0, 
+		nm_system_device_set_ip4_route (iface, config,
+								  nm_ip4_config_get_gateway (config), 0, 0, 
 								  nm_ip4_config_get_mss (config));
 
 	len = nm_ip4_config_get_num_static_routes (config);
@@ -242,7 +232,7 @@ gboolean nm_system_device_set_from_ip4_config (NMDevice *dev)
 		guint32 route = nm_ip4_config_get_static_route (config, (i * 2) + 1);
 		guint32 saddr = nm_ip4_config_get_static_route (config, i * 2);
 
-		nm_system_device_set_ip4_route (dev, route, saddr, 0xffffffff, mss);
+		nm_system_device_set_ip4_route (iface, config, route, saddr, 0xffffffff, mss);
 	}		
 
 	named_mgr = nm_named_manager_get ();
@@ -352,11 +342,12 @@ nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
 
 	/* Set up a route to the VPN gateway through the real network device */
 	if (active_device && (ad_config = nm_device_get_ip4_config (active_device))) {
-		nm_system_device_set_ip4_route (active_device,
-				nm_ip4_config_get_gateway (ad_config),
-				nm_ip4_config_get_gateway (config),
-				0xFFFFFFFF,
-				nm_ip4_config_get_mss (config));
+		nm_system_device_set_ip4_route (nm_device_get_iface (active_device),
+								  ad_config,
+								  nm_ip4_config_get_gateway (ad_config),
+								  nm_ip4_config_get_gateway (config),
+								  0xFFFFFFFF,
+								  nm_ip4_config_get_mss (config));
 	}
 
 	if (!iface || !strlen (iface))

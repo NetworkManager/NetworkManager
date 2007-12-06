@@ -60,6 +60,7 @@ struct _NMDevicePrivate
 
 	char *			udi;
 	char *			iface;   /* may change, could be renamed by user */
+	char *			ip_iface;
 	NMDeviceType		type;
 	guint32			capabilities;
 	char *			driver;
@@ -246,6 +247,26 @@ nm_device_get_iface (NMDevice *self)
 	g_return_val_if_fail (self != NULL, NULL);
 
 	return self->priv->iface;
+}
+
+
+static const char *
+nm_device_get_ip_iface (NMDevice *self)
+{
+	g_return_val_if_fail (self != NULL, NULL);
+
+	/* If it's not set, default to iface */
+	return self->priv->ip_iface ? self->priv->ip_iface : self->priv->iface;
+}
+
+
+void
+nm_device_set_ip_iface (NMDevice *self, const char *iface)
+{
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	g_free (self->priv->ip_iface);
+	self->priv->ip_iface = iface ? g_strdup (iface) : NULL;
 }
 
 
@@ -897,15 +918,7 @@ nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 	nm_info ("Activation (%s) Stage 5 of 5 (IP Configure Commit) started...",
 	         iface);
 
-	nm_device_set_ip4_config (self, ip4_config);
-	if (nm_system_device_set_from_ip4_config (self)) {
-		nm_device_update_ip4_address (self);
-		nm_system_device_add_ip6_link_address (self);
-		nm_system_restart_mdns_responder ();
-		nm_system_set_hostname (self->priv->ip4_config);
-		nm_system_activate_nis (self->priv->ip4_config);
-		nm_system_set_mtu (self);
-
+	if (nm_device_set_ip4_config (self, ip4_config)) {
 		if (NM_DEVICE_GET_CLASS (self)->update_link)
 			NM_DEVICE_GET_CLASS (self)->update_link (self);
 
@@ -1328,20 +1341,49 @@ nm_device_get_ip4_config (NMDevice *self)
 }
 
 
-void
+gboolean
 nm_device_set_ip4_config (NMDevice *self, NMIP4Config *config)
 {
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDevicePrivate *priv;
+	const char *ip_iface;
+	gboolean route_to_iface;
+	gboolean success;
 
-	g_return_if_fail (NM_IS_DEVICE (self));
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (priv->ip4_config) {
 		g_object_unref (priv->ip4_config);
 		priv->ip4_config = NULL;
 	}
 
-	if (config)
-		priv->ip4_config = g_object_ref (config);
+	if (!config)
+		return TRUE;
+
+	priv->ip4_config = g_object_ref (config);
+
+	ip_iface = nm_device_get_ip_iface (self);
+
+	/* FIXME: Not sure if the following makes any sense. */
+	/* If iface and ip_iface are the same, it's a regular network device and we
+	   treat it as such. However, if they differ, it's most likely something like
+	   a serial device with ppp interface, so route all the traffic to it. */
+	if (strcmp (ip_iface, nm_device_get_iface (self)))
+		route_to_iface = TRUE;
+	else
+		route_to_iface = FALSE;
+
+	success = nm_system_device_set_from_ip4_config (ip_iface, config, route_to_iface);
+	if (success) {
+		nm_device_update_ip4_address (self);
+		nm_system_device_add_ip6_link_address (self);
+		nm_system_set_hostname (config);
+		nm_system_set_mtu (self);
+		nm_system_activate_nis (config);
+	}
+
+	return success;
 }
 
 
@@ -1546,6 +1588,7 @@ nm_device_finalize (GObject *object)
 
 	g_free (self->priv->udi);
 	g_free (self->priv->iface);
+	g_free (self->priv->ip_iface);
 	g_free (self->priv->driver);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->finalize (object);

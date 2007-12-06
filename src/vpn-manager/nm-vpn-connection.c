@@ -726,7 +726,8 @@ connection_state_changed (NMVPNConnection *connection,
 			nm_system_vpn_device_unset_from_ip4_config (priv->parent_dev, priv->tundev, priv->ip4_config);
 
 			/* Reset routes, nameservers, and domains of the currently active device */
-			nm_system_device_set_from_ip4_config (priv->parent_dev);
+			nm_device_set_ip4_config (priv->parent_dev,
+								 NM_IP4_CONFIG (g_object_ref (nm_device_get_ip4_config (priv->parent_dev))));
 		}
 
 		if (priv->banner) {

@@ -25,7 +25,6 @@ G_DEFINE_TYPE (NMSerialDevice, nm_serial_device, NM_TYPE_DEVICE)
 #define NM_SERIAL_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SERIAL_DEVICE, NMSerialDevicePrivate))
 
 typedef struct {
-	char *serial_iface;
 	int fd;
 	GIOChannel *channel;
 	NMPPPManager *ppp_manager;
@@ -440,7 +439,7 @@ get_reply_got_data (GIOChannel *source,
 	return !done;
 }
 
-void
+guint
 nm_serial_device_get_reply (NMSerialDevice *device,
 					   guint timeout,
 					   const char *terminators,
@@ -449,9 +448,9 @@ nm_serial_device_get_reply (NMSerialDevice *device,
 {
 	GetReplyInfo *info;
 
-	g_return_if_fail (NM_IS_SERIAL_DEVICE (device));
-	g_return_if_fail (terminators != NULL);
-	g_return_if_fail (callback != NULL);
+	g_return_val_if_fail (NM_IS_SERIAL_DEVICE (device), 0);
+	g_return_val_if_fail (terminators != NULL, 0);
+	g_return_val_if_fail (callback != NULL, 0);
 
 	info = g_new (GetReplyInfo, 1);
 	info->device = device;
@@ -470,6 +469,8 @@ nm_serial_device_get_reply (NMSerialDevice *device,
 								    get_reply_timeout,
 								    info,
 								    get_reply_info_destroy);
+
+	return info->timeout_id;
 }
 
 typedef struct {
@@ -558,7 +559,7 @@ wait_for_reply_got_data (GIOChannel *source,
 	return !done;
 }
 
-void
+guint
 nm_serial_device_wait_for_reply (NMSerialDevice *device,
 						   guint timeout,
 						   char **responses,
@@ -569,9 +570,9 @@ nm_serial_device_wait_for_reply (NMSerialDevice *device,
 	char **str_array;
 	int i;
 
-	g_return_if_fail (NM_IS_SERIAL_DEVICE (device));
-	g_return_if_fail (responses != NULL);
-	g_return_if_fail (callback != NULL);
+	g_return_val_if_fail (NM_IS_SERIAL_DEVICE (device), 0);
+	g_return_val_if_fail (responses != NULL, 0);
+	g_return_val_if_fail (callback != NULL, 0);
 
 	/* Copy the array */
 	str_array = g_new (char*, g_strv_length (responses) + 1);
@@ -598,6 +599,8 @@ nm_serial_device_wait_for_reply (NMSerialDevice *device,
 								    wait_for_reply_timeout,
 								    info,
 								    wait_for_reply_info_destroy);
+
+	return info->timeout_id;
 }
 
 #if 0
@@ -765,8 +768,7 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 {
 	NMDevice *device = NM_DEVICE (user_data);
 
-	g_object_set (device, NM_DEVICE_INTERFACE_IFACE, iface, NULL);
-
+	nm_device_set_ip_iface (device, iface);
 	NM_SERIAL_DEVICE_GET_PRIVATE (device)->pending_ip4_config = g_object_ref (config);
 	nm_device_activate_schedule_stage4_ip_config_get (device);
 }
@@ -824,9 +826,7 @@ real_deactivate_quickly (NMDevice *device)
 	NMSerialDevice *self = NM_SERIAL_DEVICE (device);
 	NMSerialDevicePrivate *priv = NM_SERIAL_DEVICE_GET_PRIVATE (device);
 
-	/* Restore the iface (ttyUSB0 vs ppp0) */
-	if (!strcmp (nm_device_get_iface (device), priv->serial_iface))
-		g_object_set (device, NM_DEVICE_INTERFACE_IFACE, priv->serial_iface, NULL);
+	nm_device_set_ip_iface (device, NULL);
 
 	if (priv->pending_ip4_config) {
 		g_object_unref (priv->pending_ip4_config);
@@ -869,32 +869,12 @@ nm_serial_device_init (NMSerialDevice *self)
 {
 }
 
-static GObject*
-constructor (GType type,
-		   guint n_construct_params,
-		   GObjectConstructParam *construct_params)
-{
-	GObject *object;
-
-	object = G_OBJECT_CLASS (nm_serial_device_parent_class)->constructor (type,
-															n_construct_params,
-															construct_params);
-	if (!object)
-		return NULL;
-
-	NM_SERIAL_DEVICE_GET_PRIVATE (object)->serial_iface = g_strdup (nm_device_get_iface (NM_DEVICE (object)));
-
-	return object;
-}
-
 static void
 finalize (GObject *object)
 {
 	NMSerialDevice *self = NM_SERIAL_DEVICE (object);
-	NMSerialDevicePrivate *priv = NM_SERIAL_DEVICE_GET_PRIVATE (self);
 
 	nm_serial_device_close (self);
-	g_free (priv->serial_iface);
 
 	G_OBJECT_CLASS (nm_serial_device_parent_class)->finalize (object);
 }
@@ -908,7 +888,6 @@ nm_serial_device_class_init (NMSerialDeviceClass *klass)
 	g_type_class_add_private (object_class, sizeof (NMSerialDevicePrivate));
 
 	/* Virtual methods */
-	object_class->constructor = constructor;
 	object_class->finalize = finalize;
 
 	parent_class->check_connection = real_check_connection;

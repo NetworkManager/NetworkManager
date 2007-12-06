@@ -49,13 +49,13 @@ gboolean nm_serial_device_send_command        (NMSerialDevice *device,
 gboolean nm_serial_device_send_command_string (NMSerialDevice *device,
 									  const char *str);
 
-void     nm_serial_device_get_reply           (NMSerialDevice *device,
+guint    nm_serial_device_get_reply           (NMSerialDevice *device,
 									  guint timeout,
 									  const char *terminators,
 									  NMSerialGetReplyFn callback,
 									  gpointer user_data);
 
-void     nm_serial_device_wait_for_reply      (NMSerialDevice *device,
+guint    nm_serial_device_wait_for_reply      (NMSerialDevice *device,
 									  guint timeout,
 									  char **responses,
 									  NMSerialWaitForReplyFn callback,

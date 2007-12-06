@@ -1,3 +1,5 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+
 /* NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -61,7 +63,10 @@ gboolean		nm_system_device_get_use_dhcp				(NMDevice *dev);
 
 gboolean		nm_system_device_get_disabled				(NMDevice *dev);
 
-gboolean		nm_system_device_set_from_ip4_config		(NMDevice *dev);
+gboolean		nm_system_device_set_from_ip4_config		(const char *iface,
+												 NMIP4Config *config,
+												 gboolean route_to_iface);
+
 gboolean		nm_system_vpn_device_set_from_ip4_config	(NMDevice *active_device,
 									 const char *iface,
 									 NMIP4Config *config,

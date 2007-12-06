@@ -136,7 +136,7 @@ void			nm_device_set_use_dhcp	(NMDevice *dev,
 								 gboolean use_dhcp);
 
 NMIP4Config *	nm_device_get_ip4_config	(NMDevice *dev);
-void			nm_device_set_ip4_config	(NMDevice *dev,
+gboolean		nm_device_set_ip4_config	(NMDevice *dev,
 								 NMIP4Config *config);
 
 gboolean		nm_device_is_up	(NMDevice *dev);
