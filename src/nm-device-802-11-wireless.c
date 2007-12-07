@@ -1403,14 +1403,15 @@ nm_device_802_11_wireless_set_essid (NMDevice80211Wireless *self,
 	unsigned char	safe_essid[IW_ESSID_MAX_SIZE + 1] = "\0";
 	const char *	iface;
 	const char *	driver;
+	gboolean		lock_ssid = TRUE;
 
 	g_return_if_fail (self != NULL);
 
 	/* Make sure the essid we get passed is a valid size */
-	if (!essid)
+	if (!essid) {
 		safe_essid[0] = '\0';
-	else
-	{
+		lock_ssid = FALSE;
+	} else {
 		strncpy ((char *) safe_essid, essid, IW_ESSID_MAX_SIZE);
 		safe_essid[IW_ESSID_MAX_SIZE] = '\0';
 	}
@@ -1420,7 +1421,7 @@ nm_device_802_11_wireless_set_essid (NMDevice80211Wireless *self,
 	{
 		wreq.u.essid.pointer = (caddr_t) safe_essid;
 		wreq.u.essid.length	 = strlen ((char *) safe_essid) + 1;
-		wreq.u.essid.flags	 = 1;	/* Enable essid on card */
+		wreq.u.essid.flags	 = lock_ssid ? 1 : 0;
 
 #ifdef IOCTL_DEBUG
 	nm_info ("%s: About to SET IWESSID.", iface);
