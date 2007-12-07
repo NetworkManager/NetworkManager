@@ -22,6 +22,7 @@
 #ifndef NM_NETLINK_H
 #define NM_NETLINK_H
 
+#include <asm/types.h>
 #include <netlink/route/addr.h>
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
