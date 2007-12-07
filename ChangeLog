@@ -1,5 +1,13 @@
 2007-12-07  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-netlink.c
+	  src/NetworkManagerSystem.c
+		- (new_nl_handle): ensure that the same netlink pid is never chosen
+			twice (gnome.org #491047)
+		- Make more robust against allocation-related failures should they occur
+
+2007-12-07  Dan Williams  <dcbw@redhat.com>
+
 	Noticed by Christian Persch <chpe@gnome.org>
 
 	Always chain up to parent object in dispose and finalize handlers.

@@ -199,22 +199,22 @@ nm_system_device_set_from_ip4_config (const char *iface,
 	g_return_val_if_fail (iface != NULL, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
 
+	nlh = nm_netlink_get_default_handle ();
+	if (!nlh)
+		return FALSE;
+
 	nm_system_delete_default_route ();
 	nm_system_device_flush_addresses_with_iface (iface);
 	nm_system_device_flush_routes_with_iface (iface);
 	nm_system_flush_arp_cache ();
 
-	nlh = nm_netlink_get_default_handle ();
-
-	if ((addr = nm_ip4_config_to_rtnl_addr (config, NM_RTNL_ADDR_DEFAULT)))
-	{
+	if ((addr = nm_ip4_config_to_rtnl_addr (config, NM_RTNL_ADDR_DEFAULT))) {
 		rtnl_addr_set_ifindex (addr, nm_netlink_iface_to_index (iface));
 
 		if ((err = rtnl_addr_add (nlh, addr, 0)) < 0)
 			nm_warning ("(%s) error %d returned from rtnl_addr_add():\n%s", iface, err, nl_geterror());
 		rtnl_addr_put (addr);
-	}
-	else
+	} else
 		nm_warning ("couldn't create rtnl address!\n");
 
 	sleep (1);
@@ -353,11 +353,14 @@ nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
 	if (!iface || !strlen (iface))
 		goto out;
 
+	nlh = nm_netlink_get_default_handle ();
+	if (!nlh)
+		goto out;
+
 	nm_system_device_set_up_down_with_iface (iface, TRUE);
 
 	iface_idx = nm_netlink_iface_to_index (iface);
 
-	nlh = nm_netlink_get_default_handle ();
 	if ((addr = nm_ip4_config_to_rtnl_addr (config, NM_RTNL_ADDR_PTP_DEFAULT))) {
 		int err = 0;
 		rtnl_addr_set_ifindex (addr, iface_idx);
@@ -474,8 +477,11 @@ gboolean nm_system_device_set_up_down_with_iface (const char *iface, gboolean up
 	idx = nm_netlink_iface_to_index (iface);
 	old = nm_netlink_index_to_rtnl_link (idx);
 	if (old) {
-		struct nl_handle * nlh = nm_netlink_get_default_handle ();
-		rtnl_link_change (nlh, old, request, 0);
+		struct nl_handle *nlh;
+
+		nlh = nm_netlink_get_default_handle ();
+		if (nlh)
+			rtnl_link_change (nlh, old, request, 0);
 	}
 
 	rtnl_link_put (old);
@@ -518,9 +524,11 @@ void nm_system_set_mtu (NMDevice *dev)
 	         mtu);
 	rtnl_link_set_mtu (request, mtu);
 	nlh = nm_netlink_get_default_handle ();
-	rtnl_link_change (nlh, old, request, 0);
+	if (nlh)
+		rtnl_link_change (nlh, old, request, 0);
 
 	rtnl_link_put (old);
 out_request:
 	rtnl_link_put (request);
 }
+
