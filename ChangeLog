@@ -1,3 +1,9 @@
+2007-12-07  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.c
+		- Wrap #include of linux/mii.h to fix redefined structures due to
+			incorrect kernel headers (gnome.org #350061)
+
 2007-12-06  Tambet Ingo  <tambet@gmail.com>
 
 	* src/nm-umts-device.c (real_act_stage1_prepare): Flash the modem (drop DTR)
