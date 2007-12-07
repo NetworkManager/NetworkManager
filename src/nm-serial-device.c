@@ -888,6 +888,13 @@ real_check_connection (NMDevice *dev, NMConnection *connection)
 	return TRUE;
 }
 
+static gboolean
+real_is_up (NMDevice *device)
+{
+	/* Serial devices are always "up" */
+	return TRUE;
+}
+
 /*****************************************************************************/
 
 static void
@@ -916,6 +923,7 @@ nm_serial_device_class_init (NMSerialDeviceClass *klass)
 	/* Virtual methods */
 	object_class->finalize = finalize;
 
+	parent_class->is_up = real_is_up;
 	parent_class->check_connection = real_check_connection;
 	parent_class->act_stage2_config = real_act_stage2_config;
 	parent_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;

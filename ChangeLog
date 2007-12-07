@@ -1,5 +1,10 @@
 2007-12-07  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-serial-device.c
+		- (real_is_up): serial devices are always "up"
+
+2007-12-07  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-netlink.c
 	  src/NetworkManagerSystem.c
 		- (new_nl_handle): ensure that the same netlink pid is never chosen
