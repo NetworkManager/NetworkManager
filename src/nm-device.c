@@ -1543,17 +1543,9 @@ nm_device_dispose (GObject *object)
 {
 	NMDevice *self = NM_DEVICE (object);
 
-	if (self->priv->dispose_has_run) {
-		/* If dispose already ran, return. */
-		return;
-	}
-
-	if (!self->priv->initialized) {
-		/* Don't tear down stuff that might not yet be set up */
+	if (self->priv->dispose_has_run || !self->priv->initialized)
 		goto out;
-	}
 
-	/* Make sure dispose does not run twice. */
 	self->priv->dispose_has_run = TRUE;
 
 	/* 

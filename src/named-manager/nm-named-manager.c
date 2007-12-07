@@ -776,12 +776,17 @@ nm_named_manager_dispose (GObject *object)
 	NMNamedManager *mgr = NM_NAMED_MANAGER (object);
 	GSList *elt;
 
-	if (mgr->priv->disposed)
+	if (mgr->priv->disposed) {
+		G_OBJECT_CLASS (nm_named_manager_parent_class)->dispose (object);
 		return;
+	}
+
 	mgr->priv->disposed = TRUE;
 
 	for (elt = mgr->priv->configs; elt; elt = g_slist_next (elt))
 		remove_ip4_config_from_named (mgr, (NMIP4Config *)(elt->data));
+
+	G_OBJECT_CLASS (nm_named_manager_parent_class)->dispose (object);
 }
 
 static void

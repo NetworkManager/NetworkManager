@@ -166,6 +166,8 @@ finalize (GObject *object)
 	g_object_unref (priv->client_proxy);
 	g_object_unref (priv->bus_proxy);
 	g_hash_table_destroy (priv->devices);
+
+	G_OBJECT_CLASS (nm_client_parent_class)->finalize (object);
 }
 
 static void

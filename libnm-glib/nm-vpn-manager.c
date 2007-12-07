@@ -120,6 +120,7 @@ static void
 finalize (GObject *object)
 {
 	g_object_unref (NM_VPN_MANAGER_GET_PRIVATE (object)->manager_proxy);
+	G_OBJECT_CLASS (nm_vpn_manager_parent_class)->finalize (object);
 }
 
 static void

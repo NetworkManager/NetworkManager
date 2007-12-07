@@ -489,8 +489,10 @@ dispose (GObject *object)
 {
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (object);
 
-	if (priv->disposed)
+	if (priv->disposed) {
+		G_OBJECT_CLASS (nm_device_802_11_wireless_parent_class)->dispose (object);
 		return;
+	}
 
 	priv->disposed = TRUE;
 

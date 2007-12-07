@@ -204,6 +204,7 @@ finalize (GObject *object)
 		g_free (priv->banner);
 
 	g_object_unref (priv->proxy);
+	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->finalize (object);
 }
 
 static void

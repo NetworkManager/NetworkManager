@@ -141,11 +141,10 @@ nm_supplicant_manager_dispose (GObject *object)
 	NMSupplicantManagerPrivate *priv = NM_SUPPLICANT_MANAGER_GET_PRIVATE (object);
 
 	if (priv->dispose_has_run) {
-		/* If dispose did already run, return. */
+		G_OBJECT_CLASS (nm_supplicant_manager_parent_class)->dispose (object);
 		return;
 	}
 
-	/* Make sure dispose does not run twice. */
 	priv->dispose_has_run = TRUE;
 
 	if (priv->poke_id) {
@@ -153,12 +152,6 @@ nm_supplicant_manager_dispose (GObject *object)
 		priv->poke_id = 0;
 	}
 
-	/* 
-	 * In dispose, you are supposed to free all types referenced from this
-	 * object which might themselves hold a reference to self. Generally,
-	 * the most simple solution is to unref all members on which you own a 
-	 * reference.
-	 */
 	if (priv->dbus_mgr) {
 		g_object_unref (G_OBJECT (priv->dbus_mgr));
 		priv->dbus_mgr = NULL;

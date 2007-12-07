@@ -565,8 +565,10 @@ dispose (GObject *object)
 	NMVPNServiceState state;
 	GError *err = NULL;
 
-	if (priv->disposed)
+	if (priv->disposed) {
+		G_OBJECT_CLASS (nm_vpn_plugin_parent_class)->dispose (object);
 		return;
+	}
 
 	priv->disposed = TRUE;
 

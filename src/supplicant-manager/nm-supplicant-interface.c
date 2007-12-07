@@ -305,19 +305,11 @@ nm_supplicant_interface_dispose (GObject *object)
 	guint32 sm_state;
 
 	if (priv->dispose_has_run) {
-		/* If dispose did already run, return. */
+		G_OBJECT_CLASS (nm_supplicant_interface_parent_class)->dispose (object);
 		return;
 	}
 
-	/* Make sure dispose does not run twice. */
 	priv->dispose_has_run = TRUE;
-
-	/* 
-	 * In dispose, you are supposed to free all types referenced from this
-	 * object which might themselves hold a reference to self. Generally,
-	 * the most simple solution is to unref all members on which you own a 
-	 * reference.
-	 */
 
 	/* Ask wpa_supplicant to remove this interface */
 	sm_state = nm_supplicant_manager_get_state (priv->smgr);

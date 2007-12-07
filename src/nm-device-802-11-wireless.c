@@ -2862,9 +2862,10 @@ nm_device_802_11_wireless_dispose (GObject *object)
 	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (object);
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 
-	/* Make sure dispose does not run twice. */
-	if (priv->dispose_has_run)
+	if (priv->dispose_has_run) {
+		G_OBJECT_CLASS (nm_device_802_11_wireless_parent_class)->dispose (object);
 		return;
+	}
 
 	priv->dispose_has_run = TRUE;
 

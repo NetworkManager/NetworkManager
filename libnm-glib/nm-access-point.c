@@ -316,8 +316,11 @@ dispose (GObject *object)
 {
 	NMAccessPointPrivate *priv = NM_ACCESS_POINT_GET_PRIVATE (object);
 
-	if (priv->disposed)
+	if (priv->disposed) {
+		G_OBJECT_CLASS (nm_access_point_parent_class)->dispose (object);
 		return;
+	}
+
 	priv->disposed = TRUE;
 
 	g_object_unref (priv->ap_proxy);

@@ -50,8 +50,10 @@ dispose (GObject *object)
 {
 	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (object);
 
-	if (priv->disposed)
+	if (priv->disposed) {
+		G_OBJECT_CLASS (nm_device_802_3_ethernet_parent_class)->dispose (object);
 		return;
+	}
 
 	priv->disposed = TRUE;
 

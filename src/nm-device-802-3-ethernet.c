@@ -395,6 +395,13 @@ nm_device_802_3_ethernet_dispose (GObject *object)
 	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (object);
 	NMNetlinkMonitor *monitor;
 
+	if (priv->dispose_has_run) {
+		G_OBJECT_CLASS (nm_device_802_3_ethernet_parent_class)->dispose (object);
+		return;
+	}
+
+	priv->dispose_has_run = TRUE;
+
 	monitor = nm_netlink_monitor_get ();
 	if (priv->link_connected_id) {
 		g_signal_handler_disconnect (monitor, priv->link_connected_id);

@@ -64,8 +64,10 @@ dispose (GObject *object)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 
-	if (priv->disposed)
+	if (priv->disposed) {
+		G_OBJECT_CLASS (nm_object_parent_class)->dispose (object);
 		return;
+	}
 
 	priv->disposed = TRUE;
 

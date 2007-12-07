@@ -93,8 +93,10 @@ dispose (GObject *object)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
 
-	if (priv->disposed)
+	if (priv->disposed) {
+		G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
 		return;
+	}
 
 	priv->disposed = TRUE;
 
