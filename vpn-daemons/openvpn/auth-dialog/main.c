@@ -386,8 +386,10 @@ main (int argc, char *argv[])
 
 	exit_status = 0;
 
-	if (!info.need_password && !info.need_certpass)
+	if (!info.need_password && !info.need_certpass) {
+		printf ("%s\n%s\n\n\n", NM_OPENVPN_KEY_NOSECRET, "true");
 		goto out;
+	}
 
 	if (get_passwords (&info, retry)) {
 		if (info.need_password)

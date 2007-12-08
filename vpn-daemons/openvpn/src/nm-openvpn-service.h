@@ -66,6 +66,7 @@
 
 #define NM_OPENVPN_KEY_PASSWORD "password"
 #define NM_OPENVPN_KEY_CERTPASS "cert-pass"
+#define NM_OPENVPN_KEY_NOSECRET "no-secret"
 
 typedef struct {
 	NMVPNPlugin parent;

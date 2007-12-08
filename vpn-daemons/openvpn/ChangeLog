@@ -1,3 +1,19 @@
+2007-12-07  Dan Williams  <dcbw@redhat.com>
+
+	Patches from Casey Harkins <caseyharkins@gmail.com>
+
+	* src/nm-openvpn-service-openvpn-helper.c
+		- (parse_addr_list): fix off-by-one error
+
+	* src/nm-openvpn-service.c
+		- (nm_openvpn_start_openvpn_binary): don't let openvpn stomp all over
+			the routing table since NM manages that
+
+	* auth-dialog/main.c
+	  src/nm-openvpn-service.h
+	  src/nm-openvpn-service.c
+		- Don't require a certificate password
+
 2007-12-05  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Casey Harkins <caseyharkins@gmail.com>

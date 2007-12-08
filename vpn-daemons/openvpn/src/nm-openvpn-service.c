@@ -101,6 +101,7 @@ static ValidProperty valid_properties[] = {
 	{ NM_OPENVPN_KEY_USERNAME,        G_TYPE_STRING },
 	{ NM_OPENVPN_KEY_PASSWORD,        G_TYPE_STRING },
 	{ NM_OPENVPN_KEY_CERTPASS,        G_TYPE_STRING },
+	{ NM_OPENVPN_KEY_NOSECRET,        G_TYPE_STRING },
 	{ NULL,                           G_TYPE_NONE }
 };
 
@@ -461,6 +462,9 @@ nm_openvpn_start_openvpn_binary (NMOpenvpnPlugin *plugin, GHashTable *properties
 	g_ptr_array_add (openvpn_argv, (gpointer) "1194");
 	/* Query on the management socket for user/pass */
 	g_ptr_array_add (openvpn_argv, (gpointer) "--management-query-passwords");
+
+	/* do not let openvpn setup routes, NM will handle it */
+	g_ptr_array_add (openvpn_argv, (gpointer) "--route-noexec");
 
 	/* Now append configuration options which are dependent on the configuration type */
 	switch (connection_type) {

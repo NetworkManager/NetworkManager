@@ -166,7 +166,7 @@ parse_addr_list (GValue *value_array, const char *str)
 
 	g_strfreev (split);
 
-	if (!value_array && array->len > 1) {
+	if (!value_array && array->len > 0) {
 		value_array = g_slice_new0 (GValue);
 		g_value_init (value_array, DBUS_TYPE_G_UINT_ARRAY);
 		g_value_set_boxed (value_array, array);
