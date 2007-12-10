@@ -1,3 +1,9 @@
+2007-12-09  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManager.c
+		- (nm_killswitch_getpower_reply_cb): don't repeat errors too often
+			(rh #246106)
+
 2007-12-07  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerSystem.c

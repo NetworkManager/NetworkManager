@@ -65,6 +65,8 @@
  */
 static NMData		*nm_data = NULL;
 
+char *ks_err_message = NULL;
+
 static gboolean sigterm_pipe_handler (GIOChannel *src, GIOCondition condition, gpointer data);
 static void nm_data_free (NMData *data);
 static gboolean nm_poll_killswitches(gpointer user_data);
@@ -339,7 +341,7 @@ static void nm_killswitch_getpower_reply_cb (DBusPendingCall *pcall, NMData * da
 {
 	DBusError		err;
 	DBusMessage *	reply = NULL;
-	guint32			status;
+	gint32			status;
 
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (data != NULL);
@@ -353,15 +355,25 @@ static void nm_killswitch_getpower_reply_cb (DBusPendingCall *pcall, NMData * da
 	if (message_is_error (reply)) {
 		dbus_error_init (&err);
 		dbus_set_error_from_message (&err, reply);
-		nm_info ("Error getting killswitch power: %s - %s", err.name, err.message);
+		if (!ks_err_message || strcmp (ks_err_message, err.message)) {
+			nm_info ("Error getting killswitch power: %s - %s", err.name, err.message);
+			g_free (ks_err_message);
+			ks_err_message = g_strdup (err.message);
+		}
 		dbus_error_free (&err);
 		goto out;
 	}
 
 	if (!dbus_message_get_args (reply, &err, DBUS_TYPE_UINT32, &status, DBUS_TYPE_INVALID)) {
-		nm_info ("Error getting killswitch power arguments: %s - %s", err.name, err.message);
-		dbus_error_free (&err);
-		goto out;
+		if (!dbus_message_get_args (reply, &err, DBUS_TYPE_INT32, &status, DBUS_TYPE_INVALID)) {
+			if (!ks_err_message || strcmp (ks_err_message, err.message)) {
+				nm_info ("Error getting killswitch power arguments: %s - %s", err.name, err.message);
+				g_free (ks_err_message);
+				ks_err_message = g_strdup (err.message);
+			}
+			dbus_error_free (&err);
+			goto out;
+		}
 	}
 
 	if (status == 0)
