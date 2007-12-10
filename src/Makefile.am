@@ -58,8 +58,8 @@ NetworkManager_SOURCES =				\
 		nm-properties-changed-signal.h	\
 		nm-serial-device.c		\
 		nm-serial-device.h		\
-		nm-umts-device.c		\
-		nm-umts-device.h		\
+		nm-gsm-device.c		\
+		nm-gsm-device.h		\
 		autoip.c					\
 		autoip.h					\
 		kernel-types.h			\

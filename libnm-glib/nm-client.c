@@ -5,7 +5,7 @@
 #include "nm-client.h"
 #include "nm-device-802-3-ethernet.h"
 #include "nm-device-802-11-wireless.h"
-#include "nm-umts-device.h"
+#include "nm-gsm-device.h"
 #include "nm-device-private.h"
 #include "nm-marshal.h"
 #include <nm-utils.h>
@@ -389,8 +389,8 @@ get_device (NMClient *client, const char *path, gboolean create_if_not_found)
 		case DEVICE_TYPE_802_11_WIRELESS:
 			device = NM_DEVICE (nm_device_802_11_wireless_new (connection, path));
 			break;
-		case DEVICE_TYPE_UMTS:
-			device = NM_DEVICE (nm_umts_device_new (connection, path));
+		case DEVICE_TYPE_GSM:
+			device = NM_DEVICE (nm_gsm_device_new (connection, path));
 			break;
 		default:
 			device = nm_device_new (connection, path);

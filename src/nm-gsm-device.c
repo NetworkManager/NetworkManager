@@ -1,55 +1,55 @@
 /* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
 #include <string.h>
-#include "nm-umts-device.h"
+#include "nm-gsm-device.h"
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
-#include "nm-setting-umts.h"
+#include "nm-setting-gsm.h"
 #include "nm-utils.h"
 
-G_DEFINE_TYPE (NMUmtsDevice, nm_umts_device, NM_TYPE_SERIAL_DEVICE)
+G_DEFINE_TYPE (NMGsmDevice, nm_gsm_device, NM_TYPE_SERIAL_DEVICE)
 
 typedef enum {
-	NM_UMTS_SECRET_NONE = 0,
-	NM_UMTS_SECRET_PIN,
-	NM_UMTS_SECRET_PUK
-} NMUmtsSecret;
+	NM_GSM_SECRET_NONE = 0,
+	NM_GSM_SECRET_PIN,
+	NM_GSM_SECRET_PUK
+} NMGsmSecret;
 
-#define NM_UMTS_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_UMTS_DEVICE, NMUmtsDevicePrivate))
+#define NM_GSM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_GSM_DEVICE, NMGsmDevicePrivate))
 
 typedef struct {
-	NMUmtsSecret need_secret;
+	NMGsmSecret need_secret;
 	guint pending_id;
-} NMUmtsDevicePrivate;
+} NMGsmDevicePrivate;
 
 
 static void enter_pin (NMSerialDevice *device, gboolean retry);
 static void automatic_registration (NMSerialDevice *device);
 
-NMUmtsDevice *
-nm_umts_device_new (const char *udi,
-				const char *iface,
-				const char *driver)
+NMGsmDevice *
+nm_gsm_device_new (const char *udi,
+			    const char *iface,
+			    const char *driver)
 {
 	g_return_val_if_fail (udi != NULL, NULL);
 	g_return_val_if_fail (iface != NULL, NULL);
 	g_return_val_if_fail (driver != NULL, NULL);
 
-	return (NMUmtsDevice *) g_object_new (NM_TYPE_UMTS_DEVICE,
-								   NM_DEVICE_INTERFACE_UDI, udi,
-								   NM_DEVICE_INTERFACE_IFACE, iface,
-								   NM_DEVICE_INTERFACE_DRIVER, driver,
-								   NULL);
+	return (NMGsmDevice *) g_object_new (NM_TYPE_GSM_DEVICE,
+								  NM_DEVICE_INTERFACE_UDI, udi,
+								  NM_DEVICE_INTERFACE_IFACE, iface,
+								  NM_DEVICE_INTERFACE_DRIVER, driver,
+								  NULL);
 }
 
 static inline void
-umts_device_set_pending (NMUmtsDevice *device, guint pending_id)
+gsm_device_set_pending (NMGsmDevice *device, guint pending_id)
 {
-	NM_UMTS_DEVICE_GET_PRIVATE (device)->pending_id = pending_id;
+	NM_GSM_DEVICE_GET_PRIVATE (device)->pending_id = pending_id;
 }
 
 static NMSetting *
-umts_device_get_setting (NMUmtsDevice *device, GType setting_type)
+gsm_device_get_setting (NMGsmDevice *device, GType setting_type)
 {
 	NMActRequest *req;
 	NMSetting *setting = NULL;
@@ -73,7 +73,7 @@ dial_done (NMSerialDevice *device,
 {
 	gboolean success = FALSE;
 
-	umts_device_set_pending (NM_UMTS_DEVICE (device), 0);
+	gsm_device_set_pending (NM_GSM_DEVICE (device), 0);
 
 	switch (reply_index) {
 	case 0:
@@ -106,12 +106,12 @@ dial_done (NMSerialDevice *device,
 static void
 do_dial (NMSerialDevice *device)
 {
-	NMSettingUmts *setting;
+	NMSettingGsm *setting;
 	char *command;
 	guint id;
 	char *responses[] = { "CONNECT", "BUSY", "NO DIAL TONE", "NO CARRIER", NULL };
 
-	setting = NM_SETTING_UMTS (umts_device_get_setting (NM_UMTS_DEVICE (device), NM_TYPE_SETTING_UMTS));
+	setting = NM_SETTING_GSM (gsm_device_get_setting (NM_GSM_DEVICE (device), NM_TYPE_SETTING_GSM));
 
 	command = g_strconcat ("ATDT", setting->number, NULL);
 	nm_serial_device_send_command_string (device, command);
@@ -119,7 +119,7 @@ do_dial (NMSerialDevice *device)
 
 	id = nm_serial_device_wait_for_reply (device, 60, responses, dial_done, NULL);
 	if (id)
-		umts_device_set_pending (NM_UMTS_DEVICE (device), id);
+		gsm_device_set_pending (NM_GSM_DEVICE (device), id);
 	else
 		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
 }
@@ -129,7 +129,7 @@ manual_registration_done (NMSerialDevice *device,
 					 int reply_index,
 					 gpointer user_data)
 {
-	umts_device_set_pending (NM_UMTS_DEVICE (device), 0);
+	gsm_device_set_pending (NM_GSM_DEVICE (device), 0);
 
 	switch (reply_index) {
 	case 0:
@@ -149,12 +149,12 @@ manual_registration_done (NMSerialDevice *device,
 static void
 manual_registration (NMSerialDevice *device)
 {
-	NMSettingUmts *setting;
+	NMSettingGsm *setting;
 	char *command;
 	guint id;
 	char *responses[] = { "OK", "ERROR", "ERR", NULL };
 
-	setting = NM_SETTING_UMTS (umts_device_get_setting (NM_UMTS_DEVICE (device), NM_TYPE_SETTING_UMTS));
+	setting = NM_SETTING_GSM (gsm_device_get_setting (NM_GSM_DEVICE (device), NM_TYPE_SETTING_GSM));
 
 	command = g_strdup_printf ("AT+COPS=1,2,\"%s\"", setting->network_id);
 	nm_serial_device_send_command_string (device, command);
@@ -162,7 +162,7 @@ manual_registration (NMSerialDevice *device)
 
 	id = nm_serial_device_wait_for_reply (device, 30, responses, manual_registration_done, NULL);
 	if (id)
-		umts_device_set_pending (NM_UMTS_DEVICE (device), id);
+		gsm_device_set_pending (NM_GSM_DEVICE (device), id);
 	else
 		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
 }
@@ -172,7 +172,7 @@ get_network_done (NMSerialDevice *device,
 			   const char *response,
 			   gpointer user_data)
 {
-	umts_device_set_pending (NM_UMTS_DEVICE (device), 0);
+	gsm_device_set_pending (NM_GSM_DEVICE (device), 0);
 
 	if (response)
 		nm_info ("Associated with network: %s", response);
@@ -191,7 +191,7 @@ automatic_registration_get_network (NMSerialDevice *device)
 	nm_serial_device_send_command_string (device, "AT+COPS?");
 	id = nm_serial_device_get_reply (device, 10, terminators, get_network_done, NULL);
 	if (id)
-		umts_device_set_pending (NM_UMTS_DEVICE (device), id);
+		gsm_device_set_pending (NM_GSM_DEVICE (device), id);
 	else
 		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
 }
@@ -208,7 +208,7 @@ automatic_registration_response (NMSerialDevice *device,
 						   int reply_index,
 						   gpointer user_data)
 {
-	umts_device_set_pending (NM_UMTS_DEVICE (device), 0);
+	gsm_device_set_pending (NM_GSM_DEVICE (device), 0);
 
 	switch (reply_index) {
 	case 0:
@@ -220,8 +220,8 @@ automatic_registration_response (NMSerialDevice *device,
 		automatic_registration_get_network (device);
 		break;
 	case 2:
-		umts_device_set_pending (NM_UMTS_DEVICE (device),
-							g_timeout_add (1000, automatic_registration_again, device));
+		gsm_device_set_pending (NM_GSM_DEVICE (device),
+						    g_timeout_add (1000, automatic_registration_again, device));
 		break;
 	case -1:
 		nm_warning ("Automatic registration timed out");
@@ -243,7 +243,7 @@ automatic_registration (NMSerialDevice *device)
 	nm_serial_device_send_command_string (device, "AT+CREG?");
 	id = nm_serial_device_wait_for_reply (device, 60, responses, automatic_registration_response, NULL);
 	if (id)
-		umts_device_set_pending (NM_UMTS_DEVICE (device), id);
+		gsm_device_set_pending (NM_GSM_DEVICE (device), id);
 	else
 		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
 }
@@ -251,9 +251,9 @@ automatic_registration (NMSerialDevice *device)
 static void
 do_register (NMSerialDevice *device)
 {
-	NMSettingUmts *setting;
+	NMSettingGsm *setting;
 
-	setting = NM_SETTING_UMTS (umts_device_get_setting (NM_UMTS_DEVICE (device), NM_TYPE_SETTING_UMTS));
+	setting = NM_SETTING_GSM (gsm_device_get_setting (NM_GSM_DEVICE (device), NM_TYPE_SETTING_GSM));
 
 	if (setting->network_id)
 		manual_registration (device);
@@ -266,9 +266,9 @@ enter_pin_done (NMSerialDevice *device,
 			 int reply_index,
 			 gpointer user_data)
 {
-	NMSettingUmts *setting;
+	NMSettingGsm *setting;
 
-	umts_device_set_pending (NM_UMTS_DEVICE (device), 0);
+	gsm_device_set_pending (NM_GSM_DEVICE (device), 0);
 
 	switch (reply_index) {
 	case 0:
@@ -280,17 +280,17 @@ enter_pin_done (NMSerialDevice *device,
 		break;
 	default:
 		nm_warning ("Invalid secret");
-		setting = NM_SETTING_UMTS (umts_device_get_setting (NM_UMTS_DEVICE (device), NM_TYPE_SETTING_UMTS));
+		setting = NM_SETTING_GSM (gsm_device_get_setting (NM_GSM_DEVICE (device), NM_TYPE_SETTING_GSM));
 
 		/* Make sure we don't use the invalid PIN/PUK again
-		    as it may lock up the SIM card */
+		   as it may lock up the SIM card */
 
-		switch (NM_UMTS_DEVICE_GET_PRIVATE (device)->need_secret) {
-		case NM_UMTS_SECRET_PIN:
+		switch (NM_GSM_DEVICE_GET_PRIVATE (device)->need_secret) {
+		case NM_GSM_SECRET_PIN:
 			g_free (setting->pin);
 			setting->pin = NULL;
 			break;
-		case NM_UMTS_SECRET_PUK:
+		case NM_GSM_SECRET_PUK:
 			g_free (setting->puk);
 			setting->puk = NULL;
 			break;
@@ -306,7 +306,7 @@ enter_pin_done (NMSerialDevice *device,
 static void
 enter_pin (NMSerialDevice *device, gboolean retry)
 {
-	NMSettingUmts *setting;
+	NMSettingGsm *setting;
 	NMActRequest *req;
 	NMConnection *connection;
 	char *secret;
@@ -317,16 +317,16 @@ enter_pin (NMSerialDevice *device, gboolean retry)
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
 
-	setting = NM_SETTING_UMTS (nm_connection_get_setting (connection, NM_TYPE_SETTING_UMTS));
+	setting = NM_SETTING_GSM (nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM));
 
-	switch (NM_UMTS_DEVICE_GET_PRIVATE (device)->need_secret) {
-	case NM_UMTS_SECRET_PIN:
+	switch (NM_GSM_DEVICE_GET_PRIVATE (device)->need_secret) {
+	case NM_GSM_SECRET_PIN:
 		secret = setting->pin;
-		secret_setting_name = NM_SETTING_UMTS_PIN;
+		secret_setting_name = NM_SETTING_GSM_PIN;
 		break;
-	case NM_UMTS_SECRET_PUK:
+	case NM_GSM_SECRET_PUK:
 		secret = setting->puk;
-		secret_setting_name = NM_SETTING_UMTS_PIN;
+		secret_setting_name = NM_SETTING_GSM_PIN;
 		break;
 	default:
 		do_register (device);
@@ -344,7 +344,7 @@ enter_pin (NMSerialDevice *device, gboolean retry)
 
 		id = nm_serial_device_wait_for_reply (device, 3, responses, enter_pin_done, NULL);
 		if (id)
-			umts_device_set_pending (NM_UMTS_DEVICE (device), id);
+			gsm_device_set_pending (NM_GSM_DEVICE (device), id);
 		else
 			nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
 	} else {
@@ -359,18 +359,18 @@ check_pin_done (NMSerialDevice *device,
 			 int reply_index,
 			 gpointer user_data)
 {
-	umts_device_set_pending (NM_UMTS_DEVICE (device), 0);
+	gsm_device_set_pending (NM_GSM_DEVICE (device), 0);
 
 	switch (reply_index) {
 	case 0:
 		do_register (device);
 		break;
 	case 1:
-		NM_UMTS_DEVICE_GET_PRIVATE (device)->need_secret = NM_UMTS_SECRET_PIN;
+		NM_GSM_DEVICE_GET_PRIVATE (device)->need_secret = NM_GSM_SECRET_PIN;
 		enter_pin (device, FALSE);
 		break;
 	case 2:
-		NM_UMTS_DEVICE_GET_PRIVATE (device)->need_secret = NM_UMTS_SECRET_PUK;
+		NM_GSM_DEVICE_GET_PRIVATE (device)->need_secret = NM_GSM_SECRET_PUK;
 		enter_pin (device, FALSE);
 		break;
 	case -1:
@@ -394,7 +394,7 @@ check_pin (NMSerialDevice *device)
 
 	id = nm_serial_device_wait_for_reply (device, 3, responses, check_pin_done, NULL);
 	if (id)
-		umts_device_set_pending (NM_UMTS_DEVICE (device), id);
+		gsm_device_set_pending (NM_GSM_DEVICE (device), id);
 	else
 		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
 }
@@ -404,7 +404,7 @@ init_done (NMSerialDevice *device,
 		 int reply_index,
 		 gpointer user_data)
 {
-	umts_device_set_pending (NM_UMTS_DEVICE (device), 0);
+	gsm_device_set_pending (NM_GSM_DEVICE (device), 0);
 
 	switch (reply_index) {
 	case 0:
@@ -431,7 +431,7 @@ init_modem (NMSerialDevice *device, gpointer user_data)
 	id = nm_serial_device_wait_for_reply (device, 10, responses, init_done, NULL);
 
 	if (id)
-		umts_device_set_pending (NM_UMTS_DEVICE (device), id);
+		gsm_device_set_pending (NM_GSM_DEVICE (device), id);
 	else
 		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
 }
@@ -439,10 +439,10 @@ init_modem (NMSerialDevice *device, gpointer user_data)
 static NMActStageReturn
 real_act_stage1_prepare (NMDevice *device)
 {
-	NMUmtsDevicePrivate *priv = NM_UMTS_DEVICE_GET_PRIVATE (device);
+	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
 	NMSerialDevice *serial_device = NM_SERIAL_DEVICE (device);
 
-	priv->need_secret = NM_UMTS_SECRET_NONE;
+	priv->need_secret = NM_GSM_SECRET_NONE;
 
 	if (!nm_serial_device_open (serial_device))
 		return NM_ACT_STAGE_RETURN_FAILURE;
@@ -461,20 +461,20 @@ real_get_generic_capabilities (NMDevice *dev)
 static gboolean
 real_check_connection (NMDevice *dev, NMConnection *connection)
 {
-	NMSettingUmts *umts;
+	NMSettingGsm *gsm;
 
-	umts = (NMSettingUmts *) nm_connection_get_setting (connection, NM_TYPE_SETTING_UMTS);
-	if (!umts) {
-		nm_warning ("Connection check failed: umts setting not present.");
+	gsm = (NMSettingGsm *) nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM);
+	if (!gsm) {
+		nm_warning ("Connection check failed: gsm setting not present.");
 		return FALSE;
 	}
 
-	if (!umts->number) {
+	if (!gsm->number) {
 		nm_warning ("Connection check failed: Phone number not set.");
 		return FALSE;
 	}
 
-	return NM_DEVICE_CLASS (nm_umts_device_parent_class)->check_connection (dev, connection);
+	return NM_DEVICE_CLASS (nm_gsm_device_parent_class)->check_connection (dev, connection);
 }
 
 static void
@@ -487,7 +487,7 @@ real_connection_secrets_updated (NMDevice *dev,
 	if (nm_device_get_state (dev) != NM_DEVICE_STATE_NEED_AUTH)
 		return;
 
-	if (strcmp (setting_name, NM_SETTING_UMTS_SETTING_NAME) != 0) {
+	if (strcmp (setting_name, NM_SETTING_GSM_SETTING_NAME) != 0) {
 		nm_warning ("Ignoring updated secrets for setting '%s'.", setting_name);
 		return;
 	}
@@ -503,31 +503,31 @@ real_connection_secrets_updated (NMDevice *dev,
 static void
 real_deactivate_quickly (NMDevice *device)
 {
-	NMUmtsDevicePrivate *priv = NM_UMTS_DEVICE_GET_PRIVATE (device);
+	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
 
 	if (priv->pending_id) {
 		g_source_remove (priv->pending_id);
 		priv->pending_id = 0;
 	}
 
-	NM_DEVICE_CLASS (nm_umts_device_parent_class)->deactivate_quickly (device);
+	NM_DEVICE_CLASS (nm_gsm_device_parent_class)->deactivate_quickly (device);
 }
 
 /*****************************************************************************/
 
 static void
-nm_umts_device_init (NMUmtsDevice *self)
+nm_gsm_device_init (NMGsmDevice *self)
 {
-	nm_device_set_device_type (NM_DEVICE (self), DEVICE_TYPE_UMTS);
+	nm_device_set_device_type (NM_DEVICE (self), DEVICE_TYPE_GSM);
 }
 
 static void
-nm_umts_device_class_init (NMUmtsDeviceClass *klass)
+nm_gsm_device_class_init (NMGsmDeviceClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 
-	g_type_class_add_private (object_class, sizeof (NMUmtsDevicePrivate));
+	g_type_class_add_private (object_class, sizeof (NMGsmDevicePrivate));
 
 	device_class->get_generic_capabilities = real_get_generic_capabilities;
 	device_class->check_connection = real_check_connection;

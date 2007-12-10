@@ -12,7 +12,7 @@
 #include "nm-utils.h"
 #include "nm-device-802-11-wireless.h"
 #include "nm-device-802-3-ethernet.h"
-#include "nm-umts-device.h"
+#include "nm-gsm-device.h"
 
 /* Killswitch poll frequency in seconds */
 #define NM_HAL_MANAGER_KILLSWITCH_POLL_FREQUENCY 6
@@ -205,7 +205,7 @@ modem_device_creator (NMHalManager *manager, const char *udi)
 	}
 
 	if (serial_device && driver_name)
-		device = (NMDevice *) nm_umts_device_new (udi, serial_device + strlen ("/dev/"), driver_name);
+		device = (NMDevice *) nm_gsm_device_new (udi, serial_device + strlen ("/dev/"), driver_name);
 
 	libhal_free_string (serial_device);
 	libhal_free_string (driver_name);
@@ -234,9 +234,9 @@ register_built_in_creators (NMHalManager *manager)
 	creator->creator_fn = wireless_device_creator;
 	manager->device_creators = g_slist_append (manager->device_creators, creator);
 
-	/* Modem */
+	/* GSM Modem */
 	creator = g_slice_new0 (DeviceCreator);
-	creator->device_type_name = g_strdup ("UMTS (GSM)");
+	creator->device_type_name = g_strdup ("GSM modem");
 	creator->capability_str = g_strdup ("modem");
 	creator->is_device_fn = is_modem_device;
 	creator->creator_fn = modem_device_creator;

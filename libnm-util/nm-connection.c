@@ -16,7 +16,7 @@
 #include "nm-setting-vpn-properties.h"
 
 #include "nm-setting-serial.h"
-#include "nm-setting-umts.h"
+#include "nm-setting-gsm.h"
 
 typedef struct {
 	GHashTable *settings;
@@ -50,7 +50,7 @@ register_default_settings (void)
 		{ NM_SETTING_IP4_CONFIG_SETTING_NAME,        NM_TYPE_SETTING_IP4_CONFIG },
 		{ NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NM_TYPE_SETTING_WIRELESS_SECURITY },
 		{ NM_SETTING_SERIAL_SETTING_NAME,            NM_TYPE_SETTING_SERIAL },
-		{ NM_SETTING_UMTS_SETTING_NAME,              NM_TYPE_SETTING_UMTS },
+		{ NM_SETTING_GSM_SETTING_NAME,               NM_TYPE_SETTING_GSM },
 		{ NM_SETTING_PPP_SETTING_NAME,               NM_TYPE_SETTING_PPP },
 		{ NM_SETTING_VPN_SETTING_NAME,               NM_TYPE_SETTING_VPN },
 		{ NM_SETTING_VPN_PROPERTIES_SETTING_NAME,    NM_TYPE_SETTING_VPN_PROPERTIES },

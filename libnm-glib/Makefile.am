@@ -35,7 +35,7 @@ libnminclude_HEADERS = \
 	nm-access-point.h \
 	nm-ip4-config.h \
 	nm-settings.h \
-	nm-umts-device.h \
+	nm-gsm-device.h \
 	nm-vpn-connection.h \
 	nm-vpn-manager.h \
 	nm-vpn-plugin.h
@@ -53,7 +53,7 @@ libnm_glib_la_SOURCES = \
 	nm-access-point.c	\
 	nm-ip4-config.c		\
 	nm-settings.c		\
-	nm-umts-device.c	\
+	nm-gsm-device.c	\
 	nm-vpn-connection.c	\
 	nm-vpn-manager.c	\
 	nm-marshal-main.c

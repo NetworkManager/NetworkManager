@@ -1,10 +1,10 @@
 /* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
 #include <string.h>
-#include "nm-setting-umts.h"
+#include "nm-setting-gsm.h"
 #include "nm-utils.h"
 
-G_DEFINE_TYPE (NMSettingUmts, nm_setting_umts, NM_TYPE_SETTING)
+G_DEFINE_TYPE (NMSettingGsm, nm_setting_gsm, NM_TYPE_SETTING)
 
 enum {
 	PROP_0,
@@ -22,15 +22,15 @@ enum {
 };
 
 NMSetting *
-nm_setting_umts_new (void)
+nm_setting_gsm_new (void)
 {
-	return (NMSetting *) g_object_new (NM_TYPE_SETTING_UMTS, NULL);
+	return (NMSetting *) g_object_new (NM_TYPE_SETTING_GSM, NULL);
 }
 
 static gboolean
 verify (NMSetting *setting, GSList *all_settings)
 {
-	NMSettingUmts *self = NM_SETTING_UMTS (setting);
+	NMSettingGsm *self = NM_SETTING_GSM (setting);
 
 	if (!self->number || strlen (self->number) < 1) {
 		nm_warning ("Missing phone number");
@@ -41,15 +41,15 @@ verify (NMSetting *setting, GSList *all_settings)
 }
 
 static void
-nm_setting_umts_init (NMSettingUmts *setting)
+nm_setting_gsm_init (NMSettingGsm *setting)
 {
-	((NMSetting *) setting)->name = g_strdup (NM_SETTING_UMTS_SETTING_NAME);
+	((NMSetting *) setting)->name = g_strdup (NM_SETTING_GSM_SETTING_NAME);
 }
 
 static void
 finalize (GObject *object)
 {
-	NMSettingUmts *self = NM_SETTING_UMTS (object);
+	NMSettingGsm *self = NM_SETTING_GSM (object);
 
 	g_free (self->number);
 	g_free (self->username);
@@ -59,14 +59,14 @@ finalize (GObject *object)
 	g_free (self->pin);
 	g_free (self->puk);
 
-	G_OBJECT_CLASS (nm_setting_umts_parent_class)->finalize (object);
+	G_OBJECT_CLASS (nm_setting_gsm_parent_class)->finalize (object);
 }
 
 static void
 set_property (GObject *object, guint prop_id,
 		    const GValue *value, GParamSpec *pspec)
 {
-	NMSettingUmts *setting = NM_SETTING_UMTS (object);
+	NMSettingGsm *setting = NM_SETTING_GSM (object);
 
 	switch (prop_id) {
 	case PROP_NUMBER:
@@ -113,7 +113,7 @@ static void
 get_property (GObject *object, guint prop_id,
 		    GValue *value, GParamSpec *pspec)
 {
-	NMSettingUmts *setting = NM_SETTING_UMTS (object);
+	NMSettingGsm *setting = NM_SETTING_GSM (object);
 
 	switch (prop_id) {
 	case PROP_NUMBER:
@@ -150,7 +150,7 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
-nm_setting_umts_class_init (NMSettingUmtsClass *setting_class)
+nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
 	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
@@ -164,7 +164,7 @@ nm_setting_umts_class_init (NMSettingUmtsClass *setting_class)
 	/* Properties */
 	g_object_class_install_property
 		(object_class, PROP_NUMBER,
-		 g_param_spec_string (NM_SETTING_UMTS_NUMBER,
+		 g_param_spec_string (NM_SETTING_GSM_NUMBER,
 						  "Number",
 						  "Number",
 						  NULL,
@@ -172,7 +172,7 @@ nm_setting_umts_class_init (NMSettingUmtsClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_USERNAME,
-		 g_param_spec_string (NM_SETTING_UMTS_USERNAME,
+		 g_param_spec_string (NM_SETTING_GSM_USERNAME,
 						  "Username",
 						  "Username",
 						  NULL,
@@ -180,7 +180,7 @@ nm_setting_umts_class_init (NMSettingUmtsClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_PASSWORD,
-		 g_param_spec_string (NM_SETTING_UMTS_PASSWORD,
+		 g_param_spec_string (NM_SETTING_GSM_PASSWORD,
 						  "Password",
 						  "Password",
 						  NULL,
@@ -188,7 +188,7 @@ nm_setting_umts_class_init (NMSettingUmtsClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_APN,
-		 g_param_spec_string (NM_SETTING_UMTS_APN,
+		 g_param_spec_string (NM_SETTING_GSM_APN,
 						  "APN",
 						  "APN",
 						  NULL,
@@ -196,7 +196,7 @@ nm_setting_umts_class_init (NMSettingUmtsClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_NETWORK_ID,
-		 g_param_spec_string (NM_SETTING_UMTS_NETWORK_ID,
+		 g_param_spec_string (NM_SETTING_GSM_NETWORK_ID,
 						  "Network ID",
 						  "Network ID",
 						  NULL,
@@ -204,17 +204,17 @@ nm_setting_umts_class_init (NMSettingUmtsClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_NETWORK_TYPE,
-		 g_param_spec_int (NM_SETTING_UMTS_NETWORK_TYPE,
+		 g_param_spec_int (NM_SETTING_GSM_NETWORK_TYPE,
 					    "Network type",
 					    "Network type",
-					    NM_UMTS_NETWORK_ANY,
-					    NM_UMTS_NETWORK_PREFER_UMTS,
-					    NM_UMTS_NETWORK_ANY,
+					    NM_GSM_NETWORK_ANY,
+					    NM_GSM_NETWORK_PREFER_GSM,
+					    NM_GSM_NETWORK_ANY,
 					    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_BAND,
-		 g_param_spec_int (NM_SETTING_UMTS_BAND,
+		 g_param_spec_int (NM_SETTING_GSM_BAND,
 					    "Band",
 					    "Band",
 					    -1, 5, -1, /* FIXME: Use an enum for it */
@@ -222,7 +222,7 @@ nm_setting_umts_class_init (NMSettingUmtsClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_PIN,
-		 g_param_spec_string (NM_SETTING_UMTS_PIN,
+		 g_param_spec_string (NM_SETTING_GSM_PIN,
 						  "PIN",
 						  "PIN",
 						  NULL,
@@ -230,7 +230,7 @@ nm_setting_umts_class_init (NMSettingUmtsClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_PUK,
-		 g_param_spec_string (NM_SETTING_UMTS_PUK,
+		 g_param_spec_string (NM_SETTING_GSM_PUK,
 						  "PUK",
 						  "PUK",
 						  NULL,
