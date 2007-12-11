@@ -297,31 +297,31 @@ impl_fill_connection (NetworkManagerVpnUI *self, NMConnection *connection)
 	use_cipher             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_cipher));
 	use_ta                 = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_ta));
 
-	g_hash_table_insert (properties, NM_OPENVPN_KEY_CONNECTION_TYPE,
+	g_hash_table_insert (properties, g_strdup(NM_OPENVPN_KEY_CONNECTION_TYPE),
 					 int_to_gvalue (gtk_combo_box_get_active (GTK_COMBO_BOX (impl->w_connection_type))));
 
-	g_hash_table_insert (properties, NM_OPENVPN_KEY_TAP_DEV, bool_to_gvalue (use_tap));
-	g_hash_table_insert (properties, NM_OPENVPN_KEY_REMOTE, str_to_gvalue (remote));
-	g_hash_table_insert (properties, NM_OPENVPN_KEY_PORT, uint_to_gvalue ((guint) atoi (port)));
-	g_hash_table_insert (properties, NM_OPENVPN_KEY_PROTO_TCP, bool_to_gvalue (use_tcp));
-	g_hash_table_insert (properties, NM_OPENVPN_KEY_CA, str_to_gvalue (ca));
-	g_hash_table_insert (properties, NM_OPENVPN_KEY_CERT, str_to_gvalue (cert));
-	g_hash_table_insert (properties, NM_OPENVPN_KEY_KEY, str_to_gvalue (key));
-	g_hash_table_insert (properties, NM_OPENVPN_KEY_COMP_LZO, bool_to_gvalue (use_lzo));
-	g_hash_table_insert (properties, NM_OPENVPN_KEY_SHARED_KEY, str_to_gvalue (shared_key));
-	g_hash_table_insert (properties, NM_OPENVPN_KEY_LOCAL_IP, str_to_gvalue (local_ip));
-	g_hash_table_insert (properties, NM_OPENVPN_KEY_REMOTE_IP, str_to_gvalue (remote_ip));
-	g_hash_table_insert (properties, NM_OPENVPN_KEY_USERNAME, str_to_gvalue (username));
+	g_hash_table_insert (properties, g_strdup(NM_OPENVPN_KEY_TAP_DEV), bool_to_gvalue (use_tap));
+	g_hash_table_insert (properties, g_strdup(NM_OPENVPN_KEY_REMOTE), str_to_gvalue (remote));
+	g_hash_table_insert (properties, g_strdup(NM_OPENVPN_KEY_PORT), uint_to_gvalue ((guint) atoi (port)));
+	g_hash_table_insert (properties, g_strdup(NM_OPENVPN_KEY_PROTO_TCP), bool_to_gvalue (use_tcp));
+	g_hash_table_insert (properties, g_strdup(NM_OPENVPN_KEY_CA), str_to_gvalue (ca));
+	g_hash_table_insert (properties, g_strdup(NM_OPENVPN_KEY_CERT), str_to_gvalue (cert));
+	g_hash_table_insert (properties, g_strdup(NM_OPENVPN_KEY_KEY), str_to_gvalue (key));
+	g_hash_table_insert (properties, g_strdup(NM_OPENVPN_KEY_COMP_LZO), bool_to_gvalue (use_lzo));
+	g_hash_table_insert (properties, g_strdup(NM_OPENVPN_KEY_SHARED_KEY), str_to_gvalue (shared_key));
+	g_hash_table_insert (properties, g_strdup(NM_OPENVPN_KEY_LOCAL_IP), str_to_gvalue (local_ip));
+	g_hash_table_insert (properties, g_strdup(NM_OPENVPN_KEY_REMOTE_IP), str_to_gvalue (remote_ip));
+	g_hash_table_insert (properties, g_strdup(NM_OPENVPN_KEY_USERNAME), str_to_gvalue (username));
 
 	if (use_cipher) {
 		const gchar *cipher = gtk_combo_box_get_active_text (impl->w_cipher);
 		if (cipher != NULL)
-			g_hash_table_insert (properties, NM_OPENVPN_KEY_CIPHER, str_to_gvalue (cipher));
+			g_hash_table_insert (properties, g_strdup(NM_OPENVPN_KEY_CIPHER), str_to_gvalue (cipher));
 	}
 	if (use_ta) {
 		const gchar* dir;
 
-		g_hash_table_insert (properties, NM_OPENVPN_KEY_TA,
+		g_hash_table_insert (properties, g_strdup(NM_OPENVPN_KEY_TA),
 						 str_to_gvalue (gtk_entry_get_text (impl->w_ta)));
 
 		if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_ta_dir_zero)))
@@ -331,7 +331,7 @@ impl_fill_connection (NetworkManagerVpnUI *self, NMConnection *connection)
 		else
 			dir = "";
 
-		g_hash_table_insert (properties, NM_OPENVPN_KEY_TA_DIR, str_to_gvalue (dir));
+		g_hash_table_insert (properties, g_strdup(NM_OPENVPN_KEY_TA_DIR), str_to_gvalue (dir));
 	}
 }
 
