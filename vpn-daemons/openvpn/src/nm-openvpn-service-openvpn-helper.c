@@ -222,8 +222,6 @@ main (int argc, char *argv[])
 	val = addr_to_gvalue (getenv ("ifconfig_remote"));
 	if (val)
 		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_PTP, val);
-	else
-		helper_failed (connection, "IP4 PTP Address");
 
 	/* Netmask */
 	val = addr_to_gvalue (getenv ("route_netmask_1"));

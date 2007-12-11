@@ -2,6 +2,13 @@
 
 	Patches from Casey Harkins <caseyharkins@gmail.com>
 
+	* src/nm-openvpn-service-openvpn-helper.c
+		- (main): make ifconfig_remote optional
+
+2007-12-11  Dan Williams  <dcbw@redhat.com>
+
+	Patches from Casey Harkins <caseyharkins@gmail.com>
+
 	* properties/nm-openvpn.c
 		- (impl_fill_connection): duplicate hash table keys as required
 
