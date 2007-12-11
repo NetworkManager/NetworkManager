@@ -217,19 +217,19 @@ impl_fill_connection (NetworkManagerVpnUI *self, NMConnection *connection)
 	if (s_vpn_props->data)
 		g_hash_table_remove_all (s_vpn_props->data);
 
-	g_hash_table_insert (s_vpn_props->data, NM_VPNC_KEY_GATEWAY, str_to_gvalue (gateway));
-	g_hash_table_insert (s_vpn_props->data, NM_VPNC_KEY_ID, str_to_gvalue (groupname));
+	g_hash_table_insert (s_vpn_props->data, g_strdup(NM_VPNC_KEY_GATEWAY), str_to_gvalue (gateway));
+	g_hash_table_insert (s_vpn_props->data, g_strdup(NM_VPNC_KEY_ID), str_to_gvalue (groupname));
 
 	if (use_alternate_username)
-		g_hash_table_insert (s_vpn_props->data, NM_VPNC_KEY_XAUTH_USER, str_to_gvalue (username));
+		g_hash_table_insert (s_vpn_props->data, g_strdup(NM_VPNC_KEY_XAUTH_USER), str_to_gvalue (username));
 	if (use_domain)
-		g_hash_table_insert (s_vpn_props->data, NM_VPNC_KEY_DOMAIN, str_to_gvalue (domain));
+		g_hash_table_insert (s_vpn_props->data, g_strdup(NM_VPNC_KEY_DOMAIN), str_to_gvalue (domain));
 	if (use_keepalive)
-		g_hash_table_insert (s_vpn_props->data, NM_VPNC_KEY_NAT_KEEPALIVE, str_to_gvalue (keepalive));
+		g_hash_table_insert (s_vpn_props->data, g_strdup(NM_VPNC_KEY_NAT_KEEPALIVE), str_to_gvalue (keepalive));
 	if (enable_singledes)
-		g_hash_table_insert (s_vpn_props->data, NM_VPNC_KEY_SINGLE_DES, bool_to_gvalue (TRUE));
+		g_hash_table_insert (s_vpn_props->data, g_strdup(NM_VPNC_KEY_SINGLE_DES), bool_to_gvalue (TRUE));
 	if (disable_natt)
-		g_hash_table_insert (s_vpn_props->data, NM_VPNC_KEY_DISABLE_NAT, bool_to_gvalue (TRUE));
+		g_hash_table_insert (s_vpn_props->data, g_strdup(NM_VPNC_KEY_DISABLE_NAT), bool_to_gvalue (TRUE));
 }
 
 static void

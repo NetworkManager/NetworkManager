@@ -1,3 +1,10 @@
+2007-12-11  Dan Williams  <dcbw@redhat.com>
+
+	Patches from Casey Harkins <caseyharkins@gmail.com>
+
+	* properties/nm-vpnc.c
+		- (impl_fill_connection): duplicate hash table keys as required
+
 2007-12-05  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Denis Leroy <denis@poolshark.org>
