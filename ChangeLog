@@ -1,3 +1,8 @@
+2007-12-12  Dan Williams  <dcbw@redhat.com>
+
+	* system-settings/src/nm-system-settings.conf
+		- Allow non-root clients (like the applet) to read settings
+
 2007-12-10  Tambet Ingo  <tambet@gmail.com>
 
 	* Replace all occurences of 'UMTS' with 'GSM'.
