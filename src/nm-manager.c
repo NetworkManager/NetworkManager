@@ -490,9 +490,10 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 		nm_warning ("%s (#%d): implement merge settings", __func__, __LINE__);
 	}
 
-	g_hash_table_destroy (settings);
-
 out:
+	if (settings)
+		g_hash_table_destroy (settings);
+
 	return;
 }
 
