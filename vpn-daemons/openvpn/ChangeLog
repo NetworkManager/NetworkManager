@@ -1,7 +1,8 @@
 2007-12-13  Tim Niemueller <tim@niemueller.de>
 
-	* nm-openvpn.desktop.in:
-		- Updates to make desktop-file-validate happy
+	* nm-openvpn.desktop.in: Updates to make desktop-file-validate happy
+
+	* properties/nm-openvpn.c: Added NULL pointer checks
 
 2007-12-11  Dan Williams  <dcbw@redhat.com>
 

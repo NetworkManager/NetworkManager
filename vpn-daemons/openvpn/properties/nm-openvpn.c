@@ -547,24 +547,26 @@ impl_is_valid (NetworkManagerVpnUI *self)
 	const char *connectionname;
 	const char *remote;
 	const char *port;
-	gint connection_type =   gtk_combo_box_get_active (GTK_COMBO_BOX (impl->w_connection_type));
+	gint connection_type = gtk_combo_box_get_active (GTK_COMBO_BOX (impl->w_connection_type));
 
-	connectionname         = gtk_entry_get_text (impl->w_connection_name);
-	remote                 = gtk_entry_get_text (impl->w_remote);
-	port	                 = gtk_entry_get_text (impl->w_port);
-	use_routes             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_routes));
-	routes_entry           = gtk_entry_get_text (impl->w_routes);
+	connectionname  = gtk_entry_get_text (impl->w_connection_name);
+	remote          = gtk_entry_get_text (impl->w_remote);
+	port	           = gtk_entry_get_text (impl->w_port);
+	use_routes      = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_routes));
+	routes_entry    = gtk_entry_get_text (impl->w_routes);
 
 	is_valid = FALSE;
 
-	if ( (strlen (connectionname) == 0) ||
-		(strlen (remote) == 0) ||
-		(strstr (remote, " ") != NULL)  ||
-		(strstr (remote, "\t") != NULL) || 
-		(strlen (port) == 0) ||
-		(strstr (port, " ") != NULL)  ||
-		(strstr (port, "\t") != NULL)  ||
-		(!check_port (port)) ) {
+	if ( ((connectionname != NULL) && (strlen (connectionname) == 0)) ||
+		((remote != NULL) &&
+		 ((strlen (remote) == 0) ||
+		  (strstr (remote, " ") != NULL)  ||
+		  (strstr (remote, "\t") != NULL))) || 
+		((port != NULL) && 
+		 ((strlen (port) == 0) ||
+		  (strstr (port, " ") != NULL)  ||
+		  (strstr (port, "\t") != NULL) ||
+		  (!check_port (port)))) ) {
 
 		is_valid = FALSE;
 
@@ -577,9 +579,9 @@ impl_is_valid (NetworkManagerVpnUI *self)
 		local_ip               = gtk_entry_get_text (impl->w_local_ip);
 		remote_ip              = gtk_entry_get_text (impl->w_remote_ip);
 
-		if ( (strlen (shared_key) > 0) &&
-			(strlen (local_ip) > 0) &&
-			(strlen (remote_ip) > 0) &&
+		if ( shared_key && (strlen (shared_key) > 0) &&
+			local_ip && (strlen (local_ip) > 0) &&
+			remote_ip && (strlen (remote_ip) > 0) &&
 			check_ip (local_ip) &&
 			check_ip (remote_ip) &&
 			g_file_test( shared_key, G_FILE_TEST_IS_REGULAR) ) {
@@ -596,8 +598,8 @@ impl_is_valid (NetworkManagerVpnUI *self)
 		ca          = gtk_entry_get_text (impl->w_password_ca);
 
 
-		if (strlen (username) > 0 &&
-		    strlen (ca) > 0 &&
+		if (username && strlen (username) > 0 &&
+		    ca && strlen (ca) > 0 &&
 		    g_file_test( ca, G_FILE_TEST_IS_REGULAR) ) {
 
 			is_valid = TRUE;
@@ -615,10 +617,10 @@ impl_is_valid (NetworkManagerVpnUI *self)
 		key         = gtk_entry_get_text (impl->w_x509userpass_key);
 		username    = gtk_entry_get_text (impl->w_x509userpass_username);
 
-		if (strlen (username) > 0 &&
-		    strlen (ca) > 0 &&
-		    strlen (cert) > 0 &&
-		    strlen (key) > 0 &&
+		if ( username && strlen (username) > 0 &&
+		    ca && strlen (ca) > 0 &&
+		    cert && strlen (cert) > 0 &&
+		    key && strlen (key) > 0 &&
 		    ((!use_routes) || (use_routes && strlen (routes_entry) > 0)) &&
 		    /* validate ca/cert/key files */
 		    g_file_test( ca, G_FILE_TEST_IS_REGULAR) &&
@@ -639,9 +641,9 @@ impl_is_valid (NetworkManagerVpnUI *self)
 		key         = gtk_entry_get_text (impl->w_key);
 
 		/* initial sanity checking */
-		if (strlen (ca) > 0 &&
-		    strlen (cert) > 0 &&
-		    strlen (key) > 0 &&
+		if (ca && strlen (ca) > 0 &&
+		    cert && strlen (cert) > 0 &&
+		    key && strlen (key) > 0 &&
 		    ((!use_routes) || (use_routes && strlen (routes_entry) > 0)) &&
 		    /* validate ca/cert/key files */
 		    g_file_test( ca, G_FILE_TEST_IS_REGULAR) &&
