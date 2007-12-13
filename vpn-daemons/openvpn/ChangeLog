@@ -1,3 +1,8 @@
+2007-12-13  Tim Niemueller <tim@niemueller.de>
+
+	* nm-openvpn.desktop.in:
+		- Updates to make desktop-file-validate happy
+
 2007-12-11  Dan Williams  <dcbw@redhat.com>
 
 	Patches from Casey Harkins <caseyharkins@gmail.com>
