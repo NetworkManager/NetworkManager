@@ -1,3 +1,9 @@
+2007-12-14  Dan Williams  <dcbw@redhat.com>
+
+	* src/vpn-properties/nm-vpn-properties.c
+		- (init_app): hook up a double-click handler; select first item in the
+			list if there is one (gnome.org #334883)
+
 2007-12-09  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManager.c
