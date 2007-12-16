@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-vpnc\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-10-28 22:18+0100\n"
-"PO-Revision-Date: 2007-10-28 22:18+0100\n"
+"POT-Creation-Date: 2007-12-16 15:53+0100\n"
+"PO-Revision-Date: 2007-12-16 15:54+0100\n"
 "Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
 "Language-Team: Swedish <sv@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -50,16 +50,16 @@ msgstr "_Kom ihåg lösenord för denna session"
 msgid "_Save passwords in keyring"
 msgstr "_Spara lösenord i nyckelring"
 
-#: ../auth-dialog/main.c:169
+#: ../auth-dialog/main.c:172
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Du måsta autentisera för att komma åt VPN-nätverket \"%s\"."
 
-#: ../auth-dialog/main.c:170
+#: ../auth-dialog/main.c:173
 msgid "Authenticate VPN"
 msgstr "Autentisera VPN"
 
-#: ../auth-dialog/main.c:177
+#: ../auth-dialog/main.c:180
 msgid "_Group Password:"
 msgstr "_Grupplösenord:"
 
@@ -71,68 +71,68 @@ msgstr "Lägg till, ta bort och redigera VPN-anslutningar"
 msgid "VPN Connection Manager (vpnc)"
 msgstr "VPN-anslutningshanterare (vpnc)"
 
-#: ../properties/nm-vpnc.c:94
+#: ../properties/nm-vpnc.c:98
 msgid "Compatible Cisco VPN client (vpnc)"
 msgstr "Kompatibel Cisco VPN-klient (vpnc)"
 
-#: ../properties/nm-vpnc.c:539
+#: ../properties/nm-vpnc.c:543
 msgid "The following vpnc VPN connection will be created:"
 msgstr "Följande VPN-anslutning av typen vpnc kommer att skapas:"
 
-#: ../properties/nm-vpnc.c:541
+#: ../properties/nm-vpnc.c:545
 #, c-format
 msgid "Name:  %s"
 msgstr "Namn:  %s"
 
-#: ../properties/nm-vpnc.c:544
+#: ../properties/nm-vpnc.c:548
 #, c-format
 msgid "Gateway:  %s"
 msgstr "Gateway:  %s"
 
-#: ../properties/nm-vpnc.c:546
+#: ../properties/nm-vpnc.c:550
 #, c-format
 msgid "Group Name:  %s"
 msgstr "Gruppnamn:  %s"
 
-#: ../properties/nm-vpnc.c:550
+#: ../properties/nm-vpnc.c:554
 #, c-format
 msgid "Username:  %s"
 msgstr "Användarnamn:  %s"
 
-#: ../properties/nm-vpnc.c:555
+#: ../properties/nm-vpnc.c:559
 #, c-format
 msgid "Domain:  %s"
 msgstr "Domän:  %s"
 
-#: ../properties/nm-vpnc.c:560
+#: ../properties/nm-vpnc.c:564
 #, c-format
 msgid "Routes:  %s"
 msgstr "Vägar:  %s"
 
-#: ../properties/nm-vpnc.c:564
+#: ../properties/nm-vpnc.c:568
 #, c-format
 msgid "NAT-Keepalive packet interval:  %s"
 msgstr "Paketintervall för NAT-Keepalive:  %s"
 
-#: ../properties/nm-vpnc.c:568
+#: ../properties/nm-vpnc.c:572
 #, c-format
 msgid "Enable Single DES"
 msgstr "Aktivera Single DES"
 
-#: ../properties/nm-vpnc.c:572
+#: ../properties/nm-vpnc.c:576
 #, c-format
 msgid "Disable NAT Traversal"
 msgstr "Inaktivera NAT-traversering"
 
-#: ../properties/nm-vpnc.c:576
+#: ../properties/nm-vpnc.c:580
 msgid "The connection details can be changed using the \"Edit\" button."
 msgstr "Anslutningsdetaljerna kan ändras med hjälp av knappen \"Redigera\"."
 
-#: ../properties/nm-vpnc.c:657
+#: ../properties/nm-vpnc.c:665
 msgid "TCP tunneling not supported"
 msgstr "TCP-tunnling stöds inte"
 
-#: ../properties/nm-vpnc.c:659
+#: ../properties/nm-vpnc.c:667
 #, c-format
 msgid ""
 "The VPN settings file '%s' specifies that VPN traffic should be tunneled through TCP which is currently not supported in the vpnc software.\n"
@@ -143,37 +143,46 @@ msgstr ""
 "\n"
 "Anslutningen kan fortfarande skapas, med inaktiverad TCP-tunnling, men det kanske inte fungerar som väntat."
 
-#: ../properties/nm-vpnc.c:683
+#: ../properties/nm-vpnc.c:687
+msgid "Settings import incomplete"
+msgstr "Import av inställningar är inte komplett"
+
+#: ../properties/nm-vpnc.c:689
+#, c-format
+msgid "The VPN settings file '%s' is incomplete. You may not be able to connect without providing further information."
+msgstr "VPN-inställningsfilen \"%s\" är inte komplett. Du kanske inte kan ansluta utan att tillhandahålla ytterligare information."
+
+#: ../properties/nm-vpnc.c:709
 msgid "Cannot import settings"
 msgstr "Kan inte importera inställningar"
 
-#: ../properties/nm-vpnc.c:685
+#: ../properties/nm-vpnc.c:711
 #, c-format
-msgid "The VPN settings file '%s' does not contain valid data."
-msgstr "VPN-inställningsfilen \"%s\" innehåller inte giltiga data."
+msgid "The VPN settings file '%s' could not be read or is invalid."
+msgstr "VPN-inställningsfilen \"%s\" kunde inte läsas eller är ogiltig."
 
-#: ../properties/nm-vpnc.c:702
+#: ../properties/nm-vpnc.c:726
 msgid "Select file to import"
 msgstr "Välj fil att importera"
 
-#: ../properties/nm-vpnc.c:884
+#: ../properties/nm-vpnc.c:908
 msgid "Save as..."
 msgstr "Spara som..."
 
-#: ../properties/nm-vpnc.c:913
+#: ../properties/nm-vpnc.c:937
 #, c-format
 msgid "A file named \"%s\" already exists."
 msgstr "En fil med namnet \"%s\" finns redan."
 
-#: ../properties/nm-vpnc.c:916
+#: ../properties/nm-vpnc.c:940
 msgid "Do you want to replace it with the one you are saving?"
 msgstr "Vill du ersätta den med den du håller på att spara?"
 
-#: ../properties/nm-vpnc.c:930
+#: ../properties/nm-vpnc.c:954
 msgid "Failed to export configuration"
 msgstr "Misslyckades med att exportera konfigurationen"
 
-#: ../properties/nm-vpnc.c:932
+#: ../properties/nm-vpnc.c:956
 #, c-format
 msgid "Failed to save file %s"
 msgstr "Misslyckades med att spara filen %s"
