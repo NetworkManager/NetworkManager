@@ -86,6 +86,7 @@ nm_netlink_get_default_handle (void)
 	if (nl_connect (def_nl_handle, NETLINK_ROUTE) < 0) {
 		nm_error ("couldn't connect to netlink: %s", nl_geterror ());
 		nl_handle_destroy (def_nl_handle);
+		def_nl_handle = NULL;
 		return NULL;
 	}
 
