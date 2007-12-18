@@ -23,8 +23,8 @@ AM_CPPFLAGS =							\
 
 bin_PROGRAMS = nm-ppp-starter
 
-pppdplugindir = $(PPPD_PLUGIN_DIR)
-pppdplugin_PROGRAMS = nm-pppd-plugin.so
+pppdplugindir = $(libexecdir)/pppd/$(PPPD_VERSION)
+pppdplugin_LTLIBRARIES = nm-pppd-plugin.la
 
 nm_ppp_starter_SOURCES =			\
 				nm-ppp-starter.c	\
@@ -49,15 +49,14 @@ nm_ppp_starter_LDADD = 				\
 				$(GTHREAD_LIBS)		\
 				$(NETWORK_MANAGER_LIBS)
 
-nm_pppd_plugin_so_SOURCES = 		\
+nm_pppd_plugin_la_SOURCES = 		\
 				nm-pppd-plugin.c 	\
 				nm-pppd-plugin.h  	\
 				nm-ppp-starter.h
 
-nm_pppd_plugin_so_LDFLAGS = 		\
-				-shared 
+nm_pppd_plugin_la_LDFLAGS = -module
 
-nm_pppd_plugin_so_LDADD = 		\
+nm_pppd_plugin_la_LIBADD = 		\
 				$(DBUS_LIBS)	\
 				$(GTHREAD_LIBS)
 

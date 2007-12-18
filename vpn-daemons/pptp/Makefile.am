@@ -1,5 +1,3 @@
-AUTOMAKE_OPTIONS = foreign
-
 if WITH_GNOME
 SUBDIRS = src auth-dialog auth-dialog-general properties po
 else

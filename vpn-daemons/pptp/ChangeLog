@@ -1,3 +1,9 @@
+2007-12-17  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Christian Persch <chpe@gnome.org>
+
+	Fix up the build (gnome.org #473298)
+
 2007-08-14  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-openvpn-service.c

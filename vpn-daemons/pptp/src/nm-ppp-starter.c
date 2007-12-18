@@ -45,6 +45,7 @@
 
 #include <NetworkManager.h>
 #include <NetworkManagerVPN.h>
+#include <dbus-dict-helpers.h>
 
 #include "nm-ppp-starter.h"
 #include "nm-utils.h"
@@ -1436,8 +1437,6 @@ static void nm_ppp_dbus_process_helper_ip4_config (DBusConnection *con, DBusMess
   guint32			mtu;
   guint32			mss;
   gboolean		    success = FALSE;
-  char *            empty = "";
-  int               i;
   DBusMessageIter iter, iter_dict;
 
 

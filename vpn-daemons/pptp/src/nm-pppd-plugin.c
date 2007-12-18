@@ -75,7 +75,6 @@ void send_config_error (DBusConnection *con, const char *item);
 gboolean nm_get_auth_items (NmPPPData *data);
 gboolean nm_store_auth_info (NmPPPData *data, char **auth_items, int num_auth_items);
 gboolean nm_dbus_prepare_connection(NmPPPData *data);
-static DBusHandlerResult nm_dbus_message_handler (DBusConnection *con, DBusMessage *message, void *user_data);
 void nm_dbus_kill_connection(NmPPPData *data);
 
 gboolean nm_dbus_prepare_connection(NmPPPData *data)
@@ -132,42 +131,6 @@ void nm_dbus_kill_connection(NmPPPData *data)
     if (data->username!=NULL) g_free(data->username);
     if (data->password!=NULL) g_free(data->password);
 }
-
-/*
- * nm_dbus_message_handler
- *
- * Handle requests for our services.
- *
- */
-static DBusHandlerResult nm_dbus_message_handler (DBusConnection *con, DBusMessage *message, void *user_data)
-{
-  NmPPPData		    *data = (NmPPPData *)user_data;
-  const char		*method;
-  const char		*path;
-  DBusMessage		*reply = NULL;
-  gboolean			 handled = TRUE;
-
-  g_return_val_if_fail (data != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
-  g_return_val_if_fail (con != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
-  g_return_val_if_fail (message != NULL, DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
-
-  method = dbus_message_get_member (message);
-  path = dbus_message_get_path (message);
-
-  nm_info ("nm_dbus_message_handler() got method '%s' for path '%s'.", method, path); 
-
-  handled = FALSE;
-  
-// reply:
-  if (reply)
-    {
-      dbus_connection_send (con, reply, NULL);
-      dbus_message_unref (reply);
-    }
-
-  return (handled ? DBUS_HANDLER_RESULT_HANDLED : DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
-}
-
 
 int nm_chap_check_hook(void)
 {
