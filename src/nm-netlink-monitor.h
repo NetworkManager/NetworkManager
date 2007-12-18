@@ -36,13 +36,13 @@ G_BEGIN_DECLS
 
 typedef enum {
 	NM_NETLINK_MONITOR_ERROR_GENERIC = 0,
-	NM_NETLINK_MONITOR_ERROR_OPENING_SOCKET,
-	NM_NETLINK_MONITOR_ERROR_BINDING_TO_SOCKET,
-	NM_NETLINK_MONITOR_ERROR_BAD_SENDER,
-	NM_NETLINK_MONITOR_ERROR_BAD_SOCKET_DATA,
+	NM_NETLINK_MONITOR_ERROR_NETLINK_ALLOC_HANDLE,
+	NM_NETLINK_MONITOR_ERROR_NETLINK_CONNECT,
+	NM_NETLINK_MONITOR_ERROR_NETLINK_JOIN_GROUP,
+	NM_NETLINK_MONITOR_ERROR_NETLINK_ALLOC_LINK_CACHE,
+	NM_NETLINK_MONITOR_ERROR_PROCESSING_MESSAGE,
+	NM_NETLINK_MONITOR_ERROR_BAD_ALLOC,
 	NM_NETLINK_MONITOR_ERROR_WAITING_FOR_SOCKET_DATA,
-	NM_NETLINK_MONITOR_ERROR_READING_FROM_SOCKET,
-	NM_NETLINK_MONITOR_ERROR_SENDING_TO_SOCKET
 } NMNetlinkMonitorError;
 
 typedef struct {
@@ -53,11 +53,9 @@ typedef struct {
 	GObjectClass parent_class;
 
 	/* Signals */
-	void (*interface_connected)    (NMNetlinkMonitor *monitor, int index);
-	void (*interface_disconnected) (NMNetlinkMonitor *monitor, int index);
-
-	void (*error)                  (NMNetlinkMonitor *monitor,
-									GError *error);
+	void (*carrier_on)    (NMNetlinkMonitor *monitor, int index);
+	void (*carrier_off)   (NMNetlinkMonitor *monitor, int index);
+	void (*error)         (NMNetlinkMonitor *monitor, GError *error);
 } NMNetlinkMonitorClass;
 
 

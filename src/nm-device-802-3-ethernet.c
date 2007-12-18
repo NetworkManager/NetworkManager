@@ -79,9 +79,9 @@ static void supplicant_iface_state_cb (NMSupplicantInterface * iface,
 
 
 static void
-nm_device_802_3_ethernet_link_activated (NMNetlinkMonitor *monitor,
-                                         int idx,
-                                         gpointer user_data)
+nm_device_802_3_ethernet_carrier_on (NMNetlinkMonitor *monitor,
+                                     int idx,
+                                     gpointer user_data)
 {
 	NMDevice *dev = NM_DEVICE (user_data);
 
@@ -91,9 +91,9 @@ nm_device_802_3_ethernet_link_activated (NMNetlinkMonitor *monitor,
 }
 
 static void
-nm_device_802_3_ethernet_link_deactivated (NMNetlinkMonitor *monitor,
-                                           int idx,
-                                           gpointer user_data)
+nm_device_802_3_ethernet_carrier_off (NMNetlinkMonitor *monitor,
+                                      int idx,
+                                      gpointer user_data)
 {
 	NMDevice *dev = NM_DEVICE (user_data);
 
@@ -129,11 +129,11 @@ constructor (GType type,
 		/* Only listen to netlink for cards that support carrier detect */
 		NMNetlinkMonitor * monitor = nm_netlink_monitor_get ();
 
-		priv->link_connected_id = g_signal_connect (monitor, "interface-connected",
-										    G_CALLBACK (nm_device_802_3_ethernet_link_activated),
+		priv->link_connected_id = g_signal_connect (monitor, "carrier-on",
+										    G_CALLBACK (nm_device_802_3_ethernet_carrier_on),
 										    dev);
-		priv->link_disconnected_id = g_signal_connect (monitor, "interface-disconnected",
-											  G_CALLBACK (nm_device_802_3_ethernet_link_deactivated),
+		priv->link_disconnected_id = g_signal_connect (monitor, "carrier-off",
+											  G_CALLBACK (nm_device_802_3_ethernet_carrier_off),
 											  dev);
 
 		g_object_unref (monitor);

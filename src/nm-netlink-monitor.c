@@ -43,6 +43,7 @@
 #include "nm-netlink-monitor.h"
 #include "nm-utils.h"
 #include "nm-marshal.h"
+#include "nm-netlink.h"
 
 #define NM_NETLINK_MONITOR_EVENT_CONDITIONS \
 	((GIOCondition) (G_IO_IN | G_IO_PRI))
@@ -58,27 +59,30 @@
                                            NMNetlinkMonitorPrivate))
 
 typedef struct {
-	GMainContext *	context;
-	GIOChannel *	io_channel;
-	GSource *		event_source;
+	struct nl_handle *nlh;
+	struct nl_cb *    nlh_cb;
+	struct nl_cache * nlh_link_cache;
+
+	GMainContext *	  context;
+	GIOChannel *	  io_channel;
+	GSource *		  event_source;
 } NMNetlinkMonitorPrivate;
 
-static gboolean 
-nm_netlink_monitor_event_handler (GIOChannel       *channel,
-				  GIOCondition      io_condition,
-				  NMNetlinkMonitor *monitor);
-static gboolean 
-nm_netlink_monitor_error_handler (GIOChannel       *channel,
-				  GIOCondition      io_condition,
-				  NMNetlinkMonitor *monitor);
-static gboolean 
-nm_netlink_monitor_disconnect_handler (GIOChannel       *channel,
-				       GIOCondition      io_condition,
-				       NMNetlinkMonitor *monitor);
-enum
-{
-  INTERFACE_CONNECTED = 0,
-  INTERFACE_DISCONNECTED,
+static gboolean nm_netlink_monitor_event_handler (GIOChannel       *channel,
+                                                  GIOCondition      io_condition,
+                                                  NMNetlinkMonitor *monitor);
+
+static gboolean nm_netlink_monitor_error_handler (GIOChannel       *channel,
+                                                  GIOCondition      io_condition,
+                                                  NMNetlinkMonitor *monitor);
+
+static gboolean nm_netlink_monitor_disconnect_handler (GIOChannel       *channel,
+                                                       GIOCondition      io_condition,
+                                                       NMNetlinkMonitor *monitor);
+
+enum {
+  CARRIER_ON = 0,
+  CARRIER_OFF,
   ERROR,
 
   LAST_SIGNAL
@@ -87,6 +91,19 @@ enum
 static guint signals[LAST_SIGNAL] = { 0 };
 
 G_DEFINE_TYPE (NMNetlinkMonitor, nm_netlink_monitor, G_TYPE_OBJECT);
+
+NMNetlinkMonitor *
+nm_netlink_monitor_get (void)
+{
+	static NMNetlinkMonitor *singleton = NULL;
+
+	if (!singleton)
+		singleton = NM_NETLINK_MONITOR (g_object_new (NM_TYPE_NETLINK_MONITOR, NULL));
+	else
+		g_object_ref (singleton);
+
+	return singleton;
+}
 
 static void
 nm_netlink_monitor_init (NMNetlinkMonitor *monitor)
@@ -100,6 +117,21 @@ finalize (GObject *object)
 
 	if (priv->io_channel)
 		nm_netlink_monitor_close_connection (NM_NETLINK_MONITOR (object));
+
+	if (priv->nlh_link_cache) {
+		nl_cache_free (priv->nlh_link_cache);
+		priv->nlh_link_cache = NULL;
+	}
+
+	if (priv->nlh) {
+		nl_handle_destroy (priv->nlh);
+		priv->nlh = NULL;
+	}
+
+	if (priv->nlh_cb) {
+		nl_cb_put (priv->nlh_cb);
+		priv->nlh_cb = NULL;
+	}
 
 	G_OBJECT_CLASS (nm_netlink_monitor_parent_class)->finalize (object);
 }
@@ -115,19 +147,19 @@ nm_netlink_monitor_class_init (NMNetlinkMonitorClass *monitor_class)
 	object_class->finalize = finalize;
 
 	/* Signals */
-	signals[INTERFACE_CONNECTED] =
-		g_signal_new ("interface-connected",
+	signals[CARRIER_ON] =
+		g_signal_new ("carrier-on",
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_LAST,
-					  G_STRUCT_OFFSET (NMNetlinkMonitorClass, interface_connected),
+					  G_STRUCT_OFFSET (NMNetlinkMonitorClass, carrier_on),
 					  NULL, NULL, g_cclosure_marshal_VOID__INT,
 					  G_TYPE_NONE, 1, G_TYPE_INT);
 
-	signals[INTERFACE_DISCONNECTED] =
-		g_signal_new ("interface-disconnected",
+	signals[CARRIER_OFF] =
+		g_signal_new ("carrier-off",
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_LAST,
-					  G_STRUCT_OFFSET (NMNetlinkMonitorClass, interface_disconnected),
+					  G_STRUCT_OFFSET (NMNetlinkMonitorClass, carrier_off),
 					  NULL, NULL, g_cclosure_marshal_VOID__INT,
 					  G_TYPE_NONE, 1, G_TYPE_INT);
 
@@ -140,80 +172,148 @@ nm_netlink_monitor_class_init (NMNetlinkMonitorClass *monitor_class)
 					  G_TYPE_NONE, 1, G_TYPE_POINTER);
 }
 
+static void
+netlink_object_message_handler (struct nl_object *obj, void *arg)
+{
+	NMNetlinkMonitor *monitor = NM_NETLINK_MONITOR (arg);
+	GError *error;
+	struct rtnl_link *filter;
+	struct rtnl_link *link_obj;
+	guint flags;
+
+	filter = rtnl_link_alloc ();
+	if (!filter) {
+		error = g_error_new (NM_NETLINK_MONITOR_ERROR,
+		                     NM_NETLINK_MONITOR_ERROR_BAD_ALLOC,
+		                     _("error processing netlink message: %s"),
+		                     nl_geterror ());
+		g_signal_emit (G_OBJECT (monitor), 
+		               signals[ERROR],
+		               0, error);
+		g_error_free (error);
+		return;
+	}
+
+	/* Ensure it's a link object */
+	if (nl_object_match_filter(obj, OBJ_CAST (filter)) == 0)
+		goto out;
+
+	link_obj = (struct rtnl_link *) obj;
+	flags = rtnl_link_get_flags (link_obj);
+	if (flags & IFF_RUNNING) {
+        g_signal_emit (G_OBJECT (monitor), 
+                                signals[CARRIER_ON],
+                                0, rtnl_link_get_ifindex (link_obj));
+	} else {
+        g_signal_emit (G_OBJECT (monitor), 
+                                signals[CARRIER_OFF],
+                                0, rtnl_link_get_ifindex (link_obj));
+	}
+
+out:
+	rtnl_link_put (filter);
+}
+
+static int
+netlink_event_input (struct nl_msg *msg, void *arg)
+{
+	nl_msg_parse (msg, &netlink_object_message_handler, arg);
+
+	/* Stop processing messages */
+	return NL_STOP;
+}
+
 gboolean
 nm_netlink_monitor_open_connection (NMNetlinkMonitor *monitor,
 									GError **error)
 {
 	NMNetlinkMonitorPrivate *priv;
-	struct sockaddr_nl monitor_address = { .nl_family = 0 };
-	int fd, saved_errno;
-	GError *channel_error;
+	int fd;
+	GError *channel_error = NULL;
 	GIOFlags channel_flags;
 
 	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (monitor), FALSE);
+
 	priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
 	g_return_val_if_fail (priv->io_channel == NULL, FALSE);
 
-	fd = socket (PF_NETLINK, SOCK_RAW, NETLINK_ROUTE);
-
-	if (fd < 0) 
-	{
-		saved_errno = errno;
-
+	priv->nlh_cb = nl_cb_alloc (NL_CB_VERBOSE);
+	priv->nlh = nl_handle_alloc_cb (priv->nlh_cb);
+	if (!priv->nlh) {
 		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
-			     NM_NETLINK_MONITOR_ERROR_OPENING_SOCKET,
-			     _("unable to create netlink socket for monitoring "
-			       "wired ethernet devices - %s"),
-			       g_strerror (saved_errno));
-		return FALSE;
+		             NM_NETLINK_MONITOR_ERROR_NETLINK_ALLOC_HANDLE,
+		             _("unable to allocate netlink handle for monitoring link status: %s"),
+		             nl_geterror ());
+		goto error;
 	}
 
-	monitor_address.nl_family = AF_NETLINK;
-	monitor_address.nl_pid = getpid ();
-	monitor_address.nl_groups = RTMGRP_LINK;
-
-	if (bind (fd, 
-		  (struct sockaddr *) &monitor_address, 
-		  sizeof (monitor_address)) < 0) {
-
-		saved_errno = errno;
-
+	nl_disable_sequence_check (priv->nlh);
+	nl_socket_modify_cb (priv->nlh, NL_CB_VALID, NL_CB_CUSTOM, netlink_event_input, monitor);
+	if (nl_connect (priv->nlh, NETLINK_ROUTE) < 0) {
 		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
-			     NM_NETLINK_MONITOR_ERROR_BINDING_TO_SOCKET,
-			     _("unable to bind to netlink socket for monitoring "
-			       "wired ethernet devices - %s"),
-			       g_strerror (saved_errno));
-		return FALSE;
+		             NM_NETLINK_MONITOR_ERROR_NETLINK_CONNECT,
+		             _("unable to connect to netlink for monitoring link status: %s"),
+		             nl_geterror ());
+		goto error;
 	}
 
+	if (nl_socket_add_membership (priv->nlh, RTNLGRP_LINK) < 0) {
+		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
+		             NM_NETLINK_MONITOR_ERROR_NETLINK_JOIN_GROUP,
+		             _("unable to join netlink group for monitoring link status: %s"),
+		             nl_geterror ());
+		goto error;
+	}
+
+	if ((priv->nlh_link_cache = rtnl_link_alloc_cache (priv->nlh)) == NULL) {
+		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
+		             NM_NETLINK_MONITOR_ERROR_NETLINK_ALLOC_LINK_CACHE,
+		             _("unable to allocate netlink link cache for monitoring link status: %s"),
+		             nl_geterror ());
+		goto error;
+	}
+
+	nl_cache_mngt_provide (priv->nlh_link_cache);
+
+	fd = nl_socket_get_fd (priv->nlh);
 	priv->io_channel = g_io_channel_unix_new (fd);
 
-	channel_error = NULL;
-	g_io_channel_set_encoding (priv->io_channel,
-				   NULL	/* encoding */, 
-				   &channel_error);
-
-	/* Encoding is NULL, so no conversion error can possibly
-	 * occur
-	 */
+	g_io_channel_set_encoding (priv->io_channel, NULL, &channel_error);
+	/* Encoding is NULL, so no conversion error can possibly occur */
 	g_assert (channel_error == NULL);
 
-	g_io_channel_set_close_on_unref (priv->io_channel,
-					 TRUE);
-
+	g_io_channel_set_close_on_unref (priv->io_channel, TRUE);
 	channel_flags = g_io_channel_get_flags (priv->io_channel);
 	channel_error = NULL;
 	g_io_channel_set_flags (priv->io_channel,
-				channel_flags | G_IO_FLAG_NONBLOCK,
-				&channel_error);
-
-	if (channel_error != NULL)
-	{
+	                        channel_flags | G_IO_FLAG_NONBLOCK,
+	                        &channel_error);
+	if (channel_error != NULL) {
 		g_propagate_error (error, channel_error);
-		return FALSE;
+		goto error;
 	}
 
 	return TRUE;
+
+error:
+	if (priv->io_channel)
+		nm_netlink_monitor_close_connection (monitor);
+
+	if (priv->nlh_link_cache) {
+		nl_cache_free (priv->nlh_link_cache);
+		priv->nlh_link_cache = NULL;
+	}
+
+	if (priv->nlh) {
+		nl_handle_destroy (priv->nlh);
+		priv->nlh = NULL;
+	}
+
+	if (priv->nlh_cb) {
+		nl_cb_put (priv->nlh_cb);
+		priv->nlh_cb = NULL;
+	}
+	return FALSE;
 }
 
 void
@@ -222,6 +322,7 @@ nm_netlink_monitor_close_connection (NMNetlinkMonitor  *monitor)
 	NMNetlinkMonitorPrivate *priv;
 
 	g_return_if_fail (NM_IS_NETLINK_MONITOR (monitor));
+
 	priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
 	g_return_if_fail (priv->io_channel != NULL);
 
@@ -247,19 +348,6 @@ nm_netlink_monitor_error_quark (void)
 	return error_quark;
 }
 
-NMNetlinkMonitor *
-nm_netlink_monitor_get (void)
-{
-	static NMNetlinkMonitor *singleton = NULL;
-
-	if (!singleton)
-		singleton = NM_NETLINK_MONITOR (g_object_new (NM_TYPE_NETLINK_MONITOR, NULL));
-	else
-		g_object_ref (singleton);
-
-	return singleton;
-}
-
 static void
 nm_netlink_monitor_clear_event_source (NMNetlinkMonitor *monitor)
 {
@@ -268,12 +356,16 @@ nm_netlink_monitor_clear_event_source (NMNetlinkMonitor *monitor)
 
 void
 nm_netlink_monitor_attach (NMNetlinkMonitor *monitor, 
-			   GMainContext     *context)
+                           GMainContext     *context)
 {
 	NMNetlinkMonitorPrivate *priv;
 	GSource *event_source;
 
 	g_return_if_fail (NM_IS_NETLINK_MONITOR (monitor));
+
+	priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
+	g_return_if_fail (priv->nlh != NULL);
+
 	priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
 	g_return_if_fail (priv->context == NULL);
 
@@ -283,14 +375,13 @@ nm_netlink_monitor_attach (NMNetlinkMonitor *monitor,
 	priv->context = g_main_context_ref (context);
 
 	event_source = g_io_create_watch (priv->io_channel,
-					  NM_NETLINK_MONITOR_EVENT_CONDITIONS |
-					  NM_NETLINK_MONITOR_ERROR_CONDITIONS |
-					  NM_NETLINK_MONITOR_DISCONNECT_CONDITIONS);
+	                                  NM_NETLINK_MONITOR_EVENT_CONDITIONS |
+	                                  NM_NETLINK_MONITOR_ERROR_CONDITIONS |
+	                                  NM_NETLINK_MONITOR_DISCONNECT_CONDITIONS);
 	g_source_set_callback (event_source, 
-			       (GSourceFunc) nm_netlink_monitor_event_handler,
-			       monitor, 
-			       (GDestroyNotify) 
-                               nm_netlink_monitor_clear_event_source);
+	                       (GSourceFunc) nm_netlink_monitor_event_handler,
+	                       monitor, 
+	                       (GDestroyNotify) nm_netlink_monitor_clear_event_source);
 	g_source_attach (event_source, context);
 	priv->event_source = event_source;
 }
@@ -301,6 +392,7 @@ nm_netlink_monitor_detach (NMNetlinkMonitor *monitor)
 	NMNetlinkMonitorPrivate *priv;
 
 	g_return_if_fail (NM_IS_NETLINK_MONITOR (monitor));
+
 	priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
 	g_return_if_fail (priv->context != NULL);
 
@@ -313,114 +405,17 @@ nm_netlink_monitor_detach (NMNetlinkMonitor *monitor)
 
 gboolean
 nm_netlink_monitor_request_status (NMNetlinkMonitor  *monitor,
-				   GError           **error)
+                                   GError           **error)
 {
-	typedef struct
-	{
-		struct nlmsghdr  header;
-		struct rtgenmsg  request;
-	} NMNetlinkMonitorStatusPacket;
-
-	NMNetlinkMonitorStatusPacket packet;
 	NMNetlinkMonitorPrivate *priv;
-	struct sockaddr_nl recipient = { .nl_pad = 0 };
-	static guint32 sequence_number;
-	int fd, saved_errno;
-	ssize_t num_bytes_sent;
-	size_t num_bytes_to_send, total_bytes_sent;
-	gdouble max_wait_period, now;
-	const gchar *buffer;
-	GError *socket_error;
 
 	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (monitor), FALSE);
 
 	priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
+	g_return_val_if_fail (priv->context != NULL, FALSE);
 
-	fd = g_io_channel_unix_get_fd (priv->io_channel);
-
-	recipient.nl_family = AF_NETLINK;
-	recipient.nl_pid = 0; /* going to kernel */
-	recipient.nl_groups = RTMGRP_LINK;
-
-	memset (&packet, 0, sizeof (NMNetlinkMonitorStatusPacket));
-	packet.header.nlmsg_len = NLMSG_LENGTH (sizeof (struct rtgenmsg));
-	packet.header.nlmsg_flags = NLM_F_ROOT | NLM_F_MATCH | NLM_F_REQUEST;
-	packet.header.nlmsg_type = RTM_GETLINK;
-	packet.header.nlmsg_pid = getpid ();
-	/* Might be good to generate a unique sequence number and track
-	   the response */
-	packet.header.nlmsg_seq = sequence_number << 16;
-	sequence_number++;
-
-	packet.request.rtgen_family = AF_UNSPEC;
-
-	nm_get_timestamp (&now);
-
-	/* only block for around 1.5 seconds
-	 * FIXME: maybe too long? */
-	max_wait_period = now + 1.5;
-	num_bytes_sent = 0;
-	buffer = (const gchar *) &packet;
-	num_bytes_to_send = sizeof (packet);
-	total_bytes_sent = 0;
-	socket_error = NULL;
-	do
-	{
-		num_bytes_sent = sendto (fd, 
-					 buffer + total_bytes_sent, 
-					 num_bytes_to_send, 
-					 MSG_DONTWAIT, 
-					 (struct sockaddr *) &recipient,
-					 sizeof (recipient));
-		if (num_bytes_sent < 0)
-		{
-			saved_errno = errno;
-
-			if ((saved_errno == EAGAIN) ||
-			    (saved_errno == EWOULDBLOCK))
-			{
-				nm_get_timestamp (&now);
-				if ((max_wait_period - now) > G_MINDOUBLE)
-				{
-					saved_errno = 0;
-					continue;
-				}
-			}
-
-			socket_error = 
-				g_error_new (NM_NETLINK_MONITOR_ERROR,
-				 	     NM_NETLINK_MONITOR_ERROR_SENDING_TO_SOCKET,
-				             "%s", g_strerror (saved_errno));
-			break;
-		}
-
-		total_bytes_sent += num_bytes_sent;
-		num_bytes_to_send -= num_bytes_sent;
-
-		nm_get_timestamp (&now);
-
-		if ((max_wait_period - now) < G_MINDOUBLE)
-		{
-			socket_error = 
-				g_error_new (NM_NETLINK_MONITOR_ERROR,
-					     NM_NETLINK_MONITOR_ERROR_SENDING_TO_SOCKET,
-					     _("operation took too long"));
-			break;
-		}
-	} while (num_bytes_to_send > 0);
-
-	if (socket_error != NULL)
-	{
-		if (error != NULL)
-			g_propagate_error (error, socket_error);
-		else
-		{
-			g_signal_emit (G_OBJECT (monitor), 
-						   signals[ERROR],
-					0, socket_error);
-			g_error_free (socket_error);
-		}
-
+	if (nl_cache_refill (priv->nlh, priv->nlh_link_cache)) {
+		nm_warning ("Error updating link cache: %s", nl_geterror ());
 		return FALSE;
 	}
 
@@ -428,315 +423,66 @@ nm_netlink_monitor_request_status (NMNetlinkMonitor  *monitor,
 }
 
 static gboolean
-receive_pending_bytes (GIOChannel  *channel,
-		       gchar      **str_return,
-		       gsize       *length,
-		       GError     **error)
-{
-	GString *pending_bytes;
-	ssize_t num_bytes_read;
-	gboolean succeeded;
-	struct sockaddr_nl sender = { .nl_pad = 0 };
-	gchar buffer[4096];
-	static const size_t buffer_capacity = (size_t) sizeof (buffer);
-	socklen_t sender_size;
-	int fd, saved_errno;
-
-	fd = g_io_channel_unix_get_fd (channel);
-
-	pending_bytes = g_string_sized_new (4096);
-
-	sender_size = (socklen_t) sizeof (sender);
-	saved_errno = 0;
-	succeeded = TRUE;
-	do
-	{
-		num_bytes_read = recvfrom (fd, buffer, buffer_capacity,
-					   MSG_DONTWAIT,
-					   (struct sockaddr *) &sender,
-					   &sender_size);
-
-		if (num_bytes_read < 0)
-		{
-			saved_errno = errno;
-
-			/* the kernel doesn't send EOF when it's done,
-			 * so we just have to wait until it wants to
-			 * block and assume that means it's done.
-			 */
-			if (saved_errno == EAGAIN)
-			{
-				saved_errno = 0;
-				break;
-			}
-		}
-		else if (saved_errno == EINTR)
-			saved_errno = 0;
-
-		/* First let's make sure that the sender is actually 
-		 * someone legitimate.
-		 *
-		 * There are a few possibilities:
-		 * 	1) The size of the sender is less than the
-		 *	   size of a generic sockaddr structure. 
-		 *	   This means we got sent completely bogus 
-		 *	   data.
-		 *      2) The size of the sender is greater than or
-		 *         equal to the size of a generic sockaddr
-		 *         structure, but the address family the sender
-		 *         belongs to is not AF_NETLINK. In this case
-		 *	   we were sent some spurious packets that we
-		 *	   don't care about.
-		 *	3) The address family is AF_NETLINK but the
-		 *	   the size of the sender is not equal to the 
-		 *	   size of a sockaddr_nl structure. This means
-		 *         we can't treat the received data as an 
-		 *         instance of sockaddr_nl structure.
-		 *
-		 * In any of the above cases, we should discard the data.
-		 */
-		if ((sender_size != (socklen_t) sizeof (sender)) ||
-		    ((sender_size == (socklen_t) sizeof (sender)) &&
-		     sender.nl_family != AF_NETLINK))
-		{
-			g_set_error (error, NM_NETLINK_MONITOR_ERROR,
-				     NM_NETLINK_MONITOR_ERROR_BAD_SENDER,
-				     _("received data from wrong type of sender"));
-			succeeded = FALSE;
-			goto out;
-		}
-
-		/* We only care about messages from the kernel, 
-		 * not anywhere else. Only the kernel can have 
-		 * nl_pid == 0.
-		 */
-		if (sender.nl_pid != 0)
-		{
-			g_set_error (error, NM_NETLINK_MONITOR_ERROR,
-				     NM_NETLINK_MONITOR_ERROR_BAD_SENDER,
-				     _("received data from unexpected sender"));
-			succeeded = FALSE;
-			goto out;
-
-		}
-
-		/* Okay, the data has passed basic sanity checks,
-		 * let's store it.
-		 */
-		if (num_bytes_read > 0)
-		{
-			g_string_append_len (pending_bytes, 
-					     buffer, (gssize) num_bytes_read);
-			memset (buffer, 0, num_bytes_read);
-		}
-	}
-	while ((num_bytes_read > 0) || (saved_errno == EINTR));
-
-	if (saved_errno != 0)
-	{
-		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
-			     NM_NETLINK_MONITOR_ERROR_READING_FROM_SOCKET,
-			     "%s", g_strerror (saved_errno));
-		succeeded = FALSE;
-		goto out;
-	}
-
-out:
-	if ((pending_bytes->len > 0) && succeeded)
-	{
-		if (str_return)
-			*str_return = pending_bytes->str;
-
-		if (length)
-			*length = pending_bytes->len;
-
-		g_string_free (pending_bytes, FALSE);
-		pending_bytes = NULL;
-	}
-	else
-	{
-		if (str_return)
-			*str_return = NULL;
-
-		if (length)
-			*length = 0;
-	}
-
-	if (pending_bytes != NULL)
-		g_string_free (pending_bytes, TRUE);
-	return succeeded;
-}
-
-static gboolean 
 nm_netlink_monitor_event_handler (GIOChannel       *channel,
-				  GIOCondition      io_condition,
-				  NMNetlinkMonitor *monitor)
+                                  GIOCondition      io_condition,
+                                  NMNetlinkMonitor *monitor)
 {
-	GError *error;
-	gchar *received_bytes=NULL;
-	gboolean processing_is_done;
-	gsize num_received_bytes;
-	guint num_bytes_to_process;
-	struct nlmsghdr *header;
+	NMNetlinkMonitorPrivate *priv;
+	GError *error = NULL;
+
+	g_return_val_if_fail (NM_IS_NETLINK_MONITOR (monitor), TRUE);
+
+	priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
+	g_return_val_if_fail (priv->context != NULL, TRUE);
 
 	if (io_condition & NM_NETLINK_MONITOR_ERROR_CONDITIONS)
 		return nm_netlink_monitor_error_handler (channel, io_condition, monitor);
 	else if (io_condition & NM_NETLINK_MONITOR_DISCONNECT_CONDITIONS)
 		return nm_netlink_monitor_disconnect_handler (channel, io_condition, monitor);
 
-	g_return_val_if_fail (!(io_condition &
-			        ~(NM_NETLINK_MONITOR_EVENT_CONDITIONS)),
-			      FALSE);
+	g_return_val_if_fail (!(io_condition & ~(NM_NETLINK_MONITOR_EVENT_CONDITIONS)), FALSE);
 
-	error = NULL;
+	if (nl_recvmsgs_default (priv->nlh) < 0) {
+		error = g_error_new (NM_NETLINK_MONITOR_ERROR,
+		                     NM_NETLINK_MONITOR_ERROR_PROCESSING_MESSAGE,
+		                     _("error processing netlink message: %s"),
+		                     nl_geterror ());
 
-	/* Unfortunately, the kernel doesn't return EOF when it's
-	 * done sending packets, so read_to_end () gets confused.
-	 *
-	 * This let's us do sockaddr_nl specific sanity checks anyway.
-	 */
-	//status = g_io_channel_read_to_end (channel, &received_bytes, 
-	//			&num_received_bytes,
-	//			&error);
-	receive_pending_bytes (channel, &received_bytes,
-			       &num_received_bytes,
-			       &error);
-	if (error != NULL) 
-	{
 		g_signal_emit (G_OBJECT (monitor), 
-					   signals[ERROR],
-					   0, error);
+		               signals[ERROR],
+		               0, error);
 		g_error_free (error);
-		return FALSE;
 	}
-
-	if (num_received_bytes == 0)
-		return TRUE;
-
-	/* Why does NLMSG_* use unsigned ints instead of unsigned longs
-	 * or size_t?
-	 */
-	num_bytes_to_process = (guint) num_received_bytes;
-
-	processing_is_done = FALSE;
-	for (header = (struct nlmsghdr *) received_bytes;
-	     !processing_is_done &&
-	     NLMSG_OK (header, (gint) num_bytes_to_process);
-	     header = NLMSG_NEXT (header, num_bytes_to_process)) 
-	{
-		struct ifinfomsg *interface_info;
-		struct rtattr *attribute;
-		int num_attribute_bytes_to_process;
-
-		g_assert (num_bytes_to_process <= num_received_bytes);
-
-		switch (header->nlmsg_type)
-		{
-			case NLMSG_DONE:
-				processing_is_done = TRUE;
-				continue;
-
-			case NLMSG_NOOP:
-				continue;
-
-			case NLMSG_OVERRUN:
-			{
-				error = g_error_new (NM_NETLINK_MONITOR_ERROR,
-						     NM_NETLINK_MONITOR_ERROR_BAD_SOCKET_DATA,
-						     _("too much data was sent "
-						       "over socket and some of "
-						       "it was lost"));
-
-				g_signal_emit (G_OBJECT (monitor), 
-							   signals[ERROR],
-							   0, error);
-				g_error_free (error);
-				error = NULL;
-				continue;
-			}
-
-			case NLMSG_ERROR:
-			{
-				struct nlmsgerr *error_message;
-				
-				error_message = 
-					(struct nlmsgerr *) NLMSG_DATA (header);
-
-				error = g_error_new (NM_NETLINK_MONITOR_ERROR,
-						     NM_NETLINK_MONITOR_ERROR_BAD_SOCKET_DATA,
-						     "%s", g_strerror (error_message->error));
-
-				g_signal_emit (G_OBJECT (monitor), 
-							   signals[ERROR],
-							   0, error);
-				g_error_free (error);
-				error = NULL;
-				continue;
-			}
-
-			default:
-				/* we continue above, so we don't have to stuff
-				 * everything below here in here */
-			break;
-		}
-
-		interface_info = (struct ifinfomsg *) NLMSG_DATA (header);
-		
-		num_attribute_bytes_to_process = IFLA_PAYLOAD (header);
-
-		/* Dispatch the event */
-		for (attribute = IFLA_RTA (interface_info);
-		     RTA_OK (attribute, num_attribute_bytes_to_process);
-		     attribute = RTA_NEXT (attribute, num_attribute_bytes_to_process))
-		{
-			if (attribute->rta_type == IFLA_IFNAME) {
-				if (interface_info->ifi_flags & IFF_RUNNING) {
-					g_signal_emit (G_OBJECT (monitor), 
-							       signals[INTERFACE_CONNECTED],
-							       0, interface_info->ifi_index);
-				} else {
-					g_signal_emit (G_OBJECT (monitor), 
-							       signals[INTERFACE_DISCONNECTED],
-							       0, interface_info->ifi_index);
-				}
-			}
-		}
-	}
-	g_free (received_bytes);
 
 	return TRUE;
 }
 
 static gboolean 
 nm_netlink_monitor_error_handler (GIOChannel       *channel,
-				  GIOCondition      io_condition,
-				  NMNetlinkMonitor *monitor)
+                                  GIOCondition      io_condition,
+                                  NMNetlinkMonitor *monitor)
 {
 	GError *socket_error;
  
-	g_return_val_if_fail (!(io_condition &
-			      ~(NM_NETLINK_MONITOR_ERROR_CONDITIONS)),
-			      FALSE);
+	g_return_val_if_fail (!(io_condition & ~(NM_NETLINK_MONITOR_ERROR_CONDITIONS)), FALSE);
 
-	socket_error = 
-	    g_error_new (NM_NETLINK_MONITOR_ERROR,
-                         NM_NETLINK_MONITOR_ERROR_WAITING_FOR_SOCKET_DATA,
-			 _("error occurred while waiting for data on socket"));
+	socket_error = g_error_new (NM_NETLINK_MONITOR_ERROR,
+	                            NM_NETLINK_MONITOR_ERROR_WAITING_FOR_SOCKET_DATA,
+	                            _("error occurred while waiting for data on socket"));
 
 	g_signal_emit (G_OBJECT (monitor), 
-				   signals[ERROR],
-				   0, socket_error);
+	               signals[ERROR],
+	               0, socket_error);
 	return TRUE;
 }
 
 static gboolean 
 nm_netlink_monitor_disconnect_handler (GIOChannel       *channel,
-				       GIOCondition      io_condition,
-				       NMNetlinkMonitor *monitor)
+                                       GIOCondition      io_condition,
+                                       NMNetlinkMonitor *monitor)
 {
 
-	g_return_val_if_fail (!(io_condition & 
-			      ~(NM_NETLINK_MONITOR_DISCONNECT_CONDITIONS)),
-			      FALSE);
+	g_return_val_if_fail (!(io_condition & ~(NM_NETLINK_MONITOR_DISCONNECT_CONDITIONS)), FALSE);
 	return FALSE;
 }
+
