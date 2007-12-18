@@ -1337,7 +1337,7 @@ add_one_connection_element (NMManager *manager,
 	GValue entry = {0, };
 	GPtrArray *dev_array = NULL;
 	NMActRequest *req;
-	const char *service_name;
+	const char *service_name = NULL;
 	NMConnection *connection;
 	const char *specific_object;
 	gpointer type_ptr;
