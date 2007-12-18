@@ -1,5 +1,15 @@
 2007-12-17  Dan Williams  <dcbw@redhat.com>
 
+	* configure.in
+		- Bump requirement for libnl to 1.0-pre8 (which works with newer kernels
+			and fixes memory leaks)
+
+	* src/nm-netlink.c
+		- (nm_netlink_get_default_handle): handle new versions of libnl that
+			automatically handle the netlink PID
+
+2007-12-17  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Michael Biebl <biebl@debian.org>
 
 	* configure.in

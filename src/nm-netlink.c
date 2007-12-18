@@ -58,36 +58,33 @@ get_link_cache (void)
 struct nl_handle *
 nm_netlink_get_default_handle (void)
 {
-	pid_t nl_pid;
-	int i = 10;
+	struct nl_cb *cb;
 
 	if (def_nl_handle)
 		return def_nl_handle;
 
-	while (i-- > 0) {
-		nl_pid = g_random_int ();
-		/* Ensure we don't use the same netlink pid as nm-netlink-monitor.c */
-		if (nl_pid != getpid ())
-			break;
-	}
-
-	if (G_UNLIKELY (i <= 0)) {
-		nm_warning ("couldn't get unused netlink pid.");
-		return NULL;
-	}
-
-	def_nl_handle = nl_handle_alloc_nondefault (NL_CB_VERBOSE);
+	cb = nl_cb_alloc(NL_CB_VERBOSE);
+	def_nl_handle = nl_handle_alloc_cb (cb);
 	if (!def_nl_handle) {
 		nm_warning ("couldn't allocate netlink handle.");
 		return NULL;
 	}
 
-	nl_handle_set_pid (def_nl_handle, nl_pid);
 	if (nl_connect (def_nl_handle, NETLINK_ROUTE) < 0) {
-		nm_error ("couldn't connect to netlink: %s", nl_geterror ());
+		/* HACK: try one more time. Because the netlink monitor for link state
+		 * inits before we get here, it grabs the port that matches the PID
+		 * of the NM process, which also happens to be the PID that libnl uses
+		 * the first time too.  The real fix is to convert nm-netlink-monitor.c
+		 * over to use libnl.
+		 */
 		nl_handle_destroy (def_nl_handle);
 		def_nl_handle = NULL;
-		return NULL;
+
+		def_nl_handle = nm_netlink_get_default_handle ();
+		if (!def_nl_handle) {
+			nm_error ("couldn't connect to netlink: %s", nl_geterror ());
+			return NULL;
+		}
 	}
 
 	return def_nl_handle;
