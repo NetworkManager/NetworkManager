@@ -25,7 +25,8 @@ libppp_manager_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(top_builddir)/src/marshallers/libmarshallers.la
 
-pkglib_LTLIBRARIES = nm-pppd-plugin.la
+pppd_plugindir = $(PPPD_PLUGIN_DIR)
+pppd_plugin_LTLIBRARIES = nm-pppd-plugin.la
 
 nm_pppd_plugin_la_SOURCES = \
 	nm-pppd-plugin.c \

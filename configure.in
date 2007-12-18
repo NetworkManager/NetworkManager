@@ -4,7 +4,7 @@ AC_INIT(NetworkManager, 0.7.0, dcbw@redhat.com, NetworkManager)
 AM_INIT_AUTOMAKE([subdir-objects])
 AM_MAINTAINER_MODE
 
-AM_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADERS(config.h)
 
 dnl
 dnl Require programs
@@ -57,7 +57,7 @@ dnl Make sha1.c happy on big endian systems
 dnl
 AC_C_BIGENDIAN
 
-AC_ARG_WITH(distro, AC_HELP_STRING([--with-distro=DISTRO], [Specify the Linux distribution to target: One of redhat, suse, gentoo, debian, arch, slackware or paldo]))
+AC_ARG_WITH(distro, AS_HELP_STRING([--with-distro=DISTRO], [Specify the Linux distribution to target: One of redhat, suse, gentoo, debian, arch, slackware or paldo]))
 if test "z$with_distro" = "z"; then
 	AC_CHECK_FILE(/etc/redhat-release,with_distro="redhat")
 	AC_CHECK_FILE(/etc/SuSE-release,with_distro="suse")
@@ -96,7 +96,7 @@ AM_CONDITIONAL(TARGET_FRUGALWARE, test x"$with_distro" = xfrugalware)
 
 if test x"$with_distro" = xgentoo ; then
 	AC_ARG_WITH([mdns_provider],
-		    AC_HELP_STRING([--with-mdns-provider=PROVIDER], [Specify the mDNS implementation: Avahi, Howl, Bonjour]),,
+		    AS_HELP_STRING([--with-mdns-provider=PROVIDER], [Specify the mDNS implementation: Avahi, Howl, Bonjour]),,
 		    [with_mdns_provider=avahi])
 
 	with_mdns_provider=`echo ${with_mdns_provider} | tr '[[:upper:]]' '[[:lower:]]'`
@@ -194,17 +194,17 @@ AC_SUBST(LIBNL_LIBS)
 GLIB_GENMARSHAL=`pkg-config --variable=glib_genmarshal glib-2.0`
 AC_SUBST(GLIB_GENMARSHAL)
 
-AC_ARG_WITH(dbus-sys, AC_HELP_STRING([--with-dbus-sys=DIR], [where D-BUS system.d directory is]))
+AC_ARG_WITH(dbus-sys-dir, AS_HELP_STRING([--with-dbus-sys-dir=DIR], [where D-BUS system.d directory is]))
 
-if ! test -z "$with_dbus_sys" ; then
-    DBUS_SYS_DIR="$with_dbus_sys"
+if test -n "$with_dbus_sys_dir" ; then
+    DBUS_SYS_DIR="$with_dbus_sys_dir"
 else
     DBUS_SYS_DIR="${sysconfdir}/dbus-1/system.d"
 fi
 AC_SUBST(DBUS_SYS_DIR)
 
 # ip binary path
-AC_ARG_WITH(ip, AC_HELP_STRING([--with-ip=/path/to/ip], [path to ip])) 
+AC_ARG_WITH(ip, AS_HELP_STRING([--with-ip=/path/to/ip], [path to ip])) 
 if test "x${with_ip}" = x; then
   AC_PATH_PROG(IP_BINARY_PATH, ip, [], $PATH:/sbin:/usr/sbin)
   if ! test -x "$IP_BINARY_PATH"; then
@@ -220,9 +220,17 @@ AC_SUBST(IP_BINARY_PATH)
 AC_CHECK_HEADERS(pppd/pppd.h,,
   AC_MSG_ERROR(couldn't find pppd.h. pppd-devel package is required.))
 
+AC_ARG_WITH([pppd-plugin-dir], AS_HELP_STRING([--with-pppd-plugin-dir=DIR], [path to the pppd plugins directory]))
+
+if test -n "$with_pppd_plugin_dir" ; then
+	PPPD_PLUGIN_DIR="$with_pppd_plugin_dir"
+else
+	PPPD_PLUGIN_DIR="${libdir}/pppd/2.4.4"
+fi
+AC_SUBST(PPPD_PLUGIN_DIR)
 
 AC_ARG_ENABLE(more-warnings,
-AC_HELP_STRING([--enable-more-warnings], [Maximum compiler warnings]), set_more_warnings="$enableval",set_more_warnings=yes)
+AS_HELP_STRING([--enable-more-warnings], [Maximum compiler warnings]), set_more_warnings="$enableval",set_more_warnings=yes)
 AC_MSG_CHECKING(for more warnings, including -Werror)
 if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 	AC_MSG_RESULT(yes)
@@ -249,7 +257,7 @@ else
 	AC_MSG_RESULT(no)
 fi
 
-AC_OUTPUT([
+AC_CONFIG_FILES([
 Makefile
 include/Makefile
 src/Makefile
@@ -300,6 +308,7 @@ man/nm-tool.1
 po/Makefile.in
 NetworkManager.pc
 ])
+AC_OUTPUT
 
 echo
 echo Distribution targeting: ${with_distro}
