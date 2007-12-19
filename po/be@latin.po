@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: network-manager-ui\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-12-08 10:12+0200\n"
-"PO-Revision-Date: 2007-12-08 10:13+0200\n"
+"POT-Creation-Date: 2007-12-19 23:38+0200\n"
+"PO-Revision-Date: 2007-12-19 23:42+0200\n"
 "Last-Translator: Ihar Hrachyshka <ihar.hrachyshka@gmail.com>\n"
 "Language-Team: Belarusian Latin <i18n@mova.org>\n"
 "MIME-Version: 1.0\n"
@@ -14,44 +14,36 @@ msgstr ""
 "X-Poedit-Language: Belarusian\n"
 "X-Poedit-Country: BELARUS\n"
 
-#: ../src/nm-netlink-monitor.c:165
+#: ../src/nm-netlink-monitor.c:188 ../src/nm-netlink-monitor.c:448
 #, c-format
-msgid ""
-"unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgid "error processing netlink message: %s"
+msgstr "pamyłka pry apracoŭvańni paviedamleńnia ad sietkavaha linka: %s"
+
+#: ../src/nm-netlink-monitor.c:245
+#, c-format
+msgid "unable to allocate netlink handle for monitoring link status: %s"
 msgstr ""
-"niemahčyma stvaryć sietkavy sokiet, kab nazirać za pravodnymi sietkavymi "
-"pryładami - %s"
+"niemahčyma vydzielić handle dla sietkavaha linka, kab nazirać za jaho stanam: %s"
 
-#: ../src/nm-netlink-monitor.c:183
+#: ../src/nm-netlink-monitor.c:255
 #, c-format
-msgid ""
-"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+msgid "unable to connect to netlink for monitoring link status: %s"
 msgstr ""
-"niemahčyma dałučycca da sietkavaha sokieta, kab nazirać za pravodnymi "
-"sietkavymi pryładami - %s"
+"niemahčyma spałučycca z sietkavym linkam, kab nazirać za jaho stanam: %s"
 
-#: ../src/nm-netlink-monitor.c:407
+#: ../src/nm-netlink-monitor.c:263
 #, c-format
-msgid "operation took too long"
-msgstr "aperacyja vykkonvałasia nadta doŭha"
-
-#: ../src/nm-netlink-monitor.c:504
-#, c-format
-msgid "received data from wrong type of sender"
-msgstr "atrymanyja źviestki ad adpraŭnika niapravilnaha typu"
-
-#: ../src/nm-netlink-monitor.c:517
-#, c-format
-msgid "received data from unexpected sender"
-msgstr "atrymanyja źviestki ad niečakanaha adpraŭnika"
-
-#: ../src/nm-netlink-monitor.c:646
-#, c-format
-msgid "too much data was sent over socket and some of it was lost"
+msgid "unable to join netlink group for monitoring link status: %s"
 msgstr ""
-"praz sokiet dasłana nadta šmat źviestak, i tamu niekatoryja ź ich zhubilisia"
+"niemahčyma ŭvajści ŭ hrupu sietkavaha linka, kab nazirać za jaho stanam: %s"
 
-#: ../src/nm-netlink-monitor.c:724
+#: ../src/nm-netlink-monitor.c:271
+#, c-format
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
+msgstr ""
+"niemahčyma vydzielić keš dla sietkavaha linka, kab nazirać za jaho stanam: %s"
+
+#: ../src/nm-netlink-monitor.c:471
 #, c-format
 msgid "error occurred while waiting for data on socket"
 msgstr "pry čakańni źviestak na sokiecie adbyłasia pamyłka"
@@ -59,7 +51,22 @@ msgstr "pry čakańni źviestak na sokiecie adbyłasia pamyłka"
 #: ../src/NetworkManager.c:255
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
-msgstr "Niapravilnaja opcyja. Kab pahladzieć śpis mahčymych opcyj, užyj --help.\n"
+msgstr ""
+"Niapravilnaja opcyja. Kab pahladzieć śpis mahčymych opcyj, užyj --help.\n"
+
+#~ msgid "operation took too long"
+#~ msgstr "aperacyja vykkonvałasia nadta doŭha"
+
+#~ msgid "received data from wrong type of sender"
+#~ msgstr "atrymanyja źviestki ad adpraŭnika niapravilnaha typu"
+
+#~ msgid "received data from unexpected sender"
+#~ msgstr "atrymanyja źviestki ad niečakanaha adpraŭnika"
+
+#~ msgid "too much data was sent over socket and some of it was lost"
+#~ msgstr ""
+#~ "praz sokiet dasłana nadta šmat źviestak, i tamu niekatoryja ź ich "
+#~ "zhubilisia"
 
 #~ msgid "Cannot add VPN connection"
 #~ msgstr "Niemahčyma dadać spałučeńnie VPN"
