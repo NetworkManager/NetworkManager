@@ -467,6 +467,14 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
+		(object_class, PROP_RATE,
+		 g_param_spec_uint (NM_SETTING_WIRELESS_RATE,
+						"Rate",
+						"Rate",
+						0, G_MAXUINT32, 0,
+						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	g_object_class_install_property
 		(object_class, PROP_TX_POWER,
 		 g_param_spec_uint (NM_SETTING_WIRELESS_TX_POWER,
 						"TX Power",

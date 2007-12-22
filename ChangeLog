@@ -1,3 +1,9 @@
+2007-12-22  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-setting-wireless.c
+		- (nm_setting_wireless_class_init): add missing 'rate' property
+			specification
+
 2007-12-18  Dan Williams  <dcbw@redhat.com>
 
 	Base the NMNetlinkMonitor class on libnl instead of hand-rolled netlink.
