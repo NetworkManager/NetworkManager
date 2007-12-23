@@ -1340,7 +1340,7 @@ struct cf_pair {
 	guint32 freq;
 };
 
-static struct cf_pair cf_table[46] = {
+static struct cf_pair cf_table[] = {
 	/* B/G band */
 	{ 1, 2412 },
 	{ 2, 2417 },
@@ -1355,6 +1355,7 @@ static struct cf_pair cf_table[46] = {
 	{ 11, 2462 },
 	{ 12, 2467 },
 	{ 13, 2472 },
+	{ 14, 2484 },
 	/* A band */
 	{ 34, 5170 },
 	{ 36, 5180 },
