@@ -163,7 +163,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 						"Speed",
 						"Speed",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | G_PARAM_CONSTRUCT));
 
 	g_object_class_install_property
 		(object_class, PROP_DUPLEX,
@@ -179,7 +179,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 						   "AutoNegotiate",
 						   "Auto negotiate",
 						   TRUE,
-						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | G_PARAM_CONSTRUCT));
 
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
@@ -195,6 +195,6 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 						"MTU",
 						"MTU",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | G_PARAM_CONSTRUCT));
 }
 
