@@ -128,6 +128,6 @@ NMAccessPoint *     nm_ap_match_in_list (NMAccessPoint *find_ap,
 void				nm_ap_print_self (NMAccessPoint *ap, const char * prefix);
 
 guint32 freq_to_channel (guint32 freq);
-guint32  channel_to_freq (guint32 channel);
+guint32 channel_to_freq (guint32 channel, const char *band);
 
 #endif /* NM_ACCESS_POINT_H */

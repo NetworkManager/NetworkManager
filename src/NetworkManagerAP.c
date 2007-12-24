@@ -573,10 +573,10 @@ nm_ap_new_fake_from_connection (NMConnection *connection)
 		nm_ap_set_mode (ap, IW_MODE_INFRA);
 	}
 
-	if (s_wireless->channel) {
-		guint32 freq = channel_to_freq (s_wireless->channel);
+	if (s_wireless->band && s_wireless->channel) {
+		guint32 freq = channel_to_freq (s_wireless->channel, s_wireless->band);
 
-		if (freq == -1)
+		if (freq == 0)
 			goto error;
 
 		nm_ap_set_freq (ap, freq);
@@ -1340,23 +1340,14 @@ struct cf_pair {
 	guint32 freq;
 };
 
-static struct cf_pair cf_table[] = {
-	/* B/G band */
-	{ 1, 2412 },
-	{ 2, 2417 },
-	{ 3, 2422 },
-	{ 4, 2427 },
-	{ 5, 2432 },
-	{ 6, 2437 },
-	{ 7, 2442 },
-	{ 8, 2447 },
-	{ 9, 2452 },
-	{ 10, 2457 },
-	{ 11, 2462 },
-	{ 12, 2467 },
-	{ 13, 2472 },
-	{ 14, 2484 },
+static struct cf_pair a_table[] = {
 	/* A band */
+	{  7, 5035 },
+	{  8, 5040 },
+	{  9, 5045 },
+	{ 11, 5055 },
+	{ 12, 5060 },
+	{ 16, 5080 },
 	{ 34, 5170 },
 	{ 36, 5180 },
 	{ 38, 5190 },
@@ -1389,6 +1380,32 @@ static struct cf_pair cf_table[] = {
 	{ 160, 5800 },
 	{ 161, 5805 },
 	{ 165, 5825 },
+	{ 183, 4915 },
+	{ 184, 4920 },
+	{ 185, 4925 },
+	{ 187, 4935 },
+	{ 188, 4945 },
+	{ 192, 4960 },
+	{ 196, 4980 },
+	{ 0, -1 }
+};
+
+static struct cf_pair bg_table[] = {
+	/* B/G band */
+	{ 1, 2412 },
+	{ 2, 2417 },
+	{ 3, 2422 },
+	{ 4, 2427 },
+	{ 5, 2432 },
+	{ 6, 2437 },
+	{ 7, 2442 },
+	{ 8, 2447 },
+	{ 9, 2452 },
+	{ 10, 2457 },
+	{ 11, 2462 },
+	{ 12, 2467 },
+	{ 13, 2472 },
+	{ 14, 2484 },
 	{ 0, -1 }
 };
 
@@ -1397,18 +1414,34 @@ freq_to_channel (guint32 freq)
 {
 	int i = 0;
 
-	while (cf_table[i].chan && (cf_table[i].freq != freq))
-		i++;
-	return cf_table[i].chan;
+	if (freq > 5000) {
+		while (a_table[i].chan && (a_table[i].freq != freq))
+			i++;
+		return a_table[i].chan;
+	} else {
+		while (bg_table[i].chan && (bg_table[i].freq != freq))
+			i++;
+		return bg_table[i].chan;
+	}
+
+	return 0;
 }
 
 guint32
-channel_to_freq (guint32 channel)
+channel_to_freq (guint32 channel, const char *band)
 {
 	int i = 0;
 
-	while (cf_table[i].chan && (cf_table[i].chan != channel))
-		i++;
-	return cf_table[i].freq;
+	if (!strcmp (band, "a")) {
+		while (a_table[i].chan && (a_table[i].chan != channel))
+			i++;
+		return a_table[i].freq;
+	} else if (!strcmp (band, "bg")) {
+		while (bg_table[i].chan && (bg_table[i].chan != channel))
+			i++;
+		return a_table[i].freq;
+	}
+
+	return 0;
 }
 

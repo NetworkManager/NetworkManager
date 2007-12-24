@@ -1,5 +1,13 @@
 2007-12-24  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerAP.c
+	  src/NetworkManagerAP.h
+		- (nm_ap_new_fake_from_connection): pass band to channel_to_freq()
+		- (freq_to_channel): handle split band tables
+		- (channel_to_freq): handle split band tables, take a band argument
+
+2007-12-24  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting-connection.h
 	  libnm-util/nm-setting-connection.c
 		- Add 'lockdown' member
