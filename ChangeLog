@@ -1,5 +1,11 @@
 2007-12-24  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting-wireless.c
+		- (verify): add 802.11a channels 7, 8, 9, 11, 12, 16, 34, 165, 183, 184,
+			185, 187, 188, 192, and 196
+
+2007-12-24  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 		- (nm_device_802_11_wireless_get_frequency): handle drivers that return
 			a channel # instead of a frequency

@@ -237,8 +237,11 @@ verify (NMSetting *setting, GSList *all_settings)
 	if (self->channel) {
 		if (!strcmp (self->band, "a")) {
 			int i;
-			int valid_channels[] = { 36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112,
-								116, 120, 124, 128, 132, 136, 140, 149, 153, 157, 161, 0 };
+			int valid_channels[] = { 7, 8, 9, 11, 12, 16, 34, 36, 40, 44, 48,
+			                         52, 56, 60, 64, 100, 104, 108, 112, 116,
+			                         120, 124, 128, 132, 136, 140, 149, 153,
+			                         157, 161, 165, 183, 184, 185, 187, 188,
+			                         192, 196, 0 };
 
 			for (i = 0; valid_channels[i]; i++) {
 				if (self->channel == valid_channels[i])
