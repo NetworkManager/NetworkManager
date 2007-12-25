@@ -1051,9 +1051,19 @@ nm_device_802_11_wireless_get_frequency (NMDevice80211Wireless *self)
 
 	nm_ioctl_info ("%s: About to GET IWFREQ.", iface);
 	err = iw_get_ext (nm_dev_sock_get_fd (sk), iface, SIOCGIWFREQ, &wrq);
-	if (err >= 0)
-		freq = iw_freq2float (&wrq.u.freq);
-	else if (err == -1)
+	if (err >= 0) {
+		if (wrq.u.freq.e == 0) {
+			/* Some drivers report channel not frequency.  Convert to a
+			 * frequency; but this assumes that the device is in b/g mode.
+			 */
+			if ((wrq.u.freq.m >= 1) && (wrq.u.freq.m <= 13))
+				freq = 2407 + (5 * wrq.u.freq.m);
+			else if (wrq.u.freq.m == 14)
+				freq = 2484;
+		} else {
+			freq = iw_freq2float (&wrq.u.freq);
+		}
+	} else if (err == -1)
 		nm_warning ("(%s) error getting frequency: %s", iface, strerror (errno));
 
 	nm_dev_sock_close (sk);
