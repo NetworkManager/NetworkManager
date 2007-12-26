@@ -9,9 +9,9 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Project\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-02-07 08:57+0000\n"
-"PO-Revision-Date: 2007-02-09 15:37+0200\n"
-"Last-Translator: Khaled Hosny <khaledhosny@eglug.org>\n"
+"POT-Creation-Date: 2007-12-26 09:02+0000\n"
+"PO-Revision-Date: 2007-12-26 09:20+0100\n"
+"Last-Translator: Djihed Afifi <djihed@gmail.com>\n"
 "Language-Team: Arabic <doc@arabeyes.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -20,192 +20,126 @@ msgstr ""
 "X-Poedit-Language: Arabic\n"
 "X-Generator: KBabel 1.11.4\n"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:417
-msgid "Cannot add VPN connection"
-msgstr "لا يمكن إضافة اتصال VPN"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:419
-msgid ""
-"No suitable VPN software was found on your system. Contact your system "
-"administrator."
-msgstr "لم يُعثر على برمجيات VPN مناسبة على نظامك. اتصل بمدير نظامك."
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:461
-msgid "Cannot import VPN connection"
-msgstr "لا يمكن استيراد اتصال VPN"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:463
+#: ../src/nm-netlink-monitor.c:188
+#: ../src/nm-netlink-monitor.c:448
 #, c-format
-msgid ""
-"Cannot find suitable software for VPN connection type '%s' to import the "
-"file '%s'. Contact your system administrator."
-msgstr "لم أجد برمجيات مناسبة لاتصال VPN من نوع '%s' لاستيرادها للملف '%s'. اتصل بمدير نظامك."
+msgid "error processing netlink message: %s"
+msgstr "خطأ في قراءة رسالة نتلينك: %s"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:580
+#: ../src/nm-netlink-monitor.c:245
 #, c-format
-msgid "Error retrieving VPN connection '%s'"
-msgstr "خطأ أثناء فتح اتصال VPN '%s'"
+msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgstr "لم أتمكن من إنشاء مقبس نتلنك netlink لمراقبة حالة الوصلة: %s"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:583
+#: ../src/nm-netlink-monitor.c:255
 #, c-format
-msgid ""
-"Could not find the UI files for VPN connection type '%s'. Contact your "
-"system administrator."
-msgstr "لم أعثر على ملفات واجهة المستخدم لاتصال VPN من نوع '%s'. اتصل بمدير نظامك."
+msgid "unable to connect to netlink for monitoring link status: %s"
+msgstr "لم أتمكن من الإتصال بنتلنك netlink لمراقبة حالة الوصلة: %s"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:727
+#: ../src/nm-netlink-monitor.c:263
 #, c-format
-msgid "Delete VPN connection \"%s\"?"
-msgstr "حذف اتصال VPN \"%s\"؟"
+msgid "unable to join netlink group for monitoring link status: %s"
+msgstr "لم أتمكن من الإنضمام لمجموعة نتلنك netlink لمراقبة حالة الوصلة: %s"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:730
+#: ../src/nm-netlink-monitor.c:271
 #, c-format
-msgid ""
-"All information about the VPN connection \"%s\" will be lost and you may "
-"need your system administrator to provide information to create a new "
-"connection."
-msgstr "ستُفقد كل معلومات اتصال VPN  \"%s\" و قد تحتاج أن يعطيك مدير نظامك معلومات لإنشاء اتصال جديد."
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
+msgstr "لم أتمكن من تخصيص مخزن وصلة نتلنك netlink لمراقبة حالة الوصلة: %s"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:924
-msgid "Unable to load"
-msgstr "تعذّر التحميل"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:926
-msgid "Cannot find some needed resources (the glade file)!"
-msgstr "لم أعثر على بعض الموارد المطلوبة (ملف glade)!"
-
-#. druid_window = GTK_DIALOG (gtk_dialog_new_with_buttons (_("Create VPN Connection"),
-#. NULL,
-#. GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-#. GTK_STOCK_CANCEL,
-#. GTK_RESPONSE_REJECT,
-#. GTK_STOCK_APPLY,
-#. GTK_RESPONSE_ACCEPT,
-#. NULL));
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1081
-msgid "Create VPN Connection"
-msgstr "انشيء اتصال VPN"
-
-#. gtk_container_add (GTK_CONTAINER (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")));
-#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(druid), TRUE,TRUE,0);
-#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")), TRUE,TRUE,0);
-#. toplevel = gtk_widget_get_toplevel (GTK_WIDGET (druid));
-#. gtk_signal_connect (GTK_OBJECT (toplevel), "delete_event", GTK_SIGNAL_FUNC (vpn_window_close), NULL);
-#. make the druid window modal wrt. our main window
-#. gtk_window_set_modal (druid_window, TRUE);
-#. gtk_window_set_transient_for (GTK_WINDOW(druid_window), GTK_WINDOW (dialog));
-#. Edit dialog
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1099
-msgid "Edit VPN Connection"
-msgstr "حرر اتصال VPN"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:1
-msgid "Add a new VPN connection"
-msgstr "أضف اتصال VPN جديد"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
-msgid "Delete the selected VPN connection"
-msgstr "احذف اتصال VPN المُنتقى"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
-msgid "E_xport"
-msgstr "_صدِّر"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
-msgid "Edit the selected VPN connection"
-msgstr "حرر  اتصال VPN المُنتقى"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
-msgid "Export the VPN settings to a file"
-msgstr "صِّر اعدادات VPN إلى ملف"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
-msgid "Export the selected VPN connection to a file"
-msgstr "صدِّر اعدادات VPN المنتقاة إلى ملف"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
-msgid "Manage Virtual Private Network Connections"
-msgstr "أدر اتصالات الشبكة الخاصة التخيّليّة"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
-msgid "VPN Connections"
-msgstr "إتّصالات VPN"
-
-#: ../src/nm-ap-security-wep.c:52
-msgid "40-bit WEP"
-msgstr "40-bit WEP"
-
-#: ../src/nm-ap-security-wep.c:54
-msgid "104-bit WEP"
-msgstr "104-bit WEP"
-
-#: ../src/nm-ap-security-wpa-psk.c:51
-msgid "WPA TKIP"
-msgstr "WPA TKIP"
-
-#: ../src/nm-ap-security-wpa-psk.c:53
-msgid "WPA CCMP"
-msgstr "WPA CCMP"
-
-#: ../src/nm-ap-security-wpa-psk.c:55
-msgid "WPA Automatic"
-msgstr "WPA آلي"
-
-#: ../src/nm-ap-security-wpa-psk.c:60
-msgid "WPA2 TKIP"
-msgstr "WPA2 TKIP"
-
-#: ../src/nm-ap-security-wpa-psk.c:62
-msgid "WPA2 CCMP"
-msgstr "WPA2 CCMP"
-
-#: ../src/nm-ap-security-wpa-psk.c:64
-msgid "WPA2 Automatic"
-msgstr "WPA2 آلي"
-
-#: ../src/nm-ap-security.c:334
-msgid "none"
-msgstr "بلا"
-
-#: ../src/nm-netlink-monitor.c:174
+#: ../src/nm-netlink-monitor.c:471
 #, c-format
-msgid "unable to create netlink socket for monitoring wired ethernet devices - %s"
-msgstr "لم أتمكن من إنشاء مقبس وصلة شبكة لمراقبة بطاقات إيثرنت ذات الأسلاك - %s"
-
-#: ../src/nm-netlink-monitor.c:192
-#, c-format
-msgid "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
-msgstr "لم أتمكن من الربط بمقبس وصلة شبكة لمراقبة بطاقات إيثرنت ذات الأسلاك - %s"
-
-#: ../src/nm-netlink-monitor.c:427
-msgid "operation took too long"
-msgstr "استغرقت العملية زمنا طويلا"
-
-#: ../src/nm-netlink-monitor.c:524
-msgid "received data from wrong type of sender"
-msgstr "تلقيت بيانات من نوع خطأ من المرسلين"
-
-#: ../src/nm-netlink-monitor.c:537
-msgid "received data from unexpected sender"
-msgstr "تلقيت بيانات من مرسل غير متوقّع"
-
-#: ../src/nm-netlink-monitor.c:666
-msgid "too much data was sent over socket and some of it was lost"
-msgstr "أرسل الكثير جدا من البيانات عبر المقبس وفُقِد بعضها"
-
-#: ../src/nm-netlink-monitor.c:774
 msgid "error occurred while waiting for data on socket"
 msgstr "حدث خطأ بينما ننتظر البيانات على المقبس"
 
-#: ../src/nm-ap-security-wpa-eap.c:93 ../src/nm-ap-security-wpa-eap.c:117
-msgid "WPA2 Enterprise"
-msgstr "WPA2 مشروعات"
+#: ../src/NetworkManager.c:255
+#, c-format
+msgid "Invalid option.  Please use --help to see a list of valid options.\n"
+msgstr "خيار غير صحيح. استعمل --help لعرض قائمة الخيارات الممكنة.\n"
 
-#: ../src/nm-ap-security-wpa-eap.c:95 ../src/nm-ap-security-wpa-eap.c:122
-msgid "WPA Enterprise"
-msgstr "WPA مشروعات"
-
-#: ../src/nm-ap-security-leap.c:66 ../src/nm-ap-security-leap.c:82
-msgid "LEAP"
-msgstr "LEAP"
+#~ msgid "Cannot add VPN connection"
+#~ msgstr "لا يمكن إضافة اتصال VPN"
+#~ msgid ""
+#~ "No suitable VPN software was found on your system. Contact your system "
+#~ "administrator."
+#~ msgstr "لم يُعثر على برمجيات VPN مناسبة على نظامك. اتصل بمدير نظامك."
+#~ msgid "Cannot import VPN connection"
+#~ msgstr "لا يمكن استيراد اتصال VPN"
+#~ msgid ""
+#~ "Cannot find suitable software for VPN connection type '%s' to import the "
+#~ "file '%s'. Contact your system administrator."
+#~ msgstr ""
+#~ "لم أجد برمجيات مناسبة لاتصال VPN من نوع '%s' لاستيرادها للملف '%s'. اتصل "
+#~ "بمدير نظامك."
+#~ msgid "Error retrieving VPN connection '%s'"
+#~ msgstr "خطأ أثناء فتح اتصال VPN '%s'"
+#~ msgid ""
+#~ "Could not find the UI files for VPN connection type '%s'. Contact your "
+#~ "system administrator."
+#~ msgstr ""
+#~ "لم أعثر على ملفات واجهة المستخدم لاتصال VPN من نوع '%s'. اتصل بمدير نظامك."
+#~ msgid "Delete VPN connection \"%s\"?"
+#~ msgstr "حذف اتصال VPN \"%s\"؟"
+#~ msgid ""
+#~ "All information about the VPN connection \"%s\" will be lost and you may "
+#~ "need your system administrator to provide information to create a new "
+#~ "connection."
+#~ msgstr ""
+#~ "ستُفقد كل معلومات اتصال VPN  \"%s\" و قد تحتاج أن يعطيك مدير نظامك معلومات "
+#~ "لإنشاء اتصال جديد."
+#~ msgid "Unable to load"
+#~ msgstr "تعذّر التحميل"
+#~ msgid "Cannot find some needed resources (the glade file)!"
+#~ msgstr "لم أعثر على بعض الموارد المطلوبة (ملف glade)!"
+#~ msgid "Create VPN Connection"
+#~ msgstr "انشيء اتصال VPN"
+#~ msgid "Edit VPN Connection"
+#~ msgstr "حرر اتصال VPN"
+#~ msgid "Add a new VPN connection"
+#~ msgstr "أضف اتصال VPN جديد"
+#~ msgid "Delete the selected VPN connection"
+#~ msgstr "احذف اتصال VPN المُنتقى"
+#~ msgid "E_xport"
+#~ msgstr "_صدِّر"
+#~ msgid "Edit the selected VPN connection"
+#~ msgstr "حرر  اتصال VPN المُنتقى"
+#~ msgid "Export the VPN settings to a file"
+#~ msgstr "صِّر اعدادات VPN إلى ملف"
+#~ msgid "Export the selected VPN connection to a file"
+#~ msgstr "صدِّر اعدادات VPN المنتقاة إلى ملف"
+#~ msgid "Manage Virtual Private Network Connections"
+#~ msgstr "أدر اتصالات الشبكة الخاصة التخيّليّة"
+#~ msgid "VPN Connections"
+#~ msgstr "إتّصالات VPN"
+#~ msgid "40-bit WEP"
+#~ msgstr "40-bit WEP"
+#~ msgid "104-bit WEP"
+#~ msgstr "104-bit WEP"
+#~ msgid "WPA TKIP"
+#~ msgstr "WPA TKIP"
+#~ msgid "WPA CCMP"
+#~ msgstr "WPA CCMP"
+#~ msgid "WPA Automatic"
+#~ msgstr "WPA آلي"
+#~ msgid "WPA2 TKIP"
+#~ msgstr "WPA2 TKIP"
+#~ msgid "WPA2 CCMP"
+#~ msgstr "WPA2 CCMP"
+#~ msgid "WPA2 Automatic"
+#~ msgstr "WPA2 آلي"
+#~ msgid "none"
+#~ msgstr "بلا"
+#~ msgid "operation took too long"
+#~ msgstr "استغرقت العملية زمنا طويلا"
+#~ msgid "received data from wrong type of sender"
+#~ msgstr "تلقيت بيانات من نوع خطأ من المرسلين"
+#~ msgid "received data from unexpected sender"
+#~ msgstr "تلقيت بيانات من مرسل غير متوقّع"
+#~ msgid "too much data was sent over socket and some of it was lost"
+#~ msgstr "أرسل الكثير جدا من البيانات عبر المقبس وفُقِد بعضها"
+#~ msgid "WPA2 Enterprise"
+#~ msgstr "WPA2 مشروعات"
+#~ msgid "WPA Enterprise"
+#~ msgstr "WPA مشروعات"
+#~ msgid "LEAP"
+#~ msgstr "LEAP"
 

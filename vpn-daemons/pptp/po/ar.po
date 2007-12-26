@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Project\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-01-04 01:55+0000\n"
-"PO-Revision-Date: 2007-02-16 11:58-0000\n"
+"POT-Creation-Date: 2007-12-26 09:03+0000\n"
+"PO-Revision-Date: 2007-12-26 09:09+0100\n"
 "Last-Translator: Djihed Afifi <djihed@gmail.com>\n"
 "Language-Team: Arabic <doc@arabeyes.org>\n"
 "MIME-Version: 1.0\n"
@@ -20,27 +20,27 @@ msgstr ""
 "X-Poedit-Language: Arabic\n"
 "X-Generator: KBabel 1.11.4\n"
 
-#: ../auth-dialog-general/gnome-generic-auth-dialog.c:785
+#: ../auth-dialog-general/gnome-generic-auth-dialog.c:792
 msgid "Authentication Type:"
 msgstr "نوع التوثق:"
 
-#: ../auth-dialog-general/gnome-generic-auth-dialog.c:850
+#: ../auth-dialog-general/gnome-generic-auth-dialog.c:857
 #: ../auth-dialog-general/nm-ppp-auth.glade.h:11
 msgid "_Remember for this session"
 msgstr "_تذكّر لهذه الجلسة"
 
-#: ../auth-dialog-general/gnome-generic-auth-dialog.c:852
+#: ../auth-dialog-general/gnome-generic-auth-dialog.c:859
 #: ../auth-dialog-general/nm-ppp-auth.glade.h:13
 msgid "_Save in keyring"
 msgstr "ا_حفظ في حلقة المفاتيح"
 
-#: ../auth-dialog-general/main.c:71
+#: ../auth-dialog-general/main.c:48
 #: ../auth-dialog/main.c:140
 #, c-format
 msgid "You need to authenticate to access '%s'."
 msgstr "تحتاج للتوثق لتنفُذ إلى '%s'."
 
-#: ../auth-dialog-general/main.c:74
+#: ../auth-dialog-general/main.c:51
 #: ../auth-dialog/main.c:141
 msgid "Authenticate Connection"
 msgstr "وثِّق الإتصال"
@@ -69,7 +69,7 @@ msgid "_Authentication Type:"
 msgstr "نوع ال_توثق:"
 
 #: ../auth-dialog-general/nm-ppp-auth.glade.h:10
-#: ../auth-dialog/gnome-two-password-dialog.c:272
+#: ../auth-dialog/gnome-two-password-dialog.c:263
 msgid "_Password:"
 msgstr "_كلمة السر:"
 
@@ -78,38 +78,23 @@ msgid "_Remote name:"
 msgstr "الإسم ال_بعيد:"
 
 #: ../auth-dialog-general/nm-ppp-auth.glade.h:14
-#: ../auth-dialog/gnome-two-password-dialog.c:268
+#: ../auth-dialog/gnome-two-password-dialog.c:259
 msgid "_Username:"
 msgstr "ا_سم المستخدم:"
 
-# Khaled, the developers know about this issue
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:15
-msgid "auth-chap-window"
-msgstr "auth-chap-window"
-
-# Khaled, the developers know about this issue
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:16
-msgid "auth-mschapv2-window"
-msgstr "auth-mschapv2-window"
-
-# Khaled, the developers know about this issue
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:17
-msgid "auth-none-window"
-msgstr "auth-none-window"
-
-#: ../auth-dialog/gnome-two-password-dialog.c:147
+#: ../auth-dialog/gnome-two-password-dialog.c:144
 msgid "_Secondary Password:"
 msgstr "_كلمة سر ثانوية:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:270
+#: ../auth-dialog/gnome-two-password-dialog.c:261
 msgid "_Domain:"
 msgstr "ال_نطاق:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:355
+#: ../auth-dialog/gnome-two-password-dialog.c:352
 msgid "Connect _anonymously"
 msgstr "اتّصل كم_جهول"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:360
+#: ../auth-dialog/gnome-two-password-dialog.c:357
 msgid "Connect as _user:"
 msgstr "اتصل _كمستخدم:"
 
@@ -138,48 +123,48 @@ msgid "<b>Compression</b>"
 msgstr "<b>الضغط</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:3
-msgid "<b>Connection Name</b>"
-msgstr "<b>اسم الإتصال</b>"
-
-#: ../properties/nm-ppp-dialog.glade.h:4
-msgid "<b>Delays and TImeouts</b>"
+msgid "<b>Delays &amp; Timeouts</b>"
 msgstr "<b>التأخيرات والمهل</b>"
 
-#: ../properties/nm-ppp-dialog.glade.h:5
+#: ../properties/nm-ppp-dialog.glade.h:4
 msgid "<b>Encryption</b>"
 msgstr "<b>التعمية</b>"
 
-#: ../properties/nm-ppp-dialog.glade.h:6
+#: ../properties/nm-ppp-dialog.glade.h:5
 msgid "<b>IP Options</b>"
 msgstr "<b>خيارات IP</b>"
 
-#: ../properties/nm-ppp-dialog.glade.h:7
+#: ../properties/nm-ppp-dialog.glade.h:6
 msgid "<b>Packet Parameters</b>"
 msgstr "<b>معاملات الرزم</b>"
 
-#: ../properties/nm-ppp-dialog.glade.h:8
-msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+#: ../properties/nm-ppp-dialog.glade.h:7
+msgid "<i>Example: 172.16.0.0/16 10.11.12.0/24</i>"
 msgstr "<i>مثال: 172.16.0.0/16 10.11.12.0/24</i>"
 
-#: ../properties/nm-ppp-dialog.glade.h:9
+#: ../properties/nm-ppp-dialog.glade.h:8
 msgid "A list of extra options to pppd as would be typed on the command line"
 msgstr "قائمة بخيارات pppd في صورتها في سطر الأوامر"
 
+#: ../properties/nm-ppp-dialog.glade.h:9
+msgid "Allow B_SD Compression"
+msgstr "اسمح ب_ضغط BSD"
+
 #: ../properties/nm-ppp-dialog.glade.h:10
-msgid "Allow BSD Compression"
-msgstr "اسمح بضغط BSD"
+msgid "Allow _Deflate compression"
+msgstr "ا_سمح بتفريغ الضغط"
 
 #: ../properties/nm-ppp-dialog.glade.h:11
-msgid "Allow Deflate compression"
-msgstr "اسمح بالضغط الإفتراضي"
-
-#: ../properties/nm-ppp-dialog.glade.h:12
-msgid "Authenticate Peer"
-msgstr "وثّق الندّ"
-
-#: ../properties/nm-ppp-dialog.glade.h:13
 msgid "Authentication"
 msgstr "التوثق"
+
+#: ../properties/nm-ppp-dialog.glade.h:12
+msgid "C_hannel:"
+msgstr "ال_قناة:"
+
+#: ../properties/nm-ppp-dialog.glade.h:13
+msgid "Co_nnect delay:"
+msgstr "تأ_خير الإتصال:"
 
 #: ../properties/nm-ppp-dialog.glade.h:14
 msgid "Compression & Encryption"
@@ -190,99 +175,96 @@ msgid "Connection"
 msgstr "الإتصال"
 
 #: ../properties/nm-ppp-dialog.glade.h:16
-msgid "Debug Output"
-msgstr "نقِّح الخرْج"
+msgid "Connection na_me:"
+msgstr "إ_سم الإتصال:"
 
 #: ../properties/nm-ppp-dialog.glade.h:17
+msgid "Context _number:"
+msgstr "رقم السيا_ق:"
+
+#: ../properties/nm-ppp-dialog.glade.h:18
+msgid "Custom _PPP options:"
+msgstr "خيارات PPP _مخصصة:"
+
+#: ../properties/nm-ppp-dialog.glade.h:19
+msgid "Debug _output"
+msgstr "خرج النقح:"
+
+#: ../properties/nm-ppp-dialog.glade.h:20
 msgid "Disconnect after this many LCP echo requests fail"
 msgstr "اقطع الإتصال بعد فشل طلبات صدى LCP الكثيرة هذه"
 
-#: ../properties/nm-ppp-dialog.glade.h:18
-#: ../properties/nm-ppp-properties.c:216
-msgid "Enable stateful MPPE"
-msgstr "فعّل MPPE الحالي"
+#: ../properties/nm-ppp-dialog.glade.h:21
+msgid "E_xclusive device access (UUCP-style lock)"
+msgstr "نفاذ ح_صري للجهاز (قفل بنمط UUCP)"
 
-#: ../properties/nm-ppp-dialog.glade.h:19
-msgid "Exclusive device access (UUCP-style lock)"
-msgstr "نفاذ حصري للجهاز (قفل بنمط UUCP)"
+#: ../properties/nm-ppp-dialog.glade.h:22
+msgid "Enable stateful _MPPE"
+msgstr "ف_عّل MPPE الحالي"
 
-#: ../properties/nm-ppp-dialog.glade.h:20
+#: ../properties/nm-ppp-dialog.glade.h:23
 msgid "Find Device"
 msgstr "اعثر على الجهاز"
 
-#: ../properties/nm-ppp-dialog.glade.h:21
+#: ../properties/nm-ppp-dialog.glade.h:24
 msgid "For security reasons, options entered in the box above are checked against a list of allowed options before a connection is established.  Currently there are no options on the list."
 msgstr "للأسباب الأمنية، تُفحص الخيارات المدخلة في هذا الصندوق مقابل قائمة بالخيارات المسموح بها قبل بدأ الإتصال. لا توجد خيارات في القائمة حاليا."
 
-#: ../properties/nm-ppp-dialog.glade.h:22
+#: ../properties/nm-ppp-dialog.glade.h:25
 msgid "GPRS Options"
 msgstr "خيارات GPRS"
 
-#: ../properties/nm-ppp-dialog.glade.h:23
-msgid "Hardware RTS/CTS"
-msgstr "RTS/CTS عتادي"
-
-#: ../properties/nm-ppp-dialog.glade.h:24
+#: ../properties/nm-ppp-dialog.glade.h:26
 msgid "Host name or IP address of the PPTP server"
 msgstr "اسم أو عنوان IP لخادم PPTP"
 
-#: ../properties/nm-ppp-dialog.glade.h:25
+#: ../properties/nm-ppp-dialog.glade.h:27
+msgid "IP a_ddress:"
+msgstr "ع_نوان IP:"
+
+#: ../properties/nm-ppp-dialog.glade.h:28
 msgid "If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
 msgstr "إذا لم يُسمح بضغط BSD سيمرر الخيار 'nobsdcomp' إلى pppd"
 
-#: ../properties/nm-ppp-dialog.glade.h:26
+#: ../properties/nm-ppp-dialog.glade.h:29
 msgid "If Deflate compression is not allowed the 'nodefate' option is passed to pppd"
 msgstr "إذا لم يُسمح بالضغط الإفتراضي سيمرر الخيار 'nodefate' إلى pppd"
 
-#: ../properties/nm-ppp-dialog.glade.h:27
+#: ../properties/nm-ppp-dialog.glade.h:30
 msgid "Maximum Receive Unit"
 msgstr "أقصى وحدة تلقِّي"
 
-#: ../properties/nm-ppp-dialog.glade.h:28
+#: ../properties/nm-ppp-dialog.glade.h:31
 msgid "Maximum Transmit Unit"
 msgstr "أقصى وحدة نقل"
 
-#: ../properties/nm-ppp-dialog.glade.h:29
-msgid "Modem Connection"
-msgstr "اتصال مودم"
-
-#: ../properties/nm-ppp-dialog.glade.h:30
+#: ../properties/nm-ppp-dialog.glade.h:32
 msgid "PPP Options"
 msgstr "خيارات PPP"
 
-#: ../properties/nm-ppp-dialog.glade.h:31
-msgid "Peer DNS through tunnel"
-msgstr "ند DNS عبر نفق"
-
-#: ../properties/nm-ppp-dialog.glade.h:32
-#: ../properties/nm-ppp-properties.c:251
-msgid "Refuse CHAP"
-msgstr "ارفض CHAP"
-
 #: ../properties/nm-ppp-dialog.glade.h:33
-#: ../properties/nm-ppp-properties.c:246
-msgid "Refuse EAP"
-msgstr "ارفض EAP"
+msgid "Refuse C_HAP"
+msgstr "ا_رفض CHAP"
 
 #: ../properties/nm-ppp-dialog.glade.h:34
-msgid "Refuse MS CHAP"
-msgstr "ارفض MS CHAP"
+msgid "Refuse _EAP"
+msgstr "ار_فض EAP"
 
 #: ../properties/nm-ppp-dialog.glade.h:35
-msgid "Require 128 bit MPPE encryption"
-msgstr "تطلّب تعمية 128 bit MPPE"
+msgid "Refuse _MS CHAP"
+msgstr "ارف_ض MS CHAP"
 
 #: ../properties/nm-ppp-dialog.glade.h:36
-msgid "Require Explicit IP Addr"
-msgstr "تطلّب عنوانIP واضح"
+msgid "Require 128 bit M_PPE encryption"
+msgstr "تطلّب ت_عمية 128 bit MPPE"
 
 #: ../properties/nm-ppp-dialog.glade.h:37
-msgid "Require MPPC Compression"
-msgstr "تطلّب ضغط MPPC"
+msgid "Require MPPE _encryption"
+msgstr "تطلّب تعم_ية MPPE"
 
 #: ../properties/nm-ppp-dialog.glade.h:38
-msgid "Require MPPE encryption"
-msgstr "تطلّب تعمية MPPE"
+msgid "Require explicit IP _address"
+msgstr "تطلّب ع_نوان IP صريح"
 
 #: ../properties/nm-ppp-dialog.glade.h:39
 msgid "Requires existing network connection"
@@ -305,8 +287,8 @@ msgid "Service providers IP address"
 msgstr "عنوان IP موفِّر الخدمة"
 
 #: ../properties/nm-ppp-dialog.glade.h:44
-msgid "Telephone number to dial"
-msgstr "رقم الهاتف ليتّصل به"
+msgid "Telep_hone number:"
+msgstr "رقم ال_هاتف:"
 
 #: ../properties/nm-ppp-dialog.glade.h:45
 msgid ""
@@ -321,13 +303,12 @@ msgid "Time in seconds between echo requests"
 msgstr "الوقت بالثواني بين طلبات الصدى"
 
 #: ../properties/nm-ppp-dialog.glade.h:48
-msgid "Type:"
-msgstr "النّوع:"
+msgid "Typ_e:"
+msgstr "النّ_وع:"
 
 #: ../properties/nm-ppp-dialog.glade.h:49
-#: ../properties/nm-ppp-properties.c:201
-msgid "Use Peer DNS"
-msgstr "استخدم DNS الندّ"
+msgid "Use peer _DNS"
+msgstr "است_خدم DNS الندّ"
 
 #: ../properties/nm-ppp-dialog.glade.h:50
 msgid "When checked the \"refuse-chap\" option is passed to pppd."
@@ -366,52 +347,48 @@ msgid "When this check box is cleared the \"noauth\" option is passed to pppd."
 msgstr "عند مسح هذا الصندوق سيمرر الخيار \"noauth\" إلى pppd."
 
 #: ../properties/nm-ppp-dialog.glade.h:59
-msgid "_Access Point Name:"
+msgid "_Access point name:"
 msgstr "اسم نقطة ال_وصول:"
 
 #: ../properties/nm-ppp-dialog.glade.h:60
-msgid "_Channel:"
-msgstr "ال_قناة:"
+msgid "_Authenticate peer"
+msgstr "وثّق ال_ندّ"
 
 #: ../properties/nm-ppp-dialog.glade.h:61
-msgid "_Context Num"
-msgstr "رقم السيا_ق"
-
-#: ../properties/nm-ppp-dialog.glade.h:62
-msgid "_Custom PPP options:"
-msgstr "خيارات PPP _مخصصة:"
-
-#: ../properties/nm-ppp-dialog.glade.h:63
-msgid "_Device Address:"
+msgid "_Device address:"
 msgstr "عنوان ال_جهاز:"
 
-#: ../properties/nm-ppp-dialog.glade.h:64
+#: ../properties/nm-ppp-dialog.glade.h:62
 msgid "_Gateway:"
 msgstr "ال_بوّابة:"
 
-#: ../properties/nm-ppp-dialog.glade.h:65
-msgid "_IP Address:"
-msgstr "عنوان _IP:"
+#: ../properties/nm-ppp-dialog.glade.h:63
+msgid "_Hardware RTS/CTS"
+msgstr "RTS/CTS عتادي_"
 
-#: ../properties/nm-ppp-dialog.glade.h:66
+#: ../properties/nm-ppp-dialog.glade.h:64
 msgid "_Import Saved Configuration..."
 msgstr "ا_ستورد اعدادات محفوظة..."
 
-#: ../properties/nm-ppp-dialog.glade.h:67
-msgid "_Only use VPN connection for these addresses"
-msgstr "استخدم _فقط اتصالات VPN لهذه العناوين"
+#: ../properties/nm-ppp-dialog.glade.h:65
+msgid "_Modem connection"
+msgstr "اتصال م_ودم"
 
-#: ../properties/nm-ppp-dialog.glade.h:68
-msgid "_Packet Type"
+#: ../properties/nm-ppp-dialog.glade.h:66
+msgid "_Only use VPN connection for these addresses:"
+msgstr "استخدم _فقط اتصالات VPN لهذه العناوين:"
+
+#: ../properties/nm-ppp-dialog.glade.h:67
+msgid "_Packet type:"
 msgstr "نوع الر_زمة"
 
-#: ../properties/nm-ppp-dialog.glade.h:69
-msgid "_Telephone Number:"
-msgstr "رقم ال_هاتف:"
+#: ../properties/nm-ppp-dialog.glade.h:68
+msgid "_Peer DNS through tunnel"
+msgstr "_ند DNS عبر نفق"
 
-#: ../properties/nm-ppp-dialog.glade.h:70
-msgid "connect-delay"
-msgstr "تأخير-الإتصال"
+#: ../properties/nm-ppp-dialog.glade.h:69
+msgid "_Require MPPC compression"
+msgstr "ت_طلّب ضغط MPPC"
 
 #: ../properties/nm-ppp-properties.c:45
 msgid "pppd tunnel (PPTP, BTGPRS, Dialup)"
@@ -465,6 +442,10 @@ msgstr "اتصل عبر مودم"
 msgid "Require IP to be provided"
 msgstr "تطلّب إعطاء IP"
 
+#: ../properties/nm-ppp-properties.c:201
+msgid "Use Peer DNS"
+msgstr "استخدم DNS الندّ"
+
 #: ../properties/nm-ppp-properties.c:206
 msgid "Use MPPE encryption"
 msgstr "استخدم تعمية MPPE"
@@ -472,6 +453,10 @@ msgstr "استخدم تعمية MPPE"
 #: ../properties/nm-ppp-properties.c:211
 msgid "Use 128 bit MPPE encryption"
 msgstr "استخدم تعمية 128 bit MPPE"
+
+#: ../properties/nm-ppp-properties.c:216
+msgid "Enable stateful MPPE"
+msgstr "فعّل MPPE الحالي"
 
 #: ../properties/nm-ppp-properties.c:221
 msgid "Use MPPC compression"
@@ -492,6 +477,14 @@ msgstr "وصول حصري للجهاز بواسطة pppd"
 #: ../properties/nm-ppp-properties.c:241
 msgid "Authenticate remote peer"
 msgstr "وثِّق الندّ البعيد"
+
+#: ../properties/nm-ppp-properties.c:246
+msgid "Refuse EAP"
+msgstr "ارفض EAP"
+
+#: ../properties/nm-ppp-properties.c:251
+msgid "Refuse CHAP"
+msgstr "ارفض CHAP"
 
 #: ../properties/nm-ppp-properties.c:256
 msgid "Refuse MSCHAP"
@@ -565,7 +558,7 @@ msgstr "يوجد ملف بالإسم \"%s\" مسبقاً."
 msgid "Do you want to replace it with the one you are saving?"
 msgstr "أتريد استبداله بالملف الذي تقوم بحفظه؟"
 
-#: ../src/nm-ppp-starter.c:140
+#: ../src/nm-ppp-starter.c:141
 msgid "VPN Connection failed"
 msgstr "فشل اتصال VPN"
 
