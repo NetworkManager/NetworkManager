@@ -1,5 +1,29 @@
 2007-12-27  Dan Williams  <dcbw@redhat.com>
 
+	* src/supplicant-manager/nm-supplicant-settings-verify.c
+		- Allow 'frequency' network property
+
+	* src/supplicant-manager/nm-supplicant-config.c
+	  src/supplicant-manager/nm-supplicant-config.h
+		- (nm_supplicant_config_add_setting_wireless): add 'adhoc_freq' argument
+			for callers to specify the frequency an Ad-Hoc network should operate
+			on.  Some drivers require this to successfully create an Ad-Hoc
+			network.
+
+	* src/nm-device-802-11-wireless.c
+		- (iw_freq_to_uint32): new function; convert a struct iw_freq into a
+			guint32 value in MHz
+		- (constructor, nm_device_802_11_wireless_get_frequency): use
+			iw_freq_to_uint32()
+		- (find_supported_frequency): new function; find a free supported
+			frequency for a user-created Ad-Hoc network
+		- (build_supplicant_config): if no frequency was specified for a user-
+			created Ad-Hoc network, find a free one to use
+		- (real_act_stage1_prepare): mark Ad-Hoc connections that don't have
+			a specific object as user-created
+
+2007-12-27  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-utils.c
 	  libnm-util/nm-utils.h
 		- (nm_utils_security_valid): add 'adhoc' argument and handle security

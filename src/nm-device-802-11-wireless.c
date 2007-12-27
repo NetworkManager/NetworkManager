@@ -122,7 +122,7 @@ struct _NMDevice80211WirelessPrivate
 	iwqual			avg_qual;
 
 	gint8			num_freqs;
-	double			freqs[IW_MAX_FREQUENCIES];
+	guint32			freqs[IW_MAX_FREQUENCIES];
 
 	GSList *        ap_list;
 	NMAccessPoint * current_ap;
@@ -355,6 +355,21 @@ nm_device_802_11_wireless_init (NMDevice80211Wireless * self)
 	nm_device_set_device_type (NM_DEVICE (self), DEVICE_TYPE_802_11_WIRELESS);
 }
 
+static guint32 iw_freq_to_uint32 (struct iw_freq *freq)
+{
+	if (freq->e == 0) {
+		/* Some drivers report channel not frequency.  Convert to a
+		 * frequency; but this assumes that the device is in b/g mode.
+		 */
+		if ((freq->m >= 1) && (freq->m <= 13))
+			return 2407 + (5 * freq->m);
+		else if (freq->m == 14)
+			return 2484;
+	}
+
+	return (guint32) (iw_freq2float (freq) / 1000000);
+}
+
 static GObject*
 constructor (GType type,
 			 guint n_construct_params,
@@ -404,7 +419,7 @@ constructor (GType type,
 
 	priv->num_freqs = MIN (range.num_frequency, IW_MAX_FREQUENCIES);
 	for (i = 0; i < priv->num_freqs; i++)
-		priv->freqs[i] = iw_freq2float (&(range.freq[i]));
+		priv->freqs[i] = iw_freq_to_uint32 (&range.freq[i]);
 
 	priv->we_version = range.we_version_compiled;
 
@@ -1036,7 +1051,7 @@ nm_device_802_11_wireless_get_frequency (NMDevice80211Wireless *self)
 {
 	NMSock *sk;
 	int err;
-	double freq = 0;
+	guint32 freq = 0;
 	const char *iface;
 	struct iwreq wrq;
 
@@ -1051,23 +1066,13 @@ nm_device_802_11_wireless_get_frequency (NMDevice80211Wireless *self)
 
 	nm_ioctl_info ("%s: About to GET IWFREQ.", iface);
 	err = iw_get_ext (nm_dev_sock_get_fd (sk), iface, SIOCGIWFREQ, &wrq);
-	if (err >= 0) {
-		if (wrq.u.freq.e == 0) {
-			/* Some drivers report channel not frequency.  Convert to a
-			 * frequency; but this assumes that the device is in b/g mode.
-			 */
-			if ((wrq.u.freq.m >= 1) && (wrq.u.freq.m <= 13))
-				freq = 2407 + (5 * wrq.u.freq.m);
-			else if (wrq.u.freq.m == 14)
-				freq = 2484;
-		} else {
-			freq = iw_freq2float (&wrq.u.freq);
-		}
-	} else if (err == -1)
+	if (err >= 0)
+		freq = iw_freq_to_uint32 (&wrq.u.freq);
+	else if (err == -1)
 		nm_warning ("(%s) error getting frequency: %s", iface, strerror (errno));
 
 	nm_dev_sock_close (sk);
-	return (guint32) (freq / 1000000);
+	return freq;
 }
 
 /*
@@ -2336,6 +2341,23 @@ remove_supplicant_timeouts (NMDevice80211Wireless *self)
 	remove_link_timeout (self);
 }
 
+static guint32
+find_supported_frequency (NMDevice80211Wireless *self, guint32 *freqs)
+{
+	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
+	int i;
+
+	for (i = 0; i < priv->num_freqs; i++) {
+		while (*freqs) {
+			if (priv->freqs[i] == *freqs)
+				return *freqs;
+			freqs++;
+		}
+	}
+
+	return 0;
+}
+
 static NMSupplicantConfig *
 build_supplicant_config (NMDevice80211Wireless *self,
                          NMConnection *connection,
@@ -2344,6 +2366,7 @@ build_supplicant_config (NMDevice80211Wireless *self,
 	NMSupplicantConfig * config = NULL;
 	NMSettingWireless * s_wireless;
 	NMSettingWirelessSecurity *s_wireless_sec;
+	guint32 adhoc_freq = 0;
 
 	g_return_val_if_fail (self != NULL, NULL);
 
@@ -2354,9 +2377,33 @@ build_supplicant_config (NMDevice80211Wireless *self,
 	if (!config)
 		return NULL;
 
+	/* Figure out the Ad-Hoc frequency to use if creating an adhoc network; if
+	 * nothing was specified then pick something usable.
+	 */
+	if ((nm_ap_get_mode (ap) == IW_MODE_ADHOC) && nm_ap_get_user_created (ap)) {
+		adhoc_freq = nm_ap_get_freq (ap);
+		if (!adhoc_freq) {
+			if (s_wireless->band && !strcmp (s_wireless->band, "a")) {
+				guint32 a_freqs[] = {5180, 5200, 5220, 5745, 5765, 5785, 5805, 0};
+				adhoc_freq = find_supported_frequency (self, a_freqs);
+			} else {
+				guint32 bg_freqs[] = {2412, 2437, 2462, 2472, 0};
+				adhoc_freq = find_supported_frequency (self, bg_freqs);
+			}
+		}
+
+		if (!adhoc_freq) {
+			if (s_wireless->band && !strcmp (s_wireless->band, "a"))
+				adhoc_freq = 5180;
+			else
+				adhoc_freq = 2462;
+		}
+	}
+
 	if (!nm_supplicant_config_add_setting_wireless (config,
 	                                                s_wireless,
-	                                                nm_ap_get_broadcast (ap))) {
+	                                                nm_ap_get_broadcast (ap),
+	                                                adhoc_freq)) {
 		nm_warning ("Couldn't add 802-11-wireless setting to supplicant config.");
 		goto error;
 	}
@@ -2462,7 +2509,16 @@ real_act_stage1_prepare (NMDevice *dev)
 			ap = nm_ap_new_fake_from_connection (connection);
 			g_return_val_if_fail (ap != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-			nm_ap_set_broadcast (ap, FALSE);
+			switch (nm_ap_get_mode (ap)) {
+				case IW_MODE_ADHOC:
+					nm_ap_set_user_created (ap, TRUE);
+					break;
+				case IW_MODE_INFRA:
+				default:
+					nm_ap_set_broadcast (ap, FALSE);
+					break;
+			}
+
 			self->priv->ap_list = g_slist_append (self->priv->ap_list, ap);
 			nm_ap_export_to_dbus (ap);
 			g_signal_emit (self, signals[ACCESS_POINT_ADDED], 0, ap);

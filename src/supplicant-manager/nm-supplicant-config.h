@@ -67,7 +67,8 @@ GHashTable *nm_supplicant_config_get_blobs (NMSupplicantConfig * self);
 
 gboolean nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
                                                     NMSettingWireless * setting,
-                                                    gboolean is_broadcast);
+                                                    gboolean is_broadcast,
+                                                    guint32 adhoc_freq);
 
 gboolean nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig * self,
                                                              NMSettingWirelessSecurity * setting,

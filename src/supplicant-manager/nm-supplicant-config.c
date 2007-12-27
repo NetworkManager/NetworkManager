@@ -326,7 +326,8 @@ nm_supplicant_config_get_blobs (NMSupplicantConfig * self)
 gboolean
 nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
                                            NMSettingWireless * setting,
-                                           gboolean is_broadcast)
+                                           gboolean is_broadcast,
+                                           guint32 adhoc_freq)
 {
 	NMSupplicantConfigPrivate *priv;
 	gboolean is_adhoc;
@@ -352,6 +353,18 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 		if (!nm_supplicant_config_add_option (self, "mode", "1", -1, FALSE)) {
 			nm_warning ("Error adding mode to supplicant config.");
 			return FALSE;
+		}
+
+		if (adhoc_freq) {
+			char *str_freq;
+
+			str_freq = g_strdup_printf ("%u", adhoc_freq);
+			if (!nm_supplicant_config_add_option (self, "frequency", str_freq, -1, FALSE)) {
+				g_free (str_freq);
+				nm_warning ("Error adding Ad-Hoc frequency to supplicant config.");
+				return FALSE;
+			}
+			g_free (str_freq);
 		}
 	}
 
