@@ -1220,10 +1220,10 @@ nm_ap_check_compatible (NMAccessPoint *self,
 
 	if (s_wireless->band) {
 		if (!strcmp (s_wireless->band, "a")) {
-			if (priv->freq < 5170 || priv->freq > 5825)
+			if (priv->freq < 4915 || priv->freq > 5825)
 				return FALSE;
 		} else if (!strcmp (s_wireless->band, "bg")) {
-			if (priv->freq < 2412 || priv->freq > 2472)
+			if (priv->freq < 2412 || priv->freq > 2484)
 				return FALSE;
 		}
 	}
@@ -1414,7 +1414,7 @@ freq_to_channel (guint32 freq)
 {
 	int i = 0;
 
-	if (freq > 5000) {
+	if (freq > 4900) {
 		while (a_table[i].chan && (a_table[i].freq != freq))
 			i++;
 		return a_table[i].chan;
