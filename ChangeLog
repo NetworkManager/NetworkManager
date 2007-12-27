@@ -1,3 +1,10 @@
+2007-12-27  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-utils.c
+	  libnm-util/nm-utils.h
+		- (nm_utils_security_valid): add 'adhoc' argument and handle security
+			for adhoc networks
+
 2007-12-24  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/nm-setting-wireless.c

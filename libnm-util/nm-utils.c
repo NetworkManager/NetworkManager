@@ -667,6 +667,7 @@ gboolean
 nm_utils_security_valid (NMUtilsSecurityType type,
                          guint32 dev_caps,
                          gboolean have_ap,
+                         gboolean adhoc,
                          guint32 ap_flags,
                          guint32 ap_wpa,
                          guint32 ap_rsn)
@@ -677,8 +678,8 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		if (type == NMU_SEC_NONE)
 			return TRUE;
 		if (   (type == NMU_SEC_STATIC_WEP)
-		    || (type == NMU_SEC_DYNAMIC_WEP)
-		    || (type == NMU_SEC_LEAP)) {
+		    || ((type == NMU_SEC_DYNAMIC_WEP) && !adhoc)
+		    || ((type == NMU_SEC_LEAP) && !adhoc)) {
 			if (dev_caps & (NM_802_11_DEVICE_CAP_CIPHER_WEP40 | NM_802_11_DEVICE_CAP_CIPHER_WEP104))
 				return TRUE;
 		}
@@ -693,6 +694,9 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 			return FALSE;
 		break;
 	case NMU_SEC_LEAP: /* require PRIVACY bit for LEAP? */
+		if (adhoc)
+			return FALSE;
+		/* Fall through */
 	case NMU_SEC_STATIC_WEP:
 		g_assert (have_ap);
 		if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
@@ -704,6 +708,8 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		}
 		break;
 	case NMU_SEC_DYNAMIC_WEP:
+		if (adhoc)
+			return FALSE;
 		g_assert (have_ap);
 		if (ap_rsn || !(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
 			return FALSE;
@@ -752,6 +758,8 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		}
 		break;
 	case NMU_SEC_WPA_ENTERPRISE:
+		if (adhoc)
+			return FALSE;
 		if (!(dev_caps & NM_802_11_DEVICE_CAP_WPA))
 			return FALSE;
 		if (have_ap) {
@@ -765,6 +773,8 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		}
 		break;
 	case NMU_SEC_WPA2_ENTERPRISE:
+		if (adhoc)
+			return FALSE;
 		if (!(dev_caps & NM_802_11_DEVICE_CAP_RSN))
 			return FALSE;
 		if (have_ap) {

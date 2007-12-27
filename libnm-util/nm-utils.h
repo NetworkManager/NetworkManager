@@ -169,6 +169,7 @@ typedef enum {
 gboolean nm_utils_security_valid (NMUtilsSecurityType type,
                                   guint32 dev_caps,
                                   gboolean have_ap,
+                                  gboolean adhoc,
                                   guint32 ap_flags,
                                   guint32 ap_wpa,
                                   guint32 ap_rsn);
