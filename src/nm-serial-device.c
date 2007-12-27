@@ -868,20 +868,26 @@ real_deactivate_quickly (NMDevice *device)
 }
 
 static gboolean
-real_check_connection (NMDevice *dev, NMConnection *connection)
+real_check_connection (NMDevice *dev, NMConnection *connection, GError **error)
 {
 	NMSettingSerial *serial;
 	NMSettingPPP *ppp;
 
 	serial = (NMSettingSerial *) nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL);
 	if (!serial) {
-		nm_warning ("Connection check failed: serial setting not present.");
+		g_set_error (error,
+		             NM_DEVICE_INTERFACE_ERROR,
+		             NM_DEVICE_INTERFACE_ERROR_CONNECTION_INVALID,
+		             "%s", "Connection invalid: serial setting not present");
 		return FALSE;
 	}
 
 	ppp = (NMSettingPPP *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP);
 	if (!ppp) {
-		nm_warning ("Connection check failed: ppp setting not present.");
+		g_set_error (error,
+		             NM_DEVICE_INTERFACE_ERROR,
+		             NM_DEVICE_INTERFACE_ERROR_CONNECTION_INVALID,
+		             "%s", "Connection invalid: PPP setting not present");
 		return FALSE;
 	}
 

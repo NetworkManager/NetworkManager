@@ -74,7 +74,8 @@ gboolean  nm_manager_activate_device (NMManager *manager,
 				      NMDevice *device,
 				      NMConnection *connection,
 				      const char *specific_object,
-				      gboolean user_requested);
+				      gboolean user_requested,
+				      GError **error);
 
 gboolean  nm_manager_activation_pending (NMManager *manager);
 

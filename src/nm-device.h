@@ -98,7 +98,7 @@ struct _NMDeviceClass
 	                                            NMConnection *connection,
 	                                            const char *setting_name);
 
-	gboolean    (* check_connection) (NMDevice *self, NMConnection *connection);
+	gboolean    (* check_connection) (NMDevice *self, NMConnection *connection, GError **error);
 
 	NMActStageReturn	(* act_stage1_prepare)	(NMDevice *self);
 	NMActStageReturn	(* act_stage2_config)	(NMDevice *self);

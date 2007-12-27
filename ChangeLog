@@ -1,5 +1,42 @@
 2007-12-27  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-interface.c
+	  src/nm-device-interface.h
+		- (nm_device_interface_error_quark, nm_device_interface_error_get_type):
+			normalize and expand errors
+		- (nm_device_interface_init): register errors so they can be marshalled
+			through dbus-glib
+		- (nm_device_interface_activate): ensure that failure of activation
+			returns an error
+
+	* src/nm-device.c
+	  src/nm-device.h
+		- (device_activation_precheck): implementations of check_connection()
+			now take a GError and must fill it in if the check fails.  Return
+			more descriptive error if the requested connection is already
+			activating
+		- (nm_device_activate): actually try to return descriptive errors on
+			failures
+
+	* src/nm-device-802-11-wireless.c
+	  src/nm-device-802-3-ethernet.c
+	  src/nm-serial-device.c
+	  src/nm-gsm-device.c
+		- (real_check_connection): return more descriptive errors on failure
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_device_change_check): print activation errors in the logs
+
+	* src/nm-manager.c
+		- (nm_manager_error_quark, nm_manager_error_get_type,
+		   nm_manager_class_init): new errors
+		- (nm_manager_activate_device): handle errors
+		- (nm_manager_error_new): removed
+		- (wait_for_connection_expired, connection_added_default_handler,
+		   impl_manager_activate_device): better error handling
+
+2007-12-27  Dan Williams  <dcbw@redhat.com>
+
 	* src/supplicant-manager/nm-supplicant-settings-verify.c
 		- Allow 'frequency' network property
 

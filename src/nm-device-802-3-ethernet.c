@@ -328,7 +328,7 @@ real_can_interrupt_activation (NMDevice *dev)
 }
 
 static gboolean
-real_check_connection (NMDevice *dev, NMConnection *connection)
+real_check_connection (NMDevice *dev, NMConnection *connection, GError **error)
 {
 	return TRUE;
 }

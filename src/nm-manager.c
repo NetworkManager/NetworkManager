@@ -100,6 +100,56 @@ enum {
 	LAST_PROP
 };
 
+typedef enum
+{
+	NM_MANAGER_ERROR_UNKNOWN_CONNECTION = 0,
+	NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+	NM_MANAGER_ERROR_INVALID_SERVICE,
+	NM_MANAGER_ERROR_SYSTEM_CONNECTION,
+	NM_MANAGER_ERROR_PERMISSION_DENIED,
+} NMManagerError;
+
+#define NM_MANAGER_ERROR (nm_manager_error_quark ())
+#define NM_TYPE_MANAGER_ERROR (nm_manager_error_get_type ()) 
+
+static GQuark
+nm_manager_error_quark (void)
+{
+	static GQuark quark = 0;
+	if (!quark)
+		quark = g_quark_from_static_string ("nm-manager-error");
+	return quark;
+}
+
+/* This should really be standard. */
+#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
+
+static GType
+nm_manager_error_get_type (void)
+{
+	static GType etype = 0;
+
+	if (etype == 0) {
+		static const GEnumValue values[] = {
+			/* Connection was not provided by any known settings service. */
+			ENUM_ENTRY (NM_MANAGER_ERROR_UNKNOWN_CONNECTION, "UnknownConnection"),
+			/* Unknown device. */
+			ENUM_ENTRY (NM_MANAGER_ERROR_UNKNOWN_DEVICE, "UnknownDevice"),
+			/* Invalid settings service (not a recognized system or user
+			 * settings service name)
+			 */
+			ENUM_ENTRY (NM_MANAGER_ERROR_INVALID_SERVICE, "InvalidService"),
+			/* Connection was superceded by a system connection. */
+			ENUM_ENTRY (NM_MANAGER_ERROR_SYSTEM_CONNECTION, "SystemConnection"),
+			/* User does not have the permission to activate this connection. */
+			ENUM_ENTRY (NM_MANAGER_ERROR_PERMISSION_DENIED, "PermissionDenied"),
+			{ 0, 0, 0 }
+		};
+		etype = g_enum_register_static ("NMManagerError", values);
+	}
+	return etype;
+}
+
 static void
 nm_manager_init (NMManager *manager)
 {
@@ -357,6 +407,8 @@ nm_manager_class_init (NMManagerClass *manager_class)
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (manager_class),
 									 &dbus_glib_nm_manager_object_info);
+
+	dbus_g_error_domain_register (NM_MANAGER_ERROR, NULL, NM_TYPE_MANAGER_ERROR);
 }
 
 #define DBUS_TYPE_G_STRING_VARIANT_HASHTABLE (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE))
@@ -1108,7 +1160,8 @@ nm_manager_activate_device (NMManager *manager,
 					   NMDevice *device,
 					   NMConnection *connection,
 					   const char *specific_object,
-					   gboolean user_requested)
+					   gboolean user_requested,
+					   GError **error)
 {
 	NMActRequest *req;
 	gboolean success;
@@ -1117,8 +1170,10 @@ nm_manager_activate_device (NMManager *manager,
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
+	/* Ensure the requested connection is allowed to be activated */
+
 	req = nm_act_request_new (connection, specific_object, user_requested);
-	success = nm_device_interface_activate (NM_DEVICE_INTERFACE (device), req);
+	success = nm_device_interface_activate (NM_DEVICE_INTERFACE (device), req, error);
 	g_object_unref (req);
 
 	return success;
@@ -1132,44 +1187,28 @@ nm_manager_activation_pending (NMManager *manager)
 	return NM_MANAGER_GET_PRIVATE (manager)->pending_connection_info != NULL;
 }
 
-static GError *
-nm_manager_error_new (const gchar *format, ...)
-{
-	GError *err;
-	va_list args;
-	gchar *msg;
-	static GQuark domain_quark = 0;
-
-	if (domain_quark == 0)
-		domain_quark = g_quark_from_static_string ("nm_manager_error");
-
-	va_start (args, format);
-	msg = g_strdup_vprintf (format, args);
-	va_end (args);
-
-	err = g_error_new_literal (domain_quark, 1, (const gchar *) msg);
-
-	g_free (msg);
-
-	return err;
-}
-
 static gboolean
 wait_for_connection_expired (gpointer data)
 {
 	NMManager *manager = NM_MANAGER (data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	PendingConnectionInfo *info = priv->pending_connection_info;
-	GError *err;
+	GError *error = NULL;
 
 	g_return_val_if_fail (info != NULL, FALSE);
 
 	nm_info ("%s: didn't receive connection details soon enough for activation.",
 	         nm_device_get_iface (info->device));
 
-	err = nm_manager_error_new ("Could not find connection");
-	dbus_g_method_return_error (info->context, err);
-	g_error_free (err);
+	g_set_error (&error,
+	             NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
+	             "%s", "Connection was not provided by any settings service");
+	nm_warning ("Failed to activate device %s: (%d) %s",
+	            nm_device_get_iface (info->device),
+	            error->code,
+	            error->message);
+	dbus_g_method_return_error (info->context, error);
+	g_error_free (error);
 
 	info->timeout_id = 0;
 	pending_connection_info_destroy (priv->pending_connection_info);
@@ -1219,6 +1258,8 @@ connection_added_default_handler (NMManager *manager,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	PendingConnectionInfo *info = priv->pending_connection_info;
 	const char *path;
+	gboolean success;
+	GError *error = NULL;
 
 	if (!info)
 		return;
@@ -1236,14 +1277,21 @@ connection_added_default_handler (NMManager *manager,
 	// FIXME: remove old_dev deactivation when multiple device support lands
 	deactivate_old_device (manager);
 
-	if (nm_manager_activate_device (manager, info->device, connection, info->specific_object_path, TRUE)) {
+	success = nm_manager_activate_device (manager,
+	                                      info->device,
+	                                      connection,
+	                                      info->specific_object_path,
+	                                      TRUE,
+	                                      &error);
+	if (success)
 		dbus_g_method_return (info->context, TRUE);
-	} else {
-		GError *err;
-
-		err = nm_manager_error_new ("Error in device activation");
-		dbus_g_method_return_error (info->context, err);
-		g_error_free (err);
+	else {
+		dbus_g_method_return_error (info->context, error);
+		nm_warning ("Failed to activate device %s: (%d) %s",
+		            nm_device_get_iface (info->device),
+		            error->code,
+		            error->message);
+		g_error_free (error);
 	}
 
 	pending_connection_info_destroy (info);
@@ -1260,12 +1308,14 @@ impl_manager_activate_device (NMManager *manager,
 	NMDevice *device;
 	NMConnectionType connection_type;
 	NMConnection *connection;
-	GError *err = NULL;
+	GError *error = NULL;
 	char *real_sop = NULL;
 
 	device = nm_manager_get_device_by_path (manager, device_path);
 	if (!device) {
-		err = nm_manager_error_new ("Could not find device");
+		g_set_error (&error,
+		             NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+		             "%s", "Device not found");
 		goto err;
 	}
 
@@ -1276,7 +1326,9 @@ impl_manager_activate_device (NMManager *manager,
 	else if (!strcmp (service_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS))
 		connection_type = NM_CONNECTION_TYPE_SYSTEM;
 	else {
-		err = nm_manager_error_new ("Invalid service name");
+		g_set_error (&error,
+		             NM_MANAGER_ERROR, NM_MANAGER_ERROR_INVALID_SERVICE,
+		             "%s", "Invalid settings service name");
 		goto err;
 	}
 
@@ -1286,15 +1338,19 @@ impl_manager_activate_device (NMManager *manager,
 
 	connection = nm_manager_get_connection_by_object_path (manager, connection_type, connection_path);
 	if (connection) {
+		gboolean success;
+
 		// FIXME: remove old_dev deactivation when multiple device support lands
 		deactivate_old_device (manager);
 
-		if (nm_manager_activate_device (manager, device, connection, real_sop, TRUE)) {
+		success = nm_manager_activate_device (manager,
+		                                      device,
+		                                      connection,
+		                                      real_sop,
+		                                      TRUE,
+		                                      &error);
+		if (success)
 			dbus_g_method_return (context, TRUE);
-		} else {
-			err = nm_manager_error_new ("Error in device activation");
-			goto err;
-		}
 	} else {
 		PendingConnectionInfo *info;
 		NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
@@ -1321,9 +1377,13 @@ impl_manager_activate_device (NMManager *manager,
 	}
 
  err:
-	if (err) {
-		dbus_g_method_return_error (context, err);
-		g_error_free (err);
+	if (error) {
+		dbus_g_method_return_error (context, error);
+		nm_warning ("Failed to activate device %s: (%d) %s",
+		            nm_device_get_iface (device),
+		            error->code,
+		            error->message);
+		g_error_free (error);
 	}
 
 	g_free (real_sop);

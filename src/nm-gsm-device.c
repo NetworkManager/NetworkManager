@@ -459,22 +459,28 @@ real_get_generic_capabilities (NMDevice *dev)
 }
 
 static gboolean
-real_check_connection (NMDevice *dev, NMConnection *connection)
+real_check_connection (NMDevice *dev, NMConnection *connection, GError **error)
 {
 	NMSettingGsm *gsm;
 
 	gsm = (NMSettingGsm *) nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM);
 	if (!gsm) {
-		nm_warning ("Connection check failed: gsm setting not present.");
+		g_set_error (error,
+		             NM_DEVICE_INTERFACE_ERROR,
+		             NM_DEVICE_INTERFACE_ERROR_CONNECTION_INVALID,
+		             "%s", "Connection invalid: GSM setting not present");
 		return FALSE;
 	}
 
 	if (!gsm->number) {
-		nm_warning ("Connection check failed: Phone number not set.");
+		g_set_error (error,
+		             NM_DEVICE_INTERFACE_ERROR,
+		             NM_DEVICE_INTERFACE_ERROR_CONNECTION_INVALID,
+		             "%s", "Connection invalid: Phone number not set");
 		return FALSE;
 	}
 
-	return NM_DEVICE_CLASS (nm_gsm_device_parent_class)->check_connection (dev, connection);
+	return NM_DEVICE_CLASS (nm_gsm_device_parent_class)->check_connection (dev, connection, error);
 }
 
 static void

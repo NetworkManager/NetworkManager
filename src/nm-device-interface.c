@@ -11,10 +11,10 @@ static gboolean impl_device_deactivate (NMDeviceInterface *device, GError **err)
 GQuark
 nm_device_interface_error_quark (void)
 {
-  static GQuark quark = 0;
-  if (!quark)
-    quark = g_quark_from_static_string ("nm_device_interface_error");
-  return quark;
+	static GQuark quark = 0;
+	if (!quark)
+		quark = g_quark_from_static_string ("nm-device-interface-error");
+	return quark;
 }
 
 /* This should really be standard. */
@@ -27,7 +27,10 @@ nm_device_interface_error_get_type (void)
 
 	if (etype == 0) {
 		static const GEnumValue values[] = {
-			ENUM_ENTRY (NM_DEVICE_INTERFACE_ERROR_UNKNOWN_CONNECTION, "UnknownConnection"),
+			/* Connection is already activating. */
+			ENUM_ENTRY (NM_DEVICE_INTERFACE_ERROR_CONNECTION_ACTIVATING, "ConnectionActivating"),
+			/* Connection is invalid for this device. */
+			ENUM_ENTRY (NM_DEVICE_INTERFACE_ERROR_CONNECTION_INVALID, "ConnectionInvalid"),
 			{ 0, 0, 0 }
 		};
 		etype = g_enum_register_static ("NMDeviceInterfaceError", values);
@@ -140,6 +143,10 @@ nm_device_interface_init (gpointer g_iface)
 	dbus_g_object_type_install_info (iface_type,
 									 &dbus_glib_nm_device_interface_object_info);
 
+	dbus_g_error_domain_register (NM_DEVICE_INTERFACE_ERROR,
+	                              NULL,
+	                              NM_TYPE_DEVICE_INTERFACE_ERROR);
+
 	initialized = TRUE;
 }
 
@@ -187,13 +194,20 @@ nm_device_interface_get_iface (NMDeviceInterface *device)
 
 gboolean
 nm_device_interface_activate (NMDeviceInterface *device,
-						NMActRequest *req)
+                              NMActRequest *req,
+                              GError **error)
 {
+	gboolean success;
+
 	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), FALSE);
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
 
 	nm_info ("Activating device %s", nm_device_interface_get_iface (device));
-	return NM_DEVICE_INTERFACE_GET_INTERFACE (device)->activate (device, req);
+	success = NM_DEVICE_INTERFACE_GET_INTERFACE (device)->activate (device, req, error);
+	if (!success)
+		g_assert (*error);
+
+	return success;
 }
 
 void

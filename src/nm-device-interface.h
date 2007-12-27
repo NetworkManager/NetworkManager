@@ -14,11 +14,12 @@
 
 typedef enum
 {
-	NM_DEVICE_INTERFACE_ERROR_UNKNOWN_CONNECTION = 0,
+	NM_DEVICE_INTERFACE_ERROR_CONNECTION_ACTIVATING = 0,
+	NM_DEVICE_INTERFACE_ERROR_CONNECTION_INVALID,
 } NMDeviceInterfaceError;
 
 #define NM_DEVICE_INTERFACE_ERROR (nm_device_interface_error_quark ())
-#define NM_DEVICE_INTERFACE_TYPE_ERROR (nm_device_interface_error_get_type ()) 
+#define NM_TYPE_DEVICE_INTERFACE_ERROR (nm_device_interface_error_get_type ()) 
 
 #define NM_DEVICE_INTERFACE_UDI "udi"
 #define NM_DEVICE_INTERFACE_IFACE "interface"
@@ -52,7 +53,8 @@ struct _NMDeviceInterface {
 
 	/* Methods */
 	gboolean (*activate) (NMDeviceInterface *device,
-			      NMActRequest *req);
+	                      NMActRequest *req,
+	                      GError **error);
 
 	void (*deactivate) (NMDeviceInterface *device);
 
@@ -67,7 +69,8 @@ GType nm_device_interface_error_get_type (void);
 GType nm_device_interface_get_type (void);
 
 gboolean nm_device_interface_activate (NMDeviceInterface *device,
-				       NMActRequest *req);
+				       NMActRequest *req,
+				       GError **error);
 
 void nm_device_interface_deactivate (NMDeviceInterface *device);
 

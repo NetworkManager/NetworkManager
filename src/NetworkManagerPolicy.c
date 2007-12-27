@@ -367,8 +367,24 @@ nm_policy_device_change_check (gpointer user_data)
 		if (old_dev)
 			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (old_dev));
 
-		if (new_dev)
-			nm_manager_activate_device (policy->manager, new_dev, connection, specific_object, FALSE);
+		if (new_dev) {
+			GError *error = NULL;
+			gboolean success;
+
+			success = nm_manager_activate_device (policy->manager,
+			                                      new_dev,
+			                                      connection,
+			                                      specific_object,
+			                                      FALSE,
+			                                      &error);
+			if (!success) {
+				nm_warning ("Failed to automatically activate device %s: (%d) %s",
+				            nm_device_get_iface (new_dev),
+				            error->code,
+				            error->message);
+				g_error_free (error);
+			}
+		}
 	}
 
 out:
