@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-10-28 22:19+0100\n"
-"PO-Revision-Date: 2007-10-28 22:20+0100\n"
+"POT-Creation-Date: 2007-12-28 19:41+0100\n"
+"PO-Revision-Date: 2007-12-28 19:52+0100\n"
 "Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "MIME-Version: 1.0\n"
@@ -18,37 +18,33 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../src/nm-netlink-monitor.c:165
+#: ../src/nm-netlink-monitor.c:188
+#: ../src/nm-netlink-monitor.c:448
 #, c-format
-msgid "unable to create netlink socket for monitoring wired ethernet devices - %s"
-msgstr "kan inte skapa netlink-uttag för övervakning av trådbundna ethernet-enheter - %s"
+msgid "error processing netlink message: %s"
+msgstr "fel vid behandling av netlink-meddelande: %s"
 
-#: ../src/nm-netlink-monitor.c:183
+#: ../src/nm-netlink-monitor.c:245
 #, c-format
-msgid "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
-msgstr "kan inte binda till netlink-uttag för övervakning av trådbundna ethernet-enheter - %s"
+msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgstr "kan inte allokera netlink-handtag för övervakning av länkstatus: %s"
 
-#: ../src/nm-netlink-monitor.c:407
+#: ../src/nm-netlink-monitor.c:255
 #, c-format
-msgid "operation took too long"
-msgstr "åtgärden tog för lång tid"
+msgid "unable to connect to netlink for monitoring link status: %s"
+msgstr "kan inte ansluta till netlink för övervakning av länkstatus: %s"
 
-#: ../src/nm-netlink-monitor.c:504
+#: ../src/nm-netlink-monitor.c:263
 #, c-format
-msgid "received data from wrong type of sender"
-msgstr "tog emot data från fel typ av avsändare"
+msgid "unable to join netlink group for monitoring link status: %s"
+msgstr "kan inte gå med i netlink-grupp för övervakning av länkstatus: %s"
 
-#: ../src/nm-netlink-monitor.c:517
+#: ../src/nm-netlink-monitor.c:271
 #, c-format
-msgid "received data from unexpected sender"
-msgstr "tog emot data från oväntad avsändare"
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
+msgstr "kan inte allokera netlink-länkcache för övervakning av länkstatus: %s"
 
-#: ../src/nm-netlink-monitor.c:646
-#, c-format
-msgid "too much data was sent over socket and some of it was lost"
-msgstr "för mycket data skickades över uttaget och en del gick förlorat"
-
-#: ../src/nm-netlink-monitor.c:724
+#: ../src/nm-netlink-monitor.c:471
 #, c-format
 msgid "error occurred while waiting for data on socket"
 msgstr "fel inträffade vid väntan på data i uttaget"
@@ -58,6 +54,14 @@ msgstr "fel inträffade vid väntan på data i uttaget"
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr "Ogiltig flagga.  Använd --help för att se en lista över giltiga flaggor.\n"
 
+#~ msgid "operation took too long"
+#~ msgstr "åtgärden tog för lång tid"
+#~ msgid "received data from wrong type of sender"
+#~ msgstr "tog emot data från fel typ av avsändare"
+#~ msgid "received data from unexpected sender"
+#~ msgstr "tog emot data från oväntad avsändare"
+#~ msgid "too much data was sent over socket and some of it was lost"
+#~ msgstr "för mycket data skickades över uttaget och en del gick förlorat"
 #~ msgid "Passphrase for wireless network %s"
 #~ msgstr "Lösenfras för det trådlösa nätverket %s"
 #~ msgid "Connection to the wireless network '%s' failed."
