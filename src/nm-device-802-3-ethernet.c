@@ -327,12 +327,6 @@ real_can_interrupt_activation (NMDevice *dev)
 	return interrupt;
 }
 
-static gboolean
-real_check_connection (NMDevice *dev, NMConnection *connection, GError **error)
-{
-	return TRUE;
-}
-
 typedef struct BestConnectionInfo {
 	NMDevice8023Ethernet * self;
 	NMConnection * found;
@@ -472,7 +466,6 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 	parent_class->update_link = real_update_link;
 	parent_class->can_interrupt_activation = real_can_interrupt_activation;
 	parent_class->set_hw_address = real_set_hw_address;
-	parent_class->check_connection = real_check_connection;
 	parent_class->get_best_connection = real_get_best_connection;
 
 	/* properties */

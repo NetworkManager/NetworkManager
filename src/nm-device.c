@@ -39,6 +39,7 @@
 #include "autoip.h"
 #include "nm-netlink.h"
 #include "nm-setting-ip4-config.h"
+#include "nm-setting-connection.h"
 
 #define NM_ACT_REQUEST_IP4_CONFIG "nm-act-request-ip4-config"
 
@@ -82,6 +83,10 @@ struct _NMDevicePrivate
 	gulong              dhcp_timeout_sigid;
 };
 
+static gboolean nm_device_check_connection_conflicts (NMDeviceInterface *device,
+                                                      NMConnection *connection,
+                                                      NMConnection *system_connection);
+
 static gboolean nm_device_activate (NMDeviceInterface *device,
                                     NMActRequest *req,
                                     GError **error);
@@ -100,6 +105,7 @@ static void
 device_interface_init (NMDeviceInterface *device_interface_class)
 {
 	/* interface implementation */
+	device_interface_class->check_connection_conflicts = nm_device_check_connection_conflicts;
 	device_interface_class->activate = nm_device_activate;
 	device_interface_class->deactivate = nm_device_deactivate;
 }
@@ -1105,6 +1111,19 @@ nm_device_deactivate (NMDeviceInterface *device)
 	nm_device_state_changed (self, NM_DEVICE_STATE_DISCONNECTED);
 }
 
+static gboolean
+nm_device_check_connection_conflicts (NMDeviceInterface *device,
+                                      NMConnection *connection,
+                                      NMConnection *system_connection)
+{
+	NMDeviceClass *klass = NM_DEVICE_CLASS (NM_DEVICE (device));
+
+	if (klass->check_connection_conflicts)
+		return klass->check_connection_conflicts (NM_DEVICE (device), connection, system_connection);
+
+	return FALSE;
+}
+
 static void
 connection_secrets_updated_cb (NMActRequest *req,
                                NMConnection *connection,
@@ -1136,7 +1155,8 @@ device_activation_precheck (NMDevice *self, NMConnection *connection, GError **e
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
-	if (!NM_DEVICE_GET_CLASS (self)->check_connection (self, connection, error)) {
+	if (   NM_DEVICE_GET_CLASS (self)->check_connection_complete
+	    && !NM_DEVICE_GET_CLASS (self)->check_connection_complete (self, connection, error)) {
 		/* connection is invalid */
 		g_assert (*error);
 		return FALSE;

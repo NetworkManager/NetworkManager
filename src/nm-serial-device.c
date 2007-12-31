@@ -868,7 +868,7 @@ real_deactivate_quickly (NMDevice *device)
 }
 
 static gboolean
-real_check_connection (NMDevice *dev, NMConnection *connection, GError **error)
+real_check_connection_complete (NMDevice *dev, NMConnection *connection, GError **error)
 {
 	NMSettingSerial *serial;
 	NMSettingPPP *ppp;
@@ -891,7 +891,7 @@ real_check_connection (NMDevice *dev, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	return TRUE;
+	return NM_DEVICE_CLASS (nm_serial_device_parent_class)->check_connection_complete (dev, connection, error);
 }
 
 static gboolean
@@ -930,7 +930,7 @@ nm_serial_device_class_init (NMSerialDeviceClass *klass)
 	object_class->finalize = finalize;
 
 	parent_class->is_up = real_is_up;
-	parent_class->check_connection = real_check_connection;
+	parent_class->check_connection_complete = real_check_connection_complete;
 	parent_class->act_stage2_config = real_act_stage2_config;
 	parent_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 	parent_class->deactivate_quickly = real_deactivate_quickly;

@@ -459,7 +459,7 @@ real_get_generic_capabilities (NMDevice *dev)
 }
 
 static gboolean
-real_check_connection (NMDevice *dev, NMConnection *connection, GError **error)
+real_check_connection_complete (NMDevice *dev, NMConnection *connection, GError **error)
 {
 	NMSettingGsm *gsm;
 
@@ -480,7 +480,7 @@ real_check_connection (NMDevice *dev, NMConnection *connection, GError **error)
 		return FALSE;
 	}
 
-	return NM_DEVICE_CLASS (nm_gsm_device_parent_class)->check_connection (dev, connection, error);
+	return NM_DEVICE_CLASS (nm_gsm_device_parent_class)->check_connection_complete (dev, connection, error);
 }
 
 static void
@@ -536,7 +536,7 @@ nm_gsm_device_class_init (NMGsmDeviceClass *klass)
 	g_type_class_add_private (object_class, sizeof (NMGsmDevicePrivate));
 
 	device_class->get_generic_capabilities = real_get_generic_capabilities;
-	device_class->check_connection = real_check_connection;
+	device_class->check_connection_complete = real_check_connection_complete;
 	device_class->act_stage1_prepare = real_act_stage1_prepare;
 	device_class->connection_secrets_updated = real_connection_secrets_updated;
 	device_class->deactivate_quickly = real_deactivate_quickly;

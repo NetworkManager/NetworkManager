@@ -1,3 +1,33 @@
+2007-12-31  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-interface.c
+	  src/nm-device-interface.h
+		- (nm_device_interface_check_connection_conflicts): new function
+
+	* src/nm-device.c
+	  src/nm-device.h
+		- (nm_device_check_connection_conflicts): new function
+		- (device_activation_precheck): don't require subclasses to implement
+			check_connection_complete()
+		- check_connection() -> check_connection_complete()
+
+	* src/nm-device-802-11-wireless.c
+		- (real_check_connection): remove; unused
+		- (real_check_connection_conflicts): implement, handle lockdown for
+			system connections
+
+	* src/nm-device-802-3-ethernet.c
+		- (real_check_connection): remove; unused
+
+	* src/nm-manager.c
+		- (check_connection_allowed): new function
+		- (nm_manager_activate_device): ensure the connection being requested
+			is allowed to be activated
+
+	* src/nm-serial-device.c
+	  src/nm-gsm-device.c
+		- real_check_connection() -> real_check_connection_complete()
+
 2007-12-27  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-interface.c

@@ -91,14 +91,20 @@ struct _NMDeviceClass
 	guint32		(* get_generic_capabilities)	(NMDevice *self);
 
 	NMConnection * (* get_best_connection) (NMDevice *self,
-						GSList *connections,
+	                                        GSList *connections,
 	                                        char **specific_object);
 
 	void        (* connection_secrets_updated) (NMDevice *self,
 	                                            NMConnection *connection,
 	                                            const char *setting_name);
 
-	gboolean    (* check_connection) (NMDevice *self, NMConnection *connection, GError **error);
+	gboolean    (* check_connection_conflicts) (NMDevice *self,
+	                                            NMConnection *connection,
+	                                            NMConnection *system_connection);
+
+	gboolean    (* check_connection_complete) (NMDevice *self,
+	                                           NMConnection *connection,
+	                                           GError **error);
 
 	NMActStageReturn	(* act_stage1_prepare)	(NMDevice *self);
 	NMActStageReturn	(* act_stage2_config)	(NMDevice *self);

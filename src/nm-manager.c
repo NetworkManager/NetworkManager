@@ -1155,6 +1155,41 @@ nm_manager_get_device_by_udi (NMManager *manager, const char *udi)
 	return NULL;
 }
 
+static gboolean
+check_connection_allowed (NMManager *manager,
+                          NMDevice *device,
+                          NMConnection *connection,
+                          const char *specific_object,
+                          GError **error)
+{
+	NMSettingConnection *s_con;
+	GSList *system_connections;
+	GSList *iter;
+	gboolean allowed = TRUE;
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	g_return_val_if_fail (s_con != NULL, FALSE);
+
+	system_connections = nm_manager_get_connections (manager, NM_CONNECTION_TYPE_SYSTEM);
+	for (iter = system_connections; iter; iter = g_slist_next (iter)) {
+		NMConnection *system_connection = NM_CONNECTION (iter->data);
+
+		if (connection == system_connection)
+			continue;
+
+		if (nm_device_interface_check_connection_conflicts (NM_DEVICE_INTERFACE (device),
+		                                                    connection,
+		                                                    system_connection)) {
+			allowed = FALSE;
+			break;
+		}
+	}
+
+	g_slist_foreach (system_connections, (GFunc) g_object_unref, NULL);
+
+	return allowed;
+}
+
 gboolean
 nm_manager_activate_device (NMManager *manager,
 					   NMDevice *device,
@@ -1171,6 +1206,8 @@ nm_manager_activate_device (NMManager *manager,
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
 	/* Ensure the requested connection is allowed to be activated */
+	if (!check_connection_allowed (manager, device, connection, specific_object, error))
+		return FALSE;
 
 	req = nm_act_request_new (connection, specific_object, user_requested);
 	success = nm_device_interface_activate (NM_DEVICE_INTERFACE (device), req, error);

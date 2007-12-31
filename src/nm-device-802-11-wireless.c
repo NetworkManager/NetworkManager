@@ -744,9 +744,50 @@ real_deactivate (NMDevice *dev)
 }
 
 static gboolean
-real_check_connection (NMDevice *dev, NMConnection *connection, GError **error)
+real_check_connection_conflicts (NMDevice *device,
+                                 NMConnection *connection,
+                                 NMConnection *system_connection)
 {
-	return TRUE;
+	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (device);
+	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
+	NMSettingConnection *s_con;
+	NMSettingConnection *system_s_con;
+	NMSettingWireless *s_wireless;
+	NMSettingWireless *system_s_wireless;
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	g_assert (s_con);
+
+	system_s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (system_connection, NM_TYPE_SETTING_CONNECTION));
+	g_assert (system_s_con);
+
+	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	g_assert (s_wireless);
+
+	system_s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (system_connection, NM_TYPE_SETTING_WIRELESS));
+	g_assert (system_s_wireless);
+
+	if (!system_s_con->lockdown)
+		return FALSE;
+
+	if (!strcmp (system_s_con->lockdown, "device")) {
+		/* If the system connection has a MAC address and the MAC address
+		 * matches this device, the activation request conflicts.
+		 */
+		if (   system_s_wireless->mac_address
+			&& !memcmp (system_s_wireless->mac_address->data, &(priv->hw_addr.ether_addr_octet), ETH_ALEN))
+			return TRUE;
+	} else if (!strcmp (system_s_con->lockdown, "connection")) {
+		/* If the system connection has an SSID and it matches the SSID of the
+		 * connection being activated, the connection being activated conflicts.
+		 */
+		g_assert (system_s_wireless->ssid);
+		g_assert (s_wireless->ssid);
+		if (nm_utils_same_ssid (system_s_wireless->ssid, s_wireless->ssid, TRUE))
+			return TRUE;
+	}
+
+	return FALSE;
 }
 
 typedef struct BestConnectionInfo {
@@ -3003,9 +3044,9 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 	parent_class->bring_down = real_bring_down;
 	parent_class->update_link = real_update_link;
 	parent_class->set_hw_address = real_set_hw_address;
-	parent_class->check_connection = real_check_connection;
 	parent_class->get_best_connection = real_get_best_connection;
 	parent_class->connection_secrets_updated = real_connection_secrets_updated;
+	parent_class->check_connection_conflicts = real_check_connection_conflicts;
 
 	parent_class->act_stage1_prepare = real_act_stage1_prepare;
 	parent_class->act_stage2_config = real_act_stage2_config;
