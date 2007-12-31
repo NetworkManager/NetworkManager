@@ -40,22 +40,27 @@ typedef struct {
 } ValidProperty;
 
 static ValidProperty valid_properties[] = {
-	{ NM_VPNC_KEY_GATEWAY,         G_TYPE_STRING },
-	{ NM_VPNC_KEY_ID,              G_TYPE_STRING },
-	{ NM_VPNC_KEY_SECRET,          G_TYPE_STRING },
-	{ NM_VPNC_KEY_XAUTH_USER,      G_TYPE_STRING },
-	{ NM_VPNC_KEY_XAUTH_PASSWORD,  G_TYPE_STRING },
-	{ NM_VPNC_KEY_UDP_ENCAPS,      G_TYPE_BOOLEAN },
-	{ NM_VPNC_KEY_UDP_ENCAPS_PORT, G_TYPE_INT },
-	{ NM_VPNC_KEY_DOMAIN,          G_TYPE_STRING },
-	{ NM_VPNC_KEY_DHGROUP,         G_TYPE_STRING },
-	{ NM_VPNC_KEY_PERFECT_FORWARD, G_TYPE_STRING },
-	{ NM_VPNC_KEY_APP_VERSION,     G_TYPE_STRING },
-	{ NM_VPNC_KEY_REKEYING,        G_TYPE_INT },
-	{ NM_VPNC_KEY_NAT_KEEPALIVE,   G_TYPE_STRING },
-	{ NM_VPNC_KEY_DISABLE_NAT,     G_TYPE_BOOLEAN },
-	{ NM_VPNC_KEY_SINGLE_DES,      G_TYPE_BOOLEAN },
-	{ NULL,                        G_TYPE_NONE }
+	{ NM_VPNC_KEY_GATEWAY,               G_TYPE_STRING },
+	{ NM_VPNC_KEY_ID,                    G_TYPE_STRING },
+	{ NM_VPNC_KEY_SECRET,                G_TYPE_STRING },
+	{ NM_VPNC_KEY_XAUTH_USER,            G_TYPE_STRING },
+	{ NM_VPNC_KEY_XAUTH_PASSWORD,        G_TYPE_STRING },
+	{ NM_VPNC_KEY_DOMAIN,                G_TYPE_STRING },
+	{ NM_VPNC_KEY_DHGROUP,               G_TYPE_STRING },
+	{ NM_VPNC_KEY_PERFECT_FORWARD,       G_TYPE_STRING },
+	{ NM_VPNC_KEY_APP_VERSION,           G_TYPE_STRING },
+	{ NM_VPNC_KEY_REKEYING,              G_TYPE_INT },
+	{ NM_VPNC_KEY_NAT_KEEPALIVE,         G_TYPE_STRING },
+	{ NM_VPNC_KEY_DISABLE_NAT,           G_TYPE_BOOLEAN },
+	{ NM_VPNC_KEY_SINGLE_DES,            G_TYPE_BOOLEAN },
+	/* vpnc 0.3.x */
+	{ NM_VPNC_KEY_UDP_ENCAPS,            G_TYPE_BOOLEAN },
+	{ NM_VPNC_KEY_UDP_ENCAPS_PORT,       G_TYPE_INT },
+	/* vpnc 0.4.x */
+	{ NM_VPNC_KEY_NAT_TRAVERSAL_MODE,    G_TYPE_STRING },
+	{ NM_VPNC_KEY_CISCO_UDP_ENCAPS_PORT, G_TYPE_INT },
+
+	{ NULL,                              G_TYPE_NONE }
 };
 
 static void
@@ -246,7 +251,14 @@ nm_vpnc_config_write (gint vpnc_fd,
 		                     NM_VPNC_REKEYING_INTERVAL);
 	}
 
-	// FIXME: do we need to enable Cisco UDP encapsulation here?
+	/* Options for vpnc 0.4.x */
+	write_config_option (vpnc_fd,
+	                     NM_VPNC_KEY_NAT_TRAVERSAL_MODE " %s\n",
+	                     "cisco-udp");
+	write_config_option (vpnc_fd,
+	                     NM_VPNC_KEY_CISCO_UDP_ENCAPS_PORT " %d\n",
+	                     NM_VPNC_UDP_ENCAPSULATION_PORT);
+
 	/* 0.4.x rekeys automatically */
 
 	/* Fill username if it's not present */

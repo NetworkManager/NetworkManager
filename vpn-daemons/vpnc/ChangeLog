@@ -1,3 +1,9 @@
+2007-12-31  Christopher Aillon  <caillon@redhat.com>
+
+	* src/nm-vpnc-service.h:
+	* src/nm-vpnc-service.c:
+		- Support Cisco UDP Encapsulation in vpnc >= 0.4 (#420925)
+
 2007-12-11  Dan Williams  <dcbw@redhat.com>
 
 	Patches from Casey Harkins <caseyharkins@gmail.com>

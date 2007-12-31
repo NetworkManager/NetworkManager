@@ -23,8 +23,6 @@
 #define NM_VPNC_KEY_SECRET "IPSec secret"
 #define NM_VPNC_KEY_XAUTH_USER "Xauth username"
 #define NM_VPNC_KEY_XAUTH_PASSWORD "Xauth password"
-#define NM_VPNC_KEY_UDP_ENCAPS "UDP Encapsulate"
-#define NM_VPNC_KEY_UDP_ENCAPS_PORT "UDP Encapsulation Port"
 #define NM_VPNC_KEY_DOMAIN "Domain"
 #define NM_VPNC_KEY_DHGROUP "IKE DH Group"
 #define NM_VPNC_KEY_PERFECT_FORWARD "Perfect Forward Secrecy"
@@ -33,7 +31,12 @@
 #define NM_VPNC_KEY_NAT_KEEPALIVE "NAT-Keepalive packet interval"
 #define NM_VPNC_KEY_DISABLE_NAT "Disable NAT Traversal"
 #define NM_VPNC_KEY_SINGLE_DES "Enable Single DES"
-
+/* vpnc 0.3.x */
+#define NM_VPNC_KEY_UDP_ENCAPS "UDP Encapsulate"
+#define NM_VPNC_KEY_UDP_ENCAPS_PORT "UDP Encapsulation Port"
+/* vpnc 0.4.x */
+#define NM_VPNC_KEY_NAT_TRAVERSAL_MODE "NAT Traversal Mode"
+#define NM_VPNC_KEY_CISCO_UDP_ENCAPS_PORT "Cisco UDP Encapsulation Port"
 
 typedef struct {
 	NMVPNPlugin parent;
