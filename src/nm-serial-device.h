@@ -4,6 +4,7 @@
 #define NM_SERIAL_DEVICE_H
 
 #include <nm-device.h>
+#include <nm-setting-serial.h>
 
 G_BEGIN_DECLS
 
@@ -41,7 +42,9 @@ typedef void (*NMSerialFlashFn)        (NMSerialDevice *device,
 
 
 
-gboolean nm_serial_device_open                (NMSerialDevice *device);
+gboolean nm_serial_device_open                (NMSerialDevice *device, 
+									  NMSettingSerial *setting);
+
 void     nm_serial_device_close               (NMSerialDevice *device);
 gboolean nm_serial_device_send_command        (NMSerialDevice *device,
 									  GByteArray *command);
@@ -71,6 +74,8 @@ guint    nm_serial_device_flash               (NMSerialDevice *device,
 									  guint32 flash_time,
 									  NMSerialFlashFn callback,
 									  gpointer user_data);
+
+GIOChannel *nm_serial_device_get_io_channel   (NMSerialDevice *device);
 
 G_END_DECLS
 

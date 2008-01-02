@@ -144,7 +144,6 @@ constructor (GType type,
 	GObject *object;
 	NMDevice *dev;
 	NMDevicePrivate *priv;
-	NMDBusManager *manager;
 
 	object = G_OBJECT_CLASS (nm_device_parent_class)->constructor (type,
 													   n_construct_params,
@@ -181,14 +180,6 @@ constructor (GType type,
 	}
 
 	nm_print_device_capabilities (dev);
-
-	manager = nm_dbus_manager_get ();
-
-	nm_info ("(%s): exporting device as %s", priv->iface, priv->udi);
-	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (manager),
-								  priv->udi, object);
-
-	g_object_unref (manager);
 
 	priv->initialized = TRUE;
 	return object;

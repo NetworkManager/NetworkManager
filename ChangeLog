@@ -1,3 +1,30 @@
+2008-01-02  Tambet Ingo  <tambet@gmail.com>
+
+	* libnm-util/nm-setting-serial.c (nm_setting_serial_class_init): Mark the properties
+	with G_PARAM_CONSTRUCT so that they get the default values.
+
+	* src/nm-gsm-device.c: Add preliminary support for monitoring device. It only monitors
+	the monitoring device and prints out the output for now. Or more precicely, doesn't
+	do absolutely anything right now since the montoring device argument is never set.
+
+	* src/nm-serial-device.c (serial_debug): Implement. It's very verbose and thus
+	requires it's own knob to turn it on.
+	(config_fd): Add NMSettingSerial to the arguments list.
+	(nm_serial_device_open): Ditto.
+	(get_reply_got_data): Ignore the terminators at the beginning of the output.
+	(nm_serial_device_get_io_channel): Implement.
+
+	* src/nm-manager.c: Add NMDBusManager to the private data of the NMManager. Asking
+	a new reference every time (and forgetting to release it sometimes) is a pain and
+	it's not like NMManager could work without dbus.
+	(nm_manager_add_device): Register the added device on dbus here.
+
+	* src/nm-hal-manager.c (modem_device_creator): Pass NULL for now for the monitoring
+	device.
+
+	* src/nm-device.c (constructor): Don't export the device here, instead export
+	it when it's added to the NMManager's device list.
+
 2007-12-31  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-interface.c

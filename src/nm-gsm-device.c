@@ -1,5 +1,6 @@
 /* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
+#include <stdio.h>
 #include <string.h>
 #include "nm-gsm-device.h"
 #include "nm-device-interface.h"
@@ -8,6 +9,13 @@
 #include "nm-utils.h"
 
 G_DEFINE_TYPE (NMGsmDevice, nm_gsm_device, NM_TYPE_SERIAL_DEVICE)
+
+enum {
+	PROP_0,
+	PROP_MONITOR_IFACE,
+
+	LAST_PROP
+};
 
 typedef enum {
 	NM_GSM_SECRET_NONE = 0,
@@ -18,6 +26,9 @@ typedef enum {
 #define NM_GSM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_GSM_DEVICE, NMGsmDevicePrivate))
 
 typedef struct {
+	char *monitor_iface;
+	NMSerialDevice *monitor_device;
+
 	NMGsmSecret need_secret;
 	guint pending_id;
 } NMGsmDevicePrivate;
@@ -28,17 +39,19 @@ static void automatic_registration (NMSerialDevice *device);
 
 NMGsmDevice *
 nm_gsm_device_new (const char *udi,
-			    const char *iface,
+			    const char *data_iface,
+			    const char *monitor_iface,
 			    const char *driver)
 {
 	g_return_val_if_fail (udi != NULL, NULL);
-	g_return_val_if_fail (iface != NULL, NULL);
+	g_return_val_if_fail (data_iface != NULL, NULL);
 	g_return_val_if_fail (driver != NULL, NULL);
 
 	return (NMGsmDevice *) g_object_new (NM_TYPE_GSM_DEVICE,
 								  NM_DEVICE_INTERFACE_UDI, udi,
-								  NM_DEVICE_INTERFACE_IFACE, iface,
+								  NM_DEVICE_INTERFACE_IFACE, data_iface,
 								  NM_DEVICE_INTERFACE_DRIVER, driver,
+								  NM_GSM_DEVICE_MONITOR_IFACE, monitor_iface,
 								  NULL);
 }
 
@@ -130,7 +143,7 @@ manual_registration_done (NMSerialDevice *device,
 					 gpointer user_data)
 {
 	gsm_device_set_pending (NM_GSM_DEVICE (device), 0);
-
+ 
 	switch (reply_index) {
 	case 0:
 		do_dial (device);
@@ -441,10 +454,13 @@ real_act_stage1_prepare (NMDevice *device)
 {
 	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
 	NMSerialDevice *serial_device = NM_SERIAL_DEVICE (device);
+	NMSettingSerial *setting;
 
 	priv->need_secret = NM_GSM_SECRET_NONE;
 
-	if (!nm_serial_device_open (serial_device))
+	setting = NM_SETTING_SERIAL (gsm_device_get_setting (NM_GSM_DEVICE (device), NM_TYPE_SETTING_SERIAL));
+
+	if (!nm_serial_device_open (serial_device, setting))
 		return NM_ACT_STAGE_RETURN_FAILURE;
 
 	priv->pending_id = nm_serial_device_flash (serial_device, 100, init_modem, NULL);
@@ -520,11 +536,154 @@ real_deactivate_quickly (NMDevice *device)
 }
 
 /*****************************************************************************/
+/* Monitor device handling */
+
+static gboolean
+monitor_device_got_data (GIOChannel *source,
+					GIOCondition condition,
+					gpointer data)
+{
+	gsize bytes_read;
+	char buf[4096];
+	GIOStatus status;
+
+	if (condition & G_IO_IN) {
+		do {
+			status = g_io_channel_read_chars (source, buf, 4096, &bytes_read, NULL);
+
+			if (bytes_read) {
+				buf[bytes_read] = '\0';
+				/* Do nothing with the data for now */
+				nm_debug ("Monitor got unhandled data: '%s'", buf);
+			}
+		} while (bytes_read == 4096 || status == G_IO_STATUS_AGAIN);
+	}
+
+	if (condition & G_IO_HUP || condition & G_IO_ERR) {
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
+setup_monitor_device (NMGsmDevice *device)
+{
+	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
+	GIOChannel *channel;
+	NMSettingSerial *setting;
+
+	if (!priv->monitor_iface) {
+		nm_debug ("No monitoring udi provided");
+		return FALSE;
+	}
+
+	priv->monitor_device = g_object_new (NM_TYPE_SERIAL_DEVICE,
+								  NM_DEVICE_INTERFACE_UDI, nm_device_get_udi (NM_DEVICE (device)),
+								  NM_DEVICE_INTERFACE_IFACE, priv->monitor_iface,
+								  NULL);
+
+	if (!priv->monitor_device) {
+		nm_warning ("Creation of the monitoring device failed");
+		return FALSE;
+	}
+
+	setting = NM_SETTING_SERIAL (nm_setting_serial_new ());
+	if (!nm_serial_device_open (priv->monitor_device, setting)) {
+		nm_warning ("Monitoring device open failed");
+		g_object_unref (setting);
+		g_object_unref (priv->monitor_device);
+		return FALSE;
+	}
+
+	g_object_unref (setting);
+
+	channel = nm_serial_device_get_io_channel (priv->monitor_device);
+	g_io_add_watch (channel, G_IO_IN | G_IO_ERR | G_IO_HUP,
+				 monitor_device_got_data, device);
+
+	g_io_channel_unref (channel);
+
+	return TRUE;
+}
+
+/*****************************************************************************/
 
 static void
 nm_gsm_device_init (NMGsmDevice *self)
 {
 	nm_device_set_device_type (NM_DEVICE (self), DEVICE_TYPE_GSM);
+}
+
+static GObject*
+constructor (GType type,
+		   guint n_construct_params,
+		   GObjectConstructParam *construct_params)
+{
+	GObject *object;
+
+	object = G_OBJECT_CLASS (nm_gsm_device_parent_class)->constructor (type,
+														  n_construct_params,
+														  construct_params);
+	if (!object)
+		return NULL;
+
+	/* FIXME: Make the monitor device not required for now */
+	setup_monitor_device (NM_GSM_DEVICE (object));
+#if 0
+	if (!setup_monitor_device (NM_GSM_DEVICE (object))) {
+		g_object_unref (object);
+		object = NULL;
+	}
+#endif
+
+	return object;
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+		    const GValue *value, GParamSpec *pspec)
+{
+	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_MONITOR_IFACE:
+		/* Construct only */
+		priv->monitor_iface = g_value_dup_string (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+get_property (GObject *object, guint prop_id,
+		    GValue *value, GParamSpec *pspec)
+{
+	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_MONITOR_IFACE:
+		g_value_set_string (value, priv->monitor_iface);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+finalize (GObject *object)
+{
+	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (object);
+
+	if (priv->monitor_device)
+		g_object_unref (priv->monitor_device);
+
+	g_free (priv->monitor_iface);
+
+	G_OBJECT_CLASS (nm_gsm_device_parent_class)->finalize (object);
 }
 
 static void
@@ -535,9 +694,23 @@ nm_gsm_device_class_init (NMGsmDeviceClass *klass)
 
 	g_type_class_add_private (object_class, sizeof (NMGsmDevicePrivate));
 
+	object_class->constructor = constructor;
+	object_class->get_property = get_property;
+	object_class->set_property = set_property;
+	object_class->finalize = finalize;
+
 	device_class->get_generic_capabilities = real_get_generic_capabilities;
 	device_class->check_connection_complete = real_check_connection_complete;
 	device_class->act_stage1_prepare = real_act_stage1_prepare;
 	device_class->connection_secrets_updated = real_connection_secrets_updated;
 	device_class->deactivate_quickly = real_deactivate_quickly;
+
+	/* Properties */
+	g_object_class_install_property
+		(object_class, PROP_MONITOR_IFACE,
+		 g_param_spec_string (NM_GSM_DEVICE_MONITOR_IFACE,
+						  "Monitoring interface",
+						  "Monitoring interface",
+						  NULL,
+						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 }

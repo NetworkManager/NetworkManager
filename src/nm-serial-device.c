@@ -16,9 +16,10 @@
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
 #include "ppp-manager/nm-ppp-manager.h"
-#include "nm-setting-serial.h"
 #include "nm-setting-ppp.h"
 #include "nm-utils.h"
+
+/* #define NM_DEBUG_SERIAL 1 */
 
 G_DEFINE_TYPE (NMSerialDevice, nm_serial_device, NM_TYPE_DEVICE)
 
@@ -166,6 +167,33 @@ parse_stopbits (guint i)
 	return stopbits;
 }
 
+#ifdef NM_DEBUG_SERIAL
+static inline void
+serial_debug (const char *prefix, const char *data, int len)
+{
+	GString *str;
+	int i;
+
+	str = g_string_sized_new (len);
+	for (i = 0; i < len; i++) {
+		if (data[i] == '\0')
+			g_string_append_c (str, ' ');
+		else if (data[i] == '\r')
+			g_string_append_c (str, '\n');
+		else
+			g_string_append_c (str, data[i]);
+	}
+
+	nm_debug ("%s '%s'", prefix, str->str);
+	g_string_free (str, TRUE);
+}
+#else
+static inline void
+serial_debug (const char *prefix, const char *data, int len)
+{
+}
+#endif /* NM_DEBUG_SERIAL */
+
 static NMSetting *
 serial_device_get_setting (NMSerialDevice *device, GType setting_type)
 {
@@ -185,17 +213,14 @@ serial_device_get_setting (NMSerialDevice *device, GType setting_type)
 }
 
 static gboolean
-config_fd (NMSerialDevice *device)
+config_fd (NMSerialDevice *device, NMSettingSerial *setting)
 {
 	NMSerialDevicePrivate *priv = NM_SERIAL_DEVICE_GET_PRIVATE (device);
-	NMSettingSerial *setting;
 	struct termio stbuf;
 	int speed;
 	int bits;
 	int parity;
 	int stopbits;
-
-	setting = NM_SETTING_SERIAL (serial_device_get_setting (device, NM_TYPE_SETTING_SERIAL));
 
 	speed = parse_baudrate (setting->baud);
 	bits = parse_bits (setting->bits);
@@ -224,13 +249,15 @@ config_fd (NMSerialDevice *device)
 }
 
 gboolean
-nm_serial_device_open (NMSerialDevice *device)
+nm_serial_device_open (NMSerialDevice *device,
+				   NMSettingSerial *setting)
 {
 	NMSerialDevicePrivate *priv;
 	const char *iface;
 	char *path;
 
 	g_return_val_if_fail (NM_IS_SERIAL_DEVICE (device), FALSE);
+	g_return_val_if_fail (NM_IS_SETTING_SERIAL (setting), FALSE);
 
 	priv = NM_SERIAL_DEVICE_GET_PRIVATE (device);
 	iface = nm_device_get_iface (NM_DEVICE (device));
@@ -252,7 +279,7 @@ nm_serial_device_open (NMSerialDevice *device)
 		return FALSE;
 	}
 
-	config_fd (device);
+	config_fd (device, setting);
 
 	priv->channel = g_io_channel_unix_new (priv->fd);
 
@@ -293,10 +320,7 @@ nm_serial_device_send_command (NMSerialDevice *device, GByteArray *command)
 	fd = NM_SERIAL_DEVICE_GET_PRIVATE (device)->fd;
 	setting = NM_SETTING_SERIAL (serial_device_get_setting (device, NM_TYPE_SETTING_SERIAL));
 
-	g_print ("Sending: ");
-	for (i = 0; i < command->len; i++)
-		g_print ("%c", command->data[i]);
-	g_print ("\n");
+	serial_debug ("Sending:", (char *) command->data, command->len);
 
 	for (i = 0; i < command->len; i++) {
 	again:
@@ -399,20 +423,25 @@ get_reply_got_data (GIOChannel *source,
 			if (bytes_read > 0) {
 				char *p;
 
-				g_print ("Got: ");
-				for (i = 0; i < bytes_read; i++)
-					g_print ("%c", buf[i]);
-				g_print ("\n");
+				serial_debug ("Got:", buf, bytes_read);
 
 				p = &buf[0];
 				for (i = 0; i < bytes_read && !done; i++, p++) {
 					int j;
+					gboolean is_terminator = FALSE;
 
-					for (j = 0; j < strlen (info->terminators); j++)
-						if (*p == info->terminators[j])
+					for (j = 0; j < strlen (info->terminators); j++) {
+						if (*p == info->terminators[j]) {
+							is_terminator = TRUE;
+							break;
+						}
+					}
+
+					if (is_terminator) {
+						/* Ignore terminators in the beginning of the output */
+						if (info->result->len > 0)
 							done = TRUE;
-
-					if (!done)
+					} else
 						g_string_append_c (info->result, *p);
 				}
 			}
@@ -530,10 +559,7 @@ wait_for_reply_got_data (GIOChannel *source,
 			}
 
 			if (bytes_read > 0) {
-				g_print ("Got: ");
-				for (i = 0; i < bytes_read; i++)
-					g_print ("%c", buf[i]);
-				g_print ("\n");
+				serial_debug ("Got:", buf, bytes_read);
 
 				for (i = 0; info->str_needles[i]; i++) {
 					if (strcasestr (buf, info->str_needles[i])) {
@@ -769,6 +795,20 @@ nm_serial_device_flash (NMSerialDevice *device,
 						  g_free);
 }
 
+GIOChannel *
+nm_serial_device_get_io_channel (NMSerialDevice *device)
+{
+	NMSerialDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SERIAL_DEVICE (device), 0);
+
+	priv = NM_SERIAL_DEVICE_GET_PRIVATE (device);
+	if (priv->channel)
+		return g_io_channel_ref (priv->channel);
+
+	return NULL;
+}
+
 static void
 ppp_state_changed (NMPPPManager *ppp_manager, NMPPPStatus status, gpointer user_data)
 {
@@ -901,6 +941,12 @@ real_is_up (NMDevice *device)
 	return TRUE;
 }
 
+static guint32
+real_get_generic_capabilities (NMDevice *dev)
+{
+	return NM_DEVICE_CAP_NM_SUPPORTED;
+}
+
 /*****************************************************************************/
 
 static void
@@ -929,6 +975,7 @@ nm_serial_device_class_init (NMSerialDeviceClass *klass)
 	/* Virtual methods */
 	object_class->finalize = finalize;
 
+	parent_class->get_generic_capabilities = real_get_generic_capabilities;
 	parent_class->is_up = real_is_up;
 	parent_class->check_connection_complete = real_check_connection_complete;
 	parent_class->act_stage2_config = real_act_stage2_config;

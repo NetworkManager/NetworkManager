@@ -205,7 +205,7 @@ modem_device_creator (NMHalManager *manager, const char *udi)
 	}
 
 	if (serial_device && driver_name)
-		device = (NMDevice *) nm_gsm_device_new (udi, serial_device + strlen ("/dev/"), driver_name);
+		device = (NMDevice *) nm_gsm_device_new (udi, serial_device + strlen ("/dev/"), NULL, driver_name);
 
 	libhal_free_string (serial_device);
 	libhal_free_string (driver_name);

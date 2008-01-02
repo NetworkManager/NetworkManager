@@ -60,6 +60,8 @@ typedef struct {
 	GSList *devices;
 	NMState state;
 
+	NMDBusManager *dbus_mgr;
+
 	GHashTable *user_connections;
 	DBusGProxy *user_proxy;
 
@@ -160,6 +162,8 @@ nm_manager_init (NMManager *manager)
 	priv->sleeping = FALSE;
 	priv->state = NM_STATE_DISCONNECTED;
 
+	priv->dbus_mgr = nm_dbus_manager_get ();
+
 	priv->user_connections = g_hash_table_new_full (g_str_hash,
 	                                                g_str_equal,
 	                                                g_free,
@@ -247,6 +251,9 @@ finalize (GObject *object)
 
 	while (g_slist_length (priv->devices))
 		nm_manager_remove_device (manager, NM_DEVICE (priv->devices->data), TRUE);
+
+	if (priv->dbus_mgr)
+		g_object_unref (priv->dbus_mgr);
 
 	G_OBJECT_CLASS (nm_manager_parent_class)->finalize (object);
 }
@@ -653,20 +660,18 @@ internal_new_connection_cb (DBusGProxy *proxy,
 {
 	struct GetSettingsInfo *info;
 	DBusGProxy *con_proxy;
-	NMDBusManager * dbus_mgr;
 	DBusGConnection * g_connection;
 	DBusGProxyCall *call;
 	DBusGProxy *secrets_proxy;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
-	dbus_mgr = nm_dbus_manager_get ();
-	g_connection = nm_dbus_manager_get_connection (dbus_mgr);
+	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
 	con_proxy = dbus_g_proxy_new_for_name (g_connection,
 	                                       dbus_g_proxy_get_bus_name (proxy),
 	                                       path,
 	                                       NM_DBUS_IFACE_SETTINGS_CONNECTION);
 	if (!con_proxy) {
 		nm_warning ("Error: could not init user connection proxy");
-		g_object_unref (dbus_mgr);
 		return;
 	}
 
@@ -674,7 +679,6 @@ internal_new_connection_cb (DBusGProxy *proxy,
 	                                           dbus_g_proxy_get_bus_name (proxy),
 	                                           path,
 	                                           NM_DBUS_IFACE_SETTINGS_CONNECTION_SECRETS);
-	g_object_unref (dbus_mgr);
 	if (!secrets_proxy) {
 		nm_warning ("Error: could not init user connection secrets proxy");
 		g_object_unref (con_proxy);
@@ -779,16 +783,13 @@ query_connections (NMManager *manager,
 	}
 
 	if (!*proxy) {
-		NMDBusManager * dbus_mgr;
 		DBusGConnection * g_connection;
 
-		dbus_mgr = nm_dbus_manager_get ();
-		g_connection = nm_dbus_manager_get_connection (dbus_mgr);
+		g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
 		*proxy = dbus_g_proxy_new_for_name (g_connection,
 		                                    service,
 		                                    NM_DBUS_PATH_SETTINGS,
 		                                    NM_DBUS_IFACE_SETTINGS);
-		g_object_unref (dbus_mgr);
 		if (!*proxy) {
 			nm_warning ("Error: could not init settings proxy");
 			return;
@@ -864,18 +865,16 @@ NMManager *
 nm_manager_new (void)
 {
 	GObject *object;
-	DBusGConnection *connection;
-	NMDBusManager * dbus_mgr;
+	NMManagerPrivate *priv;
 
 	object = g_object_new (NM_TYPE_MANAGER, NULL);
+	priv = NM_MANAGER_GET_PRIVATE (object);
 
-	dbus_mgr = nm_dbus_manager_get ();
-	connection = nm_dbus_manager_get_connection (dbus_mgr);
-	dbus_g_connection_register_g_object (connection,
+	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (priv->dbus_mgr),
 	                                     NM_DBUS_PATH,
 	                                     object);
 
-	g_signal_connect (dbus_mgr,
+	g_signal_connect (priv->dbus_mgr,
 	                  "name-owner-changed",
 	                  G_CALLBACK (nm_manager_name_owner_changed),
 	                  NM_MANAGER (object));
@@ -1060,6 +1059,13 @@ nm_manager_add_device (NMManager *manager, NMDevice *device)
 	}
 
 	nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
+
+	nm_info ("(%s): exporting device as %s",
+		    nm_device_get_iface (device),
+		    nm_device_get_udi (device));
+	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (priv->dbus_mgr),
+								  nm_device_get_udi (device),
+								  G_OBJECT (device));
 
 	manager_device_added (manager, device);
 }

@@ -54,7 +54,7 @@ NMSysconfigConnectionSettings *nm_sysconfig_connection_settings_new (NMConnectio
                                                                      DBusGConnection *g_conn);
 
 /*
- * NMSysconfigSetttings
+ * NMSysconfigSettings
  */
 typedef struct _NMSysconfigSettings NMSysconfigSettings;
 typedef struct _NMSysconfigSettingsClass NMSysconfigSettingsClass;

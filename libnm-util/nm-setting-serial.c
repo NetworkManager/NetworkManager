@@ -100,7 +100,7 @@ nm_setting_serial_class_init (NMSettingSerialClass *setting_class)
 						"Baud",
 						"Baud rate",
 						0, G_MAXUINT, 57600,
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_BITS,
@@ -108,7 +108,7 @@ nm_setting_serial_class_init (NMSettingSerialClass *setting_class)
 						"Bits",
 						"Bits",
 						5, 8, 8,
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_PARITY,
@@ -116,7 +116,7 @@ nm_setting_serial_class_init (NMSettingSerialClass *setting_class)
 						"Parity",
 						"Parity",
 						'E', 'o', 'n',
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_STOPBITS,
@@ -124,7 +124,7 @@ nm_setting_serial_class_init (NMSettingSerialClass *setting_class)
 						"Stopbits",
 						"Stopbits",
 						1, 2, 1,
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_SEND_DELAY,
@@ -132,5 +132,5 @@ nm_setting_serial_class_init (NMSettingSerialClass *setting_class)
 						  "SendDelay",
 						  "Send delay",
 						  0, G_MAXUINT64, 0,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 }

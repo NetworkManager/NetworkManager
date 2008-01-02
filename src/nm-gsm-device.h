@@ -14,6 +14,8 @@ G_BEGIN_DECLS
 #define NM_IS_GSM_DEVICE_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_GSM_DEVICE))
 #define NM_GSM_DEVICE_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_GSM_DEVICE, NMGsmDeviceClass))
 
+#define NM_GSM_DEVICE_MONITOR_IFACE "monitor-iface"
+
 typedef struct {
 	NMSerialDevice parent;
 } NMGsmDevice;
@@ -25,7 +27,8 @@ typedef struct {
 GType nm_gsm_device_get_type (void);
 
 NMGsmDevice *nm_gsm_device_new (const char *udi,
-						  const char *iface,
+						  const char *data_iface,
+						  const char *monitor_iface,
 						  const char *driver);
 
 G_END_DECLS
