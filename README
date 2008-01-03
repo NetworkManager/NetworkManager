@@ -20,7 +20,8 @@ the wireless one.
 For wireless networking support, NetworkManager keeps a list of wireless
 networks, the preferred list.  Preferred Networks are wireless networks that
 the user has explicitly made NetworkManager associate with at some previous
-time.  So if the user walks into a Starbucks and explicitly asks NetworkManager to associate with that Starbucks network, NetworkManager will remember the
+time.  So if the user walks into a Starbucks and explicitly asks NetworkManager
+to associate with that Starbucks network, NetworkManager will remember the
 Starbucks network information from that point on.  Upon returning to that
 Starbucks, NetworkManager will attempt to associate _automatically_ with the
 Starbucks network since it is now in the Preferred Networks list.  The point of
