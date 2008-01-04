@@ -1337,13 +1337,13 @@ export_to_file (NetworkManagerVpnUIImpl *impl,
 	FILE *f;
 	const char *connection_type = "";
 	const char *remote = "";
-	guint port;
-	gboolean tap_dev;
-	gboolean proto_tcp;
+	guint port = 1194;
+	gboolean tap_dev = FALSE;
+	gboolean proto_tcp = FALSE;
 	const char *ca = "";
 	const char *cert = "";
 	const char *key = "";
-	gboolean lzo;
+	gboolean lzo = FALSE;
 	const char *shared_key = "";
 	const char *local_ip = "";
 	const char *remote_ip = "";
