@@ -154,7 +154,7 @@ if test x"$with_gnome" != xno; then
 	PKG_CHECK_MODULES(GNOME_KEYRING, gnome-keyring-1)
 fi
 
-PKG_CHECK_MODULES(LIBNL, libnl-1)
+PKG_CHECK_MODULES(LIBNL, libnl-1 >= 1.0-pre8)
 
 AC_ARG_WITH(gcrypt, AC_HELP_STRING([--with-gcrypt], [Use gcrypt library]), ac_gcrypt=$withval, ac_gcrypt=auto)
 if test x"$ac_gcrypt" != xno; then

@@ -174,7 +174,7 @@ nm_netlink_monitor_open_connection (NmNetlinkMonitor *monitor,
 	}
 
 	monitor_address.nl_family = AF_NETLINK;
-	monitor_address.nl_pid = getpid ();
+	monitor_address.nl_pid = UINT_MAX;
 	monitor_address.nl_groups = RTMGRP_LINK;
 
 	if (bind (fd, 
@@ -365,7 +365,7 @@ nm_netlink_monitor_request_status (NmNetlinkMonitor  *monitor,
 	packet.header.nlmsg_len = NLMSG_LENGTH (sizeof (struct rtgenmsg));
 	packet.header.nlmsg_flags = NLM_F_ROOT | NLM_F_MATCH | NLM_F_REQUEST;
 	packet.header.nlmsg_type = RTM_GETLINK;
-	packet.header.nlmsg_pid = getpid ();
+	packet.header.nlmsg_pid = UINT_MAX;
 	/* Might be good to generate a unique sequence number and track
 	   the response */
 	packet.header.nlmsg_seq = sequence_number << 16;

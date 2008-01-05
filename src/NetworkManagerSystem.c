@@ -196,7 +196,7 @@ static void iface_to_rtnl_index (const char *iface, struct nl_handle *nlh, struc
 	i = rtnl_link_name2i (cache, iface);
 	if (RTNL_LINK_NOT_FOUND != i)
 		rtnl_addr_set_ifindex (addr, i);
-	nl_cache_destroy_and_free (cache);
+	nl_cache_free (cache);
 }
 
 
@@ -216,54 +216,41 @@ static struct rtnl_link * iface_to_rtnl_link (const char *iface, struct nl_handl
 
 	nl_cache_update (nlh, cache);
 	have_link = rtnl_link_get_by_name (cache, iface);
-	nl_cache_destroy_and_free (cache);
+	nl_cache_free (cache);
 
 	return have_link;
 }
 
-static GStaticMutex nlh_mutex = G_STATIC_MUTEX_INIT;
-
-GHashTable *nl_pids = NULL;
-
 static struct
-nl_handle * new_nl_handle (void)
+nl_handle *new_nl_handle (gboolean recursive)
 {
-	struct nl_handle * nlh = NULL;
-	guint32 nl_pid;
-	int i = 0;
+	struct nl_handle *nlh = NULL;
+	struct nl_cb *cb;
 
-	g_static_mutex_lock (&nlh_mutex);
-
-	if (nl_pids == NULL) {
-		nl_pids = g_hash_table_new (g_direct_hash, g_direct_equal);
-		g_assert (nl_pids);
-
-		/* Insert the PID used by nm-netlink-monitor.c */
-		g_hash_table_insert (nl_pids, GUINT_TO_POINTER (getpid ()), GUINT_TO_POINTER (1));
+	cb = nl_cb_alloc (NL_CB_VERBOSE);
+	nlh = nl_handle_alloc_cb (cb);
+	if (!nlh) {
+		nm_warning ("%s: couldn't allocate netlink handle: %s", __func__, nl_geterror ());
+		return NULL;
 	}
 
-	while (i++ < 10) {
-		nl_pid = g_random_int ();
-		if (!g_hash_table_lookup (nl_pids, GUINT_TO_POINTER (nl_pid)))
-			break;
-	}
+	if (nl_connect (nlh, NETLINK_ROUTE) < 0) {
+		/* HACK: try one more time. Because the netlink monitor for link state
+		 * inits before we get here, it grabs the port that matches the PID
+		 * of the NM process, which also happens to be the PID that libnl uses
+		 * the first time too.  The real fix is to convert nm-netlink-monitor.c
+		 * over to use libnl.
+		 */
+		nl_handle_destroy (nlh);
+		if (recursive)
+			return NULL;
 
-	if (i < 10) {
-		nlh = nl_handle_alloc_nondefault (NL_CB_VERBOSE);
-		nl_handle_set_pid (nlh, nl_pid);
-
-		if (nl_connect (nlh, NETLINK_ROUTE) < 0) {
+		nlh = new_nl_handle (TRUE);
+		if (!nlh) {
 			nm_warning ("%s: couldn't connect to netlink: %s", __func__, nl_geterror ());
-			nl_handle_destroy (nlh);
-			nlh = NULL;
-		} else {
-			g_hash_table_insert (nl_pids, GUINT_TO_POINTER (nl_pid), GUINT_TO_POINTER (1));
+			return NULL;
 		}
-	} else {
-		g_warning ("%s: couldn't find free netlink pid.", __func__);
 	}
-
-	g_static_mutex_unlock (&nlh_mutex);
 
 	return nlh;
 }
@@ -273,15 +260,9 @@ destroy_nl_handle (struct nl_handle *nlh)
 {
 	g_return_if_fail (nlh != NULL);
 
-	g_static_mutex_lock (&nlh_mutex);
-	g_hash_table_remove (nl_pids, GUINT_TO_POINTER (nl_handle_get_pid (nlh)));
-	g_static_mutex_unlock (&nlh_mutex);
-
 	nl_close (nlh);
 	nl_handle_destroy (nlh);
-
 }
-
 
 int
 nm_system_get_rtnl_index_from_iface (const char *iface)
@@ -290,7 +271,7 @@ nm_system_get_rtnl_index_from_iface (const char *iface)
 	struct nl_cache *	cache;
 	int				i = RTNL_LINK_NOT_FOUND;
 
-	nlh = new_nl_handle ();
+	nlh = new_nl_handle (FALSE);
 	if (!nlh)
 		return RTNL_LINK_NOT_FOUND;
 
@@ -302,7 +283,7 @@ nm_system_get_rtnl_index_from_iface (const char *iface)
 
 	nl_cache_update (nlh, cache);
 	i = rtnl_link_name2i (cache, iface);
-	nl_cache_destroy_and_free (cache);
+	nl_cache_free (cache);
 
 out:
 	destroy_nl_handle (nlh);
@@ -318,7 +299,7 @@ nm_system_get_iface_from_rtnl_index (int rtnl_index)
 	struct nl_cache *	cache = NULL;
 	char *			buf = NULL;
 
-	nlh = new_nl_handle ();
+	nlh = new_nl_handle (FALSE);
 	if (!nlh)
 		return NULL;
 
@@ -340,7 +321,7 @@ nm_system_get_iface_from_rtnl_index (int rtnl_index)
 	}
 
 destroy_cache:
-	nl_cache_destroy_and_free (cache);
+	nl_cache_free (cache);
 
 out:
 	destroy_nl_handle (nlh);
@@ -370,7 +351,7 @@ gboolean nm_system_device_set_from_ip4_config (NMDevice *dev)
 	config = nm_device_get_ip4_config (dev);
 	g_return_val_if_fail (config != NULL, FALSE);
 
-	nlh = new_nl_handle ();
+	nlh = new_nl_handle (FALSE);
 	if (!nlh)
 		return FALSE;
 
@@ -504,7 +485,7 @@ nm_system_vpn_device_set_from_ip4_config (NMNamedManager *named,
 	if (!iface || !strlen (iface))
 		goto done;
 
-	nlh = new_nl_handle ();
+	nlh = new_nl_handle (FALSE);
 	if (!nlh)
 		goto done;
 
@@ -614,7 +595,7 @@ gboolean nm_system_device_set_up_down_with_iface (const char *iface, gboolean up
 
 	g_return_val_if_fail (iface != NULL, FALSE);
 
-	nlh = new_nl_handle ();
+	nlh = new_nl_handle (FALSE);
 	if (!nlh)
 		return FALSE;
 
@@ -658,7 +639,7 @@ void nm_system_set_mtu (NMDevice *dev)
 	if (!mtu)
 		return;
 
-	nlh = new_nl_handle ();
+	nlh = new_nl_handle (FALSE);
 	if (!nlh)
 		return;
 
