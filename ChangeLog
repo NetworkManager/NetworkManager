@@ -1,5 +1,12 @@
 2008-01-04  Dan Williams  <dcbw@redhat.com>
 
+	* src/named-manager/nm-named-manager.c
+		- (rewrite_resolv_conf, add_ip4_config_to_named): use primary IP4Config's
+			nameservers if the secondary config doesn't have any
+			(gnome.org #346833)
+
+2008-01-04  Dan Williams  <dcbw@redhat.com>
+
 	* configure.in
 		- Bump libnl requirement to 1.0-pre8
 
