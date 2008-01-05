@@ -1,3 +1,23 @@
+2008-01-04  Dan Williams  <dcbw@redhat.com>
+
+	* configure.in
+		- Bump libnl requirement to 1.0-pre8
+
+	* src/NetworkManagerSystem.c
+		- (new_nl_handle, destroy_nl_handle): port to libnl-1.0-pre8
+		- (iface_to_rtnl_index, iface_to_rtnl_link,
+		   nm_system_get_rtnl_index_from_iface,
+		   nm_system_get_iface_from_rtnl_index,
+		   nm_system_device_set_from_ip4_config,
+		   nm_system_vpn_device_set_from_ip4_config,
+		   nm_system_device_set_up_down_with_iface,
+		   nm_system_set_mtu): update for libnl-1.0-pre8
+
+	* src/nm-netlink-monitor.c
+		- (nm_netlink_monitor_open_connection,
+		   nm_netlink_monitor_request_status): don't use netlink pids that
+			conflict with libnl
+
 2007-12-14  Dan Williams  <dcbw@redhat.com>
 
 	* src/vpn-properties/nm-vpn-properties.c
