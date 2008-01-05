@@ -258,6 +258,7 @@ rewrite_resolv_conf (NMNamedManager *mgr, NMIP4Config *config, GError **error)
 	const char *	tmp_resolv_conf = RESOLV_CONF ".tmp";
 	char *		searches = NULL;
 	FILE *		f;
+	NMIP4Config *ns_config = config;
 
 	/* If no config, we don't have anything to update, so exit silently */
 	if (!config)
@@ -289,10 +290,18 @@ rewrite_resolv_conf (NMNamedManager *mgr, NMIP4Config *config, GError **error)
 		return FALSE;
 	}
 
-	searches = compute_searches (mgr, config);
+	/* If the ip4 config is a secondary config and has no nameservers, use the
+	 * nameservers from the primary config.
+	 */
+	if (   nm_ip4_config_get_secondary (config)
+	    && !nm_ip4_config_get_num_nameservers (config)) {
+		ns_config = mgr->priv->configs->data;
+	}
+	g_return_val_if_fail (ns_config != NULL, FALSE);
 
-	if (mgr->priv->use_named == TRUE)
-	{
+	searches = compute_searches (mgr, ns_config);
+
+	if (mgr->priv->use_named == TRUE) {
 		/* Using caching-nameserver & local DNS */
 		if (fprintf (f,
 		             "%s%s%s",
@@ -308,11 +317,9 @@ rewrite_resolv_conf (NMNamedManager *mgr, NMIP4Config *config, GError **error)
 			g_free (searches);
 			return FALSE;
 		}
-	}
-	else
-	{
+	} else {
 		/* Using glibc resolver */
-		char *nameservers = compute_nameservers (mgr, config);
+		char *nameservers = compute_nameservers (mgr, ns_config);
 
 		if ((fprintf (f, "%s\n\n", searches) < 0) ||
 		    (fprintf (f, "%s\n\n", nameservers) < 0)) {
@@ -381,6 +388,7 @@ static gboolean
 add_ip4_config_to_named (NMNamedManager *mgr, NMIP4Config *config)
 {
 	const char *domain;
+	NMIP4Config *ns_config = config;
 	int i, num_nameservers;
 	gboolean		success = FALSE;
 	DBusMessage *	message;
@@ -416,9 +424,18 @@ add_ip4_config_to_named (NMNamedManager *mgr, NMIP4Config *config)
 	                          DBUS_TYPE_STRING, &domain,
 	                          DBUS_TYPE_INVALID);
 
-	num_nameservers = nm_ip4_config_get_num_nameservers (config);
+	/* If the ip4 config is a secondary config and has no nameservers, use the
+	 * nameservers from the primary config.
+	 */
+	if (   nm_ip4_config_get_secondary (config)
+	    && !nm_ip4_config_get_num_nameservers (config)) {
+		ns_config = mgr->priv->configs->data;
+	}
+	g_return_val_if_fail (ns_config != NULL, FALSE);
+
+	num_nameservers = nm_ip4_config_get_num_nameservers (ns_config);
 	for (i = 0; i < num_nameservers; i++) {
-		dbus_uint32_t	server = nm_ip4_config_get_nameserver (config, i);
+		dbus_uint32_t	server = nm_ip4_config_get_nameserver (ns_config, i);
 		dbus_uint16_t	port = htons (53); /* default DNS port */
 		char			fwd_policy = dflt ? 1 : 2; /* 'first' : 'only' */
 
