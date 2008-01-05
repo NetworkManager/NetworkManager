@@ -1,3 +1,9 @@
+2008-01-04  Dan Williams <dcbw@redhat.com>
+
+	* nm-vpnc-service.name.in
+	  Makefile.am
+		- Sync with trunk's multilib fix stuff
+
 2007-09-14   Clytie Siddall <clytie@riverland.net.au>
 
 	* configure.in: Added "vi" to ALL_LINGUAS.

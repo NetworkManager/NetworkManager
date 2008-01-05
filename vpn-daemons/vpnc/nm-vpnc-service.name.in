@@ -1,8 +1,8 @@
 [VPN Connection]
 name=vpnc
 service=org.freedesktop.NetworkManager.vpnc
-program=@bindir@/nm-vpnc-service
+program=@BINDIR@/nm-vpnc-service
 
 [GNOME]
-auth-dialog=@libexecdir@/nm-vpnc-auth-dialog
-properties=@prefix@/${LIB}/libnm-vpnc-properties
+auth-dialog=@LIBEXECDIR@/nm-vpnc-auth-dialog
+properties=@PREFIX@/${LIB}/libnm-vpnc-properties
