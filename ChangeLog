@@ -1,3 +1,15 @@
+2008-01-06  Dan Williams  <dcbw@redhat.com>
+
+	Fixes gnome.org #466954
+
+	* src/nm-device-802-11-wireless.c
+		- (find_supported_frequency): new function; find the first frequency the
+			card appears to support from a given list
+		- (supplicant_send_network_config): explicitly send a frequency the
+			Ad-Hoc config should use, some cards require it.  If the version
+			of wpa_supplicant being used does not support the 'frequency' option,
+			NetworkManager will ignore the error and proceed.
+
 2008-01-04  Dan Williams  <dcbw@redhat.com>
 
 	* src/named-manager/nm-named-manager.c

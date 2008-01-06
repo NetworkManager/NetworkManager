@@ -2807,6 +2807,22 @@ exit:
 	return success;
 }
 
+static guint32
+find_supported_frequency (NMDevice80211Wireless *self, guint32 *freqs)
+{
+	int i;
+
+	for (i = 0; i < self->priv->num_freqs; i++) {
+		while (*freqs) {
+			if ((guint32) self->priv->freqs[i] == (*freqs * 1000000))
+				return *freqs;
+			freqs++;
+		}
+	}
+
+	return 0;
+}
+
 
 static gboolean
 supplicant_send_network_config (NMDevice80211Wireless *self,
@@ -2887,11 +2903,23 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	}
 
 	/* Ad-Hoc ? */
-	if (is_adhoc)
-	{
+	if (is_adhoc) {
+		guint32 adhoc_freq = nm_ap_get_freq (ap);
+
 		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
 				"SET_NETWORK %i mode 1", nwid))
 			goto out;
+		
+		if (!adhoc_freq) {
+			guint32 freqs[] = {2412, 2437, 2462, 2472, 0};
+			adhoc_freq = find_supported_frequency (self, freqs);
+			if (!adhoc_freq)
+				adhoc_freq = 2462;
+		}
+		/* Don't make failure to set the frequency option a hard error */
+		nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
+		                                        "SET_NETWORK %i frequency %d",
+		                                        nwid, adhoc_freq);
 	}
 
 	if (nm_device_activation_should_cancel (NM_DEVICE (self)))
