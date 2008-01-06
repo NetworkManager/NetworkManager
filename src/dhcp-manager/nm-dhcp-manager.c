@@ -476,6 +476,8 @@ NMIP4Config * nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager, NMActReque
 	guint32 *		ip4_nis_servers = NULL;
 	struct in_addr	temp_addr;
 	nm_completion_args	args;
+	guint32		mtu = 0;
+	guint32 *   dhcp_mtus = NULL;
 
 	g_return_val_if_fail (manager != NULL, NULL);
 	g_return_val_if_fail (req != NULL, NULL);
@@ -580,10 +582,19 @@ NMIP4Config * nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager, NMActReque
 	}
 
 	/*
-	 * Grab the MTU from the backend.  If DHCP servers can send recommended MTU's,
-	 * should set that here if the backend returns zero.
+	 * MTU from the system backend is preferred; otherwise the DHCP-provided
+	 * MTU is used.
 	 */
-	nm_ip4_config_set_mtu (ip4_config, nm_system_get_mtu (dev));
+	mtu = nm_system_get_mtu (dev);
+	if (!mtu) {
+		if (get_ip4_uint32s (manager, dev, "interface_mtu", &dhcp_mtus, &count, TRUE)) {
+			if (count)
+				mtu = dhcp_mtus[0];
+		}
+	}
+
+	if (mtu)
+		nm_ip4_config_set_mtu (ip4_config, mtu);
 
 out:
 	g_free (hostname);
