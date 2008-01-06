@@ -101,6 +101,8 @@
 
 2007-12-27  Dan Williams  <dcbw@redhat.com>
 
+	Fixes gnome.org #466954
+
 	* src/supplicant-manager/nm-supplicant-settings-verify.c
 		- Allow 'frequency' network property
 
