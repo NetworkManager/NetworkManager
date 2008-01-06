@@ -1,4 +1,4 @@
-2008-01-04  Dan Williams  <dcbw@redhat.com>
+2008-01-06  Dan Williams  <dcbw@redhat.com>
 
 	* src/dhcp-manager/nm-dhcp-manager.c
 		- (nm_dhcp_manager_get_ip4_config): handle DHCP-provided MTU
