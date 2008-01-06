@@ -27,6 +27,7 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "nm-dhcp-manager.h"
 #include "nm-marshal.h"
@@ -841,6 +842,7 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 	char *			nis_servers = NULL;
 	char *			static_routes = NULL;
 	char *			ip = NULL;		//this is a general string that is used as a temporary place for ip(s)
+	char *			mtu = NULL;
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (manager), NULL);
 	g_return_val_if_fail (iface != NULL, NULL);
@@ -961,7 +963,7 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 		g_strfreev (searches);
 	}
 
-	if (static_routes){
+	if (static_routes) {
 		char **searches = g_strsplit (static_routes, " ", 0);
 
 		if ((g_strv_length (searches) % 2) == 0) {
@@ -992,11 +994,13 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 		g_strfreev (searches);
 	}
 
-	/*
-	 * FIXME:
-	 * Grab the MTU from the backend. If DHCP servers can send recommended
-	 * MTU's, should set that here.
-	 */
+	mtu = g_hash_table_lookup (device->options, "new_interface_mtu");
+	if (mtu) {
+		int int_mtu = atoi (mtu);
+
+		if (int_mtu)
+			nm_ip4_config_set_mtu (ip4_config, int_mtu);
+	}
 
 	return ip4_config;
 }

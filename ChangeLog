@@ -1,5 +1,11 @@
 2008-01-04  Dan Williams  <dcbw@redhat.com>
 
+	* src/dhcp-manager/nm-dhcp-manager.c
+		- (nm_dhcp_manager_get_ip4_config): handle DHCP-provided MTU
+			(gnome.org #332953)
+
+2008-01-04  Dan Williams  <dcbw@redhat.com>
+
 	* src/named-manager/nm-named-manager.c
 		- (rewrite_resolv_conf, add_ip4_config_to_named): use primary IP4Config's
 			nameservers if the secondary config doesn't have any

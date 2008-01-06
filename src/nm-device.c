@@ -719,9 +719,11 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 		real_config = nm_dhcp_manager_get_ip4_config (NM_DEVICE_GET_PRIVATE (self)->dhcp_manager,
 											 nm_device_get_iface (self));
 
-		if (real_config && nm_ip4_config_get_mtu (real_config) == 0)
+		if (real_config && nm_ip4_config_get_mtu (real_config) == 0) {
 			/* If the DHCP server doesn't set the MTU, get it from backend. */
+			// FIXME: let the NMConnection override the MTU
 			nm_ip4_config_set_mtu (real_config, nm_system_get_mtu (self));
+		}
 	} else {
 		real_config = nm_ip4_config_new ();
 	}
