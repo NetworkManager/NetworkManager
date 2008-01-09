@@ -1,5 +1,11 @@
 2008-01-09  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManager.c
+		- (nm_killswitch_getpower_reply_cb): handle different HAL versions
+			better by matching the variable type with the D-Bus argument type
+
+2008-01-09  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-ap-security-wpa-eap.c
 		- (real_write_supplicant_config): send the 'fragment_size' option (but
 			don't fail if it's not supported)

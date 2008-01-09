@@ -341,7 +341,8 @@ static void nm_killswitch_getpower_reply_cb (DBusPendingCall *pcall, NMData * da
 {
 	DBusError		err;
 	DBusMessage *	reply = NULL;
-	gint32			status;
+	gint32			int_status = 1;
+	guint32			uint_status = 1;
 
 	g_return_if_fail (pcall != NULL);
 	g_return_if_fail (data != NULL);
@@ -364,8 +365,11 @@ static void nm_killswitch_getpower_reply_cb (DBusPendingCall *pcall, NMData * da
 		goto out;
 	}
 
-	if (!dbus_message_get_args (reply, &err, DBUS_TYPE_UINT32, &status, DBUS_TYPE_INVALID)) {
-		if (!dbus_message_get_args (reply, &err, DBUS_TYPE_INT32, &status, DBUS_TYPE_INVALID)) {
+	/* Handle both HAL <= 0.5.9 which uses UINT and HAL >= 0.5.10 which
+	 * uses INT.
+	 */
+	if (!dbus_message_get_args (reply, &err, DBUS_TYPE_UINT32, &uint_status, DBUS_TYPE_INVALID)) {
+		if (!dbus_message_get_args (reply, &err, DBUS_TYPE_INT32, &int_status, DBUS_TYPE_INVALID)) {
 			if (!ks_err_message || strcmp (ks_err_message, err.message)) {
 				nm_info ("Error getting killswitch power arguments: %s - %s", err.name, err.message);
 				g_free (ks_err_message);
@@ -373,11 +377,14 @@ static void nm_killswitch_getpower_reply_cb (DBusPendingCall *pcall, NMData * da
 			}
 			dbus_error_free (&err);
 			goto out;
+		} else {
+			if (int_status == 0)
+				data->tmp_hw_rf_enabled = FALSE;
 		}
+	} else {
+		if (uint_status == 0)
+			data->tmp_hw_rf_enabled = FALSE;
 	}
-
-	if (status == 0)
-		data->tmp_hw_rf_enabled = FALSE;
 
 out:
 	if (reply)
