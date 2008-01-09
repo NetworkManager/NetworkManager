@@ -3,6 +3,7 @@
 .\" Copyright (C) 2005 Robert Love
 .\"
 .TH NM-TOOL "1"
+.SH NAME
 nm-tool \- utility to report NetworkManager state 
 .SH SYNOPSIS
 .B nm-tool
