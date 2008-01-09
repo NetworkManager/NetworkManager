@@ -1,6 +1,9 @@
 /* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
+#include <string.h>
+
 #include "nm-setting-serial.h"
+#include "nm-setting-ppp.h"
 
 G_DEFINE_TYPE (NMSettingSerial, nm_setting_serial, NM_TYPE_SETTING)
 
@@ -19,6 +22,28 @@ NMSetting *
 nm_setting_serial_new (void)
 {
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_SERIAL, NULL);
+}
+
+static gint
+find_setting_by_name (gconstpointer a, gconstpointer b)
+{
+	NMSetting *setting = NM_SETTING (a);
+	const char *str = (const char *) b;
+
+	return strcmp (nm_setting_get_name (setting), str);
+}
+
+static gboolean
+verify (NMSetting *setting, GSList *all_settings)
+{
+	/* Serial connections require a PPP setting */
+	if (all_settings && 
+	    !g_slist_find_custom (all_settings, NM_SETTING_PPP_SETTING_NAME, find_setting_by_name)) {
+		g_warning ("Missing PPP setting");
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 static void
@@ -87,10 +112,12 @@ static void
 nm_setting_serial_class_init (NMSettingSerialClass *setting_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
+	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
 
 	/* virtual methods */
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
+	parent_class->verify       = verify;
 
 	/* Properties */
 

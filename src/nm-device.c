@@ -1148,13 +1148,6 @@ device_activation_precheck (NMDevice *self, NMConnection *connection, GError **e
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
-	if (   NM_DEVICE_GET_CLASS (self)->check_connection_complete
-	    && !NM_DEVICE_GET_CLASS (self)->check_connection_complete (self, connection, error)) {
-		/* connection is invalid */
-		g_assert (*error);
-		return FALSE;
-	}
-
 	if (nm_device_get_state (self) != NM_DEVICE_STATE_ACTIVATED)
 		return TRUE;
 

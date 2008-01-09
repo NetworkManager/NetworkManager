@@ -474,31 +474,6 @@ real_get_generic_capabilities (NMDevice *dev)
 	return NM_DEVICE_CAP_NM_SUPPORTED;
 }
 
-static gboolean
-real_check_connection_complete (NMDevice *dev, NMConnection *connection, GError **error)
-{
-	NMSettingGsm *gsm;
-
-	gsm = (NMSettingGsm *) nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM);
-	if (!gsm) {
-		g_set_error (error,
-		             NM_DEVICE_INTERFACE_ERROR,
-		             NM_DEVICE_INTERFACE_ERROR_CONNECTION_INVALID,
-		             "%s", "Connection invalid: GSM setting not present");
-		return FALSE;
-	}
-
-	if (!gsm->number) {
-		g_set_error (error,
-		             NM_DEVICE_INTERFACE_ERROR,
-		             NM_DEVICE_INTERFACE_ERROR_CONNECTION_INVALID,
-		             "%s", "Connection invalid: Phone number not set");
-		return FALSE;
-	}
-
-	return NM_DEVICE_CLASS (nm_gsm_device_parent_class)->check_connection_complete (dev, connection, error);
-}
-
 static void
 real_connection_secrets_updated (NMDevice *dev,
                                  NMConnection *connection,
@@ -700,7 +675,6 @@ nm_gsm_device_class_init (NMGsmDeviceClass *klass)
 	object_class->finalize = finalize;
 
 	device_class->get_generic_capabilities = real_get_generic_capabilities;
-	device_class->check_connection_complete = real_check_connection_complete;
 	device_class->act_stage1_prepare = real_act_stage1_prepare;
 	device_class->connection_secrets_updated = real_connection_secrets_updated;
 	device_class->deactivate_quickly = real_deactivate_quickly;

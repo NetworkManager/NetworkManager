@@ -2,6 +2,7 @@
 
 #include <string.h>
 #include "nm-setting-gsm.h"
+#include "nm-setting-serial.h"
 #include "nm-utils.h"
 
 G_DEFINE_TYPE (NMSettingGsm, nm_setting_gsm, NM_TYPE_SETTING)
@@ -27,10 +28,26 @@ nm_setting_gsm_new (void)
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_GSM, NULL);
 }
 
+static gint
+find_setting_by_name (gconstpointer a, gconstpointer b)
+{
+	NMSetting *setting = NM_SETTING (a);
+	const char *str = (const char *) b;
+
+	return strcmp (nm_setting_get_name (setting), str);
+}
+
 static gboolean
 verify (NMSetting *setting, GSList *all_settings)
 {
 	NMSettingGsm *self = NM_SETTING_GSM (setting);
+
+	/* Serial connections require a PPP setting */
+	if (all_settings && 
+	    !g_slist_find_custom (all_settings, NM_SETTING_SERIAL_SETTING_NAME, find_setting_by_name)) {
+		g_warning ("Missing serial setting");
+		return FALSE;
+	}
 
 	if (!self->number || strlen (self->number) < 1) {
 		nm_warning ("Missing phone number");

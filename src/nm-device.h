@@ -102,10 +102,6 @@ struct _NMDeviceClass
 	                                            NMConnection *connection,
 	                                            NMConnection *system_connection);
 
-	gboolean    (* check_connection_complete) (NMDevice *self,
-	                                           NMConnection *connection,
-	                                           GError **error);
-
 	NMActStageReturn	(* act_stage1_prepare)	(NMDevice *self);
 	NMActStageReturn	(* act_stage2_config)	(NMDevice *self);
 	NMActStageReturn	(* act_stage3_ip_config_start) (NMDevice *self);

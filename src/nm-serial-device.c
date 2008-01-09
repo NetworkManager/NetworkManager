@@ -908,33 +908,6 @@ real_deactivate_quickly (NMDevice *device)
 }
 
 static gboolean
-real_check_connection_complete (NMDevice *dev, NMConnection *connection, GError **error)
-{
-	NMSettingSerial *serial;
-	NMSettingPPP *ppp;
-
-	serial = (NMSettingSerial *) nm_connection_get_setting (connection, NM_TYPE_SETTING_SERIAL);
-	if (!serial) {
-		g_set_error (error,
-		             NM_DEVICE_INTERFACE_ERROR,
-		             NM_DEVICE_INTERFACE_ERROR_CONNECTION_INVALID,
-		             "%s", "Connection invalid: serial setting not present");
-		return FALSE;
-	}
-
-	ppp = (NMSettingPPP *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP);
-	if (!ppp) {
-		g_set_error (error,
-		             NM_DEVICE_INTERFACE_ERROR,
-		             NM_DEVICE_INTERFACE_ERROR_CONNECTION_INVALID,
-		             "%s", "Connection invalid: PPP setting not present");
-		return FALSE;
-	}
-
-	return NM_DEVICE_CLASS (nm_serial_device_parent_class)->check_connection_complete (dev, connection, error);
-}
-
-static gboolean
 real_is_up (NMDevice *device)
 {
 	/* Serial devices are always "up" */
@@ -977,7 +950,6 @@ nm_serial_device_class_init (NMSerialDeviceClass *klass)
 
 	parent_class->get_generic_capabilities = real_get_generic_capabilities;
 	parent_class->is_up = real_is_up;
-	parent_class->check_connection_complete = real_check_connection_complete;
 	parent_class->act_stage2_config = real_act_stage2_config;
 	parent_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 	parent_class->deactivate_quickly = real_deactivate_quickly;
