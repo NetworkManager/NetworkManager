@@ -341,8 +341,8 @@ initscript/Arch/Makefile
 initscript/Arch/networkmanager
 initscript/Arch/networkmanager-dispatcher
 man/Makefile
-man/NetworkManager.1
-man/NetworkManagerDispatcher.1
+man/NetworkManager.8
+man/NetworkManagerDispatcher.8
 man/nm-tool.1
 po/Makefile.in
 NetworkManager.pc
