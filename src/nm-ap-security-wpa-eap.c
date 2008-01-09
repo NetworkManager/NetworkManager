@@ -329,6 +329,9 @@ real_write_supplicant_config (NMAPSecurity *instance,
 			goto out;
 	}
 
+	nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
+			"SET_NETWORK %i fragment_size 1300", nwid);
+
 	success = TRUE;
 
 out:
