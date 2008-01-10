@@ -327,7 +327,8 @@ gboolean
 nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
                                            NMSettingWireless * setting,
                                            gboolean is_broadcast,
-                                           guint32 adhoc_freq)
+                                           guint32 adhoc_freq,
+                                           gboolean has_scan_capa_ssid)
 {
 	NMSupplicantConfigPrivate *priv;
 	gboolean is_adhoc;
@@ -338,8 +339,14 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 	priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
 	
 	is_adhoc = (setting->mode && !strcmp (setting->mode, "adhoc")) ? TRUE : FALSE;
-	if (!is_broadcast || is_adhoc)
+	if (is_adhoc)
 		priv->ap_scan = 2;
+	else if (is_broadcast == FALSE) {
+		/* drivers that support scanning specific SSIDs should use
+		 * ap_scan=1, while those that do not should use ap_scan=2.
+		 */
+		priv->ap_scan = has_scan_capa_ssid ? 1 : 2;
+	}
 
 	if (!nm_supplicant_config_add_option (self, "ssid",
 					      (char *) setting->ssid->data,

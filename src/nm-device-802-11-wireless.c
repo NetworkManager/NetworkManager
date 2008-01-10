@@ -142,6 +142,7 @@ struct _NMDevice80211WirelessPrivate
 	/* Static options from driver */
 	guint8			we_version;
 	guint32			capabilities;
+	gboolean		has_scan_capa_ssid;
 };
 
 
@@ -370,6 +371,27 @@ static guint32 iw_freq_to_uint32 (struct iw_freq *freq)
 	return (guint32) (iw_freq2float (freq) / 1000000);
 }
 
+
+/* Until a new wireless-tools comes out that has the defs and the structure,
+ * need to copy them here.
+ */
+/* Scan capability flags - in (struct iw_range *)->scan_capa */
+#define NM_IW_SCAN_CAPA_NONE		0x00
+#define NM_IW_SCAN_CAPA_ESSID		0x01
+
+struct iw_range_with_scan_capa
+{
+	guint32		throughput;
+	guint32		min_nwid;
+	guint32		max_nwid;
+	guint16		old_num_channels;
+	guint8		old_num_frequency;
+
+	guint8		scan_capa;
+/* don't need the rest... */
+};
+
+
 static GObject*
 constructor (GType type,
 			 guint n_construct_params,
@@ -382,6 +404,7 @@ constructor (GType type,
 	const char *iface;
 	NMSock *sk = NULL;
 	struct iw_range range;
+	struct iw_range_with_scan_capa *scan_capa_range;
 	struct iwreq wrq;
 	int i;
 
@@ -422,6 +445,14 @@ constructor (GType type,
 		priv->freqs[i] = iw_freq_to_uint32 (&range.freq[i]);
 
 	priv->we_version = range.we_version_compiled;
+
+	/* Check for the ability to scan specific SSIDs.  Until the scan_capa
+	 * field gets added to wireless-tools, need to work around that by casting
+	 * to the custom structure.
+	 */
+	scan_capa_range = (struct iw_range_with_scan_capa *) &range;
+	if (scan_capa_range->scan_capa & NM_IW_SCAN_CAPA_ESSID)
+		priv->has_scan_capa_ssid = TRUE;
 
 	/* 802.11 wireless-specific capabilities */
 	priv->capabilities = get_wireless_capabilities (self, &range, wrq.u.data.length);
@@ -2404,8 +2435,9 @@ build_supplicant_config (NMDevice80211Wireless *self,
                          NMConnection *connection,
                          NMAccessPoint *ap)
 {
-	NMSupplicantConfig * config = NULL;
-	NMSettingWireless * s_wireless;
+	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
+	NMSupplicantConfig *config = NULL;
+	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wireless_sec;
 	guint32 adhoc_freq = 0;
 
@@ -2444,7 +2476,8 @@ build_supplicant_config (NMDevice80211Wireless *self,
 	if (!nm_supplicant_config_add_setting_wireless (config,
 	                                                s_wireless,
 	                                                nm_ap_get_broadcast (ap),
-	                                                adhoc_freq)) {
+	                                                adhoc_freq,
+	                                                priv->has_scan_capa_ssid)) {
 		nm_warning ("Couldn't add 802-11-wireless setting to supplicant config.");
 		goto error;
 	}
