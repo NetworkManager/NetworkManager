@@ -86,6 +86,7 @@ struct _NMDevice80211WirelessPrivate
 	/* Static options from driver */
 	guint8			we_version;
 	guint32			capabilities;
+	gboolean		has_scan_capa_ssid;
 };
 
 
@@ -383,6 +384,27 @@ nm_device_802_11_wireless_init (NMDevice80211Wireless * self)
 	self->priv->supplicant.pid = -1;
 }
 
+
+/* Until a new wireless-tools comes out that has the defs and the structure,
+ * need to copy them here.
+ */
+/* Scan capability flags - in (struct iw_range *)->scan_capa */
+#define NM_IW_SCAN_CAPA_NONE		0x00
+#define NM_IW_SCAN_CAPA_ESSID		0x01
+
+struct iw_range_with_scan_capa
+{
+	guint32		throughput;
+	guint32		min_nwid;
+	guint32		max_nwid;
+	guint16		old_num_channels;
+	guint8		old_num_frequency;
+
+	guint8		scan_capa;
+/* don't need the rest... */
+};
+
+
 static void
 real_init (NMDevice *dev)
 {
@@ -422,6 +444,7 @@ real_init (NMDevice *dev)
 
 		if (ioctl (nm_dev_sock_get_fd (sk), SIOCGIWRANGE, &wrq) >= 0)
 		{
+			struct iw_range_with_scan_capa *scan_capa_range;
 			int i;
 
 			self->priv->max_qual.qual = range.max_qual.qual;
@@ -439,6 +462,14 @@ real_init (NMDevice *dev)
 				self->priv->freqs[i] = iw_freq2float (&(range.freq[i]));
 
 			self->priv->we_version = range.we_version_compiled;
+
+			/* Check for the ability to scan specific SSIDs.  Until the scan_capa
+			 * field gets added to wireless-tools, need to work around that by casting
+			 * to the custom structure.
+			 */
+			scan_capa_range = (struct iw_range_with_scan_capa *) &range;
+			if (scan_capa_range->scan_capa & NM_IW_SCAN_CAPA_ESSID)
+				self->priv->has_scan_capa_ssid = TRUE;
 
 			/* 802.11 wireless-specific capabilities */
 			self->priv->capabilities = get_wireless_capabilities (self, &range, wrq.u.data.length);
@@ -2858,12 +2889,16 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 				|| (caps & NM_802_11_CAP_PROTO_WPA2);
 
 	/* Use "AP_SCAN 2" if:
-	 * - The wireless network is non-broadcast or Ad-Hoc
+	 * - The wireless network is non-broadcast and the driver doesn't support
+	 *     scanning specific SSIDs
+	 * - The wireless network is Ad-Hoc
 	 * - The wireless driver does not support WPA (stupid drivers...)
 	 */
 	is_adhoc = (nm_ap_get_mode(ap) == IW_MODE_ADHOC);
-	if (!nm_ap_get_broadcast (ap) || is_adhoc || !supports_wpa)
+	if (is_adhoc || !supports_wpa)
 		ap_scan = "AP_SCAN 2";
+	else if (!nm_ap_get_broadcast (ap))
+		ap_scan = self->priv->has_scan_capa_ssid ? "AP_SCAN 1" : "AP_SCAN 2";
 
 	/* Tell wpa_supplicant that we'll do the scanning */
 	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, ap_scan))

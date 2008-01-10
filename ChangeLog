@@ -1,5 +1,17 @@
 2008-01-10  Dan Williams  <dcbw@redhat.com>
 
+	Fix gnome.org #464215.  Requires the kernel patch titled
+	"Introduce WEXT scan capabilities" but will handle the patch not being
+	present, you'll just continue to have problems with hidden SSIDs when
+	using mac80211-based drivers.
+
+	* src/nm-device-802-11-wireless.c
+		- (real_init): check whether or not the driver supports SSID scans
+		- (supplicant_send_network_config): if the driver supports SSID scans,
+			and the AP is hidden, use ap_scan=1 instead of ap_scan=2
+
+2008-01-10  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManager.c
 		- (nm_killswitch_getpower_reply_cb): ensure DBusErrors are initialized
 			before using them
