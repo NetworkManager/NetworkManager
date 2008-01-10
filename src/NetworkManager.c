@@ -368,9 +368,11 @@ static void nm_killswitch_getpower_reply_cb (DBusPendingCall *pcall, NMData * da
 	/* Handle both HAL <= 0.5.9 which uses UINT and HAL >= 0.5.10 which
 	 * uses INT.
 	 */
+	dbus_error_init (&err);
 	if (!dbus_message_get_args (reply, &err, DBUS_TYPE_UINT32, &uint_status, DBUS_TYPE_INVALID)) {
 		dbus_error_free (&err);
 
+		dbus_error_init (&err);
 		if (!dbus_message_get_args (reply, &err, DBUS_TYPE_INT32, &int_status, DBUS_TYPE_INVALID)) {
 			if (!ks_err_message || strcmp (ks_err_message, err.message)) {
 				nm_info ("Error getting killswitch power arguments: %s - %s", err.name, err.message);

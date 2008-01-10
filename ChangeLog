@@ -1,3 +1,9 @@
+2008-01-10  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManager.c
+		- (nm_killswitch_getpower_reply_cb): ensure DBusErrors are initialized
+			before using them
+
 2008-01-09  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManager.c
