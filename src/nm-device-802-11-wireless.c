@@ -468,8 +468,16 @@ real_init (NMDevice *dev)
 			 * to the custom structure.
 			 */
 			scan_capa_range = (struct iw_range_with_scan_capa *) &range;
-			if (scan_capa_range->scan_capa & NM_IW_SCAN_CAPA_ESSID)
+			if (scan_capa_range->scan_capa & NM_IW_SCAN_CAPA_ESSID) {
 				self->priv->has_scan_capa_ssid = TRUE;
+				nm_info ("%s: driver supports SSID scans (scan_capa 0x%02X).",
+				         nm_device_get_iface (NM_DEVICE (self)),
+				         scan_capa_range->scan_capa);
+			} else {
+				nm_info ("%s: driver does not support SSID scans (scan_capa 0x%02X).",
+				         nm_device_get_iface (NM_DEVICE (self)),
+				         scan_capa_range->scan_capa);
+			}
 
 			/* 802.11 wireless-specific capabilities */
 			self->priv->capabilities = get_wireless_capabilities (self, &range, wrq.u.data.length);
