@@ -1,5 +1,10 @@
 2008-01-10  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerAP.c
+		- (foreach_property_cb): catch more hidden SSID formats
+
+2008-01-10  Dan Williams  <dcbw@redhat.com>
+
 	Fix gnome.org #464215.  Requires the kernel patch titled
 	"Introduce WEXT scan capabilities" but will handle the patch not being
 	present, you'll just continue to have problems with hidden SSIDs when

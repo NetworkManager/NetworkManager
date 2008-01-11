@@ -391,6 +391,9 @@ foreach_property_cb (gpointer key, gpointer value, gpointer user_data)
 				&& (memcmp (array->data, "<hidden>", 8) == 0))
 				return;
 
+			if (nm_utils_is_empty_ssid ((const guint8 *) array->data, len))
+				return;
+
 			ssid = g_byte_array_sized_new (len);
 			g_byte_array_append (ssid, (const guint8 *) array->data, len);
 			nm_ap_set_ssid (ap, ssid);
