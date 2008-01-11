@@ -556,6 +556,7 @@ nm_ap_new_fake_from_connection (NMConnection *connection)
 	g_return_val_if_fail (s_wireless->ssid->len > 0, NULL);
 
 	ap = nm_ap_new ();
+	nm_ap_set_fake (ap, TRUE);
 
 	len = s_wireless->ssid->len;
 	ssid = g_byte_array_sized_new (len);

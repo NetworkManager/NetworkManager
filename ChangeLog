@@ -1,3 +1,27 @@
+2008-01-11  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerAP.c
+		- (nm_ap_new_fake_from_connection): mark fake APs as fake
+
+	* src/nm-device-802-11-wireless.c
+		- (get_active_ap): do two passes over the scan list if the caller
+			requests that hidden APs get matched too; during the second pass
+			when matching hidden APs, ignore the SSID since hidden APs in the
+			scan list don't have an SSID yet
+		- (periodic_update): move some checks to
+			nm_device_802_11_periodic_update() because not all callers need them
+		- (nm_device_802_11_periodic_update): move some checks here from
+			perodic_update()
+		- (merge_scanned_ap): if the current AP is fake, then don't do strict
+			matching on incoming scan results, because the fake AP's flags
+			might be slightly different (yet still compatible) with the incoming
+			scan result's flags and they might actually be the same AP; update
+			the rate on merged APs too
+		- (activation_success_handler): update the frequency of the fake AP
+			on successful connection; match hidden APs too since if the
+			current AP is fake, there might already be a scan result in the
+			scan list for the desired AP, just without it's SSID filled in yet
+
 2008-01-10  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerAP.c
