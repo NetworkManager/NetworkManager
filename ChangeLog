@@ -1,3 +1,9 @@
+2008-01-12  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.c
+		- (activation_success_handler): if a match was found in the scan list
+			and that match is a hidden AP, update that AP's SSID
+
 2008-01-11  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerAP.c

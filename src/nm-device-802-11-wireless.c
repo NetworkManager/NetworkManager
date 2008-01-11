@@ -2936,10 +2936,16 @@ activation_success_handler (NMDevice *dev)
 	tmp_ap = get_active_ap (self, ap, TRUE);
 	if (tmp_ap) {
 		NMActRequest *req = nm_device_get_act_request (NM_DEVICE (self));
+		const GByteArray *ssid = nm_ap_get_ssid (tmp_ap);
 
 		/* Found a better match in the scan list than the fake AP.  Use it
 		 * instead.
 		 */
+
+		/* If the better match was a hidden AP, update it's SSID */
+		if (!ssid || nm_utils_is_empty_ssid (ssid->data, ssid->len))
+			nm_ap_set_ssid (tmp_ap, nm_ap_get_ssid (ap));
+
 		nm_act_request_set_specific_object (req, nm_ap_get_dbus_path (tmp_ap));
 
 		self->priv->ap_list = g_slist_remove (self->priv->ap_list, ap);
