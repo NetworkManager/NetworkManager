@@ -306,9 +306,11 @@ nm_device_802_11_wireless_get_access_points (NMDevice80211Wireless *device)
 		int i;
 
 		for (i = 0; i < array->len; i++) {
-			NMAccessPoint *ap = get_access_point (device, (const char *) g_ptr_array_index (array, i), TRUE);
+			char *path = (char *) g_ptr_array_index (array, i);
+			NMAccessPoint *ap = get_access_point (device, (const char *) path, TRUE);
 			if (ap)
 				list = g_slist_prepend (list, ap);
+			g_free (path);
 		}
 
 		g_ptr_array_free (array, TRUE);
