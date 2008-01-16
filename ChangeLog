@@ -1,3 +1,14 @@
+2008-01-16  Tambet Ingo  <tambet@gmail.com>
+
+	Shuffle the code a bit in preparation for wired 802.1X authentication.
+
+	* src/nm-device-802-11-wireless.c: Remove the supplicant driving code and use
+	NMSuppicant instead.
+
+	* src/nm-supplicant.[ch]: New files. The wpa_supplicant driving code is moved
+	here from nm-device-802-11-wireless.c and refactored a bit so it can be shared
+	by wired cards as well.
+
 2008-01-10  Dan Williams  <dcbw@redhat.com>
 
 	Fix gnome.org #464215.  Requires the kernel patch titled

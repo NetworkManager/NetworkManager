@@ -1,3 +1,5 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+
 /* NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -35,6 +37,7 @@
 #include "nm-device-private.h"
 #include "NetworkManagerAPList.h"
 #include "NetworkManagerDbus.h"
+#include "nm-supplicant.h"
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerPolicy.h"
@@ -46,15 +49,6 @@
 /* #define IW_QUAL_DEBUG */
 
 #define NM_DEVICE_802_11_WIRELESS_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_802_11_WIRELESS, NMDevice80211WirelessPrivate))
-
-struct _Supplicant
-{
-	GPid				pid;
-	GSource *			watch;
-	GSource *			status;
-	struct wpa_ctrl *	ctrl;
-	GSource *			timeout;
-};
 
 struct _NMDevice80211WirelessPrivate
 {
@@ -77,7 +71,7 @@ struct _NMDevice80211WirelessPrivate
 	GSource *			scan_timeout;
 	GSource *			pending_scan;
 
-	struct _Supplicant	supplicant;
+	NMSupplicant *supplicant;
 
 	guint32			failed_link_count;
 	GSource *			link_timeout;
@@ -126,8 +120,6 @@ static gboolean	is_associated (NMDevice80211Wireless *self);
 static gboolean	link_to_specific_ap (NMDevice80211Wireless *self,
 								 NMAccessPoint *ap,
 								 gboolean default_link);
-
-static void		supplicant_cleanup (NMDevice80211Wireless *self);
 
 static void		remove_link_timeout (NMDevice80211Wireless *self);
 
@@ -380,8 +372,6 @@ nm_device_802_11_wireless_init (NMDevice80211Wireless * self)
 	self->priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 	self->priv->dispose_has_run = FALSE;
 	self->priv->is_initialized = FALSE;
-
-	self->priv->supplicant.pid = -1;
 }
 
 
@@ -621,7 +611,7 @@ real_update_link (NMDevice *dev)
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
 
 	/* If the supplicant isn't running, we can't possibly have a link */
-	if (!self->priv->supplicant.pid)
+	if (!self->priv->supplicant)
 		nm_device_set_active_link (NM_DEVICE (self), FALSE);
 }
 
@@ -681,7 +671,11 @@ real_deactivate_quickly (NMDevice *dev)
 {
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
 
-	supplicant_cleanup (self);
+	if (self->priv->supplicant) {
+		g_object_unref (self->priv->supplicant);
+		self->priv->supplicant = NULL;
+	}
+
 	remove_link_timeout (self);
 }
 
@@ -2155,11 +2149,11 @@ nm_device_802_11_wireless_scan (gpointer user_data)
 	 * the scan request rather than doing it ourselves.
 	 */
 	iface = nm_device_get_iface (NM_DEVICE (self));
-	if (self->priv->supplicant.ctrl)
+	if (self->priv->supplicant)
 	{
-		if (nm_utils_supplicant_request_with_check (self->priv->supplicant.ctrl,
-				"OK", __func__, NULL, "SCAN"))
-			success = TRUE;
+	  if (nm_utils_supplicant_request_with_check (nm_supplicant_get_ctrl (self->priv->supplicant),
+						      "OK", __func__, NULL, "SCAN"))
+	    success = TRUE;
 	}
 	else
 	{
@@ -2409,442 +2403,7 @@ ap_is_auth_required (NMAccessPoint *ap, gboolean *has_key)
 	return auth_required;
 }
 
-
 /****************************************************************************/
-/* WPA Supplicant control stuff
- *
- * Originally from:
- *
- *	wpa_supplicant wrapper
- *
- *	Copyright (C) 2005 Kay Sievers <kay.sievers@vrfy.org>
- *
- *	This program is free software; you can redistribute it and/or modify it
- *	under the terms of the GNU General Public License as published by the
- *	Free Software Foundation version 2 of the License.
- */
-
-#define WPA_SUPPLICANT_GLOBAL_SOCKET		LOCALSTATEDIR"/run/wpa_supplicant-global"
-#define WPA_SUPPLICANT_CONTROL_SOCKET		LOCALSTATEDIR"/run/wpa_supplicant"
-#define WPA_SUPPLICANT_NUM_RETRIES		20
-#define WPA_SUPPLICANT_RETRY_TIME_US		100*1000
-
-
-static void
-remove_link_timeout (NMDevice80211Wireless *self)
-{
-	g_return_if_fail (self != NULL);
-
-	if (self->priv->link_timeout != NULL)
-	{
-		g_source_destroy (self->priv->link_timeout);
-		self->priv->link_timeout = NULL;
-	}
-}
-
-static void
-supplicant_remove_timeout (NMDevice80211Wireless *self)
-{
-	g_return_if_fail (self != NULL);
-
-	/* Remove any pending timeouts on the request */
-	if (self->priv->supplicant.timeout != NULL)
-	{
-		g_source_destroy (self->priv->supplicant.timeout);
-		self->priv->supplicant.timeout = NULL;
-	}
-}
-
-static char *
-supplicant_get_device_socket_path (NMDevice80211Wireless *self)
-{
-	const char *iface;
-
-	g_return_val_if_fail (self != NULL, NULL);
-
-	iface = nm_device_get_iface (NM_DEVICE (self));
-	return g_strdup_printf (WPA_SUPPLICANT_CONTROL_SOCKET "/%s", iface);
-}
-
-static void
-supplicant_cleanup (NMDevice80211Wireless *self)
-{
-	char * sock_path;
-
-	g_return_if_fail (self != NULL);
-
-	if (self->priv->supplicant.pid > 0)
-	{
-		kill (self->priv->supplicant.pid, SIGTERM);
-		self->priv->supplicant.pid = -1;
-	}
-	if (self->priv->supplicant.watch)
-	{
-		g_source_destroy (self->priv->supplicant.watch);
-		self->priv->supplicant.watch = NULL;
-	}
-	if (self->priv->supplicant.status)
-	{
-		g_source_destroy (self->priv->supplicant.status);
-		self->priv->supplicant.status = NULL;
-	}
-	if (self->priv->supplicant.ctrl)
-	{
-		wpa_ctrl_close (self->priv->supplicant.ctrl);
-		self->priv->supplicant.ctrl = NULL;
-	}
-
-	supplicant_remove_timeout (self);
-	remove_link_timeout (self);
-
-	/* HACK: should be fixed in wpa_supplicant.  Will likely
-	 * require accomodations for selinux.
-	 */
-	unlink (WPA_SUPPLICANT_GLOBAL_SOCKET);
-	sock_path = supplicant_get_device_socket_path (self);
-	unlink (sock_path);
-	g_free (sock_path);
-}
-
-static void
-supplicant_watch_done (gpointer user_data)
-{
-	NMDevice80211Wireless *device = NM_DEVICE_802_11_WIRELESS (user_data);
-
-	device->priv->supplicant.watch = NULL;
-}
-
-static void
-supplicant_watch_cb (GPid pid,
-                     gint status,
-                     gpointer user_data)
-{
-	NMDevice *			dev = NM_DEVICE (user_data);
-	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (user_data);
-	
-	g_assert (self);
-
-	if (WIFEXITED (status))
-		nm_warning ("wpa_supplicant exited with error code %d", WEXITSTATUS (status));
-	else if (WIFSTOPPED (status)) 
-		nm_warning ("wpa_supplicant stopped unexpectedly with signal %d", WSTOPSIG (status));
-	else if (WIFSIGNALED (status))
-		nm_warning ("wpa_supplicant died with signal %d", WTERMSIG (status));
-	else
-		nm_warning ("wpa_supplicant died from an unknown cause");
-
-	supplicant_cleanup (self);
-
-	nm_device_set_active_link (dev, FALSE);
-}
-
-
-static void
-link_timeout_done (gpointer user_data)
-{
-	NMDevice80211Wireless *device = NM_DEVICE_802_11_WIRELESS (user_data);
-
-	device->priv->link_timeout = NULL;
-}
-
-
-/*
- * link_timeout_cb
- *
- * Called when the link to the access point has been down for a specified
- * period of time.
- */
-static gboolean
-link_timeout_cb (gpointer user_data)
-{
-	NMDevice *			dev = NM_DEVICE (user_data);
- 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (user_data);	
- 	NMActRequest *			req = nm_device_get_act_request (dev);
- 	NMAccessPoint *		ap = nm_act_request_get_ap (req);
- 	NMData *				data = nm_device_get_app_data (dev);
- 	gboolean				has_key;
-
-	g_assert (dev);
-
- 	/* Disconnect event during initial authentication and credentials
- 	 * ARE checked - we are likely to have wrong key.  Ask the user for
- 	 * another one.
- 	 */
- 	if (   (nm_act_request_get_stage (req) == NM_ACT_STAGE_DEVICE_CONFIG)
- 	    && (ap_is_auth_required (ap, &has_key) && has_key))
- 	{
- 		/* Association/authentication failed, we must have bad encryption key */
- 		nm_info ("Activation (%s/wireless): disconnected during association,"
- 		         " asking for new key.", nm_device_get_iface (dev));
- 		supplicant_remove_timeout(self);
- 		nm_dbus_get_user_key_for_network (data->dbus_connection, req, TRUE);
- 	}
- 	else
- 	{
- 		nm_info ("%s: link timed out.", nm_device_get_iface (dev));
- 		nm_device_set_active_link (dev, FALSE);
- 	}
-
-	return FALSE;
-}
-
-
-static void
-supplicant_status_done (gpointer user_data)
-{
-	NMDevice80211Wireless *device = NM_DEVICE_802_11_WIRELESS (user_data);
-
-	device->priv->supplicant.status = NULL;
-}
-
-
-#define MESSAGE_LEN	2048
-
-static gboolean
-supplicant_status_cb (GIOChannel *source,
-                      GIOCondition condition,
-                      gpointer user_data)
-{
-	NMDevice *			dev = NM_DEVICE (user_data);
-	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (user_data);
-	char *				message;
-	size_t				len;
-	struct wpa_ctrl *		ctrl;
-	NMActRequest * 		req;
-
-	g_assert (self);
-
-	/* Do nothing if we're supposed to be canceling activation.
-	 * We'll get cleaned up by the cancellation handlers later.
-	 */
-	if (nm_device_activation_should_cancel (dev))
-		return TRUE;
-
-	ctrl = self->priv->supplicant.ctrl;
-	g_return_val_if_fail (ctrl != NULL, FALSE);
-
-	req = nm_device_get_act_request (NM_DEVICE (self));
-
-	message = g_malloc (MESSAGE_LEN);
-	len = MESSAGE_LEN;
-	wpa_ctrl_recv (ctrl, message, &len);
-	message[len] = '\0';
-
-	if (strstr (message, WPA_EVENT_CONNECTED) != NULL)
-	{
-		remove_link_timeout (self);
-		nm_device_set_active_link (dev, TRUE);
-
-		/* If this is the initial association during device activation,
-		 * schedule the next activation stage.
-		 */
-		if (req && (nm_act_request_get_stage (req) == NM_ACT_STAGE_DEVICE_CONFIG))
-		{
-			NMAccessPoint	*ap = nm_act_request_get_ap (req);
-
-			nm_info ("Activation (%s/wireless) Stage 2 of 5 (Device Configure) "
-					"successful.  Connected to access point '%s'.",
-					nm_device_get_iface (NM_DEVICE (self)),
-					nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
-			supplicant_remove_timeout (self);
-			nm_device_activate_schedule_stage3_ip_config_start (req);
-		}
-	}
-	else if (strstr (message, WPA_EVENT_DISCONNECTED) != NULL)
-	{
-		if (nm_device_is_activated (dev) || nm_device_is_activating (dev))
-		{
-			/* Start the link timeout so we allow some time for reauthentication */
-			if ((self->priv->link_timeout == NULL) && !self->priv->scanning)
-			{
-				GMainContext *	context = nm_device_get_main_context (dev);
-				self->priv->link_timeout = g_timeout_source_new (8000);
-				g_source_set_callback (self->priv->link_timeout,
-									   link_timeout_cb,
-									   self,
-									   link_timeout_done);
-				g_source_attach (self->priv->link_timeout, context);
-				g_source_unref (self->priv->link_timeout);
-			}
-		}
-		else
-		{
-			nm_device_set_active_link (dev, FALSE);
-		}
-	}
-
-	g_free (message);
-
-	return TRUE;
-}
-
-
-#define NM_SUPPLICANT_TIMEOUT	20	/* how long we wait for wpa_supplicant to associate (in seconds) */
-
-static unsigned int
-get_supplicant_timeout (NMDevice80211Wireless *self)
-{
-	if (self->priv->num_freqs > 14)
-		return NM_SUPPLICANT_TIMEOUT * 2;
-	return NM_SUPPLICANT_TIMEOUT;
-}
-
-
-static void
-supplicant_timeout_done (gpointer user_data)
-{
-	NMDevice80211Wireless *device = NM_DEVICE_802_11_WIRELESS (user_data);
-
-	device->priv->supplicant.timeout = NULL;
-}
-
-
-/*
- * supplicant_timeout_cb
- *
- * Called when the supplicant has been unable to connect to an access point
- * within a specified period of time.
- */
-static gboolean
-supplicant_timeout_cb (gpointer user_data)
-{
-	NMDevice *			dev = NM_DEVICE (user_data);
-	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (user_data);
-	NMActRequest *	req = nm_device_get_act_request (dev);
-	NMAccessPoint *	ap = nm_act_request_get_ap (req);
-	NMData *	data = nm_device_get_app_data (dev);
-	gboolean	has_key;
-
-	g_assert (self);
-		
-	/* Timed out waiting for authentication success; if the security method
-	 * in use does not require access point side authentication (Open System
-	 * WEP, for example) then we are likely using the wrong authentication
-	 * algorithm or key.  Request new one from the user.
-	 */
-	if (!ap_is_auth_required (ap, &has_key) && has_key)
-	{
-		/* Activation failed, we must have bad encryption key */
-		nm_info ("Activation (%s/wireless): association took too long (>%us), asking for new key.",
-				nm_device_get_iface (dev), get_supplicant_timeout (self));
-		nm_dbus_get_user_key_for_network (data->dbus_connection, req, TRUE);
-	}
-	else
-	{
-		nm_info ("Activation (%s/wireless): association took too long (>%us), failing activation.",
-				nm_device_get_iface (dev), get_supplicant_timeout (self));
-		if (nm_device_is_activating (dev))
-			nm_policy_schedule_activation_failed (nm_device_get_act_request (dev));
-	}
-
-	return FALSE;
-}
-
-/*
- * supplicant_child_setup
- *
- * Set the process group ID of the newly forked process
- *
- */
-static void
-supplicant_child_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	/* We are in the child process at this point */
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-}
-
-static gboolean
-supplicant_exec (NMDevice80211Wireless *self)
-{
-	gboolean	success = FALSE;
-	char *	argv[4];
-	GError *	error = NULL;
-	GPid		pid = -1;
-
-	argv[0] = WPA_SUPPLICANT_BIN;
-	argv[1] = "-g";
-	argv[2] = WPA_SUPPLICANT_GLOBAL_SOCKET;
-	argv[3] = NULL;
-
-	success = g_spawn_async ("/", argv, NULL, 0, &supplicant_child_setup, NULL,
-	                         &pid, &error);
-	if (!success)
-	{
-		if (error)
-		{
-			nm_warning ("Couldn't start wpa_supplicant.  Error: (%d) %s",
-					error->code, error->message);
-			g_error_free (error);
-		}
-		else
-			nm_warning ("Couldn't start wpa_supplicant due to an unknown error.");
-	}
-	else
-	{
-		/* Monitor the child process so we know when it stops */
-		self->priv->supplicant.pid = pid;
-		if (self->priv->supplicant.watch)
-			g_source_destroy (self->priv->supplicant.watch);
-		self->priv->supplicant.watch = g_child_watch_source_new (pid);
-		g_source_set_callback (self->priv->supplicant.watch,
-							   (GSourceFunc) supplicant_watch_cb,
-							   self,
-							   supplicant_watch_done);
-		g_source_attach (self->priv->supplicant.watch, nm_device_get_main_context (NM_DEVICE (self)));
-		g_source_unref (self->priv->supplicant.watch);
-	}
-
-	return success;
-}
-
-
-static gboolean
-supplicant_interface_init (NMDevice80211Wireless *self)
-{
-	struct wpa_ctrl *	ctrl = NULL;
-	char *			socket_path;
-	const char *		iface = nm_device_get_iface (NM_DEVICE (self));
-	gboolean			success = FALSE;
-	int				tries = 0;
-
-	/* Try to open wpa_supplicant's global control socket */
-	for (tries = 0; tries < WPA_SUPPLICANT_NUM_RETRIES && !ctrl; tries++)
-	{
-		ctrl = wpa_ctrl_open (WPA_SUPPLICANT_GLOBAL_SOCKET, NM_RUN_DIR);
-		g_usleep (WPA_SUPPLICANT_RETRY_TIME_US);
-	}
-
-	if (!ctrl)
-	{
-		nm_info ("Error opening supplicant global control interface.");
-		goto exit;
-	}
-
-	/* wpa_cli -g/var/run/wpa_supplicant-global interface_add eth1 "" wext /var/run/wpa_supplicant */
-	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
-			"INTERFACE_ADD %s\t\twext\t" WPA_SUPPLICANT_CONTROL_SOCKET "\t", iface))
-		goto exit;
-	wpa_ctrl_close (ctrl);
-
-	/* Get a control socket to wpa_supplicant for this interface.
-	 * Try a couple times to work around naive socket naming
-	 * in wpa_ctrl that sometimes collides with stale ones.
-	 */
-	socket_path = supplicant_get_device_socket_path (self);
-	while (!self->priv->supplicant.ctrl && (tries++ < 10))
-		self->priv->supplicant.ctrl = wpa_ctrl_open (socket_path, NM_RUN_DIR);
-	g_free (socket_path);
-	if (!self->priv->supplicant.ctrl)
-	{
-		nm_info ("Error opening control interface to supplicant.");
-		goto exit;
-	}
-	success = TRUE;
-
-exit:
-	return success;
-}
 
 static guint32
 find_supported_frequency (NMDevice80211Wireless *self, guint32 *freqs)
@@ -2862,7 +2421,6 @@ find_supported_frequency (NMDevice80211Wireless *self, guint32 *freqs)
 	return 0;
 }
 
-
 static gboolean
 supplicant_send_network_config (NMDevice80211Wireless *self,
                                 NMActRequest *req)
@@ -2879,13 +2437,10 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	guint32			caps;
 	gboolean			supports_wpa;
 
-	g_return_val_if_fail (self != NULL, FALSE);
-	g_return_val_if_fail (req != NULL, FALSE);
-
 	ap = nm_act_request_get_ap (req);
 	g_assert (ap);
 
-	ctrl = self->priv->supplicant.ctrl;
+	ctrl = nm_supplicant_get_ctrl (self->priv->supplicant);
 	g_assert (ctrl);
 
 	/* Assume that drivers that don't support WPA pretty much suck,
@@ -2985,52 +2540,157 @@ out:
 	return success;
 }
 
+#define NM_SUPPLICANT_TIMEOUT	20	/* how long we wait for wpa_supplicant to associate (in seconds) */
 
-static gboolean
-supplicant_monitor_start (NMDevice80211Wireless *self)
+static unsigned int
+get_supplicant_timeout (NMDevice80211Wireless *self)
 {
-	gboolean		success = FALSE;
-	int			fd = -1;
-	GIOChannel *	channel;
-	GMainContext *	context;
-
-	g_return_val_if_fail (self != NULL, FALSE);
-
-	/* register network event monitor */
-	if (wpa_ctrl_attach (self->priv->supplicant.ctrl) != 0)
-		goto out;
-
-	if ((fd = wpa_ctrl_get_fd (self->priv->supplicant.ctrl)) < 0)
-		goto out;
-
-	context = nm_device_get_main_context (NM_DEVICE (self));
-	channel = g_io_channel_unix_new (fd);
-	self->priv->supplicant.status = g_io_create_watch (channel, G_IO_IN);
-	g_io_channel_unref (channel);
-	g_source_set_callback (self->priv->supplicant.status,
-						   (GSourceFunc) supplicant_status_cb,
-						   self,
-						   supplicant_status_done);
-	g_source_attach (self->priv->supplicant.status, context);
-	g_source_unref (self->priv->supplicant.status);
-
-	/* Set up a timeout on the association to kill it after get_supplicant_time() seconds */
-	self->priv->supplicant.timeout = g_timeout_source_new (get_supplicant_timeout (self) * 1000);
-	g_source_set_callback (self->priv->supplicant.timeout,
-						   supplicant_timeout_cb,
-						   self,
-						   supplicant_timeout_done);
-	g_source_attach (self->priv->supplicant.timeout, context);
-	g_source_unref (self->priv->supplicant.timeout);
-
-	success = TRUE;
-
-out:
-	return success;
+	if (self->priv->num_freqs > 14)
+		return NM_SUPPLICANT_TIMEOUT * 2;
+	return NM_SUPPLICANT_TIMEOUT;
 }
 
+static gboolean
+supplicant_timed_out (gpointer user_data)
+{
+	NMDevice *dev = NM_DEVICE (user_data);
+	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (user_data);
+	NMActRequest *req = nm_device_get_act_request (dev);
+	NMAccessPoint *ap = nm_act_request_get_ap (req);
+	NMData *data = nm_device_get_app_data (dev);
+	gboolean has_key;
 
+	/* Timed out waiting for authentication success; if the security method
+	 * in use does not require access point side authentication (Open System
+	 * WEP, for example) then we are likely using the wrong authentication
+	 * algorithm or key.  Request new one from the user.
+	 */
+	if (!ap_is_auth_required (ap, &has_key) && has_key) {
+		/* Activation failed, we must have bad encryption key */
+		nm_info ("Activation (%s/wireless): association took too long (>%us), asking for new key.",
+				nm_device_get_iface (dev), get_supplicant_timeout (self));
+		nm_dbus_get_user_key_for_network (data->dbus_connection, req, TRUE);
+	} else {
+		nm_info ("Activation (%s/wireless): association took too long (>%us), failing activation.",
+				nm_device_get_iface (dev), get_supplicant_timeout (self));
+		if (nm_device_is_activating (dev))
+			nm_policy_schedule_activation_failed (nm_device_get_act_request (dev));
+	}
 
+	return FALSE;
+}
+
+static void
+remove_link_timeout (NMDevice80211Wireless *self)
+{
+	g_return_if_fail (self != NULL);
+
+	if (self->priv->link_timeout != NULL)
+	{
+		g_source_destroy (self->priv->link_timeout);
+		self->priv->link_timeout = NULL;
+	}
+}
+
+static void
+link_timeout_done (gpointer user_data)
+{
+	NMDevice80211Wireless *device = NM_DEVICE_802_11_WIRELESS (user_data);
+
+	device->priv->link_timeout = NULL;
+}
+
+/*
+ * link_timeout_cb
+ *
+ * Called when the link to the access point has been down for a specified
+ * period of time.
+ */
+static gboolean
+link_timeout_cb (gpointer user_data)
+{
+	NMDevice *			dev = NM_DEVICE (user_data);
+ 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (user_data);	
+ 	NMActRequest *			req = nm_device_get_act_request (dev);
+ 	NMAccessPoint *		ap = nm_act_request_get_ap (req);
+ 	NMData *				data = nm_device_get_app_data (dev);
+ 	gboolean				has_key;
+
+	g_assert (dev);
+
+ 	/* Disconnect event during initial authentication and credentials
+ 	 * ARE checked - we are likely to have wrong key.  Ask the user for
+ 	 * another one.
+ 	 */
+ 	if (   (nm_act_request_get_stage (req) == NM_ACT_STAGE_DEVICE_CONFIG)
+ 	    && (ap_is_auth_required (ap, &has_key) && has_key))
+ 	{
+ 		/* Association/authentication failed, we must have bad encryption key */
+ 		nm_info ("Activation (%s/wireless): disconnected during association,"
+ 		         " asking for new key.", nm_device_get_iface (dev));
+ 		nm_supplicant_remove_timeout (self->priv->supplicant);
+ 		nm_dbus_get_user_key_for_network (data->dbus_connection, req, TRUE);
+ 	}
+ 	else
+ 	{
+ 		nm_info ("%s: link timed out.", nm_device_get_iface (dev));
+ 		nm_device_set_active_link (dev, FALSE);
+ 	}
+
+	return FALSE;
+}
+
+static void
+supplicant_state_changed (NMSupplicant *supplicant,
+					 gboolean connected,
+					 gpointer user_data)
+{
+	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (user_data);
+	NMDevice *dev = NM_DEVICE (self);
+	NMActRequest *req = nm_device_get_act_request (NM_DEVICE (self));
+
+	if (connected) {
+		remove_link_timeout (self);
+		nm_device_set_active_link (dev, TRUE);
+
+		/* If this is the initial association during device activation,
+		 * schedule the next activation stage.
+		 */
+		if (req && (nm_act_request_get_stage (req) == NM_ACT_STAGE_DEVICE_CONFIG)) {
+			NMAccessPoint *ap = nm_act_request_get_ap (req);
+
+			nm_info ("Activation (%s/wireless) Stage 2 of 5 (Device Configure) "
+				    "successful.  Connected to access point '%s'.",
+				    nm_device_get_iface (dev),
+				    nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
+			nm_supplicant_remove_timeout (self->priv->supplicant);
+			nm_device_activate_schedule_stage3_ip_config_start (req);
+		}
+	} else {
+		if (nm_device_is_activated (dev) || nm_device_is_activating (dev)) {
+			/* Start the link timeout so we allow some time for reauthentication */
+			if ((self->priv->link_timeout == NULL) && !self->priv->scanning) {
+				self->priv->link_timeout = g_timeout_source_new (8000);
+				g_source_set_callback (self->priv->link_timeout,
+								   link_timeout_cb,
+								   self,
+								   link_timeout_done);
+				g_source_attach (self->priv->link_timeout, nm_device_get_main_context (dev));
+				g_source_unref (self->priv->link_timeout);
+			}
+		} else
+			nm_device_set_active_link (dev, FALSE);
+	}
+}
+
+static void
+supplicant_down (NMSupplicant *supplicant,
+			  gpointer user_data)
+{
+	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (user_data);
+
+	remove_link_timeout (self);
+}
 
 /****************************************************************************/
 
@@ -3040,14 +2700,12 @@ real_act_stage2_config (NMDevice *dev,
 {
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
 	NMAccessPoint *		ap = nm_act_request_get_ap (req);
-	NMActStageReturn		ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMData *				data = nm_act_request_get_data (req);
 	const char *			iface;
 	gboolean				ask_user = FALSE;
+	GMainContext *ctx;
 
 	g_assert (ap);
-
-	supplicant_cleanup (self);
 
 	/* If we need an encryption key, get one */
 	if (ap_need_key (self, ap, &ask_user))
@@ -3060,22 +2718,32 @@ real_act_stage2_config (NMDevice *dev,
 	sleep (1);
 
 	iface = nm_device_get_iface (dev);
-	if (!supplicant_exec (self))
+	ctx = nm_device_get_main_context (dev);
+
+	self->priv->supplicant = nm_supplicant_new ();
+	g_signal_connect (self->priv->supplicant, "state-changed",
+			  G_CALLBACK (supplicant_state_changed),
+			  self);
+
+	g_signal_connect (self->priv->supplicant, "down",
+			  G_CALLBACK (supplicant_down),
+			  self);
+
+	if (!nm_supplicant_exec (self->priv->supplicant, ctx))
 	{
-		nm_warning ("Activation (%s/wireless): couldn't start the supplicant.",
-			iface);
+		nm_warning ("Activation (%s/wireless): couldn't start the supplicant.", iface);
 		goto out;
 	}
-	if (!supplicant_interface_init (self))
+	if (!nm_supplicant_interface_init (self->priv->supplicant, iface, "wext"))
 	{
-		nm_warning ("Activation (%s/wireless): couldn't connect to the supplicant.",
-			iface);
+		nm_warning ("Activation (%s/wireless): couldn't connect to the supplicant.", iface);
 		goto out;
 	}
-	if (!supplicant_monitor_start (self))
+	if (!nm_supplicant_monitor_start (self->priv->supplicant, ctx,
+					  get_supplicant_timeout (self),
+					  supplicant_timed_out, self))
 	{
-		nm_warning ("Activation (%s/wireless): couldn't monitor the supplicant.",
-			iface);
+		nm_warning ("Activation (%s/wireless): couldn't monitor the supplicant.", iface);
 		goto out;
 	}
 	if (!supplicant_send_network_config (self, req))
@@ -3086,10 +2754,13 @@ real_act_stage2_config (NMDevice *dev,
 	}
 
 	/* We'll get stage3 started when the supplicant connects */
-	ret = NM_ACT_STAGE_RETURN_POSTPONE;
+	return NM_ACT_STAGE_RETURN_POSTPONE;
 
 out:
-	return ret;
+	g_object_unref (self->priv->supplicant);
+	self->priv->supplicant = NULL;
+
+	return NM_ACT_STAGE_RETURN_FAILURE;
 }
 
 
