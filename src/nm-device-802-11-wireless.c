@@ -2862,6 +2862,14 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 		/* Activation failed, we must have bad encryption key */
 		nm_debug ("Activation (%s/wireless): could not get IP configuration info for '%s', asking for new key.",
 				nm_device_get_iface (dev), nm_ap_get_essid (ap) ? nm_ap_get_essid (ap) : "(none)");
+
+		/* Kill the supplicant */
+		if (self->priv->supplicant) {
+			g_object_unref (self->priv->supplicant);
+			self->priv->supplicant = NULL;
+		}
+		remove_link_timeout (self);
+
 		nm_dbus_get_user_key_for_network (data->dbus_connection, req, TRUE);
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	}

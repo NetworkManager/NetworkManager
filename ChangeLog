@@ -1,3 +1,11 @@
+2008-01-16  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.c
+		- (real_act_stage4_ip_config_timeout): clean up the supplicant to ensure
+			that the connection attempt starts fresh.  Otherwise, when the key
+			comes back, NM pukes and fails the new attempt because the
+			supplicant can't terminate and start up again quickly enough
+
 2008-01-16  Tambet Ingo  <tambet@gmail.com>
 
 	Shuffle the code a bit in preparation for wired 802.1X authentication.
