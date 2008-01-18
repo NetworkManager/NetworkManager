@@ -342,17 +342,18 @@ real_can_interrupt_activation (NMDevice *dev)
 }
 
 typedef struct BestConnectionInfo {
-	NMDevice8023Ethernet * self;
-	NMConnection * found;
+	NMDevice8023Ethernet *self;
+	NMConnection *found;
 } BestConnectionInfo;
 
 static void
 find_best_connection (gpointer data, gpointer user_data)
 {
-	BestConnectionInfo * info = (BestConnectionInfo *) user_data;
+	BestConnectionInfo *info = (BestConnectionInfo *) user_data;
+	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (info->self);
 	NMConnection *connection = NM_CONNECTION (data);
-	NMSettingConnection * s_con;
-	NMSettingWired * s_wired;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
 
 	if (info->found)
 		return;
@@ -366,8 +367,12 @@ find_best_connection (gpointer data, gpointer user_data)
 		return;
 
 	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
-	if (s_wired == NULL)
-		return;
+	g_return_if_fail (s_wired != NULL);
+
+	if (s_wired->mac_address) {
+		if (memcmp (s_wired->mac_address->data, priv->hw_addr.ether_addr_octet, ETH_ALEN))
+			return;
+	}
 
 	info->found = connection;
 }
@@ -379,17 +384,6 @@ real_get_best_connection (NMDevice *dev,
 {
 	NMDevice8023Ethernet * self = NM_DEVICE_802_3_ETHERNET (dev);
 	BestConnectionInfo find_info;
-	guint32 caps;
-
-	caps = nm_device_get_capabilities (dev);
-
-	/* FIXME: for now, non-carrier-detect devices don't have a best connection,
-	 * the user needs to pick one.  In the near-future, we want to instead
-	 * honor the first 'autoconnect':True connection we find that applies
-	 * to this device.
-	 */
-	if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
-		return NULL;
 
 	memset (&find_info, 0, sizeof (BestConnectionInfo));
 	find_info.self = self;

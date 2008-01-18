@@ -1,5 +1,15 @@
 2008-01-18  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-3-ethernet.c
+		- (find_best_connection): check MAC address too
+		- (real_get_best_connection): let autoconnect=True connections activate
+			for devices that don't have carrier detection
+
+	* src/nm-device-802-11-wireless.c
+		- (find_best_connection): check MAC address too
+
+2008-01-18  Dan Williams  <dcbw@redhat.com>
+
 	* system-settings/plugins/ifcfg/parser.c
 		- (make_connection_setting): interpret ON_BOOT=y as 'autoconnect=True'
 

@@ -845,19 +845,20 @@ real_check_connection_conflicts (NMDevice *device,
 }
 
 typedef struct BestConnectionInfo {
-	NMDevice80211Wireless * self;
-	NMConnection * found;
-	NMAccessPoint * found_ap;
+	NMDevice80211Wireless *self;
+	NMConnection *found;
+	NMAccessPoint *found_ap;
 } BestConnectionInfo;
 
 static void
 find_best_connection (gpointer data, gpointer user_data)
 {
-	BestConnectionInfo * info = (BestConnectionInfo *) user_data;
+	BestConnectionInfo *info = (BestConnectionInfo *) user_data;
+	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (info->self);
 	NMConnection *connection = NM_CONNECTION (data);
-	NMSettingConnection * s_con;
-	NMSettingWireless * s_wireless;
-	GSList * elt;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wireless;
+	GSList *elt;
 
 	if (info->found)
 		return;
@@ -871,8 +872,12 @@ find_best_connection (gpointer data, gpointer user_data)
 		return;
 
 	s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
-	if (s_wireless == NULL)
-		return;
+	g_return_if_fail (s_wireless != NULL);
+
+	if (s_wireless->mac_address) {
+		if (memcmp (s_wireless->mac_address->data, priv->hw_addr.ether_addr_octet, ETH_ALEN))
+			return;
+	}
 
 	for (elt = info->self->priv->ap_list; elt; elt = g_slist_next (elt)) {
 		NMAccessPoint *ap = NM_AP (elt->data);
