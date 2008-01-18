@@ -814,10 +814,12 @@ real_check_connection_conflicts (NMDevice *device,
 	g_assert (system_s_con);
 
 	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
-	g_assert (s_wireless);
+	if (!s_wireless)
+		return FALSE;
 
 	system_s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (system_connection, NM_TYPE_SETTING_WIRELESS));
-	g_assert (system_s_wireless);
+	if (!system_s_wireless)
+		return FALSE;
 
 	if (!system_s_con->lockdown)
 		return FALSE;
