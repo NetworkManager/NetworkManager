@@ -1,5 +1,13 @@
 2008-01-17  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-3-ethernet.c
+		- (nm_device_802_3_ethernet_carrier_on,
+		   nm_device_802_3_ethernet_carrier_off): ignore any spurious netlink
+			carrier events that might come in for devices that don't support
+			carrier detect
+
+2008-01-17  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-interface.c
 		- (nm_device_interface_check_connection_conflicts): need to actually
 			get the interface, not cast to the object

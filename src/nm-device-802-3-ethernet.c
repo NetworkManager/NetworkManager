@@ -84,10 +84,17 @@ nm_device_802_3_ethernet_carrier_on (NMNetlinkMonitor *monitor,
                                      gpointer user_data)
 {
 	NMDevice *dev = NM_DEVICE (user_data);
+	guint32 caps;
 
 	/* Make sure signal is for us */
-	if (nm_netlink_iface_to_index (nm_device_get_iface (dev)) == idx)
+	if (nm_netlink_iface_to_index (nm_device_get_iface (dev)) == idx) {
+		/* Ignore spurious netlink messages */
+		caps = nm_device_get_capabilities (dev);
+		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
+			return;
+
 		nm_device_set_active_link (dev, TRUE);
+	}
 }
 
 static void
@@ -96,10 +103,17 @@ nm_device_802_3_ethernet_carrier_off (NMNetlinkMonitor *monitor,
                                       gpointer user_data)
 {
 	NMDevice *dev = NM_DEVICE (user_data);
+	guint32 caps;
 
 	/* Make sure signal is for us */
-	if (nm_netlink_iface_to_index (nm_device_get_iface (dev)) == idx)
+	if (nm_netlink_iface_to_index (nm_device_get_iface (dev)) == idx) {
+		/* Ignore spurious netlink messages */
+		caps = nm_device_get_capabilities (dev);
+		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
+			return;
+
 		nm_device_set_active_link (dev, FALSE);
+	}
 }
 
 static GObject*
