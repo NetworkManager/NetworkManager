@@ -1,5 +1,12 @@
 2008-01-17  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_device_change_check): clear change check idle here
+		- (device_change_check_done): remove
+		- (schedule_change_check): simplify
+
+2008-01-17  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-manager.c
 		- (check_connection_allowed): take an NMDeviceInterface instead of
 			an NMDevice object as an argument

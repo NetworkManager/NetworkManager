@@ -224,6 +224,8 @@ nm_policy_device_change_check (gpointer user_data)
 	NMDevice * old_dev = NULL;
 	gboolean do_switch = FALSE;
 
+	policy->device_state_changed_idle_id = 0;
+
 	switch (nm_manager_get_state (policy->manager)) {
 	case NM_STATE_CONNECTED:
 		old_dev = nm_manager_get_active_device (policy->manager);
@@ -404,22 +406,13 @@ global_state_changed (NMManager *manager, NMState state, gpointer user_data)
 }
 
 static void
-device_change_check_done (gpointer user_data)
-{
-	NMPolicy *policy = (NMPolicy *) user_data;
-	policy->device_state_changed_idle_id = 0;
-}
-
-static void
 schedule_change_check (NMPolicy *policy)
 {
 	if (policy->device_state_changed_idle_id > 0)
 		return;
 
-	policy->device_state_changed_idle_id = g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
-															nm_policy_device_change_check,
-															policy,
-															device_change_check_done);
+	policy->device_state_changed_idle_id = g_idle_add (nm_policy_device_change_check,
+	                                                   policy);
 }
 
 static NMConnection *
