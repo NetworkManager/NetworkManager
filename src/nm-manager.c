@@ -1163,7 +1163,7 @@ nm_manager_get_device_by_udi (NMManager *manager, const char *udi)
 
 static gboolean
 check_connection_allowed (NMManager *manager,
-                          NMDevice *device,
+                          NMDeviceInterface *dev_iface,
                           NMConnection *connection,
                           const char *specific_object,
                           GError **error)
@@ -1183,7 +1183,7 @@ check_connection_allowed (NMManager *manager,
 		if (connection == system_connection)
 			continue;
 
-		if (nm_device_interface_check_connection_conflicts (NM_DEVICE_INTERFACE (device),
+		if (nm_device_interface_check_connection_conflicts (dev_iface,
 		                                                    connection,
 		                                                    system_connection)) {
 			allowed = FALSE;
@@ -1205,18 +1205,21 @@ nm_manager_activate_device (NMManager *manager,
 					   GError **error)
 {
 	NMActRequest *req;
+	NMDeviceInterface *dev_iface;
 	gboolean success;
 
 	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
 	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
+	dev_iface = NM_DEVICE_INTERFACE (device);
+
 	/* Ensure the requested connection is allowed to be activated */
-	if (!check_connection_allowed (manager, device, connection, specific_object, error))
+	if (!check_connection_allowed (manager, dev_iface, connection, specific_object, error))
 		return FALSE;
 
 	req = nm_act_request_new (connection, specific_object, user_requested);
-	success = nm_device_interface_activate (NM_DEVICE_INTERFACE (device), req, error);
+	success = nm_device_interface_activate (dev_iface, req, error);
 	g_object_unref (req);
 
 	return success;
