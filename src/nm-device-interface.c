@@ -201,10 +201,10 @@ nm_device_interface_check_connection_conflicts (NMDeviceInterface *device,
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (system_connection), FALSE);
 
-	if (!device->check_connection_conflicts)
+	if (!NM_DEVICE_INTERFACE_GET_INTERFACE (device)->check_connection_conflicts)
 		return FALSE;
 
-	return device->check_connection_conflicts (device, connection, system_connection);
+	return NM_DEVICE_INTERFACE_GET_INTERFACE (device)->check_connection_conflicts (device, connection, system_connection);
 }
 
 gboolean

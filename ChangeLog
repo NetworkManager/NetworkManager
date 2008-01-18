@@ -1,5 +1,15 @@
 2008-01-17  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-interface.c
+		- (nm_device_interface_check_connection_conflicts): need to actually
+			get the interface, not cast to the object
+
+	* src/nm-device.c
+		- (nm_device_check_connection_conflicts): need to get the device class,
+			not cast the device to the device class
+
+2008-01-17  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 		- (real_check_connection_conflicts): ignore connections that aren't
 			wireless connections

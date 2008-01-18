@@ -1105,14 +1105,14 @@ nm_device_deactivate (NMDeviceInterface *device)
 }
 
 static gboolean
-nm_device_check_connection_conflicts (NMDeviceInterface *device,
+nm_device_check_connection_conflicts (NMDeviceInterface *dev_iface,
                                       NMConnection *connection,
                                       NMConnection *system_connection)
 {
-	NMDeviceClass *klass = NM_DEVICE_CLASS (NM_DEVICE (device));
+	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (NM_DEVICE (dev_iface));
 
 	if (klass->check_connection_conflicts)
-		return klass->check_connection_conflicts (NM_DEVICE (device), connection, system_connection);
+		return klass->check_connection_conflicts (NM_DEVICE (dev_iface), connection, system_connection);
 
 	return FALSE;
 }
