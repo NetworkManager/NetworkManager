@@ -1060,7 +1060,7 @@ nm_manager_add_device (NMManager *manager, NMDevice *device)
 
 	nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
 
-	nm_info ("(%s): exporting device as %s",
+	nm_info ("(%s): exported as %s",
 		    nm_device_get_iface (device),
 		    nm_device_get_udi (device));
 	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (priv->dbus_mgr),
