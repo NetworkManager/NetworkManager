@@ -1,5 +1,11 @@
 2008-01-19  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-11-wireless.c
+		- (real_get_best_connection): collapse find_best_connection() into this
+			function
+
+2008-01-19  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-3-ethernet.c
 		- (real_get_best_connection): collapse find_best_connection() into this
 			function

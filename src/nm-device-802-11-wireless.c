@@ -844,70 +844,48 @@ real_check_connection_conflicts (NMDevice *device,
 	return FALSE;
 }
 
-typedef struct BestConnectionInfo {
-	NMDevice80211Wireless *self;
-	NMConnection *found;
-	NMAccessPoint *found_ap;
-} BestConnectionInfo;
-
-static void
-find_best_connection (gpointer data, gpointer user_data)
-{
-	BestConnectionInfo *info = (BestConnectionInfo *) user_data;
-	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (info->self);
-	NMConnection *connection = NM_CONNECTION (data);
-	NMSettingConnection *s_con;
-	NMSettingWireless *s_wireless;
-	GSList *elt;
-
-	if (info->found)
-		return;
-
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
-	if (s_con == NULL)
-		return;
-	if (strcmp (s_con->type, NM_SETTING_WIRELESS_SETTING_NAME))
-		return;
-	if (!s_con->autoconnect)
-		return;
-
-	s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
-	g_return_if_fail (s_wireless != NULL);
-
-	if (s_wireless->mac_address) {
-		if (memcmp (s_wireless->mac_address->data, priv->hw_addr.ether_addr_octet, ETH_ALEN))
-			return;
-	}
-
-	for (elt = info->self->priv->ap_list; elt; elt = g_slist_next (elt)) {
-		NMAccessPoint *ap = NM_AP (elt->data);
-
-		if (nm_ap_check_compatible (ap, connection)) {
-			/* All good; connection is usable */
-			info->found = connection;
-			info->found_ap = ap;
-			break;
-		}
-	}
-}
-
 static NMConnection *
 real_get_best_connection (NMDevice *dev,
                           GSList *connections,
                           char **specific_object)
 {
-	NMDevice80211Wireless * self = NM_DEVICE_802_11_WIRELESS (dev);
-	BestConnectionInfo find_info;
+	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
+	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
+	GSList *iter, *ap_iter;
 
-	memset (&find_info, 0, sizeof (BestConnectionInfo));
-	find_info.self = self;
-	/* Assumes 'connections' list is already sorted according to timestamp */
-	g_slist_foreach (connections, find_best_connection, &find_info);
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
+		NMConnection *connection = NM_CONNECTION (iter->data);
+		NMSettingConnection *s_con;
+		NMSettingWireless *s_wireless;
 
-	if (find_info.found)
-		*specific_object = (char *) nm_ap_get_dbus_path (find_info.found_ap);
-	
-	return find_info.found;
+		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+		if (s_con == NULL)
+			continue;
+		if (strcmp (s_con->type, NM_SETTING_WIRELESS_SETTING_NAME))
+			continue;
+		if (!s_con->autoconnect)
+			continue;
+
+		s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+		if (!s_wireless)
+			continue;
+
+		if (s_wireless->mac_address) {
+			if (memcmp (s_wireless->mac_address->data, priv->hw_addr.ether_addr_octet, ETH_ALEN))
+				continue;
+		}
+
+		for (ap_iter = priv->ap_list; ap_iter; ap_iter = g_slist_next (ap_iter)) {
+			NMAccessPoint *ap = NM_AP (ap_iter->data);
+
+			if (nm_ap_check_compatible (ap, connection)) {
+				/* All good; connection is usable */
+				*specific_object = (char *) nm_ap_get_dbus_path (ap);
+				return connection;
+			}
+		}
+	}
+	return NULL;
 }
 
 /*
