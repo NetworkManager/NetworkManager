@@ -341,54 +341,40 @@ real_can_interrupt_activation (NMDevice *dev)
 	return interrupt;
 }
 
-typedef struct BestConnectionInfo {
-	NMDevice8023Ethernet *self;
-	NMConnection *found;
-} BestConnectionInfo;
-
-static void
-find_best_connection (gpointer data, gpointer user_data)
-{
-	BestConnectionInfo *info = (BestConnectionInfo *) user_data;
-	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (info->self);
-	NMConnection *connection = NM_CONNECTION (data);
-	NMSettingConnection *s_con;
-	NMSettingWired *s_wired;
-
-	if (info->found)
-		return;
-
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
-	if (s_con == NULL)
-		return;
-	if (strcmp (s_con->type, NM_SETTING_WIRED_SETTING_NAME))
-		return;
-	if (!s_con->autoconnect)
-		return;
-
-	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
-	g_return_if_fail (s_wired != NULL);
-
-	if (s_wired->mac_address) {
-		if (memcmp (s_wired->mac_address->data, priv->hw_addr.ether_addr_octet, ETH_ALEN))
-			return;
-	}
-
-	info->found = connection;
-}
-
 static NMConnection *
 real_get_best_connection (NMDevice *dev,
-			  GSList *connections,
+                          GSList *connections,
                           char **specific_object)
 {
-	NMDevice8023Ethernet * self = NM_DEVICE_802_3_ETHERNET (dev);
-	BestConnectionInfo find_info;
+	NMDevice8023Ethernet *self = NM_DEVICE_802_3_ETHERNET (dev);
+	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self);
+	GSList *iter;
 
-	memset (&find_info, 0, sizeof (BestConnectionInfo));
-	find_info.self = self;
-	g_slist_foreach (connections, find_best_connection, &find_info);
-	return find_info.found;
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
+		NMConnection *connection = NM_CONNECTION (iter->data);
+		NMSettingConnection *s_con;
+		NMSettingWired *s_wired;
+
+		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+		g_assert (s_con);
+
+		if (strcmp (s_con->type, NM_SETTING_WIRED_SETTING_NAME))
+			continue;
+		if (!s_con->autoconnect)
+			continue;
+
+		s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
+		if (!s_wired)
+			continue;
+
+		if (s_wired->mac_address) {
+			if (memcmp (s_wired->mac_address->data, priv->hw_addr.ether_addr_octet, ETH_ALEN))
+				continue;
+		}
+
+		return connection;
+	}
+	return NULL;
 }
 
 static void
