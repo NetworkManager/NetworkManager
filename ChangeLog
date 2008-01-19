@@ -1,5 +1,13 @@
 2008-01-19  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_device_change_check): system connections override user
+			connections; don't activate a user connection if there's a currently
+			active system connection, and new, better system connections always
+			interrupt user connections
+
+2008-01-19  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-manager.h
 		- (nm_manager_get_connection_type): new function
 

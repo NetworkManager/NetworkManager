@@ -315,6 +315,27 @@ nm_policy_device_change_check (gpointer user_data)
 		gboolean old_user_requested = nm_act_request_get_user_requested (old_act_req);
 		gboolean old_has_link = nm_device_has_active_link (old_dev);
 
+		/* If an old device is active or being activated, and its connection is
+		 * a system connection, and the best connection is a user connection,
+		 * don't switch.
+		 */
+		if (   old_connection
+		    && (nm_manager_get_connection_type (old_connection) == NM_CONNECTION_TYPE_SYSTEM)
+		    && (nm_manager_get_connection_type (connection) == NM_CONNECTION_TYPE_USER))
+			goto out;
+
+		if (   (nm_manager_get_connection_type (connection) == NM_CONNECTION_TYPE_SYSTEM)
+		    && (nm_manager_get_connection_type (old_connection) == NM_CONNECTION_TYPE_USER)) {
+			do_switch = TRUE;
+			nm_info ("SWITCH: found system connection '%s (%s)', overrides"
+			         " current connection '%s (%s)'.",
+			         connection ? get_connection_id (connection) : "(none)",
+			         nm_device_get_iface (new_dev),
+			         old_connection ? get_connection_id (old_connection) : "(none)",
+			         nm_device_get_iface (old_dev));
+			goto do_switch;
+		}
+
 		if (NM_IS_DEVICE_802_3_ETHERNET (old_dev)) {
 			/* Only switch if the old device was not user requested, and we are switching to
 			 * a new device.  Note that new_dev will never be wireless since automatic device picking
@@ -364,6 +385,7 @@ nm_policy_device_change_check (gpointer user_data)
 		}
 	}
 
+do_switch:
 	if (do_switch) {
 		// FIXME: remove old_dev deactivation when multiple device support lands
 		if (old_dev)
