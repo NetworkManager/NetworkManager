@@ -100,7 +100,7 @@ make_connection_setting (const char *file,
 	s_con->type = g_strdup (type);
 
 	/* Be somewhat conservative about autoconnect */
-	if (svTrueValue (ifcfg, "ON_BOOT", FALSE))
+	if (svTrueValue (ifcfg, "ONBOOT", FALSE))
 		s_con->autoconnect = TRUE;
 
 	return (NMSetting *) s_con;
