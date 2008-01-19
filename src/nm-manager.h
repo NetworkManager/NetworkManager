@@ -96,4 +96,17 @@ NMConnection * nm_manager_get_connection_by_object_path (NMManager *manager,
                                                          NMConnectionType type,
                                                          const char *path);
 
+static inline NMConnectionType
+nm_manager_get_connection_type (NMConnection *connection)
+{
+	NMConnectionType type;
+
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NM_CONNECTION_TYPE_UNKNOWN);
+
+	type = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_TYPE_TAG));
+	if (type != NM_CONNECTION_TYPE_USER && type != NM_CONNECTION_TYPE_SYSTEM)
+		type = NM_CONNECTION_TYPE_UNKNOWN;
+	return type;
+}
+
 #endif /* NM_MANAGER_H */
