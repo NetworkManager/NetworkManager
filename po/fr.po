@@ -1,226 +1,66 @@
 # French translation of NetworkManager.
-# Copyright (C) 2004-2007 The GNOME Foundation.
+# Copyright (C) 2004-2008 The GNOME Foundation.
 # This file is distributed under the same license as the NetworkManager package.
 #
 # Raphaël Tournoy <lexpas@free.fr>, 2004.
-# Stéphane Raimbault <stephae.raimbault@free.fr>, 2006.
+# Stéphane Raimbault <stephane.raimbault@gmail.com>, 2006-2008.
 # Jonathan Ernst <jonathan@ernstfamily.ch>, 2007.
+# Robert-André Mauchin <zebob.m@pengzone.org>, 2007.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager 0.7.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-02-11 05:01+0100\n"
-"PO-Revision-Date: 2007-01-26 10:39+0100\n"
-"Last-Translator: Jonathan Ernst <jonathan@ernstfamily.ch>\n"
+"POT-Creation-Date: 2008-01-19 16:15+0100\n"
+"PO-Revision-Date: 2008-01-19 16:13+0100\n"
+"Last-Translator: Stéphane Raimbault <stephane.raimbault@gmail.com>\n"
 "Language-Team: GNOME French Team <gnomefr@traduc.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n>1;\n"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:417
-msgid "Cannot add VPN connection"
-msgstr "Impossible d'ajouter des connexions VPN"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:419
-msgid ""
-"No suitable VPN software was found on your system. Contact your system "
-"administrator."
-msgstr ""
-"Aucun logiciel VPN adéquat n'a été trouvé sur votre système. Contactez votre "
-"administrateur système."
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:461
-msgid "Cannot import VPN connection"
-msgstr "Impossible d'importer la connexion VPN"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:463
+#: ../src/nm-netlink-monitor.c:188 ../src/nm-netlink-monitor.c:448
 #, c-format
-msgid ""
-"Cannot find suitable software for VPN connection type '%s' to import the "
-"file '%s'. Contact your system administrator."
-msgstr ""
-"Impossible de trouver un logiciel adéquat supportant la connexion VPN de "
-"type « %s » pour importer le fichier « %s ». Contactez votre administrateur "
-"système."
+msgid "error processing netlink message: %s"
+msgstr "erreur lors du traitement du message netlink : %s"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:580
+#: ../src/nm-netlink-monitor.c:245
 #, c-format
-msgid "Error retrieving VPN connection '%s'"
-msgstr "Impossible de maintenir la connexion VPN « %s »"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:583
-#, c-format
-msgid ""
-"Could not find the UI files for VPN connection type '%s'. Contact your "
-"system administrator."
+msgid "unable to allocate netlink handle for monitoring link status: %s"
 msgstr ""
-"Impossible de trouver les fichiers de l'interface utilisateur pour la "
-"connexion VPN de type « %s ». Contactez votre administrateur système."
+"impossible d'allouer un gestionnaire netlink pour surveiller l'état de la "
+"connexion : %s"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:727
+#: ../src/nm-netlink-monitor.c:255
 #, c-format
-msgid "Delete VPN connection \"%s\"?"
-msgstr "Voulez-vous supprimer la connexion VPN « %s » ?"
+msgid "unable to connect to netlink for monitoring link status: %s"
+msgstr ""
+"impossible de se connecter à netlink pour surveiller l'état de la "
+"connexion : %s"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:730
+#: ../src/nm-netlink-monitor.c:263
 #, c-format
-msgid ""
-"All information about the VPN connection \"%s\" will be lost and you may "
-"need your system administrator to provide information to create a new "
-"connection."
+msgid "unable to join netlink group for monitoring link status: %s"
 msgstr ""
-"Toutes les informations au sujet de la connexion « %s » seront perdues et il "
-"se peut que vous ayez besoin de votre administrateur système pour créer une "
-"nouvelle connexion."
+"impossible de joindre le group netlink pour surveiller l'état de la "
+"connexion : %s"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:924
-msgid "Unable to load"
-msgstr "Impossible de charger"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:926
-msgid "Cannot find some needed resources (the glade file)!"
-msgstr "Impossible de trouver les ressources requises (le fichier glade)."
-
-#. druid_window = GTK_DIALOG (gtk_dialog_new_with_buttons (_("Create VPN Connection"),
-#. NULL,
-#. GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-#. GTK_STOCK_CANCEL,
-#. GTK_RESPONSE_REJECT,
-#. GTK_STOCK_APPLY,
-#. GTK_RESPONSE_ACCEPT,
-#. NULL));
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1081
-msgid "Create VPN Connection"
-msgstr "Création d'une connexion VPN"
-
-#. gtk_container_add (GTK_CONTAINER (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")));
-#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(druid), TRUE,TRUE,0);
-#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")), TRUE,TRUE,0);
-#. toplevel = gtk_widget_get_toplevel (GTK_WIDGET (druid));
-#. gtk_signal_connect (GTK_OBJECT (toplevel), "delete_event", GTK_SIGNAL_FUNC (vpn_window_close), NULL);
-#. make the druid window modal wrt. our main window
-#. gtk_window_set_modal (druid_window, TRUE);
-#. gtk_window_set_transient_for (GTK_WINDOW(druid_window), GTK_WINDOW (dialog));
-#. Edit dialog
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1099
-msgid "Edit VPN Connection"
-msgstr "Édition de la connexion VPN"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:1
-msgid "Add a new VPN connection"
-msgstr "Ajoute une nouvelle connexion VPN"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
-msgid "Delete the selected VPN connection"
-msgstr "Supprime la connexion VPN sélectionnée"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
-msgid "E_xport"
-msgstr "E_xporter"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
-msgid "Edit the selected VPN connection"
-msgstr "Édite la connexion VPN sélectionnée"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
-msgid "Export the VPN settings to a file"
-msgstr "Exporte les paramètres VPN dans un fichier"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
-msgid "Export the selected VPN connection to a file"
-msgstr "Exporte la connexion VPN sélectionnée dans un fichier"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
-msgid "Manage Virtual Private Network Connections"
-msgstr "Gérer les connexions réseaux privés virtuels"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
-msgid "VPN Connections"
-msgstr "Connexions VPN"
-
-#: ../src/nm-ap-security-wep.c:52
-msgid "40-bit WEP"
-msgstr "WEB 40-bit"
-
-#: ../src/nm-ap-security-wep.c:54
-msgid "104-bit WEP"
-msgstr "WEP 104-bit"
-
-#: ../src/nm-ap-security-wpa-psk.c:51
-msgid "WPA TKIP"
-msgstr "WPA TKIP"
-
-#: ../src/nm-ap-security-wpa-psk.c:53
-msgid "WPA CCMP"
-msgstr "WPA CCMP"
-
-#: ../src/nm-ap-security-wpa-psk.c:55
-msgid "WPA Automatic"
-msgstr "WPA Automatique"
-
-#: ../src/nm-ap-security-wpa-psk.c:60
-msgid "WPA2 TKIP"
-msgstr "WPA2 TKIP"
-
-#: ../src/nm-ap-security-wpa-psk.c:62
-msgid "WPA2 CCMP"
-msgstr "WPA2 CCMP"
-
-#: ../src/nm-ap-security-wpa-psk.c:64
-msgid "WPA2 Automatic"
-msgstr "WPA2 Automatique"
-
-#: ../src/nm-ap-security.c:334
-msgid "none"
-msgstr "Aucun"
-
-#: ../src/nm-netlink-monitor.c:174
+#: ../src/nm-netlink-monitor.c:271
 #, c-format
-msgid ""
-"unable to create netlink socket for monitoring wired ethernet devices - %s"
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
 msgstr ""
-"impossible de créer une socket réseau pour surveiller les périphériques "
-"ethernet câblés - %s"
+"impossible d'allouer un cache de connexion netlink pour surveiller l'état de "
+"la connexion : %s"
 
-#: ../src/nm-netlink-monitor.c:192
+#: ../src/nm-netlink-monitor.c:471
 #, c-format
-msgid ""
-"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
-msgstr ""
-"impossible d'associer une socket réseau pour surveiller les périphériques "
-"ethernet câblés - %s"
-
-#: ../src/nm-netlink-monitor.c:427
-msgid "operation took too long"
-msgstr "l'opération a été trop longue"
-
-#: ../src/nm-netlink-monitor.c:524
-msgid "received data from wrong type of sender"
-msgstr "réception de données depuis le mauvais type d'expéditeur"
-
-#: ../src/nm-netlink-monitor.c:537
-msgid "received data from unexpected sender"
-msgstr "réception de données depuis un expéditeur non attendu"
-
-#: ../src/nm-netlink-monitor.c:666
-msgid "too much data was sent over socket and some of it was lost"
-msgstr ""
-"trop de données ont été envoyées sur la socket et certaines ont été perdues"
-
-#: ../src/nm-netlink-monitor.c:774
 msgid "error occurred while waiting for data on socket"
-msgstr "une erreur est survenue pendant l'attente de données sur la socket"
+msgstr "une erreur est survenue pendant l'attente de données sur le connecteur"
 
-#: ../src/nm-ap-security-wpa-eap.c:93 ../src/nm-ap-security-wpa-eap.c:117
-msgid "WPA2 Enterprise"
-msgstr "WPA2 entreprise"
-
-#: ../src/nm-ap-security-wpa-eap.c:95 ../src/nm-ap-security-wpa-eap.c:122
-msgid "WPA Enterprise"
-msgstr "WPA entreprise"
-
-#: ../src/nm-ap-security-leap.c:66 ../src/nm-ap-security-leap.c:82
-msgid "LEAP"
-msgstr "LEAP"
+#: ../src/NetworkManager.c:255
+#, c-format
+msgid "Invalid option.  Please use --help to see a list of valid options.\n"
+msgstr ""
+"Option non valide.  Utilisez --help pour afficher une liste d'options "
+"valides.\n"
