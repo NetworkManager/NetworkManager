@@ -1,5 +1,35 @@
 2008-01-21  Dan Williams  <dcbw@redhat.com>
 
+	* include/NetworkManager.h
+		- Add CDMA mobile broadband card device type
+
+	* src/nm-hal-manager.c
+		- (modem_device_creator): handle both CDMA and GSM modems; the device
+			must now be tagged with 'cdma' or 'gsm' capability
+
+	* src/nm-cdma-device.c
+	  src/nm-cdma-device.h
+	  src/Makefile.am
+		- Add the CDMA mobile broadband card device class
+
+	* libnm-util/nm-connection.c
+		- (register_default_settings): add NMSettingCdma
+
+	* libnm-util/nm-setting-cdma.c
+	  libnm-util/nm-setting-cdma.h
+	  libnm-util/Makefile.am
+		- Add the CDMA mobile broadband card setting class
+
+	* libnm-glib/nm-cdma-device.c
+	  libnm-glib/nm-cdma-device.h
+	  libnm-glib/Makefile.am
+		- Add the CDMA mobile broadband card GLib proxy class
+
+	* libnm-glib/nm-client.c
+		- (get_device): handle CDMA devices too
+
+2008-01-21  Dan Williams  <dcbw@redhat.com>
+
 	* src/ppp-manager/nm-ppp-manager.c
 		- (ip4_config_get): set peer address too
 

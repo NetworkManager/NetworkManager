@@ -13,6 +13,7 @@
 #include "nm-device-802-11-wireless.h"
 #include "nm-device-802-3-ethernet.h"
 #include "nm-gsm-device.h"
+#include "nm-cdma-device.h"
 
 /* Killswitch poll frequency in seconds */
 #define NM_HAL_MANAGER_KILLSWITCH_POLL_FREQUENCY 6
@@ -194,6 +195,9 @@ modem_device_creator (NMHalManager *manager, const char *udi)
 	char *parent_udi;
 	char *driver_name = NULL;
 	NMDevice *device = NULL;
+	char **capabilities, **iter;
+	gboolean type_gsm = FALSE;
+	gboolean type_cdma = FALSE;
 
 	serial_device = libhal_device_get_property_string (manager->hal_ctx, udi, "serial.device", NULL);
 
@@ -204,9 +208,28 @@ modem_device_creator (NMHalManager *manager, const char *udi)
 		libhal_free_string (parent_udi);
 	}
 
-	if (serial_device && driver_name)
-		device = (NMDevice *) nm_gsm_device_new (udi, serial_device + strlen ("/dev/"), NULL, driver_name);
+	if (!serial_device || !driver_name)
+		goto out;
 
+	capabilities = libhal_device_get_property_strlist (manager->hal_ctx, udi, "info.capabilities", NULL);
+	for (iter = capabilities; *iter; iter++) {
+		if (!strcmp (*iter, "gsm")) {
+			type_gsm = TRUE;
+			break;
+		}
+		if (!strcmp (*iter, "cdma")) {
+			type_cdma = TRUE;
+			break;
+		}
+	}
+	g_strfreev (capabilities);
+
+	if (type_gsm)
+		device = (NMDevice *) nm_gsm_device_new (udi, serial_device + strlen ("/dev/"), NULL, driver_name);
+	else if (type_cdma)
+		device = (NMDevice *) nm_cdma_device_new (udi, serial_device + strlen ("/dev/"), NULL, driver_name);
+
+out:
 	libhal_free_string (serial_device);
 	libhal_free_string (driver_name);
 
@@ -234,9 +257,9 @@ register_built_in_creators (NMHalManager *manager)
 	creator->creator_fn = wireless_device_creator;
 	manager->device_creators = g_slist_append (manager->device_creators, creator);
 
-	/* GSM Modem */
+	/* Modem */
 	creator = g_slice_new0 (DeviceCreator);
-	creator->device_type_name = g_strdup ("GSM modem");
+	creator->device_type_name = g_strdup ("Modem");
 	creator->capability_str = g_strdup ("modem");
 	creator->is_device_fn = is_modem_device;
 	creator->creator_fn = modem_device_creator;

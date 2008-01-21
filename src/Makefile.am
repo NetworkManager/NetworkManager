@@ -60,6 +60,8 @@ NetworkManager_SOURCES =				\
 		nm-serial-device.h		\
 		nm-gsm-device.c		\
 		nm-gsm-device.h		\
+		nm-cdma-device.c		\
+		nm-cdma-device.h		\
 		autoip.c					\
 		autoip.h					\
 		kernel-types.h			\

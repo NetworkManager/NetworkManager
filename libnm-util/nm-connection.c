@@ -17,6 +17,7 @@
 
 #include "nm-setting-serial.h"
 #include "nm-setting-gsm.h"
+#include "nm-setting-cdma.h"
 
 typedef struct {
 	GHashTable *settings;
@@ -51,6 +52,7 @@ register_default_settings (void)
 		{ NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NM_TYPE_SETTING_WIRELESS_SECURITY },
 		{ NM_SETTING_SERIAL_SETTING_NAME,            NM_TYPE_SETTING_SERIAL },
 		{ NM_SETTING_GSM_SETTING_NAME,               NM_TYPE_SETTING_GSM },
+		{ NM_SETTING_CDMA_SETTING_NAME,              NM_TYPE_SETTING_CDMA },
 		{ NM_SETTING_PPP_SETTING_NAME,               NM_TYPE_SETTING_PPP },
 		{ NM_SETTING_VPN_SETTING_NAME,               NM_TYPE_SETTING_VPN },
 		{ NM_SETTING_VPN_PROPERTIES_SETTING_NAME,    NM_TYPE_SETTING_VPN_PROPERTIES },
