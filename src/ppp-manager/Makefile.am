@@ -18,7 +18,7 @@ libppp_manager_la_CPPFLAGS = \
 	-DG_DISABLE_DEPRECATED \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DLIBDIR=\"$(libdir)\" \
-	-DPLUGINDIR=\"$(pkglibdir)\"
+	-DPLUGINDIR=\"$(PPPD_PLUGIN_DIR)\"
 
 libppp_manager_la_LIBADD = \
 	$(DBUS_LIBS) \
