@@ -239,6 +239,7 @@ nm_ip_up (void *data, int arg)
 {
 	NMPppdPlugin *plugin = NM_PPPD_PLUGIN (data);
 	ipcp_options opts = ipcp_gotoptions[ifunit];
+	ipcp_options peer_opts = ipcp_hisoptions[ifunit];
 	GHashTable *hash;
 	GArray *array;
 	GValue *val;
@@ -253,10 +254,18 @@ nm_ip_up (void *data, int arg)
 
 	g_hash_table_insert (hash, NM_PPP_IP4_CONFIG_INTERFACE, 
 					 str_to_gvalue (ifname));
+
 	g_hash_table_insert (hash, NM_PPP_IP4_CONFIG_ADDRESS, 
 					 uint_to_gvalue (opts.ouraddr));
-	g_hash_table_insert (hash, NM_PPP_IP4_CONFIG_GATEWAY, 
-					 uint_to_gvalue (opts.hisaddr));
+
+	if (opts.hisaddr) {
+		g_hash_table_insert (hash, NM_PPP_IP4_CONFIG_GATEWAY, 
+						 uint_to_gvalue (opts.hisaddr));
+	} else if (peer_opts.hisaddr) {
+		g_hash_table_insert (hash, NM_PPP_IP4_CONFIG_GATEWAY, 
+						 uint_to_gvalue (peer_opts.hisaddr));
+	}
+
 	g_hash_table_insert (hash, NM_PPP_IP4_CONFIG_NETMASK, 
 					 uint_to_gvalue (0xFFFFFFFF));
 

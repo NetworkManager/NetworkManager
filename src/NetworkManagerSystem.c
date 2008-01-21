@@ -195,6 +195,7 @@ nm_system_device_set_from_ip4_config (const char *iface,
 	struct rtnl_addr *	addr = NULL;
 	int				err;
 	int len, i;
+	guint32 flags;
 
 	g_return_val_if_fail (iface != NULL, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
@@ -208,7 +209,11 @@ nm_system_device_set_from_ip4_config (const char *iface,
 	nm_system_device_flush_routes_with_iface (iface);
 	nm_system_flush_arp_cache ();
 
-	if ((addr = nm_ip4_config_to_rtnl_addr (config, NM_RTNL_ADDR_DEFAULT))) {
+	flags = NM_RTNL_ADDR_DEFAULT;
+	if (nm_ip4_config_get_ptp_address (config))
+		flags |= NM_RTNL_ADDR_PTP_ADDR;
+
+	if ((addr = nm_ip4_config_to_rtnl_addr (config, flags))) {
 		rtnl_addr_set_ifindex (addr, nm_netlink_iface_to_index (iface));
 
 		if ((err = rtnl_addr_add (nlh, addr, 0)) < 0)
