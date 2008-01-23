@@ -92,9 +92,8 @@ NMAccessPoint *	nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wirele
 													const char *essid,
 													NMAPSecurity *security);
 
-void			nm_device_802_11_wireless_set_scan_interval (struct NMData *data,
-                                                            NMDevice80211Wireless *dev,
-                                                            NMWirelessScanInterval interval);
+void			nm_device_802_11_wireless_ui_activated (struct NMData *data,
+                                                        NMWirelessScanInterval interval);
 
 void	nm_device_802_11_wireless_copy_allowed_to_dev_list (NMDevice80211Wireless *self,
 											  struct NMAccessPointList *allowed_list);

@@ -513,7 +513,7 @@ static DBusHandlerResult nm_dbus_signal_filter (DBusConnection *connection, DBus
 		}
 		else if (dbus_message_is_signal (message, NMI_DBUS_INTERFACE, "UserInterfaceActivated"))
 		{
-			nm_device_802_11_wireless_set_scan_interval (data, NULL, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
+			nm_device_802_11_wireless_ui_activated (data, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
 			handled = TRUE;
 		}
 	}

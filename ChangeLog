@@ -1,3 +1,35 @@
+2008-01-23  Dan Williams  <dcbw@redhat.com>
+
+	Fix up the scan algorithm to help gnome.org #498887.
+
+	* src/nm-device-802-11-wireless.c
+	  src/nm-device-802-11-wireless.h
+		- (nm_device_802_11_wireless_set_scan_interval): make static, and
+			only change a specific device's scan interval.  If the scan interval
+			is now ACTIVE, schedule a scan at the earliest possible opportunity
+			as long as the last scan was at least 20 seconds ago
+		- (real_init, real_deactivate, 
+		- (real_start): use schedule_scan() instead of rolling the scan
+			scheduling code manually
+		- (set_scan_interval_cb -> set_inactive_scan_interval_cb): call
+			nm_device_802_11_wireless_ui_activated() instead of
+			nm_device_802_11_wireless_set_scan_interval() because the change is
+			really global to all wireless devices
+		- (set_inactive_scan_timeout): new function; reset the INVACTIVE scan
+			interval timeout
+		- (nm_device_802_11_wireless_ui_activated): reset the scan interval
+			for all wireless devices
+		- (request_and_convert_scan_results): don't set last_scan here
+		- (scan_results_timeout): set last_scan here instead, and after the
+			first successful scan, set the scan interval from INIT -> ACTIVE
+		- (nm_device_802_11_wireless_scan): cleanups
+		- (schedule_scan): take a new argument so that callers can specify the
+			scan interval if they desire
+
+	* src/NetworkManagerDbus.c
+		- (nm_dbus_signal_filter): call nm_device_802_11_wireless_ui_activated()
+			instead of nm_device_802_11_wireless_set_scan_interval()
+
 2008-01-16  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-11-wireless.c

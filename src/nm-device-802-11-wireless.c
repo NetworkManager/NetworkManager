@@ -102,14 +102,11 @@ static gboolean nm_device_802_11_wireless_scan (gpointer user_data);
 
 static void	cancel_scan_results_timeout (NMDevice80211Wireless *self);
 
-static void	cancel_pending_scan (NMDevice80211Wireless *self);
-
-static void	request_and_convert_scan_results (NMDevice80211Wireless *self);
-
 static gboolean	process_scan_results (NMDevice80211Wireless *dev,
                                           const guint8 *res_buf,
                                           guint32 res_buf_len);
-static void	schedule_scan (NMDevice80211Wireless *self);
+
+static void	schedule_scan (NMDevice80211Wireless *self, guint32 ms);
 
 static int	wireless_qual_to_percent (const struct iw_quality *qual,
                                          const struct iw_quality *max_qual,
@@ -132,6 +129,9 @@ static void		nm_device_802_11_wireless_event (NmNetlinkMonitor *monitor,
                                                      char *data,
                                                      int data_len,
                                                      NMDevice80211Wireless *self);
+
+static void		nm_device_802_11_wireless_set_scan_interval (NMDevice80211Wireless *self,
+                                                             NMWirelessScanInterval interval);
 
 /*
  * nm_device_802_11_wireless_update_signal_strength
@@ -410,7 +410,8 @@ real_init (NMDevice *dev)
 	self->priv->ap_list = nm_ap_list_new (NETWORK_TYPE_DEVICE);
 
 	app_data = nm_device_get_app_data (NM_DEVICE (self));
-	nm_device_802_11_wireless_set_scan_interval (app_data, self, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
+
+	nm_device_802_11_wireless_set_scan_interval (self, NM_WIRELESS_SCAN_INTERVAL_INIT);
 
 	nm_device_802_11_wireless_set_mode (self, IW_MODE_INFRA);
 
@@ -644,19 +645,11 @@ real_start (NMDevice *dev)
 	guint				source_id;
 
 	/* Start the scanning timeout for devices that can do scanning */
-	if (nm_device_get_capabilities (dev) & NM_DEVICE_CAP_WIRELESS_SCAN)
-	{
+	if (nm_device_get_capabilities (dev) & NM_DEVICE_CAP_WIRELESS_SCAN) {
 		/* Stupid orinoco has problems scanning immediately after being up,
 		 * so wait a bit before triggering a scan.
 		 */
-		self->priv->pending_scan = g_timeout_source_new (600);
-		g_source_set_callback (self->priv->pending_scan,
-							   nm_device_802_11_wireless_scan,
-							   self,
-							   nm_device_802_11_wireless_scan_done);
-		source_id = g_source_attach (self->priv->pending_scan,
-				nm_device_get_main_context (dev));
-		g_source_unref (self->priv->pending_scan);
+		schedule_scan (self, 600);
 	}
 
 	/* Peridoically update link status and signal strength */
@@ -684,16 +677,15 @@ static void
 real_deactivate (NMDevice *dev)
 {
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
-	NMData *				app_data;
-
-	app_data = nm_device_get_app_data (dev);
-	g_assert (app_data);
 
 	/* Clean up stuff, don't leave the card associated */
 	nm_device_802_11_wireless_set_essid (self, "");
 	nm_device_802_11_wireless_set_wep_enc_key (self, NULL, 0);
 	nm_device_802_11_wireless_set_mode (self, IW_MODE_INFRA);
-	nm_device_802_11_wireless_set_scan_interval (app_data, self, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
+
+	/* Don't re-set the scan interval if there hasn't been a scan yet */
+	if (self->priv->last_scan > 0)
+		nm_device_802_11_wireless_set_scan_interval (self, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
 }
 
 
@@ -1096,59 +1088,76 @@ nm_device_802_11_wireless_ap_list_get (NMDevice80211Wireless *self)
 
 
 static gboolean
-set_scan_interval_cb (gpointer user_data)
+set_inactive_scan_interval_cb (gpointer user_data)
 {
 	NMData *data = (NMData*) user_data;
 
-	nm_device_802_11_wireless_set_scan_interval (data, NULL, NM_WIRELESS_SCAN_INTERVAL_INACTIVE);
-
+	nm_device_802_11_wireless_ui_activated (data, NM_WIRELESS_SCAN_INTERVAL_INACTIVE);
 	return FALSE;
 }
 
-void
-nm_device_802_11_wireless_set_scan_interval (NMData *data,
-                                             NMDevice80211Wireless *self,
+static void
+set_inactive_scan_timeout (NMData *data, NMWirelessScanInterval interval)
+{
+	static GSource *source = NULL;
+
+	if (source) {
+		g_source_destroy (source);
+		g_source_unref (source);
+	}
+
+	if (interval != NM_WIRELESS_SCAN_INTERVAL_INACTIVE) {
+		source = g_timeout_source_new (120000);
+		g_source_set_callback (source, set_inactive_scan_interval_cb, (gpointer) data, NULL);
+		g_source_attach (source, data->main_context);
+	}
+}
+
+static void
+nm_device_802_11_wireless_set_scan_interval (NMDevice80211Wireless *self,
                                              NMWirelessScanInterval interval)
 {
-	static guint	source_id = 0;
-	GSource *		source = NULL;
-	GSList *		elt;
-	gboolean		found = FALSE;
-	guint8		seconds = nm_wireless_scan_interval_to_seconds (interval);
+	guint8 seconds = nm_wireless_scan_interval_to_seconds (interval);
 
-	g_return_if_fail (data != NULL);
+	g_return_if_fail (self != NULL);
 
-	if (source_id != 0)
-		g_source_remove (source_id);
+	self->priv->scan_interval = seconds;	
 
-	for (elt = data->dev_list; elt; elt = g_slist_next (elt))
-	{
-		NMDevice *d = (NMDevice *)(elt->data);
-		if (self && (NM_DEVICE (self) != d))
-			continue;
+	if (interval == NM_WIRELESS_SCAN_INTERVAL_ACTIVE && !self->priv->scanning) {
+		glong new_next_scan = self->priv->last_scan + seconds;
+		GTimeVal cur_time;
 
-		if (d && nm_device_is_802_11_wireless (d))
-		{
-			NM_DEVICE_802_11_WIRELESS (d)->priv->scan_interval = seconds;
-			if (self && (NM_DEVICE (self) == d))
-				found = TRUE;
+		g_get_current_time (&cur_time);
+
+		if (new_next_scan <= cur_time.tv_sec) {
+			/* If the interval is now ACTIVE, and the last scan was more than the
+			 * ACTIVE interval seconds ago, schedule an immediate scan.
+			 */
+			schedule_scan (self, 200);
+		} else if (new_next_scan > cur_time.tv_sec) {
+			/* If the interval is now ACTIVE, and the last scan was less than the
+			 * ACTIVE interval seconds ago, schedule a scan at last_scan + ACTIVE
+			 * interval seconds.
+			 */
+			schedule_scan (self, (new_next_scan - cur_time.tv_sec) * 1000);
 		}
 	}
 
-	/* In case the scan interval didn't get set (which can happen during card
-	 * initialization where the device gets set up before being added to the
-	 * device list), set interval here
-	 */
-	if (self && !found)
-		self->priv->scan_interval = seconds;
+	set_inactive_scan_timeout (nm_device_get_app_data (NM_DEVICE (self)), interval);
+}
 
-	if (interval != NM_WIRELESS_SCAN_INTERVAL_INACTIVE)
-	{
-		source = g_timeout_source_new (120000);
-		g_source_set_callback (source, set_scan_interval_cb, (gpointer) data, NULL);
-		source_id = g_source_attach (source, data->main_context);
-		g_source_unref (source);
+void
+nm_device_802_11_wireless_ui_activated (NMData *data,
+                                        NMWirelessScanInterval interval)
+{
+	GSList *iter;
+
+	for (iter = data->dev_list; iter; iter = g_slist_next (iter)) {
+		if (NM_IS_DEVICE_802_11_WIRELESS (iter->data))
+			nm_device_802_11_wireless_set_scan_interval (NM_DEVICE_802_11_WIRELESS (iter->data), interval);
 	}
+
+	set_inactive_scan_timeout (data, interval);
 }
 
 
@@ -1981,7 +1990,6 @@ request_and_convert_scan_results (NMDevice80211Wireless *self)
 	{
 		NMData *	app_data = nm_device_get_app_data (NM_DEVICE (self));
 		GSource *	convert_source = g_idle_source_new ();
-		GTimeVal	cur_time;
 
 		/* We run the scan processing function from the main thread, since it must deliver
 		 * messages over DBUS.  Plus, that way the main thread is the only thread that has
@@ -1997,8 +2005,6 @@ request_and_convert_scan_results (NMDevice80211Wireless *self)
 							   (GDestroyNotify) free_process_scan_cb_data);
 		g_source_attach (convert_source, app_data->main_context);
 		g_source_unref (convert_source);
-		g_get_current_time (&cur_time);
-		self->priv->last_scan = cur_time.tv_sec;
 	}
 }
 
@@ -2022,10 +2028,22 @@ scan_results_timeout_done (gpointer user_data)
 static gboolean
 scan_results_timeout (NMDevice80211Wireless *self)
 {
+	GTimeVal cur_time;
+
 	g_return_val_if_fail (self != NULL, FALSE);
 
 	request_and_convert_scan_results (self);
-	schedule_scan (self);
+
+	self->priv->scanning = FALSE;
+
+	g_get_current_time (&cur_time);
+	self->priv->last_scan = cur_time.tv_sec;
+
+	/* After the first successful scan back down to the ACTIVE scan interval */
+	if (self->priv->scan_interval == nm_wireless_scan_interval_to_seconds (NM_WIRELESS_SCAN_INTERVAL_INIT))
+		nm_device_802_11_wireless_set_scan_interval (self, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
+	else
+		schedule_scan (self, 0);
 
 	return FALSE;
 }
@@ -2098,7 +2116,6 @@ nm_device_802_11_wireless_scan (gpointer user_data)
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (user_data);
 	guint32				caps;
 	NMData *				app_data;
-	gboolean				success = FALSE;
 	const char *			iface;
 
 	g_return_val_if_fail (self != NULL, FALSE);
@@ -2110,7 +2127,7 @@ nm_device_802_11_wireless_scan (gpointer user_data)
 	if (!(caps & NM_DEVICE_CAP_NM_SUPPORTED) || !(caps & NM_DEVICE_CAP_WIRELESS_SCAN))
 		goto out;
 
-	self->priv->pending_scan = NULL;
+	nm_device_802_11_wireless_scan_done ((gpointer) self);
 
 	/* Reschedule ourselves if all wireless is disabled, we're asleep,
 	 * or we are currently activating.
@@ -2119,9 +2136,8 @@ nm_device_802_11_wireless_scan (gpointer user_data)
 		|| (app_data->asleep == TRUE)
 		|| (nm_device_is_activating (NM_DEVICE (self)) == TRUE))
 	{
-		nm_device_802_11_wireless_set_scan_interval (app_data, self, NM_WIRELESS_SCAN_INTERVAL_INIT);
-		schedule_scan (self);
-		goto out;
+		nm_device_802_11_wireless_set_scan_interval (self, NM_WIRELESS_SCAN_INTERVAL_INIT);
+		goto reschedule;
 	}
 
 	/*
@@ -2131,83 +2147,54 @@ nm_device_802_11_wireless_scan (gpointer user_data)
 	 */
 	if ((self->priv->num_freqs > 14) && nm_device_is_activated (NM_DEVICE (self)) == TRUE)
 	{
-		nm_device_802_11_wireless_set_scan_interval (app_data, self, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
-		schedule_scan (self);
-		goto out;
+		nm_device_802_11_wireless_set_scan_interval (self, NM_WIRELESS_SCAN_INTERVAL_ACTIVE);
+		goto reschedule;
 	}
-
-	self->priv->scanning = TRUE;
 
 	/* Device must be up before we can scan */
 	if (nm_device_bring_up_wait (NM_DEVICE (self), 1))
-	{
-		schedule_scan (self);
-		goto out;
-	}
+		goto reschedule;
+
+	self->priv->scanning = TRUE;
 
 	/* If we're currently connected to an AP, let wpa_supplicant initiate
 	 * the scan request rather than doing it ourselves.
 	 */
 	iface = nm_device_get_iface (NM_DEVICE (self));
-	if (self->priv->supplicant)
-	{
-	  if (nm_utils_supplicant_request_with_check (nm_supplicant_get_ctrl (self->priv->supplicant),
-						      "OK", __func__, NULL, "SCAN"))
-	    success = TRUE;
-	}
-	else
-	{
-		NMSock *		sk;
-
-		if ((sk = nm_dev_sock_open (NM_DEVICE (self), DEV_WIRELESS, __FUNCTION__, NULL)))
-		{
-			struct iwreq wrq;
-
-			wrq.u.data.pointer = NULL;
-			wrq.u.data.flags = 0;
-			wrq.u.data.length = 0;
-			if (iw_set_ext (nm_dev_sock_get_fd (sk), iface, SIOCSIWSCAN, &wrq) == 0)
-				success = TRUE;
-			nm_dev_sock_close (sk);
+	if (self->priv->supplicant) {
+		if (!nm_utils_supplicant_request_with_check (nm_supplicant_get_ctrl (self->priv->supplicant),
+						      "OK", __func__, NULL, "SCAN")) {
+			nm_warning ("(%s): could not trigger wireless scan", iface);
+			goto reschedule;
 		}
-	}
+		schedule_scan_results_timeout (self, 10);
+	} else {
+		NMSock *sk = NULL;
+		struct iwreq wrq;
+		int ret;
 
-	if (success)
-	{
+		sk = nm_dev_sock_open (NM_DEVICE (self), DEV_WIRELESS, __FUNCTION__, NULL);
+		if (!sk) {
+			nm_warning ("(%s): could not open control socket on device", iface);
+			goto reschedule;
+		}
+
+		memset (&wrq, 0, sizeof (wrq));
+		ret = iw_set_ext (nm_dev_sock_get_fd (sk), iface, SIOCSIWSCAN, &wrq);
+		nm_dev_sock_close (sk);
+
+		if (ret != 0) {
+			nm_warning ("(%s): could not trigger wireless scan: %s", iface, strerror (errno));
+			goto reschedule;
+		}
 		schedule_scan_results_timeout (self, 10);
 	}
-	else
-	{
-		nm_warning ("could not trigger wireless scan on device %s: %s",
-				iface, strerror (errno));
-		schedule_scan (self);
-	}
+	return FALSE;
 
+reschedule:
+	schedule_scan (self, 0);
 out:
 	return FALSE;	/* Balance g_source_attach(), destroyed on return */
-}
-
-
-/*
- * nm_device_wireless_schedule_scan
- *
- * Schedule a wireless scan in the /device's/ thread.
- *
- */
-static void
-schedule_scan (NMDevice80211Wireless *self)
-{
-	g_return_if_fail (self != NULL);
-
-	cancel_pending_scan (self);
-
-	self->priv->pending_scan = g_timeout_source_new (self->priv->scan_interval * 1000);
-	g_source_set_callback (self->priv->pending_scan,
-						   nm_device_802_11_wireless_scan,
-						   self,
-						   nm_device_802_11_wireless_scan_done);
-	g_source_attach (self->priv->pending_scan, nm_device_get_main_context (NM_DEVICE (self)));
-	g_source_unref (self->priv->pending_scan);
 }
 
 
@@ -2217,11 +2204,36 @@ cancel_pending_scan (NMDevice80211Wireless *self)
 	g_return_if_fail (self != NULL);
 
 	self->priv->scanning = FALSE;
-	if (self->priv->pending_scan)
-	{
+	if (self->priv->pending_scan) {
 		g_source_destroy (self->priv->pending_scan);
 		self->priv->pending_scan = NULL;
 	}
+}
+
+
+/*
+ * schedule_scan
+ *
+ * Schedule a wireless scan in the /device's/ thread.
+ *
+ */
+static void
+schedule_scan (NMDevice80211Wireless *self, guint32 ms)
+{
+	guint32 interval;
+
+	g_return_if_fail (self != NULL);
+
+	cancel_pending_scan (self);
+
+	interval = ms ? ms : self->priv->scan_interval * 1000;
+	self->priv->pending_scan = g_timeout_source_new (interval);
+	g_source_set_callback (self->priv->pending_scan,
+						   nm_device_802_11_wireless_scan,
+						   self,
+						   nm_device_802_11_wireless_scan_done);
+	g_source_attach (self->priv->pending_scan, nm_device_get_main_context (NM_DEVICE (self)));
+	g_source_unref (self->priv->pending_scan);
 }
 
 
