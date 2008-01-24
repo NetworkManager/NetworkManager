@@ -190,6 +190,12 @@ get_access_point (NMDevice80211Wireless *device, const char *path, gboolean crea
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device);
 	NMAccessPoint *ap;
 
+	g_return_val_if_fail (path != NULL, NULL);
+
+	/* path of "/" means NULL */
+	if (!strcmp (path, "/"))
+		return NULL;
+
 	ap = g_hash_table_lookup (priv->aps, path);
 	if (!ap && create_if_not_found) {
 		ap = nm_access_point_new (nm_object_get_connection (NM_OBJECT (device)), path);
@@ -214,8 +220,7 @@ nm_device_802_11_wireless_set_active_ap (NMDevice80211Wireless *self,
 		priv->current_ap = NULL;
 	}
 
-	/* ap_path of "/" means no AP */
-	if (ap_path && strcmp (ap_path, "/")) {
+	if (ap_path) {
 		priv->current_ap = get_access_point (self, ap_path, TRUE);
 		if (priv->current_ap)
 			g_object_ref (priv->current_ap);
@@ -330,7 +335,7 @@ access_point_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 	NMAccessPoint *ap;
 
 	ap = get_access_point (device, path, TRUE);
-	if (device)
+	if (device && ap)
 		g_signal_emit (device, signals[ACCESS_POINT_ADDED], 0, ap);
 }
 
@@ -341,7 +346,7 @@ access_point_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 	NMAccessPoint *ap;
 
 	ap = get_access_point (device, path, FALSE);
-	if (device) {
+	if (device && ap) {
 		g_signal_emit (device, signals[ACCESS_POINT_REMOVED], 0, ap);
 		g_hash_table_remove (NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device)->aps, path);
 	}

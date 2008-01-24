@@ -1,6 +1,16 @@
 2008-01-24  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-glib/nm-device-802-11-wireless.c
+		- (get_access_point): move the "/" check here; check for invalid path
+			too
+		- (nm_device_802_11_wireless_set_active_ap): leave the "/" check up
+			to get_access_point()
+		- (access_point_added_proxy, access_point_removed_proxy): don't try
+			to send signals for non-existent access points
+
+2008-01-24  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-glib/nm-device-802-11-wireless.c
 		- (nm_device_802_11_wireless_set_active_ap): path of "/" means no AP
 
 2008-01-23  Dan Williams  <dcbw@redhat.com>
