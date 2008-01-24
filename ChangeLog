@@ -1,3 +1,9 @@
+2008-01-23  Dan Williams  <dcbw@redhat.com>
+
+	* test/libnm_glib_test.c
+		- (signal_handler, setup_signals): trap SIGINT and SIGTERM
+		- (main): set up signal handlers; call libnm_glib_shutdown
+
 2008-01-21  Dan Williams  <dcbw@redhat.com>
 
 	* include/NetworkManager.h

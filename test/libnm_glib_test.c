@@ -23,6 +23,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
+
 #include "libnm_glib.h"
 
 
@@ -56,10 +58,33 @@ static void status_printer (libnm_glib_ctx *ctx, gpointer user_data)
 	}
 }
 
+static GMainLoop *loop = NULL;
+
+static void
+signal_handler (int signo)
+{
+	if (signo == SIGINT || signo == SIGTERM) {
+		g_message ("Caught signal %d, shutting down...", signo);
+		g_main_loop_quit (loop);
+	}
+}
+
+static void
+setup_signals (void)
+{
+	struct sigaction action;
+	sigset_t mask;
+
+	sigemptyset (&mask);
+	action.sa_handler = signal_handler;
+	action.sa_mask = mask;
+	action.sa_flags = 0;
+	sigaction (SIGTERM,  &action, NULL);
+	sigaction (SIGINT,  &action, NULL);
+}
 
 int main( int argc, char *argv[] )
 {
-	GMainLoop	*loop;
 	libnm_glib_ctx *ctx;
 	guint id;
 
@@ -79,7 +104,10 @@ int main( int argc, char *argv[] )
 	fprintf (stderr, "Registered Callback with ID %d\n", id);
 
 	loop = g_main_loop_new (NULL, FALSE);
+	setup_signals ();
 	g_main_loop_run (loop);
+
+	libnm_glib_shutdown (ctx);
 
 	exit (0);
 }
