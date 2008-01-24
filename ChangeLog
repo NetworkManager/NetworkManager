@@ -1,5 +1,15 @@
 2008-01-23  Dan Williams  <dcbw@redhat.com>
 
+	Fix gnome.org #511323
+
+	* src/NetworkManagerAPList.c
+		- (nm_ap_list_merge_scanned_ap): if the AP being merged is hiding its
+			SSID, but there's an AP in the device's list with the same BSSID
+			that is not hidden, only update the strength and last-seen
+			attributes of the devlist AP and keep the existing SSID.
+
+2008-01-23  Dan Williams  <dcbw@redhat.com>
+
 	Fix up the scan algorithm to help gnome.org #498887.
 
 	* src/nm-device-802-11-wireless.c

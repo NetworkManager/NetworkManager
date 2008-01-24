@@ -463,32 +463,33 @@ gboolean nm_ap_list_merge_scanned_ap (NMDevice80211Wireless *dev, NMAccessPointL
 		const char *	merge_essid = nm_ap_get_essid (merge_ap);
 		const GTimeVal  *merge_ap_seen = nm_ap_get_last_seen (merge_ap);
 
-		/* Did the AP's name change? */
-		if (!devlist_essid || !merge_essid || nm_null_safe_strcmp (devlist_essid, merge_essid))
-		{
-			nm_dbus_signal_wireless_network_change (app_data->dbus_connection,
-			        dev, list_ap, NETWORK_STATUS_DISAPPEARED, -1);
-			new = TRUE;
+		/* All attributes should be updated when merging a non-hidden SSID,
+		 * but prefer most attributes of existing non-hidden SSIDs when the
+		 * merge AP is hidden.
+		 */
+		if (merge_essid) {
+			/* Did the AP's name change? */
+			if (!devlist_essid || nm_null_safe_strcmp (devlist_essid, merge_essid)) {
+				nm_dbus_signal_wireless_network_change (app_data->dbus_connection,
+				        dev, list_ap, NETWORK_STATUS_DISAPPEARED, -1);
+				new = TRUE;
+			}
+
+			nm_ap_set_capabilities (list_ap, nm_ap_get_capabilities (merge_ap));
+			nm_ap_set_broadcast (list_ap, nm_ap_get_broadcast (merge_ap));
+			nm_ap_set_essid (list_ap, merge_essid);
 		}
 
-		nm_ap_set_capabilities (list_ap, nm_ap_get_capabilities (merge_ap));
-		if (nm_ap_get_strength (merge_ap) != nm_ap_get_strength (list_ap))
-		{
+		if (nm_ap_get_strength (merge_ap) != nm_ap_get_strength (list_ap)) {
 			nm_ap_set_strength (list_ap, nm_ap_get_strength (merge_ap));
 			strength_changed = TRUE;
 		}
 		nm_ap_set_last_seen (list_ap, merge_ap_seen);
-		nm_ap_set_broadcast (list_ap, nm_ap_get_broadcast (merge_ap));
 
 		/* If the AP is noticed in a scan, it's automatically no longer
 		 * artificial, since it clearly exists somewhere.
 		 */
 		nm_ap_set_artificial (list_ap, FALSE);
-
-		/* Have to change AP's name _after_ dbus signal for old network name
-		 * has gone out.
-		 */
-		nm_ap_set_essid (list_ap, merge_essid);
 	}
 	else if ((list_ap = nm_ap_list_get_ap_by_essid (list, nm_ap_get_essid (merge_ap))))
 	{
