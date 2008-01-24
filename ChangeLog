@@ -1,5 +1,11 @@
 2008-01-23  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/libnm_glib.c
+		- (libnm_glib_init): make thread joinable
+		- (libnm_glib_ctx_free): join thread on exit to clean up memory
+
+2008-01-23  Dan Williams  <dcbw@redhat.com>
+
 	* test/libnm_glib_test.c
 		- (signal_handler, setup_signals): trap SIGINT and SIGTERM
 		- (main): set up signal handlers; call libnm_glib_shutdown

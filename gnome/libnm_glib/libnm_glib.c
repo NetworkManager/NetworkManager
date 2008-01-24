@@ -40,8 +40,10 @@ struct libnm_glib_ctx
 	DBusConnection	*	dbus_con;
 	guint			dbus_watcher;
 	guint			dbus_watch_interval;
+
 	gboolean			thread_done;
 	gboolean			thread_inited;
+	GThread *			thread;
 
 	GSList *			callbacks;
 	GMutex *			callbacks_lock;
@@ -458,6 +460,9 @@ libnm_glib_ctx_free (libnm_glib_ctx *ctx)
 	g_slist_foreach (ctx->callbacks, (GFunc)g_free, NULL);
 	g_slist_free (ctx->callbacks);
 
+	if (ctx->thread)
+		g_thread_join (ctx->thread);
+
 	memset (ctx, 0, sizeof (libnm_glib_ctx));
 	memset (&(ctx->check), 0xDD, sizeof (ctx->check));
 	g_free (ctx);
@@ -488,7 +493,6 @@ error:
 libnm_glib_ctx *
 libnm_glib_init (void)
 {
-	GError	*error = NULL;
 	libnm_glib_ctx	*ctx = NULL;
 
 	g_type_init ();
@@ -496,15 +500,12 @@ libnm_glib_init (void)
 		g_thread_init (NULL);
 	dbus_g_thread_init ();
 
-	if (!(ctx = libnm_glib_ctx_new()))
+	if (!(ctx = libnm_glib_ctx_new ()))
 		return NULL;
 
-	if (!g_thread_create (libnm_glib_dbus_worker, ctx, FALSE, &error))
-	{
-		if (error)
-			g_error_free (error);
+	ctx->thread = g_thread_create (libnm_glib_dbus_worker, ctx, TRUE, NULL);
+	if (!ctx->thread)
 		goto error;	
-	}
 
 	/* Wait until initialization of the thread */
 	while (!ctx->thread_inited)
