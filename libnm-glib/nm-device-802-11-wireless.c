@@ -214,7 +214,8 @@ nm_device_802_11_wireless_set_active_ap (NMDevice80211Wireless *self,
 		priv->current_ap = NULL;
 	}
 
-	if (ap_path && (!strcmp (ap_path, "/"))) {
+	/* ap_path of "/" means no AP */
+	if (ap_path && strcmp (ap_path, "/")) {
 		priv->current_ap = get_access_point (self, ap_path, TRUE);
 		if (priv->current_ap)
 			g_object_ref (priv->current_ap);
