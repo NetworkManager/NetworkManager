@@ -93,7 +93,7 @@ typedef struct
 	void (* scanned_ap)       (NMSupplicantInterface * iface,
 	                           DBusMessage * message);
 
-	void (* scan_result)      (NMSupplicantInterface * iface, guint32 result);
+	void (* scan_result)      (NMSupplicantInterface * iface, gboolean result);
 
 	void (* connection_state) (NMSupplicantInterface * iface,
 	                           guint32 new_state,
