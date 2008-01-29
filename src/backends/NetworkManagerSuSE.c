@@ -32,6 +32,9 @@
 #include <signal.h>
 #include <sys/stat.h>
 #include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <string.h>
 
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"
@@ -425,6 +428,38 @@ out:
 }
 
 
+static gboolean
+parse_netmask (const char *buf, guint32 *netmask)
+{
+	gboolean success = FALSE;
+
+	if (strstr (buf, ".")) {
+		struct in_addr addr;
+
+		if (inet_aton (buf, &addr)) {
+			*netmask = addr.s_addr;
+			success = TRUE;
+		}
+	} else {
+		int maskval;
+
+		maskval = atoi (buf);
+		if (maskval >= 0 && maskval <= 32) {
+			guint32 mask = 0;
+
+			while (maskval > 0) {
+				mask = (mask >> 1) + 0x80000000;
+				maskval--;
+			}
+
+			*netmask = htonl (mask);
+			success = TRUE;
+		}
+	}
+
+	return success;
+}
+
 /*
  * nm_system_device_get_system_config
  *
@@ -661,14 +696,38 @@ found:
 		buf = svGetValue (file, "IPADDR");
 		if (buf)
 		{
-			struct in_addr ip;
-			int ret;
+			char **pieces;
+			char *ip_str = NULL;
+			char *netmask_str = NULL;
 
-			ret = inet_aton (buf, &ip);
-			if (ret)
-				nm_ip4_config_set_address (sys_data->config, ip.s_addr);
-			else
+			pieces = g_strsplit (buf, "/", 0);
+			if (g_strv_length (pieces) == 1) {
+				ip_str = buf;
+			} else if (g_strv_length (pieces) == 2) {
+				ip_str = pieces[0];
+				netmask_str = pieces[1];
+			} else
 				error = TRUE;
+
+			if (!error && ip_str) {
+				struct in_addr ip;
+
+				if (inet_aton (ip_str, &ip))
+					nm_ip4_config_set_address (sys_data->config, ip.s_addr);
+				else
+					error = TRUE;
+			}
+
+			if (!error && netmask_str) {
+				guint32 netmask;
+
+				if (parse_netmask (netmask_str, &netmask))
+					nm_ip4_config_set_netmask (sys_data->config, netmask);
+				else
+					error = TRUE;
+			}
+
+			g_strfreev (pieces);
 			free (buf);
 		}
 		else
@@ -683,7 +742,8 @@ found:
 
 		if ((buf = svGetValue (file, "NETMASK")))
 		{
-			nm_ip4_config_set_netmask (sys_data->config, inet_addr (buf));
+			if (nm_ip4_config_get_netmask (sys_data->config) == 0)
+				nm_ip4_config_set_netmask (sys_data->config, inet_addr (buf));
 			free (buf);
 		}
 		else
