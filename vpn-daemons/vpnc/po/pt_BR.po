@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-vpnc\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-09-15 01:07-0300\n"
-"PO-Revision-Date: 2007-09-15 01:27-0300\n"
+"POT-Creation-Date: 2007-12-05 22:06+0000\n"
+"PO-Revision-Date: 2007-12-29 17:49-0300\n"
 "Last-Translator: Luiz Armesto <luiz.armesto@gmail.com>\n"
 "Language-Team: Brazilian Portuguese <gnome-l10n-br@listas.cipsga.org.br>\n"
 "MIME-Version: 1.0\n"
@@ -20,7 +20,7 @@ msgstr ""
 
 #: ../auth-dialog/gnome-two-password-dialog.c:144
 msgid "_Secondary Password:"
-msgstr "_Senha secundária:"
+msgstr "_Senha Secundária:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:258
 msgid "_Username:"
@@ -50,133 +50,137 @@ msgstr "_Lembrar senhas para esta sessão"
 msgid "_Save passwords in keyring"
 msgstr "_Salvar senhas no chaveiro"
 
-#: ../auth-dialog/main.c:160
+#: ../auth-dialog/main.c:172
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
-msgstr "Você precisa se autenticar para acessar a Rede Privada Virtual '%s'."
+msgstr "Você precisa se autenticar para acessar a Rede Privada Virtual (VPN) \"%s\"."
 
-#: ../auth-dialog/main.c:161
+#: ../auth-dialog/main.c:173
 msgid "Authenticate VPN"
 msgstr "Autenticar VPN"
 
-#: ../auth-dialog/main.c:168
+#: ../auth-dialog/main.c:180
 msgid "_Group Password:"
-msgstr "Senha do _grupo:"
+msgstr "Senha do _Grupo:"
 
 #: ../nm-vpnc.desktop.in.h:1
 msgid "Add, Remove, and Edit VPN Connections"
-msgstr "Adiciona, remove e edita conexões VPN"
+msgstr "Adiciona, Remove e Edita Conexões VPN"
 
 #: ../nm-vpnc.desktop.in.h:2
 msgid "VPN Connection Manager (vpnc)"
-msgstr "Gerenciador de conexões VPN (vpnc)"
+msgstr "Gerenciador de Conexões VPN (vpnc)"
 
-#: ../properties/nm-vpnc.c:94
+#: ../properties/nm-vpnc.c:98
 msgid "Compatible Cisco VPN client (vpnc)"
 msgstr "Cliente VPN compatível com Cisco (vpnc)"
 
-#: ../properties/nm-vpnc.c:523
+#: ../properties/nm-vpnc.c:543
 msgid "The following vpnc VPN connection will be created:"
 msgstr "A seguinte conexão VPN vpnc será criada:"
 
-#: ../properties/nm-vpnc.c:525
+#: ../properties/nm-vpnc.c:545
 #, c-format
 msgid "Name:  %s"
 msgstr "Nome:  %s"
 
-#: ../properties/nm-vpnc.c:528
+#: ../properties/nm-vpnc.c:548
 #, c-format
 msgid "Gateway:  %s"
 msgstr "Gateway:   %s"
 
-#: ../properties/nm-vpnc.c:530
+#: ../properties/nm-vpnc.c:550
 #, c-format
 msgid "Group Name:  %s"
-msgstr "Nome do grupo:  %s"
+msgstr "Nome do Grupo:  %s"
 
-#: ../properties/nm-vpnc.c:534
+#: ../properties/nm-vpnc.c:554
 #, c-format
 msgid "Username:  %s"
-msgstr "Nome do usuário:  %s"
+msgstr "Nome do Usuário:  %s"
 
-#: ../properties/nm-vpnc.c:539
+#: ../properties/nm-vpnc.c:559
 #, c-format
 msgid "Domain:  %s"
 msgstr "Domínio:  %s"
 
-#: ../properties/nm-vpnc.c:544
+#: ../properties/nm-vpnc.c:564
 #, c-format
 msgid "Routes:  %s"
 msgstr "Rotas:  %s"
 
-#: ../properties/nm-vpnc.c:548
+#: ../properties/nm-vpnc.c:568
 #, c-format
 msgid "NAT-Keepalive packet interval:  %s"
 msgstr "Intervalo do pacote NAT-Keepalive:  %s"
 
-#: ../properties/nm-vpnc.c:552
+#: ../properties/nm-vpnc.c:572
 msgid "Enable Single DES"
 msgstr "Habilitar DES Simples"
 
-#: ../properties/nm-vpnc.c:556
+#: ../properties/nm-vpnc.c:576
 msgid "Disable NAT Traversal"
-msgstr "Desabilar NAT Traversal"
+msgstr "Desabilitar NAT Traversal"
 
-#: ../properties/nm-vpnc.c:560
+#: ../properties/nm-vpnc.c:580
 msgid "The connection details can be changed using the \"Edit\" button."
 msgstr "Os detalhes da conexão podem ser alterados usando o botão \"Editar\"."
 
-#: ../properties/nm-vpnc.c:638
+#: ../properties/nm-vpnc.c:665
 msgid "TCP tunneling not supported"
-msgstr "Encapsulamento TCP não suportado"
+msgstr "Não há suporte a encapsulamento TCP"
 
-#: ../properties/nm-vpnc.c:640
+#: ../properties/nm-vpnc.c:667
 #, c-format
 msgid ""
-"The VPN settings file '%s' specifies that VPN traffic should be tunneled "
-"through TCP which is currently not supported in the vpnc software.\n"
+"The VPN settings file '%s' specifies that VPN traffic should be tunneled through TCP which is currently not supported in the vpnc software.\n"
 "\n"
-"The connection can still be created, with TCP tunneling disabled, however it "
-"may not work as expected."
+"The connection can still be created, with TCP tunneling disabled, however it may not work as expected."
 msgstr ""
-"O arquivo de configurações de VPN \"%s\" especifica que o tráfico VPN deve "
-"ser encapsulado por TCP que, atualmente, não é suportado pelo software vpnc.\n"
+"O arquivo de configurações de VPN \"%s\" especifica que o tráfico VPN deve ser encapsulado por TCP que, atualmente, não é suportado pelo software vpnc.\n"
 "\n"
-"A conexão ainda pode ser criada, com encapsulamento por TCP desativado, mas "
-"pode não funcionar como experado."
+"A conexão ainda pode ser criada, com encapsulamento por TCP desativado, mas pode não funcionar como esperado."
 
-#: ../properties/nm-vpnc.c:661
+#: ../properties/nm-vpnc.c:687
+msgid "Settings import incomplete"
+msgstr "Importação de configurações incompleta"
+
+#: ../properties/nm-vpnc.c:689
+#, c-format
+msgid "The VPN settings file '%s' is incomplete. You may not be able to connect without providing further information."
+msgstr "O arquivo de configurações VPN \"%s\" está incompleto. Você pode não estar apto a conectar sem fornecer outras informações."
+
+#: ../properties/nm-vpnc.c:709
 msgid "Cannot import settings"
 msgstr "Não é possível importar as configurações"
 
-#: ../properties/nm-vpnc.c:663
+#: ../properties/nm-vpnc.c:711
 #, c-format
-msgid "The VPN settings file '%s' does not contain valid data."
-msgstr "O arquivo de configurações de VPN \"%s\" não contém dados válidos."
+msgid "The VPN settings file '%s' could not be read or is invalid."
+msgstr "O arquivo de configurações de VPN \"%s\" não pôde ser lido ou é inválido."
 
-#: ../properties/nm-vpnc.c:680
+#: ../properties/nm-vpnc.c:726
 msgid "Select file to import"
 msgstr "Selecione o arquivo para importar"
 
-#. printf ("in impl_export\n");
-#: ../properties/nm-vpnc.c:860
+#: ../properties/nm-vpnc.c:908
 msgid "Save as..."
 msgstr "Salvar como..."
 
-#: ../properties/nm-vpnc.c:890
+#: ../properties/nm-vpnc.c:937
 #, c-format
 msgid "A file named \"%s\" already exists."
 msgstr "Um arquivo com o nome \"%s\" já existe."
 
-#: ../properties/nm-vpnc.c:893
+#: ../properties/nm-vpnc.c:940
 msgid "Do you want to replace it with the one you are saving?"
 msgstr "Deseja substituí-lo com o arquivo que você está salvando?"
 
-#: ../properties/nm-vpnc.c:907
+#: ../properties/nm-vpnc.c:954
 msgid "Failed to export configuration"
 msgstr "Falha ao exportar a configuração"
 
-#: ../properties/nm-vpnc.c:909
+#: ../properties/nm-vpnc.c:956
 #, c-format
 msgid "Failed to save file %s"
 msgstr "Falha ao salvar o arquivo %s"
@@ -199,7 +203,7 @@ msgstr "Habilitar criptografia _fraca DES simples"
 
 #: ../properties/nm-vpnc-dialog.glade.h:5
 msgid "G_roup name:"
-msgstr "Nome do G_rupo:"
+msgstr "Nome do g_rupo:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:6
 msgid "Import _Saved Configuration..."
@@ -210,12 +214,8 @@ msgid "Interval:"
 msgstr "Intervalo:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:8
-msgid ""
-"Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
-msgstr ""
-"Nome usado para identificar a conexão à rede privada, p. ex. \"VPN do Campus"
-"\" ou \"Rede Corporativa\""
+msgid "Name used to identify the connection to the private network, e.g. \"Campus VPN\" or \"Corporate Network\""
+msgstr "Nome usado para identificar a conexão à rede privada, p. ex. \"VPN do Campus\" ou \"Rede Corporativa\""
 
 #: ../properties/nm-vpnc-dialog.glade.h:9
 msgid "Optional"
@@ -226,20 +226,12 @@ msgid "Override _user name"
 msgstr "Ignorar nome do _usuário"
 
 #: ../properties/nm-vpnc-dialog.glade.h:11
-msgid ""
-"Please enter the information provided by your system administrator below. Do "
-"not enter your password here as you will be prompted when connecting."
-msgstr ""
-"Por favor, digite as informações fornecidas pelo seu administrador de "
-"sistemas. Não digite sua senha aqui, já que ela será pedida ao conectar."
+msgid "Please enter the information provided by your system administrator below. Do not enter your password here as you will be prompted when connecting."
+msgstr "Por favor, digite as informações fornecidas pelo seu administrador de sistemas. Não digite sua senha aqui, já que ela será pedida ao conectar."
 
 #: ../properties/nm-vpnc-dialog.glade.h:12
-msgid ""
-"Please note that the file you import is not a Cisco VPN or VPNC "
-"configuration file. Ask your adminstrator for the file."
-msgstr ""
-"Por favor, observe que arquivo que você importou não é um arquivo de "
-"configuração Cisco VPN ou VPNC. Pergunte ao seu administrador pelo arquivo."
+msgid "Please note that the file you import is not a Cisco VPN or VPNC configuration file. Ask your adminstrator for the file."
+msgstr "Por favor, observe que arquivo que você importou não é um arquivo de configuração Cisco VPN ou VPNC. Pergunte ao seu administrador pelo arquivo."
 
 #: ../properties/nm-vpnc-dialog.glade.h:13
 msgid "Required"
@@ -266,36 +258,30 @@ msgstr "Usar conexão VPN _apenas para estes endereços"
 #~ msgstr ""
 #~ "A autenticação na VPN falhou porque o nome do usuário e a senha não foram "
 #~ "aceitos."
-
 #~ msgid "The VPN login failed because the VPN program could not be started."
 #~ msgstr ""
 #~ "A autenticação na VPN falhou porque o programa VPN não pôde ser iniciado."
-
 #~ msgid ""
 #~ "The VPN login failed because the VPN program could not connect to the VPN "
 #~ "server."
 #~ msgstr ""
 #~ "A autenticação na VPN falhou porque o programa VPN não pôde conectar ao "
 #~ "servidor VPN."
-
 #~ msgid ""
 #~ "The VPN login failed because the VPN configuration options were invalid."
 #~ msgstr ""
 #~ "A autenticação na VPN falhou porque as opções de configuração de VPN eram "
 #~ "inválidas."
-
 #~ msgid ""
 #~ "The VPN login failed because the VPN program received an invalid "
 #~ "configuration from the VPN server."
 #~ msgstr ""
 #~ "A autenticação na VPN falhou porque o programa VPN recebeu uma "
 #~ "configuração inválida do servidor VPN."
-
 #~ msgid "<b>Connection Information</b>"
 #~ msgstr "<b>Informações da conexão</b>"
-
 #~ msgid "<b>Connection Name</b>"
 #~ msgstr "<b>Nome da conexão</b>"
-
 #~ msgid "O_ptional Information"
 #~ msgstr "_Informações opcionais"
+
