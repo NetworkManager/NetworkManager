@@ -1,3 +1,9 @@
+2008-01-30  Dan Williams  <dcbw@redhat.com>
+
+	* system-settings/plugins/ifcfg
+	* system-settings/plugins/ifcfg-fedora
+		- Move the ifcfg plugin to ifcfg-fedora
+
 2008-01-24  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-glib/nm-device-802-11-wireless.c

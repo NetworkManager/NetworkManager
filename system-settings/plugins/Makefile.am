@@ -1,2 +1,2 @@
-SUBDIRS=ifcfg
+SUBDIRS=ifcfg-fedora
 

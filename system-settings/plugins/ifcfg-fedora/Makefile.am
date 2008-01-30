@@ -1,7 +1,7 @@
 
-pkglib_LTLIBRARIES = libnm-settings-plugin-ifcfg.la
+pkglib_LTLIBRARIES = libnm-settings-plugin-ifcfg-fedora.la
 
-libnm_settings_plugin_ifcfg_la_SOURCES = \
+libnm_settings_plugin_ifcfg_fedora_la_SOURCES = \
 	shvar.c \
 	shvar.h \
 	parser.c \
@@ -9,7 +9,7 @@ libnm_settings_plugin_ifcfg_la_SOURCES = \
 	plugin.c \
 	plugin.h
 
-libnm_settings_plugin_ifcfg_la_CPPFLAGS = \
+libnm_settings_plugin_ifcfg_fedora_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(GMODULE_CFLAGS) \
 	$(DBUS_CFLAGS) \
@@ -19,8 +19,8 @@ libnm_settings_plugin_ifcfg_la_CPPFLAGS = \
 	-I$(top_srcdir)/libnm-util \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
 
-libnm_settings_plugin_ifcfg_la_LDFLAGS = -module -avoid-version
-libnm_settings_plugin_ifcfg_la_LIBADD = \
+libnm_settings_plugin_ifcfg_fedora_la_LDFLAGS = -module -avoid-version
+libnm_settings_plugin_ifcfg_fedora_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(GMODULE_LIBS) \
 	$(top_builddir)/libnm-util/libnm-util.la

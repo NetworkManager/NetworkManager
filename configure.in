@@ -277,7 +277,7 @@ dispatcher-daemon/Makefile
 system-settings/Makefile
 system-settings/src/Makefile
 system-settings/plugins/Makefile
-system-settings/plugins/ifcfg/Makefile
+system-settings/plugins/ifcfg-fedora/Makefile
 test/Makefile
 test/test-common/Makefile
 initscript/Makefile
