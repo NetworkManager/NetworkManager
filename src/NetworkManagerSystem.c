@@ -277,7 +277,7 @@ nm_system_get_rtnl_index_from_iface (const char *iface)
 
 	cache = rtnl_link_alloc_cache (nlh);
 	if (!cache) {
-		nm_warning ("%s: couldn't allocate link cache.");
+		nm_warning ("%s: couldn't allocate link cache.", iface);
 		goto out;
 	}
 
@@ -305,7 +305,7 @@ nm_system_get_iface_from_rtnl_index (int rtnl_index)
 
 	cache = rtnl_link_alloc_cache (nlh);
 	if (!cache) {
-		nm_warning ("%s: couldn't allocate link cache.");
+		nm_warning ("Couldn't allocate link cache.");
 		goto out;
 	}
 

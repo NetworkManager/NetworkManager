@@ -115,11 +115,15 @@ static gboolean
 real_write_supplicant_config (NMAPSecurity *instance,
                               struct wpa_ctrl *ctrl,
                               int nwid,
-                              gboolean adhoc)
+                              NMAPSecurityWriteFlags flag)
 {
 	gboolean			success = FALSE;
 	char *			msg = NULL;
 	const char *		key = nm_ap_security_get_key (instance);
+
+	/* WEP is not valid for wired */
+	if (flag == NM_AP_SECURITY_WRITE_FLAG_WIRED)
+		goto out;
 
 	/* WEP network setup */
 	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,

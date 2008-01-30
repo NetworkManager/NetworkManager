@@ -2536,7 +2536,10 @@ supplicant_send_network_config (NMDevice80211Wireless *self,
 	if (nm_device_activation_should_cancel (NM_DEVICE (self)))
 		goto out;
 
-	if (!nm_ap_security_write_supplicant_config (nm_ap_get_security (ap), ctrl, nwid, is_adhoc))
+	if (!nm_ap_security_write_supplicant_config (nm_ap_get_security (ap), ctrl, nwid,
+										is_adhoc ?
+										NM_AP_SECURITY_WRITE_FLAG_ADHOC :
+										NM_AP_SECURITY_WRITE_FLAG_NONE))
 		goto out;
 
 	if (nm_device_activation_should_cancel (NM_DEVICE (self)))
@@ -2719,6 +2722,9 @@ real_act_stage2_config (NMDevice *dev,
 	GMainContext *ctx;
 
 	g_assert (ap);
+
+	if (self->priv->supplicant)
+		g_object_unref (self->priv->supplicant);
 
 	/* If we need an encryption key, get one */
 	if (ap_need_key (self, ap, &ask_user))

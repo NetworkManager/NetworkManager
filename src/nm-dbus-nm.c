@@ -1,3 +1,5 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+
 /* NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -227,10 +229,11 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 	const char * INVALID_ARGS_MESSAGE = "NetworkManager::setActiveDevice called with invalid arguments.";
 	NMDevice *		dev = NULL;
 	DBusMessage *		reply = NULL;
-	char *			dev_path;
-	NMAccessPoint *	ap = NULL;
+	char *			dev_path = NULL;
+	NMAPSecurity * 	security = NULL;
 	NMActRequest * req;
 	DBusMessageIter	iter;
+	char *			network_id = NULL;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (message != NULL, NULL);
@@ -253,61 +256,61 @@ static DBusMessage *nm_dbus_nm_set_active_device (DBusConnection *connection, DB
 	if (!dev || !(nm_device_get_capabilities (dev) & NM_DEVICE_CAP_NM_SUPPORTED))
 	{
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotFound",
-						"The requested network device does not exist.");
+									   "The requested network device does not exist.");
 		nm_warning ("%s:%d (%s): Invalid device (device not found).", __FILE__, __LINE__, __func__);
 		goto out;
 	}
 
-	if (nm_device_is_802_11_wireless (dev))
-	{
-		NMAPSecurity * 	security = NULL;
-		char *			essid = NULL;
+	/* Next up is the network id... */
+	if (dbus_message_iter_next (&iter) && (dbus_message_iter_get_arg_type (&iter) == DBUS_TYPE_STRING))
+		dbus_message_iter_get_basic (&iter, &network_id);
 
-		if (!dbus_message_iter_next (&iter) || (dbus_message_iter_get_arg_type (&iter) != DBUS_TYPE_STRING))
-		{
+	/* and finally, the security object */
+	if (dbus_message_iter_next (&iter)) {
+		security = nm_ap_security_new_deserialize (&iter);
+		if (!security) {
+			/* There was security info, but it was invalid */
+			reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, INVALID_ARGS_ERROR, INVALID_ARGS_MESSAGE);
+			nm_warning ("%s:%d (%s): Invalid argument (security info).", __FILE__, __LINE__, __func__);
+			goto out;
+		}
+	}
+
+	req = nm_act_request_new (data->data, dev, TRUE);
+
+	if (nm_device_is_802_11_wireless (dev)) {
+		NMAccessPoint *ap;
+
+		if (!network_id || (strlen (network_id) <= 0)) {
 			nm_warning ("%s:%d (%s): Invalid argument type (essid).", __FILE__, __LINE__, __func__);
 			goto out;
 		}
 
-		/* grab ssid and ensure validity */
-		dbus_message_iter_get_basic (&iter, &essid);
-		if (!essid || (strlen (essid) <= 0))
-		{
-			nm_warning ("%s:%d (%s): Invalid argument (essid).", __FILE__, __LINE__, __func__);
-			goto out;
-		}
-
-		/* If there's security information, we use that.  If not, we
-		 * make some up from the scan list.
-		 */
-		if (dbus_message_iter_next (&iter))
-		{
-			if (!(security = nm_ap_security_new_deserialize (&iter)))
-			{
-				/* There was security info, but it was invalid */
-				reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, INVALID_ARGS_ERROR, INVALID_ARGS_MESSAGE);
-				nm_warning ("%s:%d (%s): Invalid argument (wireless security info).", __FILE__, __LINE__, __func__);
-				goto out;
-			}
-		}
-
 		/* Set up the wireless-specific activation request properties */
-		ap = nm_device_802_11_wireless_get_activation_ap (NM_DEVICE_802_11_WIRELESS (dev), essid, security);
-		if (security)
-	 		g_object_unref (G_OBJECT (security));
+		ap = nm_device_802_11_wireless_get_activation_ap (NM_DEVICE_802_11_WIRELESS (dev), network_id, security);
+		nm_act_request_set_ap (req, ap);
+	} else if (nm_device_is_802_3_ethernet (dev)) {
+		if (network_id && security) {
+			NMWiredNetwork *wired_net;
 
-		nm_info ("User Switch: %s / %s", dev_path, essid);
+			wired_net = nm_wired_network_new (network_id, security);
+			nm_act_request_set_wired_network (req, wired_net);
+			g_object_unref (wired_net);
+		}
 	}
-	else if (nm_device_is_802_3_ethernet (dev))
-	{
+
+	if (network_id)
+		nm_info ("User Switch: %s / %s", dev_path, network_id);
+	else
 		nm_info ("User Switch: %s", dev_path);
-	}
 
 	nm_device_deactivate (dev);
 	nm_schedule_state_change_signal_broadcast (data->data);
-	req = nm_act_request_new (data->data, dev, ap, TRUE);
 	nm_policy_schedule_device_activation (req);
 	nm_act_request_unref (req);
+
+	if (security)
+		g_object_unref (security);
 
 	/* empty success message */
 	reply = dbus_message_new_method_return (message);
@@ -398,7 +401,10 @@ static DBusMessage *nm_dbus_nm_create_wireless_network (DBusConnection *connecti
 	g_object_unref (G_OBJECT (security));
 	nm_ap_set_user_created (new_ap, TRUE);
 
-	req = nm_act_request_new (data->data, dev, new_ap, TRUE);
+	req = nm_act_request_new (data->data, dev, TRUE);
+	nm_act_request_set_ap (req, new_ap);
+	nm_ap_unref (new_ap);
+
 	nm_policy_schedule_device_activation (req);
 	nm_act_request_unref (req);
 

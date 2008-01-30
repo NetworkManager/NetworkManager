@@ -62,7 +62,7 @@ char *		get_name_owner						(DBusConnection *con, const char *name);
 char *		nm_dbus_get_object_path_for_device		(NMDevice *dev);
 char *		nm_dbus_get_object_path_for_network	(NMDevice *dev, NMAccessPoint *ap);
 
-void			nm_dbus_schedule_device_status_change_signal	(NMData *data, NMDevice *dev, NMAccessPoint *ap, DeviceStatus status);
+void			nm_dbus_schedule_device_status_change_signal	(NMData *data, NMDevice *dev, const char *essid, DeviceStatus status);
 
 void			nm_dbus_signal_state_change			(DBusConnection *connection, NMData *data);
 

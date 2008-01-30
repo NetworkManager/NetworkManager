@@ -256,6 +256,7 @@ supplicant_status_done (gpointer user_data)
 static void
 supplicant_state_changed (NMSupplicant *self, gboolean up)
 {
+	nm_info ("Supplicant state changed: %d", up);
 	g_signal_emit (self, signals[STATE_CHANGED], 0, up);
 }
 

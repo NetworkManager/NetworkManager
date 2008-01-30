@@ -100,7 +100,7 @@ static gboolean
 real_write_supplicant_config (NMAPSecurity *instance,
                               struct wpa_ctrl *ctrl,
                               int nwid,
-                              gboolean user_created)
+                              NMAPSecurityWriteFlags flag)
 {
 	NMAPSecurityLEAP *	self = NM_AP_SECURITY_LEAP (instance);
 	gboolean			success = FALSE;
@@ -108,6 +108,11 @@ real_write_supplicant_config (NMAPSecurity *instance,
 	const char *		password = nm_ap_security_get_key(instance);
 
 	g_return_val_if_fail (nm_ap_security_get_we_cipher (instance) == NM_AUTH_TYPE_LEAP, FALSE);
+
+	/* LEAP is not valid for wired */
+	if (flag == NM_AP_SECURITY_WRITE_FLAG_WIRED)
+		goto out;
+
 
 	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i proto WPA", nwid))
 		   goto out;

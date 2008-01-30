@@ -134,7 +134,7 @@ static gboolean
 real_write_supplicant_config (NMAPSecurity *instance,
                               struct wpa_ctrl *ctrl,
                               int nwid,
-                              gboolean adhoc)
+                              NMAPSecurityWriteFlags flag)
 {
 	NMAPSecurityWPA_PSK * self = NM_AP_SECURITY_WPA_PSK (instance);
 	gboolean			success = FALSE;
@@ -144,6 +144,11 @@ real_write_supplicant_config (NMAPSecurity *instance,
 	char *			key_mgmt = "WPA-PSK";
 	char *			pairwise_cipher = NULL;
 	char *			group_cipher = NULL;
+
+
+	/* WPA-PSK is not valid for wired */
+	if (flag == NM_AP_SECURITY_WRITE_FLAG_WIRED)
+		goto out;
 
 	/* WPA-PSK network setup */
 
@@ -161,7 +166,7 @@ real_write_supplicant_config (NMAPSecurity *instance,
 	}
 
 	/* Ad-Hoc has to be WPA-NONE */
-	if (adhoc)
+	if (flag == NM_AP_SECURITY_WRITE_FLAG_ADHOC)
 		key_mgmt = "WPA-NONE";
 
 	if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
@@ -189,7 +194,7 @@ real_write_supplicant_config (NMAPSecurity *instance,
 		pairwise_cipher = group_cipher = "NONE";
 
 	/* Ad-Hoc requires pairwise cipher of NONE */
-	if (adhoc)
+	if (flag == NM_AP_SECURITY_WRITE_FLAG_ADHOC)
 		pairwise_cipher = "NONE";
 
 	/* If user selected "Automatic", we let wpa_supplicant sort it out */

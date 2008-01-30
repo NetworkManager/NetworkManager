@@ -171,7 +171,7 @@ static gboolean
 real_write_supplicant_config (NMAPSecurity *instance,
                               struct wpa_ctrl *ctrl,
                               int nwid,
-                              gboolean adhoc)
+                              NMAPSecurityWriteFlags flag)
 {
 	NMAPSecurityWPA_EAP * self = NM_AP_SECURITY_WPA_EAP (instance);
 	gboolean			success = FALSE;
@@ -212,15 +212,17 @@ real_write_supplicant_config (NMAPSecurity *instance,
 
 	/* WPA-EAP network setup */
 
-	if (self->priv->wpa_version == IW_AUTH_WPA_VERSION_WPA)
-	{
-		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i proto WPA", nwid))
-			goto out;
-	}
-	else
-	{
-		if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i proto WPA2", nwid))
-			goto out;
+	if (flag != NM_AP_SECURITY_WRITE_FLAG_WIRED) {
+		if (self->priv->wpa_version == IW_AUTH_WPA_VERSION_WPA)
+		{
+			if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i proto WPA", nwid))
+				goto out;
+		}
+		else
+		{
+			if (!nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL, "SET_NETWORK %i proto WPA2", nwid))
+				goto out;
+		}
 	}
 
 	if (key_type != IW_AUTH_CIPHER_WEP104)
@@ -307,7 +309,8 @@ real_write_supplicant_config (NMAPSecurity *instance,
 	 * Set the pairwise and group cipher, if the user provided one.  If user selected "Automatic", we
 	 * let wpa_supplicant sort it out.  Likewise, if the user selected "Dynamic WEP", we do nothing.
 	 */
-	if (key_type != NM_AUTH_TYPE_WPA_PSK_AUTO && key_type != IW_AUTH_CIPHER_WEP104)
+	if (flag != NM_AP_SECURITY_WRITE_FLAG_WIRED &&
+	    key_type != NM_AUTH_TYPE_WPA_PSK_AUTO && key_type != IW_AUTH_CIPHER_WEP104)
 	{
 		const char *cipher;
 
@@ -329,8 +332,9 @@ real_write_supplicant_config (NMAPSecurity *instance,
 			goto out;
 	}
 
-	nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
-			"SET_NETWORK %i fragment_size 1300", nwid);
+	if (flag != NM_AP_SECURITY_WRITE_FLAG_WIRED)
+		nm_utils_supplicant_request_with_check (ctrl, "OK", __func__, NULL,
+												"SET_NETWORK %i fragment_size 1300", nwid);
 
 	success = TRUE;
 

@@ -174,7 +174,7 @@ typedef struct NMStatusChangeData
 {
 	NMData *			data;
 	NMDevice *		dev;
-	NMAccessPoint *	ap;
+	char *essid;
 	DeviceStatus	 	status;
 } NMStatusChangeData;
 
@@ -232,11 +232,9 @@ static gboolean nm_dbus_signal_device_status_change (gpointer user_data)
 	}
 
 	/* If the device was wireless, attach the name of the wireless network that failed to activate */
-	if (cb_data->ap)
+	if (cb_data->essid)
 	{
-		const char *essid = nm_ap_get_essid (cb_data->ap);
-		if (essid)
-			dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_STRING, &essid, DBUS_TYPE_INVALID);
+		dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_STRING, &cb_data->essid, DBUS_TYPE_INVALID);
 	}
 	else
 		dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path, DBUS_TYPE_INVALID);
@@ -248,8 +246,7 @@ static gboolean nm_dbus_signal_device_status_change (gpointer user_data)
 	if (message)
 		dbus_message_unref (message);
 
-	if (cb_data->ap)
-		nm_ap_unref (cb_data->ap);
+	g_free (cb_data->essid);
 
 	g_free (dev_path);
 	g_object_unref (G_OBJECT (cb_data->dev));
@@ -259,7 +256,7 @@ static gboolean nm_dbus_signal_device_status_change (gpointer user_data)
 }
 
 
-void nm_dbus_schedule_device_status_change_signal (NMData *data, NMDevice *dev, NMAccessPoint *ap, DeviceStatus status)
+void nm_dbus_schedule_device_status_change_signal (NMData *data, NMDevice *dev, const char *essid, DeviceStatus status)
 {
 	NMStatusChangeData	*cb_data = NULL;
 	GSource			*source;
@@ -271,11 +268,9 @@ void nm_dbus_schedule_device_status_change_signal (NMData *data, NMDevice *dev, 
 	g_object_ref (G_OBJECT (dev));
 	cb_data->data = data;
 	cb_data->dev = dev;
-	if (ap)
-	{
-		nm_ap_ref (ap);
-		cb_data->ap = ap;
-	}
+	if (essid)
+		cb_data->essid = g_strdup (essid);
+
 	cb_data->status = status;
 
 	source = g_idle_source_new ();

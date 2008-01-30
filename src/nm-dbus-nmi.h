@@ -24,6 +24,7 @@
 
 #include "NetworkManager.h"
 #include "NetworkManagerAP.h"
+#include "nm-wired-network.h"
 
 void			nm_dbus_get_user_key_for_network		(DBusConnection *connection, NMActRequest *req, const gboolean new_key);
 
@@ -32,6 +33,9 @@ void			nm_dbus_cancel_get_user_key_for_network	(DBusConnection *connection, NMAc
 NMAccessPoint *nm_dbus_get_network_object			(DBusConnection *connection, NMNetworkType type, const char *network);
 
 gboolean		nm_dbus_update_network_info			(DBusConnection *connection, NMAccessPoint *ap, const gboolean user_requested);
+
+gboolean		nm_dbus_update_wired_network_info	(DBusConnection *connection, NMWiredNetwork *wired_net);
+
 
 void			nm_dbus_update_one_allowed_network		(DBusConnection *connection, const char *network, NMData *data);
 

@@ -620,7 +620,7 @@ nm_device_set_active_link (NMDevice *self,
 				do_switch = TRUE;
 
 			/* FIXME: Why is this activation request created here and never used? */
-			/* if (do_switch && (act_req = nm_act_request_new (app_data, self, NULL, TRUE))) */
+			/* if (do_switch && (act_req = nm_act_request_new (app_data, self, TRUE))) */
 			if (do_switch)
 			{
 				nm_info ("Will activate wired connection '%s' because it now has a link.", nm_device_get_iface (self));

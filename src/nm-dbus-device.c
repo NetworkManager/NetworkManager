@@ -448,8 +448,17 @@ static DBusMessage *nm_dbus_device_get_properties (DBusConnection *connection, D
 				}
 			}
 		}
-		else
+		else {
+			NMActRequest *req = nm_device_get_act_request (dev);
+
+			if (req) {
+				NMWiredNetwork *wired_net = nm_act_request_get_wired_network (req);
+				if (wired_net)
+					active_network_path = g_strdup (nm_wired_network_get_network_id (wired_net));
+			}
+
 			speed = nm_device_802_3_ethernet_get_speed (NM_DEVICE_802_3_ETHERNET (dev));
+		}
 
 		if (!active_network_path)
 			active_network_path = g_strdup ("");

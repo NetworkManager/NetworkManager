@@ -51,8 +51,8 @@ static gboolean nm_policy_activation_finish (NMActRequest *req)
 {
 	NMDevice			*dev = NULL;
 	NMData			*data = NULL;
-	NMAccessPoint *	ap = NULL;
 	NMActRequest * dev_req;
+	const char *network_id = NULL;
 
 	g_return_val_if_fail (req != NULL, FALSE);
 
@@ -69,14 +69,19 @@ static gboolean nm_policy_activation_finish (NMActRequest *req)
 	if (!dev_req || (dev_req != req))
 		return FALSE;
 
-    if (nm_device_is_802_11_wireless (dev))
-        ap = nm_act_request_get_ap (req);
+    if (NM_IS_DEVICE_802_11_WIRELESS (dev))
+		network_id = nm_ap_get_essid (nm_act_request_get_ap (req));
+	else if (NM_IS_DEVICE_802_3_ETHERNET (dev)) {
+		NMWiredNetwork *wired_net = nm_act_request_get_wired_network (req);
+		if (wired_net)
+			network_id = nm_wired_network_get_network_id (wired_net);
+	}
 
 	nm_device_activation_success_handler (dev, req);
 
 	nm_act_request_unref (req);
 	nm_info ("Activation (%s) successful, device activated.", nm_device_get_iface (dev));
-	nm_dbus_schedule_device_status_change_signal (data, dev, ap, DEVICE_NOW_ACTIVE);
+	nm_dbus_schedule_device_status_change_signal (data, dev, network_id, DEVICE_NOW_ACTIVE);
 	nm_schedule_state_change_signal_broadcast (data);
 
 	return FALSE;
@@ -123,7 +128,7 @@ static gboolean nm_policy_activation_failed (NMActRequest *req)
 {
 	NMDevice *	dev = NULL;
 	NMData *		data = NULL;
-	NMAccessPoint *ap = NULL;
+	const char *network_id = NULL;
 
 	g_return_val_if_fail (req != NULL, FALSE);
 
@@ -135,11 +140,16 @@ static gboolean nm_policy_activation_failed (NMActRequest *req)
 
 	nm_device_activation_failure_handler (dev, req);
 
-    if (nm_device_is_802_11_wireless (dev))
-        ap = nm_act_request_get_ap (req);
+	if (NM_IS_DEVICE_802_11_WIRELESS (dev))
+		network_id = nm_ap_get_essid (nm_act_request_get_ap (req));
+	else if (NM_IS_DEVICE_802_3_ETHERNET (dev)) {
+		NMWiredNetwork *wired_net = nm_act_request_get_wired_network (req);
+		if (wired_net)
+			network_id = nm_wired_network_get_network_id (wired_net);
+	}
 
 	nm_info ("Activation (%s) failed.", nm_device_get_iface (dev));
-	nm_dbus_schedule_device_status_change_signal	(data, dev, ap, DEVICE_ACTIVATION_FAILED);
+	nm_dbus_schedule_device_status_change_signal (data, dev, network_id, DEVICE_ACTIVATION_FAILED);
 
 	nm_device_deactivate (dev);
 	nm_schedule_state_change_signal_broadcast (data);
@@ -455,12 +465,18 @@ nm_policy_device_change_check (NMData *data)
 
 		if (has_link)
 		{
-			if ((act_req = nm_act_request_new (data, new_dev, ap, FALSE)))
+			if ((act_req = nm_act_request_new (data, new_dev, FALSE)))
 			{
 				nm_info ("Will activate connection '%s%s%s'.",
 				         nm_device_get_iface (new_dev),
 				         ap ? "/" : "",
 				         ap ? nm_ap_get_essid (ap) : "");
+
+				if (ap) {
+					nm_act_request_set_ap (act_req, ap);
+					nm_ap_unref (ap);
+				}
+
 				nm_policy_schedule_device_activation (act_req);
 				nm_act_request_unref (act_req);
 			}

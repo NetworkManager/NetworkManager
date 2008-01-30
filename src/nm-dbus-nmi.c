@@ -1,3 +1,5 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+
 /* NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -22,6 +24,7 @@
 #include "NetworkManager.h"
 #include "nm-device.h"
 #include "nm-activation-request.h"
+#include "nm-device-802-3-ethernet.h"
 #include "NetworkManagerAPList.h"
 #include "NetworkManagerPolicy.h"
 #include "NetworkManagerUtils.h"
@@ -29,42 +32,23 @@
 #include "nm-utils.h"
 
 
-/*
- * nm_dbus_get_user_key_for_network_cb
- *
- * Callback from nm_dbus_get_user_key_for_network when NetworkManagerInfo returns
- * the new user key.
- *
- */
-static void nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall, NMActRequest *req)
+static gboolean
+nm_dbus_get_wireless_user_key_done (DBusMessage *reply, NMActRequest *req)
 {
-	DBusMessage *		reply = NULL;
-	NMData *			data;
-	NMDevice *		dev;
-	NMAccessPoint *	ap;
-	NMAPSecurity *		security;
-	DBusMessageIter	iter;
+	NMAccessPoint *ap;
+	NMData *data;
+	NMAPSecurity *security;
+	DBusMessageIter iter;
 
-	g_return_if_fail (pcall != NULL);
-	g_return_if_fail (req != NULL);
+	const char *iface = nm_device_get_iface (nm_act_request_get_dev (req));
 
 	data = nm_act_request_get_data (req);
 	g_assert (data);
 
-	dev = nm_act_request_get_dev (req);
-	g_assert (dev);
-
 	ap = nm_act_request_get_ap (req);
 	g_assert (ap);
 
-	if (!dbus_pending_call_get_completed (pcall))
-		goto out;
-
-	if (!(reply = dbus_pending_call_steal_reply (pcall)))
-		goto out;
-
-	if (message_is_error (reply))
-	{
+	if (message_is_error (reply)) {
 		DBusError err;
 
 		dbus_error_init (&err);
@@ -72,10 +56,8 @@ static void nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall, NMActRe
 
 		/* Check for cancelled error */
 		if (strcmp (err.name, NMI_DBUS_USER_KEY_CANCELED_ERROR) == 0)
-		{
 			nm_info ("Activation (%s) New wireless user key request for network '%s' was canceled.",
-					nm_device_get_iface (dev), nm_ap_get_essid (ap));
-		}
+				    iface, nm_ap_get_essid (ap));
 		else
 			nm_warning ("nm_dbus_get_user_key_for_network_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
 
@@ -87,15 +69,13 @@ static void nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall, NMActRe
 		 * here...  ad nauseum.  Figure out how to deal with a failure here.
 		 */
 		nm_ap_list_append_ap (data->invalid_ap_list, ap);
-		nm_policy_schedule_activation_failed (req);
-		goto out;
+		return FALSE;
 	}
 
-	nm_info ("Activation (%s) New wireless user key for network '%s' received.", nm_device_get_iface (dev), nm_ap_get_essid (ap));
+	nm_info ("Activation (%s) New wireless user key for network '%s' received.", iface, nm_ap_get_essid (ap));
 
 	dbus_message_iter_init (reply, &iter);
-	if ((security = nm_ap_security_new_deserialize (&iter)))
-	{
+	if ((security = nm_ap_security_new_deserialize (&iter))) {
 		NMAccessPoint *allowed_ap;
 
 		nm_ap_set_security (ap, security);
@@ -106,11 +86,91 @@ static void nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall, NMActRe
 			nm_ap_set_security (allowed_ap, security);
 
 		g_object_unref (G_OBJECT (security));	/* set_security copies the object */
-		nm_device_activate_schedule_stage1_device_prepare (req);
 	}
+
+	return TRUE;
+}
+
+static gboolean
+nm_dbus_get_wired_user_key_done (DBusMessage *reply, NMActRequest *req)
+{
+	NMAPSecurity *security;
+	DBusMessageIter iter;
+	NMWiredNetwork *wired_net;
+	const char *iface = nm_device_get_iface (nm_act_request_get_dev (req));
+
+	wired_net = nm_act_request_get_wired_network (req);
+	g_assert (wired_net);
+
+	if (message_is_error (reply)) {
+		DBusError err;
+
+		dbus_error_init (&err);
+		dbus_set_error_from_message (&err, reply);
+
+		/* Check for cancelled error */
+		if (strcmp (err.name, NMI_DBUS_USER_KEY_CANCELED_ERROR) == 0)
+			nm_info ("Activation (%s) New wired user key request was canceled.", iface);
+		else
+			nm_warning ("nm_dbus_get_user_key_for_network_cb(): dbus returned an error.\n  (%s) %s\n", err.name, err.message);
+
+		dbus_error_free (&err);
+		return FALSE;
+	}
+
+	nm_info ("Activation (%s) New wired user key received.", iface);
+
+	dbus_message_iter_init (reply, &iter);
+	if ((security = nm_ap_security_new_deserialize (&iter))) {
+		nm_wired_network_set_security (wired_net, security);
+		g_object_unref (security);
+	}
+
+	return TRUE;
+}
+
+/*
+ * nm_dbus_get_user_key_for_network_cb
+ *
+ * Callback from nm_dbus_get_user_key_for_network when NetworkManagerInfo returns
+ * the new user key.
+ *
+ */
+static void nm_dbus_get_user_key_for_network_cb (DBusPendingCall *pcall, NMActRequest *req)
+{
+	NMDevice *dev;
+	gboolean success;
+	DBusMessage *reply = NULL;
+
+	g_return_if_fail (pcall != NULL);
+	g_return_if_fail (req != NULL);
+
+	if (!dbus_pending_call_get_completed (pcall))
+		goto out;
+
+	if (!(reply = dbus_pending_call_steal_reply (pcall)))
+		goto out;
+
+	dev = nm_act_request_get_dev (req);
+	g_assert (dev);
+
 	nm_act_request_set_user_key_pending_call (req, NULL);
 
-out:
+	if (NM_IS_DEVICE_802_11_WIRELESS (dev))
+		success = nm_dbus_get_wireless_user_key_done (reply, req);
+	else if (NM_IS_DEVICE_802_3_ETHERNET (dev))
+		success = nm_dbus_get_wired_user_key_done (reply, req);
+	else {
+		g_error ("Unhandled device type (%s)", G_OBJECT_TYPE_NAME (dev));
+		return;
+	}
+
+	if (success)
+		nm_device_activate_schedule_stage1_device_prepare (req);
+	else
+		nm_policy_schedule_activation_failed (req);
+
+ out:
 	if (reply)
 		dbus_message_unref (reply);
 	nm_act_request_unref (req);
@@ -126,11 +186,8 @@ out:
  */
 void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMActRequest *req, const gboolean new_key)
 {
-	DBusMessage *		message;
-	DBusPendingCall *	pcall;
 	NMData *			data;
 	NMDevice *		dev;
-	NMAccessPoint *	ap;
 	gint32			attempt = 1;
 	char *			dev_path;
 	char *			net_path;
@@ -145,22 +202,44 @@ void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMActRequest 
 	dev = nm_act_request_get_dev (req);
 	g_assert (dev);
 
-	ap = nm_act_request_get_ap (req);
-	g_assert (ap);
+	if (NM_IS_DEVICE_802_11_WIRELESS (dev)) {
+		NMAccessPoint *	ap;
 
-	essid = nm_ap_get_essid (ap);
-	nm_info ("Activation (%s) New wireless user key requested for network '%s'.", nm_device_get_iface (dev), essid);
+		ap = nm_act_request_get_ap (req);
+		g_assert (ap);
 
-	if (!(message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "getKeyForNetwork")))
-	{
-		nm_warning ("nm_dbus_get_user_key_for_network(): Couldn't allocate the dbus message");
+		essid = nm_ap_get_essid (ap);
+		net_path = nm_dbus_get_object_path_for_network (dev, ap);
+
+		nm_info ("Activation (%s) New wireless user key requested for network '%s'.",
+			    nm_device_get_iface (dev), essid);
+
+	} else if (NM_IS_DEVICE_802_3_ETHERNET (dev)) {
+		NMWiredNetwork *wired_net;
+
+		wired_net = nm_act_request_get_wired_network (req);
+		g_assert (wired_net);
+		
+		essid = nm_wired_network_get_network_id (wired_net);
+		net_path = g_strdup ("/");
+	} else {
+		g_error ("Unhandled device type (%s)", G_OBJECT_TYPE_NAME (dev));
 		return;
 	}
 
 	dev_path = nm_dbus_get_object_path_for_device (dev);
-	net_path = nm_dbus_get_object_path_for_network (dev, ap);
+
 	if (dev_path && strlen (dev_path) && net_path && strlen (net_path))
 	{
+		DBusMessage *message;
+		DBusPendingCall *pcall;
+
+		if (!(message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "getKeyForNetwork")))
+		{
+			nm_warning ("nm_dbus_get_user_key_for_network(): Couldn't allocate the dbus message");
+			return;
+		}
+
 		dbus_message_append_args (message, DBUS_TYPE_OBJECT_PATH, &dev_path,
 									DBUS_TYPE_OBJECT_PATH, &net_path,
 									DBUS_TYPE_STRING, &essid,
@@ -176,7 +255,11 @@ void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMActRequest 
 		}
 		else
 			nm_warning ("nm_dbus_get_user_key_for_network(): could not send dbus message");
-	} else nm_warning ("nm_dbus_get_user_key_for_network(): bad object path data");
+
+		dbus_message_unref (message);
+	} else
+		nm_warning ("nm_dbus_get_user_key_for_network(): bad object path data");
+
 	g_free (net_path);
 	g_free (dev_path);
 
@@ -184,8 +267,6 @@ void nm_dbus_get_user_key_for_network (DBusConnection *connection, NMActRequest 
 	 * we just hang in the activation process and nothing happens
 	 * until the user cancels stuff.
 	 */
-
-	dbus_message_unref (message);
 }
 
 
@@ -219,26 +300,15 @@ void nm_dbus_cancel_get_user_key_for_network (DBusConnection *connection, NMActR
 }
 
 
-/*
- * nm_dbus_update_network_info
- *
- * Tell NetworkManagerInfo the updated info of the AP
- *
- */
-gboolean nm_dbus_update_network_info (DBusConnection *connection, NMAccessPoint *ap, const gboolean automatic)
+static gboolean update_network_info (DBusConnection *connection,
+							  const char *network_id,
+							  gboolean automatic,
+							  const char *bssid,
+							  NMAPSecurity *security)
 {
-	DBusMessage *		message;
-	gboolean			success = FALSE;
-	const char *		essid;
-	gchar *			char_bssid;
-	NMAPSecurity *		security;
-	const struct ether_addr *addr;
-	DBusMessageIter	iter;
-
-	g_return_val_if_fail (connection != NULL, FALSE);
-	g_return_val_if_fail (ap != NULL, FALSE);
-
-	essid = nm_ap_get_essid (ap);
+	DBusMessage *message;
+	DBusMessageIter iter;
+	gboolean success = FALSE;
 
 	if (!(message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "updateNetworkInfo")))
 	{
@@ -249,19 +319,52 @@ gboolean nm_dbus_update_network_info (DBusConnection *connection, NMAccessPoint 
 	dbus_message_iter_init_append (message, &iter);
 
 	/* First argument: ESSID (STRING) */
-	dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &essid);
+	dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &network_id);
 
 	/* Second argument: Automatic (BOOLEAN) */
 	dbus_message_iter_append_basic (&iter, DBUS_TYPE_BOOLEAN, &automatic);
 
 	/* Third argument: Access point's BSSID */
+	dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &bssid);
+
+	/* Serialize the AP's security info into the message */
+	if (nm_ap_security_serialize (security, &iter) != 0)
+		goto unref;
+
+	if (dbus_connection_send (connection, message, NULL))
+		success = TRUE;
+	else
+		nm_warning ("update_network_info(): failed to send dbus message.");
+
+unref:
+	dbus_message_unref (message);
+
+out:
+	return success;
+
+}
+
+
+/*
+ * nm_dbus_update_network_info
+ *
+ * Tell NetworkManagerInfo the updated info of the AP
+ *
+ */
+gboolean nm_dbus_update_network_info (DBusConnection *connection, NMAccessPoint *ap, const gboolean automatic)
+{
+	gboolean success;
+	gchar *char_bssid;
+	const struct ether_addr *addr;
+
+	g_return_val_if_fail (connection != NULL, FALSE);
+	g_return_val_if_fail (ap != NULL, FALSE);
+
 	addr = nm_ap_get_address (ap);
 	if ((nm_ap_get_mode (ap) == IW_MODE_INFRA) && nm_ethernet_address_is_valid (addr))
 	{
 		char_bssid = g_new0 (gchar, 20);
 		iw_ether_ntop (addr, char_bssid);
-		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &char_bssid);
-		g_free (char_bssid);
 	}
 	else
 	{
@@ -269,26 +372,30 @@ gboolean nm_dbus_update_network_info (DBusConnection *connection, NMAccessPoint 
 		 * the BSSID is usually randomly constructed by the driver and
 		 * changed every time you activate the network.
 		 */
-		char_bssid = " ";
-		dbus_message_iter_append_basic (&iter, DBUS_TYPE_STRING, &char_bssid);
+		char_bssid = g_strdup (" ");
 	}
 
-	/* Serialize the AP's security info into the message */
-	security = nm_ap_get_security (ap);
-	g_assert (security);
-	if (nm_ap_security_serialize (security, &iter) != 0)
-		goto unref;
+	success = update_network_info (connection,
+							 nm_ap_get_essid (ap),
+							 automatic,
+							 char_bssid,
+							 nm_ap_get_security (ap));
+	g_free (char_bssid);
 
-	if (dbus_connection_send (connection, message, NULL))
-		success = TRUE;
-	else
-		nm_warning ("nm_dbus_update_network_info(): failed to send dbus message.");
-
-unref:
-	dbus_message_unref (message);
-
-out:
 	return success;
+}
+
+
+gboolean nm_dbus_update_wired_network_info (DBusConnection *connection, NMWiredNetwork *wired_net)
+{
+	g_return_val_if_fail (connection != NULL, FALSE);
+	g_return_val_if_fail (wired_net != NULL, FALSE);
+
+	return update_network_info (connection,
+						   nm_wired_network_get_network_id (wired_net),
+						   FALSE,
+						   "WIRED", /* CRAPPY HACK */
+						   nm_wired_network_get_security (wired_net));
 }
 
 

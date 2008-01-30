@@ -28,18 +28,24 @@
 #include "NetworkManagerMain.h"
 #include "nm-device.h"
 #include "NetworkManagerAP.h"
+#include "nm-wired-network.h"
 #include "nm-ip4-config.h"
 
 
 
-NMActRequest *		nm_act_request_new				(NMData *data, NMDevice *dev, NMAccessPoint *ap, gboolean user_requested);
+NMActRequest *		nm_act_request_new				(NMData *data, NMDevice *dev, gboolean user_requested);
 void				nm_act_request_ref				(NMActRequest *req);
 void				nm_act_request_unref			(NMActRequest *req);
 
 NMDevice *		nm_act_request_get_dev			(NMActRequest *req);
 NMData *			nm_act_request_get_data			(NMActRequest *req);
-NMAccessPoint *	nm_act_request_get_ap			(NMActRequest *req);
 gboolean			nm_act_request_get_user_requested	(NMActRequest *req);
+
+NMAccessPoint *	nm_act_request_get_ap			(NMActRequest *req);
+void			nm_act_request_set_ap			(NMActRequest *req, NMAccessPoint *ap);
+
+NMWiredNetwork *nm_act_request_get_wired_network	(NMActRequest *req);
+void			nm_act_request_set_wired_network	(NMActRequest *req, NMWiredNetwork *network);
 
 NMIP4Config *		nm_act_request_get_ip4_config		(NMActRequest *req);
 void				nm_act_request_set_ip4_config		(NMActRequest *req, NMIP4Config *ip4_config);

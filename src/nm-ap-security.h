@@ -40,6 +40,12 @@ G_BEGIN_DECLS
 #define NM_IS_AP_SECURITY_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_AP_SECURITY))
 #define NM_AP_SECURITY_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_AP_SECURITY, NMAPSecurityClass))
 
+typedef enum {
+	NM_AP_SECURITY_WRITE_FLAG_NONE,
+	NM_AP_SECURITY_WRITE_FLAG_ADHOC,
+	NM_AP_SECURITY_WRITE_FLAG_WIRED
+} NMAPSecurityWriteFlags;
+
 typedef struct _NMAPSecurity NMAPSecurity;
 typedef struct _NMAPSecurityClass NMAPSecurityClass;
 typedef struct _NMAPSecurityPrivate NMAPSecurityPrivate;
@@ -67,7 +73,7 @@ struct _NMAPSecurityClass
 	gboolean	(*write_supplicant_config_func)(NMAPSecurity *self,
 									  struct wpa_ctrl *ctrl,
 									  int nwid,
-									  gboolean adhoc);
+									  NMAPSecurityWriteFlags flag);
 
 	guint32 (*get_default_capabilities_func)(NMAPSecurity *self);
 	gboolean (*get_authentication_required_func)(NMAPSecurity *self);
@@ -94,7 +100,7 @@ int			nm_ap_security_serialize (NMAPSecurity *self,
 gboolean		nm_ap_security_write_supplicant_config (NMAPSecurity *self,
 									struct wpa_ctrl *ctrl,
 									int nwid,
-									gboolean adhoc);
+									NMAPSecurityWriteFlags flag);
 
 const char *	nm_ap_security_get_description (NMAPSecurity *self);
 

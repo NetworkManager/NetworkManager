@@ -66,6 +66,8 @@ NetworkManager_SOURCES =				\
 		nm-ap-security-leap.h   		\
 		nm-supplicant.h				\
 		nm-supplicant.c				\
+		nm-wired-network.c			\
+		nm-wired-network.h			\
 		nm-marshal-main.c			\
 		kernel-types.h				\
 		wpa.c					\
