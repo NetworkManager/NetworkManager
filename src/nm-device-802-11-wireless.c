@@ -1104,6 +1104,7 @@ set_inactive_scan_timeout (NMData *data, NMWirelessScanInterval interval)
 	if (source) {
 		g_source_destroy (source);
 		g_source_unref (source);
+		source = NULL;
 	}
 
 	if (interval != NM_WIRELESS_SCAN_INTERVAL_INACTIVE) {
