@@ -410,8 +410,6 @@ static void nm_dbus_vpn_connections_update_cb (DBusPendingCall *pcall, void *use
 	NMData *			data = (NMData *) user_data;
 	DBusMessage *		reply;
 	DBusMessageIter	iter, array_iter;
-	GSList *			remove_list = NULL;
-	GSList *			elt;
 
 	g_return_if_fail (pcall);
 	g_return_if_fail (data != NULL);
@@ -427,21 +425,14 @@ static void nm_dbus_vpn_connections_update_cb (DBusPendingCall *pcall, void *use
 
 	nm_info ("Updating VPN Connections...");
 
-	remove_list = nm_vpn_manager_vpn_connection_list_copy (data->vpn_manager);
-
 	dbus_message_iter_init (reply, &iter);
 	dbus_message_iter_recurse (&iter, &array_iter);
 	while (dbus_message_iter_get_arg_type (&array_iter) == DBUS_TYPE_STRING)
 	{
 		DBusMessage *		message;
 		const char *		con_name;
-		NMVPNConnection *	vpn;
 
 		dbus_message_iter_get_basic (&array_iter, &con_name);
-
-		/* If the connection already exists, remove it from the remove list */
-		if ((vpn = nm_vpn_manager_find_connection_by_name (data->vpn_manager, con_name)))
-			remove_list = g_slist_remove (remove_list, vpn);
 
 		if ((message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "getVPNConnectionProperties")))
 		{
@@ -462,15 +453,6 @@ static void nm_dbus_vpn_connections_update_cb (DBusPendingCall *pcall, void *use
 		dbus_message_iter_next (&array_iter);
 	}
 	dbus_message_unref (reply);
-
-	/* VPN connections left in the remove list aren't known by NMI, therefore we delete them */
-	for (elt = remove_list; elt; elt = g_slist_next (elt))
-	{
-		nm_vpn_manager_remove_connection (data->vpn_manager, elt->data);
-		nm_vpn_connection_unref (elt->data);
-	}
-
-	g_slist_free (remove_list);
 
 out:
 	dbus_pending_call_unref (pcall);
@@ -526,6 +508,8 @@ static gboolean nm_dbus_vpn_connections_update_from_nmi (NMData *data)
 	g_return_val_if_fail (data != NULL, FALSE);
 	g_return_val_if_fail (data->dbus_connection != NULL, FALSE);
 	g_return_val_if_fail (data->vpn_manager != NULL, FALSE);
+
+	nm_vpn_manager_clear_connections (data->vpn_manager);
 
 	if (!(message = dbus_message_new_method_call (NMI_DBUS_SERVICE, NMI_DBUS_PATH, NMI_DBUS_INTERFACE, "getVPNConnections")))
 	{

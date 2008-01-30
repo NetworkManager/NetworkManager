@@ -130,28 +130,6 @@ NMVPNService *nm_vpn_manager_find_service_by_name (NMVPNManager *manager, const 
 
 
 /*
- * nm_vpn_manager_vpn_connection_list_copy
- *
- * Make a shallow copy of the VPN connection list, should
- * only be used by nm-dbus-vpn.c
- *
- */
-GSList *nm_vpn_manager_vpn_connection_list_copy (NMVPNManager *manager)
-{
-	GSList *	list;
-	GSList *	elt;
-
-	g_return_val_if_fail (manager != NULL, NULL);
-
-	list = g_slist_copy (manager->connections);
-	for (elt = list; elt; elt = g_slist_next (elt))
-		nm_vpn_connection_ref (elt->data);
-
-	return list;
-}
-
-
-/*
  * nm_vpn_manager_add_connection
  *
  * Add a new VPN connection if none already exits, otherwise update the existing one.
@@ -223,6 +201,29 @@ void nm_vpn_manager_remove_connection (NMVPNManager *manager, NMVPNConnection *v
 
 	manager->connections = g_slist_remove (manager->connections, vpn);
 	nm_vpn_connection_unref (vpn);
+}
+
+
+/*
+ * nm_vpn_manager_clear_connections
+ *
+ * Remove all VPN connections.
+ *
+ */
+void
+nm_vpn_manager_clear_connections (NMVPNManager *manager)
+{
+	GSList *connections;
+	GSList *iter;
+
+	g_return_if_fail (manager != NULL);
+
+	connections = g_slist_copy (manager->connections);
+
+	for (iter = connections; iter; iter = iter->next)
+		nm_vpn_manager_remove_connection (manager, (NMVPNConnection *) iter->data);
+
+	g_slist_free (connections);
 }
 
 

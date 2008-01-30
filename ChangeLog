@@ -1,5 +1,16 @@
 2008-01-29  Tambet Ingo  <tambet@gmail.com>
 
+	* src/vpn-manager/nm-dbus-vpn.c (nm_dbus_vpn_connections_update_cb): Don't
+	try to merge the VPN connections, just add everything.
+	(nm_dbus_vpn_connections_update_from_nmi): Remove the existing VPN connections
+	when a new instance of NMI service appears.
+
+	* src/vpn-manager/nm-vpn-manager.c (nm_vpn_manager_vpn_connection_list_copy):
+	Remove.
+	(nm_vpn_manager_clear_connections): Implement.
+
+2008-01-29  Tambet Ingo  <tambet@gmail.com>
+
 	* src/backends/NetworkManagerSuSE.c (nm_system_device_get_system_config):
 	Fix the issue where NM doesn't honor YaST static IP settings.
 	(bugzilla.novell.com #271757).

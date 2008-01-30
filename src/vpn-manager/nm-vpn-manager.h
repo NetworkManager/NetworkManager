@@ -29,12 +29,11 @@
 NMVPNManager *		nm_vpn_manager_new						(NMData *app_data);
 NMVPNConnection *	nm_vpn_manager_add_connection				(NMVPNManager *manager, const char *name, const char *service_name, const char *user_name);
 void				nm_vpn_manager_remove_connection			(NMVPNManager *manager, NMVPNConnection *vpn);
+void				nm_vpn_manager_clear_connections			(NMVPNManager *manager);
 char	**			nm_vpn_manager_get_connection_names		(NMVPNManager *manager);
 void				nm_vpn_manager_dispose					(NMVPNManager *manager);
 
 NMVPNActRequest *	nm_vpn_manager_get_vpn_act_request			(NMVPNManager *manager);
-
-GSList *			nm_vpn_manager_vpn_connection_list_copy		(NMVPNManager *manager);
 
 void				nm_vpn_manager_activate_vpn_connection		(NMVPNManager *manager, NMVPNConnection *vpn, char **password_items,
 										int password_count, char **data_items, int data_count,
