@@ -1,3 +1,11 @@
+2008-01-30  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-3-ethernet.c
+		- (real_update_link): factor common link checking code out into 
+			poll_link_state()
+		- (real_deactivate_quickly): schedule link state change in an idle
+			handler rather than doing it immediately to prevent deadlocks
+
 2008-01-30  Tambet Ingo  <tambet@ximian.com>
 
 	Implement 802.1x wired authentication.

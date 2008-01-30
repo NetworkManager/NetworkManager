@@ -156,34 +156,38 @@ nm_device_802_3_ethernet_link_deactivated (NmNetlinkMonitor *monitor,
 	g_source_unref (source);
 }
 
-static void
-real_update_link (NMDevice *dev)
+static gboolean
+poll_link_state (NMDevice8023Ethernet *self)
 {
-	NMDevice8023Ethernet *	self = NM_DEVICE_802_3_ETHERNET (dev);
-	gboolean	have_link = FALSE;
+	gboolean have_link = FALSE;
 	guint32	caps;
-	gchar *	contents;
-	gsize	length;
+	gchar *contents;
+	gsize length;
 
 	if (nm_device_get_removed (NM_DEVICE (self)) || self->priv->failed_8021x)
-		goto out;
+		return FALSE;
 
 	/* Devices that don't support carrier detect are always "on" and
 	 * must be manually chosen by the user.
 	 */
 	caps = nm_device_get_capabilities (NM_DEVICE (self));
-	if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT)) {
-		have_link = TRUE;
-		goto out;
-	}
+	if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
+		return TRUE;
 
 	if (g_file_get_contents (self->priv->carrier_file_path, &contents, &length, NULL)) {
 		have_link = atoi (contents) > 0 ? TRUE : FALSE;
 		g_free (contents);
 	}
 
-out:
-	nm_device_set_active_link (NM_DEVICE (self), have_link);
+	return have_link;
+}
+
+static void
+real_update_link (NMDevice *dev)
+{
+	NMDevice8023Ethernet *self = NM_DEVICE_802_3_ETHERNET (dev);
+
+	nm_device_set_active_link (NM_DEVICE (self), poll_link_state (self));
 }
 
 
@@ -223,6 +227,7 @@ static void
 real_deactivate_quickly (NMDevice *dev)
 {
 	NMDevice8023Ethernet *self = NM_DEVICE_802_3_ETHERNET (dev);
+	gboolean have_link;
 
 	if (self->priv->supplicant) {
 		g_object_unref (self->priv->supplicant);
@@ -232,7 +237,18 @@ real_deactivate_quickly (NMDevice *dev)
 	remove_link_timeout (self);
 
 	self->priv->failed_8021x = FALSE;
-	real_update_link (dev);
+	have_link = poll_link_state (self);
+	if (nm_device_has_active_link (dev) != have_link) {
+		GSource * source;
+
+		source = g_idle_source_new ();
+		if (have_link)
+			g_source_set_callback (source, (GSourceFunc) link_activated_helper, self, NULL);
+		else
+			g_source_set_callback (source, (GSourceFunc) link_deactivated_helper, self, NULL);
+		g_source_attach (source, nm_device_get_main_context (NM_DEVICE (self)));
+		g_source_unref (source);
+	}
 }
 
 
