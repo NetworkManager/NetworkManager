@@ -1,3 +1,8 @@
+2008-01-30  Tambet Ingo  <tambet@ximian.com>
+
+	* src/named-manager/nm-named-manager.c (rewrite_resolv_conf): Add some
+	information on what produced the content (process name and pid).
+
 2008-01-30  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-3-ethernet.c
