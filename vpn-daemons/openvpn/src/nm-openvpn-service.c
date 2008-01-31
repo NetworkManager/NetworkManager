@@ -91,7 +91,7 @@ static ValidProperty valid_properties[] = {
 	{ NM_OPENVPN_KEY_TAP_DEV,         G_TYPE_BOOLEAN },
 	{ NM_OPENVPN_KEY_KEY,             G_TYPE_STRING },
 	{ NM_OPENVPN_KEY_LOCAL_IP,        G_TYPE_STRING },
-	{ NM_OPENVPN_KEY_PORT,            G_TYPE_UINT },
+	{ NM_OPENVPN_KEY_PORT,            G_TYPE_INT },
 	{ NM_OPENVPN_KEY_PROTO_TCP,       G_TYPE_BOOLEAN },
 	{ NM_OPENVPN_KEY_REMOTE,          G_TYPE_STRING },
 	{ NM_OPENVPN_KEY_REMOTE_IP,       G_TYPE_STRING },
@@ -419,7 +419,7 @@ nm_openvpn_start_openvpn_binary (NMOpenvpnPlugin *plugin, GHashTable *properties
 	tmp = g_hash_table_lookup (properties, NM_OPENVPN_KEY_PORT);
 	if (tmp)
 		/* The string here is leaked, big deal. */
-		g_ptr_array_add (openvpn_argv, g_strdup_printf ("%u", g_value_get_uint ((GValue *) tmp)));
+		g_ptr_array_add (openvpn_argv, g_strdup_printf ("%u", g_value_get_int ((GValue *) tmp)));
 	else
 		/* Default to IANA assigned port 1194 */
 		g_ptr_array_add (openvpn_argv, (GValue *) "1194");

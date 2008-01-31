@@ -224,18 +224,6 @@ int_to_gvalue (int i)
 	return value;
 }
 
-static GValue *
-uint_to_gvalue (guint u)
-{
-	GValue *value;
-
-	value = g_slice_new0 (GValue);
-	g_value_init (value, G_TYPE_UINT);
-	g_value_set_uint (value, u);
-
-	return value;
-}
-
 static void
 impl_fill_connection (NetworkManagerVpnUI *self, NMConnection *connection)
 {
@@ -302,7 +290,7 @@ impl_fill_connection (NetworkManagerVpnUI *self, NMConnection *connection)
 
 	g_hash_table_insert (properties, g_strdup(NM_OPENVPN_KEY_TAP_DEV), bool_to_gvalue (use_tap));
 	g_hash_table_insert (properties, g_strdup(NM_OPENVPN_KEY_REMOTE), str_to_gvalue (remote));
-	g_hash_table_insert (properties, g_strdup(NM_OPENVPN_KEY_PORT), uint_to_gvalue ((guint) atoi (port)));
+	g_hash_table_insert (properties, g_strdup(NM_OPENVPN_KEY_PORT), int_to_gvalue ((guint) atoi (port)));
 	g_hash_table_insert (properties, g_strdup(NM_OPENVPN_KEY_PROTO_TCP), bool_to_gvalue (use_tcp));
 	g_hash_table_insert (properties, g_strdup(NM_OPENVPN_KEY_CA), str_to_gvalue (ca));
 	g_hash_table_insert (properties, g_strdup(NM_OPENVPN_KEY_CERT), str_to_gvalue (cert));
@@ -373,7 +361,7 @@ set_property (gpointer key, gpointer val, gpointer user_data)
 	if (!strcmp (name, NM_OPENVPN_KEY_REMOTE))
 		gtk_entry_set_text (impl->w_remote, g_value_get_string (value));
 	else if (!strcmp (name, NM_OPENVPN_KEY_PORT)) {
-		char *port = g_strdup_printf ("%u", g_value_get_uint (value));
+		char *port = g_strdup_printf ("%d", g_value_get_int (value));
 		gtk_entry_set_text (impl->w_port, port);
 		g_free (port);
 	} else if (!strcmp (name, NM_OPENVPN_KEY_CA))
@@ -468,7 +456,7 @@ impl_get_widget (NetworkManagerVpnUI *self, NMConnection *connection)
 
 
 /** Checks if port is an integer and
- *  less than 65 
+ *  less than 65536
  */
 static gboolean
 check_port (const char *port)
@@ -1337,7 +1325,7 @@ export_to_file (NetworkManagerVpnUIImpl *impl,
 	FILE *f;
 	const char *connection_type = "";
 	const char *remote = "";
-	guint port = 1194;
+	gint port = 1194;
 	gboolean tap_dev = FALSE;
 	gboolean proto_tcp = FALSE;
 	const char *ca = "";
@@ -1369,7 +1357,7 @@ export_to_file (NetworkManagerVpnUIImpl *impl,
 
 	val = (GValue *) g_hash_table_lookup (s_vpn_props->data, NM_OPENVPN_KEY_PORT);
 	if (val)
-		port = g_value_get_uint (val);
+		port = g_value_get_int (val);
 
 	val = (GValue *) g_hash_table_lookup (s_vpn_props->data, NM_OPENVPN_KEY_TAP_DEV);
 	if (val)
@@ -1468,7 +1456,7 @@ export_to_file (NetworkManagerVpnUIImpl *impl,
 			    "description=%s\n"
 			    "connection-type=%s\n"
 			    "remote=%s\n"
-			    "port=%u\n"
+			    "port=%d\n"
 			    "dev=%s\n"
 			    "proto=%s\n"
 			    "ca=%s\n"

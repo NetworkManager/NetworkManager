@@ -1,3 +1,11 @@
+2008-01-31  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Robert Hughes <rhughes@smgf.org>
+
+	* src/nm-openvpn-service.c
+	  properties/nm-openvpn.c
+		- Make 'port' an integer, not a uint
+
 2007-12-13  Tim Niemueller <tim@niemueller.de>
 
 	* nm-openvpn.desktop.in: Updates to make desktop-file-validate happy
