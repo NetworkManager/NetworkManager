@@ -904,23 +904,6 @@ nm_device_802_11_wireless_get_address (NMDevice80211Wireless *self,
 	memcpy (addr, &(self->priv->hw_addr), sizeof (struct ether_addr));
 }
 
-static NMAccessPoint *
-ap_list_get_ap_by_ssid (GSList *list,
-                        const GByteArray * ssid)
-{
-	GSList * elt;
-
-	for (elt = list; elt; elt = g_slist_next (elt)) {
-		NMAccessPoint * ap = NM_AP (elt->data);
-		const GByteArray * ap_ssid = nm_ap_get_ssid (ap);
-
-		if (ap_ssid && nm_utils_same_ssid (ap_ssid, ssid, TRUE))
-			return ap;
-	}
-
-	return NULL;
-}
-
 #if DEBUG
 static void
 nm_device_802_11_wireless_ap_list_print (NMDevice80211Wireless *self)
@@ -938,46 +921,6 @@ nm_device_802_11_wireless_ap_list_print (NMDevice80211Wireless *self)
 	nm_info ("AP_LIST_PRINT: done");
 }
 #endif
-
-/*
- * nm_device_802_11_wireless_ap_list_get_ap_by_ssid
- *
- * Get the access point for a specific SSID
- *
- */
-NMAccessPoint *
-nm_device_802_11_wireless_ap_list_get_ap_by_ssid (NMDevice80211Wireless *self,
-                                                  const GByteArray * ssid)
-{
-	g_return_val_if_fail (self != NULL, NULL);
-	g_return_val_if_fail (ssid != NULL, NULL);
-
-	return ap_list_get_ap_by_ssid (self->priv->ap_list, ssid);
-}
-
-
-/*
- * nm_device_ap_list_get_ap_by_obj_path
- *
- * Get the access point for a dbus object path.  Requires an _unescaped_
- * object path.
- *
- */
-NMAccessPoint *
-nm_device_802_11_wireless_ap_list_get_ap_by_obj_path (NMDevice80211Wireless *self,
-                                                      const char *obj_path)
-{
-	GSList * elt;
-
-	for (elt = self->priv->ap_list; elt; elt = g_slist_next (elt)) {
-		NMAccessPoint *ap = NM_AP (elt->data);
-
-		if (!strcmp (obj_path, nm_ap_get_dbus_path (ap)))
-			return ap;
-	}
-
-	return NULL;
-}
 
 static gboolean
 impl_device_get_access_points (NMDevice80211Wireless *self,
@@ -1586,60 +1529,6 @@ cancel_pending_scan (NMDevice80211Wireless *self)
 	}
 }
 
-
-#if 0
-/*
- * is_associated
- *
- * Figure out whether or not we're associated to an access point
- */
-static gboolean
-is_associated (NMDevice80211Wireless *self)
-{
-	struct iwreq	wrq;
-	NMSock *		sk;
-	gboolean		associated = FALSE;
-	const char *	iface;
-
-	iface = nm_device_get_iface (NM_DEVICE (self));
-
-	if ((sk = nm_dev_sock_open (iface, DEV_WIRELESS, __FUNCTION__, NULL)) == NULL)
-		return FALSE;
-
-	/* Some cards, for example ipw2x00 cards, can short-circuit the MAC
-	 * address check using this check on IWNAME.  Its faster.
-	 */
-	memset (&wrq, 0, sizeof (struct iwreq));
-	nm_ioctl_info ("%s: About to GET IWNAME.", iface);
-	if (iw_get_ext (nm_dev_sock_get_fd (sk), iface, SIOCGIWNAME, &wrq) >= 0)
-	{
-		if (!strcmp (wrq.u.name, "unassociated"))
-		{
-			associated = FALSE;
-			goto out;
-		}
-	}
-
-	if (!associated)
-	{
-		/*
-		 * For all other wireless cards, the best indicator of a "link" at this time
-		 * seems to be whether the card has a valid access point MAC address.
-		 * Is there a better way?  Some cards don't work too well with this check, ie
-		 * Lucent WaveLAN.
-		 */
-		nm_ioctl_info ("%s: About to GET IWAP.", iface);
-		if (iw_get_ext (nm_dev_sock_get_fd (sk), iface, SIOCGIWAP, &wrq) >= 0)
-			if (nm_ethernet_address_is_valid ((struct ether_addr *)(&(wrq.u.ap_addr.sa_data))))
-				associated = TRUE;
-	}
-
-out:
-	nm_dev_sock_close (sk);
-
-	return associated;
-}
-#endif
 
 static gboolean
 is_encrypted (guint32 flags, guint32 wpa_flags, guint32 rsn_flags)
@@ -3246,6 +3135,7 @@ nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wireless *self)
 {
 	NMActRequest *req;
 	const char *ap_path;
+	GSList * elt;
 
 	g_return_val_if_fail (NM_IS_DEVICE_802_11_WIRELESS (self), NULL);
 
@@ -3257,6 +3147,13 @@ nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wireless *self)
 	if (!ap_path)
 		return NULL;
 
-	return nm_device_802_11_wireless_ap_list_get_ap_by_obj_path (self, ap_path);
+	/* Find the AP by it's object path */
+	for (elt = self->priv->ap_list; elt; elt = g_slist_next (elt)) {
+		NMAccessPoint *ap = NM_AP (elt->data);
+
+		if (!strcmp (ap_path, nm_ap_get_dbus_path (ap)))
+			return ap;
+	}
+	return NULL;
 }
 

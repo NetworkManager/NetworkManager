@@ -100,12 +100,6 @@ gboolean		nm_device_802_11_wireless_set_mode (NMDevice80211Wireless *self,
 
 void			nm_device_802_11_wireless_reset_scan_interval (NMDevice80211Wireless *dev);
 
-NMAccessPoint *	nm_device_802_11_wireless_ap_list_get_ap_by_obj_path (NMDevice80211Wireless *dev,
-													const char *obj_path);
-
-NMAccessPoint *	nm_device_802_11_wireless_ap_list_get_ap_by_ssid (NMDevice80211Wireless *dev,
-													const GByteArray * ssid);
-
 int		nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *self);
 
 gboolean nm_device_802_11_wireless_can_activate (NMDevice80211Wireless * self);

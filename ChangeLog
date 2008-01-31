@@ -1,3 +1,14 @@
+2008-01-31  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.h
+	  src/nm-device-802-11-wireless.c
+		- (ap_list_get_ap_by_ssid, is_associated,
+		   nm_device_802_11_wireless_ap_list_get_ap_by_ssid,
+		   nm_device_802_11_wireless_ap_list_get_ap_by_obj_path): remove
+		- (nm_device_802_11_wireless_get_activation_ap): collapse
+			nm_device_802_11_wireless_ap_list_get_ap_by_obj_path() into this
+			function
+
 2008-01-30  Dan Williams  <dcbw@redhat.com>
 
 	* system-settings/plugins/ifcfg
