@@ -1,3 +1,9 @@
+2008-02-01  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerPolicy.c
+		- (device_state_changed): schedule a change check when a device gets
+			deactivated so something happens if you disconnect GSM/CDMA
+
 2008-01-31  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-11-wireless.h

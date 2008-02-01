@@ -467,6 +467,8 @@ device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 		/* Clear the invalid tag on the connection */
 		if (connection)
 			g_object_set_data (G_OBJECT (connection), INVALID_TAG, NULL);
+	} else if (state == NM_DEVICE_STATE_DISCONNECTED) {
+		schedule_change_check (policy);
 	}
 }
 
