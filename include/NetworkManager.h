@@ -122,7 +122,7 @@ typedef enum NMDeviceType
 
 
 /*
- * Device states. Will obsolete NMActStage soon.
+ * Device states
  */
 typedef enum
 {
