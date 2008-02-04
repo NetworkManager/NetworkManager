@@ -1,5 +1,14 @@
 2008-02-04  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/src/Makefile.am
+		- Install D-Bus service activation file for the system settings
+			service
+
+	* system-settings/src/org.freedesktop.NetworkManagerSystemSettings.service
+		- D-Bus service activation file for system settings service
+
+2008-02-04  Dan Williams  <dcbw@redhat.com>
+
 	* system-settings/src/main.c
 		- (parse_config_file): parse a config file
 		- (main): accept --config option and read plugins from config file

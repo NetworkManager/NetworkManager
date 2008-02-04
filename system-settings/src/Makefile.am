@@ -39,6 +39,11 @@ nm_system_settings_LDFLAGS = -rdynamic
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = nm-system-settings.conf
 
+dbusactivationdir = $(prefix)/share/dbus-1/system-services
+dbusactivation_DATA = org.freedesktop.NetworkManagerSystemSettings.service
+
 EXTRA_DIST = \
-	$(dbusservice_DATA)
+	$(dbusservice_DATA) \
+	$(dbusactivation_DATA)
+
 
