@@ -1,3 +1,12 @@
+2008-02-04  Dan Williams  <dcbw@redhat.com>
+
+	* src/supplicant-manager/nm-supplicant-manager.c
+		- (poke_supplicant_cb): reschedule the poke as a timeout, don't let
+			glib automatically reschedule
+		- (nm_supplicant_manager_init): immediately try to start the supplicant
+		- (nm_supplicant_manager_name_owner_changed): immediately try to restart
+			the supplicant
+
 2008-02-01  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerPolicy.c

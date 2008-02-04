@@ -29,7 +29,7 @@
 #include "nm-marshal.h"
 #include "nm-utils.h"
 
-#define SUPPLICANT_POKE_INTERVAL 6000
+#define SUPPLICANT_POKE_INTERVAL 120000
 
 typedef struct {
 	NMDBusManager *	dbus_mgr;
@@ -97,14 +97,20 @@ poke_supplicant_cb (gpointer user_data)
 	                                   WPAS_DBUS_INTERFACE);
 	if (!proxy) {
 		nm_warning ("Error: could not init wpa_supplicant proxy");
-		return TRUE;
+		goto out;
 	}
 
 	nm_info ("Trying to start the supplicant...");
 	dbus_g_proxy_call_no_reply (proxy, "getInterface", G_TYPE_STRING, tmp, G_TYPE_INVALID);
 	g_object_unref (proxy);
 
-	return TRUE;
+out:
+	/* Reschedule the poke */	
+	priv->poke_id = g_timeout_add (SUPPLICANT_POKE_INTERVAL,
+	                               poke_supplicant_cb,
+	                               (gpointer) self);
+
+	return FALSE;
 }
 
 static void
@@ -126,12 +132,8 @@ nm_supplicant_manager_init (NMSupplicantManager * self)
 	                  self);
 
 	if (!running) {
-		/* Poke the supplicant so that it gets activated by dbus system bus
-		 * activation.
-		 */
-		priv->poke_id = g_timeout_add (SUPPLICANT_POKE_INTERVAL,
-		                               poke_supplicant_cb,
-		                               (gpointer) self);
+		/* Try to activate the supplicant */
+		priv->poke_id = g_idle_add (poke_supplicant_cb, (gpointer) self);
 	}
 }
 
@@ -209,14 +211,13 @@ nm_supplicant_manager_name_owner_changed (NMDBusManager *dbus_mgr,
 	} else if (old_owner_good && !new_owner_good) {
 		nm_supplicant_manager_set_state (self, NM_SUPPLICANT_MANAGER_STATE_DOWN);
 
-		if (!priv->poke_id) {
-			/* Poke the supplicant so that it gets activated by dbus system bus
-			 * activation.
-			 */
-			priv->poke_id = g_timeout_add (SUPPLICANT_POKE_INTERVAL,
-			                               poke_supplicant_cb,
-			                               (gpointer) self);
-		}
+		if (priv->poke_id)
+			g_source_remove (priv->poke_id);
+
+		/* Poke the supplicant so that it gets activated by dbus system bus
+		 * activation.
+		 */
+		priv->poke_id = g_idle_add (poke_supplicant_cb, (gpointer) self);
 	}
 }
 
