@@ -33,8 +33,8 @@
 #include "shvar.h"
 #include "nm-system-config-interface.h"
 
-#define IFCFG_PLUGIN_NAME "ifcfg"
-#define IFCFG_PLUGIN_INFO "(C) 2007 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list."
+#define IFCFG_PLUGIN_NAME "ifcfg-fedora"
+#define IFCFG_PLUGIN_INFO "(c) 2007 - 2008 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list."
 
 static void system_config_interface_init (NMSystemConfigInterface *system_config_interface_class);
 
@@ -149,7 +149,7 @@ build_one_connection (const char *profile_path, const char *filename)
 	ifcfg_file = g_build_filename (profile_path, filename, NULL);
 	g_return_val_if_fail (ifcfg_file != NULL, NULL);
 
-	PLUGIN_PRINT (PLUGIN_NAME, "parsing %s ... ", ifcfg_file);
+	PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "parsing %s ... ", ifcfg_file);
 
 	connection = parser_parse_file (ifcfg_file, &error);
 	if (connection) {
@@ -158,11 +158,11 @@ build_one_connection (const char *profile_path, const char *filename)
 		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 		g_assert (s_con);
 		g_assert (s_con->id);
-		PLUGIN_PRINT (PLUGIN_NAME, "    found connection '%s'", s_con->id);
+		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    found connection '%s'", s_con->id);
 		g_object_set_data_full (G_OBJECT (connection), IFCFG_FILE_PATH_TAG,
 		                        ifcfg_file, (GDestroyNotify) g_free);
 	} else {
-		PLUGIN_PRINT (PLUGIN_NAME, "    error: %s",
+		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    error: %s",
 		              error->message ? error->message : "(unknown)");
 		g_free (ifcfg_file);
 	}
@@ -184,7 +184,7 @@ get_connections_for_profile (const char *profile_path,
 
 	dir = g_dir_open (profile_path, 0, NULL);
 	if (!dir) {
-		PLUGIN_WARN (PLUGIN_NAME, "couldn't access network profile directory '%s'.", profile_path);
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "couldn't access network profile directory '%s'.", profile_path);
 		return NULL;
 	}
 
@@ -221,7 +221,7 @@ free_watch (gpointer key, gpointer value, gpointer user_data)
 	int wd = GPOINTER_TO_INT (value);
 
 	if (inotify_rm_watch (ifd, wd) != 0)
-		PLUGIN_WARN (PLUGIN_NAME, "error removing inotify watch on %s", (char *) key);
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "error removing inotify watch on %s", (char *) key);
 }
 
 static void
@@ -325,7 +325,7 @@ handle_profile_item_changed (SCPluginIfcfg *plugin,
 				/* couldn't replace the settings for some reason; have to
 				 * remove the connection then.
 				 */
-				PLUGIN_WARN (PLUGIN_NAME, "couldn't update connection for '%s'.", filename);
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "couldn't update connection for '%s'.", filename);
 				priv->connections = g_slist_remove (priv->connections, existing);
 				g_signal_emit_by_name (plugin, "connection-removed", existing);
 				g_object_unref (existing);
@@ -439,11 +439,11 @@ init (NMSystemConfigInterface *config)
 
 	priv->profile = get_current_profile_path ();
 	if (!priv->profile)
-		PLUGIN_WARN (PLUGIN_NAME, "could not determine network profile path.");
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "could not determine network profile path.");
 
 	priv->ifd = sc_plugin_inotify_init (plugin, &error);
 	if (error) {
-		PLUGIN_PRINT (PLUGIN_NAME, "    inotify error: %s",
+		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    inotify error: %s",
 		              error->message ? error->message : "(unknown)");
 	}
 }

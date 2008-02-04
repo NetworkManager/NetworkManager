@@ -24,8 +24,6 @@
 
 #include <glib-object.h>
 
-#define PLUGIN_NAME "ifcfg"
-
 #define SC_TYPE_PLUGIN_IFCFG            (sc_plugin_ifcfg_get_type ())
 #define SC_PLUGIN_IFCFG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), SC_TYPE_PLUGIN_IFCFG, SCPluginIfcfg))
 #define SC_PLUGIN_IFCFG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), SC_TYPE_PLUGIN_IFCFG, SCPluginIfcfgClass))

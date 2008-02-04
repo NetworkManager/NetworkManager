@@ -1,5 +1,14 @@
 2008-02-04  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/plugins/ifcfg-fedora/plugin.c
+		- Change reported name to 'ifcfg-fedora'
+		- Use IFCFG_PLUGIN_NAME
+
+	* system-settings/plugins/ifcfg-fedora/plugin.c
+		- Remove PLUGIN_NAME, use IFCFG_PLUGIN_NAME instead
+
+2008-02-04  Dan Williams  <dcbw@redhat.com>
+
 	* system-settings/plugins/ifcfg-fedora/parser.c
 		- (get_ifcfg_name): new function; factor out ifcfg name finding code
 		- (make_connection_setting): use get_ifcfg_name()
