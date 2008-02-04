@@ -1,5 +1,11 @@
 2008-02-04  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/src/main.c
+		- (parse_config_file): parse a config file
+		- (main): accept --config option and read plugins from config file
+
+2008-02-04  Dan Williams  <dcbw@redhat.com>
+
 	* system-settings/plugins/ifcfg-fedora/plugin.c
 		- Change reported name to 'ifcfg-fedora'
 		- Use IFCFG_PLUGIN_NAME

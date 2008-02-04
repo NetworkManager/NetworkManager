@@ -375,6 +375,30 @@ error:
 	return FALSE;
 }
 
+static gboolean
+parse_config_file (const char *filename, char **plugins, GError **error)
+{
+	GKeyFile *config;
+
+	config = g_key_file_new ();
+	if (!config) {
+		g_set_error (error, plugins_error_quark (), 0,
+		             "Not enough memory to load config file.");
+		return FALSE;
+	}
+
+	g_key_file_set_list_separator (config, ',');
+	if (!g_key_file_load_from_file (config, filename, G_KEY_FILE_NONE, error))
+		return FALSE;
+
+	*plugins = g_key_file_get_value (config, "main", "plugins", error);
+	if (*error)
+		return FALSE;
+
+	g_key_file_free (config);
+	return TRUE;
+}
+
 int
 main (int argc, char **argv)
 {
@@ -382,8 +406,10 @@ main (int argc, char **argv)
 	GOptionContext *opt_ctx;
 	GError *error = NULL;
 	char *plugins = NULL;
+	char *config = NULL;
 
 	GOptionEntry entries[] = {
+		{ "config", 0, 0, G_OPTION_ARG_FILENAME, &config, "Config file location", "/path/to/config.file" },
 		{ "plugins", 0, 0, G_OPTION_ARG_STRING, &plugins, "List of plugins separated by ,", "plugin1,plugin2" },
 		{ NULL }
 	};
@@ -400,8 +426,15 @@ main (int argc, char **argv)
 
 	g_option_context_free (opt_ctx);
 
+	if (config) {
+		if (!parse_config_file (config, &plugins, &error)) {
+			g_warning ("Invalid config file: %s.", error->message);
+			return 1;
+		}
+	}
+
 	if (!plugins) {
-		g_warning ("'plugins' argument is required.");
+		g_warning ("No plugins were specified.");
 		return 1;
 	}
 
