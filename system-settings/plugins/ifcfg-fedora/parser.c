@@ -54,16 +54,11 @@ get_int (const char *str, int *value)
 	return TRUE;
 }
 
-static NMSetting *
-make_connection_setting (const char *file,
-                         shvarFile *ifcfg,
-                         const char *type,
-                         const char *suggested)
+static char *
+get_ifcfg_name (const char *file)
 {
-	NMSettingConnection *s_con;
 	char *basename = NULL;
 	int len;
-	char *ifcfg_name;
 
 	basename = g_path_get_basename (file);
 	if (!basename)
@@ -77,24 +72,40 @@ make_connection_setting (const char *file,
 		goto error;
 
 	/* ignore .bak files */
-	if ((len > 4) && !strcmp (basename + len - 4, BAK_TAG))
+	if ((len > 4) && !strcasecmp (basename + len - 4, BAK_TAG))
 		goto error;
 
-	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
+	return g_strdup (basename + strlen (IFCFG_TAG));
 
-	ifcfg_name = (char *) (basename + strlen (IFCFG_TAG));
+error:
+	g_free (basename);
+	return NULL;
+}
+
+static NMSetting *
+make_connection_setting (const char *file,
+                         shvarFile *ifcfg,
+                         const char *type,
+                         const char *suggested)
+{
+	NMSettingConnection *s_con;
+	char *ifcfg_name = NULL;
+
+	ifcfg_name = get_ifcfg_name (file);
+	if (!ifcfg_name)
+		return NULL;
+
+	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
 
  	if (suggested) {
 		/* For cosmetic reasons, if the suggested name is the same as
 		 * the ifcfg files name, don't use it.
 		 */
-		if (strcmp (ifcfg_name, suggested)) {
+		if (strcmp (ifcfg_name, suggested))
 			s_con->id = g_strdup_printf ("System %s (%s)", suggested, ifcfg_name);
-			ifcfg_name = NULL;
-		}
 	}
 
-	if (ifcfg_name)
+	if (!s_con->id)
 		s_con->id = g_strdup_printf ("System %s", ifcfg_name);
 
 	s_con->type = g_strdup (type);
@@ -103,11 +114,8 @@ make_connection_setting (const char *file,
 	if (svTrueValue (ifcfg, "ONBOOT", FALSE))
 		s_con->autoconnect = TRUE;
 
+	g_free (ifcfg_name);
 	return (NMSetting *) s_con;
-
-error:
-	g_free (basename);
-	return NULL;
 }
 
 #define SEARCH_TAG "search "
@@ -293,7 +301,7 @@ get_one_wep_key (shvarFile *ifcfg, guint8 idx, GError **error)
 
 	shvar_key = g_strdup_printf ("KEY%d", idx);
 	value = svGetValue (ifcfg, shvar_key);
-	if (!value)
+	if (!value || !strlen (value))
 		goto out;
 
 	/* Validate keys */
@@ -334,9 +342,9 @@ out:
 	return key;
 }
 
-#define READ_WEP_KEY(idx) \
+#define READ_WEP_KEY(idx, ifcfg_file) \
 	{ \
-		char *key = get_one_wep_key (ifcfg, idx, error); \
+		char *key = get_one_wep_key (ifcfg_file, idx, error); \
 		if (*error) \
 			goto error; \
 		if (key) { \
@@ -348,19 +356,61 @@ out:
 		} \
 	}
 
+static shvarFile *
+get_keys_ifcfg (const char *parent)
+{
+	char *ifcfg_name;
+	char *keys_file = NULL;
+	char *tmp = NULL;
+	shvarFile *ifcfg = NULL;
+
+	ifcfg_name = get_ifcfg_name (parent);
+	if (!ifcfg_name)
+		return NULL;
+
+	tmp = g_path_get_dirname (parent);
+	if (!tmp)
+		goto out;
+
+	keys_file = g_strdup_printf ("%s/keys-%s", tmp, ifcfg_name);
+	if (!keys_file)
+		goto out;
+
+	ifcfg = svNewFile (keys_file);
+
+out:
+	g_free (keys_file);
+	g_free (tmp);
+	g_free (ifcfg_name);
+	return ifcfg;
+}
+
 static NMSetting *
-make_wireless_security_setting (shvarFile *ifcfg, GError **error)
+make_wireless_security_setting (shvarFile *ifcfg,
+                                const char *file,
+                                GError **error)
 {
 	NMSettingWirelessSecurity *s_wireless_sec;
 	gboolean have_key = FALSE;
 	char *value;
+	shvarFile *keys_ifcfg;
 
 	s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
 
-	READ_WEP_KEY(0)
-	READ_WEP_KEY(1)
-	READ_WEP_KEY(2)
-	READ_WEP_KEY(3)
+	READ_WEP_KEY(0, ifcfg)
+	READ_WEP_KEY(1, ifcfg)
+	READ_WEP_KEY(2, ifcfg)
+	READ_WEP_KEY(3, ifcfg)
+
+	/* Try to get keys from the "shadow" key file */
+	keys_ifcfg = get_keys_ifcfg (file);
+	if (keys_ifcfg) {
+		READ_WEP_KEY(0, keys_ifcfg)
+		READ_WEP_KEY(1, keys_ifcfg)
+		READ_WEP_KEY(2, keys_ifcfg)
+		READ_WEP_KEY(3, keys_ifcfg)
+		svCloseFile (keys_ifcfg);
+	}
 
 	value = svGetValue (ifcfg, "DEFAULTKEY");
 	if (value) {
@@ -495,7 +545,7 @@ wireless_connection_from_ifcfg (const char *file, shvarFile *ifcfg, GError **err
 	}
 
 	/* Wireless security */
-	security_setting = make_wireless_security_setting (ifcfg, error);
+	security_setting = make_wireless_security_setting (ifcfg, file, error);
 	if (*error)
 		goto error;
 	if (security_setting)
@@ -625,7 +675,7 @@ parser_parse_file (const char *file, GError **error)
 
 	g_return_val_if_fail (file != NULL, NULL);
 
-	parsed = svNewFile(file);
+	parsed = svNewFile (file);
 	if (!parsed) {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Couldn't parse file '%s'", file);
