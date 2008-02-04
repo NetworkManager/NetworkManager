@@ -422,7 +422,7 @@ make_wireless_security_setting (shvarFile *ifcfg,
 			s_wireless_sec->wep_tx_keyidx = key_idx;
 		else {
 			g_set_error (error, ifcfg_plugin_error_quark (), 0,
-			             "Invalid defualt WEP key '%s'", value);
+			             "Invalid default WEP key '%s'", value);
 	 		g_free (value);
 			goto error;
 		}
@@ -450,8 +450,8 @@ make_wireless_security_setting (shvarFile *ifcfg,
 		g_free (lcase);
 	}
 
-	if (have_key)
-		s_wireless_sec->key_mgmt = g_strdup ("none");
+	// FIXME: unencrypted and WEP-only for now
+	s_wireless_sec->key_mgmt = g_strdup ("none");
 
 	return NM_SETTING (s_wireless_sec);
 
@@ -672,8 +672,17 @@ parser_parse_file (const char *file, GError **error)
 	char *type;
 	char *nmc = NULL;
 	NMSetting *s_ip4;
+	char *ifcfg_name = NULL;
 
 	g_return_val_if_fail (file != NULL, NULL);
+
+	ifcfg_name = get_ifcfg_name (file);
+	if (!ifcfg_name) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Ignoring connection '%s' because it's not an ifcfg file.", file);
+		return NULL;
+	}
+	g_free (ifcfg_name);
 
 	parsed = svNewFile (file);
 	if (!parsed) {
@@ -698,8 +707,8 @@ parser_parse_file (const char *file, GError **error)
 
 		if (!strcmp (lower, "no") || !strcmp (lower, "n") || !strcmp (lower, "false")) {
 			g_free (lower);
-			// FIXME: actually ignore the device, not the connection
-			g_message ("Ignoring connection '%s' because NM_CONTROLLED was false", file);
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Ignoring connection '%s' because NM_CONTROLLED was false.", file);
 			goto done;
 		}
 		g_free (lower);

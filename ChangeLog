@@ -1,5 +1,13 @@
 2008-02-04  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/plugins/ifcfg-fedora/parser.c
+		- (make_wireless_security_setting): fix spelling; unencrypted networks
+			need key_mgmt set too
+		- (parser_parse_file): validate ifcfg file name and don't try to parse
+			.bak files; ensure that an error is set whenever NULL gets returned
+
+2008-02-04  Dan Williams  <dcbw@redhat.com>
+
 	* system-settings/src/Makefile.am
 		- Install D-Bus service activation file for the system settings
 			service
