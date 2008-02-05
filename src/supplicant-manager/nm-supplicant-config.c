@@ -375,10 +375,10 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 		}
 	}
 
-	/* For non-broadcast networks, we need to set "scan_ssid 1" to scan with
-	 * probe request frames. However, don't try to probe Ad-Hoc networks.
+	/* Except for Ad-Hoc networks, request that the driver probe for the
+	 * specific SSID we want to associate with.
 	 */
-	if (!is_broadcast && !is_adhoc) {
+	if (!is_adhoc) {
 		if (!nm_supplicant_config_add_option (self, "scan_ssid", "1", -1, FALSE))
 			return FALSE;
 	}

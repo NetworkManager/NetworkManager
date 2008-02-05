@@ -1,3 +1,9 @@
+2008-02-05  Dan Williams  <dcbw@redhat.com>
+
+	* src/supplicant-manager/nm-supplicant-config.c
+		- (nm_supplicant_config_add_setting_wireless): send scan_ssid=1 for
+			broadcast networks too
+
 2008-02-04  Dan Williams  <dcbw@redhat.com>
 
 	* system-settings/plugins/ifcfg-fedora/parser.c
