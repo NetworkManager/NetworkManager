@@ -1,3 +1,8 @@
+2008-02-05  Tambet Ingo  <tambet@gmail.com>
+
+	* src/NetworkManagerPolicy.c (nm_policy_device_change_check): Don't unref AP
+	twice. Fixes a memory corruption crash on wireless device deactivation.
+
 2008-01-30  Tambet Ingo  <tambet@ximian.com>
 
 	* src/named-manager/nm-named-manager.c (rewrite_resolv_conf): Add some

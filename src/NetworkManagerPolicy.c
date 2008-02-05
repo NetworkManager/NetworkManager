@@ -472,10 +472,8 @@ nm_policy_device_change_check (NMData *data)
 				         ap ? "/" : "",
 				         ap ? nm_ap_get_essid (ap) : "");
 
-				if (ap) {
+				if (ap)
 					nm_act_request_set_ap (act_req, ap);
-					nm_ap_unref (ap);
-				}
 
 				nm_policy_schedule_device_activation (act_req);
 				nm_act_request_unref (act_req);
