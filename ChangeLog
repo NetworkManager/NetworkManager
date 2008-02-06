@@ -1,3 +1,15 @@
+2008-02-06  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-manager.c
+		- (finalize): remove devices a bit earlier; clean up system settings
+			poke
+		- (nm_manager_name_owner_changed): clean up system settings poke when
+			the service appears, and try to restart it if it fails
+		- (poke_system_settings_daemon_cb): try to get the system settings
+			service started through D-Bus service activation
+		- (initial_get_connections): start the system settings daemon if it's
+			not already running
+
 2008-02-05  Dan Williams  <dcbw@redhat.com>
 
 	* src/supplicant-manager/nm-supplicant-config.c

@@ -31,6 +31,8 @@ static gboolean impl_manager_sleep (NMManager *manager, gboolean sleep, GError *
 static const char * nm_manager_get_connection_dbus_path (NMManager *manager,
                                                          NMConnection *connection);
 
+static gboolean poke_system_settings_daemon_cb (gpointer user_data);
+
 /* Legacy 0.6 compatibility interface */
 
 static gboolean impl_manager_legacy_sleep (NMManager *manager, GError **err);
@@ -46,6 +48,7 @@ static void connection_added_default_handler (NMManager *manager,
 									 NMConnection *connection,
 									 NMConnectionType connection_type);
 
+#define SSD_POKE_INTERVAL 120000
 
 typedef struct {
 	DBusGMethodInvocation *context;
@@ -72,6 +75,8 @@ typedef struct {
 	gboolean wireless_enabled;
 	gboolean wireless_hw_enabled;
 	gboolean sleeping;
+
+	guint poke_id;
 } NMManagerPrivate;
 
 #define NM_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_MANAGER, NMManagerPrivate))
@@ -241,6 +246,9 @@ finalize (GObject *object)
 	pending_connection_info_destroy (priv->pending_connection_info);
 	priv->pending_connection_info = NULL;
 
+	while (g_slist_length (priv->devices))
+		nm_manager_remove_device (manager, NM_DEVICE (priv->devices->data), TRUE);
+
 	nm_manager_connections_destroy (manager, NM_CONNECTION_TYPE_USER);
 	g_hash_table_destroy (priv->user_connections);
 	priv->user_connections = NULL;
@@ -249,8 +257,10 @@ finalize (GObject *object)
 	g_hash_table_destroy (priv->system_connections);
 	priv->system_connections = NULL;
 
-	while (g_slist_length (priv->devices))
-		nm_manager_remove_device (manager, NM_DEVICE (priv->devices->data), TRUE);
+	if (priv->poke_id) {
+		g_source_remove (priv->poke_id);
+		priv->poke_id = 0;
+	}
 
 	if (priv->dbus_mgr)
 		g_object_unref (priv->dbus_mgr);
@@ -821,7 +831,8 @@ nm_manager_name_owner_changed (NMDBusManager *mgr,
                                const char *new,
                                gpointer user_data)
 {
-	NMManager * manager = NM_MANAGER (user_data);
+	NMManager *manager = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	gboolean old_owner_good = (old && (strlen (old) > 0));
 	gboolean new_owner_good = (new && (strlen (new) > 0));
 
@@ -835,23 +846,70 @@ nm_manager_name_owner_changed (NMDBusManager *mgr,
 		}
 	} else if (strcmp (name, NM_DBUS_SERVICE_SYSTEM_SETTINGS) == 0) {
 		if (!old_owner_good && new_owner_good) {
+			if (priv->poke_id) {
+				g_source_remove (priv->poke_id);
+				priv->poke_id = 0;
+			}
+
 			/* System Settings service appeared, update stuff */
 			query_connections (manager, NM_CONNECTION_TYPE_SYSTEM);
 		} else {
 			/* System Settings service disappeared, throw them away (?) */
 			nm_manager_connections_destroy (manager, NM_CONNECTION_TYPE_SYSTEM);
+
+			if (priv->poke_id)
+				g_source_remove (priv->poke_id);
+
+			/* Poke the system settings daemon so that it gets activated by dbus
+			 * system bus activation.
+			 */
+			priv->poke_id = g_idle_add (poke_system_settings_daemon_cb, (gpointer) manager);
 		}
 	}
 }
 
 static gboolean
+poke_system_settings_daemon_cb (gpointer user_data)
+{
+	NMManager *manager = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	DBusGConnection *g_connection;
+	DBusGProxy *proxy;
+
+	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
+	proxy = dbus_g_proxy_new_for_name (g_connection,
+	                                   NM_DBUS_SERVICE_SYSTEM_SETTINGS,
+	                                   NM_DBUS_PATH_SETTINGS,
+	                                   NM_DBUS_IFACE_SETTINGS);
+	if (!proxy) {
+		nm_warning ("Error: could not init system settings daemon proxy");
+		goto out;
+	}
+
+	nm_info ("Trying to start the system settings daemon...");
+	dbus_g_proxy_call_no_reply (proxy, "ListConnections", G_TYPE_INVALID);
+	g_object_unref (proxy);
+
+out:
+	/* Reschedule the poke */
+	priv->poke_id = g_timeout_add (SSD_POKE_INTERVAL, poke_system_settings_daemon_cb, (gpointer) manager);
+
+	return FALSE;
+}
+
+static gboolean
 initial_get_connections (gpointer user_data)
 {
-	NMManager * manager = NM_MANAGER (user_data);
+	NMManager *manager = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
 	if (nm_dbus_manager_name_has_owner (nm_dbus_manager_get (),
-	                                    NM_DBUS_SERVICE_SYSTEM_SETTINGS))
+	                                    NM_DBUS_SERVICE_SYSTEM_SETTINGS)) {
 		query_connections (manager, NM_CONNECTION_TYPE_SYSTEM);
+	} else {
+		/* Try to activate the system settings daemon */
+		priv->poke_id = g_idle_add (poke_system_settings_daemon_cb, (gpointer) manager);
+	}
 
 	if (nm_dbus_manager_name_has_owner (nm_dbus_manager_get (),
 	                                    NM_DBUS_SERVICE_USER_SETTINGS))
