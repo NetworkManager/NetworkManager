@@ -186,6 +186,7 @@ main (int argc, char *argv[])
 	GError *err = NULL;
 	GValue *dns_list = NULL;
 	GValue *nbns_list = NULL;
+	GValue *dns_domain = NULL;
 
 	g_type_init ();
 
@@ -248,12 +249,16 @@ main (int argc, char *argv[])
 			dns_list = parse_addr_list (dns_list, tmp + 4);
 		else if (g_str_has_prefix (tmp, "WINS "))
 			nbns_list = parse_addr_list (nbns_list, tmp + 5);
+		else if (g_str_has_prefix (tmp, "DOMAIN ") && !dns_domain)
+			dns_domain = str_to_gvalue (tmp + 7, FALSE);
 	}
 
 	if (dns_list)
 		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_DNS, dns_list);
 	if (nbns_list)
 		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_NBNS, nbns_list);
+	if (dns_domain)
+		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_DOMAIN, dns_domain);
 
 	/* Send the config info to nm-openvpn-service */
 	send_ip4_config (connection, config);

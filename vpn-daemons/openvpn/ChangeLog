@@ -1,3 +1,10 @@
+2008-02-06  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Ryan Ayers <rayers.public@dividia.net>
+
+	* src/nm-openvpn-service-openvpn-helper.c
+		- (main): respect server-provided DNS search domain
+
 2008-01-31  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Robert Hughes <rhughes@smgf.org>
