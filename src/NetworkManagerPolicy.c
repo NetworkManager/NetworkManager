@@ -44,6 +44,7 @@
 struct NMPolicy {
 	NMManager *manager;
 	guint device_state_changed_idle_id;
+	GSList *signal_ids;
 };
 
 #define INVALID_TAG "invalid"
@@ -550,6 +551,9 @@ connection_updated (NMManager *manager,
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
 
+	/* Clear the invalid tag on the connection if it got updated. */
+	g_object_set_data (G_OBJECT (connection), INVALID_TAG, NULL);
+
 	schedule_change_check (policy);
 }
 
@@ -584,37 +588,46 @@ nm_policy_new (NMManager *manager)
 {
 	NMPolicy *policy;
 	static gboolean initialized = FALSE;
+	gulong id;
 
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
 	g_return_val_if_fail (initialized == FALSE, NULL);
 
-	policy = g_slice_new (NMPolicy);
+	policy = g_malloc0 (sizeof (NMPolicy));
 	policy->manager = g_object_ref (manager);
 	policy->device_state_changed_idle_id = 0;
 
-	g_signal_connect (manager, "state-change", G_CALLBACK (global_state_changed), policy);
+	id = g_signal_connect (manager, "state-change",
+	                       G_CALLBACK (global_state_changed), policy);
+	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
 
-	g_signal_connect (manager, "device-added",
-					  G_CALLBACK (device_added), policy);
+	id = g_signal_connect (manager, "device-added",
+	                       G_CALLBACK (device_added), policy);
+	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
 
-	g_signal_connect (manager, "device-removed",
-					  G_CALLBACK (device_removed), policy);
+	id = g_signal_connect (manager, "device-removed",
+	                       G_CALLBACK (device_removed), policy);
+	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
 
 	/* Large batch of connections added, manager doesn't want us to
 	 * process each one individually.
 	 */
-	g_signal_connect (manager, "connections-added",
-					  G_CALLBACK (connections_added), policy);
+	id = g_signal_connect (manager, "connections-added",
+	                       G_CALLBACK (connections_added), policy);
+	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
 
 	/* Single connection added */
-	g_signal_connect (manager, "connection-added",
-					  G_CALLBACK (connection_added), policy);
+	id = g_signal_connect (manager, "connection-added",
+	                       G_CALLBACK (connection_added), policy);
+	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
 
-	g_signal_connect (manager, "connection-updated",
-					  G_CALLBACK (connection_updated), policy);
+	id = g_signal_connect (manager, "connection-updated",
+	                       G_CALLBACK (connection_updated), policy);
+	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
 
-	g_signal_connect (manager, "connection-removed",
-					  G_CALLBACK (connection_removed), policy);
+	id = g_signal_connect (manager, "connection-removed",
+	                       G_CALLBACK (connection_removed), policy);
+	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
 
 	return policy;
 }
@@ -622,9 +635,20 @@ nm_policy_new (NMManager *manager)
 void
 nm_policy_destroy (NMPolicy *policy)
 {
-	if (policy) {
-		g_object_unref (policy->manager);
-		g_slice_free (NMPolicy, policy);
+	GSList *iter;
+
+	g_return_if_fail (policy != NULL);
+
+	if (policy->device_state_changed_idle_id) {
+		g_source_remove (policy->device_state_changed_idle_id);
+		policy->device_state_changed_idle_id = 0;
 	}
+
+	for (iter = policy->signal_ids; iter; iter = g_slist_next (iter))
+		g_signal_handler_disconnect (policy->manager, (gulong) iter->data);
+	g_slist_free (policy->signal_ids);
+
+	g_object_unref (policy->manager);
+	g_free (policy);
 }
 

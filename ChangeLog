@@ -1,3 +1,14 @@
+2008-02-07  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerPolicy.c
+		- (connection_updated): clear invalid tag when connection gets updated
+			to allow that connection to be tried again
+		- (nm_policy_new): save signal ids so they can be disconnected when
+			the policy is destroyed
+		- (nm_policy_destroy): stop any in-progress state change idle handler,
+			and disconnect all signals from the manager object so that none
+			of the policy functions gets called after the policy is destroyed
+
 2008-02-06  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-manager.c
