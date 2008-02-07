@@ -390,7 +390,6 @@ stuff_changed (GIOChannel *channel, GIOCondition cond, gpointer user_data)
 		                         evt.len > PATH_MAX ? PATH_MAX : evt.len,
 		                         NULL, NULL);
 
-g_message ("%s: path changed: %s", __func__, filename);
 		if (evt.wd == priv->profile_wd) {
 			if (!strcmp (filename, "network")) {
 				char *new_profile;
