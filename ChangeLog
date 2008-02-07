@@ -1,5 +1,13 @@
 2008-02-07  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/src/nm-system-config-interface.c
+	  system-settings/src/nm-system-config-interface.h
+		- Add a get_secrets() interface function to retrieve secrets for a
+			specific setting of a specific connection.  Document the interface
+			a bit more too.
+
+2008-02-07  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 		- (handle_auth_or_fail): new function; consolidate device activation
 			failure check after a certain number of failures getting secrets
