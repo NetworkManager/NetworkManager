@@ -71,13 +71,29 @@ typedef struct _NMSystemConfigInterface NMSystemConfigInterface;
 struct _NMSystemConfigInterface {
 	GTypeInterface g_iface;
 
+	/* Called when the plugin is loaded to initialize it */
 	void     (*init) (NMSystemConfigInterface *config);
 
+	/* Returns the plugins currently known list of connections.  The returned
+	 * list is owned by the plugin and not freed by the system settings service.
+	 */
 	GSList * (*get_connections) (NMSystemConfigInterface *config);
 
+	/* Return the secrets associated with a specific setting of a specific
+	 * connection.  The returned hash table is unreffed by the system settings
+	 * service.
+	 */
+	GHashTable * (*get_secrets) (NMSystemConfigInterface *config, NMConnection *connection, NMSetting *setting);
+
 	/* Signals */
+
+	/* Emitted when a new connection has been found by the plugin */
 	void (*connection_added)   (NMSystemConfigInterface *config, NMConnection *connection);
+
+	/* Emitted when a connection has been removed by the plugin */
 	void (*connection_removed) (NMSystemConfigInterface *config, NMConnection *connection);
+
+	/* Emitted when any non-secret settings of the connection change */
 	void (*connection_updated) (NMSystemConfigInterface *config, NMConnection *connection);
 };
 
@@ -86,6 +102,10 @@ GType nm_system_config_interface_get_type (void);
 void nm_system_config_interface_init (NMSystemConfigInterface *config);
 
 GSList * nm_system_config_interface_get_connections (NMSystemConfigInterface *config);
+
+GHashTable *nm_system_config_interface_get_secrets (NMSystemConfigInterface *config,
+                                                    NMConnection *connection,
+                                                    NMSetting *setting);
 
 G_END_DECLS
 

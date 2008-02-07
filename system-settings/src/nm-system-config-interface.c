@@ -128,3 +128,17 @@ nm_system_config_interface_get_connections (NMSystemConfigInterface *config)
 	return NULL;
 }
 
+GHashTable *
+nm_system_config_interface_get_secrets (NMSystemConfigInterface *config,
+                                        NMConnection *connection,
+                                        NMSetting *setting)
+{
+	g_return_val_if_fail (config != NULL, NULL);
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (setting != NULL, NULL);
+
+	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->get_secrets)
+		return NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->get_secrets (config, connection, setting);
+	return NULL;
+}
+
