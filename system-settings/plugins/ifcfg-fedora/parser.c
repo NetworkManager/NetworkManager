@@ -41,6 +41,69 @@
 #include "parser.h"
 #include "plugin.h"
 
+#define CONNECTION_DATA_TAG "plugin-data"
+
+ConnectionData *
+connection_data_get (NMConnection *connection)
+{
+	return (ConnectionData *) g_object_get_data (G_OBJECT (connection), CONNECTION_DATA_TAG);
+}
+
+static void
+copy_one_cdata_secret (gpointer key, gpointer data, gpointer user_data)
+{
+	ConnectionData *to = (ConnectionData *) user_data;
+
+	g_hash_table_insert (to->secrets, key, g_strdup (data));
+}
+
+static void
+clear_one_cdata_secret (gpointer key, gpointer data, gpointer user_data)
+{
+	guint32 len = strlen (data);
+	memset (data, 0, len);
+}
+
+void
+connection_data_copy_secrets (ConnectionData *from, ConnectionData *to)
+{
+	g_return_if_fail (from != NULL);
+	g_return_if_fail (to != NULL);
+
+	g_hash_table_foreach (to->secrets, clear_one_cdata_secret, NULL);
+	g_hash_table_remove_all (to->secrets);
+
+	g_hash_table_foreach (from->secrets, copy_one_cdata_secret, to);
+}
+
+static void
+connection_data_free (gpointer userdata)
+{
+	ConnectionData *cdata = (ConnectionData *) userdata;
+
+	g_return_if_fail (cdata != NULL);
+
+	g_free (cdata->ifcfg_path);
+	g_hash_table_foreach (cdata->secrets, clear_one_cdata_secret, NULL);
+	g_hash_table_destroy (cdata->secrets);
+	memset (cdata, 0, sizeof (ConnectionData));
+	g_free (cdata);
+}
+
+ConnectionData *
+connection_data_add (NMConnection *connection, const char *ifcfg_path)
+{
+	ConnectionData *cdata;
+
+	cdata = g_malloc0 (sizeof (ConnectionData));
+	cdata->ifcfg_path = g_strdup (ifcfg_path);
+	cdata->secrets = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
+
+	g_object_set_data_full (G_OBJECT (connection),
+	                        CONNECTION_DATA_TAG, cdata,
+	                        connection_data_free);
+	return cdata;
+}
 
 static gboolean
 get_int (const char *str, int *value)
@@ -342,17 +405,15 @@ out:
 	return key;
 }
 
-#define READ_WEP_KEY(idx, ifcfg_file) \
+#define READ_WEP_KEY(idx, ifcfg_file, cdata) \
 	{ \
 		char *key = get_one_wep_key (ifcfg_file, idx, error); \
 		if (*error) \
 			goto error; \
 		if (key) { \
-			g_object_set_data_full (G_OBJECT (s_wireless_sec), \
-			                        NM_SETTING_WIRELESS_SECURITY_WEP_KEY##idx, \
-			                        key, \
-			                        g_free); \
-			have_key = TRUE; \
+			g_hash_table_insert (cdata->secrets, \
+			                     NM_SETTING_WIRELESS_SECURITY_WEP_KEY##idx, \
+			                     key); \
 		} \
 	}
 
@@ -388,28 +449,27 @@ out:
 static NMSetting *
 make_wireless_security_setting (shvarFile *ifcfg,
                                 const char *file,
+                                ConnectionData *cdata,
                                 GError **error)
 {
 	NMSettingWirelessSecurity *s_wireless_sec;
-	gboolean have_key = FALSE;
 	char *value;
-	shvarFile *keys_ifcfg;
+	shvarFile *keys_ifcfg = NULL;
 
 	s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
 
-	READ_WEP_KEY(0, ifcfg)
-	READ_WEP_KEY(1, ifcfg)
-	READ_WEP_KEY(2, ifcfg)
-	READ_WEP_KEY(3, ifcfg)
+	READ_WEP_KEY(0, ifcfg, cdata)
+	READ_WEP_KEY(1, ifcfg, cdata)
+	READ_WEP_KEY(2, ifcfg, cdata)
+	READ_WEP_KEY(3, ifcfg, cdata)
 
 	/* Try to get keys from the "shadow" key file */
 	keys_ifcfg = get_keys_ifcfg (file);
 	if (keys_ifcfg) {
-		READ_WEP_KEY(0, keys_ifcfg)
-		READ_WEP_KEY(1, keys_ifcfg)
-		READ_WEP_KEY(2, keys_ifcfg)
-		READ_WEP_KEY(3, keys_ifcfg)
-		svCloseFile (keys_ifcfg);
+		READ_WEP_KEY(0, keys_ifcfg, cdata)
+		READ_WEP_KEY(1, keys_ifcfg, cdata)
+		READ_WEP_KEY(2, keys_ifcfg, cdata)
+		READ_WEP_KEY(3, keys_ifcfg, cdata)
 	}
 
 	value = svGetValue (ifcfg, "DEFAULTKEY");
@@ -453,11 +513,16 @@ make_wireless_security_setting (shvarFile *ifcfg,
 	// FIXME: unencrypted and WEP-only for now
 	s_wireless_sec->key_mgmt = g_strdup ("none");
 
+	if (keys_ifcfg)
+		svCloseFile (keys_ifcfg);
+
 	return NM_SETTING (s_wireless_sec);
 
 error:
 	if (s_wireless_sec)
 		g_object_unref (s_wireless_sec);
+	if (keys_ifcfg)
+		svCloseFile (keys_ifcfg);
 	return NULL;
 }
 
@@ -531,6 +596,7 @@ wireless_connection_from_ifcfg (const char *file, shvarFile *ifcfg, GError **err
 	NMSettingWireless *tmp;
 	NMSetting *security_setting = NULL;
 	char *printable_ssid = NULL;
+	ConnectionData *cdata;
 
 	g_return_val_if_fail (file != NULL, NULL);
 	g_return_val_if_fail (ifcfg != NULL, NULL);
@@ -544,8 +610,11 @@ wireless_connection_from_ifcfg (const char *file, shvarFile *ifcfg, GError **err
 		return NULL;
 	}
 
+	/* Add plugin specific data to connection */
+	cdata = connection_data_add (connection, file);
+
 	/* Wireless security */
-	security_setting = make_wireless_security_setting (ifcfg, file, error);
+	security_setting = make_wireless_security_setting (ifcfg, file, cdata, error);
 	if (*error)
 		goto error;
 	if (security_setting)
@@ -622,6 +691,7 @@ wired_connection_from_ifcfg (const char *file, shvarFile *ifcfg, GError **error)
 	NMConnection *connection = NULL;
 	NMSetting *con_setting = NULL;
 	NMSetting *wired_setting = NULL;
+	ConnectionData *cdata;
 
 	g_return_val_if_fail (file != NULL, NULL);
 	g_return_val_if_fail (ifcfg != NULL, NULL);
@@ -640,6 +710,9 @@ wired_connection_from_ifcfg (const char *file, shvarFile *ifcfg, GError **error)
 		goto error;
 	}
 	nm_connection_add_setting (connection, con_setting);
+
+	/* Add plugin data to connection */
+	cdata = connection_data_add (connection, file);
 
 	wired_setting = make_wired_setting (ifcfg, error);
 	if (!wired_setting)

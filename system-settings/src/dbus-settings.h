@@ -19,8 +19,13 @@
  * (C) Copyright 2007 Red Hat, Inc.
  */
 
+#ifndef __DBUS_SETTINGS_H__
+#define __DBUS_SETTINGS_H__
+
 #include <nm-connection.h>
 #include <nm-settings.h>
+
+#define NM_SS_PLUGIN_TAG "nm-ss-plugin"
 
 typedef struct _NMSysconfigConnectionSettings NMSysconfigConnectionSettings;
 typedef struct _NMSysconfigConnectionSettingsClass NMSysconfigConnectionSettingsClass;
@@ -92,3 +97,4 @@ void nm_sysconfig_settings_remove_connection (NMSysconfigSettings *settings,
 void nm_sysconfig_settings_update_connection (NMSysconfigSettings *settings,
                                               NMConnection *connection);
 
+#endif  /* __DBUS_SETTINGS_H__ */

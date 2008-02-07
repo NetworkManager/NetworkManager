@@ -40,9 +40,12 @@
 #include "dbus-settings.h"
 #include "nm-system-config-interface.h"
 
+#define NM_SS_CONNECTIONS_TAG "nm-ss-connections"
+
 typedef struct {
 	DBusConnection *connection;
 	DBusGConnection *g_connection;
+
 	DBusGProxy *bus_proxy;
 	gboolean started;
 
@@ -75,6 +78,11 @@ connection_added_cb (NMSystemConfigInterface *config,
                      NMConnection *connection,
                      Application *app)
 {
+	GSList **connections;
+
+	connections = g_object_get_data (G_OBJECT (config), NM_SS_CONNECTIONS_TAG);
+	*connections = g_slist_append (*connections, connection);
+
 	nm_sysconfig_settings_add_connection (app->settings, connection, app->g_connection);
 }
 
@@ -83,6 +91,11 @@ connection_removed_cb (NMSystemConfigInterface *config,
                        NMConnection *connection,
                        Application *app)
 {
+	GSList **connections;
+
+	connections = g_object_get_data (G_OBJECT (config), NM_SS_CONNECTIONS_TAG);
+	*connections = g_slist_remove (*connections, connection);
+
 	nm_sysconfig_settings_remove_connection (app->settings, connection);
 }
 
@@ -214,15 +227,10 @@ print_plugin_info (gpointer item, gpointer user_data)
 static void
 free_plugin_connections (gpointer data)
 {
-	GSList *connections = (GSList *) data;
+	GSList **connections = (GSList **) data;
 
-	g_slist_foreach (connections, (GFunc) g_object_unref, NULL);
-}
-
-static void
-add_connection_to_settings (gpointer data, gpointer user_data)
-{
-	connection_added_cb (NULL, NM_CONNECTION (data), (Application *) user_data);
+	g_slist_foreach (*connections, (GFunc) g_object_unref, NULL);
+	g_slist_free (*connections);
 }
 
 static gboolean
@@ -235,22 +243,29 @@ load_connections (gpointer user_data)
 
 	for (iter = app->plugins; iter; iter = g_slist_next (iter)) {
 		NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (iter->data);
-		GSList *connections;
+		GSList *plugin_connections, **connections;
+		GSList *elt;
 
-		connections = nm_system_config_interface_get_connections (plugin);
+		plugin_connections = nm_system_config_interface_get_connections (plugin);
+
+		connections = g_malloc0 (sizeof (GSList *));
+		g_object_set_data_full (G_OBJECT (plugin), NM_SS_CONNECTIONS_TAG,
+		                        connections, free_plugin_connections);
 
 		// FIXME: ensure connections from plugins loaded with a lower priority
 		// get rejected when they conflict with connections from a higher
 		// priority plugin.
 
-		g_slist_foreach (connections, (GFunc) g_object_ref, NULL);
-		g_slist_foreach (connections, (GFunc) add_connection_to_settings, app);
-		g_object_set_data_full (G_OBJECT (plugin), "connections",
-		                        connections, free_plugin_connections);
+		for (elt = plugin_connections; elt; elt = g_slist_next (elt)) {
+			g_object_ref (NM_CONNECTION (elt->data));
+			g_object_set_data (G_OBJECT (elt->data), NM_SS_PLUGIN_TAG, plugin);
+			connection_added_cb (NM_SYSTEM_CONFIG_INTERFACE (plugin), NM_CONNECTION (elt->data), app);
+		}
 	}
 
 	return FALSE;
 }
+
 
 /******************************************************************/
 

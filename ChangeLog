@@ -1,5 +1,48 @@
 2008-02-07  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/src/dbus-settings.c
+	  system-settings/src/dbus-settings.h
+		- (add_one_secret_to_hash): copy secrets out of the plugin-returned hash
+			table of secrets
+		- (connection_settings_get_secrets): consolidate error returns into
+			one place; use the new get_secrets() plugin interface function to
+			get secrets from the plugin itself rather than using GObject data
+			magic
+
+	* system-settings/src/main.c
+		- (connection_added_cb, connection_removed_cb, free_plugin_connections,
+		   load_connections): keep a private list of the plugin-returned
+			connections, don't use the plugin's GSList
+
+	* system-settings/plugins/ifcfg-fedora/plugin.c
+		- (watch_path): watch the path, not the filename (duh)
+		- (reload_all_connections): use the direct hash/equal functions; the
+			ones for int aren't appropriate here
+		- (get_secrets, system_config_interface_init): implement the
+			get_secrets() function
+		- (build_one_connection, find_connection_by_path): ifcfg file path is
+			now in the connection's ConnectionData instead of being a GObject
+			data property
+		- (handle_profile_item_changed): ifcfg file path is now in the
+			connection's ConnectionData instead of being a GObject data property;
+			be sure to copy secrets over from the new connection to the existing
+			connection when updating the connection's settings
+		- (init): sc_plugin_inotify_init() returns success/fail, not the inotify
+			file descriptor
+
+	* system-settings/plugins/ifcfg-fedora/parser.c
+	  system-settings/plugins/ifcfg-fedora/parser.h
+		- (connection_data_get, copy_one_cdata_secret, clear_one_cdata_secret,
+		   connection_data_copy_secrets, connection_data_free,
+		   connection_data_add): new functions; connection data manipulation
+		- (make_wireless_security_setting): stuff secrets into the
+			connection data, not as GObject data items; make sure to close
+			the keys ifcfg file
+		- (wireless_connection_from_ifcfg, wired_connection_from_ifcfg): add
+			connection data to the connection
+
+2008-02-07  Dan Williams  <dcbw@redhat.com>
+
 	* system-settings/src/nm-system-config-interface.c
 	  system-settings/src/nm-system-config-interface.h
 		- Add a get_secrets() interface function to retrieve secrets for a

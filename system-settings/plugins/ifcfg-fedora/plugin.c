@@ -25,8 +25,10 @@
 #include <string.h>
 #include <sys/inotify.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include <nm-setting-connection.h>
+#include <nm-setting-wireless-security.h>
 
 #include "plugin.h"
 #include "parser.h"
@@ -44,8 +46,6 @@ G_DEFINE_TYPE_EXTENDED (SCPluginIfcfg, sc_plugin_ifcfg, G_TYPE_OBJECT, 0,
 
 #define SC_PLUGIN_IFCFG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), SC_TYPE_PLUGIN_IFCFG, SCPluginIfcfgPrivate))
 
-
-#define IFCFG_FILE_PATH_TAG "ifcfg-file-path"
 
 typedef struct {
 	gboolean initialized;
@@ -111,29 +111,32 @@ find_watched_path (gpointer key, gpointer value, gpointer user_data)
 static void
 watch_path (const char *path, const int inotify_fd, GHashTable *table)
 {
-	char *basename;
+	char *dirname;
 	int wd;
 	struct FindInfo info;
 
-	basename = g_path_get_basename (path);
-	g_return_if_fail (basename != NULL);
+	dirname = g_path_get_dirname (path);
+	g_return_if_fail (dirname != NULL);
 
 	info.found = FALSE;
-	info.path = basename;
+	info.path = dirname;
 	g_hash_table_foreach (table, find_watched_path, &info);
 	if (info.found)
 		goto error;
 
-	wd = inotify_add_watch (inotify_fd, basename,
+	wd = inotify_add_watch (inotify_fd, dirname,
 	                        IN_CLOSE_WRITE | IN_CREATE | IN_DELETE | IN_MOVE);
-	if (wd == -1)
+	if (wd == -1) {
+		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    inotify error watching '%s': errno %d",
+		              dirname, errno);
 		goto error;
+	}
 
-	g_hash_table_insert (table, GINT_TO_POINTER (wd), basename);
+	g_hash_table_insert (table, GINT_TO_POINTER (wd), dirname);
 	return;
 
 error:
-	g_free (basename);
+	g_free (dirname);
 }
 
 static NMConnection *
@@ -159,8 +162,6 @@ build_one_connection (const char *profile_path, const char *filename)
 		g_assert (s_con);
 		g_assert (s_con->id);
 		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    found connection '%s'", s_con->id);
-		g_object_set_data_full (G_OBJECT (connection), IFCFG_FILE_PATH_TAG,
-		                        ifcfg_file, (GDestroyNotify) g_free);
 	} else {
 		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    error: %s",
 		              error->message ? error->message : "(unknown)");
@@ -250,7 +251,7 @@ reload_all_connections (SCPluginIfcfg *plugin)
 
 	clear_all_connections (plugin);
 
-	priv->watch_table = g_hash_table_new_full (g_int_hash, g_int_equal, NULL, g_free);
+	priv->watch_table = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_free);
 
 	/* Add connections from the current profile */
 	priv->connections = get_connections_for_profile (priv->profile, priv->ifd, priv->watch_table);
@@ -268,6 +269,25 @@ get_connections (NMSystemConfigInterface *config)
 	return priv->connections;
 }
 
+static GHashTable *
+get_secrets (NMSystemConfigInterface *config,
+             NMConnection *connection,
+             NMSetting *setting)
+{
+	ConnectionData *cdata;
+
+	/* wifi security only for now */
+	if (!NM_IS_SETTING_WIRELESS_SECURITY (setting))
+		return NULL;
+
+	cdata = connection_data_get (connection);
+	if (!cdata || !cdata->secrets)
+		return NULL;
+
+	g_hash_table_ref (cdata->secrets);
+	return cdata->secrets;
+}
+
 static NMConnection *
 find_connection_by_path (GSList *connections, const char *path)
 {
@@ -277,10 +297,11 @@ find_connection_by_path (GSList *connections, const char *path)
 
 	for (iter = connections; iter; iter = g_slist_next (iter)) {
 		NMConnection *list_connection = NM_CONNECTION (iter->data);
-		const char *list_connection_path;
+		ConnectionData *cdata;
 
-		list_connection_path = g_object_get_data (G_OBJECT (list_connection), IFCFG_FILE_PATH_TAG);
-		if (list_connection_path && !strcmp (list_connection_path, path))
+		cdata = connection_data_get (list_connection);
+		g_assert (cdata);
+		if (cdata->ifcfg_path && !strcmp (cdata->ifcfg_path, path))
 			return list_connection;
 	}
 	return NULL;
@@ -303,19 +324,20 @@ handle_profile_item_changed (SCPluginIfcfg *plugin,
 
 	if (!strncmp (filename, IFCFG_TAG, strlen (IFCFG_TAG))) {
 		NMConnection *new_connection;
-		const char *filepath;
 		NMConnection *existing;
+		ConnectionData *new_cdata;
 
 		new_connection = build_one_connection (priv->profile, filename);
 		if (!new_connection)
 			goto out;
 
-		filepath = g_object_get_data (G_OBJECT (new_connection), IFCFG_FILE_PATH_TAG);
-		g_assert (filepath);
+		new_cdata = connection_data_get (new_connection);
+		g_assert (new_cdata);
 
-		existing = find_connection_by_path (priv->connections, filepath);
+		existing = find_connection_by_path (priv->connections, new_cdata->ifcfg_path);
 		if (existing) {
 			GHashTable *new_settings;
+			ConnectionData *existing_cdata;
 
 			/* update the settings of the existing connection for this
 			 * ifcfg file and notify listeners that something has changed.
@@ -330,6 +352,9 @@ handle_profile_item_changed (SCPluginIfcfg *plugin,
 				g_signal_emit_by_name (plugin, "connection-removed", existing);
 				g_object_unref (existing);
 			} else {
+				existing_cdata = connection_data_get (existing);
+				g_assert (existing_cdata);
+				connection_data_copy_secrets (new_cdata, existing_cdata);
 				g_signal_emit_by_name (plugin, "connection-updated", existing);
 			}
 			g_object_unref (new_connection);
@@ -365,6 +390,7 @@ stuff_changed (GIOChannel *channel, GIOCondition cond, gpointer user_data)
 		                         evt.len > PATH_MAX ? PATH_MAX : evt.len,
 		                         NULL, NULL);
 
+g_message ("%s: path changed: %s", __func__, filename);
 		if (evt.wd == priv->profile_wd) {
 			if (!strcmp (filename, "network")) {
 				char *new_profile;
@@ -425,8 +451,6 @@ sc_plugin_inotify_init (SCPluginIfcfg *plugin, GError **error)
 	                            plugin);
 	g_io_channel_unref (channel);
 
-
-
 	return TRUE;
 }
 
@@ -441,8 +465,7 @@ init (NMSystemConfigInterface *config)
 	if (!priv->profile)
 		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "could not determine network profile path.");
 
-	priv->ifd = sc_plugin_inotify_init (plugin, &error);
-	if (error) {
+	if (!sc_plugin_inotify_init (plugin, &error)) {
 		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    inotify error: %s",
 		              error->message ? error->message : "(unknown)");
 	}
@@ -507,6 +530,7 @@ system_config_interface_init (NMSystemConfigInterface *system_config_interface_c
 {
 	/* interface implementation */
 	system_config_interface_class->get_connections = get_connections;
+	system_config_interface_class->get_secrets = get_secrets;
 	system_config_interface_class->init = init;
 }
 

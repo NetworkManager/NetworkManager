@@ -27,6 +27,7 @@
 #include <nm-setting-connection.h>
 
 #include "dbus-settings.h"
+#include "nm-system-config-interface.h"
 #include "nm-utils.h"
 
 static gchar *connection_settings_get_id (NMConnectionSettings *connection);
@@ -78,6 +79,11 @@ destroy_gvalue (gpointer data)
 	g_slice_free (GValue, value);
 }
 
+struct AddSecretsData {
+	GHashTable *plugin_secrets;
+	GHashTable *out_secrets;
+};
+
 static void
 add_one_secret_to_hash (NMSetting *setting,
                         const char *key,
@@ -85,7 +91,7 @@ add_one_secret_to_hash (NMSetting *setting,
                         gboolean secret,
                         gpointer user_data)
 {
-	GHashTable *secrets = (GHashTable *) user_data;
+	struct AddSecretsData *data = (struct AddSecretsData *) user_data;
 	const char *str_val;
 
 	if (!secret)
@@ -94,11 +100,11 @@ add_one_secret_to_hash (NMSetting *setting,
 	if (!G_VALUE_HOLDS (value, G_TYPE_STRING))
 		return;
 
-	str_val = g_object_get_data (G_OBJECT (setting), key);
+	str_val = g_hash_table_lookup (data->plugin_secrets, key);
 	if (!str_val)
 		return;
 
-	g_hash_table_insert (secrets, g_strdup (key), string_to_gvalue (str_val));
+	g_hash_table_insert (data->out_secrets, g_strdup (key), string_to_gvalue (str_val));
 }
 
 static void
@@ -110,9 +116,10 @@ connection_settings_get_secrets (NMConnectionSettings *sys_connection,
 {
 	NMConnection *connection = NM_SYSCONFIG_CONNECTION_SETTINGS (sys_connection)->connection;
 	GError *error = NULL;
-	GHashTable *secrets;
 	NMSettingConnection *s_con;
 	NMSetting *setting;
+	NMSystemConfigInterface *plugin;
+	struct AddSecretsData sdata;
 
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 	g_return_if_fail (setting_name != NULL);
@@ -122,10 +129,7 @@ connection_settings_get_secrets (NMConnectionSettings *sys_connection,
 		g_set_error (&error, NM_SETTINGS_ERROR, 1,
 		             "%s.%d - Connection didn't have requested setting '%s'.",
 		             __FILE__, __LINE__, setting_name);
-		g_warning (error->message);
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-		return;
+		goto error;
 	}
 
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection,
@@ -136,26 +140,45 @@ connection_settings_get_secrets (NMConnectionSettings *sys_connection,
 		             NM_SETTING_CONNECTION_SETTING_NAME
 		             "' setting , or the connection name was invalid.",
 		             __FILE__, __LINE__);
-		g_warning (error->message);
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-		return;
+		goto error;
 	}
 
-	secrets = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, destroy_gvalue);
-	nm_setting_enumerate_values (setting, add_one_secret_to_hash, secrets);
-	if (g_hash_table_size (secrets) == 0) {
+	plugin = g_object_get_data (G_OBJECT (connection), NM_SS_PLUGIN_TAG);
+	if (!plugin) {
+		g_set_error (&error, NM_SETTINGS_ERROR, 1,
+		             "%s.%d - Connection had no plugin to ask for secrets.",
+		             __FILE__, __LINE__);
+		goto error;
+	}
+
+	sdata.plugin_secrets = nm_system_config_interface_get_secrets (plugin, connection, setting);
+	if (!sdata.plugin_secrets) {
+		g_set_error (&error, NM_SETTINGS_ERROR, 1,
+		             "%s.%d - Connection's plugin did not return a secrets hash.",
+		             __FILE__, __LINE__);
+		goto error;
+	}
+
+	sdata.out_secrets = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, destroy_gvalue);
+	nm_setting_enumerate_values (setting, add_one_secret_to_hash, &sdata);
+	g_hash_table_unref (sdata.plugin_secrets);
+
+	if (g_hash_table_size (sdata.out_secrets) == 0) {
 		g_set_error (&error, NM_SETTINGS_ERROR, 1,
 		             "%s.%d - Secrets were found for setting '%s' but none"
 		             " were valid.", __FILE__, __LINE__, setting_name);
-		g_warning (error->message);
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
+		goto error;
 	} else {
-		dbus_g_method_return (context, secrets);
+		dbus_g_method_return (context, sdata.out_secrets);
 	}
 
-	g_hash_table_destroy (secrets);
+	g_hash_table_destroy (sdata.out_secrets);
+	return;
+
+error:
+	g_warning (error->message);
+	dbus_g_method_return_error (context, error);
+	g_error_free (error);
 }
 
 static void

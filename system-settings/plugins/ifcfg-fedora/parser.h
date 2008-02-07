@@ -28,6 +28,15 @@
 #define IFCFG_TAG "ifcfg-"
 #define BAK_TAG ".bak"
 
+typedef struct {
+	char *ifcfg_path;
+	GHashTable *secrets;
+} ConnectionData;
+
 NMConnection * parser_parse_file (const char *file, GError **error);
+
+ConnectionData *connection_data_get (NMConnection *connection);
+ConnectionData *connection_data_add (NMConnection *connection, const char *ifcfg_path);
+void connection_data_copy_secrets (ConnectionData *from, ConnectionData *to);
 
 #endif /* _PARSER_H_ */
