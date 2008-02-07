@@ -9,6 +9,16 @@
 # processname: NetworkManagerDispatcher
 # pidfile: /var/run/NetworkManager/NetworkManagerDispatcher.pid
 #
+### BEGIN INIT INFO
+# Provides: network_manager_dispatcher
+# Required-Start: $local_fs messagebus
+# Required-Stop: $local_fs messagebus
+# Default-Start:  3 4 5
+# Default-Stop: 0 1 6
+# Short-Description: start and stop NetworkManagerDispatcher
+# Description: NetworkManagerDispatcher is a tool for running scripts triggered \
+#              by network events
+### END INIT INFO
 
 prefix=@prefix@
 exec_prefix=@prefix@

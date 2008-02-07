@@ -1,5 +1,11 @@
 2008-02-07  Dan Williams  <dcbw@redhat.com>
 
+	* initscript/RedHat/NetworkManager.in
+	  initscript/RedHat/NetworkManagerDispatcher.in
+		- Add new-style LSB init headers
+
+2008-02-07  Dan Williams  <dcbw@redhat.com>
+
 	* system-settings/src/dbus-settings.c
 	  system-settings/src/dbus-settings.h
 		- (add_one_secret_to_hash): copy secrets out of the plugin-returned hash

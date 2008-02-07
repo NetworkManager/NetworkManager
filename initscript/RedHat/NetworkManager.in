@@ -9,6 +9,15 @@
 # processname: NetworkManager
 # pidfile: /var/run/NetworkManager/NetworkManager.pid
 #
+### BEGIN INIT INFO
+# Provides: network_manager
+# Required-Start: $local_fs messagebus haldaemon
+# Required-Stop: $local_fs messagebus haldaemon
+# Default-Start:  3 4 5
+# Default-Stop: 0 1 6
+# Short-Description: start and stop NetworkManager
+# Description: NetworkManager is a tool for easily managing network connections
+### END INIT INFO
 
 prefix=@prefix@
 exec_prefix=@prefix@
