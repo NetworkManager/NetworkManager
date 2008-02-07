@@ -1,5 +1,18 @@
 2008-02-07  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-11-wireless.c
+		- (handle_auth_or_fail): new function; consolidate device activation
+			failure check after a certain number of failures getting secrets
+		- (supplicant_connection_timeout_cb, real_act_stage2_config,
+		   real_act_stage4_ip_config_timeout): use handle_auth_or_fail() to fail
+			the connection if secrets were requested more than a few times
+		- (real_act_stage3_ip_config_start): don't clear the wireless secrets
+			tries here; otherwise they are cleared before the IP configure
+			timeout, which happens with open system WEP when key is wrong
+		- (activation_success_handler): clear wireless secrets tries here too
+
+2008-02-07  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerPolicy.c
 		- (connection_updated): clear invalid tag when connection gets updated
 			to allow that connection to be tried again

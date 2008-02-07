@@ -67,6 +67,8 @@ static void nm_device_802_11_wireless_ap_list_print (NMDevice80211Wireless *self
 #define SCAN_INTERVAL_STEP 20
 #define SCAN_INTERVAL_MAX 120
 
+#define WIRELESS_SECRETS_TRIES "wireless-secrets-tries"
+
 
 G_DEFINE_TYPE (NMDevice80211Wireless, nm_device_802_11_wireless, NM_TYPE_DEVICE)
 
@@ -2227,6 +2229,52 @@ remove_supplicant_connection_timeout (NMDevice80211Wireless *self)
 	}
 }
 
+static NMActStageReturn
+handle_auth_or_fail (NMDevice80211Wireless *self,
+                     NMActRequest *req,
+                     gboolean new_secrets)
+{
+	const char *setting_name;
+	guint32 tries;
+	NMAccessPoint *ap;
+	NMConnection *connection;
+
+	g_return_val_if_fail (NM_IS_DEVICE_802_11_WIRELESS (self), NM_ACT_STAGE_RETURN_FAILURE);
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), NM_ACT_STAGE_RETURN_FAILURE);
+
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+
+	ap = nm_device_802_11_wireless_get_activation_ap (self);
+	g_assert (ap);
+
+	tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES));
+	if (tries > 3) {
+		/* Make the user try again explicitly */
+		nm_ap_set_invalid (ap, TRUE);
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
+
+	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH);
+
+	nm_connection_clear_secrets (connection);
+	setting_name = nm_connection_need_secrets (connection, NULL);
+	if (setting_name) {
+		gboolean get_new;
+
+		/* If the caller doesn't necessarily want completely new secrets,
+		 * only ask for new secrets after the first failure.
+		 */
+		get_new = new_secrets ? TRUE : (tries ? TRUE : FALSE);
+		nm_act_request_request_connection_secrets (req, setting_name, get_new);
+
+		g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
+	} else {
+		nm_warning ("Cleared secrets, but setting didn't need any secrets.");
+	}
+	return NM_ACT_STAGE_RETURN_POSTPONE;
+}
+
 /*
  * supplicant_connection_timeout_cb
  *
@@ -2240,8 +2288,8 @@ supplicant_connection_timeout_cb (gpointer user_data)
 	NMDevice80211Wireless * self = NM_DEVICE_802_11_WIRELESS (user_data);
 	NMAccessPoint *         ap;
 	NMActRequest *          req;
-	NMConnection *          connection = NULL;
 	gboolean                auth_enforced = FALSE, encrypted = FALSE;
+	NMConnection *connection;
 
 	cleanup_association_attempt (self, TRUE);
 
@@ -2270,19 +2318,16 @@ supplicant_connection_timeout_cb (gpointer user_data)
 		         nm_device_get_iface (dev));
 		nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
 	} else {
-		const char *setting_name;
-
 		/* Authentication failed, encryption key is probably bad */
-		nm_info ("Activation (%s/wireless): association took too long, "
-		         "asking for new key.",
+		nm_info ("Activation (%s/wireless): association took too long.",
 		         nm_device_get_iface (dev));
 
-		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
-
-		nm_connection_clear_secrets (connection);
-		setting_name = nm_connection_need_secrets (connection, NULL);
-		if (setting_name)
-			nm_act_request_request_connection_secrets (req, setting_name, TRUE);
+		if (handle_auth_or_fail (self, req, TRUE) == NM_ACT_STAGE_RETURN_POSTPONE) {
+			nm_info ("Activation (%s/wireless): asking for new secrets",
+			         nm_device_get_iface (dev));
+		} else {
+			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
+		}
 	}
 
 	return FALSE;
@@ -2538,8 +2583,6 @@ real_connection_secrets_updated (NMDevice *dev,
 	nm_device_activate_schedule_stage1_device_prepare (dev);
 }
 
-#define WIRELESS_SECRETS_TRIES "wireless-secrets-tries"
-
 static NMActStageReturn
 real_act_stage2_config (NMDevice *dev)
 {
@@ -2571,25 +2614,11 @@ real_act_stage2_config (NMDevice *dev)
 	/* If we need secrets, get them */
 	setting_name = nm_connection_need_secrets (connection, NULL);
 	if (setting_name) {
-		guint32 tries;
-
 		nm_info ("Activation (%s/wireless): access point '%s' has security,"
 		         " but secrets are required.",
 		         iface, s_connection->id);
 
-		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
-
-		/* Request new secrets if the connection failed to even associate */
-		tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES));
-		if (tries > 4) {
-			/* Make the user try again explicitly */
-			nm_ap_set_invalid (ap, TRUE);
-			return NM_ACT_STAGE_RETURN_FAILURE;
-		}
-
-		nm_act_request_request_connection_secrets (req, setting_name, tries ? TRUE : FALSE);
-		g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
-		return NM_ACT_STAGE_RETURN_POSTPONE;
+		return handle_auth_or_fail (self, req, FALSE);
 	} else {
 		NMSettingWireless *s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, 
 																		 NM_TYPE_SETTING_WIRELESS);
@@ -2663,9 +2692,6 @@ real_act_stage3_ip_config_start (NMDevice *dev)
 
 	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
-
-	/* Clear wireless secrets tries once a successful association happens */
-	g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, NULL);
 
 	/* User-created access points (ie, Ad-Hoc networks) don't do DHCP,
 	 * everything else does.
@@ -2746,22 +2772,20 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 	connection = nm_act_request_get_connection (req);
 	auth_enforced = ap_auth_enforced (connection, ap, &encrypted);
 	if (encrypted && !auth_enforced) {
-		const GByteArray * ssid = nm_ap_get_ssid (ap);
-		const char *setting_name;
+		NMSettingConnection *s_con;
+
+		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 
 		/* Activation failed, we must have bad encryption key */
-		nm_debug ("Activation (%s/wireless): could not get IP configuration "
-		          "info for '%s', asking for new key.",
-		          nm_device_get_iface (dev),
-		          ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
-		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
+		nm_info ("Activation (%s/wireless): could not get IP configuration for "
+		          "connection '%s'.",
+		          nm_device_get_iface (dev), s_con->id);
 
-		nm_connection_clear_secrets (connection);
-		setting_name = nm_connection_need_secrets (connection, NULL);
-		if (setting_name)
-			nm_act_request_request_connection_secrets (req, setting_name, TRUE);
-
-		ret = NM_ACT_STAGE_RETURN_POSTPONE;
+		ret = handle_auth_or_fail (self, req, TRUE);
+		if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
+			nm_info ("Activation (%s/wireless): asking for new secrets",
+			         nm_device_get_iface (dev));
+		}
 	} else if (nm_ap_get_mode (ap) == IW_MODE_ADHOC) {
 		NMDevice80211WirelessClass *	klass;
 		NMDeviceClass * parent_class;
@@ -2791,6 +2815,17 @@ activation_success_handler (NMDevice *dev)
 	NMAccessPoint *ap;
 	struct ether_addr bssid = { {0x0, 0x0, 0x0, 0x0, 0x0, 0x0} };
 	NMAccessPoint *tmp_ap;
+	NMActRequest *req;
+	NMConnection *connection;
+
+	req = nm_device_get_act_request (dev);
+	g_assert (req);
+
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+
+	/* Clear wireless secrets tries on success */
+	g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, NULL);
 
 	ap = nm_device_802_11_wireless_get_activation_ap (self);
 
@@ -2809,7 +2844,6 @@ activation_success_handler (NMDevice *dev)
 
 	tmp_ap = get_active_ap (self, ap, TRUE);
 	if (tmp_ap) {
-		NMActRequest *req = nm_device_get_act_request (NM_DEVICE (self));
 		const GByteArray *ssid = nm_ap_get_ssid (tmp_ap);
 
 		/* Found a better match in the scan list than the fake AP.  Use it
