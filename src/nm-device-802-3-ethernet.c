@@ -229,7 +229,7 @@ real_bring_up (NMDevice *dev)
 	g_signal_connect (priv->sup_iface,
 	                  "state",
 	                  G_CALLBACK (supplicant_iface_state_cb),
-	                  dev);
+	                  NM_DEVICE_802_3_ETHERNET (dev));
 
 	g_object_unref (sup_mgr);
 
