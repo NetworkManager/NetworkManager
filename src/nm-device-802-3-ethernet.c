@@ -56,7 +56,8 @@ typedef struct {
 	gulong			link_connected_id;
 	gulong			link_disconnected_id;
 
-	NMSupplicantInterface *  sup_iface;
+	NMSupplicantInterface *sup_iface;
+	gulong			iface_state_id; 
 } NMDevice8023EthernetPrivate;
 
 enum {
@@ -216,6 +217,7 @@ real_bring_up (NMDevice *dev)
 	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (dev);
 	NMSupplicantManager *sup_mgr;
 	const char *iface;
+	gulong id;
 
 	iface = nm_device_get_iface (dev);
 	sup_mgr = nm_supplicant_manager_get ();
@@ -226,10 +228,11 @@ real_bring_up (NMDevice *dev)
 		return FALSE;
 	}
 
-	g_signal_connect (priv->sup_iface,
-	                  "state",
-	                  G_CALLBACK (supplicant_iface_state_cb),
-	                  NM_DEVICE_802_3_ETHERNET (dev));
+	id = g_signal_connect (priv->sup_iface,
+	                       "state",
+	                       G_CALLBACK (supplicant_iface_state_cb),
+	                       NM_DEVICE_802_3_ETHERNET (dev));
+	priv->iface_state_id = id;
 
 	g_object_unref (sup_mgr);
 
@@ -245,6 +248,11 @@ real_bring_down (NMDevice *dev)
 
 	sup_mgr = nm_supplicant_manager_get ();
 	if (priv->sup_iface) {
+		if (priv->iface_state_id > 0) {
+			g_signal_handler_disconnect (priv->sup_iface, priv->iface_state_id);
+			priv->iface_state_id = 0;
+		}
+
 		nm_supplicant_manager_release_iface (sup_mgr, priv->sup_iface);
 		priv->sup_iface = NULL;
 	}

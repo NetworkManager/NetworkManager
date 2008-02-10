@@ -1,3 +1,10 @@
+2008-02-10  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-3-ethernet.c
+		- (real_bring_up): save the supplicant interface state signal id
+		- (real_bring_down): disconnect from the supplicant interface state
+			signal
+
 2008-02-07  Dan Williams  <dcbw@redhat.com>
 
 	* initscript/RedHat/NetworkManager.in
