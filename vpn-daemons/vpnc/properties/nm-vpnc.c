@@ -55,9 +55,12 @@ struct _NetworkManagerVpnUIImpl {
 	GtkCheckButton *w_use_domain;
 	GtkEntry *w_domain;
 	GtkCheckButton *w_use_routes;
+	GtkCheckButton *w_disable_natt;
+	GtkCheckButton *w_enable_singledes;
 	GtkEntry *w_routes;
 	GtkExpander *w_opt_info_expander;
 	GtkButton *w_import_button;
+	GtkComboBox *w_vendor;
 };
 
 static void 
@@ -68,6 +71,8 @@ vpnc_clear_widget (NetworkManagerVpnUIImpl *impl)
 	gtk_entry_set_text (impl->w_group_name, "");
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_alternate_username), FALSE);
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_routes), FALSE);
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_disable_natt), FALSE);
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_enable_singledes), FALSE);
 	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_domain), FALSE);
 	gtk_entry_set_text (impl->w_username, "");
 	gtk_entry_set_text (impl->w_routes, "");
@@ -104,6 +109,9 @@ impl_get_widget (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, 
 	if (connection_name != NULL)
 		gtk_entry_set_text (impl->w_connection_name, connection_name);
 
+	/* Default vendor is Cisco */
+	gtk_combo_box_set_active (GTK_COMBO_BOX (impl->w_vendor), 0);
+
 	for (i = properties; i != NULL && g_slist_next (i) != NULL; i = g_slist_next (g_slist_next (i))) {
 		const char *key;
 		const char *value;
@@ -125,7 +133,16 @@ impl_get_widget (NetworkManagerVpnUI *self, GSList *properties, GSList *routes, 
 			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_use_domain), TRUE);
 			gtk_widget_set_sensitive (GTK_WIDGET (impl->w_domain), TRUE);
 			should_expand = TRUE;
-		}
+		} else if (strcmp (key, "Disable NAT Traversal") == 0) {
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_disable_natt), TRUE);
+		} else if (strcmp (key, "Enable Single DES") == 0) {
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_enable_singledes), TRUE);
+		} else if (strcmp (key, "Vendor") == 0) {
+			if (strcmp (value, "netscreen"))
+				gtk_combo_box_set_active (GTK_COMBO_BOX (impl->w_vendor), 1);
+			else  /* Cisco as default */
+				gtk_combo_box_set_active (GTK_COMBO_BOX (impl->w_vendor), 0);
+		} 
 	}
 
 
@@ -172,7 +189,10 @@ impl_get_properties (NetworkManagerVpnUI *self)
 	gboolean use_alternate_username;
 	const char *username;
 	gboolean use_domain;
+	gboolean disable_natt;
+	gboolean enable_singledes;
 	const char *domain;
+	gint vendor;
 
 	connectionname         = gtk_entry_get_text (impl->w_connection_name);
 	gateway                = gtk_entry_get_text (impl->w_gateway);
@@ -180,13 +200,25 @@ impl_get_properties (NetworkManagerVpnUI *self)
 	use_alternate_username = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_alternate_username));
 	username               = gtk_entry_get_text (impl->w_username);
 	use_domain             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_domain));
+	disable_natt           = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_disable_natt));
+	enable_singledes       = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_enable_singledes));
 	domain                 = gtk_entry_get_text (impl->w_domain);
+	vendor                 = gtk_combo_box_get_active (impl->w_vendor);
 
 	data = NULL;
 	data = g_slist_append (data, g_strdup ("IPSec gateway"));
 	data = g_slist_append (data, g_strdup (gateway));
 	data = g_slist_append (data, g_strdup ("IPSec ID"));
 	data = g_slist_append (data, g_strdup (groupname));
+	
+	if (vendor == 0) {
+		data = g_slist_append (data, g_strdup ("Vendor"));
+		data = g_slist_append (data, g_strdup ("cisco"));
+	} else {
+		data = g_slist_append (data, g_strdup ("Vendor"));
+		data = g_slist_append (data, g_strdup ("netscreen"));
+	}
+	
 	if (use_alternate_username) {
 		data = g_slist_append (data, g_strdup ("Xauth username"));
 		data = g_slist_append (data, g_strdup (username));
@@ -194,6 +226,14 @@ impl_get_properties (NetworkManagerVpnUI *self)
 	if (use_domain) {
 		data = g_slist_append (data, g_strdup ("Domain"));
 		data = g_slist_append (data, g_strdup (domain));
+	}
+	if (enable_singledes) {
+		data = g_slist_append (data, g_strdup ("Enable Single DES"));
+		data = g_slist_append (data, g_strdup (""));
+	}
+	if (disable_natt) {
+		data = g_slist_append (data, g_strdup ("Disable NAT Traversal"));
+		data = g_slist_append (data, g_strdup (""));
 	}
 
 	return data;
@@ -266,7 +306,10 @@ impl_is_valid (NetworkManagerVpnUI *self)
 	gboolean use_routes;
 	const char *routes_entry;
 	gboolean use_domain;
+	gboolean disable_natt;
+	gboolean enable_singledes;
 	const char *domain_entry;
+	gint vendor;
 
 	is_valid = FALSE;
 
@@ -276,9 +319,12 @@ impl_is_valid (NetworkManagerVpnUI *self)
 	use_alternate_username = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_alternate_username));
 	username               = gtk_entry_get_text (impl->w_username);
 	use_routes             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_routes));
+	disable_natt           = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_disable_natt));
+	enable_singledes       = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_enable_singledes));
 	routes_entry           = gtk_entry_get_text (impl->w_routes);
 	use_domain             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_domain));
 	domain_entry           = gtk_entry_get_text (impl->w_domain);
+	vendor                 = gtk_combo_box_get_active (impl->w_vendor);
 
 	/* initial sanity checking */
 	if (strlen (connectionname) > 0 &&
@@ -295,6 +341,10 @@ impl_is_valid (NetworkManagerVpnUI *self)
 	     strstr (gateway, "\t") != NULL)) {
 		is_valid = FALSE;
 	}
+
+	/* validate vendor */
+	if (is_valid && vendor == -1)
+		is_valid = FALSE;
 
 	/* validate groupname; can be anything */
 
@@ -429,9 +479,12 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
 	gboolean use_alternate_username;
 	const char *username;
 	gboolean use_routes;
+	gboolean disable_natt;
+	gboolean enable_singledes;
 	const char *routes;
 	gboolean use_domain;
 	const char *domain;
+	gint vendor;
 
 	connectionname         = gtk_entry_get_text (impl->w_connection_name);
 	gateway                = gtk_entry_get_text (impl->w_gateway);
@@ -439,9 +492,12 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
 	use_alternate_username = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_alternate_username));
 	username               = gtk_entry_get_text (impl->w_username);
 	use_routes             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_routes));
+	disable_natt           = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_disable_natt));
+	enable_singledes       = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_enable_singledes));
 	routes                 = gtk_entry_get_text (impl->w_routes);
 	use_domain             = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (impl->w_use_domain));
 	domain                 = gtk_entry_get_text (impl->w_domain);
+	vendor                 = gtk_combo_box_get_active (impl->w_vendor);
 
 	buf = g_string_sized_new (512);
 
@@ -449,6 +505,12 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
 	g_string_append (buf, "\n\n\t");
 	g_string_append_printf (buf, _("Name:  %s"), connectionname);
 	g_string_append (buf, "\n\n\t");
+	
+	if (vendor == 0)
+		g_string_append_printf (buf, _("Vendor:  cisco"));
+	else
+		g_string_append_printf (buf, _("Vendor:  netscreen"));
+	g_string_append (buf, "\n\t");
 
 	g_string_append_printf (buf, _("Gateway:  %s"), gateway);
 	g_string_append (buf, "\n\t");
@@ -467,6 +529,14 @@ impl_get_confirmation_details (NetworkManagerVpnUI *self, gchar **retval)
 	if (use_routes) {
 		g_string_append (buf, "\n\t");
 		g_string_append_printf (buf, _("Routes:  %s"), routes);
+	}
+	if (enable_singledes) {
+		g_string_append (buf, "\n\t");
+		g_string_append_printf (buf, _("Enable Single DES"));
+	}
+	if (disable_natt) {
+		g_string_append (buf, "\n\t");
+		g_string_append_printf (buf, _("Disable NAT Traversal"));
 	}
 
 	g_string_append (buf, "\n\n");
@@ -530,6 +600,20 @@ import_from_file (NetworkManagerVpnUIImpl *impl, const char *path)
 
 	gtk_expander_set_expanded (impl->w_opt_info_expander, expand);
 
+	if ((buf = pcf_file_lookup_value (pcf, "main", "SingleDES"))) {
+		if (strncmp (buf, "1", 1) == 0)
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_enable_singledes), TRUE);
+		else
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_enable_singledes), FALSE);
+	}
+
+	if ((buf = pcf_file_lookup_value (pcf, "main", "EnableNat"))) {
+		if (strncmp (buf, "0", 1) == 0)
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_disable_natt), TRUE);
+		else
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (impl->w_disable_natt), FALSE);
+	}
+	
 	if ((buf = pcf_file_lookup_value (pcf, "main", "TunnelingMode"))) {
 		/* If applicable, put up warning that TCP tunneling will be disabled */
 
@@ -601,7 +685,7 @@ import_button_clicked (GtkButton *button, gpointer user_data)
 	if (filename != NULL) {
 		import_from_file (impl, filename);
 		g_free (filename);
-	}      
+	}
 }
 
 static gboolean 
@@ -625,6 +709,8 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
 	FILE *f;
 	GSList *i;
 	const char *gateway = NULL;
+	const char *enablenat = "1";
+	const char *singledes = "0";
 	const char *groupname = NULL;
 	const char *username = NULL;
 	const char *domain = NULL;
@@ -648,6 +734,10 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
 			username = value;
 		} else if (strcmp (key, "Domain") == 0) {
 			domain = value;
+		} else if (strcmp (key, "Disable NAT Traversal") == 0) {
+			enablenat = "0";
+		} else if (strcmp (key, "Enable Single DES") == 0) {
+			singledes = "1";
 		}
 	}
 
@@ -693,7 +783,7 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
 		 "SaveUserPassword=0\n"
 		 "EnableBackup=0\n"
 		 "BackupServer=\n"
-		 "EnableNat=1\n"
+		 "EnableNat=%s\n"
 		 "CertStore=0\n"
 		 "CertName=\n"
 		 "CertPath=\n"
@@ -714,13 +804,16 @@ export_to_file (NetworkManagerVpnUIImpl *impl, const char *path,
 		 "SendCertChain=0\n"
 		 "VerifyCertDN=\n"
 		 "EnableSplitDNS=1\n"
+		 "SingleDES=%s\n"
 		 "SPPhonebook=\n"
 		 "%s",
 		 /* Description */ connection_name,
 		 /* Host */        gateway,
 		 /* GroupName */   groupname,
 		 /* Username */    username != NULL ? username : "",
+		 /* EnableNat */   enablenat,
 		 /* NTDomain */    domain != NULL ? domain : "",
+		 /* SingleDES */   singledes,
 		 /* X-NM-Routes */ routes_str != NULL ? routes_str : "");
 
 	fclose (f);
@@ -825,9 +918,12 @@ impl_get_object (void)
 	impl->w_use_alternate_username = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "vpnc-use-alternate-username"));
 	impl->w_username               = GTK_ENTRY (glade_xml_get_widget (impl->xml, "vpnc-username"));
 	impl->w_use_routes             = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "vpnc-use-routes"));
+	impl->w_disable_natt           = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "vpnc-disable-natt"));
+	impl->w_enable_singledes       = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "vpnc-enable-singledes"));
 	impl->w_routes                 = GTK_ENTRY (glade_xml_get_widget (impl->xml, "vpnc-routes"));
 	impl->w_use_domain             = GTK_CHECK_BUTTON (glade_xml_get_widget (impl->xml, "vpnc-use-domain"));
 	impl->w_domain                 = GTK_ENTRY (glade_xml_get_widget (impl->xml, "vpnc-domain"));
+	impl->w_vendor                 = GTK_COMBO_BOX (glade_xml_get_widget (impl->xml, "vpnc-vendor"));
 	impl->w_opt_info_expander      = GTK_EXPANDER (glade_xml_get_widget (impl->xml, 
 									     "vpnc-optional-information-expander"));
 	impl->w_import_button          = GTK_BUTTON (glade_xml_get_widget (impl->xml, 
@@ -854,6 +950,8 @@ impl_get_object (void)
 	gtk_signal_connect (GTK_OBJECT (impl->w_routes), 
 			    "changed", GTK_SIGNAL_FUNC (editable_changed), impl);
 	gtk_signal_connect (GTK_OBJECT (impl->w_domain), 
+			    "changed", GTK_SIGNAL_FUNC (editable_changed), impl);
+	gtk_signal_connect (GTK_OBJECT (impl->w_vendor), 
 			    "changed", GTK_SIGNAL_FUNC (editable_changed), impl);
 
 	gtk_signal_connect (GTK_OBJECT (impl->w_import_button), 

@@ -505,6 +505,9 @@ static gboolean nm_vpnc_config_options_validate (char **data_items, int num_item
 		{ "Application Version",           OPT_TYPE_ASCII },
 		{ "Rekeying interval",             OPT_TYPE_ASCII },
 		{ "NAT-Keepalive packet interval", OPT_TYPE_ASCII },
+		{ "Vendor",                        OPT_TYPE_ASCII },
+		{ "Enable Single DES",             OPT_TYPE_ASCII },
+		{ "Disable NAT Traversal",         OPT_TYPE_ASCII },
 		{ NULL,                            OPT_TYPE_UNKNOWN }
 	};
 

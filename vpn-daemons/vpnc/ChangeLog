@@ -1,3 +1,13 @@
+2008-02-11  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Cyril Jaquier <cyril.jaquier@jaqpot.net>
+
+	* properties/nm-vpnc-dialog.glade
+	  properties/nm-vpnc.c
+	  src/nm-vpnc-service.c
+		- Add support for "Vendor", "Enable Single DES", and 
+			"Disable NAT Traversal"
+
 2008-01-04  Dan Williams <dcbw@redhat.com>
 
 	* nm-vpnc-service.name.in
