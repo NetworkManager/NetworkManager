@@ -125,7 +125,7 @@ G_STMT_START								\
 	G_BREAKPOINT ();						\
 } G_STMT_END
 
-gchar *nm_dbus_escape_object_path (const gchar *utf8_string);
+gchar *nm_dbus_escape_object_path_item (const gchar *item);
 gchar *nm_dbus_unescape_object_path (const gchar *object_path);
 
 char *nm_utils_essid_to_utf8 (const char *orig_essid);

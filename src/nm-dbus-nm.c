@@ -434,12 +434,14 @@ static DBusMessage *nm_dbus_nm_create_test_device (DBusConnection *connection, D
 		test_dev_num++;
 		if ((reply = dbus_message_new_method_return (message)))
 		{
-			char		*dev_path, *escaped_dev_path;
-			dev_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
-			escaped_dev_path = nm_dbus_escape_object_path (dev_path);
+			char *dev_path, *escaped_dev;
+
+			escaped_dev = nm_dbus_escape_object_path_item (nm_device_get_iface (dev));
+			dev_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, escaped_dev);
+			g_free (escaped_dev);
+
 			dbus_message_append_args (reply, DBUS_TYPE_STRING, &dev_path, DBUS_TYPE_INVALID);
 			g_free (dev_path);
-			g_free (escaped_dev_path);
 		}
 		g_free (interface);
 		g_free (udi);

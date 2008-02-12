@@ -27,42 +27,27 @@
 #include <glib.h>
 #include "nm-utils.h"
 
-gchar *nm_dbus_escape_object_path (const gchar *utf8_string)
+gchar *nm_dbus_escape_object_path_item (const gchar *item)
 {
-	const gchar *p;
+	unsigned char *p;
 	gchar *object_path;
 	GString *string;
 
-	g_return_val_if_fail (utf8_string != NULL, NULL);	
-	g_return_val_if_fail (g_utf8_validate (utf8_string, -1, NULL), NULL);
+	g_return_val_if_fail (item != NULL, NULL);	
 
-	string = g_string_sized_new ((strlen (utf8_string) + 1) * 6);
+	string = g_string_sized_new ((strlen (item) + 1) * 6);
 
-	for (p = utf8_string; *p != '\0'; p = g_utf8_next_char (p))
-	{
-		gunichar character;
-
-		character = g_utf8_get_char (p);
-
-		if (((character >= ((gunichar) 'a')) && 
-		     (character <= ((gunichar) 'z'))) ||
-		    ((character >= ((gunichar) 'A')) && 
-		     (character <= ((gunichar) 'Z'))) ||
-		    ((character >= ((gunichar) '0')) && 
-		     (character <= ((gunichar) '9'))) ||
-		     (character == ((gunichar) '/')))
-		{
-			g_string_append_c (string, (gchar) character);
-			continue;
-		}
-
-		g_string_append_printf (string, "_%x_", character);
+	for (p = (unsigned char *) item; *p != '\0'; p++) {
+		if (((*p >= 'a') && (*p <= 'z')) ||
+		    ((*p >= 'A') && (*p <= 'Z')) ||
+		    ((*p >= '0') && (*p <= '9')))
+			g_string_append_c (string, *p);
+		else
+			g_string_append_printf (string, "_%02x_", (unsigned char) *p);
 	}
 
 	object_path = string->str;
-
 	g_string_free (string, FALSE);
-
 	return object_path;
 }
 

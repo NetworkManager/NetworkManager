@@ -82,15 +82,18 @@ DBusMessage *nm_dbus_create_error_message (DBusMessage *message, const char *exc
  */
 char * nm_dbus_get_object_path_for_device (NMDevice *dev)
 {
-	char *object_path, *escaped_object_path;
+	char *object_path, *escaped_dev;
 
 	g_return_val_if_fail (dev != NULL, NULL);
 
-	object_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
-	escaped_object_path = nm_dbus_escape_object_path (object_path);
-	g_free (object_path);
+	escaped_dev = nm_dbus_escape_object_path_item (nm_device_get_iface (dev));
+	if (!escaped_dev)
+		return NULL;
 
-	return escaped_object_path;
+	object_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, escaped_dev);
+	g_free (escaped_dev);
+
+	return object_path;
 }
 
 
@@ -102,7 +105,7 @@ char * nm_dbus_get_object_path_for_device (NMDevice *dev)
  */
 char * nm_dbus_get_object_path_for_network (NMDevice *dev, NMAccessPoint *ap)
 {
-	char *object_path, *escaped_object_path;
+	char *object_path = NULL, *escaped_ssid = NULL, *escaped_dev = NULL;
 
 	g_return_val_if_fail (dev != NULL, NULL);
 	g_return_val_if_fail (ap != NULL, NULL);
@@ -110,11 +113,15 @@ char * nm_dbus_get_object_path_for_network (NMDevice *dev, NMAccessPoint *ap)
 	if (!nm_ap_get_essid (ap))
 		return NULL;
 
-	object_path = g_strdup_printf ("%s/%s/Networks/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev), nm_ap_get_essid (ap));
-	escaped_object_path = nm_dbus_escape_object_path (object_path);
-	g_free (object_path);
+	escaped_ssid = nm_dbus_escape_object_path_item (nm_ap_get_essid (ap));
+	escaped_dev = nm_dbus_escape_object_path_item (nm_device_get_iface (dev));
+	if (escaped_dev && escaped_ssid)
+		object_path = g_strdup_printf ("%s/%s/Networks/%s", NM_DBUS_PATH_DEVICES, escaped_dev, escaped_ssid);
 
-	return escaped_object_path;
+	g_free (escaped_ssid);
+	g_free (escaped_dev);
+
+	return object_path;
 }
 
 
@@ -139,25 +146,29 @@ NMDevice *nm_dbus_get_device_from_escaped_object_path (NMData *data, const char 
 	for (elt = data->dev_list; elt; elt = g_slist_next (elt))
 	{
 		char *compare_path;
-		char *escaped_compare_path;
+		char *escaped_dev;
 		int len;
 
 		if (!(dev = (NMDevice *)(elt->data)))
 			continue;
 
-		compare_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
-		escaped_compare_path = nm_dbus_escape_object_path (compare_path);
-		g_free (compare_path);
-		len = strlen (escaped_compare_path);
+		escaped_dev = nm_dbus_escape_object_path_item (nm_device_get_iface (dev));
+		if (!escaped_dev)
+			continue;
+
+		compare_path = g_strdup_printf ("%s/%s", NM_DBUS_PATH_DEVICES, escaped_dev);
+		g_free (escaped_dev);
+
+		len = strlen (compare_path);
 
 		/* Compare against our constructed path, but ignore any trailing elements */
-		if (    (strncmp (path, escaped_compare_path, len) == 0)
+		if (    (strncmp (path, compare_path, len) == 0)
 			&& ((path[len] == '\0' || path[len] == '/')))
 		{
-			g_free (escaped_compare_path);
+			g_free (compare_path);
 			break;
 		}
-		g_free (escaped_compare_path);
+		g_free (compare_path);
 		dev = NULL;
 	}
 	nm_unlock_mutex (data->dev_list_mutex, __FUNCTION__);
@@ -639,21 +650,24 @@ static DBusHandlerResult nm_dbus_devices_message_handler (DBusConnection *connec
 		reply = nm_dbus_create_error_message (message, NM_DBUS_INTERFACE, "DeviceNotFound", "The requested network device does not exist.");
 	else
 	{
-		char			*object_path, *escaped_object_path;
+		char			*object_path, *escaped_dev;
 		NMDbusCBData	 cb_data;
 
 		cb_data.data = data;
 		cb_data.dev = dev;
 
 		/* Test whether or not the _networks_ of a device were queried instead of the device itself */
-		object_path = g_strdup_printf ("%s/%s/Networks/", NM_DBUS_PATH_DEVICES, nm_device_get_iface (dev));
-		escaped_object_path = nm_dbus_escape_object_path (object_path);
-		g_free (object_path);
-		if (strncmp (path, escaped_object_path, strlen (escaped_object_path)) == 0)
-			handled = nm_dbus_method_dispatch (data->net_methods, connection, message, &cb_data, &reply);
-		else
-			handled = nm_dbus_method_dispatch (data->device_methods, connection, message, &cb_data, &reply);
-		g_free (escaped_object_path);
+		escaped_dev = nm_dbus_escape_object_path_item (nm_device_get_iface (dev));
+		if (escaped_dev) {
+			object_path = g_strdup_printf ("%s/%s/Networks/", NM_DBUS_PATH_DEVICES, escaped_dev);
+			g_free (escaped_dev);
+
+			if (strncmp (path, object_path, strlen (object_path)) == 0)
+				handled = nm_dbus_method_dispatch (data->net_methods, connection, message, &cb_data, &reply);
+			else
+				handled = nm_dbus_method_dispatch (data->device_methods, connection, message, &cb_data, &reply);
+			g_free (object_path);
+		}
 	}
 
 	if (reply)

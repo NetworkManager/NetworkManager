@@ -1,5 +1,32 @@
 2008-02-11  Dan Williams  <dcbw@redhat.com>
 
+	Fix gnome.org #399292
+
+	* utils/nm-utils.c
+	  utils/nm-utils.h
+		- (nm_dbus_escape_object_path -> nm_dbus_escape_object_path_item): don't
+			pass '/' through, escape it too; therefore the function is no
+			longer suitable for escaping entire object paths, but only elements
+			of an object path.  Helps fixing crashes due to libdbus assertions
+			when trying to push invalid object paths through.
+
+	* src/NetworkManagerDbus.c
+		- (nm_dbus_get_object_path_for_device,
+		   nm_dbus_get_object_path_for_network,
+		   nm_dbus_get_device_from_escaped_object_path,
+		   nm_dbus_devices_message_handler): escape individual elements of the
+			object path, not the whole path
+
+	* src/nm-dbus-nm.c
+		- (nm_dbus_nm_create_test_device): escape individual elements of the
+			object path, not the whole path
+
+	* src/nm-dbus-net.c
+		- (nm_dbus_get_ap_from_object_path): escape individual elements of the
+			object path, not the whole path
+
+2008-02-11  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 	  src/nm-device-802-11-wireless.h
 		- (nm_device_802_11_wireless_ap_list_get_ap_by_obj_path): remove, unused

@@ -39,7 +39,6 @@ static NMAccessPoint *nm_dbus_get_ap_from_object_path (const char *path, NMDevic
 	NMAccessPoint		*ap = NULL;
 	NMAccessPointList	*ap_list;
 	NMAPListIter		*iter;
-	char			compare_path[100], *escaped_compare_path;
 
 	g_return_val_if_fail (path != NULL, NULL);
 	g_return_val_if_fail (dev != NULL, NULL);
@@ -51,29 +50,39 @@ static NMAccessPoint *nm_dbus_get_ap_from_object_path (const char *path, NMDevic
 	if (!(iter = nm_ap_list_iter_new (ap_list)))
 		return (NULL);
 
-	while ((ap = nm_ap_list_iter_next (iter)))
-	{
+	while ((ap = nm_ap_list_iter_next (iter))) {
 		int len;
+		char *compare_path, *escaped_dev, *escaped_ssid;
 
-		snprintf (compare_path, 100, "%s/%s/Networks/%s", NM_DBUS_PATH_DEVICES,
-				nm_device_get_iface (dev), nm_ap_get_essid (ap));
-		escaped_compare_path = nm_dbus_escape_object_path (compare_path);
+		if (!nm_ap_get_essid (ap))
+			continue;
 
-		len = strlen(escaped_compare_path);
-		if (strncmp (path, escaped_compare_path, len) == 0)
-		{
+		escaped_dev = nm_dbus_escape_object_path_item (nm_device_get_iface (dev));
+		if (!escaped_dev)
+			continue;
+
+		escaped_ssid = nm_dbus_escape_object_path_item (nm_ap_get_essid (ap));
+		if (!escaped_ssid) {
+			g_free (escaped_dev);
+			continue;
+		}
+
+		compare_path = g_strdup_printf ("%s/%s/Networks/%s",
+		                                NM_DBUS_PATH_DEVICES, escaped_dev, escaped_ssid);
+
+		len = strlen (compare_path);
+		if (strncmp (path, compare_path, len) == 0) {
 			/* Differentiate between 'foo' and 'foo-a' */
-			if (path[len] == '\0' || path[len] == '/')
-			{
-				g_free (escaped_compare_path);
+			if (path[len] == '\0' || path[len] == '/') {
+				g_free (compare_path);
 				break;
 			}
 		}
-		g_free (escaped_compare_path);
+		g_free (compare_path);
 	}
 		
 	nm_ap_list_iter_free (iter);
-	return (ap);
+	return ap;
 }
 
 
