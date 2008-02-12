@@ -506,7 +506,8 @@ wireless_event_helper (gpointer user_data)
 	NMDevice80211Wireless *	self;
 	WirelessEventCBData *	cb_data;
 	struct iw_event iwe_buf, *iwe = &iwe_buf;
-	char *pos, *end, *custom;
+	struct stream_descr	stream;
+	int			ret;
 
 	cb_data = (WirelessEventCBData *) user_data;
 	g_return_val_if_fail (cb_data != NULL, FALSE);
@@ -517,45 +518,26 @@ wireless_event_helper (gpointer user_data)
 	g_return_val_if_fail (cb_data->data != NULL, FALSE);
 	g_return_val_if_fail (cb_data->len >= 0, FALSE);
 
-	pos = cb_data->data;
-	end = cb_data->data + cb_data->len;
+	/* Init stream descriptor */
+	iw_init_event_stream (&stream, (char *) cb_data->data, cb_data->len);
 
-	while (pos + IW_EV_LCP_LEN <= end)
+	while (1)
 	{
-		/* Event data may be unaligned, so make a local, aligned copy
-		 * before processing. */
-		memcpy (&iwe_buf, pos, IW_EV_LCP_LEN);
-		if (iwe->len <= IW_EV_LCP_LEN)
+		/* Extract an event */
+		ret = iw_extract_event_stream (&stream, &iwe_buf, self->priv->we_version);
+		if (ret <= 0)
 			break;
 
-		custom = pos + IW_EV_POINT_LEN;
-		if (self->priv->we_version > 18 &&
-		    (iwe->cmd == IWEVMICHAELMICFAILURE ||
-		     iwe->cmd == IWEVCUSTOM ||
-		     iwe->cmd == IWEVASSOCREQIE ||
-		     iwe->cmd == IWEVASSOCRESPIE ||
-		     iwe->cmd == IWEVPMKIDCAND))
-		{
-			/* WE-19 removed the pointer from struct iw_point */
-			char *dpos = (char *) &iwe_buf.u.data.length;
-			int dlen = dpos - (char *) &iwe_buf;
-			memcpy (dpos, pos + IW_EV_LCP_LEN,
-			       sizeof (struct iw_event) - dlen);
-		}
-		else
-		{
-			memcpy (&iwe_buf, pos, sizeof (struct iw_event));
-			custom += IW_EV_POINT_OFF;
-		}
-
+		iwe = &iwe_buf;		/* Prevent gcc unstrict-aliasing */
 		switch (iwe->cmd)
 		{
 			case SIOCGIWAP:
-				if (   memcmp(iwe->u.ap_addr.sa_data,
+				/* Association status */
+				if (   memcmp (iwe->u.ap_addr.sa_data,
 					   "\x00\x00\x00\x00\x00\x00", ETH_ALEN) == 0
-				    || memcmp(iwe->u.ap_addr.sa_data,
+				    || memcmp (iwe->u.ap_addr.sa_data,
 					   "\x44\x44\x44\x44\x44\x44", ETH_ALEN) == 0
-				    || memcmp(iwe->u.ap_addr.sa_data,
+				    || memcmp (iwe->u.ap_addr.sa_data,
 					   "\xFF\xFF\xFF\xFF\xFF\xFF", ETH_ALEN) == 0)
 				{
 					/* disassociated */
@@ -572,7 +554,6 @@ wireless_event_helper (gpointer user_data)
 					schedule_scan_results_timeout (self, 5);
 				break;
 		}
-		pos += iwe->len;
 	}
 
 	return FALSE;

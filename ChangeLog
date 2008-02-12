@@ -1,3 +1,10 @@
+2008-02-12  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Jean Tourrilhes <jt@hpl.hp.com>
+
+	* src/nm-device-802-11-wireless.c
+		- (wireless_event_helper): use iwlib event processing helpers
+
 2008-02-11  Dan Williams  <dcbw@redhat.com>
 
 	Fix gnome.org #399292
