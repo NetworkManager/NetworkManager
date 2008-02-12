@@ -1,3 +1,16 @@
+2008-02-12  Dan Williams  <dcbw@redhat.com>
+
+	* system-settings/src/nm-system-config-interface.c
+	  system-settings/src/nm-system-config-interface.h
+		- (load_connections): get_connections() should now return an allocated
+			GSList that the system settings service will free
+
+	* system-settings/plugins/ifcfg-fedora/plugin.c
+	  system-settings/plugins/ifcfg-fedora/parser.h
+	  system-settings/plugins/ifcfg-fedora/parser.c
+		- Fix up inotify issues; handle keys-* files, handle new files appearing
+			in the profile directory, handle resolv.conf file changes
+
 2008-02-10  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-3-ethernet.c

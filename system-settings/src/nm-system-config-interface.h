@@ -75,7 +75,7 @@ struct _NMSystemConfigInterface {
 	void     (*init) (NMSystemConfigInterface *config);
 
 	/* Returns the plugins currently known list of connections.  The returned
-	 * list is owned by the plugin and not freed by the system settings service.
+	 * list is freed by the system settings service.
 	 */
 	GSList * (*get_connections) (NMSystemConfigInterface *config);
 

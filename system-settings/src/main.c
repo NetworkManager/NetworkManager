@@ -261,6 +261,8 @@ load_connections (gpointer user_data)
 			g_object_set_data (G_OBJECT (elt->data), NM_SS_PLUGIN_TAG, plugin);
 			connection_added_cb (NM_SYSTEM_CONFIG_INTERFACE (plugin), NM_CONNECTION (elt->data), app);
 		}
+
+		g_slist_free (plugin_connections);
 	}
 
 	return FALSE;

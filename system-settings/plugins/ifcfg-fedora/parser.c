@@ -184,29 +184,23 @@ make_connection_setting (const char *file,
 #define SEARCH_TAG "search "
 #define NS_TAG "nameserver "
 
-static void
-read_profile_resolv_conf (shvarFile *ifcfg, NMSettingIP4Config *s_ip4)
+void
+connection_update_from_resolv_conf (char **lines, NMSettingIP4Config *s_ip4)
 {
-	char *file = NULL;
-	char *dir = NULL;
-	char *contents = NULL;
-	char **lines = NULL;
 	char **line;
 
-	dir = g_path_get_dirname (ifcfg->fileName);
-	if (!dir)
-		goto out;
+	/* lines == NULL means clear out existing settings */
+	if (!lines) {
+		if (s_ip4->dns) {
+			g_array_free (s_ip4->dns, TRUE);
+			s_ip4->dns = NULL;
+		}
 
-	file = g_strdup_printf ("%s/resolv.conf", dir);
-	if (!file)
-		goto out;
-
-	if (!g_file_get_contents (file, &contents, NULL, NULL))
-		goto out;
-
-	lines = g_strsplit (contents, "\n", 0);
-	if (!lines || !*lines)
-		goto out;
+		g_slist_foreach (s_ip4->dns_search, (GFunc) g_free, NULL);
+		g_slist_free (s_ip4->dns_search);
+		s_ip4->dns_search = NULL;
+		return;
+	}
 
 	s_ip4->dns = g_array_new (FALSE, FALSE, sizeof (guint32));
 
@@ -237,9 +231,36 @@ read_profile_resolv_conf (shvarFile *ifcfg, NMSettingIP4Config *s_ip4)
 		}
 	}
 
+	if (!s_ip4->dns->len) {
+		g_array_free (s_ip4->dns, TRUE);
+		s_ip4->dns = NULL;
+	}
+}
+
+static void
+read_profile_resolv_conf (const char *dir, NMSettingIP4Config *s_ip4)
+{
+	char *file = NULL;
+	char *contents = NULL;
+	char **lines = NULL;
+
+	file = g_strdup_printf ("%s/resolv.conf", dir);
+	if (!file)
+		goto out;
+
+	if (!g_file_get_contents (file, &contents, NULL, NULL))
+		goto out;
+
+	lines = g_strsplit (contents, "\n", 0);
+	if (!lines || !*lines)
+		goto out;
+
+	connection_update_from_resolv_conf (lines, s_ip4);
+
 out:
 	if (lines)
 		g_strfreev (lines);
+	g_free (contents);
 	g_free (file);
 }
 
@@ -250,6 +271,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 	char *value = NULL;
 	NMSettingIP4Address tmp = { 0, 0, 0 };
 	gboolean manual = TRUE;
+	char *dir;
 
 	value = svGetValue (ifcfg, "BOOTPROTO");
 	if (!value)
@@ -308,7 +330,15 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 		s_ip4->addresses = g_slist_append (s_ip4->addresses, addr);
 	}
 
-	read_profile_resolv_conf (ifcfg, s_ip4);
+	dir = g_path_get_dirname (ifcfg->fileName);
+	if (dir) {
+		read_profile_resolv_conf (dir, s_ip4);
+		g_free (dir);
+	} else {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Not enough memory to parse resolv.conf");
+		goto error;
+	}
 
 	return NM_SETTING (s_ip4);
 
@@ -433,7 +463,7 @@ get_keys_ifcfg (const char *parent)
 	if (!tmp)
 		goto out;
 
-	keys_file = g_strdup_printf ("%s/keys-%s", tmp, ifcfg_name);
+	keys_file = g_strdup_printf ("%s/" KEYS_TAG "%s", tmp, ifcfg_name);
 	if (!keys_file)
 		goto out;
 
@@ -746,6 +776,8 @@ parser_parse_file (const char *file, GError **error)
 	char *nmc = NULL;
 	NMSetting *s_ip4;
 	char *ifcfg_name = NULL;
+	gboolean ignored = FALSE;
+	ConnectionData *cdata;
 
 	g_return_val_if_fail (file != NULL, NULL);
 
@@ -778,12 +810,8 @@ parser_parse_file (const char *file, GError **error)
 		lower = g_ascii_strdown (nmc, -1);
 		g_free (nmc);
 
-		if (!strcmp (lower, "no") || !strcmp (lower, "n") || !strcmp (lower, "false")) {
-			g_free (lower);
-			g_set_error (error, ifcfg_plugin_error_quark (), 0,
-			             "Ignoring connection '%s' because NM_CONTROLLED was false.", file);
-			goto done;
-		}
+		if (!strcmp (lower, "no") || !strcmp (lower, "n") || !strcmp (lower, "false"))
+			ignored = TRUE;
 		g_free (lower);
 	}
 
@@ -809,6 +837,10 @@ parser_parse_file (const char *file, GError **error)
 	} else if (s_ip4) {
 		nm_connection_add_setting (connection, s_ip4);
 	}
+
+	/* Update the ignored tag */
+	cdata = connection_data_get (connection);
+	cdata->ignored = ignored;
 
 	if (!nm_connection_verify (connection)) {
 		g_object_unref (connection);

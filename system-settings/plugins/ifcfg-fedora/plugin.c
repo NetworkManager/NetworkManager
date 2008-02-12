@@ -111,61 +111,87 @@ find_watched_path (gpointer key, gpointer value, gpointer user_data)
 static void
 watch_path (const char *path, const int inotify_fd, GHashTable *table)
 {
-	char *dirname;
 	int wd;
 	struct FindInfo info;
 
-	dirname = g_path_get_dirname (path);
-	g_return_if_fail (dirname != NULL);
+	g_return_if_fail (g_path_is_absolute (path));
 
 	info.found = FALSE;
-	info.path = dirname;
+	info.path = path;
 	g_hash_table_foreach (table, find_watched_path, &info);
 	if (info.found)
-		goto error;
+		return;
 
-	wd = inotify_add_watch (inotify_fd, dirname,
-	                        IN_CLOSE_WRITE | IN_CREATE | IN_DELETE | IN_MOVE);
+	wd = inotify_add_watch (inotify_fd, path,
+	                        IN_CLOSE_WRITE | IN_CREATE | IN_DELETE | IN_MOVE | IN_MOVE_SELF);
 	if (wd == -1) {
 		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    inotify error watching '%s': errno %d",
-		              dirname, errno);
-		goto error;
+		              path, errno);
+	} else {
+		g_hash_table_insert (table, GINT_TO_POINTER (wd), g_strdup (path));
 	}
-
-	g_hash_table_insert (table, GINT_TO_POINTER (wd), dirname);
-	return;
-
-error:
-	g_free (dirname);
 }
 
 static NMConnection *
 build_one_connection (const char *profile_path, const char *filename)
 {
 	NMConnection *connection;
-	char *ifcfg_file = NULL;
 	GError *error = NULL;
 
 	g_return_val_if_fail (profile_path != NULL, NULL);
 	g_return_val_if_fail (filename != NULL, NULL);
 
-	ifcfg_file = g_build_filename (profile_path, filename, NULL);
-	g_return_val_if_fail (ifcfg_file != NULL, NULL);
+	PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "parsing %s ... ", filename);
 
-	PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "parsing %s ... ", ifcfg_file);
-
-	connection = parser_parse_file (ifcfg_file, &error);
+	connection = parser_parse_file (filename, &error);
 	if (connection) {
 		NMSettingConnection *s_con;
 
 		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 		g_assert (s_con);
 		g_assert (s_con->id);
-		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    found connection '%s'", s_con->id);
+		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    read connection '%s'", s_con->id);
 	} else {
 		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    error: %s",
 		              error->message ? error->message : "(unknown)");
-		g_free (ifcfg_file);
+	}
+
+	return connection;
+}
+
+static NMConnection *
+handle_new_ifcfg (const char *profile_path,
+                  const char *file,
+                  const int inotify_fd,
+                  GHashTable *watch_table)
+{
+	NMConnection *connection;
+	ConnectionData *cdata;
+	char *keys_file, *basename;
+
+	connection = build_one_connection (profile_path, file);
+	if (!connection)
+		return NULL;
+
+	/* Watch the file too so we can match up the watch descriptor with the
+	 * path we care about if the file is a hardlink.
+	 */
+	watch_path (file, inotify_fd, watch_table);
+
+	/* If there's a keys file watch that too */
+	basename = g_path_get_basename (file);
+	if (basename) {
+		keys_file = g_strdup_printf ("%s" KEYS_TAG "%s", profile_path, basename + strlen (IFCFG_TAG));
+		if (keys_file && g_file_test (keys_file, G_FILE_TEST_EXISTS))
+			watch_path (keys_file, inotify_fd, watch_table);
+		g_free (keys_file);
+		g_free (basename);
+	}
+
+	cdata = connection_data_get (connection);
+	if (cdata->ignored) {
+		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Ignoring connection '%s' because "
+		              "NM_CONTROLLED was false.", file);
 	}
 
 	return connection;
@@ -179,6 +205,7 @@ get_connections_for_profile (const char *profile_path,
 	GSList *connections = NULL;
 	GDir *dir;
 	const char *item;
+	char *resolv_conf;
 
 	g_return_val_if_fail (profile_path != NULL, NULL);
 	g_return_val_if_fail (watch_table != NULL, NULL);
@@ -191,17 +218,29 @@ get_connections_for_profile (const char *profile_path,
 
 	while ((item = g_dir_read_name (dir))) {
 		NMConnection *connection;
+		char *ifcfg_file;
 
 		if (strncmp (item, IFCFG_TAG, strlen (IFCFG_TAG)))
 			continue;
 
-		connection = build_one_connection (profile_path, item);
+		ifcfg_file = g_build_filename (profile_path, item, NULL);
+
+		connection = handle_new_ifcfg (profile_path, ifcfg_file, inotify_fd, watch_table);
 		if (connection)
 			connections = g_slist_append (connections, connection);
+
+		g_free (ifcfg_file);
 	}
 	g_dir_close (dir);
 
 	watch_path (profile_path, inotify_fd, watch_table);
+
+	/* Watch resolv.conf too */
+	resolv_conf = g_strdup_printf ("%sresolv.conf", profile_path);
+	if (g_file_test (resolv_conf, G_FILE_TEST_EXISTS))
+		watch_path (resolv_conf, inotify_fd, watch_table);
+	g_free (resolv_conf);
+
 	return connections;
 }
 
@@ -262,11 +301,23 @@ get_connections (NMSystemConfigInterface *config)
 {
 	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (config);
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	GSList *list = NULL, *iter;
 
 	if (!priv->initialized)
 		reload_all_connections (plugin);
 
-	return priv->connections;
+	for (iter = priv->connections; iter; iter = g_slist_next (iter)) {
+		NMConnection *connection = NM_CONNECTION (iter->data);
+		ConnectionData *cdata;
+
+		cdata = connection_data_get (connection);
+		if (!cdata->ignored) {
+			list = g_slist_append (list, connection);
+			cdata->exported = TRUE;
+		}
+	}
+
+	return list;
 }
 
 static GHashTable *
@@ -308,67 +359,200 @@ find_connection_by_path (GSList *connections, const char *path)
 }
 
 static void
-handle_profile_item_changed (SCPluginIfcfg *plugin,
-                             struct inotify_event *evt,
-                             const char *filename)
+handle_connection_changed (SCPluginIfcfg *plugin,
+                           const char *filename)
 {
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
-	const char *path;
+	NMConnection *new_connection;
+	NMConnection *existing;
+	ConnectionData *new_cdata;
+	GHashTable *new_settings;
+	ConnectionData *existing_cdata;
+	gboolean remove = FALSE;
+
+	/* Could return NULL if the connection got deleted */
+	new_connection = build_one_connection (priv->profile, filename);
+
+	existing = find_connection_by_path (priv->connections, filename);
+	if (!existing) {
+		if (new_connection) {
+			new_cdata = connection_data_get (new_connection);
+			g_assert (new_cdata);
+
+			/* totally new connection */
+			priv->connections = g_slist_append (priv->connections, new_connection);
+			if (!new_cdata->ignored) {
+				new_cdata->exported = TRUE;
+				g_signal_emit_by_name (plugin, "connection-added", new_connection);
+			}
+		}
+		return;
+	}
+
+	existing_cdata = connection_data_get (existing);
+	g_assert (existing_cdata);
+
+	if (new_connection) {
+		/* update the settings of the existing connection for this
+		 * ifcfg file and notify listeners that something has changed.
+		 */
+		new_settings = nm_connection_to_hash (new_connection);
+		if (!nm_connection_replace_settings (existing, new_settings)) {
+			/* couldn't replace the settings for some reason; have to
+			 * remove the connection then.
+			 */
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "couldn't update connection for '%s'.", filename);
+			remove = TRUE;
+		} else {
+			/* Success */
+			new_cdata = connection_data_get (new_connection);
+			g_assert (new_cdata);
+
+			connection_data_copy_secrets (new_cdata, existing_cdata);
+
+			if (new_cdata->ignored && !existing_cdata->ignored) {
+				/* connection now ignored */
+				existing_cdata->ignored = TRUE;
+				g_signal_emit_by_name (plugin, "connection-removed", existing);
+				existing_cdata->exported = FALSE;
+			} else if (!new_cdata->ignored && existing_cdata->ignored) {
+				/* connection no longer ignored, let the system settings
+				 * service know about it now.
+				 */
+				existing_cdata->ignored = FALSE;
+				existing_cdata->exported = TRUE;
+				g_signal_emit_by_name (plugin, "connection-added", existing);
+			} else if (!new_cdata->ignored && !existing_cdata->ignored) {
+				/* connection updated and not ignored */
+				g_signal_emit_by_name (plugin, "connection-updated", existing);
+			} else if (new_cdata->ignored && existing_cdata->ignored) {
+				/* do nothing */
+			}
+		}
+		g_object_unref (new_connection);
+	} else {
+		remove = TRUE;
+	}
+
+	if (remove) {
+		priv->connections = g_slist_remove (priv->connections, existing);
+		if (!existing_cdata->ignored)
+			g_signal_emit_by_name (plugin, "connection-removed", existing);
+		g_object_unref (existing);
+	}
+}
+
+static void
+handle_resolv_conf_changed (SCPluginIfcfg *plugin, const char *path)
+{
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	char *contents = NULL;
+	char **lines = NULL;
+	GSList *iter;
+
+	g_return_if_fail (path != NULL);
+
+	g_file_get_contents (path, &contents, NULL, NULL);
+	if (contents) {
+		lines = g_strsplit (contents, "\n", 0);
+		if (lines && !*lines) {
+			g_strfreev (lines);
+			lines = NULL;
+		}
+	}
+
+	if (lines) {
+		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Updating connections because %s changed.", path);
+	} else {
+		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Updating connections because %s was deleted.", path);
+	}
+
+	for (iter = priv->connections; iter; iter = g_slist_next (iter)) {
+		NMConnection *connection = NM_CONNECTION (iter->data);
+		NMSettingIP4Config *s_ip4;
+
+		s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+		if (s_ip4) {
+			ConnectionData *cdata;
+
+			cdata = connection_data_get (connection);
+			g_assert (cdata);
+
+			connection_update_from_resolv_conf (lines, s_ip4);
+
+			if (!cdata->ignored)
+				g_signal_emit_by_name (plugin, "connection-updated", connection);
+		}
+	}
+
+	if (lines)
+		g_strfreev (lines);
+	g_free (contents);
+}
+
+static void
+handle_profile_item_changed (SCPluginIfcfg *plugin, const char *path)
+{
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	char *basename;
 
 	g_return_if_fail (plugin != NULL);
-	g_return_if_fail (evt != NULL);
+	g_return_if_fail (path != NULL);
 
-	path = g_hash_table_lookup (priv->watch_table, GINT_TO_POINTER (evt->wd));
+	basename = g_path_get_basename (path);
+	if (!basename) {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "not enough memory to parse connection change.");
+		return;
+	}
+
+	if (!strncmp (basename, IFCFG_TAG, strlen (IFCFG_TAG)))
+		handle_connection_changed (plugin, path);
+	else if (!strncmp (basename, KEYS_TAG, strlen (KEYS_TAG))) {
+		char *ifcfg;
+		
+		ifcfg = g_strdup_printf ("%s" IFCFG_TAG "%s", priv->profile, basename + strlen (KEYS_TAG));
+		if (ifcfg)
+			handle_connection_changed (plugin, ifcfg);
+		g_free (ifcfg);
+	} else if (!strcmp (basename, "resolv.conf"))
+		handle_resolv_conf_changed (plugin, path);
+
+	g_free (basename);
+}
+
+static void
+handle_profile_item_new (SCPluginIfcfg *plugin, const char *filename)
+{
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	char *path;
+
+	path = g_strdup_printf ("%s%s", priv->profile, filename);
 	if (!path)
 		return;
 
-	if (!strncmp (filename, IFCFG_TAG, strlen (IFCFG_TAG))) {
-		NMConnection *new_connection;
-		NMConnection *existing;
-		ConnectionData *new_cdata;
+	if (!strcmp (filename, "resolv.conf")) {
+		watch_path (path, priv->ifd, priv->watch_table);
+		handle_resolv_conf_changed (plugin, path);
+	} else if (!strncmp (filename, IFCFG_TAG, strlen (IFCFG_TAG))) {
+		NMConnection *connection;
 
-		new_connection = build_one_connection (priv->profile, filename);
-		if (!new_connection)
-			goto out;
+		connection = handle_new_ifcfg (priv->profile, path, priv->ifd, priv->watch_table);
+		if (connection) {
+			ConnectionData *cdata;
 
-		new_cdata = connection_data_get (new_connection);
-		g_assert (new_cdata);
+			cdata = connection_data_get (connection);
+			g_assert (cdata);
 
-		existing = find_connection_by_path (priv->connections, new_cdata->ifcfg_path);
-		if (existing) {
-			GHashTable *new_settings;
-			ConnectionData *existing_cdata;
-
-			/* update the settings of the existing connection for this
-			 * ifcfg file and notify listeners that something has changed.
-			 */
-			new_settings = nm_connection_to_hash (new_connection);
-			if (!nm_connection_replace_settings (existing, new_settings)) {
-				/* couldn't replace the settings for some reason; have to
-				 * remove the connection then.
-				 */
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "couldn't update connection for '%s'.", filename);
-				priv->connections = g_slist_remove (priv->connections, existing);
-				g_signal_emit_by_name (plugin, "connection-removed", existing);
-				g_object_unref (existing);
-			} else {
-				existing_cdata = connection_data_get (existing);
-				g_assert (existing_cdata);
-				connection_data_copy_secrets (new_cdata, existing_cdata);
-				g_signal_emit_by_name (plugin, "connection-updated", existing);
+			/* new connection */
+			priv->connections = g_slist_append (priv->connections, connection);
+			if (!cdata->ignored) {
+				cdata->exported = TRUE;
+				g_signal_emit_by_name (plugin, "connection-added", connection);
 			}
-			g_object_unref (new_connection);
-		} else {
-			/* totally new connection */
-			priv->connections = g_slist_append (priv->connections, new_connection);
-			g_signal_emit_by_name (plugin, "connection-added", new_connection);
 		}
-	} else if (!strcmp (filename, "resolv.conf")) {
-		// Update dns entries in all connections
 	}
 
-out:
-	return;
+	g_free (path);
 }
 
 static gboolean
@@ -380,18 +564,30 @@ stuff_changed (GIOChannel *channel, GIOCondition cond, gpointer user_data)
 
 	/* read the notifications from the watch descriptor */
 	while (g_io_channel_read_chars (channel, (gchar *) &evt, sizeof (struct inotify_event), NULL, NULL) == G_IO_STATUS_NORMAL) {
+		const char *path;
 		gchar filename[PATH_MAX + 1];
 
-		if (evt.len <= 0)
-			continue;
+		path = g_hash_table_lookup (priv->watch_table, GINT_TO_POINTER (evt.wd));
 
-		g_io_channel_read_chars (channel,
-		                         filename,
-		                         evt.len > PATH_MAX ? PATH_MAX : evt.len,
-		                         NULL, NULL);
+		filename[0] = '\0';
+		if (evt.len > 0) {
+			g_io_channel_read_chars (channel,
+			                        filename,
+			                        evt.len > PATH_MAX ? PATH_MAX : evt.len,
+			                        NULL, NULL);
+		}
+
+		if (!path && !strlen (filename)) {
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "unhandled inotify event.");
+			continue;
+		}
 
 		if (evt.wd == priv->profile_wd) {
-			if (!strcmp (filename, "network")) {
+			char *basename;
+
+			basename = g_path_get_basename (filename);
+
+			if (basename && !strcmp (basename, "network")) {
 				char *new_profile;
 
 				new_profile = get_current_profile_path ();
@@ -406,8 +602,21 @@ stuff_changed (GIOChannel *channel, GIOCondition cond, gpointer user_data)
 				}
 				g_free (new_profile);
 			}
-		} else
-			handle_profile_item_changed (plugin, &evt, filename);
+			g_free (basename);
+		} else {
+			/* If the item was deleted, stop tracking its watch */
+			if (evt.mask & (IN_DELETE | IN_DELETE_SELF)) {
+				inotify_rm_watch (priv->ifd, evt.wd);
+				g_hash_table_remove (priv->watch_table, GINT_TO_POINTER (evt.wd));
+			}
+
+			if (strlen (filename) && !strcmp (path, priv->profile)) {
+				/* Some file appeared */
+				handle_profile_item_new (plugin, filename);
+			} else {
+				handle_profile_item_changed (plugin, path);
+			}
+		}
 	}
 
 	return TRUE;

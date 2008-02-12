@@ -24,16 +24,23 @@
 
 #include <glib.h>
 #include <nm-connection.h>
+#include <nm-setting-ip4-config.h>
 
 #define IFCFG_TAG "ifcfg-"
+#define KEYS_TAG "keys-"
 #define BAK_TAG ".bak"
 
 typedef struct {
 	char *ifcfg_path;
+	gboolean ignored;
+	gboolean exported;
+
 	GHashTable *secrets;
 } ConnectionData;
 
 NMConnection * parser_parse_file (const char *file, GError **error);
+
+void connection_update_from_resolv_conf (char **lines, NMSettingIP4Config *s_ip4);
 
 ConnectionData *connection_data_get (NMConnection *connection);
 ConnectionData *connection_data_add (NMConnection *connection, const char *ifcfg_path);
