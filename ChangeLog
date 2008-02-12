@@ -1,5 +1,11 @@
 2008-02-12  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-utils.c
+		- (nm_utils_convert_uint_array_to_string): don't die on NULL array, it's
+			just any empty array
+
+2008-02-12  Dan Williams  <dcbw@redhat.com>
+
 	* system-settings/src/nm-system-config-interface.c
 	  system-settings/src/nm-system-config-interface.h
 		- (load_connections): get_connections() should now return an allocated

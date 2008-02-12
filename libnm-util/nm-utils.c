@@ -489,7 +489,7 @@ nm_utils_convert_uint_array_to_string (const GValue *src_value, GValue *dest_val
 	array = (GArray *) g_value_get_boxed (src_value);
 
 	printable = g_string_new ("[");
-	while (i < array->len) {
+	while (array && (i < array->len)) {
 		char buf[INET_ADDRSTRLEN + 1];
 		struct in_addr addr;
 
