@@ -1,5 +1,13 @@
 2008-02-12  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/plugins/ifcfg-fedora/plugin.c
+		- (watch_path): handle IN_DELETE_SELF too
+		- (handle_connection_changed): notify when removing a connection
+		- (stuff_changed): don't warn on unknown inotify watches; handle the
+			case of a file moving out of the profile directory
+
+2008-02-12  Dan Williams  <dcbw@redhat.com>
+
 	* system-settings/plugins/ifcfg-fedora/parser.c
 		- (make_ip4_setting): bring IPv4 setting handling more up to spec
 

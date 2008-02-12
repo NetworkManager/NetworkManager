@@ -123,7 +123,7 @@ watch_path (const char *path, const int inotify_fd, GHashTable *table)
 		return;
 
 	wd = inotify_add_watch (inotify_fd, path,
-	                        IN_CLOSE_WRITE | IN_CREATE | IN_DELETE | IN_MOVE | IN_MOVE_SELF);
+	                        IN_CLOSE_WRITE | IN_CREATE | IN_DELETE | IN_MOVE | IN_MOVE_SELF | IN_DELETE_SELF);
 	if (wd == -1) {
 		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    inotify error watching '%s': errno %d",
 		              path, errno);
@@ -439,6 +439,7 @@ handle_connection_changed (SCPluginIfcfg *plugin,
 		if (!existing_cdata->ignored)
 			g_signal_emit_by_name (plugin, "connection-removed", existing);
 		g_object_unref (existing);
+		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    removed connection");
 	}
 }
 
@@ -555,6 +556,29 @@ handle_profile_item_new (SCPluginIfcfg *plugin, const char *filename)
 	g_free (path);
 }
 
+typedef struct {
+	gboolean found;
+	const char *path;
+} FindInfo;
+
+static void
+find_path_helper (gpointer key, gpointer data, gpointer user_data)
+{
+	FindInfo *info = (FindInfo *) user_data;
+
+	if (!info->found && !strcmp (data, info->path))
+		info->found = TRUE;
+}
+
+static gboolean
+find_path (GHashTable *table, const char *path)
+{
+	FindInfo info = { FALSE, path };
+
+	g_hash_table_foreach (table, find_path_helper, &info);
+	return info.found;
+}
+
 static gboolean
 stuff_changed (GIOChannel *channel, GIOCondition cond, gpointer user_data)
 {
@@ -577,10 +601,8 @@ stuff_changed (GIOChannel *channel, GIOCondition cond, gpointer user_data)
 			                        NULL, NULL);
 		}
 
-		if (!path && !strlen (filename)) {
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "unhandled inotify event.");
+		if (!path && !strlen (filename))
 			continue;
-		}
 
 		if (evt.wd == priv->profile_wd) {
 			char *basename;
@@ -604,18 +626,36 @@ stuff_changed (GIOChannel *channel, GIOCondition cond, gpointer user_data)
 			}
 			g_free (basename);
 		} else {
+			char *fullpath;
+			gboolean path_found, delete = FALSE;
+
 			/* If the item was deleted, stop tracking its watch */
-			if (evt.mask & (IN_DELETE | IN_DELETE_SELF)) {
+			if (evt.mask & (IN_DELETE | IN_DELETE_SELF))
+				delete = TRUE;
+
+			/* Track moves out of the profile directory */
+			if (   (evt.mask & IN_MOVE_SELF)
+			    && path
+			    && strcmp (path, priv->profile)
+			    && !strncmp (path, priv->profile, strlen (priv->profile))
+			    && !g_file_test (path, G_FILE_TEST_EXISTS))
+				delete = TRUE;
+
+			if (delete) {
 				inotify_rm_watch (priv->ifd, evt.wd);
 				g_hash_table_remove (priv->watch_table, GINT_TO_POINTER (evt.wd));
 			}
 
-			if (strlen (filename) && !strcmp (path, priv->profile)) {
+			fullpath = g_strdup_printf ("%s%s", priv->profile, filename);
+			path_found = find_path (priv->watch_table, fullpath);
+
+			if (strlen (filename) && !strcmp (path, priv->profile) && !path_found) {
 				/* Some file appeared */
 				handle_profile_item_new (plugin, filename);
 			} else {
-				handle_profile_item_changed (plugin, path);
+				handle_profile_item_changed (plugin, path_found ? fullpath : path);
 			}
+			g_free (fullpath);
 		}
 	}
 
