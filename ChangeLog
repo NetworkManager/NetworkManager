@@ -1,5 +1,10 @@
 2008-02-12  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/plugins/ifcfg-fedora/parser.c
+		- (make_ip4_setting): bring IPv4 setting handling more up to spec
+
+2008-02-12  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-utils.c
 		- (nm_utils_convert_uint_array_to_string): don't die on NULL array, it's
 			just any empty array

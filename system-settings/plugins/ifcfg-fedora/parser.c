@@ -274,13 +274,8 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 	char *dir;
 
 	value = svGetValue (ifcfg, "BOOTPROTO");
-	if (!value)
-		return NULL;
-
-	if (!strcmp (value, "bootp") || !strcmp (value, "dhcp")) {
+	if (value && (!strcmp (value, "bootp") || !strcmp (value, "dhcp")))
 		manual = FALSE;
-		return NULL;
-	}
 
 	value = svGetValue (ifcfg, "IPADDR");
 	if (value) {
