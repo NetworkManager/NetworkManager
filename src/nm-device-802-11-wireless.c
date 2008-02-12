@@ -1034,45 +1034,6 @@ nm_device_802_11_wireless_ap_list_get_ap_by_bssid (NMDevice80211Wireless *self,
 
 
 /*
- * nm_device_ap_list_get_ap_by_obj_path
- *
- * Get the access point for a dbus object path.  Requires an _unescaped_
- * object path.
- *
- */
-NMAccessPoint *
-nm_device_802_11_wireless_ap_list_get_ap_by_obj_path (NMDevice80211Wireless *self,
-                                                      const char *obj_path)
-{
-	NMAccessPoint *	ret_ap = NULL;
-	char *			built_path;
-	char *			dev_path;
-
-	g_return_val_if_fail (self != NULL, NULL);
-	g_return_val_if_fail (obj_path != NULL, NULL);
-
-	if (!self->priv->ap_list)
-		return NULL;
-
-	dev_path = nm_dbus_get_object_path_for_device (NM_DEVICE (self));
-	dev_path = nm_dbus_unescape_object_path (dev_path);
-	built_path = g_strdup_printf ("%s/Networks/", dev_path);
-	g_free (dev_path);
-
-	if (strncmp (built_path, obj_path, strlen (built_path)) == 0)
-	{
-		char *essid = g_strdup (obj_path + strlen (built_path));
-
-		ret_ap = nm_ap_list_get_ap_by_essid (self->priv->ap_list, essid);
-		g_free (essid);
-	}
-	g_free (built_path);
-
-	return ret_ap;
-}
-
-
-/*
  * nm_device_ap_list_get
  *
  * Return a pointer to the AP list

@@ -1,3 +1,9 @@
+2008-02-11  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.c
+	  src/nm-device-802-11-wireless.h
+		- (nm_device_802_11_wireless_ap_list_get_ap_by_obj_path): remove, unused
+
 2008-02-05  Tambet Ingo  <tambet@gmail.com>
 
 	* src/NetworkManagerPolicy.c (nm_policy_device_change_check): Don't unref AP

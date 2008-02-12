@@ -100,9 +100,6 @@ void	nm_device_802_11_wireless_copy_allowed_to_dev_list (NMDevice80211Wireless *
 
 struct NMAccessPointList *	nm_device_802_11_wireless_ap_list_get (NMDevice80211Wireless *dev);
 
-NMAccessPoint *	nm_device_802_11_wireless_ap_list_get_ap_by_obj_path (NMDevice80211Wireless *dev,
-													const char *obj_path);
-
 NMAccessPoint *	nm_device_802_11_wireless_ap_list_get_ap_by_bssid (NMDevice80211Wireless *dev,
 													const struct ether_addr *bssid);
 
