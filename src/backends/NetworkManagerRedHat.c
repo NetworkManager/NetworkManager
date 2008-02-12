@@ -499,7 +499,6 @@ void *nm_system_device_get_system_config (NMDevice *dev, NMData *app_data)
 
 	if ((buf = svGetValue (file, "NM_CONTROLLED")))
 	{
-		nm_debug ("NM_CONTROLLED=%s", buf);
 		if (!strcasecmp (buf, "no"))
 		{
 			nm_info ("System configuration disables device %s", nm_device_get_iface (dev));
