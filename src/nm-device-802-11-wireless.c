@@ -2997,8 +2997,10 @@ nm_device_802_11_wireless_dispose (GObject *object)
 
 	cancel_scan_results_timeout (self);
 
-	g_signal_handler_disconnect (G_OBJECT (data->netlink_monitor),
-		self->priv->wireless_event_id);
+	if (self->priv->wireless_event_id) {
+		g_signal_handler_disconnect (G_OBJECT (data->netlink_monitor),
+			self->priv->wireless_event_id);
+	}
 
 	/* Chain up to the parent class */
 	parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
