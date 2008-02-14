@@ -1,790 +1,113 @@
-# translation of NetworkManager.HEAD.ne.po to Nepali
-# translation of NetworkManager.HEAD.po to Nepali
+# translation of NetworkManager.NETWORKMANAGER_0_6_0_RELEASE.ne.po to Nepali
 # This file is distributed under the same license as the PACKAGE package.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER.
-# Jyotsna Shrestha <jyoshrestha@hotmail.com>, 2005.
-# Ganesh Ghimire <gghimire@gmail.com>, 2005.
-# Dadhiram Nepal <yourssymbol@gmail.com>, 2005.
-# Jaydeep Bhusal <zaydeep@hotmail.com>, 2005.
-# Mahesh subedi <submanesh@hotmail.com>, 2006.
 #
+# Jyotsna Shrestha <jyoshrestha@hotmail.com>, 2005.
+# Shyam Krishna Bal <balshyam24@yahoo.com>, 2007.
+# Shiva Pokharel <shiva@mpp.org.np>, 2007.
+# Nabin Gautam <nabin@mpp.org.np>, 2008.
 msgid ""
 msgstr ""
-"Project-Id-Version: NetworkManager.HEAD.ne\n"
-"Report-Msgid-Bugs-To:<info@mpp.org.np> \n"
-"POT-Creation-Date: 2006-05-15 12:26+0200\n"
-"PO-Revision-Date: 2006-09-04 10:10+0545\n"
-"Last-Translator: Mahesh subedi <submanesh@hotmail.com>\n"
+"Project-Id-Version: NetworkManager.NETWORKMANAGER_0_6_0_RELEASE.ne\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2007-03-03 03:27+0000\n"
+"PO-Revision-Date: 2008-01-21 11:28+0545\n"
+"Last-Translator: Nabin Gautam <nabin@mpp.org.np>\n"
 "Language-Team: Nepali <info@mpp.org.np>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2;plural=(n!=1)\n"
-"X-Generator: KBabel 1.10.2\n"
+"Plural-Forms: nplurals=2; plural=n !=1\n"
+"X-Generator: KBabel 1.11.4\n"
 
-#: ../gnome/applet/applet-compat.c:171 ../gnome/applet/applet-dbus-info.c:919
-#, c-format
-msgid "Passphrase for wireless network %s"
-msgstr "ताररहित सञ्जाल %s का लागि पासफ्रेज"
-
-#: ../gnome/applet/applet-dbus.c:383
-#, c-format
-msgid "Connection to the wireless network '%s' failed."
-msgstr "ताररहित सञ्जाल '%s' जडान असफल"
-
-#: ../gnome/applet/applet-dbus.c:388
-msgid "Connection to the wired network failed."
-msgstr "तारसहित सञ्जालमा जडान असफल"
-
-#: ../gnome/applet/applet.c:184
-msgid "Error displaying connection information:"
-msgstr "जडान सूचना प्रदर्शन गर्दा त्रुटि:"
-
-#: ../gnome/applet/applet.c:202
-msgid "Could not find some required resources (the glade file)!"
-msgstr "केही आवश्यक स्रोतहरू (ग्लाड फाइल) फेला पार्न सकेन !"
-
-#: ../gnome/applet/applet.c:213
-msgid "No active connections!"
-msgstr "सक्रिय जडान छैन !"
-
-#: ../gnome/applet/applet.c:234
-#, c-format
-msgid "Wired Ethernet (%s)"
-msgstr "तारसहित इथरनेट (%s)"
-
-#: ../gnome/applet/applet.c:236
-#, c-format
-msgid "Wireless Ethernet (%s)"
-msgstr "ताररहित इथरनेट (%s)"
-
-#: ../gnome/applet/applet.c:337 ../gnome/applet/applet.c:362
-msgid "NetworkManager Applet"
-msgstr "सञ्जाल प्रबन्धक एप्लेट"
-
-#: ../gnome/applet/applet.c:339 ../gnome/applet/applet.c:364
-msgid "Copyright © 2004-2005 Red Hat, Inc."
-msgstr "सर्वाधिकार © 2004-2005 Red Hat, Inc."
-
-#: ../gnome/applet/applet.c:340 ../gnome/applet/applet.c:365
-msgid "Notification area applet for managing your network devices and connections."
-msgstr "तपाईँको सञ्जाल यन्त्र र जडान प्रबन्धका लागि चेतावनी क्षेत्र एप्लेट"
-
-#: ../gnome/applet/applet.c:343 ../gnome/applet/applet.c:370
-msgid "translator-credits"
-msgstr ""
-"Mahesh Subedi <submanesh@hotmail.com>"
-"Ganesh Ghimire <gghimire@gmail.com>"
-"Dadhiram Nepal <yourssymbol@gmail.com>"
-"Jaydeep Bhusal <zaydeep@hotmail.com>"
-
-#: ../gnome/applet/applet.c:426
-msgid "VPN Login Failure"
-msgstr "VPN लगइन असफल"
-
-#: ../gnome/applet/applet.c:427
-#, c-format
-msgid "Could not start the VPN connection '%s' due to a login failure."
-msgstr "लगइन असफलताका कारणले VPN जडान '%s' सुरु गर्न सकेन ।"
-
-#: ../gnome/applet/applet.c:431
-msgid "VPN Start Failure"
-msgstr "VPN लगइन असफल"
-
-#: ../gnome/applet/applet.c:432
-#, c-format
-msgid ""
-"Could not start the VPN connection '%s' due to a failure launching the VPN "
-"program."
-msgstr "कार्यक्रम सरुआत असफलताका कारणले VPN जडान '%s' सुरु गर्न सकेन ।"
-
-#: ../gnome/applet/applet.c:436 ../gnome/applet/applet.c:446
-msgid "VPN Connect Failure"
-msgstr "VPN जडान असफल"
-
-#: ../gnome/applet/applet.c:437
-#, c-format
-msgid "Could not start the VPN connection '%s' due to a connection error."
-msgstr "जडान त्रुटिका कारणले VPN जडान '%s' सुरु गर्न सकेन ।"
-
-#: ../gnome/applet/applet.c:441
-msgid "VPN Configuration Error"
-msgstr "VPN कन्फिगरेसन त्रुटि"
-
-#: ../gnome/applet/applet.c:442
-#, c-format
-msgid "The VPN connection '%s' was not correctly configured."
-msgstr "VPN जडान '%s' सही कन्फिगर भएको थिएन ।"
-
-#: ../gnome/applet/applet.c:447
-#, c-format
-msgid ""
-"Could not start the VPN connection '%s' because the VPN server did not "
-"return an adequate network configuration."
-msgstr "VPN सर्भरले प्रयाप्त सञ्जाल कन्फिगरेसन फिर्ता नगरेको कारणले VPN जडान '%s' सुरु गर्न सकेन ।"
-
-#: ../gnome/applet/applet.c:517
-msgid "VPN Login Message"
-msgstr "VPN लगइन सन्देश"
-
-#: ../gnome/applet/applet.c:741 ../gnome/applet/applet.c:2506
-#: ../gnome/applet/other-network-dialog.c:453
-#: ../gnome/applet/passphrase-dialog.c:229
-msgid ""
-"The NetworkManager Applet could not find some required resources (the glade "
-"file was not found)."
-msgstr "सञ्जाल प्रबन्धक एप्लेटले केही आवश्यक स्रोतहरू (ग्लेड फाइल फेला परेन) फेला पार्न सकेन ।"
-
-#: ../gnome/applet/applet.c:753
-#, c-format
-msgid "The network device \"%s (%s)\" does not support wireless scanning."
-msgstr "सञ्जाल यन्त्र \"%s (%s)\" ले ताररहित स्क्यानिङलाई समर्थन गरेन ।"
-
-#: ../gnome/applet/applet.c:761
-#, c-format
-msgid "The network device \"%s (%s)\" does not support link detection."
-msgstr "सञ्जाल यन्त्र \"%s (%s)\" ले लिङ्क अनुसन्धान समर्थन गरेन ।"
-
-#: ../gnome/applet/applet.c:908
-#, c-format
-msgid "Preparing device %s for the wired network..."
-msgstr "तारसहित सञ्जालका लागि यन्त्र %s तयारी गरिँदैछ..."
-
-#: ../gnome/applet/applet.c:910
-#, c-format
-msgid "Preparing device %s for the wireless network '%s'..."
-msgstr "ताररहित सञ्जाल '%s'का लागि यन्त्र %s तयारी गरिँदैछ..."
-
-#: ../gnome/applet/applet.c:918
-#, c-format
-msgid "Configuring device %s for the wired network..."
-msgstr "तारसहित सञ्जालका लागि यन्त्र %s तयारी गरिँदैछ..."
-
-#: ../gnome/applet/applet.c:920
-#, c-format
-msgid "Attempting to join the wireless network '%s'..."
-msgstr "ताररहित सञ्जाल '%s' जडान गर्न समाहित गरिँदैछ..."
-
-#: ../gnome/applet/applet.c:928
-#, c-format
-msgid "Waiting for Network Key for the wireless network '%s'..."
-msgstr "ताररहित सञ्जाल '%s' का लागि सञ्जाल कुञ्जीलाई प्रतिक्षा गर्दैछ..."
-
-#: ../gnome/applet/applet.c:936 ../gnome/applet/applet.c:946
-msgid "Requesting a network address from the wired network..."
-msgstr "तारसहित सञ्जालबाट एउटा सञ्जाल ठेगाना अनुरोध गरिँदैछ..."
-
-#: ../gnome/applet/applet.c:938 ../gnome/applet/applet.c:948
-#, c-format
-msgid "Requesting a network address from the wireless network '%s'..."
-msgstr "ताररहित सञ्जाल '%s' बाट सञ्जाल ठेगाना अनुरोध गरिँदैछ..."
-
-#: ../gnome/applet/applet.c:956
-msgid "Finishing connection to the wired network..."
-msgstr "तारसहित सञ्जालमा जडान सकिँदैछ..."
-
-#: ../gnome/applet/applet.c:958
-#, c-format
-msgid "Finishing connection to the wireless network '%s'..."
-msgstr "ताररहित सञ्जाल '%s' मा जडान सकिँदैछ..."
-
-#: ../gnome/applet/applet.c:1075
-msgid "NetworkManager is not running"
-msgstr "सञ्जाल प्रबन्धक चलिरहेको छैन ।"
-
-#: ../gnome/applet/applet.c:1083 ../gnome/applet/applet.c:1826
-msgid "Networking disabled"
-msgstr "सञ्जाल अक्षम पारियो"
-
-#: ../gnome/applet/applet.c:1088
-msgid "No network connection"
-msgstr "सञ्जाल जडान छैन"
-
-#: ../gnome/applet/applet.c:1093
-msgid "Wired network connection"
-msgstr "तारसहित सञ्जाल जडान"
-
-#: ../gnome/applet/applet.c:1097
-msgid "Connected to an Ad-Hoc wireless network"
-msgstr "Ad-Hoc ताररहित सञ्जालमा जडान स्थापना गरियो"
-
-#: ../gnome/applet/applet.c:1099
-#, c-format
-msgid "Wireless network connection to '%s' (%d%%)"
-msgstr "'%s' (%d%%) मा ताररहित सञ्जाल जडान"
-
-#: ../gnome/applet/applet.c:1120
-#, c-format
-msgid "VPN connection to '%s'"
-msgstr "'%s' मा VPN जडान"
-
-#: ../gnome/applet/applet.c:1128
-#, c-format
-msgid "VPN connecting to '%s'"
-msgstr "'%s' मा VPN जडान गरिँदैछ"
-
-#: ../gnome/applet/applet.c:1541
-msgid "_Connect to Other Wireless Network..."
-msgstr "अन्य ताररहित सञ्जालमा जडान गर्नुहोस्..."
-
-#: ../gnome/applet/applet.c:1562
-msgid "Create _New Wireless Network..."
-msgstr "नयाँ ताररहित सञ्जाल सिर्जना गर्नुहोस्..."
-
-#: ../gnome/applet/applet.c:1683
-msgid "_VPN Connections"
-msgstr "VPN जडान"
-
-#: ../gnome/applet/applet.c:1728
-msgid "_Configure VPN..."
-msgstr "VPN कन्फिगर गर्नुहोस्..."
-
-#: ../gnome/applet/applet.c:1732
-msgid "_Disconnect VPN..."
-msgstr "VPN जडान बिच्छेद गर्नुहोस्..."
-
-#: ../gnome/applet/applet.c:1754
-msgid "_Dial Up Connections"
-msgstr "डायलअप जडान"
-
-#. FIXME: We should save and then check the state of the devices and show Connect _or_ Disconnect for each item
-#: ../gnome/applet/applet.c:1765
-#, c-format
-msgid "Connect to %s..."
-msgstr "%s मा जडान गर्नुहोस्..."
-
-#: ../gnome/applet/applet.c:1771
-#, c-format
-msgid "Disconnect from %s..."
-msgstr "%s बाट जडान बिच्छेद गर्नुहोस्..."
-
-#: ../gnome/applet/applet.c:1820
-msgid "No network devices have been found"
-msgstr "सञ्जाल यन्त्र फेला पारेको छैन"
-
-#: ../gnome/applet/applet.c:2012
-msgid "NetworkManager is not running..."
-msgstr "सञ्जाल प्रबन्धक चलिरहेको छैन..."
-
-#. 'Enable Networking' item
-#: ../gnome/applet/applet.c:2168
-msgid "Enable _Networking"
-msgstr "सञ्जाल सक्षम पार्नुहोस्"
-
-#. 'Enable Wireless' item
-#: ../gnome/applet/applet.c:2174
-msgid "Enable _Wireless"
-msgstr "ताररहित सक्षम पार्नुहोस्"
-
-#. 'Connection Information' item
-#: ../gnome/applet/applet.c:2180
-msgid "Connection _Information"
-msgstr "जडान सूचना"
-
-#. Help item
-#: ../gnome/applet/applet.c:2191
-msgid "_Help"
-msgstr "मद्दत"
-
-#. About item
-#: ../gnome/applet/applet.c:2200
-msgid "_About"
-msgstr "बारेमा"
-
-#: ../gnome/applet/applet.c:2625
-msgid ""
-"The NetworkManager applet could not find some required resources.  It cannot "
-"continue.\n"
-msgstr "सञ्जाल प्रबन्धक एप्लेटले केही आवश्यक स्रोतहरू फेला पार्न सकेन । यसलाई सुचारू गर्न सकेन ।\n"
-
-#: ../gnome/applet/wireless-security-option.c:157
-msgid "Open System"
-msgstr "प्रणाली खोल्नुहोस्"
-
-#: ../gnome/applet/wireless-security-option.c:160
-msgid "Shared Key"
-msgstr "साझेदारी गरिएको कुञ्जी"
-
-#: ../gnome/applet/wireless-security-option.c:208
-msgid "Automatic (Default)"
-msgstr "स्वचालित (पूर्वनिर्धारित)"
-
-#: ../gnome/applet/wireless-security-option.c:215
-msgid "AES-CCMP"
-msgstr "AES-CCMP"
-
-#: ../gnome/applet/wireless-security-option.c:223
-msgid "TKIP"
-msgstr "TKIP"
-
-#: ../gnome/applet/wireless-security-option.c:231
-msgid "Dynamic WEP"
-msgstr "गतिशिल WEP"
-
-#: ../gnome/applet/wso-none.c:53
-msgid "None"
-msgstr "कुनै पनि होइन"
-
-#: ../gnome/applet/wso-wep-ascii.c:138
-msgid "WEP 64/128-bit ASCII"
-msgstr "WEP 64/128-bit ASCII"
-
-#: ../gnome/applet/wso-wep-hex.c:135
-msgid "WEP 64/128-bit Hex"
-msgstr "WEP 64/128-बिट हेक्स"
-
-#: ../gnome/applet/wso-wep-passphrase.c:135
-msgid "WEP 128-bit Passphrase"
-msgstr "WEP 128-bit पासफ्रेज"
-
-#: ../gnome/applet/wso-wpa-eap.c:237
-msgid "PEAP"
-msgstr "PEAP"
-
-#: ../gnome/applet/wso-wpa-eap.c:238
-msgid "TLS"
-msgstr "TLS"
-
-#: ../gnome/applet/wso-wpa-eap.c:239
-msgid "TTLS"
-msgstr "TTLS"
-
-#: ../gnome/applet/wso-wpa-eap.c:247 ../src/nm-ap-security-wpa-eap.c:92
-#: ../src/nm-ap-security-wpa-eap.c:116
-msgid "WPA2 Enterprise"
-msgstr "WPA2 उद्योग"
-
-#: ../gnome/applet/wso-wpa-eap.c:249 ../src/nm-ap-security-wpa-eap.c:94
-#: ../src/nm-ap-security-wpa-eap.c:121
-msgid "WPA Enterprise"
-msgstr "WPA उद्योग"
-
-#: ../gnome/applet/wso-wpa-psk.c:178
-msgid "WPA2 Personal"
-msgstr "WPA2 व्यक्तिगत"
-
-#: ../gnome/applet/wso-wpa-psk.c:180
-msgid "WPA Personal"
-msgstr "WPA व्यक्तिगत"
-
-#: ../gnome/applet/eggtrayicon.c:134
-msgid "Orientation"
-msgstr "अभिमुखीकरण"
-
-#: ../gnome/applet/eggtrayicon.c:135
-msgid "The orientation of the tray."
-msgstr "ट्रेको अभिमुखीकरण"
-
-#: ../gnome/applet/menu-items.c:87
-#, c-format
-msgid "Wired Network (%s)"
-msgstr "तारसहित सञ्जाल (%s)"
-
-#: ../gnome/applet/menu-items.c:90
-msgid "_Wired Network"
-msgstr "तारसहित सञ्जाल"
-
-#: ../gnome/applet/menu-items.c:161
-#, c-format
-msgid "Wireless Network (%s)"
-msgid_plural "Wireless Networks (%s)"
-msgstr[0] "ताररहित सञ्जाल (%s)"
-msgstr[1] "ताररहित सञ्जाल (%s)"
-
-#: ../gnome/applet/menu-items.c:163
-msgid "Wireless Network"
-msgid_plural "Wireless Networks"
-msgstr[0] "ताररहित सञ्जाल"
-msgstr[1] "ताररहित सञ्जाल"
-
-#: ../gnome/applet/menu-items.c:330
-msgid " (invalid Unicode)"
-msgstr " (अवैध यूनिकोड)"
-
-#: ../gnome/applet/other-network-dialog.c:352
-#, c-format
-msgid ""
-"By default, the wireless network's name is set to your computer's name, %s, "
-"with no encryption enabled"
-msgstr "पूर्वनिर्धारण अनुसार, कुनै गुप्तीकरण सक्षम नपारिकन ताररहित सञ्जालको नाम तपाईँको कम्प्युटरको नाम  %s मा सेट हुन्छ"
-
-#: ../gnome/applet/other-network-dialog.c:358
-msgid "Create new wireless network"
-msgstr "नयाँ ताररहित सञ्जाल सिर्जना गर्नुहोस्"
-
-#: ../gnome/applet/other-network-dialog.c:359
-msgid ""
-"Enter the name and security settings of the wireless network you wish to "
-"create."
-msgstr "तपाईँले सिर्जना गर्न चहानुभएको ताररहित सञ्जालको नाम र सुरक्षा सेटिङ प्रविष्ट गर्नुहोस् ।"
-
-#: ../gnome/applet/other-network-dialog.c:363
-msgid "Create New Wireless Network"
-msgstr "नयाँ ताररहित सञ्जाल सिर्जना गर्नुहोस्"
-
-#: ../gnome/applet/other-network-dialog.c:368
-msgid "Existing wireless network"
-msgstr "अवस्थित ताररहित सञ्जाल"
-
-#: ../gnome/applet/other-network-dialog.c:369
-msgid "Enter the name of the wireless network to which you wish to connect."
-msgstr "तपाईँले जडान गर्न चहानुभएको ताररहित सञ्जालको नाम प्रविष्ट गर्नुहोस् ।"
-
-#: ../gnome/applet/other-network-dialog.c:371
-msgid "Connect to Other Wireless Network"
-msgstr "अन्य ताररहित सञ्जालमा जडान गर्नुहोस्"
-
-#: ../gnome/applet/passphrase-dialog.c:216
-msgid "Error connecting to wireless network"
-msgstr "ताररहित सञ्जालमा जडान गर्दा त्रुटि"
-
-#: ../gnome/applet/passphrase-dialog.c:217
-msgid ""
-"The requested wireless network requires security capabilities unsupported by "
-"your hardware."
-msgstr "अनुरोध गरिएको ताररहित सञ्जाललाई तपाईँको हार्डवयेरले समर्थन नगर्ने सुरक्षा क्षमता आवश्यक पर्दछ ।"
-
-#: ../gnome/applet/vpn-password-dialog.c:152
-#: ../gnome/applet/vpn-password-dialog.c:189
-#, c-format
-msgid "Cannot start VPN connection '%s'"
-msgstr "VPN जडान '%s' सुरु गर्न सकिँदैन"
-
-#: ../gnome/applet/vpn-password-dialog.c:155
-#, c-format
-msgid ""
-"Could not find the authentication dialog for VPN connection type '%s'. "
-"Contact your system administrator."
-msgstr "VPN जडान परकार '%s'का लागि प्रमाणीकरण समवाद भेटाउन सकेन । तपाईँको प्रणाली प्रशासकलाई सम्पर्क गर्नुहोस् ।"
-
-#: ../gnome/applet/vpn-password-dialog.c:192
-#, c-format
-msgid ""
-"There was a problem launching the authentication dialog for VPN connection "
-"type '%s'. Contact your system administrator."
-msgstr "VPN जडान प्रकार '%s' का लागि प्रमाणीकरण विस्तार गर्दा समस्या थियो । तपाईँको प्रणाली प्रशासकलाई सम्पर्क गर्नुहोस् ।"
-
-#: ../gnome/applet/applet.glade.h:1
-msgid " "
-msgstr " "
-
-#: ../gnome/applet/applet.glade.h:2
-msgid "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
-msgstr "<span weight=\"bold\" size=\"larger\">जडान सूचना सक्रिय पार्नुहोस्</span>"
-
-#: ../gnome/applet/applet.glade.h:4
-#, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
-"Network</span>\n"
-"\n"
-"A passphrase or encryption key is required to access the wireless network '%"
-"s'."
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">ताररहित सञ्जाललाई पासफ्रेज आवश्यक पर्दछ</span>\n"
-"\n"
-"ताररहित सञ्जाल '%"
-"s' को पहुँचका लागि एउटा पासफ्रेज वा गुप्तीकरण कुञ्जी आवश्यक पर्दछ ।"
-
-#: ../gnome/applet/applet.glade.h:8
-#, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
-"\n"
-"%s  It will not be completely functional."
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">घटेको सञ्जाल प्रकार्यता </span>\n"
-"\n"
-"%s यो पूर्णरूपले प्रकार्यता हुने छैन ।"
-
-#: ../gnome/applet/applet.glade.h:12
-#, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
-"span>\n"
-"\n"
-"You have chosen to log in to the wireless network '%s'.  If you are sure "
-"that this wireless network is secure, click the checkbox below and "
-"NetworkManager will not require confirmation on subsequent log ins."
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">ताररहित सञ्जाल लगइन यकिन</span>\n"
-"\n"
-"तपाईँले ताररहित सञ्जाल '%s' मा लगइन रोज्नु भएको छ । यदि तपाईँ ताररहित सञ्जाल सुरक्षित छ भन्ने कुरामा निश्चिन्त हुनुहुन्छ भने तलको जाँच बाकसमा क्लिक गर्नुहोस् र सञ्जाल प्रबन्धकलाई क्रमागत लग आगतमा यकिन आवश्यक हुँदैन ।"
-
-#: ../gnome/applet/applet.glade.h:15
-msgid "Anonymous Identity:"
-msgstr "पहिचान गुमनाम:"
-
-#: ../gnome/applet/applet.glade.h:16
-msgid "Authentication:"
-msgstr "प्रमाणीकरण:"
-
-#: ../gnome/applet/applet.glade.h:17
-msgid "Broadcast Address:"
-msgstr "प्रसारण ठेगाना:"
-
-#: ../gnome/applet/applet.glade.h:18
-msgid "CA Certificate File:"
-msgstr "CA प्रमाणपत्र फाइल:"
-
-#: ../gnome/applet/applet.glade.h:19
-msgid "C_onnect"
-msgstr "जडान गर्नुहोस्"
-
-#: ../gnome/applet/applet.glade.h:20
-msgid "Client Certificate File:"
-msgstr "ग्राहक प्रमाणपत्र फाइल:"
-
-#: ../gnome/applet/applet.glade.h:21
-msgid "Connection Information"
-msgstr "जडान सूचना"
-
-#: ../gnome/applet/applet.glade.h:22
-msgid "Default Route:"
-msgstr "पूर्वनिरधारित बाटो:"
-
-#: ../gnome/applet/applet.glade.h:23
-msgid "Destination Address:"
-msgstr "गन्तब्य ठेगाना:"
-
-#: ../gnome/applet/applet.glade.h:24
-msgid "Driver:"
-msgstr "ड्राइभर:"
-
-#: ../gnome/applet/applet.glade.h:25
-msgid "EAP Method:"
-msgstr "EAP विधि:"
-
-#: ../gnome/applet/applet.glade.h:26
-msgid "Hardware Address:"
-msgstr "हार्डवयेर ठेगाना:"
-
-#: ../gnome/applet/applet.glade.h:27
-msgid "IP Address:"
-msgstr "IP ठेगाना:"
-
-#: ../gnome/applet/applet.glade.h:28
-msgid "Identity:"
-msgstr "पहिचान:"
-
-#: ../gnome/applet/applet.glade.h:29
-msgid "Interface:"
-msgstr "इन्टरफेस:"
-
-#: ../gnome/applet/applet.glade.h:30
-msgid "Key Type:"
-msgstr "कुञ्जी प्रकार:"
-
-#: ../gnome/applet/applet.glade.h:31
-msgid "Key:"
-msgstr "कुञ्जी:"
-
-#: ../gnome/applet/applet.glade.h:32
-msgid ""
-"None\n"
-"WEP 128-bit Passphrase\n"
-"WEP 64/128-bit Hex\n"
-"WEP 64/128-bit ASCII\n"
-msgstr ""
-"कुनै पनि होइन\n"
-"WEP 128-bit पासफ्रेस\n"
-"WEP 64/128-bit हेक्स\n"
-"WEP 64/128-bit ASCII\n"
-
-#: ../gnome/applet/applet.glade.h:37
-msgid ""
-"Open System\n"
-"Shared Key"
-msgstr ""
-"खुला प्रणाली\n"
-"बाँडिएको कुञ्जी"
-
-#: ../gnome/applet/applet.glade.h:39
-msgid "Other Wireless Network..."
-msgstr "अन्य ताररहित सञ्जाल..."
-
-#: ../gnome/applet/applet.glade.h:40
-msgid "Passphrase:"
-msgstr "पासफ्रेज:"
-
-#: ../gnome/applet/applet.glade.h:41
-msgid "Password:"
-msgstr "पासवर्ड:"
-
-#: ../gnome/applet/applet.glade.h:42
-msgid "Primary DNS:"
-msgstr "प्राथमिक DNS:"
-
-#: ../gnome/applet/applet.glade.h:43
-msgid "Private Key File:"
-msgstr "व्यक्तिगत कुञ्जी फाइल:"
-
-#: ../gnome/applet/applet.glade.h:44
-msgid "Private Key Password:"
-msgstr "व्यक्तिगत कुञ्जी पासवर्ड:"
-
-#: ../gnome/applet/applet.glade.h:45
-msgid "Secondary DNS:"
-msgstr "गौण DNS:"
-
-#: ../gnome/applet/applet.glade.h:46
-msgid "Select the CA Certificate File"
-msgstr "CA प्रमाणपत्र फाइल चयन गर्नुहोस्"
-
-#: ../gnome/applet/applet.glade.h:47
-msgid "Select the Client Certificate File"
-msgstr "ग्राहक प्रमाणपत्र फाइल चयन गर्नुहोस्"
-
-#: ../gnome/applet/applet.glade.h:48
-msgid "Select the Private Key File"
-msgstr "व्यक्तिगत कुञ्जी फाइल चयन गर्नुहोस्"
-
-#: ../gnome/applet/applet.glade.h:49
-msgid "Show key"
-msgstr "कुञ्जी देखाउनुहोस्"
-
-#: ../gnome/applet/applet.glade.h:50
-msgid "Show passphrase"
-msgstr "पासफ्रेज देखाउनुहोस्"
-
-#: ../gnome/applet/applet.glade.h:51
-msgid "Show password"
-msgstr "पासवर्ड देखाउनुहोस्"
-
-#: ../gnome/applet/applet.glade.h:52
-msgid "Show passwords"
-msgstr "पासवर्ड देखाउनुहोस्"
-
-#: ../gnome/applet/applet.glade.h:53
-msgid "Speed:"
-msgstr "गति:"
-
-#: ../gnome/applet/applet.glade.h:54
-msgid "Subnet Mask:"
-msgstr "सबनेट मास्क:"
-
-#: ../gnome/applet/applet.glade.h:55
-msgid "Type:"
-msgstr "प्रकार:"
-
-#: ../gnome/applet/applet.glade.h:56
-msgid "User Name:"
-msgstr "प्रयोगकर्ता नाम:"
-
-#: ../gnome/applet/applet.glade.h:57
-msgid "Wireless Network Key Required"
-msgstr "ताररहित सञ्जाल कुञ्जी आवश्यक"
-
-#: ../gnome/applet/applet.glade.h:58
-msgid "Wireless _adapter:"
-msgstr "ताररहित अनुकूलक:"
-
-#: ../gnome/applet/applet.glade.h:59
-msgid "_Always Trust this Wireless Network"
-msgstr "सधै यो ताररहित सञ्जालमा विश्वास गर्नुहोस्"
-
-#: ../gnome/applet/applet.glade.h:60
-msgid "_Don't remind me again"
-msgstr "मलाई फेरि सम्झाउनु पर्दैन"
-
-#: ../gnome/applet/applet.glade.h:61
-msgid "_Login to Network"
-msgstr "सञ्जालमा लगइन गर्नुहोस्"
-
-#: ../gnome/applet/applet.glade.h:62
-msgid "_Network Name:"
-msgstr "सञ्जाल नाम:"
-
-#: ../gnome/applet/applet.glade.h:63
-msgid "_Wireless Security:"
-msgstr "ताररहित सुरक्षा:"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:378
+#: ../gnome/vpn-properties/nm-vpn-properties.c:405
 msgid "Cannot add VPN connection"
-msgstr "VPN जडान थप्न सकिँदैन"
+msgstr "भीपीएन जडान थप गर्न सकिँदैन"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:380
+#: ../gnome/vpn-properties/nm-vpn-properties.c:407
 msgid ""
 "No suitable VPN software was found on your system. Contact your system "
 "administrator."
-msgstr "तपाईँको प्रणालीमा उपयुक्त VPN सफ्टवेयर फेला परेन । तपाईँको प्रणाली प्रशासकलाई सम्पर्क गर्नुहोस् ।"
+msgstr ""
+"तपाईँको प्रणालीमा कुनै अनुकूल भीपीएन सफ्टवेयर फेला परेन । तपाईँको प्रणाली "
+"प्रशासकलाई सम्पर्क गर्नुहोस् ।"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:432
+#: ../gnome/vpn-properties/nm-vpn-properties.c:457
 msgid "Cannot import VPN connection"
-msgstr "VPN जडान आयात गर्न सकिँदैन"
+msgstr "भीपीएन जडान आयात गर्न सकिँदैन"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:434
+#: ../gnome/vpn-properties/nm-vpn-properties.c:459
 #, c-format
 msgid ""
 "Cannot find suitable software for VPN connection type '%s' to import the "
 "file '%s'. Contact your system administrator."
-msgstr "'%s' फाइलमा आयात गर्न VPN जडान प्रकार '%s' का लागि उपयुक्त छैन । तपाईँको प्रणाली प्रशासकलाई सम्पर्क गर्नुहोस् ।"
+msgstr "फाइल '%s' आयात गर्न भीपीएन जडान प्रकार '%s' का लागि उपयोगी सफ्टवेयर फेला पार्न सकिँदैन । तपाईँको प्रणाली प्रशासकलाई सम्पर्क गर्नुहोस् ।"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:574
+#: ../gnome/vpn-properties/nm-vpn-properties.c:596
 #, c-format
 msgid "Error retrieving VPN connection '%s'"
-msgstr "VPN जडान '%s' पुन: प्रयास गर्दा त्रुटि"
+msgstr "भीपीएन जडान पुन: प्राप्ति गर्दा त्रुटि '%s'"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:577
+#: ../gnome/vpn-properties/nm-vpn-properties.c:599
 #, c-format
 msgid ""
 "Could not find the UI files for VPN connection type '%s'. Contact your "
 "system administrator."
-msgstr "VPN जडान प्रकार '%s' का लागि UI फाइल फेला पार्न सकिँदैन । तपाईँको प्रणाली प्रशासकसँग सम्पर्क गर्नुहोस् ।"
+msgstr "भीपीएन जडान प्रकार '%s' का लागि यूआई फाइलहरू फेला पार्न सकेन । तपाईँको प्रणाली प्रशासकलाई सम्पर्क गर्नुहोस् ।"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:734
+#: ../gnome/vpn-properties/nm-vpn-properties.c:746
 #, c-format
 msgid "Delete VPN connection \"%s\"?"
-msgstr "VPN जडान \"%s\" मेट्नुहोस् ?"
+msgstr "भीपीएन जडान \"%s\" मेट्नुहुन्छ ?"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:737
+#: ../gnome/vpn-properties/nm-vpn-properties.c:749
 #, c-format
 msgid ""
 "All information about the VPN connection \"%s\" will be lost and you may "
 "need your system administrator to provide information to create a new "
 "connection."
-msgstr "VPN जडान \"%s\" का बारेमा सबै सूचना नष्ट हुँनेछन् र तपाईँलाई नयाँ जडान सिर्जना गर्ने सूचना उपलबध गराउन तपाईँको प्रणाली प्रशासकको आवश्यकता पर्नसक्छ ।"
+msgstr "भीपीएन जडान \"%s\" बारेका सबै जानकारी हराउनेछन् र तपाईँलाई नयाँ जडान सिर्जना गर्न जानकारी उपलब्ध गराउन प्रणाली प्रशासक आवश्यक पर्दछ ।"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:947
+#: ../gnome/vpn-properties/nm-vpn-properties.c:963
 msgid "Unable to load"
-msgstr "लोड गर्न अक्षम"
+msgstr "लोड गर्न असक्षम"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:949
+#: ../gnome/vpn-properties/nm-vpn-properties.c:965
 msgid "Cannot find some needed resources (the glade file)!"
-msgstr "केही आवश्यक स्रोत (ग्लेड फाइल) फेला पार्न सकिँदैन !"
+msgstr "केही आवश्यक संसाधानहरू फेला पार्न सकिँदैन (ग्लेड फाइल)!"
 
 #. Edit dialog
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1058
+#: ../gnome/vpn-properties/nm-vpn-properties.c:1084
 msgid "Edit VPN Connection"
-msgstr "VPN जडान सम्पादन गर्नुहोस्"
+msgstr "भीपीएन जडान सम्पादन गर्नुहोस्"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:1
 msgid "Add a new VPN connection"
-msgstr "नयाँ VPN जडान थप्नुहोस्"
+msgstr "नयाँ भीपीएन जडान थप्नुहोस्"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
 msgid "Choose which type of VPN connection you wish to create."
-msgstr "तपाईँले सिर्जना गर्न चाहेको VPN प्रकारको जडान रोज्नुहोस्"
+msgstr "तपाईँ कस्तो प्रकारको भीपीएन जडान सिर्जना गर्न चाहनुहुन्छ रोज्नुहोस् ।"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
 msgid "Connect to:"
-msgstr "यसमा जडान गर्नुहोस्:"
+msgstr "जडान गर्नुहोस्:"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
 msgid "Create VPN Connection"
-msgstr "VPN जडान सिर्जना गर्नुहोस्"
+msgstr "भीपीएन जडान सिर्जना गर्नुहोस्"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
 msgid "Create VPN Connection - 1 of 2"
-msgstr "VPN जडान २ को - १ सिर्जना गर्नुहोस्"
+msgstr "भीपीएन जडान सिर्जना गर्नुहोस् - २ को १"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
 msgid "Create VPN Connection - 2 of 2"
-msgstr "VPN जडान २ को - २ सिर्जना गर्नुहोस्"
+msgstr "भीपीएन जडान सिर्जना गर्नुहोस् - २ को २"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
 msgid "Delete the selected VPN connection"
-msgstr "चयन गरेको VPN जडान मेट्नुहोस्"
+msgstr "चयन गरिएका भीपीएन जडान मेट्नुहोस्"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
 msgid "E_xport"
@@ -792,23 +115,23 @@ msgstr "निर्यात गर्नुहोस्"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:9
 msgid "Edit the selected VPN connection"
-msgstr "चयन गरेको VPN जडान सम्पादन गर्नुहोस्"
+msgstr "चयन गरिएका भीपीएन जडान सम्पादन गर्नुहोस्"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:10
 msgid "Export the VPN settings to a file"
-msgstr "फाइलमा VPN सेटिङ निर्यात गर्नुहोस्"
+msgstr "फाइलमा भीपीएन सेटिङ निर्यात गर्नुहोस्"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:11
 msgid "Export the selected VPN connection to a file"
-msgstr "फाइलमा चयन गरेको VPN जडान निर्यात गर्नुहोस्"
+msgstr "फाइलमा चयन गरिएका भीपीएन जडान निर्यात गर्नुहोस्"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:12
 msgid "Finish Creating VPN Connection"
-msgstr "VPN जडान सिर्जना सकियो"
+msgstr "भीपीएन जडानको सिर्जना समाप्त गर्नुहोस्"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:13
 msgid "Manage Virtual Private Network Connections"
-msgstr "अवास्तविक व्यक्तिगत सञ्जाल जडान प्रवन्ध गर्नुहोस्"
+msgstr "अवास्तविक नीजि सञ्जाल जडानहरू प्रबन्ध गर्नुहोस्"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:14
 msgid ""
@@ -818,21 +141,21 @@ msgid ""
 "It will require some information, such as IP addresses and secrets.  Please "
 "see your system administrator to obtain this information."
 msgstr ""
-"यो सहायकले तपाईँलाई अवास्तविक व्यक्तिगत सञ्जाल (VPN) मा जडानको सिर्जनाको माध्यम मार्गदर्शन गर्नेछ ।\n"
+"यो सहयोगले तपाईँलाई अवास्तविक नीजि सञ्जाल (भीपीएन) मा जडानको सिर्जना मार्फत मार्गदर्शन गर्नेछ ।\n"
 "\n"
-" यसका लागि केही सूचनाको आवश्यकता पर्नेछ, जस्तै IP ठेगाना र रहस्य । कृपया तपाईँको प्रणाली प्रशासकलाई यो सूचना उपलब्ध गराउन देखाउनुहोस् ।"
+"यसलाई केही सूचनाको आवश्यक पर्नेछ, जस्तै आईपी ठेगानाहरू र गोप्य कुराहरू । कृपया यो जानकारी प्राप्त गर्न तपाईँको प्रणाली प्रशासकलाई सोध्नुहोस् ।"
 
 #: ../gnome/vpn-properties/nm-vpn-properties.glade.h:17
 msgid "VPN Connections"
-msgstr "VPN जडान"
+msgstr "भीपीएन जडान"
 
 #: ../src/nm-ap-security-wep.c:52
 msgid "40-bit WEP"
-msgstr "४०-बिट WEP"
+msgstr "40-bit WEP"
 
 #: ../src/nm-ap-security-wep.c:54
 msgid "104-bit WEP"
-msgstr "१०४-बिट WEP"
+msgstr "104-bit WEP"
 
 #: ../src/nm-ap-security-wpa-psk.c:50
 msgid "WPA TKIP"
@@ -844,7 +167,7 @@ msgstr "WPA CCMP"
 
 #: ../src/nm-ap-security-wpa-psk.c:54
 msgid "WPA Automatic"
-msgstr "स्विचालित WPA"
+msgstr "WPA स्वचालित"
 
 #: ../src/nm-ap-security-wpa-psk.c:59
 msgid "WPA2 TKIP"
@@ -856,65 +179,51 @@ msgstr "WPA2 CCMP"
 
 #: ../src/nm-ap-security-wpa-psk.c:63
 msgid "WPA2 Automatic"
-msgstr "स्वचालित WPA2"
+msgstr "WPA2 स्वचालित"
 
-#: ../src/nm-ap-security.c:320
+#: ../src/nm-ap-security.c:338
 msgid "none"
 msgstr "कुनै पनि होइन"
 
 #: ../src/nm-netlink-monitor.c:170
 #, c-format
 msgid "unable to create netlink socket for monitoring wired ethernet devices - %s"
-msgstr "मानिटरिङ तारसहित इथरनेट यन्त्र - %s का लागि नेटलिङ्क सकेट सिर्जना गर्न अक्षम"
+msgstr "तारसहितको इथरनेट यन्त्रहरूको अनुगमनका लागि नेटलिङ्क सकेट सिर्जना गर्न असक्षम - %s"
 
 #: ../src/nm-netlink-monitor.c:188
 #, c-format
 msgid "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
-msgstr "मोनिटरिङ तारसहित इथरनेट यन्त्र - %s का लागि नेटलिङ्क सकेट संयोजन गर्न अक्षम"
+msgstr "तारसहितको इथरनेट यन्त्रको अनुगमनका लागि नेटलिङ्क सकेटमा बाइन्ड गर्न असक्षम - %s"
 
-#: ../src/nm-netlink-monitor.c:425
+#: ../src/nm-netlink-monitor.c:426
 msgid "operation took too long"
-msgstr "सञ्चालनले लामो समय लियो"
+msgstr "सञ्चालनले धेरै लामो समय लियो"
 
-#: ../src/nm-netlink-monitor.c:522
+#: ../src/nm-netlink-monitor.c:523
 msgid "received data from wrong type of sender"
-msgstr "गलत प्रकारको प्रेषकबाट पठाएको डेटा प्राप्त गरियो"
+msgstr "गलत प्रकारको प्रेषकबाट पठाएको डेटा प्राप्त गरियो ।"
 
-#: ../src/nm-netlink-monitor.c:535
+#: ../src/nm-netlink-monitor.c:536
 msgid "received data from unexpected sender"
-msgstr "आशा नगरेको प्रेषकबाट पठाएको डेटा प्राप्त गरियो"
+msgstr "अनपेक्षित प्रेषकबाट पठाएको डेटा प्राप्त गरियो"
 
-#: ../src/nm-netlink-monitor.c:664
+#: ../src/nm-netlink-monitor.c:665
 msgid "too much data was sent over socket and some of it was lost"
-msgstr "सकेटलाई धेरै डेटा पठाइयो र त्यसमध्ये केही हरायो ।"
+msgstr "सकेट माथी धेरै डेटाहरू पठाइयो र त्यसमध्ये केही हराएको थियो ।"
 
-#: ../src/nm-netlink-monitor.c:774
+#: ../src/nm-netlink-monitor.c:775
 msgid "error occurred while waiting for data on socket"
-msgstr "सकेटमा डेटाका लागि पर्खिरहदा त्रुटि देखाउँछ"
+msgstr "सकेटमा डेटा प्रतिक्षा गर्दा त्रुटि देखापर्यो"
 
-#: ../gnome/applet/applet-dbus-devices.c:921
-#, c-format
-msgid "You are now connected to the Ad-Hoc wireless network '%s'."
-msgstr "तपाईँले अहिले Ad-Hoc ताररहित सञ्जाल '%s' मा जडित हुनुहुन्छ ।"
+#: ../src/nm-ap-security-wpa-eap.c:96 ../src/nm-ap-security-wpa-eap.c:120
+msgid "WPA2 Enterprise"
+msgstr "WPA2 उद्यमशीलता"
 
-#: ../gnome/applet/applet-dbus-devices.c:926
-#, c-format
-msgid "You are now connected to the wireless network '%s'."
-msgstr "तपाईँ अहिले ताररहित सञ्जाल '%s' मा जडित हुनुहुन्छ ।"
+#: ../src/nm-ap-security-wpa-eap.c:98 ../src/nm-ap-security-wpa-eap.c:125
+msgid "WPA Enterprise"
+msgstr "WPA उद्यमशीलता"
 
-#: ../gnome/applet/applet-dbus-devices.c:933
-msgid "You are now connected to the wired network."
-msgstr "तपाईँ अहिले तारसहित सञ्जालमा जडित हुनुहुन्छ ।"
-
-#: ../gnome/applet/applet-dbus-devices.c:939
-msgid "Connection Established"
-msgstr "जडान स्थापना भयो"
-
-#: ../gnome/applet/applet-dbus-devices.c:982
-msgid "Disconnected"
-msgstr "जडान विच्छेद भयो"
-
-#: ../gnome/applet/applet-dbus-devices.c:983
-msgid "The network connection has been disconnected."
-msgstr "सञ्जाल जडान बिच्छेद भएको छ ।"
+#: ../src/nm-ap-security-leap.c:66 ../src/nm-ap-security-leap.c:82
+msgid "LEAP"
+msgstr "LEAP"
 
