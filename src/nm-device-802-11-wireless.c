@@ -761,6 +761,12 @@ device_cleanup (NMDevice80211Wireless *self)
 		g_object_unref (priv->supplicant.mgr);
 		priv->supplicant.mgr = NULL;
 	}
+
+	g_slist_foreach (self->priv->ap_list, (GFunc) g_object_unref, NULL);
+	g_slist_free (self->priv->ap_list);
+	self->priv->ap_list = NULL;
+
+	set_current_ap (self, NULL);
 }
 
 static void

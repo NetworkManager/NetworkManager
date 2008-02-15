@@ -1,5 +1,14 @@
 2008-02-15  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-11-wireless.c
+		- (device_cleanup): release the AP list here too so that the AP list
+			doesn't survive across suspend/resume and up/down.  There is some
+			room for optimization, for example blow the list away when the card
+			brought back up, but only if the device has only been down for a
+			minute or more.
+
+2008-02-15  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-hal-manager.c
 		- (modem_device_creator): recognize new HAL modem capabilities
 
