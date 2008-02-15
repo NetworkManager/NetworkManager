@@ -1,3 +1,10 @@
+2008-02-15  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Michael Biebl <biebl@debian.org>
+
+	* configure.in
+		- Use po/LINGUAS
+
 2008-02-12  Dan Williams  <dcbw@redhat.com>
 
 	Release 0.6.5.98  (0.6.6rc1)
