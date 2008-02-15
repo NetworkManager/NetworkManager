@@ -211,18 +211,34 @@ modem_device_creator (NMHalManager *manager, const char *udi)
 	if (!serial_device || !driver_name)
 		goto out;
 
-	capabilities = libhal_device_get_property_strlist (manager->hal_ctx, udi, "info.capabilities", NULL);
+	capabilities = libhal_device_get_property_strlist (manager->hal_ctx, udi, "modem.command_sets", NULL);
 	for (iter = capabilities; *iter; iter++) {
-		if (!strcmp (*iter, "gsm")) {
+		if (!strcmp (*iter, "GSM-07.07")) {
 			type_gsm = TRUE;
 			break;
 		}
-		if (!strcmp (*iter, "cdma")) {
+		if (!strcmp (*iter, "IS-707-A")) {
 			type_cdma = TRUE;
 			break;
 		}
 	}
 	g_strfreev (capabilities);
+
+	/* Compatiblity with the pre-specification bits */
+	if (!type_gsm && !type_cdma) {
+		capabilities = libhal_device_get_property_strlist (manager->hal_ctx, udi, "info.capabilities", NULL);
+		for (iter = capabilities; *iter; iter++) {
+			if (!strcmp (*iter, "gsm")) {
+				type_gsm = TRUE;
+				break;
+			}
+			if (!strcmp (*iter, "cdma")) {
+				type_cdma = TRUE;
+				break;
+			}
+		}
+		g_strfreev (capabilities);
+	}
 
 	if (type_gsm)
 		device = (NMDevice *) nm_gsm_device_new (udi, serial_device + strlen ("/dev/"), NULL, driver_name);
