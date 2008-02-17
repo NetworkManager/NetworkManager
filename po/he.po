@@ -1,0 +1,50 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Yair Hershkovitz, 2008.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: 1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2008-02-17 03:56+0000\n"
+"PO-Revision-Date: 2008-02-17 03:56+0000\n"
+"Last-Translator: Yair Hershkovitz  <yairhr@gmail.com>\n"
+"Language-Team: he\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: ../src/nm-netlink-monitor.c:188 ../src/nm-netlink-monitor.c:448
+#, c-format
+msgid "error processing netlink message: %s"
+msgstr "error processing netlink message: %s"
+
+#: ../src/nm-netlink-monitor.c:245
+#, c-format
+msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgstr "unable to allocate netlink handle for monitoring link status: %s"
+
+#: ../src/nm-netlink-monitor.c:255
+#, c-format
+msgid "unable to connect to netlink for monitoring link status: %s"
+msgstr "unable to connect to netlink for monitoring link status: %s"
+
+#: ../src/nm-netlink-monitor.c:263
+#, c-format
+msgid "unable to join netlink group for monitoring link status: %s"
+msgstr "unable to join netlink group for monitoring link status: %s"
+
+#: ../src/nm-netlink-monitor.c:271
+#, c-format
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
+msgstr "unable to allocate netlink link cache for monitoring link status: %s"
+
+#: ../src/nm-netlink-monitor.c:471
+msgid "error occurred while waiting for data on socket"
+msgstr "error occurred while waiting for data on socket"
+
+#: ../src/NetworkManager.c:255
+#, c-format
+msgid "Invalid option.  Please use --help to see a list of valid options.\n"
+msgstr "Invalid option.  Please use --help to see a list of valid options.\n"
