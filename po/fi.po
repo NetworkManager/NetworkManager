@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-07-11 06:37+0300\n"
+"POT-Creation-Date: 2008-02-19 07:51+0300\n"
 "PO-Revision-Date: 2007-01-31 10:50+0300\n"
 "Last-Translator: Ilkka Tuohela <hile@iki.fi>\n"
 "Language-Team: Finnish <gnome-fi-laatu@lists.sourceforge.net>\n"
@@ -17,209 +17,169 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:417
-msgid "Cannot add VPN connection"
-msgstr "VPN-yhteyttä ei voitu lisätä"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:419
-msgid ""
-"No suitable VPN software was found on your system. Contact your system "
-"administrator."
-msgstr ""
-"Sopivaa VPN-ohjelmistoa ei löytynyt järjestelmästäsi. Ota yhteyttä "
-"järjestelmäsi ylläpitäjään."
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:461
-msgid "Cannot import VPN connection"
-msgstr "VPN-yhteyttä ei voida tuoda"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:463
+#: ../src/nm-netlink-monitor.c:188 ../src/nm-netlink-monitor.c:448
 #, c-format
-msgid ""
-"Cannot find suitable software for VPN connection type '%s' to import the "
-"file '%s'. Contact your system administrator."
-msgstr ""
-"Sopivaa VPN-ohjelmistoa VPN-yhteyden tyypille \"%s\" ei löydy tuotaessa "
-"asetustiedostoa \"%s\". Ota yhteyttä järjestelmäsi ylläpitäjään."
+msgid "error processing netlink message: %s"
+msgstr "virhe käsiteltäessä netlink-viestiä: %s"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:580
+#: ../src/nm-netlink-monitor.c:245
 #, c-format
-msgid "Error retrieving VPN connection '%s'"
-msgstr "Virhe haettaessa VPN-yhteyttä \"%s\""
+msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgstr "ei voitu varata netlink-kahvaa linkin tilan tarkkailulle: %s"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:583
+#: ../src/nm-netlink-monitor.c:255
 #, c-format
-msgid ""
-"Could not find the UI files for VPN connection type '%s'. Contact your "
-"system administrator."
-msgstr ""
-"VPN-yhteyden tyypille \"%s\" ei löydy käyttöliittymää. Ota yhteyttä "
-"järjestelmäsi ylläpitäjään."
+msgid "unable to connect to netlink for monitoring link status: %s"
+msgstr "ei voitu yhdistää netlink-pistokkeeseen linkin tilan tarkkailua varten: %s"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:727
+#: ../src/nm-netlink-monitor.c:263
 #, c-format
-msgid "Delete VPN connection \"%s\"?"
-msgstr "Poistetaanko VPN-yhteys \"%s\"?"
+msgid "unable to join netlink group for monitoring link status: %s"
+msgstr "ei voit liittyä netlink-ryhmään linkin tilan tarkkailua varten: %s"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:730
+#: ../src/nm-netlink-monitor.c:271
 #, c-format
-msgid ""
-"All information about the VPN connection \"%s\" will be lost and you may "
-"need your system administrator to provide information to create a new "
-"connection."
-msgstr ""
-"Kaikki tiedot VPN-yhteydestä \"%s\" hukataan ja voit joutua ottamaan "
-"yhteyttä järjestelmäsiylläpitäjään, jotta saat uuden yhteyden luomiseen "
-"tarvittavat tiedot."
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
+msgstr "ei voitu varata netlink-linkin välimuistia inkin tilan tarkkailua "
+"varten %s"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:924
-msgid "Unable to load"
-msgstr "Ei voitu ladata"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:926
-msgid "Cannot find some needed resources (the glade file)!"
-msgstr "Jotain tarvittavista resursseista ei löydy (glade-tiedosto)!"
-
-#. druid_window = GTK_DIALOG (gtk_dialog_new_with_buttons (_("Create VPN Connection"),
-#. NULL,
-#. GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-#. GTK_STOCK_CANCEL,
-#. GTK_RESPONSE_REJECT,
-#. GTK_STOCK_APPLY,
-#. GTK_RESPONSE_ACCEPT,
-#. NULL));
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1081
-msgid "Create VPN Connection"
-msgstr "Luo VPN-yhteys"
-
-#. gtk_container_add (GTK_CONTAINER (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")));
-#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(druid), TRUE,TRUE,0);
-#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")), TRUE,TRUE,0);
-#. toplevel = gtk_widget_get_toplevel (GTK_WIDGET (druid));
-#. gtk_signal_connect (GTK_OBJECT (toplevel), "delete_event", GTK_SIGNAL_FUNC (vpn_window_close), NULL);
-#. make the druid window modal wrt. our main window
-#. gtk_window_set_modal (druid_window, TRUE);
-#. gtk_window_set_transient_for (GTK_WINDOW(druid_window), GTK_WINDOW (dialog));
-#. Edit dialog
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1099
-msgid "Edit VPN Connection"
-msgstr "Muokkaa VPN-yhteyttä"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:1
-msgid "Add a new VPN connection"
-msgstr "Lisää uusi VPN-yhteys"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
-msgid "Delete the selected VPN connection"
-msgstr "Poista valittu VPN-yhteys"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
-msgid "E_xport"
-msgstr "_Vie"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
-msgid "Edit the selected VPN connection"
-msgstr "Muokkaa valittua VPN-yhteyttä"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
-msgid "Export the VPN settings to a file"
-msgstr "Vie VPN-asetukset tiedostoon"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
-msgid "Export the selected VPN connection to a file"
-msgstr "Vie valittu VPN-yhteys tiedostoon"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
-msgid "Manage Virtual Private Network Connections"
-msgstr "Hallitse VPN-yhteyksiä"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
-msgid "VPN Connections"
-msgstr "VPN-yhteydet"
-
-#: ../src/nm-ap-security-wep.c:52
-msgid "40-bit WEP"
-msgstr "40-bittinen WEP"
-
-#: ../src/nm-ap-security-wep.c:54
-msgid "104-bit WEP"
-msgstr "104-bittinen WEP"
-
-#: ../src/nm-ap-security-wpa-psk.c:51
-msgid "WPA TKIP"
-msgstr "WPA TKIP"
-
-#: ../src/nm-ap-security-wpa-psk.c:53
-msgid "WPA CCMP"
-msgstr "WPA COMP"
-
-#: ../src/nm-ap-security-wpa-psk.c:55
-msgid "WPA Automatic"
-msgstr "WPA (automaattinen)"
-
-#: ../src/nm-ap-security-wpa-psk.c:60
-msgid "WPA2 TKIP"
-msgstr "WPA2 TKIP"
-
-#: ../src/nm-ap-security-wpa-psk.c:62
-msgid "WPA2 CCMP"
-msgstr "WPA2 COMP"
-
-#: ../src/nm-ap-security-wpa-psk.c:64
-msgid "WPA2 Automatic"
-msgstr "WPA2 (automaattinen)"
-
-#: ../src/nm-ap-security.c:326
-msgid "none"
-msgstr "ei mitään"
-
-#: ../src/nm-netlink-monitor.c:174
+#: ../src/nm-netlink-monitor.c:471
 #, c-format
-msgid ""
-"unable to create netlink socket for monitoring wired ethernet devices - %s"
-msgstr ""
-"Netlink-pistoketta kiinteiden verkkoyhteyksien tarkkailuun ei voida luoda - %"
-"s"
-
-#: ../src/nm-netlink-monitor.c:192
-#, c-format
-msgid ""
-"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
-msgstr ""
-"Netlink-pistoketta ei voida sitoa kiinteiden verkkoyhteyksien tarkkailua "
-"varten - %s"
-
-#: ../src/nm-netlink-monitor.c:416
-msgid "operation took too long"
-msgstr "toimenpide kesti liian pitkään"
-
-#: ../src/nm-netlink-monitor.c:513
-msgid "received data from wrong type of sender"
-msgstr "vastaanotettiin tietoa väärän tyyppiseltä lähettäjältä"
-
-#: ../src/nm-netlink-monitor.c:526
-msgid "received data from unexpected sender"
-msgstr "vastaanotettiin tietoja odottamattomalta lähettäjältä"
-
-#: ../src/nm-netlink-monitor.c:655
-msgid "too much data was sent over socket and some of it was lost"
-msgstr "lähetettiin liian paljon tietoja pistekkeeseen ja osaa siitä hukkui"
-
-#: ../src/nm-netlink-monitor.c:755
 msgid "error occurred while waiting for data on socket"
 msgstr "virhe odotettaessa tietoja pistokkeesta"
 
-#: ../src/nm-ap-security-wpa-eap.c:93 ../src/nm-ap-security-wpa-eap.c:112
-msgid "WPA2 Enterprise"
-msgstr "WPA2 Enterprise"
+#: ../src/NetworkManager.c:255
+#, c-format
+msgid "Invalid option.  Please use --help to see a list of valid options.\n"
+msgstr ""
+"Virheellinen valitsin: Antamalla --help näet luettelon kelvollisista\n"
+"valitsimista.\n"
 
-#: ../src/nm-ap-security-wpa-eap.c:95 ../src/nm-ap-security-wpa-eap.c:115
-msgid "WPA Enterprise"
-msgstr "WPA Enterprise"
+#~ msgid "Cannot add VPN connection"
+#~ msgstr "VPN-yhteyttä ei voitu lisätä"
 
-#: ../src/nm-ap-security-leap.c:66 ../src/nm-ap-security-leap.c:80
-msgid "LEAP"
-msgstr "LEAP"
+#~ msgid ""
+#~ "No suitable VPN software was found on your system. Contact your system "
+#~ "administrator."
+#~ msgstr ""
+#~ "Sopivaa VPN-ohjelmistoa ei löytynyt järjestelmästäsi. Ota yhteyttä "
+#~ "järjestelmäsi ylläpitäjään."
+
+#~ msgid "Cannot import VPN connection"
+#~ msgstr "VPN-yhteyttä ei voida tuoda"
+
+#~ msgid ""
+#~ "Cannot find suitable software for VPN connection type '%s' to import the "
+#~ "file '%s'. Contact your system administrator."
+#~ msgstr ""
+#~ "Sopivaa VPN-ohjelmistoa VPN-yhteyden tyypille \"%s\" ei löydy tuotaessa "
+#~ "asetustiedostoa \"%s\". Ota yhteyttä järjestelmäsi ylläpitäjään."
+
+#~ msgid "Error retrieving VPN connection '%s'"
+#~ msgstr "Virhe haettaessa VPN-yhteyttä \"%s\""
+
+#~ msgid ""
+#~ "Could not find the UI files for VPN connection type '%s'. Contact your "
+#~ "system administrator."
+#~ msgstr ""
+#~ "VPN-yhteyden tyypille \"%s\" ei löydy käyttöliittymää. Ota yhteyttä "
+#~ "järjestelmäsi ylläpitäjään."
+
+#~ msgid "Delete VPN connection \"%s\"?"
+#~ msgstr "Poistetaanko VPN-yhteys \"%s\"?"
+
+#~ msgid ""
+#~ "All information about the VPN connection \"%s\" will be lost and you may "
+#~ "need your system administrator to provide information to create a new "
+#~ "connection."
+#~ msgstr ""
+#~ "Kaikki tiedot VPN-yhteydestä \"%s\" hukataan ja voit joutua ottamaan "
+#~ "yhteyttä järjestelmäsiylläpitäjään, jotta saat uuden yhteyden luomiseen "
+#~ "tarvittavat tiedot."
+
+#~ msgid "Unable to load"
+#~ msgstr "Ei voitu ladata"
+
+#~ msgid "Cannot find some needed resources (the glade file)!"
+#~ msgstr "Jotain tarvittavista resursseista ei löydy (glade-tiedosto)!"
+
+#~ msgid "Create VPN Connection"
+#~ msgstr "Luo VPN-yhteys"
+
+#~ msgid "Edit VPN Connection"
+#~ msgstr "Muokkaa VPN-yhteyttä"
+
+#~ msgid "Add a new VPN connection"
+#~ msgstr "Lisää uusi VPN-yhteys"
+
+#~ msgid "Delete the selected VPN connection"
+#~ msgstr "Poista valittu VPN-yhteys"
+
+#~ msgid "E_xport"
+#~ msgstr "_Vie"
+
+#~ msgid "Edit the selected VPN connection"
+#~ msgstr "Muokkaa valittua VPN-yhteyttä"
+
+#~ msgid "Export the VPN settings to a file"
+#~ msgstr "Vie VPN-asetukset tiedostoon"
+
+#~ msgid "Export the selected VPN connection to a file"
+#~ msgstr "Vie valittu VPN-yhteys tiedostoon"
+
+#~ msgid "Manage Virtual Private Network Connections"
+#~ msgstr "Hallitse VPN-yhteyksiä"
+
+#~ msgid "VPN Connections"
+#~ msgstr "VPN-yhteydet"
+
+#~ msgid "40-bit WEP"
+#~ msgstr "40-bittinen WEP"
+
+#~ msgid "104-bit WEP"
+#~ msgstr "104-bittinen WEP"
+
+#~ msgid "WPA TKIP"
+#~ msgstr "WPA TKIP"
+
+#~ msgid "WPA CCMP"
+#~ msgstr "WPA COMP"
+
+#~ msgid "WPA Automatic"
+#~ msgstr "WPA (automaattinen)"
+
+#~ msgid "WPA2 TKIP"
+#~ msgstr "WPA2 TKIP"
+
+#~ msgid "WPA2 CCMP"
+#~ msgstr "WPA2 COMP"
+
+#~ msgid "WPA2 Automatic"
+#~ msgstr "WPA2 (automaattinen)"
+
+#~ msgid "none"
+#~ msgstr "ei mitään"
+
+#~ msgid "operation took too long"
+#~ msgstr "toimenpide kesti liian pitkään"
+
+#~ msgid "received data from wrong type of sender"
+#~ msgstr "vastaanotettiin tietoa väärän tyyppiseltä lähettäjältä"
+
+#~ msgid "received data from unexpected sender"
+#~ msgstr "vastaanotettiin tietoja odottamattomalta lähettäjältä"
+
+#~ msgid "too much data was sent over socket and some of it was lost"
+#~ msgstr "lähetettiin liian paljon tietoja pistekkeeseen ja osaa siitä hukkui"
+
+#~ msgid "WPA2 Enterprise"
+#~ msgstr "WPA2 Enterprise"
+
+#~ msgid "WPA Enterprise"
+#~ msgstr "WPA Enterprise"
+
+#~ msgid "LEAP"
+#~ msgstr "LEAP"
 
 #~ msgid "Passphrase for wireless network %s"
 #~ msgstr "Langattoman verkon %s tunnuslause"
