@@ -870,7 +870,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 		(object_class, PROP_PHASE1_PEAPLABEL,
 		 g_param_spec_string (NM_SETTING_WIRELESS_SECURITY_PHASE1_PEAPLABEL,
 						  "Phase1 PEAP label",
-						  "Phase2 PEAP label",
+						  "Phase1 PEAP label",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
