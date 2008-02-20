@@ -8,7 +8,7 @@ BUILT_SOURCES = \
 	nm-device-802-11-wireless-bindings.h \
 	nm-marshal.h \
 	nm-marshal.c \
-	nm-settings-connection-glue.h \
+	nm-exported-connection-glue.h \
 	nm-settings-glue.h \
 	nm-vpn-manager-bindings.h \
 	nm-vpn-connection-bindings.h \
@@ -111,8 +111,8 @@ nm-access-point-bindings.h: $(top_srcdir)/introspection/nm-access-point.xml
 nm-settings-glue.h: $(top_srcdir)/introspection/nm-settings.xml
 	dbus-binding-tool --prefix=nm_settings --mode=glib-server --output=nm-settings-glue.h $(top_srcdir)/introspection/nm-settings.xml
 
-nm-settings-connection-glue.h: $(top_srcdir)/introspection/nm-settings-connection.xml
-	dbus-binding-tool --prefix=nm_connection_settings --mode=glib-server --output=nm-settings-connection-glue.h $(top_srcdir)/introspection/nm-settings-connection.xml
+nm-exported-connection-glue.h: $(top_srcdir)/introspection/nm-exported-connection.xml
+	dbus-binding-tool --prefix=nm_exported_connection --mode=glib-server --output=nm-exported-connection-glue.h $(top_srcdir)/introspection/nm-exported-connection.xml
 
 nm-vpn-manager-bindings.h: $(top_srcdir)/introspection/nm-vpn-manager.xml
 	dbus-binding-tool --prefix=nm_vpn_manager --mode=glib-client --output=nm-vpn-manager-bindings.h $(top_srcdir)/introspection/nm-vpn-manager.xml

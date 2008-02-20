@@ -21,11 +21,25 @@
 
 typedef struct {
 	GHashTable *settings;
+
+	/* Type of the connection (system or user) */
+	NMConnectionScope scope;
+
+	/* D-Bus path of the connection, if any */
+	char *path;
 } NMConnectionPrivate;
 
 #define NM_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CONNECTION, NMConnectionPrivate))
 
 G_DEFINE_TYPE (NMConnection, nm_connection, G_TYPE_OBJECT)
+
+enum {
+	PROP_0,
+	PROP_SCOPE,
+	PROP_PATH,
+
+	LAST_PROP
+};
 
 enum {
 	SECRETS_UPDATED,
@@ -471,6 +485,48 @@ nm_connection_dump (NMConnection *connection)
 	g_hash_table_foreach (NM_CONNECTION_GET_PRIVATE (connection)->settings, dump_setting, NULL);
 }
 
+void
+nm_connection_set_scope (NMConnection *connection, NMConnectionScope scope)
+{
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+
+	NM_CONNECTION_GET_PRIVATE (connection)->scope = scope;
+}
+
+NMConnectionScope
+nm_connection_get_scope (NMConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NM_CONNECTION_SCOPE_UNKNOWN);
+
+	return NM_CONNECTION_GET_PRIVATE (connection)->scope;
+}
+
+void
+nm_connection_set_path (NMConnection *connection, const char *path)
+{
+	NMConnectionPrivate *priv;
+
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+
+	priv = NM_CONNECTION_GET_PRIVATE (connection);
+
+	if (priv->path) {
+		g_free (priv->path);
+		priv->path = NULL;
+	}
+
+	if (path)
+		priv->path = g_strdup (path);
+}
+
+const char *
+nm_connection_get_path (NMConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	return NM_CONNECTION_GET_PRIVATE (connection)->path;
+}
+
 NMConnection *
 nm_connection_new (void)
 {
@@ -522,7 +578,48 @@ finalize (GObject *object)
 	g_hash_table_destroy (priv->settings);
 	priv->settings = NULL;
 
+	g_free (priv->path);
+	priv->path = NULL;
+
 	G_OBJECT_CLASS (nm_connection_parent_class)->finalize (object);
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+		    const GValue *value, GParamSpec *pspec)
+{
+	NMConnection *connection = NM_CONNECTION (object);
+
+	switch (prop_id) {
+	case PROP_SCOPE:
+		nm_connection_set_scope (connection, g_value_get_uint (value));
+		break;
+	case PROP_PATH:
+		nm_connection_set_path (connection, g_value_get_string (value));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+get_property (GObject *object, guint prop_id,
+		    GValue *value, GParamSpec *pspec)
+{
+	NMConnection *connection = NM_CONNECTION (object);
+
+	switch (prop_id) {
+	case PROP_SCOPE:
+		g_value_set_uint (value, nm_connection_get_scope (connection));
+		break;
+	case PROP_PATH:
+		g_value_set_string (value, nm_connection_get_path (connection));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -533,7 +630,28 @@ nm_connection_class_init (NMConnectionClass *klass)
 	g_type_class_add_private (klass, sizeof (NMConnectionPrivate));
 
 	/* virtual methods */
+	object_class->set_property = set_property;
+	object_class->get_property = get_property;
 	object_class->finalize = finalize;
+
+	/* Properties */
+	g_object_class_install_property
+		(object_class, PROP_SCOPE,
+		 g_param_spec_uint (NM_CONNECTION_SCOPE,
+						    "Scope",
+						    "Scope",
+						    NM_CONNECTION_SCOPE_UNKNOWN,
+						    NM_CONNECTION_SCOPE_USER,
+						    NM_CONNECTION_SCOPE_UNKNOWN,
+						    G_PARAM_READWRITE));
+
+	g_object_class_install_property
+		(object_class, PROP_PATH,
+		 g_param_spec_string (NM_CONNECTION_PATH,
+						  "Path",
+						  "Path",
+						  NULL,
+						  G_PARAM_READWRITE));
 
 	/* Signals */
 	signals[SECRETS_UPDATED] =

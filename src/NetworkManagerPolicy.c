@@ -97,8 +97,8 @@ nm_policy_auto_get_best_device (NMPolicy *policy,
 		return NULL;
 
 	/* System connections first, then user connections */
-	connections = nm_manager_get_connections (policy->manager, NM_CONNECTION_TYPE_SYSTEM);
-	connections = g_slist_concat (connections, nm_manager_get_connections (policy->manager, NM_CONNECTION_TYPE_USER));
+	connections = nm_manager_get_connections (policy->manager, NM_CONNECTION_SCOPE_SYSTEM);
+	connections = g_slist_concat (connections, nm_manager_get_connections (policy->manager, NM_CONNECTION_SCOPE_USER));
 
 	/* Remove connections that are in the invalid list. */
 	elt = connections;
@@ -321,12 +321,12 @@ nm_policy_device_change_check (gpointer user_data)
 		 * don't switch.
 		 */
 		if (   old_connection
-		    && (nm_manager_get_connection_type (old_connection) == NM_CONNECTION_TYPE_SYSTEM)
-		    && (nm_manager_get_connection_type (connection) == NM_CONNECTION_TYPE_USER))
+		    && (nm_manager_get_connection_scope (old_connection) == NM_CONNECTION_SCOPE_SYSTEM)
+		    && (nm_manager_get_connection_scope (connection) == NM_CONNECTION_SCOPE_USER))
 			goto out;
 
-		if (   (nm_manager_get_connection_type (connection) == NM_CONNECTION_TYPE_SYSTEM)
-		    && (nm_manager_get_connection_type (old_connection) == NM_CONNECTION_TYPE_USER)) {
+		if (   (nm_manager_get_connection_scope (connection) == NM_CONNECTION_SCOPE_SYSTEM)
+		    && (nm_manager_get_connection_scope (old_connection) == NM_CONNECTION_SCOPE_USER)) {
 			do_switch = TRUE;
 			nm_info ("SWITCH: found system connection '%s (%s)', overrides"
 			         " current connection '%s (%s)'.",
@@ -524,7 +524,7 @@ device_removed (NMManager *manager, NMDevice *device, gpointer user_data)
 
 static void
 connections_added (NMManager *manager,
-                   NMConnectionType connection_type,
+                   NMConnectionScope scope,
                    gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
@@ -535,7 +535,7 @@ connections_added (NMManager *manager,
 static void
 connection_added (NMManager *manager,
                   NMConnection *connection,
-                  NMConnectionType connection_type,
+                  NMConnectionScope scope,
                   gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
@@ -546,7 +546,7 @@ connection_added (NMManager *manager,
 static void
 connection_updated (NMManager *manager,
                     NMConnection *connection,
-                    NMConnectionType connection_type,
+                    NMConnectionScope scope,
                     gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
@@ -560,7 +560,7 @@ connection_updated (NMManager *manager,
 static void
 connection_removed (NMManager *manager,
                     NMConnection *connection,
-                    NMConnectionType connection_type,
+                    NMConnectionScope scope,
                     gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;

@@ -1,5 +1,6 @@
 #include <NetworkManager.h>
 #include <nm-utils.h>
+#include <nm-setting-connection.h>
 #include "nm-settings.h"
 
 
@@ -87,85 +88,111 @@ nm_settings_class_init (NMSettingsClass *settings_class)
 }
 
 void
-nm_settings_signal_new_connection (NMSettings *settings, NMConnectionSettings *connection)
+nm_settings_signal_new_connection (NMSettings *settings, NMExportedConnection *connection)
 {
 	g_return_if_fail (NM_IS_SETTINGS (settings));
-	g_return_if_fail (NM_IS_CONNECTION_SETTINGS (connection));
+	g_return_if_fail (NM_IS_EXPORTED_CONNECTION (connection));
 
 	g_signal_emit (settings, settings_signals[S_NEW_CONNECTION], 0, connection);
 }
 
 /*
- * NMConnectionSettings implementation
+ * NMExportedConnection implementation
  */
 
-static gboolean impl_connection_settings_get_id (NMConnectionSettings *connection,
+static gboolean impl_exported_connection_get_id (NMExportedConnection *connection,
 						 gchar **id,
 						 GError **error);
-static gboolean impl_connection_settings_get_settings (NMConnectionSettings *connection,
+static gboolean impl_exported_connection_get_settings (NMExportedConnection *connection,
 						       GHashTable **settings,
 						       GError **error);
-static void impl_connection_settings_get_secrets (NMConnectionSettings *connection,
+static void impl_exported_connection_get_secrets (NMExportedConnection *connection,
 						      const gchar *setting_name,
 						      const gchar **hints,
 						      gboolean request_new,
 						      DBusGMethodInvocation *context);
 
-#include "nm-settings-connection-glue.h"
+#include "nm-exported-connection-glue.h"
 
-#define CONNECTION_SETTINGS_CLASS(o) (NM_CONNECTION_SETTINGS_CLASS (G_OBJECT_GET_CLASS (o)))
+#define EXPORTED_CONNECTION_CLASS(o) (NM_EXPORTED_CONNECTION_CLASS (G_OBJECT_GET_CLASS (o)))
 
-G_DEFINE_TYPE (NMConnectionSettings, nm_connection_settings, G_TYPE_OBJECT)
+G_DEFINE_TYPE (NMExportedConnection, nm_exported_connection, G_TYPE_OBJECT)
 
 enum {
-	CS_UPDATED,
-	CS_REMOVED,
+	EC_UPDATED,
+	EC_REMOVED,
 
-	CS_LAST_SIGNAL
+	EC_LAST_SIGNAL
 };
 
-static guint connection_signals[CS_LAST_SIGNAL] = { 0 };
+static guint connection_signals[EC_LAST_SIGNAL] = { 0 };
+
+enum {
+	PROP_0,
+	PROP_CONNECTION,
+
+	LAST_PROP
+};
+
+typedef struct {
+	NMConnection *wrapped;
+} NMExportedConnectionPrivate;
+
+#define NM_EXPORTED_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
+                                               NM_TYPE_EXPORTED_CONNECTION, \
+                                               NMExportedConnectionPrivate))
+
 
 static gboolean
-impl_connection_settings_get_id (NMConnectionSettings *connection,
-				 gchar **id,
-				 GError **error)
+impl_exported_connection_get_id (NMExportedConnection *connection,
+                                 gchar **id,
+                                 GError **error)
 {
-	g_return_val_if_fail (NM_IS_CONNECTION_SETTINGS (connection), FALSE);
+	NMExportedConnectionPrivate *priv;
 
-	if (!CONNECTION_SETTINGS_CLASS (connection)->get_id) {
-		g_set_error (error, NM_SETTINGS_ERROR, 1,
-		             "%s.%d - Missing implementation for ConnectionSettings::get_id.",
-		             __FILE__, __LINE__);
-		return FALSE;
+	g_return_val_if_fail (NM_IS_EXPORTED_CONNECTION (connection), FALSE);
+
+	priv = NM_EXPORTED_CONNECTION_GET_PRIVATE (connection);
+	if (!EXPORTED_CONNECTION_CLASS (connection)->get_id) {
+		NMSettingConnection *s_con;
+
+		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (priv->wrapped, NM_TYPE_SETTING_CONNECTION));
+		if (!s_con || !s_con->id) {
+			g_set_error (error, NM_SETTINGS_ERROR, 1,
+			             "%s.%d - Invalid connection.",
+			             __FILE__, __LINE__);
+			return FALSE;
+		}
+
+		*id = g_strdup (s_con->id);
+	} else {
+		*id = EXPORTED_CONNECTION_CLASS (connection)->get_id (connection);
 	}
-
-	*id = CONNECTION_SETTINGS_CLASS (connection)->get_id (connection);
 
 	return TRUE;
 }
 
 static gboolean
-impl_connection_settings_get_settings (NMConnectionSettings *connection,
+impl_exported_connection_get_settings (NMExportedConnection *connection,
 				       GHashTable **settings,
 				       GError **error)
 {
-	g_return_val_if_fail (NM_IS_CONNECTION_SETTINGS (connection), FALSE);
+	NMExportedConnectionPrivate *priv;
 
-	if (!CONNECTION_SETTINGS_CLASS (connection)->get_settings) {
-		g_set_error (error, NM_SETTINGS_ERROR, 1,
-		             "%s.%d - Missing implementation for ConnectionSettings::get_settings.",
-		             __FILE__, __LINE__);
-		return FALSE;
-	}
+	g_return_val_if_fail (NM_IS_EXPORTED_CONNECTION (connection), FALSE);
 
-	*settings = CONNECTION_SETTINGS_CLASS (connection)->get_settings (connection);
+	priv = NM_EXPORTED_CONNECTION_GET_PRIVATE (connection);
+
+	if (!EXPORTED_CONNECTION_CLASS (connection)->get_settings)
+		*settings = nm_connection_to_hash (priv->wrapped);
+	else
+		*settings = EXPORTED_CONNECTION_CLASS (connection)->get_settings (connection);
 
 	return TRUE;
 }
 
 static void
-impl_connection_settings_get_secrets (NMConnectionSettings *connection,
+impl_exported_connection_get_secrets (NMExportedConnection *connection,
                                       const gchar *setting_name,
                                       const gchar **hints,
                                       gboolean request_new,
@@ -173,7 +200,7 @@ impl_connection_settings_get_secrets (NMConnectionSettings *connection,
 {
 	GError *error = NULL;
 
-	if (!NM_IS_CONNECTION_SETTINGS (connection)) {
+	if (!NM_IS_EXPORTED_CONNECTION (connection)) {
 		g_set_error (&error, NM_SETTINGS_ERROR, 1,
 		             "%s.%d - Invalid connection in ConnectionSettings::get_secrets.",
 		             __FILE__, __LINE__);
@@ -182,7 +209,7 @@ impl_connection_settings_get_secrets (NMConnectionSettings *connection,
 		return;
 	}
 
-	if (!CONNECTION_SETTINGS_CLASS (connection)->get_secrets) {
+	if (!EXPORTED_CONNECTION_CLASS (connection)->get_secrets) {
 		g_set_error (&error, NM_SETTINGS_ERROR, 1,
 		             "%s.%d - Missing implementation for ConnectionSettings::get_secrets.",
 		             __FILE__, __LINE__);
@@ -191,109 +218,161 @@ impl_connection_settings_get_secrets (NMConnectionSettings *connection,
 		return;
 	}
 
-	CONNECTION_SETTINGS_CLASS (connection)->get_secrets (connection, setting_name, hints, request_new, context);
+	EXPORTED_CONNECTION_CLASS (connection)->get_secrets (connection, setting_name, hints, request_new, context);
 }
 
 static void
-nm_connection_settings_init (NMConnectionSettings *connection)
+nm_exported_connection_init (NMExportedConnection *connection)
 {
-	static guint32 cs_counter = 0;
-
-	connection->dbus_path = g_strdup_printf ("%s/%u",
-		                                     NM_DBUS_PATH_SETTINGS,
-		                                     cs_counter++);
 }
 
 static void
-nm_connection_settings_dispose (GObject *object)
+set_property (GObject *object, guint prop_id,
+		    const GValue *value, GParamSpec *pspec)
 {
-	NMConnectionSettings * self = NM_CONNECTION_SETTINGS (object);
+	NMExportedConnectionPrivate *priv = NM_EXPORTED_CONNECTION_GET_PRIVATE (object);
 
-	if (self->dbus_path) {
-		g_free (self->dbus_path);
-		self->dbus_path = NULL;
+	switch (prop_id) {
+	case PROP_CONNECTION:
+		if (priv->wrapped)
+			g_object_unref (priv->wrapped);
+		priv->wrapped = g_value_get_object (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+get_property (GObject *object, guint prop_id,
+		    GValue *value, GParamSpec *pspec)
+{
+	NMExportedConnection *exported = NM_EXPORTED_CONNECTION (object);
+
+	switch (prop_id) {
+	case PROP_CONNECTION:
+		g_value_set_object (value, nm_exported_connection_get_connection (exported));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+nm_exported_connection_dispose (GObject *object)
+{
+	NMExportedConnectionPrivate *priv = NM_EXPORTED_CONNECTION_GET_PRIVATE (object);
+
+	if (priv->wrapped) {
+		g_object_unref (priv->wrapped);
+		priv->wrapped = NULL;
 	}
 
-	G_OBJECT_CLASS (nm_connection_settings_parent_class)->dispose (object);
-}
-
-static void
-nm_connection_settings_finalize (GObject *object)
-{
-	G_OBJECT_CLASS (nm_connection_settings_parent_class)->finalize (object);
+	G_OBJECT_CLASS (nm_exported_connection_parent_class)->dispose (object);
 }
 
 #define DBUS_TYPE_G_STRING_VARIANT_HASHTABLE (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE))
 #define DBUS_TYPE_G_DICT_OF_DICTS (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, DBUS_TYPE_G_STRING_VARIANT_HASHTABLE))
 
 static void
-nm_connection_settings_class_init (NMConnectionSettingsClass *connection_settings_class)
+nm_exported_connection_class_init (NMExportedConnectionClass *exported_connection_class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (connection_settings_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (exported_connection_class);
+
+	g_type_class_add_private (object_class, sizeof (NMExportedConnectionPrivate));
 
 	/* virtual methods */
-	object_class->finalize = nm_connection_settings_finalize;
-	object_class->dispose = nm_connection_settings_dispose;
+	object_class->set_property = set_property;
+	object_class->get_property = get_property;
+	object_class->dispose = nm_exported_connection_dispose;
 
-	connection_settings_class->get_id = NULL;
-	connection_settings_class->get_settings = NULL;
-	connection_settings_class->get_secrets = NULL;
+	exported_connection_class->get_id = NULL;
+	exported_connection_class->get_settings = NULL;
+	exported_connection_class->get_secrets = NULL;
+
+	/* Properties */
+	g_object_class_install_property
+		(object_class, PROP_CONNECTION,
+		 g_param_spec_object (NM_EXPORTED_CONNECTION_CONNECTION,
+						      "Connection",
+						      "Wrapped connection",
+						      NM_TYPE_CONNECTION,
+						      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	/* signals */
-	connection_signals[CS_UPDATED] =
+	connection_signals[EC_UPDATED] =
 		g_signal_new ("updated",
 			      G_OBJECT_CLASS_TYPE (object_class),
 			      G_SIGNAL_RUN_FIRST,
-			      G_STRUCT_OFFSET (NMConnectionSettingsClass, updated),
+			      G_STRUCT_OFFSET (NMExportedConnectionClass, updated),
 			      NULL, NULL,
 			      g_cclosure_marshal_VOID__POINTER,
 			      G_TYPE_NONE, 1,
 			      DBUS_TYPE_G_DICT_OF_DICTS);
-	connection_signals[CS_REMOVED] =
+
+	connection_signals[EC_REMOVED] =
 		g_signal_new ("removed",
 			      G_OBJECT_CLASS_TYPE (object_class),
 			      G_SIGNAL_RUN_FIRST,
-			      G_STRUCT_OFFSET (NMConnectionSettingsClass, removed),
+			      G_STRUCT_OFFSET (NMExportedConnectionClass, removed),
 			      NULL, NULL,
 			      g_cclosure_marshal_VOID__VOID,
 			      G_TYPE_NONE, 0);
 
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (connection_settings_class),
-					 &dbus_glib_nm_connection_settings_object_info);
+	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (exported_connection_class),
+	                                 &dbus_glib_nm_exported_connection_object_info);
+}
+
+NMConnection *
+nm_exported_connection_get_connection (NMExportedConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_EXPORTED_CONNECTION (connection), NULL);
+
+	return NM_EXPORTED_CONNECTION_GET_PRIVATE (connection)->wrapped;
 }
 
 void
-nm_connection_settings_register_object (NMConnectionSettings *connection,
+nm_exported_connection_register_object (NMExportedConnection *connection,
+                                        NMConnectionScope scope,
                                         DBusGConnection *dbus_connection)
 {
-	g_return_if_fail (NM_IS_CONNECTION_SETTINGS (connection));
+	NMExportedConnectionPrivate *priv;
+	static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
+	static guint32 ec_counter = 0;
+	char *path;
+
+	g_return_if_fail (NM_IS_EXPORTED_CONNECTION (connection));
 	g_return_if_fail (dbus_connection != NULL);
 
+	priv = NM_EXPORTED_CONNECTION_GET_PRIVATE (connection);
+
+	g_static_mutex_lock (&mutex);
+	path = g_strdup_printf ("%s/%u", NM_DBUS_PATH_SETTINGS, ec_counter++);
+	g_static_mutex_unlock (&mutex);
+
+	nm_connection_set_path (priv->wrapped, path);
+	nm_connection_set_scope (priv->wrapped, scope);
+
 	dbus_g_connection_register_g_object (dbus_connection,
-	                                     connection->dbus_path,
+	                                     path,
 	                                     G_OBJECT (connection));
-}
-
-const char *
-nm_connection_settings_get_dbus_object_path (NMConnectionSettings *connection)
-{
-	g_return_val_if_fail (NM_IS_CONNECTION_SETTINGS (connection), NULL);
-
-	return connection->dbus_path;
-} 
-
-void
-nm_connection_settings_signal_updated (NMConnectionSettings *connection, GHashTable *settings)
-{
-	g_return_if_fail (NM_IS_CONNECTION_SETTINGS (connection));
-
-	g_signal_emit (connection, connection_signals[CS_UPDATED], 0, settings);
+	g_free (path);
 }
 
 void
-nm_connection_settings_signal_removed (NMConnectionSettings *connection)
+nm_exported_connection_signal_updated (NMExportedConnection *connection, GHashTable *settings)
 {
-	g_return_if_fail (NM_IS_CONNECTION_SETTINGS (connection));
+	g_return_if_fail (NM_IS_EXPORTED_CONNECTION (connection));
 
-	g_signal_emit (connection, connection_signals[CS_REMOVED], 0);
+	g_signal_emit (connection, connection_signals[EC_UPDATED], 0, settings);
+}
+
+void
+nm_exported_connection_signal_removed (NMExportedConnection *connection)
+{
+	g_return_if_fail (NM_IS_EXPORTED_CONNECTION (connection));
+
+	g_signal_emit (connection, connection_signals[EC_REMOVED], 0);
 }

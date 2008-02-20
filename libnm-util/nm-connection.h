@@ -16,6 +16,15 @@ G_BEGIN_DECLS
 #define NM_IS_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_CONNECTION))
 #define NM_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_CONNECTION, NMConnectionClass))
 
+typedef enum {
+	NM_CONNECTION_SCOPE_UNKNOWN = 0,
+	NM_CONNECTION_SCOPE_SYSTEM,
+	NM_CONNECTION_SCOPE_USER,
+} NMConnectionScope;
+
+#define NM_CONNECTION_SCOPE "scope"
+#define NM_CONNECTION_PATH "path"
+
 typedef struct {
 	GObject parent;
 } NMConnection;
@@ -56,6 +65,16 @@ void          nm_connection_clear_secrets (NMConnection *connection);
 void          nm_connection_update_secrets (NMConnection *connection,
                                             const char *setting_name,
                                             GHashTable *secrets);
+
+void             nm_connection_set_scope (NMConnection *connection,
+                                                 NMConnectionScope scope);
+
+NMConnectionScope nm_connection_get_scope (NMConnection *connection);
+
+void             nm_connection_set_path (NMConnection *connection,
+                                         const char *path);
+
+const char *     nm_connection_get_path (NMConnection *connection);
 
 void          nm_connection_for_each_setting_value (NMConnection *connection,
 										  NMSettingValueIterFn func,

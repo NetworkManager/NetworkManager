@@ -22,12 +22,6 @@
 #define NM_MANAGER_CONNECTION_TYPE_TAG "service-type"
 #define NM_MANAGER_CONNECTION_SECRETS_PROXY_TAG "dbus-secrets-proxy"
 
-typedef enum {
-	NM_CONNECTION_TYPE_UNKNOWN = 0,
-	NM_CONNECTION_TYPE_SYSTEM,
-	NM_CONNECTION_TYPE_USER,
-} NMConnectionType;
-
 typedef struct {
 	GObject parent;
 } NMManager;
@@ -41,19 +35,19 @@ typedef struct {
 	void (*state_change) (NMManager *manager, guint state);
 	void (*properties_changed) (NMManager *manager, GHashTable *properties);
 
-	void (*connections_added) (NMManager *manager, NMConnectionType type);
+	void (*connections_added) (NMManager *manager, NMConnectionScope scope);
 
 	void (*connection_added) (NMManager *manager,
 				  NMConnection *connection,
-				  NMConnectionType connection_type);
+				  NMConnectionScope scope);
 
 	void (*connection_updated) (NMManager *manager,
 				  NMConnection *connection,
-				  NMConnectionType connection_type);
+				  NMConnectionScope scope);
 
 	void (*connection_removed) (NMManager *manager,
 				    NMConnection *connection,
-				    NMConnectionType connection_type);
+				    NMConnectionScope scope);
 } NMManagerClass;
 
 GType nm_manager_get_type (void);
@@ -90,23 +84,23 @@ void nm_manager_sleep (NMManager *manager, gboolean sleep);
 
 /* Connections */
 
-GSList *nm_manager_get_connections    (NMManager *manager, NMConnectionType type);
+GSList *nm_manager_get_connections    (NMManager *manager, NMConnectionScope scope);
 
 NMConnection * nm_manager_get_connection_by_object_path (NMManager *manager,
-                                                         NMConnectionType type,
+                                                         NMConnectionScope scope,
                                                          const char *path);
 
-static inline NMConnectionType
-nm_manager_get_connection_type (NMConnection *connection)
+static inline NMConnectionScope
+nm_manager_get_connection_scope (NMConnection *connection)
 {
-	NMConnectionType type;
+	NMConnectionScope scope;
 
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), NM_CONNECTION_TYPE_UNKNOWN);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NM_CONNECTION_SCOPE_UNKNOWN);
 
-	type = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_TYPE_TAG));
-	if (type != NM_CONNECTION_TYPE_USER && type != NM_CONNECTION_TYPE_SYSTEM)
-		type = NM_CONNECTION_TYPE_UNKNOWN;
-	return type;
+	scope = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_TYPE_TAG));
+	if (scope != NM_CONNECTION_SCOPE_USER && scope != NM_CONNECTION_SCOPE_SYSTEM)
+		scope = NM_CONNECTION_SCOPE_UNKNOWN;
+	return scope;
 }
 
 #endif /* NM_MANAGER_H */

@@ -1,3 +1,17 @@
+2008-02-20  Dan Williams  <dcbw@redhat.com>
+
+	* Global rename of NMConnectionSettings -> NMExportedConnection to cut down
+		on confusing names
+
+	* Add 'path' and 'scope' properties to NMConnection since both NM and the
+		applet were having to hack this in anyway.  Remove the 'path' stuff from
+		NMExportedConnection
+
+	* Internally rename NMConnectionType -> NMConnectionScope
+
+	* Provide default implementations of the 'get_id' and 'get_settings' methods
+		of NMExportedConnection
+
 2008-02-15  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-11-wireless.c

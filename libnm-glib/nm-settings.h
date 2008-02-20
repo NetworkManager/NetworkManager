@@ -1,6 +1,6 @@
 
-#ifndef NM_SETTINGS_H
-#define NM_SETTINGS_H 1
+#ifndef __NM_SETTINGS_H__
+#define __NM_SETTINGS_H__
 
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
@@ -10,46 +10,48 @@ G_BEGIN_DECLS
 #define NM_SETTINGS_ERROR nm_settings_error_quark ()
 GQuark nm_settings_error_quark (void);
 
-#define NM_TYPE_CONNECTION_SETTINGS            (nm_connection_settings_get_type ())
-#define NM_CONNECTION_SETTINGS(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_CONNECTION_SETTINGS, NMConnectionSettings))
-#define NM_CONNECTION_SETTINGS_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_CONNECTION_SETTINGS, NMConnectionSettingsClass))
-#define NM_IS_CONNECTION_SETTINGS(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_CONNECTION_SETTINGS))
-#define NM_IS_CONNECTION_SETTINGS_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_CONNECTION_SETTINGS))
-#define NM_CONNECTION_SETTINGS_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_CONNECTION_SETTINGS, NMConnectionSettingsClass))
+#define NM_TYPE_EXPORTED_CONNECTION            (nm_exported_connection_get_type ())
+#define NM_EXPORTED_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_EXPORTED_CONNECTION, NMExportedConnection))
+#define NM_EXPORTED_CONNECTION_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_EXPORTED_CONNECTION, NMExportedConnectionClass))
+#define NM_IS_EXPORTED_CONNECTION(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_EXPORTED_CONNECTION))
+#define NM_IS_EXPORTED_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_EXPORTED_CONNECTION))
+#define NM_EXPORTED_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_EXPORTED_CONNECTION, NMExportedConnectionClass))
+
+#define NM_EXPORTED_CONNECTION_CONNECTION "connection"
 
 typedef struct {
 	GObject parent;
-
-	/* private */
-	char * dbus_path;
-} NMConnectionSettings;
+} NMExportedConnection;
 
 typedef struct {
 	GObjectClass parent_class;
 
 	/* virtual methods */
-	gchar * (* get_id) (NMConnectionSettings *connection);
-	GHashTable * (* get_settings) (NMConnectionSettings *connection);
-	void         (* get_secrets) (NMConnectionSettings *connection,
+	gchar * (* get_id) (NMExportedConnection *connection);
+	GHashTable * (* get_settings) (NMExportedConnection *connection);
+	void         (* get_secrets) (NMExportedConnection *connection,
 	                              const gchar *setting_name,
 	                              const gchar **hints,
 	                              gboolean request_new,
 	                              DBusGMethodInvocation *context);
 
 	/* signals */
-	void (* updated) (NMConnectionSettings *connection, GHashTable *settings);
-	void (* removed) (NMConnectionSettings *connection);
-} NMConnectionSettingsClass;
+	void (* updated) (NMExportedConnection *connection, GHashTable *settings);
+	void (* removed) (NMExportedConnection *connection);
+} NMExportedConnectionClass;
 
-GType  nm_connection_settings_get_type (void);
-void
-nm_connection_settings_register_object (NMConnectionSettings *connection,
-                                        DBusGConnection *dbus_connection);
-const char *nm_connection_settings_get_dbus_object_path (NMConnectionSettings *connection);
+GType nm_exported_connection_get_type (void);
+
+void nm_exported_connection_register_object (NMExportedConnection *connection,
+                                             NMConnectionScope scope,
+                                             DBusGConnection *dbus_connection);
+
+NMConnection *nm_exported_connection_get_connection (NMExportedConnection *connection);
+
+void nm_exported_connection_signal_updated (NMExportedConnection *connection, GHashTable *settings);
+void nm_exported_connection_signal_removed (NMExportedConnection *connection);
 
 
-void   nm_connection_settings_signal_updated (NMConnectionSettings *connection, GHashTable *settings);
-void   nm_connection_settings_signal_removed (NMConnectionSettings *connection);
 
 #define NM_TYPE_SETTINGS            (nm_settings_get_type ())
 #define NM_SETTINGS(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTINGS, NMSettings))
@@ -69,12 +71,12 @@ typedef struct {
 	GPtrArray * (* list_connections) (NMSettings *settings);
 
 	/* signals */
-	void (* new_connection) (NMSettings *settings, NMConnectionSettings *connection);
+	void (* new_connection) (NMSettings *settings, NMExportedConnection *connection);
 } NMSettingsClass;
 
 GType nm_settings_get_type (void);
 
-void  nm_settings_signal_new_connection (NMSettings *settings, NMConnectionSettings *connection);
+void  nm_settings_signal_new_connection (NMSettings *settings, NMExportedConnection *connection);
 
 G_END_DECLS
 

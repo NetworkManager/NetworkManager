@@ -27,35 +27,32 @@
 
 #define NM_SS_PLUGIN_TAG "nm-ss-plugin"
 
-typedef struct _NMSysconfigConnectionSettings NMSysconfigConnectionSettings;
-typedef struct _NMSysconfigConnectionSettingsClass NMSysconfigConnectionSettingsClass;
+typedef struct _NMSysconfigExportedConnection NMSysconfigExportedConnection;
+typedef struct _NMSysconfigExportedConnectionClass NMSysconfigExportedConnectionClass;
 
 /*
- * NMSysconfigConnectionSettings
+ * NMSysconfigExportedConnection
  */
 
-#define NM_TYPE_SYSCONFIG_CONNECTION_SETTINGS            (nm_sysconfig_connection_settings_get_type ())
-#define NM_SYSCONFIG_CONNECTION_SETTINGS(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SYSCONFIG_CONNECTION_SETTINGS, NMSysconfigConnectionSettings))
-#define NM_SYSCONFIG_CONNECTION_SETTINGS_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_SYSCONFIG_CONNECTION_SETTINGS, NMSysconfigConnectionSettingsClass))
-#define NM_IS_SYSCONFIG_CONNECTION_SETTINGS(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_SYSCONFIG_CONNECTION_SETTINGS))
-#define NM_IS_SYSCONFIG_CONNECTION_SETTINGS_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_SYSCONFIG_CONNECTION_SETTINGS))
-#define NM_SYSCONFIG_CONNECTION_SETTINGS_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SYSCONFIG_CONNECTION_SETTINGS, NMSysconfigConnectionSettingsClass))
+#define NM_TYPE_SYSCONFIG_EXPORTED_CONNECTION            (nm_sysconfig_exported_connection_get_type ())
+#define NM_SYSCONFIG_EXPORTED_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SYSCONFIG_EXPORTED_CONNECTION, NMSysconfigExportedConnection))
+#define NM_SYSCONFIG_EXPORTED_CONNECTION_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_SYSCONFIG_EXPORTED_CONNECTION, NMSysconfigExportedConnectionClass))
+#define NM_IS_SYSCONFIG_EXPORTED_CONNECTION(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_SYSCONFIG_EXPORTED_CONNECTION))
+#define NM_IS_SYSCONFIG_EXPORTED_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_SYSCONFIG_EXPORTED_CONNECTION))
+#define NM_SYSCONFIG_EXPORTED_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SYSCONFIG_EXPORTED_CONNECTION, NMSysconfigExportedConnectionClass))
 
-struct _NMSysconfigConnectionSettings
+struct _NMSysconfigExportedConnection
 {
-    NMConnectionSettings parent_instance;
-
-    char *id;
-    NMConnection *connection;
+    NMExportedConnection parent_instance;
 };
 
-struct _NMSysconfigConnectionSettingsClass
+struct _NMSysconfigExportedConnectionClass
 {
-    NMConnectionSettingsClass parent_class;
+    NMExportedConnectionClass parent_class;
 };
 
-GType nm_sysconfig_connection_settings_get_type (void);
-NMSysconfigConnectionSettings *nm_sysconfig_connection_settings_new (NMConnection *connection,
+GType nm_sysconfig_exported_connection_get_type (void);
+NMSysconfigExportedConnection *nm_sysconfig_exported_connection_new (NMConnection *connection,
                                                                      DBusGConnection *g_conn);
 
 /*

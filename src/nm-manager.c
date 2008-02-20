@@ -41,19 +41,19 @@ static gboolean impl_manager_legacy_state (NMManager *manager, guint32 *state, G
 
 #include "nm-manager-glue.h"
 
-static void nm_manager_connections_destroy (NMManager *manager, NMConnectionType type);
+static void nm_manager_connections_destroy (NMManager *manager, NMConnectionScope scope);
 static void manager_set_wireless_enabled (NMManager *manager, gboolean enabled);
 
 static void connection_added_default_handler (NMManager *manager,
 									 NMConnection *connection,
-									 NMConnectionType connection_type);
+									 NMConnectionScope scope);
 
 #define SSD_POKE_INTERVAL 120000
 
 typedef struct {
 	DBusGMethodInvocation *context;
 	NMDevice *device;
-	NMConnectionType connection_type;
+	NMConnectionScope scope;
 	char *connection_path;
 	char *specific_object_path;
 	guint timeout_id;
@@ -249,11 +249,11 @@ finalize (GObject *object)
 	while (g_slist_length (priv->devices))
 		nm_manager_remove_device (manager, NM_DEVICE (priv->devices->data), TRUE);
 
-	nm_manager_connections_destroy (manager, NM_CONNECTION_TYPE_USER);
+	nm_manager_connections_destroy (manager, NM_CONNECTION_SCOPE_USER);
 	g_hash_table_destroy (priv->user_connections);
 	priv->user_connections = NULL;
 
-	nm_manager_connections_destroy (manager, NM_CONNECTION_TYPE_SYSTEM);
+	nm_manager_connections_destroy (manager, NM_CONNECTION_SCOPE_SYSTEM);
 	g_hash_table_destroy (priv->system_connections);
 	priv->system_connections = NULL;
 
@@ -431,17 +431,17 @@ nm_manager_class_init (NMManagerClass *manager_class)
 #define DBUS_TYPE_G_STRING_VARIANT_HASHTABLE (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE))
 #define DBUS_TYPE_G_DICT_OF_DICTS (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, DBUS_TYPE_G_STRING_VARIANT_HASHTABLE))
 
-static NMConnectionType
+static NMConnectionScope
 get_type_for_proxy (DBusGProxy *proxy)
 {
 	const char *bus_name = dbus_g_proxy_get_bus_name (proxy);
 
 	if (strcmp (bus_name, NM_DBUS_SERVICE_USER_SETTINGS) == 0)
-		return NM_CONNECTION_TYPE_USER;
+		return NM_CONNECTION_SCOPE_USER;
 	else if (strcmp (bus_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS) == 0)
-		return NM_CONNECTION_TYPE_SYSTEM;
+		return NM_CONNECTION_SCOPE_SYSTEM;
 
-	return NM_CONNECTION_TYPE_UNKNOWN;
+	return NM_CONNECTION_SCOPE_UNKNOWN;
 }
 
 typedef struct GetSettingsInfo {
@@ -493,7 +493,7 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 	GError *err = NULL;
 	GHashTable *settings = NULL;
 	NMConnection *connection;
-	NMConnectionType type;
+	NMConnectionScope scope;
 	NMManager *manager;
 
 	g_return_if_fail (info != NULL);
@@ -527,14 +527,14 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 		                        (GDestroyNotify) g_object_unref);
 
 		priv = NM_MANAGER_GET_PRIVATE (manager);
-		type = get_type_for_proxy (proxy);
-		switch (type) {
-			case NM_CONNECTION_TYPE_USER:
+		scope = get_type_for_proxy (proxy);
+		switch (scope) {
+			case NM_CONNECTION_SCOPE_USER:
 				g_hash_table_insert (priv->user_connections,
 				                     g_strdup (path),
 				                     connection);
 				break;
-			case NM_CONNECTION_TYPE_SYSTEM:
+			case NM_CONNECTION_SCOPE_SYSTEM:
 				g_hash_table_insert (priv->system_connections,
 				                     g_strdup (path),
 				                     connection);
@@ -547,13 +547,13 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 
 		g_object_set_data (G_OBJECT (connection),
 		                   NM_MANAGER_CONNECTION_TYPE_TAG,
-		                   GUINT_TO_POINTER (type));
+		                   GUINT_TO_POINTER (scope));
 
 		/* If the connection-added signal is supposed to be batched, don't
 		 * emit the single connection-added here.
 		 */
 		if (!info->calls)
-			g_signal_emit (manager, signals[CONNECTION_ADDED], 0, connection, type);
+			g_signal_emit (manager, signals[CONNECTION_ADDED], 0, connection, scope);
 	} else {
 		// FIXME: merge settings? or just replace?
 		nm_warning ("%s (#%d): implement merge settings", __func__, __LINE__);
@@ -580,11 +580,11 @@ get_connection_for_proxy (NMManager *manager,
 		*out_path = path;
 
 	switch (get_type_for_proxy (proxy)) {
-		case NM_CONNECTION_TYPE_USER:
+		case NM_CONNECTION_SCOPE_USER:
 			*out_hash = priv->user_connections;
 			connection = g_hash_table_lookup (priv->user_connections, path);
 			break;
-		case NM_CONNECTION_TYPE_SYSTEM:
+		case NM_CONNECTION_SCOPE_SYSTEM:
 			*out_hash = priv->system_connections;
 			connection = g_hash_table_lookup (priv->system_connections, path);
 			break;
@@ -602,7 +602,7 @@ remove_connection (NMManager *manager,
                    GHashTable *hash,
                    const char *path)
 {
-	NMConnectionType type;
+	NMConnectionScope scope;
 
 	/* Destroys the connection, then associated DBusGProxy due to the
 	 * weak reference notify function placed on the connection when it
@@ -610,8 +610,8 @@ remove_connection (NMManager *manager,
 	 */
 	g_object_ref (connection);
 	g_hash_table_remove (hash, path);
-	type = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_TYPE_TAG));
-	g_signal_emit (manager, signals[CONNECTION_REMOVED], 0, connection, type);
+	scope = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_TYPE_TAG));
+	g_signal_emit (manager, signals[CONNECTION_REMOVED], 0, connection, scope);
 	g_object_unref (connection);
 }
 
@@ -652,11 +652,11 @@ connection_updated_cb (DBusGProxy *proxy, GHashTable *settings, gpointer user_da
 
 	valid = nm_connection_replace_settings (old_connection, settings);
 	if (valid) {
-		NMConnectionType type;
+		NMConnectionScope scope;
 
-		type = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (old_connection),
+		scope = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (old_connection),
 		                                            NM_MANAGER_CONNECTION_TYPE_TAG));
-		g_signal_emit (manager, signals[CONNECTION_UPDATED], 0, old_connection, type);
+		g_signal_emit (manager, signals[CONNECTION_UPDATED], 0, old_connection, scope);
 	} else {
 		remove_connection (manager, old_connection, hash, path);
 	}
@@ -771,7 +771,7 @@ new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
 
 static void
 query_connections (NMManager *manager,
-                   NMConnectionType type)
+                   NMConnectionScope scope)
 {
 	NMManagerPrivate *priv;
 	DBusGProxyCall *call;
@@ -781,14 +781,14 @@ query_connections (NMManager *manager,
 	g_return_if_fail (NM_IS_MANAGER (manager));
 
 	priv = NM_MANAGER_GET_PRIVATE (manager);
-	if (type == NM_CONNECTION_TYPE_USER) {
+	if (scope == NM_CONNECTION_SCOPE_USER) {
 		proxy = &priv->user_proxy;
 		service = NM_DBUS_SERVICE_USER_SETTINGS;
-	} else if (type == NM_CONNECTION_TYPE_SYSTEM) {
+	} else if (scope == NM_CONNECTION_SCOPE_SYSTEM) {
 		proxy = &priv->system_proxy;
 		service = NM_DBUS_SERVICE_SYSTEM_SETTINGS;
 	} else {
-		nm_warning ("Unknown NMConnectionType %d", type);
+		nm_warning ("Unknown NMConnectionScope %d", scope);
 		return;
 	}
 
@@ -839,10 +839,10 @@ nm_manager_name_owner_changed (NMDBusManager *mgr,
 	if (strcmp (name, NM_DBUS_SERVICE_USER_SETTINGS) == 0) {
 		if (!old_owner_good && new_owner_good) {
 			/* User Settings service appeared, update stuff */
-			query_connections (manager, NM_CONNECTION_TYPE_USER);
+			query_connections (manager, NM_CONNECTION_SCOPE_USER);
 		} else {
 			/* User Settings service disappeared, throw them away (?) */
-			nm_manager_connections_destroy (manager, NM_CONNECTION_TYPE_USER);
+			nm_manager_connections_destroy (manager, NM_CONNECTION_SCOPE_USER);
 		}
 	} else if (strcmp (name, NM_DBUS_SERVICE_SYSTEM_SETTINGS) == 0) {
 		if (!old_owner_good && new_owner_good) {
@@ -852,10 +852,10 @@ nm_manager_name_owner_changed (NMDBusManager *mgr,
 			}
 
 			/* System Settings service appeared, update stuff */
-			query_connections (manager, NM_CONNECTION_TYPE_SYSTEM);
+			query_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
 		} else {
 			/* System Settings service disappeared, throw them away (?) */
-			nm_manager_connections_destroy (manager, NM_CONNECTION_TYPE_SYSTEM);
+			nm_manager_connections_destroy (manager, NM_CONNECTION_SCOPE_SYSTEM);
 
 			if (priv->poke_id)
 				g_source_remove (priv->poke_id);
@@ -905,7 +905,7 @@ initial_get_connections (gpointer user_data)
 
 	if (nm_dbus_manager_name_has_owner (nm_dbus_manager_get (),
 	                                    NM_DBUS_SERVICE_SYSTEM_SETTINGS)) {
-		query_connections (manager, NM_CONNECTION_TYPE_SYSTEM);
+		query_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
 	} else {
 		/* Try to activate the system settings daemon */
 		priv->poke_id = g_idle_add (poke_system_settings_daemon_cb, (gpointer) manager);
@@ -913,7 +913,7 @@ initial_get_connections (gpointer user_data)
 
 	if (nm_dbus_manager_name_has_owner (nm_dbus_manager_get (),
 	                                    NM_DBUS_SERVICE_USER_SETTINGS))
-		query_connections (manager, NM_CONNECTION_TYPE_USER);
+		query_connections (manager, NM_CONNECTION_SCOPE_USER);
 
 	return FALSE;
 }
@@ -947,19 +947,19 @@ emit_removed (gpointer key, gpointer value, gpointer user_data)
 {
 	NMManager *manager = NM_MANAGER (user_data);
 	NMConnection *connection = NM_CONNECTION (value);
-	NMConnectionType type;
+	NMConnectionScope scope;
 
-	type = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_TYPE_TAG));
-	g_signal_emit (manager, signals[CONNECTION_REMOVED], 0, connection, type);
+	scope = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_TYPE_TAG));
+	g_signal_emit (manager, signals[CONNECTION_REMOVED], 0, connection, scope);
 }
 
 static void
 nm_manager_connections_destroy (NMManager *manager,
-                                NMConnectionType type)
+                                NMConnectionScope scope)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
-	if (type == NM_CONNECTION_TYPE_USER) {
+	if (scope == NM_CONNECTION_SCOPE_USER) {
 		if (priv->user_connections) {
 			g_hash_table_foreach (priv->user_connections, emit_removed, manager);
 			g_hash_table_remove_all (priv->user_connections);
@@ -969,7 +969,7 @@ nm_manager_connections_destroy (NMManager *manager,
 			g_object_unref (priv->user_proxy);
 			priv->user_proxy = NULL;
 		}
-	} else if (type == NM_CONNECTION_TYPE_SYSTEM) {
+	} else if (scope == NM_CONNECTION_SCOPE_SYSTEM) {
 		if (priv->system_connections) {
 			g_hash_table_foreach (priv->system_connections, emit_removed, manager);
 			g_hash_table_remove_all (priv->system_connections);
@@ -980,7 +980,7 @@ nm_manager_connections_destroy (NMManager *manager,
 			priv->system_proxy = NULL;
 		}
 	} else {
-		nm_warning ("Unknown NMConnectionType %d", type);
+		nm_warning ("Unknown NMConnectionScope %d", scope);
 	}
 }
 
@@ -1051,8 +1051,8 @@ manager_hidden_ap_found (NMDeviceInterface *device,
 
 	/* Look for this AP's BSSID in the seen-bssids list of a connection,
 	 * and if a match is found, copy over the SSID */
-	connections = nm_manager_get_connections (manager, NM_CONNECTION_TYPE_SYSTEM);
-	connections = g_slist_concat (connections,  nm_manager_get_connections (manager, NM_CONNECTION_TYPE_USER));
+	connections = nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
+	connections = g_slist_concat (connections,  nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_USER));
 
 	for (iter = connections; iter && !done; iter = g_slist_next (iter)) {
 		NMConnection *connection = NM_CONNECTION (iter->data);
@@ -1234,7 +1234,7 @@ check_connection_allowed (NMManager *manager,
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	g_return_val_if_fail (s_con != NULL, FALSE);
 
-	system_connections = nm_manager_get_connections (manager, NM_CONNECTION_TYPE_SYSTEM);
+	system_connections = nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
 	for (iter = system_connections; iter; iter = g_slist_next (iter)) {
 		NMConnection *system_connection = NM_CONNECTION (iter->data);
 
@@ -1357,7 +1357,7 @@ deactivate_old_device (NMManager *manager)
 static void
 connection_added_default_handler (NMManager *manager,
 						    NMConnection *connection,
-						    NMConnectionType connection_type)
+						    NMConnectionScope scope)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	PendingConnectionInfo *info = priv->pending_connection_info;
@@ -1368,7 +1368,7 @@ connection_added_default_handler (NMManager *manager,
 	if (!info)
 		return;
 
-	if (connection_type != info->connection_type)
+	if (scope != info->scope)
 		return;
 
 	path = nm_manager_get_connection_dbus_path (manager, connection);
@@ -1410,7 +1410,7 @@ impl_manager_activate_device (NMManager *manager,
 						DBusGMethodInvocation *context)
 {
 	NMDevice *device;
-	NMConnectionType connection_type;
+	NMConnectionScope scope;
 	NMConnection *connection;
 	GError *error = NULL;
 	char *real_sop = NULL;
@@ -1426,9 +1426,9 @@ impl_manager_activate_device (NMManager *manager,
 	nm_info ("User request for activation of %s.", nm_device_get_iface (device));
 
 	if (!strcmp (service_name, NM_DBUS_SERVICE_USER_SETTINGS))
-		connection_type = NM_CONNECTION_TYPE_USER;
+		scope = NM_CONNECTION_SCOPE_USER;
 	else if (!strcmp (service_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS))
-		connection_type = NM_CONNECTION_TYPE_SYSTEM;
+		scope = NM_CONNECTION_SCOPE_SYSTEM;
 	else {
 		g_set_error (&error,
 		             NM_MANAGER_ERROR, NM_MANAGER_ERROR_INVALID_SERVICE,
@@ -1440,7 +1440,7 @@ impl_manager_activate_device (NMManager *manager,
 	if (specific_object_path && strcmp (specific_object_path, "/"))
 		real_sop = g_strdup (specific_object_path);
 
-	connection = nm_manager_get_connection_by_object_path (manager, connection_type, connection_path);
+	connection = nm_manager_get_connection_by_object_path (manager, scope, connection_path);
 	if (connection) {
 		gboolean success;
 
@@ -1471,7 +1471,7 @@ impl_manager_activate_device (NMManager *manager,
 		info = g_slice_new0 (PendingConnectionInfo);
 		info->context = context;
 		info->device = g_object_ref (device);
-		info->connection_type = connection_type;
+		info->scope = scope;
 		info->connection_path = g_strdup (connection_path);
 		info->specific_object_path = g_strdup (real_sop);
 		info->timeout_id = g_timeout_add (5000, wait_for_connection_expired, manager);
@@ -1513,11 +1513,11 @@ add_one_connection_element (NMManager *manager,
 	type_ptr = g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_TYPE_TAG);
 	g_return_val_if_fail (type_ptr != NULL, NULL);
 
-	switch ((NMConnectionType) GPOINTER_TO_UINT (type_ptr)) {
-		case NM_CONNECTION_TYPE_USER:
+	switch ((NMConnectionScope) GPOINTER_TO_UINT (type_ptr)) {
+		case NM_CONNECTION_SCOPE_USER:
 			service_name = NM_DBUS_SERVICE_USER_SETTINGS;
 			break;
-		case NM_CONNECTION_TYPE_SYSTEM:
+		case NM_CONNECTION_SCOPE_SYSTEM:
 			service_name = NM_DBUS_SERVICE_SYSTEM_SETTINGS;
 			break;
 		default:
@@ -1755,7 +1755,7 @@ connections_to_slist (gpointer key, gpointer value, gpointer user_data)
  */
 GSList *
 nm_manager_get_connections (NMManager *manager,
-                            NMConnectionType type)
+                            NMConnectionScope scope)
 {
 	NMManagerPrivate *priv;
 	GSList *list = NULL;
@@ -1763,18 +1763,18 @@ nm_manager_get_connections (NMManager *manager,
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
 
 	priv = NM_MANAGER_GET_PRIVATE (manager);
-	if (type == NM_CONNECTION_TYPE_USER)
+	if (scope == NM_CONNECTION_SCOPE_USER)
 		g_hash_table_foreach (priv->user_connections, connections_to_slist, &list);
-	else if (type == NM_CONNECTION_TYPE_SYSTEM)
+	else if (scope == NM_CONNECTION_SCOPE_SYSTEM)
 		g_hash_table_foreach (priv->system_connections, connections_to_slist, &list);
 	else
-		nm_warning ("Unknown NMConnectionType %d", type);	
+		nm_warning ("Unknown NMConnectionScope %d", scope);	
 	return list;
 }
 
 NMConnection *
 nm_manager_get_connection_by_object_path (NMManager *manager,
-                                          NMConnectionType type,
+                                          NMConnectionScope scope,
                                           const char *path)
 {
 	NMManagerPrivate *priv;
@@ -1784,12 +1784,12 @@ nm_manager_get_connection_by_object_path (NMManager *manager,
 	g_return_val_if_fail (path != NULL, NULL);
 
 	priv = NM_MANAGER_GET_PRIVATE (manager);
-	if (type == NM_CONNECTION_TYPE_USER)
+	if (scope == NM_CONNECTION_SCOPE_USER)
 		connection = (NMConnection *) g_hash_table_lookup (priv->user_connections, path);
-	else if (type == NM_CONNECTION_TYPE_SYSTEM)
+	else if (scope == NM_CONNECTION_SCOPE_SYSTEM)
 		connection = (NMConnection *) g_hash_table_lookup (priv->system_connections, path);
 	else
-		nm_warning ("Unknown NMConnectionType %d", type);
+		nm_warning ("Unknown NMConnectionScope %d", scope);
 	return connection;
 }
 

@@ -30,34 +30,17 @@
 #include "nm-system-config-interface.h"
 #include "nm-utils.h"
 
-static gchar *connection_settings_get_id (NMConnectionSettings *connection);
-static void connection_settings_get_secrets (NMConnectionSettings *connection,
+static void exported_connection_get_secrets (NMExportedConnection *connection,
                                              const gchar *setting_name,
                                              const gchar **hints,
                                              gboolean request_new,
                                              DBusGMethodInvocation *context);
 
-G_DEFINE_TYPE (NMSysconfigConnectionSettings, nm_sysconfig_connection_settings, NM_TYPE_CONNECTION_SETTINGS);
+G_DEFINE_TYPE (NMSysconfigExportedConnection, nm_sysconfig_exported_connection, NM_TYPE_EXPORTED_CONNECTION);
 
 /*
- * NMSysconfigConnectionSettings
+ * NMSysconfigExportedConnection
  */
-static gchar *
-connection_settings_get_id (NMConnectionSettings *connection)
-{
-	NMSysconfigConnectionSettings *c = NM_SYSCONFIG_CONNECTION_SETTINGS (connection);
-
-	return g_strdup (c->id);
-}
-
-static GHashTable *
-connection_settings_get_settings (NMConnectionSettings *connection)
-{
-	NMSysconfigConnectionSettings *c = NM_SYSCONFIG_CONNECTION_SETTINGS (connection);
-
-	return nm_connection_to_hash (c->connection);
-}
-
 static GValue *
 string_to_gvalue (const char *str)
 {
@@ -108,18 +91,20 @@ add_one_secret_to_hash (NMSetting *setting,
 }
 
 static void
-connection_settings_get_secrets (NMConnectionSettings *sys_connection,
+exported_connection_get_secrets (NMExportedConnection *sys_connection,
 				 const gchar *setting_name,
 				 const gchar **hints,
 				 gboolean request_new,
 				 DBusGMethodInvocation *context)
 {
-	NMConnection *connection = NM_SYSCONFIG_CONNECTION_SETTINGS (sys_connection)->connection;
+	NMConnection *connection;
 	GError *error = NULL;
 	NMSettingConnection *s_con;
 	NMSetting *setting;
 	NMSystemConfigInterface *plugin;
 	struct AddSecretsData sdata;
+
+	connection = nm_exported_connection_get_connection (sys_connection);
 
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 	g_return_if_fail (setting_name != NULL);
@@ -182,45 +167,43 @@ error:
 }
 
 static void
-nm_sysconfig_connection_settings_finalize (GObject *object)
+nm_sysconfig_exported_connection_finalize (GObject *object)
 {
-	G_OBJECT_CLASS (nm_sysconfig_connection_settings_parent_class)->finalize (object);
+	G_OBJECT_CLASS (nm_sysconfig_exported_connection_parent_class)->finalize (object);
 }
 
 static void
-nm_sysconfig_connection_settings_class_init (NMSysconfigConnectionSettingsClass *class)
+nm_sysconfig_exported_connection_class_init (NMSysconfigExportedConnectionClass *class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (class);
-	NMConnectionSettingsClass *connection = NM_CONNECTION_SETTINGS_CLASS (class);
+	NMExportedConnectionClass *connection = NM_EXPORTED_CONNECTION_CLASS (class);
 
-	object_class->finalize = nm_sysconfig_connection_settings_finalize;
+	object_class->finalize = nm_sysconfig_exported_connection_finalize;
 
-	connection->get_id = connection_settings_get_id;
-	connection->get_settings = connection_settings_get_settings;
-	connection->get_secrets = connection_settings_get_secrets;
+	connection->get_secrets = exported_connection_get_secrets;
 }
 
 static void
-nm_sysconfig_connection_settings_init (NMSysconfigConnectionSettings *sysconfig_connection_settings)
+nm_sysconfig_exported_connection_init (NMSysconfigExportedConnection *sysconfig_exported_connection)
 {
 	
 }
 
-NMSysconfigConnectionSettings *
-nm_sysconfig_connection_settings_new (NMConnection *connection,
+NMSysconfigExportedConnection *
+nm_sysconfig_exported_connection_new (NMConnection *connection,
                                       DBusGConnection *g_conn)
 {
-	NMSysconfigConnectionSettings *settings;
-	NMSettingConnection *s_con;
+	NMSysconfigExportedConnection *exported;
 
-	settings = g_object_new (nm_sysconfig_connection_settings_get_type(), NULL);
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-	settings->id = g_strdup (s_con->id);
-	settings->connection = connection;
+	exported = g_object_new (NM_TYPE_SYSCONFIG_EXPORTED_CONNECTION,
+	                         NM_EXPORTED_CONNECTION_CONNECTION, connection,
+	                         NULL);
 
-	nm_connection_settings_register_object (NM_CONNECTION_SETTINGS (settings), g_conn);
-	
-	return settings;
+	nm_exported_connection_register_object (NM_EXPORTED_CONNECTION (exported),
+	                                        NM_CONNECTION_SCOPE_SYSTEM,
+	                                        g_conn);
+
+	return exported;
 }
 
 /*
@@ -242,10 +225,12 @@ nm_sysconfig_settings_list_connections (NMSettings *settings)
 
 	connections = g_ptr_array_new ();
 	for (iter = sysconfig_settings->connections; iter; iter = g_slist_next (iter)) {
-		NMConnectionSettings *connection = NM_CONNECTION_SETTINGS (iter->data);
+		NMExportedConnection *exported = NM_EXPORTED_CONNECTION (iter->data);
+		NMConnection *connection;
 		char *path;
 
-		path = g_strdup (nm_connection_settings_get_dbus_object_path (connection));
+		connection = nm_exported_connection_get_connection (exported);
+		path = g_strdup (nm_connection_get_path (connection));
 		if (path)
 			g_ptr_array_add (connections, path);
 	}
@@ -299,12 +284,12 @@ nm_sysconfig_settings_add_connection (NMSysconfigSettings *settings,
                                       NMConnection *connection,
                                       DBusGConnection *g_connection)
 {
-	NMSysconfigConnectionSettings *exported;
+	NMSysconfigExportedConnection *exported;
 
 	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (settings));
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 
-	exported = nm_sysconfig_connection_settings_new (connection, g_connection);
+	exported = nm_sysconfig_exported_connection_new (connection, g_connection);
 	if (!exported) {
 		g_warning ("%s: couldn't export the connection!", __func__);
 		return;
@@ -313,7 +298,7 @@ nm_sysconfig_settings_add_connection (NMSysconfigSettings *settings,
 	settings->connections = g_slist_append (settings->connections, exported);
 
 	nm_settings_signal_new_connection (NM_SETTINGS (settings),
-	                                   NM_CONNECTION_SETTINGS (exported));
+	                                   NM_EXPORTED_CONNECTION (exported));
 }
 
 static void
@@ -326,11 +311,15 @@ remove_connection (NMSysconfigSettings *settings,
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 
 	for (iter = settings->connections; iter; iter = g_slist_next (iter)) {
-		NMSysconfigConnectionSettings *item = NM_SYSCONFIG_CONNECTION_SETTINGS (iter->data);
+		NMSysconfigExportedConnection *item = NM_SYSCONFIG_EXPORTED_CONNECTION (iter->data);
+		NMExportedConnection *exported = NM_EXPORTED_CONNECTION (item);
+		NMConnection *wrapped;
 
-		if (item->connection == connection) {
+		wrapped = nm_exported_connection_get_connection (exported);
+
+		if (wrapped == connection) {
 			settings->connections = g_slist_remove (settings->connections, iter);
-			nm_connection_settings_signal_removed (NM_CONNECTION_SETTINGS (item));
+			nm_exported_connection_signal_removed (exported);
 			g_object_unref (item);
 			g_slist_free (iter);
 			break;
@@ -351,15 +340,18 @@ nm_sysconfig_settings_update_connection (NMSysconfigSettings *settings,
 {
 	GHashTable *hash;
 	GSList *iter;
-	NMSysconfigConnectionSettings *found = NULL;
+	NMSysconfigExportedConnection *found = NULL;
 
 	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (settings));
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 
 	for (iter = settings->connections; iter; iter = g_slist_next (iter)) {
-		NMSysconfigConnectionSettings *item = NM_SYSCONFIG_CONNECTION_SETTINGS (iter->data);
+		NMSysconfigExportedConnection *item = NM_SYSCONFIG_EXPORTED_CONNECTION (iter->data);
+		NMConnection *wrapped;
 
-		if (item->connection == connection) {
+		wrapped = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (item));
+
+		if (wrapped == connection) {
 			found = item;
 			break;
 		}
@@ -377,7 +369,7 @@ nm_sysconfig_settings_update_connection (NMSysconfigSettings *settings,
 	}
 
 	hash = nm_connection_to_hash (connection);
-	nm_connection_settings_signal_updated (NM_CONNECTION_SETTINGS (found), hash);
+	nm_exported_connection_signal_updated (NM_EXPORTED_CONNECTION (found), hash);
 	g_hash_table_destroy (hash);
 }
 

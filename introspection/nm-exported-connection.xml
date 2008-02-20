@@ -5,12 +5,12 @@
   <interface name="org.freedesktop.NetworkManagerSettings.Connection">
 
     <method name="GetID">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_connection_settings_get_id"/>
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_exported_connection_get_id"/>
       <arg name="id" type="s" direction="out"/>
     </method>
 
     <method name="GetSettings">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_connection_settings_get_settings"/>
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_exported_connection_get_settings"/>
       <arg name="settings" type="a{sa{sv}}" direction="out"/>
     </method>
 
@@ -27,7 +27,7 @@
   <interface name="org.freedesktop.NetworkManagerSettings.Connection.Secrets">
 
     <method name="GetSecrets">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_connection_settings_get_secrets"/>
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_exported_connection_get_secrets"/>
       <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <arg name="setting_name" type="s" direction="in"/>
       <!-- Array of strings of key names in the Setting for which NM thinks
