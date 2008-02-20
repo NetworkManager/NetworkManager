@@ -1,0 +1,58 @@
+# translation of NetworkManager.HEAD.po to Basque
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+#
+# Iñaki Larrañaga Murgoitio <dooteo@euskalgnu.org>, 2008.
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager.HEAD\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2008-02-20 11:38+0100\n"
+"PO-Revision-Date: 2008-02-19 19:27+0100\n"
+"Last-Translator: Iñaki Larrañaga Murgoitio <dooteo@euskalgnu.org>\n"
+"Language-Team: Basque <eu@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.4\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: ../src/nm-netlink-monitor.c:188 ../src/nm-netlink-monitor.c:448
+#, c-format
+msgid "error processing netlink message: %s"
+msgstr "errorea netlink-en mezua prozesatzean: %s"
+
+#: ../src/nm-netlink-monitor.c:245
+#, c-format
+msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgstr ""
+"ezin da netlink-en kudeatzailea esleitu konexioaren egoera monitorizatzeko: %"
+"s"
+
+#: ../src/nm-netlink-monitor.c:255
+#, c-format
+msgid "unable to connect to netlink for monitoring link status: %s"
+msgstr "ezin da netlink-ekin konektatu konexioaren egoera monitorizatzeko: %s"
+
+#: ../src/nm-netlink-monitor.c:263
+#, c-format
+msgid "unable to join netlink group for monitoring link status: %s"
+msgstr ""
+"ezin da netlink taldearekin elkartu konexioaren egoera monitorizatzeko: %s"
+
+#: ../src/nm-netlink-monitor.c:271
+#, c-format
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
+msgstr ""
+"ezin da netlink-en konexio-cachea esleitu konexioaren egoera "
+"monitorizatzeko: %s"
+
+#: ../src/nm-netlink-monitor.c:471
+msgid "error occurred while waiting for data on socket"
+msgstr "errorea gertatu da socket-eko datuen zai egotean"
+
+#: ../src/NetworkManager.c:255
+#, c-format
+msgid "Invalid option.  Please use --help to see a list of valid options.\n"
+msgstr ""
+"Aukera baliogabea. Erabili '--help' baliozko aukeren zerrenda ikusteko.\n"
