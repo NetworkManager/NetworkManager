@@ -19,7 +19,6 @@
 #define NM_MANAGER_WIRELESS_HARDWARE_ENABLED "wireless-hardware-enabled"
 
 #define NM_MANAGER_CONNECTION_PROXY_TAG "dbus-proxy"
-#define NM_MANAGER_CONNECTION_TYPE_TAG "service-type"
 #define NM_MANAGER_CONNECTION_SECRETS_PROXY_TAG "dbus-secrets-proxy"
 
 typedef struct {
@@ -89,18 +88,5 @@ GSList *nm_manager_get_connections    (NMManager *manager, NMConnectionScope sco
 NMConnection * nm_manager_get_connection_by_object_path (NMManager *manager,
                                                          NMConnectionScope scope,
                                                          const char *path);
-
-static inline NMConnectionScope
-nm_manager_get_connection_scope (NMConnection *connection)
-{
-	NMConnectionScope scope;
-
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), NM_CONNECTION_SCOPE_UNKNOWN);
-
-	scope = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_TYPE_TAG));
-	if (scope != NM_CONNECTION_SCOPE_USER && scope != NM_CONNECTION_SCOPE_SYSTEM)
-		scope = NM_CONNECTION_SCOPE_UNKNOWN;
-	return scope;
-}
 
 #endif /* NM_MANAGER_H */

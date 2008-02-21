@@ -28,9 +28,6 @@ static gboolean impl_manager_get_active_connections (NMManager *manager,
 
 static gboolean impl_manager_sleep (NMManager *manager, gboolean sleep, GError **err);
 
-static const char * nm_manager_get_connection_dbus_path (NMManager *manager,
-                                                         NMConnection *connection);
-
 static gboolean poke_system_settings_daemon_cb (gpointer user_data);
 
 /* Legacy 0.6 compatibility interface */
@@ -432,7 +429,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 #define DBUS_TYPE_G_DICT_OF_DICTS (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, DBUS_TYPE_G_STRING_VARIANT_HASHTABLE))
 
 static NMConnectionScope
-get_type_for_proxy (DBusGProxy *proxy)
+get_scope_for_proxy (DBusGProxy *proxy)
 {
 	const char *bus_name = dbus_g_proxy_get_bus_name (proxy);
 
@@ -468,7 +465,7 @@ free_get_settings_info (gpointer data)
 			g_signal_emit (info->manager,
 			               signals[CONNECTIONS_ADDED],
 			               0,
-			               get_type_for_proxy (info->proxy));
+			               get_scope_for_proxy (info->proxy));
 		}
 	}
 
@@ -516,6 +513,11 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 		if (connection == NULL)
 			goto out;
 
+		scope = get_scope_for_proxy (proxy);
+
+		nm_connection_set_path (connection, path);
+		nm_connection_set_scope (connection, scope);
+
 		g_object_set_data_full (G_OBJECT (connection),
 		                        NM_MANAGER_CONNECTION_PROXY_TAG,
 		                        proxy,
@@ -527,7 +529,6 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 		                        (GDestroyNotify) g_object_unref);
 
 		priv = NM_MANAGER_GET_PRIVATE (manager);
-		scope = get_type_for_proxy (proxy);
 		switch (scope) {
 			case NM_CONNECTION_SCOPE_USER:
 				g_hash_table_insert (priv->user_connections,
@@ -544,10 +545,6 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 				g_assert_not_reached ();
 				break;
 		}
-
-		g_object_set_data (G_OBJECT (connection),
-		                   NM_MANAGER_CONNECTION_TYPE_TAG,
-		                   GUINT_TO_POINTER (scope));
 
 		/* If the connection-added signal is supposed to be batched, don't
 		 * emit the single connection-added here.
@@ -569,17 +566,13 @@ out:
 static NMConnection *
 get_connection_for_proxy (NMManager *manager,
                           DBusGProxy *proxy,
-                          GHashTable **out_hash,
-                          const char **out_path)
+                          GHashTable **out_hash)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	NMConnection *connection = NULL;
 	const char *path = dbus_g_proxy_get_path (proxy);
 
-	if (out_path)
-		*out_path = path;
-
-	switch (get_type_for_proxy (proxy)) {
+	switch (get_scope_for_proxy (proxy)) {
 		case NM_CONNECTION_SCOPE_USER:
 			*out_hash = priv->user_connections;
 			connection = g_hash_table_lookup (priv->user_connections, path);
@@ -599,19 +592,17 @@ get_connection_for_proxy (NMManager *manager,
 static void
 remove_connection (NMManager *manager,
                    NMConnection *connection,
-                   GHashTable *hash,
-                   const char *path)
+                   GHashTable *hash)
 {
-	NMConnectionScope scope;
-
 	/* Destroys the connection, then associated DBusGProxy due to the
 	 * weak reference notify function placed on the connection when it
 	 * was created.
 	 */
 	g_object_ref (connection);
-	g_hash_table_remove (hash, path);
-	scope = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_TYPE_TAG));
-	g_signal_emit (manager, signals[CONNECTION_REMOVED], 0, connection, scope);
+	g_hash_table_remove (hash, nm_connection_get_path (connection));
+	g_signal_emit (manager, signals[CONNECTION_REMOVED], 0,
+	               connection,
+	               nm_connection_get_scope (connection));
 	g_object_unref (connection);
 }
 
@@ -621,11 +612,10 @@ connection_removed_cb (DBusGProxy *proxy, gpointer user_data)
 	NMManager * manager = NM_MANAGER (user_data);
 	NMConnection *connection = NULL;
 	GHashTable *hash = NULL;
-	const char *path;
 
-	connection = get_connection_for_proxy (manager, proxy, &hash, &path);
+	connection = get_connection_for_proxy (manager, proxy, &hash);
 	if (connection)
-		remove_connection (manager, connection, hash, path);
+		remove_connection (manager, connection, hash);
 }
 
 static void
@@ -635,30 +625,26 @@ connection_updated_cb (DBusGProxy *proxy, GHashTable *settings, gpointer user_da
 	NMConnection *new_connection;
 	NMConnection *old_connection;
 	GHashTable *hash;
-	const char *path;
 	gboolean valid = FALSE;
 
-	old_connection = get_connection_for_proxy (manager, proxy, &hash, &path);
-	if (!old_connection)
-		return;
+	old_connection = get_connection_for_proxy (manager, proxy, &hash);
+	g_return_if_fail (old_connection != NULL);
 
 	new_connection = nm_connection_new_from_hash (settings);
 	if (!new_connection) {
 		/* New connection invalid, remove existing connection */
-		remove_connection (manager, old_connection, hash, path);
+		remove_connection (manager, old_connection, hash);
 		return;
 	}
 	g_object_unref (new_connection);
 
 	valid = nm_connection_replace_settings (old_connection, settings);
 	if (valid) {
-		NMConnectionScope scope;
-
-		scope = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (old_connection),
-		                                            NM_MANAGER_CONNECTION_TYPE_TAG));
-		g_signal_emit (manager, signals[CONNECTION_UPDATED], 0, old_connection, scope);
+		g_signal_emit (manager, signals[CONNECTION_UPDATED], 0,
+		               old_connection,
+		               nm_connection_get_scope (old_connection));
 	} else {
-		remove_connection (manager, old_connection, hash, path);
+		remove_connection (manager, old_connection, hash);
 	}
 }
 
@@ -947,10 +933,10 @@ emit_removed (gpointer key, gpointer value, gpointer user_data)
 {
 	NMManager *manager = NM_MANAGER (user_data);
 	NMConnection *connection = NM_CONNECTION (value);
-	NMConnectionScope scope;
 
-	scope = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_TYPE_TAG));
-	g_signal_emit (manager, signals[CONNECTION_REMOVED], 0, connection, scope);
+	g_signal_emit (manager, signals[CONNECTION_REMOVED], 0,
+	               connection,
+	               nm_connection_get_scope (connection));
 }
 
 static void
@@ -1361,7 +1347,6 @@ connection_added_default_handler (NMManager *manager,
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	PendingConnectionInfo *info = priv->pending_connection_info;
-	const char *path;
 	gboolean success;
 	GError *error = NULL;
 
@@ -1371,8 +1356,7 @@ connection_added_default_handler (NMManager *manager,
 	if (scope != info->scope)
 		return;
 
-	path = nm_manager_get_connection_dbus_path (manager, connection);
-	if (strcmp (info->connection_path, path))
+	if (strcmp (info->connection_path, nm_connection_get_path (connection)))
 		return;
 
 	/* Will destroy below; can't be valid during the initial activation start */
@@ -1504,16 +1488,13 @@ add_one_connection_element (NMManager *manager,
 	const char *service_name = NULL;
 	NMConnection *connection;
 	const char *specific_object;
-	gpointer type_ptr;
 
 	req = nm_device_get_act_request (device);
  	g_assert (req);
 
 	connection = nm_act_request_get_connection (req);
-	type_ptr = g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_TYPE_TAG);
-	g_return_val_if_fail (type_ptr != NULL, NULL);
 
-	switch ((NMConnectionScope) GPOINTER_TO_UINT (type_ptr)) {
+	switch (nm_connection_get_scope (connection)) {
 		case NM_CONNECTION_SCOPE_USER:
 			service_name = NM_DBUS_SERVICE_USER_SETTINGS;
 			break;
@@ -1548,7 +1529,7 @@ add_one_connection_element (NMManager *manager,
 	g_value_take_boxed (&entry, dbus_g_type_specialized_construct (type));
 	dbus_g_type_struct_set (&entry,
 	                        0, service_name,
-	                        1, nm_manager_get_connection_dbus_path (manager, connection),
+	                        1, nm_connection_get_path (connection),
 	                        2, specific_object ? specific_object : "/",
 	                        3, dev_array,
 	                        G_MAXUINT);
@@ -1791,23 +1772,5 @@ nm_manager_get_connection_by_object_path (NMManager *manager,
 	else
 		nm_warning ("Unknown NMConnectionScope %d", scope);
 	return connection;
-}
-
-static const char *
-nm_manager_get_connection_dbus_path (NMManager *manager,
-                                     NMConnection *connection)
-{
-	DBusGProxy *proxy;
-
-	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
-
-	proxy = g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_PROXY_TAG);
-	if (!DBUS_IS_G_PROXY (proxy)) {
-		nm_warning ("Couldn't get dbus proxy for connection.");
-		return NULL;
-	}
-
-	return dbus_g_proxy_get_path (proxy);
 }
 

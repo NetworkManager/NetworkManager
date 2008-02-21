@@ -321,12 +321,12 @@ nm_policy_device_change_check (gpointer user_data)
 		 * don't switch.
 		 */
 		if (   old_connection
-		    && (nm_manager_get_connection_scope (old_connection) == NM_CONNECTION_SCOPE_SYSTEM)
-		    && (nm_manager_get_connection_scope (connection) == NM_CONNECTION_SCOPE_USER))
+		    && (nm_connection_get_scope (old_connection) == NM_CONNECTION_SCOPE_SYSTEM)
+		    && (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_USER))
 			goto out;
 
-		if (   (nm_manager_get_connection_scope (connection) == NM_CONNECTION_SCOPE_SYSTEM)
-		    && (nm_manager_get_connection_scope (old_connection) == NM_CONNECTION_SCOPE_USER)) {
+		if (   (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_SYSTEM)
+		    && (nm_connection_get_scope (old_connection) == NM_CONNECTION_SCOPE_USER)) {
 			do_switch = TRUE;
 			nm_info ("SWITCH: found system connection '%s (%s)', overrides"
 			         " current connection '%s (%s)'.",

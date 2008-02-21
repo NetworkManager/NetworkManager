@@ -1,5 +1,28 @@
 2008-02-20  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_device_change_check): get scope off the connection, not
+			using the manager helper
+
+	* src/nm-manager.c
+	  src/nm-manager.h
+		- (get_scope_for_proxy): rename from get_type_for_proxy()
+		- (connection_get_settings_cb): set scope and path on connection, not
+			using GObject data items
+		- (get_connection_for_proxy): don't need to return path, since that
+			can be gotten from the connection
+		- (get_connection_for_proxy): get path off the connection, not from
+			parameters
+		- (connection_removed_cb, connection_updated_cb): don't need to get
+			path from get_connection_for_proxy(); get scope off the connection
+			instead of using GObject data items
+		- (connection_added_default_handler, add_one_connection_element): use
+			nm_connection_get_path() not nm_manager_get_connection_dbus_path()
+		- (nm_manager_get_connection_dbus_path): remove
+		- (nm_manager_get_connection_scope): remove
+
+2008-02-20  Dan Williams  <dcbw@redhat.com>
+
 	* Global rename of NMConnectionSettings -> NMExportedConnection to cut down
 		on confusing names
 
