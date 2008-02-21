@@ -195,6 +195,6 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 						"MTU",
 						"MTU",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | G_PARAM_CONSTRUCT));
+						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_FUZZY_IGNORE));
 }
 

@@ -144,7 +144,9 @@ nm_setting_verify (NMSetting *setting, GSList *all_settings)
 }
 
 gboolean
-nm_setting_compare (NMSetting *setting, NMSetting *other)
+nm_setting_compare (NMSetting *setting,
+                    NMSetting *other,
+                    NMSettingCompareFlags flags)
 {
 	GParamSpec **property_specs;
 	guint n_property_specs;
@@ -166,6 +168,13 @@ nm_setting_compare (NMSetting *setting, NMSetting *other)
 		GParamSpec *prop_spec = property_specs[i];
 		GValue value1 = { 0 };
 		GValue value2 = { 0 };
+
+		/* Fuzzy compare ignores properties defined with the FUZZY_IGNORE flag */
+		if (   (flags & COMPARE_FLAGS_FUZZY)
+		    && (prop_spec->flags & NM_SETTING_PARAM_FUZZY_IGNORE)) {
+			different = TRUE;
+			continue;
+		}
 
 		g_value_init (&value1, prop_spec->value_type);
 		g_object_get_property (G_OBJECT (setting), prop_spec->name, &value1);

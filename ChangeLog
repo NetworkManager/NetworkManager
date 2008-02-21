@@ -1,5 +1,26 @@
 2008-02-20  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-connection.c
+	  libnm-util/nm-connection.h
+		- (nm_connection_compare): accept compare flags and pass them to the
+			setting compare function
+
+	* libnm-util/nm-setting.c
+	  libnm-util/nm-setting.h
+		- (nm_setting_compare): accept compare flags; ignore properties that are
+			marked fuzzy
+
+	* libnm-util/nm-setting-connection.c
+	  libnm-util/nm-setting-wireless.c
+	  libnm-util/nm-setting-ppp.c
+	  libnm-util/nm-setting-wired.c
+		- Mark some setting properties as ignorable when doing a fuzzy compare
+
+	* src/nm-device.c
+		- (device_activation_precheck): use exact compare
+
+2008-02-20  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerPolicy.c
 		- (nm_policy_device_change_check): get scope off the connection, not
 			using the manager helper

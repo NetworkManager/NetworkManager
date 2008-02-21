@@ -205,6 +205,7 @@ nm_connection_replace_settings (NMConnection *connection,
 typedef struct {
 	NMConnection *other;
 	gboolean failed;
+	NMSettingCompareFlags flags;
 } CompareConnectionInfo;
 
 static void
@@ -219,16 +220,18 @@ compare_one_setting (gpointer key, gpointer value, gpointer user_data)
 
 	other_setting = nm_connection_get_setting (info->other, G_OBJECT_TYPE (setting));
 	if (other_setting)
-		info->failed = nm_setting_compare (setting, other_setting) ? FALSE : TRUE;
+		info->failed = nm_setting_compare (setting, other_setting, info->flags) ? FALSE : TRUE;
 	else
 		info->failed = TRUE;
 }
 
 gboolean
-nm_connection_compare (NMConnection *connection, NMConnection *other)
+nm_connection_compare (NMConnection *connection,
+                       NMConnection *other,
+                       NMSettingCompareFlags flags)
 {
 	NMConnectionPrivate *priv;
-	CompareConnectionInfo info = { other, FALSE };
+	CompareConnectionInfo info = { other, FALSE, flags };
 
 	if (!connection && !other)
 		return TRUE;

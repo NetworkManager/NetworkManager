@@ -226,7 +226,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "No BSD compression",
 						   "No BSD compression",
 						   FALSE,
-						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	g_object_class_install_property
 		(object_class, PROP_NODEFLATE,
@@ -234,7 +234,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "No deflate",
 						   "No deflate",
 						   FALSE,
-						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	g_object_class_install_property
 		(object_class, PROP_REQUIRE_MPPE,
@@ -290,7 +290,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						"Baud",
 						"Baud",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	g_object_class_install_property
 		(object_class, PROP_MRU,
@@ -306,7 +306,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						"MTU",
 						"MTU",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	g_object_class_install_property
 		(object_class, PROP_LCP_ECHO_FAILURE,
@@ -314,7 +314,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						"LCP echo failure",
 						"LCP echo failure",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	g_object_class_install_property
 		(object_class, PROP_LCP_ECHO_INTERVAL,
@@ -322,5 +322,5 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						"LCP echo interval",
 						"LCP echo interval",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 }

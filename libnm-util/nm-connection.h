@@ -53,7 +53,8 @@ gboolean      nm_connection_replace_settings (NMConnection *connection,
 									 GHashTable *new_settings);
 
 gboolean      nm_connection_compare       (NMConnection *connection,
-								   NMConnection *other);
+                                           NMConnection *other,
+                                           NMSettingCompareFlags flags);
 
 gboolean      nm_connection_verify        (NMConnection *connection);
 

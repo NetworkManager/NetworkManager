@@ -475,7 +475,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 						"Rate",
 						"Rate",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	g_object_class_install_property
 		(object_class, PROP_TX_POWER,
@@ -483,7 +483,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 						"TX Power",
 						"TX Power",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
@@ -507,7 +507,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 						"MTU",
 						"MTU",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	g_object_class_install_property
 		(object_class, PROP_SEC,

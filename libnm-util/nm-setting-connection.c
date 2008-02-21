@@ -144,7 +144,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 						  "ID",
 						  "User-readable connection identifier/name",
 						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	g_object_class_install_property
 		(object_class, PROP_TYPE,
@@ -160,7 +160,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 						   "Autoconnect",
 						   "Connection autoconnect",
 						   FALSE,
-						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	g_object_class_install_property
 		(object_class, PROP_TIMESTAMP,
@@ -168,7 +168,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 						  "Timestamp",
 						  "Connection timestamp",
 						  0, G_MAXUINT64, 0,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	g_object_class_install_property
 		(object_class, PROP_LOCKDOWN,

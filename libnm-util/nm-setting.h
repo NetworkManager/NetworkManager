@@ -15,9 +15,10 @@ G_BEGIN_DECLS
 #define NM_IS_SETTING_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_SETTING))
 #define NM_SETTING_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SETTING, NMSettingClass))
 
-#define NM_SETTING_PARAM_SERIALIZE (1 << (0 + G_PARAM_USER_SHIFT))
-#define NM_SETTING_PARAM_REQUIRED  (1 << (1 + G_PARAM_USER_SHIFT))
-#define NM_SETTING_PARAM_SECRET    (1 << (2 + G_PARAM_USER_SHIFT))
+#define NM_SETTING_PARAM_SERIALIZE    (1 << (0 + G_PARAM_USER_SHIFT))
+#define NM_SETTING_PARAM_REQUIRED     (1 << (1 + G_PARAM_USER_SHIFT))
+#define NM_SETTING_PARAM_SECRET       (1 << (2 + G_PARAM_USER_SHIFT))
+#define NM_SETTING_PARAM_FUZZY_IGNORE (1 << (3 + G_PARAM_USER_SHIFT))
 
 #define NM_SETTING_NAME "name"
 
@@ -59,8 +60,18 @@ const char *nm_setting_get_name      (NMSetting *setting);
 gboolean    nm_setting_verify        (NMSetting *setting,
 							   GSList    *all_settings);
 
+
+typedef enum {
+	/* Match all attributes exactly */
+	COMPARE_FLAGS_EXACT = 0x00,
+
+	/* Match only important attributes, like SSID, type, security settings, etc */
+	COMPARE_FLAGS_FUZZY = 0x01,
+} NMSettingCompareFlags;
+
 gboolean    nm_setting_compare       (NMSetting *setting,
-							   NMSetting *other);
+                                      NMSetting *other,
+                                      NMSettingCompareFlags flags);
 
 void        nm_setting_enumerate_values (NMSetting *setting,
                                          NMSettingValueIterFn func,

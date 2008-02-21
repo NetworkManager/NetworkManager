@@ -1154,8 +1154,9 @@ device_activation_precheck (NMDevice *self, NMConnection *connection, GError **e
 	if (!nm_device_is_activating (self))
 		return TRUE;
 
+	// FIXME: why not just check connection path & service?
 	current_connection = nm_act_request_get_connection (nm_device_get_act_request (self));
-	if (nm_connection_compare (connection, current_connection)) {
+	if (nm_connection_compare (connection, current_connection, COMPARE_FLAGS_EXACT)) {
 		/* Already activating or activated with the same connection */
 		g_set_error (error,
 		             NM_DEVICE_INTERFACE_ERROR,
