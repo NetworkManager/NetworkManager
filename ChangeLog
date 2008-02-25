@@ -1,5 +1,10 @@
 2008-02-25  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-utils.c
+		- (nm_utils_ssid_to_utf8): use a dynamically allocated buffer
+
+2008-02-25  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting.c
 		- (nm_setting_compare): Fix C&P error from r3068 that caused settings
 			comparisons to always succeed; clarify assignment of values to

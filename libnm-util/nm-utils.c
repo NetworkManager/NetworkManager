@@ -198,25 +198,23 @@ get_encodings_for_lang (const char *lang,
 	return success;
 }
 
-
+#define SSID_BUF_SIZE (IW_ESSID_MAX_SIZE + 1)
 char *
 nm_utils_ssid_to_utf8 (const char *ssid, guint32 len)
 {
-	char * new_ssid = NULL;
-	char buf[IW_ESSID_MAX_SIZE + 1];
-	guint32 buf_len = MIN (sizeof (buf) - 1, len);
-	char * lang;
+	char *converted = NULL;
+	char *buf;
+	guint32 buf_len = MIN (SSID_BUF_SIZE - 1, len);
+	char *lang;
 	char *e1 = NULL, *e2 = NULL, *e3 = NULL;
 
 	g_return_val_if_fail (ssid != NULL, NULL);
 
-	memset (buf, 0, sizeof (buf));
+	buf = g_malloc0 (SSID_BUF_SIZE);
 	memcpy (buf, ssid, buf_len);
 
-	if (g_utf8_validate (buf, buf_len, NULL)) {
-		new_ssid = g_strdup (buf);
-		goto out;
-	}
+	if (g_utf8_validate (buf, buf_len, NULL))
+		return buf;
 
 	/* Even if the local encoding is UTF-8, LANG may give
 	 * us a clue as to what encoding SSIDs are more likely to be in.
@@ -233,20 +231,20 @@ nm_utils_ssid_to_utf8 (const char *ssid, guint32 len)
 		g_free (lang);
 	}
 
-	new_ssid = g_convert (buf, buf_len, "UTF-8", e1, NULL, NULL, NULL);
-	if (!new_ssid && e2) {
-		new_ssid = g_convert (buf, buf_len, "UTF-8", e2, NULL, NULL, NULL);
-	}
-	if (!new_ssid && e3) {
-		new_ssid = g_convert (buf, buf_len, "UTF-8", e3, NULL, NULL, NULL);
-	}
-	if (!new_ssid) {
-		new_ssid = g_convert_with_fallback (buf, buf_len, "UTF-8", e1,
+	converted = g_convert (buf, buf_len, "UTF-8", e1, NULL, NULL, NULL);
+	if (!converted && e2)
+		converted = g_convert (buf, buf_len, "UTF-8", e2, NULL, NULL, NULL);
+
+	if (!converted && e3)
+		converted = g_convert (buf, buf_len, "UTF-8", e3, NULL, NULL, NULL);
+
+	if (!converted) {
+		converted = g_convert_with_fallback (buf, buf_len, "UTF-8", e1,
 	                "?", NULL, NULL, NULL);
 	}
 
-out:
-	return new_ssid;
+	g_free (buf);
+	return converted;
 }
 
 /* Shamelessly ripped from the Linux kernel ieee80211 stack */
