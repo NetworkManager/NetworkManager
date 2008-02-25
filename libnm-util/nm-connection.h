@@ -52,6 +52,7 @@ NMSetting    *nm_connection_get_setting_by_name (NMConnection *connection,
 gboolean      nm_connection_replace_settings (NMConnection *connection,
 									 GHashTable *new_settings);
 
+/* Returns TRUE if the connections are the same */
 gboolean      nm_connection_compare       (NMConnection *connection,
                                            NMConnection *other,
                                            NMSettingCompareFlags flags);
