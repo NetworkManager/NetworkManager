@@ -1,3 +1,9 @@
+2008-02-24  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-setting-wireless.c
+		- (nm_setting_wireless_class_init): 'seen bssids' should be ignored for
+			fuzzy matches
+
 2008-02-20  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/nm-connection.c

@@ -499,7 +499,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 							   "Seen BSSIDS",
 							   "Seen BSSIDs",
 							   dbus_g_type_get_collection ("GSList", G_TYPE_STRING),
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	g_object_class_install_property
 		(object_class, PROP_MTU,
