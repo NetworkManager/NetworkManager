@@ -188,9 +188,9 @@ nm_setting_compare (NMSetting *setting,
 		g_object_get_property (G_OBJECT (setting), prop_spec->name, &value1);
 
 		g_value_init (&value2, prop_spec->value_type);
-		g_object_get_property (G_OBJECT (setting), prop_spec->name, &value2);
+		g_object_get_property (G_OBJECT (other), prop_spec->name, &value2);
 
-		different = g_param_values_cmp (prop_spec, &value1, &value2) != 0;
+		different = g_param_values_cmp (prop_spec, &value1, &value2);
 
 		g_value_unset (&value1);
 		g_value_unset (&value2);
