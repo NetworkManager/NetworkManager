@@ -230,13 +230,19 @@ static void
 set_property (GObject *object, guint prop_id,
 		    const GValue *value, GParamSpec *pspec)
 {
+	GObject *connection;
 	NMExportedConnectionPrivate *priv = NM_EXPORTED_CONNECTION_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_CONNECTION:
-		if (priv->wrapped)
+		if (priv->wrapped) {
 			g_object_unref (priv->wrapped);
-		priv->wrapped = g_value_get_object (value);
+			priv->wrapped = NULL;
+		}
+
+		connection = g_value_dup_object (value);
+		if (connection)
+			priv->wrapped = NM_CONNECTION (connection);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

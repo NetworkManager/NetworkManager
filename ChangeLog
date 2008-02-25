@@ -1,5 +1,11 @@
 2008-02-25  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/nm-settings.c
+		- (set_property): use g_value_dup_object() to ref the object as was
+			intended originally
+
+2008-02-25  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-utils.c
 		- (nm_utils_ssid_to_utf8): use a dynamically allocated buffer
 
