@@ -1,6 +1,9 @@
 /* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
+#include <string.h>
+
 #include "nm-setting.h"
+#include "nm-setting-connection.h"
 #include "nm-utils.h"
 
 G_DEFINE_ABSTRACT_TYPE (NMSetting, nm_setting, G_TYPE_OBJECT)
@@ -150,7 +153,7 @@ nm_setting_compare (NMSetting *setting,
 {
 	GParamSpec **property_specs;
 	guint n_property_specs;
-	gboolean different;
+	gint different;
 	guint i;
 
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
@@ -169,12 +172,17 @@ nm_setting_compare (NMSetting *setting,
 		GValue value1 = { 0 };
 		GValue value2 = { 0 };
 
-		/* Fuzzy compare ignores properties defined with the FUZZY_IGNORE flag */
+		/* Fuzzy compare ignores secrets and properties defined with the
+		 * FUZZY_IGNORE flag
+		 */
 		if (   (flags & COMPARE_FLAGS_FUZZY)
-		    && (prop_spec->flags & NM_SETTING_PARAM_FUZZY_IGNORE)) {
-			different = TRUE;
+		    && (prop_spec->flags & (NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_SECRET)))
 			continue;
-		}
+
+		if (   (flags & COMPARE_FLAGS_IGNORE_ID)
+		    && !strcmp (setting->name, NM_SETTING_CONNECTION_SETTING_NAME)
+		    && !strcmp (prop_spec->name, NM_SETTING_CONNECTION_ID))
+			continue;
 
 		g_value_init (&value1, prop_spec->value_type);
 		g_object_get_property (G_OBJECT (setting), prop_spec->name, &value1);
@@ -190,7 +198,7 @@ nm_setting_compare (NMSetting *setting,
 
 	g_free (property_specs);
 
-	return different;
+	return different == 0 ? TRUE : FALSE;
 }
 
 void

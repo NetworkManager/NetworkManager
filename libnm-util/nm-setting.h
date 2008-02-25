@@ -63,12 +63,16 @@ gboolean    nm_setting_verify        (NMSetting *setting,
 
 typedef enum {
 	/* Match all attributes exactly */
-	COMPARE_FLAGS_EXACT = 0x00,
+	COMPARE_FLAGS_EXACT = 0x00000000,
 
 	/* Match only important attributes, like SSID, type, security settings, etc */
-	COMPARE_FLAGS_FUZZY = 0x01,
+	COMPARE_FLAGS_FUZZY = 0x00000001,
+
+	/* Ignore the connection ID */
+	COMPARE_FLAGS_IGNORE_ID = 0x00000002,
 } NMSettingCompareFlags;
 
+/* Returns TRUE if the connections are the same */
 gboolean    nm_setting_compare       (NMSetting *setting,
                                       NMSetting *other,
                                       NMSettingCompareFlags flags);

@@ -1,5 +1,12 @@
 2008-02-24  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting.c
+	  libnm-util/nm-setting.h
+		- (nm_setting_compare): fix 'fuzzy' compare logic; add IGNORE_ID bits;
+			fix return value to match nm_connection_compare() meaning
+
+2008-02-24  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting-wireless.c
 		- (nm_setting_wireless_class_init): 'seen bssids' should be ignored for
 			fuzzy matches
