@@ -746,6 +746,8 @@ device_cleanup (NMDevice80211Wireless *self)
 
 	cancel_pending_scan (self);
 
+	cleanup_association_attempt (self, TRUE);
+
 	/* Tell the supplicant to disconnect from the current AP */
 	if (priv->supplicant.iface)
 		nm_supplicant_interface_disconnect (priv->supplicant.iface);
@@ -2964,11 +2966,6 @@ nm_device_802_11_wireless_dispose (GObject *object)
 	}
 
 	priv->dispose_has_run = TRUE;
-
-	/* General cleanup, free references to other objects */
-	g_slist_foreach (self->priv->ap_list, (GFunc) g_object_unref, NULL);
-	g_slist_free (self->priv->ap_list);
-	self->priv->ap_list = NULL;
 
 	device_cleanup (self);
 
