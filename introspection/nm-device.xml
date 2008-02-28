@@ -1,31 +1,140 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<node name="/">
+<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
   <interface name="org.freedesktop.NetworkManager.Device">
     <method name="Deactivate">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_deactivate"/>
+      <tp:docstring>
+        Deactivate the device, removing its routing table entry and IP address
+      </tp:docstring>
     </method>
 
-    <property name="Udi" type="s" access="read"/>
-    <property name="Interface" type="s" access="read"/>
-    <property name="Driver" type="s" access="read"/>
-    <property name="Capabilities" type="u" access="read"/>
-    <property name="Ip4Address" type="i" access="read"/>
-    <property name="State" type="u" access="read"/>
-    <property name="Ip4Config" type="o" access="read"/>
-    <property name="Carrier" type="b" access="read"/>
+    <property name="Udi" type="s" access="read">
+      <tp:docstring>
+        HAL UDI for the device.
+      </tp:docstring>
+    </property>
+    <property name="Interface" type="s" access="read">
+      <tp:docstring>
+        The network interface offered by the device.
+      </tp:docstring>
+    </property>
+    <property name="Driver" type="s" access="read">
+      <tp:docstring>
+        The driver handling the device.
+      </tp:docstring>
+    </property>
+    <property name="Capabilities" type="u" access="read" tp:type="NM_DEVICE_CAP">
+      <tp:docstring>
+        Flags describing the capabilities of the device.
+      </tp:docstring>
+    </property>
+    <property name="Ip4Address" type="i" access="read">
+      <tp:docstring>
+        The IPv4 address bound to the device. FIXME: what about devices with >1 IP address?
+      </tp:docstring>
+    </property>
+    <property name="State" type="u" access="read" tp:type="NM_DEVICE_STATE">
+      <tp:docstring>
+        The current state of the device.
+      </tp:docstring>
+    </property>
+    <property name="Ip4Config" type="o" access="read">
+      <tp:docstring>
+        Object path of the Ip4Config object describing the configuration of the device.
+      </tp:docstring>
+    </property>
+    <property name="Carrier" type="b" access="read">
+      <tp:docstring>
+        Indicates whether the physical carrier is found (e.g. the device is plugged in or associated to a network).
+      </tp:docstring>
+    </property>
 
     <!-- Ugh, but I see no other way of getting the type on the caller
-         based on dbus object path only -->
-    <property name="DeviceType" type="u" access="read"/>
+    based on dbus object path only -->
+    <property name="DeviceType" type="u" access="read">
+      <tp:docstring>
+      </tp:docstring>
+    </property>
+
 
     <signal name="StateChanged">
-      <arg name="state" type="u"/>
+      <arg name="state" type="u" tp:type="NM_DEVICE_STATE">
+        <tp:docstring>
+          The new state of the device.
+        </tp:docstring>
+      </arg>
     </signal>
 
     <signal name="CarrierChanged">
-      <arg name="carrier_on" type="b"/>
+      <arg name="carrier_on" type="b">
+        <tp:docstring>
+          Boolean indicating whether the carrier is now on or off.
+        </tp:docstring>
+      </arg>
     </signal>
-
+    <tp:enum name="NM_DEVICE_STATE" type="u">
+      <tp:enumvalue suffix="UNKNOWN" value="0">
+        <tp:docstring>
+          The device is in an unknown state.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="DOWN" value="1">
+        <tp:docstring>
+          The device is down.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="DISCONNECTED" value="2">
+        <tp:docstring>
+          The device is not connected.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="PREPARE" value="3">
+        <tp:docstring>
+          The device is preparing to connect.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="CONFIG" value="4">
+        <tp:docstring>
+          The device is being configured.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="NEED_AUTH" value="5">
+        <tp:docstring>
+          The device is awaiting authorization credentials.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="IP_CONFIG" value="6">
+        <tp:docstring>
+          The IP address of the device is being configured.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="ACTIVATED" value="7">
+        <tp:docstring>
+          The device is active.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="FAILED" value="8">
+        <tp:docstring>
+          The device is in a failure state following an attempt to activate it.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="CANCELLED" value="9">
+        <tp:docstring>
+          The previous activation attempt on this device was cancelled.
+        </tp:docstring>
+      </tp:enumvalue>
+    </tp:enum>
+    <tp:flags name="NM_DEVICE_CAP" value-prefix="NM_DEVICE_CAP" type="u">
+      <tp:flag suffix="NONE" value="0x0">
+        <tp:docstring>Null capability.</tp:docstring>
+      </tp:flag>
+      <tp:flag suffix="NM_SUPPORTED" value="0x1">
+        <tp:docstring>The device is supported by NetworkManager.</tp:docstring>
+      </tp:flag>
+      <tp:flag suffix="CARRIER_DETECT" value="0x2">
+        <tp:docstring>The device supports carrier detection.</tp:docstring>
+      </tp:flag>
+    </tp:flags>
   </interface>
 </node>

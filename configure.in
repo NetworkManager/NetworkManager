@@ -53,6 +53,18 @@ IT_PROG_INTLTOOL([0.35.0])
 AM_GLIB_GNU_GETTEXT
 
 dnl
+dnl GNOME support
+dnl
+AC_ARG_WITH(docs, AC_HELP_STRING([--with-docs], [Build NetworkManager documentation]))
+AM_CONDITIONAL(WITH_DOCS, test "x$with_docs" = "xyes")
+case $with_docs in
+	yes) ;;
+	*)
+		with_docs=no
+		;;
+esac
+
+dnl
 dnl Make sha1.c happy on big endian systems
 dnl
 AC_C_BIGENDIAN
@@ -313,3 +325,8 @@ AC_OUTPUT
 echo
 echo Distribution targeting: ${with_distro}
 echo 'if this is not correct, please specifiy your distro with --with-distro=DISTRO'
+
+echo
+echo Building documentation: ${with_docs}
+echo
+

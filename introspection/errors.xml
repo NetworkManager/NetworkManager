@@ -1,0 +1,36 @@
+<?xml version="1.0" ?>
+<tp:errors xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
+    namespace="org.freedesktop.NetworkManager.Error">
+  <tp:copyright>Copyright (C) 2008 Novell, Inc.</tp:copyright>
+
+  <tp:error name="Unknown Connection">
+    <tp:docstring>
+        Connection was not provided by any known settings service.
+    </tp:docstring>
+  </tp:error>
+
+  <tp:error name="Unknown Device">
+    <tp:docstring>
+        Unknown device.
+    </tp:docstring>
+  </tp:error>
+
+  <tp:error name="Invalid Service">
+    <tp:docstring>
+        Invalid settings service (not a recognized system or user settings service name).
+    </tp:docstring>
+  </tp:error>
+
+  <tp:error name="System Connection">
+    <tp:docstring>
+        Connection was superseded by a system connection.
+    </tp:docstring>
+  </tp:error>
+
+  <tp:error name="Permission Denied">
+    <tp:docstring>
+    User does not have the permission to activate this connection.
+    </tp:docstring>
+  </tp:error>
+
+</tp:errors>

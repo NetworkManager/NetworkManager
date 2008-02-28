@@ -7,72 +7,229 @@
   the legacy methods at the end of this file.
 -->
 
-<node name="/">
+<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
   <interface name="org.freedesktop.NetworkManager">
     <method name="GetDevices">
+      <tp:docstring>
+        Get the list of network devices.
+      </tp:docstring>
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_get_devices"/>
-      <arg name="devices" type="ao" direction="out"/>
+      <arg name="devices" type="ao" direction="out">
+        <tp:docstring>
+          List of object paths of network devices known to the system.
+        </tp:docstring>
+      </arg>
     </method>
 
     <method name="ActivateDevice">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_activate_device"/>
       <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
-      <arg name="device" type="o" direction="in"/>
-      <arg name="service_name" type="s" direction="in"/>
-      <arg name="connection" type="o" direction="in"/>
-      <arg name="specific_object" type="o" direction="in"/>
+      <tp:docstring>
+        Activate a device using the supplied connection.
+      </tp:docstring>
+      <arg name="device" type="o" direction="in">
+        <tp:docstring>
+          The device to be activated.
+        </tp:docstring>
+      </arg>
+      <arg name="service_name" type="s" direction="in">
+        <tp:docstring>
+          The D-Bus service name of the settings service that provides this connection.
+        </tp:docstring>
+      </arg>
+      <arg name="connection" type="o" direction="in">
+        <tp:docstring>
+          The connection to activate the devices with.
+        </tp:docstring>
+      </arg>
+      <arg name="specific_object" type="o" direction="in">
+        <tp:docstring>
+          The path of a device-type-specific object this activation should use, for example a WiFi access point.
+        </tp:docstring>
+      </arg>
+      <tp:possible-errors>
+        <tp:error name="org.freedesktop.NetworkManager.Error.UnknownConnection"/>
+        <tp:error name="org.freedesktop.NetworkManager.Error.UnknownDevice"/>
+        <tp:error name="org.freedesktop.NetworkManager.Error.InvalidService"/>
+        <tp:error name="org.freedesktop.NetworkManager.Error.ConnectionActivating">
+          <tp:docstring>Another connection is already activating or the same connection is already active.  FIXME: check if the error name is correct.  FIXME: split into 2 errors?</tp:docstring>
+        </tp:error>
+        <tp:error name="org.freedesktop.NetworkManager.Error.ConnectionInvalid">
+          <tp:docstring>The connection is invalid for this device.</tp:docstring>
+        </tp:error>
+
+      </tp:possible-errors>
     </method>
 
     <method name="GetActiveConnections">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_get_active_connections"/>
       <!-- 'connections' is an array of structs
-           consisting of the following elements:
-               service name
-               connection object path
-               specific object
-               array of (device object path)
+      consisting of the following elements:
+      service name
+      connection object path
+      specific object
+      array of (device object path)
       -->
-      <arg name="connections" type="a(sooao)" direction="out"/>
+      <arg name="connections" type="a(sooao)" direction="out" tp:type="Active_Connection[]">
+        <tp:docstring>
+          List of active connections
+        </tp:docstring>
+      </arg>
     </method>
 
     <method name="Sleep">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_sleep"/>
-      <arg name="sleep" type="b" direction="in"/>
+      <tp:docstring>
+        Control the NetworkManager daemon's sleep state.  When asleep, all interfaces that it manages are deactivated.  When awake, devices are available to be activated.
+      </tp:docstring>
+      <arg name="sleep" type="b" direction="in">
+        <tp:docstring>
+          Indicates whether the NetworkManager daemon should sleep or wake.
+        </tp:docstring>
+      </arg>
     </method>
 
-    <property name="WirelessEnabled" type="b" access="readwrite"/>
-    <property name="WirelessHardwareEnabled" type="b" access="read"/>
-    <property name="State" type="u" access="read"/>
+    <property name="WirelessEnabled" type="b" access="readwrite">
+      <tp:docstring>
+        Indicates if wireless is currently enabled or not.
+      </tp:docstring>
+    </property>
+
+    <property name="WirelessHardwareEnabled" type="b" access="read">
+      <tp:docstring>
+        Indicates if the wireless hardware is currently enabled, i.e. the state of the RF kill switch.
+      </tp:docstring>
+    </property>
+
+    <property name="State" type="u" access="read" tp:type="NM_STATE">
+      <tp:docstring>
+        The overall state of the NetworkManager daemon.
+      </tp:docstring>
+    </property>
 
     <signal name="StateChange">
-      <arg name="state" type="u"/>
+      <tp:docstring>
+        NetworkManager's state changed.
+      </tp:docstring>
+      <arg name="state" type="u" tp:type="NM_STATE">
+        <tp:docstring>
+          The new state of NetworkManager.
+        </tp:docstring>
+      </arg>
     </signal>
 
     <signal name="PropertiesChanged">
-      <arg name="properties" type="a{sv}"/>
+      <tp:docstring>
+        NetworkManager's properties changed.
+      </tp:docstring>
+      <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
+        <tp:docstring>
+          The changed properties.
+        </tp:docstring>
+      </arg>
     </signal>
 
     <signal name="DeviceAdded">
-      <arg name="state" type="o"/>
+      <tp:docstring>
+        A device was added to the system
+      </tp:docstring>
+      <arg name="device_path" type="o">
+        <tp:docstring>
+          The object path of the newly added device.
+        </tp:docstring>
+      </arg>
     </signal>
 
     <signal name="DeviceRemoved">
-      <arg name="state" type="o"/>
+      <tp:docstring>
+        A device was removed from the system, and is no longer available.
+      </tp:docstring>
+      <arg name="device_path" type="o">
+        <tp:docstring>
+          The object path of the device that was just removed.
+        </tp:docstring>
+      </arg>
     </signal>
+
+    <tp:enum name="NM_STATE" type="u">
+      <tp:docstring>
+        Describes the overall state of the daemon.
+      </tp:docstring>
+      <tp:enumvalue suffix="UNKNOWN" value="0">
+        <tp:docstring>
+          The NetworkManager daemon is in an unknown state.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="ASLEEP" value="1">
+        <tp:docstring>
+          The NetworkManager daemon is asleep and all interfaces managed by it are inactive.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="CONNECTING" value="2">
+        <tp:docstring>
+          The NetworkManager daemon is connecting a device.  FIXME: What does this mean when one device is active and another is connecting?
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="CONNECTED" value="3">
+        <tp:docstring>
+          The NetworkManager daemon is connected.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="DISCONNECTED" value="4">
+        <tp:docstring>
+          The NetworkManager daemon is disconnected.
+        </tp:docstring>
+      </tp:enumvalue>
+    </tp:enum>
+
+
+    <tp:struct name="Active_Connection" array-name="Active_Connection_List">
+      <tp:docstring>A struct representing an active connection, returned by GetActiveConnections on the NetworkManager interface.
+      </tp:docstring>
+      <tp:member type="s" name="service_name">
+        <tp:docstring>
+          The D-Bus service name of the settings service that provides this connection.
+        </tp:docstring>
+      </tp:member>
+      <tp:member type="o" name="connection_path">
+        <tp:docstring>
+          Object path of the active connection
+        </tp:docstring>
+      </tp:member>
+      <tp:member type="o" name="specific_object">
+        <tp:docstring>
+          Object path of a device-type-specific object this connection uses, for example a specific WiFi access point.
+        </tp:docstring>
+      </tp:member>
+      <tp:member type="ao" name="active_device_list">
+        <tp:docstring>
+          Array of object paths to the devices this connection is active on.
+        </tp:docstring>
+      </tp:member>
+    </tp:struct>
 
     <!-- Legacy methods to maintain backwards compatibility for 0.6 branch. -->
 
     <method name="sleep">
+      <tp:docstring>
+        DEPRECATED.  Control the NetworkManager daemon's sleep state.  When asleep, all interfaces that it manages are deactivated.
+      </tp:docstring>
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_legacy_sleep"/>
     </method>
 
     <method name="wake">
+      <tp:docstring>
+        DEPRECATED.  Control the NetworkManager daemon's sleep state.  When awake, all known interfaces are available to be activated.
+      </tp:docstring>
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_legacy_wake"/>
     </method>
 
     <method name="state">
+      <tp:docstring>
+        DEPRECATED.  The overall state of the NetworkManager daemon.
+      </tp:docstring>
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_legacy_state"/>
-      <arg name="state" type="u" direction="out"/>
+      <arg name="state" type="u" direction="out" tp:type="NM_STATE"/>
     </method>
 
   </interface>

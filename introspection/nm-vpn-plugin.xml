@@ -1,49 +1,132 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<node name="/">
+<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
   <interface name="org.freedesktop.NetworkManager.VPN.Plugin">
+    <tp:docstring>
+      This interface is provided by plugins providing VPN services to the NetworkManager daemon.
+    </tp:docstring>
     <method name="Connect">
+      <tp:docstring>
+        Tells the plugin to connect.
+      </tp:docstring>
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_connect"/>
-      <arg name="connection" type="a{sa{sv}}" direction="in"/>
+      <arg name="connection" type="a{sa{sv}}" direction="in" tp:type="String_String_Variant_Map_Map">
+        <tp:docstring>
+          Describes the connection to be established.
+        </tp:docstring>
+      </arg>
+      <tp:possible-errors>
+        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.StartingInProgress"/>
+        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.AlreadyStarted"/>
+        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.StoppingInProgress"/>
+        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.BadArguments"/>
+        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.LaunchFailed"/>
+      </tp:possible-errors>
     </method>
 
     <method name="NeedSecrets">
+      <tp:docstring>
+        Asks the plugin whether the provided connection will require secrets to connect successfully.
+      </tp:docstring>
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_need_secrets"/>
-      <arg name="settings" type="a{sa{sv}}" direction="in"/>
-      <arg name="setting_name" type="s" direction="out"/>
+      <arg name="settings" type="a{sa{sv}}" direction="in" tp:type="String_String_Variant_Map_Map">
+        <tp:docstring>
+          Describes the connection that may need secrets.
+        </tp:docstring>
+      </arg>
+      <arg name="setting_name" type="s" direction="out">
+        <tp:docstring>
+          The setting name within the provided connection that requires secrets, if any.
+        </tp:docstring>
+      </arg>
+      <tp:possible-errors>
+        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.ConnectionInvalid"/>
+      </tp:possible-errors>
     </method>
 
     <method name="Disconnect">
+      <tp:docstring>
+        Disconnect the plugin.
+      </tp:docstring>
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_disconnect"/>
+      <tp:possible-errors>
+        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.StoppingInProgress"/>
+        <tp:error name="org.freedesktop.NetworkManager.VPN.Error.AlreadyStopped"/>
+      </tp:possible-errors>
     </method>
 
     <method name="SetIp4Config">
+      <tp:docstring>
+        Set IPv4 details on the connection.
+      </tp:docstring>
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_set_ip4_config"/>
-      <arg name="config" type="a{sv}" direction="in"/>
+      <arg name="config" type="a{sv}" direction="in" tp:type="String_Variant_Map">
+        <tp:docstring>
+          Ip4Config details for the conneciton.
+        </tp:docstring>
+      </arg>
     </method>
 
     <method name="SetFailure">
+      <tp:docstring>
+        Indicate a failure to the plugin.
+      </tp:docstring>
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_plugin_set_failure"/>
-      <arg name="reason" type="s" direction="in"/>
+      <arg name="reason" type="s" direction="in">
+        <tp:docstring>
+          The reason for the failure.
+        </tp:docstring>
+      </arg>
     </method>
 
-    <property name="State" type="u" access="read"/>
+    <property name="State" type="u" access="read" tp:type="NM_VPN_CONNECTION_STATE">
+      <tp:docstring>
+        The state of the plugin.
+      </tp:docstring>
+    </property>
 
     <signal name="StateChanged">
-      <arg name="state" type="u"/>
+      <tp:docstring>
+        Emitted when the plugin state changes.
+      </tp:docstring>
+      <arg name="state" type="u" tp:type="NM_VPN_CONNECTION_STATE">
+        <tp:docstring>
+          The new state of the plugin.
+        </tp:docstring>
+      </arg>
     </signal>
 
     <signal name="Ip4Config">
-      <arg name="ip4config" type="a{sv}"/>
+      <tp:docstring>
+        The plugin obtained an IPv4 configuration.
+      </tp:docstring>
+      <arg name="ip4config" type="a{sv}" tp:type="String_Variant_Map">
+        <tp:docstring>
+          The IPv4 configuration.
+        </tp:docstring>
+      </arg>
     </signal>
 
     <signal name="LoginBanner">
-      <arg name="banner" type="s"/>
+      <tp:docstring>
+        Emitted when the plugin receives a login banner from the VPN service.
+      </tp:docstring>
+      <arg name="banner" type="s">
+        <tp:docstring>
+          The login banner string.
+        </tp:docstring>
+      </arg>
     </signal>
 
     <signal name="Failure">
-      <arg name="reason" type="u"/>
+      <tp:docstring>
+        Emitted when a failure in the VPN plugin occurs.
+      </tp:docstring>
+      <arg name="reason" type="u" tp:type="NM_VPN_CONNECTION_STATE_REASON">
+        <tp:docstring>
+          Reason code for the failure.
+        </tp:docstring>
+      </arg>
     </signal>
-
   </interface>
 </node>

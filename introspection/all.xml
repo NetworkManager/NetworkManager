@@ -1,0 +1,52 @@
+<tp:spec
+  xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
+  xmlns:xi="http://www.w3.org/2001/XInclude">
+
+<tp:title>NetworkManager D-Bus Interface Specification</tp:title>
+<tp:version>0.7.0</tp:version>
+
+
+<tp:copyright>Copyright (C) 2008 Red Hat, Inc.</tp:copyright>
+<tp:copyright>Copyright (C) 2008 Novell, Inc.</tp:copyright>
+
+<tp:license xmlns="http://www.w3.org/1999/xhtml">
+<p>This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.</p>
+
+<p>This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+General Public License for more details.</p>
+
+<p>You should have received a copy of the GNU Lesser General Public
+License along with this library; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</p>
+</tp:license>
+
+<xi:include href="nm-manager.xml"/>
+<xi:include href="nm-access-point.xml"/>
+<xi:include href="nm-device.xml"/>
+<xi:include href="nm-device-802-3-ethernet.xml"/>
+<xi:include href="nm-device-802-11-wireless.xml"/>
+<xi:include href="nm-ip4-config.xml"/>
+<xi:include href="nm-settings.xml"/>
+<xi:include href="nm-exported-connection.xml"/>
+<xi:include href="nm-vpn-manager.xml"/>
+<xi:include href="nm-vpn-connection.xml"/>
+<xi:include href="nm-vpn-plugin.xml"/>
+
+<xi:include href="errors.xml"/>
+<xi:include href="vpn-errors.xml"/>
+<xi:include href="generic-types.xml"/>
+
+<!--
+<xi:include href="extensions.xml">
+	<xi:fallback>
+		<!- - absence of non-spec extensions is OK - ->
+	</xi:fallback>
+</xi:include>
+-->
+
+</tp:spec>

@@ -1,42 +1,89 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<node name="/">
+<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
 
-  <interface name="org.freedesktop.NetworkManagerSettings.Connection">
+    <interface name="org.freedesktop.NetworkManagerSettings.Connection">
+        <tp:docstring>
+            Represents a single network connection configuration.
+        </tp:docstring>
+        <method name="GetID">
+            <tp:docstring>
+                Obtain the ID of this connection.
+            </tp:docstring>
+            <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_exported_connection_get_id"/>
+            <arg name="id" type="s" direction="out">
+                <tp:docstring>
+                    The ID of this connection.
+                </tp:docstring>
+            </arg>
+        </method>
 
-    <method name="GetID">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_exported_connection_get_id"/>
-      <arg name="id" type="s" direction="out"/>
-    </method>
+        <method name="GetSettings">
+            <tp:docstring>
+                Get the settings maps describing this object.
+            </tp:docstring>
+            <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_exported_connection_get_settings"/>
+            <arg name="settings" type="a{sa{sv}}" direction="out" tp:type="String_String_Variant_Map_Map">
+                <tp:docstring>
+                    The nested settings maps describing this object.
+                </tp:docstring>
+            </arg>
+        </method>
 
-    <method name="GetSettings">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_exported_connection_get_settings"/>
-      <arg name="settings" type="a{sa{sv}}" direction="out"/>
-    </method>
+        <signal name="Updated">
+            <tp:docstring>
+                Emitted when some settings changed.
+            </tp:docstring>
+            <arg name="settings" type="a{sa{sv}}" tp:type="String_String_Variant_Map_Map">
+                <tp:docstring>
+                    Contains the changed settings.
+                </tp:docstring>
+            </arg>
+        </signal>
 
-    <signal name="Updated">
-      <arg name="settings" type="a{sa{sv}}"/>
-    </signal>
+        <signal name="Removed">
+            <tp:docstring>
+                Emitted when this settings object was removed. FIXME: Is this emitted after it was removed or when it is about to be removed?  If after removed, then different semantics to Device removed.  if prior to removal, should be called AboutToBeRemoved.
+            </tp:docstring>
+        </signal>
 
-    <signal name="Removed">
-    </signal>
+    </interface>
 
-  </interface>
+    <interface name="org.freedesktop.NetworkManagerSettings.Connection.Secrets">
+        <tp:docstring>
+            Secrets have a separate interface so that they can be locked down.
+        </tp:docstring>
 
-  <!-- Secrets have a separate interface so that they can be locked down -->
-  <interface name="org.freedesktop.NetworkManagerSettings.Connection.Secrets">
+        <method name="GetSecrets">
+            <tp:docstring>
+                Get the secrets encapsulated in this object.
+            </tp:docstring>
+            <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_exported_connection_get_secrets"/>
+            <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+            <arg name="setting_name" type="s" direction="in">
+                <tp:docstring>
+                    Name of the setting to return.
+                </tp:docstring>
+            </arg>
+            <arg name="hints" type="as" direction="in">
+                <tp:docstring>
+                    Array of strings of key names in the Setting for which NM thinks
+                    a secrets may be required.A
+                </tp:docstring>
+            </arg>
+            <arg name="request_new" type="b" direction="in">
+                <tp:docstring>
+                    Indicates whether new secrets should be requested or if the request can be fulfilled from storage.
+                </tp:docstring>
+            </arg>
 
-    <method name="GetSecrets">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_exported_connection_get_secrets"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
-      <arg name="setting_name" type="s" direction="in"/>
-      <!-- Array of strings of key names in the Setting for which NM thinks
-           a secrets may be required. -->
-      <arg name="hints" type="as" direction="in"/>
-      <arg name="request_new" type="b" direction="in"/>
-      <arg name="secrets" type="a{sv}" direction="out"/>
-    </method>
+            <arg name="secrets" type="a{sv}" direction="out" tp:type="String_Variant_Map">
+                <tp:docstring>
+                    Map of secrets.
+                </tp:docstring>
+            </arg>
+        </method>
 
-  </interface>
+    </interface>
 
 </node>

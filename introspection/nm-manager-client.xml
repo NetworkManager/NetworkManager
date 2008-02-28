@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <!-- 
-  READ ME! READ ME! READ ME! READ ME! READ ME!
+READ ME! READ ME! READ ME! READ ME! READ ME!
 
-  This file needs to be kept in sync with nm-manager.xml with the exception of
-  the legacy methods at the end of nm-manager.xml.
+This file needs to be kept in sync with nm-manager.xml with the exception of
+the legacy methods at the end of nm-manager.xml.
+
+This file is only used to ensure that a few legacy 0.6 D-DBus methods that
+NM supports don't leak into libnm-glib, but are only exposed by the NMManager
+object.  dbus-glib generates the same bound function names for D-Bus the methods
+"sleep" and "Sleep", unfortunately.
 -->
 
 <node name="/">
@@ -59,6 +64,5 @@
     <signal name="DeviceRemoved">
       <arg name="state" type="o"/>
     </signal>
-
   </interface>
 </node>

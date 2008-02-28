@@ -1,16 +1,34 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
-<node name="/">
+<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
   <interface name="org.freedesktop.NetworkManager.IP4Config">
-    <property name="Address" type="u" access="read"/>
-    <property name="Gateway" type="u" access="read"/>
-    <property name="Netmask" type="u" access="read"/>
-    <property name="Broadcast" type="u" access="read"/>
-    <property name="Hostname" type="s" access="read"/>
-    <property name="Nameservers" type="au" access="read"/>
-    <property name="Domains" type="as" access="read"/>
-    <property name="NisDomain" type="s" access="read"/>
-    <property name="NisServers" type="au" access="read"/>
+    <property name="Address" type="u" access="read">
+      <tp:docstring>IPv4 address. FIXME: what about multiple addresses?</tp:docstring>
+    </property>
+    <property name="Gateway" type="u" access="read">
+      <tp:docstring>Default gateway.</tp:docstring>
+    </property>
+    <property name="Netmask" type="u" access="read">
+      <tp:docstring>Network mask of this network.</tp:docstring>
+    </property>
+    <property name="Broadcast" type="u" access="read">
+      <tp:docstring>Broadcast address of this network.</tp:docstring>
+    </property>
+    <property name="Hostname" type="s" access="read">
+      <tp:docstring>The hostname associated with this IPv4 address. FIXME: what about multiple hostnames?</tp:docstring>
+    </property>
+    <property name="Nameservers" type="au" access="read">
+      <tp:docstring>The nameservers in use.</tp:docstring>
+    </property>
+    <property name="Domains" type="as" access="read">
+      <tp:docstring>A list of domains this address belongs to.</tp:docstring>
+    </property>
+    <property name="NisDomain" type="s" access="read">
+      <tp:docstring>The NIS domain this address belongs to.</tp:docstring>
+    </property>
+    <property name="NisServers" type="au" access="read">
+      <tp:docstring>The NIS servers associated with this address.</tp:docstring>
+    </property>
   </interface>
 </node>
 

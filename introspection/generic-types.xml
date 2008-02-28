@@ -1,0 +1,47 @@
+<tp:generic-types
+  xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+  <tp:mapping name="String_Variant_Map">
+    <tp:docstring>A mapping from strings to variants representing extra
+      key-value pairs.</tp:docstring>
+    <tp:member type="s" name="Key"/>
+    <tp:member type="v" name="Value"/>
+  </tp:mapping>
+
+  <tp:mapping name="String_String_Map">
+    <tp:docstring>A mapping from strings to strings representing extra
+      key-value pairs.</tp:docstring>
+    <tp:member type="s" name="Key"/>
+    <tp:member type="s" name="Value"/>
+  </tp:mapping>
+
+  <tp:mapping name="String_String_Variant_Map_Map">
+      <tp:docstring>A mapping from strings to a map of string to variant.</tp:docstring>
+      <tp:member type="s" name="Key"/>
+      <tp:member type="a{sv}" name="Value" tp:type="String_Variant_Map"/>
+  </tp:mapping>
+
+  <tp:enum name="IW_MODE" type="i">
+    <tp:docstring></tp:docstring>
+    <tp:enumvalue suffix="AUTO" value="0">
+      <tp:docstring>Automatic mode controlled by the driver.</tp:docstring>
+    </tp:enumvalue>
+    <tp:enumvalue suffix="ADHOC" value="1">
+      <tp:docstring>Single cell network.</tp:docstring>
+    </tp:enumvalue>
+    <tp:enumvalue suffix="INFRA" value="2">
+      <tp:docstring>Multi cell network, roaming.</tp:docstring>
+    </tp:enumvalue>
+    <tp:enumvalue suffix="MASTER" value="3">
+      <tp:docstring>Synchronisation master or Access Point.</tp:docstring>
+    </tp:enumvalue>
+    <tp:enumvalue suffix="REPEAT" value="4">
+      <tp:docstring>Wireless Repeater (forwarder).</tp:docstring>
+    </tp:enumvalue>
+    <tp:enumvalue suffix="SECOND" value="5">
+      <tp:docstring>Secondary master/repeater (backup).</tp:docstring>
+    </tp:enumvalue>
+    <tp:enumvalue suffix="MONITOR" value="6">
+      <tp:docstring>Passive monitor (listen only).</tp:docstring>
+    </tp:enumvalue>
+  </tp:enum>
+</tp:generic-types>

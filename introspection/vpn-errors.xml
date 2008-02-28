@@ -1,0 +1,32 @@
+<?xml version="1.0" ?>
+<tp:errors xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0"
+    namespace="org.freedesktop.NetworkManager.VPN.Error">
+  <tp:error name="General">
+    <tp:docstring>This is a drab, nondescript error.</tp:docstring>
+  </tp:error>
+  <tp:error name="StartingInProgress">
+    <tp:docstring>The request could not be processed because the VPN connection is already being started.</tp:docstring>
+  </tp:error>
+  <tp:error name="AlreadyStarted">
+    <tp:docstring>The request could not be processed because a VPN connection was already active.</tp:docstring>
+  </tp:error>
+  <tp:error name="StoppingInProgress">
+    <tp:docstring>The request could not be processed because the VPN connection is already being stopped.</tp:docstring>
+  </tp:error>
+  <tp:error name="AlreadyStopped">
+    <tp:docstring>The request could not be processed because the VPN connection was already stopped.</tp:docstring>
+  </tp:error>
+  <tp:error name="WrongState">
+    <tp:docstring>The request could not be processed because the VPN connection is in the wrong state for this type of request. FIXME: too general?</tp:docstring>
+  </tp:error>
+  <tp:error name="BadArguments">
+    <tp:docstring>Invalid arguments were passed with the request.  FIXME: too general.</tp:docstring>
+  </tp:error>
+  <tp:error name="LaunchFailed">
+    <tp:docstring>A binary providing the service failed to launch.</tp:docstring>
+  </tp:error>
+  <tp:error name="ConnectionInvalid">
+    <tp:docstring>The request could not be processed because the VPN connection settings were invalid.</tp:docstring>
+  </tp:error>
+</tp:errors>
+
