@@ -1,55 +1,28 @@
 #!/sbin/runscript
-#
-# NetworkManager:   NetworkManager daemon
-#
-# chkconfig: 345 98 02
-# description:  This is a daemon for automatically switching network \
-#               connections to the best available connection. \
-#
-# processname: NetworkManager
-# pidfile: /var/run/NetworkManager.pid
-#
-### BEGIN INIT INFO
-# Provides: $network
-### END INIT INFO
-
-prefix=@prefix@
-exec_prefix=@prefix@
-sbindir=@sbindir@
-
-NETWORKMANAGER_BIN=${sbindir}/NetworkManager
-
-# Sanity checks.
-[ -x $NETWORKMANAGER_BIN ] || exit 0
-
-# We need /sbin/ip
-[ -x /sbin/ip ] || exit 0
-
-# so we can rearrange this easily
-processname=$NETWORKMANAGER_BIN
-pidfile=/var/run/NetworkManager.pid
+# Copyright (c) 2008 Saleem Abdulrasool <compnerd@compnerd.org>
+# Distributed under the terms of the GNU General Purpose License v2
+# $Header: $
 
 depend() {
-	need hald dhcdbd
+   need hald
 }
 
-start()
-{
-	if [ -e ${pidfile} ]; then
-		rm -f ${pidfile}
-	fi
-	ebegin "Starting NetworkManager"
-	start-stop-daemon --start --quiet --exec ${processname}
-	eend $?
-	echo $(/bin/pidof NetworkManager) > ${pidfile}
+start() {
+   ebegin "Starting NetworkManager"
+   start-stop-daemon --start --quiet --pidfile /var/run/NetworkManager.pid --exec /usr/sbin/NetworkManager
+   eend $?
 }
 
-stop()
-{
-	ebegin "Stopping NetworkManager"
-	start-stop-daemon --stop --quiet --exec ${processname} --pidfile ${pidfile}
-	eend $?
-	if [ -e ${pidfile} ]; then
-		rm -f $pidfile
-	fi
+stop() {
+   local retval
+
+   ebegin "Stopping NetworkManager"
+   start-stop-daemon --stop --quiet --pidfile /var/run/NetworkManager.pid
+   retval=$?
+   eend ${retval}
+
+   [ -e /var/run/NetworkManager.pid ] && rm -f /var/run/NetworkManager.pid
+   return ${retval}
 }
+
+# vim: set ft=gentoo-init-d ts=3 sw=3 et:

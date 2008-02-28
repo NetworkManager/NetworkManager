@@ -1,52 +1,27 @@
 #!/sbin/runscript
-#
-# NetworkManagerDispatcher:   NetworkManagerDispatcher daemon
-#
-# chkconfig: 345 98 02
-# description:  This is a daemon for automatically executing scripts \
-#               when network connections change. \
-#
-# processname: NetworkManagerDispatcher
-# pidfile: /var/run/NetworkManagerDispatcher.pid
-#
-### BEGIN INIT INFO
-# Provides: networkmanager-dispatcher
-### END INIT INFO
-
-prefix=@prefix@
-exec_prefix=@prefix@
-sbindir=@sbindir@
-
-NETWORKMANAGERDISPATCHER_BIN=${sbindir}/NetworkManagerDispatcher
-
-# Sanity checks.
-[ -x $NETWORKMANAGERDISPATCHER_BIN ] || exit 0
-
-# so we can rearrange this easily
-processname=$NETWORKMANAGERDISPATCHER_BIN
-pidfile=/var/run/NetworkManagerDispatcher.pid
+# Copyright (c) 2008 Saleem Abdulrasool <compnerd@compnerd.org>
+# Distributed under the terms of the GNU General Purpose License v2
+# $Header: $
 
 depend() {
-	need NetworkManager
+   need NetworkManager
 }
 
-start()
-{
-	if [ -e ${pidfile} ]; then
-		rm -f ${pidfile}
-	fi
-	ebegin "Starting NetworkManagerDispatcher"
-	start-stop-daemon --start --quiet --exec ${processname}
-	eend $?
-	echo $(/bin/pidof NetworkManagerDispatcher) > ${pidfile}
+start() {
+   ebegin "Starting NetworkManagerDispatcher"
+      start-stop-daemon --start --quiet --pidfile /var/run/NetworkManagerDispatcher.pid --exec /usr/sbin/NetworkManagerDispatcher
+      eend $?
 }
 
-stop()
-{
-	ebegin "Stopping NetworkManagerDispatcher"
-	start-stop-daemon --stop --quiet --exec ${processname} --pidfile ${pidfile}
-	eend $?
-	if [ -e ${pidfile} ]; then
-		rm -f $pidfile
-	fi
+stop() {
+   local retval
+
+   ebegin "Stopping NetworkManagerDispatcher"
+   start-stop-daemon --stop --quiet --pidfile /var/run/NetworkManagerDispatcher.pid
+   retval=$?
+   eend ${retval}
+
+   [ -e /var/run/NetworkManagerDispatcher.pid ] && rm -f /var/run/NetworkManagerDispatcher.pid
 }
+
+# vim: set ft=gentoo-init-d ts=3 sw=3 et:

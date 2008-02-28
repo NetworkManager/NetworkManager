@@ -1,3 +1,11 @@
+2008-02-27  Saleem Abdulrasool  <compnerd@compnerd.org>
+
+	reviewed by: steev@steev.net
+
+	* initscript/Gentoo/NetworkManager.in:
+	* initscript/Gentoo/NetworkManagerDispatcher.in:
+		Update the scripts and move them to Gentoo style.
+
 2008-02-27  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Will Stephenson <wstephenson@kde.org>
