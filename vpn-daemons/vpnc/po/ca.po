@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-vpnc\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-02-22 19:27+0100\n"
-"PO-Revision-Date: 2007-02-22 12:36+0100\n"
+"POT-Creation-Date: 2008-02-28 16:38+0100\n"
+"PO-Revision-Date: 2008-02-28 16:39+0100\n"
 "Last-Translator: Gil Forcada <gilforcada@guifi.net>\n"
 "Language-Team: Catalan <tradgnome@softcatala.org>\n"
 "MIME-Version: 1.0\n"
@@ -48,16 +48,16 @@ msgstr "_Recorda la contrasenya per aquesta sessió"
 msgid "_Save passwords in keyring"
 msgstr "_Desa la contrasenya a l'anell de claus"
 
-#: ../auth-dialog/main.c:161
+#: ../auth-dialog/main.c:172
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Us heu d'autenticar per poder accedir a la xarxa privada virtual «%s»."
 
-#: ../auth-dialog/main.c:162
+#: ../auth-dialog/main.c:173
 msgid "Authenticate VPN"
 msgstr "Autentica la VPN"
 
-#: ../auth-dialog/main.c:169
+#: ../auth-dialog/main.c:180
 msgid "_Group Password:"
 msgstr "Contrasenya de _grup:"
 
@@ -69,53 +69,68 @@ msgstr "Afegiu, suprimiu, i editeu connexions VPN"
 msgid "VPN Connection Manager (vpnc)"
 msgstr "Gestor de connexions VPN (vpnc)"
 
-#: ../properties/nm-vpnc.c:84
+#: ../properties/nm-vpnc.c:98
 msgid "Compatible Cisco VPN client (vpnc)"
 msgstr "Client VPN compatible amb Cisco (vpnc)"
 
-#: ../properties/nm-vpnc.c:448
+#: ../properties/nm-vpnc.c:543
 msgid "The following vpnc VPN connection will be created:"
 msgstr "Es crearà la següent connexió VPN de vpnc:"
 
-#: ../properties/nm-vpnc.c:450
+#: ../properties/nm-vpnc.c:545
 #, c-format
 msgid "Name:  %s"
 msgstr "Nom:  %s"
 
-#: ../properties/nm-vpnc.c:453
+#: ../properties/nm-vpnc.c:548
 #, c-format
 msgid "Gateway:  %s"
 msgstr "Passarel·la:  %s"
 
-#: ../properties/nm-vpnc.c:455
+#: ../properties/nm-vpnc.c:550
 #, c-format
 msgid "Group Name:  %s"
 msgstr "Nom del grup:  %s"
 
-#: ../properties/nm-vpnc.c:459
+#: ../properties/nm-vpnc.c:554
 #, c-format
 msgid "Username:  %s"
 msgstr "Nom d'usuari:  %s"
 
-#: ../properties/nm-vpnc.c:464
+#: ../properties/nm-vpnc.c:559
 #, c-format
 msgid "Domain:  %s"
 msgstr "Domini:  %s"
 
-#: ../properties/nm-vpnc.c:469
+#: ../properties/nm-vpnc.c:564
 #, c-format
 msgid "Routes:  %s"
 msgstr "Rutes:  %s"
 
-#: ../properties/nm-vpnc.c:473
+#: ../properties/nm-vpnc.c:568
+#, c-format
+msgid "NAT-Keepalive packet interval:  %s"
+msgstr "Interval del paquet NAT-Keepalive: %s"
+
+#: ../properties/nm-vpnc.c:572
+#, c-format
+msgid "Enable Single DES"
+msgstr "Habilita el DES únic"
+
+#: ../properties/nm-vpnc.c:576
+#, c-format
+msgid "Disable NAT Traversal"
+msgstr "Inhabilita el NAT transversal"
+
+#: ../properties/nm-vpnc.c:580
 msgid "The connection details can be changed using the \"Edit\" button."
 msgstr "Els detalls de la connexió es poden canviar amb el botó «Edita»."
 
-#: ../properties/nm-vpnc.c:542
+#: ../properties/nm-vpnc.c:665
 msgid "TCP tunneling not supported"
 msgstr "No està implementat els túnels TCP"
 
-#: ../properties/nm-vpnc.c:544
+#: ../properties/nm-vpnc.c:667
 #, c-format
 msgid ""
 "The VPN settings file '%s' specifies that VPN traffic should be tunneled "
@@ -131,67 +146,84 @@ msgstr ""
 "Tot i això es pot crear la connexió, amb el túnel a través de TCP "
 "inhabilitat, tanmateix segurament no funcionarà com s'espera."
 
-#: ../properties/nm-vpnc.c:565
+#: ../properties/nm-vpnc.c:687
+msgid "Settings import incomplete"
+msgstr "No s'han pogut importar els paràmetres"
+
+#: ../properties/nm-vpnc.c:689
+#, c-format
+msgid ""
+"The VPN settings file '%s' is incomplete. You may not be able to connect "
+"without providing further information."
+msgstr ""
+"El fitxer de configuració de la VPN «%s» no és complet. No us podreu "
+"connectar si no proporcioneu més informació."
+
+#: ../properties/nm-vpnc.c:709
 msgid "Cannot import settings"
 msgstr "No es poden importar els paràmetres"
 
-#: ../properties/nm-vpnc.c:567
+#: ../properties/nm-vpnc.c:711
 #, c-format
-msgid "The VPN settings file '%s' does not contain valid data."
-msgstr "El fitxer de paràmetres VPN «%s», no conté dades vàlides."
+msgid "The VPN settings file '%s' could not be read or is invalid."
+msgstr ""
+"No s'ha pogut llegir el fitxer de configuració de la VPN «%s» o no és vàlid."
 
-#: ../properties/nm-vpnc.c:584
+#: ../properties/nm-vpnc.c:726
 msgid "Select file to import"
 msgstr "Seleccioneu el fitxer a importar"
 
-#. printf ("in impl_export\n");
-#: ../properties/nm-vpnc.c:744
+#: ../properties/nm-vpnc.c:908
 msgid "Save as..."
 msgstr "Anomena i desa..."
 
-#: ../properties/nm-vpnc.c:774
+#: ../properties/nm-vpnc.c:937
 #, c-format
 msgid "A file named \"%s\" already exists."
 msgstr "Ja existeix un fitxer anomenat «%s»."
 
-#: ../properties/nm-vpnc.c:777
+#: ../properties/nm-vpnc.c:940
 msgid "Do you want to replace it with the one you are saving?"
 msgstr "Voleu reemplaçar-lo amb el que voleu desar?"
 
-#: ../properties/nm-vpnc.c:791
+#: ../properties/nm-vpnc.c:954
 msgid "Failed to export configuration"
 msgstr "No s'ha pogut exportar la configuració"
 
-#: ../properties/nm-vpnc.c:793
+#: ../properties/nm-vpnc.c:956
 #, c-format
 msgid "Failed to save file %s"
 msgstr "No s'ha pogut desar el fitxer %s"
 
 #: ../properties/nm-vpnc-dialog.glade.h:1
-msgid "<b>Connection Information</b>"
-msgstr "<b>Informació de la connexió</b>"
-
-#: ../properties/nm-vpnc-dialog.glade.h:2
-msgid "<b>Connection Name</b>"
-msgstr "<b>Nom de la connexió</b>"
-
-#: ../properties/nm-vpnc-dialog.glade.h:3
-msgid "<b>Required</b>"
-msgstr "<b>Necessària</b>"
-
-#: ../properties/nm-vpnc-dialog.glade.h:4
 msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
 msgstr "<i>exemple: 172.16.0.0/16 10.11.12.0/24</i>"
 
-#: ../properties/nm-vpnc-dialog.glade.h:5
-msgid "Connection Name"
-msgstr "Nom de la connexió"
+#: ../properties/nm-vpnc-dialog.glade.h:2
+msgid "Connection na_me:"
+msgstr "No_m de la connexió:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:6
-msgid "G_roup Name:"
+#: ../properties/nm-vpnc-dialog.glade.h:3
+msgid "Disable NAT _traversal"
+msgstr "Inhabilita el NAT _transversal"
+
+#: ../properties/nm-vpnc-dialog.glade.h:4
+msgid "Enable _weak single DES encryption"
+msgstr "Habilita el xifratge DES únic _fluix"
+
+#: ../properties/nm-vpnc-dialog.glade.h:5
+msgid "G_roup name:"
 msgstr "Nom del g_rup:"
 
+#: ../properties/nm-vpnc-dialog.glade.h:6
+msgid "Import _Saved Configuration..."
+msgstr "Importa la configuració _desada..."
+
 #: ../properties/nm-vpnc-dialog.glade.h:7
+msgid "Interval:"
+msgstr "Interval:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:8
 msgid ""
 "Name used to identify the connection to the private network, e.g. \"Campus "
 "VPN\" or \"Corporate Network\""
@@ -199,15 +231,15 @@ msgstr ""
 "Nom utilitzat per identificar la connexió a la xarxa privada, per exemple "
 "«VPN del Campus» o «Xarxa Corporativa»"
 
-#: ../properties/nm-vpnc-dialog.glade.h:8
+#: ../properties/nm-vpnc-dialog.glade.h:9
 msgid "Optional"
 msgstr "Opcional"
 
-#: ../properties/nm-vpnc-dialog.glade.h:9
+#: ../properties/nm-vpnc-dialog.glade.h:10
 msgid "Override _user name"
 msgstr "Sobreescriu el nom d'_usuari"
 
-#: ../properties/nm-vpnc-dialog.glade.h:10
+#: ../properties/nm-vpnc-dialog.glade.h:11
 msgid ""
 "Please enter the information provided by your system administrator below. Do "
 "not enter your password here as you will be prompted when connecting."
@@ -215,7 +247,7 @@ msgstr ""
 "Entreu la informació proporcionada pel vostre administrador de sistema. No "
 "hi entreu la vostra contrasenya, ja es demanarà en connectar."
 
-#: ../properties/nm-vpnc-dialog.glade.h:11
+#: ../properties/nm-vpnc-dialog.glade.h:12
 msgid ""
 "Please note that the file you import is not a Cisco VPN or VPNC "
 "configuration file. Ask your adminstrator for the file."
@@ -223,57 +255,62 @@ msgstr ""
 "Tingueu en compte que el fitxer que heu importat no és un fitxer de "
 "configuració Cisco VPN o VPNC. Demaneu el fitxer al vostre administrador."
 
-#: ../properties/nm-vpnc-dialog.glade.h:12
+#: ../properties/nm-vpnc-dialog.glade.h:13
+msgid "Required"
+msgstr "Necessària"
+
+#: ../properties/nm-vpnc-dialog.glade.h:14
+msgid "Use NAT _keepalive packets"
+msgstr "Utilitza els paquets NAT _keepalive"
+
+#: ../properties/nm-vpnc-dialog.glade.h:15
 msgid "Use _domain for authentication"
 msgstr "Utilitzeu el _domini per l'autenticació"
 
-#: ../properties/nm-vpnc-dialog.glade.h:13
+#: ../properties/nm-vpnc-dialog.glade.h:16
 msgid "_Gateway:"
 msgstr "_Passarel·la:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:14
-msgid "_Import Saved Configuration..."
-msgstr "_Importa la configuració desada..."
-
-#: ../properties/nm-vpnc-dialog.glade.h:15
+#: ../properties/nm-vpnc-dialog.glade.h:17
 msgid "_Only use VPN connection for these addresses"
 msgstr "_Fes servir només la connexió VPN per aquestes adreces"
 
-#: ../src/nm-vpnc-service.c:118
-msgid ""
-"The VPN login failed because the user name and password were not accepted."
-msgstr ""
-"No s'ha pogut connectar a la VPN perquè no s'han acceptat el nom d'usuari i "
-"la contrasenya."
+#~ msgid "<b>Connection Information</b>"
+#~ msgstr "<b>Informació de la connexió</b>"
 
-#: ../src/nm-vpnc-service.c:120
-msgid "The VPN login failed because the VPN program could not be started."
-msgstr ""
-"No s'ha pogut connectar a la VPN perquè no s'ha pogut iniciar l'aplicació "
-"VPN."
+#~ msgid "<b>Connection Name</b>"
+#~ msgstr "<b>Nom de la connexió</b>"
 
-#: ../src/nm-vpnc-service.c:122
-msgid ""
-"The VPN login failed because the VPN program could not connect to the VPN "
-"server."
-msgstr ""
-"No s'ha pogut connectar a la VPN perquè l'aplicació VPN no s'ha pogut "
-"connectar al servidor VPN."
+#~ msgid ""
+#~ "The VPN login failed because the user name and password were not accepted."
+#~ msgstr ""
+#~ "No s'ha pogut connectar a la VPN perquè no s'han acceptat el nom d'usuari "
+#~ "i la contrasenya."
 
-#: ../src/nm-vpnc-service.c:124
-msgid ""
-"The VPN login failed because the VPN configuration options were invalid."
-msgstr ""
-"No s'ha pogut connectar a la VPN perquè les opcions de configuració de la "
-"VPN eren errònies."
+#~ msgid "The VPN login failed because the VPN program could not be started."
+#~ msgstr ""
+#~ "No s'ha pogut connectar a la VPN perquè no s'ha pogut iniciar l'aplicació "
+#~ "VPN."
 
-#: ../src/nm-vpnc-service.c:126
-msgid ""
-"The VPN login failed because the VPN program received an invalid "
-"configuration from the VPN server."
-msgstr ""
-"No s'ha pogut connectar a la VPN perquè l'aplicació VPN ha rebut una "
-"configuració errònia del servidor VPN."
+#~ msgid ""
+#~ "The VPN login failed because the VPN program could not connect to the VPN "
+#~ "server."
+#~ msgstr ""
+#~ "No s'ha pogut connectar a la VPN perquè l'aplicació VPN no s'ha pogut "
+#~ "connectar al servidor VPN."
+
+#~ msgid ""
+#~ "The VPN login failed because the VPN configuration options were invalid."
+#~ msgstr ""
+#~ "No s'ha pogut connectar a la VPN perquè les opcions de configuració de la "
+#~ "VPN eren errònies."
+
+#~ msgid ""
+#~ "The VPN login failed because the VPN program received an invalid "
+#~ "configuration from the VPN server."
+#~ msgstr ""
+#~ "No s'ha pogut connectar a la VPN perquè l'aplicació VPN ha rebut una "
+#~ "configuració errònia del servidor VPN."
 
 #~ msgid "O_ptional Information"
 #~ msgstr "Informació o_pcional"
