@@ -1,64 +1,14 @@
-2008-02-27  Saleem Abdulrasool  <compnerd@compnerd.org>
+2008-02-28  Tambet Ingo  <tambet@gmail.com>
 
-	reviewed by: steev@steev.net
+	Implement suse plugin for system settings daemon.
 
-	* initscript/Gentoo/NetworkManager.in:
-	* initscript/Gentoo/NetworkManagerDispatcher.in:
-		Update the scripts and move them to Gentoo style.
+	* system-settings/plugins/ifcfg-suse/*: Implement.
 
-2008-02-27  Dan Williams  <dcbw@redhat.com>
+	* system-settings/plugins/Makefile.am: Add ifcfg-suse to subdirs when targeting
+	suse.
 
-	Patch from Will Stephenson <wstephenson@kde.org>
-
-	* Makefile.am
-	  configure.in
-		- Set up spec autogeneration infrastructure
-
-	* docs/NetworkManager DBUS API.txt
-		- Note how old this doc is and where to look for the canonical
-			D-Bus specification
-
-	* introspection/*
-		- Add annotations and comments
-
-2008-02-27  Dan Williams  <dcbw@redhat.com>
-
-	* src/nm-device-802-11-wireless.c
-		- (device_cleanup): cleanup any association attempt that might be in
-			progress
-		- (nm_device_802_11_wireless_dispose): device_cleanup() already
-			destroys the AP list
-
-2008-02-25  Dan Williams  <dcbw@redhat.com>
-
-	* libnm-glib/nm-settings.c
-		- (set_property): use g_value_dup_object() to ref the object as was
-			intended originally
-
-2008-02-25  Dan Williams  <dcbw@redhat.com>
-
-	* libnm-util/nm-utils.c
-		- (nm_utils_ssid_to_utf8): use a dynamically allocated buffer
-
-2008-02-25  Dan Williams  <dcbw@redhat.com>
-
-	* libnm-util/nm-setting.c
-		- (nm_setting_compare): Fix C&P error from r3068 that caused settings
-			comparisons to always succeed; clarify assignment of values to
-			'different'
-
-2008-02-24  Dan Williams  <dcbw@redhat.com>
-
-	* libnm-util/nm-setting.c
-	  libnm-util/nm-setting.h
-		- (nm_setting_compare): fix 'fuzzy' compare logic; add IGNORE_ID bits;
-			fix return value to match nm_connection_compare() meaning
-
-2008-02-24  Dan Williams  <dcbw@redhat.com>
-
-	* libnm-util/nm-setting-wireless.c
-		- (nm_setting_wireless_class_init): 'seen bssids' should be ignored for
-			fuzzy matches
+	* configure.in: Check (without failing) for gio.
+	Create ifcfg-suse plugin's Makefile.
 
 2008-02-20  Dan Williams  <dcbw@redhat.com>
 

@@ -53,18 +53,6 @@ IT_PROG_INTLTOOL([0.35.0])
 AM_GLIB_GNU_GETTEXT
 
 dnl
-dnl GNOME support
-dnl
-AC_ARG_WITH(docs, AC_HELP_STRING([--with-docs], [Build NetworkManager documentation]))
-AM_CONDITIONAL(WITH_DOCS, test "x$with_docs" = "xyes")
-case $with_docs in
-	yes) ;;
-	*)
-		with_docs=no
-		;;
-esac
-
-dnl
 dnl Make sha1.c happy on big endian systems
 dnl
 AC_C_BIGENDIAN
@@ -195,6 +183,11 @@ PKG_CHECK_MODULES(GOBJECT, gobject-2.0)
 AC_SUBST(GOBJECT_CFLAGS)
 AC_SUBST(GOBJECT_LIBS)
 
+# This is optional, at least for now.
+PKG_CHECK_MODULES(GIO, gio-2.0,,true)
+AC_SUBST(GIO_CFLAGS)
+AC_SUBST(GIO_LIBS)
+
 PKG_CHECK_MODULES(HAL, hal >= 0.5.0)
 AC_SUBST(HAL_CFLAGS)
 AC_SUBST(HAL_LIBS)
@@ -290,6 +283,7 @@ system-settings/Makefile
 system-settings/src/Makefile
 system-settings/plugins/Makefile
 system-settings/plugins/ifcfg-fedora/Makefile
+system-settings/plugins/ifcfg-suse/Makefile
 test/Makefile
 test/test-common/Makefile
 initscript/Makefile
@@ -325,8 +319,3 @@ AC_OUTPUT
 echo
 echo Distribution targeting: ${with_distro}
 echo 'if this is not correct, please specifiy your distro with --with-distro=DISTRO'
-
-echo
-echo Building documentation: ${with_docs}
-echo
-
