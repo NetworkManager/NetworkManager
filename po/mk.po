@@ -1,4 +1,4 @@
-# translation of mk.po to Macedonian
+# translation of NetworkManager.HEAD.po to Macedonian
 # translation of mk.po.
 # Copyright (C) 2005 THE mk.po'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the mk.po package.
@@ -6,13 +6,13 @@
 # Арангел Ангов <ufo@linux.net.mk>, 2005.
 # <>, 2005.
 # Jovan Naumovski <jovan@lugola.net>, 2006.
-# Arangel Angov <ufo@linux.net.mk>, 2006, 2007.
+# Arangel Angov <ufo@linux.net.mk>, 2006, 2007, 2008.
 msgid ""
 msgstr ""
-"Project-Id-Version: mk\n"
+"Project-Id-Version: NetworkManager.HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-02-03 18:35+0000\n"
-"PO-Revision-Date: 2007-03-01 23:04+0100\n"
+"POT-Creation-Date: 2007-12-18 17:15+0000\n"
+"PO-Revision-Date: 2008-02-27 23:15+0100\n"
 "Last-Translator: Arangel Angov <ufo@linux.net.mk>\n"
 "Language-Team: Macedonian <ossm-members@hedona.on.net.mk>\n"
 "MIME-Version: 1.0\n"
@@ -21,205 +21,37 @@ msgstr ""
 "Plural-Forms: nplurals=3; plural= n==1 || n%10==1 ? 0 : 1\n"
 "X-Generator: KBabel 1.11.4\n"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:417
-msgid "Cannot add VPN connection"
-msgstr "Не можам да додадам VPN врска"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:419
-msgid ""
-"No suitable VPN software was found on your system. Contact your system "
-"administrator."
-msgstr ""
-"Не е пронајден соодветен VPN софтвер на Вашиот систем. Контактирајте го "
-"Вашиот систем администратор."
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:461
-msgid "Cannot import VPN connection"
-msgstr "Не можам да ја увезам VPN врската"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:463
+#: ../src/nm-netlink-monitor.c:188 ../src/nm-netlink-monitor.c:448
 #, c-format
-msgid ""
-"Cannot find suitable software for VPN connection type '%s' to import the "
-"file '%s'. Contact your system administrator."
-msgstr ""
-"Не можам да најдам соодветен софтвер за VPN врска од типот '%s' за да "
-"ја внесам датотеката '%s' . Контактирајте го администраторот."
+msgid "error processing netlink message: %s"
+msgstr "грешка при процесирање на netlink пораката: %s"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:580
+#: ../src/nm-netlink-monitor.c:245
 #, c-format
-msgid "Error retrieving VPN connection '%s'"
-msgstr "Грешка во воспоставувањето на VPN врската '%s'"
+msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgstr "не можам да алоцирам нетлинк справувач за надгледување на статусот на врската: %s"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:583
+#: ../src/nm-netlink-monitor.c:255
 #, c-format
-msgid ""
-"Could not find the UI files for VPN connection type '%s'. Contact your "
-"system administrator."
-msgstr ""
-"Не можам да ги пронајдам датотеките за корисничкиот интерфејс за VPN "
-"врската од тип '%s'. Контактирајте го Вашиот администратор на системот."
+msgid "unable to connect to netlink for monitoring link status: %s"
+msgstr "не можам да се поврзам за нетлинк за надгледување на статусот на врската: %s"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:727
+#: ../src/nm-netlink-monitor.c:263
 #, c-format
-msgid "Delete VPN connection \"%s\"?"
-msgstr "Да ја избришам VPN врската \"%s\"?"
+msgid "unable to join netlink group for monitoring link status: %s"
+msgstr "не можам да ја приклучам нетлинк групата за надгледување на статусот на врската: %s"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:730
+#: ../src/nm-netlink-monitor.c:271
 #, c-format
-msgid ""
-"All information about the VPN connection \"%s\" will be lost and you may "
-"need your system administrator to provide information to create a new "
-"connection."
-msgstr ""
-"Сите информации за VPN врската \"%s\" ќе бидат изгубени и можеби ќе "
-"треба да го контактирате администраторот за да добиете информации за "
-"креирање на нова врска."
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
+msgstr "не можам да алоцирам нетлинк кеш за надгледување на статусот на врската: %s"
 
-#: ../gnome/vpn-properties/nm-vpn-properties.c:924
-msgid "Unable to load"
-msgstr "Не можам да вчитам"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:926
-msgid "Cannot find some needed resources (the glade file)!"
-msgstr "Не можам да ги пронајдам потребните ресурси (glade датотеката)!"
-
-#. druid_window = GTK_DIALOG (gtk_dialog_new_with_buttons (_("Create VPN Connection"),
-#. NULL,
-#. GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-#. GTK_STOCK_CANCEL,
-#. GTK_RESPONSE_REJECT,
-#. GTK_STOCK_APPLY,
-#. GTK_RESPONSE_ACCEPT,
-#. NULL));
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1081
-msgid "Create VPN Connection"
-msgstr "Креирај VPN врска"
-
-#. gtk_container_add (GTK_CONTAINER (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")));
-#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(druid), TRUE,TRUE,0);
-#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")), TRUE,TRUE,0);
-#. toplevel = gtk_widget_get_toplevel (GTK_WIDGET (druid));
-#. gtk_signal_connect (GTK_OBJECT (toplevel), "delete_event", GTK_SIGNAL_FUNC (vpn_window_close), NULL);
-#. make the druid window modal wrt. our main window
-#. gtk_window_set_modal (druid_window, TRUE);
-#. gtk_window_set_transient_for (GTK_WINDOW(druid_window), GTK_WINDOW (dialog));
-#. Edit dialog
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1099
-msgid "Edit VPN Connection"
-msgstr "Уреди ја VPN врската"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:1
-msgid "Add a new VPN connection"
-msgstr "Додај нова VPN врска"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
-msgid "Delete the selected VPN connection"
-msgstr "Избриши ја избраната VPN врска"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
-msgid "E_xport"
-msgstr "И_звези"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
-msgid "Edit the selected VPN connection"
-msgstr "Уреди ја избраната VPN врска"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
-msgid "Export the VPN settings to a file"
-msgstr "Извези ги поставувањата за VPN во датотека"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
-msgid "Export the selected VPN connection to a file"
-msgstr "Извези ја избраната VPN врска во датотека"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
-msgid "Manage Virtual Private Network Connections"
-msgstr "Справете се со врските за виртуелните приватни мрежи"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
-msgid "VPN Connections"
-msgstr "VPN поврзувања"
-
-#: ../src/nm-ap-security-wep.c:52
-msgid "40-bit WEP"
-msgstr "40-bit WEP"
-
-#: ../src/nm-ap-security-wep.c:54
-msgid "104-bit WEP"
-msgstr "104-bit WEP"
-
-#: ../src/nm-ap-security-wpa-psk.c:51
-msgid "WPA TKIP"
-msgstr "WPA TKIP"
-
-#: ../src/nm-ap-security-wpa-psk.c:53
-msgid "WPA CCMP"
-msgstr "WPA CCMP"
-
-#: ../src/nm-ap-security-wpa-psk.c:55
-msgid "WPA Automatic"
-msgstr "WPA автоматски"
-
-#: ../src/nm-ap-security-wpa-psk.c:60
-msgid "WPA2 TKIP"
-msgstr "WPA2 TKIP"
-
-#: ../src/nm-ap-security-wpa-psk.c:62
-msgid "WPA2 CCMP"
-msgstr "WPA2 CCMP"
-
-#: ../src/nm-ap-security-wpa-psk.c:64
-msgid "WPA2 Automatic"
-msgstr "WPA2 Aвтоматски"
-
-#: ../src/nm-ap-security.c:334
-msgid "none"
-msgstr "ништо"
-
-#: ../src/nm-netlink-monitor.c:174
-#, c-format
-msgid "unable to create netlink socket for monitoring wired ethernet devices - %s"
-msgstr ""
-"не можам да креирам нетлинк сокет за надгледување на жичените етернет уреди "
-"- %s"
-
-#: ../src/nm-netlink-monitor.c:192
-#, c-format
-msgid "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
-msgstr ""
-"не можам да се поврзам нетлинк сокет за надгледување на жичените етернет "
-"уреди - %s"
-
-#: ../src/nm-netlink-monitor.c:427
-msgid "operation took too long"
-msgstr "операцијата траеше предолго"
-
-#: ../src/nm-netlink-monitor.c:524
-msgid "received data from wrong type of sender"
-msgstr "примив податоци од погрешен тип на испраќач"
-
-#: ../src/nm-netlink-monitor.c:537
-msgid "received data from unexpected sender"
-msgstr "примив податоци од неочекуван испраќач"
-
-#: ../src/nm-netlink-monitor.c:666
-msgid "too much data was sent over socket and some of it was lost"
-msgstr "премногу податоци беа испратени преку сокетот и некои од нив се изгубија"
-
-#: ../src/nm-netlink-monitor.c:774
+#: ../src/nm-netlink-monitor.c:471
 msgid "error occurred while waiting for data on socket"
 msgstr "се случи грешка при чекањето на податоци од сокетот"
 
-#: ../src/nm-ap-security-wpa-eap.c:93 ../src/nm-ap-security-wpa-eap.c:117
-msgid "WPA2 Enterprise"
-msgstr "WPA2 Enterprise"
-
-#: ../src/nm-ap-security-wpa-eap.c:95 ../src/nm-ap-security-wpa-eap.c:122
-msgid "WPA Enterprise"
-msgstr "WPA Enterprise"
-
-#: ../src/nm-ap-security-leap.c:66 ../src/nm-ap-security-leap.c:82
-msgid "LEAP"
-msgstr "LEAP"
+#: ../src/NetworkManager.c:255
+#, c-format
+msgid "Invalid option.  Please use --help to see a list of valid options.\n"
+msgstr "Невалидна опција.  Ве молам користете --help за листа на валидни опции.\n"
 
