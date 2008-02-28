@@ -74,11 +74,6 @@ gboolean		nm_generic_device_set_up_down_with_iface		(NMDevice *dev, const char *
 
 gboolean		nm_generic_device_update_resolv_conf		(void *data, int len, const char *domain_name);
 
-GSList *		nm_generic_get_dialup_config (void);
-void			nm_generic_deactivate_all_dialup (GSList *list);
-gboolean		nm_generic_activate_dialup (GSList *list, const char *dialup);
-gboolean		nm_generic_deactivate_dialup (GSList *list, const char *dialup);
-
 void			nm_generic_set_hostname (NMIP4Config *config);
 void			nm_generic_activate_nis (NMIP4Config *config);
 void			nm_generic_shutdown_nis (void);

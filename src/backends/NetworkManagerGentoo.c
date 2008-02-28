@@ -447,31 +447,6 @@ void nm_system_device_free_system_config (NMDevice *dev, void *system_config_dat
         g_free (sys_data);
 }
 
-NMIP4Config *nm_system_device_new_ip4_system_config (NMDevice *dev)
-{
-	GentooSystemConfigData	*sys_data;
-	NMIP4Config		*new_config = NULL;
-
-	g_return_val_if_fail (dev != NULL, NULL);
-
-	if ((sys_data = nm_device_get_system_config_data (dev)))
-		new_config = nm_ip4_config_copy (sys_data->config);
-
-	return new_config;
-}
-
-gboolean nm_system_device_get_use_dhcp (NMDevice *dev)
-{
-	GentooSystemConfigData	*sys_data;
-
-	g_return_val_if_fail (dev != NULL, TRUE);
-
-	if ((sys_data = nm_device_get_system_config_data (dev)))
-		return sys_data->use_dhcp;
-
-	return TRUE;
-}
-
 /*
  * nm_system_device_get_disabled
  *
@@ -482,32 +457,6 @@ gboolean nm_system_device_get_use_dhcp (NMDevice *dev)
 gboolean nm_system_device_get_disabled (NMDevice *dev)
 {
 	return FALSE;
-}
-
-void nm_system_deactivate_all_dialup (GSList *list)
-{
-}
-
-gboolean nm_system_deactivate_dialup (GSList *list, const char *dialup)
-{
-            return FALSE;
-}
-
-gboolean nm_system_activate_dialup (GSList *list, const char *dialup)
-{
-            return FALSE;
-}
-
-/*
- *  nm_system_get_dialup_config
- *  
- *  Enumerate dial up options on this system, allocate NMDialUpConfig's,
- *  fill them out, and return.
- *  
- */
-GSList * nm_system_get_dialup_config (void)
-{
-            return NULL;
 }
 
 /*

@@ -265,46 +265,9 @@ void nm_system_flush_arp_cache (void)
 	nm_generic_flush_arp_cache ();
 }
 
-void nm_system_deactivate_all_dialup (GSList *list)
-{
-}
-
-gboolean nm_system_deactivate_dialup (GSList *list, const char *dialup)
-{
-	return FALSE;
-}
-
-gboolean nm_system_activate_dialup (GSList *list, const char *dialup)
-{
-	return FALSE;
-}
-
-/*
- *  nm_system_get_dialup_config
- *  
- *  Enumerate dial up options on this system, allocate NMDialUpConfig's,
- *  fill them out, and return.
- *  
- */
-GSList * nm_system_get_dialup_config (void)
-{
-	return NULL;
-}
-
 void nm_system_device_free_system_config (NMDevice *dev, void *system_config_data)
 {
 }
-
-NMIP4Config *nm_system_device_new_ip4_system_config (NMDevice *dev)
-{
-	return NULL;
-}
-
-gboolean nm_system_device_get_use_dhcp (NMDevice *dev)
-{
-	return TRUE;
-}
-
 
 /*
  * nm_system_device_get_disabled

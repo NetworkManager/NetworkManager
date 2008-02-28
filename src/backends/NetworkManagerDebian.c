@@ -37,7 +37,6 @@
 #include "nm-device.h"
 #include "nm-device-802-3-ethernet.h"
 #include "nm-device-802-11-wireless.h"
-#include "NetworkManagerDialup.h"
 #include "interface_parser.h"
 #include "nm-utils.h"
 
@@ -355,26 +354,6 @@ void nm_system_device_free_system_config (NMDevice *dev, void *system_config_dat
 
 
 /*
- * nm_system_device_get_use_dhcp
- *
- * Return whether the distro-specific system config tells us to use
- * dhcp for this device.
- *
- */
-gboolean nm_system_device_get_use_dhcp (NMDevice *dev)
-{
-	DebSystemConfigData	*sys_data;
-
-	g_return_val_if_fail (dev != NULL, TRUE);
-
-	if ((sys_data = nm_device_get_system_config_data (dev)))
-		return sys_data->use_dhcp;
-
-	return TRUE;
-}
-
-
-/*
  * nm_system_device_get_disabled
  *
  * Return whether the distro-specific system config tells us to use
@@ -384,125 +363,6 @@ gboolean nm_system_device_get_use_dhcp (NMDevice *dev)
 gboolean nm_system_device_get_disabled (NMDevice *dev)
 {
 	return FALSE;
-}
-
-
-NMIP4Config *nm_system_device_new_ip4_system_config (NMDevice *dev)
-{
-	DebSystemConfigData	*sys_data;
-	NMIP4Config		*new_config = NULL;
-
-	g_return_val_if_fail (dev != NULL, NULL);
-
-	if ((sys_data = nm_device_get_system_config_data (dev)))
-		new_config = nm_ip4_config_copy (sys_data->config);
-
-	return new_config;
-}
-
-void nm_system_deactivate_all_dialup (GSList *list)
-{
-	GSList *elt;
-
-	for (elt = list; elt; elt = g_slist_next (elt))
-	{
-		NMDialUpConfig *config = (NMDialUpConfig *) elt->data;
-		char *cmd;
-
-		cmd = g_strdup_printf ("/sbin/ifdown %s", (char *) config->data);
-		nm_spawn_process (cmd);
-		g_free (cmd);
-	}
-}
-
-gboolean nm_system_deactivate_dialup (GSList *list, const char *dialup)
-{
-	GSList *elt;
-	gboolean ret = FALSE;
-
-	for (elt = list; elt; elt = g_slist_next (elt))
-	{
-		NMDialUpConfig *config = (NMDialUpConfig *) elt->data;
-		if (strcmp (dialup, config->name) == 0)
-		{
-			char *cmd;
-
-			nm_info ("Deactivating dialup device %s (%s) ...", dialup, (char *) config->data);
-			cmd = g_strdup_printf ("/sbin/ifdown %s", (char *) config->data);
-			nm_spawn_process (cmd);
-			g_free (cmd);
-			ret = TRUE;
-			break;
-		}
-	}
-
-	return ret;
-}
-
-gboolean nm_system_activate_dialup (GSList *list, const char *dialup)
-{
-	GSList *elt;
-	gboolean ret = FALSE;
-
-	for (elt = list; elt; elt = g_slist_next (elt))
-	{
-		NMDialUpConfig *config = (NMDialUpConfig *) elt->data;
-		if (strcmp (dialup, config->name) == 0)
-		{
-			char *cmd;
-
-			nm_info ("Activating dialup device %s (%s) ...", dialup, (char *) config->data);
-			cmd = g_strdup_printf ("/sbin/ifup %s", (char *) config->data);
-			nm_spawn_process (cmd);
-			g_free (cmd);
-			ret = TRUE;
-			break;
-		}
-	}
-
-	return ret;
-}
-
-GSList * nm_system_get_dialup_config (void)
-{
-	const char *buf;
-	unsigned int i = 0;
-	GSList *list = NULL;
-	if_block *curr;
-	ifparser_init();
-
-	/* FIXME: get all ppp(and others?) lines from /e/n/i here */
-	curr = ifparser_getfirst();
-	while(curr!=NULL)
-	{
-		NMDialUpConfig *config;
-		if (strcmp(curr->type,"iface")==0) 
-		{
-			buf = ifparser_getkey(curr,"inet");
-			if (buf && strcmp (buf, "ppp")==0)
-			{
-				config = g_malloc (sizeof (NMDialUpConfig));
-				config->name = g_strdup_printf ("Modem (#%d)", i++);
-				config->data = g_strdup (curr->name);	/* interface name */
-
-				list = g_slist_append (list, config);
-
-				nm_info ("Found dial up configuration for %s: %s", config->name, (char *) config->data);
-			}
-		}
-		curr = curr->next;
-	}
-	ifparser_destroy();
-
-	/* Hack: Go back and remove the "(#0)" if there is only one device */
-	if (i == 1)
-	{
-		NMDialUpConfig *config = (NMDialUpConfig *) list->data;
-		g_free (config->name);
-		config->name = g_strdup ("Modem");
-	}
-
-	return list;
 }
 
 /*

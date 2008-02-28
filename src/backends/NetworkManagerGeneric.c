@@ -412,25 +412,6 @@ NMIP4Config *nm_generic_device_new_ip4_system_config (NMDevice *dev)
 	return NULL;
 }
 
-void nm_generic_deactivate_all_dialup (GSList *list)
-{
-}
-
-gboolean nm_generic_deactivate_dialup (GSList *list, const char *dialup)
-{
-	return FALSE;
-}
-
-gboolean nm_generic_activate_dialup (GSList *list, const char *dialup)
-{
-	return FALSE;
-}
-
-GSList * nm_generic_get_dialup_config (void)
-{
-	return NULL;
-}
-
 /*
  * nm_generic_activate_nis
  *

@@ -1,5 +1,9 @@
 2008-02-28  Tambet Ingo  <tambet@gmail.com>
 
+	Get rid of a bunch of unused distro specific functions.
+
+2008-02-28  Tambet Ingo  <tambet@gmail.com>
+
 	Implement suse plugin for system settings daemon.
 
 	* system-settings/plugins/ifcfg-suse/*: Implement.
