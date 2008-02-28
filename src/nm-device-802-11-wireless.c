@@ -131,7 +131,7 @@ struct _NMDevice80211WirelessPrivate
 	guint32			rate;
 	
 	gboolean			scanning;
-	GTimeVal			scheduled_scan_time;
+	glong			scheduled_scan_time;
 	guint8			scan_interval; /* seconds */
 	guint               pending_scan_id;
 
@@ -1514,7 +1514,7 @@ schedule_scan (NMDevice80211Wireless *self)
 	g_get_current_time (&current_time);
 
 	/* Cancel the pending scan only if it would happen later than what is scheduled right now */
-	if (priv->pending_scan_id && (current_time.tv_sec + priv->scan_interval < priv->scheduled_scan_time.tv_sec))
+	if (priv->pending_scan_id && (current_time.tv_sec + priv->scan_interval < priv->scheduled_scan_time))
 		cancel_pending_scan (self);
 
 	if (!priv->pending_scan_id)
@@ -1522,7 +1522,7 @@ schedule_scan (NMDevice80211Wireless *self)
 											   request_wireless_scan,
 											   self);
 
-	priv->scheduled_scan_time.tv_sec = current_time.tv_sec + priv->scan_interval;
+	priv->scheduled_scan_time = current_time.tv_sec + priv->scan_interval;
 	if (priv->scan_interval < SCAN_INTERVAL_MAX)
 		priv->scan_interval += SCAN_INTERVAL_STEP;
 }
