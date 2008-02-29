@@ -228,14 +228,6 @@ void nm_system_restart_mdns_responder (void)
 	{
 		nm_spawn_process ("/etc/init.d/avahi-daemon restart");
 	}
-#elif defined(MDNS_PROVIDER_HOWL)
-	if (g_file_text ("/var/run/mDNSResponder.pid", G_FILE_TEST_EXISTS))
-	{
-		nm_info ("Restarting mDNSResponder");
-		nm_spawn_process ("/etc/init.d/mDNSResponder stop");
-		nm_spawn_process ("/etc/init.d/mDNSResponder zap");
-		nm_spawn_process ("/etc/init.d/mDNSResponder start");
-	}
 #elif defined(MDNS_PROVIDER_BONJOUR)
 	if (g_file_test ("/var/run/mDNSResponderPosix.pid", G_FILE_TEST_EXISTS))
 	{

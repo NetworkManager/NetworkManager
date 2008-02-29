@@ -1,3 +1,12 @@
+2008-02-28  Saleem Abdulrasool  <compnerd@compnerd.org>
+
+	reviewed by: Steev <steev@steev.net>
+
+	* configure.in:
+	* src/backends/NetworkManagerGentoo.c:
+	(nm_system_restart_mdns_responder):
+		Howl is no longer a supported mDNS provider
+
 2008-02-28  Tambet Ingo  <tambet@gmail.com>
 
 	Get rid of a bunch of unused distro specific functions.
