@@ -1,3 +1,10 @@
+2008-02-28  Saleem Abdulrasool  <compnerd@compnerd.org>
+
+	reviewed by: Steev <steev@steev.net>
+
+	* initscript/Gentoo/NetworkManager.in:
+		Update init script and move it to Gentoo style.
+
 2008-02-28  Dan Williams  <dcbw@redhat.com>
 
 	Release 0.6.5.99  (0.6.6rc2)
