@@ -316,13 +316,14 @@ nm_policy_device_change_check (gpointer user_data)
 		gboolean old_user_requested = nm_act_request_get_user_requested (old_act_req);
 		gboolean old_has_link = nm_device_has_active_link (old_dev);
 
-		/* If an old device is active or being activated, and its connection is
-		 * a system connection, and the best connection is a user connection,
-		 * don't switch.
+		/* If an old device is active or being activated (and has an active link),
+		 * and its connection is a system connection, and the best connection is
+		 * a user connection, don't switch.
 		 */
 		if (   old_connection
 		    && (nm_connection_get_scope (old_connection) == NM_CONNECTION_SCOPE_SYSTEM)
-		    && (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_USER))
+		    && (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_USER)
+		    && nm_device_has_active_link (old_dev))
 			goto out;
 
 		if (   (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_SYSTEM)

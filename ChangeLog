@@ -1,5 +1,12 @@
 2008-02-29  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_device_change_check): ensure that a previously active
+			device with a system connection has a link before denying a switch
+			to a user connection
+
+2008-02-29  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 		- (link_timeout_cb): try again if scanning; deactivate the device when
 			activated if the link dies
