@@ -32,7 +32,6 @@ NetworkManager_SOURCES =				\
 		nm-device-802-11-wireless.h	\
 		NetworkManagerAP.c			\
 		NetworkManagerAP.h			\
-		NetworkManagerDialup.h		\
 		nm-dbus-manager.h			\
 		nm-dbus-manager.c			\
 		nm-hal-manager.c			\
