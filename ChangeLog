@@ -2,6 +2,14 @@
 
 	reviewed by: Steev <steev@steev.net>
 
+	* initscript/Gentoo/Makefile.am:
+	* initscript/Gentoo/NetworkManagerDispatcher.in:
+		Add initscript for NetworkManagerDispatcher
+
+2008-02-28  Saleem Abdulrasool  <compnerd@compnerd.org>
+
+	reviewed by: Steev <steev@steev.net>
+
 	* initscript/Gentoo/NetworkManager.in:
 		Update init script and move it to Gentoo style.
 
