@@ -1,5 +1,15 @@
 2008-02-28  Saleem Abdulrasool  <compnerd@compnerd.org>
 
+	* src/backends/NetworkManagerGentoo.c:
+	(nm_system_restart_mdns_responder),
+	(nm_system_device_add_ip6_link_address), (svGetArray),
+	(GentooReadConfig), (nm_system_device_get_system_config),
+	(nm_system_device_get_disabled), (nm_system_set_hostname),
+	(nm_system_get_mtu):
+		Apply patch from the Gentoo tree at steev's request.
+
+2008-02-28  Saleem Abdulrasool  <compnerd@compnerd.org>
+
 	reviewed by: Steev <steev@steev.net>
 
 	* initscript/Gentoo/Makefile.am:

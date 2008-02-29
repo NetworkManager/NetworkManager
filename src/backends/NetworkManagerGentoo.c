@@ -1,3 +1,4 @@
+
 /* NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -249,10 +250,33 @@ void nm_system_update_dns (void)
  *
  */
 void nm_system_restart_mdns_responder (void)
-{
-	nm_spawn_process("/etc/init.d/mDNSResponder stop");
-	nm_spawn_process("/etc/init.d/mDNSResponder zap");
-	nm_spawn_process("/etc/init.d/mDNSResponder start");
+{	
+	pid_t pid;
+	FILE *fp;
+	int res;
+
+	// 
+	fp = fopen ("/var/run/mDNSResponder.pid", "rt");
+
+	/* Is the mDNS daemon running? */
+	/* if (g_file_test("/var/run/mDNSResponder.pid", G_FILE_TEST_EXISTS)) */
+	if (fp)
+	{
+		res = fscanf (fp, "%d", &pid);
+		if (res == 1)
+		{
+			nm_info ("Restarting mDNSResponder (pid=%d).", pid);
+			kill (pid, SIGUSR1);
+		}
+	
+		fclose (fp);
+	}
+	/* Apple's mDNSResponder */
+	if (g_file_test("/var/run/mDNSResponderPosix.pid", G_FILE_TEST_EXISTS))
+	{
+		nm_info("Restarting mDNSResponderPosix");
+		nm_spawn_process("/etc/init.d/mDNSResponderPosix restart");
+	}
 }
 
 
@@ -265,7 +289,6 @@ void nm_system_restart_mdns_responder (void)
 void nm_system_device_add_ip6_link_address (NMDevice *dev)
 {
 	char *buf;
-	char *addr;
 	struct ether_addr hw_addr;
 	unsigned char eui[8];
 	
@@ -283,13 +306,268 @@ void nm_system_device_add_ip6_link_address (NMDevice *dev)
 	nm_spawn_process(buf);
 	g_free(buf);
 }
+/* Get the array associated with the key, and leave the current pointer
+ * pointing at the line containing the key.  The char** returned MUST
+ * be freed by the caller.
+ */
+gchar **
+svGetArray(shvarFile *s, const char *key)
+{
+	gchar **values = NULL, **lines, *line, *value;
+	GList *restore;
+	int len, strvlen, i, j;
+
+	g_assert(s);
+	g_assert(key);
+
+	/* Attempt to do things the easy way first */
+	line = svGetValue(s, key);
+	if (!line)
+		return NULL;
+	
+	restore = s->current;
+	
+	g_strstrip(strtok(line, "#"));	/* Remove comments and whitespace */
+	
+	if (line[0] != '(')
+	{
+		/* This isn't an array, so pretend it's a one item array. */
+		values = g_renew(char*, values, 2);
+		values[0] = line;
+		values[1] = NULL;
+		return values;
+	}
+	
+	while(!strrchr(line, ')'))
+	{
+		s->current = s->current->next;
+		value = g_strjoin(" ", line, g_strstrip(strtok(s->current->data, "#")), NULL);
+		g_free(line);
+		line = value;
+		value = NULL;
+	}
+	
+	lines = g_strsplit(line, "\"", 0);
+	
+	strvlen = g_strv_length(lines);
+	if (strvlen == 0)
+	{
+		/* didn't split, something's wrong */
+		g_free(line);
+		return NULL;
+	}
+	
+	j = 0;
+	for (i = 0; i <= strvlen - 1; i++)
+	{
+		value = lines[i];
+		len = strlen(g_strstrip(value));
+		if ((value[0] == '(') || (value[0] == ')') || (len == 0))
+			continue;
+		
+		values = g_renew(char*, values, j + 2);
+		values[j+1] = NULL;
+		values[j++] = g_strdup(value);
+	}
+	
+	g_free(line);
+	g_strfreev(lines);
+	s->current = restore;
+	
+	return values;
+}
+
+/*
+*   GentooReadConfig
+*   
+*   Most of this comes from the arch backend, no need to re-invent.
+*   Read platform dependant config file and fill hash with relevant info
+*/
+static GHashTable * GentooReadConfig(const char* dev)
+{
+	GHashTable *ifs;
+	shvarFile	*file;
+	int len, hits, i = 0;
+	guint32 maskval;
+	gchar buf[16], *value, *cidrprefix, *gateway;
+	gchar *config_str, *iface_str, *route_str, *mtu_str, *dnsserver_str, *dnssearch_str;	/* Lookup keys */
+	gchar **conf, **config = NULL, **routes = NULL;
+	struct in_addr mask;
+	
+	file = svNewFile(SYSCONFDIR"/conf.d/net");
+	if (!file)
+		return NULL;
+	
+	ifs = g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+	if (ifs == NULL)
+	{
+		nm_debug("Unable to create g_hash_table.");
+		svCloseFile(file);
+		return NULL;
+	}
+	
+	/* Keys we will use for lookups later */
+	config_str = g_strdup_printf("config_%s", dev);
+	iface_str = g_strdup_printf("iface_%s", dev);
+	route_str = g_strdup_printf("routes_%s", dev);
+	mtu_str = g_strdup_printf("mtu_%s", dev);
+	dnsserver_str = g_strdup_printf("dns_servers_%s", dev);
+	dnssearch_str = g_strdup_printf("dns_search_%s", dev);
+	
+	
+	if ((config = svGetArray(file, iface_str)))
+	{
+		/* This isn't tested, (or supported, really) so hopefully it works */
+		nm_info("You are using a deprecated configuration syntax for %s.", dev);
+		nm_info("You are advised to read /etc/conf.d/net.example and upgrade it accordingly.");
+		value = svGetValue(file, "gateway");
+		if ((value) && (gateway = strstr(value, dev)) && strtok(gateway, "/"))
+		{
+			/* Is it possible to specify multiple gateways using this variable? */
+			gateway = strtok(NULL, "/");
+			routes = g_renew(char*, routes, 2);
+			routes[0] = g_strdup_printf("default via %s", gateway);
+			routes[1] = NULL;
+			g_free(value);
+		}
+	}
+	else
+	{
+		config = svGetArray(file, config_str);
+		routes = svGetArray(file, route_str);
+	}
+	
+	
+	if ((config) && g_ascii_strcasecmp(config[0], "dhcp"))
+	{
+		nm_debug("Found %s in %s.", config_str, SYSCONFDIR"/conf.d/net");
+	
+		if (!g_ascii_strcasecmp(config[0], "null"))
+		{
+			nm_debug("Config disables device %s.", dev);
+			g_hash_table_insert(ifs, g_strdup("disabled"), g_strdup("true"));
+		}
+		else
+		{
+			/* TODO: Handle "noop". */
+			conf = g_strsplit(config[0], " ", 0);
+			hits = g_strv_length(conf);
+			
+			strtok(conf[0], "/");
+			if ((cidrprefix = strtok(NULL, "/")))
+			{
+				maskval = 0xffffffff;
+				maskval <<= (32 - atoi(cidrprefix));
+				mask.s_addr = htonl(maskval);
+				g_hash_table_insert(ifs, g_strdup("netmask"), g_strdup(inet_ntoa(mask)));
+			}
+			
+			
+			if ((hits > 0) && inet_aton(conf[0], &mask))
+			{
+				g_hash_table_insert(ifs, g_strdup(dev), g_strdup(conf[i++]));
+				while ((hits -= 2) > 0)
+				{
+					g_hash_table_insert(ifs, g_strdup(conf[i]), g_strdup(conf[i+1]));
+					i += 2;
+				}
+			}
+			else
+			{
+				nm_debug("Unhandled configuration. Switching to DHCP.");
+				nm_debug("\t%s = %s", config_str, config[0]);
+				g_hash_table_insert(ifs, g_strdup("dhcp"), g_strdup("true"));
+			}
+			g_strfreev(conf);
+		}
+	}
+	else
+	{
+		nm_debug("Enabling DHCP for device %s.", dev);
+		g_hash_table_insert(ifs, g_strdup("dhcp"), g_strdup("true"));
+	}
+	
+	g_strfreev(config);
+	
+	if (routes)
+	{
+		nm_debug("Found %s in config.", route_str);
+		
+		len = g_strv_length(routes);
+		for (i = 0; i < len; i++)
+		{
+			if (!sscanf(routes[i], "default via %[0-9.:]", buf))
+				continue;
+
+			g_hash_table_insert(ifs,g_strdup("gateway"),g_strdup( (char*) buf));
+		}
+	}
+	
+	g_strfreev(routes);
+	
+	if ((value = svGetValue(file, mtu_str)))
+	{
+		nm_debug("Found %s in config.", mtu_str);
+		g_hash_table_insert(ifs, g_strdup("mtu"), g_strdup(value));
+	}
+	
+	g_free(value);
+	
+	if (!(value = svGetValue(file, dnsserver_str)))
+	{
+		value = svGetValue(file, "dns_servers");
+	}
+	if (value)
+	{
+		nm_debug("Found DNS nameservers in config.");
+		g_hash_table_insert(ifs, g_strdup("nameservers"), g_strdup(value));
+	}
+	
+	g_free(value);
+	
+	if (!(value = svGetValue(file, dnssearch_str)))
+	{
+		value = svGetValue(file, "dns_search");
+	}
+	if (value)
+	{
+		nm_debug("Found DNS search in config.");
+		g_hash_table_insert(ifs, g_strdup("dnssearch"), g_strdup(value));
+	}
+
+	g_free(value);
+	svCloseFile(file);
+	
+	if ((file = svNewFile(SYSCONFDIR"/conf.d/hostname")))
+	{	
+		if ((value = svGetValue(file, "HOSTNAME")) && (strlen(value) > 0))
+		{
+			nm_debug("Found hostname.");
+			g_hash_table_insert(ifs, g_strdup("hostname"), g_strdup(value));
+		}
+		
+		g_free(value);
+		svCloseFile(file);
+	}
+
+		
+	g_free(config_str);
+	g_free(iface_str);
+	g_free(route_str);
+	g_free(mtu_str);
+	g_free(dnsserver_str);
+	g_free(dnssearch_str);
+	
+	return ifs;
+}
 
 typedef struct GentooSystemConfigData
 {
 	NMIP4Config *	config;
 	gboolean		use_dhcp;
+	gboolean		system_disabled;
+	guint32		mtu;
 } GentooSystemConfigData;
-
 
 /*
  * nm_system_device_get_system_config
@@ -301,133 +579,172 @@ typedef struct GentooSystemConfigData
  */
 void *nm_system_device_get_system_config (NMDevice *dev, NMData *app_data)
 {
-	char		*cfg_file_path = NULL;
-	FILE		*file = NULL;
-	char		 buffer[100];
-	char		 confline[100], dhcpline[100], ipline[100];
-	int		 ipa, ipb, ipc, ipd;
- 	int		 nNext =  0, bNext = 0, count = 0;
-	char		*confToken;
-	gboolean	 data_good = FALSE;
-	gboolean	 use_dhcp = TRUE;
-	GentooSystemConfigData *sys_data = NULL;
-	guint32	 ip4_address = 0;
-	guint32	 ip4_netmask = 0;
-	guint32	 ip4_gateway = 0;
-	guint32	 ip4_broadcast = 0;
+	GHashTable* ifh;
+	gpointer val;
+	gchar **strarr;
+	GentooSystemConfigData*   sys_data = NULL;
+	int len, i;
 
-	g_return_val_if_fail (dev != NULL, NULL);
-
-	sys_data = g_malloc0 (sizeof (GentooSystemConfigData));
-    sys_data->config = nm_device_get_ip4_config(dev);
-	/* We use DHCP on an interface unless told not to */
+	g_return_val_if_fail(dev != NULL, NULL);
+	
+	sys_data = g_malloc0(sizeof (GentooSystemConfigData));
 	sys_data->use_dhcp = TRUE;
-	nm_device_set_use_dhcp (dev, TRUE);
-//	nm_ip4_config_set_address (sys_data->config, 0);
-//	nm_ip4_config_set_gateway (sys_data->config, 0);
-//	nm_ip4_config_set_netmask (sys_data->config, 0);
+	sys_data->system_disabled = FALSE;
+	sys_data->mtu = 0;
+	sys_data->config=NULL;
 
-	/* Gentoo systems store this information in
-	 * /etc/conf.d/net, this is for all interfaces.
-	 */
-
-	cfg_file_path = g_strdup_printf ("/etc/conf.d/net");
-	if (!cfg_file_path)
-		return NULL;
-
-	if (!(file = fopen (cfg_file_path, "r")))
+	ifh = GentooReadConfig(nm_device_get_iface(dev));
+	if (ifh == NULL)
 	{
-		g_free (cfg_file_path);
+		g_free(sys_data);
 		return NULL;
 	}
- 	sprintf(confline, "iface_%s", nm_device_get_iface (dev));
- 	sprintf(dhcpline, "iface_%s=\"dhcp\"", nm_device_get_iface (dev));
-	while (fgets (buffer, 499, file) && !feof (file))
+	
+	val = g_hash_table_lookup(ifh, "disabled");
+	if (val)
 	{
-		/* Kock off newline if any */
-		g_strstrip (buffer);
+		if (!strcasecmp (val, "true"))
+		{
+			nm_info ("System configuration disables device %s", nm_device_get_iface (dev));
+			sys_data->system_disabled = TRUE;
+		}
+	}
+	
+	val = g_hash_table_lookup(ifh, "mtu");
+	if (val)
+	{
+		guint32 mtu;
+		
+		mtu = strtoul(val, NULL, 10);
+		if (mtu > 500 && mtu < INT_MAX)
+		{
+			nm_debug("System configuration specifies a MTU of %i for device %s", mtu, nm_device_get_iface(dev));
+			sys_data->mtu = mtu;
+		}
+	}
+	val = g_hash_table_lookup(ifh, "hostname");
+	if (val)
+	{
+		nm_ip4_config_set_hostname(sys_data->config, val);
+	}
+	
+	val = g_hash_table_lookup(ifh, nm_device_get_iface(dev));
+	if (val && !g_hash_table_lookup(ifh, "dhcp"))
+	{
+		/* This device does not use DHCP */
 
-		if (strncmp (buffer, confline, strlen(confline)) == 0)
+		sys_data->use_dhcp=FALSE;
+		sys_data->config = nm_ip4_config_new();
+
+		nm_ip4_config_set_address (sys_data->config, inet_addr (val));
+
+		val = g_hash_table_lookup(ifh, "gateway");
+		if (val)
+			nm_ip4_config_set_gateway (sys_data->config, inet_addr (val));
+		else
+		{
+			nm_info ("Network configuration for device '%s' does not specify a gateway but is "
+				 "statically configured (non-DHCP).", nm_device_get_iface (dev));
+		}
+
+		val = g_hash_table_lookup(ifh, "netmask");
+		if (val)
+			nm_ip4_config_set_netmask (sys_data->config, inet_addr (val));
+		else
+		{
+			guint32 addr = nm_ip4_config_get_address (sys_data->config);
+
+			/* Make a default netmask if we have an IP address */
+			if (((ntohl (addr) & 0xFF000000) >> 24) <= 127)
+				nm_ip4_config_set_netmask (sys_data->config, htonl (0xFF000000));
+			else if (((ntohl (addr) & 0xFF000000) >> 24) <= 191)
+				nm_ip4_config_set_netmask (sys_data->config, htonl (0xFFFF0000));
+			else
+				nm_ip4_config_set_netmask (sys_data->config, htonl (0xFFFFFF00));
+		}
+
+		val = g_hash_table_lookup(ifh, "broadcast");
+		if (val)
+			nm_ip4_config_set_broadcast (sys_data->config, inet_addr (val));
+		else if ((val = g_hash_table_lookup(ifh, "brd")))
+			nm_ip4_config_set_broadcast (sys_data->config, inet_addr (val));
+		else
+		{
+			guint32 broadcast = ((nm_ip4_config_get_address (sys_data->config) & nm_ip4_config_get_netmask (sys_data->config))
+							 | ~nm_ip4_config_get_netmask (sys_data->config));
+			nm_ip4_config_set_broadcast (sys_data->config, broadcast);
+		}
+		
+		val = g_hash_table_lookup(ifh, "nameservers");
+		if (val)
+		{
+			nm_debug("Using DNS nameservers \"%s\" from config for device %s.", val, nm_device_get_iface(dev));
+			if ((strarr = g_strsplit(val, " ", 0)))
 			{
-			/* Make sure this config file is for this device */
-			if (strncmp (&buffer[strlen(confline) - strlen(nm_device_get_iface (dev))], 
-				nm_device_get_iface (dev), strlen(nm_device_get_iface (dev))) != 0)
+				len = g_strv_length(strarr);
+				for(i = 0; i < len; i++)
 				{
-				nm_warning ("System config file '%s' does not define device '%s'\n",
-                                             cfg_file_path, nm_device_get_iface (dev));
-				break;
-			}
-			else
-				data_good = TRUE;
+					guint32 addr = (guint32) (inet_addr (strarr[i]));
 
-			if (strncmp (buffer, dhcpline, strlen(dhcpline)) == 0)
-			{
-				use_dhcp = TRUE;
+					if (addr != (guint32) -1)
+						nm_ip4_config_add_nameserver(sys_data->config, addr);
+				}
+				
+				g_strfreev(strarr);
 			}
 			else
 			{
-				use_dhcp = FALSE;
-				confToken = strtok(&buffer[strlen(confline) + 2], " ");
-				while (count < 3)
-					{
-					if (nNext == 1 && bNext == 1)
-					{
-						ip4_address = inet_addr (confToken);
-						count++;
-						continue;
-					}
-					if (strcmp(confToken, "netmask") == 0)
-					{
-						confToken = strtok(NULL, " ");
-						ip4_netmask = inet_addr (confToken);
-						count++;
-						nNext = 1;
-					}
-					else if (strcmp(confToken, "broadcast") == 0)
-					{
-						confToken = strtok(NULL, " ");
-						count++;
-						bNext = 1;
-					}
-					else
-					{
-						ip4_address = inet_addr (confToken);
-						count++;
-					}
-						confToken = strtok(NULL, " ");
-					}
+				guint32 addr = (guint32) (inet_addr (val));
+
+				if (addr != (guint32) -1)
+					nm_ip4_config_add_nameserver(sys_data->config, addr);
+			}
+		}
+
+		val = g_hash_table_lookup(ifh, "dnssearch");
+		if (val)
+		{
+			nm_debug("Using DNS search \"%s\" from config for device %s.", val, nm_device_get_iface(dev));
+			if ((strarr = g_strsplit(val, " ", 0)))
+			{
+				len = g_strv_length(strarr);
+				for(i = 0; i < len; i++)
+				{
+					if (strarr[i])
+						nm_ip4_config_add_domain(sys_data->config, strarr[i]);
 				}
+				
+				g_strfreev(strarr);
 			}
-		/* If we aren't using dhcp, then try to get the gateway */
-		if (!use_dhcp)
+			else
 			{
-			sprintf(ipline, "gateway=\"%s/", nm_device_get_iface (dev));
-			if (strncmp(buffer, ipline, strlen(ipline) - 1) == 0)
-			{
-				sprintf(ipline, "gateway=\"%s/%%d.%%d.%%d.%%d\"", nm_device_get_iface (dev) );
-				sscanf(buffer, ipline, &ipa, &ipb, &ipc, &ipd);
-				sprintf(ipline, "%d.%d.%d.%d", ipa, ipb, ipc, ipd);
-				ip4_gateway = inet_addr (ipline);
+				nm_ip4_config_add_domain(sys_data->config, val);
 			}
-		}		
+		}
+		
+		nm_ip4_config_set_mtu (sys_data->config, sys_data->mtu);
+
+#if 0
+		{
+			int j;
+			nm_debug ("------ Config (%s)", nm_device_get_iface (dev));
+			nm_debug ("    ADDR=%d", nm_ip4_config_get_address (sys_data->config));
+			nm_debug ("    GW  =%d", nm_ip4_config_get_gateway (sys_data->config));
+			nm_debug ("    NM  =%d", nm_ip4_config_get_netmask (sys_data->config));
+			nm_debug ("    NSs =%d",nm_ip4_config_get_num_nameservers(sys_data->config));
+			for (j=0;j<nm_ip4_config_get_num_nameservers(sys_data->config);j++)
+			{
+				nm_debug ("    NS =%d",nm_ip4_config_get_nameserver(sys_data->config,j));
+			}
+			nm_debug ("---------------------\n");
+		}
+#endif
+
 	}
-	fclose (file);
-	g_free (cfg_file_path);
- 
-	/* If successful, set values on the device */
-	if (data_good)
-	{
-        nm_warning("data good :-)");
-		nm_device_set_use_dhcp (dev, use_dhcp);
-		if (ip4_address)
-            nm_ip4_config_set_address (sys_data->config, ip4_address);
-		if (ip4_gateway)
-            nm_ip4_config_set_gateway (sys_data->config, ip4_gateway);
-		if (ip4_netmask)
-			nm_ip4_config_set_netmask (sys_data->config, ip4_netmask);
-		if (ip4_broadcast)
-			nm_ip4_config_set_broadcast (sys_data->config, ip4_broadcast);
-	}
+	
+	g_hash_table_destroy(ifh);
+
+
 	return (void *)sys_data;
 }
 
@@ -514,6 +831,13 @@ gboolean nm_system_device_get_use_dhcp (NMDevice *dev)
  */
 gboolean nm_system_device_get_disabled (NMDevice *dev)
 {
+	GentooSystemConfigData *sys_data;
+
+	g_return_val_if_fail (dev != NULL, FALSE);
+
+	if ((sys_data = nm_device_get_system_config_data (dev)))
+		return sys_data->system_disabled;
+
 	return FALSE;
 }
 
@@ -571,6 +895,37 @@ void nm_system_shutdown_nis (void)
  */
 void nm_system_set_hostname (NMIP4Config *config)
 {
+	char *h_name = NULL;
+	const char *hostname;
+
+	g_return_if_fail (config != NULL);
+
+	hostname = nm_ip4_config_get_hostname (config);
+	if (!hostname)
+	{
+		struct in_addr temp_addr;
+		struct hostent *host;
+
+		/* try to get hostname via dns */
+		temp_addr.s_addr = nm_ip4_config_get_address (config);
+		host = gethostbyaddr ((char *) &temp_addr, sizeof (temp_addr), AF_INET);
+		if (host)
+		{
+			h_name = g_strdup (host->h_name);
+			hostname = strtok (h_name, ".");
+		}
+		else
+			nm_warning ("nm_system_set_hostname(): gethostbyaddr failed, h_errno = %d", h_errno);
+	}
+
+	if (hostname)
+	{
+		nm_info ("Setting hostname to '%s'", hostname);
+		if (sethostname (hostname, strlen (hostname)) < 0)
+			nm_warning ("Could not set hostname.");
+	}
+
+	g_free (h_name);
 }
 
 /*
@@ -591,5 +946,12 @@ gboolean nm_system_should_modify_resolv_conf (void)
  */
 guint32 nm_system_get_mtu (NMDevice *dev)
 {
+	GentooSystemConfigData *sys_data;
+
+	g_return_val_if_fail (dev != NULL, 0);
+
+	if ((sys_data = nm_device_get_system_config_data (dev)))
+		return sys_data->mtu;
+
 	return 0;
 }
