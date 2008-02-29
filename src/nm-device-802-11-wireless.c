@@ -1528,6 +1528,8 @@ schedule_scan (NMDevice80211Wireless *self, gboolean backoff)
 				priv->scan_interval += (SCAN_INTERVAL_STEP / factor);
 				/* Ensure the scan interval will never be less than 20s... */
 				priv->scan_interval = MAX(priv->scan_interval, SCAN_INTERVAL_MIN + SCAN_INTERVAL_STEP);
+				/* ... or more than 120s */
+				priv->scan_interval = MIN(priv->scan_interval, SCAN_INTERVAL_MAX);
 		}
 	}
 }
