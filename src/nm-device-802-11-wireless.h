@@ -98,8 +98,6 @@ const GByteArray *	nm_device_802_11_wireless_get_ssid (NMDevice80211Wireless *se
 gboolean		nm_device_802_11_wireless_set_mode (NMDevice80211Wireless *self,
 										 const int mode);
 
-void			nm_device_802_11_wireless_reset_scan_interval (NMDevice80211Wireless *dev);
-
 int		nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *self);
 
 gboolean nm_device_802_11_wireless_can_activate (NMDevice80211Wireless * self);

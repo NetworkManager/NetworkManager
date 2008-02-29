@@ -1,3 +1,24 @@
+2008-02-29  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.c
+	  src/nm-device-802-11-wireless.h
+		- (nm_device_802_11_wireless_reset_scan_interval): remove, unused
+			elsewhere; fold into the sole user in nm-device-802-11-wireless.c
+		- (device_cleanup): reset the scan interval lower when the device
+			deactivates
+		- (can_scan): base decision mostly off device state, not supplicant
+			interface state since the supplicant interface state isn't a
+			great indicator of whether the device is active or not
+		- (request_wireless_scan): clean up; schedule the next scan here
+		- (schedule_scan): only back the scan interval off if a new scan
+			actually gets scheduled; and make scan intervals tighter when the
+			device is disconnected
+		- (supplicant_iface_state_cb_handler): fold in the bits of
+			nm_device_802_11_wireless_reset_scan_interval() by resetting scan
+			interval to minimum
+		- (activation_success_handler): reset scan interval to something
+			reasonable 
+
 2008-02-28  Saleem Abdulrasool  <compnerd@compnerd.org>
 
 	reviewed by: Steev <steev@steev.net>

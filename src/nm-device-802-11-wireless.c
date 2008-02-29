@@ -148,7 +148,7 @@ struct _NMDevice80211WirelessPrivate
 };
 
 
-static void	schedule_scan (NMDevice80211Wireless *self);
+static void	schedule_scan (NMDevice80211Wireless *self, gboolean backoff);
 
 static void	cancel_pending_scan (NMDevice80211Wireless *self);
 
@@ -745,6 +745,8 @@ device_cleanup (NMDevice80211Wireless *self)
 	}
 
 	cancel_pending_scan (self);
+	/* Reset the scan interval to be pretty frequent when disconnected */
+	priv->scan_interval = SCAN_INTERVAL_MIN + SCAN_INTERVAL_STEP;
 
 	cleanup_association_attempt (self, TRUE);
 
@@ -970,20 +972,6 @@ nm_device_802_11_wireless_can_activate (NMDevice80211Wireless * self)
 		return TRUE;
 
 	return FALSE;
-}
-
-
-void
-nm_device_802_11_wireless_reset_scan_interval (NMDevice80211Wireless *self)
-{
-	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
-
-	g_return_if_fail (NM_IS_DEVICE_802_11_WIRELESS (self));
-
-	priv->scan_interval = SCAN_INTERVAL_MIN;
-
-	if (priv->pending_scan_id)
-		schedule_scan (self);
 }
 
 /*
@@ -1452,31 +1440,36 @@ static gboolean
 can_scan (NMDevice80211Wireless *self)
 {
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
-	guint32 state;
-	gboolean scan = FALSE;
+	guint32 sup_state;
+	NMDeviceState dev_state;
+	gboolean is_disconnected = FALSE;
 
-	state = nm_supplicant_interface_get_connection_state (priv->supplicant.iface);
+	sup_state = nm_supplicant_interface_get_connection_state (priv->supplicant.iface);
+	dev_state = nm_device_get_state (NM_DEVICE (self));
 
-	if (priv->num_freqs >= 14) {
-		/* A/B/G cards should only scan if they are disconnected. */
-		if (state == NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED ||
-			state == NM_SUPPLICANT_INTERFACE_CON_STATE_INACTIVE)
-			scan = TRUE;
-	} else if (state == NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED ||
-			   state == NM_SUPPLICANT_INTERFACE_CON_STATE_INACTIVE ||
-			   state == NM_SUPPLICANT_INTERFACE_CON_STATE_COMPLETED)
-		scan = TRUE;
+	is_disconnected = (   sup_state == NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED
+	                   || sup_state == NM_SUPPLICANT_INTERFACE_CON_STATE_INACTIVE
+	                   || sup_state == NM_SUPPLICANT_INTERFACE_CON_STATE_SCANNING
+	                   || dev_state == NM_DEVICE_STATE_UNKNOWN
+	                   || dev_state == NM_DEVICE_STATE_DOWN
+	                   || dev_state == NM_DEVICE_STATE_DISCONNECTED
+	                   || dev_state == NM_DEVICE_STATE_FAILED
+	                   || dev_state == NM_DEVICE_STATE_CANCELLED) ? TRUE : FALSE;
 
-	return scan;
-}
+	/* All wireless devices can scan when disconnected */
+	if (is_disconnected)
+		return TRUE;
 
-static void
-supplicant_iface_scan_result_cb (NMSupplicantInterface * iface,
-								 gboolean result,
-								 NMDevice80211Wireless * self)
-{
-	if (can_scan (self))
-		schedule_scan (self);
+	/* Devices supporting only B/G frequencies can scan when disconnected 
+	 * and activated, but not when activating.  We don't allow a/b/g devices to
+	 * scan when activated, because there are just too many channels to scan and
+	 * it takes too long to scan them, so users get angry when their SSH
+	 * sessions lag.
+	 */
+	if ((priv->num_freqs <= 14) && (dev_state == NM_DEVICE_STATE_ACTIVATED))
+		return TRUE;
+
+	return FALSE;
 }
 
 static gboolean
@@ -1484,18 +1477,18 @@ request_wireless_scan (gpointer user_data)
 {
 	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (user_data);
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
-	gboolean success = TRUE;
+	gboolean backoff = FALSE;
 
 	if (can_scan (self)) {
-//		nm_debug ("Starting wireless scan for device %s.",
-//				  nm_device_get_iface (NM_DEVICE (user_data)));
-
-		success = nm_supplicant_interface_request_scan (priv->supplicant.iface);
-		if (success)
-			priv->pending_scan_id = 0;
+		if (nm_supplicant_interface_request_scan (priv->supplicant.iface)) {
+			/* success */
+			backoff = TRUE;
+		}
 	}
 
-	return !success;
+	priv->pending_scan_id = 0;
+	schedule_scan (self, backoff);
+	return FALSE;
 }
 
 
@@ -1506,25 +1499,37 @@ request_wireless_scan (gpointer user_data)
  *
  */
 static void
-schedule_scan (NMDevice80211Wireless *self)
+schedule_scan (NMDevice80211Wireless *self, gboolean backoff)
 {
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
-	GTimeVal current_time;
+	GTimeVal now;
 
-	g_get_current_time (&current_time);
+	g_get_current_time (&now);
 
-	/* Cancel the pending scan only if it would happen later than what is scheduled right now */
-	if (priv->pending_scan_id && (current_time.tv_sec + priv->scan_interval < priv->scheduled_scan_time))
-		cancel_pending_scan (self);
+	/* Cancel the pending scan if it would happen later than (now + the scan_interval) */
+	if (priv->pending_scan_id) {
+		if (now.tv_sec + priv->scan_interval < priv->scheduled_scan_time)
+			cancel_pending_scan (self);
+	}
 
-	if (!priv->pending_scan_id)
+	if (!priv->pending_scan_id) {
+		guint factor = 2;
+
+		if (    nm_device_is_activating (NM_DEVICE (self))
+		    || (nm_device_get_state (NM_DEVICE (self)) == NM_DEVICE_STATE_ACTIVATED))
+			factor = 1;
+
 		priv->pending_scan_id = g_timeout_add (priv->scan_interval * 1000,
 											   request_wireless_scan,
 											   self);
 
-	priv->scheduled_scan_time = current_time.tv_sec + priv->scan_interval;
-	if (priv->scan_interval < SCAN_INTERVAL_MAX)
-		priv->scan_interval += SCAN_INTERVAL_STEP;
+		priv->scheduled_scan_time = now.tv_sec + priv->scan_interval;
+		if (backoff && (priv->scan_interval < (SCAN_INTERVAL_MAX / factor))) {
+				priv->scan_interval += (SCAN_INTERVAL_STEP / factor);
+				/* Ensure the scan interval will never be less than 20s... */
+				priv->scan_interval = MAX(priv->scan_interval, SCAN_INTERVAL_MIN + SCAN_INTERVAL_STEP);
+		}
+	}
 }
 
 
@@ -1539,6 +1544,15 @@ cancel_pending_scan (NMDevice80211Wireless *self)
 	}
 }
 
+
+static void
+supplicant_iface_scan_result_cb (NMSupplicantInterface * iface,
+								 gboolean result,
+								 NMDevice80211Wireless * self)
+{
+	if (can_scan (self))
+		schedule_scan (self, TRUE);
+}
 
 static gboolean
 is_encrypted (guint32 flags, guint32 wpa_flags, guint32 rsn_flags)
@@ -1945,12 +1959,14 @@ supplicant_iface_state_cb_handler (gpointer user_data)
 {
 	struct state_cb_data *  cb_data = (struct state_cb_data *) user_data;
 	NMDevice80211Wireless * self;
+	NMDevice80211WirelessPrivate *priv;
 	guint32                 new_state, old_state;
 
 	g_return_val_if_fail (cb_data != NULL, FALSE);
 
 	self = cb_data->self;
-	new_state = cb_data->new_state;
+	priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
+ 	new_state = cb_data->new_state;
 	old_state = cb_data->old_state;
 
 	nm_info ("(%s) supplicant interface is now in state %d (from %d).",
@@ -1959,8 +1975,8 @@ supplicant_iface_state_cb_handler (gpointer user_data)
              old_state);
 
 	if (new_state == NM_SUPPLICANT_INTERFACE_STATE_READY) {
-		nm_device_802_11_wireless_reset_scan_interval (self);
-		schedule_scan (self);
+		priv->scan_interval = SCAN_INTERVAL_MIN;
+		schedule_scan (self, TRUE);
 	} else if (new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
 		cancel_pending_scan (self);
 		cleanup_association_attempt (self, FALSE);
@@ -2820,6 +2836,7 @@ static void
 activation_success_handler (NMDevice *dev)
 {
 	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
+	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 	NMAccessPoint *ap;
 	struct ether_addr bssid = { {0x0, 0x0, 0x0, 0x0, 0x0, 0x0} };
 	NMAccessPoint *tmp_ap;
@@ -2871,6 +2888,9 @@ activation_success_handler (NMDevice *dev)
 
 done:
 	periodic_update (self);
+
+	/* Reset scan interval to something reasonable */
+	priv->scan_interval = SCAN_INTERVAL_MIN + (SCAN_INTERVAL_STEP * 2);
 }
 
 
