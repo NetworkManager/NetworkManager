@@ -1855,7 +1855,8 @@ static gboolean
 link_timeout_cb (gpointer user_data)
 {
 	NMDevice *              dev = NM_DEVICE (user_data);
-	NMDevice80211Wireless * self = NM_DEVICE_802_11_WIRELESS (user_data);	
+	NMDevice80211Wireless * self = NM_DEVICE_802_11_WIRELESS (dev);
+	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 	NMActRequest *          req = NULL;
 	NMAccessPoint *         ap = NULL;
 	NMConnection *          connection;
@@ -1864,8 +1865,11 @@ link_timeout_cb (gpointer user_data)
 
 	g_assert (dev);
 
-	if (self->priv->link_timeout_id)
-		self->priv->link_timeout_id = 0;
+	/* If currently scanning and disconnected still, check again later. */
+	if (priv->scanning)
+		return TRUE;
+
+	priv->link_timeout_id = 0;
 
 	req = nm_device_get_act_request (dev);
 	ap = nm_device_802_11_wireless_get_activation_ap (self);
@@ -1876,6 +1880,15 @@ link_timeout_cb (gpointer user_data)
 			cleanup_association_attempt (self, TRUE);
 			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
 		}
+		return FALSE;
+	}
+
+	/* Disconnect event while activated; the supplicant hasn't been able
+	 * to reassociate within the timeout period, so the connection must
+	 * fail.
+	 */
+	if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED) {
+		nm_device_interface_deactivate (NM_DEVICE_INTERFACE (dev));
 		return FALSE;
 	}
 
@@ -2048,8 +2061,8 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 	} else if (new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED) {
 		if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED || nm_device_is_activating (dev)) {
 			/* Start the link timeout so we allow some time for reauthentication */
-			if ((self->priv->link_timeout_id == 0) && !self->priv->scanning)
-				self->priv->link_timeout_id = g_timeout_add (12000, link_timeout_cb, self);
+			if (!self->priv->link_timeout_id)
+				self->priv->link_timeout_id = g_timeout_add (15000, link_timeout_cb, self);
 		} else {
 			nm_device_set_active_link (dev, FALSE);
 		}
