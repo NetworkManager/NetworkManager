@@ -545,7 +545,7 @@ real_update_link (NMDevice *dev)
 		new_link = TRUE;
 
 out:
-	nm_device_set_active_link (NM_DEVICE (self), new_link);
+	nm_device_set_carrier (NM_DEVICE (self), new_link);
 }
 
 static NMAccessPoint *
@@ -1877,7 +1877,7 @@ link_timeout_cb (gpointer user_data)
 	ap = nm_device_802_11_wireless_get_activation_ap (self);
 	if (req == NULL || ap == NULL) {
 		nm_warning ("couldn't get activation request or activation AP.");
-		nm_device_set_active_link (dev, FALSE);
+		nm_device_set_carrier (dev, FALSE);
 		if (nm_device_is_activating (dev)) {
 			cleanup_association_attempt (self, TRUE);
 			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
@@ -1928,7 +1928,7 @@ link_timeout_cb (gpointer user_data)
 
 time_out:
 	nm_info ("%s: link timed out.", nm_device_get_iface (dev));
-	nm_device_set_active_link (dev, FALSE);
+	nm_device_set_carrier (dev, FALSE);
 	return FALSE;
 }
 
@@ -1996,7 +1996,7 @@ supplicant_iface_state_cb_handler (gpointer user_data)
 		cancel_pending_scan (self);
 		cleanup_association_attempt (self, FALSE);
 		cleanup_supplicant_interface (self);
-		nm_device_set_active_link (NM_DEVICE (self), FALSE);
+		nm_device_set_carrier (NM_DEVICE (self), FALSE);
 	}
 	
 	g_slice_free (struct state_cb_data, cb_data);
@@ -2045,7 +2045,7 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 	if (new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_COMPLETED) {
 		remove_supplicant_interface_connection_error_handler (self);
 		remove_supplicant_timeouts (self);
-		nm_device_set_active_link (dev, TRUE);
+		nm_device_set_carrier (dev, TRUE);
 
 		/* If this is the initial association during device activation,
 		 * schedule the next activation stage.
@@ -2066,7 +2066,7 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 			if (!self->priv->link_timeout_id)
 				self->priv->link_timeout_id = g_timeout_add (15000, link_timeout_cb, self);
 		} else {
-			nm_device_set_active_link (dev, FALSE);
+			nm_device_set_carrier (dev, FALSE);
 		}
 	}
 
@@ -2164,7 +2164,7 @@ supplicant_mgr_state_cb_handler (gpointer user_data)
 			cleanup_association_attempt (self, FALSE);
 			cleanup_supplicant_interface (self);
 
-			nm_device_set_active_link (NM_DEVICE (self), FALSE);
+			nm_device_set_carrier (NM_DEVICE (self), FALSE);
 
 			if (nm_device_is_activating (dev)) {
 				nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);

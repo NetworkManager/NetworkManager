@@ -94,7 +94,7 @@ nm_device_802_3_ethernet_carrier_on (NMNetlinkMonitor *monitor,
 		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
 			return;
 
-		nm_device_set_active_link (dev, TRUE);
+		nm_device_set_carrier (dev, TRUE);
 	}
 }
 
@@ -113,7 +113,7 @@ nm_device_802_3_ethernet_carrier_off (NMNetlinkMonitor *monitor,
 		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
 			return;
 
-		nm_device_set_active_link (dev, FALSE);
+		nm_device_set_carrier (dev, FALSE);
 	}
 }
 
@@ -155,7 +155,7 @@ constructor (GType type,
 	} else {
 		priv->link_connected_id = 0;
 		priv->link_disconnected_id = 0;
-		nm_device_set_active_link (dev, TRUE);
+		nm_device_set_carrier (dev, TRUE);
 	}
 
 	return object;
@@ -177,7 +177,7 @@ static void
 real_update_link (NMDevice *dev)
 {
 	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (dev);
-	gboolean have_link = FALSE;
+	gboolean carrier = FALSE;
 	guint32 caps;
 	gchar * contents;
 	gsize length;
@@ -187,17 +187,17 @@ real_update_link (NMDevice *dev)
 	 */
 	caps = nm_device_get_capabilities (dev);
 	if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT)) {
-		have_link = TRUE;
+		carrier = TRUE;
 		goto out;
 	}
 
 	if (g_file_get_contents (priv->carrier_file_path, &contents, &length, NULL)) {
-		have_link = atoi (contents) > 0 ? TRUE : FALSE;
+		carrier = atoi (contents) > 0 ? TRUE : FALSE;
 		g_free (contents);
 	}
 
 out:
-	nm_device_set_active_link (dev, have_link);
+	nm_device_set_carrier (dev, carrier);
 }
 
 
@@ -342,7 +342,7 @@ real_can_interrupt_activation (NMDevice *dev)
 	 * if the link becomes inactive.
 	 */
 	if (nm_device_get_capabilities (dev) & NM_DEVICE_CAP_CARRIER_DETECT) {
-		if (nm_device_has_active_link (dev) == FALSE) {
+		if (nm_device_get_carrier (dev) == FALSE) {
 			interrupt = TRUE;
 		}
 	}

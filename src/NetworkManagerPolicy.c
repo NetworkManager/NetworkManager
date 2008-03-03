@@ -117,12 +117,12 @@ nm_policy_auto_get_best_device (NMPolicy *policy,
 	for (elt = nm_manager_get_devices (policy->manager); elt; elt = elt->next) {
 		NMConnection *tmp_con = NULL;
 		char *tmp_obj = NULL;
-		gboolean link_active;
+		gboolean carrier;
 		guint prio = 0;
 		NMDevice * dev = (NMDevice *)(elt->data);
 		guint32 caps;
 
-		link_active = nm_device_has_active_link (dev);
+		carrier = nm_device_get_carrier (dev);
 		caps = nm_device_get_capabilities (dev);
 
 		tmp_con = nm_device_get_best_connection (dev, connections, &tmp_obj);
@@ -140,10 +140,10 @@ nm_policy_auto_get_best_device (NMPolicy *policy,
 		}
 
 		if (NM_IS_DEVICE_802_3_ETHERNET (dev)) {
-			if (link_active)
+			if (carrier)
 				prio += 1;
 
-			if (nm_device_get_act_request (dev) && link_active)
+			if (nm_device_get_act_request (dev) && carrier)
 				prio += 1;
 
 			if (prio > best_wired_prio) {
@@ -157,10 +157,10 @@ nm_policy_auto_get_best_device (NMPolicy *policy,
 			/* Bump by 1 so that _something_ gets chosen every time */
 			prio += 1;
 
-			if (link_active)
+			if (carrier)
 				prio += 1;
 
-			if (nm_device_get_act_request (dev) && link_active)
+			if (nm_device_get_act_request (dev) && carrier)
 				prio += 3;
 
 			if (prio > best_wireless_prio) {
@@ -314,7 +314,7 @@ nm_policy_device_change_check (gpointer user_data)
 		do_switch = TRUE;
 	} else if (old_dev && new_dev) {
 		gboolean old_user_requested = nm_act_request_get_user_requested (old_act_req);
-		gboolean old_has_link = nm_device_has_active_link (old_dev);
+		gboolean old_carrier = nm_device_get_carrier (old_dev);
 
 		/* If an old device is active or being activated (and has an active link),
 		 * and its connection is a system connection, and the best connection is
@@ -323,7 +323,7 @@ nm_policy_device_change_check (gpointer user_data)
 		if (   old_connection
 		    && (nm_connection_get_scope (old_connection) == NM_CONNECTION_SCOPE_SYSTEM)
 		    && (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_USER)
-		    && nm_device_has_active_link (old_dev))
+		    && old_carrier)
 			goto out;
 
 		if (   (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_SYSTEM)
@@ -343,7 +343,7 @@ nm_policy_device_change_check (gpointer user_data)
 			 * a new device.  Note that new_dev will never be wireless since automatic device picking
 			 * above will prefer a wired device to a wireless device.
 			 */
-			if ((!old_user_requested || !old_has_link) && (new_dev != old_dev)) {
+			if ((!old_user_requested || !old_carrier) && (new_dev != old_dev)) {
 				nm_info ("SWITCH: found better connection '%s (%s)' than "
 				         " current connection '%s (%s)'.",
 				         connection ? get_connection_id (connection) : "(none)",
@@ -365,7 +365,7 @@ nm_policy_device_change_check (gpointer user_data)
 				if (old_dev == new_dev && nm_device_is_activating (new_dev))
 					same_activating = TRUE;
 
-				if (!same_activating && !old_has_link && (old_mode != IW_MODE_ADHOC)) {
+				if (!same_activating && !old_carrier && (old_mode != IW_MODE_ADHOC)) {
 					NMSettingConnection * new_sc = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 					NMSettingConnection * old_sc = (NMSettingConnection *) nm_connection_get_setting (old_connection, NM_TYPE_SETTING_CONNECTION);
 
@@ -376,7 +376,7 @@ nm_policy_device_change_check (gpointer user_data)
 					         new_sc->id,
 					         nm_device_get_iface (old_dev),
 					         old_sc->id,
-					         old_has_link);
+					         old_carrier);
 					do_switch = TRUE;
 				}
 			} else if (NM_IS_DEVICE_802_3_ETHERNET (new_dev)) {

@@ -1,5 +1,16 @@
 2008-03-02  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device.c
+	  src/nm-device.h
+	  src/nm-device-802-11-wireless.c
+	  src/nm-device-802-3-ethernet.c
+	  src/NetworkManagerPolicy.c
+		- s/link_active/carrier
+		- nm_device_set_active_link() -> nm_device_set_carrier()
+		- nm_device_has_active_link() -> nm_device_get_carrier()
+
+2008-03-02  Dan Williams  <dcbw@redhat.com>
+
 	* system-settings/plugins/ifcfg-fedora/parser.c
 		- (make_wireless_setting): fail connection creation on missing SSID
 

@@ -128,7 +128,9 @@ NMDeviceType	nm_device_get_device_type	(NMDevice *dev);
 guint32		nm_device_get_capabilities	(NMDevice *dev);
 guint32		nm_device_get_type_capabilities	(NMDevice *dev);
 
-gboolean		nm_device_has_active_link	(NMDevice *dev);
+gboolean		nm_device_get_carrier	(NMDevice *dev);
+void			nm_device_set_carrier	(NMDevice *dev, const gboolean carrier);
+
 guint32			nm_device_get_ip4_address	(NMDevice *dev);
 void				nm_device_update_ip4_address	(NMDevice *dev);
 struct in6_addr *	nm_device_get_ip6_address	(NMDevice *dev);
