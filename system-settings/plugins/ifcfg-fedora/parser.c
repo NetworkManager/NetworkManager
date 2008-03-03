@@ -576,6 +576,9 @@ make_wireless_setting (shvarFile *ifcfg,
 		s_wireless->ssid = g_byte_array_sized_new (strlen (value));
 		g_byte_array_append (s_wireless->ssid, (const guint8 *) value, len);
 		g_free (value);
+	} else {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0, "Missing SSID");
+		goto error;
 	}
 
 	value = svGetValue (ifcfg, "MODE");
