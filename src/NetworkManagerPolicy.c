@@ -43,7 +43,7 @@
 
 struct NMPolicy {
 	NMManager *manager;
-	guint device_state_changed_idle_id;
+	guint update_state_id;
 	GSList *signal_ids;
 };
 
@@ -225,7 +225,7 @@ nm_policy_device_change_check (gpointer user_data)
 	NMDevice * old_dev = NULL;
 	gboolean do_switch = FALSE;
 
-	policy->device_state_changed_idle_id = 0;
+	policy->update_state_id = 0;
 
 	switch (nm_manager_get_state (policy->manager)) {
 	case NM_STATE_CONNECTED:
@@ -432,10 +432,10 @@ global_state_changed (NMManager *manager, NMState state, gpointer user_data)
 static void
 schedule_change_check (NMPolicy *policy)
 {
-	if (policy->device_state_changed_idle_id > 0)
+	if (policy->update_state_id > 0)
 		return;
 
-	policy->device_state_changed_idle_id = g_idle_add (nm_policy_device_change_check,
+	policy->update_state_id = g_idle_add (nm_policy_device_change_check,
 	                                                   policy);
 }
 
@@ -596,7 +596,7 @@ nm_policy_new (NMManager *manager)
 
 	policy = g_malloc0 (sizeof (NMPolicy));
 	policy->manager = g_object_ref (manager);
-	policy->device_state_changed_idle_id = 0;
+	policy->update_state_id = 0;
 
 	id = g_signal_connect (manager, "state-change",
 	                       G_CALLBACK (global_state_changed), policy);
@@ -640,9 +640,9 @@ nm_policy_destroy (NMPolicy *policy)
 
 	g_return_if_fail (policy != NULL);
 
-	if (policy->device_state_changed_idle_id) {
-		g_source_remove (policy->device_state_changed_idle_id);
-		policy->device_state_changed_idle_id = 0;
+	if (policy->update_state_id) {
+		g_source_remove (policy->update_state_id);
+		policy->update_state_id = 0;
 	}
 
 	for (iter = policy->signal_ids; iter; iter = g_slist_next (iter))

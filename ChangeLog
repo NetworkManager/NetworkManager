@@ -1,5 +1,10 @@
 2008-03-02  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerPolicy.c
+		- s/device_state_changed_idle_id/update_state_id/
+
+2008-03-02  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device.c
 	  src/nm-device.h
 	  src/nm-device-802-11-wireless.c
