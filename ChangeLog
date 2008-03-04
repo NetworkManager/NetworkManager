@@ -1,3 +1,16 @@
+2008-03-04  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Michael Biebl <biebl@debian.org>
+
+	* NetworkManager.pc.in
+		- doesn't actually depend on dbus-1
+
+	* libnm-util/nm-utils.h
+		- remove unused #include <dbus/dbus.h>
+
+	* libnm-glib/libnm_glib.pc.in
+		- depends on glib and dbus-glib
+
 2008-03-02  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerPolicy.c

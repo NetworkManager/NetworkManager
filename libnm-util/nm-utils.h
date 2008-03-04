@@ -25,7 +25,6 @@
 
 #include <glib.h>
 #include <execinfo.h>
-#include <dbus/dbus.h>
 
 #include "nm-connection.h"
 
