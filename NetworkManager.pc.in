@@ -6,6 +6,6 @@ libgnome_serverdir=@libexecdir@
 
 Name: NetworkManager
 Description: System for maintaining active network connection
-Requires: dbus-1 libnm-util
+Requires:
 Version: @VERSION@
 Cflags: -I${includedir}/NetworkManager

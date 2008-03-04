@@ -1,3 +1,16 @@
+2008-03-04  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Michael Biebl <biebl@debian.org>
+
+	* NetworkManager.pc.in
+		- Doesn't actually require anything special at build time
+
+	* gnome/libnm_glib/libnm_glib.pc.in
+		- Doesn't require dbus/dbus-glib headers at build time
+
+	* libnm-util/libnm-util.pc.in
+		- Doesn't require glib headers at build time
+
 2008-03-04  Tambet Ingo  <tambet@gmail.com>
 
 	* src/nm-device-802-3-ethernet.c (nm_device_802_3_ethernet_get_speed):

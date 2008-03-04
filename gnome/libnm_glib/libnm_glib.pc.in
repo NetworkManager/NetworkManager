@@ -6,7 +6,7 @@ includedir=@includedir@
 Name: libnm_glib
 Description: Client library for determining network connection properties from NetworkManager, using glib
 Version: @VERSION@
-Requires: dbus-1 glib-2.0 dbus-glib-1
+Requires: glib-2.0
 Cflags: -DDBUS_API_SUBJECT_TO_CHANGE -I${includedir}/NetworkManager
 Libs: -L${libdir} -lnm_glib
 
