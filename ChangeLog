@@ -1,3 +1,8 @@
+2008-03-04  Tambet Ingo  <tambet@gmail.com>
+
+	* src/nm-device-802-3-ethernet.c (nm_device_802_3_ethernet_get_speed):
+	Add a workaround for broken driver that return -1 for the speed.
+
 2008-02-28  Saleem Abdulrasool  <compnerd@compnerd.org>
 
 	* src/backends/NetworkManagerGentoo.c:

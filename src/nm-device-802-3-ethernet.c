@@ -673,6 +673,10 @@ nm_device_802_3_ethernet_get_speed (NMDevice8023Ethernet *self)
 		goto out;
 	speed = edata.speed;
 
+	/* Workaround for drivers that report unknown as -1 which gets lost due to casting to u16 */
+	if (speed == G_MAXUINT16)
+		speed = 0;
+
 out:
 	nm_dev_sock_close (sk);
 	return speed;
