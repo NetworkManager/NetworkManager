@@ -1,3 +1,8 @@
+2008-03-06  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-vpnc-service-vpnc-helper.c
+		- (main): pass the MTU in the returned option hash table
+
 2007-12-31  Christopher Aillon  <caillon@redhat.com>
 
 	* src/nm-vpnc-service.h:

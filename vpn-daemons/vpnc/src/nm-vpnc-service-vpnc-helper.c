@@ -114,6 +114,21 @@ str_to_gvalue (const char *str, gboolean try_convert)
 }
 
 static GValue *
+uint_to_gvalue (guint32 num)
+{
+	GValue *val;
+
+	if (num == 0)
+		return NULL;
+
+	val = g_slice_new0 (GValue);
+	g_value_init (val, G_TYPE_UINT);
+	g_value_set_uint (val, num);
+
+	return val;
+}
+
+static GValue *
 addr_to_gvalue (const char *str)
 {
 	struct in_addr	temp_addr;
@@ -126,11 +141,7 @@ addr_to_gvalue (const char *str)
 	if (!inet_aton (str, &temp_addr))
 		return NULL;
 
-	val = g_slice_new0 (GValue);
-	g_value_init (val, G_TYPE_UINT);
-	g_value_set_uint (val, temp_addr.s_addr);
-
-	return val;
+	return uint_to_gvalue (temp_addr.s_addr);
 }
 
 static GValue *
@@ -262,6 +273,11 @@ main (int argc, char *argv[])
 	val = str_to_gvalue (getenv ("CISCO_BANNER"), TRUE);
 	if (val)
 		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_BANNER, val);
+
+	/* Set MTU to 1412 */
+	val = uint_to_gvalue (1412);
+	if (val)
+		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_MTU, val);
 
 	/* Send the config info to nm-vpnc-service */
 	send_ip4_config (connection, config);
