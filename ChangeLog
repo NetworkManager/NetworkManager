@@ -1,3 +1,8 @@
+2008-03-06  Tambet Ingo  <tambet@gmail.com>
+
+	* src/backends/shvar.c (unescape): Fix a bug where empty strings ('') get
+	unescaped to a single quote (').
+
 2008-03-04  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Michael Biebl <biebl@debian.org>
