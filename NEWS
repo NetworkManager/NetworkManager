@@ -1,4 +1,30 @@
 ==============================================
+NetworkManager-0.6.6
+Overview of changes since NetworkManager-0.6.5
+==============================================
+
+0.6.6 is a bug fix release, but also includes a few enhancements:
+
+• A connection editor for Gnome
+• Support for WiFi killswitches
+• Better compatibility with various wireless and wired drivers
+• 802.1x wired authentication support
+• Better handling of VPN and WPA Enterprise security
+• Better handling of weird SSIDs
+• Populate the passphrase dialog with previous options
+• Translation updates and piles of bug fixes
+
+See the ChangeLog for full details.
+
+==============================================
+NetworkManager-0.6.5
+Overview of changes since NetworkManager-0.6.4
+==============================================
+
+0.6.5 is a bug fix release with many, many bug
+fixes.  See the ChangeLog for details.
+
+==============================================
 NetworkManager-0.6.4
 Overview of changes since NetworkManager-0.6.3
 ==============================================
