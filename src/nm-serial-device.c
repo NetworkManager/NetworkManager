@@ -843,17 +843,21 @@ static NMActStageReturn
 real_act_stage2_config (NMDevice *device)
 {
 	NMSerialDevicePrivate *priv = NM_SERIAL_DEVICE_GET_PRIVATE (device);
-	NMSettingPPP *setting;
+	NMActRequest *req;
+	NMConnection *connection;
 	GError *err = NULL;
 	NMActStageReturn ret;
 
-	setting = NM_SETTING_PPP (serial_device_get_setting (NM_SERIAL_DEVICE (device), NM_TYPE_SETTING_PPP));
+	req = nm_device_get_act_request (device);
+	g_assert (req);
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
 
 	priv->ppp_manager = nm_ppp_manager_new ();
 
 	if (nm_ppp_manager_start (priv->ppp_manager,
 						 nm_device_get_iface (device),
-						 setting,
+						 connection,
 						 &err)) {
 		g_signal_connect (priv->ppp_manager, "state-changed",
 					   G_CALLBACK (ppp_state_changed),

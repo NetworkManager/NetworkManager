@@ -12,6 +12,13 @@ libppp_manager_la_SOURCES = \
 	nm-ppp-manager.h \
 	nm-ppp-status.h
 
+nm-ppp-manager-glue.h: $(top_srcdir)/introspection/nm-ppp-manager.xml
+	dbus-binding-tool --prefix=nm_ppp_manager --mode=glib-server --output=nm-ppp-manager-glue.h $(top_srcdir)/introspection/nm-ppp-manager.xml
+
+built_sources = nm-ppp-manager-glue.h
+
+$(libppp_manager_la_OBJECTS): $(built_sources)
+
 libppp_manager_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(HAL_CFLAGS) \

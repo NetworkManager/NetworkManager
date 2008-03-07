@@ -1,3 +1,5 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+
 #ifndef NM_PPP_MANAGER_H
 #define NM_PPP_MANAGER_H
 
@@ -5,7 +7,7 @@
 #include <glib-object.h>
 
 #include "nm-ppp-status.h"
-#include "nm-setting-ppp.h"
+#include "nm-connection.h"
 #include "nm-ip4-config.h"
 #include "nm-pppd-plugin.h"
 
@@ -33,9 +35,9 @@ GType nm_ppp_manager_get_type (void);
 NMPPPManager *nm_ppp_manager_new (void);
 
 gboolean nm_ppp_manager_start (NMPPPManager *manager,
-							   const char *device,
-							   NMSettingPPP *setting,
-							   GError **err);
+						 const char *device,
+						 NMConnection *connection,
+						 GError **err);
 
 void     nm_ppp_manager_stop  (NMPPPManager *manager);
 

@@ -7,9 +7,25 @@
 #include <unistd.h>
 
 #include "nm-ppp-manager.h"
+#include "nm-setting-ppp.h"
 #include "nm-dbus-manager.h"
 #include "nm-utils.h"
 #include "nm-marshal.h"
+
+static gboolean impl_ppp_manager_need_secrets (NMPPPManager *manager,
+									  GHashTable *connection,
+									  char **service_name,
+									  GError **err);
+
+static gboolean impl_ppp_manager_set_state (NMPPPManager *manager,
+								    guint32 state,
+								    GError **err);
+
+static gboolean impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
+									    GHashTable *config,
+									    GError **err);
+
+#include "nm-ppp-manager-glue.h"
 
 #define NM_PPPD_PLUGIN PLUGINDIR "/nm-pppd-plugin.so"
 #define NM_PPP_WAIT_PPPD 10000 /* 10 seconds */
@@ -17,11 +33,9 @@
 typedef struct {
 	GPid pid;
 	NMDBusManager *dbus_manager;
-	DBusGProxy *proxy;
 
 	guint32 ppp_watch_id;
 	guint32 ppp_timeout_handler;
-	guint32 name_owner_changed_handler;
 } NMPPPManagerPrivate;
 
 #define NM_PPP_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_PPP_MANAGER, NMPPPManagerPrivate))
@@ -53,10 +67,53 @@ nm_ppp_manager_init (NMPPPManager *manager)
 {
 }
 
+static GObject *
+constructor (GType type,
+		   guint n_construct_params,
+		   GObjectConstructParam *construct_params)
+{
+	GObject *object;
+	NMPPPManagerPrivate *priv;
+	DBusGConnection *connection;
+	DBusGProxy *proxy;
+	guint request_name_result;
+	GError *err = NULL;
+
+	object = G_OBJECT_CLASS (nm_ppp_manager_parent_class)->constructor (type,
+														   n_construct_params,
+														   construct_params);
+	if (!object)
+		return NULL;
+
+	priv = NM_PPP_MANAGER_GET_PRIVATE (object);
+	priv->dbus_manager = nm_dbus_manager_get ();
+	connection = nm_dbus_manager_get_connection (priv->dbus_manager);
+
+	proxy = dbus_g_proxy_new_for_name (connection,
+								"org.freedesktop.DBus",
+								"/org/freedesktop/DBus",
+								"org.freedesktop.DBus");
+
+	if (dbus_g_proxy_call (proxy, "RequestName", &err,
+					   G_TYPE_STRING, NM_DBUS_SERVICE_PPP,
+					   G_TYPE_UINT, 0,
+					   G_TYPE_INVALID,
+					   G_TYPE_UINT, &request_name_result,
+					   G_TYPE_INVALID))
+		dbus_g_connection_register_g_object (connection, NM_DBUS_PATH_PPP, object);
+
+	g_object_unref (proxy);
+
+	return object;
+}
+
 static void
 finalize (GObject *object)
 {
+	//NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (object);
+
 	nm_ppp_manager_stop (NM_PPP_MANAGER (object));
+	//g_object_unref (priv->dbus_manager);
 
 	G_OBJECT_CLASS (nm_ppp_manager_parent_class)->finalize (object);
 }
@@ -68,6 +125,10 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 
 	g_type_class_add_private (manager_class, sizeof (NMPPPManagerPrivate));
 
+	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (manager_class),
+							   &dbus_glib_nm_ppp_manager_object_info);
+
+	object_class->constructor = constructor;
 	object_class->finalize = finalize;
 
 	/* signals */
@@ -100,6 +161,106 @@ nm_ppp_manager_new (void)
 }
 
 /*******************************************/
+
+static void
+remove_timeout_handler (NMPPPManager *manager)
+{
+	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
+	
+	if (priv->ppp_timeout_handler) {
+		g_source_remove (priv->ppp_timeout_handler);
+		priv->ppp_timeout_handler = 0;
+	}
+}
+
+static gboolean
+impl_ppp_manager_need_secrets (NMPPPManager *manager,
+						 GHashTable *connection,
+						 char **service_name,
+						 GError **err)
+{
+	remove_timeout_handler (manager);
+	
+	return TRUE;
+}
+
+static gboolean impl_ppp_manager_set_state (NMPPPManager *manager,
+								    guint32 state,
+								    GError **err)
+{
+	remove_timeout_handler (manager);
+	g_signal_emit (manager, signals[STATE_CHANGED], 0, state);
+
+	return TRUE;
+}
+
+static gboolean
+impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
+						   GHashTable *config_hash,
+						   GError **err)
+{
+	NMIP4Config *config;
+	GValue *val;
+	const char *iface;
+	int i;
+
+	nm_info ("PPP manager(IP Config Get) reply received.");
+
+	remove_timeout_handler (manager);
+
+	/* FIXME */
+/* 	g_source_remove (priv->ipconfig_timeout); */
+/* 	priv->ipconfig_timeout = 0; */
+
+	config = nm_ip4_config_new ();
+
+	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_GATEWAY);
+	if (val) {
+		nm_ip4_config_set_gateway (config, g_value_get_uint (val));
+		nm_ip4_config_set_ptp_address (config, g_value_get_uint (val));
+	}
+
+	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_ADDRESS);
+	if (val)
+		nm_ip4_config_set_address (config, g_value_get_uint (val));
+
+	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_NETMASK);
+	if (val)
+		nm_ip4_config_set_netmask (config, g_value_get_uint (val));
+	else
+		/* If no netmask, default to Class C address */
+		nm_ip4_config_set_netmask (config, 0x00FF);
+
+	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_DNS);
+	if (val) {
+		GArray *dns = (GArray *) g_value_get_boxed (val);
+
+		for (i = 0; i < dns->len; i++)
+			nm_ip4_config_add_nameserver (config, g_array_index (dns, guint, i));
+	}
+
+	/* FIXME: The plugin helpfully sends WINS servers as well
+	   and we're insensitive clods and ignore them. */
+
+	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_INTERFACE);
+	if (val)
+		iface = g_value_get_string (val);
+	else {
+		nm_warning ("No interface");
+		goto out;
+	}
+
+	g_signal_emit (manager, signals[IP4_CONFIG], 0, iface, config);
+
+ out:
+	g_object_unref (config);
+
+	return TRUE;
+}
+
+/*******************************************/
+
+
 
 typedef struct {
 	GPtrArray *array;
@@ -284,137 +445,6 @@ pppd_timed_out (gpointer data)
 	return FALSE;
 }
 
-static void
-ppp_status_changed (DBusGProxy *proxy,
-				guint32 status,
-				gpointer user_data)
-{
-	NMPPPManager *manager = NM_PPP_MANAGER (user_data);
-
-	g_signal_emit (manager, signals[STATE_CHANGED], 0, status);
-}
-
-static void
-ip4_config_get (DBusGProxy *proxy,
-			 GHashTable *config_hash,
-			 gpointer user_data)
-{
-	NMPPPManager *manager = NM_PPP_MANAGER (user_data);
-	NMIP4Config *config;
-	GValue *val;
-	const char *iface;
-	int i;
-
-	nm_info ("PPP manager(IP Config Get) reply received.");
-
-	/* FIXME */
-/* 	g_source_remove (priv->ipconfig_timeout); */
-/* 	priv->ipconfig_timeout = 0; */
-
-	config = nm_ip4_config_new ();
-
-	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_GATEWAY);
-	if (val) {
-		nm_ip4_config_set_gateway (config, g_value_get_uint (val));
-		nm_ip4_config_set_ptp_address (config, g_value_get_uint (val));
-	}
-
-	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_ADDRESS);
-	if (val)
-		nm_ip4_config_set_address (config, g_value_get_uint (val));
-
-	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_NETMASK);
-	if (val)
-		nm_ip4_config_set_netmask (config, g_value_get_uint (val));
-	else
-		/* If no netmask, default to Class C address */
-		nm_ip4_config_set_netmask (config, 0x00FF);
-
-	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_DNS);
-	if (val) {
-		GArray *dns = (GArray *) g_value_get_boxed (val);
-
-		for (i = 0; i < dns->len; i++)
-			nm_ip4_config_add_nameserver (config, g_array_index (dns, guint, i));
-	}
-
-	/* FIXME: The plugin helpfully sends WINS servers as well
-	   and we're insensitive clods and ignore them. */
-
-	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_INTERFACE);
-	if (val)
-		iface = g_value_get_string (val);
-	else {
-		nm_warning ("No interface");
-		goto out;
-	}
-
-	g_signal_emit (manager, signals[IP4_CONFIG], 0, iface, config);
-
- out:
-	g_object_unref (config);
-}
-
-static void
-name_owner_changed (NMDBusManager *dbus_manager,
-				const char *name,
-				const char *old,
-				const char *new,
-				gpointer user_data)
-{
-	NMPPPManager *manager = NM_PPP_MANAGER (user_data);
-	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
-	gboolean old_owner_good = (old && (strlen (old) > 0));
-	gboolean new_owner_good = (new && (strlen (new) > 0));
-
-	if (strcmp (name, NM_DBUS_SERVICE_PPP))
-		return;
-
-	if (!old_owner_good && new_owner_good) {
-		if (priv->ppp_timeout_handler) {
-			g_source_remove (priv->ppp_timeout_handler);
-			priv->ppp_timeout_handler = 0;
-		}
-
-		/* Work around the bug in dbus-glib where name-owner-changed signal is always emitted twice */
-		if (!priv->proxy) {
-			priv->proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (priv->dbus_manager),
-											 NM_DBUS_SERVICE_PPP,
-											 NM_DBUS_PATH_PPP,
-											 NM_DBUS_INTERFACE_PPP);
-
-			dbus_g_proxy_add_signal (priv->proxy, "StateChanged", G_TYPE_UINT, G_TYPE_INVALID);
-			dbus_g_proxy_connect_signal (priv->proxy, "StateChanged",
-								    G_CALLBACK (ppp_status_changed),
-								    manager, NULL);
-
-			dbus_g_object_register_marshaller (g_cclosure_marshal_VOID__BOXED,
-										G_TYPE_NONE, G_TYPE_VALUE, G_TYPE_INVALID);
-			dbus_g_proxy_add_signal (priv->proxy, "Ip4Config",
-								dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
-								G_TYPE_INVALID);
-			dbus_g_proxy_connect_signal (priv->proxy, "Ip4Config",
-								    G_CALLBACK (ip4_config_get),
-								    manager, NULL);
-		}
-	} else if (old_owner_good && !new_owner_good) {
-		nm_ppp_manager_stop (manager);
-	}
-}
-
-static void
-start_dbus_watcher (NMPPPManager *manager)
-{
-	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
-
-	priv->ppp_timeout_handler = g_timeout_add (NM_PPP_WAIT_PPPD, pppd_timed_out, manager);
-
-	priv->dbus_manager = nm_dbus_manager_get ();
-	priv->name_owner_changed_handler = g_signal_connect (priv->dbus_manager, "name-owner-changed",
-											   G_CALLBACK (name_owner_changed),
-											   manager);
-}
-
 static NMCmdLine *
 create_pppd_cmd_line (NMSettingPPP *setting, const char *device, GError **err)
 {
@@ -501,19 +531,22 @@ pppd_child_setup (gpointer user_data G_GNUC_UNUSED)
 gboolean
 nm_ppp_manager_start (NMPPPManager *manager,
 				  const char *device,
-				  NMSettingPPP *setting,
+				  NMConnection *connection,
 				  GError **err)
 {
 	NMPPPManagerPrivate *priv;
+	NMSettingPPP *ppp_setting;
 	NMCmdLine *ppp_cmd;
 	char *cmd_str;
 	GSource *ppp_watch;
 
 	g_return_val_if_fail (NM_IS_PPP_MANAGER (manager), FALSE);
 	g_return_val_if_fail (device != NULL, FALSE);
-	g_return_val_if_fail (setting != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
-	ppp_cmd = create_pppd_cmd_line (setting, device, err);
+	ppp_setting = NM_SETTING_PPP (nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP));
+
+	ppp_cmd = create_pppd_cmd_line (ppp_setting, device, err);
 	if (!ppp_cmd)
 		return FALSE;
 
@@ -543,7 +576,7 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	priv->ppp_watch_id = g_source_get_id (ppp_watch);
 	g_source_unref (ppp_watch);
 
-	start_dbus_watcher (manager);
+	priv->ppp_timeout_handler = g_timeout_add (NM_PPP_WAIT_PPPD, pppd_timed_out, manager);
 
  out:
 	if (ppp_cmd)
@@ -564,17 +597,6 @@ nm_ppp_manager_stop (NMPPPManager *manager)
 	if (priv->ppp_timeout_handler) {
 		g_source_remove (priv->ppp_timeout_handler);
 		priv->ppp_timeout_handler = 0;
-	}
-
-	if (priv->proxy) {
-		g_object_unref (priv->proxy);
-		priv->proxy = NULL;
-	}
-
-	if (priv->dbus_manager) {
-		g_signal_handler_disconnect (priv->dbus_manager, priv->name_owner_changed_handler);
-		g_object_unref (priv->dbus_manager);
-		priv->dbus_manager = NULL;
 	}
 
 	if (priv->ppp_watch_id) {

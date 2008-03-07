@@ -14,127 +14,15 @@
 #include "nm-ppp-status.h"
 #include "nm-pppd-plugin-glue.h"
 
-GType nm_pppd_plugin_get_type (void);
 int plugin_init (void);
 
 char pppd_version[] = VERSION;
 
-#define NM_TYPE_PPPD_PLUGIN            (nm_pppd_plugin_get_type ())
-#define NM_PPPD_PLUGIN(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_PPPD_PLUGIN, NMPppdPlugin))
-#define NM_PPPD_PLUGIN_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_PPPD_PLUGIN, NMPppdPluginClass))
-#define NM_IS_PPPD_PLUGIN(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_PPPD_PLUGIN))
-#define NM_IS_PPPD_PLUGIN_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_PPPD_PLUGIN))
-#define NM_PPPD_PLUGIN_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_PPPD_PLUGIN, NMPppdPluginClass))
-
-typedef struct {
-	GObject parent;
-} NMPppdPlugin;
-
-typedef struct {
-	GObjectClass parent;
-
-	void (*state_changed)  (NMPppdPlugin *plugin,
-					    NMPPPStatus status);
-	void (*ip4_config)     (NMPppdPlugin *plugin,
-					    GHashTable  *ip4_config);
-} NMPppdPluginClass;
-
-G_DEFINE_TYPE (NMPppdPlugin, nm_pppd_plugin, G_TYPE_OBJECT)
-
-#define NM_PPPD_PLUGIN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_PPPD_PLUGIN, NMPppdPluginPrivate))
-
-typedef struct {
-	DBusGConnection *bus;
-} NMPppdPluginPrivate;
-
-enum {
-	STATE_CHANGED,
-	IP4_CONFIG,
-
-	LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
-
-static void
-nm_pppd_plugin_init (NMPppdPlugin *plugin)
-{
-}
-
-static void
-finalize (GObject *object)
-{
-	dbus_g_connection_unref (NM_PPPD_PLUGIN_GET_PRIVATE (object)->bus);
-
-	G_OBJECT_CLASS (nm_pppd_plugin_parent_class)->finalize (object);
-}
-
-static void
-nm_pppd_plugin_class_init (NMPppdPluginClass *plugin_class)
-{
-	GObjectClass *object_class = G_OBJECT_CLASS (plugin_class);
-
-	g_type_class_add_private (object_class, sizeof (NMPppdPluginPrivate));
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (plugin_class),
-							   &dbus_glib_nm_pppd_plugin_object_info);
-
-	object_class->finalize = finalize;
-
-	/* signals */
-	signals[STATE_CHANGED] =
-		g_signal_new ("state-changed",
-				    G_OBJECT_CLASS_TYPE (object_class),
-				    G_SIGNAL_RUN_FIRST,
-				    G_STRUCT_OFFSET (NMPppdPluginClass, state_changed),
-				    NULL, NULL,
-				    g_cclosure_marshal_VOID__UINT,
-				    G_TYPE_NONE, 1,
-				    G_TYPE_UINT);
-
-	signals[IP4_CONFIG] =
-		g_signal_new ("ip4-config",
-				    G_OBJECT_CLASS_TYPE (object_class),
-				    G_SIGNAL_RUN_FIRST,
-				    G_STRUCT_OFFSET (NMPppdPluginClass, ip4_config),
-				    NULL, NULL,
-				    g_cclosure_marshal_VOID__BOXED,
-				    G_TYPE_NONE, 1,
-				    dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE));
-}
-
-static NMPppdPlugin *
-nm_pppd_plugin_new (DBusGConnection *bus)
-{
-	GObject *obj;
-
-	obj = g_object_new (NM_TYPE_PPPD_PLUGIN, NULL);
-	if (!obj)
-		return NULL;
-
-	NM_PPPD_PLUGIN_GET_PRIVATE (obj)->bus = dbus_g_connection_ref (bus);
-	dbus_g_connection_register_g_object (bus, NM_DBUS_PATH_PPP, obj);
-
-	return (NMPppdPlugin *) obj;
-}
-
-static void
-nm_pppd_plugin_state_changed (NMPppdPlugin *plugin, NMPPPStatus ppp_status)
-{
-	g_signal_emit (plugin, signals[STATE_CHANGED], 0, ppp_status);
-}
-
-static void
-nm_pppd_plugin_ip4_config (NMPppdPlugin *plugin, GHashTable *ip4_config)
-{
-	g_signal_emit (plugin, signals[IP4_CONFIG], 0, ip4_config);
-}
-
-/*****************************************************************************/
+static DBusGProxy *proxy = NULL;
 
 static void
 nm_phasechange (void *data, int arg)
 {
-	NMPppdPlugin *plugin = NM_PPPD_PLUGIN (data);
 	NMPPPStatus ppp_status = NM_PPP_STATUS_UNKNOWN;
 	char *ppp_phase;
 
@@ -197,8 +85,12 @@ nm_phasechange (void *data, int arg)
 		break;
 	}
 
-	if (ppp_status != NM_PPP_STATUS_UNKNOWN)
-		nm_pppd_plugin_state_changed (plugin, ppp_status);
+	if (ppp_status != NM_PPP_STATUS_UNKNOWN) {
+		dbus_g_proxy_call_no_reply (proxy, "SetState",
+							   G_TYPE_UINT, ppp_status,
+							   G_TYPE_INVALID,
+							   G_TYPE_INVALID);
+	}
 }
 
 static GValue *
@@ -237,7 +129,6 @@ value_destroy (gpointer data)
 static void
 nm_ip_up (void *data, int arg)
 {
-	NMPppdPlugin *plugin = NM_PPPD_PLUGIN (data);
 	ipcp_options opts = ipcp_gotoptions[ifunit];
 	ipcp_options peer_opts = ipcp_hisoptions[ifunit];
 	GHashTable *hash;
@@ -299,25 +190,25 @@ nm_ip_up (void *data, int arg)
 		g_hash_table_insert (hash, NM_PPP_IP4_CONFIG_WINS, val);
 	}
 
-	nm_pppd_plugin_ip4_config (plugin, hash);
+	dbus_g_proxy_call_no_reply (proxy, "SetIp4Config",
+						   dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
+						   hash,
+						   G_TYPE_INVALID,
+						   G_TYPE_INVALID);
+
 	g_hash_table_destroy (hash);
 }
 
 static void
 nm_exit_notify (void *data, int arg)
 {
-	NMPppdPlugin *plugin = NM_PPPD_PLUGIN (data);
-
-	g_object_unref (plugin);
+	g_object_unref (data);
 }
 
 int
 plugin_init (void)
 {
 	DBusGConnection *bus;
-	DBusGProxy *bus_proxy;
-	NMPppdPlugin *plugin;
-	guint request_name_result;
 	GError *err = NULL;
 
 	g_type_init ();
@@ -329,33 +220,16 @@ plugin_init (void)
 		return -1;
 	}
 
-	bus_proxy = dbus_g_proxy_new_for_name (bus,
-								    "org.freedesktop.DBus",
-								    "/org/freedesktop/DBus",
-								    "org.freedesktop.DBus");
+	proxy = dbus_g_proxy_new_for_name (bus,
+								NM_DBUS_SERVICE_PPP,
+								NM_DBUS_PATH_PPP,
+								NM_DBUS_INTERFACE_PPP);
 
-	if (!dbus_g_proxy_call (bus_proxy, "RequestName", &err,
-					    G_TYPE_STRING, NM_DBUS_SERVICE_PPP,
-					    G_TYPE_UINT, 0,
-					    G_TYPE_INVALID,
-					    G_TYPE_UINT, &request_name_result,
-					    G_TYPE_INVALID)) {
-		g_warning ("Failed to acquire '" NM_DBUS_SERVICE_PPP "'");
-		g_error_free (err);
-		dbus_g_connection_unref (bus);
-		g_object_unref (bus_proxy);
-
-		return -1;
-	}
-
-	g_object_unref (bus_proxy);
-
-	plugin = nm_pppd_plugin_new (bus);
 	dbus_g_connection_unref (bus);
 
-	add_notifier (&phasechange, nm_phasechange, plugin);
-	add_notifier (&ip_up_notifier, nm_ip_up, plugin);
-	add_notifier (&exitnotify, nm_exit_notify, plugin);
+	add_notifier (&phasechange, nm_phasechange, NULL);
+	add_notifier (&ip_up_notifier, nm_ip_up, NULL);
+	add_notifier (&exitnotify, nm_exit_notify, proxy);
 
 	return 0;
 }
