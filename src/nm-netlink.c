@@ -46,7 +46,7 @@ get_link_cache (void)
 		link_cache = rtnl_link_alloc_cache (nlh);
 
 	if (G_UNLIKELY (!link_cache)) {
-		nm_warning ("couldn't allocate netlink link cache.");
+		nm_warning ("couldn't allocate netlink link cache: %s", nl_geterror ());
 		return NULL;
 	}
 
@@ -67,6 +67,11 @@ nm_netlink_get_default_handle (void)
 	def_nl_handle = nl_handle_alloc_cb (cb);
 	if (!def_nl_handle) {
 		nm_warning ("couldn't allocate netlink handle.");
+		return NULL;
+	}
+
+	if (nl_connect (def_nl_handle, NETLINK_ROUTE) < 0) {
+		nm_error ("couldn't connect to netlink: %s", nl_geterror ());
 		return NULL;
 	}
 

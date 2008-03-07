@@ -1,6 +1,13 @@
 2008-03-07  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-netlink.c
+		- (nm_netlink_get_default_handle): mistakenly removed too much code in
+			last commit; fix that
+		- (get_link_cache): print error string
+
+2008-03-07  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-netlink.c
 		- (nm_netlink_get_default_handle): NMNetlinkMonitor now uses libnl,
 			don't need this hack any more (Benoit Boissinot)
 
