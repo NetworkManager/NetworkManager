@@ -1,6 +1,6 @@
 # Swedish messages for NetworkManager.
-# Copyright (C) 2004, 2005, 2006 Free Software Foundation, Inc.
-# Daniel Nylander <po@danielnylander.se>, 2006.
+# Copyright (C) 2004, 2005, 2006, 2008 Free Software Foundation, Inc.
+# Daniel Nylander <po@danielnylander.se>, 2006, 2008.
 # Christian Rose <menthos@menthos.com>, 2004, 2005, 2006.
 #
 # $Id: sv.po,v 1.14 2006/12/10 18:34:55 dnylande Exp $
@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-12-28 19:41+0100\n"
-"PO-Revision-Date: 2007-12-28 19:52+0100\n"
+"POT-Creation-Date: 2008-03-07 20:55+0100\n"
+"PO-Revision-Date: 2008-03-07 20:56+0100\n"
 "Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "MIME-Version: 1.0\n"
@@ -53,6 +53,14 @@ msgstr "fel inträffade vid väntan på data i uttaget"
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr "Ogiltig flagga.  Använd --help för att se en lista över giltiga flaggor.\n"
+
+#: ../src/named-manager/nm-named-manager.c:218
+msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
+msgstr "OBSERVERA: uppslag via glibc har inte stöd för mer än 3 namnservrar."
+
+#: ../src/named-manager/nm-named-manager.c:220
+msgid "The nameservers listed below may not be recognized."
+msgstr "Namnservrarna listade nedan kanske inte kommer att kännas igen."
 
 #~ msgid "operation took too long"
 #~ msgstr "åtgärden tog för lång tid"
