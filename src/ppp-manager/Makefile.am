@@ -54,7 +54,7 @@ nm_pppd_plugin_la_LIBADD = \
 nm-pppd-plugin-glue.h: nm-pppd-plugin.xml
 	dbus-binding-tool --prefix=nm_pppd_plugin --mode=glib-server --output=nm-pppd-plugin-glue.h $(top_srcdir)/src/ppp-manager/nm-pppd-plugin.xml
 
-BUILT_SOURCES = nm-pppd-plugin-glue.h
+BUILT_SOURCES = nm-pppd-plugin-glue.h nm-ppp-manager-glue.h
 
 EXTRA_DIST = nm-pppd-plugin.xml
 
