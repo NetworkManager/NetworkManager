@@ -1,3 +1,8 @@
+2008-03-06  Dan Williams  <dcbw@redhat.com>
+
+	* autogen.sh
+		- Die gnome-common, die
+
 2008-03-04  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Michael Biebl <biebl@debian.org>
