@@ -70,23 +70,6 @@ nm_netlink_get_default_handle (void)
 		return NULL;
 	}
 
-	if (nl_connect (def_nl_handle, NETLINK_ROUTE) < 0) {
-		/* HACK: try one more time. Because the netlink monitor for link state
-		 * inits before we get here, it grabs the port that matches the PID
-		 * of the NM process, which also happens to be the PID that libnl uses
-		 * the first time too.  The real fix is to convert nm-netlink-monitor.c
-		 * over to use libnl.
-		 */
-		nl_handle_destroy (def_nl_handle);
-		def_nl_handle = NULL;
-
-		def_nl_handle = nm_netlink_get_default_handle ();
-		if (!def_nl_handle) {
-			nm_error ("couldn't connect to netlink: %s", nl_geterror ());
-			return NULL;
-		}
-	}
-
 	return def_nl_handle;
 }
 

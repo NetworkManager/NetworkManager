@@ -1,3 +1,9 @@
+2008-03-07  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-netlink.c
+		- (nm_netlink_get_default_handle): NMNetlinkMonitor now uses libnl,
+			don't need this hack any more (Benoit Boissinot)
+
 2008-03-06  Dan Williams  <dcbw@redhat.com>
 
 	* autogen.sh
