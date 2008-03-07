@@ -107,7 +107,7 @@
       </tp:docstring>
     </property>
 
-    <signal name="StateChange">
+    <signal name="StateChanged">
       <tp:docstring>
         NetworkManager's state changed.
       </tp:docstring>
@@ -209,6 +209,17 @@
     </tp:struct>
 
     <!-- Legacy methods to maintain backwards compatibility for 0.6 branch. -->
+
+    <signal name="StateChange">
+      <tp:docstring>
+        DEPRECATED.  NetworkManager's state changed.  Use the 'StateChanged' signal instead.
+      </tp:docstring>
+      <arg name="state" type="u" tp:type="NM_STATE">
+        <tp:docstring>
+          The new state of NetworkManager.
+        </tp:docstring>
+      </arg>
+    </signal>
 
     <method name="sleep">
       <tp:docstring>

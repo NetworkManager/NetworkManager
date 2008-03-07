@@ -83,7 +83,8 @@ G_DEFINE_TYPE (NMManager, nm_manager, G_TYPE_OBJECT)
 enum {
 	DEVICE_ADDED,
 	DEVICE_REMOVED,
-	STATE_CHANGE,
+	STATE_CHANGED,
+	STATE_CHANGE,  /* DEPRECATED */
 	PROPERTIES_CHANGED,
 	CONNECTIONS_ADDED,
 	CONNECTION_ADDED,
@@ -214,6 +215,9 @@ nm_manager_update_state (NMManager *manager)
 
 	if (priv->state != new_state) {
 		priv->state = new_state;
+		g_signal_emit (manager, signals[STATE_CHANGED], 0, priv->state);
+
+		/* Emit StateChange too for backwards compatibility */
 		g_signal_emit (manager, signals[STATE_CHANGE], 0, priv->state);
 	}
 }
@@ -365,11 +369,11 @@ nm_manager_class_init (NMManagerClass *manager_class)
 					  G_TYPE_NONE, 1,
 					  G_TYPE_OBJECT);
 
-	signals[STATE_CHANGE] =
-		g_signal_new ("state-change",
+	signals[STATE_CHANGED] =
+		g_signal_new ("state-changed",
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMManagerClass, state_change),
+					  G_STRUCT_OFFSET (NMManagerClass, state_changed),
 					  NULL, NULL,
 					  g_cclosure_marshal_VOID__UINT,
 					  G_TYPE_NONE, 1,
@@ -418,6 +422,17 @@ nm_manager_class_init (NMManagerClass *manager_class)
 				    nm_marshal_VOID__OBJECT_UINT,
 					  G_TYPE_NONE, 2,
 				    G_TYPE_OBJECT, G_TYPE_UINT);
+
+	/* StateChange is DEPRECATED */
+	signals[STATE_CHANGE] =
+		g_signal_new ("state-change",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  0, NULL, NULL,
+					  g_cclosure_marshal_VOID__UINT,
+					  G_TYPE_NONE, 1,
+					  G_TYPE_UINT);
+
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (manager_class),
 									 &dbus_glib_nm_manager_object_info);

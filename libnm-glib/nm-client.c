@@ -41,7 +41,7 @@ enum {
 	MANAGER_RUNNING,
 	DEVICE_ADDED,
 	DEVICE_REMOVED,
-	STATE_CHANGE,
+	STATE_CHANGED,
 
 	LAST_SIGNAL
 };
@@ -54,7 +54,7 @@ static void proxy_name_owner_changed (DBusGProxy *proxy,
 									  const char *new_owner,
 									  gpointer user_data);
 
-static void client_state_change_proxy (DBusGProxy *proxy, guint state, gpointer user_data);
+static void client_state_changed_proxy (DBusGProxy *proxy, guint state, gpointer user_data);
 static void client_device_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data);
 static void client_device_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data);
 
@@ -108,10 +108,10 @@ constructor (GType type,
 										   nm_object_get_path (object),
 										   NM_DBUS_INTERFACE);
 
-	dbus_g_proxy_add_signal (priv->client_proxy, "StateChange", G_TYPE_UINT, G_TYPE_INVALID);
+	dbus_g_proxy_add_signal (priv->client_proxy, "StateChanged", G_TYPE_UINT, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->client_proxy,
-						    "StateChange",
-						    G_CALLBACK (client_state_change_proxy),
+						    "StateChanged",
+						    G_CALLBACK (client_state_changed_proxy),
 						    object,
 						    NULL);
 
@@ -299,11 +299,11 @@ nm_client_class_init (NMClientClass *client_class)
 					  G_TYPE_NONE, 1,
 					  G_TYPE_OBJECT);
 
-	signals[STATE_CHANGE] =
-		g_signal_new ("state-change",
+	signals[STATE_CHANGED] =
+		g_signal_new ("state-changed",
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMClientClass, state_change),
+					  G_STRUCT_OFFSET (NMClientClass, state_changed),
 					  NULL, NULL,
 					  g_cclosure_marshal_VOID__UINT,
 					  G_TYPE_NONE, 1,
@@ -358,14 +358,14 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 }
 
 static void
-client_state_change_proxy (DBusGProxy *proxy, guint state, gpointer user_data)
+client_state_changed_proxy (DBusGProxy *proxy, guint state, gpointer user_data)
 {
 	NMClient *client = NM_CLIENT (user_data);
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
 
 	if (priv->state != state) {
 		priv->state = state;
-		g_signal_emit (client, signals[STATE_CHANGE], 0, state);
+		g_signal_emit (client, signals[STATE_CHANGED], 0, state);
 	}
 }
 

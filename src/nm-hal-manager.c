@@ -748,7 +748,7 @@ nm_hal_manager_new (NMManager *nm_manager)
 	                  manager);
 
 	g_signal_connect (nm_manager,
-					  "state-change",
+					  "state-changed",
 					  G_CALLBACK (nm_manager_state_changed),
 					  manager);
 

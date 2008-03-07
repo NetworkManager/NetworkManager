@@ -33,7 +33,7 @@ typedef struct {
 	void (*manager_running) (NMClient *client, gboolean running);
 	void (*device_added) (NMClient *client, NMDevice *device);
 	void (*device_removed) (NMClient *client, NMDevice *device);
-	void (*state_change) (NMClient *client, NMState state);
+	void (*state_changed) (NMClient *client, NMState state);
 } NMClientClass;
 
 GType nm_client_get_type (void);

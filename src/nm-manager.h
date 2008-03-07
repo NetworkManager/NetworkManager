@@ -31,7 +31,7 @@ typedef struct {
 	/* Signals */
 	void (*device_added) (NMManager *manager, NMDevice *device);
 	void (*device_removed) (NMManager *manager, NMDevice *device);
-	void (*state_change) (NMManager *manager, guint state);
+	void (*state_changed) (NMManager *manager, guint state);
 	void (*properties_changed) (NMManager *manager, GHashTable *properties);
 
 	void (*connections_added) (NMManager *manager, NMConnectionScope scope);

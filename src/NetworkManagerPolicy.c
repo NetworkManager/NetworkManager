@@ -469,7 +469,7 @@ nm_policy_new (NMManager *manager)
 	policy->manager = g_object_ref (manager);
 	policy->update_state_id = 0;
 
-	id = g_signal_connect (manager, "state-change",
+	id = g_signal_connect (manager, "state-changed",
 	                       G_CALLBACK (global_state_changed), policy);
 	policy->signal_ids = g_slist_append (policy->signal_ids, (gpointer) id);
 

@@ -1,5 +1,30 @@
 2008-03-07  Dan Williams  <dcbw@redhat.com>
 
+	Change manager's StateChange signal to StateChanged for consistency.
+
+	* introspection/nm-manager.xml
+		- Add 'StateChanged' signal
+		- Move 'StateChange' down to the deprecated section
+
+	* src/nm-hal-manager.c
+		- (nm_hal_manager_new): connect to 'state-changed' instead
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_new): connect to 'state-changed' instead
+
+	* src/nm-manager.c
+	  src/nm-manager.h
+		- (nm_manager_update_state): emit both 'state-changed' and 'state-change'
+		- (nm_manager_class_init): add 'state-changed' and not the deprecation
+			of 'state-change'
+
+	* libnm-glib/nm-client.c
+	  libnm-glib/nm-client.h
+		- (constructor, nm_client_class_init, client_state_changed_proxy):
+			track and proxy 'state-changed' instead of 'state-change'
+
+2008-03-07  Dan Williams  <dcbw@redhat.com>
+
 	First pass of multiple active device support.  Expect bugs.
 
 	* src/nm-ip4-config.c
