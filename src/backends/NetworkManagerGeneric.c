@@ -50,33 +50,34 @@ void nm_generic_init (void)
 }
 
 /*
- * nm_generic_device_add_default_route_via_device
+ * nm_generic_replace_default_route
  *
- * Add default route to the given device
- *
- */
-void nm_generic_device_add_default_route_via_device (NMDevice *dev)
-{
-	g_return_if_fail (dev != NULL);
-
-	nm_system_device_add_default_route_via_device_with_iface (nm_device_get_iface (dev));
-}
-
-
-/*
- * nm_generic_device_add_default_route_via_device_with_iface
- *
- * Add default route to the given device
+ * Replace default route with one via the current device
  *
  */
-void nm_generic_device_add_default_route_via_device_with_iface (const char *iface)
+void
+nm_generic_device_replace_default_route (const char *iface, guint32 gw, guint32 mss)
 {
-	char	*buf;
+	char *buf, *addr_str = NULL, *mss_str = NULL;
 
 	g_return_if_fail (iface != NULL);
 
-	/* Add default gateway */
-	buf = g_strdup_printf (IP_BINARY_PATH" route add default dev %s", iface);
+	if (gw > 0) {
+		struct in_addr addr = { .s_addr = gw };
+		char buf2[INET_ADDRSTRLEN + 1];
+
+		memset (buf2, 0, sizeof (buf2));
+		inet_ntop (AF_INET, &addr, buf2, INET_ADDRSTRLEN);	
+		addr_str = g_strdup_printf ("via %s", buf2);
+	}
+
+	if (mss > 0)
+		mss_str = g_strdup_printf ("advmss %d", mss);
+
+	buf = g_strdup_printf (IP_BINARY_PATH" route replace default %s %s dev %s",
+	                       addr_str ? addr_str : "",
+	                       mss_str ? mss_str : "",
+	                       iface);
 	nm_spawn_process (buf);
 	g_free (buf);
 }
@@ -452,14 +453,3 @@ gboolean nm_generic_should_modify_resolv_conf (void)
 	return TRUE;
 }
 
-
-/*
- * nm_generic_get_mtu
- *
- * Return a user-provided or system-mandated MTU for this device or zero if
- * no such MTU is provided.
- */
-guint32 nm_generic_get_mtu (NMDevice *dev)
-{
-	return 0;
-}

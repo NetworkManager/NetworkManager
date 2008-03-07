@@ -248,7 +248,7 @@ nm_device_get_iface (NMDevice *self)
 }
 
 
-static const char *
+const char *
 nm_device_get_ip_iface (NMDevice *self)
 {
 	g_return_val_if_fail (self != NULL, NULL);
@@ -373,10 +373,19 @@ nm_device_set_carrier (NMDevice *self,
 }
 
 
+gboolean
+nm_device_can_activate (NMDevice *self, gboolean wireless_enabled)
+{
+	if (!NM_DEVICE_GET_CLASS (self)->can_activate)
+			return TRUE;
+
+	return NM_DEVICE_GET_CLASS (self)->can_activate (self, wireless_enabled);
+}
+
 NMConnection *
-nm_device_get_best_connection (NMDevice *dev,
-			       GSList *connections,
-                               char **specific_object)
+nm_device_get_best_auto_connection (NMDevice *dev,
+                                    GSList *connections,
+                                    char **specific_object)
 {
 	guint32 caps;
 
@@ -389,10 +398,10 @@ nm_device_get_best_connection (NMDevice *dev,
 	if (!(caps & NM_DEVICE_CAP_NM_SUPPORTED))
 		return NULL;
 
-	if (!NM_DEVICE_GET_CLASS (dev)->get_best_connection)
+	if (!NM_DEVICE_GET_CLASS (dev)->get_best_auto_connection)
 		return NULL;
 
-	return NM_DEVICE_GET_CLASS (dev)->get_best_connection (dev, connections, specific_object);
+	return NM_DEVICE_GET_CLASS (dev)->get_best_auto_connection (dev, connections, specific_object);
 }
 
 /*
@@ -709,34 +718,25 @@ static NMActStageReturn
 real_act_stage4_get_ip4_config (NMDevice *self,
                                 NMIP4Config **config)
 {
-	NMIP4Config *		real_config = NULL;
-	NMActStageReturn	ret = NM_ACT_STAGE_RETURN_FAILURE;
+	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
+	NMConnection *connection;
 
 	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	if (nm_device_get_use_dhcp (self)) {
-		real_config = nm_dhcp_manager_get_ip4_config (NM_DEVICE_GET_PRIVATE (self)->dhcp_manager,
+	connection = nm_act_request_get_connection (nm_device_get_act_request (self));
+
+	if (nm_device_get_use_dhcp (self))
+		*config = nm_dhcp_manager_get_ip4_config (NM_DEVICE_GET_PRIVATE (self)->dhcp_manager,
 											 nm_device_get_iface (self));
+	else
+		*config = nm_ip4_config_new ();
 
-		if (real_config && nm_ip4_config_get_mtu (real_config) == 0) {
-			/* If the DHCP server doesn't set the MTU, get it from backend. */
-			// FIXME: let the NMConnection override the MTU
-			nm_ip4_config_set_mtu (real_config, nm_system_get_mtu (self));
-		}
-	} else {
-		real_config = nm_ip4_config_new ();
-	}
+	if (*config) {
+		NMSettingIP4Config *s_ip4;
 
-	if (real_config) {
-		NMActRequest *req;
-
-		req = nm_device_get_act_request (self);
-		merge_ip4_config (real_config, 
-					   (NMSettingIP4Config *) nm_connection_get_setting (nm_act_request_get_connection (req),
-															   NM_TYPE_SETTING_IP4_CONFIG));
-
-		*config = real_config;
+		s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+		merge_ip4_config (*config, s_ip4);
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	} else {
 		/* Make sure device is up even if config fails */
@@ -1397,7 +1397,6 @@ nm_device_set_ip4_config (NMDevice *self, NMIP4Config *config)
 		nm_device_update_ip4_address (self);
 		nm_system_device_add_ip6_link_address (self);
 		nm_system_set_hostname (config);
-		nm_system_set_mtu (self);
 		nm_system_activate_nis (config);
 	}
 

@@ -1262,6 +1262,9 @@ nm_manager_activate_device (NMManager *manager,
 	if (!check_connection_allowed (manager, dev_iface, connection, specific_object, error))
 		return FALSE;
 
+	if (nm_device_get_act_request (device))
+		nm_device_interface_deactivate (dev_iface);
+
 	req = nm_act_request_new (connection, specific_object, user_requested);
 	success = nm_device_interface_activate (dev_iface, req, error);
 	g_object_unref (req);
@@ -1307,39 +1310,6 @@ wait_for_connection_expired (gpointer data)
 	return FALSE;
 }
 
-/* ICK ICK ICK; should go away with multiple device support.  There is
- * corresponding code in NetworkManagerPolicy.c that handles this for
- * automatically activated connections.
- */
-static void
-deactivate_old_device (NMManager *manager)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	NMDevice *device = NULL;
-	GSList *iter;
-
-	switch (priv->state) {
-	case NM_STATE_CONNECTED:
-		device = nm_manager_get_active_device (manager);
-		break;
-	case NM_STATE_CONNECTING:
-		for (iter = nm_manager_get_devices (manager); iter; iter = iter->next) {
-			NMDevice *d = NM_DEVICE (iter->data);
-
-			if (nm_device_is_activating (d)) {
-				device = d;
-				break;
-			}
-		}
-		break;
-	default:
-		break;
-	}
-
-	if (device)
-		nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
-}
-
 static void
 connection_added_default_handler (NMManager *manager,
 						    NMConnection *connection,
@@ -1361,9 +1331,6 @@ connection_added_default_handler (NMManager *manager,
 
 	/* Will destroy below; can't be valid during the initial activation start */
 	priv->pending_connection_info = NULL;
-
-	// FIXME: remove old_dev deactivation when multiple device support lands
-	deactivate_old_device (manager);
 
 	success = nm_manager_activate_device (manager,
 	                                      info->device,
@@ -1427,9 +1394,6 @@ impl_manager_activate_device (NMManager *manager,
 	connection = nm_manager_get_connection_by_object_path (manager, scope, connection_path);
 	if (connection) {
 		gboolean success;
-
-		// FIXME: remove old_dev deactivation when multiple device support lands
-		deactivate_old_device (manager);
 
 		success = nm_manager_activate_device (manager,
 		                                      device,

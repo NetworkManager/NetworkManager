@@ -28,13 +28,18 @@
 #include <dbus/dbus.h>
 #include "nm-ip4-config.h"
 
-typedef enum
-{
+typedef enum {
 	NM_NAMED_MANAGER_ERROR_SYSTEM,
 	NM_NAMED_MANAGER_ERROR_INVALID_NAMESERVER,
 	NM_NAMED_MANAGER_ERROR_INVALID_HOST,
 	NM_NAMED_MANAGER_ERROR_INVALID_ID
 } NMNamedManagerError;
+
+typedef enum {
+	NM_NAMED_IP_CONFIG_TYPE_DEFAULT = 0,
+	NM_NAMED_IP_CONFIG_TYPE_BEST_DEVICE,
+	NM_NAMED_IP_CONFIG_TYPE_VPN
+} NMNamedIPConfigType;
 
 #define NM_NAMED_MANAGER_ERROR nm_named_manager_error_quark ()
 GQuark nm_named_manager_error_quark (void);
@@ -64,7 +69,9 @@ GType nm_named_manager_get_type (void);
 
 NMNamedManager * nm_named_manager_get (void);
 
-gboolean nm_named_manager_add_ip4_config (NMNamedManager *mgr, NMIP4Config *config);
+gboolean nm_named_manager_add_ip4_config (NMNamedManager *mgr,
+                                          NMIP4Config *config,
+                                          NMNamedIPConfigType cfg_type);
 
 gboolean nm_named_manager_remove_ip4_config (NMNamedManager *mgr, NMIP4Config *config);
 

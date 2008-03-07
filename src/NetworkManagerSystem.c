@@ -190,11 +190,9 @@ nm_system_device_set_from_ip4_config (const char *iface,
 							   NMIP4Config *config,
 							   gboolean route_to_iface)
 {
-	NMNamedManager * named_mgr;
-	struct nl_handle *	nlh = NULL;
-	struct rtnl_addr *	addr = NULL;
-	int				err;
-	int len, i;
+	struct nl_handle *nlh = NULL;
+	struct rtnl_addr *addr = NULL;
+	int len, i, err;
 	guint32 flags;
 
 	g_return_val_if_fail (iface != NULL, FALSE);
@@ -224,13 +222,6 @@ nm_system_device_set_from_ip4_config (const char *iface,
 
 	sleep (1);
 
-	if (route_to_iface)
-		nm_system_device_add_default_route_via_device_with_iface (iface);
-	else
-		nm_system_device_set_ip4_route (iface, config,
-								  nm_ip4_config_get_gateway (config), 0, 0, 
-								  nm_ip4_config_get_mss (config));
-
 	len = nm_ip4_config_get_num_static_routes (config);
 	for (i = 0; i < len; i++) {
 		guint32 mss = nm_ip4_config_get_mss (config);
@@ -240,9 +231,8 @@ nm_system_device_set_from_ip4_config (const char *iface,
 		nm_system_device_set_ip4_route (iface, config, route, saddr, 0xffffffff, mss);
 	}		
 
-	named_mgr = nm_named_manager_get ();
-	nm_named_manager_add_ip4_config (named_mgr, config);
-	g_object_unref (named_mgr);
+	if (nm_ip4_config_get_mtu (config))
+		nm_system_device_set_mtu (iface, nm_ip4_config_get_mtu (config));
 
 	return TRUE;
 }
@@ -339,7 +329,6 @@ nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
 	NMIP4Config *		ad_config = NULL;
 	struct nl_handle *	nlh = NULL;
 	struct rtnl_addr *	addr = NULL;
-	struct rtnl_link *	request = NULL;
 	NMNamedManager *named_mgr;
 	int iface_idx;
 
@@ -347,7 +336,7 @@ nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
 
 	/* Set up a route to the VPN gateway through the real network device */
 	if (active_device && (ad_config = nm_device_get_ip4_config (active_device))) {
-		nm_system_device_set_ip4_route (nm_device_get_iface (active_device),
+		nm_system_device_set_ip4_route (nm_device_get_ip_iface (active_device),
 								  ad_config,
 								  nm_ip4_config_get_gateway (ad_config),
 								  nm_ip4_config_get_gateway (config),
@@ -376,28 +365,15 @@ nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
 		nm_warning ("couldn't create rtnl address!\n");
 
 	/* Set the MTU */
-	if ((request = rtnl_link_alloc ())) {
-		struct rtnl_link * old;
-		guint32 mtu;
-
-		old = nm_netlink_index_to_rtnl_link (iface_idx);
-		mtu = nm_ip4_config_get_mtu (config);
-		if (mtu == 0)
-			mtu = 1412;  /* Default to 1412 (vpnc) */
-		rtnl_link_set_mtu (request, mtu);
-		rtnl_link_change (nlh, old, request, 0);
-
-		rtnl_link_put (old);
-		rtnl_link_put (request);
-	}
+	if (nm_ip4_config_get_mtu (config))
+		nm_system_device_set_mtu (iface, nm_ip4_config_get_mtu (config));
 
 	sleep (1);
 
 	nm_system_device_flush_routes_with_iface (iface);
 
 	if (g_slist_length (routes) == 0) {
-		nm_system_delete_default_route ();
-		nm_system_device_add_default_route_via_device_with_iface (iface);
+		nm_system_device_replace_default_route (iface, 0, 0);
 	} else {
 		GSList *iter;
 
@@ -421,7 +397,7 @@ nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
 
 out:
 	named_mgr = nm_named_manager_get ();
-	nm_named_manager_add_ip4_config (named_mgr, config);
+	nm_named_manager_add_ip4_config (named_mgr, config, NM_NAMED_IP_CONFIG_TYPE_VPN);
 	g_object_unref (named_mgr);
 
 	return TRUE;
@@ -498,42 +474,37 @@ out:
 }
 
 
-/*
- * nm_system_set_mtu
- *
- * Set the MTU for a given device.
- */
-void nm_system_set_mtu (NMDevice *dev)
+gboolean
+nm_system_device_set_mtu (const char *iface, guint32 mtu)
 {
-	struct rtnl_link *	request;
-	struct rtnl_link *	old;
-	unsigned long		mtu;
-	struct nl_handle *	nlh;
-	guint32 idx;
+	struct rtnl_link *old;
+	struct rtnl_link *new;
+	gboolean success = FALSE;
+	struct nl_handle *nlh;
+	int iface_idx;
 
-	mtu = nm_system_get_mtu (dev);
-	if (!mtu)
-		return;
+	g_return_val_if_fail (iface != NULL, FALSE);
+	g_return_val_if_fail (mtu > 0, FALSE);
 
-	request = rtnl_link_alloc ();
-	if (!request)
-		return;
+	new = rtnl_link_alloc ();
+	if (!new)
+		return FALSE;
 
-	idx = nm_netlink_iface_to_index (nm_device_get_iface (dev));
-	old = nm_netlink_index_to_rtnl_link (idx);
-	if (!old)
-		goto out_request;
+	iface_idx = nm_netlink_iface_to_index (iface);
+	old = nm_netlink_index_to_rtnl_link (iface_idx);
+	if (old) {
+		rtnl_link_set_mtu (new, mtu);
+		nlh = nm_netlink_get_default_handle ();
+		if (nlh) {
+			rtnl_link_change (nlh, old, new, 0);
+			success = TRUE;
+		}
+		rtnl_link_put (old);
+	}
 
-	nm_info ("Setting MTU of interface '%s' to %ld",
-	         nm_device_get_iface (dev),
-	         mtu);
-	rtnl_link_set_mtu (request, mtu);
-	nlh = nm_netlink_get_default_handle ();
-	if (nlh)
-		rtnl_link_change (nlh, old, request, 0);
-
-	rtnl_link_put (old);
-out_request:
-	rtnl_link_put (request);
+	rtnl_link_put (new);
+	return success;
 }
+
+
 

@@ -1,3 +1,136 @@
+2008-03-07  Dan Williams  <dcbw@redhat.com>
+
+	First pass of multiple active device support.  Expect bugs.
+
+	* src/nm-ip4-config.c
+	  src/nm-ip4-config.h
+		- (nm_ip4_config_get_secondary, nm_ip4_config_set_secondary): remove;
+			there are better ways to do this in the named manager
+
+	* src/nm-device.c
+	  src/nm-device.h
+		- (nm_device_can_activate): return whether the device can activate a
+			connection right now; taking into account things like carrier state
+			and rfkill state
+		- (nm_device_get_best_auto_connection): renamed from
+			nm_device_get_best_connection
+		- (real_act_stage4_get_ip4_config): MTU stuff is now handled in the
+			device subclasses themselves, so that each device can override the
+			MTU from it's NMSetting subclass if needed
+		- (nm_device_set_ip4_config): set MTU when setting up routes and stuff
+			in NetworkManagerSystem.c, not here
+
+	* src/named-manager/nm-named-manager.c
+	  src/named-manager/nm-named-manager.h
+		- (nm_named_manager_name_owner_changed,
+		   nm_named_manager_dbus_connection_changed): fix for changes to
+			rewrite_resolv_conf()
+		- (compute_nameservers): don't need the NMNamedManager at all, remove
+			from parameter list
+		- (merge_one_ip4_config): new function; merge ip4 configs together
+		- (rewrite_resolv_conf): write out resolv.conf from all the stored
+			ip4 configs; the VPN config takes precedence, then the best
+			device config, then the rest of the configs
+		- (get_domain_for_config): take the NMNamedManager as an argument
+			to check whether the config is the VPN config
+		- (add_ip4_config_to_named): fixups for removal of the 'secondary'
+			attribute from ip4 configs
+		- (add_all_ip4_configs_to_named): add all the configs in priority order
+		- (remove_ip4_config_from_named): fix for changes to
+			get_domain_for_config()
+		- (nm_named_manager_add_ip4_config): assign the config to the right slot
+			based on its type; callers must pass in the type now
+		- (get_last_default_domain): remove, unused
+		- (nm_named_manager_remove_ip4_config): handle config slots correctly
+
+	* src/nm-device-802-11-wireless.c
+		- (real_can_activate): new function
+		- (real_get_best_auto_connection): renamed from real_get_best_connection
+		- (real_act_stage4_get_ip4_config): handle MTU override
+
+	* src/nm-device-802-3-ethernet.c
+		- (real_can_activate): new function
+		- (real_get_best_auto_connection): renamed from real_get_best_connection
+		- (real_act_stage4_get_ip4_config): new function; handle MTU override
+
+	* src/vpn-manager/nm-vpn-connection.c
+		- (nm_vpn_connection_ip4_config_get): don't need to set the 'secondary'
+			attribute on the ip4 config
+
+	* src/NetworkManagerPolicy.c
+		- (nm_policy_auto_get_best_device): remove
+		- (nm_policy_device_change_check): remove
+		- (update_default_route): new function; set the default route via
+			the specified device
+		- (get_device_priority): new function; return the priority number of
+			a device type WRT which one should have the default route.  Order is
+			(highest to lowest)  wired, wireless, GSM, CDMA.
+		- (update_routing_and_dns): new function; determine which device should
+			have the default route, then update the routing table and DNS
+		- (maybe_auto_activate_device): new function; if a device is now
+			available for activation, find out what connection it would like to
+			activate and do it
+		- (schedule_activate_check): new function; if a device can be activated
+			now, schedule the activation.  Each device may have only one
+			pending activation at a given time.
+		- (device_state_changed): if activation was canceled, try again,
+			possibly with another connection; if the device was activated,
+			update routing and DNS; if the device was deactivated, try again
+			with another connection
+		- (device_carrier_changed): if there is no carrier, deactivate the
+			device; otherwise schedule an activation check for the device
+		- (wireless_networks_changed): schedule an activation check for the
+			device
+		- (device_added): keep track of the signal handler IDs so they can
+			be removed when the device goes away
+		- (device_removed): remove any signal handlers that might be attached
+			to the device; update routing and DNS
+		- (schedule_activate_all): new function
+		- (connections_added, connection_added, connection_updated): when
+			connections change, schedule all devices for an activation check
+		- (connection_removed): when a device is deactivated because its
+			connection was removed, schedule another activation check for it
+		- (nm_policy_destroy): destroy pending activations and disconnect
+			all device signal handlers
+
+	* src/nm-manager.c
+		- (nm_manager_activate_device): if the device was already actived,
+			deactivate it
+		- (deactivate_old_device): remove
+		- (connection_added_default_handler, impl_manager_activate_device):
+			don't deactivate other devices when activating this one
+
+	* src/backends/NetworkManagerGentoo.c
+	  src/backends/NetworkManagerFrugalware.c
+	  src/backends/NetworkManagerPaldo.c
+	  src/backends/NetworkManagerRedHat.c
+	  src/backends/NetworkManagerSlackware.c
+	  src/backends/NetworkManagerArch.c
+	  src/backends/NetworkManagerSuSE.c
+	  src/backends/NetworkManagerDebian.c
+		- (nm_system_get_mtu): remove; MTU should be provided through the
+			distro's system settings service plugin instead
+		- (nm_system_device_add_default_route_via_device): remove
+		- (nm_system_device_add_default_route_via_device_with_iface): remove
+		- (nm_system_device_replace_default_route): new function; call
+			generic implementation
+
+	* src/backends/NetworkManagerGeneric.c
+	  src/backends/NetworkManagerGeneric.h
+		- (nm_generic_device_add_default_route_via_device,
+		   nm_generic_device_add_default_route_via_device_with_iface): remove
+		- (nm_generic_device_replace_default_route): replace the default route
+			with the given route via some gateway
+
+	* src/NetworkManagerSystem.c
+	  src/NetworkManagerSystem.h
+		- (nm_system_device_set_from_ip4_config): let the policy handle updates
+			to routing and DNS; but set the MTU here
+		- (nm_system_vpn_device_set_from_ip4_config): set the route with the
+			ip_iface of the active device; use the standard MTU setting function
+		- (nm_system_set_mtu): remove
+		- (nm_system_device_set_mtu): consolidate MTU setting code in one place
+
 2008-03-07  Tambet Ingo  <tambet@gmail.com>
 
 	Rework the interaction between ppp manager and pppd plugin. Register a well

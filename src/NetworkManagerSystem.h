@@ -38,8 +38,9 @@ gboolean		nm_system_device_has_active_routes			(NMDevice *dev);
 void			nm_system_device_flush_routes				(NMDevice *dev);
 void			nm_system_device_flush_routes_with_iface	(const char *iface);
 
-void			nm_system_device_add_default_route_via_device(NMDevice *dev);
-void			nm_system_device_add_default_route_via_device_with_iface(const char *iface);
+void			nm_system_device_replace_default_route      (const char *iface,
+                                                             guint32 gw,
+                                                             guint32 mss);
 
 void			nm_system_device_add_route_via_device_with_iface (const char *iface, const char *route);
 
@@ -82,8 +83,7 @@ void			nm_system_set_hostname (NMIP4Config *config);
 void			nm_system_activate_nis (NMIP4Config *config);
 void			nm_system_shutdown_nis (void);
 
-void			nm_system_set_mtu (NMDevice *dev);
-guint32		nm_system_get_mtu (NMDevice *dev);
+gboolean		nm_system_device_set_mtu (const char *iface, guint32 mtu);
 
 gboolean		nm_system_should_modify_resolv_conf (void);
 

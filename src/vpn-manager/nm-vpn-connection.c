@@ -243,7 +243,6 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	priv->ipconfig_timeout = 0;
 
 	config = nm_ip4_config_new ();
-	nm_ip4_config_set_secondary (config, TRUE);
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_GATEWAY);
 	if (val)

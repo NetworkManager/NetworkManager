@@ -856,10 +856,19 @@ real_check_connection_conflicts (NMDevice *device,
 	return FALSE;
 }
 
+static gboolean
+real_can_activate (NMDevice *dev, gboolean wireless_enabled)
+{
+	if (!wireless_enabled)
+		return FALSE;
+
+	return TRUE;
+}
+
 static NMConnection *
-real_get_best_connection (NMDevice *dev,
-                          GSList *connections,
-                          char **specific_object)
+real_get_best_auto_connection (NMDevice *dev,
+                               GSList *connections,
+                               char **specific_object)
 {
 	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
@@ -2756,31 +2765,40 @@ static NMActStageReturn
 real_act_stage4_get_ip4_config (NMDevice *dev,
                                 NMIP4Config **config)
 {
-	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
-	NMAccessPoint *		ap = nm_device_802_11_wireless_get_activation_ap (self);
-	NMActStageReturn		ret = NM_ACT_STAGE_RETURN_FAILURE;
-	NMIP4Config *			real_config = NULL;
+	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
+	NMAccessPoint *ap = nm_device_802_11_wireless_get_activation_ap (self);
+	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 
 	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
 	g_assert (ap);
-	if (nm_ap_get_user_created (ap))
-	{
-		real_config = nm_device_new_ip4_autoip_config (NM_DEVICE (self));
+	if (nm_ap_get_user_created (ap)) {
+		*config = nm_device_new_ip4_autoip_config (NM_DEVICE (self));
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
-	}
-	else
-	{
+	} else {
 		NMDevice80211WirelessClass *	klass;
 		NMDeviceClass * parent_class;
 
 		/* Chain up to parent */
 		klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (self);
 		parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
-		ret = parent_class->act_stage4_get_ip4_config (dev, &real_config);
+		ret = parent_class->act_stage4_get_ip4_config (dev, config);
 	}
-	*config = real_config;
+
+	if ((ret == NM_ACT_STAGE_RETURN_SUCCESS) && *config) {
+		NMConnection *connection;
+		NMSettingWireless *s_wireless;
+
+		connection = nm_act_request_get_connection (nm_device_get_act_request (dev));
+		g_assert (connection);
+		s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+		g_assert (s_wireless);
+
+		/* MTU override */
+		if (s_wireless->mtu)
+			nm_ip4_config_set_mtu (*config, s_wireless->mtu);
+	}
 
 	return ret;
 }
@@ -3065,7 +3083,8 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 	parent_class->bring_down = real_bring_down;
 	parent_class->update_link = real_update_link;
 	parent_class->set_hw_address = real_set_hw_address;
-	parent_class->get_best_connection = real_get_best_connection;
+	parent_class->get_best_auto_connection = real_get_best_auto_connection;
+	parent_class->can_activate = real_can_activate;
 	parent_class->connection_secrets_updated = real_connection_secrets_updated;
 	parent_class->check_connection_conflicts = real_check_connection_conflicts;
 

@@ -90,9 +90,11 @@ struct _NMDeviceClass
 	guint32		(* get_type_capabilities)	(NMDevice *self);
 	guint32		(* get_generic_capabilities)	(NMDevice *self);
 
-	NMConnection * (* get_best_connection) (NMDevice *self,
-	                                        GSList *connections,
-	                                        char **specific_object);
+	gboolean	(* can_activate) (NMDevice *self, gboolean wireless_enabled);
+
+	NMConnection * (* get_best_auto_connection) (NMDevice *self,
+	                                             GSList *connections,
+	                                             char **specific_object);
 
 	void        (* connection_secrets_updated) (NMDevice *self,
 	                                            NMConnection *connection,
@@ -122,6 +124,7 @@ GType nm_device_get_type (void);
 
 const char *	nm_device_get_udi		(NMDevice *dev);
 const char *	nm_device_get_iface		(NMDevice *dev);
+const char *	nm_device_get_ip_iface	(NMDevice *dev);
 const char *	nm_device_get_driver	(NMDevice *dev);
 
 NMDeviceType	nm_device_get_device_type	(NMDevice *dev);
@@ -152,9 +155,11 @@ void *		nm_device_get_system_config_data	(NMDevice *dev);
 
 NMActRequest *	nm_device_get_act_request	(NMDevice *dev);
 
-NMConnection * nm_device_get_best_connection (NMDevice *dev,
-					      GSList *connections,
-                                              char **specific_object);
+gboolean		nm_device_can_activate	(NMDevice *dev, gboolean wireless_enabled);
+
+NMConnection * nm_device_get_best_auto_connection (NMDevice *dev,
+                                                   GSList *connections,
+                                                   char **specific_object);
 
 void			nm_device_activate_schedule_stage1_device_prepare		(NMDevice *device);
 void			nm_device_activate_schedule_stage2_device_config		(NMDevice *device);

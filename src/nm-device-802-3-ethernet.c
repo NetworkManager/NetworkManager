@@ -349,10 +349,20 @@ real_can_interrupt_activation (NMDevice *dev)
 	return interrupt;
 }
 
+static gboolean
+real_can_activate (NMDevice *dev, gboolean wireless_enabled)
+{
+	/* Can't do anything if there isn't a carrier */
+	if (!nm_device_get_carrier (dev))
+		return FALSE;
+
+	return TRUE;
+}
+
 static NMConnection *
-real_get_best_connection (NMDevice *dev,
-                          GSList *connections,
-                          char **specific_object)
+real_get_best_auto_connection (NMDevice *dev,
+                               GSList *connections,
+                               char **specific_object)
 {
 	NMDevice8023Ethernet *self = NM_DEVICE_802_3_ETHERNET (dev);
 	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self);
@@ -383,6 +393,40 @@ real_get_best_connection (NMDevice *dev,
 		return connection;
 	}
 	return NULL;
+}
+
+static NMActStageReturn
+real_act_stage4_get_ip4_config (NMDevice *dev,
+                                NMIP4Config **config)
+{
+	NMDevice8023Ethernet *self = NM_DEVICE_802_3_ETHERNET (dev);
+	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
+	NMDevice8023EthernetClass *klass;
+	NMDeviceClass *parent_class;
+
+	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	/* Chain up to parent */
+	klass = NM_DEVICE_802_3_ETHERNET_GET_CLASS (self);
+	parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
+	ret = parent_class->act_stage4_get_ip4_config (dev, config);
+
+	if ((ret == NM_ACT_STAGE_RETURN_SUCCESS) && *config) {
+		NMConnection *connection;
+		NMSettingWired *s_wired;
+
+		connection = nm_act_request_get_connection (nm_device_get_act_request (dev));
+		g_assert (connection);
+		s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+		g_assert (s_wired);
+
+		/* MTU override */
+		if (s_wired->mtu)
+			nm_ip4_config_set_mtu (*config, s_wired->mtu);
+	}
+
+	return ret;
 }
 
 static void
@@ -468,7 +512,9 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 	parent_class->update_link = real_update_link;
 	parent_class->can_interrupt_activation = real_can_interrupt_activation;
 	parent_class->set_hw_address = real_set_hw_address;
-	parent_class->get_best_connection = real_get_best_connection;
+	parent_class->get_best_auto_connection = real_get_best_auto_connection;
+	parent_class->can_activate = real_can_activate;
+	parent_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 
 	/* properties */
 	g_object_class_install_property

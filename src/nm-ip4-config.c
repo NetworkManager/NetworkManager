@@ -56,12 +56,6 @@ typedef struct {
 	gchar *	nis_domain;
 	GArray *nis_servers;
 	GArray *static_routes;
-
-	/* If this is a VPN/etc config that requires
-	 * another device (like Ethernet) to already have
-	 * an IP4Config before it can be used.
-	 */
-	gboolean	secondary;
 } NMIP4ConfigPrivate;
 
 
@@ -142,20 +136,6 @@ NMIP4Config *nm_ip4_config_copy (NMIP4Config *src_config)
 	}		
 
 	return dst_config;
-}
-
-gboolean nm_ip4_config_get_secondary (NMIP4Config *config)
-{
-	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), FALSE);
-
-	return NM_IP4_CONFIG_GET_PRIVATE (config)->secondary;
-}
-
-void nm_ip4_config_set_secondary (NMIP4Config *config, gboolean secondary)
-{
-	g_return_if_fail (NM_IS_IP4_CONFIG (config));
-
-	NM_IP4_CONFIG_GET_PRIVATE (config)->secondary = secondary;
 }
 
 guint32 nm_ip4_config_get_address (NMIP4Config *config)

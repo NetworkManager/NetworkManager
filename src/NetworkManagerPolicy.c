@@ -35,21 +35,27 @@
 #include "nm-activation-request.h"
 #include "nm-utils.h"
 #include "nm-device-interface.h"
+#include "nm-device.h"
 #include "nm-device-802-11-wireless.h"
 #include "nm-device-802-3-ethernet.h"
+#include "nm-gsm-device.h"
+#include "nm-cdma-device.h"
 #include "nm-dbus-manager.h"
 #include "nm-setting-connection.h"
 #include "NetworkManagerSystem.h"
+#include "nm-named-manager.h"
 
 struct NMPolicy {
 	NMManager *manager;
 	guint update_state_id;
+	GSList *pending_activation_checks;
 	GSList *signal_ids;
+	GSList *dev_signal_ids;
+
+	NMDevice *default_device;
 };
 
 #define INVALID_TAG "invalid"
-
-static void schedule_change_check (NMPolicy *policy);
 
 static const char *
 get_connection_id (NMConnection *connection)
@@ -64,361 +70,148 @@ get_connection_id (NMConnection *connection)
 	return s_con->id;
 }
 
-/*
- * nm_policy_auto_get_best_device
- *
- * Find the best device to use, regardless of whether we are
- * "locked" on one device at this time.
- *
- */
-static NMDevice *
-nm_policy_auto_get_best_device (NMPolicy *policy,
-                                NMConnection **connection,
-                                char **specific_object)
+static void
+update_default_route (NMPolicy *policy, NMDevice *new)
 {
-	GSList *connections;
-	GSList *				elt;
-	NMDevice8023Ethernet *	best_wired_dev = NULL;
-	guint				best_wired_prio = 0;
-	NMConnection * best_wired_connection = NULL;
-	char * best_wired_specific_object = NULL;
-	NMDevice80211Wireless *	best_wireless_dev = NULL;
-	guint				best_wireless_prio = 0;
-	NMConnection * best_wireless_connection = NULL;
-	char * best_wireless_specific_object = NULL;
-	NMDevice *			highest_priority_dev = NULL;
+	const char *ip_iface;
 
-	g_return_val_if_fail (connection != NULL, NULL);
-	g_return_val_if_fail (*connection == NULL, NULL);
-	g_return_val_if_fail (specific_object != NULL, NULL);
-	g_return_val_if_fail (*specific_object == NULL, NULL);
+	/* FIXME: Not sure if the following makes any sense. */
+	/* If iface and ip_iface are the same, it's a regular network device and we
+	   treat it as such. However, if they differ, it's most likely something like
+	   a serial device with ppp interface, so route all the traffic to it. */
+	ip_iface = nm_device_get_ip_iface (new);
+	if (strcmp (ip_iface, nm_device_get_iface (new))) {
+		nm_system_device_replace_default_route (ip_iface, 0, 0);
+	} else {
+		NMIP4Config *config;
 
-	if (nm_manager_get_state (policy->manager) == NM_STATE_ASLEEP)
-		return NULL;
+		config = nm_device_get_ip4_config (new);
+		nm_system_device_replace_default_route (ip_iface, nm_ip4_config_get_gateway (config),
+		                                        nm_ip4_config_get_mss (config));
+	}
+}
+
+static guint32
+get_device_priority (NMDevice *dev)
+{
+	if (NM_IS_CDMA_DEVICE (dev))
+		return 2;
+
+	if (NM_IS_GSM_DEVICE (dev))
+		return 3;
+
+	if (NM_IS_DEVICE_802_11_WIRELESS (dev))
+		return 4;
+
+	if (NM_IS_DEVICE_802_3_ETHERNET (dev))
+		return 5;
+
+	return 1;
+}
+
+static void
+update_routing_and_dns (NMPolicy *policy)
+{
+	NMDevice *best = NULL;
+	guint32 best_prio = 0;
+	GSList *devices, *iter;
+	NMNamedManager *named_mgr;
+	NMIP4Config *config;
+
+	devices = nm_manager_get_devices (policy->manager);
+	for (iter = devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *dev = NM_DEVICE (iter->data);
+		guint32 prio;
+		
+		if (nm_device_get_state (dev) != NM_DEVICE_STATE_ACTIVATED)
+			continue;
+
+		prio = get_device_priority (dev);
+		if (prio > best_prio) {
+			best = dev;
+			best_prio = prio;
+		}
+	}
+
+	if (!best)
+		goto out;
+
+	update_default_route (policy, best);
+
+	named_mgr = nm_named_manager_get ();
+	config = nm_device_get_ip4_config (best);
+	nm_named_manager_add_ip4_config (named_mgr, config, NM_NAMED_IP_CONFIG_TYPE_BEST_DEVICE);
+	g_object_unref (named_mgr);
+
+out:
+	policy->default_device = best;	
+}
+
+typedef struct {
+	NMPolicy *policy;
+	NMDevice *device;
+	guint id;
+} ActivateData;
+
+static gboolean
+auto_activate_device (gpointer user_data)
+{
+	ActivateData *data = (ActivateData *) user_data;
+	NMPolicy *policy;
+	NMConnection *best_connection;
+	char *specific_object = NULL;
+	GSList *connections, *iter;
+
+	g_assert (data);
+	policy = data->policy;
 
 	/* System connections first, then user connections */
 	connections = nm_manager_get_connections (policy->manager, NM_CONNECTION_SCOPE_SYSTEM);
 	connections = g_slist_concat (connections, nm_manager_get_connections (policy->manager, NM_CONNECTION_SCOPE_USER));
 
 	/* Remove connections that are in the invalid list. */
-	elt = connections;
-	while (elt) {
-		NMConnection *iter_connection = NM_CONNECTION (elt->data);
-		GSList *next = g_slist_next (elt);
+	iter = connections;
+	while (iter) {
+		NMConnection *iter_connection = NM_CONNECTION (iter->data);
+		GSList *next = g_slist_next (iter);
 
 		if (g_object_get_data (G_OBJECT (iter_connection), INVALID_TAG)) {
-			connections = g_slist_remove_link (connections, elt);
+			connections = g_slist_remove_link (connections, iter);
 			g_object_unref (iter_connection);
-			g_slist_free (elt);
+			g_slist_free (iter);
 		}
-		elt = next;
+		iter = next;
 	}
 
-	for (elt = nm_manager_get_devices (policy->manager); elt; elt = elt->next) {
-		NMConnection *tmp_con = NULL;
-		char *tmp_obj = NULL;
-		gboolean carrier;
-		guint prio = 0;
-		NMDevice * dev = (NMDevice *)(elt->data);
-		guint32 caps;
+	best_connection = nm_device_get_best_auto_connection (data->device, connections, &specific_object);
+	if (best_connection) {
+		GError *error = NULL;
 
-		carrier = nm_device_get_carrier (dev);
-		caps = nm_device_get_capabilities (dev);
-
-		tmp_con = nm_device_get_best_connection (dev, connections, &tmp_obj);
-		if (tmp_con == NULL) {
-			NMActRequest *req = nm_device_get_act_request (dev);
-
-			/* If the device is activating, the NMConnection it's got is the
-			 * best one.  In other words, follow activation of a particular
-			 * NMConnection through to success/failure rather than cutting it
-			 * off if it becomes invalid
-			 */
-			tmp_con = req ? nm_act_request_get_connection (req) : NULL;
-			if (!tmp_con)
-				continue;
-		}
-
-		if (NM_IS_DEVICE_802_3_ETHERNET (dev)) {
-			if (carrier)
-				prio += 1;
-
-			if (nm_device_get_act_request (dev) && carrier)
-				prio += 1;
-
-			if (prio > best_wired_prio) {
-				best_wired_dev = NM_DEVICE_802_3_ETHERNET (dev);
-				best_wired_prio = prio;
-				best_wired_connection = tmp_con;
-				best_wired_specific_object = tmp_obj;
-			}
-		} else if (   NM_IS_DEVICE_802_11_WIRELESS (dev)
-		           && nm_manager_wireless_enabled (policy->manager)) {
-			/* Bump by 1 so that _something_ gets chosen every time */
-			prio += 1;
-
-			if (carrier)
-				prio += 1;
-
-			if (nm_device_get_act_request (dev) && carrier)
-				prio += 3;
-
-			if (prio > best_wireless_prio) {
-				best_wireless_dev = NM_DEVICE_802_11_WIRELESS (dev);
-				best_wireless_prio = prio;
-				best_wireless_connection = tmp_con;
-				best_wireless_specific_object = tmp_obj;
-			}
+		if (!nm_manager_activate_device (policy->manager,
+		                                 data->device,
+		                                 best_connection,
+		                                 specific_object,
+		                                 FALSE,
+		                                 &error)) {
+			nm_warning ("Failed to automatically activate device %s: (%d) %s",
+			            nm_device_get_iface (data->device),
+			            error->code,
+			            error->message);
+			g_error_free (error);
 		}
 	}
 
-	if (best_wired_dev) {
-		highest_priority_dev = NM_DEVICE (best_wired_dev);
-		*connection = g_object_ref (best_wired_connection);
-		*specific_object = best_wired_specific_object;
-	} else if (best_wireless_dev) {
-		gboolean can_activate;
+	/* Remove this call's handler ID */
+	policy->pending_activation_checks = g_slist_remove (policy->pending_activation_checks, data);
 
-		can_activate = nm_device_802_11_wireless_can_activate (best_wireless_dev);
-		if (can_activate) {
-			highest_priority_dev = NM_DEVICE (best_wireless_dev);
-			*connection = g_object_ref (best_wireless_connection);
-			*specific_object = best_wireless_specific_object;
-		}
-	}
+	g_object_unref (data->device);
 
 	g_slist_foreach (connections, (GFunc) g_object_unref, NULL);
 	g_slist_free (connections);
 
-	if (FALSE) {
-		nm_info ("AUTO: Best wired device = %s, best wireless device = %s, best connection name = '%s'",
-		         best_wired_dev ? nm_device_get_iface (NM_DEVICE (best_wired_dev)) : "(null)",
-		         best_wireless_dev ? nm_device_get_iface (NM_DEVICE (best_wireless_dev)) : "(null)",
-		         *connection ? get_connection_id (*connection) : "(none)");
-	}
-
-	return *connection ? highest_priority_dev : NULL;
-}
-
-/*
- * nm_policy_device_change_check
- *
- * Figures out which interface to switch the active
- * network connection to if our global network state has changed.
- * Global network state changes are triggered by:
- *    1) insertion/deletion of interfaces
- *    2) link state change of an interface
- *    3) wireless network topology changes
- *
- */
-static gboolean
-nm_policy_device_change_check (gpointer user_data)
-{
-	NMPolicy *policy = (NMPolicy *) user_data;
-	GSList *iter;
-	guint32 caps;
-	NMConnection *connection = NULL;
-	NMConnection *old_connection = NULL;
-	NMActRequest *old_act_req = NULL;
-	char * specific_object = NULL;
-	NMDevice * new_dev = NULL;
-	NMDevice * old_dev = NULL;
-	gboolean do_switch = FALSE;
-
-	policy->update_state_id = 0;
-
-	switch (nm_manager_get_state (policy->manager)) {
-	case NM_STATE_CONNECTED:
-		old_dev = nm_manager_get_active_device (policy->manager);
-
-		/* Don't touch devices that are not upped/downed automatically */
-		if (!NM_IS_DEVICE_802_3_ETHERNET (old_dev) && !NM_IS_DEVICE_802_11_WIRELESS (old_dev))
-			goto out;
-
-		caps = nm_device_get_capabilities (old_dev);
-
-		/* Don't interrupt semi-supported devices.  If the user chose
-		 * one, they must explicitly choose to move to another device, we're not
-		 * going to move for them.
-		 */
-		if ((NM_IS_DEVICE_802_3_ETHERNET (old_dev) && !(caps & NM_DEVICE_CAP_CARRIER_DETECT))) {
-			nm_info ("Old device '%s' was semi-supported and user chosen, won't"
-			         " change unless told to.",
-			         nm_device_get_iface (old_dev));
-			goto out;
-		}
-		break;
-	case NM_STATE_CONNECTING:
-		for (iter = nm_manager_get_devices (policy->manager); iter; iter = iter->next) {
-			NMDevice *d = NM_DEVICE (iter->data);
-
-			if (nm_device_is_activating (d)) {
-				if (nm_device_can_interrupt_activation (d)) {
-					old_dev = d;
-					break;
-				} else
-					goto out;
-			}
-		}
-		break;
-	case NM_STATE_DISCONNECTED:
-		if (nm_manager_activation_pending (policy->manager)) {
-			nm_info ("There is a pending activation, won't change.");
-			goto out;
-		}
-		break;
-	default:
-		break;
-	}
-
-	new_dev = nm_policy_auto_get_best_device (policy, &connection, &specific_object);
-
-	if (old_dev) {
-		old_act_req = nm_device_get_act_request (old_dev);
-		if (old_act_req)
-			old_connection = nm_act_request_get_connection (old_act_req);
- 	}
-
-	/* Four cases here:
-	 *
-	 * 1) old device is NULL, new device is NULL - we aren't currently connected to anything, and we
-	 *		can't find anything to connect to.  Do nothing.
-	 *
-	 * 2) old device is NULL, new device is good - we aren't currently connected to anything, but
-	 *		we have something we can connect to.  Connect to it.
-	 *
-	 * 3) old device is good, new device is NULL - have a current connection, but it's no good since
-	 *		auto device picking didn't come up with the save device.  Terminate current connection.
-	 *
-	 * 4) old device is good, new device is good - have a current connection, and auto device picking
-	 *		came up with a device too.  More considerations:
-	 *		a) different devices?  activate new device
-	 *		b) same device, different access points?  activate new device
-	 *		c) same device, same access point?  do nothing
-	 */
-
-	if (!old_dev && !new_dev) {
-		; /* Do nothing, wait for something like link-state to change, or an access point to be found */
-	} else if (!old_dev && new_dev) {
-		/* Activate new device */
-		nm_info ("SWITCH: no current connection, found better connection '%s (%s)'.",
-		         connection ? get_connection_id (connection) : "(none)",
-		         nm_device_get_iface (new_dev));
-		do_switch = TRUE;
-	} else if (old_dev && !new_dev) {
-		/* Terminate current connection */
-		nm_info ("SWITCH: terminating current connection '%s (%s)' because it's"
-		         " no longer valid.",
-		         old_connection ? get_connection_id (old_connection) : "(none)",
-		         nm_device_get_iface (old_dev));
-		do_switch = TRUE;
-	} else if (old_dev && new_dev) {
-		gboolean old_user_requested = nm_act_request_get_user_requested (old_act_req);
-		gboolean old_carrier = nm_device_get_carrier (old_dev);
-
-		/* If an old device is active or being activated (and has an active link),
-		 * and its connection is a system connection, and the best connection is
-		 * a user connection, don't switch.
-		 */
-		if (   old_connection
-		    && (nm_connection_get_scope (old_connection) == NM_CONNECTION_SCOPE_SYSTEM)
-		    && (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_USER)
-		    && old_carrier)
-			goto out;
-
-		if (   (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_SYSTEM)
-		    && (nm_connection_get_scope (old_connection) == NM_CONNECTION_SCOPE_USER)) {
-			do_switch = TRUE;
-			nm_info ("SWITCH: found system connection '%s (%s)', overrides"
-			         " current connection '%s (%s)'.",
-			         connection ? get_connection_id (connection) : "(none)",
-			         nm_device_get_iface (new_dev),
-			         old_connection ? get_connection_id (old_connection) : "(none)",
-			         nm_device_get_iface (old_dev));
-			goto do_switch;
-		}
-
-		if (NM_IS_DEVICE_802_3_ETHERNET (old_dev)) {
-			/* Only switch if the old device was not user requested, and we are switching to
-			 * a new device.  Note that new_dev will never be wireless since automatic device picking
-			 * above will prefer a wired device to a wireless device.
-			 */
-			if ((!old_user_requested || !old_carrier) && (new_dev != old_dev)) {
-				nm_info ("SWITCH: found better connection '%s (%s)' than "
-				         " current connection '%s (%s)'.",
-				         connection ? get_connection_id (connection) : "(none)",
-				         nm_device_get_iface (new_dev),
-				         old_connection ? get_connection_id (old_connection) : "(none)",
-				         nm_device_get_iface (old_dev));
-				do_switch = TRUE;
-			}
-		} else if (NM_IS_DEVICE_802_11_WIRELESS (old_dev)) {
-			/* Only switch if the old device's wireless config is invalid */
-			if (NM_IS_DEVICE_802_11_WIRELESS (new_dev)) {
-				NMAccessPoint *old_ap = nm_device_802_11_wireless_get_activation_ap (NM_DEVICE_802_11_WIRELESS (old_dev));
-				int old_mode = nm_ap_get_mode (old_ap);
-				gboolean same_activating = FALSE;
-
-				/* Don't interrupt activation of a wireless device by
-				 * trying to auto-activate any connection on that device.
-				 */
-				if (old_dev == new_dev && nm_device_is_activating (new_dev))
-					same_activating = TRUE;
-
-				if (!same_activating && !old_carrier && (old_mode != IW_MODE_ADHOC)) {
-					NMSettingConnection * new_sc = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
-					NMSettingConnection * old_sc = (NMSettingConnection *) nm_connection_get_setting (old_connection, NM_TYPE_SETTING_CONNECTION);
-
-					nm_info ("SWITCH: found better connection '%s/%s'"
-					         " than current connection '%s/%s'.  "
-					         "have_link=%d",
-					         nm_device_get_iface (new_dev),
-					         new_sc->id,
-					         nm_device_get_iface (old_dev),
-					         old_sc->id,
-					         old_carrier);
-					do_switch = TRUE;
-				}
-			} else if (NM_IS_DEVICE_802_3_ETHERNET (new_dev)) {
-				/* Always prefer Ethernet over wireless, unless the user explicitly switched away. */
- 				if (!old_user_requested)
-					do_switch = TRUE;
-			}
-		}
-	}
-
-do_switch:
-	if (do_switch) {
-		// FIXME: remove old_dev deactivation when multiple device support lands
-		if (old_dev)
-			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (old_dev));
-
-		if (new_dev) {
-			GError *error = NULL;
-			gboolean success;
-
-			success = nm_manager_activate_device (policy->manager,
-			                                      new_dev,
-			                                      connection,
-			                                      specific_object,
-			                                      FALSE,
-			                                      &error);
-			if (!success) {
-				nm_warning ("Failed to automatically activate device %s: (%d) %s",
-				            nm_device_get_iface (new_dev),
-				            error->code,
-				            error->message);
-				g_error_free (error);
-			}
-		}
-	}
-
-out:
-	if (connection)
-		g_object_unref (connection);
+	g_free (data);
 	return FALSE;
 }
-
 
 /*****************************************************************************/
 
@@ -430,13 +223,41 @@ global_state_changed (NMManager *manager, NMState state, gpointer user_data)
 }
 
 static void
-schedule_change_check (NMPolicy *policy)
+schedule_activate_check (NMPolicy *policy, NMDevice *device)
 {
-	if (policy->update_state_id > 0)
+	ActivateData *data;
+	GSList *iter;
+	gboolean wireless_enabled;
+
+	if (nm_manager_get_state (policy->manager) == NM_STATE_ASLEEP)
 		return;
 
-	policy->update_state_id = g_idle_add (nm_policy_device_change_check,
-	                                                   policy);
+	// FIXME: kind of a hack, but devices don't have access to the manager
+	// object directly
+	wireless_enabled = nm_manager_wireless_enabled (policy->manager);
+	if (!nm_device_can_activate (device, wireless_enabled))
+		return;
+
+	// FIXME: if a device is already activating (or activated) with a connection
+	// but another connection now overrides the current one for that device,
+	// deactivate the device and activate the new connection instead of just
+	// bailing if the device is already active
+	if (nm_device_get_act_request (device))
+		return;
+
+	for (iter = policy->pending_activation_checks; iter; iter = g_slist_next (iter)) {
+		/* Only one pending activation check at a time */
+		if (((ActivateData *) iter->data)->device == device)
+			return;
+	}
+
+	data = g_malloc0 (sizeof (ActivateData));
+	g_return_if_fail (data != NULL);
+
+	data->policy = policy;
+	data->device = g_object_ref (device);
+	data->id = g_idle_add (auto_activate_device, data);
+	policy->pending_activation_checks = g_slist_append (policy->pending_activation_checks, data);
 }
 
 static NMConnection *
@@ -458,69 +279,126 @@ device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 	NMConnection *connection = get_device_connection (device);
 
 	if ((state == NM_DEVICE_STATE_FAILED) || (state == NM_DEVICE_STATE_CANCELLED)) {
-		schedule_change_check (policy);
-
 		/* Mark the connection invalid so it doesn't get automatically chosen */
 		if (connection) {
 			g_object_set_data (G_OBJECT (connection), INVALID_TAG, GUINT_TO_POINTER (TRUE));
 			nm_info ("Marking connection '%s' invalid.", get_connection_id (connection));
 		}
+
+		if (state == NM_DEVICE_STATE_CANCELLED)
+			schedule_activate_check (policy, device);
 	} else if (state == NM_DEVICE_STATE_ACTIVATED) {
 		/* Clear the invalid tag on the connection */
 		if (connection)
 			g_object_set_data (G_OBJECT (connection), INVALID_TAG, NULL);
+
+		update_routing_and_dns (policy);
 	} else if (state == NM_DEVICE_STATE_DISCONNECTED) {
-		schedule_change_check (policy);
+		update_routing_and_dns (policy);
+
+		schedule_activate_check (policy, device);
 	}
 }
 
 static void
-device_carrier_changed (NMDevice *device, gboolean carrier_on, gpointer user_data)
+device_carrier_changed (NMDevice *device, gboolean carrier, gpointer user_data)
 {
-	NMPolicy *policy = (NMPolicy *) user_data;
-
-	schedule_change_check (policy);
+	if (!carrier) {
+		if (NM_IS_DEVICE_802_3_ETHERNET (device))
+			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
+	} else {
+		schedule_activate_check ((NMPolicy *) user_data, device);
+	}
 }
 
 static void
 wireless_networks_changed (NMDevice80211Wireless *device, NMAccessPoint *ap, gpointer user_data)
 {
-	NMPolicy *policy = (NMPolicy *) user_data;
+	schedule_activate_check ((NMPolicy *) user_data, NM_DEVICE (device));
+}
 
-	schedule_change_check (policy);
+typedef struct {
+	gulong id;
+	NMDevice *device;
+} DeviceSignalID;
+
+static GSList *
+add_device_signal_id (GSList *list, gulong id, NMDevice *device)
+{
+	DeviceSignalID *data;
+
+	data = g_malloc0 (sizeof (DeviceSignalID));
+	if (!data)
+		return list;
+
+	data->id = id;
+	data->device = device;
+	return g_slist_append (list, data);
 }
 
 static void
 device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
+	gulong id;
 
-	g_signal_connect (device, "state-changed",
-					  G_CALLBACK (device_state_changed),
-					  policy);
+	id = g_signal_connect (device, "state-changed",
+	                       G_CALLBACK (device_state_changed),
+	                       policy);
+	policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
 
-	g_signal_connect (device, "carrier-changed",
-					  G_CALLBACK (device_carrier_changed),
-					  policy);
+	id = g_signal_connect (device, "carrier-changed",
+	                       G_CALLBACK (device_carrier_changed),
+	                       policy);
+	policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
 
 	if (NM_IS_DEVICE_802_11_WIRELESS (device)) {
-		g_signal_connect (device, "access-point-added",
-						  G_CALLBACK (wireless_networks_changed),
-						  policy);
-		g_signal_connect (device, "access-point-removed",
-						  G_CALLBACK (wireless_networks_changed),
-						  policy);
+		id = g_signal_connect (device, "access-point-added",
+		                       G_CALLBACK (wireless_networks_changed),
+		                       policy);
+		policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
+
+		id = g_signal_connect (device, "access-point-removed",
+		                       G_CALLBACK (wireless_networks_changed),
+		                       policy);
+		policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
 	}
 
-	schedule_change_check (policy);
+	schedule_activate_check (policy, device);
 }
 
 static void
 device_removed (NMManager *manager, NMDevice *device, gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
+	GSList *iter = policy->dev_signal_ids;
 
-	schedule_change_check (policy);
+	/* Clear any signal handlers for this device */
+	while (iter) {
+		DeviceSignalID *data = (DeviceSignalID *) iter->data;
+		GSList *next = g_slist_next (iter);
+
+		if (data->device == device) {
+			policy->dev_signal_ids = g_slist_remove_link (policy->dev_signal_ids, iter);
+			
+			g_signal_handler_disconnect (data->device, data->id);
+			g_free (data);
+			g_slist_free (iter);
+		}
+		iter = next;
+	}
+
+	update_routing_and_dns (policy);
+}
+
+static void
+schedule_activate_all (NMPolicy *policy)
+{
+	GSList *iter, *devices;
+
+	devices = nm_manager_get_devices (policy->manager);
+	for (iter = devices; iter; iter = g_slist_next (iter))
+		schedule_activate_check (policy, NM_DEVICE (iter->data));
 }
 
 static void
@@ -528,9 +406,7 @@ connections_added (NMManager *manager,
                    NMConnectionScope scope,
                    gpointer user_data)
 {
-	NMPolicy *policy = (NMPolicy *) user_data;
-
-	schedule_change_check (policy);
+	schedule_activate_all ((NMPolicy *) user_data);
 }
 
 static void
@@ -539,9 +415,7 @@ connection_added (NMManager *manager,
                   NMConnectionScope scope,
                   gpointer user_data)
 {
-	NMPolicy *policy = (NMPolicy *) user_data;
-
-	schedule_change_check (policy);
+	schedule_activate_all ((NMPolicy *) user_data);
 }
 
 static void
@@ -550,12 +424,10 @@ connection_updated (NMManager *manager,
                     NMConnectionScope scope,
                     gpointer user_data)
 {
-	NMPolicy *policy = (NMPolicy *) user_data;
-
 	/* Clear the invalid tag on the connection if it got updated. */
 	g_object_set_data (G_OBJECT (connection), INVALID_TAG, NULL);
 
-	schedule_change_check (policy);
+	schedule_activate_all ((NMPolicy *) user_data);
 }
 
 static void
@@ -564,12 +436,11 @@ connection_removed (NMManager *manager,
                     NMConnectionScope scope,
                     gpointer user_data)
 {
-	NMPolicy *policy = (NMPolicy *) user_data;
 	GSList *iter;
 
 	/* If the connection just removed was active, deactive it */
 	for (iter = nm_manager_get_devices (manager); iter; iter = g_slist_next (iter)) {
-		NMDevice *device = (NMDevice *) iter->data;
+		NMDevice *device = NM_DEVICE (iter->data);
 		NMActRequest *req = nm_device_get_act_request (device);
 		NMConnection *dev_connection;
 
@@ -577,11 +448,11 @@ connection_removed (NMManager *manager,
 			continue;
 
 		dev_connection = nm_act_request_get_connection (req);
-		if (dev_connection == connection)
+		if (dev_connection == connection) {
 			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
+			schedule_activate_check ((NMPolicy *) user_data, device);
+		}
 	}
-
-	schedule_change_check (policy);
 }
 
 NMPolicy *
@@ -640,14 +511,26 @@ nm_policy_destroy (NMPolicy *policy)
 
 	g_return_if_fail (policy != NULL);
 
-	if (policy->update_state_id) {
-		g_source_remove (policy->update_state_id);
-		policy->update_state_id = 0;
+	for (iter = policy->pending_activation_checks; iter; iter = g_slist_next (iter)) {
+		ActivateData *data = (ActivateData *) iter->data;
+
+		g_source_remove (data->id);
+		g_object_unref (data->device);
+		g_free (data);
 	}
+	g_slist_free (policy->pending_activation_checks);
 
 	for (iter = policy->signal_ids; iter; iter = g_slist_next (iter))
 		g_signal_handler_disconnect (policy->manager, (gulong) iter->data);
 	g_slist_free (policy->signal_ids);
+
+	for (iter = policy->dev_signal_ids; iter; iter = g_slist_next (iter)) {
+		DeviceSignalID *data = (DeviceSignalID *) iter->data;
+
+		g_signal_handler_disconnect (data->device, data->id);
+		g_free (data);
+	}
+	g_slist_free (policy->dev_signal_ids);
 
 	g_object_unref (policy->manager);
 	g_free (policy);

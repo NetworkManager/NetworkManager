@@ -219,25 +219,17 @@ void nm_system_device_add_route_via_device_with_iface (const char *iface, const 
 }
 
 /*
- * nm_system_device_add_default_route_via_device
- *
- * Flush all routes associated with a network device
- *
- */
-void nm_system_device_add_default_route_via_device (NMDevice *dev)
-{
-	nm_generic_device_add_default_route_via_device (dev);
-}
-
-/*
- * nm_system_device_add_default_route_via_device_with_iface
+ * nm_system_device_replace_default_route
  *
  * Add default route to the given device
  *
  */
-void nm_system_device_add_default_route_via_device_with_iface (const char *iface)
+void
+nm_system_device_replace_default_route (const char *iface,
+                                        guint32 gw,
+                                        guint32 mss)
 {
-	nm_generic_device_add_default_route_via_device_with_iface (iface);
+	nm_generic_device_replace_default_route (iface, gw, mss);
 }
  
  
@@ -322,14 +314,3 @@ gboolean nm_system_should_modify_resolv_conf (void)
 	return TRUE;
 }
 
-
-/*
- * nm_system_get_mtu
- *
- * Return a user-provided or system-mandated MTU for this device or zero if
- * no such MTU is provided.
- */
-guint32 nm_system_get_mtu (NMDevice *dev)
-{
-	return 0;
-}

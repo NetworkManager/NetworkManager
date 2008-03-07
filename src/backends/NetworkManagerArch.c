@@ -65,26 +65,17 @@ void nm_system_init (void)
 }
 
 /*
- * nm_system_device_add_default_route_via_device
+ * nm_system_device_replace_default_route
  *
  * Add default route to the given device
  *
  */
-void nm_system_device_add_default_route_via_device (NMDevice *dev)
+void
+nm_system_device_replace_default_route (const char *iface,
+                                        guint32 gw,
+                                        guint32 mss)
 {
-	nm_generic_device_add_default_route_via_device (dev);
-}
-
-
-/*
- * nm_system_device_add_default_route_via_device_with_iface
- *
- * Add default route to the given device
- *
- */
-void nm_system_device_add_default_route_via_device_with_iface (const char *iface)
-{
-	nm_generic_device_add_default_route_via_device_with_iface (iface);
+	nm_generic_device_replace_default_route (iface, gw, mss);
 }
 
 /*
@@ -686,14 +677,3 @@ void nm_system_set_hostname (NMIP4Config *config)
 {
 }
 
-/*
- * nm_system_get_mtu
- *
- * Return a user-provided or system-mandated MTU for this device or zero if
- * no such MTU is provided.
- */
-guint32 nm_system_get_mtu (NMDevice *dev)
-{
-	return 0;
-
-}

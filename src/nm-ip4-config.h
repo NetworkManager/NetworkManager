@@ -59,9 +59,6 @@ GType nm_ip4_config_get_type (void);
 NMIP4Config *	nm_ip4_config_new				(void);
 NMIP4Config *	nm_ip4_config_copy				(NMIP4Config *config);
 
-gboolean		nm_ip4_config_get_secondary		(NMIP4Config *config);
-void			nm_ip4_config_set_secondary		(NMIP4Config *config, gboolean secondary);
-
 guint32		nm_ip4_config_get_address		(NMIP4Config *config);
 void			nm_ip4_config_set_address		(NMIP4Config *config, guint32 addr);
 
