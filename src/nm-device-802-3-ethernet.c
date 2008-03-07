@@ -578,7 +578,8 @@ nm_device_802_3_ethernet_get_speed (NMDevice8023Ethernet *self)
 	ifr.ifr_data = (char *) &edata;
 	if (ioctl (nm_dev_sock_get_fd (sk), SIOCETHTOOL, &ifr) == -1)
 		goto out;
-	speed = edata.speed > 0 ? (guint32) edata.speed : 0;
+
+	speed = edata.speed != G_MAXUINT16 ? edata.speed : 0;
 
 out:
 	nm_dev_sock_close (sk);

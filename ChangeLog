@@ -1,3 +1,9 @@
+2008-03-07  Tambet Ingo  <tambet@gmail.com>
+
+	* src/nm-device-802-3-ethernet.c (nm_device_802_3_ethernet_get_speed): Handle
+	the case correctly where driver is trying to send -1 for the speed, which gets
+	casted to u16 and thus is always > 0.
+
 2008-03-07  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-hal-manager.c
