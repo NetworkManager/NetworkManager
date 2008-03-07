@@ -1,5 +1,16 @@
 2008-03-07  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-hal-manager.c
+		- (nm_get_device_driver_name): use net.originating_device first, fall
+			back to physical device.  HAL has deprecated physical_device.
+
+	* libnm-glib/nm-device.c
+		- (get_product_and_vendor): use net.originating_device first, fall
+			back to physical device.  HAL has deprecated physical_device.
+		- (nm_device_update_description): s/physical_device_udi/orig_dev_udi
+
+2008-03-07  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-netlink.c
 		- (nm_netlink_get_default_handle): mistakenly removed too much code in
 			last commit; fix that

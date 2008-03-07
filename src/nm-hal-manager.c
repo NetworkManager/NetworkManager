@@ -68,16 +68,21 @@ get_creator (NMHalManager *manager, const char *udi)
 static char *
 nm_get_device_driver_name (LibHalContext *ctx, const char *udi)
 {
-	char *physdev_udi;
+	char *origdev_udi;
 	char *driver_name = NULL;
 
-	physdev_udi = libhal_device_get_property_string (ctx, udi, "net.physical_device", NULL);
-	if (physdev_udi && libhal_device_property_exists (ctx, physdev_udi, "info.linux.driver", NULL)) {
-		char *drv = libhal_device_get_property_string (ctx, physdev_udi, "info.linux.driver", NULL);
+	origdev_udi = libhal_device_get_property_string (ctx, udi, "net.originating_device", NULL);
+	if (!origdev_udi) {
+		/* Older HAL uses 'physical_device' */
+		origdev_udi = libhal_device_get_property_string (ctx, udi, "net.physical_device", NULL);
+	}
+
+	if (origdev_udi && libhal_device_property_exists (ctx, origdev_udi, "info.linux.driver", NULL)) {
+		char *drv = libhal_device_get_property_string (ctx, origdev_udi, "info.linux.driver", NULL);
 		driver_name = g_strdup (drv);
 		libhal_free_string (drv);
 	}
-	libhal_free_string (physdev_udi);
+	libhal_free_string (origdev_udi);
 
 	return driver_name;
 }

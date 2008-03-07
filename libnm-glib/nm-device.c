@@ -273,7 +273,7 @@ nm_device_get_state (NMDevice *device)
 static char *
 get_product_and_vendor (DBusGConnection *connection,
                         const char *udi,
-                        gboolean want_physdev,
+                        gboolean want_origdev,
                         gboolean warn,
                         char **product,
                         char **vendor)
@@ -313,14 +313,38 @@ get_product_and_vendor (DBusGConnection *connection,
 		err = NULL;
     }
 
-	if (!dbus_g_proxy_call (proxy, "GetPropertyString", &err,
-							G_TYPE_STRING, want_physdev ? "net.physical_device" : "info.parent",
-							G_TYPE_INVALID,
-							G_TYPE_STRING, &parent,
-							G_TYPE_INVALID)) {
-		g_warning ("Error getting physical device info from HAL: %s", err->message);
-		g_error_free (err);
-    }
+	if (want_origdev) {
+		dbus_g_proxy_call (proxy, "GetPropertyString", NULL,
+		                   G_TYPE_STRING, "net.originating_device",
+		                   G_TYPE_INVALID,
+		                   G_TYPE_STRING, &parent,
+		                   G_TYPE_INVALID);
+
+		if (!parent) {
+			/* Older HAL uses 'physical_device' */
+			dbus_g_proxy_call (proxy, "GetPropertyString", &err,
+			                   G_TYPE_STRING, "net.physical_device",
+			                   G_TYPE_INVALID,
+			                   G_TYPE_STRING, &parent,
+			                   G_TYPE_INVALID);
+		}
+
+		if (err || !parent) {
+			g_warning ("Error getting originating device info from HAL: %s",
+			           err ? err->message : "unknown error");
+			if (err)
+				g_error_free (err);
+		}
+	} else {
+		if (!dbus_g_proxy_call (proxy, "GetPropertyString", &err,
+								G_TYPE_STRING, "info.parent",
+								G_TYPE_INVALID,
+								G_TYPE_STRING, &parent,
+								G_TYPE_INVALID)) {
+			g_warning ("Error getting parent device info from HAL: %s", err->message);
+			g_error_free (err);
+	    }
+	}
 
 	if (parent && tmp_product && tmp_vendor) {
 		*product = tmp_product;
@@ -340,7 +364,7 @@ nm_device_update_description (NMDevice *device)
 	NMDevicePrivate *priv;
 	DBusGConnection *connection;
 	char *udi;
-	char *physical_device_udi = NULL;
+	char *orig_dev_udi = NULL;
 	char *pd_parent_udi = NULL;
 
 	g_return_if_fail (NM_IS_DEVICE (device));
@@ -354,9 +378,9 @@ nm_device_update_description (NMDevice *device)
 	connection = nm_object_get_connection (NM_OBJECT (device));
 	g_return_if_fail (connection != NULL);
 
-	/* First, get the physical device info */
+	/* First, get the originating device info */
 	udi = nm_device_get_udi (device);
-	physical_device_udi = get_product_and_vendor (connection, udi, TRUE, FALSE, &priv->product, &priv->vendor);
+	orig_dev_udi = get_product_and_vendor (connection, udi, TRUE, FALSE, &priv->product, &priv->vendor);
 	g_free (udi);
 
 	/* Ignore product and vendor for the Network Interface */
@@ -367,17 +391,17 @@ nm_device_update_description (NMDevice *device)
 		priv->vendor = NULL;
 	}
 
-	/* Get product and vendor off the physical device if possible */
+	/* Get product and vendor off the originating device if possible */
 	pd_parent_udi = get_product_and_vendor (connection,
-	                                        physical_device_udi,
+	                                        orig_dev_udi,
 	                                        FALSE,
 	                                        FALSE,
 	                                        &priv->product,
 	                                        &priv->vendor);
-	g_free (physical_device_udi);
+	g_free (orig_dev_udi);
 
-	/* If one of the product/vendor isn't found on the physical device, try the
-	 * parent of the physical device.
+	/* If one of the product/vendor isn't found on the originating device, try the
+	 * parent of the originating device.
 	 */
 	if (!priv->product || !priv->vendor) {
 		char *ignore;
