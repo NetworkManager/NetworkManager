@@ -1,5 +1,21 @@
 2008-03-07  Tambet Ingo  <tambet@gmail.com>
 
+	Rework the interaction between ppp manager and pppd plugin. Register a well
+	known DBUS service in manager and let the plugin call it's methods instead
+	of listening plugin's signals.
+
+	* src/ppp-manager/nm-pppd-plugin.c: Call ppp-manager dbus methods instead
+	of emitting signals.
+
+	* src/ppp-manager/nm-ppp-manager.c: Implement dbus service here.
+
+	* src/ppp-manager/Makefile.am: Build nm-ppp-manager-glue.h.
+
+	* src/nm-serial-device.c (real_act_stage2_config): Pass NMConnection to
+	nm_ppp_manager_start().
+
+	* introspection/nm-ppp-manager.xml: New file.
+
 	* src/nm-device-802-3-ethernet.c (nm_device_802_3_ethernet_get_speed): Handle
 	the case correctly where driver is trying to send -1 for the speed, which gets
 	casted to u16 and thus is always > 0.
