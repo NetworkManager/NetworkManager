@@ -1,5 +1,13 @@
 2008-03-07  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/plugins/ifcfg-fedora/parser.c
+		- (is_wireless_device): new function; test a device for wireless
+			extensions
+		- (parser_parse_file): if the ifcfg file doesn't have a TYPE tag,
+			test the device for wireless extensions to determine the type
+
+2008-03-07  Dan Williams  <dcbw@redhat.com>
+
 	Change manager's StateChange signal to StateChanged for consistency.
 
 	* introspection/nm-manager.xml

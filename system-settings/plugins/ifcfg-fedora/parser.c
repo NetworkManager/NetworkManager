@@ -26,6 +26,17 @@
 #include <arpa/inet.h>
 #include <ctype.h>
 #include <sys/inotify.h>
+#include <errno.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
+
+#ifndef __user
+#define __user
+#endif
+#include <linux/types.h>
+#include <wireless.h>
+#undef __user
 
 #include <glib.h>
 
@@ -764,7 +775,47 @@ error:
 		g_object_unref (wired_setting);
 	return NULL;
 }
-	
+
+static gboolean
+is_wireless_device (const char *iface, gboolean *is_wireless)
+{
+	int fd;
+	struct iw_range range;
+	struct iwreq wrq;
+	gboolean success = FALSE;
+
+	g_return_val_if_fail (iface != NULL, FALSE);
+	g_return_val_if_fail (is_wireless != NULL, FALSE);
+
+	*is_wireless = FALSE;
+
+	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (!fd)
+		return FALSE;
+
+	memset (&wrq, 0, sizeof (struct iwreq));
+	memset (&range, 0, sizeof (struct iw_range));
+	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
+	wrq.u.data.pointer = (caddr_t) &range;
+	wrq.u.data.length = sizeof (struct iw_range);
+
+	if (ioctl (fd, SIOCGIWRANGE, &wrq) < 0) {
+		if (errno == -EOPNOTSUPP)
+			success = TRUE;
+		goto out;
+	}
+
+	*is_wireless = TRUE;
+	success = TRUE;
+
+out:
+	close (fd);
+	return success;
+}
+
+#define TYPE_ETHERNET "Ethernet"
+#define TYPE_WIRELESS "Wireless"
+
 NMConnection *
 parser_parse_file (const char *file, GError **error)
 {
@@ -796,9 +847,34 @@ parser_parse_file (const char *file, GError **error)
 
 	type = svGetValue (parsed, "TYPE");
 	if (!type) {
-		g_set_error (error, ifcfg_plugin_error_quark (), 0,
-		             "File '%s' didn't have a TYPE key.", file);
-		goto done;
+		char *device;
+		gboolean is_wireless = FALSE;
+
+		/* If no type, if the device has wireless extensions, it's wifi,
+		 * otherwise it's ethernet.
+		 */
+		device = svGetValue (parsed, "DEVICE");
+		if (!device) {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "File '%s' had neither TYPE nor DEVICE keys.", file);
+			goto done;
+		}
+
+		/* Test wireless extensions */
+		if (!is_wireless_device (device, &is_wireless)) {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "File '%s' specified device '%s', but the device's "
+			             "type could not be determined.", file, device);
+			g_free (device);
+			goto done;
+		}
+
+		if (is_wireless)
+			type = g_strdup (TYPE_WIRELESS);
+		else
+			type = g_strdup (TYPE_ETHERNET);
+
+		g_free (device);
 	}
 
 	nmc = svGetValue (parsed, "NM_CONTROLLED");
@@ -813,9 +889,9 @@ parser_parse_file (const char *file, GError **error)
 		g_free (lower);
 	}
 
-	if (!strcmp (type, "Ethernet"))
+	if (!strcmp (type, TYPE_ETHERNET))
 		connection = wired_connection_from_ifcfg (file, parsed, error);
-	else if (!strcmp (type, "Wireless"))
+	else if (!strcmp (type, TYPE_WIRELESS))
 		connection = wireless_connection_from_ifcfg (file, parsed, error);
 	else {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
