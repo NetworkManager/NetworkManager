@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: network-manager-ui\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-12-19 23:38+0200\n"
-"PO-Revision-Date: 2007-12-19 23:42+0200\n"
+"POT-Creation-Date: 2008-03-09 23:59+0200\n"
+"PO-Revision-Date: 2008-03-10 00:01+0200\n"
 "Last-Translator: Ihar Hrachyshka <ihar.hrachyshka@gmail.com>\n"
 "Language-Team: Belarusian Latin <i18n@mova.org>\n"
 "MIME-Version: 1.0\n"
@@ -23,7 +23,8 @@ msgstr "pamyłka pry apracoŭvańni paviedamleńnia ad sietkavaha linka: %s"
 #, c-format
 msgid "unable to allocate netlink handle for monitoring link status: %s"
 msgstr ""
-"niemahčyma vydzielić handle dla sietkavaha linka, kab nazirać za jaho stanam: %s"
+"niemahčyma vydzielić handle dla sietkavaha linka, kab nazirać za jaho "
+"stanam: %s"
 
 #: ../src/nm-netlink-monitor.c:255
 #, c-format
@@ -44,7 +45,6 @@ msgstr ""
 "niemahčyma vydzielić keš dla sietkavaha linka, kab nazirać za jaho stanam: %s"
 
 #: ../src/nm-netlink-monitor.c:471
-#, c-format
 msgid "error occurred while waiting for data on socket"
 msgstr "pry čakańni źviestak na sokiecie adbyłasia pamyłka"
 
@@ -54,158 +54,10 @@ msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr ""
 "Niapravilnaja opcyja. Kab pahladzieć śpis mahčymych opcyj, užyj --help.\n"
 
-#~ msgid "operation took too long"
-#~ msgstr "aperacyja vykkonvałasia nadta doŭha"
+#: ../src/named-manager/nm-named-manager.c:218
+msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
+msgstr "UVAHA: resolver glibc nie padtrymlivaje bolš za 3 servery nazvaŭ."
 
-#~ msgid "received data from wrong type of sender"
-#~ msgstr "atrymanyja źviestki ad adpraŭnika niapravilnaha typu"
-
-#~ msgid "received data from unexpected sender"
-#~ msgstr "atrymanyja źviestki ad niečakanaha adpraŭnika"
-
-#~ msgid "too much data was sent over socket and some of it was lost"
-#~ msgstr ""
-#~ "praz sokiet dasłana nadta šmat źviestak, i tamu niekatoryja ź ich "
-#~ "zhubilisia"
-
-#~ msgid "Cannot add VPN connection"
-#~ msgstr "Niemahčyma dadać spałučeńnie VPN"
-
-#~ msgid ""
-#~ "No suitable VPN software was found on your system. Contact your system "
-#~ "administrator."
-#~ msgstr ""
-#~ "Na hetaj systemie nia znojdzienaja prahrama dla VPN. Źviažysia z "
-#~ "systemnym administrataram."
-
-#~ msgid "Cannot import VPN connection"
-#~ msgstr "Niemahčyma impartavać spałučeńnie VPN"
-
-#~ msgid ""
-#~ "Cannot find suitable software for VPN connection type '%s' to import the "
-#~ "file '%s'. Contact your system administrator."
-#~ msgstr ""
-#~ "Na hetaj systemie nia znojdzienaja prahrama dla spałučeńnia VPN typu '%"
-#~ "s', kab impartavać fajł '%s'. Źviažysia z systemnym administrataram."
-
-#~ msgid "Error retrieving VPN connection '%s'"
-#~ msgstr "Pamyłka atrymańnia spałučeńnia VPN '%s'"
-
-#~ msgid ""
-#~ "Could not find the UI files for VPN connection type '%s'. Contact your "
-#~ "system administrator."
-#~ msgstr ""
-#~ "Niemahčyma znajści fajły UI dla typu '%s' spałučeńniaŭ VPN. Źviažysia z "
-#~ "systemnym administrataram."
-
-#~ msgid "Delete VPN connection \"%s\"?"
-#~ msgstr "Vydalić spałučeńnie VPN \"%s\"?"
-
-#~ msgid ""
-#~ "All information about the VPN connection \"%s\" will be lost and you may "
-#~ "need your system administrator to provide information to create a new "
-#~ "connection."
-#~ msgstr ""
-#~ "Usie źviestki pra spałučeńnie VPN \"%s\" źniknuć, i tabie mohuć "
-#~ "spatrebicca źviestki ad systemnaha administratara pra toje, jak stvaryć "
-#~ "novaje spałučeńnie."
-
-#~ msgid "Unable to load"
-#~ msgstr "Niemahčyma adčytać"
-
-#~ msgid "Cannot find some needed resources (the glade file)!"
-#~ msgstr "Niemahčyma znajści niekatoryja patrebnyja resursy (fajł glade)!"
-
-#~ msgid "Create VPN Connection"
-#~ msgstr "Stvary spałučeńnie VPN"
-
-#~ msgid "Edit VPN Connection"
-#~ msgstr "Redahuj spałučeńnie VPN"
-
-#~ msgid "Add a new VPN connection"
-#~ msgstr "Dadaj novaje spałučeńnie VPN"
-
-#~ msgid "Delete the selected VPN connection"
-#~ msgstr "Vydal abranaje spałučeńnie VPN"
-
-#~ msgid "E_xport"
-#~ msgstr "E_kspartuj"
-
-#~ msgid "Edit the selected VPN connection"
-#~ msgstr "Redahuj abranaje spałučeńnie VPN"
-
-#~ msgid "Export the VPN settings to a file"
-#~ msgstr "Ekspartuj nałady VPN u fajł"
-
-#~ msgid "Export the selected VPN connection to a file"
-#~ msgstr "Ekspartuj abranaje spałučeńnie VPN u fajł"
-
-#~ msgid "Manage Virtual Private Network Connections"
-#~ msgstr "Kiruj spałučeńniami ź virtualnaj pryvatnaj sietkaj (VPN)"
-
-#~ msgid "VPN Connections"
-#~ msgstr "Spałučeńni VPN"
-
-#~ msgid "40-bit WEP"
-#~ msgstr "40-bitny WEP"
-
-#~ msgid "104-bit WEP"
-#~ msgstr "104-bitny WEP"
-
-#~ msgid "WPA TKIP"
-#~ msgstr "WPA TKIP"
-
-#~ msgid "WPA CCMP"
-#~ msgstr "WPA CCMP"
-
-#~ msgid "WPA Automatic"
-#~ msgstr "Aŭtamatyčny WPA"
-
-#~ msgid "WPA2 TKIP"
-#~ msgstr "WPA2 TKIP"
-
-#~ msgid "WPA2 CCMP"
-#~ msgstr "WPA2 CCMP"
-
-#~ msgid "WPA2 Automatic"
-#~ msgstr "Aŭtamatyčny WPA2"
-
-#~ msgid "none"
-#~ msgstr "niama"
-
-#~ msgid "WPA2 Enterprise"
-#~ msgstr "WPA2 Enterprise"
-
-#~ msgid "WPA Enterprise"
-#~ msgstr "WPA Enterprise"
-
-#~ msgid "LEAP"
-#~ msgstr "LEAP"
-
-#~ msgid "Choose which type of VPN connection you wish to create."
-#~ msgstr "Abiary typ stvaranaha spałučeńnia VPN."
-
-#~ msgid "Connect to:"
-#~ msgstr "Złučajsia z:"
-
-#~ msgid "Create VPN Connection - 1 of 2"
-#~ msgstr "Stvary spałučeńnie VPN - 1 z 2"
-
-#~ msgid "Create VPN Connection - 2 of 2"
-#~ msgstr "Stvary spałučeńnie VPN - 2 z 2"
-
-#~ msgid "Finish Creating VPN Connection"
-#~ msgstr "Skonč stvareńnie spałučeńnia VPN"
-
-#~ msgid ""
-#~ "This assistant will guide you through the creation of a connection to a "
-#~ "Virtual Private Network (VPN).\n"
-#~ "\n"
-#~ "It will require some information, such as IP addresses and secrets.  "
-#~ "Please see your system administrator to obtain this information."
-#~ msgstr ""
-#~ "Hety pamočnik dapamoža stvaryć spałučeńnie ź virtualnaj pryvatnaj sietkaj "
-#~ "(VPN).\n"
-#~ "\n"
-#~ "Treba viedać peŭnyja źviestki, a mienavita adrasy IP i sakrety. Źviažysia "
-#~ "z systemnym administrataram, kab atrymać źviestki."
+#: ../src/named-manager/nm-named-manager.c:220
+msgid "The nameservers listed below may not be recognized."
+msgstr "Niemahčyma paznać nastupnyja servery nazvaŭ."
