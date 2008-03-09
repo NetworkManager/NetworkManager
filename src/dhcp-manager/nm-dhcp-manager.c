@@ -842,7 +842,8 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 	guint32			ip4_broadcast = 0;
 	guint32			ip4_gateway = 0;
 	char *			hostname = NULL;
-	char *			domain_names = NULL;
+	char *			domain = NULL;
+	char *			search = NULL;
 	char *			nameservers = NULL;
 	char *			nis_domain = NULL;
 	char *			nis_servers = NULL;
@@ -915,7 +916,8 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 
 	hostname = g_hash_table_lookup (device->options, "new_host_name");
 	nameservers = g_hash_table_lookup (device->options, "new_domain_name_servers");
-	domain_names = g_hash_table_lookup (device->options, "new_domain_name");
+	domain = g_hash_table_lookup (device->options, "new_domain_name");
+	search = g_hash_table_lookup (device->options, "new_domain_search");
 	nis_domain = g_hash_table_lookup (device->options, "new_nis_domain");
 	nis_servers = g_hash_table_lookup (device->options, "new_nis_servers");
 	static_routes = g_hash_table_lookup (device->options, "new_static_routes");
@@ -939,13 +941,24 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 		nm_info ("  hostname '%s'", hostname);
 	}
 
-	if (domain_names) {
-		char **searches = g_strsplit (domain_names, " ", 0);
+	if (domain) {
+		char **domains = g_strsplit (domain, " ", 0);
+		char **s;
+
+		for (s = domains; *s; s++) {
+			nm_info ("  domain name '%s'", *s);
+			nm_ip4_config_add_domain (ip4_config, *s);
+		}
+		g_strfreev (domains);
+	}
+
+	if (search) {
+		char **searches = g_strsplit (search, " ", 0);
 		char **s;
 
 		for (s = searches; *s; s++) {
-			nm_info ("  domain name '%s'", *s);
-			nm_ip4_config_add_domain (ip4_config, *s);
+			nm_info ("  domain search '%s'", *s);
+			nm_ip4_config_add_search (ip4_config, *s);
 		}
 		g_strfreev (searches);
 	}

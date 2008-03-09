@@ -2,6 +2,13 @@
 
 	Patch from Bas Zoetekouw <bas@debian.org>
 
+	* src/dhcp-manager/nm-dhcp-manager.c
+		- (nm_dhcp_manager_get_ip4_config): handle domain-search option too
+
+2008-03-09  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Bas Zoetekouw <bas@debian.org>
+
 	* src/nm-ip4-config.c
 	  src/nm-ip4-config.h
 		- (nm_ip4_config_add_search, nm_ip4_config_get_search,
