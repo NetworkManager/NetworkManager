@@ -51,6 +51,7 @@ typedef struct {
 
 	GArray *nameservers;
 	GPtrArray *domains;
+	GPtrArray *searches;
 
 	gchar *	hostname;
 	gchar *	nis_domain;
@@ -251,17 +252,6 @@ guint32 nm_ip4_config_get_num_nis_servers (NMIP4Config *config)
 	return NM_IP4_CONFIG_GET_PRIVATE (config)->nis_servers->len;
 }
 
-void nm_ip4_config_add_domain (NMIP4Config *config, const char *domain)
-{
-	g_return_if_fail (NM_IS_IP4_CONFIG (config));
-	g_return_if_fail (domain != NULL);
-
-	if (!strlen (domain))
-		return;
-
-	g_ptr_array_add (NM_IP4_CONFIG_GET_PRIVATE (config)->domains, g_strdup (domain));
-}
-
 void nm_ip4_config_set_hostname (NMIP4Config *config, const char *hostname)
 {
 	g_return_if_fail (NM_IS_IP4_CONFIG (config));
@@ -319,6 +309,19 @@ guint32 nm_ip4_config_get_num_static_routes (NMIP4Config *config)
 	return (NM_IP4_CONFIG_GET_PRIVATE (config)->static_routes->len) / 2;
 }
 
+
+void nm_ip4_config_add_domain (NMIP4Config *config, const char *domain)
+{
+	g_return_if_fail (NM_IS_IP4_CONFIG (config));
+	g_return_if_fail (domain != NULL);
+	g_return_if_fail (strlen (domain) > 0);
+
+	if (!strlen (domain))
+		return;
+
+	g_ptr_array_add (NM_IP4_CONFIG_GET_PRIVATE (config)->domains, g_strdup (domain));
+}
+
 const char *nm_ip4_config_get_domain (NMIP4Config *config, guint i)
 {
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
@@ -331,6 +334,29 @@ guint32 nm_ip4_config_get_num_domains (NMIP4Config *config)
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), 0);
 
 	return NM_IP4_CONFIG_GET_PRIVATE (config)->domains->len;
+}
+
+void nm_ip4_config_add_search (NMIP4Config *config, const char *search)
+{
+	g_return_if_fail (config != NULL);
+	g_return_if_fail (search != NULL);
+	g_return_if_fail (strlen (search) > 0);
+
+	g_ptr_array_add (NM_IP4_CONFIG_GET_PRIVATE (config)->searches, g_strdup (search));
+}
+
+const char *nm_ip4_config_get_search (NMIP4Config *config, guint i)
+{
+	g_return_val_if_fail (config != NULL, NULL);
+
+	return (const char *) g_ptr_array_index (NM_IP4_CONFIG_GET_PRIVATE (config)->searches, i);
+}
+
+guint32 nm_ip4_config_get_num_searches (NMIP4Config *config)
+{
+	g_return_val_if_fail (config != NULL, 0);
+
+	return NM_IP4_CONFIG_GET_PRIVATE (config)->searches->len;
 }
 
 guint32 nm_ip4_config_get_mtu (NMIP4Config *config)
