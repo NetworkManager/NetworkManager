@@ -1,3 +1,8 @@
+2008-03-09  Dan Williams  <dcbw@redhat.com>
+
+	* src/dhcp-manager/nm-dhcp-manager.c
+		- (dhclient_run): send interface-specific config files to dhclient
+
 2008-03-07  Dan Williams  <dcbw@redhat.com>
 
 	* system-settings/plugins/ifcfg-fedora/parser.c

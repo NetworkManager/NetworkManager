@@ -601,6 +601,7 @@ dhclient_run (NMDHCPDevice *device)
 	GError *		error = NULL;
 	char *			pidfile = NULL;
 	char *			leasefile = NULL;
+	char *			conffile = NULL;
 	gboolean		success = FALSE;
 	char *			pid_contents = NULL;
 
@@ -629,6 +630,12 @@ dhclient_run (NMDHCPDevice *device)
 		goto out;
 	}
 
+	conffile = g_strdup_printf (SYSCONFDIR "/dhclient-%s.conf", device->iface);
+	if (!conffile) {
+		nm_warning ("%s: not enough memory for dhclient options.", device->iface);
+		goto out;
+	}
+
 	/* Kill any existing dhclient bound to this interface */
 	if (g_file_get_contents (pidfile, &pid_contents, NULL, NULL)) {
 		unsigned long int tmp = strtoul (pid_contents, NULL, 10);
@@ -643,11 +650,6 @@ dhclient_run (NMDHCPDevice *device)
 
 	g_ptr_array_add (dhclient_argv, (gpointer) "-d");
 
-#if 0
-	/* Disable until we figure out what is really needed here */
-	g_ptr_array_add (dhclient_argv, (gpointer) "-x");
-#endif
-
 	g_ptr_array_add (dhclient_argv, (gpointer) "-sf");	/* Set script file */
 	g_ptr_array_add (dhclient_argv, (gpointer) ACTION_SCRIPT_PATH );
 
@@ -656,6 +658,9 @@ dhclient_run (NMDHCPDevice *device)
 
 	g_ptr_array_add (dhclient_argv, (gpointer) "-lf");	/* Set lease file */
 	g_ptr_array_add (dhclient_argv, (gpointer) leasefile);
+
+	g_ptr_array_add (dhclient_argv, (gpointer) "-cf");	/* Set interface config file */
+	g_ptr_array_add (dhclient_argv, (gpointer) conffile);
 
 	g_ptr_array_add (dhclient_argv, (gpointer) device->iface);
 	g_ptr_array_add (dhclient_argv, NULL);
@@ -677,6 +682,7 @@ dhclient_run (NMDHCPDevice *device)
 
 out:
 	g_free (pid_contents);
+	g_free (conffile);
 	g_free (leasefile);
 	g_free (pidfile);
 	g_ptr_array_free (dhclient_argv, TRUE);
