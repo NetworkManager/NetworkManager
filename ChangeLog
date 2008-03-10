@@ -1,5 +1,18 @@
 2008-03-10  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-serial-device.c
+		- (nm_serial_device_send_command): report errno on error
+		- (get_reply_got_data): limit the size of the overall buffer
+		- (wait_for_reply_info_destroy): destroy result string
+		- (wait_for_reply_got_data): append received data to an overall buffer
+			until timeout, filled buffer, or error instead of keeping a per-call
+			buffer.  Some devices send data slowly enough that this function
+			gets called multiple times for the same command stream.
+		- (nm_serial_device_wait_for_reply): initialize overall buffer for
+			wait_for_reply_got_data() here
+
+2008-03-10  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-cdma-device.c
 		- (do_dial, init_modem): handle errors from
 			nm_serial_device_send_command_string()

@@ -336,7 +336,7 @@ nm_serial_device_send_command (NMSerialDevice *device, GByteArray *command)
 			if (errno == EAGAIN)
 				goto again;
 
-			g_warning ("Error in writing");
+			g_warning ("Error in writing (errno %d)", errno);
 			return FALSE;
 		}
 
@@ -421,7 +421,6 @@ get_reply_got_data (GIOChannel *source,
 		GError *err = NULL;
 
 		status = g_io_channel_read_chars (source, buf, SERIAL_BUF_SIZE, &bytes_read, &err);
-
 		if (status == G_IO_STATUS_ERROR) {
 			g_warning ("%s", err->message);
 			g_error_free (err);
@@ -452,6 +451,15 @@ get_reply_got_data (GIOChannel *source,
 				} else
 					g_string_append_c (info->result, *p);
 			}
+		}
+
+		/* Limit the size of the buffer */
+		if (info->result->len > SERIAL_BUF_SIZE) {
+			g_warning ("%s (%s): response buffer filled before repsonse received",
+			           __func__, nm_device_get_iface (NM_DEVICE (info->device)));
+			g_string_free (info->result, TRUE);
+			info->result = NULL;
+			done = TRUE;
 		}
 	} while (!done || bytes_read == SERIAL_BUF_SIZE || status == G_IO_STATUS_AGAIN);
 
@@ -513,6 +521,7 @@ nm_serial_device_get_reply (NMSerialDevice *device,
 typedef struct {
 	NMSerialDevice *device;
 	char **str_needles;
+	GString *result;
 	NMSerialWaitForReplyFn callback;
 	gpointer user_data;
 	guint timeout_id;
@@ -526,6 +535,9 @@ wait_for_reply_info_destroy (gpointer data)
 
 	if (info->got_data_id)
 		g_source_remove (info->got_data_id);
+
+	if (info->result)
+		g_string_free (info->result, TRUE);
 
 	g_strfreev (info->str_needles);
 	g_free (info);
@@ -547,7 +559,6 @@ wait_for_reply_got_data (GIOChannel *source,
 					gpointer data)
 {
 	WaitForReplyInfo *info = (WaitForReplyInfo *) data;
-	GString *response = NULL;
 	gchar buf[SERIAL_BUF_SIZE + 1];
 	gsize bytes_read;
 	GIOStatus status;
@@ -558,7 +569,6 @@ wait_for_reply_got_data (GIOChannel *source,
 	if (!(condition & G_IO_IN))
 		goto done;
 
-	response = g_string_new (NULL);
 	do {
 		GError *err = NULL;
 
@@ -571,20 +581,26 @@ wait_for_reply_got_data (GIOChannel *source,
 
 		if (bytes_read > 0) {
 			buf[bytes_read] = 0;
-			g_string_append (response, buf);
+			g_string_append (info->result, buf);
 
-			serial_debug ("Got:", response->str, response->len);
+			serial_debug ("Got:", info->result->str, info->result->len);
 
 			for (i = 0; info->str_needles[i]; i++) {
-				if (strcasestr (response->str, info->str_needles[i])) {
+				if (   info->result->str
+				    && strcasestr (info->result->str, info->str_needles[i])) {
 					idx = i;
 					done = TRUE;
 				}
 			}
 		}
-	} while (bytes_read == SERIAL_BUF_SIZE || status == G_IO_STATUS_AGAIN);
 
-	g_string_free (response, TRUE);
+		/* Limit the size of the buffer */
+		if (info->result->len > SERIAL_BUF_SIZE) {
+			g_warning ("%s (%s): response buffer filled before repsonse received",
+			           __func__, nm_device_get_iface (NM_DEVICE (info->device)));
+			done = TRUE;
+		}
+	} while (!done || bytes_read == SERIAL_BUF_SIZE || status == G_IO_STATUS_AGAIN);
 
 done:
 	if (condition & G_IO_HUP || condition & G_IO_ERR)
@@ -625,9 +641,10 @@ nm_serial_device_wait_for_reply (NMSerialDevice *device,
 	}
 	str_array[i] = NULL;
 
-	info = g_new (WaitForReplyInfo, 1);
+	info = g_new0 (WaitForReplyInfo, 1);
 	info->device = device;
 	info->str_needles = str_array;
+	info->result = g_string_new (NULL);
 	info->callback = callback;
 	info->user_data = user_data;
 
