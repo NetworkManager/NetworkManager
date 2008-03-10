@@ -19,7 +19,7 @@
 #include "nm-setting-ppp.h"
 #include "nm-utils.h"
 
-#define NM_DEBUG_SERIAL 1
+/* #define NM_DEBUG_SERIAL 1 */
 
 #define SERIAL_BUF_SIZE 2048
 
