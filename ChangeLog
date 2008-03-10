@@ -1,3 +1,9 @@
+2008-03-10  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-ip4-config.c
+		- (nm_ip4_config_init): allocate searches list
+		- (finalize): free searches list
+
 2008-03-09  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Bas Zoetekouw <bas@debian.org>

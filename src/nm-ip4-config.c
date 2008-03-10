@@ -480,6 +480,7 @@ nm_ip4_config_init (NMIP4Config *config)
 	priv->nis_servers = g_array_new (FALSE, TRUE, sizeof (guint32));
 	priv->static_routes = g_array_new (FALSE, TRUE, sizeof (guint32));
 	priv->domains = g_ptr_array_new ();
+	priv->searches = g_ptr_array_new ();
 }
 
 static void
@@ -491,6 +492,7 @@ finalize (GObject *object)
 	g_free (priv->nis_domain);
 	g_array_free (priv->nameservers, TRUE);
 	g_ptr_array_free (priv->domains, TRUE);
+	g_ptr_array_free (priv->searches, TRUE);
 	g_array_free (priv->nis_servers, TRUE);
 	g_array_free (priv->static_routes, TRUE);
 }
