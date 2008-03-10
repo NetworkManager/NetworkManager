@@ -1,4 +1,4 @@
-# translation of es.po to Spanish
+# translation of NetworkManager.HEAD.po to Español
 # translation of NetworkManager.HEAD.po to
 # Traducción de NetworkManager al español.
 # Copyright (C) Spanish translation for NetworkManager
@@ -7,15 +7,15 @@
 # Antonio Ognio <antonio@linux.org.pe>, 2004.
 # Francisco Javier F. Serrador <serrador@cvs.gnome.org>, 2004, 2005, 2006.
 # Lucas Vieites Fariña <lucas@asixinformatica.com>, 2005, 2006.
-# Jorge González <jorgegonz@svn.gnome.org>, 2007.
+# Jorge González <jorgegonz@svn.gnome.org>, 2007, 2008.
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager.HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-12-18 17:15+0000\n"
-"PO-Revision-Date: 2007-12-19 10:29+0100\n"
+"POT-Creation-Date: 2008-03-07 19:44+0000\n"
+"PO-Revision-Date: 2008-03-10 11:27+0100\n"
 "Last-Translator: Jorge González <jorgegonz@svn.gnome.org>\n"
-"Language-Team: Spanish <gnome-es-list@gnome.org>\n"
+"Language-Team: Español <gnome-es-list@gnome.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -30,7 +30,9 @@ msgstr "error al procesar el mensaje de netlink: %s"
 #: ../src/nm-netlink-monitor.c:245
 #, c-format
 msgid "unable to allocate netlink handle for monitoring link status: %s"
-msgstr "no se puede asignar el manejador netlink para monitorizar el estado del enlace: %s"
+msgstr ""
+"no se puede asignar el manejador netlink para monitorizar el estado del "
+"enlace: %s"
 
 #: ../src/nm-netlink-monitor.c:255
 #, c-format
@@ -45,9 +47,12 @@ msgstr "no pudo unirse al grupo netlink para monitorizar el estado del enlace: %
 #: ../src/nm-netlink-monitor.c:271
 #, c-format
 msgid "unable to allocate netlink link cache for monitoring link status: %s"
-msgstr "no se puede asignar el enlace a la caché de netlink para monitorizar el estado del enlace: %s"
+msgstr ""
+"no se puede asignar el enlace a la caché de netlink para monitorizar el "
+"estado del enlace: %s"
 
 #: ../src/nm-netlink-monitor.c:471
+#, c-format
 msgid "error occurred while waiting for data on socket"
 msgstr "ha ocurrido un error mientras esperaban datos en un socket"
 
@@ -55,4 +60,12 @@ msgstr "ha ocurrido un error mientras esperaban datos en un socket"
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr "Opción no válida. Use --help para ver una lista de las opciones válidas.\n"
+
+#: ../src/named-manager/nm-named-manager.c:218
+msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
+msgstr "NOTA: el determinador de nombres de glibc no soporta más de 3 servidores de nombres."
+
+#: ../src/named-manager/nm-named-manager.c:220
+msgid "The nameservers listed below may not be recognized."
+msgstr "Puede que los servidores de nombres listados abajo no se reconozcan."
 
