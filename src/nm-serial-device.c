@@ -241,7 +241,8 @@ config_fd (NMSerialDevice *device, NMSettingSerial *setting)
 	stbuf.c_cflag |= (speed | bits | CREAD | 0 | parity | stopbits);
 
 	if (ioctl (priv->fd, TCSETA, &stbuf) < 0) {
-		g_warning ("Can not control device");
+		nm_warning ("(%s) cannot control device (errno %d)",
+		            nm_device_get_iface (NM_DEVICE (device)), errno);
 		return FALSE;
 	}
 
@@ -262,24 +263,27 @@ nm_serial_device_open (NMSerialDevice *device,
 	priv = NM_SERIAL_DEVICE_GET_PRIVATE (device);
 	iface = nm_device_get_iface (NM_DEVICE (device));
 
-	nm_debug ("Opening device '%s'", iface);
+	nm_debug ("(%s) opening device...", iface);
 
 	path = g_build_filename ("/dev", iface, NULL);
 	priv->fd = open (path, O_RDWR | O_EXCL | O_NONBLOCK | O_NOCTTY);
 	g_free (path);
 
 	if (priv->fd < 0) {
-		nm_warning ("Can not open device '%s'", iface);
+		nm_warning ("(%s) cannot open device (errno %d)", iface, errno);
 		return FALSE;
 	}
 
 	if (ioctl (priv->fd, TCGETA, &priv->old_t) < 0) {
-		nm_warning ("Can not control device '%s'", iface);
+		nm_warning ("(%s) cannot control device (errno %d)", iface, errno);
 		close (priv->fd);
 		return FALSE;
 	}
 
-	config_fd (device, setting);
+	if (!config_fd (device, setting)) {
+		close (priv->fd);
+		return FALSE;
+	}
 
 	priv->channel = g_io_channel_unix_new (priv->fd);
 

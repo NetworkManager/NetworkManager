@@ -1,5 +1,11 @@
 2008-03-10  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-serial-device.c
+		- (config_fd): report error from TCSETA
+		- (nm_serial_device_open): fail when config_fd() fails
+
+2008-03-10  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-ip4-config.c
 		- (nm_ip4_config_init): allocate searches list
 		- (finalize): free searches list
