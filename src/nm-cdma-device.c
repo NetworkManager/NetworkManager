@@ -112,18 +112,23 @@ do_dial (NMSerialDevice *device)
 	char *command;
 	guint id;
 	char *responses[] = { "CONNECT", "BUSY", "NO DIAL TONE", "NO CARRIER", NULL };
+	gboolean success;
 
 	setting = NM_SETTING_CDMA (cdma_device_get_setting (NM_CDMA_DEVICE (device), NM_TYPE_SETTING_CDMA));
 
 	command = g_strconcat ("ATDT", setting->number, NULL);
-	nm_serial_device_send_command_string (device, command);
+	success = nm_serial_device_send_command_string (device, command);
 	g_free (command);
 
-	id = nm_serial_device_wait_for_reply (device, 60, responses, dial_done, NULL);
-	if (id)
-		cdma_device_set_pending (NM_CDMA_DEVICE (device), id);
-	else
+	if (success) {
+		id = nm_serial_device_wait_for_reply (device, 60, responses, dial_done, NULL);
+		if (id)
+			cdma_device_set_pending (NM_CDMA_DEVICE (device), id);
+		else
+			nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+	} else {
 		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+	}
 }
 
 static void
@@ -154,7 +159,11 @@ init_modem (NMSerialDevice *device, gpointer user_data)
 	guint id;
 	char *responses[] = { "OK", "ERR", NULL };
 
-	nm_serial_device_send_command_string (device, "ATZ E0");
+	if (!nm_serial_device_send_command_string (device, "ATZ E0")) {
+		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		return;
+	}
+
 	id = nm_serial_device_wait_for_reply (device, 10, responses, init_done, NULL);
 
 	if (id)

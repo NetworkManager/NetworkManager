@@ -1,5 +1,16 @@
 2008-03-10  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-cdma-device.c
+		- (do_dial, init_modem): handle errors from
+			nm_serial_device_send_command_string()
+
+	* src/nm-gsm-device.c
+		- (do_dial, manual_registration, automatic_registration_get_network,
+		   automatic_registration, enter_pin, check_pin, init_modem): handle
+			errors from nm_serial_device_send_command_string()
+
+2008-03-10  Dan Williams  <dcbw@redhat.com>
+
 	Patch based on ideas suggested by Bas Zoetekouw <bas@debian.org>
 
 	* src/named-manager/nm-named-manager.c
