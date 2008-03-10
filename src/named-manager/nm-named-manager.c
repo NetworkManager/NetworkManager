@@ -214,7 +214,7 @@ compute_nameservers (NMIP4Config *config)
 		inet_ntop (AF_INET, &addr, buf, ADDR_BUF_LEN);
 
 		if (i == 3) {
-			g_string_append (str, "# ");
+			g_string_append (str, "\n# ");
 			g_string_append (str, _("NOTE: the glibc resolver does not support more than 3 nameservers."));
 			g_string_append (str, "\n# ");
 			g_string_append (str, _("The nameservers listed below may not be recognized."));
@@ -233,15 +233,27 @@ compute_nameservers (NMIP4Config *config)
 static void
 merge_one_ip4_config (NMIP4Config *dst, NMIP4Config *src)
 {
-	guint32 num, i;
+	guint32 num, num_domains, i;
 
 	num = nm_ip4_config_get_num_nameservers (src);
 	for (i = 0; i < num; i++)
 		nm_ip4_config_add_nameserver (dst, nm_ip4_config_get_nameserver (src, i));
 
-	num = nm_ip4_config_get_num_domains (src);
-	for (i = 0; i < num; i++)
+	num_domains = nm_ip4_config_get_num_domains (src);
+	for (i = 0; i < num_domains; i++)
 		nm_ip4_config_add_domain (dst, nm_ip4_config_get_domain (src, i));
+
+	num = nm_ip4_config_get_num_searches (src);
+	if (num > 0) {
+		for (i = 0; i < num; i++)
+			nm_ip4_config_add_search (dst, nm_ip4_config_get_search (src, i));
+	} else {
+		/* If no search domains were specified, add the 'domain' list to
+		 * search domains.
+		 */
+		for (i = 0; i < num_domains; i++)
+			nm_ip4_config_add_search (dst, nm_ip4_config_get_domain (src, i));
+	}
 }
 
 static gboolean
@@ -249,11 +261,12 @@ rewrite_resolv_conf (NMNamedManager *mgr, GError **error)
 {
 	NMNamedManagerPrivate *priv;
 	const char *tmp_resolv_conf = RESOLV_CONF ".tmp";
-	char *searches = NULL;
-	guint32 num_domains, i;
+	char *searches = NULL, *domain = NULL;
+	guint32 num_domains, num_searches, i;
 	NMIP4Config *composite;
 	GSList *iter;
 	FILE *f;
+	GString *str;
 
 	g_return_val_if_fail (error != NULL, FALSE);
 	g_return_val_if_fail (*error == NULL, FALSE);
@@ -303,19 +316,56 @@ rewrite_resolv_conf (NMNamedManager *mgr, GError **error)
 		merge_one_ip4_config (composite, config);
 	}
 
-	/* Compute resolv.conf search domains */
-	num_domains = nm_ip4_config_get_num_domains (composite);
-	if (num_domains > 0) {
-		GString *str;
+	/* ISC DHCP 3.1 provides support for the domain-search option. This is the
+	 * correct way for a DHCP server to provide a domain search list. Wedging
+	 * multiple domains into the domain-name option is a horrible hack.
+	 *
+	 * So, we handle it like this (as proposed by Andrew Pollock at
+	 * http://bugs.debian.org/465158):
+	 *
+	 * - if the domain-search option is present in the data received via DHCP,
+	 *   use it in favour of the domain-name option for setting the search
+	 *   directive in /etc/resolv.conf
+	 *
+	 * - if the domain-name option is present in the data received via DHCP, use
+	 *   it to set the domain directive in /etc/resolv.conf
+	 *   (this is handled in compute_domain() below)
+	 *
+	 * - if only the domain-name option is present in the data received via DHCP
+	 *   (and domain-search is not), for backwards compatibility, set the search
+	 *   directive in /etc/resolv.conf to the specified domain names
+	 */
 
+	num_domains = nm_ip4_config_get_num_domains (composite);
+	num_searches = nm_ip4_config_get_num_searches (composite);
+
+	if ((num_searches == 0)  && (num_domains > 0)) {
 		str = g_string_new ("search");
 		for (i = 0; i < num_domains; i++) {
 			g_string_append_c (str, ' ');
 			g_string_append (str, nm_ip4_config_get_domain (composite, i));		
 		}
 
-		g_string_append_c (str, '\n');
+		g_string_append (str, "\n\n");
 		searches = g_string_free (str, FALSE);
+	} else if (num_searches > 0) {
+		str = g_string_new ("search");
+		for (i = 0; i < num_searches; i++) {
+			g_string_append_c (str, ' ');
+			g_string_append (str, nm_ip4_config_get_search (composite, i));		
+		}
+
+		g_string_append (str, "\n\n");
+		searches = g_string_free (str, FALSE);
+	}
+
+	/* Compute resolv.conf domain */
+	if (num_domains > 0) {
+		str = g_string_new ("domain ");
+		g_string_append (str, nm_ip4_config_get_domain (composite, 0));
+		g_string_append (str, "\n\n");
+
+		domain = g_string_free (str, FALSE);
 	}
 
 	if (mgr->priv->use_named == TRUE) {
@@ -335,8 +385,10 @@ rewrite_resolv_conf (NMNamedManager *mgr, GError **error)
 		/* Using glibc resolver */
 		char *nameservers = compute_nameservers (composite);
 
-		if ((fprintf (f, "%s\n\n", searches ? searches : "") < 0) ||
-		    (fprintf (f, "%s\n\n", nameservers ? nameservers : "") < 0)) {
+		if (fprintf (f, "%s%s%s\n",
+		             domain ? domain : "",
+		             searches ? searches : "",
+		             nameservers ? nameservers : "") < 0) {
 			g_set_error (error,
 				     NM_NAMED_MANAGER_ERROR,
 				     NM_NAMED_MANAGER_ERROR_SYSTEM,
@@ -356,6 +408,7 @@ rewrite_resolv_conf (NMNamedManager *mgr, GError **error)
 		}
 	}
 
+	g_free (domain);
 	g_free (searches);
 
 	if (*error == NULL) {

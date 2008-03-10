@@ -1,5 +1,17 @@
 2008-03-10  Dan Williams  <dcbw@redhat.com>
 
+	Patch based on ideas suggested by Bas Zoetekouw <bas@debian.org>
+
+	* src/named-manager/nm-named-manager.c
+		- (compute_searches): prefer searches before domains
+		- (compute_domain): new function
+		- (rewrite_resolv_conf): write out the 'domain' and 'searches' options
+		- (merge_one_ip4_config): if there are no searches in the source config,
+			merge domains of the source config into the target config
+		- (compute_nameservers): make formatting of resolv.conf a bit nicer
+
+2008-03-10  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-serial-device.c
 		- (get_reply_got_data): clean up indentation, shrink serial buffer
 		- (wait_for_reply_got_data): try to handle slower serial devices where
