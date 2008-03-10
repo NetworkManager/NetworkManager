@@ -19,7 +19,9 @@
 #include "nm-setting-ppp.h"
 #include "nm-utils.h"
 
-/* #define NM_DEBUG_SERIAL 1 */
+#define NM_DEBUG_SERIAL 1
+
+#define SERIAL_BUF_SIZE 2048
 
 G_DEFINE_TYPE (NMSerialDevice, nm_serial_device, NM_TYPE_DEVICE)
 
@@ -407,51 +409,53 @@ get_reply_got_data (GIOChannel *source,
 {
 	GetReplyInfo *info = (GetReplyInfo *) data;
 	gsize bytes_read;
-	char buf[4096];
+	char buf[SERIAL_BUF_SIZE + 1];
 	GIOStatus status;
 	gboolean done = FALSE;
 	int i;
 
-	if (condition & G_IO_IN) {
-		do {
-			GError *err = NULL;
+	if (!(condition & G_IO_IN))
+		goto done;
 
-			status = g_io_channel_read_chars (source, buf, 4096, &bytes_read, &err);
+	do {
+		GError *err = NULL;
 
-			if (status == G_IO_STATUS_ERROR) {
-				g_warning ("%s", err->message);
-				g_error_free (err);
-				err = NULL;
-			}
+		status = g_io_channel_read_chars (source, buf, SERIAL_BUF_SIZE, &bytes_read, &err);
 
-			if (bytes_read > 0) {
-				char *p;
+		if (status == G_IO_STATUS_ERROR) {
+			g_warning ("%s", err->message);
+			g_error_free (err);
+			err = NULL;
+		}
 
-				serial_debug ("Got:", buf, bytes_read);
+		if (bytes_read > 0) {
+			char *p;
 
-				p = &buf[0];
-				for (i = 0; i < bytes_read && !done; i++, p++) {
-					int j;
-					gboolean is_terminator = FALSE;
+			serial_debug ("Got:", buf, bytes_read);
 
-					for (j = 0; j < strlen (info->terminators); j++) {
-						if (*p == info->terminators[j]) {
-							is_terminator = TRUE;
-							break;
-						}
+			p = &buf[0];
+			for (i = 0; i < bytes_read && !done; i++, p++) {
+				int j;
+				gboolean is_terminator = FALSE;
+
+				for (j = 0; j < strlen (info->terminators); j++) {
+					if (*p == info->terminators[j]) {
+						is_terminator = TRUE;
+						break;
 					}
-
-					if (is_terminator) {
-						/* Ignore terminators in the beginning of the output */
-						if (info->result->len > 0)
-							done = TRUE;
-					} else
-						g_string_append_c (info->result, *p);
 				}
-			}
-		} while (!done || bytes_read == 4096 || status == G_IO_STATUS_AGAIN);
-	}
 
+				if (is_terminator) {
+					/* Ignore terminators in the beginning of the output */
+					if (info->result->len > 0)
+						done = TRUE;
+				} else
+					g_string_append_c (info->result, *p);
+			}
+		}
+	} while (!done || bytes_read == SERIAL_BUF_SIZE || status == G_IO_STATUS_AGAIN);
+
+done:
 	if (condition & G_IO_HUP || condition & G_IO_ERR) {
 		g_string_free (info->result, TRUE);
 		info->result = NULL;
@@ -543,38 +547,46 @@ wait_for_reply_got_data (GIOChannel *source,
 					gpointer data)
 {
 	WaitForReplyInfo *info = (WaitForReplyInfo *) data;
+	GString *response = NULL;
+	gchar buf[SERIAL_BUF_SIZE + 1];
 	gsize bytes_read;
-	char buf[4096];
 	GIOStatus status;
 	gboolean done = FALSE;
 	int idx = -1;
 	int i;
 
-	if (condition & G_IO_IN) {
-		do {
-			GError *err = NULL;
+	if (!(condition & G_IO_IN))
+		goto done;
 
-			status = g_io_channel_read_chars (source, buf, 4096, &bytes_read, &err);
+	response = g_string_new (NULL);
+	do {
+		GError *err = NULL;
 
-			if (status == G_IO_STATUS_ERROR) {
-				g_warning ("%s", err->message);
-				g_error_free (err);
-				err = NULL;
-			}
+		status = g_io_channel_read_chars (source, buf, SERIAL_BUF_SIZE, &bytes_read, &err);
+		if (status == G_IO_STATUS_ERROR) {
+			g_warning ("%s", err->message);
+			g_error_free (err);
+			err = NULL;
+		}
 
-			if (bytes_read > 0) {
-				serial_debug ("Got:", buf, bytes_read);
+		if (bytes_read > 0) {
+			buf[bytes_read] = 0;
+			g_string_append (response, buf);
 
-				for (i = 0; info->str_needles[i]; i++) {
-					if (strcasestr (buf, info->str_needles[i])) {
-						idx = i;
-						done = TRUE;
-					}
+			serial_debug ("Got:", response->str, response->len);
+
+			for (i = 0; info->str_needles[i]; i++) {
+				if (strcasestr (response->str, info->str_needles[i])) {
+					idx = i;
+					done = TRUE;
 				}
 			}
-		} while (bytes_read == 4096 || status == G_IO_STATUS_AGAIN);
-	}
+		}
+	} while (bytes_read == SERIAL_BUF_SIZE || status == G_IO_STATUS_AGAIN);
 
+	g_string_free (response, TRUE);
+
+done:
 	if (condition & G_IO_HUP || condition & G_IO_ERR)
 		done = TRUE;
 

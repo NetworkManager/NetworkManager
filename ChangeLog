@@ -1,5 +1,14 @@
 2008-03-10  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-serial-device.c
+		- (get_reply_got_data): clean up indentation, shrink serial buffer
+		- (wait_for_reply_got_data): try to handle slower serial devices where
+			the reply is broken up into multiple reads by concatenating replies
+			together until either an error is received or the search string is
+			found
+
+2008-03-10  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device.c
 		- (nm_device_bring_down): deactivate the device if it's activating too,
 			not just if it's already activated.  This makes sure that everything
