@@ -1,5 +1,12 @@
 2008-03-10  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device.c
+		- (nm_device_bring_down): deactivate the device if it's activating too,
+			not just if it's already activated.  This makes sure that everything
+			from an association attempt is cleaned up (like DHCP for example)
+
+2008-03-10  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-serial-device.c
 		- (config_fd): report error from TCSETA
 		- (nm_serial_device_open): fail when config_fd() fails

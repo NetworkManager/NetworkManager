@@ -1515,6 +1515,8 @@ nm_device_bring_up (NMDevice *self, gboolean wait)
 void
 nm_device_bring_down (NMDevice *self, gboolean wait)
 {
+	NMDeviceState state;
+
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	if (!nm_device_is_up (self))
@@ -1522,7 +1524,8 @@ nm_device_bring_down (NMDevice *self, gboolean wait)
 
 	nm_info ("Bringing down device %s", nm_device_get_iface (self));
 
-	if (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED)
+	state = nm_device_get_state (self);
+	if ((state == NM_DEVICE_STATE_ACTIVATED) || nm_device_is_activating (self))
 		nm_device_interface_deactivate (NM_DEVICE_INTERFACE (self));
 
 	if (NM_DEVICE_GET_CLASS (self)->bring_down)
