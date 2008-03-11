@@ -1253,12 +1253,52 @@ nm_device_can_interrupt_activation (NMDevice *self)
 /* IP Configuration stuff */
 
 static void
+handle_dhcp_lease_change (NMDevice *device)
+{
+	NMIP4Config *config;
+	NMSettingIP4Config *s_ip4;
+	NMConnection *connection;
+	NMActRequest *req;
+
+	if (!nm_device_get_use_dhcp (device)) {
+		nm_warning ("got DHCP rebind for device that wasn't using DHCP.");
+		return;
+	}
+
+	config = nm_dhcp_manager_get_ip4_config (NM_DEVICE_GET_PRIVATE (device)->dhcp_manager,
+											 nm_device_get_iface (device));
+	if (!config) {
+		nm_warning ("failed to get DHCP config for rebind");
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED);
+		return;
+	}
+
+	req = nm_device_get_act_request (device);
+	g_assert (req);
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	merge_ip4_config (config, s_ip4);
+
+	g_object_set_data (G_OBJECT (req), NM_ACT_REQUEST_IP4_CONFIG, config);
+
+	if (nm_device_set_ip4_config (device, config)) {
+		if (NM_DEVICE_GET_CLASS (device)->update_link)
+			NM_DEVICE_GET_CLASS (device)->update_link (device);
+	} else {
+		nm_warning ("Failed to update IP4 config in response to DHCP event.");
+	}
+}
+
+static void
 dhcp_state_changed (NMDHCPManager *dhcp_manager,
 					const char *iface,
 					NMDHCPState state,
 					gpointer user_data)
 {
-	NMDevice * device = NM_DEVICE (user_data);
+	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceState dev_state;
 
 	if (strcmp (nm_device_get_iface (device), iface) != 0)
 		return;
@@ -1266,13 +1306,17 @@ dhcp_state_changed (NMDHCPManager *dhcp_manager,
 	if (!nm_device_get_act_request (device))
 		return;
 
+	dev_state = nm_device_get_state (device);
+
 	switch (state) {
 	case DHC_BOUND:	/* lease obtained */
 	case DHC_RENEW:	/* lease renewed */
 	case DHC_REBOOT:	/* have valid lease, but now obtained a different one */
 	case DHC_REBIND:	/* new, different lease */
-		if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG)
+		if (dev_state == NM_DEVICE_STATE_IP_CONFIG)
 			nm_device_activate_schedule_stage4_ip_config_get (device);
+		else if (dev_state == NM_DEVICE_STATE_ACTIVATED)
+			handle_dhcp_lease_change (device);
 		break;
 	case DHC_TIMEOUT: /* timed out contacting DHCP server */
 		if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG)
@@ -1286,7 +1330,7 @@ dhcp_state_changed (NMDHCPManager *dhcp_manager,
 		} else if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
 			if (nm_device_get_use_dhcp (device)) {
 				/* dhclient quit and therefore can't renew our lease, kill the conneciton */
-				nm_device_deactivate (NM_DEVICE_INTERFACE (device));
+				nm_device_state_changed (device, NM_DEVICE_STATE_FAILED);
 			}
 		}
 		break;
@@ -1372,6 +1416,13 @@ nm_device_set_ip4_config (NMDevice *self, NMIP4Config *config)
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	if (priv->ip4_config) {
+		NMNamedManager *named_mgr;
+
+		/* Remove any previous IP4 Config from the named manager */
+		named_mgr = nm_named_manager_get ();
+		nm_named_manager_remove_ip4_config (named_mgr, priv->ip4_config);
+		g_object_unref (named_mgr);
+
 		g_object_unref (priv->ip4_config);
 		priv->ip4_config = NULL;
 	}

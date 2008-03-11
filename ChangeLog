@@ -1,5 +1,14 @@
 2008-03-10  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device.c
+		- (handle_dhcp_lease_change): apply an IP4 config to a device in
+			response to a DHCP lease change
+		- (dhcp_state_changed): handle DHCP lease changes while activated
+		- (nm_device_set_ip4_config): remove a previously set named config
+			when setting an ip4 config
+
+2008-03-10  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-serial-device.c
 		- (nm_serial_device_send_command): report errno on error
 		- (get_reply_got_data): limit the size of the overall buffer
