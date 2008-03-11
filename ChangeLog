@@ -1,5 +1,24 @@
 2008-03-11  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device.c
+		- (nm_device_deactivate): don't need to munge DNS here; that gets done
+			already in nm_device_set_ip4_config()
+		- (handle_dhcp_lease_change): fail the device if setting the IP4Config
+			due to a DHCP rebind fails
+		- (nm_device_set_ip4_config): send property notifications when the
+			ip4 config changes
+		- (get_property): only report IP4Config property during valid states
+
+	* src/NetworkManagerPolicy.c
+		- (update_routing_and_dns): ignore devices that don't have an ip4
+			config; add parameter 'force_update' to allow callers to specify
+			that changes should be made even if the default device doesn't change
+		- (device_ip4_config_changed): update DNS and routing when the device's
+			IP4Config changes, like for DHCP updates
+		- (device_added): listen for ip4-config property changes
+
+2008-03-11  Dan Williams  <dcbw@redhat.com>
+
 	Fix address handling as a result of DHCP rebind/renew/reboot.
 
 	* src/NetworkManagerSystem.c

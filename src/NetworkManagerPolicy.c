@@ -110,7 +110,7 @@ get_device_priority (NMDevice *dev)
 }
 
 static void
-update_routing_and_dns (NMPolicy *policy)
+update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 {
 	NMDevice *best = NULL;
 	guint32 best_prio = 0;
@@ -123,7 +123,8 @@ update_routing_and_dns (NMPolicy *policy)
 		NMDevice *dev = NM_DEVICE (iter->data);
 		guint32 prio;
 		
-		if (nm_device_get_state (dev) != NM_DEVICE_STATE_ACTIVATED)
+		if (   (nm_device_get_state (dev) != NM_DEVICE_STATE_ACTIVATED)
+		    || !nm_device_get_ip4_config (dev))
 			continue;
 
 		prio = get_device_priority (dev);
@@ -133,11 +134,10 @@ update_routing_and_dns (NMPolicy *policy)
 		}
 	}
 
-	if (!best || (best == policy->default_device))
+	if (!best)
 		goto out;
-
-	nm_info ("Policy (%s) now the default device for routing and DNS.",
-	         nm_device_get_iface (best));
+	if (!force_update && (best == policy->default_device))
+		goto out;
 
 	update_default_route (policy, best);
 
@@ -145,6 +145,9 @@ update_routing_and_dns (NMPolicy *policy)
 	config = nm_device_get_ip4_config (best);
 	nm_named_manager_add_ip4_config (named_mgr, config, NM_NAMED_IP_CONFIG_TYPE_BEST_DEVICE);
 	g_object_unref (named_mgr);
+
+	nm_info ("Policy set (%s) as default device for routing and DNS.",
+	         nm_device_get_iface (best));
 
 out:
 	policy->default_device = best;	
@@ -296,9 +299,9 @@ device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 		if (connection)
 			g_object_set_data (G_OBJECT (connection), INVALID_TAG, NULL);
 
-		update_routing_and_dns (policy);
+		update_routing_and_dns (policy, FALSE);
 	} else if (state == NM_DEVICE_STATE_DISCONNECTED) {
-		update_routing_and_dns (policy);
+		update_routing_and_dns (policy, FALSE);
 
 		schedule_activate_check (policy, device);
 	}
@@ -313,6 +316,12 @@ device_carrier_changed (NMDevice *device, gboolean carrier, gpointer user_data)
 	} else {
 		schedule_activate_check ((NMPolicy *) user_data, device);
 	}
+}
+
+static void
+device_ip4_config_changed (NMDevice *device, NMIP4Config *config, gpointer user_data)
+{
+	update_routing_and_dns ((NMPolicy *) user_data, TRUE);
 }
 
 static void
@@ -356,6 +365,11 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 	                       policy);
 	policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
 
+	id = g_signal_connect (device, "notify::" NM_DEVICE_INTERFACE_IP4_CONFIG,
+	                       G_CALLBACK (device_ip4_config_changed),
+	                       policy);
+	policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
+
 	if (NM_IS_DEVICE_802_11_WIRELESS (device)) {
 		id = g_signal_connect (device, "access-point-added",
 		                       G_CALLBACK (wireless_networks_changed),
@@ -392,7 +406,7 @@ device_removed (NMManager *manager, NMDevice *device, gpointer user_data)
 		iter = next;
 	}
 
-	update_routing_and_dns (policy);
+	update_routing_and_dns (policy, FALSE);
 }
 
 static void

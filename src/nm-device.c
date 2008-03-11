@@ -1075,8 +1075,6 @@ static void
 nm_device_deactivate (NMDeviceInterface *device)
 {
 	NMDevice *self = NM_DEVICE (device);
-	NMIP4Config *	config;
-	NMNamedManager * named_mgr;
 
 	g_return_if_fail (self != NULL);
 
@@ -1084,13 +1082,8 @@ nm_device_deactivate (NMDeviceInterface *device)
 
 	nm_device_deactivate_quickly (self);
 
-	/* Remove any device nameservers and domains */
-	if ((config = nm_device_get_ip4_config (self))) {
-		named_mgr = nm_named_manager_get ();
-		nm_named_manager_remove_ip4_config (named_mgr, config);
-		nm_device_set_ip4_config (self, NULL);
-		g_object_unref (named_mgr);
-	}
+	/* Clean up nameservers and addresses */
+	nm_device_set_ip4_config (self, NULL);
 
 	/* Take out any entries in the routing table and any IP address the device had. */
 	nm_system_device_flush_routes (self);
@@ -1288,6 +1281,7 @@ handle_dhcp_lease_change (NMDevice *device)
 			NM_DEVICE_GET_CLASS (device)->update_link (device);
 	} else {
 		nm_warning ("Failed to update IP4 config in response to DHCP event.");
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED);
 	}
 }
 
@@ -1399,7 +1393,7 @@ nm_device_get_ip4_config (NMDevice *self)
 {
 	g_return_val_if_fail (self != NULL, NULL);
 
-	return self->priv->ip4_config;
+	return NM_DEVICE_GET_PRIVATE (self)->ip4_config;
 }
 
 
@@ -1427,8 +1421,11 @@ nm_device_set_ip4_config (NMDevice *self, NMIP4Config *config)
 		priv->ip4_config = NULL;
 	}
 
-	if (!config)
+	if (!config) {
+		if (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED)
+			g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_IP4_CONFIG);
 		return TRUE;
+	}
 
 	priv->ip4_config = g_object_ref (config);
 
@@ -1450,6 +1447,8 @@ nm_device_set_ip4_config (NMDevice *self, NMIP4Config *config)
 		nm_system_set_hostname (config);
 		nm_system_activate_nis (config);
 	}
+
+	g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_IP4_CONFIG);
 
 	return success;
 }
@@ -1693,6 +1692,7 @@ get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
+	NMDeviceState state;
 
 	switch (prop_id) {
 	case NM_DEVICE_INTERFACE_PROP_UDI:
@@ -1711,7 +1711,12 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->ip4_address);
 		break;
 	case NM_DEVICE_INTERFACE_PROP_IP4_CONFIG:
-		g_value_set_object (value, priv->ip4_config);
+		state = nm_device_get_state (NM_DEVICE (object));
+		if (   (state == NM_DEVICE_STATE_ACTIVATED)
+		    || (state == NM_DEVICE_STATE_IP_CONFIG))
+			g_value_set_object (value, priv->ip4_config);
+		else
+			g_value_set_object (value, NULL);
 		break;
 	case NM_DEVICE_INTERFACE_PROP_STATE:
 		g_value_set_uint (value, priv->state);
