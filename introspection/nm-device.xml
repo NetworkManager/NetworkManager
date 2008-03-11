@@ -41,7 +41,7 @@
     </property>
     <property name="Ip4Config" type="o" access="read">
       <tp:docstring>
-        Object path of the Ip4Config object describing the configuration of the device.
+        Object path of the Ip4Config object describing the configuration of the device.  Only valid when the device is in the NM_DEVICE_STATE_ACTIVATED state.
       </tp:docstring>
     </property>
     <property name="Carrier" type="b" access="read">
