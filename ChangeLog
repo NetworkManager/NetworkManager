@@ -35,7 +35,6 @@
 	* introspection/nm-ppp-manager.xml: Make NeedSecrets method async, return only
 	username and password.
 	
->>>>>>> .r3418
 2008-03-10  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device.c
