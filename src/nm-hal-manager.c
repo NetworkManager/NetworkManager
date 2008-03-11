@@ -292,20 +292,11 @@ create_device_and_add_to_list (NMHalManager *manager,
 						 DeviceCreator *creator,
 						 const char *udi)
 {
-	NMDevice *dev = NULL;
-	char *usb_test = NULL;
+	NMDevice *dev;
 
 	/* Make sure the device is not already in the device list */
 	if ((dev = nm_manager_get_device_by_udi (manager->nm_manager, udi)))
 		return NULL;
-
-	/* Ignore Ethernet-over-USB devices too for the moment (Red Hat #135722) */
-	if (libhal_device_property_exists (manager->hal_ctx, udi, "usb.interface.class", NULL)
-		&& (usb_test = libhal_device_get_property_string (manager->hal_ctx, udi, "usb.interface.class", NULL))) {
-
-		libhal_free_string (usb_test);
-		return NULL;
-	}
 
 	dev = creator->creator_fn (manager, udi);
 	if (dev) {

@@ -1,3 +1,7 @@
+2008-03-11  Tambet Ingo  <tambet@gmail.com>
+
+	* src/nm-hal-manager.c (create_device_and_add_to_list): Don't ignore USB devices.
+
 2008-03-11  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerPolicy.c
