@@ -9,6 +9,7 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ppp.h"
+#include "nm-setting-pppoe.h"
 #include "nm-setting-wired.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
@@ -68,6 +69,7 @@ register_default_settings (void)
 		{ NM_SETTING_GSM_SETTING_NAME,               NM_TYPE_SETTING_GSM },
 		{ NM_SETTING_CDMA_SETTING_NAME,              NM_TYPE_SETTING_CDMA },
 		{ NM_SETTING_PPP_SETTING_NAME,               NM_TYPE_SETTING_PPP },
+		{ NM_SETTING_PPPOE_SETTING_NAME,             NM_TYPE_SETTING_PPPOE },
 		{ NM_SETTING_VPN_SETTING_NAME,               NM_TYPE_SETTING_VPN },
 		{ NM_SETTING_VPN_PROPERTIES_SETTING_NAME,    NM_TYPE_SETTING_VPN_PROPERTIES },
 		{ NULL }

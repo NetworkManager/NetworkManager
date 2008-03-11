@@ -7,6 +7,7 @@
 #include <glib-object.h>
 
 #include "nm-ppp-status.h"
+#include "nm-activation-request.h"
 #include "nm-connection.h"
 #include "nm-ip4-config.h"
 #include "nm-pppd-plugin.h"
@@ -36,13 +37,19 @@ NMPPPManager *nm_ppp_manager_new (void);
 
 gboolean nm_ppp_manager_start (NMPPPManager *manager,
 						 const char *device,
-						 NMConnection *connection,
+						 NMActRequest *req,
 						 GError **err);
+
+void     nm_ppp_manager_update_secrets (NMPPPManager *manager,
+								const char *device,
+								NMConnection *connection);
 
 void     nm_ppp_manager_stop  (NMPPPManager *manager);
 
 
 #define NM_PPP_MANAGER_ERROR nm_ppp_manager_error_quark()
+#define NM_TYPE_PPP_MANAGER_ERROR (nm_ppp_manager_error_get_type ()) 
+
 GQuark nm_ppp_manager_error_quark (void);
 
 #endif /* NM_PPP_MANAGER_H */

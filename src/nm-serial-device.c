@@ -877,20 +877,17 @@ real_act_stage2_config (NMDevice *device)
 {
 	NMSerialDevicePrivate *priv = NM_SERIAL_DEVICE_GET_PRIVATE (device);
 	NMActRequest *req;
-	NMConnection *connection;
 	GError *err = NULL;
 	NMActStageReturn ret;
 
 	req = nm_device_get_act_request (device);
 	g_assert (req);
-	connection = nm_act_request_get_connection (req);
-	g_assert (connection);
 
 	priv->ppp_manager = nm_ppp_manager_new ();
 
 	if (nm_ppp_manager_start (priv->ppp_manager,
 						 nm_device_get_iface (device),
-						 connection,
+						 req,
 						 &err)) {
 		g_signal_connect (priv->ppp_manager, "state-changed",
 					   G_CALLBACK (ppp_state_changed),

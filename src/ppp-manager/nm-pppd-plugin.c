@@ -1,5 +1,6 @@
 /* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
+#include <string.h>
 #include <pppd/pppd.h>
 #include <pppd/fsm.h>
 #include <pppd/ipcp.h>
@@ -25,6 +26,8 @@ nm_phasechange (void *data, int arg)
 {
 	NMPPPStatus ppp_status = NM_PPP_STATUS_UNKNOWN;
 	char *ppp_phase;
+
+	g_return_if_fail (DBUS_IS_G_PROXY (proxy));
 
 	switch (arg) {
 	case PHASE_DEAD:
@@ -135,6 +138,8 @@ nm_ip_up (void *data, int arg)
 	GArray *array;
 	GValue *val;
 
+	g_return_if_fail (DBUS_IS_G_PROXY (proxy));
+
 	if (!opts.ouraddr) {
 		g_warning ("Didn't receive an internal IP from pppd");
 		return;
@@ -199,10 +204,59 @@ nm_ip_up (void *data, int arg)
 	g_hash_table_destroy (hash);
 }
 
+static int
+get_credentials (char *username, char *password)
+{
+	char *my_username;
+	char *my_password;
+	size_t len;
+	GError *err = NULL;
+
+	g_return_val_if_fail (DBUS_IS_G_PROXY (proxy), -1);
+
+	my_username = my_password = NULL;
+	dbus_g_proxy_call (proxy, "NeedSecrets", &err,
+				    G_TYPE_INVALID,
+				    G_TYPE_STRING, &my_username,
+				    G_TYPE_STRING, &my_password,
+				    G_TYPE_INVALID);
+
+	if (err) {
+		g_warning ("Could not get secrets: %s", err->message);
+		g_error_free (err);
+		return -1;
+	}
+
+	if (my_username) {
+		len = strlen (my_username) + 1;
+		len = len < MAXNAMELEN ? len : MAXNAMELEN;
+
+		strncpy (username, my_username, len);
+		username[len - 1] = '\0';
+
+		g_free (my_username);
+	}
+
+	if (my_password) {
+		len = strlen (my_password) + 1;
+		len = len < MAXSECRETLEN ? len : MAXSECRETLEN;
+
+		strncpy (password, my_password, len);
+		password[len - 1] = '\0';
+
+		g_free (my_password);
+	}
+
+	return 0;
+}
+
 static void
 nm_exit_notify (void *data, int arg)
 {
-	g_object_unref (data);
+	g_return_if_fail (DBUS_IS_G_PROXY (proxy));
+
+	g_object_unref (proxy);
+	proxy = NULL;
 }
 
 int
@@ -226,6 +280,9 @@ plugin_init (void)
 								NM_DBUS_INTERFACE_PPP);
 
 	dbus_g_connection_unref (bus);
+
+	chap_passwd_hook = get_credentials;
+	pap_passwd_hook = get_credentials;
 
 	add_notifier (&phasechange, nm_phasechange, NULL);
 	add_notifier (&ip_up_notifier, nm_ip_up, NULL);

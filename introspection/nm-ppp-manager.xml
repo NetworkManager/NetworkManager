@@ -4,8 +4,9 @@
   <interface name="org.freedesktop.NetworkManager.PPP">
     <method name="NeedSecrets">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_ppp_manager_need_secrets"/>
-      <arg name="settings" type="a{sa{sv}}" direction="in"/>
-      <arg name="setting_name" type="s" direction="out"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+      <arg name="username" type="s" direction="out"/>
+      <arg name="password" type="s" direction="out"/>
     </method>
 
     <method name="SetIp4Config">

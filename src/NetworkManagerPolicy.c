@@ -163,6 +163,14 @@ auto_activate_device (gpointer user_data)
 	GSList *connections, *iter;
 
 	g_assert (data);
+
+	// FIXME: if a device is already activating (or activated) with a connection
+	// but another connection now overrides the current one for that device,
+	// deactivate the device and activate the new connection instead of just
+	// bailing if the device is already active
+	if (nm_device_get_act_request (data->device))
+		return FALSE;
+
 	policy = data->policy;
 
 	/* System connections first, then user connections */
@@ -236,13 +244,6 @@ schedule_activate_check (NMPolicy *policy, NMDevice *device)
 	// object directly
 	wireless_enabled = nm_manager_wireless_enabled (policy->manager);
 	if (!nm_device_can_activate (device, wireless_enabled))
-		return;
-
-	// FIXME: if a device is already activating (or activated) with a connection
-	// but another connection now overrides the current one for that device,
-	// deactivate the device and activate the new connection instead of just
-	// bailing if the device is already active
-	if (nm_device_get_act_request (device))
 		return;
 
 	for (iter = policy->pending_activation_checks; iter; iter = g_slist_next (iter)) {

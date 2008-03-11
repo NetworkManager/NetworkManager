@@ -39,6 +39,8 @@
 #include "NetworkManagerSystem.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wired.h"
+#include "nm-setting-pppoe.h"
+#include "ppp-manager/nm-ppp-manager.h"
 #include "nm-utils.h"
 
 #include "nm-device-802-3-ethernet-glue.h"
@@ -58,6 +60,10 @@ typedef struct {
 
 	NMSupplicantInterface *sup_iface;
 	gulong			iface_state_id; 
+
+	/* PPPoE */
+	NMPPPManager *ppp_manager;
+	NMIP4Config  *pending_ip4_config;
 } NMDevice8023EthernetPrivate;
 
 enum {
@@ -395,38 +401,189 @@ real_get_best_auto_connection (NMDevice *dev,
 	return NULL;
 }
 
-static NMActStageReturn
-real_act_stage4_get_ip4_config (NMDevice *dev,
-                                NMIP4Config **config)
+static void
+real_connection_secrets_updated (NMDevice *dev,
+						   NMConnection *connection,
+						   const char *setting_name)
 {
-	NMDevice8023Ethernet *self = NM_DEVICE_802_3_ETHERNET (dev);
-	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
-	NMDevice8023EthernetClass *klass;
-	NMDeviceClass *parent_class;
+	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (dev);
+
+	if (priv->ppp_manager) {
+		/* PPPoE */
+		nm_ppp_manager_update_secrets (priv->ppp_manager, nm_device_get_iface (dev), connection);
+	}
+}
+
+
+/*****************************************************************************/
+/* PPPoE */
+
+static void
+ppp_state_changed (NMPPPManager *ppp_manager, NMPPPStatus status, gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (user_data);
+
+	switch (status) {
+	case NM_PPP_STATUS_NETWORK:
+		nm_device_state_changed (device, NM_DEVICE_STATE_IP_CONFIG);
+		break;
+	case NM_PPP_STATUS_DISCONNECT:
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED);
+		break;
+	case NM_PPP_STATUS_DEAD:
+		if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED)
+			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
+		else
+			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED);
+		break;
+	default:
+		break;
+	}
+}
+
+static void
+ppp_ip4_config (NMPPPManager *ppp_manager,
+			 const char *iface,
+			 NMIP4Config *config,
+			 gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (user_data);
+
+	nm_device_set_ip_iface (device, iface);
+	NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (device)->pending_ip4_config = g_object_ref (config);
+	nm_device_activate_schedule_stage4_ip_config_get (device);
+}
+
+static NMActStageReturn
+pppoe_stage2_config (NMDevice8023Ethernet *self)
+{
+	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self);
+	NMActRequest *req;
+	GError *err = NULL;
+	NMActStageReturn ret;
+
+	req = nm_device_get_act_request (NM_DEVICE (self));
+	g_assert (req);
+
+	priv->ppp_manager = nm_ppp_manager_new ();
+	if (nm_ppp_manager_start (priv->ppp_manager,
+						 nm_device_get_iface (NM_DEVICE (self)),
+						 req,
+						 &err)) {
+		g_signal_connect (priv->ppp_manager, "state-changed",
+					   G_CALLBACK (ppp_state_changed),
+					   self);
+		g_signal_connect (priv->ppp_manager, "ip4-config",
+					   G_CALLBACK (ppp_ip4_config),
+					   self);
+		ret = NM_ACT_STAGE_RETURN_POSTPONE;
+	} else {
+		nm_warning ("%s", err->message);
+		g_error_free (err);
+
+		g_object_unref (priv->ppp_manager);
+		priv->ppp_manager = NULL;
+
+		ret = NM_ACT_STAGE_RETURN_FAILURE;
+	}
+
+	return ret;
+}
+
+/* FIXME: Move it to nm-device.c and then get rid of all foo_device_get_setting() all around.
+   It's here now to keep the patch short. */
+static NMSetting *
+device_get_setting (NMDevice *device, GType setting_type)
+{
+	NMActRequest *req;
+	NMSetting *setting = NULL;
+
+	req = nm_device_get_act_request (device);
+	if (req) {
+		NMConnection *connection;
+
+		connection = nm_act_request_get_connection (req);
+		if (connection)
+			setting = nm_connection_get_setting (connection, setting_type);
+	}
+
+	return setting;
+}
+
+static NMActStageReturn
+real_act_stage2_config (NMDevice *device)
+{
+	NMSettingConnection *s_connection;
+	NMActStageReturn ret;
+
+	s_connection = NM_SETTING_CONNECTION (device_get_setting (device, NM_TYPE_SETTING_CONNECTION));
+	g_assert (s_connection);
+
+	if (!strcmp (s_connection->type, NM_SETTING_WIRED_SETTING_NAME))
+		ret = NM_ACT_STAGE_RETURN_SUCCESS;
+	else if (!strcmp (s_connection->type, NM_SETTING_PPPOE_SETTING_NAME))
+		ret = pppoe_stage2_config (NM_DEVICE_802_3_ETHERNET (device));
+	else {
+		nm_warning ("Invalid connection type '%s' for ethernet device", s_connection->type);
+		ret = NM_ACT_STAGE_RETURN_FAILURE;
+	}
+
+	return ret;
+}
+
+static NMActStageReturn
+real_act_stage4_get_ip4_config (NMDevice *device, NMIP4Config **config)
+{
+	NMDevice8023Ethernet *self = NM_DEVICE_802_3_ETHERNET (device);
+	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self);
+	NMActStageReturn ret;
 
 	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	/* Chain up to parent */
-	klass = NM_DEVICE_802_3_ETHERNET_GET_CLASS (self);
-	parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
-	ret = parent_class->act_stage4_get_ip4_config (dev, config);
+	if (!priv->ppp_manager) {
+		/* Regular ethernet connection. */
 
-	if ((ret == NM_ACT_STAGE_RETURN_SUCCESS) && *config) {
-		NMConnection *connection;
-		NMSettingWired *s_wired;
+		/* Chain up to parent */
+		ret = NM_DEVICE_CLASS (nm_device_802_3_ethernet_parent_class)->act_stage4_get_ip4_config (device, config);
 
-		connection = nm_act_request_get_connection (nm_device_get_act_request (dev));
-		g_assert (connection);
-		s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
-		g_assert (s_wired);
+		if ((ret == NM_ACT_STAGE_RETURN_SUCCESS)) {
+			NMConnection *connection;
+			NMSettingWired *s_wired;
 
-		/* MTU override */
-		if (s_wired->mtu)
-			nm_ip4_config_set_mtu (*config, s_wired->mtu);
+			connection = nm_act_request_get_connection (nm_device_get_act_request (device));
+			g_assert (connection);
+			s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+			g_assert (s_wired);
+
+			/* MTU override */
+			if (s_wired->mtu)
+				nm_ip4_config_set_mtu (*config, s_wired->mtu);
+		}
+	} else {
+		/* PPPoE */
+		*config = priv->pending_ip4_config;
+		priv->pending_ip4_config = NULL;
+		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	}
 
 	return ret;
+}
+
+static void
+real_deactivate_quickly (NMDevice *device)
+{
+	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (device);
+
+	if (priv->pending_ip4_config) {
+		g_object_unref (priv->pending_ip4_config);
+		priv->pending_ip4_config = NULL;
+	}
+
+	if (priv->ppp_manager) {
+		g_object_unref (priv->ppp_manager);
+		priv->ppp_manager = NULL;
+	}
 }
 
 static void
@@ -514,7 +671,11 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 	parent_class->set_hw_address = real_set_hw_address;
 	parent_class->get_best_auto_connection = real_get_best_auto_connection;
 	parent_class->can_activate = real_can_activate;
+	parent_class->connection_secrets_updated = real_connection_secrets_updated;
+
+	parent_class->act_stage2_config = real_act_stage2_config;
 	parent_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
+	parent_class->deactivate_quickly = real_deactivate_quickly;
 
 	/* properties */
 	g_object_class_install_property

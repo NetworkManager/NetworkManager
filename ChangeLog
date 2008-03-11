@@ -1,3 +1,33 @@
+2008-03-10  Tambet Ingo  <tambet@gmail.com>
+
+	Implement PPPoE.
+
+	* src/ppp-manager/nm-ppp-manager.c (create_pppd_cmd_line): Use PPPoE service
+	setting. Use "nic-$eth".
+
+	* src/NetworkManagerPolicy.c (auto_activate_device): Move the check of whether
+	the device is activating here to fix a race condition.
+
+	* src/ppp-manager/nm-pppd-plugin.c (get_credentials): Implement.
+
+	* src/ppp-manager/nm-ppp-manager.c (impl_ppp_manager_need_secrets): Implement.
+	(ppp_watch_cb): Emit a signal to notify pppd is not running anymore.
+	(nm_ppp_manager_start): Take activation request instead of connection, we might
+	need it for asking secrets.
+	(nm_ppp_manager_update_secrets): Implement.
+
+	* src/nm-serial-device.c (real_act_stage2_config): Send activation request to
+	ppp manager start. It might be needed for asking secrets.
+
+	* src/nm-device-802-3-ethernet.c (real_connection_secrets_updated): Implement.
+	(ppp_state_changed): Handle pppd daemon disappearing.
+	(pppoe_stage2_config): Send activation request to ppp manager start.
+
+	* libnm-util/nm-setting-pppoe.c (nm_setting_pppoe_class_init): Fix a typo.
+
+	* introspection/nm-ppp-manager.xml: Make NeedSecrets method async, return only
+	username and password.
+	
 2008-03-10  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device.c
