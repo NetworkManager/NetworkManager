@@ -25,10 +25,10 @@ typedef enum
 #define NM_DEVICE_INTERFACE_IFACE "interface"
 #define NM_DEVICE_INTERFACE_DRIVER "driver"
 #define NM_DEVICE_INTERFACE_CAPABILITIES "capabilities"
-#define NM_DEVICE_INTERFACE_IP4_ADDRESS "ip4_address"
-#define NM_DEVICE_INTERFACE_IP4_CONFIG "ip4_config"
+#define NM_DEVICE_INTERFACE_IP4_ADDRESS "ip4-address"
+#define NM_DEVICE_INTERFACE_IP4_CONFIG "ip4-config"
 #define NM_DEVICE_INTERFACE_STATE "state"
-#define NM_DEVICE_INTERFACE_DEVICE_TYPE "device_type" /* ugh */
+#define NM_DEVICE_INTERFACE_DEVICE_TYPE "device-type" /* ugh */
 #define NM_DEVICE_INTERFACE_CARRIER "carrier"
 
 typedef enum {
