@@ -150,18 +150,6 @@ void nm_system_flush_loopback_routes (void)
 
 
 /*
- * nm_system_delete_default_route
- *
- * Remove the old default route in preparation for a new one
- *
- */
-void nm_system_delete_default_route (void)
-{
-	nm_generic_delete_default_route ();
-}
-
-
-/*
  * nm_system_flush_arp_cache
  *
  * Flush all entries in the arp cache.

@@ -179,6 +179,36 @@ out:
 }
 
 
+typedef struct {
+	const char *iface;
+	struct nl_handle *nlh;
+	struct rtnl_addr *match;
+} AddrCheckData;
+
+static void
+check_one_address (struct nl_object *object, void *user_data)
+{
+	AddrCheckData *data = (AddrCheckData *) user_data;
+	struct rtnl_addr *addr = (struct rtnl_addr *) object;
+	int err;
+
+	/* Delete addresses on this interface which don't match the one we
+	 * are about to add to it.
+	 */
+	if (nl_object_identical ((struct nl_object *) data->match, (struct nl_object *) addr))
+		return;
+	if (rtnl_addr_get_ifindex (addr) != rtnl_addr_get_ifindex (data->match))
+		return;
+	if (rtnl_addr_get_family (addr) != rtnl_addr_get_family (data->match))
+		return;
+
+	err = rtnl_addr_delete (data->nlh, addr, 0);
+	if (err < 0) {
+		nm_warning ("(%s) error %d returned from rtnl_addr_delete(): %s",
+		            data->iface, err, nl_geterror());
+	}
+}
+
 /*
  * nm_system_device_set_from_ip4_config
  *
@@ -192,8 +222,11 @@ nm_system_device_set_from_ip4_config (const char *iface,
 {
 	struct nl_handle *nlh = NULL;
 	struct rtnl_addr *addr = NULL;
+	struct nl_cache *addr_cache = NULL;
 	int len, i, err;
 	guint32 flags;
+	AddrCheckData check_data;
+	gboolean success = FALSE;
 
 	g_return_val_if_fail (iface != NULL, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
@@ -202,23 +235,32 @@ nm_system_device_set_from_ip4_config (const char *iface,
 	if (!nlh)
 		return FALSE;
 
-	nm_system_delete_default_route ();
-	nm_system_device_flush_addresses_with_iface (iface);
-	nm_system_device_flush_routes_with_iface (iface);
-	nm_system_flush_arp_cache ();
+	addr_cache = rtnl_addr_alloc_cache (nlh);
+	if (!addr_cache)
+		goto out;
+	nl_cache_mngt_provide (addr_cache);
 
 	flags = NM_RTNL_ADDR_DEFAULT;
 	if (nm_ip4_config_get_ptp_address (config))
 		flags |= NM_RTNL_ADDR_PTP_ADDR;
 
-	if ((addr = nm_ip4_config_to_rtnl_addr (config, flags))) {
-		rtnl_addr_set_ifindex (addr, nm_netlink_iface_to_index (iface));
-
-		if ((err = rtnl_addr_add (nlh, addr, 0)) < 0)
-			nm_warning ("(%s) error %d returned from rtnl_addr_add():\n%s", iface, err, nl_geterror());
-		rtnl_addr_put (addr);
-	} else
+	addr = nm_ip4_config_to_rtnl_addr (config, flags);
+	if (!addr) {
 		nm_warning ("couldn't create rtnl address!\n");
+		goto out;
+	}
+	rtnl_addr_set_ifindex (addr, nm_netlink_iface_to_index (iface));
+
+	memset (&check_data, 0, sizeof (check_data));
+	check_data.iface = iface;
+	check_data.nlh = nlh;
+	check_data.match = addr;
+
+	/* Remove all addresses except the one we're about to add */
+	nl_cache_foreach (addr_cache, check_one_address, &check_data);
+
+	if ((err = rtnl_addr_add (nlh, addr, 0)) < 0)
+		nm_warning ("(%s) error %d returned from rtnl_addr_add():\n%s", iface, err, nl_geterror());
 
 	sleep (1);
 
@@ -234,7 +276,14 @@ nm_system_device_set_from_ip4_config (const char *iface,
 	if (nm_ip4_config_get_mtu (config))
 		nm_system_device_set_mtu (iface, nm_ip4_config_get_mtu (config));
 
-	return TRUE;
+	success = TRUE;
+
+out:
+	if (addr)
+		rtnl_addr_put (addr);
+	if (addr_cache)
+		nl_cache_free (addr_cache);
+	return success;
 }
 
 

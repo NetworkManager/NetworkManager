@@ -173,7 +173,7 @@ void nm_generic_device_flush_addresses_with_iface (const char *iface)
 void nm_generic_enable_loopback (void)
 {
 	nm_spawn_process (IP_BINARY_PATH" link set dev lo up");
-	nm_spawn_process (IP_BINARY_PATH" addr add 127.0.0.1/8 brd 127.255.255.255 dev lo scope host label loopback");
+	nm_spawn_process (IP_BINARY_PATH" addr add 127.0.0.1/8 brd 127.255.255.255 dev lo scope host label lo");
 }
 
 
@@ -187,18 +187,6 @@ void nm_generic_enable_loopback (void)
 void nm_generic_flush_loopback_routes (void)
 {
 	nm_system_device_flush_routes_with_iface ("lo");
-}
-
-
-/*
- * nm_generic_delete_default_route
- *
- * Remove the old default route in preparation for a new one
- *
- */
-void nm_generic_delete_default_route (void)
-{
-	nm_spawn_process (IP_BINARY_PATH" route del default");
 }
 
 

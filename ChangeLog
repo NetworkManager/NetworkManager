@@ -1,5 +1,31 @@
 2008-03-11  Dan Williams  <dcbw@redhat.com>
 
+	Fix address handling as a result of DHCP rebind/renew/reboot.
+
+	* src/NetworkManagerSystem.c
+		- (check_one_address): delete an address if it doesn't match a given
+			one for the same interface
+		- (nm_system_device_set_from_ip4_config): don't flush the default route,
+			be smarter about flushing addresses (only flush ones that don't
+			match the one we're about to apply)
+
+	* src/backends/NetworkManagerDebian.c
+	  src/backends/NetworkManagerSuSE.c
+	  src/backends/NetworkManagerArch.c
+	  src/backends/NetworkManagerSlackware.c
+	  src/backends/NetworkManagerRedHat.c
+	  src/backends/NetworkManagerPaldo.c
+	  src/backends/NetworkManagerFrugalware.c
+	  src/backends/NetworkManagerGentoo.c
+		- (nm_system_delete_default_route): remove
+
+	* src/backends/NetworkManagerGeneric.c
+	  src/backends/NetworkManagerGeneric.h
+		- (nm_generic_enable_loopback): fix the loopback device label
+		- (nm_generic_delete_default_route): remove; no longer used
+
+2008-03-11  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-interface.h
 		- Delimit property name words with '-', otherwise g_object_notify()
 			doesn't work the way we expect

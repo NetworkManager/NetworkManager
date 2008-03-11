@@ -48,7 +48,6 @@ void			nm_generic_device_flush_addresses_with_iface	(const char *iface);
 
 void			nm_generic_enable_loopback				(void);
 void			nm_generic_flush_loopback_routes			(void);
-void			nm_generic_delete_default_route			(void);
 void			nm_generic_flush_arp_cache				(void);
 void			nm_generic_kill_all_dhcp_daemons			(void);
 void			nm_generic_update_dns					(void);
