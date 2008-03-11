@@ -1,3 +1,10 @@
+2008-03-11  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerPolicy.c
+		- (update_routing_and_dns): don't change anything if the default device
+			hasn't changed; print something out when switching the default route
+			and DNS
+
 2008-03-10  Tambet Ingo  <tambet@gmail.com>
 
 	Implement PPPoE.
@@ -28,6 +35,7 @@
 	* introspection/nm-ppp-manager.xml: Make NeedSecrets method async, return only
 	username and password.
 	
+>>>>>>> .r3418
 2008-03-10  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device.c

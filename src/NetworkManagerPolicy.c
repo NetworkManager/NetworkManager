@@ -133,8 +133,11 @@ update_routing_and_dns (NMPolicy *policy)
 		}
 	}
 
-	if (!best)
+	if (!best || (best == policy->default_device))
 		goto out;
+
+	nm_info ("Policy (%s) now the default device for routing and DNS.",
+	         nm_device_get_iface (best));
 
 	update_default_route (policy, best);
 
