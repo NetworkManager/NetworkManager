@@ -125,7 +125,7 @@ detail_access_point (gpointer data, gpointer user_data)
 							(nm_access_point_get_mode (ap) == IW_MODE_INFRA) ? "Infra" : "Ad-Hoc",
 							nm_access_point_get_hw_address (ap),
 							nm_access_point_get_frequency (ap),
-							nm_access_point_get_rate (ap) / 1000000,
+							nm_access_point_get_max_bitrate (ap) / 1000,
 							nm_access_point_get_strength (ap));
 
 	if (   !(flags & NM_802_11_AP_FLAGS_PRIVACY)

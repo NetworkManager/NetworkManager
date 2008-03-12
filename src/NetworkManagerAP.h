@@ -43,7 +43,7 @@
 #define NM_AP_FREQUENCY "frequency"
 #define NM_AP_HW_ADDRESS "hw-address"
 #define NM_AP_MODE "mode"
-#define NM_AP_RATE "rate"
+#define NM_AP_MAX_BITRATE "max-bitrate"
 #define NM_AP_STRENGTH "strength"
 
 typedef struct {
@@ -93,8 +93,8 @@ void				nm_ap_set_strength		(NMAccessPoint *ap, gint8 strength);
 guint32			nm_ap_get_freq			(NMAccessPoint *ap);
 void				nm_ap_set_freq			(NMAccessPoint *ap, guint32 freq);
 
-guint32			nm_ap_get_rate			(NMAccessPoint *ap);
-void				nm_ap_set_rate			(NMAccessPoint *ap, guint32 rate);
+guint32			nm_ap_get_max_bitrate			(NMAccessPoint *ap);
+void				nm_ap_set_max_bitrate		(NMAccessPoint *ap, guint32 bitrate);
 
 gboolean			nm_ap_get_invalid		(const NMAccessPoint *ap);
 void				nm_ap_set_invalid		(NMAccessPoint *ap, gboolean invalid);

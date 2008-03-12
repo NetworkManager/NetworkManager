@@ -1,5 +1,32 @@
 2008-03-12  Dan Williams  <dcbw@redhat.com>
 
+	Harmonize the 802.11 bitrate API
+
+	* introspection/nm-access-point.xml
+		- 'Rate' -> 'MaxBitrate'; clarify units
+
+	* introspection/nm-device-802-11-wireless.xml
+		- Clarify units of 'Bitrate'
+
+	* src/NetworkManagerAP.c
+	  src/NetworkManagerAP.h
+		- (set_property, get_property, nm_ap_class_init): rename 'rate'
+			property to 'max-bitrate'
+		- (foreach_property_cb): convert rate to Kb/s
+
+	* src/nm-device-802-11-wireless.c
+		- (nm_device_802_11_wireless_get_bitrate): return rate in Kb/s
+
+	* libnm-glib/nm-access-point.c
+	  libnm-glib/nm-access-point.h
+		- 'rate' -> 'max-bitrate'
+
+	* test/nm-tool.c
+	  libnm-glib/libnm-glib-test.c
+		- Fix up for these changes
+
+2008-03-12  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device.c
 		- (nm_device_set_ip4_config): don't send property notifications when
 			the ip4 config is set to NULL; it causes a PropertyChanged signal

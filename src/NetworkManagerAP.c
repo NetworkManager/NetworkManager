@@ -43,8 +43,8 @@ typedef struct
 	struct ether_addr	address;
 	int				mode;		/* from IW_MODE_* in wireless.h */
 	gint8			strength;
-	guint32			freq;		/* Frequency in GHz * 1000; ie 2.412 == 2412 */
-	guint32			rate;
+	guint32			freq;		/* Frequency in MHz; ie 2412 (== 2.412 GHz) */
+	guint32			max_bitrate;/* Maximum bitrate of the AP in Kbit/s (ie 54000 Kb/s == 54Mbit/s) */
 
 	guint32			flags;		/* General flags */
 	guint32			wpa_flags;	/* WPA-related flags */
@@ -88,7 +88,7 @@ enum {
 	PROP_FREQUENCY,
 	PROP_HW_ADDRESS,
 	PROP_MODE,
-	PROP_RATE,
+	PROP_MAX_BITRATE,
 	PROP_STRENGTH,
 	LAST_PROP
 };
@@ -145,8 +145,8 @@ set_property (GObject *object, guint prop_id,
 	case PROP_MODE:
 		nm_ap_set_mode (ap, g_value_get_int (value));
 		break;
-	case PROP_RATE:
-		nm_ap_set_rate (ap, g_value_get_uint (value));
+	case PROP_MAX_BITRATE:
+		nm_ap_set_max_bitrate (ap, g_value_get_uint (value));
 		break;
 	case PROP_STRENGTH:
 		nm_ap_set_strength (ap, g_value_get_char (value));
@@ -196,8 +196,8 @@ get_property (GObject *object, guint prop_id,
 	case PROP_MODE:
 		g_value_set_int (value, priv->mode);
 		break;
-	case PROP_RATE:
-		g_value_set_uint (value, priv->rate);
+	case PROP_MAX_BITRATE:
+		g_value_set_uint (value, priv->max_bitrate);
 		break;
 	case PROP_STRENGTH:
 		g_value_set_char (value, priv->strength);
@@ -298,10 +298,10 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 						   G_PARAM_READWRITE));
 
 	g_object_class_install_property
-		(object_class, PROP_RATE,
-		 g_param_spec_uint (NM_AP_RATE,
-							"Rate",
-							"Rate",
+		(object_class, PROP_MAX_BITRATE,
+		 g_param_spec_uint (NM_AP_MAX_BITRATE,
+							"Max Bitrate",
+							"Max Bitrate",
 							0, G_MAXUINT16, 0,
 							G_PARAM_READWRITE));
 
@@ -429,7 +429,8 @@ foreach_property_cb (gpointer key, gpointer value, gpointer user_data)
 		if (!strcmp (key, "frequency")) {
 			nm_ap_set_freq (ap, (guint32) int_val);
 		} else if (!strcmp (key, "maxrate")) {
-			nm_ap_set_rate (ap, int_val);
+			/* Supplicant reports as b/s, we use Kb/s internally */
+			nm_ap_set_max_bitrate (ap, int_val / 1000);
 		}
 	} else if (G_VALUE_HOLDS_UINT (variant)) {
 		guint32 val = g_value_get_uint (variant);
@@ -671,7 +672,7 @@ nm_ap_print_self (NMAccessPoint *ap,
 	         MAC_ARG (priv->address.ether_addr_octet),
 	         priv->strength,
 	         priv->freq,
-	         priv->rate,
+	         priv->max_bitrate,
 	         priv->invalid,
 	         priv->mode,
 	         priv->last_seen);
@@ -968,22 +969,22 @@ nm_ap_set_freq (NMAccessPoint *ap,
 
 
 /*
- * Get/set functions for rate
+ * Get/set functions for max bitrate
  *
  */
-guint32 nm_ap_get_rate (NMAccessPoint *ap)
+guint32 nm_ap_get_max_bitrate (NMAccessPoint *ap)
 {
 	guint32 rate;
 
 	g_return_val_if_fail (NM_IS_AP (ap), 0);
 
-	g_object_get (ap, NM_AP_RATE, &rate, NULL);
+	g_object_get (ap, NM_AP_MAX_BITRATE, &rate, NULL);
 
 	return rate;
 }
 
 void
-nm_ap_set_rate (NMAccessPoint *ap, guint32 rate)
+nm_ap_set_max_bitrate (NMAccessPoint *ap, guint32 bitrate)
 {
 	NMAccessPointPrivate *priv;
 
@@ -991,9 +992,9 @@ nm_ap_set_rate (NMAccessPoint *ap, guint32 rate)
 
 	priv = NM_AP_GET_PRIVATE (ap);
 
-	if (priv->rate != rate) {
-		priv->rate = rate;
-		g_object_notify (G_OBJECT (ap), NM_AP_RATE);
+	if (priv->max_bitrate != bitrate) {
+		priv->max_bitrate = bitrate;
+		g_object_notify (G_OBJECT (ap), NM_AP_MAX_BITRATE);
 	}
 }
 

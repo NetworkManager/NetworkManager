@@ -27,7 +27,7 @@
 
     <property name="Bitrate" type="u" access="read">
       <tp:docstring>
-        The bit rate currently used by the wireless device. FIXME: Why is this not called Rate like for AP?
+        The bit rate currently used by the wireless device, in kilobits/second (Kb/s).
       </tp:docstring>
     </property>
     <property name="ActiveAccessPoint" type="o" access="read">

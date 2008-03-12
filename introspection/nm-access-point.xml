@@ -15,7 +15,7 @@
       <tp:docstring>The Service Set Identifier identifying the access point.</tp:docstring>
     </property>
     <property name="Frequency" type="u" access="read">
-      <tp:docstring>The radio channel frequency in use by the access point.</tp:docstring>
+      <tp:docstring>The radio channel frequency in use by the access point, in MHz.</tp:docstring>
     </property>
     <property name="HwAddress" type="s" access="read">
       <tp:docstring>The hardware address of the access point.</tp:docstring>
@@ -24,8 +24,8 @@
     <property name="Mode" type="i" access="read" tp:type="IW_MODE">
       <tp:docstring>Describes the operating mode of the access point.</tp:docstring>
     </property>
-    <property name="Rate" type="u" access="read">
-      <tp:docstring>The bit rate currently achievable to this access point.</tp:docstring>
+    <property name="MaxBitrate" type="u" access="read">
+      <tp:docstring>The maximum bitrate this access point is capable of, in kilobits/second (Kb/s).</tp:docstring>
     </property>
     <property name="Strength" type="y" access="read">
       <tp:docstring>The current signal strength received from this access point.</tp:docstring>

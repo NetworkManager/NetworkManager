@@ -15,13 +15,13 @@ G_BEGIN_DECLS
 #define NM_ACCESS_POINT_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_ACCESS_POINT, NMAccessPointClass))
 
 #define NM_ACCESS_POINT_FLAGS      "flags"
-#define NM_ACCESS_POINT_WPA_FLAGS  "wpa_flags"
-#define NM_ACCESS_POINT_RSN_FLAGS  "rsn_flags"
+#define NM_ACCESS_POINT_WPA_FLAGS  "wpa-flags"
+#define NM_ACCESS_POINT_RSN_FLAGS  "rsn-flags"
 #define NM_ACCESS_POINT_SSID       "ssid"
 #define NM_ACCESS_POINT_FREQUENCY  "frequency"
-#define NM_ACCESS_POINT_HW_ADDRESS "hw_address"
+#define NM_ACCESS_POINT_HW_ADDRESS "hw-address"
 #define NM_ACCESS_POINT_MODE       "mode"
-#define NM_ACCESS_POINT_RATE       "rate"
+#define NM_ACCESS_POINT_MAX_BITRATE   "max-bitrate"
 #define NM_ACCESS_POINT_STRENGTH   "strength"
 
 typedef struct {
@@ -43,7 +43,7 @@ const GByteArray * nm_access_point_get_ssid   (NMAccessPoint *ap);
 guint32      nm_access_point_get_frequency    (NMAccessPoint *ap);
 const char * nm_access_point_get_hw_address   (NMAccessPoint *ap);
 int          nm_access_point_get_mode         (NMAccessPoint *ap);
-guint32      nm_access_point_get_rate         (NMAccessPoint *ap);
+guint32      nm_access_point_get_max_bitrate  (NMAccessPoint *ap);
 gint8        nm_access_point_get_strength     (NMAccessPoint *ap);
 
 G_END_DECLS

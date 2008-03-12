@@ -21,7 +21,7 @@ typedef struct {
 	guint32 frequency;
 	char *hw_address;
 	int mode;
-	guint32 rate;
+	guint32 max_bitrate;
 	gint8 strength;
 } NMAccessPointPrivate;
 
@@ -34,7 +34,7 @@ enum {
 	PROP_FREQUENCY,
 	PROP_HW_ADDRESS,
 	PROP_MODE,
-	PROP_RATE,
+	PROP_MAX_BITRATE,
 	PROP_STRENGTH,
 
 	LAST_PROP
@@ -47,7 +47,7 @@ enum {
 #define DBUS_PROP_FREQUENCY "Frequency"
 #define DBUS_PROP_HW_ADDRESS "HwAddress"
 #define DBUS_PROP_MODE "Mode"
-#define DBUS_PROP_RATE "Rate"
+#define DBUS_PROP_MAX_BITRATE "MaxBitrate"
 #define DBUS_PROP_STRENGTH "Strength"
 
 NMAccessPoint *
@@ -253,29 +253,29 @@ nm_access_point_get_mode (NMAccessPoint *ap)
 }
 
 static void
-nm_access_point_set_rate (NMAccessPoint *ap, guint32 rate)
+nm_access_point_set_max_bitrate (NMAccessPoint *ap, guint32 bitrate)
 {
 	NMAccessPointPrivate *priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
 
-	priv->rate = rate;
-	g_object_notify (G_OBJECT (ap), NM_ACCESS_POINT_RATE);
+	priv->max_bitrate = bitrate;
+	g_object_notify (G_OBJECT (ap), NM_ACCESS_POINT_MAX_BITRATE);
 }
 
 guint32
-nm_access_point_get_rate (NMAccessPoint *ap)
+nm_access_point_get_max_bitrate (NMAccessPoint *ap)
 {
 	NMAccessPointPrivate *priv;
 
 	g_return_val_if_fail (NM_IS_ACCESS_POINT (ap), 0);
 
 	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
-	if (!priv->rate) {
-		priv->rate = nm_object_get_uint_property (NM_OBJECT (ap),
-		                                          NM_DBUS_INTERFACE_ACCESS_POINT,
-		                                          DBUS_PROP_RATE);
+	if (!priv->max_bitrate) {
+		priv->max_bitrate = nm_object_get_uint_property (NM_OBJECT (ap),
+		                                              NM_DBUS_INTERFACE_ACCESS_POINT,
+		                                              DBUS_PROP_MAX_BITRATE);
 	}
 
-	return priv->rate;
+	return priv->max_bitrate;
 }
 
 static void
@@ -370,8 +370,8 @@ set_property (GObject *object, guint prop_id,
 	case PROP_MODE:
 		nm_access_point_set_mode (ap, g_value_get_int (value));
 		break;
-	case PROP_RATE:
-		nm_access_point_set_rate (ap, g_value_get_uint (value));
+	case PROP_MAX_BITRATE:
+		nm_access_point_set_max_bitrate (ap, g_value_get_uint (value));
 		break;
 	case PROP_STRENGTH:
 		nm_access_point_set_strength (ap, g_value_get_char (value));
@@ -420,8 +420,8 @@ get_property (GObject *object,
 	case PROP_MODE:
 		g_value_set_int (value, priv->mode);
 		break;
-	case PROP_RATE:
-		g_value_set_uint (value, priv->rate);
+	case PROP_MAX_BITRATE:
+		g_value_set_uint (value, priv->max_bitrate);
 		break;
 	case PROP_STRENGTH:
 		g_value_set_char (value, priv->strength);
@@ -533,10 +533,10 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 					    G_PARAM_READWRITE));
 
 	g_object_class_install_property
-		(object_class, PROP_RATE,
-		 g_param_spec_uint (NM_ACCESS_POINT_RATE,
-						"Rate",
-						"Rate",
+		(object_class, PROP_MAX_BITRATE,
+		 g_param_spec_uint (NM_ACCESS_POINT_MAX_BITRATE,
+						"Max Bitrate",
+						"Max Bitrate",
 						0, G_MAXUINT32, 0,
 						G_PARAM_READWRITE));
 

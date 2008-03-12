@@ -1319,7 +1319,7 @@ nm_device_802_11_wireless_set_ssid (NMDevice80211Wireless *self,
  * nm_device_802_11_wireless_get_bitrate
  *
  * For wireless devices, get the bitrate to broadcast/receive at.
- * Returned value is rate in b/s.
+ * Returned value is rate in Kb/s.
  *
  */
 static guint32
@@ -1342,7 +1342,7 @@ nm_device_802_11_wireless_get_bitrate (NMDevice80211Wireless *self)
 	err = iw_get_ext (nm_dev_sock_get_fd (sk), iface, SIOCGIWRATE, &wrq);
 	nm_dev_sock_close (sk);
 
-	return ((err >= 0) ? wrq.u.bitrate.value : 0);
+	return ((err >= 0) ? wrq.u.bitrate.value / 1000 : 0);
 }
 
 /*
@@ -1663,7 +1663,7 @@ merge_scanned_ap (NMDevice80211Wireless *self,
 		nm_ap_set_last_seen (found_ap, nm_ap_get_last_seen (merge_ap));
 		nm_ap_set_broadcast (found_ap, nm_ap_get_broadcast (merge_ap));
 		nm_ap_set_freq (found_ap, nm_ap_get_freq (merge_ap));
-		nm_ap_set_rate (found_ap, nm_ap_get_rate (merge_ap));
+		nm_ap_set_max_bitrate (found_ap, nm_ap_get_max_bitrate (merge_ap));
 
 		/* If the AP is noticed in a scan, it's automatically no longer
 		 * fake, since it clearly exists somewhere.

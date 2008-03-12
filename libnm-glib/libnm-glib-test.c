@@ -141,7 +141,7 @@ dump_access_point (NMAccessPoint *ap)
 	g_print ("\tFrequency: %u\n", nm_access_point_get_frequency (ap));
 
 	g_print ("\tMode: %d\n", nm_access_point_get_mode (ap));
-	g_print ("\tRate: %d\n", nm_access_point_get_rate (ap));
+	g_print ("\tRate: %d\n", nm_access_point_get_max_bitrate (ap));
 	g_print ("\tStrength: %d\n", nm_access_point_get_strength (ap));
 }
 
