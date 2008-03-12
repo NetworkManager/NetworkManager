@@ -6,10 +6,7 @@ libnm_util_la_CPPFLAGS =				\
 	$(GLIB_CFLAGS)					\
 	$(DBUS_CFLAGS)					\
 	-DDBUS_API_SUBJECT_TO_CHANGE		\
-	-DG_DISABLE_DEPRECATED			\
-	-DGDK_DISABLE_DEPRECATED			\
-	-DGNOME_DISABLE_DEPRECATED		\
-	-DGNOMELOCALEDIR=\"$(datadir)/locale\"
+	-DG_DISABLE_DEPRECATED
 
 libnm_util_include_HEADERS = 		\
 	nm-connection.h			\
