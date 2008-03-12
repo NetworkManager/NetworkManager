@@ -371,19 +371,6 @@ void nm_generic_device_free_system_config (NMDevice *dev, void *system_config_da
 
 
 /*
- * nm_generic_device_get_use_dhcp
- *
- * Return whether the distro-specific system config tells us to use
- * dhcp for this device.
- *
- */
-gboolean nm_generic_device_get_use_dhcp (NMDevice *dev)
-{
-	return TRUE;
-}
-
-
-/*
  * nm_generic_device_get_disabled
  *
  * Return whether the distro-specific system config tells us to use

@@ -59,8 +59,6 @@ void *		nm_generic_device_get_system_config			(NMDevice *dev);
 void			nm_generic_device_free_system_config		(NMDevice *dev, void *system_config_data);
 NMIP4Config *	nm_generic_device_new_ip4_system_config		(NMDevice *dev);
 
-gboolean		nm_generic_device_get_use_dhcp				(NMDevice *dev);
-
 gboolean		nm_generic_device_get_disabled				(NMDevice *dev);
 
 gboolean		nm_generic_device_set_from_ip4_config		(NMDevice *dev);

@@ -1,5 +1,11 @@
 2008-03-11  Dan Williams  <dcbw@redhat.com>
 
+	* src/backends/NetworkManagerGeneric.c
+	  src/backends/NetworkManagerGeneric.h
+		- (nm_generic_device_get_use_dhcp): remove
+
+2008-03-11  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device.c
 		- (nm_device_deactivate): don't need to munge DNS here; that gets done
 			already in nm_device_set_ip4_config()
