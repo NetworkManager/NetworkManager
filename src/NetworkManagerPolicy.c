@@ -308,18 +308,24 @@ device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 }
 
 static void
-device_carrier_changed (NMDevice *device, gboolean carrier, gpointer user_data)
+device_carrier_changed (NMDevice8023Ethernet *device,
+                        GParamSpec *pspec,
+                        gpointer user_data)
 {
-	if (!carrier) {
-		if (NM_IS_DEVICE_802_3_ETHERNET (device))
-			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
-	} else {
-		schedule_activate_check ((NMPolicy *) user_data, device);
-	}
+	const char *prop = g_param_spec_get_name (pspec);
+
+	g_return_if_fail (strcmp (prop, NM_DEVICE_802_3_ETHERNET_CARRIER) == 0);
+
+	if (!nm_device_802_3_ethernet_get_carrier (device))
+		nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
+	else
+		schedule_activate_check ((NMPolicy *) user_data, NM_DEVICE (device));
 }
 
 static void
-device_ip4_config_changed (NMDevice *device, NMIP4Config *config, gpointer user_data)
+device_ip4_config_changed (NMDevice *device,
+                           GParamSpec *pspec,
+                           gpointer user_data)
 {
 	update_routing_and_dns ((NMPolicy *) user_data, TRUE);
 }
@@ -360,11 +366,6 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 	                       policy);
 	policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
 
-	id = g_signal_connect (device, "carrier-changed",
-	                       G_CALLBACK (device_carrier_changed),
-	                       policy);
-	policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
-
 	id = g_signal_connect (device, "notify::" NM_DEVICE_INTERFACE_IP4_CONFIG,
 	                       G_CALLBACK (device_ip4_config_changed),
 	                       policy);
@@ -378,6 +379,13 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 
 		id = g_signal_connect (device, "access-point-removed",
 		                       G_CALLBACK (wireless_networks_changed),
+		                       policy);
+		policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
+	}
+
+	if (NM_IS_DEVICE_802_3_ETHERNET (device)) {
+		id = g_signal_connect (device, "notify::" NM_DEVICE_802_3_ETHERNET_CARRIER,
+		                       G_CALLBACK (device_carrier_changed),
 		                       policy);
 		policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
 	}

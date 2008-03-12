@@ -113,14 +113,6 @@ nm_device_interface_init (gpointer g_iface)
 							0, G_MAXUINT32, DEVICE_TYPE_UNKNOWN,
 							G_PARAM_READABLE));
 
-	g_object_interface_install_property
-		(g_iface,
-		 g_param_spec_boolean (NM_DEVICE_INTERFACE_CARRIER,
-							   "Carrier",
-							   "Carrier",
-							   FALSE,
-							   G_PARAM_READABLE));
-
 	/* Signals */
 	g_signal_new ("state-changed",
 				  iface_type,
@@ -130,15 +122,6 @@ nm_device_interface_init (gpointer g_iface)
 				  g_cclosure_marshal_VOID__UINT,
 				  G_TYPE_NONE, 1,
 				  G_TYPE_UINT);
-
-	g_signal_new ("carrier-changed",
-				  iface_type,
-				  G_SIGNAL_RUN_FIRST,
-				  G_STRUCT_OFFSET (NMDeviceInterface, carrier_changed),
-				  NULL, NULL,
-				  g_cclosure_marshal_VOID__BOOLEAN,
-				  G_TYPE_NONE, 1,
-				  G_TYPE_BOOLEAN);
 
 	dbus_g_object_type_install_info (iface_type,
 									 &dbus_glib_nm_device_interface_object_info);

@@ -27,7 +27,6 @@ typedef struct {
 
 	/* Signals */
 	void (*state_changed) (NMDevice *device, NMDeviceState state);
-	void (*carrier_changed) (NMDevice *device, gboolean carrier);
 } NMDeviceClass;
 
 GType nm_device_get_type (void);
@@ -46,7 +45,6 @@ NMIP4Config  *nm_device_get_ip4_config   (NMDevice *device);
 NMDeviceState nm_device_get_state        (NMDevice *device);
 const char   *nm_device_get_product      (NMDevice *device);
 const char   *nm_device_get_vendor       (NMDevice *device);
-gboolean      nm_device_get_carrier      (NMDevice *device);
 
 NMDeviceType  nm_device_type_for_path    (DBusGConnection *connection,
 										  const char *path);

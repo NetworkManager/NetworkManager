@@ -27,6 +27,8 @@
 #include <string.h>
 #include <net/ethernet.h>
 #include <stdlib.h>
+#include <linux/sockios.h>
+#include <linux/ethtool.h>
 
 #include "nm-device-802-3-ethernet.h"
 #include "nm-device-interface.h"
@@ -42,6 +44,7 @@
 #include "nm-setting-pppoe.h"
 #include "ppp-manager/nm-ppp-manager.h"
 #include "nm-utils.h"
+#include "nm-properties-changed-signal.h"
 
 #include "nm-device-802-3-ethernet-glue.h"
 
@@ -54,6 +57,8 @@ typedef struct {
 	gboolean	dispose_has_run;
 
 	struct ether_addr	hw_addr;
+	gboolean			carrier;
+
 	char *			carrier_file_path;
 	gulong			link_connected_id;
 	gulong			link_disconnected_id;
@@ -67,14 +72,24 @@ typedef struct {
 } NMDevice8023EthernetPrivate;
 
 enum {
+	PROPERTIES_CHANGED,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
+
+enum {
 	PROP_0,
 	PROP_HW_ADDRESS,
 	PROP_SPEED,
+	PROP_CARRIER,
 
 	LAST_PROP
 };
 
-static guint32 nm_device_802_3_ethernet_get_speed (NMDevice8023Ethernet *self);
+
+static void set_carrier (NMDevice8023Ethernet *self, const gboolean carrier);
 
 static gboolean supports_mii_carrier_detect (NMDevice8023Ethernet *dev);
 static gboolean supports_ethtool_carrier_detect (NMDevice8023Ethernet *dev);
@@ -100,7 +115,7 @@ nm_device_802_3_ethernet_carrier_on (NMNetlinkMonitor *monitor,
 		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
 			return;
 
-		nm_device_set_carrier (dev, TRUE);
+		set_carrier (NM_DEVICE_802_3_ETHERNET (dev), TRUE);
 	}
 }
 
@@ -119,8 +134,33 @@ nm_device_802_3_ethernet_carrier_off (NMNetlinkMonitor *monitor,
 		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
 			return;
 
-		nm_device_set_carrier (dev, FALSE);
+		set_carrier (NM_DEVICE_802_3_ETHERNET (dev), FALSE);
 	}
+}
+
+static void
+device_state_changed (NMDeviceInterface *device, NMDeviceState state, gpointer user_data)
+{
+	NMDevice8023Ethernet *self = NM_DEVICE_802_3_ETHERNET (user_data);
+	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self);
+	gboolean carrier = FALSE;
+	guint32 caps;
+	gchar *contents;
+
+	if (state != NM_DEVICE_STATE_ACTIVATED)
+		return;
+
+	/* Devices that don't support carrier detect are always "on" */
+	caps = nm_device_get_capabilities (NM_DEVICE (self));
+	if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
+		return;
+
+	if (g_file_get_contents (priv->carrier_file_path, &contents, NULL, NULL)) {
+		carrier = atoi (contents) > 0 ? TRUE : FALSE;
+		g_free (contents);
+	}
+
+	set_carrier (self, carrier);
 }
 
 static GObject*
@@ -161,8 +201,10 @@ constructor (GType type,
 	} else {
 		priv->link_connected_id = 0;
 		priv->link_disconnected_id = 0;
-		nm_device_set_carrier (dev, TRUE);
+		set_carrier (NM_DEVICE_802_3_ETHERNET (dev), TRUE);
 	}
+
+	g_signal_connect (dev, "state-changed", G_CALLBACK (device_state_changed), dev);
 
 	return object;
 }
@@ -175,37 +217,10 @@ nm_device_802_3_ethernet_init (NMDevice8023Ethernet * self)
 	priv->dispose_has_run = FALSE;
 
 	memset (&(priv->hw_addr), 0, sizeof (struct ether_addr));
+	priv->carrier = FALSE;
 
 	nm_device_set_device_type (NM_DEVICE (self), DEVICE_TYPE_802_3_ETHERNET);
 }
-
-static void
-real_update_link (NMDevice *dev)
-{
-	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (dev);
-	gboolean carrier = FALSE;
-	guint32 caps;
-	gchar * contents;
-	gsize length;
-
-	/* Devices that don't support carrier detect are always "on" and
-	 * must be manually chosen by the user.
-	 */
-	caps = nm_device_get_capabilities (dev);
-	if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT)) {
-		carrier = TRUE;
-		goto out;
-	}
-
-	if (g_file_get_contents (priv->carrier_file_path, &contents, &length, NULL)) {
-		carrier = atoi (contents) > 0 ? TRUE : FALSE;
-		g_free (contents);
-	}
-
-out:
-	nm_device_set_carrier (dev, carrier);
-}
-
 
 static gboolean
 real_is_up (NMDevice *device)
@@ -298,6 +313,63 @@ nm_device_802_3_ethernet_get_address (NMDevice8023Ethernet *self, struct ether_a
 	memcpy (addr, &(NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self)->hw_addr), sizeof (struct ether_addr));
 }
 
+/*
+ * Get/set functions for carrier
+ */
+gboolean
+nm_device_802_3_ethernet_get_carrier (NMDevice8023Ethernet *self)
+{
+	g_return_val_if_fail (self != NULL, FALSE);
+
+	return NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self)->carrier;
+}
+
+static void
+set_carrier (NMDevice8023Ethernet *self, const gboolean carrier)
+{
+	NMDevice8023EthernetPrivate *priv;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self);
+	if (priv->carrier != carrier) {
+		priv->carrier = carrier;
+		g_object_notify (G_OBJECT (self), NM_DEVICE_802_3_ETHERNET_CARRIER);
+	}
+}
+
+/* Returns speed in Mb/s */
+static guint32
+nm_device_802_3_ethernet_get_speed (NMDevice8023Ethernet *self)
+{
+	NMSock *			sk;
+	struct ifreq		ifr;
+	struct ethtool_cmd	edata;
+	const char *		iface;
+	guint32				speed = 0;
+
+	g_return_val_if_fail (self != NULL, FALSE);
+
+	iface = nm_device_get_iface (NM_DEVICE (self));
+	if ((sk = nm_dev_sock_open (iface, DEV_GENERAL, __func__, NULL)) == NULL)
+	{
+		nm_warning ("cannot open socket on interface %s for ethtool: %s",
+				iface, strerror (errno));
+		return FALSE;
+	}
+
+	strncpy (ifr.ifr_name, iface, sizeof (ifr.ifr_name) - 1);
+	edata.cmd = ETHTOOL_GSET;
+	ifr.ifr_data = (char *) &edata;
+	if (ioctl (nm_dev_sock_get_fd (sk), SIOCETHTOOL, &ifr) == -1)
+		goto out;
+
+	speed = edata.speed != G_MAXUINT16 ? edata.speed : 0;
+
+out:
+	nm_dev_sock_close (sk);
+	return speed;
+}
 
 static void
 real_set_hw_address (NMDevice *dev)
@@ -342,15 +414,15 @@ real_get_generic_capabilities (NMDevice *dev)
 static gboolean
 real_can_interrupt_activation (NMDevice *dev)
 {
+	NMDevice8023Ethernet *self = NM_DEVICE_802_3_ETHERNET (dev);
 	gboolean interrupt = FALSE;
 
 	/* Devices that support carrier detect can interrupt activation
 	 * if the link becomes inactive.
 	 */
 	if (nm_device_get_capabilities (dev) & NM_DEVICE_CAP_CARRIER_DETECT) {
-		if (nm_device_get_carrier (dev) == FALSE) {
+		if (nm_device_802_3_ethernet_get_carrier (self) == FALSE)
 			interrupt = TRUE;
-		}
 	}
 	return interrupt;
 }
@@ -358,8 +430,10 @@ real_can_interrupt_activation (NMDevice *dev)
 static gboolean
 real_can_activate (NMDevice *dev, gboolean wireless_enabled)
 {
+	NMDevice8023Ethernet *self = NM_DEVICE_802_3_ETHERNET (dev);
+
 	/* Can't do anything if there isn't a carrier */
-	if (!nm_device_get_carrier (dev))
+	if (!nm_device_802_3_ethernet_get_carrier (self))
 		return FALSE;
 
 	return TRUE;
@@ -641,6 +715,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_SPEED:
 		g_value_set_uint (value, nm_device_802_3_ethernet_get_speed (device));
 		break;
+	case PROP_CARRIER:
+		g_value_set_boolean (value, nm_device_802_3_ethernet_get_carrier (device));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -666,7 +743,6 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 	parent_class->is_up = real_is_up;
 	parent_class->bring_up = real_bring_up;
 	parent_class->bring_down = real_bring_down;
-	parent_class->update_link = real_update_link;
 	parent_class->can_interrupt_activation = real_can_interrupt_activation;
 	parent_class->set_hw_address = real_set_hw_address;
 	parent_class->get_best_auto_connection = real_get_best_auto_connection;
@@ -693,6 +769,19 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 						   "Speed",
 						   0, G_MAXUINT32, 0,
 						   G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_CARRIER,
+		 g_param_spec_boolean (NM_DEVICE_802_3_ETHERNET_CARRIER,
+							   "Carrier",
+							   "Carrier",
+							   FALSE,
+							   G_PARAM_READABLE));
+
+	/* Signals */
+	signals[PROPERTIES_CHANGED] = 
+		nm_properties_changed_signal_new (object_class,
+								    G_STRUCT_OFFSET (NMDevice8023EthernetClass, properties_changed));
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
 									 &dbus_glib_nm_device_802_3_ethernet_object_info);
@@ -721,8 +810,6 @@ supplicant_iface_state_cb (NMSupplicantInterface * iface,
 /**************************************/
 /*    Ethtool capability detection    */
 /**************************************/
-#include <linux/sockios.h>
-#include <linux/ethtool.h>
 
 static gboolean
 supports_ethtool_carrier_detect (NMDevice8023Ethernet *self)
@@ -757,40 +844,6 @@ out:
 	nm_ioctl_info ("%s: Done with ETHTOOL\n", iface);
 	nm_dev_sock_close (sk);
 	return supports_ethtool;
-}
-
-
-/* Returns speed in Mb/s */
-static guint32
-nm_device_802_3_ethernet_get_speed (NMDevice8023Ethernet *self)
-{
-	NMSock *			sk;
-	struct ifreq		ifr;
-	struct ethtool_cmd	edata;
-	const char *		iface;
-	guint32				speed = 0;
-
-	g_return_val_if_fail (self != NULL, FALSE);
-
-	iface = nm_device_get_iface (NM_DEVICE (self));
-	if ((sk = nm_dev_sock_open (iface, DEV_GENERAL, __func__, NULL)) == NULL)
-	{
-		nm_warning ("cannot open socket on interface %s for ethtool: %s",
-				iface, strerror (errno));
-		return FALSE;
-	}
-
-	strncpy (ifr.ifr_name, iface, sizeof (ifr.ifr_name) - 1);
-	edata.cmd = ETHTOOL_GSET;
-	ifr.ifr_data = (char *) &edata;
-	if (ioctl (nm_dev_sock_get_fd (sk), SIOCETHTOOL, &ifr) == -1)
-		goto out;
-
-	speed = edata.speed != G_MAXUINT16 ? edata.speed : 0;
-
-out:
-	nm_dev_sock_close (sk);
-	return speed;
 }
 
 

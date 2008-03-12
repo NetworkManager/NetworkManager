@@ -519,35 +519,6 @@ init_supplicant_interface (NMDevice80211Wireless * self)
 	}
 }
 
-static void
-real_update_link (NMDevice *dev)
-{
-	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
-	gboolean new_link = FALSE;
-	guint32  state;
-
-	/* Ignore link changes when scanning */
-	if (self->priv->scanning)
-		return;
-
-	if (!self->priv->supplicant.iface)
-		goto out;
-
-	state = nm_supplicant_interface_get_state (self->priv->supplicant.iface);
-	if (state != NM_SUPPLICANT_INTERFACE_STATE_READY)
-		goto out;
-
-	state = nm_supplicant_interface_get_connection_state (self->priv->supplicant.iface);
-	if (   state == NM_SUPPLICANT_INTERFACE_CON_STATE_COMPLETED
-	    || state == NM_SUPPLICANT_INTERFACE_CON_STATE_ASSOCIATED
-	    || state == NM_SUPPLICANT_INTERFACE_CON_STATE_4WAY_HANDSHAKE
-	    || state == NM_SUPPLICANT_INTERFACE_CON_STATE_GROUP_HANDSHAKE)
-		new_link = TRUE;
-
-out:
-	nm_device_set_carrier (NM_DEVICE (self), new_link);
-}
-
 static NMAccessPoint *
 get_active_ap (NMDevice80211Wireless *self,
                NMAccessPoint *ignore_ap,
@@ -1886,7 +1857,6 @@ link_timeout_cb (gpointer user_data)
 	ap = nm_device_802_11_wireless_get_activation_ap (self);
 	if (req == NULL || ap == NULL) {
 		nm_warning ("couldn't get activation request or activation AP.");
-		nm_device_set_carrier (dev, FALSE);
 		if (nm_device_is_activating (dev)) {
 			cleanup_association_attempt (self, TRUE);
 			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
@@ -1937,7 +1907,6 @@ link_timeout_cb (gpointer user_data)
 
 time_out:
 	nm_info ("%s: link timed out.", nm_device_get_iface (dev));
-	nm_device_set_carrier (dev, FALSE);
 	return FALSE;
 }
 
@@ -2005,7 +1974,6 @@ supplicant_iface_state_cb_handler (gpointer user_data)
 		cancel_pending_scan (self);
 		cleanup_association_attempt (self, FALSE);
 		cleanup_supplicant_interface (self);
-		nm_device_set_carrier (NM_DEVICE (self), FALSE);
 	}
 	
 	g_slice_free (struct state_cb_data, cb_data);
@@ -2054,7 +2022,6 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 	if (new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_COMPLETED) {
 		remove_supplicant_interface_connection_error_handler (self);
 		remove_supplicant_timeouts (self);
-		nm_device_set_carrier (dev, TRUE);
 
 		/* If this is the initial association during device activation,
 		 * schedule the next activation stage.
@@ -2074,8 +2041,6 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 			/* Start the link timeout so we allow some time for reauthentication */
 			if (!self->priv->link_timeout_id)
 				self->priv->link_timeout_id = g_timeout_add (15000, link_timeout_cb, self);
-		} else {
-			nm_device_set_carrier (dev, FALSE);
 		}
 	}
 
@@ -2172,8 +2137,6 @@ supplicant_mgr_state_cb_handler (gpointer user_data)
 
 			cleanup_association_attempt (self, FALSE);
 			cleanup_supplicant_interface (self);
-
-			nm_device_set_carrier (NM_DEVICE (self), FALSE);
 
 			if (nm_device_is_activating (dev)) {
 				nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
@@ -3081,7 +3044,6 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 	parent_class->is_up = real_is_up;
 	parent_class->bring_up = real_bring_up;
 	parent_class->bring_down = real_bring_down;
-	parent_class->update_link = real_update_link;
 	parent_class->set_hw_address = real_set_hw_address;
 	parent_class->get_best_auto_connection = real_get_best_auto_connection;
 	parent_class->can_activate = real_can_activate;

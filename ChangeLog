@@ -1,5 +1,82 @@
 2008-03-12  Dan Williams  <dcbw@redhat.com>
 
+	Move the 'carrier' property from NMDevice to NMDevice8023Ethernet;
+	convert the libnm-glib NMDevice8023Ethernet to cached properties
+
+	* introspection/nm-device-802-3-ethernet.xml
+		- New 'Carrier' property
+		- New 'PropertiesChanged' signal
+
+	* introspection/nm-device.xml
+		- Remove 'Carrier' property
+		- Remove 'CarrierChanged' signal
+
+	* src/nm-device-interface.c
+	  src/nm-device-interface.h
+		- (nm_device_interface_init): remove 'carrier' property and
+			'carrier-changed' signal
+
+	* src/nm-device.c
+	  src/nm-device.h
+		- (nm_device_get_carrier, nm_device_set_carrier): remove
+		- (nm_device_activate_stage5_ip_config_commit): don't bother updating
+			the link here; wired device will handle that
+		- (handle_dhcp_lease_change): don't bother updating link here
+		- (get_property, nm_device_class_init): remove carrier property
+
+	* src/nm-device-802-11-wireless.c
+		- (real_update_link, nm_device_802_11_wireless_class_init): remove
+			real_update_link(); wireless devices don't use carrier at all
+		- (link_timeout_cb, supplicant_iface_state_cb_handler,
+		   supplicant_iface_connection_state_cb_handler,
+		   supplicant_mgr_state_cb_handler): remove anything to do with carrier
+
+	* src/nm-device-802-3-ethernet.c
+	  src/nm-device-802-3-ethernet.h
+		- (nm_device_802_3_ethernet_carrier_on,
+		   nm_device_802_3_ethernet_carrier_off, constructor): use set_carrier()
+			instead of nm_device_set_carrier()
+		- (device_state_changed): update link from sysfs on activation;
+			replaces real_update_link()
+		- (real_update_link): remove, replaced by device_state_changed()
+		- (nm_device_802_3_ethernet_get_carrier, set_carrier): new functions
+		- (nm_device_802_3_ethernet_get_speed): move up with other getters/setters
+		- (real_get_generic_capabilities, real_can_interrupt_activation): use
+			new get_carrier function
+		- (get_property): add 'carrier' property
+		- (nm_device_802_3_ethernet_class_init): add 'carrier' property and
+			hook into property-changed signal helper
+
+	* src/NetworkManagerPolicy.c
+		- (device_carrier_changed): will only ever be called with a wired device
+		- (device_added): only hook up to carrier-changed for wired devices
+
+	* libnm-glib/nm-device.c
+	  libnm-glib/nm-device.h
+		- (constructor, nm_device_class_init): remove carrier-changed signal
+		- (device_carrier_changed_proxy): remove; unused
+		- (nm_device_get_carrier): remove; carrier a property of wired devices
+
+	* libnm-glib/nm-device-802-3-ethernet.c
+	  libnm-glib/nm-device-802-3-ethernet.h
+		- Convert to cached properties like AP and Wireless objects
+		- (nm_device_802_3_ethernet_get_hw_address): now returns a 'const char *'
+			instead of a 'char *', return value should not be freed
+		- (nm_device_802_3_ethernet_get_carrier): return current carrier status
+		- (constructor): hook into properties-changed helper
+		- (set_property, get_property): new functions
+		- (nm_device_802_3_ethernet_class_init): export GObject properties
+
+	* test/nm-tool.c
+		- (detail_device): strdup the wired hardware address too since it's
+			cached now
+
+	* libnm-glib/libnm-glib-test.c
+		- (dump_wired): strdup the wired hardware address too since it's
+			cached now
+
+2008-03-12  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting-ip4-config.c
 	  libnm-util/nm-setting-ip4-config.h
 		- (set_property, get_property, nm_setting_ip4_config_class_init): add

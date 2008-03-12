@@ -44,11 +44,6 @@
         Object path of the Ip4Config object describing the configuration of the device.  Only valid when the device is in the NM_DEVICE_STATE_ACTIVATED state.
       </tp:docstring>
     </property>
-    <property name="Carrier" type="b" access="read">
-      <tp:docstring>
-        Indicates whether the physical carrier is found (e.g. the device is plugged in or associated to a network).
-      </tp:docstring>
-    </property>
 
     <!-- Ugh, but I see no other way of getting the type on the caller
     based on dbus object path only -->
@@ -66,13 +61,6 @@
       </arg>
     </signal>
 
-    <signal name="CarrierChanged">
-      <arg name="carrier_on" type="b">
-        <tp:docstring>
-          Boolean indicating whether the carrier is now on or off.
-        </tp:docstring>
-      </arg>
-    </signal>
     <tp:enum name="NM_DEVICE_STATE" type="u">
       <tp:enumvalue suffix="UNKNOWN" value="0">
         <tp:docstring>

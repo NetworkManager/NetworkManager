@@ -172,13 +172,12 @@ dump_wireless (NMDevice80211Wireless *device)
 static void
 dump_wired (NMDevice8023Ethernet *device)
 {
-	char *str;
+	const char *str;
 
 	g_print ("Speed: %d\n", nm_device_802_3_ethernet_get_speed (device));
 
 	str = nm_device_802_3_ethernet_get_hw_address (device);
 	g_print ("MAC: %s\n", str);
-	g_free (str);
 }
 
 static void

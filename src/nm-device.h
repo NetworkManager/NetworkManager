@@ -79,8 +79,6 @@ struct _NMDeviceClass
 {
 	GObjectClass parent;
 
-	void			(* update_link)	(NMDevice *self);
-
 	gboolean		(* is_up)			(NMDevice *self);
 	gboolean		(* bring_up)		(NMDevice *self);
 	void			(* bring_down)		(NMDevice *self);
@@ -130,9 +128,6 @@ const char *	nm_device_get_driver	(NMDevice *dev);
 NMDeviceType	nm_device_get_device_type	(NMDevice *dev);
 guint32		nm_device_get_capabilities	(NMDevice *dev);
 guint32		nm_device_get_type_capabilities	(NMDevice *dev);
-
-gboolean		nm_device_get_carrier	(NMDevice *dev);
-void			nm_device_set_carrier	(NMDevice *dev, const gboolean carrier);
 
 guint32			nm_device_get_ip4_address	(NMDevice *dev);
 void				nm_device_update_ip4_address	(NMDevice *dev);

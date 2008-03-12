@@ -66,7 +66,6 @@ struct _NMDevicePrivate
 	guint32			capabilities;
 	char *			driver;
 
-	gboolean			carrier;
 	guint32			ip4_address;
 	struct in6_addr	ip6_address;
 
@@ -123,7 +122,6 @@ nm_device_init (NMDevice * self)
 	self->priv->capabilities = NM_DEVICE_CAP_NONE;
 	self->priv->driver = NULL;
 
-	self->priv->carrier = FALSE;
 	self->priv->ip4_address = 0;
 	memset (&self->priv->ip6_address, 0, sizeof (struct in6_addr));
 
@@ -343,33 +341,6 @@ nm_device_get_act_request (NMDevice *self)
 	g_return_val_if_fail (self != NULL, NULL);
 
 	return self->priv->act_request;
-}
-
-
-/*
- * Get/set functions for carrier
- */
-gboolean
-nm_device_get_carrier (NMDevice *self)
-{
-	g_return_val_if_fail (self != NULL, FALSE);
-
-	return self->priv->carrier;
-}
-
-void
-nm_device_set_carrier (NMDevice *self,
-                       const gboolean carrier)
-{
-	NMDevicePrivate *priv;
-
-	g_return_if_fail (NM_IS_DEVICE (self));
-
-	priv = NM_DEVICE_GET_PRIVATE (self);
-	if (priv->carrier != carrier) {
-		priv->carrier = carrier;
-		g_signal_emit_by_name (self, "carrier-changed", carrier);
-	}
 }
 
 
@@ -918,14 +889,10 @@ nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 	nm_info ("Activation (%s) Stage 5 of 5 (IP Configure Commit) started...",
 	         iface);
 
-	if (nm_device_set_ip4_config (self, ip4_config)) {
-		if (NM_DEVICE_GET_CLASS (self)->update_link)
-			NM_DEVICE_GET_CLASS (self)->update_link (self);
-
+	if (nm_device_set_ip4_config (self, ip4_config))
 		nm_device_state_changed (self, NM_DEVICE_STATE_ACTIVATED);
-	} else {
+	else
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
-	}
 
 	nm_info ("Activation (%s) Stage 5 of 5 (IP Configure Commit) complete.",
 	         iface);
@@ -1276,10 +1243,7 @@ handle_dhcp_lease_change (NMDevice *device)
 
 	g_object_set_data (G_OBJECT (req), NM_ACT_REQUEST_IP4_CONFIG, config);
 
-	if (nm_device_set_ip4_config (device, config)) {
-		if (NM_DEVICE_GET_CLASS (device)->update_link)
-			NM_DEVICE_GET_CLASS (device)->update_link (device);
-	} else {
+	if (!nm_device_set_ip4_config (device, config)) {
 		nm_warning ("Failed to update IP4 config in response to DHCP event.");
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED);
 	}
@@ -1724,9 +1688,6 @@ get_property (GObject *object, guint prop_id,
 	case NM_DEVICE_INTERFACE_PROP_DEVICE_TYPE:
 		g_value_set_uint (value, priv->type);
 		break;
-	case NM_DEVICE_INTERFACE_PROP_CARRIER:
-		g_value_set_boolean (value, priv->carrier);
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1791,10 +1752,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	g_object_class_override_property (object_class,
 									  NM_DEVICE_INTERFACE_PROP_DEVICE_TYPE,
 									  NM_DEVICE_INTERFACE_DEVICE_TYPE);
-
-	g_object_class_override_property (object_class,
-									  NM_DEVICE_INTERFACE_PROP_CARRIER,
-									  NM_DEVICE_INTERFACE_CARRIER);
 }
 
 void

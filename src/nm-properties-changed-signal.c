@@ -1,5 +1,8 @@
 /* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
+#include <string.h>
+#include <stdio.h>
+
 #include <dbus/dbus-glib.h>
 #include "nm-properties-changed-signal.h"
 
@@ -44,6 +47,22 @@ properties_changed_info_destroy (gpointer data)
 	g_slice_free (PropertiesChangedInfo, info);
 }
 
+#define DEBUG
+#ifdef DEBUG
+static void
+add_to_string (gpointer key, gpointer value, gpointer user_data)
+{
+	char *buf = (char *) user_data;
+	GValue str_val = { 0, };
+
+	g_value_init (&str_val, G_TYPE_STRING);
+	g_value_transform ((GValue *) value, &str_val);
+
+	sprintf (buf + strlen (buf), "{%s: %s}, ", (const char *) key, g_value_get_string (&str_val));
+	g_value_unset (&str_val);
+}
+#endif
+
 static gboolean
 properties_changed (gpointer data)
 {
@@ -51,6 +70,14 @@ properties_changed (gpointer data)
 	PropertiesChangedInfo *info = (PropertiesChangedInfo *) g_object_get_data (object, NM_DBUS_PROPERTY_CHANGED);
 
 	g_assert (info);
+
+#ifdef DEBUG
+	{
+		char buf[2048] = { 0, };
+		g_hash_table_foreach (info->hash, add_to_string, &buf);
+		g_message ("%s: %s -> %s", __func__, G_OBJECT_TYPE_NAME (object), buf);
+	}
+#endif
 
 	g_signal_emit (object, info->signal_id, 0, info->hash);
 	g_hash_table_remove_all (info->hash);

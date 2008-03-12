@@ -40,6 +40,7 @@ G_BEGIN_DECLS
 
 #define NM_DEVICE_802_3_ETHERNET_HW_ADDRESS "hw-address"
 #define NM_DEVICE_802_3_ETHERNET_SPEED "speed"
+#define NM_DEVICE_802_3_ETHERNET_CARRIER "carrier"
 
 typedef struct {
 	NMDevice parent;
@@ -47,6 +48,9 @@ typedef struct {
 
 typedef struct {
 	NMDeviceClass parent;
+
+	/* Signals */
+	void (*properties_changed) (NMDevice8023Ethernet *device, GHashTable *properties);
 } NMDevice8023EthernetClass;
 
 
@@ -59,6 +63,8 @@ NMDevice8023Ethernet *nm_device_802_3_ethernet_new (const char *udi,
 
 void nm_device_802_3_ethernet_get_address (NMDevice8023Ethernet *dev,
 								   struct ether_addr *addr);
+
+gboolean nm_device_802_3_ethernet_get_carrier (NMDevice8023Ethernet *dev);
 
 G_END_DECLS
 

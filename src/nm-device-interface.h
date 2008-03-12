@@ -29,7 +29,6 @@ typedef enum
 #define NM_DEVICE_INTERFACE_IP4_CONFIG "ip4-config"
 #define NM_DEVICE_INTERFACE_STATE "state"
 #define NM_DEVICE_INTERFACE_DEVICE_TYPE "device-type" /* ugh */
-#define NM_DEVICE_INTERFACE_CARRIER "carrier"
 
 typedef enum {
 	NM_DEVICE_INTERFACE_PROP_FIRST = 0x1000,
@@ -42,7 +41,6 @@ typedef enum {
 	NM_DEVICE_INTERFACE_PROP_IP4_CONFIG,
 	NM_DEVICE_INTERFACE_PROP_STATE,
 	NM_DEVICE_INTERFACE_PROP_DEVICE_TYPE,
-	NM_DEVICE_INTERFACE_PROP_CARRIER
 } NMDeviceInterfaceProp;
 
 
@@ -64,7 +62,6 @@ struct _NMDeviceInterface {
 
 	/* Signals */
 	void (*state_changed) (NMDeviceInterface *device, NMDeviceState state);
-	void (*carrier_changed) (NMDeviceInterface *device, gboolean carrier_on);
 };
 
 GQuark nm_device_interface_error_quark (void);

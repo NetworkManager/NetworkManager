@@ -14,15 +14,11 @@ typedef struct {
 	char *product;
 	char *vendor;
 
-	gboolean carrier;
-	gboolean carrier_valid;
-
 	gboolean disposed;
 } NMDevicePrivate;
 
 enum {
 	STATE_CHANGED,
-	CARRIER_CHANGED,
 
 	LAST_SIGNAL
 };
@@ -40,7 +36,6 @@ enum {
 
 
 static void device_state_change_proxy (DBusGProxy *proxy, guint state, gpointer user_data);
-static void device_carrier_changed_proxy (DBusGProxy *proxy, gboolean carrier, gpointer user_data);
 
 static void
 nm_device_init (NMDevice *device)
@@ -48,8 +43,6 @@ nm_device_init (NMDevice *device)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
 	priv->state = NM_DEVICE_STATE_UNKNOWN;
-	priv->carrier = FALSE;
-	priv->carrier_valid = FALSE;
 	priv->disposed = FALSE;
 	priv->product = NULL;
 	priv->vendor = NULL;
@@ -81,10 +74,6 @@ constructor (GType type,
 								 G_CALLBACK (device_state_change_proxy),
 								 object, NULL);
 
-	dbus_g_proxy_add_signal (priv->device_proxy, "CarrierChanged", G_TYPE_BOOLEAN, G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->device_proxy, "CarrierChanged",
-								 G_CALLBACK (device_carrier_changed_proxy),
-								 object, NULL);
 	return G_OBJECT (object);
 }
 
@@ -138,16 +127,6 @@ nm_device_class_init (NMDeviceClass *device_class)
 					  g_cclosure_marshal_VOID__UINT,
 					  G_TYPE_NONE, 1,
 					  G_TYPE_UINT);
-
-	signals[CARRIER_CHANGED] =
-		g_signal_new ("carrier-changed",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMDeviceClass, carrier_changed),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__BOOLEAN,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_BOOLEAN);
 }
 
 static void
@@ -159,19 +138,6 @@ device_state_change_proxy (DBusGProxy *proxy, guint state, gpointer user_data)
 	if (priv->state != state) {
 		priv->state = state;
 		g_signal_emit (device, signals[STATE_CHANGED], 0, state);
-	}
-}
-
-static void
-device_carrier_changed_proxy (DBusGProxy *proxy, gboolean carrier, gpointer user_data)
-{
-	NMDevice *device = NM_DEVICE (user_data);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
-
-	if ((priv->carrier != carrier) || !priv->carrier_valid) {
-		priv->carrier_valid = TRUE;
-		priv->carrier = carrier;
-		g_signal_emit (device, signals[CARRIER_CHANGED], 0, carrier);
 	}
 }
 
@@ -436,24 +402,6 @@ nm_device_get_vendor (NMDevice *device)
 	if (!priv->vendor)
 		nm_device_update_description (device);
 	return priv->vendor;
-}
-
-gboolean
-nm_device_get_carrier (NMDevice *device)
-{
-	NMDevicePrivate *priv;
-
-	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
-
-	priv = NM_DEVICE_GET_PRIVATE (device);
-
-	if (!priv->carrier_valid) {
-		priv->carrier = nm_object_get_boolean_property (NM_OBJECT (device),
-		                                                NM_DBUS_INTERFACE_DEVICE, "Carrier");
-		priv->carrier_valid = TRUE;
-	}
-
-	return priv->carrier;
 }
 
 NMDeviceType
