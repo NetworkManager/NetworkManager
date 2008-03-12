@@ -1,3 +1,7 @@
+2008-03-12  Dan Williams  <dcbw@redhat.com>
+
+	* POTFILES.in: add missing translatables
+
 2008-03-10  Jorge Gonzalez  <jorgegonz@svn.gnome.org>
 
 	* es.po: Updated Spanish translation
