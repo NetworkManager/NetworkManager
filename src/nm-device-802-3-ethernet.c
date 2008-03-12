@@ -456,7 +456,8 @@ real_get_best_auto_connection (NMDevice *dev,
 		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 		g_assert (s_con);
 
-		if (strcmp (s_con->type, NM_SETTING_WIRED_SETTING_NAME))
+		if (   strcmp (s_con->type, NM_SETTING_WIRED_SETTING_NAME)
+		    && strcmp (s_con->type, NM_SETTING_PPPOE_SETTING_NAME))
 			continue;
 		if (!s_con->autoconnect)
 			continue;
