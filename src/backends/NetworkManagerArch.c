@@ -448,7 +448,7 @@ static GHashTable * ArchReadConfig(const char* file, const char* dev)
 	{
 		char hit[128];
 		gchar** splt;
-		gint hits,i;    
+		gint hits,j;
 
 		if (sscanf(val,"( %[!0-9a-zA-z ] )",hit))
 		{
@@ -456,15 +456,15 @@ static GHashTable * ArchReadConfig(const char* file, const char* dev)
 			splt=g_strsplit(hit," ",0);
 
 			hits=g_strv_length(splt);
-			for (i=0;i<hits;i++)
+			for (j=0;j<hits;j++)
 			{
 
-				if (splt[i][0]=='!')
+				if (splt[j][0]=='!')
 				{
 					continue;
 				}
 
-				if ((val=g_hash_table_lookup(cfg,splt[i])))
+				if ((val=g_hash_table_lookup(cfg,splt[j])))
 				{
 
 					if (sscanf(val," \" default gw %[0-9a-zA-Z.-_] \"",hit))
