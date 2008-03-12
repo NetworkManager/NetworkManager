@@ -1,5 +1,12 @@
 2008-03-12  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/plugins/ifcfg-fedora/parser.c
+	  system-settings/plugins/ifcfg-fedora/parser.h
+		- (get_ifcfg_name): ignore more file suffixes
+		- (is_wireless_device): fix check for ifcfgs that have no TYPE
+
+2008-03-12  Dan Williams  <dcbw@redhat.com>
+
 	* configure.in
 		- Bring in the bits of gnome-common we actually use (all 15 lines)
 

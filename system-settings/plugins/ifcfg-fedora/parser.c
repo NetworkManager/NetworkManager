@@ -128,6 +128,21 @@ get_int (const char *str, int *value)
 	return TRUE;
 }
 
+static gboolean
+should_ignore_file (const char *basename, const char *tag)
+{
+	int len, tag_len;
+
+	g_return_val_if_fail (basename != NULL, TRUE);
+	g_return_val_if_fail (tag != NULL, TRUE);
+
+	len = strlen (basename);
+	tag_len = strlen (tag);
+	if ((len > tag_len) && !strcasecmp (basename + len - tag_len, tag))
+		return TRUE;
+	return FALSE;
+}
+
 static char *
 get_ifcfg_name (const char *file)
 {
@@ -145,8 +160,14 @@ get_ifcfg_name (const char *file)
 	if (strncmp (basename, IFCFG_TAG, strlen (IFCFG_TAG)))
 		goto error;
 
-	/* ignore .bak files */
-	if ((len > 4) && !strcasecmp (basename + len - 4, BAK_TAG))
+	/* ignore some files */
+	if (should_ignore_file (basename, BAK_TAG))
+		goto error;
+	if (should_ignore_file (basename, TILDE_TAG))
+		goto error;
+	if (should_ignore_file (basename, ORIG_TAG))
+		goto error;
+	if (should_ignore_file (basename, REJ_TAG))
 		goto error;
 
 	return g_strdup (basename + strlen (IFCFG_TAG));
@@ -800,7 +821,7 @@ is_wireless_device (const char *iface, gboolean *is_wireless)
 	wrq.u.data.length = sizeof (struct iw_range);
 
 	if (ioctl (fd, SIOCGIWRANGE, &wrq) < 0) {
-		if (errno == -EOPNOTSUPP)
+		if (errno == EOPNOTSUPP)
 			success = TRUE;
 		goto out;
 	}
