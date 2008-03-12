@@ -1,5 +1,15 @@
 2008-03-12  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device.c
+		- (nm_device_set_ip4_config): don't send property notifications when
+			the ip4 config is set to NULL; it causes a PropertyChanged signal
+			which dbus-glib can't parse because the value is NULL, which isn't
+			a legal object path.  Setting the IP4 config to NULL is only
+			valid when deactivating a device anyway, so the device state change
+			will alert listeners that the ip4 config is invalid.
+
+2008-03-12  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-properties-changed-signal.c
 		- (add_to_string): better handling of NULL objects
 

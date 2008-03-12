@@ -1385,11 +1385,8 @@ nm_device_set_ip4_config (NMDevice *self, NMIP4Config *config)
 		priv->ip4_config = NULL;
 	}
 
-	if (!config) {
-		if (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED)
-			g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_IP4_CONFIG);
+	if (!config)
 		return TRUE;
-	}
 
 	priv->ip4_config = g_object_ref (config);
 
