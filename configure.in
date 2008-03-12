@@ -14,14 +14,21 @@ AM_PROG_CC_C_O
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 
-dnl
-dnl This doesn't depend on gnome support, only on gnome-common, autogen already
-dnl uses gnome-autogen
-dnl
-GNOME_COMMON_INIT
-GNOME_DEBUG_CHECK
-GNOME_COMPILE_WARNINGS([maximum])
-GNOME_MAINTAINER_MODE_DEFINES
+dnl ensure that when the Automake generated makefile calls aclocal,
+dnl it honours the $ACLOCAL_FLAGS environment variable
+ACLOCAL_AMFLAGS="\${ACLOCAL_FLAGS}"
+if test -n "$ac_macro_dir"; then
+    ACLOCAL_AMFLAGS="-I $ac_macro_dir $ACLOCAL_AMFLAGS"
+fi
+AC_SUBST([ACLOCAL_AMFLAGS])
+
+dnl maintainer mode stuff
+if test $USE_MAINTAINER_MODE = yes; then
+	DISABLE_DEPRECATED="-DG_DISABLE_DEPRECATED -DGCONF_DISABLE_DEPRECATED"
+else
+	DISABLE_DEPRECATED=""
+fi
+AC_SUBST(DISABLE_DEPRECATED)
 
 dnl
 dnl Required headers

@@ -1,5 +1,10 @@
 2008-03-12  Dan Williams  <dcbw@redhat.com>
 
+	* configure.in
+		- Bring in the bits of gnome-common we actually use (all 15 lines)
+
+2008-03-12  Dan Williams  <dcbw@redhat.com>
+
 	* system-settings/plugins/ifcfg-fedora/plugin.c
 		- (write_auto_wired_connection): new function; write out an auto
 			wired connection file since the applet isn't doing it any more
