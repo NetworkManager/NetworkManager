@@ -17,6 +17,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_IP4_CONFIG_SETTING_NAME "ipv4"
 
 #define NM_SETTING_IP4_CONFIG_MANUAL     "manual"
+#define NM_SETTING_IP4_CONFIG_AUTOIP     "autoip"
 #define NM_SETTING_IP4_CONFIG_DNS        "dns"
 #define NM_SETTING_IP4_CONFIG_DNS_SEARCH "dns-search"
 #define NM_SETTING_IP4_CONFIG_ADDRESSES  "addresses"
@@ -31,6 +32,7 @@ typedef struct {
 	NMSetting parent;
 
 	gboolean manual;
+	gboolean autoip;
 	GArray *dns;        /* array of guint32 */
 	GSList *dns_search; /* list of strings */
 	GSList *addresses;  /* array of NMSettingIP4Address */

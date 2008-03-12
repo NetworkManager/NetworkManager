@@ -1,3 +1,10 @@
+2008-03-12  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-setting-ip4-config.c
+	  libnm-util/nm-setting-ip4-config.h
+		- (set_property, get_property, nm_setting_ip4_config_class_init): add
+			the 'autoip' property from the spec
+
 2008-03-11  Dan Williams  <dcbw@redhat.com>
 
 	* src/backends/NetworkManagerGeneric.c

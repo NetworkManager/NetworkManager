@@ -10,6 +10,7 @@ G_DEFINE_TYPE (NMSettingIP4Config, nm_setting_ip4_config, NM_TYPE_SETTING)
 enum {
 	PROP_0,
 	PROP_MANUAL,
+	PROP_AUTOIP,
 	PROP_DNS,
 	PROP_DNS_SEARCH,
 	PROP_ADDRESSES,
@@ -127,6 +128,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_MANUAL:
 		setting->manual = g_value_get_boolean (value);
 		break;
+	case PROP_AUTOIP:
+		setting->autoip = g_value_get_boolean (value);
+		break;
 	case PROP_DNS:
 		if (setting->dns)
 			g_array_free (setting->dns, TRUE);
@@ -155,6 +159,9 @@ get_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_MANUAL:
 		g_value_set_boolean (value, setting->manual);
+		break;
+	case PROP_AUTOIP:
+		g_value_set_boolean (value, setting->autoip);
 		break;
 	case PROP_DNS:
 		g_value_set_boxed (value, setting->dns);
@@ -189,6 +196,14 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		 g_param_spec_boolean (NM_SETTING_IP4_CONFIG_MANUAL,
 						   "Manual",
 						   "Do not use DHCP",
+						   FALSE,
+						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	g_object_class_install_property
+		(object_class, PROP_AUTOIP,
+		 g_param_spec_boolean (NM_SETTING_IP4_CONFIG_AUTOIP,
+						   "Auto IP",
+						   "Use Auto IP",
 						   FALSE,
 						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
