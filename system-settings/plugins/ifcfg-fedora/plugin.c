@@ -28,6 +28,7 @@
 #include <errno.h>
 
 #include <nm-setting-connection.h>
+#include <nm-setting-wired.h>
 #include <nm-setting-wireless-security.h>
 
 #include "plugin.h"
@@ -87,6 +88,32 @@ get_current_profile_path (void)
 	path = g_strdup_printf (SYSCONFDIR "/sysconfig/networking/profiles/%s/", buf);
 	g_free (buf);
 	return path;
+}
+
+#define AUTO_WIRED_STAMP_FILE SYSCONFDIR"/NetworkManager/auto-wired-stamp"
+#define AUTO_WIRED_FILE_NAME  _("ifcfg-Auto Wired")
+static void
+write_auto_wired_connection (const char *profile_path)
+{
+	GError *error = NULL;
+	char *path;
+	const char *contents = "# Written by nm-system-settings\nTYPE=Ethernet\nBOOTPROTO=dhcp\nONBOOT=yes\nUSERCTL=yes\nPEERDNS=yes\n";
+
+	/* Write out a default autoconnect ethernet connection */
+	if (g_file_test (AUTO_WIRED_STAMP_FILE, G_FILE_TEST_EXISTS) || !profile_path)
+		return;
+
+	path = g_strdup_printf ("%s/%s", profile_path, AUTO_WIRED_FILE_NAME);
+	if (g_file_test (path, G_FILE_TEST_EXISTS))
+		return;
+
+	PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "writing default Auto Wired connection");
+	if (!g_file_set_contents (path, contents, -1, &error)) {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "could not write default wired connection: %s (%d).", error->message, error->code);
+		g_error_free (error);
+	} else {
+		g_file_set_contents (AUTO_WIRED_STAMP_FILE, "", -1, NULL);
+	}
 }
 
 struct FindInfo {
@@ -287,6 +314,8 @@ static void
 reload_all_connections (SCPluginIfcfg *plugin)
 {
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	GSList *iter;
+	gboolean have_wired = FALSE;
 
 	clear_all_connections (plugin);
 
@@ -294,6 +323,19 @@ reload_all_connections (SCPluginIfcfg *plugin)
 
 	/* Add connections from the current profile */
 	priv->connections = get_connections_for_profile (priv->profile, priv->ifd, priv->watch_table);
+
+	/* Check if we need to write out the auto wired connection */
+	for (iter = priv->connections; iter; iter = g_slist_next (iter)) {
+		NMConnection *connection = NM_CONNECTION (iter->data);
+		NMSettingConnection *s_con;
+
+		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+		if (!strcmp (s_con->type, NM_SETTING_WIRED_SETTING_NAME))
+			have_wired = TRUE;
+	}
+
+	if (!have_wired)
+		write_auto_wired_connection (priv->profile);
 }
 
 static GSList *
@@ -716,6 +758,7 @@ init (NMSystemConfigInterface *config)
 	if (!sc_plugin_inotify_init (plugin, &error)) {
 		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    inotify error: %s",
 		              error->message ? error->message : "(unknown)");
+		g_error_free (error);
 	}
 }
 

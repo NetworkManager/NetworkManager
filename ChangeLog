@@ -1,5 +1,14 @@
 2008-03-12  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/plugins/ifcfg-fedora/plugin.c
+		- (write_auto_wired_connection): new function; write out an auto
+			wired connection file since the applet isn't doing it any more
+		- (reload_all_connections): write out the auto wired connection file
+			if there aren't any wired connections already
+		- (init): don't leak a GError
+
+2008-03-12  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-interface.c
 		- (nm_device_interface_activate): print the ID of the connection
 			that's about to be activated
