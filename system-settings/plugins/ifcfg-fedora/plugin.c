@@ -91,7 +91,8 @@ get_current_profile_path (void)
 }
 
 #define AUTO_WIRED_STAMP_FILE SYSCONFDIR"/NetworkManager/auto-wired-stamp"
-#define AUTO_WIRED_FILE_NAME  _("ifcfg-Auto Wired")
+#define AUTO_WIRED_FILE_NAME  _("Auto Wired")
+
 static void
 write_auto_wired_connection (const char *profile_path)
 {
@@ -103,7 +104,7 @@ write_auto_wired_connection (const char *profile_path)
 	if (g_file_test (AUTO_WIRED_STAMP_FILE, G_FILE_TEST_EXISTS) || !profile_path)
 		return;
 
-	path = g_strdup_printf ("%s/%s", profile_path, AUTO_WIRED_FILE_NAME);
+	path = g_strdup_printf ("%s/ifcfg-%s", profile_path, AUTO_WIRED_FILE_NAME);
 	if (g_file_test (path, G_FILE_TEST_EXISTS))
 		return;
 
