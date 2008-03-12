@@ -1,5 +1,10 @@
 2008-03-12  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-properties-changed-signal.c
+		- (add_to_string): better handling of NULL objects
+
+2008-03-12  Dan Williams  <dcbw@redhat.com>
+
 	Move the 'carrier' property from NMDevice to NMDevice8023Ethernet;
 	convert the libnm-glib NMDevice8023Ethernet to cached properties
 

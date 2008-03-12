@@ -55,9 +55,21 @@ add_to_string (gpointer key, gpointer value, gpointer user_data)
 	GValue str_val = { 0, };
 
 	g_value_init (&str_val, G_TYPE_STRING);
-	g_value_transform ((GValue *) value, &str_val);
+	if (!g_value_transform ((GValue *) value, &str_val)) {
+		if (G_VALUE_HOLDS_OBJECT (value)) {
+			GObject *obj = g_value_get_object (value);
 
-	sprintf (buf + strlen (buf), "{%s: %s}, ", (const char *) key, g_value_get_string (&str_val));
+			if (g_value_get_object (value)) {
+				sprintf (buf + strlen (buf), "{%s: %p (%s)}, ",
+				         (const char *) key, obj, G_OBJECT_TYPE_NAME (obj));
+			} else {
+				sprintf (buf + strlen (buf), "{%s: %p}, ", (const char *) key, obj);
+			}
+		} else
+			sprintf (buf + strlen (buf), "{%s: <transform error>}, ", (const char *) key);
+	} else {
+		sprintf (buf + strlen (buf), "{%s: %s}, ", (const char *) key, g_value_get_string (&str_val));
+	}
 	g_value_unset (&str_val);
 }
 #endif
