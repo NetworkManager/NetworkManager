@@ -47,7 +47,6 @@ properties_changed_info_destroy (gpointer data)
 	g_slice_free (PropertiesChangedInfo, info);
 }
 
-#define DEBUG
 #ifdef DEBUG
 static void
 add_to_string (gpointer key, gpointer value, gpointer user_data)
