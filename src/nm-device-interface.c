@@ -1,5 +1,6 @@
 /* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
+#include "nm-setting-connection.h"
 #include "nm-device-interface.h"
 #include "nm-ip4-config.h"
 #include "nm-utils.h"
@@ -196,11 +197,18 @@ nm_device_interface_activate (NMDeviceInterface *device,
                               GError **error)
 {
 	gboolean success;
+	NMConnection *connection;
+	NMSettingConnection *s_con;
 
 	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), FALSE);
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
 
-	nm_info ("Activating device %s", nm_device_interface_get_iface (device));
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	g_assert (s_con);
+
+	nm_info ("Activation (%s) starting connection '%s'", nm_device_interface_get_iface (device), s_con->id);
 	success = NM_DEVICE_INTERFACE_GET_INTERFACE (device)->activate (device, req, error);
 	if (!success)
 		g_assert (*error);

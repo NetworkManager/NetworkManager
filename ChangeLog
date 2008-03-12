@@ -1,5 +1,11 @@
 2008-03-12  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-interface.c
+		- (nm_device_interface_activate): print the ID of the connection
+			that's about to be activated
+
+2008-03-12  Dan Williams  <dcbw@redhat.com>
+
 	Harmonize the 802.11 bitrate API
 
 	* introspection/nm-access-point.xml
