@@ -31,19 +31,6 @@
 #include "nm-ip4-config.h"
 #include "nm-connection.h"
 
-#if 0
-# define IOCTL_DEBUG 1
-#endif
-
-#ifdef IOCTL_DEBUG
-# define nm_ioctl_info(fmt, args...)				\
-  G_STMT_START {								\
-      g_message ("<information>\t" fmt "\n", ##args);	\
-  } G_STMT_END
-#else
-# define nm_ioctl_info(fmt, args...) do { } while(0)
-#endif
-
 typedef enum NMActStageReturn
 {
 	NM_ACT_STAGE_RETURN_FAILURE = 0,

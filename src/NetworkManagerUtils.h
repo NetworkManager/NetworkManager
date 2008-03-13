@@ -33,25 +33,6 @@
 #include "NetworkManager.h"
 #include "nm-device.h"
 
-typedef enum SockType
-{
-	DEV_WIRELESS,
-	DEV_GENERAL,
-	NETWORK_CONTROL
-} SockType;
-
-typedef struct NMSock NMSock;
-
-
-NMSock *		nm_dev_sock_open				(const char *iface,
-												 SockType type,
-												 const char *func_name,
-												 const char *desc);
-
-void			nm_dev_sock_close				(NMSock *sock);
-int			nm_dev_sock_get_fd				(NMSock *sock);
-void			nm_print_open_socks				(void);
-
 int			nm_null_safe_strcmp				(const char *s1, const char *s2);
 
 gboolean		nm_ethernet_address_is_valid		(const struct ether_addr *test_addr);
@@ -60,44 +41,6 @@ gboolean		nm_ethernet_addresses_are_equal	(const struct ether_addr *a, const str
 int			nm_spawn_process				(const char *args);
 
 void			nm_print_device_capabilities		(NMDevice *dev);
-
-#define NM_COMPLETION_TRIES_INFINITY -1
-
-typedef void * nm_completion_args[8];
-
-typedef gboolean (*nm_completion_func)(int tries, nm_completion_args args);
-typedef gboolean (*nm_completion_boolean_function_1)(u_int64_t arg);
-typedef gboolean (*nm_completion_boolean_function_2)(
-	u_int64_t arg0, u_int64_t arg1);
-
-void nm_wait_for_completion(
-	const int max_tries,
-	const guint interval_usecs,
-	nm_completion_func test_func,
-	nm_completion_func action_func,
-	nm_completion_args args);
-
-void nm_wait_for_completion_or_timeout(
-	const int max_tries,
-	const struct timeval *max_time,
-	const guint interval_usecs,
-	nm_completion_func test_func,
-	nm_completion_func action_func,
-	nm_completion_args args);
-
-void nm_wait_for_timeout(
-	const struct timeval *max_time,
-	const guint interval_usecs,
-	nm_completion_func test_func,
-	nm_completion_func action_func,
-	nm_completion_args args);
-
-gboolean nm_completion_boolean_test(int tries, nm_completion_args args);
-gboolean nm_completion_boolean_function1_test(int tries,
-		nm_completion_args args);
-gboolean nm_completion_boolean_function2_test(int tries,
-		nm_completion_args args);
-#define nm_completion_boolean_function_test nm_completion_boolean_function1_test
 
 gchar*			nm_utils_inet_ip4_address_as_string (guint32 ip);
 

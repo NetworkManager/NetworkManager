@@ -209,7 +209,7 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 	ARPMessage		p;
 	struct ether_addr	addr;
 	struct in_addr		ip = {0};
-	NMSock *			sk = NULL;
+	int fd = -1;
 	int				nprobes = 0;
 	int				nannounce = 0;
 	gboolean			success = FALSE;
@@ -233,15 +233,14 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 		goto out;
 
 	/* open an ARP socket */
-	if ((sk = nm_dev_sock_open (iface, NETWORK_CONTROL, __FUNCTION__, NULL)) == NULL)
-	{
+	fd = socket (AF_PACKET, SOCK_PACKET, htons (ETH_P_ALL));
+	if (fd < 0) {
 		nm_warning ("%s: Couldn't open network control socket.", iface);
 		goto out;
 	}
 
 	/* bind to the ARP socket */
-	if (bind (nm_dev_sock_get_fd (sk), &saddr, sizeof (saddr)) < 0)
-	{
+	if (bind (fd, &saddr, sizeof (saddr)) < 0) {
 		nm_warning ("%s: Couldn't bind to the device.", iface);
 		goto out;
 	}
@@ -264,7 +263,7 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 		if (nprobes < PROBE_NUM)
 		{
 			nm_info ("autoip: Sending probe #%d for IP address %s.", nprobes, inet_ntoa (ip));
-			arp (nm_dev_sock_get_fd (sk), &saddr, ARPOP_REQUEST, &addr, null_ip, &null_addr, ip);
+			arp (fd, &saddr, ARPOP_REQUEST, &addr, null_ip, &null_addr, ip);
 			nprobes++;
 			gettimeofday (&timeout, NULL);
 			if (nprobes == PROBE_NUM)
@@ -286,7 +285,7 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 		else if (nannounce < ANNOUNCE_NUM)
 		{
 			nm_info ("autoip: Sending announce #%d for IP address %s.", nannounce, inet_ntoa (ip));
-			arp (nm_dev_sock_get_fd (sk), &saddr, ARPOP_REQUEST, &addr, ip, &addr, ip);
+			arp (fd, &saddr, ARPOP_REQUEST, &addr, ip, &addr, ip);
 			nannounce++;
 			gettimeofday (&timeout, NULL);
 			timeout.tv_sec += ANNOUNCE_INTERVAL;
@@ -301,18 +300,16 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 		}
 
 		nm_info ("autoip: Waiting for reply...");
-		err = peekfd (dev, nm_dev_sock_get_fd (sk), &timeout);
+		err = peekfd (dev, fd, &timeout);
 		if ((err == RET_ERROR) || (err == RET_CEASED))
 			goto out;
 
 		/* There's some data waiting for us */
-		if (err == RET_SUCCESS)
-		{
+		if (err == RET_SUCCESS) {
 			nm_info ("autoip: Got some data to check for reply packet.");
 
 			/* read ARP packet */
-			if (recv (nm_dev_sock_get_fd (sk), &p, sizeof (p), 0) < 0)
-			{
+			if (recv (fd, &p, sizeof (p), 0) < 0) {
 				nm_warning ("autoip: packet receive failure, ignoring it.");
 				continue;
 			}
@@ -348,7 +345,7 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 	}
 
 out:
-	if (sk)
-		nm_dev_sock_close (sk);
+	if (fd >= 0)
+		close (fd);
 	return success;
 }

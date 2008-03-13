@@ -342,32 +342,35 @@ set_carrier (NMDevice8023Ethernet *self, const gboolean carrier)
 static guint32
 nm_device_802_3_ethernet_get_speed (NMDevice8023Ethernet *self)
 {
-	NMSock *			sk;
-	struct ifreq		ifr;
-	struct ethtool_cmd	edata;
-	const char *		iface;
-	guint32				speed = 0;
+	int fd;
+	struct ifreq ifr;
+	struct ethtool_cmd edata;
+	const char *iface;
+	guint32 speed = 0;
+	size_t len;
 
-	g_return_val_if_fail (self != NULL, FALSE);
+	g_return_val_if_fail (self != NULL, 0);
 
-	iface = nm_device_get_iface (NM_DEVICE (self));
-	if ((sk = nm_dev_sock_open (iface, DEV_GENERAL, __func__, NULL)) == NULL)
-	{
-		nm_warning ("cannot open socket on interface %s for ethtool: %s",
-				iface, strerror (errno));
-		return FALSE;
+	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		nm_warning ("couldn't open control socket.");
+		return 0;
 	}
 
-	strncpy (ifr.ifr_name, iface, sizeof (ifr.ifr_name) - 1);
+	iface = nm_device_get_iface (NM_DEVICE (self));
+	len = MIN (sizeof (ifr.ifr_name) - 1, strlen (iface));
+	memset (&ifr, 0, sizeof (struct ifreq));
+	strncpy (ifr.ifr_name, iface, len);
+
 	edata.cmd = ETHTOOL_GSET;
 	ifr.ifr_data = (char *) &edata;
-	if (ioctl (nm_dev_sock_get_fd (sk), SIOCETHTOOL, &ifr) == -1)
+	if (ioctl (fd, SIOCETHTOOL, &ifr) == -1)
 		goto out;
 
 	speed = edata.speed != G_MAXUINT16 ? edata.speed : 0;
 
 out:
-	nm_dev_sock_close (sk);
+	close (fd);
 	return speed;
 }
 
@@ -376,23 +379,30 @@ real_set_hw_address (NMDevice *dev)
 {
 	NMDevice8023Ethernet *self = NM_DEVICE_802_3_ETHERNET (dev);
 	struct ifreq req;
-	NMSock *sk;
-	int ret;
+	int ret, fd;
+	const char *iface;
+	size_t len;
 
-	sk = nm_dev_sock_open (nm_device_get_iface (dev), DEV_GENERAL, __FUNCTION__, NULL);
-	if (!sk)
+	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		nm_warning ("couldn't open control socket.");
 		return;
+	}
 
+	iface = nm_device_get_iface (dev);
+	len = MIN (sizeof (req.ifr_name) - 1, strlen (iface));
 	memset (&req, 0, sizeof (struct ifreq));
-	strncpy (req.ifr_name, nm_device_get_iface (dev), sizeof (req.ifr_name) - 1);
+	strncpy (req.ifr_name, iface, len);
 
-	ret = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFHWADDR, &req);
-	if (ret == 0)
+	ret = ioctl (fd, SIOCGIFHWADDR, &req);
+	if (ret == 0) {
 		memcpy (&(NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self)->hw_addr),
 				&(req.ifr_hwaddr.sa_data), sizeof (struct ether_addr));
+	}
 
-	nm_dev_sock_close (sk);
+	close (fd);
 }
+
 static guint32
 real_get_generic_capabilities (NMDevice *dev)
 {
@@ -815,35 +825,36 @@ supplicant_iface_state_cb (NMSupplicantInterface * iface,
 static gboolean
 supports_ethtool_carrier_detect (NMDevice8023Ethernet *self)
 {
-	NMSock *			sk;
-	struct ifreq		ifr;
-	gboolean			supports_ethtool = FALSE;
-	struct ethtool_cmd	edata;
-	const char *		iface;
+	int fd;
+	struct ifreq ifr;
+	gboolean supports_ethtool = FALSE;
+	struct ethtool_cmd edata;
+	const char *iface;
+	size_t len;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 
-	iface = nm_device_get_iface (NM_DEVICE (self));
-	if ((sk = nm_dev_sock_open (iface, DEV_GENERAL, __func__, NULL)) == NULL)
-	{
-		nm_warning ("cannot open socket on interface %s for ethtool detect: %s",
-				iface, strerror (errno));
+	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		nm_warning ("couldn't open control socket.");
 		return FALSE;
 	}
 
-	strncpy (ifr.ifr_name, iface, sizeof(ifr.ifr_name) - 1);
+	iface = nm_device_get_iface (NM_DEVICE (self));
+	len = MIN (sizeof (ifr.ifr_name) - 1, strlen (iface));
+	memset (&ifr, 0, sizeof (struct ifreq));
+	strncpy (ifr.ifr_name, iface, len);
+
 	edata.cmd = ETHTOOL_GLINK;
 	ifr.ifr_data = (char *) &edata;
 
-	nm_ioctl_info ("%s: About to ETHTOOL\n", iface);
-	if (ioctl (nm_dev_sock_get_fd (sk), SIOCETHTOOL, &ifr) == -1)
+	if (ioctl (fd, SIOCETHTOOL, &ifr) == -1)
 		goto out;
 
 	supports_ethtool = TRUE;
 
 out:
-	nm_ioctl_info ("%s: Done with ETHTOOL\n", iface);
-	nm_dev_sock_close (sk);
+	close (fd);
 	return supports_ethtool;
 }
 
@@ -856,13 +867,13 @@ out:
 #undef _LINUX_IF_H
 
 static int
-mdio_read (NMDevice8023Ethernet *self, NMSock *sk, struct ifreq *ifr, int location)
+mdio_read (NMDevice8023Ethernet *self, int fd, struct ifreq *ifr, int location)
 {
 	struct mii_ioctl_data *mii;
 	int val = -1;
 	const char *	iface;
 
-	g_return_val_if_fail (sk != NULL, -1);
+	g_return_val_if_fail (fd >= 0, -1);
 	g_return_val_if_fail (ifr != NULL, -1);
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
@@ -870,10 +881,8 @@ mdio_read (NMDevice8023Ethernet *self, NMSock *sk, struct ifreq *ifr, int locati
 	mii = (struct mii_ioctl_data *) &ifr->ifr_ifru;
 	mii->reg_num = location;
 
-	nm_ioctl_info ("%s: About to GET MIIREG\n", iface);
-	if (ioctl (nm_dev_sock_get_fd (sk), SIOCGMIIREG, ifr) >= 0)
+	if (ioctl (fd, SIOCGMIIREG, ifr) >= 0)
 		val = mii->val_out;
-	nm_ioctl_info ("%s: Done with GET MIIREG\n", iface);
 
 	return val;
 }
@@ -881,36 +890,34 @@ mdio_read (NMDevice8023Ethernet *self, NMSock *sk, struct ifreq *ifr, int locati
 static gboolean
 supports_mii_carrier_detect (NMDevice8023Ethernet *self)
 {
-	NMSock *		sk;
-	struct ifreq	ifr;
-	int			bmsr;
-	gboolean		supports_mii = FALSE;
-	int			err;
-	const char *	iface;
+	int err, fd, bmsr;
+	struct ifreq ifr;
+	gboolean supports_mii = FALSE;
+	const char *iface;
+	size_t len;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 
-	iface = nm_device_get_iface (NM_DEVICE (self));
-	if ((sk = nm_dev_sock_open (iface, DEV_GENERAL, __FUNCTION__, NULL)) == NULL)
-	{
-		nm_warning ("cannot open socket on interface %s for MII detect; errno=%d",
-				iface, errno);
-		return FALSE;
+	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		nm_warning ("couldn't open control socket.");
+		return 0;
 	}
 
-	strncpy (ifr.ifr_name, iface, sizeof (ifr.ifr_name) - 1);
-	nm_ioctl_info ("%s: About to GET MIIPHY\n", iface);
-	err = ioctl (nm_dev_sock_get_fd (sk), SIOCGMIIPHY, &ifr);
-	nm_ioctl_info ("%s: Done with GET MIIPHY\n", iface);
+	iface = nm_device_get_iface (NM_DEVICE (self));
+	len = MIN (sizeof (ifr.ifr_name) - 1, strlen (iface));
+	memset (&ifr, 0, sizeof (struct ifreq));
+	strncpy (ifr.ifr_name, iface, len);
 
+	err = ioctl (fd, SIOCGMIIPHY, &ifr);
 	if (err < 0)
 		goto out;
 
 	/* If we can read the BMSR register, we assume that the card supports MII link detection */
-	bmsr = mdio_read (self, sk, &ifr, MII_BMSR);
+	bmsr = mdio_read (self, fd, &ifr, MII_BMSR);
 	supports_mii = (bmsr != -1) ? TRUE : FALSE;
 
 out:
-	nm_dev_sock_close (sk);
+	close (fd);
 	return supports_mii;	
 }

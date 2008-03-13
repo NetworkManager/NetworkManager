@@ -353,8 +353,6 @@ main (int argc, char *argv[])
 	g_main_loop_run (main_loop);
 
 done:
-	nm_print_open_socks ();
-
 	if (vpn_manager)
 		g_object_unref (vpn_manager);
 

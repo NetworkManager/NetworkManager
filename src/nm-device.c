@@ -191,23 +191,25 @@ error:
 static gboolean
 real_is_up (NMDevice *self)
 {
-	NMSock *		sk;
-	struct ifreq	ifr;
-	int			err;
+	struct ifreq ifr;
 	const char *iface;
+	int err, fd;
+	size_t len;
 
-	iface = nm_device_get_iface (self);
-	if ((sk = nm_dev_sock_open (iface, DEV_GENERAL, __FUNCTION__, NULL)) == NULL)
+	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		nm_warning ("couldn't open control socket.");
 		return FALSE;
+	}
 
 	/* Get device's flags */
-	strncpy (ifr.ifr_name, iface, sizeof (ifr.ifr_name) - 1);
+	iface = nm_device_get_iface (self);
+	len = MIN (sizeof (ifr.ifr_name) - 1, strlen (iface));
+	strncpy (ifr.ifr_name, iface, len);
 
-	nm_ioctl_info ("%s: About to GET IFFLAGS.", iface);
-	err = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFFLAGS, &ifr);
-	nm_ioctl_info ("%s: Done with GET IFFLAGS.", iface);
+	err = ioctl (fd, SIOCGIFFLAGS, &ifr);
+	close (fd);
 
-	nm_dev_sock_close (sk);
 	if (!err)
 		return (!((ifr.ifr_flags^IFF_UP) & IFF_UP));
 
@@ -1469,28 +1471,29 @@ nm_device_get_ip4_address (NMDevice *self)
 void
 nm_device_update_ip4_address (NMDevice *self)
 {
-	guint32		new_address;
-	struct ifreq	req;
-	NMSock *		sk;
-	int			err;
-	const char *	iface;
+	struct ifreq req;
+	const char *iface;
+	guint32 new_address;
+	int fd, err;
+	size_t len;
 	
 	g_return_if_fail (self  != NULL);
 
-	iface = nm_device_get_iface (self);
-	g_return_if_fail (iface != NULL);
-
-	if ((sk = nm_dev_sock_open (iface, DEV_GENERAL, __func__, NULL)) == NULL)
+	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		nm_warning ("couldn't open control socket.");
 		return;
+	}
+
+	iface = nm_device_get_iface (self);
+	len = MIN (sizeof (req.ifr_name) - 1, strlen (iface));
 
 	memset (&req, 0, sizeof (struct ifreq));
-	strncpy (req.ifr_name, iface, sizeof (req.ifr_name) - 1);
+	strncpy (req.ifr_name, iface, len);
 
-	nm_ioctl_info ("%s: About to GET IFADDR.", iface);
-	err = ioctl (nm_dev_sock_get_fd (sk), SIOCGIFADDR, &req);
-	nm_ioctl_info ("%s: Done with GET IFADDR.", iface);
+	err = ioctl (fd, SIOCGIFADDR, &req);
 
-	nm_dev_sock_close (sk);
+	close (fd);
 	if (err != 0)
 		return;
 
@@ -1511,24 +1514,11 @@ nm_device_is_up (NMDevice *self)
 	return TRUE;
 }
 
-/* I really wish nm_v_wait_for_completion_or_timeout could translate these
- * to first class args instead of a all this void * arg stuff, so these
- * helpers could be nice and _tiny_. */
-static gboolean
-nm_completion_device_is_up_test (int tries,
-                                 nm_completion_args args)
-{
-	NMDevice *self = NM_DEVICE (args[0]);
-
-	if (nm_device_is_up (self))
-		return TRUE;
-	return FALSE;
-}
-
 gboolean
 nm_device_bring_up (NMDevice *self, gboolean wait)
 {
 	gboolean success;
+	guint32 tries = 0;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
@@ -1547,12 +1537,9 @@ nm_device_bring_up (NMDevice *self, gboolean wait)
 			return FALSE;
 	}
 
-	if (wait) {
-		nm_completion_args args;
-
-		args[0] = self;
-		nm_wait_for_completion (400, G_USEC_PER_SEC / 200, NULL, nm_completion_device_is_up_test, args);
-	}
+	/* Wait for the device to come up if requested */
+	while (wait && !nm_device_is_up (self) && (tries++ < 50))
+		g_usleep (200);
 
 	nm_device_state_changed (self, NM_DEVICE_STATE_DISCONNECTED);
 
@@ -1563,6 +1550,7 @@ void
 nm_device_bring_down (NMDevice *self, gboolean wait)
 {
 	NMDeviceState state;
+	guint32 tries = 0;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -1580,12 +1568,9 @@ nm_device_bring_down (NMDevice *self, gboolean wait)
 
 	nm_system_device_set_up_down (self, FALSE);
 
-	if (wait) {
-		nm_completion_args args;
-
-		args[0] = self;
-		nm_wait_for_completion (400, G_USEC_PER_SEC / 200, NULL, nm_completion_device_is_up_test, args);
-	}
+	/* Wait for the device to come up if requested */
+	while (wait && nm_device_is_up (self) && (tries++ < 50))
+		g_usleep (200);
 
 	nm_device_state_changed (self, NM_DEVICE_STATE_DOWN);
 }
