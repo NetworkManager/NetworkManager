@@ -369,7 +369,7 @@ static guint32 iw_freq_to_uint32 (struct iw_freq *freq)
 			return 2484;
 	}
 
-	return (guint32) (iw_freq2float (freq) / 1000000);
+	return (guint32) (((double) freq->m) * pow (10, freq->e) / 1000000);
 }
 
 
