@@ -7,15 +7,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: eu\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-03-08 13:38+0100\n"
-"PO-Revision-Date: 2008-03-08 13:49+0100\n"
+"POT-Creation-Date: 2008-03-13 11:33+0100\n"
+"PO-Revision-Date: 2008-03-13 11:34+0100\n"
 "Last-Translator: Iñaki Larrañaga Murgoitio <dooteo@euskalgnu.org>\n"
 "Language-Team: Basque <itzulpena@euskalgnu.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: KBabel 1.11.4\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms:  nplurals=2; plural=(n > 1);\n"
 
 #: ../src/nm-netlink-monitor.c:188 ../src/nm-netlink-monitor.c:448
 #, c-format
@@ -58,9 +58,15 @@ msgstr "Aukera baliogabea. Erabili '--help' baliozko aukeren zerrenda ikusteko.\
 
 #: ../src/named-manager/nm-named-manager.c:218
 msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
-msgstr "OHARRA: glibc-en gordetzaileak ez du 3 izen-zerbitzari baino gehiago onartzen."
+msgstr ""
+"OHARRA: glibc-en gordetzaileak ez du 3 izen-zerbitzari baino gehiago "
+"onartzen."
 
 #: ../src/named-manager/nm-named-manager.c:220
 msgid "The nameservers listed below may not be recognized."
 msgstr "Azpian zerrendatutako izen-zenbitzariak ez dira ezagutuko."
+
+#: ../system-settings/plugins/ifcfg-fedora/plugin.c:94
+msgid "Auto Wired"
+msgstr "Automatikoki konektatuta"
 
