@@ -1,5 +1,33 @@
 2008-03-12  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting-ip4-config.c
+	  libnm-util/nm-setting-ip4-config.h
+		- Remove 'manual' and 'autoip' properties
+		- Add 'method' property
+		- (verify): fix verification with 'method'
+		- (finalize): free 'method'
+		- (set_property, get_property, nm_setting_ip4_config_class_init): fix
+			up for 'method'
+
+	* src/nm-device.c
+		- (real_act_stage3_ip_config_start): check IP4Config method
+		- (nm_device_new_ip4_autoip_config): add a note about not sucking in
+			the future
+		- (merge_ip4_config): IP settings are valid with DHCP too
+		- (real_act_stage4_get_ip4_config): handle all IP4Config methods
+		- (real_act_stage4_ip_config_timeout): don't do autoip on DHCP timeout
+
+	* src/nm-device-802-11-wireless.c
+		- (real_act_stage3_ip_config_start): remove; autoip only on demand
+		- (real_act_stage4_get_ip4_config): just chain up to parent; autoip
+			only on demand
+
+	* system-settings/plugins/ifcfg-fedora/parser.c
+	  system-settings/plugins/ifcfg-suse/parser.c
+		- (make_ip4_setting): fix up for 'method'
+
+2008-03-12  Dan Williams  <dcbw@redhat.com>
+
 	* system-settings/plugins/ifcfg-fedora/parser.c
 	  system-settings/plugins/ifcfg-fedora/parser.h
 		- (get_ifcfg_name): ignore more file suffixes

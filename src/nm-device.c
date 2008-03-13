@@ -531,11 +531,11 @@ real_act_stage3_ip_config_start (NMDevice *self)
 													NM_TYPE_SETTING_IP4_CONFIG);
 
 	/* If we did not receive IP4 configuration information, default to DHCP */
-	if (!setting || setting->manual == FALSE) {
-		/* Begin a DHCP transaction on the interface */
+	if (!setting || !strcmp (setting->method, NM_SETTING_IP4_CONFIG_METHOD_DHCP)) {
 		NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 		gboolean success;
 
+		/* Begin a DHCP transaction on the interface */
 		nm_device_set_use_dhcp (self, TRUE);
 
 		/* DHCP manager will cancel any transaction already in progress and we do not
@@ -636,8 +636,8 @@ nm_device_new_ip4_autoip_config (NMDevice *self)
 
 	g_return_val_if_fail (self != NULL, NULL);
 
-	if (get_autoip (self, &ip))
-	{
+	// FIXME: make our autoip implementation not suck; use avahi-autoip
+	if (get_autoip (self, &ip)) {
 		#define LINKLOCAL_BCAST		0xa9feffff
 
 		config = nm_ip4_config_new ();
@@ -673,15 +673,13 @@ merge_ip4_config (NMIP4Config *ip4_config, NMSettingIP4Config *setting)
 
 	if (setting->addresses) {
 		/* FIXME; add support for more than one set of address/netmask/gateway for NMIP4Config */
-		if (setting->manual) {
-			NMSettingIP4Address *addr = (NMSettingIP4Address *) setting->addresses->data;
+		NMSettingIP4Address *addr = (NMSettingIP4Address *) setting->addresses->data;
 
-			nm_ip4_config_set_address (ip4_config, addr->address);
-			nm_ip4_config_set_netmask (ip4_config, addr->netmask);
+		nm_ip4_config_set_address (ip4_config, addr->address);
+		nm_ip4_config_set_netmask (ip4_config, addr->netmask);
 
-			if (addr->gateway)
-				nm_ip4_config_set_gateway (ip4_config, addr->gateway);
-		}
+		if (addr->gateway)
+			nm_ip4_config_set_gateway (ip4_config, addr->gateway);
 	}
 }
 
@@ -691,29 +689,36 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 {
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMConnection *connection;
+	NMSettingIP4Config *s_ip4;
 
 	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
 	connection = nm_act_request_get_connection (nm_device_get_act_request (self));
+	g_assert (connection);
 
-	if (nm_device_get_use_dhcp (self))
+	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+
+	if (nm_device_get_use_dhcp (self)) {
 		*config = nm_dhcp_manager_get_ip4_config (NM_DEVICE_GET_PRIVATE (self)->dhcp_manager,
 											 nm_device_get_iface (self));
-	else
-		*config = nm_ip4_config_new ();
-
-	if (*config) {
-		NMSettingIP4Config *s_ip4;
-
-		s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
 		merge_ip4_config (*config, s_ip4);
-		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	} else {
-		/* Make sure device is up even if config fails */
-		if (!nm_device_bring_up (self, FALSE))
-			ret = NM_ACT_STAGE_RETURN_FAILURE;
+		g_assert (s_ip4);
+
+		if (!strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP)) {
+			nm_device_new_ip4_autoip_config (self);
+		} else if (!strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
+			*config = nm_ip4_config_new ();
+			merge_ip4_config (*config, s_ip4);
+		}
 	}
+
+	if (!*config) {
+		/* Make sure device is up even if config fails */
+		nm_device_bring_up (self, FALSE);
+	} else
+		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 
 	return ret;
 }
@@ -791,11 +796,8 @@ real_act_stage4_ip_config_timeout (NMDevice *self,
 	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	/* Wired network, no DHCP reply.  Let's get an IP via Zeroconf. */
-	nm_info ("No DHCP reply received.  Automatically obtaining IP via Zeroconf.");
-	*config = nm_device_new_ip4_autoip_config (self);
-
-	return NM_ACT_STAGE_RETURN_SUCCESS;
+	/* DHCP failed; connection must fail */
+	return NM_ACT_STAGE_RETURN_FAILURE;
 }
 
 

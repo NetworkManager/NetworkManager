@@ -1,5 +1,7 @@
 /* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
+#include <string.h>
+
 #include <dbus/dbus-glib.h>
 #include "nm-setting-ip4-config.h"
 #include "nm-param-spec-specialized.h"
@@ -9,8 +11,7 @@ G_DEFINE_TYPE (NMSettingIP4Config, nm_setting_ip4_config, NM_TYPE_SETTING)
 
 enum {
 	PROP_0,
-	PROP_MANUAL,
-	PROP_AUTOIP,
+	PROP_METHOD,
 	PROP_DNS,
 	PROP_DNS_SEARCH,
 	PROP_ADDRESSES,
@@ -29,11 +30,34 @@ verify (NMSetting *setting, GSList *all_settings)
 {
 	NMSettingIP4Config *self = NM_SETTING_IP4_CONFIG (setting);
 
-	if (self->manual) {
+	if (!self->method)
+		return FALSE;
+
+	if (!strcmp (self->method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
 		if (!self->addresses) {
 			g_warning ("address is not provided");
 			return FALSE;
 		}
+	} else if (!strcmp (self->method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP)) {
+		if (self->dns && self->dns->len) {
+			g_warning ("may not specify DNS when using autoip");
+			return FALSE;
+		}
+
+		if (g_slist_length (self->dns_search)) {
+			g_warning ("may not specify DNS searches when using autoip");
+			return FALSE;
+		}
+
+		if (g_slist_length (self->addresses)) {
+			g_warning ("may not specify IP addresses when using autoip");
+			return FALSE;
+		}
+	} else if (!strcmp (self->method, NM_SETTING_IP4_CONFIG_METHOD_DHCP)) {
+		/* nothing to do */
+	} else {
+		g_warning ("invalid IP4 config method '%s'", self->method);
+		return FALSE;
 	}
 
 	return TRUE;
@@ -50,6 +74,8 @@ static void
 finalize (GObject *object)
 {
 	NMSettingIP4Config *self = NM_SETTING_IP4_CONFIG (object);
+
+	g_free (self->method);
 
 	if (self->dns)
 		g_array_free (self->dns, TRUE);
@@ -125,11 +151,9 @@ set_property (GObject *object, guint prop_id,
 	NMSettingIP4Config *setting = NM_SETTING_IP4_CONFIG (object);
 
 	switch (prop_id) {
-	case PROP_MANUAL:
-		setting->manual = g_value_get_boolean (value);
-		break;
-	case PROP_AUTOIP:
-		setting->autoip = g_value_get_boolean (value);
+	case PROP_METHOD:
+		g_free (setting->method);
+		setting->method = g_value_dup_string (value);
 		break;
 	case PROP_DNS:
 		if (setting->dns)
@@ -157,11 +181,8 @@ get_property (GObject *object, guint prop_id,
 	NMSettingIP4Config *setting = NM_SETTING_IP4_CONFIG (object);
 
 	switch (prop_id) {
-	case PROP_MANUAL:
-		g_value_set_boolean (value, setting->manual);
-		break;
-	case PROP_AUTOIP:
-		g_value_set_boolean (value, setting->autoip);
+	case PROP_METHOD:
+		g_value_set_string (value, setting->method);
 		break;
 	case PROP_DNS:
 		g_value_set_boxed (value, setting->dns);
@@ -192,20 +213,12 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 
 	/* Properties */
 	g_object_class_install_property
-		(object_class, PROP_MANUAL,
-		 g_param_spec_boolean (NM_SETTING_IP4_CONFIG_MANUAL,
-						   "Manual",
-						   "Do not use DHCP",
-						   FALSE,
-						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
-
-	g_object_class_install_property
-		(object_class, PROP_AUTOIP,
-		 g_param_spec_boolean (NM_SETTING_IP4_CONFIG_AUTOIP,
-						   "Auto IP",
-						   "Use Auto IP",
-						   FALSE,
-						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+		(object_class, PROP_METHOD,
+		 g_param_spec_string (NM_SETTING_IP4_CONFIG_METHOD,
+						      "Method",
+						      "IP configuration method",
+						      NULL,
+						      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_DNS,

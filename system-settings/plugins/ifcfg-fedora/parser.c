@@ -302,12 +302,17 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 	NMSettingIP4Config *s_ip4 = NULL;
 	char *value = NULL;
 	NMSettingIP4Address tmp = { 0, 0, 0 };
-	gboolean manual = TRUE;
+	char *method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
 	char *dir;
 
 	value = svGetValue (ifcfg, "BOOTPROTO");
-	if (value && (!strcmp (value, "bootp") || !strcmp (value, "dhcp")))
-		manual = FALSE;
+	if (value && (!g_ascii_strcasecmp (value, "bootp") || !g_ascii_strcasecmp (value, "dhcp")))
+		method = NM_SETTING_IP4_CONFIG_METHOD_DHCP;
+
+	if (value && !g_ascii_strcasecmp (value, "autoip")) {
+		method = NM_SETTING_IP4_CONFIG_METHOD_AUTOIP;
+		goto done;
+	}
 
 	value = svGetValue (ifcfg, "IPADDR");
 	if (value) {
@@ -348,8 +353,9 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 		g_free (value);
 	}
 
+done:
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
-	s_ip4->manual = manual;
+	s_ip4->method = g_strdup (method);
 	if (tmp.address || tmp.netmask || tmp.gateway) {
 		NMSettingIP4Address *addr;
 		addr = g_new0 (NMSettingIP4Address, 1);
@@ -357,14 +363,17 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 		s_ip4->addresses = g_slist_append (s_ip4->addresses, addr);
 	}
 
-	dir = g_path_get_dirname (ifcfg->fileName);
-	if (dir) {
-		read_profile_resolv_conf (dir, s_ip4);
-		g_free (dir);
-	} else {
-		g_set_error (error, ifcfg_plugin_error_quark (), 0,
-		             "Not enough memory to parse resolv.conf");
-		goto error;
+	/* No DNS for autoip */
+	if (g_ascii_strcasecmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP)) {
+		dir = g_path_get_dirname (ifcfg->fileName);
+		if (dir) {
+			read_profile_resolv_conf (dir, s_ip4);
+			g_free (dir);
+		} else {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Not enough memory to parse resolv.conf");
+			goto error;
+		}
 	}
 
 	return NM_SETTING (s_ip4);

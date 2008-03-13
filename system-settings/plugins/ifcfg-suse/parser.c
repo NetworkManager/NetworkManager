@@ -155,14 +155,14 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 	NMSettingIP4Config *s_ip4 = NULL;
 	char *value = NULL;
 	NMSettingIP4Address tmp = { 0, 0, 0 };
-	gboolean manual = TRUE;
+	char *method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
 
 	value = svGetValue (ifcfg, "BOOTPROTO");
 	if (!value)
 		return NULL;
 
 	if (!g_ascii_strcasecmp (value, "bootp") || !g_ascii_strcasecmp (value, "dhcp")) {
-		manual = FALSE;
+		method = NM_SETTING_IP4_CONFIG_METHOD_DHCP;
 		return NULL;
 	}
 
@@ -212,7 +212,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 	}
 
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
-	s_ip4->manual = manual;
+	s_ip4->method = g_strdup (method);
 	if (tmp.address || tmp.netmask || tmp.gateway) {
 		NMSettingIP4Address *addr;
 		addr = g_new0 (NMSettingIP4Address, 1);

@@ -2685,69 +2685,19 @@ out:
 	return ret;
 }
 
-
-static NMActStageReturn
-real_act_stage3_ip_config_start (NMDevice *dev)
-{
-	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
-	NMAccessPoint *		ap;
-	NMActStageReturn		ret = NM_ACT_STAGE_RETURN_FAILURE;
-	NMActRequest *          req;
-	NMConnection *          connection;
-
-	ap = nm_device_802_11_wireless_get_activation_ap (self);
-	g_assert (ap);
-
-	req = nm_device_get_act_request (dev);
-	g_assert (req);
-
-	connection = nm_act_request_get_connection (req);
-	g_assert (connection);
-
-	/* User-created access points (ie, Ad-Hoc networks) don't do DHCP,
-	 * everything else does.
-	 */
-	if (!nm_ap_get_user_created (ap))
-	{
-		NMDevice80211WirelessClass *	klass;
-		NMDeviceClass * parent_class;
-
-		/* Chain up to parent */
-		klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (self);
-		parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
-		ret = parent_class->act_stage3_ip_config_start (dev);
-	}
-	else
-		ret = NM_ACT_STAGE_RETURN_SUCCESS;
-
-	return ret;
-}
-
-
 static NMActStageReturn
 real_act_stage4_get_ip4_config (NMDevice *dev,
                                 NMIP4Config **config)
 {
-	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
-	NMAccessPoint *ap = nm_device_802_11_wireless_get_activation_ap (self);
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
+	NMDeviceClass *parent_class;
 
 	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	g_assert (ap);
-	if (nm_ap_get_user_created (ap)) {
-		*config = nm_device_new_ip4_autoip_config (NM_DEVICE (self));
-		ret = NM_ACT_STAGE_RETURN_SUCCESS;
-	} else {
-		NMDevice80211WirelessClass *	klass;
-		NMDeviceClass * parent_class;
-
-		/* Chain up to parent */
-		klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (self);
-		parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
-		ret = parent_class->act_stage4_get_ip4_config (dev, config);
-	}
+	/* Chain up to parent */
+	parent_class = NM_DEVICE_CLASS (nm_device_802_11_wireless_parent_class);
+	ret = parent_class->act_stage4_get_ip4_config (dev, config);
 
 	if ((ret == NM_ACT_STAGE_RETURN_SUCCESS) && *config) {
 		NMConnection *connection;
@@ -3052,7 +3002,6 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 
 	parent_class->act_stage1_prepare = real_act_stage1_prepare;
 	parent_class->act_stage2_config = real_act_stage2_config;
-	parent_class->act_stage3_ip_config_start = real_act_stage3_ip_config_start;
 	parent_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 	parent_class->act_stage4_ip_config_timeout = real_act_stage4_ip_config_timeout;
 	parent_class->deactivate = real_deactivate;
