@@ -1,5 +1,11 @@
 2008-03-13  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerPolicy.c
+		- (update_routing_and_dns): never set the default route through an
+			IPv4LL addressed device
+
+2008-03-13  Dan Williams  <dcbw@redhat.com>
+
 	* NetworkManagerUtils.c
 	  NetworkManagerUtils.h
 		- Remove NMSock stuff

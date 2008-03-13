@@ -121,10 +121,23 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	devices = nm_manager_get_devices (policy->manager);
 	for (iter = devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
+		NMActRequest *req;
+		NMConnection *connection;
+		NMSettingIP4Config *s_ip4;
 		guint32 prio;
 		
 		if (   (nm_device_get_state (dev) != NM_DEVICE_STATE_ACTIVATED)
 		    || !nm_device_get_ip4_config (dev))
+			continue;
+
+		req = nm_device_get_act_request (dev);
+		g_assert (req);
+		connection = nm_act_request_get_connection (req);
+		g_assert (connection);
+
+		/* Never set the default route through an IPv4LL-addressed device */
+		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+		if (s_ip4 && !strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP))
 			continue;
 
 		prio = get_device_priority (dev);
