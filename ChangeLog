@@ -1,5 +1,16 @@
 2008-03-13  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerUtils.c
+	  src/NetworkManagerUtils.h
+		- (nm_ether_ntop): replacement for iw_ether_ntop()
+
+	* src/NetworkManagerAP.c
+	  src/nm-device-802-11-wireless.c
+	  src/nm-device-802-3-ethernet.c
+		- s/iw_ether_ntop/nm_ether_ntop/g
+
+2008-03-13  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerPolicy.c
 		- (update_routing_and_dns): never set the default route through an
 			IPv4LL addressed device

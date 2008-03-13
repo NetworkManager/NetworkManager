@@ -50,5 +50,7 @@ int				nm_utils_ip4_netmask_to_prefix (guint32 ip4_netmask);
 
 char *          nm_utils_hexstr2bin (const char *hex, size_t len);
 
+char *nm_ether_ntop (const struct ether_addr *mac);
+
 #endif
 

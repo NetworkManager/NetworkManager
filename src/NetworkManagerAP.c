@@ -162,7 +162,6 @@ get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
 	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (object);
-	char hw_addr_buf[20];
 	GArray * ssid;
 	int len;
 	int i;
@@ -189,9 +188,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->freq);
 		break;
 	case PROP_HW_ADDRESS:
-		memset (hw_addr_buf, 0, 20);
-		iw_ether_ntop (&priv->address, hw_addr_buf);
-		g_value_set_string (value, &hw_addr_buf[0]);
+		g_value_take_string (value, nm_ether_ntop (&priv->address));
 		break;
 	case PROP_MODE:
 		g_value_set_int (value, priv->mode);

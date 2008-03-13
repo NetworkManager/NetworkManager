@@ -714,14 +714,11 @@ get_property (GObject *object, guint prop_id,
 {
 	NMDevice8023Ethernet *device = NM_DEVICE_802_3_ETHERNET (object);
 	struct ether_addr hw_addr;
-	char hw_addr_buf[20];
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
-		memset (hw_addr_buf, 0, 20);
 		nm_device_802_3_ethernet_get_address (device, &hw_addr);
-		iw_ether_ntop (&hw_addr, hw_addr_buf);
-		g_value_set_string (value, &hw_addr_buf[0]);
+		g_value_take_string (value, nm_ether_ntop (&hw_addr));
 		break;
 	case PROP_SPEED:
 		g_value_set_uint (value, nm_device_802_3_ethernet_get_speed (device));

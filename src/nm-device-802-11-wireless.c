@@ -610,28 +610,27 @@ periodic_update (NMDevice80211Wireless *self)
 		const GByteArray *new_ssid = NULL;
 		const struct ether_addr *old_bssid = NULL;
 		const GByteArray *old_ssid = NULL;
-		gchar new_addr[20];
-		gchar old_addr[20];
+		char *old_addr = NULL, *new_addr = NULL;
 
-		memset (new_addr, '\0', sizeof (new_addr));
 		if (new_ap) {
 			new_bssid = nm_ap_get_address (new_ap);
-			iw_ether_ntop (new_bssid, new_addr);
+			new_addr = nm_ether_ntop (new_bssid);
 			new_ssid = nm_ap_get_ssid (new_ap);
 		}
 
-		memset (old_addr, '\0', sizeof (old_addr));
 		if (priv->current_ap) {
 			old_bssid = nm_ap_get_address (priv->current_ap);
-			iw_ether_ntop (old_bssid, old_addr);
+			old_addr = nm_ether_ntop (old_bssid);
 			old_ssid = nm_ap_get_ssid (priv->current_ap);
 		}
 
 		nm_debug ("Roamed from BSSID %s (%s) to %s (%s)",
-		          old_bssid ? old_addr : "(none)",
+		          old_addr ? old_addr : "(none)",
 		          old_ssid ? nm_utils_escape_ssid (old_ssid->data, old_ssid->len) : "(none)",
-		          new_bssid ? new_addr : "(none)",
+		          new_addr ? new_addr : "(none)",
 		          new_ssid ? nm_utils_escape_ssid (new_ssid->data, new_ssid->len) : "(none)");
+		g_free (old_addr);
+		g_free (new_addr);
 
 		set_current_ap (self, new_ap);
 	}
@@ -2942,14 +2941,11 @@ get_property (GObject *object, guint prop_id,
 	NMDevice80211Wireless *device = NM_DEVICE_802_11_WIRELESS (object);
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device);
 	struct ether_addr hw_addr;
-	char hw_addr_buf[20];
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
-		memset (hw_addr_buf, 0, 20);
 		nm_device_802_11_wireless_get_address (device, &hw_addr);
-		iw_ether_ntop (&hw_addr, hw_addr_buf);
-		g_value_set_string (value, &hw_addr_buf[0]);
+		g_value_take_string (value, nm_ether_ntop (&hw_addr));
 		break;
 	case PROP_MODE:
 		g_value_set_int (value, nm_device_802_11_wireless_get_mode (device));

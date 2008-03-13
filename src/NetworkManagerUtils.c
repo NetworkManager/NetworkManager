@@ -351,3 +351,14 @@ nm_utils_hexstr2bin (const char *hex,
 }
 
 /* End from hostap */
+
+char *
+nm_ether_ntop (const struct ether_addr *mac)
+{
+	/* we like leading zeros */
+	return g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
+	                        mac->ether_addr_octet[0], mac->ether_addr_octet[1],
+	                        mac->ether_addr_octet[2], mac->ether_addr_octet[3],
+	                        mac->ether_addr_octet[4], mac->ether_addr_octet[5]);
+}
+
