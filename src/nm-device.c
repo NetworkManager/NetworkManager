@@ -658,28 +658,62 @@ merge_ip4_config (NMIP4Config *ip4_config, NMSettingIP4Config *setting)
 		return; /* Defaults are just fine */
 
 	if (setting->dns) {
-		int i;
+		int i, j;
 
-		for (i = 0; i < setting->dns->len; i++)
-			nm_ip4_config_add_nameserver (ip4_config, g_array_index (setting->dns, guint32, i));
+		for (i = 0; i < setting->dns->len; i++) {
+			guint32 ns;
+			gboolean found = FALSE;
+
+			/* Avoid dupes */
+			ns = g_array_index (setting->dns, guint32, i);
+			for (j = 0; j < nm_ip4_config_get_num_nameservers (ip4_config); j++) {
+				if (nm_ip4_config_get_nameserver (ip4_config, j) == ns) {
+					found = TRUE;
+					break;
+				}
+			}
+
+			if (!found)
+				nm_ip4_config_add_nameserver (ip4_config, ns);
+		}
 	}
 
 	if (setting->dns_search) {
 		GSList *iter;
 
-		for (iter = setting->dns_search; iter; iter = iter->next)
-			nm_ip4_config_add_domain (ip4_config, (char *) iter->data);
+		for (iter = setting->dns_search; iter; iter = iter->next) {
+			int i;
+			gboolean found = FALSE;
+
+			/* Avoid dupes */
+			for (i = 0; i < nm_ip4_config_get_num_searches (ip4_config); i++) {
+				const char *search = nm_ip4_config_get_search (ip4_config, i);
+
+				if (!strcmp (search, (char *) iter->data)) {
+					found = TRUE;
+					break;
+				}
+			}
+
+			if (!found)
+				nm_ip4_config_add_search (ip4_config, (char *) iter->data);
+		}
 	}
 
 	if (setting->addresses) {
 		/* FIXME; add support for more than one set of address/netmask/gateway for NMIP4Config */
 		NMSettingIP4Address *addr = (NMSettingIP4Address *) setting->addresses->data;
 
-		nm_ip4_config_set_address (ip4_config, addr->address);
-		nm_ip4_config_set_netmask (ip4_config, addr->netmask);
+		/* Avoid dupes, but override if anything is different */
+		if (   (nm_ip4_config_get_address (ip4_config) != addr->address)
+		    || (nm_ip4_config_get_netmask (ip4_config) != addr->netmask)
+		    || (addr->gateway && (nm_ip4_config_get_gateway (ip4_config) != addr->gateway))) {
+			nm_ip4_config_set_address (ip4_config, addr->address);
+			nm_ip4_config_set_netmask (ip4_config, addr->netmask);
 
-		if (addr->gateway)
-			nm_ip4_config_set_gateway (ip4_config, addr->gateway);
+			if (addr->gateway)
+				nm_ip4_config_set_gateway (ip4_config, addr->gateway);
+		}
 	}
 }
 
