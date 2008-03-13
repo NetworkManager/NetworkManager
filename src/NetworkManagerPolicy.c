@@ -41,6 +41,7 @@
 #include "nm-gsm-device.h"
 #include "nm-cdma-device.h"
 #include "nm-dbus-manager.h"
+#include "nm-setting-ip4-config.h"
 #include "nm-setting-connection.h"
 #include "NetworkManagerSystem.h"
 #include "nm-named-manager.h"
