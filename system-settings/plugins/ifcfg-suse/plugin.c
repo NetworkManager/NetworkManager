@@ -240,7 +240,7 @@ update_default_routes (NMSystemConfigInterface *config, gboolean emit_updated)
 	for (iter = priv->connections; iter; iter = iter->next) {
 		connection = NM_CONNECTION (iter->data);
 		ip4_setting = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
-		if (ip4_setting && ip4_setting->manual) {
+		if (ip4_setting && !strcmp (ip4_setting->method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
 			got_manual = TRUE;
 			break;
 		}
@@ -256,7 +256,7 @@ update_default_routes (NMSystemConfigInterface *config, gboolean emit_updated)
 	for (iter = priv->connections; iter; iter = iter->next) {
 		connection = NM_CONNECTION (iter->data);
 		ip4_setting = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
-		if (ip4_setting && ip4_setting->manual) {
+		if (ip4_setting && !strcmp (ip4_setting->method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
 			GSList *address_iter;
 
 			for (address_iter = ip4_setting->addresses; address_iter; address_iter = address_iter->next) {

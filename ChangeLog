@@ -1,3 +1,8 @@
+2008-03-13  Tambet Ingo  <tambet@gmail.com>
+
+	* system-settings/plugins/ifcfg-suse/plugin.c (update_default_routes): 
+	Adapt the changes of NMSettingIP4Config.
+
 2008-03-13  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerUtils.c
