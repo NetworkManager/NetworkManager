@@ -1,3 +1,8 @@
+2008-03-13  Dan Williams  <dcbw@redhat.com>
+
+	* nm-openvpn-service.name.in
+		- Fix for 64 bit compat (gnome.org #522231)
+
 2008-02-06  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Ryan Ayers <rayers.public@dividia.net>

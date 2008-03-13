@@ -5,4 +5,5 @@ program=@BINDIR@/nm-openvpn-service
 
 [GNOME]
 auth-dialog=@LIBEXECDIR@/nm-openvpn-auth-dialog
-properties=@LIBDIR@/libnm-openvpn-properties
+properties=@PREFIX@/${LIB}/libnm-openvpn-properties
+
