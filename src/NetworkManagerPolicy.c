@@ -190,7 +190,7 @@ auto_activate_device (gpointer user_data)
 	// deactivate the device and activate the new connection instead of just
 	// bailing if the device is already active
 	if (nm_device_get_act_request (data->device))
-		return FALSE;
+		goto out;
 
 	policy = data->policy;
 
@@ -233,12 +233,13 @@ auto_activate_device (gpointer user_data)
 	/* Remove this call's handler ID */
 	policy->pending_activation_checks = g_slist_remove (policy->pending_activation_checks, data);
 
-	g_object_unref (data->device);
-
 	g_slist_foreach (connections, (GFunc) g_object_unref, NULL);
 	g_slist_free (connections);
 
+ out:
+	g_object_unref (data->device);
 	g_free (data);
+
 	return FALSE;
 }
 

@@ -1,3 +1,8 @@
+2008-03-14  Tambet Ingo  <tambet@gmail.com>
+
+	* src/NetworkManagerPolicy.c (auto_activate_device): Don't leak device and
+	data.
+
 2008-03-14  Dan Williams  <dcbw@redhat.com>
 
 	* include/wireless-helper.h
