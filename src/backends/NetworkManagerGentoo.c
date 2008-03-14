@@ -30,8 +30,10 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <signal.h>
-
+#include <string.h>
+#include <stdlib.h>
 #include <arpa/inet.h>
+
 #include "NetworkManagerGeneric.h"
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"

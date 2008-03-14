@@ -42,6 +42,9 @@
 #include <arpa/inet.h>
 #include <glib/gprintf.h>
 #include <glib/gfileutils.h>
+#include <string.h>
+#include <stdlib.h>
+
 #include "NetworkManagerGeneric.h"
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"

@@ -31,6 +31,9 @@
 #include <signal.h>
 #include <arpa/inet.h>
 #include <glib/gkeyfile.h>
+#include <string.h>
+#include <stdlib.h>
+
 #include "NetworkManagerGeneric.h"
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"
