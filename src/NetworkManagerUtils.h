@@ -26,7 +26,6 @@
 #include <stdio.h>
 #include <syslog.h>
 #include <net/ethernet.h>
-#include <iwlib.h>
 #include <sys/time.h>
 #include <stdarg.h>
 
