@@ -1,5 +1,12 @@
 2008-03-14  Tambet Ingo  <tambet@gmail.com>
 
+	* src/nm-manager.c
+		- (nm_device_interface_get_iface): g_object_get() will return an
+			allocated value, so this function must not return const
+		- (nm_device_interface_activate): free returned iface
+
+2008-03-14  Tambet Ingo  <tambet@gmail.com>
+
 	* src/NetworkManagerPolicy.c (auto_activate_device): Don't leak device and
 	data.
 

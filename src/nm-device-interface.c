@@ -164,10 +164,10 @@ nm_device_interface_get_type (void)
 }
 
 /* FIXME: This should be public and nm_device_get_iface() should be removed. */
-static const char *
+static char *
 nm_device_interface_get_iface (NMDeviceInterface *device)
 {
-	const char *iface = NULL;
+	char *iface = NULL;
 
 	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), NULL);
 
@@ -199,6 +199,7 @@ nm_device_interface_activate (NMDeviceInterface *device,
 	gboolean success;
 	NMConnection *connection;
 	NMSettingConnection *s_con;
+	char *iface;
 
 	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), FALSE);
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
@@ -208,7 +209,10 @@ nm_device_interface_activate (NMDeviceInterface *device,
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_con);
 
-	nm_info ("Activation (%s) starting connection '%s'", nm_device_interface_get_iface (device), s_con->id);
+	iface = nm_device_interface_get_iface (device);
+	nm_info ("Activation (%s) starting connection '%s'", iface, s_con->id);
+	g_free (iface);
+
 	success = NM_DEVICE_INTERFACE_GET_INTERFACE (device)->activate (device, req, error);
 	if (!success)
 		g_assert (*error);
