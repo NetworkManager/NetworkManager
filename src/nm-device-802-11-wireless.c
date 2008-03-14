@@ -215,15 +215,17 @@ nm_device_802_11_wireless_update_signal_strength (NMDevice80211Wireless *self,
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd >= 0) {
-		gboolean has_range = FALSE;
-		iwrange range;
-		iwstats stats;
+		struct iwreq wrq;
+		struct iw_statistics stats;
 
-		memset (&range, 0, sizeof (iwrange));
-		has_range = (iw_get_range_info (fd, iface, &range) >= 0);
+		memset (&stats, 0, sizeof (stats));
 
-		memset (&stats, 0, sizeof (iwstats));
-		if (iw_get_stats (fd, iface, &stats, &range, has_range) == 0) {
+		wrq.u.data.pointer = &stats;
+		wrq.u.data.length = sizeof (stats);
+		wrq.u.data.flags = 1;		/* Clear updated flag */
+		strncpy (wrq.ifr_name, iface, IFNAMSIZ);
+
+		if (ioctl (fd, SIOCGIWSTATS, &wrq) == 0) {
 			percent = wireless_qual_to_percent (&stats.qual, (const iwqual *)(&self->priv->max_qual),
 					(const iwqual *)(&self->priv->avg_qual));
 		}
@@ -245,7 +247,7 @@ real_get_generic_capabilities (NMDevice *dev)
 {
 	int fd, err;
 	guint32 caps = NM_DEVICE_CAP_NONE;
-	iwrange range;
+	struct iw_range range;
 	struct iwreq wrq;
 	const char *iface = nm_device_get_iface (dev);
 
@@ -257,12 +259,18 @@ real_get_generic_capabilities (NMDevice *dev)
 		goto out;
 	}
 
-	if (iw_get_range_info (fd, iface, &range) < 0) {
+	memset (&wrq, 0, sizeof (struct iwreq));
+	memset (&range, 0, sizeof (struct iw_range));
+	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
+	wrq.u.data.pointer = (caddr_t) &range;
+	wrq.u.data.length = sizeof (struct iw_range);
+
+	if (ioctl (fd, SIOCGIWRANGE, &wrq) < 0) {
 		nm_warning ("couldn't get driver range information.");
 		goto out;
 	}
 
-	if (range.we_version_compiled < 16) {
+	if ((wrq.u.data.length < 300) || (range.we_version_compiled < 16)) {
 		nm_warning ("%s: driver's Wireless Extensions version (%d) is too old.",
 					iface, range.we_version_compiled);
 		goto out;
@@ -272,7 +280,8 @@ real_get_generic_capabilities (NMDevice *dev)
 
 	/* Card's that don't scan aren't supported */
 	memset (&wrq, 0, sizeof (struct iwreq));
-	err = iw_set_ext (fd, iface, SIOCSIWSCAN, &wrq);
+	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
+	err = ioctl (fd, SIOCSIWSCAN, &wrq);
 	if ((err == -1) && (errno == EOPNOTSUPP))
 		caps = NM_DEVICE_CAP_NONE;
 
@@ -968,14 +977,15 @@ nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *self)
 
 	g_return_val_if_fail (self != NULL, -1);
 
-	iface = nm_device_get_iface (NM_DEVICE (self));
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0)
 		goto out;
 
 	memset (&wrq, 0, sizeof (struct iwreq));
+	iface = nm_device_get_iface (NM_DEVICE (self));
+	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
 
-	if (iw_get_ext (fd, iface, SIOCGIWMODE, &wrq) == 0) {
+	if (ioctl (fd, SIOCGIWMODE, &wrq) == 0) {
 		if ((wrq.u.mode == IW_MODE_ADHOC) || (wrq.u.mode == IW_MODE_INFRA))
 			mode = wrq.u.mode;
 	} else {
@@ -1010,15 +1020,16 @@ nm_device_802_11_wireless_set_mode (NMDevice80211Wireless *self,
 	if (nm_device_802_11_wireless_get_mode (self) == mode)
 		return TRUE;
 
-	iface = nm_device_get_iface (NM_DEVICE (self));
-
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0)
 		goto out;
 
 	memset (&wrq, 0, sizeof (struct iwreq));
 	wrq.u.mode = mode;
-	if (iw_set_ext (fd, iface, SIOCSIWMODE, &wrq) == 0)
+	iface = nm_device_get_iface (NM_DEVICE (self));
+	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
+
+	if (ioctl (fd, SIOCSIWMODE, &wrq) == 0)
 		success = TRUE;
 	else {
 		if (errno != ENODEV) {
@@ -1049,14 +1060,15 @@ nm_device_802_11_wireless_get_frequency (NMDevice80211Wireless *self)
 
 	g_return_val_if_fail (self != NULL, 0);
 
-	iface = nm_device_get_iface (NM_DEVICE (self));
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0)
 		return 0;
 
 	memset (&wrq, 0, sizeof (struct iwreq));
+	iface = nm_device_get_iface (NM_DEVICE (self));
+	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
 
-	err = iw_get_ext (fd, iface, SIOCGIWFREQ, &wrq);
+	err = ioctl (fd, SIOCGIWFREQ, &wrq);
 	if (err >= 0)
 		freq = iw_freq_to_uint32 (&wrq.u.freq);
 	else if (err == -1)
@@ -1189,7 +1201,6 @@ const GByteArray *
 nm_device_802_11_wireless_get_ssid (NMDevice80211Wireless *self)
 {
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
-	const char * iface;
 	int	sk;
 	struct iwreq wrq;
 	char ssid[IW_ESSID_MAX_SIZE + 1];
@@ -1197,7 +1208,6 @@ nm_device_802_11_wireless_get_ssid (NMDevice80211Wireless *self)
 
 	g_return_val_if_fail (self != NULL, NULL);	
 
-	iface = nm_device_get_iface (NM_DEVICE (self));
 	sk = socket (AF_INET, SOCK_DGRAM, 0);
 	if (!sk) {
 		nm_error ("Couldn't create socket: %d.", errno);
@@ -1208,7 +1218,9 @@ nm_device_802_11_wireless_get_ssid (NMDevice80211Wireless *self)
 	wrq.u.essid.pointer = (caddr_t) &ssid;
 	wrq.u.essid.length = sizeof (ssid);
 	wrq.u.essid.flags = 0;
-	if (iw_get_ext (sk, iface, SIOCGIWESSID, &wrq) < 0) {
+	strncpy (wrq.ifr_name, nm_device_get_iface (NM_DEVICE (self)), IFNAMSIZ);
+
+	if (ioctl (sk, SIOCGIWESSID, &wrq) < 0) {
 		nm_warning ("Couldn't get SSID: %d", errno);
 		goto out;
     }
@@ -1286,7 +1298,9 @@ nm_device_802_11_wireless_set_ssid (NMDevice80211Wireless *self,
 	wrq.u.essid.length = len;
 	wrq.u.essid.flags = (len > 0) ? 1 : 0; /* 1=enable SSID, 0=disable/any */
 
-	if (iw_get_ext (sk, iface, SIOCSIWESSID, &wrq) < 0) {
+	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
+
+	if (ioctl (sk, SIOCSIWESSID, &wrq) < 0) {
 		if (errno != ENODEV) {
 			nm_warning ("error setting SSID to '%s' for device %s: %s",
 			            ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(null)",
@@ -1319,17 +1333,16 @@ nm_device_802_11_wireless_get_bitrate (NMDevice80211Wireless *self)
 {
 	int err = -1, fd;
 	struct iwreq wrq;
-	const char *iface;
 
 	g_return_val_if_fail (self != NULL, 0);
 
-	iface = nm_device_get_iface (NM_DEVICE (self));
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0)
 		return 0;
 
 	memset (&wrq, 0, sizeof (wrq));
-	err = iw_get_ext (fd, iface, SIOCGIWRATE, &wrq);
+	strncpy (wrq.ifr_name, nm_device_get_iface (NM_DEVICE (self)), IFNAMSIZ);
+	err = ioctl (fd, SIOCGIWRATE, &wrq);
 	close (fd);
 
 	return ((err >= 0) ? wrq.u.bitrate.value / 1000 : 0);
@@ -1347,14 +1360,12 @@ nm_device_802_11_wireless_get_bssid (NMDevice80211Wireless *self,
 {
 	int fd;
 	struct iwreq wrq;
-	const char *iface;
 
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (bssid != NULL);
 
 	memset (bssid, 0, sizeof (struct ether_addr));
 
-	iface = nm_device_get_iface (NM_DEVICE (self));
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
 		g_warning ("failed to open control socket.");
@@ -1362,7 +1373,8 @@ nm_device_802_11_wireless_get_bssid (NMDevice80211Wireless *self,
 	}
 
 	memset (&wrq, 0, sizeof (wrq));
-	if (iw_get_ext (fd, iface, SIOCGIWAP, &wrq) >= 0)
+	strncpy (wrq.ifr_name, nm_device_get_iface (NM_DEVICE (self)), IFNAMSIZ);
+	if (ioctl (fd, SIOCGIWAP, &wrq) >= 0)
 		memcpy (bssid->ether_addr_octet, &(wrq.u.ap_addr.sa_data), ETH_ALEN);
 
 	close (fd);
@@ -1380,7 +1392,7 @@ nm_device_802_11_wireless_disable_encryption (NMDevice80211Wireless *self)
 {
 	int fd;
 	const char *iface;
-	struct iwreq wreq = {
+	struct iwreq wrq = {
 		.u.data.pointer = (caddr_t) NULL,
 		.u.data.length = 0,
 		.u.data.flags = IW_ENCODE_DISABLED
@@ -1395,7 +1407,9 @@ nm_device_802_11_wireless_disable_encryption (NMDevice80211Wireless *self)
 	}
 
 	iface = nm_device_get_iface (NM_DEVICE (self));
-	if (iw_set_ext (fd, iface, SIOCSIWENCODE, &wreq) == -1) {
+	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
+
+	if (ioctl (fd, SIOCSIWENCODE, &wrq) == -1) {
 		if (errno != ENODEV) {
 			nm_warning ("error setting key for device %s: %s",
 			            iface, strerror (errno));

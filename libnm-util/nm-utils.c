@@ -25,9 +25,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <iwlib.h>
-#include <wireless.h>
 #include <arpa/inet.h>
+
+#include "wireless-helper.h"
 
 #include <glib.h>
 #include <glib-object.h>

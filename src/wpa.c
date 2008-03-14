@@ -12,13 +12,17 @@
  * See README and COPYING for more details.
  */
 
+#include "wireless-helper.h"
+
 #include <stdint.h>
-#include <iwlib.h>
+#include <string.h>
 #include <glib.h>
 
-#include "kernel-types.h"
 #include "wpa.h"
 #include "nm-utils.h"
+
+typedef guint16 u16;
+typedef guint8 u8;
 
 #define WPA_GET_LE16(a) ((u16) (((a)[1] << 8) | (a)[0]))
 

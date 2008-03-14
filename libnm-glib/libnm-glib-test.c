@@ -3,8 +3,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <iwlib.h>
-#include <wireless.h>
+
+#include "wireless-helper.h"
 
 #include "nm-client.h"
 #include "nm-device.h"

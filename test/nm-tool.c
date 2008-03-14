@@ -26,7 +26,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <iwlib.h>
+#include "wireless-helper.h"
 
 #include <sys/socket.h>
 #include <netinet/in.h>

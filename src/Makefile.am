@@ -63,7 +63,6 @@ NetworkManager_SOURCES =				\
 		nm-cdma-device.h		\
 		autoip.c					\
 		autoip.h					\
-		kernel-types.h			\
 		wpa.c				\
 		wpa.h				\
 		nm-netlink.c			\
@@ -121,7 +120,6 @@ NetworkManager_LDADD = 							\
 			$(DBUS_LIBS)						\
 			$(GTHREAD_LIBS)					\
 			$(HAL_LIBS)						\
-			$(IWLIB)							\
 			$(LIBNL_LIBS)						\
 			./marshallers/libmarshallers.la	\
 			./named-manager/libnamed-manager.la	\

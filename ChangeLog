@@ -1,5 +1,40 @@
 2008-03-14  Dan Williams  <dcbw@redhat.com>
 
+	* include/wireless-helper.h
+	  include/Makefile.am
+		- One place for all the junk needed for #including wireless.h
+
+	* test/nm-tool.c
+	  src/NetworkManagerAP.c
+	  src/wpa.c
+	  src/Makefile.am
+	  libnm-util/nm-utils.c
+	  libnm-util/nm-setting-wireless.c
+	  libnm-glib/nm-device-802-11-wireless.c
+	  libnm-glib/nm-access-point.c
+	  libnm-glib/libnm-glib-test.c
+		- include wireless-helper.h, not iwlib.h
+
+	* configure.in
+		- Don't need libiw really, just need to check for wireless.h
+
+	* src/kernel-types.h
+		- Remove; used types moved into wpa.c
+
+	* src/nm-device-802-11-wireless.c
+		- (nm_device_802_11_wireless_update_signal_strength,
+		   real_get_generic_capabilities, nm_device_802_11_wireless_get_mode,
+		   nm_device_802_11_wireless_set_mode,
+		   nm_device_802_11_wireless_get_frequency,
+		   nm_device_802_11_wireless_get_ssid,
+		   nm_device_802_11_wireless_set_ssid,
+		   nm_device_802_11_wireless_get_bitrate,
+		   nm_device_802_11_wireless_get_bssid,
+		   nm_device_802_11_wireless_disable_encryption): use ioctl() directly
+			instead of iwlib functions
+
+2008-03-14  Dan Williams  <dcbw@redhat.com>
+
 	* src/ppp-manager/nm-ppp-manager.c
 		- (impl_ppp_manager_need_secrets): since it's asynchronous now, it
 			should only take the DBusGMethodInvocation argument, not user/pass

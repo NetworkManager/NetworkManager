@@ -2,9 +2,11 @@
 
 #include <string.h>
 #include <netinet/ether.h>
+
+#include "wireless-helper.h"
+
 #include <dbus/dbus-glib.h>
-#include <iwlib.h>
-#include <wireless.h>
+
 #include "NetworkManager.h"
 
 #include "nm-setting-wireless.h"

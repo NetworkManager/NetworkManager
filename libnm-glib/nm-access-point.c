@@ -1,6 +1,8 @@
 /* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
-#include <iwlib.h>
+#include "wireless-helper.h"
+
+#include <string.h>
 
 #include "nm-access-point.h"
 #include "NetworkManager.h"

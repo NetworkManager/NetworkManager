@@ -1,5 +1,8 @@
 /* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
-#include <iwlib.h>
+
+#include "wireless-helper.h"
+
+#include <string.h>
 
 #include "nm-device-802-11-wireless.h"
 #include "nm-device-private.h"

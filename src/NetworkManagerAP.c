@@ -20,11 +20,14 @@
  * (C) Copyright 2004 Red Hat, Inc.
  */
 
+#include "wireless-helper.h"
+
+#include <string.h>
+
 #include "NetworkManagerAP.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-dbus-manager.h"
-#include <wireless.h>
 #include "wpa.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-setting-wireless.h"
