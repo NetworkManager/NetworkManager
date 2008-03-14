@@ -15,9 +15,7 @@
 #include "nm-marshal.h"
 
 static void impl_ppp_manager_need_secrets (NMPPPManager *manager,
-								   char **username,
-								   char **password,
-								   DBusGMethodInvocation *context);
+                                           DBusGMethodInvocation *context);
 
 static gboolean impl_ppp_manager_set_state (NMPPPManager *manager,
 								    guint32 state,
@@ -187,9 +185,7 @@ remove_timeout_handler (NMPPPManager *manager)
 
 static void
 impl_ppp_manager_need_secrets (NMPPPManager *manager,
-						 char **username,
-						 char **password,
-						 DBusGMethodInvocation *context)
+                               DBusGMethodInvocation *context)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
 	NMConnection *connection;
