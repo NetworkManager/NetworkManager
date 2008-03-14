@@ -42,7 +42,9 @@
 #include <resolv.h>
 #include <netdb.h>
 #include <glib.h>
-#include <pthread.h>
+#include <ctype.h>
+#include <linux/if.h>
+
 #include "NetworkManagerSystem.h"
 #include "nm-device.h"
 #include "nm-named-manager.h"

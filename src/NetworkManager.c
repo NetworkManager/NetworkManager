@@ -36,6 +36,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <glib/gi18n.h>
+#include <string.h>
 
 #include "NetworkManager.h"
 #include "nm-utils.h"

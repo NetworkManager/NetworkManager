@@ -28,6 +28,8 @@
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <unistd.h>
 
 #include "nm-dhcp-manager.h"
 #include "nm-marshal.h"

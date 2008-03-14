@@ -28,6 +28,7 @@
 #include <signal.h>
 #include <fcntl.h>
 #include <sys/select.h>
+#include <string.h>
 
 #include "NetworkManagerPolicy.h"
 #include "NetworkManagerUtils.h"
