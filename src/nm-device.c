@@ -25,6 +25,10 @@
 #include <dbus/dbus.h>
 #include <netinet/in.h>
 #include <string.h>
+#include <net/if.h>
+#include <unistd.h>
+#include <errno.h>
+#include <sys/ioctl.h>
 
 #include "nm-device-interface.h"
 #include "nm-device.h"
@@ -194,7 +198,6 @@ real_is_up (NMDevice *self)
 	struct ifreq ifr;
 	const char *iface;
 	int err, fd;
-	size_t len;
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
@@ -204,9 +207,7 @@ real_is_up (NMDevice *self)
 
 	/* Get device's flags */
 	iface = nm_device_get_iface (self);
-	len = MIN (sizeof (ifr.ifr_name) - 1, strlen (iface));
-	strncpy (ifr.ifr_name, iface, len);
-
+	strncpy (ifr.ifr_name, iface, IFNAMSIZ);
 	err = ioctl (fd, SIOCGIFFLAGS, &ifr);
 	close (fd);
 
@@ -1472,10 +1473,8 @@ void
 nm_device_update_ip4_address (NMDevice *self)
 {
 	struct ifreq req;
-	const char *iface;
 	guint32 new_address;
 	int fd, err;
-	size_t len;
 	
 	g_return_if_fail (self  != NULL);
 
@@ -1485,15 +1484,11 @@ nm_device_update_ip4_address (NMDevice *self)
 		return;
 	}
 
-	iface = nm_device_get_iface (self);
-	len = MIN (sizeof (req.ifr_name) - 1, strlen (iface));
-
 	memset (&req, 0, sizeof (struct ifreq));
-	strncpy (req.ifr_name, iface, len);
-
+	strncpy (req.ifr_name, nm_device_get_iface (self), IFNAMSIZ);
 	err = ioctl (fd, SIOCGIFADDR, &req);
-
 	close (fd);
+
 	if (err != 0)
 		return;
 

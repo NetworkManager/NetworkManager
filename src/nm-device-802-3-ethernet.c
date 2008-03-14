@@ -29,6 +29,9 @@
 #include <stdlib.h>
 #include <linux/sockios.h>
 #include <linux/ethtool.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
+#include <net/if.h>
 
 #include "nm-device-802-3-ethernet.h"
 #include "nm-device-interface.h"
@@ -344,10 +347,10 @@ nm_device_802_3_ethernet_get_speed (NMDevice8023Ethernet *self)
 {
 	int fd;
 	struct ifreq ifr;
-	struct ethtool_cmd edata;
-	const char *iface;
+	struct ethtool_cmd edata = {
+		.cmd = ETHTOOL_GSET,
+	};
 	guint32 speed = 0;
-	size_t len;
 
 	g_return_val_if_fail (self != NULL, 0);
 
@@ -357,13 +360,10 @@ nm_device_802_3_ethernet_get_speed (NMDevice8023Ethernet *self)
 		return 0;
 	}
 
-	iface = nm_device_get_iface (NM_DEVICE (self));
-	len = MIN (sizeof (ifr.ifr_name) - 1, strlen (iface));
 	memset (&ifr, 0, sizeof (struct ifreq));
-	strncpy (ifr.ifr_name, iface, len);
-
-	edata.cmd = ETHTOOL_GSET;
+	strncpy (ifr.ifr_name, nm_device_get_iface (NM_DEVICE (self)), IFNAMSIZ);
 	ifr.ifr_data = (char *) &edata;
+
 	if (ioctl (fd, SIOCETHTOOL, &ifr) == -1)
 		goto out;
 
@@ -380,8 +380,6 @@ real_set_hw_address (NMDevice *dev)
 	NMDevice8023Ethernet *self = NM_DEVICE_802_3_ETHERNET (dev);
 	struct ifreq req;
 	int ret, fd;
-	const char *iface;
-	size_t len;
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
@@ -389,10 +387,8 @@ real_set_hw_address (NMDevice *dev)
 		return;
 	}
 
-	iface = nm_device_get_iface (dev);
-	len = MIN (sizeof (req.ifr_name) - 1, strlen (iface));
 	memset (&req, 0, sizeof (struct ifreq));
-	strncpy (req.ifr_name, iface, len);
+	strncpy (req.ifr_name, nm_device_get_iface (dev), IFNAMSIZ);
 
 	ret = ioctl (fd, SIOCGIFHWADDR, &req);
 	if (ret == 0) {
@@ -826,8 +822,6 @@ supports_ethtool_carrier_detect (NMDevice8023Ethernet *self)
 	struct ifreq ifr;
 	gboolean supports_ethtool = FALSE;
 	struct ethtool_cmd edata;
-	const char *iface;
-	size_t len;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 
@@ -837,10 +831,8 @@ supports_ethtool_carrier_detect (NMDevice8023Ethernet *self)
 		return FALSE;
 	}
 
-	iface = nm_device_get_iface (NM_DEVICE (self));
-	len = MIN (sizeof (ifr.ifr_name) - 1, strlen (iface));
 	memset (&ifr, 0, sizeof (struct ifreq));
-	strncpy (ifr.ifr_name, iface, len);
+	strncpy (ifr.ifr_name, nm_device_get_iface (NM_DEVICE (self)), IFNAMSIZ);
 
 	edata.cmd = ETHTOOL_GLINK;
 	ifr.ifr_data = (char *) &edata;
@@ -890,8 +882,6 @@ supports_mii_carrier_detect (NMDevice8023Ethernet *self)
 	int err, fd, bmsr;
 	struct ifreq ifr;
 	gboolean supports_mii = FALSE;
-	const char *iface;
-	size_t len;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 
@@ -901,10 +891,8 @@ supports_mii_carrier_detect (NMDevice8023Ethernet *self)
 		return 0;
 	}
 
-	iface = nm_device_get_iface (NM_DEVICE (self));
-	len = MIN (sizeof (ifr.ifr_name) - 1, strlen (iface));
 	memset (&ifr, 0, sizeof (struct ifreq));
-	strncpy (ifr.ifr_name, iface, len);
+	strncpy (ifr.ifr_name, nm_device_get_iface (NM_DEVICE (self)), IFNAMSIZ);
 
 	err = ioctl (fd, SIOCGMIIPHY, &ifr);
 	if (err < 0)
