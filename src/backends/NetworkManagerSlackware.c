@@ -99,21 +99,6 @@ void nm_system_device_flush_addresses_with_iface (const char *iface)
 }
 
 /*
- * nm_system_device_setup_static_ip4_config
- *
- * Set up the device with a particular IPv4 address/netmask/gateway.
- *
- * Returns:	TRUE	on success
- *			FALSE on error
- *
- */
-gboolean nm_system_device_setup_static_ip4_config (NMDevice *dev)
-{
-	nm_warning ("nm_system_device_setup_static_ip4_config() is not implemented yet for this distribution.\n");
-	return FALSE;
-}
-
-/*
  * nm_system_device_get_system_config
  *
  * Retrieve any relevant configuration info for a particular device
