@@ -304,10 +304,13 @@ nm_serial_device_close (NMSerialDevice *device)
 	if (priv->fd) {
 		nm_debug ("Closing device '%s'", nm_device_get_iface (NM_DEVICE (device)));
 
-		g_io_channel_unref (priv->channel);
+		if (priv->channel) {
+			g_io_channel_unref (priv->channel);
+			priv->channel = NULL;
+		}
+
 		ioctl (priv->fd, TCSETA, &priv->old_t);
 		close (priv->fd);
-
 		priv->fd = 0;
 	}
 }
