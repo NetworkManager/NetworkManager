@@ -6,6 +6,7 @@
 #include "nm-connection.h"
 #include "nm-utils.h"
 
+#include "nm-setting-8021x.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ppp.h"
@@ -61,6 +62,7 @@ register_default_settings (void)
 		GType type;
 	} default_map[] = {
 		{ NM_SETTING_CONNECTION_SETTING_NAME,        NM_TYPE_SETTING_CONNECTION },
+		{ NM_SETTING_802_1X_SETTING_NAME,            NM_TYPE_SETTING_802_1X },
 		{ NM_SETTING_WIRED_SETTING_NAME,             NM_TYPE_SETTING_WIRED },
 		{ NM_SETTING_WIRELESS_SETTING_NAME,          NM_TYPE_SETTING_WIRELESS },
 		{ NM_SETTING_IP4_CONFIG_SETTING_NAME,        NM_TYPE_SETTING_IP4_CONFIG },

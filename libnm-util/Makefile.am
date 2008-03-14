@@ -12,6 +12,7 @@ libnm_util_include_HEADERS = 		\
 	nm-connection.h			\
 	nm-param-spec-specialized.h	\
 	nm-setting.h			\
+	nm-setting-8021x.h		\
 	nm-setting-connection.h		\
 	nm-setting-ip4-config.h		\
 	nm-setting-ppp.h		\
@@ -30,6 +31,7 @@ libnm_util_la_SOURCES=			\
 	nm-connection.c			\
 	nm-param-spec-specialized.c	\
 	nm-setting.c			\
+	nm-setting-8021x.c		\
 	nm-setting-connection.c		\
 	nm-setting-ip4-config.c		\
 	nm-setting-ppp.c		\
