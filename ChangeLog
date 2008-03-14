@@ -1,4 +1,4 @@
-2008-03-14  Tambet Ingo  <tambet@gmail.com>
+2008-03-14  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-manager.c
 		- (nm_device_interface_get_iface): g_object_get() will return an
