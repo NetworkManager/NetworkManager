@@ -31,7 +31,6 @@
 #include <sys/time.h>
 #include <string.h>
 #include <signal.h>
-#include <iwlib.h>
 
 #include "NetworkManager.h"
 #include "NetworkManagerUtils.h"
