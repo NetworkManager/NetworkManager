@@ -12,8 +12,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager.HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-03-07 19:44+0000\n"
-"PO-Revision-Date: 2008-03-10 11:27+0100\n"
+"POT-Creation-Date: 2008-03-12 18:36+0000\n"
+"PO-Revision-Date: 2008-03-16 13:20+0100\n"
 "Last-Translator: Jorge González <jorgegonz@svn.gnome.org>\n"
 "Language-Team: Español <gnome-es-list@gnome.org>\n"
 "MIME-Version: 1.0\n"
@@ -63,9 +63,15 @@ msgstr "Opción no válida. Use --help para ver una lista de las opciones válid
 
 #: ../src/named-manager/nm-named-manager.c:218
 msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
-msgstr "NOTA: el determinador de nombres de glibc no soporta más de 3 servidores de nombres."
+msgstr ""
+"NOTA: el determinador de nombres de glibc no soporta más de 3 servidores de "
+"nombres."
 
 #: ../src/named-manager/nm-named-manager.c:220
 msgid "The nameservers listed below may not be recognized."
 msgstr "Puede que los servidores de nombres listados abajo no se reconozcan."
+
+#: ../system-settings/plugins/ifcfg-fedora/plugin.c:94
+msgid "Auto Wired"
+msgstr "Conexión cableada automática"
 
