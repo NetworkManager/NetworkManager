@@ -99,8 +99,6 @@ struct _NMDeviceClass
 	void			(* deactivate)			(NMDevice *self);
 	void			(* deactivate_quickly)	(NMDevice *self);
 
-	void			(* activation_cancel_handler)		(NMDevice *self);
-
 	gboolean		(* can_interrupt_activation)		(NMDevice *self);
 };
 
@@ -149,8 +147,6 @@ void			nm_device_activate_schedule_stage4_ip_config_get		(NMDevice *device);
 void			nm_device_activate_schedule_stage4_ip_config_timeout	(NMDevice *device);
 gboolean		nm_device_deactivate_quickly	(NMDevice *dev);
 gboolean		nm_device_is_activating		(NMDevice *dev);
-void			nm_device_activation_cancel	(NMDevice *dev);
-
 gboolean		nm_device_can_interrupt_activation		(NMDevice *self);
 
 NMDeviceState nm_device_get_state (NMDevice *device);

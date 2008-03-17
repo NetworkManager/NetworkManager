@@ -1,3 +1,16 @@
+2008-03-17  Tambet Ingo  <tambet@gmail.com>
+
+	Clean up activating device deactivation.
+
+	* src/nm-device.c (real_activation_cancel_handler): Remove. The same thing
+	should be done whether the device activation gets cancelled or the device
+	is just getting deactivated.
+	(nm_device_activation_cancel): Remove.
+	(nm_device_deactivate_quickly): Handle the case where device is activating.
+
+	* src/nm-device-802-11-wireless.c (real_activation_cancel_handler): Remove.
+	It does the exact same thing as real_deactivate_quickly().
+
 2008-03-17  Dan Williams  <dcbw@redhat.com>
 
 	Split the 802.1x bits out of the wireless-security setting so they are

@@ -989,52 +989,6 @@ clear_act_request (NMDevice *self)
 	priv->act_request = NULL;
 }
 
-static void
-real_activation_cancel_handler (NMDevice *self)
-{
-	if (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG  &&
-		nm_device_get_use_dhcp (self)) {
-
-		nm_dhcp_manager_cancel_transaction (NM_DEVICE_GET_PRIVATE (self)->dhcp_manager,
-											nm_device_get_iface (self));
-	}
-}
-
-
-/*
- * nm_device_activation_cancel
- *
- * Signal activation worker that it should stop and die.
- *
- */
-void
-nm_device_activation_cancel (NMDevice *self)
-{
-	NMDeviceClass *klass;
-
-	g_return_if_fail (self != NULL);
-
-	if (!nm_device_is_activating (self))
-		return;
-
-	nm_info ("Activation (%s): cancelling...", nm_device_get_iface (self));
-
-	/* Break the activation chain */
-	if (self->priv->act_source_id) {
-		g_source_remove (self->priv->act_source_id);
-		self->priv->act_source_id = 0;
-	}
-
-	klass = NM_DEVICE_CLASS (g_type_class_peek (NM_TYPE_DEVICE));
-	if (klass->activation_cancel_handler)
-		klass->activation_cancel_handler (self);
-
-	clear_act_request (self);
-
-	nm_info ("Activation (%s): cancelled.", nm_device_get_iface (self));
-}
-
-
 /*
  * nm_device_deactivate_quickly
  *
@@ -1046,22 +1000,27 @@ nm_device_activation_cancel (NMDevice *self)
 gboolean
 nm_device_deactivate_quickly (NMDevice *self)
 {
-	g_return_val_if_fail (self != NULL, FALSE);
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	nm_system_shutdown_nis ();
 
-	if (nm_device_is_activating (self))
-		nm_device_activation_cancel (self);
+	/* Break the activation chain */
+	if (priv->act_source_id) {
+		g_source_remove (priv->act_source_id);
+		priv->act_source_id = 0;
+	}
 
 	/* Stop any ongoing DHCP transaction on this device */
 	if (nm_device_get_act_request (self) && nm_device_get_use_dhcp (self)) {
-		nm_dhcp_manager_cancel_transaction (NM_DEVICE_GET_PRIVATE (self)->dhcp_manager,
-											nm_device_get_iface (self));		
+		nm_dhcp_manager_cancel_transaction (priv->dhcp_manager, nm_device_get_iface (self));
+		nm_device_set_use_dhcp (self, FALSE);
 	}
 
-	/* Tear down an existing activation request, which may not have happened
-	 * in nm_device_activation_cancel() above, for various reasons.
-	 */
+	/* Tear down an existing activation request */
 	clear_act_request (self);
 
 	/* Call device type-specific deactivation */
@@ -1723,7 +1682,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	object_class->constructor = constructor;
 
 	klass->is_up = real_is_up;
-	klass->activation_cancel_handler = real_activation_cancel_handler;
 	klass->get_type_capabilities = real_get_type_capabilities;
 	klass->get_generic_capabilities = real_get_generic_capabilities;
 	klass->act_stage1_prepare = real_act_stage1_prepare;

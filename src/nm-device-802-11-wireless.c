@@ -2902,26 +2902,6 @@ activation_failure_handler (NMDevice *dev)
 	         ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)");
 }
 
-static void
-real_activation_cancel_handler (NMDevice *dev)
-{
-	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
-	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
-	NMDevice80211WirelessClass *klass;
-	NMDeviceClass *parent_class;
-
-	/* Chain up to parent first */
-	klass = NM_DEVICE_802_11_WIRELESS_GET_CLASS (self);
-	parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
-	parent_class->activation_cancel_handler (dev);
-
-	cleanup_association_attempt (self, TRUE);
-
-	set_current_ap (self, NULL);
-	priv->rate = 0;
-}
-
-
 static gboolean
 real_can_interrupt_activation (NMDevice *dev)
 {
@@ -3025,8 +3005,6 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 	parent_class->deactivate = real_deactivate;
 	parent_class->deactivate_quickly = real_deactivate_quickly;
 	parent_class->can_interrupt_activation = real_can_interrupt_activation;
-
-	parent_class->activation_cancel_handler = real_activation_cancel_handler;
 
 	/* Properties */
 	g_object_class_install_property
