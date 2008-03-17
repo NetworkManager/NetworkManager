@@ -43,7 +43,7 @@ typedef struct {
 	/* Signals */
 	void (*connection_secrets_updated)  (NMActRequest *req,
 	                                     NMConnection *connection,
-	                                     const char * setting);
+	                                     GSList *updated_settings);
 	void (*connection_secrets_failed)   (NMActRequest *req,
 	                                     NMConnection *connection,
 	                                     const char * setting);

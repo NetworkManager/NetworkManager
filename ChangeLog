@@ -1,5 +1,80 @@
 2008-03-17  Dan Williams  <dcbw@redhat.com>
 
+	Split the 802.1x bits out of the wireless-security setting so they are
+	generalized enough for wired 802.1x to use too.
+
+	* introspection/nm-exported-connection.xml
+		- GetSecrets now returns 'a{sa{sv}}' (a hash of settings hashes) instead
+			of just a hash of the secrets for one setting
+
+	* libnm-util/nm-setting-wireless-security.c
+	  libnm-util/nm-setting-wireless-security.h
+		- Remove 802.1x-specific stuff
+		- Added leap-username and leap-password properties for old-school LEAP
+
+	* src/nm-device.c
+	  src/nm-device.h
+		- (connection_secrets_updated_cb): take a list of updated settings names,
+			not just one
+
+	* src/supplicant-manager/nm-supplicant-config.c
+	  src/supplicant-manager/nm-supplicant-config.h
+		- (nm_supplicant_config_add_setting_wireless_security): remove 802.1x
+			specific stuff; fix for updated LEAP bits; punt 802.1x stuff
+			to nm_supplicant_config_add_setting_8021x()
+		- (nm_supplicant_config_add_setting_8021x): add an 802-1x setting to
+			the supplicant config
+
+	* src/nm-device-802-11-wireless.c
+		- (build_supplicant_config): pass in the 802.1x setting too, if any
+		- (real_connection_secrets_updated): take a list of updated settings
+			names, not just one
+
+	* src/nm-device-802-3-ethernet.c
+	  src/nm-cdma-device.c
+	  src/nm-gsm-device.c
+		- (real_connection_secrets_updated_cb): take a list of updated settings
+			names, not just one
+
+	* src/nm-activation-request.c
+	  src/nm-activation-request.h
+		- (nm_act_request_class_init): the 'connection-secrets-updated' signal
+			now passes a list of updated settings names, not just one
+		- (update_one_setting): new function; handle one updated setting
+		- (get_secrets_cb): handle multiple settings returned from the
+			settings service; have to be careful of ordering here as there are
+			some dependencies between settings (ex. wireless-security and 802.1x
+			in some cases)
+
+	* src/marshallers/nm-marshal.list
+		- new marshaller for connection-secrets-updated signal
+
+	* libnm-util/nm-setting-8021x.c
+		- Add back the 'pin' and 'psk' settings, for EAP-SIM and EAP-PSK auth
+			methods
+		- (verify): a valid 'eap' property is now required
+
+	* libnm-util/nm-connection.c
+		- (register_default_settings): add priorities to settings; there are
+			some dependencies between settings, and during the need_secrets
+			calls this priority needs to be respected.  For example, only the
+			wireless-security setting knows whether or not the connection is
+			going to use 802.1x or now, so it must be asked for secrets before
+			any existing 802.1x setting is
+		- (nm_connection_lookup_setting_type): expose
+
+	* libnm-util/nm-setting-wireless.c
+		- (verify): should verify even if all_settings is NULL; otherwise won't
+			catch the case where there is missing security
+
+	* libnm-util/nm-setting-wireless-security.c
+		- Remove everything to do with 802.1x
+		- Add old-school LEAP specific properties for username and password
+		- (need_secrets): rework LEAP secrets checking
+		- (verify): rework for LEAP and 802.1x verification
+
+2008-03-17  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerPolicy.c
 		- (auto_activate_device): always remove the current activation check
 			from the pending activation list, otherwise when the policy gets

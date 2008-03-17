@@ -484,8 +484,8 @@ real_get_best_auto_connection (NMDevice *dev,
 
 static void
 real_connection_secrets_updated (NMDevice *dev,
-						   NMConnection *connection,
-						   const char *setting_name)
+                                 NMConnection *connection,
+                                 GSList *updated_settings)
 {
 	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (dev);
 

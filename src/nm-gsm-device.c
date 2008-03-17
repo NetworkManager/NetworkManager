@@ -506,17 +506,26 @@ real_get_generic_capabilities (NMDevice *dev)
 static void
 real_connection_secrets_updated (NMDevice *dev,
                                  NMConnection *connection,
-                                 const char *setting_name)
+                                 GSList *updated_settings)
 {
 	NMActRequest *req;
+	gboolean found = FALSE;
+	GSList *iter;
 
 	if (nm_device_get_state (dev) != NM_DEVICE_STATE_NEED_AUTH)
 		return;
 
-	if (strcmp (setting_name, NM_SETTING_GSM_SETTING_NAME) != 0) {
-		nm_warning ("Ignoring updated secrets for setting '%s'.", setting_name);
-		return;
+	for (iter = updated_settings; iter; iter = g_slist_next (iter)) {
+		const char *setting_name = (const char *) iter->data;
+
+		if (!strcmp (setting_name, NM_SETTING_GSM_SETTING_NAME))
+			found = TRUE;
+		else
+			nm_warning ("Ignoring updated secrets for setting '%s'.", setting_name);
 	}
+
+	if (!found)
+		return;
 
 	req = nm_device_get_act_request (dev);
 	g_assert (req);

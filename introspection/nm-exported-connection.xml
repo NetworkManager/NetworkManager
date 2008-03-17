@@ -68,7 +68,7 @@
             <arg name="hints" type="as" direction="in">
                 <tp:docstring>
                     Array of strings of key names in the Setting for which NM thinks
-                    a secrets may be required.A
+                    a secrets may be required.
                 </tp:docstring>
             </arg>
             <arg name="request_new" type="b" direction="in">
@@ -77,9 +77,9 @@
                 </tp:docstring>
             </arg>
 
-            <arg name="secrets" type="a{sv}" direction="out" tp:type="String_Variant_Map">
+            <arg name="secrets" type="a{sa{sv}}" direction="out" tp:type="String_String_Variant_Map_Map">
                 <tp:docstring>
-                    Map of secrets.
+                    Nested settings maps containing secrets.  Each setting MUST contain at least the 'name' field, containing the name of the setting, and one or more secrets.
                 </tp:docstring>
             </arg>
         </method>

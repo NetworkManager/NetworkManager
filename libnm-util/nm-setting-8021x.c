@@ -28,6 +28,8 @@ enum {
 	PROP_PASSWORD,
 	PROP_PRIVATE_KEY,
 	PROP_PHASE2_PRIVATE_KEY,
+	PROP_PIN,
+	PROP_PSK,
 
 	LAST_PROP
 };
@@ -45,6 +47,15 @@ need_secrets_password (NMSetting8021x *self,
 {
 	if (!self->password || !strlen (self->password))
 		g_ptr_array_add (secrets, NM_SETTING_802_1X_PASSWORD);
+}
+
+static void
+need_secrets_sim (NMSetting8021x *self,
+                  GPtrArray *secrets,
+                  gboolean phase2)
+{
+	if (!self->pin || !strlen (self->pin))
+		g_ptr_array_add (secrets, NM_SETTING_802_1X_PIN);
 }
 
 static void
@@ -125,6 +136,7 @@ static EAPMethodsTable eap_methods_table[] = {
 	{ "tls", need_secrets_tls, verify_tls },
 	{ "peap", need_secrets_phase2, NULL },
 	{ "ttls", need_secrets_phase2, verify_ttls },
+	{ "sim", need_secrets_sim, NULL },
 	{ "gtc", NULL, NULL },  // FIXME: implement
 	{ "otp", NULL, NULL },  // FIXME: implement
 	{ NULL, NULL, NULL }
@@ -206,32 +218,34 @@ static gboolean
 verify (NMSetting *setting, GSList *all_settings)
 {
 	NMSetting8021x *self = NM_SETTING_802_1X (setting);
-	const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "fast", NULL };
+	const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "sim", "fast", NULL };
 	const char *valid_phase1_peapver[] = { "0", "1", NULL };
 	const char *valid_phase2_auth[] = { "pap", "chap", "mschap", "mschapv2", "gtc", "otp", "md5", "tls", NULL };
 	const char *valid_phase2_autheap[] = { "md5", "mschapv2", "otp", "gtc", "tls", NULL };
+	GSList *iter;
 
-	if (self->eap) {
-		GSList *iter;
+	if (!self->eap) {
+		g_warning ("Missing eap method");
+		return FALSE;
+	}
 
-		if (!nm_utils_string_slist_validate (self->eap, valid_eap)) {
-			g_warning ("Invalid eap");
-			return FALSE;
-		}
+	if (!nm_utils_string_slist_validate (self->eap, valid_eap)) {
+		g_warning ("Invalid eap");
+		return FALSE;
+	}
 
-		/* Ask each configured EAP method if its valid */
-		for (iter = self->eap; iter; iter = g_slist_next (iter)) {
-			const char *method = (const char *) iter->data;
-			int i;
+	/* Ask each configured EAP method if its valid */
+	for (iter = self->eap; iter; iter = g_slist_next (iter)) {
+		const char *method = (const char *) iter->data;
+		int i;
 
-			for (i = 0; eap_methods_table[i].method; i++) {
-				if (eap_methods_table[i].v_func == NULL)
-					continue;
-				if (!strcmp (eap_methods_table[i].method, method)) {
-					if (!(*eap_methods_table[i].v_func) (self, FALSE))
-						return FALSE;
-					break;
-				}
+		for (i = 0; eap_methods_table[i].method; i++) {
+			if (eap_methods_table[i].v_func == NULL)
+				continue;
+			if (!strcmp (eap_methods_table[i].method, method)) {
+				if (!(*eap_methods_table[i].v_func) (self, FALSE))
+					return FALSE;
+				break;
 			}
 		}
 	}

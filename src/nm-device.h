@@ -83,7 +83,7 @@ struct _NMDeviceClass
 
 	void        (* connection_secrets_updated) (NMDevice *self,
 	                                            NMConnection *connection,
-	                                            const char *setting_name);
+	                                            GSList *updated_settings);
 
 	gboolean    (* check_connection_conflicts) (NMDevice *self,
 	                                            NMConnection *connection,

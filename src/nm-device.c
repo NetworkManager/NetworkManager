@@ -1119,13 +1119,13 @@ nm_device_check_connection_conflicts (NMDeviceInterface *dev_iface,
 static void
 connection_secrets_updated_cb (NMActRequest *req,
                                NMConnection *connection,
-                               const char *setting_name,
+                               GSList *updated_settings,
                                gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 
 	if (NM_DEVICE_GET_CLASS (self)->connection_secrets_updated)
-		NM_DEVICE_GET_CLASS (self)->connection_secrets_updated (self, connection, setting_name);
+		NM_DEVICE_GET_CLASS (self)->connection_secrets_updated (self, connection, updated_settings);
 }
 
 static void

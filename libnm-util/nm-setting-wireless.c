@@ -279,9 +279,8 @@ verify (NMSetting *setting, GSList *all_settings)
 		}
 	}
 
-	if (self->security && 
-	    all_settings && 
-	    !g_slist_find_custom (all_settings, self->security, find_setting_by_name)) {
+	if (   self->security
+	    && !g_slist_find_custom (all_settings, self->security, find_setting_by_name)) {
 		g_warning ("Invalid or missing security");
 		return FALSE;
 	}

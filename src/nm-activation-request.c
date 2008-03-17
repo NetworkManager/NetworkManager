@@ -21,10 +21,12 @@
 
 #include <string.h>
 #include <dbus/dbus-glib.h>
+
 #include "nm-activation-request.h"
 #include "nm-marshal.h"
 #include "nm-utils.h"
-#include "nm-setting-wireless.h"
+#include "nm-setting-wireless-security.h"
+#include "nm-setting-8021x.h"
 
 #include "nm-manager.h" /* FIXME! */
 
@@ -108,9 +110,9 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMActRequestClass, connection_secrets_updated),
 					  NULL, NULL,
-					  nm_marshal_VOID__OBJECT_STRING,
+					  nm_marshal_VOID__OBJECT_POINTER,
 					  G_TYPE_NONE, 2,
-					  G_TYPE_OBJECT, G_TYPE_STRING);
+					  G_TYPE_OBJECT, G_TYPE_POINTER);
 
 	signals[CONNECTION_SECRETS_FAILED] =
 		g_signal_new ("connection-secrets-failed",
@@ -158,17 +160,93 @@ free_get_secrets_info (gpointer data)
 	GetSecretsInfo *info = (GetSecretsInfo *) data;
 
 	g_free (info->setting_name);
-	g_slice_free (GetSecretsInfo, info);
+	g_free (info);
 }
+
+static void
+update_one_setting (const char* key,
+                    GHashTable *setting_hash,
+                    NMConnection *connection,
+                    GSList **updated)
+{
+	GType type;
+	NMSetting *setting = NULL;
+
+	/* Check whether a complete & valid NMSetting object was returned.  If
+	 * yes, replace the setting object in the connection.  If not, just try
+	 * updating the secrets.
+	 */
+	type = nm_connection_lookup_setting_type (key);
+	if (type == 0)
+		return;
+
+	setting = nm_setting_from_hash (type, setting_hash);
+	if (setting) {
+		NMSetting *s_8021x = NULL;
+		GSList *all_settings = NULL;
+
+		/* The wireless-security setting might need the 802.1x setting in
+		 * the all_settings argument of the verify function. Ugh.
+		 */
+		s_8021x = nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
+		if (s_8021x)
+			all_settings = g_slist_append (all_settings, s_8021x);
+
+		if (!nm_setting_verify (setting, all_settings)) {
+			/* Just try updating secrets */
+			g_object_unref (setting);
+			setting = NULL;
+		}
+
+		g_slist_free (all_settings);
+	}
+
+	if (setting)
+		nm_connection_add_setting (connection, setting);
+	else
+		nm_connection_update_secrets (connection, key, setting_hash);
+
+	*updated = g_slist_append (*updated, (gpointer) key);
+}
+
+static void
+add_one_key_to_list (gpointer key, gpointer data, gpointer user_data)
+{
+	GSList **list = (GSList **) user_data;
+
+	*list = g_slist_append (*list, key);
+}
+
+static gint
+settings_order_func (gconstpointer a, gconstpointer b)
+{
+	/* Just ensure the 802.1x setting gets processed _before_ the
+	 * wireless-security one.
+	 */
+
+	if (   !strcmp (a, NM_SETTING_802_1X_SETTING_NAME)
+	    && !strcmp (b, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME))
+		return -1;
+
+	if (   !strcmp (a, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME)
+	    && !strcmp (b, NM_SETTING_802_1X_SETTING_NAME))
+		return 1;
+
+	return 0;
+}
+
+#define DBUS_TYPE_G_STRING_VARIANT_HASHTABLE (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE))
+#define DBUS_TYPE_G_DICT_OF_DICTS (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, DBUS_TYPE_G_STRING_VARIANT_HASHTABLE))
 
 static void
 get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 {
 	GetSecretsInfo *info = (GetSecretsInfo *) user_data;
 	GError *err = NULL;
-	GHashTable *secrets = NULL;
+	GHashTable *settings = NULL;
 	NMActRequestPrivate *priv = NULL;
-	NMSetting *setting = NULL;
+	GSList *keys = NULL, *iter;
+	GSList *updated = NULL;
 
 	g_return_if_fail (info != NULL);
 	g_return_if_fail (info->req);
@@ -178,7 +256,7 @@ get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	g_object_set_data (G_OBJECT (priv->connection), CONNECTION_GET_SECRETS_CALL_TAG, NULL);
 
 	if (!dbus_g_proxy_end_call (proxy, call, &err,
-								dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE), &secrets,
+								DBUS_TYPE_G_DICT_OF_DICTS, &settings,
 								G_TYPE_INVALID)) {
 		nm_warning ("Couldn't get connection secrets: %s.", err->message);
 		g_error_free (err);
@@ -190,39 +268,41 @@ get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 		return;
 	}
 
-	if (g_hash_table_size (secrets) == 0) {
+	if (g_hash_table_size (settings) == 0) {
 		// FIXME: some better way to handle invalid message?
 		nm_warning ("GetSecrets call returned but no secrets were found.");
 		goto out;
 	}
 
-	/* Check whether a complete & valid NMSetting object was returned.  If
-	 * yes, replace the setting object in the connection.  If not, just try
-	 * updating the secrets.
-	 */
-	if (!strcmp (info->setting_name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME))
-		setting = nm_setting_from_hash (NM_TYPE_SETTING_WIRELESS_SECURITY, secrets);
+	g_hash_table_foreach (settings, add_one_key_to_list, &keys);
+	keys = g_slist_sort (keys, settings_order_func);
+	for (iter = keys; iter; iter = g_slist_next (iter)) {
+		GHashTable *setting_hash;
 
-	if (setting) {
-		if (!nm_setting_verify (setting, NULL)) {
-			g_object_unref (setting);
-			setting = NULL;
-		}
+		setting_hash = g_hash_table_lookup (settings, iter->data);
+		if (setting_hash) {
+			update_one_setting ((const char *) iter->data,
+			                    setting_hash,
+			                    priv->connection,
+			                    &updated);
+		} else
+			nm_warning ("Couldn't get setting secrets for '%s'", (const char *) iter->data);
+	}
+	g_slist_free (keys);
+
+	if (g_slist_length (updated)) {
+		g_signal_emit (info->req,
+		               signals[CONNECTION_SECRETS_UPDATED],
+		               0,
+		               priv->connection,
+		               updated);
+	} else {
+		nm_warning ("No secrets updated because not valid settings were received!");
 	}
 
-	if (setting)
-		nm_connection_add_setting (priv->connection, setting);
-	else
-		nm_connection_update_secrets (priv->connection, info->setting_name, secrets);
-
-	g_signal_emit (info->req,
-	               signals[CONNECTION_SECRETS_UPDATED],
-	               0,
-	               priv->connection,
-	               info->setting_name);
-
 out:
-	g_hash_table_destroy (secrets);
+	g_slist_free (updated);
+	g_hash_table_destroy (settings);
 }
 
 #define DBUS_TYPE_STRING_ARRAY   (dbus_g_type_get_collection ("GPtrArray", G_TYPE_STRING))
@@ -248,7 +328,7 @@ nm_act_request_request_connection_secrets (NMActRequest *req,
 		goto error;
 	}
 
-	info = g_slice_new0 (GetSecretsInfo);
+	info = g_malloc0 (sizeof (GetSecretsInfo));
 	if (!info) {
 		nm_warning ("Not enough memory to get secrets");
 		goto error;

@@ -46,6 +46,8 @@
 #include "nm-properties-changed-signal.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wireless.h"
+#include "nm-setting-wireless-security.h"
+#include "nm-setting-8021x.h"
 
 static gboolean impl_device_get_access_points (NMDevice80211Wireless *device,
                                                GPtrArray **aps,
@@ -2454,9 +2456,12 @@ build_supplicant_config (NMDevice80211Wireless *self,
 	if (s_wireless_sec) {
 		DBusGProxy *proxy = g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_PROXY_TAG);
 		const char *con_path = dbus_g_proxy_get_path (proxy);
+		NMSetting8021x *s_8021x;
 
+		s_8021x = (NMSetting8021x *) nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
 		if (!nm_supplicant_config_add_setting_wireless_security (config,
 	                                                             s_wireless_sec,
+	                                                             s_8021x,
 	                                                             con_path)) {
 			nm_warning ("Couldn't add 802-11-wireless-security setting to "
 			            "supplicant config.");
@@ -2582,16 +2587,24 @@ real_act_stage1_prepare (NMDevice *dev)
 static void
 real_connection_secrets_updated (NMDevice *dev,
                                  NMConnection *connection,
-                                 const char *setting_name)
+                                 GSList *updated_settings)
 {
 	NMActRequest *req;
+	gboolean valid = FALSE;
+	GSList *iter;
 
 	if (nm_device_get_state (dev) != NM_DEVICE_STATE_NEED_AUTH)
 		return;
 
-	if (strcmp (setting_name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) != 0) {
-		nm_warning ("Ignoring updated secrets for setting '%s'.", setting_name);
-		return;
+	for (iter = updated_settings; iter; iter = g_slist_next (iter)) {
+		const char *setting_name = (const char *) iter->data;
+
+		if (   !strcmp (setting_name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME)
+		    || !strcmp (setting_name, NM_SETTING_802_1X_SETTING_NAME)) {
+			valid = TRUE;
+		} else {
+			nm_warning ("Ignoring updated secrets for setting '%s'.", setting_name);
+		}
 	}
 
 	req = nm_device_get_act_request (dev);

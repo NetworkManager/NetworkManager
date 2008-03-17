@@ -14,7 +14,7 @@ G_BEGIN_DECLS
 #define NM_IS_SETTING_802_1X_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_SETTING_802_1X))
 #define NM_SETTING_802_1X_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SETTING_802_1X, NMSetting8021xClass))
 
-#define NM_SETTING_802_1X_SETTING_NAME "802.1X"
+#define NM_SETTING_802_1X_SETTING_NAME "802-1x"
 
 #define NM_SETTING_802_1X_EAP "eap"
 #define NM_SETTING_802_1X_IDENTITY "identity"
@@ -33,6 +33,8 @@ G_BEGIN_DECLS
 #define NM_SETTING_802_1X_PASSWORD "password"
 #define NM_SETTING_802_1X_PRIVATE_KEY "private-key"
 #define NM_SETTING_802_1X_PHASE2_PRIVATE_KEY "phase2-private-key"
+#define NM_SETTING_802_1X_PIN "pin"
+#define NM_SETTING_802_1X_PSK "psk"
 
 typedef struct {
 	NMSetting parent;
@@ -52,6 +54,8 @@ typedef struct {
 	char *phase2_ca_path;
 	GByteArray *phase2_client_cert;
 	char *password;
+	char *pin;
+	char *psk;
 	GByteArray *private_key;
 	GByteArray *phase2_private_key;
 } NMSetting8021x;

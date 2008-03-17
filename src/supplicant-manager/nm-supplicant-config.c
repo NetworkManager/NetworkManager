@@ -464,8 +464,9 @@ get_blob_id (const char *name, const char *seed_uid)
 	}
 
 gboolean
-nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig * self,
-                                                    NMSettingWirelessSecurity * setting,
+nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
+                                                    NMSettingWirelessSecurity *setting,
+                                                    NMSetting8021x *setting_8021x,
                                                     const char *connection_uid)
 {
 	NMSupplicantConfigPrivate *priv;
@@ -480,20 +481,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig * self,
 
 	ADD_STRING_VAL (setting->key_mgmt, "key_mgmt", TRUE, FALSE, FALSE);
 	ADD_STRING_VAL (setting->auth_alg, "auth_alg", TRUE, FALSE, FALSE);
-	ADD_STRING_VAL (setting->nai, "nai", FALSE, FALSE, FALSE);
 	ADD_STRING_VAL (setting->psk, "psk", FALSE, TRUE, TRUE);
-	ADD_STRING_VAL (setting->password, "password", FALSE, FALSE, TRUE);
-	ADD_STRING_VAL (setting->pin, "pin", FALSE, FALSE, TRUE);
-	ADD_STRING_VAL (setting->eappsk, "eappsk", FALSE, TRUE, TRUE);
-
-	/* Private key passwords are never passed to wpa_supplicant because the
-	 * user agent is responsible for decoding and decrypting the private key,
-	 * and file paths are never passed to wpa_supplicant to ensure that
-	 * the supplicant can be locked down and doesn't try to read stuff from
-	 * all over the drive.
-	 */
-
-	ADD_STRING_LIST_VAL (setting->eap, "eap", TRUE, FALSE);
 
 	/* Only WPA-specific things when using WPA */
 	if (   !strcmp (setting->key_mgmt, "wpa-none")
@@ -522,59 +510,111 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig * self,
 		}
 	}
 
-	/* 802.1 stuff for Dynamic WEP and WPA-Enterprise */
-	if (   (strcmp (setting->key_mgmt, "ieee8021x") == 0)
-	    || (strcmp (setting->key_mgmt, "wpa-eap") == 0)) {
-		GString *phase1, *phase2;
-		char *tmp;
-
-		/* Drop the fragment size a bit for better compatibility */
-		if (!nm_supplicant_config_add_option (self, "fragment_size", "1300", -1, FALSE))
+	if (setting->auth_alg && !strcmp (setting->auth_alg, "leap")) {
+		/* LEAP */
+		if (!strcmp (setting->key_mgmt, "ieee8021x")) {
+			ADD_STRING_VAL (setting->leap_username, "identity", FALSE, FALSE, FALSE);
+			ADD_STRING_VAL (setting->leap_password, "password", FALSE, FALSE, TRUE);
+			ADD_STRING_VAL ("leap", "eap", TRUE, FALSE, FALSE);
+		} else {
 			return FALSE;
-
-		phase1 = g_string_new (NULL);
-		if (setting->phase1_peapver)
-			g_string_append_printf (phase1, "peapver=%s", setting->phase1_peapver);
-
-		if (setting->phase1_peaplabel) {
-			if (phase1->len)
-				g_string_append_c (phase1, ' ');
-			g_string_append_printf (phase1, "peaplabel=%s", setting->phase1_peaplabel);
 		}
-
-		if (phase1->len)
-			ADD_STRING_VAL (phase1->str, "phase1", FALSE, FALSE, FALSE);
-		g_string_free (phase1, TRUE);
-
-		phase2 = g_string_new (NULL);
-		if (setting->phase2_auth) {
-			tmp = g_ascii_strup (setting->phase2_auth, -1);
-			g_string_append_printf (phase2, "auth=%s", tmp);
-			g_free (tmp);
+	} else {
+		/* 802.1x for Dynamic WEP and WPA-Enterprise */
+		if (   !strcmp (setting->key_mgmt, "ieee8021x")
+		    || !strcmp (setting->key_mgmt, "wpa-eap")) {
+		    if (!setting_8021x)
+		    	return FALSE;
+			if (!nm_supplicant_config_add_setting_8021x (self, setting_8021x, connection_uid, FALSE))
+				return FALSE;
 		}
-
-		if (setting->phase2_autheap) {
-			if (phase2->len)
-				g_string_append_c (phase2, ' ');
-			tmp = g_ascii_strup (setting->phase2_autheap, -1);
-			g_string_append_printf (phase2, "autheap=%s", tmp);
-			g_free (tmp);
-		}
-
-		if (phase2->len)
-			ADD_STRING_VAL (phase2->str, "phase2", FALSE, FALSE, FALSE);
-		g_string_free (phase2, TRUE);
-
-		ADD_BLOB_VAL (setting->ca_cert, "ca_cert", connection_uid);
-		ADD_BLOB_VAL (setting->client_cert, "client_cert", connection_uid);
-		ADD_BLOB_VAL (setting->private_key, "private_key", connection_uid);
-		ADD_BLOB_VAL (setting->phase2_ca_cert, "ca_cert2", connection_uid);
-		ADD_BLOB_VAL (setting->phase2_client_cert, "client_cert2", connection_uid);
-		ADD_BLOB_VAL (setting->phase2_private_key, "private_key2", connection_uid);
-
-		ADD_STRING_VAL (setting->identity, "identity", FALSE, FALSE, FALSE);
-		ADD_STRING_VAL (setting->anonymous_identity, "anonymous_identity", FALSE, FALSE, FALSE);
 	}
+
+	return TRUE;
+}
+
+gboolean
+nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
+                                        NMSetting8021x *setting,
+                                        const char *connection_uid,
+                                        gboolean wired)
+{
+	NMSupplicantConfigPrivate *priv;
+	char * value;
+	gboolean success;
+	GString *phase1, *phase2;
+	char *tmp;
+
+	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
+	g_return_val_if_fail (setting != NULL, FALSE);
+	g_return_val_if_fail (connection_uid != NULL, FALSE);
+
+	priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
+
+	ADD_STRING_VAL (setting->password, "password", FALSE, FALSE, TRUE);
+	ADD_STRING_VAL (setting->pin, "pin", FALSE, FALSE, TRUE);
+
+	if (wired) {
+		ADD_STRING_VAL ("IEEE8021X", "key_mgmt", TRUE, FALSE, FALSE);
+		/* Wired 802.1x must always use eapol_flags=0 */
+		ADD_STRING_VAL ("0", "eapol_flags", FALSE, FALSE, FALSE);
+	}
+
+	/* Private key passwords are never passed to wpa_supplicant because the
+	 * user agent is responsible for decoding and decrypting the private key,
+	 * and file paths are never passed to wpa_supplicant to ensure that
+	 * the supplicant can be locked down and doesn't try to read stuff from
+	 * all over the drive.
+	 */
+
+	ADD_STRING_LIST_VAL (setting->eap, "eap", TRUE, FALSE);
+
+	/* Drop the fragment size a bit for better compatibility */
+	if (!nm_supplicant_config_add_option (self, "fragment_size", "1300", -1, FALSE))
+		return FALSE;
+
+	phase1 = g_string_new (NULL);
+	if (setting->phase1_peapver)
+		g_string_append_printf (phase1, "peapver=%s", setting->phase1_peapver);
+
+	if (setting->phase1_peaplabel) {
+		if (phase1->len)
+			g_string_append_c (phase1, ' ');
+		g_string_append_printf (phase1, "peaplabel=%s", setting->phase1_peaplabel);
+	}
+
+	if (phase1->len)
+		ADD_STRING_VAL (phase1->str, "phase1", FALSE, FALSE, FALSE);
+	g_string_free (phase1, TRUE);
+
+	phase2 = g_string_new (NULL);
+	if (setting->phase2_auth) {
+		tmp = g_ascii_strup (setting->phase2_auth, -1);
+		g_string_append_printf (phase2, "auth=%s", tmp);
+		g_free (tmp);
+	}
+
+	if (setting->phase2_autheap) {
+		if (phase2->len)
+			g_string_append_c (phase2, ' ');
+		tmp = g_ascii_strup (setting->phase2_autheap, -1);
+		g_string_append_printf (phase2, "autheap=%s", tmp);
+		g_free (tmp);
+	}
+
+	if (phase2->len)
+		ADD_STRING_VAL (phase2->str, "phase2", FALSE, FALSE, FALSE);
+	g_string_free (phase2, TRUE);
+
+	ADD_BLOB_VAL (setting->ca_cert, "ca_cert", connection_uid);
+	ADD_BLOB_VAL (setting->client_cert, "client_cert", connection_uid);
+	ADD_BLOB_VAL (setting->private_key, "private_key", connection_uid);
+	ADD_BLOB_VAL (setting->phase2_ca_cert, "ca_cert2", connection_uid);
+	ADD_BLOB_VAL (setting->phase2_client_cert, "client_cert2", connection_uid);
+	ADD_BLOB_VAL (setting->phase2_private_key, "private_key2", connection_uid);
+
+	ADD_STRING_VAL (setting->identity, "identity", FALSE, FALSE, FALSE);
+	ADD_STRING_VAL (setting->anonymous_identity, "anonymous_identity", FALSE, FALSE, FALSE);
 
 	return TRUE;
 }

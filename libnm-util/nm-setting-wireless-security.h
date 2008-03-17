@@ -22,31 +22,13 @@ G_BEGIN_DECLS
 #define NM_SETTING_WIRELESS_SECURITY_PROTO "proto"
 #define NM_SETTING_WIRELESS_SECURITY_PAIRWISE "pairwise"
 #define NM_SETTING_WIRELESS_SECURITY_GROUP "group"
-#define NM_SETTING_WIRELESS_SECURITY_EAP "eap"
-#define NM_SETTING_WIRELESS_SECURITY_IDENTITY "identity"
-#define NM_SETTING_WIRELESS_SECURITY_ANONYMOUS_IDENTITY "anonymous-identity"
-#define NM_SETTING_WIRELESS_SECURITY_CA_CERT "ca-cert"
-#define NM_SETTING_WIRELESS_SECURITY_CA_PATH "ca-path"
-#define NM_SETTING_WIRELESS_SECURITY_CLIENT_CERT "client-cert"
-#define NM_SETTING_WIRELESS_SECURITY_PHASE1_PEAPVER "phase1-peapver"
-#define NM_SETTING_WIRELESS_SECURITY_PHASE1_PEAPLABEL "phase1-peaplabel"
-#define NM_SETTING_WIRELESS_SECURITY_PHASE1_FAST_PROVISIONING "phase1-fast-provisioning"
-#define NM_SETTING_WIRELESS_SECURITY_PHASE2_AUTH "phase2-auth"
-#define NM_SETTING_WIRELESS_SECURITY_PHASE2_AUTHEAP "phase2-autheap"
-#define NM_SETTING_WIRELESS_SECURITY_PHASE2_CA_CERT "phase2-ca-cert"
-#define NM_SETTING_WIRELESS_SECURITY_PHASE2_CA_PATH "phase2-ca-path"
-#define NM_SETTING_WIRELESS_SECURITY_PHASE2_CLIENT_CERT "phase2-client-cert"
-#define NM_SETTING_WIRELESS_SECURITY_NAI "nai"
+#define NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME "leap-username"
 #define NM_SETTING_WIRELESS_SECURITY_WEP_KEY0 "wep-key0"
 #define NM_SETTING_WIRELESS_SECURITY_WEP_KEY1 "wep-key1"
 #define NM_SETTING_WIRELESS_SECURITY_WEP_KEY2 "wep-key2"
 #define NM_SETTING_WIRELESS_SECURITY_WEP_KEY3 "wep-key3"
 #define NM_SETTING_WIRELESS_SECURITY_PSK "psk"
-#define NM_SETTING_WIRELESS_SECURITY_PASSWORD "password"
-#define NM_SETTING_WIRELESS_SECURITY_PIN "pin"
-#define NM_SETTING_WIRELESS_SECURITY_EAPPSK "eappsk"
-#define NM_SETTING_WIRELESS_SECURITY_PRIVATE_KEY "private-key"
-#define NM_SETTING_WIRELESS_SECURITY_PHASE2_PRIVATE_KEY "phase2-private-key"
+#define NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD "leap-password"
 
 typedef struct {
 	NMSetting parent;
@@ -57,31 +39,13 @@ typedef struct {
 	GSList *proto; /* GSList of strings */
 	GSList *pairwise; /* GSList of strings */
 	GSList *group; /* GSList of strings */
-	GSList *eap; /* GSList of strings */
-	char *identity;
-	char *anonymous_identity;
-	GByteArray *ca_cert;
-	char *ca_path;
-	GByteArray *client_cert;
-	char *phase1_peapver;
-	char *phase1_peaplabel;
-	char *phase1_fast_provisioning;
-	char *phase2_auth;
-	char *phase2_autheap;
-	GByteArray *phase2_ca_cert;
-	char *phase2_ca_path;
-	GByteArray *phase2_client_cert;
-	char *nai;
+	char *leap_username;
 	char *wep_key0;
 	char *wep_key1;
 	char *wep_key2;
 	char *wep_key3;
 	char *psk;
-	char *password;
-	char *pin;
-	char *eappsk;
-	GByteArray *private_key;
-	GByteArray *phase2_private_key;
+	char *leap_password;
 } NMSettingWirelessSecurity;
 
 typedef struct {

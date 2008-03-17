@@ -53,34 +53,63 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 static GHashTable *registered_settings = NULL;
 
+#define DEFAULT_MAP_SIZE 13
+
+static struct SettingInfo {
+	const char *name;
+	GType type;
+	guint32 priority;
+} default_map[DEFAULT_MAP_SIZE] = { { NULL } };
+
+static void
+register_one_setting (int i, const char *name, GType type, guint32 priority)
+{
+	g_return_if_fail (i >= 0);
+	g_return_if_fail (i < DEFAULT_MAP_SIZE);
+	g_return_if_fail (default_map[i].name == NULL);
+
+	default_map[i].name = name;
+	default_map[i].type = type;
+	default_map[i].priority = priority;
+	nm_setting_register (name, type);
+}
+
 static void
 register_default_settings (void)
 {
-	int i;
-	const struct {
-		const char *name;
-		GType type;
-	} default_map[] = {
-		{ NM_SETTING_CONNECTION_SETTING_NAME,        NM_TYPE_SETTING_CONNECTION },
-		{ NM_SETTING_802_1X_SETTING_NAME,            NM_TYPE_SETTING_802_1X },
-		{ NM_SETTING_WIRED_SETTING_NAME,             NM_TYPE_SETTING_WIRED },
-		{ NM_SETTING_WIRELESS_SETTING_NAME,          NM_TYPE_SETTING_WIRELESS },
-		{ NM_SETTING_IP4_CONFIG_SETTING_NAME,        NM_TYPE_SETTING_IP4_CONFIG },
-		{ NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NM_TYPE_SETTING_WIRELESS_SECURITY },
-		{ NM_SETTING_SERIAL_SETTING_NAME,            NM_TYPE_SETTING_SERIAL },
-		{ NM_SETTING_GSM_SETTING_NAME,               NM_TYPE_SETTING_GSM },
-		{ NM_SETTING_CDMA_SETTING_NAME,              NM_TYPE_SETTING_CDMA },
-		{ NM_SETTING_PPP_SETTING_NAME,               NM_TYPE_SETTING_PPP },
-		{ NM_SETTING_PPPOE_SETTING_NAME,             NM_TYPE_SETTING_PPPOE },
-		{ NM_SETTING_VPN_SETTING_NAME,               NM_TYPE_SETTING_VPN },
-		{ NM_SETTING_VPN_PROPERTIES_SETTING_NAME,    NM_TYPE_SETTING_VPN_PROPERTIES },
-		{ NULL }
-	};
+	int i = 0;
 
 	nm_utils_register_value_transformations ();
 
-	for (i = 0; default_map[i].name; i++)
-		nm_setting_register (default_map[i].name, default_map[i].type);
+	if (G_LIKELY (default_map[0].name))
+		return;
+
+	register_one_setting (i++, NM_SETTING_CONNECTION_SETTING_NAME,        NM_TYPE_SETTING_CONNECTION,        0);
+	register_one_setting (i++, NM_SETTING_WIRED_SETTING_NAME,             NM_TYPE_SETTING_WIRED,             1);
+	register_one_setting (i++, NM_SETTING_WIRELESS_SETTING_NAME,          NM_TYPE_SETTING_WIRELESS,          1);
+	register_one_setting (i++, NM_SETTING_GSM_SETTING_NAME,               NM_TYPE_SETTING_GSM,               1);
+	register_one_setting (i++, NM_SETTING_CDMA_SETTING_NAME,              NM_TYPE_SETTING_CDMA,              1);
+	register_one_setting (i++, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NM_TYPE_SETTING_WIRELESS_SECURITY, 2);
+	register_one_setting (i++, NM_SETTING_SERIAL_SETTING_NAME,            NM_TYPE_SETTING_SERIAL,            2);
+	register_one_setting (i++, NM_SETTING_PPP_SETTING_NAME,               NM_TYPE_SETTING_PPP,               3);
+	register_one_setting (i++, NM_SETTING_PPPOE_SETTING_NAME,             NM_TYPE_SETTING_PPPOE,             3);
+	register_one_setting (i++, NM_SETTING_802_1X_SETTING_NAME,            NM_TYPE_SETTING_802_1X,            3);
+	register_one_setting (i++, NM_SETTING_VPN_SETTING_NAME,               NM_TYPE_SETTING_VPN,               4);
+	register_one_setting (i++, NM_SETTING_VPN_PROPERTIES_SETTING_NAME,    NM_TYPE_SETTING_VPN_PROPERTIES,    5);
+	register_one_setting (i++, NM_SETTING_IP4_CONFIG_SETTING_NAME,        NM_TYPE_SETTING_IP4_CONFIG,        6);
+}
+
+static guint32
+get_priority_for_setting_type (GType type)
+{
+	int i;
+
+	for (i = 0; default_map[i].name; i++) {
+		if (default_map[i].type == type)
+			return default_map[i].priority;
+	}
+
+	return G_MAXUINT32;
 }
 
 void
@@ -107,7 +136,7 @@ nm_setting_unregister (const char *name)
 		g_hash_table_remove (registered_settings, name);
 }
 
-static GType
+GType
 nm_connection_lookup_setting_type (const char *name)
 {
 	char *type_name;
@@ -331,24 +360,27 @@ nm_connection_update_secrets (NMConnection *connection,
 	g_signal_emit (connection, signals[SECRETS_UPDATED], 0, setting_name);
 }
 
-typedef struct NeedSecretsInfo {
-	GPtrArray *secrets;
-	NMSetting *setting;
-} NeedSecretsInfo;
+static gint
+setting_priority_compare (gconstpointer a, gconstpointer b)
+{
+	guint32 prio_a, prio_b;
+
+	prio_a = get_priority_for_setting_type (G_OBJECT_TYPE (NM_SETTING (a)));
+	prio_b = get_priority_for_setting_type (G_OBJECT_TYPE (NM_SETTING (b)));
+
+	if (prio_a < prio_b)
+		return -1;
+	else if (prio_a == prio_b)
+		return 0;
+	return 1;
+}
 
 static void
-need_secrets_check (gpointer key, gpointer data, gpointer user_data)
+add_setting_to_list (gpointer key, gpointer data, gpointer user_data)
 {
-	NMSetting *setting = NM_SETTING (data);
-	NeedSecretsInfo *info = (NeedSecretsInfo *) user_data;
+	GSList **list = (GSList **) user_data;
 
-	// FIXME: allow more than one setting to say it needs secrets
-	if (info->secrets)
-		return;
-
-	info->secrets = nm_setting_need_secrets (setting);
-	if (info->secrets)
-		info->setting = setting;
+	*list = g_slist_insert_sorted (*list, NM_SETTING (data), setting_priority_compare);
 }
 
 const char *
@@ -356,26 +388,38 @@ nm_connection_need_secrets (NMConnection *connection,
                             GPtrArray **hints)
 {
 	NMConnectionPrivate *priv;
-	NeedSecretsInfo info = { NULL, NULL };
+	GSList *settings = NULL;
+	GSList *iter;
+	char *name = NULL;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
-	g_hash_table_foreach (priv->settings, need_secrets_check, &info);
 
-	// FIXME: do something with requested secrets rather than asking for
-	// all of them.  Maybe make info.secrets a hash table mapping
-	// settings name :: [list of secrets key names].
-	if (info.secrets) {
-		if (hints)
-			*hints = info.secrets;
-		else
-			g_ptr_array_free (info.secrets, TRUE);
+	/* Get list of settings in priority order */
+	g_hash_table_foreach (priv->settings, add_setting_to_list, &settings);
 
-		return nm_setting_get_name (info.setting);
+	for (iter = settings; iter; iter = g_slist_next (iter)) {
+		NMSetting *setting = NM_SETTING (iter->data);
+		GPtrArray *secrets;
+
+		// FIXME: do something with requested secrets rather than asking for
+		// all of them.  Maybe make secrets a hash table mapping
+		// settings name :: [list of secrets key names].
+		secrets = nm_setting_need_secrets (setting);
+		if (secrets) {
+			if (hints)
+				*hints = secrets;
+			else
+				g_ptr_array_free (secrets, TRUE);
+
+			name = (char *) nm_setting_get_name (setting);
+			break;
+		}
 	}
 
-	return NULL;
+	g_slist_free (settings);
+	return name;
 }
 
 static void

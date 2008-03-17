@@ -92,6 +92,8 @@ void nm_setting_register   (const char *name,
 
 void nm_setting_unregister (const char *name);
 
+GType nm_connection_lookup_setting_type (const char *name);
+
 G_END_DECLS
 
 #endif /* NM_CONNECTION_H */
