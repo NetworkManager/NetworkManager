@@ -184,6 +184,7 @@ auto_activate_device (gpointer user_data)
 	GSList *connections, *iter;
 
 	g_assert (data);
+	policy = data->policy;
 
 	// FIXME: if a device is already activating (or activated) with a connection
 	// but another connection now overrides the current one for that device,
@@ -191,8 +192,6 @@ auto_activate_device (gpointer user_data)
 	// bailing if the device is already active
 	if (nm_device_get_act_request (data->device))
 		goto out;
-
-	policy = data->policy;
 
 	/* System connections first, then user connections */
 	connections = nm_manager_get_connections (policy->manager, NM_CONNECTION_SCOPE_SYSTEM);
@@ -230,13 +229,12 @@ auto_activate_device (gpointer user_data)
 		}
 	}
 
-	/* Remove this call's handler ID */
-	policy->pending_activation_checks = g_slist_remove (policy->pending_activation_checks, data);
-
 	g_slist_foreach (connections, (GFunc) g_object_unref, NULL);
 	g_slist_free (connections);
 
  out:
+	/* Remove this call's handler ID */
+	policy->pending_activation_checks = g_slist_remove (policy->pending_activation_checks, data);
 	g_object_unref (data->device);
 	g_free (data);
 

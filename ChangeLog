@@ -1,3 +1,11 @@
+2008-03-17  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerPolicy.c
+		- (auto_activate_device): always remove the current activation check
+			from the pending activation list, otherwise when the policy gets
+			destroyed on NM exit it will attempt to free the already freed
+			activation check
+
 2008-03-14  Tambet Ingo  <tambet@gmail.com>
 
 	* src/backends/NetworkManagerSlackware.c 
