@@ -63,9 +63,9 @@ connection_data_get (NMConnection *connection)
 static void
 copy_one_cdata_secret (gpointer key, gpointer data, gpointer user_data)
 {
-	ConnectionData *to = (ConnectionData *) user_data;
+	GHashTable *to = (GHashTable *) user_data;
 
-	g_hash_table_insert (to->secrets, key, g_strdup (data));
+	g_hash_table_insert (to, key, g_strdup (data));
 }
 
 static void
@@ -81,10 +81,17 @@ connection_data_copy_secrets (ConnectionData *from, ConnectionData *to)
 	g_return_if_fail (from != NULL);
 	g_return_if_fail (to != NULL);
 
-	g_hash_table_foreach (to->secrets, clear_one_cdata_secret, NULL);
-	g_hash_table_remove_all (to->secrets);
+	g_hash_table_foreach (to->wifi_secrets, clear_one_cdata_secret, NULL);
+	g_hash_table_remove_all (to->wifi_secrets);
+	g_hash_table_foreach (from->wifi_secrets, copy_one_cdata_secret, to->wifi_secrets);
 
-	g_hash_table_foreach (from->secrets, copy_one_cdata_secret, to);
+	g_hash_table_foreach (to->onex_secrets, clear_one_cdata_secret, NULL);
+	g_hash_table_remove_all (to->onex_secrets);
+	g_hash_table_foreach (from->onex_secrets, copy_one_cdata_secret, to->onex_secrets);
+
+	g_hash_table_foreach (to->ppp_secrets, clear_one_cdata_secret, NULL);
+	g_hash_table_remove_all (to->ppp_secrets);
+	g_hash_table_foreach (from->ppp_secrets, copy_one_cdata_secret, to->ppp_secrets);
 }
 
 static void
@@ -94,9 +101,16 @@ connection_data_free (gpointer userdata)
 
 	g_return_if_fail (cdata != NULL);
 
+	g_hash_table_foreach (cdata->wifi_secrets, clear_one_cdata_secret, NULL);
+	g_hash_table_destroy (cdata->wifi_secrets);
+
+	g_hash_table_foreach (cdata->onex_secrets, clear_one_cdata_secret, NULL);
+	g_hash_table_destroy (cdata->onex_secrets);
+
+	g_hash_table_foreach (cdata->ppp_secrets, clear_one_cdata_secret, NULL);
+	g_hash_table_destroy (cdata->ppp_secrets);
+
 	g_free (cdata->ifcfg_path);
-	g_hash_table_foreach (cdata->secrets, clear_one_cdata_secret, NULL);
-	g_hash_table_destroy (cdata->secrets);
 	memset (cdata, 0, sizeof (ConnectionData));
 	g_free (cdata);
 }
@@ -108,7 +122,10 @@ connection_data_add (NMConnection *connection, const char *ifcfg_path)
 
 	cdata = g_malloc0 (sizeof (ConnectionData));
 	cdata->ifcfg_path = g_strdup (ifcfg_path);
-	cdata->secrets = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
+
+	cdata->wifi_secrets = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
+	cdata->onex_secrets = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
+	cdata->ppp_secrets = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_free);
 
 	g_object_set_data_full (G_OBJECT (connection),
 	                        CONNECTION_DATA_TAG, cdata,
@@ -477,7 +494,7 @@ out:
 		if (*error) \
 			goto error; \
 		if (key) { \
-			g_hash_table_insert (cdata->secrets, \
+			g_hash_table_insert (cdata->wifi_secrets, \
 			                     NM_SETTING_WIRELESS_SECURITY_WEP_KEY##idx, \
 			                     key); \
 		} \

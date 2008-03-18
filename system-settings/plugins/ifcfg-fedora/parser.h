@@ -38,7 +38,9 @@ typedef struct {
 	gboolean ignored;
 	gboolean exported;
 
-	GHashTable *secrets;
+	GHashTable *wifi_secrets;
+	GHashTable *onex_secrets;
+	GHashTable *ppp_secrets;
 } ConnectionData;
 
 NMConnection * parser_parse_file (const char *file, GError **error);

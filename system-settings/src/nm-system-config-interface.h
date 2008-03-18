@@ -79,9 +79,14 @@ struct _NMSystemConfigInterface {
 	 */
 	GSList * (*get_connections) (NMSystemConfigInterface *config);
 
-	/* Return the secrets associated with a specific setting of a specific
+	/* Return the secrets associated with settings of a specific
 	 * connection.  The returned hash table is unreffed by the system settings
-	 * service.
+	 * service.  Returned hash table should itself contain string::hashtable
+	 * mappings, each value being a hash table of secrets for a single setting.
+	 *
+	 *  string :: (string :: GValue)
+	 *
+	 * The returned hash table will be freed by the system settings service.
 	 */
 	GHashTable * (*get_secrets) (NMSystemConfigInterface *config, NMConnection *connection, NMSetting *setting);
 

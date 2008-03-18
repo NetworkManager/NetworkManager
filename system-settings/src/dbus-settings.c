@@ -41,53 +41,16 @@ G_DEFINE_TYPE (NMSysconfigExportedConnection, nm_sysconfig_exported_connection, 
 /*
  * NMSysconfigExportedConnection
  */
-static GValue *
-string_to_gvalue (const char *str)
-{
-	GValue *val;
-
-	val = g_slice_new0 (GValue);
-	g_value_init (val, G_TYPE_STRING);
-	g_value_set_string (val, str);
-
-	return val;
-}
 
 static void
-destroy_gvalue (gpointer data)
+check_for_secrets (gpointer key, gpointer data, gpointer user_data)
 {
-	GValue *value = (GValue *) data;
+	gboolean *have_secrets = (gboolean *) user_data;
 
-	g_value_unset (value);
-	g_slice_free (GValue, value);
-}
-
-struct AddSecretsData {
-	GHashTable *plugin_secrets;
-	GHashTable *out_secrets;
-};
-
-static void
-add_one_secret_to_hash (NMSetting *setting,
-                        const char *key,
-                        const GValue *value,
-                        gboolean secret,
-                        gpointer user_data)
-{
-	struct AddSecretsData *data = (struct AddSecretsData *) user_data;
-	const char *str_val;
-
-	if (!secret)
+	if (*have_secrets)
 		return;
 
-	if (!G_VALUE_HOLDS (value, G_TYPE_STRING))
-		return;
-
-	str_val = g_hash_table_lookup (data->plugin_secrets, key);
-	if (!str_val)
-		return;
-
-	g_hash_table_insert (data->out_secrets, g_strdup (key), string_to_gvalue (str_val));
+	*have_secrets = g_hash_table_size ((GHashTable *) data) ? TRUE : FALSE;
 }
 
 static void
@@ -101,8 +64,9 @@ exported_connection_get_secrets (NMExportedConnection *sys_connection,
 	GError *error = NULL;
 	NMSettingConnection *s_con;
 	NMSetting *setting;
+	GHashTable *settings = NULL;
 	NMSystemConfigInterface *plugin;
-	struct AddSecretsData sdata;
+	gboolean have_secrets = FALSE;
 
 	connection = nm_exported_connection_get_connection (sys_connection);
 
@@ -136,31 +100,31 @@ exported_connection_get_secrets (NMExportedConnection *sys_connection,
 		goto error;
 	}
 
-	sdata.plugin_secrets = nm_system_config_interface_get_secrets (plugin, connection, setting);
-	if (!sdata.plugin_secrets) {
+	settings = nm_system_config_interface_get_secrets (plugin, connection, setting);
+	if (!settings || (g_hash_table_size (settings) == 0)) {
 		g_set_error (&error, NM_SETTINGS_ERROR, 1,
 		             "%s.%d - Connection's plugin did not return a secrets hash.",
 		             __FILE__, __LINE__);
 		goto error;
 	}
 
-	sdata.out_secrets = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, destroy_gvalue);
-	nm_setting_enumerate_values (setting, add_one_secret_to_hash, &sdata);
-	g_hash_table_unref (sdata.plugin_secrets);
-
-	if (g_hash_table_size (sdata.out_secrets) == 0) {
+	g_hash_table_foreach (settings, check_for_secrets, &have_secrets);
+	if (!have_secrets) {
 		g_set_error (&error, NM_SETTINGS_ERROR, 1,
 		             "%s.%d - Secrets were found for setting '%s' but none"
 		             " were valid.", __FILE__, __LINE__, setting_name);
 		goto error;
 	} else {
-		dbus_g_method_return (context, sdata.out_secrets);
+		dbus_g_method_return (context, settings);
 	}
 
-	g_hash_table_destroy (sdata.out_secrets);
+	g_hash_table_destroy (settings);
 	return;
 
 error:
+	if (settings)
+		g_hash_table_destroy (settings);
+
 	g_warning (error->message);
 	dbus_g_method_return_error (context, error);
 	g_error_free (error);

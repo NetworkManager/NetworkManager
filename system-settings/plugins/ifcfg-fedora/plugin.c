@@ -30,6 +30,7 @@
 #include <nm-setting-connection.h>
 #include <nm-setting-wired.h>
 #include <nm-setting-wireless-security.h>
+#include <nm-setting-8021x.h>
 
 #include "plugin.h"
 #include "parser.h"
@@ -363,23 +364,64 @@ get_connections (NMSystemConfigInterface *config)
 	return list;
 }
 
+static GValue *
+string_to_gvalue (const char *str)
+{
+	GValue *val;
+
+	val = g_slice_new0 (GValue);
+	g_value_init (val, G_TYPE_STRING);
+	g_value_set_string (val, str);
+
+	return val;
+}
+
+static void
+add_one_secret (gpointer key, gpointer data, gpointer user_data)
+{
+	g_hash_table_insert ((GHashTable *) user_data, g_strdup (key), string_to_gvalue (data));	
+}
+
+static void
+destroy_gvalue (gpointer data)
+{
+	GValue *value = (GValue *) data;
+
+	g_value_unset (value);
+	g_slice_free (GValue, value);
+}
+
 static GHashTable *
 get_secrets (NMSystemConfigInterface *config,
              NMConnection *connection,
              NMSetting *setting)
 {
+	GHashTable *settings;
 	ConnectionData *cdata;
-
-	/* wifi security only for now */
-	if (!NM_IS_SETTING_WIRELESS_SECURITY (setting))
-		return NULL;
+	GHashTable *secrets;
 
 	cdata = connection_data_get (connection);
-	if (!cdata || !cdata->secrets)
+	if (!cdata)
 		return NULL;
 
-	g_hash_table_ref (cdata->secrets);
-	return cdata->secrets;
+	settings = g_hash_table_new_full (g_str_hash, g_str_equal,
+	                                  g_free, (GDestroyNotify) g_hash_table_destroy);
+
+	if (cdata->wifi_secrets) {
+		secrets = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, destroy_gvalue);
+		g_hash_table_foreach (cdata->wifi_secrets, add_one_secret, secrets);
+		g_hash_table_insert (settings, g_strdup (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME), secrets);
+	}
+
+	if (cdata->onex_secrets) {
+		secrets = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, destroy_gvalue);
+		g_hash_table_foreach (cdata->onex_secrets, add_one_secret, secrets);
+		g_hash_table_insert (settings, g_strdup (NM_SETTING_802_1X_SETTING_NAME), secrets);
+	}
+
+	/* FIXME: PPP secrets (which are actually split out into GSM/CDMA/etc */
+
+	return settings;
 }
 
 static NMConnection *

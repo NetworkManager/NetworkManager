@@ -1,3 +1,26 @@
+2008-03-18  Dan Williams  <dcbw@redhat.com>
+
+	Adapt system settings service for split 802.1x.
+
+	* system-settings/src/nm-system-config-interface.h
+		- clarify return value of get_secrets()
+
+	* system-settings/src/dbus-settings.c
+		- (string_to_gvalue, destroy_gvalue, add_one_secret_to_hash): remove
+		- (check_for_secrets): check if there actually secrets returned by a
+			plugin
+		- (exported_connection_get_secrets): just return the plugin-returned
+			hash of settings' secrets if it looks valid
+
+	* system-settings/plugins/ifcfg-fedora/plugin.c
+		- (get_secrets): add split secrets with correct format to reply hash
+
+	* system-settings/plugins/ifcfg-fedora/parser.c
+	  system-settings/plugins/ifcfg-fedora/parser.h
+		- (copy_one_cdata_secret, connection_data_copy_secrets,
+		   connection_data_free, connection_data_add): keep secrets for
+			different settings in different hashes
+
 2008-03-17  Tambet Ingo  <tambet@gmail.com>
 
 	Clean up activating device deactivation.
