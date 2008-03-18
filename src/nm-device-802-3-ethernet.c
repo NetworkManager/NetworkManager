@@ -39,11 +39,14 @@
 #include "nm-activation-request.h"
 #include "NetworkManagerUtils.h"
 #include "nm-supplicant-manager.h"
+#include "nm-supplicant-interface.h"
+#include "nm-supplicant-config.h"
 #include "nm-netlink.h"
 #include "nm-netlink-monitor.h"
 #include "NetworkManagerSystem.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wired.h"
+#include "nm-setting-8021x.h"
 #include "nm-setting-pppoe.h"
 #include "ppp-manager/nm-ppp-manager.h"
 #include "nm-utils.h"
@@ -56,6 +59,21 @@ G_DEFINE_TYPE (NMDevice8023Ethernet, nm_device_802_3_ethernet, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_802_3_ETHERNET_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_802_3_ETHERNET, NMDevice8023EthernetPrivate))
 
+#define WIRED_SECRETS_TRIES "wired-secrets-tries"
+
+typedef struct Supplicant {
+	NMSupplicantManager *mgr;
+	NMSupplicantInterface *iface;
+
+	/* signal handler ids */
+	guint                   mgr_state_id;
+	guint                   iface_error_id;
+	guint                   iface_state_id;
+	guint                   iface_con_state_id;
+
+	guint                   con_timeout_id;
+} Supplicant;
+
 typedef struct {
 	gboolean	dispose_has_run;
 
@@ -66,8 +84,8 @@ typedef struct {
 	gulong			link_connected_id;
 	gulong			link_disconnected_id;
 
-	NMSupplicantInterface *sup_iface;
-	gulong			iface_state_id; 
+	Supplicant          supplicant;
+	guint               link_timeout_id;
 
 	/* PPPoE */
 	NMPPPManager *ppp_manager;
@@ -96,12 +114,6 @@ static void set_carrier (NMDevice8023Ethernet *self, const gboolean carrier);
 
 static gboolean supports_mii_carrier_detect (NMDevice8023Ethernet *dev);
 static gboolean supports_ethtool_carrier_detect (NMDevice8023Ethernet *dev);
-
-static void supplicant_iface_state_cb (NMSupplicantInterface * iface,
-                                       guint32 new_state,
-                                       guint32 old_state,
-                                       NMDevice8023Ethernet *self);
-
 
 static void
 nm_device_802_3_ethernet_carrier_on (NMNetlinkMonitor *monitor,
@@ -229,7 +241,7 @@ static gboolean
 real_is_up (NMDevice *device)
 {
 	/* Try device-specific tests first */
-	if (NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (device)->sup_iface)
+	if (NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (device)->supplicant.mgr)
 		return TRUE;
 
 	return NM_DEVICE_CLASS (nm_device_802_3_ethernet_parent_class)->is_up (device);
@@ -239,48 +251,21 @@ static gboolean
 real_bring_up (NMDevice *dev)
 {
 	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (dev);
-	NMSupplicantManager *sup_mgr;
-	const char *iface;
-	gulong id;
 
-	iface = nm_device_get_iface (dev);
-	sup_mgr = nm_supplicant_manager_get ();
-	priv->sup_iface = nm_supplicant_manager_get_iface (sup_mgr, iface, FALSE);
-	if (!priv->sup_iface) {
-		nm_warning ("Couldn't initialize supplicant interface for %s.", iface);
-		g_object_unref (sup_mgr);
-		return FALSE;
-	}
-
-	id = g_signal_connect (priv->sup_iface,
-	                       "state",
-	                       G_CALLBACK (supplicant_iface_state_cb),
-	                       NM_DEVICE_802_3_ETHERNET (dev));
-	priv->iface_state_id = id;
-
-	g_object_unref (sup_mgr);
+	priv->supplicant.mgr = nm_supplicant_manager_get ();
 
 	return TRUE;
 }
-
 
 static void
 real_bring_down (NMDevice *dev)
 {
 	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (dev);
-	NMSupplicantManager *sup_mgr;
 
-	sup_mgr = nm_supplicant_manager_get ();
-	if (priv->sup_iface) {
-		if (priv->iface_state_id > 0) {
-			g_signal_handler_disconnect (priv->sup_iface, priv->iface_state_id);
-			priv->iface_state_id = 0;
-		}
-
-		nm_supplicant_manager_release_iface (sup_mgr, priv->sup_iface);
-		priv->sup_iface = NULL;
+	if (priv->supplicant.mgr) {
+		g_object_unref (priv->supplicant.mgr);
+		priv->supplicant.mgr = NULL;
 	}
-	g_object_unref (sup_mgr);
 }
 
 
@@ -488,13 +473,530 @@ real_connection_secrets_updated (NMDevice *dev,
                                  GSList *updated_settings)
 {
 	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (dev);
+	NMActRequest *req;
+	gboolean valid = FALSE;
+	GSList *iter;
+
+	if (nm_device_get_state (dev) != NM_DEVICE_STATE_NEED_AUTH)
+		return;
 
 	if (priv->ppp_manager) {
 		/* PPPoE */
 		nm_ppp_manager_update_secrets (priv->ppp_manager, nm_device_get_iface (dev), connection);
+		return;
+	}
+
+	for (iter = updated_settings; iter; iter = g_slist_next (iter)) {
+		const char *setting_name = (const char *) iter->data;
+
+		if (!strcmp (setting_name, NM_SETTING_802_1X_SETTING_NAME)) {
+			valid = TRUE;
+		} else {
+			nm_warning ("Ignoring updated secrets for setting '%s'.", setting_name);
+		}
+	}
+
+	req = nm_device_get_act_request (dev);
+	g_assert (req);
+
+	g_return_if_fail (nm_act_request_get_connection (req) == connection);
+	nm_device_activate_schedule_stage1_device_prepare (dev);
+}
+
+/* FIXME: Move it to nm-device.c and then get rid of all foo_device_get_setting() all around.
+   It's here now to keep the patch short. */
+static NMSetting *
+device_get_setting (NMDevice *device, GType setting_type)
+{
+	NMActRequest *req;
+	NMSetting *setting = NULL;
+
+	req = nm_device_get_act_request (device);
+	if (req) {
+		NMConnection *connection;
+
+		connection = nm_act_request_get_connection (req);
+		if (connection)
+			setting = nm_connection_get_setting (connection, setting_type);
+	}
+
+	return setting;
+}
+
+/*****************************************************************************/
+/* 802.1X */
+
+static void
+remove_supplicant_timeouts (NMDevice8023Ethernet *self)
+{
+	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self);
+
+	if (priv->supplicant.con_timeout_id) {
+		g_source_remove (priv->supplicant.con_timeout_id);
+		priv->supplicant.con_timeout_id = 0;
+	}
+
+	if (priv->link_timeout_id) {
+		g_source_remove (priv->link_timeout_id);
+		priv->link_timeout_id = 0;
 	}
 }
 
+static void
+remove_supplicant_interface_connection_error_handler (NMDevice8023Ethernet *self)
+{
+	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self);
+
+	if (priv->supplicant.iface_error_id != 0) {
+		g_signal_handler_disconnect (priv->supplicant.iface, priv->supplicant.iface_error_id);
+		priv->supplicant.iface_error_id = 0;
+	}
+}
+
+static void
+supplicant_interface_clean (NMDevice8023Ethernet *self)
+{
+	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self);
+
+	remove_supplicant_timeouts (self);
+	remove_supplicant_interface_connection_error_handler (self);
+
+	if (priv->supplicant.iface_con_state_id) {
+		g_signal_handler_disconnect (priv->supplicant.iface, priv->supplicant.iface_con_state_id);
+		priv->supplicant.iface_con_state_id = 0;
+	}
+
+	if (priv->supplicant.iface_state_id > 0) {
+		g_signal_handler_disconnect (priv->supplicant.iface, priv->supplicant.iface_state_id);
+		priv->supplicant.iface_state_id = 0;
+	}
+
+	if (priv->supplicant.mgr_state_id) {
+		g_signal_handler_disconnect (priv->supplicant.mgr, priv->supplicant.mgr_state_id);
+		priv->supplicant.mgr_state_id = 0;
+	}
+
+	if (priv->supplicant.iface) {
+		nm_supplicant_interface_disconnect (priv->supplicant.iface);
+		nm_supplicant_manager_release_iface (priv->supplicant.mgr, priv->supplicant.iface);
+		priv->supplicant.iface = NULL;
+	}
+}
+
+static gboolean
+link_timeout_cb (gpointer user_data)
+{
+	NMDevice8023Ethernet *self = NM_DEVICE_802_3_ETHERNET (user_data);
+	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self);
+	NMDevice *dev = NM_DEVICE (self);
+	NMActRequest *req;
+	NMConnection *connection;
+	const char *setting_name;
+
+	priv->link_timeout_id = 0;
+
+	req = nm_device_get_act_request (dev);
+
+	if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED) {
+		nm_device_interface_deactivate (NM_DEVICE_INTERFACE (dev));
+		return FALSE;
+	}
+
+	/* Disconnect event during initial authentication and credentials
+	 * ARE checked - we are likely to have wrong key.  Ask the user for
+	 * another one.
+	 */
+	if (nm_device_get_state (dev) != NM_DEVICE_STATE_CONFIG)
+		goto time_out;
+
+	connection = nm_act_request_get_connection (req);
+	nm_connection_clear_secrets (connection);
+	setting_name = nm_connection_need_secrets (connection, NULL);
+	if (!setting_name)
+		goto time_out;
+
+	nm_info ("Activation (%s/wired): disconnected during association,"
+	         " asking for new key.", nm_device_get_iface (dev));
+	supplicant_interface_clean (self);
+
+	nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
+	nm_act_request_request_connection_secrets (req, setting_name, TRUE);	
+
+	return FALSE;
+
+time_out:
+	nm_info ("%s: link timed out.", nm_device_get_iface (dev));
+	nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
+
+	return FALSE;
+}
+
+struct state_cb_data {
+	NMDevice8023Ethernet *self;
+	guint32 new_state;
+	guint32 old_state;
+};
+
+static gboolean
+schedule_state_handler (NMDevice8023Ethernet *self,
+                        GSourceFunc handler,
+                        guint32 new_state,
+                        guint32 old_state)
+{
+	struct state_cb_data * cb_data;
+
+	if (new_state == old_state)
+		return TRUE;
+
+	cb_data = g_slice_new0 (struct state_cb_data);
+	cb_data->self = self;
+	cb_data->new_state = new_state;
+	cb_data->old_state = old_state;
+
+	g_idle_add (handler, cb_data);
+
+	return TRUE;
+}
+
+static gboolean
+supplicant_mgr_state_cb_handler (gpointer user_data)
+{
+	struct state_cb_data *info = (struct state_cb_data *) user_data;
+
+	/* If the supplicant went away, release the supplicant interface */
+	if (info->new_state == NM_SUPPLICANT_MANAGER_STATE_DOWN) {
+		NMDevice *dev = NM_DEVICE (info->self);
+
+		supplicant_interface_clean (info->self);
+
+		if (nm_device_is_activating (dev))
+			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
+	}
+
+	g_slice_free (struct state_cb_data, info);
+
+	return FALSE;
+}
+
+static void
+supplicant_mgr_state_cb (NMSupplicantInterface * iface,
+                         guint32 new_state,
+                         guint32 old_state,
+                         gpointer user_data)
+{
+	nm_info ("(%s) supplicant manager is now in state %d (from %d).",
+		    nm_device_get_iface (NM_DEVICE (user_data)),
+		    new_state,
+		    old_state);
+
+	schedule_state_handler (NM_DEVICE_802_3_ETHERNET (user_data),
+					    supplicant_mgr_state_cb_handler,
+					    new_state, old_state);
+}
+
+static NMSupplicantConfig *
+build_supplicant_config (NMDevice8023Ethernet *self)
+{
+	DBusGProxy *proxy;
+	const char *con_path;
+	NMSupplicantConfig *config;
+	NMSetting8021x *security;
+	NMConnection *connection;
+
+	connection = nm_act_request_get_connection (nm_device_get_act_request (NM_DEVICE (self)));
+	proxy = g_object_get_data (G_OBJECT (connection), "dbus-proxy");
+	con_path = dbus_g_proxy_get_path (proxy);
+
+	config = nm_supplicant_config_new ();
+	if (!config)
+		return NULL;
+
+	security = NM_SETTING_802_1X (nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X));
+	if (nm_supplicant_config_add_setting_8021x (config, security, con_path, TRUE))
+		return config;
+
+	nm_warning ("Couldn't add 802.1X security setting to supplicant config.");
+	g_object_unref (config);
+
+	return NULL;
+}
+
+static gboolean
+supplicant_iface_state_cb_handler (gpointer user_data)
+{
+	struct state_cb_data *info = (struct state_cb_data *) user_data;
+	NMDevice *dev = NM_DEVICE (info->self);
+
+	if (info->new_state == NM_SUPPLICANT_INTERFACE_STATE_READY) {
+		NMSupplicantConfig *config;
+		const char *iface;
+		gboolean success = FALSE;
+
+		iface = nm_device_get_iface (NM_DEVICE (info->self));
+		config = build_supplicant_config (info->self);
+		if (config) {
+			NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (info->self);
+
+			success = nm_supplicant_interface_set_config (priv->supplicant.iface, config);
+			g_object_unref (config);
+
+			if (!success)
+				nm_warning ("Activation (%s/wired): couldn't send security "
+						  "configuration to the supplicant.", iface);
+		} else
+			nm_warning ("Activation (%s/wired): couldn't build security configuration.", iface);
+
+		if (!success)
+			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
+	}
+
+	else if (info->new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
+		supplicant_interface_clean (info->self);
+
+		if (nm_device_is_activating (dev))
+			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
+	}
+
+	g_slice_free (struct state_cb_data, info);
+
+	return FALSE;
+}
+
+static void
+supplicant_iface_state_cb (NMSupplicantInterface * iface,
+                           guint32 new_state,
+                           guint32 old_state,
+                           gpointer user_data)
+{
+
+	nm_info ("(%s) supplicant interface is now in state %d (from %d).",
+		    nm_device_get_iface (NM_DEVICE (user_data)),
+		    new_state,
+		    old_state);
+
+	schedule_state_handler (NM_DEVICE_802_3_ETHERNET (user_data),
+	                        supplicant_iface_state_cb_handler,
+	                        new_state,
+	                        old_state);
+}
+
+static gboolean
+supplicant_iface_connection_state_cb_handler (gpointer user_data)
+{
+	struct state_cb_data *info = (struct state_cb_data *) user_data;
+	NMDevice *dev = NM_DEVICE (info->self);
+
+	if (info->new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_COMPLETED) {
+		remove_supplicant_interface_connection_error_handler (info->self);
+		remove_supplicant_timeouts (info->self);
+
+		/* If this is the initial association during device activation,
+		 * schedule the next activation stage.
+		 */
+		if (nm_device_get_state (dev) == NM_DEVICE_STATE_CONFIG) {
+			nm_info ("Activation (%s/wired) Stage 2 of 5 (Device Configure) successful.",
+				    nm_device_get_iface (dev));
+			nm_device_activate_schedule_stage3_ip_config_start (dev);
+		}
+	} else if (info->new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED) {
+		if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED || nm_device_is_activating (dev)) {
+			NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (info->self);
+
+			/* Start the link timeout so we allow some time for reauthentication */
+			if (!priv->link_timeout_id)
+				priv->link_timeout_id = g_timeout_add (15000, link_timeout_cb, dev);
+		}
+	}
+
+	g_slice_free (struct state_cb_data, info);
+
+	return FALSE;
+}
+
+static void
+supplicant_iface_connection_state_cb (NMSupplicantInterface * iface,
+                                      guint32 new_state,
+                                      guint32 old_state,
+                                      gpointer user_data)
+{
+	nm_info ("(%s) Supplicant interface state change: %d -> %d",
+	         nm_device_get_iface (NM_DEVICE (user_data)), old_state, new_state);
+
+	schedule_state_handler (NM_DEVICE_802_3_ETHERNET (user_data),
+	                        supplicant_iface_connection_state_cb_handler,
+	                        new_state,
+	                        old_state);
+}
+
+static gboolean
+supplicant_iface_connection_error_cb_handler (gpointer user_data)
+{
+	NMDevice8023Ethernet *self = NM_DEVICE_802_3_ETHERNET (user_data);
+
+	supplicant_interface_clean (self);
+	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED);
+
+	return FALSE;
+}
+
+static void
+supplicant_iface_connection_error_cb (NMSupplicantInterface *iface,
+                                      const char *name,
+                                      const char *message,
+                                      gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (user_data);
+
+	nm_info ("Activation (%s/wired): association request to the supplicant failed: %s - %s",
+	         nm_device_get_iface (device), name, message);
+
+	g_idle_add (supplicant_iface_connection_error_cb_handler, device);
+}
+
+static NMActStageReturn
+handle_auth_or_fail (NMDevice8023Ethernet *self,
+                     NMActRequest *req,
+                     gboolean new_secrets)
+{
+	const char *setting_name;
+	guint32 tries;
+	NMConnection *connection;
+
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+
+	tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), WIRED_SECRETS_TRIES));
+	if (tries > 3)
+		return NM_ACT_STAGE_RETURN_FAILURE;
+
+	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH);
+
+	nm_connection_clear_secrets (connection);
+	setting_name = nm_connection_need_secrets (connection, NULL);
+	if (setting_name) {
+		gboolean get_new;
+
+		/* If the caller doesn't necessarily want completely new secrets,
+		 * only ask for new secrets after the first failure.
+		 */
+		get_new = new_secrets ? TRUE : (tries ? TRUE : FALSE);
+		nm_act_request_request_connection_secrets (req, setting_name, get_new);
+
+		g_object_set_data (G_OBJECT (connection), WIRED_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
+	} else
+		nm_warning ("Cleared secrets, but setting didn't need any secrets.");
+
+	return NM_ACT_STAGE_RETURN_POSTPONE;
+}
+
+static gboolean
+supplicant_connection_timeout_cb (gpointer user_data)
+{
+	NMDevice8023Ethernet *self = NM_DEVICE_802_3_ETHERNET (user_data);
+	NMDevice *device = NM_DEVICE (self);
+	NMActRequest *req;
+	const char *iface;
+
+	iface = nm_device_get_iface (device);
+
+	/* Authentication failed, encryption key is probably bad */
+	nm_info ("Activation (%s/wired): association took too long.", iface);
+
+	supplicant_interface_clean (self);
+	req = nm_device_get_act_request (device);
+	g_assert (req);
+
+	if (handle_auth_or_fail (self, req, TRUE) == NM_ACT_STAGE_RETURN_POSTPONE)
+		nm_info ("Activation (%s/wired): asking for new secrets", iface);
+	else
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED);
+
+	return FALSE;
+}
+
+static gboolean
+supplicant_interface_init (NMDevice8023Ethernet *self)
+{
+	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self);
+	const char *iface;
+
+	iface = nm_device_get_iface (NM_DEVICE (self));
+
+	/* Create supplicant interface */
+	priv->supplicant.iface = nm_supplicant_manager_get_iface (priv->supplicant.mgr, iface, FALSE);
+	if (!priv->supplicant.iface) {
+		nm_warning ("Couldn't initialize supplicant interface for %s.", iface);
+		supplicant_interface_clean (self);
+
+		return FALSE;
+	}
+
+	/* Listen for it's state signals */
+	priv->supplicant.iface_state_id = g_signal_connect (priv->supplicant.iface,
+											  "state",
+											  G_CALLBACK (supplicant_iface_state_cb),
+											  self);
+
+	/* Hook up error signal handler to capture association errors */
+	priv->supplicant.iface_error_id = g_signal_connect (priv->supplicant.iface,
+											  "connection-error",
+											  G_CALLBACK (supplicant_iface_connection_error_cb),
+											  self);
+
+	priv->supplicant.iface_con_state_id = g_signal_connect (priv->supplicant.iface,
+												 "connection-state",
+												 G_CALLBACK (supplicant_iface_connection_state_cb),
+												 self);
+
+	/* Listen for supplicant manager state changes */
+	priv->supplicant.mgr_state_id = g_signal_connect (priv->supplicant.mgr,
+											"state",
+											G_CALLBACK (supplicant_mgr_state_cb),
+											self);
+
+	/* Set up a timeout on the connection attempt to fail it after 25 seconds */
+	priv->supplicant.con_timeout_id = g_timeout_add (25000, supplicant_connection_timeout_cb, self);
+
+	return TRUE;
+}
+
+static NMActStageReturn
+nm_8021x_stage2_config (NMDevice8023Ethernet *self)
+{
+	NMConnection *connection;
+	NMSetting8021x *security;
+	NMSettingConnection *s_connection;
+	const char *setting_name;
+	const char *iface;
+	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
+
+	connection = nm_act_request_get_connection (nm_device_get_act_request (NM_DEVICE (self)));
+	security = NM_SETTING_802_1X (nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X));
+	if (!security) {
+		nm_warning ("Invalid or missing 802.1X security");
+		return ret;
+	}
+
+	iface = nm_device_get_iface (NM_DEVICE (self));
+	s_connection = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+
+	/* If we need secrets, get them */
+	setting_name = nm_connection_need_secrets (connection, NULL);
+	if (setting_name) {
+		nm_info ("Activation (%s/wired): connection '%s' has security, but secrets are required.",
+			    iface, s_connection->id);
+
+		ret = handle_auth_or_fail (self, nm_device_get_act_request (NM_DEVICE (self)), FALSE);
+	} else {
+		nm_info ("Activation (%s/wired): connection '%s' requires no security. No secrets needed.",
+			    iface, s_connection->id);
+
+		if (supplicant_interface_init (self))
+			ret = NM_ACT_STAGE_RETURN_POSTPONE;
+	}
+
+	return ret;
+}
 
 /*****************************************************************************/
 /* PPPoE */
@@ -571,26 +1073,6 @@ pppoe_stage2_config (NMDevice8023Ethernet *self)
 	return ret;
 }
 
-/* FIXME: Move it to nm-device.c and then get rid of all foo_device_get_setting() all around.
-   It's here now to keep the patch short. */
-static NMSetting *
-device_get_setting (NMDevice *device, GType setting_type)
-{
-	NMActRequest *req;
-	NMSetting *setting = NULL;
-
-	req = nm_device_get_act_request (device);
-	if (req) {
-		NMConnection *connection;
-
-		connection = nm_act_request_get_connection (req);
-		if (connection)
-			setting = nm_connection_get_setting (connection, setting_type);
-	}
-
-	return setting;
-}
-
 static NMActStageReturn
 real_act_stage2_config (NMDevice *device)
 {
@@ -600,9 +1082,15 @@ real_act_stage2_config (NMDevice *device)
 	s_connection = NM_SETTING_CONNECTION (device_get_setting (device, NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_connection);
 
-	if (!strcmp (s_connection->type, NM_SETTING_WIRED_SETTING_NAME))
-		ret = NM_ACT_STAGE_RETURN_SUCCESS;
-	else if (!strcmp (s_connection->type, NM_SETTING_PPPOE_SETTING_NAME))
+	if (!strcmp (s_connection->type, NM_SETTING_WIRED_SETTING_NAME)) {
+		NMSetting8021x *security;
+
+		security = (NMSetting8021x *) device_get_setting (device, NM_TYPE_SETTING_802_1X);
+		if (security)
+			ret = nm_8021x_stage2_config (NM_DEVICE_802_3_ETHERNET (device));
+		else
+			ret = NM_ACT_STAGE_RETURN_SUCCESS;
+	} else if (!strcmp (s_connection->type, NM_SETTING_PPPOE_SETTING_NAME))
 		ret = pppoe_stage2_config (NM_DEVICE_802_3_ETHERNET (device));
 	else {
 		nm_warning ("Invalid connection type '%s' for ethernet device", s_connection->type);
@@ -665,6 +1153,8 @@ real_deactivate_quickly (NMDevice *device)
 		g_object_unref (priv->ppp_manager);
 		priv->ppp_manager = NULL;
 	}
+
+	supplicant_interface_clean (NM_DEVICE_802_3_ETHERNET (device));
 }
 
 static void
@@ -789,25 +1279,6 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
 									 &dbus_glib_nm_device_802_3_ethernet_object_info);
-}
-
-
-/****************************************************************************
- * WPA Supplicant control stuff
- *
- */
-static void
-supplicant_iface_state_cb (NMSupplicantInterface * iface,
-                           guint32 new_state,
-                           guint32 old_state,
-                           NMDevice8023Ethernet *self)
-{
-	g_return_if_fail (self != NULL);
-
-	nm_info ("(%s) supplicant interface is now in state %d (from %d).",
-             nm_device_get_iface (NM_DEVICE (self)),
-             new_state,
-             old_state);
 }
 
 
