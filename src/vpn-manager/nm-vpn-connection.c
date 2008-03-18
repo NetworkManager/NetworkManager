@@ -32,6 +32,7 @@
 #include "nm-vpn-connection.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-vpn.h"
+#include "nm-setting-vpn-properties.h"
 #include "nm-dbus-manager.h"
 #include "nm-manager.h"
 #include "NetworkManagerSystem.h"
@@ -539,13 +540,30 @@ free_get_secrets_info (gpointer data)
 	g_slice_free (GetSecretsInfo, info);
 }
 
+#define DBUS_TYPE_STRING_ARRAY   (dbus_g_type_get_collection ("GPtrArray", G_TYPE_STRING))
+#define DBUS_TYPE_G_STRING_VARIANT_HASHTABLE (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE))
+#define DBUS_TYPE_G_DICT_OF_DICTS (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, DBUS_TYPE_G_STRING_VARIANT_HASHTABLE))
+
+static void
+update_vpn_properties_secrets (gpointer key, gpointer data, gpointer user_data)
+{
+	NMConnection *connection = NM_CONNECTION (user_data);
+
+	if (strcmp (key, NM_SETTING_VPN_PROPERTIES_SETTING_NAME))
+		return;
+
+	nm_connection_update_secrets (connection,
+	                              NM_SETTING_VPN_PROPERTIES_SETTING_NAME,
+	                              (GHashTable *) data);
+}
+
 static void
 get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 {
 	GetSecretsInfo *info = (GetSecretsInfo *) user_data;
 	NMVPNConnectionPrivate *priv;
 	GError *err = NULL;
-	GHashTable *secrets = NULL;
+	GHashTable *settings = NULL;
 
 	if (!info || !info->vpn_connection || !info->setting_name)
 		goto error;
@@ -555,29 +573,27 @@ get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	g_object_set_data (G_OBJECT (info->vpn_connection), CONNECTION_GET_SECRETS_CALL_TAG, NULL);
 
 	if (!dbus_g_proxy_end_call (proxy, call, &err,
-								dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE), &secrets,
+								DBUS_TYPE_G_DICT_OF_DICTS, &settings,
 								G_TYPE_INVALID)) {
 		nm_warning ("Couldn't get connection secrets: %s.", err->message);
 		g_error_free (err);
 		goto error;
 	}
 
-	if (g_hash_table_size (secrets) == 0) {
+	if (g_hash_table_size (settings) == 0) {
 		// FIXME: some better way to handle invalid message?
 		nm_warning ("GetSecrets call returned but no secrets were found.");
 		goto error;
 	}
 
-	nm_connection_update_secrets (priv->connection, info->setting_name, secrets);
-	g_hash_table_destroy (secrets);
+	g_hash_table_foreach (settings, update_vpn_properties_secrets, priv->connection);
+	g_hash_table_destroy (settings);
 	really_activate (info->vpn_connection);
 	return;
 
 error:
 	nm_vpn_connection_fail (info->vpn_connection, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS);
 }
-
-#define DBUS_TYPE_STRING_ARRAY   (dbus_g_type_get_collection ("GPtrArray", G_TYPE_STRING))
 
 static gboolean
 get_connection_secrets (NMVPNConnection *vpn_connection,

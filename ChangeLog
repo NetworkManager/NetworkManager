@@ -1,5 +1,10 @@
 2008-03-18  Dan Williams  <dcbw@redhat.com>
 
+	* src/vpn-manager/nm-vpn-connection.c
+		- (get_secrets_cb): handle new GetSecrets return format
+
+2008-03-18  Dan Williams  <dcbw@redhat.com>
+
 	Adapt system settings service for split 802.1x.
 
 	* system-settings/src/nm-system-config-interface.h
