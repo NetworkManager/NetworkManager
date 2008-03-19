@@ -21,17 +21,12 @@
       </arg>
     </method>
 
-    <method name="ActivateDevice">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_activate_device"/>
+    <method name="ActivateConnection">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_activate_connection"/>
       <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <tp:docstring>
-        Activate a device using the supplied connection.
+        Activate a connection using the supplied device.
       </tp:docstring>
-      <arg name="device" type="o" direction="in">
-        <tp:docstring>
-          The device to be activated.
-        </tp:docstring>
-      </arg>
       <arg name="service_name" type="s" direction="in">
         <tp:docstring>
           The D-Bus service name of the settings service that provides this connection.
@@ -40,6 +35,11 @@
       <arg name="connection" type="o" direction="in">
         <tp:docstring>
           The connection to activate the devices with.
+        </tp:docstring>
+      </arg>
+      <arg name="device" type="o" direction="in">
+        <tp:docstring>
+          The device to be activated.
         </tp:docstring>
       </arg>
       <arg name="specific_object" type="o" direction="in">
@@ -63,16 +63,9 @@
 
     <method name="GetActiveConnections">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_get_active_connections"/>
-      <!-- 'connections' is an array of structs
-      consisting of the following elements:
-      service name
-      connection object path
-      specific object
-      array of (device object path)
-      -->
-      <arg name="connections" type="a(sooao)" direction="out" tp:type="Active_Connection[]">
+      <arg name="connections" type="aa{sv}" direction="out">
         <tp:docstring>
-          List of active connections
+          List of active connections, each described by a property dictionary.
         </tp:docstring>
       </arg>
     </method>
@@ -181,32 +174,6 @@
         </tp:docstring>
       </tp:enumvalue>
     </tp:enum>
-
-
-    <tp:struct name="Active_Connection" array-name="Active_Connection_List">
-      <tp:docstring>A struct representing an active connection, returned by GetActiveConnections on the NetworkManager interface.
-      </tp:docstring>
-      <tp:member type="s" name="service_name">
-        <tp:docstring>
-          The D-Bus service name of the settings service that provides this connection.
-        </tp:docstring>
-      </tp:member>
-      <tp:member type="o" name="connection_path">
-        <tp:docstring>
-          Object path of the active connection
-        </tp:docstring>
-      </tp:member>
-      <tp:member type="o" name="specific_object">
-        <tp:docstring>
-          Object path of a device-type-specific object this connection uses, for example a specific WiFi access point.
-        </tp:docstring>
-      </tp:member>
-      <tp:member type="ao" name="active_device_list">
-        <tp:docstring>
-          Array of object paths to the devices this connection is active on.
-        </tp:docstring>
-      </tp:member>
-    </tp:struct>
 
     <!-- Legacy methods to maintain backwards compatibility for 0.6 branch. -->
 

@@ -139,4 +139,16 @@ typedef enum
 } NMDeviceState;
 
 
+/*
+ * Active Connection dict keys
+ */
+#define NM_AC_KEY_SERVICE_NAME            "service-name"
+#define NM_AC_KEY_CONNECTION              "connection"
+#define NM_AC_KEY_SPECIFIC_OBJECT         "specific-object"
+#define NM_AC_KEY_SHARED_TO_SERVICE_NAME  "shared-to-service-name"
+#define NM_AC_KEY_SHARED_TO_CONNECTION    "shared-to-connection"
+#define NM_AC_KEY_DEVICES                 "devices"
+
+
 #endif /* NETWORK_MANAGER_H */
+

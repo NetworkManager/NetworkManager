@@ -531,10 +531,10 @@ activate_cb (DBusGProxy *proxy, GError *err, gpointer user_data)
 }
 
 void
-nm_client_activate_device (NMClient *client,
-					  NMDevice *device,
+nm_client_activate_connection (NMClient *client,
 					  const char *service_name,
 					  const char *connection_path,
+					  NMDevice *device,
 					  const char *specific_object,
 					  NMClientActivateDeviceFn callback,
 					  gpointer user_data)
@@ -557,15 +557,33 @@ nm_client_activate_device (NMClient *client,
 	info->fn = callback;
 	info->user_data = user_data;
 
-	org_freedesktop_NetworkManager_activate_device_async (NM_CLIENT_GET_PRIVATE (client)->client_proxy,
-											    nm_object_get_path (NM_OBJECT (device)),
+	org_freedesktop_NetworkManager_activate_connection_async (NM_CLIENT_GET_PRIVATE (client)->client_proxy,
 											    service_name,
 											    connection_path,
+											    nm_object_get_path (NM_OBJECT (device)),
 											    internal_so,
 											    activate_cb,
 											    info);
 }
 
+void
+nm_client_free_active_connections_element (GHashTable *item)
+{
+	GSList *devices, *iter;
+
+	g_free (g_hash_table_lookup (item, NM_AC_KEY_SERVICE_NAME));
+	g_free (g_hash_table_lookup (item, NM_AC_KEY_CONNECTION));
+	g_free (g_hash_table_lookup (item, NM_AC_KEY_SPECIFIC_OBJECT));
+	g_free (g_hash_table_lookup (item, NM_AC_KEY_SHARED_TO_SERVICE_NAME));
+	g_free (g_hash_table_lookup (item, NM_AC_KEY_SHARED_TO_CONNECTION));
+
+	devices = g_hash_table_lookup (item, NM_AC_KEY_DEVICES);
+	for (iter = devices; iter; iter = g_slist_next (iter))
+		g_object_unref (iter->data);
+	g_slist_free (devices);
+}
+
+#define DBUS_TYPE_G_OBJECT_PATH_ARRAY (dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_OBJECT_PATH))
 
 GSList * 
 nm_client_get_active_connections (NMClient *client)
@@ -575,7 +593,6 @@ nm_client_get_active_connections (NMClient *client)
 	GPtrArray *array = NULL;
 	GError *err = NULL;
 	int i, j;
-	static GType type = 0, ao_type = 0;
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
@@ -586,82 +603,97 @@ nm_client_get_active_connections (NMClient *client)
 		return NULL;
 	}
 
-	/* dbus signature "sooao" */
-	if (G_UNLIKELY (ao_type) == 0)
-		ao_type = dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_OBJECT_PATH);
-	if (G_UNLIKELY (type) == 0) {
-		type = dbus_g_type_get_struct ("GValueArray",
-		                               G_TYPE_STRING,
-		                               DBUS_TYPE_G_OBJECT_PATH,
-		                               DBUS_TYPE_G_OBJECT_PATH,
-		                               ao_type,
-		                               G_TYPE_INVALID);
-	}
-
 	for (i = 0; i < array->len; i++) {
-		NMClientActiveConnection *ac_elt;
-		GValue val = {0, };
-		GPtrArray *devices = NULL;
+		GHashTable *reply;
+		GHashTable *active;
+		GValue *value, *value2;
+		GPtrArray *devices_array = NULL;
+		GSList *devices = NULL;
+		gboolean have_shared_service = TRUE;
 
-		ac_elt = g_slice_new0 (NMClientActiveConnection);
-		if (!ac_elt) {
-			g_warning ("Error in get_active_connections: not enough memory.");
+		active = g_hash_table_new (g_str_hash, g_str_equal);
+
+		reply = g_ptr_array_index (array, i);
+
+		/* Service name */
+		value = g_hash_table_lookup (reply, NM_AC_KEY_SERVICE_NAME);
+		if (!value || !G_VALUE_HOLDS_STRING (value)) {
+			g_warning ("%s: missing item " NM_AC_KEY_SERVICE_NAME, __func__);
+			nm_client_free_active_connections_element (active);
+			g_hash_table_destroy (reply);
+			continue;
+		}
+		g_hash_table_insert (active, NM_AC_KEY_SERVICE_NAME, g_value_dup_string (value));
+
+		/* Connection path */
+		value = g_hash_table_lookup (reply, NM_AC_KEY_CONNECTION);
+		if (!value || !G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH)) {
+			g_warning ("%s: missing item " NM_AC_KEY_CONNECTION, __func__);
+			nm_client_free_active_connections_element (active);
+			g_hash_table_destroy (reply);
+			continue;
+		}
+		g_hash_table_insert (active, NM_AC_KEY_CONNECTION, g_value_dup_boxed (value));
+
+		/* Specific object path */
+		value = g_hash_table_lookup (reply, NM_AC_KEY_SPECIFIC_OBJECT);
+		if (value && G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
+			g_hash_table_insert (active, NM_AC_KEY_SPECIFIC_OBJECT, g_value_dup_boxed (value));
+
+		/* Shared to service name */
+		value = g_hash_table_lookup (reply, NM_AC_KEY_SHARED_TO_SERVICE_NAME);
+		if (!value || !G_VALUE_HOLDS_STRING (value))
+			have_shared_service = FALSE;
+
+		value2 = g_hash_table_lookup (reply, NM_AC_KEY_SHARED_TO_CONNECTION);
+		if (have_shared_service && value2 && G_VALUE_HOLDS (value2, DBUS_TYPE_G_OBJECT_PATH)) {
+			g_hash_table_insert (active, NM_AC_KEY_SHARED_TO_SERVICE_NAME, g_value_dup_string (value));
+			g_hash_table_insert (active, NM_AC_KEY_SHARED_TO_CONNECTION, g_value_dup_boxed (value2));
+		} else {
+			/* Ignore missing shared-to-service _and_ missing shared-to-connection */
+			if (have_shared_service) {
+				g_warning ("%s: missing item " NM_AC_KEY_SHARED_TO_SERVICE_NAME, __func__);
+				nm_client_free_active_connections_element (active);
+				g_hash_table_destroy (reply);
+				continue;
+			}
+		}
+
+		/* Device array */
+		value = g_hash_table_lookup (reply, NM_AC_KEY_DEVICES);
+		if (!value || !G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH_ARRAY)) {
+			g_warning ("%s: missing item " NM_AC_KEY_DEVICES, __func__);
+			nm_client_free_active_connections_element (active);
+			g_hash_table_destroy (reply);
 			continue;
 		}
 
-		g_value_init (&val, type);
-		g_value_take_boxed (&val, g_ptr_array_index (array, i));
-		dbus_g_type_struct_get (&val,
-		                        0, &(ac_elt->service_name),
-		                        1, &(ac_elt->connection_path),
-		                        2, &(ac_elt->specific_object),
-		                        3, &devices,
-		                        G_MAXUINT);
-		g_value_unset (&val);
-
-		if (devices == NULL || (devices->len == 0)) {
-			g_warning ("Error in get_active_connections: no devices returned.");
-			nm_client_free_active_connection_element (ac_elt);
+		devices_array = g_value_get_boxed (value);
+		if (!devices_array || (devices_array->len == 0)) {
+			g_warning ("%s: no devices for this active connection.", __func__);
+			nm_client_free_active_connections_element (active);
+			g_hash_table_destroy (reply);
 			continue;
 		}
 
-		if (!strcmp (ac_elt->specific_object, "/")) {
-			g_free (ac_elt->specific_object);
-			ac_elt->specific_object = NULL;
-		}
-
-		for (j = 0; j < devices->len; j++) {
+		for (j = 0; j < devices_array->len; j++) {
 			NMDevice *device;
-			char *path = g_ptr_array_index (devices, j);
+			const char *path;
 
-			device = get_device (client, (const char *) path, TRUE);
-			ac_elt->devices = g_slist_append (ac_elt->devices, g_object_ref (device));
-			g_free (path);
+			path = (const char *) g_ptr_array_index (devices_array, j);
+			device = get_device (client, path, TRUE);
+			devices = g_slist_append (devices, g_object_ref (device));
 		}
-		g_ptr_array_free (devices, TRUE);
 
-		connections = g_slist_append (connections, ac_elt);
+		g_hash_table_insert (active, NM_AC_KEY_DEVICES, devices);
+
+		connections = g_slist_append (connections, active);
+		g_hash_table_destroy (reply);
 	}
 
 	g_ptr_array_free (array, TRUE);
 	return connections;
 }
-
-void
-nm_client_free_active_connection_element (NMClientActiveConnection *elt)
-{
-	g_return_if_fail (elt != NULL);
-
-	g_free (elt->service_name);
-	g_free (elt->connection_path);
-	g_free (elt->specific_object);
-
-	g_slist_foreach (elt->devices, (GFunc) g_object_unref, NULL);
-	g_slist_free (elt->devices);
-
-	g_slice_free (NMClientActiveConnection, elt);
-}
-
 
 gboolean
 nm_client_wireless_get_enabled (NMClient *client)

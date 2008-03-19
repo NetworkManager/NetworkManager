@@ -15,10 +15,10 @@
 #include "nm-marshal.h"
 
 static gboolean impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err);
-static void impl_manager_activate_device (NMManager *manager,
-								  char *device_path,
+static void impl_manager_activate_connection (NMManager *manager,
 								  char *service_name,
 								  char *connection_path,
+								  char *device_path,
 								  char *specific_object_path,
 								  DBusGMethodInvocation *context);
 
@@ -1368,10 +1368,10 @@ connection_added_default_handler (NMManager *manager,
 }
 
 static void
-impl_manager_activate_device (NMManager *manager,
-						char *device_path,
+impl_manager_activate_connection (NMManager *manager,
 						char *service_name,
 						char *connection_path,
+						char *device_path,
 						char *specific_object_path,
 						DBusGMethodInvocation *context)
 {
@@ -1456,22 +1456,31 @@ impl_manager_activate_device (NMManager *manager,
 	g_free (real_sop);
 }
 
-static GValueArray *
+static void
+destroy_gvalue (gpointer data)
+{
+	GValue *value = (GValue *) data;
+
+	g_value_unset (value);
+	g_slice_free (GValue, value);
+}
+
+static GHashTable *
 add_one_connection_element (NMManager *manager,
                             NMDevice *device)
 {
-	static GType type = 0, ao_type = 0;
-	GValue entry = {0, };
-	GPtrArray *dev_array = NULL;
+	GHashTable *properties;
 	NMActRequest *req;
 	const char *service_name = NULL;
 	NMConnection *connection;
 	const char *specific_object;
+	GPtrArray *dev_array = NULL;
+	GValue *value;
 
 	req = nm_device_get_act_request (device);
  	g_assert (req);
-
 	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
 
 	switch (nm_connection_get_scope (connection)) {
 		case NM_CONNECTION_SCOPE_USER:
@@ -1487,32 +1496,56 @@ add_one_connection_element (NMManager *manager,
 
 	specific_object = nm_act_request_get_specific_object (req);
 
-	/* dbus signature "sooao" */
-	if (G_UNLIKELY (ao_type) == 0)
-		ao_type = dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_OBJECT_PATH);
-	if (G_UNLIKELY (type) == 0) {
-		type = dbus_g_type_get_struct ("GValueArray",
-		                               G_TYPE_STRING,
-		                               DBUS_TYPE_G_OBJECT_PATH,
-		                               DBUS_TYPE_G_OBJECT_PATH,
-		                               ao_type,
-		                               G_TYPE_INVALID);
+	properties = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, destroy_gvalue);
+
+	/* Service name */
+	value = g_slice_new0 (GValue);
+	g_value_init (value, G_TYPE_STRING);
+	g_value_set_string (value, service_name);
+	g_hash_table_insert (properties, g_strdup (NM_AC_KEY_SERVICE_NAME), value);
+
+	/* Connection path */
+	value = g_slice_new0 (GValue);
+	g_value_init (value, DBUS_TYPE_G_OBJECT_PATH);
+	g_value_set_boxed (value, nm_connection_get_path (connection));
+	g_hash_table_insert (properties, g_strdup (NM_AC_KEY_CONNECTION), value);
+
+	/* Specific object */
+	if (specific_object) {
+		value = g_slice_new0 (GValue);
+		g_value_init (value, DBUS_TYPE_G_OBJECT_PATH);
+		g_value_set_boxed (value, specific_object);
+		g_hash_table_insert (properties, g_strdup (NM_AC_KEY_SPECIFIC_OBJECT), value);
 	}
 
-	dev_array = g_ptr_array_sized_new (1);
-	if (!dev_array)
-		return NULL;
-	g_ptr_array_add (dev_array, g_strdup (nm_device_get_udi (device)));
+	if (FALSE /* SHARED */ ) {
+		/* Shared connection service name */
+		value = g_slice_new0 (GValue);
+		g_value_init (value, G_TYPE_STRING);
+		g_value_set_string (value, service_name);
+		g_hash_table_insert (properties, g_strdup (NM_AC_KEY_SHARED_TO_SERVICE_NAME), value);
 
-	g_value_init (&entry, type);
-	g_value_take_boxed (&entry, dbus_g_type_specialized_construct (type));
-	dbus_g_type_struct_set (&entry,
-	                        0, service_name,
-	                        1, nm_connection_get_path (connection),
-	                        2, specific_object ? specific_object : "/",
-	                        3, dev_array,
-	                        G_MAXUINT);
-	return g_value_get_boxed (&entry);
+		/* Shared connection connection path */
+		value = g_slice_new0 (GValue);
+		g_value_init (value, DBUS_TYPE_G_OBJECT_PATH);
+		g_value_set_boxed (value, nm_connection_get_path (connection));
+		g_hash_table_insert (properties, g_strdup (NM_AC_KEY_SHARED_TO_CONNECTION), value);
+	}
+
+	/* Device list */
+	dev_array = g_ptr_array_sized_new (1);
+	if (!dev_array) {
+		g_hash_table_destroy (properties);
+		return NULL;
+	}
+	g_ptr_array_add (dev_array, g_object_ref (device));
+
+	value = g_slice_new0 (GValue);
+	g_value_init (value, DBUS_TYPE_G_OBJECT_ARRAY);
+	g_value_take_boxed (value, dev_array);
+	g_hash_table_insert (properties, g_strdup (NM_AC_KEY_DEVICES), value);
+
+	return properties;
 }
 
 static gboolean
@@ -1527,13 +1560,13 @@ impl_manager_get_active_connections (NMManager *manager,
 
 	priv = NM_MANAGER_GET_PRIVATE (manager);
 
-	// GPtrArray of GValueArrays of (gchar * and GPtrArray of gchar *)
+	/* GPtrArray of GHashTables */
 	*connections = g_ptr_array_sized_new (1);
 
 	// FIXME: this assumes one active device per connection
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
-		GValueArray *item;
+		GHashTable *item;
 
 		if (   (nm_device_get_state (dev) != NM_DEVICE_STATE_ACTIVATED)
 		    && !nm_device_is_activating (dev))

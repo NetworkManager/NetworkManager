@@ -1,3 +1,27 @@
+2008-03-19  Dan Williams  <dcbw@redhat.com>
+
+	* introspection/nm-manager.xml
+	  introspection/nm-manager-client.xml
+		- Rename the ActivateDevice method to ActivateConnection to better
+			reflect it's usage; it's arguments get reordered a bit too
+		- Convert GetActiveConnections method return from a struct to a dict
+
+	* include/NetworkManager.h
+		- Define the dict keys for return value of GetActiveConnections
+
+	* src/nm-manager.c
+		- impl_manager_activate_device -> impl_manager_activate_connection
+		- (add_one_connection_element): return a populated hash table, not
+			a structure
+
+	* libnm-glib/nm-client.c
+	  libnm-glib/nm-client.h
+		- nm_client_activate_device -> nm_client_activate_connection
+		- nm_client_free_active_connection_element -> nm_client_free_active_connections_element
+		- (nm_client_get_active_connections): return a GSList of GHashTables,
+			instead of the custom structures.  Each element of the returned list
+			must be freed with nm_client_free_active_connections_element()
+
 2008-03-18  Dan Williams  <dcbw@redhat.com>
 
 	* system-settings/plugins/ifcfg-fedora/parser.c

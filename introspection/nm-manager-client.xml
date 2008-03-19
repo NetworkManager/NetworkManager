@@ -19,25 +19,18 @@ object.  dbus-glib generates the same bound function names for D-Bus the methods
       <arg name="devices" type="ao" direction="out"/>
     </method>
 
-    <method name="ActivateDevice">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_activate_device"/>
+    <method name="ActivateConnection">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_activate_connection"/>
       <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
-      <arg name="device" type="o" direction="in"/>
       <arg name="service_name" type="s" direction="in"/>
       <arg name="connection" type="o" direction="in"/>
+      <arg name="device" type="o" direction="in"/>
       <arg name="specific_object" type="o" direction="in"/>
     </method>
 
     <method name="GetActiveConnections">
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_get_active_connections"/>
-      <!-- 'connections' is an array of structs
-           consisting of the following elements:
-               service name
-               connection object path
-               specific object
-               array of (device object path)
-      -->
-      <arg name="connections" type="a(sooao)" direction="out"/>
+      <arg name="connections" type="aa{sv}" direction="out"/>
     </method>
 
     <method name="Sleep">
