@@ -325,7 +325,7 @@ done:
 		}
 
 		/* DNS searches */
-		value = svGetValue (ifcfg, "DOMAIN_SEARCHES");
+		value = svGetValue (ifcfg, "SEARCH");
 		if (value) {
 			char **searches = NULL;
 
