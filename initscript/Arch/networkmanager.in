@@ -21,8 +21,6 @@ case "$1" in
 	start)
 		ck_daemon hal && /etc/rc.d/hal start
 		sleep 1
-		ck_daemon dhcdbd && /etc/rc.d/dhcdbd start
-		sleep 1
 		stat_busy "Starting NetworkManager"
 		if [ -z "$PID" ]; then
 			$NETWORKMANAGER_BIN
