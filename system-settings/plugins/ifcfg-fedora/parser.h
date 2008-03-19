@@ -45,8 +45,6 @@ typedef struct {
 
 NMConnection * parser_parse_file (const char *file, GError **error);
 
-void connection_update_from_resolv_conf (char **lines, NMSettingIP4Config *s_ip4);
-
 ConnectionData *connection_data_get (NMConnection *connection);
 ConnectionData *connection_data_add (NMConnection *connection, const char *ifcfg_path);
 void connection_data_copy_secrets (ConnectionData *from, ConnectionData *to);

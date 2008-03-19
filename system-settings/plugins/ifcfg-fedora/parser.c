@@ -163,7 +163,8 @@ should_ignore_file (const char *basename, const char *tag)
 static char *
 get_ifcfg_name (const char *file)
 {
-	char *basename = NULL;
+	char *ifcfg_name = NULL;
+	char *basename;
 	int len;
 
 	basename = g_path_get_basename (file);
@@ -187,11 +188,11 @@ get_ifcfg_name (const char *file)
 	if (should_ignore_file (basename, REJ_TAG))
 		goto error;
 
-	return g_strdup (basename + strlen (IFCFG_TAG));
+	ifcfg_name = g_strdup (basename + strlen (IFCFG_TAG));
 
 error:
 	g_free (basename);
-	return NULL;
+	return ifcfg_name;
 }
 
 static NMSetting *
@@ -230,87 +231,32 @@ make_connection_setting (const char *file,
 	return (NMSetting *) s_con;
 }
 
-#define SEARCH_TAG "search "
-#define NS_TAG "nameserver "
-
-void
-connection_update_from_resolv_conf (char **lines, NMSettingIP4Config *s_ip4)
-{
-	char **line;
-
-	/* lines == NULL means clear out existing settings */
-	if (!lines) {
-		if (s_ip4->dns) {
-			g_array_free (s_ip4->dns, TRUE);
-			s_ip4->dns = NULL;
-		}
-
-		g_slist_foreach (s_ip4->dns_search, (GFunc) g_free, NULL);
-		g_slist_free (s_ip4->dns_search);
-		s_ip4->dns_search = NULL;
-		return;
-	}
-
-	s_ip4->dns = g_array_new (FALSE, FALSE, sizeof (guint32));
-
-	for (line = lines; *line; line++) {
-		if (!strncmp (*line, SEARCH_TAG, strlen (SEARCH_TAG))) {
-			char **searches;
-
-			if (s_ip4->dns_search)
-				continue;
-
-			searches = g_strsplit (*line + strlen (SEARCH_TAG), " ", 0);
-			if (searches) {
-				char **item;
-				for (item = searches; *item; item++)
-					s_ip4->dns_search = g_slist_append (s_ip4->dns_search, *item);
-				g_free (searches);
-			}
-		} else if (!strncmp (*line, NS_TAG, strlen (NS_TAG))) {
-			char *pdns = g_strdup (*line + strlen (NS_TAG));
-			struct in_addr dns;
-
-			pdns = g_strstrip (pdns);
-			if (inet_pton (AF_INET, pdns, &dns)) {
-				g_array_append_val (s_ip4->dns, dns.s_addr);
-			} else
-				g_warning ("Invalid IP4 DNS server address '%s'", pdns);
-			g_free (pdns);
-		}
-	}
-
-	if (!s_ip4->dns->len) {
-		g_array_free (s_ip4->dns, TRUE);
-		s_ip4->dns = NULL;
-	}
-}
-
 static void
-read_profile_resolv_conf (const char *dir, NMSettingIP4Config *s_ip4)
+get_one_ip4_addr (shvarFile *ifcfg,
+                  const char *tag,
+                  guint32 *out_addr,
+                  GError **error)
 {
-	char *file = NULL;
-	char *contents = NULL;
-	char **lines = NULL;
+	char *value = NULL;
+	struct in_addr ip4_addr;
 
-	file = g_strdup_printf ("%s/resolv.conf", dir);
-	if (!file)
-		goto out;
+	g_return_if_fail (ifcfg != NULL);
+	g_return_if_fail (tag != NULL);
+	g_return_if_fail (out_addr != NULL);
+	g_return_if_fail (error != NULL);
+	g_return_if_fail (*error == NULL);
 
-	if (!g_file_get_contents (file, &contents, NULL, NULL))
-		goto out;
+	value = svGetValue (ifcfg, tag);
+	if (!value)
+		return;
 
-	lines = g_strsplit (contents, "\n", 0);
-	if (!lines || !*lines)
-		goto out;
-
-	connection_update_from_resolv_conf (lines, s_ip4);
-
-out:
-	if (lines)
-		g_strfreev (lines);
-	g_free (contents);
-	g_free (file);
+	if (inet_pton (AF_INET, value, &ip4_addr))
+		*out_addr = ip4_addr.s_addr;
+	else {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Invalid %s IP4 address '%s'", tag, value);
+	}
+	g_free (value);
 }
 
 static NMSetting *
@@ -320,7 +266,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 	char *value = NULL;
 	NMSettingIP4Address tmp = { 0, 0, 0 };
 	char *method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
-	char *dir;
+	guint32 dns;
 
 	value = svGetValue (ifcfg, "BOOTPROTO");
 	if (value && (!g_ascii_strcasecmp (value, "bootp") || !g_ascii_strcasecmp (value, "dhcp")))
@@ -331,44 +277,18 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 		goto done;
 	}
 
-	value = svGetValue (ifcfg, "IPADDR");
-	if (value) {
-		struct in_addr ip4_addr;
-		if (inet_pton (AF_INET, value, &ip4_addr))
-			tmp.address = ip4_addr.s_addr;
-		else {
-			g_set_error (error, ifcfg_plugin_error_quark (), 0,
-			             "Invalid IP4 address '%s'", value);
-			goto error;
-		}
-		g_free (value);
-	}
+	get_one_ip4_addr (ifcfg, "IPADDR", &tmp.address, error);
+	if (*error)
+		goto error;
 
-	value = svGetValue (ifcfg, "GATEWAY");
-	if (value) {
-		struct in_addr gw_addr;
-		if (inet_pton (AF_INET, value, &gw_addr))
-			tmp.gateway = gw_addr.s_addr;
-		else {
-			g_set_error (error, ifcfg_plugin_error_quark (), 0,
-			             "Invalid IP4 gateway '%s'", value);
-			goto error;
-		}
-		g_free (value);
-	}
+	get_one_ip4_addr (ifcfg, "GATEWAY", &tmp.gateway, error);
+	if (*error)
+		goto error;
 
-	value = svGetValue (ifcfg, "NETMASK");
-	if (value) {
-		struct in_addr mask_addr;
-		if (inet_pton (AF_INET, value, &mask_addr))
-			tmp.netmask = mask_addr.s_addr;
-		else {
-			g_set_error (error, ifcfg_plugin_error_quark (), 0,
-			             "Invalid IP4 netmask '%s'", value);
-			goto error;
-		}
-		g_free (value);
-	}
+	get_one_ip4_addr (ifcfg, "NETMASK", &tmp.netmask, error);
+	if (*error)
+		goto error;
+
 
 done:
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
@@ -382,14 +302,40 @@ done:
 
 	/* No DNS for autoip */
 	if (g_ascii_strcasecmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP)) {
-		dir = g_path_get_dirname (ifcfg->fileName);
-		if (dir) {
-			read_profile_resolv_conf (dir, s_ip4);
-			g_free (dir);
-		} else {
-			g_set_error (error, ifcfg_plugin_error_quark (), 0,
-			             "Not enough memory to parse resolv.conf");
+		s_ip4->dns = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
+
+		get_one_ip4_addr (ifcfg, "DNS1", &dns, error);
+		if (*error)
 			goto error;
+		g_array_append_val (s_ip4->dns, dns);
+
+		get_one_ip4_addr (ifcfg, "DNS2", &dns, error);
+		if (*error)
+			goto error;
+		g_array_append_val (s_ip4->dns, dns);
+
+		get_one_ip4_addr (ifcfg, "DNS3", &dns, error);
+		if (*error)
+			goto error;
+		g_array_append_val (s_ip4->dns, dns);
+
+		if (s_ip4->dns && !s_ip4->dns->len) {
+			g_array_free (s_ip4->dns, TRUE);
+			s_ip4->dns = NULL;
+		}
+
+		/* DNS searches */
+		value = svGetValue (ifcfg, "DOMAIN_SEARCHES");
+		if (value) {
+			char **searches = NULL;
+
+			searches = g_strsplit (value, " ", 0);
+			if (searches) {
+				char **item;
+				for (item = searches; *item; item++)
+					s_ip4->dns_search = g_slist_append (s_ip4->dns_search, *item);
+				g_free (searches);
+			}
 		}
 	}
 
@@ -904,6 +850,13 @@ parser_parse_file (const char *file, GError **error)
 		if (!device) {
 			g_set_error (error, ifcfg_plugin_error_quark (), 0,
 			             "File '%s' had neither TYPE nor DEVICE keys.", file);
+			goto done;
+		}
+
+		if (!strcmp (device, "lo")) {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Ignoring loopback device config.");
+			g_free (device);
 			goto done;
 		}
 
