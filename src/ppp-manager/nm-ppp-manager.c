@@ -709,8 +709,6 @@ nm_ppp_manager_update_secrets (NMPPPManager *manager,
 	pppoe_setting = NM_SETTING_PPPOE (nm_connection_get_setting (connection, NM_TYPE_SETTING_PPPOE));
 	g_assert (pppoe_setting);
 
-	nm_info ("Sending secrets: %s %s", pppoe_setting->username, pppoe_setting->password);
-
 	/* FIXME: Do we have to strdup the values here? */
 	dbus_g_method_return (priv->pending_secrets_context, 
 					  g_strdup (pppoe_setting->username),

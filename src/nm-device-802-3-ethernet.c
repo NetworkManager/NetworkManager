@@ -1019,6 +1019,9 @@ ppp_state_changed (NMPPPManager *ppp_manager, NMPPPStatus status, gpointer user_
 		else
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED);
 		break;
+	case NM_PPP_STATUS_AUTHENTICATE:
+		nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH);
+		break;
 	default:
 		break;
 	}
