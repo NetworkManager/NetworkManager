@@ -34,8 +34,6 @@ GType nm_device_get_type (void);
 NMDevice    *nm_device_new               (DBusGConnection *connection,
 										  const char *path);
 
-void         nm_device_deactivate        (NMDevice *device);
-
 char         *nm_device_get_iface        (NMDevice *device);
 char         *nm_device_get_udi          (NMDevice *device);
 char         *nm_device_get_driver       (NMDevice *device);

@@ -26,11 +26,12 @@ object.  dbus-glib generates the same bound function names for D-Bus the methods
       <arg name="connection" type="o" direction="in"/>
       <arg name="device" type="o" direction="in"/>
       <arg name="specific_object" type="o" direction="in"/>
+      <arg name="active_connection" type="o" direction="out"/>
     </method>
 
-    <method name="GetActiveConnections">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_get_active_connections"/>
-      <arg name="connections" type="aa{sv}" direction="out"/>
+    <method name="DeactivateConnection">
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_deactivate_connection"/>
+      <arg name="active_connection" type="o" direction="in"/>
     </method>
 
     <method name="Sleep">
@@ -40,9 +41,10 @@ object.  dbus-glib generates the same bound function names for D-Bus the methods
 
     <property name="WirelessEnabled" type="b" access="readwrite"/>
     <property name="WirelessHardwareEnabled" type="b" access="read"/>
+    <property name="ActiveConnections" type="ao" access="read"/>
     <property name="State" type="u" access="read"/>
 
-    <signal name="StateChange">
+    <signal name="StateChanged">
       <arg name="state" type="u"/>
     </signal>
 

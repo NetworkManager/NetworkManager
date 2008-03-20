@@ -86,6 +86,8 @@ nm-device-802-11-wireless-glue.h: $(top_srcdir)/introspection/nm-device-802-11-w
 nm-ip4-config-glue.h: $(top_srcdir)/introspection/nm-ip4-config.xml
 	dbus-binding-tool --prefix=nm_ip4_config --mode=glib-server --output=nm-ip4-config-glue.h $(top_srcdir)/introspection/nm-ip4-config.xml
 
+nm-active-connection-glue.h: $(top_srcdir)/introspection/nm-active-connection.xml
+	dbus-binding-tool --prefix=nm_active_connection --mode=glib-server --output=nm-active-connection-glue.h $(top_srcdir)/introspection/nm-active-connection.xml
 
 built_sources = 					\
 	nm-access-point-glue.h				\
@@ -94,6 +96,7 @@ built_sources = 					\
 	nm-device-802-3-ethernet-glue.h			\
 	nm-device-802-11-wireless-glue.h		\
 	nm-ip4-config-glue.h				\
+	nm-active-connection-glue.h \
 	$(NULL)
 
 $(NetworkManager_OBJECTS): $(built_sources)

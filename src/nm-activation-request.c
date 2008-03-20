@@ -27,6 +27,10 @@
 #include "nm-utils.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"
+#include "nm-dbus-manager.h"
+#include "nm-device.h"
+#include "nm-properties-changed-signal.h"
+#include "nm-active-connection-glue.h"
 
 #include "nm-manager.h" /* FIXME! */
 
@@ -39,6 +43,7 @@ G_DEFINE_TYPE (NMActRequest, nm_act_request, G_TYPE_OBJECT)
 enum {
 	CONNECTION_SECRETS_UPDATED,
 	CONNECTION_SECRETS_FAILED,
+	PROPERTIES_CHANGED,
 
 	LAST_SIGNAL
 };
@@ -49,8 +54,58 @@ static guint signals[LAST_SIGNAL] = { 0 };
 typedef struct {
 	NMConnection *connection;
 	char *specific_object;
+	NMConnection *shared;
+	NMDevice *device;
 	gboolean user_requested;
+
+	char *ac_path;
 } NMActRequestPrivate;
+
+enum {
+	PROP_0,
+	PROP_SERVICE_NAME,
+	PROP_CONNECTION,
+	PROP_SPECIFIC_OBJECT,
+	PROP_SHARED_SERVICE_NAME,
+	PROP_SHARED_CONNECTION,
+	PROP_DEVICES,
+
+	LAST_PROP
+};
+
+
+NMActRequest *
+nm_act_request_new (NMConnection *connection,
+                    const char *specific_object,
+                    gboolean user_requested,
+                    gpointer *device)
+{
+	GObject *object;
+	NMActRequestPrivate *priv;
+	DBusGConnection *g_connection;
+	static guint32 counter = 0;
+
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+	g_return_val_if_fail (NM_DEVICE (device), NULL);
+
+	object = g_object_new (NM_TYPE_ACT_REQUEST, NULL);
+	if (!object)
+		return NULL;
+
+	priv = NM_ACT_REQUEST_GET_PRIVATE (object);
+
+	priv->connection = g_object_ref (connection);
+	if (specific_object)
+		priv->specific_object = g_strdup (specific_object);
+	priv->device = NM_DEVICE (device);
+	priv->user_requested = user_requested;
+
+	g_connection = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
+	priv->ac_path = g_strdup_printf (NM_DBUS_PATH "/ActiveConnection/%d", counter++);
+	dbus_g_connection_register_g_object (g_connection, priv->ac_path, object);
+
+	return NM_ACT_REQUEST (object);
+}
 
 static void
 nm_act_request_init (NMActRequest *req)
@@ -79,6 +134,9 @@ dispose (GObject *object)
 	                   CONNECTION_GET_SECRETS_CALL_TAG, NULL);
 	g_object_unref (priv->connection);
 
+	if (priv->shared)
+		g_object_unref (priv->shared);
+
 out:
 	G_OBJECT_CLASS (nm_act_request_parent_class)->dispose (object);
 }
@@ -89,8 +147,71 @@ finalize (GObject *object)
 	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (object);
 
 	g_free (priv->specific_object);
+	g_free (priv->ac_path);
 
 	G_OBJECT_CLASS (nm_act_request_parent_class)->finalize (object);
+}
+
+static void
+scope_to_value (NMConnection *connection, GValue *value)
+{
+	if (!connection) {
+		g_value_set_string (value, "");
+		return;
+	}
+
+	switch (nm_connection_get_scope (connection)) {
+	case NM_CONNECTION_SCOPE_SYSTEM:
+		g_value_set_string (value, NM_DBUS_SERVICE_SYSTEM_SETTINGS);
+		break;
+	case NM_CONNECTION_SCOPE_USER:
+		g_value_set_string (value, NM_DBUS_SERVICE_USER_SETTINGS);
+		break;
+	default:
+		g_warning ("%s: unknown connection scope!", __func__);
+		break;
+	}
+}
+
+static void
+get_property (GObject *object, guint prop_id,
+			  GValue *value, GParamSpec *pspec)
+{
+	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (object);
+	GPtrArray *devices;
+
+	switch (prop_id) {
+	case PROP_SERVICE_NAME:
+		scope_to_value (priv->connection, value);
+		break;
+	case PROP_CONNECTION:
+		g_value_set_boxed (value, nm_connection_get_path (priv->connection));
+		break;
+	case PROP_SPECIFIC_OBJECT:
+		if (priv->specific_object)
+			g_value_set_boxed (value, priv->specific_object);
+		else
+			g_value_set_boxed (value, "/");
+		break;
+	case PROP_SHARED_SERVICE_NAME:
+		scope_to_value (priv->shared, value);
+		break;
+	case PROP_SHARED_CONNECTION:
+		if (!priv->shared) {
+			g_value_set_boxed (value, "/");
+			break;
+		}
+		g_value_set_boxed (value, nm_connection_get_path (priv->shared));
+		break;
+	case PROP_DEVICES:
+		devices = g_ptr_array_sized_new (1);
+		g_ptr_array_add (devices, g_strdup (nm_device_get_udi (priv->device)));
+		g_value_take_boxed (value, devices);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -100,8 +221,54 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 
 	g_type_class_add_private (req_class, sizeof (NMActRequestPrivate));
 
+	/* virtual methods */
+	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
+
+	/* properties */
+	g_object_class_install_property
+		(object_class, PROP_SERVICE_NAME,
+		 g_param_spec_string (NM_ACTIVE_CONNECTION_SERVICE_NAME,
+							  "Service name",
+							  "Service name",
+							  NULL,
+							  G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_CONNECTION,
+		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_CONNECTION,
+							  "Connection",
+							  "Connection",
+							  DBUS_TYPE_G_OBJECT_PATH,
+							  G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_SPECIFIC_OBJECT,
+		 g_param_spec_string (NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT,
+							  "Specific object",
+							  "Specific object",
+							  NULL,
+							  G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_SHARED_SERVICE_NAME,
+		 g_param_spec_string (NM_ACTIVE_CONNECTION_SHARED_SERVICE_NAME,
+							  "Shared service name",
+							  "Shared service name",
+							  NULL,
+							  G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_SHARED_CONNECTION,
+		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_SHARED_CONNECTION,
+							  "Shared connection",
+							  "Shared connection",
+							  DBUS_TYPE_G_OBJECT_PATH,
+							  G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_DEVICES,
+		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_DEVICES,
+							  "Devices",
+							  "Devices",
+							  dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_OBJECT_PATH),
+							  G_PARAM_READABLE));
 
 	/* Signals */
 	signals[CONNECTION_SECRETS_UPDATED] =
@@ -123,30 +290,13 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 					  nm_marshal_VOID__OBJECT_STRING,
 					  G_TYPE_NONE, 2,
 					  G_TYPE_OBJECT, G_TYPE_STRING);
-}
 
-NMActRequest *
-nm_act_request_new (NMConnection *connection,
-                    const char *specific_object,
-                    gboolean user_requested)
-{
-	GObject *obj;
-	NMActRequestPrivate *priv;
+	signals[PROPERTIES_CHANGED] = 
+		nm_properties_changed_signal_new (object_class,
+								    G_STRUCT_OFFSET (NMActRequestClass, properties_changed));
 
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
-
-	obj = g_object_new (NM_TYPE_ACT_REQUEST, NULL);
-	if (!obj)
-		return NULL;
-
-	priv = NM_ACT_REQUEST_GET_PRIVATE (obj);
-
-	priv->connection = g_object_ref (connection);
-	priv->user_requested = user_requested;
-	if (specific_object)
-		priv->specific_object = g_strdup (specific_object);
-
-	return NM_ACT_REQUEST (obj);
+	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (req_class),
+									 &dbus_glib_nm_active_connection_object_info);
 }
 
 typedef struct GetSecretsInfo {
@@ -407,3 +557,12 @@ nm_act_request_get_user_requested (NMActRequest *req)
 
 	return NM_ACT_REQUEST_GET_PRIVATE (req)->user_requested;
 }
+
+const char *
+nm_act_request_get_active_connection_path (NMActRequest *req)
+{
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
+
+	return NM_ACT_REQUEST_GET_PRIVATE (req)->ac_path;
+}
+

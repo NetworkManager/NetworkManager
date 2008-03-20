@@ -2,13 +2,6 @@
 
 <node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
   <interface name="org.freedesktop.NetworkManager.Device">
-    <method name="Deactivate">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_device_deactivate"/>
-      <tp:docstring>
-        Deactivate the device, removing its routing table entry and IP address
-      </tp:docstring>
-    </method>
-
     <property name="Udi" type="s" access="read">
       <tp:docstring>
         HAL UDI for the device.

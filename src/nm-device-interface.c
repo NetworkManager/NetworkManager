@@ -5,8 +5,6 @@
 #include "nm-ip4-config.h"
 #include "nm-utils.h"
 
-static gboolean impl_device_deactivate (NMDeviceInterface *device, GError **err);
-
 #include "nm-device-interface-glue.h"
 
 GQuark
@@ -228,12 +226,3 @@ nm_device_interface_deactivate (NMDeviceInterface *device)
 	NM_DEVICE_INTERFACE_GET_INTERFACE (device)->deactivate (device);
 }
 
-static gboolean
-impl_device_deactivate (NMDeviceInterface *device, GError **err)
-{
-	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), FALSE);
-
-	nm_device_interface_deactivate (device);
-
-	return TRUE;
-}

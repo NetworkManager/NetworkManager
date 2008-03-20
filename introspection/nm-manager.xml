@@ -47,6 +47,11 @@
           The path of a device-type-specific object this activation should use, for example a WiFi access point.
         </tp:docstring>
       </arg>
+      <arg name="active_connection" type="o" direction="out">
+        <tp:docstring>
+          The path of the active connection object representing this active connection.
+        </tp:docstring>
+      </arg>
       <tp:possible-errors>
         <tp:error name="org.freedesktop.NetworkManager.Error.UnknownConnection"/>
         <tp:error name="org.freedesktop.NetworkManager.Error.UnknownDevice"/>
@@ -57,15 +62,17 @@
         <tp:error name="org.freedesktop.NetworkManager.Error.ConnectionInvalid">
           <tp:docstring>The connection is invalid for this device.</tp:docstring>
         </tp:error>
-
       </tp:possible-errors>
     </method>
 
-    <method name="GetActiveConnections">
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_get_active_connections"/>
-      <arg name="connections" type="aa{sv}" direction="out">
+    <method name="DeactivateConnection">
+      <tp:docstring>
+        Deactivate an active connection.
+      </tp:docstring>
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_manager_deactivate_connection"/>
+      <arg name="active_connection" type="o" direction="in">
         <tp:docstring>
-          List of active connections, each described by a property dictionary.
+          The currently active connection to deactivate.
         </tp:docstring>
       </arg>
     </method>
@@ -91,6 +98,12 @@
     <property name="WirelessHardwareEnabled" type="b" access="read">
       <tp:docstring>
         Indicates if the wireless hardware is currently enabled, i.e. the state of the RF kill switch.
+      </tp:docstring>
+    </property>
+
+    <property name="ActiveConnections" type="ao" access="read">
+      <tp:docstring>
+        List of active connection object paths.
       </tp:docstring>
     </property>
 

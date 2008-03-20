@@ -33,6 +33,13 @@
 #define NM_IS_ACT_REQUEST_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_ACT_REQUEST))
 #define NM_ACT_REQUEST_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_ACT_REQUEST, NMActRequestClass))
 
+#define NM_ACTIVE_CONNECTION_SERVICE_NAME "service-name"
+#define NM_ACTIVE_CONNECTION_CONNECTION "connection"
+#define NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT "specific-object"
+#define NM_ACTIVE_CONNECTION_SHARED_SERVICE_NAME "shared-service-name"
+#define NM_ACTIVE_CONNECTION_SHARED_CONNECTION "shared-connection"
+#define NM_ACTIVE_CONNECTION_DEVICES "devices"
+
 typedef struct {
 	GObject parent;
 } NMActRequest;
@@ -47,13 +54,16 @@ typedef struct {
 	void (*connection_secrets_failed)   (NMActRequest *req,
 	                                     NMConnection *connection,
 	                                     const char * setting);
+
+	void (*properties_changed) (NMActRequest *req, GHashTable *properties);
 } NMActRequestClass;
 
 GType nm_act_request_get_type (void);
 
 NMActRequest *nm_act_request_new          (NMConnection *connection,
                                            const char *specific_object,
-                                           gboolean user_requested);
+                                           gboolean user_requested,
+                                           gpointer *device);  /* An NMDevice */
 
 NMConnection *nm_act_request_get_connection     (NMActRequest *req);
 gboolean      nm_act_request_request_connection_secrets (NMActRequest *req,
@@ -65,5 +75,7 @@ void          nm_act_request_set_specific_object (NMActRequest *req,
                                                   const char *specific_object);
 
 gboolean      nm_act_request_get_user_requested (NMActRequest *req);
+
+const char *  nm_act_request_get_active_connection_path (NMActRequest *req);
 
 #endif /* NM_ACTIVATION_REQUEST_H */

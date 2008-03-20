@@ -1,3 +1,49 @@
+2008-03-20  Dan Williams  <dcbw@redhat.com>
+
+	* introspection/nm-manager.xml
+	  introspection/nm-manager-client.xml
+		- (ActivateConnection): return the object path of the active connection
+			on success
+		- (GetActiveConnections): remove
+		- (DeactivateConnection): new function; deactivate a currently active
+			connection
+		- Add an ActiveConnections property which returns an array of
+			active connection object paths
+
+	* introspection/nm-device.xml
+		- (Deactivate): remove
+
+	* introspection/all.xml
+		- Add ActiveConnection introspection
+
+	* introspection/nm-active-connection.xml
+		- Add the ActiveConnection object
+
+	* include/NetworkManager.h
+		- Add the Connection.Active D-Bus interface
+
+	* src/nm-device-interface.c
+		- (impl_device_deactivate): remove
+
+	* src/nm-activation-request.c
+	  src/nm-activation-request.c
+	  src/Makefile.am
+		- Implement the Connection.Active D-Bus interface
+
+	* src/nm-manager.c
+		- (get_property, nm_manager_class_init): add ACTIVE_CONNECTIONS property
+		- (nm_manager_activate_device): return the active connection path
+		- (connection_added_default_handler, impl_manager_activate_connection):
+			return the active connection to the caller
+		- (add_one_connection_element, impl_manager_get_active_connections):
+			remove
+		- (impl_manager_deactivate_connection): new function; deactivate an
+			active connection
+
+	* libnm-glib/nm-device.c
+	  libnm-glib/nm-device.h
+		- Remove Deactivate() function
+
 2008-03-19  Dan Williams  <dcbw@redhat.com>
 
 	* introspection/nm-manager.xml

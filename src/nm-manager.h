@@ -17,6 +17,7 @@
 #define NM_MANAGER_STATE "state"
 #define NM_MANAGER_WIRELESS_ENABLED "wireless-enabled"
 #define NM_MANAGER_WIRELESS_HARDWARE_ENABLED "wireless-hardware-enabled"
+#define NM_MANAGER_ACTIVE_CONNECTIONS "active-connections"
 
 #define NM_MANAGER_CONNECTION_PROXY_TAG "dbus-proxy"
 #define NM_MANAGER_CONNECTION_SECRETS_PROXY_TAG "dbus-secrets-proxy"
@@ -63,7 +64,7 @@ NMDevice *nm_manager_get_device_by_udi (NMManager *manager, const char *udi);
 
 NMDevice *nm_manager_get_active_device (NMManager *manager);
 
-gboolean  nm_manager_activate_device (NMManager *manager,
+const char *nm_manager_activate_device (NMManager *manager,
 				      NMDevice *device,
 				      NMConnection *connection,
 				      const char *specific_object,

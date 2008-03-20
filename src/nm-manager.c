@@ -16,15 +16,15 @@
 
 static gboolean impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err);
 static void impl_manager_activate_connection (NMManager *manager,
-								  char *service_name,
-								  char *connection_path,
-								  char *device_path,
-								  char *specific_object_path,
+								  const char *service_name,
+								  const char *connection_path,
+								  const char *device_path,
+								  const char *specific_object_path,
 								  DBusGMethodInvocation *context);
 
-static gboolean impl_manager_get_active_connections (NMManager *manager,
-                                                     GPtrArray **connections,
-                                                     GError **err);
+static gboolean impl_manager_deactivate_connection (NMManager *manager,
+                                                    const char *connection_path,
+                                                    GError **error);
 
 static gboolean impl_manager_sleep (NMManager *manager, gboolean sleep, GError **err);
 
@@ -101,6 +101,7 @@ enum {
 	PROP_STATE,
 	PROP_WIRELESS_ENABLED,
 	PROP_WIRELESS_HARDWARE_ENABLED,
+	PROP_ACTIVE_CONNECTIONS,
 
 	LAST_PROP
 };
@@ -112,6 +113,7 @@ typedef enum
 	NM_MANAGER_ERROR_INVALID_SERVICE,
 	NM_MANAGER_ERROR_SYSTEM_CONNECTION,
 	NM_MANAGER_ERROR_PERMISSION_DENIED,
+	NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
 } NMManagerError;
 
 #define NM_MANAGER_ERROR (nm_manager_error_quark ())
@@ -148,6 +150,8 @@ nm_manager_error_get_type (void)
 			ENUM_ENTRY (NM_MANAGER_ERROR_SYSTEM_CONNECTION, "SystemConnection"),
 			/* User does not have the permission to activate this connection. */
 			ENUM_ENTRY (NM_MANAGER_ERROR_PERMISSION_DENIED, "PermissionDenied"),
+			/* The connection was not active. */
+			ENUM_ENTRY (NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE, "ConnectionNotActive"),
 			{ 0, 0, 0 }
 		};
 		etype = g_enum_register_static ("NMManagerError", values);
@@ -303,6 +307,25 @@ get_property (GObject *object, guint prop_id,
 	case PROP_WIRELESS_HARDWARE_ENABLED:
 		g_value_set_boolean (value, priv->wireless_hw_enabled);
 		break;
+	case PROP_ACTIVE_CONNECTIONS: {
+		GPtrArray *active;
+		GSList *iter;
+
+		active = g_ptr_array_sized_new (2);
+		for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+			NMActRequest *req;
+			const char *path;
+
+			req = nm_device_get_act_request (NM_DEVICE (iter->data));
+			if (!req)
+				continue;
+
+			path = nm_act_request_get_active_connection_path (req);
+			g_ptr_array_add (active, g_strdup (path));
+		}
+		g_value_take_boxed (value, active);
+		break;
+	}
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -347,6 +370,14 @@ nm_manager_class_init (NMManagerClass *manager_class)
 						   "RF kill state",
 						   TRUE,
 						   G_PARAM_READWRITE));
+
+	g_object_class_install_property
+		(object_class, PROP_ACTIVE_CONNECTIONS,
+		 g_param_spec_boxed (NM_MANAGER_ACTIVE_CONNECTIONS,
+							  "Active connections",
+							  "Active connections",
+							  dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_OBJECT_PATH),
+							  G_PARAM_READABLE));
 
 	/* signals */
 	signals[DEVICE_ADDED] =
@@ -1255,7 +1286,7 @@ check_connection_allowed (NMManager *manager,
 	return allowed;
 }
 
-gboolean
+const char *
 nm_manager_activate_device (NMManager *manager,
 					   NMDevice *device,
 					   NMConnection *connection,
@@ -1267,24 +1298,24 @@ nm_manager_activate_device (NMManager *manager,
 	NMDeviceInterface *dev_iface;
 	gboolean success;
 
-	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
-	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 
 	dev_iface = NM_DEVICE_INTERFACE (device);
 
 	/* Ensure the requested connection is allowed to be activated */
 	if (!check_connection_allowed (manager, dev_iface, connection, specific_object, error))
-		return FALSE;
+		return NULL;
 
 	if (nm_device_get_act_request (device))
 		nm_device_interface_deactivate (dev_iface);
 
-	req = nm_act_request_new (connection, specific_object, user_requested);
+	req = nm_act_request_new (connection, specific_object, user_requested, (gpointer) device);
 	success = nm_device_interface_activate (dev_iface, req, error);
 	g_object_unref (req);
 
-	return success;
+	return nm_act_request_get_active_connection_path (req);
 }
 
 gboolean
@@ -1332,7 +1363,7 @@ connection_added_default_handler (NMManager *manager,
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	PendingConnectionInfo *info = priv->pending_connection_info;
-	gboolean success;
+	const char *path;
 	GError *error = NULL;
 
 	if (!info)
@@ -1347,14 +1378,14 @@ connection_added_default_handler (NMManager *manager,
 	/* Will destroy below; can't be valid during the initial activation start */
 	priv->pending_connection_info = NULL;
 
-	success = nm_manager_activate_device (manager,
-	                                      info->device,
-	                                      connection,
-	                                      info->specific_object_path,
-	                                      TRUE,
-	                                      &error);
-	if (success)
-		dbus_g_method_return (info->context, TRUE);
+	path = nm_manager_activate_device (manager,
+	                                   info->device,
+	                                   connection,
+	                                   info->specific_object_path,
+	                                   TRUE,
+	                                   &error);
+	if (path)
+		dbus_g_method_return (info->context, path);
 	else {
 		dbus_g_method_return_error (info->context, error);
 		nm_warning ("Failed to activate device %s: (%d) %s",
@@ -1369,10 +1400,10 @@ connection_added_default_handler (NMManager *manager,
 
 static void
 impl_manager_activate_connection (NMManager *manager,
-						char *service_name,
-						char *connection_path,
-						char *device_path,
-						char *specific_object_path,
+						const char *service_name,
+						const char *connection_path,
+						const char *device_path,
+						const char *specific_object_path,
 						DBusGMethodInvocation *context)
 {
 	NMDevice *device;
@@ -1408,16 +1439,16 @@ impl_manager_activate_connection (NMManager *manager,
 
 	connection = nm_manager_get_connection_by_object_path (manager, scope, connection_path);
 	if (connection) {
-		gboolean success;
+		const char *path;
 
-		success = nm_manager_activate_device (manager,
-		                                      device,
-		                                      connection,
-		                                      real_sop,
-		                                      TRUE,
-		                                      &error);
-		if (success)
-			dbus_g_method_return (context, TRUE);
+		path = nm_manager_activate_device (manager,
+		                                   device,
+		                                   connection,
+		                                   real_sop,
+		                                   TRUE,
+		                                   &error);
+		if (path)
+			dbus_g_method_return (context, path);
 	} else {
 		PendingConnectionInfo *info;
 		NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
@@ -1456,130 +1487,33 @@ impl_manager_activate_connection (NMManager *manager,
 	g_free (real_sop);
 }
 
-static void
-destroy_gvalue (gpointer data)
-{
-	GValue *value = (GValue *) data;
-
-	g_value_unset (value);
-	g_slice_free (GValue, value);
-}
-
-static GHashTable *
-add_one_connection_element (NMManager *manager,
-                            NMDevice *device)
-{
-	GHashTable *properties;
-	NMActRequest *req;
-	const char *service_name = NULL;
-	NMConnection *connection;
-	const char *specific_object;
-	GPtrArray *dev_array = NULL;
-	GValue *value;
-
-	req = nm_device_get_act_request (device);
- 	g_assert (req);
-	connection = nm_act_request_get_connection (req);
-	g_assert (connection);
-
-	switch (nm_connection_get_scope (connection)) {
-		case NM_CONNECTION_SCOPE_USER:
-			service_name = NM_DBUS_SERVICE_USER_SETTINGS;
-			break;
-		case NM_CONNECTION_SCOPE_SYSTEM:
-			service_name = NM_DBUS_SERVICE_SYSTEM_SETTINGS;
-			break;
-		default:
-			g_assert_not_reached ();
-			break;
-	}
-
-	specific_object = nm_act_request_get_specific_object (req);
-
-	properties = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, destroy_gvalue);
-
-	/* Service name */
-	value = g_slice_new0 (GValue);
-	g_value_init (value, G_TYPE_STRING);
-	g_value_set_string (value, service_name);
-	g_hash_table_insert (properties, g_strdup (NM_AC_KEY_SERVICE_NAME), value);
-
-	/* Connection path */
-	value = g_slice_new0 (GValue);
-	g_value_init (value, DBUS_TYPE_G_OBJECT_PATH);
-	g_value_set_boxed (value, nm_connection_get_path (connection));
-	g_hash_table_insert (properties, g_strdup (NM_AC_KEY_CONNECTION), value);
-
-	/* Specific object */
-	if (specific_object) {
-		value = g_slice_new0 (GValue);
-		g_value_init (value, DBUS_TYPE_G_OBJECT_PATH);
-		g_value_set_boxed (value, specific_object);
-		g_hash_table_insert (properties, g_strdup (NM_AC_KEY_SPECIFIC_OBJECT), value);
-	}
-
-	if (FALSE /* SHARED */ ) {
-		/* Shared connection service name */
-		value = g_slice_new0 (GValue);
-		g_value_init (value, G_TYPE_STRING);
-		g_value_set_string (value, service_name);
-		g_hash_table_insert (properties, g_strdup (NM_AC_KEY_SHARED_TO_SERVICE_NAME), value);
-
-		/* Shared connection connection path */
-		value = g_slice_new0 (GValue);
-		g_value_init (value, DBUS_TYPE_G_OBJECT_PATH);
-		g_value_set_boxed (value, nm_connection_get_path (connection));
-		g_hash_table_insert (properties, g_strdup (NM_AC_KEY_SHARED_TO_CONNECTION), value);
-	}
-
-	/* Device list */
-	dev_array = g_ptr_array_sized_new (1);
-	if (!dev_array) {
-		g_hash_table_destroy (properties);
-		return NULL;
-	}
-	g_ptr_array_add (dev_array, g_object_ref (device));
-
-	value = g_slice_new0 (GValue);
-	g_value_init (value, DBUS_TYPE_G_OBJECT_ARRAY);
-	g_value_take_boxed (value, dev_array);
-	g_hash_table_insert (properties, g_strdup (NM_AC_KEY_DEVICES), value);
-
-	return properties;
-}
-
 static gboolean
-impl_manager_get_active_connections (NMManager *manager,
-                                     GPtrArray **connections,
-                                     GError **err)
+impl_manager_deactivate_connection (NMManager *manager,
+                                    const char *connection_path,
+                                    GError **error)
 {
-	NMManagerPrivate *priv;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	GSList *iter;
 
-	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
-
-	priv = NM_MANAGER_GET_PRIVATE (manager);
-
-	/* GPtrArray of GHashTables */
-	*connections = g_ptr_array_sized_new (1);
-
-	// FIXME: this assumes one active device per connection
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *dev = NM_DEVICE (iter->data);
-		GHashTable *item;
+		NMDevice *device = NM_DEVICE (iter->data);
+		NMActRequest *req;
 
-		if (   (nm_device_get_state (dev) != NM_DEVICE_STATE_ACTIVATED)
-		    && !nm_device_is_activating (dev))
+		req = nm_device_get_act_request (device);
+		if (!req)
 			continue;
 
-		item = add_one_connection_element (manager, dev);
-		if (!item)
-			continue;
-
-		g_ptr_array_add (*connections, item);
+		if (!strcmp (connection_path, nm_act_request_get_active_connection_path (req))) {
+			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
+			return TRUE;
+		}
 	}
 
-	return TRUE;
+	g_set_error (error,
+	             NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
+	             "%s", "The connection was not active.");
+	
+	return FALSE;
 }
 
 gboolean

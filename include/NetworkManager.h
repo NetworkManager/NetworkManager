@@ -36,6 +36,7 @@
 #define NM_DBUS_INTERFACE_ACCESS_POINT "org.freedesktop.NetworkManager.AccessPoint"
 #define NM_DBUS_INTERFACE_GSM_DEVICE "org.freedesktop.NetworkManager.Device.Gsm"
 #define NM_DBUS_INTERFACE_CDMA_DEVICE "org.freedesktop.NetworkManager.Device.Cdma"
+#define NM_DBUS_INTERFACE_ACTIVE_CONNECTION "org.freedesktop.NetworkManager.Connection.Active"
 
 #define NM_DBUS_SERVICE_USER_SETTINGS     "org.freedesktop.NetworkManagerUserSettings"
 #define NM_DBUS_SERVICE_SYSTEM_SETTINGS   "org.freedesktop.NetworkManagerSystemSettings"
