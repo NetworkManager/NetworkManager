@@ -219,6 +219,8 @@ nm_manager_update_state (NMManager *manager)
 
 	if (priv->state != new_state) {
 		priv->state = new_state;
+		g_object_notify (G_OBJECT (manager), NM_MANAGER_STATE);
+
 		g_signal_emit (manager, signals[STATE_CHANGED], 0, priv->state);
 
 		/* Emit StateChange too for backwards compatibility */
@@ -1059,6 +1061,17 @@ manager_device_state_changed (NMDeviceInterface *device, NMDeviceState state, gp
 {
 	NMManager *manager = NM_MANAGER (user_data);
 
+	switch (nm_device_interface_get_state (device)) {
+	case NM_DEVICE_STATE_PREPARE:
+	case NM_DEVICE_STATE_FAILED:
+	case NM_DEVICE_STATE_CANCELLED:
+	case NM_DEVICE_STATE_DISCONNECTED:
+		g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
+		break;
+	default:
+		break;
+	}
+
 	nm_manager_update_state (manager);
 }
 
@@ -1308,8 +1321,10 @@ nm_manager_activate_device (NMManager *manager,
 	if (!check_connection_allowed (manager, dev_iface, connection, specific_object, error))
 		return NULL;
 
-	if (nm_device_get_act_request (device))
+	if (nm_device_get_act_request (device)) {
 		nm_device_interface_deactivate (dev_iface);
+		g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
+	}
 
 	req = nm_act_request_new (connection, specific_object, user_requested, (gpointer) device);
 	success = nm_device_interface_activate (dev_iface, req, error);
@@ -1384,9 +1399,10 @@ connection_added_default_handler (NMManager *manager,
 	                                   info->specific_object_path,
 	                                   TRUE,
 	                                   &error);
-	if (path)
+	if (path) {
 		dbus_g_method_return (info->context, path);
-	else {
+		g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
+	} else {
 		dbus_g_method_return_error (info->context, error);
 		nm_warning ("Failed to activate device %s: (%d) %s",
 		            nm_device_get_iface (info->device),
@@ -1447,8 +1463,10 @@ impl_manager_activate_connection (NMManager *manager,
 		                                   real_sop,
 		                                   TRUE,
 		                                   &error);
-		if (path)
+		if (path) {
 			dbus_g_method_return (context, path);
+			g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
+		}
 	} else {
 		PendingConnectionInfo *info;
 		NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
@@ -1505,6 +1523,7 @@ impl_manager_deactivate_connection (NMManager *manager,
 
 		if (!strcmp (connection_path, nm_act_request_get_active_connection_path (req))) {
 			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
+			g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
 			return TRUE;
 		}
 	}

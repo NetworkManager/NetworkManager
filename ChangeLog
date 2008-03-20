@@ -1,5 +1,13 @@
 2008-03-20  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-manager.c
+		- (nm_manager_update_state, manager_device_state_changed,
+		   nm_manager_activate_device, connection_added_default_handler,
+		   impl_manager_activate_connection, impl_manager_deactivate_connection):
+			queue PropertyChanged singals when the active connections change
+
+2008-03-20  Dan Williams  <dcbw@redhat.com>
+
 	* introspection/nm-manager.xml
 	  introspection/nm-manager-client.xml
 		- (ActivateConnection): return the object path of the active connection
