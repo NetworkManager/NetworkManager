@@ -226,3 +226,12 @@ nm_device_interface_deactivate (NMDeviceInterface *device)
 	NM_DEVICE_INTERFACE_GET_INTERFACE (device)->deactivate (device);
 }
 
+NMDeviceState
+nm_device_interface_get_state (NMDeviceInterface *device)
+{
+	NMDeviceState state;
+
+	g_object_get (G_OBJECT (device), "state", &state, NULL);
+	return state;
+}
+

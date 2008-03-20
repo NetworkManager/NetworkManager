@@ -79,4 +79,6 @@ gboolean nm_device_interface_activate (NMDeviceInterface *device,
 
 void nm_device_interface_deactivate (NMDeviceInterface *device);
 
+NMDeviceState nm_device_interface_get_state (NMDeviceInterface *device);
+
 #endif /* NM_DEVICE_INTERFACE_H */
