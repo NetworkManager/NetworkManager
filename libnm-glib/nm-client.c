@@ -426,9 +426,23 @@ static void
 client_device_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 {
 	NMClient *client = NM_CLIENT (user_data);
-	NMDevice *device;
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
+	GObject *device;
 
-	device = nm_client_get_device_by_path (client, path);
+	device = G_OBJECT (nm_client_get_device_by_path (client, path));
+	if (!device) {
+		DBusGConnection *connection = nm_object_get_connection (NM_OBJECT (client));
+
+		device = G_OBJECT (nm_object_cache_get (path));
+		if (device) {
+			g_ptr_array_add (priv->devices, g_object_ref (device));
+		} else {
+			device = G_OBJECT (nm_device_new (connection, path));
+			if (device)
+				g_ptr_array_add (priv->devices, device);
+		}
+	}
+
 	if (device)
 		g_signal_emit (client, signals[DEVICE_ADDED], 0, device);
 }

@@ -1,5 +1,11 @@
 2008-03-24  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/nm-client.c
+		- (client_device_added_proxy): add new devices to the internal device
+			list so they appear to clients
+
+2008-03-24  Dan Williams  <dcbw@redhat.com>
+
 	Massive fixup of libnm-glib to:
 	a) have all objects (with the exception of VPN) cache their properties and
 		update them asynchronously on PropertiesChanged signals from NM
