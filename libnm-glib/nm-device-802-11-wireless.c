@@ -181,11 +181,13 @@ nm_device_802_11_wireless_get_active_access_point (NMDevice80211Wireless *self)
 	path = nm_object_get_object_path_property (NM_OBJECT (self),
 	                                           NM_DBUS_INTERFACE_DEVICE_WIRELESS,
 	                                           DBUS_PROP_ACTIVE_ACCESS_POINT);
+	if (path) {
+		g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
+		g_value_take_boxed (&value, path);
+		demarshal_active_ap (NM_OBJECT (self), NULL, &value, &priv->active_ap);
+		g_value_unset (&value);
+	}
 
-	g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
-	g_value_take_boxed (&value, path);
-	demarshal_active_ap (NM_OBJECT (self), NULL, &value, &priv->active_ap);
-	g_value_unset (&value);
 	return priv->active_ap;
 }
 
@@ -356,7 +358,7 @@ demarshal_active_ap (NMObject *object, GParamSpec *pspec, GValue *value, gpointe
 		return FALSE;
 
 	path = g_value_get_boxed (value);
-	if (strcmp (path, "/")) {
+	if (path && strcmp (path, "/")) {
 		ap = NM_ACCESS_POINT (nm_object_cache_get (path));
 		if (ap)
 			ap = g_object_ref (ap);
