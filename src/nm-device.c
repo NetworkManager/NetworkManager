@@ -1733,10 +1733,14 @@ nm_device_state_changed (NMDevice *device, NMDeviceState state)
 
 	g_return_if_fail (NM_IS_DEVICE (device));
 
+	if (device->priv->state == state)
+		return;
+
 	iface = nm_device_get_iface (device);
 	old_state = device->priv->state;
 	device->priv->state = state;
 
+	g_object_notify (G_OBJECT (device), NM_DEVICE_INTERFACE_STATE);
 	g_signal_emit_by_name (device, "state-changed", state);
 
 	switch (state) {
