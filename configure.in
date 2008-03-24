@@ -300,6 +300,7 @@ libnm-glib/libnm_glib.pc
 libnm-glib/Makefile
 callouts/Makefile
 dispatcher-daemon/Makefile
+tools/Makefile
 system-settings/Makefile
 system-settings/src/Makefile
 system-settings/plugins/Makefile

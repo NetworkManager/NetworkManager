@@ -33,7 +33,8 @@ SUBDIRS = 				\
 	   include			\
 	   introspection	\
 	   callouts \
-	   system-settings
+	   system-settings \
+	   tools
 
 EXTRA_DIST =				\
 	CONTRIBUTING			\
