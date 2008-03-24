@@ -283,9 +283,6 @@ set_property (GObject *object, guint prop_id,
 	case PROP_WIRELESS_ENABLED:
 		manager_set_wireless_enabled (NM_MANAGER (object), g_value_get_boolean (value));
 		break;
-	case PROP_WIRELESS_HARDWARE_ENABLED:
-		nm_manager_set_wireless_hardware_enabled (NM_MANAGER (object), g_value_get_boolean (value));
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -371,7 +368,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 						   "WirelessHardwareEnabled",
 						   "RF kill state",
 						   TRUE,
-						   G_PARAM_READWRITE));
+						   G_PARAM_READABLE));
 
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_CONNECTIONS,
@@ -1538,13 +1535,9 @@ impl_manager_deactivate_connection (NMManager *manager,
 gboolean
 nm_manager_wireless_enabled (NMManager *manager)
 {
-	gboolean enabled;
-
 	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
 
-	g_object_get (manager, NM_MANAGER_WIRELESS_ENABLED, &enabled, NULL);
-
-	return enabled;
+	return NM_MANAGER_GET_PRIVATE (manager)->wireless_enabled;
 }
 
 gboolean
