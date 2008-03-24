@@ -12,7 +12,8 @@ BUILT_SOURCES = \
 	nm-settings-glue.h \
 	nm-vpn-manager-bindings.h \
 	nm-vpn-connection-bindings.h \
-	nm-vpn-plugin-glue.h
+	nm-vpn-plugin-glue.h \
+	nm-active-connection-bindings.h
 
 lib_LTLIBRARIES = libnm_glib.la libnm_glib_vpn.la
 
@@ -39,11 +40,14 @@ libnminclude_HEADERS = \
 	nm-cdma-device.h \
 	nm-vpn-connection.h \
 	nm-vpn-manager.h \
-	nm-vpn-plugin.h
+	nm-vpn-plugin.h \
+	nm-types.h \
+	nm-active-connection.h
 
 libnm_glib_la_SOURCES = \
 	libnm_glib.c		\
 	nm-object.c		\
+	nm-object-private.h \
 	nm-client.c		\
 	nm-dbus-utils.c		\
 	nm-dbus-utils.h		\
@@ -58,7 +62,12 @@ libnm_glib_la_SOURCES = \
 	nm-cdma-device.c	\
 	nm-vpn-connection.c	\
 	nm-vpn-manager.c	\
-	nm-marshal-main.c
+	nm-marshal-main.c \
+	nm-types.c \
+	nm-types-private.h \
+	nm-object-cache.c \
+	nm-object-cache.h \
+	nm-active-connection.c
 
 libnm_glib_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la	\
@@ -122,6 +131,9 @@ nm-vpn-connection-bindings.h: $(top_srcdir)/introspection/nm-vpn-connection.xml
 
 nm-vpn-plugin-glue.h: $(top_srcdir)/introspection/nm-vpn-plugin.xml
 	dbus-binding-tool --prefix=nm_vpn_plugin --mode=glib-server --output=nm-vpn-plugin-glue.h $(top_srcdir)/introspection/nm-vpn-plugin.xml
+
+nm-active-connection-bindings.h: $(top_srcdir)/introspection/nm-active-connection.xml
+	dbus-binding-tool --prefix=nm_active_connection --mode=glib-client --output=nm-active-connection-bindings.h $(top_srcdir)/introspection/nm-active-connection.xml
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libnm_glib.pc

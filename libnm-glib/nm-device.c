@@ -1,5 +1,14 @@
+#include <string.h>
+
+#include "NetworkManager.h"
+#include "nm-device-802-3-ethernet.h"
+#include "nm-device-802-11-wireless.h"
+#include "nm-gsm-device.h"
+#include "nm-cdma-device.h"
 #include "nm-device.h"
 #include "nm-device-private.h"
+#include "nm-object-private.h"
+#include "nm-object-cache.h"
 
 #include "nm-device-bindings.h"
 
@@ -8,34 +17,33 @@ G_DEFINE_TYPE (NMDevice, nm_device, NM_TYPE_OBJECT)
 #define NM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE, NMDevicePrivate))
 
 typedef struct {
-	DBusGProxy *device_proxy;
-	NMDeviceState state;
+	gboolean disposed;
+	DBusGProxy *proxy;
 
+	char *iface;
+	char *udi;
+	char *driver;
+	guint32 capabilities;
+	NMIP4Config *ip4_config;
+	NMDeviceState state;
 	char *product;
 	char *vendor;
-
-	gboolean disposed;
 } NMDevicePrivate;
 
 enum {
-	STATE_CHANGED,
-
-	LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
-
-
-enum {
 	PROP_0,
-	PROP_CONNECTION,
-	PROP_PATH,
+	PROP_INTERFACE,
+	PROP_UDI,
+	PROP_DRIVER,
+	PROP_CAPABILITIES,
+	PROP_IP4_CONFIG,
+	PROP_STATE,
+	PROP_PRODUCT,
+	PROP_VENDOR,
 
 	LAST_PROP
 };
 
-
-static void device_state_change_proxy (DBusGProxy *proxy, guint state, gpointer user_data);
 
 static void
 nm_device_init (NMDevice *device)
@@ -44,8 +52,59 @@ nm_device_init (NMDevice *device)
 
 	priv->state = NM_DEVICE_STATE_UNKNOWN;
 	priv->disposed = FALSE;
-	priv->product = NULL;
-	priv->vendor = NULL;
+}
+
+static gboolean
+demarshal_ip4_config (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
+	const char *path;
+	NMIP4Config *config = NULL;
+	DBusGConnection *connection;
+
+	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
+		return FALSE;
+
+	path = g_value_get_boxed (value);
+	if (strcmp (path, "/")) {
+		config = NM_IP4_CONFIG (nm_object_cache_get (path));
+		if (config)
+			config = g_object_ref (config);
+		else {
+			connection = nm_object_get_connection (object);
+			config = NM_IP4_CONFIG (nm_ip4_config_new (connection, path));
+		}
+	}
+
+	if (priv->ip4_config) {
+		g_object_unref (priv->ip4_config);
+		priv->ip4_config = NULL;
+	}
+
+	if (config)
+		priv->ip4_config = config;
+
+	g_object_notify (G_OBJECT (object), NM_DEVICE_IP4_CONFIG);
+	return TRUE;
+}
+
+static void
+register_for_property_changed (NMDevice *device)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
+	const NMPropertiesChangedInfo property_changed_info[] = {
+		{ NM_DEVICE_UDI,          nm_object_demarshal_generic, &priv->udi },
+		{ NM_DEVICE_INTERFACE,    nm_object_demarshal_generic, &priv->iface },
+		{ NM_DEVICE_DRIVER,       nm_object_demarshal_generic, &priv->driver },
+		{ NM_DEVICE_CAPABILITIES, nm_object_demarshal_generic, &priv->capabilities },
+		{ NM_DEVICE_IP4_CONFIG,   demarshal_ip4_config,        &priv->ip4_config },
+		{ NM_DEVICE_STATE,        nm_object_demarshal_generic, &priv->state },
+		{ NULL },
+	};
+
+	nm_object_handle_properties_changed (NM_OBJECT (device),
+	                                     priv->proxy,
+	                                     property_changed_info);
 }
 
 static GObject*
@@ -64,15 +123,12 @@ constructor (GType type,
 
 	priv = NM_DEVICE_GET_PRIVATE (object);
 
-	priv->device_proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (object),
-													NM_DBUS_SERVICE,
-													nm_object_get_path (object),
-													NM_DBUS_INTERFACE_DEVICE);
+	priv->proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (object),
+											 NM_DBUS_SERVICE,
+											 nm_object_get_path (object),
+											 NM_DBUS_INTERFACE_DEVICE);
 
-	dbus_g_proxy_add_signal (priv->device_proxy, "StateChanged", G_TYPE_UINT, G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->device_proxy, "StateChanged",
-								 G_CALLBACK (device_state_change_proxy),
-								 object, NULL);
+	register_for_property_changed (NM_DEVICE (object));
 
 	return G_OBJECT (object);
 }
@@ -89,7 +145,9 @@ dispose (GObject *object)
 
 	priv->disposed = TRUE;
 
-	g_object_unref (priv->device_proxy);
+	g_object_unref (priv->proxy);
+	if (priv->ip4_config)
+		g_object_unref (priv->ip4_config);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
 }
@@ -99,10 +157,52 @@ finalize (GObject *object)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
 
+	g_free (priv->iface);
+	g_free (priv->udi);
+	g_free (priv->driver);
 	g_free (priv->product);
 	g_free (priv->vendor);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->finalize (object);
+}
+
+static void
+get_property (GObject *object,
+              guint prop_id,
+              GValue *value,
+              GParamSpec *pspec)
+{
+	NMDevice *device = NM_DEVICE (object);
+
+	switch (prop_id) {
+	case PROP_UDI:
+		g_value_set_string (value, nm_device_get_udi (device));
+		break;
+	case PROP_INTERFACE:
+		g_value_set_string (value, nm_device_get_iface (device));
+		break;
+	case PROP_DRIVER:
+		g_value_set_string (value, nm_device_get_driver (device));
+		break;
+	case PROP_CAPABILITIES:
+		g_value_set_uint (value, nm_device_get_capabilities (device));
+		break;
+	case PROP_IP4_CONFIG:
+		g_value_set_object (value, nm_device_get_ip4_config (device));
+		break;
+	case PROP_STATE:
+		g_value_set_uint (value, nm_device_get_state (device));
+		break;
+	case PROP_PRODUCT:
+		g_value_set_string (value, nm_device_get_product (device));
+		break;
+	case PROP_VENDOR:
+		g_value_set_string (value, nm_device_get_vendor (device));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -114,98 +214,226 @@ nm_device_class_init (NMDeviceClass *device_class)
 
 	/* virtual methods */
 	object_class->constructor = constructor;
+	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
-	/* signals */
-	signals[STATE_CHANGED] =
-		g_signal_new ("state-changed",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMDeviceClass, state_changed),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__UINT,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_UINT);
+	/* properties */
+	g_object_class_install_property
+		(object_class, PROP_INTERFACE,
+		 g_param_spec_string (NM_DEVICE_INTERFACE,
+						  "Interface",
+						  "Interface name",
+						  NULL,
+						  G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_UDI,
+		 g_param_spec_string (NM_DEVICE_UDI,
+						  "UDI",
+						  "HAL UDI",
+						  NULL,
+						  G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_DRIVER,
+		 g_param_spec_string (NM_DEVICE_DRIVER,
+						  "Driver",
+						  "Driver",
+						  NULL,
+						  G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_CAPABILITIES,
+		 g_param_spec_uint (NM_DEVICE_CAPABILITIES,
+						  "Capabilities",
+						  "Capabilities",
+						  0, G_MAXUINT32, 0,
+						  G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_IP4_CONFIG,
+		 g_param_spec_object (NM_DEVICE_IP4_CONFIG,
+						  "IP4 Config",
+						  "IP4 Config",
+						  NM_TYPE_IP4_CONFIG,
+						  G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_STATE,
+		 g_param_spec_uint (NM_DEVICE_STATE,
+						  "State",
+						  "State",
+						  0, G_MAXUINT32, 0,
+						  G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_VENDOR,
+		 g_param_spec_string (NM_DEVICE_VENDOR,
+						  "Vendor",
+						  "Vendor string",
+						  NULL,
+						  G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_PRODUCT,
+		 g_param_spec_string (NM_DEVICE_PRODUCT,
+						  "Product",
+						  "Product string",
+						  NULL,
+						  G_PARAM_READABLE));
 }
 
-static void
-device_state_change_proxy (DBusGProxy *proxy, guint state, gpointer user_data)
-{
-	NMDevice *device = NM_DEVICE (user_data);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
-
-	if (priv->state != state) {
-		priv->state = state;
-		g_signal_emit (device, signals[STATE_CHANGED], 0, state);
-	}
-}
-
-NMDevice *
+GObject *
 nm_device_new (DBusGConnection *connection, const char *path)
 {
-	return (NMDevice *) g_object_new (NM_TYPE_DEVICE,
-									  NM_OBJECT_CONNECTION, connection,
-									  NM_OBJECT_PATH, path,
-									  NULL);
+	DBusGProxy *proxy;
+	GError *err = NULL;
+	GValue value = {0,};
+	GType dtype = 0;
+	NMDevice *device = NULL;
+
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (path != NULL, NULL);
+
+	proxy = dbus_g_proxy_new_for_name (connection,
+									   NM_DBUS_SERVICE,
+									   path,
+									   "org.freedesktop.DBus.Properties");
+	if (!proxy) {
+		g_warning ("%s: couldn't create D-Bus object proxy.", __func__);
+		return NULL;
+	}
+
+	if (!dbus_g_proxy_call (proxy,
+						    "Get", &err,
+						    G_TYPE_STRING, NM_DBUS_INTERFACE_DEVICE,
+						    G_TYPE_STRING, "DeviceType",
+						    G_TYPE_INVALID,
+						    G_TYPE_VALUE, &value, G_TYPE_INVALID)) {
+		g_warning ("Error in get_property: %s\n", err->message);
+		g_error_free (err);
+		goto out;
+	}
+
+	switch (g_value_get_uint (&value)) {
+	case DEVICE_TYPE_802_3_ETHERNET:
+		dtype = NM_TYPE_DEVICE_802_3_ETHERNET;
+		break;
+	case DEVICE_TYPE_802_11_WIRELESS:
+		dtype = NM_TYPE_DEVICE_802_11_WIRELESS;
+		break;
+	case DEVICE_TYPE_GSM:
+		dtype = NM_TYPE_GSM_DEVICE;
+		break;
+	case DEVICE_TYPE_CDMA:
+		dtype = NM_TYPE_CDMA_DEVICE;
+		break;
+	default:
+		g_warning ("Unknown device type %d", g_value_get_uint (&value));
+		break;
+	}
+
+	if (dtype) {
+		device = (NMDevice *) g_object_new (dtype,
+											NM_OBJECT_DBUS_CONNECTION, connection,
+											NM_OBJECT_DBUS_PATH, path,
+											NULL);
+	}
+
+out:
+	g_object_unref (proxy);
+	return G_OBJECT (device);
 }
 
-char *
+const char *
 nm_device_get_iface (NMDevice *device)
 {
+	NMDevicePrivate *priv;
+
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	return nm_object_get_string_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Interface");
+	priv = NM_DEVICE_GET_PRIVATE (device);
+	if (!priv->iface) {
+		priv->iface = nm_object_get_string_property (NM_OBJECT (device),
+		                                             NM_DBUS_INTERFACE_DEVICE,
+		                                             "Interface");
+	}
+
+	return priv->iface;
 }
 
-char *
+const char *
 nm_device_get_udi (NMDevice *device)
 {
+	NMDevicePrivate *priv;
+
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	return nm_object_get_string_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Udi");
+	priv = NM_DEVICE_GET_PRIVATE (device);
+	if (!priv->udi) {
+		priv->udi = nm_object_get_string_property (NM_OBJECT (device),
+		                                           NM_DBUS_INTERFACE_DEVICE,
+		                                           "Udi");
+	}
+
+	return priv->udi;
 }
 
-char *
+const char *
 nm_device_get_driver (NMDevice *device)
 {
+	NMDevicePrivate *priv;
+
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
-	return nm_object_get_string_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Driver");
+	priv = NM_DEVICE_GET_PRIVATE (device);
+	if (!priv->driver) {
+		priv->driver = nm_object_get_string_property (NM_OBJECT (device),
+		                                              NM_DBUS_INTERFACE_DEVICE,
+		                                              "Driver");
+	}
+
+	return priv->driver;
 }
 
 guint32
 nm_device_get_capabilities (NMDevice *device)
 {
+	NMDevicePrivate *priv;
+
 	g_return_val_if_fail (NM_IS_DEVICE (device), 0);
 
-	return nm_object_get_uint_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Capabilities");
-}
+	priv = NM_DEVICE_GET_PRIVATE (device);
+	if (!priv->capabilities) {
+		priv->capabilities = nm_object_get_uint_property (NM_OBJECT (device),
+		                                                  NM_DBUS_INTERFACE_DEVICE,
+		                                                  "Capabilities");
+	}
 
-guint32
-nm_device_get_ip4_address (NMDevice *device)
-{
-	g_return_val_if_fail (NM_IS_DEVICE (device), 0);
-
-	return nm_object_get_uint_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Ip4Address");
+	return priv->capabilities;
 }
 
 NMIP4Config *
 nm_device_get_ip4_config (NMDevice *device)
 {
+	NMDevicePrivate *priv;
 	char *path;
-	NMIP4Config *config = NULL;
+	GValue value = { 0, };
 
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
+	priv = NM_DEVICE_GET_PRIVATE (device);
+	if (priv->ip4_config)
+		return priv->ip4_config;
+
 	path = nm_object_get_object_path_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Ip4Config");
 
-	if (path) {
-		config = nm_ip4_config_new (nm_object_get_connection (NM_OBJECT (device)), path);
-		g_free (path);
-	}
-
-	return config;
+	g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
+	g_value_take_boxed (&value, path);
+	demarshal_ip4_config (NM_OBJECT (device), NULL, &value, &priv->ip4_config);
+	g_value_unset (&value);
+	return priv->ip4_config;
 }
 
 NMDeviceState
@@ -216,9 +444,11 @@ nm_device_get_state (NMDevice *device)
 	g_return_val_if_fail (NM_IS_DEVICE (device), NM_DEVICE_STATE_UNKNOWN);
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
-
-	if (priv->state == NM_DEVICE_STATE_UNKNOWN)
-		priv->state = nm_object_get_uint_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "State");
+	if (priv->state == NM_DEVICE_STATE_UNKNOWN) {
+		priv->state = nm_object_get_uint_property (NM_OBJECT (device), 
+		                                           NM_DBUS_INTERFACE_DEVICE,
+		                                           "State");
+	}
 
 	return priv->state;
 }
@@ -316,7 +546,7 @@ nm_device_update_description (NMDevice *device)
 {
 	NMDevicePrivate *priv;
 	DBusGConnection *connection;
-	char *udi;
+	const char *udi;
 	char *orig_dev_udi = NULL;
 	char *pd_parent_udi = NULL;
 
@@ -334,7 +564,6 @@ nm_device_update_description (NMDevice *device)
 	/* First, get the originating device info */
 	udi = nm_device_get_udi (device);
 	orig_dev_udi = get_product_and_vendor (connection, udi, TRUE, FALSE, &priv->product, &priv->vendor);
-	g_free (udi);
 
 	/* Ignore product and vendor for the Network Interface */
 	if (priv->product || priv->vendor) {
@@ -363,6 +592,9 @@ nm_device_update_description (NMDevice *device)
 		g_free (ignore);
 	}
 	g_free (pd_parent_udi);
+
+	g_object_notify (G_OBJECT (device), NM_DEVICE_VENDOR);
+	g_object_notify (G_OBJECT (device), NM_DEVICE_PRODUCT);
 }
 
 const char *
@@ -391,37 +623,3 @@ nm_device_get_vendor (NMDevice *device)
 	return priv->vendor;
 }
 
-NMDeviceType
-nm_device_type_for_path (DBusGConnection *connection,
-						 const char *path)
-{
-	DBusGProxy *proxy;
-	GError *err = NULL;
-	GValue value = {0,};
-	NMDeviceType type = DEVICE_TYPE_UNKNOWN;
-
-	g_return_val_if_fail (connection != NULL, type);
-	g_return_val_if_fail (path != NULL, type);
-
-	proxy = dbus_g_proxy_new_for_name (connection,
-									   NM_DBUS_SERVICE,
-									   path,
-									   "org.freedesktop.DBus.Properties");
-
-	if (dbus_g_proxy_call (proxy,
-						   "Get", &err,
-						   G_TYPE_STRING, NM_DBUS_INTERFACE_DEVICE,
-						   G_TYPE_STRING, "DeviceType",
-						   G_TYPE_INVALID,
-						   G_TYPE_VALUE, &value,
-						   G_TYPE_INVALID)) {
-		type = (NMDeviceType) g_value_get_uint (&value);
-	} else {
-		g_warning ("Error in get_property: %s\n", err->message);
-		g_error_free (err);
-	}
-
-	g_object_unref (proxy);
-
-	return type;
-}

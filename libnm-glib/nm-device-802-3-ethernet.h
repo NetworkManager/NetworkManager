@@ -26,8 +26,7 @@ typedef struct {
 
 GType nm_device_802_3_ethernet_get_type (void);
 
-NMDevice8023Ethernet *nm_device_802_3_ethernet_new         (DBusGConnection *connection,
-															const char *path);
+GObject *nm_device_802_3_ethernet_new (DBusGConnection *connection, const char *path);
 
 const char * nm_device_802_3_ethernet_get_hw_address (NMDevice8023Ethernet *device);
 guint32      nm_device_802_3_ethernet_get_speed   (NMDevice8023Ethernet *device);

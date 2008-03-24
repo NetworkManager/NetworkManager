@@ -18,34 +18,35 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_DEVICE))
 #define NM_DEVICE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEVICE, NMDeviceClass))
 
+#define NM_DEVICE_UDI "udi"
+#define NM_DEVICE_INTERFACE "interface"
+#define NM_DEVICE_DRIVER "driver"
+#define NM_DEVICE_CAPABILITIES "capabilities"
+#define NM_DEVICE_IP4_CONFIG "ip4-config"
+#define NM_DEVICE_STATE "state"
+#define NM_DEVICE_VENDOR "vendor"
+#define NM_DEVICE_PRODUCT "product"
+
 typedef struct {
 	NMObject parent;
 } NMDevice;
 
 typedef struct {
 	NMObjectClass parent;
-
-	/* Signals */
-	void (*state_changed) (NMDevice *device, NMDeviceState state);
 } NMDeviceClass;
 
 GType nm_device_get_type (void);
 
-NMDevice    *nm_device_new               (DBusGConnection *connection,
-										  const char *path);
+GObject * nm_device_new (DBusGConnection *connection, const char *path);
 
-char         *nm_device_get_iface        (NMDevice *device);
-char         *nm_device_get_udi          (NMDevice *device);
-char         *nm_device_get_driver       (NMDevice *device);
+const char *  nm_device_get_iface        (NMDevice *device);
+const char *  nm_device_get_udi          (NMDevice *device);
+const char *  nm_device_get_driver       (NMDevice *device);
 guint32       nm_device_get_capabilities (NMDevice *device);
-guint32       nm_device_get_ip4_address  (NMDevice *device);
-NMIP4Config  *nm_device_get_ip4_config   (NMDevice *device);
+NMIP4Config * nm_device_get_ip4_config   (NMDevice *device);
 NMDeviceState nm_device_get_state        (NMDevice *device);
-const char   *nm_device_get_product      (NMDevice *device);
-const char   *nm_device_get_vendor       (NMDevice *device);
-
-NMDeviceType  nm_device_type_for_path    (DBusGConnection *connection,
-										  const char *path);
+const char *  nm_device_get_product      (NMDevice *device);
+const char *  nm_device_get_vendor       (NMDevice *device);
 
 G_END_DECLS
 

@@ -33,8 +33,7 @@ typedef struct {
 
 GType nm_device_802_11_wireless_get_type (void);
 
-NMDevice80211Wireless *nm_device_802_11_wireless_new         (DBusGConnection *connection,
-															  const char *path);
+GObject *nm_device_802_11_wireless_new (DBusGConnection *connection, const char *path);
 
 const char *    nm_device_802_11_wireless_get_hw_address           (NMDevice80211Wireless *device);
 int             nm_device_802_11_wireless_get_mode                 (NMDevice80211Wireless *device);
@@ -43,9 +42,9 @@ guint32         nm_device_802_11_wireless_get_capabilities         (NMDevice8021
 NMAccessPoint * nm_device_802_11_wireless_get_active_access_point  (NMDevice80211Wireless *device);
 
 NMAccessPoint * nm_device_802_11_wireless_get_access_point_by_path (NMDevice80211Wireless *device,
-                                                                    const char *object_path);
+                                                                    const char *path);
 
-GSList *        nm_device_802_11_wireless_get_access_points        (NMDevice80211Wireless *device);
+GPtrArray *     nm_device_802_11_wireless_get_access_points        (NMDevice80211Wireless *device);
 
 G_END_DECLS
 

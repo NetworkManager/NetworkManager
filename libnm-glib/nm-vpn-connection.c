@@ -17,7 +17,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * (C) Copyright 2004 Red Hat, Inc.
+ * (C) Copyright 2008 Red Hat, Inc.
  */
 
 #include <string.h>
@@ -26,6 +26,7 @@
 #include "nm-utils.h"
 #include "nm-vpn-connection-bindings.h"
 #include "nm-marshal.h"
+#include "nm-object-private.h"
 
 G_DEFINE_TYPE (NMVPNConnection, nm_vpn_connection, NM_TYPE_OBJECT)
 
@@ -57,8 +58,8 @@ nm_vpn_connection_new (DBusGConnection *dbus_connection,
 	g_return_val_if_fail (path != NULL, NULL);
 
 	connection = (NMVPNConnection *) g_object_new (NM_TYPE_VPN_CONNECTION, 
-										  NM_OBJECT_CONNECTION, dbus_connection,
-										  NM_OBJECT_PATH, path,
+										  NM_OBJECT_DBUS_CONNECTION, dbus_connection,
+										  NM_OBJECT_DBUS_PATH, path,
 										  NULL);
 
 	nm_vpn_connection_get_name (connection);

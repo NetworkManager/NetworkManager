@@ -1,3 +1,16 @@
+2008-03-24  Dan Williams  <dcbw@redhat.com>
+
+	Massive fixup of libnm-glib to:
+	a) have all objects (with the exception of VPN) cache their properties and
+		update them asynchronously on PropertiesChanged signals from NM
+	b) return internal const data for most attributes/properties instead of
+		allocated values that the caller must free
+	c) cache wrapped objects such that a given D-Bus path will always map to the
+		same GObject returned by libnm-glib
+	d) remove a few signals and move them to GObject property notifications
+	e) match recent NM D-Bus API changes for activation/deactivation
+	f) remove some private functions from libnm-glib headers
+
 2008-03-20  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-manager.c

@@ -1,17 +1,29 @@
 /* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
+#include <string.h>
 #include <nm-utils.h>
-#include "nm-object.h"
 #include "NetworkManager.h"
+#include "nm-object.h"
+#include "nm-object-cache.h"
+#include "nm-object-private.h"
+#include "nm-dbus-glib-types.h"
+
 
 G_DEFINE_ABSTRACT_TYPE (NMObject, nm_object, G_TYPE_OBJECT)
 
 #define NM_OBJECT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_OBJECT, NMObjectPrivate))
 
 typedef struct {
+	PropChangedMarshalFunc func;
+	gpointer field;
+} PropChangedInfo;
+
+typedef struct {
 	DBusGConnection *connection;
 	char *path;
 	DBusGProxy *properties_proxy;
+	GSList *pcs;
+	NMObject *parent;
 
 	gboolean disposed;
 } NMObjectPrivate;
@@ -42,6 +54,8 @@ constructor (GType type,
 																   construct_params);
 	if (!object)
 		return NULL;
+
+	nm_object_cache_add (NM_OBJECT (object));
 
 	priv = NM_OBJECT_GET_PRIVATE (object);
 
@@ -82,6 +96,8 @@ finalize (GObject *object)
 {
 	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
 
+	g_slist_foreach (priv->pcs, (GFunc) g_hash_table_destroy, NULL);
+	g_slist_free (priv->pcs);
 	g_free (priv->path);
 
 	G_OBJECT_CLASS (nm_object_parent_class)->finalize (object);
@@ -100,7 +116,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PATH:
 		/* Construct only */
-		priv->path = g_strdup (g_value_get_string (value));
+		priv->path = g_value_dup_string (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -144,7 +160,7 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 	/* porperties */
 	g_object_class_install_property
 		(object_class, PROP_CONNECTION,
-		 g_param_spec_boxed (NM_OBJECT_CONNECTION,
+		 g_param_spec_boxed (NM_OBJECT_DBUS_CONNECTION,
 							 "Connection",
 							 "Connection",
 							 DBUS_TYPE_G_CONNECTION,
@@ -152,7 +168,7 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 
 	g_object_class_install_property
 		(object_class, PROP_PATH,
-		 g_param_spec_string (NM_OBJECT_PATH,
+		 g_param_spec_string (NM_OBJECT_DBUS_PATH,
 							  "Object Path",
 							  "DBus Object Path",
 							  NULL,
@@ -177,7 +193,7 @@ nm_object_get_path (NMObject *object)
 
 /* Stolen from dbus-glib */
 static char*
-wincaps_to_uscore (const char *caps)
+wincaps_to_dash (const char *caps)
 {
 	const char *p;
 	GString *str;
@@ -186,8 +202,8 @@ wincaps_to_uscore (const char *caps)
 	p = caps;
 	while (*p) {
 		if (g_ascii_isupper (*p)) {
-			if (str->len > 0 && (str->len < 2 || str->str[str->len-2] != '_'))
-				g_string_append_c (str, '_');
+			if (str->len > 0 && (str->len < 2 || str->str[str->len-2] != '-'))
+				g_string_append_c (str, '-');
 			g_string_append_c (str, g_ascii_tolower (*p));
 		} else
 			g_string_append_c (str, *p);
@@ -200,16 +216,38 @@ wincaps_to_uscore (const char *caps)
 static void
 handle_property_changed (gpointer key, gpointer data, gpointer user_data)
 {
-	GObject *object = G_OBJECT (user_data);
+	NMObject *self = NM_OBJECT (user_data);
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (self);
 	char *prop_name;
-	GValue *value = (GValue *) data;
+	PropChangedInfo *pci;
+	GParamSpec *pspec;
+	gboolean success = FALSE, found = FALSE;
+	GSList *iter;
 
-	prop_name = wincaps_to_uscore ((char *) key);
-	if (g_object_class_find_property (G_OBJECT_GET_CLASS (object), prop_name))
-		g_object_set_property (object, prop_name, value);
-	else
-		nm_warning ("Property '%s' change detected but can't be set", prop_name);
+	prop_name = wincaps_to_dash ((char *) key);
+	pspec = g_object_class_find_property (G_OBJECT_GET_CLASS (G_OBJECT (self)), prop_name);
+	if (!pspec) {
+		g_warning ("Property '%s' change detected but couldn't be found on the object.", prop_name);
+		goto out;
+	}
 
+	/* Iterate through the object and it's parents to find the property */
+	for (iter = priv->pcs; iter; iter = g_slist_next (iter)) {
+		pci = g_hash_table_lookup ((GHashTable *) iter->data, prop_name);
+		if (pci) {
+			found = TRUE;
+			success = (*(pci->func)) (self, pspec, (GValue *) data, pci->field);
+			if (success)
+				break;
+		}
+	}
+
+	if (!found)
+		g_warning ("Property '%s' unhandled.", prop_name);
+	else if (!success)
+		g_warning ("Property '%s' could not be set due to errors.", prop_name);
+
+out:
 	g_free (prop_name);
 }
 
@@ -218,26 +256,109 @@ properties_changed_proxy (DBusGProxy *proxy,
                           GHashTable *properties,
                           gpointer user_data)
 {
-	GObject *object = G_OBJECT (user_data);
-
-	g_object_freeze_notify (object);
-	g_hash_table_foreach (properties, handle_property_changed, object);
-	g_object_thaw_notify (object);
+	g_hash_table_foreach (properties, handle_property_changed, user_data);
 }
 
 void
-nm_object_handle_properties_changed (NMObject *object, DBusGProxy *proxy)
+nm_object_handle_properties_changed (NMObject *object,
+                                     DBusGProxy *proxy,
+                                     const NMPropertiesChangedInfo *info)
 {
-	dbus_g_proxy_add_signal (proxy, "PropertiesChanged",
-	                         dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
-	                         G_TYPE_INVALID);
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	NMPropertiesChangedInfo *tmp;
+	GHashTable *instance;
+
+	g_return_if_fail (NM_IS_OBJECT (object));
+	g_return_if_fail (proxy != NULL);
+	g_return_if_fail (info != NULL);
+
+	dbus_g_proxy_add_signal (proxy, "PropertiesChanged", DBUS_TYPE_G_MAP_OF_VARIANT, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (proxy,
 						    "PropertiesChanged",
 						    G_CALLBACK (properties_changed_proxy),
 						    object,
 						    NULL);
+
+	instance = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	priv->pcs = g_slist_prepend (priv->pcs, instance);
+
+	for (tmp = (NMPropertiesChangedInfo *) info; tmp->name; tmp++) {
+		PropChangedInfo *pci;
+
+		if (!tmp->name || !tmp->func || !tmp->field) {
+			g_warning ("%s: missing field in NMPropertiesChangedInfo", __func__);
+			continue;
+		}
+
+		pci = g_malloc0 (sizeof (PropChangedInfo));
+		if (!pci) {
+			g_warning ("%s: not enough memory for PropChangedInfo", __func__);
+			continue;
+		}
+		pci->func = tmp->func;
+		pci->field = tmp->field;
+		g_hash_table_insert (instance, g_strdup (tmp->name), pci);
+	}
 }
 
+#define HANDLE_TYPE(ucase, lcase) \
+	} else if (pspec->value_type == G_TYPE_##ucase) { \
+		if (G_VALUE_HOLDS_##ucase (value)) { \
+			g##lcase *param = (g##lcase *) field; \
+			*param = g_value_get_##lcase (value); \
+		} else { \
+			success = FALSE; \
+			goto done; \
+		}
+
+gboolean
+nm_object_demarshal_generic (NMObject *object,
+                             GParamSpec *pspec,
+                             GValue *value,
+                             gpointer field)
+{
+	gboolean success = TRUE;
+
+	if (pspec->value_type == G_TYPE_STRING) {
+		if (G_VALUE_HOLDS_STRING (value)) {
+			char **param = (char **) field;
+			g_free (*param);
+			*param = g_value_dup_string (value);
+		} else if (G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH)) {
+			char **param = (char **) field;
+			g_free (*param);
+			*param = g_strdup (g_value_get_boxed (value));
+		} else {
+			success = FALSE;
+			goto done;
+		}
+	HANDLE_TYPE(BOOLEAN, boolean)
+	HANDLE_TYPE(CHAR, char)
+	HANDLE_TYPE(UCHAR, uchar)
+	HANDLE_TYPE(DOUBLE, double)
+	HANDLE_TYPE(INT, int)
+	HANDLE_TYPE(UINT, uint)
+	HANDLE_TYPE(INT64, int)
+	HANDLE_TYPE(UINT64, uint)
+	HANDLE_TYPE(LONG, long)
+	HANDLE_TYPE(ULONG, ulong)
+	} else {
+		g_warning ("%s: %s/%s unhandled type %s.",
+		           __func__, G_OBJECT_TYPE_NAME (object), pspec->name,
+		           g_type_name (pspec->value_type));
+		success = FALSE;
+	}
+
+done:
+	if (success) {
+		g_object_notify (G_OBJECT (object), pspec->name);
+	} else {
+		g_warning ("%s: %s/%s (type %s) couldn't be set with type %s.",
+		           __func__, G_OBJECT_TYPE_NAME (object), pspec->name,
+		           g_type_name (pspec->value_type), G_VALUE_TYPE_NAME (value));
+	}
+	return success;
+}
 
 gboolean
 nm_object_get_property (NMObject *object,
@@ -299,7 +420,10 @@ nm_object_get_string_property (NMObject *object,
 	GValue value = {0,};
 
 	if (nm_object_get_property (object, interface, prop_name, &value)) {
-		str = g_strdup (g_value_get_string (&value));
+		if (G_VALUE_HOLDS_STRING (&value))
+			str = g_strdup (g_value_get_string (&value));
+		else if (G_VALUE_HOLDS (&value, DBUS_TYPE_G_OBJECT_PATH))
+			str = g_strdup (g_value_get_boxed (&value));
 		g_value_unset (&value);
 	}
 

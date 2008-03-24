@@ -24,8 +24,7 @@ typedef struct {
 
 GType        nm_cdma_device_get_type (void);
 
-NMCdmaDevice *nm_cdma_device_new (DBusGConnection *connection,
-                                  const char *path);
+GObject *nm_cdma_device_new (DBusGConnection *connection, const char *path);
 
 G_END_DECLS
 

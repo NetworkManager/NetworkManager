@@ -2,6 +2,8 @@
 
 #include <dbus/dbus-glib.h>
 #include <string.h>
+#include <nm-utils.h>
+
 #include "nm-client.h"
 #include "nm-device-802-3-ethernet.h"
 #include "nm-device-802-11-wireless.h"
@@ -9,7 +11,11 @@
 #include "nm-cdma-device.h"
 #include "nm-device-private.h"
 #include "nm-marshal.h"
-#include <nm-utils.h>
+#include "nm-types-private.h"
+#include "nm-object-private.h"
+#include "nm-active-connection.h"
+#include "nm-object-cache.h"
+#include "nm-dbus-glib-types.h"
 
 #include "nm-client-bindings.h"
 
@@ -18,12 +24,14 @@ G_DEFINE_TYPE (NMClient, nm_client, NM_TYPE_OBJECT)
 #define NM_CLIENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CLIENT, NMClientPrivate))
 
 typedef struct {
+	gboolean disposed;
+
 	DBusGProxy *client_proxy;
 	DBusGProxy *bus_proxy;
 	gboolean manager_running;
 	NMState state;
-	gboolean have_device_list;
-	GHashTable *devices;
+	GPtrArray *devices;
+	GPtrArray *active_connections;
 
 	gboolean wireless_enabled;
 	gboolean wireless_hw_enabled;
@@ -31,17 +39,18 @@ typedef struct {
 
 enum {
 	PROP_0,
+	PROP_STATE,
+	PROP_MANAGER_RUNNING,
 	PROP_WIRELESS_ENABLED,
 	PROP_WIRELESS_HARDWARE_ENABLED,
+	PROP_ACTIVE_CONNECTIONS,
 
 	LAST_PROP
 };
 
 enum {
-	MANAGER_RUNNING,
 	DEVICE_ADDED,
 	DEVICE_REMOVED,
-	STATE_CHANGED,
 
 	LAST_SIGNAL
 };
@@ -54,7 +63,6 @@ static void proxy_name_owner_changed (DBusGProxy *proxy,
 									  const char *new_owner,
 									  gpointer user_data);
 
-static void client_state_changed_proxy (DBusGProxy *proxy, guint state, gpointer user_data);
 static void client_device_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data);
 static void client_device_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data);
 
@@ -64,24 +72,63 @@ nm_client_init (NMClient *client)
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
 
 	priv->state = NM_STATE_UNKNOWN;
-	priv->devices = g_hash_table_new_full (g_str_hash, g_str_equal,
-										   (GDestroyNotify) g_free,
-										   (GDestroyNotify) g_object_unref);
 }
 
 static void
-update_wireless_status (NMClient *client)
+update_wireless_status (NMClient *client, gboolean notify)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
+	gboolean val;
 
-	priv->wireless_enabled = nm_object_get_boolean_property (NM_OBJECT (client),
-												  NM_DBUS_INTERFACE,
-												  "WirelessEnabled");
+	val = nm_object_get_boolean_property (NM_OBJECT (client),
+										  NM_DBUS_INTERFACE,
+										  "WirelessHardwareEnabled");
+	if (val != priv->wireless_hw_enabled) {
+		priv->wireless_hw_enabled = val;
+		g_object_notify (G_OBJECT (client), NM_CLIENT_WIRELESS_HARDWARE_ENABLED);
+	}
 
-	priv->wireless_hw_enabled = priv->wireless_enabled ?
-		TRUE : nm_object_get_boolean_property (NM_OBJECT (client),
-									    NM_DBUS_INTERFACE,
-									    "WirelessHardwareEnabled");
+	val = priv->wireless_hw_enabled ? TRUE :
+				nm_object_get_boolean_property (NM_OBJECT (client),
+				                                NM_DBUS_INTERFACE,
+				                                "WirelessEnabled");
+	if (val != priv->wireless_enabled) {
+		priv->wireless_enabled = val;
+		g_object_notify (G_OBJECT (client), NM_CLIENT_WIRELESS_ENABLED);
+	}
+}
+
+static gboolean
+demarshal_active_connections (NMObject *object,
+                              GParamSpec *pspec,
+                              GValue *value,
+                              gpointer field)
+{
+	DBusGConnection *connection;
+
+	connection = nm_object_get_connection (object);
+	if (!nm_object_array_demarshal (value, (GPtrArray **) field, connection, nm_active_connection_new))
+		return FALSE;
+
+	g_object_notify (G_OBJECT (object), NM_CLIENT_ACTIVE_CONNECTIONS);
+	return TRUE;
+}
+
+static void
+register_for_property_changed (NMClient *client)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
+	const NMPropertiesChangedInfo property_changed_info[] = {
+		{ NM_CLIENT_STATE,                     nm_object_demarshal_generic,  &priv->state },
+		{ NM_CLIENT_WIRELESS_ENABLED,          nm_object_demarshal_generic,  &priv->wireless_enabled },
+		{ NM_CLIENT_WIRELESS_HARDWARE_ENABLED, nm_object_demarshal_generic,  &priv->wireless_hw_enabled },
+		{ NM_CLIENT_ACTIVE_CONNECTIONS,        demarshal_active_connections, &priv->active_connections },
+		{ NULL },
+	};
+
+	nm_object_handle_properties_changed (NM_OBJECT (client),
+	                                     priv->client_proxy,
+	                                     property_changed_info);
 }
 
 static GObject*
@@ -108,12 +155,7 @@ constructor (GType type,
 										   nm_object_get_path (object),
 										   NM_DBUS_INTERFACE);
 
-	dbus_g_proxy_add_signal (priv->client_proxy, "StateChanged", G_TYPE_UINT, G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->client_proxy,
-						    "StateChanged",
-						    G_CALLBACK (client_state_changed_proxy),
-						    object,
-						    NULL);
+	register_for_property_changed (NM_CLIENT (object));
 
 	dbus_g_proxy_add_signal (priv->client_proxy, "DeviceAdded", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->client_proxy,
@@ -129,9 +171,8 @@ constructor (GType type,
 						    object,
 						    NULL);
 
-	nm_object_handle_properties_changed (NM_OBJECT (object), priv->client_proxy);
-
-	update_wireless_status (NM_CLIENT (object));
+	update_wireless_status (NM_CLIENT (object), FALSE);
+	nm_client_get_state (NM_CLIENT (object));
 
 	priv->bus_proxy = dbus_g_proxy_new_for_name (connection,
 										"org.freedesktop.DBus",
@@ -160,15 +201,34 @@ constructor (GType type,
 }
 
 static void
-finalize (GObject *object)
+free_device_list (NMClient *client)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
+
+	if (!priv->devices)
+		return;
+
+	g_ptr_array_foreach (priv->devices, (GFunc) g_object_unref, NULL);
+	g_ptr_array_free (priv->devices, TRUE);
+	priv->devices = NULL;
+}
+
+static void
+dispose (GObject *object)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
 
+	if (priv->disposed) {
+		G_OBJECT_CLASS (nm_client_parent_class)->dispose (object);
+		return;
+	}
+
 	g_object_unref (priv->client_proxy);
 	g_object_unref (priv->bus_proxy);
-	g_hash_table_destroy (priv->devices);
 
-	G_OBJECT_CLASS (nm_client_parent_class)->finalize (object);
+	free_device_list (NM_CLIENT (object));
+
+	G_OBJECT_CLASS (nm_client_parent_class)->dispose (object);
 }
 
 static void
@@ -205,35 +265,28 @@ get_property (GObject *object,
               GValue *value,
               GParamSpec *pspec)
 {
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (object);
+	NMClient *self = NM_CLIENT (object);
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (self);
 
 	switch (prop_id) {
+	case PROP_STATE:
+		g_value_set_uint (value, nm_client_get_state (self));
+		break;
+	case PROP_MANAGER_RUNNING:
+		g_value_set_boolean (value, priv->manager_running);
+		break;
 	case PROP_WIRELESS_ENABLED:
 		g_value_set_boolean (value, priv->wireless_enabled);
 		break;
 	case PROP_WIRELESS_HARDWARE_ENABLED:
 		g_value_set_boolean (value, priv->wireless_hw_enabled);
 		break;
+	case PROP_ACTIVE_CONNECTIONS:
+		g_value_set_boxed (value, nm_client_get_active_connections (self));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
-	}
-}
-
-
-static void
-manager_running (NMClient *client, gboolean running)
-{
-	if (!running) {
-		NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
-
-		priv->state = NM_STATE_UNKNOWN;
-		g_hash_table_remove_all (priv->devices);
-		priv->have_device_list = FALSE;
-		priv->wireless_enabled = FALSE;
-		priv->wireless_hw_enabled = FALSE;
-	} else {
-		update_wireless_status (client);
 	}
 }
 
@@ -248,16 +301,30 @@ nm_client_class_init (NMClientClass *client_class)
 	object_class->constructor = constructor;
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
-	object_class->finalize = finalize;
-
-	client_class->manager_running = manager_running;
+	object_class->dispose = dispose;
 
 	/* properties */
+	g_object_class_install_property
+		(object_class, PROP_STATE,
+		 g_param_spec_uint (NM_CLIENT_STATE,
+						    "State",
+						    "NetworkManager state",
+						    NM_STATE_UNKNOWN, NM_STATE_DISCONNECTED, NM_STATE_UNKNOWN,
+						    G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_MANAGER_RUNNING,
+		 g_param_spec_boolean (NM_CLIENT_MANAGER_RUNNING,
+						       "ManagerRunning",
+						       "Whether NetworkManager is running",
+						       FALSE,
+						       G_PARAM_READABLE));
+
 	g_object_class_install_property
 		(object_class, PROP_WIRELESS_ENABLED,
 		 g_param_spec_boolean (NM_CLIENT_WIRELESS_ENABLED,
 						   "WirelessEnabled",
-						   "Is wirless enabled",
+						   "Is wireless enabled",
 						   TRUE,
 						   G_PARAM_READWRITE));
 
@@ -265,20 +332,19 @@ nm_client_class_init (NMClientClass *client_class)
 		(object_class, PROP_WIRELESS_HARDWARE_ENABLED,
 		 g_param_spec_boolean (NM_CLIENT_WIRELESS_HARDWARE_ENABLED,
 						   "WirelessHardwareEnabled",
-						   "Is wirless hardware enabled",
+						   "Is wireless hardware enabled",
 						   TRUE,
-						   G_PARAM_READWRITE));
+						   G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_ACTIVE_CONNECTIONS,
+		 g_param_spec_boxed (NM_CLIENT_ACTIVE_CONNECTIONS,
+						   "Active connections",
+						   "Active connections",
+						   NM_TYPE_OBJECT_ARRAY,
+						   G_PARAM_READABLE));
 
 	/* signals */
-	signals[MANAGER_RUNNING] =
-		g_signal_new ("manager-running",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMClientClass, manager_running),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__BOOLEAN,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_BOOLEAN);
 	signals[DEVICE_ADDED] =
 		g_signal_new ("device-added",
 					  G_OBJECT_CLASS_TYPE (object_class),
@@ -298,16 +364,6 @@ nm_client_class_init (NMClientClass *client_class)
 					  g_cclosure_marshal_VOID__OBJECT,
 					  G_TYPE_NONE, 1,
 					  G_TYPE_OBJECT);
-
-	signals[STATE_CHANGED] =
-		g_signal_new ("state-changed",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMClientClass, state_changed),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__UINT,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_UINT);
 }
 
 NMClient *
@@ -324,8 +380,8 @@ nm_client_new (void)
 	}
 
 	return (NMClient *) g_object_new (NM_TYPE_CLIENT,
-									  NM_OBJECT_CONNECTION, connection,
-									  NM_OBJECT_PATH, NM_DBUS_PATH,
+									  NM_OBJECT_DBUS_CONNECTION, connection,
+									  NM_OBJECT_DBUS_PATH, NM_DBUS_PATH,
 									  NULL);
 }
 
@@ -336,75 +392,34 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 						  const char *new_owner,
 						  gpointer user_data)
 {
-	if (name && !strcmp (name, NM_DBUS_SERVICE)) {
-		NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (user_data);
-		gboolean old_good = (old_owner && strlen (old_owner));
-		gboolean new_good = (new_owner && strlen (new_owner));
-		gboolean new_running = FALSE;
-
-		if (!old_good && new_good)
-			new_running = TRUE;
-		else if (old_good && !new_good)
-			new_running = FALSE;
-
-		if (new_running != priv->manager_running) {
-			priv->manager_running = new_running;
-			g_signal_emit (NM_CLIENT (user_data),
-			               signals[MANAGER_RUNNING],
-			               0,
-			               priv->manager_running);
-		}
-	}
-}
-
-static void
-client_state_changed_proxy (DBusGProxy *proxy, guint state, gpointer user_data)
-{
 	NMClient *client = NM_CLIENT (user_data);
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
+	gboolean old_good = (old_owner && strlen (old_owner));
+	gboolean new_good = (new_owner && strlen (new_owner));
+	gboolean new_running = FALSE;
 
-	if (priv->state != state) {
-		priv->state = state;
-		g_signal_emit (client, signals[STATE_CHANGED], 0, state);
+	if (!name || strcmp (name, NM_DBUS_SERVICE))
+		return;
+
+	if (!old_good && new_good)
+		new_running = TRUE;
+	else if (old_good && !new_good)
+		new_running = FALSE;
+
+	if (new_running == priv->manager_running)
+		return;
+
+	priv->manager_running = new_running;
+	if (!priv->manager_running) {
+		priv->state = NM_STATE_UNKNOWN;
+		g_object_notify (G_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
+		free_device_list (client);
+		priv->wireless_enabled = FALSE;
+		priv->wireless_hw_enabled = FALSE;
+	} else {
+		g_object_notify (G_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
+		update_wireless_status (client, TRUE);
 	}
-}
-
-static NMDevice *
-get_device (NMClient *client, const char *path, gboolean create_if_not_found)
-{
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
-	NMDevice *device;
-
-	device = g_hash_table_lookup (priv->devices, path);
-	if (!device && create_if_not_found) {
-		DBusGConnection *connection;
-		NMDeviceType type;
-
-		connection = nm_object_get_connection (NM_OBJECT (client));
-		type = nm_device_type_for_path (connection, path);
-
-		switch (type) {
-		case DEVICE_TYPE_802_3_ETHERNET:
-			device = NM_DEVICE (nm_device_802_3_ethernet_new (connection, path));
-			break;
-		case DEVICE_TYPE_802_11_WIRELESS:
-			device = NM_DEVICE (nm_device_802_11_wireless_new (connection, path));
-			break;
-		case DEVICE_TYPE_GSM:
-			device = NM_DEVICE (nm_gsm_device_new (connection, path));
-			break;
-		case DEVICE_TYPE_CDMA:
-			device = NM_DEVICE (nm_cdma_device_new (connection, path));
-			break;
-		default:
-			device = nm_device_new (connection, path);
-		}
-
-		if (device)
-			g_hash_table_insert (priv->devices, g_strdup (path), device);
-	}
-
-	return device;
 }
 
 static void
@@ -413,7 +428,7 @@ client_device_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 	NMClient *client = NM_CLIENT (user_data);
 	NMDevice *device;
 
-	device = get_device (client, path, TRUE);
+	device = nm_client_get_device_by_path (client, path);
 	if (device)
 		g_signal_emit (client, signals[DEVICE_ADDED], 0, device);
 }
@@ -422,90 +437,68 @@ static void
 client_device_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 {
 	NMClient *client = NM_CLIENT (user_data);
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
 	NMDevice *device;
 
-	device = get_device (client, path, FALSE);
+	device = nm_client_get_device_by_path (client, path);
 	if (device) {
 		g_signal_emit (client, signals[DEVICE_REMOVED], 0, device);
-		g_hash_table_remove (NM_CLIENT_GET_PRIVATE (client)->devices, path);
+		g_ptr_array_remove (priv->devices, device);
+		g_object_unref (device);
 	}
 }
 
-gboolean
-nm_client_manager_is_running (NMClient *client)
-{
-	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
-
-	return NM_CLIENT_GET_PRIVATE (client)->manager_running;
-}
-
-static void
-devices_to_slist (gpointer key, gpointer value, gpointer user_data)
-{
-	GSList **list = (GSList **) user_data;
-
-	*list = g_slist_prepend (*list, value);
-}
-
-GSList *
+GPtrArray *
 nm_client_get_devices (NMClient *client)
 {
 	NMClientPrivate *priv;
-	GSList *list = NULL;
-	GPtrArray *array = NULL;
-	GError *err = NULL;
+	DBusGConnection *connection;
+	GValue value = { 0, };
+	GError *error = NULL;
+	GPtrArray *temp;
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
 	priv = NM_CLIENT_GET_PRIVATE (client);
+	if (priv->devices)
+		return priv->devices;
 
-	if (priv->have_device_list) {
-		g_hash_table_foreach (priv->devices, devices_to_slist, &list);
-		return list;
+	if (!org_freedesktop_NetworkManager_get_devices (priv->client_proxy, &temp, &error)) {
+		g_warning ("%s: error getting devices: %s\n", __func__, error->message);
+		g_error_free (error);
+		return NULL;
 	}
 
-	if (!org_freedesktop_NetworkManager_get_devices (priv->client_proxy, &array, &err)) {
-		g_warning ("Error in get_devices: %s", err->message);
-		g_error_free (err);
-	} else {
-		int i;
+	g_value_init (&value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH);
+	g_value_take_boxed (&value, temp);
+	connection = nm_object_get_connection (NM_OBJECT (client));
+	nm_object_array_demarshal (&value, &priv->devices, connection, nm_device_new);
+	g_value_unset (&value);
 
-		for (i = 0; i < array->len; i++) {
-			NMDevice *device;
-			char *path = g_ptr_array_index (array, i);
-
-			device = get_device (client, (const char *) path, TRUE);
-			if (device)
-				list = g_slist_append (list, device);
-			g_free (path);
-		}
-
-		g_ptr_array_free (array, TRUE);
-
-		priv->have_device_list = TRUE;
-	}
-
-	return list;
+	return priv->devices;
 }
 
 NMDevice *
 nm_client_get_device_by_path (NMClient *client, const char *object_path)
 {
-	GSList *devices;
-	GSList *iter;
+	GPtrArray *devices;
+	int i;
 	NMDevice *device = NULL;
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 	g_return_val_if_fail (object_path, NULL);
 
 	devices = nm_client_get_devices (client);
-	for (iter = devices; iter; iter = iter->next) {
-		if (!strcmp (nm_object_get_path (NM_OBJECT (iter->data)), object_path)) {
-			device = NM_DEVICE (iter->data);
+	if (!devices)
+		return NULL;
+
+	for (i = 0; i < devices->len; i++) {
+		NMDevice *candidate = g_ptr_array_index (devices, i);
+		if (!strcmp (nm_object_get_path (NM_OBJECT (candidate)), object_path)) {
+			device = candidate;
 			break;
 		}
 	}
-	g_slist_free (devices);
 
 	return device;
 }
@@ -516,7 +509,10 @@ typedef struct {
 } ActivateDeviceInfo;
 
 static void
-activate_cb (DBusGProxy *proxy, GError *err, gpointer user_data)
+activate_cb (DBusGProxy *proxy,
+             char *active_connection,
+             GError *err,
+             gpointer user_data)
 {
 	ActivateDeviceInfo *info = (ActivateDeviceInfo *) user_data;
 
@@ -567,132 +563,47 @@ nm_client_activate_connection (NMClient *client,
 }
 
 void
-nm_client_free_active_connections_element (GHashTable *item)
+nm_client_deactivate_connection (NMClient *client, NMActiveConnection *active)
 {
-	GSList *devices, *iter;
+	NMClientPrivate *priv;
+	const char *path;
+	GError *error = NULL;
 
-	g_free (g_hash_table_lookup (item, NM_AC_KEY_SERVICE_NAME));
-	g_free (g_hash_table_lookup (item, NM_AC_KEY_CONNECTION));
-	g_free (g_hash_table_lookup (item, NM_AC_KEY_SPECIFIC_OBJECT));
-	g_free (g_hash_table_lookup (item, NM_AC_KEY_SHARED_TO_SERVICE_NAME));
-	g_free (g_hash_table_lookup (item, NM_AC_KEY_SHARED_TO_CONNECTION));
+	g_return_if_fail (NM_IS_CLIENT (client));
+	g_return_if_fail (NM_IS_ACTIVE_CONNECTION (active));
 
-	devices = g_hash_table_lookup (item, NM_AC_KEY_DEVICES);
-	for (iter = devices; iter; iter = g_slist_next (iter))
-		g_object_unref (iter->data);
-	g_slist_free (devices);
+	// FIXME: return errors
+	priv = NM_CLIENT_GET_PRIVATE (client);
+	path = nm_object_get_path (NM_OBJECT (active));
+	if (!org_freedesktop_NetworkManager_deactivate_connection (priv->client_proxy, path, &error)) {
+		g_warning ("Could not deactivate connection '%s': %s", path, error->message);
+		g_error_free (error);
+	}
 }
 
-#define DBUS_TYPE_G_OBJECT_PATH_ARRAY (dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_OBJECT_PATH))
-
-GSList * 
+const GPtrArray * 
 nm_client_get_active_connections (NMClient *client)
 {
 	NMClientPrivate *priv;
-	GSList *connections = NULL;
-	GPtrArray *array = NULL;
-	GError *err = NULL;
-	int i, j;
+	GValue value = { 0, };
 
 	g_return_val_if_fail (NM_IS_CLIENT (client), NULL);
 
 	priv = NM_CLIENT_GET_PRIVATE (client);
-	if (!org_freedesktop_NetworkManager_get_active_connections (priv->client_proxy, &array, &err)) {
-		g_warning ("Error in get_active_connections: %s", err->message);
-		g_error_free (err);
+	if (priv->active_connections)
+		return priv->active_connections;
+
+	if (!nm_object_get_property (NM_OBJECT (client),
+	                             "org.freedesktop.DBus.Properties",
+	                             "ActiveConnections",
+	                             &value)) {
 		return NULL;
 	}
 
-	for (i = 0; i < array->len; i++) {
-		GHashTable *reply;
-		GHashTable *active;
-		GValue *value, *value2;
-		GPtrArray *devices_array = NULL;
-		GSList *devices = NULL;
-		gboolean have_shared_service = TRUE;
+	demarshal_active_connections (NM_OBJECT (client), NULL, &value, &priv->active_connections);	
+	g_value_unset (&value);
 
-		active = g_hash_table_new (g_str_hash, g_str_equal);
-
-		reply = g_ptr_array_index (array, i);
-
-		/* Service name */
-		value = g_hash_table_lookup (reply, NM_AC_KEY_SERVICE_NAME);
-		if (!value || !G_VALUE_HOLDS_STRING (value)) {
-			g_warning ("%s: missing item " NM_AC_KEY_SERVICE_NAME, __func__);
-			nm_client_free_active_connections_element (active);
-			g_hash_table_destroy (reply);
-			continue;
-		}
-		g_hash_table_insert (active, NM_AC_KEY_SERVICE_NAME, g_value_dup_string (value));
-
-		/* Connection path */
-		value = g_hash_table_lookup (reply, NM_AC_KEY_CONNECTION);
-		if (!value || !G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH)) {
-			g_warning ("%s: missing item " NM_AC_KEY_CONNECTION, __func__);
-			nm_client_free_active_connections_element (active);
-			g_hash_table_destroy (reply);
-			continue;
-		}
-		g_hash_table_insert (active, NM_AC_KEY_CONNECTION, g_value_dup_boxed (value));
-
-		/* Specific object path */
-		value = g_hash_table_lookup (reply, NM_AC_KEY_SPECIFIC_OBJECT);
-		if (value && G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
-			g_hash_table_insert (active, NM_AC_KEY_SPECIFIC_OBJECT, g_value_dup_boxed (value));
-
-		/* Shared to service name */
-		value = g_hash_table_lookup (reply, NM_AC_KEY_SHARED_TO_SERVICE_NAME);
-		if (!value || !G_VALUE_HOLDS_STRING (value))
-			have_shared_service = FALSE;
-
-		value2 = g_hash_table_lookup (reply, NM_AC_KEY_SHARED_TO_CONNECTION);
-		if (have_shared_service && value2 && G_VALUE_HOLDS (value2, DBUS_TYPE_G_OBJECT_PATH)) {
-			g_hash_table_insert (active, NM_AC_KEY_SHARED_TO_SERVICE_NAME, g_value_dup_string (value));
-			g_hash_table_insert (active, NM_AC_KEY_SHARED_TO_CONNECTION, g_value_dup_boxed (value2));
-		} else {
-			/* Ignore missing shared-to-service _and_ missing shared-to-connection */
-			if (have_shared_service) {
-				g_warning ("%s: missing item " NM_AC_KEY_SHARED_TO_SERVICE_NAME, __func__);
-				nm_client_free_active_connections_element (active);
-				g_hash_table_destroy (reply);
-				continue;
-			}
-		}
-
-		/* Device array */
-		value = g_hash_table_lookup (reply, NM_AC_KEY_DEVICES);
-		if (!value || !G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH_ARRAY)) {
-			g_warning ("%s: missing item " NM_AC_KEY_DEVICES, __func__);
-			nm_client_free_active_connections_element (active);
-			g_hash_table_destroy (reply);
-			continue;
-		}
-
-		devices_array = g_value_get_boxed (value);
-		if (!devices_array || (devices_array->len == 0)) {
-			g_warning ("%s: no devices for this active connection.", __func__);
-			nm_client_free_active_connections_element (active);
-			g_hash_table_destroy (reply);
-			continue;
-		}
-
-		for (j = 0; j < devices_array->len; j++) {
-			NMDevice *device;
-			const char *path;
-
-			path = (const char *) g_ptr_array_index (devices_array, j);
-			device = get_device (client, path, TRUE);
-			devices = g_slist_append (devices, g_object_ref (device));
-		}
-
-		g_hash_table_insert (active, NM_AC_KEY_DEVICES, devices);
-
-		connections = g_slist_append (connections, active);
-		g_hash_table_destroy (reply);
-	}
-
-	g_ptr_array_free (array, TRUE);
-	return connections;
+	return priv->active_connections;
 }
 
 gboolean
@@ -736,6 +647,9 @@ nm_client_get_state (NMClient *client)
 
 	priv = NM_CLIENT_GET_PRIVATE (client);
 
+	if (!priv->manager_running)
+		return NM_STATE_UNKNOWN;
+
 	if (priv->state == NM_STATE_UNKNOWN)
 		priv->state = nm_object_get_uint_property (NM_OBJECT (client), NM_DBUS_INTERFACE, "State");
 
@@ -754,3 +668,12 @@ nm_client_sleep (NMClient *client, gboolean sleep)
 		g_error_free (err);
 	}
 }
+
+gboolean
+nm_client_get_manager_running (NMClient *client)
+{
+	g_return_val_if_fail (NM_IS_CLIENT (client), FALSE);
+
+	return NM_CLIENT_GET_PRIVATE (client)->manager_running;
+}
+

@@ -7,7 +7,7 @@ G_DEFINE_TYPE (NMCdmaDevice, nm_cdma_device, NM_TYPE_DEVICE)
 #define NM_CDMA_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CDMA_DEVICE, NMCdmaDevicePrivate))
 
 typedef struct {
-	DBusGProxy *cdma_proxy;
+	DBusGProxy *proxy;
 
 	gboolean disposed;
 } NMCdmaDevicePrivate;
@@ -33,10 +33,10 @@ constructor (GType type,
 
 	priv = NM_CDMA_DEVICE_GET_PRIVATE (object);
 
-	priv->cdma_proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
-	                                              NM_DBUS_SERVICE,
-	                                              nm_object_get_path (NM_OBJECT (object)),
-	                                              NM_DBUS_INTERFACE_CDMA_DEVICE);
+	priv->proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
+	                                         NM_DBUS_SERVICE,
+	                                         nm_object_get_path (NM_OBJECT (object)),
+	                                         NM_DBUS_INTERFACE_CDMA_DEVICE);
 	return object;
 }
 
@@ -52,7 +52,7 @@ dispose (GObject *object)
 
 	priv->disposed = TRUE;
 
-	g_object_unref (priv->cdma_proxy);
+	g_object_unref (priv->proxy);
 
 	G_OBJECT_CLASS (nm_cdma_device_parent_class)->dispose (object);
 }
@@ -69,14 +69,14 @@ nm_cdma_device_class_init (NMCdmaDeviceClass *device_class)
 	object_class->dispose = dispose;
 }
 
-NMCdmaDevice *
+GObject *
 nm_cdma_device_new (DBusGConnection *connection, const char *path)
 {
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (path != NULL, NULL);
 
-	return (NMCdmaDevice *) g_object_new (NM_TYPE_CDMA_DEVICE,
-	                                      NM_OBJECT_CONNECTION, connection,
-	                                      NM_OBJECT_PATH, path,
-	                                      NULL);
+	return g_object_new (NM_TYPE_CDMA_DEVICE,
+	                     NM_OBJECT_DBUS_CONNECTION, connection,
+	                     NM_OBJECT_DBUS_PATH, path,
+	                     NULL);
 }

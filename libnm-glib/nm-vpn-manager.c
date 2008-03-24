@@ -29,8 +29,8 @@ nm_vpn_manager_new (void)
 	}
 
 	return (NMVPNManager *) g_object_new (NM_TYPE_VPN_MANAGER,
-								   NM_OBJECT_CONNECTION, connection,
-								   NM_OBJECT_PATH, NM_DBUS_PATH_VPN,
+								   NM_OBJECT_DBUS_CONNECTION, connection,
+								   NM_OBJECT_DBUS_PATH, NM_DBUS_PATH_VPN,
 								   NULL);
 
 }

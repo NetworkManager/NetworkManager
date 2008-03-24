@@ -2,6 +2,7 @@
 #include <nm-utils.h>
 #include <nm-setting-connection.h>
 #include "nm-settings.h"
+#include "nm-dbus-glib-types.h"
 
 
 GQuark
@@ -279,9 +280,6 @@ nm_exported_connection_dispose (GObject *object)
 	G_OBJECT_CLASS (nm_exported_connection_parent_class)->dispose (object);
 }
 
-#define DBUS_TYPE_G_STRING_VARIANT_HASHTABLE (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE))
-#define DBUS_TYPE_G_DICT_OF_DICTS (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, DBUS_TYPE_G_STRING_VARIANT_HASHTABLE))
-
 static void
 nm_exported_connection_class_init (NMExportedConnectionClass *exported_connection_class)
 {
@@ -316,7 +314,7 @@ nm_exported_connection_class_init (NMExportedConnectionClass *exported_connectio
 			      NULL, NULL,
 			      g_cclosure_marshal_VOID__POINTER,
 			      G_TYPE_NONE, 1,
-			      DBUS_TYPE_G_DICT_OF_DICTS);
+			      DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT);
 
 	connection_signals[EC_REMOVED] =
 		g_signal_new ("removed",

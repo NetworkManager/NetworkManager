@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <signal.h>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -11,8 +12,8 @@
 #include "nm-device-802-3-ethernet.h"
 #include "nm-device-802-11-wireless.h"
 #include "nm-utils.h"
+#include "nm-active-connection.h"
 
-#if 0
 static gboolean
 test_wireless_enabled (NMClient *client)
 {
@@ -21,16 +22,15 @@ test_wireless_enabled (NMClient *client)
 	wireless = nm_client_wireless_get_enabled (client);
 	g_print ("Wireless enabled? %s\n", wireless ? "yes" : "no");
 
-	nm_client_wireless_set_enabled (client, !wireless);
+//	nm_client_wireless_set_enabled (client, !wireless);
 
-	wireless = nm_client_wireless_get_enabled (client);
-	g_print ("Wireless enabled? %s\n", wireless ? "yes" : "no");
+	wireless = nm_client_wireless_hardware_get_enabled (client);
+	g_print ("Wireless HW enabled? %s\n", wireless ? "yes" : "no");
 
-	nm_client_wireless_set_enabled (client, !wireless);
+//	nm_client_wireless_set_enabled (client, !wireless);
 
 	return TRUE;
 }
-#endif
 
 static gboolean
 test_get_state (NMClient *client)
@@ -59,8 +59,8 @@ static void
 dump_ip4_config (NMIP4Config *cfg)
 {
 	char *tmp;
-	GArray *array;
-	char **ptr_array;
+	const GArray *array;
+	const GPtrArray *ptr_array;
 	int i;
 
 	tmp = ip4_address_as_string (nm_ip4_config_get_address (cfg));
@@ -79,9 +79,7 @@ dump_ip4_config (NMIP4Config *cfg)
 	g_print ("IP4 broadcast: %s\n", tmp);
 	g_free (tmp);
 
-	tmp = nm_ip4_config_get_hostname (cfg);
-	g_print ("IP4 hostname: %s\n", tmp);
-	g_free (tmp);
+	g_print ("IP4 hostname: %s\n", nm_ip4_config_get_hostname (cfg));
 
 	array = nm_ip4_config_get_nameservers (cfg);
 	if (array) {
@@ -91,23 +89,16 @@ dump_ip4_config (NMIP4Config *cfg)
 			g_print ("\t%s\n", tmp);
 			g_free (tmp);
 		}
-
-		g_array_free (array, TRUE);
 	}
 
 	ptr_array = nm_ip4_config_get_domains (cfg);
 	if (ptr_array) {
 		g_print ("IP4 domains:\n");
-		for (i = 0; ptr_array[i]; i++) {
-			g_print ("\t%s\n", ptr_array[i]);
-		}
-
-		g_strfreev (ptr_array);
+		for (i = 0; i < ptr_array->len; i++)
+			g_print ("\t%s\n", (const char *) g_ptr_array_index (ptr_array, i));
 	}
 
-	tmp = nm_ip4_config_get_nis_domain (cfg);
-	g_print ("IP4 NIS domain: %s\n", tmp);
-	g_free (tmp);
+	g_print ("IP4 NIS domain: %s\n", nm_ip4_config_get_nis_domain (cfg));
 
 	array = nm_ip4_config_get_nis_servers (cfg);
 	if (array) {
@@ -117,8 +108,6 @@ dump_ip4_config (NMIP4Config *cfg)
 			g_print ("\t%s\n", tmp);
 			g_free (tmp);
 		}
-
-		g_array_free (array, TRUE);
 	}
 }
 
@@ -149,8 +138,8 @@ static void
 dump_wireless (NMDevice80211Wireless *device)
 {
 	const char *str;
-	GSList *iter;
-	GSList *aps;
+	GPtrArray *aps;
+	int i;
 
 	g_print ("Mode: %d\n", nm_device_802_11_wireless_get_mode (device));
 	g_print ("Bitrate: %d\n", nm_device_802_11_wireless_get_bitrate (device));
@@ -160,13 +149,10 @@ dump_wireless (NMDevice80211Wireless *device)
 
 	g_print ("AccessPoints:\n");
 	aps = nm_device_802_11_wireless_get_access_points (device);
-	for (iter = aps; iter; iter = iter->next) {
-		dump_access_point (NM_ACCESS_POINT (iter->data));
+	for (i = 0; i < aps->len; i++) {
+		dump_access_point (NM_ACCESS_POINT (g_ptr_array_index (aps, i)));
 		g_print ("\n");
 	}
-
-	g_slist_foreach (aps, (GFunc) g_object_unref, NULL);
-	g_slist_free (aps);
 }
 
 static void
@@ -183,33 +169,29 @@ dump_wired (NMDevice8023Ethernet *device)
 static void
 dump_device (NMDevice *device)
 {
-	char *str;
-	guint32 u;
+	const char *str;
 	NMDeviceState state;
 
 	str = nm_device_get_iface (device);
 	g_print ("Interface: %s\n", str);
-	g_free (str);
 
 	str = nm_device_get_udi (device);
 	g_print ("Udi: %s\n", str);
-	g_free (str);
 
 	str = nm_device_get_driver (device);
 	g_print ("Driver: %s\n", str);
-	g_free (str);
 
-	u = nm_device_get_ip4_address (device);
-	g_print ("IP address: %d\n", u);
+	str = nm_device_get_vendor (device);
+	g_print ("Vendor: %s\n", str);
+
+	str = nm_device_get_product (device);
+	g_print ("Product: %s\n", str);
 
 	state = nm_device_get_state (device);
 	g_print ("State: %d\n", state);
 
-	if (state == NM_DEVICE_STATE_ACTIVATED) {
-		NMIP4Config *cfg = nm_device_get_ip4_config (device);
-		dump_ip4_config (cfg);
-		g_object_unref (cfg);
-	}
+	if (state == NM_DEVICE_STATE_ACTIVATED)
+		dump_ip4_config (nm_device_get_ip4_config (device));
 
 	if (NM_IS_DEVICE_802_3_ETHERNET (device))
 		dump_wired (NM_DEVICE_802_3_ETHERNET (device));
@@ -220,19 +202,76 @@ dump_device (NMDevice *device)
 static gboolean
 test_devices (NMClient *client)
 {
-	GSList *list, *iter;
+	GPtrArray *devices;
+	int i;
 
-	list = nm_client_get_devices (client);
+	devices = nm_client_get_devices (client);
 	g_print ("Got devices:\n");
-	for (iter = list; iter; iter = iter->next) {
-		NMDevice *device = NM_DEVICE (iter->data);
+	if (!devices) {
+		g_print ("  NONE\n");
+		return TRUE;
+	}
+
+	for (i = 0; i < devices->len; i++) {
+		NMDevice *device = g_ptr_array_index (devices, i);
 		dump_device (device);
 		g_print ("\n");
 	}
 
-	g_slist_free (list);
-
 	return TRUE;
+}
+
+static void
+active_connections_changed (NMClient *client, GParamSpec *pspec, gpointer user_data)
+{
+	const GPtrArray *connections;
+	int i, j;
+
+	g_print ("Active connections changed:\n");
+	connections = nm_client_get_active_connections (client);
+	for (i = 0; i < connections->len; i++) {
+		NMActiveConnection *connection;
+		const GPtrArray *devices;
+
+		connection = g_ptr_array_index (connections, i);
+		g_print ("    %s\n", nm_object_get_path (NM_OBJECT (connection)));
+		devices = nm_active_connection_get_devices (connection);
+		for (j = 0; j < devices->len; j++)
+			g_print ("           %s\n", nm_device_get_udi (g_ptr_array_index (devices, j)));
+	}
+}
+
+static void
+show_active_connection_device (gpointer data, gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (data);
+
+	g_print ("           %s\n", nm_device_get_udi (device));
+}
+
+static void
+test_get_active_connections (NMClient *client)
+{
+	const GPtrArray *connections;
+	int i;
+
+	g_print ("Active connections:\n");
+	connections = nm_client_get_active_connections (client);
+	for (i = 0; i < connections->len; i++) {
+		const GPtrArray *devices;
+
+		g_print ("    %s\n", nm_object_get_path (g_ptr_array_index (connections, i)));
+		devices = nm_active_connection_get_devices (g_ptr_array_index (connections, i));
+		g_ptr_array_foreach ((GPtrArray *) devices, show_active_connection_device, NULL);
+	}
+}
+
+static void
+device_state_changed (NMDevice *device, GParamSpec *pspec, gpointer user_data)
+{
+	g_print ("Device state changed: %s %d\n",
+	         nm_device_get_iface (device),
+	         nm_device_get_state (device));
 }
 
 static void
@@ -240,6 +279,8 @@ device_added_cb (NMClient *client, NMDevice *device, gpointer user_data)
 {
 	g_print ("New device added\n");
 	dump_device (device);
+	g_signal_connect (G_OBJECT (device), "notify::state",
+	                  (GCallback) device_state_changed, NULL);
 }
 
 static void
@@ -249,45 +290,42 @@ device_removed_cb (NMClient *client, NMDevice *device, gpointer user_data)
 	dump_device (device);
 }
 
-#if 0
-static gboolean
-device_deactivate (gpointer user_data)
-{
-	NMDevice *device = NM_DEVICE (user_data);
-
-	nm_device_deactivate (device);
-
-	return FALSE;
-}
-
 static void
-device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
+manager_running (NMClient *client, GParamSpec *pspec, gpointer user_data)
 {
-	char *str;
-
-	str = nm_device_get_iface (device);
-	g_print ("Device state changed: %s %d\n", str, state);
-	g_free (str);
-
-	if (state == NM_DEVICE_STATE_ACTIVATED) {
-		g_print ("Scheduling device deactivation\n");
-		g_timeout_add (5 * 1000,
-					   device_deactivate,
-					   device);
-	}
-}
-#endif
-
-static void
-manager_running (NMClient *client, gboolean running, gpointer user_data)
-{
-	if (running) {
+	if (nm_client_get_manager_running (client)) {
 		g_print ("NM appeared\n");
-		/* 	test_wireless_enabled (client); */
+		test_wireless_enabled (client);
 		test_get_state (client);
+		test_get_active_connections (client);
 		test_devices (client);
 	} else
 		g_print ("NM disappeared\n");
+}
+
+static GMainLoop *loop = NULL;
+
+static void
+signal_handler (int signo)
+{
+	if (signo == SIGINT || signo == SIGTERM) {
+		g_message ("Caught signal %d, shutting down...", signo);
+		g_main_loop_quit (loop);
+	}
+}
+
+static void
+setup_signals (void)
+{
+	struct sigaction action;
+	sigset_t mask;
+
+	sigemptyset (&mask);
+	action.sa_handler = signal_handler;
+	action.sa_mask = mask;
+	action.sa_flags = 0;
+	sigaction (SIGTERM,  &action, NULL);
+	sigaction (SIGINT,  &action, NULL);
 }
 
 int
@@ -302,15 +340,20 @@ main (int argc, char *argv[])
 		exit (1);
 	}
 
-	g_signal_connect (client, "manager-running", G_CALLBACK (manager_running), NULL);
-	manager_running (client, nm_client_manager_is_running (client), NULL);
+	g_signal_connect (client, "notify::" NM_CLIENT_MANAGER_RUNNING,
+	                  G_CALLBACK (manager_running), NULL);
+	g_signal_connect (client, "notify::" NM_CLIENT_ACTIVE_CONNECTIONS,
+	                  G_CALLBACK (active_connections_changed), NULL);
+	manager_running (client, NULL, NULL);
 
 	g_signal_connect (client, "device-added",
 					  G_CALLBACK (device_added_cb), NULL);
 	g_signal_connect (client, "device-removed",
 					  G_CALLBACK (device_removed_cb), NULL);
 
-	g_main_loop_run (g_main_loop_new (NULL, FALSE));
+	loop = g_main_loop_new (NULL, FALSE);
+	setup_signals ();
+	g_main_loop_run (loop);
 
 	g_object_unref (client);
 

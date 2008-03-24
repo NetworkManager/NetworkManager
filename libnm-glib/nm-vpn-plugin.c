@@ -4,6 +4,7 @@
 #include "nm-vpn-plugin.h"
 #include "nm-utils.h"
 #include "nm-connection.h"
+#include "nm-dbus-glib-types.h"
 
 static gboolean impl_vpn_plugin_connect    (NMVPNPlugin *plugin,
 								    GHashTable *connection,
@@ -704,7 +705,7 @@ nm_vpn_plugin_class_init (NMVPNPluginClass *plugin_class)
 				    NULL, NULL,
 				    g_cclosure_marshal_VOID__BOXED,
 				    G_TYPE_NONE, 1,
-				    dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE));
+				    DBUS_TYPE_G_MAP_OF_VARIANT);
 
 	signals[LOGIN_BANNER] =
 		g_signal_new ("login-banner",

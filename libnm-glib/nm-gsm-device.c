@@ -76,7 +76,7 @@ nm_gsm_device_new (DBusGConnection *connection, const char *path)
 	g_return_val_if_fail (path != NULL, NULL);
 
 	return (NMGsmDevice *) g_object_new (NM_TYPE_GSM_DEVICE,
-								  NM_OBJECT_CONNECTION, connection,
-								  NM_OBJECT_PATH, path,
+								  NM_OBJECT_DBUS_CONNECTION, connection,
+								  NM_OBJECT_DBUS_PATH, path,
 								  NULL);
 }

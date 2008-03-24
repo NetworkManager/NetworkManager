@@ -177,13 +177,12 @@ detail_device (gpointer data, gpointer user_data)
 	NMDeviceState state;
 	guint32 caps;
 	guint32 speed;
-	GArray *array;
+	const GArray *array;
 
 	state = nm_device_get_state (device);
 
-	tmp = nm_device_get_iface (device);
-	printf ("- Device: %s ----------------------------------------------------------------\n", tmp);
-	g_free (tmp);
+	printf ("- Device: %s ----------------------------------------------------------------\n",
+	        nm_device_get_iface (device));
 
 	/* General information */
 	if (NM_IS_DEVICE_802_3_ETHERNET (device))
@@ -191,12 +190,7 @@ detail_device (gpointer data, gpointer user_data)
 	else if (NM_IS_DEVICE_802_11_WIRELESS (device))
 		print_string ("Type", "802.11 Wireless");
 
-	tmp = nm_device_get_driver (device);
-	if (tmp) {
-		print_string ("Driver", tmp);
-		g_free (tmp);
-	} else
-		print_string ("Driver", "(unknown)");
+	print_string ("Driver", nm_device_get_driver (device) ? nm_device_get_driver (device) : "(unknown)");
 
 	if (state == NM_DEVICE_STATE_ACTIVATED)
 		print_string ("Active", "yes");
@@ -247,7 +241,7 @@ detail_device (gpointer data, gpointer user_data)
 		guint32 wcaps;
 		NMAccessPoint *active_ap = NULL;
 		const char *active_bssid = NULL;
-		GSList *aps;
+		GPtrArray *aps;
 
 		printf ("\n  Wireless Settings\n");
 
@@ -268,8 +262,7 @@ detail_device (gpointer data, gpointer user_data)
 		printf ("\n  Wireless Access Points%s\n", active_ap ? "(* = Current AP)" : "");
 
 		aps = nm_device_802_11_wireless_get_access_points (NM_DEVICE_802_11_WIRELESS (device));
-		g_slist_foreach (aps, detail_access_point, (gpointer) active_bssid);
-		g_slist_free (aps);
+		g_ptr_array_foreach (aps, detail_access_point, (gpointer) active_bssid);
 	} else if (NM_IS_DEVICE_802_3_ETHERNET (device)) {
 		printf ("\n  Wired Settings\n");
 		/* FIXME */
@@ -312,25 +305,10 @@ detail_device (gpointer data, gpointer user_data)
 				print_string ("  DNS", tmp);
 				g_free (tmp);
 			}
-
-			g_array_free (array, TRUE);
 		}
-
-		g_object_unref (cfg);
 	}
 
 	printf ("\n\n");
-}
-
-
-static void
-print_devices (NMClient *client)
-{
-	GSList *devices;
-
-	devices = nm_client_get_devices (client);
-	g_slist_foreach (devices, detail_device, NULL);
-	g_slist_free (devices);
 }
 
 
@@ -353,7 +331,7 @@ main (int argc, char *argv[])
 		exit (1);
 	}
 
-	print_devices (client);
+	g_ptr_array_foreach (nm_client_get_devices (client), detail_device, NULL);
 
 	g_object_unref (client);
 

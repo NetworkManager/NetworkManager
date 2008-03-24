@@ -20,6 +20,7 @@
  */
 
 #include <glib.h>
+#include <glib-object.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
@@ -80,7 +81,7 @@ nmd_permission_check (struct stat *s)
  *
  */
 static void
-nmd_execute_scripts (NMDeviceState state, char *iface_name)
+nmd_execute_scripts (NMDeviceState state, const char *iface_name)
 {
 	GDir *		dir;
 	const char *	file_name;
@@ -128,15 +129,13 @@ nmd_execute_scripts (NMDeviceState state, char *iface_name)
 }
 
 static void
-device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
+device_state_changed (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 {
-	if (state == NM_DEVICE_STATE_ACTIVATED || state == NM_DEVICE_STATE_DISCONNECTED) {
-		char *iface;
+	NMDeviceState state;
 
-		iface = nm_device_get_iface (device);
-		nmd_execute_scripts (state, iface);
-		g_free (iface);
-	}
+	state = nm_device_get_state (device);
+	if (state == NM_DEVICE_STATE_ACTIVATED || state == NM_DEVICE_STATE_DISCONNECTED)
+		nmd_execute_scripts (state, nm_device_get_iface (device));
 }
 
 static void
@@ -145,7 +144,7 @@ device_add_listener (NMClient *client, NMDevice *device, gpointer user_data)
 	guint id;
 
 	if (!g_hash_table_lookup (device_signals_hash, device)) {
-		id = g_signal_connect (device, "state-changed",
+		id = g_signal_connect (device, "notify::state",
 							   G_CALLBACK (device_state_changed),
 							   NULL);
 
@@ -168,14 +167,12 @@ device_remove_listener (NMClient *client, NMDevice *device, gpointer user_data)
 static void
 add_existing_device_listeners (NMClient *client)
 {
-	GSList *list, *iter;
+	const GPtrArray *devices;
+	int i;
 
-	list = nm_client_get_devices (client);
-	for (iter = list; iter; iter = iter->next)
-		device_add_listener (client, NM_DEVICE (iter->data), NULL);
-
-	g_slist_foreach (list, (GFunc) g_object_unref, NULL);
-	g_slist_free (list);
+	devices = nm_client_get_devices (client);
+	for (i = 0; devices && (i < devices->len); i++)
+		device_add_listener (client, g_ptr_array_index (devices, i), NULL);
 }
 
 static void
