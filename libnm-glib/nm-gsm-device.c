@@ -1,13 +1,15 @@
-/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
 #include "nm-gsm-device.h"
+#include "nm-device-private.h"
+#include "nm-object-private.h"
 
 G_DEFINE_TYPE (NMGsmDevice, nm_gsm_device, NM_TYPE_DEVICE)
 
 #define NM_GSM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_GSM_DEVICE, NMGsmDevicePrivate))
 
 typedef struct {
-	DBusGProxy *gsm_proxy;
+	DBusGProxy *proxy;
 
 	gboolean disposed;
 } NMGsmDevicePrivate;
@@ -17,10 +19,23 @@ nm_gsm_device_init (NMGsmDevice *device)
 {
 }
 
+static void
+register_for_property_changed (NMGsmDevice *device)
+{
+	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
+	const NMPropertiesChangedInfo property_changed_info[] = {
+		{ NULL },
+	};
+
+	nm_object_handle_properties_changed (NM_OBJECT (device),
+	                                     priv->proxy,
+	                                     property_changed_info);
+}
+
 static GObject*
 constructor (GType type,
-		   guint n_construct_params,
-		   GObjectConstructParam *construct_params)
+             guint n_construct_params,
+             GObjectConstructParam *construct_params)
 {
 	GObject *object;
 	NMGsmDevicePrivate *priv;
@@ -33,10 +48,13 @@ constructor (GType type,
 
 	priv = NM_GSM_DEVICE_GET_PRIVATE (object);
 
-	priv->gsm_proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
+	priv->proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
 										NM_DBUS_SERVICE,
 										nm_object_get_path (NM_OBJECT (object)),
 										NM_DBUS_INTERFACE_GSM_DEVICE);
+
+	register_for_property_changed (NM_GSM_DEVICE (object));
+
 	return object;
 }
 
@@ -52,7 +70,7 @@ dispose (GObject *object)
 
 	priv->disposed = TRUE;
 
-	g_object_unref (priv->gsm_proxy);
+	g_object_unref (priv->proxy);
 
 	G_OBJECT_CLASS (nm_gsm_device_parent_class)->dispose (object);
 }
