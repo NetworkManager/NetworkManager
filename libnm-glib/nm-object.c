@@ -25,6 +25,8 @@ typedef struct {
 	GSList *pcs;
 	NMObject *parent;
 
+	GSList *notify_props;
+	gulong notify_id;
 	gboolean disposed;
 } NMObjectPrivate;
 
@@ -84,6 +86,14 @@ dispose (GObject *object)
 	}
 
 	priv->disposed = TRUE;
+
+	if (priv->notify_id) {
+		g_source_remove (priv->notify_id);
+		priv->notify_id = 0;
+	}
+
+	g_slist_foreach (priv->notify_props, (GFunc) g_free, NULL);
+	g_slist_free (priv->notify_props);
 
 	g_object_unref (priv->properties_proxy);
 	dbus_g_connection_unref (priv->connection);
@@ -189,6 +199,40 @@ nm_object_get_path (NMObject *object)
 	g_return_val_if_fail (NM_IS_OBJECT (object), NULL);
 
 	return NM_OBJECT_GET_PRIVATE (object)->path;
+}
+
+static gboolean
+deferred_notify_cb (gpointer data)
+{
+	NMObject *object = NM_OBJECT (data);
+	NMObjectPrivate *priv = NM_OBJECT_GET_PRIVATE (object);
+	GSList *iter;
+
+	priv->notify_id = 0;
+
+	for (iter = priv->notify_props; iter; iter = g_slist_next (iter)) {
+		g_object_notify (G_OBJECT (object), (const char *) iter->data);
+		g_free (iter->data);
+	}
+	g_slist_free (priv->notify_props);
+	priv->notify_props = NULL;
+
+	return FALSE;
+}
+
+void
+nm_object_queue_notify (NMObject *object, const char *property)
+{
+	NMObjectPrivate *priv;
+
+	g_return_if_fail (NM_IS_OBJECT (object));
+	g_return_if_fail (property != NULL);
+
+	priv = NM_OBJECT_GET_PRIVATE (object);
+	if (!priv->notify_id)
+		priv->notify_id = g_idle_add_full (G_PRIORITY_LOW, deferred_notify_cb, object, NULL);
+
+	priv->notify_props = g_slist_append (priv->notify_props, g_strdup (property));
 }
 
 /* Stolen from dbus-glib */
@@ -351,7 +395,7 @@ nm_object_demarshal_generic (NMObject *object,
 
 done:
 	if (success) {
-		g_object_notify (G_OBJECT (object), pspec->name);
+		nm_object_queue_notify (object, pspec->name);
 	} else {
 		g_warning ("%s: %s/%s (type %s) couldn't be set with type %s.",
 		           __func__, G_OBJECT_TYPE_NAME (object), pspec->name,
@@ -373,8 +417,8 @@ nm_object_get_property (NMObject *object,
 	g_return_val_if_fail (prop_name != NULL, FALSE);
 	g_return_val_if_fail (value != NULL, FALSE);
 
-	if (!dbus_g_proxy_call (NM_OBJECT_GET_PRIVATE (object)->properties_proxy,
-							"Get", &err,
+	if (!dbus_g_proxy_call_with_timeout (NM_OBJECT_GET_PRIVATE (object)->properties_proxy,
+							"Get", 15000, &err,
 							G_TYPE_STRING, interface,
 							G_TYPE_STRING, prop_name,
 							G_TYPE_INVALID,

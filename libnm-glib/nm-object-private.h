@@ -21,6 +21,7 @@ void             nm_object_handle_properties_changed (NMObject *object,
 
 gboolean nm_object_demarshal_generic (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field);
 
+void nm_object_queue_notify (NMObject *object, const char *property);
 
 /* DBus property accessors */
 

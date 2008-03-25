@@ -1,3 +1,30 @@
+2008-03-25  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-glib/nm-object.c
+	  libnm-glib/nm-object-private.h
+		- (nm_object_queue_notify): add helper to batch & postpone GObject notify
+			signals to an idle handler
+		- (nm_object_get_property): add a timeout to the D-Bus method call
+
+2008-03-25  Dan Williams  <dcbw@redhat.com>
+
+	* introspection/nm-device-cdma.xml
+	  introspection/nm-device-gsm.xml
+	  introspection/Makefile.am
+	  introspection/all.xml
+		- Add introspection for CDMA and GSM devices for PropertiesChanged signal
+
+	* src/nm-gsm-device.h
+	  src/nm-gsm-device.c
+	  src/nm-cdma-device.h
+	  src/nm-cdma-device.c
+	  src/Makefile.am
+		- Implement PropertiesChanged signals
+
+	* libnm-glib/nm-cdma-device.c
+	  libnm-glib/nm-cdma-device.c
+		- Attach to PropertiesChanged signals
+
 2008-03-24  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-glib/nm-client.c
