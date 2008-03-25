@@ -50,9 +50,9 @@ demarshal_ip4_array (NMObject *object, GParamSpec *pspec, GValue *value, gpointe
 		return FALSE;
 
 	if (!strcmp (pspec->name, NM_IP4_CONFIG_NAMESERVERS))
-		g_object_notify (G_OBJECT (object), NM_IP4_CONFIG_NAMESERVERS);
+		nm_object_queue_notify (object, NM_IP4_CONFIG_NAMESERVERS);
 	else if (!strcmp (pspec->name, NM_IP4_CONFIG_NIS_SERVERS))
-		g_object_notify (G_OBJECT (object), NM_IP4_CONFIG_NAMESERVERS);
+		nm_object_queue_notify (object, NM_IP4_CONFIG_NAMESERVERS);
 	return TRUE;
 }
 
@@ -62,7 +62,7 @@ demarshal_domains (NMObject *object, GParamSpec *pspec, GValue *value, gpointer 
 	if (!nm_string_array_demarshal (value, (GPtrArray **) field))
 		return FALSE;
 
-	g_object_notify (G_OBJECT (object), NM_IP4_CONFIG_DOMAINS);
+	nm_object_queue_notify (object, NM_IP4_CONFIG_DOMAINS);
 	return TRUE;
 }
 

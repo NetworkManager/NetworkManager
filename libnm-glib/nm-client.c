@@ -19,6 +19,9 @@
 
 #include "nm-client-bindings.h"
 
+void nm_device_802_11_wireless_set_wireless_enabled (NMDevice80211Wireless *device, gboolean enabled);
+
+
 G_DEFINE_TYPE (NMClient, nm_client, NM_TYPE_OBJECT)
 
 #define NM_CLIENT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CLIENT, NMClientPrivate))
@@ -75,27 +78,57 @@ nm_client_init (NMClient *client)
 }
 
 static void
+poke_wireless_devices_with_rf_status (NMClient *client)
+{
+	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
+	int i;
+
+	for (i = 0; priv->devices && (i < priv->devices->len); i++) {
+		NMDevice *device = g_ptr_array_index (priv->devices, i);
+
+		if (NM_IS_DEVICE_802_11_WIRELESS (device))
+			nm_device_802_11_wireless_set_wireless_enabled (NM_DEVICE_802_11_WIRELESS (device), priv->wireless_enabled);
+	}
+}
+
+static void
 update_wireless_status (NMClient *client, gboolean notify)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
 	gboolean val;
+	gboolean poke = FALSE;
 
 	val = nm_object_get_boolean_property (NM_OBJECT (client),
 										  NM_DBUS_INTERFACE,
 										  "WirelessHardwareEnabled");
 	if (val != priv->wireless_hw_enabled) {
 		priv->wireless_hw_enabled = val;
-		g_object_notify (G_OBJECT (client), NM_CLIENT_WIRELESS_HARDWARE_ENABLED);
+		poke = TRUE;
+		if (notify)
+			nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_WIRELESS_HARDWARE_ENABLED);
 	}
 
-	val = priv->wireless_hw_enabled ? TRUE :
-				nm_object_get_boolean_property (NM_OBJECT (client),
-				                                NM_DBUS_INTERFACE,
-				                                "WirelessEnabled");
+	if (priv->wireless_hw_enabled == FALSE)
+		val = FALSE;
+	else
+		val = nm_object_get_boolean_property (NM_OBJECT (client),
+				                              NM_DBUS_INTERFACE,
+				                              "WirelessEnabled");
 	if (val != priv->wireless_enabled) {
 		priv->wireless_enabled = val;
-		g_object_notify (G_OBJECT (client), NM_CLIENT_WIRELESS_ENABLED);
+		poke = TRUE;
+		if (notify)
+			nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_WIRELESS_ENABLED);
 	}
+
+	if (poke)
+		poke_wireless_devices_with_rf_status (client);
+}
+
+static void
+wireless_enabled_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
+{
+	poke_wireless_devices_with_rf_status (NM_CLIENT (object));
 }
 
 static gboolean
@@ -110,7 +143,7 @@ demarshal_active_connections (NMObject *object,
 	if (!nm_object_array_demarshal (value, (GPtrArray **) field, connection, nm_active_connection_new))
 		return FALSE;
 
-	g_object_notify (G_OBJECT (object), NM_CLIENT_ACTIVE_CONNECTIONS);
+	nm_object_queue_notify (object, NM_CLIENT_ACTIVE_CONNECTIONS);
 	return TRUE;
 }
 
@@ -197,6 +230,9 @@ constructor (GType type,
 		g_error_free (err);
 	}
 
+	g_signal_connect (G_OBJECT (object), "notify::" NM_CLIENT_WIRELESS_ENABLED,
+	                  G_CALLBACK (wireless_enabled_cb), NULL);
+
 	return G_OBJECT (object);
 }
 
@@ -243,14 +279,14 @@ set_property (GObject *object, guint prop_id,
 		b = g_value_get_boolean (value);
 		if (priv->wireless_enabled != b) {
 			priv->wireless_enabled = b;
-			g_object_notify (object, NM_CLIENT_WIRELESS_ENABLED);
+			nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WIRELESS_ENABLED);
 		}
 		break;
 	case PROP_WIRELESS_HARDWARE_ENABLED:
 		b = g_value_get_boolean (value);
 		if (priv->wireless_hw_enabled != b) {
 			priv->wireless_hw_enabled = b;
-			g_object_notify (object, NM_CLIENT_WIRELESS_HARDWARE_ENABLED);
+			nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WIRELESS_HARDWARE_ENABLED);
 		}
 		break;
 	default:
@@ -412,12 +448,13 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 	priv->manager_running = new_running;
 	if (!priv->manager_running) {
 		priv->state = NM_STATE_UNKNOWN;
-		g_object_notify (G_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
+		nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
 		free_device_list (client);
 		priv->wireless_enabled = FALSE;
 		priv->wireless_hw_enabled = FALSE;
+		poke_wireless_devices_with_rf_status (client);
 	} else {
-		g_object_notify (G_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
+		nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
 		update_wireless_status (client, TRUE);
 	}
 }

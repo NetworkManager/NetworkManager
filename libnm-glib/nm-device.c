@@ -25,6 +25,7 @@ typedef struct {
 	char *driver;
 	guint32 capabilities;
 	NMIP4Config *ip4_config;
+	gboolean null_ip4_config;
 	NMDeviceState state;
 	char *product;
 	char *vendor;
@@ -65,14 +66,20 @@ demarshal_ip4_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoint
 	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
 		return FALSE;
 
+	priv->null_ip4_config = FALSE;
+
 	path = g_value_get_boxed (value);
-	if (strcmp (path, "/")) {
-		config = NM_IP4_CONFIG (nm_object_cache_get (path));
-		if (config)
-			config = g_object_ref (config);
+	if (path) {
+		if (!strcmp (path, "/"))
+			priv->null_ip4_config = TRUE;
 		else {
-			connection = nm_object_get_connection (object);
-			config = NM_IP4_CONFIG (nm_ip4_config_new (connection, path));
+			config = NM_IP4_CONFIG (nm_object_cache_get (path));
+			if (config)
+				config = g_object_ref (config);
+			else {
+				connection = nm_object_get_connection (object);
+				config = NM_IP4_CONFIG (nm_ip4_config_new (connection, path));
+			}
 		}
 	}
 
@@ -84,7 +91,7 @@ demarshal_ip4_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoint
 	if (config)
 		priv->ip4_config = config;
 
-	g_object_notify (G_OBJECT (object), NM_DEVICE_IP4_CONFIG);
+	nm_object_queue_notify (object, NM_DEVICE_IP4_CONFIG);
 	return TRUE;
 }
 
@@ -426,13 +433,17 @@ nm_device_get_ip4_config (NMDevice *device)
 	priv = NM_DEVICE_GET_PRIVATE (device);
 	if (priv->ip4_config)
 		return priv->ip4_config;
+	if (priv->null_ip4_config)
+		return NULL;
 
 	path = nm_object_get_object_path_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Ip4Config");
+	if (path) {
+		g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
+		g_value_take_boxed (&value, path);
+		demarshal_ip4_config (NM_OBJECT (device), NULL, &value, &priv->ip4_config);
+		g_value_unset (&value);
+	}
 
-	g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
-	g_value_take_boxed (&value, path);
-	demarshal_ip4_config (NM_OBJECT (device), NULL, &value, &priv->ip4_config);
-	g_value_unset (&value);
 	return priv->ip4_config;
 }
 
@@ -593,8 +604,8 @@ nm_device_update_description (NMDevice *device)
 	}
 	g_free (pd_parent_udi);
 
-	g_object_notify (G_OBJECT (device), NM_DEVICE_VENDOR);
-	g_object_notify (G_OBJECT (device), NM_DEVICE_PRODUCT);
+	nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_VENDOR);
+	nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_PRODUCT);
 }
 
 const char *

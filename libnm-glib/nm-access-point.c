@@ -306,7 +306,7 @@ demarshal_ssid (NMObject *object, GParamSpec *pspec, GValue *value, gpointer fie
 	if (!nm_ssid_demarshal (value, (GByteArray **) field))
 		return FALSE;
 
-	g_object_notify (G_OBJECT (object), NM_ACCESS_POINT_SSID);
+	nm_object_queue_notify (object, NM_ACCESS_POINT_SSID);
 	return TRUE;
 }
 

@@ -1,5 +1,35 @@
 2008-03-25  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/nm-ip4-config.c
+	  libnm-glib/nm-active-connection.c
+	  libnm-glib/nm-access-point.c
+		- Use nm_object_queue_notify() instead of g_object_notify()
+
+	* libnm-glib/nm-device.c
+		- (demarshal_ip4_config): distinguish between successful but missing
+			ip4-config request, and unsuccessful and missing ip4-config request
+		- (nm_device_get_ip4_config): don't try to demarshal a NULL ip4-config
+			path
+		- Use nm_object_queue_notify() instead of g_object_notify()
+
+	* libnm-glib/nm-device-802-11-wireless.c
+		- (demarshal_active_ap): distinguish between successfull but missing
+			active-ap request, and unsuccessful and missing active-ap request
+		- (dispose, clean_up_aps): consolidate AP list and active AP clearing
+			code
+		- (nm_device_802_11_wireless_set_wireless_enabled): add a private hook
+			for the NMClient to notify the device that wireless is disabled,
+			and therefore to clear the AP list and active AP
+		- Use nm_object_queue_notify() instead of g_object_notify()
+
+	* libnm-glib/nm-client.c
+		- (poke_wireless_devices_with_rf_status): new function
+		- (update_wireless_status): notify wireless devices of the rfkill status
+			so they can clean up if needed
+		- Use nm_object_queue_notify() instead of g_object_notify()
+
+2008-03-25  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/nm-object.c
 	  libnm-glib/nm-object-private.h
 		- (nm_object_queue_notify): add helper to batch & postpone GObject notify

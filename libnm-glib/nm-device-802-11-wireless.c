@@ -19,6 +19,8 @@ G_DEFINE_TYPE (NMDevice80211Wireless, nm_device_802_11_wireless, NM_TYPE_DEVICE)
 
 static gboolean demarshal_active_ap (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field);
 
+void nm_device_802_11_wireless_set_wireless_enabled (NMDevice80211Wireless *device, gboolean enabled);
+
 typedef struct {
 	gboolean disposed;
 	DBusGProxy *proxy;
@@ -27,8 +29,11 @@ typedef struct {
 	int mode;
 	guint32 rate;
 	NMAccessPoint *active_ap;
+	gboolean null_active_ap;
 	guint32 wireless_caps;
 	GPtrArray *aps;
+
+	gboolean wireless_enabled;
 } NMDevice80211WirelessPrivate;
 
 enum {
@@ -177,6 +182,8 @@ nm_device_802_11_wireless_get_active_access_point (NMDevice80211Wireless *self)
 	priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 	if (priv->active_ap)
 		return priv->active_ap;
+	if (priv->null_active_ap)
+		return NULL;
 
 	path = nm_object_get_object_path_property (NM_OBJECT (self),
 	                                           NM_DBUS_INTERFACE_DEVICE_WIRELESS,
@@ -276,6 +283,44 @@ access_point_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 	}
 }
 
+static void
+clean_up_aps (NMDevice80211Wireless *self, gboolean notify)
+{
+	NMDevice80211WirelessPrivate *priv;
+
+	g_return_if_fail (NM_IS_DEVICE_802_11_WIRELESS (self));
+
+	priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
+
+	if (priv->active_ap)
+		g_object_unref (priv->active_ap);
+
+	if (priv->aps) {
+		while (priv->aps->len) {
+			NMAccessPoint *ap = NM_ACCESS_POINT (g_ptr_array_index (priv->aps, 0));
+
+			if (notify)
+				g_signal_emit (self, signals[ACCESS_POINT_REMOVED], 0, ap);
+			g_ptr_array_remove (priv->aps, ap);
+			g_object_unref (ap);
+		}
+		g_ptr_array_foreach (priv->aps, (GFunc) g_object_unref, NULL);
+		g_ptr_array_free (priv->aps, TRUE);
+		priv->aps = NULL;
+	}
+}
+
+void
+nm_device_802_11_wireless_set_wireless_enabled (NMDevice80211Wireless *device,
+                                                gboolean enabled)
+{
+	g_return_if_fail (NM_IS_DEVICE_802_11_WIRELESS (device));
+
+	if (!enabled)
+		clean_up_aps (device, TRUE);
+}
+
+
 /**************************************************************/
 
 static void
@@ -335,13 +380,15 @@ state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 	case NM_DEVICE_STATE_FAILED:
 	case NM_DEVICE_STATE_CANCELLED:
 	default:
+		/* Just clear active AP; don't clear the AP list unless wireless is disabled completely */
 		if (priv->active_ap) {
 			g_object_unref (priv->active_ap);
 			priv->active_ap = NULL;
+			priv->null_active_ap = FALSE;
 		}
-		g_object_notify (G_OBJECT (device), NM_DEVICE_802_11_WIRELESS_ACTIVE_ACCESS_POINT);
+		nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_802_11_WIRELESS_ACTIVE_ACCESS_POINT);
 		priv->rate = 0;
-		g_object_notify (G_OBJECT (device), NM_DEVICE_802_11_WIRELESS_BITRATE);
+		nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_802_11_WIRELESS_BITRATE);
 		break;
 	}
 }
@@ -357,14 +404,20 @@ demarshal_active_ap (NMObject *object, GParamSpec *pspec, GValue *value, gpointe
 	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
 		return FALSE;
 
+	priv->null_active_ap = FALSE;
+
 	path = g_value_get_boxed (value);
-	if (path && strcmp (path, "/")) {
-		ap = NM_ACCESS_POINT (nm_object_cache_get (path));
-		if (ap)
-			ap = g_object_ref (ap);
+	if (path) {
+		if (!strcmp (path, "/"))
+			priv->null_active_ap = TRUE;
 		else {
-			connection = nm_object_get_connection (object);
-			ap = NM_ACCESS_POINT (nm_access_point_new (connection, path));
+			ap = NM_ACCESS_POINT (nm_object_cache_get (path));
+			if (ap)
+				ap = g_object_ref (ap);
+			else {
+				connection = nm_object_get_connection (object);
+				ap = NM_ACCESS_POINT (nm_access_point_new (connection, path));
+			}
 		}
 	}
 
@@ -376,7 +429,7 @@ demarshal_active_ap (NMObject *object, GParamSpec *pspec, GValue *value, gpointe
 	if (ap)
 		priv->active_ap = ap;
 
-	g_object_notify (G_OBJECT (object), NM_DEVICE_802_11_WIRELESS_ACTIVE_ACCESS_POINT);
+	nm_object_queue_notify (object, NM_DEVICE_802_11_WIRELESS_ACTIVE_ACCESS_POINT);
 	return TRUE;
 }
 
@@ -455,15 +508,7 @@ dispose (GObject *object)
 
 	priv->disposed = TRUE;
 
-	if (priv->active_ap)
-		g_object_unref (priv->active_ap);
-
-	if (priv->aps) {
-		g_ptr_array_foreach (priv->aps, (GFunc) g_object_unref, NULL);
-		g_ptr_array_free (priv->aps, TRUE);
-		priv->aps = NULL;
-	}
-
+	clean_up_aps (NM_DEVICE_802_11_WIRELESS (object), FALSE);
 	g_object_unref (priv->proxy);
 
 	G_OBJECT_CLASS (nm_device_802_11_wireless_parent_class)->dispose (object);

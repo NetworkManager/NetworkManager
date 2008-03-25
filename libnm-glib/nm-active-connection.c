@@ -252,7 +252,7 @@ demarshal_devices (NMObject *object, GParamSpec *pspec, GValue *value, gpointer 
 	if (!nm_object_array_demarshal (value, (GPtrArray **) field, connection, nm_device_new))
 		return FALSE;
 
-	g_object_notify (G_OBJECT (object), NM_ACTIVE_CONNECTION_DEVICES);
+	nm_object_queue_notify (object, NM_ACTIVE_CONNECTION_DEVICES);
 	return TRUE;
 }
 
