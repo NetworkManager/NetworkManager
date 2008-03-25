@@ -241,6 +241,10 @@ nm_object_array_demarshal (GValue *value,
 					g_warning ("%s: couldn't create object for %s", __func__, path);
 			}
 		}
+		if (temp->len == 0) {
+			g_ptr_array_free (temp, TRUE);
+			temp = NULL;
+		}
 	}
 
 	/* Deallocate after to ensure that an object that might already
