@@ -7,23 +7,18 @@
 #include "nm-device-private.h"
 #include "nm-setting-gsm.h"
 #include "nm-utils.h"
+#include "nm-properties-changed-signal.h"
+#include "nm-gsm-device-glue.h"
 
 G_DEFINE_TYPE (NMGsmDevice, nm_gsm_device, NM_TYPE_SERIAL_DEVICE)
 
-enum {
-	PROP_0,
-	PROP_MONITOR_IFACE,
-
-	LAST_PROP
-};
+#define NM_GSM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_GSM_DEVICE, NMGsmDevicePrivate))
 
 typedef enum {
 	NM_GSM_SECRET_NONE = 0,
 	NM_GSM_SECRET_PIN,
 	NM_GSM_SECRET_PUK
 } NMGsmSecret;
-
-#define NM_GSM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_GSM_DEVICE, NMGsmDevicePrivate))
 
 typedef struct {
 	char *monitor_iface;
@@ -33,6 +28,20 @@ typedef struct {
 	guint pending_id;
 } NMGsmDevicePrivate;
 
+enum {
+	PROP_0,
+	PROP_MONITOR_IFACE,
+
+	LAST_PROP
+};
+
+enum {
+	PROPERTIES_CHANGED,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
 
 static void enter_pin (NMSerialDevice *device, gboolean retry);
 static void automatic_registration (NMSerialDevice *device);
@@ -725,4 +734,12 @@ nm_gsm_device_class_init (NMGsmDeviceClass *klass)
 						  "Monitoring interface",
 						  NULL,
 						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	/* Signals */
+	signals[PROPERTIES_CHANGED] = 
+		nm_properties_changed_signal_new (object_class,
+								    G_STRUCT_OFFSET (NMGsmDeviceClass, properties_changed));
+
+	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
+									 &dbus_glib_nm_gsm_device_object_info);
 }

@@ -1,6 +1,8 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
 #include "nm-cdma-device.h"
+#include "nm-device-private.h"
+#include "nm-object-private.h"
 
 G_DEFINE_TYPE (NMCdmaDevice, nm_cdma_device, NM_TYPE_DEVICE)
 
@@ -15,6 +17,19 @@ typedef struct {
 static void
 nm_cdma_device_init (NMCdmaDevice *device)
 {
+}
+
+static void
+register_for_property_changed (NMCdmaDevice *device)
+{
+	NMCdmaDevicePrivate *priv = NM_CDMA_DEVICE_GET_PRIVATE (device);
+	const NMPropertiesChangedInfo property_changed_info[] = {
+		{ NULL },
+	};
+
+	nm_object_handle_properties_changed (NM_OBJECT (device),
+	                                     priv->proxy,
+	                                     property_changed_info);
 }
 
 static GObject*
@@ -37,6 +52,9 @@ constructor (GType type,
 	                                         NM_DBUS_SERVICE,
 	                                         nm_object_get_path (NM_OBJECT (object)),
 	                                         NM_DBUS_INTERFACE_CDMA_DEVICE);
+
+	register_for_property_changed (NM_CDMA_DEVICE (object));
+
 	return object;
 }
 

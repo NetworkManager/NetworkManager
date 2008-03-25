@@ -7,15 +7,10 @@
 #include "nm-device-private.h"
 #include "nm-setting-cdma.h"
 #include "nm-utils.h"
+#include "nm-properties-changed-signal.h"
+#include "nm-cdma-device-glue.h"
 
 G_DEFINE_TYPE (NMCdmaDevice, nm_cdma_device, NM_TYPE_SERIAL_DEVICE)
-
-enum {
-	PROP_0,
-	PROP_MONITOR_IFACE,
-
-	LAST_PROP
-};
 
 #define NM_CDMA_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CDMA_DEVICE, NMCdmaDevicePrivate))
 
@@ -25,6 +20,22 @@ typedef struct {
 
 	guint pending_id;
 } NMCdmaDevicePrivate;
+
+enum {
+	PROP_0,
+	PROP_MONITOR_IFACE,
+
+	LAST_PROP
+};
+
+enum {
+	PROPERTIES_CHANGED,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
+
 
 NMCdmaDevice *
 nm_cdma_device_new (const char *udi,
@@ -417,4 +428,12 @@ nm_cdma_device_class_init (NMCdmaDeviceClass *klass)
 						  "Monitoring interface",
 						  NULL,
 						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	/* Signals */
+	signals[PROPERTIES_CHANGED] = 
+		nm_properties_changed_signal_new (object_class,
+								    G_STRUCT_OFFSET (NMCdmaDeviceClass, properties_changed));
+
+	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
+									 &dbus_glib_nm_cdma_device_object_info);
 }

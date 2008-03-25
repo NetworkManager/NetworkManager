@@ -22,6 +22,9 @@ typedef struct {
 
 typedef struct {
 	NMSerialDeviceClass parent;
+
+	/* Signals */
+	void (*properties_changed) (NMCdmaDevice *device, GHashTable *properties);
 } NMCdmaDeviceClass;
 
 GType nm_cdma_device_get_type (void);
