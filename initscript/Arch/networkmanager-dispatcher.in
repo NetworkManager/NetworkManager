@@ -25,7 +25,7 @@ case "$1" in
 		if [ ! -z "$PID" -o $? -gt 0 ]; then
 			stat_fail
 		else
-			add_daemon NetworkManagerDispatcher
+			add_daemon networkmanager-dispatcher
 			stat_done
 		fi
 		;;
@@ -35,7 +35,7 @@ case "$1" in
 		if [ $? -gt 0 ]; then
 			stat_fail
 		else
-			rm_daemon NetworkManagerDispatcher
+			rm_daemon networkmanager-dispatcher
 			stat_done
 		fi
 		;;

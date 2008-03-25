@@ -1,5 +1,13 @@
 2008-03-25  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Björn Martensen <bjoern.martensen@gmail.com>
+
+	* initscript/Arch/networkmanager.in
+	  initscript/Arch/networkmanager-dispatcher.in
+		- Updates for Arch Linux (gnome.org #523701)
+
+2008-03-25  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/nm-ip4-config.c
 	  libnm-glib/nm-active-connection.c
 	  libnm-glib/nm-access-point.c
