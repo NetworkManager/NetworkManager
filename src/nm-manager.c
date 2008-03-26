@@ -6,12 +6,14 @@
 #include "nm-manager.h"
 #include "nm-utils.h"
 #include "nm-dbus-manager.h"
+#include "nm-vpn-manager.h"
 #include "nm-device-interface.h"
 #include "nm-device-802-11-wireless.h"
 #include "NetworkManagerSystem.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wireless.h"
+#include "nm-setting-vpn.h"
 #include "nm-marshal.h"
 
 static gboolean impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err);
@@ -49,10 +51,10 @@ static void connection_added_default_handler (NMManager *manager,
 
 typedef struct {
 	DBusGMethodInvocation *context;
-	NMDevice *device;
 	NMConnectionScope scope;
 	char *connection_path;
 	char *specific_object_path;
+	char *device_path;
 	guint timeout_id;
 } PendingConnectionInfo;
 
@@ -74,6 +76,11 @@ typedef struct {
 	gboolean sleeping;
 
 	guint poke_id;
+
+	NMVPNManager *vpn_manager;
+	guint vpn_manager_id;
+
+	gboolean disposed;
 } NMManagerPrivate;
 
 #define NM_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_MANAGER, NMManagerPrivate))
@@ -160,9 +167,20 @@ nm_manager_error_get_type (void)
 }
 
 static void
+vpn_manager_connection_deactivated_cb (NMVPNManager *manager,
+                                       NMVPNConnection *vpn,
+                                       NMVPNConnectionState state,
+                                       NMVPNConnectionStateReason reason,
+                                       gpointer user_data)
+{
+	g_object_notify (G_OBJECT (user_data), NM_MANAGER_ACTIVE_CONNECTIONS);
+}
+
+static void
 nm_manager_init (NMManager *manager)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	guint id;
 
 	priv->wireless_enabled = TRUE;
 	priv->wireless_hw_enabled = TRUE;
@@ -180,6 +198,11 @@ nm_manager_init (NMManager *manager)
 	                                                g_str_equal,
 	                                                g_free,
 	                                                g_object_unref);
+
+	priv->vpn_manager = nm_vpn_manager_get ();
+	id = g_signal_connect (G_OBJECT (priv->vpn_manager), "connection-deactivated",
+	                       G_CALLBACK (vpn_manager_connection_deactivated_cb), manager);
+	priv->vpn_manager_id = id;
 }
 
 NMState
@@ -239,16 +262,22 @@ pending_connection_info_destroy (PendingConnectionInfo *info)
 
 	g_free (info->connection_path);
 	g_free (info->specific_object_path);
-	g_object_unref (info->device);
+	g_free (info->device_path);
 
 	g_slice_free (PendingConnectionInfo, info);
 }
 
 static void
-finalize (GObject *object)
+dispose (GObject *object)
 {
 	NMManager *manager = NM_MANAGER (object);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+
+	if (priv->disposed) {
+		G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
+		return;
+	}
+	priv->disposed = TRUE;
 
 	pending_connection_info_destroy (priv->pending_connection_info);
 	priv->pending_connection_info = NULL;
@@ -269,10 +298,15 @@ finalize (GObject *object)
 		priv->poke_id = 0;
 	}
 
-	if (priv->dbus_mgr)
-		g_object_unref (priv->dbus_mgr);
+	if (priv->vpn_manager_id) {
+		g_source_remove (priv->vpn_manager_id);
+		priv->vpn_manager_id = 0;
+	}
+	g_object_unref (priv->vpn_manager);
 
-	G_OBJECT_CLASS (nm_manager_parent_class)->finalize (object);
+	g_object_unref (priv->dbus_mgr);
+
+	G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
 }
 
 static void
@@ -289,15 +323,49 @@ set_property (GObject *object, guint prop_id,
 	}
 }
 
+static GPtrArray *
+get_active_connections (NMManager *manager, NMConnection *filter)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	NMVPNManager *vpn_manager;
+	GPtrArray *active;
+	GSList *iter;
+
+ 	active = g_ptr_array_sized_new (3);
+
+	/* Add active device connections */
+	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+		NMActRequest *req;
+		const char *path;
+
+		req = nm_device_get_act_request (NM_DEVICE (iter->data));
+		if (!req)
+			continue;
+
+		if (!filter || (nm_act_request_get_connection (req) == filter)) {
+			path = nm_act_request_get_active_connection_path (req);
+			g_ptr_array_add (active, g_strdup (path));
+		}
+	}
+
+	/* Add active VPN connections */
+	vpn_manager = nm_vpn_manager_get ();
+	nm_vpn_manager_add_active_connections (vpn_manager, filter, active);
+	g_object_unref (vpn_manager);
+
+	return active;
+}
+
 static void
 get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (object);
+	NMManager *self = NM_MANAGER (object);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
 	switch (prop_id) {
 	case PROP_STATE:
-		nm_manager_update_state (NM_MANAGER (object));
+		nm_manager_update_state (self);
 		g_value_set_uint (value, priv->state);
 		break;
 	case PROP_WIRELESS_ENABLED:
@@ -306,25 +374,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_WIRELESS_HARDWARE_ENABLED:
 		g_value_set_boolean (value, priv->wireless_hw_enabled);
 		break;
-	case PROP_ACTIVE_CONNECTIONS: {
-		GPtrArray *active;
-		GSList *iter;
-
-		active = g_ptr_array_sized_new (2);
-		for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-			NMActRequest *req;
-			const char *path;
-
-			req = nm_device_get_act_request (NM_DEVICE (iter->data));
-			if (!req)
-				continue;
-
-			path = nm_act_request_get_active_connection_path (req);
-			g_ptr_array_add (active, g_strdup (path));
-		}
-		g_value_take_boxed (value, active);
+	case PROP_ACTIVE_CONNECTIONS:
+		g_value_take_boxed (value, get_active_connections (self, NULL));
 		break;
-	}
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -343,7 +395,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
-	object_class->finalize = finalize;
+	object_class->dispose = dispose;
 
 	/* properties */
 	g_object_class_install_property
@@ -1261,6 +1313,37 @@ nm_manager_get_device_by_udi (NMManager *manager, const char *udi)
 	return NULL;
 }
 
+static NMActRequest *
+nm_manager_get_act_request_by_path (NMManager *manager,
+                                    const char *path,
+                                    NMDevice **device)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	GSList *iter;
+
+	g_return_val_if_fail (manager != NULL, NULL);
+	g_return_val_if_fail (path != NULL, NULL);
+	g_return_val_if_fail (device != NULL, NULL);
+	g_return_val_if_fail (*device == NULL, NULL);
+
+	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+		NMActRequest *req;
+		const char *ac_path;
+
+		req = nm_device_get_act_request (NM_DEVICE (iter->data));
+		if (!req)
+			continue;
+
+		ac_path = nm_act_request_get_active_connection_path (req);
+		if (!strcmp (path, ac_path)) {
+			*device = NM_DEVICE (iter->data);
+			return req;
+		}
+	}
+
+	return NULL;
+}
+
 static gboolean
 check_connection_allowed (NMManager *manager,
                           NMDeviceInterface *dev_iface,
@@ -1296,13 +1379,13 @@ check_connection_allowed (NMManager *manager,
 	return allowed;
 }
 
-const char *
-nm_manager_activate_device (NMManager *manager,
-					   NMDevice *device,
-					   NMConnection *connection,
-					   const char *specific_object,
-					   gboolean user_requested,
-					   GError **error)
+static const char *
+internal_activate_device (NMManager *manager,
+                          NMDevice *device,
+                          NMConnection *connection,
+                          const char *specific_object,
+                          gboolean user_requested,
+                          GError **error)
 {
 	NMActRequest *req;
 	NMDeviceInterface *dev_iface;
@@ -1348,16 +1431,11 @@ wait_for_connection_expired (gpointer data)
 
 	g_return_val_if_fail (info != NULL, FALSE);
 
-	nm_info ("%s: didn't receive connection details soon enough for activation.",
-	         nm_device_get_iface (info->device));
-
 	g_set_error (&error,
 	             NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_CONNECTION,
 	             "%s", "Connection was not provided by any settings service");
-	nm_warning ("Failed to activate device %s: (%d) %s",
-	            nm_device_get_iface (info->device),
-	            error->code,
-	            error->message);
+	nm_warning ("Connection (%d) %s failed to activate (timeout): (%d) %s",
+	            info->scope, info->connection_path, error->code, error->message);
 	dbus_g_method_return_error (info->context, error);
 	g_error_free (error);
 
@@ -1366,6 +1444,74 @@ wait_for_connection_expired (gpointer data)
 	priv->pending_connection_info = NULL;
 
 	return FALSE;
+}
+
+const char *
+nm_manager_activate_connection (NMManager *manager,
+                                NMConnection *connection,
+                                const char *specific_object,
+                                const char *device_path,
+                                gboolean user_requested,
+                                GError **error)
+{
+	NMDevice *device = NULL;
+	char *path = NULL;
+	NMSettingConnection *s_con;
+
+	g_return_val_if_fail (manager != NULL, NULL);
+	g_return_val_if_fail (connection != NULL, NULL);
+	g_return_val_if_fail (error != NULL, NULL);
+	g_return_val_if_fail (*error == NULL, NULL);
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	g_assert (s_con);
+
+	if (!strcmp (s_con->type, NM_SETTING_VPN_SETTING_NAME)) {
+		NMActRequest *req;
+		NMVPNManager *vpn_manager;
+
+		/* VPN connection */
+		req = nm_manager_get_act_request_by_path (manager, specific_object, &device);
+		if (!req) {
+			g_set_error (error,
+			             NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
+			             "%s", "Base connection for VPN connection not active.");
+			return NULL;
+		}
+
+		if (!device) {
+			g_set_error (error,
+			             NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+			             "%s", "Source connection had no active device.");
+			return NULL;
+		}
+
+		vpn_manager = nm_vpn_manager_get ();
+		path = (char *) nm_vpn_manager_activate_connection (vpn_manager,
+		                                                    connection,
+		                                                    req,
+		                                                    device,
+		                                                    error);
+		g_object_unref (vpn_manager);
+	} else {
+		/* Device-based connection */
+		device = nm_manager_get_device_by_path (manager, device_path);
+		if (!device) {
+			g_set_error (error,
+			             NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+			             "%s", "Device not found");
+			return NULL;
+		}
+
+		path = (char *) internal_activate_device (manager,
+		                                          device,
+		                                          connection,
+		                                          specific_object,
+		                                          user_requested,
+		                                          error);
+	}
+
+	return path;
 }
 
 static void
@@ -1390,21 +1536,19 @@ connection_added_default_handler (NMManager *manager,
 	/* Will destroy below; can't be valid during the initial activation start */
 	priv->pending_connection_info = NULL;
 
-	path = nm_manager_activate_device (manager,
-	                                   info->device,
-	                                   connection,
-	                                   info->specific_object_path,
-	                                   TRUE,
-	                                   &error);
+	path = nm_manager_activate_connection (manager,
+	                                       connection,
+	                                       info->specific_object_path,
+	                                       info->device_path,
+	                                       TRUE,
+	                                       &error);
 	if (path) {
 		dbus_g_method_return (info->context, path);
 		g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
 	} else {
 		dbus_g_method_return_error (info->context, error);
-		nm_warning ("Failed to activate device %s: (%d) %s",
-		            nm_device_get_iface (info->device),
-		            error->code,
-		            error->message);
+		nm_warning ("Connection (%d) %s failed to activate: (%d) %s",
+		            scope, info->connection_path, error->code, error->message);
 		g_error_free (error);
 	}
 
@@ -1419,21 +1563,11 @@ impl_manager_activate_connection (NMManager *manager,
 						const char *specific_object_path,
 						DBusGMethodInvocation *context)
 {
-	NMDevice *device;
-	NMConnectionScope scope;
+	NMConnectionScope scope = NM_CONNECTION_SCOPE_UNKNOWN;
 	NMConnection *connection;
 	GError *error = NULL;
 	char *real_sop = NULL;
-
-	device = nm_manager_get_device_by_path (manager, device_path);
-	if (!device) {
-		g_set_error (&error,
-		             NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
-		             "%s", "Device not found");
-		goto err;
-	}
-
-	nm_info ("User request for activation of %s.", nm_device_get_iface (device));
+	char *path = NULL;
 
 	if (!strcmp (service_name, NM_DBUS_SERVICE_USER_SETTINGS))
 		scope = NM_CONNECTION_SCOPE_USER;
@@ -1452,14 +1586,12 @@ impl_manager_activate_connection (NMManager *manager,
 
 	connection = nm_manager_get_connection_by_object_path (manager, scope, connection_path);
 	if (connection) {
-		const char *path;
-
-		path = nm_manager_activate_device (manager,
-		                                   device,
-		                                   connection,
-		                                   real_sop,
-		                                   TRUE,
-		                                   &error);
+		path = (char *) nm_manager_activate_connection (manager,
+		                                                connection,
+		                                                real_sop,
+		                                                device_path,
+		                                                TRUE,
+		                                                &error);
 		if (path) {
 			dbus_g_method_return (context, path);
 			g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
@@ -1479,7 +1611,7 @@ impl_manager_activate_connection (NMManager *manager,
 
 		info = g_slice_new0 (PendingConnectionInfo);
 		info->context = context;
-		info->device = g_object_ref (device);
+		info->device_path = g_strdup (device_path);
 		info->scope = scope;
 		info->connection_path = g_strdup (connection_path);
 		info->specific_object_path = g_strdup (real_sop);
@@ -1492,24 +1624,25 @@ impl_manager_activate_connection (NMManager *manager,
  err:
 	if (error) {
 		dbus_g_method_return_error (context, error);
-		nm_warning ("Failed to activate device %s: (%d) %s",
-		            nm_device_get_iface (device),
-		            error->code,
-		            error->message);
+		nm_warning ("Connection (%d) %s failed to activate: (%d) %s",
+		            scope, connection_path, error->code, error->message);
 		g_error_free (error);
 	}
 
 	g_free (real_sop);
 }
 
-static gboolean
-impl_manager_deactivate_connection (NMManager *manager,
-                                    const char *connection_path,
-                                    GError **error)
+gboolean
+nm_manager_deactivate_connection (NMManager *manager,
+                                  const char *connection_path,
+                                  GError **error)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	NMVPNManager *vpn_manager;
 	GSList *iter;
+	gboolean success = FALSE;
 
+	/* Check for device connections first */
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *device = NM_DEVICE (iter->data);
 		NMActRequest *req;
@@ -1521,15 +1654,33 @@ impl_manager_deactivate_connection (NMManager *manager,
 		if (!strcmp (connection_path, nm_act_request_get_active_connection_path (req))) {
 			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
 			g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
-			return TRUE;
+			success = TRUE;
+			goto done;
 		}
 	}
 
-	g_set_error (error,
-	             NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
-	             "%s", "The connection was not active.");
-	
-	return FALSE;
+	/* Check for VPN connections next */
+	vpn_manager = nm_vpn_manager_get ();
+	if (nm_vpn_manager_deactivate_connection (vpn_manager, connection_path)) {
+		success = TRUE;
+	} else {
+		g_set_error (error,
+		             NM_MANAGER_ERROR, NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
+		             "%s", "The connection was not active.");
+	}
+	g_object_unref (vpn_manager);
+
+done:
+	g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
+	return success;
+}
+
+static gboolean
+impl_manager_deactivate_connection (NMManager *manager,
+                                    const char *connection_path,
+                                    GError **error)
+{
+	return nm_manager_deactivate_connection (manager, connection_path, error);
 }
 
 gboolean
@@ -1609,23 +1760,6 @@ impl_manager_sleep (NMManager *manager, gboolean sleep, GError **err)
 	nm_manager_sleep (manager, sleep);
 
 	return TRUE;
-}
-
-NMDevice *
-nm_manager_get_active_device (NMManager *manager)
-{
-	GSList *iter;
-
-	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
-
-	for (iter = nm_manager_get_devices (manager); iter; iter = iter->next) {
-		NMDevice *dev = NM_DEVICE (iter->data);
-
-		if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED)
-			return dev;
-	}
-
-	return NULL;
 }
 
 /* Legacy 0.6 compatibility interface */
@@ -1730,5 +1864,12 @@ nm_manager_get_connection_by_object_path (NMManager *manager,
 	else
 		nm_warning ("Unknown NMConnectionScope %d", scope);
 	return connection;
+}
+
+GPtrArray *
+nm_manager_get_active_connections_by_connection (NMManager *manager,
+                                                 NMConnection *connection)
+{
+	return get_active_connections (manager, connection);
 }
 

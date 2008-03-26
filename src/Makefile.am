@@ -38,6 +38,8 @@ NetworkManager_SOURCES =				\
 		nm-hal-manager.h			\
 		nm-ip4-config.c			\
 		nm-ip4-config.h			\
+		nm-active-connection.h \
+		nm-active-connection.c \
 		NetworkManager.c			\
 		NetworkManagerPolicy.c		\
 		NetworkManagerPolicy.h		\

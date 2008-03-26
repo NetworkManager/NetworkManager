@@ -303,6 +303,12 @@ main (int argc, char *argv[])
 	/* Initialize our DBus service & connection */
 	dbus_mgr = nm_dbus_manager_get ();
 
+	vpn_manager = nm_vpn_manager_get ();
+	if (!vpn_manager) {
+		nm_warning ("Failed to start the VPN manager.");
+		goto done;
+	}
+
 	manager = nm_manager_new ();
 	if (manager == NULL) {
 		nm_error ("Failed to initialize the network manager.");
@@ -319,12 +325,6 @@ main (int argc, char *argv[])
 	sup_mgr = nm_supplicant_manager_get ();
 	if (!sup_mgr) {
 		nm_error ("Failed to initialize the supplicant manager.");
-		goto done;
-	}
-
-	vpn_manager = nm_vpn_manager_new (manager);
-	if (!vpn_manager) {
-		nm_warning ("Failed to start the VPN manager.");
 		goto done;
 	}
 
@@ -354,9 +354,6 @@ main (int argc, char *argv[])
 	g_main_loop_run (main_loop);
 
 done:
-	if (vpn_manager)
-		g_object_unref (vpn_manager);
-
 	if (hal_manager)
 		nm_hal_manager_destroy (hal_manager);
 
@@ -365,6 +362,9 @@ done:
 
 	if (manager)
 		g_object_unref (manager);
+
+	if (vpn_manager)
+		g_object_unref (vpn_manager);
 
 	if (sup_mgr)
 		g_object_unref (sup_mgr);

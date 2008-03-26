@@ -7,6 +7,7 @@
 #include <glib-object.h>
 #include "nm-device.h"
 #include "nm-vpn-connection.h"
+#include "nm-activation-request.h"
 
 #define NM_TYPE_VPN_SERVICE            (nm_vpn_service_get_type ())
 #define NM_VPN_SERVICE(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VPN_SERVICE, NMVPNService))
@@ -25,13 +26,16 @@ typedef struct {
 
 GType nm_vpn_service_get_type (void);
 
-NMVPNService    *nm_vpn_service_new      (const char *service_name);
-const char      *nm_vpn_service_get_name (NMVPNService *service);
+NMVPNService * nm_vpn_service_new (const char *service_name);
 
-NMVPNConnection *nm_vpn_service_activate (NMVPNService *service,
-								  NMConnection *connection,
-								  NMDevice *device);
+const char * nm_vpn_service_get_name (NMVPNService *service);
 
-GSList   *nm_vpn_service_get_connections (NMVPNService *service);
+NMVPNConnection * nm_vpn_service_activate (NMVPNService *service,
+                                           NMConnection *connection,
+                                           NMActRequest *act_request,
+                                           NMDevice *device,
+                                           GError **error);
+
+GSList * nm_vpn_service_get_active_connections (NMVPNService *service);
 
 #endif  /* NM_VPN_VPN_SERVICE_H */

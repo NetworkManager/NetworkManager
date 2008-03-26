@@ -30,7 +30,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-device.h"
 #include "nm-properties-changed-signal.h"
-#include "nm-active-connection-glue.h"
+#include "nm-active-connection.h"
 
 #include "nm-manager.h" /* FIXME! */
 
@@ -69,6 +69,7 @@ enum {
 	PROP_SHARED_SERVICE_NAME,
 	PROP_SHARED_CONNECTION,
 	PROP_DEVICES,
+	PROP_VPN,
 
 	LAST_PROP
 };
@@ -82,8 +83,6 @@ nm_act_request_new (NMConnection *connection,
 {
 	GObject *object;
 	NMActRequestPrivate *priv;
-	DBusGConnection *g_connection;
-	static guint32 counter = 0;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
 	g_return_val_if_fail (NM_DEVICE (device), NULL);
@@ -100,16 +99,22 @@ nm_act_request_new (NMConnection *connection,
 	priv->device = NM_DEVICE (device);
 	priv->user_requested = user_requested;
 
-	g_connection = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
-	priv->ac_path = g_strdup_printf (NM_DBUS_PATH "/ActiveConnection/%d", counter++);
-	dbus_g_connection_register_g_object (g_connection, priv->ac_path, object);
-
 	return NM_ACT_REQUEST (object);
 }
 
 static void
 nm_act_request_init (NMActRequest *req)
 {
+	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (req);
+	NMDBusManager *dbus_mgr;
+
+	priv->ac_path = nm_active_connection_get_next_object_path ();
+
+	dbus_mgr = nm_dbus_manager_get ();
+	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (dbus_mgr),
+	                                     priv->ac_path,
+	                                     G_OBJECT (req));
+	g_object_unref (dbus_mgr);
 }
 
 static void
@@ -153,27 +158,6 @@ finalize (GObject *object)
 }
 
 static void
-scope_to_value (NMConnection *connection, GValue *value)
-{
-	if (!connection) {
-		g_value_set_string (value, "");
-		return;
-	}
-
-	switch (nm_connection_get_scope (connection)) {
-	case NM_CONNECTION_SCOPE_SYSTEM:
-		g_value_set_string (value, NM_DBUS_SERVICE_SYSTEM_SETTINGS);
-		break;
-	case NM_CONNECTION_SCOPE_USER:
-		g_value_set_string (value, NM_DBUS_SERVICE_USER_SETTINGS);
-		break;
-	default:
-		g_warning ("%s: unknown connection scope!", __func__);
-		break;
-	}
-}
-
-static void
 get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
@@ -182,7 +166,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_SERVICE_NAME:
-		scope_to_value (priv->connection, value);
+		nm_active_connection_scope_to_value (priv->connection, value);
 		break;
 	case PROP_CONNECTION:
 		g_value_set_boxed (value, nm_connection_get_path (priv->connection));
@@ -194,7 +178,7 @@ get_property (GObject *object, guint prop_id,
 			g_value_set_boxed (value, "/");
 		break;
 	case PROP_SHARED_SERVICE_NAME:
-		scope_to_value (priv->shared, value);
+		nm_active_connection_scope_to_value (priv->shared, value);
 		break;
 	case PROP_SHARED_CONNECTION:
 		if (!priv->shared) {
@@ -207,6 +191,9 @@ get_property (GObject *object, guint prop_id,
 		devices = g_ptr_array_sized_new (1);
 		g_ptr_array_add (devices, g_strdup (nm_device_get_udi (priv->device)));
 		g_value_take_boxed (value, devices);
+		break;
+	case PROP_VPN:
+		g_value_set_boolean (value, FALSE);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -269,6 +256,13 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 							  "Devices",
 							  dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_OBJECT_PATH),
 							  G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_VPN,
+		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_VPN,
+							   "VPN",
+							   "Is a VPN connection",
+							   FALSE,
+							   G_PARAM_READABLE));
 
 	/* Signals */
 	signals[CONNECTION_SECRETS_UPDATED] =
@@ -295,8 +289,7 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 		nm_properties_changed_signal_new (object_class,
 								    G_STRUCT_OFFSET (NMActRequestClass, properties_changed));
 
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (req_class),
-									 &dbus_glib_nm_active_connection_object_info);
+	nm_active_connection_install_type_info (object_class);
 }
 
 typedef struct GetSecretsInfo {

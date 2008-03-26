@@ -10,7 +10,6 @@ BUILT_SOURCES = \
 	nm-marshal.c \
 	nm-exported-connection-glue.h \
 	nm-settings-glue.h \
-	nm-vpn-manager-bindings.h \
 	nm-vpn-connection-bindings.h \
 	nm-vpn-plugin-glue.h \
 	nm-active-connection-bindings.h
@@ -39,7 +38,6 @@ libnminclude_HEADERS = \
 	nm-gsm-device.h \
 	nm-cdma-device.h \
 	nm-vpn-connection.h \
-	nm-vpn-manager.h \
 	nm-vpn-plugin.h \
 	nm-types.h \
 	nm-active-connection.h
@@ -61,7 +59,6 @@ libnm_glib_la_SOURCES = \
 	nm-gsm-device.c	\
 	nm-cdma-device.c	\
 	nm-vpn-connection.c	\
-	nm-vpn-manager.c	\
 	nm-marshal-main.c \
 	nm-types.c \
 	nm-types-private.h \
@@ -122,9 +119,6 @@ nm-settings-glue.h: $(top_srcdir)/introspection/nm-settings.xml
 
 nm-exported-connection-glue.h: $(top_srcdir)/introspection/nm-exported-connection.xml
 	dbus-binding-tool --prefix=nm_exported_connection --mode=glib-server --output=nm-exported-connection-glue.h $(top_srcdir)/introspection/nm-exported-connection.xml
-
-nm-vpn-manager-bindings.h: $(top_srcdir)/introspection/nm-vpn-manager.xml
-	dbus-binding-tool --prefix=nm_vpn_manager --mode=glib-client --output=nm-vpn-manager-bindings.h $(top_srcdir)/introspection/nm-vpn-manager.xml
 
 nm-vpn-connection-bindings.h: $(top_srcdir)/introspection/nm-vpn-connection.xml
 	dbus-binding-tool --prefix=nm_vpn_connection --mode=glib-client --output=nm-vpn-connection-bindings.h $(top_srcdir)/introspection/nm-vpn-connection.xml

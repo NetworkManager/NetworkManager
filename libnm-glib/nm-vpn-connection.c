@@ -27,14 +27,14 @@
 #include "nm-vpn-connection-bindings.h"
 #include "nm-marshal.h"
 #include "nm-object-private.h"
+#include "nm-active-connection.h"
 
-G_DEFINE_TYPE (NMVPNConnection, nm_vpn_connection, NM_TYPE_OBJECT)
+G_DEFINE_TYPE (NMVPNConnection, nm_vpn_connection, NM_TYPE_ACTIVE_CONNECTION)
 
 #define NM_VPN_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_VPN_CONNECTION, NMVPNConnectionPrivate))
 
 typedef struct {
 	DBusGProxy *proxy;
-	char *name;
 	char *banner;
 	NMVPNConnectionState state;
 } NMVPNConnectionPrivate;
@@ -48,38 +48,16 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 
-NMVPNConnection *
-nm_vpn_connection_new (DBusGConnection *dbus_connection,
-				   const char *path)
+GObject *
+nm_vpn_connection_new (DBusGConnection *dbus_connection, const char *path)
 {
-	NMVPNConnection *connection;
-
 	g_return_val_if_fail (dbus_connection != NULL, NULL);
 	g_return_val_if_fail (path != NULL, NULL);
 
-	connection = (NMVPNConnection *) g_object_new (NM_TYPE_VPN_CONNECTION, 
-										  NM_OBJECT_DBUS_CONNECTION, dbus_connection,
-										  NM_OBJECT_DBUS_PATH, path,
-										  NULL);
-
-	nm_vpn_connection_get_name (connection);
-
-	return connection;
-}
-
-const char *
-nm_vpn_connection_get_name (NMVPNConnection *vpn)
-{
-	NMVPNConnectionPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), NULL);
-
-	priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn);
-	if (!priv->name)
-		priv->name = nm_object_get_string_property (NM_OBJECT (vpn),
-										    NM_DBUS_INTERFACE_VPN_CONNECTION,
-										    "Name");
-	return priv->name;
+	return g_object_new (NM_TYPE_VPN_CONNECTION, 
+	                     NM_OBJECT_DBUS_CONNECTION, dbus_connection,
+	                     NM_OBJECT_DBUS_PATH, path,
+	                     NULL);
 }
 
 const char *
@@ -136,20 +114,6 @@ state_changed_proxy (DBusGProxy *proxy,
 	}
 }
 
-void
-nm_vpn_connection_disconnect (NMVPNConnection *vpn)
-{
-	GError *err = NULL;
-
-	g_return_if_fail (NM_IS_VPN_CONNECTION (vpn));
-
-	org_freedesktop_NetworkManager_VPN_Connection_disconnect (NM_VPN_CONNECTION_GET_PRIVATE (vpn)->proxy, &err);
-	if (err) {
-		nm_warning ("Error in VPN disconnect: %s", err->message);
-		g_error_free (err);
-	}
-}
-
 /*****************************************************************************/
 
 static void
@@ -199,12 +163,11 @@ finalize (GObject *object)
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
 
-	if (priv->name)
-		g_free (priv->name);
 	if (priv->banner)
 		g_free (priv->banner);
 
 	g_object_unref (priv->proxy);
+
 	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->finalize (object);
 }
 

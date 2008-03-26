@@ -18,7 +18,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * (C) Copyright 2005 Red Hat, Inc.
+ * (C) Copyright 2008 Red Hat, Inc.
  */
 
 
@@ -39,8 +39,8 @@
 #include "nm-utils.h"
 #include "nm-vpn-plugin-bindings.h"
 #include "nm-marshal.h"
-
-static gboolean impl_vpn_connection_disconnect (NMVPNConnection *connection, GError **err);
+#include "nm-active-connection.h"
+#include "nm-properties-changed-signal.h"
 
 #define CONNECTION_GET_SECRETS_CALL_TAG "get-secrets-call"
 
@@ -49,10 +49,13 @@ static gboolean impl_vpn_connection_disconnect (NMVPNConnection *connection, GEr
 G_DEFINE_TYPE (NMVPNConnection, nm_vpn_connection, G_TYPE_OBJECT)
 
 typedef struct {
+	gboolean disposed;
+
 	NMConnection *connection;
+	NMActRequest *act_request;
 	NMDevice *parent_dev;
-	char *object_path;
-	
+	char *ac_path;
+
 	NMVPNConnectionState state;
 	gulong device_monitor;
 	DBusGProxy *proxy;
@@ -65,6 +68,7 @@ typedef struct {
 #define NM_VPN_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_VPN_CONNECTION, NMVPNConnectionPrivate))
 
 enum {
+	PROPERTIES_CHANGED,
 	STATE_CHANGED,
 
 	LAST_SIGNAL
@@ -74,7 +78,13 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 enum {
 	PROP_0,
-	PROP_NAME,
+	PROP_SERVICE_NAME,
+	PROP_CONNECTION,
+	PROP_SPECIFIC_OBJECT,
+	PROP_SHARED_SERVICE_NAME,
+	PROP_SHARED_CONNECTION,
+	PROP_DEVICES,
+	PROP_VPN,
 	PROP_STATE,
 	PROP_BANNER,
 
@@ -116,12 +126,14 @@ device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 
 NMVPNConnection *
 nm_vpn_connection_new (NMConnection *connection,
-				   NMDevice *parent_device)
+                       NMActRequest *act_request,
+                       NMDevice *parent_device)
 {
 	NMVPNConnection *vpn_connection;
 	NMVPNConnectionPrivate *priv;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (act_request), NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (parent_device), NULL);
 
 	vpn_connection = (NMVPNConnection *) g_object_new (NM_TYPE_VPN_CONNECTION, NULL);
@@ -131,6 +143,7 @@ nm_vpn_connection_new (NMConnection *connection,
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn_connection);
 
 	priv->connection = g_object_ref (connection);
+	priv->act_request = g_object_ref (act_request);
 	priv->parent_dev = g_object_ref (parent_device);
 
 	priv->device_monitor = g_signal_connect (parent_device, "state-changed",
@@ -167,24 +180,27 @@ plugin_state_changed (DBusGProxy *proxy,
 {
 	NMVPNConnection *connection = NM_VPN_CONNECTION (user_data);
 
-	nm_debug ("plugin state changed: %d", state);
+	nm_info ("VPN plugin state changed: %d", state);
 
-	if (state == NM_VPN_SERVICE_STATE_STOPPED) {
-		switch (nm_vpn_connection_get_state (connection)) {
-		case NM_VPN_CONNECTION_STATE_CONNECT:
-		case NM_VPN_CONNECTION_STATE_IP_CONFIG_GET:
-			nm_vpn_connection_set_state (connection,
-			                             NM_VPN_CONNECTION_STATE_FAILED,
-			                             NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
-			break;
-		case NM_VPN_CONNECTION_STATE_ACTIVATED:
-			nm_vpn_connection_set_state (connection,
-			                             NM_VPN_CONNECTION_STATE_DISCONNECTED,
-			                             NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
-			break;
-		default:
-			break;
-		}
+	if (state != NM_VPN_SERVICE_STATE_STOPPED)
+		return;
+
+	switch (nm_vpn_connection_get_state (connection)) {
+	case NM_VPN_CONNECTION_STATE_PREPARE:
+	case NM_VPN_CONNECTION_STATE_NEED_AUTH:
+	case NM_VPN_CONNECTION_STATE_CONNECT:
+	case NM_VPN_CONNECTION_STATE_IP_CONFIG_GET:
+		nm_vpn_connection_set_state (connection,
+		                             NM_VPN_CONNECTION_STATE_FAILED,
+		                             NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
+		break;
+	case NM_VPN_CONNECTION_STATE_ACTIVATED:
+		nm_vpn_connection_set_state (connection,
+		                             NM_VPN_CONNECTION_STATE_DISCONNECTED,
+		                             NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
+		break;
+	default:
+		break;
 	}
 }
 
@@ -431,11 +447,11 @@ nm_vpn_connection_activate (NMVPNConnection *connection)
 }
 
 const char *
-nm_vpn_connection_get_object_path (NMVPNConnection *connection)
+nm_vpn_connection_get_active_connection_path (NMVPNConnection *connection)
 {
 	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), NULL);
 
-	return NM_VPN_CONNECTION_GET_PRIVATE (connection)->object_path;
+	return NM_VPN_CONNECTION_GET_PRIVATE (connection)->ac_path;
 }
 
 const char *
@@ -450,6 +466,14 @@ nm_vpn_connection_get_name (NMVPNConnection *connection)
 	setting = (NMSettingConnection *) nm_connection_get_setting (priv->connection, NM_TYPE_SETTING_CONNECTION);
 
 	return setting->id;
+}
+
+NMConnection *
+nm_vpn_connection_get_connection (NMVPNConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), NULL);
+
+	return NM_VPN_CONNECTION_GET_PRIVATE (connection)->connection;
 }
 
 NMVPNConnectionState
@@ -488,14 +512,6 @@ nm_vpn_connection_disconnect (NMVPNConnection *connection,
 	nm_vpn_connection_set_state (connection,
 	                             NM_VPN_CONNECTION_STATE_DISCONNECTED,
 	                             reason);
-}
-
-static gboolean
-impl_vpn_connection_disconnect (NMVPNConnection *connection, GError **err)
-{
-	nm_vpn_connection_disconnect (connection, NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED);
-
-	return TRUE;
 }
 
 /******************************************************************************/
@@ -737,12 +753,15 @@ connection_state_changed (NMVPNConnection *connection,
 		}
 
 		if (priv->ip4_config) {
+			NMIP4Config *dev_ip4_config;
+
 			/* Remove attributes of the VPN's IP4 Config */
 			nm_system_vpn_device_unset_from_ip4_config (priv->parent_dev, priv->tundev, priv->ip4_config);
 
 			/* Reset routes, nameservers, and domains of the currently active device */
-			nm_device_set_ip4_config (priv->parent_dev,
-								 NM_IP4_CONFIG (g_object_ref (nm_device_get_ip4_config (priv->parent_dev))));
+			dev_ip4_config = nm_device_get_ip4_config (priv->parent_dev);
+			if (dev_ip4_config)
+				nm_device_set_ip4_config (priv->parent_dev, g_object_ref (dev_ip4_config));
 		}
 
 		if (priv->banner) {
@@ -760,22 +779,27 @@ nm_vpn_connection_init (NMVPNConnection *connection)
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 	NMDBusManager *dbus_mgr;
-	static guint32 counter = 0;
 
 	priv->state = NM_VPN_CONNECTION_STATE_PREPARE;
-	priv->object_path = g_strdup_printf (NM_DBUS_PATH_VPN_CONNECTION "/%d", counter++);
+	priv->ac_path = nm_active_connection_get_next_object_path ();
 
 	dbus_mgr = nm_dbus_manager_get ();
 	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (dbus_mgr),
-								  priv->object_path,
+								  priv->ac_path,
 								  G_OBJECT (connection));
 	g_object_unref (dbus_mgr);
 }
 
 static void
-finalize (GObject *object)
+dispose (GObject *object)
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
+
+	if (priv->disposed) {
+		G_OBJECT_CLASS (nm_vpn_connection_parent_class)->dispose (object);
+		return;
+	}
+	priv->disposed = TRUE;
 
 	if (priv->parent_dev) {
 		if (priv->device_monitor)
@@ -783,11 +807,6 @@ finalize (GObject *object)
 
 		g_object_unref (priv->parent_dev);
 	}
-
-	if (priv->banner)
-		g_free (priv->banner);
-
-	g_free (priv->tundev);
 
 	if (priv->ip4_config)
 		g_object_unref (priv->ip4_config);
@@ -800,7 +819,17 @@ finalize (GObject *object)
 
 	g_object_unref (priv->connection);
 
-	g_free (priv->object_path);
+	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->dispose (object);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
+
+	g_free (priv->banner);
+	g_free (priv->tundev);
+	g_free (priv->ac_path);
 
 	G_OBJECT_CLASS (nm_vpn_connection_parent_class)->finalize (object);
 }
@@ -809,18 +838,35 @@ static void
 get_property (GObject *object, guint prop_id,
 		    GValue *value, GParamSpec *pspec)
 {
-	const char *tmp;
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_NAME:
-		g_value_set_string (value, nm_vpn_connection_get_name (NM_VPN_CONNECTION (object)));
+	case PROP_SERVICE_NAME:
+		nm_active_connection_scope_to_value (priv->connection, value);
+		break;
+	case PROP_CONNECTION:
+		g_value_set_boxed (value, nm_connection_get_path (priv->connection));
+		break;
+	case PROP_SPECIFIC_OBJECT:
+		g_value_set_boxed (value, nm_act_request_get_active_connection_path (priv->act_request));
+		break;
+	case PROP_SHARED_SERVICE_NAME:
+		g_value_set_string (value, "");
+		break;
+	case PROP_SHARED_CONNECTION:
+		g_value_set_boxed (value, "/");
+		break;
+	case PROP_DEVICES:
+		g_value_take_boxed (value, g_ptr_array_new ());
+		break;
+	case PROP_VPN:
+		g_value_set_boolean (value, TRUE);
 		break;
 	case PROP_STATE:
 		g_value_set_uint (value, nm_vpn_connection_get_state (NM_VPN_CONNECTION (object)));
 		break;
 	case PROP_BANNER:
-		tmp = nm_vpn_connection_get_banner (NM_VPN_CONNECTION (object));
-		g_value_set_string (value, tmp ? tmp : "");
+		g_value_set_string (value, priv->banner ? priv->banner : "");
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -838,16 +884,59 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 	/* virtual methods */
 	connection_class->state_changed = connection_state_changed;
 	object_class->get_property = get_property;
+	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 
 	/* properties */
 	g_object_class_install_property
-		(object_class, PROP_NAME,
-		 g_param_spec_string (NM_VPN_CONNECTION_NAME,
-						  "Name",
-						  "Connection name",
-						  NULL,
-						  G_PARAM_READABLE));
+		(object_class, PROP_SERVICE_NAME,
+		 g_param_spec_string (NM_ACTIVE_CONNECTION_SERVICE_NAME,
+							  "Service name",
+							  "Service name",
+							  NULL,
+							  G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_CONNECTION,
+		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_CONNECTION,
+							  "Connection",
+							  "Connection",
+							  DBUS_TYPE_G_OBJECT_PATH,
+							  G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_SPECIFIC_OBJECT,
+		 g_param_spec_string (NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT,
+							  "Specific object",
+							  "Specific object",
+							  NULL,
+							  G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_SHARED_SERVICE_NAME,
+		 g_param_spec_string (NM_ACTIVE_CONNECTION_SHARED_SERVICE_NAME,
+							  "Shared service name",
+							  "Shared service name",
+							  NULL,
+							  G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_SHARED_CONNECTION,
+		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_SHARED_CONNECTION,
+							  "Shared connection",
+							  "Shared connection",
+							  DBUS_TYPE_G_OBJECT_PATH,
+							  G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_DEVICES,
+		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_DEVICES,
+							  "Devices",
+							  "Devices",
+							  dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_OBJECT_PATH),
+							  G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_VPN,
+		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_VPN,
+							   "VPN",
+							   "Is a VPN connection",
+							   TRUE,
+							   G_PARAM_READABLE));
 
 	g_object_class_install_property
 		(object_class, PROP_STATE,
@@ -878,6 +967,11 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 				    G_TYPE_NONE, 2,
 				    G_TYPE_UINT, G_TYPE_UINT);
 
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (connection_class),
-							   &dbus_glib_nm_vpn_connection_object_info);
+	signals[PROPERTIES_CHANGED] = 
+		nm_properties_changed_signal_new (object_class,
+								    G_STRUCT_OFFSET (NMVPNConnectionClass, properties_changed));
+
+	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (object_class),
+									 &dbus_glib_nm_vpn_connection_object_info);
 }
+

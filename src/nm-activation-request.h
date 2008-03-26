@@ -25,6 +25,7 @@
 #include <glib/gtypes.h>
 #include <glib-object.h>
 #include "nm-connection.h"
+#include "nm-active-connection.h"
 
 #define NM_TYPE_ACT_REQUEST            (nm_act_request_get_type ())
 #define NM_ACT_REQUEST(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_ACT_REQUEST, NMActRequest))
@@ -32,13 +33,6 @@
 #define NM_IS_ACT_REQUEST(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_ACT_REQUEST))
 #define NM_IS_ACT_REQUEST_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_ACT_REQUEST))
 #define NM_ACT_REQUEST_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_ACT_REQUEST, NMActRequestClass))
-
-#define NM_ACTIVE_CONNECTION_SERVICE_NAME "service-name"
-#define NM_ACTIVE_CONNECTION_CONNECTION "connection"
-#define NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT "specific-object"
-#define NM_ACTIVE_CONNECTION_SHARED_SERVICE_NAME "shared-service-name"
-#define NM_ACTIVE_CONNECTION_SHARED_CONNECTION "shared-connection"
-#define NM_ACTIVE_CONNECTION_DEVICES "devices"
 
 typedef struct {
 	GObject parent;

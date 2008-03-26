@@ -14,6 +14,7 @@
 #include "nm-types-private.h"
 #include "nm-object-private.h"
 #include "nm-active-connection.h"
+#include "nm-vpn-connection.h"
 #include "nm-object-cache.h"
 #include "nm-dbus-glib-types.h"
 
@@ -131,6 +132,46 @@ wireless_enabled_cb (GObject *object, GParamSpec *pspec, gpointer user_data)
 	poke_wireless_devices_with_rf_status (NM_CLIENT (object));
 }
 
+static GObject *
+new_active_connection (DBusGConnection *connection, const char *path)
+{
+	DBusGProxy *proxy;
+	GError *error = NULL;
+	GValue value = {0,};
+	GObject *object = NULL;
+
+	proxy = dbus_g_proxy_new_for_name (connection,
+									   NM_DBUS_SERVICE,
+									   path,
+									   "org.freedesktop.DBus.Properties");
+	if (!proxy) {
+		g_warning ("%s: couldn't create D-Bus object proxy.", __func__);
+		return NULL;
+	}
+
+	/* Have to create an NMVPNConnection if it's a VPN connection, otherwise
+	 * a plain NMActiveConnection.
+	 */
+	if (dbus_g_proxy_call (proxy,
+	                       "Get", &error,
+	                       G_TYPE_STRING, NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
+	                       G_TYPE_STRING, "Vpn",
+	                       G_TYPE_INVALID,
+	                       G_TYPE_VALUE, &value, G_TYPE_INVALID)) {
+		if (g_value_get_boolean (&value))
+			object = nm_vpn_connection_new (connection, path);
+		else
+			object = nm_active_connection_new (connection, path);
+	} else {
+		g_warning ("Error in getting active connection 'Vpn' property: (%d) %s",
+		           error->code, error->message);
+		g_error_free (error);
+	}
+
+	g_object_unref (proxy);
+	return object;
+}
+
 static gboolean
 demarshal_active_connections (NMObject *object,
                               GParamSpec *pspec,
@@ -140,7 +181,7 @@ demarshal_active_connections (NMObject *object,
 	DBusGConnection *connection;
 
 	connection = nm_object_get_connection (object);
-	if (!nm_object_array_demarshal (value, (GPtrArray **) field, connection, nm_active_connection_new))
+	if (!nm_object_array_demarshal (value, (GPtrArray **) field, connection, new_active_connection))
 		return FALSE;
 
 	nm_object_queue_notify (object, NM_CLIENT_ACTIVE_CONNECTIONS);

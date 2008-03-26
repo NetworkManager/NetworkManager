@@ -7,6 +7,7 @@
 #include "nm-object-private.h"
 #include "nm-types-private.h"
 #include "nm-device.h"
+#include "nm-connection.h"
 
 #include "nm-active-connection-bindings.h"
 
@@ -22,6 +23,7 @@ typedef struct {
 	DBusGProxy *proxy;
 
 	char *service_name;
+	NMConnectionScope scope;
 	char *connection;
 	char *specific_object;
 	char *shared_service_name;
@@ -60,6 +62,17 @@ nm_active_connection_new (DBusGConnection *connection, const char *path)
 						 NULL);
 }
 
+static NMConnectionScope
+get_scope_for_service_name (const char *service_name)
+{
+	if (service_name && !strcmp (service_name, NM_DBUS_SERVICE_USER_SETTINGS))
+		return NM_CONNECTION_SCOPE_USER;
+	else if (service_name && !strcmp (service_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS))
+		return NM_CONNECTION_SCOPE_SYSTEM;
+
+	return NM_CONNECTION_SCOPE_UNKNOWN;
+}
+
 const char *
 nm_active_connection_get_service_name (NMActiveConnection *connection)
 {
@@ -72,9 +85,20 @@ nm_active_connection_get_service_name (NMActiveConnection *connection)
 		priv->service_name = nm_object_get_string_property (NM_OBJECT (connection),
 		                                                    NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
 		                                                    DBUS_PROP_SERVICE_NAME);
+		priv->scope = get_scope_for_service_name (priv->service_name);
 	}
 
 	return priv->service_name;
+}
+
+NMConnectionScope
+nm_active_connection_get_scope (NMActiveConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NM_CONNECTION_SCOPE_UNKNOWN);
+
+	/* Make sure service_name and scope are up-to-date */
+	nm_active_connection_get_service_name (connection);
+	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->scope;
 }
 
 const char *
@@ -256,12 +280,24 @@ demarshal_devices (NMObject *object, GParamSpec *pspec, GValue *value, gpointer 
 	return TRUE;
 }
 
+static gboolean
+demarshal_service (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
+{
+	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
+
+	if (nm_object_demarshal_generic (object, pspec, value, field)) {
+		priv->scope = get_scope_for_service_name (priv->service_name);
+		return TRUE;
+	}
+	return FALSE;
+}
+
 static void
 register_for_property_changed (NMActiveConnection *connection)
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
 	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_ACTIVE_CONNECTION_SERVICE_NAME,        nm_object_demarshal_generic, &priv->service_name },
+		{ NM_ACTIVE_CONNECTION_SERVICE_NAME,        demarshal_service,           &priv->service_name },
 		{ NM_ACTIVE_CONNECTION_CONNECTION,          nm_object_demarshal_generic, &priv->connection },
 		{ NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT,     nm_object_demarshal_generic, &priv->specific_object },
 		{ NM_ACTIVE_CONNECTION_SHARED_SERVICE_NAME, nm_object_demarshal_generic, &priv->shared_service_name },

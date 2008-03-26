@@ -311,37 +311,43 @@ connection_state_changed (NMVPNConnection *connection,
 
 NMVPNConnection *
 nm_vpn_service_activate (NMVPNService *service,
-					NMConnection *connection,
-					NMDevice *device)
+                         NMConnection *connection,
+                         NMActRequest *act_request,
+                         NMDevice *device,
+                         GError **error)
 {
-	NMVPNConnection *vpn_connection;
+	NMVPNConnection *vpn;
 	NMVPNServicePrivate *priv;
 
 	g_return_val_if_fail (NM_IS_VPN_SERVICE (service), NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (act_request), NULL);
 	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+	g_return_val_if_fail (error != NULL, NULL);
+	g_return_val_if_fail (*error == NULL, NULL);
 
 	priv = NM_VPN_SERVICE_GET_PRIVATE (service);
 
-	vpn_connection = nm_vpn_connection_new (connection, device);
-	g_signal_connect (vpn_connection, "state-changed",
+	vpn = nm_vpn_connection_new (connection, act_request, device);
+	g_signal_connect (vpn, "state-changed",
 				   G_CALLBACK (connection_state_changed),
 				   service);
 
-	priv->connections = g_slist_prepend (priv->connections, vpn_connection);
+	priv->connections = g_slist_prepend (priv->connections, vpn);
 
-	if (nm_dbus_manager_name_has_owner (priv->dbus_mgr, priv->dbus_service))
-		nm_vpn_connection_activate (vpn_connection);
-	else if (priv->service_start_timeout == 0) {
+	if (nm_dbus_manager_name_has_owner (priv->dbus_mgr, priv->dbus_service)) {
+		// FIXME: fill in error when errors happen
+		nm_vpn_connection_activate (vpn);
+	} else if (priv->service_start_timeout == 0) {
 		nm_info ("VPN service '%s' exec scheduled...", nm_vpn_service_get_name (service));
 		g_idle_add (nm_vpn_service_daemon_exec, service);
 	}
 
-	return vpn_connection;
+	return vpn;
 }
 
 GSList *
-nm_vpn_service_get_connections (NMVPNService *service)
+nm_vpn_service_get_active_connections (NMVPNService *service)
 {
 	g_return_val_if_fail (NM_IS_VPN_SERVICE (service), NULL);
 

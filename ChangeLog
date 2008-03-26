@@ -1,3 +1,17 @@
+2008-03-26  Dan Williams  <dcbw@redhat.com>
+
+	Rework VPN connection handling for a more consistent D-Bus API.  The
+	VPNManager object has been removed, and active VPN connections are now the
+	same as any other active connection.  The Manager object's ActivateConnection
+	and DeactivateConnection methods are used to start and stop a VPN connection,
+	and the VPNConnection objects are subclasses of the ActiveConnection objects.
+	When activating a VPN connection, pass the path of the active connection
+	to which the VPN connection is tied in the 'specific_object' argument.
+
+	Consequently, the libnm-glib API has been reworked to match this arrangement,
+	with the VPNManager object removed, and the NMVPNConnection objects now
+	being subclasses of NMActiveConnection.
+
 2008-03-25  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Björn Martensen <bjoern.martensen@gmail.com>

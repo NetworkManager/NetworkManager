@@ -5,8 +5,8 @@
 
 #include <glib/gtypes.h>
 #include <glib-object.h>
-#include "nm-manager.h"
 #include "nm-vpn-connection.h"
+#include "nm-activation-request.h"
 
 #define NM_TYPE_VPN_MANAGER            (nm_vpn_manager_get_type ())
 #define NM_VPN_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VPN_MANAGER, NMVPNManager))
@@ -21,17 +21,29 @@ typedef struct {
 
 typedef struct {
 	GObjectClass parent;
+
+	/* Signals */
+	void (*connection_deactivated) (NMVPNManager *manager,
+	                                NMVPNConnection *connection,
+	                                NMVPNConnectionState state,
+	                                NMVPNConnectionStateReason reason);
 } NMVPNManagerClass;
 
 GType nm_vpn_manager_get_type (void);
 
-NMVPNManager *nm_vpn_manager_new (NMManager *nm_manager);
+NMVPNManager *nm_vpn_manager_get (void);
 
-NMVPNConnection *nm_vpn_manager_connect (NMVPNManager *manager,
-								 NMConnection *connection,
-								 NMDevice *device);
+const char *nm_vpn_manager_activate_connection (NMVPNManager *manager,
+                                                NMConnection *connection,
+                                                NMActRequest *act_request,
+                                                NMDevice *device,
+                                                GError **error);
 
-GSList *nm_vpn_manager_get_connections (NMVPNManager *manager);
+gboolean nm_vpn_manager_deactivate_connection (NMVPNManager *manager,
+                                               const char *path);
 
+void nm_vpn_manager_add_active_connections (NMVPNManager *manager,
+                                            NMConnection *filter,
+                                            GPtrArray *list);
 
 #endif /* NM_VPN_VPN_MANAGER_H */

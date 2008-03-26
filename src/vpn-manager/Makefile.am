@@ -28,9 +28,6 @@ libvpn_manager_la_LIBADD =	\
 	$(top_builddir)/src/marshallers/libmarshallers.la \
 	$(top_builddir)/libnm-util/libnm-util.la
 
-nm-vpn-manager-glue.h: $(top_srcdir)/introspection/nm-vpn-manager.xml
-	dbus-binding-tool --prefix=nm_vpn_manager --mode=glib-server --output=nm-vpn-manager-glue.h $(top_srcdir)/introspection/nm-vpn-manager.xml
-
 nm-vpn-connection-glue.h: $(top_srcdir)/introspection/nm-vpn-connection.xml
 	dbus-binding-tool --prefix=nm_vpn_connection --mode=glib-server --output=nm-vpn-connection-glue.h $(top_srcdir)/introspection/nm-vpn-connection.xml
 
@@ -39,7 +36,6 @@ nm-vpn-plugin-bindings.h: $(top_srcdir)/introspection/nm-vpn-plugin.xml
 
 
 built_sources = \
-	nm-vpn-manager-glue.h \
 	nm-vpn-connection-glue.h \
 	nm-vpn-plugin-bindings.h
 

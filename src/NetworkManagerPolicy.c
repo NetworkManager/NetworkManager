@@ -214,17 +214,22 @@ auto_activate_device (gpointer user_data)
 	best_connection = nm_device_get_best_auto_connection (data->device, connections, &specific_object);
 	if (best_connection) {
 		GError *error = NULL;
+		const char *device_path;
 
-		if (!nm_manager_activate_device (policy->manager,
-		                                 data->device,
-		                                 best_connection,
-		                                 specific_object,
-		                                 FALSE,
-		                                 &error)) {
-			nm_warning ("Failed to automatically activate device %s: (%d) %s",
-			            nm_device_get_iface (data->device),
-			            error->code,
-			            error->message);
+		device_path = nm_device_get_udi (data->device);
+		if (!nm_manager_activate_connection (policy->manager,
+		                                     best_connection,
+		                                     specific_object,
+		                                     device_path,
+		                                     FALSE,
+		                                     &error)) {
+			NMSettingConnection *s_con;
+
+			s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (best_connection, NM_TYPE_SETTING_CONNECTION));
+			g_assert (s_con);
+
+			nm_warning ("Connection '%s' auto-activation failed: (%d) %s",
+			            s_con->id, error->code, error->message);
 			g_error_free (error);
 		}
 	}
@@ -476,23 +481,30 @@ connection_removed (NMManager *manager,
                     NMConnectionScope scope,
                     gpointer user_data)
 {
-	GSList *iter;
+	NMSettingConnection *s_con;
+	GPtrArray *list;
+	int i;
 
-	/* If the connection just removed was active, deactive it */
-	for (iter = nm_manager_get_devices (manager); iter; iter = g_slist_next (iter)) {
-		NMDevice *device = NM_DEVICE (iter->data);
-		NMActRequest *req = nm_device_get_act_request (device);
-		NMConnection *dev_connection;
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	if (!s_con)
+		return;
 
-		if (!req)
-			continue;
+	list = nm_manager_get_active_connections_by_connection (manager, connection);
+	if (!list)
+		return;
 
-		dev_connection = nm_act_request_get_connection (req);
-		if (dev_connection == connection) {
-			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
-			schedule_activate_check ((NMPolicy *) user_data, device);
+	for (i = 0; i < list->len; i++) {
+		char *path = g_ptr_array_index (list, i);
+		GError *error = NULL;
+
+		if (!nm_manager_deactivate_connection (manager, path, &error)) {
+			nm_warning ("Connection '%s' disappeared, but error deactivating it: (%d) %s",
+			            s_con->id, error->code, error->message);
+			g_error_free (error);
 		}
+		g_free (path);
 	}
+	g_ptr_array_free (list, TRUE);
 }
 
 NMPolicy *

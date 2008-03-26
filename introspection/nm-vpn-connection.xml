@@ -1,20 +1,32 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+  <interface name="org.freedesktop.NetworkManager.Connection.Active">
+    <property name="ServiceName" type="s" access="read">
+      <tp:docstring>The D-Bus service name providing this connection.</tp:docstring>
+    </property>
+    <property name="Connection" type="o" access="read">
+      <tp:docstring>The path of the connection.</tp:docstring>
+    </property>
+    <property name="SpecificObject" type="o" access="read">
+      <tp:docstring>A specific object associated with the active connection.</tp:docstring>
+    </property>
+    <property name="SharedServiceName" type="s" access="read">
+      <tp:docstring>The D-Bus service name that provides a connection with which this active connection is shared.</tp:docstring>
+    </property>
+    <property name="SharedConnection" type="o" access="read">
+      <tp:docstring>The path of a connection provided by the D-Bus service SharedServiceName which which this connection is shared.</tp:docstring>
+    </property>
+    <property name="Devices" type="ao" access="read">
+      <tp:docstring>Array of object paths representing devices which are part of this active connection.</tp:docstring>
+    </property>
+  </interface>
+
   <interface name="org.freedesktop.NetworkManager.VPN.Connection">
     <tp:docstring>
-      Represents a connection to a Virtual Private Network.
+      Represents an active connection to a Virtual Private Network.
     </tp:docstring>
-    <method name="Disconnect">
-      <tp:docstring>
-        Disconnect the VPN connection.
-      </tp:docstring>
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_vpn_connection_disconnect"/>
-    </method>
 
-    <property name="Name" type="s" access="read">
-      <tp:docstring>The name of the VPN connection.</tp:docstring>
-    </property>
     <property name="State" type="u" access="read" tp:type="NM_VPN_CONNECTION_STATE">
       <tp:docstring>The state of the VPN connection.</tp:docstring>
     </property>
@@ -37,6 +49,7 @@
         </tp:docstring>
       </arg>
     </signal>
+
     <tp:enum name="NM_VPN_CONNECTION_STATE" type="u">
       <tp:enumvalue suffix="UNKNOWN" value="0">
         <tp:docstring>

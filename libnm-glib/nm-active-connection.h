@@ -4,6 +4,7 @@
 #include <glib/gtypes.h>
 #include <glib-object.h>
 #include "nm-object.h"
+#include <nm-connection.h>
 
 G_BEGIN_DECLS
 
@@ -34,6 +35,7 @@ GType nm_active_connection_get_type (void);
 GObject *nm_active_connection_new (DBusGConnection *connection, const char *path);
 
 const char * nm_active_connection_get_service_name        (NMActiveConnection *connection);
+NMConnectionScope nm_active_connection_get_scope          (NMActiveConnection *connection);
 const char * nm_active_connection_get_connection          (NMActiveConnection *connection);
 const char * nm_active_connection_get_specific_object     (NMActiveConnection *connection);
 const char * nm_active_connection_get_shared_service_name (NMActiveConnection *connection);

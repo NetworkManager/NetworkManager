@@ -62,14 +62,16 @@ GSList *nm_manager_get_devices (NMManager *manager);
 NMDevice *nm_manager_get_device_by_path (NMManager *manager, const char *path);
 NMDevice *nm_manager_get_device_by_udi (NMManager *manager, const char *udi);
 
-NMDevice *nm_manager_get_active_device (NMManager *manager);
+const char * nm_manager_activate_connection (NMManager *manager,
+                                             NMConnection *connection,
+                                             const char *specific_object,
+                                             const char *device_path,
+                                             gboolean user_requested,
+                                             GError **error);
 
-const char *nm_manager_activate_device (NMManager *manager,
-				      NMDevice *device,
-				      NMConnection *connection,
-				      const char *specific_object,
-				      gboolean user_requested,
-				      GError **error);
+gboolean nm_manager_deactivate_connection (NMManager *manager,
+                                           const char *connection_path,
+                                           GError **error);
 
 gboolean  nm_manager_activation_pending (NMManager *manager);
 
@@ -89,5 +91,8 @@ GSList *nm_manager_get_connections    (NMManager *manager, NMConnectionScope sco
 NMConnection * nm_manager_get_connection_by_object_path (NMManager *manager,
                                                          NMConnectionScope scope,
                                                          const char *path);
+
+GPtrArray * nm_manager_get_active_connections_by_connection (NMManager *manager,
+                                                             NMConnection *connection);
 
 #endif /* NM_MANAGER_H */
