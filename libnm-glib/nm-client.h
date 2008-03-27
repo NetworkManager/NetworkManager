@@ -42,7 +42,7 @@ GType nm_client_get_type (void);
 
 NMClient *nm_client_new (void);
 
-GPtrArray *nm_client_get_devices          (NMClient *client);
+const GPtrArray *nm_client_get_devices    (NMClient *client);
 NMDevice *nm_client_get_device_by_path    (NMClient *client, const char *object_path);
 
 typedef void (*NMClientActivateDeviceFn) (gpointer user_data, GError *error);

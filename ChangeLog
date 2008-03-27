@@ -1,3 +1,37 @@
+2008-03-27  Dan Williams  <dcbw@redhat.com>
+
+	* nm-object.c
+		- (nm_object_queue_notify): don't notify multiple times for the same
+			property
+
+	* nm-object-private.h
+		- (handle_ptr_array_return): return NULL if the given array is NULL or
+			if it has zero elements
+
+	* nm-ip4-config.c
+		- (finalize): use g_ptr_array_foreach() when freeing domains
+		- (nm_ip4_config_get_domains): use handle_ptr_array_return()
+
+	* nm-active-connection.c
+		- (nm_active_connection_get_devices): use handle_ptr_array_return()
+
+	* nm-device-802-11-wireless.c
+	  nm-device-802-11-wireless.h
+		- (nm_device_802_11_wireless_get_access_points): return const; use
+			handle_ptr_array_return()
+
+	* nm-types.c
+		- (nm_object_array_demarshal): always create an array, even of length
+			zero, to distinguish between "NM returned no items" and "haven't
+			asked NM yet"
+
+	* nm-client.c
+		- (dispose): free active connections too
+		- (proxy_name_owner_changed): free active connections too when NM goes
+			away
+		- (nm_client_get_devices): return const; use handle_ptr_array_return()
+		- (nm_client_get_active_connections): use handle_ptr_array_return()
+
 2008-03-26  Dan Williams  <dcbw@redhat.com>
 
 	Rework VPN connection handling for a more consistent D-Bus API.  The

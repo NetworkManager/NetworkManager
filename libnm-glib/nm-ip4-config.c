@@ -120,7 +120,6 @@ static void
 finalize (GObject *object)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
-	int i;
 
 	g_free (priv->hostname);
 	g_free (priv->nis_domain);
@@ -130,8 +129,7 @@ finalize (GObject *object)
 		g_array_free (priv->nis_servers, TRUE);
 
 	if (priv->domains) {
-		for (i = 0; i < priv->domains->len; i++)
-			g_free (g_ptr_array_index (priv->domains, i));
+		g_ptr_array_foreach (priv->domains, (GFunc) g_free, NULL);
 		g_ptr_array_free (priv->domains, TRUE);
 	}
 
@@ -396,24 +394,25 @@ nm_ip4_config_get_domains (NMIP4Config *config)
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
 
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	if (!priv->domains) {
-		if (nm_object_get_property (NM_OBJECT (config),
-									NM_DBUS_INTERFACE_IP4_CONFIG,
-									"Domains",
-									&value)) {
-			char **array = NULL, **p;
+	if (priv->domains)
+		return handle_ptr_array_return (priv->domains);
 
-			array = (char **) g_value_get_boxed (&value);
-			if (array && g_strv_length (array)) {
-				priv->domains = g_ptr_array_sized_new (g_strv_length (array));
-				for (p = array; *p; p++)
-					g_ptr_array_add (priv->domains, g_strdup (*p));
-			}
-			g_value_unset (&value);
+	if (nm_object_get_property (NM_OBJECT (config),
+								NM_DBUS_INTERFACE_IP4_CONFIG,
+								"Domains",
+								&value)) {
+		char **array = NULL, **p;
+
+		array = (char **) g_value_get_boxed (&value);
+		if (array && g_strv_length (array)) {
+			priv->domains = g_ptr_array_sized_new (g_strv_length (array));
+			for (p = array; *p; p++)
+				g_ptr_array_add (priv->domains, g_strdup (*p));
 		}
+		g_value_unset (&value);
 	}
 
-	return priv->domains;
+	return handle_ptr_array_return (priv->domains);
 }
 
 const char *

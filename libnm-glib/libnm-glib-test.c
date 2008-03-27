@@ -138,7 +138,7 @@ static void
 dump_wireless (NMDevice80211Wireless *device)
 {
 	const char *str;
-	GPtrArray *aps;
+	const GPtrArray *aps;
 	int i;
 
 	g_print ("Mode: %d\n", nm_device_802_11_wireless_get_mode (device));
@@ -202,7 +202,7 @@ dump_device (NMDevice *device)
 static gboolean
 test_devices (NMClient *client)
 {
-	GPtrArray *devices;
+	const GPtrArray *devices;
 	int i;
 
 	devices = nm_client_get_devices (client);

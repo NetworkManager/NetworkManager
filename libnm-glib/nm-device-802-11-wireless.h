@@ -44,7 +44,7 @@ NMAccessPoint * nm_device_802_11_wireless_get_active_access_point  (NMDevice8021
 NMAccessPoint * nm_device_802_11_wireless_get_access_point_by_path (NMDevice80211Wireless *device,
                                                                     const char *path);
 
-GPtrArray *     nm_device_802_11_wireless_get_access_points        (NMDevice80211Wireless *device);
+const GPtrArray *nm_device_802_11_wireless_get_access_points       (NMDevice80211Wireless *device);
 
 G_END_DECLS
 

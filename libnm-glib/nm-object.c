@@ -210,6 +210,7 @@ deferred_notify_cb (gpointer data)
 
 	priv->notify_id = 0;
 
+	priv->notify_props = g_slist_reverse (priv->notify_props);
 	for (iter = priv->notify_props; iter; iter = g_slist_next (iter)) {
 		g_object_notify (G_OBJECT (object), (const char *) iter->data);
 		g_free (iter->data);
@@ -224,6 +225,8 @@ void
 nm_object_queue_notify (NMObject *object, const char *property)
 {
 	NMObjectPrivate *priv;
+	gboolean found = FALSE;
+	GSList *iter;
 
 	g_return_if_fail (NM_IS_OBJECT (object));
 	g_return_if_fail (property != NULL);
@@ -232,7 +235,15 @@ nm_object_queue_notify (NMObject *object, const char *property)
 	if (!priv->notify_id)
 		priv->notify_id = g_idle_add_full (G_PRIORITY_LOW, deferred_notify_cb, object, NULL);
 
-	priv->notify_props = g_slist_append (priv->notify_props, g_strdup (property));
+	for (iter = priv->notify_props; iter; iter = g_slist_next (iter)) {
+		if (!strcmp ((char *) iter->data, property)) {
+			found = TRUE;
+			break;
+		}
+	}
+
+	if (!found)
+		priv->notify_props = g_slist_prepend (priv->notify_props, g_strdup (property));
 }
 
 /* Stolen from dbus-glib */

@@ -179,7 +179,7 @@ nm_active_connection_get_devices (NMActiveConnection *connection)
 
 	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
 	if (priv->devices)
-		return priv->devices;
+		return handle_ptr_array_return (priv->devices);
 
 	if (!nm_object_get_property (NM_OBJECT (connection),
 	                             NM_DBUS_INTERFACE,
@@ -191,7 +191,7 @@ nm_active_connection_get_devices (NMActiveConnection *connection)
 	demarshal_devices (NM_OBJECT (connection), NULL, &value, &priv->devices);
 	g_value_unset (&value);
 
-	return priv->devices;
+	return handle_ptr_array_return (priv->devices);
 }
 
 static void

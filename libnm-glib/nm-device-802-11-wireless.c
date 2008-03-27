@@ -198,7 +198,7 @@ nm_device_802_11_wireless_get_active_access_point (NMDevice80211Wireless *self)
 	return priv->active_ap;
 }
 
-GPtrArray *
+const GPtrArray *
 nm_device_802_11_wireless_get_access_points (NMDevice80211Wireless *self)
 {
 	NMDevice80211WirelessPrivate *priv;
@@ -211,7 +211,7 @@ nm_device_802_11_wireless_get_access_points (NMDevice80211Wireless *self)
 
 	priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 	if (priv->aps)
-		return priv->aps;
+		return handle_ptr_array_return (priv->aps);
 
 	if (!org_freedesktop_NetworkManager_Device_Wireless_get_access_points (priv->proxy, &temp, &error)) {
 		g_warning ("%s: error getting access points: %s", __func__, error->message);
@@ -225,14 +225,14 @@ nm_device_802_11_wireless_get_access_points (NMDevice80211Wireless *self)
 	nm_object_array_demarshal (&value, &priv->aps, connection, nm_access_point_new);
 	g_value_unset (&value);
 
-	return priv->aps;
+	return handle_ptr_array_return (priv->aps);
 }
 
 NMAccessPoint *
 nm_device_802_11_wireless_get_access_point_by_path (NMDevice80211Wireless *self,
 											        const char *path)
 {
-	GPtrArray *aps;
+	const GPtrArray *aps;
 	int i;
 	NMAccessPoint *ap = NULL;
 

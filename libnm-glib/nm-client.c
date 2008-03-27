@@ -278,16 +278,15 @@ constructor (GType type,
 }
 
 static void
-free_device_list (NMClient *client)
+free_object_array (GPtrArray **array)
 {
-	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
+	g_return_if_fail (array != NULL);
 
-	if (!priv->devices)
-		return;
-
-	g_ptr_array_foreach (priv->devices, (GFunc) g_object_unref, NULL);
-	g_ptr_array_free (priv->devices, TRUE);
-	priv->devices = NULL;
+	if (*array) {
+		g_ptr_array_foreach (*array, (GFunc) g_object_unref, NULL);
+		g_ptr_array_free (*array, TRUE);
+		*array = NULL;
+	}
 }
 
 static void
@@ -303,7 +302,8 @@ dispose (GObject *object)
 	g_object_unref (priv->client_proxy);
 	g_object_unref (priv->bus_proxy);
 
-	free_device_list (NM_CLIENT (object));
+	free_object_array (&priv->devices);
+	free_object_array (&priv->active_connections);
 
 	G_OBJECT_CLASS (nm_client_parent_class)->dispose (object);
 }
@@ -490,7 +490,8 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 	if (!priv->manager_running) {
 		priv->state = NM_STATE_UNKNOWN;
 		nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
-		free_device_list (client);
+		free_object_array (&priv->devices);
+		free_object_array (&priv->active_connections);
 		priv->wireless_enabled = FALSE;
 		priv->wireless_hw_enabled = FALSE;
 		poke_wireless_devices_with_rf_status (client);
@@ -540,7 +541,7 @@ client_device_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 	}
 }
 
-GPtrArray *
+const GPtrArray *
 nm_client_get_devices (NMClient *client)
 {
 	NMClientPrivate *priv;
@@ -553,7 +554,7 @@ nm_client_get_devices (NMClient *client)
 
 	priv = NM_CLIENT_GET_PRIVATE (client);
 	if (priv->devices)
-		return priv->devices;
+		return handle_ptr_array_return (priv->devices);
 
 	if (!org_freedesktop_NetworkManager_get_devices (priv->client_proxy, &temp, &error)) {
 		g_warning ("%s: error getting devices: %s\n", __func__, error->message);
@@ -567,13 +568,13 @@ nm_client_get_devices (NMClient *client)
 	nm_object_array_demarshal (&value, &priv->devices, connection, nm_device_new);
 	g_value_unset (&value);
 
-	return priv->devices;
+	return handle_ptr_array_return (priv->devices);
 }
 
 NMDevice *
 nm_client_get_device_by_path (NMClient *client, const char *object_path)
 {
-	GPtrArray *devices;
+	const GPtrArray *devices;
 	int i;
 	NMDevice *device = NULL;
 
@@ -683,7 +684,7 @@ nm_client_get_active_connections (NMClient *client)
 
 	priv = NM_CLIENT_GET_PRIVATE (client);
 	if (priv->active_connections)
-		return priv->active_connections;
+		return handle_ptr_array_return (priv->active_connections);
 
 	if (!nm_object_get_property (NM_OBJECT (client),
 	                             "org.freedesktop.DBus.Properties",
@@ -695,7 +696,7 @@ nm_client_get_active_connections (NMClient *client)
 	demarshal_active_connections (NM_OBJECT (client), NULL, &value, &priv->active_connections);	
 	g_value_unset (&value);
 
-	return priv->active_connections;
+	return handle_ptr_array_return (priv->active_connections);
 }
 
 gboolean

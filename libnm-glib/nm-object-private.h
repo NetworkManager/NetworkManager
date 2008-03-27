@@ -67,4 +67,13 @@ GByteArray *nm_object_get_byte_array_property (NMObject *object,
 											   const char *interface,
 											   const char *prop_name);
 
+static inline const GPtrArray *
+handle_ptr_array_return (GPtrArray *array)
+{
+	/* zero-length is special-case; return NULL */
+	if (!array || !array->len)
+		return NULL;
+	return array;
+}
+
 #endif /* NM_OBJECT_PRIVATE_H */
