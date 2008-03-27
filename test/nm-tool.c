@@ -241,7 +241,7 @@ detail_device (gpointer data, gpointer user_data)
 		guint32 wcaps;
 		NMAccessPoint *active_ap = NULL;
 		const char *active_bssid = NULL;
-		GPtrArray *aps;
+		const GPtrArray *aps;
 
 		printf ("\n  Wireless Settings\n");
 
@@ -262,7 +262,7 @@ detail_device (gpointer data, gpointer user_data)
 		printf ("\n  Wireless Access Points%s\n", active_ap ? "(* = Current AP)" : "");
 
 		aps = nm_device_802_11_wireless_get_access_points (NM_DEVICE_802_11_WIRELESS (device));
-		g_ptr_array_foreach (aps, detail_access_point, (gpointer) active_bssid);
+		g_ptr_array_foreach ((GPtrArray *) aps, detail_access_point, (gpointer) active_bssid);
 	} else if (NM_IS_DEVICE_802_3_ETHERNET (device)) {
 		printf ("\n  Wired Settings\n");
 		/* FIXME */
@@ -316,6 +316,7 @@ int
 main (int argc, char *argv[])
 {
 	NMClient *client;
+	const GPtrArray *devices;
 
 	g_type_init ();
 
@@ -331,7 +332,8 @@ main (int argc, char *argv[])
 		exit (1);
 	}
 
-	g_ptr_array_foreach (nm_client_get_devices (client), detail_device, NULL);
+	devices = nm_client_get_devices (client);
+	g_ptr_array_foreach ((GPtrArray *) devices, detail_device, NULL);
 
 	g_object_unref (client);
 
