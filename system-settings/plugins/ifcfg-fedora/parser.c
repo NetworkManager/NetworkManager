@@ -383,15 +383,11 @@ utils_bin2hexstr (const char *bytes, int len, int final_len)
 
 
 static char *
-get_one_wep_key (shvarFile *ifcfg, guint8 idx, GError **error)
+get_one_wep_key (shvarFile *ifcfg, const char *shvar_key, GError **error)
 {
-	char *shvar_key;
 	char *key = NULL;
 	char *value = NULL;
 
-	g_return_val_if_fail (idx <= 3, NULL);
-
-	shvar_key = g_strdup_printf ("KEY%d", idx);
 	value = svGetValue (ifcfg, shvar_key);
 	if (!value || !strlen (value))
 		goto out;
@@ -430,13 +426,12 @@ get_one_wep_key (shvarFile *ifcfg, guint8 idx, GError **error)
 
 out:
 	g_free (value);
-	g_free (shvar_key);
 	return key;
 }
 
-#define READ_WEP_KEY(idx, ifcfg_file, cdata) \
+#define READ_WEP_KEY(shvar_key, idx, ifcfg_file, cdata) \
 	{ \
-		char *key = get_one_wep_key (ifcfg_file, idx, error); \
+		char *key = get_one_wep_key (ifcfg_file, shvar_key, error); \
 		if (*error) \
 			goto error; \
 		if (key) { \
@@ -487,18 +482,20 @@ make_wireless_security_setting (shvarFile *ifcfg,
 
 	s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
 
-	READ_WEP_KEY(0, ifcfg, cdata)
-	READ_WEP_KEY(1, ifcfg, cdata)
-	READ_WEP_KEY(2, ifcfg, cdata)
-	READ_WEP_KEY(3, ifcfg, cdata)
+	READ_WEP_KEY("KEY", 0, ifcfg, cdata)
+	READ_WEP_KEY("KEY0", 0, ifcfg, cdata)
+	READ_WEP_KEY("KEY1", 1, ifcfg, cdata)
+	READ_WEP_KEY("KEY2", 2, ifcfg, cdata)
+	READ_WEP_KEY("KEY3", 3, ifcfg, cdata)
 
 	/* Try to get keys from the "shadow" key file */
 	keys_ifcfg = get_keys_ifcfg (file);
 	if (keys_ifcfg) {
-		READ_WEP_KEY(0, keys_ifcfg, cdata)
-		READ_WEP_KEY(1, keys_ifcfg, cdata)
-		READ_WEP_KEY(2, keys_ifcfg, cdata)
-		READ_WEP_KEY(3, keys_ifcfg, cdata)
+		READ_WEP_KEY("KEY", 0, keys_ifcfg, cdata)
+		READ_WEP_KEY("KEY0", 0, keys_ifcfg, cdata)
+		READ_WEP_KEY("KEY1", 1, keys_ifcfg, cdata)
+		READ_WEP_KEY("KEY2", 2, keys_ifcfg, cdata)
+		READ_WEP_KEY("KEY3", 3, keys_ifcfg, cdata)
 	}
 
 	value = svGetValue (ifcfg, "DEFAULTKEY");

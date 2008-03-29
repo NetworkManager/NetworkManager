@@ -1,3 +1,8 @@
+2008-03-29  Dan Williams  <dcbw@redhat.com>
+
+	* system-settings/plugins/ifcfg-fedora/parser.c
+		- (get_one_wep_key, make_wireless_security_setting): handle "KEY" too
+
 2008-03-27  Dan Williams  <dcbw@redhat.com>
 
 	* nm-object.c
