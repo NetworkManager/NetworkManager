@@ -230,10 +230,10 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 							  G_PARAM_READABLE));
 	g_object_class_install_property
 		(object_class, PROP_SPECIFIC_OBJECT,
-		 g_param_spec_string (NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT,
+		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT,
 							  "Specific object",
 							  "Specific object",
-							  NULL,
+							  DBUS_TYPE_G_OBJECT_PATH,
 							  G_PARAM_READABLE));
 	g_object_class_install_property
 		(object_class, PROP_SHARED_SERVICE_NAME,

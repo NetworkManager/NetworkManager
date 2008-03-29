@@ -1,5 +1,15 @@
 2008-03-29  Dan Williams  <dcbw@redhat.com>
 
+	* src/vpn-manager/nm-vpn-connection.c
+		- (nm_vpn_connection_class_init): PROP_SPECIFIC_OBJECT should be boxed,
+			not string
+
+	* src/nm-activation-request.c
+		- (nm_act_request_class_init): PROP_SPECIFIC_OBJECT should be boxed,
+			not string
+
+2008-03-29  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/nm-device-802-11-wireless.c
 		- (access_point_added_proxy): create new APs if not found
 
