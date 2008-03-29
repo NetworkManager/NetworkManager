@@ -258,13 +258,28 @@ static void
 access_point_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 {
 	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (user_data);
-	NMAccessPoint *ap;
+	NMDevice80211WirelessPrivate *priv;
+	GObject *ap;
 
 	g_return_if_fail (self != NULL);
 
-	ap = nm_device_802_11_wireless_get_access_point_by_path (self, path);
+	ap = G_OBJECT (nm_device_802_11_wireless_get_access_point_by_path (self, path));
+	if (!ap) {
+		DBusGConnection *connection = nm_object_get_connection (NM_OBJECT (self));
+
+		priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
+		ap = G_OBJECT (nm_object_cache_get (path));
+		if (ap) {
+			g_ptr_array_add (priv->aps, g_object_ref (ap));
+		} else {
+			ap = G_OBJECT (nm_access_point_new (connection, path));
+			if (ap)
+				g_ptr_array_add (priv->aps, ap);
+		}
+	}
+
 	if (ap)
-		g_signal_emit (self, signals[ACCESS_POINT_ADDED], 0, ap);
+		g_signal_emit (self, signals[ACCESS_POINT_ADDED], 0, NM_ACCESS_POINT (ap));
 }
 
 static void
