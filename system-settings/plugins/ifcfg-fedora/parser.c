@@ -382,15 +382,27 @@ utils_bin2hexstr (const char *bytes, int len, int final_len)
 }
 
 
-static char *
-get_one_wep_key (shvarFile *ifcfg, const char *shvar_key, GError **error)
+static gboolean
+add_one_wep_key (shvarFile *ifcfg,
+                 const char *shvar_key,
+                 guint8 key_idx,
+                 GHashTable *secrets,
+                 GError **error)
 {
 	char *key = NULL;
 	char *value = NULL;
+	gboolean success = FALSE;
+
+	g_return_val_if_fail (ifcfg != NULL, FALSE);
+	g_return_val_if_fail (shvar_key != NULL, FALSE);
+	g_return_val_if_fail (key_idx <= 3, FALSE);
+	g_return_val_if_fail (secrets != NULL, FALSE);
 
 	value = svGetValue (ifcfg, shvar_key);
-	if (!value || !strlen (value))
-		goto out;
+	if (!value || !strlen (value)) {
+		g_free (value);
+		return TRUE;
+	}
 
 	/* Validate keys */
 	if (strlen (value) == 10 || strlen (value) == 26) {
@@ -419,27 +431,30 @@ get_one_wep_key (shvarFile *ifcfg, const char *shvar_key, GError **error)
 			p++;
 		}
 
-		value = utils_bin2hexstr (value, strlen (value), strlen (value) * 2);
+		key = utils_bin2hexstr (value, strlen (value), strlen (value) * 2);
 	} else {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0, "Invalid WEP key length.");
 	}
 
+	if (key) {
+g_message ("%s: adding key '%s' at index %d", __func__, key, key_idx);
+		if (key_idx == 0)
+			g_hash_table_insert (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, key);
+		else if (key_idx == 1)
+			g_hash_table_insert (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY1, key);
+		else if (key_idx == 2)
+			g_hash_table_insert (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY2, key);
+		else if (key_idx == 3)
+			g_hash_table_insert (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY3, key);
+		else
+			g_assert_not_reached ();
+		success = TRUE;
+	}
+
 out:
 	g_free (value);
-	return key;
+	return success;
 }
-
-#define READ_WEP_KEY(shvar_key, idx, ifcfg_file, cdata) \
-	{ \
-		char *key = get_one_wep_key (ifcfg_file, shvar_key, error); \
-		if (*error) \
-			goto error; \
-		if (key) { \
-			g_hash_table_insert (cdata->wifi_secrets, \
-			                     NM_SETTING_WIRELESS_SECURITY_WEP_KEY##idx, \
-			                     key); \
-		} \
-	}
 
 static shvarFile *
 get_keys_ifcfg (const char *parent)
@@ -470,6 +485,23 @@ out:
 	return ifcfg;
 }
 
+static gboolean
+read_wep_keys (shvarFile *ifcfg, guint8 def_idx, GHashTable *secrets, GError **error)
+{
+	if (!add_one_wep_key (ifcfg, "KEY1", 0, secrets, error))
+		return FALSE;
+	if (!add_one_wep_key (ifcfg, "KEY2", 1, secrets, error))
+		return FALSE;
+	if (!add_one_wep_key (ifcfg, "KEY3", 2, secrets, error))
+		return FALSE;
+	if (!add_one_wep_key (ifcfg, "KEY4", 3, secrets, error))
+		return FALSE;
+	if (!add_one_wep_key (ifcfg, "KEY", def_idx, secrets, error))
+		return FALSE;
+
+	return TRUE;
+}
+
 static NMSetting *
 make_wireless_security_setting (shvarFile *ifcfg,
                                 const char *file,
@@ -479,40 +511,36 @@ make_wireless_security_setting (shvarFile *ifcfg,
 	NMSettingWirelessSecurity *s_wireless_sec;
 	char *value;
 	shvarFile *keys_ifcfg = NULL;
+	int default_key_idx = 0;
 
 	s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
-
-	READ_WEP_KEY("KEY", 0, ifcfg, cdata)
-	READ_WEP_KEY("KEY0", 0, ifcfg, cdata)
-	READ_WEP_KEY("KEY1", 1, ifcfg, cdata)
-	READ_WEP_KEY("KEY2", 2, ifcfg, cdata)
-	READ_WEP_KEY("KEY3", 3, ifcfg, cdata)
-
-	/* Try to get keys from the "shadow" key file */
-	keys_ifcfg = get_keys_ifcfg (file);
-	if (keys_ifcfg) {
-		READ_WEP_KEY("KEY", 0, keys_ifcfg, cdata)
-		READ_WEP_KEY("KEY0", 0, keys_ifcfg, cdata)
-		READ_WEP_KEY("KEY1", 1, keys_ifcfg, cdata)
-		READ_WEP_KEY("KEY2", 2, keys_ifcfg, cdata)
-		READ_WEP_KEY("KEY3", 3, keys_ifcfg, cdata)
-	}
 
 	value = svGetValue (ifcfg, "DEFAULTKEY");
 	if (value) {
 		gboolean success;
-		int key_idx = 0;
 
-		success = get_int (value, &key_idx);
-		if (success && (key_idx >= 0) && (key_idx <= 3))
-			s_wireless_sec->wep_tx_keyidx = key_idx;
-		else {
+		success = get_int (value, &default_key_idx);
+		if (success && (default_key_idx >= 1) && (default_key_idx <= 4)) {
+			default_key_idx--;  /* convert to [0...3] */
+			s_wireless_sec->wep_tx_keyidx = default_key_idx;
+		} else {
 			g_set_error (error, ifcfg_plugin_error_quark (), 0,
 			             "Invalid default WEP key '%s'", value);
 	 		g_free (value);
 			goto error;
 		}
  		g_free (value);
+	}
+
+	/* Read keys in the ifcfg file */
+	if (!read_wep_keys (ifcfg, default_key_idx, cdata->wifi_secrets, error))
+		goto error;
+
+	/* Try to get keys from the "shadow" key file */
+	keys_ifcfg = get_keys_ifcfg (file);
+	if (keys_ifcfg) {
+		if (!read_wep_keys (keys_ifcfg, default_key_idx, cdata->wifi_secrets, error))
+			goto error;
 	}
 
 	value = svGetValue (ifcfg, "SECURITYMODE");
