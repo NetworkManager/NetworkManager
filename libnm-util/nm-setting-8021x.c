@@ -6,6 +6,7 @@
 #include "nm-setting-8021x.h"
 #include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
+#include "nm-dbus-glib-types.h"
 
 G_DEFINE_TYPE (NMSetting8021x, nm_setting_802_1x, NM_TYPE_SETTING)
 
@@ -493,7 +494,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 		 nm_param_spec_specialized (NM_SETTING_802_1X_EAP,
 							   "EAP",
 							   "EAP",
-							   dbus_g_type_get_collection ("GSList", G_TYPE_STRING),
+							   DBUS_TYPE_G_LIST_OF_STRING,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property

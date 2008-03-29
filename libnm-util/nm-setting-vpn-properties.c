@@ -3,6 +3,7 @@
 #include <dbus/dbus-glib.h>
 #include "nm-setting-vpn-properties.h"
 #include "nm-param-spec-specialized.h"
+#include "nm-dbus-glib-types.h"
 
 G_DEFINE_TYPE (NMSettingVPNProperties, nm_setting_vpn_properties, NM_TYPE_SETTING)
 
@@ -140,6 +141,6 @@ nm_setting_vpn_properties_class_init (NMSettingVPNPropertiesClass *setting_class
 		 nm_param_spec_specialized (NM_SETTING_VPN_PROPERTIES_DATA,
 							   "Data",
 							   "VPN Service specific data",
-							   dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
+							   DBUS_TYPE_G_MAP_OF_VARIANT,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 }

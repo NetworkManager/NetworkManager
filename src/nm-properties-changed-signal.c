@@ -5,6 +5,7 @@
 
 #include <dbus/dbus-glib.h>
 #include "nm-properties-changed-signal.h"
+#include "nm-dbus-glib-types.h"
 
 #define NM_DBUS_PROPERTY_CHANGED "NM_DBUS_PROPERTY_CHANGED"
 
@@ -171,7 +172,7 @@ nm_properties_changed_signal_new (GObjectClass *object_class,
 				    class_offset,
 				    NULL, NULL,
 				    g_cclosure_marshal_VOID__BOXED,
-				    G_TYPE_NONE, 1, dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE));
+				    G_TYPE_NONE, 1, DBUS_TYPE_G_MAP_OF_VARIANT);
 
 	return id;
 }

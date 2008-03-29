@@ -14,6 +14,7 @@
 #include "nm-pppd-plugin.h"
 #include "nm-ppp-status.h"
 #include "nm-pppd-plugin-glue.h"
+#include "nm-dbus-glib-types.h"
 
 int plugin_init (void);
 
@@ -196,9 +197,7 @@ nm_ip_up (void *data, int arg)
 	}
 
 	dbus_g_proxy_call_no_reply (proxy, "SetIp4Config",
-						   dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
-						   hash,
-						   G_TYPE_INVALID,
+						   DBUS_TYPE_G_MAP_OF_VARIANT, hash, G_TYPE_INVALID,
 						   G_TYPE_INVALID);
 
 	g_hash_table_destroy (hash);

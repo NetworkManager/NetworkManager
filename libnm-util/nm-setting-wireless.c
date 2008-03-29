@@ -2,16 +2,15 @@
 
 #include <string.h>
 #include <netinet/ether.h>
+#include <dbus/dbus-glib.h>
 
 #include "wireless-helper.h"
 
-#include <dbus/dbus-glib.h>
-
 #include "NetworkManager.h"
-
 #include "nm-setting-wireless.h"
 #include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
+#include "nm-dbus-glib-types.h"
 
 G_DEFINE_TYPE (NMSettingWireless, nm_setting_wireless, NM_TYPE_SETTING)
 
@@ -499,7 +498,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 		 nm_param_spec_specialized (NM_SETTING_WIRELESS_SEEN_BSSIDS,
 							   "Seen BSSIDS",
 							   "Seen BSSIDs",
-							   dbus_g_type_get_collection ("GSList", G_TYPE_STRING),
+							   DBUS_TYPE_G_LIST_OF_STRING,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	g_object_class_install_property

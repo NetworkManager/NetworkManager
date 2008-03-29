@@ -34,6 +34,7 @@
 #include <dbus/dbus-glib.h>
 #include "nm-utils.h"
 #include "NetworkManager.h"
+#include "nm-dbus-glib-types.h"
 
 struct EncodingTriplet
 {
@@ -428,10 +429,6 @@ nm_utils_string_slist_validate (GSList *list, const char **valid_values)
 	return TRUE;
 }
 
-#define TYPE_GSLIST_OF_STRINGS dbus_g_type_get_collection ("GSList", G_TYPE_STRING)
-#define TYPE_ARRAY_OF_IP4ADDR_STRUCTS dbus_g_type_get_collection ("GPtrArray", dbus_g_type_get_collection ("GArray", G_TYPE_UINT))
-#define TYPE_HASH_OF_GVALUES dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE)
-
 static void
 nm_utils_convert_strv_to_slist (const GValue *src_value, GValue *dest_value)
 {
@@ -456,7 +453,7 @@ nm_utils_convert_strv_to_string (const GValue *src_value, GValue *dest_value)
 	GString *printable;
 	GSList *iter;
 
-	g_return_if_fail (g_type_is_a (G_VALUE_TYPE (src_value), TYPE_GSLIST_OF_STRINGS));
+	g_return_if_fail (g_type_is_a (G_VALUE_TYPE (src_value), DBUS_TYPE_G_LIST_OF_STRING));
 
 	strings = (GSList *) g_value_get_boxed (src_value);
 
@@ -512,7 +509,7 @@ nm_utils_convert_ip4_addr_struct_array_to_string (const GValue *src_value, GValu
 	GString *printable;
 	guint i = 0;
 
-	g_return_if_fail (g_type_is_a (G_VALUE_TYPE (src_value), TYPE_ARRAY_OF_IP4ADDR_STRUCTS));
+	g_return_if_fail (g_type_is_a (G_VALUE_TYPE (src_value), DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT));
 
 	ptr_array = (GPtrArray *) g_value_get_boxed (src_value);
 
@@ -577,7 +574,7 @@ nm_utils_convert_gvalue_hash_to_string (const GValue *src_value, GValue *dest_va
 	GHashTable *hash;
 	GString *printable;
 
-	g_return_if_fail (g_type_is_a (G_VALUE_TYPE (src_value), TYPE_HASH_OF_GVALUES));
+	g_return_if_fail (g_type_is_a (G_VALUE_TYPE (src_value), DBUS_TYPE_G_MAP_OF_VARIANT));
 
 	hash = (GHashTable *) g_value_get_boxed (src_value);
 
@@ -596,18 +593,18 @@ nm_utils_register_value_transformations (void)
 
 	if (G_UNLIKELY (!registered)) {
 		g_value_register_transform_func (G_TYPE_STRV, 
-		                                 TYPE_GSLIST_OF_STRINGS,
+		                                 DBUS_TYPE_G_LIST_OF_STRING,
 		                                 nm_utils_convert_strv_to_slist);
-		g_value_register_transform_func (TYPE_GSLIST_OF_STRINGS,
+		g_value_register_transform_func (DBUS_TYPE_G_LIST_OF_STRING,
 		                                 G_TYPE_STRING, 
 		                                 nm_utils_convert_strv_to_string);
 		g_value_register_transform_func (DBUS_TYPE_G_UINT_ARRAY,
 		                                 G_TYPE_STRING, 
 		                                 nm_utils_convert_uint_array_to_string);
-		g_value_register_transform_func (TYPE_ARRAY_OF_IP4ADDR_STRUCTS,
+		g_value_register_transform_func (DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
 		                                 G_TYPE_STRING, 
 		                                 nm_utils_convert_ip4_addr_struct_array_to_string);
-		g_value_register_transform_func (TYPE_HASH_OF_GVALUES,
+		g_value_register_transform_func (DBUS_TYPE_G_MAP_OF_VARIANT,
 		                                 G_TYPE_STRING, 
 		                                 nm_utils_convert_gvalue_hash_to_string);
 		registered = TRUE;

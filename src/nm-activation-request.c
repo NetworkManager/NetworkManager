@@ -31,6 +31,7 @@
 #include "nm-device.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-active-connection.h"
+#include "nm-dbus-glib-types.h"
 
 #include "nm-manager.h" /* FIXME! */
 
@@ -254,7 +255,7 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_DEVICES,
 							  "Devices",
 							  "Devices",
-							  dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_OBJECT_PATH),
+							  DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
 							  G_PARAM_READABLE));
 	g_object_class_install_property
 		(object_class, PROP_VPN,
@@ -378,9 +379,6 @@ settings_order_func (gconstpointer a, gconstpointer b)
 	return 0;
 }
 
-#define DBUS_TYPE_G_STRING_VARIANT_HASHTABLE (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE))
-#define DBUS_TYPE_G_DICT_OF_DICTS (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, DBUS_TYPE_G_STRING_VARIANT_HASHTABLE))
-
 static void
 get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 {
@@ -399,7 +397,7 @@ get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	g_object_set_data (G_OBJECT (priv->connection), CONNECTION_GET_SECRETS_CALL_TAG, NULL);
 
 	if (!dbus_g_proxy_end_call (proxy, call, &err,
-								DBUS_TYPE_G_DICT_OF_DICTS, &settings,
+								DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, &settings,
 								G_TYPE_INVALID)) {
 		nm_warning ("Couldn't get connection secrets: %s.", err->message);
 		g_error_free (err);
@@ -448,8 +446,6 @@ out:
 	g_hash_table_destroy (settings);
 }
 
-#define DBUS_TYPE_STRING_ARRAY   (dbus_g_type_get_collection ("GPtrArray", G_TYPE_STRING))
-
 gboolean
 nm_act_request_request_connection_secrets (NMActRequest *req,
                                            const char *setting_name,
@@ -493,7 +489,7 @@ nm_act_request_request_connection_secrets (NMActRequest *req,
 	                                             free_get_secrets_info,
 	                                             G_MAXINT32,
 	                                             G_TYPE_STRING, setting_name,
-	                                             DBUS_TYPE_STRING_ARRAY, hints,
+	                                             DBUS_TYPE_G_ARRAY_OF_STRING, hints,
 	                                             G_TYPE_BOOLEAN, request_new,
 	                                             G_TYPE_INVALID);
 	g_ptr_array_free (hints, TRUE);

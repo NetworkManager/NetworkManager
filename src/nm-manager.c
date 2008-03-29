@@ -15,6 +15,7 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-vpn.h"
 #include "nm-marshal.h"
+#include "nm-dbus-glib-types.h"
 
 static gboolean impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err);
 static void impl_manager_activate_connection (NMManager *manager,
@@ -427,7 +428,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 		 g_param_spec_boxed (NM_MANAGER_ACTIVE_CONNECTIONS,
 							  "Active connections",
 							  "Active connections",
-							  dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_OBJECT_PATH),
+							  DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
 							  G_PARAM_READABLE));
 
 	/* signals */
@@ -522,9 +523,6 @@ nm_manager_class_init (NMManagerClass *manager_class)
 	dbus_g_error_domain_register (NM_MANAGER_ERROR, NULL, NM_TYPE_MANAGER_ERROR);
 }
 
-#define DBUS_TYPE_G_STRING_VARIANT_HASHTABLE (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE))
-#define DBUS_TYPE_G_DICT_OF_DICTS (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, DBUS_TYPE_G_STRING_VARIANT_HASHTABLE))
-
 static NMConnectionScope
 get_scope_for_proxy (DBusGProxy *proxy)
 {
@@ -593,7 +591,7 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 	g_return_if_fail (info != NULL);
 
 	if (!dbus_g_proxy_end_call (proxy, call_id, &err,
-	                            DBUS_TYPE_G_DICT_OF_DICTS, &settings,
+	                            DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, &settings,
 	                            G_TYPE_INVALID)) {
 		nm_warning ("Couldn't retrieve connection settings: %s.", err->message);
 		g_error_free (err);
@@ -779,7 +777,7 @@ internal_new_connection_cb (DBusGProxy *proxy,
 	}
 
 	dbus_g_proxy_add_signal (con_proxy, "Updated",
-	                         DBUS_TYPE_G_DICT_OF_DICTS,
+	                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT,
 	                         G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (con_proxy, "Updated",
 	                             G_CALLBACK (connection_updated_cb),
@@ -806,8 +804,6 @@ internal_new_connection_cb (DBusGProxy *proxy,
 	if (info->calls)
 		*(info->calls) = g_slist_prepend (*(info->calls), call);
 }
-
-#define DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH (dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_OBJECT_PATH))
 
 static void
 list_connections_cb  (DBusGProxy *proxy,

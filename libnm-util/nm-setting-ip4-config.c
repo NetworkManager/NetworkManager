@@ -6,6 +6,7 @@
 #include "nm-setting-ip4-config.h"
 #include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
+#include "nm-dbus-glib-types.h"
 
 G_DEFINE_TYPE (NMSettingIP4Config, nm_setting_ip4_config, NM_TYPE_SETTING)
 
@@ -233,7 +234,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		 nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_DNS_SEARCH,
 							   "DNS search",
 							   "List of DNS search domains",
-							   dbus_g_type_get_collection ("GSList", G_TYPE_STRING),
+							   DBUS_TYPE_G_LIST_OF_STRING,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
@@ -241,6 +242,6 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		 nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_ADDRESSES,
 							   "Addresses",
 							   "List of NMSettingIP4Addresses",
-							   dbus_g_type_get_collection ("GPtrArray", dbus_g_type_get_collection ("GArray", G_TYPE_UINT)),
+							   DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 }

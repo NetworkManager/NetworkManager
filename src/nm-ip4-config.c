@@ -33,6 +33,7 @@
 #include <netinet/in.h>
 
 #include "nm-ip4-config-glue.h"
+#include "nm-dbus-glib-types.h"
 
 
 G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, G_TYPE_OBJECT)
@@ -599,7 +600,7 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 		 g_param_spec_boxed (NM_IP4_CONFIG_DOMAINS,
 							 "Domains",
 							 "Domains",
-							 dbus_g_type_get_collection ("GPtrArray", G_TYPE_STRING),
+							 DBUS_TYPE_G_ARRAY_OF_STRING,
 							 G_PARAM_READABLE));
 	g_object_class_install_property
 		(object_class, PROP_NIS_DOMAIN,

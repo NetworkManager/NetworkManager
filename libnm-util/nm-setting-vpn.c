@@ -5,6 +5,7 @@
 #include "nm-setting-vpn.h"
 #include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
+#include "nm-dbus-glib-types.h"
 
 G_DEFINE_TYPE (NMSettingVPN, nm_setting_vpn, NM_TYPE_SETTING)
 
@@ -137,6 +138,6 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 		 nm_param_spec_specialized (NM_SETTING_VPN_ROUTES,
 							   "Routes",
 							   "Routes",
-							   dbus_g_type_get_collection ("GSList", G_TYPE_STRING),
+							   DBUS_TYPE_G_LIST_OF_STRING,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 }

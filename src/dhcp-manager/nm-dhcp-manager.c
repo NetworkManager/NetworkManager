@@ -36,6 +36,7 @@
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-dbus-manager.h"
+#include "nm-dbus-glib-types.h"
 
 #define NM_DHCP_CLIENT_DBUS_SERVICE "org.freedesktop.nm_dhcp_client"
 #define NM_DHCP_CLIENT_DBUS_IFACE   "org.freedesktop.nm_dhcp_client"
@@ -441,8 +442,6 @@ out:
 	g_free (reason);
 }
 
-#define DBUS_TYPE_G_STRING_VARIANT_HASHTABLE (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE))
-
 static NMDHCPManager *
 nm_dhcp_manager_new (void)
 {
@@ -477,7 +476,7 @@ nm_dhcp_manager_new (void)
 
 	dbus_g_proxy_add_signal (priv->proxy,
 	                         "Event",
-	                         DBUS_TYPE_G_STRING_VARIANT_HASHTABLE,
+	                         DBUS_TYPE_G_MAP_OF_VARIANT,
 	                         G_TYPE_INVALID);
 
 	dbus_g_proxy_connect_signal (priv->proxy, "Event",

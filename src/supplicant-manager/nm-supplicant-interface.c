@@ -30,6 +30,7 @@
 #include "nm-supplicant-config.h"
 #include "nm-dbus-manager.h"
 #include "nm-call-store.h"
+#include "nm-dbus-glib-types.h"
 
 #define WPAS_DBUS_IFACE_INTERFACE   WPAS_DBUS_INTERFACE ".Interface"
 #define WPAS_DBUS_IFACE_BSSID       WPAS_DBUS_INTERFACE ".BSSID"
@@ -472,7 +473,7 @@ bssid_properties_cb  (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_
 	GHashTable *hash = NULL;
 
 	if (!dbus_g_proxy_end_call (proxy, call_id, &err,
-								dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE), &hash,
+								DBUS_TYPE_G_MAP_OF_VARIANT, &hash,
 								G_TYPE_INVALID)) {
 		if (!strstr (err->message, "The BSSID requested was invalid"))
 			nm_warning ("Couldn't retrieve BSSID properties: %s.", err->message);
@@ -517,7 +518,7 @@ scan_results_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 	GPtrArray *array = NULL;
 
 	if (!dbus_g_proxy_end_call (proxy, call_id, &err,
-								dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_OBJECT_PATH), &array,
+								DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH, &array,
 								G_TYPE_INVALID)) {
 		nm_warning ("could not get scan results: %s.", err->message);
 		g_error_free (err);
@@ -768,7 +769,7 @@ nm_supplicant_interface_add_to_supplicant (NMSupplicantInterface * self,
 										info,
 										nm_supplicant_info_destroy,
 										G_TYPE_STRING, priv->dev,
-										dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE), hash,
+										DBUS_TYPE_G_MAP_OF_VARIANT, hash,
 										G_TYPE_INVALID);
 
 		g_hash_table_destroy (hash);
@@ -1022,7 +1023,7 @@ call_set_network (NMSupplicantInfo *info)
 	call = dbus_g_proxy_begin_call (priv->net_proxy, "set", set_network_cb,
 									info,
 									nm_supplicant_info_destroy,
-									dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE), config_hash,
+									DBUS_TYPE_G_MAP_OF_VARIANT, config_hash,
 									G_TYPE_INVALID);
 	nm_supplicant_info_set_call (info, call);
 	g_hash_table_destroy (config_hash);
@@ -1076,8 +1077,6 @@ convert_blob (const char *key, const GByteArray *value, GHashTable *hash)
 	g_hash_table_insert (hash, g_strdup (key), val);
 }
 
-#define DBUS_TYPE_G_STRING_VARIANT_HASHTABLE (dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE))
-
 static void
 call_set_blobs (NMSupplicantInfo *info, GHashTable *orig_blobs)
 {
@@ -1102,7 +1101,7 @@ call_set_blobs (NMSupplicantInfo *info, GHashTable *orig_blobs)
 	call = dbus_g_proxy_begin_call (priv->iface_proxy, "setBlobs", set_blobs_cb,
 									info,
 									nm_supplicant_info_destroy,
-									DBUS_TYPE_G_STRING_VARIANT_HASHTABLE, blobs,
+									DBUS_TYPE_G_MAP_OF_VARIANT, blobs,
 									G_TYPE_INVALID);
 	nm_supplicant_info_set_call (info, call);
 	g_hash_table_destroy (blobs);

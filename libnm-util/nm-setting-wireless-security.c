@@ -7,6 +7,7 @@
 #include "nm-setting-8021x.h"
 #include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
+#include "nm-dbus-glib-types.h"
 
 G_DEFINE_TYPE (NMSettingWirelessSecurity, nm_setting_wireless_security, NM_TYPE_SETTING)
 
@@ -418,7 +419,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 		 nm_param_spec_specialized (NM_SETTING_WIRELESS_SECURITY_PROTO,
 							   "Proto",
 							   "Proto",
-							   dbus_g_type_get_collection ("GSList", G_TYPE_STRING),
+							   DBUS_TYPE_G_LIST_OF_STRING,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
@@ -426,7 +427,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 		 nm_param_spec_specialized (NM_SETTING_WIRELESS_SECURITY_PAIRWISE,
 							   "Pairwise",
 							   "Pairwise",
-							   dbus_g_type_get_collection ("GSList", G_TYPE_STRING),
+							   DBUS_TYPE_G_LIST_OF_STRING,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
@@ -434,7 +435,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 		 nm_param_spec_specialized (NM_SETTING_WIRELESS_SECURITY_GROUP,
 							   "Group",
 							   "Group",
-							   dbus_g_type_get_collection ("GSList", G_TYPE_STRING),
+							   DBUS_TYPE_G_LIST_OF_STRING,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
