@@ -490,11 +490,11 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 	if (!priv->manager_running) {
 		priv->state = NM_STATE_UNKNOWN;
 		nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
+		poke_wireless_devices_with_rf_status (client);
 		free_object_array (&priv->devices);
 		free_object_array (&priv->active_connections);
 		priv->wireless_enabled = FALSE;
 		priv->wireless_hw_enabled = FALSE;
-		poke_wireless_devices_with_rf_status (client);
 	} else {
 		nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
 		update_wireless_status (client, TRUE);

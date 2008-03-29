@@ -1,5 +1,11 @@
 2008-03-29  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/nm-client.c
+		- (proxy_name_owner_changed): tell wireless devices about rfkill state
+			before freeing them
+
+2008-03-29  Dan Williams  <dcbw@redhat.com>
+
 	* system-settings/plugins/ifcfg-fedora/parser.c
 		- Fix parsing of WEP keys; ifcfg files use indexes [1...4] rather than
 			[0...3]; also handle KEY correctly in combination with DEFAULTKEY
