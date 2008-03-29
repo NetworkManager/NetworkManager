@@ -2,8 +2,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: network-manager-ui\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-03-09 23:59+0200\n"
-"PO-Revision-Date: 2008-03-10 00:01+0200\n"
+"POT-Creation-Date: 2008-03-29 21:42+0200\n"
+"PO-Revision-Date: 2008-03-29 21:43+0200\n"
 "Last-Translator: Ihar Hrachyshka <ihar.hrachyshka@gmail.com>\n"
 "Language-Team: Belarusian Latin <i18n@mova.org>\n"
 "MIME-Version: 1.0\n"
@@ -45,10 +45,11 @@ msgstr ""
 "niemahčyma vydzielić keš dla sietkavaha linka, kab nazirać za jaho stanam: %s"
 
 #: ../src/nm-netlink-monitor.c:471
+#, c-format
 msgid "error occurred while waiting for data on socket"
 msgstr "pry čakańni źviestak na sokiecie adbyłasia pamyłka"
 
-#: ../src/NetworkManager.c:255
+#: ../src/NetworkManager.c:256
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr ""
@@ -61,3 +62,7 @@ msgstr "UVAHA: resolver glibc nie padtrymlivaje bolš za 3 servery nazvaŭ."
 #: ../src/named-manager/nm-named-manager.c:220
 msgid "The nameservers listed below may not be recognized."
 msgstr "Niemahčyma paznać nastupnyja servery nazvaŭ."
+
+#: ../system-settings/plugins/ifcfg-fedora/plugin.c:76
+msgid "Auto Wired"
+msgstr "Aŭtamatyčna źviazany"
