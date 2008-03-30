@@ -319,7 +319,6 @@ clean_up_aps (NMDevice80211Wireless *self, gboolean notify)
 			g_ptr_array_remove (priv->aps, ap);
 			g_object_unref (ap);
 		}
-		g_ptr_array_foreach (priv->aps, (GFunc) g_object_unref, NULL);
 		g_ptr_array_free (priv->aps, TRUE);
 		priv->aps = NULL;
 	}
