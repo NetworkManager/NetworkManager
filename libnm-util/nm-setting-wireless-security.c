@@ -93,19 +93,19 @@ need_secrets (NMSetting *setting)
 
 	/* Static WEP */
 	if (strcmp (self->key_mgmt, "none") == 0) {
-		if (!verify_wep_key (self->wep_key0)) {
+		if ((self->wep_tx_keyidx == 0) && !verify_wep_key (self->wep_key0)) {
 			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
 			return secrets;
 		}
-		if (self->wep_tx_keyidx == 1 && !verify_wep_key (self->wep_key1)) {
+		if ((self->wep_tx_keyidx == 1) && !verify_wep_key (self->wep_key1)) {
 			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY1);
 			return secrets;
 		}
-		if (self->wep_tx_keyidx == 2 && !verify_wep_key (self->wep_key2)) {
+		if ((self->wep_tx_keyidx == 2) && !verify_wep_key (self->wep_key2)) {
 			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY2);
 			return secrets;
 		}
-		if (self->wep_tx_keyidx == 3 && !verify_wep_key (self->wep_key3)) {
+		if ((self->wep_tx_keyidx == 3) && !verify_wep_key (self->wep_key3)) {
 			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
 			return secrets;
 		}
@@ -195,6 +195,23 @@ verify (NMSetting *setting, GSList *all_settings)
 
 	if (self->wep_tx_keyidx > 3) {
 		g_warning ("Invalid WEP key index");
+		return FALSE;
+	}
+
+	if (self->wep_key0 && !strlen (self->wep_key0)) {
+		g_warning ("Invalid zero-length WEP key #0.");
+		return FALSE;
+	}
+	if (self->wep_key1 && !strlen (self->wep_key1)) {
+		g_warning ("Invalid zero-length WEP key #1.");
+		return FALSE;
+	}
+	if (self->wep_key2 && !strlen (self->wep_key2)) {
+		g_warning ("Invalid zero-length WEP key #2.");
+		return FALSE;
+	}
+	if (self->wep_key3 && !strlen (self->wep_key3)) {
+		g_warning ("Invalid zero-length WEP key #3.");
 		return FALSE;
 	}
 

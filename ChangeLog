@@ -1,3 +1,10 @@
+2008-03-30  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-setting-wireless-security.c
+		- (need_secrets): only require key0 if the transmit key index is also
+			0
+		- (verify): reject non-NULL but zero-length WEP keys; these are invalid
+
 2008-03-29  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/nm-setting-8021x.c
