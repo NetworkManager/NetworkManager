@@ -1,3 +1,10 @@
+2008-03-31  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-glib/nm-client.c
+	  libnm-glib/nm-client.h
+		- (activate_cb): pass the new active connection to callback; fix
+			message when no callback is specified
+
 2008-03-30  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/nm-setting-wireless-security.c

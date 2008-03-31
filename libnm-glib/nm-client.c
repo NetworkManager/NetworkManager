@@ -603,18 +603,16 @@ typedef struct {
 
 static void
 activate_cb (DBusGProxy *proxy,
-             char *active_connection,
-             GError *err,
+             char *path,
+             GError *error,
              gpointer user_data)
 {
 	ActivateDeviceInfo *info = (ActivateDeviceInfo *) user_data;
 
 	if (info->fn)
-		info->fn (info->user_data, err);
-	else
-		nm_warning ("Device activation failed: %s", err->message);
-
-	/* FIXME: Free err as well? */
+		info->fn (info->user_data, path, error);
+	else if (error)
+		nm_warning ("Device activation failed: (%d) %s", error->code, error->message);
 
 	g_slice_free (ActivateDeviceInfo, info);
 }

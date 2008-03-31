@@ -45,7 +45,7 @@ NMClient *nm_client_new (void);
 const GPtrArray *nm_client_get_devices    (NMClient *client);
 NMDevice *nm_client_get_device_by_path    (NMClient *client, const char *object_path);
 
-typedef void (*NMClientActivateDeviceFn) (gpointer user_data, GError *error);
+typedef void (*NMClientActivateDeviceFn) (gpointer user_data, const char *object_path, GError *error);
 
 void nm_client_activate_connection (NMClient *client,
 						  const char *service_name,
