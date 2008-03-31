@@ -262,7 +262,8 @@ detail_device (gpointer data, gpointer user_data)
 		printf ("\n  Wireless Access Points%s\n", active_ap ? "(* = Current AP)" : "");
 
 		aps = nm_device_802_11_wireless_get_access_points (NM_DEVICE_802_11_WIRELESS (device));
-		g_ptr_array_foreach ((GPtrArray *) aps, detail_access_point, (gpointer) active_bssid);
+		if (aps && aps->len)
+			g_ptr_array_foreach ((GPtrArray *) aps, detail_access_point, (gpointer) active_bssid);
 	} else if (NM_IS_DEVICE_802_3_ETHERNET (device)) {
 		printf ("\n  Wired Settings\n");
 		/* FIXME */
