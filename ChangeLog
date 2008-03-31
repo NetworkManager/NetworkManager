@@ -1,5 +1,20 @@
 2008-03-31  Dan Williams  <dcbw@redhat.com>
 
+	* src/vpn-manager/nm-vpn-service.c
+		- (nm_vpn_service_daemon_exec): add an error argument so that spawn
+			errors can be passed back to the caller; also no longer scheduled
+			as an idle handler, but called directly; and bump up VPN service
+			spawn timeout, 2s is really short
+		- (nm_vpn_service_activate): don't schedule the VPN service activation,
+			but call it directly so that errors are reported on return from
+			ActivateConnection() and don't get lost.  If scheduled as an idle
+			handler, clients don't have the time to query NM for the new VPN
+			connection's properties before the VPN connection is torn down again
+			if the service couldn't be launched, and therefore launch errors
+			get lost.
+
+2008-03-31  Dan Williams  <dcbw@redhat.com>
+
 	* src/vpn-manager/nm-vpn-connection.c
 		- (device_state_changed): send correct state on device failure too
 		- (plugin_state_changed): failed state means unexpected disconnection,

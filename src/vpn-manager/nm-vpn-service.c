@@ -32,6 +32,7 @@
 #include "nm-vpn-service.h"
 #include "nm-dbus-manager.h"
 #include "nm-utils.h"
+#include "nm-vpn-manager.h"
 
 G_DEFINE_TYPE (NMVPNService, nm_vpn_service, G_TYPE_OBJECT)
 
@@ -228,13 +229,17 @@ nm_vpn_service_timeout (gpointer data)
 }
 
 static gboolean
-nm_vpn_service_daemon_exec (gpointer user_data)
+nm_vpn_service_daemon_exec (NMVPNService *service, GError **error)
 {
-	NMVPNService *service = NM_VPN_SERVICE (user_data);
 	NMVPNServicePrivate *priv = NM_VPN_SERVICE_GET_PRIVATE (service);
 	GPtrArray *vpn_argv;
 	gboolean launched;
-	GError *err = NULL;
+	gboolean success = FALSE;
+	GError *spawn_error = NULL;
+
+	g_return_val_if_fail (NM_IS_VPN_SERVICE (service), FALSE);
+	g_return_val_if_fail (error != NULL, FALSE);
+	g_return_val_if_fail (*error == NULL, FALSE);
 
 	vpn_argv = g_ptr_array_new ();
 	g_ptr_array_add (vpn_argv, priv->program);
@@ -247,8 +252,7 @@ nm_vpn_service_daemon_exec (gpointer user_data)
 	                          nm_vpn_service_child_setup,
 	                          NULL,
 	                          &priv->pid,
-	                          &err);
-
+	                          &spawn_error);
 	g_ptr_array_free (vpn_argv, TRUE);
 
 	if (launched) {
@@ -259,21 +263,24 @@ nm_vpn_service_daemon_exec (gpointer user_data)
 		g_source_attach (vpn_watch, NULL);
 		g_source_unref (vpn_watch);
 
-		nm_info ("VPN service '%s' executed (%s), PID %d", 
-			    nm_vpn_service_get_name (service),
-			    priv->dbus_service,
-			    priv->pid);
+		nm_info ("VPN service '%s' started (%s), PID %d", 
+		         nm_vpn_service_get_name (service), priv->dbus_service, priv->pid);
 
-		priv->service_start_timeout = g_timeout_add (2000, nm_vpn_service_timeout, service);
+		priv->service_start_timeout = g_timeout_add (5000, nm_vpn_service_timeout, service);
+		success = TRUE;
 	} else {
-		nm_warning ("VPN service '%s': could not launch the VPN service. error: '%s'.",
-		            nm_vpn_service_get_name (service), err->message);
-		g_error_free (err);
+		nm_warning ("VPN service '%s': could not launch the VPN service. error: (%d) %s.",
+		            nm_vpn_service_get_name (service), spawn_error->code, spawn_error->message);
+
+		g_set_error (error,
+		             NM_VPN_MANAGER_ERROR, NM_VPN_MANAGER_ERROR_SERVICE_START_FAILED,
+		             "%s", spawn_error->message);
 
 		nm_vpn_service_connections_stop (service, TRUE, NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_FAILED);
+		g_error_free (spawn_error);
 	}
 
-	return FALSE;
+	return success;
 }
 
 static gboolean
@@ -339,8 +346,9 @@ nm_vpn_service_activate (NMVPNService *service,
 		// FIXME: fill in error when errors happen
 		nm_vpn_connection_activate (vpn);
 	} else if (priv->service_start_timeout == 0) {
-		nm_info ("VPN service '%s' exec scheduled...", nm_vpn_service_get_name (service));
-		g_idle_add (nm_vpn_service_daemon_exec, service);
+		nm_info ("Starting VPN service '%s'...", nm_vpn_service_get_name (service));
+		if (!nm_vpn_service_daemon_exec (service, error))
+			vpn = NULL;
 	}
 
 	return vpn;
@@ -420,7 +428,7 @@ finalize (GObject *object)
 
 	nm_vpn_service_connections_stop (NM_VPN_SERVICE (object),
 	                                 FALSE,
-	                                 NM_VPN_CONNECTION_STATE_REASON_UNKNOWN);
+	                                 NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
 
 	g_signal_handler_disconnect (priv->dbus_mgr, priv->name_owner_id);
 	g_object_unref (priv->dbus_mgr);
