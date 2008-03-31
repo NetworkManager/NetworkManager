@@ -27,17 +27,7 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-typedef enum
-{
-	NM_VPN_MANAGER_ERROR_DEVICE_NOT_ACTIVE = 0,
-	NM_VPN_MANAGER_ERROR_CONNECTION_INVALID,
-	NM_VPN_MANAGER_ERROR_SERVICE_INVALID,
-} NMVPNManagerError;
-
-#define NM_VPN_MANAGER_ERROR (nm_vpn_manager_error_quark ())
-#define NM_TYPE_VPN_MANAGER_ERROR (nm_vpn_manager_error_get_type ()) 
-
-static GQuark
+GQuark
 nm_vpn_manager_error_quark (void)
 {
 	static GQuark quark = 0;
@@ -49,7 +39,7 @@ nm_vpn_manager_error_quark (void)
 /* This should really be standard. */
 #define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
 
-static GType
+GType
 nm_vpn_manager_error_get_type (void)
 {
 	static GType etype = 0;
@@ -62,6 +52,8 @@ nm_vpn_manager_error_get_type (void)
 			ENUM_ENTRY (NM_VPN_MANAGER_ERROR_CONNECTION_INVALID, "ConnectionInvalid"),
 			/* The VPN service required by this VPN connection did not exist or was invalid. */
 			ENUM_ENTRY (NM_VPN_MANAGER_ERROR_SERVICE_INVALID, "ServiceInvalid"),
+			/* The VPN service required by this VPN connection could not be started. */
+			ENUM_ENTRY (NM_VPN_MANAGER_ERROR_SERVICE_START_FAILED, "ServiceStartFailed"),
 			{ 0, 0, 0 }
 		};
 		etype = g_enum_register_static ("NMVPNManagerError", values);

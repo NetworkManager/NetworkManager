@@ -1,5 +1,11 @@
 2008-03-31  Dan Williams  <dcbw@redhat.com>
 
+	* src/vpn-manager/nm-vpn-manager.c
+	  src/vpn-manager/nm-vpn-manager.h
+		- Make VPNManager errors more available; add a service-start-failed error
+
+2008-03-31  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/nm-client.c
 	  libnm-glib/nm-client.h
 		- (activate_cb): pass the new active connection to callback; fix
