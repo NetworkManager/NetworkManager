@@ -1,5 +1,13 @@
 2008-03-31  Dan Williams  <dcbw@redhat.com>
 
+	* src/vpn-manager/nm-vpn-connection.c
+		- (device_state_changed): send correct state on device failure too
+		- (plugin_state_changed): failed state means unexpected disconnection,
+			thus if the service goes away while the VPN connection is activated
+			that's a failure too
+
+2008-03-31  Dan Williams  <dcbw@redhat.com>
+
 	* src/vpn-manager/nm-vpn-manager.c
 	  src/vpn-manager/nm-vpn-manager.h
 		- Make VPNManager errors more available; add a service-start-failed error

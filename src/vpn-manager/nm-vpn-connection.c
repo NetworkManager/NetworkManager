@@ -122,6 +122,10 @@ device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 		nm_vpn_connection_set_state (connection,
 		                             NM_VPN_CONNECTION_STATE_DISCONNECTED,
 		                             NM_VPN_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED);
+	} else if (state == NM_DEVICE_STATE_FAILED) {
+		nm_vpn_connection_set_state (connection,
+		                             NM_VPN_CONNECTION_STATE_FAILED,
+		                             NM_VPN_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED);
 	}
 }
 
@@ -191,13 +195,9 @@ plugin_state_changed (DBusGProxy *proxy,
 	case NM_VPN_CONNECTION_STATE_NEED_AUTH:
 	case NM_VPN_CONNECTION_STATE_CONNECT:
 	case NM_VPN_CONNECTION_STATE_IP_CONFIG_GET:
-		nm_vpn_connection_set_state (connection,
-		                             NM_VPN_CONNECTION_STATE_FAILED,
-		                             NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
-		break;
 	case NM_VPN_CONNECTION_STATE_ACTIVATED:
 		nm_vpn_connection_set_state (connection,
-		                             NM_VPN_CONNECTION_STATE_DISCONNECTED,
+		                             NM_VPN_CONNECTION_STATE_FAILED,
 		                             NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
 		break;
 	default:
