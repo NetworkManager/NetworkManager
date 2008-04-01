@@ -53,6 +53,12 @@ libnmbackend_la_SOURCES +=	NetworkManagerFrugalware.c
 libnmbackend_la_LIBADD += -lfwnetconfig -lfwutil
 endif
 
+if TARGET_MANDRIVA
+libnmbackend_la_SOURCES +=      NetworkManagerMandriva.c  \
+				shvar.c                         \
+				shvar.h
+endif
+
 libnmbackend_la_LIBADD += $(DBUS_LIBS) $(GTHREAD_LIBS)
 libnmbackend_la_CPPFLAGS =	$(DBUS_CFLAGS)				\
 					$(GTHREAD_CFLAGS)				\

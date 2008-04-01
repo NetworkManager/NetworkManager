@@ -1,3 +1,17 @@
+2008-04-01  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Per Øyvind Karlsen <peroyvind@mandriva.org>
+
+	* configure.in
+	  initscript/Makefile.am
+	  initscript/Mandriva/Makefile.am
+	  initscript/Mandriva/networkmanager.in
+	  initscript/Mandriva/networkmanagerdispatcher.in
+	  src/backends/Makefile.am
+	  src/backends/NetworkManagerMandriva.c
+	  system-settings/plugins/Makefile.am
+		- Add Mandriva support
+
 2008-03-31  Dan Williams  <dcbw@redhat.com>
 
 	* src/vpn-manager/nm-vpn-service.c

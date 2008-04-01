@@ -76,7 +76,7 @@ dnl Make sha1.c happy on big endian systems
 dnl
 AC_C_BIGENDIAN
 
-AC_ARG_WITH(distro, AS_HELP_STRING([--with-distro=DISTRO], [Specify the Linux distribution to target: One of redhat, suse, gentoo, debian, arch, slackware or paldo]))
+AC_ARG_WITH(distro, AS_HELP_STRING([--with-distro=DISTRO], [Specify the Linux distribution to target: One of redhat, suse, gentoo, debian, arch, slackware, paldo or mandriva]))
 if test "z$with_distro" = "z"; then
 	AC_CHECK_FILE(/etc/redhat-release,with_distro="redhat")
 	AC_CHECK_FILE(/etc/SuSE-release,with_distro="suse")
@@ -86,6 +86,7 @@ if test "z$with_distro" = "z"; then
 	AC_CHECK_FILE(/etc/arch-release,with_distro="arch")
 	AC_CHECK_FILE(/etc/slackware-version,with_distro="slackware")
 	AC_CHECK_FILE(/etc/frugalware-release,with_distro="frugalware")
+	AC_CHECK_FILE(/etc/mandriva-release,with_distro="mandriva")
 	if test "z$with_distro" = "z"; then
 		with_distro=`lsb_release -is`
 	fi
@@ -97,7 +98,7 @@ if test "z$with_distro" = "z"; then
 	exit 1
 else
 	case $with_distro in
-		redhat|suse|gentoo|debian|slackware|arch|paldo|frugalware) ;;
+		redhat|suse|gentoo|debian|slackware|arch|paldo|frugalware|mandriva) ;;
 		*)
 			echo "Your distribution (${with_distro}) is not yet supported!  (patches welcome)"
 			exit 1
@@ -112,8 +113,9 @@ AM_CONDITIONAL(TARGET_SLACKWARE, test x"$with_distro" = xslackware)
 AM_CONDITIONAL(TARGET_ARCH, test x"$with_distro" = xarch)
 AM_CONDITIONAL(TARGET_PALDO, test x"$with_distro" = xpaldo)
 AM_CONDITIONAL(TARGET_FRUGALWARE, test x"$with_distro" = xfrugalware)
+AM_CONDITIONAL(TARGET_MANDRIVA, test x"$with_distro" = xmandriva)
 
-if test x"$with_distro" = xgentoo ; then
+if test x"$with_distro" = xgentoo -o x"$with_distro" = xmandriva ; then
 	AC_ARG_WITH([mdns_provider],
 		    AS_HELP_STRING([--with-mdns-provider=PROVIDER], [Specify the mDNS implementation: Avahi, Bonjour]),,
 		    [with_mdns_provider=avahi])
@@ -328,6 +330,9 @@ initscript/Arch/networkmanager-dispatcher
 initscript/paldo/Makefile
 initscript/paldo/NetworkManager
 initscript/paldo/NetworkManagerDispatcher
+initscript/Mandriva/Makefile
+initscript/Mandriva/networkmanager
+initscript/Mandriva/networkmanagerdispatcher
 introspection/Makefile
 man/Makefile
 man/NetworkManager.8
