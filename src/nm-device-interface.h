@@ -50,9 +50,9 @@ struct _NMDeviceInterface {
 	GTypeInterface g_iface;
 
 	/* Methods */
-	gboolean (*check_connection_conflicts) (NMDeviceInterface *device,
-	                                        NMConnection *connection,
-	                                        NMConnection *system_connection);
+	gboolean (*check_connection_compatible) (NMDeviceInterface *device,
+	                                         NMConnection *connection,
+	                                         GError **error);
 
 	gboolean (*activate) (NMDeviceInterface *device,
 	                      NMActRequest *req,
@@ -69,9 +69,9 @@ GType nm_device_interface_error_get_type (void);
 
 GType nm_device_interface_get_type (void);
 
-gboolean nm_device_interface_check_connection_conflicts (NMDeviceInterface *device,
-                                                         NMConnection *connection,
-                                                         NMConnection *system_connection);
+gboolean nm_device_interface_check_connection_compatible (NMDeviceInterface *device,
+                                                          NMConnection *connection,
+                                                          GError **error);
 
 gboolean nm_device_interface_activate (NMDeviceInterface *device,
 				       NMActRequest *req,

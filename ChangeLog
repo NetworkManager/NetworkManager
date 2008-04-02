@@ -1,5 +1,27 @@
 2008-04-02  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-interface.c
+	  src/nm-device-interface.h
+	  src/nm-device.c
+	  src/nm-device.h
+		- Rename check_connection_conflicts() to check_connection_compatible()
+
+	* src/nm-device-802-11-wireless.c
+		- (real_check_connection_conflicts): remove
+		- (real_check_connection_compatible): implement; match MAC address
+
+	* src/nm-device-802-3-ethernet.c
+		- (real_check_connection_conflicts): remove
+		- (real_check_connection_compatible): implement; match MAC address
+		- (real_get_best_auto_connection): correctly handle PPPoE cases
+
+	* src/nm-manager.c
+		- (check_connection_allowed): remove; unused until PolicyKit integration
+		- (internal_activate_device): check whether the connection is compatible
+			with the device before trying to activate it
+
+2008-04-02  Dan Williams  <dcbw@redhat.com>
+
 	* system-settings/plugins/ifcfg-fedora/parser.c
 		- (read_mac_address): new function; read in MAC address and stuff it
 			into the connection

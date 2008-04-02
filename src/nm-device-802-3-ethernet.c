@@ -61,6 +61,16 @@ G_DEFINE_TYPE (NMDevice8023Ethernet, nm_device_802_3_ethernet, NM_TYPE_DEVICE)
 
 #define WIRED_SECRETS_TRIES "wired-secrets-tries"
 
+typedef enum
+{
+	NM_ETHERNET_ERROR_CONNECTION_NOT_WIRED = 0,
+	NM_ETHERNET_ERROR_CONNECTION_INVALID,
+	NM_ETHERNET_ERROR_CONNECTION_INCOMPATIBLE,
+} NMEthernetError;
+
+#define NM_ETHERNET_ERROR (nm_ethernet_error_quark ())
+#define NM_TYPE_ETHERNET_ERROR (nm_ethernet_error_get_type ()) 
+
 typedef struct Supplicant {
 	NMSupplicantManager *mgr;
 	NMSupplicantInterface *iface;
@@ -114,6 +124,38 @@ static void set_carrier (NMDevice8023Ethernet *self, const gboolean carrier);
 
 static gboolean supports_mii_carrier_detect (NMDevice8023Ethernet *dev);
 static gboolean supports_ethtool_carrier_detect (NMDevice8023Ethernet *dev);
+
+static GQuark
+nm_ethernet_error_quark (void)
+{
+	static GQuark quark = 0;
+	if (!quark)
+		quark = g_quark_from_static_string ("nm-ethernet-error");
+	return quark;
+}
+
+/* This should really be standard. */
+#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
+
+static GType
+nm_ethernet_error_get_type (void)
+{
+	static GType etype = 0;
+
+	if (etype == 0) {
+		static const GEnumValue values[] = {
+			/* Connection was not a wired connection. */
+			ENUM_ENTRY (NM_ETHERNET_ERROR_CONNECTION_NOT_WIRED, "ConnectionNotWired"),
+			/* Connection was not a valid wired connection. */
+			ENUM_ENTRY (NM_ETHERNET_ERROR_CONNECTION_INVALID, "ConnectionInvalid"),
+			/* Connection does not apply to this device. */
+			ENUM_ENTRY (NM_ETHERNET_ERROR_CONNECTION_INCOMPATIBLE, "ConnectionIncompatible"),
+			{ 0, 0, 0 }
+		};
+		etype = g_enum_register_static ("NMEthernetError", values);
+	}
+	return etype;
+}
 
 static void
 nm_device_802_3_ethernet_carrier_on (NMNetlinkMonitor *monitor,
@@ -443,22 +485,27 @@ real_get_best_auto_connection (NMDevice *dev,
 		NMConnection *connection = NM_CONNECTION (iter->data);
 		NMSettingConnection *s_con;
 		NMSettingWired *s_wired;
+		gboolean is_pppoe = FALSE;
 
 		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 		g_assert (s_con);
 
-		if (   strcmp (s_con->type, NM_SETTING_WIRED_SETTING_NAME)
-		    && strcmp (s_con->type, NM_SETTING_PPPOE_SETTING_NAME))
+		if (!strcmp (s_con->type, NM_SETTING_PPPOE_SETTING_NAME))
+			is_pppoe = TRUE;
+
+		if (!is_pppoe && strcmp (s_con->type, NM_SETTING_WIRED_SETTING_NAME))
 			continue;
 		if (!s_con->autoconnect)
 			continue;
 
 		s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
-		if (!s_wired)
+		/* Wired setting optional for PPPoE */
+		if (!is_pppoe && !s_wired)
 			continue;
 
-		if (s_wired->mac_address) {
-			if (memcmp (s_wired->mac_address->data, priv->hw_addr.ether_addr_octet, ETH_ALEN))
+		if (s_wired) {
+			if (   s_wired->mac_address
+				&& memcmp (s_wired->mac_address->data, priv->hw_addr.ether_addr_octet, ETH_ALEN))
 				continue;
 		}
 
@@ -1160,6 +1207,55 @@ real_deactivate_quickly (NMDevice *device)
 	supplicant_interface_clean (NM_DEVICE_802_3_ETHERNET (device));
 }
 
+static gboolean
+real_check_connection_compatible (NMDevice *device,
+                                  NMConnection *connection,
+                                  GError **error)
+{
+	NMDevice8023Ethernet *self = NM_DEVICE_802_3_ETHERNET (device);
+	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self);
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	gboolean is_pppoe = FALSE;
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	g_assert (s_con);
+
+	if (   strcmp (s_con->type, NM_SETTING_WIRED_SETTING_NAME)
+	    && strcmp (s_con->type, NM_SETTING_PPPOE_SETTING_NAME)) {
+		g_set_error (error,
+		             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_NOT_WIRED,
+		             "The connection was not a wired or PPPoE connection.");
+		return FALSE;
+	}
+
+	if (!strcmp (s_con->type, NM_SETTING_PPPOE_SETTING_NAME))
+		is_pppoe = TRUE;
+
+	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
+	/* Wired setting is optional for PPPoE */
+	if (!is_pppoe && !s_wired) {
+		g_set_error (error,
+		             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INVALID,
+		             "The connection was not a valid wired connection.");
+		return FALSE;
+	}
+
+	if (s_wired) {
+		if (   s_wired->mac_address
+			&& memcmp (s_wired->mac_address->data, &(priv->hw_addr.ether_addr_octet), ETH_ALEN)) {
+			g_set_error (error,
+			             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INCOMPATIBLE,
+			             "The connection's MAC address did not match this device.");
+			return FALSE;
+		}
+	}
+
+	// FIXME: check bitrate against device capabilities
+
+	return TRUE;
+}
+
 static void
 nm_device_802_3_ethernet_dispose (GObject *object)
 {
@@ -1245,6 +1341,7 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 	parent_class->get_best_auto_connection = real_get_best_auto_connection;
 	parent_class->can_activate = real_can_activate;
 	parent_class->connection_secrets_updated = real_connection_secrets_updated;
+	parent_class->check_connection_compatible = real_check_connection_compatible;
 
 	parent_class->act_stage2_config = real_act_stage2_config;
 	parent_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
@@ -1282,6 +1379,8 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
 									 &dbus_glib_nm_device_802_3_ethernet_object_info);
+
+	dbus_g_error_domain_register (NM_ETHERNET_ERROR, NULL, NM_TYPE_ETHERNET_ERROR);
 }
 
 

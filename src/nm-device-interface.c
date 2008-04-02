@@ -175,18 +175,18 @@ nm_device_interface_get_iface (NMDeviceInterface *device)
 }
 
 gboolean
-nm_device_interface_check_connection_conflicts (NMDeviceInterface *device,
-                                                NMConnection *connection,
-                                                NMConnection *system_connection)
+nm_device_interface_check_connection_compatible (NMDeviceInterface *device,
+                                                 NMConnection *connection,
+                                                 GError **error)
 {
 	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
-	g_return_val_if_fail (NM_IS_CONNECTION (system_connection), FALSE);
+	g_return_val_if_fail (error != NULL, FALSE);
+	g_return_val_if_fail (*error == NULL, FALSE);
 
-	if (!NM_DEVICE_INTERFACE_GET_INTERFACE (device)->check_connection_conflicts)
-		return FALSE;
-
-	return NM_DEVICE_INTERFACE_GET_INTERFACE (device)->check_connection_conflicts (device, connection, system_connection);
+	if (NM_DEVICE_INTERFACE_GET_INTERFACE (device)->check_connection_compatible)
+		return NM_DEVICE_INTERFACE_GET_INTERFACE (device)->check_connection_compatible (device, connection, error);
+	return TRUE;
 }
 
 gboolean

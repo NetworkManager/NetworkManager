@@ -85,9 +85,9 @@ struct _NMDeviceClass
 	                                            NMConnection *connection,
 	                                            GSList *updated_settings);
 
-	gboolean    (* check_connection_conflicts) (NMDevice *self,
-	                                            NMConnection *connection,
-	                                            NMConnection *system_connection);
+	gboolean    (* check_connection_compatible) (NMDevice *self,
+	                                             NMConnection *connection,
+	                                             GError **error);
 
 	NMActStageReturn	(* act_stage1_prepare)	(NMDevice *self);
 	NMActStageReturn	(* act_stage2_config)	(NMDevice *self);

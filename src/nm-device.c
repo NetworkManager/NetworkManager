@@ -86,9 +86,9 @@ struct _NMDevicePrivate
 	gulong              dhcp_timeout_sigid;
 };
 
-static gboolean nm_device_check_connection_conflicts (NMDeviceInterface *device,
-                                                      NMConnection *connection,
-                                                      NMConnection *system_connection);
+static gboolean check_connection_compatible (NMDeviceInterface *device,
+                                             NMConnection *connection,
+                                             GError **error);
 
 static gboolean nm_device_activate (NMDeviceInterface *device,
                                     NMActRequest *req,
@@ -108,7 +108,7 @@ static void
 device_interface_init (NMDeviceInterface *device_interface_class)
 {
 	/* interface implementation */
-	device_interface_class->check_connection_conflicts = nm_device_check_connection_conflicts;
+	device_interface_class->check_connection_compatible = check_connection_compatible;
 	device_interface_class->activate = nm_device_activate;
 	device_interface_class->deactivate = nm_device_deactivate;
 }
@@ -1063,16 +1063,16 @@ nm_device_deactivate (NMDeviceInterface *device)
 }
 
 static gboolean
-nm_device_check_connection_conflicts (NMDeviceInterface *dev_iface,
-                                      NMConnection *connection,
-                                      NMConnection *system_connection)
+check_connection_compatible (NMDeviceInterface *dev_iface,
+                             NMConnection *connection,
+                             GError **error)
 {
 	NMDeviceClass *klass = NM_DEVICE_GET_CLASS (NM_DEVICE (dev_iface));
 
-	if (klass->check_connection_conflicts)
-		return klass->check_connection_conflicts (NM_DEVICE (dev_iface), connection, system_connection);
+	if (klass->check_connection_compatible)
+		return klass->check_connection_compatible (NM_DEVICE (dev_iface), connection, error);
 
-	return FALSE;
+	return TRUE;
 }
 
 static void

@@ -1340,41 +1340,6 @@ nm_manager_get_act_request_by_path (NMManager *manager,
 	return NULL;
 }
 
-static gboolean
-check_connection_allowed (NMManager *manager,
-                          NMDeviceInterface *dev_iface,
-                          NMConnection *connection,
-                          const char *specific_object,
-                          GError **error)
-{
-	NMSettingConnection *s_con;
-	GSList *system_connections;
-	GSList *iter;
-	gboolean allowed = TRUE;
-
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-	g_return_val_if_fail (s_con != NULL, FALSE);
-
-	system_connections = nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
-	for (iter = system_connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *system_connection = NM_CONNECTION (iter->data);
-
-		if (connection == system_connection)
-			continue;
-
-		if (nm_device_interface_check_connection_conflicts (dev_iface,
-		                                                    connection,
-		                                                    system_connection)) {
-			allowed = FALSE;
-			break;
-		}
-	}
-
-	g_slist_foreach (system_connections, (GFunc) g_object_unref, NULL);
-
-	return allowed;
-}
-
 static const char *
 internal_activate_device (NMManager *manager,
                           NMDevice *device,
@@ -1393,8 +1358,8 @@ internal_activate_device (NMManager *manager,
 
 	dev_iface = NM_DEVICE_INTERFACE (device);
 
-	/* Ensure the requested connection is allowed to be activated */
-	if (!check_connection_allowed (manager, dev_iface, connection, specific_object, error))
+	/* Ensure the requested connection is compatible with the device */
+	if (!nm_device_interface_check_connection_compatible (dev_iface, connection, error))
 		return NULL;
 
 	if (nm_device_get_act_request (device)) {
@@ -1406,7 +1371,7 @@ internal_activate_device (NMManager *manager,
 	success = nm_device_interface_activate (dev_iface, req, error);
 	g_object_unref (req);
 
-	return nm_act_request_get_active_connection_path (req);
+	return success ? nm_act_request_get_active_connection_path (req) : NULL;
 }
 
 gboolean

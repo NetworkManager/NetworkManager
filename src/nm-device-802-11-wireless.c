@@ -99,6 +99,17 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
+typedef enum
+{
+	NM_WIFI_ERROR_CONNECTION_NOT_WIRELESS = 0,
+	NM_WIFI_ERROR_CONNECTION_INVALID,
+	NM_WIFI_ERROR_CONNECTION_INCOMPATIBLE,
+} NMWifiError;
+
+#define NM_WIFI_ERROR (nm_wifi_error_quark ())
+#define NM_TYPE_WIFI_ERROR (nm_wifi_error_get_type ()) 
+
+
 typedef struct Supplicant {
 	NMSupplicantManager *   mgr;
 	NMSupplicantInterface * iface;
@@ -194,6 +205,38 @@ static void device_cleanup (NMDevice80211Wireless *self);
 
 static guint32 nm_device_802_11_wireless_get_bitrate (NMDevice80211Wireless *self);
 
+
+static GQuark
+nm_wifi_error_quark (void)
+{
+	static GQuark quark = 0;
+	if (!quark)
+		quark = g_quark_from_static_string ("nm-wifi-error");
+	return quark;
+}
+
+/* This should really be standard. */
+#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
+
+static GType
+nm_wifi_error_get_type (void)
+{
+	static GType etype = 0;
+
+	if (etype == 0) {
+		static const GEnumValue values[] = {
+			/* Connection was not a wireless connection. */
+			ENUM_ENTRY (NM_WIFI_ERROR_CONNECTION_NOT_WIRELESS, "ConnectionNotWireless"),
+			/* Connection was not a valid wireless connection. */
+			ENUM_ENTRY (NM_WIFI_ERROR_CONNECTION_INVALID, "ConnectionInvalid"),
+			/* Connection does not apply to this device. */
+			ENUM_ENTRY (NM_WIFI_ERROR_CONNECTION_INCOMPATIBLE, "ConnectionIncompatible"),
+			{ 0, 0, 0 }
+		};
+		etype = g_enum_register_static ("NMWifiError", values);
+	}
+	return etype;
+}
 
 static void
 access_point_removed (NMDevice80211Wireless *device, NMAccessPoint *ap)
@@ -788,52 +831,46 @@ real_deactivate (NMDevice *dev)
 }
 
 static gboolean
-real_check_connection_conflicts (NMDevice *device,
-                                 NMConnection *connection,
-                                 NMConnection *system_connection)
+real_check_connection_compatible (NMDevice *device,
+                                  NMConnection *connection,
+                                  GError **error)
 {
 	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (device);
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 	NMSettingConnection *s_con;
-	NMSettingConnection *system_s_con;
 	NMSettingWireless *s_wireless;
-	NMSettingWireless *system_s_wireless;
 
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_con);
 
-	system_s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (system_connection, NM_TYPE_SETTING_CONNECTION));
-	g_assert (system_s_con);
-
-	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
-	if (!s_wireless)
+	if (strcmp (s_con->type, NM_SETTING_WIRELESS_SETTING_NAME)) {
+		g_set_error (error,
+		             NM_WIFI_ERROR, NM_WIFI_ERROR_CONNECTION_NOT_WIRELESS,
+		             "The connection was not a WiFi connection.");
 		return FALSE;
-
-	system_s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (system_connection, NM_TYPE_SETTING_WIRELESS));
-	if (!system_s_wireless)
-		return FALSE;
-
-	if (!system_s_con->lockdown)
-		return FALSE;
-
-	if (!strcmp (system_s_con->lockdown, "device")) {
-		/* If the system connection has a MAC address and the MAC address
-		 * matches this device, the activation request conflicts.
-		 */
-		if (   system_s_wireless->mac_address
-			&& !memcmp (system_s_wireless->mac_address->data, &(priv->hw_addr.ether_addr_octet), ETH_ALEN))
-			return TRUE;
-	} else if (!strcmp (system_s_con->lockdown, "connection")) {
-		/* If the system connection has an SSID and it matches the SSID of the
-		 * connection being activated, the connection being activated conflicts.
-		 */
-		g_assert (system_s_wireless->ssid);
-		g_assert (s_wireless->ssid);
-		if (nm_utils_same_ssid (system_s_wireless->ssid, s_wireless->ssid, TRUE))
-			return TRUE;
 	}
 
-	return FALSE;
+	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	if (!s_wireless) {
+		g_set_error (error,
+		             NM_WIFI_ERROR, NM_WIFI_ERROR_CONNECTION_INVALID,
+		             "The connection was not a valid WiFi connection.");
+		return FALSE;
+	}
+
+	if (   s_wireless->mac_address
+		&& memcmp (s_wireless->mac_address->data, &(priv->hw_addr.ether_addr_octet), ETH_ALEN)) {
+		g_set_error (error,
+		             NM_WIFI_ERROR, NM_WIFI_ERROR_CONNECTION_INCOMPATIBLE,
+		             "The connection's MAC address did not match this device.");
+		return FALSE;
+	}
+
+	// FIXME: check channel/freq/band against bands the hardware supports
+	// FIXME: check encryption against device capabilities
+	// FIXME: check bitrate against device capabilities
+
+	return TRUE;
 }
 
 static gboolean
@@ -2996,7 +3033,7 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 	parent_class->get_best_auto_connection = real_get_best_auto_connection;
 	parent_class->can_activate = real_can_activate;
 	parent_class->connection_secrets_updated = real_connection_secrets_updated;
-	parent_class->check_connection_conflicts = real_check_connection_conflicts;
+	parent_class->check_connection_compatible = real_check_connection_compatible;
 
 	parent_class->act_stage1_prepare = real_act_stage1_prepare;
 	parent_class->act_stage2_config = real_act_stage2_config;
@@ -3080,8 +3117,9 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
 									 &dbus_glib_nm_device_802_11_wireless_object_info);
-}
 
+	dbus_g_error_domain_register (NM_WIFI_ERROR, NULL, NM_TYPE_WIFI_ERROR);
+}
 
 static void
 state_changed_cb (NMDevice *device, NMDeviceState state, gpointer user_data)
