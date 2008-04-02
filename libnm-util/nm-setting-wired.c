@@ -1,5 +1,6 @@
 /* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
+#include <net/ethernet.h>
 #include <dbus/dbus-glib.h>
 #include "nm-setting-wired.h"
 #include "nm-param-spec-specialized.h"
@@ -42,7 +43,7 @@ verify (NMSetting *setting, GSList *all_settings)
 		return FALSE;
 	}
 
-	if (self->mac_address && self->mac_address->len != 6) {
+	if (self->mac_address && self->mac_address->len != ETH_ALEN) {
 		g_warning ("Invalid mac address");
 		return FALSE;
 	}
