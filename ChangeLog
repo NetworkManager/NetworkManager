@@ -1,3 +1,11 @@
+2008-04-02  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-setting-connection.c
+	  libnm-util/nm-setting-connection.h
+		- (set_property, get_property, nm_setting_connection_class_init): remove
+			the 'lockdown' property; it's functionality will be replaced by
+			PolicyKit instead
+
 2008-04-01  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Per Øyvind Karlsen <peroyvind@mandriva.org>

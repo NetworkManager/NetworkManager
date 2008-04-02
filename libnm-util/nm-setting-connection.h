@@ -20,7 +20,6 @@ G_BEGIN_DECLS
 #define NM_SETTING_CONNECTION_TYPE        "type"
 #define NM_SETTING_CONNECTION_AUTOCONNECT "autoconnect"
 #define NM_SETTING_CONNECTION_TIMESTAMP   "timestamp"
-#define NM_SETTING_CONNECTION_LOCKDOWN    "lockdown"
 
 typedef struct {
 	NMSetting parent;
@@ -29,13 +28,6 @@ typedef struct {
 	char *type;
 	gboolean autoconnect;
 	guint64 timestamp;
-
-	/* One of:
-	 *   device     - specified device may only use this connection
-	 *   connection - only this connection may be used to connect to compatible
-	 *                networks (matched on SSID, Bluetooth address, etc)
-	 */
-	char *lockdown;
 } NMSettingConnection;
 
 typedef struct {

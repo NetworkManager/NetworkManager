@@ -11,7 +11,6 @@ enum {
 	PROP_TYPE,
 	PROP_AUTOCONNECT,
 	PROP_TIMESTAMP,
-	PROP_LOCKDOWN,
 
 	LAST_PROP
 };
@@ -88,9 +87,6 @@ set_property (GObject *object, guint prop_id,
 	case PROP_TIMESTAMP:
 		setting->timestamp = g_value_get_uint64 (value);
 		break;
-	case PROP_LOCKDOWN:
-		setting->lockdown = g_value_dup_string (value);
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -115,9 +111,6 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_TIMESTAMP:
 		g_value_set_uint64 (value, setting->timestamp);
-		break;
-	case PROP_LOCKDOWN:
-		g_value_set_string (value, setting->lockdown);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -169,12 +162,4 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 						  "Connection timestamp",
 						  0, G_MAXUINT64, 0,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
-
-	g_object_class_install_property
-		(object_class, PROP_LOCKDOWN,
-		 g_param_spec_string (NM_SETTING_CONNECTION_LOCKDOWN,
-						  "Lockdown",
-						  "Connection lockdown policy",
-						  NULL,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 }
