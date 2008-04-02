@@ -30,6 +30,7 @@
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+#include <netinet/ether.h>
 
 #ifndef __user
 #define __user
@@ -381,6 +382,44 @@ utils_bin2hexstr (const char *bytes, int len, int final_len)
 	return result;
 }
 
+static gboolean
+read_mac_address (shvarFile *ifcfg, GByteArray **array, GError **error)
+{
+	char *value = NULL;
+	struct ether_addr *mac;
+
+	g_return_val_if_fail (ifcfg != NULL, FALSE);
+	g_return_val_if_fail (array != NULL, FALSE);
+	g_return_val_if_fail (*array == NULL, FALSE);
+	g_return_val_if_fail (error != NULL, FALSE);
+	g_return_val_if_fail (*error == NULL, FALSE);
+
+	value = svGetValue (ifcfg, "HWADDR");
+	if (!value || !strlen (value)) {
+		g_free (value);
+		return TRUE;
+	}
+
+	mac = ether_aton (value);
+	if (!mac) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "The MAC address '%s' was invalid.", value);
+		goto error;
+	}
+
+	*array = g_byte_array_sized_new (ETH_ALEN);
+	g_byte_array_append (*array, (guint8 *) mac->ether_addr_octet, ETH_ALEN);
+
+	return TRUE;
+
+error:
+	g_free (value);
+	if (*array) {
+		g_byte_array_free (*array, TRUE);
+		*array = NULL;
+	}
+	return FALSE;
+}
 
 static gboolean
 add_one_wep_key (shvarFile *ifcfg,
@@ -437,7 +476,6 @@ add_one_wep_key (shvarFile *ifcfg,
 	}
 
 	if (key) {
-g_message ("%s: adding key '%s' at index %d", __func__, key, key_idx);
 		if (key_idx == 0)
 			g_hash_table_insert (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0, key);
 		else if (key_idx == 1)
@@ -539,8 +577,26 @@ make_wireless_security_setting (shvarFile *ifcfg,
 	/* Try to get keys from the "shadow" key file */
 	keys_ifcfg = get_keys_ifcfg (file);
 	if (keys_ifcfg) {
-		if (!read_wep_keys (keys_ifcfg, default_key_idx, cdata->wifi_secrets, error))
+		if (!read_wep_keys (keys_ifcfg, default_key_idx, cdata->wifi_secrets, error)) {
+			svCloseFile (keys_ifcfg);
 			goto error;
+		}
+		svCloseFile (keys_ifcfg);
+	}
+
+	/* If there's a default key, ensure that key exists */
+	if ((default_key_idx == 1) && !s_wireless_sec->wep_key1) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Default WEP key index was 2, but no valid KEY2 exists.");
+		goto error;
+	} else if ((default_key_idx == 2) && !s_wireless_sec->wep_key2) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Default WEP key index was 3, but no valid KEY3 exists.");
+		goto error;
+	} else if ((default_key_idx == 3) && !s_wireless_sec->wep_key3) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Default WEP key index was 4, but no valid KEY4 exists.");
+		goto error;
 	}
 
 	value = svGetValue (ifcfg, "SECURITYMODE");
@@ -564,19 +620,31 @@ make_wireless_security_setting (shvarFile *ifcfg,
 		g_free (lcase);
 	}
 
-	// FIXME: unencrypted and WEP-only for now
-	s_wireless_sec->key_mgmt = g_strdup ("none");
+	if (   !s_wireless_sec->wep_key0
+	    && !s_wireless_sec->wep_key1
+	    && !s_wireless_sec->wep_key2
+	    && !s_wireless_sec->wep_key3
+	    && !s_wireless_sec->wep_tx_keyidx) {
+		if (s_wireless_sec->auth_alg && !strcmp (s_wireless_sec->auth_alg, "shared")) {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "WEP Shared Key authentication is invalid for "
+			             "unencrypted connections.");
+			goto error;
+		}
 
-	if (keys_ifcfg)
-		svCloseFile (keys_ifcfg);
+		/* Unencrypted */
+		g_object_unref (s_wireless_sec);
+		s_wireless_sec = NULL;
+	} else {
+		// FIXME: WEP-only for now
+		s_wireless_sec->key_mgmt = g_strdup ("none");
+	}
 
-	return NM_SETTING (s_wireless_sec);
+	return (NMSetting *) s_wireless_sec;
 
 error:
 	if (s_wireless_sec)
 		g_object_unref (s_wireless_sec);
-	if (keys_ifcfg)
-		svCloseFile (keys_ifcfg);
 	return NULL;
 }
 
@@ -633,6 +701,11 @@ make_wireless_setting (shvarFile *ifcfg,
 
 	if (security)
 		s_wireless->security = g_strdup (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+
+	if (!read_mac_address (ifcfg, &s_wireless->mac_address, error)) {
+		g_object_unref (s_wireless);
+		s_wireless = NULL;
+	}
 
 	// FIXME: channel/freq, other L2 parameters like RTS
 
@@ -737,6 +810,11 @@ make_wired_setting (shvarFile *ifcfg, GError **error)
 			s_wired = NULL;
 		}
 		g_free (value);
+	}
+
+	if (!read_mac_address (ifcfg, &s_wired->mac_address, error)) {
+		g_object_unref (s_wired);
+		s_wired = NULL;
 	}
 
 	return (NMSetting *) s_wired;

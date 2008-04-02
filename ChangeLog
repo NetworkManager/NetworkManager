@@ -1,5 +1,17 @@
 2008-04-02  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/plugins/ifcfg-fedora/parser.c
+		- (read_mac_address): new function; read in MAC address and stuff it
+			into the connection
+		- (add_one_wep_key): remove debug spew
+		- (make_wireless_security_setting): validate the default TX key; don't
+			add the wireless-security setting if the connection doesn't need
+			security; don't leak the keys shvarFile on error cases
+		- (make_wireless_setting, make_wired_setting): populate device's MAC
+			address
+
+2008-04-02  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting-connection.c
 	  libnm-util/nm-setting-connection.h
 		- (set_property, get_property, nm_setting_connection_class_init): remove
