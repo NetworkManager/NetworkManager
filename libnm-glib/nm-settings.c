@@ -143,31 +143,38 @@ typedef struct {
                                                NM_TYPE_EXPORTED_CONNECTION, \
                                                NMExportedConnectionPrivate))
 
+const char *
+nm_exported_connection_get_id (NMExportedConnection *connection)
+{
+	NMExportedConnectionPrivate *priv;
+	NMSettingConnection *s_con;
+
+	g_return_val_if_fail (NM_IS_EXPORTED_CONNECTION (connection), NULL);
+
+	priv = NM_EXPORTED_CONNECTION_GET_PRIVATE (connection);
+	if (EXPORTED_CONNECTION_CLASS (connection)->get_id)
+		return EXPORTED_CONNECTION_CLASS (connection)->get_id (connection);
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (priv->wrapped, NM_TYPE_SETTING_CONNECTION);
+	if (NM_IS_SETTING_CONNECTION (s_con))
+		return s_con->id;
+
+	return NULL;
+}
 
 static gboolean
 impl_exported_connection_get_id (NMExportedConnection *connection,
                                  gchar **id,
                                  GError **error)
 {
-	NMExportedConnectionPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_EXPORTED_CONNECTION (connection), FALSE);
 
-	priv = NM_EXPORTED_CONNECTION_GET_PRIVATE (connection);
-	if (!EXPORTED_CONNECTION_CLASS (connection)->get_id) {
-		NMSettingConnection *s_con;
-
-		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (priv->wrapped, NM_TYPE_SETTING_CONNECTION));
-		if (!s_con || !s_con->id) {
-			g_set_error (error, NM_SETTINGS_ERROR, 1,
-			             "%s.%d - Invalid connection.",
-			             __FILE__, __LINE__);
-			return FALSE;
-		}
-
-		*id = g_strdup (s_con->id);
-	} else {
-		*id = EXPORTED_CONNECTION_CLASS (connection)->get_id (connection);
+	*id = (gchar *) nm_exported_connection_get_id (connection);
+	if (!*id) {
+		g_set_error (error, NM_SETTINGS_ERROR, 1,
+		             "%s.%d - Could not get connection ID.",
+		             __FILE__, __LINE__);
+		return FALSE;
 	}
 
 	return TRUE;

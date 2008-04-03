@@ -1,3 +1,10 @@
+2008-04-03  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-glib/nm-settings.c
+	  libnm-glib/nm-settings.h
+	    - (nm_exported_connection_get_id): new function
+		- (impl_exported_connection_get_id): use nm_exported_connection_get_id()
+
 2008-04-02  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-interface.c

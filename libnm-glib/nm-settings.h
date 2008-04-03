@@ -27,7 +27,7 @@ typedef struct {
 	GObjectClass parent_class;
 
 	/* virtual methods */
-	gchar * (* get_id) (NMExportedConnection *connection);
+	const gchar *(* get_id) (NMExportedConnection *connection);
 	GHashTable * (* get_settings) (NMExportedConnection *connection);
 	void         (* get_secrets) (NMExportedConnection *connection,
 	                              const gchar *setting_name,
@@ -47,6 +47,8 @@ void nm_exported_connection_register_object (NMExportedConnection *connection,
                                              DBusGConnection *dbus_connection);
 
 NMConnection *nm_exported_connection_get_connection (NMExportedConnection *connection);
+
+const char *nm_exported_connection_get_id (NMExportedConnection *connection);
 
 void nm_exported_connection_signal_updated (NMExportedConnection *connection, GHashTable *settings);
 void nm_exported_connection_signal_removed (NMExportedConnection *connection);
