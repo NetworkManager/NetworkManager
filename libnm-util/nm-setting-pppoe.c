@@ -1,5 +1,6 @@
 /* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
+#include <string.h>
 #include "nm-setting-pppoe.h"
 
 G_DEFINE_TYPE (NMSettingPPPOE, nm_setting_pppoe, NM_TYPE_SETTING)
