@@ -24,8 +24,13 @@ verify (NMSetting *setting, GSList *all_settings)
 {
 	NMSettingPPPOE *self = NM_SETTING_PPPOE (setting);
 
-	if (!self->username) {
-		g_warning ("Missing username");
+	if (!self->username || !strlen (self->username)) {
+		g_warning ("Missing or empty username");
+		return FALSE;
+	}
+
+	if (self->service && !strlen (self->service)) {
+		g_warning ("Empty service");
 		return FALSE;
 	}
 
