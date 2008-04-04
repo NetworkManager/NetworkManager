@@ -1,33 +1,32 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 
 <node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
-    <interface name="org.freedesktop.NetworkManagerSettings">
+  <interface name="org.freedesktop.NetworkManagerSettings">
+    <tp:docstring>
+      The NetworkManagerSettings interface is provided by the service which provides connections to NetworkManager.
+    </tp:docstring>
+
+    <method name="ListConnections">
+      <tp:docstring>
+        List the connections stored by this Settings object.
+      </tp:docstring>
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_list_connections"/>
+      <arg name="connections" type="ao" direction="out">
         <tp:docstring>
-            The NetworkManagerSettings interface is held by a separate process to the daemon and provides settings to the daemon.
+          List of connections.
         </tp:docstring>
-        <method name="ListConnections">
-            <tp:docstring>
-                List the connections stored by this Settings object.
-            </tp:docstring>
-            <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_list_connections"/>
-            <arg name="connections" type="ao" direction="out">
-                <tp:docstring>
-                    List of connections.
-                </tp:docstring>
-            </arg>
-        </method>
+      </arg>
+    </method>
 
-        <signal name="NewConnection">
-            <tp:docstring>
-                Emitted when a new connection has been configured.
-            </tp:docstring>
-            <arg name="connection" type="o">
-                <tp:docstring>
-                    Object path of the new connection.
-                </tp:docstring>
-            </arg>
-        </signal>
-
-    </interface>
-
+    <signal name="NewConnection">
+      <tp:docstring>
+        Emitted when a new connection has been configured.
+      </tp:docstring>
+      <arg name="connection" type="o">
+        <tp:docstring>
+          Object path of the new connection.
+        </tp:docstring>
+      </arg>
+    </signal>
+  </interface>
 </node>
