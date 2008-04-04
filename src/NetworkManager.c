@@ -205,6 +205,13 @@ write_pidfile (const char *pidfile)
 		nm_warning ("Closing %s failed: %s", pidfile, strerror (errno));
 }
 
+static gboolean
+start_hal (gpointer user_data)
+{
+	nm_hal_manager_start ((NMHalManager *) user_data);
+	return FALSE;
+}
+
 /*
  * main
  *
@@ -343,6 +350,7 @@ main (int argc, char *argv[])
 	hal_manager = nm_hal_manager_new (manager);
 	if (!hal_manager)
 		goto done;
+	g_idle_add (start_hal, hal_manager);
 
 	/* Bring up the loopback interface. */
 	nm_system_enable_loopback ();

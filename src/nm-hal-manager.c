@@ -569,7 +569,6 @@ hal_init (NMHalManager *manager)
 {
 	DBusError error;
 	DBusGConnection *connection; 
-	gboolean success = FALSE;
 
 	manager->hal_ctx = libhal_ctx_new ();
 	if (!manager->hal_ctx) {
@@ -586,7 +585,7 @@ hal_init (NMHalManager *manager)
 		nm_error ("libhal_ctx_init() failed: %s\n"
 				  "Make sure the hal daemon is running?", 
 				  error.message);
-		goto out;
+		goto error;
 	}
 
 	libhal_ctx_set_user_data (manager->hal_ctx, manager);
@@ -598,25 +597,19 @@ hal_init (NMHalManager *manager)
 	if (dbus_error_is_set (&error)) {
 		nm_error ("libhal_device_property_watch_all(): %s", error.message);
 		libhal_ctx_shutdown (manager->hal_ctx, NULL);
-		goto out;
+		goto error;
 	}
 
-	/* Add any devices we know about */
-	add_killswitch_devices (manager);
-	add_initial_devices (manager);
-	success = TRUE;
+	return TRUE;
 
-out:
-	if (!success) {
-		if (dbus_error_is_set (&error))
-			dbus_error_free (&error);
-		if (manager->hal_ctx) {
-			libhal_ctx_free (manager->hal_ctx);
-			manager->hal_ctx = NULL;
-		}
+error:
+	if (dbus_error_is_set (&error))
+		dbus_error_free (&error);
+	if (manager->hal_ctx) {
+		libhal_ctx_free (manager->hal_ctx);
+		manager->hal_ctx = NULL;
 	}
-
-	return success;
+	return FALSE;
 }
 
 static void
@@ -746,6 +739,14 @@ nm_hal_manager_new (NMManager *nm_manager)
 	hal_init (manager);
 
 	return manager;
+}
+
+void
+nm_hal_manager_start (NMHalManager *manager)
+{
+	/* Find hardware we care about */
+	add_killswitch_devices (manager);
+	add_initial_devices (manager);
 }
 
 static void

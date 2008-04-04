@@ -1,3 +1,14 @@
+2008-04-04  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-hal-manager.c
+	  src/nm-hal-manager.h
+		- (hal_init): don't look for hardware here
+		- (nm_hal_manager_start): new function; look for hardware here instead,
+			which can be done at a later time than hal_init()
+
+	* src/NetworkManager.c
+		- (main): start HAL manager after entering the main loop
+
 2008-04-03  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-glib/nm-settings.c
