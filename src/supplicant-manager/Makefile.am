@@ -2,7 +2,7 @@ INCLUDES = \
 	-I${top_srcdir}/src \
 	-I${top_srcdir}/include \
 	-I${top_srcdir}/libnm-util \
-	-I${top_builddir}/src/marshallers \
+	-I${top_builddir}/marshallers \
 	-I${top_srcdir}/src/named-manager
 
 noinst_LTLIBRARIES = libsupplicant-manager.la
@@ -29,7 +29,7 @@ libsupplicant_manager_la_CPPFLAGS = \
 libsupplicant_manager_la_LIBADD = \
 	$(DBUS_LIBS) \
 	$(GTHREAD_LIBS) \
-	$(top_builddir)/src/marshallers/libmarshallers.la
+	$(top_builddir)/marshallers/libmarshallers.la
 
 $(libsupplicant_manager_la_OBJECTS): $(BUILT_SOURCES)
 

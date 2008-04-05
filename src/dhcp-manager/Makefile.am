@@ -1,7 +1,7 @@
 INCLUDES = \
 	-I${top_srcdir} \
 	-I${top_srcdir}/include \
-	-I${top_builddir}/src/marshallers \
+	-I${top_builddir}/marshallers \
 	-I${top_srcdir}/libnm-util \
 	-I${top_srcdir}/src \
 	-I${top_srcdir}/src/named-manager
@@ -30,7 +30,7 @@ libdhcp_manager_la_CPPFLAGS = \
 libdhcp_manager_la_LIBADD = \
 	$(DBUS_LIBS) \
 	$(GTHREAD_LIBS) \
-	$(top_builddir)/src/marshallers/libmarshallers.la
+	$(top_builddir)/marshallers/libmarshallers.la
 
 CLEANFILES = $(BUILT_SOURCES)
 

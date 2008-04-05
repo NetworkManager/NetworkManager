@@ -22,6 +22,7 @@ clean:
 endif
 
 SUBDIRS = 				\
+	   marshallers			\
 	   libnm-util			\
 	   libnm-glib			\
 	   src				\

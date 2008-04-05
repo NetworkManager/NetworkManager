@@ -3,7 +3,7 @@ INCLUDES = \
 	-I${top_srcdir}/include \
 	-I${top_srcdir}/libnm-util \
 	-I${top_srcdir}/src \
-	-I${top_builddir}/src/marshallers \
+	-I${top_builddir}/marshallers \
 	-I${top_srcdir}/src/named-manager \
 	-DVPN_NAME_FILES_DIR=\""$(sysconfdir)/NetworkManager/VPN"\"
 
@@ -25,7 +25,7 @@ libvpn_manager_la_CPPFLAGS =	\
 libvpn_manager_la_LIBADD =	\
 	$(DBUS_LIBS)		\
 	$(GTHREAD_LIBS)		\
-	$(top_builddir)/src/marshallers/libmarshallers.la \
+	$(top_builddir)/marshallers/libmarshallers.la \
 	$(top_builddir)/libnm-util/libnm-util.la
 
 nm-vpn-connection-glue.h: $(top_srcdir)/introspection/nm-vpn-connection.xml

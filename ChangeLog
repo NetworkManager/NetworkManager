@@ -1,3 +1,27 @@
+2008-04-05  Dan Williams  <dcbw@redhat.com>
+
+	* Makefile.am
+	  configure.in
+	  marshallers/Makefile.am
+	  marshallers/nm-marshal-main.c
+	  marshallers/nm-marshal.list
+		- Consolidate marshallers
+
+	* libnm-glib/nm-marshal-main.c
+	  libnm-glib/nm-marshal.list
+	  src/marshallers/Makefile.am
+	  src/marshallers/nm-marshal-main.c
+	  src/marshallers/nm-marshal.list
+		- Remove
+
+	* libnm-glib/Makefile.am
+	  src/Makefile.am
+	  src/dhcp-manager/Makefile.am
+	  src/ppp-manager/Makefile.am
+	  src/supplicant-manager/Makefile.am
+	  src/vpn-manager/Makefile.am
+		- Use consolidated marshallers
+
 2008-04-04  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-hal-manager.c

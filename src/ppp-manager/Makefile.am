@@ -3,7 +3,7 @@ INCLUDES = \
 	-I${top_srcdir}/include \
 	-I${top_srcdir}/libnm-util \
 	-I${top_srcdir}/src \
-	-I${top_builddir}/src/marshallers
+	-I${top_builddir}/marshallers
 
 noinst_LTLIBRARIES = libppp-manager.la
 
@@ -30,7 +30,7 @@ libppp_manager_la_CPPFLAGS = \
 libppp_manager_la_LIBADD = \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
-	$(top_builddir)/src/marshallers/libmarshallers.la
+	$(top_builddir)/marshallers/libmarshallers.la
 
 pppd_plugindir = $(PPPD_PLUGIN_DIR)
 pppd_plugin_LTLIBRARIES = nm-pppd-plugin.la

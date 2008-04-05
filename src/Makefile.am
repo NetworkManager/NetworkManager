@@ -1,5 +1,4 @@
 SUBDIRS= \
-	marshallers \
 	named-manager \
 	vpn-manager \
 	dhcp-manager \
@@ -9,7 +8,7 @@ SUBDIRS= \
 
 INCLUDES = -I${top_srcdir}                   \
            -I${top_srcdir}/include           \
-           -I${top_builddir}/src/marshallers   \
+           -I${top_builddir}/marshallers   \
            -I${top_srcdir}/src/named-manager \
            -I${top_srcdir}/src/vpn-manager   \
            -I${top_srcdir}/src/dhcp-manager  \
@@ -134,7 +133,7 @@ NetworkManager_LDADD = 							\
 			$(GTHREAD_LIBS)					\
 			$(HAL_LIBS)						\
 			$(LIBNL_LIBS)						\
-			./marshallers/libmarshallers.la	\
+			$(top_builddir)/marshallers/libmarshallers.la	\
 			./named-manager/libnamed-manager.la	\
 			./vpn-manager/libvpn-manager.la		\
 			./dhcp-manager/libdhcp-manager.la		\
