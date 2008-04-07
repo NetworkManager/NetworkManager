@@ -585,15 +585,18 @@ make_wireless_security_setting (shvarFile *ifcfg,
 	}
 
 	/* If there's a default key, ensure that key exists */
-	if ((default_key_idx == 1) && !s_wireless_sec->wep_key1) {
+	if (   (default_key_idx == 1)
+	    && !g_hash_table_lookup (cdata->wifi_secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY1)) {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Default WEP key index was 2, but no valid KEY2 exists.");
 		goto error;
-	} else if ((default_key_idx == 2) && !s_wireless_sec->wep_key2) {
+	} else if (   (default_key_idx == 2)
+	           && !g_hash_table_lookup (cdata->wifi_secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY2)) {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Default WEP key index was 3, but no valid KEY3 exists.");
 		goto error;
-	} else if ((default_key_idx == 3) && !s_wireless_sec->wep_key3) {
+	} else if (   (default_key_idx == 3)
+	           && !g_hash_table_lookup (cdata->wifi_secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY3)) {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Default WEP key index was 4, but no valid KEY4 exists.");
 		goto error;
@@ -620,10 +623,10 @@ make_wireless_security_setting (shvarFile *ifcfg,
 		g_free (lcase);
 	}
 
-	if (   !s_wireless_sec->wep_key0
-	    && !s_wireless_sec->wep_key1
-	    && !s_wireless_sec->wep_key2
-	    && !s_wireless_sec->wep_key3
+	if (   !g_hash_table_lookup (cdata->wifi_secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0)
+	    && !g_hash_table_lookup (cdata->wifi_secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY1)
+	    && !g_hash_table_lookup (cdata->wifi_secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY2)
+	    && !g_hash_table_lookup (cdata->wifi_secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY3)
 	    && !s_wireless_sec->wep_tx_keyidx) {
 		if (s_wireless_sec->auth_alg && !strcmp (s_wireless_sec->auth_alg, "shared")) {
 			g_set_error (error, ifcfg_plugin_error_quark (), 0,
