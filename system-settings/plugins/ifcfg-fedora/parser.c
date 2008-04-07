@@ -260,6 +260,17 @@ get_one_ip4_addr (shvarFile *ifcfg,
 	g_free (value);
 }
 
+#define GET_ONE_DNS(tag) \
+	{ \
+		guint32 dns = 0; \
+		get_one_ip4_addr (ifcfg, "DNS1", &dns, error); \
+		if (*error) \
+			goto error; \
+		if (dns) \
+			g_array_append_val (s_ip4->dns, dns); \
+	}
+		
+
 static NMSetting *
 make_ip4_setting (shvarFile *ifcfg, GError **error)
 {
@@ -267,7 +278,6 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 	char *value = NULL;
 	NMSettingIP4Address tmp = { 0, 0, 0 };
 	char *method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
-	guint32 dns;
 
 	value = svGetValue (ifcfg, "BOOTPROTO");
 	if (value && (!g_ascii_strcasecmp (value, "bootp") || !g_ascii_strcasecmp (value, "dhcp")))
@@ -305,20 +315,9 @@ done:
 	if (g_ascii_strcasecmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP)) {
 		s_ip4->dns = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
 
-		get_one_ip4_addr (ifcfg, "DNS1", &dns, error);
-		if (*error)
-			goto error;
-		g_array_append_val (s_ip4->dns, dns);
-
-		get_one_ip4_addr (ifcfg, "DNS2", &dns, error);
-		if (*error)
-			goto error;
-		g_array_append_val (s_ip4->dns, dns);
-
-		get_one_ip4_addr (ifcfg, "DNS3", &dns, error);
-		if (*error)
-			goto error;
-		g_array_append_val (s_ip4->dns, dns);
+		GET_ONE_DNS("DNS1");
+		GET_ONE_DNS("DNS2");
+		GET_ONE_DNS("DNS3");
 
 		if (s_ip4->dns && !s_ip4->dns->len) {
 			g_array_free (s_ip4->dns, TRUE);

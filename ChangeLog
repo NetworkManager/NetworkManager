@@ -1,3 +1,8 @@
+2008-04-07  Dan Williams  <dcbw@redhat.com>
+
+	* system-settings/plugins/ifcfg-fedora/parser.c
+		- (make_ip4_setting): fix parsing of DNS servers
+
 2008-04-05  Dan Williams  <dcbw@redhat.com>
 
 	* Makefile.am
