@@ -5,5 +5,5 @@ src/nm-netlink-monitor.c
 src/NetworkManager.c
 src/named-manager/nm-named-manager.c
 system-settings/plugins/ifcfg-fedora/plugin.c
-system-settings/plugins/src/main.c
+system-settings/src/main.c
 
