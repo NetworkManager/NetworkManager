@@ -1,5 +1,10 @@
 2008-04-07  Dan Williams  <dcbw@redhat.com>
 
+	* marshallers/nm-marshal.list
+		- Add VOID:STRING,UINT marshaller for system settings HAL manager
+
+2008-04-07  Dan Williams  <dcbw@redhat.com>
+
 	* system-settings/src/main.c
 		- (unmanaged_devices_changed_cb, register_plugin): proxy changes from
 			plugins to the dbus settings object
