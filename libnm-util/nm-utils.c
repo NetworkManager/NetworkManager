@@ -124,33 +124,29 @@ static GHashTable * langToEncodings2 = NULL;
 static void
 init_lang_to_encodings_hash (void)
 {
-	static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
+	struct IsoLangToEncodings *enc;
 
-	g_static_mutex_lock (&mutex);
-	if (G_UNLIKELY (!langToEncodings5 || !langToEncodings2))
-	{
-		const struct IsoLangToEncodings *	enc = &isoLangEntries5[0];
-
+	if (G_UNLIKELY (langToEncodings5 == NULL)) {
 		/* Five-letter codes */
+		enc = (struct IsoLangToEncodings *) &isoLangEntries5[0];
 		langToEncodings5 = g_hash_table_new (g_str_hash, g_str_equal);
-		while (enc->lang)
-		{
+		while (enc->lang) {
 			g_hash_table_insert (langToEncodings5, (gpointer) enc->lang,
 					(gpointer) &enc->encodings);
 			enc++;
 		}
+	}
 
+	if (G_UNLIKELY (langToEncodings2 == NULL)) {
 		/* Two-letter codes */
-		enc = &isoLangEntries2[0];
+		enc = (struct IsoLangToEncodings *) &isoLangEntries2[0];
 		langToEncodings2 = g_hash_table_new (g_str_hash, g_str_equal);
-		while (enc->lang)
-		{
+		while (enc->lang) {
 			g_hash_table_insert (langToEncodings2, (gpointer) enc->lang,
 					(gpointer) &enc->encodings);
 			enc++;
 		}
 	}
-	g_static_mutex_unlock (&mutex);
 }
 
 

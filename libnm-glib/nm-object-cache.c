@@ -25,7 +25,6 @@
 #include "nm-object-cache.h"
 #include "nm-object.h"
 
-static GStaticMutex cache_mutex = G_STATIC_MUTEX_INIT;
 static GHashTable *cache = NULL;
 
 static void
@@ -38,19 +37,15 @@ _init_cache (void)
 void
 nm_object_cache_remove_by_path (const char *path)
 {
-	g_static_mutex_lock (&cache_mutex);
 	_init_cache ();
 	g_hash_table_remove (cache, path);
-	g_static_mutex_unlock (&cache_mutex);
 }
 
 void
 nm_object_cache_remove_by_object (NMObject *object)
 {
-	g_static_mutex_lock (&cache_mutex);
 	_init_cache ();
 	g_hash_table_remove (cache, nm_object_get_path (object));
-	g_static_mutex_unlock (&cache_mutex);
 }
 
 void
@@ -58,13 +53,11 @@ nm_object_cache_add (NMObject *object)
 {
 	char *path;
 
-	g_static_mutex_lock (&cache_mutex);
 	_init_cache ();
 	path = g_strdup (nm_object_get_path (object));
 	g_hash_table_insert (cache, path, object);
 	g_object_set_data_full (G_OBJECT (object), "nm-object-cache-tag",
 	                        path, (GDestroyNotify) nm_object_cache_remove_by_path);
-	g_static_mutex_unlock (&cache_mutex);
 }
 
 NMObject *
@@ -72,10 +65,8 @@ nm_object_cache_get (const char *path)
 {
 	NMObject *object;
 
-	g_static_mutex_lock (&cache_mutex);
 	_init_cache ();
 	object = g_hash_table_lookup (cache, path);
-	g_static_mutex_unlock (&cache_mutex);
 	return object;
 }
 

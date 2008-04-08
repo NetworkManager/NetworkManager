@@ -121,14 +121,11 @@ get_leasefile_for_iface (const char * iface)
 NMDHCPManager *
 nm_dhcp_manager_get (void)
 {
-	static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
 	static NMDHCPManager *singleton = NULL;
 
-	g_static_mutex_lock (&mutex);
 	if (!singleton)
 		singleton = nm_dhcp_manager_new ();
 	g_object_ref (singleton);
-	g_static_mutex_unlock (&mutex);
 
 	return singleton;
 }

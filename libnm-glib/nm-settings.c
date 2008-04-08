@@ -350,7 +350,6 @@ nm_exported_connection_register_object (NMExportedConnection *connection,
                                         DBusGConnection *dbus_connection)
 {
 	NMExportedConnectionPrivate *priv;
-	static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
 	static guint32 ec_counter = 0;
 	char *path;
 
@@ -359,10 +358,7 @@ nm_exported_connection_register_object (NMExportedConnection *connection,
 
 	priv = NM_EXPORTED_CONNECTION_GET_PRIVATE (connection);
 
-	g_static_mutex_lock (&mutex);
 	path = g_strdup_printf ("%s/%u", NM_DBUS_PATH_SETTINGS, ec_counter++);
-	g_static_mutex_unlock (&mutex);
-
 	nm_connection_set_path (priv->wrapped, path);
 	nm_connection_set_scope (priv->wrapped, scope);
 

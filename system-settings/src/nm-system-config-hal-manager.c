@@ -260,15 +260,12 @@ nm_system_config_hal_manager_new (DBusGConnection *g_connection)
 NMSystemConfigHalManager *
 nm_system_config_hal_manager_get (DBusGConnection *g_connection)
 {
-	static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
 	static NMSystemConfigHalManager *singleton = NULL;
 
-	g_static_mutex_lock (&mutex);
 	if (!singleton)
 		singleton = nm_system_config_hal_manager_new (g_connection);
 	else
 		g_object_ref (singleton);
-	g_static_mutex_unlock (&mutex);
 
 	return singleton;
 }

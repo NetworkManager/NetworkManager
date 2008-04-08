@@ -425,14 +425,12 @@ system_config_interface_init (NMSystemConfigInterface *system_config_interface_c
 G_MODULE_EXPORT GObject *
 nm_system_config_factory (void)
 {
-	static GStaticMutex mutex = G_STATIC_MUTEX_INIT;
 	static SCPluginIfcfg *singleton = NULL;
 
-	g_static_mutex_lock (&mutex);
 	if (!singleton)
 		singleton = SC_PLUGIN_IFCFG (g_object_new (SC_TYPE_PLUGIN_IFCFG, NULL));
-	g_object_ref (singleton);
-	g_static_mutex_unlock (&mutex);
+	else
+		g_object_ref (singleton);
 
 	return G_OBJECT (singleton);
 }

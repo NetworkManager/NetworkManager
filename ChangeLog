@@ -1,5 +1,17 @@
 2008-04-08  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/nm-object-cache.c
+	  libnm-glib/nm-settings.c
+	  src/dhcp-manager/nm-dhcp-manager.c
+	  system-settings/plugins/ifcfg-fedora/plugin.c
+	  system-settings/plugins/ifcfg-suse/plugin.c
+	  system-settings/src/nm-system-config-hal-manager.c
+	  libnm-util/nm-utils.c
+		- Remove usage of GStaticMutex since gcc-4.3 hates it and because we're
+			not threadsafe anyway
+
+2008-04-08  Dan Williams  <dcbw@redhat.com>
+
 	* system-settings/src/main.c
 		- (load_stuff, device_added_cb, device_removed_cb): device added/removed
 			callbacks take a device type too
