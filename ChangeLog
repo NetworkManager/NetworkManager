@@ -1,5 +1,12 @@
 2008-04-07  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Bill Nottingham
+
+	* dispatcher-daemon/NetworkManagerDispatcher.c
+		- ignore backup/packaging crufy (rh #440143)
+
+2008-04-07  Dan Williams  <dcbw@redhat.com>
+
 	* include/NetworkManager.h
 		- Remove the DOWN and CANCELLED device states
 		- Add UNMANAGED and UNAVAILABLE device states

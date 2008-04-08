@@ -75,6 +75,35 @@ nmd_permission_check (struct stat *s)
 
 
 /*
+ * nmd_is_valid_filename
+ *
+ * Verify that the given script is a valid file name. Specifically,
+ * ensure that the file:
+ *	- is not a editor backup file
+ *	- is not a package management file
+ *	- does not start with '.'
+ */
+static inline gboolean
+nmd_is_valid_filename (const char *file_name)
+{
+	char *bad_suffixes[] = { "~", ".rpmsave", ".rpmorig", ".rpmnew", NULL };
+	char *tmp;
+	int i;
+
+	if (file_name[0] == '.')
+		return FALSE;
+	for (i = 0; bad_suffixes[i]; i++) {
+		if (g_str_has_suffix(file_name, bad_suffixes[i]))
+			return FALSE;
+	}
+	tmp = g_strrstr(file_name, ".dpkg-");
+	if (tmp && (tmp == strrchr(file_name,'.')))
+		return FALSE;
+	return TRUE;
+}
+
+
+/*
  * nmd_execute_scripts
  *
  * Call scripts in /etc/NetworkManager.d when devices go down or up
@@ -107,7 +136,7 @@ nmd_execute_scripts (NMDeviceState state, const char *iface_name)
 		char *file_path = g_build_filename (NM_SCRIPT_DIR, file_name, NULL);
 		struct stat	s;
 
-		if ((file_name[0] != '.') && (stat (file_path, &s) == 0))
+		if (nmd_is_valid_filename(file_name) && (stat (file_path, &s) == 0))
 		{
 			if (nmd_permission_check (&s))
 			{
