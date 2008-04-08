@@ -24,6 +24,7 @@ typedef struct {
 	char *udi;
 	char *driver;
 	guint32 capabilities;
+	gboolean managed;
 	NMIP4Config *ip4_config;
 	gboolean null_ip4_config;
 	NMDeviceState state;
@@ -37,6 +38,7 @@ enum {
 	PROP_UDI,
 	PROP_DRIVER,
 	PROP_CAPABILITIES,
+	PROP_MANAGED,
 	PROP_IP4_CONFIG,
 	PROP_STATE,
 	PROP_PRODUCT,
@@ -104,6 +106,7 @@ register_for_property_changed (NMDevice *device)
 		{ NM_DEVICE_INTERFACE,    nm_object_demarshal_generic, &priv->iface },
 		{ NM_DEVICE_DRIVER,       nm_object_demarshal_generic, &priv->driver },
 		{ NM_DEVICE_CAPABILITIES, nm_object_demarshal_generic, &priv->capabilities },
+		{ NM_DEVICE_MANAGED,      nm_object_demarshal_generic, &priv->managed },
 		{ NM_DEVICE_IP4_CONFIG,   demarshal_ip4_config,        &priv->ip4_config },
 		{ NM_DEVICE_STATE,        nm_object_demarshal_generic, &priv->state },
 		{ NULL },
@@ -194,6 +197,9 @@ get_property (GObject *object,
 	case PROP_CAPABILITIES:
 		g_value_set_uint (value, nm_device_get_capabilities (device));
 		break;
+	case PROP_MANAGED:
+		g_value_set_boolean (value, nm_device_get_managed (device));
+		break;
 	case PROP_IP4_CONFIG:
 		g_value_set_object (value, nm_device_get_ip4_config (device));
 		break;
@@ -256,6 +262,14 @@ nm_device_class_init (NMDeviceClass *device_class)
 						  "Capabilities",
 						  "Capabilities",
 						  0, G_MAXUINT32, 0,
+						  G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_MANAGED,
+		 g_param_spec_boolean (NM_DEVICE_MANAGED,
+						  "Managed",
+						  "Managed",
+						  FALSE,
 						  G_PARAM_READABLE));
 
 	g_object_class_install_property
@@ -419,6 +433,23 @@ nm_device_get_capabilities (NMDevice *device)
 	}
 
 	return priv->capabilities;
+}
+
+gboolean
+nm_device_get_managed (NMDevice *device)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (device), 0);
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+	if (!priv->managed) {
+		priv->managed = nm_object_get_boolean_property (NM_OBJECT (device),
+		                                                NM_DBUS_INTERFACE_DEVICE,
+		                                                "Managed");
+	}
+
+	return priv->managed;
 }
 
 NMIP4Config *

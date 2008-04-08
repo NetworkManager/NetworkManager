@@ -22,6 +22,7 @@ G_BEGIN_DECLS
 #define NM_DEVICE_INTERFACE "interface"
 #define NM_DEVICE_DRIVER "driver"
 #define NM_DEVICE_CAPABILITIES "capabilities"
+#define NM_DEVICE_MANAGED "managed"
 #define NM_DEVICE_IP4_CONFIG "ip4-config"
 #define NM_DEVICE_STATE "state"
 #define NM_DEVICE_VENDOR "vendor"
@@ -43,6 +44,7 @@ const char *  nm_device_get_iface        (NMDevice *device);
 const char *  nm_device_get_udi          (NMDevice *device);
 const char *  nm_device_get_driver       (NMDevice *device);
 guint32       nm_device_get_capabilities (NMDevice *device);
+gboolean      nm_device_get_managed      (NMDevice *device);
 NMIP4Config * nm_device_get_ip4_config   (NMDevice *device);
 NMDeviceState nm_device_get_state        (NMDevice *device);
 const char *  nm_device_get_product      (NMDevice *device);
