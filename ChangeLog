@@ -1,5 +1,11 @@
 2008-04-08  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/src/main.c
+		- (load_stuff, device_added_cb, device_removed_cb): device added/removed
+			callbacks take a device type too
+
+2008-04-08  Dan Williams  <dcbw@redhat.com>
+
 	The system settings service will now create a new default DHCP connection
 	for wired devices that have no existing applicable connection.
 

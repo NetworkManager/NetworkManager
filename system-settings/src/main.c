@@ -70,7 +70,7 @@ static gboolean dbus_init (Application *app);
 static void dbus_cleanup (Application *app);
 static gboolean start_dbus_service (Application *app);
 static void destroy_cb (DBusGProxy *proxy, gpointer user_data);
-static void device_added_cb (DBusGProxy *proxy, const char *udi, gpointer user_data);
+static void device_added_cb (DBusGProxy *proxy, const char *udi, NMDeviceType devtype, gpointer user_data);
 
 
 static GQuark
@@ -302,7 +302,7 @@ load_stuff (gpointer user_data)
 	/* Grab wired devices to make default DHCP connections for them if needed */
 	devs = nm_system_config_hal_manager_get_devices_of_type (app->hal_mgr, DEVICE_TYPE_802_3_ETHERNET);
 	for (iter = devs; iter; iter = g_slist_next (iter))
-		device_added_cb (NULL, (const char *) iter->data, app);
+		device_added_cb (NULL, (const char *) iter->data, DEVICE_TYPE_802_3_ETHERNET, app);
 
 	if (!start_dbus_service (app)) {
 		g_main_loop_quit (app->loop);
@@ -491,12 +491,12 @@ ignore:
 }
 
 static void
-device_added_cb (DBusGProxy *proxy, const char *udi, gpointer user_data)
+device_added_cb (DBusGProxy *proxy, const char *udi, NMDeviceType devtype, gpointer user_data)
 {
 	Application *app = (Application *) user_data;
 	WiredDeviceInfo *info;
 
-	if (nm_system_config_hal_manager_get_type_for_udi (app->hal_mgr, udi) != DEVICE_TYPE_802_3_ETHERNET)
+	if (devtype != DEVICE_TYPE_802_3_ETHERNET)
 		return;
 
 	/* Wait for a plugin to figure out if the device should be managed or not */
@@ -508,7 +508,7 @@ device_added_cb (DBusGProxy *proxy, const char *udi, gpointer user_data)
 }
 
 static void
-device_removed_cb (DBusGProxy *proxy, const char *udi, gpointer user_data)
+device_removed_cb (DBusGProxy *proxy, const char *udi, NMDeviceType devtype, gpointer user_data)
 {
 	Application *app = (Application *) user_data;
 	WiredDeviceInfo *info;
