@@ -382,18 +382,11 @@ state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 
 	switch (nm_device_get_state (device)) {
-	case NM_DEVICE_STATE_PREPARE:
-	case NM_DEVICE_STATE_CONFIG:
-	case NM_DEVICE_STATE_NEED_AUTH:
-	case NM_DEVICE_STATE_IP_CONFIG:
-	case NM_DEVICE_STATE_ACTIVATED:
-		break;
 	case NM_DEVICE_STATE_UNKNOWN:
-	case NM_DEVICE_STATE_DOWN:
+	case NM_DEVICE_STATE_UNMANAGED:
+	case NM_DEVICE_STATE_UNAVAILABLE:
 	case NM_DEVICE_STATE_DISCONNECTED:
 	case NM_DEVICE_STATE_FAILED:
-	case NM_DEVICE_STATE_CANCELLED:
-	default:
 		/* Just clear active AP; don't clear the AP list unless wireless is disabled completely */
 		if (priv->active_ap) {
 			g_object_unref (priv->active_ap);
@@ -403,6 +396,8 @@ state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 		nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_802_11_WIRELESS_ACTIVE_ACCESS_POINT);
 		priv->rate = 0;
 		nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_802_11_WIRELESS_BITRATE);
+		break;
+	default:
 		break;
 	}
 }

@@ -8,6 +8,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-device-interface.h"
+#include "nm-device-private.h"
 #include "nm-device-802-11-wireless.h"
 #include "NetworkManagerSystem.h"
 #include "nm-properties-changed-signal.h"
@@ -70,6 +71,8 @@ typedef struct {
 
 	GHashTable *system_connections;
 	DBusGProxy *system_proxy;
+	DBusGProxy *system_props_proxy;
+	GSList *unmanaged_udis;
 
 	PendingConnectionInfo *pending_connection_info;
 	gboolean wireless_enabled;
@@ -118,6 +121,7 @@ typedef enum
 {
 	NM_MANAGER_ERROR_UNKNOWN_CONNECTION = 0,
 	NM_MANAGER_ERROR_UNKNOWN_DEVICE,
+	NM_MANAGER_ERROR_UNMANAGED_DEVICE,
 	NM_MANAGER_ERROR_INVALID_SERVICE,
 	NM_MANAGER_ERROR_SYSTEM_CONNECTION,
 	NM_MANAGER_ERROR_PERMISSION_DENIED,
@@ -150,6 +154,8 @@ nm_manager_error_get_type (void)
 			ENUM_ENTRY (NM_MANAGER_ERROR_UNKNOWN_CONNECTION, "UnknownConnection"),
 			/* Unknown device. */
 			ENUM_ENTRY (NM_MANAGER_ERROR_UNKNOWN_DEVICE, "UnknownDevice"),
+			/* Unmanaged device. */
+			ENUM_ENTRY (NM_MANAGER_ERROR_UNMANAGED_DEVICE, "UnmanagedDevice"),
 			/* Invalid settings service (not a recognized system or user
 			 * settings service name)
 			 */
@@ -293,6 +299,13 @@ dispose (GObject *object)
 	nm_manager_connections_destroy (manager, NM_CONNECTION_SCOPE_SYSTEM);
 	g_hash_table_destroy (priv->system_connections);
 	priv->system_connections = NULL;
+
+	if (priv->system_props_proxy) {
+		g_object_unref (priv->system_props_proxy);
+		priv->system_props_proxy = NULL;
+	}
+	g_slist_foreach (priv->unmanaged_udis, (GFunc) g_free, NULL);
+	g_slist_free (priv->unmanaged_udis);
 
 	if (priv->poke_id) {
 		g_source_remove (priv->poke_id);
@@ -904,6 +917,126 @@ query_connections (NMManager *manager,
 }
 
 static void
+handle_unmanaged_devices (NMManager *manager, GPtrArray *ops)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	int i;
+	GSList *unmanaged = NULL, *iter;
+
+	g_slist_foreach (priv->unmanaged_udis, (GFunc) g_free, NULL);
+	g_slist_free (priv->unmanaged_udis);
+	priv->unmanaged_udis = NULL;
+
+	/* Mark unmanaged devices */
+	for (i = 0; ops && (i < ops->len); i++) {
+		NMDevice *device;
+		const char *udi = g_ptr_array_index (ops, i);
+
+		priv->unmanaged_udis = g_slist_prepend (priv->unmanaged_udis, g_strdup (udi));
+
+		device = nm_manager_get_device_by_udi (manager, udi);
+		if (device) {
+			unmanaged = g_slist_prepend (unmanaged, device);
+			nm_device_set_managed (device, FALSE);
+		}
+	}
+
+	/* Mark managed devices */
+	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *device = NM_DEVICE (iter->data);
+
+		if (!g_slist_find (unmanaged, device))
+			nm_device_set_managed (device, TRUE);
+	}
+
+	g_slist_free (unmanaged);
+}
+
+static void
+system_settings_properties_changed_cb (DBusGProxy *proxy,
+                                       GHashTable *properties,
+                                       gpointer user_data)
+{
+	NMManager *manager = NM_MANAGER (user_data);
+	GValue *value;
+
+	value = g_hash_table_lookup (properties, "UnmanagedDevices");
+	if (!value || !G_VALUE_HOLDS (value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH))
+		return;
+
+	handle_unmanaged_devices (manager, g_value_get_boxed (value));
+}
+
+static void
+system_settings_get_unmanaged_devices_cb (DBusGProxy *proxy,
+                                          DBusGProxyCall *call_id,
+                                          gpointer user_data)
+{
+	NMManager *manager = NM_MANAGER (user_data);
+	GError *error = NULL;
+	GValue value = { 0, };
+
+	if (!dbus_g_proxy_end_call (proxy, call_id, &error,
+	                            G_TYPE_VALUE, &value,
+	                            G_TYPE_INVALID)) {
+		nm_warning ("%s: Error getting unmanaged devices from the system "
+		            "settings service: (%d) %s",
+		            __func__, error->code, error->message);
+		g_error_free (error);
+		return;
+	}
+
+	if (!G_VALUE_HOLDS (&value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH))
+		return;
+
+	handle_unmanaged_devices (manager, g_value_get_boxed (&value));
+	g_object_unref (proxy);
+}
+
+static void
+query_unmanaged_devices (NMManager *manager)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	DBusGConnection *g_connection;
+	DBusGProxy *get_proxy;
+
+	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
+	if (!priv->system_props_proxy) {
+		priv->system_props_proxy = dbus_g_proxy_new_for_name (g_connection,
+		                                                      NM_DBUS_SERVICE_SYSTEM_SETTINGS,
+		                                                      NM_DBUS_PATH_SETTINGS,
+		                                                      "org.freedesktop.NetworkManagerSettings.System");
+		if (!priv->system_props_proxy) {
+			nm_warning ("Error: could not init system settings properties proxy.");
+			return;
+		}
+
+		dbus_g_object_register_marshaller (g_cclosure_marshal_VOID__BOXED,
+									G_TYPE_NONE, G_TYPE_VALUE, G_TYPE_INVALID);
+		dbus_g_proxy_add_signal (priv->system_props_proxy, "PropertiesChanged",
+		                         DBUS_TYPE_G_MAP_OF_VARIANT, G_TYPE_INVALID);
+		dbus_g_proxy_connect_signal (priv->system_props_proxy, "PropertiesChanged",
+		                             G_CALLBACK (system_settings_properties_changed_cb),
+		                             manager,
+		                             NULL);
+	}
+
+	/* Get unmanaged devices */
+	get_proxy = dbus_g_proxy_new_for_name (g_connection,
+		                                   NM_DBUS_SERVICE_SYSTEM_SETTINGS,
+		                                   NM_DBUS_PATH_SETTINGS,
+		                                   "org.freedesktop.DBus.Properties");
+
+	dbus_g_proxy_begin_call (get_proxy, "Get",
+	                         system_settings_get_unmanaged_devices_cb,
+	                         manager,
+	                         NULL,
+	                         G_TYPE_STRING, "org.freedesktop.NetworkManagerSettings.System",
+	                         G_TYPE_STRING, "UnmanagedDevices",
+	                         G_TYPE_INVALID);
+}
+
+static void
 nm_manager_name_owner_changed (NMDBusManager *mgr,
                                const char *name,
                                const char *old,
@@ -931,10 +1064,16 @@ nm_manager_name_owner_changed (NMDBusManager *mgr,
 			}
 
 			/* System Settings service appeared, update stuff */
+			query_unmanaged_devices (manager);
 			query_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
 		} else {
 			/* System Settings service disappeared, throw them away (?) */
 			nm_manager_connections_destroy (manager, NM_CONNECTION_SCOPE_SYSTEM);
+
+			if (priv->system_props_proxy) {
+				g_object_unref (priv->system_props_proxy);
+				priv->system_props_proxy = NULL;
+			}
 
 			if (priv->poke_id)
 				g_source_remove (priv->poke_id);
@@ -984,6 +1123,7 @@ initial_get_connections (gpointer user_data)
 
 	if (nm_dbus_manager_name_has_owner (nm_dbus_manager_get (),
 	                                    NM_DBUS_SERVICE_SYSTEM_SETTINGS)) {
+		query_unmanaged_devices (manager);
 		query_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
 	} else {
 		/* Try to activate the system settings daemon */
@@ -1084,21 +1224,11 @@ manager_set_wireless_enabled (NMManager *manager, gboolean enabled)
 	if (priv->sleeping)
 		return;
 
-	/* Tear down all wireless devices */
+	/* enable/disable wireless devices as required */
 	for (iter = priv->devices; iter; iter = iter->next) {
-		if (NM_IS_DEVICE_802_11_WIRELESS (iter->data)) {
-			if (enabled)
-				nm_device_bring_up (NM_DEVICE (iter->data), FALSE);
-			else
-				nm_device_bring_down (NM_DEVICE (iter->data), FALSE);
-		}
+		if (NM_IS_DEVICE_802_11_WIRELESS (iter->data))
+			nm_device_802_11_wireless_set_enabled (NM_DEVICE_802_11_WIRELESS (iter->data), enabled);
 	}
-}
-
-static void
-manager_device_added (NMManager *manager, NMDevice *device)
-{
-	g_signal_emit (manager, signals[DEVICE_ADDED], 0, device);
 }
 
 static void
@@ -1106,11 +1236,12 @@ manager_device_state_changed (NMDeviceInterface *device, NMDeviceState state, gp
 {
 	NMManager *manager = NM_MANAGER (user_data);
 
-	switch (nm_device_interface_get_state (device)) {
+	switch (state) {
+	case NM_DEVICE_STATE_UNMANAGED:
+	case NM_DEVICE_STATE_UNAVAILABLE:
+	case NM_DEVICE_STATE_DISCONNECTED:
 	case NM_DEVICE_STATE_PREPARE:
 	case NM_DEVICE_STATE_FAILED:
-	case NM_DEVICE_STATE_CANCELLED:
-	case NM_DEVICE_STATE_DISCONNECTED:
 		g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
 		break;
 	default:
@@ -1197,33 +1328,22 @@ nm_manager_add_device (NMManager *manager, NMDevice *device)
 		g_signal_connect (device, "hidden-ap-found",
 						  G_CALLBACK (manager_hidden_ap_found),
 						  manager);
-	}
 
-	if (!priv->sleeping) {
-		if (!NM_IS_DEVICE_802_11_WIRELESS (device) || priv->wireless_enabled) {
-			nm_device_bring_down (device, TRUE);
-			nm_device_bring_up (device, TRUE);
-		}
+		/* Set initial rfkill state */
+		nm_device_802_11_wireless_set_enabled (NM_DEVICE_802_11_WIRELESS (device), priv->wireless_enabled);
 	}
-
-	nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
 
 	nm_info ("(%s): exported as %s",
-		    nm_device_get_iface (device),
-		    nm_device_get_udi (device));
+	         nm_device_get_iface (device),
+	         nm_device_get_udi (device));
+
 	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (priv->dbus_mgr),
 								  nm_device_get_udi (device),
 								  G_OBJECT (device));
 
-	manager_device_added (manager, device);
+	g_signal_emit (manager, signals[DEVICE_ADDED], 0, device);
 }
 
-static void
-manager_device_removed (NMManager *manager, NMDevice *device)
-{
-	g_signal_emit (manager, signals[DEVICE_REMOVED], 0, device);
-}
- 
 void
 nm_manager_remove_device (NMManager *manager, NMDevice *device, gboolean deactivate)
 {
@@ -1239,13 +1359,12 @@ nm_manager_remove_device (NMManager *manager, NMDevice *device, gboolean deactiv
 		if (iter->data == device) {
 			priv->devices = g_slist_delete_link (priv->devices, iter);
 
-			nm_device_bring_down (device, FALSE);
-			if (deactivate)
-				nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
+			if (nm_device_get_managed (device))
+				nm_device_bring_down (device, FALSE);
 
 			g_signal_handlers_disconnect_by_func (device, manager_device_state_changed, manager);
 
-			manager_device_removed (manager, device);
+			g_signal_emit (manager, signals[DEVICE_REMOVED], 0, device);
 			g_object_unref (device);
 			break;
 		}
@@ -1362,10 +1481,8 @@ internal_activate_device (NMManager *manager,
 	if (!nm_device_interface_check_connection_compatible (dev_iface, connection, error))
 		return NULL;
 
-	if (nm_device_get_act_request (device)) {
-		nm_device_interface_deactivate (dev_iface);
-		g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
-	}
+	if (nm_device_get_act_request (device))
+		nm_device_state_changed (device, NM_DEVICE_STATE_DISCONNECTED);
 
 	req = nm_act_request_new (connection, specific_object, user_requested, (gpointer) device);
 	success = nm_device_interface_activate (dev_iface, req, error);
@@ -1455,12 +1572,22 @@ nm_manager_activate_connection (NMManager *manager,
 		                                                    error);
 		g_object_unref (vpn_manager);
 	} else {
+		NMDeviceState state;
+
 		/* Device-based connection */
 		device = nm_manager_get_device_by_path (manager, device_path);
 		if (!device) {
 			g_set_error (error,
 			             NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
 			             "%s", "Device not found");
+			return NULL;
+		}
+
+		state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (device));
+		if (state < NM_DEVICE_STATE_DISCONNECTED) {
+			g_set_error (error,
+			             NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNMANAGED_DEVICE,
+			             "%s", "Device not managed by NetworkManager");
 			return NULL;
 		}
 
@@ -1613,8 +1740,7 @@ nm_manager_deactivate_connection (NMManager *manager,
 			continue;
 
 		if (!strcmp (connection_path, nm_act_request_get_active_connection_path (req))) {
-			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
-			g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
+			nm_device_state_changed (device, NM_DEVICE_STATE_DISCONNECTED);
 			success = TRUE;
 			goto done;
 		}
@@ -1701,8 +1827,16 @@ nm_manager_sleep (NMManager *manager, gboolean sleep)
 		/* Just deactivate and down all devices from the device list,
 		 * we'll remove them in 'wake' for speed's sake.
 		 */
-		for (iter = priv->devices; iter; iter = iter->next)
-			nm_device_bring_down (NM_DEVICE (iter->data), FALSE);
+		for (iter = priv->devices; iter; iter = iter->next) {
+			NMDeviceState state;
+
+			state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (iter->data));
+			if (state >= NM_DEVICE_STATE_UNAVAILABLE) {
+				nm_device_bring_down (NM_DEVICE (iter->data), FALSE);
+				if (state >= NM_DEVICE_STATE_DISCONNECTED)
+					nm_device_state_changed (NM_DEVICE (iter->data), NM_DEVICE_STATE_DISCONNECTED);
+			}
+		}
 	} else {
 		nm_info  ("Waking up from sleep.");
 
@@ -1832,5 +1966,21 @@ nm_manager_get_active_connections_by_connection (NMManager *manager,
                                                  NMConnection *connection)
 {
 	return get_active_connections (manager, connection);
+}
+
+gboolean
+nm_manager_is_udi_managed (NMManager *manager, const char *udi)
+{
+	NMManagerPrivate *priv;
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
+
+	priv = NM_MANAGER_GET_PRIVATE (manager);
+	for (iter = priv->unmanaged_udis; iter; iter = g_slist_next (iter)) {
+		if (!strcmp (udi, iter->data))
+			return FALSE;
+	}
+	return TRUE;
 }
 

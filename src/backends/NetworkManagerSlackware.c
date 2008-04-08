@@ -99,19 +99,6 @@ void nm_system_device_flush_addresses_with_iface (const char *iface)
 }
 
 /*
- * nm_system_device_get_system_config
- *
- * Retrieve any relevant configuration info for a particular device
- * from the system network configuration information.  Clear out existing
- * info before setting stuff too.
- *
- */
-void *nm_system_device_get_system_config (NMDevice *dev)
-{
-	return NULL;
-}
-
-/*
  * nm_system_device_has_active_routes
  *
  * Find out whether the specified device has any routes in the routing
@@ -232,23 +219,6 @@ void nm_system_flush_arp_cache (void)
 {
 	nm_generic_flush_arp_cache ();
 }
-
-void nm_system_device_free_system_config (NMDevice *dev, void *system_config_data)
-{
-}
-
-/*
- * nm_system_device_get_disabled
- *
- * Return whether the distro-specific system config tells us to use
- * dhcp for this device.
- *
- */
-gboolean nm_system_device_get_disabled (NMDevice *dev)
-{
-	return FALSE;
-}
-
 
 /*
  * nm_system_activate_nis

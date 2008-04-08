@@ -60,6 +60,7 @@ struct _NMDevicePrivate
 {
 	gboolean	dispose_has_run;
 	gboolean	initialized;
+	guint		start_timer;
 
 	NMDeviceState state;
 
@@ -69,6 +70,7 @@ struct _NMDevicePrivate
 	NMDeviceType		type;
 	guint32			capabilities;
 	char *			driver;
+	gboolean		managed; /* whether managed by NM or not */
 
 	guint32			ip4_address;
 	struct in6_addr	ip6_address;
@@ -96,13 +98,6 @@ static gboolean nm_device_activate (NMDeviceInterface *device,
 
 static void	nm_device_activate_schedule_stage5_ip_config_commit (NMDevice *self);
 static void nm_device_deactivate (NMDeviceInterface *device);
-
-static void
-nm_device_set_address (NMDevice *device)
-{
-	if (NM_DEVICE_GET_CLASS (device)->set_hw_address)
-		NM_DEVICE_GET_CLASS (device)->set_hw_address (device);
-}
 
 static void
 device_interface_init (NMDeviceInterface *device_interface_class)
@@ -134,9 +129,18 @@ nm_device_init (NMDevice * self)
 	self->priv->system_config_data = NULL;
 	self->priv->ip4_config = NULL;
 
-	self->priv->state = NM_DEVICE_STATE_DISCONNECTED;
+	self->priv->state = NM_DEVICE_STATE_UNMANAGED;
 }
 
+static gboolean
+device_start (gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+
+	self->priv->start_timer = 0;
+	nm_device_state_changed (self, NM_DEVICE_STATE_UNAVAILABLE);
+	return FALSE;
+}
 
 static GObject*
 constructor (GType type,
@@ -172,16 +176,13 @@ constructor (GType type,
 		goto error;
 	}
 
-	/* Grab IP config data for this device from the system configuration files */
-	priv->system_config_data = nm_system_device_get_system_config (dev);
-
-	/* Allow distributions to flag devices as disabled */
-	if (nm_system_device_get_disabled (dev)) {
-		nm_warning ("(%s): Device otherwise managed, ignoring.", priv->iface);
-		goto error;
-	}
-
 	nm_print_device_capabilities (dev);
+
+	/* Delay transition from UNMANAGED to UNAVAILABLE until we've given the
+	 * system settings service a chance to figure out whether the device is
+	 * managed or not.
+	 */
+	priv->start_timer = g_timeout_add (4000, device_start, dev);
 
 	priv->initialized = TRUE;
 	return object;
@@ -348,12 +349,11 @@ nm_device_get_act_request (NMDevice *self)
 
 
 gboolean
-nm_device_can_activate (NMDevice *self, gboolean wireless_enabled)
+nm_device_can_activate (NMDevice *self)
 {
-	if (!NM_DEVICE_GET_CLASS (self)->can_activate)
-			return TRUE;
-
-	return NM_DEVICE_GET_CLASS (self)->can_activate (self, wireless_enabled);
+	if (NM_DEVICE_GET_CLASS (self)->can_activate)
+		return NM_DEVICE_GET_CLASS (self)->can_activate (self);
+	return TRUE;
 }
 
 NMConnection *
@@ -1058,8 +1058,6 @@ nm_device_deactivate (NMDeviceInterface *device)
 	/* Call device type-specific deactivation */
 	if (NM_DEVICE_GET_CLASS (self)->deactivate)
 		NM_DEVICE_GET_CLASS (self)->deactivate (self);
-
-	nm_device_state_changed (self, NM_DEVICE_STATE_DISCONNECTED);
 }
 
 static gboolean
@@ -1483,7 +1481,10 @@ nm_device_bring_up (NMDevice *self, gboolean wait)
 
 	nm_system_device_set_up_down (self, TRUE);
 	nm_device_update_ip4_address (self);
-	nm_device_set_address (self);
+
+	/* Can only get HW address of some devices when they are up */
+	if (NM_DEVICE_GET_CLASS (self)->update_hw_address)
+		NM_DEVICE_GET_CLASS (self)->update_hw_address (self);
 
 	if (NM_DEVICE_GET_CLASS (self)->bring_up) {
 		success = NM_DEVICE_GET_CLASS (self)->bring_up (self);
@@ -1494,8 +1495,6 @@ nm_device_bring_up (NMDevice *self, gboolean wait)
 	/* Wait for the device to come up if requested */
 	while (wait && !nm_device_is_up (self) && (tries++ < 50))
 		g_usleep (200);
-
-	nm_device_state_changed (self, NM_DEVICE_STATE_DISCONNECTED);
 
 	return TRUE;
 }
@@ -1525,8 +1524,6 @@ nm_device_bring_down (NMDevice *self, gboolean wait)
 	/* Wait for the device to come up if requested */
 	while (wait && nm_device_is_up (self) && (tries++ < 50))
 		g_usleep (200);
-
-	nm_device_state_changed (self, NM_DEVICE_STATE_DOWN);
 }
 
 /*
@@ -1552,6 +1549,11 @@ nm_device_dispose (GObject *object)
 	if (self->priv->dispose_has_run || !self->priv->initialized)
 		goto out;
 
+	if (self->priv->start_timer) {
+		g_source_remove (self->priv->start_timer);
+		self->priv->start_timer = 0;
+	}
+
 	self->priv->dispose_has_run = TRUE;
 
 	/* 
@@ -1561,10 +1563,10 @@ nm_device_dispose (GObject *object)
 	 * reference.
 	 */
 
-	nm_device_bring_down (self, FALSE);
-
-	nm_system_device_free_system_config (self, self->priv->system_config_data);
-	nm_device_set_ip4_config (self, NULL);
+	if (self->priv->managed) {
+		nm_device_bring_down (self, FALSE);
+		nm_device_set_ip4_config (self, NULL);
+	}
 
 	clear_act_request (self);
 
@@ -1617,6 +1619,9 @@ set_property (GObject *object, guint prop_id,
 	case NM_DEVICE_INTERFACE_PROP_IP4_ADDRESS:
 		priv->ip4_address = g_value_get_uint (value);
 		break;
+	case NM_DEVICE_INTERFACE_PROP_MANAGED:
+		priv->managed = g_value_get_boolean (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1659,6 +1664,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case NM_DEVICE_INTERFACE_PROP_DEVICE_TYPE:
 		g_value_set_uint (value, priv->type);
+		break;
+	case NM_DEVICE_INTERFACE_PROP_MANAGED:
+		g_value_set_boolean (value, priv->managed);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1723,6 +1731,10 @@ nm_device_class_init (NMDeviceClass *klass)
 	g_object_class_override_property (object_class,
 									  NM_DEVICE_INTERFACE_PROP_DEVICE_TYPE,
 									  NM_DEVICE_INTERFACE_DEVICE_TYPE);
+
+	g_object_class_override_property (object_class,
+									  NM_DEVICE_INTERFACE_PROP_MANAGED,
+									  NM_DEVICE_INTERFACE_MANAGED);
 }
 
 void
@@ -1744,8 +1756,12 @@ nm_device_state_changed (NMDevice *device, NMDeviceState state)
 	g_signal_emit_by_name (device, "state-changed", state);
 
 	switch (state) {
-	case NM_DEVICE_STATE_DOWN:
-		if (old_state == NM_DEVICE_STATE_ACTIVATED)
+	case NM_DEVICE_STATE_UNAVAILABLE:
+		if (old_state == NM_DEVICE_STATE_UNMANAGED)
+			nm_device_bring_up (device, TRUE);
+		/* Fall through */
+	case NM_DEVICE_STATE_DISCONNECTED:
+		if (old_state != NM_DEVICE_STATE_UNAVAILABLE)
 			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
@@ -1753,13 +1769,12 @@ nm_device_state_changed (NMDevice *device, NMDeviceState state)
 		break;
 	case NM_DEVICE_STATE_FAILED:
 		nm_info ("Activation (%s) failed.", nm_device_get_iface (device));
-		nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
+		nm_device_state_changed (device, NM_DEVICE_STATE_DISCONNECTED);
 		break;
 	default:
 		break;
 	}
 }
-
 
 NMDeviceState
 nm_device_get_state (NMDevice *device)
@@ -1768,3 +1783,36 @@ nm_device_get_state (NMDevice *device)
 
 	return NM_DEVICE_GET_PRIVATE (device)->state;
 }
+
+gboolean
+nm_device_get_managed (NMDevice *device)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (device), FALSE);
+
+	return NM_DEVICE_GET_PRIVATE (device)->managed;
+}
+
+void
+nm_device_set_managed (NMDevice *device, gboolean managed)
+{
+	NMDevicePrivate *priv;
+
+	g_return_if_fail (NM_IS_DEVICE (device));
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+	if (priv->managed != managed) {
+		priv->managed = managed;
+		nm_info ("(%s): now %s", nm_device_get_iface (device), managed ? "managed" : "unmanaged");
+
+		if (priv->start_timer) {
+			g_source_remove (priv->start_timer);
+			priv->start_timer = 0;
+		}
+
+		g_object_notify (G_OBJECT (device), NM_DEVICE_INTERFACE_MANAGED);
+
+		/* If now managed, jump to unavailable */
+		nm_device_state_changed (device, managed ? NM_DEVICE_STATE_UNAVAILABLE : NM_DEVICE_STATE_UNMANAGED);
+	}
+}
+

@@ -169,6 +169,30 @@ ip4_address_as_string (guint32 ip)
 	return g_strdup (ip_string);
 }
 
+static const char *
+get_dev_state_string (NMDeviceState state)
+{
+	if (state == NM_DEVICE_STATE_UNMANAGED)
+		return "unmanaged";
+	else if (state == NM_DEVICE_STATE_UNAVAILABLE)
+		return "unavailable";
+	else if (state == NM_DEVICE_STATE_DISCONNECTED)
+		return "disconnected";
+	else if (state == NM_DEVICE_STATE_PREPARE)
+		return "connecting (prepare)";
+	else if (state == NM_DEVICE_STATE_CONFIG)
+		return "connecting (configuring)";
+	else if (state == NM_DEVICE_STATE_NEED_AUTH)
+		return "connecting (need authentication)";
+	else if (state == NM_DEVICE_STATE_IP_CONFIG)
+		return "connecting (getting IP configuration)";
+	else if (state == NM_DEVICE_STATE_ACTIVATED)
+		return "connected";
+	else if (state == NM_DEVICE_STATE_FAILED)
+		return "connection failed";
+	return "unknown";
+}
+
 static void
 detail_device (gpointer data, gpointer user_data)
 {
@@ -192,10 +216,7 @@ detail_device (gpointer data, gpointer user_data)
 
 	print_string ("Driver", nm_device_get_driver (device) ? nm_device_get_driver (device) : "(unknown)");
 
-	if (state == NM_DEVICE_STATE_ACTIVATED)
-		print_string ("Active", "yes");
-	else
-		print_string ("Active", "no");
+	print_string ("State", get_dev_state_string (state));
 
 	tmp = NULL;
 	if (NM_IS_DEVICE_802_3_ETHERNET (device))

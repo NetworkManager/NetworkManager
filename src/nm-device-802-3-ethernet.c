@@ -32,6 +32,7 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 #include <net/if.h>
+#include <errno.h>
 
 #include "nm-device-802-3-ethernet.h"
 #include "nm-device-interface.h"
@@ -89,6 +90,7 @@ typedef struct {
 
 	struct ether_addr	hw_addr;
 	gboolean			carrier;
+	guint				state_to_disconnected_id;
 
 	char *			carrier_file_path;
 	gulong			link_connected_id;
@@ -119,8 +121,6 @@ enum {
 	LAST_PROP
 };
 
-
-static void set_carrier (NMDevice8023Ethernet *self, const gboolean carrier);
 
 static gboolean supports_mii_carrier_detect (NMDevice8023Ethernet *dev);
 static gboolean supports_ethtool_carrier_detect (NMDevice8023Ethernet *dev);
@@ -155,6 +155,31 @@ nm_ethernet_error_get_type (void)
 		etype = g_enum_register_static ("NMEthernetError", values);
 	}
 	return etype;
+}
+
+static void
+set_carrier (NMDevice8023Ethernet *self, const gboolean carrier)
+{
+	NMDevice8023EthernetPrivate *priv;
+	NMDeviceState state;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self);
+	if (priv->carrier == carrier)
+		return;
+
+	priv->carrier = carrier;
+	g_object_notify (G_OBJECT (self), NM_DEVICE_802_3_ETHERNET_CARRIER);
+
+	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
+	if (state == NM_DEVICE_STATE_UNAVAILABLE) {
+		if (carrier)
+			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED);
+	} else if (state >= NM_DEVICE_STATE_DISCONNECTED) {
+		if (!carrier)
+			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_UNAVAILABLE);
+	}
 }
 
 static void
@@ -195,29 +220,33 @@ nm_device_802_3_ethernet_carrier_off (NMNetlinkMonitor *monitor,
 	}
 }
 
+static gboolean
+unavailable_to_disconnected (gpointer user_data)
+{
+	nm_device_state_changed (NM_DEVICE (user_data), NM_DEVICE_STATE_DISCONNECTED);
+	return FALSE;
+}
+
 static void
 device_state_changed (NMDeviceInterface *device, NMDeviceState state, gpointer user_data)
 {
 	NMDevice8023Ethernet *self = NM_DEVICE_802_3_ETHERNET (user_data);
 	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self);
-	gboolean carrier = FALSE;
-	guint32 caps;
-	gchar *contents;
 
-	if (state != NM_DEVICE_STATE_ACTIVATED)
-		return;
-
-	/* Devices that don't support carrier detect are always "on" */
-	caps = nm_device_get_capabilities (NM_DEVICE (self));
-	if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
-		return;
-
-	if (g_file_get_contents (priv->carrier_file_path, &contents, NULL, NULL)) {
-		carrier = atoi (contents) > 0 ? TRUE : FALSE;
-		g_free (contents);
+	/* Remove any previous delayed transition to disconnected */
+	if (priv->state_to_disconnected_id) {
+		g_source_remove (priv->state_to_disconnected_id);
+		priv->state_to_disconnected_id = 0;
 	}
 
-	set_carrier (self, carrier);
+	/* If transitioning to UNAVAILBLE and we have a carrier, transition to
+	 * DISCONNECTED because the device is ready to use.  Otherwise the carrier-on
+	 * handler will handle the transition to DISCONNECTED when the carrier is detected.
+	 */
+	if ((state == NM_DEVICE_STATE_UNAVAILABLE) && priv->carrier) {
+		priv->state_to_disconnected_id = g_idle_add (unavailable_to_disconnected, self);
+		return;
+	}
 }
 
 static GObject*
@@ -258,7 +287,7 @@ constructor (GType type,
 	} else {
 		priv->link_connected_id = 0;
 		priv->link_disconnected_id = 0;
-		set_carrier (NM_DEVICE_802_3_ETHERNET (dev), TRUE);
+		priv->carrier = TRUE;
 	}
 
 	g_signal_connect (dev, "state-changed", G_CALLBACK (device_state_changed), dev);
@@ -314,7 +343,8 @@ real_bring_down (NMDevice *dev)
 NMDevice8023Ethernet *
 nm_device_802_3_ethernet_new (const char *udi,
 						const char *iface,
-						const char *driver)
+						const char *driver,
+						gboolean managed)
 {
 	g_return_val_if_fail (udi != NULL, NULL);
 	g_return_val_if_fail (iface != NULL, NULL);
@@ -324,6 +354,7 @@ nm_device_802_3_ethernet_new (const char *udi,
 										 NM_DEVICE_INTERFACE_UDI, udi,
 										 NM_DEVICE_INTERFACE_IFACE, iface,
 										 NM_DEVICE_INTERFACE_DRIVER, driver,
+										 NM_DEVICE_INTERFACE_MANAGED, managed,
 										 NULL);
 }
 
@@ -352,20 +383,6 @@ nm_device_802_3_ethernet_get_carrier (NMDevice8023Ethernet *self)
 	g_return_val_if_fail (self != NULL, FALSE);
 
 	return NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self)->carrier;
-}
-
-static void
-set_carrier (NMDevice8023Ethernet *self, const gboolean carrier)
-{
-	NMDevice8023EthernetPrivate *priv;
-
-	g_return_if_fail (NM_IS_DEVICE (self));
-
-	priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self);
-	if (priv->carrier != carrier) {
-		priv->carrier = carrier;
-		g_object_notify (G_OBJECT (self), NM_DEVICE_802_3_ETHERNET_CARRIER);
-	}
 }
 
 /* Returns speed in Mb/s */
@@ -402,9 +419,10 @@ out:
 }
 
 static void
-real_set_hw_address (NMDevice *dev)
+real_update_hw_address (NMDevice *dev)
 {
 	NMDevice8023Ethernet *self = NM_DEVICE_802_3_ETHERNET (dev);
+	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self);
 	struct ifreq req;
 	int ret, fd;
 
@@ -416,13 +434,19 @@ real_set_hw_address (NMDevice *dev)
 
 	memset (&req, 0, sizeof (struct ifreq));
 	strncpy (req.ifr_name, nm_device_get_iface (dev), IFNAMSIZ);
-
 	ret = ioctl (fd, SIOCGIFHWADDR, &req);
-	if (ret == 0) {
-		memcpy (&(NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (self)->hw_addr),
-				&(req.ifr_hwaddr.sa_data), sizeof (struct ether_addr));
+	if (ret) {
+		nm_warning ("%s: (%s) error getting hardware address: %d",
+		            __func__, nm_device_get_iface (dev), errno);
+		goto out;
 	}
 
+	if (memcmp (&priv->hw_addr, &req.ifr_hwaddr.sa_data, sizeof (struct ether_addr))) {
+		memcpy (&priv->hw_addr, &req.ifr_hwaddr.sa_data, sizeof (struct ether_addr));
+		g_object_notify (G_OBJECT (dev), NM_DEVICE_802_3_ETHERNET_HW_ADDRESS);
+	}
+
+out:
 	close (fd);
 }
 
@@ -461,7 +485,7 @@ real_can_interrupt_activation (NMDevice *dev)
 }
 
 static gboolean
-real_can_activate (NMDevice *dev, gboolean wireless_enabled)
+real_can_activate (NMDevice *dev)
 {
 	NMDevice8023Ethernet *self = NM_DEVICE_802_3_ETHERNET (dev);
 
@@ -645,7 +669,7 @@ link_timeout_cb (gpointer user_data)
 	req = nm_device_get_act_request (dev);
 
 	if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED) {
-		nm_device_interface_deactivate (NM_DEVICE_INTERFACE (dev));
+		nm_device_state_changed (dev, NM_DEVICE_STATE_DISCONNECTED);
 		return FALSE;
 	}
 
@@ -1062,7 +1086,7 @@ ppp_state_changed (NMPPPManager *ppp_manager, NMPPPStatus status, gpointer user_
 		break;
 	case NM_PPP_STATUS_DEAD:
 		if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED)
-			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
+			nm_device_state_changed (device, NM_DEVICE_STATE_DISCONNECTED);
 		else
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED);
 		break;
@@ -1280,6 +1304,11 @@ nm_device_802_3_ethernet_dispose (GObject *object)
 	}
 	g_object_unref (monitor);
 
+	if (priv->state_to_disconnected_id) {
+		g_source_remove (priv->state_to_disconnected_id);
+		priv->state_to_disconnected_id = 0;
+	}
+
 	G_OBJECT_CLASS (nm_device_802_3_ethernet_parent_class)->dispose (object);
 }
 
@@ -1337,7 +1366,7 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 	parent_class->bring_up = real_bring_up;
 	parent_class->bring_down = real_bring_down;
 	parent_class->can_interrupt_activation = real_can_interrupt_activation;
-	parent_class->set_hw_address = real_set_hw_address;
+	parent_class->update_hw_address = real_update_hw_address;
 	parent_class->get_best_auto_connection = real_get_best_auto_connection;
 	parent_class->can_activate = real_can_activate;
 	parent_class->connection_secrets_updated = real_connection_secrets_updated;

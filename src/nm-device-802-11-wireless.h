@@ -82,7 +82,8 @@ GType nm_device_802_11_wireless_get_type (void);
 
 NMDevice80211Wireless *nm_device_802_11_wireless_new (const char *udi,
 										    const char *iface,
-										    const char *driver);
+										    const char *driver,
+										    gboolean managed);
 
 void			nm_device_802_11_wireless_set_ssid (NMDevice80211Wireless *self,
 										  const GByteArray * ssid);
@@ -100,10 +101,9 @@ gboolean		nm_device_802_11_wireless_set_mode (NMDevice80211Wireless *self,
 
 int		nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *self);
 
-gboolean nm_device_802_11_wireless_can_activate (NMDevice80211Wireless * self);
-
 NMAccessPoint * nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wireless *self);
 
+void nm_device_802_11_wireless_set_enabled (NMDevice80211Wireless *self, gboolean enabled);
 
 G_END_DECLS
 

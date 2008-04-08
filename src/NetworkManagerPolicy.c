@@ -260,15 +260,16 @@ schedule_activate_check (NMPolicy *policy, NMDevice *device)
 {
 	ActivateData *data;
 	GSList *iter;
-	gboolean wireless_enabled;
+	NMDeviceState state;
 
 	if (nm_manager_get_state (policy->manager) == NM_STATE_ASLEEP)
 		return;
 
-	// FIXME: kind of a hack, but devices don't have access to the manager
-	// object directly
-	wireless_enabled = nm_manager_wireless_enabled (policy->manager);
-	if (!nm_device_can_activate (device, wireless_enabled))
+	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (device));
+	if (state < NM_DEVICE_STATE_DISCONNECTED)
+		return;
+
+	if (!nm_device_can_activate (device))
 		return;
 
 	for (iter = policy->pending_activation_checks; iter; iter = g_slist_next (iter)) {
@@ -304,41 +305,29 @@ device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 	NMPolicy *policy = (NMPolicy *) user_data;
 	NMConnection *connection = get_device_connection (device);
 
-	if ((state == NM_DEVICE_STATE_FAILED) || (state == NM_DEVICE_STATE_CANCELLED)) {
+	switch (state) {
+	case NM_DEVICE_STATE_FAILED:
 		/* Mark the connection invalid so it doesn't get automatically chosen */
 		if (connection) {
 			g_object_set_data (G_OBJECT (connection), INVALID_TAG, GUINT_TO_POINTER (TRUE));
 			nm_info ("Marking connection '%s' invalid.", get_connection_id (connection));
 		}
-
-		if (state == NM_DEVICE_STATE_CANCELLED)
-			schedule_activate_check (policy, device);
-	} else if (state == NM_DEVICE_STATE_ACTIVATED) {
+		schedule_activate_check (policy, device);
+		break;
+	case NM_DEVICE_STATE_ACTIVATED:
 		/* Clear the invalid tag on the connection */
 		if (connection)
 			g_object_set_data (G_OBJECT (connection), INVALID_TAG, NULL);
 
 		update_routing_and_dns (policy, FALSE);
-	} else if (state == NM_DEVICE_STATE_DISCONNECTED) {
+		break;
+	case NM_DEVICE_STATE_DISCONNECTED:
 		update_routing_and_dns (policy, FALSE);
-
 		schedule_activate_check (policy, device);
+		break;
+	default:
+		break;
 	}
-}
-
-static void
-device_carrier_changed (NMDevice8023Ethernet *device,
-                        GParamSpec *pspec,
-                        gpointer user_data)
-{
-	const char *prop = g_param_spec_get_name (pspec);
-
-	g_return_if_fail (strcmp (prop, NM_DEVICE_802_3_ETHERNET_CARRIER) == 0);
-
-	if (!nm_device_802_3_ethernet_get_carrier (device))
-		nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
-	else
-		schedule_activate_check ((NMPolicy *) user_data, NM_DEVICE (device));
 }
 
 static void
@@ -401,15 +390,6 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 		                       policy);
 		policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
 	}
-
-	if (NM_IS_DEVICE_802_3_ETHERNET (device)) {
-		id = g_signal_connect (device, "notify::" NM_DEVICE_802_3_ETHERNET_CARRIER,
-		                       G_CALLBACK (device_carrier_changed),
-		                       policy);
-		policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
-	}
-
-	schedule_activate_check (policy, device);
 }
 
 static void

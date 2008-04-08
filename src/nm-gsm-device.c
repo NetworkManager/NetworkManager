@@ -50,7 +50,8 @@ NMGsmDevice *
 nm_gsm_device_new (const char *udi,
 			    const char *data_iface,
 			    const char *monitor_iface,
-			    const char *driver)
+			    const char *driver,
+			    gboolean managed)
 {
 	g_return_val_if_fail (udi != NULL, NULL);
 	g_return_val_if_fail (data_iface != NULL, NULL);
@@ -61,6 +62,7 @@ nm_gsm_device_new (const char *udi,
 								  NM_DEVICE_INTERFACE_IFACE, data_iface,
 								  NM_DEVICE_INTERFACE_DRIVER, driver,
 								  NM_GSM_DEVICE_MONITOR_IFACE, monitor_iface,
+								  NM_DEVICE_INTERFACE_MANAGED, managed,
 								  NULL);
 }
 

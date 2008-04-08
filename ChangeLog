@@ -1,5 +1,117 @@
 2008-04-07  Dan Williams  <dcbw@redhat.com>
 
+	* include/NetworkManager.h
+		- Remove the DOWN and CANCELLED device states
+		- Add UNMANAGED and UNAVAILABLE device states
+		- Document the device states
+
+	* introspection/nm-device.xml
+	  src/nm-device-interface.c
+	  src/nm-device-interface.h
+		- Add the 'managed' property
+
+	* test/nm-tool.c
+		- (detail_device): print out device state
+
+	* src/NetworkManagerSystem.h
+	  src/backends/NetworkManagerArch.c
+	  src/backends/NetworkManagerDebian.c
+	  src/backends/NetworkManagerFrugalware.c
+	  src/backends/NetworkManagerGentoo.c
+	  src/backends/NetworkManagerMandriva.c
+	  src/backends/NetworkManagerPaldo.c
+	  src/backends/NetworkManagerRedHat.c
+	  src/backends/NetworkManagerSlackware.c
+	  src/backends/NetworkManagerSuSE.c
+		- (nm_system_device_get_system_config, nm_system_device_get_disabled
+		   nm_system_device_free_system_config): remove; they were unused and
+			their functionality should be re-implemented in each distro's
+			system settings service plugin 
+
+	* src/nm-gsm-device.c
+	  src/nm-gsm-device.h
+	  src/nm-cdma-device.c
+	  src/nm-cdma-device.h
+		- (*_new): take the 'managed' argument
+
+	* src/nm-device.c
+		- (nm_device_set_address): remove, fold into nm_device_bring_up()
+		- (nm_device_init): start in unmanaged state, not disconnected
+		- (constructor): don't start device until the system settings service
+			has had a chance to figure out if the device is managed or not
+		- (nm_device_deactivate, nm_device_bring_up, nm_device_bring_down):
+			don't set device state here, let callers handle that as appropriate
+		- (nm_device_dispose): don't touch the device if it's not managed
+		- (set_property, get_property, nm_device_class_init): implement the
+			'managed' property
+		- (nm_device_state_changed): bring the device up if its now managed,
+			and deactivate it if it used to be active
+		- (nm_device_get_managed, nm_device_set_managed): do the right thing
+			with the managed state
+
+	* src/nm-hal-manager.c
+		- (wired_device_creator, wireless_device_creator, modem_device_creator):
+			take initial managed state and pass it along to device constructors
+		- (create_device_and_add_to_list): get managed state and pass to
+			type creators
+
+	* src/nm-device-802-11-wireless.c
+		- (real_can_activate): fold in most of
+			nm_device_802_11_wireless_can_activate()
+		- (can_scan): can't scan in UNAVAILABLE or UNMANAGED
+		- (link_timeout_cb): instead of deactivating, change device state and
+			let the device state handler to it
+		- (real_update_hw_address): clean up
+		- (state_changed_cb): when entering UNAVAILABLE state, schedule an idle
+			handler to transition to DISCONNECTED if the device isn't rfkilled
+
+	* src/nm-device-802-3-ethernet.c
+		- (set_carrier): move above callers and get rid of prototype
+		- (device_state_changed): when entering UNAVAILABLE state, schedule an
+			idle handler to transition to DISCONNECTED if the device has a
+			carrier
+		- (real_update_hw_address): clean up
+		- (link_timeout_cb, ppp_state_changed): change state instead of calling
+			deactivation directly as deactivation doesn't change state anymore
+
+	* src/NetworkManagerPolicy.c
+		- (schedule_activate_check): yay, remove wireless_enabled hack since
+			the NMManager and wireless devices work that out themselves now
+		- (device_state_changed): change to a switch and update for new device
+			states
+		- (device_carrier_changed): remove; device handles this now through
+			state changes
+		- (device_added): don't care about carrier any more; the initial
+			activation check will happen when the device transitions to
+			DISCONNECTED
+
+	* src/nm-manager.c
+		- (dispose): clear unmanaged devices
+		- (handle_unmanaged_devices): update unmanaged device list and toggle
+			the managed property on each device when needed
+		- (system_settings_properties_changed_cb): handle signals from the
+			system settings service
+		- (system_settings_get_unmanaged_devices_cb): handle callback from
+			getting the unmanaged device list method call
+		- (query_unmanaged_devices): ask the system settings service for its
+			list of unmanaged devices
+		- (nm_manager_name_owner_changed, initial_get_connections): get unmanaged
+			devices
+		- (manager_set_wireless_enabled): push rfkill state down to wireless
+			devices directly and let them handle the necessary state transitions
+		- (manager_device_state_changed): update for new device states
+		- (nm_manager_add_device): set initial rfkill state on wireless devices
+		- (nm_manager_remove_device): don't touch the device if it's unmanaged
+		- (nm_manager_activate_connection): return error if the device is
+			unmanaged
+		- (nm_manager_sleep): handle new device states correctly; don't change
+			the state of unavailable/unmanaged devices
+
+	* libnm-glib/nm-device-802-11-wireless.c
+		- (state_changed_cb): update for new device states
+
+2008-04-07  Dan Williams  <dcbw@redhat.com>
+
 	* marshallers/nm-marshal.list
 		- Add VOID:STRING,UINT marshaller for system settings HAL manager
 

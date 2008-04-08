@@ -61,6 +61,7 @@ void nm_manager_remove_device (NMManager *manager, NMDevice *device, gboolean de
 GSList *nm_manager_get_devices (NMManager *manager);
 NMDevice *nm_manager_get_device_by_path (NMManager *manager, const char *path);
 NMDevice *nm_manager_get_device_by_udi (NMManager *manager, const char *udi);
+gboolean nm_manager_is_udi_managed (NMManager *manager, const char *udi);
 
 const char * nm_manager_activate_connection (NMManager *manager,
                                              NMConnection *connection,

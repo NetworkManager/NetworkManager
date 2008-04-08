@@ -142,6 +142,8 @@ struct _NMDevice80211WirelessPrivate
 	GSList *        ap_list;
 	NMAccessPoint * current_ap;
 	guint32			rate;
+	gboolean		enabled; /* rfkilled or not */
+	guint			state_to_disconnected_id;
 	
 	gboolean			scanning;
 	glong			scheduled_scan_time;
@@ -874,9 +876,22 @@ real_check_connection_compatible (NMDevice *device,
 }
 
 static gboolean
-real_can_activate (NMDevice *dev, gboolean wireless_enabled)
+real_can_activate (NMDevice *dev)
 {
-	if (!wireless_enabled)
+	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
+	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
+	NMSupplicantInterface *sup_iface;
+	guint32 state;
+
+	if (!priv->enabled)
+		return FALSE;
+
+	sup_iface = priv->supplicant.iface;
+	if (!sup_iface)
+		return FALSE;
+
+	state = nm_supplicant_interface_get_state (sup_iface);
+	if (state != NM_SUPPLICANT_INTERFACE_STATE_READY)
 		return FALSE;
 
 	return TRUE;
@@ -976,28 +991,6 @@ impl_device_get_access_points (NMDevice80211Wireless *self,
 			g_ptr_array_add (*aps, g_strdup (nm_ap_get_dbus_path (ap)));
 	}
 	return TRUE;
-}
-
-
-/* Return TRUE if activation is possible, FALSE if not */
-gboolean
-nm_device_802_11_wireless_can_activate (NMDevice80211Wireless * self)
-{
-	NMSupplicantInterface * sup_iface;
-	guint32 state;
-
-	g_return_val_if_fail (self != NULL, FALSE);
-
-	sup_iface = self->priv->supplicant.iface;
-
-	if (sup_iface == NULL)
-		return FALSE;
-
-	state = nm_supplicant_interface_get_state (sup_iface);
-	if (state == NM_SUPPLICANT_INTERFACE_STATE_READY)
-		return TRUE;
-
-	return FALSE;
 }
 
 /*
@@ -1469,14 +1462,15 @@ can_scan (NMDevice80211Wireless *self)
 	sup_state = nm_supplicant_interface_get_connection_state (priv->supplicant.iface);
 	dev_state = nm_device_get_state (NM_DEVICE (self));
 
+	/* Don't scan when unknown, unmanaged, or unavailable */
+	if (dev_state < NM_DEVICE_STATE_DISCONNECTED)
+		return FALSE;
+
 	is_disconnected = (   sup_state == NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED
 	                   || sup_state == NM_SUPPLICANT_INTERFACE_CON_STATE_INACTIVE
 	                   || sup_state == NM_SUPPLICANT_INTERFACE_CON_STATE_SCANNING
-	                   || dev_state == NM_DEVICE_STATE_UNKNOWN
-	                   || dev_state == NM_DEVICE_STATE_DOWN
 	                   || dev_state == NM_DEVICE_STATE_DISCONNECTED
-	                   || dev_state == NM_DEVICE_STATE_FAILED
-	                   || dev_state == NM_DEVICE_STATE_CANCELLED) ? TRUE : FALSE;
+	                   || dev_state == NM_DEVICE_STATE_FAILED) ? TRUE : FALSE;
 
 	/* All wireless devices can scan when disconnected */
 	if (is_disconnected)
@@ -1911,7 +1905,7 @@ link_timeout_cb (gpointer user_data)
 	 * fail.
 	 */
 	if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED) {
-		nm_device_interface_deactivate (NM_DEVICE_INTERFACE (dev));
+		nm_device_state_changed (dev, NM_DEVICE_STATE_DISCONNECTED);
 		return FALSE;
 	}
 
@@ -2523,12 +2517,11 @@ error:
 /****************************************************************************/
 
 static void
-real_set_hw_address (NMDevice *dev)
+real_update_hw_address (NMDevice *dev)
 {
 	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
-	const char *iface;
+	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 	struct ifreq req;
-	size_t len;
 	int ret, fd;
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
@@ -2537,20 +2530,19 @@ real_set_hw_address (NMDevice *dev)
 		return;
 	}
 
-	iface = nm_device_get_iface (dev);
-	len = MIN (sizeof (req.ifr_name) - 1, (size_t) strlen (iface));
-
 	memset (&req, 0, sizeof (struct ifreq));
-	strncpy (req.ifr_name, iface, len);
+	strncpy (req.ifr_name, nm_device_get_iface (dev), IFNAMSIZ);
 	ret = ioctl (fd, SIOCGIFHWADDR, &req);
-	if (ret)
+	if (ret) {
+		nm_warning ("%s: (%s) error getting hardware address: %d",
+		            __func__, nm_device_get_iface (dev), errno);
 		goto out;
+	}
 
-	if (memcmp (&(self->priv->hw_addr), &(req.ifr_hwaddr.sa_data), sizeof (struct ether_addr)) == 0)
-		goto out;
-
-	memcpy (&(self->priv->hw_addr), &(req.ifr_hwaddr.sa_data), sizeof (struct ether_addr));
-	g_object_notify (G_OBJECT (dev), NM_DEVICE_802_11_WIRELESS_HW_ADDRESS);
+	if (memcmp (&priv->hw_addr, &req.ifr_hwaddr.sa_data, sizeof (struct ether_addr))) {
+		memcpy (&priv->hw_addr, &req.ifr_hwaddr.sa_data, sizeof (struct ether_addr));
+		g_object_notify (G_OBJECT (dev), NM_DEVICE_802_11_WIRELESS_HW_ADDRESS);
+	}
 
 out:
 	close (fd);
@@ -2975,6 +2967,11 @@ nm_device_802_11_wireless_dispose (GObject *object)
 
 	set_current_ap (self, NULL);
 
+	if (priv->state_to_disconnected_id) {
+		g_source_remove (priv->state_to_disconnected_id);
+		priv->state_to_disconnected_id = 0;
+	}
+
 	G_OBJECT_CLASS (nm_device_802_11_wireless_parent_class)->dispose (object);
 }
 
@@ -3029,7 +3026,7 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 	parent_class->is_up = real_is_up;
 	parent_class->bring_up = real_bring_up;
 	parent_class->bring_down = real_bring_down;
-	parent_class->set_hw_address = real_set_hw_address;
+	parent_class->update_hw_address = real_update_hw_address;
 	parent_class->get_best_auto_connection = real_get_best_auto_connection;
 	parent_class->can_activate = real_can_activate;
 	parent_class->connection_secrets_updated = real_connection_secrets_updated;
@@ -3121,10 +3118,35 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 	dbus_g_error_domain_register (NM_WIFI_ERROR, NULL, NM_TYPE_WIFI_ERROR);
 }
 
+static gboolean
+unavailable_to_disconnected (gpointer user_data)
+{
+	nm_device_state_changed (NM_DEVICE (user_data), NM_DEVICE_STATE_DISCONNECTED);
+	return FALSE;
+}
+
 static void
 state_changed_cb (NMDevice *device, NMDeviceState state, gpointer user_data)
 {
+	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (device);
+	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
+
+	/* Remove any previous delayed transition to disconnected */
+	if (priv->state_to_disconnected_id) {
+		g_source_remove (priv->state_to_disconnected_id);
+		priv->state_to_disconnected_id = 0;
+	}
+
 	switch (state) {
+	case NM_DEVICE_STATE_UNAVAILABLE:
+		/* If transitioning to UNAVAILBLE and the device is not rfkilled,
+		 * transition to DISCONNECTED because the device is ready to use.
+		 * Otherwise the rfkill/enabled handler handle the transition to
+		 * DISCONNECTED when the device is no longer rfkilled.
+		 */
+		if (priv->enabled)
+			priv->state_to_disconnected_id = g_idle_add (unavailable_to_disconnected, self);
+		break;
 	case NM_DEVICE_STATE_ACTIVATED:
 		activation_success_handler (device);
 		break;
@@ -3143,7 +3165,8 @@ state_changed_cb (NMDevice *device, NMDeviceState state, gpointer user_data)
 NMDevice80211Wireless *
 nm_device_802_11_wireless_new (const char *udi,
 						 const char *iface,
-						 const char *driver)
+						 const char *driver,
+						 gboolean managed)
 {
 	GObject *obj;
 
@@ -3155,6 +3178,7 @@ nm_device_802_11_wireless_new (const char *udi,
 					NM_DEVICE_INTERFACE_UDI, udi,
 					NM_DEVICE_INTERFACE_IFACE, iface,
 					NM_DEVICE_INTERFACE_DRIVER, driver,
+					NM_DEVICE_INTERFACE_MANAGED, managed,
 					NULL);
 	if (obj == NULL)
 		return NULL;
@@ -3192,4 +3216,28 @@ nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wireless *self)
 	}
 	return NULL;
 }
+
+void
+nm_device_802_11_wireless_set_enabled (NMDevice80211Wireless *self, gboolean enabled)
+{
+	NMDevice80211WirelessPrivate *priv;
+	NMDeviceState state;
+
+	g_return_if_fail (NM_IS_DEVICE_802_11_WIRELESS (self));
+
+	priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
+	if (priv->enabled == enabled)
+		return;
+
+	priv->enabled = enabled;
+
+	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
+	if (state >= NM_DEVICE_STATE_UNAVAILABLE) {
+		if (enabled)
+			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED);
+		else
+			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_UNAVAILABLE);
+	}
+}
+
 

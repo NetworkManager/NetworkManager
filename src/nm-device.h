@@ -70,12 +70,12 @@ struct _NMDeviceClass
 	gboolean		(* bring_up)		(NMDevice *self);
 	void			(* bring_down)		(NMDevice *self);
 
-	void        (* set_hw_address) (NMDevice *self);
+	void        (* update_hw_address) (NMDevice *self);
 
 	guint32		(* get_type_capabilities)	(NMDevice *self);
 	guint32		(* get_generic_capabilities)	(NMDevice *self);
 
-	gboolean	(* can_activate) (NMDevice *self, gboolean wireless_enabled);
+	gboolean	(* can_activate) (NMDevice *self);
 
 	NMConnection * (* get_best_auto_connection) (NMDevice *self,
 	                                             GSList *connections,
@@ -135,7 +135,7 @@ void *		nm_device_get_system_config_data	(NMDevice *dev);
 
 NMActRequest *	nm_device_get_act_request	(NMDevice *dev);
 
-gboolean		nm_device_can_activate	(NMDevice *dev, gboolean wireless_enabled);
+gboolean		nm_device_can_activate	(NMDevice *dev);
 
 NMConnection * nm_device_get_best_auto_connection (NMDevice *dev,
                                                    GSList *connections,
@@ -150,6 +150,9 @@ gboolean		nm_device_is_activating		(NMDevice *dev);
 gboolean		nm_device_can_interrupt_activation		(NMDevice *self);
 
 NMDeviceState nm_device_get_state (NMDevice *device);
+
+gboolean nm_device_get_managed (NMDevice *device);
+void nm_device_set_managed (NMDevice *device, gboolean managed);
 
 G_END_DECLS
 

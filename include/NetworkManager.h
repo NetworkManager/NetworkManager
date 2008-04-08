@@ -128,15 +128,68 @@ typedef enum NMDeviceType
 typedef enum
 {
 	NM_DEVICE_STATE_UNKNOWN = 0,
-	NM_DEVICE_STATE_DOWN,
+
+	/* Initial state of all devices and the only state for devices not
+	 * managed by NetworkManager.
+	 *
+	 * Allowed next states:
+	 *   UNAVAILABLE:  the device is now managed by NetworkManager
+	 */
+	NM_DEVICE_STATE_UNMANAGED,
+
+	/* Indicates the device is not yet ready for use, but is managed by
+	 * NetworkManager.  For Ethernet devices, the device may not have an
+	 * active carrier.  For WiFi devices, the device may not have it's radio
+	 * enabled.
+	 *
+	 * Allowed next states:
+	 *   UNMANAGED:  the device is no longer managed by NetworkManager
+	 *   DISCONNECTED:  the device is now ready for use
+	 */
+	NM_DEVICE_STATE_UNAVAILABLE,
+
+	/* Indicates the device does not have an activate connection to anything.
+	 *
+	 * Allowed next states:
+	 *   UNMANAGED:  the device is no longer managed by NetworkManager
+	 *   UNAVAILABLE:  the device is no longer ready for use (rfkill, no carrier, etc)
+	 *   PREPARE:  the device has started activation
+	 */
 	NM_DEVICE_STATE_DISCONNECTED,
+
+	/* Indicate states in device activation.
+	 *
+	 * Allowed next states:
+	 *   UNMANAGED:  the device is no longer managed by NetworkManager
+	 *   UNAVAILABLE:  the device is no longer ready for use (rfkill, no carrier, etc)
+	 *   FAILED:  an error ocurred during activation
+	 *   NEED_AUTH:  authentication/secrets are needed
+	 *   ACTIVATED:  (IP_CONFIG only) activation was successful
+	 *   DISCONNECTED:  the device's connection is no longer valid, or NetworkManager went to sleep
+	 */
 	NM_DEVICE_STATE_PREPARE,
 	NM_DEVICE_STATE_CONFIG,
 	NM_DEVICE_STATE_NEED_AUTH,
 	NM_DEVICE_STATE_IP_CONFIG,
+
+	/* Indicates the device is part of an active network connection.
+	 *
+	 * Allowed next states:
+	 *   UNMANAGED:  the device is no longer managed by NetworkManager
+	 *   UNAVAILABLE:  the device is no longer ready for use (rfkill, no carrier, etc)
+	 *   FAILED:  a DHCP lease was not renewed, or another error
+	 *   DISCONNECTED:  the device's connection is no longer valid, or NetworkManager went to sleep
+	 */
 	NM_DEVICE_STATE_ACTIVATED,
+
+	/* Indicates the device's activation failed.
+	 *
+	 * Allowed next states:
+	 *   UNMANAGED:  the device is no longer managed by NetworkManager
+	 *   UNAVAILABLE:  the device is no longer ready for use (rfkill, no carrier, etc)
+	 *   DISCONNECTED:  the device's connection is ready for activation, or NetworkManager went to sleep
+	 */
 	NM_DEVICE_STATE_FAILED,
-	NM_DEVICE_STATE_CANCELLED,
 } NMDeviceState;
 
 

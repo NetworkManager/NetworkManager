@@ -35,7 +35,8 @@ struct _NMHalManager {
 /* Device creators */
 
 typedef NMDevice *(*NMDeviceCreatorFn) (NMHalManager *manager,
-								const char *udi);
+                                        const char *udi,
+                                        gboolean managed);
 
 typedef struct {
 	char *device_type_name;
@@ -109,7 +110,7 @@ is_wired_device (NMHalManager *manager, const char *udi)
 }
 
 static NMDevice *
-wired_device_creator (NMHalManager *manager, const char *udi)
+wired_device_creator (NMHalManager *manager, const char *udi, gboolean managed)
 {
 	NMDevice *device;
 	char *iface;
@@ -122,7 +123,7 @@ wired_device_creator (NMHalManager *manager, const char *udi)
 	}
 
 	driver = nm_get_device_driver_name (manager->hal_ctx, udi);
-	device = (NMDevice *) nm_device_802_3_ethernet_new (udi, iface, driver);
+	device = (NMDevice *) nm_device_802_3_ethernet_new (udi, iface, driver, managed);
 
 	libhal_free_string (iface);
 	g_free (driver);
@@ -152,7 +153,7 @@ is_wireless_device (NMHalManager *manager, const char *udi)
 }
 
 static NMDevice *
-wireless_device_creator (NMHalManager *manager, const char *udi)
+wireless_device_creator (NMHalManager *manager, const char *udi, gboolean managed)
 {
 	NMDevice *device;
 	char *iface;
@@ -165,7 +166,7 @@ wireless_device_creator (NMHalManager *manager, const char *udi)
 	}
 
 	driver = nm_get_device_driver_name (manager->hal_ctx, udi);
-	device = (NMDevice *) nm_device_802_11_wireless_new (udi, iface, driver);
+	device = (NMDevice *) nm_device_802_11_wireless_new (udi, iface, driver, managed);
 
 	libhal_free_string (iface);
 	g_free (driver);
@@ -194,7 +195,7 @@ is_modem_device (NMHalManager *manager, const char *udi)
 }
 
 static NMDevice *
-modem_device_creator (NMHalManager *manager, const char *udi)
+modem_device_creator (NMHalManager *manager, const char *udi, gboolean managed)
 {
 	char *serial_device;
 	char *parent_udi;
@@ -246,9 +247,9 @@ modem_device_creator (NMHalManager *manager, const char *udi)
 	}
 
 	if (type_gsm)
-		device = (NMDevice *) nm_gsm_device_new (udi, serial_device + strlen ("/dev/"), NULL, driver_name);
+		device = (NMDevice *) nm_gsm_device_new (udi, serial_device + strlen ("/dev/"), NULL, driver_name, managed);
 	else if (type_cdma)
-		device = (NMDevice *) nm_cdma_device_new (udi, serial_device + strlen ("/dev/"), NULL, driver_name);
+		device = (NMDevice *) nm_cdma_device_new (udi, serial_device + strlen ("/dev/"), NULL, driver_name, managed);
 
 out:
 	libhal_free_string (serial_device);
@@ -264,8 +265,8 @@ register_built_in_creators (NMHalManager *manager)
 
 	/* Wired device */
 	creator = g_slice_new0 (DeviceCreator);
-	creator->device_type_name = g_strdup ("wired Ethernet (802.3)");
-	creator->capability_str = g_strdup ("net");
+	creator->device_type_name = g_strdup ("Ethernet");
+	creator->capability_str = g_strdup ("net.80203");
 	creator->is_device_fn = is_wired_device;
 	creator->creator_fn = wired_device_creator;
 	manager->device_creators = g_slist_append (manager->device_creators, creator);
@@ -273,7 +274,7 @@ register_built_in_creators (NMHalManager *manager)
 	/* Wireless device */
 	creator = g_slice_new0 (DeviceCreator);
 	creator->device_type_name = g_strdup ("wireless (802.11)");
-	creator->capability_str = g_strdup ("net");
+	creator->capability_str = g_strdup ("net.80211");
 	creator->is_device_fn = is_wireless_device;
 	creator->creator_fn = wireless_device_creator;
 	manager->device_creators = g_slist_append (manager->device_creators, creator);
@@ -287,28 +288,28 @@ register_built_in_creators (NMHalManager *manager)
 	manager->device_creators = g_slist_append (manager->device_creators, creator);
 }
 
-static NMDevice *
+static void
 create_device_and_add_to_list (NMHalManager *manager,
 						 DeviceCreator *creator,
 						 const char *udi)
 {
 	NMDevice *dev;
+	gboolean managed;
 
 	/* Make sure the device is not already in the device list */
 	if ((dev = nm_manager_get_device_by_udi (manager->nm_manager, udi)))
-		return NULL;
+		return;
 
-	dev = creator->creator_fn (manager, udi);
+	managed = nm_manager_is_udi_managed (manager->nm_manager, udi);
+	dev = creator->creator_fn (manager, udi, managed);
 	if (dev) {
-		nm_info ("Now managing %s device '%s'.", 
-			    creator->device_type_name,
-			    nm_device_get_iface (dev));
+		nm_info ("Found new %s device '%s'.", 
+		            creator->device_type_name,
+		            nm_device_get_iface (dev));
 
 		nm_manager_add_device (manager->nm_manager, dev);
 		g_object_unref (dev);
 	}
-
-	return dev;
 }
 
 static void

@@ -55,11 +55,6 @@ void			nm_system_update_dns					(void);
 void			nm_system_restart_mdns_responder			(void);
 void			nm_system_device_add_ip6_link_address 		(NMDevice *dev);
 
-void *		nm_system_device_get_system_config			(NMDevice *dev);
-void			nm_system_device_free_system_config		(NMDevice *dev, void *system_config_data);
-
-gboolean		nm_system_device_get_disabled				(NMDevice *dev);
-
 gboolean		nm_system_device_set_from_ip4_config		(const char *iface,
 												 NMIP4Config *config,
 												 gboolean route_to_iface);

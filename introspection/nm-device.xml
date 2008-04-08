@@ -37,6 +37,11 @@
         Object path of the Ip4Config object describing the configuration of the device.  Only valid when the device is in the NM_DEVICE_STATE_ACTIVATED state.
       </tp:docstring>
     </property>
+    <property name="Managed" type="b" access="read">
+      <tp:docstring>
+        Whether or not this device is managed by NetworkManager.
+      </tp:docstring>
+    </property>
 
     <!-- Ugh, but I see no other way of getting the type on the caller
     based on dbus object path only -->

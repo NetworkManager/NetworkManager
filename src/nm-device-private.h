@@ -33,5 +33,4 @@ void			nm_device_activate_schedule_stage3_ip_config_start (NMDevice *device);
 
 void			nm_device_state_changed (NMDevice *device, NMDeviceState state);
 
-
 #endif	/* NM_DEVICE_PRIVATE_H */

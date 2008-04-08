@@ -40,12 +40,6 @@
 // Provided by the frugalwareutils package on Frugalware
 #include <libfwnetconfig.h>
 
-typedef struct FWDeviceConfigData
-{
-        NMIP4Config *	config;
-        gboolean	use_dhcp;
-} FWDeviceConfigData;
-
 /*
  * nm_system_init
  *
@@ -274,37 +268,6 @@ void nm_system_flush_arp_cache (void)
 	nm_spawn_process ("/usr/sbin/ip neigh flush all");
 }
 
-void nm_system_device_free_system_config (NMDevice *dev, void *system_config_data)
-{
-}
-
-/*
- * get_current_profile_name
- *
- * Retrieve the current network profile, if any
- *
- */
-static char *get_current_profile_name (void)
-{
-	char *          buf;
-	
-	buf = fwnet_lastprofile();
-	return buf;
-}
-
-/*
- * nm_system_device_get_disabled
- *
- * Return whether the distro-specific system config tells us to use
- * dhcp for this device.
- *
- */
-gboolean nm_system_device_get_disabled (NMDevice *dev)
-{
-	return FALSE;
-}
-
-
 /*
  * nm_system_activate_nis
  *
@@ -345,127 +308,3 @@ gboolean nm_system_should_modify_resolv_conf (void)
 	return TRUE;
 }
 
-
-/*
- * nm_system_device_get_system_config
- *
- * Read in the config file for a device.
- *
- */
-void *nm_system_device_get_system_config (NMDevice *dev)
-{
-	fwnet_profile_t *profile;
-	fwnet_interface_t *interface;
-	FWDeviceConfigData *sys_data = NULL;
-	int dhcp, i;
-	char *data = NULL;
-	gboolean error = FALSE;
-	char ip[15];
-	char netmask[15];
-	char mybroadcast[15];
-	int ret;
-	
-	sys_data = g_malloc0 (sizeof (FWDeviceConfigData));
-	sys_data->use_dhcp = TRUE;
-	
-	profile = fwnet_parseprofile(get_current_profile_name());
-	
-	for (i=0; i<g_list_length(profile->interfaces); i++)
-	{
-		interface = g_list_nth_data(profile->interfaces, i);
-		if(!strcmp(interface->name, nm_device_get_iface (dev)))
-			break;
-		interface = NULL;
-	}
-	
-	if (!interface)
-		return NULL;
-	
-	dhcp = fwnet_is_dhcp(interface);
-	
-	if (!dhcp)
-		sys_data->use_dhcp = FALSE;
-	else
-		goto out;
-	
-	sys_data->config = nm_ip4_config_new ();
-	
-	if (!(sys_data->use_dhcp))
-	{
-		data = g_list_nth_data(interface->options, 0);
-		
-		ret = sscanf(data, "%s netmask %s broadcast %s", ip, netmask, mybroadcast);
-		
-		if (ret >= 1)
-		{
-			nm_ip4_config_set_address (sys_data->config, inet_addr (ip));
-		}
-		else
-		{
-			nm_warning ("Network configuration for device '%s' was invalid (non-DHCP configuration, "
-						"but could not split options.  Will use DHCP instead.", nm_device_get_iface (dev));
-			error = TRUE;
-			goto out;
-		}
-		
-		if (ret >= 2)
-		{
-			nm_ip4_config_set_netmask (sys_data->config, inet_addr (netmask));
-		}
-		else
-		{
-			guint32	addr = nm_ip4_config_get_address (sys_data->config);
-			
-			/* Make a default netmask if we have an IP address */
-			if (((ntohl (addr) & 0xFF000000) >> 24) <= 127)
-				nm_ip4_config_set_netmask (sys_data->config, htonl (0xFF000000));
-			else if (((ntohl (addr) & 0xFF000000) >> 24) <= 191)
-				nm_ip4_config_set_netmask (sys_data->config, htonl (0xFFFF0000));
-			else
-				nm_ip4_config_set_netmask (sys_data->config, htonl (0xFFFFFF00));
-		}
-		
-		if (ret >= 3)
-		{
-			nm_ip4_config_set_broadcast (sys_data->config, inet_addr (mybroadcast));
-		}
-		else
-		{
-			guint32 broadcast = ((nm_ip4_config_get_address (sys_data->config) & nm_ip4_config_get_netmask (sys_data->config))
-									| ~nm_ip4_config_get_netmask (sys_data->config));
-			nm_ip4_config_set_broadcast (sys_data->config, broadcast);
-		}
-		
-		if (interface->gateway != NULL)
-		{
-			nm_ip4_config_set_gateway (sys_data->config, inet_addr (interface->gateway));
-		}
-		else
-		{
-			nm_warning ("Network configuration for device '%s' was invalid (non-DHCP configuration, "
-						"but no gateway specified.  Will use DHCP instead.", nm_device_get_iface (dev));
-			error = TRUE;
-			goto out;
-		}
-	}
-	
-#if 0
-	nm_debug ("------ Config (%s)", nm_device_get_iface (dev));
-	nm_debug ("    DHCP=%d\n", sys_data->use_dhcp);
-	nm_debug ("    ADDR=%d\n", nm_ip4_config_get_address (sys_data->config));
-	nm_debug ("    GW=%d\n", nm_ip4_config_get_gateway (sys_data->config));
-	nm_debug ("    NM=%d\n", nm_ip4_config_get_netmask (sys_data->config));
-	nm_debug ("---------------------\n");
-#endif
-	
-out:
-	if (error)
-	{
-		sys_data->use_dhcp = TRUE;
-		/* Clear out the config */
-		g_object_unref (sys_data->config);
-		sys_data->config = NULL;
-	}
-	
-	return (void *)sys_data;
-}

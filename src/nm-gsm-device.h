@@ -32,7 +32,8 @@ GType nm_gsm_device_get_type (void);
 NMGsmDevice *nm_gsm_device_new (const char *udi,
 						  const char *data_iface,
 						  const char *monitor_iface,
-						  const char *driver);
+						  const char *driver,
+						  gboolean managed);
 
 G_END_DECLS
 
