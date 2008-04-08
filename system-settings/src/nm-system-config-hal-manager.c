@@ -369,6 +369,19 @@ nm_system_config_hal_manager_get_devices_of_type (NMSystemConfigHalManager *mana
 	return list;
 }
 
+NMDeviceType
+nm_system_config_hal_manager_get_type_for_udi (NMSystemConfigHalManager *manager,
+                                               const char *udi)
+{
+	NMSystemConfigHalManagerPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SYSTEM_CONFIG_HAL_MANAGER (manager), DEVICE_TYPE_UNKNOWN);
+	g_return_val_if_fail (udi != NULL, DEVICE_TYPE_UNKNOWN);
+
+	priv = NM_SYSTEM_CONFIG_HAL_MANAGER_GET_PRIVATE (manager);
+	return GPOINTER_TO_UINT (g_hash_table_lookup (priv->devices, udi));
+}
+
 DBusGProxy *
 nm_system_config_hal_manager_get_hal_proxy (NMSystemConfigHalManager *manager)
 {

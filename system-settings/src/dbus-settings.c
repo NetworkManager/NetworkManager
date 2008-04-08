@@ -475,6 +475,14 @@ nm_sysconfig_settings_update_connection (NMSysconfigSettings *self,
 	g_hash_table_destroy (hash);
 }
 
+GSList *
+nm_sysconfig_settings_get_connections (NMSysconfigSettings *self)
+{
+	g_return_val_if_fail (NM_IS_SYSCONFIG_SETTINGS (self), NULL);
+
+	return NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self)->connections;
+}
+
 void
 nm_sysconfig_settings_update_unamanged_devices (NMSysconfigSettings *self,
                                                 GSList *new_list)
@@ -495,5 +503,19 @@ nm_sysconfig_settings_update_unamanged_devices (NMSysconfigSettings *self,
 		}
 	}
 	g_object_notify (G_OBJECT (self), NM_SYSCONFIG_SETTINGS_UNMANAGED_DEVICES);
+}
+
+gboolean
+nm_sysconfig_settings_is_device_managed (NMSysconfigSettings *self,
+                                         const char *udi)
+{
+	NMSysconfigSettingsPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SYSCONFIG_SETTINGS (self), FALSE);
+
+	priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+	if (g_hash_table_lookup (priv->unmanaged_devices, udi))
+		return FALSE;
+	return TRUE;
 }
 

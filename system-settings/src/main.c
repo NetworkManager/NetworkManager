@@ -26,8 +26,10 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <netinet/ether.h>
 
 #include <glib.h>
+#include <glib/gi18n.h>
 #include <gmodule.h>
 
 #include <dbus/dbus.h>
@@ -35,6 +37,8 @@
 
 #include <nm-connection.h>
 #include <nm-setting-connection.h>
+#include <nm-setting-wired.h>
+#include <nm-setting-pppoe.h>
 #include <nm-settings.h>
 #include <NetworkManager.h>
 
@@ -57,6 +61,8 @@ typedef struct {
 	GMainLoop *loop;
 
 	GSList *plugins;   /* In priority order */
+
+	GHashTable *wired_devices;
 } Application;
 
 
@@ -64,6 +70,7 @@ static gboolean dbus_init (Application *app);
 static void dbus_cleanup (Application *app);
 static gboolean start_dbus_service (Application *app);
 static void destroy_cb (DBusGProxy *proxy, gpointer user_data);
+static void device_added_cb (DBusGProxy *proxy, const char *udi, gpointer user_data);
 
 
 static GQuark
@@ -262,7 +269,7 @@ static gboolean
 load_stuff (gpointer user_data)
 {
 	Application *app = (Application *) user_data;
-	GSList *iter;
+	GSList *devs, *iter;
 
 	g_return_val_if_fail (app != NULL, FALSE);
 
@@ -292,6 +299,11 @@ load_stuff (gpointer user_data)
 
 	unmanaged_devices_changed_cb (NULL, app);
 
+	/* Grab wired devices to make default DHCP connections for them if needed */
+	devs = nm_system_config_hal_manager_get_devices_of_type (app->hal_mgr, DEVICE_TYPE_802_3_ETHERNET);
+	for (iter = devs; iter; iter = g_slist_next (iter))
+		device_added_cb (NULL, (const char *) iter->data, app);
+
 	if (!start_dbus_service (app)) {
 		g_main_loop_quit (app->loop);
 		return FALSE;
@@ -300,34 +312,213 @@ load_stuff (gpointer user_data)
 	return FALSE;
 }
 
-#if 0
+typedef struct {
+	Application *app;
+	NMConnection *connection;
+	guint add_id;
+	char *udi;
+	GByteArray *mac;
+	char *iface;
+} WiredDeviceInfo;
+
+static void
+wired_device_info_destroy (gpointer user_data)
+{
+	WiredDeviceInfo *info = (WiredDeviceInfo *) user_data;
+
+	g_free (info->iface);
+	if (info->mac)
+		g_byte_array_free (info->mac, TRUE);
+	if (info->add_id)
+		g_source_remove (info->add_id);
+	if (info->connection) {
+		nm_sysconfig_settings_remove_connection (info->app->settings, info->connection);
+		g_object_unref (info->connection);
+	}
+	g_free (info);
+}
+
+static char *
+get_details_for_udi (Application *app, const char *udi, struct ether_addr *mac)
+{
+	DBusGProxy *dev_proxy = NULL;
+	char *address = NULL;
+	char *iface = NULL;
+	struct ether_addr *temp;
+	GError *error = NULL;
+
+	g_return_val_if_fail (app != NULL, FALSE);
+	g_return_val_if_fail (udi != NULL, FALSE);
+	g_return_val_if_fail (mac != NULL, FALSE);
+
+	dev_proxy = dbus_g_proxy_new_for_name (app->g_connection,
+	                                       "org.freedesktop.Hal",
+	                                       udi,
+	                                       "org.freedesktop.Hal.Device");
+	if (!dev_proxy)
+		goto out;
+
+	if (!dbus_g_proxy_call_with_timeout (dev_proxy,
+	                                     "GetPropertyString", 5000, &error,
+	                                     G_TYPE_STRING, "net.address", G_TYPE_INVALID,
+	                                     G_TYPE_STRING, &address, G_TYPE_INVALID)) {
+		g_message ("Error getting hardware address for %s: (%d) %s",
+		           udi, error->code, error->message);
+		g_error_free (error);
+		goto out;
+	}
+
+	if (!address && !strlen (address))
+		goto out;
+
+	temp = ether_aton (address);
+	if (!temp)
+		goto out;
+	memcpy (mac, temp, sizeof (struct ether_addr));
+
+	if (!dbus_g_proxy_call_with_timeout (dev_proxy,
+	                                     "GetPropertyString", 5000, &error,
+	                                     G_TYPE_STRING, "net.interface", G_TYPE_INVALID,
+	                                     G_TYPE_STRING, &iface, G_TYPE_INVALID)) {
+		g_message ("Error getting interface name for %s: (%d) %s",
+		           udi, error->code, error->message);
+		g_error_free (error);
+	}
+
+out:
+	g_free (address);
+	if (dev_proxy)
+		g_object_unref (dev_proxy);
+	return iface;
+}
+
+static gboolean
+have_connection_for_device (Application *app, GByteArray *mac)
+{
+	GSList *list, *iter;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+
+	g_return_val_if_fail (app != NULL, FALSE);
+	g_return_val_if_fail (mac != NULL, FALSE);
+
+	/* If the device doesn't have a connection advertised by any of the
+	 * plugins, create a new default DHCP-enabled connection for it.
+	 */
+	list = nm_sysconfig_settings_get_connections (app->settings);
+	for (iter = list; iter; iter = g_slist_next (iter)) {
+		NMExportedConnection *exported = NM_EXPORTED_CONNECTION (iter->data);
+		NMConnection *connection;
+
+		connection = nm_exported_connection_get_connection (exported);
+		if (!connection)
+			continue;
+
+		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+		if (   strcmp (s_con->type, NM_SETTING_WIRED_SETTING_NAME)
+		    && strcmp (s_con->type, NM_SETTING_PPPOE_SETTING_NAME))
+			continue;
+
+		s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
+
+		/* No wired setting; therefore the PPPoE connection applies to any device */
+		if (!s_wired && !strcmp (s_con->type, NM_SETTING_PPPOE_SETTING_NAME))
+			return TRUE;
+
+		if (s_wired->mac_address) {
+			/* A connection mac-locked to this device */
+			if (!memcmp (s_wired->mac_address->data, mac->data, ETH_ALEN))
+				return TRUE;
+		} else {
+			/* A connection that applies to any wired device */
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+static gboolean
+add_default_dhcp_connection (gpointer user_data)
+{
+	WiredDeviceInfo *info = (WiredDeviceInfo *) user_data;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+
+	if (info->add_id)
+		info->add_id = 0;
+
+	/* If the device isn't managed, ignore it */
+	if (!nm_sysconfig_settings_is_device_managed (info->app->settings, info->udi))
+		goto ignore;
+
+	if (!info->iface) {
+		struct ether_addr mac;
+
+		info->iface = get_details_for_udi (info->app, info->udi, &mac);
+		if (!info->iface)
+			goto ignore;
+		info->mac = g_byte_array_sized_new (ETH_ALEN);
+		g_byte_array_append (info->mac, mac.ether_addr_octet, ETH_ALEN);
+	}
+
+	if (have_connection_for_device (info->app, info->mac))
+		goto ignore;
+
+	info->connection = nm_connection_new ();
+
+	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
+	s_con->id = g_strdup_printf (_("Auto %s"), info->iface);
+	s_con->type = g_strdup (NM_SETTING_WIRED_SETTING_NAME);
+	s_con->autoconnect = TRUE;
+	nm_connection_add_setting (info->connection, NM_SETTING (s_con));
+
+	g_message ("Adding default connection '%s' for %s", s_con->id, info->udi);
+
+	/* Lock the connection to this device */
+	s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());
+	s_wired->mac_address = g_byte_array_sized_new (ETH_ALEN);
+	g_byte_array_append (s_wired->mac_address, info->mac->data, ETH_ALEN);
+	nm_connection_add_setting (info->connection, NM_SETTING (s_wired));
+
+	nm_sysconfig_settings_add_connection (info->app->settings,
+	                                      info->connection,
+	                                      info->app->g_connection);
+	return FALSE;
+
+ignore:
+	g_hash_table_remove (info->app->wired_devices, info);
+	return FALSE;
+}
+
 static void
 device_added_cb (DBusGProxy *proxy, const char *udi, gpointer user_data)
 {
-//	Application *app = (Application *) user_data;
+	Application *app = (Application *) user_data;
+	WiredDeviceInfo *info;
 
-	g_message ("Added: %s", udi);
+	if (nm_system_config_hal_manager_get_type_for_udi (app->hal_mgr, udi) != DEVICE_TYPE_802_3_ETHERNET)
+		return;
+
+	/* Wait for a plugin to figure out if the device should be managed or not */
+	info = g_malloc0 (sizeof (WiredDeviceInfo));
+	info->app = app;
+	info->add_id = g_timeout_add (4000, add_default_dhcp_connection, info);
+	info->udi = g_strdup (udi);
+	g_hash_table_insert (app->wired_devices, info->udi, info);
 }
 
 static void
 device_removed_cb (DBusGProxy *proxy, const char *udi, gpointer user_data)
 {
-//	Application *app = (Application *) user_data;
+	Application *app = (Application *) user_data;
+	WiredDeviceInfo *info;
 
-	g_message ("Removed: %s", udi);
+	info = g_hash_table_lookup (app->wired_devices, udi);
+	if (!info)
+		return;
+
+	g_hash_table_remove (app->wired_devices, info);
 }
-
-static void
-device_new_capability_cb (DBusGProxy *proxy,
-                          const char *udi,
-                          const char *capability,
-                          gpointer user_data)
-{
-//	Application *app = (Application *) user_data;
-
-	g_message ("New capability: %s --> %s", udi, capability);
-}
-#endif
 
 /******************************************************************/
 
@@ -592,7 +783,14 @@ main (int argc, char **argv)
 		return -1;
 
 	app->settings = nm_sysconfig_settings_new (app->g_connection);
+
+	app->wired_devices = g_hash_table_new_full (g_str_hash, g_str_equal,
+	                                            g_free, wired_device_info_destroy);
 	app->hal_mgr = nm_system_config_hal_manager_get (app->g_connection);
+	g_signal_connect (G_OBJECT (app->hal_mgr), "device-added",
+	                  G_CALLBACK (device_added_cb), app);
+	g_signal_connect (G_OBJECT (app->hal_mgr), "device-removed",
+	                  G_CALLBACK (device_removed_cb), app);
 
 	/* Load the plugins; fail if a plugin is not found. */
 	app->plugins = load_plugins (app, plugins, &error);
@@ -609,6 +807,8 @@ main (int argc, char **argv)
 	g_idle_add (load_stuff, app);
 
 	g_main_loop_run (app->loop);
+
+	g_hash_table_destroy (app->wired_devices);
 
 	g_slist_foreach (app->plugins, (GFunc) g_object_unref, NULL);
 	g_slist_free (app->plugins);

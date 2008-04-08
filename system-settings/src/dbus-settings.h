@@ -97,7 +97,12 @@ void nm_sysconfig_settings_remove_connection (NMSysconfigSettings *settings,
 void nm_sysconfig_settings_update_connection (NMSysconfigSettings *settings,
                                               NMConnection *connection);
 
+GSList *nm_sysconfig_settings_get_connections (NMSysconfigSettings *settings);
+
 void nm_sysconfig_settings_update_unamanged_devices (NMSysconfigSettings *settings,
                                                      GSList *new_list);
+
+gboolean nm_sysconfig_settings_is_device_managed (NMSysconfigSettings *settings,
+                                                  const char *udi);
 
 #endif  /* __DBUS_SETTINGS_H__ */

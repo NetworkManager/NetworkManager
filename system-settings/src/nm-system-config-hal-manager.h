@@ -49,6 +49,8 @@ GType nm_system_config_hal_manager_get_type (void);
 /* Returned list is allocated and must be freed by caller */
 GSList *nm_system_config_hal_manager_get_devices_of_type (NMSystemConfigHalManager *manager, NMDeviceType devtype);
 
+NMDeviceType nm_system_config_hal_manager_get_type_for_udi (NMSystemConfigHalManager *manager, const char *udi);
+
 DBusGProxy *nm_system_config_hal_manager_get_hal_proxy (NMSystemConfigHalManager *manager);
 
 #endif /* NM_SYSTEM_CONFIG_HAL_MANAGER_H */

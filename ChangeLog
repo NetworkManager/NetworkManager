@@ -1,3 +1,25 @@
+2008-04-08  Dan Williams  <dcbw@redhat.com>
+
+	The system settings service will now create a new default DHCP connection
+	for wired devices that have no existing applicable connection.
+
+	* system-settings/src/nm-system-config-hal-manager.c
+	  system-settings/src/nm-system-config-hal-manager.h
+		- (nm_system_config_hal_manager_get_type_for_udi): new function
+
+	* system-settings/src/dbus-settings.c
+	  system-settings/src/dbus-settings.h
+		- (nm_sysconfig_settings_get_connections): new function
+		- (nm_sysconfig_settings_is_device_managed): new function
+
+	* system-settings/src/main.c
+		- (load_stuff): check for wired devices that need a default connection
+		- (get_details_for_udi): get interface and MAC address from HAL
+		- (add_default_dhcp_connection): add a default connection for a wired
+			device if needed
+		- (device_added_cb, device_removed_cb): do the right thing with
+			wired devices and their default connections on HAL device events
+
 2008-04-07  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-glib/nm-device.c
