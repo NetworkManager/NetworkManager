@@ -26,10 +26,12 @@
 #include <glib-object.h>
 #include <nm-connection.h>
 
+#include "nm-system-config-hal-manager.h"
+
 G_BEGIN_DECLS
 
 #define PLUGIN_PRINT(pname, fmt, args...) \
-	{ g_print ("   " pname ": " fmt "\n", ##args); }
+	{ g_message ("   " pname ": " fmt, ##args); }
 
 #define PLUGIN_WARN(pname, fmt, args...) \
 	{ g_warning ("   " pname ": " fmt, ##args); }
@@ -72,7 +74,7 @@ struct _NMSystemConfigInterface {
 	GTypeInterface g_iface;
 
 	/* Called when the plugin is loaded to initialize it */
-	void     (*init) (NMSystemConfigInterface *config);
+	void     (*init) (NMSystemConfigInterface *config, NMSystemConfigHalManager *hal_manager);
 
 	/* Returns the plugins currently known list of connections.  The returned
 	 * list is freed by the system settings service.
@@ -90,6 +92,13 @@ struct _NMSystemConfigInterface {
 	 */
 	GHashTable * (*get_secrets) (NMSystemConfigInterface *config, NMConnection *connection, NMSetting *setting);
 
+	/*
+	 * Return a list of HAL UDIs of devices which NetworkManager should not
+	 * manage.  Returned list will be freed by the system settings service, and
+	 * each element must be allocated using g_malloc() or its variants.
+	 */
+	GSList * (*get_unmanaged_devices) (NMSystemConfigInterface *config);
+
 	/* Signals */
 
 	/* Emitted when a new connection has been found by the plugin */
@@ -100,17 +109,23 @@ struct _NMSystemConfigInterface {
 
 	/* Emitted when any non-secret settings of the connection change */
 	void (*connection_updated) (NMSystemConfigInterface *config, NMConnection *connection);
+
+	/* Emitted when the list of unmanaged devices changes */
+	void (*unmanaged_devices_changed) (NMSystemConfigInterface *config);
 };
 
 GType nm_system_config_interface_get_type (void);
 
-void nm_system_config_interface_init (NMSystemConfigInterface *config);
+void nm_system_config_interface_init (NMSystemConfigInterface *config,
+                                      NMSystemConfigHalManager *hal_manager);
 
 GSList * nm_system_config_interface_get_connections (NMSystemConfigInterface *config);
 
 GHashTable *nm_system_config_interface_get_secrets (NMSystemConfigInterface *config,
                                                     NMConnection *connection,
                                                     NMSetting *setting);
+
+GSList *nm_system_config_interface_get_unmanaged_devices (NMSystemConfigInterface *config);
 
 G_END_DECLS
 

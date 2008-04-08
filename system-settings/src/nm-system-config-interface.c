@@ -76,6 +76,14 @@ interface_init (gpointer g_iface)
 				  G_TYPE_NONE, 1,
 				  G_TYPE_OBJECT);
 
+	g_signal_new ("unmanaged-devices-changed",
+				  iface_type,
+				  G_SIGNAL_RUN_FIRST,
+				  G_STRUCT_OFFSET (NMSystemConfigInterface, unmanaged_devices_changed),
+				  NULL, NULL,
+				  g_cclosure_marshal_VOID__VOID,
+				  G_TYPE_NONE, 0);
+
 	initialized = TRUE;
 }
 
@@ -110,12 +118,13 @@ nm_system_config_interface_get_type (void)
 }
 
 void
-nm_system_config_interface_init (NMSystemConfigInterface *config)
+nm_system_config_interface_init (NMSystemConfigInterface *config,
+                                 NMSystemConfigHalManager *hal_manager)
 {
 	g_return_if_fail (config != NULL);
 
 	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->init)
-		NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->init (config);
+		NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->init (config, hal_manager);
 }
 
 GSList *
@@ -139,6 +148,16 @@ nm_system_config_interface_get_secrets (NMSystemConfigInterface *config,
 
 	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->get_secrets)
 		return NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->get_secrets (config, connection, setting);
+	return NULL;
+}
+
+GSList *
+nm_system_config_interface_get_unmanaged_devices (NMSystemConfigInterface *config)
+{
+	g_return_val_if_fail (config != NULL, NULL);
+
+	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->get_unmanaged_devices)
+		return NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->get_unmanaged_devices (config);
 	return NULL;
 }
 

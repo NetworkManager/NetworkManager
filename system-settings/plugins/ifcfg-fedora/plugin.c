@@ -26,12 +26,21 @@
 #include <sys/inotify.h>
 #include <unistd.h>
 #include <errno.h>
+#include <net/ethernet.h>
+#include <netinet/ether.h>
+
+#include <dbus/dbus-glib.h>
 
 #include <nm-setting-connection.h>
 #include <nm-setting-wired.h>
+#include <nm-setting-wireless.h>
+#include <nm-setting-gsm.h>
+#include <nm-setting-cdma.h>
+#include <nm-setting-pppoe.h>
 #include <nm-setting-wireless-security.h>
 #include <nm-setting-8021x.h>
 
+#include "nm-dbus-glib-types.h"
 #include "plugin.h"
 #include "parser.h"
 #include "shvar.h"
@@ -53,6 +62,10 @@ G_DEFINE_TYPE_EXTENDED (SCPluginIfcfg, sc_plugin_ifcfg, G_TYPE_OBJECT, 0,
 
 typedef struct {
 	gboolean initialized;
+
+	DBusGConnection *g_connection;
+	NMSystemConfigHalManager *hal_mgr;
+
 	GSList *connections;
 
 	int ifd;
@@ -72,31 +85,186 @@ ifcfg_plugin_error_quark (void)
 	return error_quark;
 }
 
-#define AUTO_WIRED_STAMP_FILE SYSCONFDIR"/NetworkManager/auto-wired-stamp"
-#define AUTO_WIRED_FILE_NAME  _("Auto Wired")
+static char *
+get_ether_device_udi (SCPluginIfcfg *plugin, GByteArray *mac, GSList *devices)
+{
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	GError *error = NULL;
+	GSList *iter;
+	char *udi = NULL;
+
+	if (!priv->g_connection || !mac)
+		return NULL;
+
+	for (iter = devices; !udi && iter; iter = g_slist_next (iter)) {
+		DBusGProxy *dev_proxy;
+		char *address = NULL;
+
+		dev_proxy = dbus_g_proxy_new_for_name (priv->g_connection,
+		                                       "org.freedesktop.Hal",
+		                                       iter->data,
+		                                       "org.freedesktop.Hal.Device");
+		if (!dev_proxy)
+			continue;
+
+		if (dbus_g_proxy_call_with_timeout (dev_proxy,
+		                                    "GetPropertyString", 10000, &error,
+		                                    G_TYPE_STRING, "net.address", G_TYPE_INVALID,
+		                                    G_TYPE_STRING, &address, G_TYPE_INVALID)) {		
+			struct ether_addr *dev_mac;
+
+			if (address && strlen (address)) {
+				dev_mac = ether_aton (address);
+				if (!memcmp (dev_mac->ether_addr_octet, mac->data, ETH_ALEN))
+					udi = g_strdup (iter->data);
+			}
+		} else {
+			g_error_free (error);
+			error = NULL;
+		}
+		g_free (address);
+		g_object_unref (dev_proxy);
+	}
+
+	return udi;
+}
+
+static NMDeviceType
+get_device_type_for_connection (NMConnection *connection)
+{
+	NMDeviceType devtype = DEVICE_TYPE_UNKNOWN;
+	NMSettingConnection *s_con;
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	if (!s_con)
+		return DEVICE_TYPE_UNKNOWN;
+
+	if (   !strcmp (s_con->type, NM_SETTING_WIRED_SETTING_NAME)
+	    || !strcmp (s_con->type, NM_SETTING_PPPOE_SETTING_NAME)) {
+		if (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED))
+			devtype = DEVICE_TYPE_802_3_ETHERNET;
+	} else if (!strcmp (s_con->type, NM_SETTING_WIRELESS_SETTING_NAME)) {
+		if (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS))
+			devtype = DEVICE_TYPE_802_11_WIRELESS;
+	} else if (!strcmp (s_con->type, NM_SETTING_GSM_SETTING_NAME)) {
+		if (nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM))
+			devtype = DEVICE_TYPE_GSM;
+	} else if (!strcmp (s_con->type, NM_SETTING_CDMA_SETTING_NAME)) {
+		if (nm_connection_get_setting (connection, NM_TYPE_SETTING_CDMA))
+			devtype = DEVICE_TYPE_CDMA;
+	}
+
+	return devtype;
+}
+
+static char *
+get_udi_for_connection (SCPluginIfcfg *plugin, NMConnection *connection, NMDeviceType devtype)
+{
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	NMSettingWired *s_wired;
+	NMSettingWireless *s_wireless;
+	char *udi = NULL;
+	GSList *devices = NULL;
+
+	if (devtype == DEVICE_TYPE_UNKNOWN)
+		devtype = get_device_type_for_connection (connection);
+
+	switch (devtype) {
+	case DEVICE_TYPE_802_3_ETHERNET:
+		s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
+		if (s_wired) {
+			devices = nm_system_config_hal_manager_get_devices_of_type (priv->hal_mgr, DEVICE_TYPE_802_3_ETHERNET);
+			udi = get_ether_device_udi (plugin, s_wired->mac_address, devices);
+		}
+		break;
+
+	case DEVICE_TYPE_802_11_WIRELESS:
+		s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+		if (s_wireless) {
+			devices = nm_system_config_hal_manager_get_devices_of_type (priv->hal_mgr, DEVICE_TYPE_802_11_WIRELESS);
+			udi = get_ether_device_udi (plugin, s_wireless->mac_address, devices);
+		}
+		break;
+
+	default:
+		break;
+	}
+
+	g_slist_foreach (devices, (GFunc) g_free, NULL);
+	g_slist_free (devices);
+
+	return udi;
+}
 
 static void
-write_auto_wired_connection (const char *profile_path)
+device_added_cb (NMSystemConfigHalManager *hal_mgr,
+                 const char *udi,
+                 NMDeviceType devtype,
+                 gpointer user_data)
 {
-	GError *error = NULL;
-	char *path;
-	const char *contents = "# Written by nm-system-settings\nTYPE=Ethernet\nBOOTPROTO=dhcp\nONBOOT=yes\nUSERCTL=yes\nPEERDNS=yes\n";
+	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (user_data);
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	GSList *iter;
+	gboolean changed = FALSE;
 
-	/* Write out a default autoconnect ethernet connection */
-	if (g_file_test (AUTO_WIRED_STAMP_FILE, G_FILE_TEST_EXISTS) || !profile_path)
-		return;
+	/* Try to get the UDI for all connections that don't have a UDI yet */
+	for (iter = priv->connections; iter; iter = g_slist_next (iter)) {
+		NMConnection *connection = NM_CONNECTION (iter->data);
+		ConnectionData *cdata = connection_data_get (connection);
 
-	path = g_strdup_printf ("%s/ifcfg-%s", profile_path, AUTO_WIRED_FILE_NAME);
-	if (g_file_test (path, G_FILE_TEST_EXISTS))
-		return;
-
-	PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "writing default Auto Wired connection");
-	if (!g_file_set_contents (path, contents, -1, &error)) {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "could not write default wired connection: %s (%d).", error->message, error->code);
-		g_error_free (error);
-	} else {
-		g_file_set_contents (AUTO_WIRED_STAMP_FILE, "", -1, NULL);
+		if (!cdata->udi) {
+			cdata->udi = get_udi_for_connection (plugin, connection, devtype);
+			if (cdata->udi && cdata->ignored)
+				changed = TRUE;
+		}
 	}
+
+	if (changed)
+		g_signal_emit_by_name (plugin, "unmanaged-devices-changed");
+}
+
+static void
+device_removed_cb (NMSystemConfigHalManager *hal_mgr,
+                   const char *udi,
+                   NMDeviceType devtype,
+                   gpointer user_data)
+{
+	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (user_data);
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	GSList *iter;
+	gboolean changed = FALSE;
+
+	/* Try to get the UDI for all connections that don't have a UDI yet */
+	for (iter = priv->connections; iter; iter = g_slist_next (iter)) {
+		NMConnection *connection = NM_CONNECTION (iter->data);
+		ConnectionData *cdata = connection_data_get (connection);
+
+		if (cdata->udi && !strcmp (cdata->udi, udi)) {
+			g_free (cdata->udi);
+			cdata->udi = NULL;
+			if (cdata->ignored)
+				changed = TRUE;
+		}
+	}
+
+	if (changed)
+		g_signal_emit_by_name (plugin, "unmanaged-devices-changed");
+}
+
+static GSList *
+get_unmanaged_devices (NMSystemConfigInterface *config)
+{
+	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (config);
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	GSList *copy = NULL, *iter;
+
+	for (iter = priv->connections; iter; iter = g_slist_next (iter)) {
+		ConnectionData *cdata = connection_data_get (NM_CONNECTION (iter->data));
+
+		if (cdata->ignored && cdata->udi)
+			copy = g_slist_append (copy, g_strdup (cdata->udi));
+	}
+	return copy;
 }
 
 struct FindInfo {
@@ -143,7 +311,7 @@ watch_path (const char *path, const int inotify_fd, GHashTable *table)
 }
 
 static NMConnection *
-build_one_connection (const char *path)
+build_one_connection (SCPluginIfcfg *plugin, const char *path)
 {
 	NMConnection *connection;
 	GError *error = NULL;
@@ -155,6 +323,9 @@ build_one_connection (const char *path)
 	connection = parser_parse_file (path, &error);
 	if (connection) {
 		NMSettingConnection *s_con;
+		ConnectionData *cdata = connection_data_get (connection);
+
+		cdata->udi = get_udi_for_connection (plugin, connection, DEVICE_TYPE_UNKNOWN);
 
 		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 		g_assert (s_con);
@@ -169,7 +340,8 @@ build_one_connection (const char *path)
 }
 
 static NMConnection *
-handle_new_ifcfg (const char *basename,
+handle_new_ifcfg (SCPluginIfcfg *plugin,
+                  const char *basename,
                   const int inotify_fd,
                   GHashTable *watch_table)
 {
@@ -187,7 +359,7 @@ handle_new_ifcfg (const char *basename,
 		return NULL;
 	}
 
-	connection = build_one_connection (path);
+	connection = build_one_connection (plugin, path);
 	if (!connection)
 		goto out;
 
@@ -204,8 +376,8 @@ handle_new_ifcfg (const char *basename,
 
 	cdata = connection_data_get (connection);
 	if (cdata->ignored) {
-		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Ignoring connection '%s' because "
-		              "NM_CONTROLLED was false.", basename);
+		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Ignoring connection '%s' and its "
+		              "device because NM_CONTROLLED was false.", basename);
 	}
 
 out:
@@ -253,13 +425,46 @@ clear_all_connections (SCPluginIfcfg *plugin)
 }
 
 static void
+kill_old_auto_wired_file (void)
+{
+	char *path;
+	const char *match = "# Written by nm-system-settings\nTYPE=Ethernet\nBOOTPROTO=dhcp\nONBOOT=yes\nUSERCTL=yes\nPEERDNS=yes\n";
+	char *contents = NULL;
+	gsize length = 0;
+
+	path = g_strdup_printf (IFCFG_DIR "/ifcfg-Auto Wired");
+	if (!g_file_test (path, G_FILE_TEST_EXISTS)) {
+		g_free (path);
+		return;
+	}
+
+	if (!g_file_get_contents (path, &contents, &length, NULL))
+		goto out;
+
+	if (!length && !contents)
+		goto out;
+
+	if (   (length != strlen (match))
+	    && (length != (strlen (match) - 1))
+	    && (length != (strlen (match) + 1)))
+		goto out;
+
+	if (strncmp (contents, match, MIN (length, strlen (match))))
+		goto out;
+
+	unlink (path);
+
+out:
+	g_free (contents);
+	g_free (path);
+}
+
+static void
 read_all_connections (SCPluginIfcfg *plugin)
 {
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
 	GDir *dir;
 	const char *item;
-	GSList *iter;
-	gboolean have_wired = FALSE;
 
 	clear_all_connections (plugin);
 
@@ -269,31 +474,25 @@ read_all_connections (SCPluginIfcfg *plugin)
 	if (dir) {
 		while ((item = g_dir_read_name (dir))) {
 			NMConnection *connection;
+			ConnectionData *cdata;
 
 			if (strncmp (item, IFCFG_TAG, strlen (IFCFG_TAG)))
 				continue;
 
-			connection = handle_new_ifcfg (item, priv->ifd, priv->watch_table);
-			if (connection)
+			connection = handle_new_ifcfg (plugin, item, priv->ifd, priv->watch_table);
+			if (connection) {
 				priv->connections = g_slist_append (priv->connections, connection);
+				cdata = connection_data_get (connection);
+				if (cdata->ignored && cdata->udi)
+					g_signal_emit_by_name (plugin, "unmanaged-devices-changed");
+			}
 		}
 		g_dir_close (dir);
 	} else {
 		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "couldn't access network config directory '" IFCFG_DIR "'.");
 	}
 
-	/* Check if we need to write out the auto wired connection */
-	for (iter = priv->connections; iter; iter = g_slist_next (iter)) {
-		NMConnection *connection = NM_CONNECTION (iter->data);
-		NMSettingConnection *s_con;
-
-		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-		if (!strcmp (s_con->type, NM_SETTING_WIRED_SETTING_NAME))
-			have_wired = TRUE;
-	}
-
-	if (!have_wired)
-		write_auto_wired_connection (IFCFG_DIR);
+	kill_old_auto_wired_file ();
 }
 
 static GSList *
@@ -427,7 +626,7 @@ handle_connection_changed (SCPluginIfcfg *plugin,
 	}
 
 	/* Could return NULL if the connection got deleted */
-	new_connection = build_one_connection (filename);
+	new_connection = build_one_connection (plugin, filename);
 
 	existing = find_connection_by_path (priv->connections, filename);
 	if (!existing) {
@@ -440,6 +639,11 @@ handle_connection_changed (SCPluginIfcfg *plugin,
 			if (!new_cdata->ignored) {
 				new_cdata->exported = TRUE;
 				g_signal_emit_by_name (plugin, "connection-added", new_connection);
+			} else {
+				PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Ignoring connection '%s' and its "
+				              "device because NM_CONTROLLED was false.", basename);
+				if (new_cdata->udi)
+					g_signal_emit_by_name (plugin, "unmanaged-devices-changed");
 			}
 		}
 		g_free (filename);
@@ -466,24 +670,34 @@ handle_connection_changed (SCPluginIfcfg *plugin,
 			g_assert (new_cdata);
 
 			connection_data_copy_secrets (new_cdata, existing_cdata);
+			g_free (existing_cdata->udi);
+			existing_cdata->udi = new_cdata->udi ? g_strdup (new_cdata->udi) : NULL;
 
 			if (new_cdata->ignored && !existing_cdata->ignored) {
 				/* connection now ignored */
+				PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Ignoring connection '%s' and its "
+				              "device because NM_CONTROLLED was false.", basename);
+
 				existing_cdata->ignored = TRUE;
 				g_signal_emit_by_name (plugin, "connection-removed", existing);
 				existing_cdata->exported = FALSE;
+				if (existing_cdata->udi)
+					g_signal_emit_by_name (plugin, "unmanaged-devices-changed");
 			} else if (!new_cdata->ignored && existing_cdata->ignored) {
 				/* connection no longer ignored, let the system settings
 				 * service know about it now.
 				 */
 				existing_cdata->ignored = FALSE;
 				existing_cdata->exported = TRUE;
+				if (existing_cdata->udi)
+					g_signal_emit_by_name (plugin, "unmanaged-devices-changed");
 				g_signal_emit_by_name (plugin, "connection-added", existing);
 			} else if (!new_cdata->ignored && !existing_cdata->ignored) {
 				/* connection updated and not ignored */
 				g_signal_emit_by_name (plugin, "connection-updated", existing);
 			} else if (new_cdata->ignored && existing_cdata->ignored) {
-				/* do nothing */
+				if (existing_cdata->udi)
+					g_signal_emit_by_name (plugin, "unmanaged-devices-changed");
 			}
 		}
 		g_object_unref (new_connection);
@@ -495,6 +709,10 @@ handle_connection_changed (SCPluginIfcfg *plugin,
 		priv->connections = g_slist_remove (priv->connections, existing);
 		if (!existing_cdata->ignored)
 			g_signal_emit_by_name (plugin, "connection-removed", existing);
+		else {
+			if (existing_cdata->udi)
+				g_signal_emit_by_name (plugin, "unmanaged-devices-changed");
+		}
 		g_object_unref (existing);
 		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    removed connection");
 	}
@@ -521,7 +739,7 @@ handle_new_item (SCPluginIfcfg *plugin, const char *basename)
 		return;
 
 	/* New connection */
-	connection = handle_new_ifcfg (basename, priv->ifd, priv->watch_table);
+	connection = handle_new_ifcfg (plugin, basename, priv->ifd, priv->watch_table);
 	if (!connection)
 		return;
 
@@ -533,6 +751,9 @@ handle_new_item (SCPluginIfcfg *plugin, const char *basename)
 	if (!cdata->ignored) {
 		cdata->exported = TRUE;
 		g_signal_emit_by_name (plugin, "connection-added", connection);
+	} else {
+		if (cdata->udi)
+			g_signal_emit_by_name (plugin, "unmanaged-devices-changed");
 	}
 }
 
@@ -665,9 +886,10 @@ sc_plugin_inotify_init (SCPluginIfcfg *plugin, GError **error)
 }
 
 static void
-init (NMSystemConfigInterface *config)
+init (NMSystemConfigInterface *config, NMSystemConfigHalManager *hal_manager)
 {
 	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (config);
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
 	GError *error = NULL;
 
 	if (!sc_plugin_inotify_init (plugin, &error)) {
@@ -675,17 +897,38 @@ init (NMSystemConfigInterface *config)
 		              error->message ? error->message : "(unknown)");
 		g_error_free (error);
 	}
+
+	priv->hal_mgr = g_object_ref (hal_manager);
+	g_signal_connect (priv->hal_mgr, "device-added", G_CALLBACK (device_added_cb), config);
+	g_signal_connect (priv->hal_mgr, "device-removed", G_CALLBACK (device_removed_cb), config);
 }
 
 static void
 sc_plugin_ifcfg_init (SCPluginIfcfg *plugin)
 {
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	GError *error = NULL;
+
+	priv->g_connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &error);
+	if (!priv->g_connection) {
+		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    dbus-glib error: %s",
+		              error->message ? error->message : "(unknown)");
+		g_free (error);
+	}
 }
 
 static void
 dispose (GObject *object)
 {
-	clear_all_connections (SC_PLUGIN_IFCFG (object));
+	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (object);
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+
+	clear_all_connections (plugin);
+
+	g_object_unref (priv->hal_mgr);
+
+	if (priv->g_connection)
+		g_object_unref (priv->g_connection);
 
 	G_OBJECT_CLASS (sc_plugin_ifcfg_parent_class)->dispose (object);
 }
@@ -739,6 +982,7 @@ system_config_interface_init (NMSystemConfigInterface *system_config_interface_c
 	/* interface implementation */
 	system_config_interface_class->get_connections = get_connections;
 	system_config_interface_class->get_secrets = get_secrets;
+	system_config_interface_class->get_unmanaged_devices = get_unmanaged_devices;
 	system_config_interface_class->init = init;
 }
 

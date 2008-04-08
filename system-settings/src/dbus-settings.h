@@ -43,12 +43,12 @@ typedef struct _NMSysconfigExportedConnectionClass NMSysconfigExportedConnection
 
 struct _NMSysconfigExportedConnection
 {
-    NMExportedConnection parent_instance;
+	NMExportedConnection parent_instance;
 };
 
 struct _NMSysconfigExportedConnectionClass
 {
-    NMExportedConnectionClass parent_class;
+	NMExportedConnectionClass parent_class;
 };
 
 GType nm_sysconfig_exported_connection_get_type (void);
@@ -68,16 +68,19 @@ typedef struct _NMSysconfigSettingsClass NMSysconfigSettingsClass;
 #define NM_IS_SYSCONFIG_SETTINGS_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_SYSCONFIG_SETTINGS))
 #define NM_SYSCONFIG_SETTINGS_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SYSCONFIG_SETTINGS, NMSysconfigSettingsClass))
 
+#define NM_SYSCONFIG_SETTINGS_UNMANAGED_DEVICES "unmanaged-devices"
+
 struct _NMSysconfigSettings
 {
-    NMSettings parent_instance;
-
-    GSList *connections;
+	NMSettings parent_instance;
 };
 
 struct _NMSysconfigSettingsClass
 {
-    NMSettingsClass parent_class;
+	NMSettingsClass parent_class;
+
+	/* Signals */
+	void (*properties_changed) (NMSysconfigSettings *settings, GHashTable *properties);
 };
 
 GType nm_sysconfig_settings_get_type (void);
@@ -93,5 +96,8 @@ void nm_sysconfig_settings_remove_connection (NMSysconfigSettings *settings,
 
 void nm_sysconfig_settings_update_connection (NMSysconfigSettings *settings,
                                               NMConnection *connection);
+
+void nm_sysconfig_settings_update_unamanged_devices (NMSysconfigSettings *settings,
+                                                     GSList *new_list);
 
 #endif  /* __DBUS_SETTINGS_H__ */

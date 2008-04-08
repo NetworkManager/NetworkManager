@@ -326,7 +326,7 @@ ifcfg_dir_changed (GFileMonitor *monitor,
 }
 
 static void
-init (NMSystemConfigInterface *config)
+init (NMSystemConfigInterface *config, NMSystemConfigHalManager *hal_manager)
 {
 	GFile *file;
 	GFileMonitor *monitor;

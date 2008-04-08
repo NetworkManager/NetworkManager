@@ -35,6 +35,7 @@
 
 typedef struct {
 	char *ifcfg_path;
+	char *udi;
 	gboolean ignored;
 	gboolean exported;
 

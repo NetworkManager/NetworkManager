@@ -26,6 +26,7 @@
 
 #include <nm-setting-connection.h>
 
+#include "nm-dbus-glib-types.h"
 #include "dbus-settings.h"
 #include "nm-system-config-interface.h"
 #include "nm-utils.h"
@@ -150,7 +151,6 @@ nm_sysconfig_exported_connection_class_init (NMSysconfigExportedConnectionClass 
 static void
 nm_sysconfig_exported_connection_init (NMSysconfigExportedConnection *sysconfig_exported_connection)
 {
-	
 }
 
 NMSysconfigExportedConnection *
@@ -174,21 +174,42 @@ nm_sysconfig_exported_connection_new (NMConnection *connection,
  * NMSettings
  */
 
+#include "nm-settings-system-glue.h"
+
+typedef struct {
+	GSList *connections;
+	GHashTable *unmanaged_devices;
+} NMSysconfigSettingsPrivate;
+
 G_DEFINE_TYPE (NMSysconfigSettings, nm_sysconfig_settings, NM_TYPE_SETTINGS);
 
+#define NM_SYSCONFIG_SETTINGS_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SYSCONFIG_SETTINGS, NMSysconfigSettingsPrivate))
+
+enum {
+	PROPERTIES_CHANGED,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
+
+enum {
+	PROP_0,
+	PROP_UNMANAGED_DEVICES,
+
+	LAST_PROP
+};
+
 static GPtrArray *
-nm_sysconfig_settings_list_connections (NMSettings *settings)
+list_connections (NMSettings *settings)
 {
+	NMSysconfigSettings *self = NM_SYSCONFIG_SETTINGS (settings);
+	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 	GPtrArray *connections;
-	NMSysconfigSettings *sysconfig_settings;
 	GSList *iter;
 
-	g_return_val_if_fail (NM_IS_SYSCONFIG_SETTINGS (settings), NULL);
-
-	sysconfig_settings = NM_SYSCONFIG_SETTINGS (settings);
-
 	connections = g_ptr_array_new ();
-	for (iter = sysconfig_settings->connections; iter; iter = g_slist_next (iter)) {
+	for (iter = priv->connections; iter; iter = g_slist_next (iter)) {
 		NMExportedConnection *exported = NM_EXPORTED_CONNECTION (iter->data);
 		NMConnection *connection;
 		char *path;
@@ -204,17 +225,100 @@ nm_sysconfig_settings_list_connections (NMSettings *settings)
 }
 
 static void
-nm_sysconfig_settings_finalize (GObject *object)
+settings_finalize (GObject *object)
 {
-	NMSysconfigSettings *settings = NM_SYSCONFIG_SETTINGS (object);
+	NMSysconfigSettings *self = NM_SYSCONFIG_SETTINGS (object);
+	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 
-	if (settings->connections) {
-		g_slist_foreach (settings->connections, (GFunc) g_object_unref, NULL);
-		g_slist_free (settings->connections);
-		settings->connections = NULL;
+	if (priv->connections) {
+		g_slist_foreach (priv->connections, (GFunc) g_object_unref, NULL);
+		g_slist_free (priv->connections);
+		priv->connections = NULL;
 	}
 
+	g_hash_table_destroy (priv->unmanaged_devices);
+
 	G_OBJECT_CLASS (nm_sysconfig_settings_parent_class)->finalize (object);
+}
+
+static void
+add_one_unmanaged_device (gpointer key, gpointer data, gpointer user_data)
+{
+	GPtrArray *devices = (GPtrArray *) user_data;
+
+	g_ptr_array_add (devices, g_strdup (key));	
+}
+
+static char*
+uscore_to_wincaps (const char *uscore)
+{
+	const char *p;
+	GString *str;
+	gboolean last_was_uscore;
+
+	last_was_uscore = TRUE;
+  
+	str = g_string_new (NULL);
+	p = uscore;
+	while (p && *p) {
+		if (*p == '-' || *p == '_')
+			last_was_uscore = TRUE;
+		else {
+			if (last_was_uscore) {
+				g_string_append_c (str, g_ascii_toupper (*p));
+				last_was_uscore = FALSE;
+			} else
+				g_string_append_c (str, *p);
+		}
+		++p;
+	}
+
+	return g_string_free (str, FALSE);
+}
+
+static void
+notify (GObject *object, GParamSpec *pspec)
+{
+	GValue *value;
+	GHashTable *hash;
+
+	value = g_slice_new0 (GValue);
+	hash = g_hash_table_new_full (g_str_hash, g_str_equal, (GDestroyNotify) g_free, NULL);
+
+	g_value_init (value, pspec->value_type);
+	g_object_get_property (object, pspec->name, value);
+	g_hash_table_insert (hash, uscore_to_wincaps (pspec->name), value);
+	g_signal_emit (object, signals[PROPERTIES_CHANGED], 0, hash);
+	g_hash_table_destroy (hash);
+	g_value_unset (value);
+	g_slice_free (GValue, value);
+}
+
+static GPtrArray *
+get_unmanaged_devices (NMSysconfigSettings *self)
+{
+	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+	GPtrArray *devices;
+
+ 	devices = g_ptr_array_sized_new (3);
+	g_hash_table_foreach (priv->unmanaged_devices, (GHFunc) add_one_unmanaged_device, devices);
+	return devices;
+}
+
+static void
+get_property (GObject *object, guint prop_id,
+			  GValue *value, GParamSpec *pspec)
+{
+	NMSysconfigSettings *self = NM_SYSCONFIG_SETTINGS (object);
+
+	switch (prop_id) {
+	case PROP_UNMANAGED_DEVICES:
+		g_value_take_boxed (value, get_unmanaged_devices (self));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -223,14 +327,43 @@ nm_sysconfig_settings_class_init (NMSysconfigSettingsClass *class)
 	GObjectClass *object_class = G_OBJECT_CLASS (class);	
 	NMSettingsClass *settings_class = NM_SETTINGS_CLASS (class);
 	
-	object_class->finalize = nm_sysconfig_settings_finalize;
-	settings_class->list_connections = nm_sysconfig_settings_list_connections;
+	g_type_class_add_private (settings_class, sizeof (NMSysconfigSettingsPrivate));
+
+	/* virtual methods */
+	object_class->notify = notify;
+	object_class->get_property = get_property;
+	object_class->finalize = settings_finalize;
+	settings_class->list_connections = list_connections;
+
+	/* properties */
+	g_object_class_install_property
+		(object_class, PROP_UNMANAGED_DEVICES,
+		 g_param_spec_boxed (NM_SYSCONFIG_SETTINGS_UNMANAGED_DEVICES,
+							 "Unamanged devices",
+							 "Unmanaged devices",
+							 DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
+							 G_PARAM_READABLE));
+
+	/* signals */
+	signals[PROPERTIES_CHANGED] = 
+	                g_signal_new ("properties-changed",
+	                              G_OBJECT_CLASS_TYPE (object_class),
+	                              G_SIGNAL_RUN_FIRST,
+	                              G_STRUCT_OFFSET (NMSysconfigSettingsClass, properties_changed),
+	                              NULL, NULL,
+	                              g_cclosure_marshal_VOID__BOXED,
+	                              G_TYPE_NONE, 1, DBUS_TYPE_G_MAP_OF_VARIANT);
+
+	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (settings_class),
+	                                 &dbus_glib_nm_settings_system_object_info);
 }
 
 static void
-nm_sysconfig_settings_init (NMSysconfigSettings *sysconfig_settings)
+nm_sysconfig_settings_init (NMSysconfigSettings *self)
 {
-	sysconfig_settings->connections = NULL;
+	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+
+	priv->unmanaged_devices = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 }
 
 NMSysconfigSettings *
@@ -244,37 +377,41 @@ nm_sysconfig_settings_new (DBusGConnection *g_conn)
 }
 
 void
-nm_sysconfig_settings_add_connection (NMSysconfigSettings *settings,
+nm_sysconfig_settings_add_connection (NMSysconfigSettings *self,
                                       NMConnection *connection,
                                       DBusGConnection *g_connection)
 {
+	NMSysconfigSettingsPrivate *priv;
 	NMSysconfigExportedConnection *exported;
 
-	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (settings));
+	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (self));
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 
+	priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 	exported = nm_sysconfig_exported_connection_new (connection, g_connection);
 	if (!exported) {
 		g_warning ("%s: couldn't export the connection!", __func__);
 		return;
 	}
 
-	settings->connections = g_slist_append (settings->connections, exported);
+	priv->connections = g_slist_append (priv->connections, exported);
 
-	nm_settings_signal_new_connection (NM_SETTINGS (settings),
+	nm_settings_signal_new_connection (NM_SETTINGS (self),
 	                                   NM_EXPORTED_CONNECTION (exported));
 }
 
 static void
-remove_connection (NMSysconfigSettings *settings,
+remove_connection (NMSysconfigSettings *self,
                    NMConnection *connection)
 {
+	NMSysconfigSettingsPrivate *priv;
 	GSList *iter;
 
-	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (settings));
+	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (self));
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 
-	for (iter = settings->connections; iter; iter = g_slist_next (iter)) {
+	priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+	for (iter = priv->connections; iter; iter = g_slist_next (iter)) {
 		NMSysconfigExportedConnection *item = NM_SYSCONFIG_EXPORTED_CONNECTION (iter->data);
 		NMExportedConnection *exported = NM_EXPORTED_CONNECTION (item);
 		NMConnection *wrapped;
@@ -282,7 +419,7 @@ remove_connection (NMSysconfigSettings *settings,
 		wrapped = nm_exported_connection_get_connection (exported);
 
 		if (wrapped == connection) {
-			settings->connections = g_slist_remove (settings->connections, iter);
+			priv->connections = g_slist_remove_link (priv->connections, iter);
 			nm_exported_connection_signal_removed (exported);
 			g_object_unref (item);
 			g_slist_free (iter);
@@ -299,22 +436,23 @@ nm_sysconfig_settings_remove_connection (NMSysconfigSettings *settings,
 }
 
 void
-nm_sysconfig_settings_update_connection (NMSysconfigSettings *settings,
+nm_sysconfig_settings_update_connection (NMSysconfigSettings *self,
                                          NMConnection *connection)
 {
+	NMSysconfigSettingsPrivate *priv;
 	GHashTable *hash;
 	GSList *iter;
 	NMSysconfigExportedConnection *found = NULL;
 
-	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (settings));
+	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (self));
 	g_return_if_fail (NM_IS_CONNECTION (connection));
 
-	for (iter = settings->connections; iter; iter = g_slist_next (iter)) {
+	priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+	for (iter = priv->connections; iter; iter = g_slist_next (iter)) {
 		NMSysconfigExportedConnection *item = NM_SYSCONFIG_EXPORTED_CONNECTION (iter->data);
 		NMConnection *wrapped;
 
 		wrapped = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (item));
-
 		if (wrapped == connection) {
 			found = item;
 			break;
@@ -328,12 +466,34 @@ nm_sysconfig_settings_update_connection (NMSysconfigSettings *settings,
 
 	/* If the connection is no longer valid, it gets removed */
 	if (!nm_connection_verify (connection)) {
-		remove_connection (settings, connection);
+		remove_connection (self, connection);
 		return;
 	}
 
 	hash = nm_connection_to_hash (connection);
 	nm_exported_connection_signal_updated (NM_EXPORTED_CONNECTION (found), hash);
 	g_hash_table_destroy (hash);
+}
+
+void
+nm_sysconfig_settings_update_unamanged_devices (NMSysconfigSettings *self,
+                                                GSList *new_list)
+{
+	NMSysconfigSettingsPrivate *priv;
+	GSList *iter;
+
+	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (self));
+
+	priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+
+	g_hash_table_remove_all (priv->unmanaged_devices);
+	for (iter = new_list; iter; iter = g_slist_next (iter)) {
+		if (!g_hash_table_lookup (priv->unmanaged_devices, iter->data)) {
+			g_hash_table_insert (priv->unmanaged_devices,
+			                     g_strdup (iter->data),
+			                     GUINT_TO_POINTER (1));
+		}
+	}
+	g_object_notify (G_OBJECT (self), NM_SYSCONFIG_SETTINGS_UNMANAGED_DEVICES);
 }
 

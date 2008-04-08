@@ -112,6 +112,8 @@ connection_data_free (gpointer userdata)
 	g_hash_table_destroy (cdata->ppp_secrets);
 
 	g_free (cdata->ifcfg_path);
+	g_free (cdata->udi);
+
 	memset (cdata, 0, sizeof (ConnectionData));
 	g_free (cdata);
 }

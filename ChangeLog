@@ -1,5 +1,51 @@
 2008-04-07  Dan Williams  <dcbw@redhat.com>
 
+	* introspection/nm-settings-system.xml
+	  introspection/Makefile.am
+		- Define the unmanaged devices interface for the system settings service
+
+	* system-settings/src/nm-system-config-hal-manager.c
+	  system-settings/src/nm-system-config-hal-manager.h
+	  system-settings/src/nm-system-config-hal-manager-private.h
+	  system-settings/src/Makefile.am
+		- Add a lightweight HAL manager object for tracking network devices for
+			the purpose of determining unmanaged devices and which devices need
+			the default DHCP connections
+
+	* system-settings/src/nm-system-config-interface.c
+	  system-settings/src/nm-system-config-interface.h
+		- (nm_system_config_interface_init): add the HAL manager as an argument
+		- (nm_system_config_interface_get_unmanaged_devices): implement
+		- Define 'unmanaged-devices-changed' signal
+
+	* system-settings/src/dbus-settings.c
+	  system-settings/src/dbus-settings.h
+		- Implement the unmanaged devices interface; some cleanups
+
+	* system-settings/plugins/ifcfg-suse/plugin.c
+		- Fixup for plugin interface changes
+
+	* system-settings/plugins/ifcfg-fedora/plugin.c
+		- (get_ether_device_udi): new function; find the device that has
+			a specified MAC address and return its UDI
+		- (get_udi_for_connection): new function; try to find the specific
+			device a connection is locked to, if any
+		- (device_added_cb, device_removed_cb): update unmanaged device list in
+			response to HAL events
+		- (get_unmanaged_devices): new function; return unmanaged device list
+		- (build_one_connection): set the connection's locked device, if any
+		- (write_auto_wired_connection): remove
+		- (kill_old_auto_wired_file): remove the ifcfg-Auto Wired file if found
+		- (handle_connection_changed): alert listeners that the unmanaged device
+			list has changed
+		- (init): fixup for plugin interface changes, implement unmanaged devices
+
+	* system-settings/plugins/ifcfg-fedora/parser.c
+	  system-settings/plugins/ifcfg-fedora/parser.h
+		- (connection_data_free): clean up connection UDI
+
+2008-04-07  Dan Williams  <dcbw@redhat.com>
+
 	* system-settings/plugins/ifcfg-fedora/parser.c
 		- (make_ip4_setting): fix parsing of DNS servers
 
