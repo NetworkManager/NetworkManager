@@ -1,5 +1,16 @@
 2008-04-07  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/src/main.c
+		- (unmanaged_devices_changed_cb, register_plugin): proxy changes from
+			plugins to the dbus settings object
+		- (load_stuff): start the dbus service after grabbing unmanaged devices
+		- (dbus_reconnect, dbus_cleanup): make HAL manager aware of dbus events
+		- (log_handler, logging_setup, logging_shutdown): log output to syslog
+		- (main): switch default logging to syslog with a 'debug' option to
+			output to console; start up the HAL manager
+
+2008-04-07  Dan Williams  <dcbw@redhat.com>
+
 	* introspection/nm-settings-system.xml
 	  introspection/Makefile.am
 		- Define the unmanaged devices interface for the system settings service

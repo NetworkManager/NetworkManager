@@ -20,6 +20,7 @@
  * (C) Copyright 2007 Red Hat, Inc.
  */
 
+#include <syslog.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -38,6 +39,8 @@
 #include <NetworkManager.h>
 
 #include "dbus-settings.h"
+#include "nm-system-config-hal-manager.h"
+#include "nm-system-config-hal-manager-private.h"
 #include "nm-system-config-interface.h"
 
 #define NM_SS_CONNECTIONS_TAG "nm-ss-connections"
@@ -47,6 +50,7 @@ typedef struct {
 	DBusGConnection *g_connection;
 
 	DBusGProxy *bus_proxy;
+	NMSystemConfigHalManager *hal_mgr;
 	gboolean started;
 
 	NMSysconfigSettings *settings;
@@ -72,6 +76,8 @@ plugins_error_quark (void)
 
 	return error_quark;
 }
+
+
 
 static void
 connection_added_cb (NMSystemConfigInterface *config,
@@ -108,13 +114,32 @@ connection_updated_cb (NMSystemConfigInterface *config,
 }
 
 static void
+unmanaged_devices_changed_cb (NMSystemConfigInterface *config,
+                              Application *app)
+{
+	GSList *udis = NULL, *temp, *iter;
+
+	/* Ask all the plugins for their unmanaged devices */
+	for (iter = app->plugins; iter; iter = g_slist_next (iter)) {
+		temp = nm_system_config_interface_get_unmanaged_devices (NM_SYSTEM_CONFIG_INTERFACE (iter->data));
+		udis = g_slist_concat (udis, temp);
+	}
+
+	nm_sysconfig_settings_update_unamanged_devices (app->settings, udis);
+	g_slist_foreach (udis, (GFunc) g_free, NULL);
+	g_slist_free (udis);
+}
+
+static void
 register_plugin (Application *app, NMSystemConfigInterface *plugin)
 {
 	g_signal_connect (plugin, "connection-added", (GCallback) connection_added_cb, app);
 	g_signal_connect (plugin, "connection-removed", (GCallback) connection_removed_cb, app);
 	g_signal_connect (plugin, "connection-updated", (GCallback) connection_updated_cb, app);
 
-	nm_system_config_interface_init (plugin);
+	g_signal_connect (plugin, "unmanaged-devices-changed", (GCallback) unmanaged_devices_changed_cb, app);
+
+	nm_system_config_interface_init (plugin, app->hal_mgr);
 }
 
 static GObject *
@@ -219,7 +244,7 @@ print_plugin_info (gpointer item, gpointer user_data)
 	              &pinfo,
 	              NULL);
 
-	g_print ("   %s: %s\n", pname, pinfo);
+	g_message ("   %s: %s", pname, pinfo);
 	g_free (pname);
 	g_free (pinfo);
 }
@@ -234,7 +259,7 @@ free_plugin_connections (gpointer data)
 }
 
 static gboolean
-load_connections (gpointer user_data)
+load_stuff (gpointer user_data)
 {
 	Application *app = (Application *) user_data;
 	GSList *iter;
@@ -265,9 +290,44 @@ load_connections (gpointer user_data)
 		g_slist_free (plugin_connections);
 	}
 
+	unmanaged_devices_changed_cb (NULL, app);
+
+	if (!start_dbus_service (app)) {
+		g_main_loop_quit (app->loop);
+		return FALSE;
+	}
+
 	return FALSE;
 }
 
+#if 0
+static void
+device_added_cb (DBusGProxy *proxy, const char *udi, gpointer user_data)
+{
+//	Application *app = (Application *) user_data;
+
+	g_message ("Added: %s", udi);
+}
+
+static void
+device_removed_cb (DBusGProxy *proxy, const char *udi, gpointer user_data)
+{
+//	Application *app = (Application *) user_data;
+
+	g_message ("Removed: %s", udi);
+}
+
+static void
+device_new_capability_cb (DBusGProxy *proxy,
+                          const char *udi,
+                          const char *capability,
+                          gpointer user_data)
+{
+//	Application *app = (Application *) user_data;
+
+	g_message ("New capability: %s --> %s", udi, capability);
+}
+#endif
 
 /******************************************************************/
 
@@ -279,6 +339,7 @@ dbus_reconnect (gpointer user_data)
 	if (dbus_init (app)) {
 		if (start_dbus_service (app)) {
 			g_message ("reconnected to the system bus.");
+			nm_system_config_hal_manager_reinit_dbus (app->hal_mgr, app->g_connection);
 			return TRUE;
 		}
 	}
@@ -301,6 +362,8 @@ dbus_cleanup (Application *app)
 		g_object_unref (app->bus_proxy);
 		app->bus_proxy = NULL;
 	}
+
+	nm_system_config_hal_manager_deinit_dbus (app->hal_mgr);
 
 	app->started = FALSE;
 }
@@ -385,6 +448,7 @@ dbus_init (Application *app)
 	}
 
 	g_signal_connect (app->bus_proxy, "destroy", G_CALLBACK (destroy_cb), app);
+
 	return TRUE;
 
 error:	
@@ -416,6 +480,61 @@ parse_config_file (const char *filename, char **plugins, GError **error)
 	return TRUE;
 }
 
+static void
+log_handler (const gchar *log_domain,
+             GLogLevelFlags log_level,
+             const gchar *message,
+             gpointer ignored)
+{
+	int syslog_priority;	
+
+	switch (log_level) {
+		case G_LOG_LEVEL_ERROR:
+			syslog_priority = LOG_CRIT;
+			break;
+
+		case G_LOG_LEVEL_CRITICAL:
+			syslog_priority = LOG_ERR;
+			break;
+
+		case G_LOG_LEVEL_WARNING:
+			syslog_priority = LOG_WARNING;
+			break;
+
+		case G_LOG_LEVEL_MESSAGE:
+			syslog_priority = LOG_NOTICE;
+			break;
+
+		case G_LOG_LEVEL_DEBUG:
+			syslog_priority = LOG_DEBUG;
+			break;
+
+		case G_LOG_LEVEL_INFO:
+		default:
+			syslog_priority = LOG_INFO;
+			break;
+	}
+
+	syslog (syslog_priority, "%s", message);
+}
+
+
+static void
+logging_setup (void)
+{
+	openlog (G_LOG_DOMAIN, LOG_CONS, LOG_DAEMON);
+	g_log_set_handler (G_LOG_DOMAIN, 
+	                   G_LOG_LEVEL_MASK | G_LOG_FLAG_FATAL | G_LOG_FLAG_RECURSION,
+	                   log_handler,
+	                   NULL);
+}
+
+static void
+logging_shutdown (void)
+{
+	closelog ();
+}
+
 int
 main (int argc, char **argv)
 {
@@ -424,10 +543,12 @@ main (int argc, char **argv)
 	GError *error = NULL;
 	char *plugins = NULL;
 	char *config = NULL;
+	gboolean debug = FALSE;
 
 	GOptionEntry entries[] = {
 		{ "config", 0, 0, G_OPTION_ARG_FILENAME, &config, "Config file location", "/path/to/config.file" },
 		{ "plugins", 0, 0, G_OPTION_ARG_STRING, &plugins, "List of plugins separated by ,", "plugin1,plugin2" },
+		{ "debug", 0, 0, G_OPTION_ARG_NONE, &debug, "Output to console rather than syslog", NULL },
 		{ NULL }
 	};
 
@@ -464,13 +585,14 @@ main (int argc, char **argv)
 
 	app->loop = g_main_loop_new (NULL, FALSE);
 
+	if (!debug)
+		logging_setup ();
+
 	if (!dbus_init (app))
 		return -1;
 
-	if (!start_dbus_service (app))
-		return -1;
-
 	app->settings = nm_sysconfig_settings_new (app->g_connection);
+	app->hal_mgr = nm_system_config_hal_manager_get (app->g_connection);
 
 	/* Load the plugins; fail if a plugin is not found. */
 	app->plugins = load_plugins (app, plugins, &error);
@@ -481,16 +603,21 @@ main (int argc, char **argv)
 		return -1;
 	}
 	g_free (plugins);
-	g_print ("Loaded plugins:\n");
+	g_message ("Loaded plugins:");
 	g_slist_foreach (app->plugins, print_plugin_info, NULL);
-	g_print ("\n");
 
-	g_idle_add (load_connections, app);
+	g_idle_add (load_stuff, app);
 
 	g_main_loop_run (app->loop);
 
 	g_slist_foreach (app->plugins, (GFunc) g_object_unref, NULL);
 	g_slist_free (app->plugins);
+
+	g_object_unref (app->settings);
+	g_object_unref (app->hal_mgr);
+
+	if (!debug)
+		logging_shutdown ();
 
 	return 0;
 }
