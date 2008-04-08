@@ -19,6 +19,7 @@ typedef struct {
 	NMSerialDevice *monitor_device;
 
 	guint pending_id;
+	guint state_to_disconnected_id;
 } NMCdmaDevicePrivate;
 
 enum {
@@ -333,6 +334,33 @@ nm_cdma_device_init (NMCdmaDevice *self)
 	nm_device_set_device_type (NM_DEVICE (self), DEVICE_TYPE_CDMA);
 }
 
+static gboolean
+unavailable_to_disconnected (gpointer user_data)
+{
+	nm_device_state_changed (NM_DEVICE (user_data), NM_DEVICE_STATE_DISCONNECTED);
+	return FALSE;
+}
+
+static void
+device_state_changed (NMDeviceInterface *device, NMDeviceState state, gpointer user_data)
+{
+	NMCdmaDevice *self = NM_CDMA_DEVICE (user_data);
+	NMCdmaDevicePrivate *priv = NM_CDMA_DEVICE_GET_PRIVATE (self);
+
+	/* Remove any previous delayed transition to disconnected */
+	if (priv->state_to_disconnected_id) {
+		g_source_remove (priv->state_to_disconnected_id);
+		priv->state_to_disconnected_id = 0;
+	}
+
+	/* If transitioning to UNAVAILBLE and we have a carrier, transition to
+	 * DISCONNECTED because the device is ready to use.  Otherwise the carrier-on
+	 * handler will handle the transition to DISCONNECTED when the carrier is detected.
+	 */
+	if (state == NM_DEVICE_STATE_UNAVAILABLE)
+		priv->state_to_disconnected_id = g_idle_add (unavailable_to_disconnected, self);
+}
+
 static GObject*
 constructor (GType type,
              guint n_construct_params,
@@ -354,6 +382,9 @@ constructor (GType type,
 		object = NULL;
 	}
 #endif
+
+	g_signal_connect (NM_DEVICE (object), "state-changed",
+	                  G_CALLBACK (device_state_changed), NM_CDMA_DEVICE (object));
 
 	return object;
 }
@@ -400,6 +431,11 @@ finalize (GObject *object)
 		g_object_unref (priv->monitor_device);
 
 	g_free (priv->monitor_iface);
+
+	if (priv->state_to_disconnected_id) {
+		g_source_remove (priv->state_to_disconnected_id);
+		priv->state_to_disconnected_id = 0;
+	}
 
 	G_OBJECT_CLASS (nm_cdma_device_parent_class)->finalize (object);
 }
