@@ -35,8 +35,13 @@
 #include "../src/nm-vpnc-service.h"
 #include "gnome-two-password-dialog.h"
 
+#define KEYRING_CID_TAG "connection-id"
+#define KEYRING_SN_TAG "setting-name"
+#define KEYRING_SK_TAG "setting-key"
+
 static char *
-find_one_password (const char *vpn_name,
+find_one_password (const char *vpn_id,
+                   const char *vpn_name,
                    const char *vpn_service,
                    const char *secret_name,
                    gboolean *is_session)
@@ -48,13 +53,13 @@ find_one_password (const char *vpn_name,
 
 	ret = gnome_keyring_find_itemsv_sync (GNOME_KEYRING_ITEM_GENERIC_SECRET,
 	                                      &found_list,
-	                                      "connection-name",
+	                                      KEYRING_CID_TAG,
 	                                      GNOME_KEYRING_ATTRIBUTE_TYPE_STRING,
-	                                      vpn_name,
-	                                      "setting-name",
+	                                      vpn_id,
+	                                      KEYRING_SN_TAG,
 	                                      GNOME_KEYRING_ATTRIBUTE_TYPE_STRING,
 	                                      NM_SETTING_VPN_PROPERTIES_SETTING_NAME,
-	                                      "setting-key",
+	                                      KEYRING_SK_TAG,
 	                                      GNOME_KEYRING_ATTRIBUTE_TYPE_STRING,
 	                                      secret_name,
 	                                      NULL);
@@ -75,17 +80,17 @@ find_one_password (const char *vpn_name,
 }
 
 static GSList *
-lookup_pass (const char *vpn_name, const char *vpn_service, gboolean *is_session)
+lookup_pass (const char *vpn_id, const char *vpn_name, const char *vpn_service, gboolean *is_session)
 {
 	GSList *passwords = NULL;
 	char *password;
 	char *group_password;
 
-	password = find_one_password (vpn_name, vpn_service, "password", is_session);
+	password = find_one_password (vpn_id, vpn_name, vpn_service, "password", is_session);
 	if (!password)
 		return NULL;
 
-	group_password = find_one_password (vpn_name, vpn_service, "group-password", is_session);
+	group_password = find_one_password (vpn_id, vpn_name, vpn_service, "group-password", is_session);
 	if (!group_password) {
 		g_free (password);
 		return NULL;
@@ -98,7 +103,8 @@ lookup_pass (const char *vpn_name, const char *vpn_service, gboolean *is_session
 }
 
 static void
-save_vpn_password (const char *vpn_name,
+save_vpn_password (const char *vpn_id,
+                   const char *vpn_name,
                    const char *vpn_service,
                    const char *keyring,
                    const char *secret_name,
@@ -116,13 +122,13 @@ save_vpn_password (const char *vpn_name,
 
 	attrs = gnome_keyring_attribute_list_new ();
 	gnome_keyring_attribute_list_append_string (attrs,
-	                                            "connection-name",
-	                                            vpn_name);
+	                                            KEYRING_CID_TAG,
+	                                            vpn_id);
 	gnome_keyring_attribute_list_append_string (attrs,
-	                                            "setting-name",
+	                                            KEYRING_SN_TAG,
 	                                            NM_SETTING_VPN_PROPERTIES_SETTING_NAME);
 	gnome_keyring_attribute_list_append_string (attrs,
-	                                            "setting-key",
+	                                            KEYRING_SK_TAG,
 	                                            secret_name);
 
 	ret = gnome_keyring_item_create_sync (keyring,
@@ -137,7 +143,10 @@ save_vpn_password (const char *vpn_name,
 }
 
 static GSList *
-get_passwords (const char *vpn_name, const char *vpn_service, gboolean retry)
+get_passwords (const char *vpn_id,
+               const char *vpn_name,
+               const char *vpn_service,
+               gboolean retry)
 {
 	GSList          *result;
 	char            *prompt;
@@ -153,15 +162,16 @@ get_passwords (const char *vpn_name, const char *vpn_service, gboolean retry)
 	keyring_group_password = NULL;
 	keyring_result = NULL;
 
+	g_return_val_if_fail (vpn_id != NULL, NULL);
 	g_return_val_if_fail (vpn_name != NULL, NULL);
 
 	/* Use the system user name, since the VPN might have a different user name */
 	if (!retry) {
-		if ((result = lookup_pass (vpn_name, vpn_service, &keyring_is_session)) != NULL) {
+		if ((result = lookup_pass (vpn_id, vpn_name, vpn_service, &keyring_is_session)) != NULL) {
 			return result;
 		}
 	} else {
-		if ((keyring_result = lookup_pass (vpn_name, vpn_service, &keyring_is_session)) != NULL) {
+		if ((keyring_result = lookup_pass (vpn_id, vpn_name, vpn_service, &keyring_is_session)) != NULL) {
 			keyring_group_password = g_strdup ((char *) keyring_result->data);
 			keyring_password = g_strdup ((char *) (g_slist_next (keyring_result))->data);
 		}
@@ -211,12 +221,12 @@ get_passwords (const char *vpn_name, const char *vpn_service, gboolean retry)
 		switch (gnome_two_password_dialog_get_remember (GNOME_TWO_PASSWORD_DIALOG (dialog)))
 		{
 			case GNOME_TWO_PASSWORD_DIALOG_REMEMBER_SESSION:
-				save_vpn_password (vpn_name, vpn_service, "session", "password", password);
-				save_vpn_password (vpn_name, vpn_service, "session", "group-password", group_password);
+				save_vpn_password (vpn_id, vpn_name, vpn_service, "session", "password", password);
+				save_vpn_password (vpn_id, vpn_name, vpn_service, "session", "group-password", group_password);
 				break;
 			case GNOME_TWO_PASSWORD_DIALOG_REMEMBER_FOREVER:
-				save_vpn_password (vpn_name, vpn_service, NULL, "password", password);
-				save_vpn_password (vpn_name, vpn_service, NULL, "group-password", group_password);
+				save_vpn_password (vpn_id, vpn_name, vpn_service, NULL, "password", password);
+				save_vpn_password (vpn_id, vpn_name, vpn_service, NULL, "group-password", group_password);
 				break;
 			default:
 				break;
@@ -238,16 +248,16 @@ main (int argc, char *argv[])
 	GSList *passwords;
 	static gboolean retry = FALSE;
 	static gchar *vpn_name = NULL;
-	static gchar *vpn_service = NULL;
 	static gchar *vpn_id = NULL;
+	static gchar *vpn_service = NULL;
 	GOptionContext *context;
 	GnomeProgram *program;
 	GOptionEntry entries[] =
 		{
 			{ "reprompt", 'r', 0, G_OPTION_ARG_NONE, &retry, "Reprompt for passwords", NULL},
+			{ "id", 'i', 0, G_OPTION_ARG_STRING, &vpn_id, "ID of VPN connection", NULL},
 			{ "name", 'n', 0, G_OPTION_ARG_STRING, &vpn_name, "Name of VPN connection", NULL},
 			{ "service", 's', 0, G_OPTION_ARG_STRING, &vpn_service, "VPN service type", NULL},
-			{ "id", 'i', 0, G_OPTION_ARG_STRING, &vpn_id, "VPN service id", NULL},
 			{ NULL }
 		};
 	char buf[1];
@@ -268,8 +278,8 @@ main (int argc, char *argv[])
 				      GNOME_PARAM_NONE);
 	  
 
-	if (vpn_name == NULL || vpn_service == NULL) {
-		fprintf (stderr, "Have to supply both name and service\n");
+	if (vpn_id == NULL || vpn_name == NULL || vpn_service == NULL) {
+		fprintf (stderr, "Have to supply ID, name, and service\n");
 		goto out;
 	}
 
@@ -278,7 +288,7 @@ main (int argc, char *argv[])
 		goto out;		
 	}
 
-	passwords = get_passwords (vpn_name, vpn_service, retry);
+	passwords = get_passwords (vpn_id, vpn_name, vpn_service, retry);
 	if (passwords == NULL)
 		goto out;
 
