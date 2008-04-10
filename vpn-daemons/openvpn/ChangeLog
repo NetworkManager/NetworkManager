@@ -1,3 +1,7 @@
+2008-04-10  Tambet Ingo  <tambet@gmail.com>
+
+	* auth-dialog/main.c (main): Add the '-i' argument the applet now sends.
+
 2008-03-13  Dan Williams  <dcbw@redhat.com>
 
 	* nm-openvpn-service.name.in

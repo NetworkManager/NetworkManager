@@ -239,6 +239,7 @@ main (int argc, char *argv[])
 	static gboolean retry = FALSE;
 	static gchar *vpn_name = NULL;
 	static gchar *vpn_service = NULL;
+	static gchar *vpn_id = NULL;
 	GOptionContext *context;
 	GnomeProgram *program;
 	GOptionEntry entries[] =
@@ -246,6 +247,7 @@ main (int argc, char *argv[])
 			{ "reprompt", 'r', 0, G_OPTION_ARG_NONE, &retry, "Reprompt for passwords", NULL},
 			{ "name", 'n', 0, G_OPTION_ARG_STRING, &vpn_name, "Name of VPN connection", NULL},
 			{ "service", 's', 0, G_OPTION_ARG_STRING, &vpn_service, "VPN service type", NULL},
+			{ "id", 'i', 0, G_OPTION_ARG_STRING, &vpn_id, "VPN service id", NULL},
 			{ NULL }
 		};
 	char buf[1];
