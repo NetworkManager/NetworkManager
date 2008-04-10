@@ -432,6 +432,7 @@ read_wpa_psk_settings (shvarFile *ifcfg, NMSettingWirelessSecurity *security, GE
 		g_set_error (err, ifcfg_plugin_error_quark (), 0, "Missing WPA-PSK key.");
 }
 
+#if 0
 static void
 read_wpa_eap_settings (shvarFile *ifcfg, NMSettingWirelessSecurity *security, GError **err)
 {
@@ -483,6 +484,7 @@ read_wpa_eap_settings (shvarFile *ifcfg, NMSettingWirelessSecurity *security, GE
 
 	ws_wpa_fill_default_ciphers (security);
 }
+#endif
 
 static NMSetting *
 make_wireless_security_setting (shvarFile *ifcfg, GError **err)
@@ -514,7 +516,7 @@ make_wireless_security_setting (shvarFile *ifcfg, GError **err)
 		read_wpa_psk_settings (ifcfg, s_wireless_sec, err);
 	} else if (!g_ascii_strcasecmp (value, "eap")) {
 		s_wireless_sec->key_mgmt = g_strdup ("wps-eap");
-		read_wpa_eap_settings (ifcfg, s_wireless_sec, err);
+		/* read_wpa_eap_settings (ifcfg, s_wireless_sec, err); */
 	} else
 		g_set_error (err, ifcfg_plugin_error_quark (), 0, "Invalid authentication algoritm '%s'", value);
 
