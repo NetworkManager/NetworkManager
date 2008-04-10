@@ -1,5 +1,9 @@
 2008-04-10  Tambet Ingo  <tambet@gmail.com>
 
+	* libnm-util/nm-setting-wired.c (get_property): Fix a typo.
+
+2008-04-10  Tambet Ingo  <tambet@gmail.com>
+
 	* system-settings/plugins/ifcfg-suse/parser.c (make_wireless_security_setting): 
 	Make it compile again by commenting out broken code that at first didn't work and
 	now didn't compile either.

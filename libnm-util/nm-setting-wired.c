@@ -86,7 +86,7 @@ set_property (GObject *object, guint prop_id,
 		setting->speed = g_value_get_uint (value);
 		break;
 	case PROP_DUPLEX:
-		g_free (setting->port);
+		g_free (setting->duplex);
 		setting->duplex = g_value_dup_string (value);
 		break;
 	case PROP_AUTO_NEGOTIATE:
