@@ -1,3 +1,9 @@
+2008-04-10  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-gsm-device.c
+		- (automatic_registration): accept "+CREG: 0,0"
+		- (automatic_registration_response): fail on "+CREG: 0,0"
+
 2008-04-10  Tambet Ingo  <tambet@gmail.com>
 
 	* libnm-util/nm-setting-wired.c (get_property): Fix a typo.

@@ -262,6 +262,10 @@ automatic_registration_response (NMSerialDevice *device,
 		gsm_device_set_pending (NM_GSM_DEVICE (device),
 						    g_timeout_add (1000, automatic_registration_again, device));
 		break;
+	case 3:
+		nm_warning ("Automatic registration failed: not registered and not searching.");
+		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		break;
 	case -1:
 		nm_warning ("Automatic registration timed out");
 		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
@@ -277,7 +281,7 @@ static void
 automatic_registration (NMSerialDevice *device)
 {
 	guint id;
-	char *responses[] = { "+CREG: 0,1", "+CREG: 0,5", "+CREG: 0,2", NULL };
+	char *responses[] = { "+CREG: 0,1", "+CREG: 0,5", "+CREG: 0,2", "+CREG: 0,0", NULL };
 
 	if (!nm_serial_device_send_command_string (device, "AT+CREG?")) {
 		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
