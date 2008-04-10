@@ -5,6 +5,8 @@
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
 
+#include <nm-connection.h>
+
 G_BEGIN_DECLS
 
 #define NM_SETTINGS_ERROR nm_settings_error_quark ()
