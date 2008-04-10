@@ -37,6 +37,7 @@
 #include "gnome-two-password-dialog.h"
 
 typedef struct {
+	char *vpn_id;
 	char *vpn_name;
 	char *vpn_service;
 
@@ -46,6 +47,11 @@ typedef struct {
 	gboolean need_certpass;
 	char *certpass;
 } PasswordsInfo;
+
+#define KEYRING_CID_TAG "connection-id"
+#define KEYRING_SN_TAG "setting-name"
+#define KEYRING_SK_TAG "setting-key"
+
 
 static gboolean
 lookup_pass (PasswordsInfo *info, gboolean *is_session)
@@ -339,17 +345,17 @@ main (int argc, char *argv[])
 	int exit_status = 1;
 	static gboolean  retry = FALSE;
 	static gchar    *vpn_name = NULL;
+	static gchar    *vpn_id = NULL;
 	static gchar    *vpn_service = NULL;
-	static gchar *vpn_id = NULL;
 	GOptionContext  *context;
 	GnomeProgram    *program = NULL;
 	int          bytes_read;
 	GOptionEntry entries[] =
 		{
 			{ "reprompt", 'r', 0, G_OPTION_ARG_NONE, &retry, "Reprompt for passwords", NULL},
+			{ "id", 'i', 0, G_OPTION_ARG_STRING, &vpn_id, "ID of VPN connection", NULL},
 			{ "name", 'n', 0, G_OPTION_ARG_STRING, &vpn_name, "Name of VPN connection", NULL},
 			{ "service", 's', 0, G_OPTION_ARG_STRING, &vpn_service, "VPN service type", NULL},
-			{ "id", 'i', 0, G_OPTION_ARG_STRING, &vpn_id, "VPN service id", NULL},
 			{ NULL }
 		};
 	char buf[1];
@@ -367,8 +373,8 @@ main (int argc, char *argv[])
 							GNOME_PARAM_GOPTION_CONTEXT, context,
 							GNOME_PARAM_NONE);
 
-	if (vpn_name == NULL || vpn_service == NULL) {
-		fprintf (stderr, "Have to supply both name and service\n");
+	if (vpn_id == NULL || vpn_name == NULL || vpn_service == NULL) {
+		fprintf (stderr, "Have to supply ID, name, and service\n");
 		goto out;
 	}
 
@@ -378,6 +384,7 @@ main (int argc, char *argv[])
 	}
 
 	memset (&info, 0, sizeof (PasswordsInfo));
+	info.vpn_id = vpn_id;
 	info.vpn_name = vpn_name;
 	info.vpn_service = vpn_service;
 

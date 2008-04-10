@@ -1,3 +1,9 @@
+2008-04-10  Dan Williams  <dcbw@redhat.com>
+
+	* vpn-daemons/openvpn/auth-dialog/main.c
+		- Fix up for connection ID; but needs more work to actually read the
+			keyring key from the right place
+
 2008-04-10  Tambet Ingo  <tambet@gmail.com>
 
 	* auth-dialog/main.c (main): Add the '-i' argument the applet now sends.
