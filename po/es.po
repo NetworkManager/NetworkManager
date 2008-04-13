@@ -12,8 +12,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager.HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-03-12 18:36+0000\n"
-"PO-Revision-Date: 2008-03-16 13:20+0100\n"
+"POT-Creation-Date: 2008-04-08 19:28+0100\n"
+"PO-Revision-Date: 2008-04-13 16:41+0200\n"
 "Last-Translator: Jorge González <jorgegonz@svn.gnome.org>\n"
 "Language-Team: Español <gnome-es-list@gnome.org>\n"
 "MIME-Version: 1.0\n"
@@ -56,7 +56,7 @@ msgstr ""
 msgid "error occurred while waiting for data on socket"
 msgstr "ha ocurrido un error mientras esperaban datos en un socket"
 
-#: ../src/NetworkManager.c:255
+#: ../src/NetworkManager.c:263
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr "Opción no válida. Use --help para ver una lista de las opciones válidas.\n"
@@ -71,7 +71,8 @@ msgstr ""
 msgid "The nameservers listed below may not be recognized."
 msgstr "Puede que los servidores de nombres listados abajo no se reconozcan."
 
-#: ../system-settings/plugins/ifcfg-fedora/plugin.c:94
-msgid "Auto Wired"
-msgstr "Conexión cableada automática"
+#: ../system-settings/src/main.c:470
+#, c-format
+msgid "Auto %s"
+msgstr "Auto %ss"
 
