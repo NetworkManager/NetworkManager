@@ -95,7 +95,7 @@ ip4_addresses_from_gvalue (const GValue *value)
 	GSList *list = NULL;
 
 	addresses = (GPtrArray *) g_value_get_boxed (value);
-	for (i = 0; i < addresses->len; i++) {
+	for (i = 0; addresses && (i < addresses->len); i++) {
 		GArray *array = (GArray *) g_ptr_array_index (addresses, i);
 
 		if (array->len == 2 || array->len == 3) {

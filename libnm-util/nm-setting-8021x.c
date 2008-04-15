@@ -79,11 +79,15 @@ static gboolean
 verify_tls (NMSetting8021x *self, gboolean phase2)
 {
 	if (phase2) {
-		if (!self->phase2_client_cert || !self->phase2_client_cert->len)
+		if (!self->phase2_client_cert || !self->phase2_client_cert->len) {
+			g_warning ("%s: phase2 client certificate invalid", __func__);
 			return FALSE;
+		}
 	} else {
-		if (!self->client_cert || !self->client_cert->len)
+		if (!self->client_cert || !self->client_cert->len) {
+			g_warning ("%s: client certificate invalid", __func__);
 			return FALSE;
+		}
 	}
 
 	return TRUE;
@@ -92,11 +96,15 @@ verify_tls (NMSetting8021x *self, gboolean phase2)
 static gboolean
 verify_ttls (NMSetting8021x *self, gboolean phase2)
 {
-	if (!self->identity && !self->anonymous_identity)
+	if (!self->identity && !self->anonymous_identity) {
+		g_warning ("%s: missing identity or anonymous identity", __func__);
 		return FALSE;
+	}
 
-	if (!self->phase2_auth && !self->phase2_autheap)
+	if (!self->phase2_auth && !self->phase2_autheap) {
+		g_warning ("%s: missing phase2 auth method", __func__);
 		return FALSE;
+	}
 
 	return TRUE;
 }

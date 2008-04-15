@@ -1,3 +1,11 @@
+2008-04-15  Dan Williams  <dcbw@redhat.com>
+
+	* nm-setting-ip4-config.c
+		- (ip4_addresses_from_gvalue): handle NULL address array
+
+	* nm-setting-8021x.c
+		- (verify_tls, verify_ttls): warn on failed verification
+
 2008-04-10  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-gsm-device.c
