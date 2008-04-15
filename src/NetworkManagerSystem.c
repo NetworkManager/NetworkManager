@@ -417,7 +417,7 @@ nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
 
 	sleep (1);
 
-	nm_system_device_flush_routes_with_iface (iface);
+	nm_system_device_flush_ip4_routes_with_iface (iface);
 
 	if (g_slist_length (routes) == 0) {
 		nm_system_device_replace_default_route (iface, 0, 0);

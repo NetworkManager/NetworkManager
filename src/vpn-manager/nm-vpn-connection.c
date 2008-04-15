@@ -745,8 +745,8 @@ connection_state_changed (NMVPNConnection *connection,
 
 		if (priv->tundev) {
 			nm_system_device_set_up_down_with_iface (priv->tundev, FALSE);
-			nm_system_device_flush_routes_with_iface (priv->tundev);
-			nm_system_device_flush_addresses_with_iface (priv->tundev);
+			nm_system_device_flush_ip4_routes_with_iface (priv->tundev);
+			nm_system_device_flush_ip4_addresses_with_iface (priv->tundev);
 		}
 
 		if (priv->ip4_config) {

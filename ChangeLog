@@ -1,5 +1,29 @@
 2008-04-15  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Benoit Boissinot <bboissin+networkmanager@gmail.com>
+
+	* src/backends/NetworkManagerArch.c
+	  src/backends/NetworkManagerDebian.c
+	  src/backends/NetworkManagerFrugalware.c
+	  src/backends/NetworkManagerGeneric.c
+	  src/backends/NetworkManagerGeneric.h
+	  src/backends/NetworkManagerGentoo.c
+	  src/backends/NetworkManagerMandriva.c
+	  src/backends/NetworkManagerPaldo.c
+	  src/backends/NetworkManagerRedHat.c
+	  src/backends/NetworkManagerSlackware.c
+	  src/backends/NetworkManagerSuSE.c
+	  src/NetworkManagerSystem.h
+		- flush_routes -> flush_ip4_routes
+		- flush_addresses -> flush_ip4_addresses
+
+	* src/NetworkManagerSystem.c
+	  src/nm-device.c
+	  src/vpn-manager/nm-vpn-connection.c
+		- flush only IPv4 addresses; don't touch IPv6 routes and addresses
+
+2008-04-15  Dan Williams  <dcbw@redhat.com>
+
 	Remove exposure of wireless-tools mode types in the API.
 
 	* include/NetworkManager.h

@@ -35,8 +35,8 @@
 void			nm_system_init (void);
 gboolean		nm_system_device_has_active_routes			(NMDevice *dev);
 
-void			nm_system_device_flush_routes				(NMDevice *dev);
-void			nm_system_device_flush_routes_with_iface	(const char *iface);
+void			nm_system_device_flush_ip4_routes				(NMDevice *dev);
+void			nm_system_device_flush_ip4_routes_with_iface	(const char *iface);
 
 void			nm_system_device_replace_default_route      (const char *iface,
                                                              guint32 gw,
@@ -44,8 +44,8 @@ void			nm_system_device_replace_default_route      (const char *iface,
 
 void			nm_system_device_add_route_via_device_with_iface (const char *iface, const char *route);
 
-void			nm_system_device_flush_addresses			(NMDevice *dev);
-void			nm_system_device_flush_addresses_with_iface	(const char *iface);
+void			nm_system_device_flush_ip4_addresses			(NMDevice *dev);
+void			nm_system_device_flush_ip4_addresses_with_iface	(const char *iface);
 
 void			nm_system_enable_loopback				(void);
 void			nm_system_flush_loopback_routes			(void);

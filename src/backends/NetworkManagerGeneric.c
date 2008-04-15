@@ -104,64 +104,64 @@ void nm_generic_device_add_route_via_device_with_iface (const char *iface, const
 
 
 /*
- * nm_generic_device_flush_addresses
+ * nm_generic_device_flush_ip4_addresses
  *
  * Flush all network addresses associated with a network device
  *
  */
-void nm_generic_device_flush_routes (NMDevice *dev)
+void nm_generic_device_flush_ip4_routes (NMDevice *dev)
 {
 	g_return_if_fail (dev != NULL);
 
-	nm_system_device_flush_routes_with_iface (nm_device_get_iface (dev));
+	nm_system_device_flush_ip4_routes_with_iface (nm_device_get_iface (dev));
 }
 
 /*
- * nm_generic_device_flush_routes_with_iface
+ * nm_generic_device_flush_ip4_routes_with_iface
  *
  * Flush all routes associated with a network device
  *
  */
-void nm_generic_device_flush_routes_with_iface (const char *iface)
+void nm_generic_device_flush_ip4_routes_with_iface (const char *iface)
 {
 	char	*buf;
 
 	g_return_if_fail (iface != NULL);
 
 	/* Remove routing table entries */
-	buf = g_strdup_printf (IP_BINARY_PATH" route flush dev %s", iface);
+	buf = g_strdup_printf (IP_BINARY_PATH" -4 route flush dev %s", iface);
 	nm_spawn_process (buf);
 	g_free (buf);
 }
 
 /*
- * nm_generic_device_flush_addresses
+ * nm_generic_device_flush_ip4_addresses
  *
  * Flush all network addresses associated with a network device
  *
  */
-void nm_generic_device_flush_addresses (NMDevice *dev)
+void nm_generic_device_flush_ip4_addresses (NMDevice *dev)
 {
 	g_return_if_fail (dev != NULL);
 
-	nm_system_device_flush_addresses_with_iface (nm_device_get_iface (dev));
+	nm_system_device_flush_ip4_addresses_with_iface (nm_device_get_iface (dev));
 }
 
 
 /*
- * nm_generic_device_flush_addresses_with_iface
+ * nm_generic_device_flush_ip4_addresses_with_iface
  *
  * Flush all network addresses associated with a network device
  *
  */
-void nm_generic_device_flush_addresses_with_iface (const char *iface)
+void nm_generic_device_flush_ip4_addresses_with_iface (const char *iface)
 {
 	char	*buf;
 
 	g_return_if_fail (iface != NULL);
 
 	/* Remove all IP addresses for a device */
-	buf = g_strdup_printf (IP_BINARY_PATH" addr flush dev %s", iface);
+	buf = g_strdup_printf (IP_BINARY_PATH" -4 addr flush dev %s", iface);
 	nm_spawn_process (buf);
 	g_free (buf);
 }
@@ -188,7 +188,7 @@ void nm_generic_enable_loopback (void)
  */
 void nm_generic_flush_loopback_routes (void)
 {
-	nm_system_device_flush_routes_with_iface ("lo");
+	nm_system_device_flush_ip4_routes_with_iface ("lo");
 }
 
 

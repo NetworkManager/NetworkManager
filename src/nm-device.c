@@ -1051,8 +1051,8 @@ nm_device_deactivate (NMDeviceInterface *device)
 	nm_device_set_ip4_config (self, NULL);
 
 	/* Take out any entries in the routing table and any IP address the device had. */
-	nm_system_device_flush_routes (self);
-	nm_system_device_flush_addresses (self);
+	nm_system_device_flush_ip4_routes (self);
+	nm_system_device_flush_ip4_addresses (self);
 	nm_device_update_ip4_address (self);	
 
 	/* Call device type-specific deactivation */

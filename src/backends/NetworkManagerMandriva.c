@@ -54,26 +54,26 @@ void nm_system_init (void)
 
 
 /*
- * nm_system_device_flush_routes
+ * nm_system_device_flush_ip4_routes
  *
  * Flush all routes associated with a network device
  *
  */
-void nm_system_device_flush_routes (NMDevice *dev)
+void nm_system_device_flush_ip4_routes (NMDevice *dev)
 {
-	nm_generic_device_flush_routes (dev);
+	nm_generic_device_flush_ip4_routes (dev);
 }
 
 
 /*
- * nm_system_device_flush_routes_with_iface
+ * nm_system_device_flush_ip4_routes_with_iface
  *
  * Flush all routes associated with a network device
  *
  */
-void nm_system_device_flush_routes_with_iface (const char *iface)
+void nm_system_device_flush_ip4_routes_with_iface (const char *iface)
 {
-	nm_generic_device_flush_routes_with_iface (iface);
+	nm_generic_device_flush_ip4_routes_with_iface (iface);
 }
 
 
@@ -118,26 +118,26 @@ gboolean nm_system_device_has_active_routes (NMDevice *dev)
 
 
 /*
- * nm_system_device_flush_addresses
+ * nm_system_device_flush_ip4_addresses
  *
  * Flush all network addresses associated with a network device
  *
  */
-void nm_system_device_flush_addresses (NMDevice *dev)
+void nm_system_device_flush_ip4_addresses (NMDevice *dev)
 {
-	nm_generic_device_flush_addresses (dev);
+	nm_generic_device_flush_ip4_addresses (dev);
 }
 
 
 /*
- * nm_system_device_flush_addresses_with_iface
+ * nm_system_device_flush_ip4_addresses_with_iface
  *
  * Flush all network addresses associated with a network device
  *
  */
-void nm_system_device_flush_addresses_with_iface (const char *iface)
+void nm_system_device_flush_ip4_addresses_with_iface (const char *iface)
 {
-	nm_generic_device_flush_addresses_with_iface (iface);
+	nm_generic_device_flush_ip4_addresses_with_iface (iface);
 }
 
 
