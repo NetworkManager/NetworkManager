@@ -1400,7 +1400,6 @@ nm_device_set_ip4_config (NMDevice *self, NMIP4Config *config)
 	success = nm_system_device_set_from_ip4_config (ip_iface, config, route_to_iface);
 	if (success) {
 		nm_device_update_ip4_address (self);
-		nm_system_device_add_ip6_link_address (self);
 		nm_system_set_hostname (config);
 		nm_system_activate_nis (config);
 	}

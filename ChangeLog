@@ -2,6 +2,26 @@
 
 	Patch from Benoit Boissinot <bboissin+networkmanager@gmail.com>
 
+	* src/NetworkManagerSystem.h
+	  src/backends/NetworkManagerArch.c
+	  src/backends/NetworkManagerDebian.c
+	  src/backends/NetworkManagerFrugalware.c
+	  src/backends/NetworkManagerGeneric.c
+	  src/backends/NetworkManagerGeneric.h
+	  src/backends/NetworkManagerGentoo.c
+	  src/backends/NetworkManagerMandriva.c
+	  src/backends/NetworkManagerPaldo.c
+	  src/backends/NetworkManagerRedHat.c
+	  src/backends/NetworkManagerSlackware.c
+	  src/backends/NetworkManagerSuSE.c
+	  src/nm-device.c
+		- (nm_generic_device_add_ip6_link_address,
+		   nm_system_device_add_ip6_link_address): remove
+
+2008-04-15  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Benoit Boissinot <bboissin+networkmanager@gmail.com>
+
 	* src/backends/NetworkManagerArch.c
 	  src/backends/NetworkManagerDebian.c
 	  src/backends/NetworkManagerFrugalware.c
