@@ -1,3 +1,13 @@
+2008-04-15  Dan Williams  <dcbw@redhat.com>
+
+	Enhance nm-online based on a patch from Bill Nottingham.
+
+	* test/nm-online.c
+		- Add a '-q' option
+		- Add help messages and option summary
+		- Add long-format options
+		- Add a '-x' option to exit if NM isn't running or isn't connecting
+
 2008-04-15  Tambet Ingo  <tambet@gmail.com>
 
 	* libnm-util/nm-setting.c (nm_setting_duplicate): Implement.

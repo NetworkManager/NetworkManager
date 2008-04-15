@@ -13,8 +13,10 @@
 #define DBUS_API_SUBJECT_TO_CHANGE 1
 #define PROGRESS_STEPS 15
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <getopt.h>
 
 #include <glib.h>
 #include <dbus/dbus.h>
@@ -27,19 +29,30 @@ typedef struct
 {
 	int value;
 	double norm;
+	gboolean quiet;
 } Timeout;
+
+static GMainLoop *loop;
 
 static DBusHandlerResult dbus_filter (DBusConnection *connection G_GNUC_UNUSED,
 				      DBusMessage *message,
 				      void *user_data G_GNUC_UNUSED)
 {
-	if (!dbus_message_is_signal (message, NM_DBUS_INTERFACE,
-				     "DeviceNowActive"))
+	NMState state;
+
+	if (!dbus_message_is_signal (message, NM_DBUS_INTERFACE, "StateChanged"))
 		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
-	exit (0);
+
+	if (!dbus_message_get_args (message, NULL, DBUS_TYPE_UINT32, &state, DBUS_TYPE_INVALID))
+		return DBUS_HANDLER_RESULT_NOT_YET_HANDLED;
+
+	if (state == NM_STATE_CONNECTED)
+		g_main_loop_quit (loop);
+
+	return DBUS_HANDLER_RESULT_HANDLED;
 }
 
-static gboolean check_online (DBusConnection *connection)
+static NMState check_online (DBusConnection *connection)
 {
 	DBusMessage *message, *reply;
 	DBusError error;
@@ -55,16 +68,13 @@ static gboolean check_online (DBusConnection *connection)
 							   -1, &error);
 	dbus_message_unref (message);
 	if (!reply) 
-		return FALSE;
+		return NM_STATE_UNKNOWN;
 
 	if (!dbus_message_get_args (reply, NULL, DBUS_TYPE_UINT32, &state,
 				    DBUS_TYPE_INVALID))
 		exit (2);
 
-	if (state != NM_STATE_CONNECTED)
-		return FALSE;
-
-	return TRUE;
+	return state;
 }
 
 static gboolean handle_timeout (gpointer data)
@@ -72,16 +82,21 @@ static gboolean handle_timeout (gpointer data)
 	int i = PROGRESS_STEPS;
 	Timeout *timeout = (Timeout *) data;
 
-	g_print ("\rConnecting");
-	for (; i > 0; i--)
-		putchar ((timeout->value >= (i * timeout->norm)) ? ' ' : '.');
-	if (timeout->value)
-		g_print (" %4is", timeout->value);
-	fflush (stdout);
+	if (!timeout->quiet) {
+		g_print ("\rConnecting");
+		for (; i > 0; i--)
+			putchar ((timeout->value >= (i * timeout->norm)) ? ' ' : '.');
+		if (timeout->value)
+			g_print (" %4is", timeout->value);
+		fflush (stdout);
+	}
 
 	timeout->value--;
-	if (timeout->value < 0)
+	if (timeout->value < 0) {
+		if (!timeout->quiet)
+			g_print ("\n");
 		exit (1);
+	}
 
 	return TRUE;
 }
@@ -90,18 +105,49 @@ int main (int argc, char *argv[])
 {
 	DBusConnection *connection;
 	DBusError error;
-	GMainLoop *loop;
+	NMState state;
+	gint t_secs = -1;
+	gboolean exit_no_nm = FALSE;
+	gboolean quiet = FALSE;
 	Timeout timeout;
-	
-	timeout.value = 30;
+	GOptionContext *opt_ctx = NULL;
+	gboolean success;
 
-	if (argc == 2) {
-		timeout.value = (int) strtol (argv[1], NULL, 10);
-		if (timeout.value <= 0 || timeout.value > 3600) 
-			return 2;
+	GOptionEntry options[] = {
+		{"timeout", 't', 0, G_OPTION_ARG_INT, &t_secs, "Time to wait for a connection, in seconds (default is 30)", NULL},
+		{"exit", 'x', 0, G_OPTION_ARG_NONE, &exit_no_nm, "Exit immediately if NetworkManager is not running or connecting", NULL},
+		{"quiet", 'q', 0, G_OPTION_ARG_NONE, &quiet, "Don't print anything", NULL},
+		{NULL}
+	};
+
+	opt_ctx = g_option_context_new ("");
+	g_option_context_set_translation_domain (opt_ctx, "UTF-8");
+	g_option_context_set_ignore_unknown_options (opt_ctx, FALSE);
+	g_option_context_set_help_enabled (opt_ctx, TRUE);
+	g_option_context_add_main_entries (opt_ctx, options, NULL);
+
+	g_option_context_set_summary (opt_ctx,
+		"Waits for a successful connection in NetworkManager.");
+
+	success = g_option_context_parse (opt_ctx, &argc, &argv, NULL);
+	g_option_context_free (opt_ctx);
+
+	if (!success) {
+		g_error ("Invalid option.  Please use --help to see a list of valid options.");
+		return 2;
+	}
+	
+	if (t_secs > -1)
+		timeout.value = t_secs;
+	else
+		timeout.value = 30;
+	if (timeout.value < 0 || timeout.value > 3600)  {
+		g_error ("Invalid option.  Please use --help to see a list of valid options.");
+		return 2;
 	}
 
 	g_type_init ();
+	loop = g_main_loop_new (NULL, FALSE);
 
 	dbus_error_init (&error);
 	connection = dbus_bus_get (DBUS_BUS_SYSTEM, &error);
@@ -126,16 +172,19 @@ int main (int argc, char *argv[])
 	}
 
 	/* Check after we setup the filter to ensure that we cannot race. */
-	if (check_online (connection))
+	state = check_online (connection);
+	if (state == NM_STATE_CONNECTED)
 		return 0;
+	if (exit_no_nm && (state != NM_STATE_CONNECTING))
+		return 1;
 
 	if (timeout.value) {
 		timeout.norm = (double) timeout.value / (double) PROGRESS_STEPS;
 		g_timeout_add (1000, handle_timeout, &timeout);
 	}
+	timeout.quiet = quiet;
 
-	loop = g_main_loop_new (NULL, FALSE);
 	g_main_loop_run (loop);
 
-	return 2;
+	return 0;
 }
