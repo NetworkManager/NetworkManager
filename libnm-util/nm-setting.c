@@ -125,6 +125,34 @@ nm_setting_from_hash (GType setting_type,
 	return setting;
 }
 
+static void
+duplicate_setting (NMSetting *setting,
+			    const char *name,
+			    const GValue *value,
+			    gboolean secret,
+			    gpointer user_data)
+{
+	GObject *dup = (GObject *) user_data;
+
+	g_object_set_property (dup, name, value);
+}
+
+NMSetting *
+nm_setting_duplicate (NMSetting *setting)
+{
+	GObject *dup;
+
+	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
+
+	dup = g_object_new (G_OBJECT_TYPE (setting), NULL);
+
+	g_object_freeze_notify (dup);
+	nm_setting_enumerate_values (setting, duplicate_setting, dup);
+	g_object_thaw_notify (dup);
+
+	return NM_SETTING (dup);
+}
+
 const char *
 nm_setting_get_name (NMSetting *setting)
 {

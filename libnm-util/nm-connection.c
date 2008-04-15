@@ -194,6 +194,15 @@ nm_connection_add_setting (NMConnection *connection, NMSetting *setting)
 					 g_strdup (G_OBJECT_TYPE_NAME (setting)), setting);
 }
 
+void
+nm_connection_remove_setting (NMConnection *connection, GType type)
+{
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+	g_return_if_fail (g_type_is_a (type, NM_TYPE_SETTING));
+
+	g_hash_table_remove (NM_CONNECTION_GET_PRIVATE (connection)->settings, g_type_name (type));
+}
+
 NMSetting *
 nm_connection_get_setting (NMConnection *connection, GType type)
 {

@@ -55,6 +55,8 @@ GHashTable *nm_setting_to_hash       (NMSetting *setting);
 NMSetting  *nm_setting_from_hash     (GType setting_type,
 							   GHashTable *hash);
 
+NMSetting *nm_setting_duplicate      (NMSetting *setting);
+
 const char *nm_setting_get_name      (NMSetting *setting);
 
 gboolean    nm_setting_verify        (NMSetting *setting,

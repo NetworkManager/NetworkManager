@@ -1,3 +1,9 @@
+2008-04-15  Tambet Ingo  <tambet@gmail.com>
+
+	* libnm-util/nm-setting.c (nm_setting_duplicate): Implement.
+
+	* libnm-util/nm-connection.c (nm_connection_remove_setting): Implement.
+
 2008-04-15  Dan Williams  <dcbw@redhat.com>
 
 	* nm-setting-ip4-config.c
