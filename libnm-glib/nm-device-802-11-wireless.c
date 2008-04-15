@@ -1,7 +1,5 @@
 /* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
-#include "wireless-helper.h"
-
 #include <string.h>
 
 #include "nm-device-802-11-wireless.h"
@@ -26,7 +24,7 @@ typedef struct {
 	DBusGProxy *proxy;
 
 	char *hw_address;
-	int mode;
+	NM80211Mode mode;
 	guint32 rate;
 	NMAccessPoint *active_ap;
 	gboolean null_active_ap;
@@ -91,7 +89,7 @@ nm_device_802_11_wireless_get_hw_address (NMDevice80211Wireless *device)
 	return priv->hw_address;
 }
 
-int
+NM80211Mode
 nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *device)
 {
 	NMDevice80211WirelessPrivate *priv;
@@ -100,9 +98,9 @@ nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *device)
 
 	priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device);
 	if (!priv->mode) {
-		priv->mode = nm_object_get_int_property (NM_OBJECT (device),
-		                                         NM_DBUS_INTERFACE_DEVICE_WIRELESS,
-		                                         DBUS_PROP_MODE);
+		priv->mode = nm_object_get_uint_property (NM_OBJECT (device),
+		                                          NM_DBUS_INTERFACE_DEVICE_WIRELESS,
+		                                          DBUS_PROP_MODE);
 	}
 
 	return priv->mode;
@@ -358,7 +356,7 @@ get_property (GObject *object,
 		g_value_set_string (value, nm_device_802_11_wireless_get_hw_address (self));
 		break;
 	case PROP_MODE:
-		g_value_set_int (value, nm_device_802_11_wireless_get_mode (self));
+		g_value_set_uint (value, nm_device_802_11_wireless_get_mode (self));
 		break;
 	case PROP_BITRATE:
 		g_value_set_uint (value, nm_device_802_11_wireless_get_bitrate (self));
@@ -558,10 +556,10 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *device_class)
 
 	g_object_class_install_property
 		(object_class, PROP_MODE,
-		 g_param_spec_int (NM_DEVICE_802_11_WIRELESS_MODE,
+		 g_param_spec_uint (NM_DEVICE_802_11_WIRELESS_MODE,
 					    "Mode",
 					    "Mode",
-					    0, IW_MODE_INFRA, 0,
+					    NM_802_11_MODE_UNKNOWN, NM_802_11_MODE_INFRA, NM_802_11_MODE_INFRA,
 					    G_PARAM_READABLE));
 
 	g_object_class_install_property

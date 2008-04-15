@@ -84,8 +84,8 @@ void				nm_ap_set_rsn_flags	(NMAccessPoint *ap, guint32 flags);
 const struct ether_addr * nm_ap_get_address	(const NMAccessPoint *ap);
 void				nm_ap_set_address		(NMAccessPoint *ap, const struct ether_addr *addr);
 
-int				nm_ap_get_mode			(NMAccessPoint *ap);
-void				nm_ap_set_mode			(NMAccessPoint *ap, const int mode);
+NM80211Mode			nm_ap_get_mode			(NMAccessPoint *ap);
+void				nm_ap_set_mode			(NMAccessPoint *ap, const NM80211Mode mode);
 
 gint8			nm_ap_get_strength		(NMAccessPoint *ap);
 void				nm_ap_set_strength		(NMAccessPoint *ap, gint8 strength);

@@ -742,7 +742,7 @@ real_bring_up (NMDevice *dev)
 	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
 
-	nm_device_802_11_wireless_set_mode (self, IW_MODE_INFRA);
+	nm_device_802_11_wireless_set_mode (self, NM_802_11_MODE_INFRA);
 
 	priv->supplicant.mgr = nm_supplicant_manager_get ();
 	priv->supplicant.mgr_state_id = g_signal_connect (priv->supplicant.mgr,
@@ -827,7 +827,7 @@ real_deactivate (NMDevice *dev)
 {
 	NMDevice80211Wireless *	self = NM_DEVICE_802_11_WIRELESS (dev);
 
-	nm_device_802_11_wireless_set_mode (self, IW_MODE_INFRA);
+	nm_device_802_11_wireless_set_mode (self, NM_802_11_MODE_INFRA);
 	/* FIXME: Should we reset the scan interval here? */
 /* 	nm_device_802_11_wireless_set_scan_interval (app_data, self, NM_WIRELESS_SCAN_INTERVAL_ACTIVE); */
 }
@@ -999,15 +999,15 @@ impl_device_get_access_points (NMDevice80211Wireless *self,
  * Get managed/infrastructure/adhoc mode on a device
  *
  */
-int
+NM80211Mode
 nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *self)
 {
 	int fd;
-	int mode = IW_MODE_AUTO;
+	NM80211Mode mode = NM_802_11_MODE_UNKNOWN;
 	const char *iface;
 	struct iwreq wrq;
 
-	g_return_val_if_fail (self != NULL, -1);
+	g_return_val_if_fail (self != NULL, NM_802_11_MODE_UNKNOWN);
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0)
@@ -1018,8 +1018,16 @@ nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *self)
 	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
 
 	if (ioctl (fd, SIOCGIWMODE, &wrq) == 0) {
-		if ((wrq.u.mode == IW_MODE_ADHOC) || (wrq.u.mode == IW_MODE_INFRA))
-			mode = wrq.u.mode;
+		switch (wrq.u.mode) {
+		case IW_MODE_ADHOC:
+			mode = NM_802_11_MODE_ADHOC;
+			break;
+		case IW_MODE_INFRA:
+			mode = NM_802_11_MODE_INFRA;
+			break;
+		default:
+			break;
+		}
 	} else {
 		if (errno != ENODEV)
 			nm_warning ("error getting card mode on %s: %s", iface, strerror (errno));
@@ -1039,7 +1047,7 @@ out:
  */
 gboolean
 nm_device_802_11_wireless_set_mode (NMDevice80211Wireless *self,
-                                    const int mode)
+                                    const NM80211Mode mode)
 {
 	int fd;
 	const char *iface;
@@ -1047,7 +1055,7 @@ nm_device_802_11_wireless_set_mode (NMDevice80211Wireless *self,
 	struct iwreq wrq;
 
 	g_return_val_if_fail (self != NULL, FALSE);
-	g_return_val_if_fail ((mode == IW_MODE_INFRA) || (mode == IW_MODE_ADHOC) || (mode == IW_MODE_AUTO), FALSE);
+	g_return_val_if_fail ((mode == NM_802_11_MODE_INFRA) || (mode == NM_802_11_MODE_ADHOC), FALSE);
 
 	if (nm_device_802_11_wireless_get_mode (self) == mode)
 		return TRUE;
@@ -1057,7 +1065,17 @@ nm_device_802_11_wireless_set_mode (NMDevice80211Wireless *self,
 		goto out;
 
 	memset (&wrq, 0, sizeof (struct iwreq));
-	wrq.u.mode = mode;
+	switch (mode) {
+	case NM_802_11_MODE_ADHOC:
+		wrq.u.mode = IW_MODE_ADHOC;
+		break;
+	case NM_802_11_MODE_INFRA:
+		wrq.u.mode = IW_MODE_INFRA;
+		break;
+	default:
+		goto out;
+	}
+
 	iface = nm_device_get_iface (NM_DEVICE (self));
 	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
 
@@ -1613,7 +1631,7 @@ ap_auth_enforced (NMConnection *connection,
 	wpa_flags = nm_ap_get_wpa_flags (ap);
 	rsn_flags = nm_ap_get_rsn_flags (ap);
 
-	if (nm_ap_get_mode (ap) == IW_MODE_ADHOC)
+	if (nm_ap_get_mode (ap) == NM_802_11_MODE_ADHOC)
 		goto out;
 
 	/* Static WEP */
@@ -2453,7 +2471,7 @@ build_supplicant_config (NMDevice80211Wireless *self,
 	/* Figure out the Ad-Hoc frequency to use if creating an adhoc network; if
 	 * nothing was specified then pick something usable.
 	 */
-	if ((nm_ap_get_mode (ap) == IW_MODE_ADHOC) && nm_ap_get_user_created (ap)) {
+	if ((nm_ap_get_mode (ap) == NM_802_11_MODE_ADHOC) && nm_ap_get_user_created (ap)) {
 		adhoc_freq = nm_ap_get_freq (ap);
 		if (!adhoc_freq) {
 			if (s_wireless->band && !strcmp (s_wireless->band, "a")) {
@@ -2590,10 +2608,10 @@ real_act_stage1_prepare (NMDevice *dev)
 			g_return_val_if_fail (ap != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
 			switch (nm_ap_get_mode (ap)) {
-				case IW_MODE_ADHOC:
+				case NM_802_11_MODE_ADHOC:
 					nm_ap_set_user_created (ap, TRUE);
 					break;
-				case IW_MODE_INFRA:
+				case NM_802_11_MODE_INFRA:
 				default:
 					nm_ap_set_broadcast (ap, FALSE);
 					break;
@@ -2806,7 +2824,7 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 			nm_info ("Activation (%s/wireless): asking for new secrets",
 			         nm_device_get_iface (dev));
 		}
-	} else if (nm_ap_get_mode (ap) == IW_MODE_ADHOC) {
+	} else if (nm_ap_get_mode (ap) == NM_802_11_MODE_ADHOC) {
 		NMDevice80211WirelessClass *	klass;
 		NMDeviceClass * parent_class;
 
@@ -2989,7 +3007,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_take_string (value, nm_ether_ntop (&hw_addr));
 		break;
 	case PROP_MODE:
-		g_value_set_int (value, nm_device_802_11_wireless_get_mode (device));
+		g_value_set_uint (value, nm_device_802_11_wireless_get_mode (device));
 		break;
 	case PROP_BITRATE:
 		g_value_set_uint (value, priv->rate);
@@ -3050,11 +3068,11 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 							  G_PARAM_READABLE));
 	g_object_class_install_property
 		(object_class, PROP_MODE,
-		 g_param_spec_int (NM_DEVICE_802_11_WIRELESS_MODE,
-						   "Mode",
-						   "Mode",
-						   0, G_MAXINT32, 0,
-						   G_PARAM_READABLE));
+		 g_param_spec_uint (NM_DEVICE_802_11_WIRELESS_MODE,
+						    "Mode",
+						    "Mode",
+						    NM_802_11_MODE_UNKNOWN, NM_802_11_MODE_INFRA, NM_802_11_MODE_INFRA,
+						    G_PARAM_READABLE));
 	g_object_class_install_property
 		(object_class, PROP_BITRATE,
 		 g_param_spec_uint (NM_DEVICE_802_11_WIRELESS_BITRATE,

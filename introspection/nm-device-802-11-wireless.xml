@@ -19,7 +19,7 @@
         The hardware address of the device.
       </tp:docstring>
     </property>
-    <property name="Mode" type="i" access="read" tp:type="IW_MODE">
+    <property name="Mode" type="u" access="read" tp:type="NM_802_11_MODE">
       <tp:docstring>
         The operating mode of the wireless device.
       </tp:docstring>

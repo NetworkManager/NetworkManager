@@ -97,9 +97,9 @@ void			nm_device_802_11_wireless_get_bssid (NMDevice80211Wireless *dev,
 const GByteArray *	nm_device_802_11_wireless_get_ssid (NMDevice80211Wireless *self);
 
 gboolean		nm_device_802_11_wireless_set_mode (NMDevice80211Wireless *self,
-										 const int mode);
+										 const NM80211Mode mode);
 
-int		nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *self);
+NM80211Mode	nm_device_802_11_wireless_get_mode (NMDevice80211Wireless *self);
 
 NMAccessPoint * nm_device_802_11_wireless_get_activation_ap (NMDevice80211Wireless *self);
 

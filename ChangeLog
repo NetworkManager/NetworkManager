@@ -1,5 +1,34 @@
 2008-04-15  Dan Williams  <dcbw@redhat.com>
 
+	Remove exposure of wireless-tools mode types in the API.
+
+	* include/NetworkManager.h
+		- Define NM80211Mode enum
+
+	* introspection/generic-types.xml
+		- Describe NM_802_11_MODE enum
+		- Remove IW_MODE_* enum
+
+	* introspection/nm-access-point.xml
+	  libnm-glib/nm-access-point.c
+	  libnm-glib/nm-access-point.h
+		- 'mode' is now of type NM80211Mode, a DBUS_TYPE_UINT
+
+	* introspection/nm-device-802-11-wireless.xml
+	  libnm-glib/nm-device-802-11-wireless.c
+	  libnm-glib/nm-device-802-11-wireless.h
+		- 'mode' is now of type NM80211Mode, a DBUS_TYPE_UINT
+
+	* libnm-util/nm-setting-wireless.c
+	  src/NetworkManagerAP.c
+	  src/NetworkManagerAP.h
+	  src/nm-device-802-11-wireless.c
+	  src/nm-device-802-11-wireless.h
+	  test/nm-tool.c
+		- Use NM80211Mode not IW_MODE_*
+
+2008-04-15  Dan Williams  <dcbw@redhat.com>
+
 	Enhance nm-online based on a patch from Bill Nottingham.
 
 	* test/nm-online.c

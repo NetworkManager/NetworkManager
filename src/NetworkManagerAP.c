@@ -44,7 +44,7 @@ typedef struct
 	/* Scanned or cached values */
 	GByteArray *	ssid;
 	struct ether_addr	address;
-	int				mode;		/* from IW_MODE_* in wireless.h */
+	NM80211Mode		mode;
 	gint8			strength;
 	guint32			freq;		/* Frequency in MHz; ie 2412 (== 2.412 GHz) */
 	guint32			max_bitrate;/* Maximum bitrate of the AP in Kbit/s (ie 54000 Kb/s == 54Mbit/s) */
@@ -102,7 +102,7 @@ nm_ap_init (NMAccessPoint *ap)
 	NMAccessPointPrivate *priv = NM_AP_GET_PRIVATE (ap);
 
 	priv->dbus_path = NULL;
-	priv->mode = IW_MODE_INFRA;
+	priv->mode = NM_802_11_MODE_INFRA;
 	priv->flags = NM_802_11_AP_FLAGS_NONE;
 	priv->wpa_flags = NM_802_11_AP_SEC_NONE;
 	priv->rsn_flags = NM_802_11_AP_SEC_NONE;
@@ -146,7 +146,7 @@ set_property (GObject *object, guint prop_id,
 		nm_ap_set_freq (ap, g_value_get_uint (value));
 		break;
 	case PROP_MODE:
-		nm_ap_set_mode (ap, g_value_get_int (value));
+		nm_ap_set_mode (ap, g_value_get_uint (value));
 		break;
 	case PROP_MAX_BITRATE:
 		nm_ap_set_max_bitrate (ap, g_value_get_uint (value));
@@ -194,7 +194,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_take_string (value, nm_ether_ntop (&priv->address));
 		break;
 	case PROP_MODE:
-		g_value_set_int (value, priv->mode);
+		g_value_set_uint (value, priv->mode);
 		break;
 	case PROP_MAX_BITRATE:
 		g_value_set_uint (value, priv->max_bitrate);
@@ -291,10 +291,10 @@ nm_ap_class_init (NMAccessPointClass *ap_class)
 	
 	g_object_class_install_property
 		(object_class, PROP_MODE,
-		 g_param_spec_int (NM_AP_MODE,
+		 g_param_spec_uint (NM_AP_MODE,
 						   "Mode",
 						   "Mode",
-						   IW_MODE_ADHOC, IW_MODE_INFRA, IW_MODE_INFRA,
+						   NM_802_11_MODE_ADHOC, NM_802_11_MODE_INFRA, NM_802_11_MODE_INFRA,
 						   G_PARAM_READWRITE));
 
 	g_object_class_install_property
@@ -437,9 +437,9 @@ foreach_property_cb (gpointer key, gpointer value, gpointer user_data)
 
 		if (!strcmp (key, "capabilities")) {
 			if (val & IEEE80211_CAP_ESS) {
-				nm_ap_set_mode (ap, IW_MODE_INFRA);
+				nm_ap_set_mode (ap, NM_802_11_MODE_INFRA);
 			} else if (val & IEEE80211_CAP_IBSS) {
-				nm_ap_set_mode (ap, IW_MODE_ADHOC);
+				nm_ap_set_mode (ap, NM_802_11_MODE_ADHOC);
 			}
 
 			if (val & IEEE80211_CAP_PRIVACY) {
@@ -569,13 +569,13 @@ nm_ap_new_fake_from_connection (NMConnection *connection)
 
 	if (s_wireless->mode) {
 		if (!strcmp (s_wireless->mode, "infrastructure"))
-			nm_ap_set_mode (ap, IW_MODE_INFRA);
+			nm_ap_set_mode (ap, NM_802_11_MODE_INFRA);
 		else if (!strcmp (s_wireless->mode, "adhoc"))
-			nm_ap_set_mode (ap, IW_MODE_ADHOC);
+			nm_ap_set_mode (ap, NM_802_11_MODE_ADHOC);
 		else
 			goto error;
 	} else {
-		nm_ap_set_mode (ap, IW_MODE_INFRA);
+		nm_ap_set_mode (ap, NM_802_11_MODE_INFRA);
 	}
 
 	if (s_wireless->band && s_wireless->channel) {
@@ -876,9 +876,9 @@ void nm_ap_set_address (NMAccessPoint *ap, const struct ether_addr * addr)
  * Get/set functions for mode (ie Ad-Hoc, Infrastructure, etc)
  *
  */
-int nm_ap_get_mode (NMAccessPoint *ap)
+NM80211Mode nm_ap_get_mode (NMAccessPoint *ap)
 {
-	int mode;
+	NM80211Mode mode;
 
 	g_return_val_if_fail (NM_IS_AP (ap), -1);
 
@@ -887,13 +887,13 @@ int nm_ap_get_mode (NMAccessPoint *ap)
 	return mode;
 }
 
-void nm_ap_set_mode (NMAccessPoint *ap, const int mode)
+void nm_ap_set_mode (NMAccessPoint *ap, const NM80211Mode mode)
 {
 	NMAccessPointPrivate *priv;
 
 	g_return_if_fail (NM_IS_AP (ap));
 
-	if (mode == IW_MODE_ADHOC || mode == IW_MODE_INFRA) {
+	if (mode == NM_802_11_MODE_ADHOC || mode == NM_802_11_MODE_INFRA) {
 		priv = NM_AP_GET_PRIVATE (ap);
 
 		if (priv->mode != mode) {
@@ -1216,10 +1216,10 @@ nm_ap_check_compatible (NMAccessPoint *self,
 
 	if (s_wireless->mode) {
 		if (   !strcmp (s_wireless->mode, "infrastructure")
-		    && (priv->mode != IW_MODE_INFRA))
+		    && (priv->mode != NM_802_11_MODE_INFRA))
 			return FALSE;
 		if (   !strcmp (s_wireless->mode, "adhoc")
-		    && (priv->mode != IW_MODE_ADHOC))
+		    && (priv->mode != NM_802_11_MODE_ADHOC))
 			return FALSE;
 	}
 

@@ -121,6 +121,16 @@ typedef enum NMDeviceType
 #define NM_802_11_AP_SEC_KEY_MGMT_PSK		0x00000100
 #define NM_802_11_AP_SEC_KEY_MGMT_802_1X	0x00000200
 
+/*
+ * 802.11 AP and Station modes
+ *
+ */
+typedef enum {
+	NM_802_11_MODE_UNKNOWN = 0,
+	NM_802_11_MODE_ADHOC,
+	NM_802_11_MODE_INFRA,
+} NM80211Mode;
+
 
 /*
  * Device states

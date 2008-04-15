@@ -3,6 +3,7 @@
 
 #include <glib/gtypes.h>
 #include <glib-object.h>
+#include <NetworkManager.h>
 #include "nm-object.h"
 
 G_BEGIN_DECLS
@@ -42,7 +43,7 @@ guint32      nm_access_point_get_rsn_flags    (NMAccessPoint *ap);
 const GByteArray * nm_access_point_get_ssid   (NMAccessPoint *ap);
 guint32      nm_access_point_get_frequency    (NMAccessPoint *ap);
 const char * nm_access_point_get_hw_address   (NMAccessPoint *ap);
-int          nm_access_point_get_mode         (NMAccessPoint *ap);
+NM80211Mode  nm_access_point_get_mode         (NMAccessPoint *ap);
 guint32      nm_access_point_get_max_bitrate  (NMAccessPoint *ap);
 guint8       nm_access_point_get_strength     (NMAccessPoint *ap);
 

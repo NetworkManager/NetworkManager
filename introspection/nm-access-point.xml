@@ -21,7 +21,7 @@
       <tp:docstring>The hardware address of the access point.</tp:docstring>
     </property>
 
-    <property name="Mode" type="i" access="read" tp:type="IW_MODE">
+    <property name="Mode" type="u" access="read" tp:type="NM_802_11_MODE">
       <tp:docstring>Describes the operating mode of the access point.</tp:docstring>
     </property>
     <property name="MaxBitrate" type="u" access="read">

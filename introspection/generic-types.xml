@@ -20,28 +20,16 @@
       <tp:member type="a{sv}" name="Value" tp:type="String_Variant_Map"/>
   </tp:mapping>
 
-  <tp:enum name="IW_MODE" type="i">
+  <tp:enum name="NM_802_11_MODE" type="u">
     <tp:docstring></tp:docstring>
-    <tp:enumvalue suffix="AUTO" value="0">
-      <tp:docstring>Automatic mode controlled by the driver.</tp:docstring>
+    <tp:enumvalue suffix="UNKNOWN" value="0">
+      <tp:docstring>Mode is unknown.</tp:docstring>
     </tp:enumvalue>
     <tp:enumvalue suffix="ADHOC" value="1">
-      <tp:docstring>Single cell network.</tp:docstring>
+      <tp:docstring>Uncoordinated network without central infrastructure.</tp:docstring>
     </tp:enumvalue>
     <tp:enumvalue suffix="INFRA" value="2">
-      <tp:docstring>Multi cell network, roaming.</tp:docstring>
-    </tp:enumvalue>
-    <tp:enumvalue suffix="MASTER" value="3">
-      <tp:docstring>Synchronisation master or Access Point.</tp:docstring>
-    </tp:enumvalue>
-    <tp:enumvalue suffix="REPEAT" value="4">
-      <tp:docstring>Wireless Repeater (forwarder).</tp:docstring>
-    </tp:enumvalue>
-    <tp:enumvalue suffix="SECOND" value="5">
-      <tp:docstring>Secondary master/repeater (backup).</tp:docstring>
-    </tp:enumvalue>
-    <tp:enumvalue suffix="MONITOR" value="6">
-      <tp:docstring>Passive monitor (listen only).</tp:docstring>
+      <tp:docstring>Coordinated network with one or more central controllers.</tp:docstring>
     </tp:enumvalue>
   </tp:enum>
 </tp:generic-types>

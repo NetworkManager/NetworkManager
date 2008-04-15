@@ -1,7 +1,5 @@
 /* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
-#include "wireless-helper.h"
-
 #include <string.h>
 
 #include "nm-access-point.h"
@@ -25,7 +23,7 @@ typedef struct {
 	GByteArray *ssid;
 	guint32 frequency;
 	char *hw_address;
-	int mode;
+	NM80211Mode mode;
 	guint32 max_bitrate;
 	guint8 strength;
 } NMAccessPointPrivate;
@@ -169,7 +167,7 @@ nm_access_point_get_hw_address (NMAccessPoint *ap)
 	return priv->hw_address;
 }
 
-int
+NM80211Mode
 nm_access_point_get_mode (NMAccessPoint *ap)
 {
 	NMAccessPointPrivate *priv;
@@ -178,9 +176,9 @@ nm_access_point_get_mode (NMAccessPoint *ap)
 
 	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
 	if (!priv->mode) {
-		priv->mode = nm_object_get_int_property (NM_OBJECT (ap),
-		                                         NM_DBUS_INTERFACE_ACCESS_POINT,
-		                                         DBUS_PROP_MODE);
+		priv->mode = nm_object_get_uint_property (NM_OBJECT (ap),
+		                                          NM_DBUS_INTERFACE_ACCESS_POINT,
+		                                          DBUS_PROP_MODE);
 	}
 
 	return priv->mode;
@@ -286,7 +284,7 @@ get_property (GObject *object,
 		g_value_set_string (value, nm_access_point_get_hw_address (ap));
 		break;
 	case PROP_MODE:
-		g_value_set_int (value, nm_access_point_get_mode (ap));
+		g_value_set_uint (value, nm_access_point_get_mode (ap));
 		break;
 	case PROP_MAX_BITRATE:
 		g_value_set_uint (value, nm_access_point_get_max_bitrate (ap));
@@ -425,10 +423,10 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 	
 	g_object_class_install_property
 		(object_class, PROP_MODE,
-		 g_param_spec_int (NM_ACCESS_POINT_MODE,
+		 g_param_spec_uint (NM_ACCESS_POINT_MODE,
 					    "Mode",
 					    "Mode",
-					    IW_MODE_ADHOC, IW_MODE_INFRA, IW_MODE_INFRA,
+					    NM_802_11_MODE_ADHOC, NM_802_11_MODE_INFRA, NM_802_11_MODE_INFRA,
 					    G_PARAM_READABLE));
 
 	g_object_class_install_property

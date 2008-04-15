@@ -26,8 +26,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "wireless-helper.h"
-
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -122,7 +120,7 @@ detail_access_point (gpointer data, gpointer user_data)
 	str = g_string_new (NULL);
 	g_string_append_printf (str,
 							"%s, %s, Freq %d MHz, Rate %d Mb/s, Strength %d",
-							(nm_access_point_get_mode (ap) == IW_MODE_INFRA) ? "Infra" : "Ad-Hoc",
+							(nm_access_point_get_mode (ap) == NM_802_11_MODE_INFRA) ? "Infra" : "Ad-Hoc",
 							nm_access_point_get_hw_address (ap),
 							nm_access_point_get_frequency (ap),
 							nm_access_point_get_max_bitrate (ap) / 1000,
