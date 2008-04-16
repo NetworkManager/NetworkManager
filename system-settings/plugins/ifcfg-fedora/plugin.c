@@ -913,7 +913,7 @@ sc_plugin_ifcfg_init (SCPluginIfcfg *plugin)
 	if (!priv->g_connection) {
 		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    dbus-glib error: %s",
 		              error->message ? error->message : "(unknown)");
-		g_free (error);
+		g_error_free (error);
 	}
 }
 
