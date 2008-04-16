@@ -525,23 +525,23 @@ create_pppd_cmd_line (NMSettingPPP *setting,
 
 	if (setting->noauth)
 		nm_cmd_line_add_string (cmd, "noauth");
-	if (setting->noauth)
-		nm_cmd_line_add_string (cmd, "refuse-eap");
 	if (setting->refuse_eap)
-		nm_cmd_line_add_string (cmd, "refuse-chap");
+		nm_cmd_line_add_string (cmd, "refuse-eap");
 	if (setting->refuse_chap)
-		nm_cmd_line_add_string (cmd, "refuse-mschap");
+		nm_cmd_line_add_string (cmd, "refuse-chap");
 	if (setting->refuse_mschap)
-		nm_cmd_line_add_string (cmd, "nobsdcomp");
+		nm_cmd_line_add_string (cmd, "refuse-mschap");
 	if (setting->nobsdcomp)
-		nm_cmd_line_add_string (cmd, "nodeflate");
+		nm_cmd_line_add_string (cmd, "nobsdcomp");
 	if (setting->nodeflate)
-		nm_cmd_line_add_string (cmd, "require-mppe");
+		nm_cmd_line_add_string (cmd, "nodeflate");
 	if (setting->require_mppe)
-		nm_cmd_line_add_string (cmd, "require-mppe-128");
+		nm_cmd_line_add_string (cmd, "require-mppe");
 	if (setting->require_mppe_128)
-		nm_cmd_line_add_string (cmd, "mppe-stateful");
+		nm_cmd_line_add_string (cmd, "require-mppe-128");
 	if (setting->mppe_stateful)
+		nm_cmd_line_add_string (cmd, "mppe-stateful");
+	if (setting->require_mppc)
 		nm_cmd_line_add_string (cmd, "require-mppc");
 	if (setting->crtscts)
 		nm_cmd_line_add_string (cmd, "crtscts");
