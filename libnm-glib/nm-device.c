@@ -496,7 +496,8 @@ nm_device_get_state (NMDevice *device)
 }
 
 static char *
-get_product_and_vendor (DBusGConnection *connection,
+get_product_and_vendor (NMDevice *device,
+                        DBusGConnection *connection,
                         const char *udi,
                         gboolean want_origdev,
                         gboolean warn,
@@ -539,8 +540,13 @@ get_product_and_vendor (DBusGConnection *connection,
     }
 
 	if (want_origdev) {
+		gboolean serial = FALSE;
+
+		if (NM_IS_GSM_DEVICE (device) || NM_IS_CDMA_DEVICE (device))
+			serial = TRUE;
+
 		dbus_g_proxy_call (proxy, "GetPropertyString", NULL,
-		                   G_TYPE_STRING, "net.originating_device",
+		                   G_TYPE_STRING, serial ? "serial.originating_device" : "net.originating_device",
 		                   G_TYPE_INVALID,
 		                   G_TYPE_STRING, &parent,
 		                   G_TYPE_INVALID);
@@ -548,7 +554,7 @@ get_product_and_vendor (DBusGConnection *connection,
 		if (!parent) {
 			/* Older HAL uses 'physical_device' */
 			dbus_g_proxy_call (proxy, "GetPropertyString", &err,
-			                   G_TYPE_STRING, "net.physical_device",
+			                   G_TYPE_STRING, serial ? "serial.physical_device" : "net.physical_device",
 			                   G_TYPE_INVALID,
 			                   G_TYPE_STRING, &parent,
 			                   G_TYPE_INVALID);
@@ -603,9 +609,10 @@ nm_device_update_description (NMDevice *device)
 	connection = nm_object_get_connection (NM_OBJECT (device));
 	g_return_if_fail (connection != NULL);
 
-	/* First, get the originating device info */
+	/* First, get the udi of the originating device */
 	udi = nm_device_get_udi (device);
-	orig_dev_udi = get_product_and_vendor (connection, udi, TRUE, FALSE, &priv->product, &priv->vendor);
+	orig_dev_udi = get_product_and_vendor (device, connection, udi, TRUE, FALSE,
+	                                       &priv->product, &priv->vendor);
 
 	/* Ignore product and vendor for the Network Interface */
 	if (priv->product || priv->vendor) {
@@ -616,7 +623,8 @@ nm_device_update_description (NMDevice *device)
 	}
 
 	/* Get product and vendor off the originating device if possible */
-	pd_parent_udi = get_product_and_vendor (connection,
+	pd_parent_udi = get_product_and_vendor (device,
+	                                        connection,
 	                                        orig_dev_udi,
 	                                        FALSE,
 	                                        FALSE,
@@ -629,8 +637,8 @@ nm_device_update_description (NMDevice *device)
 	 */
 	if (!priv->product || !priv->vendor) {
 		char *ignore;
-		ignore = get_product_and_vendor (connection, pd_parent_udi, FALSE, TRUE,
-		                                 &priv->product, &priv->vendor);
+		ignore = get_product_and_vendor (device, connection, pd_parent_udi,
+		                                 FALSE, TRUE, &priv->product, &priv->vendor);
 		g_free (ignore);
 	}
 	g_free (pd_parent_udi);

@@ -1,5 +1,11 @@
 2008-04-15  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/nm-device.c
+		- (get_product_and_vendor): handle serial devices correctly
+		- (nm_device_update_description): pass device to get_product_and_vendor()
+
+2008-04-15  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Benoit Boissinot <bboissin+networkmanager@gmail.com>
 
 	* src/NetworkManagerSystem.h
