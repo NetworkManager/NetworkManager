@@ -1218,6 +1218,8 @@ real_deactivate_quickly (NMDevice *device)
 {
 	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (device);
 
+	nm_device_set_ip_iface (device, NULL);
+
 	if (priv->pending_ip4_config) {
 		g_object_unref (priv->pending_ip4_config);
 		priv->pending_ip4_config = NULL;
