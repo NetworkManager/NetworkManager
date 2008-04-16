@@ -2,6 +2,15 @@
 
 	Patch from 陈鑫 <znscnchen@gmail.com>
 
+	* src/ppp-manager/nm-pppd-plugin.c
+		- (get_credentials): return correct value for success; handle case where
+			pppd just does some checking but doesn't want a password
+		- (plugin_init): make CHAP work too
+
+2008-04-16  Dan Williams  <dcbw@redhat.com>
+
+	Patch from 陈鑫 <znscnchen@gmail.com>
+
 	* src/ppp-manager/nm-ppp-manager.c
 		- (create_pppd_cmd_line): fix argument generation when spawning pppd
 

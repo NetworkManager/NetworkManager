@@ -204,12 +204,29 @@ nm_ip_up (void *data, int arg)
 }
 
 static int
+get_chap_check()
+{
+	return 1;
+}
+
+static int
+get_pap_check()
+{
+	return 1;
+}
+
+static int
 get_credentials (char *username, char *password)
 {
 	char *my_username;
 	char *my_password;
 	size_t len;
 	GError *err = NULL;
+
+	if (user && !password) {
+		/* pppd is checking pap support; return 1 for supported */
+		return 1;
+	}
 
 	g_return_val_if_fail (DBUS_IS_G_PROXY (proxy), -1);
 
@@ -246,7 +263,7 @@ get_credentials (char *username, char *password)
 		g_free (my_password);
 	}
 
-	return 0;
+	return 1;
 }
 
 static void
@@ -281,7 +298,9 @@ plugin_init (void)
 	dbus_g_connection_unref (bus);
 
 	chap_passwd_hook = get_credentials;
+	chap_check_hook = get_chap_check;
 	pap_passwd_hook = get_credentials;
+	pap_check_hook = get_pap_check;
 
 	add_notifier (&phasechange, nm_phasechange, NULL);
 	add_notifier (&ip_up_notifier, nm_ip_up, NULL);
