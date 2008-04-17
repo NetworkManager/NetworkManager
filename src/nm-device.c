@@ -63,6 +63,7 @@ struct _NMDevicePrivate
 	guint		start_timer;
 
 	NMDeviceState state;
+	guint         failed_to_disconnected_id;
 
 	char *			udi;
 	char *			iface;   /* may change, could be renamed by user */
@@ -1014,6 +1015,11 @@ nm_device_deactivate_quickly (NMDevice *self)
 		priv->act_source_id = 0;
 	}
 
+	if (priv->failed_to_disconnected_id) {
+		g_source_remove (priv->failed_to_disconnected_id);
+		priv->failed_to_disconnected_id = 0;
+	}
+
 	/* Stop any ongoing DHCP transaction on this device */
 	if (nm_device_get_act_request (self) && nm_device_get_use_dhcp (self)) {
 		nm_dhcp_manager_cancel_transaction (priv->dhcp_manager, nm_device_get_iface (self));
@@ -1548,12 +1554,17 @@ nm_device_dispose (GObject *object)
 	if (self->priv->dispose_has_run || !self->priv->initialized)
 		goto out;
 
+	self->priv->dispose_has_run = TRUE;
+
 	if (self->priv->start_timer) {
 		g_source_remove (self->priv->start_timer);
 		self->priv->start_timer = 0;
 	}
 
-	self->priv->dispose_has_run = TRUE;
+	if (self->priv->failed_to_disconnected_id) {
+		g_source_remove (self->priv->failed_to_disconnected_id);
+		self->priv->failed_to_disconnected_id = 0;
+	}
 
 	/* 
 	 * In dispose, you are supposed to free all types referenced from this
@@ -1736,6 +1747,16 @@ nm_device_class_init (NMDeviceClass *klass)
 									  NM_DEVICE_INTERFACE_MANAGED);
 }
 
+static gboolean
+failed_to_disconnected (gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (user_data);
+
+	device->priv->failed_to_disconnected_id = 0;
+	nm_device_state_changed (device, NM_DEVICE_STATE_DISCONNECTED);
+	return FALSE;
+}
+
 void
 nm_device_state_changed (NMDevice *device, NMDeviceState state)
 {
@@ -1751,9 +1772,14 @@ nm_device_state_changed (NMDevice *device, NMDeviceState state)
 	old_state = device->priv->state;
 	device->priv->state = state;
 
-	g_object_notify (G_OBJECT (device), NM_DEVICE_INTERFACE_STATE);
-	g_signal_emit_by_name (device, "state-changed", state);
+	if (device->priv->failed_to_disconnected_id) {
+		g_source_remove (device->priv->failed_to_disconnected_id);
+		device->priv->failed_to_disconnected_id = 0;
+	}
 
+	/* Handle the new state here; but anything that could trigger
+	 * another state change should be done below.
+	 */
 	switch (state) {
 	case NM_DEVICE_STATE_UNAVAILABLE:
 		if (old_state == NM_DEVICE_STATE_UNMANAGED)
@@ -1763,12 +1789,20 @@ nm_device_state_changed (NMDevice *device, NMDeviceState state)
 		if (old_state != NM_DEVICE_STATE_UNAVAILABLE)
 			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
 		break;
+	default:
+		break;
+	}
+
+	g_object_notify (G_OBJECT (device), NM_DEVICE_INTERFACE_STATE);
+	g_signal_emit_by_name (device, "state-changed", state);
+
+	switch (state) {
 	case NM_DEVICE_STATE_ACTIVATED:
 		nm_info ("Activation (%s) successful, device activated.", iface);
 		break;
 	case NM_DEVICE_STATE_FAILED:
 		nm_info ("Activation (%s) failed.", nm_device_get_iface (device));
-		nm_device_state_changed (device, NM_DEVICE_STATE_DISCONNECTED);
+		device->priv->failed_to_disconnected_id = g_idle_add (failed_to_disconnected, device);
 		break;
 	default:
 		break;

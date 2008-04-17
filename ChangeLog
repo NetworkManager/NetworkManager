@@ -1,5 +1,16 @@
 2008-04-17  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device.c
+		- (nm_device_state_changed): do deactivation and and promotion to
+			unavailable here, so that the device gets cleaned up before the
+			manager runs and starts emitting signals; do the
+			FAILED->DISCONNECTED transition from an idle handler rather than
+			immediately to guard against recursion
+		- (nm_device_deactivate_quickly, nm_device_dispose): stop the
+			FAILED->DISCONNECTED handler if it's scheduled
+
+2008-04-17  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 		- (state_changed_cb): clear AP list when device transitions to
 			unavailable or unmanaged
