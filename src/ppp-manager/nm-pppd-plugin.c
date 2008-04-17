@@ -223,7 +223,7 @@ get_credentials (char *username, char *password)
 	size_t len;
 	GError *err = NULL;
 
-	if (user && !password) {
+	if (username && !password) {
 		/* pppd is checking pap support; return 1 for supported */
 		return 1;
 	}
