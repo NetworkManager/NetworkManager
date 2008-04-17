@@ -2,6 +2,7 @@
 
 #include <string.h>
 #include "nm-setting-pppoe.h"
+#include "nm-setting-ppp.h"
 
 G_DEFINE_TYPE (NMSettingPPPOE, nm_setting_pppoe, NM_TYPE_SETTING)
 
@@ -20,6 +21,15 @@ nm_setting_pppoe_new (void)
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_PPPOE, NULL);
 }
 
+static gint
+find_setting_by_name (gconstpointer a, gconstpointer b)
+{
+	NMSetting *setting = NM_SETTING (a);
+	const char *str = (const char *) b;
+
+	return strcmp (nm_setting_get_name (setting), str);
+}
+
 static gboolean
 verify (NMSetting *setting, GSList *all_settings)
 {
@@ -32,6 +42,11 @@ verify (NMSetting *setting, GSList *all_settings)
 
 	if (self->service && !strlen (self->service)) {
 		g_warning ("Empty service");
+		return FALSE;
+	}
+
+	if (!g_slist_find_custom (all_settings, NM_SETTING_PPP_SETTING_NAME, find_setting_by_name)) {
+		g_warning ("Invalid or missing PPP setting");
 		return FALSE;
 	}
 

@@ -634,8 +634,9 @@ nm_ppp_manager_start (NMPPPManager *manager,
 
 	connection = nm_act_request_get_connection (req);
 	ppp_setting = NM_SETTING_PPP (nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP));
+	g_return_val_if_fail (ppp_setting != NULL, FALSE);
+	
 	pppoe_setting = (NMSettingPPPOE *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPPOE);
-
 	if (pppoe_setting)
 		pppoe_fill_defaults (ppp_setting);
 
