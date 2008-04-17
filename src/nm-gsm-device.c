@@ -144,7 +144,7 @@ do_dial (NMSerialDevice *device)
 	g_free (command);
 
 	if (success) {
-		id = nm_serial_device_wait_for_reply (device, 60, responses, dial_done, NULL);
+		id = nm_serial_device_wait_for_reply (device, 60, responses, responses, dial_done, NULL);
 		if (id)
 			gsm_device_set_pending (NM_GSM_DEVICE (device), id);
 		else
@@ -192,7 +192,7 @@ manual_registration (NMSerialDevice *device)
 	g_free (command);
 
 	if (success) {
-		id = nm_serial_device_wait_for_reply (device, 30, responses, manual_registration_done, NULL);
+		id = nm_serial_device_wait_for_reply (device, 30, responses, responses, manual_registration_done, NULL);
 		if (id)
 			gsm_device_set_pending (NM_GSM_DEVICE (device), id);
 		else
@@ -282,13 +282,14 @@ automatic_registration (NMSerialDevice *device)
 {
 	guint id;
 	char *responses[] = { "+CREG: 0,1", "+CREG: 0,5", "+CREG: 0,2", "+CREG: 0,0", NULL };
+	char *terminators[] = { "OK", "ERROR", "ERR", NULL };
 
 	if (!nm_serial_device_send_command_string (device, "AT+CREG?")) {
 		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
 		return;
 	}
 
-	id = nm_serial_device_wait_for_reply (device, 60, responses, automatic_registration_response, NULL);
+	id = nm_serial_device_wait_for_reply (device, 60, responses, terminators, automatic_registration_response, NULL);
 	if (id)
 		gsm_device_set_pending (NM_GSM_DEVICE (device), id);
 	else
@@ -391,7 +392,7 @@ enter_pin (NMSerialDevice *device, gboolean retry)
 		g_free (command);
 
 		if (success) {
-			id = nm_serial_device_wait_for_reply (device, 3, responses, enter_pin_done, NULL);
+			id = nm_serial_device_wait_for_reply (device, 3, responses, responses, enter_pin_done, NULL);
 			if (id)
 				gsm_device_set_pending (NM_GSM_DEVICE (device), id);
 			else
@@ -441,13 +442,14 @@ check_pin (NMSerialDevice *device)
 {
 	guint id;
 	char *responses[] = { "READY", "SIM PIN", "SIM PUK", "ERROR", "ERR", NULL };
+	char *terminators[] = { "OK", "ERROR", "ERR", NULL };
 
 	if (!nm_serial_device_send_command_string (device, "AT+CPIN?")) {
 		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
 		return;
 	}
 
-	id = nm_serial_device_wait_for_reply (device, 3, responses, check_pin_done, NULL);
+	id = nm_serial_device_wait_for_reply (device, 3, responses, terminators, check_pin_done, NULL);
 	if (id)
 		gsm_device_set_pending (NM_GSM_DEVICE (device), id);
 	else
@@ -480,14 +482,14 @@ static void
 init_modem (NMSerialDevice *device, gpointer user_data)
 {
 	guint id;
-	char *responses[] = { "OK", "ERR", NULL };
+	char *responses[] = { "OK", "ERROR", "ERR", NULL };
 
 	if (!nm_serial_device_send_command_string (device, "ATZ E0")) {
 		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
 		return;
 	}
 
-	id = nm_serial_device_wait_for_reply (device, 10, responses, init_done, NULL);
+	id = nm_serial_device_wait_for_reply (device, 10, responses, responses, init_done, NULL);
 	if (id)
 		gsm_device_set_pending (NM_GSM_DEVICE (device), id);
 	else

@@ -1,3 +1,16 @@
+2008-04-17  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-serial-device.c
+	  src/nm-serial-device.h
+		- (wait_for_reply_got_data): break input into lines, and search each
+			line for responses _and_ terminator strings; also make sure that
+			the read loop doesn't continue after the timeout is supposed to fire
+		- (nm_serial_device_wait_for_reply): take an array of terminators too
+
+	* src/nm-gsm-device.c
+	  src/nm-cdma-device.c
+		- Send terminators to nm_serial_device_wait_for_reply()
+
 2008-04-16  Dan Williams  <dcbw@redhat.com>
 
 	Patch from 陈鑫 <znscnchen@gmail.com>

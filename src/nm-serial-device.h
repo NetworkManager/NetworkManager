@@ -61,6 +61,7 @@ guint    nm_serial_device_get_reply           (NMSerialDevice *device,
 guint    nm_serial_device_wait_for_reply      (NMSerialDevice *device,
 									  guint timeout,
 									  char **responses,
+									  char **terminators,
 									  NMSerialWaitForReplyFn callback,
 									  gpointer user_data);
 

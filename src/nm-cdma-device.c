@@ -135,7 +135,7 @@ do_dial (NMSerialDevice *device)
 	g_free (command);
 
 	if (success) {
-		id = nm_serial_device_wait_for_reply (device, 60, responses, dial_done, NULL);
+		id = nm_serial_device_wait_for_reply (device, 60, responses, responses, dial_done, NULL);
 		if (id)
 			cdma_device_set_pending (NM_CDMA_DEVICE (device), id);
 		else
@@ -171,14 +171,14 @@ static void
 init_modem (NMSerialDevice *device, gpointer user_data)
 {
 	guint id;
-	char *responses[] = { "OK", "ERR", NULL };
+	char *responses[] = { "OK", "ERROR", "ERR", NULL };
 
 	if (!nm_serial_device_send_command_string (device, "ATZ E0")) {
 		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
 		return;
 	}
 
-	id = nm_serial_device_wait_for_reply (device, 10, responses, init_done, NULL);
+	id = nm_serial_device_wait_for_reply (device, 10, responses, responses, init_done, NULL);
 
 	if (id)
 		cdma_device_set_pending (NM_CDMA_DEVICE (device), id);
