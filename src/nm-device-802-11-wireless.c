@@ -760,6 +760,23 @@ real_bring_up (NMDevice *dev)
 }
 
 static void
+remove_all_aps (NMDevice80211Wireless *self)
+{
+	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
+
+	/* Remove outdated APs */
+	while (g_slist_length (priv->ap_list)) {
+		NMAccessPoint *ap = NM_AP (priv->ap_list->data);
+
+		access_point_removed (self, ap);
+		priv->ap_list = g_slist_remove (priv->ap_list, ap);
+		g_object_unref (ap);
+	}
+	g_slist_free (priv->ap_list);
+	priv->ap_list = NULL;
+}
+
+static void
 device_cleanup (NMDevice80211Wireless *self)
 {
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
@@ -791,11 +808,8 @@ device_cleanup (NMDevice80211Wireless *self)
 		priv->supplicant.mgr = NULL;
 	}
 
-	g_slist_foreach (self->priv->ap_list, (GFunc) g_object_unref, NULL);
-	g_slist_free (self->priv->ap_list);
-	self->priv->ap_list = NULL;
-
 	set_current_ap (self, NULL);
+	remove_all_aps (self);
 }
 
 static void
@@ -1819,15 +1833,21 @@ set_ap_strength_from_properties (NMDevice80211Wireless *self,
 }
 
 static void
-supplicant_iface_scanned_ap_cb (NMSupplicantInterface * iface,
+supplicant_iface_scanned_ap_cb (NMSupplicantInterface *iface,
 								GHashTable *properties,
-                                NMDevice80211Wireless * self)
+                                NMDevice80211Wireless *self)
 {
+	NMDeviceState state;
 	NMAccessPoint *ap;
 
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (properties != NULL);
 	g_return_if_fail (iface != NULL);
+
+	/* Ignore new APs when unavailable or unamnaged */
+	state = nm_device_get_state (NM_DEVICE (self));
+	if (state <= NM_DEVICE_STATE_UNAVAILABLE)
+		return;
 
 	ap = nm_ap_new_from_properties (properties);
 	if (!ap)
@@ -2983,8 +3003,6 @@ nm_device_802_11_wireless_dispose (GObject *object)
 
 	device_cleanup (self);
 
-	set_current_ap (self, NULL);
-
 	if (priv->state_to_disconnected_id) {
 		g_source_remove (priv->state_to_disconnected_id);
 		priv->state_to_disconnected_id = 0;
@@ -3148,6 +3166,7 @@ state_changed_cb (NMDevice *device, NMDeviceState state, gpointer user_data)
 {
 	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (device);
 	NMDevice80211WirelessPrivate *priv = NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (self);
+	gboolean clear_aps = FALSE;
 
 	/* Remove any previous delayed transition to disconnected */
 	if (priv->state_to_disconnected_id) {
@@ -3156,6 +3175,9 @@ state_changed_cb (NMDevice *device, NMDeviceState state, gpointer user_data)
 	}
 
 	switch (state) {
+	case NM_DEVICE_STATE_UNMANAGED:
+		clear_aps = TRUE;
+		break;
 	case NM_DEVICE_STATE_UNAVAILABLE:
 		/* If transitioning to UNAVAILBLE and the device is not rfkilled,
 		 * transition to DISCONNECTED because the device is ready to use.
@@ -3164,6 +3186,7 @@ state_changed_cb (NMDevice *device, NMDeviceState state, gpointer user_data)
 		 */
 		if (priv->enabled)
 			priv->state_to_disconnected_id = g_idle_add (unavailable_to_disconnected, self);
+		clear_aps = TRUE;
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
 		activation_success_handler (device);
@@ -3177,6 +3200,9 @@ state_changed_cb (NMDevice *device, NMDeviceState state, gpointer user_data)
 	default:
 		break;
 	}
+
+	if (clear_aps)
+		remove_all_aps (self);
 }
 
 
