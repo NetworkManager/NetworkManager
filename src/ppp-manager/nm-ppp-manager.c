@@ -527,10 +527,14 @@ create_pppd_cmd_line (NMSettingPPP *setting,
 		nm_cmd_line_add_string (cmd, "noauth");
 	if (setting->refuse_eap)
 		nm_cmd_line_add_string (cmd, "refuse-eap");
+	if (setting->refuse_pap)
+		nm_cmd_line_add_string (cmd, "refuse-pap");
 	if (setting->refuse_chap)
 		nm_cmd_line_add_string (cmd, "refuse-chap");
 	if (setting->refuse_mschap)
 		nm_cmd_line_add_string (cmd, "refuse-mschap");
+	if (setting->refuse_mschapv2)
+		nm_cmd_line_add_string (cmd, "refuse-mschap-v2");
 	if (setting->nobsdcomp)
 		nm_cmd_line_add_string (cmd, "nobsdcomp");
 	if (setting->nodeflate)

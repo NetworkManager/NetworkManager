@@ -8,8 +8,10 @@ enum {
 	PROP_0,
 	PROP_NOAUTH,
 	PROP_REFUSE_EAP,
+	PROP_REFUSE_PAP,
 	PROP_REFUSE_CHAP,
 	PROP_REFUSE_MSCHAP,
+	PROP_REFUSE_MSCHAPV2,
 	PROP_NOBSDCOMP,
 	PROP_NODEFLATE,
 	PROP_REQUIRE_MPPE,
@@ -34,7 +36,14 @@ nm_setting_ppp_new (void)
 static gboolean
 verify (NMSetting *setting, GSList *all_settings)
 {
-/* 	NMSettingPPP *self = NM_SETTING_PPP (setting); */
+	NMSettingPPP *self = NM_SETTING_PPP (setting);
+
+	if (self->noauth) {
+		if (self->require_mppe) {
+			g_warning ("Option 'noauth' incompatible with 'require-mppe'");
+			return FALSE;
+		}
+	}
 
 	/* FIXME: Do we even want this or can we just let pppd evaluate the options? */
 	return TRUE;
@@ -59,11 +68,17 @@ set_property (GObject *object, guint prop_id,
 	case PROP_REFUSE_EAP:
 		setting->refuse_eap = g_value_get_boolean (value);
 		break;
+	case PROP_REFUSE_PAP:
+		setting->refuse_pap = g_value_get_boolean (value);
+		break;
 	case PROP_REFUSE_CHAP:
 		setting->refuse_chap = g_value_get_boolean (value);
 		break;
 	case PROP_REFUSE_MSCHAP:
 		setting->refuse_mschap = g_value_get_boolean (value);
+		break;
+	case PROP_REFUSE_MSCHAPV2:
+		setting->refuse_mschapv2 = g_value_get_boolean (value);
 		break;
 	case PROP_NOBSDCOMP:
 		setting->nobsdcomp = g_value_get_boolean (value);
@@ -117,11 +132,17 @@ get_property (GObject *object, guint prop_id,
 	case PROP_REFUSE_EAP:
 		g_value_set_boolean (value, setting->refuse_eap);
 		break;
+	case PROP_REFUSE_PAP:
+		g_value_set_boolean (value, setting->refuse_pap);
+		break;
 	case PROP_REFUSE_CHAP:
 		g_value_set_boolean (value, setting->refuse_chap);
 		break;
 	case PROP_REFUSE_MSCHAP:
 		g_value_set_boolean (value, setting->refuse_mschap);
+		break;
+	case PROP_REFUSE_MSCHAPV2:
+		g_value_set_boolean (value, setting->refuse_mschapv2);
 		break;
 	case PROP_NOBSDCOMP:
 		g_value_set_boolean (value, setting->nobsdcomp);
@@ -191,6 +212,14 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
+		(object_class, PROP_REFUSE_PAP,
+		 g_param_spec_boolean (NM_SETTING_PPP_REFUSE_PAP,
+						   "Refuse PAP",
+						   "Refuse PAP",
+						   FALSE,
+						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	g_object_class_install_property
 		(object_class, PROP_REFUSE_CHAP,
 		 g_param_spec_boolean (NM_SETTING_PPP_REFUSE_CHAP,
 						   "Refuse CHAP",
@@ -203,6 +232,14 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 		 g_param_spec_boolean (NM_SETTING_PPP_REFUSE_MSCHAP,
 						   "Refuse MSCHAP",
 						   "Refuse MSCHAP",
+						   FALSE,
+						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	g_object_class_install_property
+		(object_class, PROP_REFUSE_MSCHAPV2,
+		 g_param_spec_boolean (NM_SETTING_PPP_REFUSE_MSCHAPV2,
+						   "Refuse MSCHAPv2",
+						   "Refuse MSCHAPv2",
 						   FALSE,
 						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 

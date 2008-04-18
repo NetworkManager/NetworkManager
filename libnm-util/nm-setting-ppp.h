@@ -18,8 +18,10 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_PPP_NOAUTH            "noauth"
 #define NM_SETTING_PPP_REFUSE_EAP        "refuse-eap"
+#define NM_SETTING_PPP_REFUSE_PAP        "refuse-pap"
 #define NM_SETTING_PPP_REFUSE_CHAP       "refuse-chap"
 #define NM_SETTING_PPP_REFUSE_MSCHAP     "refuse-mschap"
+#define NM_SETTING_PPP_REFUSE_MSCHAPV2   "refuse-mschapv2"
 #define NM_SETTING_PPP_NOBSDCOMP         "nobsdcomp"
 #define NM_SETTING_PPP_NODEFLATE         "nodeflate"
 #define NM_SETTING_PPP_REQUIRE_MPPE      "require-mppe"
@@ -37,8 +39,10 @@ typedef struct {
 
 	gboolean noauth;
 	gboolean refuse_eap;
+	gboolean refuse_pap;
 	gboolean refuse_chap;
 	gboolean refuse_mschap;
+	gboolean refuse_mschapv2;
 	gboolean nobsdcomp;
 	gboolean nodeflate;
 	gboolean require_mppe;
