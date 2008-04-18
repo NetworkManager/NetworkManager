@@ -541,8 +541,6 @@ create_pppd_cmd_line (NMSettingPPP *setting,
 		nm_cmd_line_add_string (cmd, "require-mppe-128");
 	if (setting->mppe_stateful)
 		nm_cmd_line_add_string (cmd, "mppe-stateful");
-	if (setting->require_mppc)
-		nm_cmd_line_add_string (cmd, "require-mppc");
 	if (setting->crtscts)
 		nm_cmd_line_add_string (cmd, "crtscts");
 	if (setting->usepeerdns)

@@ -15,7 +15,6 @@ enum {
 	PROP_REQUIRE_MPPE,
 	PROP_REQUIRE_MPPE_128,
 	PROP_MPPE_STATEFUL,
-	PROP_REQUIRE_MPPC,
 	PROP_CRTSCTS,
 	PROP_USEPEERDNS,
 	PROP_BAUD,
@@ -82,9 +81,6 @@ set_property (GObject *object, guint prop_id,
 	case PROP_MPPE_STATEFUL:
 		setting->mppe_stateful = g_value_get_boolean (value);
 		break;
-	case PROP_REQUIRE_MPPC:
-		setting->require_mppc = g_value_get_boolean (value);
-		break;
 	case PROP_CRTSCTS:
 		setting->crtscts = g_value_get_boolean (value);
 		break;
@@ -145,9 +141,6 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_MPPE_STATEFUL:
 		g_value_set_boolean (value, setting->mppe_stateful);
-		break;
-	case PROP_REQUIRE_MPPC:
-		g_value_set_boolean (value, setting->require_mppc);
 		break;
 	case PROP_CRTSCTS:
 		g_value_set_boolean (value, setting->crtscts);
@@ -257,14 +250,6 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 		 g_param_spec_boolean (NM_SETTING_PPP_MPPE_STATEFUL,
 						   "MPPE stateful",
 						   "MPPE stateful",
-						   FALSE,
-						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
-
-	g_object_class_install_property
-		(object_class, PROP_REQUIRE_MPPC,
-		 g_param_spec_boolean (NM_SETTING_PPP_REQUIRE_MPPC,
-						   "Require MPPC",
-						   "Require MPPC",
 						   FALSE,
 						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
