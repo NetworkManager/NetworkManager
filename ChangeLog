@@ -3,6 +3,15 @@
 	* libnm-util/nm-setting-ppp.c
 	  libnm-util/nm-setting-ppp.h
 	  src/ppp-manager/nm-ppp-manager.c
+		- Remove the 'usepeerdns' option and always request DNS servers from
+			the PPP server; the connection chooses to use/override/ignore the
+			DNS servers returned from the PPP server
+
+2008-04-18  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-setting-ppp.c
+	  libnm-util/nm-setting-ppp.h
+	  src/ppp-manager/nm-ppp-manager.c
 		- Remove the 'require-mppc' option, because pppd doesn't support it and
 			it seems to have been an erroneous addition to the PPTP plugin in
 			the first place (from which the ppp-manager is derived)

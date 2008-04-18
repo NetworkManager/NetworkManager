@@ -543,8 +543,11 @@ create_pppd_cmd_line (NMSettingPPP *setting,
 		nm_cmd_line_add_string (cmd, "mppe-stateful");
 	if (setting->crtscts)
 		nm_cmd_line_add_string (cmd, "crtscts");
-	if (setting->usepeerdns)
-		nm_cmd_line_add_string (cmd, "usepeerdns");
+
+	/* Always ask for DNS, we don't have to use them if the connection
+	 * overrides the returned servers.
+	 */
+	nm_cmd_line_add_string (cmd, "usepeerdns");
 
 	if (setting->mru) {
 		nm_cmd_line_add_string (cmd, "mru");
@@ -596,7 +599,6 @@ pppoe_fill_defaults (NMSettingPPP *setting)
 		setting->lcp_echo_failure = 3;
 
 	setting->noauth = TRUE;
-	setting->usepeerdns = TRUE;
 	setting->nodeflate = TRUE;
 
 	/* FIXME: These commented settings should be set as well, update NMSettingPPP first. */

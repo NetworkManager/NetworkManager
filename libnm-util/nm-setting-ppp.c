@@ -16,7 +16,6 @@ enum {
 	PROP_REQUIRE_MPPE_128,
 	PROP_MPPE_STATEFUL,
 	PROP_CRTSCTS,
-	PROP_USEPEERDNS,
 	PROP_BAUD,
 	PROP_MRU,
 	PROP_MTU,
@@ -84,9 +83,6 @@ set_property (GObject *object, guint prop_id,
 	case PROP_CRTSCTS:
 		setting->crtscts = g_value_get_boolean (value);
 		break;
-	case PROP_USEPEERDNS:
-		setting->usepeerdns = g_value_get_boolean (value);
-		break;
 	case PROP_BAUD:
 		setting->baud = g_value_get_uint (value);
 		break;
@@ -144,9 +140,6 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_CRTSCTS:
 		g_value_set_boolean (value, setting->crtscts);
-		break;
-	case PROP_USEPEERDNS:
-		g_value_set_boolean (value, setting->usepeerdns);
 		break;
 	case PROP_BAUD:
 		g_value_set_uint (value, setting->baud);
@@ -258,14 +251,6 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 		 g_param_spec_boolean (NM_SETTING_PPP_CRTSCTS,
 						   "CRTSCTS",
 						   "CRTSCTS",
-						   FALSE,
-						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
-
-	g_object_class_install_property
-		(object_class, PROP_USEPEERDNS,
-		 g_param_spec_boolean (NM_SETTING_PPP_USEPEERDNS,
-						   "Use peer DNS",
-						   "Use peer DNS",
 						   FALSE,
 						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 

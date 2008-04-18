@@ -26,7 +26,6 @@ G_BEGIN_DECLS
 #define NM_SETTING_PPP_REQUIRE_MPPE_128  "require-mppe-128"
 #define NM_SETTING_PPP_MPPE_STATEFUL     "mpppe-stateful"
 #define NM_SETTING_PPP_CRTSCTS           "crtscts"
-#define NM_SETTING_PPP_USEPEERDNS        "usepeerdns"
 #define NM_SETTING_PPP_BAUD              "baud"
 #define NM_SETTING_PPP_MRU               "mru"
 #define NM_SETTING_PPP_MTU               "mtu"
@@ -46,7 +45,6 @@ typedef struct {
 	gboolean require_mppe_128;
 	gboolean mppe_stateful;
 	gboolean crtscts;
-	gboolean usepeerdns;
 
 	gint32 baud;
 	gint32 mru;
