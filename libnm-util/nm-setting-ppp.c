@@ -14,6 +14,7 @@ enum {
 	PROP_REFUSE_MSCHAPV2,
 	PROP_NOBSDCOMP,
 	PROP_NODEFLATE,
+	PROP_NO_VJ_COMP,
 	PROP_REQUIRE_MPPE,
 	PROP_REQUIRE_MPPE_128,
 	PROP_MPPE_STATEFUL,
@@ -86,6 +87,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_NODEFLATE:
 		setting->nodeflate = g_value_get_boolean (value);
 		break;
+	case PROP_NO_VJ_COMP:
+		setting->no_vj_comp = g_value_get_boolean (value);
+		break;
 	case PROP_REQUIRE_MPPE:
 		setting->require_mppe = g_value_get_boolean (value);
 		break;
@@ -149,6 +153,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_NODEFLATE:
 		g_value_set_boolean (value, setting->nodeflate);
+		break;
+	case PROP_NO_VJ_COMP:
+		g_value_set_boolean (value, setting->no_vj_comp);
 		break;
 	case PROP_REQUIRE_MPPE:
 		g_value_set_boolean (value, setting->require_mppe);
@@ -256,6 +263,14 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 		 g_param_spec_boolean (NM_SETTING_PPP_NODEFLATE,
 						   "No deflate",
 						   "No deflate",
+						   FALSE,
+						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+
+	g_object_class_install_property
+		(object_class, PROP_NO_VJ_COMP,
+		 g_param_spec_boolean (NM_SETTING_PPP_NO_VJ_COMP,
+						   "No VJ compression",
+						   "No VJ compression",
 						   FALSE,
 						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 

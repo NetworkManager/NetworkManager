@@ -24,6 +24,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_PPP_REFUSE_MSCHAPV2   "refuse-mschapv2"
 #define NM_SETTING_PPP_NOBSDCOMP         "nobsdcomp"
 #define NM_SETTING_PPP_NODEFLATE         "nodeflate"
+#define NM_SETTING_PPP_NO_VJ_COMP        "no-vj-comp"
 #define NM_SETTING_PPP_REQUIRE_MPPE      "require-mppe"
 #define NM_SETTING_PPP_REQUIRE_MPPE_128  "require-mppe-128"
 #define NM_SETTING_PPP_MPPE_STATEFUL     "mpppe-stateful"
@@ -45,16 +46,17 @@ typedef struct {
 	gboolean refuse_mschapv2;
 	gboolean nobsdcomp;
 	gboolean nodeflate;
+	gboolean no_vj_comp;
 	gboolean require_mppe;
 	gboolean require_mppe_128;
 	gboolean mppe_stateful;
 	gboolean crtscts;
 
-	gint32 baud;
-	gint32 mru;
-	gint32 mtu;
-	gint32 lcp_echo_failure;
-	gint32 lcp_echo_interval;
+	guint32 baud;
+	guint32 mru;
+	guint32 mtu;
+	guint32 lcp_echo_failure;
+	guint32 lcp_echo_interval;
 } NMSettingPPP;
 
 typedef struct {

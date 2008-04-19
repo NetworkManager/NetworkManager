@@ -2,6 +2,14 @@
 
 	* libnm-util/nm-setting-ppp.c
 	  libnm-util/nm-setting-ppp.h
+		- Add 'no-vj-comp' option for TCP header compression
+		- baud, mru, mtu, lcp_echo_failure, and lcp_echo_interval are really
+			uint32
+
+2008-04-18  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-setting-ppp.c
+	  libnm-util/nm-setting-ppp.h
 	  src/ppp-manager/nm-ppp-manager.c
 		- Add 'refuse-pap' and 'refuse-mschapv2' options
 
