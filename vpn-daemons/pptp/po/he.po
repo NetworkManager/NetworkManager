@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: 1\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-02-17 03:56+0000\n"
+"POT-Creation-Date: 2008-02-17 11:40+0000\n"
 "PO-Revision-Date: 2008-02-17 03:56+0000\n"
 "Last-Translator: Yair Hershkovitz <yairhr@gmail.com>\n"
 "Language-Team: he\n"
@@ -36,7 +36,7 @@ msgstr ""
 
 #: ../auth-dialog-general/main.c:51 ../auth-dialog/main.c:141
 msgid "Authenticate Connection"
-msgstr ""
+msgstr "אמת חיבור"
 
 #: ../auth-dialog-general/nm-ppp-auth.glade.h:2
 #, no-c-format
@@ -51,7 +51,7 @@ msgstr ""
 
 #: ../auth-dialog-general/nm-ppp-auth.glade.h:8
 msgid "Authentication Required"
-msgstr "אימות נדרש"
+msgstr "נדרש אימות"
 
 #: ../auth-dialog-general/nm-ppp-auth.glade.h:9
 msgid "_Authentication Type:"
@@ -101,8 +101,7 @@ msgstr "הוסף, הסר וערוך חיבורי VPN"
 
 #: ../nm-ppp.desktop.in.h:2
 msgid "VPN Connection Manager (PPP generic)"
-msgstr ""
-"מנהל חיבורי VPN ‏(PPP כללי)"
+msgstr "מנהל חיבורי VPN ‏(PPP כללי)"
 
 #: ../properties/nm-ppp-dialog.glade.h:1
 msgid "00:00:00:00"
@@ -126,7 +125,7 @@ msgstr "<b>אפשרויות IP</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:6
 msgid "<b>Packet Parameters</b>"
-msgstr ""
+msgstr "<b>אפשרויות חבילה</b>"
 
 #: ../properties/nm-ppp-dialog.glade.h:7
 msgid "<i>Example: 172.16.0.0/16 10.11.12.0/24</i>"
@@ -134,7 +133,7 @@ msgstr "<i>דוגמה: 172.16.0.0/16 10.11.12.0/24</i>"
 
 #: ../properties/nm-ppp-dialog.glade.h:8
 msgid "A list of extra options to pppd as would be typed on the command line"
-msgstr ""
+msgstr "רשימה של אפשרויות נוספות עבור pppd כפי שהן נרשמות בשורת הפקודה"
 
 #: ../properties/nm-ppp-dialog.glade.h:9
 msgid "Allow B_SD Compression"
@@ -174,11 +173,11 @@ msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:18
 msgid "Custom _PPP options:"
-msgstr ""
+msgstr "אפשרויות _PPP מותאמות:"
 
 #: ../properties/nm-ppp-dialog.glade.h:19
 msgid "Debug _output"
-msgstr ""
+msgstr "_פלט ניפוי"
 
 #: ../properties/nm-ppp-dialog.glade.h:20
 msgid "Disconnect after this many LCP echo requests fail"
@@ -194,7 +193,7 @@ msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:23
 msgid "Find Device"
-msgstr ""
+msgstr "חפש התקן"
 
 #: ../properties/nm-ppp-dialog.glade.h:24
 msgid ""
@@ -209,7 +208,7 @@ msgstr "אפשרויות GPRS"
 
 #: ../properties/nm-ppp-dialog.glade.h:26
 msgid "Host name or IP address of the PPTP server"
-msgstr ""
+msgstr "שם מארח או כתובת IP של שרת ה-PPTP"
 
 #: ../properties/nm-ppp-dialog.glade.h:27
 msgid "IP a_ddress:"
@@ -218,7 +217,7 @@ msgstr "כתובת _IP:"
 #: ../properties/nm-ppp-dialog.glade.h:28
 msgid ""
 "If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
-msgstr ""
+msgstr "אם כיווץ BSD אינו מורשה האפשרות 'nobsdcomp' מועברת ל-pppd"
 
 #: ../properties/nm-ppp-dialog.glade.h:29
 msgid ""
@@ -227,11 +226,11 @@ msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:30
 msgid "Maximum Receive Unit"
-msgstr ""
+msgstr "גודל יחידת קבלה מקסימאלי"
 
 #: ../properties/nm-ppp-dialog.glade.h:31
 msgid "Maximum Transmit Unit"
-msgstr ""
+msgstr "גודל יחידת שליחה מקסימאלי"
 
 #: ../properties/nm-ppp-dialog.glade.h:32
 msgid "PPP Options"
@@ -251,8 +250,7 @@ msgstr "דחה _MS CHAP"
 
 #: ../properties/nm-ppp-dialog.glade.h:36
 msgid "Require 128 bit M_PPE encryption"
-msgstr ""
-"דרוש הצפנת M_PPE ‏128 סיבית"
+msgstr "דרוש הצפנת M_PPE ‏128 סיבית"
 
 #: ../properties/nm-ppp-dialog.glade.h:37
 msgid "Require MPPE _encryption"
@@ -272,7 +270,7 @@ msgstr "ניתוב"
 
 #: ../properties/nm-ppp-dialog.glade.h:41
 msgid "Serial Options"
-msgstr ""
+msgstr "אפשרויות חיבור טורי"
 
 #: ../properties/nm-ppp-dialog.glade.h:42
 msgid "Service providers GPRS access point from device config"
@@ -280,11 +278,11 @@ msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:43
 msgid "Service providers IP address"
-msgstr ""
+msgstr "כתובת IP של ספק השירות"
 
 #: ../properties/nm-ppp-dialog.glade.h:44
 msgid "Telep_hone number:"
-msgstr ""
+msgstr "מספר ט_לפון:"
 
 #: ../properties/nm-ppp-dialog.glade.h:45
 msgid ""
@@ -295,7 +293,7 @@ msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:47
 msgid "Time in seconds between echo requests"
-msgstr ""
+msgstr "הזמן בשניות בין בקשות הד"
 
 #: ../properties/nm-ppp-dialog.glade.h:48
 msgid "Typ_e:"
@@ -307,23 +305,23 @@ msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:50
 msgid "When checked the \"refuse-chap\" option is passed to pppd."
-msgstr ""
+msgstr "כאשר מסומן האפשרות \"refuse-chap\" מועברת ל-pppd."
 
 #: ../properties/nm-ppp-dialog.glade.h:51
 msgid "When checked the \"refuse-eap\" option is passed to pppd."
-msgstr ""
+msgstr "כאשר מסומן האפשרות \"refuse-eap\" מועברת ל-pppd."
 
 #: ../properties/nm-ppp-dialog.glade.h:52
 msgid "When checked the \"refuse-mschap\" option is passed to pppd."
-msgstr ""
+msgstr "כאשר מסומן האפשרות \"refuse-mschap\" מועברת ל-pppd."
 
 #: ../properties/nm-ppp-dialog.glade.h:53
 msgid "When checked the 'lock' option is passed to pppd"
-msgstr ""
+msgstr "כאשר מסומן האפשרות \"lock\" מועברת ל-pppd."
 
 #: ../properties/nm-ppp-dialog.glade.h:54
 msgid "When checked the 'require-mppc' option is passed to pppd"
-msgstr ""
+msgstr "כאשר מסומן האפשרות \"require-mppc\" מועברת ל-pppd."
 
 #: ../properties/nm-ppp-dialog.glade.h:55
 msgid ""
@@ -333,15 +331,15 @@ msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:56
 msgid "When checked this sets the pppd 'noipdefault' option"
-msgstr ""
+msgstr "כאשר מסומן האפשרות \"noipdefault\" מועברת ל-pppd."
 
 #: ../properties/nm-ppp-dialog.glade.h:57
 msgid "When checked this sets the pppd 'usepeerdns' option"
-msgstr ""
+msgstr "כאשר מסומן האפשרות \"usepeerdns\" מועברת ל-pppd."
 
 #: ../properties/nm-ppp-dialog.glade.h:58
 msgid "When this check box is cleared the \"noauth\" option is passed to pppd."
-msgstr ""
+msgstr "כאשר מסומן האפשרות \"noauth\" מועברת ל-pppd."
 
 #: ../properties/nm-ppp-dialog.glade.h:59
 msgid "_Access point name:"
@@ -353,7 +351,7 @@ msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:61
 msgid "_Device address:"
-msgstr ""
+msgstr "_כתובת התקן:"
 
 #: ../properties/nm-ppp-dialog.glade.h:62
 msgid "_Gateway:"
@@ -365,11 +363,11 @@ msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:64
 msgid "_Import Saved Configuration..."
-msgstr ""
+msgstr "_יבא הגדרות שמורות..."
 
 #: ../properties/nm-ppp-dialog.glade.h:65
 msgid "_Modem connection"
-msgstr ""
+msgstr "חיבור _מודם"
 
 #: ../properties/nm-ppp-dialog.glade.h:66
 msgid "_Only use VPN connection for these addresses:"
@@ -377,7 +375,7 @@ msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:67
 msgid "_Packet type:"
-msgstr ""
+msgstr "_סוג חבילה:"
 
 #: ../properties/nm-ppp-dialog.glade.h:68
 msgid "_Peer DNS through tunnel"
@@ -385,7 +383,7 @@ msgstr ""
 
 #: ../properties/nm-ppp-dialog.glade.h:69
 msgid "_Require MPPC compression"
-msgstr ""
+msgstr "דרוש כיווץ _MPPC"
 
 #: ../properties/nm-ppp-properties.c:45
 msgid "pppd tunnel (PPTP, BTGPRS, Dialup)"
@@ -433,7 +431,7 @@ msgstr ""
 
 #: ../properties/nm-ppp-properties.c:191
 msgid "Connect via a modem"
-msgstr ""
+msgstr "התחבר בעזרת מודם"
 
 #: ../properties/nm-ppp-properties.c:196
 msgid "Require IP to be provided"
@@ -449,7 +447,7 @@ msgstr "השתמש בהצפנת MPPE"
 
 #: ../properties/nm-ppp-properties.c:211
 msgid "Use 128 bit MPPE encryption"
-msgstr ""
+msgstr "השתמש בהצפנת MPPE 128bit"
 
 #: ../properties/nm-ppp-properties.c:216
 msgid "Enable stateful MPPE"
@@ -457,7 +455,7 @@ msgstr ""
 
 #: ../properties/nm-ppp-properties.c:221
 msgid "Use MPPC compression"
-msgstr ""
+msgstr "השתמש בהצפנת MPPC"
 
 #: ../properties/nm-ppp-properties.c:226
 msgid "Do not use deflate compression"
@@ -465,7 +463,7 @@ msgstr ""
 
 #: ../properties/nm-ppp-properties.c:231
 msgid "Do not use BSD compression"
-msgstr ""
+msgstr "אל תשתמש בכיווץ BSD"
 
 #: ../properties/nm-ppp-properties.c:236
 msgid "Exclusive device access by pppd"
@@ -489,11 +487,11 @@ msgstr "דחה NSCHAP"
 
 #: ../properties/nm-ppp-properties.c:261
 msgid "Maximum transmit unit (in bytes)"
-msgstr ""
+msgstr "גודל יחידת שליחה מקסימאלי (בבתים)"
 
 #: ../properties/nm-ppp-properties.c:266
 msgid "Maximum receive unit (in bytes)"
-msgstr ""
+msgstr "גודל יחידת קבלה מקסימאלי (בבתים)"
 
 #: ../properties/nm-ppp-properties.c:271
 msgid "Number of failed LCP echos to cause disconnect"
@@ -509,7 +507,7 @@ msgstr ""
 
 #: ../properties/nm-ppp-properties.c:286
 msgid "Custom PPP options"
-msgstr ""
+msgstr "אפשרויות PPP מותאמות"
 
 #: ../properties/nm-ppp-properties.c:296
 msgid "Use Peer DNS over the Tunnel"
@@ -526,7 +524,7 @@ msgstr ""
 #: ../properties/vpnui_impl.c:229
 #, c-format
 msgid "The following '%s' connection will be created:"
-msgstr ""
+msgstr "חיבור ה-'%s' הבא יווצר:"
 
 #: ../properties/vpnui_impl.c:242
 #, c-format
@@ -539,7 +537,7 @@ msgstr ""
 
 #: ../properties/vpnui_impl.c:317
 msgid "Select file to import"
-msgstr ""
+msgstr "בחר קובץ ליבוא"
 
 #. printf ("in impl_export\n");
 #: ../properties/vpnui_impl.c:462
@@ -549,11 +547,11 @@ msgstr "שמור בשם..."
 #: ../properties/vpnui_impl.c:491
 #, c-format
 msgid "A file named \"%s\" already exists."
-msgstr ""
+msgstr "קובץ בשם \"%s\" כבר קיים"
 
 #: ../properties/vpnui_impl.c:494
 msgid "Do you want to replace it with the one you are saving?"
-msgstr ""
+msgstr "האם להחליפו בקובץ שאתה מנסה לשמור?"
 
 #: ../src/nm-ppp-starter.c:141
 msgid "VPN Connection failed"
