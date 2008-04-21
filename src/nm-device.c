@@ -654,73 +654,6 @@ nm_device_new_ip4_autoip_config (NMDevice *self)
 	return config;
 }
 
-
-static void
-merge_ip4_config (NMIP4Config *ip4_config, NMSettingIP4Config *setting)
-{
-	if (!setting)
-		return; /* Defaults are just fine */
-
-	if (setting->dns) {
-		int i, j;
-
-		for (i = 0; i < setting->dns->len; i++) {
-			guint32 ns;
-			gboolean found = FALSE;
-
-			/* Avoid dupes */
-			ns = g_array_index (setting->dns, guint32, i);
-			for (j = 0; j < nm_ip4_config_get_num_nameservers (ip4_config); j++) {
-				if (nm_ip4_config_get_nameserver (ip4_config, j) == ns) {
-					found = TRUE;
-					break;
-				}
-			}
-
-			if (!found)
-				nm_ip4_config_add_nameserver (ip4_config, ns);
-		}
-	}
-
-	if (setting->dns_search) {
-		GSList *iter;
-
-		for (iter = setting->dns_search; iter; iter = iter->next) {
-			int i;
-			gboolean found = FALSE;
-
-			/* Avoid dupes */
-			for (i = 0; i < nm_ip4_config_get_num_searches (ip4_config); i++) {
-				const char *search = nm_ip4_config_get_search (ip4_config, i);
-
-				if (!strcmp (search, (char *) iter->data)) {
-					found = TRUE;
-					break;
-				}
-			}
-
-			if (!found)
-				nm_ip4_config_add_search (ip4_config, (char *) iter->data);
-		}
-	}
-
-	if (setting->addresses) {
-		/* FIXME; add support for more than one set of address/netmask/gateway for NMIP4Config */
-		NMSettingIP4Address *addr = (NMSettingIP4Address *) setting->addresses->data;
-
-		/* Avoid dupes, but override if anything is different */
-		if (   (nm_ip4_config_get_address (ip4_config) != addr->address)
-		    || (nm_ip4_config_get_netmask (ip4_config) != addr->netmask)
-		    || (addr->gateway && (nm_ip4_config_get_gateway (ip4_config) != addr->gateway))) {
-			nm_ip4_config_set_address (ip4_config, addr->address);
-			nm_ip4_config_set_netmask (ip4_config, addr->netmask);
-
-			if (addr->gateway)
-				nm_ip4_config_set_gateway (ip4_config, addr->gateway);
-		}
-	}
-}
-
 static NMActStageReturn
 real_act_stage4_get_ip4_config (NMDevice *self,
                                 NMIP4Config **config)
@@ -740,7 +673,7 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 	if (nm_device_get_use_dhcp (self)) {
 		*config = nm_dhcp_manager_get_ip4_config (NM_DEVICE_GET_PRIVATE (self)->dhcp_manager,
 											 nm_device_get_iface (self));
-		merge_ip4_config (*config, s_ip4);
+		nm_utils_merge_ip4_config (*config, s_ip4);
 	} else {
 		g_assert (s_ip4);
 
@@ -748,7 +681,7 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 			nm_device_new_ip4_autoip_config (self);
 		} else if (!strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
 			*config = nm_ip4_config_new ();
-			merge_ip4_config (*config, s_ip4);
+			nm_utils_merge_ip4_config (*config, s_ip4);
 		}
 	}
 
@@ -1241,7 +1174,7 @@ handle_dhcp_lease_change (NMDevice *device)
 	g_assert (connection);
 
 	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
-	merge_ip4_config (config, s_ip4);
+	nm_utils_merge_ip4_config (config, s_ip4);
 
 	g_object_set_data (G_OBJECT (req), NM_ACT_REQUEST_IP4_CONFIG, config);
 

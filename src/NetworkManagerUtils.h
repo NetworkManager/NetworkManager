@@ -31,6 +31,8 @@
 
 #include "NetworkManager.h"
 #include "nm-device.h"
+#include "nm-ip4-config.h"
+#include "nm-setting-ip4-config.h"
 
 int			nm_null_safe_strcmp				(const char *s1, const char *s2);
 
@@ -50,6 +52,8 @@ int				nm_utils_ip4_netmask_to_prefix (guint32 ip4_netmask);
 char *          nm_utils_hexstr2bin (const char *hex, size_t len);
 
 char *nm_ether_ntop (const struct ether_addr *mac);
+
+void nm_utils_merge_ip4_config (NMIP4Config *ip4_config, NMSettingIP4Config *setting);
 
 #endif
 

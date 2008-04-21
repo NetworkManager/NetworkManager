@@ -33,6 +33,7 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-vpn.h"
 #include "nm-setting-vpn-properties.h"
+#include "nm-setting-ip4-config.h"
 #include "nm-dbus-manager.h"
 #include "nm-manager.h"
 #include "NetworkManagerSystem.h"
@@ -42,6 +43,7 @@
 #include "nm-active-connection.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-dbus-glib-types.h"
+#include "NetworkManagerUtils.h"
 
 #define CONNECTION_GET_SECRETS_CALL_TAG "get-secrets-call"
 
@@ -250,6 +252,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 {
 	NMVPNConnection *connection = NM_VPN_CONNECTION (user_data);
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+	NMSettingIP4Config *s_ip4;
 	NMIP4Config *config;
 	GValue *val;
 	int i;
@@ -324,6 +327,10 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 	priv->ip4_config = config;
+
+	/* Merge in user overrides from the NMConnection's IPv4 setting */
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (priv->connection, NM_TYPE_SETTING_IP4_CONFIG));
+	nm_utils_merge_ip4_config (config, s_ip4);
 
 	if (nm_system_vpn_device_set_from_ip4_config (priv->parent_dev, priv->tundev, priv->ip4_config,
 										 nm_vpn_connection_get_routes (connection))) {

@@ -1,3 +1,17 @@
+2008-04-20  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerUtils.c
+	  src/NetworkManagerUtils.h
+		- (nm_utils_merge_ip4_config): new function; merge settings from an
+			NMSettingIP4Config to an NMIP4Config object
+
+	* src/nm-device.c
+		- (merge_ip4_config): move to NetworkManagerUtils.c
+
+	* src/vpn-manager/nm-vpn-connection.c
+		- (nm_vpn_connection_ip4_config_get): merge in user-specified settings
+			too
+
 2008-04-18  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/nm-setting-ppp.c
