@@ -460,8 +460,20 @@ struct rtnl_addr * nm_ip4_config_to_rtnl_addr (NMIP4Config *config, guint32 flag
 	if (flags & NM_RTNL_ADDR_NETMASK)
 		ip4_addr_to_rtnl_prefixlen (priv->ip4_netmask, addr);
 
-	if (flags & NM_RTNL_ADDR_BROADCAST)
-		success = (ip4_addr_to_rtnl_broadcast (priv->ip4_broadcast, addr) >= 0);
+	if (flags & NM_RTNL_ADDR_BROADCAST) {
+		guint32 bcast = priv->ip4_broadcast;
+
+		/* Calculate the broadcast address if needed */
+		if (!bcast) {
+			guint32 hostmask, network;
+
+			network = ntohl (priv->ip4_address) & ntohl (priv->ip4_netmask);
+			hostmask = ~ntohl (priv->ip4_netmask);
+			bcast = htonl (network | hostmask);
+		}
+
+		success = (ip4_addr_to_rtnl_broadcast (bcast, addr) >= 0);
+	}
 
 	if (!success)
 	{
