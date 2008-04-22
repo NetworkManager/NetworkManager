@@ -1717,7 +1717,8 @@ nm_device_state_changed (NMDevice *device, NMDeviceState state)
 	case NM_DEVICE_STATE_UNAVAILABLE:
 		if (old_state == NM_DEVICE_STATE_UNMANAGED)
 			nm_device_bring_up (device, TRUE);
-		/* Fall through */
+		/* Fall through, so when the device needs to be deactivated due to
+		 * eg carrier changes we actually deactivate it */
 	case NM_DEVICE_STATE_DISCONNECTED:
 		if (old_state != NM_DEVICE_STATE_UNAVAILABLE)
 			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
@@ -1766,19 +1767,20 @@ nm_device_set_managed (NMDevice *device, gboolean managed)
 	g_return_if_fail (NM_IS_DEVICE (device));
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
-	if (priv->managed != managed) {
-		priv->managed = managed;
-		nm_info ("(%s): now %s", nm_device_get_iface (device), managed ? "managed" : "unmanaged");
+	if (priv->managed == managed)
+		return;
 
-		if (priv->start_timer) {
-			g_source_remove (priv->start_timer);
-			priv->start_timer = 0;
-		}
+	priv->managed = managed;
+	nm_info ("(%s): now %s", nm_device_get_iface (device), managed ? "managed" : "unmanaged");
 
-		g_object_notify (G_OBJECT (device), NM_DEVICE_INTERFACE_MANAGED);
-
-		/* If now managed, jump to unavailable */
-		nm_device_state_changed (device, managed ? NM_DEVICE_STATE_UNAVAILABLE : NM_DEVICE_STATE_UNMANAGED);
+	if (priv->start_timer) {
+		g_source_remove (priv->start_timer);
+		priv->start_timer = 0;
 	}
+
+	g_object_notify (G_OBJECT (device), NM_DEVICE_INTERFACE_MANAGED);
+
+	/* If now managed, jump to unavailable */
+	nm_device_state_changed (device, managed ? NM_DEVICE_STATE_UNAVAILABLE : NM_DEVICE_STATE_UNMANAGED);
 }
 
