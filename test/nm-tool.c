@@ -34,6 +34,8 @@
 #include <nm-device.h>
 #include <nm-device-802-3-ethernet.h>
 #include <nm-device-802-11-wireless.h>
+#include <nm-gsm-device.h>
+#include <nm-cdma-device.h>
 #include <nm-utils.h>
 
 static gboolean
@@ -211,6 +213,10 @@ detail_device (gpointer data, gpointer user_data)
 		print_string ("Type", "Wired");
 	else if (NM_IS_DEVICE_802_11_WIRELESS (device))
 		print_string ("Type", "802.11 Wireless");
+	else if (NM_IS_GSM_DEVICE (device))
+		print_string ("Type", "Mobile Broadband (GSM)");
+	else if (NM_IS_CDMA_DEVICE (device))
+		print_string ("Type", "Mobile Broadband (CDMA)");
 
 	print_string ("Driver", nm_device_get_driver (device) ? nm_device_get_driver (device) : "(unknown)");
 
