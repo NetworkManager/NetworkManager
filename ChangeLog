@@ -1,3 +1,11 @@
+2008-04-22  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Charles R. Anderson (cra@wpi.edu)
+
+	* src/NetworkManagerPolicy.c
+		- (update_routing_and_dns): don't select devices without a gateway
+			as having the default route (rh #437338)
+
 2008-04-21  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-activation-request.c

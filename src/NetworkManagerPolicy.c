@@ -138,10 +138,28 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 		connection = nm_act_request_get_connection (req);
 		g_assert (connection);
 
-		/* Never set the default route through an IPv4LL-addressed device */
 		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
-		if (s_ip4 && !strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP))
-			continue;
+		if (s_ip4) {
+			GSList *addr_iter;
+			gboolean have_gateway = FALSE;
+
+			/* Never set the default route through an IPv4LL-addressed device */
+			if (!strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP))
+				continue;
+
+			/* Never set the default route through a device that doesn't have a gateway */
+			for (addr_iter = s_ip4->addresses; addr_iter; addr_iter = g_slist_next (addr_iter)) {
+				NMSettingIP4Address *addr = (NMSettingIP4Address *) addr_iter->data;
+
+				if (addr->gateway) {
+					have_gateway = TRUE;
+					break;
+				}
+			}
+
+			if (!have_gateway)
+				continue;
+		}
 
 		prio = get_device_priority (dev);
 		if (prio > best_prio) {
