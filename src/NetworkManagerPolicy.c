@@ -116,6 +116,7 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 {
 	NMDevice *best = NULL;
 	guint32 best_prio = 0;
+	NMActRequest *best_req = NULL;
 	GSList *devices, *iter;
 	NMNamedManager *named_mgr;
 	NMIP4Config *config;
@@ -146,6 +147,7 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 		if (prio > best_prio) {
 			best = dev;
 			best_prio = prio;
+			best_req = req;
 		}
 	}
 
@@ -155,6 +157,16 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 		goto out;
 
 	update_default_route (policy, best);
+	
+	/* Update the default active connection */
+	for (iter = devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *dev = NM_DEVICE (iter->data);
+		NMActRequest *req;
+
+		req = nm_device_get_act_request (dev);
+		if (req)
+			nm_act_request_set_default (req, (req == best_req) ? TRUE : FALSE);
+	}
 
 	named_mgr = nm_named_manager_get ();
 	config = nm_device_get_ip4_config (best);

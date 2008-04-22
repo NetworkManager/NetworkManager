@@ -72,4 +72,6 @@ gboolean      nm_act_request_get_user_requested (NMActRequest *req);
 
 const char *  nm_act_request_get_active_connection_path (NMActRequest *req);
 
+void          nm_act_request_set_default (NMActRequest *req, gboolean is_default);
+
 #endif /* NM_ACTIVATION_REQUEST_H */

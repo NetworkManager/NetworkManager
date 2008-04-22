@@ -1,5 +1,20 @@
 2008-04-21  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-activation-request.c
+	  src/nm-activation-request.h
+		- (dispose): ensure to disconnect from the device's state-changed signal
+			when appropriate so the signal doesn't get handled by an already
+			disposed NMActRequest
+		- (device_state_changed): update is_default here too just to make sure
+			default is only True when the child device is activated
+		- (nm_act_request_set_default): new function
+
+	* src/NetworkManagerPolicy.c
+		- (update_routing_and_dns): set 'default' on the active connection which
+			has the default route and DNS
+
+2008-04-21  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerPolicy.c
 		- (device_state_changed): update routing and DNS when a device goes
 			into unmanaged or unavailable states too (like rfkill or carrier loss)

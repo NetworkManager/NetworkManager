@@ -141,6 +141,10 @@ dispose (GObject *object)
 	if (!priv->connection)
 		goto out;
 
+	g_signal_handlers_disconnect_by_func (G_OBJECT (priv->device),
+	                                      G_CALLBACK (device_state_changed),
+	                                      NM_ACT_REQUEST (object));
+
 	proxy = g_object_get_data (G_OBJECT (priv->connection),
 	                           NM_MANAGER_CONNECTION_SECRETS_PROXY_TAG);
 	call = g_object_get_data (G_OBJECT (priv->connection),
@@ -333,6 +337,7 @@ device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 	NMActRequest *self = NM_ACT_REQUEST (user_data);
 	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
 	NMActiveConnectionState new_state;
+	gboolean new_default = FALSE;
 
 	/* Set NMActiveConnection state based on the device's state */
 	switch (state) {
@@ -344,6 +349,7 @@ device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
 		new_state = NM_ACTIVE_CONNECTION_STATE_ACTIVATED;
+		new_default = priv->is_default;
 		break;
 	default:
 		new_state = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
@@ -353,6 +359,11 @@ device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 	if (new_state != priv->state) {
 		priv->state = new_state;
 		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_STATE);
+	}
+
+	if (new_default != priv->is_default) {
+		priv->is_default = new_default;
+		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_DEFAULT);
 	}
 }
 
@@ -616,5 +627,20 @@ nm_act_request_get_active_connection_path (NMActRequest *req)
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
 
 	return NM_ACT_REQUEST_GET_PRIVATE (req)->ac_path;
+}
+
+void
+nm_act_request_set_default (NMActRequest *req, gboolean is_default)
+{
+	NMActRequestPrivate *priv;
+
+	g_return_if_fail (NM_IS_ACT_REQUEST (req));
+
+	priv = NM_ACT_REQUEST_GET_PRIVATE (req);
+	if (priv->is_default == is_default)
+		return;
+
+	priv->is_default = is_default;
+	g_object_notify (G_OBJECT (req), NM_ACTIVE_CONNECTION_DEFAULT);
 }
 
