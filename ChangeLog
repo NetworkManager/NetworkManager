@@ -1,5 +1,11 @@
 2008-04-21  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerPolicy.c
+		- (device_state_changed): update routing and DNS when a device goes
+			into unmanaged or unavailable states too (like rfkill or carrier loss)
+
+2008-04-21  Dan Williams  <dcbw@redhat.com>
+
 	* include/NetworkManager.h
 		- Add NMActiveConnectionState enum
 

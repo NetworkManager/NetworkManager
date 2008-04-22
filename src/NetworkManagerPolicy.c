@@ -321,6 +321,8 @@ device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 
 		update_routing_and_dns (policy, FALSE);
 		break;
+	case NM_DEVICE_STATE_UNMANAGED:
+	case NM_DEVICE_STATE_UNAVAILABLE:
 	case NM_DEVICE_STATE_DISCONNECTED:
 		update_routing_and_dns (policy, FALSE);
 		schedule_activate_check (policy, device);
