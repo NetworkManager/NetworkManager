@@ -47,8 +47,6 @@
 #include "nm-system-config-hal-manager-private.h"
 #include "nm-system-config-interface.h"
 
-#define NM_SS_CONNECTIONS_TAG "nm-ss-connections"
-
 typedef struct {
 	DBusConnection *connection;
 	DBusGConnection *g_connection;
@@ -59,8 +57,6 @@ typedef struct {
 
 	NMSysconfigSettings *settings;
 	GMainLoop *loop;
-
-	GSList *plugins;   /* In priority order */
 
 	GHashTable *wired_devices;
 } Application;
@@ -82,71 +78,6 @@ plugins_error_quark (void)
 		error_quark = g_quark_from_static_string ("plugins-error-quark");
 
 	return error_quark;
-}
-
-
-
-static void
-connection_added_cb (NMSystemConfigInterface *config,
-                     NMConnection *connection,
-                     Application *app)
-{
-	GSList **connections;
-
-	connections = g_object_get_data (G_OBJECT (config), NM_SS_CONNECTIONS_TAG);
-	*connections = g_slist_append (*connections, connection);
-
-	nm_sysconfig_settings_add_connection (app->settings, connection, app->g_connection);
-}
-
-static void
-connection_removed_cb (NMSystemConfigInterface *config,
-                       NMConnection *connection,
-                       Application *app)
-{
-	GSList **connections;
-
-	connections = g_object_get_data (G_OBJECT (config), NM_SS_CONNECTIONS_TAG);
-	*connections = g_slist_remove (*connections, connection);
-
-	nm_sysconfig_settings_remove_connection (app->settings, connection);
-}
-
-static void
-connection_updated_cb (NMSystemConfigInterface *config,
-                       NMConnection *connection,
-                       Application *app)
-{
-	nm_sysconfig_settings_update_connection (app->settings, connection);
-}
-
-static void
-unmanaged_devices_changed_cb (NMSystemConfigInterface *config,
-                              Application *app)
-{
-	GSList *udis = NULL, *temp, *iter;
-
-	/* Ask all the plugins for their unmanaged devices */
-	for (iter = app->plugins; iter; iter = g_slist_next (iter)) {
-		temp = nm_system_config_interface_get_unmanaged_devices (NM_SYSTEM_CONFIG_INTERFACE (iter->data));
-		udis = g_slist_concat (udis, temp);
-	}
-
-	nm_sysconfig_settings_update_unamanged_devices (app->settings, udis);
-	g_slist_foreach (udis, (GFunc) g_free, NULL);
-	g_slist_free (udis);
-}
-
-static void
-register_plugin (Application *app, NMSystemConfigInterface *plugin)
-{
-	g_signal_connect (plugin, "connection-added", (GCallback) connection_added_cb, app);
-	g_signal_connect (plugin, "connection-removed", (GCallback) connection_removed_cb, app);
-	g_signal_connect (plugin, "connection-updated", (GCallback) connection_updated_cb, app);
-
-	g_signal_connect (plugin, "unmanaged-devices-changed", (GCallback) unmanaged_devices_changed_cb, app);
-
-	nm_system_config_interface_init (plugin, app->hal_mgr);
 }
 
 static GObject *
@@ -171,7 +102,7 @@ find_plugin (GSList *list, const char *pname)
 	return NULL;
 }
 
-static GSList *
+static gboolean
 load_plugins (Application *app, const char *plugins, GError **error)
 {
 	GSList *list = NULL;
@@ -180,7 +111,7 @@ load_plugins (Application *app, const char *plugins, GError **error)
 
 	plist = g_strsplit (plugins, ",", 0);
 	if (!plist)
-		return NULL;
+		return FALSE;
 
 	for (pname = plist; *pname; pname++) {
 		GModule *plugin;
@@ -225,44 +156,17 @@ load_plugins (Application *app, const char *plugins, GError **error)
 		}
 
 		g_module_make_resident (plugin);
-		g_object_set_data_full (obj, "nm-ss-plugin", plugin, (GDestroyNotify) g_module_close);
-		register_plugin (app, NM_SYSTEM_CONFIG_INTERFACE (obj));
+		g_object_weak_ref (obj, (GWeakNotify) g_module_close, plugin);
+		nm_sysconfig_settings_add_plugin (app->settings, NM_SYSTEM_CONFIG_INTERFACE (obj));
 		list = g_slist_append (list, obj);
 	}
-	
+
 	g_strfreev (plist);
-	return list;
-}
 
-static void
-print_plugin_info (gpointer item, gpointer user_data)
-{
-	NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (item);
-	char *pname;
-	char *pinfo;
+	g_slist_foreach (list, (GFunc) g_object_unref, NULL);
+	g_slist_free (list);
 
-	g_object_get (G_OBJECT (plugin),
-	              NM_SYSTEM_CONFIG_INTERFACE_NAME,
-	              &pname,
-	              NULL);
-
-	g_object_get (G_OBJECT (plugin),
-	              NM_SYSTEM_CONFIG_INTERFACE_INFO,
-	              &pinfo,
-	              NULL);
-
-	g_message ("   %s: %s", pname, pinfo);
-	g_free (pname);
-	g_free (pinfo);
-}
-
-static void
-free_plugin_connections (gpointer data)
-{
-	GSList **connections = (GSList **) data;
-
-	g_slist_foreach (*connections, (GFunc) g_object_unref, NULL);
-	g_slist_free (*connections);
+	return TRUE;
 }
 
 static gboolean
@@ -270,34 +174,6 @@ load_stuff (gpointer user_data)
 {
 	Application *app = (Application *) user_data;
 	GSList *devs, *iter;
-
-	g_return_val_if_fail (app != NULL, FALSE);
-
-	for (iter = app->plugins; iter; iter = g_slist_next (iter)) {
-		NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (iter->data);
-		GSList *plugin_connections, **connections;
-		GSList *elt;
-
-		plugin_connections = nm_system_config_interface_get_connections (plugin);
-
-		connections = g_malloc0 (sizeof (GSList *));
-		g_object_set_data_full (G_OBJECT (plugin), NM_SS_CONNECTIONS_TAG,
-		                        connections, free_plugin_connections);
-
-		// FIXME: ensure connections from plugins loaded with a lower priority
-		// get rejected when they conflict with connections from a higher
-		// priority plugin.
-
-		for (elt = plugin_connections; elt; elt = g_slist_next (elt)) {
-			g_object_ref (NM_CONNECTION (elt->data));
-			g_object_set_data (G_OBJECT (elt->data), NM_SS_PLUGIN_TAG, plugin);
-			connection_added_cb (NM_SYSTEM_CONFIG_INTERFACE (plugin), NM_CONNECTION (elt->data), app);
-		}
-
-		g_slist_free (plugin_connections);
-	}
-
-	unmanaged_devices_changed_cb (NULL, app);
 
 	/* Grab wired devices to make default DHCP connections for them if needed */
 	devs = nm_system_config_hal_manager_get_devices_of_type (app->hal_mgr, DEVICE_TYPE_802_3_ETHERNET);
@@ -480,9 +356,8 @@ add_default_dhcp_connection (gpointer user_data)
 	g_byte_array_append (s_wired->mac_address, info->mac->data, ETH_ALEN);
 	nm_connection_add_setting (info->connection, NM_SETTING (s_wired));
 
-	nm_sysconfig_settings_add_connection (info->app->settings,
-	                                      info->connection,
-	                                      info->app->g_connection);
+	nm_sysconfig_settings_add_connection (info->app->settings, NULL, info->connection);
+
 	return FALSE;
 
 ignore:
@@ -782,36 +657,29 @@ main (int argc, char **argv)
 	if (!dbus_init (app))
 		return -1;
 
-	app->settings = nm_sysconfig_settings_new (app->g_connection);
+	app->hal_mgr = nm_system_config_hal_manager_get (app->g_connection);
+	app->settings = nm_sysconfig_settings_new (app->g_connection, app->hal_mgr);
 
 	app->wired_devices = g_hash_table_new_full (g_str_hash, g_str_equal,
 	                                            g_free, wired_device_info_destroy);
-	app->hal_mgr = nm_system_config_hal_manager_get (app->g_connection);
 	g_signal_connect (G_OBJECT (app->hal_mgr), "device-added",
 	                  G_CALLBACK (device_added_cb), app);
 	g_signal_connect (G_OBJECT (app->hal_mgr), "device-removed",
 	                  G_CALLBACK (device_removed_cb), app);
 
 	/* Load the plugins; fail if a plugin is not found. */
-	app->plugins = load_plugins (app, plugins, &error);
+	load_plugins (app, plugins, &error);
 	if (error) {
-		g_slist_foreach (app->plugins, (GFunc) g_object_unref, NULL);
-		g_slist_free (app->plugins);
 		g_warning ("Error: %d - %s", error->code, error->message);
 		return -1;
 	}
 	g_free (plugins);
-	g_message ("Loaded plugins:");
-	g_slist_foreach (app->plugins, print_plugin_info, NULL);
 
 	g_idle_add (load_stuff, app);
 
 	g_main_loop_run (app->loop);
 
 	g_hash_table_destroy (app->wired_devices);
-
-	g_slist_foreach (app->plugins, (GFunc) g_object_unref, NULL);
-	g_slist_free (app->plugins);
 
 	g_object_unref (app->settings);
 	g_object_unref (app->hal_mgr);

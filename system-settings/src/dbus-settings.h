@@ -25,7 +25,8 @@
 #include <nm-connection.h>
 #include <nm-settings.h>
 
-#define NM_SS_PLUGIN_TAG "nm-ss-plugin"
+#include "nm-system-config-interface.h"
+#include "nm-system-config-hal-manager.h"
 
 typedef struct _NMSysconfigExportedConnection NMSysconfigExportedConnection;
 typedef struct _NMSysconfigExportedConnectionClass NMSysconfigExportedConnectionClass;
@@ -85,11 +86,15 @@ struct _NMSysconfigSettingsClass
 
 GType nm_sysconfig_settings_get_type (void);
 
-NMSysconfigSettings *nm_sysconfig_settings_new (DBusGConnection *g_conn);
+NMSysconfigSettings *nm_sysconfig_settings_new (DBusGConnection *g_conn,
+						NMSystemConfigHalManager *hal_mgr);
+
+void nm_sysconfig_settings_add_plugin     (NMSysconfigSettings *settings,
+					   NMSystemConfigInterface *plugin);
 
 void nm_sysconfig_settings_add_connection (NMSysconfigSettings *settings,
-                                           NMConnection *connection,
-                                           DBusGConnection *g_connection);
+					   NMSystemConfigInterface *plugin,
+                                           NMConnection *connection);
 
 void nm_sysconfig_settings_remove_connection (NMSysconfigSettings *settings,
                                               NMConnection *connection);

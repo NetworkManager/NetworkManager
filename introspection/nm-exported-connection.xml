@@ -18,6 +18,25 @@
             </arg>
         </method>
 
+	<method name="Update">
+	  <tp:docstring>
+	    Update the connection.
+	  </tp:docstring>
+	  <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_exported_connection_update"/>
+	  <arg name="properties" type="a{sa{sv}}" direction="in">
+	    <tp:docstring>
+	      New connection properties.
+	    </tp:docstring>
+	  </arg>
+	</method>
+
+	<method name="Delete">
+	  <tp:docstring>
+	    Delete the connection.
+	  </tp:docstring>
+	  <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_exported_connection_delete"/>
+	</method>
+
         <method name="GetSettings">
             <tp:docstring>
                 Get the settings maps describing this object.

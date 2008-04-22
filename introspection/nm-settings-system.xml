@@ -6,6 +6,18 @@
       Implemented by the system settings service to provide additional settings to NetworkManager.
     </tp:docstring>
 
+    <method name="AddConnection">
+      <tp:docstring>
+	Add new connection.
+      </tp:docstring>
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_add_connection"/>
+      <arg name="connection" type="a{sa{sv}}" direction="in">
+	<tp:docstring>
+	  Connection properties.
+	</tp:docstring>
+      </arg>
+    </method>
+
     <property name="UnmanagedDevices" type="ao" access="read">
       <tp:docstring>
         The list of HAL UDIs of devices that should not be managed by NetworkManager.

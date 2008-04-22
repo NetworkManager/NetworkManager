@@ -37,6 +37,11 @@ typedef struct {
 	                              gboolean request_new,
 	                              DBusGMethodInvocation *context);
 
+	void (*update) (NMExportedConnection *connection,
+			GHashTable *new_settings);
+
+	void (*delete) (NMExportedConnection *connection);
+
 	/* signals */
 	void (* updated) (NMExportedConnection *connection, GHashTable *settings);
 	void (* removed) (NMExportedConnection *connection);

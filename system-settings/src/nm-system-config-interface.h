@@ -99,6 +99,22 @@ struct _NMSystemConfigInterface {
 	 */
 	GSList * (*get_unmanaged_devices) (NMSystemConfigInterface *config);
 
+	/*
+	 * Add a new connection.
+	 */
+	void     (*add_connection) (NMSystemConfigInterface *config, NMConnection *connection);
+
+	/*
+	 * Update the connection.
+	 */
+	void     (*update_connection) (NMSystemConfigInterface *config, NMConnection *connection);
+
+	/*
+	 * Remove the connection.
+	 */
+	void     (*remove_connection) (NMSystemConfigInterface *config, NMConnection *connection);
+
+
 	/* Signals */
 
 	/* Emitted when a new connection has been found by the plugin */
@@ -126,6 +142,15 @@ GHashTable *nm_system_config_interface_get_secrets (NMSystemConfigInterface *con
                                                     NMSetting *setting);
 
 GSList *nm_system_config_interface_get_unmanaged_devices (NMSystemConfigInterface *config);
+
+void nm_system_config_interface_add_connection (NMSystemConfigInterface *config,
+						NMConnection *connection);
+
+void nm_system_config_interface_update_connection (NMSystemConfigInterface *config,
+						   NMConnection *connection);
+
+void nm_system_config_interface_remove_connection (NMSystemConfigInterface *config,
+						   NMConnection *connection);
 
 G_END_DECLS
 

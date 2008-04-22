@@ -1,3 +1,36 @@
+2008-04-22  Tambet Ingo  <tambet@gmail.com>
+
+	Implement GKeyFile system settings plugin.
+	Implement writing system settings (currently supported only by GKeyFile plugin).
+
+	* system-settings/src/main.c: 
+	* system-settings/src/dbus-settings.c: Move the communication with plugins
+	from main.c to dbus-settings.c. Makes it possible to talk to all registered
+	plugins for adding/updating/removing connections.
+
+	* system-settings/src/nm-system-config-interface.c
+	(nm_system_config_interface_add_connection): Implement
+	(nm_system_config_interface_update_connection): Implement.
+	(nm_system_config_interface_remove_connection): Implement.
+
+	* system-settings/plugins/keyfile/Makefile.am:
+	* system-settings/plugins/keyfile/plugin.[ch]:
+	* system-settings/plugins/keyfile/writer.[ch]:
+	* system-settings/plugins/keyfile/reader.[ch]: Implement.
+
+	* system-settings/plugins/Makefile.am: Add GKeyFile plugin.
+
+	* configure.in: Generate GKeyFile Makefile.
+
+	* libnm-glib/nm-settings.c (impl_exported_connection_get_id): Fix a memory
+	corruption, need to duplicate the returned string.
+	(impl_exported_connection_update): Implement.
+	(impl_exported_connection_delete): Implement.
+
+	* introspection/nm-settings-system.xml: Add "AddConnection" method.
+
+	* introspection/nm-exported-connection.xml: Add "Update" and "Delete" methods.
+
 2008-04-22  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Charles R. Anderson (cra@wpi.edu)

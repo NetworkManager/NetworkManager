@@ -308,6 +308,7 @@ system-settings/src/Makefile
 system-settings/plugins/Makefile
 system-settings/plugins/ifcfg-fedora/Makefile
 system-settings/plugins/ifcfg-suse/Makefile
+system-settings/plugins/keyfile/Makefile
 test/Makefile
 test/test-common/Makefile
 initscript/Makefile

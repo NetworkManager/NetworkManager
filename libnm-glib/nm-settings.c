@@ -107,6 +107,14 @@ static gboolean impl_exported_connection_get_id (NMExportedConnection *connectio
 static gboolean impl_exported_connection_get_settings (NMExportedConnection *connection,
 						       GHashTable **settings,
 						       GError **error);
+
+static gboolean impl_exported_connection_update (NMExportedConnection *connection,
+									    GHashTable *new_settings,
+									    GError *err);
+
+static gboolean impl_exported_connection_delete (NMExportedConnection *connection,
+									    GError *err);
+
 static void impl_exported_connection_get_secrets (NMExportedConnection *connection,
 						      const gchar *setting_name,
 						      const gchar **hints,
@@ -169,7 +177,7 @@ impl_exported_connection_get_id (NMExportedConnection *connection,
 {
 	g_return_val_if_fail (NM_IS_EXPORTED_CONNECTION (connection), FALSE);
 
-	*id = (gchar *) nm_exported_connection_get_id (connection);
+	*id = g_strdup (nm_exported_connection_get_id (connection));
 	if (!*id) {
 		g_set_error (error, NM_SETTINGS_ERROR, 1,
 		             "%s.%d - Could not get connection ID.",
@@ -182,8 +190,8 @@ impl_exported_connection_get_id (NMExportedConnection *connection,
 
 static gboolean
 impl_exported_connection_get_settings (NMExportedConnection *connection,
-				       GHashTable **settings,
-				       GError **error)
+							    GHashTable **settings,
+							    GError **error)
 {
 	NMExportedConnectionPrivate *priv;
 
@@ -195,6 +203,32 @@ impl_exported_connection_get_settings (NMExportedConnection *connection,
 		*settings = nm_connection_to_hash (priv->wrapped);
 	else
 		*settings = EXPORTED_CONNECTION_CLASS (connection)->get_settings (connection);
+
+	return TRUE;
+}
+
+static gboolean
+impl_exported_connection_update (NMExportedConnection *connection,
+						   GHashTable *new_settings,
+						   GError *err)
+{
+	if (EXPORTED_CONNECTION_CLASS (connection)->update)
+		EXPORTED_CONNECTION_CLASS (connection)->update (connection, new_settings);
+	else
+		nm_connection_replace_settings (NM_EXPORTED_CONNECTION_GET_PRIVATE (connection)->wrapped, new_settings);
+
+	nm_exported_connection_signal_updated (connection, new_settings);
+
+	return TRUE;
+}
+
+static gboolean
+impl_exported_connection_delete (NMExportedConnection *connection, GError *err)
+{
+	if (EXPORTED_CONNECTION_CLASS (connection)->delete)
+		EXPORTED_CONNECTION_CLASS (connection)->delete (connection);
+
+	nm_exported_connection_signal_removed (connection);
 
 	return TRUE;
 }

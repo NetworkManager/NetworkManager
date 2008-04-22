@@ -161,3 +161,35 @@ nm_system_config_interface_get_unmanaged_devices (NMSystemConfigInterface *confi
 	return NULL;
 }
 
+void
+nm_system_config_interface_add_connection (NMSystemConfigInterface *config,
+								   NMConnection *connection)
+{
+	g_return_if_fail (config != NULL);
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+
+	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->add_connection)
+		NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->add_connection (config, connection);
+}
+
+void
+nm_system_config_interface_update_connection (NMSystemConfigInterface *config,
+									 NMConnection *connection)
+{
+	g_return_if_fail (config != NULL);
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+
+	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->update_connection)
+		NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->update_connection (config, connection);
+}
+
+void
+nm_system_config_interface_remove_connection (NMSystemConfigInterface *config,
+									 NMConnection *connection)
+{
+	g_return_if_fail (config != NULL);
+	g_return_if_fail (NM_IS_CONNECTION (connection));
+
+	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->remove_connection)
+		NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->remove_connection (config, connection);
+}
