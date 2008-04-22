@@ -46,16 +46,16 @@ typedef struct {
 	NMActiveConnectionClass parent;
 
 	/* Signals */
-	void (*state_changed) (NMVPNConnection *connection,
-	                       NMVPNConnectionState state,
-	                       NMVPNConnectionStateReason reason);
+	void (*vpn_state_changed) (NMVPNConnection *connection,
+	                           NMVPNConnectionState state,
+	                           NMVPNConnectionStateReason reason);
 } NMVPNConnectionClass;
 
 GType nm_vpn_connection_get_type (void);
 
 GObject * nm_vpn_connection_new (DBusGConnection *dbus_connection, const char *path);
 
-NMVPNConnectionState  nm_vpn_connection_get_state  (NMVPNConnection *vpn);
+NMVPNConnectionState  nm_vpn_connection_get_vpn_state  (NMVPNConnection *vpn);
 const char *          nm_vpn_connection_get_banner (NMVPNConnection *vpn);
 
 G_END_DECLS

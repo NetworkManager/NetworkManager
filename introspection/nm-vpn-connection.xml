@@ -20,6 +20,12 @@
     <property name="Devices" type="ao" access="read">
       <tp:docstring>Array of object paths representing devices which are part of this active connection.</tp:docstring>
     </property>
+    <property name="State" type="u" access="read" tp:type="NM_ACTIVE_DEVICE_STATE">
+      <tp:docstring>The state of this active connection.</tp:docstring>
+    </property>
+    <property name="Default" type="b" access="read">
+      <tp:docstring>Whether this active connection is the default connection, i.e. whether it currently owns the default route.</tp:docstring>
+    </property>
   </interface>
 
   <interface name="org.freedesktop.NetworkManager.VPN.Connection">
@@ -27,14 +33,22 @@
       Represents an active connection to a Virtual Private Network.
     </tp:docstring>
 
-    <property name="State" type="u" access="read" tp:type="NM_VPN_CONNECTION_STATE">
-      <tp:docstring>The state of the VPN connection.</tp:docstring>
+    <signal name="PropertiesChanged">
+        <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
+            <tp:docstring>
+                A dictionary mapping property names to variant boxed values
+            </tp:docstring>
+        </arg>
+    </signal>
+
+    <property name="VpnState" type="u" access="read" tp:type="NM_VPN_CONNECTION_STATE">
+      <tp:docstring>The VPN-specific state of the connection.</tp:docstring>
     </property>
     <property name="Banner" type="s" access="read">
       <tp:docstring>The banner string of the VPN connection.</tp:docstring>
     </property>
 
-    <signal name="StateChanged">
+    <signal name="VpnStateChanged">
       <tp:docstring>
         Emitted when the state of the VPN connection has changed.
       </tp:docstring>

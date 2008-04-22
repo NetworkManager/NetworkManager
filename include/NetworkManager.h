@@ -203,5 +203,16 @@ typedef enum
 } NMDeviceState;
 
 
+typedef enum {
+	NM_ACTIVE_CONNECTION_STATE_UNKNOWN = 0,
+
+	/* Indicates the connection is activating */
+	NM_ACTIVE_CONNECTION_STATE_ACTIVATING,
+
+	/* Indicates the connection is currently active */
+	NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
+} NMActiveConnectionState;
+
+
 #endif /* NETWORK_MANAGER_H */
 

@@ -292,10 +292,10 @@ destroy_service (gpointer data)
 }
 
 static void
-connection_state_changed (NMVPNConnection *connection,
-                          NMVPNConnectionState state,
-                          NMVPNConnectionStateReason reason,
-                          gpointer user_data)
+connection_vpn_state_changed (NMVPNConnection *connection,
+                              NMVPNConnectionState state,
+                              NMVPNConnectionStateReason reason,
+                              gpointer user_data)
 {
 	NMVPNServicePrivate *priv = NM_VPN_SERVICE_GET_PRIVATE (user_data);
 
@@ -336,8 +336,8 @@ nm_vpn_service_activate (NMVPNService *service,
 	priv = NM_VPN_SERVICE_GET_PRIVATE (service);
 
 	vpn = nm_vpn_connection_new (connection, act_request, device);
-	g_signal_connect (vpn, "state-changed",
-				   G_CALLBACK (connection_state_changed),
+	g_signal_connect (vpn, "vpn-state-changed",
+				   G_CALLBACK (connection_vpn_state_changed),
 				   service);
 
 	priv->connections = g_slist_prepend (priv->connections, vpn);

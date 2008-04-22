@@ -1,5 +1,42 @@
 2008-04-21  Dan Williams  <dcbw@redhat.com>
 
+	* include/NetworkManager.h
+		- Add NMActiveConnectionState enum
+
+	* introspection/nm-active-connection.xml
+	  introspection/nm-vpn-connection.xml
+		- Add 'State' property for overall active connection state
+		- Add 'Default' property, when True means this active connection
+			has the default route
+		- Add PropertyChanged signals so changes actually go out over the bus
+
+	* src/nm-active-connection.h
+		- Add defines for State & Default properties
+
+	* src/nm-activation-request.c
+		- Add 'state' and 'default' properties, hook up to device 'state-changed'
+			signal to determine active connection state
+
+	* src/vpn-manager/nm-vpn-connection.c
+	  src/vpn-manager/nm-vpn-connection.h
+	  src/vpn-manager/nm-vpn-manager.c
+	  src/vpn-manager/nm-vpn-service.c
+		- Rename old 'state' to 'vpn-state'
+		- Rename nm_vpn_connection_get_state() -> nm_vpn_connection_get_vpn_state()
+		- Add 'state' and 'default' properties, hook up to the vpn connection's
+			'vpn-state-changed' signal
+
+	* libnm-glib/nm-active-connection.c
+	  libnm-glib/nm-active-connection.h
+		- Add new 'state' and 'default' properties and accessors
+
+	* libnm-glib/nm-vpn-connection.c
+	  libnm-glib/nm-vpn-connection.h
+		- Rename old 'state' property to 'vpn-state'
+		- Add new 'state' and 'default' properties and accessors
+
+2008-04-21  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-ip4-config.c
 		- (nm_ip4_config_to_rtnl_addr): fill in the broadcast address if it's
 			not specified (rh #443474)

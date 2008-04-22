@@ -59,6 +59,9 @@ typedef struct {
 	NMDevice *device;
 	gboolean user_requested;
 
+	NMActiveConnectionState state;
+	gboolean is_default;
+
 	char *ac_path;
 } NMActRequestPrivate;
 
@@ -70,10 +73,14 @@ enum {
 	PROP_SHARED_SERVICE_NAME,
 	PROP_SHARED_CONNECTION,
 	PROP_DEVICES,
+	PROP_STATE,
+	PROP_DEFAULT,
 	PROP_VPN,
 
 	LAST_PROP
 };
+
+static void device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data);
 
 
 NMActRequest *
@@ -97,7 +104,12 @@ nm_act_request_new (NMConnection *connection,
 	priv->connection = g_object_ref (connection);
 	if (specific_object)
 		priv->specific_object = g_strdup (specific_object);
+
 	priv->device = NM_DEVICE (device);
+	g_signal_connect (device, "state-changed",
+	                  G_CALLBACK (device_state_changed),
+	                  NM_ACT_REQUEST (object));
+
 	priv->user_requested = user_requested;
 
 	return NM_ACT_REQUEST (object);
@@ -110,6 +122,7 @@ nm_act_request_init (NMActRequest *req)
 	NMDBusManager *dbus_mgr;
 
 	priv->ac_path = nm_active_connection_get_next_object_path ();
+	priv->state = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
 
 	dbus_mgr = nm_dbus_manager_get ();
 	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (dbus_mgr),
@@ -182,16 +195,21 @@ get_property (GObject *object, guint prop_id,
 		nm_active_connection_scope_to_value (priv->shared, value);
 		break;
 	case PROP_SHARED_CONNECTION:
-		if (!priv->shared) {
+		if (priv->shared)
+			g_value_set_boxed (value, nm_connection_get_path (priv->shared));
+		else
 			g_value_set_boxed (value, "/");
-			break;
-		}
-		g_value_set_boxed (value, nm_connection_get_path (priv->shared));
 		break;
 	case PROP_DEVICES:
 		devices = g_ptr_array_sized_new (1);
 		g_ptr_array_add (devices, g_strdup (nm_device_get_udi (priv->device)));
 		g_value_take_boxed (value, devices);
+		break;
+	case PROP_STATE:
+		g_value_set_uint (value, priv->state);
+		break;
+	case PROP_DEFAULT:
+		g_value_set_boolean (value, priv->is_default);
 		break;
 	case PROP_VPN:
 		g_value_set_boolean (value, FALSE);
@@ -258,6 +276,22 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 							  DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
 							  G_PARAM_READABLE));
 	g_object_class_install_property
+		(object_class, PROP_STATE,
+		 g_param_spec_uint (NM_ACTIVE_CONNECTION_STATE,
+							  "State",
+							  "State",
+							  NM_ACTIVE_CONNECTION_STATE_UNKNOWN,
+							  NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
+							  NM_ACTIVE_CONNECTION_STATE_UNKNOWN,
+							  G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_DEFAULT,
+		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_DEFAULT,
+							   "Default",
+							   "Is the default active connection",
+							   FALSE,
+							   G_PARAM_READABLE));
+	g_object_class_install_property
 		(object_class, PROP_VPN,
 		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_VPN,
 							   "VPN",
@@ -291,6 +325,35 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 								    G_STRUCT_OFFSET (NMActRequestClass, properties_changed));
 
 	nm_active_connection_install_type_info (object_class);
+}
+
+static void
+device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
+{
+	NMActRequest *self = NM_ACT_REQUEST (user_data);
+	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
+	NMActiveConnectionState new_state;
+
+	/* Set NMActiveConnection state based on the device's state */
+	switch (state) {
+	case NM_DEVICE_STATE_PREPARE:
+	case NM_DEVICE_STATE_CONFIG:
+	case NM_DEVICE_STATE_NEED_AUTH:
+	case NM_DEVICE_STATE_IP_CONFIG:
+		new_state = NM_ACTIVE_CONNECTION_STATE_ACTIVATING;
+		break;
+	case NM_DEVICE_STATE_ACTIVATED:
+		new_state = NM_ACTIVE_CONNECTION_STATE_ACTIVATED;
+		break;
+	default:
+		new_state = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
+		break;
+	}
+
+	if (new_state != priv->state) {
+		priv->state = new_state;
+		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_STATE);
+	}
 }
 
 typedef struct GetSecretsInfo {

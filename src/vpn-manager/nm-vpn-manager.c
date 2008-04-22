@@ -120,10 +120,10 @@ find_active_vpn_connection_by_connection (NMVPNManager *manager, NMConnection *c
 }
 
 static void
-connection_state_changed (NMVPNConnection *connection,
-                          NMVPNConnectionState state,
-                          NMVPNConnectionStateReason reason,
-                          gpointer user_data)
+connection_vpn_state_changed (NMVPNConnection *connection,
+                              NMVPNConnectionState state,
+                              NMVPNConnectionStateReason reason,
+                              gpointer user_data)
 {
 	NMVPNManager *manager = NM_VPN_MANAGER (user_data);
 
@@ -188,8 +188,8 @@ nm_vpn_manager_activate_connection (NMVPNManager *manager,
 		vpn = nm_vpn_service_activate (service, connection, act_request, device, error);
 		if (vpn) {
 			path = (char *) nm_vpn_connection_get_active_connection_path (vpn);
-			g_signal_connect (vpn, "state-changed",
-			                  G_CALLBACK (connection_state_changed),
+			g_signal_connect (vpn, "vpn-state-changed",
+			                  G_CALLBACK (connection_vpn_state_changed),
 			                  manager);
 		}
 	} else {

@@ -31,6 +31,8 @@
 #define NM_ACTIVE_CONNECTION_SHARED_SERVICE_NAME "shared-service-name"
 #define NM_ACTIVE_CONNECTION_SHARED_CONNECTION "shared-connection"
 #define NM_ACTIVE_CONNECTION_DEVICES "devices"
+#define NM_ACTIVE_CONNECTION_STATE "state"
+#define NM_ACTIVE_CONNECTION_DEFAULT "default"
 #define NM_ACTIVE_CONNECTION_VPN "vpn"
 
 char *nm_active_connection_get_next_object_path (void);

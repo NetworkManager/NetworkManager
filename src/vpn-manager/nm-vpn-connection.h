@@ -36,7 +36,7 @@
 #define NM_IS_VPN_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_VPN_CONNECTION))
 #define NM_VPN_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_VPN_CONNECTION, NMVPNConnectionClass))
 
-#define NM_VPN_CONNECTION_STATE "state"
+#define NM_VPN_CONNECTION_VPN_STATE "vpn-state"
 #define NM_VPN_CONNECTION_BANNER "banner"
 
 typedef struct {
@@ -47,9 +47,9 @@ typedef struct {
 	GObjectClass parent;
 
 	/* Signals */
-	void (*state_changed) (NMVPNConnection *connection,
-	                       NMVPNConnectionState state,
-	                       NMVPNConnectionStateReason reason);
+	void (*vpn_state_changed) (NMVPNConnection *connection,
+	                           NMVPNConnectionState state,
+	                           NMVPNConnectionStateReason reason);
 
 	void (*properties_changed) (NMVPNConnection *connection, GHashTable *properties);
 } NMVPNConnectionClass;
@@ -64,7 +64,7 @@ void                 nm_vpn_connection_activate        (NMVPNConnection *connect
 NMConnection *       nm_vpn_connection_get_connection  (NMVPNConnection *connection);
 const char *         nm_vpn_connection_get_active_connection_path (NMVPNConnection *connection);
 const char *         nm_vpn_connection_get_name        (NMVPNConnection *connection);
-NMVPNConnectionState nm_vpn_connection_get_state       (NMVPNConnection *connection);
+NMVPNConnectionState nm_vpn_connection_get_vpn_state   (NMVPNConnection *connection);
 const char *         nm_vpn_connection_get_banner      (NMVPNConnection *connection);
 void                 nm_vpn_connection_fail            (NMVPNConnection *connection,
                                                         NMVPNConnectionStateReason reason);

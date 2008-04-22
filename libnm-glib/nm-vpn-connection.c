@@ -36,11 +36,11 @@ G_DEFINE_TYPE (NMVPNConnection, nm_vpn_connection, NM_TYPE_ACTIVE_CONNECTION)
 typedef struct {
 	DBusGProxy *proxy;
 	char *banner;
-	NMVPNConnectionState state;
+	NMVPNConnectionState vpn_state;
 } NMVPNConnectionPrivate;
 
 enum {
-	STATE_CHANGED,
+	VPN_STATE_CHANGED,
 
 	LAST_SIGNAL
 };
@@ -68,7 +68,7 @@ nm_vpn_connection_get_banner (NMVPNConnection *vpn)
 	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), NULL);
 
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn);
-	if (priv->state != NM_VPN_CONNECTION_STATE_ACTIVATED)
+	if (priv->vpn_state != NM_VPN_CONNECTION_STATE_ACTIVATED)
 		return NULL;
 
 	if (!priv->banner) {
@@ -84,33 +84,33 @@ nm_vpn_connection_get_banner (NMVPNConnection *vpn)
 }
 
 NMVPNConnectionState
-nm_vpn_connection_get_state (NMVPNConnection *vpn)
+nm_vpn_connection_get_vpn_state (NMVPNConnection *vpn)
 {
 	NMVPNConnectionPrivate *priv;
 
 	g_return_val_if_fail (NM_IS_VPN_CONNECTION (vpn), NM_VPN_CONNECTION_STATE_UNKNOWN);
 
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn);
-	if (priv->state == NM_VPN_CONNECTION_STATE_UNKNOWN) {
-		priv->state = nm_object_get_uint_property (NM_OBJECT (vpn),
+	if (priv->vpn_state == NM_VPN_CONNECTION_STATE_UNKNOWN) {
+		priv->vpn_state = nm_object_get_uint_property (NM_OBJECT (vpn),
 		                                           NM_DBUS_INTERFACE_VPN_CONNECTION,
-		                                           "State");
+		                                           "VpnState");
 	}
-	return priv->state;
+	return priv->vpn_state;
 }
 
 static void
-state_changed_proxy (DBusGProxy *proxy,
-                     NMVPNConnectionState state,
-                     NMVPNConnectionStateReason reason,
-                     gpointer user_data)
+vpn_state_changed_proxy (DBusGProxy *proxy,
+                         NMVPNConnectionState vpn_state,
+                         NMVPNConnectionStateReason reason,
+                         gpointer user_data)
 {
 	NMVPNConnection *connection = NM_VPN_CONNECTION (user_data);
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
-	if (priv->state != state) {
-		priv->state = state;
-		g_signal_emit (connection, signals[STATE_CHANGED], 0, state, reason);
+	if (priv->vpn_state != vpn_state) {
+		priv->vpn_state = vpn_state;
+		g_signal_emit (connection, signals[VPN_STATE_CHANGED], 0, vpn_state, reason);
 	}
 }
 
@@ -121,7 +121,7 @@ nm_vpn_connection_init (NMVPNConnection *connection)
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
-	priv->state = NM_VPN_CONNECTION_STATE_UNKNOWN;
+	priv->vpn_state = NM_VPN_CONNECTION_STATE_UNKNOWN;
 }
 
 static GObject*
@@ -149,10 +149,10 @@ constructor (GType type,
 	                                   G_TYPE_NONE,
 	                                   G_TYPE_UINT, G_TYPE_UINT,
 	                                   G_TYPE_INVALID);
-	dbus_g_proxy_add_signal (priv->proxy, "StateChanged", G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INVALID);
+	dbus_g_proxy_add_signal (priv->proxy, "VpnStateChanged", G_TYPE_UINT, G_TYPE_UINT, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->proxy,
-						    "StateChanged",
-						    G_CALLBACK (state_changed_proxy),
+						    "VpnStateChanged",
+						    G_CALLBACK (vpn_state_changed_proxy),
 						    object,
 						    NULL);
 	return G_OBJECT (object);
@@ -183,11 +183,11 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 	object_class->finalize = finalize;
 
 	/* signals */
-	signals[STATE_CHANGED] =
-		g_signal_new ("state-changed",
+	signals[VPN_STATE_CHANGED] =
+		g_signal_new ("vpn-state-changed",
 				    G_OBJECT_CLASS_TYPE (object_class),
 				    G_SIGNAL_RUN_FIRST,
-				    G_STRUCT_OFFSET (NMVPNConnectionClass, state_changed),
+				    G_STRUCT_OFFSET (NMVPNConnectionClass, vpn_state_changed),
 				    NULL, NULL,
 				    nm_marshal_VOID__UINT_UINT,
 				    G_TYPE_NONE, 2,

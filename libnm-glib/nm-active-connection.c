@@ -29,6 +29,8 @@ typedef struct {
 	char *shared_service_name;
 	char *shared_connection;
 	GPtrArray *devices;
+	NMActiveConnectionState state;
+	gboolean is_default;
 } NMActiveConnectionPrivate;
 
 enum {
@@ -39,6 +41,8 @@ enum {
 	PROP_SHARED_SERVICE_NAME,
 	PROP_SHARED_CONNECTION,
 	PROP_DEVICES,
+	PROP_STATE,
+	PROP_DEFAULT,
 
 	LAST_PROP
 };
@@ -49,6 +53,8 @@ enum {
 #define DBUS_PROP_SHARED_SERVICE_NAME "SharedServiceName"
 #define DBUS_PROP_SHARED_CONNECTION "SharedConnection"
 #define DBUS_PROP_DEVICES "Devices"
+#define DBUS_PROP_STATE "State"
+#define DBUS_PROP_DEFAULT "Default"
 
 GObject *
 nm_active_connection_new (DBusGConnection *connection, const char *path)
@@ -194,6 +200,40 @@ nm_active_connection_get_devices (NMActiveConnection *connection)
 	return handle_ptr_array_return (priv->devices);
 }
 
+NMActiveConnectionState
+nm_active_connection_get_state (NMActiveConnection *connection)
+{
+	NMActiveConnectionPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NM_ACTIVE_CONNECTION_STATE_UNKNOWN);
+
+	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
+	if (!priv->state) {
+		priv->state = nm_object_get_uint_property (NM_OBJECT (connection),
+		                                           NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
+		                                           DBUS_PROP_STATE);
+	}
+
+	return priv->state;
+}
+
+gboolean
+nm_active_connection_get_default (NMActiveConnection *connection)
+{
+	NMActiveConnectionPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), FALSE);
+
+	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
+	if (!priv->is_default) {
+		priv->is_default = nm_object_get_boolean_property (NM_OBJECT (connection),
+		                                                   NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
+		                                                   DBUS_PROP_DEFAULT);
+	}
+
+	return priv->is_default;
+}
+
 static void
 nm_active_connection_init (NMActiveConnection *ap)
 {
@@ -261,6 +301,12 @@ get_property (GObject *object,
 	case PROP_DEVICES:
 		g_value_set_boxed (value, nm_active_connection_get_devices (self));
 		break;
+	case PROP_STATE:
+		g_value_set_uint (value, nm_active_connection_get_state (self));
+		break;
+	case PROP_DEFAULT:
+		g_value_set_boolean (value, nm_active_connection_get_default (self));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -303,6 +349,8 @@ register_for_property_changed (NMActiveConnection *connection)
 		{ NM_ACTIVE_CONNECTION_SHARED_SERVICE_NAME, nm_object_demarshal_generic, &priv->shared_service_name },
 		{ NM_ACTIVE_CONNECTION_SHARED_CONNECTION,   nm_object_demarshal_generic, &priv->shared_connection },
 		{ NM_ACTIVE_CONNECTION_DEVICES,             demarshal_devices,           &priv->devices },
+		{ NM_ACTIVE_CONNECTION_STATE,               nm_object_demarshal_generic, &priv->state },
+		{ NM_ACTIVE_CONNECTION_DEFAULT,             nm_object_demarshal_generic, &priv->is_default },
 		{ NULL },
 	};
 
@@ -399,4 +447,22 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 						       "Devices",
 						       NM_TYPE_OBJECT_ARRAY,
 						       G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_STATE,
+		 g_param_spec_uint (NM_ACTIVE_CONNECTION_STATE,
+							  "State",
+							  "State",
+							  NM_ACTIVE_CONNECTION_STATE_UNKNOWN,
+							  NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
+							  NM_ACTIVE_CONNECTION_STATE_UNKNOWN,
+							  G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_DEFAULT,
+		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_DEFAULT,
+							   "Default",
+							   "Is the default active connection",
+							   FALSE,
+							   G_PARAM_READABLE));
 }

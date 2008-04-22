@@ -20,6 +20,38 @@
     <property name="Devices" type="ao" access="read">
       <tp:docstring>Array of object paths representing devices which are part of this active connection.</tp:docstring>
     </property>
+    <property name="State" type="u" access="read" tp:type="NM_ACTIVE_DEVICE_STATE">
+      <tp:docstring>The state of this active connection.</tp:docstring>
+    </property>
+    <property name="Default" type="b" access="read">
+      <tp:docstring>Whether this active connection is the default connection, i.e. whether it currently owns the default route.</tp:docstring>
+    </property>
+
+    <signal name="PropertiesChanged">
+        <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
+            <tp:docstring>
+                A dictionary mapping property names to variant boxed values
+            </tp:docstring>
+        </arg>
+    </signal>
+
+    <tp:enum name="NM_ACTIVE_CONNECTION_STATE" type="u">
+      <tp:enumvalue suffix="UNKNOWN" value="0">
+        <tp:docstring>
+          The active connection is in an unknown state.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="ACTIVATING" value="1">
+        <tp:docstring>
+          The connection is activating.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="ACTIVATED" value="2">
+        <tp:docstring>
+          The connection is activated.
+        </tp:docstring>
+      </tp:enumvalue>
+    </tp:enum>
   </interface>
 </node>
 
