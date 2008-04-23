@@ -2,6 +2,7 @@
 
 #include <sys/stat.h>
 #include <unistd.h>
+#include <errno.h>
 #include <dbus/dbus-glib.h>
 #include <nm-setting.h>
 #include <nm-setting-connection.h>
@@ -142,10 +143,13 @@ write_connection (NMConnection *connection)
 		filename = g_build_filename (KEYFILE_DIR, s_con->id, NULL);
 		g_file_set_contents (filename, data, len, &err);
 		chmod (filename, S_IRUSR | S_IWUSR);
-		chown (filename, 0, 0);
+		if (chown (filename, 0, 0) < 0) {
+			g_warning ("Error chowning '%s': %d", filename, errno);
+			unlink (filename);
+		} else
+			success = TRUE;
 
 		g_free (filename);
-		success = TRUE;
 	}
 
 	if (err) {
