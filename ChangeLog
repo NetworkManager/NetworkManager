@@ -1,3 +1,10 @@
+2008-04-22  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerPolicy.c
+		- (update_routing_and_dns): when checking for a gateway, look at the
+			composite IP4 config, not the connection's ip4-config setting, which
+			doesn't include DHCP-returned information
+
 2008-04-22  Tambet Ingo  <tambet@gmail.com>
 
 	Implement GKeyFile system settings plugin.

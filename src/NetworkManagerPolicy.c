@@ -126,11 +126,15 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 		NMDevice *dev = NM_DEVICE (iter->data);
 		NMActRequest *req;
 		NMConnection *connection;
+		NMIP4Config *ip4_config;
 		NMSettingIP4Config *s_ip4;
 		guint32 prio;
 		
-		if (   (nm_device_get_state (dev) != NM_DEVICE_STATE_ACTIVATED)
-		    || !nm_device_get_ip4_config (dev))
+		if (nm_device_get_state (dev) != NM_DEVICE_STATE_ACTIVATED)
+			continue;
+
+		ip4_config = nm_device_get_ip4_config (dev);
+		if (!ip4_config)
 			continue;
 
 		req = nm_device_get_act_request (dev);
@@ -138,28 +142,14 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 		connection = nm_act_request_get_connection (req);
 		g_assert (connection);
 
+		/* Never set the default route through an IPv4LL-addressed device */
 		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
-		if (s_ip4) {
-			GSList *addr_iter;
-			gboolean have_gateway = FALSE;
+		if (s_ip4 && !strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP))
+			continue;
 
-			/* Never set the default route through an IPv4LL-addressed device */
-			if (!strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP))
-				continue;
-
-			/* Never set the default route through a device that doesn't have a gateway */
-			for (addr_iter = s_ip4->addresses; addr_iter; addr_iter = g_slist_next (addr_iter)) {
-				NMSettingIP4Address *addr = (NMSettingIP4Address *) addr_iter->data;
-
-				if (addr->gateway) {
-					have_gateway = TRUE;
-					break;
-				}
-			}
-
-			if (!have_gateway)
-				continue;
-		}
+		/* FIXME: handle more than one IP address */
+		if (!nm_ip4_config_get_gateway (ip4_config))
+			continue;
 
 		prio = get_device_priority (dev);
 		if (prio > best_prio) {
