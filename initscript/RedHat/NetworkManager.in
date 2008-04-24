@@ -2,7 +2,7 @@
 #
 # NetworkManager:   NetworkManager daemon
 #
-# chkconfig: - 98 02
+# chkconfig: - 27 73
 # description:  This is a daemon for automatically switching network \
 #               connections to the best available connection.
 #
@@ -10,10 +10,10 @@
 # pidfile: /var/run/NetworkManager/NetworkManager.pid
 #
 ### BEGIN INIT INFO
-# Provides: network_manager
-# Required-Start: $local_fs messagebus haldaemon
-# Required-Stop: $local_fs messagebus haldaemon
-# Default-Start:  3 4 5
+# Provides: network_manager $network
+# Required-Start: messagebus haldaemon
+# Required-Stop: messagebus haldaemon
+# Default-Start: 2 3 4 5
 # Default-Stop: 0 1 6
 # Short-Description: start and stop NetworkManager
 # Description: NetworkManager is a tool for easily managing network connections
@@ -43,8 +43,10 @@ RETVAL=0
 
 start()
 {
-	echo $"Setting network parameters... "
+	echo -n $"Setting network parameters... "
 	sysctl -e -p /etc/sysctl.conf >/dev/null 2>&1
+	success
+	echo
 
 	echo -n $"Starting NetworkManager daemon: "
 	daemon --check $servicename $processname --pid-file=$pidfile

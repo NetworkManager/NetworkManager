@@ -2,7 +2,7 @@
 #
 # NetworkManager:   NetworkManagerDispatcher daemon
 #
-# chkconfig: - 98 02
+# chkconfig: - 28 72
 # description: This daemon automatically runs scripts when NetworkManager \
 #              changes the network state.
 #
@@ -11,9 +11,9 @@
 #
 ### BEGIN INIT INFO
 # Provides: network_manager_dispatcher
-# Required-Start: $local_fs messagebus
-# Required-Stop: $local_fs messagebus
-# Default-Start:  3 4 5
+# Required-Start: network_manager messagebus
+# Required-Stop: network_manager messagebus
+# Default-Start: 2 3 4 5
 # Default-Stop: 0 1 6
 # Short-Description: start and stop NetworkManagerDispatcher
 # Description: NetworkManagerDispatcher is a tool for running scripts triggered \
