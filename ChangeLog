@@ -1,3 +1,15 @@
+2008-04-24  Dan Williams  <dcbw@redhat.com>
+
+	* dispatcher-daemon/NetworkManagerDispatcher.c
+		- (nmd_execute_scripts): execute scripts in order as sorted by strcmp()
+
+2008-04-24  Dan Williams  <dcbw@redhat.com>
+
+	* initscript/RedHat/NetworkManager.in
+	  initscript/RedHat/NetworkManagerDispatcher.in
+		- Be active at runlevel 2
+		- Adjust priorities earlier
+
 2008-04-22  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerPolicy.c

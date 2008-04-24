@@ -102,6 +102,28 @@ nmd_is_valid_filename (const char *file_name)
 	return TRUE;
 }
 
+static gint
+sort_files (gconstpointer a, gconstpointer b)
+{
+	char *a_base = NULL, *b_base = NULL;
+	int ret = 0;
+
+	if (a && !b)
+		return 1;
+	if (!a && !b)
+		return 0;
+	if (!a && b)
+		return -1;
+
+	a_base = g_path_get_basename (a);
+	b_base = g_path_get_basename (b);
+
+	ret = strcmp (a_base, b_base);
+
+	g_free (a_base);
+	g_free (b_base);
+	return ret;
+}
 
 /*
  * nmd_execute_scripts
@@ -112,49 +134,52 @@ nmd_is_valid_filename (const char *file_name)
 static void
 nmd_execute_scripts (NMDeviceState state, const char *iface_name)
 {
-	GDir *		dir;
-	const char *	file_name;
-	const char *	char_act;
+	GDir *dir;
+	const char *filename;
+	char *act = NULL;
+	GSList *scripts = NULL, *iter;
+	GError *error = NULL;
 
 	if (state == NM_DEVICE_STATE_ACTIVATED)
-		char_act = "up";
+		act = "up";
 	else if (state == NM_DEVICE_STATE_DISCONNECTED)
-		char_act = "down";
+		act = "down";
 	else
 		return;
 
-	nm_info ("Device %s is now %s.", iface_name, char_act);
+	nm_info ("Device %s is now %s.", iface_name, act);
 
-	if (!(dir = g_dir_open (NM_SCRIPT_DIR, 0, NULL)))
-	{
-		nm_warning ("nmd_execute_scripts(): opendir() could not open '" NM_SCRIPT_DIR "'.  errno = %d", errno);
+	if (!(dir = g_dir_open (NM_SCRIPT_DIR, 0, &error))) {
+		nm_warning ("g_dir_open() could not open '" NM_SCRIPT_DIR "'.  '%s'",
+		            error->message);
+		g_error_free (error);
 		return;
 	}
 
-	while ((file_name = g_dir_read_name (dir)))
-	{
-		char *file_path = g_build_filename (NM_SCRIPT_DIR, file_name, NULL);
+	while ((filename = g_dir_read_name (dir))) {
+		char *file_path = g_build_filename (NM_SCRIPT_DIR, filename, NULL);
 		struct stat	s;
 
-		if (nmd_is_valid_filename(file_name) && (stat (file_path, &s) == 0))
-		{
-			if (nmd_permission_check (&s))
-			{
-				char *cmd;
-				int ret;
+		if (nmd_is_valid_filename(filename) && !stat (file_path, &s) && nmd_permission_check (&s))
+			scripts = g_slist_insert_sorted (scripts, file_path, sort_files);
+		else
+			g_free (file_path);
+	}
+	g_dir_close (dir);
 
-				cmd = g_strdup_printf ("%s %s %s", file_path, iface_name, char_act);
-				ret = system (cmd);
-				if (ret == -1)
-					nm_warning ("nmd_execute_scripts(): system() failed with errno = %d", errno);
-				g_free (cmd);
-			}
-		}
+	for (iter = scripts; iter; iter = g_slist_next (iter)) {
+		char *cmd;
+		int ret;
 
-		g_free (file_path);
+		cmd = g_strdup_printf ("%s %s %s", (char *) iter->data, iface_name, act);
+		ret = system (cmd);
+		if (ret == -1)
+			nm_warning ("system() failed with errno = %d", errno);
+		g_free (cmd);
 	}
 
-	g_dir_close (dir);
+	g_slist_foreach (scripts, (GFunc) g_free, NULL);
+	g_slist_free (scripts);
 }
 
 static void
