@@ -55,6 +55,9 @@ static gboolean impl_device_get_access_points (NMDevice80211Wireless *device,
 
 static guint32 nm_device_802_11_wireless_get_frequency (NMDevice80211Wireless *self);
 
+static void nm_device_802_11_wireless_set_ssid (NMDevice80211Wireless *self,
+                                                const GByteArray * ssid);
+
 #if DEBUG
 static void nm_device_802_11_wireless_ap_list_print (NMDevice80211Wireless *self);
 #endif
@@ -1316,9 +1319,8 @@ out:
 /*
  * nm_device_802_11_wireless_set_ssid
  *
- * If a device is wireless, set the SSID that it should use.
  */
-void
+static void
 nm_device_802_11_wireless_set_ssid (NMDevice80211Wireless *self,
                                     const GByteArray * ssid)
 {

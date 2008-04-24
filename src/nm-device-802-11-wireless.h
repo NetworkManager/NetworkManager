@@ -85,9 +85,6 @@ NMDevice80211Wireless *nm_device_802_11_wireless_new (const char *udi,
 										    const char *driver,
 										    gboolean managed);
 
-void			nm_device_802_11_wireless_set_ssid (NMDevice80211Wireless *self,
-										  const GByteArray * ssid);
-
 void nm_device_802_11_wireless_get_address (NMDevice80211Wireless *dev,
 								   struct ether_addr *addr);
 
