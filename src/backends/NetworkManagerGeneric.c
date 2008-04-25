@@ -52,39 +52,6 @@ void nm_generic_init (void)
 }
 
 /*
- * nm_generic_replace_default_route
- *
- * Replace default route with one via the current device
- *
- */
-void
-nm_generic_device_replace_default_route (const char *iface, guint32 gw, guint32 mss)
-{
-	char *buf, *addr_str = NULL, *mss_str = NULL;
-
-	g_return_if_fail (iface != NULL);
-
-	if (gw > 0) {
-		struct in_addr addr = { .s_addr = gw };
-		char buf2[INET_ADDRSTRLEN + 1];
-
-		memset (buf2, 0, sizeof (buf2));
-		inet_ntop (AF_INET, &addr, buf2, INET_ADDRSTRLEN);	
-		addr_str = g_strdup_printf ("via %s", buf2);
-	}
-
-	if (mss > 0)
-		mss_str = g_strdup_printf ("advmss %d", mss);
-
-	buf = g_strdup_printf (IP_BINARY_PATH" route replace default %s %s dev %s",
-	                       addr_str ? addr_str : "",
-	                       mss_str ? mss_str : "",
-	                       iface);
-	nm_spawn_process (buf);
-	g_free (buf);
-}
-
-/*
  * nm_generic_device_flush_ip4_addresses
  *
  * Flush all network addresses associated with a network device

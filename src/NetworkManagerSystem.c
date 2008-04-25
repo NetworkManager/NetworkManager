@@ -347,7 +347,7 @@ nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
 	nm_system_device_flush_ip4_routes_with_iface (iface);
 
 	if (g_slist_length (routes) == 0) {
-		nm_system_device_replace_default_route (iface, 0, 0);
+		nm_system_device_replace_default_ip4_route (iface, 0, 0);
 	} else {
 		GSList *iter;
 
@@ -496,8 +496,61 @@ void nm_system_device_add_ip4_route_via_device_with_iface (const char *iface, co
 	nl_addr_put (dst);
 
 	err = rtnl_route_add (nlh, route, 0);
-	if (err)
-		nm_warning ("rtnl_route_add() returned error %s (%d)", strerror (err), err);
+	if (err) {
+		nm_warning ("rtnl_route_add() returned error %s (%d)\n%s",
+		            strerror (err), err, nl_geterror());
+	}
+
+out:
+	rtnl_route_put (route);
+}
+
+/*
+ * nm_system_replace_default_ip4_route
+ *
+ * Replace default IPv4 route with one via the current device
+ *
+ */
+void
+nm_system_device_replace_default_ip4_route (const char *iface, guint32 gw, guint32 mss)
+{
+	struct rtnl_route * route;
+	struct nl_handle  * nlh;
+	struct nl_addr    * gw_addr;
+	int iface_idx, err;
+
+	nlh = nm_netlink_get_default_handle ();
+	g_return_if_fail (nlh != NULL);
+
+	route = rtnl_route_alloc();
+	g_return_if_fail (route != NULL);
+
+	rtnl_route_set_scope (route, RT_SCOPE_UNIVERSE);
+
+	iface_idx = nm_netlink_iface_to_index (iface);
+	if (iface_idx < 0)
+		goto out;
+	rtnl_route_set_oif (route, iface_idx);
+
+	/* Build up gateway address; a gateway of 0 (used in e.g. PPP links) means
+	 * that all packets should be sent to the gateway since it's a point-to-point
+	 * link and has no broadcast segment really.
+	 */
+	if (!(gw_addr = nl_addr_build (AF_INET, &gw, sizeof (gw))))
+		goto out;
+	rtnl_route_set_gateway (route, gw_addr);
+	nl_addr_put (gw_addr);
+
+	if (mss > 0) {
+		if (rtnl_route_set_metric (route, RTAX_ADVMSS, mss) < 0)
+			goto out;
+	}
+
+	err = rtnl_route_add (nlh, route, NLM_F_REPLACE);
+	if (err) {
+		nm_warning ("rtnl_route_add() returned error %s (%d)\n%s",
+		            strerror (err), err, nl_geterror());
+	}
 
 out:
 	rtnl_route_put (route);

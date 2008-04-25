@@ -3,6 +3,30 @@
 	Patch from Benoit Boissinot <bboissin+networkmanager@gmail.com>
 
 	* src/NetworkManagerSystem.c
+		- (nm_system_device_replace_default_ip4_route): new function; a libnl
+			implementation of nm_system_device_replace_default_route()
+
+	* src/NetworkManagerPolicy.c
+		- (update_default_route): use nm_system_device_replace_default_ip4_route()
+
+	* src/backends/NetworkManagerArch.c
+	  src/backends/NetworkManagerDebian.c
+	  src/backends/NetworkManagerFrugalware.c
+	  src/backends/NetworkManagerGeneric.c
+	  src/backends/NetworkManagerGeneric.h
+	  src/backends/NetworkManagerGentoo.c
+	  src/backends/NetworkManagerMandriva.c
+	  src/backends/NetworkManagerPaldo.c
+	  src/backends/NetworkManagerRedHat.c
+	  src/backends/NetworkManagerSlackware.c
+	  src/backends/NetworkManagerSuSE.c
+		- (nm_system_device_replace_default_route): remove
+
+2008-04-25  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Benoit Boissinot <bboissin+networkmanager@gmail.com>
+
+	* src/NetworkManagerSystem.c
 		- (validate_ip4_route): remove; use nl_addr_parse() instead
 		- (nm_system_device_add_ip4_route_via_device_with_iface): new function,
 			replace nm_system_device_add_route_via_device_with_iface() in the

@@ -83,12 +83,12 @@ update_default_route (NMPolicy *policy, NMDevice *new)
 	   a serial device with ppp interface, so route all the traffic to it. */
 	ip_iface = nm_device_get_ip_iface (new);
 	if (strcmp (ip_iface, nm_device_get_iface (new))) {
-		nm_system_device_replace_default_route (ip_iface, 0, 0);
+		nm_system_device_replace_default_ip4_route (ip_iface, 0, 0);
 	} else {
 		NMIP4Config *config;
 
 		config = nm_device_get_ip4_config (new);
-		nm_system_device_replace_default_route (ip_iface, nm_ip4_config_get_gateway (config),
+		nm_system_device_replace_default_ip4_route (ip_iface, nm_ip4_config_get_gateway (config),
 		                                        nm_ip4_config_get_mss (config));
 	}
 }

@@ -158,22 +158,6 @@ void nm_system_restart_mdns_responder (void)
 {
 }
 
-
-/*
- * nm_system_device_replace_default_route
- *
- * Add default route to the given device
- *
- */
-void
-nm_system_device_replace_default_route (const char *iface,
-                                        guint32 gw,
-                                        guint32 mss)
-{
-	nm_generic_device_replace_default_route (iface, gw, mss);
-}
- 
- 
 /*
  * nm_system_flush_loopback_routes
  *

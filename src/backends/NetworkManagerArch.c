@@ -68,20 +68,6 @@ void nm_system_init (void)
 }
 
 /*
- * nm_system_device_replace_default_route
- *
- * Add default route to the given device
- *
- */
-void
-nm_system_device_replace_default_route (const char *iface,
-                                        guint32 gw,
-                                        guint32 mss)
-{
-	nm_generic_device_replace_default_route (iface, gw, mss);
-}
-
-/*
  * nm_system_device_flush_ip4_addresses
  *
  * Flush all network addresses associated with a network device

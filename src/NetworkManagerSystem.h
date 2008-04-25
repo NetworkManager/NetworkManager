@@ -38,7 +38,7 @@ gboolean		nm_system_device_has_active_routes			(NMDevice *dev);
 void			nm_system_device_flush_ip4_routes				(NMDevice *dev);
 void			nm_system_device_flush_ip4_routes_with_iface	(const char *iface);
 
-void			nm_system_device_replace_default_route      (const char *iface,
+void			nm_system_device_replace_default_ip4_route   (const char *iface,
                                                              guint32 gw,
                                                              guint32 mss);
 
