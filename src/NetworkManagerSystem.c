@@ -52,7 +52,11 @@
 #include "nm-utils.h"
 #include "nm-netlink.h"
 
+/* Because of a bug in libnl, rtnl.h should be included before route.h */
+#include <netlink/route/rtnl.h>
+
 #include <netlink/route/addr.h>
+#include <netlink/route/route.h>
 #include <netlink/netlink.h>
 #include <netlink/utils.h>
 #include <netlink/route/link.h>
@@ -284,83 +288,6 @@ out:
 	return success;
 }
 
-
-/*
- * validate_ip4_route
- *
- * Ensure that IP4 routes are in the correct format
- *
- */
-static char *validate_ip4_route (const char *route)
-{
-	char *		ret = NULL;
-	char *		temp = NULL;
-	int			slash_pos = -1;
-	char *		p = NULL;
-	int			len, i;
-	int			dot_count = 0;
-	gboolean		have_slash = FALSE;
-	struct in_addr	addr;
-
-	g_return_val_if_fail (route != NULL, NULL);
-
-	len = strlen (route);
-	/* Minimum length, ie 1.1.1.1/8 */
-	if (len < 9)
-		return NULL;
-
-	for (i = 0; i < len; i++)
-	{
-		/* Ensure there is only one slash */
-		if (route[i] == '/')
-		{
-			if (have_slash)
-				goto out;
-
-			have_slash = TRUE;
-			slash_pos = i;
-			continue;
-		}
-
-		if (route[i] == '.')
-		{
-			if (dot_count >= 4)
-				goto out;
-
-			dot_count++;
-			continue;
-		}
-
-		if (!isdigit (route[i]))
-			goto out;
-	}
-
-	/* Make sure there is at least one slash and 3 dots */
-	if (!have_slash || !slash_pos || (dot_count != 3))
-		goto out;
-
-	/* Valid IP address part */
-	temp = g_strdup (route);
-	temp[slash_pos] = '\0';
-	memset (&addr, 0, sizeof (struct in_addr));
-	if (inet_aton (temp, &addr) == 0)
-		goto out;
-
-	/* Ensure the network # is valid */
-	p = temp + slash_pos + 1;
-	i = (int) strtol (p, NULL, 10);
-	if ((i < 0) || (i > 32))
-		goto out;
-
-	/* Success! */
-	ret = g_strdup (route);
-
-out:
-	g_free (temp);
-	return ret;
-}
-
-
 /*
  * nm_system_vpn_device_set_from_ip4_config
  *
@@ -424,22 +351,8 @@ nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
 	} else {
 		GSList *iter;
 
-		for (iter = routes; iter; iter = iter->next) {
-			char *valid_ip4_route;
-
-			/* Make sure the route is valid, otherwise it's a security risk as the route
-			 * text is simply taken from the user, and passed directly to system().  If
-			 * we did not check the route, think of:
-			 *
-			 *     system("/sbin/ip route add `rm -rf /` dev eth0")
-			 *
-			 * where `rm -rf /` was the route text.  As UID 0 (root), we have to be careful.
-			 */
-			if ((valid_ip4_route = validate_ip4_route ((char *) iter->data))) {
-				nm_system_device_add_route_via_device_with_iface (iface, valid_ip4_route);
-				g_free (valid_ip4_route);
-			}
-		}
+		for (iter = routes; iter; iter = iter->next)
+			nm_system_device_add_ip4_route_via_device_with_iface (iface, (char *) iter->data);
 	}
 
 out:
@@ -553,5 +466,40 @@ nm_system_device_set_mtu (const char *iface, guint32 mtu)
 	return success;
 }
 
+/*
+ * nm_system_device_add_ip4_route_via_device_with_iface
+ *
+ * Add route to the given device
+ *
+ */
+void nm_system_device_add_ip4_route_via_device_with_iface (const char *iface, const char *addr)
+{
+	struct rtnl_route *route;
+	struct nl_handle *nlh;
+	struct nl_addr *dst;
+	int iface_idx, err;
 
+	nlh = nm_netlink_get_default_handle ();
+	g_return_if_fail (nlh != NULL);
+
+	route = rtnl_route_alloc ();
+	g_return_if_fail (route != NULL);
+
+	iface_idx = nm_netlink_iface_to_index (iface);
+	if (iface_idx < 0)
+		goto out;
+	rtnl_route_set_oif (route, iface_idx);
+
+	if (!(dst = nl_addr_parse (addr, AF_INET)))
+		goto out;
+	rtnl_route_set_dst (route, dst);
+	nl_addr_put (dst);
+
+	err = rtnl_route_add (nlh, route, 0);
+	if (err)
+		nm_warning ("rtnl_route_add() returned error %s (%d)", strerror (err), err);
+
+out:
+	rtnl_route_put (route);
+}
 

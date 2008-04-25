@@ -179,25 +179,6 @@ void nm_system_restart_mdns_responder (void)
 }
 
 /*
- * nm_system_device_add_route_via_device_with_iface
- *
- * Add route to the given device
- *
- */
-void nm_system_device_add_route_via_device_with_iface (const char *iface, const char *route)
-{
-	char	*buf;
-
-	g_return_if_fail (iface != NULL);
-
-	/* Add default gateway */
-	buf = g_strdup_printf ("/usr/sbin/ip route add %s dev %s", route, iface);
-	nm_spawn_process (buf);
-	g_free (buf);
-}
-
-
-/*
  * nm_system_device_replace_default_route
  *
  * Add default route to the given device

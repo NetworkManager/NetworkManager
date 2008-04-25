@@ -41,8 +41,6 @@ void			nm_generic_device_flush_ip4_routes_with_iface	(const char *iface);
 
 void            nm_generic_device_replace_default_route (const char *iface, guint32 gw, guint32 mss);
 
-void			nm_generic_device_add_route_via_device_with_iface (const char *iface, const char *route);
-
 void			nm_generic_device_flush_ip4_addresses			(NMDevice *dev);
 void			nm_generic_device_flush_ip4_addresses_with_iface	(const char *iface);
 

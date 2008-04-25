@@ -158,16 +158,6 @@ void nm_system_restart_mdns_responder (void)
 {
 }
 
-/*
- * nm_system_device_add_route_via_device_with_iface
- *
- * Add route to the given device
- *
- */
-void nm_system_device_add_route_via_device_with_iface (const char *iface, const char *route)
-{
-	nm_generic_device_add_route_via_device_with_iface (iface, route);
-}
 
 /*
  * nm_system_device_replace_default_route

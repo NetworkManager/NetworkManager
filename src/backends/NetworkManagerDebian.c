@@ -71,18 +71,6 @@ nm_system_device_replace_default_route (const char *iface,
 }
 
 /*
- * nm_system_device_add_route_via_device_with_iface
- *
- * Add route to the given device
- *
- */
-void nm_system_device_add_route_via_device_with_iface (const char *iface, const char *route)
-{
-	nm_generic_device_add_route_via_device_with_iface (iface, route);
-}
-
-
-/*
  * nm_system_device_flush_ip4_addresses
  *
  * Flush all network addresses associated with a network device
