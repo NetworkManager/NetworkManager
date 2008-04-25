@@ -265,7 +265,7 @@ get_one_ip4_addr (shvarFile *ifcfg,
 #define GET_ONE_DNS(tag) \
 	{ \
 		guint32 dns = 0; \
-		get_one_ip4_addr (ifcfg, "DNS1", &dns, error); \
+		get_one_ip4_addr (ifcfg, tag, &dns, error); \
 		if (*error) \
 			goto error; \
 		if (dns) \

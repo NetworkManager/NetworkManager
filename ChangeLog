@@ -1,3 +1,8 @@
+2008-04-25  Dan Williams  <dcbw@redhat.com>
+
+	* system-settings/plugins/ifcfg-fedora/parser.c
+		- (GET_ONE_DNS): fix parsing of DNS2 & DNS3
+
 2008-04-24  Dan Williams  <dcbw@redhat.com>
 
 	* dispatcher-daemon/NetworkManagerDispatcher.c
