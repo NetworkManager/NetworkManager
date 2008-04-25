@@ -3,6 +3,13 @@
 	Patch from Benoit Boissinot <bboissin+networkmanager@gmail.com>
 
 	* src/NetworkManagerSystem.c
+		- (nm_system_device_set_ip4_route): reimplement using libnl, not ioctls
+
+2008-04-25  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Benoit Boissinot <bboissin+networkmanager@gmail.com>
+
+	* src/NetworkManagerSystem.c
 		- (nm_system_device_replace_default_ip4_route): new function; a libnl
 			implementation of nm_system_device_replace_default_route()
 
