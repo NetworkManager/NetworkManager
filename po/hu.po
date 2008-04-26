@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager.HEAD.hu\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-03-12 18:36+0000\n"
-"PO-Revision-Date: 2008-03-19 13:31+0100\n"
+"POT-Creation-Date: 2008-04-08 19:28+0100\n"
+"PO-Revision-Date: 2008-04-26 14:06+0200\n"
 "Last-Translator: Gabor Kelemen <kelemeng@gnome.hu>\n"
 "Language-Team: Hungarian <gnome@fsf.hu>\n"
 "MIME-Version: 1.0\n"
@@ -24,32 +24,42 @@ msgstr "hiba a netlink üzenet feldolgozásakor: %s"
 #: ../src/nm-netlink-monitor.c:245
 #, c-format
 msgid "unable to allocate netlink handle for monitoring link status: %s"
-msgstr "nem lehet netlink kezelőt lefoglalni a kapcsolat állapotának megfigyelése érdekében: %s"
+msgstr ""
+"nem lehet netlink kezelőt lefoglalni a kapcsolat állapotának megfigyelése "
+"érdekében: %s"
 
 #: ../src/nm-netlink-monitor.c:255
 #, c-format
 msgid "unable to connect to netlink for monitoring link status: %s"
-msgstr "nem lehet kapcsolódni a netlinkhez a kapcsolat állapotának megfigyelése érdekében: %s"
+msgstr ""
+"nem lehet kapcsolódni a netlinkhez a kapcsolat állapotának megfigyelése "
+"érdekében: %s"
 
 #: ../src/nm-netlink-monitor.c:263
 #, c-format
 msgid "unable to join netlink group for monitoring link status: %s"
-msgstr "nem lehet csatlakozni a netlink csoporthoz a kapcsolat állapotának megfigyelése érdekében: %s"
+msgstr ""
+"nem lehet csatlakozni a netlink csoporthoz a kapcsolat állapotának "
+"megfigyelése érdekében: %s"
 
 #: ../src/nm-netlink-monitor.c:271
 #, c-format
 msgid "unable to allocate netlink link cache for monitoring link status: %s"
-msgstr "nem lehet netlink kapcsolat-gyorsítótárat lefoglalni a kapcsolat állapotának megfigyelése érdekében: %s"
+msgstr ""
+"nem lehet netlink kapcsolat-gyorsítótárat lefoglalni a kapcsolat állapotának "
+"megfigyelése érdekében: %s"
 
 #: ../src/nm-netlink-monitor.c:471
 #, c-format
 msgid "error occurred while waiting for data on socket"
 msgstr "hiba lépett fel adatokra várakozás közben a foglalaton"
 
-#: ../src/NetworkManager.c:255
+#: ../src/NetworkManager.c:263
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
-msgstr "Érvénytelen kapcsoló. Az érvényes kapcsolók listájáért használja a --help kapcsolót.\n"
+msgstr ""
+"Érvénytelen kapcsoló. Az érvényes kapcsolók listájáért használja a --help "
+"kapcsolót.\n"
 
 #: ../src/named-manager/nm-named-manager.c:218
 msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
@@ -59,7 +69,8 @@ msgstr "MEGJEGYZÉS: a glibc feloldó nem támogat háromnál több névkiszolg�
 msgid "The nameservers listed below may not be recognized."
 msgstr "Az alább felsorolt névkiszolgálók lehet, hogy nem kerülnek felismerésre."
 
-#: ../system-settings/plugins/ifcfg-fedora/plugin.c:94
-msgid "Auto Wired"
-msgstr "Automatikus vezetékes"
+#: ../system-settings/src/main.c:470
+#, c-format
+msgid "Auto %s"
+msgstr "Automatikus %s"
 
