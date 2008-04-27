@@ -29,6 +29,9 @@ libnm_openvpn_properties_la_LIBADD =    \
         $(LIBGNOMEUI_LIBS)              \
         $(NETWORK_MANAGER_LIBS)
 
+libnm_openvpn_properties_la_LDFLAGS =   \
+        -avoid-version
+
 CLEANFILES = *.bak *.gladep *~
 
 EXTRA_DIST =                            \
