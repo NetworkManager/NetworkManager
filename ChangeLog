@@ -1,5 +1,29 @@
 2008-04-27  Dan Williams  <dcbw@redhat.com>
 
+	* Makefile.am
+	  configure.in
+	  dispatcher-daemon/Makefile.am
+	  dispatcher-daemon/NetworkManagerDispatcher.c
+	  initscript/Arch/Makefile.am
+	  initscript/Arch/networkmanager-dispatcher.in
+	  initscript/Gentoo/Makefile.am
+	  initscript/Gentoo/NetworkManagerDispatcher.in
+	  initscript/Mandriva/Makefile.am
+	  initscript/Mandriva/networkmanagerdispatcher.in
+	  initscript/RedHat/Makefile.am
+	  initscript/RedHat/NetworkManagerDispatcher.in
+	  initscript/SUSE/Makefile.am
+	  initscript/SUSE/networkmanager-dispatcher.in
+	  initscript/Slackware/Makefile.am
+	  initscript/Slackware/rc.networkmanager-dispatcher.in
+	  initscript/paldo/Makefile.am
+	  initscript/paldo/NetworkManagerDispatcher.in
+	  man/Makefile.am
+	  man/NetworkManagerDispatcher.8.in
+		- Remove the dispatcher daemon
+
+2008-04-27  Dan Williams  <dcbw@redhat.com>
+
 	* callouts/Makefile.am
 	  callouts/nm-dispatcher-action.c
 	  callouts/nm-dispatcher-action.h

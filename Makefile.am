@@ -26,7 +26,6 @@ SUBDIRS = 				\
 	   libnm-util			\
 	   libnm-glib			\
 	   src				\
-	   dispatcher-daemon	\
 	   initscript			\
 	   test				\
 	   po				\

@@ -1,5 +1,6 @@
-EXTRA_DIST = NetworkManager NetworkManagerDispatcher
+EXTRA_DIST = NetworkManager
+DISTCLEANFILES = NetworkManager
 
 initddir = $(sysconfdir)/rc.d/init.d
-initd_SCRIPTS = NetworkManager NetworkManagerDispatcher
+initd_SCRIPTS = NetworkManager
 
