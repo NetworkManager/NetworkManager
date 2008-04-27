@@ -1,3 +1,8 @@
+2008-04-27  Dan Williams  <dcbw@redhat.com>
+
+	* properties/Makefile.am
+		- Avoid versioning properties plugin (gnome.org #529836)
+
 2007-12-17  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Christian Persch <chpe@gnome.org>
