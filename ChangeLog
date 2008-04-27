@@ -1,3 +1,8 @@
+2008-04-26  Saleem Abdulrasool  <compnerd@compnerd.org>
+
+	* initscript/Gentoo/NetworkManager.in:
+		Fix for starting the daemon.
+
 2008-04-25  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Benoit Boissinot <bboissin+networkmanager@gmail.com>

@@ -9,20 +9,15 @@ depend() {
 
 start() {
    ebegin "Starting NetworkManager"
-   start-stop-daemon --start --quiet --pidfile /var/run/NetworkManager.pid --exec /usr/sbin/NetworkManager
+   start-stop-daemon --start --quiet --pidfile /var/run/NetworkManager.pid \
+      --exec /usr/sbin/NetworkManager -- --pid-file /var/run/NetworkManager.pid
    eend $?
 }
 
 stop() {
-   local retval
-
    ebegin "Stopping NetworkManager"
    start-stop-daemon --stop --quiet --pidfile /var/run/NetworkManager.pid
-   retval=$?
-   eend ${retval}
-
-   [ -e /var/run/NetworkManager.pid ] && rm -f /var/run/NetworkManager.pid
-   return ${retval}
+   eend $?
 }
 
 # vim: set ft=gentoo-init-d ts=3 sw=3 et:
