@@ -624,7 +624,7 @@ nm_act_request_get_user_requested (NMActRequest *req)
 const char *
 nm_act_request_get_active_connection_path (NMActRequest *req)
 {
-	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), NULL);
 
 	return NM_ACT_REQUEST_GET_PRIVATE (req)->ac_path;
 }
