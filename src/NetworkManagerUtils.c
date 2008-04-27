@@ -21,18 +21,8 @@
 
 #include <glib.h>
 #include <stdio.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <linux/sockios.h>
-#include <syslog.h>
-#include <stdarg.h>
-#include <sys/time.h>
 #include <string.h>
-#include <signal.h>
 
-#include "NetworkManager.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-device.h"
