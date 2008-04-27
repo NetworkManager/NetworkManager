@@ -30,6 +30,9 @@ libnm_vpnc_properties_la_LIBADD =       \
         $(GCONF_LIBS)                   \
         $(LIBGNOMEUI_LIBS)
 
+libnm_vpnc_properties_la_LDFLAGS =      \
+        -avoid-version
+
 CLEANFILES = *.bak *.gladep *~
 
 EXTRA_DIST =                            \
