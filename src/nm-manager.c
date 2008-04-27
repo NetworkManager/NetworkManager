@@ -1359,8 +1359,10 @@ nm_manager_remove_device (NMManager *manager, NMDevice *device, gboolean deactiv
 		if (iter->data == device) {
 			priv->devices = g_slist_delete_link (priv->devices, iter);
 
-			if (nm_device_get_managed (device))
+			if (nm_device_get_managed (device)) {
+				nm_device_set_managed (device, FALSE);
 				nm_device_bring_down (device, FALSE);
+			}
 
 			g_signal_handlers_disconnect_by_func (device, manager_device_state_changed, manager);
 
