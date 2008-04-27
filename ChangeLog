@@ -1,3 +1,17 @@
+2008-04-27  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerUtils.c
+	  src/NetworkManagerUtils.h
+		- remove unneeded includes
+		- (nm_null_safe_strcmp, nm_ethernet_addresses_are_equal,
+		   nm_utils_inet_ip4_address_as_string, nm_timeval_has_passed,
+		   nm_timeval_cmp, nm_timeval_add): remove, unused
+		- clean up formatting
+		- (nm_spawn_process): de-uglify
+
+	* src/nm-device-802-11-wireless.c
+		- (get_active_ap): use memcmp() not nm_ethernet_addresses_are_equal()
+
 2008-04-26  Saleem Abdulrasool  <compnerd@compnerd.org>
 
 	* initscript/Gentoo/NetworkManager.in:

@@ -607,7 +607,7 @@ get_active_ap (NMDevice80211Wireless *self,
 			if (ignore_ap && (ap == ignore_ap))
 				continue;
 
-			if (!nm_ethernet_addresses_are_equal (&bssid, ap_bssid))
+			if (memcmp (bssid.ether_addr_octet, ap_bssid->ether_addr_octet, ETH_ALEN))
 				continue;
 
 		    if ((i == 0) && !nm_utils_same_ssid (ssid, ap_ssid, TRUE))

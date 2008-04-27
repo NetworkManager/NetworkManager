@@ -43,25 +43,6 @@
 #include <netinet/in.h>
 
 /*
- * nm_null_safe_strcmp
- *
- * Doesn't freaking segfault if s1/s2 are NULL
- *
- */
-int nm_null_safe_strcmp (const char *s1, const char *s2)
-{
-	if (!s1 && !s2)
-		return 0;
-	if (!s1 && s2)
-		return -1;
-	if (s1 && !s2)
-		return 1;
-		
-	return (strcmp (s1, s2));
-}
-
-
-/*
  * nm_ethernet_address_is_valid
  *
  * Compares an Ethernet address against known invalid addresses.
@@ -97,66 +78,33 @@ nm_ethernet_address_is_valid (const struct ether_addr *test_addr)
 }
 
 
-/*
- * nm_ethernet_addresses_are_equal
- *
- * Compare two Ethernet addresses and return TRUE if equal and FALSE if not.
- */
-gboolean
-nm_ethernet_addresses_are_equal (const struct ether_addr *a, const struct ether_addr *b)
+int
+nm_spawn_process (const char *args)
 {
-	g_return_val_if_fail (a != NULL, FALSE);
-	g_return_val_if_fail (b != NULL, FALSE);
-
-	if (memcmp (a, b, sizeof (struct ether_addr)))
-		return FALSE;
-	return TRUE;
-}
-
-
-/*
- * nm_spawn_process
- *
- * Wrap g_spawn_sync in a usable manner
- *
- */
-int nm_spawn_process (const char *args)
-{
-	gint		  num_args;
-	char		**argv = NULL;
-	int		  exit_status = -1;
-	GError	 *error = NULL;
-	char		 *so = NULL;
-	char		 *se = NULL;
+	gint num_args;
+	char **argv = NULL;
+	int status = -1;
+	GError *error = NULL;
 
 	g_return_val_if_fail (args != NULL, -1);
 
-	if (g_shell_parse_argv (args, &num_args, &argv, &error))
-	{
-		GError *error2 = NULL;
+	if (!g_shell_parse_argv (args, &num_args, &argv, &error)) {
+		nm_warning ("could not parse arguments for '%s': %s", args, error->message);
+		g_error_free (error);
+		return -1;
+	}
 
-		if (!g_spawn_sync ("/", argv, NULL, 0, NULL, NULL, &so, &se, &exit_status, &error2))
-			nm_warning ("nm_spawn_process('%s'): could not spawn process. (%s)\n", args, error2->message);
+	if (!g_spawn_sync ("/", argv, NULL, 0, NULL, NULL, NULL, NULL, &status, &error)) {
+		nm_warning ("could not spawn process '%s': %s", args, error->message);
+		g_error_free (error);
+	}
 
-		if (so)    g_free(so);
-		if (se)    g_free(se);
-		if (argv)  g_strfreev (argv);
-		if (error2) g_error_free (error2);
-	} else nm_warning ("nm_spawn_process('%s'): could not parse arguments (%s)\n", args, error->message);
-
-	if (error) g_error_free (error);
-
-	return (exit_status);
+	g_strfreev (argv);
+	return status;
 }
 
-
-/*
- * nm_print_device_capabilities
- *
- * Return the capabilities for a particular device.
- *
- */
-void nm_print_device_capabilities (NMDevice *dev)
+void
+nm_print_device_capabilities (NMDevice *dev)
 {
 	gboolean		full_support = TRUE;
 	guint32		caps;
@@ -169,103 +117,32 @@ void nm_print_device_capabilities (NMDevice *dev)
 	if (!driver)
 		driver = "<unknown>";
 
-	if (caps == NM_DEVICE_CAP_NONE || !(NM_DEVICE_CAP_NM_SUPPORTED))
-	{
+	if (caps == NM_DEVICE_CAP_NONE || !(NM_DEVICE_CAP_NM_SUPPORTED)) {
 		nm_info ("%s: Driver support level for '%s' is unsupported",
 				nm_device_get_iface (dev), driver);
 		return;
 	}
 
-	if (NM_IS_DEVICE_802_3_ETHERNET (dev))
-	{
-		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT))
-		{
+	if (NM_IS_DEVICE_802_3_ETHERNET (dev)) {
+		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT)) {
 			nm_info ("%s: Driver '%s' does not support carrier detection.\n"
 					"\tYou must switch to it manually.",
 					nm_device_get_iface (dev), driver);
 			full_support = FALSE;
 		}
-	}
-	else if (NM_IS_DEVICE_802_11_WIRELESS (dev))
-	{
+	} else if (NM_IS_DEVICE_802_11_WIRELESS (dev)) {
 		/* Print out WPA support */
 	}
 
-	if (full_support)
-	{
+	if (full_support) {
 		nm_info ("%s: Device is fully-supported using driver '%s'.",
 				nm_device_get_iface (dev), driver);
 	}
 }
 
-static inline int nm_timeval_cmp(const struct timeval *a,
-				 const struct timeval *b)
-{
-	int x;
-	x = a->tv_sec - b->tv_sec;
-	x *= G_USEC_PER_SEC;
-	if (x)
-		return x;
-	x = a->tv_usec - b->tv_usec;
-	if (x)
-		return x;
-	return 0;
-}
 
-static inline int nm_timeval_has_passed(const struct timeval *a)
-{
-	struct timeval current;
-
-	gettimeofday(&current, NULL);
-
-	return (nm_timeval_cmp(&current, a) >= 0);
-}
-
-static inline void nm_timeval_add(struct timeval *a,
-				  const struct timeval *b)
-{
-	struct timeval b1;
-
-	memmove(&b1, b, sizeof b1);
-
-	/* normalize a and b to be positive for everything */
-	while (a->tv_usec < 0)
-	{
-		a->tv_sec--;
-		a->tv_usec += G_USEC_PER_SEC;
-	}
-	while (b1.tv_usec < 0)
-	{
-		b1.tv_sec--;
-		b1.tv_usec += G_USEC_PER_SEC;
-	}
-
-	/* now add secs and usecs */
-	a->tv_sec += b1.tv_sec;
-	a->tv_usec += b1.tv_usec;
-
-	/* and handle our overflow */
-	if (a->tv_usec > G_USEC_PER_SEC)
-	{
-		a->tv_sec++;
-		a->tv_usec -= G_USEC_PER_SEC;
-	}
-}
-
-
-gchar *nm_utils_inet_ip4_address_as_string (guint32 ip)
-{
-	struct in_addr tmp_addr;
-	gchar *ip_string;
-
-	tmp_addr.s_addr = ip;
-	ip_string = inet_ntoa (tmp_addr);
-
-	return g_strdup (ip_string);
-}
-
-
-struct nl_addr * nm_utils_ip4_addr_to_nl_addr (guint32 ip4_addr)
+struct nl_addr *
+nm_utils_ip4_addr_to_nl_addr (guint32 ip4_addr)
 {
 	struct nl_addr * nla = NULL;
 
@@ -284,7 +161,8 @@ struct nl_addr * nm_utils_ip4_addr_to_nl_addr (guint32 ip4_addr)
  * MUST be in network byte order.
  *
  */
-int nm_utils_ip4_netmask_to_prefix (guint32 ip4_netmask)
+int
+nm_utils_ip4_netmask_to_prefix (guint32 ip4_netmask)
 {
 	int i = 1;
 
@@ -354,7 +232,9 @@ nm_utils_hexstr2bin (const char *hex,
 char *
 nm_ether_ntop (const struct ether_addr *mac)
 {
-	/* we like leading zeros */
+	/* we like leading zeros and all-caps, instead
+	 * of what glibc's ether_ntop() gives us
+	 */
 	return g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
 	                        mac->ether_addr_octet[0], mac->ether_addr_octet[1],
 	                        mac->ether_addr_octet[2], mac->ether_addr_octet[3],

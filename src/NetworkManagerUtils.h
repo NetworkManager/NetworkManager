@@ -24,32 +24,24 @@
 
 #include <glib.h>
 #include <stdio.h>
-#include <syslog.h>
 #include <net/ethernet.h>
-#include <sys/time.h>
 #include <stdarg.h>
 
-#include "NetworkManager.h"
 #include "nm-device.h"
 #include "nm-ip4-config.h"
 #include "nm-setting-ip4-config.h"
 
-int			nm_null_safe_strcmp				(const char *s1, const char *s2);
+gboolean nm_ethernet_address_is_valid (const struct ether_addr *test_addr);
 
-gboolean		nm_ethernet_address_is_valid		(const struct ether_addr *test_addr);
-gboolean		nm_ethernet_addresses_are_equal	(const struct ether_addr *a, const struct ether_addr *b);
+int nm_spawn_process (const char *args);
 
-int			nm_spawn_process				(const char *args);
+void nm_print_device_capabilities (NMDevice *dev);
 
-void			nm_print_device_capabilities		(NMDevice *dev);
+struct nl_addr *nm_utils_ip4_addr_to_nl_addr (guint32 ip4_addr);
 
-gchar*			nm_utils_inet_ip4_address_as_string (guint32 ip);
+int nm_utils_ip4_netmask_to_prefix (guint32 ip4_netmask);
 
-struct nl_addr *	nm_utils_ip4_addr_to_nl_addr (guint32 ip4_addr);
-
-int				nm_utils_ip4_netmask_to_prefix (guint32 ip4_netmask);
-
-char *          nm_utils_hexstr2bin (const char *hex, size_t len);
+char *nm_utils_hexstr2bin (const char *hex, size_t len);
 
 char *nm_ether_ntop (const struct ether_addr *mac);
 
