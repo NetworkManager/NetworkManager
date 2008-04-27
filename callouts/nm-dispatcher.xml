@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+  <interface name="org.freedesktop.nm_dispatcher">
+
+    <method name="Action">
+      <tp:docstring>
+        INTERNAL; not public API.  Perform an action.
+      </tp:docstring>
+
+      <arg name="action" type="s" direction="in">
+        <tp:docstring>
+          The action being performed.
+        </tp:docstring>
+      </arg>
+
+      <arg name="connection" type="a{sa{sv}}" direction="in">
+        <tp:docstring>
+          The connection for which this action was triggered.
+        </tp:docstring>
+      </arg>
+
+      <arg name="connection_properties" type="a{sv}" direction="in">
+        <tp:docstring>
+          Properties of the connection, including service and path.
+        </tp:docstring>
+      </arg>
+
+      <arg name="device_properties" type="a{sv}" direction="in">
+        <tp:docstring>
+          Properties of the device, including type, path, interface, and state.
+        </tp:docstring>
+      </arg>
+
+    </method>
+  </interface>
+</node>

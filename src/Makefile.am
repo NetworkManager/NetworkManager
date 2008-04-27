@@ -13,7 +13,8 @@ INCLUDES = -I${top_srcdir}                   \
            -I${top_srcdir}/src/vpn-manager   \
            -I${top_srcdir}/src/dhcp-manager  \
            -I${top_srcdir}/src/supplicant-manager  \
-           -I${top_srcdir}/libnm-util
+           -I${top_srcdir}/libnm-util \
+           -I${top_srcdir}/callouts
 
 sbin_PROGRAMS = NetworkManager
 

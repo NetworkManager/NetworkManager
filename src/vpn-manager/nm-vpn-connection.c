@@ -69,6 +69,7 @@ typedef struct {
 	guint ipconfig_timeout;
 	NMIP4Config *ip4_config;
 	char *tundev;
+	char *tapdev;
 	char *banner;
 } NMVPNConnectionPrivate;
 
@@ -107,6 +108,7 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 {
 	NMVPNConnectionPrivate *priv;
 	NMActiveConnectionState new_ac_state;
+	NMVPNConnectionState old_vpn_state;
 
 	g_return_if_fail (NM_IS_VPN_CONNECTION (connection));
 
@@ -115,6 +117,7 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 	if (vpn_state == priv->vpn_state)
 		return;
 
+	old_vpn_state = priv->vpn_state;
 	priv->vpn_state = vpn_state;
 
 	/* Set the NMActiveConnection state based on VPN state */
@@ -138,8 +141,36 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 		g_object_notify (G_OBJECT (connection), NM_ACTIVE_CONNECTION_STATE);
 	}
 
+	/* The connection gets destroyed by the VPN manager when it enters the
+	 * disconnected/failed state, but we need to keep it around for a bit
+	 * to send out signals and handle the dispatcher.  So ref it.
+	 */
 	g_object_ref (connection);
+
 	g_signal_emit (connection, signals[VPN_STATE_CHANGED], 0, vpn_state, reason);
+	g_object_notify (G_OBJECT (connection), NM_VPN_CONNECTION_VPN_STATE);
+
+	/* Call dispatcher after the event gets processed internally */
+	switch (vpn_state) {
+	case NM_VPN_CONNECTION_STATE_ACTIVATED:
+		nm_utils_call_dispatcher ("vpn-up",
+		                          priv->connection,
+		                          priv->parent_dev,
+		                          priv->tapdev ? priv->tapdev : priv->tundev);
+		break;
+	case NM_VPN_CONNECTION_STATE_FAILED:
+	case NM_VPN_CONNECTION_STATE_DISCONNECTED:
+		if (old_vpn_state == NM_VPN_CONNECTION_STATE_ACTIVATED) {
+			nm_utils_call_dispatcher ("vpn-down",
+			                          priv->connection,
+			                          priv->parent_dev,
+			                          priv->tapdev ? priv->tapdev : priv->tundev);
+		}
+		break;
+	default:
+		break;
+	}
+
 	g_object_unref (connection);
 }
 

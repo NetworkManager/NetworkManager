@@ -25,11 +25,11 @@
 #include <glib.h>
 #include <stdio.h>
 #include <net/ethernet.h>
-#include <stdarg.h>
 
 #include "nm-device.h"
 #include "nm-ip4-config.h"
 #include "nm-setting-ip4-config.h"
+#include "nm-connection.h"
 
 gboolean nm_ethernet_address_is_valid (const struct ether_addr *test_addr);
 
@@ -46,6 +46,11 @@ char *nm_utils_hexstr2bin (const char *hex, size_t len);
 char *nm_ether_ntop (const struct ether_addr *mac);
 
 void nm_utils_merge_ip4_config (NMIP4Config *ip4_config, NMSettingIP4Config *setting);
+
+void nm_utils_call_dispatcher (const char *action,
+                               NMConnection *connection,
+                               NMDevice *device,
+                               const char *vpn_iface);
 
 #endif
 

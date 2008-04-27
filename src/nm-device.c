@@ -1693,22 +1693,26 @@ failed_to_disconnected (gpointer user_data)
 void
 nm_device_state_changed (NMDevice *device, NMDeviceState state)
 {
-	const char *iface;
+	NMDevicePrivate *priv;
 	NMDeviceState old_state;
+	NMActRequest *req;
 
 	g_return_if_fail (NM_IS_DEVICE (device));
+	priv = device->priv;
 
-	if (device->priv->state == state)
+	if (priv->state == state)
 		return;
 
-	iface = nm_device_get_iface (device);
-	old_state = device->priv->state;
-	device->priv->state = state;
+	old_state = priv->state;
+	priv->state = state;
 
-	if (device->priv->failed_to_disconnected_id) {
-		g_source_remove (device->priv->failed_to_disconnected_id);
-		device->priv->failed_to_disconnected_id = 0;
+	if (priv->failed_to_disconnected_id) {
+		g_source_remove (priv->failed_to_disconnected_id);
+		priv->failed_to_disconnected_id = 0;
 	}
+
+	/* Cache the activation request for the dispatcher */
+	req = priv->act_request ? g_object_ref (priv->act_request) : NULL;
 
 	/* Handle the new state here; but anything that could trigger
 	 * another state change should be done below.
@@ -1730,17 +1734,27 @@ nm_device_state_changed (NMDevice *device, NMDeviceState state)
 	g_object_notify (G_OBJECT (device), NM_DEVICE_INTERFACE_STATE);
 	g_signal_emit_by_name (device, "state-changed", state);
 
+	/* Post-process the event after internal notification */
+
 	switch (state) {
 	case NM_DEVICE_STATE_ACTIVATED:
-		nm_info ("Activation (%s) successful, device activated.", iface);
+		nm_info ("Activation (%s) successful, device activated.", nm_device_get_iface (device));
+		nm_utils_call_dispatcher ("up", nm_act_request_get_connection (req), device, NULL);
 		break;
 	case NM_DEVICE_STATE_FAILED:
 		nm_info ("Activation (%s) failed.", nm_device_get_iface (device));
-		device->priv->failed_to_disconnected_id = g_idle_add (failed_to_disconnected, device);
+		priv->failed_to_disconnected_id = g_idle_add (failed_to_disconnected, device);
 		break;
 	default:
 		break;
 	}
+
+	if (old_state == NM_DEVICE_STATE_ACTIVATED)
+		nm_utils_call_dispatcher ("down", nm_act_request_get_connection (req), device, NULL);
+
+	/* Dispose of the cached activation request */
+	if (req)
+		g_object_unref (req);
 }
 
 NMDeviceState

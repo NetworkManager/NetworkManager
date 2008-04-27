@@ -1,5 +1,31 @@
 2008-04-27  Dan Williams  <dcbw@redhat.com>
 
+	* callouts/Makefile.am
+	  callouts/nm-dispatcher-action.c
+	  callouts/nm-dispatcher-action.h
+	  callouts/nm-dispatcher.conf
+	  callouts/nm-dispatcher.xml
+	  callouts/org.freedesktop.nm_dispatcher.service
+		- Re-implement the dispatcher as a system-bus activated service that
+			NM calls on-demand, rather than an always running daemon
+
+	* src/Makefile.am
+		- Add callouts dir to includes to pick up dispatcher defines
+
+	* src/nm-device.c
+		- (nm_device_state_changed): call dispatcher on device activated/
+			deactivated
+
+	* src/vpn-manager/nm-vpn-connection.c
+		- (nm_vpn_connection_set_vpn_state): call dispatcher when VPN connections
+			go up and down
+
+	* src/NetworkManagerUtils.c
+	  src/NetworkManagerUtils.h
+		- (nm_utils_call_dispatcher): helper to call dispatcher
+
+2008-04-27  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerUtils.c
 	  src/NetworkManagerUtils.h
 		- remove unneeded includes

@@ -28,6 +28,9 @@
 #include "nm-device.h"
 #include "nm-device-802-11-wireless.h"
 #include "nm-device-802-3-ethernet.h"
+#include "nm-dbus-manager.h"
+#include "nm-dispatcher-action.h"
+#include "nm-dbus-glib-types.h"
 
 #include <netlink/addr.h>
 #include <netinet/in.h>
@@ -297,4 +300,140 @@ nm_utils_merge_ip4_config (NMIP4Config *ip4_config, NMSettingIP4Config *setting)
 	}
 }
 
+static void
+nm_gvalue_destroy (gpointer data)
+{
+	GValue *value = (GValue *) data;
+
+	g_value_unset (value);
+	g_slice_free (GValue, value);
+}
+
+static GValue *
+str_to_gvalue (const char *str)
+{
+	GValue *value;
+
+	value = g_slice_new0 (GValue);
+	g_value_init (value, G_TYPE_STRING);
+	g_value_set_string (value, str);
+	return value;
+}
+
+static GValue *
+op_to_gvalue (const char *op)
+{
+	GValue *value;
+
+	value = g_slice_new0 (GValue);
+	g_value_init (value, DBUS_TYPE_G_OBJECT_PATH);
+	g_value_set_boxed (value, op);
+	return value;
+}
+
+static GValue *
+uint_to_gvalue (guint32 val)
+{
+	GValue *value;
+
+	value = g_slice_new0 (GValue);
+	g_value_init (value, G_TYPE_UINT);
+	g_value_set_uint (value, val);
+	return value;
+}
+
+void
+nm_utils_call_dispatcher (const char *action,
+                          NMConnection *connection,
+                          NMDevice *device,
+                          const char *vpn_iface)
+{
+	NMDBusManager *dbus_mgr;
+	DBusGProxy *proxy;
+	DBusGConnection *g_connection;
+	GHashTable *connection_hash;
+	GHashTable *connection_props;
+	GHashTable *device_props;
+
+	g_return_if_fail (action != NULL);
+	g_return_if_fail (NM_IS_DEVICE (device));
+
+	dbus_mgr = nm_dbus_manager_get ();
+	g_connection = nm_dbus_manager_get_connection (dbus_mgr);
+	proxy = dbus_g_proxy_new_for_name (g_connection,
+	                                   NM_DISPATCHER_DBUS_SERVICE,
+	                                   NM_DISPATCHER_DBUS_PATH,
+	                                   NM_DISPATCHER_DBUS_IFACE);
+	if (!proxy) {
+		nm_warning ("Error: could not get dispatcher proxy!");
+		g_object_unref (dbus_mgr);
+		return;
+	}
+
+	if (connection) {
+		connection_hash = nm_connection_to_hash (connection);
+
+		connection_props = g_hash_table_new_full (g_str_hash, g_str_equal,
+		                                          NULL, nm_gvalue_destroy);
+
+		/* Service name */
+		if (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_USER) {
+			g_hash_table_insert (connection_props,
+			                     NMD_CONNECTION_PROPS_SERVICE_NAME,
+			                     str_to_gvalue (NM_DBUS_SERVICE_USER_SETTINGS));
+		} else if (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_USER) {
+			g_hash_table_insert (connection_props,
+			                     NMD_CONNECTION_PROPS_SERVICE_NAME,
+			                     str_to_gvalue (NM_DBUS_SERVICE_SYSTEM_SETTINGS));
+		}
+
+		/* path */
+		g_hash_table_insert (connection_props,
+		                     NMD_CONNECTION_PROPS_PATH,
+		                     op_to_gvalue (nm_connection_get_path (connection)));
+	} else {
+		connection_hash = g_hash_table_new (g_direct_hash, g_direct_equal);
+		connection_props = g_hash_table_new (g_direct_hash, g_direct_equal);
+	}
+
+	device_props = g_hash_table_new_full (g_str_hash, g_str_equal,
+	                                      NULL, nm_gvalue_destroy);
+
+	/* interface */
+	g_hash_table_insert (device_props, NMD_DEVICE_PROPS_INTERFACE,
+	                     str_to_gvalue (nm_device_get_iface (device)));
+
+	/* IP interface */
+	if (vpn_iface) {
+		g_hash_table_insert (device_props, NMD_DEVICE_PROPS_IP_INTERFACE,
+		                     str_to_gvalue (vpn_iface));
+	} else if (nm_device_get_ip_iface (device)) {
+		g_hash_table_insert (device_props, NMD_DEVICE_PROPS_IP_INTERFACE,
+		                     str_to_gvalue (nm_device_get_ip_iface (device)));
+	}
+
+	/* type */
+	g_hash_table_insert (device_props, NMD_DEVICE_PROPS_TYPE,
+	                     uint_to_gvalue (nm_device_get_device_type (device)));
+
+	/* state */
+	g_hash_table_insert (device_props, NMD_DEVICE_PROPS_STATE,
+	                     uint_to_gvalue (nm_device_get_state (device)));
+
+	g_hash_table_insert (device_props, NMD_DEVICE_PROPS_PATH,
+	                     op_to_gvalue (nm_device_get_udi (device)));
+
+	dbus_g_proxy_call_no_reply (proxy, "Action",
+	                            G_TYPE_STRING, action,
+	                            DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, connection_hash,
+	                            DBUS_TYPE_G_MAP_OF_VARIANT, connection_props,
+	                            DBUS_TYPE_G_MAP_OF_VARIANT, device_props,
+	                            G_TYPE_INVALID);
+
+	g_hash_table_destroy (connection_hash);
+	g_hash_table_destroy (connection_props);
+	g_hash_table_destroy (device_props);
+	g_object_unref (proxy);
+	g_object_unref (dbus_mgr);
+}
 
