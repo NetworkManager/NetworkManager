@@ -1,8 +1,8 @@
 #!/bin/bash
 ### BEGIN INIT INFO
 # Provides: NetworkManager
-# Required-Start: $network dbus dhcdbd
-# Required-Stop: $network dbus dhcdbd
+# Required-Start: $network dbus
+# Required-Stop: $network dbus
 # Default-Start: 3 4 5
 # Default-Stop: 0 1 2 6
 ### END INIT INFO
