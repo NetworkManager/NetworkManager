@@ -173,6 +173,7 @@ set_carrier (NMDevice8023Ethernet *self, const gboolean carrier)
 	g_object_notify (G_OBJECT (self), NM_DEVICE_802_3_ETHERNET_CARRIER);
 
 	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
+nm_info ("(%s): carrier now %s (device state %d)", nm_device_get_iface (NM_DEVICE (self)), carrier ? "ON" : "OFF", state);
 	if (state == NM_DEVICE_STATE_UNAVAILABLE) {
 		if (carrier)
 			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED);

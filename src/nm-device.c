@@ -1705,6 +1705,7 @@ nm_device_state_changed (NMDevice *device, NMDeviceState state)
 
 	old_state = priv->state;
 	priv->state = state;
+nm_info ("(%s): device state change: %d -> %d", nm_device_get_iface (device), old_state, state);
 
 	if (priv->failed_to_disconnected_id) {
 		g_source_remove (priv->failed_to_disconnected_id);
