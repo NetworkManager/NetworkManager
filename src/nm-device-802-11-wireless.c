@@ -1964,22 +1964,29 @@ link_timeout_cb (gpointer user_data)
 	if (!encrypted || !auth_enforced)
 		goto time_out;
 
-	nm_connection_clear_secrets (connection);
-	setting_name = nm_connection_need_secrets (connection, NULL);
-	if (!setting_name)
-		goto time_out;
-
-	/* Association/authentication failed during association, probably have a 
-	 * bad encryption key and the authenticating entity (AP, RADIUS server, etc)
-	 * denied the association due to bad credentials.
+	/* Drivers are still just too crappy, and emit too many disassociation
+	 * events during connection.  So for now, just let the driver and supplicant
+	 * keep trying to associate, and don't ask for new secrets when we get
+	 * disconnected during association.
 	 */
-	nm_info ("Activation (%s/wireless): disconnected during association,"
-	         " asking for new key.", nm_device_get_iface (dev));
-	cleanup_association_attempt (self, TRUE);
-	nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
-	nm_act_request_request_connection_secrets (req, setting_name, TRUE);	
+	if (0) {
+		nm_connection_clear_secrets (connection);
+		setting_name = nm_connection_need_secrets (connection, NULL);
+		if (!setting_name)
+			goto time_out;
 
-	return FALSE;
+		/* Association/authentication failed during association, probably have a 
+		 * bad encryption key and the authenticating entity (AP, RADIUS server, etc)
+		 * denied the association due to bad credentials.
+		 */
+		nm_info ("Activation (%s/wireless): disconnected during association,"
+		         " asking for new key.", nm_device_get_iface (dev));
+		cleanup_association_attempt (self, TRUE);
+		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
+		nm_act_request_request_connection_secrets (req, setting_name, TRUE);	
+
+		return FALSE;
+	}
 
 time_out:
 	nm_info ("%s: link timed out.", nm_device_get_iface (dev));
