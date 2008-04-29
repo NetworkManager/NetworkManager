@@ -25,6 +25,7 @@ struct _NMHalManager {
 	GSList *device_creators;
 
 	gboolean nm_sleeping;
+	guint add_devices_id;
 
 	/* Killswitch handling */
 	GSList *killswitch_list;
@@ -366,15 +367,18 @@ device_new_capability (LibHalContext *ctx, const char *udi, const char *capabili
 		create_device_and_add_to_list (manager, creator, udi);
 }
 
-static void
-add_initial_devices (NMHalManager *manager)
+static gboolean
+add_initial_devices (gpointer user_data)
 {
+	NMHalManager *manager = (NMHalManager *) user_data;
 	DeviceCreator *creator;
 	GSList *iter;
 	char **devices;
 	int num_devices;
 	int i;
 	DBusError err;
+
+	manager->add_devices_id = 0;
 
 	for (iter = manager->device_creators; iter; iter = iter->next) {
 		creator = (DeviceCreator *) iter->data;
@@ -399,6 +403,8 @@ add_initial_devices (NMHalManager *manager)
 
 		libhal_free_string_array (devices);
 	}
+
+	return FALSE;
 }
 
 typedef struct {
@@ -699,7 +705,20 @@ nm_manager_state_changed (NMManager *nm_manager, NMState state, gpointer user_da
 	} else if (manager->nm_sleeping) {
 		/* If the previous state was sleep, the next one means we just woke up */
 		manager->nm_sleeping = FALSE;
-		add_initial_devices (manager);
+
+		/* Punt adding back devices to an idle handler to give the manager
+		 * time to push signals out over D-Bus when it wakes up.  Since the
+		 * signal emission might ref the old pre-sleep device, when the new
+		 * device gets found there will be a D-Bus object path conflict between
+		 * the old device and the new device, and dbus-glib "helpfully" asserts
+		 * here and we die.
+		 */
+		if (manager->add_devices_id)
+			g_source_remove (manager->add_devices_id);
+		manager->add_devices_id = g_idle_add_full (G_PRIORITY_LOW,
+		                                           add_initial_devices,
+		                                           manager,
+		                                           NULL);
 	}
 }
 
@@ -765,6 +784,11 @@ nm_hal_manager_destroy (NMHalManager *manager)
 {
 	if (!manager)
 		return;
+
+	if (manager->add_devices_id) {
+		g_source_remove (manager->add_devices_id);
+		manager->add_devices_id = 0;
+	}
 
 	g_free (manager->kswitch_err);
 

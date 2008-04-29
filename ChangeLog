@@ -1,3 +1,14 @@
+2008-04-28  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-hal-manager.c
+		- (add_initial_devices): convert to a GSourceFunc prototype
+		- (nm_manager_state_changed): when coming out of sleep, punt the
+			device re-addition to an idle handler to let D-Bus events go out
+			first, fixing a potential dbus-glib assert if the old device was
+			not yet disposed (due to references held while emitting the D-Bus
+			signals) but the new device was found, because the mainloop didn't
+			run between signal emission and add_initial_devices()
+
 2008-04-27  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Benoit Boissinot <bboissin+networkmanager@gmail.com>
