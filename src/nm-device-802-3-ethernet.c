@@ -312,9 +312,8 @@ nm_device_802_3_ethernet_init (NMDevice8023Ethernet * self)
 static gboolean
 real_is_up (NMDevice *device)
 {
-	/* Try device-specific tests first */
-	if (NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (device)->supplicant.mgr)
-		return TRUE;
+	if (!NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (device)->supplicant.mgr)
+		return FALSE;
 
 	return NM_DEVICE_CLASS (nm_device_802_3_ethernet_parent_class)->is_up (device);
 }
@@ -326,11 +325,11 @@ real_bring_up (NMDevice *dev)
 
 	priv->supplicant.mgr = nm_supplicant_manager_get ();
 
-	return TRUE;
+	return priv->supplicant.mgr ? TRUE : FALSE;
 }
 
 static void
-real_bring_down (NMDevice *dev)
+real_take_down (NMDevice *dev)
 {
 	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (dev);
 
@@ -340,6 +339,23 @@ real_bring_down (NMDevice *dev)
 	}
 }
 
+static gboolean
+real_hw_is_up (NMDevice *device)
+{
+	return NM_DEVICE_CLASS (nm_device_802_3_ethernet_parent_class)->hw_is_up (device);
+}
+
+static gboolean
+real_hw_bring_up (NMDevice *dev)
+{
+	return nm_system_device_set_up_down (dev, TRUE);
+}
+
+static void
+real_hw_take_down (NMDevice *dev)
+{
+	nm_system_device_set_up_down (dev, FALSE);
+}
 
 NMDevice8023Ethernet *
 nm_device_802_3_ethernet_new (const char *udi,
@@ -1365,9 +1381,12 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *klass)
 	object_class->finalize = nm_device_802_3_ethernet_finalize;
 
 	parent_class->get_generic_capabilities = real_get_generic_capabilities;
+	parent_class->hw_is_up = real_hw_is_up;
+	parent_class->hw_bring_up = real_hw_bring_up;
+	parent_class->hw_take_down = real_hw_take_down;
 	parent_class->is_up = real_is_up;
 	parent_class->bring_up = real_bring_up;
-	parent_class->bring_down = real_bring_down;
+	parent_class->take_down = real_take_down;
 	parent_class->can_interrupt_activation = real_can_interrupt_activation;
 	parent_class->update_hw_address = real_update_hw_address;
 	parent_class->get_best_auto_connection = real_get_best_auto_connection;

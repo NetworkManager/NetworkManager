@@ -100,6 +100,9 @@ static gboolean nm_device_activate (NMDeviceInterface *device,
 static void	nm_device_activate_schedule_stage5_ip_config_commit (NMDevice *self);
 static void nm_device_deactivate (NMDeviceInterface *device);
 
+static gboolean nm_device_bring_up (NMDevice *self, gboolean wait);
+static gboolean nm_device_is_up (NMDevice *self);
+
 static void
 device_interface_init (NMDeviceInterface *device_interface_class)
 {
@@ -195,7 +198,7 @@ error:
 
 
 static gboolean
-real_is_up (NMDevice *self)
+real_hw_is_up (NMDevice *self)
 {
 	struct ifreq ifr;
 	const char *iface;
@@ -222,6 +225,17 @@ real_is_up (NMDevice *self)
 	}
 
 	return FALSE;
+}
+
+static gboolean
+nm_device_hw_is_up (NMDevice *self)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	if (NM_DEVICE_GET_CLASS (self)->hw_is_up)
+		return NM_DEVICE_GET_CLASS (self)->hw_is_up (self);
+
+	return TRUE;
 }
 
 static guint32
@@ -982,7 +996,7 @@ nm_device_deactivate (NMDeviceInterface *device)
 
 	g_return_if_fail (self != NULL);
 
-	nm_info ("Deactivating device %s.", nm_device_get_iface (self));
+	nm_info ("(%s): deactivating device.", nm_device_get_iface (self));
 
 	nm_device_deactivate_quickly (self);
 
@@ -1392,8 +1406,7 @@ nm_device_update_ip4_address (NMDevice *self)
 		self->priv->ip4_address = new_address;
 }
 
-
-gboolean
+static gboolean
 nm_device_is_up (NMDevice *self)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
@@ -1404,25 +1417,83 @@ nm_device_is_up (NMDevice *self)
 	return TRUE;
 }
 
-gboolean
-nm_device_bring_up (NMDevice *self, gboolean wait)
+static gboolean
+nm_device_hw_bring_up (NMDevice *self, gboolean wait)
 {
 	gboolean success;
 	guint32 tries = 0;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
-	if (nm_device_is_up (self))
-		return TRUE;
+	if (nm_device_hw_is_up (self))
+		goto out;
 
-	nm_info ("Bringing up device %s", nm_device_get_iface (self));
+	nm_info ("(%s): bringing up device.", nm_device_get_iface (self));
 
-	nm_system_device_set_up_down (self, TRUE);
-	nm_device_update_ip4_address (self);
+	if (NM_DEVICE_GET_CLASS (self)->hw_bring_up) {
+		success = NM_DEVICE_GET_CLASS (self)->hw_bring_up (self);
+		if (!success)
+			return FALSE;
+	}
 
+	/* Wait for the device to come up if requested */
+	while (wait && !nm_device_hw_is_up (self) && (tries++ < 50))
+		g_usleep (200);
+
+	if (!nm_device_hw_is_up (self)) {
+		nm_warning ("(%s): device not up after timeout!", nm_device_get_iface (self));
+		return FALSE;
+	}
+
+out:
 	/* Can only get HW address of some devices when they are up */
 	if (NM_DEVICE_GET_CLASS (self)->update_hw_address)
 		NM_DEVICE_GET_CLASS (self)->update_hw_address (self);
+
+	nm_device_update_ip4_address (self);
+	return TRUE;
+}
+
+static void
+nm_device_hw_take_down (NMDevice *self, gboolean wait)
+{
+	guint32 tries = 0;
+
+	g_return_if_fail (NM_IS_DEVICE (self));
+
+	if (!nm_device_hw_is_up (self))
+		return;
+
+	nm_info ("(%s): taking down device.", nm_device_get_iface (self));
+
+	if (NM_DEVICE_GET_CLASS (self)->hw_take_down)
+		NM_DEVICE_GET_CLASS (self)->hw_take_down (self);
+
+	/* Wait for the device to come up if requested */
+	while (wait && nm_device_hw_is_up (self) && (tries++ < 50))
+		g_usleep (200);
+}
+
+static gboolean
+real_is_up (NMDevice *self)
+{
+	return TRUE;
+}
+
+static gboolean
+nm_device_bring_up (NMDevice *self, gboolean wait)
+{
+	gboolean success;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	if (!nm_device_hw_bring_up (self, wait))
+		return FALSE;
+
+	if (nm_device_is_up (self))
+		return TRUE;
+
+	nm_info ("(%s): preparing device.", nm_device_get_iface (self));
 
 	if (NM_DEVICE_GET_CLASS (self)->bring_up) {
 		success = NM_DEVICE_GET_CLASS (self)->bring_up (self);
@@ -1430,38 +1501,28 @@ nm_device_bring_up (NMDevice *self, gboolean wait)
 			return FALSE;
 	}
 
-	/* Wait for the device to come up if requested */
-	while (wait && !nm_device_is_up (self) && (tries++ < 50))
-		g_usleep (200);
-
 	return TRUE;
 }
 
 void
-nm_device_bring_down (NMDevice *self, gboolean wait)
+nm_device_take_down (NMDevice *self, gboolean wait)
 {
 	NMDeviceState state;
-	guint32 tries = 0;
 
 	g_return_if_fail (NM_IS_DEVICE (self));
-
-	if (!nm_device_is_up (self))
-		return;
-
-	nm_info ("Bringing down device %s", nm_device_get_iface (self));
 
 	state = nm_device_get_state (self);
 	if ((state == NM_DEVICE_STATE_ACTIVATED) || nm_device_is_activating (self))
 		nm_device_interface_deactivate (NM_DEVICE_INTERFACE (self));
 
-	if (NM_DEVICE_GET_CLASS (self)->bring_down)
-		NM_DEVICE_GET_CLASS (self)->bring_down (self);
+	if (nm_device_is_up (self)) {
+		nm_info ("(%s): cleaning up...", nm_device_get_iface (self));
 
-	nm_system_device_set_up_down (self, FALSE);
+		if (NM_DEVICE_GET_CLASS (self)->take_down)
+			NM_DEVICE_GET_CLASS (self)->take_down (self);
+	}
 
-	/* Wait for the device to come up if requested */
-	while (wait && nm_device_is_up (self) && (tries++ < 50))
-		g_usleep (200);
+	nm_device_hw_take_down (self, wait);
 }
 
 /*
@@ -1507,7 +1568,7 @@ nm_device_dispose (GObject *object)
 	 */
 
 	if (self->priv->managed) {
-		nm_device_bring_down (self, FALSE);
+		nm_device_take_down (self, FALSE);
 		nm_device_set_ip4_config (self, NULL);
 	}
 
@@ -1632,6 +1693,7 @@ nm_device_class_init (NMDeviceClass *klass)
 	object_class->get_property = get_property;
 	object_class->constructor = constructor;
 
+	klass->hw_is_up = real_hw_is_up;
 	klass->is_up = real_is_up;
 	klass->get_type_capabilities = real_get_type_capabilities;
 	klass->get_generic_capabilities = real_get_generic_capabilities;
@@ -1719,6 +1781,10 @@ nm_info ("(%s): device state change: %d -> %d", nm_device_get_iface (device), ol
 	 * another state change should be done below.
 	 */
 	switch (state) {
+	case NM_DEVICE_STATE_UNMANAGED:
+		if (old_state > NM_DEVICE_STATE_UNMANAGED)
+			nm_device_take_down (device, TRUE);
+		break;
 	case NM_DEVICE_STATE_UNAVAILABLE:
 		if (old_state == NM_DEVICE_STATE_UNMANAGED)
 			nm_device_bring_up (device, TRUE);

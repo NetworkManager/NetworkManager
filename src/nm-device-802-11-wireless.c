@@ -48,6 +48,7 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"
+#include "NetworkManagerSystem.h"
 
 static gboolean impl_device_get_access_points (NMDevice80211Wireless *device,
                                                GPtrArray **aps,
@@ -730,11 +731,28 @@ out:
 }
 
 static gboolean
+real_hw_is_up (NMDevice *device)
+{
+	return NM_DEVICE_CLASS (nm_device_802_11_wireless_parent_class)->hw_is_up (device);
+}
+
+static gboolean
+real_hw_bring_up (NMDevice *dev)
+{
+	return nm_system_device_set_up_down (dev, TRUE);
+}
+
+static void
+real_hw_take_down (NMDevice *dev)
+{
+	nm_system_device_set_up_down (dev, FALSE);
+}
+
+static gboolean
 real_is_up (NMDevice *device)
 {
-	/* Try device-specific tests first */
-	if (NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device)->periodic_source_id)
-		return TRUE;
+	if (!NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device)->periodic_source_id)
+		return FALSE;
 
 	return NM_DEVICE_CLASS (nm_device_802_11_wireless_parent_class)->is_up (device);
 }
@@ -752,9 +770,8 @@ real_bring_up (NMDevice *dev)
 													  "state",
 													  G_CALLBACK (supplicant_mgr_state_cb),
 													  self);
-	if (nm_supplicant_manager_get_state (priv->supplicant.mgr) == NM_SUPPLICANT_MANAGER_STATE_IDLE) {
+	if (nm_supplicant_manager_get_state (priv->supplicant.mgr) == NM_SUPPLICANT_MANAGER_STATE_IDLE)
 		init_supplicant_interface (self);
-	}
 
 	/* Peridoically update signal strength */
 	priv->periodic_source_id = g_timeout_add (6000, nm_device_802_11_periodic_update, self);
@@ -816,7 +833,7 @@ device_cleanup (NMDevice80211Wireless *self)
 }
 
 static void
-real_bring_down (NMDevice *dev)
+real_take_down (NMDevice *dev)
 {
 	NMDevice80211Wireless *self = NM_DEVICE_802_11_WIRELESS (dev);
 
@@ -1139,7 +1156,7 @@ nm_device_802_11_wireless_get_frequency (NMDevice80211Wireless *self)
 	if (err >= 0)
 		freq = iw_freq_to_uint32 (&wrq.u.freq);
 	else if (err == -1)
-		nm_warning ("(%s) error getting frequency: %s", iface, strerror (errno));
+		nm_warning ("(%s): error getting frequency: %s", iface, strerror (errno));
 
 	close (fd);
 	return freq;
@@ -2045,10 +2062,10 @@ supplicant_iface_state_cb_handler (gpointer user_data)
  	new_state = cb_data->new_state;
 	old_state = cb_data->old_state;
 
-	nm_info ("(%s) supplicant interface is now in state %d (from %d).",
+	nm_info ("(%s): supplicant interface state change: %d -> %d.",
              nm_device_get_iface (NM_DEVICE (self)),
-             new_state,
-             old_state);
+             old_state,
+             new_state);
 
 	if (new_state == NM_SUPPLICANT_INTERFACE_STATE_READY) {
 		priv->scan_interval = SCAN_INTERVAL_MIN;
@@ -2099,7 +2116,7 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 		goto out;
 	}
 
-	nm_info ("(%s) Supplicant interface state change: %d -> %d",
+	nm_info ("(%s): supplicant connection state change: %d -> %d",
 	         nm_device_get_iface (dev), old_state, new_state);
 
 	if (new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_COMPLETED) {
@@ -2208,7 +2225,7 @@ supplicant_mgr_state_cb_handler (gpointer user_data)
 	new_state = cb_data->new_state;
 	old_state = cb_data->old_state;
 
-	nm_info ("(%s) supplicant manager is now in state %d (from %d).",
+	nm_info ("(%s): supplicant manager is now in state %d (from %d).",
              nm_device_get_iface (NM_DEVICE (self)),
              new_state,
              old_state);
@@ -3068,9 +3085,12 @@ nm_device_802_11_wireless_class_init (NMDevice80211WirelessClass *klass)
 
 	parent_class->get_type_capabilities = real_get_type_capabilities;
 	parent_class->get_generic_capabilities = real_get_generic_capabilities;
+	parent_class->hw_is_up = real_hw_is_up;
+	parent_class->hw_bring_up = real_hw_bring_up;
+	parent_class->hw_take_down = real_hw_take_down;
 	parent_class->is_up = real_is_up;
 	parent_class->bring_up = real_bring_up;
-	parent_class->bring_down = real_bring_down;
+	parent_class->take_down = real_take_down;
 	parent_class->update_hw_address = real_update_hw_address;
 	parent_class->get_best_auto_connection = real_get_best_auto_connection;
 	parent_class->can_activate = real_can_activate;

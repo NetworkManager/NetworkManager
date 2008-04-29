@@ -1,5 +1,41 @@
 2008-04-28  Dan Williams  <dcbw@redhat.com>
 
+	Fix the device up/down ambiguities.  Up/down state used to be a
+	conglomeration of hardware state (IFF_UP) and any device-specific things
+	(supplicant, periodic timers, etc) that the device used to indicate
+	readiness.  Unfortunately, if the hardware was already IFF_UP for some
+	reason, then the device specific stuff wouldn't get run, and the device
+	would be stuck.
+
+	* src/nm-device.c
+	  src/nm-device.h
+		- Create hw_is_up, hw_bring_up, and hw_take_down
+		- Rename bring_down -> take_down
+		- (real_hw_is_up): check interface flags for IFF_UP
+		- (nm_device_hw_is_up): let subclasses figure out their own HW state
+		- (nm_device_is_up): make static; only used locally
+		- (nm_device_hw_bring_up): update the hardware and IPv4 addresses even
+			if the device is already up; if the device isn't up, bring it up
+		- (nm_device_hw_take_down): just take down hardware
+		- (nm_device_bring_up): bring up HW first, then device specific stuff
+		- (nm_device_take_down): always deactivate device when called; always
+			try to take hardware down too
+		- (nm_device_state_changed): take device down when entering unmanaged
+			state from a higher state
+
+	* src/nm-device-802-11-wireless.c
+		- (real_hw_is_up, real_hw_bring_up, real_hw_take_down): implement; just
+			check IFF_UP really
+		- (real_take_down, supplicant_iface_state_cb_handler, 
+		   supplicant_iface_connection_state_cb_handler,
+		   supplicant_mgr_state_cb_handler): fix some messages
+
+	* src/nm-device-802-3-ethernet.c
+		- (real_hw_is_up, real_hw_bring_up, real_hw_take_down): implement; just
+			check IFF_UP really
+
+2008-04-28  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-manager.c
 	  src/nm-manager.h
 		- (nm_manager_error_get_type): add new error

@@ -66,9 +66,17 @@ struct _NMDeviceClass
 {
 	GObjectClass parent;
 
-	gboolean		(* is_up)			(NMDevice *self);
-	gboolean		(* bring_up)		(NMDevice *self);
-	void			(* bring_down)		(NMDevice *self);
+	/* Hardware state, ie IFF_UP */
+	gboolean        (*hw_is_up)      (NMDevice *self);
+	gboolean        (*hw_bring_up)   (NMDevice *self);
+	void            (*hw_take_down)  (NMDevice *self);
+
+	/* Additional stuff required to operate the device, like a 
+	 * connection to the supplicant, Bluez, etc
+	 */
+	gboolean        (*is_up)         (NMDevice *self);
+	gboolean        (*bring_up)      (NMDevice *self);
+	void            (*take_down)     (NMDevice *self);
 
 	void        (* update_hw_address) (NMDevice *self);
 
@@ -126,10 +134,7 @@ NMIP4Config *	nm_device_get_ip4_config	(NMDevice *dev);
 gboolean		nm_device_set_ip4_config	(NMDevice *dev,
 								 NMIP4Config *config);
 
-gboolean		nm_device_is_up	(NMDevice *dev);
-gboolean		nm_device_bring_up (NMDevice *dev, gboolean wait);
-void			nm_device_bring_down (NMDevice *dev, gboolean wait);
-
+void		nm_device_take_down (NMDevice *dev, gboolean wait);
 
 void *		nm_device_get_system_config_data	(NMDevice *dev);
 
