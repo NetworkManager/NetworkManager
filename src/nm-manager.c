@@ -126,6 +126,7 @@ typedef enum
 	NM_MANAGER_ERROR_SYSTEM_CONNECTION,
 	NM_MANAGER_ERROR_PERMISSION_DENIED,
 	NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE,
+	NM_MANAGER_ERROR_ALREADY_ASLEEP_OR_AWAKE,
 } NMManagerError;
 
 #define NM_MANAGER_ERROR (nm_manager_error_quark ())
@@ -166,7 +167,9 @@ nm_manager_error_get_type (void)
 			ENUM_ENTRY (NM_MANAGER_ERROR_PERMISSION_DENIED, "PermissionDenied"),
 			/* The connection was not active. */
 			ENUM_ENTRY (NM_MANAGER_ERROR_CONNECTION_NOT_ACTIVE, "ConnectionNotActive"),
-			{ 0, 0, 0 }
+			{ 0, 0, 0 },
+			ENUM_ENTRY (NM_MANAGER_ERROR_ALREADY_ASLEEP_OR_AWAKE, "AlreadyAsleepOrAwake"),
+			{ 0, 0, 0 },
 		};
 		etype = g_enum_register_static ("NMManagerError", values);
 	}
@@ -1359,10 +1362,8 @@ nm_manager_remove_device (NMManager *manager, NMDevice *device, gboolean deactiv
 		if (iter->data == device) {
 			priv->devices = g_slist_delete_link (priv->devices, iter);
 
-			if (nm_device_get_managed (device)) {
+			if (nm_device_get_managed (device))
 				nm_device_set_managed (device, FALSE);
-				nm_device_bring_down (device, FALSE);
-			}
 
 			g_signal_handlers_disconnect_by_func (device, manager_device_state_changed, manager);
 
@@ -1807,40 +1808,36 @@ nm_manager_set_wireless_hardware_enabled (NMManager *manager,
 	}
 }
 
-void
-nm_manager_sleep (NMManager *manager, gboolean sleep)
+static gboolean
+impl_manager_sleep (NMManager *manager, gboolean sleep, GError **error)
 {
 	NMManagerPrivate *priv;
 
-	g_return_if_fail (NM_IS_MANAGER (manager));
+	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
 
 	priv = NM_MANAGER_GET_PRIVATE (manager);
 
-	if (priv->sleeping == sleep)
-		return;
+	if (priv->sleeping == sleep) {
+		g_set_error (error,
+		             NM_MANAGER_ERROR, NM_MANAGER_ERROR_ALREADY_ASLEEP_OR_AWAKE,
+		             "Already %s", sleep ? "asleep" : "awake");		
+		return FALSE;
+	}
 
 	priv->sleeping = sleep;
 
 	if (sleep) {
 		GSList *iter;
 
-		nm_info ("Going to sleep.");
+		nm_info ("Sleeping...");
 
 		/* Just deactivate and down all devices from the device list,
 		 * we'll remove them in 'wake' for speed's sake.
 		 */
-		for (iter = priv->devices; iter; iter = iter->next) {
-			NMDeviceState state;
-
-			state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (iter->data));
-			if (state >= NM_DEVICE_STATE_UNAVAILABLE) {
-				nm_device_bring_down (NM_DEVICE (iter->data), FALSE);
-				if (state >= NM_DEVICE_STATE_DISCONNECTED)
-					nm_device_state_changed (NM_DEVICE (iter->data), NM_DEVICE_STATE_DISCONNECTED);
-			}
-		}
+		for (iter = priv->devices; iter; iter = iter->next)
+			nm_device_set_managed (NM_DEVICE (iter->data), FALSE);
 	} else {
-		nm_info  ("Waking up from sleep.");
+		nm_info  ("Waking up...");
 
 		while (g_slist_length (priv->devices))
 			nm_manager_remove_device (manager, NM_DEVICE (priv->devices->data), FALSE);
@@ -1849,28 +1846,21 @@ nm_manager_sleep (NMManager *manager, gboolean sleep)
 	}
 
 	nm_manager_update_state (manager);
-}
-
-static gboolean
-impl_manager_sleep (NMManager *manager, gboolean sleep, GError **err)
-{
-	nm_manager_sleep (manager, sleep);
-
 	return TRUE;
 }
 
 /* Legacy 0.6 compatibility interface */
 
 static gboolean
-impl_manager_legacy_sleep (NMManager *manager, GError **err)
+impl_manager_legacy_sleep (NMManager *manager, GError **error)
 {
-	return impl_manager_sleep (manager, TRUE, err);
+	return impl_manager_sleep (manager, TRUE, error);
 }
 
 static gboolean
-impl_manager_legacy_wake  (NMManager *manager, GError **err)
+impl_manager_legacy_wake  (NMManager *manager, GError **error)
 {
-	return impl_manager_sleep (manager, FALSE, err);
+	return impl_manager_sleep (manager, FALSE, error);
 }
 
 static gboolean

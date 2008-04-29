@@ -83,7 +83,6 @@ gboolean nm_manager_wireless_enabled (NMManager *manager);
 gboolean nm_manager_wireless_hardware_enabled (NMManager *manager);
 void nm_manager_set_wireless_hardware_enabled (NMManager *manager,
 					       gboolean enabled);
-void nm_manager_sleep (NMManager *manager, gboolean sleep);
 
 /* Connections */
 

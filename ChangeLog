@@ -1,5 +1,17 @@
 2008-04-28  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-manager.c
+	  src/nm-manager.h
+		- (nm_manager_error_get_type): add new error
+		- (nm_manager_remove_device): don't bother taking down the device here,
+			the state change from unmanaging the device will do it
+		- (impl_manager_sleep): move nm_manager_sleep() here since nothing else
+			uses it; when going to sleep, just unmanage the device instead of
+			taking it down, because stuff will cleaned up correctly when the
+			device gets unmanaged
+
+2008-04-28  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-hal-manager.c
 		- (add_initial_devices): convert to a GSourceFunc prototype
 		- (nm_manager_state_changed): when coming out of sleep, punt the
