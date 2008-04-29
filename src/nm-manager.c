@@ -17,6 +17,7 @@
 #include "nm-setting-vpn.h"
 #include "nm-marshal.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-hal-manager.h"
 
 static gboolean impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err);
 static void impl_manager_activate_connection (NMManager *manager,
@@ -49,6 +50,27 @@ static void connection_added_default_handler (NMManager *manager,
 									 NMConnection *connection,
 									 NMConnectionScope scope);
 
+static void manager_device_state_changed (NMDevice *device,
+                                          NMDeviceState state,
+                                          gpointer user_data);
+
+static void hal_manager_udi_added_cb (NMHalManager *hal_mgr,
+                                      const char *udi,
+                                      const char *type_name,
+                                      NMDeviceCreatorFn creator_fn,
+                                      gpointer user_data);
+
+static void hal_manager_udi_removed_cb (NMHalManager *hal_mgr,
+                                        const char *udi,
+                                        gpointer user_data);
+
+static void hal_manager_rfkill_changed_cb (NMHalManager *hal_mgr,
+                                           gboolean rfkilled,
+                                           gpointer user_data);
+
+static void hal_manager_hal_reappeared_cb (NMHalManager *hal_mgr,
+                                           gpointer user_data);
+
 #define SSD_POKE_INTERVAL 120000
 
 typedef struct {
@@ -65,6 +87,7 @@ typedef struct {
 	NMState state;
 
 	NMDBusManager *dbus_mgr;
+	NMHalManager *hal_mgr;
 
 	GHashTable *user_connections;
 	DBusGProxy *user_proxy;
@@ -80,6 +103,7 @@ typedef struct {
 	gboolean sleeping;
 
 	guint poke_id;
+	guint add_devices_id;
 
 	NMVPNManager *vpn_manager;
 	guint vpn_manager_id;
@@ -278,6 +302,18 @@ pending_connection_info_destroy (PendingConnectionInfo *info)
 }
 
 static void
+remove_one_device (NMManager *manager, NMDevice *device)
+{
+	if (nm_device_get_managed (device))
+		nm_device_set_managed (device, FALSE);
+
+	g_signal_handlers_disconnect_by_func (device, manager_device_state_changed, manager);
+
+	g_signal_emit (manager, signals[DEVICE_REMOVED], 0, device);
+	g_object_unref (device);
+}
+
+static void
 dispose (GObject *object)
 {
 	NMManager *manager = NM_MANAGER (object);
@@ -292,8 +328,15 @@ dispose (GObject *object)
 	pending_connection_info_destroy (priv->pending_connection_info);
 	priv->pending_connection_info = NULL;
 
-	while (g_slist_length (priv->devices))
-		nm_manager_remove_device (manager, NM_DEVICE (priv->devices->data), TRUE);
+	if (priv->add_devices_id) {
+		g_source_remove (priv->add_devices_id);
+		priv->add_devices_id = 0;
+	}
+
+	while (g_slist_length (priv->devices)) {
+		remove_one_device (manager, NM_DEVICE (priv->devices->data));
+		priv->devices = g_slist_remove_link (priv->devices, priv->devices);
+	}
 
 	nm_manager_connections_destroy (manager, NM_CONNECTION_SCOPE_USER);
 	g_hash_table_destroy (priv->user_connections);
@@ -322,6 +365,7 @@ dispose (GObject *object)
 	g_object_unref (priv->vpn_manager);
 
 	g_object_unref (priv->dbus_mgr);
+	g_object_unref (priv->hal_mgr);
 
 	G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
 }
@@ -919,6 +963,18 @@ query_connections (NMManager *manager,
 	                                G_TYPE_INVALID);
 }
 
+static NMDevice *
+nm_manager_get_device_by_udi (NMManager *manager, const char *udi)
+{
+	GSList *iter;
+
+	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
+		if (!strcmp (nm_device_get_udi (NM_DEVICE (iter->data)), udi))
+			return NM_DEVICE (iter->data);
+	}
+	return NULL;
+}
+
 static void
 handle_unmanaged_devices (NMManager *manager, GPtrArray *ops)
 {
@@ -1140,6 +1196,17 @@ initial_get_connections (gpointer user_data)
 	return FALSE;
 }
 
+static gboolean
+deferred_hal_manager_query_devices (gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+
+	priv->add_devices_id = 0;
+	nm_hal_manager_query_devices (priv->hal_mgr);
+
+	return FALSE;
+}
 
 NMManager *
 nm_manager_new (void)
@@ -1160,6 +1227,29 @@ nm_manager_new (void)
 	                  NM_MANAGER (object));
 
 	g_idle_add ((GSourceFunc) initial_get_connections, NM_MANAGER (object));
+
+	priv->hal_mgr = nm_hal_manager_new ();
+	g_idle_add (deferred_hal_manager_query_devices, object);
+
+	g_signal_connect (priv->hal_mgr,
+	                  "udi-added",
+	                  G_CALLBACK (hal_manager_udi_added_cb),
+	                  NM_MANAGER (object));
+
+	g_signal_connect (priv->hal_mgr,
+	                  "udi-removed",
+	                  G_CALLBACK (hal_manager_udi_removed_cb),
+	                  NM_MANAGER (object));
+
+	g_signal_connect (priv->hal_mgr,
+	                  "rfkill-changed",
+	                  G_CALLBACK (hal_manager_rfkill_changed_cb),
+	                  NM_MANAGER (object));
+
+	g_signal_connect (priv->hal_mgr,
+	                  "hal-reappeared",
+	                  G_CALLBACK (hal_manager_hal_reappeared_cb),
+	                  NM_MANAGER (object));
 
 	return NM_MANAGER (object);
 }
@@ -1235,7 +1325,7 @@ manager_set_wireless_enabled (NMManager *manager, gboolean enabled)
 }
 
 static void
-manager_device_state_changed (NMDeviceInterface *device, NMDeviceState state, gpointer user_data)
+manager_device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 {
 	NMManager *manager = NM_MANAGER (user_data);
 
@@ -1308,21 +1398,44 @@ next:
 	g_slist_free (connections);
 }
 
-void
-nm_manager_add_device (NMManager *manager, NMDevice *device)
+static void
+hal_manager_udi_added_cb (NMHalManager *hal_mgr,
+                          const char *udi,
+                          const char *type_name,
+                          NMDeviceCreatorFn creator_fn,
+                          gpointer user_data)
 {
-	NMManagerPrivate *priv;
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	gboolean managed = TRUE;
+	GObject *device;
+	GSList *iter;
+	const char *iface;
 
-	g_return_if_fail (NM_IS_MANAGER (manager));
-	g_return_if_fail (NM_IS_DEVICE (device));
+	if (priv->sleeping)
+		return;
 
-	priv = NM_MANAGER_GET_PRIVATE (manager);
+	/* Make sure the device is not already in the device list */
+	if (nm_manager_get_device_by_udi (self, udi))
+		return;
 
-	priv->devices = g_slist_append (priv->devices, g_object_ref (device));
+	/* Figure out if the device is managed or not */
+	for (iter = priv->unmanaged_udis; iter; iter = g_slist_next (iter)) {
+		if (!strcmp (udi, iter->data)) {
+			managed = FALSE;
+			break;
+		}
+	}
+
+	device = creator_fn (hal_mgr, udi, managed);
+	if (!device)
+		return;
+
+	priv->devices = g_slist_append (priv->devices, device);
 
 	g_signal_connect (device, "state-changed",
 					  G_CALLBACK (manager_device_state_changed),
-					  manager);
+					  self);
 
 	/* Attach to the access-point-added signal so that the manager can fill
 	 * non-SSID-broadcasting APs with an SSID.
@@ -1330,48 +1443,86 @@ nm_manager_add_device (NMManager *manager, NMDevice *device)
 	if (NM_IS_DEVICE_802_11_WIRELESS (device)) {
 		g_signal_connect (device, "hidden-ap-found",
 						  G_CALLBACK (manager_hidden_ap_found),
-						  manager);
+						  self);
 
 		/* Set initial rfkill state */
 		nm_device_802_11_wireless_set_enabled (NM_DEVICE_802_11_WIRELESS (device), priv->wireless_enabled);
 	}
 
-	nm_info ("(%s): exported as %s",
-	         nm_device_get_iface (device),
-	         nm_device_get_udi (device));
+	iface = nm_device_get_iface (NM_DEVICE (device));
+	nm_info ("Found new %s device '%s'.", type_name, iface);
 
 	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (priv->dbus_mgr),
-								  nm_device_get_udi (device),
-								  G_OBJECT (device));
+								  nm_device_get_udi (NM_DEVICE (device)),
+								  device);
+	nm_info ("(%s): exported as %s", iface, udi);
 
-	g_signal_emit (manager, signals[DEVICE_ADDED], 0, device);
+	g_signal_emit (self, signals[DEVICE_ADDED], 0, device);
 }
 
-void
-nm_manager_remove_device (NMManager *manager, NMDevice *device, gboolean deactivate)
+static void
+hal_manager_udi_removed_cb (NMHalManager *manager,
+                            const char *udi,
+                            gpointer user_data)
 {
-	NMManagerPrivate *priv;
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GSList *iter;
 
-	g_return_if_fail (NM_IS_MANAGER (manager));
-	g_return_if_fail (NM_IS_DEVICE (device));
-
-	priv = NM_MANAGER_GET_PRIVATE (manager);
+	g_return_if_fail (udi != NULL);
 
 	for (iter = priv->devices; iter; iter = iter->next) {
-		if (iter->data == device) {
+		NMDevice *device = NM_DEVICE (iter->data);
+
+		if (!strcmp (nm_device_get_udi (device), udi)) {
 			priv->devices = g_slist_delete_link (priv->devices, iter);
-
-			if (nm_device_get_managed (device))
-				nm_device_set_managed (device, FALSE);
-
-			g_signal_handlers_disconnect_by_func (device, manager_device_state_changed, manager);
-
-			g_signal_emit (manager, signals[DEVICE_REMOVED], 0, device);
-			g_object_unref (device);
+			remove_one_device (self, device);
 			break;
 		}
 	}
+}
+
+static void
+hal_manager_rfkill_changed_cb (NMHalManager *hal_mgr,
+                               gboolean rfkilled,
+                               gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	gboolean enabled = !rfkilled;
+
+	if (priv->wireless_hw_enabled != enabled) {
+		nm_info ("Wireless now %s by radio killswitch", enabled ? "enabled" : "disabled");
+		priv->wireless_hw_enabled = enabled;
+		g_object_notify (G_OBJECT (self), NM_MANAGER_WIRELESS_HARDWARE_ENABLED);
+
+		manager_set_wireless_enabled (self, enabled);
+	}
+}
+
+static void
+hal_manager_hal_reappeared_cb (NMHalManager *hal_mgr,
+                               gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+
+	/* Remove devices which are no longer known to HAL */
+	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *device = NM_DEVICE (iter->data);
+		GSList *next = iter->next;
+
+		if (nm_hal_manager_udi_exists (priv->hal_mgr, nm_device_get_udi (device)))
+			continue;
+
+		priv->devices = g_slist_delete_link (priv->devices, iter);
+		remove_one_device (self, device);
+		iter = next;
+	}
+
+	/* Get any new ones */
+	nm_hal_manager_query_devices (priv->hal_mgr);
 }
 
 GSList *
@@ -1394,41 +1545,6 @@ impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err)
 		g_ptr_array_add (*devices, g_strdup (nm_device_get_udi (NM_DEVICE (iter->data))));
 
 	return TRUE;
-}
-
-NMDevice *
-nm_manager_get_device_by_path (NMManager *manager, const char *path)
-{
-	GSList *iter;
-
-	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
-	g_return_val_if_fail (path != NULL, NULL);
-
-	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
-		NMDevice *device = NM_DEVICE (iter->data);
-
-		if (!strcmp (nm_device_get_udi (device), path))
-			return device;
-	}
-
-	return NULL;
-}
-
-NMDevice *
-nm_manager_get_device_by_udi (NMManager *manager, const char *udi)
-{
-	GSList *iter;
-
-	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
-
-	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
-		NMDevice *device = NM_DEVICE (iter->data);
-
-		if (!strcmp (nm_device_get_udi (device), udi))
-			return device;
-	}
-
-	return NULL;
 }
 
 static NMActRequest *
@@ -1492,14 +1608,6 @@ internal_activate_device (NMManager *manager,
 	g_object_unref (req);
 
 	return success ? nm_act_request_get_active_connection_path (req) : NULL;
-}
-
-gboolean
-nm_manager_activation_pending (NMManager *manager)
-{
-	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
-
-	return NM_MANAGER_GET_PRIVATE (manager)->pending_connection_info != NULL;
 }
 
 static gboolean
@@ -1578,7 +1686,7 @@ nm_manager_activate_connection (NMManager *manager,
 		NMDeviceState state;
 
 		/* Device-based connection */
-		device = nm_manager_get_device_by_path (manager, device_path);
+		device = nm_manager_get_device_by_udi (manager, device_path);
 		if (!device) {
 			g_set_error (error,
 			             NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
@@ -1773,41 +1881,6 @@ impl_manager_deactivate_connection (NMManager *manager,
 	return nm_manager_deactivate_connection (manager, connection_path, error);
 }
 
-gboolean
-nm_manager_wireless_enabled (NMManager *manager)
-{
-	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
-
-	return NM_MANAGER_GET_PRIVATE (manager)->wireless_enabled;
-}
-
-gboolean
-nm_manager_wireless_hardware_enabled (NMManager *manager)
-{
-	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
-
-	return NM_MANAGER_GET_PRIVATE (manager)->wireless_hw_enabled;
-}
-
-void
-nm_manager_set_wireless_hardware_enabled (NMManager *manager,
-								  gboolean enabled)
-{
-	NMManagerPrivate *priv;
-
-	g_return_if_fail (NM_IS_MANAGER (manager));
-
-	priv = NM_MANAGER_GET_PRIVATE (manager);
-
-	if (priv->wireless_hw_enabled != enabled) {
-		nm_info ("Wireless now %s by radio killswitch", enabled ? "enabled" : "disabled");
-		priv->wireless_hw_enabled = enabled;
-		g_object_notify (G_OBJECT (manager), NM_MANAGER_WIRELESS_HARDWARE_ENABLED);
-
-		manager_set_wireless_enabled (manager, enabled);
-	}
-}
-
 static gboolean
 impl_manager_sleep (NMManager *manager, gboolean sleep, GError **error)
 {
@@ -1839,10 +1912,24 @@ impl_manager_sleep (NMManager *manager, gboolean sleep, GError **error)
 	} else {
 		nm_info  ("Waking up...");
 
-		while (g_slist_length (priv->devices))
-			nm_manager_remove_device (manager, NM_DEVICE (priv->devices->data), FALSE);
+		while (g_slist_length (priv->devices)) {
+			remove_one_device (manager, NM_DEVICE (priv->devices->data));
+			priv->devices = g_slist_remove_link (priv->devices, priv->devices);
+		}
 
-		priv->devices = NULL;
+		/* Punt adding back devices to an idle handler to give the manager
+		 * time to push signals out over D-Bus when it wakes up.  Since the
+		 * signal emission might ref the old pre-sleep device, when the new
+		 * device gets found there will be a D-Bus object path conflict between
+		 * the old device and the new device, and dbus-glib "helpfully" asserts
+		 * here and we die.
+		 */
+		if (priv->add_devices_id)
+			g_source_remove (priv->add_devices_id);
+		priv->add_devices_id = g_idle_add_full (G_PRIORITY_LOW,
+		                                        deferred_hal_manager_query_devices,
+		                                        manager,
+		                                        NULL);
 	}
 
 	nm_manager_update_state (manager);
@@ -1958,21 +2045,5 @@ nm_manager_get_active_connections_by_connection (NMManager *manager,
                                                  NMConnection *connection)
 {
 	return get_active_connections (manager, connection);
-}
-
-gboolean
-nm_manager_is_udi_managed (NMManager *manager, const char *udi)
-{
-	NMManagerPrivate *priv;
-	GSList *iter;
-
-	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
-
-	priv = NM_MANAGER_GET_PRIVATE (manager);
-	for (iter = priv->unmanaged_udis; iter; iter = g_slist_next (iter)) {
-		if (!strcmp (udi, iter->data))
-			return FALSE;
-	}
-	return TRUE;
 }
 

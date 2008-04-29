@@ -43,7 +43,6 @@
 #include "NetworkManagerUtils.h"
 #include "nm-device-interface.h"
 #include "nm-manager.h"
-#include "nm-hal-manager.h"	
 #include "nm-device.h"
 #include "nm-device-802-3-ethernet.h"
 #include "nm-device-802-11-wireless.h"
@@ -205,13 +204,6 @@ write_pidfile (const char *pidfile)
 		nm_warning ("Closing %s failed: %s", pidfile, strerror (errno));
 }
 
-static gboolean
-start_hal (gpointer user_data)
-{
-	nm_hal_manager_start ((NMHalManager *) user_data);
-	return FALSE;
-}
-
 /*
  * main
  *
@@ -225,7 +217,6 @@ main (int argc, char *argv[])
 	char *		user_pidfile = NULL;
 	gboolean success;
 	NMPolicy *policy = NULL;
-	NMHalManager *hal_manager = NULL;
 	NMVPNManager *vpn_manager = NULL;
 	NMNamedManager *named_mgr = NULL;
 	NMDBusManager *	dbus_mgr = NULL;
@@ -347,11 +338,6 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	hal_manager = nm_hal_manager_new (manager);
-	if (!hal_manager)
-		goto done;
-	g_idle_add (start_hal, hal_manager);
-
 	/* Bring up the loopback interface. */
 	nm_system_enable_loopback ();
 
@@ -362,9 +348,6 @@ main (int argc, char *argv[])
 	g_main_loop_run (main_loop);
 
 done:
-	if (hal_manager)
-		nm_hal_manager_destroy (hal_manager);
-
 	if (policy)
 		nm_policy_destroy (policy);
 

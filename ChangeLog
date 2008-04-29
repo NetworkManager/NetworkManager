@@ -1,3 +1,44 @@
+2008-04-29  Dan Williams  <dcbw@redhat.com>
+
+	Handle HAL dropouts better; allow NM to start up even if HAL isn't up yet.
+
+	* marshallers/nm-marshal.list
+		- Add marshaller
+
+	* src/NetworkManager.c
+		- (main): let the NMManager handle the NMHalManager
+
+	* src/nm-hal-manager.c
+	  src/nm-hal-manager.h
+		- convert to a GObject, and emit singals when stuff changes.  Let the
+			NMManager handle the signals, instead of the NMHalManager calling
+			into the NMManager.  
+
+	* src/nm-manager.c
+	  src/nm-manager.h
+		- (remove_one_device): consolidate device removals here
+		- (dispose): use remove_one_device()
+		- (nm_manager_get_device_by_udi): make static
+		- (deferred_hal_manager_query_devices): idle handler to query the HAL
+			manager for devices at startup or wakeup time
+		- (nm_manager_new): create and monitor the HAL manager
+		- (hal_manager_udi_added_cb): new function; do what
+			nm_manager_add_device() used to do when signalled by the hal manager
+		- (hal_manager_udi_removed_cb): new function; do what
+			nm_manager_remove_device() used to do when signalled by the hal
+			manager
+		- (hal_manager_rfkill_changed_cb): handle rfkill changes from the
+			hal manager
+		- (hal_manager_hal_reappeared_cb): when HAL comes back, remove devices
+			in our device list that aren't known to HAL
+		- (impl_manager_sleep): on wakeup, re-add devices from an idle handler;
+			see comments on nm-hal-manager.c::nm_manager_state_changed() a few
+			commits ago
+		- (nm_manager_get_device_by_path, nm_manager_is_udi_managed,
+		   nm_manager_activation_pending, nm_manager_wireless_enabled,
+		   nm_manager_wireless_hardware_enabled,
+		   nm_manager_set_wireless_hardware_enabled): remove, unused
+
 2008-04-28  Dan Williams  <dcbw@redhat.com>
 
 	Fix the device up/down ambiguities.  Up/down state used to be a
