@@ -358,7 +358,7 @@ enter_pin (NMSerialDevice *device, gboolean retry)
 	NMActRequest *req;
 	NMConnection *connection;
 	char *secret;
-	char *secret_setting_name;
+	char *secret_name = NULL;
 
 	req = nm_device_get_act_request (NM_DEVICE (device));
 	g_assert (req);
@@ -370,11 +370,11 @@ enter_pin (NMSerialDevice *device, gboolean retry)
 	switch (NM_GSM_DEVICE_GET_PRIVATE (device)->need_secret) {
 	case NM_GSM_SECRET_PIN:
 		secret = setting->pin;
-		secret_setting_name = NM_SETTING_GSM_PIN;
+		secret_name = NM_SETTING_GSM_PIN;
 		break;
 	case NM_GSM_SECRET_PUK:
 		secret = setting->puk;
-		secret_setting_name = NM_SETTING_GSM_PIN;
+		secret_name = NM_SETTING_GSM_PUK;
 		break;
 	default:
 		do_register (device);
@@ -401,9 +401,9 @@ enter_pin (NMSerialDevice *device, gboolean retry)
 			nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
 		}
 	} else {
-		nm_info ("%s required", secret_setting_name);
+		nm_info ("(%s): GSM %s secret required", nm_device_get_iface (NM_DEVICE (device)), secret_name);
 		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_NEED_AUTH);
-		nm_act_request_request_connection_secrets (req, secret_setting_name, retry);
+		nm_act_request_request_connection_secrets (req, NM_SETTING_GSM_SETTING_NAME, retry);
 	}
 }
 

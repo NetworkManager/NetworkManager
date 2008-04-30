@@ -1,5 +1,11 @@
 2008-04-30  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-gsm-device.c
+		- (enter_pin): fix setting name passed to applets when asking for a GSM
+			PIN or PUK
+
+2008-04-30  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-manager.c
 		- (nm_manager_error_get_type): remove erroneous NULL enum from table
 
