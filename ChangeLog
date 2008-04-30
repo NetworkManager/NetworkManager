@@ -1,5 +1,12 @@
 2008-04-30  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-802-3-ethernet.c
+	  src/nm-device-802-11-wireless.c
+		- (real_is_up): return true instead of chaining up to unimplemented
+			parent method
+
+2008-04-30  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerSystem.c
 	  src/NetworkManagerSystem.h
 		- (nm_system_device_is_up, nm_system_device_is_up_with_iface): new

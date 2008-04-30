@@ -754,7 +754,7 @@ real_is_up (NMDevice *device)
 	if (!NM_DEVICE_802_11_WIRELESS_GET_PRIVATE (device)->periodic_source_id)
 		return FALSE;
 
-	return NM_DEVICE_CLASS (nm_device_802_11_wireless_parent_class)->is_up (device);
+	return TRUE;
 }
 
 static gboolean

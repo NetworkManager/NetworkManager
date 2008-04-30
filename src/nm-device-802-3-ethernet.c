@@ -315,7 +315,7 @@ real_is_up (NMDevice *device)
 	if (!NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (device)->supplicant.mgr)
 		return FALSE;
 
-	return NM_DEVICE_CLASS (nm_device_802_3_ethernet_parent_class)->is_up (device);
+	return TRUE;
 }
 
 static gboolean
