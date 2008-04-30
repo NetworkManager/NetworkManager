@@ -1,5 +1,10 @@
 2008-04-30  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-manager.c
+		- (nm_manager_error_get_type): remove erroneous NULL enum from table
+
+2008-04-30  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-802-3-ethernet.c
 	  src/nm-device-802-11-wireless.c
 		- (real_is_up): return true instead of chaining up to unimplemented
