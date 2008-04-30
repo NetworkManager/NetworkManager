@@ -436,6 +436,41 @@ out:
 	return success;
 }
 
+gboolean
+nm_system_device_is_up (NMDevice *device)
+{
+	g_return_val_if_fail (device != NULL, FALSE);
+
+	return nm_system_device_is_up_with_iface (nm_device_get_iface (device));
+}
+
+gboolean
+nm_system_device_is_up_with_iface (const char *iface)
+{
+	struct ifreq ifr;
+	int err, fd;
+
+	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		nm_warning ("couldn't open control socket.");
+		return FALSE;
+	}
+
+	/* Get device's flags */
+	strncpy (ifr.ifr_name, iface, IFNAMSIZ);
+	err = ioctl (fd, SIOCGIFFLAGS, &ifr);
+	close (fd);
+
+	if (!err)
+		return (!((ifr.ifr_flags^IFF_UP) & IFF_UP));
+
+	if (errno != ENODEV) {
+		nm_warning ("%s: could not get flags for device %s.  errno = %d", 
+		            __func__, iface, errno);
+	}
+
+	return FALSE;
+}
 
 gboolean
 nm_system_device_set_mtu (const char *iface, guint32 mtu)

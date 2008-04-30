@@ -733,7 +733,7 @@ out:
 static gboolean
 real_hw_is_up (NMDevice *device)
 {
-	return NM_DEVICE_CLASS (nm_device_802_11_wireless_parent_class)->hw_is_up (device);
+	return nm_system_device_is_up (device);
 }
 
 static gboolean

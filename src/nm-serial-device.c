@@ -1010,13 +1010,6 @@ real_deactivate_quickly (NMDevice *device)
 	nm_serial_device_close (self);
 }
 
-static gboolean
-real_is_up (NMDevice *device)
-{
-	/* Serial devices are always "up" */
-	return TRUE;
-}
-
 static guint32
 real_get_generic_capabilities (NMDevice *dev)
 {
@@ -1052,7 +1045,6 @@ nm_serial_device_class_init (NMSerialDeviceClass *klass)
 	object_class->finalize = finalize;
 
 	parent_class->get_generic_capabilities = real_get_generic_capabilities;
-	parent_class->is_up = real_is_up;
 	parent_class->act_stage2_config = real_act_stage2_config;
 	parent_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 	parent_class->deactivate_quickly = real_deactivate_quickly;

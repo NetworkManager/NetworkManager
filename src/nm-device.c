@@ -196,37 +196,6 @@ error:
 	return NULL;
 }
 
-
-static gboolean
-real_hw_is_up (NMDevice *self)
-{
-	struct ifreq ifr;
-	const char *iface;
-	int err, fd;
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		nm_warning ("couldn't open control socket.");
-		return FALSE;
-	}
-
-	/* Get device's flags */
-	iface = nm_device_get_iface (self);
-	strncpy (ifr.ifr_name, iface, IFNAMSIZ);
-	err = ioctl (fd, SIOCGIFFLAGS, &ifr);
-	close (fd);
-
-	if (!err)
-		return (!((ifr.ifr_flags^IFF_UP) & IFF_UP));
-
-	if (errno != ENODEV) {
-		nm_warning ("%s: could not get flags for device %s.  errno = %d", 
-		            __func__, iface, errno);
-	}
-
-	return FALSE;
-}
-
 static gboolean
 nm_device_hw_is_up (NMDevice *self)
 {
@@ -1475,12 +1444,6 @@ nm_device_hw_take_down (NMDevice *self, gboolean wait)
 }
 
 static gboolean
-real_is_up (NMDevice *self)
-{
-	return TRUE;
-}
-
-static gboolean
 nm_device_bring_up (NMDevice *self, gboolean wait)
 {
 	gboolean success;
@@ -1693,8 +1656,6 @@ nm_device_class_init (NMDeviceClass *klass)
 	object_class->get_property = get_property;
 	object_class->constructor = constructor;
 
-	klass->hw_is_up = real_hw_is_up;
-	klass->is_up = real_is_up;
 	klass->get_type_capabilities = real_get_type_capabilities;
 	klass->get_generic_capabilities = real_get_generic_capabilities;
 	klass->act_stage1_prepare = real_act_stage1_prepare;

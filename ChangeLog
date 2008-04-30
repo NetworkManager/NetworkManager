@@ -1,3 +1,23 @@
+2008-04-30  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerSystem.c
+	  src/NetworkManagerSystem.h
+		- (nm_system_device_is_up, nm_system_device_is_up_with_iface): new
+			functions to check device flags for IFF_UP
+
+	* src/nm-serial-device.c
+		- (real_is_up): remove; NMDevice now returns TRUE if the subclass doesn't
+			implement is_up
+
+	* src/nm-device-802-3-ethernet.c
+	  src/nm-device-802-11-wireless.c
+		- (real_hw_is_up): call nm_system_device_is_up()
+
+	* src/nm-device.c
+		- (real_hw_is_up): move to nm_system_device_is_up_with_iface()
+		- (real_is_up): remove; nm_device_is_up() returns TRUE if subclass
+			does not implement
+
 2008-04-29  Dan Williams  <dcbw@redhat.com>
 
 	Handle HAL dropouts better; allow NM to start up even if HAL isn't up yet.
