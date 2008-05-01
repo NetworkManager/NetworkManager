@@ -1,3 +1,13 @@
+2008-05-01  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Michael Biebl <biebl@debian.org>
+
+	* callouts/Makefile.am
+	  callouts/org.freedesktop.nm_dispatcher.service.in
+	  system-settings/src/Makefile.am
+	  system-settings/src/org.freedesktop.NetworkManagerSystemSettings.service.in
+		- use the right install location for dbus-activated stuff
+
 2008-04-30  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-gsm-device.c

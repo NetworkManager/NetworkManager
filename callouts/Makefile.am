@@ -46,15 +46,25 @@ nm_dispatcher_action_LDADD = \
 nm-dispatcher-glue.h: nm-dispatcher.xml
 	dbus-binding-tool --prefix=nm_dispatcher --mode=glib-server --output=nm-dispatcher-glue.h $(top_srcdir)/callouts/nm-dispatcher.xml
 
-dbusactivationdir = $(prefix)/share/dbus-1/system-services
-dbusactivation_DATA = org.freedesktop.nm_dispatcher.service
+dbusactivationdir = $(datadir)/dbus-1/system-services
+dbusactivation_in_files = org.freedesktop.nm_dispatcher.service.in
+dbusactivation_DATA = $(dbusactivation_in_files:.service.in=.service)
+
+%.service: %.service.in
+	$(edit) $< >$@
+
+edit = @sed \
+	-e 's|@sbindir[@]|$(sbindir)|g' \
+	-e 's|@sysconfdir[@]|$(sysconfdir)|g' \
+	-e 's|@localstatedir[@]|$(localstatedir)|g' \
+	-e 's|@libexecdir[@]|$(libexecdir)|g'
 
 BUILT_SOURCES = nm-dispatcher-glue.h
 
-CLEANFILES = $(BUILT_SOURCES)
+CLEANFILES = $(BUILT_SOURCES) $(dbusactivation_DATA)
 
 EXTRA_DIST = \
 	$(dbusservice_DATA) \
-	$(dbusactivation_DATA) \
+	$(dbusactivation_in_files) \
 	nm-dispatcher.xml
 

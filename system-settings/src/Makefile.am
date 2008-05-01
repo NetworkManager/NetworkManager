@@ -51,13 +51,24 @@ nm-settings-system-glue.h: $(top_srcdir)/introspection/nm-settings-system.xml
 dbusservicedir = $(DBUS_SYS_DIR)
 dbusservice_DATA = nm-system-settings.conf
 
-dbusactivationdir = $(prefix)/share/dbus-1/system-services
-dbusactivation_DATA = org.freedesktop.NetworkManagerSystemSettings.service
+dbusactivationdir = $(datadir)/dbus-1/system-services
+dbusactivation_in_files = org.freedesktop.NetworkManagerSystemSettings.service.in
+dbusactivation_DATA = $(dbusactivation_in_files:.service.in=.service)
+
+%service: %service.in
+	$(edit) $< >$@
+
+edit = @sed \
+	-e 's|@sbindir[@]|$(sbindir)|g' \
+	-e 's|@sysconfdir[@]|$(sysconfdir)|g' \
+	-e 's|@localstatedir[@]|$(localstatedir)|g' \
+	-e 's|@libexecdir[@]|$(libexecdir)|g'
 
 EXTRA_DIST = \
 	$(dbusservice_DATA) \
-	$(dbusactivation_DATA)
+	$(dbusactivation_in_files)
 
 CLEANFILES = \
-	$(BUILT_SOURCES)
+	$(BUILT_SOURCES) \
+	$(dbusactivation_DATA)
 
