@@ -240,7 +240,8 @@ modem_device_creator (NMHalManager *self, const char *udi, gboolean managed)
 		goto out;
 
 	capabilities = libhal_device_get_property_strlist (priv->hal_ctx, udi, "modem.command_sets", NULL);
-	for (iter = capabilities; *iter; iter++) {
+	/* 'capabilites' may be NULL */
+	for (iter = capabilities; iter && *iter; iter++) {
 		if (!strcmp (*iter, "GSM-07.07")) {
 			type_gsm = TRUE;
 			break;
