@@ -1,3 +1,8 @@
+2008-05-01  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-vpnc-service.c
+		- (validate_one_property): allow the 'name' property
+
 2008-04-27  Dan Williams  <dcbw@redhat.com>
 
 	* properties/Makefile.am
