@@ -928,7 +928,7 @@ dispose (GObject *object)
 	g_object_unref (priv->hal_mgr);
 
 	if (priv->g_connection)
-		g_object_unref (priv->g_connection);
+		dbus_g_connection_unref (priv->g_connection);
 
 	G_OBJECT_CLASS (sc_plugin_ifcfg_parent_class)->dispose (object);
 }
