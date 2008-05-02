@@ -566,7 +566,7 @@ find_terminator (const char *line, char **terminators)
 	int i;
 
 	for (i = 0; terminators[i]; i++) {
-		if (!strcasecmp (line, terminators[i]))
+		if (!strncasecmp (line, terminators[i], strlen (terminators[i])))
 			return TRUE;
 	}
 	return FALSE;

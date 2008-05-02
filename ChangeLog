@@ -1,3 +1,10 @@
+2008-05-02  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-serial-device.c
+		- (find_terminator): don't compare the whole line, just the size of the
+			terminator, since some modems put stuff after the terminator, like
+			"CONNECT 9600"
+
 2008-05-01  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Michael Biebl <biebl@debian.org>
