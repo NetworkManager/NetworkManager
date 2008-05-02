@@ -114,6 +114,10 @@ validate_one_property (gpointer key, gpointer val, gpointer user_data)
 	if (*failed)
 		return;
 
+	/* 'name' is the setting name; always allowed but unused */
+	if (!strcmp ((char *) key, NM_SETTING_NAME))
+		return;
+
 	for (i = 0; valid_properties[i].name; i++) {
 		ValidProperty prop = valid_properties[i];
 
