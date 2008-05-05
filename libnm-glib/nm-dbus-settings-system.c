@@ -82,7 +82,7 @@ update_unmanaged_devices (NMDBusSettingsSystem *self, GValue *value)
 
 		priv->got_unmanaged_devices = TRUE;
 	} else
-		g_warning ("Invalid return value type: %s", G_VALUE_TYPE_NAME (&value));
+		g_warning ("Invalid return value type: %s", G_VALUE_TYPE_NAME (value));
 }
 
 GSList *
