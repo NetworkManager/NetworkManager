@@ -13,7 +13,7 @@ BUILT_SOURCES = \
 	nm-exported-connection-bindings.h \
 	nm-settings-glue.h \
 	nm-settings-bindings.h \
-	nm-settings-system-bindings.h
+	nm-settings-system-bindings.h \
 	nm-vpn-connection-bindings.h \
 	nm-vpn-plugin-glue.h \
 	nm-active-connection-bindings.h
