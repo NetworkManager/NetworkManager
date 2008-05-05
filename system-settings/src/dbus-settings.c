@@ -213,27 +213,12 @@ enum {
 	LAST_PROP
 };
 
-static GPtrArray *
+static GSList *
 list_connections (NMSettings *settings)
 {
 	NMSysconfigSettings *self = NM_SYSCONFIG_SETTINGS (settings);
-	GPtrArray *connections;
-	GSList *iter;
 
-	connections = g_ptr_array_new ();
-	for (iter = nm_sysconfig_settings_get_connections (self); iter; iter = g_slist_next (iter)) {
-		NMExportedConnection *exported = NM_EXPORTED_CONNECTION (iter->data);
-		NMConnection *connection;
-		char *path;
-
-		connection = nm_exported_connection_get_connection (exported);
-		path = g_strdup (nm_connection_get_path (connection));
-		if (path)
-			g_ptr_array_add (connections, path);
-	}
-	
-	/* Return a list of strings with paths to connection settings objects */
-	return connections;
+	return g_slist_copy (nm_sysconfig_settings_get_connections (self));
 }
 
 static void

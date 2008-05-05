@@ -10,7 +10,10 @@ BUILT_SOURCES = \
 	nm-device-802-3-ethernet-bindings.h \
 	nm-device-802-11-wireless-bindings.h \
 	nm-exported-connection-glue.h \
+	nm-exported-connection-bindings.h \
 	nm-settings-glue.h \
+	nm-settings-bindings.h \
+	nm-settings-system-bindings.h
 	nm-vpn-connection-bindings.h \
 	nm-vpn-plugin-glue.h \
 	nm-active-connection-bindings.h
@@ -41,7 +44,10 @@ libnminclude_HEADERS = \
 	nm-vpn-connection.h \
 	nm-vpn-plugin.h \
 	nm-types.h \
-	nm-active-connection.h
+	nm-active-connection.h \
+	nm-dbus-connection.h \
+	nm-dbus-settings.h \
+	nm-dbus-settings-system.h
 
 libnm_glib_la_SOURCES = \
 	libnm_glib.c		\
@@ -64,7 +70,10 @@ libnm_glib_la_SOURCES = \
 	nm-types-private.h \
 	nm-object-cache.c \
 	nm-object-cache.h \
-	nm-active-connection.c
+	nm-active-connection.c \
+	nm-dbus-connection.c \
+	nm-dbus-settings.c \
+	nm-dbus-settings-system.c
 
 libnm_glib_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la	\
@@ -104,8 +113,17 @@ nm-access-point-bindings.h: $(top_srcdir)/introspection/nm-access-point.xml
 nm-settings-glue.h: $(top_srcdir)/introspection/nm-settings.xml
 	dbus-binding-tool --prefix=nm_settings --mode=glib-server --output=nm-settings-glue.h $(top_srcdir)/introspection/nm-settings.xml
 
+nm-settings-bindings.h: $(top_srcdir)/introspection/nm-settings.xml
+	dbus-binding-tool --prefix=nm_settings --mode=glib-client --output=nm-settings-bindings.h $(top_srcdir)/introspection/nm-settings.xml
+
+nm-settings-system-bindings.h: $(top_srcdir)/introspection/nm-settings-system.xml
+	dbus-binding-tool --prefix=nm_settings_system --mode=glib-client --output=nm-settings-system-bindings.h $(top_srcdir)/introspection/nm-settings-system.xml
+
 nm-exported-connection-glue.h: $(top_srcdir)/introspection/nm-exported-connection.xml
 	dbus-binding-tool --prefix=nm_exported_connection --mode=glib-server --output=nm-exported-connection-glue.h $(top_srcdir)/introspection/nm-exported-connection.xml
+
+nm-exported-connection-bindings.h: $(top_srcdir)/introspection/nm-exported-connection.xml
+	dbus-binding-tool --prefix=nm_exported_connection --mode=glib-client --output=nm-exported-connection-bindings.h $(top_srcdir)/introspection/nm-exported-connection.xml
 
 nm-vpn-connection-bindings.h: $(top_srcdir)/introspection/nm-vpn-connection.xml
 	dbus-binding-tool --prefix=nm_vpn_connection --mode=glib-client --output=nm-vpn-connection-bindings.h $(top_srcdir)/introspection/nm-vpn-connection.xml

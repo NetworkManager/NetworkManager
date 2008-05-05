@@ -43,6 +43,7 @@
 #define NM_DBUS_SERVICE_USER_SETTINGS     "org.freedesktop.NetworkManagerUserSettings"
 #define NM_DBUS_SERVICE_SYSTEM_SETTINGS   "org.freedesktop.NetworkManagerSystemSettings"
 #define NM_DBUS_IFACE_SETTINGS            "org.freedesktop.NetworkManagerSettings"
+#define NM_DBUS_IFACE_SETTINGS_SYSTEM     "org.freedesktop.NetworkManagerSettings.System"
 #define NM_DBUS_PATH_SETTINGS             "/org/freedesktop/NetworkManagerSettings"
 
 #define NM_DBUS_IFACE_SETTINGS_CONNECTION "org.freedesktop.NetworkManagerSettings.Connection"

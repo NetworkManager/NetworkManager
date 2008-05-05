@@ -1,3 +1,48 @@
+2008-05-05  Tambet Ingo  <tambet@gmail.com>
+
+	* libnm-glib/nm-dbus-settings.c (constructor): Fix the 
+	"PropertiesChanged" signal signature.
+
+	* libnm-glib/nm-dbus-connection.c (constructor): Use the common GType
+	defined in nm-dbus-glib-types.h.
+	Don't register the connection on dbus, we're a proxy class to 
+	communicate with an already registered connection over dbus.
+
+2008-04-30  Tambet Ingo  <tambet@gmail.com>
+
+	Implement new subclasses of NMSettings and NMExportedConnection to make
+	it easier for the applet to access and modify system settings.
+
+	* libnm-glib/nm-dbus-connection.[ch]:
+	* libnm-glib/nm-dbus-settings.[ch]:
+	* libnm-glib/nm-dbus-settings-system.[ch]: Implement.
+
+	* libnm-glib/Makefile.am: Add the new files to build, generate some more
+	bindings and glue.
+
+	* include/NetworkManager.h: Define the system settings DBus interface.
+
+2008-04-30  Tambet Ingo  <tambet@gmail.com>
+
+	Implement additional C API for exported connections to make them identical
+	with the DBus API. Change the (list_connections) virtual function to be
+	more usable from C - instead of requiring implementers to return a GPtrArray
+	of dbus paths, return a list of connections.
+
+	* libnm-glib/nm-settings.c (nm_exported_connection_class_init): Fix a typo.
+	(nm_settings_list_connections):
+	(nm_exported_connection_new):
+	(nm_exported_connection_update):
+	(nm_exported_connection_delete): Implement.
+
+	(impl_settings_list_connections):
+	(impl_exported_connection_update):
+	(impl_exported_connection_delete): Use the new public functions to make 
+	sure the C and dbus interfaces stay in sync.
+
+	* system-settings/src/dbus-settings.c (list_connections): Return a list of
+	connections.
+
 2008-05-02  Dan Williams  <dcbw@redhat.com>
 
 	* system-settings/plugins/ifcfg-fedora/plugin.c

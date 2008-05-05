@@ -49,6 +49,8 @@ typedef struct {
 
 GType nm_exported_connection_get_type (void);
 
+NMExportedConnection *nm_exported_connection_new (NMConnection *wrapped);
+
 void nm_exported_connection_register_object (NMExportedConnection *connection,
                                              NMConnectionScope scope,
                                              DBusGConnection *dbus_connection);
@@ -57,7 +59,14 @@ NMConnection *nm_exported_connection_get_connection (NMExportedConnection *conne
 
 const char *nm_exported_connection_get_id (NMExportedConnection *connection);
 
-void nm_exported_connection_signal_updated (NMExportedConnection *connection, GHashTable *settings);
+void nm_exported_connection_update (NMExportedConnection *connection,
+				    GHashTable *new_settings);
+
+void nm_exported_connection_delete (NMExportedConnection *connection);
+
+void nm_exported_connection_signal_updated (NMExportedConnection *connection,
+					    GHashTable *new_settings);
+
 void nm_exported_connection_signal_removed (NMExportedConnection *connection);
 
 
@@ -77,7 +86,8 @@ typedef struct {
 	GObjectClass parent_class;
 
 	/* virtual methods */
-	GPtrArray * (* list_connections) (NMSettings *settings);
+	/* Returns a list of NMExportedConnections. Caller should free the list. */
+	GSList * (*list_connections) (NMSettings *settings);
 
 	/* signals */
 	void (* new_connection) (NMSettings *settings, NMExportedConnection *connection);
@@ -85,7 +95,10 @@ typedef struct {
 
 GType nm_settings_get_type (void);
 
+GSList *nm_settings_list_connections (NMSettings *settings);
+
 void  nm_settings_signal_new_connection (NMSettings *settings, NMExportedConnection *connection);
+
 
 G_END_DECLS
 
