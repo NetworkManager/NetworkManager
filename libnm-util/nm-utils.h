@@ -28,6 +28,10 @@
 
 #include "nm-connection.h"
 
+/*********************************************************/
+/* The API defined here is _NOT_ guaranteed in any way!! */
+/*********************************************************/
+
 #define nm_print_backtrace()						\
 G_STMT_START								\
 {									\
@@ -172,5 +176,8 @@ gboolean nm_utils_security_valid (NMUtilsSecurityType type,
                                   guint32 ap_flags,
                                   guint32 ap_wpa,
                                   guint32 ap_rsn);
+
+GSList *nm_utils_ip4_addresses_from_gvalue (const GValue *value);
+void nm_utils_ip4_addresses_to_gvalue (GSList *list, GValue *value);
 
 #endif /* NM_UTILS_H */

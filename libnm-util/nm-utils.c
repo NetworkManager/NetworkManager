@@ -35,6 +35,7 @@
 #include "nm-utils.h"
 #include "NetworkManager.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-setting-ip4-config.h"
 
 struct EncodingTriplet
 {
@@ -785,3 +786,54 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 
 	return good;
 }
+
+GSList *
+nm_utils_ip4_addresses_from_gvalue (const GValue *value)
+{
+	GPtrArray *addresses;
+	int i;
+	GSList *list = NULL;
+
+	addresses = (GPtrArray *) g_value_get_boxed (value);
+	for (i = 0; addresses && (i < addresses->len); i++) {
+		GArray *array = (GArray *) g_ptr_array_index (addresses, i);
+		NMSettingIP4Address *addr;
+
+		if (array->len != 3) {
+			nm_warning ("Ignoring invalid IP4 address");
+			continue;
+		}
+		
+		addr = g_malloc0 (sizeof (NMSettingIP4Address));
+		addr->address = g_array_index (array, guint32, 0);
+		addr->netmask = g_array_index (array, guint32, 1);
+		addr->gateway = g_array_index (array, guint32, 2);
+		list = g_slist_prepend (list, addr);
+	}
+
+	return g_slist_reverse (list);
+}
+
+void
+nm_utils_ip4_addresses_to_gvalue (GSList *list, GValue *value)
+{
+	GPtrArray *addresses;
+	GSList *iter;
+
+	addresses = g_ptr_array_new ();
+
+	for (iter = list; iter; iter = iter->next) {
+		NMSettingIP4Address *addr = (NMSettingIP4Address *) iter->data;
+		GArray *array;
+
+		array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
+
+		g_array_append_val (array, addr->address);
+		g_array_append_val (array, addr->netmask);
+		g_array_append_val (array, addr->gateway);
+		g_ptr_array_add (addresses, array);
+	}
+
+	g_value_take_boxed (value, addresses);
+}
+
