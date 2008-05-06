@@ -834,20 +834,10 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 {
 	NMDHCPManagerPrivate *priv;
 	NMDHCPDevice *device;
-	NMIP4Config *		ip4_config = NULL;
-	guint32			ip4_address = 0;
-	guint32			ip4_netmask = 0;
-	guint32			ip4_broadcast = 0;
-	guint32			ip4_gateway = 0;
-	char *			hostname = NULL;
-	char *			domain = NULL;
-	char *			search = NULL;
-	char *			nameservers = NULL;
-	char *			nis_domain = NULL;
-	char *			nis_servers = NULL;
-	char *			static_routes = NULL;
-	char *			ip = NULL;		//this is a general string that is used as a temporary place for ip(s)
-	char *			mtu = NULL;
+	NMIP4Config *ip4_config = NULL;
+	NMSettingIP4Address *addr;
+	guint32 ip4_num = 0;
+	char *str = NULL;
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (manager), NULL);
 	g_return_val_if_fail (iface != NULL, NULL);
@@ -865,82 +855,73 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 		return NULL;
 	}
 
-	ip = g_hash_table_lookup (device->options, "new_ip_address");
-	if (ip != NULL) {
-		ip4_address = inet_addr (ip);
-		nm_info("  address %s", ip);
-	}
-	else {
-		return NULL;
-	}
-
-	ip = g_hash_table_lookup (device->options, "new_subnet_mask");
-	if (ip != NULL) {
-		ip4_netmask = inet_addr (ip);
-		nm_info("  netmask %s", ip);
-	}
-	else {
-		return NULL;
-	}
-
-	ip = g_hash_table_lookup (device->options, "new_broadcast_address");
-	if (ip != NULL) {
-		ip4_broadcast = inet_addr (ip);
-		nm_info("  broadcast %s", ip);
-	}
-	else {
-		return NULL;
-	}
-
-	ip = g_hash_table_lookup (device->options, "new_routers");
-	if (ip != NULL) {
-		ip4_gateway = inet_addr (ip);
-	}
-	else { /* If DHCP doesn't have a 'routers', just use the DHCP server's address as our gateway for now */
-		ip = g_hash_table_lookup (device->options, "new_dhcp_server_identifier");
-		if (ip != NULL)
-			ip4_gateway = inet_addr (ip);
-		else
-			return NULL;
-	}
-
-	nm_info("  gateway %s", ip);
-
 	ip4_config = nm_ip4_config_new ();
-	nm_ip4_config_set_address (ip4_config, ip4_address);
-	nm_ip4_config_set_netmask (ip4_config, ip4_netmask);
-	nm_ip4_config_set_broadcast (ip4_config, ip4_broadcast);
-	nm_ip4_config_set_gateway (ip4_config, ip4_gateway);
+	if (!ip4_config) {
+		nm_warning ("%s: couldn't allocate memory for an IP4Config!", device->iface);
+		return NULL;
+	}
 
-	hostname = g_hash_table_lookup (device->options, "new_host_name");
-	nameservers = g_hash_table_lookup (device->options, "new_domain_name_servers");
-	domain = g_hash_table_lookup (device->options, "new_domain_name");
-	search = g_hash_table_lookup (device->options, "new_domain_search");
-	nis_domain = g_hash_table_lookup (device->options, "new_nis_domain");
-	nis_servers = g_hash_table_lookup (device->options, "new_nis_servers");
-	static_routes = g_hash_table_lookup (device->options, "new_static_routes");
+	addr = g_malloc0 (sizeof (NMSettingIP4Address));
+	if (!addr) {
+		nm_warning ("%s: couldn't allocate memory for an IP4 Address!", device->iface);
+		goto error;
+	}
 
-	if (nameservers) {
-		char **searches = g_strsplit (nameservers, " ", 0);
+	str = g_hash_table_lookup (device->options, "new_ip_address");
+	if (str != NULL) {
+		addr->address = inet_addr (str);
+		nm_info("  address %s", str);
+	}
+	if (!addr->address) {
+		g_free (addr);
+		goto error;
+	}
+
+	str = g_hash_table_lookup (device->options, "new_subnet_mask");
+	if (str != NULL) {
+		addr->netmask = inet_addr (str);
+		nm_info("  netmask %s", str);
+	}
+
+	str = g_hash_table_lookup (device->options, "new_routers");
+	if (str != NULL) {
+		addr->gateway = inet_addr (str);
+	} else { /* If DHCP doesn't have a 'routers', just use the DHCP server's address as our gateway for now */
+		str = g_hash_table_lookup (device->options, "new_dhcp_server_identifier");
+		if (str != NULL)
+			addr->gateway = inet_addr (str);
+		else {
+			g_free (addr);
+			return NULL;
+		}
+	}
+	nm_info("  gateway %s", str);
+
+	nm_ip4_config_take_address (ip4_config, addr);
+
+	str = g_hash_table_lookup (device->options, "new_host_name");
+	if (str) {
+		nm_ip4_config_set_hostname (ip4_config, str);
+		nm_info ("  hostname '%s'", str);
+	}
+
+	str = g_hash_table_lookup (device->options, "new_domain_name_servers");
+	if (str) {
+		char **searches = g_strsplit (str, " ", 0);
 		char **s;
-		int ip4_nameserver;
 
 		for (s = searches; *s; s++) {
 			// FIXME: use inet_aton
-			ip4_nameserver = inet_addr (*s);
-			nm_ip4_config_add_nameserver (ip4_config, ip4_nameserver);
+			ip4_num = inet_addr (*s);
+			nm_ip4_config_add_nameserver (ip4_config, ip4_num);
 			nm_info ("  nameserver '%s'", *s);
 		}
 		g_strfreev (searches);
 	}
 
-	if (hostname) {
-		nm_ip4_config_set_hostname (ip4_config, hostname);
-		nm_info ("  hostname '%s'", hostname);
-	}
-
-	if (domain) {
-		char **domains = g_strsplit (domain, " ", 0);
+	str = g_hash_table_lookup (device->options, "new_domain_name");
+	if (str) {
+		char **domains = g_strsplit (str, " ", 0);
 		char **s;
 
 		for (s = domains; *s; s++) {
@@ -950,8 +931,9 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 		g_strfreev (domains);
 	}
 
-	if (search) {
-		char **searches = g_strsplit (search, " ", 0);
+	str = g_hash_table_lookup (device->options, "new_domain_search");
+	if (str) {
+		char **searches = g_strsplit (str, " ", 0);
 		char **s;
 
 		for (s = searches; *s; s++) {
@@ -961,48 +943,50 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 		g_strfreev (searches);
 	}
 
-	if (nis_domain) {
-		nm_ip4_config_set_nis_domain (ip4_config, nis_domain);
-		nm_info ("  nis domain '%s'", nis_domain);
+	str = g_hash_table_lookup (device->options, "new_nis_domain");
+	if (str) {
+		nm_ip4_config_set_nis_domain (ip4_config, str);
+		nm_info ("  nis domain '%s'", str);
 	}
 
-	if (nis_servers) {
-		char **searches = g_strsplit (nis_servers, " ", 0);
+	str = g_hash_table_lookup (device->options, "new_nis_servers");
+	if (str) {
+		char **searches = g_strsplit (str, " ", 0);
 		char **s;
-		int ip4_nis_server;
 
 		for (s = searches; *s; s++) {
 			// FIXME: use inet_aton
-			ip4_nis_server = inet_addr (*s);
-			nm_ip4_config_add_nis_server (ip4_config, ip4_nis_server);
+			ip4_num = inet_addr (*s);
+			nm_ip4_config_add_nis_server (ip4_config, ip4_num);
 			nm_info ("  nis server '%s'", *s);
 		}
 		g_strfreev (searches);
 	}
 
-	if (static_routes) {
-		char **searches = g_strsplit (static_routes, " ", 0);
+	str = g_hash_table_lookup (device->options, "new_static_routes");
+	if (str) {
+		char **searches = g_strsplit (str, " ", 0);
 
 		if ((g_strv_length (searches) % 2) == 0) {
 			char **s;
 
 			for (s = searches; *s; s += 2) {
-				struct in_addr addr;
-				struct in_addr route;
+				struct in_addr rt_addr;
+				struct in_addr rt_route;
 
-				if (inet_aton (*s, &addr) == 0) {
+				if (inet_aton (*s, &rt_addr) == 0) {
 					nm_warning ("DHCP provided invalid static route address: '%s'", *s);
 					continue;
 				}
-				if (inet_aton (*(s + 1), &route) == 0) {
+				if (inet_aton (*(s + 1), &rt_route) == 0) {
 					nm_warning ("DHCP provided invalid static route gateway: '%s'", *(s + 1));
 					continue;
 				}
 
 				// FIXME: ensure the IP addresse and route are sane
 				nm_ip4_config_add_static_route (ip4_config,
-				                                (guint32) addr.s_addr,
-				                                (guint32) route.s_addr);
+				                                (guint32) rt_addr.s_addr,
+				                                (guint32) rt_route.s_addr);
 				nm_info ("  static route %s gw %s", *s, *(s + 1));
 			}
 		} else {
@@ -1011,13 +995,17 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 		g_strfreev (searches);
 	}
 
-	mtu = g_hash_table_lookup (device->options, "new_interface_mtu");
-	if (mtu) {
-		int int_mtu = atoi (mtu);
+	str = g_hash_table_lookup (device->options, "new_interface_mtu");
+	if (str) {
+		int int_mtu = atoi (str);
 
 		if (int_mtu)
 			nm_ip4_config_set_mtu (ip4_config, int_mtu);
 	}
 
 	return ip4_config;
+
+error:
+	g_object_unref (ip4_config);
+	return NULL;
 }

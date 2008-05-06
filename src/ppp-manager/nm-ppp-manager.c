@@ -5,6 +5,7 @@
 #include <signal.h>
 #include <string.h>
 #include <unistd.h>
+#include <arpa/inet.h>
 
 #include "nm-ppp-manager.h"
 #include "nm-setting-connection.h"
@@ -231,6 +232,7 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 						   GError **err)
 {
 	NMIP4Config *config;
+	NMSettingIP4Address *addr;
 	GValue *val;
 	const char *iface;
 	int i;
@@ -244,23 +246,33 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 /* 	priv->ipconfig_timeout = 0; */
 
 	config = nm_ip4_config_new ();
+	addr = g_malloc0 (sizeof (NMSettingIP4Address));
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_GATEWAY);
 	if (val) {
-		nm_ip4_config_set_gateway (config, g_value_get_uint (val));
+		addr->gateway = g_value_get_uint (val);
 		nm_ip4_config_set_ptp_address (config, g_value_get_uint (val));
 	}
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_ADDRESS);
 	if (val)
-		nm_ip4_config_set_address (config, g_value_get_uint (val));
+		addr->address = g_value_get_uint (val);
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_NETMASK);
 	if (val)
-		nm_ip4_config_set_netmask (config, g_value_get_uint (val));
-	else
+		addr->netmask = g_value_get_uint (val);
+	else {
 		/* If no netmask, default to Class C address */
-		nm_ip4_config_set_netmask (config, 0x00FF);
+		addr->netmask = htonl (0x000000FF);
+	}
+
+	if (addr->netmask && addr->address) {
+		nm_ip4_config_take_address (config, addr);
+	} else {
+		nm_warning ("%s: invalid IPv4 address or netmask received!", __func__);
+		g_free (addr);
+		goto out;
+	}
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_DNS);
 	if (val) {

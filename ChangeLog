@@ -1,3 +1,60 @@
+2008-05-06  Dan Williams  <dcbw@redhat.com>
+
+	* src/dhcp-manager/nm-dhcp-manager.c
+		- (nm_dhcp_manager_get_ip4_config): clean up; update for changes to
+			NMIP4Config to support multiple IP addresses
+
+	* src/NetworkManagerUtils.c
+		- (nm_utils_merge_ip4_config): update for multiple IP addresses
+
+	* src/nm-ip4-config.c
+	  src/nm-ip4-config.h
+		- Store a list of IPv4 address/netmask/gateway tuples
+		- (nm_ip4_config_get_gateway, nm_ip4_config_set_gateway,
+		   nm_ip4_config_get_netmask, nm_ip4_config_set_netmask,
+		   nm_ip4_config_get_broadcast, nm_ip4_config_set_broadcast,
+		   nm_ip4_config_set_address): remove
+		- (nm_ip4_config_take_address, nm_ip4_config_add_address,
+		   nm_ip4_config_replace_address, nm_ip4_config_get_num_addresses):
+			new functions; handle multiple IPv4 addresses
+
+	* src/nm-device.c
+	  src/ppp-manager/nm-ppp-manager.c
+	  src/vpn-manager/nm-vpn-connection.c
+	  src/NetworkManagerPolicy.c
+	  test/nm-tool.c
+	  libnm-glib/libnm-glib-test.c
+		- update for changes to NMIP4Config for multiple IPv4 addresses
+
+	* src/NetworkManagerSystem.c
+		- (nm_system_device_set_ip4_route): don't add the route if any address
+			is on the same subnet as the destination
+		- (check_one_address): ignore the exact match, just match family and
+			interface index
+		- (add_ip4_addresses): add all IPv4 addresses in an NMIP4Config to
+			an interface
+		- (nm_system_device_set_from_ip4_config): use add_ip4_addresses()
+		- (nm_system_vpn_device_set_from_ip4_config): use add_ip4_addresses()
+
+	* introspection/nm-ip4-config.xml
+		- Remove 'address', 'gateway', 'netmask', and 'broadcast' properties
+		- Add 'addresses' property which is an array of (uuu) tuples of
+			address/netmask/gateway
+
+	* libnm-util/nm-setting-ip4-config.c
+		- (set_property): use ip-address <-> GValue converters from nm-utils.c
+
+	* libnm-glib/nm-ip4-config.c
+	  libnm-glib/nm-ip4-config.h
+		- Handle D-Bus interface changes to support multiple IP addresses
+
+2008-05-06  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-utils.c
+	  libnm-util/nm-utils.h
+		- (nm_utils_ip4_addresses_from_gvalue,
+		   nm_utils_ip4_addresses_to_gvalue): new functions
+
 2008-05-06  Tambet Ingo  <tambet@gmail.com>
 
 	* libnm-glib/nm-dbus-settings.c (fetch_connections_done): Don't leak

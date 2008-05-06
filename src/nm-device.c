@@ -618,21 +618,21 @@ nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 NMIP4Config *
 nm_device_new_ip4_autoip_config (NMDevice *self)
 {
-	struct in_addr		ip;
-	NMIP4Config *		config = NULL;
+	struct in_addr ip;
+	NMIP4Config *config = NULL;
+	NMSettingIP4Address *addr;
 
 	g_return_val_if_fail (self != NULL, NULL);
 
 	// FIXME: make our autoip implementation not suck; use avahi-autoip
-	if (get_autoip (self, &ip)) {
-		#define LINKLOCAL_BCAST		0xa9feffff
+	if (!get_autoip (self, &ip))
+		return NULL;
 
-		config = nm_ip4_config_new ();
-		nm_ip4_config_set_address (config, (guint32)(ip.s_addr));
-		nm_ip4_config_set_netmask (config, (guint32)(ntohl (0xFFFF0000)));
-		nm_ip4_config_set_broadcast (config, (guint32)(ntohl (LINKLOCAL_BCAST)));
-		nm_ip4_config_set_gateway (config, 0);
-	}
+	config = nm_ip4_config_new ();
+	addr = g_malloc0 (sizeof (NMSettingIP4Address));
+	addr->address = (guint32) ip.s_addr;
+	addr->netmask = (guint32) ntohl (0xFFFF0000);
+	nm_ip4_config_take_address (config, addr);
 
 	return config;
 }

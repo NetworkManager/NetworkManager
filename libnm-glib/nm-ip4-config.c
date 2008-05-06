@@ -4,6 +4,7 @@
 #include "NetworkManager.h"
 #include "nm-types-private.h"
 #include "nm-object-private.h"
+#include "nm-utils.h"
 
 G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, NM_TYPE_OBJECT)
 
@@ -12,10 +13,7 @@ G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, NM_TYPE_OBJECT)
 typedef struct {
 	DBusGProxy *proxy;
 
-	guint32 address;
-	guint32 gateway;
-	guint32 netmask;
-	guint32 broadcast;
+	GSList *addresses;
 	char *hostname;
 	GArray *nameservers;
 	GPtrArray *domains;
@@ -25,10 +23,7 @@ typedef struct {
 
 enum {
 	PROP_0,
-	PROP_ADDRESS,
-	PROP_GATEWAY,
-	PROP_NETMASK,
-	PROP_BROADCAST,
+	PROP_ADDRESSES,
 	PROP_HOSTNAME,
 	PROP_NAMESERVERS,
 	PROP_DOMAINS,
@@ -41,6 +36,21 @@ enum {
 static void
 nm_ip4_config_init (NMIP4Config *config)
 {
+}
+
+static gboolean
+demarshal_ip4_address_array (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
+
+	g_slist_foreach (priv->addresses, (GFunc) g_free, NULL);
+	g_slist_free (priv->addresses);
+	priv->addresses = NULL;
+
+	priv->addresses = nm_utils_ip4_addresses_from_gvalue (value);
+	nm_object_queue_notify (object, NM_IP4_CONFIG_ADDRESSES);
+
+	return TRUE;
 }
 
 static gboolean
@@ -71,10 +81,7 @@ register_for_property_changed (NMIP4Config *config)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_IP4_CONFIG_ADDRESS,     nm_object_demarshal_generic,  &priv->address },
-		{ NM_IP4_CONFIG_GATEWAY,     nm_object_demarshal_generic,  &priv->gateway },
-		{ NM_IP4_CONFIG_NETMASK,     nm_object_demarshal_generic,  &priv->netmask },
-		{ NM_IP4_CONFIG_BROADCAST,   nm_object_demarshal_generic,  &priv->broadcast },
+		{ NM_IP4_CONFIG_ADDRESSES,   demarshal_ip4_address_array,  &priv->addresses },
 		{ NM_IP4_CONFIG_HOSTNAME,    nm_object_demarshal_generic,  &priv->hostname },
 		{ NM_IP4_CONFIG_NAMESERVERS, demarshal_ip4_array,          &priv->nameservers },
 		{ NM_IP4_CONFIG_DOMAINS,     demarshal_domains,            &priv->domains },
@@ -121,6 +128,9 @@ finalize (GObject *object)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
 
+	g_slist_foreach (priv->addresses, (GFunc) g_free, NULL);
+	g_slist_free (priv->addresses);
+
 	g_free (priv->hostname);
 	g_free (priv->nis_domain);
 	if (priv->nameservers)
@@ -143,19 +153,11 @@ get_property (GObject *object,
               GParamSpec *pspec)
 {
 	NMIP4Config *self = NM_IP4_CONFIG (object);
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (self);
 
 	switch (prop_id) {
-	case PROP_ADDRESS:
-		g_value_set_uint (value, nm_ip4_config_get_address (self));
-		break;
-	case PROP_GATEWAY:
-		g_value_set_uint (value, nm_ip4_config_get_gateway (self));
-		break;
-	case PROP_NETMASK:
-		g_value_set_uint (value, nm_ip4_config_get_netmask (self));
-		break;
-	case PROP_BROADCAST:
-		g_value_set_uint (value, nm_ip4_config_get_broadcast (self));
+	case PROP_ADDRESSES:
+		nm_utils_ip4_addresses_to_gvalue (priv->addresses, value);
 		break;
 	case PROP_HOSTNAME:
 		g_value_set_string (value, nm_ip4_config_get_hostname (self));
@@ -192,36 +194,11 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 
 	/* properties */
 	g_object_class_install_property
-		(object_class, PROP_ADDRESS,
-		 g_param_spec_uint (NM_IP4_CONFIG_ADDRESS,
-						    "Address",
-						    "Address",
-						    0, G_MAXUINT32, 0,
-						    G_PARAM_READABLE));
-
-	g_object_class_install_property
-		(object_class, PROP_GATEWAY,
-		 g_param_spec_uint (NM_IP4_CONFIG_GATEWAY,
-						    "Gateway",
-						    "Gateway",
-						    0, G_MAXUINT32, 0,
-						    G_PARAM_READABLE));
-
-	g_object_class_install_property
-		(object_class, PROP_NETMASK,
-		 g_param_spec_uint (NM_IP4_CONFIG_NETMASK,
-						    "Netmask",
-						    "Netmask",
-						    0, G_MAXUINT32, 0,
-						    G_PARAM_READABLE));
-
-	g_object_class_install_property
-		(object_class, PROP_BROADCAST,
-		 g_param_spec_uint (NM_IP4_CONFIG_BROADCAST,
-						    "Broadcast",
-						    "Broadcast",
-						    0, G_MAXUINT32, 0,
-						    G_PARAM_READABLE));
+		(object_class, PROP_ADDRESSES,
+		 g_param_spec_pointer (NM_IP4_CONFIG_ADDRESSES,
+						       "Addresses",
+						       "Addresses",
+						       G_PARAM_READABLE));
 
 	g_object_class_install_property
 		(object_class, PROP_HOSTNAME,
@@ -273,72 +250,29 @@ nm_ip4_config_new (DBusGConnection *connection, const char *object_path)
 									 NULL);
 }
 
-guint32
-nm_ip4_config_get_address (NMIP4Config *config)
+const GSList *
+nm_ip4_config_get_addresses (NMIP4Config *config)
 {
 	NMIP4ConfigPrivate *priv;
+	GValue value = { 0, };
 
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), 0);
 
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	if (!priv->address) {
-		priv->address = nm_object_get_uint_property (NM_OBJECT (config),
-		                                             NM_DBUS_INTERFACE_IP4_CONFIG,
-		                                             "Address");
+	if (priv->addresses)
+		return priv->addresses;
+
+	if (!nm_object_get_property (NM_OBJECT (config),
+	                             "org.freedesktop.DBus.Properties",
+	                             "Addresses",
+	                             &value)) {
+		return NULL;
 	}
 
-	return priv->address;
-}
+	demarshal_ip4_address_array (NM_OBJECT (config), NULL, &value, &priv->addresses);	
+	g_value_unset (&value);
 
-guint32
-nm_ip4_config_get_gateway (NMIP4Config *config)
-{
-	NMIP4ConfigPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), 0);
-
-	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	if (!priv->gateway) {
-		priv->gateway = nm_object_get_uint_property (NM_OBJECT (config),
-		                                             NM_DBUS_INTERFACE_IP4_CONFIG,
-		                                             "Gateway");
-	}
-
-	return priv->gateway;
-}
-
-guint32
-nm_ip4_config_get_netmask (NMIP4Config *config)
-{
-	NMIP4ConfigPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), 0);
-
-	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	if (!priv->netmask) {
-		priv->netmask = nm_object_get_uint_property (NM_OBJECT (config),
-		                                             NM_DBUS_INTERFACE_IP4_CONFIG,
-		                                             "Netmask");
-	}
-
-	return priv->netmask;
-}
-
-guint32
-nm_ip4_config_get_broadcast (NMIP4Config *config)
-{
-	NMIP4ConfigPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), 0);
-
-	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	if (!priv->broadcast) {
-		priv->broadcast = nm_object_get_uint_property (NM_OBJECT (config),
-		                                               NM_DBUS_INTERFACE_IP4_CONFIG,
-		                                               "Broadcast");
-	}
-
-	return priv->broadcast;
+	return priv->addresses;
 }
 
 const char *

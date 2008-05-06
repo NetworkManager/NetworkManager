@@ -27,6 +27,8 @@
 #include <glib/gtypes.h>
 #include <glib-object.h>
 
+#include "nm-setting-ip4-config.h"
+
 #define NM_TYPE_IP4_CONFIG            (nm_ip4_config_get_type ())
 #define NM_IP4_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_IP4_CONFIG, NMIP4Config))
 #define NM_IP4_CONFIG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_IP4_CONFIG, NMIP4ConfigClass))
@@ -42,10 +44,7 @@ typedef struct {
 	GObjectClass parent;
 } NMIP4ConfigClass;
 
-#define NM_IP4_CONFIG_ADDRESS "address"
-#define NM_IP4_CONFIG_GATEWAY "gateway"
-#define NM_IP4_CONFIG_NETMASK "netmask"
-#define NM_IP4_CONFIG_BROADCAST "broadcast"
+#define NM_IP4_CONFIG_ADDRESSES "addresses"
 #define NM_IP4_CONFIG_HOSTNAME "hostname"
 #define NM_IP4_CONFIG_NAMESERVERS "nameservers"
 #define NM_IP4_CONFIG_DOMAINS "domains"
@@ -59,20 +58,14 @@ GType nm_ip4_config_get_type (void);
 NMIP4Config *	nm_ip4_config_new				(void);
 NMIP4Config *	nm_ip4_config_copy				(NMIP4Config *config);
 
-guint32		nm_ip4_config_get_address		(NMIP4Config *config);
-void			nm_ip4_config_set_address		(NMIP4Config *config, guint32 addr);
+void					nm_ip4_config_take_address		(NMIP4Config *config, NMSettingIP4Address *address);
+void					nm_ip4_config_add_address		(NMIP4Config *config, NMSettingIP4Address *address);
+void					nm_ip4_config_replace_address		(NMIP4Config *config, guint32 i, NMSettingIP4Address *new_address);
+const NMSettingIP4Address *	nm_ip4_config_get_address		(NMIP4Config *config, guint32 i);
+guint32					nm_ip4_config_get_num_addresses	(NMIP4Config *config);
 
 guint32		nm_ip4_config_get_ptp_address		(NMIP4Config *config);
 void			nm_ip4_config_set_ptp_address		(NMIP4Config *config, guint32 ptp_addr);
-
-guint32		nm_ip4_config_get_gateway		(NMIP4Config *config);
-void			nm_ip4_config_set_gateway		(NMIP4Config *config, guint32 gateway);
-
-guint32		nm_ip4_config_get_netmask		(NMIP4Config *config);
-void			nm_ip4_config_set_netmask		(NMIP4Config *config, guint32 netmask);
-
-guint32		nm_ip4_config_get_broadcast		(NMIP4Config *config);
-void			nm_ip4_config_set_broadcast		(NMIP4Config *config, guint32 broadcast);
 
 void			nm_ip4_config_add_nameserver		(NMIP4Config *config, guint32 nameserver);
 guint32		nm_ip4_config_get_nameserver		(NMIP4Config *config, guint i);
@@ -116,6 +109,6 @@ void			nm_ip4_config_set_mss			(NMIP4Config *config, guint32 mss);
 #define NM_RTNL_ADDR_DEFAULT		(NM_RTNL_ADDR_ADDR | NM_RTNL_ADDR_NETMASK | NM_RTNL_ADDR_BROADCAST)
 #define NM_RTNL_ADDR_PTP_DEFAULT	(NM_RTNL_ADDR_ADDR | NM_RTNL_ADDR_NETMASK | NM_RTNL_ADDR_PTP_ADDR)
 
-struct rtnl_addr *	nm_ip4_config_to_rtnl_addr	(NMIP4Config *config, guint32 flags);
+struct rtnl_addr *nm_ip4_config_to_rtnl_addr (NMIP4Config *config, guint32 i, guint32 flags);
 
 #endif /* NM_IP4_CONFIG_H */

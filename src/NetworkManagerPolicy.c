@@ -86,10 +86,11 @@ update_default_route (NMPolicy *policy, NMDevice *new)
 		nm_system_device_replace_default_ip4_route (ip_iface, 0, 0);
 	} else {
 		NMIP4Config *config;
+		const NMSettingIP4Address *def_addr;
 
 		config = nm_device_get_ip4_config (new);
-		nm_system_device_replace_default_ip4_route (ip_iface, nm_ip4_config_get_gateway (config),
-		                                        nm_ip4_config_get_mss (config));
+		def_addr = nm_ip4_config_get_address (config, 0);
+		nm_system_device_replace_default_ip4_route (ip_iface, def_addr->gateway, nm_ip4_config_get_mss (config));
 	}
 }
 
@@ -129,6 +130,8 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 		NMIP4Config *ip4_config;
 		NMSettingIP4Config *s_ip4;
 		guint32 prio;
+		guint i;
+		gboolean have_gateway = FALSE;
 		
 		if (nm_device_get_state (dev) != NM_DEVICE_STATE_ACTIVATED)
 			continue;
@@ -147,8 +150,18 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 		if (s_ip4 && !strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP))
 			continue;
 
-		/* FIXME: handle more than one IP address */
-		if (!nm_ip4_config_get_gateway (ip4_config))
+		/* Make sure at least one of this device's IP addresses has a gateway */
+		for (i = 0; i < nm_ip4_config_get_num_addresses (ip4_config); i++) {
+			const NMSettingIP4Address *addr;
+
+			addr = nm_ip4_config_get_address (ip4_config, i);
+			if (addr->gateway) {
+				have_gateway = TRUE;
+				break;
+			}
+		}
+
+		if (!have_gateway)
 			continue;
 
 		prio = get_device_priority (dev);

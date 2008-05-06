@@ -13,6 +13,7 @@
 #include "nm-device-802-11-wireless.h"
 #include "nm-utils.h"
 #include "nm-active-connection.h"
+#include "nm-setting-ip4-config.h"
 
 static gboolean
 test_wireless_enabled (NMClient *client)
@@ -61,23 +62,24 @@ dump_ip4_config (NMIP4Config *cfg)
 	char *tmp;
 	const GArray *array;
 	const GPtrArray *ptr_array;
+	GSList *iter;
 	int i;
 
-	tmp = ip4_address_as_string (nm_ip4_config_get_address (cfg));
-	g_print ("IP4 address: %s\n", tmp);
-	g_free (tmp);
+	for (iter = (GSList *) nm_ip4_config_get_addresses (cfg); iter; iter = g_slist_next (iter)) {
+		NMSettingIP4Address *addr = iter->data;
 
-	tmp = ip4_address_as_string (nm_ip4_config_get_gateway (cfg));
-	g_print ("IP4 gateway: %s\n", tmp);
-	g_free (tmp);
+		tmp = ip4_address_as_string (addr->address);
+		g_print ("IP4 address: %s\n", tmp);
+		g_free (tmp);
 
-	tmp = ip4_address_as_string (nm_ip4_config_get_netmask (cfg));
-	g_print ("IP4 netmask: %s\n", tmp);
-	g_free (tmp);
+		tmp = ip4_address_as_string (addr->netmask);
+		g_print ("IP4 netmask: %s\n", tmp);
+		g_free (tmp);
 
-	tmp = ip4_address_as_string (nm_ip4_config_get_broadcast (cfg));
-	g_print ("IP4 broadcast: %s\n", tmp);
-	g_free (tmp);
+		tmp = ip4_address_as_string (addr->gateway);
+		g_print ("IP4 gateway: %s\n\n", tmp);
+		g_free (tmp);
+	}
 
 	g_print ("IP4 hostname: %s\n", nm_ip4_config_get_hostname (cfg));
 

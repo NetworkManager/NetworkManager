@@ -80,7 +80,7 @@ nm_system_device_set_ip4_route (const char *iface,
 	struct nl_handle *nlh = NULL;
 	struct nl_addr *gw_addr = NULL;
 	struct nl_addr *dest_addr = NULL;
-	int err, iface_idx;
+	int err, iface_idx, i;
 
 	/*
 	 * Zero is not a legal gateway and the ioctl will fail.  But zero is a
@@ -93,10 +93,15 @@ nm_system_device_set_ip4_route (const char *iface,
 	/*
 	 * Do not add the route if the destination is on the same subnet.
 	 */
-	if (iface_config &&
-	    ((guint32)ip4_dest & nm_ip4_config_get_netmask (iface_config)) ==
-	        (nm_ip4_config_get_address (iface_config) & nm_ip4_config_get_netmask (iface_config)))
-		return TRUE;
+	if (iface_config) {
+		for (i = 0; i < nm_ip4_config_get_num_addresses (iface_config); i++) {
+			const NMSettingIP4Address *cfg_addr;
+
+			cfg_addr = nm_ip4_config_get_address (iface_config, i);
+		    if ((ip4_dest & cfg_addr->netmask) == (cfg_addr->address & cfg_addr->netmask))
+		    	return TRUE;
+		}
+	}
 
 	nlh = nm_netlink_get_default_handle ();
 	g_return_val_if_fail (nlh != NULL, FALSE);
@@ -186,8 +191,9 @@ out:
 
 typedef struct {
 	const char *iface;
+	int ifindex;
+	int family;
 	struct nl_handle *nlh;
-	struct rtnl_addr *match;
 } AddrCheckData;
 
 static void
@@ -197,21 +203,76 @@ check_one_address (struct nl_object *object, void *user_data)
 	struct rtnl_addr *addr = (struct rtnl_addr *) object;
 	int err;
 
-	/* Delete addresses on this interface which don't match the one we
-	 * are about to add to it.
-	 */
-	if (nl_object_identical ((struct nl_object *) data->match, (struct nl_object *) addr))
-		return;
-	if (rtnl_addr_get_ifindex (addr) != rtnl_addr_get_ifindex (data->match))
-		return;
-	if (rtnl_addr_get_family (addr) != rtnl_addr_get_family (data->match))
-		return;
-
-	err = rtnl_addr_delete (data->nlh, addr, 0);
-	if (err < 0) {
-		nm_warning ("(%s) error %d returned from rtnl_addr_delete(): %s",
-		            data->iface, err, nl_geterror());
+	if (rtnl_addr_get_ifindex (addr) == data->ifindex) {
+		if (rtnl_addr_get_family (addr) == data->family) {
+			err = rtnl_addr_delete (data->nlh, addr, 0);
+			if (err < 0) {
+				nm_warning ("(%s) error %d returned from rtnl_addr_delete(): %s",
+				            data->iface, err, nl_geterror());
+			}
+		}
 	}
+}
+
+static gboolean
+add_ip4_addresses (NMIP4Config *config, const char *iface)
+{
+	struct nl_handle *nlh = NULL;
+	struct nl_cache *addr_cache = NULL;
+	int i, iface_idx, err;
+	AddrCheckData check_data;
+	guint32 flags = 0;
+	gboolean did_gw = FALSE;
+
+	nlh = nm_netlink_get_default_handle ();
+	if (!nlh)
+		return FALSE;
+
+	addr_cache = rtnl_addr_alloc_cache (nlh);
+	if (!addr_cache)
+		return FALSE;
+	nl_cache_mngt_provide (addr_cache);
+
+	iface_idx = nm_netlink_iface_to_index (iface);
+
+	memset (&check_data, 0, sizeof (check_data));
+	check_data.iface = iface;
+	check_data.nlh = nlh;
+	check_data.ifindex = iface_idx;
+	check_data.family = AF_INET;
+
+	/* Remove all existing IPv4 addresses */
+	nl_cache_foreach (addr_cache, check_one_address, &check_data);
+
+	for (i = 0; i < nm_ip4_config_get_num_addresses (config); i++) {
+		const NMSettingIP4Address *addr;
+		struct rtnl_addr *nl_addr = NULL;
+
+		addr = nm_ip4_config_get_address (config, i);
+		g_assert (addr);
+
+		flags = NM_RTNL_ADDR_DEFAULT;
+		if (addr->gateway && !did_gw) {
+			if (nm_ip4_config_get_ptp_address (config))
+				flags |= NM_RTNL_ADDR_PTP_ADDR;
+			did_gw = TRUE;
+		}
+
+		nl_addr = nm_ip4_config_to_rtnl_addr (config, i, flags);
+		if (!nl_addr) {
+			nm_warning ("couldn't create rtnl address!\n");
+			continue;
+		}
+		rtnl_addr_set_ifindex (nl_addr, iface_idx);
+
+		if ((err = rtnl_addr_add (nlh, nl_addr, 0)) < 0)
+			nm_warning ("(%s) error %d returned from rtnl_addr_add():\n%s", iface, err, nl_geterror());
+
+		rtnl_addr_put (nl_addr);
+	}
+
+	nl_cache_free (addr_cache);
+	return TRUE;
 }
 
 /*
@@ -225,47 +286,13 @@ nm_system_device_set_from_ip4_config (const char *iface,
 							   NMIP4Config *config,
 							   gboolean route_to_iface)
 {
-	struct nl_handle *nlh = NULL;
-	struct rtnl_addr *addr = NULL;
-	struct nl_cache *addr_cache = NULL;
-	int len, i, err;
-	guint32 flags;
-	AddrCheckData check_data;
-	gboolean success = FALSE;
+	int len, i;
 
 	g_return_val_if_fail (iface != NULL, FALSE);
 	g_return_val_if_fail (config != NULL, FALSE);
 
-	nlh = nm_netlink_get_default_handle ();
-	if (!nlh)
+	if (!add_ip4_addresses (config, iface))
 		return FALSE;
-
-	addr_cache = rtnl_addr_alloc_cache (nlh);
-	if (!addr_cache)
-		goto out;
-	nl_cache_mngt_provide (addr_cache);
-
-	flags = NM_RTNL_ADDR_DEFAULT;
-	if (nm_ip4_config_get_ptp_address (config))
-		flags |= NM_RTNL_ADDR_PTP_ADDR;
-
-	addr = nm_ip4_config_to_rtnl_addr (config, flags);
-	if (!addr) {
-		nm_warning ("couldn't create rtnl address!\n");
-		goto out;
-	}
-	rtnl_addr_set_ifindex (addr, nm_netlink_iface_to_index (iface));
-
-	memset (&check_data, 0, sizeof (check_data));
-	check_data.iface = iface;
-	check_data.nlh = nlh;
-	check_data.match = addr;
-
-	/* Remove all addresses except the one we're about to add */
-	nl_cache_foreach (addr_cache, check_one_address, &check_data);
-
-	if ((err = rtnl_addr_add (nlh, addr, 0)) < 0)
-		nm_warning ("(%s) error %d returned from rtnl_addr_add():\n%s", iface, err, nl_geterror());
 
 	sleep (1);
 
@@ -281,14 +308,7 @@ nm_system_device_set_from_ip4_config (const char *iface,
 	if (nm_ip4_config_get_mtu (config))
 		nm_system_device_set_mtu (iface, nm_ip4_config_get_mtu (config));
 
-	success = TRUE;
-
-out:
-	if (addr)
-		rtnl_addr_put (addr);
-	if (addr_cache)
-		nl_cache_free (addr_cache);
-	return success;
+	return TRUE;
 }
 
 /*
@@ -303,43 +323,45 @@ nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
                                           NMIP4Config *config,
                                           GSList *routes)
 {
-	NMIP4Config *		ad_config = NULL;
-	struct nl_handle *	nlh = NULL;
-	struct rtnl_addr *	addr = NULL;
+	NMIP4Config *ad_config = NULL;
 	NMNamedManager *named_mgr;
-	int iface_idx;
+	int i;
 
 	g_return_val_if_fail (config != NULL, FALSE);
 
 	/* Set up a route to the VPN gateway through the real network device */
 	if (active_device && (ad_config = nm_device_get_ip4_config (active_device))) {
+		guint32 ad_gw = 0, vpn_gw = 0;
+		const NMSettingIP4Address *tmp;
+
+		for (i = 0; i < nm_ip4_config_get_num_addresses (ad_config); i++) {
+			tmp = nm_ip4_config_get_address (ad_config, i);
+			if (tmp->gateway) {
+				ad_gw = tmp->gateway;
+				break;
+			}
+		}
+
+		for (i = 0; i < nm_ip4_config_get_num_addresses (config); i++) {
+			tmp = nm_ip4_config_get_address (config, i);
+			if (tmp->gateway) {
+				vpn_gw = tmp->gateway;
+				break;
+			}
+		}
+
 		nm_system_device_set_ip4_route (nm_device_get_ip_iface (active_device),
-								  ad_config,
-								  nm_ip4_config_get_gateway (ad_config),
-								  nm_ip4_config_get_gateway (config),
-								  32,
+								  ad_config, ad_gw, vpn_gw, 32,
 								  nm_ip4_config_get_mss (config));
 	}
 
 	if (!iface || !strlen (iface))
 		goto out;
 
-	nlh = nm_netlink_get_default_handle ();
-	if (!nlh)
-		goto out;
-
 	nm_system_device_set_up_down_with_iface (iface, TRUE);
 
-	iface_idx = nm_netlink_iface_to_index (iface);
-
-	if ((addr = nm_ip4_config_to_rtnl_addr (config, NM_RTNL_ADDR_PTP_DEFAULT))) {
-		int err = 0;
-		rtnl_addr_set_ifindex (addr, iface_idx);
-		if ((err = rtnl_addr_add (nlh, addr, 0)) < 0)
-			nm_warning ("error %d returned from rtnl_addr_add():\n%s", err, nl_geterror());
-		rtnl_addr_put (addr);
-	} else
-		nm_warning ("couldn't create rtnl address!\n");
+	if (!add_ip4_addresses (config, iface))
+		goto out;
 
 	/* Set the MTU */
 	if (nm_ip4_config_get_mtu (config))

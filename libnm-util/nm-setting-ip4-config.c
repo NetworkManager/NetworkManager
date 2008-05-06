@@ -87,64 +87,6 @@ finalize (GObject *object)
 	G_OBJECT_CLASS (nm_setting_ip4_config_parent_class)->finalize (object);
 }
 
-static GSList *
-ip4_addresses_from_gvalue (const GValue *value)
-{
-	GPtrArray *addresses;
-	int i;
-	GSList *list = NULL;
-
-	addresses = (GPtrArray *) g_value_get_boxed (value);
-	for (i = 0; addresses && (i < addresses->len); i++) {
-		GArray *array = (GArray *) g_ptr_array_index (addresses, i);
-
-		if (array->len == 2 || array->len == 3) {
-			NMSettingIP4Address *ip4_addr;
-
-			ip4_addr = g_new0 (NMSettingIP4Address, 1);
-			ip4_addr->address = g_array_index (array, guint32, 0);
-			ip4_addr->netmask = g_array_index (array, guint32, 1);
-
-			if (array->len == 3)
-				ip4_addr->gateway = g_array_index (array, guint32, 2);
-
-			list = g_slist_prepend (list, ip4_addr);
-		} else
-			nm_warning ("Ignoring invalid IP4 address");
-	}
-
-	return g_slist_reverse (list);
-}
-
-static void
-ip4_addresses_to_gvalue (GSList *list, GValue *value)
-{
-	GPtrArray *addresses;
-	GSList *iter;
-
-	addresses = g_ptr_array_new ();
-
-	for (iter = list; iter; iter = iter->next) {
-		NMSettingIP4Address *ip4_addr = (NMSettingIP4Address *) iter->data;
-		GArray *array;
-		const guint32 empty_val = 0;
-
-		array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
-
-		g_array_append_val (array, ip4_addr->address);
-		g_array_append_val (array, ip4_addr->netmask);
-
-		if (ip4_addr->gateway)
-			g_array_append_val (array, ip4_addr->gateway);
-		else
-			g_array_append_val (array, empty_val);
-
-		g_ptr_array_add (addresses, array);
-	}
-
-	g_value_take_boxed (value, addresses);
-}
-
 static void
 set_property (GObject *object, guint prop_id,
 		    const GValue *value, GParamSpec *pspec)
@@ -167,7 +109,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_ADDRESSES:
 		nm_utils_slist_free (setting->addresses, g_free);
-		setting->addresses = ip4_addresses_from_gvalue (value);
+		setting->addresses = nm_utils_ip4_addresses_from_gvalue (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -192,7 +134,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boxed (value, setting->dns_search);
 		break;
 	case PROP_ADDRESSES:
-		ip4_addresses_to_gvalue (setting->addresses, value);
+		nm_utils_ip4_addresses_to_gvalue (setting->addresses, value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

@@ -27,6 +27,7 @@
 #include "nm-dbus-manager.h"
 #include "NetworkManager.h"
 #include "NetworkManagerUtils.h"
+#include "nm-setting-ip4-config.h"
 
 #include <netlink/route/addr.h>
 #include <netlink/utils.h>
@@ -41,11 +42,8 @@ G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, G_TYPE_OBJECT)
 #define NM_IP4_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IP4_CONFIG, NMIP4ConfigPrivate))
 
 typedef struct {
-	guint32	ip4_address;
-	guint32	ip4_ptp_address;
-	guint32	ip4_gateway;
-	guint32	ip4_netmask;
-	guint32	ip4_broadcast;
+	GSList *addresses;
+	guint32	ptp_address;
 
 	guint32	mtu;	/* Maximum Transmission Unit of the interface */
 	guint32	mss;	/* Maximum Segment Size of the route */
@@ -54,8 +52,8 @@ typedef struct {
 	GPtrArray *domains;
 	GPtrArray *searches;
 
-	gchar *	hostname;
-	gchar *	nis_domain;
+	gchar *hostname;
+	gchar *nis_domain;
 	GArray *nis_servers;
 	GArray *static_routes;
 } NMIP4ConfigPrivate;
@@ -63,10 +61,7 @@ typedef struct {
 
 enum {
 	PROP_0,
-	PROP_ADDRESS,
-	PROP_GATEWAY,
-	PROP_NETMASK,
-	PROP_BROADCAST,
+	PROP_ADDRESSES,
 	PROP_HOSTNAME,
 	PROP_NAMESERVERS,
 	PROP_DOMAINS,
@@ -100,20 +95,26 @@ nm_ip4_config_new (void)
 NMIP4Config *nm_ip4_config_copy (NMIP4Config *src_config)
 {
 	NMIP4Config *dst_config;
-	NMIP4ConfigPrivate *priv;
+	NMIP4ConfigPrivate *src_priv;
 	int i;
 	int len;
+	GSList *iter;
 
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (src_config), NULL);
 
 	dst_config = nm_ip4_config_new ();
-	priv = NM_IP4_CONFIG_GET_PRIVATE (dst_config);
+	src_priv = NM_IP4_CONFIG_GET_PRIVATE (src_config);
 
-	nm_ip4_config_set_address     (dst_config, nm_ip4_config_get_address (src_config));
+	for (iter = src_priv->addresses; iter; iter = g_slist_next (iter)) {
+		NMSettingIP4Address *src_addr = (NMSettingIP4Address *) iter->data;
+		NMSettingIP4Address *dst_addr;
+
+		dst_addr = g_malloc0 (sizeof (NMSettingIP4Address));
+		memcpy (dst_addr, src_addr, sizeof (NMSettingIP4Address));
+		nm_ip4_config_take_address (dst_config, dst_addr);
+	}
+
 	nm_ip4_config_set_ptp_address (dst_config, nm_ip4_config_get_ptp_address (src_config));
-	nm_ip4_config_set_gateway     (dst_config, nm_ip4_config_get_gateway (src_config));
-	nm_ip4_config_set_netmask     (dst_config, nm_ip4_config_get_netmask (src_config));
-	nm_ip4_config_set_broadcast   (dst_config, nm_ip4_config_get_broadcast (src_config));
 	nm_ip4_config_set_hostname    (dst_config, nm_ip4_config_get_hostname (src_config));
 	nm_ip4_config_set_nis_domain  (dst_config, nm_ip4_config_get_nis_domain (src_config));
 
@@ -140,74 +141,79 @@ NMIP4Config *nm_ip4_config_copy (NMIP4Config *src_config)
 	return dst_config;
 }
 
-guint32 nm_ip4_config_get_address (NMIP4Config *config)
+void
+nm_ip4_config_take_address (NMIP4Config *config,
+                            NMSettingIP4Address *address)
+{
+	NMIP4ConfigPrivate *priv;
+
+	g_return_if_fail (NM_IS_IP4_CONFIG (config));
+	g_return_if_fail (address != NULL);
+
+	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	priv->addresses = g_slist_append (priv->addresses, address);
+}
+
+void
+nm_ip4_config_add_address (NMIP4Config *config,
+                           NMSettingIP4Address *address)
+{
+	NMIP4ConfigPrivate *priv;
+	NMSettingIP4Address *copy;
+
+	g_return_if_fail (NM_IS_IP4_CONFIG (config));
+	g_return_if_fail (address != NULL);
+
+	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	copy = g_malloc0 (sizeof (NMSettingIP4Address));
+	memcpy (copy, address, sizeof (NMSettingIP4Address));
+	priv->addresses = g_slist_append (priv->addresses, copy);
+}
+
+void
+nm_ip4_config_replace_address (NMIP4Config *config,
+                               guint i,
+                               NMSettingIP4Address *new_address)
+{
+	NMIP4ConfigPrivate *priv;
+	GSList *old;
+
+	g_return_if_fail (NM_IS_IP4_CONFIG (config));
+
+	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	old = g_slist_nth (priv->addresses, i);
+	g_return_if_fail (old != NULL);
+
+	g_free (old->data);
+	old->data = new_address;
+}
+
+const NMSettingIP4Address *nm_ip4_config_get_address (NMIP4Config *config, guint i)
+{
+	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
+
+	return (const NMSettingIP4Address *) g_slist_nth_data (NM_IP4_CONFIG_GET_PRIVATE (config)->addresses, i);
+}
+
+guint32 nm_ip4_config_get_num_addresses (NMIP4Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), 0);
 
-	return NM_IP4_CONFIG_GET_PRIVATE (config)->ip4_address;
-}
-
-void nm_ip4_config_set_address (NMIP4Config *config, guint32 addr)
-{
-	g_return_if_fail (NM_IS_IP4_CONFIG (config));
-
-	NM_IP4_CONFIG_GET_PRIVATE (config)->ip4_address = addr;
+	return g_slist_length (NM_IP4_CONFIG_GET_PRIVATE (config)->addresses);
 }
 
 guint32 nm_ip4_config_get_ptp_address (NMIP4Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), 0);
 
-	return NM_IP4_CONFIG_GET_PRIVATE (config)->ip4_ptp_address;
+	return NM_IP4_CONFIG_GET_PRIVATE (config)->ptp_address;
 }
 
 void nm_ip4_config_set_ptp_address (NMIP4Config *config, guint32 ptp_addr)
 {
 	g_return_if_fail (NM_IS_IP4_CONFIG (config));
 
-	NM_IP4_CONFIG_GET_PRIVATE (config)->ip4_ptp_address = ptp_addr;
-}
-
-guint32 nm_ip4_config_get_gateway (NMIP4Config *config)
-{
-	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), 0);
-
-	return NM_IP4_CONFIG_GET_PRIVATE (config)->ip4_gateway;
-}
-
-void nm_ip4_config_set_gateway (NMIP4Config *config, guint32 gateway)
-{
-	g_return_if_fail (NM_IS_IP4_CONFIG (config));
-
-	NM_IP4_CONFIG_GET_PRIVATE (config)->ip4_gateway = gateway;
-}
-
-guint32 nm_ip4_config_get_netmask (NMIP4Config *config)
-{
-	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), 0);
-
-	return NM_IP4_CONFIG_GET_PRIVATE (config)->ip4_netmask;
-}
-
-void nm_ip4_config_set_netmask (NMIP4Config *config, guint32 netmask)
-{
-	g_return_if_fail (NM_IS_IP4_CONFIG (config));
-
-	NM_IP4_CONFIG_GET_PRIVATE (config)->ip4_netmask = netmask;
-}
-
-guint32 nm_ip4_config_get_broadcast (NMIP4Config *config)
-{
-	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), 0);
-
-	return NM_IP4_CONFIG_GET_PRIVATE (config)->ip4_broadcast;
-}
-
-void nm_ip4_config_set_broadcast (NMIP4Config *config, guint32 broadcast)
-{
-	g_return_if_fail (NM_IS_IP4_CONFIG (config));
-
-	NM_IP4_CONFIG_GET_PRIVATE (config)->ip4_broadcast = broadcast;
+	NM_IP4_CONFIG_GET_PRIVATE (config)->ptp_address = ptp_addr;
 }
 
 void nm_ip4_config_add_nameserver (NMIP4Config *config, guint32 nameserver)
@@ -440,43 +446,42 @@ static int ip4_addr_to_rtnl_broadcast (guint32 ip4_broadcast, struct rtnl_addr *
 }
 
 
-struct rtnl_addr * nm_ip4_config_to_rtnl_addr (NMIP4Config *config, guint32 flags)
+struct rtnl_addr *
+nm_ip4_config_to_rtnl_addr (NMIP4Config *config, guint32 i, guint32 flags)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	struct rtnl_addr *	addr = NULL;
-	gboolean			success = TRUE;
+	const NMSettingIP4Address *config_addr;
+	struct rtnl_addr *addr;
+	gboolean success = TRUE;
 
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
+
+	config_addr = nm_ip4_config_get_address (config, i);
+	g_return_val_if_fail (config_addr != NULL, NULL);
 
 	if (!(addr = rtnl_addr_alloc()))
 		return NULL;
 
 	if (flags & NM_RTNL_ADDR_ADDR)
-		success = (ip4_addr_to_rtnl_local (priv->ip4_address, addr) >= 0);
+		success = (ip4_addr_to_rtnl_local (config_addr->address, addr) >= 0);
 
 	if (flags & NM_RTNL_ADDR_PTP_ADDR)
-		success = (ip4_addr_to_rtnl_peer (priv->ip4_ptp_address, addr) >= 0);
+		success = (ip4_addr_to_rtnl_peer (priv->ptp_address, addr) >= 0);
 
 	if (flags & NM_RTNL_ADDR_NETMASK)
-		ip4_addr_to_rtnl_prefixlen (priv->ip4_netmask, addr);
+		ip4_addr_to_rtnl_prefixlen (config_addr->netmask, addr);
 
 	if (flags & NM_RTNL_ADDR_BROADCAST) {
-		guint32 bcast = priv->ip4_broadcast;
+		guint32 hostmask, network, bcast;
 
-		/* Calculate the broadcast address if needed */
-		if (!bcast) {
-			guint32 hostmask, network;
-
-			network = ntohl (priv->ip4_address) & ntohl (priv->ip4_netmask);
-			hostmask = ~ntohl (priv->ip4_netmask);
-			bcast = htonl (network | hostmask);
-		}
+		network = ntohl (config_addr->address) & ntohl (config_addr->netmask);
+		hostmask = ~ntohl (config_addr->netmask);
+		bcast = htonl (network | hostmask);
 
 		success = (ip4_addr_to_rtnl_broadcast (bcast, addr) >= 0);
 	}
 
-	if (!success)
-	{
+	if (!success) {
 		rtnl_addr_put (addr);
 		addr = NULL;
 	}
@@ -501,6 +506,8 @@ finalize (GObject *object)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
 
+	g_slist_foreach (priv->addresses, (GFunc) g_free, NULL);
+	g_slist_free (priv->addresses);
 	g_free (priv->hostname);
 	g_free (priv->nis_domain);
 	g_array_free (priv->nameservers, TRUE);
@@ -511,23 +518,43 @@ finalize (GObject *object)
 }
 
 static void
+ip4_addresses_to_gvalue (GSList *list, GValue *value)
+{
+	GPtrArray *addresses;
+	GSList *iter;
+
+	addresses = g_ptr_array_new ();
+
+	for (iter = list; iter; iter = iter->next) {
+		NMSettingIP4Address *ip4_addr = (NMSettingIP4Address *) iter->data;
+		GArray *array;
+		const guint32 empty_val = 0;
+
+		array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
+
+		g_array_append_val (array, ip4_addr->address);
+		g_array_append_val (array, ip4_addr->netmask);
+
+		if (ip4_addr->gateway)
+			g_array_append_val (array, ip4_addr->gateway);
+		else
+			g_array_append_val (array, empty_val);
+
+		g_ptr_array_add (addresses, array);
+	}
+
+	g_value_take_boxed (value, addresses);
+}
+
+static void
 get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
 
 	switch (prop_id) {
-	case PROP_ADDRESS:
-		g_value_set_uint (value, priv->ip4_address);
-		break;
-	case PROP_GATEWAY:
-		g_value_set_uint (value, priv->ip4_gateway);
-		break;
-	case PROP_NETMASK:
-		g_value_set_uint (value, priv->ip4_netmask);
-		break;
-	case PROP_BROADCAST:
-		g_value_set_uint (value, priv->ip4_broadcast);
+	case PROP_ADDRESSES:
+		ip4_addresses_to_gvalue (priv->addresses, value);
 		break;
 	case PROP_HOSTNAME:
 		g_value_set_string (value, priv->hostname);
@@ -566,32 +593,11 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 
 	/* properties */
 	g_object_class_install_property
-		(object_class, PROP_ADDRESS,
-		 g_param_spec_uint (NM_IP4_CONFIG_ADDRESS,
-							"Address",
-							"IP4 address",
-							0, G_MAXUINT32, 0,
-							G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_GATEWAY,
-		 g_param_spec_uint (NM_IP4_CONFIG_GATEWAY,
-							"Gateway",
-							"Gateway address",
-							0, G_MAXUINT32, 0,
-							G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_NETMASK,
-		 g_param_spec_uint (NM_IP4_CONFIG_NETMASK,
-							"Netmask",
-							"Netmask address",
-							0, G_MAXUINT32, 0,
-							G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_BROADCAST,
-		 g_param_spec_uint (NM_IP4_CONFIG_BROADCAST,
-							"Broadcast",
-							"Broadcast address",
-							0, G_MAXUINT32, 0,
+		(object_class, PROP_ADDRESSES,
+		 g_param_spec_boxed (NM_IP4_CONFIG_ADDRESSES,
+							"Addresses",
+							"IP4 addresses",
+							DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
 							G_PARAM_READABLE));
 	g_object_class_install_property
 		(object_class, PROP_HOSTNAME,

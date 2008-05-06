@@ -237,6 +237,8 @@ nm_ether_ntop (const struct ether_addr *mac)
 void
 nm_utils_merge_ip4_config (NMIP4Config *ip4_config, NMSettingIP4Config *setting)
 {
+	GSList *iter;
+
 	if (!setting)
 		return; /* Defaults are just fine */
 
@@ -261,42 +263,44 @@ nm_utils_merge_ip4_config (NMIP4Config *ip4_config, NMSettingIP4Config *setting)
 		}
 	}
 
-	if (setting->dns_search) {
-		GSList *iter;
+	/* DNS search domains */
+	for (iter = setting->dns_search; iter; iter = iter->next) {
+		int i;
+		gboolean found = FALSE;
 
-		for (iter = setting->dns_search; iter; iter = iter->next) {
-			int i;
-			gboolean found = FALSE;
+		/* Avoid dupes */
+		for (i = 0; i < nm_ip4_config_get_num_searches (ip4_config); i++) {
+			const char *search = nm_ip4_config_get_search (ip4_config, i);
 
-			/* Avoid dupes */
-			for (i = 0; i < nm_ip4_config_get_num_searches (ip4_config); i++) {
-				const char *search = nm_ip4_config_get_search (ip4_config, i);
-
-				if (!strcmp (search, (char *) iter->data)) {
-					found = TRUE;
-					break;
-				}
+			if (!strcmp (search, (char *) iter->data)) {
+				found = TRUE;
+				break;
 			}
-
-			if (!found)
-				nm_ip4_config_add_search (ip4_config, (char *) iter->data);
 		}
+
+		if (!found)
+			nm_ip4_config_add_search (ip4_config, (char *) iter->data);
 	}
 
-	if (setting->addresses) {
-		/* FIXME; add support for more than one set of address/netmask/gateway for NMIP4Config */
-		NMSettingIP4Address *addr = (NMSettingIP4Address *) setting->addresses->data;
+	/* IPv4 addresses */
+	for (iter = setting->addresses; iter; iter = g_slist_next (iter)) {
+		NMSettingIP4Address *setting_addr = (NMSettingIP4Address *) iter->data;
+		guint32 i, num;
 
-		/* Avoid dupes, but override if anything is different */
-		if (   (nm_ip4_config_get_address (ip4_config) != addr->address)
-		    || (nm_ip4_config_get_netmask (ip4_config) != addr->netmask)
-		    || (addr->gateway && (nm_ip4_config_get_gateway (ip4_config) != addr->gateway))) {
-			nm_ip4_config_set_address (ip4_config, addr->address);
-			nm_ip4_config_set_netmask (ip4_config, addr->netmask);
+		num = nm_ip4_config_get_num_addresses (ip4_config);
+		for (i = 0; i < num; i++) {
+			const NMSettingIP4Address *cfg_addr;
 
-			if (addr->gateway)
-				nm_ip4_config_set_gateway (ip4_config, addr->gateway);
+			cfg_addr = nm_ip4_config_get_address (ip4_config, i);
+			/* Dupe, override with user-specified address */
+			if (cfg_addr->address == setting_addr->address) {
+				nm_ip4_config_replace_address (ip4_config, i, setting_addr);
+				break;
+			}
 		}
+
+		if (i == num)
+			nm_ip4_config_add_address (ip4_config, setting_addr);
 	}
 }
 

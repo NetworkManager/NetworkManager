@@ -2,17 +2,8 @@
 
 <node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
   <interface name="org.freedesktop.NetworkManager.IP4Config">
-    <property name="Address" type="u" access="read">
-      <tp:docstring>IPv4 address. FIXME: what about multiple addresses?</tp:docstring>
-    </property>
-    <property name="Gateway" type="u" access="read">
-      <tp:docstring>Default gateway.</tp:docstring>
-    </property>
-    <property name="Netmask" type="u" access="read">
-      <tp:docstring>Network mask of this network.</tp:docstring>
-    </property>
-    <property name="Broadcast" type="u" access="read">
-      <tp:docstring>Broadcast address of this network.</tp:docstring>
+    <property name="Addresses" type="aau" access="read">
+      <tp:docstring>Tuples of IPv4 address/netmask/gateway.  The gateway is optional, if not given should be 0.</tp:docstring>
     </property>
     <property name="Hostname" type="s" access="read">
       <tp:docstring>The hostname associated with this IPv4 address. FIXME: what about multiple hostnames?</tp:docstring>

@@ -271,6 +271,7 @@ print_vpn_config (NMIP4Config *config,
 			   const char *tundev,
 			   const char *banner)
 {
+	const NMSettingIP4Address *addr;
 	struct in_addr temp_addr;
 	char *         dns_domain = NULL;
 	guint32        num;
@@ -278,12 +279,13 @@ print_vpn_config (NMIP4Config *config,
 
 	g_return_if_fail (config != NULL);
 
-	temp_addr.s_addr = nm_ip4_config_get_gateway (config);
+	addr = nm_ip4_config_get_address (config, 0);
+	temp_addr.s_addr = addr->gateway;
 	nm_info ("VPN Gateway: %s", inet_ntoa (temp_addr));
 	nm_info ("Tunnel Device: %s", tundev);
-	temp_addr.s_addr = nm_ip4_config_get_address (config);
+	temp_addr.s_addr = addr->address;
 	nm_info ("Internal IP4 Address: %s", inet_ntoa (temp_addr));
-	temp_addr.s_addr = nm_ip4_config_get_netmask (config);
+	temp_addr.s_addr = addr->netmask;
 	nm_info ("Internal IP4 Netmask: %s", inet_ntoa (temp_addr));
 	temp_addr.s_addr = nm_ip4_config_get_ptp_address (config);
 	nm_info ("Internal IP4 Point-to-Point Address: %s", inet_ntoa (temp_addr));
@@ -312,6 +314,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	NMVPNConnection *connection = NM_VPN_CONNECTION (user_data);
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 	NMSettingIP4Config *s_ip4;
+	NMSettingIP4Address *addr;
 	NMIP4Config *config;
 	GValue *val;
 	int i;
@@ -324,13 +327,15 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 
 	config = nm_ip4_config_new ();
 
+	addr = g_malloc0 (sizeof (NMSettingIP4Address));
+
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_GATEWAY);
 	if (val)
-		nm_ip4_config_set_gateway (config, g_value_get_uint (val));
+		addr->gateway = g_value_get_uint (val);
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_ADDRESS);
 	if (val)
-		nm_ip4_config_set_address (config, g_value_get_uint (val));
+		addr->address = g_value_get_uint (val);
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_PTP);
 	if (val)
@@ -338,10 +343,18 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_NETMASK);
 	if (val)
-		nm_ip4_config_set_netmask (config, g_value_get_uint (val));
-	else
+		addr->netmask = g_value_get_uint (val);
+	else {
 		/* If no netmask, default to Class C address */
-		nm_ip4_config_set_netmask (config, 0x00FF);
+		addr->netmask = htonl (0x000000FF);
+	}
+
+	if (addr->address && addr->netmask) {
+		nm_ip4_config_take_address (config, addr);
+	} else {
+		g_warning ("%s: invalid IP4 config received!", __func__);
+		g_free (addr);
+	}
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_DNS);
 	if (val) {

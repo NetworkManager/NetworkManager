@@ -37,6 +37,7 @@
 #include <nm-gsm-device.h>
 #include <nm-cdma-device.h>
 #include <nm-utils.h>
+#include <nm-setting-ip4-config.h>
 
 static gboolean
 get_nm_state (NMClient *client)
@@ -303,24 +304,26 @@ detail_device (gpointer data, gpointer user_data)
 	/* IP Setup info */
 	if (state == NM_DEVICE_STATE_ACTIVATED) {
 		NMIP4Config *cfg = nm_device_get_ip4_config (device);
+		GSList *iter;
 
-		printf ("\n  IP Settings:\n");
+		printf ("\n  IPv4 Settings:\n");
 
-		tmp = ip4_address_as_string (nm_ip4_config_get_address (cfg));
-		print_string ("  IP Address", tmp);
-		g_free (tmp);
+		for (iter = (GSList *) nm_ip4_config_get_addresses (cfg); iter; iter = g_slist_next (iter)) {
+			NMSettingIP4Address *addr = iter->data;
 
-		tmp = ip4_address_as_string (nm_ip4_config_get_netmask (cfg));
-		print_string ("  Subnet Mask", tmp);
-		g_free (tmp);
+			tmp = ip4_address_as_string (addr->address);
+			print_string ("  Address", tmp);
+			g_free (tmp);
 
-		tmp = ip4_address_as_string (nm_ip4_config_get_broadcast (cfg));
-		print_string ("  Broadcast", tmp);
-		g_free (tmp);
+			tmp = ip4_address_as_string (addr->netmask);
+			print_string ("  Netmask", tmp);
+			g_free (tmp);
 
-		tmp = ip4_address_as_string (nm_ip4_config_get_gateway (cfg));
-		print_string ("  Gateway", tmp);
-		g_free (tmp);
+			tmp = ip4_address_as_string (addr->gateway);
+			print_string ("  Gateway", tmp);
+			g_free (tmp);
+			printf ("\n");
+		}
 
 		array = nm_ip4_config_get_nameservers (cfg);
 		if (array) {
