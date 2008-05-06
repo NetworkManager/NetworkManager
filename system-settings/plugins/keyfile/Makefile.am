@@ -23,6 +23,7 @@ libnm_settings_plugin_keyfile_la_LDFLAGS = -module -avoid-version
 libnm_settings_plugin_keyfile_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(GMODULE_LIBS) \
+	$(DBUS_LIBS) \
 	$(GIO_LIBS) \
 	$(top_builddir)/libnm-util/libnm-util.la
 
