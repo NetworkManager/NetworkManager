@@ -89,8 +89,12 @@ fetch_connections_done (DBusGProxy *proxy,
 	if (!err) {
 		int i;
 
-		for (i = 0; i < connections->len; i++)
-			new_connection_cb (proxy, g_ptr_array_index (connections, i), user_data);
+		for (i = 0; i < connections->len; i++) {
+			char *path = g_ptr_array_index (connections, i);
+
+			new_connection_cb (proxy, path, user_data);
+			g_free (path);
+		}
 	} else {
 		g_warning ("Could not retrieve dbus connections: %s.", err->message);
 		g_error_free (err);
