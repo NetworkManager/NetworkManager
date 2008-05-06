@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: NetworkManager-pptp HEAD\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2007-07-27 03:58+0100\n"
-"PO-Revision-Date: 2008-04-26 14:04+0200\n"
+"PO-Revision-Date: 2008-05-06 21:14+0200\n"
 "Last-Translator: Gabor Kelemen <kelemeng@gnome.hu>\n"
 "Language-Team: Hungarian <gnome@fsf.hu>\n"
 "MIME-Version: 1.0\n"
@@ -197,7 +197,7 @@ msgstr "_Kizárólagos eszközhozzáférés (UUCP stílusú zár)"
 
 #: ../properties/nm-ppp-dialog.glade.h:22
 msgid "Enable stateful _MPPE"
-msgstr "Az alapos _MPPE engedélyezése"
+msgstr "Állapottartó _MPPE engedélyezése"
 
 #: ../properties/nm-ppp-dialog.glade.h:23
 msgid "Find Device"
@@ -466,7 +466,7 @@ msgstr "128 bites MPPE titkosítás használata"
 
 #: ../properties/nm-ppp-properties.c:216
 msgid "Enable stateful MPPE"
-msgstr "Az alapos MPPE engedélyezése"
+msgstr "Állapottartó MPPE engedélyezése"
 
 #: ../properties/nm-ppp-properties.c:221
 msgid "Use MPPC compression"
