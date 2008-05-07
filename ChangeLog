@@ -1,3 +1,16 @@
+2008-05-05  Tambet Ingo  <tambet@gmail.com>
+
+	* system-settings/plugins/keyfile/nm-keyfile-connection.[ch]: Implement.
+
+	* system-settings/plugins/keyfile/plugin.c: Work with
+	NMKeyfileConnections.
+
+	* system-settings/src/dbus-settings.c: Remove NMSysconfigExportedConnection.
+	Plugins are supposed to return NMExportedConnections now and handle the
+	updated(), removed(), and GetSecrets().
+	Store the internal list of connections in hash table to make it easier
+	to find duplicates.
+
 2008-05-07  Tambet Ingo  <tambet@gmail.com>
 
 	* src/backends/NetworkManagerSuSE.c (nm_system_set_hostname): Update

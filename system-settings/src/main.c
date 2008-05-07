@@ -190,7 +190,7 @@ load_stuff (gpointer user_data)
 
 typedef struct {
 	Application *app;
-	NMConnection *connection;
+	NMExportedConnection *connection;
 	guint add_id;
 	char *udi;
 	GByteArray *mac;
@@ -281,7 +281,7 @@ have_connection_for_device (Application *app, GByteArray *mac)
 	/* If the device doesn't have a connection advertised by any of the
 	 * plugins, create a new default DHCP-enabled connection for it.
 	 */
-	list = nm_sysconfig_settings_get_connections (app->settings);
+	list = nm_settings_list_connections (NM_SETTINGS (app->settings));
 	for (iter = list; iter; iter = g_slist_next (iter)) {
 		NMExportedConnection *exported = NM_EXPORTED_CONNECTION (iter->data);
 		NMConnection *connection;
@@ -319,6 +319,7 @@ add_default_dhcp_connection (gpointer user_data)
 	WiredDeviceInfo *info = (WiredDeviceInfo *) user_data;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
+	NMConnection *wrapped;
 
 	if (info->add_id)
 		info->add_id = 0;
@@ -340,13 +341,15 @@ add_default_dhcp_connection (gpointer user_data)
 	if (have_connection_for_device (info->app, info->mac))
 		goto ignore;
 
-	info->connection = nm_connection_new ();
+	wrapped = nm_connection_new ();
+	info->connection = nm_exported_connection_new (wrapped);
+	g_object_unref (wrapped);
 
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
 	s_con->id = g_strdup_printf (_("Auto %s"), info->iface);
 	s_con->type = g_strdup (NM_SETTING_WIRED_SETTING_NAME);
 	s_con->autoconnect = TRUE;
-	nm_connection_add_setting (info->connection, NM_SETTING (s_con));
+	nm_connection_add_setting (wrapped, NM_SETTING (s_con));
 
 	g_message ("Adding default connection '%s' for %s", s_con->id, info->udi);
 
@@ -354,9 +357,9 @@ add_default_dhcp_connection (gpointer user_data)
 	s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());
 	s_wired->mac_address = g_byte_array_sized_new (ETH_ALEN);
 	g_byte_array_append (s_wired->mac_address, info->mac->data, ETH_ALEN);
-	nm_connection_add_setting (info->connection, NM_SETTING (s_wired));
+	nm_connection_add_setting (wrapped, NM_SETTING (s_wired));
 
-	nm_sysconfig_settings_add_connection (info->app->settings, NULL, info->connection);
+	nm_sysconfig_settings_add_connection (info->app->settings, info->connection);
 
 	return FALSE;
 

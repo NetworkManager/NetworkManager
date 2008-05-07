@@ -13,7 +13,7 @@
 
 #include "plugin.h"
 #include "nm-system-config-interface.h"
-#include "reader.h"
+#include "nm-keyfile-connection.h"
 #include "writer.h"
 
 #define KEYFILE_PLUGIN_NAME "keyfile"
@@ -36,19 +36,17 @@ typedef struct {
 	gboolean disposed;
 } SCPluginKeyfilePrivate;
 
-static NMConnection *
+static NMKeyfileConnection *
 read_one_connection (NMSystemConfigInterface *config, const char *filename)
 {
 	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (config);
-	char *full_path;
-	NMConnection *connection = NULL;
+	NMKeyfileConnection *connection;
 
-	full_path = g_build_filename (KEYFILE_DIR, filename, NULL);
-	connection = connection_from_file (full_path);
+	connection = nm_keyfile_connection_new (filename);
 	if (connection)
-		g_hash_table_insert (priv->hash, g_strdup (filename), connection);
-
-	g_free (full_path);
+		g_hash_table_insert (priv->hash,
+						 (gpointer) nm_keyfile_connection_get_filename (connection),
+						 g_object_ref (connection));
 
 	return connection;
 }
@@ -63,38 +61,19 @@ read_connections (NMSystemConfigInterface *config)
 	if (dir) {
 		const char *item;
 
-		while ((item = g_dir_read_name (dir)))
-			read_one_connection (config, item);
+		while ((item = g_dir_read_name (dir))) {
+			char *full_path;
+
+			full_path = g_build_filename (KEYFILE_DIR, item, NULL);
+			read_one_connection (config, full_path);
+			g_free (full_path);
+		}
 
 		g_dir_close (dir);
 	} else {
 		g_warning ("Can not read directory '%s': %s", KEYFILE_DIR, err->message);
 		g_error_free (err);
 	}
-}
-
-static void
-delete_connection (NMSystemConfigInterface *config, NMConnection *connection)
-{
-	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (config);
-	NMSettingConnection *s_con;
-	char *filename;
-
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-	if (!s_con)
-		return;
-
-	filename = g_build_filename (KEYFILE_DIR, s_con->id, NULL);
-
-	if (g_hash_table_lookup (priv->hash, s_con->id)) {
-		if (g_file_test (filename, G_FILE_TEST_IS_REGULAR))
-			/* Monitoring takes care of the rest */
-			g_unlink (filename);
-		else
-			g_warning ("File '%s' does not exist", filename);
-	}
-
-	g_free (filename);
 }
 
 /* Monitoring */
@@ -109,37 +88,29 @@ dir_changed (GFileMonitor *monitor,
 	NMSystemConfigInterface *config = NM_SYSTEM_CONFIG_INTERFACE (user_data);
 	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (config);
 	char *name;
-	NMConnection *connection;
+	NMKeyfileConnection *connection;
 
-	name = g_file_get_basename (file);
+	name = g_file_get_path (file);
 	connection = g_hash_table_lookup (priv->hash, name);
 
 	switch (event_type) {
 	case G_FILE_MONITOR_EVENT_DELETED:
 		if (connection) {
 			g_hash_table_remove (priv->hash, name);
-			g_signal_emit_by_name (config, "connection-removed", connection);
+			nm_exported_connection_signal_removed (NM_EXPORTED_CONNECTION (connection));
 		}
 		break;
-	case G_FILE_MONITOR_EVENT_CREATED:
 	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
 		if (connection) {
 			/* Update */
-			char *full_path;
-			NMConnection *tmp;
+			NMExportedConnection *tmp;
 
-			full_path = g_file_get_path (file);
-			tmp = connection_from_file (full_path);
-			g_free (full_path);
-
+			tmp = (NMExportedConnection *) nm_keyfile_connection_new (name);
 			if (tmp) {
 				GHashTable *settings;
 
-				settings = nm_connection_to_hash (tmp);
-
-				if (nm_connection_replace_settings (connection, settings))
-					g_signal_emit_by_name (config, "connection-updated", connection);
-
+				settings = nm_connection_to_hash (nm_exported_connection_get_connection (tmp));
+				nm_exported_connection_update (NM_EXPORTED_CONNECTION (connection), settings);
 				g_hash_table_destroy (settings);
 				g_object_unref (tmp);
 			}
@@ -164,7 +135,7 @@ setup_monitoring (NMSystemConfigInterface *config)
 	GFile *file;
 	GFileMonitor *monitor;
 
-	priv->hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
+	priv->hash = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
 
 	file = g_file_new_for_path (KEYFILE_DIR);
 	monitor = g_file_monitor_directory (file, G_FILE_MONITOR_NONE, NULL, NULL);
@@ -206,18 +177,6 @@ static void
 add_connection (NMSystemConfigInterface *config, NMConnection *connection)
 {
 	write_connection (connection);
-}
-
-static void
-update_connection (NMSystemConfigInterface *config, NMConnection *connection)
-{
-	write_connection (connection);
-}
-
-static void
-remove_connection (NMSystemConfigInterface *config, NMConnection *connection)
-{
-	delete_connection (config, connection);
 }
 
 /* GObject */
@@ -292,8 +251,6 @@ system_config_interface_init (NMSystemConfigInterface *system_config_interface_c
 	/* interface implementation */
 	system_config_interface_class->get_connections = get_connections;
 	system_config_interface_class->add_connection = add_connection;
-	system_config_interface_class->update_connection = update_connection;
-	system_config_interface_class->remove_connection = remove_connection;
 }
 
 G_MODULE_EXPORT GObject *

@@ -32,155 +32,12 @@
 #include "dbus-settings.h"
 #include "nm-utils.h"
 
-#define NM_SS_PLUGIN_TAG "nm-ss-plugin"
-
-static void exported_connection_get_secrets (NMExportedConnection *connection,
-                                             const gchar *setting_name,
-                                             const gchar **hints,
-                                             gboolean request_new,
-                                             DBusGMethodInvocation *context);
-
-G_DEFINE_TYPE (NMSysconfigExportedConnection, nm_sysconfig_exported_connection, NM_TYPE_EXPORTED_CONNECTION);
-
-/*
- * NMSysconfigExportedConnection
- */
-
-static void
-check_for_secrets (gpointer key, gpointer data, gpointer user_data)
-{
-	gboolean *have_secrets = (gboolean *) user_data;
-
-	if (*have_secrets)
-		return;
-
-	*have_secrets = g_hash_table_size ((GHashTable *) data) ? TRUE : FALSE;
-}
-
-static void
-exported_connection_get_secrets (NMExportedConnection *sys_connection,
-				 const gchar *setting_name,
-				 const gchar **hints,
-				 gboolean request_new,
-				 DBusGMethodInvocation *context)
-{
-	NMConnection *connection;
-	GError *error = NULL;
-	NMSettingConnection *s_con;
-	NMSetting *setting;
-	GHashTable *settings = NULL;
-	NMSystemConfigInterface *plugin;
-	gboolean have_secrets = FALSE;
-
-	connection = nm_exported_connection_get_connection (sys_connection);
-
-	g_return_if_fail (NM_IS_CONNECTION (connection));
-	g_return_if_fail (setting_name != NULL);
-
-	setting = nm_connection_get_setting_by_name (connection, setting_name);
-	if (!setting) {
-		g_set_error (&error, NM_SETTINGS_ERROR, 1,
-		             "%s.%d - Connection didn't have requested setting '%s'.",
-		             __FILE__, __LINE__, setting_name);
-		goto error;
-	}
-
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection,
-												   NM_TYPE_SETTING_CONNECTION));
-	if (!s_con || !s_con->id || !strlen (s_con->id) || !s_con->type) {
-		g_set_error (&error, NM_SETTINGS_ERROR, 1,
-		             "%s.%d - Connection didn't have required '"
-		             NM_SETTING_CONNECTION_SETTING_NAME
-		             "' setting , or the connection name was invalid.",
-		             __FILE__, __LINE__);
-		goto error;
-	}
-
-	plugin = g_object_get_data (G_OBJECT (sys_connection), NM_SS_PLUGIN_TAG);
-	if (!plugin) {
-		g_set_error (&error, NM_SETTINGS_ERROR, 1,
-		             "%s.%d - Connection had no plugin to ask for secrets.",
-		             __FILE__, __LINE__);
-		goto error;
-	}
-
-	settings = nm_system_config_interface_get_secrets (plugin, connection, setting);
-	if (!settings || (g_hash_table_size (settings) == 0)) {
-		g_set_error (&error, NM_SETTINGS_ERROR, 1,
-		             "%s.%d - Connection's plugin did not return a secrets hash.",
-		             __FILE__, __LINE__);
-		goto error;
-	}
-
-	g_hash_table_foreach (settings, check_for_secrets, &have_secrets);
-	if (!have_secrets) {
-		g_set_error (&error, NM_SETTINGS_ERROR, 1,
-		             "%s.%d - Secrets were found for setting '%s' but none"
-		             " were valid.", __FILE__, __LINE__, setting_name);
-		goto error;
-	} else {
-		dbus_g_method_return (context, settings);
-	}
-
-	g_hash_table_destroy (settings);
-	return;
-
-error:
-	if (settings)
-		g_hash_table_destroy (settings);
-
-	g_warning (error->message);
-	dbus_g_method_return_error (context, error);
-	g_error_free (error);
-}
-
-static void
-nm_sysconfig_exported_connection_finalize (GObject *object)
-{
-	G_OBJECT_CLASS (nm_sysconfig_exported_connection_parent_class)->finalize (object);
-}
-
-static void
-nm_sysconfig_exported_connection_class_init (NMSysconfigExportedConnectionClass *class)
-{
-	GObjectClass *object_class = G_OBJECT_CLASS (class);
-	NMExportedConnectionClass *connection = NM_EXPORTED_CONNECTION_CLASS (class);
-
-	object_class->finalize = nm_sysconfig_exported_connection_finalize;
-
-	connection->get_secrets = exported_connection_get_secrets;
-}
-
-static void
-nm_sysconfig_exported_connection_init (NMSysconfigExportedConnection *sysconfig_exported_connection)
-{
-}
-
-NMSysconfigExportedConnection *
-nm_sysconfig_exported_connection_new (NMConnection *connection,
-                                      DBusGConnection *g_conn)
-{
-	NMSysconfigExportedConnection *exported;
-
-	exported = g_object_new (NM_TYPE_SYSCONFIG_EXPORTED_CONNECTION,
-	                         NM_EXPORTED_CONNECTION_CONNECTION, connection,
-	                         NULL);
-
-	nm_exported_connection_register_object (NM_EXPORTED_CONNECTION (exported),
-	                                        NM_CONNECTION_SCOPE_SYSTEM,
-	                                        g_conn);
-
-	return exported;
-}
-
-/*
- * NMSettings
- */
-
 static gboolean
 impl_settings_add_connection (NMSysconfigSettings *self, GHashTable *hash, GError **err);
 
 #include "nm-settings-system-glue.h"
+
+static void unmanaged_devices_changed (NMSystemConfigInterface *config, gpointer user_data);
 
 typedef struct {
 	DBusGConnection *g_connection;
@@ -188,10 +45,8 @@ typedef struct {
 
 	GSList *plugins;
 	gboolean connections_loaded;
-	GSList *connections;
+	GHashTable *connections;
 	GHashTable *unmanaged_devices;
-
-	gboolean in_plugin_signal_handler;
 } NMSysconfigSettingsPrivate;
 
 G_DEFINE_TYPE (NMSysconfigSettings, nm_sysconfig_settings, NM_TYPE_SETTINGS);
@@ -213,12 +68,50 @@ enum {
 	LAST_PROP
 };
 
+static void
+hash_keys_to_slist (gpointer key, gpointer val, gpointer user_data)
+{
+	GSList **list = (GSList **) user_data;
+
+	*list = g_slist_prepend (*list, key);
+}
+
 static GSList *
 list_connections (NMSettings *settings)
 {
 	NMSysconfigSettings *self = NM_SYSCONFIG_SETTINGS (settings);
+	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+	GSList *list = NULL;
 
-	return g_slist_copy (nm_sysconfig_settings_get_connections (self));
+	if (!priv->connections_loaded) {
+		GSList *iter;
+
+		for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
+			NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (iter->data);
+			GSList *plugin_connections;
+			GSList *elt;
+
+			plugin_connections = nm_system_config_interface_get_connections (plugin);
+
+			// FIXME: ensure connections from plugins loaded with a lower priority
+			// get rejected when they conflict with connections from a higher
+			// priority plugin.
+
+			for (elt = plugin_connections; elt; elt = g_slist_next (elt))
+				nm_sysconfig_settings_add_connection (self, NM_EXPORTED_CONNECTION (elt->data));
+
+			g_slist_free (plugin_connections);
+		}
+
+		/* FIXME: Bad hack */
+		unmanaged_devices_changed (NULL, self);
+
+		priv->connections_loaded = TRUE;
+	}
+
+	g_hash_table_foreach (priv->connections, hash_keys_to_slist, &list);
+
+	return list;
 }
 
 static void
@@ -227,12 +120,7 @@ settings_finalize (GObject *object)
 	NMSysconfigSettings *self = NM_SYSCONFIG_SETTINGS (object);
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 
-	if (priv->connections) {
-		g_slist_foreach (priv->connections, (GFunc) g_object_unref, NULL);
-		g_slist_free (priv->connections);
-		priv->connections = NULL;
-	}
-
+	g_hash_table_destroy (priv->connections);
 	g_hash_table_destroy (priv->unmanaged_devices);
 
 	g_slist_foreach (priv->plugins, (GFunc) g_object_unref, NULL);
@@ -366,6 +254,7 @@ nm_sysconfig_settings_init (NMSysconfigSettings *self)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 
+	priv->connections = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
 	priv->unmanaged_devices = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 }
 
@@ -390,34 +279,10 @@ nm_sysconfig_settings_new (DBusGConnection *g_conn, NMSystemConfigHalManager *ha
 
 static void
 plugin_connection_added (NMSystemConfigInterface *config,
-					NMConnection *connection,
+					NMExportedConnection *connection,
 					gpointer user_data)
 {
-	nm_sysconfig_settings_add_connection (NM_SYSCONFIG_SETTINGS (user_data), config, connection);
-}
-
-static void
-plugin_connection_removed (NMSystemConfigInterface *config,
-					  NMConnection *connection,
-					  gpointer user_data)
-{
-	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (user_data);
-
-	priv->in_plugin_signal_handler = TRUE;
-	nm_sysconfig_settings_remove_connection (NM_SYSCONFIG_SETTINGS (user_data), connection);
-	priv->in_plugin_signal_handler = FALSE;
-}
-
-static void
-plugin_connection_updated (NMSystemConfigInterface *config,
-					  NMConnection *connection,
-					  gpointer user_data)
-{
-	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (user_data);
-
-	priv->in_plugin_signal_handler = TRUE;
-	nm_sysconfig_settings_update_connection (NM_SYSCONFIG_SETTINGS (user_data), connection);
-	priv->in_plugin_signal_handler = FALSE;
+	nm_sysconfig_settings_add_connection (NM_SYSCONFIG_SETTINGS (user_data), connection);
 }
 
 static void
@@ -466,9 +331,6 @@ nm_sysconfig_settings_add_plugin (NMSysconfigSettings *self,
 	priv->plugins = g_slist_append (priv->plugins, g_object_ref (plugin));
 
 	g_signal_connect (plugin, "connection-added", G_CALLBACK (plugin_connection_added), self);
-	g_signal_connect (plugin, "connection-removed", G_CALLBACK (plugin_connection_removed), self);
-	g_signal_connect (plugin, "connection-updated", G_CALLBACK (plugin_connection_updated), self);
-
 	g_signal_connect (plugin, "unmanaged-devices-changed", G_CALLBACK (unmanaged_devices_changed), self);
 
 	nm_system_config_interface_init (plugin, priv->hal_mgr);
@@ -484,182 +346,49 @@ nm_sysconfig_settings_add_plugin (NMSysconfigSettings *self,
 }
 
 static void
-connection_updated (NMExportedConnection *sys_connection,
-				GHashTable *new_settings,
+connection_removed (NMExportedConnection *connection,
 				gpointer user_data)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (user_data);
-	NMSystemConfigInterface *plugin;
-	NMConnection *connection;
 
-	if (priv->in_plugin_signal_handler)
-		return;
-
-	connection = nm_exported_connection_get_connection (sys_connection);
-	plugin = (NMSystemConfigInterface *) g_object_get_data (G_OBJECT (sys_connection), NM_SS_PLUGIN_TAG);
-
-	if (plugin) {
-		nm_system_config_interface_update_connection (plugin, connection);
-	} else {
-		GSList *iter;
-
-		for (iter = priv->plugins; iter; iter = iter->next)
-			nm_system_config_interface_update_connection (NM_SYSTEM_CONFIG_INTERFACE (iter->data), connection);
-	}
-}
-
-static void
-connection_removed (NMExportedConnection *sys_connection,
-				gpointer user_data)
-{
-	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (user_data);
-	NMSystemConfigInterface *plugin;
-	NMConnection *connection;
-
-	if (priv->in_plugin_signal_handler)
-		return;
-
-	connection = nm_exported_connection_get_connection (sys_connection);
-	plugin = (NMSystemConfigInterface *) g_object_get_data (G_OBJECT (sys_connection), NM_SS_PLUGIN_TAG);
-
-	if (plugin) {
-		nm_system_config_interface_remove_connection (plugin, connection);
-	} else {
-		GSList *iter;
-
-		for (iter = priv->plugins; iter; iter = iter->next)
-			nm_system_config_interface_remove_connection (NM_SYSTEM_CONFIG_INTERFACE (iter->data), connection);
-	}
-}
-
-static NMExportedConnection *
-find_existing_connection (NMSysconfigSettings *self, NMConnection *connection)
-{
-	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
-	GSList *iter;
-
-	for (iter = priv->connections; iter; iter = g_slist_next (iter)) {
-		NMExportedConnection *exported = NM_EXPORTED_CONNECTION (iter->data);
-		NMConnection *wrapped = nm_exported_connection_get_connection (exported);
-
-		if (wrapped == connection)
-			return exported;
-	}
-
-	return NULL;
+	g_hash_table_remove (priv->connections, connection);
 }
 
 void
 nm_sysconfig_settings_add_connection (NMSysconfigSettings *self,
-							   NMSystemConfigInterface *plugin,
-							   NMConnection *connection)
+							   NMExportedConnection *connection)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
-	NMSysconfigExportedConnection *exported;
 
 	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (self));
-	g_return_if_fail (NM_IS_CONNECTION (connection));
+	g_return_if_fail (NM_IS_EXPORTED_CONNECTION (connection));
 
-	if (find_existing_connection (self, connection)) {
+	if (g_hash_table_lookup (priv->connections, connection)) {
 		/* A plugin is lying to us */
 		g_message ("Connection is already added, ignoring");
 		return;
 	}
 
-	exported = nm_sysconfig_exported_connection_new (connection, priv->g_connection);
-	if (exported) {
-		priv->connections = g_slist_append (priv->connections, exported);
+	g_hash_table_insert (priv->connections, connection, GINT_TO_POINTER (1));
+	g_signal_connect (connection, "removed", G_CALLBACK (connection_removed), self);
 
-		g_signal_connect (exported, "updated", G_CALLBACK (connection_updated), self);
-		g_signal_connect (exported, "removed", G_CALLBACK (connection_removed), self);
-
-		if (plugin)
-			g_object_set_data (G_OBJECT (exported), NM_SS_PLUGIN_TAG, plugin);
-
-		nm_settings_signal_new_connection (NM_SETTINGS (self), NM_EXPORTED_CONNECTION (exported));
-	} else
-		g_warning ("%s: couldn't export the connection!", __func__);
+	nm_exported_connection_register_object (connection, NM_CONNECTION_SCOPE_SYSTEM, priv->g_connection);
+	nm_settings_signal_new_connection (NM_SETTINGS (self), connection);
 }
 
 void
 nm_sysconfig_settings_remove_connection (NMSysconfigSettings *self,
-								 NMConnection *connection)
+								 NMExportedConnection *connection)
 {
-	NMExportedConnection *exported;
+	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 
 	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (self));
-	g_return_if_fail (NM_IS_CONNECTION (connection));
+	g_return_if_fail (NM_IS_EXPORTED_CONNECTION (connection));
 
-	exported = find_existing_connection (self, connection);
-	if (exported) {
-		NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
-
-		priv->connections = g_slist_remove (priv->connections, exported);
-		nm_exported_connection_signal_removed (exported);
-		g_object_unref (exported);
+	if (g_hash_table_lookup (priv->connections, connection)) {
+		nm_exported_connection_signal_removed (connection);
+		g_hash_table_remove (priv->connections, connection);
 	}
-}
-
-void
-nm_sysconfig_settings_update_connection (NMSysconfigSettings *self,
-								 NMConnection *connection)
-{
-	NMExportedConnection *exported;
-
-	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (self));
-	g_return_if_fail (NM_IS_CONNECTION (connection));
-
-	exported = find_existing_connection (self, connection);
-	if (exported) {
-		if (nm_connection_verify (connection)) {
-			GHashTable *hash;
-
-			hash = nm_connection_to_hash (connection);
-			nm_exported_connection_signal_updated (exported, hash);
-			g_hash_table_destroy (hash);
-		} else
-			/* If the connection is no longer valid, it gets removed */
-			nm_sysconfig_settings_remove_connection (self, connection);
-	} else
-		g_warning ("%s: cannot update unknown connection", __func__);
-}
-
-GSList *
-nm_sysconfig_settings_get_connections (NMSysconfigSettings *self)
-{
-	NMSysconfigSettingsPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_SYSCONFIG_SETTINGS (self), NULL);
-
-	priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
-
-	if (!priv->connections_loaded) {
-		GSList *iter;
-
-		for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
-			NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (iter->data);
-			GSList *plugin_connections;
-			GSList *elt;
-
-			plugin_connections = nm_system_config_interface_get_connections (plugin);
-
-			// FIXME: ensure connections from plugins loaded with a lower priority
-			// get rejected when they conflict with connections from a higher
-			// priority plugin.
-
-			for (elt = plugin_connections; elt; elt = g_slist_next (elt))
-				nm_sysconfig_settings_add_connection (self, plugin, NM_CONNECTION (elt->data));
-
-			g_slist_free (plugin_connections);
-		}
-
-		/* FIXME: Bad hack */
-		unmanaged_devices_changed (NULL, self);
-
-		priv->connections_loaded = TRUE;
-	}
-
-	return priv->connections;
 }
 
 gboolean

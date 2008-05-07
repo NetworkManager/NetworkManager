@@ -25,6 +25,7 @@
 #include <glib.h>
 #include <glib-object.h>
 #include <nm-connection.h>
+#include <nm-settings.h>
 
 #include "nm-system-config-hal-manager.h"
 
@@ -81,17 +82,6 @@ struct _NMSystemConfigInterface {
 	 */
 	GSList * (*get_connections) (NMSystemConfigInterface *config);
 
-	/* Return the secrets associated with settings of a specific
-	 * connection.  The returned hash table is unreffed by the system settings
-	 * service.  Returned hash table should itself contain string::hashtable
-	 * mappings, each value being a hash table of secrets for a single setting.
-	 *
-	 *  string :: (string :: GValue)
-	 *
-	 * The returned hash table will be freed by the system settings service.
-	 */
-	GHashTable * (*get_secrets) (NMSystemConfigInterface *config, NMConnection *connection, NMSetting *setting);
-
 	/*
 	 * Return a list of HAL UDIs of devices which NetworkManager should not
 	 * manage.  Returned list will be freed by the system settings service, and
@@ -104,27 +94,10 @@ struct _NMSystemConfigInterface {
 	 */
 	void     (*add_connection) (NMSystemConfigInterface *config, NMConnection *connection);
 
-	/*
-	 * Update the connection.
-	 */
-	void     (*update_connection) (NMSystemConfigInterface *config, NMConnection *connection);
-
-	/*
-	 * Remove the connection.
-	 */
-	void     (*remove_connection) (NMSystemConfigInterface *config, NMConnection *connection);
-
-
 	/* Signals */
 
 	/* Emitted when a new connection has been found by the plugin */
-	void (*connection_added)   (NMSystemConfigInterface *config, NMConnection *connection);
-
-	/* Emitted when a connection has been removed by the plugin */
-	void (*connection_removed) (NMSystemConfigInterface *config, NMConnection *connection);
-
-	/* Emitted when any non-secret settings of the connection change */
-	void (*connection_updated) (NMSystemConfigInterface *config, NMConnection *connection);
+	void (*connection_added)   (NMSystemConfigInterface *config, NMExportedConnection *connection);
 
 	/* Emitted when the list of unmanaged devices changes */
 	void (*unmanaged_devices_changed) (NMSystemConfigInterface *config);
@@ -137,20 +110,10 @@ void nm_system_config_interface_init (NMSystemConfigInterface *config,
 
 GSList * nm_system_config_interface_get_connections (NMSystemConfigInterface *config);
 
-GHashTable *nm_system_config_interface_get_secrets (NMSystemConfigInterface *config,
-                                                    NMConnection *connection,
-                                                    NMSetting *setting);
-
 GSList *nm_system_config_interface_get_unmanaged_devices (NMSystemConfigInterface *config);
 
 void nm_system_config_interface_add_connection (NMSystemConfigInterface *config,
 						NMConnection *connection);
-
-void nm_system_config_interface_update_connection (NMSystemConfigInterface *config,
-						   NMConnection *connection);
-
-void nm_system_config_interface_remove_connection (NMSystemConfigInterface *config,
-						   NMConnection *connection);
 
 G_END_DECLS
 

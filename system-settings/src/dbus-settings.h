@@ -28,37 +28,6 @@
 #include "nm-system-config-interface.h"
 #include "nm-system-config-hal-manager.h"
 
-typedef struct _NMSysconfigExportedConnection NMSysconfigExportedConnection;
-typedef struct _NMSysconfigExportedConnectionClass NMSysconfigExportedConnectionClass;
-
-/*
- * NMSysconfigExportedConnection
- */
-
-#define NM_TYPE_SYSCONFIG_EXPORTED_CONNECTION            (nm_sysconfig_exported_connection_get_type ())
-#define NM_SYSCONFIG_EXPORTED_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SYSCONFIG_EXPORTED_CONNECTION, NMSysconfigExportedConnection))
-#define NM_SYSCONFIG_EXPORTED_CONNECTION_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_SYSCONFIG_EXPORTED_CONNECTION, NMSysconfigExportedConnectionClass))
-#define NM_IS_SYSCONFIG_EXPORTED_CONNECTION(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_SYSCONFIG_EXPORTED_CONNECTION))
-#define NM_IS_SYSCONFIG_EXPORTED_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_SYSCONFIG_EXPORTED_CONNECTION))
-#define NM_SYSCONFIG_EXPORTED_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SYSCONFIG_EXPORTED_CONNECTION, NMSysconfigExportedConnectionClass))
-
-struct _NMSysconfigExportedConnection
-{
-	NMExportedConnection parent_instance;
-};
-
-struct _NMSysconfigExportedConnectionClass
-{
-	NMExportedConnectionClass parent_class;
-};
-
-GType nm_sysconfig_exported_connection_get_type (void);
-NMSysconfigExportedConnection *nm_sysconfig_exported_connection_new (NMConnection *connection,
-                                                                     DBusGConnection *g_conn);
-
-/*
- * NMSysconfigSettings
- */
 typedef struct _NMSysconfigSettings NMSysconfigSettings;
 typedef struct _NMSysconfigSettingsClass NMSysconfigSettingsClass;
 
@@ -93,16 +62,10 @@ void nm_sysconfig_settings_add_plugin     (NMSysconfigSettings *settings,
 					   NMSystemConfigInterface *plugin);
 
 void nm_sysconfig_settings_add_connection (NMSysconfigSettings *settings,
-					   NMSystemConfigInterface *plugin,
-                                           NMConnection *connection);
+                                           NMExportedConnection *connection);
 
 void nm_sysconfig_settings_remove_connection (NMSysconfigSettings *settings,
-                                              NMConnection *connection);
-
-void nm_sysconfig_settings_update_connection (NMSysconfigSettings *settings,
-                                              NMConnection *connection);
-
-GSList *nm_sysconfig_settings_get_connections (NMSysconfigSettings *settings);
+                                              NMExportedConnection *connection);
 
 void nm_sysconfig_settings_update_unamanged_devices (NMSysconfigSettings *settings,
                                                      GSList *new_list);

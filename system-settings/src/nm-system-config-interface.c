@@ -56,25 +56,7 @@ interface_init (gpointer g_iface)
 				  NULL, NULL,
 				  g_cclosure_marshal_VOID__OBJECT,
 				  G_TYPE_NONE, 1,
-				  G_TYPE_OBJECT);
-
-	g_signal_new ("connection-removed",
-				  iface_type,
-				  G_SIGNAL_RUN_FIRST,
-				  G_STRUCT_OFFSET (NMSystemConfigInterface, connection_removed),
-				  NULL, NULL,
-				  g_cclosure_marshal_VOID__OBJECT,
-				  G_TYPE_NONE, 1,
-				  G_TYPE_OBJECT);
-
-	g_signal_new ("connection-updated",
-				  iface_type,
-				  G_SIGNAL_RUN_FIRST,
-				  G_STRUCT_OFFSET (NMSystemConfigInterface, connection_updated),
-				  NULL, NULL,
-				  g_cclosure_marshal_VOID__OBJECT,
-				  G_TYPE_NONE, 1,
-				  G_TYPE_OBJECT);
+				  NM_TYPE_EXPORTED_CONNECTION);
 
 	g_signal_new ("unmanaged-devices-changed",
 				  iface_type,
@@ -137,20 +119,6 @@ nm_system_config_interface_get_connections (NMSystemConfigInterface *config)
 	return NULL;
 }
 
-GHashTable *
-nm_system_config_interface_get_secrets (NMSystemConfigInterface *config,
-                                        NMConnection *connection,
-                                        NMSetting *setting)
-{
-	g_return_val_if_fail (config != NULL, NULL);
-	g_return_val_if_fail (connection != NULL, NULL);
-	g_return_val_if_fail (setting != NULL, NULL);
-
-	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->get_secrets)
-		return NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->get_secrets (config, connection, setting);
-	return NULL;
-}
-
 GSList *
 nm_system_config_interface_get_unmanaged_devices (NMSystemConfigInterface *config)
 {
@@ -170,26 +138,4 @@ nm_system_config_interface_add_connection (NMSystemConfigInterface *config,
 
 	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->add_connection)
 		NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->add_connection (config, connection);
-}
-
-void
-nm_system_config_interface_update_connection (NMSystemConfigInterface *config,
-									 NMConnection *connection)
-{
-	g_return_if_fail (config != NULL);
-	g_return_if_fail (NM_IS_CONNECTION (connection));
-
-	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->update_connection)
-		NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->update_connection (config, connection);
-}
-
-void
-nm_system_config_interface_remove_connection (NMSystemConfigInterface *config,
-									 NMConnection *connection)
-{
-	g_return_if_fail (config != NULL);
-	g_return_if_fail (NM_IS_CONNECTION (connection));
-
-	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->remove_connection)
-		NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->remove_connection (config, connection);
 }
