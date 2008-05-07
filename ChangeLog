@@ -1,5 +1,10 @@
 2008-05-07  Tambet Ingo  <tambet@gmail.com>
 
+	* src/backends/NetworkManagerSuSE.c (nm_system_set_hostname): Update
+	for multiple IP addresses.
+
+2008-05-07  Tambet Ingo  <tambet@gmail.com>
+
 	Patch from André Lemos.
 
 	* libnm-glib/nm-dbus-settings.c (fetch_connections_done): Fix a memory

@@ -327,9 +327,11 @@ void nm_system_set_hostname (NMIP4Config *config)
 		{
 			struct in_addr temp_addr;
 			struct hostent *host;
+			const NMSettingIP4Address *ip_address;
 
 			/* try to get hostname via dns */
-			temp_addr.s_addr = nm_ip4_config_get_address (config);
+			ip_address = nm_ip4_config_get_address (config, 0);
+			temp_addr.s_addr = ip_address->address;
 			host = gethostbyaddr ((char *) &temp_addr, sizeof (temp_addr), AF_INET);
 			if (host)
 			{
