@@ -95,13 +95,12 @@ fetch_connections_done (DBusGProxy *proxy,
 			new_connection_cb (proxy, path, user_data);
 			g_free (path);
 		}
+
+		g_ptr_array_free (connections, TRUE);
 	} else {
 		g_warning ("Could not retrieve dbus connections: %s.", err->message);
 		g_error_free (err);
 	}
-
-	if (connections)
-		g_ptr_array_free (connections, TRUE);
 }
 
 static void
