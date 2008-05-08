@@ -43,10 +43,11 @@ read_one_connection (NMSystemConfigInterface *config, const char *filename)
 	NMKeyfileConnection *connection;
 
 	connection = nm_keyfile_connection_new (filename);
-	if (connection)
+	if (connection) {
 		g_hash_table_insert (priv->hash,
 						 (gpointer) nm_keyfile_connection_get_filename (connection),
 						 g_object_ref (connection));
+	}
 
 	return connection;
 }
@@ -221,7 +222,8 @@ dispose (GObject *object)
 		g_object_unref (priv->monitor);
 	}
 
-	g_hash_table_destroy (priv->hash);
+	if (priv->hash)
+		g_hash_table_destroy (priv->hash);
 
 	G_OBJECT_CLASS (sc_plugin_keyfile_parent_class)->dispose (object);
 }
