@@ -17,7 +17,9 @@ nm_system_settings_SOURCES = \
 	nm-system-config-interface.h \
 	nm-system-config-hal-manager.c \
 	nm-system-config-hal-manager.h \
-	nm-system-config-hal-manager-private.h
+	nm-system-config-hal-manager-private.h \
+	sha1.c \
+	sha1.h
 
 nm_system_settings_CPPFLAGS = \
 	$(DBUS_CFLAGS) \

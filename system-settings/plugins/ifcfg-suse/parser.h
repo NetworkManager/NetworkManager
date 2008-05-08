@@ -23,13 +23,15 @@
 #define _PARSER_H_
 
 #include <glib.h>
+#include <NetworkManager.h>
 #include <nm-connection.h>
 
 #define IFCFG_TAG "ifcfg-"
 #define BAK_TAG ".bak"
 
-NMConnection * parser_parse_ifcfg  (const char *file, GError **error);
-guint32        parser_parse_routes (const char *file, GError **err);
+NMConnection *parse_ifcfg (const char *iface, NMDeviceType type);
+gboolean parser_ignore_device (const char *iface);
 
+guint32        parser_parse_routes (const char *filename);
 
 #endif /* _PARSER_H_ */

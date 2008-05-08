@@ -1,3 +1,23 @@
+2008-05-08  Tambet Ingo  <tambet@gmail.com>
+
+	Rewrite the suse system settings plugin.
+
+	* system-settings/plugins/ifcfg-suse/plugin.c: Rewrite.
+
+	* system-settings/plugins/ifcfg-suse/parser.c: Rewrite.
+
+	* system-settings/plugins/ifcfg-suse/nm-suse-connection.[ch]: Implement.
+
+	* system-settings/plugins/ifcfg-suse/Makefile.am: Add new files to build.
+
+	* system-settings/src/dbus-settings.c: Fix connection reference counting.
+
+	* system-settings/src/main.c (load_plugins): Improve error reporting.
+
+	* system-settings/src/sha1.[ch] Add.
+
+	* system-settings/src/Makefile.am: Add sha1[ch] to build.
+
 2008-05-07  Dan Williams  <dcbw@redhat.com>
 
 	* system-settings/plugins/keyfile/reader.c

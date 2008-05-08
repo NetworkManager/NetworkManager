@@ -363,13 +363,11 @@ nm_sysconfig_settings_add_connection (NMSysconfigSettings *self,
 	g_return_if_fail (NM_IS_SYSCONFIG_SETTINGS (self));
 	g_return_if_fail (NM_IS_EXPORTED_CONNECTION (connection));
 
-	if (g_hash_table_lookup (priv->connections, connection)) {
-		/* A plugin is lying to us */
-		g_message ("Connection is already added, ignoring");
+	if (g_hash_table_lookup (priv->connections, connection))
+		/* A plugin is lying to us. */
 		return;
-	}
 
-	g_hash_table_insert (priv->connections, connection, GINT_TO_POINTER (1));
+	g_hash_table_insert (priv->connections, g_object_ref (connection), GINT_TO_POINTER (1));
 	g_signal_connect (connection, "removed", G_CALLBACK (connection_removed), self);
 
 	nm_exported_connection_register_object (connection, NM_CONNECTION_SCOPE_SYSTEM, priv->g_connection);

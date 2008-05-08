@@ -34,6 +34,7 @@
 
 #include "plugin.h"
 #include "parser.h"
+#include "nm-suse-connection.h"
 #include "nm-system-config-interface.h"
 
 #define IFCFG_PLUGIN_NAME "ifcfg-suse"
@@ -52,13 +53,17 @@ G_DEFINE_TYPE_EXTENDED (SCPluginIfcfg, sc_plugin_ifcfg, G_TYPE_OBJECT, 0,
 #define IFCFG_FILE_PATH_TAG "ifcfg-file-path"
 
 typedef struct {
+	DBusGConnection *dbus_connection;
+	NMSystemConfigHalManager *hal_manager;
+
 	gboolean initialized;
-	GSList *connections;
+	GHashTable *connections;
+	GHashTable *unmanaged_devices;
 
-	GFileMonitor *monitor;
-	guint monitor_id;
+	guint32 default_gw;
+	GFileMonitor *default_gw_monitor;
+	guint default_gw_monitor_id;
 } SCPluginIfcfgPrivate;
-
 
 GQuark
 ifcfg_plugin_error_quark (void)
@@ -71,118 +76,74 @@ ifcfg_plugin_error_quark (void)
 	return error_quark;
 }
 
-struct FindInfo {
-	const char *path;
-	gboolean found;
-};
-
-static gboolean
-is_ifcfg_file (const char *file)
-{
-	return g_str_has_prefix (file, IFCFG_TAG) && strcmp (file, IFCFG_TAG "lo");
-}
-
-static NMConnection *
-build_one_connection (const char *ifcfg_file)
-{
-	NMConnection *connection;
-	GError *err = NULL;
-
-	PLUGIN_PRINT (PLUGIN_NAME, "parsing %s ... ", ifcfg_file);
-
-	connection = parser_parse_ifcfg (ifcfg_file, &err);
-	if (connection) {
-		NMSettingConnection *s_con;
-
-		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-		g_assert (s_con);
-		g_assert (s_con->id);
-		PLUGIN_PRINT (PLUGIN_NAME, "    found connection '%s'", s_con->id);
-	} else
-		PLUGIN_PRINT (PLUGIN_NAME, "    error: %s", err->message ? err->message : "(unknown)");
-
-	return connection;
-}
-
-typedef struct {
-	SCPluginIfcfg *plugin;
-	NMConnection *connection;
-	GFileMonitor *monitor;
-	guint monitor_id;
-} ConnectionMonitor;
-
 static void
-connection_monitor_destroy (gpointer data)
+update_one_connection (gpointer key, gpointer val, gpointer user_data)
 {
-	ConnectionMonitor *monitor = (ConnectionMonitor *) data;
+	NMExportedConnection *exported = NM_EXPORTED_CONNECTION (val);
+	NMConnection *connection;
+	NMSettingIP4Config *ip4_config;
 
-	g_signal_handler_disconnect (monitor->monitor, monitor->monitor_id);
-	g_file_monitor_cancel (monitor->monitor);
-	g_object_unref (monitor->monitor);
+	connection = nm_exported_connection_get_connection (exported);
+	ip4_config = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	if (!ip4_config)
+		return;
 
-	g_free (monitor);
+	if (ip4_config->addresses) {
+		/* suse only has one address per device */
+		NMSettingIP4Address *ip4_address = (NMSettingIP4Address *) ip4_config->addresses->data;
+		SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (user_data);
+		GHashTable *settings;
+
+		if (ip4_address->gateway != priv->default_gw) {
+			ip4_address->gateway = priv->default_gw;
+			settings = nm_connection_to_hash (connection);
+			nm_exported_connection_signal_updated (exported, settings);
+			g_hash_table_destroy (settings);
+		}
+	}
 }
 
 static void
-connection_file_changed (GFileMonitor *monitor,
-					GFile *file,
-					GFile *other_file,
-					GFileMonitorEvent event_type,
-					gpointer user_data)
+update_connections (SCPluginIfcfg *self)
 {
-	ConnectionMonitor *cm = (ConnectionMonitor *) user_data;
-	gboolean remove_connection = FALSE;
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
+
+	g_hash_table_foreach (priv->connections, update_one_connection, self);
+}
+
+static void
+routes_changed (GFileMonitor *monitor,
+			 GFile *file,
+			 GFile *other_file,
+			 GFileMonitorEvent event_type,
+			 gpointer user_data)
+{
+	SCPluginIfcfg *self = SC_PLUGIN_IFCFG (user_data);
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
+	char *filename;
+	guint32 new_gw;
 
 	switch (event_type) {
-	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT: {
-		NMConnection *new_connection;
-		GHashTable *new_settings;
-		char *filename;
-		char *ifcfg_file;
-
-		/* In case anything goes wrong */
-		remove_connection = TRUE;
-
-		filename = g_file_get_basename (file);
-		ifcfg_file = g_build_filename (IFCFG_DIR, filename, NULL);
+	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
+	case G_FILE_MONITOR_EVENT_DELETED:
+		filename = g_file_get_path (file);
+		new_gw = parser_parse_routes (filename);
 		g_free (filename);
 
-		new_connection = build_one_connection (ifcfg_file);
-		g_free (ifcfg_file);
-
-		if (new_connection) {
-			new_settings = nm_connection_to_hash (new_connection);
-			if (nm_connection_replace_settings (cm->connection, new_settings)) {
-				/* Nothing went wrong */
-				remove_connection = FALSE;
-				g_signal_emit_by_name (cm->plugin, "connection-updated", cm->connection);
-			}
-
-			g_object_unref (new_connection);
+		if (priv->default_gw != new_gw) {
+			priv->default_gw = new_gw;
+			update_connections (self);
 		}
-
-		break;
-	}
-	case G_FILE_MONITOR_EVENT_DELETED:
-		remove_connection = TRUE;
 		break;
 	default:
 		break;
 	}
-
-	if (remove_connection) {
-		SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (cm->plugin);
-
-		priv->connections = g_slist_remove (priv->connections, cm->connection);
-		g_signal_emit_by_name (cm->plugin, "connection-removed", cm->connection);
-		g_object_unref (cm->connection);
-		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    removed connection");
-	}
 }
 
 static void
-monitor_connection (NMSystemConfigInterface *config, NMConnection *connection, const char *filename)
+monitor_routes (SCPluginIfcfg *self, const char *filename)
 {
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
 	GFile *file;
 	GFileMonitor *monitor;
 
@@ -191,170 +152,190 @@ monitor_connection (NMSystemConfigInterface *config, NMConnection *connection, c
 	g_object_unref (file);
 
 	if (monitor) {
-		ConnectionMonitor *cm;
-
-		cm = g_new (ConnectionMonitor, 1);
-		cm->plugin = SC_PLUGIN_IFCFG (config);
-		cm->connection = connection;
-		cm->monitor = monitor;
-		cm->monitor_id = g_signal_connect (monitor, "changed", G_CALLBACK (connection_file_changed), cm);
-		g_object_set_data_full (G_OBJECT (connection), "file-monitor", cm, connection_monitor_destroy);
+		priv->default_gw_monitor_id = g_signal_connect (monitor, "changed", G_CALLBACK (routes_changed), self);
+		priv->default_gw_monitor = monitor;
 	}
 }
 
-static void
-add_one_connection (NMSystemConfigInterface *config, const char *filename, gboolean emit_added)
+static char *
+get_iface_by_udi (SCPluginIfcfg *self, const char *udi)
 {
-	char *ifcfg_file;
-	NMConnection *connection;
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
+	DBusGProxy *proxy;
+	char *iface = NULL;
 
-	if (!is_ifcfg_file (filename))
-		return;
-	
-	ifcfg_file = g_build_filename (IFCFG_DIR, filename, NULL);
-	connection = build_one_connection (ifcfg_file);
-	if (connection) {
-		SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (config);
+	proxy = dbus_g_proxy_new_for_name (priv->dbus_connection,
+								"org.freedesktop.Hal",
+								udi,
+								"org.freedesktop.Hal.Device");
 
-		monitor_connection (config, connection, ifcfg_file);
-		priv->connections = g_slist_append (priv->connections, connection);
+	dbus_g_proxy_call_with_timeout (proxy, "GetPropertyString", 10000, NULL,
+							  G_TYPE_STRING, "net.interface", G_TYPE_INVALID,
+							  G_TYPE_STRING, &iface, G_TYPE_INVALID);
+	g_object_unref (proxy);
 
-		if (emit_added)
-			g_signal_emit_by_name (config, "connection-added", connection);
-	}
-
-	g_free (ifcfg_file);
+	return iface;
 }
 
 static void
-update_default_routes (NMSystemConfigInterface *config, gboolean emit_updated)
+read_connection (SCPluginIfcfg *self, const char *udi, NMDeviceType dev_type)
 {
-	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (config);
-	GSList *iter;
-	NMConnection *connection;
-	NMSettingIP4Config *ip4_setting;
-	gboolean got_manual = FALSE;
-	guint32 default_route;
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
+	char *iface;
 
-	/* First, make sure we have any non-DHCP connections */
-	for (iter = priv->connections; iter; iter = iter->next) {
-		connection = NM_CONNECTION (iter->data);
-		ip4_setting = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
-		if (ip4_setting && !strcmp (ip4_setting->method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
-			got_manual = TRUE;
-			break;
-		}
-	}
+	iface = get_iface_by_udi (self, udi);
+	if (iface) {
+		if (parser_ignore_device (iface)) {
+			g_hash_table_insert (priv->unmanaged_devices, g_strdup (udi), GINT_TO_POINTER (1));
+			g_signal_emit_by_name (self, "unmanaged-devices-changed");
+		} else {
+			NMSuseConnection *connection;
 
-	if (!got_manual)
-		return;
-
-	default_route = parser_parse_routes (IFCFG_DIR "/routes", NULL);
-	if (!default_route)
-		return;
-
-	for (iter = priv->connections; iter; iter = iter->next) {
-		connection = NM_CONNECTION (iter->data);
-		ip4_setting = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
-		if (ip4_setting && !strcmp (ip4_setting->method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
-			GSList *address_iter;
-
-			for (address_iter = ip4_setting->addresses; address_iter; address_iter = address_iter->next) {
-				NMSettingIP4Address *addr = (NMSettingIP4Address *) address_iter->data;
-				
-				addr->gateway = default_route;
-				if (emit_updated)
-					g_signal_emit_by_name (config, "connection-updated", connection);
+			connection = nm_suse_connection_new (iface, dev_type);
+			if (connection) {
+				g_hash_table_insert (priv->connections, g_strdup (udi), connection);
+				g_signal_emit_by_name (self, "connection-added", connection);
 			}
 		}
 	}
-}
 
-static GSList *
-get_connections (NMSystemConfigInterface *config)
-{
-	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (config);
-
-	if (!priv->initialized) {
-		GDir *dir;
-		const char *item;
-		GError *err = NULL;
-
-		dir = g_dir_open (IFCFG_DIR, 0, &err);
-		if (!dir) {
-			PLUGIN_WARN (PLUGIN_NAME, "couldn't access network directory '%s': %s.", IFCFG_DIR, err->message);
-			g_error_free (err);
-			return NULL;
-		}
-
-		while ((item = g_dir_read_name (dir)))
-			add_one_connection (config, item, FALSE);
-
-		g_dir_close (dir);
-		priv->initialized = TRUE;
-	}
-
-	if (!priv->connections)
-		/* No need to do any futher work, we have nothing. */
-		return priv->connections;
-
-	update_default_routes (config, FALSE);
-
-	return priv->connections;
+	g_free (iface);
 }
 
 static void
-ifcfg_dir_changed (GFileMonitor *monitor,
-			    GFile *file,
-			    GFile *other_file,
-			    GFileMonitorEvent event_type,
-			    gpointer user_data)
+read_connections_by_type (SCPluginIfcfg *self, NMDeviceType dev_type)
 {
-	NMSystemConfigInterface *config = NM_SYSTEM_CONFIG_INTERFACE (user_data);
-	char *name;
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
+	GSList *list;
+	GSList *iter;
 
-	name = g_file_get_basename (file);
-
-	if (event_type == G_FILE_MONITOR_EVENT_CREATED) {
-		add_one_connection (config, name, TRUE);
+	list = nm_system_config_hal_manager_get_devices_of_type (priv->hal_manager, dev_type);
+	for (iter = list; iter; iter = iter->next) {
+		read_connection (self, (char *) iter->data, dev_type);
+		g_free (iter->data);
 	}
 
-	if (!strcmp (name, "routes"))
-		update_default_routes (config, TRUE);
+	g_slist_free (list);
+}
 
-	g_free (name);
+static void
+device_added_cb (NMSystemConfigHalManager *hal_mgr,
+                 const char *udi,
+                 NMDeviceType dev_type,
+                 gpointer user_data)
+{
+	SCPluginIfcfg *self = SC_PLUGIN_IFCFG (user_data);
+
+	if (dev_type != DEVICE_TYPE_802_3_ETHERNET && dev_type != DEVICE_TYPE_802_11_WIRELESS)
+		return;
+
+	read_connection (self, udi, dev_type);
+}
+
+static void
+device_removed_cb (NMSystemConfigHalManager *hal_mgr,
+                   const char *udi,
+                   NMDeviceType dev_type,
+                   gpointer user_data)
+{
+	SCPluginIfcfg *self = SC_PLUGIN_IFCFG (user_data);
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
+	NMExportedConnection *exported;
+
+	if (dev_type != DEVICE_TYPE_802_3_ETHERNET && dev_type != DEVICE_TYPE_802_11_WIRELESS)
+		return;
+
+	if (g_hash_table_remove (priv->unmanaged_devices, udi))
+		g_signal_emit_by_name (self, "unmanaged-devices-changed");
+
+	exported = (NMExportedConnection *) g_hash_table_lookup (priv->connections, udi);
+	if (exported) {
+		nm_exported_connection_signal_removed (exported);
+		g_hash_table_remove (priv->connections, udi);
+	}
 }
 
 static void
 init (NMSystemConfigInterface *config, NMSystemConfigHalManager *hal_manager)
 {
-	GFile *file;
-	GFileMonitor *monitor;
-	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (config);
+	SCPluginIfcfg *self = SC_PLUGIN_IFCFG (config);
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
 
-	file = g_file_new_for_path (IFCFG_DIR);
-	monitor = g_file_monitor_directory (file, G_FILE_MONITOR_NONE, NULL, NULL);
-	g_object_unref (file);
+	priv->hal_manager = g_object_ref (hal_manager);
 
-	if (monitor) {
-		priv->monitor_id = g_signal_connect (monitor, "changed", G_CALLBACK (ifcfg_dir_changed), config);
-		priv->monitor = monitor;
+	g_signal_connect (priv->hal_manager, "device-added", G_CALLBACK (device_added_cb), self);
+	g_signal_connect (priv->hal_manager, "device-removed", G_CALLBACK (device_removed_cb), self);
+}
+
+static void
+get_connections_cb (gpointer key, gpointer val, gpointer user_data)
+{
+	GSList **list = (GSList **) user_data;
+
+	*list = g_slist_prepend (*list, val);
+}
+
+static GSList *
+get_connections (NMSystemConfigInterface *config)
+{
+	SCPluginIfcfg *self = SC_PLUGIN_IFCFG (config);
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
+	GSList *list = NULL;
+
+	if (!priv->initialized) {
+		const char *filename;
+
+		read_connections_by_type (self, DEVICE_TYPE_802_3_ETHERNET);
+		read_connections_by_type (self, DEVICE_TYPE_802_11_WIRELESS);
+
+		filename = SYSCONFDIR"/sysconfig/network/routes";
+		monitor_routes (self, filename);
+		priv->default_gw = parser_parse_routes (filename);
+		if (priv->default_gw)
+			update_connections (self);
+
+		priv->initialized = TRUE;
 	}
+
+	g_hash_table_foreach (priv->connections, get_connections_cb, &list);
+
+	return list;
 }
 
 static void
-release_one_connection (gpointer item, gpointer user_data)
+get_unamanged_devices_cb (gpointer key, gpointer val, gpointer user_data)
 {
-	NMConnection *connection = NM_CONNECTION (item);
-	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (user_data);
+	GSList **list = (GSList **) key;
 
-	g_signal_emit_by_name (plugin, "connection-removed", connection);
-	g_object_unref (connection);
+	*list = g_slist_prepend (*list, g_strdup ((char *) val));
+}
+
+static GSList *
+get_unmanaged_devices (NMSystemConfigInterface *config)
+{
+	GSList *list = NULL;
+
+	g_hash_table_foreach (SC_PLUGIN_IFCFG_GET_PRIVATE (config)->unmanaged_devices,
+					  get_unamanged_devices_cb, &list);
+
+	return list;
 }
 
 static void
-sc_plugin_ifcfg_init (SCPluginIfcfg *plugin)
+sc_plugin_ifcfg_init (SCPluginIfcfg *self)
 {
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
+	GError *err = NULL;
+
+	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
+	priv->unmanaged_devices = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+
+	priv->dbus_connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &err);
+	if (!priv->dbus_connection) {
+		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    dbus-glib error: %s",
+		              err->message ? err->message : "(unknown)");
+		g_error_free (err);
+	}
 }
 
 static void
@@ -362,18 +343,21 @@ dispose (GObject *object)
 {
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (object);
 
-	if (priv->connections) {
-		g_slist_foreach (priv->connections, release_one_connection, object);
-		g_slist_free (priv->connections);
+	g_hash_table_destroy (priv->connections);
+	g_hash_table_destroy (priv->unmanaged_devices);
+
+	if (priv->default_gw_monitor) {
+		if (priv->default_gw_monitor_id)
+			g_signal_handler_disconnect (priv->default_gw_monitor, priv->default_gw_monitor_id);
+
+		g_file_monitor_cancel (priv->default_gw_monitor);
+		g_object_unref (priv->default_gw_monitor);
 	}
 
-	if (priv->monitor) {
-		if (priv->monitor_id)
-			g_signal_handler_disconnect (priv->monitor, priv->monitor_id);
+	if (priv->hal_manager)
+		g_object_unref (priv->hal_manager);
 
-		g_file_monitor_cancel (priv->monitor);
-		g_object_unref (priv->monitor);
-	}
+	dbus_g_connection_unref (priv->dbus_connection);
 
 	G_OBJECT_CLASS (sc_plugin_ifcfg_parent_class)->dispose (object);
 }
@@ -419,6 +403,7 @@ system_config_interface_init (NMSystemConfigInterface *system_config_interface_c
 {
 	/* interface implementation */
 	system_config_interface_class->get_connections = get_connections;
+	system_config_interface_class->get_unmanaged_devices = get_unmanaged_devices;
 	system_config_interface_class->init = init;
 }
 

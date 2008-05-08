@@ -130,8 +130,8 @@ load_plugins (Application *app, const char *plugins, GError **error)
 		plugin = g_module_open (path, G_MODULE_BIND_LOCAL);
 		if (!plugin) {
 			g_set_error (error, plugins_error_quark (), 0,
-			             "Could not find plugin '%s' as %s!",
-			             *pname, path);
+			             "Could not load plugin '%s': %s",
+			             *pname, g_module_error ());
 			g_free (full_name);
 			g_free (path);
 			break;
