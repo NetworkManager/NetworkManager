@@ -9,6 +9,7 @@
 #include "nm-utils.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-gsm-device-glue.h"
+#include "nm-setting-connection.h"
 
 G_DEFINE_TYPE (NMGsmDevice, nm_gsm_device, NM_TYPE_SERIAL_DEVICE)
 
@@ -515,6 +516,31 @@ real_act_stage1_prepare (NMDevice *device)
 	return priv->pending_id ? NM_ACT_STAGE_RETURN_POSTPONE : NM_ACT_STAGE_RETURN_FAILURE;
 }
 
+static NMConnection *
+real_get_best_auto_connection (NMDevice *dev,
+                               GSList *connections,
+                               char **specific_object)
+{
+	GSList *iter;
+
+	for (iter = connections; iter; iter = g_slist_next (iter)) {
+		NMConnection *connection = NM_CONNECTION (iter->data);
+		NMSettingConnection *s_con;
+
+		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+		g_assert (s_con);
+
+		if (!s_con->autoconnect)
+			continue;
+
+		if (strcmp (s_con->type, NM_SETTING_GSM_SETTING_NAME))
+			continue;
+
+		return connection;
+	}
+	return NULL;
+}
+
 static guint32
 real_get_generic_capabilities (NMDevice *dev)
 {
@@ -765,6 +791,7 @@ nm_gsm_device_class_init (NMGsmDeviceClass *klass)
 	object_class->set_property = set_property;
 	object_class->finalize = finalize;
 
+	device_class->get_best_auto_connection = real_get_best_auto_connection;
 	device_class->get_generic_capabilities = real_get_generic_capabilities;
 	device_class->act_stage1_prepare = real_act_stage1_prepare;
 	device_class->connection_secrets_updated = real_connection_secrets_updated;
