@@ -1,5 +1,20 @@
 2008-05-07  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/plugins/keyfile/reader.c
+		- (read_one_setting_value): handle IP address items separately
+		- (read_array_of_uint): read IPv4 DNS option as a string array
+		- (read_array_of_array_of_uint): read IPv4 address tuples as a string
+			array
+
+	* system-settings/plugins/keyfile/writer.c
+		- (write_setting_value): handle IP address items separately
+		- (write_array_of_uint): handle IPv4 DNS option as a string array,
+			not an array of uint, so that it's user-editable
+		- (write_array_of_array_of_uint): handle IPv4 address tuples as string
+			arrays, so they are user-editable
+
+2008-05-07  Dan Williams  <dcbw@redhat.com>
+
 	* system-settings/plugins/keyfile/Makefile.am
 		- Change location of the keyfile plugin settings to
 			/etc/NetworkManager/system-connections

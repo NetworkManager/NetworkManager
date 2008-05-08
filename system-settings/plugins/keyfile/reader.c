@@ -5,11 +5,133 @@
 #include <sys/types.h>
 #include <dbus/dbus-glib.h>
 #include <nm-setting.h>
+#include <nm-setting-ip4-config.h>
+#include <arpa/inet.h>
+#include <string.h>
 
+#include "nm-dbus-glib-types.h"
 #include "reader.h"
 
-#define DBUS_TYPE_G_ARRAY_OF_UINT          (dbus_g_type_get_collection ("GArray", G_TYPE_UINT))
-#define DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT (dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_ARRAY_OF_UINT))
+static gboolean
+read_array_of_uint (GKeyFile *file,
+                    NMSetting *setting,
+                    const char *key)
+{
+	GArray *array = NULL;
+	gsize length;
+	int i;
+
+	if (NM_IS_SETTING_IP4_CONFIG (setting) && !strcmp (key, NM_SETTING_IP4_CONFIG_DNS)) {
+		char **list, **iter;
+		int ret;
+
+		list = g_key_file_get_string_list (file, setting->name, key, &length, NULL);
+		if (!list || !g_strv_length (list))
+			return TRUE;
+
+		array = g_array_sized_new (FALSE, FALSE, sizeof (guint32), length);
+		for (iter = list; *iter; iter++) {
+			struct in_addr addr;
+
+			ret = inet_pton (AF_INET, *iter, &addr);
+			if (ret <= 0) {
+				g_warning ("%s: ignoring invalid DNS server address '%s'", __func__, *iter);
+				continue;
+			}
+
+			g_array_append_val (array, addr.s_addr);			
+		}
+	} else {
+		gint *tmp;
+
+		tmp = g_key_file_get_integer_list (file, setting->name, key, &length, NULL);
+
+		array = g_array_sized_new (FALSE, FALSE, sizeof (guint32), length);
+		for (i = 0; i < length; i++)
+			g_array_append_val (array, tmp[i]);
+	}
+
+	if (array) {
+		g_object_set (setting, key, array, NULL);
+		g_array_free (array, TRUE);
+	}
+
+	return TRUE;
+}
+
+static void
+free_one_address (gpointer data, gpointer user_data)
+{
+	g_array_free ((GArray *) data, TRUE);
+}
+
+static gboolean
+read_array_of_array_of_uint (GKeyFile *file,
+                             NMSetting *setting,
+                             const char *key)
+{
+	GPtrArray *addresses;
+	int i = 0;
+
+	/* Only handle IPv4 addresses for now */
+	if (   !NM_IS_SETTING_IP4_CONFIG (setting)
+	    || strcmp (key, NM_SETTING_IP4_CONFIG_ADDRESSES))
+	    return FALSE;
+
+	addresses = g_ptr_array_sized_new (3);
+
+	/* Look for individual addresses */
+	while (i++ < 1000) {
+		gchar **tmp, **iter;
+		char *key_name;
+		gsize length = 0;
+		int ret;
+		GArray *address;
+		guint32 empty = 0;
+
+		key_name = g_strdup_printf ("address%d", i);
+		tmp = g_key_file_get_string_list (file, setting->name, key_name, &length, NULL);
+		g_free (key_name);
+
+		if (!tmp || !length)
+			break; /* all done */
+
+		if ((length < 2) || (length > 3)) {
+			g_warning ("%s: ignoring invalid IPv4 address item '%s'", __func__, key_name);
+			goto next;
+		}
+
+		/* convert the string array into IP addresses */
+		address = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
+		for (iter = tmp; *iter; iter++) {
+			struct in_addr addr;
+
+			ret = inet_pton (AF_INET, *iter, &addr);
+			if (ret <= 0) {
+				g_warning ("%s: ignoring invalid IPv4 %s element '%s'", __func__, key_name, *iter);
+				g_array_free (address, TRUE);
+				goto next;
+			}
+
+			g_array_append_val (address, addr.s_addr);
+		}
+
+		/* fill in blank gateway if not specified */
+		if (address->len == 2)
+			g_array_append_val (address, empty);
+
+		g_ptr_array_add (addresses, address);
+
+next:
+		g_strfreev (tmp);
+	}
+
+	g_object_set (setting, key, addresses, NULL);
+
+	g_ptr_array_foreach (addresses, free_one_address, NULL);
+	g_ptr_array_free (addresses, TRUE);
+	return TRUE;
+}
 
 static void
 read_one_setting_value (NMSetting *setting,
@@ -21,8 +143,17 @@ read_one_setting_value (NMSetting *setting,
 	GKeyFile *file = (GKeyFile *) user_data;
 	GType type;
 	GError *err = NULL;
+	gboolean check_for_key = TRUE;
 
-	if (!g_key_file_has_key (file, setting->name, key, &err)) {
+	/* Setting name gets picked up from the keyfile's section name instead */
+	if (!strcmp (key, NM_SETTING_NAME))
+		return;
+
+	/* IPv4 addresses don't have the exact key name */
+	if (NM_IS_SETTING_IP4_CONFIG (setting) && !strcmp (key, NM_SETTING_IP4_CONFIG_ADDRESSES))
+		check_for_key = FALSE;
+
+	if (check_for_key && !g_key_file_has_key (file, setting->name, key, &err)) {
 		if (err) {
 			g_warning ("Error loading setting '%s' value: %s", setting->name, err->message);
 			g_error_free (err);
@@ -111,22 +242,15 @@ read_one_setting_value (NMSetting *setting,
 		/* FIXME */
 		g_warning ("Implement me");
 	} else if (type == DBUS_TYPE_G_UINT_ARRAY) {
-		gint *tmp;
-		GArray *array;
-		gsize length;
-		int i;
-
-		tmp = g_key_file_get_integer_list (file, setting->name, key, &length, NULL);
-
-		array = g_array_sized_new (FALSE, FALSE, sizeof (guint32), length);
-		for (i = 0; i < length; i++)
-			g_array_append_val (array, tmp[i]);
-
-		g_object_set (setting, key, array, NULL);
-		g_array_free (array, TRUE);
+		if (!read_array_of_uint (file, setting, key)) {
+			g_warning ("Unhandled setting property type (read): '%s/%s' : '%s'",
+					 setting->name, key, G_VALUE_TYPE_NAME (value));
+		}
 	} else if (type == DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT) {
-		/* FIXME */
-		g_warning ("Implement me");
+		if (!read_array_of_array_of_uint (file, setting, key)) {
+			g_warning ("Unhandled setting property type (read): '%s/%s' : '%s'",
+					 setting->name, key, G_VALUE_TYPE_NAME (value));
+		}
 	} else {
 		g_warning ("Unhandled setting property type (read): '%s/%s' : '%s'",
 				 setting->name, key, G_VALUE_TYPE_NAME (value));
