@@ -221,11 +221,7 @@ AC_SUBST(LIBNL_LIBS)
 
 PKG_CHECK_MODULES(POLKIT, polkit-dbus)
 
-AC_CHECK_PROG([POLKIT_POLICY_FILE_VALIDATE],
-    [polkit-policy-file-validate], [polkit-policy-file-validate])
-if test -z "$POLKIT_POLICY_FILE_VALIDATE"; then
-    AC_MSG_ERROR([polkit-policy-file-validate not found])
-fi
+AC_PATH_PROG([POLKIT_POLICY_FILE_VALIDATE], [polkit-policy-file-validate], [false])
 
 GLIB_GENMARSHAL=`pkg-config --variable=glib_genmarshal glib-2.0`
 AC_SUBST(GLIB_GENMARSHAL)
