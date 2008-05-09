@@ -6,6 +6,7 @@
 #include <NetworkManager.h>
 #include "nm-suse-connection.h"
 #include "parser.h"
+#include "nm-polkit-helpers.h"
 
 G_DEFINE_TYPE (NMSuseConnection, nm_suse_connection, NM_TYPE_SYSCONFIG_CONNECTION)
 
@@ -103,6 +104,26 @@ get_id (NMExportedConnection *exported)
 	return NM_SUSE_CONNECTION_GET_PRIVATE (exported)->filename;
 }
 
+static gboolean
+update (NMExportedConnection *exported,
+	   GHashTable *new_settings,
+	   GError **err)
+{	
+	g_set_error (err, NM_SYSCONFIG_SETTINGS_ERROR, NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
+			   "%s", "Please use YaST to change this connection.");
+
+	return FALSE;
+}
+
+static gboolean
+delete (NMExportedConnection *exported, GError **err)
+{
+	g_set_error (err, NM_SYSCONFIG_SETTINGS_ERROR, NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
+			   "%s", "Please use YaST to remove this connection.");
+
+	return FALSE;
+}
+
 /* GObject */
 
 static void
@@ -141,4 +162,6 @@ nm_suse_connection_class_init (NMSuseConnectionClass *suse_connection_class)
 
 	connection_class->get_settings = get_settings;
 	connection_class->get_id       = get_id;
+	connection_class->update       = update;
+	connection_class->delete       = delete;
 }
