@@ -131,10 +131,10 @@ static gboolean impl_exported_connection_get_settings (NMExportedConnection *con
 
 static gboolean impl_exported_connection_update (NMExportedConnection *connection,
 									    GHashTable *new_settings,
-									    GError *err);
+									    DBusGMethodInvocation *context);
 
 static gboolean impl_exported_connection_delete (NMExportedConnection *connection,
-									    GError *err);
+									    DBusGMethodInvocation *context);
 
 static void impl_exported_connection_get_secrets (NMExportedConnection *connection,
 						      const gchar *setting_name,
@@ -241,19 +241,46 @@ impl_exported_connection_get_settings (NMExportedConnection *connection,
 static gboolean
 impl_exported_connection_update (NMExportedConnection *connection,
 						   GHashTable *new_settings,
-						   GError *err)
+						   DBusGMethodInvocation *context)
 {
-	nm_exported_connection_update (connection, new_settings);
+	GError *err = NULL;
+	gboolean success;
 
-	return TRUE;
+	/* A hack to share the DBusGMethodInvocation with the possible overriders of connection::delete */
+	g_object_set_data (G_OBJECT (connection), NM_EXPORTED_CONNECTION_DBUS_METHOD_INVOCATION, context);
+	success = nm_exported_connection_update (connection, new_settings, &err);
+	g_object_set_data (G_OBJECT (connection), NM_EXPORTED_CONNECTION_DBUS_METHOD_INVOCATION, NULL);
+
+	if (success) {
+		dbus_g_method_return (context);
+	} else {
+		dbus_g_method_return_error (context, err);
+		g_error_free (err);
+	}
+
+	return success;
 }
 
 static gboolean
-impl_exported_connection_delete (NMExportedConnection *connection, GError *err)
+impl_exported_connection_delete (NMExportedConnection *connection,
+						   DBusGMethodInvocation *context)
 {
-	nm_exported_connection_delete (connection);
+	GError *err = NULL;
+	gboolean success;
 
-	return TRUE;
+	/* A hack to share the DBusGMethodInvocation with the possible overriders of connection::delete */
+	g_object_set_data (G_OBJECT (connection), NM_EXPORTED_CONNECTION_DBUS_METHOD_INVOCATION, context);
+	success = nm_exported_connection_delete (connection, &err);
+	g_object_set_data (G_OBJECT (connection), NM_EXPORTED_CONNECTION_DBUS_METHOD_INVOCATION, NULL);
+
+	if (success) {
+		dbus_g_method_return (context);
+	} else {
+		dbus_g_method_return_error (context, err);
+		g_error_free (err);
+	}
+
+	return success;
 }
 
 static void
@@ -425,30 +452,41 @@ nm_exported_connection_register_object (NMExportedConnection *connection,
 	g_free (path);
 }
 
-void
+gboolean
 nm_exported_connection_update (NMExportedConnection *connection,
-						 GHashTable *new_settings)
+						 GHashTable *new_settings,
+						 GError **err)
 {
-	g_return_if_fail (NM_IS_EXPORTED_CONNECTION (connection));
-	g_return_if_fail (new_settings != NULL);
+	gboolean success = TRUE;
 
-	nm_connection_replace_settings (NM_EXPORTED_CONNECTION_GET_PRIVATE (connection)->wrapped, new_settings);
+	g_return_val_if_fail (NM_IS_EXPORTED_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (new_settings != NULL, FALSE);
 
 	if (EXPORTED_CONNECTION_CLASS (connection)->update)
-		EXPORTED_CONNECTION_CLASS (connection)->update (connection, new_settings);
+		success = EXPORTED_CONNECTION_CLASS (connection)->update (connection, new_settings, err);
 
-	nm_exported_connection_signal_updated (connection, new_settings);
+	if (success) {
+		nm_connection_replace_settings (NM_EXPORTED_CONNECTION_GET_PRIVATE (connection)->wrapped, new_settings);
+		nm_exported_connection_signal_updated (connection, new_settings);
+	}
+
+	return success;
 }
 
-void
-nm_exported_connection_delete (NMExportedConnection *connection)
+gboolean
+nm_exported_connection_delete (NMExportedConnection *connection, GError **err)
 {
-	g_return_if_fail (NM_IS_EXPORTED_CONNECTION (connection));
+	gboolean success = TRUE;
+
+	g_return_val_if_fail (NM_IS_EXPORTED_CONNECTION (connection), FALSE);
 
 	if (EXPORTED_CONNECTION_CLASS (connection)->delete)
-		EXPORTED_CONNECTION_CLASS (connection)->delete (connection);
+		success = EXPORTED_CONNECTION_CLASS (connection)->delete (connection, err);
 
-	nm_exported_connection_signal_removed (connection);
+	if (success)
+		nm_exported_connection_signal_removed (connection);
+
+	return success;
 }
 
 void

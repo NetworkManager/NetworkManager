@@ -28,8 +28,9 @@ GType nm_dbus_settings_system_get_type (void);
 
 NMDBusSettingsSystem *nm_dbus_settings_system_new (DBusGConnection *dbus_connection);
 
-void nm_dbus_settings_system_add_connection (NMDBusSettingsSystem *self,
-									NMConnection *connection);
+gboolean nm_dbus_settings_system_add_connection (NMDBusSettingsSystem *self,
+									    NMConnection *connection,
+									    GError **err);
 
 GSList *nm_dbus_settings_system_get_unmanaged_devices (NMDBusSettingsSystem *self);
 

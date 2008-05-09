@@ -11,6 +11,7 @@
 	Add new connection.
       </tp:docstring>
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_add_connection"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <arg name="connection" type="a{sa{sv}}" direction="in">
 	<tp:docstring>
 	  Connection properties.

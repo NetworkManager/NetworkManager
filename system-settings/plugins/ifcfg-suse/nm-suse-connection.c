@@ -7,7 +7,7 @@
 #include "nm-suse-connection.h"
 #include "parser.h"
 
-G_DEFINE_TYPE (NMSuseConnection, nm_suse_connection, NM_TYPE_EXPORTED_CONNECTION)
+G_DEFINE_TYPE (NMSuseConnection, nm_suse_connection, NM_TYPE_SYSCONFIG_CONNECTION)
 
 #define NM_SUSE_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SUSE_CONNECTION, NMSuseConnectionPrivate))
 
@@ -37,14 +37,14 @@ file_changed (GFileMonitor *monitor,
 		new_connection = parse_ifcfg (priv->iface, priv->dev_type);
 		if (new_connection) {
 			new_settings = nm_connection_to_hash (new_connection);
-			nm_exported_connection_update (exported, new_settings);
+			nm_exported_connection_update (exported, new_settings, NULL);
 			g_hash_table_destroy (new_settings);
 			g_object_unref (new_connection);
 		} else
-			nm_exported_connection_delete (exported);
+			nm_exported_connection_delete (exported, NULL);
 		break;
 	case G_FILE_MONITOR_EVENT_DELETED:
-		nm_exported_connection_delete (exported);
+		nm_exported_connection_delete (exported, NULL);
 		break;
 	default:
 		break;

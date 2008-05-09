@@ -7,7 +7,7 @@
 #include "reader.h"
 #include "writer.h"
 
-G_DEFINE_TYPE (NMKeyfileConnection, nm_keyfile_connection, NM_TYPE_EXPORTED_CONNECTION)
+G_DEFINE_TYPE (NMKeyfileConnection, nm_keyfile_connection, NM_TYPE_SYSCONFIG_CONNECTION)
 
 #define NM_KEYFILE_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_KEYFILE_CONNECTION, NMKeyfileConnectionPrivate))
 
@@ -52,18 +52,33 @@ get_id (NMExportedConnection *exported)
 	return NM_KEYFILE_CONNECTION_GET_PRIVATE (exported)->filename;
 }
 
-static void
-update (NMExportedConnection *exported, GHashTable *new_settings)
+static gboolean
+update (NMExportedConnection *exported,
+	   GHashTable *new_settings,
+	   GError **err)
 {
-	write_connection (nm_exported_connection_get_connection (exported));
+	gboolean success;
+
+	success = NM_EXPORTED_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->update (exported, new_settings, err);
+
+	if (success)
+		write_connection (nm_exported_connection_get_connection (exported));
+
+	return success;
 }
 
-static void
-delete (NMExportedConnection *exported)
+static gboolean
+delete (NMExportedConnection *exported, GError **err)
 {
 	NMKeyfileConnectionPrivate *priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (exported);
+	gboolean success;
 
-	g_unlink (priv->filename);
+	success = NM_EXPORTED_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->delete (exported, err);
+
+	if (success)
+		g_unlink (priv->filename);
+
+	return success;
 }
 
 /* GObject */

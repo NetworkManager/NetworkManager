@@ -13,11 +13,15 @@ nm_system_settings_SOURCES = \
 	dbus-settings.c \
 	dbus-settings.h \
 	main.c \
+	nm-polkit-helpers.c \
+	nm-polkit-helpers.h \
 	nm-system-config-interface.c \
 	nm-system-config-interface.h \
 	nm-system-config-hal-manager.c \
 	nm-system-config-hal-manager.h \
 	nm-system-config-hal-manager-private.h \
+	nm-sysconfig-connection.c \
+	nm-sysconfig-connection.h \
 	sha1.c \
 	sha1.h
 
@@ -25,6 +29,7 @@ nm_system_settings_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(GTHREAD_CFLAGS) \
 	$(GMODULE_CFLAGS) \
+	$(POLKIT_CFLAGS) \
 	-DDBUS_API_SUBJECT_TO_CHANGE \
 	-DG_DISABLE_DEPRECATED	\
 	-DBINDIR=\"$(bindir)\" \
@@ -40,6 +45,7 @@ nm_system_settings_LDADD = \
 	$(DBUS_LIBS) \
 	$(GTHREAD_LIBS) \
 	$(GMODULE_LIBS) \
+	$(POLKIT_LIBS) \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(top_builddir)/libnm-glib/libnm_glib.la \
 	$(top_builddir)/marshallers/libmarshallers.la

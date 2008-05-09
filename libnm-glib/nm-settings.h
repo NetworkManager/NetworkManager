@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
 #ifndef __NM_SETTINGS_H__
 #define __NM_SETTINGS_H__
@@ -21,6 +22,8 @@ GQuark nm_settings_error_quark (void);
 
 #define NM_EXPORTED_CONNECTION_CONNECTION "connection"
 
+#define NM_EXPORTED_CONNECTION_DBUS_METHOD_INVOCATION "nm-exported-connection-dbus-method-invocation"
+
 typedef struct {
 	GObject parent;
 } NMExportedConnection;
@@ -37,10 +40,12 @@ typedef struct {
 	                              gboolean request_new,
 	                              DBusGMethodInvocation *context);
 
-	void (*update) (NMExportedConnection *connection,
-			GHashTable *new_settings);
+	gboolean (*update) (NMExportedConnection *connection,
+					GHashTable *new_settings,
+					GError **err);
 
-	void (*delete) (NMExportedConnection *connection);
+	gboolean (*delete) (NMExportedConnection *connection,
+					GError **err);
 
 	/* signals */
 	void (* updated) (NMExportedConnection *connection, GHashTable *settings);
@@ -59,13 +64,15 @@ NMConnection *nm_exported_connection_get_connection (NMExportedConnection *conne
 
 const char *nm_exported_connection_get_id (NMExportedConnection *connection);
 
-void nm_exported_connection_update (NMExportedConnection *connection,
-				    GHashTable *new_settings);
+gboolean nm_exported_connection_update (NMExportedConnection *connection,
+								GHashTable *new_settings,
+								GError **err);
 
-void nm_exported_connection_delete (NMExportedConnection *connection);
+gboolean nm_exported_connection_delete (NMExportedConnection *connection,
+								GError **err);
 
 void nm_exported_connection_signal_updated (NMExportedConnection *connection,
-					    GHashTable *new_settings);
+								    GHashTable *new_settings);
 
 void nm_exported_connection_signal_removed (NMExportedConnection *connection);
 

@@ -101,6 +101,7 @@ dir_changed (GFileMonitor *monitor,
 			nm_exported_connection_signal_removed (NM_EXPORTED_CONNECTION (connection));
 		}
 		break;
+	case G_FILE_MONITOR_EVENT_CREATED:
 	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
 		if (connection) {
 			/* Update */
@@ -111,7 +112,7 @@ dir_changed (GFileMonitor *monitor,
 				GHashTable *settings;
 
 				settings = nm_connection_to_hash (nm_exported_connection_get_connection (tmp));
-				nm_exported_connection_update (NM_EXPORTED_CONNECTION (connection), settings);
+				nm_exported_connection_update (NM_EXPORTED_CONNECTION (connection), settings, NULL);
 				g_hash_table_destroy (settings);
 				g_object_unref (tmp);
 			}

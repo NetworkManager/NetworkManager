@@ -25,15 +25,15 @@
 #include <nm-connection.h>
 #include <dbus/dbus.h>
 #include <string.h>
-
 #include <nm-setting-connection.h>
 
 #include "nm-dbus-glib-types.h"
 #include "dbus-settings.h"
+#include "nm-polkit-helpers.h"
 #include "nm-utils.h"
 
 static gboolean
-impl_settings_add_connection (NMSysconfigSettings *self, GHashTable *hash, GError **err);
+impl_settings_add_connection (NMSysconfigSettings *self, GHashTable *hash, DBusGMethodInvocation *context);
 
 #include "nm-settings-system-glue.h"
 
@@ -41,6 +41,7 @@ static void unmanaged_devices_changed (NMSystemConfigInterface *config, gpointer
 
 typedef struct {
 	DBusGConnection *g_connection;
+	PolKitContext *pol_ctx;
 	NMSystemConfigHalManager *hal_mgr;
 
 	GSList *plugins;
@@ -125,6 +126,9 @@ settings_finalize (GObject *object)
 
 	g_slist_foreach (priv->plugins, (GFunc) g_object_unref, NULL);
 	g_slist_free (priv->plugins);
+
+	if (priv->pol_ctx)
+		polkit_context_unref (priv->pol_ctx);
 
 	g_object_unref (priv->hal_mgr);
 	dbus_g_connection_unref (priv->g_connection);
@@ -218,7 +222,7 @@ nm_sysconfig_settings_class_init (NMSysconfigSettingsClass *class)
 	GObjectClass *object_class = G_OBJECT_CLASS (class);	
 	NMSettingsClass *settings_class = NM_SETTINGS_CLASS (class);
 	
-	g_type_class_add_private (settings_class, sizeof (NMSysconfigSettingsPrivate));
+	g_type_class_add_private (class, sizeof (NMSysconfigSettingsPrivate));
 
 	/* virtual methods */
 	object_class->notify = notify;
@@ -247,6 +251,8 @@ nm_sysconfig_settings_class_init (NMSysconfigSettingsClass *class)
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (settings_class),
 	                                 &dbus_glib_nm_settings_system_object_info);
+
+	dbus_g_error_domain_register (NM_SYSCONFIG_SETTINGS_ERROR, NULL, NM_TYPE_SYSCONFIG_SETTINGS_ERROR);
 }
 
 static void
@@ -256,6 +262,8 @@ nm_sysconfig_settings_init (NMSysconfigSettings *self)
 
 	priv->connections = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
 	priv->unmanaged_devices = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
+
+	priv->pol_ctx = create_polkit_context ();
 }
 
 NMSysconfigSettings *
@@ -404,13 +412,22 @@ nm_sysconfig_settings_is_device_managed (NMSysconfigSettings *self,
 }
 
 static gboolean
-impl_settings_add_connection (NMSysconfigSettings *self, GHashTable *hash, GError **err)
+impl_settings_add_connection (NMSysconfigSettings *self,
+						GHashTable *hash,
+						DBusGMethodInvocation *context)
 {
+	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 	NMConnection *connection;
+	GError *err = NULL;
+
+	if (!check_polkit_privileges (priv->g_connection, priv->pol_ctx, context, &err)) {
+		dbus_g_method_return_error (context, err);
+		g_error_free (err);
+		return FALSE;
+	}
 
 	connection = nm_connection_new_from_hash (hash);
 	if (connection) {
-		NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 		GSList *iter;
 
 		/* Here's how it works:
@@ -429,10 +446,15 @@ impl_settings_add_connection (NMSysconfigSettings *self, GHashTable *hash, GErro
 			nm_system_config_interface_add_connection (NM_SYSTEM_CONFIG_INTERFACE (iter->data), connection);
 
 		g_object_unref (connection);
+		dbus_g_method_return (context);
 		return TRUE;
 	} else {
 		/* Invalid connection hash */
-		/* FIXME: Set error */
+		err = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
+					    NM_SYSCONFIG_SETTINGS_ERROR_INVALID_CONNECTION,
+					    "%s", "Invalid connection");
+		dbus_g_method_return_error (context, err);
+		g_error_free (err);
 		return FALSE;
 	}
 }

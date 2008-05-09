@@ -4,7 +4,7 @@
 #define NM_SUSE_CONNECTION_H
 
 #include <NetworkManager.h>
-#include <nm-settings.h>
+#include <nm-sysconfig-connection.h>
 
 G_BEGIN_DECLS
 
@@ -16,11 +16,11 @@ G_BEGIN_DECLS
 #define NM_SUSE_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SUSE_CONNECTION, NMSuseConnectionClass))
 
 typedef struct {
-	NMExportedConnection parent;
+	NMSysconfigConnection parent;
 } NMSuseConnection;
 
 typedef struct {
-	NMExportedConnectionClass parent;
+	NMSysconfigConnectionClass parent;
 } NMSuseConnectionClass;
 
 GType nm_suse_connection_get_type (void);

@@ -3,7 +3,7 @@
 #ifndef NM_KEYFILE_CONNECTION_H
 #define NM_KEYFILE_CONNECTION_H
 
-#include <nm-settings.h>
+#include <nm-sysconfig-connection.h>
 
 G_BEGIN_DECLS
 
@@ -17,11 +17,11 @@ G_BEGIN_DECLS
 #define NM_KEYFILE_CONNECTION_FILENAME  "filename"
 
 typedef struct {
-	NMExportedConnection parent;
+	NMSysconfigConnection parent;
 } NMKeyfileConnection;
 
 typedef struct {
-	NMExportedConnectionClass parent;
+	NMSysconfigConnectionClass parent;
 } NMKeyfileConnectionClass;
 
 GType nm_keyfile_connection_get_type (void);

@@ -69,28 +69,20 @@ get_secrets (NMExportedConnection *connection,
 	g_warning ("Implement me");
 }
 
-static void
-update (NMExportedConnection *exported, GHashTable *new_settings)
+static gboolean
+update (NMExportedConnection *exported, GHashTable *new_settings, GError **err)
 {
 	NMDBusConnectionPrivate *priv = NM_DBUS_CONNECTION_GET_PRIVATE (exported);
-	GError *err = NULL;
 
-	if (!org_freedesktop_NetworkManagerSettings_Connection_update (priv->proxy, new_settings, &err)) {
-		nm_warning ("Can not update dbus connection: %s", err->message);
-		g_error_free (err);
-	}
+	return org_freedesktop_NetworkManagerSettings_Connection_update (priv->proxy, new_settings, err);
 }
 
-static void
-delete (NMExportedConnection *exported)
+static gboolean
+delete (NMExportedConnection *exported, GError **err)
 {
 	NMDBusConnectionPrivate *priv = NM_DBUS_CONNECTION_GET_PRIVATE (exported);
-	GError *err = NULL;
 
-	if (!org_freedesktop_NetworkManagerSettings_Connection_delete (priv->proxy, &err)) {
-		nm_warning ("Can not delete dbus connection: %s", err->message);
-		g_error_free (err);
-	}
+	return org_freedesktop_NetworkManagerSettings_Connection_delete (priv->proxy, err);
 }
 
 static void

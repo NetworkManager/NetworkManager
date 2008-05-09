@@ -219,6 +219,14 @@ PKG_CHECK_MODULES(LIBNL, libnl-1 >= 1.0-pre8)
 AC_SUBST(LIBNL_CFLAGS)
 AC_SUBST(LIBNL_LIBS)
 
+PKG_CHECK_MODULES(POLKIT, polkit-dbus)
+
+AC_CHECK_PROG([POLKIT_POLICY_FILE_VALIDATE],
+    [polkit-policy-file-validate], [polkit-policy-file-validate])
+if test -z "$POLKIT_POLICY_FILE_VALIDATE"; then
+    AC_MSG_ERROR([polkit-policy-file-validate not found])
+fi
+
 GLIB_GENMARSHAL=`pkg-config --variable=glib_genmarshal glib-2.0`
 AC_SUBST(GLIB_GENMARSHAL)
 
@@ -331,6 +339,7 @@ man/Makefile
 man/NetworkManager.8
 man/nm-tool.1
 po/Makefile.in
+policy/Makefile
 NetworkManager.pc
 ])
 AC_OUTPUT

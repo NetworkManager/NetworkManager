@@ -34,7 +34,8 @@ SUBDIRS = 				\
 	   introspection	\
 	   callouts \
 	   system-settings \
-	   tools
+	   tools \
+	   policy
 
 EXTRA_DIST =				\
 	CONTRIBUTING			\

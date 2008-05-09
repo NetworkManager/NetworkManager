@@ -37,27 +37,25 @@ nm_dbus_settings_system_new (DBusGConnection *dbus_connection)
 										 NULL);
 }
 
-void
+gboolean
 nm_dbus_settings_system_add_connection (NMDBusSettingsSystem *self,
-								NMConnection *connection)
+								NMConnection *connection,
+								GError **err)
 {
 	NMDBusSettingsSystemPrivate *priv;
 	GHashTable *settings;
-	GError *err = NULL;
+	gboolean ret;
 
-	g_return_if_fail (NM_IS_DBUS_SETTINGS_SYSTEM (self));
-	g_return_if_fail (NM_IS_CONNECTION (connection));
+	g_return_val_if_fail (NM_IS_DBUS_SETTINGS_SYSTEM (self), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
 	priv = NM_DBUS_SETTINGS_SYSTEM_GET_PRIVATE (self);
 	settings = nm_connection_to_hash (connection);
 
-	org_freedesktop_NetworkManagerSettings_System_add_connection (priv->settings_proxy, settings, &err);
-	if (err) {
-		g_warning ("Could not add system settings: %s", err->message);
-		g_error_free (err);
-	}
-
+	ret = org_freedesktop_NetworkManagerSettings_System_add_connection (priv->settings_proxy, settings, err);
 	g_hash_table_destroy (settings);
+
+	return ret;
 }
 
 static void

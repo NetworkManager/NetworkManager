@@ -9,6 +9,60 @@
 
 2008-05-08  Tambet Ingo  <tambet@gmail.com>
 
+	Use PolicyKit to authorize the system settings' AddConnection method
+	and the system settings connections' Update and Delete methods.
+	
+	* libnm-glib/nm-settings.c (impl_exported_connection_update)
+	(impl_exported_connection_delete, nm_exported_connection_update)
+	(nm_exported_connection_delete): Return boolean and fill GError
+	to notify the callers of the reasons why it might have failed.
+
+	* libnm-glib/nm-dbus-settings-system.c
+	(nm_dbus_settings_system_add_connection): Return the error from dbus
+	call so that the callers can see why it failed.
+
+	* libnm-glib/nm-dbus-connection.c (update, delete): Update the 
+	signatures.
+
+	* system-settings/src/nm-polkit-helpers.[ch]: Implement.
+
+	* system-settings/src/nm-sysconfig-connection.[ch]: Implement. New
+	abstract base class that checks PolicyKit permissions.
+
+	* system-settings/src/dbus-settings.c:
+	(impl_settings_add_connection): Check the policy before carring out
+	the request.
+
+	* system-settings/plugins/keyfile/nm-keyfile-connection.c:
+	Inherit from NMSysconfigConnection, check the policies before
+	allowing updating or removing.
+
+	* system-settings/plugins/ifcfg-suse/nm-suse-connection.c:
+	Inherit from NMSysconfigConnection.
+
+	* introspection/nm-exported-connection.xml: Annotate "Update" and 
+	"Delete" methods with async flag so that the implementations can get
+	access to DBusGMethodInvocation.
+
+	* system-settings/src/dbus-settings.c 
+	(settings_add_connection_check_privileges): Implement.
+	(impl_settings_add_connection): Check the privileges before adding a new
+	connection. Improve error reporting.
+
+	* introspection/nm-settings-system.xml: Make the 'AddConnection' method
+	async so that the implementation can access DBusGMethodInvocation.
+
+	* configure.in: Check for PolicyKit.
+
+	* policy/org.freedesktop.network-manager-settings.system.policy: 
+	New file.
+
+	* policy/Makefile.am: Install the policy file.
+
+	* configure.in: Add 'policy' subdir.
+
+2008-05-08  Tambet Ingo  <tambet@gmail.com>
+
 	Rewrite the suse system settings plugin.
 
 	* system-settings/plugins/ifcfg-suse/plugin.c: Rewrite.
