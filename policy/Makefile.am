@@ -19,5 +19,4 @@ check:
 
 clean-local :
 	rm -f *~
-polkit_policydir = $(datadir)/PolicyKit/policy
 
