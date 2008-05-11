@@ -1,6 +1,5 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* NetworkManager system settings service
- *
- * Søren Sandmann <sandmann@daimi.au.dk>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,15 +15,11 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
  *
- * (C) Copyright 2007 Red Hat, Inc.
+ * (C) Copyright 2008 Red Hat, Inc.
  */
 
-#ifndef _PARSER_H_
-#define _PARSER_H_
-
-#include <glib.h>
-#include <nm-connection.h>
-#include <nm-setting-ip4-config.h>
+#ifndef __COMMON_H__
+#define __COMMON_H__
 
 #define IFCFG_TAG "ifcfg-"
 #define KEYS_TAG "keys-"
@@ -33,21 +28,10 @@
 #define ORIG_TAG ".orig"
 #define REJ_TAG ".rej"
 
-typedef struct {
-	char *ifcfg_path;
-	char *udi;
-	gboolean ignored;
-	gboolean exported;
+#include <glib.h>
 
-	GHashTable *wifi_secrets;
-	GHashTable *onex_secrets;
-	GHashTable *ppp_secrets;
-} ConnectionData;
+GQuark ifcfg_plugin_error_quark (void);
 
-NMConnection * parser_parse_file (const char *file, GError **error);
 
-ConnectionData *connection_data_get (NMConnection *connection);
-ConnectionData *connection_data_add (NMConnection *connection, const char *ifcfg_path);
-void connection_data_copy_secrets (ConnectionData *from, ConnectionData *to);
+#endif  /* __COMMON_H__ */
 
-#endif /* _PARSER_H_ */

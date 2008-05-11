@@ -1,5 +1,30 @@
 2008-05-11  Dan Williams  <dcbw@redhat.com>
 
+	Update Fedora system-settings plugin to support latest API and use
+	GFileMonitor rather than home-rolled inotify code.
+
+	* system-settings/plugins/ifcfg-fedora/Makefile.am
+	  system-settings/plugins/ifcfg-fedora/common.h
+	  system-settings/plugins/ifcfg-fedora/plugin.c
+		- Update to latest system settings plugin API; use GIO instead of
+			custom inotify code; use NMIfcfgConnection objects instead of
+			ConnectionData structures tacked onto NMConnection objects
+
+	* system-settings/plugins/ifcfg-fedora/nm-ifcfg-connection.c
+	  system-settings/plugins/ifcfg-fedora/nm-ifcfg-connection.h
+		- Implement an NMExportedConnection subclass mapping ifcfg files to
+			connections
+
+	* system-settings/plugins/ifcfg-fedora/reader.c
+	  system-settings/plugins/ifcfg-fedora/reader.h
+		- Move ifcfg parsing bits here from parser.c
+
+	* system-settings/plugins/ifcfg-fedora/parser.c
+	  system-settings/plugins/ifcfg-fedora/parser.h
+		- Remove; most code moved to reader.c
+
+2008-05-11  Dan Williams  <dcbw@redhat.com>
+
 	* configure.in
 	  Makefile.am
 	  gfilemonitor/*

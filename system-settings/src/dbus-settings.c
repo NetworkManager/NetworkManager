@@ -70,6 +70,38 @@ enum {
 };
 
 static void
+load_connections (NMSysconfigSettings *self)
+{
+	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+	GSList *iter;
+
+	if (priv->connections_loaded)
+		return;
+
+	for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
+		NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (iter->data);
+		GSList *plugin_connections;
+		GSList *elt;
+
+		plugin_connections = nm_system_config_interface_get_connections (plugin);
+
+		// FIXME: ensure connections from plugins loaded with a lower priority
+		// get rejected when they conflict with connections from a higher
+		// priority plugin.
+
+		for (elt = plugin_connections; elt; elt = g_slist_next (elt))
+			nm_sysconfig_settings_add_connection (self, NM_EXPORTED_CONNECTION (elt->data));
+
+		g_slist_free (plugin_connections);
+	}
+
+	/* FIXME: Bad hack */
+	unmanaged_devices_changed (NULL, self);
+
+	priv->connections_loaded = TRUE;
+}
+
+static void
 hash_keys_to_slist (gpointer key, gpointer val, gpointer user_data)
 {
 	GSList **list = (GSList **) user_data;
@@ -84,31 +116,7 @@ list_connections (NMSettings *settings)
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 	GSList *list = NULL;
 
-	if (!priv->connections_loaded) {
-		GSList *iter;
-
-		for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
-			NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (iter->data);
-			GSList *plugin_connections;
-			GSList *elt;
-
-			plugin_connections = nm_system_config_interface_get_connections (plugin);
-
-			// FIXME: ensure connections from plugins loaded with a lower priority
-			// get rejected when they conflict with connections from a higher
-			// priority plugin.
-
-			for (elt = plugin_connections; elt; elt = g_slist_next (elt))
-				nm_sysconfig_settings_add_connection (self, NM_EXPORTED_CONNECTION (elt->data));
-
-			g_slist_free (plugin_connections);
-		}
-
-		/* FIXME: Bad hack */
-		unmanaged_devices_changed (NULL, self);
-
-		priv->connections_loaded = TRUE;
-	}
+	load_connections (self);
 
 	g_hash_table_foreach (priv->connections, hash_keys_to_slist, &list);
 
@@ -194,6 +202,8 @@ get_unmanaged_devices (NMSysconfigSettings *self)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 	GPtrArray *devices;
+
+	load_connections (self);
 
  	devices = g_ptr_array_sized_new (3);
 	g_hash_table_foreach (priv->unmanaged_devices, (GHFunc) add_one_unmanaged_device, devices);
@@ -406,6 +416,9 @@ nm_sysconfig_settings_is_device_managed (NMSysconfigSettings *self,
 	g_return_val_if_fail (NM_IS_SYSCONFIG_SETTINGS (self), FALSE);
 
 	priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+
+	load_connections (self);
+
 	if (g_hash_table_lookup (priv->unmanaged_devices, udi))
 		return FALSE;
 	return TRUE;
