@@ -206,10 +206,16 @@ PKG_CHECK_MODULES(GOBJECT, gobject-2.0)
 AC_SUBST(GOBJECT_CFLAGS)
 AC_SUBST(GOBJECT_LIBS)
 
-# This is optional, at least for now.
-PKG_CHECK_MODULES(GIO, gio-2.0,,true)
-AC_SUBST(GIO_CFLAGS)
-AC_SUBST(GIO_LIBS)
+PKG_CHECK_EXISTS(gio-2.0,[have_gio=yes],[have_gio=no])
+if test x"$have_gio" = "xno"; then
+	AC_DEFINE([NO_GIO],[1],[Define if you don't have GIO])
+	echo "GIO not found; using private GFileMonitor library"
+else
+	PKG_CHECK_MODULES(GIO, gio-2.0)
+	AC_SUBST(GIO_CFLAGS)
+	AC_SUBST(GIO_LIBS)
+fi
+AM_CONDITIONAL(NO_GIO, test x"$have_gio" == "xno")
 
 PKG_CHECK_MODULES(HAL, hal >= 0.5.0)
 AC_SUBST(HAL_CFLAGS)
@@ -305,6 +311,7 @@ libnm-util/libnm-util.pc
 libnm-util/Makefile
 libnm-glib/libnm_glib.pc
 libnm-glib/Makefile
+gfilemonitor/Makefile
 callouts/Makefile
 tools/Makefile
 system-settings/Makefile

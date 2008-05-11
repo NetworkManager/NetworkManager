@@ -27,7 +27,13 @@ libnm_settings_plugin_keyfile_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(GMODULE_LIBS) \
 	$(DBUS_LIBS) \
-	$(GIO_LIBS) \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(top_builddir)/libnm-glib/libnm_glib.la
 
+if NO_GIO
+libnm_settings_plugin_keyfile_la_LIBADD += \
+	$(top_builddir)/gfilemonitor/libgfilemonitor.la
+else
+libnm_settings_plugin_keyfile_la_LIBADD += \
+	$(GIO_LIBS)
+endif

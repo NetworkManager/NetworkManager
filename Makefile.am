@@ -21,8 +21,13 @@ clean:
 
 endif
 
-SUBDIRS = 				\
-	   marshallers			\
+SUBDIRS = marshallers
+
+if NO_GIO
+SUBDIRS += gfilemonitor
+endif
+
+SUBDIRS += \
 	   libnm-util			\
 	   libnm-glib			\
 	   src				\
