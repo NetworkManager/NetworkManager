@@ -136,7 +136,6 @@
 
 	* system-settings/src/Makefile.am: Add sha1[ch] to build.
 
->>>>>>> .r3644
 2008-05-07  Dan Williams  <dcbw@redhat.com>
 
 	* system-settings/plugins/keyfile/reader.c
