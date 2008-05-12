@@ -22,7 +22,9 @@
 
 #include <config.h>
 #include <string.h>
+#include <glib.h>
 
+#include "inotify-helper.h"
 #include "glocalfilemonitor.h"
 
 enum
@@ -65,6 +67,7 @@ g_local_file_monitor_constructor (GType                  type,
   GObjectClass *parent_class;
   GLocalFileMonitor *local_monitor;
   const gchar *filename = NULL;
+  gchar *dname, *fname;
   gint i;
   
   klass = G_LOCAL_FILE_MONITOR_CLASS (g_type_class_peek (G_TYPE_LOCAL_FILE_MONITOR));
@@ -90,6 +93,17 @@ g_local_file_monitor_constructor (GType                  type,
     g_warning ("%s: warning: filename was NULL", __func__);
 
   local_monitor->filename = g_strdup (filename);
+
+  fname = g_path_get_basename (filename);
+  dname = g_path_get_dirname (filename);
+
+  local_monitor->sub = _ih_sub_new (dname, fname, local_monitor);
+  g_free (fname);
+  g_free (dname);
+
+  g_assert (local_monitor->sub);
+  g_assert (_ih_sub_add (local_monitor->sub));
+
   return obj;
 }
 
@@ -102,6 +116,8 @@ g_local_file_monitor_finalize (GObject *object)
       g_free (local_monitor->filename);
       local_monitor->filename = NULL;
     }
+
+  _ih_sub_free (local_monitor->sub);
 
   if (G_OBJECT_CLASS (g_local_file_monitor_parent_class)->finalize)
     (*G_OBJECT_CLASS (g_local_file_monitor_parent_class)->finalize) (object);
@@ -138,6 +154,10 @@ _g_local_file_monitor_new (const char         *pathname,
 			   GFileMonitorFlags   flags,
 			   GError            **error)
 {
+  if (!_ih_startup ()) {
+    g_set_error (error, 0, 0, "inotify is unsupported!!");
+    return NULL;
+  }
   return G_FILE_MONITOR (g_object_new (G_TYPE_LOCAL_FILE_MONITOR, "filename", pathname, NULL));
 }
 

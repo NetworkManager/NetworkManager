@@ -25,6 +25,7 @@
 
 #include <glib-object.h>
 #include "gfilemonitor.h"
+#include "inotify-sub.h"
 
 G_BEGIN_DECLS
 
@@ -43,6 +44,7 @@ struct _GLocalFileMonitor
 {
   GFileMonitor parent_instance;
   gchar *filename;
+  inotify_sub *sub;
 };
 
 struct _GLocalFileMonitorClass {

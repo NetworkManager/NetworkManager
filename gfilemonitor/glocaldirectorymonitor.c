@@ -22,7 +22,9 @@
 
 #include <config.h>
 #include <string.h>
+#include <glib.h>
 
+#include "inotify-helper.h"
 #include "glocaldirectorymonitor.h"
 
 enum
@@ -46,6 +48,8 @@ g_local_directory_monitor_finalize (GObject *object)
   local_monitor = G_LOCAL_DIRECTORY_MONITOR (object);
 
   g_free (local_monitor->dirname);
+
+  _ih_sub_free (local_monitor->sub);
 
 #if 0
   if (local_monitor->mount_monitor)
@@ -108,7 +112,12 @@ g_local_directory_monitor_constructor (GType                  type,
         }
     }
 
+  g_assert (dirname);
   local_monitor->dirname = g_strdup (dirname);
+
+  local_monitor->sub = _ih_sub_new (local_monitor->dirname, NULL, local_monitor);
+  g_assert (local_monitor->sub);
+  g_assert (_ih_sub_add (local_monitor->sub));
 
 #if 0
   if (!klass->mount_notify)
@@ -223,6 +232,10 @@ _g_local_directory_monitor_new (const char         *dirname,
 				GFileMonitorFlags   flags,
 				GError            **error)
 {
+  if (!_ih_startup ()) {
+    g_set_error (error, 0, 0, "inotify is unsupported!!");
+    return NULL;
+  }
   return G_FILE_MONITOR (g_object_new (G_TYPE_LOCAL_DIRECTORY_MONITOR, "dirname", dirname, NULL));
 }
 

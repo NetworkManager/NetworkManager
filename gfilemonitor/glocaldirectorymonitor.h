@@ -25,6 +25,7 @@
 
 #include <glib-object.h>
 #include "gfilemonitor.h"
+#include "inotify-sub.h"
 
 G_BEGIN_DECLS
 
@@ -43,6 +44,7 @@ struct _GLocalDirectoryMonitor
 {
   GFileMonitor parent_instance;
   gchar *dirname;
+  inotify_sub *sub;
 #if 0
   /* For mount emulation */
   GUnixMountMonitor *mount_monitor;
