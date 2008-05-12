@@ -79,13 +79,15 @@ g_local_file_monitor_constructor (GType                  type,
     {
       if (strcmp ("filename", g_param_spec_get_name (construct_properties[i].pspec)) == 0)
         {
-          g_warn_if_fail (G_VALUE_HOLDS_STRING (construct_properties[i].value));
+          if (!G_VALUE_HOLDS_STRING (construct_properties[i].value))
+            g_warning ("%s: warning: construct_properties[i].value does not hold a string!", __func__);
           filename = g_value_get_string (construct_properties[i].value);
           break;
         }
     }
 
-  g_warn_if_fail (filename != NULL);
+  if (filename == NULL)
+    g_warning ("%s: warning: filename was NULL", __func__);
 
   local_monitor->filename = g_strdup (filename);
   return obj;
