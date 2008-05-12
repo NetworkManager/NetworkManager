@@ -31,7 +31,7 @@ enum
   PROP_FILENAME
 };
 
-G_DEFINE_ABSTRACT_TYPE (GLocalFileMonitor, g_local_file_monitor, G_TYPE_FILE_MONITOR)
+G_DEFINE_TYPE (GLocalFileMonitor, g_local_file_monitor, G_TYPE_FILE_MONITOR)
 
 static void
 g_local_file_monitor_init (GLocalFileMonitor* local_monitor)

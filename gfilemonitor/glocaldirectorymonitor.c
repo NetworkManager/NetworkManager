@@ -37,7 +37,7 @@ static void     mounts_changed                   (GUnixMountMonitor *mount_monit
                                                   gpointer           user_data);
 #endif
 
-G_DEFINE_ABSTRACT_TYPE (GLocalDirectoryMonitor, g_local_directory_monitor, G_TYPE_FILE_MONITOR)
+G_DEFINE_TYPE (GLocalDirectoryMonitor, g_local_directory_monitor, G_TYPE_FILE_MONITOR)
 
 static void
 g_local_directory_monitor_finalize (GObject *object)
