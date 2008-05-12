@@ -1,5 +1,14 @@
 2008-05-11  Dan Williams  <dcbw@redhat.com>
 
+	* configure.in
+		- record PolicyKit version
+
+	* system-settings/src/nm-polkit-helpers.c
+		- (check_polkit_privileges): use polkit_context_can_caller_do_action()
+			with PolicyKit <= 0.6
+
+2008-05-11  Dan Williams  <dcbw@redhat.com>
+
 	Update Fedora system-settings plugin to support latest API and use
 	GFileMonitor rather than home-rolled inotify code.
 

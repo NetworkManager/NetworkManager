@@ -123,7 +123,11 @@ check_polkit_privileges (DBusGConnection *dbus_connection,
 	pk_action = polkit_action_new ();
 	polkit_action_set_action_id (pk_action, NM_SYSCONFIG_POLICY_ACTION);
 
+#if (POLKIT_VERSION_MAJOR == 0) && (POLKIT_VERSION_MINOR < 7)
+	pk_result = polkit_context_can_caller_do_action (pol_ctx, pk_action, pk_caller);
+#else
 	pk_result = polkit_context_is_caller_authorized (pol_ctx, pk_action, pk_caller, TRUE, NULL);
+#endif
 	polkit_caller_unref (pk_caller);
 	polkit_action_unref (pk_action);
 
