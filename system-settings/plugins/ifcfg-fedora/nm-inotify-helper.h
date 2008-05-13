@@ -1,0 +1,54 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+/* NetworkManager system settings service
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ *
+ * (C) Copyright 2008 Red Hat, Inc.
+ */
+
+#ifndef __INOTIFY_HELPER_H__
+#define __INOTIFY_HELPER_H__
+
+#include <glib.h>
+#include <glib-object.h>
+#include <sys/inotify.h>
+
+#define NM_TYPE_INOTIFY_HELPER            (nm_inotify_helper_get_type ())
+#define NM_INOTIFY_HELPER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_INOTIFY_HELPER, NMInotifyHelper))
+#define NM_INOTIFY_HELPER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_INOTIFY_HELPER, NMInotifyHelperClass))
+#define NM_IS_INOTIFY_HELPER(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_INOTIFY_HELPER))
+#define NM_IS_INOTIFY_HELPER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_INOTIFY_HELPER))
+#define NM_INOTIFY_HELPER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_INOTIFY_HELPER, NMInotifyHelperClass))
+
+typedef struct {
+	GObject parent;
+} NMInotifyHelper;
+
+typedef struct {
+	GObjectClass parent;
+
+	/* signals */
+	void (* event) (NMInotifyHelper *helper, struct inotify_event *evt, const char *filename);
+} NMInotifyHelperClass;
+
+GType nm_inotify_helper_get_type (void);
+
+NMInotifyHelper * nm_inotify_helper_get (void);
+
+int nm_inotify_helper_add_watch (NMInotifyHelper *helper, const char *path);
+
+void nm_inotify_helper_remove_watch (NMInotifyHelper *helper, int wd);
+
+#endif  /* __INOTIFY_HELPER_H__ */

@@ -38,14 +38,20 @@
 #include "nm-ifcfg-connection.h"
 #include "nm-system-config-hal-manager.h"
 #include "reader.h"
+#include "nm-inotify-helper.h"
 
 G_DEFINE_TYPE (NMIfcfgConnection, nm_ifcfg_connection, NM_TYPE_EXPORTED_CONNECTION)
 
 #define NM_IFCFG_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IFCFG_CONNECTION, NMIfcfgConnectionPrivate))
 
 typedef struct {
+	gulong ih_event_id;
+
 	char *filename;
+	int file_wd;
+
 	char *keyfile;
+	int keyfile_wd;
 
 	char *udi;
 	gboolean unmanaged;
@@ -63,6 +69,14 @@ enum {
 
 	LAST_PROP
 };
+
+/* Signals */
+enum {
+	IFCFG_CHANGED,
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
 
 static char *
 get_ether_device_udi (DBusGConnection *g_connection, GByteArray *mac, GSList *devices)
@@ -205,6 +219,22 @@ device_added_cb (NMSystemConfigHalManager *hal_mgr,
 	priv->daid = 0;
 }
 
+static void
+files_changed_cb (NMInotifyHelper *ih,
+                  struct inotify_event *evt,
+                  const char *path,
+                  gpointer user_data)
+{
+	NMIfcfgConnection *self = NM_IFCFG_CONNECTION (user_data);
+	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (self);
+
+	if ((evt->wd != priv->file_wd) && (evt->wd != priv->keyfile_wd))
+		return;
+
+	/* push the event up to the plugin */
+	g_signal_emit (self, signals[IFCFG_CHANGED], 0);
+}
+
 NMIfcfgConnection *
 nm_ifcfg_connection_new (const char *filename,
                          DBusGConnection *g_connection,
@@ -212,13 +242,16 @@ nm_ifcfg_connection_new (const char *filename,
                          GError **error)
 {
 	GObject *object;
+	NMIfcfgConnectionPrivate *priv;
 	NMConnection *wrapped;
 	gboolean unmanaged = FALSE;
 	char *udi;
+	char *keyfile = NULL;
+	NMInotifyHelper *ih;
 
 	g_return_val_if_fail (filename != NULL, NULL);
 
-	wrapped = connection_from_file (filename, &unmanaged, error);
+	wrapped = connection_from_file (filename, &unmanaged, &keyfile, error);
 	if (!wrapped)
 		return NULL;
 
@@ -230,14 +263,26 @@ nm_ifcfg_connection_new (const char *filename,
 	                                   NM_IFCFG_CONNECTION_UDI, udi,
 	                                   NM_EXPORTED_CONNECTION_CONNECTION, wrapped,
 	                                   NULL);
-	if (object && !udi) {
-		NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (object);
+	if (!object)
+		goto out;
 
+	priv = NM_IFCFG_CONNECTION_GET_PRIVATE (object);
+
+	if (!udi) {
 		priv->hal_mgr = g_object_ref (hal_mgr);
 		priv->g_connection = dbus_g_connection_ref (g_connection);
 		priv->daid = g_signal_connect (priv->hal_mgr, "device-added", G_CALLBACK (device_added_cb), object);
 	}
 
+	ih = nm_inotify_helper_get ();
+	priv->ih_event_id = g_signal_connect (ih, "event", G_CALLBACK (files_changed_cb), object);
+
+	priv->file_wd = nm_inotify_helper_add_watch (ih, filename);
+
+	priv->keyfile = keyfile;
+	priv->keyfile_wd = nm_inotify_helper_add_watch (ih, keyfile);
+
+out:
 	g_object_unref (wrapped);
 	g_free (udi);
 	return (NMIfcfgConnection *) object;
@@ -310,13 +355,25 @@ finalize (GObject *object)
 {
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (object);
 	NMConnection *wrapped;
+	NMInotifyHelper *ih;
+
+	g_free (priv->udi);
 
 	wrapped = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (object));
 	if (wrapped)
 		nm_connection_clear_secrets (wrapped);
 
+	ih = nm_inotify_helper_get ();
+
+	g_signal_handler_disconnect (ih, priv->ih_event_id);
+
 	g_free (priv->filename);
-	g_free (priv->udi);
+	if (priv->file_wd >= 0)
+		nm_inotify_helper_remove_watch (ih, priv->file_wd);
+
+	g_free (priv->keyfile);
+	if (priv->keyfile_wd >= 0)
+		nm_inotify_helper_remove_watch (ih, priv->keyfile_wd);
 
 	if (priv->hal_mgr) {
 		if (priv->daid)
@@ -419,4 +476,13 @@ nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 						  "UDI",
 						  NULL,
 						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	signals[IFCFG_CHANGED] =
+		g_signal_new ("ifcfg-changed",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_LAST,
+		              0, NULL, NULL,
+		              g_cclosure_marshal_VOID__VOID,
+		              G_TYPE_NONE, 0);
 }
+

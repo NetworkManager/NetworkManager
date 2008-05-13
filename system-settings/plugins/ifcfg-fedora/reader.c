@@ -379,13 +379,12 @@ out:
 	return success;
 }
 
-static shvarFile *
-get_keys_ifcfg (const char *parent)
+static char *
+get_keys_file_path (const char *parent)
 {
 	char *ifcfg_name;
 	char *keys_file = NULL;
 	char *tmp = NULL;
-	shvarFile *ifcfg = NULL;
 
 	ifcfg_name = get_ifcfg_name (parent);
 	if (!ifcfg_name)
@@ -396,15 +395,25 @@ get_keys_ifcfg (const char *parent)
 		goto out;
 
 	keys_file = g_strdup_printf ("%s/" KEYS_TAG "%s", tmp, ifcfg_name);
-	if (!keys_file)
-		goto out;
-
-	ifcfg = svNewFile (keys_file);
 
 out:
-	g_free (keys_file);
 	g_free (tmp);
 	g_free (ifcfg_name);
+	return keys_file;
+}
+
+static shvarFile *
+get_keys_ifcfg (const char *parent)
+{
+	shvarFile *ifcfg = NULL;
+	char *keys_file;
+
+	keys_file = get_keys_file_path (parent);
+	if (!keys_file)
+		return NULL;
+
+	ifcfg = svNewFile (keys_file);
+	g_free (keys_file);
 	return ifcfg;
 }
 
@@ -789,7 +798,10 @@ out:
 }
 
 NMConnection *
-connection_from_file (const char *filename, gboolean *ignored, GError **error)
+connection_from_file (const char *filename,
+                      gboolean *ignored,
+                      char **keyfile,
+                      GError **error)
 {
 	NMConnection *connection = NULL;
 	shvarFile *parsed;
@@ -800,6 +812,8 @@ connection_from_file (const char *filename, gboolean *ignored, GError **error)
 
 	g_return_val_if_fail (filename != NULL, NULL);
 	g_return_val_if_fail (ignored != NULL, NULL);
+	g_return_val_if_fail (keyfile != NULL, NULL);
+	g_return_val_if_fail (*keyfile == NULL, NULL);
 
 	ifcfg_name = get_ifcfg_name (filename);
 	if (!ifcfg_name) {
@@ -896,6 +910,8 @@ connection_from_file (const char *filename, gboolean *ignored, GError **error)
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Connection was invalid");
 	}
+
+	*keyfile = get_keys_file_path (filename);
 
 done:
 	svCloseFile (parsed);

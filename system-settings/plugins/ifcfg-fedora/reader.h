@@ -24,6 +24,9 @@
 #include <glib.h>
 #include <nm-connection.h>
 
-NMConnection *connection_from_file (const char *filename, gboolean *ignored, GError **error);
+NMConnection *connection_from_file (const char *filename,
+                                    gboolean *ignored,
+                                    char **keyfile,
+                                    GError **error);
 
 #endif  /* __READER_H__ */

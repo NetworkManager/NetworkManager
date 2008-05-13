@@ -52,6 +52,18 @@
 
 static void system_config_interface_init (NMSystemConfigInterface *system_config_interface_class);
 
+static void connection_changed_handler (SCPluginIfcfg *plugin,
+                                        const char *path,
+                                        NMIfcfgConnection *connection,
+                                        gboolean *do_remove,
+                                        gboolean *do_new);
+
+static void handle_connection_remove_or_new (SCPluginIfcfg *plugin,
+                                             const char *path,
+                                             NMIfcfgConnection *connection,
+                                             gboolean do_remove,
+                                             gboolean do_new);
+
 G_DEFINE_TYPE_EXTENDED (SCPluginIfcfg, sc_plugin_ifcfg, G_TYPE_OBJECT, 0,
 						G_IMPLEMENT_INTERFACE (NM_TYPE_SYSTEM_CONFIG_INTERFACE,
 											   system_config_interface_init))
@@ -123,6 +135,20 @@ connection_unmanaged_changed (NMIfcfgConnection *connection,
 	g_signal_emit_by_name (SC_PLUGIN_IFCFG (user_data), "unmanaged-devices-changed");
 }
 
+static void
+connection_ifcfg_changed (NMIfcfgConnection *connection, gpointer user_data)
+{
+	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (user_data);
+	gboolean do_remove = FALSE, do_new = FALSE;
+	const char *path;
+
+	path = nm_ifcfg_connection_get_filename (connection);
+	g_return_if_fail (path != NULL);
+
+	connection_changed_handler (plugin, path, connection, &do_remove, &do_new);
+	handle_connection_remove_or_new (plugin, path, connection, do_remove, do_new);
+}
+
 static NMIfcfgConnection *
 read_one_connection (SCPluginIfcfg *plugin, const char *filename)
 {
@@ -159,6 +185,10 @@ read_one_connection (SCPluginIfcfg *plugin, const char *filename)
 			g_signal_connect (G_OBJECT (connection), "notify::unmanaged",
 			                  G_CALLBACK (connection_unmanaged_changed), plugin);
 		}
+
+		/* watch changes of ifcfg hardlinks */
+		g_signal_connect (G_OBJECT (connection), "ifcfg-changed",
+		                  G_CALLBACK (connection_ifcfg_changed), plugin);
 	} else {
 		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    error: %s",
 		              error->message ? error->message : "(unknown)");
@@ -169,7 +199,7 @@ read_one_connection (SCPluginIfcfg *plugin, const char *filename)
 }
 
 static gboolean
-should_ignore_file (const char *basename, const char *tag)
+check_suffix (const char *basename, const char *tag)
 {
 	int len, tag_len;
 
@@ -181,6 +211,28 @@ should_ignore_file (const char *basename, const char *tag)
 	if ((len > tag_len) && !strcasecmp (basename + len - tag_len, tag))
 		return TRUE;
 	return FALSE;
+}
+
+static gboolean
+should_ignore_file (const char *filename)
+{
+	char *basename;
+	gboolean ignore = TRUE;
+
+	g_return_val_if_fail (filename != NULL, TRUE);
+
+	basename = g_path_get_basename (filename);
+	g_return_val_if_fail (basename != NULL, TRUE);
+
+	if (   !strncmp (basename, IFCFG_TAG, strlen (IFCFG_TAG))
+		&& !check_suffix (basename, BAK_TAG)
+		&& !check_suffix (basename, TILDE_TAG)
+		&& !check_suffix (basename, ORIG_TAG)
+		&& !check_suffix (basename, REJ_TAG))
+		ignore = FALSE;
+
+	g_free (basename);
+	return ignore;
 }
 
 static void
@@ -196,14 +248,7 @@ read_connections (SCPluginIfcfg *plugin)
 		while ((item = g_dir_read_name (dir))) {
 			char *full_path;
 
-			if (strncmp (item, IFCFG_TAG, strlen (IFCFG_TAG)))
-				continue;
-
-			/* ignore some files */
-			if (   should_ignore_file (item, BAK_TAG)
-			    || should_ignore_file (item, TILDE_TAG)
-			    || should_ignore_file (item, ORIG_TAG)
-			    || should_ignore_file (item, REJ_TAG))
+			if (should_ignore_file (item))
 				continue;
 
 			full_path = g_build_filename (IFCFG_DIR, item, NULL);
@@ -221,6 +266,108 @@ read_connections (SCPluginIfcfg *plugin)
 /* Monitoring */
 
 static void
+connection_changed_handler (SCPluginIfcfg *plugin,
+                            const char *path,
+                            NMIfcfgConnection *connection,
+                            gboolean *do_remove,
+                            gboolean *do_new)
+{
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	NMIfcfgConnection *tmp;
+	GError *error = NULL;
+	GHashTable *settings;
+	gboolean new_unmanaged, old_unmanaged;
+
+	g_return_if_fail (plugin != NULL);
+	g_return_if_fail (path != NULL);
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (do_remove != NULL);
+	g_return_if_fail (do_new != NULL);
+
+	PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "updating %s", path);
+
+	tmp = (NMIfcfgConnection *) nm_ifcfg_connection_new (path, priv->g_connection, priv->hal_mgr, &error);
+	if (!tmp) {
+		/* couldn't read connection; remove it */
+
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error: %s",
+		             error->message ? error->message : "(unknown)");
+		g_error_free (error);
+
+		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "removed %s.", path);
+		*do_remove = TRUE;
+		return;
+	}
+
+	/* Successfully read connection changes */
+
+	old_unmanaged = nm_ifcfg_connection_get_unmanaged (NM_IFCFG_CONNECTION (connection));
+	new_unmanaged = nm_ifcfg_connection_get_unmanaged (NM_IFCFG_CONNECTION (tmp));
+
+	if (new_unmanaged) {
+		if (!old_unmanaged) {
+			/* Unexport the connection by destroying it, then re-creating it as unmanaged */
+			*do_remove = *do_new = TRUE;
+		}
+	} else {
+		NMConnection *old_wrapped, *new_wrapped;
+
+		if (old_unmanaged)  /* no longer unmanaged */
+			g_signal_emit_by_name (plugin, "connection-added", connection);
+
+		new_wrapped = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (tmp));
+		old_wrapped = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (connection));
+
+		/* Only update if different */
+		if (!nm_connection_compare (new_wrapped, old_wrapped, COMPARE_FLAGS_EXACT)) {
+			settings = nm_connection_to_hash (new_wrapped);
+			nm_exported_connection_update (NM_EXPORTED_CONNECTION (connection), settings, NULL);
+			g_hash_table_destroy (settings);
+		}
+
+		/* Update unmanaged status */
+		g_object_set (connection, "unmanaged", new_unmanaged, NULL);
+		g_signal_emit_by_name (plugin, "unmanaged-devices-changed");
+	}
+	g_object_unref (tmp);
+}
+
+static void
+handle_connection_remove_or_new (SCPluginIfcfg *plugin,
+                                 const char *path,
+                                 NMIfcfgConnection *connection,
+                                 gboolean do_remove,
+                                 gboolean do_new)
+{
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+
+	g_return_if_fail (plugin != NULL);
+	g_return_if_fail (path != NULL);
+
+	if (do_remove) {
+		gboolean unmanaged;
+
+		g_return_if_fail (connection != NULL);
+
+		unmanaged = nm_ifcfg_connection_get_unmanaged (connection);
+		g_hash_table_remove (priv->connections, path);
+		nm_exported_connection_signal_removed (NM_EXPORTED_CONNECTION (connection));
+
+		/* Emit unmanaged changes _after_ removing the connection */
+		if (unmanaged)
+			g_signal_emit_by_name (plugin, "unmanaged-devices-changed");
+	}
+
+	if (do_new) {
+		connection = read_one_connection (plugin, path);
+		if (connection) {
+			if (!nm_ifcfg_connection_get_unmanaged (NM_IFCFG_CONNECTION (connection)))
+				g_signal_emit_by_name (plugin, "connection-added", connection);
+		}
+	}
+}
+
+static void
 dir_changed (GFileMonitor *monitor,
 		   GFile *file,
 		   GFile *other_file,
@@ -234,94 +381,31 @@ dir_changed (GFileMonitor *monitor,
 	gboolean do_remove = FALSE, do_new = FALSE;
 
 	name = g_file_get_path (file);
-	connection = g_hash_table_lookup (priv->connections, name);
+	if (should_ignore_file (name)) {
+		g_free (name);
+		return;
+	}
 
-	switch (event_type) {
-	case G_FILE_MONITOR_EVENT_DELETED:
-		if (connection) {
+	connection = g_hash_table_lookup (priv->connections, name);
+	if (!connection) {
+		do_new = TRUE;
+	} else {
+		switch (event_type) {
+		case G_FILE_MONITOR_EVENT_DELETED:
 			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "removed %s.", name);
 			do_remove = TRUE;
-		}
-		break;
-	case G_FILE_MONITOR_EVENT_CREATED:
-	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
-		if (connection) {
+			break;
+		case G_FILE_MONITOR_EVENT_CREATED:
+		case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
 			/* Update */
-			NMIfcfgConnection *tmp;
-			GError *error = NULL;
-
-			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "updating %s", name);
-
-			tmp = (NMIfcfgConnection *) nm_ifcfg_connection_new (name, priv->g_connection, priv->hal_mgr, &error);
-			if (tmp) {
-				GHashTable *settings;
-				gboolean new_unmanaged, old_unmanaged;
-
-				old_unmanaged = nm_ifcfg_connection_get_unmanaged (NM_IFCFG_CONNECTION (connection));
-				new_unmanaged = nm_ifcfg_connection_get_unmanaged (NM_IFCFG_CONNECTION (tmp));
-
-				if (new_unmanaged) {
-					if (!old_unmanaged) {
-						/* Unexport the connection by destroying it, then re-creating it as unmanaged */
-						do_remove = do_new = TRUE;
-					}
-				} else {
-					NMConnection *old_wrapped, *new_wrapped;
-
-					if (old_unmanaged)  /* no longer unmanaged */
-						g_signal_emit_by_name (plugin, "connection-added", connection);
-
-					new_wrapped = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (tmp));
-					old_wrapped = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (connection));
-
-					/* Only update if different */
-					if (!nm_connection_compare (new_wrapped, old_wrapped, COMPARE_FLAGS_EXACT)) {
-						settings = nm_connection_to_hash (new_wrapped);
-						nm_exported_connection_update (NM_EXPORTED_CONNECTION (connection), settings, NULL);
-						g_hash_table_destroy (settings);
-					}
-
-					/* Update unmanaged status */
-					g_object_set (connection, "unmanaged", new_unmanaged, NULL);
-					g_signal_emit_by_name (plugin, "unmanaged-devices-changed");
-				}
-				g_object_unref (tmp);
-			} else {
-				/* couldn't read connection; remove it */
-
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error: %s",
-				             error->message ? error->message : "(unknown)");
-				g_error_free (error);
-
-				PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "removed %s.", name);
-				do_remove = TRUE;
-			}
-		} else {
-			do_new = TRUE;
-		}
-		break;
-	default:
-		break;
-	}
-
-	if (do_remove) {
-		gboolean unmanaged = nm_ifcfg_connection_get_unmanaged (connection);
-
-		g_hash_table_remove (priv->connections, name);
-		nm_exported_connection_signal_removed (NM_EXPORTED_CONNECTION (connection));
-
-		/* Emit unmanaged changes _after_ removing the connection */
-		if (unmanaged)
-			g_signal_emit_by_name (plugin, "unmanaged-devices-changed");
-	}
-
-	if (do_new) {
-		connection = read_one_connection (plugin, name);
-		if (connection) {
-			if (!nm_ifcfg_connection_get_unmanaged (NM_IFCFG_CONNECTION (connection)))
-				g_signal_emit_by_name (plugin, "connection-added", connection);
+			connection_changed_handler (plugin, name, connection, &do_remove, &do_new);
+			break;
+		default:
+			break;
 		}
 	}
+
+	handle_connection_remove_or_new (plugin, name, connection, do_remove, do_new);
 
 	g_free (name);
 }

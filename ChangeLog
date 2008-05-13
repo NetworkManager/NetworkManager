@@ -1,3 +1,38 @@
+2008-05-13  Dan Williams  <dcbw@redhat.com>
+
+	* marshallers/nm-marshal.list
+		- Add VOID:POINTER,STRING marshaller for ifcfg-fedora plugin
+
+	* system-settings/plugins/ifcfg-fedora/Makefile.am
+	  system-settings/plugins/ifcfg-fedora/nm-inotify-helper.c
+	  system-settings/plugins/ifcfg-fedora/nm-inotify-helper.h
+		- Implement a minimal inotify helper for watch paths for IN_CLOSE_WRITE
+			events.  Solely for use watching ifcfg files to pick up changes
+			to their hardlinks, since GIO doesn't support this yet (bgo #532815)
+
+	* system-settings/plugins/ifcfg-fedora/nm-ifcfg-connection.c
+		- (nm_ifcfg_connection_class_init): new 'ifcfg-changed' signal when the
+			file contents change
+		- (finalize): clean up inotify watches
+		- (nm_ifcfg_connection_new): store keyfile; inotify watch the keyfile
+			and the connection ifcfg for changes on their hardlinks
+		- (files_changed_cb): proxy the changed signal back out to listeners
+
+	* system-settings/plugins/ifcfg-fedora/plugin.c
+		- (dir_changed): 
+		- (connection_ifcfg_changed): re-read the connection when the ifcfg
+			changes
+		- (read_one_connection): connect to change signals on the new connection
+		- (dir_changed, connection_changed_handler,
+		   handle_connection_remove_or_new): break out connection change
+			handling and connection new/remove handling so it can be used from
+			both the GFileMonitor callback and the NMIfcfgConnection changed
+			signals
+
+	* system-settings/plugins/ifcfg-fedora/reader.c
+	  system-settings/plugins/ifcfg-fedora/reader.h
+		- (connection_from_file): return the keyfile path the connection would use
+
 2008-05-13  Tambet Ingo  <tambet@gmail.com>
 
 	* system-settings/src/nm-polkit-helpers.c (create_polkit_context): Use a 

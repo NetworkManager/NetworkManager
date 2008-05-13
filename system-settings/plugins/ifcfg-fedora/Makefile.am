@@ -10,7 +10,9 @@ libnm_settings_plugin_ifcfg_fedora_la_SOURCES = \
 	nm-ifcfg-connection.h \
 	reader.c \
 	reader.h \
-	common.h
+	common.h \
+	nm-inotify-helper.c \
+	nm-inotify-helper.h
 
 libnm_settings_plugin_ifcfg_fedora_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
@@ -21,6 +23,7 @@ libnm_settings_plugin_ifcfg_fedora_la_CPPFLAGS = \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/libnm-glib \
 	-I$(top_srcdir)/libnm-util \
+	-I$(top_builddir)/marshallers \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
 
 libnm_settings_plugin_ifcfg_fedora_la_LDFLAGS = -module -avoid-version
@@ -28,7 +31,8 @@ libnm_settings_plugin_ifcfg_fedora_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(GMODULE_LIBS) \
 	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/libnm-glib/libnm_glib.la
+	$(top_builddir)/libnm-glib/libnm_glib.la \
+	$(top_builddir)/marshallers/libmarshallers.la
 
 if NO_GIO
 libnm_settings_plugin_ifcfg_fedora_la_LIBADD += \
