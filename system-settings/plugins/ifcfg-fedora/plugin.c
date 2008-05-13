@@ -312,11 +312,20 @@ connection_changed_handler (SCPluginIfcfg *plugin,
 	} else {
 		NMConnection *old_wrapped, *new_wrapped;
 
-		if (old_unmanaged)  /* no longer unmanaged */
-			g_signal_emit_by_name (plugin, "connection-added", connection);
-
 		new_wrapped = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (tmp));
 		old_wrapped = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (connection));
+
+		if (old_unmanaged) {  /* no longer unmanaged */
+			NMSettingConnection *s_con;
+
+			s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (new_wrapped, NM_TYPE_SETTING_CONNECTION));
+			g_assert (s_con);
+			g_assert (s_con->id);
+
+			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Managing connection '%s' and its "
+			              "device because NM_CONTROLLED was true.", s_con->id);
+			g_signal_emit_by_name (plugin, "connection-added", connection);
+		}
 
 		/* Only update if different */
 		if (!nm_connection_compare (new_wrapped, old_wrapped, COMPARE_FLAGS_EXACT)) {
