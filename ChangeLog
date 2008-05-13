@@ -1,3 +1,11 @@
+2008-05-13  Tambet Ingo  <tambet@gmail.com>
+
+	* system-settings/src/nm-polkit-helpers.c (create_polkit_context): Use a 
+	single PolKitContext which is shared by all. PolKitContext::unref leaks
+	just about everything, including all open file descriptiors and results
+	in 99% cpu usage when data arrives to any of the fds that don't belong
+	to any context anymore.
+
 2008-05-12  Dan Williams  <dcbw@redhat.com>
 
 	* gfilemonitor/glocaldirectorymonitor.c

@@ -76,20 +76,24 @@ pk_io_remove_watch (PolKitContext *pk_context, int watch_id)
 PolKitContext *
 create_polkit_context (void)
 {
-	PolKitContext *pol_ctx;
-	PolKitError *err = NULL;
+	static PolKitContext *global_context = NULL;
+	PolKitError *err;
 
-	pol_ctx = polkit_context_new ();
-	polkit_context_set_io_watch_functions (pol_ctx, pk_io_add_watch, pk_io_remove_watch);
-	if (!polkit_context_init (pol_ctx, &err)) {
+	if (G_LIKELY (global_context))
+		return polkit_context_ref (global_context);
+
+	global_context = polkit_context_new ();
+	polkit_context_set_io_watch_functions (global_context, pk_io_add_watch, pk_io_remove_watch);
+	err = NULL;
+	if (!polkit_context_init (global_context, &err)) {
 		g_warning ("Cannot initialize libpolkit: %s", polkit_error_get_error_message (err));
 		polkit_error_free (err);
 
-		polkit_context_unref (pol_ctx);
-		pol_ctx = NULL;
+		polkit_context_unref (global_context);
+		global_context = NULL;
 	}
 
-	return pol_ctx;
+	return global_context;
 }
 
 gboolean
