@@ -71,7 +71,7 @@ typedef enum {
 	COMPARE_FLAGS_FUZZY = 0x00000001,
 
 	/* Ignore the connection ID */
-	COMPARE_FLAGS_IGNORE_ID = 0x00000002,
+	COMPARE_FLAGS_IGNORE_ID = 0x00000002
 } NMSettingCompareFlags;
 
 /* Returns TRUE if the connections are the same */

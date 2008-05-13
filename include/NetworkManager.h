@@ -129,7 +129,7 @@ typedef enum NMDeviceType
 typedef enum {
 	NM_802_11_MODE_UNKNOWN = 0,
 	NM_802_11_MODE_ADHOC,
-	NM_802_11_MODE_INFRA,
+	NM_802_11_MODE_INFRA
 } NM80211Mode;
 
 
@@ -200,7 +200,7 @@ typedef enum
 	 *   UNAVAILABLE:  the device is no longer ready for use (rfkill, no carrier, etc)
 	 *   DISCONNECTED:  the device's connection is ready for activation, or NetworkManager went to sleep
 	 */
-	NM_DEVICE_STATE_FAILED,
+	NM_DEVICE_STATE_FAILED
 } NMDeviceState;
 
 
@@ -211,7 +211,7 @@ typedef enum {
 	NM_ACTIVE_CONNECTION_STATE_ACTIVATING,
 
 	/* Indicates the connection is currently active */
-	NM_ACTIVE_CONNECTION_STATE_ACTIVATED,
+	NM_ACTIVE_CONNECTION_STATE_ACTIVATED
 } NMActiveConnectionState;
 
 

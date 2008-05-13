@@ -166,7 +166,7 @@ typedef enum {
 	NMU_SEC_WPA_PSK,
 	NMU_SEC_WPA_ENTERPRISE,
 	NMU_SEC_WPA2_PSK,
-	NMU_SEC_WPA2_ENTERPRISE,
+	NMU_SEC_WPA2_ENTERPRISE
 } NMUtilsSecurityType;
 
 gboolean nm_utils_security_valid (NMUtilsSecurityType type,
