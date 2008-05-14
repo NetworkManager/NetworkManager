@@ -20,7 +20,7 @@
     <property name="Devices" type="ao" access="read">
       <tp:docstring>Array of object paths representing devices which are part of this active connection.</tp:docstring>
     </property>
-    <property name="State" type="u" access="read" tp:type="NM_ACTIVE_DEVICE_STATE">
+    <property name="State" type="u" access="read" tp:type="NM_ACTIVE_CONNECTION_STATE">
       <tp:docstring>The state of this active connection.</tp:docstring>
     </property>
     <property name="Default" type="b" access="read">
