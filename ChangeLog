@@ -1,5 +1,15 @@
 2008-05-13  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-private.h
+	  src/nm-device.c
+		- (nm_device_hw_bring_up, nm_device_hw_take_down): export
+
+	* src/nm-device-802-11-wireless.c
+		- (nm_device_802_11_wireless_set_enabled): take devices up
+			and down as appropriate for the rfkill state
+
+2008-05-13  Dan Williams  <dcbw@redhat.com>
+
 	* marshallers/nm-marshal.list
 		- Add VOID:POINTER,STRING marshaller for ifcfg-fedora plugin
 

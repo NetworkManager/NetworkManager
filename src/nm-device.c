@@ -1386,7 +1386,7 @@ nm_device_is_up (NMDevice *self)
 	return TRUE;
 }
 
-static gboolean
+gboolean
 nm_device_hw_bring_up (NMDevice *self, gboolean wait)
 {
 	gboolean success;
@@ -1423,7 +1423,7 @@ out:
 	return TRUE;
 }
 
-static void
+void
 nm_device_hw_take_down (NMDevice *self, gboolean wait)
 {
 	guint32 tries = 0;

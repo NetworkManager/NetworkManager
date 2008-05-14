@@ -33,4 +33,8 @@ void			nm_device_activate_schedule_stage3_ip_config_start (NMDevice *device);
 
 void			nm_device_state_changed (NMDevice *device, NMDeviceState state);
 
+gboolean nm_device_hw_bring_up (NMDevice *self, gboolean wait);
+
+void nm_device_hw_take_down (NMDevice *self, gboolean wait);
+
 #endif	/* NM_DEVICE_PRIVATE_H */

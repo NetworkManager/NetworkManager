@@ -3306,10 +3306,13 @@ nm_device_802_11_wireless_set_enabled (NMDevice80211Wireless *self, gboolean ena
 
 	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
 	if (state >= NM_DEVICE_STATE_UNAVAILABLE) {
-		if (enabled)
+		if (enabled) {
+			nm_device_hw_bring_up (NM_DEVICE (self), TRUE);
 			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED);
-		else
+		} else {
 			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_UNAVAILABLE);
+			nm_device_hw_take_down (NM_DEVICE (self), TRUE);
+		}
 	}
 }
 
