@@ -274,6 +274,8 @@ constructor (GType type,
 
 	caps = nm_device_get_capabilities (dev);
 	if (caps & NM_DEVICE_CAP_CARRIER_DETECT) {
+		GError *error = NULL;
+
 		/* Only listen to netlink for cards that support carrier detect */
 		NMNetlinkMonitor * monitor = nm_netlink_monitor_get ();
 
@@ -283,6 +285,11 @@ constructor (GType type,
 		priv->link_disconnected_id = g_signal_connect (monitor, "carrier-off",
 											  G_CALLBACK (nm_device_802_3_ethernet_carrier_off),
 											  dev);
+
+		if (!nm_netlink_monitor_request_status (monitor, &error)) {
+			nm_warning ("couldn't request carrier state: %s", error->message);
+			g_error_free (error);
+		}
 
 		g_object_unref (monitor);
 	} else {

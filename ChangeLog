@@ -1,5 +1,19 @@
 2008-05-14  Dan Williams  <dcbw@redhat.com>
 
+	Fix Linus' bug in rh #134886
+
+	* src/nm-device-802-3-ethernet.c
+		- (constructor): request initial carrier state
+
+	* src/nm-netlink-monitor.c
+		- (nm_netlink_monitor_request_status): schedule emission of carrier
+			signals after refilling the link cache.  Because the refill is a 
+			synchronous operation, the normal message hander won't get called
+			since libnl has already consumed the messages.
+		- (deferred_emit_carrier_state): emit carrier states from an idle handler
+
+2008-05-14  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerSystem.c
 		- (nm_system_device_is_up_with_iface): clean up
 

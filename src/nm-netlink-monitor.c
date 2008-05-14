@@ -66,6 +66,8 @@ typedef struct {
 	GMainContext *	  context;
 	GIOChannel *	  io_channel;
 	GSource *		  event_source;
+
+	guint request_status_id;
 } NMNetlinkMonitorPrivate;
 
 static gboolean nm_netlink_monitor_event_handler (GIOChannel       *channel,
@@ -114,6 +116,9 @@ static void
 finalize (GObject *object)
 {
 	NMNetlinkMonitorPrivate *priv = NM_NETLINK_MONITOR_GET_PRIVATE (object);
+
+	if (priv->request_status_id)
+		g_source_remove (priv->request_status_id);
 
 	if (priv->io_channel)
 		nm_netlink_monitor_close_connection (NM_NETLINK_MONITOR (object));
@@ -403,6 +408,19 @@ nm_netlink_monitor_detach (NMNetlinkMonitor *monitor)
 	priv->context = NULL;
 }
 
+static gboolean
+deferred_emit_carrier_state (gpointer user_data)
+{
+	NMNetlinkMonitor *monitor = NM_NETLINK_MONITOR (user_data);
+	NMNetlinkMonitorPrivate *priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
+
+	priv->request_status_id = 0;
+
+	/* Emit each device's new state */
+	nl_cache_foreach_filter (priv->nlh_link_cache, NULL, netlink_object_message_handler, monitor);
+	return FALSE;
+}
+
 gboolean
 nm_netlink_monitor_request_status (NMNetlinkMonitor  *monitor,
                                    GError           **error)
@@ -414,10 +432,15 @@ nm_netlink_monitor_request_status (NMNetlinkMonitor  *monitor,
 	priv = NM_NETLINK_MONITOR_GET_PRIVATE (monitor);
 	g_return_val_if_fail (priv->context != NULL, FALSE);
 
+	/* Update the link cache with latest state */
 	if (nl_cache_refill (priv->nlh, priv->nlh_link_cache)) {
 		nm_warning ("Error updating link cache: %s", nl_geterror ());
 		return FALSE;
 	}
+
+	/* Schedule the carrier state emission */
+	if (!priv->request_status_id)
+		priv->request_status_id = g_idle_add (deferred_emit_carrier_state, monitor);
 
 	return TRUE;
 }
