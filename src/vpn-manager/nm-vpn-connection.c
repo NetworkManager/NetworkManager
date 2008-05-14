@@ -179,7 +179,7 @@ device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 {
 	NMVPNConnection *connection = NM_VPN_CONNECTION (user_data);
 
-	if (state == NM_DEVICE_STATE_DISCONNECTED) {
+	if (state <= NM_DEVICE_STATE_DISCONNECTED) {
 		nm_vpn_connection_set_vpn_state (connection,
 		                                 NM_VPN_CONNECTION_STATE_DISCONNECTED,
 		                                 NM_VPN_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED);

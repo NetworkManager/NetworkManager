@@ -1,5 +1,24 @@
 2008-05-13  Dan Williams  <dcbw@redhat.com>
 
+	Fix refcounting issues over sleep/wake when a VPN connection was active that
+	caused NM to try registering an object path for a device upon wake that was
+	the same as an already registered object path.
+
+	* src/nm-device.c
+		- (nm_device_take_down): properly handle cases where the device is
+			no longer active but was just active, and therefore must be
+			deactivated.  When a device moves to unmanaged mode, this function
+			previously would not deactivate the device, because the state was
+			already unmanaged by the time this function was called.
+
+	* src/vpn-manager/nm-vpn-connection.c
+		- (device_state_changed): properly handle multiple devices states in
+			which the device is now deactivated.  Code previously didn't handle
+			transitions to the UNAVAILABLE (like rfkill or carrier off) and
+			UNMANAGED states.
+
+2008-05-13  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-private.h
 	  src/nm-device.c
 		- (nm_device_hw_bring_up, nm_device_hw_take_down): export

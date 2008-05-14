@@ -1470,12 +1470,9 @@ nm_device_bring_up (NMDevice *self, gboolean wait)
 void
 nm_device_take_down (NMDevice *self, gboolean wait)
 {
-	NMDeviceState state;
-
 	g_return_if_fail (NM_IS_DEVICE (self));
 
-	state = nm_device_get_state (self);
-	if ((state == NM_DEVICE_STATE_ACTIVATED) || nm_device_is_activating (self))
+	if (nm_device_get_act_request (self))
 		nm_device_interface_deactivate (NM_DEVICE_INTERFACE (self));
 
 	if (nm_device_is_up (self)) {
