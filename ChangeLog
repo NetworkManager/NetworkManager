@@ -1,3 +1,8 @@
+2008-05-14  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerSystem.c
+		- (nm_system_device_is_up_with_iface): clean up
+
 2008-05-13  Dan Williams  <dcbw@redhat.com>
 
 	Fix refcounting issues over sleep/wake when a VPN connection was active that

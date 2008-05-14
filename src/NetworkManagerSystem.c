@@ -470,7 +470,8 @@ gboolean
 nm_system_device_is_up_with_iface (const char *iface)
 {
 	struct ifreq ifr;
-	int err, fd;
+	int fd;
+	gboolean up = FALSE;
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
@@ -480,18 +481,17 @@ nm_system_device_is_up_with_iface (const char *iface)
 
 	/* Get device's flags */
 	strncpy (ifr.ifr_name, iface, IFNAMSIZ);
-	err = ioctl (fd, SIOCGIFFLAGS, &ifr);
+	if (ioctl (fd, SIOCGIFFLAGS, &ifr) < 0) {
+		if (errno != ENODEV) {
+			nm_warning ("%s: could not get flags for device %s.  errno = %d", 
+			            __func__, iface, errno);
+		}
+	} else {
+		up = !!(ifr.ifr_flags & IFF_UP);
+	}
 	close (fd);
 
-	if (!err)
-		return (!((ifr.ifr_flags^IFF_UP) & IFF_UP));
-
-	if (errno != ENODEV) {
-		nm_warning ("%s: could not get flags for device %s.  errno = %d", 
-		            __func__, iface, errno);
-	}
-
-	return FALSE;
+	return up;
 }
 
 gboolean
