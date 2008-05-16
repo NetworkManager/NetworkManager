@@ -1,3 +1,9 @@
+2008-05-16  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-802-11-wireless.c
+		- (nm_device_802_11_wireless_set_enabled): request a scan after enabling
+			wireless
+
 2008-05-14  Dan Williams  <dcbw@redhat.com>
 
 	Fix Linus' bug in rh #134886

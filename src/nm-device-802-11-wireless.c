@@ -3309,11 +3309,14 @@ nm_device_802_11_wireless_set_enabled (NMDevice80211Wireless *self, gboolean ena
 		if (enabled) {
 			nm_device_hw_bring_up (NM_DEVICE (self), TRUE);
 			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED);
+
+			/* Request a scan to get results immediately */
+			cancel_pending_scan (self);
+			request_wireless_scan (self);
 		} else {
 			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_UNAVAILABLE);
 			nm_device_hw_take_down (NM_DEVICE (self), TRUE);
 		}
 	}
 }
-
 
