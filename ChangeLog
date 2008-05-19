@@ -2,7 +2,7 @@
 
 	* system-settings/plugins/ifcfg-fedora/reader.c
 		- (make_ip4_setting): get a fallback gateway from /etc/sysconfig/network
-			if the ifcfg doesn't specify one
+			if the ifcfg doesn't specify one (rh #446527)
 
 2008-05-19  Dan Williams  <dcbw@redhat.com>
 
