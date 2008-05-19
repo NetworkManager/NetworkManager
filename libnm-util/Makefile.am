@@ -28,6 +28,8 @@ libnm_util_include_HEADERS = 		\
 	nm-utils.h
 
 libnm_util_la_SOURCES=			\
+	crypto.c			\
+	crypto.h			\
 	nm-connection.c			\
 	nm-param-spec-specialized.c	\
 	nm-setting.c			\
@@ -51,7 +53,27 @@ libnm_util_la_LDFLAGS= $(GLIB_LIBS) $(DBUS_LIBS)
 
 libnm_util_la_CFLAGS=-fPIC
 
+libnm_util_la_LIBADD = 
+
+if WITH_GNUTLS
+libnm_util_la_SOURCES += crypto_gnutls.c
+libnm_util_la_CPPFLAGS += $(LIBGCRYPT_CFLAGS) $(GNUTLS_CFLAGS)
+libnm_util_la_LIBADD += $(LIBGCRYPT_LIBS) $(GNUTLS_LIBS)
+endif
+
+if WITH_NSS
+libnm_util_la_SOURCES += crypto_nss.c
+libnm_util_la_CPPFLAGS += $(NSS_CFLAGS)
+libnm_util_la_LIBADD += $(NSS_LIBS)
+endif
+
 libnm_util_includedir=$(includedir)/NetworkManager
+
+noinst_PROGRAMS = test-crypto
+
+test_crypto_SOURCES = test-crypto.c
+test_crypto_CPPFLAGS = $(GLIB_CFLAGS) -D_GNU_SOURCE
+test_crypto_LDADD = $(GLIB_LIBS) ${top_builddir}/libnm-util/libnm-util.la
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libnm-util.pc

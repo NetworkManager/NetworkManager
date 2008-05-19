@@ -68,6 +68,32 @@ GType nm_setting_802_1x_get_type (void);
 
 NMSetting *nm_setting_802_1x_new (void);
 
+gboolean nm_setting_802_1x_set_ca_cert (NMSetting8021x *self,
+								const char *filename,
+								GError **err);
+
+gboolean nm_setting_802_1x_set_client_cert (NMSetting8021x *self,
+								    const char *filename,
+								    GError **err);
+
+gboolean nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *self,
+									  const char *filename,
+									  GError **err);
+
+gboolean nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *self,
+										 const char *filename,
+										 GError **err);
+
+gboolean nm_setting_802_1x_set_private_key (NMSetting8021x *self,
+								    const char *filename,
+								    const char *password,
+								    GError **err);
+
+gboolean nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
+										 const char *filename,
+										 const char *password,
+										 GError **err);
+
 G_END_DECLS
 
 #endif /* NM_SETTING_8021X_H */

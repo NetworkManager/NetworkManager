@@ -436,12 +436,14 @@ read_wpa_psk_settings (shvarFile *ifcfg,
 		g_warning ("Missing WPA-PSK key");
 }
 
-#if 0
-
-static void
-read_wpa_eap_settings (shvarFile *ifcfg, NMSettingWirelessSecurity *security)
+static NMSetting *
+read_wpa_eap_settings (shvarFile *ifcfg)
 {
+	NMSetting8021x *s_802_1x;
 	char *str;
+	GError *err = NULL;
+
+	s_802_1x = NM_SETTING_802_1X (nm_setting_802_1x_new ());
 
 	str = svGetValue (ifcfg, "WIRELESS_EAP_MODE");
 	if (str) {
@@ -450,35 +452,61 @@ read_wpa_eap_settings (shvarFile *ifcfg, NMSettingWirelessSecurity *security)
 
 		pieces = g_strsplit (str, " ", 0);
 		for (i = 0; pieces[i]; i++)
-			s_8021x->eap = g_slist_append (s_8021x->eap, pieces[i]);
+			s_802_1x->eap = g_slist_append (s_802_1x->eap, pieces[i]);
 
 		g_free (pieces);
 		g_free (str);
 	}
 
 	s_802_1x->anonymous_identity = svGetValue (ifcfg, "WIRELESS_WPA_ANONID");
-
-	char *ca_path;
-
-	GByteArray *ca_cert;
-	"WIRELESS_CA_CERT";
-
-	GByteArray *client_cert;
-	"WIRELESS_CLIENT_CERT";
-
-	GByteArray *private_key;
-	"WIRELESS_CLIENT_KEY";
-
-	private_key_passwd
-	"WIRELESS_CLIENT_KEY_PASSWORD";
-
-
 	s_802_1x->phase1_peapver = svGetValue (ifcfg, "WIRELESS_PEAP_VERSION");
 	s_802_1x->phase2_auth = svGetValue (ifcfg, "WIRELESS_EAP_AUTH");
 	s_802_1x->identity = svGetValue (ifcfg, "WIRELESS_WPA_IDENTITY");
 	s_802_1x->password = svGetValue (ifcfg, "WIRELESS_WPA_PASSWORD");
+
+	str = svGetValue (ifcfg, "WIRELESS_CA_CERT");
+	if (str) {
+		nm_setting_802_1x_set_ca_cert (s_802_1x, str, &err);
+		if (err) {
+			g_warning ("Error loading WIRELESS_CA_CERT: %s", err->message);
+			g_error_free (err);
+		}
+
+		g_free (str);
+	}
+
+	str = svGetValue (ifcfg, "WIRELESS_CLIENT_CERT");
+	if (str) {
+		nm_setting_802_1x_set_client_cert (s_802_1x, str, &err);
+		if (err) {
+			g_warning ("Error loading WIRELESS_CLIENT_CERT: %s", err->message);
+			g_error_free (err);
+		}
+
+		g_free (str);
+	}
+
+	str = svGetValue (ifcfg, "WIRELESS_CLIENT_KEY");
+	if (str) {
+		char *password;
+
+		password = svGetValue (ifcfg, "WIRELESS_CLIENT_KEY_PASSWORD");
+		if (password) {
+			nm_setting_802_1x_set_private_key (s_802_1x, str, password, &err);
+			if (err) {
+				g_warning ("Error loading WIRELESS_CLIENT_KEY: %s", err->message);
+				g_error_free (err);
+			}
+
+			g_free (password);
+		} else
+			g_warning ("Missing WIRELESS_CLIENT_KEY_PASSWORD");
+
+		g_free (str);
+	}
+
+	return (NMSetting *) s_802_1x;
 }
-#endif
 
 static NMSetting *
 make_wireless_security_setting (shvarFile *ifcfg, NMSettingWireless *s_wireless)
@@ -492,6 +520,9 @@ make_wireless_security_setting (shvarFile *ifcfg, NMSettingWireless *s_wireless)
 		return NULL;
 	}
 
+	if (!g_ascii_strcasecmp (str, "eap"))
+		return read_wpa_eap_settings (ifcfg);
+
 	security = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
 
 	if (!g_ascii_strcasecmp (str, "open")) {
@@ -500,18 +531,9 @@ make_wireless_security_setting (shvarFile *ifcfg, NMSettingWireless *s_wireless)
 	} else if (!g_ascii_strcasecmp (str, "sharedkey")) {
 		security->auth_alg = g_strdup ("shared");
 		read_wep_settings (ifcfg, security);
-	}
-
-	else if (!g_ascii_strcasecmp (str, "psk")) {
+	} else if (!g_ascii_strcasecmp (str, "psk")) {
 		security->key_mgmt = g_strdup ("wpa-psk");
 		read_wpa_psk_settings (ifcfg, security, s_wireless);
-	} else if (!g_ascii_strcasecmp (str, "eap")) {
-		/* FIXME */
-/* 		security->key_mgmt = g_strdup ("wps-eap"); */
-/* 		read_wpa_eap_settings (ifcfg, security); */
-		g_warning ("WPA-EAP is currently not supported.");
-		g_object_unref (security);
-		security = NULL;
 	} else
 		g_warning ("Invalid authentication algorithm: '%s'", str);
 

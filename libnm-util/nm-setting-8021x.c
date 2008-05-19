@@ -7,6 +7,7 @@
 #include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
+#include "crypto.h"
 
 G_DEFINE_TYPE (NMSetting8021x, nm_setting_802_1x, NM_TYPE_SETTING)
 
@@ -39,6 +40,117 @@ NMSetting *
 nm_setting_802_1x_new (void)
 {
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_802_1X, NULL);
+}
+
+gboolean
+nm_setting_802_1x_set_ca_cert (NMSetting8021x *self,
+						 const char *filename,
+						 GError **err)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
+	g_return_val_if_fail (filename != NULL, FALSE);
+
+	if (self->ca_cert)
+		g_byte_array_free (self->ca_cert, TRUE);
+
+	self->ca_cert = crypto_load_and_verify_certificate (filename, err);
+
+	return self->ca_cert != NULL;
+}
+
+gboolean
+nm_setting_802_1x_set_client_cert (NMSetting8021x *self,
+							const char *filename,
+							GError **err)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
+	g_return_val_if_fail (filename != NULL, FALSE);
+
+	if (self->client_cert)
+		g_byte_array_free (self->client_cert, TRUE);
+
+	self->client_cert = crypto_load_and_verify_certificate (filename, err);
+
+	return self->client_cert != NULL;
+}
+
+gboolean
+nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *self,
+							   const char *filename,
+							   GError **err)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
+	g_return_val_if_fail (filename != NULL, FALSE);
+
+	if (self->phase2_ca_cert)
+		g_byte_array_free (self->phase2_ca_cert, TRUE);
+
+	self->phase2_ca_cert = crypto_load_and_verify_certificate (filename, err);
+
+	return self->phase2_ca_cert != NULL;
+
+}
+
+gboolean
+nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *self,
+								  const char *filename,
+								  GError **err)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
+	g_return_val_if_fail (filename != NULL, FALSE);
+
+	if (self->phase2_client_cert)
+		g_byte_array_free (self->phase2_client_cert, TRUE);
+
+	self->phase2_client_cert = crypto_load_and_verify_certificate (filename, err);
+
+	return self->phase2_client_cert != NULL;
+}
+
+gboolean
+nm_setting_802_1x_set_private_key (NMSetting8021x *self,
+							const char *filename,
+							const char *password,
+							GError **err)
+{
+	guint32 ignore;
+
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
+	g_return_val_if_fail (filename != NULL, FALSE);
+	g_return_val_if_fail (password != NULL, FALSE);
+
+	if (self->private_key) {
+		/* Try not to leave the decrypted private key around in memory */
+		memset (self->private_key, 0, self->private_key->len);
+		g_byte_array_free (self->private_key, TRUE);
+	}
+
+	self->private_key = crypto_get_private_key (filename, password, &ignore, err);
+
+	return self->private_key != NULL;
+}
+
+gboolean
+nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
+								  const char *filename,
+								  const char *password,
+								  GError **err)
+{
+	guint32 ignore;
+
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
+	g_return_val_if_fail (filename != NULL, FALSE);
+	g_return_val_if_fail (password != NULL, FALSE);
+
+	if (self->phase2_private_key) {
+		/* Try not to leave the decrypted private key around in memory */
+		memset (self->phase2_private_key, 0, self->phase2_private_key->len);
+		g_byte_array_free (self->phase2_private_key, TRUE);
+	}
+
+	self->phase2_private_key = crypto_get_private_key (filename, password, &ignore, err);
+
+	return self->phase2_private_key != NULL;
 }
 
 static void
@@ -487,6 +599,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
 	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+	GError *error = NULL;
 
 	/* virtual methods */
 	object_class->set_property = set_property;
@@ -632,4 +745,12 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 							   "Phase2 private key",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+
+	/* Initialize crypto lbrary. */
+	if (!crypto_init (&error)) {
+		g_warning ("Couldn't initilize crypto system: %d %s",
+		           error->code, error->message);
+		g_error_free (error);
+	}
+
 }

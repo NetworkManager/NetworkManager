@@ -1,3 +1,24 @@
+2008-05-15  Tambet Ingo  <tambet@gmail.com>
+
+	Move crypto functions from nm-applet to libnm-util.
+
+	* libnm-util/nm-setting-8021x.c (nm_setting_802_1x_set_ca_cert)
+	(nm_setting_802_1x_set_client_cert)
+	(nm_setting_802_1x_set_phase2_ca_cert)
+	(nm_setting_802_1x_set_phase2_client_cert)
+	(nm_setting_802_1x_set_private_key)
+	(nm_setting_802_1x_set_phase2_private_key): Implement. Given a certificate
+	file (or private key and it's password), read the certificate data.
+
+	* libnm-util/crypto_nss.c: 
+	* libnm-util/crypto_gnutls.c: 
+	* libnm-util/crypto.[ch]: Move here from nm-applet.
+
+	* configure.in: Check for NSS and gnutls here (moved here from nm-applet).
+
+	* system-settings/plugins/ifcfg-suse/parser.c (read_wpa_eap_settings):
+	Imlement WPA-EAP configuration reading from sysconfig.
+
 2008-05-16  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-802-11-wireless.c

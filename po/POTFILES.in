@@ -6,4 +6,7 @@ src/NetworkManager.c
 src/named-manager/nm-named-manager.c
 system-settings/plugins/ifcfg-fedora/plugin.c
 system-settings/src/main.c
+libnm-util/crypto.c
+libnm-util/crypto_gnutls.c
+libnm-util/crypto_nss.c
 
