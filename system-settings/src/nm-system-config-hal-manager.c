@@ -26,7 +26,8 @@
 #include "nm-marshal.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-system-config-hal-manager.h"
-#include "nm-system-config-hal-manager-private.h"
+
+NMSystemConfigHalManager *nm_system_config_hal_manager_get (DBusGConnection *g_connection);
 
 #define NUM_DEVICE_TYPES	DEVICE_TYPE_CDMA
 
@@ -318,19 +319,6 @@ nm_system_config_hal_manager_class_init (NMSystemConfigHalManagerClass *manager_
 					  G_TYPE_NONE, 2,
 					  G_TYPE_STRING,
 					  G_TYPE_UINT);
-}
-
-void
-nm_system_config_hal_manager_reinit_dbus (NMSystemConfigHalManager *manager,
-                                          DBusGConnection *g_connection)
-{
-	init_dbus (manager, g_connection);
-}
-
-void
-nm_system_config_hal_manager_deinit_dbus (NMSystemConfigHalManager *manager)
-{
-	cleanup_dbus (manager);
 }
 
 typedef struct {

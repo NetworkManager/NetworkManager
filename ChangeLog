@@ -1,3 +1,26 @@
+2008-05-19  Dan Williams  <dcbw@redhat.com>
+
+	Make the system settings service exit when the bus goes away.  Since it's
+	a bus-activated service, it's lifetime is limited to the bus that activated
+	it (rh #444976).
+
+	* system-settings/src/Makefile.am
+	  system-settings/src/nm-system-config-hal-manager-private.h
+		- Remove nm-system-config-hal-manager-private.h
+
+	* system-settings/src/nm-system-config-hal-manager.c
+		- (nm_system_config_hal_manager_reinit_dbus,
+		   nm_system_config_hal_manager_deinit_dbus): remove
+
+	* system-settings/src/main.c
+		- (dbus_reconnect): remove
+		- (dbus_cleanup): don't tell the HAL manager to deinit dbus
+		- (destroy_cb): just quit when the bus goes away
+		- (start_dbus_service, dbus_init): simplify
+		- (main): destroy the wired devices hash table after destroying
+			the HAL manager so we don't have to disconnect signals from the
+			HAL manager
+
 2008-05-15  Tambet Ingo  <tambet@gmail.com>
 
 	Move crypto functions from nm-applet to libnm-util.

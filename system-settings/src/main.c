@@ -44,7 +44,6 @@
 
 #include "dbus-settings.h"
 #include "nm-system-config-hal-manager.h"
-#include "nm-system-config-hal-manager-private.h"
 #include "nm-system-config-interface.h"
 
 typedef struct {
@@ -53,7 +52,6 @@ typedef struct {
 
 	DBusGProxy *bus_proxy;
 	NMSystemConfigHalManager *hal_mgr;
-	gboolean started;
 
 	NMSysconfigSettings *settings;
 	GMainLoop *loop;
@@ -62,8 +60,9 @@ typedef struct {
 } Application;
 
 
+NMSystemConfigHalManager *nm_system_config_hal_manager_get (DBusGConnection *g_connection);
+
 static gboolean dbus_init (Application *app);
-static void dbus_cleanup (Application *app);
 static gboolean start_dbus_service (Application *app);
 static void destroy_cb (DBusGProxy *proxy, gpointer user_data);
 static void device_added_cb (DBusGProxy *proxy, const char *udi, NMDeviceType devtype, gpointer user_data);
@@ -400,23 +399,6 @@ device_removed_cb (DBusGProxy *proxy, const char *udi, NMDeviceType devtype, gpo
 
 /******************************************************************/
 
-static gboolean
-dbus_reconnect (gpointer user_data)
-{
-	Application *app = (Application *) user_data;
-
-	if (dbus_init (app)) {
-		if (start_dbus_service (app)) {
-			g_message ("reconnected to the system bus.");
-			nm_system_config_hal_manager_reinit_dbus (app->hal_mgr, app->g_connection);
-			return TRUE;
-		}
-	}
-
-	dbus_cleanup (app);
-	return FALSE;
-}
-
 static void
 dbus_cleanup (Application *app)
 {
@@ -431,10 +413,6 @@ dbus_cleanup (Application *app)
 		g_object_unref (app->bus_proxy);
 		app->bus_proxy = NULL;
 	}
-
-	nm_system_config_hal_manager_deinit_dbus (app->hal_mgr);
-
-	app->started = FALSE;
 }
 
 static void
@@ -443,10 +421,8 @@ destroy_cb (DBusGProxy *proxy, gpointer user_data)
 	Application *app = (Application *) user_data;
 
 	/* Clean up existing connection */
-	g_warning ("disconnected by the system bus.");
-	dbus_cleanup (app);
-
-	g_timeout_add (3000, dbus_reconnect, app);
+	g_warning ("disconnected from the system bus, exiting.");
+	g_main_loop_quit (app->loop);
 }
 
 static gboolean
@@ -454,11 +430,6 @@ start_dbus_service (Application *app)
 {
 	int request_name_result;
 	GError *err = NULL;
-
-	if (app->started) {
-		g_warning ("Service has already started.");
-		return FALSE;
-	}
 
 	if (!dbus_g_proxy_call (app->bus_proxy, "RequestName", &err,
 							G_TYPE_STRING, NM_DBUS_SERVICE_SYSTEM_SETTINGS,
@@ -469,23 +440,17 @@ start_dbus_service (Application *app)
 		g_warning ("Could not acquire the NetworkManagerSystemSettings service.\n"
 		           "  Message: '%s'", err->message);
 		g_error_free (err);
-		goto out;
+		return FALSE;
 	}
 
 	if (request_name_result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
 		g_warning ("Could not acquire the NetworkManagerSystemSettings service "
 		           "as it is already taken.  Return: %d",
 		           request_name_result);
-		goto out;
+		return FALSE;
 	}
 
-	app->started = TRUE;
-
-out:
-	if (!app->started)
-		dbus_cleanup (app);
-
-	return app->started;
+	return TRUE;
 }
 
 static gboolean
@@ -513,16 +478,12 @@ dbus_init (Application *app)
 	                                            "org.freedesktop.DBus");
 	if (!app->bus_proxy) {
 		g_warning ("Could not get the DBus object!");
-		goto error;
+		return FALSE;
 	}
 
 	g_signal_connect (app->bus_proxy, "destroy", G_CALLBACK (destroy_cb), app);
 
 	return TRUE;
-
-error:	
-	dbus_cleanup (app);
-	return FALSE;
 }
 
 static gboolean
@@ -682,10 +643,12 @@ main (int argc, char **argv)
 
 	g_main_loop_run (app->loop);
 
-	g_hash_table_destroy (app->wired_devices);
-
 	g_object_unref (app->settings);
 	g_object_unref (app->hal_mgr);
+
+	g_hash_table_destroy (app->wired_devices);
+
+	dbus_cleanup (app);
 
 	if (!debug)
 		logging_shutdown ();
