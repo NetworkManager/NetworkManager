@@ -1,5 +1,11 @@
 2008-05-19  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/plugins/ifcfg-fedora/reader.c
+		- (make_ip4_setting): get a fallback gateway from /etc/sysconfig/network
+			if the ifcfg doesn't specify one
+
+2008-05-19  Dan Williams  <dcbw@redhat.com>
+
 	Make the system settings service exit when the bus goes away.  Since it's
 	a bus-activated service, it's lifetime is limited to the bus that activated
 	it (rh #444976).

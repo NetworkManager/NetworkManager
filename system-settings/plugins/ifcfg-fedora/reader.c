@@ -182,6 +182,19 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 	if (*error)
 		goto error;
 
+	/* If no gateway in the ifcfg, try /etc/sysconfig/network instead */
+	if (!tmp.gateway) {
+		shvarFile *network;
+
+		network = svNewFile ("/etc/sysconfig/network");
+		if (network) {
+			get_one_ip4_addr (network, "GATEWAY", &tmp.gateway, error);
+			svCloseFile (network);
+			if (*error)
+				goto error;
+		}
+	}
+
 	get_one_ip4_addr (ifcfg, "NETMASK", &tmp.netmask, error);
 	if (*error)
 		goto error;
