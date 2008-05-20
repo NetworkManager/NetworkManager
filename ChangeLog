@@ -1,3 +1,8 @@
+2008-05-20  Dan Williams  <dcbw@redhat.com>
+
+	* system-settings/plugins/ifcfg-fedora/reader.c
+		- (add_one_wep_key): handle ASCII WEP keys too
+
 2008-05-19  Dan Williams  <dcbw@redhat.com>
 
 	* system-settings/plugins/ifcfg-fedora/reader.c

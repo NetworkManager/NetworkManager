@@ -355,9 +355,10 @@ add_one_wep_key (shvarFile *ifcfg,
 			p++;
 		}
 		key = g_strdup (value);
-	} else if (strlen (value) == 5 || strlen (value) == 13) {
+	} else if (   strncmp (value, "s:", 2)
+	           && (strlen (value) == 7 || strlen (value) == 15)) {
 		/* ASCII passphrase */
-		char *p = value;
+		char *p = value + 2;
 
 		while (*p) {
 			if (!isascii ((int) (*p))) {
