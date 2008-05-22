@@ -1925,18 +1925,11 @@ impl_manager_sleep (NMManager *manager, gboolean sleep, GError **error)
 	} else {
 		nm_info  ("Waking up...");
 
-		/* Punt adding back devices to an idle handler to give the manager
-		 * time to push signals out over D-Bus when it wakes up.  Since the
-		 * signal emission might ref the old pre-sleep device, when the new
-		 * device gets found there will be a D-Bus object path conflict between
-		 * the old device and the new device, and dbus-glib "helpfully" asserts
-		 * here and we die.
-		 */
-		if (!priv->sync_devices_id)
-			priv->sync_devices_id = g_idle_add_full (G_PRIORITY_LOW,
-											 deferred_sync_devices,
-											 manager,
-											 NULL);
+		sync_devices (manager);
+		if (priv->sync_devices_id) {
+			g_source_remove (priv->sync_devices_id);
+			priv->sync_devices_id = 0;
+		}
 	}
 
 	nm_manager_update_state (manager);

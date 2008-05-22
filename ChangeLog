@@ -1,5 +1,10 @@
 2008-05-22  Tambet Ingo  <tambet@gmail.com>
 
+	* src/nm-manager.c (impl_manager_sleep): No need to schedule the sync
+	anymore, do it right away.
+
+2008-05-22  Tambet Ingo  <tambet@gmail.com>
+
 	* src/nm-gsm-device.c (device_state_changed): Make sure we don't leave the
 	serial device open when we're not connecting or connected.
 
