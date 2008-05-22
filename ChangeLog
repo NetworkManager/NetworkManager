@@ -1,3 +1,9 @@
+2008-05-22  Dan Williams  <dcbw@redhat.com>
+
+	* configure.in
+		- clean up crypto options; just use --with-crypto=nss or
+			--with-crypto=gnutls
+
 2008-05-22  Tambet Ingo  <tambet@gmail.com>
 
 	* src/nm-manager.c (impl_manager_sleep): No need to schedule the sync
