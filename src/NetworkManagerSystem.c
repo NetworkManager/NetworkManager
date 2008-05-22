@@ -575,6 +575,7 @@ void
 nm_system_device_replace_default_ip4_route (const char *iface, guint32 gw, guint32 mss)
 {
 	struct rtnl_route * route;
+	struct rtnl_route * route2 = NULL;
 	struct nl_handle  * nlh;
 	struct nl_addr    * gw_addr;
 	int iface_idx, err;
@@ -607,12 +608,49 @@ nm_system_device_replace_default_ip4_route (const char *iface, guint32 gw, guint
 	}
 
 	err = rtnl_route_add (nlh, route, NLM_F_REPLACE);
-	if (err) {
+	if (err == 0) {
+		/* Everything good */
+		goto out;
+	} else if (err != ESRCH) {
 		nm_warning ("rtnl_route_add() returned error %s (%d)\n%s",
 		            strerror (err), err, nl_geterror());
+		goto out;
+	}
+
+	/* Gateway might be over a bridge; try adding a route to gateway first */
+	route2 = rtnl_route_alloc ();
+	if (route2 == NULL)
+		goto out;
+	rtnl_route_set_oif (route2, iface_idx);
+	rtnl_route_set_dst (route2, gw_addr);
+
+	if (mss) {
+		if (rtnl_route_set_metric (route2, RTAX_ADVMSS, mss) < 0)
+			goto out;
+	}
+
+	/* Add route to gateway over bridge */
+	err = rtnl_route_add (nlh, route2, 0);
+	if (err) {
+		nm_warning ("Failed to add IPv4 default route on '%s': %s",
+				  iface,
+				  nl_geterror ());
+		goto out;
+	}
+
+	/* Try adding the route again */
+	err = rtnl_route_add (nlh, route, 0);
+	if (err) {
+		rtnl_route_del (nlh, route2, 0);
+		nm_warning ("Failed to set IPv4 default route on '%s': %s",
+				  iface,
+				  nl_geterror ());
 	}
 
 out:
+	if (route2)
+		rtnl_route_put (route2);
+
 	rtnl_route_put (route);
 }
 

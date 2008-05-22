@@ -5,6 +5,20 @@
 
 	* src/nm-cdma-device.c (device_state_changed): Ditto.
 
+2008-05-22  Tambet Ingo  <tambet@gmail.com>
+
+	Don't remove all devices on waking up, sync with HAL.
+
+	* src/nm-manager.c (nm_manager_udi_is_managed): Implement.
+	(sync_devices): Implement, based on hal_manager_hal_reappeared_cb.
+	(hal_manager_hal_reappeared_cb): Just call sync_devices.
+
+2008-05-21  Tambet Ingo  <tambet@gmail.com>
+
+	* src/NetworkManagerSystem.c (nm_system_device_replace_default_ip4_route):
+	If the default gateway is unreachable, add a route to gateway and try
+	again.
+
 2008-05-20  Dan Williams  <dcbw@redhat.com>
 
 	* system-settings/plugins/ifcfg-fedora/reader.c

@@ -103,7 +103,7 @@ typedef struct {
 	gboolean sleeping;
 
 	guint poke_id;
-	guint add_devices_id;
+	guint sync_devices_id;
 
 	NMVPNManager *vpn_manager;
 	guint vpn_manager_id;
@@ -328,9 +328,9 @@ dispose (GObject *object)
 	pending_connection_info_destroy (priv->pending_connection_info);
 	priv->pending_connection_info = NULL;
 
-	if (priv->add_devices_id) {
-		g_source_remove (priv->add_devices_id);
-		priv->add_devices_id = 0;
+	if (priv->sync_devices_id) {
+		g_source_remove (priv->sync_devices_id);
+		priv->sync_devices_id = 0;
 	}
 
 	while (g_slist_length (priv->devices)) {
@@ -975,6 +975,20 @@ nm_manager_get_device_by_udi (NMManager *manager, const char *udi)
 	return NULL;
 }
 
+static gboolean
+nm_manager_udi_is_managed (NMManager *self, const char *udi)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+
+	for (iter = priv->unmanaged_udis; iter; iter = iter->next) {
+		if (!strcmp (udi, iter->data))
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
 static void
 handle_unmanaged_devices (NMManager *manager, GPtrArray *ops)
 {
@@ -1196,14 +1210,41 @@ initial_get_connections (gpointer user_data)
 	return FALSE;
 }
 
+static void
+sync_devices (NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *devices;
+	GSList *iter;
+
+	/* Remove devices which are no longer known to HAL */
+	devices = g_slist_copy (priv->devices);
+	for (iter = devices; iter; iter = iter->next) {
+		NMDevice *device = NM_DEVICE (iter->data);
+		const char *udi = nm_device_get_udi (device);
+
+		if (nm_hal_manager_udi_exists (priv->hal_mgr, udi)) {
+			nm_device_set_managed (device, nm_manager_udi_is_managed (self, udi));
+		} else {
+			priv->devices = g_slist_delete_link (priv->devices, iter);
+			remove_one_device (self, device);
+		}
+	}
+
+	g_slist_free (devices);
+
+	/* Get any new ones */
+	nm_hal_manager_query_devices (priv->hal_mgr);
+}
+
 static gboolean
-deferred_hal_manager_query_devices (gpointer user_data)
+deferred_sync_devices (gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
-	priv->add_devices_id = 0;
-	nm_hal_manager_query_devices (priv->hal_mgr);
+	priv->sync_devices_id = 0;
+	sync_devices (self);
 
 	return FALSE;
 }
@@ -1229,7 +1270,7 @@ nm_manager_new (void)
 	g_idle_add ((GSourceFunc) initial_get_connections, NM_MANAGER (object));
 
 	priv->hal_mgr = nm_hal_manager_new ();
-	g_idle_add (deferred_hal_manager_query_devices, object);
+	priv->sync_devices_id = g_idle_add (deferred_sync_devices, object);
 
 	g_signal_connect (priv->hal_mgr,
 	                  "udi-added",
@@ -1407,9 +1448,7 @@ hal_manager_udi_added_cb (NMHalManager *hal_mgr,
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	gboolean managed = TRUE;
 	GObject *device;
-	GSList *iter;
 	const char *iface;
 
 	if (priv->sleeping)
@@ -1419,15 +1458,7 @@ hal_manager_udi_added_cb (NMHalManager *hal_mgr,
 	if (nm_manager_get_device_by_udi (self, udi))
 		return;
 
-	/* Figure out if the device is managed or not */
-	for (iter = priv->unmanaged_udis; iter; iter = g_slist_next (iter)) {
-		if (!strcmp (udi, iter->data)) {
-			managed = FALSE;
-			break;
-		}
-	}
-
-	device = creator_fn (hal_mgr, udi, managed);
+	device = creator_fn (hal_mgr, udi, nm_manager_udi_is_managed (self, udi));
 	if (!device)
 		return;
 
@@ -1504,25 +1535,7 @@ static void
 hal_manager_hal_reappeared_cb (NMHalManager *hal_mgr,
                                gpointer user_data)
 {
-	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *iter;
-
-	/* Remove devices which are no longer known to HAL */
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *device = NM_DEVICE (iter->data);
-		GSList *next = iter->next;
-
-		if (nm_hal_manager_udi_exists (priv->hal_mgr, nm_device_get_udi (device)))
-			continue;
-
-		priv->devices = g_slist_delete_link (priv->devices, iter);
-		remove_one_device (self, device);
-		iter = next;
-	}
-
-	/* Get any new ones */
-	nm_hal_manager_query_devices (priv->hal_mgr);
+	sync_devices (NM_MANAGER (user_data));
 }
 
 GSList *
@@ -1912,11 +1925,6 @@ impl_manager_sleep (NMManager *manager, gboolean sleep, GError **error)
 	} else {
 		nm_info  ("Waking up...");
 
-		while (g_slist_length (priv->devices)) {
-			remove_one_device (manager, NM_DEVICE (priv->devices->data));
-			priv->devices = g_slist_remove_link (priv->devices, priv->devices);
-		}
-
 		/* Punt adding back devices to an idle handler to give the manager
 		 * time to push signals out over D-Bus when it wakes up.  Since the
 		 * signal emission might ref the old pre-sleep device, when the new
@@ -1924,12 +1932,11 @@ impl_manager_sleep (NMManager *manager, gboolean sleep, GError **error)
 		 * the old device and the new device, and dbus-glib "helpfully" asserts
 		 * here and we die.
 		 */
-		if (priv->add_devices_id)
-			g_source_remove (priv->add_devices_id);
-		priv->add_devices_id = g_idle_add_full (G_PRIORITY_LOW,
-		                                        deferred_hal_manager_query_devices,
-		                                        manager,
-		                                        NULL);
+		if (!priv->sync_devices_id)
+			priv->sync_devices_id = g_idle_add_full (G_PRIORITY_LOW,
+											 deferred_sync_devices,
+											 manager,
+											 NULL);
 	}
 
 	nm_manager_update_state (manager);
