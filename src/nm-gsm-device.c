@@ -697,6 +697,19 @@ device_state_changed (NMDeviceInterface *device, NMDeviceState state, gpointer u
 	 */
 	if (state == NM_DEVICE_STATE_UNAVAILABLE)
 		priv->state_to_disconnected_id = g_idle_add (unavailable_to_disconnected, self);
+
+	/* Make sure we don't leave the serial device open */
+	switch (state) {
+	case NM_DEVICE_STATE_NEED_AUTH:
+	case NM_DEVICE_STATE_UNMANAGED:
+	case NM_DEVICE_STATE_UNAVAILABLE:
+	case NM_DEVICE_STATE_FAILED:
+	case NM_DEVICE_STATE_DISCONNECTED:
+		nm_serial_device_close (NM_SERIAL_DEVICE (self));
+		break;
+	default:
+		break;
+	}
 }
 
 static GObject*
