@@ -284,8 +284,6 @@ auto_activate_device (gpointer user_data)
 static void
 global_state_changed (NMManager *manager, NMState state, gpointer user_data)
 {
-	if (state == NM_STATE_CONNECTED)
-		nm_system_restart_mdns_responder ();
 }
 
 static void

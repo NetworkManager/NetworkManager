@@ -181,34 +181,6 @@ void nm_system_update_dns (void)
 	nm_spawn_process ("/usr/sbin/nscd -i hosts");
 }
 
-
-/*
- * nm_system_restart_mdns_responder
- *
- * Restart the multicast DNS responder so that it knows about new
- * network interfaces and IP addresses.
- *
- */
-void nm_system_restart_mdns_responder (void)
-{
-	pid_t pid;
-	FILE *fp;
-	int res;
-
-	fp = fopen ("/var/run/mdnsd.pid", "rt");
-	if (!fp)
-		return;
-
-	res = fscanf (fp, "%d", &pid);
-	if (res == 1)
-	{
-		nm_info ("Restarting mdnsd (pid=%d).", pid);
-		kill (pid, SIGUSR1);
-	}
-
-	fclose (fp);
-}
-
 /*
  * nm_system_activate_nis
  *

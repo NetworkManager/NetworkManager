@@ -174,18 +174,6 @@ void nm_generic_update_dns (void)
 {
 }
 
-
-/*
- * nm_generic_restart_mdns_responder
- *
- * Restart the multicast DNS responder so that it knows about new
- * network interfaces and IP addresses.
- *
- */
-void nm_generic_restart_mdns_responder (void)
-{
-}
-
 /*
  * nm_generic_set_ip4_config_from_resolv_conf
  *

@@ -187,31 +187,6 @@ void nm_system_update_dns (void)
 	}
 }
 
-
-/*
- * nm_system_restart_mdns_responder
- *
- * Restart the multicast DNS responder so that it knows about new
- * network interfaces and IP addresses.
- *
- */
-void nm_system_restart_mdns_responder (void)
-{
-	FILE 		*fp  = NULL;
-
-	if ((fp = fopen ("/var/run/mDNSResponder.pid", "rt")))
-	{
-		int pid;
-		int res = fscanf (fp, "%d", &pid);
-		fclose (fp);
-		if (res == 1)
-		{
-			nm_info ("Restarting mDNSResponder.");
-			kill (pid, SIGUSR1);
-		}
-	}
-}
-
 /*
  * nm_system_activate_nis
  *

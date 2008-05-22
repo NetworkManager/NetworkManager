@@ -189,42 +189,6 @@ void nm_system_update_dns (void)
 	}
 }
 
-
-/*
- * nm_system_restart_mdns_responder
- *
- * Restart the multicast DNS responder so that it knows about new
- * network interfaces and IP addresses.
- *
- */
-void nm_system_restart_mdns_responder (void)
-{
-#if defined(MDNS_PROVIDER_AVAHI)
-	nm_info ("Restarting avahi-daemon");
-	if (g_file_test ("/var/run/avahi-daemon/pid", G_FILE_TEST_EXISTS))
-	{
-		nm_spawn_process ("/etc/init.d/avahi-daemon restart");
-	}
-#elif defined(MDNS_PROVIDER_HOWL)
-	if (g_file_text ("/var/run/mDNSResponder.pid", G_FILE_TEST_EXISTS))
-	{
-		nm_info ("Restarting mDNSResponder");
-		nm_spawn_process ("/etc/init.d/mDNSResponder stop");
-		nm_spawn_process ("/etc/init.d/mDNSResponder zap");
-		nm_spawn_process ("/etc/init.d/mDNSResponder start");
-	}
-#elif defined(MDNS_PROVIDER_BONJOUR)
-	if (g_file_test ("/var/run/mDNSResponderPosix.pid", G_FILE_TEST_EXISTS))
-	{
-		nm_info ("Restarting mDNSResponderPosix");
-		nm_spawn_process ("/etc/init.d/mDNSResponderPosix restart");
-	}
-#else
-	g_printerr("No mDNSResponder support enabled");
-	g_assert_not_reached();
-#endif
-}
-
 /*
  * nm_system_activate_nis
  *

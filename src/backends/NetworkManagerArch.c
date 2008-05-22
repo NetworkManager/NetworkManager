@@ -288,23 +288,6 @@ void nm_system_update_dns (void)
 	}
 }
 
-
-/*
- * nm_system_restart_mdns_responder
- *
- * Restart the multicast DNS responder so that it knows about new
- * network interfaces and IP addresses.
- *
- */
-void nm_system_restart_mdns_responder (void)
-{
-	/* Check if the daemon was already running - do not start a new instance */
-	if (g_file_test("/var/run/daemons/avahi-daemon", G_FILE_TEST_EXISTS))
-	{
-		nm_spawn_process ("/etc/rc.d/avahi-daemon restart");
-	}	
-}
-
 /*
  * nm_system_activate_nis
  *

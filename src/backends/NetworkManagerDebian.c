@@ -163,19 +163,6 @@ void nm_system_update_dns (void)
 
 }
 
-
-/*
- * nm_system_restart_mdns_responder
- *
- * Restart the multicast DNS responder so that it knows about new
- * network interfaces and IP addresses.
- *
- */
-void nm_system_restart_mdns_responder (void)
-{
-	nm_spawn_process ("/usr/bin/killall -q -USR1 mDNSResponder");
-}
-
 /*
  * nm_system_activate_nis
  *

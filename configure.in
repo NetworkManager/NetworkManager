@@ -115,26 +115,6 @@ AM_CONDITIONAL(TARGET_PALDO, test x"$with_distro" = xpaldo)
 AM_CONDITIONAL(TARGET_FRUGALWARE, test x"$with_distro" = xfrugalware)
 AM_CONDITIONAL(TARGET_MANDRIVA, test x"$with_distro" = xmandriva)
 
-if test x"$with_distro" = xgentoo -o x"$with_distro" = xmandriva ; then
-	AC_ARG_WITH([mdns_provider],
-		    AS_HELP_STRING([--with-mdns-provider=PROVIDER], [Specify the mDNS implementation: Avahi, Bonjour]),,
-		    [with_mdns_provider=avahi])
-
-	with_mdns_provider=`echo ${with_mdns_provider} | tr '[[:upper:]]' '[[:lower:]]'`
-
-	case $with_mdns_provider in
-		avahi)
-			AC_DEFINE([MDNS_PROVIDER_AVAHI], [], [Use avahi for mDNS provider])
-		;;
-		bonjour)
-			AC_DEFINE([MDNS_PROVIDER_BONJOUR], [], [Use Bonjour mDNSResponderPosix for mDNS provider])
-		;;
-		*)
-			AC_MSG_ERROR([invalid mdns implementation specified ($with_mdns_provider)])
-		;;
-	esac
-fi
-
 AC_MSG_CHECKING([Linux Wireless Extensions >= 18])
 AC_TRY_COMPILE([#ifndef __user
                 #define __user

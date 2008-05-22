@@ -1,5 +1,33 @@
 2008-05-22  Dan Williams  <dcbw@redhat.com>
 
+	Remove anything mDNS related.  This is better done from a distro-specific
+	dispatcher script.  Plus, any distro using avahi doesn't need to restart
+	avahi, since avahi can handle interface changes just fine using netlink.
+
+	* configure.in
+		- Remove --with-mdns-provider
+
+	* src/NetworkManagerPolicy.c
+		- (global_state_changed): don't restart the mdns provider
+
+	* src/NetworkManagerSystem.h
+	  src/backends/NetworkManagerArch.c
+	  src/backends/NetworkManagerDebian.c
+	  src/backends/NetworkManagerFrugalware.c
+	  src/backends/NetworkManagerGentoo.c
+	  src/backends/NetworkManagerMandriva.c
+	  src/backends/NetworkManagerPaldo.c
+	  src/backends/NetworkManagerRedHat.c
+	  src/backends/NetworkManagerSlackware.c
+	  src/backends/NetworkManagerSuSE.c
+		- (nm_system_restart_mdns_responder): remove
+
+	* src/backends/NetworkManagerGeneric.c
+	  src/backends/NetworkManagerGeneric.h
+		- (nm_generic_restart_mdns_responder): remove
+
+2008-05-22  Dan Williams  <dcbw@redhat.com>
+
 	* configure.in
 		- clean up crypto options; just use --with-crypto=nss or
 			--with-crypto=gnutls

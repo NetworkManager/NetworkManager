@@ -148,17 +148,6 @@ void nm_system_update_dns (void)
 }
 
 /*
- * nm_system_restart_mdns_responder
- *
- * Restart the multicast DNS responder so that it knows about new
- * network interfaces and IP addresses.
- *
- */
-void nm_system_restart_mdns_responder (void)
-{
-}
-
-/*
  * nm_system_flush_loopback_routes
  *
  * Flush all routes associated with the loopback device, because it
