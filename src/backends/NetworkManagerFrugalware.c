@@ -81,38 +81,6 @@ void nm_system_device_flush_ip4_routes_with_iface (const char *iface)
 	g_free (buf);
 }
 
-
-/*
- * nm_system_device_flush_ip4_addresses
- *
- * Flush all network addresses associated with a network device
- *
- */
-void nm_system_device_flush_ip4_addresses (NMDevice *dev)
-{
-	g_return_if_fail (dev != NULL);
-
-	nm_system_device_flush_ip4_addresses_with_iface (nm_device_get_iface (dev));
-}
-
-/*
- * nm_system_device_flush_ip4_addresses_with_iface
- *
- * Flush all network addresses associated with a network device
- *
- */
-void nm_system_device_flush_ip4_addresses_with_iface (const char *iface)
-{
-	char	*buf;
-
-	g_return_if_fail (iface != NULL);
-
-	/* Remove all IP addresses for a device */
-	buf = g_strdup_printf ("/usr/sbin/ip -4 addr flush dev %s", iface);
-	nm_spawn_process (buf);
-	g_free (buf);
-}
-
 /*
  * nm_system_device_has_active_routes
  *

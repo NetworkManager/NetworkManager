@@ -90,29 +90,6 @@ void nm_system_device_flush_ip4_routes_with_iface (const char *iface)
 }
 
 /*
- * nm_system_device_flush_ip4_addresses
- *
- * Flush all network addresses associated with a network device
- *
- */
-void nm_system_device_flush_ip4_addresses (NMDevice *dev)
-{
-	nm_generic_device_flush_ip4_addresses (dev);
-}
-
-
-/*
- * nm_system_device_flush_ip4_addresses_with_iface
- *
- * Flush all network addresses associated with a network device
- *
- */
-void nm_system_device_flush_ip4_addresses_with_iface (const char *iface)
-{
-	nm_generic_device_flush_ip4_addresses_with_iface (iface);
-}
-
-/*
  * nm_system_device_setup_static_ip4_config
  *
  * Set up the device with a particular IPv4 address/netmask/gateway.

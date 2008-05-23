@@ -1,5 +1,29 @@
 2008-05-23  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Benoit Boissinot <bboissin+networkmanager@gmail.com>
+
+	* src/NetworkManagerSystem.c
+		- (nm_system_device_flush_ip4_addresses_with_iface): implement with
+			libnl
+
+	* src/backends/NetworkManagerArch.c
+	  src/backends/NetworkManagerDebian.c
+	  src/backends/NetworkManagerFrugalware.c
+	  src/backends/NetworkManagerGentoo.c
+	  src/backends/NetworkManagerMandriva.c
+	  src/backends/NetworkManagerPaldo.c
+	  src/backends/NetworkManagerRedHat.c
+	  src/backends/NetworkManagerSlackware.c
+	  src/backends/NetworkManagerSuSE.c
+		- (nm_system_device_flush_ip4_addresses,
+		   nm_system_device_flush_ip4_addresses_with_iface): remove
+
+	* src/backends/NetworkManagerGeneric.c
+		- (nm_generic_device_flush_ip4_addresses,
+		   nm_generic_device_flush_ip4_addresses_with_iface): remove
+
+2008-05-23  Dan Williams  <dcbw@redhat.com>
+
 	* src/supplicant-manager/nm-supplicant-settings-verify.c
 		- Switch 'bssid' from bytes to keyword type
 		- (validate_type_keyword): allow NULL keyword lists

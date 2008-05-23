@@ -654,3 +654,54 @@ out:
 	rtnl_route_put (route);
 }
 
+/*
+ * nm_system_device_flush_ip4_addresses
+ *
+ * Flush all network addresses associated with a network device
+ *
+ */
+void nm_system_device_flush_ip4_addresses (NMDevice *dev)
+{
+	g_return_if_fail (dev != NULL);
+
+	nm_system_device_flush_ip4_addresses_with_iface (nm_device_get_iface (dev));
+}
+
+
+/*
+ * nm_system_device_flush_ip4_addresses_with_iface
+ *
+ * Flush all network addresses associated with a network device
+ *
+ */
+void nm_system_device_flush_ip4_addresses_with_iface (const char *iface)
+{
+	struct nl_handle *nlh = NULL;
+	struct nl_cache *addr_cache = NULL;
+	int iface_idx;
+	AddrCheckData check_data;
+
+	g_return_if_fail (iface != NULL);
+	iface_idx = nm_netlink_iface_to_index (iface);
+	g_return_if_fail (iface_idx >= 0);
+
+	nlh = nm_netlink_get_default_handle ();
+	g_return_if_fail (nlh != NULL);
+
+	memset (&check_data, 0, sizeof (check_data));
+	check_data.iface = iface;
+	check_data.nlh = nlh;
+	check_data.family = AF_INET;
+	check_data.ifindex = nm_netlink_iface_to_index (iface);
+
+	addr_cache = rtnl_addr_alloc_cache (nlh);
+	if (!addr_cache)
+		return;
+	nl_cache_mngt_provide (addr_cache);
+
+	/* Remove all IP addresses for a device */
+	nl_cache_foreach (addr_cache, check_one_address, &check_data);
+
+	nl_cache_free (addr_cache);
+}
+

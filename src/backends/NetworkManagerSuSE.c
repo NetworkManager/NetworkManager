@@ -97,30 +97,6 @@ gboolean nm_system_device_has_active_routes (NMDevice *dev)
 
 
 /*
- * nm_system_device_flush_ip4_addresses
- *
- * Flush all network addresses associated with a network device
- *
- */
-void nm_system_device_flush_ip4_addresses (NMDevice *dev)
-{
-	nm_generic_device_flush_ip4_addresses (dev);
-}
-
-
-/*
- * nm_system_device_flush_ip4_addresses_with_iface
- *
- * Flush all network addresses associated with a network device
- *
- */
-void nm_system_device_flush_ip4_addresses_with_iface (const char *iface)
-{
-	nm_generic_device_flush_ip4_addresses_with_iface (iface);
-}
-
-
-/*
  * nm_system_enable_loopback
  *
  * Bring up the loopback interface
