@@ -84,19 +84,6 @@ void nm_system_device_flush_ip4_routes_with_iface (const char *iface)
 }
 
 /*
- * nm_system_device_has_active_routes
- *
- * Find out whether the specified device has any routes in the routing
- * table.
- *
- */
-gboolean nm_system_device_has_active_routes (NMDevice *dev)
-{
-	return FALSE;
-}
-
-
-/*
  * nm_system_enable_loopback
  *
  * Bring up the loopback interface
@@ -106,32 +93,6 @@ void nm_system_enable_loopback (void)
 {
 	nm_generic_enable_loopback ();
 }
-
-
-/*
- * nm_system_flush_loopback_routes
- *
- * Flush all routes associated with the loopback device, because it
- * sometimes gets the first route for ZeroConf/Link-Local traffic.
- *
- */
-void nm_system_flush_loopback_routes (void)
-{
-	nm_generic_flush_loopback_routes ();
-}
-
-
-/*
- * nm_system_flush_arp_cache
- *
- * Flush all entries in the arp cache.
- *
- */
-void nm_system_flush_arp_cache (void)
-{
-	nm_generic_flush_arp_cache ();
-}
-
 
 /*
  * nm_system_kill_all_dhcp_daemons

@@ -1,5 +1,27 @@
 2008-05-23  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Benoit Boissinot <bboissin+networkmanager@gmail.com>
+
+	* src/NetworkManagerSystem.h
+	  src/backends/NetworkManagerArch.c
+	  src/backends/NetworkManagerDebian.c
+	  src/backends/NetworkManagerFrugalware.c
+	  src/backends/NetworkManagerGentoo.c
+	  src/backends/NetworkManagerMandriva.c
+	  src/backends/NetworkManagerPaldo.c
+	  src/backends/NetworkManagerRedHat.c
+	  src/backends/NetworkManagerSlackware.c
+	  src/backends/NetworkManagerSuSE.c
+		- (nm_system_device_has_active_routes, nm_system_flush_loopback_routes,
+		   nm_system_flush_arp_cache): remove, unused
+
+	* src/backends/NetworkManagerGeneric.c
+	  src/backends/NetworkManagerGeneric.h
+		- (nm_generic_device_has_active_routes, nm_generic_flush_loopback_routes,
+		   nm_generic_flush_arp_cache): remove, unused
+
+2008-05-23  Dan Williams  <dcbw@redhat.com>
+
 	* system-settings/plugins/ifcfg-fedora/reader.c
 		- (make_ip4_setting): honor PEERDNS setting
 

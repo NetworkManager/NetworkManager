@@ -33,7 +33,6 @@
  */
 
 void			nm_system_init (void);
-gboolean		nm_system_device_has_active_routes			(NMDevice *dev);
 
 void			nm_system_device_flush_ip4_routes				(NMDevice *dev);
 void			nm_system_device_flush_ip4_routes_with_iface	(const char *iface);
@@ -48,8 +47,6 @@ void			nm_system_device_flush_ip4_addresses			(NMDevice *dev);
 void			nm_system_device_flush_ip4_addresses_with_iface	(const char *iface);
 
 void			nm_system_enable_loopback				(void);
-void			nm_system_flush_loopback_routes			(void);
-void			nm_system_flush_arp_cache				(void);
 void			nm_system_kill_all_dhcp_daemons			(void);
 void			nm_system_update_dns					(void);
 
@@ -71,8 +68,6 @@ gboolean		nm_system_device_set_up_down_with_iface		(const char *iface, gboolean 
 
 gboolean        nm_system_device_is_up (NMDevice *device);
 gboolean        nm_system_device_is_up_with_iface (const char *iface);
-
-gboolean		nm_system_device_update_resolv_conf		(void *data, int len, const char *domain_name);
 
 void			nm_system_set_hostname (NMIP4Config *config);
 void			nm_system_activate_nis (NMIP4Config *config);

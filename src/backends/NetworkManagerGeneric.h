@@ -34,7 +34,6 @@
  */
 
 void			nm_generic_init (void);
-gboolean		nm_generic_device_has_active_routes			(NMDevice *dev);
 
 void			nm_generic_device_flush_ip4_routes				(NMDevice *dev);
 void			nm_generic_device_flush_ip4_routes_with_iface	(const char *iface);
@@ -43,8 +42,6 @@ void			nm_generic_device_flush_ip4_addresses			(NMDevice *dev);
 void			nm_generic_device_flush_ip4_addresses_with_iface	(const char *iface);
 
 void			nm_generic_enable_loopback				(void);
-void			nm_generic_flush_loopback_routes			(void);
-void			nm_generic_flush_arp_cache				(void);
 void			nm_generic_kill_all_dhcp_daemons			(void);
 void			nm_generic_update_dns					(void);
 
@@ -61,8 +58,6 @@ gboolean		nm_generic_vpn_device_unset_from_ip4_config	(NMNamedManager *named, NM
 
 gboolean		nm_generic_device_set_up_down				(NMDevice *dev, gboolean up);
 gboolean		nm_generic_device_set_up_down_with_iface		(NMDevice *dev, const char *iface, gboolean up);
-
-gboolean		nm_generic_device_update_resolv_conf		(void *data, int len, const char *domain_name);
 
 void			nm_generic_set_hostname (NMIP4Config *config);
 void			nm_generic_activate_nis (NMIP4Config *config);

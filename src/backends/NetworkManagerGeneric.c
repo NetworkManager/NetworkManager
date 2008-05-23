@@ -94,32 +94,6 @@ void nm_generic_enable_loopback (void)
 	nm_spawn_process (IP_BINARY_PATH" addr add 127.0.0.1/8 brd 127.255.255.255 dev lo scope host label lo");
 }
 
-
-/*
- * nm_generic_flush_loopback_routes
- *
- * Flush all routes associated with the loopback device, because it
- * sometimes gets the first route for ZeroConf/Link-Local traffic.
- *
- */
-void nm_generic_flush_loopback_routes (void)
-{
-	nm_system_device_flush_ip4_routes_with_iface ("lo");
-}
-
-
-/*
- * nm_generic_flush_arp_cache
- *
- * Flush all entries in the arp cache.
- *
- */
-void nm_generic_flush_arp_cache (void)
-{
-	nm_spawn_process (IP_BINARY_PATH" neigh flush all");
-}
-
-
 /*
  * nm_generic_kill_all_dhcp_daemons
  *
