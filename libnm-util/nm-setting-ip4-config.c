@@ -16,6 +16,7 @@ enum {
 	PROP_DNS,
 	PROP_DNS_SEARCH,
 	PROP_ADDRESSES,
+	PROP_IGNORE_DHCP_DNS,
 
 	LAST_PROP
 };
@@ -111,6 +112,9 @@ set_property (GObject *object, guint prop_id,
 		nm_utils_slist_free (setting->addresses, g_free);
 		setting->addresses = nm_utils_ip4_addresses_from_gvalue (value);
 		break;
+	case PROP_IGNORE_DHCP_DNS:
+		setting->ignore_dhcp_dns = g_value_get_boolean (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -135,6 +139,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_ADDRESSES:
 		nm_utils_ip4_addresses_to_gvalue (setting->addresses, value);
+		break;
+	case PROP_IGNORE_DHCP_DNS:
+		g_value_set_boolean (value, setting->ignore_dhcp_dns);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -186,4 +193,12 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 							   "List of NMSettingIP4Addresses",
 							   DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	g_object_class_install_property
+		(object_class, PROP_IGNORE_DHCP_DNS,
+		 g_param_spec_boolean (NM_SETTING_IP4_CONFIG_IGNORE_DHCP_DNS,
+						   "Ignore DHCP DNS",
+						   "Ignore DHCP DNS",
+						   FALSE,
+						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 }

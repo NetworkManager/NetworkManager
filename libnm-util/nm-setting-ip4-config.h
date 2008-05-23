@@ -16,10 +16,11 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_IP4_CONFIG_SETTING_NAME "ipv4"
 
-#define NM_SETTING_IP4_CONFIG_METHOD     "method"
-#define NM_SETTING_IP4_CONFIG_DNS        "dns"
-#define NM_SETTING_IP4_CONFIG_DNS_SEARCH "dns-search"
-#define NM_SETTING_IP4_CONFIG_ADDRESSES  "addresses"
+#define NM_SETTING_IP4_CONFIG_METHOD          "method"
+#define NM_SETTING_IP4_CONFIG_DNS             "dns"
+#define NM_SETTING_IP4_CONFIG_DNS_SEARCH      "dns-search"
+#define NM_SETTING_IP4_CONFIG_ADDRESSES       "addresses"
+#define NM_SETTING_IP4_CONFIG_IGNORE_DHCP_DNS "ignore-dhcp-dns"
 
 #define NM_SETTING_IP4_CONFIG_METHOD_DHCP   "dhcp"
 #define NM_SETTING_IP4_CONFIG_METHOD_AUTOIP "autoip"
@@ -38,6 +39,7 @@ typedef struct {
 	GArray *dns;        /* array of guint32 */
 	GSList *dns_search; /* list of strings */
 	GSList *addresses;  /* array of NMSettingIP4Address */
+	gboolean ignore_dhcp_dns;
 } NMSettingIP4Config;
 
 typedef struct {

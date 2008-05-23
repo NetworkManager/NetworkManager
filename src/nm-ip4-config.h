@@ -70,6 +70,7 @@ void			nm_ip4_config_set_ptp_address		(NMIP4Config *config, guint32 ptp_addr);
 void			nm_ip4_config_add_nameserver		(NMIP4Config *config, guint32 nameserver);
 guint32		nm_ip4_config_get_nameserver		(NMIP4Config *config, guint i);
 guint32		nm_ip4_config_get_num_nameservers	(NMIP4Config *config);
+void			nm_ip4_config_reset_nameservers		(NMIP4Config *config);
 
 void			nm_ip4_config_add_nis_server		(NMIP4Config *config, guint32 nis_server);
 guint32		nm_ip4_config_get_nis_server		(NMIP4Config *config, guint i);
@@ -92,6 +93,7 @@ guint32		nm_ip4_config_get_num_domains		(NMIP4Config *config);
 void			nm_ip4_config_add_search			(NMIP4Config *config, const char *search);
 const char *	nm_ip4_config_get_search			(NMIP4Config *config, guint i);
 guint32		nm_ip4_config_get_num_searches		(NMIP4Config *config);
+void			nm_ip4_config_reset_searches		(NMIP4Config *config);
 
 guint32		nm_ip4_config_get_mtu			(NMIP4Config *config);
 void			nm_ip4_config_set_mtu			(NMIP4Config *config, guint32 mtu);

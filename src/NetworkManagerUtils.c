@@ -1,3 +1,5 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+
 /* NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -241,6 +243,11 @@ nm_utils_merge_ip4_config (NMIP4Config *ip4_config, NMSettingIP4Config *setting)
 
 	if (!setting)
 		return; /* Defaults are just fine */
+
+	if (setting->ignore_dhcp_dns) {
+		nm_ip4_config_reset_nameservers (ip4_config);
+		nm_ip4_config_reset_searches (ip4_config);
+	}
 
 	if (setting->dns) {
 		int i, j;

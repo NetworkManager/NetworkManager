@@ -1,3 +1,5 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+
 /* NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -238,6 +240,16 @@ guint32 nm_ip4_config_get_num_nameservers (NMIP4Config *config)
 	return NM_IP4_CONFIG_GET_PRIVATE (config)->nameservers->len;
 }
 
+void nm_ip4_config_reset_nameservers (NMIP4Config *config)
+{
+	NMIP4ConfigPrivate *priv;
+
+	g_return_if_fail (NM_IS_IP4_CONFIG (config));
+
+	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	g_array_remove_range (priv->nameservers, 0, priv->nameservers->len);
+}
+
 void nm_ip4_config_add_nis_server (NMIP4Config *config, guint32 nis_server)
 {
 	g_return_if_fail (NM_IS_IP4_CONFIG (config));
@@ -364,6 +376,16 @@ guint32 nm_ip4_config_get_num_searches (NMIP4Config *config)
 	g_return_val_if_fail (config != NULL, 0);
 
 	return NM_IP4_CONFIG_GET_PRIVATE (config)->searches->len;
+}
+
+void nm_ip4_config_reset_searches (NMIP4Config *config)
+{
+	NMIP4ConfigPrivate *priv;
+
+	g_return_if_fail (NM_IS_IP4_CONFIG (config));
+
+	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	g_ptr_array_remove_range (priv->searches, 0, priv->searches->len);
 }
 
 guint32 nm_ip4_config_get_mtu (NMIP4Config *config)

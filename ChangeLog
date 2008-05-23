@@ -1,3 +1,18 @@
+2008-05-23  Tambet Ingo  <tambet@gmail.com>
+
+	Add a flag to NMSettingIP4Config to make it possible to ignore the DNS
+	information received from DHCP.
+
+	* libnm-util/nm-setting-ip4-config.c: Add a new membet "ignore_dhcp_dns"
+	to make it possible to ignore the DNS information (both servers and 
+	searches) returned by DHCP server.
+
+	* src/NetworkManagerUtils.c (nm_utils_merge_ip4_config): Reset the
+	name servers and searches if "ignore_dhcp_dns" is set.
+
+	* src/nm-ip4-config.c (nm_ip4_config_reset_nameservers)
+	(nm_ip4_config_reset_searches): Implement.
+
 2008-05-22  Dan Williams  <dcbw@redhat.com>
 
 	Remove anything mDNS related.  This is better done from a distro-specific
