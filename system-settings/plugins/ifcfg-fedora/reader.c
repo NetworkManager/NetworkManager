@@ -199,7 +199,6 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 	if (*error)
 		goto error;
 
-
 done:
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
 	s_ip4->method = g_strdup (method);
@@ -236,6 +235,8 @@ done:
 				g_free (searches);
 			}
 		}
+
+		s_ip4->ignore_dhcp_dns = !svTrueValue (ifcfg, "PEERDNS", 1);
 	}
 
 	return NM_SETTING (s_ip4);

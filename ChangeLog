@@ -1,5 +1,10 @@
 2008-05-23  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/plugins/ifcfg-fedora/reader.c
+		- (make_ip4_setting): honor PEERDNS setting
+
+2008-05-23  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Benoit Boissinot <bboissin+networkmanager@gmail.com>
 
 	* src/NetworkManagerSystem.c
