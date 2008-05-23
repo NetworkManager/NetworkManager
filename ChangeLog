@@ -2,6 +2,13 @@
 
 	Patch from Benoit Boissinot <bboissin+networkmanager@gmail.com>
 
+	* src/backends/NetworkManagerGeneric.c
+		- (nm_generic_enable_loopback): use libnl
+
+2008-05-23  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Benoit Boissinot <bboissin+networkmanager@gmail.com>
+
 	* src/NetworkManagerSystem.h
 	  src/backends/NetworkManagerArch.c
 	  src/backends/NetworkManagerDebian.c

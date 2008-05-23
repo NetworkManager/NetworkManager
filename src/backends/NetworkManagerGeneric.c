@@ -38,6 +38,13 @@
 #include "nm-device-802-3-ethernet.h"
 #include "nm-device-802-11-wireless.h"
 #include "nm-utils.h"
+#include "nm-netlink.h"
+
+/* Because of a bug in libnl, rtnl.h should be included before route.h */
+#include <netlink/route/rtnl.h>
+
+#include <netlink/route/addr.h>
+#include <netlink/netlink.h>
 
 /*
  * nm_generic_init
@@ -90,8 +97,51 @@ void nm_generic_device_flush_ip4_routes_with_iface (const char *iface)
  */
 void nm_generic_enable_loopback (void)
 {
-	nm_spawn_process (IP_BINARY_PATH" link set dev lo up");
-	nm_spawn_process (IP_BINARY_PATH" addr add 127.0.0.1/8 brd 127.255.255.255 dev lo scope host label lo");
+	struct nl_handle *	nlh = NULL;
+	struct rtnl_addr *	addr = NULL;
+	struct nl_addr *	nl_addr = NULL;
+	guint32			binaddr = 0;
+	int			iface_idx = -1;
+	int			err;
+
+	nm_system_device_set_up_down_with_iface ("lo", TRUE);
+
+	nlh = nm_netlink_get_default_handle ();
+	if (!nlh)
+		return;
+
+	iface_idx = nm_netlink_iface_to_index ("lo");
+	if (iface_idx < 0)
+		return;
+
+	addr = rtnl_addr_alloc ();
+	if (!addr)
+		return;
+
+	binaddr = htonl (0x7f000001); /* 127.0.0.1 */
+	nl_addr = nl_addr_build (AF_INET, &binaddr, sizeof(binaddr));
+	if (!nl_addr)
+		goto out;
+	rtnl_addr_set_local (addr, nl_addr);
+	nl_addr_put (nl_addr);
+
+	binaddr = htonl (0x7fffffff); /* 127.255.255.255 */
+	nl_addr = nl_addr_build (AF_INET, &binaddr, sizeof(binaddr));
+	if (!nl_addr)
+		goto out;
+	rtnl_addr_set_broadcast (addr, nl_addr);
+	nl_addr_put (nl_addr);
+
+	rtnl_addr_set_prefixlen (addr, 8);
+	rtnl_addr_set_ifindex (addr, iface_idx);
+	rtnl_addr_set_scope (addr, RT_SCOPE_HOST);
+	rtnl_addr_set_label (addr, "lo");
+
+	if ((err = rtnl_addr_add (nlh, addr, 0)) < 0)
+		nm_warning ("error %d returned from rtnl_addr_add():\n%s", err, nl_geterror());
+out:
+	if (addr)
+		rtnl_addr_put (addr);
 }
 
 /*
