@@ -83,7 +83,7 @@ const char * phase2_allowed[] =   {"auth=PAP", "auth=CHAP", "auth=MSCHAP",
 
 static const struct Opt opt_table[] = {
 	{ "ssid",               TYPE_BYTES,   0, 32,FALSE,  NULL },
-	{ "bssid",              TYPE_BYTES,   0, 6, FALSE,  NULL },
+	{ "bssid",              TYPE_KEYWORD, 0, 0, FALSE,  NULL },
 	{ "scan_ssid",          TYPE_INT,     0, 1, FALSE,  NULL },
 	{ "mode",               TYPE_INT,     0, 1, FALSE,  NULL },
 	{ "frequency",          TYPE_INT,     2412, 5825, FALSE,  NULL },
@@ -176,6 +176,10 @@ validate_type_keyword (const struct Opt * opt,
 
 	g_return_val_if_fail (opt != NULL, FALSE);
 	g_return_val_if_fail (value != NULL, FALSE);
+
+	/* Allow everything */
+	if (!opt->str_allowed)
+		return TRUE;
 
 	candidates = g_strsplit (value, " ", 0);
 	if (!candidates)

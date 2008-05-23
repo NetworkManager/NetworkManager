@@ -22,6 +22,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <glib.h>
+#include <netinet/ether.h>
 #include <dbus/dbus-glib.h>
 
 #include "nm-supplicant-config.h"
@@ -323,6 +324,9 @@ nm_supplicant_config_get_blobs (NMSupplicantConfig * self)
 	return NM_SUPPLICANT_CONFIG_GET_PRIVATE (self)->blobs;
 }
 
+#define MAC_FMT "%02x:%02x:%02x:%02x:%02x:%02x"
+#define MAC_ARG(x) ((guint8*)(x))[0],((guint8*)(x))[1],((guint8*)(x))[2],((guint8*)(x))[3],((guint8*)(x))[4],((guint8*)(x))[5]
+
 gboolean
 nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
                                            NMSettingWireless * setting,
@@ -383,14 +387,18 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 			return FALSE;
 	}
 
-	if (setting->bssid) {
+	if (setting->bssid && setting->bssid->len) {
+		char *str_bssid;
+
+		str_bssid = g_strdup_printf (MAC_FMT, MAC_ARG (setting->bssid->data));
 		if (!nm_supplicant_config_add_option (self, "bssid",
-						      (char *) setting->bssid->data,
-						      setting->bssid->len,
-	 	                                     FALSE)) {
+		                                      str_bssid, strlen (str_bssid),
+		                                      FALSE)) {
+			g_free (str_bssid);
 			nm_warning ("Error adding BSSID to supplicant config.");
 			return FALSE;
 		}
+		g_free (str_bssid);
 	}
 
 	// FIXME: band & channel config items
