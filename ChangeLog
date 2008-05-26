@@ -1,3 +1,8 @@
+2008-05-26  Tambet Ingo  <tambet@gmail.com>
+
+	* src/vpn-manager/nm-vpn-manager.c (nm_vpn_manager_get_service): Fix a
+	reference counting issue.
+
 2008-05-23  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Benoit Boissinot <bboissin+networkmanager@gmail.com>

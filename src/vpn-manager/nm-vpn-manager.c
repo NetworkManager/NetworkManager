@@ -72,7 +72,7 @@ nm_vpn_manager_get_service (NMVPNManager *manager, const char *service_name)
 		NMVPNService *service = NM_VPN_SERVICE (iter->data);
 
 		if (!strcmp (service_name, nm_vpn_service_get_name (service)))
-			return service;
+			return g_object_ref (service);
 	}
 
 	return NULL;
