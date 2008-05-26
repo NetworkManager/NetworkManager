@@ -1,5 +1,10 @@
 2008-05-26  Tambet Ingo  <tambet@gmail.com>
 
+	* system-settings/plugins/ifcfg-suse/plugin.c (get_unamanged_devices_cb):
+	Fix a typo.
+
+2008-05-26  Tambet Ingo  <tambet@gmail.com>
+
 	* src/vpn-manager/nm-vpn-manager.c (nm_vpn_manager_get_service): Fix a
 	reference counting issue.
 

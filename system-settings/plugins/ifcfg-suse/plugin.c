@@ -313,7 +313,7 @@ get_unamanged_devices_cb (gpointer key, gpointer val, gpointer user_data)
 {
 	GSList **list = (GSList **) key;
 
-	*list = g_slist_prepend (*list, g_strdup ((char *) val));
+	*list = g_slist_prepend (*list, g_strdup ((char *) key));
 }
 
 static GSList *
