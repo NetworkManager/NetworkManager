@@ -367,10 +367,6 @@ nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
 	if (nm_ip4_config_get_mtu (config))
 		nm_system_device_set_mtu (iface, nm_ip4_config_get_mtu (config));
 
-	sleep (1);
-
-	nm_system_device_flush_ip4_routes_with_iface (iface);
-
 	if (g_slist_length (routes) == 0) {
 		nm_system_device_replace_default_ip4_route (iface, 0, 0);
 	} else {
@@ -703,5 +699,79 @@ void nm_system_device_flush_ip4_addresses_with_iface (const char *iface)
 	nl_cache_foreach (addr_cache, check_one_address, &check_data);
 
 	nl_cache_free (addr_cache);
+}
+
+/*
+ * nm_system_device_flush_ip4_routes
+ *
+ * Flush all network addresses associated with a network device
+ *
+ */
+void nm_system_device_flush_ip4_routes (NMDevice *dev)
+{
+	g_return_if_fail (dev != NULL);
+
+	nm_system_device_flush_ip4_routes_with_iface (nm_device_get_iface (dev));
+}
+
+typedef struct {
+	const char *iface;
+	struct nl_handle *nlh;
+	int iface_idx;
+} RouteCheckData;
+
+static void
+check_one_route (struct nl_object *object, void *user_data)
+{
+	RouteCheckData *data = (RouteCheckData *) user_data;
+	struct rtnl_route *route = (struct rtnl_route *) object;
+	int err;
+
+	/* Delete all IPv4 routes from this interface */
+	if (rtnl_route_get_oif (route) != data->iface_idx)
+		return;
+	if (rtnl_route_get_family (route) != AF_INET)
+		return;
+
+	err = rtnl_route_del (data->nlh, route, 0);
+	if (err < 0) {
+		nm_warning ("(%s) error %d returned from rtnl_route_del(): %s",
+		            data->iface, err, nl_geterror());
+	}
+}
+
+/*
+ * nm_system_device_flush_ip4_routes_with_iface
+ *
+ * Flush all routes associated with a network device
+ *
+ */
+void nm_system_device_flush_ip4_routes_with_iface (const char *iface)
+{
+	struct nl_handle *nlh = NULL;
+	struct nl_cache *route_cache = NULL;
+	int iface_idx;
+	RouteCheckData check_data;
+
+	g_return_if_fail (iface != NULL);
+	iface_idx = nm_netlink_iface_to_index (iface);
+	g_return_if_fail (iface_idx >= 0);
+
+	nlh = nm_netlink_get_default_handle ();
+	g_return_if_fail (nlh != NULL);
+
+	memset (&check_data, 0, sizeof (check_data));
+	check_data.iface = iface;
+	check_data.nlh = nlh;
+	check_data.iface_idx = iface_idx;
+
+	route_cache = rtnl_route_alloc_cache (nlh);
+	g_return_if_fail (route_cache != NULL);
+	nl_cache_mngt_provide (route_cache);
+
+	/* Remove routing table entries */
+	nl_cache_foreach (route_cache, check_one_route, &check_data);
+
+	nl_cache_free (route_cache);
 }
 

@@ -50,30 +50,6 @@ void nm_system_init (void)
 	nm_generic_init ();
 }
 
-
-/*
- * nm_system_device_flush_ip4_routes
- *
- * Flush all routes associated with a network device
- *
- */
-void nm_system_device_flush_ip4_routes (NMDevice *dev)
-{
-	nm_generic_device_flush_ip4_routes (dev);
-}
-
-
-/*
- * nm_system_device_flush_ip4_routes_with_iface
- *
- * Flush all routes associated with a network device
- *
- */
-void nm_system_device_flush_ip4_routes_with_iface (const char *iface)
-{
-	nm_generic_device_flush_ip4_routes_with_iface (iface);
-}
-
 /*
  * nm_system_enable_loopback
  *

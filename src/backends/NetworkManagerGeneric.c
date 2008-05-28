@@ -59,37 +59,6 @@ void nm_generic_init (void)
 }
 
 /*
- * nm_generic_device_flush_ip4_addresses
- *
- * Flush all network addresses associated with a network device
- *
- */
-void nm_generic_device_flush_ip4_routes (NMDevice *dev)
-{
-	g_return_if_fail (dev != NULL);
-
-	nm_system_device_flush_ip4_routes_with_iface (nm_device_get_iface (dev));
-}
-
-/*
- * nm_generic_device_flush_ip4_routes_with_iface
- *
- * Flush all routes associated with a network device
- *
- */
-void nm_generic_device_flush_ip4_routes_with_iface (const char *iface)
-{
-	char	*buf;
-
-	g_return_if_fail (iface != NULL);
-
-	/* Remove routing table entries */
-	buf = g_strdup_printf (IP_BINARY_PATH" -4 route flush dev %s", iface);
-	nm_spawn_process (buf);
-	g_free (buf);
-}
-
-/*
  * nm_generic_enable_loopback
  *
  * Bring up the loopback interface
