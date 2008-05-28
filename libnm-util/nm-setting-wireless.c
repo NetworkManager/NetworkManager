@@ -18,6 +18,7 @@ enum {
 	PROP_0,
 	PROP_SSID,
 	PROP_MODE,
+	PROP_ADHOC_CREATE,
 	PROP_BAND,
 	PROP_CHANNEL,
 	PROP_BSSID,
@@ -225,6 +226,11 @@ verify (NMSetting *setting, GSList *all_settings)
 		return FALSE;
 	}
 
+	if (self->mode && strcmp (self->mode, "adhoc") && self->adhoc_create) {
+		g_warning ("Key 'adhoc-create' only valid with Ad-Hoc mode.");
+		return FALSE;
+	}
+
 	if (self->band && !nm_utils_string_in_list (self->band, valid_bands)) {
 		g_warning ("Invalid band. Should be either 'a' or 'bg'");
 		return FALSE;
@@ -330,6 +336,9 @@ set_property (GObject *object, guint prop_id,
 		g_free (setting->mode);
 		setting->mode = g_value_dup_string (value);
 		break;
+	case PROP_ADHOC_CREATE:
+		setting->adhoc_create = g_value_get_boolean (value);
+		break;
 	case PROP_BAND:
 		g_free (setting->band);
 		setting->band = g_value_dup_string (value);
@@ -382,6 +391,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_MODE:
 		g_value_set_string (value, setting->mode);
+		break;
+	case PROP_ADHOC_CREATE:
+		g_value_set_boolean (value, setting->adhoc_create);
 		break;
 	case PROP_BAND:
 		g_value_set_string (value, setting->band);
@@ -443,6 +455,14 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 						  "Mode",
 						  "Mode",
 						  NULL,
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	g_object_class_install_property
+		(object_class, PROP_ADHOC_CREATE,
+		 g_param_spec_boolean (NM_SETTING_WIRELESS_ADHOC_CREATE,
+						  "Ad-Hoc Create",
+						  "Ad-Hoc Create",
+						  FALSE,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property

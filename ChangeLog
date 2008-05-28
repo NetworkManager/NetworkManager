@@ -1,3 +1,13 @@
+2008-05-28  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-setting-wireless.c
+	  libnm-util/nm-setting-wireless.h
+		- (set_property, get_property, nm_setting_wireless_class_init): add the
+			'adhoc-create' property, which when TRUE indicates that NM should
+			create this connection as an adhoc wifi network if it's not found
+			as an adhoc network during scanning.  Can be used to auto-create
+			adhoc networks when used in combination with autoconnect.
+
 2008-05-28  Tambet Ingo  <tambet@gmail.com>
 
 	Patch from Dennis Noordsij <dennis.noordsij@helsinki.fi>.
