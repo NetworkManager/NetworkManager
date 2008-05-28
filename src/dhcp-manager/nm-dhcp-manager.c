@@ -1,3 +1,5 @@
+/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+
 /* nm-dhcp-manager.c - Handle the DHCP daemon for NetworkManager
  *
  * Copyright (C) 2005 Dan Williams
@@ -835,8 +837,8 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 	NMDHCPManagerPrivate *priv;
 	NMDHCPDevice *device;
 	NMIP4Config *ip4_config = NULL;
-	NMSettingIP4Address *addr;
-	guint32 ip4_num = 0;
+	struct in_addr tmp_addr;
+	NMSettingIP4Address *addr = NULL;
 	char *str = NULL;
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (manager), NULL);
@@ -868,36 +870,26 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 	}
 
 	str = g_hash_table_lookup (device->options, "new_ip_address");
-	if (str != NULL) {
-		addr->address = inet_addr (str);
-		nm_info("  address %s", str);
-	}
-	if (!addr->address) {
-		g_free (addr);
+	if (str && inet_aton (str, &tmp_addr)) {
+		addr->address = tmp_addr.s_addr;
+		nm_info ("  address %s", str);
+	} else
 		goto error;
-	}
 
 	str = g_hash_table_lookup (device->options, "new_subnet_mask");
-	if (str != NULL) {
-		addr->netmask = inet_addr (str);
-		nm_info("  netmask %s", str);
+	if (str && inet_aton (str, &tmp_addr)) {
+		addr->netmask = tmp_addr.s_addr;
+		nm_info ("  netmask %s", str);
 	}
 
 	str = g_hash_table_lookup (device->options, "new_routers");
-	if (str != NULL) {
-		addr->gateway = inet_addr (str);
-	} else { /* If DHCP doesn't have a 'routers', just use the DHCP server's address as our gateway for now */
-		str = g_hash_table_lookup (device->options, "new_dhcp_server_identifier");
-		if (str != NULL)
-			addr->gateway = inet_addr (str);
-		else {
-			g_free (addr);
-			return NULL;
-		}
+	if (str && inet_aton (str, &tmp_addr)) {
+		addr->gateway = tmp_addr.s_addr;
+		nm_info("  gateway %s", str);
 	}
-	nm_info("  gateway %s", str);
 
 	nm_ip4_config_take_address (ip4_config, addr);
+	addr = NULL;
 
 	str = g_hash_table_lookup (device->options, "new_host_name");
 	if (str) {
@@ -911,10 +903,11 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 		char **s;
 
 		for (s = searches; *s; s++) {
-			// FIXME: use inet_aton
-			ip4_num = inet_addr (*s);
-			nm_ip4_config_add_nameserver (ip4_config, ip4_num);
-			nm_info ("  nameserver '%s'", *s);
+			if (inet_aton (*s, &tmp_addr)) {
+				nm_ip4_config_add_nameserver (ip4_config, tmp_addr.s_addr);
+				nm_info ("  nameserver '%s'", *s);
+			} else
+				nm_warning ("Ignoring invalid nameserver '%s'", *s);
 		}
 		g_strfreev (searches);
 	}
@@ -955,10 +948,11 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 		char **s;
 
 		for (s = searches; *s; s++) {
-			// FIXME: use inet_aton
-			ip4_num = inet_addr (*s);
-			nm_ip4_config_add_nis_server (ip4_config, ip4_num);
-			nm_info ("  nis server '%s'", *s);
+			if (inet_aton (*s, &tmp_addr)) {
+				nm_ip4_config_add_nis_server (ip4_config, tmp_addr.s_addr);
+				nm_info ("  nis server '%s'", *s);
+			} else
+				nm_warning ("Ignoring invalid nis server '%s'", *s);
 		}
 		g_strfreev (searches);
 	}
@@ -1006,6 +1000,10 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 	return ip4_config;
 
 error:
+	if (addr)
+		g_free (addr);
+
 	g_object_unref (ip4_config);
+
 	return NULL;
 }

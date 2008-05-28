@@ -1,3 +1,13 @@
+2008-05-28  Tambet Ingo  <tambet@gmail.com>
+
+	* src/ppp-manager/nm-ppp-manager.c (nm_ppp_manager_stop): Make sure 
+	pppd gets killed, if SIGTERM doesn't do it's job, SIGKILL it.
+
+	* src/dhcp-manager/nm-dhcp-manager.c (nm_dhcp_manager_get_ip4_config):
+	Use inet_aton() everywhere to improve error detection.
+	Don't fall back to 'dhcp_server_identifier' if the gateway is not
+	provided.
+
 2008-05-26  Tambet Ingo  <tambet@gmail.com>
 
 	* system-settings/plugins/ifcfg-suse/plugin.c (get_unamanged_devices_cb):

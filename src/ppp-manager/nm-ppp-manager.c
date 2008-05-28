@@ -733,6 +733,17 @@ nm_ppp_manager_update_secrets (NMPPPManager *manager,
 	priv->pending_secrets_context = NULL;
 }
 
+static gboolean
+ensure_killed (gpointer data)
+{
+	int pid = GPOINTER_TO_INT (data);
+
+	if (kill (pid, 0) == 0)
+		kill (pid, SIGKILL);
+
+	return FALSE;
+}
+
 void
 nm_ppp_manager_stop (NMPPPManager *manager)
 {
@@ -753,7 +764,11 @@ nm_ppp_manager_stop (NMPPPManager *manager)
 	}
 
 	if (priv->pid) {
-		kill (priv->pid, SIGTERM);
+		if (kill (priv->pid, SIGTERM) == 0)
+			g_timeout_add (2000, ensure_killed, GINT_TO_POINTER (priv->pid));
+		else
+			kill (priv->pid, SIGKILL);
+
 		priv->pid = 0;
 	}
 }
