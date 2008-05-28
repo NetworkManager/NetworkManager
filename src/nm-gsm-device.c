@@ -311,6 +311,49 @@ do_register (NMSerialDevice *device)
 }
 
 static void
+init_full_done (NMSerialDevice *device,
+			 int reply_index,
+			 gpointer user_data)
+{
+	gsm_device_set_pending (NM_GSM_DEVICE (device), 0);
+
+	switch (reply_index) {
+	case 0:
+		do_register (device);
+		break;
+	case -1:
+		nm_warning ("Modem second stage initialization timed out");
+		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		break;
+	default:
+		nm_warning ("Modem second stage initialization failed");
+		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		return;
+	}
+}
+
+static void
+init_modem_full (NMSerialDevice *device)
+{
+	guint id;
+	char *responses[] = { "OK", "ERROR", "ERR", NULL };
+
+	/* At this point we know that SIM has been unlocked, and we can safely
+	 * initialize the modem
+	 */
+	if (!nm_serial_device_send_command_string (device, "ATZ")) {
+		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		return;
+	}
+
+	id = nm_serial_device_wait_for_reply (device, 10, responses, responses, init_full_done, NULL);
+	if (id)
+		gsm_device_set_pending (NM_GSM_DEVICE (device), id);
+	else
+		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+}
+
+static void
 enter_pin_done (NMSerialDevice *device,
 			 int reply_index,
 			 gpointer user_data)
@@ -318,10 +361,9 @@ enter_pin_done (NMSerialDevice *device,
 	NMSettingGsm *setting;
 
 	gsm_device_set_pending (NM_GSM_DEVICE (device), 0);
-
 	switch (reply_index) {
 	case 0:
-		do_register (device);
+		init_modem_full (device);
 		break;
 	case -1:
 		nm_warning ("Did not receive response for secret");
@@ -484,7 +526,6 @@ init_modem (NMSerialDevice *device, gpointer user_data)
 {
 	guint id;
 	char *responses[] = { "OK", "ERROR", "ERR", NULL };
-
 	if (!nm_serial_device_send_command_string (device, "ATZ E0")) {
 		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
 		return;

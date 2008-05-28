@@ -1,5 +1,12 @@
 2008-05-28  Tambet Ingo  <tambet@gmail.com>
 
+	Patch from Dennis Noordsij <dennis.noordsij@helsinki.fi>.
+
+	* src/nm-gsm-device.c: Don't try to reset the modem before PIN is
+	checked, it doesn't work on some devices.
+
+2008-05-28  Tambet Ingo  <tambet@gmail.com>
+
 	* src/ppp-manager/nm-ppp-manager.c (nm_ppp_manager_stop): Make sure 
 	pppd gets killed, if SIGTERM doesn't do it's job, SIGKILL it.
 
