@@ -285,19 +285,6 @@ else
 fi
 AC_SUBST(DBUS_SYS_DIR)
 
-# ip binary path
-AC_ARG_WITH(ip, AS_HELP_STRING([--with-ip=/path/to/ip], [path to ip])) 
-if test "x${with_ip}" = x; then
-  AC_PATH_PROG(IP_BINARY_PATH, ip, [], $PATH:/sbin:/usr/sbin)
-  if ! test -x "$IP_BINARY_PATH"; then
-	AC_MSG_ERROR(iproute2 was not installed.  See http://linux-net.osdl.org/index.php/Iproute2)
-  fi
-else
-  IP_BINARY_PATH="$with_ip"
-fi
-AC_DEFINE_UNQUOTED(IP_BINARY_PATH, "$IP_BINARY_PATH", [Define to path of ip binary])
-AC_SUBST(IP_BINARY_PATH)
-
 # PPPD
 AC_CHECK_HEADERS(pppd/pppd.h,,
   AC_MSG_ERROR(couldn't find pppd.h. pppd development headers are required.))
