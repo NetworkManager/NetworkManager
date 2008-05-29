@@ -25,6 +25,7 @@ G_BEGIN_DECLS
 #define NM_SETTING_IP4_CONFIG_METHOD_DHCP   "dhcp"
 #define NM_SETTING_IP4_CONFIG_METHOD_AUTOIP "autoip"
 #define NM_SETTING_IP4_CONFIG_METHOD_MANUAL "manual"
+#define NM_SETTING_IP4_CONFIG_METHOD_SHARED "shared"
 
 typedef struct {
 	guint32 address;

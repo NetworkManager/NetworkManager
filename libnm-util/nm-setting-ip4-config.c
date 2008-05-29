@@ -40,19 +40,20 @@ verify (NMSetting *setting, GSList *all_settings)
 			g_warning ("address is not provided");
 			return FALSE;
 		}
-	} else if (!strcmp (self->method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP)) {
+	} else if (   !strcmp (self->method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP)
+	           || !strcmp (self->method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
 		if (self->dns && self->dns->len) {
-			g_warning ("may not specify DNS when using autoip");
+			g_warning ("may not specify DNS when using autoip/shared");
 			return FALSE;
 		}
 
 		if (g_slist_length (self->dns_search)) {
-			g_warning ("may not specify DNS searches when using autoip");
+			g_warning ("may not specify DNS searches when using autoip/shared");
 			return FALSE;
 		}
 
 		if (g_slist_length (self->addresses)) {
-			g_warning ("may not specify IP addresses when using autoip");
+			g_warning ("may not specify IP addresses when using autoip/shared");
 			return FALSE;
 		}
 	} else if (!strcmp (self->method, NM_SETTING_IP4_CONFIG_METHOD_DHCP)) {

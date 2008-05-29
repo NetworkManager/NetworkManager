@@ -1,5 +1,14 @@
 2008-05-29  Dan Williams <dcbw@redhat.com>
 
+	* libnm-util/nm-setting-ip4-config.c
+	  libnm-util/nm-setting-ip4-config.h
+		- Add a 'shared' method to indicate that this connection should be
+			brought up with a DHCP and proxy DNS server to facilitate
+			connection sharing.
+		- (verify): 'shared' method doesn't allow DNS or searches either
+
+2008-05-29  Dan Williams <dcbw@redhat.com>
+
 	* configure.in
 	  src/Makefile.am
 	  src/dnsmasq-manager/Makefile.am
