@@ -1,5 +1,14 @@
 2008-05-29  Dan Williams <dcbw@redhat.com>
 
+	* configure.in
+	  src/Makefile.am
+	  src/dnsmasq-manager/Makefile.am
+	  src/dnsmasq-manager/nm-dnsmasq-manager.c
+	  src/dnsmasq-manager/nm-dnsmasq-manager.h
+		- Add a dnsmasq daemon manager to facilitate connection sharing
+
+2008-05-29  Dan Williams <dcbw@redhat.com>
+
 	* src/nm-device-private.h
 		- Remove unused prototypes and clean up
 

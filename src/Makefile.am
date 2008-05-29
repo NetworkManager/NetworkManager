@@ -4,7 +4,8 @@ SUBDIRS= \
 	dhcp-manager \
 	supplicant-manager \
 	ppp-manager \
-	backends
+	backends \
+	dnsmasq-manager
 
 INCLUDES = -I${top_srcdir}                   \
            -I${top_srcdir}/include           \
@@ -13,6 +14,7 @@ INCLUDES = -I${top_srcdir}                   \
            -I${top_srcdir}/src/vpn-manager   \
            -I${top_srcdir}/src/dhcp-manager  \
            -I${top_srcdir}/src/supplicant-manager  \
+           -I${top_srcdir}/src/dnsmasq-manager  \
            -I${top_srcdir}/libnm-util \
            -I${top_srcdir}/callouts
 
@@ -139,6 +141,7 @@ NetworkManager_LDADD = 							\
 			./vpn-manager/libvpn-manager.la		\
 			./dhcp-manager/libdhcp-manager.la		\
 			./supplicant-manager/libsupplicant-manager.la		\
+			./dnsmasq-manager/libdnsmasq-manager.la		\
 			./ppp-manager/libppp-manager.la		\
 			./backends/libnmbackend.la			\
 			$(top_builddir)/libnm-util/libnm-util.la
