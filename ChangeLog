@@ -1,5 +1,9 @@
 2008-05-28  Dan Williams  <dcbw@redhat.com>
 
+	Revert r3697 (adhoc-create property patch); it's the wrong way to do this.
+
+2008-05-28  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Benoit Boissinot <bboissin+networkmanager@gmail.com>
 
 	* src/NetworkManagerSystem.c

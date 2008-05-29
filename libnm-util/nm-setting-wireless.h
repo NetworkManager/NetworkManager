@@ -17,25 +17,23 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_WIRELESS_SETTING_NAME "802-11-wireless"
 
-#define NM_SETTING_WIRELESS_SSID         "ssid"
-#define NM_SETTING_WIRELESS_MODE         "mode"
-#define NM_SETTING_WIRELESS_ADHOC_CREATE "adhoc-create"
-#define NM_SETTING_WIRELESS_BAND         "band"
-#define NM_SETTING_WIRELESS_CHANNEL      "channel"
-#define NM_SETTING_WIRELESS_BSSID        "bssid"
-#define NM_SETTING_WIRELESS_RATE         "rate"
-#define NM_SETTING_WIRELESS_TX_POWER     "tx-power"
-#define NM_SETTING_WIRELESS_MAC_ADDRESS  "mac-address"
-#define NM_SETTING_WIRELESS_MTU          "mtu"
-#define NM_SETTING_WIRELESS_SEEN_BSSIDS  "seen-bssids"
-#define NM_SETTING_WIRELESS_SEC          "security"
+#define NM_SETTING_WIRELESS_SSID        "ssid"
+#define NM_SETTING_WIRELESS_MODE        "mode"
+#define NM_SETTING_WIRELESS_BAND        "band"
+#define NM_SETTING_WIRELESS_CHANNEL     "channel"
+#define NM_SETTING_WIRELESS_BSSID       "bssid"
+#define NM_SETTING_WIRELESS_RATE        "rate"
+#define NM_SETTING_WIRELESS_TX_POWER    "tx-power"
+#define NM_SETTING_WIRELESS_MAC_ADDRESS "mac-address"
+#define NM_SETTING_WIRELESS_MTU         "mtu"
+#define NM_SETTING_WIRELESS_SEEN_BSSIDS "seen-bssids"
+#define NM_SETTING_WIRELESS_SEC         "security"
 
 typedef struct {
 	NMSetting parent;
 
 	GByteArray *ssid;
 	char *mode;
-	gboolean adhoc_create;
 	char *band;
 	guint32 channel;
 	GByteArray *bssid;
