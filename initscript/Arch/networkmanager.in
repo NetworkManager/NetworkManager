@@ -13,9 +13,6 @@ NETWORKMANAGER_BIN=${sbindir}/NetworkManager
 # Sanity checks.
 [ -x $NETWORKMANAGER_BIN ] || exit 0
 
-# We need /usr/sbin/ip
-[ -x /usr/sbin/ip ] || exit 0
-
 PID=`pidof -o %PPID $NETWORKMANAGER_BIN`
 case "$1" in
 	start)

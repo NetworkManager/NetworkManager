@@ -25,9 +25,6 @@ USER=root
 # Gracefully exit if the package has been removed.
 test -x $DAEMON || exit 0
 
-# We need /sbin/ip
-[ -x /sbin/ip ] || exit 1
-
 #
 #	Function that starts the daemon/service.
 #

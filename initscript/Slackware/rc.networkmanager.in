@@ -18,9 +18,6 @@ NETWORKMANAGER_BIN=${sbindir}/NetworkManager
 # Sanity checks.
 [ -x $NETWORKMANAGER_BIN ] || exit 0
 
-# We need /sbin/ip
-[ -x /sbin/ip ] || exit 0
-
 PIDFILE=/var/run/NetworkManager.pid
 
 nm_start()

@@ -28,9 +28,6 @@ NETWORKMANAGER_BIN=${sbindir}/NetworkManager
 # Sanity checks.
 [ -x $NETWORKMANAGER_BIN ] || exit 1
 
-# We need /sbin/ip
-[ -x /sbin/ip ] || exit 1
-
 # Source function library.
 . /etc/rc.d/init.d/functions
 
