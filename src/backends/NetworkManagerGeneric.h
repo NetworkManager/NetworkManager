@@ -35,12 +35,6 @@
 
 void			nm_generic_init (void);
 
-void			nm_generic_device_flush_ip4_routes				(NMDevice *dev);
-void			nm_generic_device_flush_ip4_routes_with_iface	(const char *iface);
-
-void			nm_generic_device_flush_ip4_addresses			(NMDevice *dev);
-void			nm_generic_device_flush_ip4_addresses_with_iface	(const char *iface);
-
 void			nm_generic_enable_loopback				(void);
 void			nm_generic_kill_all_dhcp_daemons			(void);
 void			nm_generic_update_dns					(void);
