@@ -38,14 +38,16 @@ file_changed (GFileMonitor *monitor,
 		new_connection = parse_ifcfg (priv->iface, priv->dev_type);
 		if (new_connection) {
 			new_settings = nm_connection_to_hash (new_connection);
-			nm_exported_connection_update (exported, new_settings, NULL);
+			nm_connection_replace_settings (nm_exported_connection_get_connection (exported), new_settings);
+			nm_exported_connection_signal_updated (exported, new_settings);
+
 			g_hash_table_destroy (new_settings);
 			g_object_unref (new_connection);
 		} else
-			nm_exported_connection_delete (exported, NULL);
+			nm_exported_connection_signal_removed (exported);
 		break;
 	case G_FILE_MONITOR_EVENT_DELETED:
-		nm_exported_connection_delete (exported, NULL);
+		nm_exported_connection_signal_removed (exported);
 		break;
 	default:
 		break;
