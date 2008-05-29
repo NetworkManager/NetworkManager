@@ -1,5 +1,11 @@
 2008-05-29  Dan Williams <dcbw@redhat.com>
 
+	* src/nm-device-802-11-wireless.c
+		- (real_get_best_auto_connection): auto-activate 'shared' method
+			connections too
+
+2008-05-29  Dan Williams <dcbw@redhat.com>
+
 	* libnm-util/nm-setting-ip4-config.c
 	  libnm-util/nm-setting-ip4-config.h
 		- Add a 'shared' method to indicate that this connection should be

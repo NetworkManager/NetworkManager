@@ -944,6 +944,7 @@ real_get_best_auto_connection (NMDevice *dev,
 		NMConnection *connection = NM_CONNECTION (iter->data);
 		NMSettingConnection *s_con;
 		NMSettingWireless *s_wireless;
+		NMSettingIP4Config *s_ip4;
 
 		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 		if (s_con == NULL)
@@ -961,6 +962,11 @@ real_get_best_auto_connection (NMDevice *dev,
 			if (memcmp (s_wireless->mac_address->data, priv->hw_addr.ether_addr_octet, ETH_ALEN))
 				continue;
 		}
+
+		/* Use the connection if it's a shared connection */
+		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+		if (s_ip4 && !strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
+			return connection;
 
 		for (ap_iter = priv->ap_list; ap_iter; ap_iter = g_slist_next (ap_iter)) {
 			NMAccessPoint *ap = NM_AP (ap_iter->data);
