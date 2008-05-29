@@ -1,5 +1,21 @@
 2008-05-29  Dan Williams <dcbw@redhat.com>
 
+	* src/nm-device.c
+		- (dnsmasq_state_changed_cb): new function; fail the connection if
+			something happens to dnsmasq
+		- (nm_device_new_ip4_shared_config): new function; create a new
+			ip4-config for shared connections.  Shared connections always use a
+			fixed static IP address.
+		- (real_act_stage4_get_ip4_config): handle shared connections; fix
+			autoip connections by actually using the returned ip4-config and
+			not leaking it
+		- (nm_device_activate_stage5_ip_config_commit): start dnsmasq for shared
+			connections
+		- (nm_device_deactivate_quickly, nm_device_dispose): terminate dnsmasq
+			if its active
+
+2008-05-29  Dan Williams <dcbw@redhat.com>
+
 	* src/nm-device-802-11-wireless.c
 		- (real_get_best_auto_connection): auto-activate 'shared' method
 			connections too

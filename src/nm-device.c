@@ -44,6 +44,7 @@
 #include "nm-netlink.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-connection.h"
+#include "nm-dnsmasq-manager.h"
 
 #define NM_ACT_REQUEST_IP4_CONFIG "nm-act-request-ip4-config"
 
@@ -86,6 +87,9 @@ struct _NMDevicePrivate
 	NMDHCPManager *     dhcp_manager;
 	gulong              dhcp_state_sigid;
 	gulong              dhcp_timeout_sigid;
+
+	NMDnsMasqManager *  dnsmasq_manager;
+	gulong              dnsmasq_state_id;
 };
 
 static gboolean check_connection_compatible (NMDeviceInterface *device,
@@ -358,6 +362,20 @@ nm_device_get_best_auto_connection (NMDevice *dev,
 		return NULL;
 
 	return NM_DEVICE_GET_CLASS (dev)->get_best_auto_connection (dev, connections, specific_object);
+}
+
+static void
+dnsmasq_state_changed_cb (NMDnsMasqManager *manager, guint32 status, gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+
+	switch (status) {
+	case NM_DNSMASQ_STATUS_DEAD:
+		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
+		break;
+	default:
+		break;
+	}
 }
 
 /*
@@ -635,10 +653,28 @@ nm_device_new_ip4_autoip_config (NMDevice *self)
 	return config;
 }
 
+static NMIP4Config *
+nm_device_new_ip4_shared_config (NMDevice *self)
+{
+	NMIP4Config *config = NULL;
+	NMSettingIP4Address *addr;
+
+	g_return_val_if_fail (self != NULL, NULL);
+
+	config = nm_ip4_config_new ();
+	addr = g_malloc0 (sizeof (NMSettingIP4Address));
+	addr->address = (guint32) ntohl (0x0a2a2b01); /* 10.42.43.1 */
+	addr->netmask = (guint32) ntohl (0xFFFFFF00); /* 255.255.255.0 */
+	nm_ip4_config_take_address (config, addr);
+
+	return config;
+}
+
 static NMActStageReturn
 real_act_stage4_get_ip4_config (NMDevice *self,
                                 NMIP4Config **config)
 {
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMConnection *connection;
 	NMSettingIP4Config *s_ip4;
@@ -659,10 +695,13 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 		g_assert (s_ip4);
 
 		if (!strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP)) {
-			nm_device_new_ip4_autoip_config (self);
+			*config = nm_device_new_ip4_autoip_config (self);
 		} else if (!strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
 			*config = nm_ip4_config_new ();
 			nm_utils_merge_ip4_config (*config, s_ip4);
+		} else if (!strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
+			*config = nm_device_new_ip4_shared_config (self);
+			priv->dnsmasq_manager = nm_dnsmasq_manager_new ();
 		}
 	}
 
@@ -828,26 +867,49 @@ static gboolean
 nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
-	NMIP4Config *  ip4_config = NULL;
-	const char *   iface;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMIP4Config *ip4_config = NULL;
+	const char *iface;
+	NMConnection *connection;
+	NMSettingIP4Config *s_ip4;
 
 	ip4_config = g_object_get_data (G_OBJECT (nm_device_get_act_request (self)),
 									NM_ACT_REQUEST_IP4_CONFIG);
 	g_assert (ip4_config);
 
 	/* Clear the activation source ID now that this stage has run */
-	if (self->priv->act_source_id > 0)
-		self->priv->act_source_id = 0;
+	if (priv->act_source_id > 0)
+		priv->act_source_id = 0;
 
 	iface = nm_device_get_iface (self);
 	nm_info ("Activation (%s) Stage 5 of 5 (IP Configure Commit) started...",
 	         iface);
 
-	if (nm_device_set_ip4_config (self, ip4_config))
-		nm_device_state_changed (self, NM_DEVICE_STATE_ACTIVATED);
-	else
+	if (!nm_device_set_ip4_config (self, ip4_config)) {
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
+		goto out;
+	}
 
+	connection = nm_act_request_get_connection (nm_device_get_act_request (self));
+	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	if (s_ip4 && !strcmp (s_ip4->method, "shared")) {
+		GError *error = NULL;
+
+		if (!nm_dnsmasq_manager_start (priv->dnsmasq_manager, nm_device_get_ip_iface (self), &error)) {
+			nm_warning ("(%s): failed to start dnsmasq: %s", iface, error->message);
+			g_error_free (error);
+			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
+			goto out;
+		}
+
+		priv->dnsmasq_state_id = g_signal_connect (priv->dnsmasq_manager, "state-changed",
+		                                           G_CALLBACK (dnsmasq_state_changed_cb),
+		                                           self);
+	}
+
+	nm_device_state_changed (self, NM_DEVICE_STATE_ACTIVATED);
+
+out:
 	nm_info ("Activation (%s) Stage 5 of 5 (IP Configure Commit) complete.",
 	         iface);
 	return FALSE;
@@ -935,9 +997,20 @@ nm_device_deactivate_quickly (NMDevice *self)
 	}
 
 	/* Stop any ongoing DHCP transaction on this device */
-	if (nm_device_get_act_request (self) && nm_device_get_use_dhcp (self)) {
-		nm_dhcp_manager_cancel_transaction (priv->dhcp_manager, nm_device_get_iface (self));
-		nm_device_set_use_dhcp (self, FALSE);
+	if (nm_device_get_act_request (self)) {
+		if (nm_device_get_use_dhcp (self)) {
+			nm_dhcp_manager_cancel_transaction (priv->dhcp_manager, nm_device_get_iface (self));
+			nm_device_set_use_dhcp (self, FALSE);
+		} else if (priv->dnsmasq_manager) {
+			if (priv->dnsmasq_state_id) {
+				g_signal_handler_disconnect (priv->dnsmasq_manager, priv->dnsmasq_state_id);
+				priv->dnsmasq_state_id = 0;
+			}
+
+			nm_dnsmasq_manager_stop (priv->dnsmasq_manager);
+			g_object_unref (priv->dnsmasq_manager);
+			priv->dnsmasq_manager = NULL;
+		}
 	}
 
 	/* Tear down an existing activation request */
@@ -1523,6 +1596,17 @@ nm_device_dispose (GObject *object)
 	}
 
 	nm_device_set_use_dhcp (self, FALSE);
+
+	if (self->priv->dnsmasq_manager) {
+		if (self->priv->dnsmasq_state_id) {
+			g_signal_handler_disconnect (self->priv->dnsmasq_manager, self->priv->dnsmasq_state_id);
+			self->priv->dnsmasq_state_id = 0;
+		}
+
+		nm_dnsmasq_manager_stop (self->priv->dnsmasq_manager);
+		g_object_unref (self->priv->dnsmasq_manager);
+		self->priv->dnsmasq_manager = NULL;
+	}
 
 out:
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
