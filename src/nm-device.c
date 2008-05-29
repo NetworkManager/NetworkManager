@@ -82,7 +82,6 @@ struct _NMDevicePrivate
 	gulong          secrets_failed_id;
 
 	/* IP configuration info */
-	void *			system_config_data;	/* Distro-specific config data (parsed config file, etc) */
 	NMIP4Config *		ip4_config;			/* Config from DHCP, PPP, or system config files */
 	NMDHCPManager *     dhcp_manager;
 	gulong              dhcp_state_sigid;
@@ -130,7 +129,6 @@ nm_device_init (NMDevice * self)
 
 	self->priv->act_source_id = 0;
 
-	self->priv->system_config_data = NULL;
 	self->priv->ip4_config = NULL;
 
 	self->priv->state = NM_DEVICE_STATE_UNMANAGED;
@@ -615,7 +613,7 @@ nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
  * Build up an IP config with a Link Local address
  *
  */
-NMIP4Config *
+static NMIP4Config *
 nm_device_new_ip4_autoip_config (NMDevice *self)
 {
 	struct in_addr ip;
@@ -1484,21 +1482,6 @@ nm_device_take_down (NMDevice *self, gboolean wait)
 
 	nm_device_hw_take_down (self, wait);
 }
-
-/*
- * nm_device_get_system_config_data
- *
- * Return distro-specific system configuration data for this device.
- *
- */
-void *
-nm_device_get_system_config_data (NMDevice *self)
-{
-	g_return_val_if_fail (self != NULL, NULL);
-
-	return self->priv->system_config_data;
-}
-
 
 static void
 nm_device_dispose (GObject *object)

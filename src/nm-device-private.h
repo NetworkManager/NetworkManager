@@ -24,14 +24,13 @@
 
 #include "nm-device.h"
 
-void			nm_device_set_ip_iface (NMDevice *self, const char *iface);
-void			nm_device_set_device_type (NMDevice *dev, NMDeviceType type);
-void			nm_device_set_active_link	(NMDevice *dev, const gboolean active);
-NMIP4Config *	nm_device_new_ip4_autoip_config (NMDevice *self);
+void nm_device_set_ip_iface (NMDevice *self, const char *iface);
 
-void			nm_device_activate_schedule_stage3_ip_config_start (NMDevice *device);
+void nm_device_set_device_type (NMDevice *dev, NMDeviceType type);
 
-void			nm_device_state_changed (NMDevice *device, NMDeviceState state);
+void nm_device_activate_schedule_stage3_ip_config_start (NMDevice *device);
+
+void nm_device_state_changed (NMDevice *device, NMDeviceState state);
 
 gboolean nm_device_hw_bring_up (NMDevice *self, gboolean wait);
 

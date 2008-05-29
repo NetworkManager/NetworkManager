@@ -1,3 +1,12 @@
+2008-05-29  Dan Williams <dcbw@redhat.com>
+
+	* src/nm-device-private.h
+		- Remove unused prototypes and clean up
+
+	* src/nm-device.c
+		- Remove anything related to system_config_data, which is no longer used
+		- (nm_device_new_ip4_autoip_config): make static
+
 2008-05-29  Tambet Ingo  <tambet@gmail.com>
 
 	* system-settings/plugins/ifcfg-suse/nm-suse-connection.c
