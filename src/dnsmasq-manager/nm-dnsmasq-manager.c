@@ -12,6 +12,8 @@
 #include "nm-utils.h"
 
 typedef struct {
+	char *iface;
+	char *pidfile;
 	GPid pid;
 	guint32 dm_watch_id;
 } NMDnsMasqManagerPrivate;
@@ -29,7 +31,7 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 typedef enum {
-	NM_DNSMASQ_MANAGER_ERROR_UNKOWN
+	NM_DNSMASQ_MANAGER_ERROR_NOT_FOUND,
 } NMDnsMasqManagerError;
 
 GQuark
@@ -48,20 +50,15 @@ nm_dnsmasq_manager_init (NMDnsMasqManager *manager)
 {
 }
 
-static GObject *
-constructor (GType type,
-             guint n_construct_params,
-             GObjectConstructParam *construct_params)
-{
-	return G_OBJECT_CLASS (nm_dnsmasq_manager_parent_class)->constructor (type,
-														   n_construct_params,
-														   construct_params);
-}
-
 static void
 finalize (GObject *object)
 {
+	NMDnsMasqManagerPrivate *priv = NM_DNSMASQ_MANAGER_GET_PRIVATE (object);
+
 	nm_dnsmasq_manager_stop (NM_DNSMASQ_MANAGER (object));
+
+	g_free (priv->iface);
+	g_free (priv->pidfile);
 
 	G_OBJECT_CLASS (nm_dnsmasq_manager_parent_class)->finalize (object);
 }
@@ -73,7 +70,6 @@ nm_dnsmasq_manager_class_init (NMDnsMasqManagerClass *manager_class)
 
 	g_type_class_add_private (manager_class, sizeof (NMDnsMasqManagerPrivate));
 
-	object_class->constructor = constructor;
 	object_class->finalize = finalize;
 
 	/* signals */
@@ -89,9 +85,20 @@ nm_dnsmasq_manager_class_init (NMDnsMasqManagerClass *manager_class)
 }
 
 NMDnsMasqManager *
-nm_dnsmasq_manager_new (void)
+nm_dnsmasq_manager_new (const char *iface)
 {
-	return (NMDnsMasqManager *) g_object_new (NM_TYPE_DNSMASQ_MANAGER, NULL);
+	NMDnsMasqManager *manager;
+	NMDnsMasqManagerPrivate *priv;
+
+	manager = (NMDnsMasqManager *) g_object_new (NM_TYPE_DNSMASQ_MANAGER, NULL);
+	if (!manager)
+		return NULL;
+
+	priv = NM_DNSMASQ_MANAGER_GET_PRIVATE (manager);
+	priv->iface = g_strdup (iface);
+	priv->pidfile = g_strdup_printf (LOCALSTATEDIR "/run/nm-dnsmasq-%s.pid", iface);
+
+	return manager;
 }
 
 typedef struct {
@@ -217,25 +224,17 @@ dm_watch_cb (GPid pid, gint status, gpointer user_data)
 	g_signal_emit (manager, signals[STATE_CHANGED], 0, NM_DNSMASQ_STATUS_DEAD);
 }
 
-static char *
-get_pidfile_for_iface (const char *iface)
-{
-	g_return_val_if_fail (iface != NULL, NULL);
-
-	return g_strdup_printf (LOCALSTATEDIR "/run/nm-dnsmasq-%s.pid", iface);
-}
-
 static NMCmdLine *
-create_dm_cmd_line (const char *iface, GError **err)
+create_dm_cmd_line (const char *iface, const char *pidfile, GError **error)
 {
 	const char *dm_binary;
 	NMCmdLine *cmd;
-	char *s, *pidfile;
+	char *s;
 
 	dm_binary = nm_find_dnsmasq ();
 	if (!dm_binary) {
-		g_set_error (err, NM_DNSMASQ_MANAGER_ERROR, NM_DNSMASQ_MANAGER_ERROR,
-				   "Could not find dnsmasq binary.");
+		g_set_error (error, NM_DNSMASQ_MANAGER_ERROR, NM_DNSMASQ_MANAGER_ERROR_NOT_FOUND,
+		             "Could not find dnsmasq binary.");
 		return NULL;
 	}
 
@@ -252,9 +251,7 @@ create_dm_cmd_line (const char *iface, GError **err)
 	nm_cmd_line_add_string (cmd, "--dhcp-option=option:router,0.0.0.0");
 	nm_cmd_line_add_string (cmd, "--dhcp-lease-max=50");
 
-	pidfile = get_pidfile_for_iface (iface);
 	s = g_strdup_printf ("--pid-file=%s", pidfile);
-	g_free (pidfile);
 	nm_cmd_line_add_string (cmd, s);
 	g_free (s);
 
@@ -270,15 +267,13 @@ dm_child_setup (gpointer user_data G_GNUC_UNUSED)
 }
 
 static void
-kill_existing_for_iface (const char *iface)
+kill_existing_for_iface (const char *iface, const char *pidfile)
 {
-	char *pidfile;
 	char *contents = NULL;
 	glong pid;
 	char *proc_path = NULL;
 	char *cmdline_contents = NULL;
 
-	pidfile = get_pidfile_for_iface (iface);
 	if (!g_file_get_contents (pidfile, &contents, NULL, NULL))
 		goto out;
 
@@ -302,13 +297,10 @@ out:
 	g_free (cmdline_contents);
 	g_free (proc_path);
 	g_free (contents);
-	g_free (pidfile);
 }
 
 gboolean
-nm_dnsmasq_manager_start (NMDnsMasqManager *manager,
-				  const char *iface,
-				  GError **err)
+nm_dnsmasq_manager_start (NMDnsMasqManager *manager, GError **error)
 {
 	NMDnsMasqManagerPrivate *priv;
 	NMCmdLine *dm_cmd;
@@ -316,17 +308,18 @@ nm_dnsmasq_manager_start (NMDnsMasqManager *manager,
 	GSource *dm_watch;
 
 	g_return_val_if_fail (NM_IS_DNSMASQ_MANAGER (manager), FALSE);
-	g_return_val_if_fail (iface != NULL, FALSE);
+	if (error)
+		g_return_val_if_fail (*error == NULL, FALSE);
 
-	kill_existing_for_iface (iface);
+	priv = NM_DNSMASQ_MANAGER_GET_PRIVATE (manager);
 
-	dm_cmd = create_dm_cmd_line (iface, err);
+	kill_existing_for_iface (priv->iface, priv->pidfile);
+
+	dm_cmd = create_dm_cmd_line (priv->iface, priv->pidfile, error);
 	if (!dm_cmd)
 		return FALSE;
 
 	g_ptr_array_add (dm_cmd->array, NULL);
-
-	priv = NM_DNSMASQ_MANAGER_GET_PRIVATE (manager);
 
 	nm_info ("Starting dnsmasq...");
 
@@ -338,7 +331,7 @@ nm_dnsmasq_manager_start (NMDnsMasqManager *manager,
 	if (!g_spawn_async (NULL, (char **) dm_cmd->array->pdata, NULL,
 					G_SPAWN_DO_NOT_REAP_CHILD,
 					dm_child_setup,
-					NULL, &priv->pid, err)) {
+					NULL, &priv->pid, error)) {
 		goto out;
 	}
 
@@ -390,4 +383,6 @@ nm_dnsmasq_manager_stop (NMDnsMasqManager *manager)
 
 		priv->pid = 0;
 	}
+
+	unlink (priv->pidfile);
 }

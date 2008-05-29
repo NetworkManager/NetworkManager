@@ -33,11 +33,9 @@ typedef struct {
 
 GType nm_dnsmasq_manager_get_type (void);
 
-NMDnsMasqManager *nm_dnsmasq_manager_new (void);
+NMDnsMasqManager *nm_dnsmasq_manager_new (const char *iface);
 
-gboolean nm_dnsmasq_manager_start (NMDnsMasqManager *manager,
-                                   const char *device,
-                                   GError **err);
+gboolean nm_dnsmasq_manager_start (NMDnsMasqManager *manager, GError **error);
 
 void     nm_dnsmasq_manager_stop  (NMDnsMasqManager *manager);
 

@@ -701,7 +701,7 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 			nm_utils_merge_ip4_config (*config, s_ip4);
 		} else if (!strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
 			*config = nm_device_new_ip4_shared_config (self);
-			priv->dnsmasq_manager = nm_dnsmasq_manager_new ();
+			priv->dnsmasq_manager = nm_dnsmasq_manager_new (nm_device_get_ip_iface (self));
 		}
 	}
 
@@ -895,7 +895,7 @@ nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 	if (s_ip4 && !strcmp (s_ip4->method, "shared")) {
 		GError *error = NULL;
 
-		if (!nm_dnsmasq_manager_start (priv->dnsmasq_manager, nm_device_get_ip_iface (self), &error)) {
+		if (!nm_dnsmasq_manager_start (priv->dnsmasq_manager, &error)) {
 			nm_warning ("(%s): failed to start dnsmasq: %s", iface, error->message);
 			g_error_free (error);
 			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);

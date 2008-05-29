@@ -1,5 +1,19 @@
 2008-05-29  Dan Williams <dcbw@redhat.com>
 
+	* src/dnsmasq-manager/nm-dnsmasq-manager.c
+	  src/dnsmasq-manager/nm-dnsmasq-manager.h
+		- (nm_dnsmasq_manager_new): move iface argument here
+		- (constructor): remove, not needed
+		- (get_pidfile_for_iface, create_dm_cmd_line, kill_existing_for_iface,
+		   nm_dnsmasq_manager_start, nm_dnsmasq_manager_stop): use priv->pidfile
+
+	* src/nm-device.c
+		- (real_act_stage4_get_ip4_config,
+		   nm_device_activate_stage5_ip_config_commit): fix for dnsmasq manager
+			changes
+
+2008-05-29  Dan Williams <dcbw@redhat.com>
+
 	* src/nm-device.c
 		- (dnsmasq_state_changed_cb): new function; fail the connection if
 			something happens to dnsmasq
