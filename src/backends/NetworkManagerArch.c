@@ -54,8 +54,6 @@
 #include "interface_parser.h"
 #include "nm-utils.h"
 
-#define ARPING "/usr/sbin/arping"
-
 /*
  * nm_system_init
  *
