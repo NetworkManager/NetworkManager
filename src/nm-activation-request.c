@@ -644,3 +644,11 @@ nm_act_request_set_default (NMActRequest *req, gboolean is_default)
 	g_object_notify (G_OBJECT (req), NM_ACTIVE_CONNECTION_DEFAULT);
 }
 
+gboolean
+nm_act_request_get_default (NMActRequest *req)
+{
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
+
+	return NM_ACT_REQUEST_GET_PRIVATE (req)->is_default;
+}
+
