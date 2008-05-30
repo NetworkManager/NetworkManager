@@ -1,3 +1,9 @@
+2008-05-30  Dan Williams <dcbw@redhat.com>
+
+	* src/named-manager/nm-named-manager.c
+	  src/named-manager/nm-named-manager.h
+		- Remove stale/obsolete bits for controlling bind over DBus
+
 2008-05-29  Dan Williams <dcbw@redhat.com>
 
 	* src/dnsmasq-manager/nm-dnsmasq-manager.c

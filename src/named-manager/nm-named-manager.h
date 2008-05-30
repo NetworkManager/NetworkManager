@@ -57,8 +57,6 @@ typedef struct NMNamedManagerPrivate NMNamedManagerPrivate;
 
 typedef struct {
 	GObject parent;
-
-	NMNamedManagerPrivate *priv;
 } NMNamedManager;
 
 typedef struct {
