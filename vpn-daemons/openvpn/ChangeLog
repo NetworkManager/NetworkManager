@@ -1,3 +1,12 @@
+2008-05-30  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Casey Harkins <caseyharkins@gmail.com>
+
+	* src/nm-openvpn-service.c
+		- (nm_openvpn_start_openvpn_binary): don't send --ns-cert-type, it's
+			not really supposed to be used anymore since that option isn't
+			used any more when creating server certificates
+
 2008-05-22  Tambet Ingo  <tambet@gmail.com>
 
 	* src/nm-openvpn-service.c (real_disconnect): If sending SIGTERM 

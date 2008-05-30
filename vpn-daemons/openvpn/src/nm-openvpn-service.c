@@ -474,8 +474,6 @@ nm_openvpn_start_openvpn_binary (NMOpenvpnPlugin *plugin, GHashTable *properties
 	switch (connection_type) {
 	case NM_OPENVPN_CONTYPE_X509:
 		g_ptr_array_add (openvpn_argv, (gpointer) "--client");
-		g_ptr_array_add (openvpn_argv, (gpointer) "--ns-cert-type");
-		g_ptr_array_add (openvpn_argv, (gpointer) "server");
 
 		tmp = g_hash_table_lookup (properties, NM_OPENVPN_KEY_CA);
 		if (tmp) {
@@ -525,8 +523,6 @@ nm_openvpn_start_openvpn_binary (NMOpenvpnPlugin *plugin, GHashTable *properties
 	case NM_OPENVPN_CONTYPE_PASSWORD:
 		/* Client mode */
 		g_ptr_array_add (openvpn_argv, (gpointer) "--client");
-		g_ptr_array_add (openvpn_argv, (gpointer) "--ns-cert-type");
-		g_ptr_array_add (openvpn_argv, (gpointer) "server");
 		/* Use user/path authentication */
 		g_ptr_array_add (openvpn_argv, (gpointer) "--auth-user-pass");
 
@@ -539,8 +535,6 @@ nm_openvpn_start_openvpn_binary (NMOpenvpnPlugin *plugin, GHashTable *properties
 
 	case NM_OPENVPN_CONTYPE_X509USERPASS:
 		g_ptr_array_add (openvpn_argv, (gpointer) "--client");
-		g_ptr_array_add (openvpn_argv, (gpointer) "--ns-cert-type");
-		g_ptr_array_add (openvpn_argv, (gpointer) "server");
 
 		tmp = g_hash_table_lookup (properties, NM_OPENVPN_KEY_CA);
 		if (tmp) {
