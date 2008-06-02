@@ -98,8 +98,8 @@ nm_system_device_set_ip4_route (const char *iface,
 			const NMSettingIP4Address *cfg_addr;
 
 			cfg_addr = nm_ip4_config_get_address (iface_config, i);
-		    if ((ip4_dest & cfg_addr->netmask) == (cfg_addr->address & cfg_addr->netmask))
-		    	return TRUE;
+			if ((ip4_dest & cfg_addr->netmask) == (cfg_addr->address & cfg_addr->netmask))
+				return TRUE;
 		}
 	}
 
