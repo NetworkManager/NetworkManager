@@ -978,9 +978,14 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 				}
 
 				// FIXME: ensure the IP addresse and route are sane
-				nm_ip4_config_add_static_route (ip4_config,
-				                                (guint32) rt_addr.s_addr,
-				                                (guint32) rt_route.s_addr);
+
+				addr = g_malloc0 (sizeof (NMSettingIP4Address));
+				addr->address = (guint32) rt_addr.s_addr;
+				addr->netmask = 0xFFFFFFFF; /* 255.255.255.255 */
+				addr->gateway = (guint32) rt_route.s_addr;
+
+				nm_ip4_config_take_static_route (ip4_config, addr);
+				addr = NULL;
 				nm_info ("  static route %s gw %s", *s, *(s + 1));
 			}
 		} else {

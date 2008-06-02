@@ -16,6 +16,7 @@ enum {
 	PROP_DNS,
 	PROP_DNS_SEARCH,
 	PROP_ADDRESSES,
+	PROP_ROUTES,
 	PROP_IGNORE_DHCP_DNS,
 
 	LAST_PROP
@@ -112,6 +113,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_ADDRESSES:
 		nm_utils_slist_free (setting->addresses, g_free);
 		setting->addresses = nm_utils_ip4_addresses_from_gvalue (value);
+	case PROP_ROUTES:
+		nm_utils_slist_free (setting->routes, g_free);
+		setting->routes = nm_utils_ip4_addresses_from_gvalue (value);
 		break;
 	case PROP_IGNORE_DHCP_DNS:
 		setting->ignore_dhcp_dns = g_value_get_boolean (value);
@@ -140,6 +144,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_ADDRESSES:
 		nm_utils_ip4_addresses_to_gvalue (setting->addresses, value);
+		break;
+	case PROP_ROUTES:
+		nm_utils_ip4_addresses_to_gvalue (setting->routes, value);
 		break;
 	case PROP_IGNORE_DHCP_DNS:
 		g_value_set_boolean (value, setting->ignore_dhcp_dns);
@@ -191,6 +198,14 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		(object_class, PROP_ADDRESSES,
 		 nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_ADDRESSES,
 							   "Addresses",
+							   "List of NMSettingIP4Addresses",
+							   DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
+							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	g_object_class_install_property
+		(object_class, PROP_ROUTES,
+		 nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_ROUTES,
+							   "Routes",
 							   "List of NMSettingIP4Addresses",
 							   DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));

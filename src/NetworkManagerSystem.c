@@ -275,6 +275,33 @@ add_ip4_addresses (NMIP4Config *config, const char *iface)
 	return TRUE;
 }
 
+static int
+netmask_to_prefix (guint32 netmask)
+{
+	guchar *p;
+	guchar *end;
+	int prefix = 0;
+
+	p = (guchar *) &netmask;
+	end = p + sizeof (guint32);
+
+	while ((*p == 0xFF) && p < end) {
+		prefix += 8;
+		p++;
+	}
+
+	if (p < end) {
+		guchar v = *p;
+
+		while (v) {
+			prefix++;
+			v <<= 1;
+		}
+	}
+
+	return prefix;
+}
+
 /*
  * nm_system_device_set_from_ip4_config
  *
@@ -298,12 +325,14 @@ nm_system_device_set_from_ip4_config (const char *iface,
 
 	len = nm_ip4_config_get_num_static_routes (config);
 	for (i = 0; i < len; i++) {
-		guint32 mss = nm_ip4_config_get_mss (config);
-		guint32 route = nm_ip4_config_get_static_route (config, (i * 2) + 1);
-		guint32 saddr = nm_ip4_config_get_static_route (config, i * 2);
+		const NMSettingIP4Address *route = nm_ip4_config_get_static_route (config, i);
 
-		nm_system_device_set_ip4_route (iface, config, route, saddr, 32, mss);
-	}		
+		nm_system_device_set_ip4_route (iface, config, 
+								  route->gateway,
+								  route->address,
+								  netmask_to_prefix (route->netmask),
+								  nm_ip4_config_get_mss (config));
+	}
 
 	if (nm_ip4_config_get_mtu (config))
 		nm_system_device_set_mtu (iface, nm_ip4_config_get_mtu (config));

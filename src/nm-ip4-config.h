@@ -76,8 +76,10 @@ void			nm_ip4_config_add_nis_server		(NMIP4Config *config, guint32 nis_server);
 guint32		nm_ip4_config_get_nis_server		(NMIP4Config *config, guint i);
 guint32		nm_ip4_config_get_num_nis_servers	(NMIP4Config *config);
 
-void			nm_ip4_config_add_static_route		(NMIP4Config *config, guint32 addr, guint32 gateway);
-guint32		nm_ip4_config_get_static_route		(NMIP4Config *config, guint i);
+void			nm_ip4_config_take_static_route		(NMIP4Config *config, NMSettingIP4Address *address);
+void			nm_ip4_config_add_static_route		(NMIP4Config *config, NMSettingIP4Address *address);
+void			nm_ip4_config_replace_static_route		(NMIP4Config *config, guint32 i, NMSettingIP4Address *new_address);
+const NMSettingIP4Address *	nm_ip4_config_get_static_route		(NMIP4Config *config, guint32 i);
 guint32		nm_ip4_config_get_num_static_routes	(NMIP4Config *config);
 
 void			nm_ip4_config_set_hostname		(NMIP4Config *config, const char *hostname);

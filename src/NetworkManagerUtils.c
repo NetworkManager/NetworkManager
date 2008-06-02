@@ -309,6 +309,27 @@ nm_utils_merge_ip4_config (NMIP4Config *ip4_config, NMSettingIP4Config *setting)
 		if (i == num)
 			nm_ip4_config_add_address (ip4_config, setting_addr);
 	}
+
+	/* IPv4 static routes */
+	for (iter = setting->routes; iter; iter = g_slist_next (iter)) {
+		NMSettingIP4Address *setting_route = (NMSettingIP4Address *) iter->data;
+		guint32 i, num;
+
+		num = nm_ip4_config_get_num_static_routes (ip4_config);
+		for (i = 0; i < num; i++) {
+			const NMSettingIP4Address *cfg_route;
+
+			cfg_route = nm_ip4_config_get_static_route (ip4_config, i);
+			/* Dupe, override with user-specified address */
+			if (cfg_route->address == setting_route->address) {
+				nm_ip4_config_replace_static_route (ip4_config, i, setting_route);
+				break;
+			}
+		}
+
+		if (i == num)
+			nm_ip4_config_add_static_route (ip4_config, setting_route);
+	}
 }
 
 static void
