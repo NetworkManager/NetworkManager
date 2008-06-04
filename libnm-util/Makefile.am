@@ -10,7 +10,6 @@ libnm_util_la_CPPFLAGS =				\
 
 libnm_util_include_HEADERS = 		\
 	nm-connection.h			\
-	nm-param-spec-specialized.h	\
 	nm-setting.h			\
 	nm-setting-8021x.h		\
 	nm-setting-connection.h		\
@@ -80,4 +79,6 @@ pkgconfig_DATA = libnm-util.pc
 
 DISTCLEANFILES = libnm-util.pc
 
-EXTRA_DIST = libnm-util.pc.in
+EXTRA_DIST = \
+	libnm-util.pc.in \
+	nm-param-spec-specialized.h
