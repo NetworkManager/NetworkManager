@@ -2,7 +2,7 @@
 #
 # NetworkManager:   NetworkManager daemon
 #
-# chkconfig: - 27 73
+# chkconfig: - 27 84
 # description:  This is a daemon for automatically switching network \
 #               connections to the best available connection.
 #
