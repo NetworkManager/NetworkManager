@@ -828,6 +828,12 @@ device_cleanup (NMDevice80211Wireless *self)
 		priv->supplicant.mgr = NULL;
 	}
 
+	if (priv->ssid) {
+		g_byte_array_free (priv->ssid, TRUE);
+		priv->ssid = NULL;
+	}
+
+
 	set_current_ap (self, NULL);
 	remove_all_aps (self);
 }

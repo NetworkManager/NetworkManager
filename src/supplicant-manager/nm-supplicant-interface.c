@@ -534,7 +534,10 @@ scan_results_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 
 		/* Fire off a "properties" call for each returned BSSID */
 		for (i = 0; i < array->len; i++) {
-			request_bssid_properties (info->interface, g_ptr_array_index (array, i));
+			char *op = g_ptr_array_index (array, i);
+
+			request_bssid_properties (info->interface, op);
+			g_free (op);
 		}
 
 		g_ptr_array_free (array, TRUE);
@@ -654,6 +657,7 @@ iface_state_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 		NMSupplicantInfo *info = (NMSupplicantInfo *) user_data;
 
 		NM_SUPPLICANT_INTERFACE_GET_PRIVATE (info->interface)->con_state = wpas_state_string_to_enum (state_str);
+		g_free (state_str);
 		nm_supplicant_interface_set_state (info->interface,
 										   NM_SUPPLICANT_INTERFACE_STATE_READY);
 	}
@@ -700,7 +704,7 @@ nm_supplicant_interface_add_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpoi
 	} else {
 		NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (info->interface);
 
-		priv->object_path = g_strdup (path);
+		priv->object_path = path;
 
 		priv->iface_proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (priv->dbus_mgr),
 													   WPAS_DBUS_SERVICE,
@@ -772,6 +776,8 @@ nm_supplicant_interface_add_to_supplicant (NMSupplicantInterface * self,
 										DBUS_TYPE_G_MAP_OF_VARIANT, hash,
 										G_TYPE_INVALID);
 
+		g_value_unset (driver);
+		g_free (driver);
 		g_hash_table_destroy (hash);
 	}
 
@@ -1128,6 +1134,7 @@ add_network_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 													 WPAS_DBUS_SERVICE,
 													 path,
 													 WPAS_DBUS_IFACE_NETWORK);
+		g_free (path);
 
 		info = nm_supplicant_info_new (info->interface,
 		                               priv->net_proxy,

@@ -83,22 +83,25 @@ static GObject *
 find_plugin (GSList *list, const char *pname)
 {
 	GSList *iter;
+	GObject *obj = NULL;
 
 	g_return_val_if_fail (pname != NULL, FALSE);
 
-	for (iter = list; iter; iter = g_slist_next (iter)) {
+	for (iter = list; iter && !obj; iter = g_slist_next (iter)) {
 		NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (iter->data);
-		char *list_pname;
+		char *list_pname = NULL;
 
 		g_object_get (G_OBJECT (plugin),
 		              NM_SYSTEM_CONFIG_INTERFACE_NAME,
 		              &list_pname,
 		              NULL);
 		if (list_pname && !strcmp (pname, list_pname))
-			return G_OBJECT (plugin);
+			obj = G_OBJECT (plugin);
+
+		g_free (list_pname);
 	}
 
-	return NULL;
+	return obj;
 }
 
 static gboolean
@@ -176,8 +179,12 @@ load_stuff (gpointer user_data)
 
 	/* Grab wired devices to make default DHCP connections for them if needed */
 	devs = nm_system_config_hal_manager_get_devices_of_type (app->hal_mgr, DEVICE_TYPE_802_3_ETHERNET);
-	for (iter = devs; iter; iter = g_slist_next (iter))
+	for (iter = devs; iter; iter = g_slist_next (iter)) {
 		device_added_cb (NULL, (const char *) iter->data, DEVICE_TYPE_802_3_ETHERNET, app);
+		g_free (iter->data);
+	}
+
+	g_slist_free (devs);
 
 	if (!start_dbus_service (app)) {
 		g_main_loop_quit (app->loop);
@@ -273,6 +280,7 @@ have_connection_for_device (Application *app, GByteArray *mac)
 	GSList *list, *iter;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
+	gboolean ret = FALSE;
 
 	g_return_val_if_fail (app != NULL, FALSE);
 	g_return_val_if_fail (mac != NULL, FALSE);
@@ -297,19 +305,28 @@ have_connection_for_device (Application *app, GByteArray *mac)
 		s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
 
 		/* No wired setting; therefore the PPPoE connection applies to any device */
-		if (!s_wired && !strcmp (s_con->type, NM_SETTING_PPPOE_SETTING_NAME))
-			return TRUE;
+		if (!s_wired && !strcmp (s_con->type, NM_SETTING_PPPOE_SETTING_NAME)) {
+			ret = TRUE;
+			break;
+		}
 
 		if (s_wired->mac_address) {
 			/* A connection mac-locked to this device */
-			if (!memcmp (s_wired->mac_address->data, mac->data, ETH_ALEN))
-				return TRUE;
+			if (!memcmp (s_wired->mac_address->data, mac->data, ETH_ALEN)) {
+				ret = TRUE;
+				break;
+			}
+
 		} else {
 			/* A connection that applies to any wired device */
-			return TRUE;
+			ret = TRUE;
+			break;
 		}
 	}
-	return FALSE;
+
+	g_slist_free (list);
+
+	return ret;
 }
 
 static gboolean

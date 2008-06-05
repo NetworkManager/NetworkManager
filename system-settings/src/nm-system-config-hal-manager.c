@@ -97,6 +97,9 @@ get_type_for_udi (NMSystemConfigHalManager *manager, const char *udi)
 					else if (!strcmp (elt->data, "IS-707-A"))
 						devtype = DEVICE_TYPE_CDMA;
 				}
+
+				g_slist_foreach (csets, (GFunc) g_free, NULL);
+				g_slist_free (csets);
 			}
 		}
 	}

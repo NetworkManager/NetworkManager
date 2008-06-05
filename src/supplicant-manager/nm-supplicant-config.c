@@ -436,12 +436,10 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 				g_string_append (str, elt->data); \
 			} \
 		} \
-		value = g_strdup (str->str); \
 		if (ucase) \
-			value = g_ascii_strup (str->str, -1); \
+		  g_string_ascii_up (str); \
+		success = nm_supplicant_config_add_option (self, name, str->str, -1, secret); \
 		g_string_free (str, TRUE); \
-		success = nm_supplicant_config_add_option (self, name, value, -1, secret); \
-		g_free (value); \
 		if (!success) { \
 			nm_warning ("Error adding %s to supplicant config.", name); \
 			return FALSE; \

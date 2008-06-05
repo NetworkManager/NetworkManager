@@ -107,6 +107,7 @@ nm_setting_from_hash (GType setting_type,
 {
 	NMSetting *setting;
 	NMSettingFromHashInfo info;
+	int i;
 
 	g_return_val_if_fail (G_TYPE_IS_INSTANTIATABLE (setting_type), NULL);
 	g_return_val_if_fail (hash != NULL, NULL);
@@ -118,6 +119,11 @@ nm_setting_from_hash (GType setting_type,
 	g_hash_table_foreach (hash, one_property_cb, &info);
 
 	setting = (NMSetting *) g_object_newv (setting_type, info.n_params, info.params);
+
+	for (i = 0; i < info.n_params; i++) {
+		GValue *v = &info.params[i].value;
+		g_value_unset (v);
+	}
 
 	g_free (info.params);
 	g_type_class_unref (info.class);

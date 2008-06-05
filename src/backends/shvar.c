@@ -392,6 +392,7 @@ svCloseFile(shvarFile *s)
     }
     g_free(s->fileName);
     g_list_free(s->freeList);
+    g_list_foreach (s->lineList, (GFunc) g_free, NULL);
     g_list_free(s->lineList); /* implicitly frees s->current */
     g_free(s);
     return 0;

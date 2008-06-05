@@ -1,3 +1,54 @@
+2008-06-05  Tambet Ingo  <tambet@gmail.com>
+
+	Fix memory leaks.
+
+	* system-settings/src/nm-system-config-hal-manager.c (get_type_for_udi):
+	Free data returned from dbus method call.
+
+	* system-settings/src/nm-polkit-helpers.c (check_polkit_privileges):
+	dbus_g_method_get_sender() returns a duplicated string, free it 
+	when done.
+	(check_polkit_privileges): Looks like policykit sometimes returns
+	error and non-null return value, don't leak errors in that case.
+
+	* system-settings/src/main.c (find_plugin): Don't leak existing 
+	plugin names.
+	(load_stuff): Don't leak device list and list items.
+	(have_connection_for_device): Don't leak connection list.
+
+	* system-settings/plugins/keyfile/reader.c (read_one_setting_value):
+	Free the data received from g_keyfile_get_*.
+
+	* system-settings/plugins/ifcfg-suse/parser.c (READ_WEP_KEY): Free
+	the key when the security object is updated.
+
+	* src/supplicant-manager/nm-supplicant-interface.c (scan_results_cb):
+	Free data returned from dbus method call.
+	(iface_state_cb): Ditto.
+	(add_network_cb): Ditto.
+	(nm_supplicant_interface_add_cb): Don't make another copy of already
+	duplicated object path.
+	(nm_supplicant_interface_add_to_supplicant): Free the driver GValue
+	when done.
+
+	* src/supplicant-manager/nm-supplicant-config.c 
+	(ADD_STRING_LIST_VAL): Fix a memory leak.
+
+	* src/nm-manager.c (free_get_settings_info): Free the allocated
+	memory slice.
+	(list_connections_cb): Free data returned from dbus method call.
+	(system_settings_get_unmanaged_devices_cb): Ditto.
+
+	* src/nm-device-802-11-wireless.c (device_cleanup): Free ssid.
+
+	* system-settings/plugins/ifcfg-suse/shvar.c (svCloseFile): 
+	* system-settings/plugins/ifcfg-fedora/shvar.c (svCloseFile): 
+	* src/backends/shvar.c (svCloseFile): Free the duplicated content
+	of the GList.
+
+	* libnm-util/nm-setting.c (nm_setting_from_hash): Free the constructor
+	arguments after the object is created.
+
 2008-06-04  Dan Williams <dcbw@redhat.com>
 
 	* libnm-util/Makefile.am

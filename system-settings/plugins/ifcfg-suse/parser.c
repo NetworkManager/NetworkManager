@@ -317,6 +317,7 @@ get_one_wep_key (shvarFile *ifcfg, guint8 idx, GError **err)
 					    NM_SETTING_WIRELESS_SECURITY_WEP_KEY##idx, \
 					    key,								  \
 					    NULL);							  \
+			g_free (key); \
 			have_key = TRUE; \
 		} \
 	}

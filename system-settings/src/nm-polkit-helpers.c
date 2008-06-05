@@ -103,7 +103,7 @@ check_polkit_privileges (DBusGConnection *dbus_connection,
 					GError **err)
 {
 	DBusError dbus_error;
-	const char *sender;
+	char *sender;
 	PolKitCaller *pk_caller;
 	PolKitAction *pk_action;
 	PolKitResult pk_result;
@@ -113,13 +113,17 @@ check_polkit_privileges (DBusGConnection *dbus_connection,
 	pk_caller = polkit_caller_new_from_dbus_name (dbus_g_connection_get_connection (dbus_connection),
 										 sender,
 										 &dbus_error);
-	if (!pk_caller) {
+	g_free (sender);
+
+	if (dbus_error_is_set (&dbus_error)) {
 		*err = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
 						NM_SYSCONFIG_SETTINGS_ERROR_NOT_PRIVILEGED,
 						"Error getting information about caller: %s: %s",
 						dbus_error.name, dbus_error.message);
 		dbus_error_free (&dbus_error);
-		polkit_caller_unref (pk_caller);
+
+		if (pk_caller)
+			polkit_caller_unref (pk_caller);
 
 		return FALSE;
 	}

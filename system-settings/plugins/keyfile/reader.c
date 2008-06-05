@@ -201,6 +201,7 @@ read_one_setting_value (NMSetting *setting,
 
 		tmp_str = g_key_file_get_value (file, setting->name, key, NULL);
 		uint_val = g_ascii_strtoull (tmp_str, NULL, 10);
+		g_free (tmp_str);
 		g_object_set (setting, key, uint_val, NULL);
  	} else if (type == DBUS_TYPE_G_UCHAR_ARRAY) {
 		gint *tmp;
@@ -223,6 +224,7 @@ read_one_setting_value (NMSetting *setting,
 
 		g_object_set (setting, key, array, NULL);
 		g_byte_array_free (array, TRUE);
+		g_free (tmp);
  	} else if (type == dbus_g_type_get_collection ("GSList", G_TYPE_STRING)) {
 		gchar **sa;
 		gsize length;

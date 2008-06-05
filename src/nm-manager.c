@@ -617,6 +617,7 @@ free_get_settings_info (gpointer data)
 		*(info->calls) = g_slist_remove (*(info->calls), info->call);
 		if (g_slist_length (*(info->calls)) == 0) {
 			g_slist_free (*(info->calls));
+			g_slice_free (GSList, (gpointer) info->calls);
 			g_signal_emit (info->manager,
 			               signals[CONNECTIONS_ADDED],
 			               0,
@@ -890,10 +891,10 @@ list_connections_cb  (DBusGProxy *proxy,
 	calls = g_slice_new0 (GSList *);
 
 	for (i = 0; i < ops->len; i++) {
-		internal_new_connection_cb (proxy,
-		                            g_ptr_array_index (ops, i),
-		                            manager,
-		                            calls);
+		char *op = g_ptr_array_index (ops, i);
+
+		internal_new_connection_cb (proxy, op, manager, calls);
+		g_free (op);
 	}
 
 	g_ptr_array_free (ops, TRUE);
@@ -1059,10 +1060,11 @@ system_settings_get_unmanaged_devices_cb (DBusGProxy *proxy,
 		return;
 	}
 
-	if (!G_VALUE_HOLDS (&value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH))
-		return;
+	if (G_VALUE_HOLDS (&value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH))
+		handle_unmanaged_devices (manager, g_value_get_boxed (&value));
 
-	handle_unmanaged_devices (manager, g_value_get_boxed (&value));
+	g_value_unset (&value);
+
 	g_object_unref (proxy);
 }
 
