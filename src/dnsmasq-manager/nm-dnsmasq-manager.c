@@ -171,7 +171,7 @@ nm_find_dnsmasq (void)
 static void
 dm_exit_code (guint dm_exit_status)
 {
-	const char *msg;
+	char *msg = "Unknown error";
 
 	switch (dm_exit_status) {
 	case 1:
