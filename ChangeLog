@@ -1,3 +1,26 @@
+2008-06-06  Dan Williams <dcbw@redhat.com>
+
+	Patch from Tambet Ingo  <tambet@gmail.com>
+
+	* src/NetworkManagerSystem.c
+	  src/NetworkManagerSystem.h
+		- (nm_system_device_add_ip4_route_via_device_with_iface): remove
+		- (nm_system_device_set_from_ip4_config): remove unused route_to_iface
+		- (nm_system_device_set_ip4_route): clean up
+		- (nm_system_vpn_device_set_from_ip4_config): clean up, add VPN routes
+
+	* src/nm-device.c
+		- (nm_device_set_ip4_config): remove unused route_to_iface bits
+
+	* src/vpn-manager/nm-vpn-connection.c
+		- (ip_address_to_string): new function
+		- (print_vpn_config): use ip_address_to_string
+		- (merge_vpn_routes): add user-defined routes to the ip4 config
+		- (nm_vpn_connection_ip4_config_get): add routes the VPN server sent
+
+	* include/NetworkManagerVPN.h
+		- Add 'routes' key
+
 2008-06-05  Dan Williams <dcbw@redhat.com>
 
 	Patch from Markus Becker <mab@comnets.uni-bremen.de>

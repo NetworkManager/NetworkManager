@@ -61,133 +61,144 @@
 #include <netlink/utils.h>
 #include <netlink/route/link.h>
 
-
-/*
- * nm_system_device_set_ip4_route
- *
- */
 static gboolean
-nm_system_device_set_ip4_route (const char *iface,
-                                NMIP4Config *iface_config,
-                                guint32 ip4_gateway,
-                                guint32 ip4_dest,
-                                int prefix,
-                                int mss)
+route_in_same_subnet (NMIP4Config *config, guint32 dest, guint32 netmask)
 {
-	gboolean success = FALSE;
-	struct rtnl_route *route = NULL;
-	struct rtnl_route *route2 = NULL;
-	struct nl_handle *nlh = NULL;
-	struct nl_addr *gw_addr = NULL;
-	struct nl_addr *dest_addr = NULL;
-	int err, iface_idx, i;
+	int num;
+	int i;
 
-	/*
-	 * Zero is not a legal gateway and the ioctl will fail.  But zero is a
-	 * way of saying "no route" so we just return here.  Hopefully the
-	 * caller flushed the routes, first.
-	 */
-	if (ip4_gateway == 0)
-		return TRUE;
+	num = nm_ip4_config_get_num_addresses (config);
+	for (i = 0; i < num; i++) {
+		const NMSettingIP4Address *cfg_addr;
 
-	/*
-	 * Do not add the route if the destination is on the same subnet.
-	 */
-	if (iface_config) {
-		for (i = 0; i < nm_ip4_config_get_num_addresses (iface_config); i++) {
-			const NMSettingIP4Address *cfg_addr;
+		cfg_addr = nm_ip4_config_get_address (config, i);
+		if ((dest & netmask) == (cfg_addr->address & cfg_addr->netmask))
+			return TRUE;
+	}
 
-			cfg_addr = nm_ip4_config_get_address (iface_config, i);
-			if ((ip4_dest & cfg_addr->netmask) == (cfg_addr->address & cfg_addr->netmask))
-				return TRUE;
+	return FALSE;
+}
+
+static struct rtnl_route *
+create_route (int iface_idx, int mss)
+{
+	struct rtnl_route *route;
+
+	route = rtnl_route_alloc ();
+	if (route) {
+		rtnl_route_set_oif (route, iface_idx);
+
+		if (mss && rtnl_route_set_metric (route, RTAX_ADVMSS, mss) < 0)
+			nm_warning ("Could not set mss");
+	} else
+		nm_warning ("Could not allocate route");
+
+	return route;
+}
+
+static int
+netmask_to_prefix (guint32 netmask)
+{
+	guchar *p;
+	guchar *end;
+	int prefix = 0;
+
+	p = (guchar *) &netmask;
+	end = p + sizeof (guint32);
+
+	while ((*p == 0xFF) && p < end) {
+		prefix += 8;
+		p++;
+	}
+
+	if (p < end) {
+		guchar v = *p;
+
+		while (v) {
+			prefix++;
+			v <<= 1;
 		}
 	}
 
+	return prefix;
+}
+
+static void
+nm_system_device_set_ip4_route (const char *iface, 
+						  NMIP4Config *iface_config,
+						  guint32 ip4_dest,
+						  guint32 ip4_netmask,
+						  guint32 ip4_gateway,
+						  int mss)
+{
+	struct nl_handle *nlh;
+	struct rtnl_route *route;
+	struct nl_addr *dest_addr;
+	struct nl_addr *gw_addr = NULL;
+	int err, iface_idx;
+
+	if (iface_config && route_in_same_subnet (iface_config, ip4_dest, ip4_netmask))
+		return;
+
 	nlh = nm_netlink_get_default_handle ();
-	g_return_val_if_fail (nlh != NULL, FALSE);
+	g_return_if_fail (nlh != NULL);
 
 	iface_idx = nm_netlink_iface_to_index (iface);
-	g_return_val_if_fail (iface_idx >= 0, FALSE);
+	g_return_if_fail (iface_idx >= 0);
 
-	route = rtnl_route_alloc ();
-	g_return_val_if_fail (route != NULL, FALSE);
+	route = create_route (iface_idx, mss);
+	g_return_if_fail (route != NULL);
 
-	rtnl_route_set_scope (route, RT_SCOPE_UNIVERSE);
-	rtnl_route_set_oif (route, iface_idx);
-
-	gw_addr = nl_addr_build (AF_INET, &ip4_gateway, sizeof (ip4_gateway));
-	if (gw_addr == NULL)
-		goto out;
-	rtnl_route_set_gateway (route, gw_addr);
-
+	/* Destination */
 	dest_addr = nl_addr_build (AF_INET, &ip4_dest, sizeof (ip4_dest));
-	if (dest_addr == NULL)
-		goto out;
-	nl_addr_set_prefixlen (dest_addr, prefix);
+	g_return_if_fail (dest_addr != NULL);
+	nl_addr_set_prefixlen (dest_addr, netmask_to_prefix (ip4_netmask));
+
 	rtnl_route_set_dst (route, dest_addr);
 	nl_addr_put (dest_addr);
 
-	if (mss) {
-		if (rtnl_route_set_metric (route, RTAX_ADVMSS, mss) < 0)
-			goto out;
+	/* Gateway */
+	if (ip4_gateway) {
+		gw_addr = nl_addr_build (AF_INET, &ip4_gateway, sizeof (ip4_gateway));
+		if (gw_addr) {
+			rtnl_route_set_gateway (route, gw_addr);
+			rtnl_route_set_scope (route, RT_SCOPE_UNIVERSE);
+		} else {
+			nm_warning ("Invalid gateway");
+			rtnl_route_put (route);
+			return;
+		}
 	}
 
+	/* Add the route */
 	err = rtnl_route_add (nlh, route, 0);
-	if (err == 0) {
-		/* Everything good */
-		success = TRUE;
-		goto out;
+	if (err == ESRCH && ip4_gateway) {
+		/* Gateway might be over a bridge; try adding a route to gateway first */
+		struct rtnl_route *route2;
+
+		route2 = create_route (iface_idx, mss);
+		if (route2) {
+			/* Add route to gateway over bridge */
+			rtnl_route_set_dst (route2, gw_addr);
+			err = rtnl_route_add (nlh, route2, 0);
+			if (!err) {
+				/* Try adding the route again */
+				err = rtnl_route_add (nlh, route, 0);
+				if (err)
+					rtnl_route_del (nlh, route2, 0);
+			}
+
+			rtnl_route_put (route2);
+		}
 	}
 
-	if (err != ESRCH) {
-		nm_warning ("Failed to set IPv4 default route on '%s': %s",
-		            iface,
-		            nl_geterror ());
-		goto out;
-	}
-		
-	/* Gateway might be over a bridge; try adding a route to gateway first */
-	route2 = rtnl_route_alloc ();
-	if (route2 == NULL)
-		goto out;
-	rtnl_route_set_oif (route2, iface_idx);
-	rtnl_route_set_dst (route2, gw_addr);
+	if (err)
+		nm_warning ("Failed to set IPv4 route on '%s': %s", iface, nl_geterror ());
 
-	if (mss) {
-		if (rtnl_route_set_metric (route2, RTAX_ADVMSS, mss) < 0)
-			goto out;
-	}
-
-	/* Add route to gateway over bridge */
-	err = rtnl_route_add (nlh, route2, 0);
-	if (err) {
-		nm_warning ("Failed to add IPv4 default route on '%s': %s",
-		            iface,
-		            nl_geterror ());
-		goto out;
-	}
-
-	/* Try adding the route again */
-	err = rtnl_route_add (nlh, route, 0);
-	if (!err) {
-		success = TRUE;
-	} else {
-		rtnl_route_del (nlh, route2, 0);
-		nm_warning ("Failed to set IPv4 default route on '%s': %s",
-		            iface,
-		            nl_geterror ());
-	}
-
-out:
+	rtnl_route_put (route);
 	if (gw_addr)
 		nl_addr_put (gw_addr);
-	if (route2)
-		rtnl_route_put (route2);
-	if (route)
-		rtnl_route_put (route);
-	return success;
 }
-
 
 typedef struct {
 	const char *iface;
@@ -275,33 +286,6 @@ add_ip4_addresses (NMIP4Config *config, const char *iface)
 	return TRUE;
 }
 
-static int
-netmask_to_prefix (guint32 netmask)
-{
-	guchar *p;
-	guchar *end;
-	int prefix = 0;
-
-	p = (guchar *) &netmask;
-	end = p + sizeof (guint32);
-
-	while ((*p == 0xFF) && p < end) {
-		prefix += 8;
-		p++;
-	}
-
-	if (p < end) {
-		guchar v = *p;
-
-		while (v) {
-			prefix++;
-			v <<= 1;
-		}
-	}
-
-	return prefix;
-}
-
 /*
  * nm_system_device_set_from_ip4_config
  *
@@ -310,8 +294,7 @@ netmask_to_prefix (guint32 netmask)
  */
 gboolean
 nm_system_device_set_from_ip4_config (const char *iface,
-							   NMIP4Config *config,
-							   gboolean route_to_iface)
+							   NMIP4Config *config)
 {
 	int len, i;
 
@@ -328,9 +311,9 @@ nm_system_device_set_from_ip4_config (const char *iface,
 		const NMSettingIP4Address *route = nm_ip4_config_get_static_route (config, i);
 
 		nm_system_device_set_ip4_route (iface, config, 
-								  route->gateway,
 								  route->address,
-								  netmask_to_prefix (route->netmask),
+								  route->netmask,
+								  route->gateway,
 								  nm_ip4_config_get_mss (config));
 	}
 
@@ -349,11 +332,11 @@ nm_system_device_set_from_ip4_config (const char *iface,
 gboolean
 nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
                                           const char *iface,
-                                          NMIP4Config *config,
-                                          GSList *routes)
+                                          NMIP4Config *config)
 {
 	NMIP4Config *ad_config = NULL;
 	NMNamedManager *named_mgr;
+	int num;
 	int i;
 
 	g_return_val_if_fail (config != NULL, FALSE);
@@ -363,7 +346,8 @@ nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
 		guint32 ad_gw = 0, vpn_gw = 0;
 		const NMSettingIP4Address *tmp;
 
-		for (i = 0; i < nm_ip4_config_get_num_addresses (ad_config); i++) {
+		num = nm_ip4_config_get_num_addresses (ad_config);
+		for (i = 0; i < num; i++) {
 			tmp = nm_ip4_config_get_address (ad_config, i);
 			if (tmp->gateway) {
 				ad_gw = tmp->gateway;
@@ -371,17 +355,20 @@ nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
 			}
 		}
 
-		for (i = 0; i < nm_ip4_config_get_num_addresses (config); i++) {
-			tmp = nm_ip4_config_get_address (config, i);
-			if (tmp->gateway) {
-				vpn_gw = tmp->gateway;
-				break;
+		if (ad_gw) {
+			num = nm_ip4_config_get_num_addresses (config);
+			for (i = 0; i < num; i++) {
+				tmp = nm_ip4_config_get_address (config, i);
+				if (tmp->gateway) {
+					vpn_gw = tmp->gateway;
+					break;
+				}
 			}
-		}
 
-		nm_system_device_set_ip4_route (nm_device_get_ip_iface (active_device),
-								  ad_config, ad_gw, vpn_gw, 32,
-								  nm_ip4_config_get_mss (config));
+			nm_system_device_set_ip4_route (nm_device_get_ip_iface (active_device),
+									  ad_config, vpn_gw, 0xFFFFFFFF, ad_gw,
+									  nm_ip4_config_get_mss (config));
+		}
 	}
 
 	if (!iface || !strlen (iface))
@@ -396,14 +383,20 @@ nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
 	if (nm_ip4_config_get_mtu (config))
 		nm_system_device_set_mtu (iface, nm_ip4_config_get_mtu (config));
 
-	if (g_slist_length (routes) == 0) {
-		nm_system_device_replace_default_ip4_route (iface, 0, 0);
-	} else {
-		GSList *iter;
+	/* Set routes */
+	num = nm_ip4_config_get_num_static_routes (config);
+	for (i = 0; i < num; i++) {
+		const NMSettingIP4Address *route = nm_ip4_config_get_static_route (config, i);
 
-		for (iter = routes; iter; iter = iter->next)
-			nm_system_device_add_ip4_route_via_device_with_iface (iface, (char *) iter->data);
+		nm_system_device_set_ip4_route (iface, config,
+								  route->address,
+								  route->netmask,
+								  route->gateway,
+								  nm_ip4_config_get_mss (config));
 	}
+
+	if (num == 0)
+		nm_system_device_replace_default_ip4_route (iface, 0, 0);
 
 out:
 	named_mgr = nm_named_manager_get ();
@@ -549,45 +542,6 @@ nm_system_device_set_mtu (const char *iface, guint32 mtu)
 
 	rtnl_link_put (new);
 	return success;
-}
-
-/*
- * nm_system_device_add_ip4_route_via_device_with_iface
- *
- * Add route to the given device
- *
- */
-void nm_system_device_add_ip4_route_via_device_with_iface (const char *iface, const char *addr)
-{
-	struct rtnl_route *route;
-	struct nl_handle *nlh;
-	struct nl_addr *dst;
-	int iface_idx, err;
-
-	nlh = nm_netlink_get_default_handle ();
-	g_return_if_fail (nlh != NULL);
-
-	route = rtnl_route_alloc ();
-	g_return_if_fail (route != NULL);
-
-	iface_idx = nm_netlink_iface_to_index (iface);
-	if (iface_idx < 0)
-		goto out;
-	rtnl_route_set_oif (route, iface_idx);
-
-	if (!(dst = nl_addr_parse (addr, AF_INET)))
-		goto out;
-	rtnl_route_set_dst (route, dst);
-	nl_addr_put (dst);
-
-	err = rtnl_route_add (nlh, route, 0);
-	if (err) {
-		nm_warning ("rtnl_route_add() returned error %s (%d)\n%s",
-		            strerror (err), err, nl_geterror());
-	}
-
-out:
-	rtnl_route_put (route);
 }
 
 /*
@@ -803,4 +757,3 @@ void nm_system_device_flush_ip4_routes_with_iface (const char *iface)
 
 	nl_cache_free (route_cache);
 }
-

@@ -1355,7 +1355,6 @@ nm_device_set_ip4_config (NMDevice *self, NMIP4Config *config)
 {
 	NMDevicePrivate *priv;
 	const char *ip_iface;
-	gboolean route_to_iface;
 	gboolean success;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
@@ -1381,16 +1380,7 @@ nm_device_set_ip4_config (NMDevice *self, NMIP4Config *config)
 
 	ip_iface = nm_device_get_ip_iface (self);
 
-	/* FIXME: Not sure if the following makes any sense. */
-	/* If iface and ip_iface are the same, it's a regular network device and we
-	   treat it as such. However, if they differ, it's most likely something like
-	   a serial device with ppp interface, so route all the traffic to it. */
-	if (strcmp (ip_iface, nm_device_get_iface (self)))
-		route_to_iface = TRUE;
-	else
-		route_to_iface = FALSE;
-
-	success = nm_system_device_set_from_ip4_config (ip_iface, config, route_to_iface);
+	success = nm_system_device_set_from_ip4_config (ip_iface, config);
 	if (success) {
 		nm_device_update_ip4_address (self);
 		nm_system_set_hostname (config);

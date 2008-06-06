@@ -116,5 +116,6 @@ typedef enum NMVPNConnectionStateReason
 #define NM_VPN_PLUGIN_IP4_CONFIG_TUNDEV  "tundev"
 #define NM_VPN_PLUGIN_IP4_CONFIG_DOMAIN  "domain"
 #define NM_VPN_PLUGIN_IP4_CONFIG_BANNER  "banner"
+#define NM_VPN_PLUGIN_IP4_CONFIG_ROUTES  "routes"
 
 #endif /* NETWORK_MANAGER_VPN_H */

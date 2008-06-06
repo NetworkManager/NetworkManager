@@ -27,6 +27,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <errno.h>
+#include <stdlib.h>
 
 #include "NetworkManager.h"
 #include "NetworkManagerVPN.h"
@@ -228,17 +230,6 @@ nm_vpn_connection_get_service (NMVPNConnection *connection)
 	return setting->service_type;
 }
 
-static GSList *
-nm_vpn_connection_get_routes (NMVPNConnection *connection)
-{
-	NMSettingVPN *setting;
-
-	setting = (NMSettingVPN *) nm_connection_get_setting (NM_VPN_CONNECTION_GET_PRIVATE (connection)->connection,
-											    NM_TYPE_SETTING_VPN);
-
-	return setting->routes;
-}
-
 static void
 plugin_state_changed (DBusGProxy *proxy,
 				  NMVPNServiceState state,
@@ -266,13 +257,21 @@ plugin_state_changed (DBusGProxy *proxy,
 	}
 }
 
+static const char *
+ip_address_to_string (guint32 numeric)
+{
+	struct in_addr temp_addr;
+
+	temp_addr.s_addr = numeric;
+	return inet_ntoa (temp_addr);
+}
+
 static void
 print_vpn_config (NMIP4Config *config,
 			   const char *tundev,
 			   const char *banner)
 {
 	const NMSettingIP4Address *addr;
-	struct in_addr temp_addr;
 	char *         dns_domain = NULL;
 	guint32        num;
 	guint32        i;
@@ -280,22 +279,27 @@ print_vpn_config (NMIP4Config *config,
 	g_return_if_fail (config != NULL);
 
 	addr = nm_ip4_config_get_address (config, 0);
-	temp_addr.s_addr = addr->gateway;
-	nm_info ("VPN Gateway: %s", inet_ntoa (temp_addr));
+
+	nm_info ("VPN Gateway: %s", ip_address_to_string (addr->gateway));
 	nm_info ("Tunnel Device: %s", tundev);
-	temp_addr.s_addr = addr->address;
-	nm_info ("Internal IP4 Address: %s", inet_ntoa (temp_addr));
-	temp_addr.s_addr = addr->netmask;
-	nm_info ("Internal IP4 Netmask: %s", inet_ntoa (temp_addr));
-	temp_addr.s_addr = nm_ip4_config_get_ptp_address (config);
-	nm_info ("Internal IP4 Point-to-Point Address: %s", inet_ntoa (temp_addr));
+	nm_info ("Internal IP4 Address: %s", ip_address_to_string (addr->address));
+	nm_info ("Internal IP4 Netmask: %s", ip_address_to_string (addr->netmask));
+	nm_info ("Internal IP4 Point-to-Point Address: %s",
+		    ip_address_to_string (nm_ip4_config_get_ptp_address (config)));
 	nm_info ("Maximum Segment Size (MSS): %d", nm_ip4_config_get_mss (config));
 
-	num = nm_ip4_config_get_num_nameservers (config);
+	num = nm_ip4_config_get_num_static_routes (config);
 	for (i = 0; i < num; i++) {
-		temp_addr.s_addr = nm_ip4_config_get_nameserver (config, i);
-		nm_info ("Internal IP4 DNS: %s", inet_ntoa (temp_addr));
+		addr = nm_ip4_config_get_static_route (config, i);
+		nm_info ("Static Route: %s/%s Gateway: %s",
+			    ip_address_to_string (addr->address),
+			    ip_address_to_string (addr->netmask),
+			    ip_address_to_string (addr->gateway));
 	}
+
+	num = nm_ip4_config_get_num_nameservers (config);
+	for (i = 0; i < num; i++)
+		nm_info ("Internal IP4 DNS: %s", ip_address_to_string (nm_ip4_config_get_nameserver (config, i)));
 
 	if (nm_ip4_config_get_num_domains (config) > 0)
 		dns_domain = (char *) nm_ip4_config_get_domain (config, 0);
@@ -304,6 +308,57 @@ print_vpn_config (NMIP4Config *config,
 	nm_info ("-----------------------------------------");
 	nm_info ("%s", banner);
 	nm_info ("-----------------------------------------");
+}
+
+static void
+merge_vpn_routes (NMVPNConnection *connection, NMIP4Config *config)
+{
+	NMSettingVPN *setting;
+	GSList *iter;
+
+	setting = NM_SETTING_VPN (nm_connection_get_setting (NM_VPN_CONNECTION_GET_PRIVATE (connection)->connection,
+											   NM_TYPE_SETTING_VPN));
+
+	/* FIXME: Shouldn't the routes from user (NMSettingVPN) be inserted in the beginning
+	   instead of appending to the end?
+	*/
+
+	for (iter = setting->routes; iter; iter = iter->next) {
+		struct in_addr tmp;
+		char *p, *route;
+		long int prefix = 32;
+
+		route = g_strdup ((char *) iter->data);
+		p = strchr (route, '/');
+		if (!p || !(*(p + 1))) {
+			nm_warning ("Ignoring invalid route '%s'", route);
+			goto next;
+		}
+
+		errno = 0;
+		prefix = strtol (p + 1, NULL, 10);
+		if (errno || prefix < 0 || prefix > 32) {
+			nm_warning ("Ignoring invalid route '%s'", route);
+			goto next;
+		}
+
+		/* don't pass the prefix to inet_pton() */
+		*p = '\0';
+		if (inet_pton (AF_INET, route, &tmp) > 0) {
+			NMSettingIP4Address *addr;
+
+			addr = g_new0 (NMSettingIP4Address, 1);
+			addr->address = tmp.s_addr;
+			addr->netmask = ntohl (0xFFFFFFFF << (32 - prefix));
+			addr->gateway = 0;
+
+			nm_ip4_config_take_static_route (config, addr);
+		} else
+			nm_warning ("Ignoring invalid route '%s'", route);
+
+next:
+		g_free (route);
+	}
 }
 
 static void
@@ -395,6 +450,18 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 		priv->banner = g_strdup (g_value_get_string (val));
 	}
 
+	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_ROUTES);
+	if (val) {
+		GSList *routes;
+		GSList *iter;
+
+		routes = nm_utils_ip4_addresses_from_gvalue (val);
+		for (iter = routes; iter; iter = iter->next)
+			nm_ip4_config_take_static_route (config, (NMSettingIP4Address *) iter->data);
+
+		g_slist_free (routes);
+	}
+
 	print_vpn_config (config, priv->tundev, priv->banner);
 
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
@@ -403,9 +470,9 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	/* Merge in user overrides from the NMConnection's IPv4 setting */
 	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (priv->connection, NM_TYPE_SETTING_IP4_CONFIG));
 	nm_utils_merge_ip4_config (config, s_ip4);
+	merge_vpn_routes (connection, config);
 
-	if (nm_system_vpn_device_set_from_ip4_config (priv->parent_dev, priv->tundev, priv->ip4_config,
-										 nm_vpn_connection_get_routes (connection))) {
+	if (nm_system_vpn_device_set_from_ip4_config (priv->parent_dev, priv->tundev, priv->ip4_config)) {
 		nm_info ("VPN connection '%s' (IP Config Get) complete.",
 			    nm_vpn_connection_get_name (connection));
 		nm_vpn_connection_set_vpn_state (connection,
