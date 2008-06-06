@@ -86,10 +86,15 @@ create_polkit_context (void)
 	polkit_context_set_io_watch_functions (global_context, pk_io_add_watch, pk_io_remove_watch);
 	err = NULL;
 	if (!polkit_context_init (global_context, &err)) {
-		g_warning ("Cannot initialize libpolkit: %s", polkit_error_get_error_message (err));
-		polkit_error_free (err);
+		g_warning ("Cannot initialize libpolkit: %s",
+		           err ? polkit_error_get_error_message (err) : "unknown error");
+		if (err)
+			polkit_error_free (err);
 
+		/* PK 0.6's polkit_context_init() unrefs the global_context on failure */
+#if (POLKIT_VERSION_MAJOR == 0) && (POLKIT_VERSION_MINOR >= 7)
 		polkit_context_unref (global_context);
+#endif
 		global_context = NULL;
 	}
 

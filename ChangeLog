@@ -1,5 +1,12 @@
 2008-06-06  Dan Williams <dcbw@redhat.com>
 
+	* system-settings/src/nm-polkit-helpers.c
+		- (create_polkit_context): in PolicyKit 0.6, polkit_context_init() will
+			unref the context if the initialization fails; also avoid spew when
+			the error isn't set
+
+2008-06-06  Dan Williams <dcbw@redhat.com>
+
 	Patch from Tambet Ingo  <tambet@gmail.com>
 
 	* src/NetworkManagerSystem.c
