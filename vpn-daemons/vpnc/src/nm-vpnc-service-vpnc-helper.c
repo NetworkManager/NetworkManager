@@ -35,6 +35,10 @@
 #include "nm-vpnc-service.h"
 #include "nm-utils.h"
 
+/* These are here because nm-dbus-glib-types.h isn't exported */
+#define DBUS_TYPE_G_ARRAY_OF_UINT          (dbus_g_type_get_collection ("GArray", G_TYPE_UINT))
+#define DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT (dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_ARRAY_OF_UINT))
+
 static void
 helper_failed (DBusGConnection *connection, const char *reason)
 {
@@ -132,7 +136,6 @@ static GValue *
 addr_to_gvalue (const char *str)
 {
 	struct in_addr	temp_addr;
-	GValue *val;
 
 	/* Empty */
 	if (!str || strlen (str) < 1)
@@ -180,6 +183,65 @@ addr_list_to_gvalue (const char *str)
 	g_value_set_boxed (val, array);
 
 	return val;
+}
+
+static GValue *
+get_routes (void)
+{
+	GValue *value = NULL;
+	GPtrArray *routes;
+	char *tmp;
+	int num;
+	int i;
+
+#define BUFLEN 256
+
+	tmp = getenv ("CISCO_SPLIT_INC");
+	if (!tmp || strlen (tmp) < 1)
+		return NULL;
+
+	num = atoi (tmp);
+	if (!num)
+		return NULL;
+
+	routes = g_ptr_array_new ();
+
+	for (i = 0; i < num; i++) {
+		GArray *array;
+		char buf[BUFLEN];
+		struct in_addr network;
+		struct in_addr netmask;
+		guint32 gateway = 0; /* no gateway */
+
+		snprintf (buf, BUFLEN, "CISCO_SPLIT_INC_%d_ADDR", i);
+		tmp = getenv (buf);
+		if (!tmp || inet_aton (tmp, &network) != 0) {
+			nm_warning ("Ignoring invalid static route address '%s'", tmp ? tmp : "NULL");
+			continue;
+		}
+
+		snprintf (buf, BUFLEN, "CISCO_SPLIT_INC_%d_MASK", i);
+		tmp = getenv (buf);
+		if (!tmp || inet_aton (tmp, &netmask) != 0) {
+			nm_warning ("Ignoring invalid static route netmask '%s'", tmp ? tmp : "NULL");
+			continue;
+		}
+
+		array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
+		g_array_append_val (array, network.s_addr);
+		g_array_append_val (array, netmask.s_addr);
+		g_array_append_val (array, gateway);
+		g_ptr_array_add (routes, array);
+	}
+
+	if (routes->len > 0) {
+		value = g_new0 (GValue, 1);
+		g_value_init (value, DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT);
+		g_value_take_boxed (value, routes);
+	} else
+		g_ptr_array_free (routes, TRUE);
+
+	return value;
 }
 
 /*
@@ -268,6 +330,11 @@ main (int argc, char *argv[])
 	val = str_to_gvalue (getenv ("CISCO_DEF_DOMAIN"), TRUE);
 	if (val)
 		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_DOMAIN, val);
+
+	/* Routes */
+	val = get_routes ();
+	if (val)
+		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_ROUTES, val);
 
 	/* Banner */
 	val = str_to_gvalue (getenv ("CISCO_BANNER"), TRUE);
