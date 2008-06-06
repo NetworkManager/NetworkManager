@@ -198,11 +198,14 @@ static void
 detail_device (gpointer data, gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (data);
+	NMClient *client = NM_CLIENT (user_data);
 	char *tmp;
 	NMDeviceState state;
 	guint32 caps;
 	guint32 speed;
 	const GArray *array;
+	const GPtrArray *connections;
+	int j;
 
 	state = nm_device_get_state (device);
 
@@ -222,6 +225,22 @@ detail_device (gpointer data, gpointer user_data)
 	print_string ("Driver", nm_device_get_driver (device) ? nm_device_get_driver (device) : "(unknown)");
 
 	print_string ("State", get_dev_state_string (state));
+
+	connections = nm_client_get_active_connections (client);
+	for (j = 0; connections && (j < connections->len); j++) {
+		NMActiveConnection *candidate = g_ptr_array_index (connections, j);
+		const GPtrArray *devices = nm_active_connection_get_devices (candidate);
+		NMDevice *candidate_dev;
+
+		if (!devices || !devices->len)
+			continue;
+		candidate_dev = g_ptr_array_index (devices, 0);
+
+		if ((candidate_dev == device) && nm_active_connection_get_default(candidate))
+			print_string ("Default", "yes");
+		else
+			print_string ("Default", "no");
+	}
 
 	tmp = NULL;
 	if (NM_IS_DEVICE_802_3_ETHERNET (device))
@@ -362,7 +381,7 @@ main (int argc, char *argv[])
 	}
 
 	devices = nm_client_get_devices (client);
-	g_ptr_array_foreach ((GPtrArray *) devices, detail_device, NULL);
+	g_ptr_array_foreach ((GPtrArray *) devices, detail_device, client);
 
 	g_object_unref (client);
 
