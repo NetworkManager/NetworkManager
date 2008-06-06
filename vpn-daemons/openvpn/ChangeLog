@@ -1,3 +1,10 @@
+2008-06-06  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Tambet Ingo  <tambet@gmail.com>
+
+	* src/nm-openvpn-service-openvpn-helper.c
+		- (main, get_routes): send routes too
+
 2008-05-30  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Casey Harkins <caseyharkins@gmail.com>

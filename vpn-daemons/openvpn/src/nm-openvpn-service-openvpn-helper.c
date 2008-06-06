@@ -43,6 +43,10 @@
 #include "nm-openvpn-service.h"
 #include "nm-utils.h"
 
+/* These are here because nm-dbus-glib-types.h isn't exported */
+#define DBUS_TYPE_G_ARRAY_OF_UINT          (dbus_g_type_get_collection ("GArray", G_TYPE_UINT))
+#define DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT (dbus_g_type_get_collection ("GPtrArray", DBUS_TYPE_G_ARRAY_OF_UINT))
+
 static void
 helper_failed (DBusGConnection *connection, const char *reason)
 {
@@ -175,6 +179,66 @@ parse_addr_list (GValue *value_array, const char *str)
 	return value_array;
 }
 
+static GValue *
+get_routes (void)
+{
+	GValue *value = NULL;
+	GPtrArray *routes;
+	char *tmp;
+	int i;
+
+#define BUFLEN 256
+
+	routes = g_ptr_array_new ();
+
+	for (i = 1; i < 256; i++) {
+		GArray *array;
+		char buf[BUFLEN];
+		struct in_addr network;
+		struct in_addr netmask;
+		struct in_addr gateway = { 0, };
+
+		snprintf (buf, BUFLEN, "route_network_%d", i);
+		tmp = getenv (buf);
+		if (!tmp || strlen (tmp) < 1)
+			break;
+
+		if (inet_aton (tmp, &network) != 0) {
+			nm_warning ("Ignoring invalid static route address '%s'", tmp ? tmp : "NULL");
+			continue;
+		}
+
+		snprintf (buf, BUFLEN, "route_netmask_%d", i);
+		tmp = getenv (buf);
+		if (!tmp || inet_aton (tmp, &netmask) != 0) {
+			nm_warning ("Ignoring invalid static route netmask '%s'", tmp ? tmp : "NULL");
+			continue;
+		}
+
+		snprintf (buf, BUFLEN, "route_gateway_%d", i);
+		tmp = getenv (buf);
+		if (!tmp || inet_aton (tmp, &gateway) != 0) {
+			nm_warning ("Ignoring invalid static route gateway '%s'", tmp ? tmp : "NULL");
+			continue;
+		}
+
+		array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
+		g_array_append_val (array, network.s_addr);
+		g_array_append_val (array, netmask.s_addr);
+		g_array_append_val (array, gateway.s_addr);
+		g_ptr_array_add (routes, array);
+	}
+
+	if (routes->len > 0) {
+		value = g_new0 (GValue, 1);
+		g_value_init (value, DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT);
+		g_value_take_boxed (value, routes);
+	} else
+		g_ptr_array_free (routes, TRUE);
+
+	return value;
+}
+
 int
 main (int argc, char *argv[])
 {
@@ -228,6 +292,10 @@ main (int argc, char *argv[])
 	val = addr_to_gvalue (getenv ("route_netmask_1"));
 	if (val)
 		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_NETMASK, val);
+
+	val = get_routes ();
+	if (val)
+		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_ROUTES, val);
 
     	/* DNS and WINS servers */
 	for (i = 1; i < 256; i++) {
