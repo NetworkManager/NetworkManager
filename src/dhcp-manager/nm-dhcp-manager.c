@@ -140,6 +140,12 @@ nm_dhcp_manager_init (NMDHCPManager *manager)
 static void
 finalize (GObject *object)
 {
+	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (object);
+
+	g_hash_table_destroy (priv->devices);
+	g_object_unref (priv->proxy);
+	g_object_unref (priv->dbus_mgr);
+
 	G_OBJECT_CLASS (nm_dhcp_manager_parent_class)->finalize (object);
 }
 
@@ -211,7 +217,7 @@ nm_dhcp_device_destroy (NMDHCPDevice *device)
 {
 	nm_dhcp_device_timeout_cleanup (device);
 	nm_dhcp_device_watch_cleanup (device);
-	g_hash_table_remove_all (device->options);
+	g_hash_table_destroy (device->options);
 	g_free (device->iface);
 	g_slice_free (NMDHCPDevice, device);
 }
