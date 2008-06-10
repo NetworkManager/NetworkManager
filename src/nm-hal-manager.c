@@ -12,7 +12,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-utils.h"
 #include "nm-device-802-11-wireless.h"
-#include "nm-device-802-3-ethernet.h"
+#include "nm-device-ethernet.h"
 #include "nm-gsm-device.h"
 #include "nm-cdma-device.h"
 
@@ -141,7 +141,7 @@ wired_device_creator (NMHalManager *self, const char *udi, gboolean managed)
 	}
 
 	driver = nm_get_device_driver_name (priv->hal_ctx, udi);
-	device = (GObject *) nm_device_802_3_ethernet_new (udi, iface, driver, managed);
+	device = (GObject *) nm_device_ethernet_new (udi, iface, driver, managed);
 
 	libhal_free_string (iface);
 	g_free (driver);

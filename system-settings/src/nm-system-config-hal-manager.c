@@ -29,7 +29,7 @@
 
 NMSystemConfigHalManager *nm_system_config_hal_manager_get (DBusGConnection *g_connection);
 
-#define NUM_DEVICE_TYPES	DEVICE_TYPE_CDMA
+#define NUM_DEVICE_TYPES	NM_DEVICE_TYPE_CDMA
 
 typedef struct {
 	DBusGConnection *g_connection;
@@ -56,7 +56,7 @@ static NMDeviceType
 get_type_for_udi (NMSystemConfigHalManager *manager, const char *udi)
 {
 	NMSystemConfigHalManagerPrivate *priv = NM_SYSTEM_CONFIG_HAL_MANAGER_GET_PRIVATE (manager);
-	NMDeviceType devtype = DEVICE_TYPE_UNKNOWN;
+	NMDeviceType devtype = NM_DEVICE_TYPE_UNKNOWN;
 	DBusGProxy *dev_proxy;
 	GError *error = NULL;
 	GSList *capabilities = NULL, *iter;
@@ -66,7 +66,7 @@ get_type_for_udi (NMSystemConfigHalManager *manager, const char *udi)
 	                                       udi,
 	                                       "org.freedesktop.Hal.Device");
 	if (!dev_proxy)
-		return DEVICE_TYPE_UNKNOWN;
+		return NM_DEVICE_TYPE_UNKNOWN;
 
 	if (!dbus_g_proxy_call_with_timeout (dev_proxy,
 	                                     "GetPropertyStringList", 10000, &error,
@@ -79,11 +79,11 @@ get_type_for_udi (NMSystemConfigHalManager *manager, const char *udi)
 	if (!g_slist_length (capabilities))
 		goto out;
 
-	for (iter = capabilities; iter && (devtype == DEVICE_TYPE_UNKNOWN); iter = g_slist_next (iter)) {
+	for (iter = capabilities; iter && (devtype == NM_DEVICE_TYPE_UNKNOWN); iter = g_slist_next (iter)) {
 		if (!strcmp (iter->data, "net.80203"))
-			devtype = DEVICE_TYPE_802_3_ETHERNET;
+			devtype = NM_DEVICE_TYPE_ETHERNET;
 		else if (!strcmp (iter->data, "net.80211"))
-			devtype = DEVICE_TYPE_802_11_WIRELESS;
+			devtype = NM_DEVICE_TYPE_WIFI;
 		else if (!strcmp (iter->data, "modem")) {
 			GSList *csets = NULL, *elt;
 
@@ -91,11 +91,11 @@ get_type_for_udi (NMSystemConfigHalManager *manager, const char *udi)
 			                                    "GetPropertyStringList", 10000, &error,
 			                                    G_TYPE_STRING, "modem.command_sets", G_TYPE_INVALID,
 			                                    DBUS_TYPE_G_LIST_OF_STRING, &csets, G_TYPE_INVALID)) {		
-				for (elt = csets; elt && (devtype == DEVICE_TYPE_UNKNOWN); elt = g_slist_next (elt)) {
+				for (elt = csets; elt && (devtype == NM_DEVICE_TYPE_UNKNOWN); elt = g_slist_next (elt)) {
 					if (!strcmp (elt->data, "GSM-07.07"))
-						devtype = DEVICE_TYPE_GSM;
+						devtype = NM_DEVICE_TYPE_GSM;
 					else if (!strcmp (elt->data, "IS-707-A"))
-						devtype = DEVICE_TYPE_CDMA;
+						devtype = NM_DEVICE_TYPE_CDMA;
 				}
 
 				g_slist_foreach (csets, (GFunc) g_free, NULL);
@@ -120,7 +120,7 @@ device_added_cb (DBusGProxy *proxy, const char *udi, gpointer user_data)
 
 	if (!g_hash_table_lookup (priv->devices, udi)) {
 		devtype = get_type_for_udi (manager, udi);
-		if (devtype != DEVICE_TYPE_UNKNOWN) {
+		if (devtype != NM_DEVICE_TYPE_UNKNOWN) {
 			g_hash_table_insert (priv->devices, g_strdup (udi), GUINT_TO_POINTER (devtype));
 			g_signal_emit (manager, signals[DEVICE_ADDED], 0, udi, devtype);
 		}
@@ -135,7 +135,7 @@ device_removed_cb (DBusGProxy *proxy, const char *udi, gpointer user_data)
 	NMDeviceType devtype;
 
 	devtype = GPOINTER_TO_UINT (g_hash_table_lookup (priv->devices, udi));
-	if (devtype != DEVICE_TYPE_UNKNOWN) {
+	if (devtype != NM_DEVICE_TYPE_UNKNOWN) {
 		g_signal_emit (manager, signals[DEVICE_REMOVED], 0, udi, devtype);
 		g_hash_table_remove (priv->devices, udi);
 	}
@@ -153,7 +153,7 @@ device_new_capability_cb (DBusGProxy *proxy,
 
 	if (!g_hash_table_lookup (priv->devices, udi)) {
 		devtype = get_type_for_udi (manager, udi);
-		if (devtype != DEVICE_TYPE_UNKNOWN) {
+		if (devtype != NM_DEVICE_TYPE_UNKNOWN) {
 			g_hash_table_insert (priv->devices, g_strdup (udi), GUINT_TO_POINTER (devtype));
 			g_signal_emit (manager, signals[DEVICE_ADDED], 0, udi, devtype);
 		}
@@ -363,8 +363,8 @@ nm_system_config_hal_manager_get_type_for_udi (NMSystemConfigHalManager *manager
 {
 	NMSystemConfigHalManagerPrivate *priv;
 
-	g_return_val_if_fail (NM_IS_SYSTEM_CONFIG_HAL_MANAGER (manager), DEVICE_TYPE_UNKNOWN);
-	g_return_val_if_fail (udi != NULL, DEVICE_TYPE_UNKNOWN);
+	g_return_val_if_fail (NM_IS_SYSTEM_CONFIG_HAL_MANAGER (manager), NM_DEVICE_TYPE_UNKNOWN);
+	g_return_val_if_fail (udi != NULL, NM_DEVICE_TYPE_UNKNOWN);
 
 	priv = NM_SYSTEM_CONFIG_HAL_MANAGER_GET_PRIVATE (manager);
 	return GPOINTER_TO_UINT (g_hash_table_lookup (priv->devices, udi));

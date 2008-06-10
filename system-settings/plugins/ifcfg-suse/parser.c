@@ -658,10 +658,10 @@ parse_ifcfg (const char *iface, NMDeviceType type)
 	connection = nm_connection_new ();
 
 	switch (type) {
-	case DEVICE_TYPE_802_3_ETHERNET:
+	case NM_DEVICE_TYPE_ETHERNET:
 		parse_ethernet (connection, file, iface);
 		break;
-	case DEVICE_TYPE_802_11_WIRELESS:
+	case NM_DEVICE_TYPE_WIFI:
 		parse_wireless (connection, file, iface);
 		break;
 	default:

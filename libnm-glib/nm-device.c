@@ -1,7 +1,7 @@
 #include <string.h>
 
 #include "NetworkManager.h"
-#include "nm-device-802-3-ethernet.h"
+#include "nm-device-ethernet.h"
 #include "nm-device-802-11-wireless.h"
 #include "nm-gsm-device.h"
 #include "nm-cdma-device.h"
@@ -338,16 +338,16 @@ nm_device_new (DBusGConnection *connection, const char *path)
 	}
 
 	switch (g_value_get_uint (&value)) {
-	case DEVICE_TYPE_802_3_ETHERNET:
-		dtype = NM_TYPE_DEVICE_802_3_ETHERNET;
+	case NM_DEVICE_TYPE_ETHERNET:
+		dtype = NM_TYPE_DEVICE_ETHERNET;
 		break;
-	case DEVICE_TYPE_802_11_WIRELESS:
+	case NM_DEVICE_TYPE_WIFI:
 		dtype = NM_TYPE_DEVICE_802_11_WIRELESS;
 		break;
-	case DEVICE_TYPE_GSM:
+	case NM_DEVICE_TYPE_GSM:
 		dtype = NM_TYPE_GSM_DEVICE;
 		break;
-	case DEVICE_TYPE_CDMA:
+	case NM_DEVICE_TYPE_CDMA:
 		dtype = NM_TYPE_CDMA_DEVICE;
 		break;
 	default:

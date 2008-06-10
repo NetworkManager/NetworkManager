@@ -33,8 +33,6 @@
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device.h"
-#include "nm-device-802-3-ethernet.h"
-#include "nm-device-802-11-wireless.h"
 #include "nm-utils.h"
 
 // Provided by the frugalwareutils package on Frugalware

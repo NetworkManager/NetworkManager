@@ -302,7 +302,7 @@ nm_dispatcher_action (Handler *h,
 	NMConnection *connection;
 	char *iface = NULL;
 	char *parent_iface = NULL;
-	NMDeviceType type = DEVICE_TYPE_UNKNOWN;
+	NMDeviceType type = NM_DEVICE_TYPE_UNKNOWN;
 	GValue *value;
 
 	/* Back off the quit timeout */

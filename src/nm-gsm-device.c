@@ -710,7 +710,7 @@ setup_monitor_device (NMGsmDevice *device)
 static void
 nm_gsm_device_init (NMGsmDevice *self)
 {
-	nm_device_set_device_type (NM_DEVICE (self), DEVICE_TYPE_GSM);
+	nm_device_set_device_type (NM_DEVICE (self), NM_DEVICE_TYPE_GSM);
 }
 
 static gboolean

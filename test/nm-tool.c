@@ -32,7 +32,7 @@
 
 #include <nm-client.h>
 #include <nm-device.h>
-#include <nm-device-802-3-ethernet.h>
+#include <nm-device-ethernet.h>
 #include <nm-device-802-11-wireless.h>
 #include <nm-gsm-device.h>
 #include <nm-cdma-device.h>
@@ -213,7 +213,7 @@ detail_device (gpointer data, gpointer user_data)
 	        nm_device_get_iface (device));
 
 	/* General information */
-	if (NM_IS_DEVICE_802_3_ETHERNET (device))
+	if (NM_IS_DEVICE_ETHERNET (device))
 		print_string ("Type", "Wired");
 	else if (NM_IS_DEVICE_802_11_WIRELESS (device))
 		print_string ("Type", "802.11 Wireless");
@@ -243,8 +243,8 @@ detail_device (gpointer data, gpointer user_data)
 	}
 
 	tmp = NULL;
-	if (NM_IS_DEVICE_802_3_ETHERNET (device))
-		tmp = g_strdup (nm_device_802_3_ethernet_get_hw_address (NM_DEVICE_802_3_ETHERNET (device)));
+	if (NM_IS_DEVICE_ETHERNET (device))
+		tmp = g_strdup (nm_device_ethernet_get_hw_address (NM_DEVICE_ETHERNET (device)));
 	else if (NM_IS_DEVICE_802_11_WIRELESS (device))
 		tmp = g_strdup (nm_device_802_11_wireless_get_hw_address (NM_DEVICE_802_11_WIRELESS (device)));
 
@@ -264,13 +264,13 @@ detail_device (gpointer data, gpointer user_data)
 		print_string ("  Carrier Detect", "yes");
 
 	speed = 0;
-	if (NM_IS_DEVICE_802_3_ETHERNET (device)) {
+	if (NM_IS_DEVICE_ETHERNET (device)) {
 		/* Speed in Mb/s */
-		speed = nm_device_802_3_ethernet_get_speed (NM_DEVICE_802_3_ETHERNET (device));
+		speed = nm_device_ethernet_get_speed (NM_DEVICE_ETHERNET (device));
 	} else if (NM_IS_DEVICE_802_11_WIRELESS (device)) {
 		/* Speed in b/s */
 		speed = nm_device_802_11_wireless_get_bitrate (NM_DEVICE_802_11_WIRELESS (device));
-		speed /= 1000000;
+		speed /= 1000;
 	}
 
 	if (speed) {
@@ -309,7 +309,7 @@ detail_device (gpointer data, gpointer user_data)
 		aps = nm_device_802_11_wireless_get_access_points (NM_DEVICE_802_11_WIRELESS (device));
 		if (aps && aps->len)
 			g_ptr_array_foreach ((GPtrArray *) aps, detail_access_point, (gpointer) active_bssid);
-	} else if (NM_IS_DEVICE_802_3_ETHERNET (device)) {
+	} else if (NM_IS_DEVICE_ETHERNET (device)) {
 		printf ("\n  Wired Settings\n");
 		/* FIXME */
 #if 0

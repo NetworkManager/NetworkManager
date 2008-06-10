@@ -357,7 +357,7 @@ setup_monitor_device (NMCdmaDevice *device)
 static void
 nm_cdma_device_init (NMCdmaDevice *self)
 {
-	nm_device_set_device_type (NM_DEVICE (self), DEVICE_TYPE_CDMA);
+	nm_device_set_device_type (NM_DEVICE (self), NM_DEVICE_TYPE_CDMA);
 }
 
 static gboolean

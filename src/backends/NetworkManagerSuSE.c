@@ -43,8 +43,6 @@
 #include "NetworkManagerUtils.h"
 #include "nm-device.h"
 #include "NetworkManagerPolicy.h"
-#include "nm-device-802-3-ethernet.h"
-#include "nm-device-802-11-wireless.h"
 #include "nm-utils.h"
 #include "shvar.h"
 

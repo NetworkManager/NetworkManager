@@ -124,26 +124,26 @@ get_ether_device_udi (DBusGConnection *g_connection, GByteArray *mac, GSList *de
 static NMDeviceType
 get_device_type_for_connection (NMConnection *connection)
 {
-	NMDeviceType devtype = DEVICE_TYPE_UNKNOWN;
+	NMDeviceType devtype = NM_DEVICE_TYPE_UNKNOWN;
 	NMSettingConnection *s_con;
 
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	if (!s_con)
-		return DEVICE_TYPE_UNKNOWN;
+		return NM_DEVICE_TYPE_UNKNOWN;
 
 	if (   !strcmp (s_con->type, NM_SETTING_WIRED_SETTING_NAME)
 	    || !strcmp (s_con->type, NM_SETTING_PPPOE_SETTING_NAME)) {
 		if (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED))
-			devtype = DEVICE_TYPE_802_3_ETHERNET;
+			devtype = NM_DEVICE_TYPE_ETHERNET;
 	} else if (!strcmp (s_con->type, NM_SETTING_WIRELESS_SETTING_NAME)) {
 		if (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS))
-			devtype = DEVICE_TYPE_802_11_WIRELESS;
+			devtype = NM_DEVICE_TYPE_WIFI;
 	} else if (!strcmp (s_con->type, NM_SETTING_GSM_SETTING_NAME)) {
 		if (nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM))
-			devtype = DEVICE_TYPE_GSM;
+			devtype = NM_DEVICE_TYPE_GSM;
 	} else if (!strcmp (s_con->type, NM_SETTING_CDMA_SETTING_NAME)) {
 		if (nm_connection_get_setting (connection, NM_TYPE_SETTING_CDMA))
-			devtype = DEVICE_TYPE_CDMA;
+			devtype = NM_DEVICE_TYPE_CDMA;
 	}
 
 	return devtype;
@@ -160,22 +160,22 @@ get_udi_for_connection (NMConnection *connection,
 	char *udi = NULL;
 	GSList *devices = NULL;
 
-	if (devtype == DEVICE_TYPE_UNKNOWN)
+	if (devtype == NM_DEVICE_TYPE_UNKNOWN)
 		devtype = get_device_type_for_connection (connection);
 
 	switch (devtype) {
-	case DEVICE_TYPE_802_3_ETHERNET:
+	case NM_DEVICE_TYPE_ETHERNET:
 		s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
 		if (s_wired) {
-			devices = nm_system_config_hal_manager_get_devices_of_type (hal_mgr, DEVICE_TYPE_802_3_ETHERNET);
+			devices = nm_system_config_hal_manager_get_devices_of_type (hal_mgr, NM_DEVICE_TYPE_ETHERNET);
 			udi = get_ether_device_udi (g_connection, s_wired->mac_address, devices);
 		}
 		break;
 
-	case DEVICE_TYPE_802_11_WIRELESS:
+	case NM_DEVICE_TYPE_WIFI:
 		s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
 		if (s_wireless) {
-			devices = nm_system_config_hal_manager_get_devices_of_type (hal_mgr, DEVICE_TYPE_802_11_WIRELESS);
+			devices = nm_system_config_hal_manager_get_devices_of_type (hal_mgr, NM_DEVICE_TYPE_WIFI);
 			udi = get_ether_device_udi (g_connection, s_wireless->mac_address, devices);
 		}
 		break;
@@ -255,7 +255,7 @@ nm_ifcfg_connection_new (const char *filename,
 	if (!wrapped)
 		return NULL;
 
-	udi = get_udi_for_connection (wrapped, g_connection, hal_mgr, DEVICE_TYPE_UNKNOWN);
+	udi = get_udi_for_connection (wrapped, g_connection, hal_mgr, NM_DEVICE_TYPE_UNKNOWN);
 
 	object = (GObject *) g_object_new (NM_TYPE_IFCFG_CONNECTION,
 	                                   NM_IFCFG_CONNECTION_FILENAME, filename,

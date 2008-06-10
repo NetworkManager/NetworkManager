@@ -40,7 +40,7 @@
 #include "nm-device-interface.h"
 #include "nm-device.h"
 #include "nm-device-802-11-wireless.h"
-#include "nm-device-802-3-ethernet.h"
+#include "nm-device-ethernet.h"
 #include "nm-gsm-device.h"
 #include "nm-cdma-device.h"
 #include "nm-dbus-manager.h"
@@ -108,7 +108,7 @@ get_device_priority (NMDevice *dev)
 	if (NM_IS_DEVICE_802_11_WIRELESS (dev))
 		return 4;
 
-	if (NM_IS_DEVICE_802_3_ETHERNET (dev))
+	if (NM_IS_DEVICE_ETHERNET (dev))
 		return 5;
 
 	return 1;

@@ -124,7 +124,7 @@ nm_device_init (NMDevice * self)
 	self->priv->initialized = FALSE;
 	self->priv->udi = NULL;
 	self->priv->iface = NULL;
-	self->priv->type = DEVICE_TYPE_UNKNOWN;
+	self->priv->type = NM_DEVICE_TYPE_UNKNOWN;
 	self->priv->capabilities = NM_DEVICE_CAP_NONE;
 	self->priv->driver = NULL;
 
@@ -274,7 +274,7 @@ nm_device_get_driver (NMDevice *self)
 NMDeviceType
 nm_device_get_device_type (NMDevice *self)
 {
-	g_return_val_if_fail (NM_IS_DEVICE (self), DEVICE_TYPE_UNKNOWN);
+	g_return_val_if_fail (NM_IS_DEVICE (self), NM_DEVICE_TYPE_UNKNOWN);
 
 	return self->priv->type;
 }
@@ -284,7 +284,7 @@ void
 nm_device_set_device_type (NMDevice *dev, NMDeviceType type)
 {
 	g_return_if_fail (NM_IS_DEVICE (dev));
-	g_return_if_fail (NM_DEVICE_GET_PRIVATE (dev)->type == DEVICE_TYPE_UNKNOWN);
+	g_return_if_fail (NM_DEVICE_GET_PRIVATE (dev)->type == NM_DEVICE_TYPE_UNKNOWN);
 
 	NM_DEVICE_GET_PRIVATE (dev)->type = type;
 }

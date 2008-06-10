@@ -1,12 +1,12 @@
-#include "nm-device-802-3-ethernet.h"
+#include "nm-device-ethernet.h"
 #include "nm-device-private.h"
 #include "nm-object-private.h"
 
-#include "nm-device-802-3-ethernet-bindings.h"
+#include "nm-device-ethernet-bindings.h"
 
-G_DEFINE_TYPE (NMDevice8023Ethernet, nm_device_802_3_ethernet, NM_TYPE_DEVICE)
+G_DEFINE_TYPE (NMDeviceEthernet, nm_device_ethernet, NM_TYPE_DEVICE)
 
-#define NM_DEVICE_802_3_ETHERNET_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_802_3_ETHERNET, NMDevice8023EthernetPrivate))
+#define NM_DEVICE_ETHERNET_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_ETHERNET, NMDeviceEthernetPrivate))
 
 typedef struct {
 	DBusGProxy *proxy;
@@ -17,7 +17,7 @@ typedef struct {
 	gboolean carrier_valid;
 
 	gboolean disposed;
-} NMDevice8023EthernetPrivate;
+} NMDeviceEthernetPrivate;
 
 enum {
 	PROP_0,
@@ -33,25 +33,25 @@ enum {
 #define DBUS_PROP_CARRIER "Carrier"
 
 GObject *
-nm_device_802_3_ethernet_new (DBusGConnection *connection, const char *path)
+nm_device_ethernet_new (DBusGConnection *connection, const char *path)
 {
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (path != NULL, NULL);
 
-	return g_object_new (NM_TYPE_DEVICE_802_3_ETHERNET,
+	return g_object_new (NM_TYPE_DEVICE_ETHERNET,
 	                     NM_OBJECT_DBUS_CONNECTION, connection,
 	                     NM_OBJECT_DBUS_PATH, path,
 	                     NULL);
 }
 
 const char *
-nm_device_802_3_ethernet_get_hw_address (NMDevice8023Ethernet *device)
+nm_device_ethernet_get_hw_address (NMDeviceEthernet *device)
 {
-	NMDevice8023EthernetPrivate *priv;
+	NMDeviceEthernetPrivate *priv;
 
-	g_return_val_if_fail (NM_IS_DEVICE_802_3_ETHERNET (device), NULL);
+	g_return_val_if_fail (NM_IS_DEVICE_ETHERNET (device), NULL);
 
-	priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (device);
+	priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 	if (!priv->hw_address) {
 		priv->hw_address = nm_object_get_string_property (NM_OBJECT (device),
 		                                                  NM_DBUS_INTERFACE_DEVICE_WIRED,
@@ -62,13 +62,13 @@ nm_device_802_3_ethernet_get_hw_address (NMDevice8023Ethernet *device)
 }
 
 guint32
-nm_device_802_3_ethernet_get_speed (NMDevice8023Ethernet *device)
+nm_device_ethernet_get_speed (NMDeviceEthernet *device)
 {
-	NMDevice8023EthernetPrivate *priv;
+	NMDeviceEthernetPrivate *priv;
 
-	g_return_val_if_fail (NM_IS_DEVICE_802_3_ETHERNET (device), 0);
+	g_return_val_if_fail (NM_IS_DEVICE_ETHERNET (device), 0);
 
-	priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (device);
+	priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 	if (!priv->speed) {
 		priv->speed = nm_object_get_uint_property (NM_OBJECT (device),
 		                                           NM_DBUS_INTERFACE_DEVICE_WIRED,
@@ -79,13 +79,13 @@ nm_device_802_3_ethernet_get_speed (NMDevice8023Ethernet *device)
 }
 
 gboolean
-nm_device_802_3_ethernet_get_carrier (NMDevice8023Ethernet *device)
+nm_device_ethernet_get_carrier (NMDeviceEthernet *device)
 {
-	NMDevice8023EthernetPrivate *priv;
+	NMDeviceEthernetPrivate *priv;
 
-	g_return_val_if_fail (NM_IS_DEVICE_802_3_ETHERNET (device), FALSE);
+	g_return_val_if_fail (NM_IS_DEVICE_ETHERNET (device), FALSE);
 
-	priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (device);
+	priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 	if (!priv->carrier_valid) {
 		priv->carrier = nm_object_get_boolean_property (NM_OBJECT (device),
 		                                                NM_DBUS_INTERFACE_DEVICE_WIRED,
@@ -97,9 +97,9 @@ nm_device_802_3_ethernet_get_carrier (NMDevice8023Ethernet *device)
 }
 
 static void
-nm_device_802_3_ethernet_init (NMDevice8023Ethernet *device)
+nm_device_ethernet_init (NMDeviceEthernet *device)
 {
-	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (device);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 
 	priv->disposed = FALSE;
 	priv->carrier = FALSE;
@@ -107,13 +107,13 @@ nm_device_802_3_ethernet_init (NMDevice8023Ethernet *device)
 }
 
 static void
-register_for_property_changed (NMDevice8023Ethernet *device)
+register_for_property_changed (NMDeviceEthernet *device)
 {
-	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (device);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_DEVICE_802_3_ETHERNET_HW_ADDRESS, nm_object_demarshal_generic, &priv->hw_address },
-		{ NM_DEVICE_802_3_ETHERNET_SPEED,      nm_object_demarshal_generic, &priv->speed },
-		{ NM_DEVICE_802_3_ETHERNET_CARRIER,    nm_object_demarshal_generic, &priv->carrier },
+		{ NM_DEVICE_ETHERNET_HW_ADDRESS, nm_object_demarshal_generic, &priv->hw_address },
+		{ NM_DEVICE_ETHERNET_SPEED,      nm_object_demarshal_generic, &priv->speed },
+		{ NM_DEVICE_ETHERNET_CARRIER,    nm_object_demarshal_generic, &priv->carrier },
 		{ NULL },
 	};
 
@@ -128,22 +128,22 @@ constructor (GType type,
 			 GObjectConstructParam *construct_params)
 {
 	GObject *object;
-	NMDevice8023EthernetPrivate *priv;
+	NMDeviceEthernetPrivate *priv;
 
-	object = G_OBJECT_CLASS (nm_device_802_3_ethernet_parent_class)->constructor (type,
+	object = G_OBJECT_CLASS (nm_device_ethernet_parent_class)->constructor (type,
 																				  n_construct_params,
 																				  construct_params);
 	if (!object)
 		return NULL;
 
-	priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (object);
+	priv = NM_DEVICE_ETHERNET_GET_PRIVATE (object);
 
 	priv->proxy = dbus_g_proxy_new_for_name (nm_object_get_connection (NM_OBJECT (object)),
 	                                         NM_DBUS_SERVICE,
 	                                         nm_object_get_path (NM_OBJECT (object)),
 	                                         NM_DBUS_INTERFACE_DEVICE_WIRED);
 
-	register_for_property_changed (NM_DEVICE_802_3_ETHERNET (object));
+	register_for_property_changed (NM_DEVICE_ETHERNET (object));
 
 	return object;
 }
@@ -151,10 +151,10 @@ constructor (GType type,
 static void
 dispose (GObject *object)
 {
-	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (object);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (object);
 
 	if (priv->disposed) {
-		G_OBJECT_CLASS (nm_device_802_3_ethernet_parent_class)->dispose (object);
+		G_OBJECT_CLASS (nm_device_ethernet_parent_class)->dispose (object);
 		return;
 	}
 
@@ -162,18 +162,18 @@ dispose (GObject *object)
 
 	g_object_unref (priv->proxy);
 
-	G_OBJECT_CLASS (nm_device_802_3_ethernet_parent_class)->dispose (object);
+	G_OBJECT_CLASS (nm_device_ethernet_parent_class)->dispose (object);
 }
 
 static void
 finalize (GObject *object)
 {
-	NMDevice8023EthernetPrivate *priv = NM_DEVICE_802_3_ETHERNET_GET_PRIVATE (object);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (object);
 
 	if (priv->hw_address)
 		g_free (priv->hw_address);
 
-	G_OBJECT_CLASS (nm_device_802_3_ethernet_parent_class)->finalize (object);
+	G_OBJECT_CLASS (nm_device_ethernet_parent_class)->finalize (object);
 }
 
 static void
@@ -182,17 +182,17 @@ get_property (GObject *object,
               GValue *value,
               GParamSpec *pspec)
 {
-	NMDevice8023Ethernet *device = NM_DEVICE_802_3_ETHERNET (object);
+	NMDeviceEthernet *device = NM_DEVICE_ETHERNET (object);
 
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
-		g_value_set_string (value, nm_device_802_3_ethernet_get_hw_address (device));
+		g_value_set_string (value, nm_device_ethernet_get_hw_address (device));
 		break;
 	case PROP_SPEED:
-		g_value_set_uint (value, nm_device_802_3_ethernet_get_speed (device));
+		g_value_set_uint (value, nm_device_ethernet_get_speed (device));
 		break;
 	case PROP_CARRIER:
-		g_value_set_boolean (value, nm_device_802_3_ethernet_get_carrier (device));
+		g_value_set_boolean (value, nm_device_ethernet_get_carrier (device));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -201,11 +201,11 @@ get_property (GObject *object,
 }
 
 static void
-nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *device_class)
+nm_device_ethernet_class_init (NMDeviceEthernetClass *device_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (device_class);
 
-	g_type_class_add_private (device_class, sizeof (NMDevice8023EthernetPrivate));
+	g_type_class_add_private (device_class, sizeof (NMDeviceEthernetPrivate));
 
 	/* virtual methods */
 	object_class->constructor = constructor;
@@ -216,7 +216,7 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *device_class)
 	/* properties */
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,
-		 g_param_spec_string (NM_DEVICE_802_3_ETHERNET_HW_ADDRESS,
+		 g_param_spec_string (NM_DEVICE_ETHERNET_HW_ADDRESS,
 						  "MAC Address",
 						  "Hardware MAC address",
 						  NULL,
@@ -224,7 +224,7 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *device_class)
 
 	g_object_class_install_property
 		(object_class, PROP_SPEED,
-		 g_param_spec_uint (NM_DEVICE_802_3_ETHERNET_SPEED,
+		 g_param_spec_uint (NM_DEVICE_ETHERNET_SPEED,
 					    "Speed",
 					    "Speed",
 					    0, G_MAXUINT32, 0,
@@ -232,7 +232,7 @@ nm_device_802_3_ethernet_class_init (NMDevice8023EthernetClass *device_class)
 
 	g_object_class_install_property
 		(object_class, PROP_CARRIER,
-		 g_param_spec_boolean (NM_DEVICE_802_3_ETHERNET_CARRIER,
+		 g_param_spec_boolean (NM_DEVICE_ETHERNET_CARRIER,
 					    "Carrier",
 					    "Carrier",
 					    FALSE,

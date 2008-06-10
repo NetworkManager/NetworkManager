@@ -9,7 +9,7 @@
 
 #include "nm-client.h"
 #include "nm-device.h"
-#include "nm-device-802-3-ethernet.h"
+#include "nm-device-ethernet.h"
 #include "nm-device-802-11-wireless.h"
 #include "nm-utils.h"
 #include "nm-active-connection.h"
@@ -158,13 +158,13 @@ dump_wireless (NMDevice80211Wireless *device)
 }
 
 static void
-dump_wired (NMDevice8023Ethernet *device)
+dump_wired (NMDeviceEthernet *device)
 {
 	const char *str;
 
-	g_print ("Speed: %d\n", nm_device_802_3_ethernet_get_speed (device));
+	g_print ("Speed: %d\n", nm_device_ethernet_get_speed (device));
 
-	str = nm_device_802_3_ethernet_get_hw_address (device);
+	str = nm_device_ethernet_get_hw_address (device);
 	g_print ("MAC: %s\n", str);
 }
 
@@ -195,8 +195,8 @@ dump_device (NMDevice *device)
 	if (state == NM_DEVICE_STATE_ACTIVATED)
 		dump_ip4_config (nm_device_get_ip4_config (device));
 
-	if (NM_IS_DEVICE_802_3_ETHERNET (device))
-		dump_wired (NM_DEVICE_802_3_ETHERNET (device));
+	if (NM_IS_DEVICE_ETHERNET (device))
+		dump_wired (NM_DEVICE_ETHERNET (device));
 	else if (NM_IS_DEVICE_802_11_WIRELESS (device))
 		dump_wireless (NM_DEVICE_802_11_WIRELESS (device));
 }

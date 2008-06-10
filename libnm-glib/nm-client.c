@@ -5,7 +5,7 @@
 #include <nm-utils.h>
 
 #include "nm-client.h"
-#include "nm-device-802-3-ethernet.h"
+#include "nm-device-ethernet.h"
 #include "nm-device-802-11-wireless.h"
 #include "nm-gsm-device.h"
 #include "nm-cdma-device.h"

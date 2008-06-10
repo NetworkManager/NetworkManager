@@ -414,7 +414,7 @@ nm_device_802_11_wireless_init (NMDevice80211Wireless * self)
 
 	memset (&(self->priv->hw_addr), 0, sizeof (struct ether_addr));
 
-	nm_device_set_device_type (NM_DEVICE (self), DEVICE_TYPE_802_11_WIRELESS);
+	nm_device_set_device_type (NM_DEVICE (self), NM_DEVICE_TYPE_WIFI);
 }
 
 static guint32 iw_freq_to_uint32 (struct iw_freq *freq)

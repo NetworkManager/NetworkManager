@@ -31,7 +31,7 @@
 #include <unistd.h>
 #include "NetworkManager.h"
 #include "nm-device.h"
-#include "nm-device-802-3-ethernet.h"
+#include "nm-device-ethernet.h"
 #include "nm-device-802-11-wireless.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
@@ -225,8 +225,8 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 	memset (&saddr, 0, sizeof (saddr));
 	strncpy (saddr.sa_data, iface, sizeof (saddr.sa_data));
 
-	if (NM_IS_DEVICE_802_3_ETHERNET (dev))
-		nm_device_802_3_ethernet_get_address (NM_DEVICE_802_3_ETHERNET (dev), &addr);
+	if (NM_IS_DEVICE_ETHERNET (dev))
+		nm_device_ethernet_get_address (NM_DEVICE_ETHERNET (dev), &addr);
 	else if (NM_IS_DEVICE_802_11_WIRELESS (dev))
 		nm_device_802_11_wireless_get_address (NM_DEVICE_802_11_WIRELESS (dev), &addr);
 	else

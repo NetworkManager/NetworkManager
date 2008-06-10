@@ -109,7 +109,7 @@ nm_device_interface_init (gpointer g_iface)
 		 g_param_spec_uint (NM_DEVICE_INTERFACE_DEVICE_TYPE,
 							"DeviceType",
 							"DeviceType",
-							0, G_MAXUINT32, DEVICE_TYPE_UNKNOWN,
+							0, G_MAXUINT32, NM_DEVICE_TYPE_UNKNOWN,
 							G_PARAM_READABLE));
 
 	g_object_interface_install_property

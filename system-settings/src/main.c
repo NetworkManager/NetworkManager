@@ -178,9 +178,9 @@ load_stuff (gpointer user_data)
 	GSList *devs, *iter;
 
 	/* Grab wired devices to make default DHCP connections for them if needed */
-	devs = nm_system_config_hal_manager_get_devices_of_type (app->hal_mgr, DEVICE_TYPE_802_3_ETHERNET);
+	devs = nm_system_config_hal_manager_get_devices_of_type (app->hal_mgr, NM_DEVICE_TYPE_ETHERNET);
 	for (iter = devs; iter; iter = g_slist_next (iter)) {
-		device_added_cb (NULL, (const char *) iter->data, DEVICE_TYPE_802_3_ETHERNET, app);
+		device_added_cb (NULL, (const char *) iter->data, NM_DEVICE_TYPE_ETHERNET, app);
 		g_free (iter->data);
 	}
 
@@ -390,7 +390,7 @@ device_added_cb (DBusGProxy *proxy, const char *udi, NMDeviceType devtype, gpoin
 	Application *app = (Application *) user_data;
 	WiredDeviceInfo *info;
 
-	if (devtype != DEVICE_TYPE_802_3_ETHERNET)
+	if (devtype != NM_DEVICE_TYPE_ETHERNET)
 		return;
 
 	/* Wait for a plugin to figure out if the device should be managed or not */

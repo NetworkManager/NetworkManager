@@ -38,7 +38,7 @@ static void create_device (DBusConnection *connection, NMDeviceType type)
 	char *string;
 
 	g_return_if_fail (connection != NULL);
-	g_return_if_fail (((type == DEVICE_TYPE_802_3_ETHERNET) || (type == DEVICE_TYPE_802_11_WIRELESS)));
+	g_return_if_fail (((type == NM_DEVICE_TYPE_ETHERNET) || (type == NM_DEVICE_TYPE_WIFI)));
 
 	message = dbus_message_new_method_call (NM_DBUS_SERVICE, NM_DBUS_PATH, NM_DBUS_INTERFACE, "createTestDevice");
 	if (message == NULL)
@@ -189,7 +189,7 @@ int main( int argc, char *argv[] )
 	gboolean		 destroy = FALSE;
 	gboolean		 make_link_active = FALSE;
 	gboolean		 make_link_inactive = FALSE;
-	NMDeviceType	 dev_type = DEVICE_TYPE_UNKNOWN;
+	NMDeviceType	 dev_type = NM_DEVICE_TYPE_UNKNOWN;
 
 	if (argc < 2) {
 		print_usage ();
@@ -231,9 +231,9 @@ int main( int argc, char *argv[] )
 					if (optarg)
 					{
 						if (strcmp (optarg, "wired") == 0)
-							dev_type = DEVICE_TYPE_802_3_ETHERNET;
+							dev_type = NM_DEVICE_TYPE_ETHERNET;
 						else if (strcmp (optarg, "wireless") == 0)
-							dev_type = DEVICE_TYPE_802_11_WIRELESS;
+							dev_type = NM_DEVICE_TYPE_WIFI;
 					}
 				}
 				else if (strcmp (opt, "remove-device") == 0)

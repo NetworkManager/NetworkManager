@@ -1,5 +1,9 @@
 2008-06-10  Dan Williams  <dcbw@redhat.com>
 
+	The grand 802-3-ethernet rename.  Get rid of the 802-3/8023/802_3 bits.
+
+2008-06-10  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Tambet Ingo <tambet@gmail.com>
 
 	* src/ppp-manager/nm-ppp-manager.c: Add ppp stats monitoring, signal the

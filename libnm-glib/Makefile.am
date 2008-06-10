@@ -7,7 +7,7 @@ BUILT_SOURCES = \
 	nm-access-point-bindings.h \
 	nm-client-bindings.h \
 	nm-device-bindings.h \
-	nm-device-802-3-ethernet-bindings.h \
+	nm-device-ethernet-bindings.h \
 	nm-device-802-11-wireless-bindings.h \
 	nm-exported-connection-glue.h \
 	nm-exported-connection-bindings.h \
@@ -34,7 +34,7 @@ libnminclude_HEADERS = \
 	nm-object.h		\
 	nm-client.h		\
 	nm-device.h		\
-	nm-device-802-3-ethernet.h \
+	nm-device-ethernet.h \
 	nm-device-802-11-wireless.h \
 	nm-access-point.h \
 	nm-ip4-config.h \
@@ -59,7 +59,7 @@ libnm_glib_la_SOURCES = \
 	nm-dbus-utils.h		\
 	nm-device.c		\
 	nm-device-private.h	\
-	nm-device-802-3-ethernet.c \
+	nm-device-ethernet.c \
 	nm-device-802-11-wireless.c \
 	nm-access-point.c	\
 	nm-ip4-config.c		\
@@ -103,8 +103,8 @@ nm-client-bindings.h: $(top_srcdir)/introspection/nm-manager-client.xml
 nm-device-bindings.h: $(top_srcdir)/introspection/nm-device.xml
 	dbus-binding-tool --prefix=nm_device --mode=glib-client --output=nm-device-bindings.h $(top_srcdir)/introspection/nm-device.xml
 
-nm-device-802-3-ethernet-bindings.h: $(top_srcdir)/introspection/nm-device-802-3-ethernet.xml
-	dbus-binding-tool --prefix=nm_device_802_3_ethernet --mode=glib-client --output=nm-device-802-3-ethernet-bindings.h $(top_srcdir)/introspection/nm-device-802-3-ethernet.xml
+nm-device-ethernet-bindings.h: $(top_srcdir)/introspection/nm-device-ethernet.xml
+	dbus-binding-tool --prefix=nm_device_ethernet --mode=glib-client --output=nm-device-ethernet-bindings.h $(top_srcdir)/introspection/nm-device-ethernet.xml
 
 nm-device-802-11-wireless-bindings.h: $(top_srcdir)/introspection/nm-device-802-11-wireless.xml
 	dbus-binding-tool --prefix=nm_device_802_11_wireless --mode=glib-client --output=nm-device-802-11-wireless-bindings.h $(top_srcdir)/introspection/nm-device-802-11-wireless.xml

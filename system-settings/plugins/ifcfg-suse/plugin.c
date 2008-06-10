@@ -232,7 +232,7 @@ device_added_cb (NMSystemConfigHalManager *hal_mgr,
 {
 	SCPluginIfcfg *self = SC_PLUGIN_IFCFG (user_data);
 
-	if (dev_type != DEVICE_TYPE_802_3_ETHERNET && dev_type != DEVICE_TYPE_802_11_WIRELESS)
+	if (dev_type != NM_DEVICE_TYPE_ETHERNET && dev_type != NM_DEVICE_TYPE_WIFI)
 		return;
 
 	read_connection (self, udi, dev_type);
@@ -248,7 +248,7 @@ device_removed_cb (NMSystemConfigHalManager *hal_mgr,
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
 	NMExportedConnection *exported;
 
-	if (dev_type != DEVICE_TYPE_802_3_ETHERNET && dev_type != DEVICE_TYPE_802_11_WIRELESS)
+	if (dev_type != NM_DEVICE_TYPE_ETHERNET && dev_type != NM_DEVICE_TYPE_WIFI)
 		return;
 
 	if (g_hash_table_remove (priv->unmanaged_devices, udi))
@@ -291,8 +291,8 @@ get_connections (NMSystemConfigInterface *config)
 	if (!priv->initialized) {
 		const char *filename;
 
-		read_connections_by_type (self, DEVICE_TYPE_802_3_ETHERNET);
-		read_connections_by_type (self, DEVICE_TYPE_802_11_WIRELESS);
+		read_connections_by_type (self, NM_DEVICE_TYPE_ETHERNET);
+		read_connections_by_type (self, NM_DEVICE_TYPE_WIFI);
 
 		filename = SYSCONFDIR"/sysconfig/network/routes";
 		monitor_routes (self, filename);

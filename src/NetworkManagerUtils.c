@@ -29,7 +29,7 @@
 #include "nm-utils.h"
 #include "nm-device.h"
 #include "nm-device-802-11-wireless.h"
-#include "nm-device-802-3-ethernet.h"
+#include "nm-device-ethernet.h"
 #include "nm-dbus-manager.h"
 #include "nm-dispatcher-action.h"
 #include "nm-dbus-glib-types.h"
@@ -118,7 +118,7 @@ nm_print_device_capabilities (NMDevice *dev)
 		return;
 	}
 
-	if (NM_IS_DEVICE_802_3_ETHERNET (dev)) {
+	if (NM_IS_DEVICE_ETHERNET (dev)) {
 		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT)) {
 			nm_info ("%s: Driver '%s' does not support carrier detection.\n"
 					"\tYou must switch to it manually.",
