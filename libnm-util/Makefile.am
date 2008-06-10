@@ -72,7 +72,7 @@ noinst_PROGRAMS = test-crypto
 
 test_crypto_SOURCES = test-crypto.c
 test_crypto_CPPFLAGS = $(GLIB_CFLAGS) -D_GNU_SOURCE
-test_crypto_LDADD = $(GLIB_LIBS) ${top_builddir}/libnm-util/libnm-util.la
+test_crypto_LDADD = $(GLIB_LIBS) libnm-util.la
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libnm-util.pc
