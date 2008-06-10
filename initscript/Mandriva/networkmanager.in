@@ -31,6 +31,9 @@ NETWORKMANAGER_BIN=${sbindir}/NetworkManager
 # Source function library.
 . /etc/rc.d/init.d/functions
 
+# Source network configuration
+. /etc/sysconfig/network
+
 # so we can rearrange this easily
 processname=NetworkManager
 servicename=NetworkManager
@@ -51,6 +54,14 @@ start()
 	daemon --check $servicename $processname --pid-file=$pidfile
 	RETVAL=$?
 	echo
+	if [ -n "${NETWORKWAIT}" ]; then 
+		[ -z "${LINKDELAY}" ] && LINKDELAY=10
+		echo -n $"Waiting for network..."
+		nm-online -q --timeout=$LINKDELAY || nm-online -q -x --timeout=30
+		[ "$?" = "0" ] && success "network startup" || failure "network startup"
+		echo
+		[ -n "${NETWORKDELAY}" ] && /bin/sleep ${NETWORKDELAY}
+	fi
 	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/$servicename
 }
 
