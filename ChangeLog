@@ -1,3 +1,10 @@
+2008-06-09  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-glib/nm-device-802-11-wireless.c
+		- (access_point_removed_proxy): actually unref the AP after removing
+			it from the device's AP list.  Fixes refcounting bug for APs that
+			caused them to get mixed up in the applet's menu.
+
 2008-06-09  Tambet Ingo  <tambet@gmail.com>
 
 	* src/dhcp-manager/nm-dhcp-manager.c (finalize): Free private members.

@@ -293,6 +293,7 @@ access_point_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 	if (ap) {
 		g_signal_emit (self, signals[ACCESS_POINT_REMOVED], 0, ap);
 		g_ptr_array_remove (priv->aps, ap);
+		g_object_unref (G_OBJECT (ap));
 	}
 }
 
