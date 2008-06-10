@@ -1,5 +1,12 @@
 2008-06-09  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device.c
+		- (clear_act_request): unset the 'default' property of the activation
+			request when clearing it to ensure the property changed signal gets
+			delivered and handled
+
+2008-06-09  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/nm-device-802-11-wireless.c
 		- (access_point_removed_proxy): actually unref the AP after removing
 			it from the device's AP list.  Fixes refcounting bug for APs that

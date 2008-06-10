@@ -962,6 +962,8 @@ clear_act_request (NMDevice *self)
 		priv->secrets_failed_id = 0;
 	}
 
+	nm_act_request_set_default (priv->act_request, FALSE);
+
 	g_object_unref (priv->act_request);
 	priv->act_request = NULL;
 }
