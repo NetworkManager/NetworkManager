@@ -1,3 +1,11 @@
+2008-06-10  Dan Williams  <dcbw@redhat.com>
+
+	* configure.in
+		- Add TARGET_* define to config.h to distinguish distros
+
+	* src/dhcp-manager/nm-dhcp-manager.c
+		- (dhclient_run): use distro-specific path for dhclient config file
+
 2008-06-09  Dan Williams  <dcbw@redhat.com>
 
 	* src/dnsmasq-manager/nm-dnsmasq-manager.c

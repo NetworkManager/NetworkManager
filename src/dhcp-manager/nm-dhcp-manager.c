@@ -55,6 +55,15 @@
 
 #define NM_DHCP_TIMEOUT   	45 /* DHCP timeout, in seconds */
 
+#if defined(TARGET_SUSE)
+#define DHCLIENT_CONF_PATH  SYSCONFDIR "/dhclient.conf"
+#elif defined(TARGET_DEBIAN)
+#define DHCLIENT_CONF_PATH  SYSCONFDIR "/dhcp3/dhclient.conf"
+#else
+#define DHCLIENT_CONF_PATH_FORMAT  SYSCONFDIR "/dhclient-%s.conf"
+#endif
+
+
 static const char *dhclient_binary_paths[] =
 {
 	"/sbin/dhclient",
@@ -636,7 +645,11 @@ dhclient_run (NMDHCPDevice *device)
 		goto out;
 	}
 
-	conffile = g_strdup_printf (SYSCONFDIR "/dhclient-%s.conf", device->iface);
+#ifdef DHCLIENT_CONF_PATH_FORMAT
+	conffile = g_strdup_printf (DHCLIENT_CONF_PATH_FORMAT, device->iface);
+#else
+	conffile = g_strdup (DHCLIENT_CONF_PATH);
+#endif
 	if (!conffile) {
 		nm_warning ("%s: not enough memory for dhclient options.", device->iface);
 		goto out;

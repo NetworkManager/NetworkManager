@@ -105,15 +105,51 @@ else
 			;;
 	esac
 fi
+
 AM_CONDITIONAL(TARGET_REDHAT, test x"$with_distro" = xredhat)
+if test x"$with_distro" = xredhat; then
+  AC_DEFINE(TARGET_REDHAT, 1, [Define if you have Fedora or RHEL])
+fi
+
 AM_CONDITIONAL(TARGET_SUSE, test x"$with_distro" = xsuse)
+if test x"$with_distro" = xsuse; then
+  AC_DEFINE(TARGET_SUSE, 1, [Define if you have OpenSUSE or SLES])
+fi
+
 AM_CONDITIONAL(TARGET_GENTOO, test x"$with_distro" = xgentoo)
+if test x"$with_distro" = xgentoo; then
+  AC_DEFINE(TARGET_GENTOO, 1, [Define if you have Gentoo])
+fi
+
 AM_CONDITIONAL(TARGET_DEBIAN, test x"$with_distro" = xdebian)
+if test x"$with_distro" = xdebian; then
+  AC_DEFINE(TARGET_DEBIAN, 1, [Define if you have Debian])
+fi
+
 AM_CONDITIONAL(TARGET_SLACKWARE, test x"$with_distro" = xslackware)
+if test x"$with_distro" = xslackware; then
+  AC_DEFINE(TARGET_SLACKWARE, 1, [Define if you have Slackware])
+fi
+
 AM_CONDITIONAL(TARGET_ARCH, test x"$with_distro" = xarch)
+if test x"$with_distro" = xarch; then
+  AC_DEFINE(TARGET_ARCH, 1, [Define if you have Arch])
+fi
+
 AM_CONDITIONAL(TARGET_PALDO, test x"$with_distro" = xpaldo)
+if test x"$with_distro" = xpaldo; then
+  AC_DEFINE(TARGET_PALDO, 1, [Define if you have Paldo])
+fi
+
 AM_CONDITIONAL(TARGET_FRUGALWARE, test x"$with_distro" = xfrugalware)
+if test x"$with_distro" = xfrugalware; then
+  AC_DEFINE(TARGET_FRUGALWARE, 1, [Define if you have Frugalware])
+fi
+
 AM_CONDITIONAL(TARGET_MANDRIVA, test x"$with_distro" = xmandriva)
+if test x"$with_distro" = xmandriva; then
+  AC_DEFINE(TARGET_MANDRIVA, 1, [Define if you have Mandriva])
+fi
 
 AC_MSG_CHECKING([Linux Wireless Extensions >= 18])
 AC_TRY_COMPILE([#ifndef __user
