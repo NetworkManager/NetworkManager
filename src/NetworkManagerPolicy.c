@@ -29,6 +29,8 @@
 #include <fcntl.h>
 #include <sys/select.h>
 #include <string.h>
+#include <stdlib.h>
+#include <sys/wait.h>
 
 #include "NetworkManagerPolicy.h"
 #include "NetworkManagerUtils.h"
@@ -179,20 +181,30 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 
 	update_default_route (policy, best);
 	
-	/* Update the default active connection */
+	/* Update the default active connection.  Only mark the new default
+	 * active connection after setting default = FALSE on all other connections
+	 * first.  The order is important, we don't want two connections marked
+	 * default at the same time ever.
+	 */
 	for (iter = devices; iter; iter = g_slist_next (iter)) {
 		NMDevice *dev = NM_DEVICE (iter->data);
 		NMActRequest *req;
 
 		req = nm_device_get_act_request (dev);
-		if (req)
-			nm_act_request_set_default (req, (req == best_req) ? TRUE : FALSE);
+		if (req && (req != best_req))
+			nm_act_request_set_default (req, FALSE);
 	}
 
 	named_mgr = nm_named_manager_get ();
 	config = nm_device_get_ip4_config (best);
 	nm_named_manager_add_ip4_config (named_mgr, config, NM_NAMED_IP_CONFIG_TYPE_BEST_DEVICE);
 	g_object_unref (named_mgr);
+
+	/* Now set new default active connection _after_ updating DNS info, so that
+	 * if the connection is shared dnsmasq picks up the right stuff.
+	 */
+	if (best_req)
+			nm_act_request_set_default (best_req, TRUE);
 
 	nm_info ("Policy set (%s) as default device for routing and DNS.",
 	         nm_device_get_iface (best));
@@ -330,6 +342,178 @@ get_device_connection (NMDevice *device)
 	return nm_act_request_get_connection (req);
 }
 
+static gboolean
+do_ipt_cmd (const char *fmt, ...)
+{
+	va_list args;
+	char *cmd;
+	int ret;
+
+	va_start (args, fmt);
+	cmd = g_strdup_vprintf (fmt, args);
+	va_end (args);
+
+	nm_info ("Executing: %s", cmd);
+	ret = system (cmd);
+	g_free (cmd);
+
+	if (ret == -1) {
+		nm_info ("** Error executing command.");
+		return FALSE;
+	} else if (WEXITSTATUS (ret)) {
+		nm_info ("** Command returned exit status %d.", WEXITSTATUS (ret));
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static void
+sharing_init (void)
+{
+	system ("echo \"1\" > /proc/sys/net/ipv4/ip_forward");
+	system ("echo \"1\" > /proc/sys/net/ipv4/ip_dynaddr");
+	system ("/sbin/modprobe ip_tables iptable_nat ip_nat_ftp ip_nat_irc");
+	do_ipt_cmd ("/sbin/iptables -P INPUT ACCEPT");
+	do_ipt_cmd ("/sbin/iptables -F INPUT");
+	do_ipt_cmd ("/sbin/iptables -P OUTPUT ACCEPT");
+	do_ipt_cmd ("/sbin/iptables -F OUTPUT");
+	do_ipt_cmd ("/sbin/iptables -P FORWARD DROP");
+	do_ipt_cmd ("/sbin/iptables -F FORWARD");
+	do_ipt_cmd ("/sbin/iptables -t nat -F");
+}
+
+static void
+sharing_stop (NMActRequest *req)
+{
+	do_ipt_cmd ("/sbin/iptables -F INPUT");
+	do_ipt_cmd ("/sbin/iptables -F OUTPUT");
+	do_ipt_cmd ("/sbin/iptables -P FORWARD DROP");
+	do_ipt_cmd ("/sbin/iptables -F FORWARD");
+	do_ipt_cmd ("/sbin/iptables -F -t nat");
+
+	// Delete all User-specified chains
+	do_ipt_cmd ("/sbin/iptables -X");
+
+	// Reset all IPTABLES counters
+	do_ipt_cmd ("/sbin/iptables -Z");
+
+	nm_act_request_set_shared (req, FALSE);
+}
+
+/* Given a default activation request, start NAT-ing if there are any shared
+ * connections.
+ */
+static void
+sharing_restart (NMPolicy *policy, NMActRequest *req)
+{
+	GSList *devices, *iter;
+	const char *extif;
+	gboolean have_shared = FALSE;
+
+	if (nm_act_request_get_shared (req))
+		sharing_stop (req);
+
+	extif = nm_device_get_ip_iface (NM_DEVICE (nm_act_request_get_device (req)));
+	g_assert (extif);
+
+	/* Start NAT-ing every 'shared' connection */
+	devices = nm_manager_get_devices (policy->manager);
+	for (iter = devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *candidate = NM_DEVICE (iter->data);
+		NMSettingIP4Config *s_ip4;
+		NMConnection *connection;
+		const char *intif;
+
+		if (nm_device_get_state (candidate) != NM_DEVICE_STATE_ACTIVATED)
+			continue;
+
+		connection = get_device_connection (candidate);
+		g_assert (connection);
+
+		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+		if (!s_ip4 || strcmp (s_ip4->method, "shared"))
+			continue;
+
+		/* Init sharing if there's a shared connection to NAT */
+		if (!have_shared) {
+			sharing_init ();
+			have_shared = TRUE;
+		}
+
+		// FWD: Allow all connections OUT and only existing and related ones IN
+		intif = nm_device_get_ip_iface (candidate);
+		g_assert (intif);
+		do_ipt_cmd ("/sbin/iptables -A FORWARD -i %s -o %s -m state --state ESTABLISHED,RELATED -j ACCEPT", extif, intif);
+		do_ipt_cmd ("/sbin/iptables -A FORWARD -i %s -o %s -j ACCEPT", extif, intif);
+		do_ipt_cmd ("/sbin/iptables -A FORWARD -i %s -o %s -j ACCEPT", intif, extif);
+	}
+
+	if (have_shared) {
+		// Enabling SNAT (MASQUERADE) functionality on $EXTIF
+		do_ipt_cmd ("/sbin/iptables -t nat -A POSTROUTING -o %s -j MASQUERADE", extif);
+
+		nm_act_request_set_shared (req, TRUE);
+	}
+}
+
+static void
+check_sharing (NMPolicy *policy, NMDevice *device, NMConnection *connection)
+{
+	NMSettingIP4Config *s_ip4;
+	GSList *devices, *iter;
+	NMActRequest *default_req = NULL;
+
+	if (!connection)
+		return;
+
+	/* We only care about 'shared' connections going up or down */
+	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	if (!s_ip4 || strcmp (s_ip4->method, "shared"))
+		return;
+
+	/* Find the default connection, if any */
+	devices = nm_manager_get_devices (policy->manager);
+	for (iter = devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *candidate = NM_DEVICE (iter->data);
+		NMActRequest *req = nm_device_get_act_request (candidate);
+
+		if (req && nm_act_request_get_default (req)) {
+			default_req = req;
+			break;
+		}
+	}
+
+	/* Restart sharing if there's a default active connection */
+	if (default_req)
+		sharing_restart (policy, default_req);
+}
+
+static void
+active_connection_default_changed (NMActRequest *req,
+                                   GParamSpec *pspec,
+                                   NMPolicy *policy)
+{
+	gboolean is_default = nm_act_request_get_default (req);
+
+	if (is_default) {
+		if (nm_act_request_get_shared (req)) {
+			/* Already shared, shouldn't get here */
+			nm_warning ("%s: Active connection '%s' already shared.",
+			            __func__, nm_act_request_get_active_connection_path (req));
+			return;
+		}
+
+		sharing_restart (policy, req);
+	} else {
+		if (!nm_act_request_get_shared (req))
+			return;  /* Don't care about non-shared connections */
+
+		/* Tear down all NAT-ing */
+		sharing_stop (req);
+	}
+}
+
 static void
 device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 {
@@ -344,19 +528,27 @@ device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 			nm_info ("Marking connection '%s' invalid.", get_connection_id (connection));
 		}
 		schedule_activate_check (policy, device);
+		check_sharing (policy, device, connection);
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
 		/* Clear the invalid tag on the connection */
 		if (connection)
 			g_object_set_data (G_OBJECT (connection), INVALID_TAG, NULL);
 
+		g_signal_connect (G_OBJECT (nm_device_get_act_request (device)),
+		                  "notify::default",
+		                  G_CALLBACK (active_connection_default_changed),
+		                  policy);
+
 		update_routing_and_dns (policy, FALSE);
+		check_sharing (policy, device, connection);
 		break;
 	case NM_DEVICE_STATE_UNMANAGED:
 	case NM_DEVICE_STATE_UNAVAILABLE:
 	case NM_DEVICE_STATE_DISCONNECTED:
 		update_routing_and_dns (policy, FALSE);
 		schedule_activate_check (policy, device);
+		check_sharing (policy, device, connection);
 		break;
 	default:
 		break;

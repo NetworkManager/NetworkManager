@@ -1,5 +1,23 @@
 2008-06-09  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerPolicy.c
+		- (update_routing_and_dns): set the default connection _after_ unsetting
+			default on all non-default connections so that two connections can
+			never be default at the same time
+		- (device_state_changed): start and stop connection sharing when
+			needed
+		- (active_connection_default_changed): restart or stop sharing when
+			the default connection changes to keep shared connections always
+			NAT-ed through the default connection
+		- (check_sharing): handle activation/deactivation of shared connections
+		- (sharing_restart): atom-bomb approach to connection sharing until we
+			can use libnl; reinit all sharing when the default connection or
+			shared connections change
+		- (sharing_init, sharing_stop): evil functions that init and deinit
+			iptables
+
+2008-06-09  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-activation-request.c
 	  src/nm-activation-request.h
 		- (nm_act_request_set_shared, nm_act_request_get_shared,
