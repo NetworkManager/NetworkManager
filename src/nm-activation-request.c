@@ -55,12 +55,13 @@ static guint signals[LAST_SIGNAL] = { 0 };
 typedef struct {
 	NMConnection *connection;
 	char *specific_object;
-	NMConnection *shared;
+	NMConnection *shared_connection;
 	NMDevice *device;
 	gboolean user_requested;
 
 	NMActiveConnectionState state;
 	gboolean is_default;
+	gboolean shared;
 
 	char *ac_path;
 } NMActRequestPrivate;
@@ -157,8 +158,8 @@ dispose (GObject *object)
 	                   CONNECTION_GET_SECRETS_CALL_TAG, NULL);
 	g_object_unref (priv->connection);
 
-	if (priv->shared)
-		g_object_unref (priv->shared);
+	if (priv->shared_connection)
+		g_object_unref (priv->shared_connection);
 
 out:
 	G_OBJECT_CLASS (nm_act_request_parent_class)->dispose (object);
@@ -196,11 +197,11 @@ get_property (GObject *object, guint prop_id,
 			g_value_set_boxed (value, "/");
 		break;
 	case PROP_SHARED_SERVICE_NAME:
-		nm_active_connection_scope_to_value (priv->shared, value);
+		nm_active_connection_scope_to_value (priv->shared_connection, value);
 		break;
 	case PROP_SHARED_CONNECTION:
-		if (priv->shared)
-			g_value_set_boxed (value, nm_connection_get_path (priv->shared));
+		if (priv->shared_connection)
+			g_value_set_boxed (value, nm_connection_get_path (priv->shared_connection));
 		else
 			g_value_set_boxed (value, "/");
 		break;
@@ -650,5 +651,29 @@ nm_act_request_get_default (NMActRequest *req)
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
 
 	return NM_ACT_REQUEST_GET_PRIVATE (req)->is_default;
+}
+
+void
+nm_act_request_set_shared (NMActRequest *req, gboolean shared)
+{
+	g_return_if_fail (NM_IS_ACT_REQUEST (req));
+
+	NM_ACT_REQUEST_GET_PRIVATE (req)->shared = shared;
+}
+
+gboolean
+nm_act_request_get_shared (NMActRequest *req)
+{
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
+
+	return NM_ACT_REQUEST_GET_PRIVATE (req)->shared;
+}
+
+GObject *
+nm_act_request_get_device (NMActRequest *req)
+{
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
+
+	return G_OBJECT (NM_ACT_REQUEST_GET_PRIVATE (req)->device);
 }
 

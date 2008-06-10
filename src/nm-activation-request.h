@@ -76,4 +76,10 @@ void          nm_act_request_set_default (NMActRequest *req, gboolean is_default
 
 gboolean      nm_act_request_get_default (NMActRequest *req);
 
+gboolean      nm_act_request_get_shared (NMActRequest *req);
+
+void          nm_act_request_set_shared (NMActRequest *req, gboolean shared);
+
+GObject *     nm_act_request_get_device (NMActRequest *req);
+
 #endif /* NM_ACTIVATION_REQUEST_H */

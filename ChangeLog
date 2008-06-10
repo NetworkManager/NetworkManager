@@ -1,5 +1,13 @@
 2008-06-09  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-activation-request.c
+	  src/nm-activation-request.h
+		- (nm_act_request_set_shared, nm_act_request_get_shared,
+		   nm_act_request_get_device): new functions to facilitate connection
+			sharing
+
+2008-06-09  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device.c
 		- (clear_act_request): unset the 'default' property of the activation
 			request when clearing it to ensure the property changed signal gets
