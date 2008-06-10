@@ -9,7 +9,7 @@
 #include "nm-vpn-manager.h"
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
-#include "nm-device-802-11-wireless.h"
+#include "nm-device-wifi.h"
 #include "NetworkManagerSystem.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-setting-connection.h"
@@ -1362,8 +1362,8 @@ manager_set_wireless_enabled (NMManager *manager, gboolean enabled)
 
 	/* enable/disable wireless devices as required */
 	for (iter = priv->devices; iter; iter = iter->next) {
-		if (NM_IS_DEVICE_802_11_WIRELESS (iter->data))
-			nm_device_802_11_wireless_set_enabled (NM_DEVICE_802_11_WIRELESS (iter->data), enabled);
+		if (NM_IS_DEVICE_WIFI (iter->data))
+			nm_device_wifi_set_enabled (NM_DEVICE_WIFI (iter->data), enabled);
 	}
 }
 
@@ -1473,13 +1473,13 @@ hal_manager_udi_added_cb (NMHalManager *hal_mgr,
 	/* Attach to the access-point-added signal so that the manager can fill
 	 * non-SSID-broadcasting APs with an SSID.
 	 */
-	if (NM_IS_DEVICE_802_11_WIRELESS (device)) {
+	if (NM_IS_DEVICE_WIFI (device)) {
 		g_signal_connect (device, "hidden-ap-found",
 						  G_CALLBACK (manager_hidden_ap_found),
 						  self);
 
 		/* Set initial rfkill state */
-		nm_device_802_11_wireless_set_enabled (NM_DEVICE_802_11_WIRELESS (device), priv->wireless_enabled);
+		nm_device_wifi_set_enabled (NM_DEVICE_WIFI (device), priv->wireless_enabled);
 	}
 
 	iface = nm_device_get_iface (NM_DEVICE (device));

@@ -1,6 +1,6 @@
 EXTRA_DIST =						\
 	nm-access-point.xml				\
-	nm-device-802-11-wireless.xml	\
+	nm-device-wifi.xml	\
 	nm-device-ethernet.xml	\
 	nm-device-cdma.xml \
 	nm-device-gsm.xml \

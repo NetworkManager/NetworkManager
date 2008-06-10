@@ -33,7 +33,7 @@
 #include <nm-client.h>
 #include <nm-device.h>
 #include <nm-device-ethernet.h>
-#include <nm-device-802-11-wireless.h>
+#include <nm-device-wifi.h>
 #include <nm-gsm-device.h>
 #include <nm-cdma-device.h>
 #include <nm-utils.h>
@@ -215,8 +215,8 @@ detail_device (gpointer data, gpointer user_data)
 	/* General information */
 	if (NM_IS_DEVICE_ETHERNET (device))
 		print_string ("Type", "Wired");
-	else if (NM_IS_DEVICE_802_11_WIRELESS (device))
-		print_string ("Type", "802.11 Wireless");
+	else if (NM_IS_DEVICE_WIFI (device))
+		print_string ("Type", "802.11 WiFi");
 	else if (NM_IS_GSM_DEVICE (device))
 		print_string ("Type", "Mobile Broadband (GSM)");
 	else if (NM_IS_CDMA_DEVICE (device))
@@ -245,8 +245,8 @@ detail_device (gpointer data, gpointer user_data)
 	tmp = NULL;
 	if (NM_IS_DEVICE_ETHERNET (device))
 		tmp = g_strdup (nm_device_ethernet_get_hw_address (NM_DEVICE_ETHERNET (device)));
-	else if (NM_IS_DEVICE_802_11_WIRELESS (device))
-		tmp = g_strdup (nm_device_802_11_wireless_get_hw_address (NM_DEVICE_802_11_WIRELESS (device)));
+	else if (NM_IS_DEVICE_WIFI (device))
+		tmp = g_strdup (nm_device_wifi_get_hw_address (NM_DEVICE_WIFI (device)));
 
 	if (tmp) {
 		print_string ("HW Address", tmp);
@@ -267,9 +267,9 @@ detail_device (gpointer data, gpointer user_data)
 	if (NM_IS_DEVICE_ETHERNET (device)) {
 		/* Speed in Mb/s */
 		speed = nm_device_ethernet_get_speed (NM_DEVICE_ETHERNET (device));
-	} else if (NM_IS_DEVICE_802_11_WIRELESS (device)) {
+	} else if (NM_IS_DEVICE_WIFI (device)) {
 		/* Speed in b/s */
-		speed = nm_device_802_11_wireless_get_bitrate (NM_DEVICE_802_11_WIRELESS (device));
+		speed = nm_device_wifi_get_bitrate (NM_DEVICE_WIFI (device));
 		speed /= 1000;
 	}
 
@@ -282,7 +282,7 @@ detail_device (gpointer data, gpointer user_data)
 	}
 
 	/* Wireless specific information */
-	if ((NM_IS_DEVICE_802_11_WIRELESS (device))) {
+	if ((NM_IS_DEVICE_WIFI (device))) {
 		guint32 wcaps;
 		NMAccessPoint *active_ap = NULL;
 		const char *active_bssid = NULL;
@@ -290,23 +290,23 @@ detail_device (gpointer data, gpointer user_data)
 
 		printf ("\n  Wireless Settings\n");
 
-		wcaps = nm_device_802_11_wireless_get_capabilities (NM_DEVICE_802_11_WIRELESS (device));
+		wcaps = nm_device_wifi_get_capabilities (NM_DEVICE_WIFI (device));
 
-		if (wcaps & (NM_802_11_DEVICE_CAP_CIPHER_WEP40 | NM_802_11_DEVICE_CAP_CIPHER_WEP104))
+		if (wcaps & (NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104))
 			print_string ("  WEP Encryption", "yes");
-		if (wcaps & NM_802_11_DEVICE_CAP_WPA)
+		if (wcaps & NM_WIFI_DEVICE_CAP_WPA)
 			print_string ("  WPA Encryption", "yes");
-		if (wcaps & NM_802_11_DEVICE_CAP_RSN)
+		if (wcaps & NM_WIFI_DEVICE_CAP_RSN)
 			print_string ("  WPA2 Encryption", "yes");
 
 		if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
-			active_ap = nm_device_802_11_wireless_get_active_access_point (NM_DEVICE_802_11_WIRELESS (device));
+			active_ap = nm_device_wifi_get_active_access_point (NM_DEVICE_WIFI (device));
 			active_bssid = active_ap ? nm_access_point_get_hw_address (active_ap) : NULL;
 		}
 
 		printf ("\n  Wireless Access Points%s\n", active_ap ? "(* = Current AP)" : "");
 
-		aps = nm_device_802_11_wireless_get_access_points (NM_DEVICE_802_11_WIRELESS (device));
+		aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (device));
 		if (aps && aps->len)
 			g_ptr_array_foreach ((GPtrArray *) aps, detail_access_point, (gpointer) active_bssid);
 	} else if (NM_IS_DEVICE_ETHERNET (device)) {

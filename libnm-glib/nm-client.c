@@ -6,7 +6,7 @@
 
 #include "nm-client.h"
 #include "nm-device-ethernet.h"
-#include "nm-device-802-11-wireless.h"
+#include "nm-device-wifi.h"
 #include "nm-gsm-device.h"
 #include "nm-cdma-device.h"
 #include "nm-device-private.h"
@@ -20,7 +20,7 @@
 
 #include "nm-client-bindings.h"
 
-void nm_device_802_11_wireless_set_wireless_enabled (NMDevice80211Wireless *device, gboolean enabled);
+void nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enabled);
 
 
 G_DEFINE_TYPE (NMClient, nm_client, NM_TYPE_OBJECT)
@@ -87,8 +87,8 @@ poke_wireless_devices_with_rf_status (NMClient *client)
 	for (i = 0; priv->devices && (i < priv->devices->len); i++) {
 		NMDevice *device = g_ptr_array_index (priv->devices, i);
 
-		if (NM_IS_DEVICE_802_11_WIRELESS (device))
-			nm_device_802_11_wireless_set_wireless_enabled (NM_DEVICE_802_11_WIRELESS (device), priv->wireless_enabled);
+		if (NM_IS_DEVICE_WIFI (device))
+			nm_device_wifi_set_wireless_enabled (NM_DEVICE_WIFI (device), priv->wireless_enabled);
 	}
 }
 

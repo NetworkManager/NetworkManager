@@ -1,5 +1,10 @@
 2008-06-10  Dan Williams  <dcbw@redhat.com>
 
+	The grand 802-11-wireless rename.  Get rid of the 802-11/80211/802_11 bits
+	and use "wifi" everwhere instead.
+
+2008-06-10  Dan Williams  <dcbw@redhat.com>
+
 	The grand 802-3-ethernet rename.  Get rid of the 802-3/8023/802_3 bits.
 
 2008-06-10  Dan Williams  <dcbw@redhat.com>

@@ -30,8 +30,8 @@ NetworkManager_SOURCES =				\
 		nm-device-private.h			\
 		nm-device-ethernet.c	\
 		nm-device-ethernet.h	\
-		nm-device-802-11-wireless.c	\
-		nm-device-802-11-wireless.h	\
+		nm-device-wifi.c	\
+		nm-device-wifi.h	\
 		NetworkManagerAP.c			\
 		NetworkManagerAP.h			\
 		nm-dbus-manager.h			\
@@ -84,8 +84,8 @@ nm-device-interface-glue.h: $(top_srcdir)/introspection/nm-device.xml
 nm-device-ethernet-glue.h: $(top_srcdir)/introspection/nm-device-ethernet.xml
 	dbus-binding-tool --prefix=nm_device_ethernet --mode=glib-server --output=nm-device-ethernet-glue.h $(top_srcdir)/introspection/nm-device-ethernet.xml
 
-nm-device-802-11-wireless-glue.h: $(top_srcdir)/introspection/nm-device-802-11-wireless.xml
-	dbus-binding-tool --prefix=nm_device_802_11_wireless --mode=glib-server --output=nm-device-802-11-wireless-glue.h $(top_srcdir)/introspection/nm-device-802-11-wireless.xml
+nm-device-wifi-glue.h: $(top_srcdir)/introspection/nm-device-wifi.xml
+	dbus-binding-tool --prefix=nm_device_wifi --mode=glib-server --output=nm-device-wifi-glue.h $(top_srcdir)/introspection/nm-device-wifi.xml
 
 nm-serial-device-glue.h: $(top_srcdir)/introspection/nm-device-serial.xml
 	dbus-binding-tool --prefix=nm_serial_device --mode=glib-server --output=nm-serial-device-glue.h $(top_srcdir)/introspection/nm-device-serial.xml
@@ -107,7 +107,7 @@ built_sources = 					\
 	nm-manager-glue.h				\
 	nm-device-interface-glue.h			\
 	nm-device-ethernet-glue.h			\
-	nm-device-802-11-wireless-glue.h		\
+	nm-device-wifi-glue.h		\
 	nm-serial-device-glue.h \
 	nm-cdma-device-glue.h \
 	nm-gsm-device-glue.h \

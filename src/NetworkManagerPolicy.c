@@ -1,4 +1,4 @@
-/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -39,7 +39,7 @@
 #include "nm-utils.h"
 #include "nm-device-interface.h"
 #include "nm-device.h"
-#include "nm-device-802-11-wireless.h"
+#include "nm-device-wifi.h"
 #include "nm-device-ethernet.h"
 #include "nm-gsm-device.h"
 #include "nm-cdma-device.h"
@@ -105,7 +105,7 @@ get_device_priority (NMDevice *dev)
 	if (NM_IS_GSM_DEVICE (dev))
 		return 3;
 
-	if (NM_IS_DEVICE_802_11_WIRELESS (dev))
+	if (NM_IS_DEVICE_WIFI (dev))
 		return 4;
 
 	if (NM_IS_DEVICE_ETHERNET (dev))
@@ -564,7 +564,7 @@ device_ip4_config_changed (NMDevice *device,
 }
 
 static void
-wireless_networks_changed (NMDevice80211Wireless *device, NMAccessPoint *ap, gpointer user_data)
+wireless_networks_changed (NMDeviceWifi *device, NMAccessPoint *ap, gpointer user_data)
 {
 	schedule_activate_check ((NMPolicy *) user_data, NM_DEVICE (device));
 }
@@ -604,7 +604,7 @@ device_added (NMManager *manager, NMDevice *device, gpointer user_data)
 	                       policy);
 	policy->dev_signal_ids = add_device_signal_id (policy->dev_signal_ids, id, device);
 
-	if (NM_IS_DEVICE_802_11_WIRELESS (device)) {
+	if (NM_IS_DEVICE_WIFI (device)) {
 		id = g_signal_connect (device, "access-point-added",
 		                       G_CALLBACK (wireless_networks_changed),
 		                       policy);

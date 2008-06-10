@@ -622,32 +622,32 @@ device_supports_ap_ciphers (guint32 dev_caps,
 		/* Static WEP only uses group ciphers */
 		have_pair = TRUE;
 	} else {
-		if (dev_caps & NM_802_11_DEVICE_CAP_CIPHER_WEP40)
+		if (dev_caps & NM_WIFI_DEVICE_CAP_CIPHER_WEP40)
 			if (ap_flags & NM_802_11_AP_SEC_PAIR_WEP40)
 				have_pair = TRUE;
-		if (dev_caps & NM_802_11_DEVICE_CAP_CIPHER_WEP104)
+		if (dev_caps & NM_WIFI_DEVICE_CAP_CIPHER_WEP104)
 			if (ap_flags & NM_802_11_AP_SEC_PAIR_WEP104)
 				have_pair = TRUE;
-		if (dev_caps & NM_802_11_DEVICE_CAP_CIPHER_TKIP)
+		if (dev_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP)
 			if (ap_flags & NM_802_11_AP_SEC_PAIR_TKIP)
 				have_pair = TRUE;
-		if (dev_caps & NM_802_11_DEVICE_CAP_CIPHER_CCMP)
+		if (dev_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP)
 			if (ap_flags & NM_802_11_AP_SEC_PAIR_CCMP)
 				have_pair = TRUE;
 	}
 
 	/* Group */
-	if (dev_caps & NM_802_11_DEVICE_CAP_CIPHER_WEP40)
+	if (dev_caps & NM_WIFI_DEVICE_CAP_CIPHER_WEP40)
 		if (ap_flags & NM_802_11_AP_SEC_GROUP_WEP40)
 			have_group = TRUE;
-	if (dev_caps & NM_802_11_DEVICE_CAP_CIPHER_WEP104)
+	if (dev_caps & NM_WIFI_DEVICE_CAP_CIPHER_WEP104)
 		if (ap_flags & NM_802_11_AP_SEC_GROUP_WEP104)
 			have_group = TRUE;
 	if (!static_wep) {
-		if (dev_caps & NM_802_11_DEVICE_CAP_CIPHER_TKIP)
+		if (dev_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP)
 			if (ap_flags & NM_802_11_AP_SEC_GROUP_TKIP)
 				have_group = TRUE;
-		if (dev_caps & NM_802_11_DEVICE_CAP_CIPHER_CCMP)
+		if (dev_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP)
 			if (ap_flags & NM_802_11_AP_SEC_GROUP_CCMP)
 				have_group = TRUE;
 	}
@@ -672,7 +672,7 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		if (   (type == NMU_SEC_STATIC_WEP)
 		    || ((type == NMU_SEC_DYNAMIC_WEP) && !adhoc)
 		    || ((type == NMU_SEC_LEAP) && !adhoc)) {
-			if (dev_caps & (NM_802_11_DEVICE_CAP_CIPHER_WEP40 | NM_802_11_DEVICE_CAP_CIPHER_WEP104))
+			if (dev_caps & (NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104))
 				return TRUE;
 		}
 	}
@@ -714,7 +714,7 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		}
 		break;
 	case NMU_SEC_WPA_PSK:
-		if (!(dev_caps & NM_802_11_DEVICE_CAP_WPA))
+		if (!(dev_caps & NM_WIFI_DEVICE_CAP_WPA))
 			return FALSE;
 		if (have_ap) {
 			if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
@@ -722,17 +722,17 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 
 			if (ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_PSK) {
 				if (   (ap_wpa & NM_802_11_AP_SEC_PAIR_TKIP)
-				    && (dev_caps & NM_802_11_DEVICE_CAP_CIPHER_TKIP))
+				    && (dev_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP))
 					return TRUE;
 				if (   (ap_wpa & NM_802_11_AP_SEC_PAIR_CCMP)
-				    && (dev_caps & NM_802_11_DEVICE_CAP_CIPHER_CCMP))
+				    && (dev_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
 					return TRUE;
 			}
 			return FALSE;
 		}
 		break;
 	case NMU_SEC_WPA2_PSK:
-		if (!(dev_caps & NM_802_11_DEVICE_CAP_RSN))
+		if (!(dev_caps & NM_WIFI_DEVICE_CAP_RSN))
 			return FALSE;
 		if (have_ap) {
 			if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
@@ -740,10 +740,10 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 
 			if (ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_PSK) {
 				if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_TKIP)
-				    && (dev_caps & NM_802_11_DEVICE_CAP_CIPHER_TKIP))
+				    && (dev_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP))
 					return TRUE;
 				if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_CCMP)
-				    && (dev_caps & NM_802_11_DEVICE_CAP_CIPHER_CCMP))
+				    && (dev_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
 					return TRUE;
 			}
 			return FALSE;
@@ -752,7 +752,7 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 	case NMU_SEC_WPA_ENTERPRISE:
 		if (adhoc)
 			return FALSE;
-		if (!(dev_caps & NM_802_11_DEVICE_CAP_WPA))
+		if (!(dev_caps & NM_WIFI_DEVICE_CAP_WPA))
 			return FALSE;
 		if (have_ap) {
 			if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
@@ -767,7 +767,7 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 	case NMU_SEC_WPA2_ENTERPRISE:
 		if (adhoc)
 			return FALSE;
-		if (!(dev_caps & NM_802_11_DEVICE_CAP_RSN))
+		if (!(dev_caps & NM_WIFI_DEVICE_CAP_RSN))
 			return FALSE;
 		if (have_ap) {
 			if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))

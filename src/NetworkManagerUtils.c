@@ -28,7 +28,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "nm-device.h"
-#include "nm-device-802-11-wireless.h"
+#include "nm-device-wifi.h"
 #include "nm-device-ethernet.h"
 #include "nm-dbus-manager.h"
 #include "nm-dispatcher-action.h"
@@ -125,7 +125,7 @@ nm_print_device_capabilities (NMDevice *dev)
 					nm_device_get_iface (dev), driver);
 			full_support = FALSE;
 		}
-	} else if (NM_IS_DEVICE_802_11_WIRELESS (dev)) {
+	} else if (NM_IS_DEVICE_WIFI (dev)) {
 		/* Print out WPA support */
 	}
 

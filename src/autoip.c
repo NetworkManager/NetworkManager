@@ -32,7 +32,7 @@
 #include "NetworkManager.h"
 #include "nm-device.h"
 #include "nm-device-ethernet.h"
-#include "nm-device-802-11-wireless.h"
+#include "nm-device-wifi.h"
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
 #include "autoip.h"
@@ -227,8 +227,8 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 
 	if (NM_IS_DEVICE_ETHERNET (dev))
 		nm_device_ethernet_get_address (NM_DEVICE_ETHERNET (dev), &addr);
-	else if (NM_IS_DEVICE_802_11_WIRELESS (dev))
-		nm_device_802_11_wireless_get_address (NM_DEVICE_802_11_WIRELESS (dev), &addr);
+	else if (NM_IS_DEVICE_WIFI (dev))
+		nm_device_wifi_get_address (NM_DEVICE_WIFI (dev), &addr);
 	else
 		goto out;
 

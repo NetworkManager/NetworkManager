@@ -10,7 +10,7 @@
 #include "nm-client.h"
 #include "nm-device.h"
 #include "nm-device-ethernet.h"
-#include "nm-device-802-11-wireless.h"
+#include "nm-device-wifi.h"
 #include "nm-utils.h"
 #include "nm-active-connection.h"
 #include "nm-setting-ip4-config.h"
@@ -137,20 +137,20 @@ dump_access_point (NMAccessPoint *ap)
 }
 
 static void
-dump_wireless (NMDevice80211Wireless *device)
+dump_wireless (NMDeviceWifi *device)
 {
 	const char *str;
 	const GPtrArray *aps;
 	int i;
 
-	g_print ("Mode: %d\n", nm_device_802_11_wireless_get_mode (device));
-	g_print ("Bitrate: %d\n", nm_device_802_11_wireless_get_bitrate (device));
+	g_print ("Mode: %d\n", nm_device_wifi_get_mode (device));
+	g_print ("Bitrate: %d\n", nm_device_wifi_get_bitrate (device));
 
-	str = nm_device_802_11_wireless_get_hw_address (device);
+	str = nm_device_wifi_get_hw_address (device);
 	g_print ("MAC: %s\n", str);
 
 	g_print ("AccessPoints:\n");
-	aps = nm_device_802_11_wireless_get_access_points (device);
+	aps = nm_device_wifi_get_access_points (device);
 	for (i = 0; i < aps->len; i++) {
 		dump_access_point (NM_ACCESS_POINT (g_ptr_array_index (aps, i)));
 		g_print ("\n");
@@ -197,8 +197,8 @@ dump_device (NMDevice *device)
 
 	if (NM_IS_DEVICE_ETHERNET (device))
 		dump_wired (NM_DEVICE_ETHERNET (device));
-	else if (NM_IS_DEVICE_802_11_WIRELESS (device))
-		dump_wireless (NM_DEVICE_802_11_WIRELESS (device));
+	else if (NM_IS_DEVICE_WIFI (device))
+		dump_wireless (NM_DEVICE_WIFI (device));
 }
 
 static gboolean

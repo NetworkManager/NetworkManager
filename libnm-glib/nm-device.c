@@ -2,7 +2,7 @@
 
 #include "NetworkManager.h"
 #include "nm-device-ethernet.h"
-#include "nm-device-802-11-wireless.h"
+#include "nm-device-wifi.h"
 #include "nm-gsm-device.h"
 #include "nm-cdma-device.h"
 #include "nm-device.h"
@@ -342,7 +342,7 @@ nm_device_new (DBusGConnection *connection, const char *path)
 		dtype = NM_TYPE_DEVICE_ETHERNET;
 		break;
 	case NM_DEVICE_TYPE_WIFI:
-		dtype = NM_TYPE_DEVICE_802_11_WIRELESS;
+		dtype = NM_TYPE_DEVICE_WIFI;
 		break;
 	case NM_DEVICE_TYPE_GSM:
 		dtype = NM_TYPE_GSM_DEVICE;
