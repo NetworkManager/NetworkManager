@@ -225,11 +225,17 @@ dm_watch_cb (GPid pid, gint status, gpointer user_data)
 }
 
 static NMCmdLine *
-create_dm_cmd_line (const char *iface, const char *pidfile, GError **error)
+create_dm_cmd_line (const char *iface,
+                    NMIP4Config *ip4_config,
+                    const char *pidfile,
+                    GError **error)
 {
 	const char *dm_binary;
 	NMCmdLine *cmd;
-	char *s;
+	GString *s;
+	const NMSettingIP4Address *tmp;
+	struct in_addr addr;
+	char buf[INET_ADDRSTRLEN + 1];
 
 	dm_binary = nm_find_dnsmasq ();
 	if (!dm_binary) {
@@ -238,24 +244,68 @@ create_dm_cmd_line (const char *iface, const char *pidfile, GError **error)
 		return NULL;
 	}
 
+	/* Find the IP4 address to use */
+	tmp = nm_ip4_config_get_address (ip4_config, 0);
+
 	/* Create dnsmasq command line */
 	cmd = nm_cmd_line_new ();
 	nm_cmd_line_add_string (cmd, dm_binary);
 
 	nm_cmd_line_add_string (cmd, "--no-hosts");
 	nm_cmd_line_add_string (cmd, "--keep-in-foreground");
-	nm_cmd_line_add_string (cmd, "--listen-address=10.42.43.1");
 	nm_cmd_line_add_string (cmd, "--bind-interfaces");
 	nm_cmd_line_add_string (cmd, "--no-poll");
-	nm_cmd_line_add_string (cmd, "--dhcp-range=10.42.43.10,10.42.43.100,60m");
+
+	s = g_string_new ("--listen-address=");
+	addr.s_addr = tmp->address;
+	if (!inet_ntop (AF_INET, &addr, &buf[0], INET_ADDRSTRLEN)) {
+		nm_warning ("%s: error converting IP4 address 0x%X",
+		            __func__, ntohl (addr.s_addr));
+		goto error;
+	}
+	g_string_append (s, buf);
+	nm_cmd_line_add_string (cmd, s->str);
+	g_string_free (s, TRUE);
+
+	s = g_string_new ("--dhcp-range=");
+
+	/* Add start of address range */
+	addr.s_addr = tmp->address + ntohl (9);
+	if (!inet_ntop (AF_INET, &addr, &buf[0], INET_ADDRSTRLEN)) {
+		nm_warning ("%s: error converting IP4 address 0x%X",
+		            __func__, ntohl (addr.s_addr));
+		goto error;
+	}
+	g_string_append (s, buf);
+
+	g_string_append_c (s, ',');
+
+	/* Add end of address range */
+	addr.s_addr = tmp->address + ntohl (99);
+	if (!inet_ntop (AF_INET, &addr, &buf[0], INET_ADDRSTRLEN)) {
+		nm_warning ("%s: error converting IP4 address 0x%X",
+		            __func__, ntohl (addr.s_addr));
+		goto error;
+	}
+	g_string_append (s, buf);
+
+	g_string_append (s, ",60m");
+	nm_cmd_line_add_string (cmd, s->str);
+	g_string_free (s, TRUE);
+
 	nm_cmd_line_add_string (cmd, "--dhcp-option=option:router,0.0.0.0");
 	nm_cmd_line_add_string (cmd, "--dhcp-lease-max=50");
 
-	s = g_strdup_printf ("--pid-file=%s", pidfile);
-	nm_cmd_line_add_string (cmd, s);
-	g_free (s);
+	s = g_string_new ("--pid-file=");
+	g_string_append (s, pidfile);
+	nm_cmd_line_add_string (cmd, s->str);
+	g_string_free (s, TRUE);
 
 	return cmd;
+
+error:
+	nm_cmd_line_destroy (cmd);
+	return NULL;
 }
 
 static void
@@ -300,7 +350,9 @@ out:
 }
 
 gboolean
-nm_dnsmasq_manager_start (NMDnsMasqManager *manager, GError **error)
+nm_dnsmasq_manager_start (NMDnsMasqManager *manager,
+                          NMIP4Config *ip4_config,
+                          GError **error)
 {
 	NMDnsMasqManagerPrivate *priv;
 	NMCmdLine *dm_cmd;
@@ -315,7 +367,7 @@ nm_dnsmasq_manager_start (NMDnsMasqManager *manager, GError **error)
 
 	kill_existing_for_iface (priv->iface, priv->pidfile);
 
-	dm_cmd = create_dm_cmd_line (priv->iface, priv->pidfile, error);
+	dm_cmd = create_dm_cmd_line (priv->iface, ip4_config, priv->pidfile, error);
 	if (!dm_cmd)
 		return FALSE;
 

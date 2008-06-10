@@ -1,5 +1,22 @@
 2008-06-09  Dan Williams  <dcbw@redhat.com>
 
+	* src/dnsmasq-manager/nm-dnsmasq-manager.c
+	  src/dnsmasq-manager/nm-dnsmasq-manager.h
+		- (create_dm_cmd_line): use the IP4 address of the ip4-config to
+			calculate the addresses passed to dnsmasq instead of hard-coding
+			them
+
+	* src/nm-device.c
+		- (nm_device_new_ip4_shared_config): be somewhat dynamic when choosing
+			IP addresses for shared connections to guard against shared
+			connection address collisions
+		- (real_act_stage4_get_ip4_config): handle possible NULL ip4-configs on
+			error conditions
+		- (nm_device_activate_stage5_ip_config_commit): pass ip4-config to
+			the dnsmasq manager
+
+2008-06-09  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerPolicy.c
 		- (update_routing_and_dns): set the default connection _after_ unsetting
 			default on all non-default connections so that two connections can

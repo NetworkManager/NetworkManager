@@ -6,6 +6,8 @@
 #include <glib/gtypes.h>
 #include <glib-object.h>
 
+#include "nm-ip4-config.h"
+
 #define NM_TYPE_DNSMASQ_MANAGER            (nm_dnsmasq_manager_get_type ())
 #define NM_DNSMASQ_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DNSMASQ_MANAGER, NMDnsMasqManager))
 #define NM_DNSMASQ_MANAGER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DNSMASQ_MANAGER, NMDnsMasqManagerClass))
@@ -35,7 +37,9 @@ GType nm_dnsmasq_manager_get_type (void);
 
 NMDnsMasqManager *nm_dnsmasq_manager_new (const char *iface);
 
-gboolean nm_dnsmasq_manager_start (NMDnsMasqManager *manager, GError **error);
+gboolean nm_dnsmasq_manager_start (NMDnsMasqManager *manager,
+                                   NMIP4Config *ip4_config,
+                                   GError **error);
 
 void     nm_dnsmasq_manager_stop  (NMDnsMasqManager *manager);
 

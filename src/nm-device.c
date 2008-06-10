@@ -653,19 +653,57 @@ nm_device_new_ip4_autoip_config (NMDevice *self)
 	return config;
 }
 
+static GHashTable *shared_ips = NULL;
+
+static void
+release_shared_ip (gpointer data)
+{
+	g_hash_table_remove (shared_ips, data);
+}
+
+static guint32
+reserve_shared_ip (void)
+{
+	guint32 start = (guint32) ntohl (0x0a2a2b01); /* 10.42.43.1 */
+	guint32 count = 0;
+
+	while (g_hash_table_lookup (shared_ips, (gpointer) (start + count))) {
+		count += ntohl (0x100);
+		if (count > ntohl (0xFE00)) {
+			nm_warning ("%s: ran out of shared IP addresses!", __func__);
+			return 0;
+		}
+	}
+
+	g_hash_table_insert (shared_ips, (gpointer) (start + count), GUINT_TO_POINTER (TRUE));
+	return start + count;
+}
+
 static NMIP4Config *
 nm_device_new_ip4_shared_config (NMDevice *self)
 {
 	NMIP4Config *config = NULL;
 	NMSettingIP4Address *addr;
+	guint32 tmp_addr;
 
 	g_return_val_if_fail (self != NULL, NULL);
 
+	if (G_UNLIKELY (shared_ips == NULL))
+		shared_ips = g_hash_table_new (g_direct_hash, g_direct_equal);
+
+	tmp_addr = reserve_shared_ip ();
+	if (!tmp_addr)
+		return NULL;
+
 	config = nm_ip4_config_new ();
 	addr = g_malloc0 (sizeof (NMSettingIP4Address));
-	addr->address = (guint32) ntohl (0x0a2a2b01); /* 10.42.43.1 */
+	addr->address = tmp_addr;
 	addr->netmask = (guint32) ntohl (0xFFFFFF00); /* 255.255.255.0 */
 	nm_ip4_config_take_address (config, addr);
+
+	/* Remove the address lock when the object gets disposed */
+	g_object_set_data_full (G_OBJECT (config), "shared-ip",
+	                        GUINT_TO_POINTER (addr->address), release_shared_ip);
 
 	return config;
 }
@@ -690,7 +728,8 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 	if (nm_device_get_use_dhcp (self)) {
 		*config = nm_dhcp_manager_get_ip4_config (NM_DEVICE_GET_PRIVATE (self)->dhcp_manager,
 											 nm_device_get_iface (self));
-		nm_utils_merge_ip4_config (*config, s_ip4);
+		if (*config)
+			nm_utils_merge_ip4_config (*config, s_ip4);
 	} else {
 		g_assert (s_ip4);
 
@@ -698,10 +737,12 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 			*config = nm_device_new_ip4_autoip_config (self);
 		} else if (!strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
 			*config = nm_ip4_config_new ();
-			nm_utils_merge_ip4_config (*config, s_ip4);
+			if (*config)
+				nm_utils_merge_ip4_config (*config, s_ip4);
 		} else if (!strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
 			*config = nm_device_new_ip4_shared_config (self);
-			priv->dnsmasq_manager = nm_dnsmasq_manager_new (nm_device_get_ip_iface (self));
+			if (*config)
+				priv->dnsmasq_manager = nm_dnsmasq_manager_new (nm_device_get_ip_iface (self));
 		}
 	}
 
@@ -895,7 +936,7 @@ nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 	if (s_ip4 && !strcmp (s_ip4->method, "shared")) {
 		GError *error = NULL;
 
-		if (!nm_dnsmasq_manager_start (priv->dnsmasq_manager, &error)) {
+		if (!nm_dnsmasq_manager_start (priv->dnsmasq_manager, ip4_config, &error)) {
 			nm_warning ("(%s): failed to start dnsmasq: %s", iface, error->message);
 			g_error_free (error);
 			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
