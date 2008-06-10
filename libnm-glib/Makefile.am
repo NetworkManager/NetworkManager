@@ -41,6 +41,7 @@ libnminclude_HEADERS = \
 	nm-settings.h \
 	nm-gsm-device.h \
 	nm-cdma-device.h \
+	nm-serial-device.h \
 	nm-vpn-connection.h \
 	nm-vpn-plugin.h \
 	nm-types.h \
@@ -65,6 +66,7 @@ libnm_glib_la_SOURCES = \
 	nm-settings.c		\
 	nm-gsm-device.c	\
 	nm-cdma-device.c	\
+	nm-serial-device.c \
 	nm-vpn-connection.c	\
 	nm-types.c \
 	nm-types-private.h \

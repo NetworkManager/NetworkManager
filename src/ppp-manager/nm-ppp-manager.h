@@ -29,6 +29,7 @@ typedef struct {
 	/* Signals */
 	void (*state_changed) (NMPPPManager *manager, NMPPPStatus status);
 	void (*ip4_config) (NMPPPManager *manager, const char *iface, NMIP4Config *config);
+	void (*stats) (NMPPPManager *manager, guint32 in_bytes, guint32 out_bytes);
 } NMPPPManagerClass;
 
 GType nm_ppp_manager_get_type (void);

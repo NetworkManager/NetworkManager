@@ -17,7 +17,9 @@
 #include "nm-device-private.h"
 #include "ppp-manager/nm-ppp-manager.h"
 #include "nm-setting-ppp.h"
+#include "nm-marshal.h"
 #include "nm-utils.h"
+#include "nm-serial-device-glue.h"
 
 /* #define NM_DEBUG_SERIAL 1 */
 
@@ -33,7 +35,19 @@ typedef struct {
 	NMPPPManager *ppp_manager;
 	NMIP4Config  *pending_ip4_config;
 	struct termios old_t;
+
+	/* PPP stats */
+	guint32 in_bytes;
+	guint32 out_bytes;
 } NMSerialDevicePrivate;
+
+enum {
+	PPP_STATS,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
 
 static int
 parse_baudrate (guint i)
@@ -941,6 +955,23 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 	nm_device_activate_schedule_stage4_ip_config_get (device);
 }
 
+static void
+ppp_stats (NMPPPManager *ppp_manager,
+		 guint32 in_bytes,
+		 guint32 out_bytes,
+		 gpointer user_data)
+{
+	NMSerialDevice *device = NM_SERIAL_DEVICE (user_data);
+	NMSerialDevicePrivate *priv = NM_SERIAL_DEVICE_GET_PRIVATE (device);
+
+	if (priv->in_bytes != in_bytes || priv->out_bytes != out_bytes) {
+		priv->in_bytes = in_bytes;
+		priv->out_bytes = out_bytes;
+
+		g_signal_emit (device, signals[PPP_STATS], 0, in_bytes, out_bytes);
+	}
+}
+
 static NMActStageReturn
 real_act_stage2_config (NMDevice *device)
 {
@@ -964,6 +995,10 @@ real_act_stage2_config (NMDevice *device)
 		g_signal_connect (priv->ppp_manager, "ip4-config",
 					   G_CALLBACK (ppp_ip4_config),
 					   device);
+		g_signal_connect (priv->ppp_manager, "stats",
+					   G_CALLBACK (ppp_stats),
+					   device);
+
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else {
 		nm_warning ("%s", err->message);
@@ -1001,6 +1036,8 @@ real_deactivate_quickly (NMDevice *device)
 		g_object_unref (priv->pending_ip4_config);
 		priv->pending_ip4_config = NULL;
 	}
+
+	priv->in_bytes = priv->out_bytes = 0;
 
 	if (priv->ppp_manager) {
 		g_object_unref (priv->ppp_manager);
@@ -1048,4 +1085,18 @@ nm_serial_device_class_init (NMSerialDeviceClass *klass)
 	parent_class->act_stage2_config = real_act_stage2_config;
 	parent_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 	parent_class->deactivate_quickly = real_deactivate_quickly;
+
+	/* Signals */
+	signals[PPP_STATS] =
+		g_signal_new ("ppp-stats",
+				    G_OBJECT_CLASS_TYPE (object_class),
+				    G_SIGNAL_RUN_FIRST,
+				    G_STRUCT_OFFSET (NMSerialDeviceClass, ppp_stats),
+				    NULL, NULL,
+				    nm_marshal_VOID__UINT_UINT,
+				    G_TYPE_NONE, 2,
+				    G_TYPE_UINT, G_TYPE_UINT);
+
+	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
+							   &dbus_glib_nm_serial_device_object_info);
 }

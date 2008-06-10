@@ -4,7 +4,7 @@
 #include "nm-device-private.h"
 #include "nm-object-private.h"
 
-G_DEFINE_TYPE (NMCdmaDevice, nm_cdma_device, NM_TYPE_DEVICE)
+G_DEFINE_TYPE (NMCdmaDevice, nm_cdma_device, NM_TYPE_SERIAL_DEVICE)
 
 #define NM_CDMA_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_CDMA_DEVICE, NMCdmaDevicePrivate))
 

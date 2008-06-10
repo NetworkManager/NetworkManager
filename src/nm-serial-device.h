@@ -21,6 +21,9 @@ typedef struct {
 
 typedef struct {
 	NMDeviceClass parent;
+
+	/* Signals */
+	void (*ppp_stats) (NMSerialDevice *device, guint32 in_bytes, guint32 out_bytes);
 } NMSerialDeviceClass;
 
 GType nm_serial_device_get_type (void);

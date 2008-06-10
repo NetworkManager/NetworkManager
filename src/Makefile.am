@@ -87,6 +87,9 @@ nm-device-802-3-ethernet-glue.h: $(top_srcdir)/introspection/nm-device-802-3-eth
 nm-device-802-11-wireless-glue.h: $(top_srcdir)/introspection/nm-device-802-11-wireless.xml
 	dbus-binding-tool --prefix=nm_device_802_11_wireless --mode=glib-server --output=nm-device-802-11-wireless-glue.h $(top_srcdir)/introspection/nm-device-802-11-wireless.xml
 
+nm-serial-device-glue.h: $(top_srcdir)/introspection/nm-device-serial.xml
+	dbus-binding-tool --prefix=nm_serial_device --mode=glib-server --output=nm-serial-device-glue.h $(top_srcdir)/introspection/nm-device-serial.xml
+
 nm-cdma-device-glue.h: $(top_srcdir)/introspection/nm-device-cdma.xml
 	dbus-binding-tool --prefix=nm_cdma_device --mode=glib-server --output=nm-cdma-device-glue.h $(top_srcdir)/introspection/nm-device-cdma.xml
 
@@ -105,6 +108,7 @@ built_sources = 					\
 	nm-device-interface-glue.h			\
 	nm-device-802-3-ethernet-glue.h			\
 	nm-device-802-11-wireless-glue.h		\
+	nm-serial-device-glue.h \
 	nm-cdma-device-glue.h \
 	nm-gsm-device-glue.h \
 	nm-ip4-config-glue.h				\

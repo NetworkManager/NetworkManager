@@ -3,7 +3,7 @@
 #ifndef NM_CDMA_DEVICE_H
 #define NM_CDMA_DEVICE_H
 
-#include "nm-device.h"
+#include "nm-serial-device.h"
 
 G_BEGIN_DECLS
 
@@ -15,11 +15,11 @@ G_BEGIN_DECLS
 #define NM_CDMA_DEVICE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_CDMA_DEVICE, NMCdmaDeviceClass))
 
 typedef struct {
-	NMDevice parent;
+	NMSerialDevice parent;
 } NMCdmaDevice;
 
 typedef struct {
-	NMDeviceClass parent;
+	NMSerialDeviceClass parent;
 } NMCdmaDeviceClass;
 
 GType        nm_cdma_device_get_type (void);

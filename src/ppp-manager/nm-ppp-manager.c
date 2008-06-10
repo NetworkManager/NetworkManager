@@ -7,6 +7,18 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
+#include <errno.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <asm/types.h>
+#include <net/if.h>
+
+#include <linux/ppp_defs.h>
+#ifndef aligned_u64
+#define aligned_u64 unsigned long long __attribute__((aligned(8)))
+#endif
+#include <linux/if_ppp.h>
+
 #include "nm-ppp-manager.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-ppp.h"
@@ -41,6 +53,11 @@ typedef struct {
 
 	guint32 ppp_watch_id;
 	guint32 ppp_timeout_handler;
+
+	/* Monitoring */
+	char *iface;
+	int monitor_fd;
+	guint monitor_id;
 } NMPPPManagerPrivate;
 
 #define NM_PPP_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_PPP_MANAGER, NMPPPManagerPrivate))
@@ -50,6 +67,7 @@ G_DEFINE_TYPE (NMPPPManager, nm_ppp_manager, G_TYPE_OBJECT)
 enum {
 	STATE_CHANGED,
 	IP4_CONFIG,
+	STATS,
 
 	LAST_SIGNAL
 };
@@ -163,12 +181,58 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 				    G_TYPE_NONE, 2,
 				    G_TYPE_STRING,
 				    G_TYPE_OBJECT);
+
+	signals[STATS] =
+		g_signal_new ("stats",
+				    G_OBJECT_CLASS_TYPE (object_class),
+				    G_SIGNAL_RUN_FIRST,
+				    G_STRUCT_OFFSET (NMPPPManagerClass, stats),
+				    NULL, NULL,
+				    nm_marshal_VOID__UINT_UINT,
+				    G_TYPE_NONE, 2,
+				    G_TYPE_UINT, G_TYPE_UINT);
 }
 
 NMPPPManager *
 nm_ppp_manager_new (void)
 {
 	return (NMPPPManager *) g_object_new (NM_TYPE_PPP_MANAGER, NULL);
+}
+
+/*******************************************/
+
+static gboolean
+monitor_cb (gpointer user_data)
+{
+	NMPPPManager *manager = NM_PPP_MANAGER (user_data);
+	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
+	struct ifpppstatsreq req;
+
+	memset (&req, 0, sizeof (req));
+	req.stats_ptr = (caddr_t) &req.stats;
+
+	strncpy (req.ifr__name, priv->iface, sizeof (req.ifr__name));
+	if (!ioctl (priv->monitor_fd, SIOCGPPPSTATS, &req) < 0)
+		nm_warning ("Could not read ppp stats: %s", strerror (errno));
+	else
+		g_signal_emit (manager, signals[STATS], 0, 
+					req.stats.p.ppp_ibytes,
+					req.stats.p.ppp_obytes);
+
+	return TRUE;
+}
+
+static void
+monitor_stats (NMPPPManager *manager, const char *iface)
+{
+	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
+
+	priv->monitor_fd = socket (AF_INET, SOCK_DGRAM, 0);
+	if (priv->monitor_fd > 0) {
+		priv->iface = g_strdup (iface);
+		priv->monitor_id = g_timeout_add (5000, monitor_cb, manager);
+	} else
+		nm_warning ("Could not open pppd monitor: %s", strerror (errno));
 }
 
 /*******************************************/
@@ -291,6 +355,8 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 	}
 
 	g_signal_emit (manager, signals[IP4_CONFIG], 0, iface, config);
+
+	monitor_stats (manager, iface);
 
  out:
 	g_object_unref (config);
@@ -752,6 +818,20 @@ nm_ppp_manager_stop (NMPPPManager *manager)
 	g_return_if_fail (NM_IS_PPP_MANAGER (manager));
 
 	priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
+
+	if (priv->monitor_id) {
+		g_source_remove (priv->monitor_id);
+		priv->monitor_id = 0;
+	}
+
+	if (priv->monitor_fd) {
+		/* Get the stats one last time */
+		monitor_cb (manager);
+		close (priv->monitor_fd);
+		priv->monitor_fd = 0;
+	}
+
+	g_free (priv->iface);
 
 	if (priv->ppp_timeout_handler) {
 		g_source_remove (priv->ppp_timeout_handler);

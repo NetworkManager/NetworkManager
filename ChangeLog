@@ -1,5 +1,32 @@
 2008-06-10  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Tambet Ingo <tambet@gmail.com>
+
+	* src/ppp-manager/nm-ppp-manager.c: Add ppp stats monitoring, signal the
+		changes.
+
+	* src/nm-serial-device.c: Monitor "ppp-stats" signals from NMPPPManager. Add
+		a signal to emit these changes over dbus.
+
+	* src/Makefile.am: Genereate nm-serial-device-glue.
+
+	* libnm-glib/nm-serial-device.[ch]: Implement.
+
+	* libnm-glib/nm-cdma-device.[ch]
+	  libnm-glib/nm-gsm-device.[ch]: Inherit from NMSerialDevice.
+
+	* libnm-glib/Makefile.am: Add nm-serial-device.[ch].
+
+	* introspection/nm-device-serial.xml: Implement.
+
+	* introspection/all.xml: Fix a couple of typos, add nm-device-serial.xml.
+
+	* introspection/Makefile.am: Add nm-device-serial.xml.
+
+	* include/NetworkManager.h: Add a DBus interface for serial device.
+
+2008-06-10  Dan Williams  <dcbw@redhat.com>
+
 	* configure.in
 		- Add TARGET_* define to config.h to distinguish distros
 

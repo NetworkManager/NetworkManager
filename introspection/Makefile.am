@@ -4,6 +4,7 @@ EXTRA_DIST =						\
 	nm-device-802-3-ethernet.xml	\
 	nm-device-cdma.xml \
 	nm-device-gsm.xml \
+	nm-device-serial.xml \
 	nm-device.xml					\
 	nm-ip4-config.xml				\
 	nm-manager.xml					\
