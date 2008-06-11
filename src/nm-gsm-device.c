@@ -130,7 +130,7 @@ dial_done (NMSerialDevice *device,
 }
 
 static void
-do_dial (NMSerialDevice *device)
+do_dial (NMSerialDevice *device, guint cid)
 {
 	NMSettingGsm *setting;
 	char *command;
@@ -140,7 +140,20 @@ do_dial (NMSerialDevice *device)
 
 	setting = NM_SETTING_GSM (gsm_device_get_setting (NM_GSM_DEVICE (device), NM_TYPE_SETTING_GSM));
 
-	command = g_strconcat ("ATDT", setting->number, NULL);
+	if (cid) {
+		GString *str;
+
+		str = g_string_new ("ATD");
+		if (g_str_has_suffix (setting->number, "#"))
+			str = g_string_append_len (str, setting->number, strlen (setting->number) - 1);
+		else
+			str = g_string_append (str, setting->number);
+
+		g_string_append_printf (str, "***%d#", cid);
+		command = g_string_free (str, FALSE);
+	} else
+		command = g_strconcat ("ATDT", setting->number, NULL);
+
 	success = nm_serial_device_send_command_string (device, command);
 	g_free (command);
 
@@ -156,6 +169,57 @@ do_dial (NMSerialDevice *device)
 }
 
 static void
+set_apn_done (NMSerialDevice *device,
+		    int reply_index,
+		    gpointer user_data)
+{
+	guint cid = GPOINTER_TO_UINT (user_data);
+
+	gsm_device_set_pending (NM_GSM_DEVICE (device), 0);
+ 
+	switch (reply_index) {
+	case 0:
+		do_dial (device, cid);
+		break;
+	default:
+		nm_warning ("Setting APN failed");
+		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		break;
+	}
+}
+
+static void
+set_apn (NMSerialDevice *device)
+{
+	NMSettingGsm *setting;
+	char *command;
+	char *responses[] = { "OK", "ERROR", NULL };
+	gboolean success;
+	guint id = 0;
+	guint cid = 1;
+
+	setting = NM_SETTING_GSM (gsm_device_get_setting (NM_GSM_DEVICE (device), NM_TYPE_SETTING_GSM));
+
+	if (!setting->apn) {
+		/* APN not set, nothing to do */
+		do_dial (device, 0);
+		return;
+	}
+
+	command = g_strdup_printf ("AT+CGDCONT=%d, \"IP\", \"%s\"", cid, setting->apn);
+	success = nm_serial_device_send_command_string (device, command);
+	g_free (command);
+
+	if (success)
+		id = nm_serial_device_wait_for_reply (device, 3, responses, responses, set_apn_done, GUINT_TO_POINTER (cid));
+
+	if (id)
+		gsm_device_set_pending (NM_GSM_DEVICE (device), id);
+	else
+		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+}
+
+static void
 manual_registration_done (NMSerialDevice *device,
 					 int reply_index,
 					 gpointer user_data)
@@ -164,7 +228,7 @@ manual_registration_done (NMSerialDevice *device,
  
 	switch (reply_index) {
 	case 0:
-		do_dial (device);
+		set_apn (device);
 		break;
 	case -1:
 		nm_warning ("Manual registration timed out");
@@ -215,7 +279,7 @@ get_network_done (NMSerialDevice *device,
 	else
 		nm_warning ("Couldn't read active network name");
 
-	do_dial (device);
+	set_apn (device);
 }
 
 static void

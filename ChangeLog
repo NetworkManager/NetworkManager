@@ -1,5 +1,17 @@
 2008-06-11  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Tambet Ingo <tambet@gmail.com>
+
+	* libnm-util/nm-setting-gsm.c
+		- (verify): validate APN
+
+	* src/nm-gsm-device.c
+		- (manual_registration_done): start setting APN if needed
+		- (set_apn, set_apn_done): set the APN
+		- (do_dial): use the APN when dialing
+
+2008-06-11  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerSystem.c
 		- (nm_system_device_set_ip4_route,
 		   nm_system_device_replace_default_ip4_route): check for the right

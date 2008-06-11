@@ -54,6 +54,11 @@ verify (NMSetting *setting, GSList *all_settings)
 		return FALSE;
 	}
 
+	if (self->apn && (strlen (self->apn) < 1 || strchr (self->apn, '"'))) {
+		nm_warning ("Invalid APN");
+		return FALSE;
+	}
+
 	return TRUE;
 }
 
