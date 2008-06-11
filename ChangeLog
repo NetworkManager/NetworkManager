@@ -1,5 +1,13 @@
 2008-06-11  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerSystem.c
+		- (nm_system_device_set_ip4_route,
+		   nm_system_device_replace_default_ip4_route): check for the right
+			return value from rtnl_route_add() to know when to add a gateway
+			route (from Tambet)
+
+2008-06-11  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerPolicy.c
 		- do_ipt_cmd -> do_cmd
 		- (sharing_init): use do_cmd() instead of system()

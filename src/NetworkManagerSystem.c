@@ -172,7 +172,7 @@ nm_system_device_set_ip4_route (const char *iface,
 
 	/* Add the route */
 	err = rtnl_route_add (nlh, route, 0);
-	if (err == ESRCH && ip4_gateway) {
+	if (err == -ESRCH && ip4_gateway) {
 		/* Gateway might be over a bridge; try adding a route to gateway first */
 		struct rtnl_route *route2;
 
@@ -590,7 +590,7 @@ nm_system_device_replace_default_ip4_route (const char *iface, guint32 gw, guint
 	if (err == 0) {
 		/* Everything good */
 		goto out;
-	} else if (err != ESRCH) {
+	} else if (err != -ESRCH) {
 		nm_warning ("rtnl_route_add() returned error %s (%d)\n%s",
 		            strerror (err), err, nl_geterror());
 		goto out;
