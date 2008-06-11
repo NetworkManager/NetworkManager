@@ -343,7 +343,7 @@ get_device_connection (NMDevice *device)
 }
 
 static gboolean
-do_ipt_cmd (const char *fmt, ...)
+do_cmd (const char *fmt, ...)
 {
 	va_list args;
 	char *cmd;
@@ -371,32 +371,32 @@ do_ipt_cmd (const char *fmt, ...)
 static void
 sharing_init (void)
 {
-	system ("echo \"1\" > /proc/sys/net/ipv4/ip_forward");
-	system ("echo \"1\" > /proc/sys/net/ipv4/ip_dynaddr");
-	system ("/sbin/modprobe ip_tables iptable_nat ip_nat_ftp ip_nat_irc");
-	do_ipt_cmd ("/sbin/iptables -P INPUT ACCEPT");
-	do_ipt_cmd ("/sbin/iptables -F INPUT");
-	do_ipt_cmd ("/sbin/iptables -P OUTPUT ACCEPT");
-	do_ipt_cmd ("/sbin/iptables -F OUTPUT");
-	do_ipt_cmd ("/sbin/iptables -P FORWARD DROP");
-	do_ipt_cmd ("/sbin/iptables -F FORWARD");
-	do_ipt_cmd ("/sbin/iptables -t nat -F");
+	do_cmd ("echo \"1\" > /proc/sys/net/ipv4/ip_forward");
+	do_cmd ("echo \"1\" > /proc/sys/net/ipv4/ip_dynaddr");
+	do_cmd ("/sbin/modprobe ip_tables iptable_nat ip_nat_ftp ip_nat_irc");
+	do_cmd ("/sbin/iptables -P INPUT ACCEPT");
+	do_cmd ("/sbin/iptables -F INPUT");
+	do_cmd ("/sbin/iptables -P OUTPUT ACCEPT");
+	do_cmd ("/sbin/iptables -F OUTPUT");
+	do_cmd ("/sbin/iptables -P FORWARD DROP");
+	do_cmd ("/sbin/iptables -F FORWARD");
+	do_cmd ("/sbin/iptables -t nat -F");
 }
 
 static void
 sharing_stop (NMActRequest *req)
 {
-	do_ipt_cmd ("/sbin/iptables -F INPUT");
-	do_ipt_cmd ("/sbin/iptables -F OUTPUT");
-	do_ipt_cmd ("/sbin/iptables -P FORWARD DROP");
-	do_ipt_cmd ("/sbin/iptables -F FORWARD");
-	do_ipt_cmd ("/sbin/iptables -F -t nat");
+	do_cmd ("/sbin/iptables -F INPUT");
+	do_cmd ("/sbin/iptables -F OUTPUT");
+	do_cmd ("/sbin/iptables -P FORWARD DROP");
+	do_cmd ("/sbin/iptables -F FORWARD");
+	do_cmd ("/sbin/iptables -F -t nat");
 
 	// Delete all User-specified chains
-	do_ipt_cmd ("/sbin/iptables -X");
+	do_cmd ("/sbin/iptables -X");
 
 	// Reset all IPTABLES counters
-	do_ipt_cmd ("/sbin/iptables -Z");
+	do_cmd ("/sbin/iptables -Z");
 
 	nm_act_request_set_shared (req, FALSE);
 }
@@ -444,14 +444,14 @@ sharing_restart (NMPolicy *policy, NMActRequest *req)
 		// FWD: Allow all connections OUT and only existing and related ones IN
 		intif = nm_device_get_ip_iface (candidate);
 		g_assert (intif);
-		do_ipt_cmd ("/sbin/iptables -A FORWARD -i %s -o %s -m state --state ESTABLISHED,RELATED -j ACCEPT", extif, intif);
-		do_ipt_cmd ("/sbin/iptables -A FORWARD -i %s -o %s -j ACCEPT", extif, intif);
-		do_ipt_cmd ("/sbin/iptables -A FORWARD -i %s -o %s -j ACCEPT", intif, extif);
+		do_cmd ("/sbin/iptables -A FORWARD -i %s -o %s -m state --state ESTABLISHED,RELATED -j ACCEPT", extif, intif);
+		do_cmd ("/sbin/iptables -A FORWARD -i %s -o %s -j ACCEPT", extif, intif);
+		do_cmd ("/sbin/iptables -A FORWARD -i %s -o %s -j ACCEPT", intif, extif);
 	}
 
 	if (have_shared) {
 		// Enabling SNAT (MASQUERADE) functionality on $EXTIF
-		do_ipt_cmd ("/sbin/iptables -t nat -A POSTROUTING -o %s -j MASQUERADE", extif);
+		do_cmd ("/sbin/iptables -t nat -A POSTROUTING -o %s -j MASQUERADE", extif);
 
 		nm_act_request_set_shared (req, TRUE);
 	}

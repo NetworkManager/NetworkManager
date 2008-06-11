@@ -1,3 +1,9 @@
+2008-06-11  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerPolicy.c
+		- do_ipt_cmd -> do_cmd
+		- (sharing_init): use do_cmd() instead of system()
+
 2008-06-10  Dan Williams  <dcbw@redhat.com>
 
 	The grand 802-11-wireless rename.  Get rid of the 802-11/80211/802_11 bits
