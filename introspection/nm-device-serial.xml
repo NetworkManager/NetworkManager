@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+  <interface name="org.freedesktop.NetworkManager.Device.Serial">
+
+  <signal name="PppStats">
+    <arg name="in_bytes" type="u">
+      <tp:docstring>
+	Bytes received
+      </tp:docstring>
+    </arg>
+    <arg name="out_bytes" type="u">
+      <tp:docstring>
+	Bytes sent
+      </tp:docstring>
+    </arg>
+  </signal>
+
+  </interface>
+</node>
