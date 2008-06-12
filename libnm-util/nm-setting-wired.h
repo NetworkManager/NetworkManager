@@ -16,6 +16,19 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_WIRED_SETTING_NAME "802-3-ethernet"
 
+typedef enum
+{
+	NM_SETTING_WIRED_ERROR_UNKNOWN = 0,
+	NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+	NM_SETTING_WIRED_ERROR_MISSING_PROPERTY
+} NMSettingWiredError;
+
+#define NM_TYPE_SETTING_WIRED_ERROR (nm_setting_wired_error_get_type ()) 
+GType nm_setting_wired_error_get_type (void);
+
+#define NM_SETTING_WIRED_ERROR nm_setting_wired_error_quark ()
+GQuark nm_setting_wired_error_quark (void);
+
 #define NM_SETTING_WIRED_PORT "port"
 #define NM_SETTING_WIRED_SPEED "speed"
 #define NM_SETTING_WIRED_DUPLEX "duplex"

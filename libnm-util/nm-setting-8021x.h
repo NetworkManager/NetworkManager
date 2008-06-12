@@ -16,6 +16,20 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_802_1X_SETTING_NAME "802-1x"
 
+typedef enum
+{
+	NM_SETTING_802_1X_ERROR_UNKNOWN = 0,
+	NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+	NM_SETTING_802_1X_ERROR_MISSING_PROPERTY
+} NMSetting8021xError;
+
+#define NM_TYPE_SETTING_802_1X_ERROR (nm_setting_802_1x_error_get_type ()) 
+GType nm_setting_802_1x_error_get_type (void);
+
+#define NM_SETTING_802_1X_ERROR nm_setting_802_1x_error_quark ()
+GQuark nm_setting_802_1x_error_quark (void);
+
+
 #define NM_SETTING_802_1X_EAP "eap"
 #define NM_SETTING_802_1X_IDENTITY "identity"
 #define NM_SETTING_802_1X_ANONYMOUS_IDENTITY "anonymous-identity"

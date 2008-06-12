@@ -411,7 +411,7 @@ update_one_setting (const char* key,
 		if (s_8021x)
 			all_settings = g_slist_append (all_settings, s_8021x);
 
-		if (!nm_setting_verify (setting, all_settings)) {
+		if (!nm_setting_verify (setting, all_settings, NULL)) {
 			/* Just try updating secrets */
 			g_object_unref (setting);
 			setting = NULL;

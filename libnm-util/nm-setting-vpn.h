@@ -16,6 +16,19 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_VPN_SETTING_NAME "vpn"
 
+typedef enum
+{
+	NM_SETTING_VPN_ERROR_UNKNOWN = 0,
+	NM_SETTING_VPN_ERROR_INVALID_PROPERTY,
+	NM_SETTING_VPN_ERROR_MISSING_PROPERTY,
+} NMSettingVpnError;
+
+#define NM_TYPE_SETTING_VPN_ERROR (nm_setting_vpn_error_get_type ()) 
+GType nm_setting_vpn_error_get_type (void);
+
+#define NM_SETTING_VPN_ERROR nm_setting_vpn_error_quark ()
+GQuark nm_setting_vpn_error_quark (void);
+
 #define NM_SETTING_VPN_SERVICE_TYPE "service-type"
 #define NM_SETTING_VPN_USER_NAME    "user-name"
 #define NM_SETTING_VPN_ROUTES       "routes"

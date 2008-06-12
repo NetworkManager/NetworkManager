@@ -664,10 +664,17 @@ connection_get_settings_cb  (DBusGProxy *proxy,
  	if (connection == NULL) {
 		const char *path = dbus_g_proxy_get_path (proxy);
 		NMManagerPrivate *priv;
+		GError *error = NULL;
 
-		connection = nm_connection_new_from_hash (settings);
-		if (connection == NULL)
+		connection = nm_connection_new_from_hash (settings, &error);
+		if (connection == NULL) {
+			nm_warning ("%s: Invalid connection: '%s' / '%s' invalid: %d",
+			            __func__,
+			            g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)),
+			            error->message, error->code);
+			g_error_free (error);
 			goto out;
+		}
 
 		scope = get_scope_for_proxy (proxy);
 
@@ -782,13 +789,19 @@ connection_updated_cb (DBusGProxy *proxy, GHashTable *settings, gpointer user_da
 	NMConnection *old_connection;
 	GHashTable *hash;
 	gboolean valid = FALSE;
+	GError *error = NULL;
 
 	old_connection = get_connection_for_proxy (manager, proxy, &hash);
 	g_return_if_fail (old_connection != NULL);
 
-	new_connection = nm_connection_new_from_hash (settings);
+	new_connection = nm_connection_new_from_hash (settings, &error);
 	if (!new_connection) {
 		/* New connection invalid, remove existing connection */
+		nm_warning ("%s: Invalid connection: '%s' / '%s' invalid: %d",
+		            __func__,
+		            g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)),
+		            error->message, error->code);
+		g_error_free (error);
 		remove_connection (manager, old_connection, hash);
 		return;
 	}

@@ -33,7 +33,8 @@ typedef struct {
 
 	/* Virtual functions */
 	gboolean    (*verify)            (NMSetting  *setting,
-	                                  GSList     *all_settings);
+	                                  GSList     *all_settings,
+	                                  GError     **error);
 
 	GPtrArray  *(*need_secrets)      (NMSetting  *setting);
 
@@ -60,7 +61,8 @@ NMSetting *nm_setting_duplicate      (NMSetting *setting);
 const char *nm_setting_get_name      (NMSetting *setting);
 
 gboolean    nm_setting_verify        (NMSetting *setting,
-							   GSList    *all_settings);
+                                      GSList    *all_settings,
+                                      GError    **error);
 
 
 typedef enum {

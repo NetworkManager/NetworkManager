@@ -4,6 +4,42 @@
 #include "nm-setting-pppoe.h"
 #include "nm-setting-ppp.h"
 
+GQuark
+nm_setting_pppoe_error_quark (void)
+{
+	static GQuark quark;
+
+	if (G_UNLIKELY (!quark))
+		quark = g_quark_from_static_string ("nm-setting-pppoe-error-quark");
+	return quark;
+}
+
+/* This should really be standard. */
+#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
+
+GType
+nm_setting_pppoe_error_get_type (void)
+{
+	static GType etype = 0;
+
+	if (etype == 0) {
+		static const GEnumValue values[] = {
+			/* Unknown error. */
+			ENUM_ENTRY (NM_SETTING_PPPOE_ERROR_UNKNOWN, "UnknownError"),
+			/* The specified property was invalid. */
+			ENUM_ENTRY (NM_SETTING_PPPOE_ERROR_INVALID_PROPERTY, "InvalidProperty"),
+			/* The specified property was missing and is required. */
+			ENUM_ENTRY (NM_SETTING_PPPOE_ERROR_MISSING_PROPERTY, "MissingProperty"),
+			/* The required PPP setting is missing */
+			ENUM_ENTRY (NM_SETTING_PPPOE_ERROR_MISSING_PPP_SETTING, "MissingPPPSetting"),
+			{ 0, 0, 0 }
+		};
+		etype = g_enum_register_static ("NMSettingPPPOEError", values);
+	}
+	return etype;
+}
+
+
 G_DEFINE_TYPE (NMSettingPPPOE, nm_setting_pppoe, NM_TYPE_SETTING)
 
 enum {
@@ -31,22 +67,37 @@ find_setting_by_name (gconstpointer a, gconstpointer b)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings)
+verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingPPPOE *self = NM_SETTING_PPPOE (setting);
 
-	if (!self->username || !strlen (self->username)) {
-		g_warning ("Missing or empty username");
+	if (!self->username) {
+		g_set_error (error,
+		             NM_SETTING_PPPOE_ERROR,
+		             NM_SETTING_PPPOE_ERROR_MISSING_PROPERTY,
+		             NM_SETTING_PPPOE_USERNAME);
+		return FALSE;
+	} else if (!strlen (self->username)) {
+		g_set_error (error,
+		             NM_SETTING_PPPOE_ERROR,
+		             NM_SETTING_PPPOE_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_PPPOE_USERNAME);
 		return FALSE;
 	}
 
 	if (self->service && !strlen (self->service)) {
-		g_warning ("Empty service");
+		g_set_error (error,
+		             NM_SETTING_PPPOE_ERROR,
+		             NM_SETTING_PPPOE_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_PPPOE_SERVICE);
 		return FALSE;
 	}
 
 	if (!g_slist_find_custom (all_settings, NM_SETTING_PPP_SETTING_NAME, find_setting_by_name)) {
-		g_warning ("Invalid or missing PPP setting");
+		g_set_error (error,
+		             NM_SETTING_PPPOE_ERROR,
+		             NM_SETTING_PPPOE_ERROR_MISSING_PPP_SETTING,
+		             NULL);
 		return FALSE;
 	}
 

@@ -59,44 +59,98 @@ static struct SettingInfo {
 	const char *name;
 	GType type;
 	guint32 priority;
+	GQuark error_quark;
 } default_map[DEFAULT_MAP_SIZE] = { { NULL } };
 
 static void
-register_one_setting (int i, const char *name, GType type, guint32 priority)
+register_one_setting (const char *name, GType type, GQuark error_quark, guint32 priority)
 {
-	g_return_if_fail (i >= 0);
+	static guint32 i = 0;
+
 	g_return_if_fail (i < DEFAULT_MAP_SIZE);
 	g_return_if_fail (default_map[i].name == NULL);
 
 	default_map[i].name = name;
 	default_map[i].type = type;
+	default_map[i].error_quark = error_quark;
 	default_map[i].priority = priority;
+	i++;
+
 	nm_setting_register (name, type);
 }
 
 static void
 register_default_settings (void)
 {
-	int i = 0;
-
 	nm_utils_register_value_transformations ();
 
 	if (G_LIKELY (default_map[0].name))
 		return;
 
-	register_one_setting (i++, NM_SETTING_CONNECTION_SETTING_NAME,        NM_TYPE_SETTING_CONNECTION,        0);
-	register_one_setting (i++, NM_SETTING_WIRED_SETTING_NAME,             NM_TYPE_SETTING_WIRED,             1);
-	register_one_setting (i++, NM_SETTING_WIRELESS_SETTING_NAME,          NM_TYPE_SETTING_WIRELESS,          1);
-	register_one_setting (i++, NM_SETTING_GSM_SETTING_NAME,               NM_TYPE_SETTING_GSM,               1);
-	register_one_setting (i++, NM_SETTING_CDMA_SETTING_NAME,              NM_TYPE_SETTING_CDMA,              1);
-	register_one_setting (i++, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NM_TYPE_SETTING_WIRELESS_SECURITY, 2);
-	register_one_setting (i++, NM_SETTING_SERIAL_SETTING_NAME,            NM_TYPE_SETTING_SERIAL,            2);
-	register_one_setting (i++, NM_SETTING_PPP_SETTING_NAME,               NM_TYPE_SETTING_PPP,               3);
-	register_one_setting (i++, NM_SETTING_PPPOE_SETTING_NAME,             NM_TYPE_SETTING_PPPOE,             3);
-	register_one_setting (i++, NM_SETTING_802_1X_SETTING_NAME,            NM_TYPE_SETTING_802_1X,            3);
-	register_one_setting (i++, NM_SETTING_VPN_SETTING_NAME,               NM_TYPE_SETTING_VPN,               4);
-	register_one_setting (i++, NM_SETTING_VPN_PROPERTIES_SETTING_NAME,    NM_TYPE_SETTING_VPN_PROPERTIES,    5);
-	register_one_setting (i++, NM_SETTING_IP4_CONFIG_SETTING_NAME,        NM_TYPE_SETTING_IP4_CONFIG,        6);
+	register_one_setting (NM_SETTING_CONNECTION_SETTING_NAME,
+	                      NM_TYPE_SETTING_CONNECTION,
+	                      NM_SETTING_CONNECTION_ERROR,
+	                      0);
+
+	register_one_setting (NM_SETTING_WIRED_SETTING_NAME,
+	                      NM_TYPE_SETTING_WIRED,
+	                      NM_SETTING_WIRED_ERROR,
+	                      1);
+
+	register_one_setting (NM_SETTING_WIRELESS_SETTING_NAME,
+	                      NM_TYPE_SETTING_WIRELESS,
+	                      NM_SETTING_WIRELESS_ERROR,
+	                      1);
+
+	register_one_setting (NM_SETTING_GSM_SETTING_NAME,
+	                      NM_TYPE_SETTING_GSM,
+	                      NM_SETTING_GSM_ERROR,
+	                      1);
+
+	register_one_setting (NM_SETTING_CDMA_SETTING_NAME,
+	                      NM_TYPE_SETTING_CDMA,
+	                      NM_SETTING_CDMA_ERROR,
+	                      1);
+
+	register_one_setting (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	                      NM_TYPE_SETTING_WIRELESS_SECURITY,
+	                      NM_SETTING_WIRELESS_SECURITY_ERROR,
+	                      2);
+
+	register_one_setting (NM_SETTING_SERIAL_SETTING_NAME,
+	                      NM_TYPE_SETTING_SERIAL,
+	                      NM_SETTING_SERIAL_ERROR,
+	                      2);
+
+	register_one_setting (NM_SETTING_PPP_SETTING_NAME,
+	                      NM_TYPE_SETTING_PPP,
+	                      NM_SETTING_PPP_ERROR,
+	                      3);
+
+	register_one_setting (NM_SETTING_PPPOE_SETTING_NAME,
+	                      NM_TYPE_SETTING_PPPOE,
+	                      NM_SETTING_PPPOE_ERROR,
+	                      3);
+
+	register_one_setting (NM_SETTING_802_1X_SETTING_NAME,
+	                      NM_TYPE_SETTING_802_1X,
+	                      NM_SETTING_802_1X_ERROR,
+	                      3);
+
+	register_one_setting (NM_SETTING_VPN_SETTING_NAME,
+	                      NM_TYPE_SETTING_VPN,
+	                      NM_SETTING_VPN_ERROR,
+	                      4);
+
+	register_one_setting (NM_SETTING_VPN_PROPERTIES_SETTING_NAME,
+	                      NM_TYPE_SETTING_VPN_PROPERTIES,
+	                      NM_SETTING_VPN_PROPERTIES_ERROR,
+	                      5);
+
+	register_one_setting (NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	                      NM_TYPE_SETTING_IP4_CONFIG,
+	                      NM_SETTING_IP4_CONFIG_ERROR,
+	                      6);
 }
 
 static guint32
@@ -118,10 +172,11 @@ nm_setting_register (const char *name, GType type)
 	g_return_if_fail (name != NULL);
 	g_return_if_fail (G_TYPE_IS_INSTANTIATABLE (type));
 
-	if (!registered_settings)
+	if (G_UNLIKELY (!registered_settings)) {
 		registered_settings = g_hash_table_new_full (g_str_hash, g_str_equal, 
-											(GDestroyNotify) g_free,
-											(GDestroyNotify) g_free);
+		                                             (GDestroyNotify) g_free,
+		                                             (GDestroyNotify) g_free);
+	}
 
 	if (g_hash_table_lookup (registered_settings, name))
 		g_warning ("Already have a creator function for '%s', overriding", name);
@@ -153,6 +208,19 @@ nm_connection_lookup_setting_type (const char *name)
 	}
 
 	return type;
+}
+
+GType
+nm_connection_lookup_setting_type_by_quark (GQuark error_quark)
+{
+	int i;
+
+	for (i = 0; default_map[i].name; i++) {
+		if (default_map[i].error_quark == error_quark)
+			return default_map[i].type;
+	}
+
+	return G_TYPE_INVALID;
 }
 
 NMSetting *
@@ -230,14 +298,21 @@ gboolean
 nm_connection_replace_settings (NMConnection *connection,
                                 GHashTable *new_settings)
 {
+	GError *error = NULL;
+
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (new_settings != NULL, FALSE);
 
 	g_hash_table_remove_all (NM_CONNECTION_GET_PRIVATE (connection)->settings);
 	g_hash_table_foreach (new_settings, parse_one_setting, connection);
 
-	if (!nm_connection_verify (connection)) {
-		g_warning ("Settings invalid.");
+	if (!nm_connection_verify (connection, &error)) {
+		g_warning ("%s: '%s' / '%s' invalid: %d",
+		           __func__,
+		           g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)),
+		           error->message,
+		           error->code);
+		g_error_free (error);
 		return FALSE;
 	}
 
@@ -299,6 +374,7 @@ nm_connection_compare (NMConnection *connection,
 typedef struct {
 	gboolean success;
 	GSList *all_settings;
+	GError **error;
 } VerifySettingsInfo;
 
 static void
@@ -308,7 +384,7 @@ verify_one_setting (gpointer data, gpointer user_data)
 	VerifySettingsInfo *info = (VerifySettingsInfo *) user_data;
 
 	if (info->success)
-		info->success = nm_setting_verify (setting, info->all_settings);
+		info->success = nm_setting_verify (setting, info->all_settings, info->error);
 }
 
 static void
@@ -320,13 +396,15 @@ hash_values_to_slist (gpointer key, gpointer value, gpointer user_data)
 }
 
 gboolean
-nm_connection_verify (NMConnection *connection)
+nm_connection_verify (NMConnection *connection, GError **error)
 {
 	NMConnectionPrivate *priv;
 	NMSetting *connection_setting;
 	VerifySettingsInfo info;
 
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	if (error)
+		g_return_val_if_fail (*error == NULL, FALSE);
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
 
@@ -338,13 +416,13 @@ nm_connection_verify (NMConnection *connection)
 	}
 
 	/* Now, run the verify function of each setting */
+	memset (&info, 0, sizeof (info));
 	info.success = TRUE;
-	info.all_settings = NULL;
+	info.error = error;
 	g_hash_table_foreach (priv->settings, hash_values_to_slist, &info.all_settings);
 
 	g_slist_foreach (info.all_settings, verify_one_setting, &info);
 	g_slist_free (info.all_settings);
-
 	return info.success;
 }
 
@@ -601,7 +679,7 @@ nm_connection_new (void)
 }
 
 NMConnection *
-nm_connection_new_from_hash (GHashTable *hash)
+nm_connection_new_from_hash (GHashTable *hash, GError **error)
 {
 	NMConnection *connection;
 	NMConnectionPrivate *priv;
@@ -613,7 +691,7 @@ nm_connection_new_from_hash (GHashTable *hash)
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
 
-	if (!nm_connection_verify (connection)) {
+	if (!nm_connection_verify (connection, error)) {
 		g_object_unref (connection);
 		return NULL;
 	}

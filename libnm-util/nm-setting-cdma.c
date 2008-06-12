@@ -5,6 +5,42 @@
 #include "nm-setting-serial.h"
 #include "nm-utils.h"
 
+GQuark
+nm_setting_cdma_error_quark (void)
+{
+	static GQuark quark;
+
+	if (G_UNLIKELY (!quark))
+		quark = g_quark_from_static_string ("nm-setting-cdma-error-quark");
+	return quark;
+}
+
+/* This should really be standard. */
+#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
+
+GType
+nm_setting_cdma_error_get_type (void)
+{
+	static GType etype = 0;
+
+	if (etype == 0) {
+		static const GEnumValue values[] = {
+			/* Unknown error. */
+			ENUM_ENTRY (NM_SETTING_CDMA_ERROR_UNKNOWN, "UnknownError"),
+			/* The specified property was invalid. */
+			ENUM_ENTRY (NM_SETTING_CDMA_ERROR_INVALID_PROPERTY, "InvalidProperty"),
+			/* The specified property was missing and is required. */
+			ENUM_ENTRY (NM_SETTING_CDMA_ERROR_MISSING_PROPERTY, "MissingProperty"),
+			/* The required serial setting is missing */
+			ENUM_ENTRY (NM_SETTING_CDMA_ERROR_MISSING_SERIAL_SETTING, "MissingSerialSetting"),
+			{ 0, 0, 0 }
+		};
+		etype = g_enum_register_static ("NMSettingCdmaError", values);
+	}
+	return etype;
+}
+
+
 G_DEFINE_TYPE (NMSettingCdma, nm_setting_cdma, NM_TYPE_SETTING)
 
 enum {
@@ -32,19 +68,31 @@ find_setting_by_name (gconstpointer a, gconstpointer b)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings)
+verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingCdma *self = NM_SETTING_CDMA (setting);
 
 	/* Serial connections require a PPP setting */
 	if (all_settings && 
 	    !g_slist_find_custom (all_settings, NM_SETTING_SERIAL_SETTING_NAME, find_setting_by_name)) {
-		g_warning ("Missing serial setting");
+		g_set_error (error,
+		             NM_SETTING_CDMA_ERROR,
+		             NM_SETTING_CDMA_ERROR_MISSING_SERIAL_SETTING,
+		             NULL);
 		return FALSE;
 	}
 
-	if (!self->number || strlen (self->number) < 1) {
-		nm_warning ("Missing phone number");
+	if (!self->number) {
+		g_set_error (error,
+		             NM_SETTING_CDMA_ERROR,
+		             NM_SETTING_CDMA_ERROR_MISSING_PROPERTY,
+		             NM_SETTING_CDMA_NUMBER);
+		return FALSE;
+	} else if (!strlen (self->number)) {
+		g_set_error (error,
+		             NM_SETTING_CDMA_ERROR,
+		             NM_SETTING_CDMA_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_CDMA_NUMBER);
 		return FALSE;
 	}
 

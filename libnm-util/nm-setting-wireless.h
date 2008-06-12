@@ -17,6 +17,21 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_WIRELESS_SETTING_NAME "802-11-wireless"
 
+typedef enum
+{
+	NM_SETTING_WIRELESS_ERROR_UNKNOWN = 0,
+	NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
+	NM_SETTING_WIRELESS_ERROR_MISSING_PROPERTY,
+	NM_SETTING_WIRELESS_ERROR_MISSING_SECURITY_SETTING,
+	NM_SETTING_WIRELESS_ERROR_CHANNEL_REQUIRES_BAND
+} NMSettingWirelessError;
+
+#define NM_TYPE_SETTING_WIRELESS_ERROR (nm_setting_wireless_error_get_type ()) 
+GType nm_setting_wireless_error_get_type (void);
+
+#define NM_SETTING_WIRELESS_ERROR nm_setting_wireless_error_quark ()
+GQuark nm_setting_wireless_error_quark (void);
+
 #define NM_SETTING_WIRELESS_SSID        "ssid"
 #define NM_SETTING_WIRELESS_MODE        "mode"
 #define NM_SETTING_WIRELESS_BAND        "band"

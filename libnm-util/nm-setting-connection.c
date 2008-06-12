@@ -3,6 +3,42 @@
 #include <string.h>
 #include "nm-setting-connection.h"
 
+GQuark
+nm_setting_connection_error_quark (void)
+{
+	static GQuark quark;
+
+	if (G_UNLIKELY (!quark))
+		quark = g_quark_from_static_string ("nm-setting-connection-error-quark");
+	return quark;
+}
+
+/* This should really be standard. */
+#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
+
+GType
+nm_setting_connection_error_get_type (void)
+{
+	static GType etype = 0;
+
+	if (etype == 0) {
+		static const GEnumValue values[] = {
+			/* Unknown error. */
+			ENUM_ENTRY (NM_SETTING_CONNECTION_ERROR_UNKNOWN, "UnknownError"),
+			/* The specified property was invalid. */
+			ENUM_ENTRY (NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY, "InvalidProperty"),
+			/* The specified property was missing and is required. */
+			ENUM_ENTRY (NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY, "MissingProperty"),
+			/* The setting specified by the 'type' field was not found. */
+			ENUM_ENTRY (NM_SETTING_CONNECTION_ERROR_TYPE_SETTING_NOT_FOUND, "TypeSettingNotFound"),
+			{ 0, 0, 0 }
+		};
+		etype = g_enum_register_static ("NMSettingConnectionError", values);
+	}
+	return etype;
+}
+
+
 G_DEFINE_TYPE (NMSettingConnection, nm_setting_connection, NM_TYPE_SETTING)
 
 enum {
@@ -30,19 +66,44 @@ find_setting_by_name (gconstpointer a, gconstpointer b)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings)
+verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingConnection *self = NM_SETTING_CONNECTION (setting);
 
-	if (!self->id || !strlen (self->id))
+	if (!self->id) {
+		g_set_error (error,
+		             NM_SETTING_CONNECTION_ERROR,
+		             NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
+		             NM_SETTING_CONNECTION_ID);
 		return FALSE;
+	} else if (!strlen (self->id)) {
+		g_set_error (error,
+		             NM_SETTING_CONNECTION_ERROR,
+		             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_CONNECTION_ID);
+		return FALSE;
+	}
 
-	if (!self->type || !strlen (self->type))
+	if (!self->type) {
+		g_set_error (error,
+		             NM_SETTING_CONNECTION_ERROR,
+		             NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
+		             NM_SETTING_CONNECTION_TYPE);
 		return FALSE;
+	} else if (!strlen (self->type)) {
+		g_set_error (error,
+		             NM_SETTING_CONNECTION_ERROR,
+		             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_CONNECTION_TYPE);
+		return FALSE;
+	}
 
 	/* Make sure the corresponding 'type' item is present */
 	if (all_settings && !g_slist_find_custom (all_settings, self->type, find_setting_by_name)) {
-		g_warning ("Required setting '%s' not found.", self->type);
+		g_set_error (error,
+		             NM_SETTING_CONNECTION_ERROR,
+		             NM_SETTING_CONNECTION_ERROR_TYPE_SETTING_NOT_FOUND,
+		             NM_SETTING_CONNECTION_TYPE);
 		return FALSE;
 	}
 

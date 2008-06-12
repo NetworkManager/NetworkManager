@@ -16,6 +16,20 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_SERIAL_SETTING_NAME "serial"
 
+typedef enum
+{
+	NM_SETTING_SERIAL_ERROR_UNKNOWN = 0,
+	NM_SETTING_SERIAL_ERROR_INVALID_PROPERTY,
+	NM_SETTING_SERIAL_ERROR_MISSING_PROPERTY,
+	NM_SETTING_SERIAL_ERROR_MISSING_PPP_SETTING
+} NMSettingSerialError;
+
+#define NM_TYPE_SETTING_SERIAL_ERROR (nm_setting_serial_error_get_type ()) 
+GType nm_setting_serial_error_get_type (void);
+
+#define NM_SETTING_SERIAL_ERROR nm_setting_serial_error_quark ()
+GQuark nm_setting_serial_error_quark (void);
+
 #define NM_SETTING_SERIAL_BAUD "baud"
 #define NM_SETTING_SERIAL_BITS "bits"
 #define NM_SETTING_SERIAL_PARITY "parity"

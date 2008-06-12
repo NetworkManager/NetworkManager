@@ -168,16 +168,16 @@ nm_setting_get_name (NMSetting *setting)
 }
 
 gboolean
-nm_setting_verify (NMSetting *setting, GSList *all_settings)
+nm_setting_verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
-	gboolean success = TRUE;
-
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+	if (error)
+		g_return_val_if_fail (*error == NULL, FALSE);
 
 	if (NM_SETTING_GET_CLASS (setting)->verify)
-		success = NM_SETTING_GET_CLASS (setting)->verify (setting, all_settings);
+		return NM_SETTING_GET_CLASS (setting)->verify (setting, all_settings, error);
 
-	return success;
+	return TRUE;
 }
 
 gboolean

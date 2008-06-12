@@ -2,6 +2,42 @@
 
 #include "nm-setting-ppp.h"
 
+GQuark
+nm_setting_ppp_error_quark (void)
+{
+	static GQuark quark;
+
+	if (G_UNLIKELY (!quark))
+		quark = g_quark_from_static_string ("nm-setting-ppp-error-quark");
+	return quark;
+}
+
+/* This should really be standard. */
+#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
+
+GType
+nm_setting_ppp_error_get_type (void)
+{
+	static GType etype = 0;
+
+	if (etype == 0) {
+		static const GEnumValue values[] = {
+			/* Unknown error. */
+			ENUM_ENTRY (NM_SETTING_PPP_ERROR_UNKNOWN, "UnknownError"),
+			/* The specified property was invalid. */
+			ENUM_ENTRY (NM_SETTING_PPP_ERROR_INVALID_PROPERTY, "InvalidProperty"),
+			/* The specified property was missing and is required. */
+			ENUM_ENTRY (NM_SETTING_PPP_ERROR_MISSING_PROPERTY, "MissingProperty"),
+			/* The 'require-mppe' option is not allowed in conjunction with 'noauth'. */
+			ENUM_ENTRY (NM_SETTING_PPP_ERROR_REQUIRE_MPPE_NOT_ALLOWED, "RequireMPPENotAllowed"),
+			{ 0, 0, 0 }
+		};
+		etype = g_enum_register_static ("NMSettingPPPError", values);
+	}
+	return etype;
+}
+
+
 G_DEFINE_TYPE (NMSettingPPP, nm_setting_ppp, NM_TYPE_SETTING)
 
 enum {
@@ -35,13 +71,16 @@ nm_setting_ppp_new (void)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings)
+verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingPPP *self = NM_SETTING_PPP (setting);
 
 	if (self->noauth) {
 		if (self->require_mppe) {
-			g_warning ("Option 'noauth' incompatible with 'require-mppe'");
+			g_set_error (error,
+			             NM_SETTING_PPP_ERROR,
+			             NM_SETTING_PPP_ERROR_REQUIRE_MPPE_NOT_ALLOWED,
+			             NM_SETTING_PPP_REQUIRE_MPPE);
 			return FALSE;
 		}
 	}

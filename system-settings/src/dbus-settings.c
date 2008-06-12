@@ -431,7 +431,7 @@ impl_settings_add_connection (NMSysconfigSettings *self,
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 	NMConnection *connection;
-	GError *err = NULL;
+	GError *err = NULL, *cnfh_error = NULL;
 
 	if (!check_polkit_privileges (priv->g_connection, priv->pol_ctx, context, &err)) {
 		dbus_g_method_return_error (context, err);
@@ -439,7 +439,7 @@ impl_settings_add_connection (NMSysconfigSettings *self,
 		return FALSE;
 	}
 
-	connection = nm_connection_new_from_hash (hash);
+	connection = nm_connection_new_from_hash (hash, &cnfh_error);
 	if (connection) {
 		GSList *iter;
 
@@ -465,7 +465,10 @@ impl_settings_add_connection (NMSysconfigSettings *self,
 		/* Invalid connection hash */
 		err = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
 					    NM_SYSCONFIG_SETTINGS_ERROR_INVALID_CONNECTION,
-					    "%s", "Invalid connection");
+					    "Invalid connection: '%s' / '%s' invalid: %d",
+					    g_type_name (nm_connection_lookup_setting_type_by_quark (cnfh_error->domain)),
+					    cnfh_error->message, cnfh_error->code);
+		g_error_free (cnfh_error);
 		dbus_g_method_return_error (context, err);
 		g_error_free (err);
 		return FALSE;

@@ -1,3 +1,9 @@
+2008-06-12  Dan Williams  <dcbw@redhat.com>
+
+	Add a GError argument to nm_connection_verify() and nm_setting_verify(),
+	and add error enums to each NMSetting subclass.  Each NMSetting subclass now
+	returns a descriptive GError when verification fails.
+
 2008-06-11  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Tambet Ingo <tambet@gmail.com>

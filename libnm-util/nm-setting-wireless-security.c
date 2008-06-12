@@ -9,6 +9,48 @@
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 
+GQuark
+nm_setting_wireless_security_error_quark (void)
+{
+	static GQuark quark;
+
+	if (G_UNLIKELY (!quark))
+		quark = g_quark_from_static_string ("nm-setting-wireless-security-error-quark");
+	return quark;
+}
+
+/* This should really be standard. */
+#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
+
+GType
+nm_setting_wireless_security_error_get_type (void)
+{
+	static GType etype = 0;
+
+	if (etype == 0) {
+		static const GEnumValue values[] = {
+			/* Unknown error. */
+			ENUM_ENTRY (NM_SETTING_WIRELESS_SECURITY_ERROR_UNKNOWN, "UnknownError"),
+			/* The specified property was invalid. */
+			ENUM_ENTRY (NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY, "InvalidProperty"),
+			/* The specified property was missing and is required. */
+			ENUM_ENTRY (NM_SETTING_WIRELESS_SECURITY_ERROR_MISSING_PROPERTY, "MissingProperty"),
+			/* The required 802.1x setting is missing */
+			ENUM_ENTRY (NM_SETTING_WIRELESS_SECURITY_ERROR_MISSING_802_1X_SETTING, "Missing8021xSetting"),
+			/* The LEAP authentication algorithm requires use of 802.1x key management. */
+			ENUM_ENTRY (NM_SETTING_WIRELESS_SECURITY_ERROR_LEAP_REQUIRES_802_1X, "LEAPRequires8021x"),
+			/* The LEAP authentication algorithm requires a username. */
+			ENUM_ENTRY (NM_SETTING_WIRELESS_SECURITY_ERROR_LEAP_REQUIRES_USERNAME, "LEAPRequiresUsername"),
+			/* Shared Key authentication can only be used with WEP encryption. */
+			ENUM_ENTRY (NM_SETTING_WIRELESS_SECURITY_ERROR_SHARED_KEY_REQUIRES_WEP, "SharedKeyRequiresWEP"),
+			{ 0, 0, 0 }
+		};
+		etype = g_enum_register_static ("NMSettingWirelessSecurityError", values);
+	}
+	return etype;
+}
+
+
 G_DEFINE_TYPE (NMSettingWirelessSecurity, nm_setting_wireless_security, NM_TYPE_SETTING)
 
 enum {
@@ -158,7 +200,7 @@ find_setting_by_name (gconstpointer a, gconstpointer b)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings)
+verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingWirelessSecurity *self = NM_SETTING_WIRELESS_SECURITY (setting);
 	const char *valid_key_mgmt[] = { "none", "ieee8021x", "wpa-none", "wpa-psk", "wpa-eap", NULL };
@@ -167,19 +209,36 @@ verify (NMSetting *setting, GSList *all_settings)
 	const char *valid_pairwise[] = { "wep40", "wep104", "tkip", "ccmp", NULL };
 	const char *valid_groups[] = { "wep40", "wep104", "tkip", "ccmp", NULL };
 
-	if (!self->key_mgmt || !nm_utils_string_in_list (self->key_mgmt, valid_key_mgmt)) {
-		g_warning ("Missing or invalid key management");
+	if (!self->key_mgmt) {
+		g_set_error (error,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR_MISSING_PROPERTY,
+		             NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+		return FALSE;
+	}
+
+	if (!nm_utils_string_in_list (self->key_mgmt, valid_key_mgmt)) {
+		g_set_error (error,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
 		return FALSE;
 	}
 
 	if (self->auth_alg && !strcmp (self->auth_alg, "leap")) {
 		/* LEAP must use ieee8021x key management */
 		if (strcmp (self->key_mgmt, "ieee8021x")) {
-			g_warning ("LEAP requires IEEE8021X key management.");
+			g_set_error (error,
+			             NM_SETTING_WIRELESS_SECURITY_ERROR,
+			             NM_SETTING_WIRELESS_SECURITY_ERROR_LEAP_REQUIRES_802_1X,
+			             NM_SETTING_WIRELESS_SECURITY_AUTH_ALG);
 			return FALSE;
 		}
 		if (!self->leap_username) {
-			g_warning ("LEAP requires a username.");
+			g_set_error (error,
+			             NM_SETTING_WIRELESS_SECURITY_ERROR,
+			             NM_SETTING_WIRELESS_SECURITY_ERROR_LEAP_REQUIRES_USERNAME,
+			             NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
 			return FALSE;
 		}
 	} else {
@@ -187,58 +246,99 @@ verify (NMSetting *setting, GSList *all_settings)
 	        || (strcmp (self->key_mgmt, "wpa-eap") == 0)) {
 			/* Need an 802.1x setting too */
 			if (!g_slist_find_custom (all_settings, NM_SETTING_802_1X_SETTING_NAME, find_setting_by_name)) {
-				g_warning ("Invalid or missing 802.1x setting");
+				g_set_error (error,
+				             NM_SETTING_WIRELESS_SECURITY_ERROR,
+				             NM_SETTING_WIRELESS_SECURITY_ERROR_MISSING_802_1X_SETTING,
+				             NULL);
 				return FALSE;
 			}
 		}
 	}
 
+	if (self->leap_username && !strlen (self->leap_username)) {
+		g_set_error (error,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
+		return FALSE;
+	}
+
 	if (self->wep_tx_keyidx > 3) {
-		g_warning ("Invalid WEP key index");
+		g_set_error (error,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX);
 		return FALSE;
 	}
 
 	if (self->wep_key0 && !strlen (self->wep_key0)) {
-		g_warning ("Invalid zero-length WEP key #0.");
+		g_set_error (error,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
 		return FALSE;
 	}
 	if (self->wep_key1 && !strlen (self->wep_key1)) {
-		g_warning ("Invalid zero-length WEP key #1.");
+		g_set_error (error,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRELESS_SECURITY_WEP_KEY1);
 		return FALSE;
 	}
 	if (self->wep_key2 && !strlen (self->wep_key2)) {
-		g_warning ("Invalid zero-length WEP key #2.");
+		g_set_error (error,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRELESS_SECURITY_WEP_KEY2);
 		return FALSE;
 	}
 	if (self->wep_key3 && !strlen (self->wep_key3)) {
-		g_warning ("Invalid zero-length WEP key #3.");
+		g_set_error (error,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
 		return FALSE;
 	}
 
 	if (self->auth_alg && !nm_utils_string_in_list (self->auth_alg, valid_auth_algs)) {
-		g_warning ("Invalid authentication algorithm");
+		g_set_error (error,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRELESS_SECURITY_AUTH_ALG);
 		return FALSE;
 	}
 
 	if (self->proto && !nm_utils_string_slist_validate (self->proto, valid_protos)) {
-		g_warning ("Invalid authentication protocol");
+		g_set_error (error,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRELESS_SECURITY_PROTO);
 		return FALSE;
 	}
 
 	if (self->pairwise && !nm_utils_string_slist_validate (self->pairwise, valid_pairwise)) {
-		g_warning ("Invalid pairwise");
+		g_set_error (error,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRELESS_SECURITY_PAIRWISE);
 		return FALSE;
 	}
 
 	if (self->group && !nm_utils_string_slist_validate (self->group, valid_groups)) {
-		g_warning ("Invalid group");
+		g_set_error (error,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRELESS_SECURITY_GROUP);
 		return FALSE;
 	}
 
 	/* Shared Key auth can only be used with WEP */
 	if (self->auth_alg && !strcmp (self->auth_alg, "shared")) {
 		if (self->key_mgmt && strcmp (self->key_mgmt, "none")) {
-			g_warning ("Shared Key authentication can only be used with WEP.");
+			g_set_error (error,
+			             NM_SETTING_WIRELESS_SECURITY_ERROR,
+			             NM_SETTING_WIRELESS_SECURITY_ERROR_SHARED_KEY_REQUIRES_WEP,
+			             NM_SETTING_WIRELESS_SECURITY_AUTH_ALG);
 			return FALSE;
 		}
 	}

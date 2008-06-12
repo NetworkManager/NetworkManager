@@ -16,6 +16,20 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_CDMA_SETTING_NAME "cdma"
 
+typedef enum
+{
+	NM_SETTING_CDMA_ERROR_UNKNOWN = 0,
+	NM_SETTING_CDMA_ERROR_INVALID_PROPERTY,
+	NM_SETTING_CDMA_ERROR_MISSING_PROPERTY,
+	NM_SETTING_CDMA_ERROR_MISSING_SERIAL_SETTING
+} NMSettingCdmaError;
+
+#define NM_TYPE_SETTING_CDMA_ERROR (nm_setting_cdma_error_get_type ()) 
+GType nm_setting_cdma_error_get_type (void);
+
+#define NM_SETTING_CDMA_ERROR nm_setting_cdma_error_quark ()
+GQuark nm_setting_cdma_error_quark (void);
+
 #define NM_SETTING_CDMA_NUMBER       "number"
 #define NM_SETTING_CDMA_USERNAME     "username"
 #define NM_SETTING_CDMA_PASSWORD     "password"

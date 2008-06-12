@@ -121,7 +121,7 @@ constructor (GType type,
 	NMConnection *wrapped;
 	const char *service;
 	GHashTable *settings = NULL;
-	GError *err = NULL;
+	GError *error = NULL;
 
 	object = G_OBJECT_CLASS (nm_dbus_connection_parent_class)->constructor (type, n_construct_params, construct_params);
 
@@ -146,17 +146,21 @@ constructor (GType type,
 									 priv->path,
 									 NM_DBUS_IFACE_SETTINGS_CONNECTION);
 
-	if (!org_freedesktop_NetworkManagerSettings_Connection_get_settings (priv->proxy, &settings, &err)) {
-		nm_warning ("Can not retrieve settings: %s", err->message);
-		g_error_free (err);
+	if (!org_freedesktop_NetworkManagerSettings_Connection_get_settings (priv->proxy, &settings, &error)) {
+		nm_warning ("Can not retrieve settings: %s", error->message);
+		g_error_free (error);
 		goto err;
 	}
 
-	wrapped = nm_connection_new_from_hash (settings);
+	wrapped = nm_connection_new_from_hash (settings, &error);
 	g_hash_table_destroy (settings);
 
 	if (!wrapped) {
-		nm_warning ("Invalid settings");
+		nm_warning ("Invalid connection: '%s' / '%s' invalid: %d",
+		            g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)),
+		            error->message,
+		            error->code);
+		g_error_free (error);
 		goto err;
 	}
 

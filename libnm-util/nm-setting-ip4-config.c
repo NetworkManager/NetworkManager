@@ -8,6 +8,42 @@
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 
+GQuark
+nm_setting_ip4_config_error_quark (void)
+{
+	static GQuark quark;
+
+	if (G_UNLIKELY (!quark))
+		quark = g_quark_from_static_string ("nm-setting-ip4-config-error-quark");
+	return quark;
+}
+
+/* This should really be standard. */
+#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
+
+GType
+nm_setting_ip4_config_error_get_type (void)
+{
+	static GType etype = 0;
+
+	if (etype == 0) {
+		static const GEnumValue values[] = {
+			/* Unknown error. */
+			ENUM_ENTRY (NM_SETTING_IP4_CONFIG_ERROR_UNKNOWN, "UnknownError"),
+			/* The specified property was invalid. */
+			ENUM_ENTRY (NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY, "InvalidProperty"),
+			/* The specified property was missing and is required. */
+			ENUM_ENTRY (NM_SETTING_IP4_CONFIG_ERROR_MISSING_PROPERTY, "MissingProperty"),
+			/* The specified property was not allowed in combination with the current 'method' */
+			ENUM_ENTRY (NM_SETTING_IP4_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD, "NotAllowedForMethod"),
+			{ 0, 0, 0 }
+		};
+		etype = g_enum_register_static ("NMSettingIP4ConfigError", values);
+	}
+	return etype;
+}
+
+
 G_DEFINE_TYPE (NMSettingIP4Config, nm_setting_ip4_config, NM_TYPE_SETTING)
 
 enum {
@@ -29,38 +65,58 @@ nm_setting_ip4_config_new (void)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings)
+verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingIP4Config *self = NM_SETTING_IP4_CONFIG (setting);
 
-	if (!self->method)
+	if (!self->method) {
+		g_set_error (error,
+		             NM_SETTING_IP4_CONFIG_ERROR,
+		             NM_SETTING_IP4_CONFIG_ERROR_MISSING_PROPERTY,
+		             NM_SETTING_IP4_CONFIG_METHOD);
 		return FALSE;
+	}
 
 	if (!strcmp (self->method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
 		if (!self->addresses) {
-			g_warning ("address is not provided");
+			g_set_error (error,
+			             NM_SETTING_IP4_CONFIG_ERROR,
+			             NM_SETTING_IP4_CONFIG_ERROR_MISSING_PROPERTY,
+			             NM_SETTING_IP4_CONFIG_ADDRESSES);
 			return FALSE;
 		}
 	} else if (   !strcmp (self->method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP)
 	           || !strcmp (self->method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
 		if (self->dns && self->dns->len) {
-			g_warning ("may not specify DNS when using autoip/shared");
+			g_set_error (error,
+			             NM_SETTING_IP4_CONFIG_ERROR,
+			             NM_SETTING_IP4_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD,
+			             NM_SETTING_IP4_CONFIG_DNS);
 			return FALSE;
 		}
 
 		if (g_slist_length (self->dns_search)) {
-			g_warning ("may not specify DNS searches when using autoip/shared");
+			g_set_error (error,
+			             NM_SETTING_IP4_CONFIG_ERROR,
+			             NM_SETTING_IP4_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD,
+			             NM_SETTING_IP4_CONFIG_DNS_SEARCH);
 			return FALSE;
 		}
 
 		if (g_slist_length (self->addresses)) {
-			g_warning ("may not specify IP addresses when using autoip/shared");
+			g_set_error (error,
+			             NM_SETTING_IP4_CONFIG_ERROR,
+			             NM_SETTING_IP4_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD,
+			             NM_SETTING_IP4_CONFIG_ADDRESSES);
 			return FALSE;
 		}
 	} else if (!strcmp (self->method, NM_SETTING_IP4_CONFIG_METHOD_DHCP)) {
 		/* nothing to do */
 	} else {
-		g_warning ("invalid IP4 config method '%s'", self->method);
+		g_set_error (error,
+		             NM_SETTING_IP4_CONFIG_ERROR,
+		             NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_IP4_CONFIG_METHOD);
 		return FALSE;
 	}
 

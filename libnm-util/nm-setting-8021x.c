@@ -9,6 +9,40 @@
 #include "nm-dbus-glib-types.h"
 #include "crypto.h"
 
+GQuark
+nm_setting_802_1x_error_quark (void)
+{
+	static GQuark quark;
+
+	if (G_UNLIKELY (!quark))
+		quark = g_quark_from_static_string ("nm-setting-802-1x-error-quark");
+	return quark;
+}
+
+/* This should really be standard. */
+#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
+
+GType
+nm_setting_802_1x_error_get_type (void)
+{
+	static GType etype = 0;
+
+	if (etype == 0) {
+		static const GEnumValue values[] = {
+			/* Unknown error. */
+			ENUM_ENTRY (NM_SETTING_802_1X_ERROR_UNKNOWN, "UnknownError"),
+			/* The specified property was invalid. */
+			ENUM_ENTRY (NM_SETTING_802_1X_ERROR_INVALID_PROPERTY, "InvalidProperty"),
+			/* The specified property was missing and is required. */
+			ENUM_ENTRY (NM_SETTING_802_1X_ERROR_MISSING_PROPERTY, "MissingProperty"),
+			{ 0, 0, 0 }
+		};
+		etype = g_enum_register_static ("NMSetting8021xError", values);
+	}
+	return etype;
+}
+
+
 G_DEFINE_TYPE (NMSetting8021x, nm_setting_802_1x, NM_TYPE_SETTING)
 
 enum {
@@ -188,16 +222,34 @@ need_secrets_tls (NMSetting8021x *self,
 }
 
 static gboolean
-verify_tls (NMSetting8021x *self, gboolean phase2)
+verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 {
 	if (phase2) {
-		if (!self->phase2_client_cert || !self->phase2_client_cert->len) {
-			g_warning ("%s: phase2 client certificate invalid", __func__);
+		if (!self->phase2_client_cert) {
+			g_set_error (error,
+			             NM_SETTING_802_1X_ERROR,
+			             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
+			             NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
+			return FALSE;
+		} else if (!self->phase2_client_cert->len) {
+			g_set_error (error,
+			             NM_SETTING_802_1X_ERROR,
+			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			             NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
 			return FALSE;
 		}
 	} else {
-		if (!self->client_cert || !self->client_cert->len) {
-			g_warning ("%s: client certificate invalid", __func__);
+		if (!self->client_cert) {
+			g_set_error (error,
+			             NM_SETTING_802_1X_ERROR,
+			             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
+			             NM_SETTING_802_1X_CLIENT_CERT);
+			return FALSE;
+		} else if (!self->client_cert->len) {
+			g_set_error (error,
+			             NM_SETTING_802_1X_ERROR,
+			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			             NM_SETTING_802_1X_CLIENT_CERT);
 			return FALSE;
 		}
 	}
@@ -206,15 +258,57 @@ verify_tls (NMSetting8021x *self, gboolean phase2)
 }
 
 static gboolean
-verify_ttls (NMSetting8021x *self, gboolean phase2)
+verify_ttls (NMSetting8021x *self, gboolean phase2, GError **error)
 {
-	if (!self->identity && !self->anonymous_identity) {
-		g_warning ("%s: missing identity or anonymous identity", __func__);
+	if (   (!self->identity || !strlen (self->identity))
+	    && (!self->anonymous_identity || !strlen (self->anonymous_identity))) {
+		if (!self->identity) {
+			g_set_error (error,
+			             NM_SETTING_802_1X_ERROR,
+			             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
+			             NM_SETTING_802_1X_IDENTITY);
+		} else if (!strlen (self->identity)) {
+			g_set_error (error,
+			             NM_SETTING_802_1X_ERROR,
+			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			             NM_SETTING_802_1X_IDENTITY);
+		} else if (!self->anonymous_identity) {
+			g_set_error (error,
+			             NM_SETTING_802_1X_ERROR,
+			             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
+			             NM_SETTING_802_1X_ANONYMOUS_IDENTITY);
+		} else {
+			g_set_error (error,
+			             NM_SETTING_802_1X_ERROR,
+			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			             NM_SETTING_802_1X_ANONYMOUS_IDENTITY);
+		}
 		return FALSE;
 	}
 
-	if (!self->phase2_auth && !self->phase2_autheap) {
-		g_warning ("%s: missing phase2 auth method", __func__);
+	if (   (!self->phase2_auth || !strlen (self->phase2_auth))
+	    && (!self->phase2_autheap || !strlen (self->phase2_autheap))) {
+		if (!self->phase2_auth) {
+			g_set_error (error,
+			             NM_SETTING_802_1X_ERROR,
+			             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
+			             NM_SETTING_802_1X_PHASE2_AUTH);
+		} else if (!strlen (self->phase2_auth)) {
+			g_set_error (error,
+			             NM_SETTING_802_1X_ERROR,
+			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			             NM_SETTING_802_1X_PHASE2_AUTH);
+		} else if (!self->phase2_autheap) {
+			g_set_error (error,
+			             NM_SETTING_802_1X_ERROR,
+			             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
+			             NM_SETTING_802_1X_PHASE2_AUTHEAP);
+		} else {
+			g_set_error (error,
+			             NM_SETTING_802_1X_ERROR,
+			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			             NM_SETTING_802_1X_PHASE2_AUTHEAP);
+		}
 		return FALSE;
 	}
 
@@ -222,9 +316,21 @@ verify_ttls (NMSetting8021x *self, gboolean phase2)
 }
 
 static gboolean
-verify_identity (NMSetting8021x *self, gboolean phase2)
+verify_identity (NMSetting8021x *self, gboolean phase2, GError **error)
 {
-	return self->identity ? TRUE : FALSE;
+	if (!self->identity) {
+		g_set_error (error,
+		             NM_SETTING_802_1X_ERROR,
+		             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
+		             NM_SETTING_802_1X_IDENTITY);
+	} else if (!strlen (self->identity)) {
+		g_set_error (error,
+		             NM_SETTING_802_1X_ERROR,
+		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_802_1X_IDENTITY);
+	}
+
+	return TRUE;
 }
 
 /* Implemented below... */
@@ -238,7 +344,8 @@ typedef void (*EAPMethodNeedSecretsFunc) (NMSetting8021x *self,
                                           gboolean phase2);
 
 typedef gboolean (*EAPMethodValidateFunc)(NMSetting8021x *self,
-                                          gboolean phase2);
+                                          gboolean phase2,
+                                          GError **error);
 
 typedef struct {
 	const char *method;
@@ -336,7 +443,7 @@ need_secrets (NMSetting *setting)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings)
+verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSetting8021x *self = NM_SETTING_802_1X (setting);
 	const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "sim", "fast", NULL };
@@ -345,13 +452,22 @@ verify (NMSetting *setting, GSList *all_settings)
 	const char *valid_phase2_autheap[] = { "md5", "mschapv2", "otp", "gtc", "tls", NULL };
 	GSList *iter;
 
+	if (error)
+		g_return_val_if_fail (*error == NULL, FALSE);
+
 	if (!self->eap) {
-		g_warning ("Missing eap method");
+		g_set_error (error,
+		             NM_SETTING_802_1X_ERROR,
+		             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
+		             NM_SETTING_802_1X_EAP);
 		return FALSE;
 	}
 
 	if (!nm_utils_string_slist_validate (self->eap, valid_eap)) {
-		g_warning ("Invalid eap");
+		g_set_error (error,
+		             NM_SETTING_802_1X_ERROR,
+		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_802_1X_EAP);
 		return FALSE;
 	}
 
@@ -364,7 +480,7 @@ verify (NMSetting *setting, GSList *all_settings)
 			if (eap_methods_table[i].v_func == NULL)
 				continue;
 			if (!strcmp (eap_methods_table[i].method, method)) {
-				if (!(*eap_methods_table[i].v_func) (self, FALSE))
+				if (!(*eap_methods_table[i].v_func) (self, FALSE, error))
 					return FALSE;
 				break;
 			}
@@ -372,27 +488,42 @@ verify (NMSetting *setting, GSList *all_settings)
 	}
 
 	if (self->phase1_peapver && !nm_utils_string_in_list (self->phase1_peapver, valid_phase1_peapver)) {
-		g_warning ("Invalid phase1 peapver");
+		g_set_error (error,
+		             NM_SETTING_802_1X_ERROR,
+		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_802_1X_PHASE1_PEAPVER);
 		return FALSE;
 	}
 
 	if (self->phase1_peaplabel && strcmp (self->phase1_peaplabel, "1")) {
-		g_warning ("Invalid phase1 peaplabel");
+		g_set_error (error,
+		             NM_SETTING_802_1X_ERROR,
+		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_802_1X_PHASE1_PEAPLABEL);
 		return FALSE;
 	}
 
 	if (self->phase1_fast_provisioning && strcmp (self->phase1_fast_provisioning, "1")) {
-		g_warning ("Invalid phase1 fast provisioning");
+		g_set_error (error,
+		             NM_SETTING_802_1X_ERROR,
+		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_802_1X_PHASE1_FAST_PROVISIONING);
 		return FALSE;
 	}
 
 	if (self->phase2_auth && !nm_utils_string_in_list (self->phase2_auth, valid_phase2_auth)) {
-		g_warning ("Invalid phase2 authentication");
+		g_set_error (error,
+		             NM_SETTING_802_1X_ERROR,
+		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_802_1X_PHASE2_AUTH);
 		return FALSE;
 	}
 
 	if (self->phase2_autheap && !nm_utils_string_in_list (self->phase2_autheap, valid_phase2_autheap)) {
-		g_warning ("Invalid phase2 autheap");
+		g_set_error (error,
+		             NM_SETTING_802_1X_ERROR,
+		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_802_1X_PHASE2_AUTHEAP);
 		return FALSE;
 	}
 

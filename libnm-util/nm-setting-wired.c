@@ -6,6 +6,40 @@
 #include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 
+GQuark
+nm_setting_wired_error_quark (void)
+{
+	static GQuark quark;
+
+	if (G_UNLIKELY (!quark))
+		quark = g_quark_from_static_string ("nm-setting-wired-error-quark");
+	return quark;
+}
+
+/* This should really be standard. */
+#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
+
+GType
+nm_setting_wired_error_get_type (void)
+{
+	static GType etype = 0;
+
+	if (etype == 0) {
+		static const GEnumValue values[] = {
+			/* Unknown error. */
+			ENUM_ENTRY (NM_SETTING_WIRED_ERROR_UNKNOWN, "UnknownError"),
+			/* The specified property was invalid. */
+			ENUM_ENTRY (NM_SETTING_WIRED_ERROR_INVALID_PROPERTY, "InvalidProperty"),
+			/* The specified property was missing and is required. */
+			ENUM_ENTRY (NM_SETTING_WIRED_ERROR_MISSING_PROPERTY, "MissingProperty"),
+			{ 0, 0, 0 }
+		};
+		etype = g_enum_register_static ("NMSettingWiredError", values);
+	}
+	return etype;
+}
+
+
 G_DEFINE_TYPE (NMSettingWired, nm_setting_wired, NM_TYPE_SETTING)
 
 enum {
@@ -27,24 +61,33 @@ nm_setting_wired_new (void)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings)
+verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingWired *self = NM_SETTING_WIRED (setting);
 	const char *valid_ports[] = { "tp", "aui", "bnc", "mii", NULL };
 	const char *valid_duplex[] = { "half", "full", NULL };
 
 	if (self->port && !nm_utils_string_in_list (self->port, valid_ports)) {
-		g_warning ("Invalid port");
+		g_set_error (error,
+		             NM_SETTING_WIRED_ERROR,
+		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRED_PORT);
 		return FALSE;
 	}
 
 	if (self->duplex && !nm_utils_string_in_list (self->duplex, valid_duplex)) {
-		g_warning ("Invalid duplex");
+		g_set_error (error,
+		             NM_SETTING_WIRED_ERROR,
+		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRED_DUPLEX);
 		return FALSE;
 	}
 
 	if (self->mac_address && self->mac_address->len != ETH_ALEN) {
-		g_warning ("Invalid mac address");
+		g_set_error (error,
+		             NM_SETTING_WIRED_ERROR,
+		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRED_MAC_ADDRESS);
 		return FALSE;
 	}
 

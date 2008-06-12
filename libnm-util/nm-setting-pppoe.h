@@ -16,6 +16,20 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_PPPOE_SETTING_NAME "pppoe"
 
+typedef enum
+{
+	NM_SETTING_PPPOE_ERROR_UNKNOWN = 0,
+	NM_SETTING_PPPOE_ERROR_INVALID_PROPERTY,
+	NM_SETTING_PPPOE_ERROR_MISSING_PROPERTY,
+	NM_SETTING_PPPOE_ERROR_MISSING_PPP_SETTING
+} NMSettingPPPOEError;
+
+#define NM_TYPE_SETTING_PPPOE_ERROR (nm_setting_pppoe_error_get_type ()) 
+GType nm_setting_pppoe_error_get_type (void);
+
+#define NM_SETTING_PPPOE_ERROR nm_setting_pppoe_error_quark ()
+GQuark nm_setting_pppoe_error_quark (void);
+
 #define NM_SETTING_PPPOE_SERVICE  "service"
 #define NM_SETTING_PPPOE_USERNAME "username"
 #define NM_SETTING_PPPOE_PASSWORD "password"

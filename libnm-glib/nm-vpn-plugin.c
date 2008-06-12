@@ -321,14 +321,22 @@ nm_vpn_plugin_set_ip4_config (NMVPNPlugin *plugin,
 static gboolean
 impl_vpn_plugin_connect (NMVPNPlugin *plugin,
 					GHashTable *properties,
-					GError **err)
+					GError **error)
 {
 	NMConnection *connection;
-	gboolean success;
+	gboolean success = FALSE;
 
-	connection = nm_connection_new_from_hash (properties);
-	success = nm_vpn_plugin_connect (plugin, connection, err);
-	g_object_unref (connection);
+	connection = nm_connection_new_from_hash (properties, error);
+	if (!connection) {
+		nm_warning ("%s: Invalid connection: '%s' / '%s' invalid: %d",
+		            __func__,
+		            g_type_name (nm_connection_lookup_setting_type_by_quark ((*error)->domain)),
+		            (*error)->message,
+		            (*error)->code);
+	} else {
+		success = nm_vpn_plugin_connect (plugin, connection, error);
+		g_object_unref (connection);
+	}
 
 	return success;
 }
@@ -344,17 +352,20 @@ impl_vpn_plugin_need_secrets (NMVPNPlugin *plugin,
 	char *sn = NULL;
 	GError *ns_err = NULL;
 	gboolean needed = FALSE;
+	GError *cnfh_err = NULL;
 
 	g_return_val_if_fail (NM_IS_VPN_PLUGIN (plugin), FALSE);
 	g_return_val_if_fail (properties != NULL, FALSE);
 
-	connection = nm_connection_new_from_hash (properties);
+	connection = nm_connection_new_from_hash (properties, &cnfh_err);
 	if (!connection) {
 		g_set_error (err,
 		             NM_VPN_PLUGIN_ERROR,
 		             NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID,
-		             "%s",
-		             "The connection information was invalid.");
+		             "The connection was invalid: '%s' / '%s' invalid: %d.",
+		             g_type_name (nm_connection_lookup_setting_type_by_quark (cnfh_err->domain)),
+		             cnfh_err->message, cnfh_err->code);
+		g_error_free (cnfh_err);
 		return FALSE;
 	}
 

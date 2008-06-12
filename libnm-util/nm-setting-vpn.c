@@ -7,6 +7,40 @@
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 
+GQuark
+nm_setting_vpn_error_quark (void)
+{
+	static GQuark quark;
+
+	if (G_UNLIKELY (!quark))
+		quark = g_quark_from_static_string ("nm-setting-vpn-error-quark");
+	return quark;
+}
+
+/* This should really be standard. */
+#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
+
+GType
+nm_setting_vpn_error_get_type (void)
+{
+	static GType etype = 0;
+
+	if (etype == 0) {
+		static const GEnumValue values[] = {
+			/* Unknown error. */
+			ENUM_ENTRY (NM_SETTING_VPN_ERROR_UNKNOWN, "UnknownError"),
+			/* The specified property was invalid. */
+			ENUM_ENTRY (NM_SETTING_VPN_ERROR_INVALID_PROPERTY, "InvalidProperty"),
+			/* The specified property was missing and is required. */
+			ENUM_ENTRY (NM_SETTING_VPN_ERROR_MISSING_PROPERTY, "MissingProperty"),
+			{ 0, 0, 0 }
+		};
+		etype = g_enum_register_static ("NMSettingVpnError", values);
+	}
+	return etype;
+}
+
+
 G_DEFINE_TYPE (NMSettingVPN, nm_setting_vpn, NM_TYPE_SETTING)
 
 enum {
@@ -25,16 +59,34 @@ nm_setting_vpn_new (void)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings)
+verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingVPN *self = NM_SETTING_VPN (setting);
 
-	if (!self->service_type || !strlen (self->service_type))
+	if (!self->service_type) {
+		g_set_error (error,
+		             NM_SETTING_VPN_ERROR,
+		             NM_SETTING_VPN_ERROR_MISSING_PROPERTY,
+		             NM_SETTING_VPN_SERVICE_TYPE);
 		return FALSE;
+	}
+
+	if (!strlen (self->service_type)) {
+		g_set_error (error,
+		             NM_SETTING_VPN_ERROR,
+		             NM_SETTING_VPN_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_VPN_SERVICE_TYPE);
+		return FALSE;
+	}
 
 	/* default username can be NULL, but can't be zero-length */
-	if (self->user_name && !strlen (self->user_name))
+	if (self->user_name && !strlen (self->user_name)) {
+		g_set_error (error,
+		             NM_SETTING_VPN_ERROR,
+		             NM_SETTING_VPN_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_VPN_USER_NAME);
 		return FALSE;
+	}
 
 	return TRUE;
 }

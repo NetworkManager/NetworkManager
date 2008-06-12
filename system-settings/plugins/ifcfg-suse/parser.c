@@ -648,6 +648,7 @@ parse_ifcfg (const char *iface, NMDeviceType type)
 {
 	shvarFile *file;
 	NMConnection *connection;
+	GError *error = NULL;
 
 	g_return_val_if_fail (iface != NULL, NULL);
 
@@ -670,7 +671,12 @@ parse_ifcfg (const char *iface, NMDeviceType type)
 
 	svCloseFile (file);
 
-	if (!nm_connection_verify (connection)) {
+	if (!nm_connection_verify (connection, &error)) {
+		g_warning ("%s: Invalid connection for %s: '%s' / '%s' invalid: %d",
+		           __func__, iface,
+		           g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)),
+		           error->message, error->code);
+		g_error_free (error);
 		g_object_unref (connection);
 		connection = NULL;
 	}

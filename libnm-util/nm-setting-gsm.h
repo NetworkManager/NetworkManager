@@ -16,6 +16,20 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_GSM_SETTING_NAME "gsm"
 
+typedef enum
+{
+	NM_SETTING_GSM_ERROR_UNKNOWN = 0,
+	NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
+	NM_SETTING_GSM_ERROR_MISSING_PROPERTY,
+	NM_SETTING_GSM_ERROR_MISSING_SERIAL_SETTING
+} NMSettingGsmError;
+
+#define NM_TYPE_SETTING_GSM_ERROR (nm_setting_gsm_error_get_type ()) 
+GType nm_setting_gsm_error_get_type (void);
+
+#define NM_SETTING_GSM_ERROR nm_setting_gsm_error_quark ()
+GQuark nm_setting_gsm_error_quark (void);
+
 #define NM_SETTING_GSM_NUMBER       "number"
 #define NM_SETTING_GSM_USERNAME     "username"
 #define NM_SETTING_GSM_PASSWORD     "password"

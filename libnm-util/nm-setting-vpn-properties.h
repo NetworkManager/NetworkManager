@@ -15,6 +15,20 @@ G_BEGIN_DECLS
 #define NM_SETTING_VPN_PROPERTIES_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SETTING_VPN_PROPERTIES, NMSettingVPNPropertiesClass))
 
 #define NM_SETTING_VPN_PROPERTIES_SETTING_NAME "vpn-properties"
+
+typedef enum
+{
+	NM_SETTING_VPN_PROPERTIES_ERROR_UNKNOWN = 0,
+	NM_SETTING_VPN_PROPERTIES_ERROR_INVALID_PROPERTY,
+	NM_SETTING_VPN_PROPERTIES_ERROR_MISSING_PROPERTY,
+} NMSettingVPNPropertiesError;
+
+#define NM_TYPE_SETTING_VPN_PROPERTIES_ERROR (nm_setting_vpn_properties_error_get_type ()) 
+GType nm_setting_vpn_properties_error_get_type (void);
+
+#define NM_SETTING_VPN_PROPERTIES_ERROR nm_setting_vpn_properties_error_quark ()
+GQuark nm_setting_vpn_properties_error_quark (void);
+
 #define NM_SETTING_VPN_PROPERTIES_DATA "data"
 
 typedef struct {

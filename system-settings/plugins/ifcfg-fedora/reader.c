@@ -678,11 +678,8 @@ wireless_connection_from_ifcfg (const char *file, shvarFile *ifcfg, GError **err
 	}
 	nm_connection_add_setting (connection, con_setting);
 
-	if (!nm_connection_verify (connection)) {
-		g_set_error (error, ifcfg_plugin_error_quark (), 0,
-		             "Connection from %s was invalid.", file);
+	if (!nm_connection_verify (connection, error))
 		goto error;
-	}
 
 	return connection;
 
@@ -758,11 +755,8 @@ wired_connection_from_ifcfg (const char *file, shvarFile *ifcfg, GError **error)
 
 	nm_connection_add_setting (connection, wired_setting);
 
-	if (!nm_connection_verify (connection)) {
-		g_set_error (error, ifcfg_plugin_error_quark (), 0,
-		             "Connection from %s was invalid.", file);
+	if (!nm_connection_verify (connection, error))
 		goto error;
-	}
 
 	return connection;
 
@@ -919,11 +913,9 @@ connection_from_file (const char *filename,
 		nm_connection_add_setting (connection, s_ip4);
 	}
 
-	if (!nm_connection_verify (connection)) {
+	if (!nm_connection_verify (connection, error)) {
 		g_object_unref (connection);
 		connection = NULL;
-		g_set_error (error, ifcfg_plugin_error_quark (), 0,
-		             "Connection was invalid");
 	}
 
 	*keyfile = get_keys_file_path (filename);

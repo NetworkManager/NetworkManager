@@ -39,7 +39,9 @@ typedef struct {
 GType nm_connection_get_type (void);
 
 NMConnection *nm_connection_new           (void);
-NMConnection *nm_connection_new_from_hash (GHashTable *hash);
+
+NMConnection *nm_connection_new_from_hash (GHashTable *hash, GError **error);
+
 void          nm_connection_add_setting   (NMConnection *connection,
 								   NMSetting    *setting);
 
@@ -60,7 +62,7 @@ gboolean      nm_connection_compare       (NMConnection *connection,
                                            NMConnection *other,
                                            NMSettingCompareFlags flags);
 
-gboolean      nm_connection_verify        (NMConnection *connection);
+gboolean      nm_connection_verify        (NMConnection *connection, GError **error);
 
 const char *  nm_connection_need_secrets  (NMConnection *connection,
                                            GPtrArray **hints);
@@ -96,6 +98,8 @@ void nm_setting_register   (const char *name,
 void nm_setting_unregister (const char *name);
 
 GType nm_connection_lookup_setting_type (const char *name);
+
+GType nm_connection_lookup_setting_type_by_quark (GQuark error_quark);
 
 G_END_DECLS
 

@@ -12,6 +12,44 @@
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 
+GQuark
+nm_setting_wireless_error_quark (void)
+{
+	static GQuark quark;
+
+	if (G_UNLIKELY (!quark))
+		quark = g_quark_from_static_string ("nm-setting-wireless-error-quark");
+	return quark;
+}
+
+/* This should really be standard. */
+#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
+
+GType
+nm_setting_wireless_error_get_type (void)
+{
+	static GType etype = 0;
+
+	if (etype == 0) {
+		static const GEnumValue values[] = {
+			/* Unknown error. */
+			ENUM_ENTRY (NM_SETTING_WIRELESS_ERROR_UNKNOWN, "UnknownError"),
+			/* The specified property was invalid. */
+			ENUM_ENTRY (NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY, "InvalidProperty"),
+			/* The specified property was missing and is required. */
+			ENUM_ENTRY (NM_SETTING_WIRELESS_ERROR_MISSING_PROPERTY, "MissingProperty"),
+			/* The required security setting is missing */
+			ENUM_ENTRY (NM_SETTING_WIRELESS_ERROR_MISSING_SECURITY_SETTING, "MissingSecuritySetting"),
+			/* The 'channel' property requires a valid 'band' */
+			ENUM_ENTRY (NM_SETTING_WIRELESS_ERROR_CHANNEL_REQUIRES_BAND, "ChannelRequiresBand"),
+			{ 0, 0, 0 }
+		};
+		etype = g_enum_register_static ("NMSettingWirelessError", values);
+	}
+	return etype;
+}
+
+
 G_DEFINE_TYPE (NMSettingWireless, nm_setting_wireless, NM_TYPE_SETTING)
 
 enum {
@@ -208,30 +246,50 @@ find_setting_by_name (gconstpointer a, gconstpointer b)
 }
 
 static gboolean
-verify (NMSetting *setting, GSList *all_settings)
+verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingWireless *self = NM_SETTING_WIRELESS (setting);
 	const char *valid_modes[] = { "infrastructure", "adhoc", NULL };
 	const char *valid_bands[] = { "a", "bg", NULL };
 	GSList *iter;
 
-	if (!self->ssid || self->ssid->len < 1 || self->ssid->len > 32) {
-		g_warning ("Invalid or missing ssid");
+	if (!self->ssid) {
+		g_set_error (error,
+		             NM_SETTING_WIRELESS_ERROR,
+		             NM_SETTING_WIRELESS_ERROR_MISSING_PROPERTY,
+		             NM_SETTING_WIRELESS_SSID);
+		return FALSE;
+	}
+
+	if (!self->ssid->len || self->ssid->len > 32) {
+		g_set_error (error,
+		             NM_SETTING_WIRELESS_ERROR,
+		             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRELESS_SSID);
 		return FALSE;
 	}
 
 	if (self->mode && !nm_utils_string_in_list (self->mode, valid_modes)) {
-		g_warning ("Invalid mode. Should be either 'infrastructure' or 'adhoc'");
+		g_set_error (error,
+		             NM_SETTING_WIRELESS_ERROR,
+		             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRELESS_MODE);
 		return FALSE;
 	}
 
 	if (self->band && !nm_utils_string_in_list (self->band, valid_bands)) {
-		g_warning ("Invalid band. Should be either 'a' or 'bg'");
+		g_set_error (error,
+		             NM_SETTING_WIRELESS_ERROR,
+		             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRELESS_BAND);
 		return FALSE;
 	}
 
 	if (self->channel && !self->band) {
-		g_warning ("Channel was provided without band");
+		g_set_error (error,
+		             NM_SETTING_WIRELESS_ERROR,
+		             NM_SETTING_WIRELESS_ERROR_CHANNEL_REQUIRES_BAND,
+		             NM_SETTING_WIRELESS_BAND);
 		return FALSE;
 	}
 
@@ -250,22 +308,34 @@ verify (NMSetting *setting, GSList *all_settings)
 			}
 
 			if (valid_channels[i] == 0) {
-				g_warning ("Invalid channel");
+				g_set_error (error,
+				             NM_SETTING_WIRELESS_ERROR,
+				             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
+				             NM_SETTING_WIRELESS_CHANNEL);
 				return FALSE;
 			}
 		} else if (!strcmp (self->band, "bg") && self->channel > 14) {
-			g_warning ("Invalid channel");
+				g_set_error (error,
+				             NM_SETTING_WIRELESS_ERROR,
+				             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
+				             NM_SETTING_WIRELESS_CHANNEL);
 			return FALSE;
 		}
 	}
 
-	if (self->bssid && self->bssid->len != 6) {
-		g_warning ("Invalid bssid");
+	if (self->bssid && self->bssid->len != ETH_ALEN) {
+		g_set_error (error,
+		             NM_SETTING_WIRELESS_ERROR,
+		             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRELESS_BSSID);
 		return FALSE;
 	}
 
-	if (self->mac_address && self->mac_address->len != 6) {
-		g_warning ("Invalid mac address");
+	if (self->mac_address && self->mac_address->len != ETH_ALEN) {
+		g_set_error (error,
+		             NM_SETTING_WIRELESS_ERROR,
+		             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRELESS_MAC_ADDRESS);
 		return FALSE;
 	}
 
@@ -273,14 +343,20 @@ verify (NMSetting *setting, GSList *all_settings)
 		struct ether_addr addr;
 
 		if (!ether_aton_r (iter->data, &addr)) {
-			g_warning ("Invalid bssid");
+			g_set_error (error,
+			             NM_SETTING_WIRELESS_ERROR,
+			             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
+			             NM_SETTING_WIRELESS_SEEN_BSSIDS);
 			return FALSE;
 		}
 	}
 
 	if (   self->security
 	    && !g_slist_find_custom (all_settings, self->security, find_setting_by_name)) {
-		g_warning ("Invalid or missing security");
+		g_set_error (error,
+		             NM_SETTING_WIRELESS_ERROR,
+		             NM_SETTING_WIRELESS_ERROR_MISSING_SECURITY_SETTING,
+		             NULL);
 		return FALSE;
 	}
 

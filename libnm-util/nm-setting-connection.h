@@ -16,6 +16,20 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_CONNECTION_SETTING_NAME "connection"
 
+typedef enum
+{
+	NM_SETTING_CONNECTION_ERROR_UNKNOWN = 0,
+	NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
+	NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
+	NM_SETTING_CONNECTION_ERROR_TYPE_SETTING_NOT_FOUND
+} NMSettingConnectionError;
+
+#define NM_TYPE_SETTING_CONNECTION_ERROR (nm_setting_connection_error_get_type ()) 
+GType nm_setting_connection_error_get_type (void);
+
+#define NM_SETTING_CONNECTION_ERROR nm_setting_connection_error_quark ()
+GQuark nm_setting_connection_error_quark (void);
+
 #define NM_SETTING_CONNECTION_ID          "id"
 #define NM_SETTING_CONNECTION_TYPE        "type"
 #define NM_SETTING_CONNECTION_AUTOCONNECT "autoconnect"

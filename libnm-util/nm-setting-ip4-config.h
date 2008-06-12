@@ -16,6 +16,20 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_IP4_CONFIG_SETTING_NAME "ipv4"
 
+typedef enum
+{
+	NM_SETTING_IP4_CONFIG_ERROR_UNKNOWN = 0,
+	NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY,
+	NM_SETTING_IP4_CONFIG_ERROR_MISSING_PROPERTY,
+	NM_SETTING_IP4_CONFIG_ERROR_NOT_ALLOWED_FOR_METHOD
+} NMSettingIP4ConfigError;
+
+#define NM_TYPE_SETTING_IP4_CONFIG_ERROR (nm_setting_ip4_config_error_get_type ()) 
+GType nm_setting_ip4_config_error_get_type (void);
+
+#define NM_SETTING_IP4_CONFIG_ERROR nm_setting_ip4_config_error_quark ()
+GQuark nm_setting_ip4_config_error_quark (void);
+
 #define NM_SETTING_IP4_CONFIG_METHOD          "method"
 #define NM_SETTING_IP4_CONFIG_DNS             "dns"
 #define NM_SETTING_IP4_CONFIG_DNS_SEARCH      "dns-search"

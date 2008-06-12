@@ -16,6 +16,20 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_PPP_SETTING_NAME "ppp"
 
+typedef enum
+{
+	NM_SETTING_PPP_ERROR_UNKNOWN = 0,
+	NM_SETTING_PPP_ERROR_INVALID_PROPERTY,
+	NM_SETTING_PPP_ERROR_MISSING_PROPERTY,
+	NM_SETTING_PPP_ERROR_REQUIRE_MPPE_NOT_ALLOWED
+} NMSettingPPPError;
+
+#define NM_TYPE_SETTING_PPP_ERROR (nm_setting_ppp_error_get_type ()) 
+GType nm_setting_ppp_error_get_type (void);
+
+#define NM_SETTING_PPP_ERROR nm_setting_ppp_error_quark ()
+GQuark nm_setting_ppp_error_quark (void);
+
 #define NM_SETTING_PPP_NOAUTH            "noauth"
 #define NM_SETTING_PPP_REFUSE_EAP        "refuse-eap"
 #define NM_SETTING_PPP_REFUSE_PAP        "refuse-pap"

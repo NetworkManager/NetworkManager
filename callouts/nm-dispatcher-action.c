@@ -311,10 +311,15 @@ nm_dispatcher_action (Handler *h,
 	if (!d->persist)
 		d->quit_timeout = g_timeout_add (10000, quit_timeout_cb, NULL);
 
-	connection = nm_connection_new_from_hash (connection_hash);
+	connection = nm_connection_new_from_hash (connection_hash, error);
 	if (connection) {
-		if (!nm_connection_verify (connection))
-			g_warning ("Connection was invalid!");
+		g_warning ("%s: Invalid connection: '%s' / '%s' invalid: %d",
+		           __func__,
+		           g_type_name (nm_connection_lookup_setting_type_by_quark ((*error)->domain)),
+		           (*error)->message, (*error)->code);
+		/* Don't fail on this error yet */
+		g_error_free (*error);
+		*error = NULL;
 	}
 
 	value = g_hash_table_lookup (device_props, NMD_DEVICE_PROPS_INTERFACE);
