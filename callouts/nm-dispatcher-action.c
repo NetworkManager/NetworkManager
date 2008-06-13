@@ -312,7 +312,7 @@ nm_dispatcher_action (Handler *h,
 		d->quit_timeout = g_timeout_add (10000, quit_timeout_cb, NULL);
 
 	connection = nm_connection_new_from_hash (connection_hash, error);
-	if (connection) {
+	if (!connection) {
 		g_warning ("%s: Invalid connection: '%s' / '%s' invalid: %d",
 		           __func__,
 		           g_type_name (nm_connection_lookup_setting_type_by_quark ((*error)->domain)),
