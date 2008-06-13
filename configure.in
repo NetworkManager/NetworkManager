@@ -170,7 +170,7 @@ if test "$ac_have_iwevgenie" = no; then
 	AC_MSG_ERROR(wireless-tools >= 28pre9 not installed or not functional)
 fi
 
-PKG_CHECK_MODULES(DBUS, dbus-glib-1 >= 0.72)
+PKG_CHECK_MODULES(DBUS, dbus-glib-1 >= 0.75)
 
 ##### Find out the version of DBUS we're using
 dbus_version=`pkg-config --modversion dbus-1`
