@@ -44,6 +44,7 @@ libnminclude_HEADERS = \
 	nm-serial-device.h \
 	nm-vpn-connection.h \
 	nm-vpn-plugin.h \
+	nm-vpn-plugin-ui-interface.h \
 	nm-types.h \
 	nm-active-connection.h \
 	nm-dbus-connection.h \
@@ -92,7 +93,8 @@ libnm_glib_test_SOURCES = libnm-glib-test.c
 libnm_glib_test_CFLAGS = $(GLIB_CFLAGS) $(DBUS_CFLAGS)
 libnm_glib_test_LDADD = libnm_glib.la $(top_builddir)/libnm-util/libnm-util.la $(GLIB_LIBS) $(DBUS_LIBS)
 
-libnm_glib_vpn_la_SOURCES = nm-vpn-plugin.c
+
+libnm_glib_vpn_la_SOURCES = nm-vpn-plugin.c nm-vpn-plugin-ui-interface.c
 libnm_glib_vpn_la_CFLAGS = $(GLIB_CFLAGS) $(DBUS_CFLAGS)
 libnm_glib_vpn_la_LIBADD = $(top_builddir)/libnm-util/libnm-util.la $(GLIB_LIBS) $(DBUS_LIBS)
 
@@ -137,11 +139,11 @@ nm-active-connection-bindings.h: $(top_srcdir)/introspection/nm-active-connectio
 	dbus-binding-tool --prefix=nm_active_connection --mode=glib-client --output=nm-active-connection-bindings.h $(top_srcdir)/introspection/nm-active-connection.xml
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = libnm_glib.pc
+pkgconfig_DATA = libnm_glib.pc libnm_glib_vpn.pc
 
-DISTCLEANFILES = libnm_glib.pc
+DISTCLEANFILES = libnm_glib.pc libnm_glib.pc
 
-EXTRA_DIST = libnm_glib.pc.in
+EXTRA_DIST = libnm_glib.pc.in libnm_glib_vpn.pc.in
 
 CLEANFILES = \
 	$(BUILT_SOURCES)

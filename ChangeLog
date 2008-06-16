@@ -1,3 +1,14 @@
+2008-06-16  Dan Williams  <dcbw@redhat.com>
+
+	* configure.in
+	  libnm-glib/libnm_glib_vpn.pc.in
+		- add a .pc file for libnm_glib_vpn
+
+	* libnm-glib/nm-vpn-plugin-ui-interface.c
+	  libnm-glib/nm-vpn-plugin-ui-interface.h
+		- Move the glib/GNOME VPN UI plugin interface into libnm-glib and
+			rework it substantially
+
 2008-06-12  Dan Williams  <dcbw@redhat.com>
 
 	Add a GError argument to nm_connection_verify() and nm_setting_verify(),
