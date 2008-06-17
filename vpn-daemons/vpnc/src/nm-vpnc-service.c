@@ -32,7 +32,6 @@ static const char *vpnc_binary_paths[] =
 
 #define NM_VPNC_HELPER_PATH		BINDIR"/nm-vpnc-service-vpnc-helper"
 #define NM_VPNC_UDP_ENCAPSULATION_PORT	0 /* random port */
-#define NM_VPNC_REKEYING_INTERVAL 7200 /* default interval of 2 hours */
 
 typedef struct {
 	const char *name;
@@ -49,17 +48,11 @@ static ValidProperty valid_properties[] = {
 	{ NM_VPNC_KEY_DHGROUP,               G_TYPE_STRING },
 	{ NM_VPNC_KEY_PERFECT_FORWARD,       G_TYPE_STRING },
 	{ NM_VPNC_KEY_APP_VERSION,           G_TYPE_STRING },
-	{ NM_VPNC_KEY_REKEYING,              G_TYPE_INT },
-	{ NM_VPNC_KEY_NAT_KEEPALIVE,         G_TYPE_STRING },
-	{ NM_VPNC_KEY_DISABLE_NAT,           G_TYPE_BOOLEAN },
 	{ NM_VPNC_KEY_SINGLE_DES,            G_TYPE_BOOLEAN },
-	/* vpnc 0.3.x */
-	{ NM_VPNC_KEY_UDP_ENCAPS,            G_TYPE_BOOLEAN },
-	{ NM_VPNC_KEY_UDP_ENCAPS_PORT,       G_TYPE_INT },
-	/* vpnc 0.4.x */
+	{ NM_VPNC_KEY_NO_ENCRYPTION,         G_TYPE_BOOLEAN },
+	{ NM_VPNC_KEY_DPD_IDLE_TIMEOUT,      G_TYPE_INT },
 	{ NM_VPNC_KEY_NAT_TRAVERSAL_MODE,    G_TYPE_STRING },
 	{ NM_VPNC_KEY_CISCO_UDP_ENCAPS_PORT, G_TYPE_INT },
-
 	{ NULL,                              G_TYPE_NONE }
 };
 
@@ -239,31 +232,13 @@ nm_vpnc_config_write (gint vpnc_fd,
                       GHashTable *properties)
 {
 	const char *props_user_name;
+	const char *props_natt_mode;
 
 	write_config_option (vpnc_fd, "Script " NM_VPNC_HELPER_PATH "\n");
 
-	/* Thankfully vpnc ignores options it does not understand... */
-
-	/* Options for vpnc 0.3.x */
-	write_config_option (vpnc_fd, NM_VPNC_KEY_UDP_ENCAPS "\n");
-	write_config_option (vpnc_fd,
-	                     NM_VPNC_KEY_UDP_ENCAPS_PORT " %d\n",
-	                     NM_VPNC_UDP_ENCAPSULATION_PORT);
-	if (!g_hash_table_lookup (properties, NM_VPNC_KEY_REKEYING)) {
-		write_config_option (vpnc_fd,
-		                     NM_VPNC_KEY_REKEYING " %d\n",
-		                     NM_VPNC_REKEYING_INTERVAL);
-	}
-
-	/* Options for vpnc 0.4.x */
-	write_config_option (vpnc_fd,
-	                     NM_VPNC_KEY_NAT_TRAVERSAL_MODE " %s\n",
-	                     "cisco-udp");
 	write_config_option (vpnc_fd,
 	                     NM_VPNC_KEY_CISCO_UDP_ENCAPS_PORT " %d\n",
 	                     NM_VPNC_UDP_ENCAPSULATION_PORT);
-
-	/* 0.4.x rekeys automatically */
 
 	/* Fill username if it's not present */
 	props_user_name = g_hash_table_lookup (properties, NM_VPNC_KEY_XAUTH_USER);
@@ -273,6 +248,14 @@ nm_vpnc_config_write (gint vpnc_fd,
 		write_config_option (vpnc_fd,
 		                     NM_VPNC_KEY_XAUTH_USER " %s\n",
 		                     default_user_name);
+	}
+	
+	/* Use NAT-T by default */
+	props_natt_mode = g_hash_table_lookup (properties, NM_VPNC_KEY_NAT_TRAVERSAL_MODE);
+	if (!props_natt_mode || !strlen (props_natt_mode)) {
+		write_config_option (vpnc_fd,
+		                     NM_VPNC_KEY_NAT_TRAVERSAL_MODE " %s\n",
+		                     NM_VPNC_NATT_MODE_NATT);
 	}
 
 	g_hash_table_foreach (properties, write_one_property, GINT_TO_POINTER (vpnc_fd));

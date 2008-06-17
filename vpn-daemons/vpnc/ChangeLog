@@ -1,3 +1,12 @@
+2008-06-17  Dan Williams  <dcbw@redhat.com>
+
+	* Convert to new NM VPN UI plugin format
+	* Remove vpnc 0.3.x options
+	* Handle Dead Peer Detection option
+	* Handle NAT Traversal option
+
+	Requires a NetworkManager of at least the SVN revision before this commit.
+
 2008-06-06  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Tambet Ingo  <tambet@gmail.com>

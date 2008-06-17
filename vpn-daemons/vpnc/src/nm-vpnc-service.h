@@ -27,16 +27,15 @@
 #define NM_VPNC_KEY_DHGROUP "IKE DH Group"
 #define NM_VPNC_KEY_PERFECT_FORWARD "Perfect Forward Secrecy"
 #define NM_VPNC_KEY_APP_VERSION "Application Version"
-#define NM_VPNC_KEY_REKEYING "Rekeying interval"
-#define NM_VPNC_KEY_NAT_KEEPALIVE "NAT-Keepalive packet interval"
-#define NM_VPNC_KEY_DISABLE_NAT "Disable NAT Traversal"
 #define NM_VPNC_KEY_SINGLE_DES "Enable Single DES"
-/* vpnc 0.3.x */
-#define NM_VPNC_KEY_UDP_ENCAPS "UDP Encapsulate"
-#define NM_VPNC_KEY_UDP_ENCAPS_PORT "UDP Encapsulation Port"
-/* vpnc 0.4.x */
+#define NM_VPNC_KEY_NO_ENCRYPTION "Enable no encryption"
 #define NM_VPNC_KEY_NAT_TRAVERSAL_MODE "NAT Traversal Mode"
+#define NM_VPNC_KEY_DPD_IDLE_TIMEOUT "DPD idle timeout (our side)"
 #define NM_VPNC_KEY_CISCO_UDP_ENCAPS_PORT "Cisco UDP Encapsulation Port"
+
+#define NM_VPNC_NATT_MODE_NATT "natt"
+#define NM_VPNC_NATT_MODE_NONE "none"
+#define NM_VPNC_NATT_MODE_CISCO "cisco-udp"
 
 typedef struct {
 	NMVPNPlugin parent;
