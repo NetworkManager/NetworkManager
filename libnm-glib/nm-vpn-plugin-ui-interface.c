@@ -39,6 +39,13 @@ interface_init (gpointer g_iface)
 							  G_PARAM_READABLE));
 
 	g_object_interface_install_property (g_iface,
+		 g_param_spec_string (NM_VPN_PLUGIN_UI_INTERFACE_DESC,
+							  "Desc",
+							  "VPN Plugin description",
+							  NULL,
+							  G_PARAM_READABLE));
+
+	g_object_interface_install_property (g_iface,
 		 g_param_spec_string (NM_VPN_PLUGIN_UI_INTERFACE_SERVICE,
 							  "Service",
 							  "VPN Plugin D-Bus service name",

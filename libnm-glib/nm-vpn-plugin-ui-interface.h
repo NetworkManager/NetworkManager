@@ -51,8 +51,11 @@ NMVpnPluginUiInterface *nm_vpn_plugin_ui_factory (GError **error);
 #define NM_VPN_PLUGIN_UI_CAPABILITY_IMPORT   0x01
 #define NM_VPN_PLUGIN_UI_CAPABILITY_EXPORT   0x02
 
-/* Display name of the VPN plugin */
+/* Short display name of the VPN plugin */
 #define NM_VPN_PLUGIN_UI_INTERFACE_NAME "name"
+
+/* Longer description of the the VPN plugin */
+#define NM_VPN_PLUGIN_UI_INTERFACE_DESC "desc"
 
 /* D-Bus service name of the plugin's VPN service */
 #define NM_VPN_PLUGIN_UI_INTERFACE_SERVICE "service"
@@ -61,6 +64,7 @@ typedef enum {
 	NM_VPN_PLUGIN_UI_INTERFACE_PROP_FIRST = 0x1000,
 
 	NM_VPN_PLUGIN_UI_INTERFACE_PROP_NAME = NM_VPN_PLUGIN_UI_INTERFACE_PROP_FIRST,
+	NM_VPN_PLUGIN_UI_INTERFACE_PROP_DESC,
 	NM_VPN_PLUGIN_UI_INTERFACE_PROP_SERVICE
 } NMVpnPluginUiInterfaceProp;
 
