@@ -85,7 +85,6 @@ typedef struct {
 	GtkWidget *widget;
 	GtkSizeGroup *group;
 	gint orig_dpd_timeout;
-	gboolean valid;
 } VpncPluginUiWidgetPrivate;
 
 
@@ -102,47 +101,64 @@ vpnc_plugin_ui_error_quark (void)
 	return error_quark;
 }
 
+/* This should really be standard. */
+#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
 
-static void
-check_validity (VpncPluginUiWidget *self)
+GType
+vpnc_plugin_ui_error_get_type (void)
+{
+	static GType etype = 0;
+
+	if (etype == 0) {
+		static const GEnumValue values[] = {
+			/* Unknown error. */
+			ENUM_ENTRY (VPNC_PLUGIN_UI_ERROR_UNKNOWN, "UnknownError"),
+			/* The specified property was invalid. */
+			ENUM_ENTRY (VPNC_PLUGIN_UI_ERROR_INVALID_PROPERTY, "InvalidProperty"),
+			/* The specified property was missing and is required. */
+			ENUM_ENTRY (VPNC_PLUGIN_UI_ERROR_MISSING_PROPERTY, "MissingProperty"),
+			{ 0, 0, 0 }
+		};
+		etype = g_enum_register_static ("VpncPluginUiError", values);
+	}
+	return etype;
+}
+
+
+static gboolean
+check_validity (VpncPluginUiWidget *self, GError **error)
 {
 	VpncPluginUiWidgetPrivate *priv = VPNC_PLUGIN_UI_WIDGET_GET_PRIVATE (self);
 	GtkWidget *widget;
-	gboolean is_valid = TRUE;
 	char *str;
 
 	widget = glade_xml_get_widget (priv->xml, "gateway_entry");
 	str = (char *) gtk_entry_get_text (GTK_ENTRY (widget));
 	if (!str || !strlen (str) || strstr (str, " ") || strstr (str, "\t")) {
-		is_valid = FALSE;
-		goto done;
+		g_set_error (error,
+		             VPNC_PLUGIN_UI_ERROR,
+		             VPNC_PLUGIN_UI_ERROR_INVALID_PROPERTY,
+		             NM_VPNC_KEY_GATEWAY);
+		return FALSE;
 	}
 
 	widget = glade_xml_get_widget (priv->xml, "group_entry");
 	str = (char *) gtk_entry_get_text (GTK_ENTRY (widget));
 	if (!str || !strlen (str)) {
-		is_valid = FALSE;
-		goto done;
+		g_set_error (error,
+		             VPNC_PLUGIN_UI_ERROR,
+		             VPNC_PLUGIN_UI_ERROR_INVALID_PROPERTY,
+		             NM_VPNC_KEY_ID);
+		return FALSE;
 	}
 
-done:
-	if (priv->valid != is_valid) {
-		priv->valid = is_valid;
-		g_signal_emit_by_name (self, "validity-changed", priv->valid);
-	}
-}
-
-static gboolean
-idle_check_validity (gpointer user_data)
-{
-	check_validity (VPNC_PLUGIN_UI_WIDGET (user_data));
-	return FALSE;
+	return TRUE;
 }
 
 static void
-entry_changed_cb (GtkEntry *entry, gpointer user_data)
+stuff_changed_cb (GtkWidget *widget, gpointer user_data)
 {
-	check_validity (VPNC_PLUGIN_UI_WIDGET (user_data));
+	g_signal_emit_by_name (VPNC_PLUGIN_UI_WIDGET (user_data), "changed");
 }
 
 static gboolean
@@ -170,7 +186,7 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 		if (value && G_VALUE_HOLDS_STRING (value))
 			gtk_entry_set_text (GTK_ENTRY (widget), g_value_get_string (value));
 	}
-	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (entry_changed_cb), self);
+	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
 
 	widget = glade_xml_get_widget (priv->xml, "group_entry");
 	if (!widget)
@@ -181,7 +197,7 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 		if (value && G_VALUE_HOLDS_STRING (value))
 			gtk_entry_set_text (GTK_ENTRY (widget), g_value_get_string (value));
 	}
-	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (entry_changed_cb), self);
+	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
 
 	widget = glade_xml_get_widget (priv->xml, "encryption_combo");
 	if (!widget)
@@ -212,6 +228,7 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 	gtk_combo_box_set_model (GTK_COMBO_BOX (widget), GTK_TREE_MODEL (store));
 	g_object_unref (store);
 	gtk_combo_box_set_active (GTK_COMBO_BOX (widget), active < 0 ? 0 : active);
+	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
 
 	widget = glade_xml_get_widget (priv->xml, "user_entry");
 	if (!widget)
@@ -224,6 +241,7 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 		else {
 		}
 	}
+	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
 
 	widget = glade_xml_get_widget (priv->xml, "domain_entry");
 	if (!widget)
@@ -234,6 +252,7 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 		if (value && G_VALUE_HOLDS_STRING (value))
 			gtk_entry_set_text (GTK_ENTRY (widget), g_value_get_string (value));
 	}
+	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
 
 	active = -1;
 	store = gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_STRING);
@@ -271,6 +290,7 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 	gtk_combo_box_set_model (GTK_COMBO_BOX (widget), GTK_TREE_MODEL (store));
 	g_object_unref (store);
 	gtk_combo_box_set_active (GTK_COMBO_BOX (widget), active < 0 ? 0 : active);
+	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
 
 	widget = glade_xml_get_widget (priv->xml, "disable_dpd_checkbutton");
 	if (!widget)
@@ -283,8 +303,7 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 				gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), TRUE);
 		}
 	}
-
-	g_idle_add (idle_check_validity, self);
+	g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK (stuff_changed_cb), self);
 
 	return TRUE;
 }
@@ -334,8 +353,10 @@ int_to_gvalue (gint i)
 	return value;
 }
 
-static void
-update_connection (NMVpnPluginUiWidgetInterface *iface, NMConnection *connection)
+static gboolean
+update_connection (NMVpnPluginUiWidgetInterface *iface,
+                   NMConnection *connection,
+                   GError **error)
 {
 	VpncPluginUiWidget *self = VPNC_PLUGIN_UI_WIDGET (iface);
 	VpncPluginUiWidgetPrivate *priv = VPNC_PLUGIN_UI_WIDGET_GET_PRIVATE (self);
@@ -346,6 +367,9 @@ update_connection (NMVpnPluginUiWidgetInterface *iface, NMConnection *connection
 	char *str;
 	GtkTreeModel *model;
 	GtkTreeIter iter;
+
+	if (!check_validity (self, error))
+		return FALSE;
 
 	s_vpn = NM_SETTING_VPN (nm_setting_vpn_new ());
 	s_vpn->service_type = g_strdup (NM_DBUS_SERVICE_VPNC);
@@ -431,6 +455,7 @@ update_connection (NMVpnPluginUiWidgetInterface *iface, NMConnection *connection
 	}
 
 	nm_connection_add_setting (connection, NM_SETTING (s_vpn_props));
+	return TRUE;
 }
 
 static NMVpnPluginUiWidgetInterface *

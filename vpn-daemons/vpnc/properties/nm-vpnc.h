@@ -25,6 +25,16 @@
 
 #include <glib-object.h>
 
+typedef enum
+{
+	VPNC_PLUGIN_UI_ERROR_UNKNOWN = 0,
+	VPNC_PLUGIN_UI_ERROR_INVALID_PROPERTY,
+	VPNC_PLUGIN_UI_ERROR_MISSING_PROPERTY
+} VpncPluginUiError;
+
+#define VPNC_TYPE_PLUGIN_UI_ERROR (vpnc_plugin_ui_error_get_type ()) 
+GType vpnc_plugin_ui_error_get_type (void);
+
 #define VPNC_TYPE_PLUGIN_UI            (vpnc_plugin_ui_get_type ())
 #define VPNC_PLUGIN_UI(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), VPNC_TYPE_PLUGIN_UI, VpncPluginUi))
 #define VPNC_PLUGIN_UI_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), VPNC_TYPE_PLUGIN_UI, VpncPluginUiClass))

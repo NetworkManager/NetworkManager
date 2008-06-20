@@ -1,3 +1,15 @@
+2008-06-20  Dan Williams  <dcbw@redhat.com>
+
+	Update for changes to the plugin API
+
+	* properties/nm-vpnc.c
+	  properties/nm-vpnc.h
+		- Add error enum
+		- (check_validity): set the error
+		- (init_plugin_ui): emit the 'changed' signal whenever a UI widget
+			changes
+		- (update_connection): return validity
+
 2008-06-17  Dan Williams  <dcbw@redhat.com>
 
 	* Convert to new NM VPN UI plugin format
