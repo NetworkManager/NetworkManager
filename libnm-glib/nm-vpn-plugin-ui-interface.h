@@ -141,20 +141,29 @@ struct _NMVpnPluginUiWidgetInterface {
 	/* Return the GtkWidget for the VPN's UI */
 	GObject * (*get_widget) (NMVpnPluginUiWidgetInterface *iface);
 
-	/* Called to save the user-entered options to the connection object */
-	void (*update_connection) (NMVpnPluginUiWidgetInterface *iface,
-	                           NMConnection *connection);
+	/* Called to save the user-entered options to the connection object.  Should
+	 * return FALSE and set 'error' if the current options are invalid.  'error'
+	 * should contain enough information for the plugin to determine which UI
+	 * widget is invalid at a later point in time.  For example, creating unique
+	 * error codes for what error occurred and populating the message field
+	 * of 'error' with the name of the invalid property.
+	 */
+	gboolean (*update_connection) (NMVpnPluginUiWidgetInterface *iface,
+	                               NMConnection *connection,
+	                               GError **error);
 
-	/* Emitted when the validity of the user-entered options changes */
-	void (*validity_changed) (NMVpnPluginUiWidgetInterface *iface, gboolean valid);
+	/* Emitted when the value of a UI widget changes.  May trigger a validity
+	 * check via update_connection() to write values to the connection */
+	void (*changed) (NMVpnPluginUiWidgetInterface *iface);
 };
 
 GType nm_vpn_plugin_ui_widget_interface_get_type (void);
 
 GObject * nm_vpn_plugin_ui_widget_interface_get_widget (NMVpnPluginUiWidgetInterface *iface);
 
-void nm_vpn_plugin_ui_widget_interface_update_connection (NMVpnPluginUiWidgetInterface *iface,
-                                                          NMConnection *connection);
+gboolean nm_vpn_plugin_ui_widget_interface_update_connection (NMVpnPluginUiWidgetInterface *iface,
+                                                              NMConnection *connection,
+                                                              GError **error);
 
 G_END_DECLS
 

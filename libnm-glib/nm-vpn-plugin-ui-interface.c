@@ -145,13 +145,13 @@ widget_interface_init (gpointer g_iface)
 		return;
 
 	/* Signals */
-	g_signal_new ("validity-changed",
+	g_signal_new ("changed",
 				  iface_type,
 				  G_SIGNAL_RUN_FIRST,
-				  G_STRUCT_OFFSET (NMVpnPluginUiWidgetInterface, validity_changed),
+				  G_STRUCT_OFFSET (NMVpnPluginUiWidgetInterface, changed),
 				  NULL, NULL,
-				  g_cclosure_marshal_VOID__BOOLEAN,
-				  G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
+				  g_cclosure_marshal_VOID__VOID,
+				  G_TYPE_NONE, 0);
 
 	initialized = TRUE;
 }
@@ -191,10 +191,14 @@ nm_vpn_plugin_ui_widget_interface_get_widget (NMVpnPluginUiWidgetInterface *ifac
 	return NM_VPN_PLUGIN_UI_WIDGET_INTERFACE_GET_INTERFACE (iface)->get_widget (iface);
 }
 
-void
+gboolean
 nm_vpn_plugin_ui_widget_interface_update_connection (NMVpnPluginUiWidgetInterface *iface,
-                                                     NMConnection *connection)
+                                                     NMConnection *connection,
+                                                     GError **error)
 {
-	return NM_VPN_PLUGIN_UI_WIDGET_INTERFACE_GET_INTERFACE (iface)->update_connection (iface, connection);
+	if (error)
+		g_return_val_if_fail (*error == NULL, FALSE);
+
+	return NM_VPN_PLUGIN_UI_WIDGET_INTERFACE_GET_INTERFACE (iface)->update_connection (iface, connection, error);
 }
 

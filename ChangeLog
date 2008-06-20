@@ -1,3 +1,13 @@
+2008-06-20  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-glib/nm-vpn-plugin-ui-interface.c
+	  libnm-glib/nm-vpn-plugin-ui-interface.h
+		- 'validity-changed' -> 'changed' to work better with the connection
+			editor.  Plugin UI widgets should emit 'changed' whenever their
+			UI values change in a meaningful way.
+		- (nm_vpn_plugin_ui_widget_interface_update_connection): the
+			update_connection member now returns validity of the UI widget
+
 2008-06-20  Tambet Ingo  <tambet@gmail.com>
 
 	* libnm-util/nm-connection.c (nm_connection_duplicate): Implement.
