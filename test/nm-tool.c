@@ -206,6 +206,7 @@ detail_device (gpointer data, gpointer user_data)
 	const GArray *array;
 	const GPtrArray *connections;
 	int j;
+	gboolean is_default = FALSE;
 
 	state = nm_device_get_state (device);
 
@@ -237,10 +238,13 @@ detail_device (gpointer data, gpointer user_data)
 		candidate_dev = g_ptr_array_index (devices, 0);
 
 		if ((candidate_dev == device) && nm_active_connection_get_default(candidate))
-			print_string ("Default", "yes");
-		else
-			print_string ("Default", "no");
+			is_default = TRUE;
 	}
+
+	if (is_default)
+		print_string ("Default", "yes");
+	else
+		print_string ("Default", "no");
 
 	tmp = NULL;
 	if (NM_IS_DEVICE_ETHERNET (device))
