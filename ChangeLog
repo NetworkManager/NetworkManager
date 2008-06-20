@@ -1,3 +1,7 @@
+2008-06-20  Tambet Ingo  <tambet@gmail.com>
+
+	* libnm-util/nm-connection.c (nm_connection_duplicate): Implement.
+
 2008-06-17  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-glib/nm-vpn-plugin-ui-interface.c

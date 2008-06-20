@@ -42,6 +42,8 @@ NMConnection *nm_connection_new           (void);
 
 NMConnection *nm_connection_new_from_hash (GHashTable *hash, GError **error);
 
+NMConnection *nm_connection_duplicate     (NMConnection *connection);
+
 void          nm_connection_add_setting   (NMConnection *connection,
 								   NMSetting    *setting);
 

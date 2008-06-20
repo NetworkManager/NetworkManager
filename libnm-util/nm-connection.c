@@ -700,6 +700,26 @@ nm_connection_new_from_hash (GHashTable *hash, GError **error)
 }
 
 static void
+duplicate_cb (gpointer key, gpointer value, gpointer user_data)
+{
+	nm_connection_add_setting (NM_CONNECTION (user_data), nm_setting_duplicate (NM_SETTING (value)));
+}
+
+NMConnection *
+nm_connection_duplicate (NMConnection *connection)
+{
+	NMConnection *dup;
+
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+
+	dup = nm_connection_new ();
+	nm_connection_set_scope (dup, nm_connection_get_scope (connection));
+	g_hash_table_foreach (NM_CONNECTION_GET_PRIVATE (connection)->settings, duplicate_cb, dup);
+
+	return dup;
+}
+
+static void
 nm_connection_init (NMConnection *connection)
 {
 	NMConnectionPrivate *priv = NM_CONNECTION_GET_PRIVATE (connection);
