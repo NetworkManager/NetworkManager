@@ -1,6 +1,6 @@
 # Swedish messages for NetworkManager-vpnc.
-# Copyright (C) 2004, 2005, 2006, 2007 Free Software Foundation, Inc.
-# Daniel Nylander <po@danielnylander.se>, 2006, 2007.
+# Copyright (C) 2004, 2005, 2006, 2007, 2008 Free Software Foundation, Inc.
+# Daniel Nylander <po@danielnylander.se>, 2006, 2007, 2008.
 # Christian Rose <menthos@menthos.com>, 2004, 2005, 2006.
 #
 # $Id: sv.po,v 1.2 2006/07/12 12:49:06 menthos Exp $
@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-vpnc\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-12-16 15:53+0100\n"
-"PO-Revision-Date: 2007-12-16 15:54+0100\n"
+"POT-Creation-Date: 2008-06-24 00:07+0200\n"
+"PO-Revision-Date: 2008-06-24 00:09+0100\n"
 "Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
 "Language-Team: Swedish <sv@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -50,16 +50,16 @@ msgstr "_Kom ihåg lösenord för denna session"
 msgid "_Save passwords in keyring"
 msgstr "_Spara lösenord i nyckelring"
 
-#: ../auth-dialog/main.c:172
+#: ../auth-dialog/main.c:182
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Du måsta autentisera för att komma åt VPN-nätverket \"%s\"."
 
-#: ../auth-dialog/main.c:173
+#: ../auth-dialog/main.c:183
 msgid "Authenticate VPN"
 msgstr "Autentisera VPN"
 
-#: ../auth-dialog/main.c:180
+#: ../auth-dialog/main.c:190
 msgid "_Group Password:"
 msgstr "_Grupplösenord:"
 
@@ -71,68 +71,43 @@ msgstr "Lägg till, ta bort och redigera VPN-anslutningar"
 msgid "VPN Connection Manager (vpnc)"
 msgstr "VPN-anslutningshanterare (vpnc)"
 
-#: ../properties/nm-vpnc.c:98
-msgid "Compatible Cisco VPN client (vpnc)"
-msgstr "Kompatibel Cisco VPN-klient (vpnc)"
+#: ../properties/nm-vpnc.c:51
+msgid "Cisco Compatible VPN (vpnc)"
+msgstr "Cisco-kompatibel VPN (vpnc)"
 
-#: ../properties/nm-vpnc.c:543
-msgid "The following vpnc VPN connection will be created:"
-msgstr "Följande VPN-anslutning av typen vpnc kommer att skapas:"
+#: ../properties/nm-vpnc.c:52
+msgid "Compatible with various Cisco, Juniper, Netscreen, and Sonicwall IPSec-based VPN gateways."
+msgstr "Kompatibel med olika Cisco, Juniper, Netscreen och Sonicwall IPSec-baserade VPN-gateway."
 
-#: ../properties/nm-vpnc.c:545
-#, c-format
-msgid "Name:  %s"
-msgstr "Namn:  %s"
+#: ../properties/nm-vpnc.c:210
+msgid "Secure (default)"
+msgstr "Säker (standard)"
 
-#: ../properties/nm-vpnc.c:548
-#, c-format
-msgid "Gateway:  %s"
-msgstr "Gateway:  %s"
+#: ../properties/nm-vpnc.c:213
+msgid "Weak (use with caution)"
+msgstr "Svag (använd med försiktighet)"
 
-#: ../properties/nm-vpnc.c:550
-#, c-format
-msgid "Group Name:  %s"
-msgstr "Gruppnamn:  %s"
+#: ../properties/nm-vpnc.c:221
+msgid "None (completely insecure)"
+msgstr "Ingen (totalt osäker)"
 
-#: ../properties/nm-vpnc.c:554
-#, c-format
-msgid "Username:  %s"
-msgstr "Användarnamn:  %s"
+#: ../properties/nm-vpnc.c:266
+msgid "NAT-T (default)"
+msgstr "NAT-T (standard)"
 
-#: ../properties/nm-vpnc.c:559
-#, c-format
-msgid "Domain:  %s"
-msgstr "Domän:  %s"
+#: ../properties/nm-vpnc.c:273
+msgid "Cisco UDP"
+msgstr "Cisco UDP"
 
-#: ../properties/nm-vpnc.c:564
-#, c-format
-msgid "Routes:  %s"
-msgstr "Vägar:  %s"
+#: ../properties/nm-vpnc.c:280
+msgid "Disabled"
+msgstr "Inaktiverad"
 
-#: ../properties/nm-vpnc.c:568
-#, c-format
-msgid "NAT-Keepalive packet interval:  %s"
-msgstr "Paketintervall för NAT-Keepalive:  %s"
-
-#: ../properties/nm-vpnc.c:572
-#, c-format
-msgid "Enable Single DES"
-msgstr "Aktivera Single DES"
-
-#: ../properties/nm-vpnc.c:576
-#, c-format
-msgid "Disable NAT Traversal"
-msgstr "Inaktivera NAT-traversering"
-
-#: ../properties/nm-vpnc.c:580
-msgid "The connection details can be changed using the \"Edit\" button."
-msgstr "Anslutningsdetaljerna kan ändras med hjälp av knappen \"Redigera\"."
-
-#: ../properties/nm-vpnc.c:665
+#: ../properties/nm-vpnc.c:706
 msgid "TCP tunneling not supported"
 msgstr "TCP-tunnling stöds inte"
 
-#: ../properties/nm-vpnc.c:667
+#: ../properties/nm-vpnc.c:708
 #, c-format
 msgid ""
 "The VPN settings file '%s' specifies that VPN traffic should be tunneled through TCP which is currently not supported in the vpnc software.\n"
@@ -143,118 +118,133 @@ msgstr ""
 "\n"
 "Anslutningen kan fortfarande skapas, med inaktiverad TCP-tunnling, men det kanske inte fungerar som väntat."
 
-#: ../properties/nm-vpnc.c:687
-msgid "Settings import incomplete"
-msgstr "Import av inställningar är inte komplett"
-
-#: ../properties/nm-vpnc.c:689
-#, c-format
-msgid "The VPN settings file '%s' is incomplete. You may not be able to connect without providing further information."
-msgstr "VPN-inställningsfilen \"%s\" är inte komplett. Du kanske inte kan ansluta utan att tillhandahålla ytterligare information."
-
-#: ../properties/nm-vpnc.c:709
-msgid "Cannot import settings"
-msgstr "Kan inte importera inställningar"
-
-#: ../properties/nm-vpnc.c:711
-#, c-format
-msgid "The VPN settings file '%s' could not be read or is invalid."
-msgstr "VPN-inställningsfilen \"%s\" kunde inte läsas eller är ogiltig."
-
-#: ../properties/nm-vpnc.c:726
-msgid "Select file to import"
-msgstr "Välj fil att importera"
-
-#: ../properties/nm-vpnc.c:908
-msgid "Save as..."
-msgstr "Spara som..."
-
-#: ../properties/nm-vpnc.c:937
-#, c-format
-msgid "A file named \"%s\" already exists."
-msgstr "En fil med namnet \"%s\" finns redan."
-
-#: ../properties/nm-vpnc.c:940
-msgid "Do you want to replace it with the one you are saving?"
-msgstr "Vill du ersätta den med den du håller på att spara?"
-
-#: ../properties/nm-vpnc.c:954
-msgid "Failed to export configuration"
-msgstr "Misslyckades med att exportera konfigurationen"
-
-#: ../properties/nm-vpnc.c:956
-#, c-format
-msgid "Failed to save file %s"
-msgstr "Misslyckades med att spara filen %s"
-
 #: ../properties/nm-vpnc-dialog.glade.h:1
-msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
-msgstr "<i>exempel: 172.16.0.0/16 10.11.12.0/24</i>"
+msgid " "
+msgstr " "
 
 #: ../properties/nm-vpnc-dialog.glade.h:2
-msgid "Connection na_me:"
-msgstr "Anslutningsna_mn:"
+msgid "<b>General</b>"
+msgstr "<b>Allmänt</b>"
 
 #: ../properties/nm-vpnc-dialog.glade.h:3
-msgid "Disable NAT _traversal"
-msgstr "Inaktivera NAT-_traversering"
+msgid "<b>Optional</b>"
+msgstr "<b>Valfri</b>"
 
 #: ../properties/nm-vpnc-dialog.glade.h:4
-msgid "Enable _weak single DES encryption"
-msgstr "Aktivera _svag single DES-kryptering"
+msgid "Disable Dead Peer Detection"
+msgstr "Inaktivera Dead Peer Detection"
 
 #: ../properties/nm-vpnc-dialog.glade.h:5
-msgid "G_roup name:"
-msgstr "G_ruppnamn:"
+msgid "Domain:"
+msgstr "Domän:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:6
-msgid "Import _Saved Configuration..."
-msgstr "Importera _sparad konfiguration..."
+msgid "Encryption Method:"
+msgstr "Krypteringsmetod:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:7
-msgid "Interval:"
-msgstr "Intervall:"
+msgid "G_roup Name:"
+msgstr "G_ruppnamn:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:8
-msgid "Name used to identify the connection to the private network, e.g. \"Campus VPN\" or \"Corporate Network\""
-msgstr "Namn som används för att identifiera anslutningen till det privata nätverket, exempelvis \"Campus-VPN\" eller \"Företagsnätverket\""
+msgid "NAT Traversal:"
+msgstr "NAT-traversering:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:9
-msgid "Optional"
-msgstr "Valfri"
+msgid "User name:"
+msgstr "Användarnamn:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:10
-msgid "Override _user name"
-msgstr "Åsidosätt _användarnamn"
-
-#: ../properties/nm-vpnc-dialog.glade.h:11
-msgid "Please enter the information provided by your system administrator below. Do not enter your password here as you will be prompted when connecting."
-msgstr "Ange den information som har tillhandahållits av din systemadministratör nedan. Ange inte lösenordet här eftersom du kommer att efterfrågas det när du ansluter."
-
-#: ../properties/nm-vpnc-dialog.glade.h:12
-msgid "Please note that the file you import is not a Cisco VPN or VPNC configuration file. Ask your adminstrator for the file."
-msgstr "Observera att filen som du importerar inte är en konfigurationsfil för Cisco VPN eller VPNC. Fråga din adminstratör om filen."
-
-#: ../properties/nm-vpnc-dialog.glade.h:13
-msgid "Required"
-msgstr "Krävs"
-
-#: ../properties/nm-vpnc-dialog.glade.h:14
-msgid "Use NAT _keepalive packets"
-msgstr "Använd NAT-_keepalivepaket"
-
-#: ../properties/nm-vpnc-dialog.glade.h:15
-msgid "Use _domain for authentication"
-msgstr "Använd _domän för autentisering"
-
-#: ../properties/nm-vpnc-dialog.glade.h:16
 msgid "_Gateway:"
 msgstr "_Gateway:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:17
-msgid "_Only use VPN connection for these addresses"
-msgstr "Använd _endast VPN-anslutning för dessa adresser"
-
+#~ msgid "The following vpnc VPN connection will be created:"
+#~ msgstr "Följande VPN-anslutning av typen vpnc kommer att skapas:"
+#~ msgid "Name:  %s"
+#~ msgstr "Namn:  %s"
+#~ msgid "Gateway:  %s"
+#~ msgstr "Gateway:  %s"
+#~ msgid "Group Name:  %s"
+#~ msgstr "Gruppnamn:  %s"
+#~ msgid "Username:  %s"
+#~ msgstr "Användarnamn:  %s"
+#~ msgid "Domain:  %s"
+#~ msgstr "Domän:  %s"
+#~ msgid "Routes:  %s"
+#~ msgstr "Vägar:  %s"
+#~ msgid "NAT-Keepalive packet interval:  %s"
+#~ msgstr "Paketintervall för NAT-Keepalive:  %s"
+#~ msgid "Enable Single DES"
+#~ msgstr "Aktivera Single DES"
+#~ msgid "The connection details can be changed using the \"Edit\" button."
+#~ msgstr "Anslutningsdetaljerna kan ändras med hjälp av knappen \"Redigera\"."
+#~ msgid "Settings import incomplete"
+#~ msgstr "Import av inställningar är inte komplett"
+#~ msgid ""
+#~ "The VPN settings file '%s' is incomplete. You may not be able to connect "
+#~ "without providing further information."
+#~ msgstr ""
+#~ "VPN-inställningsfilen \"%s\" är inte komplett. Du kanske inte kan ansluta "
+#~ "utan att tillhandahålla ytterligare information."
+#~ msgid "Cannot import settings"
+#~ msgstr "Kan inte importera inställningar"
+#~ msgid "The VPN settings file '%s' could not be read or is invalid."
+#~ msgstr "VPN-inställningsfilen \"%s\" kunde inte läsas eller är ogiltig."
+#~ msgid "Select file to import"
+#~ msgstr "Välj fil att importera"
+#~ msgid "Save as..."
+#~ msgstr "Spara som..."
+#~ msgid "A file named \"%s\" already exists."
+#~ msgstr "En fil med namnet \"%s\" finns redan."
+#~ msgid "Do you want to replace it with the one you are saving?"
+#~ msgstr "Vill du ersätta den med den du håller på att spara?"
+#~ msgid "Failed to export configuration"
+#~ msgstr "Misslyckades med att exportera konfigurationen"
+#~ msgid "Failed to save file %s"
+#~ msgstr "Misslyckades med att spara filen %s"
+#~ msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+#~ msgstr "<i>exempel: 172.16.0.0/16 10.11.12.0/24</i>"
+#~ msgid "Connection na_me:"
+#~ msgstr "Anslutningsna_mn:"
+#~ msgid "Disable NAT _traversal"
+#~ msgstr "Inaktivera NAT-_traversering"
+#~ msgid "Enable _weak single DES encryption"
+#~ msgstr "Aktivera _svag single DES-kryptering"
+#~ msgid "G_roup name:"
+#~ msgstr "G_ruppnamn:"
+#~ msgid "Import _Saved Configuration..."
+#~ msgstr "Importera _sparad konfiguration..."
+#~ msgid "Interval:"
+#~ msgstr "Intervall:"
+#~ msgid ""
+#~ "Name used to identify the connection to the private network, e.g. "
+#~ "\"Campus VPN\" or \"Corporate Network\""
+#~ msgstr ""
+#~ "Namn som används för att identifiera anslutningen till det privata "
+#~ "nätverket, exempelvis \"Campus-VPN\" eller \"Företagsnätverket\""
+#~ msgid "Override _user name"
+#~ msgstr "Åsidosätt _användarnamn"
+#~ msgid ""
+#~ "Please enter the information provided by your system administrator below. "
+#~ "Do not enter your password here as you will be prompted when connecting."
+#~ msgstr ""
+#~ "Ange den information som har tillhandahållits av din systemadministratör "
+#~ "nedan. Ange inte lösenordet här eftersom du kommer att efterfrågas det "
+#~ "när du ansluter."
+#~ msgid ""
+#~ "Please note that the file you import is not a Cisco VPN or VPNC "
+#~ "configuration file. Ask your adminstrator for the file."
+#~ msgstr ""
+#~ "Observera att filen som du importerar inte är en konfigurationsfil för "
+#~ "Cisco VPN eller VPNC. Fråga din adminstratör om filen."
+#~ msgid "Required"
+#~ msgstr "Krävs"
+#~ msgid "Use NAT _keepalive packets"
+#~ msgstr "Använd NAT-_keepalivepaket"
+#~ msgid "Use _domain for authentication"
+#~ msgstr "Använd _domän för autentisering"
+#~ msgid "_Only use VPN connection for these addresses"
+#~ msgstr "Använd _endast VPN-anslutning för dessa adresser"
 #~ msgid ""
 #~ "The VPN login failed because the user name and password were not accepted."
 #~ msgstr ""
@@ -306,16 +296,10 @@ msgstr "Använd _endast VPN-anslutning för dessa adresser"
 #~ msgstr "Gateway:"
 #~ msgid "Group Name: %s"
 #~ msgstr "Gruppnamn: %s"
-#~ msgid "Group Name:"
-#~ msgstr "Gruppnamn:"
 #~ msgid "Username: %s"
 #~ msgstr "Användarnamn: %s"
-#~ msgid "Username:"
-#~ msgstr "Användarnamn:"
 #~ msgid "Domain: %s"
 #~ msgstr "Domän: %s"
-#~ msgid "Domain:"
-#~ msgstr "Domän:"
 #~ msgid "Routes: %s"
 #~ msgstr "Vägar: %s"
 #~ msgid "Routes:"
