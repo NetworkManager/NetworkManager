@@ -1,3 +1,26 @@
+2008-06-23  Christian Persch  <chpe@gnome.org>
+
+	* vpn-daemons/openvpn/auth-dialog/gnome-two-password-dialog.c:
+	* vpn-daemons/openvpn/auth-dialog/gnome-two-password-dialog.h:
+	* vpn-daemons/pptp/auth-dialog-general/anonymous-auth-module.c:
+	(impl_get_object):
+	* vpn-daemons/pptp/auth-dialog-general/chap-auth-module.c:
+	(impl_get_object):
+	* vpn-daemons/pptp/auth-dialog-general/gnome-generic-auth-dialog.c:
+	* vpn-daemons/pptp/auth-dialog-general/gnome-generic-auth-dialog.h:
+	* vpn-daemons/pptp/auth-dialog-general/mschapv2-auth-module.c:
+	(impl_get_object):
+	* vpn-daemons/pptp/auth-dialog/gnome-two-password-dialog.c:
+	* vpn-daemons/pptp/auth-dialog/gnome-two-password-dialog.h:
+	* vpn-daemons/pptp/properties/nm-ppp-properties.c: (impl_setup):
+	* vpn-daemons/pptp/properties/vpnui_impl.c: (impl_get_object):
+	* vpn-daemons/pptp/properties/vpnui_opt.c:
+	(vpnui_opt_connect_signals):
+	* vpn-daemons/pptp/properties/vpnui_opt.h:
+	* vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c:
+	* vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.h: Don't use
+	deprecated gtk type macros. Bug #539325.
+
 2008-06-20  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-glib/nm-vpn-plugin-ui-interface.c

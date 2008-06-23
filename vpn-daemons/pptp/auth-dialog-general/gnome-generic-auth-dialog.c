@@ -104,7 +104,7 @@ static void dialog_close_callback                (GtkWidget              *widget
 
 static gpointer parent_class;
 
-GtkType
+GType
 gnome_generic_auth_dialog_get_type (void)
 {
 	static GType type = 0;

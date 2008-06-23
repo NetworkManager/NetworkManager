@@ -34,10 +34,10 @@
 G_BEGIN_DECLS
 
 #define GNOME_TYPE_GENERIC_AUTH_DIALOG            (gnome_generic_auth_dialog_get_type ())
-#define GNOME_GENERIC_AUTH_DIALOG(obj)            (GTK_CHECK_CAST ((obj), GNOME_TYPE_GENERIC_AUTH_DIALOG, GnomeGenericAuthDialog))
-#define GNOME_GENERIC_AUTH_DIALOG_CLASS(klass)    (GTK_CHECK_CLASS_CAST ((klass), GNOME_TYPE_GENERIC_AUTH_DIALOG, GnomeGenericAuthDialogClass))
-#define GNOME_IS_GENERIC_AUTH_DIALOG(obj)         (GTK_CHECK_TYPE ((obj), GNOME_TYPE_GENERIC_AUTH_DIALOG))
-#define GNOME_IS_GENERIC_AUTH_DIALOG_CLASS(klass) (GTK_CHECK_CLASS_TYPE ((klass), GNOME_TYPE_GENERIC_AUTH_DIALOG))
+#define GNOME_GENERIC_AUTH_DIALOG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), GNOME_TYPE_GENERIC_AUTH_DIALOG, GnomeGenericAuthDialog))
+#define GNOME_GENERIC_AUTH_DIALOG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), GNOME_TYPE_GENERIC_AUTH_DIALOG, GnomeGenericAuthDialogClass))
+#define GNOME_IS_GENERIC_AUTH_DIALOG(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GNOME_TYPE_GENERIC_AUTH_DIALOG))
+#define GNOME_IS_GENERIC_AUTH_DIALOG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), GNOME_TYPE_GENERIC_AUTH_DIALOG))
 
 typedef struct GnomeGenericAuthDialog        GnomeGenericAuthDialog;
 typedef struct GnomeGenericAuthDialogClass   GnomeGenericAuthDialogClass;
@@ -62,7 +62,7 @@ typedef enum {
 } GnomeGenericAuthDialogRemember;
 
 
-GtkType    gnome_generic_auth_dialog_get_type (void);
+GType    gnome_generic_auth_dialog_get_type (void);
 GtkWidget *gnome_generic_auth_dialog_new (const char	*dialog_title,
                 			   const char	*message,
 			                   const char   *user,

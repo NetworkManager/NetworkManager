@@ -132,69 +132,69 @@ impl_setup (NetworkManagerVpnUIImpl *impl)
   opt = vpnui_opt_new(
   "connection-name", VPN_UI_OPTTYPE_STRING, 
   NULL, "Description", _("Name"),
-  GTK_SIGNAL_FUNC(&editable_changed), &vld_non_empty, impl );
+  G_CALLBACK(&editable_changed), &vld_non_empty, impl );
   impl->connection_name_opt = opt;
 
   opt = vpnui_opt_new(
   "ppp-connection-type", VPN_UI_OPTTYPE_COMBO, 
   "ppp-connection-type", "Connection-Type", NULL,
-  GTK_SIGNAL_FUNC(&variant_changed), NULL, impl );
+  G_CALLBACK(&variant_changed), NULL, impl );
   impl->variant_combo = GTK_COMBO_BOX(opt->widget);
 
   opt = vpnui_opt_new(
   "pptp-remote", VPN_UI_OPTTYPE_STRING, 
   "pptp-remote", "PPTP-Server", _("PPTP Server"),
-  GTK_SIGNAL_FUNC(&editable_changed), &vld_non_empty, impl );
+  G_CALLBACK(&editable_changed), &vld_non_empty, impl );
 
   opt = vpnui_opt_new(
   "phone-number", VPN_UI_OPTTYPE_STRING, 
   "phone-number", "Telephone-Number", _("Telephone Number"),
-  GTK_SIGNAL_FUNC(&editable_changed), &vld_non_empty, impl );
+  G_CALLBACK(&editable_changed), &vld_non_empty, impl );
 
   opt = vpnui_opt_new(
   "bt-bdaddr", VPN_UI_OPTTYPE_STRING, 
   "bt-bdaddr", "Bluetooth-Address", _("Bluetooth Address"),
-  GTK_SIGNAL_FUNC(&editable_changed), &vld_non_empty, impl );
+  G_CALLBACK(&editable_changed), &vld_non_empty, impl );
 
   opt = vpnui_opt_new(
   "bt-channel", VPN_UI_OPTTYPE_STRING, 
   "bt-channel", "Bluetooth-Channel", _("Bluetooth Channel"),
-  GTK_SIGNAL_FUNC(&editable_changed), &vld_non_empty, impl );
+  G_CALLBACK(&editable_changed), &vld_non_empty, impl );
 
   opt = vpnui_opt_new(
   "gprs-apn", VPN_UI_OPTTYPE_STRING, 
   "gprs-apn", "GPRS-Access-Point-Name", _("GPRS APN"),
-  GTK_SIGNAL_FUNC(&editable_changed), &vld_non_empty, impl );
+  G_CALLBACK(&editable_changed), &vld_non_empty, impl );
 
   opt = vpnui_opt_new(
   "gprs-ip-address", VPN_UI_OPTTYPE_STRING, 
   "gprs-ip-address", "GPRS-IP-Address", _("GPRS IP"),
-  GTK_SIGNAL_FUNC(&editable_changed), &vld_non_empty, impl );
+  G_CALLBACK(&editable_changed), &vld_non_empty, impl );
 
   opt = vpnui_opt_new(
   "gprs-context-num", VPN_UI_OPTTYPE_STRING, 
   "gprs-context-num", "GPRS-Context-Number", _("GPRS Context No."),
-  GTK_SIGNAL_FUNC(&editable_changed), &vld_non_empty, impl );
+  G_CALLBACK(&editable_changed), &vld_non_empty, impl );
 
   opt = vpnui_opt_new(
   "gprs-packet-type", VPN_UI_OPTTYPE_STRING, 
   "gprs-packet-type", "GPRS-Packet-Type", _("GPRS Packet Type"),
-  GTK_SIGNAL_FUNC(&editable_changed), &vld_non_empty, impl );
+  G_CALLBACK(&editable_changed), &vld_non_empty, impl );
 
   opt = vpnui_opt_new(
   "ppp-crtscts", VPN_UI_OPTTYPE_YESNO, 
   "ppp-crtscts", "PPP-Hardware-CTSRTS", _("Use CTS/RTS flow control"),
-  GTK_SIGNAL_FUNC(&editable_changed), NULL, impl );
+  G_CALLBACK(&editable_changed), NULL, impl );
 
   opt = vpnui_opt_new(
   "ppp-modem", VPN_UI_OPTTYPE_YESNO, 
   "ppp-modem", "PPP-Modem", _("Connect via a modem"),
-  GTK_SIGNAL_FUNC(&editable_changed), NULL, impl );
+  G_CALLBACK(&editable_changed), NULL, impl );
 
   opt = vpnui_opt_new(
   "ppp-noipdefault", VPN_UI_OPTTYPE_YESNO, 
   "ppp-noipdefault", "PPP-No-IP-Default", _("Require IP to be provided"),
-  GTK_SIGNAL_FUNC(&editable_changed), NULL, impl );
+  G_CALLBACK(&editable_changed), NULL, impl );
 
   opt = vpnui_opt_new(
   "usepeerdns"  , VPN_UI_OPTTYPE_YESNO , 
@@ -284,7 +284,7 @@ impl_setup (NetworkManagerVpnUIImpl *impl)
   opt = vpnui_opt_new(
   "ppp-extra", VPN_UI_OPTTYPE_STRING, 
   "ppp-extra", "PPP-Custom-Options", _("Custom PPP options"),
-  GTK_SIGNAL_FUNC(&editable_changed), NULL, impl );
+  G_CALLBACK(&editable_changed), NULL, impl );
 
   opt = vpnui_opt_new(
   "ppp-debug"  , VPN_UI_OPTTYPE_YESNO ,
@@ -300,13 +300,13 @@ impl_setup (NetworkManagerVpnUIImpl *impl)
   opt = vpnui_opt_new(
   "routes"  , VPN_UI_OPTTYPE_STRING , 
   "routes", "X-NM-Routes", _("Specific networks available"),
-  GTK_SIGNAL_FUNC(&editable_changed), &vld_routes_if_sens, impl );
+  G_CALLBACK(&editable_changed), &vld_routes_if_sens, impl );
   impl->routes_opt = opt;
 
   opt = vpnui_opt_new(
   "use-routes"  , VPN_UI_OPTTYPE_YESNO , 
   "use-routes", "Use-Routes", _("Limit to specific networks"),
-  GTK_SIGNAL_FUNC(&use_routes_toggled), NULL, impl );
+  G_CALLBACK(&use_routes_toggled), NULL, impl );
   impl->routes_toggle_opt = opt;
 
   variant = vpnui_variant_new( "pptp","Windows VPN (PPTP)",

@@ -74,20 +74,20 @@ void vpnui_opt_connect_signals(VpnUIConfigOption *opt)
   switch (opt->option_type) 
   {
     case VPN_UI_OPTTYPE_YESNO:
-      gtk_signal_connect (GTK_OBJECT (opt->widget), 
-			"toggled", GTK_SIGNAL_FUNC (opt->change_handler), opt->impl);
+      g_signal_connect (GTK_OBJECT (opt->widget), 
+			"toggled", G_CALLBACK (opt->change_handler), opt->impl);
       break;
     case VPN_UI_OPTTYPE_STRING:
-      gtk_signal_connect (GTK_OBJECT (opt->widget), 
-			"changed", GTK_SIGNAL_FUNC (opt->change_handler), opt->impl);
+      g_signal_connect (GTK_OBJECT (opt->widget), 
+			"changed", G_CALLBACK (opt->change_handler), opt->impl);
       break;
     case VPN_UI_OPTTYPE_SPINNER:
-      gtk_signal_connect (GTK_OBJECT (opt->widget), 
-			"changed", GTK_SIGNAL_FUNC (opt->change_handler), opt->impl);
+      g_signal_connect (GTK_OBJECT (opt->widget), 
+			"changed", G_CALLBACK (opt->change_handler), opt->impl);
       break;
     case VPN_UI_OPTTYPE_COMBO:
-      gtk_signal_connect (GTK_OBJECT (opt->widget), 
-			"changed", GTK_SIGNAL_FUNC (opt->change_handler), opt->impl);
+      g_signal_connect (GTK_OBJECT (opt->widget), 
+			"changed", G_CALLBACK (opt->change_handler), opt->impl);
       break;
   }
 }

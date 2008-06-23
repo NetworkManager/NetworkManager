@@ -112,13 +112,13 @@ impl_get_object (void)
 //  impl->callback                 = NULL;
 
 //    if (impl->w_import_button!=NULL) {
-//      gtk_signal_connect (GTK_OBJECT (impl->w_import_button), 
-//			"clicked", GTK_SIGNAL_FUNC (import_button_clicked), impl);
+//      g_signal_connect (GTK_OBJECT (impl->w_import_button), 
+//			"clicked", G_CALLBACK (import_button_clicked), impl);
 //    }
 //
 //    /* make the widget reusable */
-//    gtk_signal_connect (GTK_OBJECT (impl->widget), "delete-event", 
-//			GTK_SIGNAL_FUNC (gtk_widget_hide_on_delete), NULL);
+//    g_signal_connect (GTK_OBJECT (impl->widget), "delete-event", 
+//			G_CALLBACK (gtk_widget_hide_on_delete), NULL);
 //    
     impl_clear_widget (impl);
 

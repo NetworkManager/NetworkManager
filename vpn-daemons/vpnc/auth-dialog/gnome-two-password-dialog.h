@@ -33,10 +33,10 @@
 G_BEGIN_DECLS
 
 #define GNOME_TYPE_TWO_PASSWORD_DIALOG            (gnome_two_password_dialog_get_type ())
-#define GNOME_TWO_PASSWORD_DIALOG(obj)            (GTK_CHECK_CAST ((obj), GNOME_TYPE_TWO_PASSWORD_DIALOG, GnomeTwoPasswordDialog))
-#define GNOME_TWO_PASSWORD_DIALOG_CLASS(klass)    (GTK_CHECK_CLASS_CAST ((klass), GNOME_TYPE_TWO_PASSWORD_DIALOG, GnomeTwoPasswordDialogClass))
-#define GNOME_IS_TWO_PASSWORD_DIALOG(obj)         (GTK_CHECK_TYPE ((obj), GNOME_TYPE_TWO_PASSWORD_DIALOG))
-#define GNOME_IS_TWO_PASSWORD_DIALOG_CLASS(klass) (GTK_CHECK_CLASS_TYPE ((klass), GNOME_TYPE_TWO_PASSWORD_DIALOG))
+#define GNOME_TWO_PASSWORD_DIALOG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), GNOME_TYPE_TWO_PASSWORD_DIALOG, GnomeTwoPasswordDialog))
+#define GNOME_TWO_PASSWORD_DIALOG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), GNOME_TYPE_TWO_PASSWORD_DIALOG, GnomeTwoPasswordDialogClass))
+#define GNOME_IS_TWO_PASSWORD_DIALOG(obj)         (G_TYPE_CHECK_INSTANCE_TYPE ((obj), GNOME_TYPE_TWO_PASSWORD_DIALOG))
+#define GNOME_IS_TWO_PASSWORD_DIALOG_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass), GNOME_TYPE_TWO_PASSWORD_DIALOG))
 
 typedef struct GnomeTwoPasswordDialog        GnomeTwoPasswordDialog;
 typedef struct GnomeTwoPasswordDialogClass   GnomeTwoPasswordDialogClass;
@@ -61,7 +61,7 @@ typedef enum {
 } GnomeTwoPasswordDialogRemember;
 
 
-GtkType    gnome_two_password_dialog_get_type (void);
+GType    gnome_two_password_dialog_get_type (void);
 GtkWidget* gnome_two_password_dialog_new      (const char *dialog_title,
 					   const char *message,
 					   const char *username,

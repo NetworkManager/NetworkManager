@@ -25,7 +25,7 @@ struct _VpnUIConfigOption
   char   *export_name;
   char   *description;
   gboolean   active;
-  GtkSignalFunc change_handler;
+  GCallback change_handler;
   gboolean (*validator)(VpnUIConfigOption *opt);
   GtkWidget  *widget;
   NetworkManagerVpnUIImpl *impl;
