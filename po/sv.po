@@ -10,7 +10,7 @@ msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2008-06-24 00:10+0200\n"
-"PO-Revision-Date: 2008-06-24 00:23+0100\n"
+"PO-Revision-Date: 2008-06-24 00:30+0100\n"
 "Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "MIME-Version: 1.0\n"
@@ -65,7 +65,7 @@ msgstr "Namnservrarna listade nedan kanske inte kommer att kännas igen."
 #: ../system-settings/src/main.c:365
 #, c-format
 msgid "Auto %s"
-msgstr "Auto %s"
+msgstr "Automatisk %s"
 
 #: ../libnm-util/crypto.c:123
 #, c-format
