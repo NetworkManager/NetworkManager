@@ -304,10 +304,10 @@ get_password_types (PasswordsInfo *info)
 		g_free (key);
 
 		switch (connection_type) {
-		case NM_OPENVPN_CONTYPE_X509USERPASS:
+		case NM_OPENVPN_CONTYPE_PASSWORD_TLS:
 			info->need_password = TRUE;
 			/* Fall through */
-		case NM_OPENVPN_CONTYPE_X509:
+		case NM_OPENVPN_CONTYPE_TLS:
 			success = TRUE;
 
 			key = g_strconcat (connection_path, "/vpn-properties/", NM_OPENVPN_KEY_KEY, NULL);
@@ -318,7 +318,7 @@ get_password_types (PasswordsInfo *info)
 				g_free (str);
 			}
 			break;
-		case NM_OPENVPN_CONTYPE_SHAREDKEY:
+		case NM_OPENVPN_CONTYPE_STATIC_KEY:
 			success = TRUE;
 			break;
 		case NM_OPENVPN_CONTYPE_PASSWORD:

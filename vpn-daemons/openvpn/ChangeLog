@@ -1,3 +1,9 @@
+2008-06-23  Dan Williams  <dcbw@redhat.com>
+
+	* Convert to new NM VPN UI plugin format
+
+	Requires a NetworkManager of at least SVN revision r3761.
+
 2008-06-06  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Tambet Ingo  <tambet@gmail.com>

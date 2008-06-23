@@ -2,8 +2,11 @@
 
 lib_LTLIBRARIES = libnm-openvpn-properties.la
 
-libnm_openvpn_properties_la_SOURCES = 			\
-				nm-openvpn.c
+libnm_openvpn_properties_la_SOURCES = \
+	nm-openvpn.c \
+	nm-openvpn.h \
+	auth-helpers.c \
+	auth-helpers.h
 
 gladedir = $(datadir)/gnome-vpn-properties/openvpn
 glade_DATA = nm-openvpn-dialog.glade

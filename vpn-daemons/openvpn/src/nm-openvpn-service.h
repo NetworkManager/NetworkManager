@@ -41,11 +41,11 @@
 /* Do not change numbers, only add if needed!
    See properties/nm-openvpn.c:connection_type_changed() for details
  */
-#define NM_OPENVPN_CONTYPE_INVALID -1
-#define NM_OPENVPN_CONTYPE_X509 0
-#define NM_OPENVPN_CONTYPE_SHAREDKEY 1
-#define NM_OPENVPN_CONTYPE_PASSWORD 2
-#define NM_OPENVPN_CONTYPE_X509USERPASS 3
+#define NM_OPENVPN_CONTYPE_INVALID      -1
+#define NM_OPENVPN_CONTYPE_TLS          0
+#define NM_OPENVPN_CONTYPE_STATIC_KEY   1
+#define NM_OPENVPN_CONTYPE_PASSWORD     2
+#define NM_OPENVPN_CONTYPE_PASSWORD_TLS 3
 
 #define NM_OPENVPN_KEY_CA "ca"
 #define NM_OPENVPN_KEY_CERT "cert"
@@ -60,6 +60,7 @@
 #define NM_OPENVPN_KEY_REMOTE "remote"
 #define NM_OPENVPN_KEY_REMOTE_IP "remote-ip"
 #define NM_OPENVPN_KEY_SHARED_KEY "shared-key"
+#define NM_OPENVPN_KEY_SHARED_KEY_DIRECTION "shared-key-direction"
 #define NM_OPENVPN_KEY_TA "ta"
 #define NM_OPENVPN_KEY_TA_DIR "ta-dir"
 #define NM_OPENVPN_KEY_USERNAME "username"

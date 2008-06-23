@@ -336,7 +336,7 @@ get_connection_type (GHashTable *properties)
 	if (tmp)
 		connection_type = g_value_get_int ((GValue *) tmp);
 
-	if (connection_type < NM_OPENVPN_CONTYPE_INVALID || connection_type > NM_OPENVPN_CONTYPE_X509USERPASS)
+	if (connection_type < NM_OPENVPN_CONTYPE_INVALID || connection_type > NM_OPENVPN_CONTYPE_PASSWORD_TLS)
 		connection_type = NM_OPENVPN_CONTYPE_INVALID;
 
 	return connection_type;
@@ -472,7 +472,7 @@ nm_openvpn_start_openvpn_binary (NMOpenvpnPlugin *plugin, GHashTable *properties
 
 	/* Now append configuration options which are dependent on the configuration type */
 	switch (connection_type) {
-	case NM_OPENVPN_CONTYPE_X509:
+	case NM_OPENVPN_CONTYPE_TLS:
 		g_ptr_array_add (openvpn_argv, (gpointer) "--client");
 
 		tmp = g_hash_table_lookup (properties, NM_OPENVPN_KEY_CA);
@@ -494,7 +494,7 @@ nm_openvpn_start_openvpn_binary (NMOpenvpnPlugin *plugin, GHashTable *properties
 		}
 		break;
 
-	case NM_OPENVPN_CONTYPE_SHAREDKEY:
+	case NM_OPENVPN_CONTYPE_STATIC_KEY:
 		tmp = g_hash_table_lookup (properties, NM_OPENVPN_KEY_SHARED_KEY);
 		if (tmp) {
 			g_ptr_array_add (openvpn_argv, (gpointer) "--secret");
@@ -533,7 +533,7 @@ nm_openvpn_start_openvpn_binary (NMOpenvpnPlugin *plugin, GHashTable *properties
 		}
 		break;
 
-	case NM_OPENVPN_CONTYPE_X509USERPASS:
+	case NM_OPENVPN_CONTYPE_PASSWORD_TLS:
 		g_ptr_array_add (openvpn_argv, (gpointer) "--client");
 
 		tmp = g_hash_table_lookup (properties, NM_OPENVPN_KEY_CA);
@@ -585,8 +585,8 @@ nm_openvpn_start_openvpn_binary (NMOpenvpnPlugin *plugin, GHashTable *properties
 	   X509: May require certificate password
 	*/
 	if (connection_type == NM_OPENVPN_CONTYPE_PASSWORD ||
-	    connection_type == NM_OPENVPN_CONTYPE_X509USERPASS ||
-	    connection_type == NM_OPENVPN_CONTYPE_X509) {
+	    connection_type == NM_OPENVPN_CONTYPE_PASSWORD_TLS ||
+	    connection_type == NM_OPENVPN_CONTYPE_TLS) {
 
 		NMOpenvpnPluginIOData  *io_data;
 
@@ -677,7 +677,7 @@ real_need_secrets (NMVPNPlugin *plugin,
 
 	connection_type = get_connection_type (s_vpn_props->data);
 	switch (connection_type) {
-	case NM_OPENVPN_CONTYPE_X509USERPASS:
+	case NM_OPENVPN_CONTYPE_PASSWORD_TLS:
 		/* Will require username and password and maybe certificate password */
 		if (!g_hash_table_lookup (s_vpn_props->data, NM_OPENVPN_KEY_CERTPASS))
 			need_secrets = TRUE;
@@ -688,7 +688,7 @@ real_need_secrets (NMVPNPlugin *plugin,
 		    !g_hash_table_lookup (s_vpn_props->data, NM_OPENVPN_KEY_PASSWORD))
 			need_secrets = TRUE;
 		break;
-	case NM_OPENVPN_CONTYPE_X509:
+	case NM_OPENVPN_CONTYPE_TLS:
 		/* May require certificate password */
 		if (!g_hash_table_lookup (s_vpn_props->data, NM_OPENVPN_KEY_CERTPASS))
 			need_secrets = TRUE;
