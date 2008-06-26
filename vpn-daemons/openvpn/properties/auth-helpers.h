@@ -29,6 +29,7 @@
 #include <gtk/gtkfilefilter.h>
 #include <glade/glade.h>
 
+#include <nm-connection.h>
 #include <nm-setting-vpn-properties.h>
 
 typedef void (*ChangedCallback) (GtkWidget *widget, gpointer user_data);
@@ -56,5 +57,11 @@ gboolean auth_widget_update_connection (GladeXML *xml,
 GtkFileFilter *tls_file_chooser_filter_new (void);
 
 GtkFileFilter *sk_file_chooser_filter_new (void);
+
+GtkWidget *advanced_dialog_new (GHashTable *hash, int contype);
+
+GHashTable *advanced_dialog_new_hash_from_connection (NMConnection *connection, GError **error);
+
+GHashTable *advanced_dialog_new_hash_from_dialog (GtkWidget *dialog, GError **error);
 
 #endif

@@ -3,6 +3,7 @@
 auth-dialog/gnome-two-password-dialog.c
 auth-dialog/main.c
 nm-openvpn.desktop.in
+properties/auth-helpers.c
 properties/nm-openvpn.c
 properties/nm-openvpn-dialog.glade
 src/nm-openvpn-service.c

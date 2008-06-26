@@ -1,3 +1,7 @@
+2008-06-26  Dan Williams  <dcbw@redhat.com>
+
+	Implement the Advanced... dialog
+
 2008-06-23  Dan Williams  <dcbw@redhat.com>
 
 	* Convert to new NM VPN UI plugin format

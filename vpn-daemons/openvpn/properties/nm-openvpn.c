@@ -82,6 +82,9 @@ typedef struct {
 	GladeXML *xml;
 	GtkWidget *widget;
 	GtkSizeGroup *group;
+	GtkWindowGroup *window_group;
+	gboolean window_added;
+	GHashTable *advanced;
 } OpenvpnPluginUiWidgetPrivate;
 
 
@@ -185,6 +188,73 @@ auth_combo_changed_cb (GtkWidget *combo, gpointer user_data)
 	stuff_changed_cb (combo, self);
 }
 
+static void
+advanced_dialog_close_cb (GtkWidget *dialog, gpointer user_data)
+{
+	OpenvpnPluginUiWidget *self = OPENVPN_PLUGIN_UI_WIDGET (user_data);
+	OpenvpnPluginUiWidgetPrivate *priv = OPENVPN_PLUGIN_UI_WIDGET_GET_PRIVATE (self);
+
+	gtk_widget_hide (dialog);
+	/* gtk_widget_destroy() will remove the window from the window group */
+	gtk_widget_destroy (dialog);
+}
+
+static void
+advanced_dialog_response_cb (GtkWidget *dialog, gint response, gpointer user_data)
+{
+	OpenvpnPluginUiWidget *self = OPENVPN_PLUGIN_UI_WIDGET (user_data);
+	OpenvpnPluginUiWidgetPrivate *priv = OPENVPN_PLUGIN_UI_WIDGET_GET_PRIVATE (self);
+	GError *error = NULL;
+
+	if (priv->advanced)
+		g_hash_table_destroy (priv->advanced);
+	priv->advanced = advanced_dialog_new_hash_from_dialog (dialog, &error);
+	if (!priv->advanced) {
+		g_message ("%s: error reading advanced settings: %s", __func__, error->message);
+		g_error_free (error);
+	}
+	advanced_dialog_close_cb (dialog, self);
+
+	stuff_changed_cb (NULL, self);
+}
+
+static void
+advanced_button_clicked_cb (GtkWidget *button, gpointer user_data)
+{
+	OpenvpnPluginUiWidget *self = OPENVPN_PLUGIN_UI_WIDGET (user_data);
+	OpenvpnPluginUiWidgetPrivate *priv = OPENVPN_PLUGIN_UI_WIDGET_GET_PRIVATE (self);
+	GtkWidget *dialog, *toplevel, *widget;
+	GtkTreeModel *model;
+	GtkTreeIter iter;
+	int contype = NM_OPENVPN_CONTYPE_INVALID;
+
+	toplevel = gtk_widget_get_toplevel (priv->widget);
+	g_return_if_fail (GTK_WIDGET_TOPLEVEL (toplevel));
+
+	widget = glade_xml_get_widget (priv->xml, "auth_combo");
+	model = gtk_combo_box_get_model (GTK_COMBO_BOX (widget));
+	if (gtk_combo_box_get_active_iter (GTK_COMBO_BOX (widget), &iter))
+		gtk_tree_model_get (model, &iter, COL_AUTH_TYPE, &contype, -1);
+
+	dialog = advanced_dialog_new (priv->advanced, contype);
+	if (!dialog) {
+		g_warning ("%s: failed to create the Advanced dialog!", __func__);
+		return;
+	}
+
+	gtk_window_group_add_window (priv->window_group, GTK_WINDOW (dialog));
+	if (!priv->window_added) {
+		gtk_window_group_add_window (priv->window_group, GTK_WINDOW (toplevel));
+		priv->window_added = TRUE;
+	}
+
+	gtk_window_set_transient_for (GTK_WINDOW (dialog), GTK_WINDOW (toplevel));
+	g_signal_connect (G_OBJECT (dialog), "response", G_CALLBACK (advanced_dialog_response_cb), self);
+	g_signal_connect (G_OBJECT (dialog), "close", G_CALLBACK (advanced_dialog_close_cb), self);
+
+	gtk_widget_show_all (dialog);
+}
+
 static gboolean
 init_plugin_ui (OpenvpnPluginUiWidget *self, NMConnection *connection, GError **error)
 {
@@ -286,6 +356,9 @@ init_plugin_ui (OpenvpnPluginUiWidget *self, NMConnection *connection, GError **
 	g_signal_connect (widget, "changed", G_CALLBACK (auth_combo_changed_cb), self);
 	gtk_combo_box_set_active (GTK_COMBO_BOX (widget), active < 0 ? 0 : active);
 
+	widget = glade_xml_get_widget (priv->xml, "advanced_button");
+	g_signal_connect (G_OBJECT (widget), "clicked", G_CALLBACK (advanced_button_clicked_cb), self);
+
 	return TRUE;
 }
 
@@ -332,6 +405,31 @@ int_to_gvalue (gint i)
 	g_value_set_int (value, i);
 
 	return value;
+}
+
+static void
+hash_copy_advanced (gpointer key, gpointer data, gpointer user_data)
+{
+	GHashTable *hash = (GHashTable *) user_data;
+	GValue *value = (GValue *) data;
+	const char *i;
+
+	if (G_VALUE_HOLDS_STRING (value)) {
+		g_hash_table_insert (hash,
+		                     g_strdup ((const char *) key),
+		                     str_to_gvalue (g_value_get_string (value)));
+	} else if (G_VALUE_HOLDS_INT (value)) {
+		g_hash_table_insert (hash,
+		                     g_strdup ((const char *) key),
+		                     int_to_gvalue (g_value_get_int (value)));
+	} else if (G_VALUE_HOLDS_BOOLEAN (value)) {
+		g_hash_table_insert (hash,
+		                     g_strdup ((const char *) key),
+		                     bool_to_gvalue (g_value_get_boolean (value)));
+	} else {
+		g_warning ("%s: unhandled key '%s' of type '%s'",
+		           __func__, (const char *) key, G_VALUE_TYPE_NAME (value));
+	}
 }
 
 static gboolean
@@ -388,6 +486,9 @@ update_connection (NMVpnPluginUiWidgetInterface *iface,
 		}
 	}
 
+	if (priv->advanced)
+		g_hash_table_foreach (priv->advanced, hash_copy_advanced, s_vpn_props->data);
+
 	nm_connection_add_setting (connection, NM_SETTING (s_vpn_props));
 	valid = TRUE;
 
@@ -432,7 +533,15 @@ nm_vpn_plugin_ui_widget_interface_new (NMConnection *connection, GError **error)
 	}
 	g_object_ref_sink (priv->widget);
 
+	priv->window_group = gtk_window_group_new ();
+
 	if (!init_plugin_ui (OPENVPN_PLUGIN_UI_WIDGET (object), connection, error)) {
+		g_object_unref (object);
+		return NULL;
+	}
+
+	priv->advanced = advanced_dialog_new_hash_from_connection (connection, error);
+	if (!priv->advanced) {
 		g_object_unref (object);
 		return NULL;
 	}
@@ -449,11 +558,17 @@ dispose (GObject *object)
 	if (priv->group)
 		g_object_unref (priv->group);
 
+	if (priv->window_group)
+		g_object_unref (priv->window_group);
+
 	if (priv->widget)
 		g_object_unref (priv->widget);
 
 	if (priv->xml)
 		g_object_unref (priv->xml);
+
+	if (priv->advanced)
+		g_hash_table_destroy (priv->advanced);
 
 	G_OBJECT_CLASS (openvpn_plugin_ui_widget_parent_class)->dispose (object);
 }
