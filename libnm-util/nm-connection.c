@@ -9,6 +9,7 @@
 #include "nm-setting-8021x.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-ip4-config.h"
+#include "nm-setting-ip6-config.h"
 #include "nm-setting-ppp.h"
 #include "nm-setting-pppoe.h"
 #include "nm-setting-wired.h"
@@ -151,6 +152,11 @@ register_default_settings (void)
 	                      NM_TYPE_SETTING_IP4_CONFIG,
 	                      NM_SETTING_IP4_CONFIG_ERROR,
 	                      6);
+
+	register_one_setting (NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	                      NM_TYPE_SETTING_IP6_CONFIG,
+	                      NM_SETTING_IP6_CONFIG_ERROR,
+	                      7);
 }
 
 static guint32

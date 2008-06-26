@@ -14,6 +14,7 @@ libnm_util_include_HEADERS = 		\
 	nm-setting-8021x.h		\
 	nm-setting-connection.h		\
 	nm-setting-ip4-config.h		\
+	nm-setting-ip6-config.h		\
 	nm-setting-ppp.h		\
 	nm-setting-pppoe.h		\
 	nm-setting-serial.h		\
@@ -35,6 +36,7 @@ libnm_util_la_SOURCES=			\
 	nm-setting-8021x.c		\
 	nm-setting-connection.c		\
 	nm-setting-ip4-config.c		\
+	nm-setting-ip6-config.c		\
 	nm-setting-ppp.c		\
 	nm-setting-pppoe.c		\
 	nm-setting-serial.c		\

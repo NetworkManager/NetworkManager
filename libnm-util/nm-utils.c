@@ -36,6 +36,7 @@
 #include "NetworkManager.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-setting-ip4-config.h"
+#include "nm-setting-ip6-config.h"
 
 struct EncodingTriplet
 {
@@ -845,3 +846,141 @@ nm_utils_ip4_addresses_to_gvalue (GSList *list, GValue *value)
 	g_value_take_boxed (value, addresses);
 }
 
+GSList *
+nm_utils_ip6_addresses_from_gvalue (const GValue *value)
+{
+	GPtrArray *addresses;
+	int i;
+	GSList *list = NULL;
+
+	addresses = (GPtrArray *) g_value_get_boxed (value);
+
+	for (i = 0; addresses && (i < addresses->len); i++) {
+		GValueArray *elements = (GValueArray *) g_ptr_array_index (addresses, i);
+		GValue *tmp;
+		GByteArray *ba_addr, *ba_gw;
+		NMSettingIP6Address *addr;
+		guint32 prefix;
+
+		if (   (elements->n_values != 3)
+		    || (G_VALUE_TYPE (g_value_array_get_nth (elements, 0)) != DBUS_TYPE_G_UCHAR_ARRAY)
+		    || (G_VALUE_TYPE (g_value_array_get_nth (elements, 1)) != G_TYPE_UINT)
+		    || (G_VALUE_TYPE (g_value_array_get_nth (elements, 2)) != DBUS_TYPE_G_UCHAR_ARRAY)) {
+			nm_warning ("%s: ignoring invalid IP6 address structure", __func__);
+			continue;
+		}
+
+		tmp = g_value_array_get_nth (elements, 0);
+		ba_addr = g_value_get_boxed (tmp);
+		if (ba_addr->len != 16) {
+			nm_warning ("%s: ignoring invalid IP6 address of length %d",
+			            __func__, ba_addr->len);
+			continue;
+		}
+
+		tmp = g_value_array_get_nth (elements, 1);
+		prefix = g_value_get_uint (tmp);
+		if (prefix > 32) {
+			nm_warning ("%s: ignoring invalid IP6 prefix %d",
+			            __func__, prefix);
+			continue;
+		}
+
+		tmp = g_value_array_get_nth (elements, 2);
+		ba_gw = g_value_get_boxed (tmp);
+		if (ba_gw->len != 16) {
+			nm_warning ("%s: ignoring invalid IP6 gateway of length %d",
+			            __func__, ba_gw->len);
+			continue;
+		}
+		
+		addr = g_malloc0 (sizeof (NMSettingIP6Address));
+		addr->prefix = prefix;
+		memcpy (addr->address.s6_addr, ba_addr->data, 16);
+		memcpy (addr->gateway.s6_addr, ba_gw->data, 16);
+		list = g_slist_prepend (list, addr);
+	}
+
+	return g_slist_reverse (list);
+}
+
+void
+nm_utils_ip6_addresses_to_gvalue (GSList *list, GValue *value)
+{
+	GPtrArray *addresses;
+	GSList *iter;
+
+	addresses = g_ptr_array_new ();
+
+	for (iter = list; iter; iter = iter->next) {
+		NMSettingIP6Address *addr = (NMSettingIP6Address *) iter->data;
+		GValue element = { 0, };
+		GByteArray *ba_addr, *ba_gw;
+
+		g_value_init (&element, DBUS_TYPE_G_IP6_ADDRESS);
+		g_value_take_boxed (&element, dbus_g_type_specialized_construct (DBUS_TYPE_G_IP6_ADDRESS));
+
+		ba_addr = g_byte_array_sized_new (16);
+		g_byte_array_append (ba_addr, (guint8 *) addr->address.s6_addr, 16);
+
+		ba_gw = g_byte_array_sized_new (16);
+		g_byte_array_append (ba_gw, (guint8 *) addr->gateway.s6_addr, 16);
+
+		dbus_g_type_struct_set (&element,
+		                        0, ba_addr,
+		                        1, addr->prefix,
+		                        2, ba_gw,
+		                        G_MAXUINT);
+
+		g_ptr_array_add (addresses, g_value_get_boxed (&element));
+		g_value_unset (&element);
+	}
+
+	g_value_take_boxed (value, addresses);
+}
+
+GSList *
+nm_utils_ip6_dns_from_gvalue (const GValue *value)
+{
+	GPtrArray *dns;
+	int i;
+	GSList *list = NULL;
+
+	dns = (GPtrArray *) g_value_get_boxed (value);
+	for (i = 0; dns && (i < dns->len); i++) {
+		GByteArray *bytearray = (GByteArray *) g_ptr_array_index (dns, i);
+		struct in6_addr *addr;
+
+		if (bytearray->len != 16) {
+			nm_warning ("%s: ignoring invalid IP6 address of length %d",
+			            __func__, bytearray->len);
+			continue;
+		}
+
+		addr = g_malloc0 (sizeof (struct in6_addr));
+		memcpy (addr->s6_addr, bytearray->data, bytearray->len);
+		list = g_slist_prepend (list, addr);
+	}
+
+	return g_slist_reverse (list);
+}
+
+void
+nm_utils_ip6_dns_to_gvalue (GSList *list, GValue *value)
+{
+	GPtrArray *dns;
+	GSList *iter;
+
+	dns = g_ptr_array_new ();
+
+	for (iter = list; iter; iter = iter->next) {
+		struct in6_addr *addr = (struct in6_addr *) iter->data;
+		GByteArray *bytearray;
+
+		bytearray = g_byte_array_sized_new (16);
+		g_byte_array_append (bytearray, (guint8 *) addr->s6_addr, 16);
+		g_ptr_array_add (dns, bytearray);
+	}
+
+	g_value_take_boxed (value, dns);
+}

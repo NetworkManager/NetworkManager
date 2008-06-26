@@ -1,5 +1,26 @@
 2008-06-26  Dan Williams <dcbw@redhat.com>
 
+	Patch from David Cantrell <dcantrell@redhat.com> and me
+
+	* include/nm-dbus-glib-types.h
+		- Add IP6 address types
+
+	* libnm-util/Makefile.am
+	  libnm-util/nm-setting-ip6-config.c
+	  libnm-util/nm-setting-ip6-config.h
+		- Add IP6 settings object
+
+	* libnm-util/nm-connection.c
+		- (register_default_settings): register ip6 settings object
+
+	* libnm-util/nm-utils.c
+	  libnm-util/nm-utils.h
+		- (nm_utils_ip6_addresses_from_gvalue, nm_utils_ip6_addresses_to_gvalue,
+		   nm_utils_ip6_dns_from_gvalue, nm_utils_ip6_dns_to_gvalue): add
+			ip6 address conversion functions
+	
+2008-06-26  Dan Williams <dcbw@redhat.com>
+
 	Patch from David Cantrell <dcantrell@redhat.com>
 	
 	* Use inet_ntop() and inet_pton() everwhere and check for errors
