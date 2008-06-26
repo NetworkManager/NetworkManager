@@ -1015,7 +1015,12 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 
 	str = g_hash_table_lookup (device->options, "new_interface_mtu");
 	if (str) {
-		int int_mtu = atoi (str);
+		int int_mtu;
+
+		errno = 0;
+		int_mtu = strtol (str, NULL, 10);
+		if ((errno == EINVAL) || (errno == ERANGE))
+			goto error;
 
 		if (int_mtu)
 			nm_ip4_config_set_mtu (ip4_config, int_mtu);
