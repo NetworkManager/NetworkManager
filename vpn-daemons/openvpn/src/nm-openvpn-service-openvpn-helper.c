@@ -135,7 +135,7 @@ addr_to_gvalue (const char *str)
 	if (!str || strlen (str) < 1)
 		return NULL;
 
-	if (!inet_aton (str, &temp_addr))
+	if (inet_pton (AF_INET, str, &temp_addr) <= 0)
 		return NULL;
 
 	val = g_slice_new0 (GValue);
@@ -164,7 +164,7 @@ parse_addr_list (GValue *value_array, const char *str)
 
 	split = g_strsplit (str, " ", -1);
 	for (i = 0; split[i]; i++) {
-		if (inet_aton (split[i], &temp_addr))
+		if (inet_pton (AF_INET, split[i], &temp_addr) > 0)
 			g_array_append_val (array, temp_addr.s_addr);
 	}
 
@@ -203,21 +203,21 @@ get_routes (void)
 		if (!tmp || strlen (tmp) < 1)
 			break;
 
-		if (inet_aton (tmp, &network) != 0) {
+		if (inet_pton (AF_INET, tmp, &network) <= 0) {
 			nm_warning ("Ignoring invalid static route address '%s'", tmp ? tmp : "NULL");
 			continue;
 		}
 
 		snprintf (buf, BUFLEN, "route_netmask_%d", i);
 		tmp = getenv (buf);
-		if (!tmp || inet_aton (tmp, &netmask) != 0) {
+		if (!tmp || inet_pton (AF_INET, tmp, &netmask) <= 0) {
 			nm_warning ("Ignoring invalid static route netmask '%s'", tmp ? tmp : "NULL");
 			continue;
 		}
 
 		snprintf (buf, BUFLEN, "route_gateway_%d", i);
 		tmp = getenv (buf);
-		if (!tmp || inet_aton (tmp, &gateway) != 0) {
+		if (!tmp || inet_pton (AF_INET, tmp, &gateway) <= 0) {
 			nm_warning ("Ignoring invalid static route gateway '%s'", tmp ? tmp : "NULL");
 			continue;
 		}

@@ -1,5 +1,11 @@
 2008-06-26  Dan Williams <dcbw@redhat.com>
 
+	Patch from David Cantrell <dcantrell@redhat.com>
+	
+	* Use inet_ntop() and inet_pton() everwhere and check for errors
+
+2008-06-26  Dan Williams <dcbw@redhat.com>
+
 	* Update FSF address in license headers (Michael Biebl <biebl@debian.org>)
 
 2008-06-26  Dan Williams <dcbw@redhat.com>

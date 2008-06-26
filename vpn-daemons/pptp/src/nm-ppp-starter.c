@@ -442,7 +442,9 @@ static gint nm_ppp_get_cmdline_pptp (NmPPPData *data, char **data_items, const i
   int                   i = 0;
   struct hostent    *hostinfo = NULL;
   char *        pppd_pty = NULL;
+  char buf[INET_ADDRSTRLEN+1];
   
+  memset (&buf, '\0', sizeof (buf));
 
   /* Find pptp */
   pptp_binary = pptp_binary_paths;
@@ -466,7 +468,10 @@ static gint nm_ppp_get_cmdline_pptp (NmPPPData *data, char **data_items, const i
         return -1;
       }
       data -> ip4_vpn_gateway = *(struct in_addr*)(hostinfo->h_addr_list[0]);
-      data -> str_ip4_vpn_gateway = g_strdup( inet_ntoa( data -> ip4_vpn_gateway ) );
+
+      if ( !inet_ntop (AF_INET, &data -> ip4_vpn_gateway, buf, INET_ADDRSTRLEN))
+        data -> str_ip4_vpn_gateway = NULL;
+      data -> str_ip4_vpn_gateway = g_strdup( buf );
 
       pppd_pty = g_strdup_printf ("%s %s --nolaunchpppd", (*pptp_binary), data->str_ip4_vpn_gateway);
 
@@ -510,7 +515,10 @@ static gint nm_ppp_get_cmdline_dialup (NmPPPData *data, char **data_items, const
 //        return -1;
 //      }
 //      data -> ip4_vpn_gateway = *(struct in_addr*)(hostinfo->h_addr_list[0]);
-//      data -> str_ip4_vpn_gateway = g_strdup( inet_ntoa( data -> ip4_vpn_gateway ) );
+//
+//      if ( !inet_ntop (AF_INET, &data -> ip4_vpn_gateway, buf, INET_ADDRSTRLEN))
+//        data -> str_ip4_gateway = NULL;
+//      data -> str_ip4_vpn_gateway = g_strdup( buf );
 //
 //      pppd_pty = g_strdup_printf ("%s %s --nolaunchpppd", (*pptp_binary), data->str_ip4_vpn_gateway);
 //

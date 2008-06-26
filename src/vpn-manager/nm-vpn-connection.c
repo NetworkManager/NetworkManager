@@ -261,9 +261,18 @@ static const char *
 ip_address_to_string (guint32 numeric)
 {
 	struct in_addr temp_addr;
+	char buf[INET_ADDRSTRLEN+1];
 
+	memset (&buf, '\0', sizeof (buf));
 	temp_addr.s_addr = numeric;
-	return inet_ntoa (temp_addr);
+
+	if (inet_ntop (AF_INET, &temp_addr, buf, INET_ADDRSTRLEN)) {
+		return g_strdup (buf);
+	} else {
+		nm_warning ("%s: error converting IP4 address 0x%X",
+		            __func__, ntohl (temp_addr.s_addr));
+		return NULL;
+	}
 }
 
 static void

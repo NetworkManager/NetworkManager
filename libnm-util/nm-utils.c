@@ -490,7 +490,9 @@ nm_utils_convert_uint_array_to_string (const GValue *src_value, GValue *dest_val
 
 		memset (buf, 0, sizeof (buf));
 		addr.s_addr = g_array_index (array, guint32, i++);
-		inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN);
+		if (!inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN))
+			nm_warning ("%s: error converting IP4 address 0x%X",
+			            __func__, ntohl (addr.s_addr));
 		g_string_append_printf (printable, "%u (%s)", addr.s_addr, buf);
 	}
 	g_string_append_c (printable, ']');
@@ -528,13 +530,17 @@ nm_utils_convert_ip4_addr_struct_array_to_string (const GValue *src_value, GValu
 
 		memset (buf, 0, sizeof (buf));
 		addr.s_addr = g_array_index (array, guint32, 0);
-		inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN);
+		if (!inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN))
+			nm_warning ("%s: error converting IP4 address 0x%X",
+			            __func__, ntohl (addr.s_addr));
 		g_string_append_printf (printable, "ip = %s", buf);
 		g_string_append (printable, ", ");
 
 		memset (buf, 0, sizeof (buf));
 		addr.s_addr = g_array_index (array, guint32, 1);
-		inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN);
+		if (!inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN))
+			nm_warning ("%s: error converting IP4 address 0x%X",
+			            __func__, ntohl (addr.s_addr));
 		g_string_append_printf (printable, "mask = %s", buf);
 
 		if (array->len > 2) {
@@ -542,7 +548,9 @@ nm_utils_convert_ip4_addr_struct_array_to_string (const GValue *src_value, GValu
 
 			memset (buf, 0, sizeof (buf));
 			addr.s_addr = g_array_index (array, guint32, 2);
-			inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN);
+			if (!inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN))
+				nm_warning ("%s: error converting IP4 address 0x%X",
+				            __func__, ntohl (addr.s_addr));
 			g_string_append_printf (printable, "gw = %s", buf);
 		}
 

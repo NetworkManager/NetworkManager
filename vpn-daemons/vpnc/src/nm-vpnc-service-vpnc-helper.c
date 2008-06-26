@@ -141,7 +141,7 @@ addr_to_gvalue (const char *str)
 	if (!str || strlen (str) < 1)
 		return NULL;
 
-	if (!inet_aton (str, &temp_addr))
+	if (inet_pton (AF_INET, str, &temp_addr) <= 0)
 		return NULL;
 
 	return uint_to_gvalue (temp_addr.s_addr);
@@ -167,7 +167,7 @@ addr_list_to_gvalue (const char *str)
 	for (i = 0; split[i]; i++) {
 		struct in_addr addr;
 
-		if (inet_aton (split[i], &addr)) {
+		if (inet_pton (AF_INET, split[i], &addr) > 0) {
 			g_array_append_val (array, addr.s_addr);
 		} else {
 			g_strfreev (split);
@@ -215,14 +215,14 @@ get_routes (void)
 
 		snprintf (buf, BUFLEN, "CISCO_SPLIT_INC_%d_ADDR", i);
 		tmp = getenv (buf);
-		if (!tmp || inet_aton (tmp, &network) != 0) {
+		if (!tmp || inet_pton (AF_INET, tmp, &network) <= 0) {
 			nm_warning ("Ignoring invalid static route address '%s'", tmp ? tmp : "NULL");
 			continue;
 		}
 
 		snprintf (buf, BUFLEN, "CISCO_SPLIT_INC_%d_MASK", i);
 		tmp = getenv (buf);
-		if (!tmp || inet_aton (tmp, &netmask) != 0) {
+		if (!tmp || inet_pton (AF_INET, tmp, &netmask) <= 0) {
 			nm_warning ("Ignoring invalid static route netmask '%s'", tmp ? tmp : "NULL");
 			continue;
 		}

@@ -889,20 +889,20 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 	}
 
 	str = g_hash_table_lookup (device->options, "new_ip_address");
-	if (str && inet_aton (str, &tmp_addr)) {
+	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
 		addr->address = tmp_addr.s_addr;
 		nm_info ("  address %s", str);
 	} else
 		goto error;
 
 	str = g_hash_table_lookup (device->options, "new_subnet_mask");
-	if (str && inet_aton (str, &tmp_addr)) {
+	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
 		addr->netmask = tmp_addr.s_addr;
 		nm_info ("  netmask %s", str);
 	}
 
 	str = g_hash_table_lookup (device->options, "new_routers");
-	if (str && inet_aton (str, &tmp_addr)) {
+	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
 		addr->gateway = tmp_addr.s_addr;
 		nm_info("  gateway %s", str);
 	}
@@ -922,7 +922,7 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 		char **s;
 
 		for (s = searches; *s; s++) {
-			if (inet_aton (*s, &tmp_addr)) {
+			if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
 				nm_ip4_config_add_nameserver (ip4_config, tmp_addr.s_addr);
 				nm_info ("  nameserver '%s'", *s);
 			} else
@@ -967,7 +967,7 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 		char **s;
 
 		for (s = searches; *s; s++) {
-			if (inet_aton (*s, &tmp_addr)) {
+			if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
 				nm_ip4_config_add_nis_server (ip4_config, tmp_addr.s_addr);
 				nm_info ("  nis server '%s'", *s);
 			} else
@@ -987,11 +987,11 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 				struct in_addr rt_addr;
 				struct in_addr rt_route;
 
-				if (inet_aton (*s, &rt_addr) == 0) {
+				if (inet_pton (AF_INET, *s, &rt_addr) <= 0) {
 					nm_warning ("DHCP provided invalid static route address: '%s'", *s);
 					continue;
 				}
-				if (inet_aton (*(s + 1), &rt_route) == 0) {
+				if (inet_pton (AF_INET, *(s + 1), &rt_route) <= 0) {
 					nm_warning ("DHCP provided invalid static route gateway: '%s'", *(s + 1));
 					continue;
 				}

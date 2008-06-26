@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <signal.h>
+#include <string.h>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -47,13 +48,19 @@ test_get_state (NMClient *client)
 static gchar *
 ip4_address_as_string (guint32 ip)
 {
+	char buf[INET_ADDRSTRLEN+1];
 	struct in_addr tmp_addr;
-	gchar *ip_string;
 
+	memset (&buf, '\0', sizeof (buf));
 	tmp_addr.s_addr = ip;
-	ip_string = inet_ntoa (tmp_addr);
 
-	return g_strdup (ip_string);
+	if (inet_ntop (AF_INET, &tmp_addr, buf, INET_ADDRSTRLEN)) {
+		return g_strdup (buf);
+	} else {
+		nm_warning ("%s: error converting IP4 address 0x%X",
+		            __func__, ntohl (tmp_addr.s_addr));
+		return NULL;
+	}
 }
 
 static void

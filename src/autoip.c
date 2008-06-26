@@ -214,6 +214,9 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 	int				nannounce = 0;
 	gboolean			success = FALSE;
 	const char *iface;
+	char buf[INET_ADDRSTRLEN+1];
+
+	memset(&buf, '\0', sizeof (buf));
 
 	g_return_val_if_fail (dev != NULL, FALSE);
 	g_return_val_if_fail (out_ip != NULL, FALSE);
@@ -262,7 +265,12 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 
 		if (nprobes < PROBE_NUM)
 		{
-			nm_info ("autoip: Sending probe #%d for IP address %s.", nprobes, inet_ntoa (ip));
+			if (!inet_ntop (AF_INET, &ip, buf, INET_ADDRSTRLEN)) {
+				nm_warning ("%s: error converting IP4 address 0x%X",
+				            __func__, ntohl (ip.s_addr));
+				continue;
+			}
+			nm_info ("autoip: Sending probe #%d for IP address %s.", nprobes, buf);
 			arp (fd, &saddr, ARPOP_REQUEST, &addr, null_ip, &null_addr, ip);
 			nprobes++;
 			gettimeofday (&timeout, NULL);
@@ -284,7 +292,12 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 		}
 		else if (nannounce < ANNOUNCE_NUM)
 		{
-			nm_info ("autoip: Sending announce #%d for IP address %s.", nannounce, inet_ntoa (ip));
+			if (!inet_ntop (AF_INET, &ip, buf, INET_ADDRSTRLEN)) {
+				nm_warning ("%s: error converting IP4 address 0x%X",
+				            __func__, ntohl (ip.s_addr));
+				continue;
+			}
+			nm_info ("autoip: Sending announce #%d for IP address %s.", nannounce, buf);
 			arp (fd, &saddr, ARPOP_REQUEST, &addr, ip, &addr, ip);
 			nannounce++;
 			gettimeofday (&timeout, NULL);
@@ -319,10 +332,20 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 			{
 				struct in_addr a;
 				memcpy (&(a.s_addr), &(p.sInaddr), sizeof (a.s_addr));
-				nm_warning (" source = %s %02X:%02X:%02X:%02X:%02X:%02X, ", inet_ntoa (a),
+				if (!inet_ntop (AF_INET, &a, buf, INET_ADDRSTRLEN)) {
+					nm_warning ("%s: error converting IP4 address 0x%X",
+					            __func__, ntohl (a.s_addr));
+					continue;
+				}
+				nm_warning (" source = %s %02X:%02X:%02X:%02X:%02X:%02X, ", buf,
 					p.sHaddr[0], p.sHaddr[1], p.sHaddr[2], p.sHaddr[3], p.sHaddr[4], p.sHaddr[5]);
 				memcpy (&(a.s_addr), &(p.tInaddr), sizeof (a.s_addr));
-				nm_warning (" target = %s %02X:%02X:%02X:%02X:%02X:%02X\n", inet_ntoa (a),
+				if (!inet_ntop (AF_INET, &a, buf, INET_ADDRSTRLEN)) {
+					nm_warning ("%s: error converting IP4 address 0x%X",
+					            __func__, ntohl (a.s_addr));
+					continue;
+				}
+				nm_warning (" target = %s %02X:%02X:%02X:%02X:%02X:%02X\n", buf,
 					p.tHaddr[0], p.tHaddr[1], p.tHaddr[2], p.tHaddr[3], p.tHaddr[4], p.tHaddr[5]);
 			}
 		#endif
@@ -333,7 +356,12 @@ gboolean get_autoip (NMDevice *dev, struct in_addr *out_ip)
 				&& (memcmp (&addr, &p.tHaddr, ETH_ALEN) != 0))
 			{
 			#ifdef ARP_DEBUG
-				nm_warning ("autoip: (%s) ARP conflict for IP address %s.\n", iface, inet_ntoa(ip));
+				if (!inet_ntop (AF_INET, &ip, buf, INET_ADDRSTRLEN)) {
+					nm_warning ("%s: error converting IP4 address 0x%X",
+					            __func__, ntohl (ip.s_addr));
+					continue;
+				}
+				nm_warning ("autoip: (%s) ARP conflict for IP address %s.\n", iface, buf);
 			#endif
 
 				/* Ok, start all over again */

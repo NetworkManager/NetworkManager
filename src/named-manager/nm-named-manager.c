@@ -108,7 +108,9 @@ compute_nameservers (NMIP4Config *config)
 		if (!buf)
 			continue;
 
-		inet_ntop (AF_INET, &addr, buf, ADDR_BUF_LEN);
+		if (!inet_ntop (AF_INET, &addr, buf, ADDR_BUF_LEN))
+			nm_warning ("%s: error converting IP4 address 0x%X",
+			            __func__, ntohl (addr.s_addr));
 
 		if (i == 3) {
 			g_string_append (str, "\n# ");

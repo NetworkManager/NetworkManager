@@ -7,6 +7,7 @@
 #include <nm-setting.h>
 #include <nm-setting-connection.h>
 #include <nm-setting-ip4-config.h>
+#include <nm-utils.h>
 #include <string.h>
 #include <arpa/inet.h>
 
@@ -36,7 +37,13 @@ write_array_of_uint (GKeyFile *file,
 			struct in_addr addr;
 
 			addr.s_addr = g_array_index (array, guint32, i);
-			list[i] = g_strdup (inet_ntop (AF_INET, &addr, buf, sizeof (buf)));
+			if (!inet_ntop (AF_INET, &addr, buf, sizeof (buf))) {
+				nm_warning ("%s: error converting IP4 address 0x%X",
+				            __func__, ntohl (addr.s_addr));
+				list[i] = NULL;
+			} else {
+				list[i] = g_strdup (buf);
+			}
 		}
 
 		g_key_file_set_string_list (file, setting->name, key, (const char **) list, array->len);
@@ -81,14 +88,33 @@ write_array_of_array_of_uint (GKeyFile *file,
 		char *key_name;
 
 		addr.s_addr = g_array_index (tuple, guint32, 0);
-		list[0] = g_strdup (inet_ntop (AF_INET, &addr, buf, sizeof (buf)));
+		if (!inet_ntop (AF_INET, &addr, buf, sizeof (buf))) {
+			nm_warning ("%s: error converting IP4 address 0x%X",
+			            __func__, ntohl (addr.s_addr));
+			list[0] = NULL;
+		} else {
+			list[0] = g_strdup (buf);
+		}
 
 		addr.s_addr = g_array_index (tuple, guint32, 1);
-		list[1] = g_strdup (inet_ntop (AF_INET, &addr, buf, sizeof (buf)));
+		if (!inet_ntop (AF_INET, &addr, buf, sizeof (buf))) {
+			nm_warning ("%s: error converting IP4 address 0x%X",
+			            __func__, ntohl (addr.s_addr));
+			list[1] = NULL;
+		} else {
+			list[1] = g_strdup (buf);
+		}
 
 		addr.s_addr = g_array_index (tuple, guint32, 2);
-		if (addr.s_addr)
-			list[2] = g_strdup (inet_ntop (AF_INET, &addr, buf, sizeof (buf)));
+		if (addr.s_addr) {
+			if (!inet_ntop (AF_INET, &addr, buf, sizeof (buf))) {
+				nm_warning ("%s: error converting IP4 address 0x%X",
+					        __func__, ntohl (addr.s_addr));
+				list[2] = NULL;
+			} else {
+				list[2] = g_strdup (buf);
+			}
+		}
 
 		key_name = g_strdup_printf ("address%d", j + 1);
 		g_key_file_set_string_list (file, setting->name, key_name, (const char **) list, list[2] ? 3 : 2);

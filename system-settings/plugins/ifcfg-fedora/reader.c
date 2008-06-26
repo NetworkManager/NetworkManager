@@ -137,7 +137,7 @@ get_one_ip4_addr (shvarFile *ifcfg,
 	if (!value)
 		return;
 
-	if (inet_pton (AF_INET, value, &ip4_addr))
+	if (inet_pton (AF_INET, value, &ip4_addr) > 0)
 		*out_addr = ip4_addr.s_addr;
 	else {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,

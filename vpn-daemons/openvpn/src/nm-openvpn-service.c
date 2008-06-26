@@ -244,7 +244,8 @@ nm_openvpn_connect_timer_cb (gpointer data)
 		return FALSE;
 
 	serv_addr.sin_family = AF_INET;
-	inet_aton ("127.0.0.1", &(serv_addr.sin_addr));
+	if (inet_pton (AF_INET, "127.0.0.1", &(serv_addr.sin_addr)) <= 0)
+		nm_warning ("%s: could not convert 127.0.0.1", __func__);
 	serv_addr.sin_port = htons (1194);
  
 	connected = (connect (socket_fd, (struct sockaddr *) &serv_addr, sizeof (serv_addr)) == 0);

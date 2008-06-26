@@ -155,6 +155,9 @@ void print_array (DBusConnection *connection, int opt)
 	const char	*name = NULL;
 	int			 opt_type = -1;
 	unsigned int foo;
+	char buf[INET_ADDRSTRLEN+1];
+
+	memset (&buf, '\0', sizeof (buf));
 
 	ret = call_nm_method (connection, "getName", opt, FALSE, DBUS_TYPE_STRING, (void *)(&name), NULL);
 	if (ret != RETURN_SUCCESS)
@@ -212,7 +215,11 @@ void print_array (DBusConnection *connection, int opt)
 					break;
 				case DBUS_TYPE_UINT32:
 					in.s_addr = uint32[i];
-					fprintf (stderr, "%u (%s)%s", uint32[i], inet_ntoa(in), last ? "" : ", ");
+					if (!inet_ntop (AF_INET, &in, buf, INET_ADDRSTRLEN))
+						nm_warning ("%s: error converting IP4 address 0x%X",
+						            __func__, ntohl (in.s_addr));
+					else
+						fprintf (stderr, "%u (%s)%s", uint32[i], buf, last ? "" : ", ");
 					break;
 				case DBUS_TYPE_STRING:
 					fprintf (stderr, "'%s'%s", string[i], last ? "" : ", ");

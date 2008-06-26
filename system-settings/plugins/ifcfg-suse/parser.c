@@ -141,7 +141,7 @@ make_ip4_setting (shvarFile *ifcfg)
 
 		pieces = g_strsplit (str, "/", 2);
 
-		if (inet_pton (AF_INET, pieces[0], &ip4_addr)) {
+		if (inet_pton (AF_INET, pieces[0], &ip4_addr) > 0) {
 			tmp.address = ip4_addr.s_addr;
 
 			if (g_strv_length (pieces) == 2)
@@ -166,7 +166,7 @@ make_ip4_setting (shvarFile *ifcfg)
 		if (str) {
 			struct in_addr mask_addr;
 
-			if (inet_pton (AF_INET, str, &mask_addr))
+			if (inet_pton (AF_INET, str, &mask_addr) > 0)
 				tmp.netmask = mask_addr.s_addr;
 			else {
 				g_warning ("Ignoring invalid IP4 addres: invalid netmask: '%s'", str);
