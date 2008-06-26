@@ -100,43 +100,43 @@ libnm_glib_vpn_la_LIBADD = $(top_builddir)/libnm-util/libnm-util.la $(GLIB_LIBS)
 
 
 nm-client-bindings.h: $(top_srcdir)/introspection/nm-manager-client.xml
-	dbus-binding-tool --prefix=nm_client --mode=glib-client --output=nm-client-bindings.h $(top_srcdir)/introspection/nm-manager-client.xml
+	dbus-binding-tool --prefix=nm_client --mode=glib-client --output=$@ $<
 
 nm-device-bindings.h: $(top_srcdir)/introspection/nm-device.xml
-	dbus-binding-tool --prefix=nm_device --mode=glib-client --output=nm-device-bindings.h $(top_srcdir)/introspection/nm-device.xml
+	dbus-binding-tool --prefix=nm_device --mode=glib-client --output=$@ $<
 
 nm-device-ethernet-bindings.h: $(top_srcdir)/introspection/nm-device-ethernet.xml
-	dbus-binding-tool --prefix=nm_device_ethernet --mode=glib-client --output=nm-device-ethernet-bindings.h $(top_srcdir)/introspection/nm-device-ethernet.xml
+	dbus-binding-tool --prefix=nm_device_ethernet --mode=glib-client --output=$@ $<
 
 nm-device-wifi-bindings.h: $(top_srcdir)/introspection/nm-device-wifi.xml
-	dbus-binding-tool --prefix=nm_device_wifi --mode=glib-client --output=nm-device-wifi-bindings.h $(top_srcdir)/introspection/nm-device-wifi.xml
+	dbus-binding-tool --prefix=nm_device_wifi --mode=glib-client --output=$@ $<
 
 nm-access-point-bindings.h: $(top_srcdir)/introspection/nm-access-point.xml
-	dbus-binding-tool --prefix=nm_access_point --mode=glib-client --output=nm-access-point-bindings.h $(top_srcdir)/introspection/nm-access-point.xml
+	dbus-binding-tool --prefix=nm_access_point --mode=glib-client --output=$@ $<
 
 nm-settings-glue.h: $(top_srcdir)/introspection/nm-settings.xml
-	dbus-binding-tool --prefix=nm_settings --mode=glib-server --output=nm-settings-glue.h $(top_srcdir)/introspection/nm-settings.xml
+	dbus-binding-tool --prefix=nm_settings --mode=glib-server --output=$@ $<
 
 nm-settings-bindings.h: $(top_srcdir)/introspection/nm-settings.xml
-	dbus-binding-tool --prefix=nm_settings --mode=glib-client --output=nm-settings-bindings.h $(top_srcdir)/introspection/nm-settings.xml
+	dbus-binding-tool --prefix=nm_settings --mode=glib-client --output=$@ $<
 
 nm-settings-system-bindings.h: $(top_srcdir)/introspection/nm-settings-system.xml
-	dbus-binding-tool --prefix=nm_settings_system --mode=glib-client --output=nm-settings-system-bindings.h $(top_srcdir)/introspection/nm-settings-system.xml
+	dbus-binding-tool --prefix=nm_settings_system --mode=glib-client --output=$@ $<
 
 nm-exported-connection-glue.h: $(top_srcdir)/introspection/nm-exported-connection.xml
-	dbus-binding-tool --prefix=nm_exported_connection --mode=glib-server --output=nm-exported-connection-glue.h $(top_srcdir)/introspection/nm-exported-connection.xml
+	dbus-binding-tool --prefix=nm_exported_connection --mode=glib-server --output=$@ $<
 
 nm-exported-connection-bindings.h: $(top_srcdir)/introspection/nm-exported-connection.xml
-	dbus-binding-tool --prefix=nm_exported_connection --mode=glib-client --output=nm-exported-connection-bindings.h $(top_srcdir)/introspection/nm-exported-connection.xml
+	dbus-binding-tool --prefix=nm_exported_connection --mode=glib-client --output=$@ $<
 
 nm-vpn-connection-bindings.h: $(top_srcdir)/introspection/nm-vpn-connection.xml
-	dbus-binding-tool --prefix=nm_vpn_connection --mode=glib-client --output=nm-vpn-connection-bindings.h $(top_srcdir)/introspection/nm-vpn-connection.xml
+	dbus-binding-tool --prefix=nm_vpn_connection --mode=glib-client --output=$@ $<
 
 nm-vpn-plugin-glue.h: $(top_srcdir)/introspection/nm-vpn-plugin.xml
-	dbus-binding-tool --prefix=nm_vpn_plugin --mode=glib-server --output=nm-vpn-plugin-glue.h $(top_srcdir)/introspection/nm-vpn-plugin.xml
+	dbus-binding-tool --prefix=nm_vpn_plugin --mode=glib-server --output=$@ $<
 
 nm-active-connection-bindings.h: $(top_srcdir)/introspection/nm-active-connection.xml
-	dbus-binding-tool --prefix=nm_active_connection --mode=glib-client --output=nm-active-connection-bindings.h $(top_srcdir)/introspection/nm-active-connection.xml
+	dbus-binding-tool --prefix=nm_active_connection --mode=glib-client --output=$@ $<
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libnm_glib.pc libnm_glib_vpn.pc

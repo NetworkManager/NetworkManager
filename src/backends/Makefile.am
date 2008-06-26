@@ -63,8 +63,6 @@ libnmbackend_la_LIBADD += $(DBUS_LIBS) $(GTHREAD_LIBS)
 libnmbackend_la_CPPFLAGS =	$(DBUS_CFLAGS)				\
 					$(GTHREAD_CFLAGS)				\
 					$(HAL_CFLAGS)					\
-					-g							\
-					-Wall						\
 					-DDBUS_API_SUBJECT_TO_CHANGE		\
 					-DG_DISABLE_DEPRECATED			\
 					-DBINDIR=\"$(bindir)\"			\

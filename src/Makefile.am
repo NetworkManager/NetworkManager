@@ -73,36 +73,36 @@ NetworkManager_SOURCES =				\
 		nm-netlink.h
 
 nm-access-point-glue.h: $(top_srcdir)/introspection/nm-access-point.xml
-	dbus-binding-tool --prefix=nm_access_point --mode=glib-server --output=nm-access-point-glue.h $(top_srcdir)/introspection/nm-access-point.xml
+	dbus-binding-tool --prefix=nm_access_point --mode=glib-server --output=$@ $<
 
 nm-manager-glue.h: $(top_srcdir)/introspection/nm-manager.xml
-	dbus-binding-tool --prefix=nm_manager --mode=glib-server --output=nm-manager-glue.h $(top_srcdir)/introspection/nm-manager.xml
+	dbus-binding-tool --prefix=nm_manager --mode=glib-server --output=$@ $<
 
 nm-device-interface-glue.h: $(top_srcdir)/introspection/nm-device.xml
-	dbus-binding-tool --prefix=nm_device_interface --mode=glib-server --output=nm-device-interface-glue.h $(top_srcdir)/introspection/nm-device.xml
+	dbus-binding-tool --prefix=nm_device_interface --mode=glib-server --output=$@ $<
 
 nm-device-ethernet-glue.h: $(top_srcdir)/introspection/nm-device-ethernet.xml
-	dbus-binding-tool --prefix=nm_device_ethernet --mode=glib-server --output=nm-device-ethernet-glue.h $(top_srcdir)/introspection/nm-device-ethernet.xml
+	dbus-binding-tool --prefix=nm_device_ethernet --mode=glib-server --output=$@ $<
 
 nm-device-wifi-glue.h: $(top_srcdir)/introspection/nm-device-wifi.xml
-	dbus-binding-tool --prefix=nm_device_wifi --mode=glib-server --output=nm-device-wifi-glue.h $(top_srcdir)/introspection/nm-device-wifi.xml
+	dbus-binding-tool --prefix=nm_device_wifi --mode=glib-server --output=$@ $<
 
 nm-serial-device-glue.h: $(top_srcdir)/introspection/nm-device-serial.xml
-	dbus-binding-tool --prefix=nm_serial_device --mode=glib-server --output=nm-serial-device-glue.h $(top_srcdir)/introspection/nm-device-serial.xml
+	dbus-binding-tool --prefix=nm_serial_device --mode=glib-server --output=$@ $<
 
 nm-cdma-device-glue.h: $(top_srcdir)/introspection/nm-device-cdma.xml
-	dbus-binding-tool --prefix=nm_cdma_device --mode=glib-server --output=nm-cdma-device-glue.h $(top_srcdir)/introspection/nm-device-cdma.xml
+	dbus-binding-tool --prefix=nm_cdma_device --mode=glib-server --output=$@ $<
 
 nm-gsm-device-glue.h: $(top_srcdir)/introspection/nm-device-gsm.xml
-	dbus-binding-tool --prefix=nm_gsm_device --mode=glib-server --output=nm-gsm-device-glue.h $(top_srcdir)/introspection/nm-device-gsm.xml
+	dbus-binding-tool --prefix=nm_gsm_device --mode=glib-server --output=$@ $<
 
 nm-ip4-config-glue.h: $(top_srcdir)/introspection/nm-ip4-config.xml
-	dbus-binding-tool --prefix=nm_ip4_config --mode=glib-server --output=nm-ip4-config-glue.h $(top_srcdir)/introspection/nm-ip4-config.xml
+	dbus-binding-tool --prefix=nm_ip4_config --mode=glib-server --output=$@ $<
 
 nm-active-connection-glue.h: $(top_srcdir)/introspection/nm-active-connection.xml
-	dbus-binding-tool --prefix=nm_active_connection --mode=glib-server --output=nm-active-connection-glue.h $(top_srcdir)/introspection/nm-active-connection.xml
+	dbus-binding-tool --prefix=nm_active_connection --mode=glib-server --output=$@ $<
 
-built_sources = 					\
+BUILT_SOURCES = 					\
 	nm-access-point-glue.h				\
 	nm-manager-glue.h				\
 	nm-device-interface-glue.h			\
@@ -112,10 +112,7 @@ built_sources = 					\
 	nm-cdma-device-glue.h \
 	nm-gsm-device-glue.h \
 	nm-ip4-config-glue.h				\
-	nm-active-connection-glue.h \
-	$(NULL)
-
-$(NetworkManager_OBJECTS): $(built_sources)
+	nm-active-connection-glue.h
 
 NetworkManager_CPPFLAGS = 							\
 	$(DBUS_CFLAGS)									\
@@ -181,5 +178,5 @@ install-data-hook:
 	   $(mkinstalldirs) -m 0700 $(DESTDIR)$(rundir)
 	   $(mkinstalldirs) -m 0755 $(DESTDIR)$(dispatcherdir)
 
-CLEANFILES = $(built_sources)
+CLEANFILES = $(BUILT_SOURCES)
 

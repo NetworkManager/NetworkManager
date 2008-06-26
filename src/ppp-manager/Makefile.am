@@ -13,7 +13,7 @@ libppp_manager_la_SOURCES = \
 	nm-ppp-status.h
 
 nm-ppp-manager-glue.h: $(top_srcdir)/introspection/nm-ppp-manager.xml
-	dbus-binding-tool --prefix=nm_ppp_manager --mode=glib-server --output=nm-ppp-manager-glue.h $(top_srcdir)/introspection/nm-ppp-manager.xml
+	dbus-binding-tool --prefix=nm_ppp_manager --mode=glib-server --output=$@ $<
 
 built_sources = nm-ppp-manager-glue.h
 
@@ -52,7 +52,7 @@ nm_pppd_plugin_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la
 
 nm-pppd-plugin-glue.h: nm-pppd-plugin.xml
-	dbus-binding-tool --prefix=nm_pppd_plugin --mode=glib-server --output=nm-pppd-plugin-glue.h $(top_srcdir)/src/ppp-manager/nm-pppd-plugin.xml
+	dbus-binding-tool --prefix=nm_pppd_plugin --mode=glib-server --output=$@ $<
 
 BUILT_SOURCES = nm-pppd-plugin-glue.h nm-ppp-manager-glue.h
 

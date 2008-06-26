@@ -50,8 +50,6 @@ libnm_util_la_SOURCES=			\
 
 libnm_util_la_LDFLAGS= $(GLIB_LIBS) $(DBUS_LIBS)
 
-libnm_util_la_CFLAGS=-fPIC
-
 libnm_util_la_LIBADD = 
 
 if WITH_GNUTLS

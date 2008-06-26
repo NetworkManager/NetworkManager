@@ -44,7 +44,7 @@ nm_dispatcher_action_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la
 
 nm-dispatcher-glue.h: nm-dispatcher.xml
-	dbus-binding-tool --prefix=nm_dispatcher --mode=glib-server --output=nm-dispatcher-glue.h $(top_srcdir)/callouts/nm-dispatcher.xml
+	dbus-binding-tool --prefix=nm_dispatcher --mode=glib-server --output=$@ $<
 
 dbusactivationdir = $(datadir)/dbus-1/system-services
 dbusactivation_in_files = org.freedesktop.nm_dispatcher.service.in

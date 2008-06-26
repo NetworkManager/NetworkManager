@@ -31,7 +31,3 @@ libsupplicant_manager_la_LIBADD = \
 	$(GTHREAD_LIBS) \
 	$(top_builddir)/marshallers/libmarshallers.la
 
-$(libsupplicant_manager_la_OBJECTS): $(BUILT_SOURCES)
-
-CLEANFILES = $(BUILT_SOURCES)
-

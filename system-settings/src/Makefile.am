@@ -52,7 +52,7 @@ nm_system_settings_LDADD = \
 nm_system_settings_LDFLAGS = -rdynamic
 
 nm-settings-system-glue.h: $(top_srcdir)/introspection/nm-settings-system.xml
-	dbus-binding-tool --prefix=nm_settings_system --mode=glib-server --output=nm-settings-system-glue.h $(top_srcdir)/introspection/nm-settings-system.xml
+	dbus-binding-tool --prefix=nm_settings_system --mode=glib-server --output=$@ $<
 
 
 dbusservicedir = $(DBUS_SYS_DIR)
