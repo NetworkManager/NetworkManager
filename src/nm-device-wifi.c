@@ -1951,10 +1951,6 @@ link_timeout_cb (gpointer user_data)
 
 	g_assert (dev);
 
-	/* If currently scanning and disconnected still, check again later. */
-	if (priv->scanning)
-		return TRUE;
-
 	priv->link_timeout_id = 0;
 
 	req = nm_device_get_act_request (dev);
@@ -2110,25 +2106,22 @@ supplicant_iface_state_cb (NMSupplicantInterface * iface,
 static gboolean
 supplicant_iface_connection_state_cb_handler (gpointer user_data)
 {
-	struct state_cb_data *  cb_data = (struct state_cb_data *) user_data;
-	NMDeviceWifi * self;
-	NMDevice *              dev;
-	guint32                 new_state, old_state;
+	struct state_cb_data *cb_data = (struct state_cb_data *) user_data;
+	NMDeviceWifi *self = cb_data->self;
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	NMDevice *dev = NM_DEVICE (self);
+	guint32 new_state = cb_data->new_state;
+	guint32 old_state = cb_data->old_state;
 
-	g_return_val_if_fail (cb_data != NULL, FALSE);
-
-	self = cb_data->self;
-	dev = NM_DEVICE (self);
-	new_state = cb_data->new_state;
-	old_state = cb_data->old_state;
-
-	if (!nm_device_get_act_request (NM_DEVICE (self))) {
+	if (!nm_device_get_act_request (dev)) {
 		/* The device is not activating or already activated; do nothing. */
 		goto out;
 	}
 
 	nm_info ("(%s): supplicant connection state change: %d -> %d",
 	         nm_device_get_iface (dev), old_state, new_state);
+
+	priv->scanning = (new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_SCANNING);
 
 	if (new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_COMPLETED) {
 		remove_supplicant_interface_connection_error_handler (self);
@@ -2149,16 +2142,15 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 		}
 	} else if (new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED) {
 		if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED || nm_device_is_activating (dev)) {
-			/* Start the link timeout so we allow some time for reauthentication */
-			if (!self->priv->link_timeout_id)
-				self->priv->link_timeout_id = g_timeout_add (15000, link_timeout_cb, self);
+			/* Start the link timeout so we allow some time for reauthentication,
+			 * use a longer timeout if we are scanning since some cards take a
+			 * while to scan.
+			 */
+			if (!priv->link_timeout_id) {
+				priv->link_timeout_id = g_timeout_add (priv->scanning ? 30000 : 15000,
+				                                       link_timeout_cb, self);
+			}
 		}
-	}
-
-	if (new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_SCANNING) {
-		self->priv->scanning = TRUE;
-	} else {
-		self->priv->scanning = FALSE;
 	}
 
 out:

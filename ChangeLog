@@ -1,5 +1,15 @@
 2008-06-26  Dan Williams <dcbw@redhat.com>
 
+	Patch from Adel Gadllah <adel.gadllah@gmail.com>
+
+	* src/nm-device-wifi.c
+		- (link_timeout_cb): don't ignore disconnects due to scanning
+		- (supplicant_iface_connection_state_cb_handler): instead, schedule
+			a longer timeout when scanning; avoids case where supplicant can't
+			find the AP and just keeps scanning forever but isn't connected
+
+2008-06-26  Dan Williams <dcbw@redhat.com>
+
 	Patch from Michael Biebl <biebl@debian.org>
 
 	* Clean up build system stuff
