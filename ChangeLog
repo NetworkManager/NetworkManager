@@ -1,5 +1,9 @@
 2008-06-26  Dan Williams <dcbw@redhat.com>
 
+	* Update FSF address in license headers (Michael Biebl <biebl@debian.org>)
+
+2008-06-26  Dan Williams <dcbw@redhat.com>
+
 	Patch from Adel Gadllah <adel.gadllah@gmail.com>
 
 	* src/nm-device-wifi.c
