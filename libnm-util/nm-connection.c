@@ -54,7 +54,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 static GHashTable *registered_settings = NULL;
 
-#define DEFAULT_MAP_SIZE 13
+#define DEFAULT_MAP_SIZE 14
 
 static struct SettingInfo {
 	const char *name;
@@ -157,6 +157,8 @@ register_default_settings (void)
 	                      NM_TYPE_SETTING_IP6_CONFIG,
 	                      NM_SETTING_IP6_CONFIG_ERROR,
 	                      7);
+
+	/* Be sure to update DEFAULT_MAP_SIZE if you add another setting!! */
 }
 
 static guint32
