@@ -1,3 +1,12 @@
+2008-06-29  Dan Williams <dcbw@redhat.com>
+
+	* src/nm-hal-manager.c
+		- Rework killswitch handling to query killswitch status immediately
+			when the first killswitch is added, so that rfkill state is
+			known as early as possible
+		- Also treat failure of GetPower() as rfkill when the dbus method
+			call times out (but not when the HAL callout returns an error)
+
 2008-06-26  Dan Williams <dcbw@redhat.com>
 
 	Patch from David Cantrell <dcantrell@redhat.com> and me

@@ -25,12 +25,15 @@ typedef struct {
 	LibHalContext *hal_ctx;
 	NMDBusManager *dbus_mgr;
 	GSList *device_creators;
+	gboolean rfkilled;  /* Authoritative rfkill state */
 
 	/* Killswitch handling */
 	GSList *killswitch_list;
 	guint32 killswitch_poll_id;
 	char *kswitch_err;
-	gboolean rfkilled;
+	gboolean poll_rfkilled;
+	guint32 pending_polls;
+	GSList *poll_proxies;
 
 	gboolean disposed;
 } NMHalManagerPrivate;
@@ -50,6 +53,8 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
+
+static gboolean poll_killswitches (gpointer user_data);
 
 /* Device creators */
 
@@ -389,32 +394,43 @@ add_initial_devices (NMHalManager *self)
 	}
 }
 
-typedef struct {
-	NMHalManager *manager;
-	gboolean rfkilled;
-	guint32 pending_polls;
-	GSList *proxies;
-} NMKillswitchPollInfo;
+static void
+killswitch_poll_cleanup (NMHalManager *self)
+{
+	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
+
+	if (priv->poll_proxies) {
+		g_slist_foreach (priv->poll_proxies, (GFunc) g_object_unref, NULL);
+		g_slist_free (priv->poll_proxies);
+		priv->poll_proxies = NULL;
+	}
+
+	priv->pending_polls = 0;
+	priv->poll_rfkilled = FALSE;
+}
 
 static void
 killswitch_getpower_done (gpointer user_data)
 {
-	NMKillswitchPollInfo *info = (NMKillswitchPollInfo *) user_data;
-	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (info->manager);
+	NMHalManager *self = NM_HAL_MANAGER (user_data);
+	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
 
-	info->pending_polls--;
+	priv->pending_polls--;
 
-	if (info->pending_polls > 0)
+	if (priv->pending_polls > 0)
 		return;
 
-	g_slist_foreach (info->proxies, (GFunc) g_object_unref, NULL);
-	g_slist_free (info->proxies);
-	info->proxies = NULL;
-
-	if (info->rfkilled != priv->rfkilled) {
-		priv->rfkilled = info->rfkilled;
-		g_signal_emit (info->manager, signals[RFKILL_CHANGED], 0, priv->rfkilled);
+	if (priv->poll_rfkilled != priv->rfkilled) {
+		priv->rfkilled = priv->poll_rfkilled;
+		g_signal_emit (self, signals[RFKILL_CHANGED], 0, priv->rfkilled);
 	}
+
+	killswitch_poll_cleanup (self);
+
+	/* Schedule next poll */
+	priv->killswitch_poll_id = g_timeout_add (RFKILL_POLL_FREQUENCY * 1000,
+	                                          poll_killswitches,
+	                                          self);
 }
 
 static void 
@@ -422,33 +438,50 @@ killswitch_getpower_reply (DBusGProxy *proxy,
 					  DBusGProxyCall *call_id,
 					  gpointer user_data)
 {
-	NMKillswitchPollInfo *info = (NMKillswitchPollInfo *) user_data;
-	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (info->manager);
-	int power;
+	NMHalManager *self = NM_HAL_MANAGER (user_data);
+	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
+	int power = 1;
 	GError *err = NULL;
 
 	if (dbus_g_proxy_end_call (proxy, call_id, &err,
-						  G_TYPE_INT, &power,
-						  G_TYPE_INVALID)) {
+	                           G_TYPE_INT, &power,
+	                           G_TYPE_INVALID)) {
 		if (power == 0)
-			info->rfkilled = TRUE;
+			priv->poll_rfkilled = TRUE;
 	} else {
-		/* Only print the error if we haven't seen it before */
-		if (   err->message
-		    && (!priv->kswitch_err || strcmp (priv->kswitch_err, err->message) != 0)) {
-			nm_warning ("Error getting killswitch power: %s.", err->message);
-			g_free (priv->kswitch_err);
-			priv->kswitch_err = g_strdup (err->message);
+		if (err->message) {
+			/* Only print the error if we haven't seen it before */
+		    if (!priv->kswitch_err || strcmp (priv->kswitch_err, err->message) != 0) {
+				nm_warning ("Error getting killswitch power: %s.", err->message);
+				g_free (priv->kswitch_err);
+				priv->kswitch_err = g_strdup (err->message);
+
+				/* If there was an error talking to HAL, treat that as rfkilled.
+				 * See rh #448889.  On some Dell laptops, dellWirelessCtl
+				 * may not be present, but HAL still advertises a killswitch,
+				 * and calls to GetPower() will fail.  Thus we cannot assume
+				 * that a failure of GetPower() automatically means the wireless
+				 * is rfkilled, because in this situation NM would never bring
+				 * the radio up.  Only assume failures between NM and HAL should
+				 * block the radio, not failures of the HAL killswitch callout
+				 * itself.
+				 */
+				if (strstr (err->message, "Did not receive a reply")) {
+					nm_warning ("HAL did not reply to killswitch power request;"
+					            " assuming radio is blocked.");
+					priv->poll_rfkilled = TRUE;
+				}
+			}
 		}
 		g_error_free (err);
 	}
 }
 
 static void
-poll_killswitches_real (gpointer data, gpointer user_data)
+poll_one_killswitch (gpointer data, gpointer user_data)
 {
-	NMKillswitchPollInfo *info = (NMKillswitchPollInfo *) user_data;
-	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (info->manager);
+	NMHalManager *self = NM_HAL_MANAGER (user_data);
+	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
 	DBusGProxy *proxy;
 
 	proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (priv->dbus_mgr),
@@ -458,36 +491,23 @@ poll_killswitches_real (gpointer data, gpointer user_data)
 
 	dbus_g_proxy_begin_call (proxy, "GetPower",
 						killswitch_getpower_reply,
-						info,
+						self,
 						killswitch_getpower_done,
 						G_TYPE_INVALID);
-	info->pending_polls++;
-	info->proxies = g_slist_prepend (info->proxies, proxy);
+	priv->pending_polls++;
+	priv->poll_proxies = g_slist_prepend (priv->poll_proxies, proxy);
 }
 
 static gboolean
 poll_killswitches (gpointer user_data)
 {
-	NMKillswitchPollInfo *info = (NMKillswitchPollInfo *) user_data;
-	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (info->manager);
+	NMHalManager *self = NM_HAL_MANAGER (user_data);
+	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
 
-	info->rfkilled = FALSE;
-	info->pending_polls = 0;
+	killswitch_poll_cleanup (self);
 
-	g_slist_foreach (priv->killswitch_list, poll_killswitches_real, info);
-	return TRUE;
-}
-
-static void
-killswitch_poll_destroy (gpointer data)
-{
-	NMKillswitchPollInfo *info = (NMKillswitchPollInfo *) data;
-
-	if (info->proxies) {
-		g_slist_foreach (info->proxies, (GFunc) g_object_unref, NULL);
-		g_slist_free (info->proxies);
-	}
-	g_slice_free (NMKillswitchPollInfo, info);
+	g_slist_foreach (priv->killswitch_list, poll_one_killswitch, self);
+	return FALSE;
 }
 
 static void
@@ -511,19 +531,9 @@ add_killswitch_device (NMHalManager *self, const char *udi)
 			goto out;
 	}
 
-	/* Start polling switches if this is the first switch we've found */
-	if (!priv->killswitch_list) {
-		NMKillswitchPollInfo *info;
-
-		info = g_slice_new0 (NMKillswitchPollInfo);
-		info->manager = self;
-
-		priv->killswitch_poll_id = g_timeout_add_full (G_PRIORITY_DEFAULT,
-												RFKILL_POLL_FREQUENCY * 1000,
-												poll_killswitches,
-												info,
-												killswitch_poll_destroy);
-	}
+	/* Poll switches if this is the first switch we've found */
+	if (!priv->killswitch_list)
+		priv->killswitch_poll_id = g_idle_add (poll_killswitches, self);
 
 	priv->killswitch_list = g_slist_append (priv->killswitch_list, g_strdup (udi));
 	nm_info ("Found radio killswitch %s", udi);
@@ -617,6 +627,7 @@ hal_deinit (NMHalManager *self)
 		g_source_remove (priv->killswitch_poll_id);
 		priv->killswitch_poll_id = 0;
 	}
+	killswitch_poll_cleanup (self);
 
 	if (priv->killswitch_list) {
 		g_slist_foreach (priv->killswitch_list, (GFunc) g_free, NULL);
