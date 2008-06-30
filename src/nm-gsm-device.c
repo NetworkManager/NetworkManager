@@ -45,8 +45,8 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-static void enter_pin (NMSerialDevice *device, gboolean retry);
-static void automatic_registration (NMSerialDevice *device);
+static void enter_pin (NMGsmDevice *device, gboolean retry);
+static void automatic_registration (NMGsmDevice *device);
 
 NMGsmDevice *
 nm_gsm_device_new (const char *udi,
@@ -68,10 +68,39 @@ nm_gsm_device_new (const char *udi,
 								  NULL);
 }
 
-static inline void
-gsm_device_set_pending (NMGsmDevice *device, guint pending_id)
+static void
+modem_wait_for_reply (NMGsmDevice *self,
+				  const char *command,
+				  guint timeout,
+				  char **responses,
+				  char **terminators,
+				  NMSerialWaitForReplyFn callback)
 {
-	NM_GSM_DEVICE_GET_PRIVATE (device)->pending_id = pending_id;
+	NMSerialDevice *serial = NM_SERIAL_DEVICE (self);
+	guint id = 0;
+
+	if (nm_serial_device_send_command_string (serial, command))
+		id = nm_serial_device_wait_for_reply (serial, timeout, responses, terminators, callback, NULL);
+
+	if (id == 0)
+		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED);
+}
+
+static void
+modem_get_reply (NMGsmDevice *self,
+			  const char *command,
+			  guint timeout,
+			  const char *terminators,
+			  NMSerialGetReplyFn callback)
+{
+	NMSerialDevice *serial = NM_SERIAL_DEVICE (self);
+	guint id = 0;
+
+	if (nm_serial_device_send_command_string (serial, command))
+		id = nm_serial_device_get_reply (serial, timeout, terminators, callback, NULL);
+
+	if (id == 0)
+		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED);
 }
 
 static NMSetting *
@@ -98,8 +127,6 @@ dial_done (NMSerialDevice *device,
 		 gpointer user_data)
 {
 	gboolean success = FALSE;
-
-	gsm_device_set_pending (NM_GSM_DEVICE (device), 0);
 
 	switch (reply_index) {
 	case 0:
@@ -130,13 +157,11 @@ dial_done (NMSerialDevice *device,
 }
 
 static void
-do_dial (NMSerialDevice *device, guint cid)
+do_dial (NMGsmDevice *device, guint cid)
 {
 	NMSettingGsm *setting;
 	char *command;
-	guint id;
 	char *responses[] = { "CONNECT", "BUSY", "NO DIAL TONE", "NO CARRIER", NULL };
-	gboolean success;
 
 	setting = NM_SETTING_GSM (gsm_device_get_setting (NM_GSM_DEVICE (device), NM_TYPE_SETTING_GSM));
 
@@ -154,18 +179,8 @@ do_dial (NMSerialDevice *device, guint cid)
 	} else
 		command = g_strconcat ("ATDT", setting->number, NULL);
 
-	success = nm_serial_device_send_command_string (device, command);
+	modem_wait_for_reply (device, command, 60, responses, responses, dial_done);
 	g_free (command);
-
-	if (success) {
-		id = nm_serial_device_wait_for_reply (device, 60, responses, responses, dial_done, NULL);
-		if (id)
-			gsm_device_set_pending (NM_GSM_DEVICE (device), id);
-		else
-			nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
-	} else {
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
-	}
 }
 
 static void
@@ -173,13 +188,9 @@ set_apn_done (NMSerialDevice *device,
 		    int reply_index,
 		    gpointer user_data)
 {
-	guint cid = GPOINTER_TO_UINT (user_data);
-
-	gsm_device_set_pending (NM_GSM_DEVICE (device), 0);
- 
 	switch (reply_index) {
 	case 0:
-		do_dial (device, cid);
+		do_dial (NM_GSM_DEVICE (device), 1);
 		break;
 	default:
 		nm_warning ("Setting APN failed");
@@ -189,13 +200,11 @@ set_apn_done (NMSerialDevice *device,
 }
 
 static void
-set_apn (NMSerialDevice *device)
+set_apn (NMGsmDevice *device)
 {
 	NMSettingGsm *setting;
 	char *command;
 	char *responses[] = { "OK", "ERROR", NULL };
-	gboolean success;
-	guint id = 0;
 	guint cid = 1;
 
 	setting = NM_SETTING_GSM (gsm_device_get_setting (NM_GSM_DEVICE (device), NM_TYPE_SETTING_GSM));
@@ -207,16 +216,8 @@ set_apn (NMSerialDevice *device)
 	}
 
 	command = g_strdup_printf ("AT+CGDCONT=%d, \"IP\", \"%s\"", cid, setting->apn);
-	success = nm_serial_device_send_command_string (device, command);
+	modem_wait_for_reply (device, command, 3, responses, responses, set_apn_done);
 	g_free (command);
-
-	if (success)
-		id = nm_serial_device_wait_for_reply (device, 3, responses, responses, set_apn_done, GUINT_TO_POINTER (cid));
-
-	if (id)
-		gsm_device_set_pending (NM_GSM_DEVICE (device), id);
-	else
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
 }
 
 static void
@@ -224,11 +225,9 @@ manual_registration_done (NMSerialDevice *device,
 					 int reply_index,
 					 gpointer user_data)
 {
-	gsm_device_set_pending (NM_GSM_DEVICE (device), 0);
- 
 	switch (reply_index) {
 	case 0:
-		set_apn (device);
+		set_apn (NM_GSM_DEVICE (device));
 		break;
 	case -1:
 		nm_warning ("Manual registration timed out");
@@ -242,29 +241,17 @@ manual_registration_done (NMSerialDevice *device,
 }
 
 static void
-manual_registration (NMSerialDevice *device)
+manual_registration (NMGsmDevice *device)
 {
 	NMSettingGsm *setting;
 	char *command;
-	guint id;
 	char *responses[] = { "OK", "ERROR", "ERR", NULL };
-	gboolean success;
 
-	setting = NM_SETTING_GSM (gsm_device_get_setting (NM_GSM_DEVICE (device), NM_TYPE_SETTING_GSM));
+	setting = NM_SETTING_GSM (gsm_device_get_setting (device, NM_TYPE_SETTING_GSM));
 
 	command = g_strdup_printf ("AT+COPS=1,2,\"%s\"", setting->network_id);
-	success = nm_serial_device_send_command_string (device, command);
+	modem_wait_for_reply (device, command, 30, responses, responses, manual_registration_done);
 	g_free (command);
-
-	if (success) {
-		id = nm_serial_device_wait_for_reply (device, 30, responses, responses, manual_registration_done, NULL);
-		if (id)
-			gsm_device_set_pending (NM_GSM_DEVICE (device), id);
-		else
-			nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
-	} else {
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
-	}
 }
 
 static void
@@ -272,38 +259,26 @@ get_network_done (NMSerialDevice *device,
 			   const char *response,
 			   gpointer user_data)
 {
-	gsm_device_set_pending (NM_GSM_DEVICE (device), 0);
-
 	if (response)
 		nm_info ("Associated with network: %s", response);
 	else
 		nm_warning ("Couldn't read active network name");
 
-	set_apn (device);
+	set_apn (NM_GSM_DEVICE (device));
 }
 
 static void
-automatic_registration_get_network (NMSerialDevice *device)
+automatic_registration_get_network (NMGsmDevice *device)
 {
-	guint id;
 	const char terminators[] = { '\r', '\n', '\0' };
 
-	if (!nm_serial_device_send_command_string (device, "AT+COPS?")) {
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
-		return;
-	}
-
-	id = nm_serial_device_get_reply (device, 10, terminators, get_network_done, NULL);
-	if (id)
-		gsm_device_set_pending (NM_GSM_DEVICE (device), id);
-	else
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+	modem_get_reply (device, "AT+COPS?", 10, terminators, get_network_done);
 }
 
 static gboolean
 automatic_registration_again (gpointer data)
 {
-	automatic_registration (NM_SERIAL_DEVICE (data));
+	automatic_registration (NM_GSM_DEVICE (data));
 	return FALSE;
 }
 
@@ -312,20 +287,17 @@ automatic_registration_response (NMSerialDevice *device,
 						   int reply_index,
 						   gpointer user_data)
 {
-	gsm_device_set_pending (NM_GSM_DEVICE (device), 0);
-
 	switch (reply_index) {
 	case 0:
 		nm_info ("Registered on Home network");
-		automatic_registration_get_network (device);
+		automatic_registration_get_network (NM_GSM_DEVICE (device));
 		break;
 	case 1:
 		nm_info ("Registered on Roaming network");
-		automatic_registration_get_network (device);
+		automatic_registration_get_network (NM_GSM_DEVICE (device));
 		break;
 	case 2:
-		gsm_device_set_pending (NM_GSM_DEVICE (device),
-						    g_timeout_add (1000, automatic_registration_again, device));
+		NM_GSM_DEVICE_GET_PRIVATE (device)->pending_id = g_timeout_add (1000, automatic_registration_again, device);
 		break;
 	case 3:
 		nm_warning ("Automatic registration failed: not registered and not searching.");
@@ -343,30 +315,20 @@ automatic_registration_response (NMSerialDevice *device,
 }
 
 static void
-automatic_registration (NMSerialDevice *device)
+automatic_registration (NMGsmDevice *device)
 {
-	guint id;
 	char *responses[] = { "+CREG: 0,1", "+CREG: 0,5", "+CREG: 0,2", "+CREG: 0,0", NULL };
 	char *terminators[] = { "OK", "ERROR", "ERR", NULL };
 
-	if (!nm_serial_device_send_command_string (device, "AT+CREG?")) {
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
-		return;
-	}
-
-	id = nm_serial_device_wait_for_reply (device, 60, responses, terminators, automatic_registration_response, NULL);
-	if (id)
-		gsm_device_set_pending (NM_GSM_DEVICE (device), id);
-	else
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+	modem_wait_for_reply (device, "AT+CREG?", 60, responses, terminators, automatic_registration_response);
 }
 
 static void
-do_register (NMSerialDevice *device)
+do_register (NMGsmDevice *device)
 {
 	NMSettingGsm *setting;
 
-	setting = NM_SETTING_GSM (gsm_device_get_setting (NM_GSM_DEVICE (device), NM_TYPE_SETTING_GSM));
+	setting = NM_SETTING_GSM (gsm_device_get_setting (device, NM_TYPE_SETTING_GSM));
 
 	if (setting->network_id)
 		manual_registration (device);
@@ -379,11 +341,9 @@ init_full_done (NMSerialDevice *device,
 			 int reply_index,
 			 gpointer user_data)
 {
-	gsm_device_set_pending (NM_GSM_DEVICE (device), 0);
-
 	switch (reply_index) {
 	case 0:
-		do_register (device);
+		do_register (NM_GSM_DEVICE (device));
 		break;
 	case -1:
 		nm_warning ("Modem second stage initialization timed out");
@@ -397,24 +357,11 @@ init_full_done (NMSerialDevice *device,
 }
 
 static void
-init_modem_full (NMSerialDevice *device)
+init_modem_full (NMGsmDevice *device)
 {
-	guint id;
 	char *responses[] = { "OK", "ERROR", "ERR", NULL };
 
-	/* At this point we know that SIM has been unlocked, and we can safely
-	 * initialize the modem
-	 */
-	if (!nm_serial_device_send_command_string (device, "ATZ")) {
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
-		return;
-	}
-
-	id = nm_serial_device_wait_for_reply (device, 10, responses, responses, init_full_done, NULL);
-	if (id)
-		gsm_device_set_pending (NM_GSM_DEVICE (device), id);
-	else
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+	modem_wait_for_reply (device, "ATZ", 10, responses, responses, init_full_done);
 }
 
 static void
@@ -424,10 +371,9 @@ enter_pin_done (NMSerialDevice *device,
 {
 	NMSettingGsm *setting;
 
-	gsm_device_set_pending (NM_GSM_DEVICE (device), 0);
 	switch (reply_index) {
 	case 0:
-		init_modem_full (device);
+		init_modem_full (NM_GSM_DEVICE (device));
 		break;
 	case -1:
 		nm_warning ("Did not receive response for secret");
@@ -453,13 +399,13 @@ enter_pin_done (NMSerialDevice *device,
 			break;
 		}
 
-		enter_pin (device, TRUE);
+		enter_pin (NM_GSM_DEVICE (device), TRUE);
 		break;
 	}
 }
 
 static void
-enter_pin (NMSerialDevice *device, gboolean retry)
+enter_pin (NMGsmDevice *device, gboolean retry)
 {
 	NMSettingGsm *setting;
 	NMActRequest *req;
@@ -490,23 +436,11 @@ enter_pin (NMSerialDevice *device, gboolean retry)
 
 	if (secret) {
 		char *command;
-		guint id;
 		char *responses[] = { "OK", "ERROR", "ERR", NULL };
-		gboolean success;
 
 		command = g_strdup_printf ("AT+CPIN=\"%s\"", secret);
-		success = nm_serial_device_send_command_string (device, command);
+		modem_wait_for_reply (device, command, 3, responses, responses, enter_pin_done);
 		g_free (command);
-
-		if (success) {
-			id = nm_serial_device_wait_for_reply (device, 3, responses, responses, enter_pin_done, NULL);
-			if (id)
-				gsm_device_set_pending (NM_GSM_DEVICE (device), id);
-			else
-				nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
-		} else {
-			nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
-		}
 	} else {
 		nm_info ("(%s): GSM %s secret required", nm_device_get_iface (NM_DEVICE (device)), secret_name);
 		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_NEED_AUTH);
@@ -519,19 +453,17 @@ check_pin_done (NMSerialDevice *device,
 			 int reply_index,
 			 gpointer user_data)
 {
-	gsm_device_set_pending (NM_GSM_DEVICE (device), 0);
-
 	switch (reply_index) {
 	case 0:
-		do_register (device);
+		do_register (NM_GSM_DEVICE (device));
 		break;
 	case 1:
 		NM_GSM_DEVICE_GET_PRIVATE (device)->need_secret = NM_GSM_SECRET_PIN;
-		enter_pin (device, FALSE);
+		enter_pin (NM_GSM_DEVICE (device), FALSE);
 		break;
 	case 2:
 		NM_GSM_DEVICE_GET_PRIVATE (device)->need_secret = NM_GSM_SECRET_PUK;
-		enter_pin (device, FALSE);
+		enter_pin (NM_GSM_DEVICE (device), FALSE);
 		break;
 	case -1:
 		nm_warning ("PIN checking timed out");
@@ -545,22 +477,12 @@ check_pin_done (NMSerialDevice *device,
 }
 
 static void
-check_pin (NMSerialDevice *device)
+check_pin (NMGsmDevice *self)
 {
-	guint id;
 	char *responses[] = { "READY", "SIM PIN", "SIM PUK", "ERROR", "ERR", NULL };
 	char *terminators[] = { "OK", "ERROR", "ERR", NULL };
 
-	if (!nm_serial_device_send_command_string (device, "AT+CPIN?")) {
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
-		return;
-	}
-
-	id = nm_serial_device_wait_for_reply (device, 3, responses, terminators, check_pin_done, NULL);
-	if (id)
-		gsm_device_set_pending (NM_GSM_DEVICE (device), id);
-	else
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+	modem_wait_for_reply (self, "AT+CPIN?", 3, responses, terminators, check_pin_done);
 }
 
 static void
@@ -568,11 +490,9 @@ init_done (NMSerialDevice *device,
 		 int reply_index,
 		 gpointer user_data)
 {
-	gsm_device_set_pending (NM_GSM_DEVICE (device), 0);
-
 	switch (reply_index) {
 	case 0:
-		check_pin (device);
+		check_pin (NM_GSM_DEVICE (device));
 		break;
 	case -1:
 		nm_warning ("Modem initialization timed out");
@@ -588,18 +508,9 @@ init_done (NMSerialDevice *device,
 static void
 init_modem (NMSerialDevice *device, gpointer user_data)
 {
-	guint id;
 	char *responses[] = { "OK", "ERROR", "ERR", NULL };
-	if (!nm_serial_device_send_command_string (device, "ATZ E0")) {
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
-		return;
-	}
 
-	id = nm_serial_device_wait_for_reply (device, 10, responses, responses, init_done, NULL);
-	if (id)
-		gsm_device_set_pending (NM_GSM_DEVICE (device), id);
-	else
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+	modem_wait_for_reply (NM_GSM_DEVICE (device), "AT E0", 10, responses, responses, init_done);
 }
 
 static NMActStageReturn
@@ -608,6 +519,7 @@ real_act_stage1_prepare (NMDevice *device)
 	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
 	NMSerialDevice *serial_device = NM_SERIAL_DEVICE (device);
 	NMSettingSerial *setting;
+	guint id;
 
 	priv->need_secret = NM_GSM_SECRET_NONE;
 
@@ -616,9 +528,9 @@ real_act_stage1_prepare (NMDevice *device)
 	if (!nm_serial_device_open (serial_device, setting))
 		return NM_ACT_STAGE_RETURN_FAILURE;
 
-	priv->pending_id = nm_serial_device_flash (serial_device, 100, init_modem, NULL);
+	id = nm_serial_device_flash (serial_device, 100, init_modem, NULL);
 
-	return priv->pending_id ? NM_ACT_STAGE_RETURN_POSTPONE : NM_ACT_STAGE_RETURN_FAILURE;
+	return id ? NM_ACT_STAGE_RETURN_POSTPONE : NM_ACT_STAGE_RETURN_FAILURE;
 }
 
 static NMConnection *

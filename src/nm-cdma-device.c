@@ -19,7 +19,6 @@ typedef struct {
 	char *monitor_iface;
 	NMSerialDevice *monitor_device;
 
-	guint pending_id;
 	guint state_to_disconnected_id;
 } NMCdmaDevicePrivate;
 
@@ -59,12 +58,6 @@ nm_cdma_device_new (const char *udi,
 	                                      NULL);
 }
 
-static inline void
-cdma_device_set_pending (NMCdmaDevice *device, guint pending_id)
-{
-	NM_CDMA_DEVICE_GET_PRIVATE (device)->pending_id = pending_id;
-}
-
 static NMSetting *
 cdma_device_get_setting (NMCdmaDevice *device, GType setting_type)
 {
@@ -89,8 +82,6 @@ dial_done (NMSerialDevice *device,
            gpointer user_data)
 {
 	gboolean success = FALSE;
-
-	cdma_device_set_pending (NM_CDMA_DEVICE (device), 0);
 
 	switch (reply_index) {
 	case 0:
@@ -125,25 +116,18 @@ do_dial (NMSerialDevice *device)
 {
 	NMSettingCdma *setting;
 	char *command;
-	guint id;
+	guint id = 0;
 	char *responses[] = { "CONNECT", "BUSY", "NO DIAL TONE", "NO CARRIER", NULL };
-	gboolean success;
 
 	setting = NM_SETTING_CDMA (cdma_device_get_setting (NM_CDMA_DEVICE (device), NM_TYPE_SETTING_CDMA));
 
 	command = g_strconcat ("ATDT", setting->number, NULL);
-	success = nm_serial_device_send_command_string (device, command);
+	if (nm_serial_device_send_command_string (device, command))
+		id = nm_serial_device_wait_for_reply (device, 60, responses, responses, dial_done, NULL);
 	g_free (command);
 
-	if (success) {
-		id = nm_serial_device_wait_for_reply (device, 60, responses, responses, dial_done, NULL);
-		if (id)
-			cdma_device_set_pending (NM_CDMA_DEVICE (device), id);
-		else
-			nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
-	} else {
+	if (id == 0)
 		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
-	}
 }
 
 static void
@@ -151,8 +135,6 @@ init_done (NMSerialDevice *device,
 		 int reply_index,
 		 gpointer user_data)
 {
-	cdma_device_set_pending (NM_CDMA_DEVICE (device), 0);
-
 	switch (reply_index) {
 	case 0:
 		do_dial (device);
@@ -171,37 +153,31 @@ init_done (NMSerialDevice *device,
 static void
 init_modem (NMSerialDevice *device, gpointer user_data)
 {
-	guint id;
+	guint id = 0;
 	char *responses[] = { "OK", "ERROR", "ERR", NULL };
 
-	if (!nm_serial_device_send_command_string (device, "ATZ E0")) {
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
-		return;
-	}
+	if (nm_serial_device_send_command_string (device, "ATZ E0"))
+		id = nm_serial_device_wait_for_reply (device, 10, responses, responses, init_done, NULL);
 
-	id = nm_serial_device_wait_for_reply (device, 10, responses, responses, init_done, NULL);
-
-	if (id)
-		cdma_device_set_pending (NM_CDMA_DEVICE (device), id);
-	else
+	if (id == 0)
 		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
 }
 
 static NMActStageReturn
 real_act_stage1_prepare (NMDevice *device)
 {
-	NMCdmaDevicePrivate *priv = NM_CDMA_DEVICE_GET_PRIVATE (device);
 	NMSerialDevice *serial_device = NM_SERIAL_DEVICE (device);
 	NMSettingSerial *setting;
+	guint id;
 
 	setting = NM_SETTING_SERIAL (cdma_device_get_setting (NM_CDMA_DEVICE (device), NM_TYPE_SETTING_SERIAL));
 
 	if (!nm_serial_device_open (serial_device, setting))
 		return NM_ACT_STAGE_RETURN_FAILURE;
 
-	priv->pending_id = nm_serial_device_flash (serial_device, 100, init_modem, NULL);
+	id = nm_serial_device_flash (serial_device, 100, init_modem, NULL);
 
-	return priv->pending_id ? NM_ACT_STAGE_RETURN_POSTPONE : NM_ACT_STAGE_RETURN_FAILURE;
+	return id ? NM_ACT_STAGE_RETURN_POSTPONE : NM_ACT_STAGE_RETURN_FAILURE;
 }
 
 static NMConnection *
@@ -265,19 +241,6 @@ real_connection_secrets_updated (NMDevice *dev,
 	g_return_if_fail (nm_act_request_get_connection (req) == connection);
 
 	nm_device_activate_schedule_stage1_device_prepare (dev);
-}
-
-static void
-real_deactivate_quickly (NMDevice *device)
-{
-	NMCdmaDevicePrivate *priv = NM_CDMA_DEVICE_GET_PRIVATE (device);
-
-	if (priv->pending_id) {
-		g_source_remove (priv->pending_id);
-		priv->pending_id = 0;
-	}
-
-	NM_DEVICE_CLASS (nm_cdma_device_parent_class)->deactivate_quickly (device);
 }
 
 /*****************************************************************************/
@@ -496,7 +459,6 @@ nm_cdma_device_class_init (NMCdmaDeviceClass *klass)
 	device_class->get_generic_capabilities = real_get_generic_capabilities;
 	device_class->act_stage1_prepare = real_act_stage1_prepare;
 	device_class->connection_secrets_updated = real_connection_secrets_updated;
-	device_class->deactivate_quickly = real_deactivate_quickly;
 
 	/* Properties */
 	g_object_class_install_property

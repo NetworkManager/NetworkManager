@@ -36,6 +36,9 @@ typedef struct {
 	NMIP4Config  *pending_ip4_config;
 	struct termios old_t;
 
+	guint pending_id;
+	guint timeout_id;
+
 	/* PPP stats */
 	guint32 in_bytes;
 	guint32 out_bytes;
@@ -228,6 +231,98 @@ serial_device_get_setting (NMSerialDevice *device, GType setting_type)
 	return setting;
 }
 
+/* Timeout handling */
+
+static void
+nm_serial_device_timeout_removed (gpointer data)
+{
+	NMSerialDevicePrivate *priv = NM_SERIAL_DEVICE_GET_PRIVATE (data);
+
+	priv->timeout_id = 0;
+}
+
+static gboolean
+nm_serial_device_timed_out (gpointer data)
+{
+	NMSerialDevicePrivate *priv = NM_SERIAL_DEVICE_GET_PRIVATE (data);
+
+	/* Cancel data reading */
+	if (priv->pending_id)
+		g_source_remove (priv->pending_id);
+	else
+		nm_warning ("Timeout reached, but there's nothing to time out");
+
+	return FALSE;
+}
+
+static void
+nm_serial_device_add_timeout (NMSerialDevice *self, guint timeout)
+{
+	NMSerialDevicePrivate *priv = NM_SERIAL_DEVICE_GET_PRIVATE (self);
+
+	if (priv->pending_id == 0)
+		nm_warning ("Adding a time out while not waiting for any data");
+
+	if (priv->timeout_id) {
+		nm_warning ("Trying to add a new time out while the old one still exists");
+		g_source_remove (priv->timeout_id);
+	}
+
+	priv->timeout_id = g_timeout_add_full (G_PRIORITY_DEFAULT,
+								    timeout * 1000,
+								    nm_serial_device_timed_out,
+								    self,
+								    nm_serial_device_timeout_removed);
+	if (G_UNLIKELY (priv->timeout_id == 0))
+		nm_warning ("Registering serial device time out failed.");
+}
+
+static void
+nm_serial_device_remove_timeout (NMSerialDevice *self)
+{
+	NMSerialDevicePrivate *priv = NM_SERIAL_DEVICE_GET_PRIVATE (self);
+
+	if (priv->timeout_id)
+		g_source_remove (priv->timeout_id);
+}
+
+/* Pending data reading */
+
+static guint
+nm_serial_device_set_pending (NMSerialDevice *device,
+						guint timeout,
+						GIOFunc callback,
+						gpointer user_data,
+						GDestroyNotify notify)
+{
+	NMSerialDevicePrivate *priv = NM_SERIAL_DEVICE_GET_PRIVATE (device);
+
+	if (G_UNLIKELY (priv->pending_id)) {
+		/* FIXME: Probably should queue up pending calls instead? */
+		/* Multiple pending calls on the same GIOChannel doesn't work, so let's cancel the previous one. */
+		nm_warning ("Adding new pending call while previous one isn't finished.");
+		nm_warning ("Cancelling the previous pending call.");
+		g_source_remove (priv->pending_id);
+	}
+
+	priv->pending_id = g_io_add_watch_full (priv->channel,
+									G_PRIORITY_DEFAULT,
+									G_IO_IN | G_IO_ERR | G_IO_HUP,
+									callback, user_data, notify);
+
+	nm_serial_device_add_timeout (device, timeout);
+
+	return priv->pending_id;}
+
+static void
+nm_serial_device_pending_done (NMSerialDevice *self)
+{
+	NM_SERIAL_DEVICE_GET_PRIVATE (self)->pending_id = 0;
+	nm_serial_device_remove_timeout (self);
+}
+
+/****/
+
 static gboolean
 config_fd (NMSerialDevice *device, NMSettingSerial *setting)
 {
@@ -315,6 +410,9 @@ nm_serial_device_close (NMSerialDevice *device)
 
 	priv = NM_SERIAL_DEVICE_GET_PRIVATE (device);
 
+	if (priv->pending_id)
+		g_source_remove (priv->pending_id);
+
 	if (priv->fd) {
 		nm_debug ("Closing device '%s'", nm_device_get_iface (NM_DEVICE (device)));
 
@@ -389,34 +487,23 @@ typedef struct {
 	GString *result;
 	NMSerialGetReplyFn callback;
 	gpointer user_data;
-	guint timeout_id;
-	guint got_data_id;
 } GetReplyInfo;
 
 static void
-get_reply_info_destroy (gpointer data)
+get_reply_done (gpointer data)
 {
 	GetReplyInfo *info = (GetReplyInfo *) data;
 
-	if (info->got_data_id)
-		g_source_remove (info->got_data_id);
+	nm_serial_device_pending_done (info->device);
 
+	/* Call the callback */
+	info->callback (info->device, info->result->str, info->user_data);
+
+	/* Free info */
 	g_free (info->terminators);
+	g_string_free (info->result, TRUE);
 
-	if (info->result)
-		g_string_free (info->result, TRUE);
-
-	g_free (info);
-}
-
-static gboolean
-get_reply_timeout (gpointer data)
-{
-	GetReplyInfo *info = (GetReplyInfo *) data;
-
-	info->callback (info->device, NULL, info->user_data);
-
-	return FALSE;
+	g_slice_free (GetReplyInfo, info);
 }
 
 static gboolean
@@ -431,8 +518,10 @@ get_reply_got_data (GIOChannel *source,
 	gboolean done = FALSE;
 	int i;
 
-	if (!(condition & G_IO_IN))
-		goto done;
+	if (condition & G_IO_HUP || condition & G_IO_ERR) {
+		g_string_truncate (info->result, 0);
+		return FALSE;
+	}
 
 	do {
 		GError *err = NULL;
@@ -474,29 +563,10 @@ get_reply_got_data (GIOChannel *source,
 		if (info->result->len > SERIAL_BUF_SIZE) {
 			g_warning ("%s (%s): response buffer filled before repsonse received",
 			           __func__, nm_device_get_iface (NM_DEVICE (info->device)));
-			g_string_free (info->result, TRUE);
-			info->result = NULL;
+			g_string_truncate (info->result, 0);
 			done = TRUE;
 		}
 	} while (!done || bytes_read == SERIAL_BUF_SIZE || status == G_IO_STATUS_AGAIN);
-
-done:
-	if (condition & G_IO_HUP || condition & G_IO_ERR) {
-		g_string_free (info->result, TRUE);
-		info->result = NULL;
-		done = TRUE;
-	}
-
-	if (done) {
-		char *result = info->result ? g_string_free (info->result, FALSE) : NULL;
-		info->result = NULL;
-		info->callback (info->device, result, info->user_data);
-		g_free (result);
-
-		/* Clear the id - returning FALSE already removes it */
-		info->got_data_id = 0;
-		g_source_remove (info->timeout_id);
-	}
 
 	return !done;
 }
@@ -514,25 +584,14 @@ nm_serial_device_get_reply (NMSerialDevice *device,
 	g_return_val_if_fail (terminators != NULL, 0);
 	g_return_val_if_fail (callback != NULL, 0);
 
-	info = g_new (GetReplyInfo, 1);
+	info = g_slice_new0 (GetReplyInfo);
 	info->device = device;
 	info->terminators = g_strdup (terminators);
 	info->result = g_string_new (NULL);
 	info->callback = callback;
 	info->user_data = user_data;
 
-	info->got_data_id = g_io_add_watch (NM_SERIAL_DEVICE_GET_PRIVATE (device)->channel,
-								 G_IO_IN | G_IO_ERR | G_IO_HUP,
-								 get_reply_got_data,
-								 info);
-
-	info->timeout_id = g_timeout_add_full (G_PRIORITY_DEFAULT,
-								    timeout * 1000,
-								    get_reply_timeout,
-								    info,
-								    get_reply_info_destroy);
-
-	return info->timeout_id;
+	return nm_serial_device_set_pending (device, timeout, get_reply_got_data, info, get_reply_done);
 }
 
 typedef struct {
@@ -542,36 +601,28 @@ typedef struct {
 	GString *result;
 	NMSerialWaitForReplyFn callback;
 	gpointer user_data;
+	int reply_index;
 	guint timeout;
 	time_t start;
-	guint timeout_id;
-	guint got_data_id;
 } WaitForReplyInfo;
 
 static void
-wait_for_reply_info_destroy (gpointer data)
+wait_for_reply_done (gpointer data)
 {
 	WaitForReplyInfo *info = (WaitForReplyInfo *) data;
 
-	if (info->got_data_id)
-		g_source_remove (info->got_data_id);
+	nm_serial_device_pending_done (info->device);
 
+	/* Call the callback */
+	info->callback (info->device, info->reply_index, info->user_data);
+
+	/* Free info */
 	if (info->result)
 		g_string_free (info->result, TRUE);
 
 	g_strfreev (info->str_needles);
 	g_strfreev (info->terminators);
-	g_free (info);
-}
-
-static gboolean
-wait_for_reply_timeout (gpointer data)
-{
-	WaitForReplyInfo *info = (WaitForReplyInfo *) data;
-
-	info->callback (info->device, -1, info->user_data);
-
-	return FALSE;
+	g_slice_free (WaitForReplyInfo, info);
 }
 
 static gboolean
@@ -614,10 +665,9 @@ wait_for_reply_got_data (GIOChannel *source,
 	GIOStatus status;
 	gboolean got_response = FALSE;
 	gboolean done = FALSE;
-	int idx = -1;
 
-	if (!(condition & G_IO_IN))
-		goto done;
+	if (condition & G_IO_HUP || condition & G_IO_ERR)
+		return FALSE;
 
 	do {
 		GError *err = NULL;
@@ -663,8 +713,8 @@ wait_for_reply_got_data (GIOChannel *source,
 				tmp = g_strstrip (line);
 				if (tmp && strlen (tmp)) {
 					done = find_terminator (tmp, info->terminators);
-					if (idx == -1)
-						got_response = find_response (tmp, info->str_needles, &idx);
+					if (info->reply_index == -1)
+						got_response = find_response (tmp, info->str_needles, &(info->reply_index));
 				}
 			}
 
@@ -692,18 +742,6 @@ wait_for_reply_got_data (GIOChannel *source,
 			g_usleep (50);
 	} while (!done || bytes_read == SERIAL_BUF_SIZE || status == G_IO_STATUS_AGAIN);
 
-done:
-	if (condition & G_IO_HUP || condition & G_IO_ERR)
-		done = TRUE;
-
-	if (done) {
-		info->callback (info->device, idx, info->user_data);
-
-		/* Clear the id - returning FALSE already removes it */
-		info->got_data_id = 0;
-		g_source_remove (info->timeout_id);
-	}
-
 	return !done;
 }
 
@@ -721,28 +759,18 @@ nm_serial_device_wait_for_reply (NMSerialDevice *device,
 	g_return_val_if_fail (responses != NULL, 0);
 	g_return_val_if_fail (callback != NULL, 0);
 
-	info = g_new0 (WaitForReplyInfo, 1);
+	info = g_slice_new0 (WaitForReplyInfo);
 	info->device = device;
 	info->str_needles = g_strdupv (responses);
 	info->terminators = g_strdupv (terminators);
 	info->result = g_string_new (NULL);
 	info->callback = callback;
 	info->user_data = user_data;
-
-	info->got_data_id = g_io_add_watch (NM_SERIAL_DEVICE_GET_PRIVATE (device)->channel,
-								 G_IO_IN | G_IO_ERR | G_IO_HUP,
-								 wait_for_reply_got_data,
-								 info);
-
+	info->reply_index = -1;
 	info->timeout = timeout * 1000;
 	info->start = time (NULL);
-	info->timeout_id = g_timeout_add_full (G_PRIORITY_DEFAULT,
-								    timeout * 1000,
-								    wait_for_reply_timeout,
-								    info,
-								    wait_for_reply_info_destroy);
 
-	return info->timeout_id;
+	return nm_serial_device_set_pending (device, timeout, wait_for_reply_got_data, info, wait_for_reply_done);
 }
 
 #if 0
@@ -753,14 +781,18 @@ typedef struct {
 	gpointer user_data;
 } WaitQuietInfo;
 
-static gboolean
+static void
 wait_quiet_done (gpointer data)
 {
 	WaitQuietInfo *info = (WaitQuietInfo *) data;
 
+	nm_serial_device_pending_done (info->device);
+
+	/* Call the callback */
 	info->callback (info->device, info->timed_out, info->user_data);
 
-	return FALSE;
+	/* Free info */
+	g_slice_free (WaitQuietInfo, info);
 }
 
 static gboolean
@@ -769,7 +801,7 @@ wait_quiet_quiettime (gpointer data)
 	WaitQuietInfo *info = (WaitQuietInfo *) data;
 
 	info->timed_out = FALSE;
-	wait_quiet_done (data);
+	g_source_remove (NM_SERIAL_DEVICE_GET_PRIVATE (info->device)->pending);
 
 	return FALSE;
 }
@@ -784,6 +816,9 @@ wait_quiet_got_data (GIOChannel *source,
 	char buf[4096];
 	GIOStatus status;
 
+	if (condition & G_IO_HUP || condition & G_IO_ERR)
+		return FALSE;
+
 	if (condition & G_IO_IN) {
 		do {
 			status = g_io_channel_read_chars (source, buf, 4096, &bytes_read, NULL);
@@ -794,11 +829,6 @@ wait_quiet_got_data (GIOChannel *source,
 				info->quiet_id = g_timeout_add (info->quiet_time, wait_quiet_quiettime, info);
 			}
 		} while (bytes_read == 4096 || status == G_IO_STATUS_AGAIN);
-	}
-
-	if (condition & G_IO_HUP || condition & G_IO_ERR) {
-		wait_quiet_done (data);
-		return FALSE
 	}
 
 	return TRUE;
@@ -816,27 +846,16 @@ nm_serial_device_wait_quiet (NMSerialDevice *device,
 	g_return_if_fail (NM_IS_SERIAL_DEVICE (device));
 	g_return_if_fail (callback != NULL);
 
-	info = g_new (WaitQuietInfo, 1);
-
+	info = g_slice_new0 (WaitQuietInfo);
 	info->device = device;
 	info->timed_out = TRUE;
 	info->callback = callback;
 	info->user_data = user_data;
-	
-	info->got_data_id = g_io_add_watch (NM_SERIAL_DEVICE_GET_PRIVATE (device)->channel,
-								 G_IO_IN | G_IO_ERR | G_IO_HUP,
-								 wait_quiet_got_data,
-								 info);
-
 	info->quiet_id = g_timeout_add (quiet_time,
 							  wait_quiet_timeout,
 							  info);
 
-	info->timeout_id = g_timeout_add_full (G_PRIORITY_DEFAULT,
-								    timeout,
-								    wait_quiet_timeout,
-								    info,
-								    wait_quiet_info_destroy);
+	return nm_serial_device_set_pending (device, timeout, wait_quiet_got_data, info, wait_quiet_done);
 }
 
 #endif
@@ -874,13 +893,24 @@ set_speed (NMSerialDevice *device, speed_t speed)
 	tcsetattr (fd, TCSANOW, &options);
 }
 
-static gboolean
+static void
 flash_done (gpointer data)
 {
 	FlashInfo *info = (FlashInfo *) data;
 
-	set_speed (info->device, info->current_speed);
+	NM_SERIAL_DEVICE_GET_PRIVATE (info->device)->pending_id = 0;
+
 	info->callback (info->device, info->user_data);
+
+	g_slice_free (FlashInfo, info);
+}
+
+static gboolean
+flash_do (gpointer data)
+{
+	FlashInfo *info = (FlashInfo *) data;
+
+	set_speed (info->device, info->current_speed);
 
 	return FALSE;
 }
@@ -892,11 +922,12 @@ nm_serial_device_flash (NMSerialDevice *device,
 				    gpointer user_data)
 {
 	FlashInfo *info;
+	guint id;
 
 	g_return_val_if_fail (NM_IS_SERIAL_DEVICE (device), 0);
 	g_return_val_if_fail (callback != NULL, 0);
 
-	info = g_new (FlashInfo, 1);
+	info = g_slice_new0 (FlashInfo);
 	info->device = device;
 	info->current_speed = get_speed (device);
 	info->callback = callback;
@@ -904,11 +935,15 @@ nm_serial_device_flash (NMSerialDevice *device,
 
 	set_speed (device, B0);
 
-	return g_timeout_add_full (G_PRIORITY_DEFAULT,
-						  flash_time,
-						  flash_done,
-						  info,
-						  g_free);
+	id = g_timeout_add_full (G_PRIORITY_DEFAULT,
+						flash_time,
+						flash_do,
+						info,
+						flash_done);
+
+	NM_SERIAL_DEVICE_GET_PRIVATE (device)->pending_id = id;
+
+	return id;
 }
 
 GIOChannel *
