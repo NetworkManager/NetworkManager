@@ -1,5 +1,10 @@
 2008-06-30  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-wifi.c
+		- Consistently use NM_DEVICE_WIFI_GET_PRIVATE instead of self->priv
+
+2008-06-30  Dan Williams  <dcbw@redhat.com>
+
 	Attempt to fix various issues causing rh #448889.  Mainly, to qualify for
 	the DISCONNECTED state, the device must not be rfkilled _and_ have a valid
 	priv->supplicant.iface.  When either condition is false, the device should
