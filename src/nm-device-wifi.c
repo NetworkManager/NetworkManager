@@ -2240,10 +2240,10 @@ supplicant_mgr_state_cb_handler (gpointer user_data)
 		if (priv->supplicant.iface) {
 			cleanup_association_attempt (self, FALSE);
 			supplicant_interface_release (self);
-
-			if (nm_device_is_activating (dev))
-				nm_device_state_changed (dev, NM_DEVICE_STATE_UNAVAILABLE);
 		}
+
+		if (nm_device_get_state (dev) > NM_DEVICE_STATE_UNAVAILABLE)
+			nm_device_state_changed (dev, NM_DEVICE_STATE_UNAVAILABLE);
 	} else if (new_state == NM_SUPPLICANT_MANAGER_STATE_IDLE) {
 		dev_state = nm_device_get_state (dev);
 		if (    priv->enabled
