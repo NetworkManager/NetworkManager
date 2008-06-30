@@ -112,7 +112,7 @@ typedef struct
 	DBusGProxy *          iface_proxy;
 	DBusGProxy *          net_proxy;
 
-	GSource *             scan_results_timeout;
+	guint                 scan_results_timeout;
 	guint32               last_scan;
 
 	NMSupplicantConfig *  cfg;
@@ -326,7 +326,7 @@ nm_supplicant_interface_dispose (GObject *object)
 		g_object_unref (priv->net_proxy);
 
 	if (priv->scan_results_timeout)
-		g_source_destroy (priv->scan_results_timeout);
+		g_source_remove (priv->scan_results_timeout);
 
 	if (priv->smgr) {
 		g_signal_handler_disconnect (priv->smgr,
@@ -553,6 +553,10 @@ request_scan_results (gpointer user_data)
 	DBusGProxyCall *call;
 	GTimeVal cur_time;
 
+	priv->scan_results_timeout = 0;
+
+	g_return_val_if_fail (priv->iface_proxy != NULL, FALSE);
+
 	info = nm_supplicant_info_new (self, priv->iface_proxy, priv->other_pcalls);
 	call = dbus_g_proxy_begin_call (priv->iface_proxy, "scanResults", scan_results_cb, 
 									info,
@@ -562,12 +566,6 @@ request_scan_results (gpointer user_data)
 
 	g_get_current_time (&cur_time);
 	priv->last_scan = cur_time.tv_sec;
-
-	if (priv->scan_results_timeout) {
-		g_source_unref (priv->scan_results_timeout);
-		priv->scan_results_timeout = NULL;
-	}
-
 	return FALSE;
 }
 
@@ -575,23 +573,15 @@ static void
 wpas_iface_query_scan_results (DBusGProxy *proxy, gpointer user_data)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (user_data);
-	guint id;
-	GSource * source;
 
 	/* Only query scan results if a query is not queued */
 	if (priv->scan_results_timeout)
 		return;
 
 	/* Only fetch scan results every 4s max, but initially do it right away */
-	if (priv->last_scan == 0) {
-		id = g_idle_add (request_scan_results, user_data);
-	} else {
-		id = g_timeout_add (4000, request_scan_results, user_data);
-	}
-	if (id > 0) {
-		source = g_main_context_find_source_by_id (NULL, id);
-		priv->scan_results_timeout = source;
-	}
+	priv->scan_results_timeout = g_timeout_add (priv->last_scan ? 4000 : 0,
+	                                            request_scan_results,
+	                                            user_data);
 }
 
 static guint32

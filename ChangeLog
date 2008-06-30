@@ -1,3 +1,10 @@
+2008-06-30  Dan Williams  <dcbw@redhat.com>
+
+	* src/supplicant-manager/nm-supplicant-interface.c
+		- (request_scan_results, nm_supplicant_interface_dispose,
+		   wpas_iface_query_scan_results): cleanup; scan_results_timeout is now
+			the id of the timeout, not a GSource
+
 2008-06-30  Tambet Ingo  <tambet@gmail.com>
 
 	* src/backends/NetworkManagerSuSE.c (nm_system_activate_nis): Fix a 
