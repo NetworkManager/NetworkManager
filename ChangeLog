@@ -1,5 +1,11 @@
 2008-06-30  Tambet Ingo  <tambet@gmail.com>
 
+	* src/backends/NetworkManagerSuSE.c (nm_system_activate_nis): Fix a 
+	bunch of typoes introduced by "Patch from David Cantrell 
+	<dcantrell@redhat.com> and me".
+
+2008-06-30  Tambet Ingo  <tambet@gmail.com>
+
 	* src/nm-serial-device.c: 
 	* src/nm-gsm-device.c: 
 	* src/nm-cdma-device.c: Move the pending call handling to a common location

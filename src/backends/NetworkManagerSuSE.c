@@ -103,12 +103,12 @@ void nm_system_activate_nis (NMIP4Config *config)
 	shvarFile *file;
 	const char *nis_domain;
 	char *name, *buf;
-	struct in_addr	temp_addr;
+	struct in_addr temp_addr;
 	int i;
 	FILE *ypconf = NULL;
-	char buf[INET_ADDRSTRLEN+1];
+	char addr_buf[INET_ADDRSTRLEN+1];
 
-	memset (&buf, '\0', sizeof (buf));
+	memset (&addr_buf, '\0', sizeof (addr_buf));
 
 	g_return_if_fail (config != NULL);
 
@@ -149,11 +149,11 @@ void nm_system_activate_nis (NMIP4Config *config)
 				for (i = 0; i < num_nis_servers; i++) {
 					temp_addr.s_addr = nm_ip4_config_get_nis_server (config, i);
 
-					if (!inet_ntop (AF_INET, &temp_addr, buf, INET_ADDRSTRLEN))
+					if (!inet_ntop (AF_INET, &temp_addr, addr_buf, INET_ADDRSTRLEN))
 						nm_warning ("%s: error converting IP4 address 0x%X",
-						            __func__, ntohl (tempaddr.s_addr));
+						            __func__, ntohl (temp_addr.s_addr));
 					else
-						fprintf (ypconf, "domain %s server %s\n", nis_domain, buf);
+						fprintf (ypconf, "domain %s server %s\n", nis_domain, addr_buf);
 				}
 				fprintf (ypconf, "\n");
 				fclose (ypconf);
