@@ -1,5 +1,46 @@
 2008-06-30  Dan Williams  <dcbw@redhat.com>
 
+	Attempt to fix various issues causing rh #448889.  Mainly, to qualify for
+	the DISCONNECTED state, the device must not be rfkilled _and_ have a valid
+	priv->supplicant.iface.  When either condition is false, the device should
+	transition back to UNAVAILABLE because it cannot be used.
+
+	* src/nm-device-wifi.c
+		- (constructor): cleanup; connect to supplicant manager here since the
+			supplicant manager is always around
+		- (supplicant_interface_acquire): rename from init_supplicant_interface,
+			ensure the supplicant manager is in the IDLE state
+		- (supplicant_interface_release): rename from cleanup_supplicant_interface,
+			cancel any pending scans too
+		- (real_bring_up): don't set up the supplicnat interface here, because
+			we need the supplicant interface at times when the device may not
+			be "up"
+		- (real_take_down): just remove the periodic source
+		- (schedule_scan): ensure a state that would peg the CPU doesn't happen
+		- (remove_supplicant_interface_connection_error_handler): cleanup; don't
+			do anything if there's no supplicant interface
+		- (cleanup_association_attempt): cleanup
+		- (supplicant_iface_state_cb_handler): request an immediate scan when
+			the interface enters the READY state; transition to UNAVAILABLE
+			state when the interface goes down because the device can't be used
+			without a supplicant interface
+		- (supplicant_mgr_state_cb_handler): if the supplicant goes away, clean
+			up and transition to UNAVAILABLE; if the supplicant becomes ready,
+			acquire the supplicant interface and transition to DISCONNECTED
+			if the radio isn't killed
+		- (nm_device_wifi_dispose): move most of device_cleanup() here
+		- (state_changed_cb): release any existing supplicant interface; if the
+			radio is enabled then try to acquire a new supplicant interface;
+			if the radio is enabled and a supplicant interface has been acquired,
+			we can transition to DISCONNECTED
+		- (nm_device_wifi_set_enabled): if bringing the hardware up failed,
+			don't enable the radio, because HAL probably lied to us about the
+			killswitch being off.  If bringing the hardware up worked, then
+			try to grab a supplicant interface, and if that was successful,
+			transition to DISCONNECTED
+
+2008-06-30  Dan Williams  <dcbw@redhat.com>
+
 	* src/supplicant-manager/nm-supplicant-interface.c
 		- (request_scan_results, nm_supplicant_interface_dispose,
 		   wpas_iface_query_scan_results): cleanup; scan_results_timeout is now
