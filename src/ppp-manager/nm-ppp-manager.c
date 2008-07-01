@@ -23,6 +23,8 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-ppp.h"
 #include "nm-setting-pppoe.h"
+#include "nm-setting-gsm.h"
+#include "nm-setting-cdma.h"
 #include "nm-dbus-manager.h"
 #include "nm-utils.h"
 #include "nm-marshal.h"
@@ -254,30 +256,62 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
 	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSetting *setting;
 	const char *setting_name;
+	guint32 tries;
+	char *hint1 = NULL;
 
 	remove_timeout_handler (manager);
 
 	connection = nm_act_request_get_connection (priv->act_req);
 
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	g_assert (s_con);
+	g_assert (s_con->type);
+
 	nm_connection_clear_secrets (connection);
 	setting_name = nm_connection_need_secrets (connection, NULL);
 	if (setting_name) {
-		guint32 tries;
-
-		tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), PPP_MANAGER_SECRET_TRIES));
-		nm_act_request_request_connection_secrets (priv->act_req, setting_name, tries == 0 ? TRUE : FALSE);
-		g_object_set_data (G_OBJECT (connection), PPP_MANAGER_SECRET_TRIES, GUINT_TO_POINTER (++tries));
-		priv->pending_secrets_context = context;
+		setting = nm_connection_get_setting_by_name (connection, setting_name);
 	} else {
-		GError *err = NULL;
+		/* Always ask for secrets unless the connection's type setting doesn't
+		 * even exist (which shouldn't happen).  Empty username and password are
+		 * valid, but we need to tell the pppd plugin that this is valid by
+		 * sending back blank secrets.
+		 */
+		setting = nm_connection_get_setting_by_name (connection, s_con->type);
+		if (!setting) {
+			GError *err = NULL;
 
-		g_set_error (&err, NM_PPP_MANAGER_ERROR, NM_PPP_MANAGER_ERROR_UNKOWN,
-				   "Cleared secrets, but setting didn't need any secrets.");
-
-		nm_warning ("%s", err->message);
-		dbus_g_method_return_error (context, err);
+			g_set_error (&err, NM_PPP_MANAGER_ERROR, NM_PPP_MANAGER_ERROR_UNKOWN,
+					   "Missing type-specific setting; no secrets could be found.");
+			nm_warning ("%s", err->message);
+			dbus_g_method_return_error (context, err);
+			return;
+		}
+		setting_name = nm_setting_get_name (setting);
 	}
+
+	/* FIXME: figure out some way of pushing this down to the settings
+	 * themselves and keeping the PPP Manager generic.
+	 */
+	if (NM_IS_SETTING_PPPOE (setting))
+		hint1 = NM_SETTING_PPPOE_PASSWORD;
+	else if (NM_IS_SETTING_GSM (setting))
+		hint1 = NM_SETTING_GSM_PASSWORD;
+	else if (NM_IS_SETTING_CDMA (setting))
+		hint1 = NM_SETTING_CDMA_PASSWORD;
+
+	tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), PPP_MANAGER_SECRET_TRIES));
+	nm_act_request_request_connection_secrets (priv->act_req,
+	                                           setting_name,
+	                                           tries == 0 ? TRUE : FALSE,
+	                                           SECRETS_CALLER_PPP,
+	                                           hint1,
+	                                           NULL);
+	g_object_set_data (G_OBJECT (connection), PPP_MANAGER_SECRET_TRIES, GUINT_TO_POINTER (++tries));
+	priv->pending_secrets_context = context;
 }
 
 static gboolean impl_ppp_manager_set_state (NMPPPManager *manager,
@@ -764,38 +798,44 @@ nm_ppp_manager_start (NMPPPManager *manager,
 
 void
 nm_ppp_manager_update_secrets (NMPPPManager *manager,
-						 const char *device,
-						 NMConnection *connection)
+                               const char *device,
+                               const char *username,
+                               const char *password,
+                               const char *error_message)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
-	NMSettingConnection *s_connection;
-	NMSettingPPPOE *pppoe_setting;
 
 	g_return_if_fail (NM_IS_PPP_MANAGER (manager));
 	g_return_if_fail (device != NULL);
-	g_return_if_fail (NM_IS_CONNECTION (connection));
 	g_return_if_fail (priv->pending_secrets_context != NULL);
 
-	s_connection = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-	g_assert (s_connection);
+	if (error_message) {
+		g_return_if_fail (username == NULL);
+		g_return_if_fail (password == NULL);
+	} else {
+		g_return_if_fail (username != NULL);
+		g_return_if_fail (password != NULL);
+	}
 
-	if (strcmp (s_connection->type, NM_SETTING_PPPOE_SETTING_NAME))
-		/* Not for us */
-		return;
+	if (error_message) {
+		GError *err = NULL;
 
-	/* This is sort of a hack but...
-	   pppd plugin only ever needs username and password.
-	   Passing the full connection there would mean some bloat:
-	   the plugin would need to link against libnm-util just to parse this.
-	   So instead, let's just send what it needs */
+		g_set_error (&err, NM_PPP_MANAGER_ERROR, NM_PPP_MANAGER_ERROR_UNKOWN, error_message);
+		nm_warning ("%s", error_message);
+		dbus_g_method_return_error (priv->pending_secrets_context, err);
+		g_error_free (err);
+	} else {
+		/* This is sort of a hack but...
+		   pppd plugin only ever needs username and password.
+		   Passing the full connection there would mean some bloat:
+		   the plugin would need to link against libnm-util just to parse this.
+		   So instead, let's just send what it needs */
 
-	pppoe_setting = NM_SETTING_PPPOE (nm_connection_get_setting (connection, NM_TYPE_SETTING_PPPOE));
-	g_assert (pppoe_setting);
-
-	/* FIXME: Do we have to strdup the values here? */
-	dbus_g_method_return (priv->pending_secrets_context, 
-					  g_strdup (pppoe_setting->username),
-					  g_strdup (pppoe_setting->password));
+		/* FIXME: Do we have to strdup the values here? */
+		dbus_g_method_return (priv->pending_secrets_context,
+		                      g_strdup (username),
+		                      g_strdup (password));
+	}
 	priv->pending_secrets_context = NULL;
 }
 

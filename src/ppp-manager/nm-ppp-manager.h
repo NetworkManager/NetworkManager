@@ -42,8 +42,10 @@ gboolean nm_ppp_manager_start (NMPPPManager *manager,
 						 GError **err);
 
 void     nm_ppp_manager_update_secrets (NMPPPManager *manager,
-								const char *device,
-								NMConnection *connection);
+                                        const char *device,
+                                        const char *username,
+                                        const char *password,
+                                        const char *error_message);
 
 void     nm_ppp_manager_stop  (NMPPPManager *manager);
 

@@ -2042,7 +2042,8 @@ link_timeout_cb (gpointer user_data)
 		         " asking for new key.", nm_device_get_iface (dev));
 		cleanup_association_attempt (self, TRUE);
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
-		nm_act_request_request_connection_secrets (req, setting_name, TRUE);	
+		nm_act_request_request_connection_secrets (req, setting_name, TRUE,
+		                                           SECRETS_CALLER_WIFI, NULL, NULL);
 
 		return FALSE;
 	}
@@ -2391,7 +2392,8 @@ handle_auth_or_fail (NMDeviceWifi *self,
 		 * only ask for new secrets after the first failure.
 		 */
 		get_new = new_secrets ? TRUE : (tries ? TRUE : FALSE);
-		nm_act_request_request_connection_secrets (req, setting_name, get_new);
+		nm_act_request_request_connection_secrets (req, setting_name, get_new,
+		                                           SECRETS_CALLER_WIFI, NULL, NULL);
 
 		g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
 	} else {
@@ -2695,11 +2697,14 @@ real_act_stage1_prepare (NMDevice *dev)
 static void
 real_connection_secrets_updated (NMDevice *dev,
                                  NMConnection *connection,
-                                 GSList *updated_settings)
+                                 GSList *updated_settings,
+                                 RequestSecretsCaller caller)
 {
 	NMActRequest *req;
 	gboolean valid = FALSE;
 	GSList *iter;
+
+	g_return_if_fail (caller == SECRETS_CALLER_WIFI);
 
 	if (nm_device_get_state (dev) != NM_DEVICE_STATE_NEED_AUTH)
 		return;

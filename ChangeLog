@@ -1,3 +1,56 @@
+2008-07-01  Dan Williams  <dcbw@redhat.com>
+
+	Fix mobile broadband username/password issues.  NM was never requesting
+	mobile broadband secrets, nor was it passing back the username and password
+	if it had them.
+
+	* marshallers/nm-marshal.list
+		- Add some new types for activation request objects
+
+	* src/nm-activation-request.c
+	  src/nm-activation-request.h
+		- (get_secrets_cb): pass the caller type in the signal
+		- (nm_act_request_request_connection_secrets): take a caller type, so
+			that GetSecrets() reply handlers know who asked for the secrets in
+			the first place; use secret hints too so the settings service can
+			figure out exactly what NM wants (ie, PIN or the PPP password)
+
+	* src/ppp-manager/nm-ppp-manager.c
+	  src/ppp-manager/nm-ppp-manager.h
+		- (impl_ppp_manager_need_secrets): nm_connection_need_secrets() won't
+			detect needed secrets when the secret could be blank, like GSM/CDMA
+			passwords.  So always ask for secrets, and send a hint as to what
+			secret we really want.
+		- (nm_ppp_manager_update_secrets): make function more generic by making
+			the device specific class figure out the username and password, and
+			accept an error argument to return back over D-Bus
+
+	* src/nm-device-wifi.c
+		- (link_timeout_cb, handle_auth_or_fail): update for changes to
+			nm_act_request_request_connection_secrets()
+		- (real_connection_secrets_updated): update for 'caller' changes
+
+	* src/nm-device.c
+	  src/nm-device.h
+		- (connection_secrets_updated_cb, connection_secrets_failed_cb): update
+			for 'caller' changes
+
+	* src/nm-device-ethernet.c
+		- (real_connection_secrets_updated): update for 'caller' changes and
+			move logic for getting PPPoE username and password here before
+			calling nm_ppp_manager_update_secrets()
+		- (link_timeout_cb, handle_auth_or_fail): update for changes to
+			nm_act_request_request_connection_secrets()
+
+	* src/nm-cdma-device.c
+		- (real_connection_secrets_updated): pass username and password back
+			to the PPP manager when required
+
+	* src/nm-gsm-device.c
+		- (enter_pin): send the required secret name to the settings service
+		- (real_connection_secrets_updated): pass username and password back
+			to the PPP manager when required
+
 2008-06-30  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-wifi.c

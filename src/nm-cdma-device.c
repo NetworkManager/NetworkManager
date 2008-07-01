@@ -214,14 +214,40 @@ real_get_generic_capabilities (NMDevice *dev)
 static void
 real_connection_secrets_updated (NMDevice *dev,
                                  NMConnection *connection,
-                                 GSList *updated_settings)
+                                 GSList *updated_settings,
+                                 RequestSecretsCaller caller)
 {
 	NMActRequest *req;
 	gboolean found = FALSE;
 	GSList *iter;
 
-	if (nm_device_get_state (dev) != NM_DEVICE_STATE_NEED_AUTH)
+	if (caller == SECRETS_CALLER_PPP) {
+		NMPPPManager *ppp_manager;
+		NMSettingCdma *s_cdma = NULL;
+
+		ppp_manager = nm_serial_device_get_ppp_manager (NM_SERIAL_DEVICE (dev));
+		g_return_if_fail (ppp_manager != NULL);
+
+		s_cdma = (NMSettingCdma *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CDMA);
+		if (!s_cdma) {
+			/* Shouldn't ever happen */
+			nm_ppp_manager_update_secrets (ppp_manager,
+			                               nm_device_get_iface (dev),
+			                               NULL,
+			                               NULL,
+			                               "missing CDMA setting; no secrets could be found.");
+		} else {
+			nm_ppp_manager_update_secrets (ppp_manager,
+			                               nm_device_get_iface (dev),
+			                               s_cdma->username ? s_cdma->username : "",
+			                               s_cdma->password ? s_cdma->password : "",
+			                               NULL);
+		}
 		return;
+	}
+
+	g_return_if_fail (caller == SECRETS_CALLER_CDMA);
+	g_return_if_fail (nm_device_get_state (dev) == NM_DEVICE_STATE_NEED_AUTH);
 
 	for (iter = updated_settings; iter; iter = g_slist_next (iter)) {
 		const char *setting_name = (const char *) iter->data;

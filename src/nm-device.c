@@ -1113,18 +1113,20 @@ static void
 connection_secrets_updated_cb (NMActRequest *req,
                                NMConnection *connection,
                                GSList *updated_settings,
+                               RequestSecretsCaller caller,
                                gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
 
 	if (NM_DEVICE_GET_CLASS (self)->connection_secrets_updated)
-		NM_DEVICE_GET_CLASS (self)->connection_secrets_updated (self, connection, updated_settings);
+		NM_DEVICE_GET_CLASS (self)->connection_secrets_updated (self, connection, updated_settings, caller);
 }
 
 static void
 connection_secrets_failed_cb (NMActRequest *req,
                               NMConnection *connection,
                               const char *setting_name,
+                              RequestSecretsCaller caller,
                               gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);

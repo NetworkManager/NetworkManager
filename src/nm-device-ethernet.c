@@ -565,7 +565,8 @@ real_get_best_auto_connection (NMDevice *dev,
 static void
 real_connection_secrets_updated (NMDevice *dev,
                                  NMConnection *connection,
-                                 GSList *updated_settings)
+                                 GSList *updated_settings,
+                                 RequestSecretsCaller caller)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (dev);
 	NMActRequest *req;
@@ -575,11 +576,31 @@ real_connection_secrets_updated (NMDevice *dev,
 	if (nm_device_get_state (dev) != NM_DEVICE_STATE_NEED_AUTH)
 		return;
 
-	if (priv->ppp_manager) {
-		/* PPPoE */
-		nm_ppp_manager_update_secrets (priv->ppp_manager, nm_device_get_iface (dev), connection);
+	/* PPPoE? */
+	if (caller == SECRETS_CALLER_PPP) {
+		NMSettingPPPOE *s_pppoe;
+
+		g_assert (priv->ppp_manager);
+
+		s_pppoe = (NMSettingPPPOE *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPPOE);
+		if (!s_pppoe) {
+			nm_ppp_manager_update_secrets (priv->ppp_manager,
+			                               nm_device_get_iface (dev),
+			                               NULL,
+			                               NULL,
+			                               "missing PPPoE setting; no secrets could be found.");
+		} else {
+			nm_ppp_manager_update_secrets (priv->ppp_manager,
+			                               nm_device_get_iface (dev),
+			                               s_pppoe->username ? s_pppoe->username : "",
+			                               s_pppoe->password ? s_pppoe->password : "",
+			                               NULL);
+		}
 		return;
 	}
+
+	/* Only caller could be ourselves for 802.1x */
+	g_return_if_fail (caller == SECRETS_CALLER_ETHERNET);
 
 	for (iter = updated_settings; iter; iter = g_slist_next (iter)) {
 		const char *setting_name = (const char *) iter->data;
@@ -715,7 +736,8 @@ link_timeout_cb (gpointer user_data)
 	supplicant_interface_clean (self);
 
 	nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
-	nm_act_request_request_connection_secrets (req, setting_name, TRUE);	
+	nm_act_request_request_connection_secrets (req, setting_name, TRUE,
+	                                           SECRETS_CALLER_ETHERNET, NULL, NULL);
 
 	return FALSE;
 
@@ -975,7 +997,8 @@ handle_auth_or_fail (NMDeviceEthernet *self,
 		 * only ask for new secrets after the first failure.
 		 */
 		get_new = new_secrets ? TRUE : (tries ? TRUE : FALSE);
-		nm_act_request_request_connection_secrets (req, setting_name, get_new);
+		nm_act_request_request_connection_secrets (req, setting_name, get_new,
+		                                           SECRETS_CALLER_ETHERNET, NULL, NULL);
 
 		g_object_set_data (G_OBJECT (connection), WIRED_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
 	} else

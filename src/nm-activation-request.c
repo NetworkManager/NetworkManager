@@ -311,9 +311,9 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMActRequestClass, connection_secrets_updated),
 					  NULL, NULL,
-					  nm_marshal_VOID__OBJECT_POINTER,
-					  G_TYPE_NONE, 2,
-					  G_TYPE_OBJECT, G_TYPE_POINTER);
+					  nm_marshal_VOID__OBJECT_POINTER_UINT,
+					  G_TYPE_NONE, 3,
+					  G_TYPE_OBJECT, G_TYPE_POINTER, G_TYPE_UINT);
 
 	signals[CONNECTION_SECRETS_FAILED] =
 		g_signal_new ("connection-secrets-failed",
@@ -321,9 +321,9 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMActRequestClass, connection_secrets_failed),
 					  NULL, NULL,
-					  nm_marshal_VOID__OBJECT_STRING,
-					  G_TYPE_NONE, 2,
-					  G_TYPE_OBJECT, G_TYPE_STRING);
+					  nm_marshal_VOID__OBJECT_STRING_UINT,
+					  G_TYPE_NONE, 3,
+					  G_TYPE_OBJECT, G_TYPE_STRING, G_TYPE_UINT);
 
 	signals[PROPERTIES_CHANGED] = 
 		nm_properties_changed_signal_new (object_class,
@@ -371,6 +371,7 @@ device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
 typedef struct GetSecretsInfo {
 	NMActRequest *req;
 	char *setting_name;
+	RequestSecretsCaller caller;
 } GetSecretsInfo;
 
 static void
@@ -480,7 +481,8 @@ get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 		               signals[CONNECTION_SECRETS_FAILED],
 		               0,
 		               priv->connection,
-		               info->setting_name);
+		               info->setting_name,
+		               info->caller);
 		return;
 	}
 
@@ -511,7 +513,8 @@ get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 		               signals[CONNECTION_SECRETS_UPDATED],
 		               0,
 		               priv->connection,
-		               updated);
+		               updated,
+		               info->caller);
 	} else {
 		nm_warning ("No secrets updated because not valid settings were received!");
 	}
@@ -524,7 +527,10 @@ out:
 gboolean
 nm_act_request_request_connection_secrets (NMActRequest *req,
                                            const char *setting_name,
-                                           gboolean request_new)
+                                           gboolean request_new,
+                                           RequestSecretsCaller caller,
+                                           const char *hint1,
+                                           const char *hint2)
 {
 	DBusGProxy *proxy;
 	DBusGProxyCall *call;
@@ -555,9 +561,15 @@ nm_act_request_request_connection_secrets (NMActRequest *req,
 	}
 
 	/* Empty for now */
-	hints = g_ptr_array_new ();
+	hints = g_ptr_array_sized_new (2);
+
+	if (hint1)
+		g_ptr_array_add (hints, g_strdup (hint1));
+	if (hint2)
+		g_ptr_array_add (hints, g_strdup (hint2));
 
 	info->req = req;
+	info->caller = caller;
 	call = dbus_g_proxy_begin_call_with_timeout (proxy, "GetSecrets",
 	                                             get_secrets_cb,
 	                                             info,

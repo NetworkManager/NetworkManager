@@ -38,16 +38,27 @@ typedef struct {
 	GObject parent;
 } NMActRequest;
 
+typedef enum {
+	SECRETS_CALLER_NONE = 0,
+	SECRETS_CALLER_ETHERNET,
+	SECRETS_CALLER_WIFI,
+	SECRETS_CALLER_GSM,
+	SECRETS_CALLER_CDMA,
+	SECRETS_CALLER_PPP
+} RequestSecretsCaller;
+
 typedef struct {
 	GObjectClass parent;
 
 	/* Signals */
 	void (*connection_secrets_updated)  (NMActRequest *req,
 	                                     NMConnection *connection,
-	                                     GSList *updated_settings);
+	                                     GSList *updated_settings,
+	                                     RequestSecretsCaller caller);
 	void (*connection_secrets_failed)   (NMActRequest *req,
 	                                     NMConnection *connection,
-	                                     const char * setting);
+	                                     const char *setting,
+	                                     RequestSecretsCaller caller);
 
 	void (*properties_changed) (NMActRequest *req, GHashTable *properties);
 } NMActRequestClass;
@@ -62,7 +73,10 @@ NMActRequest *nm_act_request_new          (NMConnection *connection,
 NMConnection *nm_act_request_get_connection     (NMActRequest *req);
 gboolean      nm_act_request_request_connection_secrets (NMActRequest *req,
                                                          const char *setting_name,
-                                                         gboolean request_new);
+                                                         gboolean request_new,
+                                                         RequestSecretsCaller caller,
+                                                         const char *hint1,
+                                                         const char *hint2);
 const char *  nm_act_request_get_specific_object (NMActRequest *req);
 
 void          nm_act_request_set_specific_object (NMActRequest *req,
