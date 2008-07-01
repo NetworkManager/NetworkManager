@@ -474,7 +474,7 @@ tls_default_filter (const GtkFileFilterInfo *filter_info, gpointer data)
 	ext = g_ascii_strdown (p, -1);
 	if (!ext)
 		return FALSE;
-	if (strcmp (ext, ".pem")) {
+	if (strcmp (ext, ".pem") && strcmp (ext, ".crt") && strcmp (ext, ".key")) {
 		g_free (ext);
 		return FALSE;
 	}
@@ -517,7 +517,7 @@ tls_file_chooser_filter_new (void)
 
 	filter = gtk_file_filter_new ();
 	gtk_file_filter_add_custom (filter, GTK_FILE_FILTER_FILENAME, tls_default_filter, NULL, NULL);
-	gtk_file_filter_set_name (filter, _("PEM certificates (*.pem)"));
+	gtk_file_filter_set_name (filter, _("PEM certificates (*.pem, *.crt, *.key)"));
 	return filter;
 }
 
