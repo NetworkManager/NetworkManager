@@ -1,8 +1,6 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /***************************************************************************
  *
- * nm-openvpn.c : GNOME UI dialogs for configuring openvpn VPN connections
- *
  * Copyright (C) 2008 Dan Williams, <dcbw@redhat.com>
  * Copyright (C) 2008 Tambet Ingo, <tambet@gmail.com>
  *
