@@ -249,7 +249,8 @@ void nm_ip4_config_reset_nameservers (NMIP4Config *config)
 	g_return_if_fail (NM_IS_IP4_CONFIG (config));
 
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	g_array_remove_range (priv->nameservers, 0, priv->nameservers->len);
+	if (priv->nameservers->len)
+		g_array_remove_range (priv->nameservers, 0, priv->nameservers->len);
 }
 
 void nm_ip4_config_add_nis_server (NMIP4Config *config, guint32 nis_server)
@@ -427,7 +428,8 @@ void nm_ip4_config_reset_searches (NMIP4Config *config)
 	g_return_if_fail (NM_IS_IP4_CONFIG (config));
 
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	g_ptr_array_remove_range (priv->searches, 0, priv->searches->len);
+	if (priv->searches->len)
+		g_ptr_array_remove_range (priv->searches, 0, priv->searches->len);
 }
 
 guint32 nm_ip4_config_get_mtu (NMIP4Config *config)
