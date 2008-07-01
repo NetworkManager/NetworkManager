@@ -5,6 +5,7 @@
 
 #include <nm-device.h>
 #include <nm-setting-serial.h>
+#include "ppp-manager/nm-ppp-manager.h"
 
 G_BEGIN_DECLS
 
@@ -80,6 +81,8 @@ guint    nm_serial_device_flash               (NMSerialDevice *device,
 									  gpointer user_data);
 
 GIOChannel *nm_serial_device_get_io_channel   (NMSerialDevice *device);
+
+NMPPPManager *nm_serial_device_get_ppp_manager (NMSerialDevice *device);
 
 G_END_DECLS
 

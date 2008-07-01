@@ -960,6 +960,14 @@ nm_serial_device_get_io_channel (NMSerialDevice *device)
 	return NULL;
 }
 
+NMPPPManager *
+nm_serial_device_get_ppp_manager (NMSerialDevice *device)
+{
+	g_return_val_if_fail (NM_IS_SERIAL_DEVICE (device), NULL);
+
+	return NM_SERIAL_DEVICE_GET_PRIVATE (device)->ppp_manager;
+}
+
 static void
 ppp_state_changed (NMPPPManager *ppp_manager, NMPPPStatus status, gpointer user_data)
 {
