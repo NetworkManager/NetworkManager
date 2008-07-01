@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager 0.9.x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-05-14 17:05+0200\n"
-"PO-Revision-Date: 2008-05-14 17:08+0200\n"
+"POT-Creation-Date: 2008-07-01 09:07+0200\n"
+"PO-Revision-Date: 2008-07-01 09:09+0200\n"
 "Last-Translator: Kjartan Maraas <kmaraas@gnome.org>\n"
 "Language-Team: Norwegian Bokmål <i18n-nb@lister.ping.uio.no>\n"
 "MIME-Version: 1.0\n"
@@ -25,7 +25,8 @@ msgstr "feil ved prosessering av netlink-melding: %s"
 #: ../src/nm-netlink-monitor.c:250
 #, c-format
 msgid "unable to allocate netlink handle for monitoring link status: %s"
-msgstr "kan ikke opprette netlink-håndtak for overvåking av tilkoblingsstatus: %s"
+msgstr ""
+"kan ikke opprette netlink-håndtak for overvåking av tilkoblingsstatus: %s"
 
 #: ../src/nm-netlink-monitor.c:260
 #, c-format
@@ -35,33 +36,213 @@ msgstr "kan ikke koble til netlink for overvåking av status for tilkobling: %s"
 #: ../src/nm-netlink-monitor.c:268
 #, c-format
 msgid "unable to join netlink group for monitoring link status: %s"
-msgstr "kan ikke bli med i netlink-gruppen for overvåking av status for tilkobling: %s"
+msgstr ""
+"kan ikke bli med i netlink-gruppen for overvåking av status for tilkobling: %"
+"s"
 
 #: ../src/nm-netlink-monitor.c:276
 #, c-format
 msgid "unable to allocate netlink link cache for monitoring link status: %s"
-msgstr "kan ikke allokere netlink-tilkoblingsbuffer for overvåking av status for tilkobling: %s"
+msgstr ""
+"kan ikke allokere netlink-tilkoblingsbuffer for overvåking av status for "
+"tilkobling: %s"
 
 #: ../src/nm-netlink-monitor.c:494
 #, c-format
 msgid "error occurred while waiting for data on socket"
 msgstr "det skjedde en feil under venting på data på sokkel"
 
-#: ../src/NetworkManager.c:254
+#: ../src/NetworkManager.c:250
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
-msgstr "Ugyldig flagg. Vennligst bruk --help for å se en liste med gyldige flagg.\n"
+msgstr ""
+"Ugyldig flagg. Vennligst bruk --help for å se en liste med gyldige flagg.\n"
 
-#: ../src/named-manager/nm-named-manager.c:218
+#: ../src/named-manager/nm-named-manager.c:117
 msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
 msgstr "MERK: glibc navneoppslag støtter ikke flere enn 3 navnetjenere."
 
-#: ../src/named-manager/nm-named-manager.c:220
+#: ../src/named-manager/nm-named-manager.c:119
 msgid "The nameservers listed below may not be recognized."
 msgstr "Navnetjenere listet under vil kanskje ikke bli gjenkjent."
 
-#: ../system-settings/src/main.c:349
+#: ../system-settings/src/main.c:365
 #, c-format
 msgid "Auto %s"
 msgstr "Auto %s"
 
+#: ../libnm-util/crypto.c:123
+#, c-format
+msgid "PEM key file had no end tag '%s'."
+msgstr "PEM-nøkkelfil hadde ikke avsluttende tagg «%s»."
+
+#: ../libnm-util/crypto.c:133
+#, c-format
+msgid "Doesn't look like a PEM private key file."
+msgstr "Ser ikke ut som en privat PEM-nøkkelfil."
+
+#: ../libnm-util/crypto.c:141
+#, c-format
+msgid "Not enough memory to store PEM file data."
+msgstr "Ikke nok minne til å lagre data for PEM-fil."
+
+#: ../libnm-util/crypto.c:157
+#, c-format
+msgid "Malformed PEM file: Proc-Type was not first tag."
+msgstr "Feilutformet PEM-fil: Proc-Type var ikke første tagg."
+
+#: ../libnm-util/crypto.c:165
+#, c-format
+msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
+msgstr ""
+
+#: ../libnm-util/crypto.c:175
+#, c-format
+msgid "Malformed PEM file: DEK-Info was not the second tag."
+msgstr ""
+
+#: ../libnm-util/crypto.c:186
+#, c-format
+msgid "Malformed PEM file: no IV found in DEK-Info tag."
+msgstr ""
+
+#: ../libnm-util/crypto.c:193
+#, c-format
+msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
+msgstr ""
+
+#: ../libnm-util/crypto.c:206
+#, c-format
+msgid "Malformed PEM file: unknown private key cipher '%s'."
+msgstr ""
+
+#: ../libnm-util/crypto.c:225
+#, c-format
+msgid "Could not decode private key."
+msgstr "Kunne ikke dekode privat nøkkel."
+
+#: ../libnm-util/crypto.c:269
+#, c-format
+msgid "PEM certificate '%s' had no end tag '%s'."
+msgstr ""
+
+#: ../libnm-util/crypto.c:279
+#, c-format
+msgid "Failed to decode certificate."
+msgstr "Klarte ikke å dekode sertifikat."
+
+#: ../libnm-util/crypto.c:288 ../libnm-util/crypto.c:296
+#, c-format
+msgid "Not enough memory to store certificate data."
+msgstr ""
+
+#: ../libnm-util/crypto.c:326
+#, c-format
+msgid "IV must be an even number of bytes in length."
+msgstr ""
+
+#: ../libnm-util/crypto.c:335
+#, c-format
+msgid "Not enough memory to store the IV."
+msgstr ""
+
+#: ../libnm-util/crypto.c:346
+#, c-format
+msgid "IV contains non-hexadecimal digits."
+msgstr ""
+
+#: ../libnm-util/crypto.c:384 ../libnm-util/crypto_gnutls.c:125
+#: ../libnm-util/crypto_nss.c:134
+#, c-format
+msgid "Private key cipher '%s' was unknown."
+msgstr ""
+
+#: ../libnm-util/crypto.c:393
+#, c-format
+msgid "Not enough memory to create private key decryption key."
+msgstr ""
+
+#: ../libnm-util/crypto.c:511
+#, c-format
+msgid "Not enough memory to store decrypted private key."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:72
+#, c-format
+msgid "Failed to initialize the MD5 engine: %s / %s."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:134 ../libnm-util/crypto_nss.c:143
+#, c-format
+msgid "Not enough memory for decrypted key buffer."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:142
+#, c-format
+msgid "Failed to initialize the decryption cipher context: %s / %s."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:151
+#, c-format
+msgid "Failed to set symmetric key for decryption: %s / %s."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:160
+#, c-format
+msgid "Failed to set IV for decryption: %s / %s."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:169
+#, c-format
+msgid "Failed to decrypt the private key: %s / %s."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:207
+#, c-format
+msgid "Error initializing certificate data: %s"
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:219
+#, c-format
+msgid "Couldn't decode certificate: %s"
+msgstr "Kunne ikke dekode sertifikat: %s"
+
+#: ../libnm-util/crypto_nss.c:76
+#, c-format
+msgid "Failed to initialize the MD5 context: %d."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:151
+#, c-format
+msgid "Failed to initialize the decryption cipher slot."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:161
+#, c-format
+msgid "Failed to set symmetric key for decryption."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:171
+#, c-format
+msgid "Failed to set IV for decryption."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:179
+#, c-format
+msgid "Failed to initialize the decryption context."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:192
+#, c-format
+msgid "Failed to decrypt the private key: %d."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:204
+#, c-format
+msgid "Failed to finalize decryption of the private key: %d."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:248
+#, c-format
+msgid "Couldn't decode certificate: %d"
+msgstr "Kunne ikke dekode sertifikat: %d"
