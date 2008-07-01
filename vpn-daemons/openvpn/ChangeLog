@@ -1,3 +1,15 @@
+2008-06-30  Dan Williams  <dcbw@redhat.com>
+
+	* properties/import-export.c
+	  properties/import-export.h
+	  properties/Makefile.am
+		- Implement import of OpenVPN config files
+
+	* properties/nm-openvpn.c
+	  properties/nm-openvpn.h
+		- Add another error for import
+		- (import): check file extension; get contents; hand off to importer
+
 2008-06-26  Dan Williams  <dcbw@redhat.com>
 
 	Implement the Advanced... dialog

@@ -6,7 +6,9 @@ libnm_openvpn_properties_la_SOURCES = \
 	nm-openvpn.c \
 	nm-openvpn.h \
 	auth-helpers.c \
-	auth-helpers.h
+	auth-helpers.h \
+	import-export.c \
+	import-export.h
 
 gladedir = $(datadir)/gnome-vpn-properties/openvpn
 glade_DATA = nm-openvpn-dialog.glade

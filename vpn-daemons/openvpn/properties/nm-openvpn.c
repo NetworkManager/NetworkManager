@@ -48,6 +48,7 @@
 #include "../src/nm-openvpn-service.h"
 #include "nm-openvpn.h"
 #include "auth-helpers.h"
+#include "import-export.h"
 
 #define OPENVPN_PLUGIN_NAME    _("OpenVPN")
 #define OPENVPN_PLUGIN_DESC    _("Compatible with the OpenVPN server.")
@@ -119,6 +120,10 @@ openvpn_plugin_ui_error_get_type (void)
 			ENUM_ENTRY (OPENVPN_PLUGIN_UI_ERROR_INVALID_PROPERTY, "InvalidProperty"),
 			/* The specified property was missing and is required. */
 			ENUM_ENTRY (OPENVPN_PLUGIN_UI_ERROR_MISSING_PROPERTY, "MissingProperty"),
+			/* The file to import could not be read. */
+			ENUM_ENTRY (OPENVPN_PLUGIN_UI_ERROR_FILE_NOT_READABLE, "FileNotReadable"),
+			/* The file to import could was not an OpenVPN client file. */
+			ENUM_ENTRY (OPENVPN_PLUGIN_UI_ERROR_FILE_NOT_OPENVPN, "FileNotOpenVPN"),
 			{ 0, 0, 0 }
 		};
 		etype = g_enum_register_static ("OpenvpnPluginUiError", values);
@@ -599,7 +604,47 @@ openvpn_plugin_ui_widget_interface_init (NMVpnPluginUiWidgetInterface *iface_cla
 static NMConnection *
 import (NMVpnPluginUiInterface *iface, const char *path, GError **error)
 {
-	return NULL;
+	NMConnection *connection = NULL;
+	char *contents = NULL;
+	char **lines = NULL;
+	char *ext;
+
+	ext = strrchr (path, '.');
+	if (!ext) {
+		g_set_error (error,
+		             OPENVPN_PLUGIN_UI_ERROR,
+		             OPENVPN_PLUGIN_UI_ERROR_FILE_NOT_OPENVPN,
+		             "unknown OpenVPN file extension");
+		goto out;
+	}
+
+	if (strcmp (ext, ".ovpn") && strcmp (ext, ".conf") && strcmp (ext, ".cnf")) {
+		g_set_error (error,
+		             OPENVPN_PLUGIN_UI_ERROR,
+		             OPENVPN_PLUGIN_UI_ERROR_FILE_NOT_OPENVPN,
+		             "unknown OpenVPN file extension");
+		goto out;
+	}
+
+	if (!g_file_get_contents (path, &contents, NULL, error))
+		return NULL;
+
+	lines = g_strsplit_set (contents, "\r\n", 0);
+	if (g_strv_length (lines) <= 1) {
+		g_set_error (error,
+		             OPENVPN_PLUGIN_UI_ERROR,
+		             OPENVPN_PLUGIN_UI_ERROR_FILE_NOT_READABLE,
+		             "not a valid OpenVPN configuration file");
+		goto out;
+	}
+
+	connection = do_import (path, lines, error);
+
+out:
+	if (lines)
+		g_strfreev (lines);
+	g_free (contents);
+	return connection;
 }
 
 static gboolean
@@ -608,7 +653,7 @@ export (NMVpnPluginUiInterface *iface,
         NMConnection *connection,
         GError **error)
 {
-	return FALSE;
+	return do_export (path, connection, error);
 }
 
 static char *
