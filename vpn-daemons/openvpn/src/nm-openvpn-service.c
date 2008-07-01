@@ -83,26 +83,27 @@ typedef struct {
 } ValidProperty;
 
 static ValidProperty valid_properties[] = {
-	{ NM_OPENVPN_KEY_CA,              G_TYPE_STRING },
-	{ NM_OPENVPN_KEY_CERT,            G_TYPE_STRING },
-	{ NM_OPENVPN_KEY_CIPHER,          G_TYPE_STRING },
-	{ NM_OPENVPN_KEY_COMP_LZO,        G_TYPE_BOOLEAN },
-	{ NM_OPENVPN_KEY_CONNECTION_TYPE, G_TYPE_INT },
-	{ NM_OPENVPN_KEY_TAP_DEV,         G_TYPE_BOOLEAN },
-	{ NM_OPENVPN_KEY_KEY,             G_TYPE_STRING },
-	{ NM_OPENVPN_KEY_LOCAL_IP,        G_TYPE_STRING },
-	{ NM_OPENVPN_KEY_PORT,            G_TYPE_INT },
-	{ NM_OPENVPN_KEY_PROTO_TCP,       G_TYPE_BOOLEAN },
-	{ NM_OPENVPN_KEY_REMOTE,          G_TYPE_STRING },
-	{ NM_OPENVPN_KEY_REMOTE_IP,       G_TYPE_STRING },
-	{ NM_OPENVPN_KEY_SHARED_KEY,      G_TYPE_STRING },
-	{ NM_OPENVPN_KEY_TA,              G_TYPE_STRING },
-	{ NM_OPENVPN_KEY_TA_DIR,          G_TYPE_STRING },
-	{ NM_OPENVPN_KEY_USERNAME,        G_TYPE_STRING },
-	{ NM_OPENVPN_KEY_PASSWORD,        G_TYPE_STRING },
-	{ NM_OPENVPN_KEY_CERTPASS,        G_TYPE_STRING },
-	{ NM_OPENVPN_KEY_NOSECRET,        G_TYPE_STRING },
-	{ NULL,                           G_TYPE_NONE }
+	{ NM_OPENVPN_KEY_CA,                   G_TYPE_STRING },
+	{ NM_OPENVPN_KEY_CERT,                 G_TYPE_STRING },
+	{ NM_OPENVPN_KEY_CIPHER,               G_TYPE_STRING },
+	{ NM_OPENVPN_KEY_COMP_LZO,             G_TYPE_BOOLEAN },
+	{ NM_OPENVPN_KEY_CONNECTION_TYPE,      G_TYPE_INT },
+	{ NM_OPENVPN_KEY_TAP_DEV,              G_TYPE_BOOLEAN },
+	{ NM_OPENVPN_KEY_KEY,                  G_TYPE_STRING },
+	{ NM_OPENVPN_KEY_LOCAL_IP,             G_TYPE_STRING },
+	{ NM_OPENVPN_KEY_PROTO_TCP,            G_TYPE_BOOLEAN },
+	{ NM_OPENVPN_KEY_PORT,                 G_TYPE_INT },
+	{ NM_OPENVPN_KEY_REMOTE,               G_TYPE_STRING },
+	{ NM_OPENVPN_KEY_REMOTE_IP,            G_TYPE_STRING },
+	{ NM_OPENVPN_KEY_SHARED_KEY,           G_TYPE_STRING },
+	{ NM_OPENVPN_KEY_SHARED_KEY_DIRECTION, G_TYPE_INT },
+	{ NM_OPENVPN_KEY_TA,                   G_TYPE_STRING },
+	{ NM_OPENVPN_KEY_TA_DIR,               G_TYPE_STRING },
+	{ NM_OPENVPN_KEY_USERNAME,             G_TYPE_STRING },
+	{ NM_OPENVPN_KEY_PASSWORD,             G_TYPE_STRING },
+	{ NM_OPENVPN_KEY_CERTPASS,             G_TYPE_STRING },
+	{ NM_OPENVPN_KEY_NOSECRET,             G_TYPE_STRING },
+	{ NULL,                                G_TYPE_NONE }
 };
 
 static void
