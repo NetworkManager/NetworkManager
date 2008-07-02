@@ -1,3 +1,9 @@
+2008-07-02  Dan Williams  <dcbw@redhat.com>
+
+	* properties/auth-helpers.c
+		- (tls_default_filter): read more of the certificate/key file to look
+			for the known certificate or key tags, not just 1024 bytes
+
 2008-06-30  Dan Williams  <dcbw@redhat.com>
 
 	* properties/auth-helpers.c

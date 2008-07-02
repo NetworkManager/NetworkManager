@@ -458,11 +458,10 @@ static gboolean
 tls_default_filter (const GtkFileFilterInfo *filter_info, gpointer data)
 {
 	int fd;
-	unsigned char buffer[1024];
-	ssize_t bytes_read;
+	char *contents = NULL, *p, *ext;
+	gsize bytes_read = 0;
 	gboolean show = FALSE;
-	char *p;
-	char *ext;
+	struct stat statbuf;
 
 	if (!filter_info->filename)
 		return FALSE;
@@ -480,33 +479,36 @@ tls_default_filter (const GtkFileFilterInfo *filter_info, gpointer data)
 	}
 	g_free (ext);
 
-	fd = open (filter_info->filename, O_RDONLY);
-	if (fd < 0)
+	/* Ignore files that are really large */
+	if (!stat (filter_info->filename, &statbuf)) {
+		if (statbuf.st_size > 500000)
+			return FALSE;
+	}
+
+	if (!g_file_get_contents (filter_info->filename, &contents, &bytes_read, NULL))
 		return FALSE;
 
-	bytes_read = read (fd, buffer, sizeof (buffer) - 1);
 	if (bytes_read < 400)  /* needs to be lower? */
 		goto out;
-	buffer[bytes_read] = '\0';
 
 	/* Check for PEM signatures */
-	if (find_tag (pem_rsa_key_begin, (const char *) buffer, bytes_read)) {
+	if (find_tag (pem_rsa_key_begin, (const char *) contents, bytes_read)) {
 		show = TRUE;
 		goto out;
 	}
 
-	if (find_tag (pem_dsa_key_begin, (const char *) buffer, bytes_read)) {
+	if (find_tag (pem_dsa_key_begin, (const char *) contents, bytes_read)) {
 		show = TRUE;
 		goto out;
 	}
 
-	if (find_tag (pem_cert_begin, (const char *) buffer, bytes_read)) {
+	if (find_tag (pem_cert_begin, (const char *) contents, bytes_read)) {
 		show = TRUE;
 		goto out;
 	}
 
 out:
-	close (fd);
+	g_free (contents);
 	return show;
 }
 
