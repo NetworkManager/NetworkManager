@@ -448,6 +448,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	NMSetting8021x *self = NM_SETTING_802_1X (setting);
 	const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "sim", "fast", NULL };
 	const char *valid_phase1_peapver[] = { "0", "1", NULL };
+	const char *valid_phase1_peaplabel[] = { "0", "1", NULL };
 	const char *valid_phase2_auth[] = { "pap", "chap", "mschap", "mschapv2", "gtc", "otp", "md5", "tls", NULL };
 	const char *valid_phase2_autheap[] = { "md5", "mschapv2", "otp", "gtc", "tls", NULL };
 	GSList *iter;
@@ -495,7 +496,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (self->phase1_peaplabel && strcmp (self->phase1_peaplabel, "1")) {
+	if (self->phase1_peaplabel && !nm_utils_string_in_list (self->phase1_peaplabel, valid_phase1_peaplabel)) {
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,

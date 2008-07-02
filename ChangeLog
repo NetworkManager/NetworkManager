@@ -1,5 +1,10 @@
 2008-07-02  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting-8021x.c
+		- (verify): allow forcing the PEAP label to 0
+
+2008-07-02  Dan Williams  <dcbw@redhat.com>
+
 	* introspection/nm-active-connection.xml
 	  introspection/nm-vpn-connection.xml
 	  libnm-glib/nm-active-connection.c
