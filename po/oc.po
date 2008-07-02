@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: oc\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-06-09 15:21+0200\n"
+"POT-Creation-Date: 2008-07-02 09:01+0200\n"
 "PO-Revision-Date: 2007-12-29 18:31+0100\n"
 "Last-Translator: Yannig Marchegay (Kokoyaya) <yannig@marchegay.org>\n"
 "Language-Team: Occitan <ubuntu-l10n-oci@lists.ubuntu.com>\n"
@@ -46,16 +46,16 @@ msgstr ""
 msgid "error occurred while waiting for data on socket"
 msgstr ""
 
-#: ../src/NetworkManager.c:254
+#: ../src/NetworkManager.c:250
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr ""
 
-#: ../src/named-manager/nm-named-manager.c:115
+#: ../src/named-manager/nm-named-manager.c:117
 msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
 msgstr ""
 
-#: ../src/named-manager/nm-named-manager.c:117
+#: ../src/named-manager/nm-named-manager.c:119
 msgid "The nameservers listed below may not be recognized."
 msgstr ""
 
