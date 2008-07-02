@@ -28,8 +28,6 @@
 #define NM_ACTIVE_CONNECTION_SERVICE_NAME "service-name"
 #define NM_ACTIVE_CONNECTION_CONNECTION "connection"
 #define NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT "specific-object"
-#define NM_ACTIVE_CONNECTION_SHARED_SERVICE_NAME "shared-service-name"
-#define NM_ACTIVE_CONNECTION_SHARED_CONNECTION "shared-connection"
 #define NM_ACTIVE_CONNECTION_DEVICES "devices"
 #define NM_ACTIVE_CONNECTION_STATE "state"
 #define NM_ACTIVE_CONNECTION_DEFAULT "default"

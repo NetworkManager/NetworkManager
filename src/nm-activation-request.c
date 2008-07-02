@@ -55,7 +55,6 @@ static guint signals[LAST_SIGNAL] = { 0 };
 typedef struct {
 	NMConnection *connection;
 	char *specific_object;
-	NMConnection *shared_connection;
 	NMDevice *device;
 	gboolean user_requested;
 
@@ -71,8 +70,6 @@ enum {
 	PROP_SERVICE_NAME,
 	PROP_CONNECTION,
 	PROP_SPECIFIC_OBJECT,
-	PROP_SHARED_SERVICE_NAME,
-	PROP_SHARED_CONNECTION,
 	PROP_DEVICES,
 	PROP_STATE,
 	PROP_DEFAULT,
@@ -158,9 +155,6 @@ dispose (GObject *object)
 	                   CONNECTION_GET_SECRETS_CALL_TAG, NULL);
 	g_object_unref (priv->connection);
 
-	if (priv->shared_connection)
-		g_object_unref (priv->shared_connection);
-
 out:
 	G_OBJECT_CLASS (nm_act_request_parent_class)->dispose (object);
 }
@@ -193,15 +187,6 @@ get_property (GObject *object, guint prop_id,
 	case PROP_SPECIFIC_OBJECT:
 		if (priv->specific_object)
 			g_value_set_boxed (value, priv->specific_object);
-		else
-			g_value_set_boxed (value, "/");
-		break;
-	case PROP_SHARED_SERVICE_NAME:
-		nm_active_connection_scope_to_value (priv->shared_connection, value);
-		break;
-	case PROP_SHARED_CONNECTION:
-		if (priv->shared_connection)
-			g_value_set_boxed (value, nm_connection_get_path (priv->shared_connection));
 		else
 			g_value_set_boxed (value, "/");
 		break;
@@ -257,20 +242,6 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT,
 							  "Specific object",
 							  "Specific object",
-							  DBUS_TYPE_G_OBJECT_PATH,
-							  G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_SHARED_SERVICE_NAME,
-		 g_param_spec_string (NM_ACTIVE_CONNECTION_SHARED_SERVICE_NAME,
-							  "Shared service name",
-							  "Shared service name",
-							  NULL,
-							  G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_SHARED_CONNECTION,
-		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_SHARED_CONNECTION,
-							  "Shared connection",
-							  "Shared connection",
 							  DBUS_TYPE_G_OBJECT_PATH,
 							  G_PARAM_READABLE));
 	g_object_class_install_property

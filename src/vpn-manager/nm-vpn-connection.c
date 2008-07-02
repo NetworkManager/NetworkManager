@@ -91,8 +91,6 @@ enum {
 	PROP_SERVICE_NAME,
 	PROP_CONNECTION,
 	PROP_SPECIFIC_OBJECT,
-	PROP_SHARED_SERVICE_NAME,
-	PROP_SHARED_CONNECTION,
 	PROP_DEVICES,
 	PROP_STATE,
 	PROP_DEFAULT,
@@ -1003,12 +1001,6 @@ get_property (GObject *object, guint prop_id,
 	case PROP_SPECIFIC_OBJECT:
 		g_value_set_boxed (value, nm_act_request_get_active_connection_path (priv->act_request));
 		break;
-	case PROP_SHARED_SERVICE_NAME:
-		g_value_set_string (value, "");
-		break;
-	case PROP_SHARED_CONNECTION:
-		g_value_set_boxed (value, "/");
-		break;
 	case PROP_DEVICES:
 		g_value_take_boxed (value, g_ptr_array_new ());
 		break;
@@ -1066,20 +1058,6 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT,
 							  "Specific object",
 							  "Specific object",
-							  DBUS_TYPE_G_OBJECT_PATH,
-							  G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_SHARED_SERVICE_NAME,
-		 g_param_spec_string (NM_ACTIVE_CONNECTION_SHARED_SERVICE_NAME,
-							  "Shared service name",
-							  "Shared service name",
-							  NULL,
-							  G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_SHARED_CONNECTION,
-		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_SHARED_CONNECTION,
-							  "Shared connection",
-							  "Shared connection",
 							  DBUS_TYPE_G_OBJECT_PATH,
 							  G_PARAM_READABLE));
 	g_object_class_install_property

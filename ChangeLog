@@ -1,5 +1,16 @@
 2008-07-02  Dan Williams  <dcbw@redhat.com>
 
+	* introspection/nm-active-connection.xml
+	  introspection/nm-vpn-connection.xml
+	  libnm-glib/nm-active-connection.c
+	  src/nm-activation-request.c
+	  src/nm-active-connection.h
+	  src/vpn-manager/nm-vpn-connection.c
+		- Remove "SharedServiceName" and "SharedConnection" bits from the D-Bus
+			and libnm-glib API since sharing didn't get implemented that way
+
+2008-07-02  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-wifi.c
 		- (can_scan): don't scan when a shared connection is activated since
 			that makes drivers mad (causing disconnects); also NM doesn't need

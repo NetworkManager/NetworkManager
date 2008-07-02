@@ -11,12 +11,6 @@
     <property name="SpecificObject" type="o" access="read">
       <tp:docstring>A specific object associated with the active connection.</tp:docstring>
     </property>
-    <property name="SharedServiceName" type="s" access="read">
-      <tp:docstring>The D-Bus service name that provides a connection with which this active connection is shared.</tp:docstring>
-    </property>
-    <property name="SharedConnection" type="o" access="read">
-      <tp:docstring>The path of a connection provided by the D-Bus service SharedServiceName which which this connection is shared.</tp:docstring>
-    </property>
     <property name="Devices" type="ao" access="read">
       <tp:docstring>Array of object paths representing devices which are part of this active connection.</tp:docstring>
     </property>

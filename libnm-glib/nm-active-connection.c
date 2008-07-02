@@ -26,8 +26,6 @@ typedef struct {
 	NMConnectionScope scope;
 	char *connection;
 	char *specific_object;
-	char *shared_service_name;
-	char *shared_connection;
 	GPtrArray *devices;
 	NMActiveConnectionState state;
 	gboolean is_default;
@@ -38,8 +36,6 @@ enum {
 	PROP_SERVICE_NAME,
 	PROP_CONNECTION,
 	PROP_SPECIFIC_OBJECT,
-	PROP_SHARED_SERVICE_NAME,
-	PROP_SHARED_CONNECTION,
 	PROP_DEVICES,
 	PROP_STATE,
 	PROP_DEFAULT,
@@ -50,8 +46,6 @@ enum {
 #define DBUS_PROP_SERVICE_NAME "ServiceName"
 #define DBUS_PROP_CONNECTION "Connection"
 #define DBUS_PROP_SPECIFIC_OBJECT "SpecificObject"
-#define DBUS_PROP_SHARED_SERVICE_NAME "SharedServiceName"
-#define DBUS_PROP_SHARED_CONNECTION "SharedConnection"
 #define DBUS_PROP_DEVICES "Devices"
 #define DBUS_PROP_STATE "State"
 #define DBUS_PROP_DEFAULT "Default"
@@ -139,40 +133,6 @@ nm_active_connection_get_specific_object (NMActiveConnection *connection)
 	}
 
 	return priv->specific_object;
-}
-
-const char *
-nm_active_connection_get_shared_service_name (NMActiveConnection *connection)
-{
-	NMActiveConnectionPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
-
-	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
-	if (!priv->shared_service_name) {
-		priv->shared_service_name = nm_object_get_string_property (NM_OBJECT (connection),
-		                                                           NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
-		                                                           DBUS_PROP_SHARED_SERVICE_NAME);
-	}
-
-	return priv->shared_service_name;
-}
-
-const char *
-nm_active_connection_get_shared_connection (NMActiveConnection *connection)
-{
-	NMActiveConnectionPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_ACTIVE_CONNECTION (connection), NULL);
-
-	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
-	if (!priv->shared_connection) {
-		priv->shared_connection = nm_object_get_string_property (NM_OBJECT (connection),
-		                                                         NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
-		                                                         DBUS_PROP_SHARED_CONNECTION);
-	}
-
-	return priv->shared_connection;
 }
 
 const GPtrArray *
@@ -268,8 +228,6 @@ finalize (GObject *object)
 	g_free (priv->service_name);
 	g_free (priv->connection);
 	g_free (priv->specific_object);
-	g_free (priv->shared_service_name);
-	g_free (priv->shared_service_name);
 
 	G_OBJECT_CLASS (nm_active_connection_parent_class)->finalize (object);
 }
@@ -291,12 +249,6 @@ get_property (GObject *object,
 		break;
 	case PROP_SPECIFIC_OBJECT:
 		g_value_set_boxed (value, nm_active_connection_get_specific_object (self));
-		break;
-	case PROP_SHARED_SERVICE_NAME:
-		g_value_set_string (value, nm_active_connection_get_shared_service_name (self));
-		break;
-	case PROP_SHARED_CONNECTION:
-		g_value_set_boxed (value, nm_active_connection_get_shared_connection (self));
 		break;
 	case PROP_DEVICES:
 		g_value_set_boxed (value, nm_active_connection_get_devices (self));
@@ -346,8 +298,6 @@ register_for_property_changed (NMActiveConnection *connection)
 		{ NM_ACTIVE_CONNECTION_SERVICE_NAME,        demarshal_service,           &priv->service_name },
 		{ NM_ACTIVE_CONNECTION_CONNECTION,          nm_object_demarshal_generic, &priv->connection },
 		{ NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT,     nm_object_demarshal_generic, &priv->specific_object },
-		{ NM_ACTIVE_CONNECTION_SHARED_SERVICE_NAME, nm_object_demarshal_generic, &priv->shared_service_name },
-		{ NM_ACTIVE_CONNECTION_SHARED_CONNECTION,   nm_object_demarshal_generic, &priv->shared_connection },
 		{ NM_ACTIVE_CONNECTION_DEVICES,             demarshal_devices,           &priv->devices },
 		{ NM_ACTIVE_CONNECTION_STATE,               nm_object_demarshal_generic, &priv->state },
 		{ NM_ACTIVE_CONNECTION_DEFAULT,             nm_object_demarshal_generic, &priv->is_default },
@@ -421,22 +371,6 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 		 g_param_spec_string (NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT,
 						      "Specific object",
 						      "Specific object",
-						      NULL,
-						      G_PARAM_READABLE));
-
-	g_object_class_install_property
-		(object_class, PROP_SHARED_SERVICE_NAME,
-		 g_param_spec_string (NM_ACTIVE_CONNECTION_SHARED_SERVICE_NAME,
-						  "Shared Service Name",
-						  "Shared Service Name",
-						  NULL,
-						  G_PARAM_READABLE));
-
-	g_object_class_install_property
-		(object_class, PROP_SHARED_CONNECTION,
-		 g_param_spec_string (NM_ACTIVE_CONNECTION_SHARED_CONNECTION,
-						      "Shared Connection",
-						      "Shared Connection",
 						      NULL,
 						      G_PARAM_READABLE));
 
