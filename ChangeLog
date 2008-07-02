@@ -1,3 +1,12 @@
+2008-07-02  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-wifi.c
+		- (can_scan): don't scan when a shared connection is activated since
+			that makes drivers mad (causing disconnects); also NM doesn't need
+			to hedge against disconnects by keeping up-to-date network topology
+			because the connection originates from the local machine, and thus
+			there should be no disconnects
+
 2008-07-01  Dan Williams  <dcbw@redhat.com>
 
 	Fix mobile broadband username/password issues.  NM was never requesting

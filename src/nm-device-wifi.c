@@ -48,6 +48,8 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-8021x.h"
+#include "nm-setting-ip4-config.h"
+#include "nm-setting-ip6-config.h"
 #include "NetworkManagerSystem.h"
 
 static gboolean impl_device_get_access_points (NMDeviceWifi *device,
@@ -1538,6 +1540,7 @@ can_scan (NMDeviceWifi *self)
 	guint32 sup_state;
 	NMDeviceState dev_state;
 	gboolean is_disconnected = FALSE;
+	NMActRequest *req;
 
 	g_return_val_if_fail (priv->supplicant.iface != NULL, FALSE);
 
@@ -1557,6 +1560,23 @@ can_scan (NMDeviceWifi *self)
 	/* All wireless devices can scan when disconnected */
 	if (is_disconnected)
 		return TRUE;
+
+	/* Don't scan when a shared connection is active; it makes drivers mad */
+	req = nm_device_get_act_request (NM_DEVICE (self));
+	if (req) {
+		NMConnection *connection;
+		NMSettingIP4Config *s_ip4;
+		NMSettingIP6Config *s_ip6;
+
+		connection = nm_act_request_get_connection (req);
+		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+		if (s_ip4 && !strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
+			return FALSE;
+
+		s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
+		if (s_ip6 && !strcmp (s_ip6->method, NM_SETTING_IP6_CONFIG_METHOD_SHARED))
+			return FALSE;
+	}
 
 	/* Devices supporting only B/G frequencies can scan when disconnected 
 	 * and activated, but not when activating.  We don't allow a/b/g devices to
