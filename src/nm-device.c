@@ -525,16 +525,16 @@ nm_device_activate_schedule_stage2_device_config (NMDevice *self)
 static NMActStageReturn
 real_act_stage3_ip_config_start (NMDevice *self)
 {
-	NMSettingIP4Config *setting;
+	NMSettingIP4Config *s_ip4;
 	NMActRequest *req;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
 
 	req = nm_device_get_act_request (self);
-	setting = (NMSettingIP4Config *) nm_connection_get_setting (nm_act_request_get_connection (req),
+	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (nm_act_request_get_connection (req),
 													NM_TYPE_SETTING_IP4_CONFIG);
 
 	/* If we did not receive IP4 configuration information, default to DHCP */
-	if (!setting || !strcmp (setting->method, NM_SETTING_IP4_CONFIG_METHOD_DHCP)) {
+	if (!s_ip4 || !strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_DHCP)) {
 		NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 		gboolean success;
 
@@ -547,6 +547,7 @@ real_act_stage3_ip_config_start (NMDevice *self)
 
 		success = nm_dhcp_manager_begin_transaction (priv->dhcp_manager,
 													 nm_device_get_iface (self),
+													 s_ip4,
 													 45);
 
 		g_signal_handler_unblock (priv->dhcp_manager, priv->dhcp_state_sigid);

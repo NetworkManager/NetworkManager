@@ -1,4 +1,4 @@
-/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
 #include <string.h>
 
@@ -54,6 +54,8 @@ enum {
 	PROP_ADDRESSES,
 	PROP_ROUTES,
 	PROP_IGNORE_DHCP_DNS,
+	PROP_DHCP_CLIENT_ID,
+	PROP_DHCP_HOSTNAME,
 
 	LAST_PROP
 };
@@ -120,6 +122,16 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
+	if (self->dhcp_client_id && !strlen (self->dhcp_client_id)) {
+		g_warning ("invalid DHCP client ID");
+		return FALSE;
+	}
+
+	if (self->dhcp_hostname && !strlen (self->dhcp_hostname)) {
+		g_warning ("invalid DHCP client ID");
+		return FALSE;
+	}
+
 	return TRUE;
 }
 
@@ -176,6 +188,14 @@ set_property (GObject *object, guint prop_id,
 	case PROP_IGNORE_DHCP_DNS:
 		setting->ignore_dhcp_dns = g_value_get_boolean (value);
 		break;
+	case PROP_DHCP_CLIENT_ID:
+		g_free (setting->dhcp_client_id);
+		setting->dhcp_client_id = g_value_dup_string (value);
+		break;
+	case PROP_DHCP_HOSTNAME:
+		g_free (setting->dhcp_hostname);
+		setting->dhcp_hostname = g_value_dup_string (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -206,6 +226,12 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_IGNORE_DHCP_DNS:
 		g_value_set_boolean (value, setting->ignore_dhcp_dns);
+		break;
+	case PROP_DHCP_CLIENT_ID:
+		g_value_set_string (value, setting->dhcp_client_id);
+		break;
+	case PROP_DHCP_HOSTNAME:
+		g_value_set_string (value, setting->dhcp_hostname);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -273,4 +299,21 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 						   "Ignore DHCP DNS",
 						   FALSE,
 						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	g_object_class_install_property
+		(object_class, PROP_DHCP_CLIENT_ID,
+		 g_param_spec_string (NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID,
+						   "DHCP Client ID",
+						   "DHCP Client ID",
+						   NULL,
+						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	g_object_class_install_property
+		(object_class, PROP_DHCP_HOSTNAME,
+		 g_param_spec_string (NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME,
+						   "DHCP Hostname",
+						   "DHCP Hostname",
+						   NULL,
+						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 }
+

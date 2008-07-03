@@ -36,6 +36,8 @@ GQuark nm_setting_ip4_config_error_quark (void);
 #define NM_SETTING_IP4_CONFIG_ADDRESSES       "addresses"
 #define NM_SETTING_IP4_CONFIG_ROUTES          "routes"
 #define NM_SETTING_IP4_CONFIG_IGNORE_DHCP_DNS "ignore-dhcp-dns"
+#define NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID  "dhcp-client-id"
+#define NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME   "dhcp-hostname"
 
 #define NM_SETTING_IP4_CONFIG_METHOD_DHCP   "dhcp"
 #define NM_SETTING_IP4_CONFIG_METHOD_AUTOIP "autoip"
@@ -57,6 +59,8 @@ typedef struct {
 	GSList *addresses;  /* array of NMSettingIP4Address */
 	GSList *routes;     /* array of NMSettingIP4Address */
 	gboolean ignore_dhcp_dns;
+	char *dhcp_client_id;
+	char *dhcp_hostname;
 } NMSettingIP4Config;
 
 typedef struct {

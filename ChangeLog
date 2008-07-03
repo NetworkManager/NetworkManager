@@ -1,3 +1,31 @@
+2008-07-03  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-setting-ip4-config.c
+	  libnm-util/nm-setting-ip4-config.h
+		- Add properties for DHCP Client Identifier and DHCP Hostname
+
+	* src/dhcp-manager/nm-dhcp-manager.c
+	  src/dhcp-manager/nm-dhcp-manager.h
+		- (nm_dhcp_manager_begin_transaction): take the connection's ip4-config
+			setting as an argument to pass on to the dhclient config file
+			creation function
+		- (nm_dhcp_manager_cancel_transaction_real): remove dhclient config when
+			DHCP is torn down
+		- (dhclient_run): punt config file handling to create_dhclient_config()
+		- (create_dhclient_config): create an interface-specific dhclient
+			config file since there may need to be interface-specific options
+			passed to dhclient
+		- (merge_dhclient_config): merge normal distro dhclient config file and
+			add options from the connection
+		- (nm_dhcp_device_new): generate the interface specific dhclient
+			config file path once
+		- (nm_dhcp_device_destroy): handle partially initialized objects; free
+			dhclient config file path
+
+	* src/nm-device.c
+		- (real_act_stage3_ip_config_start): pass ip4-config, if any, to the
+			DHCP manager when starting DHCP
+
 2008-07-02  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/nm-setting-8021x.c

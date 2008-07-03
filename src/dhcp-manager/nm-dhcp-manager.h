@@ -23,6 +23,9 @@
 
 #include <glib/gtypes.h>
 #include <glib-object.h>
+
+#include <nm-setting-ip4-config.h>
+
 #include "nm-ip4-config.h"
 
 #define NM_TYPE_DHCP_MANAGER            (nm_dhcp_manager_get_type ())
@@ -68,6 +71,7 @@ GType nm_dhcp_manager_get_type (void);
 NMDHCPManager *nm_dhcp_manager_get                  (void);
 gboolean       nm_dhcp_manager_begin_transaction    (NMDHCPManager *manager,
                                                      const char *iface,
+                                                     NMSettingIP4Config *s_ip4,
                                                      guint32 timeout);
 void           nm_dhcp_manager_cancel_transaction   (NMDHCPManager *manager,
                                                      const char *iface);

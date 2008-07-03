@@ -22,6 +22,7 @@
 
 
 #include <glib.h>
+#include <glib/gi18n.h>
 #include <dbus/dbus.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -32,6 +33,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include "nm-dhcp-manager.h"
 #include "nm-marshal.h"
@@ -55,14 +57,6 @@
 
 #define NM_DHCP_TIMEOUT   	45 /* DHCP timeout, in seconds */
 
-#if defined(TARGET_SUSE)
-#define DHCLIENT_CONF_PATH  SYSCONFDIR "/dhclient.conf"
-#elif defined(TARGET_DEBIAN)
-#define DHCLIENT_CONF_PATH  SYSCONFDIR "/dhcp3/dhclient.conf"
-#else
-#define DHCLIENT_CONF_PATH_FORMAT  SYSCONFDIR "/dhclient-%s.conf"
-#endif
-
 
 static const char *dhclient_binary_paths[] =
 {
@@ -76,6 +70,7 @@ typedef struct {
         char *			iface;
         guchar 			state;
         GPid 			dhclient_pid;
+        char *			dhclient_conf;
         guint			timeout_id;
         guint			watch_id;
         NMDHCPManager *	manager;
@@ -224,9 +219,19 @@ nm_dhcp_device_watch_cleanup (NMDHCPDevice * device)
 static void
 nm_dhcp_device_destroy (NMDHCPDevice *device)
 {
+	int ret;
+
 	nm_dhcp_device_timeout_cleanup (device);
 	nm_dhcp_device_watch_cleanup (device);
-	g_hash_table_destroy (device->options);
+
+	if (device->options)
+		g_hash_table_destroy (device->options);
+
+	if (device->dhclient_conf) {
+		ret = unlink (device->dhclient_conf);
+		g_free (device->dhclient_conf);
+	}
+
 	g_free (device->iface);
 	g_slice_free (NMDHCPDevice, device);
 }
@@ -529,6 +534,7 @@ nm_dhcp_device_new (NMDHCPManager *manager, const char *iface)
 {
 	NMDHCPDevice *device;
 	GHashTable * hash = NM_DHCP_MANAGER_GET_PRIVATE (manager)->devices;
+	char *tmp;
 
 	device = g_slice_new0 (NMDHCPDevice);
 	if (!device) {
@@ -545,6 +551,10 @@ nm_dhcp_device_new (NMDHCPManager *manager, const char *iface)
 	}
 	
 	device->manager = manager;
+
+	tmp = g_strdup_printf ("nm-dhclient-%s.conf", iface);
+	device->dhclient_conf = g_build_filename ("/var", "run", tmp, NULL);
+	g_free (tmp);
 
 	nm_dhcp_manager_cancel_transaction_real (device, FALSE);
 
@@ -564,9 +574,7 @@ nm_dhcp_device_new (NMDHCPManager *manager, const char *iface)
 	return device;
 
 error:
-	g_hash_table_destroy (device->options);
-	g_free (device->iface);
-	g_slice_free (NMDHCPDevice, device);
+	nm_dhcp_device_destroy (device);
 	return NULL;
 }
 
@@ -607,8 +615,131 @@ dhclient_child_setup (gpointer user_data G_GNUC_UNUSED)
 	setpgid (pid, pid);
 }
 
+
+#define DHCP_CLIENT_ID_TAG "send dhcp-client-identifier"
+#define DHCP_CLIENT_ID_FORMAT DHCP_CLIENT_ID_TAG " \"%s\"; # added by NetworkManager"
+
+#define DHCP_HOSTNAME_TAG "send host-name"
+#define DHCP_HOSTNAME_FORMAT DHCP_HOSTNAME_TAG " \"%s\"; # added by NetworkManager"
+
 static gboolean
-dhclient_run (NMDHCPDevice *device)
+merge_dhclient_config (NMDHCPDevice *device,
+                       NMSettingIP4Config *s_ip4,
+                       const char *contents,
+                       const char *orig,
+                       GError **error)
+{
+	GString *new_contents;
+	gboolean success = FALSE;
+
+	g_return_val_if_fail (device != NULL, FALSE);
+	g_return_val_if_fail (device->iface != NULL, FALSE);
+	
+	new_contents = g_string_new (_("# Created by NetworkManager\n"));
+
+	/* Add existing options, if any, but ignore stuff NM will replace. */
+	if (contents) {
+		char **lines = NULL, **line;
+
+		g_string_append_printf (new_contents, _("# Merged from %s\n\n"), orig);
+
+		lines = g_strsplit_set (contents, "\n\r", 0);
+		for (line = lines; lines && *line; line++) {
+			gboolean ignore = FALSE;
+
+			if (!strlen (g_strstrip (*line)))
+				continue;
+
+			if (   s_ip4
+			    && s_ip4->dhcp_client_id
+			    && !strncmp (*line, DHCP_CLIENT_ID_TAG, strlen (DHCP_CLIENT_ID_TAG)))
+				ignore = TRUE;
+
+			if (   s_ip4
+			    && s_ip4->dhcp_client_id
+			    && !strncmp (*line, DHCP_HOSTNAME_TAG, strlen (DHCP_HOSTNAME_TAG)))
+				ignore = TRUE;
+
+			if (!ignore) {
+				g_string_append (new_contents, *line);
+				g_string_append_c (new_contents, '\n');
+			}
+		}
+
+		if (lines)
+			g_strfreev (lines);
+	} else
+		g_string_append_c (new_contents, '\n');
+
+	/* Add NM options from connection */
+	if (s_ip4 && s_ip4->dhcp_client_id)
+		g_string_append_printf (new_contents, DHCP_CLIENT_ID_FORMAT "\n", s_ip4->dhcp_client_id);
+
+	if (s_ip4 && s_ip4->dhcp_hostname)
+		g_string_append_printf (new_contents, DHCP_HOSTNAME_FORMAT "\n", s_ip4->dhcp_hostname);
+
+	if (g_file_set_contents (device->dhclient_conf, new_contents->str, -1, error))
+		success = TRUE;
+
+	g_string_free (new_contents, TRUE);
+	return success;
+}
+
+/* NM provides interface-specific options; thus the same dhclient config
+ * file cannot be used since DHCP transactions can happen in parallel.
+ * Since some distros don't have default per-interface dhclient config files,
+ * read their single config file and merge that into a custom per-interface
+ * config file along with the NM options.
+ */
+static gboolean
+create_dhclient_config (NMDHCPDevice *device, NMSettingIP4Config *s_ip4)
+{
+	char *orig = NULL, *contents = NULL;
+	GError *error = NULL;
+	gboolean success = FALSE;
+
+	g_return_val_if_fail (device != NULL, FALSE);
+
+#if defined(TARGET_SUSE)
+	orig = g_strdup (SYSCONFDIR "/dhclient.conf");
+#elif defined(TARGET_DEBIAN)
+	orig = g_strdup (SYSCONFDIR "/dhcp3/dhclient.conf");
+#else
+	orig = g_strdup_printf (SYSCONFDIR "/dhclient-%s.conf", device->iface);
+#endif
+
+	if (!orig) {
+		nm_warning ("%s: not enough memory for dhclient options.", device->iface);
+		return FALSE;
+	}
+
+	if (!g_file_test (orig, G_FILE_TEST_EXISTS))
+		goto out;
+
+	if (!g_file_get_contents (orig, &contents, NULL, &error)) {
+		nm_warning ("%s: error reading dhclient configuration %s: %s",
+		            device->iface, orig, error->message);
+		g_error_free (error);
+		goto out;
+	}
+
+out:
+	error = NULL;
+	if (merge_dhclient_config (device, s_ip4, contents, orig, &error))
+		success = TRUE;
+	else {
+		nm_warning ("%s: error creating dhclient configuration: %s",
+		            device->iface, error->message);
+		g_error_free (error);
+	}
+
+	g_free (contents);
+	g_free (orig);
+	return success;
+}
+
+static gboolean
+dhclient_run (NMDHCPDevice *device, NMSettingIP4Config *s_ip4)
 {
 	const char **	dhclient_binary = NULL;
 	GPtrArray *		dhclient_argv = NULL;
@@ -616,7 +747,6 @@ dhclient_run (NMDHCPDevice *device)
 	GError *		error = NULL;
 	char *			pidfile = NULL;
 	char *			leasefile = NULL;
-	char *			conffile = NULL;
 	gboolean		success = FALSE;
 	char *			pid_contents = NULL;
 
@@ -645,15 +775,8 @@ dhclient_run (NMDHCPDevice *device)
 		goto out;
 	}
 
-#ifdef DHCLIENT_CONF_PATH_FORMAT
-	conffile = g_strdup_printf (DHCLIENT_CONF_PATH_FORMAT, device->iface);
-#else
-	conffile = g_strdup (DHCLIENT_CONF_PATH);
-#endif
-	if (!conffile) {
-		nm_warning ("%s: not enough memory for dhclient options.", device->iface);
+	if (!create_dhclient_config (device, s_ip4))
 		goto out;
-	}
 
 	/* Kill any existing dhclient bound to this interface */
 	if (g_file_get_contents (pidfile, &pid_contents, NULL, NULL)) {
@@ -679,7 +802,7 @@ dhclient_run (NMDHCPDevice *device)
 	g_ptr_array_add (dhclient_argv, (gpointer) leasefile);
 
 	g_ptr_array_add (dhclient_argv, (gpointer) "-cf");	/* Set interface config file */
-	g_ptr_array_add (dhclient_argv, (gpointer) conffile);
+	g_ptr_array_add (dhclient_argv, (gpointer) device->dhclient_conf);
 
 	g_ptr_array_add (dhclient_argv, (gpointer) device->iface);
 	g_ptr_array_add (dhclient_argv, NULL);
@@ -701,7 +824,6 @@ dhclient_run (NMDHCPDevice *device)
 
 out:
 	g_free (pid_contents);
-	g_free (conffile);
 	g_free (leasefile);
 	g_free (pidfile);
 	g_ptr_array_free (dhclient_argv, TRUE);
@@ -711,6 +833,7 @@ out:
 gboolean
 nm_dhcp_manager_begin_transaction (NMDHCPManager *manager,
 								   const char *iface,
+								   NMSettingIP4Config *s_ip4,
 								   guint32 timeout)
 {
 	NMDHCPManagerPrivate *priv;
@@ -740,7 +863,7 @@ nm_dhcp_manager_begin_transaction (NMDHCPManager *manager,
 	                                    nm_dhcp_manager_handle_timeout,
 	                                    device);
 
-	dhclient_run (device);
+	dhclient_run (device, s_ip4);
 
 	return TRUE;
 }
@@ -809,6 +932,9 @@ nm_dhcp_manager_cancel_transaction_real (NMDHCPDevice *device, gboolean blocking
 		remove (leasefile);
 		g_free (leasefile);
 	}
+
+	/* Clean up config file if it got left around */
+	remove (device->dhclient_conf);
 
 	nm_dhcp_device_watch_cleanup (device);
 	nm_dhcp_device_timeout_cleanup (device);
