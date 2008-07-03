@@ -4,5 +4,5 @@ service=org.freedesktop.NetworkManager.vpnc
 program=@BINDIR@/nm-vpnc-service
 
 [GNOME]
-auth-dialog=@LIBEXECDIR@/nm-vpnc-auth-dialog
-properties=@PREFIX@/${LIB}/libnm-vpnc-properties
+auth-dialog=nm-vpnc-auth-dialog
+properties=libnm-vpnc-properties

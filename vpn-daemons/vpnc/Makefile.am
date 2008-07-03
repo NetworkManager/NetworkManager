@@ -24,8 +24,6 @@ endif
 
 nm-vpnc-service.name: $(srcdir)/nm-vpnc-service.name.in Makefile
 	sed	-e 's|[@]BINDIR[@]|$(bindir)|g' \
-		-e 's|[@]LIBEXECDIR[@]|$(libexecdir)|g' \
-		-e 's|[@]PREFIX[@]|$(prefix)|g' \
 		< $(srcdir)/nm-vpnc-service.name.in \
 		> nm-vpnc-service.name
 
