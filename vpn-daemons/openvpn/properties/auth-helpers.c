@@ -139,7 +139,6 @@ sk_init_auth_widget (GladeXML *xml,
 {
 	GtkWidget *widget;
 	GValue *value = NULL;
-	gint sk_direction = -1;
 	GtkListStore *store;
 	GtkTreeIter iter;
 	gint active = -1;
@@ -350,7 +349,6 @@ update_from_filechooser (GladeXML *xml,
 	if (strlen (filename))
 		g_hash_table_insert (s_vpn_props->data, g_strdup (key), str_to_gvalue (filename));
 	
-done:
 	g_free (filename);
 }
 
@@ -457,7 +455,6 @@ static const char *pem_cert_begin = "-----BEGIN CERTIFICATE-----";
 static gboolean
 tls_default_filter (const GtkFileFilterInfo *filter_info, gpointer data)
 {
-	int fd;
 	char *contents = NULL, *p, *ext;
 	gsize bytes_read = 0;
 	gboolean show = FALSE;
@@ -636,7 +633,6 @@ advanced_dialog_new_hash_from_connection (NMConnection *connection,
 {
 	GHashTable *hash;
 	NMSettingVPNProperties *s_vpn_props;
-	GValue *value;
 
 	hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, nm_gvalue_destroy);
 

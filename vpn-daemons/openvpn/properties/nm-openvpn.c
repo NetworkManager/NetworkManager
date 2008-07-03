@@ -135,7 +135,6 @@ static gboolean
 check_validity (OpenvpnPluginUiWidget *self, GError **error)
 {
 	OpenvpnPluginUiWidgetPrivate *priv = OPENVPN_PLUGIN_UI_WIDGET_GET_PRIVATE (self);
-	gboolean is_valid = TRUE;
 	GtkWidget *widget;
 	const char *str;
 	GtkTreeModel *model;
@@ -197,7 +196,6 @@ static void
 advanced_dialog_close_cb (GtkWidget *dialog, gpointer user_data)
 {
 	OpenvpnPluginUiWidget *self = OPENVPN_PLUGIN_UI_WIDGET (user_data);
-	OpenvpnPluginUiWidgetPrivate *priv = OPENVPN_PLUGIN_UI_WIDGET_GET_PRIVATE (self);
 
 	gtk_widget_hide (dialog);
 	/* gtk_widget_destroy() will remove the window from the window group */
@@ -266,7 +264,6 @@ init_plugin_ui (OpenvpnPluginUiWidget *self, NMConnection *connection, GError **
 	OpenvpnPluginUiWidgetPrivate *priv = OPENVPN_PLUGIN_UI_WIDGET_GET_PRIVATE (self);
 	NMSettingVPNProperties *s_vpn_props;
 	GtkWidget *widget;
-	GtkWidget *auth_widget;
 	GtkListStore *store;
 	GtkTreeIter iter;
 	int active = -1;
@@ -417,7 +414,6 @@ hash_copy_advanced (gpointer key, gpointer data, gpointer user_data)
 {
 	GHashTable *hash = (GHashTable *) user_data;
 	GValue *value = (GValue *) data;
-	const char *i;
 
 	if (G_VALUE_HOLDS_STRING (value)) {
 		g_hash_table_insert (hash,
@@ -447,7 +443,6 @@ update_connection (NMVpnPluginUiWidgetInterface *iface,
 	NMSettingVPN *s_vpn;
 	NMSettingVPNProperties *s_vpn_props;
 	GtkWidget *widget;
-	GValue *value;
 	char *str;
 	GtkTreeModel *model;
 	GtkTreeIter iter;
@@ -660,7 +655,6 @@ static char *
 get_suggested_name (NMVpnPluginUiInterface *iface, NMConnection *connection)
 {
 	NMSettingConnection *s_con;
-	char *suggested;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 
