@@ -1,3 +1,10 @@
+2008-07-03  Dan Williams  <dcbw@redhat.com>
+
+	* nm-openvpn-service.name.in
+	  Makefile.am
+		- Remove paths from .name file (requires applet r776 or later) to fix
+			issues with multilib and magic path substitution in glibc
+
 2008-07-02  Dan Williams  <dcbw@redhat.com>
 
 	* properties/auth-helpers.c

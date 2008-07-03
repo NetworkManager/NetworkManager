@@ -4,6 +4,6 @@ service=org.freedesktop.NetworkManager.openvpn
 program=@BINDIR@/nm-openvpn-service
 
 [GNOME]
-auth-dialog=@LIBEXECDIR@/nm-openvpn-auth-dialog
-properties=@PREFIX@/${LIB}/libnm-openvpn-properties
+auth-dialog=nm-openvpn-auth-dialog
+properties=libnm-openvpn-properties
 
