@@ -12,8 +12,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager.HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-05-19 07:43+0000\n"
-"PO-Revision-Date: 2008-05-25 12:25+0200\n"
+"POT-Creation-Date: 2008-07-03 16:22+0000\n"
+"PO-Revision-Date: 2008-07-04 17:36+0200\n"
 "Last-Translator: Jorge González <jorgegonz@svn.gnome.org>\n"
 "Language-Team: Español <gnome-es-list@gnome.org>\n"
 "MIME-Version: 1.0\n"
@@ -56,22 +56,35 @@ msgstr ""
 msgid "error occurred while waiting for data on socket"
 msgstr "ha ocurrido un error mientras esperaban datos en un socket"
 
-#: ../src/NetworkManager.c:254
+#: ../src/NetworkManager.c:250
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr "Opción no válida. Use --help para ver una lista de las opciones válidas.\n"
 
-#: ../src/named-manager/nm-named-manager.c:218
+#: ../src/dhcp-manager/nm-dhcp-manager.c:638
+msgid "# Created by NetworkManager\n"
+msgstr "# Creado por NetworkManager\n"
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:644
+#, c-format
+msgid ""
+"# Merged from %s\n"
+"\n"
+msgstr ""
+"# Mezclado de %s\n"
+"\n"
+
+#: ../src/named-manager/nm-named-manager.c:117
 msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
 msgstr ""
 "NOTA: el determinador de nombres de glibc no soporta más de 3 servidores de "
 "nombres."
 
-#: ../src/named-manager/nm-named-manager.c:220
+#: ../src/named-manager/nm-named-manager.c:119
 msgid "The nameservers listed below may not be recognized."
 msgstr "Puede que los servidores de nombres listados abajo no se reconozcan."
 
-#: ../system-settings/src/main.c:349
+#: ../system-settings/src/main.c:365
 #, c-format
 msgid "Auto %s"
 msgstr "Auto %ss"
@@ -119,7 +132,7 @@ msgstr "Archivo PEM mal formado: formato de IV no válido en la etiqueta DEK-Inf
 #: ../libnm-util/crypto.c:206
 #, c-format
 msgid "Malformed PEM file: unknown private key cipher '%s'."
-msgstr ""
+msgstr "Archivo PEM malformado: cifrador de clave privada «%s» desconocido."
 
 #: ../libnm-util/crypto.c:225
 #, c-format
@@ -160,12 +173,14 @@ msgstr "IV contiene dígitos no hexadecimales."
 #: ../libnm-util/crypto_nss.c:134
 #, c-format
 msgid "Private key cipher '%s' was unknown."
-msgstr ""
+msgstr "Se desconocía el cifrador de clave privada «%s»."
 
 #: ../libnm-util/crypto.c:393
 #, c-format
 msgid "Not enough memory to create private key decryption key."
-msgstr "No hay memoria suficiente para crear la clave privada de la clave de descifrado."
+msgstr ""
+"No hay memoria suficiente para crear la clave privada de la clave de "
+"descifrado."
 
 #: ../libnm-util/crypto.c:511
 #, c-format
@@ -185,7 +200,7 @@ msgstr "No hay memoria suficiente para el búfer de la clave descifrada."
 #: ../libnm-util/crypto_gnutls.c:142
 #, c-format
 msgid "Failed to initialize the decryption cipher context: %s / %s."
-msgstr ""
+msgstr "Falló al inicializar el contexto de descifrado: %s / %s."
 
 #: ../libnm-util/crypto_gnutls.c:151
 #, c-format
@@ -220,7 +235,7 @@ msgstr "Falló al inicializar el contexto MD5: %d"
 #: ../libnm-util/crypto_nss.c:151
 #, c-format
 msgid "Failed to initialize the decryption cipher slot."
-msgstr ""
+msgstr "Falló al inicializar la ranura de descifrado."
 
 #: ../libnm-util/crypto_nss.c:161
 #, c-format
