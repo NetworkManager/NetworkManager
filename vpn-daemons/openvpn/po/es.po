@@ -13,8 +13,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn.HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-06-26 17:42+0000\n"
-"PO-Revision-Date: 2008-06-28 12:05+0200\n"
+"POT-Creation-Date: 2008-07-01 03:19+0000\n"
+"PO-Revision-Date: 2008-07-04 17:38+0200\n"
 "Last-Translator: Jorge González <jorgegonz@svn.gnome.org>\n"
 "Language-Team: Español <gnome-es-list@gnome.org>\n"
 "MIME-Version: 1.0\n"
@@ -79,59 +79,59 @@ msgstr "_Contraseña del certificado:"
 msgid "Certificate password:"
 msgstr "Contraseña del certificado:"
 
-#: ../properties/auth-helpers.c:70
+#: ../properties/auth-helpers.c:68
 msgid "Choose a Certificate Authority certificate..."
 msgstr "Elija un certificado de una autoridad de certificados…"
 
-#: ../properties/auth-helpers.c:89
+#: ../properties/auth-helpers.c:87
 msgid "Choose your personal certificate..."
 msgstr "Elija su certificado personal…"
 
-#: ../properties/auth-helpers.c:107
+#: ../properties/auth-helpers.c:105
 msgid "Choose your private key..."
 msgstr "Elija su clave privada…"
 
-#: ../properties/auth-helpers.c:161
+#: ../properties/auth-helpers.c:159
 msgid "Choose an OpenVPN static key..."
 msgstr "Elija una clave estática OpenVPN…"
 
-#: ../properties/auth-helpers.c:179 ../properties/auth-helpers.c:868
+#: ../properties/auth-helpers.c:177 ../properties/auth-helpers.c:866
 msgid "None"
 msgstr "Ninguno"
 
-#: ../properties/auth-helpers.c:522
-msgid "PEM certificates (*.pem)"
-msgstr "Certificados PEM (*.pem)"
+#: ../properties/auth-helpers.c:520
+msgid "PEM certificates (*.pem, *.crt, *.key)"
+msgstr "Certificados PEM (*.pem, *.crt, *.key)"
 
-#: ../properties/auth-helpers.c:582
+#: ../properties/auth-helpers.c:580
 msgid "OpenVPN Static Keys (*.key)"
 msgstr "Claves estáticas OpenVPN (*.key)"
 
-#: ../properties/auth-helpers.c:707
+#: ../properties/auth-helpers.c:705
 msgid "Default"
 msgstr "Predeterminado"
 
-#: ../properties/nm-openvpn.c:52
+#: ../properties/nm-openvpn.c:53
 msgid "OpenVPN"
 msgstr "OpenVPN"
 
-#: ../properties/nm-openvpn.c:53
+#: ../properties/nm-openvpn.c:54
 msgid "Compatible with the OpenVPN server."
 msgstr "Compatible con el servidor OpenVPN."
 
-#: ../properties/nm-openvpn.c:309 ../properties/nm-openvpn-dialog.glade.h:7
+#: ../properties/nm-openvpn.c:314 ../properties/nm-openvpn-dialog.glade.h:7
 msgid "Certificates (TLS)"
 msgstr "Certificados (TLS)"
 
-#: ../properties/nm-openvpn.c:321
+#: ../properties/nm-openvpn.c:326
 msgid "Password"
 msgstr "Contraseña"
 
-#: ../properties/nm-openvpn.c:335
+#: ../properties/nm-openvpn.c:340
 msgid "Password with Certificates (TLS)"
 msgstr "Contraseñas con certificados (TLS)"
 
-#: ../properties/nm-openvpn.c:347
+#: ../properties/nm-openvpn.c:352
 msgid "Static Key"
 msgstr "Clave estática"
 
@@ -153,9 +153,10 @@ msgid ""
 "peer.  For example, if the peer uses '1', this connection must use '0'.  If "
 "you are unsure what value to use, contact your system administrator.</i>"
 msgstr ""
-"<i>Si se usa la dirección de la clave, debe ser la opuesta a la usada en el par "
-"VPN. Por ejemplo, si el par usa «1», esta conexión debe usar «0». Si "
-"no está seguro de qué valor usar, contacte con el administrador de su sistema.</i>"
+"<i>Si se usa la dirección de la clave, debe ser la opuesta a la usada en el "
+"par VPN. Por ejemplo, si el par usa «1», esta conexión debe usar «0». Si no "
+"está seguro de qué valor usar, contacte con el administrador de su sistema.</"
+"i>"
 
 #: ../properties/nm-openvpn-dialog.glade.h:5
 msgid "Ad_vanced..."
