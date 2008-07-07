@@ -566,7 +566,7 @@ get_routes (const char *routelist)
 
 		errno = 0;
 		prefix = strtol (p + 1, NULL, 10);
-		if (errno || prefix < 0 || prefix > 32) {
+		if (errno || prefix <= 0 || prefix > 32) {
 			g_warning ("Ignoring invalid route '%s'", route);
 			goto next;
 		}
@@ -578,7 +578,7 @@ get_routes (const char *routelist)
 
 			addr = g_new0 (NMSettingIP4Address, 1);
 			addr->address = tmp.s_addr;
-			addr->netmask = ntohl (0xFFFFFFFF << (32 - prefix));
+			addr->prefix = (guint32) prefix;
 			addr->gateway = 0;
 
 			routes = g_slist_append (routes, addr);
@@ -805,7 +805,7 @@ export (NMVpnPluginUiInterface *iface,
 
 			num_addr.s_addr = addr->address;
 			if (inet_ntop (AF_INET, &num_addr, &str_addr[0], INET_ADDRSTRLEN + 1))
-				g_string_append_printf (routes, "%s/%d", str_addr, addr->netmask);
+				g_string_append_printf (routes, "%s/%d", str_addr, addr->prefix);
 		}
 	}
 

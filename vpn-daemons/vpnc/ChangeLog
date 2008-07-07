@@ -1,3 +1,9 @@
+2008-07-07  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-vpnc-service-vpnc-helper.c
+	  properties/nm-vpnc.c
+		- Use IPv4 address prefixes rather than netmasks (requires svn3812)
+
 2008-07-03  Dan Williams  <dcbw@redhat.com>
 
 	* nm-vpnc-service.name.in

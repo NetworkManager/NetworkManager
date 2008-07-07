@@ -27,6 +27,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <errno.h>
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
@@ -210,8 +211,8 @@ get_routes (void)
 		GArray *array;
 		char buf[BUFLEN];
 		struct in_addr network;
-		struct in_addr netmask;
 		guint32 gateway = 0; /* no gateway */
+		guint32 prefix;
 
 		snprintf (buf, BUFLEN, "CISCO_SPLIT_INC_%d_ADDR", i);
 		tmp = getenv (buf);
@@ -220,16 +221,33 @@ get_routes (void)
 			continue;
 		}
 
-		snprintf (buf, BUFLEN, "CISCO_SPLIT_INC_%d_MASK", i);
+		snprintf (buf, BUFLEN, "CISCO_SPLIT_INC_%d_MASKLEN", i);
 		tmp = getenv (buf);
-		if (!tmp || inet_pton (AF_INET, tmp, &netmask) <= 0) {
-			nm_warning ("Ignoring invalid static route netmask '%s'", tmp ? tmp : "NULL");
-			continue;
+		if (tmp) {
+			long int tmp_prefix;
+
+			errno = 0;
+			tmp_prefix = strtol (tmp, NULL, 10);
+			if (errno || tmp_prefix <= 0 || tmp_prefix > 32) {
+				nm_warning ("Ignoring invalid static route prefix '%s'", tmp ? tmp : "NULL");
+				continue;
+			}
+			prefix = (guint32) tmp_prefix;
+		} else {
+			struct in_addr netmask;
+
+			snprintf (buf, BUFLEN, "CISCO_SPLIT_INC_%d_MASK", i);
+			tmp = getenv (buf);
+			if (!tmp || inet_pton (AF_INET, tmp, &netmask) <= 0) {
+				nm_warning ("Ignoring invalid static route netmask '%s'", tmp ? tmp : "NULL");
+				continue;
+			}
+			prefix = nm_utils_ip4_netmask_to_prefix (netmask.s_addr);
 		}
 
 		array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
 		g_array_append_val (array, network.s_addr);
-		g_array_append_val (array, netmask.s_addr);
+		g_array_append_val (array, prefix);
 		g_array_append_val (array, gateway);
 		g_ptr_array_add (routes, array);
 	}
@@ -265,6 +283,7 @@ main (int argc, char *argv[])
 	GHashTable *config;
 	GValue *val;
 	GError *err = NULL;
+	struct in_addr temp_addr;
 
 	g_type_init ();
 
@@ -312,9 +331,16 @@ main (int argc, char *argv[])
 		helper_failed (connection, "IP4 PTP Address");
 
 	/* Netmask */
-	val = addr_to_gvalue (getenv ("INTERNAL_IP4_NETMASK"));
-	if (val)
-		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_NETMASK, val);
+	tmp = getenv ("INTERNAL_IP4_NETMASK");
+	if (tmp && inet_pton (AF_INET, tmp, &temp_addr) > 0) {
+		GValue *val;
+
+		val = g_slice_new0 (GValue);
+		g_value_init (val, G_TYPE_UINT);
+		g_value_set_uint (val, nm_utils_ip4_netmask_to_prefix (temp_addr.s_addr));
+
+		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_PREFIX, val);
+	}
 
 	/* DNS */
 	val = addr_list_to_gvalue (getenv ("INTERNAL_IP4_DNS"));
