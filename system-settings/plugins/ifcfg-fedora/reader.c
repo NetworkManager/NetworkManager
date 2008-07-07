@@ -171,9 +171,13 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 		method = NM_SETTING_IP4_CONFIG_METHOD_DHCP;
 
 	if (value && !g_ascii_strcasecmp (value, "autoip")) {
-		method = NM_SETTING_IP4_CONFIG_METHOD_AUTOIP;
-		goto done;
+		g_free (value);
+		s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+		s_ip4->method = g_strdup (NM_SETTING_IP4_CONFIG_METHOD_AUTOIP);
+		return NM_SETTING (s_ip4);
 	}
+
+	g_free (value);
 
 	get_one_ip4_addr (ifcfg, "IPADDR", &tmp.address, error);
 	if (*error)
@@ -196,55 +200,86 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 		}
 	}
 
-	get_one_ip4_addr (ifcfg, "NETMASK", &netmask, error);
-	if (*error)
-		goto error;
-	tmp.prefix = nm_utils_ip4_netmask_to_prefix (netmask);
+	value = svGetValue (ifcfg, "PREFIX");
+	if (value) {
+		long int prefix;
 
-done:
+		errno = 0;
+		prefix = strtol (value, NULL, 10);
+		if (errno || prefix <= 0 || prefix > 32) {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Invalid IP4 prefix '%s'", value);
+			g_free (value);
+			goto error;
+		}
+		tmp.prefix = (guint32) prefix;
+		g_free (value);
+	}
+
+	/* Fall back to NETMASK if no PREFIX was specified */
+	if (!tmp.prefix) {
+		get_one_ip4_addr (ifcfg, "NETMASK", &netmask, error);
+		if (*error)
+			goto error;
+		tmp.prefix = nm_utils_ip4_netmask_to_prefix (netmask);
+	}
+
+	/* Validate the prefix */
+	if (!tmp.prefix || tmp.prefix > 32) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Invalid IP4 prefix '%d'", tmp.prefix);
+		goto error;
+	}
+
+	/* Yay, let's make an IP4 config */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
 	s_ip4->method = g_strdup (method);
-	if (tmp.address || tmp.prefix || tmp.gateway) {
+	s_ip4->ignore_dhcp_dns = !svTrueValue (ifcfg, "PEERDNS", 1);
+
+	/* DHCP hostname for 'send host-name' option */
+	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DHCP)) {
+		value = svGetValue (ifcfg, "DHCP_HOSTNAME");
+		if (value && strlen (value))
+			s_ip4->dhcp_hostname = g_strdup (value);
+		g_free (value);
+	}
+
+	if (tmp.address && tmp.prefix) {
 		NMSettingIP4Address *addr;
 		addr = g_new0 (NMSettingIP4Address, 1);
 		memcpy (addr, &tmp, sizeof (NMSettingIP4Address));
 		s_ip4->addresses = g_slist_append (s_ip4->addresses, addr);
 	}
 
-	/* No DNS for autoip */
-	if (g_ascii_strcasecmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP)) {
-		s_ip4->dns = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
+	s_ip4->dns = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
 
-		GET_ONE_DNS("DNS1");
-		GET_ONE_DNS("DNS2");
-		GET_ONE_DNS("DNS3");
+	GET_ONE_DNS("DNS1");
+	GET_ONE_DNS("DNS2");
+	GET_ONE_DNS("DNS3");
 
-		if (s_ip4->dns && !s_ip4->dns->len) {
-			g_array_free (s_ip4->dns, TRUE);
-			s_ip4->dns = NULL;
+	if (s_ip4->dns && !s_ip4->dns->len) {
+		g_array_free (s_ip4->dns, TRUE);
+		s_ip4->dns = NULL;
+	}
+
+	/* DNS searches */
+	value = svGetValue (ifcfg, "SEARCH");
+	if (value) {
+		char **searches = NULL;
+
+		searches = g_strsplit (value, " ", 0);
+		if (searches) {
+			char **item;
+			for (item = searches; *item; item++)
+				s_ip4->dns_search = g_slist_append (s_ip4->dns_search, *item);
+			g_free (searches);
 		}
-
-		/* DNS searches */
-		value = svGetValue (ifcfg, "SEARCH");
-		if (value) {
-			char **searches = NULL;
-
-			searches = g_strsplit (value, " ", 0);
-			if (searches) {
-				char **item;
-				for (item = searches; *item; item++)
-					s_ip4->dns_search = g_slist_append (s_ip4->dns_search, *item);
-				g_free (searches);
-			}
-		}
-
-		s_ip4->ignore_dhcp_dns = !svTrueValue (ifcfg, "PEERDNS", 1);
+		g_free (value);
 	}
 
 	return NM_SETTING (s_ip4);
 
 error:
-	g_free (value);
 	if (s_ip4)
 		g_object_unref (s_ip4);
 	return NULL;
@@ -308,6 +343,7 @@ read_mac_address (shvarFile *ifcfg, GByteArray **array, GError **error)
 		goto error;
 	}
 
+	g_free (value);
 	*array = g_byte_array_sized_new (ETH_ALEN);
 	g_byte_array_append (*array, (guint8 *) mac->ether_addr_octet, ETH_ALEN);
 
@@ -580,6 +616,7 @@ make_wireless_setting (shvarFile *ifcfg,
 			g_set_error (error, ifcfg_plugin_error_quark (), 0,
 			             "Invalid SSID '%s' (size %zu not between 1 and 32 inclusive)",
 			             value, len);
+			g_free (value);
 			goto error;
 		}
 

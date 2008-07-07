@@ -1,5 +1,11 @@
 2008-07-07  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/plugins/ifcfg-fedora/reader.c
+		- (make_ip4_setting): handle DHCP_HOSTNAME; fix up prefix support to
+			handle PREFIX too; clean up
+
+2008-07-07  Dan Williams  <dcbw@redhat.com>
+
 	Convert to using IPv4 prefixes instead of netmasks.
 
 2008-07-03  Dan Williams  <dcbw@redhat.com>
