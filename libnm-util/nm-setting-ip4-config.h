@@ -45,16 +45,16 @@ GQuark nm_setting_ip4_config_error_quark (void);
 #define NM_SETTING_IP4_CONFIG_METHOD_SHARED "shared"
 
 typedef struct {
-	guint32 address;
-	guint32 netmask;
-	guint32 gateway;
+	guint32 address;   /* network byte order */
+	guint32 prefix;
+	guint32 gateway;   /* network byte order */
 } NMSettingIP4Address;
 
 typedef struct {
 	NMSetting parent;
 
 	char *method;
-	GArray *dns;        /* array of guint32 */
+	GArray *dns;        /* array of guint32; elements in network byte order */
 	GSList *dns_search; /* list of strings */
 	GSList *addresses;  /* array of NMSettingIP4Address */
 	GSList *routes;     /* array of NMSettingIP4Address */

@@ -70,6 +70,8 @@ static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingIP4Config *self = NM_SETTING_IP4_CONFIG (setting);
+	GSList *iter;
+	int i;
 
 	if (!self->method) {
 		g_set_error (error,
@@ -130,6 +132,22 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	if (self->dhcp_hostname && !strlen (self->dhcp_hostname)) {
 		g_warning ("invalid DHCP client ID");
 		return FALSE;
+	}
+
+	/* Validate addresses */
+	for (iter = self->addresses, i = 0; iter; iter = g_slist_next (iter), i++) {
+		NMSettingIP4Address *addr = (NMSettingIP4Address *) iter->data;
+
+		if (!addr->address) {
+			g_warning ("invalid IP4 address #%d", i);
+			return FALSE;
+		}
+
+		if (!addr->prefix || addr->prefix > 32) {
+			g_warning ("invalid IP4 address prefix %d for address #%d",
+			           addr->prefix, i);
+			return FALSE;
+		}
 	}
 
 	return TRUE;

@@ -156,19 +156,53 @@ nm_utils_ip4_addr_to_nl_addr (guint32 ip4_addr)
  * MUST be in network byte order.
  *
  */
-int
-nm_utils_ip4_netmask_to_prefix (guint32 ip4_netmask)
+guint32
+nm_utils_ip4_netmask_to_prefix (guint32 netmask)
 {
-	int i = 1;
+	guchar *p, *end;
+	guint32 prefix = 0;
 
-	g_return_val_if_fail (ip4_netmask != 0, 0);
+	p = (guchar *) &netmask;
+	end = p + sizeof (guint32);
 
-	/* Just count how many bit shifts we need */
-	ip4_netmask = ntohl (ip4_netmask);
-	while (!(ip4_netmask & 0x1) && ++i)
-		ip4_netmask = ip4_netmask >> 1;
-	return (32 - (i-1));
+	while ((*p == 0xFF) && p < end) {
+		prefix += 8;
+		p++;
+	}
+
+	if (p < end) {
+		guchar v = *p;
+
+		while (v) {
+			prefix++;
+			v <<= 1;
+		}
+	}
+
+	return prefix;
 }
+
+/*
+ * nm_utils_ip4_prefix_to_netmask
+ *
+ * Figure out the netmask from a prefix.
+ *
+ */
+guint32
+nm_utils_ip4_prefix_to_netmask (guint32 prefix)
+{
+	guint32 msk = 0x80000000;
+	guint32 netmask = 0;
+
+	while (prefix > 0) {
+		netmask |= msk;
+		msk >>= 1;
+		prefix--;
+	}
+
+	return (guint32) htonl (netmask);
+}
+
 
 /* From hostap, Copyright (c) 2002-2005, Jouni Malinen <jkmaline@cc.hut.fi> */
 

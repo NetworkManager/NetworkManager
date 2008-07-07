@@ -164,6 +164,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 	char *value = NULL;
 	NMSettingIP4Address tmp = { 0, 0, 0 };
 	char *method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
+	guint32 netmask = 0;
 
 	value = svGetValue (ifcfg, "BOOTPROTO");
 	if (value && (!g_ascii_strcasecmp (value, "bootp") || !g_ascii_strcasecmp (value, "dhcp")))
@@ -195,14 +196,15 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 		}
 	}
 
-	get_one_ip4_addr (ifcfg, "NETMASK", &tmp.netmask, error);
+	get_one_ip4_addr (ifcfg, "NETMASK", &netmask, error);
 	if (*error)
 		goto error;
+	tmp.prefix = nm_utils_ip4_netmask_to_prefix (netmask);
 
 done:
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
 	s_ip4->method = g_strdup (method);
-	if (tmp.address || tmp.netmask || tmp.gateway) {
+	if (tmp.address || tmp.prefix || tmp.gateway) {
 		NMSettingIP4Address *addr;
 		addr = g_new0 (NMSettingIP4Address, 1);
 		memcpy (addr, &tmp, sizeof (NMSettingIP4Address));

@@ -180,6 +180,9 @@ gboolean nm_utils_security_valid (NMUtilsSecurityType type,
 GSList *nm_utils_ip4_addresses_from_gvalue (const GValue *value);
 void nm_utils_ip4_addresses_to_gvalue (GSList *list, GValue *value);
 
+guint32 nm_utils_ip4_netmask_to_prefix (guint32 ip4_netmask);
+guint32 nm_utils_ip4_prefix_to_netmask (guint32 ip4_prefix);
+
 GSList *nm_utils_ip6_addresses_from_gvalue (const GValue *value);
 void nm_utils_ip6_addresses_to_gvalue (GSList *list, GValue *value);
 

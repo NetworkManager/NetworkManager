@@ -490,13 +490,6 @@ static int ip4_addr_to_rtnl_peer (guint32 ip4_address, struct rtnl_addr *addr)
 	return err;
 }
 
-static void ip4_addr_to_rtnl_prefixlen (guint32 ip4_netmask, struct rtnl_addr *addr)
-{
-	g_return_if_fail (addr != NULL);
-
-	rtnl_addr_set_prefixlen (addr, nm_utils_ip4_netmask_to_prefix (ip4_netmask));
-}
-
 static int ip4_addr_to_rtnl_broadcast (guint32 ip4_broadcast, struct rtnl_addr *addr)
 {
 	struct nl_addr	* local = NULL;
@@ -534,14 +527,15 @@ nm_ip4_config_to_rtnl_addr (NMIP4Config *config, guint32 i, guint32 flags)
 	if (flags & NM_RTNL_ADDR_PTP_ADDR)
 		success = (ip4_addr_to_rtnl_peer (priv->ptp_address, addr) >= 0);
 
-	if (flags & NM_RTNL_ADDR_NETMASK)
-		ip4_addr_to_rtnl_prefixlen (config_addr->netmask, addr);
+	if (flags & NM_RTNL_ADDR_PREFIX)
+		rtnl_addr_set_prefixlen (addr, config_addr->prefix);
 
 	if (flags & NM_RTNL_ADDR_BROADCAST) {
-		guint32 hostmask, network, bcast;
+		guint32 hostmask, network, bcast, netmask;
 
-		network = ntohl (config_addr->address) & ntohl (config_addr->netmask);
-		hostmask = ~ntohl (config_addr->netmask);
+		netmask = nm_utils_ip4_prefix_to_netmask (config_addr->prefix);
+		network = ntohl (config_addr->address) & ntohl (netmask);
+		hostmask = ~ntohl (netmask);
 		bcast = htonl (network | hostmask);
 
 		success = (ip4_addr_to_rtnl_broadcast (bcast, addr) >= 0);
@@ -597,7 +591,7 @@ ip4_addresses_to_gvalue (GSList *list, GValue *value)
 		array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
 
 		g_array_append_val (array, ip4_addr->address);
-		g_array_append_val (array, ip4_addr->netmask);
+		g_array_append_val (array, ip4_addr->prefix);
 
 		if (ip4_addr->gateway)
 			g_array_append_val (array, ip4_addr->gateway);

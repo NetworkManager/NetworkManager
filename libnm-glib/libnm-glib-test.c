@@ -79,8 +79,8 @@ dump_ip4_config (NMIP4Config *cfg)
 		g_print ("IP4 address: %s\n", tmp);
 		g_free (tmp);
 
-		tmp = ip4_address_as_string (addr->netmask);
-		g_print ("IP4 netmask: %s\n", tmp);
+		tmp = ip4_address_as_string (nm_utils_ip4_prefix_to_netmask (addr->prefix));
+		g_print ("IP4 prefix: %d (%s)\n", addr->prefix, tmp);
 		g_free (tmp);
 
 		tmp = ip4_address_as_string (addr->gateway);

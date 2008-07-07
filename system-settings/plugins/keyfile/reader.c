@@ -1,5 +1,7 @@
 /* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
+#include <errno.h>
+#include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -88,6 +90,7 @@ read_array_of_array_of_uint (GKeyFile *file,
 		int ret;
 		GArray *address;
 		guint32 empty = 0;
+		int j;
 
 		key_name = g_strdup_printf ("address%d", i);
 		tmp = g_key_file_get_string_list (file, setting->name, key_name, &length, NULL);
@@ -103,17 +106,33 @@ read_array_of_array_of_uint (GKeyFile *file,
 
 		/* convert the string array into IP addresses */
 		address = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
-		for (iter = tmp; *iter; iter++) {
+		for (iter = tmp, j = 0; *iter; iter++, j++) {
 			struct in_addr addr;
 
-			ret = inet_pton (AF_INET, *iter, &addr);
-			if (ret <= 0) {
-				g_warning ("%s: ignoring invalid IPv4 %s element '%s'", __func__, key_name, *iter);
-				g_array_free (address, TRUE);
-				goto next;
-			}
+			if (j == 1) {
+				/* prefix */
+				long tmp_prefix;
+				guint32 prefix;
 
-			g_array_append_val (address, addr.s_addr);
+				errno = 0;
+				tmp_prefix = strtol (*iter, NULL, 10);
+				if (errno || (tmp_prefix < 0) || (tmp_prefix > 32)) {
+					g_warning ("%s: ignoring invalid IPv4 %s prefix '%s'", __func__, key_name, *iter);
+					g_array_free (address, TRUE);
+					goto next;
+				}
+				prefix = (guint32) tmp_prefix;
+				g_array_append_val (address, prefix);
+			} else {
+				/* address and gateway */
+				ret = inet_pton (AF_INET, *iter, &addr);
+				if (ret <= 0) {
+					g_warning ("%s: ignoring invalid IPv4 %s element '%s'", __func__, key_name, *iter);
+					g_array_free (address, TRUE);
+					goto next;
+				}
+				g_array_append_val (address, addr.s_addr);
+			}
 		}
 
 		/* fill in blank gateway if not specified */

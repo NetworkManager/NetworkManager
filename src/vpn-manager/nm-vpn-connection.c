@@ -290,7 +290,7 @@ print_vpn_config (NMIP4Config *config,
 	nm_info ("VPN Gateway: %s", ip_address_to_string (addr->gateway));
 	nm_info ("Tunnel Device: %s", tundev);
 	nm_info ("Internal IP4 Address: %s", ip_address_to_string (addr->address));
-	nm_info ("Internal IP4 Netmask: %s", ip_address_to_string (addr->netmask));
+	nm_info ("Internal IP4 Prefix: %d", addr->prefix);
 	nm_info ("Internal IP4 Point-to-Point Address: %s",
 		    ip_address_to_string (nm_ip4_config_get_ptp_address (config)));
 	nm_info ("Maximum Segment Size (MSS): %d", nm_ip4_config_get_mss (config));
@@ -298,9 +298,9 @@ print_vpn_config (NMIP4Config *config,
 	num = nm_ip4_config_get_num_static_routes (config);
 	for (i = 0; i < num; i++) {
 		addr = nm_ip4_config_get_static_route (config, i);
-		nm_info ("Static Route: %s/%s Gateway: %s",
+		nm_info ("Static Route: %s/%d Gateway: %s",
 			    ip_address_to_string (addr->address),
-			    ip_address_to_string (addr->netmask),
+			    addr->prefix,
 			    ip_address_to_string (addr->gateway));
 	}
 
@@ -344,7 +344,7 @@ merge_vpn_routes (NMVPNConnection *connection, NMIP4Config *config)
 
 		errno = 0;
 		prefix = strtol (p + 1, NULL, 10);
-		if (errno || prefix < 0 || prefix > 32) {
+		if (errno || prefix <= 0 || prefix > 32) {
 			nm_warning ("Ignoring invalid route '%s'", route);
 			goto next;
 		}
@@ -356,7 +356,7 @@ merge_vpn_routes (NMVPNConnection *connection, NMIP4Config *config)
 
 			addr = g_new0 (NMSettingIP4Address, 1);
 			addr->address = tmp.s_addr;
-			addr->netmask = ntohl (0xFFFFFFFF << (32 - prefix));
+			addr->prefix = (guint32) prefix;
 			addr->gateway = 0;
 
 			nm_ip4_config_take_static_route (config, addr);
@@ -390,6 +390,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	config = nm_ip4_config_new ();
 
 	addr = g_malloc0 (sizeof (NMSettingIP4Address));
+	addr->prefix = 24; /* default to class C */
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_GATEWAY);
 	if (val)
@@ -403,15 +404,11 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	if (val)
 		nm_ip4_config_set_ptp_address (config, g_value_get_uint (val));
 
-	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_NETMASK);
+	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_PREFIX);
 	if (val)
-		addr->netmask = g_value_get_uint (val);
-	else {
-		/* If no netmask, default to Class C address */
-		addr->netmask = htonl (0x000000FF);
-	}
+		addr->prefix = g_value_get_uint (val);
 
-	if (addr->address && addr->netmask) {
+	if (addr->address && addr->prefix) {
 		nm_ip4_config_take_address (config, addr);
 	} else {
 		g_warning ("%s: invalid IP4 config received!", __func__);

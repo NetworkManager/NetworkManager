@@ -815,7 +815,7 @@ nm_utils_ip4_addresses_from_gvalue (const GValue *value)
 		
 		addr = g_malloc0 (sizeof (NMSettingIP4Address));
 		addr->address = g_array_index (array, guint32, 0);
-		addr->netmask = g_array_index (array, guint32, 1);
+		addr->prefix = g_array_index (array, guint32, 1);
 		addr->gateway = g_array_index (array, guint32, 2);
 		list = g_slist_prepend (list, addr);
 	}
@@ -838,12 +838,66 @@ nm_utils_ip4_addresses_to_gvalue (GSList *list, GValue *value)
 		array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
 
 		g_array_append_val (array, addr->address);
-		g_array_append_val (array, addr->netmask);
+		g_array_append_val (array, addr->prefix);
 		g_array_append_val (array, addr->gateway);
 		g_ptr_array_add (addresses, array);
 	}
 
 	g_value_take_boxed (value, addresses);
+}
+
+/*
+ * nm_utils_ip4_netmask_to_prefix
+ *
+ * Figure out the network prefix from a netmask.  Netmask
+ * MUST be in network byte order.
+ *
+ */
+guint32
+nm_utils_ip4_netmask_to_prefix (guint32 netmask)
+{
+	guchar *p, *end;
+	guint32 prefix = 0;
+
+	p = (guchar *) &netmask;
+	end = p + sizeof (guint32);
+
+	while ((*p == 0xFF) && p < end) {
+		prefix += 8;
+		p++;
+	}
+
+	if (p < end) {
+		guchar v = *p;
+
+		while (v) {
+			prefix++;
+			v <<= 1;
+		}
+	}
+
+	return prefix;
+}
+
+/*
+ * nm_utils_ip4_prefix_to_netmask
+ *
+ * Figure out the netmask from a prefix.
+ *
+ */
+guint32
+nm_utils_ip4_prefix_to_netmask (guint32 prefix)
+{
+	guint32 msk = 0x80000000;
+	guint32 netmask = 0;
+
+	while (prefix > 0) {
+		netmask |= msk;
+		msk >>= 1;
+		prefix--;
+	}
+
+	return (guint32) htonl (netmask);
 }
 
 GSList *

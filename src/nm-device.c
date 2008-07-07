@@ -648,7 +648,7 @@ nm_device_new_ip4_autoip_config (NMDevice *self)
 	config = nm_ip4_config_new ();
 	addr = g_malloc0 (sizeof (NMSettingIP4Address));
 	addr->address = (guint32) ip.s_addr;
-	addr->netmask = (guint32) ntohl (0xFFFF0000);
+	addr->prefix = 16;
 	nm_ip4_config_take_address (config, addr);
 
 	return config;
@@ -699,7 +699,7 @@ nm_device_new_ip4_shared_config (NMDevice *self)
 	config = nm_ip4_config_new ();
 	addr = g_malloc0 (sizeof (NMSettingIP4Address));
 	addr->address = tmp_addr;
-	addr->netmask = (guint32) ntohl (0xFFFFFF00); /* 255.255.255.0 */
+	addr->prefix = 24; /* 255.255.255.0 */
 	nm_ip4_config_take_address (config, addr);
 
 	/* Remove the address lock when the object gets disposed */

@@ -15,6 +15,7 @@
 #include "nm-ppp-status.h"
 #include "nm-pppd-plugin-glue.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-utils.h"
 
 int plugin_init (void);
 
@@ -163,8 +164,7 @@ nm_ip_up (void *data, int arg)
 						 uint_to_gvalue (peer_opts.hisaddr));
 	}
 
-	g_hash_table_insert (hash, NM_PPP_IP4_CONFIG_NETMASK, 
-					 uint_to_gvalue (0xFFFFFFFF));
+	g_hash_table_insert (hash, NM_PPP_IP4_CONFIG_PREFIX, uint_to_gvalue (32));
 
 	if (opts.dnsaddr[0] || opts.dnsaddr[1]) {
 		array = g_array_new (FALSE, FALSE, sizeof (guint32));

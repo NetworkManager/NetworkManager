@@ -339,13 +339,16 @@ detail_device (gpointer data, gpointer user_data)
 
 		for (iter = (GSList *) nm_ip4_config_get_addresses (cfg); iter; iter = g_slist_next (iter)) {
 			NMSettingIP4Address *addr = iter->data;
+			char *tmp2;
 
 			tmp = ip4_address_as_string (addr->address);
 			print_string ("  Address", tmp);
 			g_free (tmp);
 
-			tmp = ip4_address_as_string (addr->netmask);
-			print_string ("  Netmask", tmp);
+			tmp2 = ip4_address_as_string (nm_utils_ip4_prefix_to_netmask (addr->prefix));
+			tmp = g_strdup_printf ("%d (%s)", addr->prefix, tmp2);
+			g_free (tmp2);
+			print_string ("  Prefix", tmp);
 			g_free (tmp);
 
 			tmp = ip4_address_as_string (addr->gateway);

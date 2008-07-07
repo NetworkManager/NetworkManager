@@ -108,7 +108,7 @@ typedef enum NMVPNConnectionStateReason
 #define NM_VPN_PLUGIN_IP4_CONFIG_GATEWAY "gateway"
 #define NM_VPN_PLUGIN_IP4_CONFIG_ADDRESS "address"
 #define NM_VPN_PLUGIN_IP4_CONFIG_PTP     "ptp"
-#define NM_VPN_PLUGIN_IP4_CONFIG_NETMASK "netmask"
+#define NM_VPN_PLUGIN_IP4_CONFIG_PREFIX  "prefix"
 #define NM_VPN_PLUGIN_IP4_CONFIG_DNS     "dns"
 #define NM_VPN_PLUGIN_IP4_CONFIG_NBNS    "nbns"
 #define NM_VPN_PLUGIN_IP4_CONFIG_MSS     "mss"

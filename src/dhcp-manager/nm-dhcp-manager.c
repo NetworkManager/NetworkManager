@@ -34,11 +34,11 @@
 #include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <stdio.h>
 
 #include "nm-dhcp-manager.h"
 #include "nm-marshal.h"
 #include "nm-utils.h"
-#include "NetworkManagerUtils.h"
 #include "nm-dbus-manager.h"
 #include "nm-dbus-glib-types.h"
 
@@ -1023,8 +1023,8 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 
 	str = g_hash_table_lookup (device->options, "new_subnet_mask");
 	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
-		addr->netmask = tmp_addr.s_addr;
-		nm_info ("  netmask %s", str);
+		addr->prefix = nm_utils_ip4_netmask_to_prefix (tmp_addr.s_addr);
+		nm_info ("  prefix %d (%s)", addr->prefix, str);
 	}
 
 	str = g_hash_table_lookup (device->options, "new_routers");
@@ -1126,7 +1126,7 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 
 				addr = g_malloc0 (sizeof (NMSettingIP4Address));
 				addr->address = (guint32) rt_addr.s_addr;
-				addr->netmask = 0xFFFFFFFF; /* 255.255.255.255 */
+				addr->prefix = 32; /* 255.255.255.255 */
 				addr->gateway = (guint32) rt_route.s_addr;
 
 				nm_ip4_config_take_static_route (ip4_config, addr);

@@ -339,12 +339,9 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 
 	remove_timeout_handler (manager);
 
-	/* FIXME */
-/* 	g_source_remove (priv->ipconfig_timeout); */
-/* 	priv->ipconfig_timeout = 0; */
-
 	config = nm_ip4_config_new ();
 	addr = g_malloc0 (sizeof (NMSettingIP4Address));
+	addr->prefix = 32;
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_GATEWAY);
 	if (val) {
@@ -356,18 +353,14 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 	if (val)
 		addr->address = g_value_get_uint (val);
 
-	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_NETMASK);
+	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_PREFIX);
 	if (val)
-		addr->netmask = g_value_get_uint (val);
-	else {
-		/* If no netmask, default to Class C address */
-		addr->netmask = htonl (0x000000FF);
-	}
+		addr->prefix = g_value_get_uint (val);
 
-	if (addr->netmask && addr->address) {
+	if (addr->address && addr->prefix) {
 		nm_ip4_config_take_address (config, addr);
 	} else {
-		nm_warning ("%s: invalid IPv4 address or netmask received!", __func__);
+		nm_warning ("%s: invalid IPv4 address received!", __func__);
 		g_free (addr);
 		goto out;
 	}

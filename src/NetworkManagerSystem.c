@@ -62,17 +62,17 @@
 #include <netlink/route/link.h>
 
 static gboolean
-route_in_same_subnet (NMIP4Config *config, guint32 dest, guint32 netmask)
+route_in_same_subnet (NMIP4Config *config, guint32 prefix)
 {
 	int num;
 	int i;
 
 	num = nm_ip4_config_get_num_addresses (config);
 	for (i = 0; i < num; i++) {
-		const NMSettingIP4Address *cfg_addr;
+		const NMSettingIP4Address *addr;
 
-		cfg_addr = nm_ip4_config_get_address (config, i);
-		if ((dest & netmask) == (cfg_addr->address & cfg_addr->netmask))
+		addr = nm_ip4_config_get_address (config, i);
+		if (prefix == addr->prefix)
 			return TRUE;
 	}
 
@@ -96,38 +96,11 @@ create_route (int iface_idx, int mss)
 	return route;
 }
 
-static int
-netmask_to_prefix (guint32 netmask)
-{
-	guchar *p;
-	guchar *end;
-	int prefix = 0;
-
-	p = (guchar *) &netmask;
-	end = p + sizeof (guint32);
-
-	while ((*p == 0xFF) && p < end) {
-		prefix += 8;
-		p++;
-	}
-
-	if (p < end) {
-		guchar v = *p;
-
-		while (v) {
-			prefix++;
-			v <<= 1;
-		}
-	}
-
-	return prefix;
-}
-
 static void
 nm_system_device_set_ip4_route (const char *iface, 
 						  NMIP4Config *iface_config,
 						  guint32 ip4_dest,
-						  guint32 ip4_netmask,
+						  guint32 ip4_prefix,
 						  guint32 ip4_gateway,
 						  int mss)
 {
@@ -137,7 +110,7 @@ nm_system_device_set_ip4_route (const char *iface,
 	struct nl_addr *gw_addr = NULL;
 	int err, iface_idx;
 
-	if (iface_config && route_in_same_subnet (iface_config, ip4_dest, ip4_netmask))
+	if (iface_config && route_in_same_subnet (iface_config, ip4_prefix))
 		return;
 
 	nlh = nm_netlink_get_default_handle ();
@@ -152,7 +125,7 @@ nm_system_device_set_ip4_route (const char *iface,
 	/* Destination */
 	dest_addr = nl_addr_build (AF_INET, &ip4_dest, sizeof (ip4_dest));
 	g_return_if_fail (dest_addr != NULL);
-	nl_addr_set_prefixlen (dest_addr, netmask_to_prefix (ip4_netmask));
+	nl_addr_set_prefixlen (dest_addr, (int) ip4_prefix);
 
 	rtnl_route_set_dst (route, dest_addr);
 	nl_addr_put (dest_addr);
@@ -312,7 +285,7 @@ nm_system_device_set_from_ip4_config (const char *iface,
 
 		nm_system_device_set_ip4_route (iface, config, 
 								  route->address,
-								  route->netmask,
+								  route->prefix,
 								  route->gateway,
 								  nm_ip4_config_get_mss (config));
 	}
@@ -366,7 +339,7 @@ nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
 			}
 
 			nm_system_device_set_ip4_route (nm_device_get_ip_iface (active_device),
-									  ad_config, vpn_gw, 0xFFFFFFFF, ad_gw,
+									  ad_config, vpn_gw, 32, ad_gw,
 									  nm_ip4_config_get_mss (config));
 		}
 	}
@@ -390,7 +363,7 @@ nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
 
 		nm_system_device_set_ip4_route (iface, config,
 								  route->address,
-								  route->netmask,
+								  route->prefix,
 								  route->gateway,
 								  nm_ip4_config_get_mss (config));
 	}

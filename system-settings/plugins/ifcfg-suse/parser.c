@@ -95,20 +95,6 @@ make_connection_setting (shvarFile *file,
 	return (NMSetting *) s_con;
 }
 
-static guint32
-ip4_prefix_to_netmask (int prefix)
-{
-	guint32 msk = 0x80000000;
-	guint32 netmask = 0;
-
-	while (prefix > 0) {
-		netmask |= msk;
-		msk >>= 1;
-		prefix--;
-	}
-
-	return htonl (netmask);
-}
 
 static NMSetting *
 make_ip4_setting (shvarFile *ifcfg)
@@ -145,7 +131,7 @@ make_ip4_setting (shvarFile *ifcfg)
 			tmp.address = ip4_addr.s_addr;
 
 			if (g_strv_length (pieces) == 2)
-				tmp.netmask = ip4_prefix_to_netmask (atoi (pieces[1]));
+				tmp.prefix = atoi (pieces[1]);
 		} else
 			g_warning ("Ignoring invalid IP4 address '%s'", str);
 
@@ -153,31 +139,37 @@ make_ip4_setting (shvarFile *ifcfg)
 		g_free (str);
 	}
 
-	if (tmp.address && tmp.netmask == 0) {
+	if (tmp.address && tmp.prefix == 0) {
 		str = svGetValue (ifcfg, "PREFIXLEN");
 		if (str) {
-			tmp.netmask = ip4_prefix_to_netmask (atoi (str));
+			tmp.prefix = atoi (str);
 			g_free (str);
 		}
 	}
 
-	if (tmp.address && tmp.netmask == 0) {
+	if (tmp.address && tmp.prefix == 0) {
 		str = svGetValue (ifcfg, "NETMASK");
 		if (str) {
 			struct in_addr mask_addr;
 
 			if (inet_pton (AF_INET, str, &mask_addr) > 0)
-				tmp.netmask = mask_addr.s_addr;
+				tmp.prefix = nm_utils_ip4_netmask_to_prefix (mask_addr.s_addr);
 			else {
 				g_warning ("Ignoring invalid IP4 addres: invalid netmask: '%s'", str);
 				tmp.address = 0;
-				tmp.netmask = 0;
+				tmp.prefix = 0;
 			}
 			g_free (str);
 		}
 	}
 
-	if (tmp.address || tmp.netmask) {
+	if (!tmp.prefix || tmp.prefix > 32) {
+		g_warning ("Ignoring invalid IP4 addres: invalid prefix: '%d'", tmp.prefix);
+		tmp.address = 0;
+		tmp.prefix = 0;
+	}
+
+	if (tmp.address) {
 		NMSettingIP4Address *addr;
 		addr = g_new0 (NMSettingIP4Address, 1);
 		memcpy (addr, &tmp, sizeof (NMSettingIP4Address));
