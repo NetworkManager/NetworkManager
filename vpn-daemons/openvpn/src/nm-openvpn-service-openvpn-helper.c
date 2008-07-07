@@ -197,6 +197,7 @@ get_routes (void)
 		struct in_addr network;
 		struct in_addr netmask;
 		struct in_addr gateway = { 0, };
+		guint32 prefix;
 
 		snprintf (buf, BUFLEN, "route_network_%d", i);
 		tmp = getenv (buf);
@@ -224,7 +225,8 @@ get_routes (void)
 
 		array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
 		g_array_append_val (array, network.s_addr);
-		g_array_append_val (array, netmask.s_addr);
+		prefix = nm_utils_ip4_netmask_to_prefix (netmask.s_addr);
+		g_array_append_val (array, prefix);
 		g_array_append_val (array, gateway.s_addr);
 		g_ptr_array_add (routes, array);
 	}
@@ -251,6 +253,7 @@ main (int argc, char *argv[])
 	GValue *dns_list = NULL;
 	GValue *nbns_list = NULL;
 	GValue *dns_domain = NULL;
+	struct in_addr temp_addr;
 
 	g_type_init ();
 
@@ -289,9 +292,16 @@ main (int argc, char *argv[])
 		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_PTP, val);
 
 	/* Netmask */
-	val = addr_to_gvalue (getenv ("route_netmask_1"));
-	if (val)
-		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_NETMASK, val);
+	tmp = getenv ("route_netmask_1");
+	if (tmp && inet_pton (AF_INET, tmp, &temp_addr) > 0) {
+		GValue *val;
+
+		val = g_slice_new0 (GValue);
+		g_value_init (val, G_TYPE_UINT);
+		g_value_set_uint (val, nm_utils_ip4_netmask_to_prefix (temp_addr.s_addr));
+
+		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_PREFIX, val);
+	}
 
 	val = get_routes ();
 	if (val)
