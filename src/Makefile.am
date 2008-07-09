@@ -65,8 +65,6 @@ NetworkManager_SOURCES =				\
 		nm-gsm-device.h		\
 		nm-cdma-device.c		\
 		nm-cdma-device.h		\
-		autoip.c					\
-		autoip.h					\
 		wpa.c				\
 		wpa.h				\
 		nm-netlink.c			\

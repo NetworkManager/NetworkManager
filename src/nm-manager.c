@@ -19,6 +19,9 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-hal-manager.h"
 
+#define NM_AUTOIP_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
+#define NM_AUTOIP_DBUS_IFACE   "org.freedesktop.nm_avahi_autoipd"
+
 static gboolean impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err);
 static void impl_manager_activate_connection (NMManager *manager,
 								  const char *service_name,
@@ -107,6 +110,8 @@ typedef struct {
 
 	NMVPNManager *vpn_manager;
 	guint vpn_manager_id;
+
+	DBusGProxy *aipd_proxy;
 
 	gboolean disposed;
 } NMManagerPrivate;
@@ -211,9 +216,49 @@ vpn_manager_connection_deactivated_cb (NMVPNManager *manager,
 }
 
 static void
+aipd_handle_event (DBusGProxy *proxy,
+                   const char *event,
+                   const char *iface,
+                   const char *address,
+                   gpointer user_data)
+{
+	NMManager *manager = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	GSList *iter;
+	gboolean handled;
+
+	if (!event || !iface) {
+		nm_warning ("Incomplete message received from avahi-autoipd");
+		return;
+	}
+
+	if (   (strcmp (event, "BIND") != 0)
+	    && (strcmp (event, "CONFLICT") != 0)
+	    && (strcmp (event, "UNBIND") != 0)
+	    && (strcmp (event, "STOP") != 0)) {
+		nm_warning ("Unknown event '%s' received from avahi-autoipd", event);
+		return;
+	}
+
+	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *candidate = NM_DEVICE (iter->data);
+
+		if (!strcmp (nm_device_get_iface (candidate), iface)) {
+			nm_device_handle_autoip4_event (candidate, event, address);
+			handled = TRUE;
+			break;
+		}
+	}
+
+	if (!handled)
+		nm_warning ("Unhandled avahi-autoipd event for '%s'", iface);
+}
+
+static void
 nm_manager_init (NMManager *manager)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	DBusGConnection *g_connection;
 	guint id;
 
 	priv->wireless_enabled = TRUE;
@@ -237,6 +282,29 @@ nm_manager_init (NMManager *manager)
 	id = g_signal_connect (G_OBJECT (priv->vpn_manager), "connection-deactivated",
 	                       G_CALLBACK (vpn_manager_connection_deactivated_cb), manager);
 	priv->vpn_manager_id = id;
+
+	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
+	priv->aipd_proxy = dbus_g_proxy_new_for_name (g_connection,
+	                                              NM_AUTOIP_DBUS_SERVICE,
+	                                              "/",
+	                                              NM_AUTOIP_DBUS_IFACE);
+	if (priv->aipd_proxy) {
+		dbus_g_object_register_marshaller (nm_marshal_VOID__STRING_STRING_STRING,
+										   G_TYPE_NONE,
+										   G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+										   G_TYPE_INVALID);
+
+		dbus_g_proxy_add_signal (priv->aipd_proxy,
+		                         "Event",
+		                         G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+		                         G_TYPE_INVALID);
+
+		dbus_g_proxy_connect_signal (priv->aipd_proxy, "Event",
+									 G_CALLBACK (aipd_handle_event),
+									 manager,
+									 NULL);
+	} else
+		nm_warning ("Could not initialize avahi-autoipd D-Bus proxy");
 }
 
 NMState

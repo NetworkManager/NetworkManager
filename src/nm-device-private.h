@@ -36,4 +36,8 @@ gboolean nm_device_hw_bring_up (NMDevice *self, gboolean wait);
 
 void nm_device_hw_take_down (NMDevice *self, gboolean wait);
 
+void nm_device_handle_autoip4_event (NMDevice *self,
+                                     const char *event,
+                                     const char *address);
+
 #endif	/* NM_DEVICE_PRIVATE_H */

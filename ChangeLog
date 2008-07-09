@@ -1,3 +1,20 @@
+2008-07-09  Dan Williams  <dcbw@redhat.com>
+
+	* callouts/Makefile.am
+	  callouts/nm-avahi-autoipd-action.c
+	  callouts/nm-avahi-autoipd.conf
+		- avahi-autoipd callout to send options back to NM
+
+	* src/autoip.c
+	  src/autoip.h
+		- remove
+
+	* src/nm-device.c
+	  src/nm-device-private.h
+	  src/nm-manager.c
+		- Use avahi-autoipd for IPv4LL functionality rather than really crappy
+			old custom stuff
+
 2008-07-07  Dan Williams  <dcbw@redhat.com>
 
 	* system-settings/plugins/ifcfg-fedora/reader.c

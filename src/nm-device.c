@@ -1,4 +1,4 @@
-/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -17,7 +17,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2005 Red Hat, Inc.
+ * (C) Copyright 2005 - 2008 Red Hat, Inc.
  */
 
 #include <glib.h>
@@ -29,6 +29,10 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/ioctl.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <arpa/inet.h>
 
 #include "nm-device-interface.h"
 #include "nm-device.h"
@@ -40,7 +44,6 @@
 #include "nm-dbus-manager.h"
 #include "nm-named-manager.h"
 #include "nm-utils.h"
-#include "autoip.h"
 #include "nm-netlink.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-connection.h"
@@ -88,8 +91,15 @@ struct _NMDevicePrivate
 	gulong              dhcp_state_sigid;
 	gulong              dhcp_timeout_sigid;
 
+	/* dnsmasq stuff for shared connections */
 	NMDnsMasqManager *  dnsmasq_manager;
 	gulong              dnsmasq_state_id;
+
+	/* avahi-autoipd stuff */
+	GPid		aipd_pid;
+	guint		aipd_watch;
+	guint		aipd_timeout;
+	guint32     aipd_addr;
 };
 
 static gboolean check_connection_compatible (NMDeviceInterface *device,
@@ -521,6 +531,271 @@ nm_device_activate_schedule_stage2_device_config (NMDevice *self)
 	         nm_device_get_iface (self));
 }
 
+static void
+aipd_timeout_remove (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->aipd_timeout) {
+		g_source_remove (priv->aipd_timeout);
+		priv->aipd_timeout = 0;
+	}
+}
+
+static void
+aipd_cleanup (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->aipd_pid > 0) {
+		kill (priv->aipd_pid, SIGKILL);
+		priv->aipd_pid = -1;
+	}
+
+	if (priv->aipd_watch) {
+		g_source_remove (priv->aipd_watch);
+		priv->aipd_watch = 0;
+	}
+
+	aipd_timeout_remove (self);
+
+	priv->aipd_addr = 0;
+}
+
+static NMIP4Config *
+aipd_get_ip4_config (NMDevice *self)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMIP4Config *config = NULL;
+	NMSettingIP4Address *addr;
+
+	g_return_val_if_fail (priv->aipd_addr > 0, NULL);
+
+	config = nm_ip4_config_new ();
+	addr = g_malloc0 (sizeof (NMSettingIP4Address));
+	addr->address = (guint32) priv->aipd_addr;
+	addr->prefix = 16;
+	nm_ip4_config_take_address (config, addr);
+
+	return config;	
+}
+
+static gboolean
+handle_autoip_change (NMDevice *self)
+{
+	NMActRequest *req;
+	NMConnection *connection;
+	NMIP4Config *config;
+
+	config = aipd_get_ip4_config (self);
+	if (!config) {
+		nm_warning ("failed to get autoip config for rebind");
+		return FALSE;
+	}
+
+	req = nm_device_get_act_request (self);
+	g_assert (req);
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+
+	g_object_set_data (G_OBJECT (req), NM_ACT_REQUEST_IP4_CONFIG, config);
+
+	if (!nm_device_set_ip4_config (self, config)) {
+		nm_warning ("(%s): failed to update IP4 config in response to autoip event.",
+		            nm_device_get_iface (self));
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+#define IPV4LL_NETWORK (htonl (0xA9FE0000L))
+#define IPV4LL_NETMASK (htonl (0xFFFF0000L))
+
+void
+nm_device_handle_autoip4_event (NMDevice *self,
+                                const char *event,
+                                const char *address)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMActRequest *req;
+	NMConnection *connection = NULL;
+	NMSettingIP4Config *s_ip4 = NULL;
+	NMDeviceState state;
+	const char *iface;
+
+	g_return_if_fail (event != NULL);
+
+	req = nm_device_get_act_request (self);
+	if (!req)
+		return;
+
+	connection = nm_act_request_get_connection (req);
+	if (!connection)
+		return;
+
+	/* Ignore if the connection isn't an AutoIP connection */
+	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	if (!s_ip4 || !s_ip4->method || strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP))
+		return;
+
+	iface = nm_device_get_iface (self);
+	state = nm_device_get_state (self);
+
+	if (strcmp (event, "BIND") == 0) {
+		struct in_addr ip;
+
+		if (inet_pton (AF_INET, address, &ip) <= 0) {
+			nm_warning ("(%s): invalid address %s received from avahi-autoipd.",
+			            iface, address);
+			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
+			return;
+		}
+
+		if ((ip.s_addr & IPV4LL_NETMASK) != IPV4LL_NETWORK) {
+			nm_warning ("(%s): invalid address %s received from avahi-autoipd.",
+			            iface, address);
+			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
+			return;
+		}
+
+		switch (state) {
+		case NM_DEVICE_STATE_IP_CONFIG:
+			if (priv->aipd_addr) {
+				nm_warning ("(%s): already have autoip address!", iface);
+				return;
+			}
+
+			priv->aipd_addr = ip.s_addr;
+			aipd_timeout_remove (self);
+			nm_device_activate_schedule_stage4_ip_config_get (self);
+			break;
+		case NM_DEVICE_STATE_ACTIVATED:
+			priv->aipd_addr = ip.s_addr;
+			if (!handle_autoip_change (self))
+				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
+			break;
+		default:
+			nm_warning ("(%s): unexpected avahi-autoip event %s for %s.",
+			            iface, event, address);
+			break;
+		}
+	} else {
+		nm_warning ("%s: autoip address %s no longer valid because '%s'.",
+		            iface, address, event);
+
+		/* The address is gone; terminate the connection or fail activation */
+		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
+	}
+}
+
+static void
+aipd_watch_cb (GPid pid, gint status, gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	NMDeviceState state;
+	const char *iface;
+
+	if (!priv->aipd_watch)
+		return;
+	priv->aipd_watch = 0;
+
+	iface = nm_device_get_iface (self);
+
+	if (WIFEXITED (status))
+		nm_warning ("%s: avahi-autoipd exited with error code %d", iface, WEXITSTATUS (status));
+	else if (WIFSTOPPED (status)) 
+		nm_warning ("%s: avahi-autoipd stopped unexpectedly with signal %d", iface, WSTOPSIG (status));
+	else if (WIFSIGNALED (status))
+		nm_warning ("%s: avahi-autoipd died with signal %d", iface, WTERMSIG (status));
+	else
+		nm_warning ("%s: avahi-autoipd died from an unknown cause", iface);
+
+	aipd_cleanup (self);
+
+	state = nm_device_get_state (self);
+	if (nm_device_is_activating (self) || (state == NM_DEVICE_STATE_ACTIVATED))
+		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
+}
+
+static gboolean
+aipd_timeout_cb (gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (!priv->aipd_timeout)
+		return FALSE;
+	priv->aipd_timeout = 0;
+
+	nm_info ("%s: avahi-autoipd timed out.", nm_device_get_iface (self));
+	aipd_cleanup (self);
+
+	if (nm_device_get_state (self) == NM_DEVICE_STATE_IP_CONFIG)
+		nm_device_activate_schedule_stage4_ip_config_timeout (self);
+
+	return FALSE;
+}
+
+static void
+aipd_child_setup (gpointer user_data G_GNUC_UNUSED)
+{
+	/* We are in the child process at this point.
+	 * Give child it's own program group for signal
+	 * separation.
+	 */
+	pid_t pid = getpid ();
+	setpgid (pid, pid);
+}
+
+static gboolean
+aipd_exec (NMDevice *self, GError **error)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	char *argv[5];
+	gboolean success = FALSE;
+	const char **aipd_binary = NULL;
+	static const char *aipd_paths[] = {
+		"/usr/sbin/avahi-autoipd",
+		"/usr/local/sbin/avahi-autoipd",
+		NULL
+	};
+
+	aipd_cleanup (self);
+
+	/* Find avahi-autoipd */
+	aipd_binary = aipd_paths;
+	while (*aipd_binary != NULL) {
+		if (g_file_test (*aipd_binary, G_FILE_TEST_EXISTS))
+			break;
+		aipd_binary++;
+	}
+
+	if (!*aipd_binary) {
+		g_set_error (error, 0, 0, "%s", "couldn't find avahi-autoipd");
+		return FALSE;
+	}
+
+	argv[0] = (char *) (*aipd_binary);
+	argv[1] = "--script";
+	argv[2] = LIBEXECDIR "/nm-avahi-autoipd.action";
+	argv[3] = (char *) nm_device_get_iface (self);
+	argv[4] = NULL;
+
+	success = g_spawn_async ("/", argv, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
+	                         &aipd_child_setup, NULL, &(priv->aipd_pid), error);
+	if (!success)
+		return FALSE;
+
+	/* Monitor the child process so we know when it dies */
+	priv->aipd_watch = g_child_watch_add (priv->aipd_pid, aipd_watch_cb, self);
+
+	/* Start a timeout to bound the address attempt */
+	priv->aipd_timeout = g_timeout_add (20000, aipd_timeout_cb, self);
+
+	return TRUE;
+}
 
 static NMActStageReturn
 real_act_stage3_ip_config_start (NMDevice *self)
@@ -528,6 +803,9 @@ real_act_stage3_ip_config_start (NMDevice *self)
 	NMSettingIP4Config *s_ip4;
 	NMActRequest *req;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
+	const char *iface;
+
+	iface = nm_device_get_iface (self);
 
 	req = nm_device_get_act_request (self);
 	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (nm_act_request_get_connection (req),
@@ -544,12 +822,7 @@ real_act_stage3_ip_config_start (NMDevice *self)
 		/* DHCP manager will cancel any transaction already in progress and we do not
 		   want to cancel this activation if we get "down" state from that. */
 		g_signal_handler_block (priv->dhcp_manager, priv->dhcp_state_sigid);
-
-		success = nm_dhcp_manager_begin_transaction (priv->dhcp_manager,
-													 nm_device_get_iface (self),
-													 s_ip4,
-													 45);
-
+		success = nm_dhcp_manager_begin_transaction (priv->dhcp_manager, iface, s_ip4, 45);
 		g_signal_handler_unblock (priv->dhcp_manager, priv->dhcp_state_sigid);
 
 		if (success) {
@@ -559,6 +832,21 @@ real_act_stage3_ip_config_start (NMDevice *self)
 			ret = NM_ACT_STAGE_RETURN_POSTPONE;
 		} else
 			ret = NM_ACT_STAGE_RETURN_FAILURE;
+	} else if (s_ip4 && !strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP)) {
+		GError *error = NULL;
+
+		/* Start avahi-autoipd */
+		if (aipd_exec (self, &error)) {
+			nm_info ("Activation (%s) Stage 3 of 5 (IP Configure Start) started"
+			         " avahi-autoipd...", iface);
+			ret = NM_ACT_STAGE_RETURN_POSTPONE;
+		} else {
+			nm_info ("Activation (%s) Stage 3 of 5 (IP Configure Start) failed"
+			         " to start avahi-autoipd: %s", iface, error->message);
+			g_error_free (error);
+			aipd_cleanup (self);
+			ret = NM_ACT_STAGE_RETURN_FAILURE;
+		}
 	}
 
 	return ret;
@@ -623,35 +911,6 @@ nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 
 	nm_info ("Activation (%s) Stage 3 of 5 (IP Configure Start) scheduled.",
 	         nm_device_get_iface (self));
-}
-
-
-/*
- * nm_device_new_ip4_autoip_config
- *
- * Build up an IP config with a Link Local address
- *
- */
-static NMIP4Config *
-nm_device_new_ip4_autoip_config (NMDevice *self)
-{
-	struct in_addr ip;
-	NMIP4Config *config = NULL;
-	NMSettingIP4Address *addr;
-
-	g_return_val_if_fail (self != NULL, NULL);
-
-	// FIXME: make our autoip implementation not suck; use avahi-autoip
-	if (!get_autoip (self, &ip))
-		return NULL;
-
-	config = nm_ip4_config_new ();
-	addr = g_malloc0 (sizeof (NMSettingIP4Address));
-	addr->address = (guint32) ip.s_addr;
-	addr->prefix = 16;
-	nm_ip4_config_take_address (config, addr);
-
-	return config;
 }
 
 static GHashTable *shared_ips = NULL;
@@ -735,7 +994,7 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 		g_assert (s_ip4);
 
 		if (!strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP)) {
-			*config = nm_device_new_ip4_autoip_config (self);
+			*config = aipd_get_ip4_config (self);
 		} else if (!strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
 			*config = nm_ip4_config_new ();
 			if (*config)
@@ -879,7 +1138,7 @@ out:
 /*
  * nm_device_activate_schedule_stage4_ip_config_timeout
  *
- * Deal with a timed out DHCP transaction
+ * Deal with a timeout of the IP configuration
  *
  */
 void
@@ -1056,6 +1315,8 @@ nm_device_deactivate_quickly (NMDevice *self)
 			priv->dnsmasq_manager = NULL;
 		}
 	}
+
+	aipd_cleanup (self);
 
 	/* Tear down an existing activation request */
 	clear_act_request (self);
@@ -1343,7 +1604,7 @@ dhcp_timeout (NMDHCPManager *dhcp_manager,
 		return;
 
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG)
-			nm_device_activate_schedule_stage4_ip_config_timeout (device);
+		nm_device_activate_schedule_stage4_ip_config_timeout (device);
 }
 
 gboolean
@@ -1494,7 +1755,7 @@ nm_device_is_up (NMDevice *self)
 }
 
 gboolean
-nm_device_hw_bring_up (NMDevice *self, gboolean wait)
+nm_device_hw_bring_up (NMDevice *self, gboolean do_wait)
 {
 	gboolean success;
 	guint32 tries = 0;
@@ -1513,7 +1774,7 @@ nm_device_hw_bring_up (NMDevice *self, gboolean wait)
 	}
 
 	/* Wait for the device to come up if requested */
-	while (wait && !nm_device_hw_is_up (self) && (tries++ < 50))
+	while (do_wait && !nm_device_hw_is_up (self) && (tries++ < 50))
 		g_usleep (200);
 
 	if (!nm_device_hw_is_up (self)) {
@@ -1531,7 +1792,7 @@ out:
 }
 
 void
-nm_device_hw_take_down (NMDevice *self, gboolean wait)
+nm_device_hw_take_down (NMDevice *self, gboolean do_wait)
 {
 	guint32 tries = 0;
 
@@ -1546,18 +1807,18 @@ nm_device_hw_take_down (NMDevice *self, gboolean wait)
 		NM_DEVICE_GET_CLASS (self)->hw_take_down (self);
 
 	/* Wait for the device to come up if requested */
-	while (wait && nm_device_hw_is_up (self) && (tries++ < 50))
+	while (do_wait && nm_device_hw_is_up (self) && (tries++ < 50))
 		g_usleep (200);
 }
 
 static gboolean
-nm_device_bring_up (NMDevice *self, gboolean wait)
+nm_device_bring_up (NMDevice *self, gboolean do_wait)
 {
 	gboolean success;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 
-	if (!nm_device_hw_bring_up (self, wait))
+	if (!nm_device_hw_bring_up (self, do_wait))
 		return FALSE;
 
 	if (nm_device_is_up (self))
@@ -1575,7 +1836,7 @@ nm_device_bring_up (NMDevice *self, gboolean wait)
 }
 
 void
-nm_device_take_down (NMDevice *self, gboolean wait)
+nm_device_take_down (NMDevice *self, gboolean do_wait)
 {
 	g_return_if_fail (NM_IS_DEVICE (self));
 
@@ -1589,7 +1850,7 @@ nm_device_take_down (NMDevice *self, gboolean wait)
 			NM_DEVICE_GET_CLASS (self)->take_down (self);
 	}
 
-	nm_device_hw_take_down (self, wait);
+	nm_device_hw_take_down (self, do_wait);
 }
 
 static void
