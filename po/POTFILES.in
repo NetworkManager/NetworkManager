@@ -10,4 +10,3 @@ system-settings/src/main.c
 libnm-util/crypto.c
 libnm-util/crypto_gnutls.c
 libnm-util/crypto_nss.c
-vpn-daemons/openvpn/properties/auth-helpers.c

@@ -1,5 +1,10 @@
 2008-07-10  Kjartan Maraas  <kmaraas@gnome.org>
 
+	* POTFILES.in: Move file from here to
+	* POTFILES.skip: here.
+
+2008-07-10  Kjartan Maraas  <kmaraas@gnome.org>
+
 	* POTFILES.in: Added missing file.
 	* nb.po: Updated Norwegian bokmål translation.
 

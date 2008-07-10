@@ -3,6 +3,7 @@ examples/python/systray/eggtrayicon.c
 vpn-daemons/openvpn/auth-dialog/gnome-two-password-dialog.c
 vpn-daemons/openvpn/auth-dialog/main.c
 vpn-daemons/openvpn/nm-openvpn.desktop.in
+vpn-daemons/openvpn/properties/auth-helpers.c
 vpn-daemons/openvpn/properties/nm-openvpn-dialog.glade
 vpn-daemons/openvpn/properties/nm-openvpn.c
 vpn-daemons/openvpn/src/nm-openvpn-service.c
