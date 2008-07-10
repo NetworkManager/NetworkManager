@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager 0.9.x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-07-01 09:07+0200\n"
-"PO-Revision-Date: 2008-07-01 09:09+0200\n"
+"POT-Creation-Date: 2008-07-10 09:46+0200\n"
+"PO-Revision-Date: 2008-07-10 09:48+0200\n"
 "Last-Translator: Kjartan Maraas <kmaraas@gnome.org>\n"
 "Language-Team: Norwegian Bokmål <i18n-nb@lister.ping.uio.no>\n"
 "MIME-Version: 1.0\n"
@@ -57,6 +57,17 @@ msgstr "det skjedde en feil under venting på data på sokkel"
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr ""
 "Ugyldig flagg. Vennligst bruk --help for å se en liste med gyldige flagg.\n"
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:638
+msgid "# Created by NetworkManager\n"
+msgstr "# Laget av NetworkManager\n"
+
+#: ../src/dhcp-manager/nm-dhcp-manager.c:644
+#, c-format
+msgid ""
+"# Merged from %s\n"
+"\n"
+msgstr "# Flettet fra %s\n\n"
 
 #: ../src/named-manager/nm-named-manager.c:117
 msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
@@ -134,7 +145,7 @@ msgstr "Klarte ikke å dekode sertifikat."
 #: ../libnm-util/crypto.c:288 ../libnm-util/crypto.c:296
 #, c-format
 msgid "Not enough memory to store certificate data."
-msgstr ""
+msgstr "Ikke nok minne til å lagre sertifikatdata."
 
 #: ../libnm-util/crypto.c:326
 #, c-format
@@ -246,3 +257,36 @@ msgstr ""
 #, c-format
 msgid "Couldn't decode certificate: %d"
 msgstr "Kunne ikke dekode sertifikat: %d"
+
+#: ../vpn-daemons/openvpn/properties/auth-helpers.c:68
+msgid "Choose a Certificate Authority certificate..."
+msgstr ""
+
+#: ../vpn-daemons/openvpn/properties/auth-helpers.c:87
+msgid "Choose your personal certificate..."
+msgstr ""
+
+#: ../vpn-daemons/openvpn/properties/auth-helpers.c:105
+msgid "Choose your private key..."
+msgstr "Velg din private nøkkel..."
+
+#: ../vpn-daemons/openvpn/properties/auth-helpers.c:158
+msgid "Choose an OpenVPN static key..."
+msgstr "Velg en statisk nøkkel for OpenVPN..."
+
+#: ../vpn-daemons/openvpn/properties/auth-helpers.c:176
+#: ../vpn-daemons/openvpn/properties/auth-helpers.c:864
+msgid "None"
+msgstr "Ingen"
+
+#: ../vpn-daemons/openvpn/properties/auth-helpers.c:519
+msgid "PEM certificates (*.pem, *.crt, *.key)"
+msgstr "PEM-sertifikater (*.pem, *.crt, *.key)"
+
+#: ../vpn-daemons/openvpn/properties/auth-helpers.c:579
+msgid "OpenVPN Static Keys (*.key)"
+msgstr "Statisk nøkkel for OpenVPN (*.key)"
+
+#: ../vpn-daemons/openvpn/properties/auth-helpers.c:703
+msgid "Default"
+msgstr "Forvalg"
