@@ -176,10 +176,10 @@ set_carrier (NMDeviceEthernet *self, const gboolean carrier)
 nm_info ("(%s): carrier now %s (device state %d)", nm_device_get_iface (NM_DEVICE (self)), carrier ? "ON" : "OFF", state);
 	if (state == NM_DEVICE_STATE_UNAVAILABLE) {
 		if (carrier)
-			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED);
+			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
 	} else if (state >= NM_DEVICE_STATE_DISCONNECTED) {
 		if (!carrier)
-			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_UNAVAILABLE);
+			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_NONE);
 	}
 }
 
@@ -224,12 +224,16 @@ nm_device_ethernet_carrier_off (NMNetlinkMonitor *monitor,
 static gboolean
 unavailable_to_disconnected (gpointer user_data)
 {
-	nm_device_state_changed (NM_DEVICE (user_data), NM_DEVICE_STATE_DISCONNECTED);
+	nm_device_state_changed (NM_DEVICE (user_data), NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
 	return FALSE;
 }
 
 static void
-device_state_changed (NMDeviceInterface *device, NMDeviceState state, gpointer user_data)
+device_state_changed (NMDeviceInterface *device,
+                      NMDeviceState new_state,
+                      NMDeviceState old_state,
+                      NMDeviceStateReason reason,
+                      gpointer user_data)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (user_data);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
@@ -244,7 +248,7 @@ device_state_changed (NMDeviceInterface *device, NMDeviceState state, gpointer u
 	 * DISCONNECTED because the device is ready to use.  Otherwise the carrier-on
 	 * handler will handle the transition to DISCONNECTED when the carrier is detected.
 	 */
-	if ((state == NM_DEVICE_STATE_UNAVAILABLE) && priv->carrier) {
+	if ((new_state == NM_DEVICE_STATE_UNAVAILABLE) && priv->carrier) {
 		priv->state_to_disconnected_id = g_idle_add (unavailable_to_disconnected, self);
 		return;
 	}
@@ -714,7 +718,8 @@ link_timeout_cb (gpointer user_data)
 	req = nm_device_get_act_request (dev);
 
 	if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED) {
-		nm_device_state_changed (dev, NM_DEVICE_STATE_DISCONNECTED);
+		nm_device_state_changed (dev, NM_DEVICE_STATE_DISCONNECTED,
+		                         NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
 		return FALSE;
 	}
 
@@ -731,11 +736,11 @@ link_timeout_cb (gpointer user_data)
 	if (!setting_name)
 		goto time_out;
 
-	nm_info ("Activation (%s/wired): disconnected during association,"
+	nm_info ("Activation (%s/wired): disconnected during authentication,"
 	         " asking for new key.", nm_device_get_iface (dev));
 	supplicant_interface_clean (self);
 
-	nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
+	nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
 	nm_act_request_request_connection_secrets (req, setting_name, TRUE,
 	                                           SECRETS_CALLER_ETHERNET, NULL, NULL);
 
@@ -743,7 +748,7 @@ link_timeout_cb (gpointer user_data)
 
 time_out:
 	nm_info ("%s: link timed out.", nm_device_get_iface (dev));
-	nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
+	nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
 
 	return FALSE;
 }
@@ -779,15 +784,16 @@ static gboolean
 supplicant_mgr_state_cb_handler (gpointer user_data)
 {
 	struct state_cb_data *info = (struct state_cb_data *) user_data;
+	NMDevice *device = NM_DEVICE (info->self);
 
 	/* If the supplicant went away, release the supplicant interface */
 	if (info->new_state == NM_SUPPLICANT_MANAGER_STATE_DOWN) {
-		NMDevice *dev = NM_DEVICE (info->self);
-
 		supplicant_interface_clean (info->self);
 
-		if (nm_device_is_activating (dev))
-			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
+		if (nm_device_get_state (device) > NM_DEVICE_STATE_UNAVAILABLE) {
+			nm_device_state_changed (device, NM_DEVICE_STATE_UNAVAILABLE,
+			                         NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+		}
 	}
 
 	g_slice_free (struct state_cb_data, info);
@@ -816,7 +822,7 @@ build_supplicant_config (NMDeviceEthernet *self)
 {
 	DBusGProxy *proxy;
 	const char *con_path;
-	NMSupplicantConfig *config;
+	NMSupplicantConfig *config = NULL;
 	NMSetting8021x *security;
 	NMConnection *connection;
 
@@ -829,31 +835,30 @@ build_supplicant_config (NMDeviceEthernet *self)
 		return NULL;
 
 	security = NM_SETTING_802_1X (nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X));
-	if (nm_supplicant_config_add_setting_8021x (config, security, con_path, TRUE))
-		return config;
+	if (!nm_supplicant_config_add_setting_8021x (config, security, con_path, TRUE)) {
+		nm_warning ("Couldn't add 802.1X security setting to supplicant config.");
+		g_object_unref (config);
+		config = NULL;
+	}
 
-	nm_warning ("Couldn't add 802.1X security setting to supplicant config.");
-	g_object_unref (config);
-
-	return NULL;
+	return config;
 }
 
 static gboolean
 supplicant_iface_state_cb_handler (gpointer user_data)
 {
 	struct state_cb_data *info = (struct state_cb_data *) user_data;
-	NMDevice *dev = NM_DEVICE (info->self);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (info->self);
+	NMDevice *device = NM_DEVICE (info->self);
 
 	if (info->new_state == NM_SUPPLICANT_INTERFACE_STATE_READY) {
 		NMSupplicantConfig *config;
 		const char *iface;
 		gboolean success = FALSE;
 
-		iface = nm_device_get_iface (NM_DEVICE (info->self));
+		iface = nm_device_get_iface (device);
 		config = build_supplicant_config (info->self);
 		if (config) {
-			NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (info->self);
-
 			success = nm_supplicant_interface_set_config (priv->supplicant.iface, config);
 			g_object_unref (config);
 
@@ -864,14 +869,14 @@ supplicant_iface_state_cb_handler (gpointer user_data)
 			nm_warning ("Activation (%s/wired): couldn't build security configuration.", iface);
 
 		if (!success)
-			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
-	}
+			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED);
+	} else if (info->new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
+		NMDeviceState state = nm_device_get_state (device);
 
-	else if (info->new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
 		supplicant_interface_clean (info->self);
 
-		if (nm_device_is_activating (dev))
-			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
+		if (nm_device_is_activating (device) || state == NM_DEVICE_STATE_ACTIVATED)
+			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
 	}
 
 	g_slice_free (struct state_cb_data, info);
@@ -951,7 +956,7 @@ supplicant_iface_connection_error_cb_handler (gpointer user_data)
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (user_data);
 
 	supplicant_interface_clean (self);
-	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED);
+	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED);
 
 	return FALSE;
 }
@@ -986,7 +991,7 @@ handle_auth_or_fail (NMDeviceEthernet *self,
 	if (tries > 3)
 		return NM_ACT_STAGE_RETURN_FAILURE;
 
-	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH);
+	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
 
 	nm_connection_clear_secrets (connection);
 	setting_name = nm_connection_need_secrets (connection, NULL);
@@ -1027,7 +1032,7 @@ supplicant_connection_timeout_cb (gpointer user_data)
 	if (handle_auth_or_fail (self, req, TRUE) == NM_ACT_STAGE_RETURN_POSTPONE)
 		nm_info ("Activation (%s/wired): asking for new secrets", iface);
 	else
-		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NO_SECRETS);
 
 	return FALSE;
 }
@@ -1079,7 +1084,7 @@ supplicant_interface_init (NMDeviceEthernet *self)
 }
 
 static NMActStageReturn
-nm_8021x_stage2_config (NMDeviceEthernet *self)
+nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 {
 	NMConnection *connection;
 	NMSetting8021x *security;
@@ -1092,6 +1097,7 @@ nm_8021x_stage2_config (NMDeviceEthernet *self)
 	security = NM_SETTING_802_1X (nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X));
 	if (!security) {
 		nm_warning ("Invalid or missing 802.1X security");
+		*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 		return ret;
 	}
 
@@ -1101,16 +1107,22 @@ nm_8021x_stage2_config (NMDeviceEthernet *self)
 	/* If we need secrets, get them */
 	setting_name = nm_connection_need_secrets (connection, NULL);
 	if (setting_name) {
+		NMActRequest *req = nm_device_get_act_request (NM_DEVICE (self));
+
 		nm_info ("Activation (%s/wired): connection '%s' has security, but secrets are required.",
 			    iface, s_connection->id);
 
-		ret = handle_auth_or_fail (self, nm_device_get_act_request (NM_DEVICE (self)), FALSE);
+		ret = handle_auth_or_fail (self, req, FALSE);
+		if (ret != NM_ACT_STAGE_RETURN_POSTPONE)
+			*reason = NM_DEVICE_STATE_REASON_NO_SECRETS;
 	} else {
 		nm_info ("Activation (%s/wired): connection '%s' requires no security. No secrets needed.",
 			    iface, s_connection->id);
 
 		if (supplicant_interface_init (self))
 			ret = NM_ACT_STAGE_RETURN_POSTPONE;
+		else
+			*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 	}
 
 	return ret;
@@ -1126,19 +1138,16 @@ ppp_state_changed (NMPPPManager *ppp_manager, NMPPPStatus status, gpointer user_
 
 	switch (status) {
 	case NM_PPP_STATUS_NETWORK:
-		nm_device_state_changed (device, NM_DEVICE_STATE_IP_CONFIG);
+		nm_device_state_changed (device, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 		break;
 	case NM_PPP_STATUS_DISCONNECT:
-		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_PPP_DISCONNECT);
 		break;
 	case NM_PPP_STATUS_DEAD:
-		if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED)
-			nm_device_state_changed (device, NM_DEVICE_STATE_DISCONNECTED);
-		else
-			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_PPP_FAILED);
 		break;
 	case NM_PPP_STATUS_AUTHENTICATE:
-		nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH);
+		nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
 		break;
 	default:
 		break;
@@ -1159,12 +1168,12 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 }
 
 static NMActStageReturn
-pppoe_stage2_config (NMDeviceEthernet *self)
+pppoe_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMActRequest *req;
 	GError *err = NULL;
-	NMActStageReturn ret;
+	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 
 	req = nm_device_get_act_request (NM_DEVICE (self));
 	g_assert (req);
@@ -1182,23 +1191,26 @@ pppoe_stage2_config (NMDeviceEthernet *self)
 					   self);
 		ret = NM_ACT_STAGE_RETURN_POSTPONE;
 	} else {
-		nm_warning ("%s", err->message);
+		nm_warning ("(%s): PPPoE failed to start: %s",
+		            nm_device_get_iface (NM_DEVICE (self)), err->message);
 		g_error_free (err);
 
 		g_object_unref (priv->ppp_manager);
 		priv->ppp_manager = NULL;
 
-		ret = NM_ACT_STAGE_RETURN_FAILURE;
+		*reason = NM_DEVICE_STATE_REASON_PPP_START_FAILED;
 	}
 
 	return ret;
 }
 
 static NMActStageReturn
-real_act_stage2_config (NMDevice *device)
+real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMSettingConnection *s_connection;
 	NMActStageReturn ret;
+
+	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
 	s_connection = NM_SETTING_CONNECTION (device_get_setting (device, NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_connection);
@@ -1208,13 +1220,14 @@ real_act_stage2_config (NMDevice *device)
 
 		security = (NMSetting8021x *) device_get_setting (device, NM_TYPE_SETTING_802_1X);
 		if (security)
-			ret = nm_8021x_stage2_config (NM_DEVICE_ETHERNET (device));
+			ret = nm_8021x_stage2_config (NM_DEVICE_ETHERNET (device), reason);
 		else
 			ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	} else if (!strcmp (s_connection->type, NM_SETTING_PPPOE_SETTING_NAME))
-		ret = pppoe_stage2_config (NM_DEVICE_ETHERNET (device));
+		ret = pppoe_stage2_config (NM_DEVICE_ETHERNET (device), reason);
 	else {
 		nm_warning ("Invalid connection type '%s' for ethernet device", s_connection->type);
+		*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 		ret = NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
@@ -1222,7 +1235,9 @@ real_act_stage2_config (NMDevice *device)
 }
 
 static NMActStageReturn
-real_act_stage4_get_ip4_config (NMDevice *device, NMIP4Config **config)
+real_act_stage4_get_ip4_config (NMDevice *device,
+                                NMIP4Config **config,
+                                NMDeviceStateReason *reason)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (device);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
@@ -1235,9 +1250,9 @@ real_act_stage4_get_ip4_config (NMDevice *device, NMIP4Config **config)
 		/* Regular ethernet connection. */
 
 		/* Chain up to parent */
-		ret = NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->act_stage4_get_ip4_config (device, config);
+		ret = NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->act_stage4_get_ip4_config (device, config, reason);
 
-		if ((ret == NM_ACT_STAGE_RETURN_SUCCESS)) {
+		if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
 			NMConnection *connection;
 			NMSettingWired *s_wired;
 

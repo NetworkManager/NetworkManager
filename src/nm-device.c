@@ -154,7 +154,7 @@ device_start (gpointer user_data)
 	NMDevice *self = NM_DEVICE (user_data);
 
 	self->priv->start_timer = 0;
-	nm_device_state_changed (self, NM_DEVICE_STATE_UNAVAILABLE);
+	nm_device_state_changed (self, NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
 	return FALSE;
 }
 
@@ -381,7 +381,7 @@ dnsmasq_state_changed_cb (NMDnsMasqManager *manager, guint32 status, gpointer us
 
 	switch (status) {
 	case NM_DNSMASQ_STATUS_DEAD:
-		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SHARED_START_FAILED);
 		break;
 	default:
 		break;
@@ -400,6 +400,7 @@ nm_device_activate_stage1_device_prepare (gpointer user_data)
 	NMDevice *self = NM_DEVICE (user_data);
 	const char *     iface;
 	NMActStageReturn ret;
+	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
 	/* Clear the activation source ID now that this stage has run */
 	if (self->priv->act_source_id > 0)
@@ -407,13 +408,13 @@ nm_device_activate_stage1_device_prepare (gpointer user_data)
 
 	iface = nm_device_get_iface (self);
 	nm_info ("Activation (%s) Stage 1 of 5 (Device Prepare) started...", iface);
-	nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE);
+	nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_REASON_NONE);
 
-	ret = NM_DEVICE_GET_CLASS (self)->act_stage1_prepare (self);
+	ret = NM_DEVICE_GET_CLASS (self)->act_stage1_prepare (self, &reason);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
 		goto out;
 	} else if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
-		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 		goto out;
 	}
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);
@@ -449,14 +450,14 @@ nm_device_activate_schedule_stage1_device_prepare (NMDevice *self)
 }
 
 static NMActStageReturn
-real_act_stage1_prepare (NMDevice *dev)
+real_act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 {
 	/* Nothing to do */
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
 static NMActStageReturn
-real_act_stage2_config (NMDevice *dev)
+real_act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 {
 	/* Nothing to do */
 	return NM_ACT_STAGE_RETURN_SUCCESS;
@@ -475,6 +476,7 @@ nm_device_activate_stage2_device_config (gpointer user_data)
 	NMDevice *self = NM_DEVICE (user_data);
 	const char *     iface;
 	NMActStageReturn ret;
+	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
 	/* Clear the activation source ID now that this stage has run */
 	if (self->priv->act_source_id > 0)
@@ -482,19 +484,19 @@ nm_device_activate_stage2_device_config (gpointer user_data)
 
 	iface = nm_device_get_iface (self);
 	nm_info ("Activation (%s) Stage 2 of 5 (Device Configure) starting...", iface);
-	nm_device_state_changed (self, NM_DEVICE_STATE_CONFIG);
+	nm_device_state_changed (self, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 
 	if (!nm_device_bring_up (self, FALSE)) {
-		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_CONFIG_FAILED);
 		goto out;
 	}
 
-	ret = NM_DEVICE_GET_CLASS (self)->act_stage2_config (self);
+	ret = NM_DEVICE_GET_CLASS (self)->act_stage2_config (self, &reason);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
 		goto out;
 	else if (ret == NM_ACT_STAGE_RETURN_FAILURE)
 	{
-		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 		goto out;
 	}
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);	
@@ -563,7 +565,7 @@ aipd_cleanup (NMDevice *self)
 }
 
 static NMIP4Config *
-aipd_get_ip4_config (NMDevice *self)
+aipd_get_ip4_config (NMDevice *self, NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMIP4Config *config = NULL;
@@ -572,6 +574,11 @@ aipd_get_ip4_config (NMDevice *self)
 	g_return_val_if_fail (priv->aipd_addr > 0, NULL);
 
 	config = nm_ip4_config_new ();
+	if (!config) {
+		*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
+		return NULL;
+	}
+
 	addr = g_malloc0 (sizeof (NMSettingIP4Address));
 	addr->address = (guint32) priv->aipd_addr;
 	addr->prefix = 16;
@@ -581,13 +588,15 @@ aipd_get_ip4_config (NMDevice *self)
 }
 
 static gboolean
-handle_autoip_change (NMDevice *self)
+handle_autoip_change (NMDevice *self, NMDeviceStateReason *reason)
 {
 	NMActRequest *req;
 	NMConnection *connection;
 	NMIP4Config *config;
 
-	config = aipd_get_ip4_config (self);
+	g_return_val_if_fail (reason != NULL, FALSE);
+
+	config = aipd_get_ip4_config (self, reason);
 	if (!config) {
 		nm_warning ("failed to get autoip config for rebind");
 		return FALSE;
@@ -600,7 +609,7 @@ handle_autoip_change (NMDevice *self)
 
 	g_object_set_data (G_OBJECT (req), NM_ACT_REQUEST_IP4_CONFIG, config);
 
-	if (!nm_device_set_ip4_config (self, config)) {
+	if (!nm_device_set_ip4_config (self, config, reason)) {
 		nm_warning ("(%s): failed to update IP4 config in response to autoip event.",
 		            nm_device_get_iface (self));
 		return FALSE;
@@ -644,18 +653,19 @@ nm_device_handle_autoip4_event (NMDevice *self,
 
 	if (strcmp (event, "BIND") == 0) {
 		struct in_addr ip;
+		NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
 		if (inet_pton (AF_INET, address, &ip) <= 0) {
 			nm_warning ("(%s): invalid address %s received from avahi-autoipd.",
 			            iface, address);
-			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
+			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_AUTOIP_ERROR);
 			return;
 		}
 
 		if ((ip.s_addr & IPV4LL_NETMASK) != IPV4LL_NETWORK) {
 			nm_warning ("(%s): invalid address %s received from avahi-autoipd.",
 			            iface, address);
-			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
+			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_AUTOIP_ERROR);
 			return;
 		}
 
@@ -672,8 +682,8 @@ nm_device_handle_autoip4_event (NMDevice *self,
 			break;
 		case NM_DEVICE_STATE_ACTIVATED:
 			priv->aipd_addr = ip.s_addr;
-			if (!handle_autoip_change (self))
-				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
+			if (!handle_autoip_change (self, &reason))
+				nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 			break;
 		default:
 			nm_warning ("(%s): unexpected avahi-autoip event %s for %s.",
@@ -685,7 +695,7 @@ nm_device_handle_autoip4_event (NMDevice *self,
 		            iface, address, event);
 
 		/* The address is gone; terminate the connection or fail activation */
-		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
 	}
 }
 
@@ -716,7 +726,7 @@ aipd_watch_cb (GPid pid, gint status, gpointer user_data)
 
 	state = nm_device_get_state (self);
 	if (nm_device_is_activating (self) || (state == NM_DEVICE_STATE_ACTIVATED))
-		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_AUTOIP_FAILED);
 }
 
 static gboolean
@@ -798,12 +808,14 @@ aipd_exec (NMDevice *self, GError **error)
 }
 
 static NMActStageReturn
-real_act_stage3_ip_config_start (NMDevice *self)
+real_act_stage3_ip_config_start (NMDevice *self, NMDeviceStateReason *reason)
 {
 	NMSettingIP4Config *s_ip4;
 	NMActRequest *req;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	const char *iface;
+
+	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
 	iface = nm_device_get_iface (self);
 
@@ -830,8 +842,10 @@ real_act_stage3_ip_config_start (NMDevice *self)
 			 * stuff happens.	
 			 */
 			ret = NM_ACT_STAGE_RETURN_POSTPONE;
-		} else
+		} else {
+			*reason = NM_DEVICE_STATE_REASON_DHCP_START_FAILED;
 			ret = NM_ACT_STAGE_RETURN_FAILURE;
+		}
 	} else if (s_ip4 && !strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP)) {
 		GError *error = NULL;
 
@@ -845,6 +859,7 @@ real_act_stage3_ip_config_start (NMDevice *self)
 			         " to start avahi-autoipd: %s", iface, error->message);
 			g_error_free (error);
 			aipd_cleanup (self);
+			*reason = NM_DEVICE_STATE_REASON_AUTOIP_START_FAILED;
 			ret = NM_ACT_STAGE_RETURN_FAILURE;
 		}
 	}
@@ -863,8 +878,9 @@ static gboolean
 nm_device_activate_stage3_ip_config_start (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
-	const char *     iface;
+	const char *iface;
 	NMActStageReturn ret;
+	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
 	/* Clear the activation source ID now that this stage has run */
 	if (self->priv->act_source_id > 0)
@@ -872,14 +888,14 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 
 	iface = nm_device_get_iface (self);
 	nm_info ("Activation (%s) Stage 3 of 5 (IP Configure Start) started...", iface);
-	nm_device_state_changed (self, NM_DEVICE_STATE_IP_CONFIG);
+	nm_device_state_changed (self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 
-	ret = NM_DEVICE_GET_CLASS (self)->act_stage3_ip_config_start (self);
+	ret = NM_DEVICE_GET_CLASS (self)->act_stage3_ip_config_start (self, &reason);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
 		goto out;
 	else if (ret == NM_ACT_STAGE_RETURN_FAILURE)
 	{
-		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 		goto out;
 	}
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);	
@@ -940,7 +956,7 @@ reserve_shared_ip (void)
 }
 
 static NMIP4Config *
-nm_device_new_ip4_shared_config (NMDevice *self)
+nm_device_new_ip4_shared_config (NMDevice *self, NMDeviceStateReason *reason)
 {
 	NMIP4Config *config = NULL;
 	NMSettingIP4Address *addr;
@@ -952,8 +968,10 @@ nm_device_new_ip4_shared_config (NMDevice *self)
 		shared_ips = g_hash_table_new (g_direct_hash, g_direct_equal);
 
 	tmp_addr = reserve_shared_ip ();
-	if (!tmp_addr)
+	if (!tmp_addr) {
+		*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
 		return NULL;
+	}
 
 	config = nm_ip4_config_new ();
 	addr = g_malloc0 (sizeof (NMSettingIP4Address));
@@ -970,7 +988,8 @@ nm_device_new_ip4_shared_config (NMDevice *self)
 
 static NMActStageReturn
 real_act_stage4_get_ip4_config (NMDevice *self,
-                                NMIP4Config **config)
+                                NMIP4Config **config,
+                                NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
@@ -979,6 +998,7 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 
 	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
+	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
 	connection = nm_act_request_get_connection (nm_device_get_act_request (self));
 	g_assert (connection);
@@ -990,17 +1010,22 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 											 nm_device_get_iface (self));
 		if (*config)
 			nm_utils_merge_ip4_config (*config, s_ip4);
+		else
+			*reason = NM_DEVICE_STATE_REASON_DHCP_ERROR;
 	} else {
 		g_assert (s_ip4);
+		g_assert (s_ip4->method);
 
 		if (!strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP)) {
-			*config = aipd_get_ip4_config (self);
+			*config = aipd_get_ip4_config (self, reason);
 		} else if (!strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
 			*config = nm_ip4_config_new ();
 			if (*config)
 				nm_utils_merge_ip4_config (*config, s_ip4);
+			else
+				*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
 		} else if (!strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
-			*config = nm_device_new_ip4_shared_config (self);
+			*config = nm_device_new_ip4_shared_config (self, reason);
 			if (*config)
 				priv->dnsmasq_manager = nm_dnsmasq_manager_new (nm_device_get_ip_iface (self));
 		}
@@ -1026,9 +1051,10 @@ static gboolean
 nm_device_activate_stage4_ip_config_get (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
-	NMIP4Config *    ip4_config = NULL;
+	NMIP4Config *ip4_config = NULL;
 	NMActStageReturn ret;
-	const char *     iface = NULL;
+	const char *iface = NULL;
+	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
 	/* Clear the activation source ID now that this stage has run */
 	if (self->priv->act_source_id > 0)
@@ -1037,12 +1063,12 @@ nm_device_activate_stage4_ip_config_get (gpointer user_data)
 	iface = nm_device_get_iface (self);
 	nm_info ("Activation (%s) Stage 4 of 5 (IP Configure Get) started...", iface);
 
-	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_get_ip4_config (self, &ip4_config);
+	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_get_ip4_config (self, &ip4_config, &reason);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE)
 		goto out;
 	else if (!ip4_config || (ret == NM_ACT_STAGE_RETURN_FAILURE))
 	{
-		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 		goto out;
 	}
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);	
@@ -1083,12 +1109,14 @@ nm_device_activate_schedule_stage4_ip_config_get (NMDevice *self)
 
 static NMActStageReturn
 real_act_stage4_ip_config_timeout (NMDevice *self,
-                                   NMIP4Config **config)
+                                   NMIP4Config **config,
+                                   NMDeviceStateReason *reason)
 {
 	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
 	/* DHCP failed; connection must fail */
+	*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
 	return NM_ACT_STAGE_RETURN_FAILURE;
 }
 
@@ -1103,9 +1131,10 @@ static gboolean
 nm_device_activate_stage4_ip_config_timeout (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
-	NMIP4Config *    ip4_config = NULL;
-	const char *     iface;
+	NMIP4Config *ip4_config = NULL;
+	const char *iface;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
+	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
 	/* Clear the activation source ID now that this stage has run */
 	if (self->priv->act_source_id > 0)
@@ -1114,11 +1143,11 @@ nm_device_activate_stage4_ip_config_timeout (gpointer user_data)
 	iface = nm_device_get_iface (self);
 	nm_info ("Activation (%s) Stage 4 of 5 (IP Configure Timeout) started...", iface);
 
-	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_ip_config_timeout (self, &ip4_config);
+	ret = NM_DEVICE_GET_CLASS (self)->act_stage4_ip_config_timeout (self, &ip4_config, &reason);
 	if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
 		goto out;
 	} else if (!ip4_config || (ret == NM_ACT_STAGE_RETURN_FAILURE)) {
-		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 		goto out;
 	}
 	g_assert (ret == NM_ACT_STAGE_RETURN_SUCCESS);	
@@ -1173,6 +1202,7 @@ nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 	const char *iface;
 	NMConnection *connection;
 	NMSettingIP4Config *s_ip4;
+	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
 	ip4_config = g_object_get_data (G_OBJECT (nm_device_get_act_request (self)),
 									NM_ACT_REQUEST_IP4_CONFIG);
@@ -1186,8 +1216,8 @@ nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 	nm_info ("Activation (%s) Stage 5 of 5 (IP Configure Commit) started...",
 	         iface);
 
-	if (!nm_device_set_ip4_config (self, ip4_config)) {
-		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
+	if (!nm_device_set_ip4_config (self, ip4_config, &reason)) {
+		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 		goto out;
 	}
 
@@ -1199,7 +1229,7 @@ nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 		if (!nm_dnsmasq_manager_start (priv->dnsmasq_manager, ip4_config, &error)) {
 			nm_warning ("(%s): failed to start dnsmasq: %s", iface, error->message);
 			g_error_free (error);
-			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
+			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SHARED_START_FAILED);
 			goto out;
 		}
 
@@ -1208,7 +1238,7 @@ nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 		                                           self);
 	}
 
-	nm_device_state_changed (self, NM_DEVICE_STATE_ACTIVATED);
+	nm_device_state_changed (self, NM_DEVICE_STATE_ACTIVATED, NM_DEVICE_STATE_REASON_NONE);
 
 out:
 	nm_info ("Activation (%s) Stage 5 of 5 (IP Configure Commit) complete.",
@@ -1338,6 +1368,7 @@ static void
 nm_device_deactivate (NMDeviceInterface *device)
 {
 	NMDevice *self = NM_DEVICE (device);
+	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
 	g_return_if_fail (self != NULL);
 
@@ -1346,7 +1377,7 @@ nm_device_deactivate (NMDeviceInterface *device)
 	nm_device_deactivate_quickly (self);
 
 	/* Clean up nameservers and addresses */
-	nm_device_set_ip4_config (self, NULL);
+	nm_device_set_ip4_config (self, NULL, &reason);
 
 	/* Take out any entries in the routing table and any IP address the device had. */
 	nm_system_device_flush_ip4_routes (self);
@@ -1393,7 +1424,7 @@ connection_secrets_failed_cb (NMActRequest *req,
 {
 	NMDevice *self = NM_DEVICE (user_data);
 
-	nm_device_state_changed (self, NM_DEVICE_STATE_FAILED);
+	nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NO_SECRETS);
 }
 
 static gboolean
@@ -1452,7 +1483,7 @@ nm_device_activate (NMDeviceInterface *device,
 	 * that the activation request isn't deferred because the deferred bit
 	 * gets cleared a bit too early, when the connection becomes valid.
 	 */
-	nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE);
+	nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_REASON_NONE);
 	nm_device_activate_schedule_stage1_device_prepare (self);
 
 	return TRUE;
@@ -1515,6 +1546,7 @@ handle_dhcp_lease_change (NMDevice *device)
 	NMSettingIP4Config *s_ip4;
 	NMConnection *connection;
 	NMActRequest *req;
+	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
 	if (!nm_device_get_use_dhcp (device)) {
 		nm_warning ("got DHCP rebind for device that wasn't using DHCP.");
@@ -1525,7 +1557,7 @@ handle_dhcp_lease_change (NMDevice *device)
 											 nm_device_get_iface (device));
 	if (!config) {
 		nm_warning ("failed to get DHCP config for rebind");
-		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
 		return;
 	}
 
@@ -1539,9 +1571,9 @@ handle_dhcp_lease_change (NMDevice *device)
 
 	g_object_set_data (G_OBJECT (req), NM_ACT_REQUEST_IP4_CONFIG, config);
 
-	if (!nm_device_set_ip4_config (device, config)) {
+	if (!nm_device_set_ip4_config (device, config, &reason)) {
 		nm_warning ("Failed to update IP4 config in response to DHCP event.");
-		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
 	}
 }
 
@@ -1580,11 +1612,11 @@ dhcp_state_changed (NMDHCPManager *dhcp_manager,
 	case DHC_ABEND: /* dhclient exited abnormally */
 	case DHC_END: /* dhclient exited normally */
 		if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG) {
-			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED);
+			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_DHCP_FAILED);
 		} else if (nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED) {
 			if (nm_device_get_use_dhcp (device)) {
 				/* dhclient quit and therefore can't renew our lease, kill the conneciton */
-				nm_device_state_changed (device, NM_DEVICE_STATE_FAILED);
+				nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
 			}
 		}
 		break;
@@ -1658,13 +1690,14 @@ nm_device_get_ip4_config (NMDevice *self)
 
 
 gboolean
-nm_device_set_ip4_config (NMDevice *self, NMIP4Config *config)
+nm_device_set_ip4_config (NMDevice *self, NMIP4Config *config, NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv;
 	const char *ip_iface;
 	gboolean success;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+	g_return_val_if_fail (reason != NULL, FALSE);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
@@ -1881,8 +1914,10 @@ nm_device_dispose (GObject *object)
 	 */
 
 	if (self->priv->managed) {
+		NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
+
 		nm_device_take_down (self, FALSE);
-		nm_device_set_ip4_config (self, NULL);
+		nm_device_set_ip4_config (self, NULL, &reason);
 	}
 
 	clear_act_request (self);
@@ -2070,12 +2105,14 @@ failed_to_disconnected (gpointer user_data)
 	NMDevice *device = NM_DEVICE (user_data);
 
 	device->priv->failed_to_disconnected_id = 0;
-	nm_device_state_changed (device, NM_DEVICE_STATE_DISCONNECTED);
+	nm_device_state_changed (device, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
 	return FALSE;
 }
 
 void
-nm_device_state_changed (NMDevice *device, NMDeviceState state)
+nm_device_state_changed (NMDevice *device,
+                         NMDeviceState state,
+                         NMDeviceStateReason reason)
 {
 	NMDevicePrivate *priv;
 	NMDeviceState old_state;
@@ -2121,7 +2158,7 @@ nm_info ("(%s): device state change: %d -> %d", nm_device_get_iface (device), ol
 	}
 
 	g_object_notify (G_OBJECT (device), NM_DEVICE_INTERFACE_STATE);
-	g_signal_emit_by_name (device, "state-changed", state);
+	g_signal_emit_by_name (device, "state-changed", state, old_state, 0);
 
 	/* Post-process the event after internal notification */
 
@@ -2184,6 +2221,9 @@ nm_device_set_managed (NMDevice *device, gboolean managed)
 	g_object_notify (G_OBJECT (device), NM_DEVICE_INTERFACE_MANAGED);
 
 	/* If now managed, jump to unavailable */
-	nm_device_state_changed (device, managed ? NM_DEVICE_STATE_UNAVAILABLE : NM_DEVICE_STATE_UNMANAGED);
+	if (managed)
+		nm_device_state_changed (device, NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
+	else
+		nm_device_state_changed (device, NM_DEVICE_STATE_UNMANAGED, NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
 }
 

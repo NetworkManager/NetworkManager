@@ -9,6 +9,7 @@
 #include "nm-device-private.h"
 #include "nm-object-private.h"
 #include "nm-object-cache.h"
+#include "nm-marshal.h"
 
 #include "nm-device-bindings.h"
 
@@ -46,6 +47,14 @@ enum {
 
 	LAST_PROP
 };
+
+enum {
+	STATE_CHANGED,
+
+	LAST_SIGNAL
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
 
 
 static void
@@ -108,13 +117,29 @@ register_for_property_changed (NMDevice *device)
 		{ NM_DEVICE_CAPABILITIES, nm_object_demarshal_generic, &priv->capabilities },
 		{ NM_DEVICE_MANAGED,      nm_object_demarshal_generic, &priv->managed },
 		{ NM_DEVICE_IP4_CONFIG,   demarshal_ip4_config,        &priv->ip4_config },
-		{ NM_DEVICE_STATE,        nm_object_demarshal_generic, &priv->state },
 		{ NULL },
 	};
 
 	nm_object_handle_properties_changed (NM_OBJECT (device),
 	                                     priv->proxy,
 	                                     property_changed_info);
+}
+
+static void
+device_state_changed (DBusGProxy *proxy,
+                      NMDeviceState new_state,
+                      NMDeviceState old_state,
+                      NMDeviceStateReason reason,
+                      gpointer user_data)
+{
+	NMDevice *self = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->state != new_state) {
+		priv->state = new_state;
+		g_signal_emit (self, signals[STATE_CHANGED], 0, new_state, old_state, reason);
+		nm_object_queue_notify (NM_OBJECT (self), "state");
+	}
 }
 
 static GObject*
@@ -139,6 +164,21 @@ constructor (GType type,
 											 NM_DBUS_INTERFACE_DEVICE);
 
 	register_for_property_changed (NM_DEVICE (object));
+
+	dbus_g_object_register_marshaller (nm_marshal_VOID__UINT_UINT_UINT,
+									   G_TYPE_NONE,
+									   G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT,
+									   G_TYPE_INVALID);
+
+	dbus_g_proxy_add_signal (priv->proxy,
+	                         "StateChanged",
+	                         G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT,
+	                         G_TYPE_INVALID);
+
+	dbus_g_proxy_connect_signal (priv->proxy, "StateChanged",
+								 G_CALLBACK (device_state_changed),
+								 NM_DEVICE (object),
+								 NULL);
 
 	return G_OBJECT (object);
 }
@@ -303,6 +343,17 @@ nm_device_class_init (NMDeviceClass *device_class)
 						  "Product string",
 						  NULL,
 						  G_PARAM_READABLE));
+
+	/* signals */
+	signals[STATE_CHANGED] =
+		g_signal_new ("state-changed",
+				    G_OBJECT_CLASS_TYPE (object_class),
+				    G_SIGNAL_RUN_FIRST,
+				    G_STRUCT_OFFSET (NMDeviceClass, state_changed),
+				    NULL, NULL,
+				    nm_marshal_VOID__UINT_UINT_UINT,
+				    G_TYPE_NONE, 3,
+				    G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 }
 
 GObject *

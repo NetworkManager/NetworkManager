@@ -52,9 +52,19 @@
 
 
     <signal name="StateChanged">
-      <arg name="state" type="u" tp:type="NM_DEVICE_STATE">
+      <arg name="new-state" type="u" tp:type="NM_DEVICE_STATE">
         <tp:docstring>
           The new state of the device.
+        </tp:docstring>
+      </arg>
+      <arg name="old-state" type="u" tp:type="NM_DEVICE_STATE">
+        <tp:docstring>
+          The previous state of the device.
+        </tp:docstring>
+      </arg>
+      <arg name="reason" type="u" tp:type="NM_DEVICE_STATE_REASON">
+        <tp:docstring>
+          A reason for the state transition.
         </tp:docstring>
       </arg>
     </signal>

@@ -78,8 +78,46 @@ enum {
 	LAST_PROP
 };
 
-static void device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data);
 
+static void
+device_state_changed (NMDevice *device,
+                      NMDeviceState new_state,
+                      NMDeviceState old_state,
+                      NMDeviceStateReason reason,
+                      gpointer user_data)
+{
+	NMActRequest *self = NM_ACT_REQUEST (user_data);
+	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
+	NMActiveConnectionState new_ac_state;
+	gboolean new_default = FALSE;
+
+	/* Set NMActiveConnection state based on the device's state */
+	switch (new_state) {
+	case NM_DEVICE_STATE_PREPARE:
+	case NM_DEVICE_STATE_CONFIG:
+	case NM_DEVICE_STATE_NEED_AUTH:
+	case NM_DEVICE_STATE_IP_CONFIG:
+		new_ac_state = NM_ACTIVE_CONNECTION_STATE_ACTIVATING;
+		break;
+	case NM_DEVICE_STATE_ACTIVATED:
+		new_ac_state = NM_ACTIVE_CONNECTION_STATE_ACTIVATED;
+		new_default = priv->is_default;
+		break;
+	default:
+		new_ac_state = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
+		break;
+	}
+
+	if (new_ac_state != priv->state) {
+		priv->state = new_ac_state;
+		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_STATE);
+	}
+
+	if (new_default != priv->is_default) {
+		priv->is_default = new_default;
+		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_DEFAULT);
+	}
+}
 
 NMActRequest *
 nm_act_request_new (NMConnection *connection,
@@ -301,42 +339,6 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 								    G_STRUCT_OFFSET (NMActRequestClass, properties_changed));
 
 	nm_active_connection_install_type_info (object_class);
-}
-
-static void
-device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
-{
-	NMActRequest *self = NM_ACT_REQUEST (user_data);
-	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
-	NMActiveConnectionState new_state;
-	gboolean new_default = FALSE;
-
-	/* Set NMActiveConnection state based on the device's state */
-	switch (state) {
-	case NM_DEVICE_STATE_PREPARE:
-	case NM_DEVICE_STATE_CONFIG:
-	case NM_DEVICE_STATE_NEED_AUTH:
-	case NM_DEVICE_STATE_IP_CONFIG:
-		new_state = NM_ACTIVE_CONNECTION_STATE_ACTIVATING;
-		break;
-	case NM_DEVICE_STATE_ACTIVATED:
-		new_state = NM_ACTIVE_CONNECTION_STATE_ACTIVATED;
-		new_default = priv->is_default;
-		break;
-	default:
-		new_state = NM_ACTIVE_CONNECTION_STATE_UNKNOWN;
-		break;
-	}
-
-	if (new_state != priv->state) {
-		priv->state = new_state;
-		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_STATE);
-	}
-
-	if (new_default != priv->is_default) {
-		priv->is_default = new_default;
-		g_object_notify (G_OBJECT (self), NM_ACTIVE_CONNECTION_DEFAULT);
-	}
 }
 
 typedef struct GetSecretsInfo {

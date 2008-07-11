@@ -83,7 +83,7 @@ modem_wait_for_reply (NMGsmDevice *self,
 		id = nm_serial_device_wait_for_reply (serial, timeout, responses, terminators, callback, NULL);
 
 	if (id == 0)
-		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_UNKNOWN);
 }
 
 static void
@@ -100,7 +100,7 @@ modem_get_reply (NMGsmDevice *self,
 		id = nm_serial_device_get_reply (serial, timeout, terminators, callback, NULL);
 
 	if (id == 0)
-		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_UNKNOWN);
 }
 
 static NMSetting *
@@ -127,6 +127,7 @@ dial_done (NMSerialDevice *device,
 		 gpointer user_data)
 {
 	gboolean success = FALSE;
+	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_UNKNOWN;
 
 	switch (reply_index) {
 	case 0:
@@ -135,25 +136,30 @@ dial_done (NMSerialDevice *device,
 		break;
 	case 1:
 		nm_info ("Busy");
+		reason = NM_DEVICE_STATE_REASON_MODEM_BUSY;
 		break;
 	case 2:
 		nm_warning ("No dial tone");
+		reason = NM_DEVICE_STATE_REASON_MODEM_NO_DIAL_TONE;
 		break;
 	case 3:
 		nm_warning ("No carrier");
+		reason = NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER;
 		break;
 	case -1:
 		nm_warning ("Dialing timed out");
+		reason = NM_DEVICE_STATE_REASON_MODEM_DIAL_TIMEOUT;
 		break;
 	default:
 		nm_warning ("Dialing failed");
+		reason = NM_DEVICE_STATE_REASON_MODEM_DIAL_FAILED;
 		break;
 	}
 
 	if (success)
 		nm_device_activate_schedule_stage2_device_config (NM_DEVICE (device));
 	else
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED, reason);
 }
 
 static void
@@ -194,7 +200,9 @@ set_apn_done (NMSerialDevice *device,
 		break;
 	default:
 		nm_warning ("Setting APN failed");
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (NM_DEVICE (device),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_GSM_APN_FAILED);
 		break;
 	}
 }
@@ -231,11 +239,15 @@ manual_registration_done (NMSerialDevice *device,
 		break;
 	case -1:
 		nm_warning ("Manual registration timed out");
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (NM_DEVICE (device),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_GSM_REGISTRATION_FAILED);
 		break;
 	default:
 		nm_warning ("Manual registration failed");
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (NM_DEVICE (device),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_GSM_REGISTRATION_FAILED);
 		break;
 	}
 }
@@ -301,15 +313,21 @@ automatic_registration_response (NMSerialDevice *device,
 		break;
 	case 3:
 		nm_warning ("Automatic registration failed: not registered and not searching.");
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (NM_DEVICE (device),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_GSM_REGISTRATION_FAILED);
 		break;
 	case -1:
 		nm_warning ("Automatic registration timed out");
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (NM_DEVICE (device),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_GSM_REGISTRATION_FAILED);
 		break;
 	default:
 		nm_warning ("Automatic registration failed");
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (NM_DEVICE (device),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_GSM_REGISTRATION_FAILED);
 		break;
 	}
 }
@@ -347,11 +365,15 @@ init_full_done (NMSerialDevice *device,
 		break;
 	case -1:
 		nm_warning ("Modem second stage initialization timed out");
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (NM_DEVICE (device),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
 		break;
 	default:
 		nm_warning ("Modem second stage initialization failed");
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (NM_DEVICE (device),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
 		return;
 	}
 }
@@ -377,7 +399,9 @@ enter_pin_done (NMSerialDevice *device,
 		break;
 	case -1:
 		nm_warning ("Did not receive response for secret");
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (NM_DEVICE (device),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_NO_SECRETS);
 		break;
 	default:
 		nm_warning ("Invalid secret");
@@ -443,7 +467,9 @@ enter_pin (NMGsmDevice *device, gboolean retry)
 		g_free (command);
 	} else {
 		nm_info ("(%s): GSM %s secret required", nm_device_get_iface (NM_DEVICE (device)), secret_name);
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_NEED_AUTH);
+		nm_device_state_changed (NM_DEVICE (device),
+		                         NM_DEVICE_STATE_NEED_AUTH,
+		                         NM_DEVICE_STATE_REASON_NONE);
 		nm_act_request_request_connection_secrets (req,
 		                                           NM_SETTING_GSM_SETTING_NAME,
 		                                           retry,
@@ -472,11 +498,15 @@ check_pin_done (NMSerialDevice *device,
 		break;
 	case -1:
 		nm_warning ("PIN checking timed out");
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (NM_DEVICE (device),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_GSM_PIN_CHECK_FAILED);
 		break;
 	default:
 		nm_warning ("PIN checking failed");
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (NM_DEVICE (device),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_GSM_PIN_CHECK_FAILED);
 		return;
 	}
 }
@@ -501,11 +531,15 @@ init_done (NMSerialDevice *device,
 		break;
 	case -1:
 		nm_warning ("Modem initialization timed out");
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (NM_DEVICE (device),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
 		break;
 	default:
 		nm_warning ("Modem initialization failed");
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (NM_DEVICE (device),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
 		return;
 	}
 }
@@ -519,7 +553,7 @@ init_modem (NMSerialDevice *device, gpointer user_data)
 }
 
 static NMActStageReturn
-real_act_stage1_prepare (NMDevice *device)
+real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
 	NMSerialDevice *serial_device = NM_SERIAL_DEVICE (device);
@@ -530,10 +564,14 @@ real_act_stage1_prepare (NMDevice *device)
 
 	setting = NM_SETTING_SERIAL (gsm_device_get_setting (NM_GSM_DEVICE (device), NM_TYPE_SETTING_SERIAL));
 
-	if (!nm_serial_device_open (serial_device, setting))
+	if (!nm_serial_device_open (serial_device, setting)) {
+		*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
 
 	id = nm_serial_device_flash (serial_device, 100, init_modem, NULL);
+	if (!id)
+		*reason = NM_DEVICE_STATE_REASON_UNKNOWN;
 
 	return id ? NM_ACT_STAGE_RETURN_POSTPONE : NM_ACT_STAGE_RETURN_FAILURE;
 }
@@ -723,12 +761,18 @@ nm_gsm_device_init (NMGsmDevice *self)
 static gboolean
 unavailable_to_disconnected (gpointer user_data)
 {
-	nm_device_state_changed (NM_DEVICE (user_data), NM_DEVICE_STATE_DISCONNECTED);
+	nm_device_state_changed (NM_DEVICE (user_data),
+	                         NM_DEVICE_STATE_DISCONNECTED,
+	                         NM_DEVICE_STATE_REASON_NONE);
 	return FALSE;
 }
 
 static void
-device_state_changed (NMDeviceInterface *device, NMDeviceState state, gpointer user_data)
+device_state_changed (NMDeviceInterface *device,
+                      NMDeviceState new_state,
+                      NMDeviceState old_state,
+                      NMDeviceStateReason reason,
+                      gpointer user_data)
 {
 	NMGsmDevice *self = NM_GSM_DEVICE (user_data);
 	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (self);
@@ -743,11 +787,11 @@ device_state_changed (NMDeviceInterface *device, NMDeviceState state, gpointer u
 	 * DISCONNECTED because the device is ready to use.  Otherwise the carrier-on
 	 * handler will handle the transition to DISCONNECTED when the carrier is detected.
 	 */
-	if (state == NM_DEVICE_STATE_UNAVAILABLE)
+	if (new_state == NM_DEVICE_STATE_UNAVAILABLE)
 		priv->state_to_disconnected_id = g_idle_add (unavailable_to_disconnected, self);
 
 	/* Make sure we don't leave the serial device open */
-	switch (state) {
+	switch (new_state) {
 	case NM_DEVICE_STATE_NEED_AUTH:
 	case NM_DEVICE_STATE_UNMANAGED:
 	case NM_DEVICE_STATE_UNAVAILABLE:

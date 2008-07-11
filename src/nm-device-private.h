@@ -30,7 +30,9 @@ void nm_device_set_device_type (NMDevice *dev, NMDeviceType type);
 
 void nm_device_activate_schedule_stage3_ip_config_start (NMDevice *device);
 
-void nm_device_state_changed (NMDevice *device, NMDeviceState state);
+void nm_device_state_changed (NMDevice *device,
+                              NMDeviceState state,
+                              NMDeviceStateReason reason);
 
 gboolean nm_device_hw_bring_up (NMDevice *self, gboolean wait);
 

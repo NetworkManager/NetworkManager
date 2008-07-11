@@ -312,7 +312,8 @@ nm_serial_device_set_pending (NMSerialDevice *device,
 
 	nm_serial_device_add_timeout (device, timeout);
 
-	return priv->pending_id;}
+	return priv->pending_id;
+}
 
 static void
 nm_serial_device_pending_done (NMSerialDevice *self)
@@ -975,10 +976,10 @@ ppp_state_changed (NMPPPManager *ppp_manager, NMPPPStatus status, gpointer user_
 
 	switch (status) {
 	case NM_PPP_STATUS_NETWORK:
-		nm_device_state_changed (device, NM_DEVICE_STATE_IP_CONFIG);
+		nm_device_state_changed (device, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
 		break;
 	case NM_PPP_STATUS_DISCONNECT:
-		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_PPP_DISCONNECT);
 		break;
 	default:
 		break;
@@ -1016,7 +1017,7 @@ ppp_stats (NMPPPManager *ppp_manager,
 }
 
 static NMActStageReturn
-real_act_stage2_config (NMDevice *device)
+real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMSerialDevicePrivate *priv = NM_SERIAL_DEVICE_GET_PRIVATE (device);
 	NMActRequest *req;
@@ -1050,6 +1051,7 @@ real_act_stage2_config (NMDevice *device)
 		g_object_unref (priv->ppp_manager);
 		priv->ppp_manager = NULL;
 
+		*reason = NM_DEVICE_STATE_REASON_PPP_START_FAILED;
 		ret = NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
@@ -1057,7 +1059,9 @@ real_act_stage2_config (NMDevice *device)
 }
 
 static NMActStageReturn
-real_act_stage4_get_ip4_config (NMDevice *device, NMIP4Config **config)
+real_act_stage4_get_ip4_config (NMDevice *device,
+                                NMIP4Config **config,
+                                NMDeviceStateReason *reason)
 {
 	NMSerialDevicePrivate *priv = NM_SERIAL_DEVICE_GET_PRIVATE (device);
 

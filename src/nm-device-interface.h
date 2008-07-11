@@ -63,7 +63,10 @@ struct _NMDeviceInterface {
 	void (*deactivate) (NMDeviceInterface *device);
 
 	/* Signals */
-	void (*state_changed) (NMDeviceInterface *device, NMDeviceState state);
+	void (*state_changed) (NMDeviceInterface *device,
+	                       NMDeviceState new_state,
+	                       NMDeviceState old_state,
+	                       NMDeviceStateReason reason);
 };
 
 GQuark nm_device_interface_error_quark (void);

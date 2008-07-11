@@ -515,12 +515,16 @@ active_connection_default_changed (NMActRequest *req,
 }
 
 static void
-device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
+device_state_changed (NMDevice *device,
+                      NMDeviceState new_state,
+                      NMDeviceState old_state,
+                      NMDeviceStateReason reason,
+                      gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
 	NMConnection *connection = get_device_connection (device);
 
-	switch (state) {
+	switch (new_state) {
 	case NM_DEVICE_STATE_FAILED:
 		/* Mark the connection invalid so it doesn't get automatically chosen */
 		if (connection) {

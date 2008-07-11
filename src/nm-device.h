@@ -98,13 +98,18 @@ struct _NMDeviceClass
 	                                             NMConnection *connection,
 	                                             GError **error);
 
-	NMActStageReturn	(* act_stage1_prepare)	(NMDevice *self);
-	NMActStageReturn	(* act_stage2_config)	(NMDevice *self);
-	NMActStageReturn	(* act_stage3_ip_config_start) (NMDevice *self);
+	NMActStageReturn	(* act_stage1_prepare)	(NMDevice *self,
+	                                             NMDeviceStateReason *reason);
+	NMActStageReturn	(* act_stage2_config)	(NMDevice *self,
+	                                             NMDeviceStateReason *reason);
+	NMActStageReturn	(* act_stage3_ip_config_start) (NMDevice *self,
+	                                                    NMDeviceStateReason *reason);
 	NMActStageReturn	(* act_stage4_get_ip4_config)	(NMDevice *self,
-														 NMIP4Config **config);
+														 NMIP4Config **config,
+	                                                     NMDeviceStateReason *reason);
 	NMActStageReturn	(* act_stage4_ip_config_timeout)	(NMDevice *self,
-												 NMIP4Config **config);
+	                                                         NMIP4Config **config,
+	                                                         NMDeviceStateReason *reason);
 	void			(* deactivate)			(NMDevice *self);
 	void			(* deactivate_quickly)	(NMDevice *self);
 
@@ -133,7 +138,8 @@ void			nm_device_set_use_dhcp	(NMDevice *dev,
 
 NMIP4Config *	nm_device_get_ip4_config	(NMDevice *dev);
 gboolean		nm_device_set_ip4_config	(NMDevice *dev,
-								 NMIP4Config *config);
+                                             NMIP4Config *config,
+                                             NMDeviceStateReason *reason);
 
 void		nm_device_take_down (NMDevice *dev, gboolean wait);
 

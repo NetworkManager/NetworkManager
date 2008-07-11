@@ -34,6 +34,12 @@ typedef struct {
 
 typedef struct {
 	NMObjectClass parent;
+
+	/* Signals */
+	void (*state_changed) (NMDevice *device,
+	                       NMDeviceState new_state,
+	                       NMDeviceState old_state,
+	                       NMDeviceStateReason reason);
 } NMDeviceClass;
 
 GType nm_device_get_type (void);

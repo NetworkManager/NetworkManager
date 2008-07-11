@@ -212,6 +212,108 @@ typedef enum
 } NMDeviceState;
 
 
+/*
+ * Device state change reason codes
+ */
+typedef enum {
+	/* No reason given */
+	NM_DEVICE_STATE_REASON_NONE = 0,
+
+	/* Unknown error */
+	NM_DEVICE_STATE_REASON_UNKNOWN,
+
+	/* Device is now managed */
+	NM_DEVICE_STATE_REASON_NOW_MANAGED,
+
+	/* Device is now managed unmanaged */
+	NM_DEVICE_STATE_REASON_NOW_UNMANAGED,
+
+	/* The device could not be readied for configuration */
+	NM_DEVICE_STATE_REASON_CONFIG_FAILED,
+
+	/* IP configuration could not be reserved (no available address, timeout, etc) */
+	NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE,
+
+	/* The IP config is no longer valid */
+	NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED,
+
+	/* Secrets were required, but not provided */
+	NM_DEVICE_STATE_REASON_NO_SECRETS,
+
+	/* 802.1x supplicant disconnected */
+	NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT,
+
+	/* 802.1x supplicant configuration failed */
+	NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED,
+
+	/* 802.1x supplicant failed */
+	NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED,
+
+	/* 802.1x supplicant took too long to authenticate */
+	NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT,
+
+	/* PPP service failed to start */
+	NM_DEVICE_STATE_REASON_PPP_START_FAILED,
+
+	/* PPP service disconnected */
+	NM_DEVICE_STATE_REASON_PPP_DISCONNECT,
+
+	/* PPP failed */
+	NM_DEVICE_STATE_REASON_PPP_FAILED,
+
+	/* DHCP client failed to start */
+	NM_DEVICE_STATE_REASON_DHCP_START_FAILED,
+
+	/* DHCP client error */
+	NM_DEVICE_STATE_REASON_DHCP_ERROR,
+
+	/* DHCP client failed */
+	NM_DEVICE_STATE_REASON_DHCP_FAILED,
+
+	/* Shared connection service failed to start */
+	NM_DEVICE_STATE_REASON_SHARED_START_FAILED,
+
+	/* AutoIP service failed to start */
+	NM_DEVICE_STATE_REASON_AUTOIP_START_FAILED,
+
+	/* AutoIP service error */
+	NM_DEVICE_STATE_REASON_AUTOIP_ERROR,
+
+	/* AutoIP service failed */
+	NM_DEVICE_STATE_REASON_AUTOIP_FAILED,
+
+	/* The line is busy */
+	NM_DEVICE_STATE_REASON_MODEM_BUSY,
+
+	/* No dial tone */
+	NM_DEVICE_STATE_REASON_MODEM_NO_DIAL_TONE,
+
+	/* No carrier could be established */
+	NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER,
+
+	/* The dialing request timed out */
+	NM_DEVICE_STATE_REASON_MODEM_DIAL_TIMEOUT,
+
+	/* The dialing attempt failed */
+	NM_DEVICE_STATE_REASON_MODEM_DIAL_FAILED,
+
+	/* Modem initialization failed */
+	NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED,
+
+	/* Failed to select the specified APN */
+	NM_DEVICE_STATE_REASON_GSM_APN_FAILED,
+
+	/* Failed to register with the requested network */
+	NM_DEVICE_STATE_REASON_GSM_REGISTRATION_FAILED,
+
+	/* PIN check failed */
+	NM_DEVICE_STATE_REASON_GSM_PIN_CHECK_FAILED,
+
+	/* Unused */
+	NM_DEVICE_STATE_REASON_LAST = 0xFFFF
+} NMDeviceStateReason;
+
+
 typedef enum {
 	NM_ACTIVE_CONNECTION_STATE_UNKNOWN = 0,
 
@@ -221,7 +323,6 @@ typedef enum {
 	/* Indicates the connection is currently active */
 	NM_ACTIVE_CONNECTION_STATE_ACTIVATED
 } NMActiveConnectionState;
-
 
 #endif /* NETWORK_MANAGER_H */
 

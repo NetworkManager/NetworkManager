@@ -1,3 +1,9 @@
+2008-07-11  Dan Williams  <dcbw@redhat.com>
+
+	Modify the NMDevice::state-changed signal to include the previous state
+	and reason. Enables the applet to provide more information why device
+	activation failed.
+
 2008-07-09  Dan Williams  <dcbw@redhat.com>
 
 	* callouts/Makefile.am

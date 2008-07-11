@@ -2011,10 +2011,11 @@ link_timeout_cb (gpointer user_data)
 	req = nm_device_get_act_request (dev);
 	ap = nm_device_wifi_get_activation_ap (self);
 	if (req == NULL || ap == NULL) {
+		/* shouldn't ever happen */
 		nm_warning ("couldn't get activation request or activation AP.");
 		if (nm_device_is_activating (dev)) {
 			cleanup_association_attempt (self, TRUE);
-			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
+			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NONE);
 		}
 		return FALSE;
 	}
@@ -2024,7 +2025,7 @@ link_timeout_cb (gpointer user_data)
 	 * fail.
 	 */
 	if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED) {
-		nm_device_state_changed (dev, NM_DEVICE_STATE_DISCONNECTED);
+		nm_device_state_changed (dev, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT);
 		return FALSE;
 	}
 
@@ -2061,7 +2062,7 @@ link_timeout_cb (gpointer user_data)
 		nm_info ("Activation (%s/wireless): disconnected during association,"
 		         " asking for new key.", nm_device_get_iface (dev));
 		cleanup_association_attempt (self, TRUE);
-		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH);
+		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
 		nm_act_request_request_connection_secrets (req, setting_name, TRUE,
 		                                           SECRETS_CALLER_WIFI, NULL, NULL);
 
@@ -2139,7 +2140,8 @@ supplicant_iface_state_cb_handler (gpointer user_data)
 	} else if (new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
 		cleanup_association_attempt (self, FALSE);
 		supplicant_interface_release (self);
-		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_UNAVAILABLE);
+		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_UNAVAILABLE,
+		                         NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
 	}
 	
 	g_slice_free (struct state_cb_data, cb_data);
@@ -2263,8 +2265,10 @@ supplicant_mgr_state_cb_handler (gpointer user_data)
 			supplicant_interface_release (self);
 		}
 
-		if (nm_device_get_state (dev) > NM_DEVICE_STATE_UNAVAILABLE)
-			nm_device_state_changed (dev, NM_DEVICE_STATE_UNAVAILABLE);
+		if (nm_device_get_state (dev) > NM_DEVICE_STATE_UNAVAILABLE) {
+			nm_device_state_changed (dev, NM_DEVICE_STATE_UNAVAILABLE,
+			                         NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
+		}
 	} else if (new_state == NM_SUPPLICANT_MANAGER_STATE_IDLE) {
 		dev_state = nm_device_get_state (dev);
 		if (    priv->enabled
@@ -2276,8 +2280,10 @@ supplicant_mgr_state_cb_handler (gpointer user_data)
 			/* if wireless is enabled and we have a supplicant interface,
 			 * we can transition to the DISCONNECTED state.
 			 */
-			if (priv->supplicant.iface)
-				nm_device_state_changed (dev, NM_DEVICE_STATE_DISCONNECTED);
+			if (priv->supplicant.iface) {
+				nm_device_state_changed (dev, NM_DEVICE_STATE_DISCONNECTED,
+				                         NM_DEVICE_STATE_REASON_NONE);
+			}
 		}
 	}
 
@@ -2326,7 +2332,7 @@ supplicant_iface_connection_error_cb_handler (gpointer user_data)
 	         cb_data->message);
 
 	cleanup_association_attempt (self, TRUE);
-	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED);
+	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
 
 out:
 	g_free (cb_data->name);
@@ -2401,7 +2407,7 @@ handle_auth_or_fail (NMDeviceWifi *self,
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
-	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH);
+	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
 
 	nm_connection_clear_secrets (connection);
 	setting_name = nm_connection_need_secrets (connection, NULL);
@@ -2463,7 +2469,8 @@ supplicant_connection_timeout_cb (gpointer user_data)
 		nm_info ("Activation (%s/wireless): association took too long, "
 		         "failing activation.",
 		         nm_device_get_iface (dev));
-		nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_SUPPLICANT_TIMEOUT);
 	} else {
 		/* Authentication failed, encryption key is probably bad */
 		nm_info ("Activation (%s/wireless): association took too long.",
@@ -2473,7 +2480,8 @@ supplicant_connection_timeout_cb (gpointer user_data)
 			nm_info ("Activation (%s/wireless): asking for new secrets",
 			         nm_device_get_iface (dev));
 		} else {
-			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED);
+			nm_device_state_changed (dev, NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_NO_SECRETS);
 		}
 	}
 
@@ -2650,11 +2658,14 @@ out:
 
 
 static NMActStageReturn
-real_act_stage1_prepare (NMDevice *dev)
+real_act_stage1_prepare (NMDevice *dev, NMDeviceStateReason *reason)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMAccessPoint *ap = NULL;
+	NMActRequest *req;
+	NMConnection *connection;
+	GSList *iter;
 
 	/* If the user is trying to connect to an AP that NM doesn't yet know about
 	 * (hidden network or something), create an fake AP from the security
@@ -2662,54 +2673,51 @@ real_act_stage1_prepare (NMDevice *dev)
 	 * scan list, which should show up when the connection is successful.
 	 */
 	ap = nm_device_wifi_get_activation_ap (self);
-	if (!ap) {
-		NMActRequest *req;
-		NMConnection *connection;
-		GSList *iter;
+	if (ap)
+		goto done;
 
-		req = nm_device_get_act_request (NM_DEVICE (self));
-		g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+	req = nm_device_get_act_request (NM_DEVICE (self));
+	g_return_val_if_fail (req != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-		connection = nm_act_request_get_connection (req);
-		g_return_val_if_fail (connection != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+	connection = nm_act_request_get_connection (req);
+	g_return_val_if_fail (connection != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-		/* Find a compatible AP in the scan list */
-		for (iter = priv->ap_list; iter; iter = g_slist_next (iter)) {
-			NMAccessPoint *candidate = NM_AP (iter->data);
+	/* Find a compatible AP in the scan list */
+	for (iter = priv->ap_list; iter; iter = g_slist_next (iter)) {
+		NMAccessPoint *candidate = NM_AP (iter->data);
 
-			if (nm_ap_check_compatible (candidate, connection)) {
-				ap = candidate;
-				break;
-			}
+		if (nm_ap_check_compatible (candidate, connection)) {
+			ap = candidate;
+			break;
 		}
-
-		/* If no compatible AP was found, create a fake AP (network is likely
-		 * hidden) and try to use that.
-		 */
-		if (!ap) {
-			ap = nm_ap_new_fake_from_connection (connection);
-			g_return_val_if_fail (ap != NULL, NM_ACT_STAGE_RETURN_FAILURE);
-
-			switch (nm_ap_get_mode (ap)) {
-				case NM_802_11_MODE_ADHOC:
-					nm_ap_set_user_created (ap, TRUE);
-					break;
-				case NM_802_11_MODE_INFRA:
-				default:
-					nm_ap_set_broadcast (ap, FALSE);
-					break;
-			}
-
-			priv->ap_list = g_slist_append (priv->ap_list, ap);
-			nm_ap_export_to_dbus (ap);
-			g_signal_emit (self, signals[ACCESS_POINT_ADDED], 0, ap);
-		}
-
-		nm_act_request_set_specific_object (req, nm_ap_get_dbus_path (ap));
 	}
 
-	set_current_ap (self, ap);
+	/* If no compatible AP was found, create a fake AP (network is likely
+	 * hidden) and try to use that.
+	 */
+	if (!ap) {
+		ap = nm_ap_new_fake_from_connection (connection);
+		g_return_val_if_fail (ap != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
+		switch (nm_ap_get_mode (ap)) {
+			case NM_802_11_MODE_ADHOC:
+				nm_ap_set_user_created (ap, TRUE);
+				break;
+			case NM_802_11_MODE_INFRA:
+			default:
+				nm_ap_set_broadcast (ap, FALSE);
+				break;
+		}
+
+		priv->ap_list = g_slist_append (priv->ap_list, ap);
+		nm_ap_export_to_dbus (ap);
+		g_signal_emit (self, signals[ACCESS_POINT_ADDED], 0, ap);
+	}
+
+	nm_act_request_set_specific_object (req, nm_ap_get_dbus_path (ap));
+
+done:
+	set_current_ap (self, ap);
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
@@ -2749,7 +2757,7 @@ real_connection_secrets_updated (NMDevice *dev,
 }
 
 static NMActStageReturn
-real_act_stage2_config (NMDevice *dev)
+real_act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 {
 	NMDeviceWifi * self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -2762,6 +2770,8 @@ real_act_stage2_config (NMDevice *dev)
 	NMConnection *          connection;
 	NMSettingConnection *	s_connection;
 	const char *			setting_name;
+
+	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
 	remove_supplicant_timeouts (self);
 
@@ -2780,11 +2790,17 @@ real_act_stage2_config (NMDevice *dev)
 	/* If we need secrets, get them */
 	setting_name = nm_connection_need_secrets (connection, NULL);
 	if (setting_name) {
+		NMActStageReturn auth_ret;
+
 		nm_info ("Activation (%s/wireless): access point '%s' has security,"
 		         " but secrets are required.",
 		         iface, s_connection->id);
 
-		return handle_auth_or_fail (self, req, FALSE);
+		auth_ret = handle_auth_or_fail (self, req, FALSE);
+		if (auth_ret == NM_ACT_STAGE_RETURN_FAILURE) {
+			*reason = NM_DEVICE_STATE_REASON_NO_SECRETS;
+			goto out;
+		}
 	} else {
 		NMSettingWireless *s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, 
 																		 NM_TYPE_SETTING_WIRELESS);
@@ -2804,6 +2820,7 @@ real_act_stage2_config (NMDevice *dev)
 	if (config == NULL) {
 		nm_warning ("Activation (%s/wireless): couldn't build wireless "
 			"configuration.", iface);
+		*reason = NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED;
 		goto out;
 	}
 
@@ -2817,19 +2834,21 @@ real_act_stage2_config (NMDevice *dev)
 	if (!nm_supplicant_interface_set_config (priv->supplicant.iface, config)) {
 		nm_warning ("Activation (%s/wireless): couldn't send wireless "
 			"configuration to the supplicant.", iface);
+		*reason = NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED;
 		goto out;
 	}
 
-	if (!start_supplicant_connection_timeout (self))
+	if (!start_supplicant_connection_timeout (self)) {
+		*reason = NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED;
 		goto out;
+	}
 
 	/* We'll get stage3 started when the supplicant connects */
 	ret = NM_ACT_STAGE_RETURN_POSTPONE;
 
 out:
-	if (ret == NM_ACT_STAGE_RETURN_FAILURE) {
+	if (ret == NM_ACT_STAGE_RETURN_FAILURE)
 		cleanup_association_attempt (self, TRUE);
-	}
 
 	if (config) {
 		/* Supplicant interface object refs the config; we no longer care about
@@ -2842,7 +2861,8 @@ out:
 
 static NMActStageReturn
 real_act_stage4_get_ip4_config (NMDevice *dev,
-                                NMIP4Config **config)
+                                NMIP4Config **config,
+                                NMDeviceStateReason *reason)
 {
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMDeviceClass *parent_class;
@@ -2852,7 +2872,7 @@ real_act_stage4_get_ip4_config (NMDevice *dev,
 
 	/* Chain up to parent */
 	parent_class = NM_DEVICE_CLASS (nm_device_wifi_parent_class);
-	ret = parent_class->act_stage4_get_ip4_config (dev, config);
+	ret = parent_class->act_stage4_get_ip4_config (dev, config, reason);
 
 	if ((ret == NM_ACT_STAGE_RETURN_SUCCESS) && *config) {
 		NMConnection *connection;
@@ -2874,7 +2894,8 @@ real_act_stage4_get_ip4_config (NMDevice *dev,
 
 static NMActStageReturn
 real_act_stage4_ip_config_timeout (NMDevice *dev,
-                                   NMIP4Config **config)
+                                   NMIP4Config **config,
+                                   NMDeviceStateReason *reason)
 {
 	NMDeviceWifi *	self = NM_DEVICE_WIFI (dev);
 	NMAccessPoint *		ap = nm_device_wifi_get_activation_ap (self);
@@ -2910,6 +2931,8 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 		if (ret == NM_ACT_STAGE_RETURN_POSTPONE) {
 			nm_info ("Activation (%s/wireless): asking for new secrets",
 			         nm_device_get_iface (dev));
+		} else {
+			*reason = NM_DEVICE_STATE_REASON_NO_SECRETS;
 		}
 	} else if (nm_ap_get_mode (ap) == NM_802_11_MODE_ADHOC) {
 		NMDeviceWifiClass *	klass;
@@ -2918,12 +2941,13 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 		/* For Ad-Hoc networks, chain up to parent to get a Zeroconf IP */
 		klass = NM_DEVICE_WIFI_GET_CLASS (self);
 		parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
-		ret = parent_class->act_stage4_ip_config_timeout (dev, &real_config);
+		ret = parent_class->act_stage4_ip_config_timeout (dev, &real_config, reason);
 	} else {
 		/* Non-encrypted network or authentication is enforced by some
 		 * entity (AP, RADIUS server, etc), but IP configure failed.  Alert
 		 * the user.
 		 */
+		*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
 		ret = NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
@@ -3250,12 +3274,18 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 static gboolean
 unavailable_to_disconnected (gpointer user_data)
 {
-	nm_device_state_changed (NM_DEVICE (user_data), NM_DEVICE_STATE_DISCONNECTED);
+	nm_device_state_changed (NM_DEVICE (user_data),
+	                         NM_DEVICE_STATE_DISCONNECTED,
+	                         NM_DEVICE_STATE_REASON_NONE);
 	return FALSE;
 }
 
 static void
-state_changed_cb (NMDevice *device, NMDeviceState state, gpointer user_data)
+device_state_changed (NMDevice *device,
+                      NMDeviceState new_state,
+                      NMDeviceState old_state,
+                      NMDeviceStateReason reason,
+                      gpointer user_data)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
@@ -3267,7 +3297,7 @@ state_changed_cb (NMDevice *device, NMDeviceState state, gpointer user_data)
 		priv->state_to_disconnected_id = 0;
 	}
 
-	if (state <= NM_DEVICE_STATE_UNAVAILABLE) {
+	if (new_state <= NM_DEVICE_STATE_UNAVAILABLE) {
 		/* Clean up the supplicant interface because in these states the
 		 * device cannot be used.
 		 */
@@ -3275,7 +3305,7 @@ state_changed_cb (NMDevice *device, NMDeviceState state, gpointer user_data)
 			supplicant_interface_release (self);
 	}
 
-	switch (state) {
+	switch (new_state) {
 	case NM_DEVICE_STATE_UNMANAGED:
 		clear_aps = TRUE;
 		break;
@@ -3333,7 +3363,7 @@ nm_device_wifi_new (const char *udi,
 		return NULL;
 
 	g_signal_connect (obj, "state-changed",
-				   G_CALLBACK (state_changed_cb),
+				   G_CALLBACK (device_state_changed),
 				   NULL);
 
 	return NM_DEVICE_WIFI (obj);
@@ -3398,10 +3428,15 @@ nm_device_wifi_set_enabled (NMDeviceWifi *self, gboolean enabled)
 		if (!priv->supplicant.iface)
 			supplicant_interface_acquire (self);
 
-		if (priv->supplicant.iface)
-			nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_DISCONNECTED);
+		if (priv->supplicant.iface) {
+			nm_device_state_changed (NM_DEVICE (self),
+			                         NM_DEVICE_STATE_DISCONNECTED,
+			                         NM_DEVICE_STATE_REASON_NONE);
+		}
 	} else {
-		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_UNAVAILABLE);
+		nm_device_state_changed (NM_DEVICE (self),
+		                         NM_DEVICE_STATE_UNAVAILABLE,
+		                         NM_DEVICE_STATE_REASON_NONE);
 		nm_device_hw_take_down (NM_DEVICE (self), TRUE);
 	}
 }

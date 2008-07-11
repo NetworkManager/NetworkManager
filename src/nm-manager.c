@@ -53,10 +53,6 @@ static void connection_added_default_handler (NMManager *manager,
 									 NMConnection *connection,
 									 NMConnectionScope scope);
 
-static void manager_device_state_changed (NMDevice *device,
-                                          NMDeviceState state,
-                                          gpointer user_data);
-
 static void hal_manager_udi_added_cb (NMHalManager *hal_mgr,
                                       const char *udi,
                                       const char *type_name,
@@ -367,6 +363,30 @@ pending_connection_info_destroy (PendingConnectionInfo *info)
 	g_free (info->device_path);
 
 	g_slice_free (PendingConnectionInfo, info);
+}
+
+static void
+manager_device_state_changed (NMDevice *device,
+                              NMDeviceState new_state,
+                              NMDeviceState old_state,
+                              NMDeviceStateReason reason,
+                              gpointer user_data)
+{
+	NMManager *manager = NM_MANAGER (user_data);
+
+	switch (new_state) {
+	case NM_DEVICE_STATE_UNMANAGED:
+	case NM_DEVICE_STATE_UNAVAILABLE:
+	case NM_DEVICE_STATE_DISCONNECTED:
+	case NM_DEVICE_STATE_PREPARE:
+	case NM_DEVICE_STATE_FAILED:
+		g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
+		break;
+	default:
+		break;
+	}
+
+	nm_manager_update_state (manager);
 }
 
 static void
@@ -1449,26 +1469,6 @@ manager_set_wireless_enabled (NMManager *manager, gboolean enabled)
 }
 
 static void
-manager_device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
-{
-	NMManager *manager = NM_MANAGER (user_data);
-
-	switch (state) {
-	case NM_DEVICE_STATE_UNMANAGED:
-	case NM_DEVICE_STATE_UNAVAILABLE:
-	case NM_DEVICE_STATE_DISCONNECTED:
-	case NM_DEVICE_STATE_PREPARE:
-	case NM_DEVICE_STATE_FAILED:
-		g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
-		break;
-	default:
-		break;
-	}
-
-	nm_manager_update_state (manager);
-}
-
-static void
 manager_hidden_ap_found (NMDeviceInterface *device,
                          NMAccessPoint *ap,
                          gpointer user_data)
@@ -1696,8 +1696,12 @@ internal_activate_device (NMManager *manager,
 	if (!nm_device_interface_check_connection_compatible (dev_iface, connection, error))
 		return NULL;
 
-	if (nm_device_get_act_request (device))
-		nm_device_state_changed (device, NM_DEVICE_STATE_DISCONNECTED);
+	/* Tear down any existing connection */
+	if (nm_device_get_act_request (device)) {
+		nm_device_state_changed (device,
+		                         NM_DEVICE_STATE_DISCONNECTED,
+		                         NM_DEVICE_STATE_REASON_NONE);
+	}
 
 	req = nm_act_request_new (connection, specific_object, user_requested, (gpointer) device);
 	success = nm_device_interface_activate (dev_iface, req, error);
@@ -1947,7 +1951,9 @@ nm_manager_deactivate_connection (NMManager *manager,
 			continue;
 
 		if (!strcmp (connection_path, nm_act_request_get_active_connection_path (req))) {
-			nm_device_state_changed (device, NM_DEVICE_STATE_DISCONNECTED);
+			nm_device_state_changed (device,
+			                         NM_DEVICE_STATE_DISCONNECTED,
+			                         NM_DEVICE_STATE_REASON_NONE);
 			success = TRUE;
 			goto done;
 		}

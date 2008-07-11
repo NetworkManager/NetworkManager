@@ -175,15 +175,19 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 }
 
 static void
-device_state_changed (NMDevice *device, NMDeviceState state, gpointer user_data)
+device_state_changed (NMDevice *device,
+                      NMDeviceState new_state,
+                      NMDeviceState old_state,
+                      NMDeviceStateReason reason,
+                      gpointer user_data)
 {
 	NMVPNConnection *connection = NM_VPN_CONNECTION (user_data);
 
-	if (state <= NM_DEVICE_STATE_DISCONNECTED) {
+	if (new_state <= NM_DEVICE_STATE_DISCONNECTED) {
 		nm_vpn_connection_set_vpn_state (connection,
 		                                 NM_VPN_CONNECTION_STATE_DISCONNECTED,
 		                                 NM_VPN_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED);
-	} else if (state == NM_DEVICE_STATE_FAILED) {
+	} else if (new_state == NM_DEVICE_STATE_FAILED) {
 		nm_vpn_connection_set_vpn_state (connection,
 		                                 NM_VPN_CONNECTION_STATE_FAILED,
 		                                 NM_VPN_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED);
@@ -907,8 +911,17 @@ connection_vpn_state_changed (NMVPNConnection *connection,
 
 			/* Reset routes, nameservers, and domains of the currently active device */
 			dev_ip4_config = nm_device_get_ip4_config (priv->parent_dev);
-			if (dev_ip4_config)
-				nm_device_set_ip4_config (priv->parent_dev, g_object_ref (dev_ip4_config));
+			if (dev_ip4_config) {
+				NMDeviceStateReason dev_reason = NM_DEVICE_STATE_REASON_NONE;
+
+				/* Since the config we're setting is also the device's current
+				 * config, have to ref the config to ensure it doesn't get
+				 * destroyed when the device unrefs it in nm_device_set_ip4_config().
+				 */
+				nm_device_set_ip4_config (priv->parent_dev,
+				                          g_object_ref (dev_ip4_config),
+				                          &dev_reason);
+			}
 		}
 
 		if (priv->banner) {

@@ -1,5 +1,6 @@
 /* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
+#include "nm-marshal.h"
 #include "nm-setting-connection.h"
 #include "nm-device-interface.h"
 #include "nm-ip4-config.h"
@@ -125,9 +126,9 @@ nm_device_interface_init (gpointer g_iface)
 				  G_SIGNAL_RUN_FIRST,
 				  G_STRUCT_OFFSET (NMDeviceInterface, state_changed),
 				  NULL, NULL,
-				  g_cclosure_marshal_VOID__UINT,
-				  G_TYPE_NONE, 1,
-				  G_TYPE_UINT);
+				  nm_marshal_VOID__UINT_UINT_UINT,
+				  G_TYPE_NONE, 3,
+				  G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 
 	dbus_g_object_type_install_info (iface_type,
 									 &dbus_glib_nm_device_interface_object_info);

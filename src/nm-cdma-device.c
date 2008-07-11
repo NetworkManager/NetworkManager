@@ -81,6 +81,7 @@ dial_done (NMSerialDevice *device,
            int reply_index,
            gpointer user_data)
 {
+	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_UNKNOWN;
 	gboolean success = FALSE;
 
 	switch (reply_index) {
@@ -90,15 +91,19 @@ dial_done (NMSerialDevice *device,
 		break;
 	case 1:
 		nm_info ("Busy");
+		reason = NM_DEVICE_STATE_REASON_MODEM_BUSY;
 		break;
 	case 2:
 		nm_warning ("No dial tone");
+		reason = NM_DEVICE_STATE_REASON_MODEM_NO_DIAL_TONE;
 		break;
 	case 3:
 		nm_warning ("No carrier");
+		reason = NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER;
 		break;
 	case -1:
 		nm_warning ("Dialing timed out");
+		reason = NM_DEVICE_STATE_REASON_MODEM_DIAL_TIMEOUT;
 		break;
 	default:
 		nm_warning ("Dialing failed");
@@ -108,7 +113,7 @@ dial_done (NMSerialDevice *device,
 	if (success)
 		nm_device_activate_schedule_stage2_device_config (NM_DEVICE (device));
 	else
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED, reason);
 }
 
 static void
@@ -127,7 +132,9 @@ do_dial (NMSerialDevice *device)
 	g_free (command);
 
 	if (id == 0)
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (NM_DEVICE (device),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_UNKNOWN);
 }
 
 static void
@@ -141,11 +148,15 @@ init_done (NMSerialDevice *device,
 		break;
 	case -1:
 		nm_warning ("Modem initialization timed out");
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (NM_DEVICE (device),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
 		break;
 	default:
 		nm_warning ("Modem initialization failed");
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (NM_DEVICE (device),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
 		return;
 	}
 }
@@ -160,11 +171,11 @@ init_modem (NMSerialDevice *device, gpointer user_data)
 		id = nm_serial_device_wait_for_reply (device, 10, responses, responses, init_done, NULL);
 
 	if (id == 0)
-		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED);
+		nm_device_state_changed (NM_DEVICE (device), NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_UNKNOWN);
 }
 
 static NMActStageReturn
-real_act_stage1_prepare (NMDevice *device)
+real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMSerialDevice *serial_device = NM_SERIAL_DEVICE (device);
 	NMSettingSerial *setting;
@@ -172,10 +183,14 @@ real_act_stage1_prepare (NMDevice *device)
 
 	setting = NM_SETTING_SERIAL (cdma_device_get_setting (NM_CDMA_DEVICE (device), NM_TYPE_SETTING_SERIAL));
 
-	if (!nm_serial_device_open (serial_device, setting))
+	if (!nm_serial_device_open (serial_device, setting)) {
+		*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
 
 	id = nm_serial_device_flash (serial_device, 100, init_modem, NULL);
+	if (!id)
+		*reason = NM_DEVICE_STATE_REASON_UNKNOWN;
 
 	return id ? NM_ACT_STAGE_RETURN_POSTPONE : NM_ACT_STAGE_RETURN_FAILURE;
 }
@@ -352,12 +367,18 @@ nm_cdma_device_init (NMCdmaDevice *self)
 static gboolean
 unavailable_to_disconnected (gpointer user_data)
 {
-	nm_device_state_changed (NM_DEVICE (user_data), NM_DEVICE_STATE_DISCONNECTED);
+	nm_device_state_changed (NM_DEVICE (user_data),
+	                         NM_DEVICE_STATE_DISCONNECTED,
+	                         NM_DEVICE_STATE_REASON_NONE);
 	return FALSE;
 }
 
 static void
-device_state_changed (NMDeviceInterface *device, NMDeviceState state, gpointer user_data)
+device_state_changed (NMDeviceInterface *device,
+                      NMDeviceState new_state,
+                      NMDeviceState old_state,
+                      NMDeviceStateReason reason,
+                      gpointer user_data)
 {
 	NMCdmaDevice *self = NM_CDMA_DEVICE (user_data);
 	NMCdmaDevicePrivate *priv = NM_CDMA_DEVICE_GET_PRIVATE (self);
@@ -372,11 +393,11 @@ device_state_changed (NMDeviceInterface *device, NMDeviceState state, gpointer u
 	 * DISCONNECTED because the device is ready to use.  Otherwise the carrier-on
 	 * handler will handle the transition to DISCONNECTED when the carrier is detected.
 	 */
-	if (state == NM_DEVICE_STATE_UNAVAILABLE)
+	if (new_state == NM_DEVICE_STATE_UNAVAILABLE)
 		priv->state_to_disconnected_id = g_idle_add (unavailable_to_disconnected, self);
 
 	/* Make sure we don't leave the serial device open */
-	switch (state) {
+	switch (new_state) {
 	case NM_DEVICE_STATE_NEED_AUTH:
 	case NM_DEVICE_STATE_UNMANAGED:
 	case NM_DEVICE_STATE_UNAVAILABLE:
