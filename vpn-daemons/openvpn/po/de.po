@@ -18,12 +18,12 @@ msgstr ""
 
 #: ../auth-dialog/gnome-two-password-dialog.c:145
 msgid "_Password:"
-msgstr "_Password:"
+msgstr "_Passwort:"
 
 # CHECK: Secondary => Zweit...?
 #: ../auth-dialog/gnome-two-password-dialog.c:146
 msgid "_Secondary Password:"
-msgstr "_Zweitpassword:"
+msgstr "_Zweitpasswort:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:263
 msgid "_Username:"
@@ -64,7 +64,7 @@ msgstr "VPN authentifizieren"
 
 #: ../auth-dialog/main.c:227
 msgid "Certificate pass_word:"
-msgstr "Pass_wort zertifzieren:"
+msgstr "Pass_wort zertifizieren:"
 
 #: ../auth-dialog/main.c:252
 msgid "Certificate password:"

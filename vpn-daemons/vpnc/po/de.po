@@ -21,7 +21,7 @@ msgstr "_Zweitkennwort:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:258
 msgid "_Username:"
-msgstr "_Benuterzname:"
+msgstr "_Benutzername:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:260
 msgid "_Domain:"
@@ -141,7 +141,7 @@ msgstr "Einstellungen können nicht importiert werden"
 #: ../properties/nm-vpnc.c:567
 #, c-format
 msgid "The VPN settings file '%s' does not contain valid data."
-msgstr "Die VPN-Einstellugnendatei »%s« enthält keine gültigen Daten."
+msgstr "Die VPN-Einstellungendatei »%s« enthält keine gültigen Daten."
 
 #: ../properties/nm-vpnc.c:584
 msgid "Select file to import"
@@ -247,7 +247,7 @@ msgstr "_VPN-Verbindung nur für diese Adressen verwenden"
 msgid ""
 "The VPN login failed because the user name and password were not accepted."
 msgstr ""
-"Die VPN-Anmeldung scheiterte, das Benutzername und Kennwort nicht akzeptiert "
+"Die VPN-Anmeldung scheiterte, da Benutzername und Kennwort nicht akzeptiert "
 "wurden."
 
 #: ../src/nm-vpnc-service.c:121
