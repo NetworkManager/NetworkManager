@@ -75,49 +75,49 @@
           The device is in an unknown state.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="DOWN" value="1">
+      <tp:enumvalue suffix="UNMANAGED" value="1">
         <tp:docstring>
-          The device is down.
+          The device is not managed by NetworkManager.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="DISCONNECTED" value="2">
+      <tp:enumvalue suffix="UNAVAILABLE" value="2">
+        <tp:docstring>
+          The device cannot be used (carrier off, rfkill, etc).
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="DISCONNECTED" value="3">
         <tp:docstring>
           The device is not connected.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="PREPARE" value="3">
+      <tp:enumvalue suffix="PREPARE" value="4">
         <tp:docstring>
           The device is preparing to connect.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="CONFIG" value="4">
+      <tp:enumvalue suffix="CONFIG" value="5">
         <tp:docstring>
           The device is being configured.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="NEED_AUTH" value="5">
+      <tp:enumvalue suffix="NEED_AUTH" value="6">
         <tp:docstring>
-          The device is awaiting authorization credentials.
+          The device is awaiting secrets necessary to continue connection.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="IP_CONFIG" value="6">
+      <tp:enumvalue suffix="IP_CONFIG" value="7">
         <tp:docstring>
-          The IP address of the device is being configured.
+          The IP settings of the device are being requested and configured.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="ACTIVATED" value="7">
+      <tp:enumvalue suffix="ACTIVATED" value="8">
         <tp:docstring>
           The device is active.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="FAILED" value="8">
+      <tp:enumvalue suffix="FAILED" value="9">
         <tp:docstring>
           The device is in a failure state following an attempt to activate it.
-        </tp:docstring>
-      </tp:enumvalue>
-      <tp:enumvalue suffix="CANCELLED" value="9">
-        <tp:docstring>
-          The previous activation attempt on this device was cancelled.
         </tp:docstring>
       </tp:enumvalue>
     </tp:enum>
