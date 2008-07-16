@@ -6,7 +6,7 @@
 #include <NetworkManager.h>
 #include "nm-suse-connection.h"
 #include "parser.h"
-#include "nm-polkit-helpers.h"
+#include "nm-system-config-error.h"
 
 G_DEFINE_TYPE (NMSuseConnection, nm_suse_connection, NM_TYPE_SYSCONFIG_CONNECTION)
 
@@ -111,7 +111,8 @@ update (NMExportedConnection *exported,
 	   GHashTable *new_settings,
 	   GError **err)
 {	
-	g_set_error (err, NM_SYSCONFIG_SETTINGS_ERROR, NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
+	g_set_error (err, NM_SYSCONFIG_SETTINGS_ERROR,
+			   NM_SYSCONFIG_SETTINGS_ERROR_UPDATE_NOT_SUPPORTED,
 			   "%s", "Please use YaST to change this connection.");
 
 	return FALSE;
@@ -120,7 +121,8 @@ update (NMExportedConnection *exported,
 static gboolean
 delete (NMExportedConnection *exported, GError **err)
 {
-	g_set_error (err, NM_SYSCONFIG_SETTINGS_ERROR, NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
+	g_set_error (err, NM_SYSCONFIG_SETTINGS_ERROR,
+			   NM_SYSCONFIG_SETTINGS_ERROR_DELETE_NOT_SUPPORTED,
 			   "%s", "Please use YaST to remove this connection.");
 
 	return FALSE;

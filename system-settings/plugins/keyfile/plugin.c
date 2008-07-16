@@ -181,10 +181,10 @@ get_connections (NMSystemConfigInterface *config)
 	return connections;
 }
 
-static void
+static gboolean
 add_connection (NMSystemConfigInterface *config, NMConnection *connection)
 {
-	write_connection (connection);
+	return write_connection (connection);
 }
 
 /* GObject */

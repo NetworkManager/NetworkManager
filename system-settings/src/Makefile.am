@@ -15,6 +15,8 @@ nm_system_settings_SOURCES = \
 	main.c \
 	nm-polkit-helpers.c \
 	nm-polkit-helpers.h \
+	nm-system-config-error.c \
+	nm-system-config-error.h \
 	nm-system-config-interface.c \
 	nm-system-config-interface.h \
 	nm-system-config-hal-manager.c \

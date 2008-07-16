@@ -71,9 +71,10 @@ write_array_of_array_of_uint (GKeyFile *file,
 	GPtrArray *array;
 	int i, j;
 
-	/* Only handle IPv4 addresses for now */
-	if (   !NM_IS_SETTING_IP4_CONFIG (setting)
-	    || strcmp (key, NM_SETTING_IP4_CONFIG_ADDRESSES))
+	/* Only handle IPv4 addresses and routes for now */
+	if (   !NM_IS_SETTING_IP4_CONFIG (setting) ||
+		  (strcmp (key, NM_SETTING_IP4_CONFIG_ADDRESSES) &&
+		   strcmp (key, NM_SETTING_IP4_CONFIG_ROUTES)))
 	    return FALSE;
 
 	array = (GPtrArray *) g_value_get_boxed (value);
@@ -87,6 +88,7 @@ write_array_of_array_of_uint (GKeyFile *file,
 		char *list[3] = { NULL, NULL, NULL };
 		char *key_name;
 
+		/* Address */
 		addr.s_addr = g_array_index (tuple, guint32, 0);
 		if (!inet_ntop (AF_INET, &addr, buf, sizeof (buf))) {
 			nm_warning ("%s: error converting IP4 address 0x%X",
@@ -96,15 +98,10 @@ write_array_of_array_of_uint (GKeyFile *file,
 			list[0] = g_strdup (buf);
 		}
 
-		addr.s_addr = g_array_index (tuple, guint32, 1);
-		if (!inet_ntop (AF_INET, &addr, buf, sizeof (buf))) {
-			nm_warning ("%s: error converting IP4 address 0x%X",
-			            __func__, ntohl (addr.s_addr));
-			list[1] = NULL;
-		} else {
-			list[1] = g_strdup (buf);
-		}
+		/* Prefix */
+		list[1] = g_strdup_printf ("%d", g_array_index (tuple, guint32, 1));
 
+		/* Gateway */
 		addr.s_addr = g_array_index (tuple, guint32, 2);
 		if (addr.s_addr) {
 			if (!inet_ntop (AF_INET, &addr, buf, sizeof (buf))) {
@@ -116,7 +113,7 @@ write_array_of_array_of_uint (GKeyFile *file,
 			}
 		}
 
-		key_name = g_strdup_printf ("address%d", j + 1);
+		key_name = g_strdup_printf ("%s%d", key, j + 1);
 		g_key_file_set_string_list (file, setting->name, key_name, (const char **) list, list[2] ? 3 : 2);
 		g_free (key_name);
 

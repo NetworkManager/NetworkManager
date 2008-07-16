@@ -1,39 +1,8 @@
 /* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
 
-#include "nm-polkit-helpers.h"
 #include <nm-dbus-settings.h>
-
-GQuark
-nm_sysconfig_settings_error_quark (void)
-{
-	static GQuark ret = 0;
-
-	if (ret == 0)
-		ret = g_quark_from_static_string ("nm_sysconfig_settings_error");
-
-	return ret;
-}
-
-#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
-
-GType
-nm_sysconfig_settings_error_get_type (void)
-{
-	static GType etype = 0;
-
-	if (etype == 0) {
-		static const GEnumValue values[] = {
-			ENUM_ENTRY (NM_SYSCONFIG_SETTINGS_ERROR_GENERAL, "GeneralError"),
-			ENUM_ENTRY (NM_SYSCONFIG_SETTINGS_ERROR_NOT_PRIVILEGED, "NotPrivileged"),
-			ENUM_ENTRY (NM_SYSCONFIG_SETTINGS_ERROR_INVALID_CONNECTION, "InvalidConnection"),
-			{ 0, 0, 0 }
-		};
-
-		etype = g_enum_register_static ("NMSysconfigSettingsError", values);
-	}
-
-	return etype;
-}
+#include "nm-polkit-helpers.h"
+#include "nm-system-config-error.h"
 
 static gboolean
 pk_io_watch_have_data (GIOChannel *channel, GIOCondition condition, gpointer user_data)

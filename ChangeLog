@@ -1,3 +1,39 @@
+2008-07-16  Tambet Ingo  <tambet@gmail.com>
+
+	* system-settings/src/nm-system-config-interface.c 
+	(nm_system_config_interface_supports_add): Implement.
+	(nm_system_config_interface_add_connection): Return a boolean to notify
+	of errors.
+
+	* system-settings/src/nm-polkit-helpers.c: 
+	* system-settings/src/nm-polkit-helpers.h: Move error declarations to
+	a separate file.
+
+	* system-settings/src/dbus-settings.c (impl_settings_add_connection):
+	Return an error when none of the plugins support add or if addition
+	failed for some reason.
+
+	* system-settings/src/nm-system-config-error.h: 
+	* system-settings/src/nm-system-config-error.c: New files, mostly moved
+	here from nm-polkit-helpers.[ch].
+
+	* system-settings/src/Makefile.am: Build new files.
+
+	* system-settings/plugins/keyfile/reader.c 
+	(read_array_of_array_of_uint): Make it more general so that it would
+	work for routes as well.
+
+	* system-settings/plugins/keyfile/writer.c
+	(write_array_of_array_of_uint): Ditto.
+	Fix the netmask/prefix writing.
+
+	* system-settings/plugins/keyfile/plugin.c (add_connection): Return
+	boolean to notify errors.
+
+	* system-settings/plugins/ifcfg-suse/nm-suse-connection.c (update):
+	Return more specific error.
+	(delete): Ditto.
+
 2008-07-11  Dan Williams  <dcbw@redhat.com>
 
 	Modify the NMDevice::state-changed signal to include the previous state

@@ -30,6 +30,7 @@
 #include "nm-dbus-glib-types.h"
 #include "dbus-settings.h"
 #include "nm-polkit-helpers.h"
+#include "nm-system-config-error.h"
 #include "nm-utils.h"
 
 static gboolean
@@ -431,36 +432,45 @@ impl_settings_add_connection (NMSysconfigSettings *self,
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 	NMConnection *connection;
+	GSList *iter;
 	GError *err = NULL, *cnfh_error = NULL;
+	gboolean success;
 
-	if (!check_polkit_privileges (priv->g_connection, priv->pol_ctx, context, &err)) {
-		dbus_g_method_return_error (context, err);
-		g_error_free (err);
-		return FALSE;
+	/* Does any of the plugins support adding? */
+	success = FALSE;
+	for (iter = priv->plugins; iter && success == FALSE; iter = iter->next) 
+		success = nm_system_config_interface_supports_add (NM_SYSTEM_CONFIG_INTERFACE (iter->data));
+
+	if (!success) {
+		err = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
+					    NM_SYSCONFIG_SETTINGS_ERROR_ADD_NOT_SUPPORTED,
+					    "%s", "None of the registered plugins support add.");
+		goto out;
 	}
+
+	if (!check_polkit_privileges (priv->g_connection, priv->pol_ctx, context, &err))
+		goto out;
 
 	connection = nm_connection_new_from_hash (hash, &cnfh_error);
 	if (connection) {
-		GSList *iter;
-
 		/* Here's how it works:
 		   1) plugin writes a connection.
 		   2) plugin notices that a new connection is available for reading.
 		   3) plugin reads the new connection (the one it wrote in 1) and emits 'connection-added' signal.
 		   4) NMSysconfigSettings receives the signal and adds it to it's connection list.
-
-		   This does not work if none of the plugins is able to write, but that is sort of by design - 
-		   if the connection is not saved, it won't be available after reboot and that would be very
-		   inconsistent. Perhaps we should fail this call here as well, but with multiple plugins,
-		   it's not very clear which failures we can ignore and which ones we can't.
 		*/
 
-		for (iter = priv->plugins; iter; iter = iter->next)
-			nm_system_config_interface_add_connection (NM_SYSTEM_CONFIG_INTERFACE (iter->data), connection);
+		success = FALSE;
+		for (iter = priv->plugins; iter && success == FALSE; iter = iter->next)
+			success = nm_system_config_interface_add_connection (NM_SYSTEM_CONFIG_INTERFACE (iter->data),
+													   connection);
 
 		g_object_unref (connection);
-		dbus_g_method_return (context);
-		return TRUE;
+
+		if (!success)
+			err = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
+						    NM_SYSCONFIG_SETTINGS_ERROR_ADD_FAILED,
+						    "%s", "Saving connection failed.");
 	} else {
 		/* Invalid connection hash */
 		err = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
@@ -469,8 +479,15 @@ impl_settings_add_connection (NMSysconfigSettings *self,
 					    g_type_name (nm_connection_lookup_setting_type_by_quark (cnfh_error->domain)),
 					    cnfh_error->message, cnfh_error->code);
 		g_error_free (cnfh_error);
+	}
+
+ out:
+	if (err) {
 		dbus_g_method_return_error (context, err);
 		g_error_free (err);
 		return FALSE;
+	} else {
+		dbus_g_method_return (context);
+		return TRUE;
 	}
 }

@@ -67,18 +67,13 @@ free_one_address (gpointer data, gpointer user_data)
 	g_array_free ((GArray *) data, TRUE);
 }
 
-static gboolean
-read_array_of_array_of_uint (GKeyFile *file,
-                             NMSetting *setting,
-                             const char *key)
+static GPtrArray *
+read_addresses (GKeyFile *file,
+			 const char *setting_name,
+			 const char *key)
 {
 	GPtrArray *addresses;
 	int i = 0;
-
-	/* Only handle IPv4 addresses for now */
-	if (   !NM_IS_SETTING_IP4_CONFIG (setting)
-	    || strcmp (key, NM_SETTING_IP4_CONFIG_ADDRESSES))
-	    return FALSE;
 
 	addresses = g_ptr_array_sized_new (3);
 
@@ -92,8 +87,8 @@ read_array_of_array_of_uint (GKeyFile *file,
 		guint32 empty = 0;
 		int j;
 
-		key_name = g_strdup_printf ("address%d", i);
-		tmp = g_key_file_get_string_list (file, setting->name, key_name, &length, NULL);
+		key_name = g_strdup_printf ("%s%d", key, i);
+		tmp = g_key_file_get_string_list (file, setting_name, key_name, &length, NULL);
 		g_free (key_name);
 
 		if (!tmp || !length)
@@ -145,10 +140,39 @@ next:
 		g_strfreev (tmp);
 	}
 
-	g_object_set (setting, key, addresses, NULL);
+	if (addresses->len < 1) {
+		g_ptr_array_free (addresses, TRUE);
+		addresses = NULL;
+	}
 
-	g_ptr_array_foreach (addresses, free_one_address, NULL);
-	g_ptr_array_free (addresses, TRUE);
+	return addresses;
+}
+
+static gboolean
+read_array_of_array_of_uint (GKeyFile *file,
+                             NMSetting *setting,
+                             const char *key)
+{
+	GPtrArray *addresses;
+
+	/* Only handle IPv4 addresses and routes for now */
+	if (   !NM_IS_SETTING_IP4_CONFIG (setting) ||
+		  (strcmp (key, NM_SETTING_IP4_CONFIG_ADDRESSES) &&
+		   strcmp (key, NM_SETTING_IP4_CONFIG_ROUTES)))
+	    return FALSE;
+
+	addresses = read_addresses (file, setting->name, key);
+
+	/* Work around for previous syntax */
+	if (!addresses && !strcmp (key, NM_SETTING_IP4_CONFIG_ADDRESSES))
+		addresses = read_addresses (file, setting->name, "address");
+
+	if (addresses) {
+		g_object_set (setting, key, addresses, NULL);
+		g_ptr_array_foreach (addresses, free_one_address, NULL);
+		g_ptr_array_free (addresses, TRUE);
+	}
+
 	return TRUE;
 }
 

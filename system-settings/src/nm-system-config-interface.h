@@ -92,7 +92,7 @@ struct _NMSystemConfigInterface {
 	/*
 	 * Add a new connection.
 	 */
-	void     (*add_connection) (NMSystemConfigInterface *config, NMConnection *connection);
+	gboolean (*add_connection) (NMSystemConfigInterface *config, NMConnection *connection);
 
 	/* Signals */
 
@@ -112,8 +112,10 @@ GSList * nm_system_config_interface_get_connections (NMSystemConfigInterface *co
 
 GSList *nm_system_config_interface_get_unmanaged_devices (NMSystemConfigInterface *config);
 
-void nm_system_config_interface_add_connection (NMSystemConfigInterface *config,
-						NMConnection *connection);
+gboolean nm_system_config_interface_supports_add (NMSystemConfigInterface *config);
+
+gboolean nm_system_config_interface_add_connection (NMSystemConfigInterface *config,
+						    NMConnection *connection);
 
 G_END_DECLS
 
