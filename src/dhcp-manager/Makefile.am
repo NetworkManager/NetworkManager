@@ -10,7 +10,8 @@ noinst_LTLIBRARIES = libdhcp-manager.la
 
 libdhcp_manager_la_SOURCES = \
 	nm-dhcp-manager.c \
-	nm-dhcp-manager.h
+	nm-dhcp-manager.h \
+	nm-dhcp-@DHCP_CLIENT@.c
 
 libdhcp_manager_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
@@ -22,11 +23,14 @@ libdhcp_manager_la_CPPFLAGS = \
 	-DDATADIR=\"$(datadir)\" \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\" \
-	-DLOCALSTATEDIR=\"$(localstatedir)\"
-
+	-DLOCALSTATEDIR=\"$(localstatedir)\" \
+	-DDHCP_CLIENT_PATH=\"$(DHCP_CLIENT_PATH)\"
 
 libdhcp_manager_la_LIBADD = \
 	$(DBUS_LIBS) \
 	$(GTHREAD_LIBS) \
 	$(top_builddir)/marshallers/libmarshallers.la
 
+EXTRA_DIST = \
+	     nm-dhcp-dhclient.c \
+	     nm-dhcp-dhcpcd.c

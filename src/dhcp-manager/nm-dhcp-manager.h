@@ -28,6 +28,8 @@
 
 #include "nm-ip4-config.h"
 
+#define NM_DHCP_MANAGER_RUN_DIR		LOCALSTATEDIR "/run"
+
 #define NM_TYPE_DHCP_MANAGER            (nm_dhcp_manager_get_type ())
 #define NM_DHCP_MANAGER(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP_MANAGER, NMDHCPManager))
 #define NM_DHCP_MANAGER_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DHCP_MANAGER, NMDHCPManagerClass))
@@ -39,6 +41,7 @@ typedef enum {
 	DHC_NBI=0,		/* no broadcast interfaces found */
 	DHC_PREINIT,		/* configuration started */
 	DHC_BOUND,		/* lease obtained */
+	DHC_IPV4LL,		/* IPv4LL address obtained */
 	DHC_RENEW,		/* lease renewed */
 	DHC_REBOOT,		/* have valid lease, but now obtained a different one */
 	DHC_REBIND,		/* new, different lease */
@@ -66,6 +69,19 @@ typedef struct {
 	void (*timeout)       (NMDHCPManager *manager, char *iface);
 } NMDHCPManagerClass;
 
+typedef struct {
+        char *			iface;
+        guchar			state;
+        GPid			pid;
+        char *			pid_file;
+        char *			conf_file;
+        char *			lease_file;
+        guint			timeout_id;
+        guint			watch_id;
+        NMDHCPManager *		manager;
+        GHashTable *		options;
+} NMDHCPDevice;
+
 GType nm_dhcp_manager_get_type (void);
 
 NMDHCPManager *nm_dhcp_manager_get                  (void);
@@ -79,5 +95,10 @@ NMIP4Config *  nm_dhcp_manager_get_ip4_config       (NMDHCPManager *manager, con
 NMDHCPState    nm_dhcp_manager_get_state_for_device (NMDHCPManager *manager, const char *iface);
 
 gboolean       nm_dhcp_manager_process_signal       (NMDHCPManager *manager, DBusMessage *message);
+
+gboolean       nm_dhcp_client_start                 (NMDHCPDevice *device, NMSettingIP4Config *s_ip4);
+void           nm_dhcp_client_stop                  (const char * iface,
+						     pid_t pid,
+						     gboolean blocking);
 
 #endif /* NM_DHCP_MANAGER_H */

@@ -45,37 +45,7 @@
 #define NM_DHCP_CLIENT_DBUS_SERVICE "org.freedesktop.nm_dhcp_client"
 #define NM_DHCP_CLIENT_DBUS_IFACE   "org.freedesktop.nm_dhcp_client"
 
-#define NM_DHCP_MANAGER_RUN_DIR		LOCALSTATEDIR "/run"
-
-#define NM_DHCP_MANAGER_PID_FILENAME	"dhclient"
-#define NM_DHCP_MANAGER_PID_FILE_EXT	"pid"
-
-#define NM_DHCP_MANAGER_LEASE_FILENAME	"dhclient"
-#define NM_DHCP_MANAGER_LEASE_FILE_EXT	"lease"
-
-#define ACTION_SCRIPT_PATH	LIBEXECDIR "/nm-dhcp-client.action"
-
 #define NM_DHCP_TIMEOUT   	45 /* DHCP timeout, in seconds */
-
-
-static const char *dhclient_binary_paths[] =
-{
-	"/sbin/dhclient",
-	"/usr/sbin/dhclient",
-	"/usr/local/sbin/dhclient",
-	NULL
-};
-
-typedef struct {
-        char *			iface;
-        guchar 			state;
-        GPid 			dhclient_pid;
-        char *			dhclient_conf;
-        guint			timeout_id;
-        guint			watch_id;
-        NMDHCPManager *	manager;
-        GHashTable *	options;
-} NMDHCPDevice;
 
 typedef struct {
 	NMDBusManager * dbus_mgr;
@@ -91,7 +61,6 @@ G_DEFINE_TYPE (NMDHCPManager, nm_dhcp_manager, G_TYPE_OBJECT)
 enum {
 	STATE_CHANGED,
 	TIMEOUT,
-
 	LAST_SIGNAL
 };
 
@@ -100,29 +69,6 @@ static guint signals[LAST_SIGNAL] = { 0 };
 static NMDHCPManager *nm_dhcp_manager_new (void);
 
 static void nm_dhcp_manager_cancel_transaction_real (NMDHCPDevice *device, gboolean blocking);
-
-static void stop_dhclient (const char * iface, const pid_t pid, gboolean blocking);
-
-static char *
-get_pidfile_for_iface (const char * iface)
-{
-	return g_strdup_printf ("%s/%s-%s.%s",
-	                        NM_DHCP_MANAGER_RUN_DIR,
-	                        NM_DHCP_MANAGER_PID_FILENAME,
-	                        iface,
-	                        NM_DHCP_MANAGER_PID_FILE_EXT);
-}
-
-
-static char *
-get_leasefile_for_iface (const char * iface)
-{
-	return g_strdup_printf ("%s/%s-%s.%s",
-	                        NM_DHCP_MANAGER_RUN_DIR,
-	                        NM_DHCP_MANAGER_LEASE_FILENAME,
-	                        iface,
-	                        NM_DHCP_MANAGER_LEASE_FILE_EXT);
-}
 
 NMDHCPManager *
 nm_dhcp_manager_get (void)
@@ -191,7 +137,8 @@ static gboolean state_is_bound (guint8 state)
 	if ((state == DHC_BOUND)
 	    || (state == DHC_RENEW)
 	    || (state == DHC_REBOOT)
-	    || (state == DHC_REBIND))
+	    || (state == DHC_REBIND)
+	    || (state == DHC_IPV4LL))
 		return TRUE;
 
 	return FALSE;
@@ -227,11 +174,13 @@ nm_dhcp_device_destroy (NMDHCPDevice *device)
 	if (device->options)
 		g_hash_table_destroy (device->options);
 
-	if (device->dhclient_conf) {
-		ret = unlink (device->dhclient_conf);
-		g_free (device->dhclient_conf);
+	if (device->conf_file) {
+		ret = unlink (device->conf_file);
+		g_free (device->conf_file);
 	}
 
+	g_free (device->pid_file);
+	g_free (device->lease_file);
 	g_free (device->iface);
 	g_slice_free (NMDHCPDevice, device);
 }
@@ -246,6 +195,8 @@ state_to_string (guint32 state)
 			return "preinit";
 		case DHC_BOUND:
 			return "bound";
+		case DHC_IPV4LL:
+			return "bound (ipv4ll)";
 		case DHC_RENEW:
 			return "renew";
 		case DHC_REBOOT:
@@ -283,6 +234,8 @@ string_to_state (const char *state)
 		return DHC_PREINIT;
 	else if (strcmp("BOUND", state) == 0)
 		return DHC_BOUND;
+	else if (strcmp("IPV4LL", state) == 0)
+		return DHC_IPV4LL;
 	else if (strcmp("RENEW", state) == 0)
 		return DHC_RENEW;
 	else if (strcmp("REBOOT", state) == 0)
@@ -429,7 +382,7 @@ nm_dhcp_manager_handle_event (DBusGProxy *proxy,
 
 	pid_str = get_option (options, "pid");
 	if (pid_str == NULL) {
-		nm_warning ("DHCP event didn't have associated dhclient PID.");
+		nm_warning ("DHCP event didn't have associated PID.");
 		goto out;
 	}
 
@@ -440,10 +393,10 @@ nm_dhcp_manager_handle_event (DBusGProxy *proxy,
 	}
 
 	pid = (pid_t) temp;
-	if (pid != device->dhclient_pid) {
+	if (pid != device->pid) {
 		nm_warning ("Received DHCP event from unexpected PID %u (expected %u)",
 		            pid,
-		            device->dhclient_pid);
+		            device->pid);
 		goto out;
 	}
 
@@ -534,7 +487,6 @@ nm_dhcp_device_new (NMDHCPManager *manager, const char *iface)
 {
 	NMDHCPDevice *device;
 	GHashTable * hash = NM_DHCP_MANAGER_GET_PRIVATE (manager)->devices;
-	char *tmp;
 
 	device = g_slice_new0 (NMDHCPDevice);
 	if (!device) {
@@ -551,10 +503,6 @@ nm_dhcp_device_new (NMDHCPManager *manager, const char *iface)
 	}
 	
 	device->manager = manager;
-
-	tmp = g_strdup_printf ("nm-dhclient-%s.conf", iface);
-	device->dhclient_conf = g_build_filename ("/var", "run", tmp, NULL);
-	g_free (tmp);
 
 	nm_dhcp_manager_cancel_transaction_real (device, FALSE);
 
@@ -580,254 +528,25 @@ error:
 
 
 /*
- * dhclient_watch_cb
+ * dhcp_watch_cb
  *
  * Watch our child dhclient process and get notified of events from it.
  *
  */
-static void dhclient_watch_cb (GPid pid, gint status, gpointer user_data)
+static void dhcp_watch_cb (GPid pid, gint status, gpointer user_data)
 {
 	NMDHCPDevice *device = (NMDHCPDevice *)user_data;
 
 	if (!WIFEXITED (status)) {
 		device->state = DHC_ABEND;
-		nm_warning ("dhclient died abnormally");
+		nm_warning ("dhcp client died abnormally");
 	}
-	device->dhclient_pid = 0;
+	device->pid = 0;
 
 	nm_dhcp_device_watch_cleanup (device);
 	nm_dhcp_device_timeout_cleanup (device);
 
 	g_signal_emit (G_OBJECT (device->manager), signals[STATE_CHANGED], 0, device->iface, device->state);
-}
-
-/*
- * nm_vpn_service_child_setup
- *
- * Give child a different process group to ensure signal separation.
- *
- */
-static void
-dhclient_child_setup (gpointer user_data G_GNUC_UNUSED)
-{
-	/* We are in the child process at this point */
-	pid_t pid = getpid ();
-	setpgid (pid, pid);
-}
-
-
-#define DHCP_CLIENT_ID_TAG "send dhcp-client-identifier"
-#define DHCP_CLIENT_ID_FORMAT DHCP_CLIENT_ID_TAG " \"%s\"; # added by NetworkManager"
-
-#define DHCP_HOSTNAME_TAG "send host-name"
-#define DHCP_HOSTNAME_FORMAT DHCP_HOSTNAME_TAG " \"%s\"; # added by NetworkManager"
-
-static gboolean
-merge_dhclient_config (NMDHCPDevice *device,
-                       NMSettingIP4Config *s_ip4,
-                       const char *contents,
-                       const char *orig,
-                       GError **error)
-{
-	GString *new_contents;
-	gboolean success = FALSE;
-
-	g_return_val_if_fail (device != NULL, FALSE);
-	g_return_val_if_fail (device->iface != NULL, FALSE);
-	
-	new_contents = g_string_new (_("# Created by NetworkManager\n"));
-
-	/* Add existing options, if any, but ignore stuff NM will replace. */
-	if (contents) {
-		char **lines = NULL, **line;
-
-		g_string_append_printf (new_contents, _("# Merged from %s\n\n"), orig);
-
-		lines = g_strsplit_set (contents, "\n\r", 0);
-		for (line = lines; lines && *line; line++) {
-			gboolean ignore = FALSE;
-
-			if (!strlen (g_strstrip (*line)))
-				continue;
-
-			if (   s_ip4
-			    && s_ip4->dhcp_client_id
-			    && !strncmp (*line, DHCP_CLIENT_ID_TAG, strlen (DHCP_CLIENT_ID_TAG)))
-				ignore = TRUE;
-
-			if (   s_ip4
-			    && s_ip4->dhcp_client_id
-			    && !strncmp (*line, DHCP_HOSTNAME_TAG, strlen (DHCP_HOSTNAME_TAG)))
-				ignore = TRUE;
-
-			if (!ignore) {
-				g_string_append (new_contents, *line);
-				g_string_append_c (new_contents, '\n');
-			}
-		}
-
-		if (lines)
-			g_strfreev (lines);
-	} else
-		g_string_append_c (new_contents, '\n');
-
-	/* Add NM options from connection */
-	if (s_ip4 && s_ip4->dhcp_client_id)
-		g_string_append_printf (new_contents, DHCP_CLIENT_ID_FORMAT "\n", s_ip4->dhcp_client_id);
-
-	if (s_ip4 && s_ip4->dhcp_hostname)
-		g_string_append_printf (new_contents, DHCP_HOSTNAME_FORMAT "\n", s_ip4->dhcp_hostname);
-
-	if (g_file_set_contents (device->dhclient_conf, new_contents->str, -1, error))
-		success = TRUE;
-
-	g_string_free (new_contents, TRUE);
-	return success;
-}
-
-/* NM provides interface-specific options; thus the same dhclient config
- * file cannot be used since DHCP transactions can happen in parallel.
- * Since some distros don't have default per-interface dhclient config files,
- * read their single config file and merge that into a custom per-interface
- * config file along with the NM options.
- */
-static gboolean
-create_dhclient_config (NMDHCPDevice *device, NMSettingIP4Config *s_ip4)
-{
-	char *orig = NULL, *contents = NULL;
-	GError *error = NULL;
-	gboolean success = FALSE;
-
-	g_return_val_if_fail (device != NULL, FALSE);
-
-#if defined(TARGET_SUSE)
-	orig = g_strdup (SYSCONFDIR "/dhclient.conf");
-#elif defined(TARGET_DEBIAN)
-	orig = g_strdup (SYSCONFDIR "/dhcp3/dhclient.conf");
-#else
-	orig = g_strdup_printf (SYSCONFDIR "/dhclient-%s.conf", device->iface);
-#endif
-
-	if (!orig) {
-		nm_warning ("%s: not enough memory for dhclient options.", device->iface);
-		return FALSE;
-	}
-
-	if (!g_file_test (orig, G_FILE_TEST_EXISTS))
-		goto out;
-
-	if (!g_file_get_contents (orig, &contents, NULL, &error)) {
-		nm_warning ("%s: error reading dhclient configuration %s: %s",
-		            device->iface, orig, error->message);
-		g_error_free (error);
-		goto out;
-	}
-
-out:
-	error = NULL;
-	if (merge_dhclient_config (device, s_ip4, contents, orig, &error))
-		success = TRUE;
-	else {
-		nm_warning ("%s: error creating dhclient configuration: %s",
-		            device->iface, error->message);
-		g_error_free (error);
-	}
-
-	g_free (contents);
-	g_free (orig);
-	return success;
-}
-
-static gboolean
-dhclient_run (NMDHCPDevice *device, NMSettingIP4Config *s_ip4)
-{
-	const char **	dhclient_binary = NULL;
-	GPtrArray *		dhclient_argv = NULL;
-	GPid			pid;
-	GError *		error = NULL;
-	char *			pidfile = NULL;
-	char *			leasefile = NULL;
-	gboolean		success = FALSE;
-	char *			pid_contents = NULL;
-
-	/* Find dhclient */
-	dhclient_binary = dhclient_binary_paths;
-	while (*dhclient_binary != NULL) {
-		if (g_file_test (*dhclient_binary, G_FILE_TEST_EXISTS))
-			break;
-		dhclient_binary++;
-	}
-
-	if (!*dhclient_binary) {
-		nm_warning ("Could not find dhclient binary.");
-		goto out;
-	}
-
-	pidfile = get_pidfile_for_iface (device->iface);
-	if (!pidfile) {
-		nm_warning ("%s: not enough memory for dhclient options.", device->iface);
-		goto out;
-	}
-
-	leasefile = get_leasefile_for_iface (device->iface);
-	if (!leasefile) {
-		nm_warning ("%s: not enough memory for dhclient options.", device->iface);
-		goto out;
-	}
-
-	if (!create_dhclient_config (device, s_ip4))
-		goto out;
-
-	/* Kill any existing dhclient bound to this interface */
-	if (g_file_get_contents (pidfile, &pid_contents, NULL, NULL)) {
-		unsigned long int tmp = strtoul (pid_contents, NULL, 10);
-
-		if (!((tmp == ULONG_MAX) && (errno == ERANGE)))
-			stop_dhclient (device->iface, (pid_t) tmp, TRUE);
-		remove (pidfile);
-	}
-
-	dhclient_argv = g_ptr_array_new ();
-	g_ptr_array_add (dhclient_argv, (gpointer) (*dhclient_binary));
-
-	g_ptr_array_add (dhclient_argv, (gpointer) "-d");
-
-	g_ptr_array_add (dhclient_argv, (gpointer) "-sf");	/* Set script file */
-	g_ptr_array_add (dhclient_argv, (gpointer) ACTION_SCRIPT_PATH );
-
-	g_ptr_array_add (dhclient_argv, (gpointer) "-pf");	/* Set pid file */
-	g_ptr_array_add (dhclient_argv, (gpointer) pidfile);
-
-	g_ptr_array_add (dhclient_argv, (gpointer) "-lf");	/* Set lease file */
-	g_ptr_array_add (dhclient_argv, (gpointer) leasefile);
-
-	g_ptr_array_add (dhclient_argv, (gpointer) "-cf");	/* Set interface config file */
-	g_ptr_array_add (dhclient_argv, (gpointer) device->dhclient_conf);
-
-	g_ptr_array_add (dhclient_argv, (gpointer) device->iface);
-	g_ptr_array_add (dhclient_argv, NULL);
-
-	if (!g_spawn_async (NULL, (char **) dhclient_argv->pdata, NULL, 0,
-	                    &dhclient_child_setup, NULL, &pid, &error)) {
-		nm_warning ("dhclient failed to start.  error: '%s'", error->message);
-		g_error_free (error);
-		goto out;
-	}
-
-	nm_info ("dhclient started with pid %d", pid);
-
-	device->dhclient_pid = pid;
-	device->watch_id = g_child_watch_add (pid,
-	                                      (GChildWatchFunc) dhclient_watch_cb,
-	                                      device);
-	success = TRUE;
-
-out:
-	g_free (pid_contents);
-	g_free (leasefile);
-	g_free (pidfile);
-	g_ptr_array_free (dhclient_argv, TRUE);
-	return success;
 }
 
 gboolean
@@ -863,15 +582,17 @@ nm_dhcp_manager_begin_transaction (NMDHCPManager *manager,
 	                                    nm_dhcp_manager_handle_timeout,
 	                                    device);
 
-	dhclient_run (device, s_ip4);
-
+	nm_dhcp_client_start (device, s_ip4);
+	device->watch_id = g_child_watch_add (device->pid,
+					      (GChildWatchFunc) dhcp_watch_cb,
+					      device);
 	return TRUE;
 }
 
-static void
-stop_dhclient (const char * iface,
-               pid_t pid,
-               gboolean blocking)
+void
+nm_dhcp_client_stop (const char * iface,
+		     pid_t pid,
+		     gboolean blocking)
 {
 	int i = 20; /* 4 seconds */
 
@@ -896,7 +617,7 @@ stop_dhclient (const char * iface,
 	}
 
 	if (i <= 0) {
-		nm_warning ("%s: dhclient pid %d didn't exit, will kill it.", iface, pid);
+		nm_warning ("%s: dhcp client pid %d didn't exit, will kill it.", iface, pid);
 		kill (pid, SIGKILL);
 	}
 }
@@ -904,37 +625,35 @@ stop_dhclient (const char * iface,
 static void
 nm_dhcp_manager_cancel_transaction_real (NMDHCPDevice *device, gboolean blocking)
 {
-	char * pidfile;
-	char * leasefile;
-
-	if (!device->dhclient_pid)
+	if (!device->pid)
 		return;
 
-	stop_dhclient (device->iface, device->dhclient_pid, blocking);
+	nm_dhcp_client_stop (device->iface, device->pid, blocking);
 
-	nm_info ("%s: canceled DHCP transaction, dhclient pid %d",
+	nm_info ("%s: canceled DHCP transaction, dhcp client pid %d",
 	         device->iface,
-	         device->dhclient_pid);
+	         device->pid);
 
-	device->dhclient_pid = 0;
+	device->pid = 0;
 	device->state = DHC_END;
 
 	/* Clean up the pidfile if it got left around */
-	pidfile = get_pidfile_for_iface (device->iface);
-	if (pidfile) {
-		remove (pidfile);
-		g_free (pidfile);
+	if (device->pid_file) {
+		remove (device->pid_file);
+		g_free (device->pid_file);
 	}
 
 	/* Clean up the leasefile if it got left around */
-	leasefile = get_leasefile_for_iface (device->iface);
-	if (leasefile) {
-		remove (leasefile);
-		g_free (leasefile);
+	if (device->lease_file) {
+		remove (device->lease_file);
+		g_free (device->lease_file);
 	}
 
 	/* Clean up config file if it got left around */
-	remove (device->dhclient_conf);
+	if (device->conf_file) {
+		remove (device->conf_file);
+		g_free (device->conf_file);
+	}
 
 	nm_dhcp_device_watch_cleanup (device);
 	nm_dhcp_device_timeout_cleanup (device);
@@ -962,7 +681,7 @@ nm_dhcp_manager_cancel_transaction (NMDHCPManager *manager,
 
 	device = (NMDHCPDevice *) g_hash_table_lookup (priv->devices, iface);
 
-	if (!device || !device->dhclient_pid)
+	if (!device || !device->pid)
 		return;
 
 	nm_dhcp_manager_cancel_transaction_real (device, TRUE);
@@ -998,7 +717,7 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 	}
 
 	if (!state_is_bound (device->state)) {
-		nm_warning ("%s: dhclient didn't bind to a lease.", device->iface);
+		nm_warning ("%s: dhcp client didn't bind to a lease.", device->iface);
 		return NULL;
 	}
 

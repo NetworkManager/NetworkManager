@@ -3,7 +3,7 @@
 # Please keep this file sorted alphabetically.
 src/nm-netlink-monitor.c
 src/NetworkManager.c
-src/dhcp-manager/nm-dhcp-manager.c
+src/dhcp-manager/nm-dhcp-dhclient.c
 src/named-manager/nm-named-manager.c
 system-settings/plugins/ifcfg-fedora/plugin.c
 system-settings/src/main.c

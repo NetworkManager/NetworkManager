@@ -1,3 +1,23 @@
+2008-07-16  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Roy Marples <roy@marples.name>
+
+	* configure.in
+		- Add --with-dhcp-client option
+
+	* src/dhcp-manager/Makefile.am
+		- pass DHCP_CLIENT_PATH on compile line
+
+	* src/dhcp-manager/nm-dhcp-manager.c
+	  src/dhcp-manager/nm-dhcp-manager.h
+		- Genericize for both dhcpcd and dhclient
+
+	* src/dhcp-manager/nm-dhcp-dhclient.c
+		- Move dhclient stuff out to it's own file from nm-dhcp-manager.c
+
+	* src/dhcp-manager/nm-dhcp-dhcpcd.c
+		- Implement support for dhcpcd too
+
 2008-07-16  Tambet Ingo  <tambet@gmail.com>
 
 	* system-settings/src/nm-system-config-interface.c 
