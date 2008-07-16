@@ -32,6 +32,7 @@ libnm_util_la_SOURCES=			\
 	crypto.h			\
 	nm-connection.c			\
 	nm-param-spec-specialized.c	\
+	nm-param-spec-specialized.h \
 	nm-setting.c			\
 	nm-setting-8021x.c		\
 	nm-setting-connection.c		\
@@ -50,9 +51,7 @@ libnm_util_la_SOURCES=			\
 	nm-utils.c			\
 	$(libnm_util_include_HEADERS)
 
-libnm_util_la_LDFLAGS= $(GLIB_LIBS) $(DBUS_LIBS)
-
-libnm_util_la_LIBADD = 
+libnm_util_la_LIBADD = $(GLIB_LIBS) $(DBUS_LIBS)
 
 if WITH_GNUTLS
 libnm_util_la_SOURCES += crypto_gnutls.c
@@ -80,5 +79,5 @@ pkgconfig_DATA = libnm-util.pc
 DISTCLEANFILES = libnm-util.pc
 
 EXTRA_DIST = \
-	libnm-util.pc.in \
-	nm-param-spec-specialized.h
+	libnm-util.pc.in
+
