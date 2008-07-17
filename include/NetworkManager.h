@@ -273,6 +273,9 @@ typedef enum {
 	/* Shared connection service failed to start */
 	NM_DEVICE_STATE_REASON_SHARED_START_FAILED,
 
+	/* Shared connection service failed */
+	NM_DEVICE_STATE_REASON_SHARED_FAILED,
+
 	/* AutoIP service failed to start */
 	NM_DEVICE_STATE_REASON_AUTOIP_START_FAILED,
 
