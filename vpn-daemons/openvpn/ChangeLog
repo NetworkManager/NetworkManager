@@ -1,3 +1,8 @@
+2008-07-17  Tambet Ingo  <tambet@gmail.com>
+
+	* properties/nm-openvpn.c (openvpn_plugin_ui_class_init): Don't add empty
+	private data to the class, it produces a runtime warning.
+
 2008-07-07  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-openvpn-service-openvpn-helper.c

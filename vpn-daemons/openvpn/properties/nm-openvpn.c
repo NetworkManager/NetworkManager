@@ -63,12 +63,6 @@ G_DEFINE_TYPE_EXTENDED (OpenvpnPluginUi, openvpn_plugin_ui, G_TYPE_OBJECT, 0,
 						G_IMPLEMENT_INTERFACE (NM_TYPE_VPN_PLUGIN_UI_INTERFACE,
 											   openvpn_plugin_ui_interface_init))
 
-#define OPENVPN_PLUGIN_UI_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), OPENVPN_TYPE_PLUGIN_UI, OpenvpnPluginUiPrivate))
-
-typedef struct {
-} OpenvpnPluginUiPrivate;
-
-
 /************** UI widget class **************/
 
 static void openvpn_plugin_ui_widget_interface_init (NMVpnPluginUiWidgetInterface *iface_class);
@@ -701,8 +695,6 @@ static void
 openvpn_plugin_ui_class_init (OpenvpnPluginUiClass *req_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
-
-	g_type_class_add_private (req_class, sizeof (OpenvpnPluginUiPrivate));
 
 	object_class->get_property = get_property;
 
