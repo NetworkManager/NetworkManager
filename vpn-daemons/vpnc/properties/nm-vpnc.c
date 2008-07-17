@@ -64,12 +64,6 @@ G_DEFINE_TYPE_EXTENDED (VpncPluginUi, vpnc_plugin_ui, G_TYPE_OBJECT, 0,
 						G_IMPLEMENT_INTERFACE (NM_TYPE_VPN_PLUGIN_UI_INTERFACE,
 											   vpnc_plugin_ui_interface_init))
 
-#define VPNC_PLUGIN_UI_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), VPNC_TYPE_PLUGIN_UI, VpncPluginUiPrivate))
-
-typedef struct {
-} VpncPluginUiPrivate;
-
-
 /************** UI widget class **************/
 
 static void vpnc_plugin_ui_widget_interface_init (NMVpnPluginUiWidgetInterface *iface_class);
@@ -918,8 +912,6 @@ static void
 vpnc_plugin_ui_class_init (VpncPluginUiClass *req_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (req_class);
-
-	g_type_class_add_private (req_class, sizeof (VpncPluginUiPrivate));
 
 	object_class->get_property = get_property;
 
