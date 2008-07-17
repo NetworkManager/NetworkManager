@@ -1,5 +1,13 @@
 2008-07-17  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-utils.c
+		- (string_to_utf8): general function for conversion to UTF-8 assisted
+			by locale
+		- (nm_utils_ssid_to_utf8): use string_to_utf8()
+		- (nm_utils_garray_to_string): ensure returned string is UTF-8 safe
+
+2008-07-17  Dan Williams  <dcbw@redhat.com>
+
 	* introspection/Makefile.am
 	  introspection/nm-device.xml
 	  introspection/nm-dhcp4-config.xml

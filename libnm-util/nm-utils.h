@@ -142,7 +142,10 @@ gboolean    nm_utils_same_ssid        (const GByteArray * ssid1,
 char *nm_utils_ssid_to_utf8 (const char *ssid, guint32 len);
 
 GHashTable *nm_utils_gvalue_hash_dup  (GHashTable *hash);
+
+/* Converts a GArray into a UTF-8 string */
 char       *nm_utils_garray_to_string (GArray *array);
+
 void        nm_utils_slist_free       (GSList *list,
 							    GDestroyNotify elem_destroy_fn);
 

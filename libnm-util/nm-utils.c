@@ -197,27 +197,18 @@ get_encodings_for_lang (const char *lang,
 	return success;
 }
 
-#define SSID_BUF_SIZE (IW_ESSID_MAX_SIZE + 1)
-char *
-nm_utils_ssid_to_utf8 (const char *ssid, guint32 len)
+static char *
+string_to_utf8 (const char *str, gsize len)
 {
 	char *converted = NULL;
-	char *buf;
-	guint32 buf_len = MIN (SSID_BUF_SIZE - 1, len);
-	char *lang;
-	char *e1 = NULL, *e2 = NULL, *e3 = NULL;
+	char *lang, *e1 = NULL, *e2 = NULL, *e3 = NULL;
 
-	g_return_val_if_fail (ssid != NULL, NULL);
+	g_return_val_if_fail (str != NULL, NULL);
 
-	buf = g_malloc0 (SSID_BUF_SIZE);
-	memcpy (buf, ssid, buf_len);
+	if (g_utf8_validate (str, len, NULL))
+		return g_strdup (str);
 
-	if (g_utf8_validate (buf, buf_len, NULL))
-		return buf;
-
-	/* Even if the local encoding is UTF-8, LANG may give
-	 * us a clue as to what encoding SSIDs are more likely to be in.
-	 */
+	/* LANG may be a good encoding hint */
 	g_get_charset ((const char **)(&e1));
 	if ((lang = getenv ("LANG"))) {
 		char * dot;
@@ -230,18 +221,33 @@ nm_utils_ssid_to_utf8 (const char *ssid, guint32 len)
 		g_free (lang);
 	}
 
-	converted = g_convert (buf, buf_len, "UTF-8", e1, NULL, NULL, NULL);
+	converted = g_convert (str, len, "UTF-8", e1, NULL, NULL, NULL);
 	if (!converted && e2)
-		converted = g_convert (buf, buf_len, "UTF-8", e2, NULL, NULL, NULL);
+		converted = g_convert (str, len, "UTF-8", e2, NULL, NULL, NULL);
 
 	if (!converted && e3)
-		converted = g_convert (buf, buf_len, "UTF-8", e3, NULL, NULL, NULL);
+		converted = g_convert (str, len, "UTF-8", e3, NULL, NULL, NULL);
 
 	if (!converted) {
-		converted = g_convert_with_fallback (buf, buf_len, "UTF-8", e1,
+		converted = g_convert_with_fallback (str, len, "UTF-8", e1,
 	                "?", NULL, NULL, NULL);
 	}
 
+	return converted;
+}
+
+char *
+nm_utils_ssid_to_utf8 (const char *ssid, guint32 len)
+{
+	char *converted = NULL, *buf;
+	gsize buflen = MIN (IW_ESSID_MAX_SIZE, (gsize) len);
+
+	g_return_val_if_fail (ssid != NULL, NULL);
+
+	/* New buffer to ensure NULL-termination of SSID */
+	buf = g_malloc0 (IW_ESSID_MAX_SIZE + 1);
+	memcpy (buf, ssid, buflen);
+	converted = string_to_utf8 (buf, buflen);
 	g_free (buf);
 	return converted;
 }
@@ -354,12 +360,14 @@ nm_utils_gvalue_hash_dup (GHashTable *hash)
 	return table;
 }
 
+/* Converts a GArray into a UTF-8 string */
 char *
 nm_utils_garray_to_string (GArray *array)
 {
 	GString *str;
 	int i;
 	char c;
+	char *converted = NULL;
 
 	g_return_val_if_fail (array != NULL, NULL);
 
@@ -374,7 +382,9 @@ nm_utils_garray_to_string (GArray *array)
 	}
 	str = g_string_append_c (str, '\0');
 
-	return g_string_free (str, FALSE);
+	converted = string_to_utf8 (str->str, (gsize) str->len);
+	g_string_free (str, FALSE);
+	return converted;
 }
 
 void
