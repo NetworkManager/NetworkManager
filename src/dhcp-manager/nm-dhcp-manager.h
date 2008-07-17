@@ -27,6 +27,7 @@
 #include <nm-setting-ip4-config.h>
 
 #include "nm-ip4-config.h"
+#include "nm-dhcp4-config.h"
 
 #define NM_DHCP_MANAGER_RUN_DIR		LOCALSTATEDIR "/run"
 
@@ -93,6 +94,10 @@ void           nm_dhcp_manager_cancel_transaction   (NMDHCPManager *manager,
                                                      const char *iface);
 NMIP4Config *  nm_dhcp_manager_get_ip4_config       (NMDHCPManager *manager, const char *iface);
 NMDHCPState    nm_dhcp_manager_get_state_for_device (NMDHCPManager *manager, const char *iface);
+
+gboolean       nm_dhcp_manager_set_dhcp4_config     (NMDHCPManager *manager,
+                                                     const char *iface,
+                                                     NMDHCP4Config *config);
 
 gboolean       nm_dhcp_manager_process_signal       (NMDHCPManager *manager, DBusMessage *message);
 

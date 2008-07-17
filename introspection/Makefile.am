@@ -15,5 +15,6 @@ EXTRA_DIST =						\
 	nm-vpn-plugin.xml				\
 	nm-vpn-connection.xml			\
 	nm-ppp-manager.xml \
-	nm-active-connection.xml
+	nm-active-connection.xml \
+	nm-dhcp4-config.xml
 

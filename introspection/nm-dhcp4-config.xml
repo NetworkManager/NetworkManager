@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+    <interface name="org.freedesktop.NetworkManager.DHCP4Config">
+        <tp:docstring>
+            Options and configuration returned by the IPv4 DHCP server.
+        </tp:docstring>
+        <property name="Options" type="a{sv}" access="read">
+            <tp:docstring>Configuration options returned by a DHCP server, if any.</tp:docstring>
+        </property>
+
+        <signal name="PropertiesChanged">
+            <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
+                <tp:docstring>
+                    A dictionary mapping property names to variant boxed values
+                </tp:docstring>
+            </arg>
+        </signal>
+    </interface>
+</node>

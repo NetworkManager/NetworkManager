@@ -68,7 +68,9 @@ NetworkManager_SOURCES =				\
 		wpa.c				\
 		wpa.h				\
 		nm-netlink.c			\
-		nm-netlink.h
+		nm-netlink.h \
+		nm-dhcp4-config.c \
+		nm-dhcp4-config.h
 
 nm-access-point-glue.h: $(top_srcdir)/introspection/nm-access-point.xml
 	dbus-binding-tool --prefix=nm_access_point --mode=glib-server --output=$@ $<
@@ -100,6 +102,9 @@ nm-ip4-config-glue.h: $(top_srcdir)/introspection/nm-ip4-config.xml
 nm-active-connection-glue.h: $(top_srcdir)/introspection/nm-active-connection.xml
 	dbus-binding-tool --prefix=nm_active_connection --mode=glib-server --output=$@ $<
 
+nm-dhcp4-config-glue.h: $(top_srcdir)/introspection/nm-dhcp4-config.xml
+	dbus-binding-tool --prefix=nm_dhcp4_config --mode=glib-server --output=$@ $<
+
 BUILT_SOURCES = 					\
 	nm-access-point-glue.h				\
 	nm-manager-glue.h				\
@@ -110,7 +115,8 @@ BUILT_SOURCES = 					\
 	nm-cdma-device-glue.h \
 	nm-gsm-device-glue.h \
 	nm-ip4-config-glue.h				\
-	nm-active-connection-glue.h
+	nm-active-connection-glue.h \
+	nm-dhcp4-config-glue.h
 
 NetworkManager_CPPFLAGS = 							\
 	$(DBUS_CFLAGS)									\

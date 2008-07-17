@@ -1,3 +1,28 @@
+2008-07-17  Dan Williams  <dcbw@redhat.com>
+
+	* introspection/Makefile.am
+	  introspection/nm-device.xml
+	  introspection/nm-dhcp4-config.xml
+		- Add bits for the DHCP4Config property of the device, and the DHCP4Config
+			itself
+	* src/nm-device-interface.c
+	  src/nm-device-interface.h
+		- Add the DHCP4Config property
+
+	* src/nm-device.c
+		- Keep track of DHCP4 options via a new DHCP4Config property and notify
+			D-Bus clients when it changes
+
+	* src/nm-dhcp4-config.c
+	  src/nm-dhcp4-config.h
+		- Simple object to store DHCP4 options, export them over D-Bus, and
+			notify when they change
+
+	* src/dhcp-manager/nm-dhcp-manager.c
+	  src/dhcp-manager/nm-dhcp-manager.h
+		- (nm_dhcp_manager_set_dhcp4_config, copy_dhcp4_config_option): copy and
+			filter server-returned DHCP options into an NMDHCP4Config object
+
 2008-07-16  Dan Williams  <dcbw@redhat.com>
 
 	* introspection/nm-device.xml

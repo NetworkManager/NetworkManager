@@ -881,3 +881,67 @@ error:
 
 	return NULL;
 }
+
+#define NEW_TAG "new_"
+#define OLD_TAG "old_"
+
+static void
+copy_dhcp4_config_option (gpointer key,
+                          gpointer value,
+                          gpointer user_data)
+{
+	NMDHCP4Config *config = NM_DHCP4_CONFIG (user_data);
+	char *tmp_key = NULL;
+	const char **p;
+	static const char *filter_options[] = {
+		"interface", "pid", "reason", NULL
+	};
+	
+	/* Filter out stuff that's not actually new DHCP options */
+	for (p = filter_options; *p; p++) {
+		if (!strcmp (*p, (const char *) key))
+			return;
+		if (!strncmp ((const char *) key, OLD_TAG, strlen (OLD_TAG)))
+			return;
+	}
+
+	/* Remove the "new_" prefix that dhclient passes back */
+	if (!strncmp ((const char *) key, NEW_TAG, strlen (NEW_TAG)))
+		tmp_key = g_strdup ((const char *) (key + strlen (NEW_TAG)));
+	else
+		tmp_key = g_strdup ((const char *) key);
+
+	nm_dhcp4_config_add_option (config, tmp_key, (const char *) value);
+	g_free (tmp_key);
+}
+
+gboolean
+nm_dhcp_manager_set_dhcp4_config (NMDHCPManager *self,
+                                  const char *iface,
+                                  NMDHCP4Config *config)
+{
+	NMDHCPManagerPrivate *priv;
+	NMDHCPDevice *device;
+
+	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), FALSE);
+	g_return_val_if_fail (iface != NULL, FALSE);
+	g_return_val_if_fail (config != NULL, FALSE);
+
+	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
+
+	device = (NMDHCPDevice *) g_hash_table_lookup (priv->devices, iface);
+	if (!device) {
+		nm_warning ("Device '%s' transaction not started.", iface);
+		return FALSE;
+	}
+
+	if (!state_is_bound (device->state)) {
+		nm_warning ("%s: dhclient didn't bind to a lease.", device->iface);
+		return FALSE;
+	}
+
+	nm_dhcp4_config_reset (config);
+	g_hash_table_foreach (device->options, copy_dhcp4_config_option, config);
+	return TRUE;
+}
+
