@@ -1,5 +1,10 @@
 2008-07-16  Dan Williams  <dcbw@redhat.com>
 
+	* introspection/nm-device.xml
+		- Add device state reasons
+
+2008-07-16  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Roy Marples <roy@marples.name>
 
 	* configure.in

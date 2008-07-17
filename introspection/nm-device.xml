@@ -121,6 +121,7 @@
         </tp:docstring>
       </tp:enumvalue>
     </tp:enum>
+
     <tp:flags name="NM_DEVICE_CAP" value-prefix="NM_DEVICE_CAP" type="u">
       <tp:flag suffix="NONE" value="0x0">
         <tp:docstring>Null capability.</tp:docstring>
@@ -132,5 +133,169 @@
         <tp:docstring>The device supports carrier detection.</tp:docstring>
       </tp:flag>
     </tp:flags>
+
+    <tp:enum name="NM_DEVICE_STATE_REASON" type="u">
+      <tp:enumvalue suffix="UNKNOWN" value="0">
+        <tp:docstring>
+          The reason for the device state change is unknown.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="NONE" value="1">
+        <tp:docstring>
+          The state change is normal.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="NOW_MANAGED" value="2">
+        <tp:docstring>
+          The device is now managed.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="NOW_UNMANAGED" value="3">
+        <tp:docstring>
+          The device is no longer managed.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="CONFIG_FAILED" value="4">
+        <tp:docstring>
+          The device could not be readied for configuration.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="CONFIG_UNAVAILABLE" value="5">
+        <tp:docstring>
+          IP configuration could not be reserved (no available address, timeout, etc).
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="CONFIG_EXPIRED" value="6">
+        <tp:docstring>
+          The IP configuration is no longer valid.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="NO_SECRETS" value="7">
+        <tp:docstring>
+          Secrets were required, but not provided.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="SUPPLICANT_DISCONNECT" value="8">
+        <tp:docstring>
+          The 802.1X supplicant disconnected from the access point or authentication server.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="SUPPLICANT_CONFIG_FAILED" value="9">
+        <tp:docstring>
+          Configuration of the 802.1X supplicant failed.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="SUPPLICANT_FAILED" value="10">
+        <tp:docstring>
+          The 802.1X supplicant quit or failed unexpectedly.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="SUPPLICANT_TIMEOUT" value="11">
+        <tp:docstring>
+          The 802.1X supplicant took too long to authenticate.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="PPP_START_FAILED" value="12">
+        <tp:docstring>
+          The PPP service failed to start within the allowed time.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="PPP_DISCONNECT" value="13">
+        <tp:docstring>
+          The PPP service disconnected unexpectedly.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="PPP_FAILED" value="14">
+        <tp:docstring>
+          The PPP service quit or failed unexpectedly.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="DHCP_START_FAILED" value="15">
+        <tp:docstring>
+          The DHCP service failed to start within the allowed time.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="DHCP_ERROR" value="16">
+        <tp:docstring>
+          The DHCP service reported an unexpected error.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="DHCP_FAILED" value="17">
+        <tp:docstring>
+          The DHCP service quit or failed unexpectedly.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="SHARED_START_FAILED" value="18">
+        <tp:docstring>
+          The shared connection service failed to start.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="SHARED_FAILED" value="19">
+        <tp:docstring>
+          The shared connection service quit or failed unexpectedly.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="AUTOIP_START_FAILED" value="20">
+        <tp:docstring>
+          The AutoIP service failed to start.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="AUTOIP_ERROR" value="21">
+        <tp:docstring>
+          The AutoIP service reported an unexpected error.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="AUTOIP_FAILED" value="22">
+        <tp:docstring>
+          The AutoIP service quit or failed unexpectedly.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="MODEM_BUSY" value="23">
+        <tp:docstring>
+          Dialing failed because the line was busy.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="MODEM_NO_DIAL_TONE" value="24">
+        <tp:docstring>
+          Dialing failed because there was no dial tone.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="MODEM_NO_CARRIER" value="25">
+        <tp:docstring>
+          Dialing failed because there was carrier.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="MODEM_DIAL_TIMEOUT" value="26">
+        <tp:docstring>
+          Dialing timed out.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="MODEM_DIAL_FAILED" value="27">
+        <tp:docstring>
+          Dialing failed.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="MODEM_INIT_FAILED" value="28">
+        <tp:docstring>
+          Modem initialization failed.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="GSM_APN_FAILED" value="29">
+        <tp:docstring>
+          Failed to select the specified GSM APN.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="GSM_REGISTRATION_FAILED" value="30">
+        <tp:docstring>
+          Failed to register with the requested GSM network.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="GSM_PIN_CHECK_FAILED" value="31">
+        <tp:docstring>
+          PIN check failed.
+        </tp:docstring>
+      </tp:enumvalue>
+	</tp:enum>
+
   </interface>
 </node>
