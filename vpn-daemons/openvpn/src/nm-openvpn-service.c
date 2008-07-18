@@ -444,7 +444,7 @@ nm_openvpn_start_openvpn_binary (NMOpenvpnPlugin *plugin, GHashTable *properties
 		g_ptr_array_add (openvpn_argv, (gpointer) g_value_get_string ((GValue *) tmp));
 
 		tmp = g_hash_table_lookup (properties, NM_OPENVPN_KEY_TA_DIR);
-		if (tmp)
+		if (tmp && strlen (g_value_get_string (tmp)))
 			g_ptr_array_add (openvpn_argv, (gpointer) g_value_get_string ((GValue *) tmp));
 	}
 
