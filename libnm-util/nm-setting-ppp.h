@@ -41,7 +41,7 @@ GQuark nm_setting_ppp_error_quark (void);
 #define NM_SETTING_PPP_NO_VJ_COMP        "no-vj-comp"
 #define NM_SETTING_PPP_REQUIRE_MPPE      "require-mppe"
 #define NM_SETTING_PPP_REQUIRE_MPPE_128  "require-mppe-128"
-#define NM_SETTING_PPP_MPPE_STATEFUL     "mpppe-stateful"
+#define NM_SETTING_PPP_MPPE_STATEFUL     "mppe-stateful"
 #define NM_SETTING_PPP_CRTSCTS           "crtscts"
 #define NM_SETTING_PPP_BAUD              "baud"
 #define NM_SETTING_PPP_MRU               "mru"
