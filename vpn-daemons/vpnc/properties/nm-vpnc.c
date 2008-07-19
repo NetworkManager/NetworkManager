@@ -357,7 +357,6 @@ update_connection (NMVpnPluginUiWidgetInterface *iface,
 	NMSettingVPN *s_vpn;
 	NMSettingVPNProperties *s_vpn_props;
 	GtkWidget *widget;
-	GValue *value;
 	char *str;
 	GtkTreeModel *model;
 	GtkTreeIter iter;
@@ -597,7 +596,6 @@ import (NMVpnPluginUiInterface *iface, const char *path, GError **error)
 	GHashTable *pcf;
 	const char *buf;
 	gboolean have_value;
-	gboolean complete = TRUE;
 
 	pcf = pcf_file_load (path);
 	if (!pcf) {
@@ -865,7 +863,6 @@ static char *
 get_suggested_name (NMVpnPluginUiInterface *iface, NMConnection *connection)
 {
 	NMSettingConnection *s_con;
-	char *suggested;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 

@@ -250,6 +250,8 @@ main (int argc, char *argv[])
 	static gchar *vpn_name = NULL;
 	static gchar *vpn_id = NULL;
 	static gchar *vpn_service = NULL;
+	char buf[1];
+	int ret;
 	GOptionContext *context;
 	GnomeProgram *program;
 	GOptionEntry entries[] =
@@ -260,7 +262,6 @@ main (int argc, char *argv[])
 			{ "service", 's', 0, G_OPTION_ARG_STRING, &vpn_service, "VPN service type", NULL},
 			{ NULL }
 		};
-	char buf[1];
 
 	bindtextdomain (GETTEXT_PACKAGE, NULL);
 	bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
@@ -305,7 +306,7 @@ main (int argc, char *argv[])
 	g_slist_free (passwords);
 
 	/* wait for data on stdin  */
-	fread (buf, sizeof (char), sizeof (buf), stdin);
+	ret = fread (buf, sizeof (char), sizeof (buf), stdin);
 
 out:
 	g_object_unref (program);
