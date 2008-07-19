@@ -203,6 +203,11 @@ advanced_dialog_response_cb (GtkWidget *dialog, gint response, gpointer user_dat
 	OpenvpnPluginUiWidgetPrivate *priv = OPENVPN_PLUGIN_UI_WIDGET_GET_PRIVATE (self);
 	GError *error = NULL;
 
+	if (response != GTK_RESPONSE_OK) {
+		advanced_dialog_close_cb (dialog, self);
+		return;
+	}
+
 	if (priv->advanced)
 		g_hash_table_destroy (priv->advanced);
 	priv->advanced = advanced_dialog_new_hash_from_dialog (dialog, &error);
