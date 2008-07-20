@@ -1,0 +1,8 @@
+[VPN Connection]
+name=pptp
+service=org.freedesktop.NetworkManager.pptp
+program=@BINDIR@/nm-pptp-service
+
+[GNOME]
+auth-dialog=nm-pptp-auth-dialog
+properties=libnm-pptp-properties

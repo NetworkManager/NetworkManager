@@ -1,13 +1,9 @@
-INCLUDES = -I${top_srcdir}                  \
-           -I${top_srcdir}/utils            \
-           -I${top_srcdir}/vpn-daemons/pptp
+INCLUDES = -I${top_srcdir}
 
 AM_CPPFLAGS =							\
-	$(DBUS_CFLAGS)						\
+	$(DBUS_GLIB_CFLAGS)						\
 	$(GTHREAD_CFLAGS)					\
-	$(NETWORK_MANAGER_CFLAGS)				\
-	$(PPPD_CFLAGS)						\
-	$(NM_VPN_CFLAGS)					\
+	$(NM_UTILS_CFLAGS)				\
 	-Wall							\
 	-DDBUS_API_SUBJECT_TO_CHANGE				\
 	-DG_DISABLE_DEPRECATED					\
@@ -19,45 +15,42 @@ AM_CPPFLAGS =							\
 	-DLIBEXECDIR=\""$(libexecdir)"\"			\
 	-DLOCALSTATEDIR=\""$(localstatedir)"\"		 	\
 	-DDATADIR=\"$(datadir)\"				\
+	-DPLUGINDIR=\"$(PPPD_PLUGIN_DIR)\" \
 	-fPIC
 
-bin_PROGRAMS = nm-ppp-starter
+bin_PROGRAMS = nm-pptp-service
 
-pppdplugindir = $(libexecdir)/pppd/$(PPPD_VERSION)
-pppdplugin_LTLIBRARIES = nm-pppd-plugin.la
+nm_pptp_service_SOURCES = \
+				nm-pptp-service.c \
+				nm-pptp-service.h
 
-nm_ppp_starter_SOURCES =			\
-				nm-ppp-starter.c	\
-				nm-ppp-starter.h	\
-				nm-utils.c			\
-				nm-utils.h			\
-				external/2.4.3/pppd/patchlevel.h \
-				external/2.4.3/pppd/ipcp.h \
-				external/2.4.3/pppd/pppd.h \
-				external/2.4.3/pppd/fsm.h \
-				external/2.4.4/pppd/patchlevel.h \
-				external/2.4.4/pppd/ipcp.h \
-				external/2.4.4/pppd/pppd.h \
-				external/2.4.4/pppd/fsm.h \
-				external/2.4.4b1/pppd/patchlevel.h \
-				external/2.4.4b1/pppd/ipcp.h \
-				external/2.4.4b1/pppd/pppd.h \
-				external/2.4.4b1/pppd/fsm.h
+nm-pptp-pppd-service-glue.h: $(top_srcdir)/src/nm-pptp-pppd-service.xml
+	dbus-binding-tool --prefix=nm_pptp_pppd_service --mode=glib-server --output=$@ $<
 
-nm_ppp_starter_LDADD = 				\
-				$(DBUS_LIBS)		\
+nm_pptp_service_LDADD = 				\
+				$(DBUS_GLIB_LIBS)		\
 				$(GTHREAD_LIBS)		\
-				$(NETWORK_MANAGER_LIBS)
+				$(NM_UTILS_LIBS)
 
-nm_pppd_plugin_la_SOURCES = 		\
-				nm-pppd-plugin.c 	\
-				nm-pppd-plugin.h  	\
-				nm-ppp-starter.h
+pppd_plugindir = $(PPPD_PLUGIN_DIR)
+pppd_plugin_LTLIBRARIES = nm-pptp-pppd-plugin.la
 
-nm_pppd_plugin_la_LDFLAGS = -module
+nm_pptp_pppd_plugin_la_SOURCES = \
+	nm-pptp-pppd-plugin.c \
+	nm-ppp-status.h
 
-nm_pppd_plugin_la_LIBADD = 		\
-				$(DBUS_LIBS)	\
-				$(GTHREAD_LIBS)
+nm_pptp_pppd_plugin_la_CPPFLAGS = \
+	$(DBUS_GLIB_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(NM_UTILS_CFLAGS)
 
-CLEANFILES = *~
+nm_pptp_pppd_plugin_la_LDFLAGS = -module -avoid-version
+
+nm_pptp_pppd_plugin_la_LIBADD = \
+	$(DBUS_GLIB_LIBS) \
+	$(GLIB_LIBS) \
+	$(NM_UTILS_LIBS)
+
+BUILT_SOURCES = nm-pptp-pppd-service-glue.h
+
+CLEANFILES = $(BUILT_SOURCES)

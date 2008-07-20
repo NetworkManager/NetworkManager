@@ -159,7 +159,6 @@ gnome_two_password_dialog_finalize (GObject *object)
 
 	g_free (password_dialog->details->remember_label_text);
 	g_free (password_dialog->details->secondary_password_label);
-
 	g_free (password_dialog->details);
 
 	if (G_OBJECT_CLASS (parent_class)->finalize != NULL)
@@ -463,16 +462,15 @@ gnome_two_password_dialog_new (const char	*dialog_title,
 	gtk_widget_show_all (GTK_DIALOG (password_dialog)->vbox);
 
 	password_dialog->details->remember_session_button =
-		gtk_check_button_new_with_mnemonic (_("_Remember password for this session"));
+		gtk_check_button_new_with_mnemonic (_("_Remember passwords for this session"));
 	password_dialog->details->remember_forever_button =
-		gtk_check_button_new_with_mnemonic (_("_Save password in keyring"));
+		gtk_check_button_new_with_mnemonic (_("_Save passwords in keyring"));
 
 	gtk_box_pack_start (GTK_BOX (vbox), password_dialog->details->remember_session_button, 
 			    FALSE, FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (vbox), password_dialog->details->remember_forever_button, 
 			    FALSE, FALSE, 0);
-	
-	
+
 	gnome_two_password_dialog_set_username (password_dialog, username);
 	gnome_two_password_dialog_set_password (password_dialog, password);
 	gnome_two_password_dialog_set_readonly_domain (password_dialog, readonly_username);

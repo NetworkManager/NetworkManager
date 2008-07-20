@@ -1,10 +1,11 @@
 AC_PREREQ(2.59)
 
-AC_INIT(NetworkManager-ppp_vpn, 0.7.0-beta, eemynotna@gmail.com, NetworkManager-ppp_vpn)
-
+AC_INIT(NetworkManager-pptp, 0.7.0, dcbw@redhat.com, NetworkManager-pptp)
+AC_CONFIG_AUX_DIR(.)
 AM_INIT_AUTOMAKE([1.9 foreign no-dist-gzip dist-bzip2 subdir-objects])
+AM_MAINTAINER_MODE
 
-AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_HEADER(config.h)
 
 dnl
 dnl Require programs
@@ -14,66 +15,23 @@ AM_PROG_CC_C_O
 AC_PROG_INSTALL
 AC_PROG_LIBTOOL
 
-
 dnl
 dnl Required headers
 dnl
 AC_HEADER_STDC
 AC_CHECK_HEADERS(fcntl.h paths.h sys/ioctl.h sys/time.h syslog.h unistd.h)
 
-AC_ARG_WITH(pppd, AC_HELP_STRING([--with-pppd=DISTRO], [Specify path to pppd.h (and patchlevel.h)]))
-AC_ARG_WITH(pppd-version, AC_HELP_STRING([--with-pppd-version=DISTRO], [Version of pppd.h]))
-if test "z$with_pppd" != "z"; then
-  AC_MSG_CHECKING([for $with_pppd/pppd.h])
-  if test -f "$with_pppd/pppd.h"; then
-    PPPD_CFLAGS="-I $with_pppd"
-    PPPD_VERSION=`grep VERSION $with_pppd/patchlevel.h | awk '{print $3}' | sed -e 's/\s*"\s*//g'`
-    found_pppd_headers=yes
-    AC_MSG_RESULT(found version $PPPD_VERSION)
-  else
-    AC_MSG_ERROR(not found in $with_pppd)
-  fi 
+AC_CHECK_HEADERS(pppd/pppd.h,,
+  AC_MSG_ERROR(couldn't find pppd.h. pppd development headers are required.))
+
+AC_ARG_WITH([pppd-plugin-dir], AS_HELP_STRING([--with-pppd-plugin-dir=DIR], [path to the pppd plugins directory]))
+
+if test -n "$with_pppd_plugin_dir" ; then
+	PPPD_PLUGIN_DIR="$with_pppd_plugin_dir"
+else
+	PPPD_PLUGIN_DIR="${libdir}/pppd/2.4.4"
 fi
-
-if test "z$found_pppd_headers" = "z"; then
-  AC_MSG_CHECKING([for pppd.h under $prefix/include])
-  find_pppd_h=`find $prefix/include -name pppd.h | xargs | awk '{print $1}'`
-  if echo $find_pppd_h | grep pppd.h; then
-    with_pppd=`dirname $find_pppd_h`
-    PPPD_CFLAGS="-I $with_pppd"
-    PPPD_VERSION=`grep VERSION $with_pppd/patchlevel.h | awk '{print $3}' | sed -e 's/\s*"\s*//g'`
-    found_pppd_headers=yes
-    AC_MSG_RESULT(found version $PPPD_VERSION)
-  else
-    AC_MSG_RESULT(not found)
-  fi
-fi
-
-if test "z$found_pppd_headers" = "z"; then
-  if test "z$PPPD_VERSION" = "z"; then
-    AC_MSG_RESULT(Couldn't find pppd.h trying to determine pppd version to use in tree headers)
-    ##### Find PPPD executable
-    AC_CHECK_PROG(PPPD,pppd,pppd)
-    if test "z$PPPD" = "z"; then
-        AC_MSG_ERROR(Cannot compile without pppd)
-    fi
-    AC_MSG_RESULT(pppd version not found attempting to run 'pppd --version')
-    PPPD_VERSION=`$PPPD --version 2>&1 | awk '{print $3}'`
-    if test "z$PPPD_VERSION" = "z"; then
-        AC_MSG_ERROR(Couldn't determine the version of your pppd package.)
-    fi
-  fi
-
-  if ! test -d "src/external/$PPPD_VERSION"; then
-    AC_MSG_ERROR(pppd headers could not be found)
-  fi
-
-  AC_MSG_RESULT(Found in source headers for pppd version $PPPD_VERSION)
-  PPPD_CFLAGS="-I ./external/$PPPD_VERSION"
-fi
-
-AC_SUBST([PPPD_VERSION])
-AC_SUBST(PPPD_CFLAGS)
+AC_SUBST(PPPD_PLUGIN_DIR)
 
 dnl
 dnl Checks for typedefs, structures, and compiler characteristics.
@@ -95,7 +53,7 @@ dnl
 AC_ARG_WITH(gnome, AC_HELP_STRING([--without-gnome], [Build NetworkManager-pptp without GNOME support, e.g. vpn service only]))
 AM_CONDITIONAL(WITH_GNOME, test x"$with_gnome" != xno)
 
-GETTEXT_PACKAGE=NetworkManager-ppp_vpn
+GETTEXT_PACKAGE=NetworkManager-pptp
 AC_SUBST(GETTEXT_PACKAGE)
 AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE,"$GETTEXT_PACKAGE", [Gettext package])
 
@@ -106,13 +64,13 @@ PKG_CHECK_MODULES(GTHREAD, gthread-2.0)
 AC_SUBST(GTHREAD_CFLAGS)
 AC_SUBST(GTHREAD_LIBS)
 
-PKG_CHECK_MODULES(DBUS, dbus-glib-1 >= 0.30)
-AC_SUBST(DBUS_CFLAGS)
-AC_SUBST(DBUS_LIBS)
+PKG_CHECK_MODULES(DBUS, dbus-glib-1 >= 0.74)
+AC_SUBST(DBUS_GLIB_CFLAGS)
+AC_SUBST(DBUS_GLIB_LIBS)
 
-PKG_CHECK_MODULES(NETWORK_MANAGER, NetworkManager >= 0.4.1 libnm-util >= 0.7.0)
-AC_SUBST(NETWORK_MANAGER_CFLAGS)
-AC_SUBST(NETWORK_MANAGER_LIBS)
+PKG_CHECK_MODULES(NM_UTILS, NetworkManager >= 0.7.0 libnm-util libnm_glib libnm_glib_vpn)
+AC_SUBST(NM_UTILS_CFLAGS)
+AC_SUBST(NM_UTILS_LIBS)
 
 if test x"$with_gnome" != xno; then
 	PKG_CHECK_MODULES(GTK, gtk+-2.0 >= 2.6)
@@ -140,19 +98,6 @@ if test x"$with_gnome" != xno; then
 	AC_SUBST(GNOMEKEYRING_LIBS)
 fi
 
-AC_ARG_ENABLE(nm-vpn-dbus-old,
-AC_HELP_STRING([ --enable-nm-vpn-dbus-old], [Build Plugin to use old non-'DBUS Dict' NetworkManager VPN interface [default=no]]), 
-enable_nm_vpn_dbus_old="$enableval", enable_nm_vpn_dbus_old=no)
-NM_VPN_CFLAGS=
-if test "x$enable_nm_vpn_dbus_old" = "xyes" ; then
-    NM_VPN_CFLAGS="-DNM_VPN_USE_OLD_DBUS_INTERFACE"
-fi
-AC_SUBST(NM_VPN_CFLAGS)
-
-AC_ARG_ENABLE(bluetooth, [  --enable-bluetooth  Build Bluetooth bits [default=no]], enable_bluetooth="$enableval", enable_bluetooth=no)
-if test "x$enable_bluetooth" = "xyes" ; then
-    BUILD_BLUETOOTH="yes"
-fi
 AC_ARG_ENABLE(more-warnings,
 AC_HELP_STRING([--enable-more-warnings], [Maximum compiler warnings]),
 set_more_warnings="$enableval",[
@@ -186,13 +131,11 @@ else
 	AC_MSG_RESULT(no)
 fi
 
-AC_CONFIG_FILES([
+AC_OUTPUT([
 Makefile
 src/Makefile
 auth-dialog/Makefile
-auth-dialog-general/Makefile
 properties/Makefile
 po/Makefile.in
 ])
 
-AC_OUTPUT

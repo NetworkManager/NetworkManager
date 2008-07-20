@@ -1,8 +1,7 @@
-/* nm-ppp-starter - pptp (and other ppp) integration with NetworkManager
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+/***************************************************************************
  *
- * Antony J Mee <eemynotna at gmail dot com>
- * Based on openvpn work by Tim Niemueller <tim@niemueller.de>
- *                      and Dan Williams <dcbw@redhat.com>
+ * Copyright (C) 2008 Dan Williams, <dcbw@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,13 +17,16 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- */
+ **************************************************************************/
 
-#ifndef NM_PPPD_PLUGIN_H
-#define NM_PPPD_PLUGIN_H
+#ifndef _IMPORT_EXPORT_H_
+#define _IMPORT_EXPORT_H_
 
-#define NM_DBUS_SERVICE_PPP	"org.freedesktop.NetworkManager.ppp"
-#define NM_DBUS_INTERFACE_PPP	"org.freedesktop.NetworkManager.ppp"
-#define NM_DBUS_PATH_PPP	"/org/freedesktop/NetworkManager/ppp"
+#include <glib.h>
+#include <nm-connection.h>
+
+NMConnection *do_import (const char *path, char **lines, GError **error);
+
+gboolean do_export (const char *path, NMConnection *connection, GError **error);
 
 #endif

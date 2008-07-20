@@ -1,24 +1,20 @@
+AUTOMAKE_OPTIONS = foreign
+
 if WITH_GNOME
-SUBDIRS = src auth-dialog auth-dialog-general properties po
+SUBDIRS = src auth-dialog properties po
 else
 SUBDIRS = src
 endif
 
 dbusservicedir = $(sysconfdir)/dbus-1/system.d
-dbusservice_DATA = nm-ppp-starter.conf
+dbusservice_DATA = nm-pptp-service.conf
 
-nmvpnservice_in_files = nm-ppp-starter.name.in
 nmvpnservicedir = $(sysconfdir)/NetworkManager/VPN
-nmvpnservice_DATA = $(nmvpnservice_in_files:.name.in=.name)
-
-%.name: %.name.in Makefile
-	@sed -e "s|%bindir%|$(bindir)|g" \
-	     -e "s|%libdir%|$(libdir)|g" \
-	     -e "s|%libexecdir%|$(libexecdir)|g" $< > $@
+nmvpnservice_DATA = nm-pptp-service.name
 
 if WITH_GNOME
 desktopdir = $(datadir)/applications
-desktop_in_files = nm-ppp.desktop.in
+desktop_in_files = nm-pptp.desktop.in
 desktop_DATA = $(desktop_in_files:.desktop.in=.desktop)
 @INTLTOOL_DESKTOP_RULE@
 
@@ -26,14 +22,18 @@ icondir = $(datadir)/icons/hicolor/48x48/apps
 icon_DATA = gnome-mime-application-x-pptp-settings.png
 endif
 
-EXTRA_DIST =\
-	$(nmvpnservice_in_files)	\
-	$(dbusservice_DATA)		\
-	$(desktop_in_files)		\
-	$(icon_DATA)			\
-	intltool-extract.in		\
-	intltool-merge.in		\
-	intltool-update.in
+nm-pptp-service.name: $(srcdir)/nm-pptp-service.name.in Makefile
+	sed	-e 's|[@]BINDIR[@]|$(bindir)|g' \
+		< $(srcdir)/nm-pptp-service.name.in \
+		> nm-pptp-service.name
 
-CLEANFILES = $(desktop_DATA) $(nmvpnservice_DATA) *~
+EXTRA_DIST = nm-pptp-service.name.in \
+             $(dbusservice_DATA)  \
+             $(desktop_in_files)  \
+             $(icon_DATA)         \
+             intltool-extract.in  \
+             intltool-merge.in    \
+             intltool-update.in
+
+CLEANFILES = $(nmvpnservice_DATA) $(desktop_DATA) *~
 DISTCLEANFILES = intltool-extract intltool-merge intltool-update

@@ -1,12 +1,9 @@
 # List of source files containing translatable strings.
 # Please keep this file sorted alphabetically.
-auth-dialog-general/gnome-generic-auth-dialog.c
-auth-dialog-general/main.c
-auth-dialog-general/nm-ppp-auth.glade
 auth-dialog/gnome-two-password-dialog.c
 auth-dialog/main.c
-nm-ppp.desktop.in
-properties/nm-ppp-dialog.glade
-properties/nm-ppp-properties.c
-properties/vpnui_impl.c
-src/nm-ppp-starter.c
+nm-pptp.desktop.in
+properties/advanced-dialog.c
+properties/nm-pptp-dialog.glade
+properties/nm-pptp.c
+src/nm-pptp-service.c

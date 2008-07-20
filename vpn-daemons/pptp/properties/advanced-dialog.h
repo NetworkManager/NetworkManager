@@ -1,8 +1,7 @@
-/* nm-ppp-starter - pptp (and other ppp) integration with NetworkManager
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+/***************************************************************************
  *
- * Antony J Mee <eemynotna at gmail dot com>
- * Based on openvpn work by Tim Niemueller <tim@niemueller.de>
- *                      and Dan Williams <dcbw@redhat.com>
+ * Copyright (C) 2008 Dan Williams, <dcbw@redhat.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,13 +17,21 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- */
+ **************************************************************************/
 
-#ifndef NM_PPP_SERVICE_H
-#define NM_PPP_SERVICE_H
+#ifndef _AUTH_HELPERS_H_
+#define _AUTH_HELPERS_H_
 
-#define NM_DBUS_SERVICE_PPP_STARTER	"org.freedesktop.NetworkManager.ppp_starter"
-#define NM_DBUS_INTERFACE_PPP_STARTER	"org.freedesktop.NetworkManager.ppp_starter"
-#define NM_DBUS_PATH_PPP_STARTER	"/org/freedesktop/NetworkManager/ppp_starter"
+#include <glib.h>
+#include <gtk/gtk.h>
+#include <gtk/gtkwidget.h>
+
+#include <nm-connection.h>
+
+GtkWidget *advanced_dialog_new (GHashTable *hash);
+
+GHashTable *advanced_dialog_new_hash_from_connection (NMConnection *connection, GError **error);
+
+GHashTable *advanced_dialog_new_hash_from_dialog (GtkWidget *dialog, GError **error);
 
 #endif

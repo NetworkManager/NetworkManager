@@ -1,15 +1,17 @@
 PPTP support for NetworkManager
 
-Added by Antony Mee http://www.students.ncl.ac.uk/a.j.mee
-Based entirely on OpenVPN support by Tim Niemueller http://www.niemueller.de
-
 This requires the Linux PPTP client installed 
 http://pptpclient.sourceforge.net/
 
-TODO: Support for passwords stored outside of /etc/ppp/chap-secrets
+0.7.x version:
+(C) 2008 Dan Williams <dcbw@redhat.com>, and Tambet Ingo <tambet@gmail.com>
 
-Code released under the GPL. See COPYING file in the NetworkManager
-directory.
+0.6.x version:
+(C) 2005 - 2007 Antony Mee   http://www.students.ncl.ac.uk/a.j.mee
+Based entirely on OpenVPN support by Tim Niemueller http://www.niemueller.de
 
-Aachen, 2005/11/12
+
+Theory of operation
+------------------------------
+
 
