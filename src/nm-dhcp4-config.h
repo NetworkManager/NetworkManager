@@ -27,8 +27,6 @@
 #include <glib/gtypes.h>
 #include <glib-object.h>
 
-#include "nm-dhcp4-config.h"
-
 #define NM_TYPE_DHCP4_CONFIG            (nm_dhcp4_config_get_type ())
 #define NM_DHCP4_CONFIG(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DHCP4_CONFIG, NMDHCP4Config))
 #define NM_DHCP4_CONFIG_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_DHCP4_CONFIG, NMDHCP4ConfigClass))
