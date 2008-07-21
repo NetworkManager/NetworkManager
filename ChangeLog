@@ -1,3 +1,11 @@
+2008-07-21  Dan Williams  <dcbw@redhat.com>
+
+	* src/ppp-manager/nm-ppp-manager.c
+		- (create_pppd_cmd_line): send 'noipdefault' on non-PPPoE connections
+			to prevent pppd from picking up some random local address from an
+			interface that doesn't have anything to do with the one we're
+			interested in (rh #455348)
+
 2008-07-17  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/nm-utils.c

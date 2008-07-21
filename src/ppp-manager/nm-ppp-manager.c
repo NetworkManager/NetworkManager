@@ -623,6 +623,8 @@ create_pppd_cmd_line (NMSettingPPP *setting,
 		nm_cmd_line_add_string (cmd, pppoe->username);
 	} else {
 		nm_cmd_line_add_string (cmd, device);
+		/* Don't send some random address as the local address */
+		nm_cmd_line_add_string (cmd, "noipdefault");
 	}
 
 	if (setting->baud)
