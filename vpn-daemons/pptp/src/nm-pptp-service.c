@@ -944,6 +944,7 @@ state_changed_cb (GObject *object, NMVPNServiceState state, gpointer user_data)
 	case NM_VPN_SERVICE_STATE_STARTED:
 	case NM_VPN_SERVICE_STATE_STOPPING:
 	case NM_VPN_SERVICE_STATE_STOPPED:
+		remove_timeout_handler (NM_PPTP_PLUGIN (object));
 		if (priv->service) {
 			g_object_unref (priv->service);
 			priv->service = NULL;

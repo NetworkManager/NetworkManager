@@ -1,3 +1,10 @@
+2008-07-21  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-pptp-service.c
+		- (state_changed_cb): remove the timeout handler when it's no longer
+			needed either; if pppd died on startup (wrong options) then the
+			timeout wouldn't have been removed before
+
 2008-07-20  Dan Williams  <dcbw@redhat.com>
 
 	Port to NM 0.7 VPN plugin API
