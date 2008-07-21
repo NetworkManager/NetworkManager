@@ -649,6 +649,7 @@ construct_pppd_args (NMPptpPlugin *plugin,
 	g_ptr_array_add (args, (gpointer) g_strdup ("nodetach"));
 	g_ptr_array_add (args, (gpointer) g_strdup ("lock"));
 	g_ptr_array_add (args, (gpointer) g_strdup ("usepeerdns"));
+	g_ptr_array_add (args, (gpointer) g_strdup ("noipdefault"));
 
 	value = g_hash_table_lookup (s_vpn_props->data, NM_PPTP_KEY_REFUSE_EAP);
 	if (value && G_VALUE_HOLDS_BOOLEAN (value) && g_value_get_boolean (value))
@@ -696,7 +697,7 @@ construct_pppd_args (NMPptpPlugin *plugin,
 
 	value = g_hash_table_lookup (s_vpn_props->data, NM_PPTP_KEY_NO_VJ_COMP);
 	if (value && G_VALUE_HOLDS_BOOLEAN (value) && g_value_get_boolean (value))
-		g_ptr_array_add (args, (gpointer) g_strdup ("novjcomp"));
+		g_ptr_array_add (args, (gpointer) g_strdup ("novj"));
 
 	value = g_hash_table_lookup (s_vpn_props->data, NM_PPTP_KEY_LCP_ECHO_FAILURE);
 	if (value && G_VALUE_HOLDS_UINT (value) && g_value_get_uint (value)) {
