@@ -54,3 +54,6 @@ nm_pptp_pppd_plugin_la_LIBADD = \
 BUILT_SOURCES = nm-pptp-pppd-service-glue.h
 
 CLEANFILES = $(BUILT_SOURCES)
+
+EXTRA_DIST = nm-pptp-pppd-service.xml
+
