@@ -13,7 +13,6 @@
 
 #include "nm-pppd-plugin.h"
 #include "nm-ppp-status.h"
-#include "nm-pppd-plugin-glue.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-utils.h"
 

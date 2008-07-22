@@ -51,12 +51,7 @@ nm_pppd_plugin_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(top_builddir)/libnm-util/libnm-util.la
 
-nm-pppd-plugin-glue.h: nm-pppd-plugin.xml
-	dbus-binding-tool --prefix=nm_pppd_plugin --mode=glib-server --output=$@ $<
-
-BUILT_SOURCES = nm-pppd-plugin-glue.h nm-ppp-manager-glue.h
-
-EXTRA_DIST = nm-pppd-plugin.xml
+BUILT_SOURCES = nm-ppp-manager-glue.h
 
 CLEANFILES = $(BUILT_SOURCES)
 
