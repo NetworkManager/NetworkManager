@@ -189,8 +189,6 @@ auth_combo_changed_cb (GtkWidget *combo, gpointer user_data)
 static void
 advanced_dialog_close_cb (GtkWidget *dialog, gpointer user_data)
 {
-	OpenvpnPluginUiWidget *self = OPENVPN_PLUGIN_UI_WIDGET (user_data);
-
 	gtk_widget_hide (dialog);
 	/* gtk_widget_destroy() will remove the window from the window group */
 	gtk_widget_destroy (dialog);
