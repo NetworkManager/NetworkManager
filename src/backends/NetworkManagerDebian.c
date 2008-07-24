@@ -38,7 +38,6 @@
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device.h"
-#include "interface_parser.h"
 #include "nm-utils.h"
 
 /*
