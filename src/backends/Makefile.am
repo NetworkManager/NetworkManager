@@ -31,9 +31,7 @@ libnmbackend_la_SOURCES +=	NetworkManagerGentoo.c		\
 endif
 
 if TARGET_DEBIAN
-libnmbackend_la_SOURCES +=	NetworkManagerDebian.c	\
-						interface_parser.c		\
-						interface_parser.h	
+libnmbackend_la_SOURCES +=	NetworkManagerDebian.c
 endif
 
 if TARGET_SLACKWARE

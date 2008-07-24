@@ -815,7 +815,7 @@ nm_ppp_manager_update_secrets (NMPPPManager *manager,
 	if (error_message) {
 		GError *err = NULL;
 
-		g_set_error (&err, NM_PPP_MANAGER_ERROR, NM_PPP_MANAGER_ERROR_UNKOWN, error_message);
+		g_set_error (&err, NM_PPP_MANAGER_ERROR, NM_PPP_MANAGER_ERROR_UNKOWN, "%s", error_message);
 		nm_warning ("%s", error_message);
 		dbus_g_method_return_error (priv->pending_secrets_context, err);
 		g_error_free (err);
