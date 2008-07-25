@@ -1,3 +1,7 @@
+2008-07-25  Gil Forcada  <gforcada@gnome.org>
+
+	* POTFILES.skip: Added some files here.
+
 2008-07-10  Kjartan Maraas  <kmaraas@gnome.org>
 
 	* POTFILES.in: Move file from here to

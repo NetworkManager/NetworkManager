@@ -13,8 +13,11 @@ vpn-daemons/pptp/auth-dialog-general/nm-ppp-auth.glade
 vpn-daemons/pptp/auth-dialog/gnome-two-password-dialog.c
 vpn-daemons/pptp/auth-dialog/main.c
 vpn-daemons/pptp/nm-ppp.desktop.in
+vpn-daemons/pptp/nm-pptp.desktop.in
+vpn-daemons/pptp/properties/advanced-dialog.c
 vpn-daemons/pptp/properties/nm-ppp-dialog.glade
 vpn-daemons/pptp/properties/nm-ppp-properties.c
+vpn-daemons/pptp/properties/nm-pptp-dialog.glade
 vpn-daemons/pptp/properties/vpnui_impl.c
 vpn-daemons/pptp/src/nm-ppp-starter.c
 vpn-daemons/vpnc/auth-dialog/gnome-two-password-dialog.c
