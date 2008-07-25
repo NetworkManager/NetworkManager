@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-06-24 00:10+0200\n"
-"PO-Revision-Date: 2008-06-24 00:30+0100\n"
+"POT-Creation-Date: 2008-07-25 22:39+0200\n"
+"PO-Revision-Date: 2008-07-25 22:40+0100\n"
 "Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "MIME-Version: 1.0\n"
@@ -54,11 +54,24 @@ msgstr "fel inträffade vid väntan på data i uttaget"
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr "Ogiltig flagga.  Använd --help för att se en lista över giltiga flaggor.\n"
 
-#: ../src/named-manager/nm-named-manager.c:115
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:87
+msgid "# Created by NetworkManager\n"
+msgstr "# Skapad av Nätverkshanterare\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:93
+#, c-format
+msgid ""
+"# Merged from %s\n"
+"\n"
+msgstr ""
+"# Sammanfogad från %s\n"
+"\n"
+
+#: ../src/named-manager/nm-named-manager.c:117
 msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
 msgstr "OBSERVERA: uppslag via glibc har inte stöd för mer än 3 namnservrar."
 
-#: ../src/named-manager/nm-named-manager.c:117
+#: ../src/named-manager/nm-named-manager.c:119
 msgid "The nameservers listed below may not be recognized."
 msgstr "Namnservrarna listade nedan kanske inte kommer att kännas igen."
 
