@@ -46,29 +46,7 @@
 NMConnection *
 do_import (const char *path, char **lines, GError **error)
 {
-	NMConnection *connection = NULL;
-	NMSettingConnection *s_con;
-	NMSettingVPN *s_vpn;
-	NMSettingVPNProperties *s_vpn_props;
-	char *last_dot;
-
-	connection = nm_connection_new ();
-	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
-	nm_connection_add_setting (connection, NM_SETTING (s_con));
-
-	s_vpn = NM_SETTING_VPN (nm_setting_vpn_new ());
-	s_vpn->service_type = g_strdup (NM_DBUS_SERVICE_PPTP);
-	nm_connection_add_setting (connection, NM_SETTING (s_vpn));
-
-	s_vpn_props = NM_SETTING_VPN_PROPERTIES (nm_setting_vpn_properties_new ());
-	nm_connection_add_setting (connection, NM_SETTING (s_vpn_props));
-
-	s_con->id = g_path_get_basename (path);
-	last_dot = strrchr (s_con->id, '.');
-	if (last_dot)
-		*last_dot = '\0';
-
-	return connection;
+	return NULL;
 }
 
 gboolean
