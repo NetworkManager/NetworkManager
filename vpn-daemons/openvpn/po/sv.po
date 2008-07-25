@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-06-24 00:04+0200\n"
-"PO-Revision-Date: 2008-06-24 00:07+0100\n"
+"POT-Creation-Date: 2008-07-25 22:40+0200\n"
+"PO-Revision-Date: 2008-07-25 22:42+0100\n"
 "Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "MIME-Version: 1.0\n"
@@ -67,27 +67,61 @@ msgstr "Certifikatlöse_nord:"
 msgid "Certificate password:"
 msgstr "Certifikatlösenord:"
 
-#: ../properties/nm-openvpn.c:52
+#: ../properties/auth-helpers.c:68
+msgid "Choose a Certificate Authority certificate..."
+msgstr "Välj ett CA-certifikat (Certifikatutfärdare)..."
+
+#: ../properties/auth-helpers.c:87
+msgid "Choose your personal certificate..."
+msgstr "Välj ditt personliga certifikat..."
+
+#: ../properties/auth-helpers.c:105
+msgid "Choose your private key..."
+msgstr "Välj din privata nyckel..."
+
+#: ../properties/auth-helpers.c:158
+msgid "Choose an OpenVPN static key..."
+msgstr "Välj en statisk OpenVPN-nyckel..."
+
+#: ../properties/auth-helpers.c:176
+#: ../properties/auth-helpers.c:864
+msgid "None"
+msgstr "Ingen"
+
+#: ../properties/auth-helpers.c:519
+msgid "PEM certificates (*.pem, *.crt, *.key)"
+msgstr "PEM-certifikat (*.pem, *.crt, *.key)"
+
+#: ../properties/auth-helpers.c:579
+msgid "OpenVPN Static Keys (*.key)"
+msgstr "Statiska OpenVPN-nycklar (*.key)"
+
+#: ../properties/auth-helpers.c:703
+msgid "Default"
+msgstr "Standard"
+
+#: ../properties/nm-openvpn.c:53
 msgid "OpenVPN"
 msgstr "OpenVPN"
 
-#: ../properties/nm-openvpn.c:53
+#: ../properties/nm-openvpn.c:54
 msgid "Compatible with the OpenVPN server."
 msgstr "Kompatibel med OpenVPN-servern."
 
-#: ../properties/nm-openvpn.c:239
+#: ../properties/nm-openvpn.c:308
+#: ../properties/nm-openvpn-dialog.glade.h:7
 msgid "Certificates (TLS)"
 msgstr "Certifikat (TLS)"
 
-#: ../properties/nm-openvpn.c:251
+#: ../properties/nm-openvpn.c:320
 msgid "Password"
 msgstr "Lösenord"
 
-#: ../properties/nm-openvpn.c:265
+#: ../properties/nm-openvpn.c:334
 msgid "Password with Certificates (TLS)"
 msgstr "Lösenord med certifikat (TLS)"
 
-#: ../properties/nm-openvpn.c:277
+#: ../properties/nm-openvpn.c:346
 msgid "Static Key"
 msgstr "Statisk nyckel"
 
@@ -115,47 +149,91 @@ msgstr "A_vancerat..."
 msgid "CA Certificate:"
 msgstr "CA-certifikat:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:7
+#: ../properties/nm-openvpn-dialog.glade.h:8
+msgid "Cipher:"
+msgstr "Skiffer:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:9
+msgid "General"
+msgstr "Allmänt"
+
+#: ../properties/nm-openvpn-dialog.glade.h:10
 msgid "Key Direction:"
 msgstr "Nyckelriktning:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:8
+#: ../properties/nm-openvpn-dialog.glade.h:11
+msgid "Key File:"
+msgstr "Nyckelfil:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:12
+msgid "OpenVPN Advanced Options"
+msgstr "Avancerade alternativ för OpenVPN"
+
+#: ../properties/nm-openvpn-dialog.glade.h:13
 msgid "Private Key:"
 msgstr "Privat nyckel:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:9
+#: ../properties/nm-openvpn-dialog.glade.h:14
 msgid "Static Key:"
 msgstr "Statisk nyckel:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:10
+#: ../properties/nm-openvpn-dialog.glade.h:15
 msgid "Type:"
 msgstr "Typ:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:11
+#: ../properties/nm-openvpn-dialog.glade.h:16
+msgid "Use L_ZO data compression"
+msgstr "Använd L_ZO-datakomprimering"
+
+#: ../properties/nm-openvpn-dialog.glade.h:17
+msgid "Use a TA_P device"
+msgstr "Använd en TA_P-enhet"
+
+#: ../properties/nm-openvpn-dialog.glade.h:18
+msgid "Use a _TCP connection"
+msgstr "Använd en _TCP-anslutning"
+
+#: ../properties/nm-openvpn-dialog.glade.h:19
+msgid "Use additional TLS authentication"
+msgstr "Använd ytterligare TLS-autentisering"
+
+#: ../properties/nm-openvpn-dialog.glade.h:20
+msgid "Use custom gateway p_ort:"
+msgstr "Använd anpassad gatewayp_ort:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:21
 msgid "User Certificate:"
 msgstr "Användarcertifikat:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:12
+#: ../properties/nm-openvpn-dialog.glade.h:22
 msgid "User name:"
 msgstr "Användarnamn:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:13
+#: ../properties/nm-openvpn-dialog.glade.h:23
 msgid "_Gateway:"
 msgstr "_Gateway:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:14
+#: ../properties/nm-openvpn-dialog.glade.h:24
+msgid "gtk-cancel"
+msgstr "Avbryt"
+
+#: ../properties/nm-openvpn-dialog.glade.h:25
+msgid "gtk-ok"
+msgstr "OK"
+
+#: ../properties/nm-openvpn-dialog.glade.h:26
 msgid "page 1"
 msgstr "sida 1"
 
-#: ../properties/nm-openvpn-dialog.glade.h:15
+#: ../properties/nm-openvpn-dialog.glade.h:27
 msgid "page 2"
 msgstr "sida 2"
 
-#: ../properties/nm-openvpn-dialog.glade.h:16
+#: ../properties/nm-openvpn-dialog.glade.h:28
 msgid "page 3"
 msgstr "sida 3"
 
-#: ../properties/nm-openvpn-dialog.glade.h:17
+#: ../properties/nm-openvpn-dialog.glade.h:29
 msgid "page 4"
 msgstr "sida 4"
 
@@ -211,10 +289,6 @@ msgstr "sida 4"
 #~ msgstr "Använd LZO-komprimering: %s"
 #~ msgid "Yes"
 #~ msgstr "Ja"
-#~ msgid "No"
-#~ msgstr "Nej"
-#~ msgid "Cipher:  %s"
-#~ msgstr "Skiffer:  %s"
 #~ msgid "TLS auth:  %s %s"
 #~ msgstr "TLS-autentisering:  %s %s"
 #~ msgid "The connection details can be changed using the \"Edit\" button."
@@ -246,8 +320,6 @@ msgstr "sida 4"
 #~ msgstr "Misslyckades med att exportera konfiguration"
 #~ msgid "Failed to save file %s"
 #~ msgstr "Misslyckades med att spara filen %s"
-#~ msgid "(Default: 1194)"
-#~ msgstr "(Standard: 1194)"
 #~ msgid "65536"
 #~ msgstr "65536"
 #~ msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
@@ -270,8 +342,6 @@ msgstr "sida 4"
 #~ msgstr "Nätverk"
 #~ msgid "Only use _VPN connection for these addresses:"
 #~ msgstr "Använd endast _VPN-anslutning för dessa adresser:"
-#~ msgid "OpenVPN Advanced Options"
-#~ msgstr "Avancerade alternativ för OpenVPN"
 #~ msgid "OpenVPN Configuration"
 #~ msgstr "Konfiguration för OpenVPN"
 #~ msgid ""
@@ -291,12 +361,6 @@ msgstr "sida 4"
 #~ msgstr "Delad _nyckel:"
 #~ msgid "TLS-Auth"
 #~ msgstr "TLS-Auth"
-#~ msgid "Use L_ZO compression"
-#~ msgstr "Använd L_ZO-komprimering"
-#~ msgid "Use TA_P device"
-#~ msgstr "Använd TA_P-enhet"
-#~ msgid "Use _TCP connection"
-#~ msgstr "Använd _TCP-anslutning"
 #~ msgid "Use _TLS auth:"
 #~ msgstr "Använd _TLS-autentisering:"
 #~ msgid "Use cip_her:"
@@ -434,8 +498,6 @@ msgstr "sida 4"
 #~ msgstr "Gruppnamn:"
 #~ msgid "Override user name"
 #~ msgstr "Åsidosätt användarnamn"
-#~ msgid "Use domain for authentication"
-#~ msgstr "Använd domän för autentisering"
 #~ msgid "_Import..."
 #~ msgstr "_Importera..."
 #~ msgid "Compatible Cisco VPN client (vpnc)"
