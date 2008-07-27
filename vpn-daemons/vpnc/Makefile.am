@@ -22,10 +22,8 @@ icondir = $(datadir)/icons/hicolor/48x48/apps
 icon_DATA = gnome-mime-application-x-cisco-vpn-settings.png
 endif
 
-nm-vpnc-service.name: $(srcdir)/nm-vpnc-service.name.in Makefile
-	sed	-e 's|[@]BINDIR[@]|$(bindir)|g' \
-		< $(srcdir)/nm-vpnc-service.name.in \
-		> nm-vpnc-service.name
+nm-vpnc-service.name: $(srcdir)/nm-vpnc-service.name.in
+	sed -e 's|[@]LIBEXECDIR[@]|$(libexecdir)|g' $< >$@
 
 EXTRA_DIST = nm-vpnc-service.name.in \
              $(dbusservice_DATA)  \

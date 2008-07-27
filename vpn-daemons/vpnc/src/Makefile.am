@@ -4,7 +4,6 @@ AM_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(GTHREAD_CFLAGS) \
 	$(NM_UTILS_CFLAGS) \
-	-Wall \
 	-DDBUS_API_SUBJECT_TO_CHANGE \
 	-DG_DISABLE_DEPRECATED \
 	-DBINDIR=\"$(bindir)\" \
@@ -16,7 +15,7 @@ AM_CPPFLAGS = \
 	-DLOCALSTATEDIR=\""$(localstatedir)"\" \
 	-DDATADIR=\"$(datadir)\"
 
-bin_PROGRAMS = nm-vpnc-service nm-vpnc-service-vpnc-helper
+libexec_PROGRAMS = nm-vpnc-service nm-vpnc-service-vpnc-helper
 
 nm_vpnc_service_SOURCES = \
 				nm-vpnc-service.c \

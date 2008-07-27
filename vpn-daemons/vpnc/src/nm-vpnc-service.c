@@ -30,7 +30,7 @@ static const char *vpnc_binary_paths[] =
 	NULL
 };
 
-#define NM_VPNC_HELPER_PATH		BINDIR"/nm-vpnc-service-vpnc-helper"
+#define NM_VPNC_HELPER_PATH		LIBEXECDIR"/nm-vpnc-service-vpnc-helper"
 #define NM_VPNC_UDP_ENCAPSULATION_PORT	0 /* random port */
 
 typedef struct {

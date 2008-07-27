@@ -1,3 +1,10 @@
+2008-07-27  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Michael Biebl <biebl@debian.org>
+
+	* Move service to $LIBEXECDIR, remove unneeded compilation flags, move
+		properties plugin to $LIBDIR/NetworkManager
+
 2008-07-17  Tambet Ingo  <tambet@gmail.com>
 
 	* properties/nm-vpnc.c (vpnc_plugin_ui_class_init): Don't add empty

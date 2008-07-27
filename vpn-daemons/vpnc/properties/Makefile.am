@@ -1,6 +1,5 @@
-
-
-lib_LTLIBRARIES = libnm-vpnc-properties.la
+plugindir = $(libdir)/NetworkManager
+plugin_LTLIBRARIES = libnm-vpnc-properties.la
 
 libnm_vpnc_properties_la_SOURCES = \
 	pcf-file.c \
