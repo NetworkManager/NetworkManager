@@ -9,8 +9,6 @@ libmarshallers_la_SOURCES = \
 
 libmarshallers_la_CPPFLAGS = \
 	$(GTHREAD_CFLAGS) \
-	-g \
-	-Wall \
 	-DG_DISABLE_DEPRECATED
 
 
