@@ -1,5 +1,12 @@
 2008-07-27  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Roy Marples <roy@marples.name>
+
+	* src/dhcp-manager/nm-dhcp-dhcpcd.c
+		- (nm_dhcp_client_start): fixup for latest dhcpcd 4.0 RC
+
+2008-07-27  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-gsm-device.c
 		- (init_modem_full): send "ATZ E0" after CPIN, because apparently some
 			Huawei devices turn echo back on after CPIN (rh #456770)

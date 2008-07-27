@@ -90,7 +90,9 @@ nm_dhcp_client_start (NMDHCPDevice *device, NMSettingIP4Config *s_ip4)
 	argv = g_ptr_array_new ();
 	g_ptr_array_add (argv, (gpointer) DHCP_CLIENT_PATH);
 
-	g_ptr_array_add (argv, (gpointer) "-X");	/* Don't fork */
+	g_ptr_array_add (argv, (gpointer) "-B");	/* Don't background on lease (disable fork()) */
+
+	g_ptr_array_add (argv, (gpointer) "-K");	/* Disable built-in carrier detection */
 
 	g_ptr_array_add (argv, (gpointer) "-L");	/* Disable built-in IPv4LL since we use avahi-autoipd */
 
