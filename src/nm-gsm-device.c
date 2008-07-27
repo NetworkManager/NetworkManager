@@ -383,7 +383,11 @@ init_modem_full (NMGsmDevice *device)
 {
 	char *responses[] = { "OK", "ERROR", "ERR", NULL };
 
-	modem_wait_for_reply (device, "ATZ", 10, responses, responses, init_full_done);
+	/* Send E0 too because some devices turn echo back on after CPIN which
+	 * just breaks stuff since echo-ed commands are interpreted as replies.
+	 * rh #456770
+	 */
+	modem_wait_for_reply (device, "ATZ E0", 10, responses, responses, init_full_done);
 }
 
 static void

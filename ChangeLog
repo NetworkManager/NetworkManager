@@ -1,3 +1,9 @@
+2008-07-27  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-gsm-device.c
+		- (init_modem_full): send "ATZ E0" after CPIN, because apparently some
+			Huawei devices turn echo back on after CPIN (rh #456770)
+
 2008-07-24  Tambet Ingo  <tambet@gmail.com>
 
 	* src/ppp-manager/nm-ppp-manager.c (nm_ppp_manager_update_secrets): Add
