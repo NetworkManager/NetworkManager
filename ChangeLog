@@ -1,5 +1,10 @@
 2008-07-27  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/plugins/ifcfg-fedora/reader.c
+		- (make_ip4_setting): fix parsing automatic configs
+
+2008-07-27  Dan Williams  <dcbw@redhat.com>
+
 	* src/dnsmasq-manager/nm-dnsmasq-manager.c
 	  src/nm-device.c
 	  src/ppp-manager/nm-ppp-manager.c

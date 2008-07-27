@@ -179,56 +179,59 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 
 	g_free (value);
 
-	get_one_ip4_addr (ifcfg, "IPADDR", &tmp.address, error);
-	if (*error)
-		goto error;
-
-	get_one_ip4_addr (ifcfg, "GATEWAY", &tmp.gateway, error);
-	if (*error)
-		goto error;
-
-	/* If no gateway in the ifcfg, try /etc/sysconfig/network instead */
-	if (!tmp.gateway) {
-		shvarFile *network;
-
-		network = svNewFile ("/etc/sysconfig/network");
-		if (network) {
-			get_one_ip4_addr (network, "GATEWAY", &tmp.gateway, error);
-			svCloseFile (network);
-			if (*error)
-				goto error;
-		}
-	}
-
-	value = svGetValue (ifcfg, "PREFIX");
-	if (value) {
-		long int prefix;
-
-		errno = 0;
-		prefix = strtol (value, NULL, 10);
-		if (errno || prefix <= 0 || prefix > 32) {
-			g_set_error (error, ifcfg_plugin_error_quark (), 0,
-			             "Invalid IP4 prefix '%s'", value);
-			g_free (value);
-			goto error;
-		}
-		tmp.prefix = (guint32) prefix;
-		g_free (value);
-	}
-
-	/* Fall back to NETMASK if no PREFIX was specified */
-	if (!tmp.prefix) {
-		get_one_ip4_addr (ifcfg, "NETMASK", &netmask, error);
+	/* Handle manual settings */
+	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
+		get_one_ip4_addr (ifcfg, "IPADDR", &tmp.address, error);
 		if (*error)
 			goto error;
-		tmp.prefix = nm_utils_ip4_netmask_to_prefix (netmask);
-	}
 
-	/* Validate the prefix */
-	if (!tmp.prefix || tmp.prefix > 32) {
-		g_set_error (error, ifcfg_plugin_error_quark (), 0,
-		             "Invalid IP4 prefix '%d'", tmp.prefix);
-		goto error;
+		get_one_ip4_addr (ifcfg, "GATEWAY", &tmp.gateway, error);
+		if (*error)
+			goto error;
+
+		/* If no gateway in the ifcfg, try /etc/sysconfig/network instead */
+		if (!tmp.gateway) {
+			shvarFile *network;
+
+			network = svNewFile ("/etc/sysconfig/network");
+			if (network) {
+				get_one_ip4_addr (network, "GATEWAY", &tmp.gateway, error);
+				svCloseFile (network);
+				if (*error)
+					goto error;
+			}
+		}
+
+		value = svGetValue (ifcfg, "PREFIX");
+		if (value) {
+			long int prefix;
+
+			errno = 0;
+			prefix = strtol (value, NULL, 10);
+			if (errno || prefix <= 0 || prefix > 32) {
+				g_set_error (error, ifcfg_plugin_error_quark (), 0,
+				             "Invalid IP4 prefix '%s'", value);
+				g_free (value);
+				goto error;
+			}
+			tmp.prefix = (guint32) prefix;
+			g_free (value);
+		}
+
+		/* Fall back to NETMASK if no PREFIX was specified */
+		if (!tmp.prefix) {
+			get_one_ip4_addr (ifcfg, "NETMASK", &netmask, error);
+			if (*error)
+				goto error;
+			tmp.prefix = nm_utils_ip4_netmask_to_prefix (netmask);
+		}
+
+		/* Validate the prefix */
+		if (!tmp.prefix || tmp.prefix > 32) {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Invalid IP4 prefix '%d'", tmp.prefix);
+			goto error;
+		}
 	}
 
 	/* Yay, let's make an IP4 config */
