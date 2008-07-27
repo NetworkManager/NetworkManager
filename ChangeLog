@@ -1,5 +1,17 @@
 2008-07-27  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting-ip6-config.c
+		- (set_property): add missing break that caused routes to be overwritten
+			with addresses
+
+	* libnm-util/nm-setting-ip6-config.c
+		- (verify): validate routes and return GError everywhere on invalid setting
+		- (finalize): don't leak routes
+		- (set_property): add missing break that caused routes to be overwritten
+			with addresses
+
+2008-07-27  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/*
 		- Relicense to LGPLv2+
 

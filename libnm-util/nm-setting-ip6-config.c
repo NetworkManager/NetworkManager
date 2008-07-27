@@ -204,6 +204,7 @@ set_property (GObject *object, guint prop_id,
 	case PROP_ADDRESSES:
 		nm_utils_slist_free (setting->addresses, g_free);
 		setting->addresses = nm_utils_ip6_addresses_from_gvalue (value);
+		break;
 	case PROP_ROUTES:
 		nm_utils_slist_free (setting->routes, g_free);
 		setting->routes = nm_utils_ip6_addresses_from_gvalue (value);
