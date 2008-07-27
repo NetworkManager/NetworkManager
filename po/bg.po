@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-02-02 06:43+0200\n"
+"POT-Creation-Date: 2008-07-27 23:54+0300\n"
 "PO-Revision-Date: 2007-02-02 05:46+0200\n"
 "Last-Translator: Alexander Shopov <ash@contact.bg>\n"
 "Language-Team: Bulgarian <dict@fsa-bg.org>\n"
@@ -16,965 +16,935 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 
-#: ../gnome/applet/applet-compat.c:171 ../gnome/applet/applet-dbus-info.c:926
+#: ../src/nm-netlink-monitor.c:193 ../src/nm-netlink-monitor.c:471
 #, c-format
-msgid "Passphrase for wireless network %s"
-msgstr "Парола за безжичната мрежа %s"
-
-#: ../gnome/applet/applet-dbus.c:274
-#, c-format
-msgid "Connection to the wireless network '%s' failed."
-msgstr "Неуспешно свързване към безжичната мрежа „%s“."
-
-#: ../gnome/applet/applet-dbus.c:279
-msgid "Connection to the wired network failed."
-msgstr "Неуспешно свързване към кабелната мрежа."
-
-#: ../gnome/applet/applet.c:182
-msgid "Error displaying connection information:"
-msgstr "Грешка при показване на информацията за връзката:"
-
-#: ../gnome/applet/applet.c:200
-msgid "Could not find some required resources (the glade file)!"
-msgstr "Някои ресурси не бяха открити (файлът на glade)!"
-
-#: ../gnome/applet/applet.c:210
-msgid "No active connections!"
-msgstr "Няма действащи връзки!"
-
-#: ../gnome/applet/applet.c:227
-#, c-format
-msgid "%d Mb/s"
-msgstr "%d Mb/s"
-
-#: ../gnome/applet/applet.c:230
-#, c-format
-msgid "Wired Ethernet (%s)"
-msgstr "Кабелен Етернет (%s)"
-
-#: ../gnome/applet/applet.c:232
-#, c-format
-msgid "Wireless Ethernet (%s)"
-msgstr "Безжичен Етернет (%s)"
-
-#: ../gnome/applet/applet.c:238
-msgid "Unknown"
-msgstr "неопределима"
-
-#: ../gnome/applet/applet.c:330 ../gnome/applet/applet.c:357
-msgid "NetworkManager Applet"
-msgstr "Аплетът NetworkManager"
-
-#: ../gnome/applet/applet.c:332
-msgid ""
-"Copyright © 2004-2006 Red Hat, Inc.\n"
-"Copyright © 2005-2006 Novell, Inc."
+msgid "error processing netlink message: %s"
 msgstr ""
-"Авторски права © 2004-2006 Red Hat, Inc.\n"
-"Авторски права © 2004-2006 Novell, Inc."
 
-#: ../gnome/applet/applet.c:334 ../gnome/applet/applet.c:361
-msgid ""
-"Notification area applet for managing your network devices and connections."
-msgstr ""
-"Аплет за областта за уведомяване за управление на мрежовите устройства и "
-"връзки."
-
-#: ../gnome/applet/applet.c:337 ../gnome/applet/applet.c:365
-msgid "translator-credits"
-msgstr ""
-"Александър Шопов <ash@contact.bg>\n"
-"\n"
-"Проектът за превод на GNOME има нужда от подкрепа.\n"
-"Научете повече за нас на http://gnome.cult.bg\n"
-"Докладвайте за грешки на http://gnome.cult.bg/bugs<"
-
-#: ../gnome/applet/applet.c:359
-msgid ""
-"Copyright © 2004-2005 Red Hat, Inc.\n"
-"Copyright © 2005-2006 Novell, Inc."
-msgstr ""
-"Авторски права © 2004-2005 Red Hat, Inc.\n"
-"Авторски права © 2005-2006 Novell, Inc."
-
-#: ../gnome/applet/applet.c:421
-msgid "VPN Login Failure"
-msgstr "Грешка при идентификация пред ВЧМ"
-
-#: ../gnome/applet/applet.c:422
-#, c-format
-msgid "Could not start the VPN connection '%s' due to a login failure."
-msgstr ""
-"Неуспех при осъществяването на връзката към ВЧМ „%s“ поради грешка в "
-"идентификацията."
-
-#: ../gnome/applet/applet.c:426
-msgid "VPN Start Failure"
-msgstr "Грешка при стартиране на ВЧМ"
-
-#: ../gnome/applet/applet.c:427
-#, c-format
-msgid ""
-"Could not start the VPN connection '%s' due to a failure launching the VPN "
-"program."
-msgstr ""
-"Връзката към ВЧМ „%s“ се провали поради грешка при стартиране на програмата "
-"за ВЧМ."
-
-#: ../gnome/applet/applet.c:431 ../gnome/applet/applet.c:441
-msgid "VPN Connect Failure"
-msgstr "Грешка при свързване към ВЧМ"
-
-#: ../gnome/applet/applet.c:432
-#, c-format
-msgid "Could not start the VPN connection '%s' due to a connection error."
-msgstr "Връзката към ВЧМ „%s“ се провали поради грешка при свързването."
-
-#: ../gnome/applet/applet.c:436
-msgid "VPN Configuration Error"
-msgstr "Грешка в настройките на ВЧМ"
-
-#: ../gnome/applet/applet.c:437
-#, c-format
-msgid "The VPN connection '%s' was not correctly configured."
-msgstr "Връзката към ВЧМ „%s“ е с неправилни настройки."
-
-#: ../gnome/applet/applet.c:442
-#, c-format
-msgid ""
-"Could not start the VPN connection '%s' because the VPN server did not "
-"return an adequate network configuration."
-msgstr ""
-"Връзката към ВЧМ „%s“ се провали, защото настройките на мрежата върнати от "
-"сървъра за ВЧМ бяха неправилни."
-
-#: ../gnome/applet/applet.c:512
-msgid "VPN Login Message"
-msgstr "Съобщение при идентификация пред ВЧМ"
-
-#: ../gnome/applet/applet.c:737 ../gnome/applet/applet.c:2635
-#: ../gnome/applet/other-network-dialog.c:458
-#: ../gnome/applet/passphrase-dialog.c:228
-msgid ""
-"The NetworkManager Applet could not find some required resources (the glade "
-"file was not found)."
-msgstr ""
-"Аплетът NetworkManager не можа да открие някои задължителни ресурси (файлът "
-"на glade)."
-
-#: ../gnome/applet/applet.c:749
-#, c-format
-msgid "The network device \"%s (%s)\" does not support wireless scanning."
-msgstr "Мрежовото устройство „%s (%s)“ не поддържа безжично претърсване."
-
-#: ../gnome/applet/applet.c:757
-#, c-format
-msgid "The network device \"%s (%s)\" does not support link detection."
-msgstr "Мрежовото устройство „%s (%s)“ не поддържа засичане на връзка."
-
-#. Note to translators: this is used if no essid is known
-#: ../gnome/applet/applet.c:905 ../gnome/applet/applet.c:1103
-msgid "(unknown)"
-msgstr "(не се знае)"
-
-#: ../gnome/applet/applet.c:911
-#, c-format
-msgid "Preparing device %s for the wired network..."
-msgstr "Подготвяне на устройството „%s“ за кабелната мрежа..."
-
-#: ../gnome/applet/applet.c:913
-#, c-format
-msgid "Preparing device %s for the wireless network '%s'..."
-msgstr "Подготвяне на устройството „%s“ за безжичната мрежа „%s“..."
-
-#: ../gnome/applet/applet.c:921
-#, c-format
-msgid "Configuring device %s for the wired network..."
-msgstr "Настройване на устройството „%s“ за кабелната мрежа..."
-
-#: ../gnome/applet/applet.c:923
-#, c-format
-msgid "Attempting to join the wireless network '%s'..."
-msgstr "Опит за свързване към безжичната мрежа „%s“..."
-
-#: ../gnome/applet/applet.c:931
-#, c-format
-msgid "Waiting for Network Key for the wireless network '%s'..."
-msgstr "Изчакване за мрежовия ключ за безжичната мрежа „%s“..."
-
-#: ../gnome/applet/applet.c:939 ../gnome/applet/applet.c:949
-msgid "Requesting a network address from the wired network..."
-msgstr "Запитване на кабелната мрежа за адрес..."
-
-#: ../gnome/applet/applet.c:941 ../gnome/applet/applet.c:951
-#, c-format
-msgid "Requesting a network address from the wireless network '%s'..."
-msgstr "Запитване на безжичната мрежа „%s“ за адрес..."
-
-#: ../gnome/applet/applet.c:959
-msgid "Finishing connection to the wired network..."
-msgstr "Завършване на връзката към кабелната мрежа..."
-
-#: ../gnome/applet/applet.c:961
-#, c-format
-msgid "Finishing connection to the wireless network '%s'..."
-msgstr "Завършване на връзката към безжичната мрежа „%s“..."
-
-#: ../gnome/applet/applet.c:1078
-msgid "NetworkManager is not running"
-msgstr "NetworkManager не е включен"
-
-#: ../gnome/applet/applet.c:1086 ../gnome/applet/applet.c:1843
-msgid "Networking disabled"
-msgstr "Мрежата е изключена"
-
-#: ../gnome/applet/applet.c:1091
-msgid "No network connection"
-msgstr "Няма връзка към мрежа"
-
-#: ../gnome/applet/applet.c:1096
-msgid "Wired network connection"
-msgstr "Връзка към кабелна мрежа"
-
-#: ../gnome/applet/applet.c:1100
-msgid "Connected to an Ad-Hoc wireless network"
-msgstr "Връзка към инцидентна, безжична мрежа"
-
-#: ../gnome/applet/applet.c:1102
-#, c-format
-msgid "Wireless network connection to '%s' (%d%%)"
-msgstr "Безжична връзка към „%s“ (%d%%)"
-
-#: ../gnome/applet/applet.c:1123
-#, c-format
-msgid "VPN connection to '%s'"
-msgstr "Връзка по ВЧМ към „%s“"
-
-#: ../gnome/applet/applet.c:1131
-#, c-format
-msgid "VPN connecting to '%s'"
-msgstr "Свързване по ВЧМ към „%s“"
-
-#: ../gnome/applet/applet.c:1556
-msgid "_Connect to Other Wireless Network..."
-msgstr "_Свързване към други безжични мрежи..."
-
-#: ../gnome/applet/applet.c:1577
-msgid "Create _New Wireless Network..."
-msgstr "Създаване на _нова безжична мрежа..."
-
-#: ../gnome/applet/applet.c:1700
-msgid "_VPN Connections"
-msgstr "_Връзки по ВЧМ"
-
-#: ../gnome/applet/applet.c:1745
-msgid "_Configure VPN..."
-msgstr "_Настройване на ВЧМ..."
-
-#: ../gnome/applet/applet.c:1749
-msgid "_Disconnect VPN..."
-msgstr "_Прекъсване на ВЧМ..."
-
-#: ../gnome/applet/applet.c:1771
-msgid "_Dial Up Connections"
-msgstr "_Връзки по телефонна линия"
-
-#. FIXME: We should save and then check the state of the devices and show Connect _or_ Disconnect for each item
-#: ../gnome/applet/applet.c:1782
-#, c-format
-msgid "Connect to %s..."
-msgstr "Свързване към %s..."
-
-#: ../gnome/applet/applet.c:1788
-#, c-format
-msgid "Disconnect from %s..."
-msgstr "Прекъсване на връзката към %s..."
-
-#: ../gnome/applet/applet.c:1837
-msgid "No network devices have been found"
-msgstr "Не са открити мрежови устройства"
-
-#: ../gnome/applet/applet.c:2029
-msgid "NetworkManager is not running..."
-msgstr "NetworkManager не е включен..."
-
-#. 'Enable Networking' item
-#: ../gnome/applet/applet.c:2210
-msgid "Enable _Networking"
-msgstr "_Включване на мрежата"
-
-#. 'Enable Wireless' item
-#: ../gnome/applet/applet.c:2216
-msgid "Enable _Wireless"
-msgstr "Включване на _безжичната мрежа"
-
-#. 'Connection Information' item
-#: ../gnome/applet/applet.c:2222
-msgid "Connection _Information"
-msgstr "_Информация за връзката"
-
-#. Help item
-#: ../gnome/applet/applet.c:2233
-msgid "_Help"
-msgstr "_Помощ"
-
-#. About item
-#: ../gnome/applet/applet.c:2242
-msgid "_About"
-msgstr "_Относно"
-
-#: ../gnome/applet/applet.c:2824
-msgid ""
-"The NetworkManager applet could not find some required resources.  It cannot "
-"continue.\n"
-msgstr ""
-"Аплетът NetworkManager не може да открие необходим ресурс. Програмата не "
-"може да продължи работа.\n"
-
-#: ../gnome/applet/wireless-security-option.c:157
-msgid "Open System"
-msgstr "Открита система"
-
-#: ../gnome/applet/wireless-security-option.c:160
-msgid "Shared Key"
-msgstr "Споделен ключ"
-
-#: ../gnome/applet/wireless-security-option.c:208
-msgid "Automatic (Default)"
-msgstr "Автоматично (по подразбиране)"
-
-#: ../gnome/applet/wireless-security-option.c:215
-msgid "AES-CCMP"
-msgstr "AES-CCMP"
-
-#: ../gnome/applet/wireless-security-option.c:223
-msgid "TKIP"
-msgstr "TKIP"
-
-#: ../gnome/applet/wireless-security-option.c:231
-msgid "Dynamic WEP"
-msgstr "Динамичен WEP"
-
-#: ../gnome/applet/wso-none.c:53
-msgid "None"
-msgstr "Без"
-
-#: ../gnome/applet/wso-wep-ascii.c:138
-msgid "WEP 64/128-bit ASCII"
-msgstr "40/128-битов ключ за WEP в ASCII"
-
-#: ../gnome/applet/wso-wep-hex.c:135
-msgid "WEP 64/128-bit Hex"
-msgstr "40/128-битов шестнадесетичен ключ за WEP"
-
-#: ../gnome/applet/wso-wep-passphrase.c:135
-msgid "WEP 128-bit Passphrase"
-msgstr "128 битова парола WEP"
-
-#: ../gnome/applet/wso-wpa-eap.c:237
-msgid "PEAP"
-msgstr "PEAP"
-
-#: ../gnome/applet/wso-wpa-eap.c:238
-msgid "TLS"
-msgstr "TLS"
-
-#: ../gnome/applet/wso-wpa-eap.c:239
-msgid "TTLS"
-msgstr "TTLS"
-
-#: ../gnome/applet/wso-wpa-eap.c:247 ../src/nm-ap-security-wpa-eap.c:93
-#: ../src/nm-ap-security-wpa-eap.c:117
-msgid "WPA2 Enterprise"
-msgstr "WPA2 Enterprise"
-
-#: ../gnome/applet/wso-wpa-eap.c:249 ../src/nm-ap-security-wpa-eap.c:95
-#: ../src/nm-ap-security-wpa-eap.c:122
-msgid "WPA Enterprise"
-msgstr "WPA Enterprise"
-
-#: ../gnome/applet/wso-wpa-psk.c:178
-msgid "WPA2 Personal"
-msgstr "WPA2 Personal"
-
-#: ../gnome/applet/wso-wpa-psk.c:180
-msgid "WPA Personal"
-msgstr "WPA Personal"
-
-#: ../gnome/applet/eggtrayicon.c:134
-msgid "Orientation"
-msgstr "Ориентация"
-
-#: ../gnome/applet/eggtrayicon.c:135
-msgid "The orientation of the tray."
-msgstr "Ориентацията на тавата"
-
-#: ../gnome/applet/menu-items.c:88
-#, c-format
-msgid "Wired Network (%s)"
-msgstr "Кабелна мрежа (%s)"
-
-#: ../gnome/applet/menu-items.c:91
-msgid "_Wired Network"
-msgstr "_Кабелна мрежа"
-
-#: ../gnome/applet/menu-items.c:162
-#, c-format
-msgid "Wireless Network (%s)"
-msgid_plural "Wireless Networks (%s)"
-msgstr[0] "Безжична мрежа (%s)"
-msgstr[1] "Безжични мрежи (%s)"
-
-#: ../gnome/applet/menu-items.c:164
-msgid "Wireless Network"
-msgid_plural "Wireless Networks"
-msgstr[0] "Безжична мрежа"
-msgstr[1] "Безжични мрежи"
-
-#: ../gnome/applet/menu-items.c:343
-msgid " (invalid Unicode)"
-msgstr " (невалиден Уникод)"
-
-#: ../gnome/applet/other-network-dialog.c:352
-#, c-format
-msgid ""
-"By default, the wireless network's name is set to your computer's name, %s, "
-"with no encryption enabled"
-msgstr ""
-"По подразбиране името на безжичната мрежа е името на компютъра ви, „%s“, без "
-"шифриране"
-
-#: ../gnome/applet/other-network-dialog.c:358
-msgid "Create new wireless network"
-msgstr "Създаване на нова безжична мрежа"
-
-#: ../gnome/applet/other-network-dialog.c:359
-msgid ""
-"Enter the name and security settings of the wireless network you wish to "
-"create."
-msgstr ""
-"Въведете името и настройките на сигурността на безжичната мрежа, която "
-"искате да създадете."
-
-#: ../gnome/applet/other-network-dialog.c:363
-msgid "Create New Wireless Network"
-msgstr "Създаване на нова безжична мрежа"
-
-#: ../gnome/applet/other-network-dialog.c:368
-msgid "Existing wireless network"
-msgstr "Съществуваща безжична мрежа"
-
-#: ../gnome/applet/other-network-dialog.c:369
-msgid "Enter the name of the wireless network to which you wish to connect."
-msgstr "Въведете името на безжичната мрежа, към която искате да се свържете."
-
-#: ../gnome/applet/other-network-dialog.c:371
-msgid "Connect to Other Wireless Network"
-msgstr "Свързване към друга безжична мрежа"
-
-#: ../gnome/applet/passphrase-dialog.c:215
-msgid "Error connecting to wireless network"
-msgstr "Грешка при свързване към друга безжична мрежа"
-
-#: ../gnome/applet/passphrase-dialog.c:216
-msgid ""
-"The requested wireless network requires security capabilities unsupported by "
-"your hardware."
-msgstr "Хардуерът ви не поддържа изискванията на поисканата безжична мрежа."
-
-#: ../gnome/applet/vpn-password-dialog.c:151
-#: ../gnome/applet/vpn-password-dialog.c:188
-#, c-format
-msgid "Cannot start VPN connection '%s'"
-msgstr "Връзката към ВЧМ „%s“ не може да бъде стартирана"
-
-#: ../gnome/applet/vpn-password-dialog.c:154
-#, c-format
-msgid ""
-"Could not find the authentication dialog for VPN connection type '%s'. "
-"Contact your system administrator."
-msgstr ""
-"Диалоговата кутия за идентификация пред ВЧМ „%s“ не може да бъде открита. "
-"Свържете се със системния администратор."
-
-#: ../gnome/applet/vpn-password-dialog.c:191
-#, c-format
-msgid ""
-"There was a problem launching the authentication dialog for VPN connection "
-"type '%s'. Contact your system administrator."
-msgstr ""
-"Имаше проблем с показването на диалоговата кутия за идентификация пред ВЧМ „%"
-"s“. Свържете се със системния администратор."
-
-#: ../gnome/applet/applet.glade.h:1
-msgid " "
-msgstr " "
-
-#: ../gnome/applet/applet.glade.h:2
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">Информация за действащата връзка</span>"
-
-#: ../gnome/applet/applet.glade.h:4
-#, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
-"Network</span>\n"
-"\n"
-"A passphrase or encryption key is required to access the wireless network '%"
-"s'."
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">Безжичната мрежа изисква парола</"
-"span>\n"
-"\n"
-"Необходима е парола или ключ за шифриране, за да се свържете с безжичната "
-"мрежа „%s“."
-
-#: ../gnome/applet/applet.glade.h:8
-#, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</span>\n"
-"\n"
-"%s  It will not be completely functional."
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">Ограничена функционалност на мрежата</"
-"span>\n"
-"\n"
-"%s няма да функционира изцяло."
-
-#: ../gnome/applet/applet.glade.h:12
-#, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Wireless Network Login Confirmation</"
-"span>\n"
-"\n"
-"You have chosen to log in to the wireless network '%s'.  If you are sure "
-"that this wireless network is secure, click the checkbox below and "
-"NetworkManager will not require confirmation on subsequent log ins."
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">Потвърждение за свързване към безжична "
-"мрежа</span>\n"
-"\n"
-"Избрали сте да се свържете към безжичната мрежа „%s“. Ако сте уверени, че тя "
-"е сигурна и можете да й се доверите, задайте настройката отдолу и "
-"NetworkManager няма да ви иска потвърждения при следващи влизания."
-
-#: ../gnome/applet/applet.glade.h:15
-msgid "Anonymous Identity:"
-msgstr "Анонимна идентичност:"
-
-#: ../gnome/applet/applet.glade.h:16
-msgid "Authentication:"
-msgstr "Идентификация:"
-
-#: ../gnome/applet/applet.glade.h:17
-msgid "Broadcast Address:"
-msgstr "Адрес за разпръскване:"
-
-#: ../gnome/applet/applet.glade.h:18
-msgid "CA Certificate File:"
-msgstr "Файл със сертификатите на сертифициращите организации:"
-
-#: ../gnome/applet/applet.glade.h:19
-msgid "C_onnect"
-msgstr "_Свързване"
-
-#: ../gnome/applet/applet.glade.h:20
-msgid "Client Certificate File:"
-msgstr "Файл с клиентските сертификати:"
-
-#: ../gnome/applet/applet.glade.h:21
-msgid "Connection Information"
-msgstr "Информация за връзката"
-
-#: ../gnome/applet/applet.glade.h:22
-msgid "Default Route:"
-msgstr "Маршрут по подразбиране:"
-
-#: ../gnome/applet/applet.glade.h:23
-msgid "Destination Address:"
-msgstr "Целеви адрес:"
-
-#: ../gnome/applet/applet.glade.h:24
-msgid "Driver:"
-msgstr "Драйвер:"
-
-#: ../gnome/applet/applet.glade.h:25
-msgid "EAP Method:"
-msgstr "Метод за EAP:"
-
-#: ../gnome/applet/applet.glade.h:26
-msgid "Hardware Address:"
-msgstr "Хардуерен адрес:"
-
-#: ../gnome/applet/applet.glade.h:27
-msgid "IP Address:"
-msgstr "IP адрес:"
-
-#: ../gnome/applet/applet.glade.h:28
-msgid "Identity:"
-msgstr "Идентичност:"
-
-#: ../gnome/applet/applet.glade.h:29
-msgid "Interface:"
-msgstr "Интерфейс:"
-
-#: ../gnome/applet/applet.glade.h:30
-msgid "Key Type:"
-msgstr "Вид ключ:"
-
-#: ../gnome/applet/applet.glade.h:31
-msgid "Key management:"
-msgstr "Управление на ключове:"
-
-#: ../gnome/applet/applet.glade.h:32
-msgid "Key:"
-msgstr "Ключ:"
-
-#: ../gnome/applet/applet.glade.h:33
-msgid ""
-"None\n"
-"WEP 128-bit Passphrase\n"
-"WEP 64/128-bit Hex\n"
-"WEP 64/128-bit ASCII\n"
-msgstr ""
-"Няма\n"
-"128 битова парола WEP\n"
-"40/128-битов шестнадесетичен ключ за WEP\n"
-"40/128-битов ключ за WEP в ASCII\n"
-
-#: ../gnome/applet/applet.glade.h:38
-msgid ""
-"Open System\n"
-"Shared Key"
-msgstr ""
-"Открита система\n"
-"Споделен ключ"
-
-#: ../gnome/applet/applet.glade.h:40
-msgid "Other Wireless Network..."
-msgstr "Друга безжична мрежа..."
-
-#: ../gnome/applet/applet.glade.h:41
-msgid "Passphrase:"
-msgstr "Парола:"
-
-#: ../gnome/applet/applet.glade.h:42
-msgid "Password:"
-msgstr "Парола:"
-
-#: ../gnome/applet/applet.glade.h:43
-msgid "Primary DNS:"
-msgstr "Основен сървър за DNS:"
-
-#: ../gnome/applet/applet.glade.h:44
-msgid "Private Key File:"
-msgstr "Файл с частните ключове:"
-
-#: ../gnome/applet/applet.glade.h:45
-msgid "Private Key Password:"
-msgstr "Парола за частния ключ:"
-
-#: ../gnome/applet/applet.glade.h:46
-msgid "Secondary DNS:"
-msgstr "Допълнителен сървър за DNS:"
-
-#: ../gnome/applet/applet.glade.h:47
-msgid "Select the CA Certificate File"
-msgstr "Избор на файла със сертификатите на сертифициращите организации"
-
-#: ../gnome/applet/applet.glade.h:48
-msgid "Select the Client Certificate File"
-msgstr "Избор на файла с клиентските сертификати"
-
-#: ../gnome/applet/applet.glade.h:49
-msgid "Select the Private Key File"
-msgstr "Избор на файла с частните ключове"
-
-#: ../gnome/applet/applet.glade.h:50
-msgid "Show key"
-msgstr "Показване на ключа"
-
-#: ../gnome/applet/applet.glade.h:51
-msgid "Show passphrase"
-msgstr "Показване на паролата"
-
-#: ../gnome/applet/applet.glade.h:52
-msgid "Show password"
-msgstr "Показване на паролата"
-
-#: ../gnome/applet/applet.glade.h:53
-msgid "Show passwords"
-msgstr "Показване на паролите"
-
-#: ../gnome/applet/applet.glade.h:54
-msgid "Speed:"
-msgstr "Скорост:"
-
-#: ../gnome/applet/applet.glade.h:55
-msgid "Subnet Mask:"
-msgstr "Маска на подмрежата:"
-
-#: ../gnome/applet/applet.glade.h:56
-msgid "Type:"
-msgstr "Вид:"
-
-#: ../gnome/applet/applet.glade.h:57
-msgid "User Name:"
-msgstr "Потребителско име:"
-
-#: ../gnome/applet/applet.glade.h:58
-msgid "Wireless Network Key Required"
-msgstr "Необходим е ключ за безжична мрежа"
-
-#: ../gnome/applet/applet.glade.h:59
-msgid "Wireless _adapter:"
-msgstr "Безжичен _адаптер:"
-
-#: ../gnome/applet/applet.glade.h:60
-msgid "_Always Trust this Wireless Network"
-msgstr "_Постоянно доверие на тази безжична мрежа"
-
-#: ../gnome/applet/applet.glade.h:61
-msgid "_Don't remind me again"
-msgstr "_Да няма нови напомняния"
-
-#: ../gnome/applet/applet.glade.h:62
-msgid "_Fallback on this Network"
-msgstr "Тази мрежа да е и _резервна"
-
-#: ../gnome/applet/applet.glade.h:63
-msgid "_Login to Network"
-msgstr "_Свързване към мрежа"
-
-#: ../gnome/applet/applet.glade.h:64
-msgid "_Network Name:"
-msgstr "_Име на мрежа:"
-
-#: ../gnome/applet/applet.glade.h:65
-msgid "_Wireless Security:"
-msgstr "_Безжична сигурност:"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:417
-msgid "Cannot add VPN connection"
-msgstr "Не може да се добави връзка към ВЧМ"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:419
-msgid ""
-"No suitable VPN software was found on your system. Contact your system "
-"administrator."
-msgstr ""
-"Не е открит подходящ софтуер за ВЧМ. Свържете се със системния администратор."
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:461
-msgid "Cannot import VPN connection"
-msgstr "Връзката към ВЧМ не може да се внесе"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:463
-#, c-format
-msgid ""
-"Cannot find suitable software for VPN connection type '%s' to import the "
-"file '%s'. Contact your system administrator."
-msgstr ""
-"Файлът „%2$s“ не може да се внесе, защото не може да се открие подходящ "
-"софтуер за връзка към ВЧМ от вида „%1$s“. Свържете се със системния "
-"администратор."
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:580
-#, c-format
-msgid "Error retrieving VPN connection '%s'"
-msgstr "Грешка при получаване на информация за връзката към ВЧМ „%s“"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:583
-#, c-format
-msgid ""
-"Could not find the UI files for VPN connection type '%s'. Contact your "
-"system administrator."
-msgstr ""
-"Файловете с описание на графичния интерфейс за връзки към ВЧМ от вида „%s“ "
-"не могат да бъдат открити. Свържете се със системния администратор."
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:727
-#, c-format
-msgid "Delete VPN connection \"%s\"?"
-msgstr "Да се изтрие ли връзката към ВЧМ „%s“?"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:730
-#, c-format
-msgid ""
-"All information about the VPN connection \"%s\" will be lost and you may "
-"need your system administrator to provide information to create a new "
-"connection."
-msgstr ""
-"Цялата информация за връзката към ВЧМ „%s“ ще бъде изтрита и може да се "
-"наложи да я искате наново от системния администратор, ако искате да я "
-"създадете наново."
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:924
-msgid "Unable to load"
-msgstr "Неуспех при зареждане"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.c:926
-msgid "Cannot find some needed resources (the glade file)!"
-msgstr "Някои ресурси не бяха открити (файлът на glade)!"
-
-#. druid_window = GTK_DIALOG (gtk_dialog_new_with_buttons (_("Create VPN Connection"),
-#. NULL,
-#. GTK_DIALOG_MODAL | GTK_DIALOG_DESTROY_WITH_PARENT,
-#. GTK_STOCK_CANCEL,
-#. GTK_RESPONSE_REJECT,
-#. GTK_STOCK_APPLY,
-#. GTK_RESPONSE_ACCEPT,
-#. NULL));
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1081
-msgid "Create VPN Connection"
-msgstr "Създаване на връзка към ВЧМ"
-
-#. gtk_container_add (GTK_CONTAINER (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")));
-#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(druid), TRUE,TRUE,0);
-#. gtk_box_pack_start (GTK_BOX (druid_window->vbox), GTK_WIDGET(gtk_label_new("Some label")), TRUE,TRUE,0);
-#. toplevel = gtk_widget_get_toplevel (GTK_WIDGET (druid));
-#. gtk_signal_connect (GTK_OBJECT (toplevel), "delete_event", GTK_SIGNAL_FUNC (vpn_window_close), NULL);
-#. make the druid window modal wrt. our main window
-#. gtk_window_set_modal (druid_window, TRUE);
-#. gtk_window_set_transient_for (GTK_WINDOW(druid_window), GTK_WINDOW (dialog));
-#. Edit dialog
-#: ../gnome/vpn-properties/nm-vpn-properties.c:1099
-msgid "Edit VPN Connection"
-msgstr "Редактиране на връзка към ВЧМ"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:1
-msgid "Add a new VPN connection"
-msgstr "Добавяне на нова връзка към ВЧМ"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:2
-msgid "Delete the selected VPN connection"
-msgstr "Изтриване на избраната връзка към ВЧМ"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:3
-msgid "E_xport"
-msgstr "_Изнасяне"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:4
-msgid "Edit the selected VPN connection"
-msgstr "Редактиране на избраната връзка към ВЧМ"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:5
-msgid "Export the VPN settings to a file"
-msgstr "Изнасяне на настройките за ВЧМ във файл"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:6
-msgid "Export the selected VPN connection to a file"
-msgstr "Изнасяне на избраната връзка към ВЧМ във файл"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:7
-msgid "Manage Virtual Private Network Connections"
-msgstr "Управление на връзките към ВЧМ"
-
-#: ../gnome/vpn-properties/nm-vpn-properties.glade.h:8
-msgid "VPN Connections"
-msgstr "Връзки към ВЧМ"
-
-#: ../src/nm-ap-security-wep.c:52
-msgid "40-bit WEP"
-msgstr "40-битов WEP"
-
-#: ../src/nm-ap-security-wep.c:54
-msgid "104-bit WEP"
-msgstr "104-битов WEP"
-
-#: ../src/nm-ap-security-wpa-psk.c:51
-msgid "WPA TKIP"
-msgstr "WPA TKIP"
-
-#: ../src/nm-ap-security-wpa-psk.c:53
-msgid "WPA CCMP"
-msgstr "WPA CCMP"
-
-#: ../src/nm-ap-security-wpa-psk.c:55
-msgid "WPA Automatic"
-msgstr "Автоматичен WPA"
-
-#: ../src/nm-ap-security-wpa-psk.c:60
-msgid "WPA2 TKIP"
-msgstr "WPA2 TKIP"
-
-#: ../src/nm-ap-security-wpa-psk.c:62
-msgid "WPA2 CCMP"
-msgstr "WPA2 CCMP"
-
-#: ../src/nm-ap-security-wpa-psk.c:64
-msgid "WPA2 Automatic"
-msgstr "Автоматичен WPA2"
-
-#: ../src/nm-ap-security.c:334
-msgid "none"
-msgstr "липсва"
-
-#: ../src/nm-netlink-monitor.c:174
-#, c-format
-msgid ""
-"unable to create netlink socket for monitoring wired ethernet devices - %s"
+#: ../src/nm-netlink-monitor.c:250
+#, fuzzy, c-format
+msgid "unable to allocate netlink handle for monitoring link status: %s"
 msgstr ""
 "неуспешно създаване на мрежово гнездо за наблюдение на устройства за кабелен "
 "Етернет - %s"
 
-#: ../src/nm-netlink-monitor.c:192
-#, c-format
-msgid ""
-"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
+#: ../src/nm-netlink-monitor.c:260
+#, fuzzy, c-format
+msgid "unable to connect to netlink for monitoring link status: %s"
 msgstr ""
 "неуспешно свързване към мрежовото гнездо за наблюдение на устройства за "
 "кабелен Етернет - %s"
 
-#: ../src/nm-netlink-monitor.c:427
-msgid "operation took too long"
-msgstr "операцията продължи прекалено дълго"
-
-#: ../src/nm-netlink-monitor.c:524
-msgid "received data from wrong type of sender"
-msgstr "получени са данни от неправилен вид изпращач"
-
-#: ../src/nm-netlink-monitor.c:537
-msgid "received data from unexpected sender"
-msgstr "получени са данни от неочакван изпращач"
-
-#: ../src/nm-netlink-monitor.c:666
-msgid "too much data was sent over socket and some of it was lost"
+#: ../src/nm-netlink-monitor.c:268
+#, fuzzy, c-format
+msgid "unable to join netlink group for monitoring link status: %s"
 msgstr ""
-"през гнездото са получени прекалено много данни и някои от тях са загубени"
+"неуспешно свързване към мрежовото гнездо за наблюдение на устройства за "
+"кабелен Етернет - %s"
 
-#: ../src/nm-netlink-monitor.c:774
+#: ../src/nm-netlink-monitor.c:276
+#, fuzzy, c-format
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
+msgstr ""
+"неуспешно създаване на мрежово гнездо за наблюдение на устройства за кабелен "
+"Етернет - %s"
+
+#: ../src/nm-netlink-monitor.c:494
+#, c-format
 msgid "error occurred while waiting for data on socket"
 msgstr "грешка при изчакване за данни през гнездо"
 
-#: ../gnome/applet/applet-dbus-devices.c:930
+#: ../src/NetworkManager.c:250
 #, c-format
-msgid "You are now connected to the Ad-Hoc wireless network '%s'."
-msgstr "Свързали сте се към инцидентната, безжична мрежа „%s“."
+msgid "Invalid option.  Please use --help to see a list of valid options.\n"
+msgstr ""
 
-#: ../gnome/applet/applet-dbus-devices.c:935
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:87
+msgid "# Created by NetworkManager\n"
+msgstr ""
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:93
 #, c-format
-msgid "You are now connected to the wireless network '%s'."
-msgstr "Свързани сте към безжичната мрежа „%s“."
+msgid ""
+"# Merged from %s\n"
+"\n"
+msgstr ""
 
-#: ../gnome/applet/applet-dbus-devices.c:942
-msgid "You are now connected to the wired network."
-msgstr "Свързани сте към кабелната мрежа."
+#: ../src/named-manager/nm-named-manager.c:117
+msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
+msgstr ""
 
-#: ../gnome/applet/applet-dbus-devices.c:948
-msgid "Connection Established"
-msgstr "Връзката е осъществена"
+#: ../src/named-manager/nm-named-manager.c:119
+msgid "The nameservers listed below may not be recognized."
+msgstr ""
 
-#: ../gnome/applet/applet-dbus-devices.c:997
-msgid "Disconnected"
-msgstr "Без връзка"
+#: ../system-settings/src/main.c:365
+#, c-format
+msgid "Auto %s"
+msgstr ""
 
-#: ../gnome/applet/applet-dbus-devices.c:998
-msgid "The network connection has been disconnected."
-msgstr "Връзката към мрежата е прекъсната."
+#: ../libnm-util/crypto.c:125
+#, c-format
+msgid "PEM key file had no end tag '%s'."
+msgstr ""
 
-#: ../src/nm-ap-security-leap.c:66 ../src/nm-ap-security-leap.c:82
-msgid "LEAP"
-msgstr "LEAP"
+#: ../libnm-util/crypto.c:135
+#, c-format
+msgid "Doesn't look like a PEM private key file."
+msgstr ""
+
+#: ../libnm-util/crypto.c:143
+#, c-format
+msgid "Not enough memory to store PEM file data."
+msgstr ""
+
+#: ../libnm-util/crypto.c:159
+#, c-format
+msgid "Malformed PEM file: Proc-Type was not first tag."
+msgstr ""
+
+#: ../libnm-util/crypto.c:167
+#, c-format
+msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
+msgstr ""
+
+#: ../libnm-util/crypto.c:177
+#, c-format
+msgid "Malformed PEM file: DEK-Info was not the second tag."
+msgstr ""
+
+#: ../libnm-util/crypto.c:188
+#, c-format
+msgid "Malformed PEM file: no IV found in DEK-Info tag."
+msgstr ""
+
+#: ../libnm-util/crypto.c:195
+#, c-format
+msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
+msgstr ""
+
+#: ../libnm-util/crypto.c:208
+#, c-format
+msgid "Malformed PEM file: unknown private key cipher '%s'."
+msgstr ""
+
+#: ../libnm-util/crypto.c:227
+#, c-format
+msgid "Could not decode private key."
+msgstr ""
+
+#: ../libnm-util/crypto.c:271
+#, c-format
+msgid "PEM certificate '%s' had no end tag '%s'."
+msgstr ""
+
+#: ../libnm-util/crypto.c:281
+#, c-format
+msgid "Failed to decode certificate."
+msgstr ""
+
+#: ../libnm-util/crypto.c:290 ../libnm-util/crypto.c:298
+#, c-format
+msgid "Not enough memory to store certificate data."
+msgstr ""
+
+#: ../libnm-util/crypto.c:328
+#, c-format
+msgid "IV must be an even number of bytes in length."
+msgstr ""
+
+#: ../libnm-util/crypto.c:337
+#, c-format
+msgid "Not enough memory to store the IV."
+msgstr ""
+
+#: ../libnm-util/crypto.c:348
+#, c-format
+msgid "IV contains non-hexadecimal digits."
+msgstr ""
+
+#: ../libnm-util/crypto.c:386 ../libnm-util/crypto_gnutls.c:126
+#: ../libnm-util/crypto_nss.c:136
+#, c-format
+msgid "Private key cipher '%s' was unknown."
+msgstr ""
+
+#: ../libnm-util/crypto.c:395
+#, c-format
+msgid "Not enough memory to create private key decryption key."
+msgstr ""
+
+#: ../libnm-util/crypto.c:513
+#, c-format
+msgid "Not enough memory to store decrypted private key."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:73
+#, c-format
+msgid "Failed to initialize the MD5 engine: %s / %s."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:135 ../libnm-util/crypto_nss.c:145
+#, c-format
+msgid "Not enough memory for decrypted key buffer."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:143
+#, c-format
+msgid "Failed to initialize the decryption cipher context: %s / %s."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:152
+#, c-format
+msgid "Failed to set symmetric key for decryption: %s / %s."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:161
+#, c-format
+msgid "Failed to set IV for decryption: %s / %s."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:170
+#, c-format
+msgid "Failed to decrypt the private key: %s / %s."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:208
+#, c-format
+msgid "Error initializing certificate data: %s"
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:220
+#, c-format
+msgid "Couldn't decode certificate: %s"
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:78
+#, c-format
+msgid "Failed to initialize the MD5 context: %d."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:153
+#, c-format
+msgid "Failed to initialize the decryption cipher slot."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:163
+#, c-format
+msgid "Failed to set symmetric key for decryption."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:173
+#, c-format
+msgid "Failed to set IV for decryption."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:181
+#, c-format
+msgid "Failed to initialize the decryption context."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:194
+#, c-format
+msgid "Failed to decrypt the private key: %d."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:206
+#, c-format
+msgid "Failed to finalize decryption of the private key: %d."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:250
+#, c-format
+msgid "Couldn't decode certificate: %d"
+msgstr ""
+
+#~ msgid "Passphrase for wireless network %s"
+#~ msgstr "Парола за безжичната мрежа %s"
+
+#~ msgid "Connection to the wireless network '%s' failed."
+#~ msgstr "Неуспешно свързване към безжичната мрежа „%s“."
+
+#~ msgid "Connection to the wired network failed."
+#~ msgstr "Неуспешно свързване към кабелната мрежа."
+
+#~ msgid "Error displaying connection information:"
+#~ msgstr "Грешка при показване на информацията за връзката:"
+
+#~ msgid "Could not find some required resources (the glade file)!"
+#~ msgstr "Някои ресурси не бяха открити (файлът на glade)!"
+
+#~ msgid "No active connections!"
+#~ msgstr "Няма действащи връзки!"
+
+#~ msgid "%d Mb/s"
+#~ msgstr "%d Mb/s"
+
+#~ msgid "Wired Ethernet (%s)"
+#~ msgstr "Кабелен Етернет (%s)"
+
+#~ msgid "Wireless Ethernet (%s)"
+#~ msgstr "Безжичен Етернет (%s)"
+
+#~ msgid "Unknown"
+#~ msgstr "неопределима"
+
+#~ msgid "NetworkManager Applet"
+#~ msgstr "Аплетът NetworkManager"
+
+#~ msgid ""
+#~ "Copyright © 2004-2006 Red Hat, Inc.\n"
+#~ "Copyright © 2005-2006 Novell, Inc."
+#~ msgstr ""
+#~ "Авторски права © 2004-2006 Red Hat, Inc.\n"
+#~ "Авторски права © 2004-2006 Novell, Inc."
+
+#~ msgid ""
+#~ "Notification area applet for managing your network devices and "
+#~ "connections."
+#~ msgstr ""
+#~ "Аплет за областта за уведомяване за управление на мрежовите устройства и "
+#~ "връзки."
+
+#~ msgid "translator-credits"
+#~ msgstr ""
+#~ "Александър Шопов <ash@contact.bg>\n"
+#~ "\n"
+#~ "Проектът за превод на GNOME има нужда от подкрепа.\n"
+#~ "Научете повече за нас на http://gnome.cult.bg\n"
+#~ "Докладвайте за грешки на http://gnome.cult.bg/bugs<"
+
+#~ msgid ""
+#~ "Copyright © 2004-2005 Red Hat, Inc.\n"
+#~ "Copyright © 2005-2006 Novell, Inc."
+#~ msgstr ""
+#~ "Авторски права © 2004-2005 Red Hat, Inc.\n"
+#~ "Авторски права © 2005-2006 Novell, Inc."
+
+#~ msgid "VPN Login Failure"
+#~ msgstr "Грешка при идентификация пред ВЧМ"
+
+#~ msgid "Could not start the VPN connection '%s' due to a login failure."
+#~ msgstr ""
+#~ "Неуспех при осъществяването на връзката към ВЧМ „%s“ поради грешка в "
+#~ "идентификацията."
+
+#~ msgid "VPN Start Failure"
+#~ msgstr "Грешка при стартиране на ВЧМ"
+
+#~ msgid ""
+#~ "Could not start the VPN connection '%s' due to a failure launching the "
+#~ "VPN program."
+#~ msgstr ""
+#~ "Връзката към ВЧМ „%s“ се провали поради грешка при стартиране на "
+#~ "програмата за ВЧМ."
+
+#~ msgid "VPN Connect Failure"
+#~ msgstr "Грешка при свързване към ВЧМ"
+
+#~ msgid "Could not start the VPN connection '%s' due to a connection error."
+#~ msgstr "Връзката към ВЧМ „%s“ се провали поради грешка при свързването."
+
+#~ msgid "VPN Configuration Error"
+#~ msgstr "Грешка в настройките на ВЧМ"
+
+#~ msgid "The VPN connection '%s' was not correctly configured."
+#~ msgstr "Връзката към ВЧМ „%s“ е с неправилни настройки."
+
+#~ msgid ""
+#~ "Could not start the VPN connection '%s' because the VPN server did not "
+#~ "return an adequate network configuration."
+#~ msgstr ""
+#~ "Връзката към ВЧМ „%s“ се провали, защото настройките на мрежата върнати "
+#~ "от сървъра за ВЧМ бяха неправилни."
+
+#~ msgid "VPN Login Message"
+#~ msgstr "Съобщение при идентификация пред ВЧМ"
+
+#~ msgid ""
+#~ "The NetworkManager Applet could not find some required resources (the "
+#~ "glade file was not found)."
+#~ msgstr ""
+#~ "Аплетът NetworkManager не можа да открие някои задължителни ресурси "
+#~ "(файлът на glade)."
+
+#~ msgid "The network device \"%s (%s)\" does not support wireless scanning."
+#~ msgstr "Мрежовото устройство „%s (%s)“ не поддържа безжично претърсване."
+
+#~ msgid "The network device \"%s (%s)\" does not support link detection."
+#~ msgstr "Мрежовото устройство „%s (%s)“ не поддържа засичане на връзка."
+
+#~ msgid "(unknown)"
+#~ msgstr "(не се знае)"
+
+#~ msgid "Preparing device %s for the wired network..."
+#~ msgstr "Подготвяне на устройството „%s“ за кабелната мрежа..."
+
+#~ msgid "Preparing device %s for the wireless network '%s'..."
+#~ msgstr "Подготвяне на устройството „%s“ за безжичната мрежа „%s“..."
+
+#~ msgid "Configuring device %s for the wired network..."
+#~ msgstr "Настройване на устройството „%s“ за кабелната мрежа..."
+
+#~ msgid "Attempting to join the wireless network '%s'..."
+#~ msgstr "Опит за свързване към безжичната мрежа „%s“..."
+
+#~ msgid "Waiting for Network Key for the wireless network '%s'..."
+#~ msgstr "Изчакване за мрежовия ключ за безжичната мрежа „%s“..."
+
+#~ msgid "Requesting a network address from the wired network..."
+#~ msgstr "Запитване на кабелната мрежа за адрес..."
+
+#~ msgid "Requesting a network address from the wireless network '%s'..."
+#~ msgstr "Запитване на безжичната мрежа „%s“ за адрес..."
+
+#~ msgid "Finishing connection to the wired network..."
+#~ msgstr "Завършване на връзката към кабелната мрежа..."
+
+#~ msgid "Finishing connection to the wireless network '%s'..."
+#~ msgstr "Завършване на връзката към безжичната мрежа „%s“..."
+
+#~ msgid "NetworkManager is not running"
+#~ msgstr "NetworkManager не е включен"
+
+#~ msgid "Networking disabled"
+#~ msgstr "Мрежата е изключена"
+
+#~ msgid "No network connection"
+#~ msgstr "Няма връзка към мрежа"
+
+#~ msgid "Wired network connection"
+#~ msgstr "Връзка към кабелна мрежа"
+
+#~ msgid "Connected to an Ad-Hoc wireless network"
+#~ msgstr "Връзка към инцидентна, безжична мрежа"
+
+#~ msgid "Wireless network connection to '%s' (%d%%)"
+#~ msgstr "Безжична връзка към „%s“ (%d%%)"
+
+#~ msgid "VPN connection to '%s'"
+#~ msgstr "Връзка по ВЧМ към „%s“"
+
+#~ msgid "VPN connecting to '%s'"
+#~ msgstr "Свързване по ВЧМ към „%s“"
+
+#~ msgid "_Connect to Other Wireless Network..."
+#~ msgstr "_Свързване към други безжични мрежи..."
+
+#~ msgid "Create _New Wireless Network..."
+#~ msgstr "Създаване на _нова безжична мрежа..."
+
+#~ msgid "_VPN Connections"
+#~ msgstr "_Връзки по ВЧМ"
+
+#~ msgid "_Configure VPN..."
+#~ msgstr "_Настройване на ВЧМ..."
+
+#~ msgid "_Disconnect VPN..."
+#~ msgstr "_Прекъсване на ВЧМ..."
+
+#~ msgid "_Dial Up Connections"
+#~ msgstr "_Връзки по телефонна линия"
+
+#~ msgid "Connect to %s..."
+#~ msgstr "Свързване към %s..."
+
+#~ msgid "Disconnect from %s..."
+#~ msgstr "Прекъсване на връзката към %s..."
+
+#~ msgid "No network devices have been found"
+#~ msgstr "Не са открити мрежови устройства"
+
+#~ msgid "NetworkManager is not running..."
+#~ msgstr "NetworkManager не е включен..."
+
+#~ msgid "Enable _Networking"
+#~ msgstr "_Включване на мрежата"
+
+#~ msgid "Enable _Wireless"
+#~ msgstr "Включване на _безжичната мрежа"
+
+#~ msgid "Connection _Information"
+#~ msgstr "_Информация за връзката"
+
+#~ msgid "_Help"
+#~ msgstr "_Помощ"
+
+#~ msgid "_About"
+#~ msgstr "_Относно"
+
+#~ msgid ""
+#~ "The NetworkManager applet could not find some required resources.  It "
+#~ "cannot continue.\n"
+#~ msgstr ""
+#~ "Аплетът NetworkManager не може да открие необходим ресурс. Програмата не "
+#~ "може да продължи работа.\n"
+
+#~ msgid "Open System"
+#~ msgstr "Открита система"
+
+#~ msgid "Shared Key"
+#~ msgstr "Споделен ключ"
+
+#~ msgid "Automatic (Default)"
+#~ msgstr "Автоматично (по подразбиране)"
+
+#~ msgid "AES-CCMP"
+#~ msgstr "AES-CCMP"
+
+#~ msgid "TKIP"
+#~ msgstr "TKIP"
+
+#~ msgid "Dynamic WEP"
+#~ msgstr "Динамичен WEP"
+
+#~ msgid "None"
+#~ msgstr "Без"
+
+#~ msgid "WEP 64/128-bit ASCII"
+#~ msgstr "40/128-битов ключ за WEP в ASCII"
+
+#~ msgid "WEP 64/128-bit Hex"
+#~ msgstr "40/128-битов шестнадесетичен ключ за WEP"
+
+#~ msgid "WEP 128-bit Passphrase"
+#~ msgstr "128 битова парола WEP"
+
+#~ msgid "PEAP"
+#~ msgstr "PEAP"
+
+#~ msgid "TLS"
+#~ msgstr "TLS"
+
+#~ msgid "TTLS"
+#~ msgstr "TTLS"
+
+#~ msgid "WPA2 Enterprise"
+#~ msgstr "WPA2 Enterprise"
+
+#~ msgid "WPA Enterprise"
+#~ msgstr "WPA Enterprise"
+
+#~ msgid "WPA2 Personal"
+#~ msgstr "WPA2 Personal"
+
+#~ msgid "WPA Personal"
+#~ msgstr "WPA Personal"
+
+#~ msgid "Orientation"
+#~ msgstr "Ориентация"
+
+#~ msgid "The orientation of the tray."
+#~ msgstr "Ориентацията на тавата"
+
+#~ msgid "Wired Network (%s)"
+#~ msgstr "Кабелна мрежа (%s)"
+
+#~ msgid "_Wired Network"
+#~ msgstr "_Кабелна мрежа"
+
+#~ msgid "Wireless Network (%s)"
+#~ msgid_plural "Wireless Networks (%s)"
+#~ msgstr[0] "Безжична мрежа (%s)"
+#~ msgstr[1] "Безжични мрежи (%s)"
+
+#~ msgid "Wireless Network"
+#~ msgid_plural "Wireless Networks"
+#~ msgstr[0] "Безжична мрежа"
+#~ msgstr[1] "Безжични мрежи"
+
+#~ msgid " (invalid Unicode)"
+#~ msgstr " (невалиден Уникод)"
+
+#~ msgid ""
+#~ "By default, the wireless network's name is set to your computer's name, %"
+#~ "s, with no encryption enabled"
+#~ msgstr ""
+#~ "По подразбиране името на безжичната мрежа е името на компютъра ви, „%s“, "
+#~ "без шифриране"
+
+#~ msgid "Create new wireless network"
+#~ msgstr "Създаване на нова безжична мрежа"
+
+#~ msgid ""
+#~ "Enter the name and security settings of the wireless network you wish to "
+#~ "create."
+#~ msgstr ""
+#~ "Въведете името и настройките на сигурността на безжичната мрежа, която "
+#~ "искате да създадете."
+
+#~ msgid "Create New Wireless Network"
+#~ msgstr "Създаване на нова безжична мрежа"
+
+#~ msgid "Existing wireless network"
+#~ msgstr "Съществуваща безжична мрежа"
+
+#~ msgid "Enter the name of the wireless network to which you wish to connect."
+#~ msgstr ""
+#~ "Въведете името на безжичната мрежа, към която искате да се свържете."
+
+#~ msgid "Connect to Other Wireless Network"
+#~ msgstr "Свързване към друга безжична мрежа"
+
+#~ msgid "Error connecting to wireless network"
+#~ msgstr "Грешка при свързване към друга безжична мрежа"
+
+#~ msgid ""
+#~ "The requested wireless network requires security capabilities unsupported "
+#~ "by your hardware."
+#~ msgstr "Хардуерът ви не поддържа изискванията на поисканата безжична мрежа."
+
+#~ msgid "Cannot start VPN connection '%s'"
+#~ msgstr "Връзката към ВЧМ „%s“ не може да бъде стартирана"
+
+#~ msgid ""
+#~ "Could not find the authentication dialog for VPN connection type '%s'. "
+#~ "Contact your system administrator."
+#~ msgstr ""
+#~ "Диалоговата кутия за идентификация пред ВЧМ „%s“ не може да бъде открита. "
+#~ "Свържете се със системния администратор."
+
+#~ msgid ""
+#~ "There was a problem launching the authentication dialog for VPN "
+#~ "connection type '%s'. Contact your system administrator."
+#~ msgstr ""
+#~ "Имаше проблем с показването на диалоговата кутия за идентификация пред "
+#~ "ВЧМ „%s“. Свържете се със системния администратор."
+
+#~ msgid " "
+#~ msgstr " "
+
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Active Connection Information</span>"
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">Информация за действащата връзка</"
+#~ "span>"
+
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
+#~ "Network</span>\n"
+#~ "\n"
+#~ "A passphrase or encryption key is required to access the wireless network "
+#~ "'%s'."
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">Безжичната мрежа изисква парола</"
+#~ "span>\n"
+#~ "\n"
+#~ "Необходима е парола или ключ за шифриране, за да се свържете с безжичната "
+#~ "мрежа „%s“."
+
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Reduced Network Functionality</"
+#~ "span>\n"
+#~ "\n"
+#~ "%s  It will not be completely functional."
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">Ограничена функционалност на "
+#~ "мрежата</span>\n"
+#~ "\n"
+#~ "%s няма да функционира изцяло."
+
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Wireless Network Login "
+#~ "Confirmation</span>\n"
+#~ "\n"
+#~ "You have chosen to log in to the wireless network '%s'.  If you are sure "
+#~ "that this wireless network is secure, click the checkbox below and "
+#~ "NetworkManager will not require confirmation on subsequent log ins."
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">Потвърждение за свързване към "
+#~ "безжична мрежа</span>\n"
+#~ "\n"
+#~ "Избрали сте да се свържете към безжичната мрежа „%s“. Ако сте уверени, че "
+#~ "тя е сигурна и можете да й се доверите, задайте настройката отдолу и "
+#~ "NetworkManager няма да ви иска потвърждения при следващи влизания."
+
+#~ msgid "Anonymous Identity:"
+#~ msgstr "Анонимна идентичност:"
+
+#~ msgid "Authentication:"
+#~ msgstr "Идентификация:"
+
+#~ msgid "Broadcast Address:"
+#~ msgstr "Адрес за разпръскване:"
+
+#~ msgid "CA Certificate File:"
+#~ msgstr "Файл със сертификатите на сертифициращите организации:"
+
+#~ msgid "C_onnect"
+#~ msgstr "_Свързване"
+
+#~ msgid "Client Certificate File:"
+#~ msgstr "Файл с клиентските сертификати:"
+
+#~ msgid "Connection Information"
+#~ msgstr "Информация за връзката"
+
+#~ msgid "Default Route:"
+#~ msgstr "Маршрут по подразбиране:"
+
+#~ msgid "Destination Address:"
+#~ msgstr "Целеви адрес:"
+
+#~ msgid "Driver:"
+#~ msgstr "Драйвер:"
+
+#~ msgid "EAP Method:"
+#~ msgstr "Метод за EAP:"
+
+#~ msgid "Hardware Address:"
+#~ msgstr "Хардуерен адрес:"
+
+#~ msgid "IP Address:"
+#~ msgstr "IP адрес:"
+
+#~ msgid "Identity:"
+#~ msgstr "Идентичност:"
+
+#~ msgid "Interface:"
+#~ msgstr "Интерфейс:"
+
+#~ msgid "Key Type:"
+#~ msgstr "Вид ключ:"
+
+#~ msgid "Key management:"
+#~ msgstr "Управление на ключове:"
+
+#~ msgid "Key:"
+#~ msgstr "Ключ:"
+
+#~ msgid ""
+#~ "None\n"
+#~ "WEP 128-bit Passphrase\n"
+#~ "WEP 64/128-bit Hex\n"
+#~ "WEP 64/128-bit ASCII\n"
+#~ msgstr ""
+#~ "Няма\n"
+#~ "128 битова парола WEP\n"
+#~ "40/128-битов шестнадесетичен ключ за WEP\n"
+#~ "40/128-битов ключ за WEP в ASCII\n"
+
+#~ msgid ""
+#~ "Open System\n"
+#~ "Shared Key"
+#~ msgstr ""
+#~ "Открита система\n"
+#~ "Споделен ключ"
+
+#~ msgid "Other Wireless Network..."
+#~ msgstr "Друга безжична мрежа..."
+
+#~ msgid "Passphrase:"
+#~ msgstr "Парола:"
+
+#~ msgid "Password:"
+#~ msgstr "Парола:"
+
+#~ msgid "Primary DNS:"
+#~ msgstr "Основен сървър за DNS:"
+
+#~ msgid "Private Key File:"
+#~ msgstr "Файл с частните ключове:"
+
+#~ msgid "Private Key Password:"
+#~ msgstr "Парола за частния ключ:"
+
+#~ msgid "Secondary DNS:"
+#~ msgstr "Допълнителен сървър за DNS:"
+
+#~ msgid "Select the CA Certificate File"
+#~ msgstr "Избор на файла със сертификатите на сертифициращите организации"
+
+#~ msgid "Select the Client Certificate File"
+#~ msgstr "Избор на файла с клиентските сертификати"
+
+#~ msgid "Select the Private Key File"
+#~ msgstr "Избор на файла с частните ключове"
+
+#~ msgid "Show key"
+#~ msgstr "Показване на ключа"
+
+#~ msgid "Show passphrase"
+#~ msgstr "Показване на паролата"
+
+#~ msgid "Show password"
+#~ msgstr "Показване на паролата"
+
+#~ msgid "Show passwords"
+#~ msgstr "Показване на паролите"
+
+#~ msgid "Speed:"
+#~ msgstr "Скорост:"
+
+#~ msgid "Subnet Mask:"
+#~ msgstr "Маска на подмрежата:"
+
+#~ msgid "Type:"
+#~ msgstr "Вид:"
+
+#~ msgid "User Name:"
+#~ msgstr "Потребителско име:"
+
+#~ msgid "Wireless Network Key Required"
+#~ msgstr "Необходим е ключ за безжична мрежа"
+
+#~ msgid "Wireless _adapter:"
+#~ msgstr "Безжичен _адаптер:"
+
+#~ msgid "_Always Trust this Wireless Network"
+#~ msgstr "_Постоянно доверие на тази безжична мрежа"
+
+#~ msgid "_Don't remind me again"
+#~ msgstr "_Да няма нови напомняния"
+
+#~ msgid "_Fallback on this Network"
+#~ msgstr "Тази мрежа да е и _резервна"
+
+#~ msgid "_Login to Network"
+#~ msgstr "_Свързване към мрежа"
+
+#~ msgid "_Network Name:"
+#~ msgstr "_Име на мрежа:"
+
+#~ msgid "_Wireless Security:"
+#~ msgstr "_Безжична сигурност:"
+
+#~ msgid "Cannot add VPN connection"
+#~ msgstr "Не може да се добави връзка към ВЧМ"
+
+#~ msgid ""
+#~ "No suitable VPN software was found on your system. Contact your system "
+#~ "administrator."
+#~ msgstr ""
+#~ "Не е открит подходящ софтуер за ВЧМ. Свържете се със системния "
+#~ "администратор."
+
+#~ msgid "Cannot import VPN connection"
+#~ msgstr "Връзката към ВЧМ не може да се внесе"
+
+#~ msgid ""
+#~ "Cannot find suitable software for VPN connection type '%s' to import the "
+#~ "file '%s'. Contact your system administrator."
+#~ msgstr ""
+#~ "Файлът „%2$s“ не може да се внесе, защото не може да се открие подходящ "
+#~ "софтуер за връзка към ВЧМ от вида „%1$s“. Свържете се със системния "
+#~ "администратор."
+
+#~ msgid "Error retrieving VPN connection '%s'"
+#~ msgstr "Грешка при получаване на информация за връзката към ВЧМ „%s“"
+
+#~ msgid ""
+#~ "Could not find the UI files for VPN connection type '%s'. Contact your "
+#~ "system administrator."
+#~ msgstr ""
+#~ "Файловете с описание на графичния интерфейс за връзки към ВЧМ от вида „%"
+#~ "s“ не могат да бъдат открити. Свържете се със системния администратор."
+
+#~ msgid "Delete VPN connection \"%s\"?"
+#~ msgstr "Да се изтрие ли връзката към ВЧМ „%s“?"
+
+#~ msgid ""
+#~ "All information about the VPN connection \"%s\" will be lost and you may "
+#~ "need your system administrator to provide information to create a new "
+#~ "connection."
+#~ msgstr ""
+#~ "Цялата информация за връзката към ВЧМ „%s“ ще бъде изтрита и може да се "
+#~ "наложи да я искате наново от системния администратор, ако искате да я "
+#~ "създадете наново."
+
+#~ msgid "Unable to load"
+#~ msgstr "Неуспех при зареждане"
+
+#~ msgid "Cannot find some needed resources (the glade file)!"
+#~ msgstr "Някои ресурси не бяха открити (файлът на glade)!"
+
+#~ msgid "Create VPN Connection"
+#~ msgstr "Създаване на връзка към ВЧМ"
+
+#~ msgid "Edit VPN Connection"
+#~ msgstr "Редактиране на връзка към ВЧМ"
+
+#~ msgid "Add a new VPN connection"
+#~ msgstr "Добавяне на нова връзка към ВЧМ"
+
+#~ msgid "Delete the selected VPN connection"
+#~ msgstr "Изтриване на избраната връзка към ВЧМ"
+
+#~ msgid "E_xport"
+#~ msgstr "_Изнасяне"
+
+#~ msgid "Edit the selected VPN connection"
+#~ msgstr "Редактиране на избраната връзка към ВЧМ"
+
+#~ msgid "Export the VPN settings to a file"
+#~ msgstr "Изнасяне на настройките за ВЧМ във файл"
+
+#~ msgid "Export the selected VPN connection to a file"
+#~ msgstr "Изнасяне на избраната връзка към ВЧМ във файл"
+
+#~ msgid "Manage Virtual Private Network Connections"
+#~ msgstr "Управление на връзките към ВЧМ"
+
+#~ msgid "VPN Connections"
+#~ msgstr "Връзки към ВЧМ"
+
+#~ msgid "40-bit WEP"
+#~ msgstr "40-битов WEP"
+
+#~ msgid "104-bit WEP"
+#~ msgstr "104-битов WEP"
+
+#~ msgid "WPA TKIP"
+#~ msgstr "WPA TKIP"
+
+#~ msgid "WPA CCMP"
+#~ msgstr "WPA CCMP"
+
+#~ msgid "WPA Automatic"
+#~ msgstr "Автоматичен WPA"
+
+#~ msgid "WPA2 TKIP"
+#~ msgstr "WPA2 TKIP"
+
+#~ msgid "WPA2 CCMP"
+#~ msgstr "WPA2 CCMP"
+
+#~ msgid "WPA2 Automatic"
+#~ msgstr "Автоматичен WPA2"
+
+#~ msgid "none"
+#~ msgstr "липсва"
+
+#~ msgid "operation took too long"
+#~ msgstr "операцията продължи прекалено дълго"
+
+#~ msgid "received data from wrong type of sender"
+#~ msgstr "получени са данни от неправилен вид изпращач"
+
+#~ msgid "received data from unexpected sender"
+#~ msgstr "получени са данни от неочакван изпращач"
+
+#~ msgid "too much data was sent over socket and some of it was lost"
+#~ msgstr ""
+#~ "през гнездото са получени прекалено много данни и някои от тях са загубени"
+
+#~ msgid "You are now connected to the Ad-Hoc wireless network '%s'."
+#~ msgstr "Свързали сте се към инцидентната, безжична мрежа „%s“."
+
+#~ msgid "You are now connected to the wireless network '%s'."
+#~ msgstr "Свързани сте към безжичната мрежа „%s“."
+
+#~ msgid "You are now connected to the wired network."
+#~ msgstr "Свързани сте към кабелната мрежа."
+
+#~ msgid "Connection Established"
+#~ msgstr "Връзката е осъществена"
+
+#~ msgid "Disconnected"
+#~ msgstr "Без връзка"
+
+#~ msgid "The network connection has been disconnected."
+#~ msgstr "Връзката към мрежата е прекъсната."
+
+#~ msgid "LEAP"
+#~ msgstr "LEAP"
