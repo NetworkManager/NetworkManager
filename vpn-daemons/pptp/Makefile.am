@@ -22,10 +22,8 @@ icondir = $(datadir)/icons/hicolor/48x48/apps
 icon_DATA = gnome-mime-application-x-pptp-settings.png
 endif
 
-nm-pptp-service.name: $(srcdir)/nm-pptp-service.name.in Makefile
-	sed	-e 's|[@]BINDIR[@]|$(bindir)|g' \
-		< $(srcdir)/nm-pptp-service.name.in \
-		> nm-pptp-service.name
+nm-pptp-service.name: $(srcdir)/nm-pptp-service.name.in
+	sed -e 's|[@]LIBEXECDIR[@]|$(libexecdir)|g' $< >$@
 
 EXTRA_DIST = nm-pptp-service.name.in \
              $(dbusservice_DATA)  \

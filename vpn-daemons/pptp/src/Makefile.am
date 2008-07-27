@@ -4,7 +4,6 @@ AM_CPPFLAGS =							\
 	$(DBUS_GLIB_CFLAGS)						\
 	$(GTHREAD_CFLAGS)					\
 	$(NM_UTILS_CFLAGS)				\
-	-Wall							\
 	-DDBUS_API_SUBJECT_TO_CHANGE				\
 	-DG_DISABLE_DEPRECATED					\
 	-DBINDIR=\"$(bindir)\"					\
@@ -15,10 +14,9 @@ AM_CPPFLAGS =							\
 	-DLIBEXECDIR=\""$(libexecdir)"\"			\
 	-DLOCALSTATEDIR=\""$(localstatedir)"\"		 	\
 	-DDATADIR=\"$(datadir)\"				\
-	-DPLUGINDIR=\"$(PPPD_PLUGIN_DIR)\" \
-	-fPIC
+	-DPLUGINDIR=\"$(PPPD_PLUGIN_DIR)\" 
 
-bin_PROGRAMS = nm-pptp-service
+libexec_PROGRAMS = nm-pptp-service
 
 nm_pptp_service_SOURCES = \
 				nm-pptp-service.c \

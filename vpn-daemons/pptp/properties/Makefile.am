@@ -1,4 +1,5 @@
-lib_LTLIBRARIES = libnm-pptp-properties.la
+plugindir = $(libdir)/NetworkManager
+plugin_LTLIBRARIES = libnm-pptp-properties.la
 
 libnm_pptp_properties_la_SOURCES = \
 	nm-pptp.c \

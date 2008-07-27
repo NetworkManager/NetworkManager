@@ -1,3 +1,10 @@
+2008-07-27  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Michael Biebl <biebl@debian.org>
+
+	* Move service to $LIBEXECDIR, remove unneeded compilation flags, move
+		properties plugin to $LIBDIR/NetworkManager
+
 2008-07-21  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-pptp-service.c
