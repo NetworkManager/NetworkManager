@@ -1,5 +1,14 @@
 2008-07-27  Dan Williams  <dcbw@redhat.com>
 
+	* src/dnsmasq-manager/nm-dnsmasq-manager.c
+	  src/nm-device.c
+	  src/ppp-manager/nm-ppp-manager.c
+		- Ensure child process gets reaped.  The child watch function may be
+			removed from the mainloop before the child gets killed, so we have
+			to make sure the child is reaped when it's told to die intentionally
+
+2008-07-27  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Roy Marples <roy@marples.name>
 
 	* src/dhcp-manager/nm-dhcp-dhcpcd.c

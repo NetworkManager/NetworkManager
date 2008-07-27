@@ -737,7 +737,6 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	NMSettingPPPOE *pppoe_setting;
 	NMCmdLine *ppp_cmd;
 	char *cmd_str;
-	GSource *ppp_watch;
 
 	g_return_val_if_fail (NM_IS_PPP_MANAGER (manager), FALSE);
 	g_return_val_if_fail (device != NULL, FALSE);
@@ -775,12 +774,7 @@ nm_ppp_manager_start (NMPPPManager *manager,
 
 	nm_debug ("ppp started with pid %d", priv->pid);
 
-	ppp_watch = g_child_watch_source_new (priv->pid);
-	g_source_set_callback (ppp_watch, (GSourceFunc) ppp_watch_cb, manager, NULL);
-	g_source_attach (ppp_watch, NULL);
-	priv->ppp_watch_id = g_source_get_id (ppp_watch);
-	g_source_unref (ppp_watch);
-
+	priv->ppp_watch_id = g_child_watch_add (priv->pid, (GChildWatchFunc) ppp_watch_cb, manager);
 	priv->ppp_timeout_handler = g_timeout_add (NM_PPP_WAIT_PPPD, pppd_timed_out, manager);
 	priv->act_req = g_object_ref (req);
 
@@ -842,6 +836,9 @@ ensure_killed (gpointer data)
 	if (kill (pid, 0) == 0)
 		kill (pid, SIGKILL);
 
+	/* ensure the child is reaped */
+	waitpid (pid, NULL, WNOHANG);
+
 	return FALSE;
 }
 
@@ -881,8 +878,11 @@ nm_ppp_manager_stop (NMPPPManager *manager)
 	if (priv->pid) {
 		if (kill (priv->pid, SIGTERM) == 0)
 			g_timeout_add (2000, ensure_killed, GINT_TO_POINTER (priv->pid));
-		else
+		else {
 			kill (priv->pid, SIGKILL);
+			/* ensure the child is reaped */
+			waitpid (priv->pid, NULL, WNOHANG);
+		}
 
 		priv->pid = 0;
 	}

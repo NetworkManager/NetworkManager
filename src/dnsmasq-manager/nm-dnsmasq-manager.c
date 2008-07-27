@@ -357,7 +357,6 @@ nm_dnsmasq_manager_start (NMDnsMasqManager *manager,
 	NMDnsMasqManagerPrivate *priv;
 	NMCmdLine *dm_cmd;
 	char *cmd_str;
-	GSource *dm_watch;
 
 	g_return_val_if_fail (NM_IS_DNSMASQ_MANAGER (manager), FALSE);
 	if (error)
@@ -389,11 +388,7 @@ nm_dnsmasq_manager_start (NMDnsMasqManager *manager,
 
 	nm_debug ("dnsmasq started with pid %d", priv->pid);
 
-	dm_watch = g_child_watch_source_new (priv->pid);
-	g_source_set_callback (dm_watch, (GSourceFunc) dm_watch_cb, manager, NULL);
-	g_source_attach (dm_watch, NULL);
-	priv->dm_watch_id = g_source_get_id (dm_watch);
-	g_source_unref (dm_watch);
+	priv->dm_watch_id = g_child_watch_add (priv->pid, (GChildWatchFunc) dm_watch_cb, manager);
 
  out:
 	if (dm_cmd)
@@ -409,6 +404,9 @@ ensure_killed (gpointer data)
 
 	if (kill (pid, 0) == 0)
 		kill (pid, SIGKILL);
+
+	/* ensure child is reaped */
+	waitpid (pid, NULL, WNOHANG);
 
 	return FALSE;
 }
@@ -433,6 +431,8 @@ nm_dnsmasq_manager_stop (NMDnsMasqManager *manager)
 		else
 			kill (priv->pid, SIGKILL);
 
+		/* ensure child is reaped */
+		waitpid (priv->pid, NULL, WNOHANG);
 		priv->pid = 0;
 	}
 
