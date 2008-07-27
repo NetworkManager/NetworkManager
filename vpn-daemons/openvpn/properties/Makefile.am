@@ -1,6 +1,5 @@
-
-
-lib_LTLIBRARIES = libnm-openvpn-properties.la
+plugindir = $(libdir)/NetworkManager
+plugin_LTLIBRARIES = libnm-openvpn-properties.la
 
 libnm_openvpn_properties_la_SOURCES = \
 	nm-openvpn.c \

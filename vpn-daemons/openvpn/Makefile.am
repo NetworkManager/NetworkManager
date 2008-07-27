@@ -22,10 +22,8 @@ icondir = $(datadir)/icons/hicolor/48x48/apps
 icon_DATA = gnome-mime-application-x-openvpn-settings.png
 endif
 
-nm-openvpn-service.name: $(srcdir)/nm-openvpn-service.name.in Makefile
-	sed	-e 's|[@]BINDIR[@]|$(bindir)|g' \
-		< $(srcdir)/nm-openvpn-service.name.in \
-		> nm-openvpn-service.name
+nm-openvpn-service.name: $(srcdir)/nm-openvpn-service.name.in
+	sed -e 's|[@]LIBEXECDIR[@]|$(libexecdir)|g' $< >$@
 
 EXTRA_DIST = nm-openvpn-service.name.in \
              $(dbusservice_DATA)  \

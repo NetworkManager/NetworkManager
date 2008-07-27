@@ -53,7 +53,7 @@
 #include "nm-openvpn-service.h"
 #include "nm-utils.h"
 
-#define NM_OPENVPN_HELPER_PATH		BINDIR"/nm-openvpn-service-openvpn-helper"
+#define NM_OPENVPN_HELPER_PATH		LIBEXECDIR"/nm-openvpn-service-openvpn-helper"
 
 G_DEFINE_TYPE (NMOpenvpnPlugin, nm_openvpn_plugin, NM_TYPE_VPN_PLUGIN)
 

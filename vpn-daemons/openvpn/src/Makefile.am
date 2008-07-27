@@ -1,7 +1,6 @@
 AM_CPPFLAGS =							\
 	$(DBUS_CFLAGS)						\
 	$(NETWORK_MANAGER_CFLAGS)				\
-	-Wall							\
 	-DDBUS_API_SUBJECT_TO_CHANGE				\
 	-DG_DISABLE_DEPRECATED					\
 	-DBINDIR=\"$(bindir)\"					\
@@ -13,7 +12,7 @@ AM_CPPFLAGS =							\
 	-DLOCALSTATEDIR=\""$(localstatedir)"\"		 	\
 	-DDATADIR=\"$(datadir)\"
 
-bin_PROGRAMS = nm-openvpn-service nm-openvpn-service-openvpn-helper
+libexec_PROGRAMS = nm-openvpn-service nm-openvpn-service-openvpn-helper
 
 nm_openvpn_service_SOURCES =				\
 				nm-openvpn-service.c	\
