@@ -297,9 +297,11 @@ handle_property_changed (gpointer key, gpointer data, gpointer user_data)
 		}
 	}
 
-	if (!found)
+	if (!found) {
+#if DEBUG
 		g_warning ("Property '%s' unhandled.", prop_name);
-	else if (!success)
+#endif
+	} else if (!success)
 		g_warning ("Property '%s' could not be set due to errors.", prop_name);
 
 out:
