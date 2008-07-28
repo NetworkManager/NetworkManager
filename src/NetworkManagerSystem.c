@@ -62,7 +62,7 @@
 #include <netlink/route/link.h>
 
 static gboolean
-route_in_same_subnet (NMIP4Config *config, guint32 prefix)
+route_in_same_subnet (NMIP4Config *config, guint32 dest, guint32 prefix)
 {
 	int num;
 	int i;
@@ -72,8 +72,13 @@ route_in_same_subnet (NMIP4Config *config, guint32 prefix)
 		const NMSettingIP4Address *addr;
 
 		addr = nm_ip4_config_get_address (config, i);
-		if (prefix == addr->prefix)
-			return TRUE;
+		if (prefix == addr->prefix) {
+			guint32 masked_addr = addr->address >> (32 - addr->prefix);
+			guint32 masked_dest = dest >> (32 - prefix);
+
+			if (masked_addr == masked_dest)
+				return TRUE;
+		}
 	}
 
 	return FALSE;
@@ -110,7 +115,7 @@ nm_system_device_set_ip4_route (const char *iface,
 	struct nl_addr *gw_addr = NULL;
 	int err, iface_idx;
 
-	if (iface_config && route_in_same_subnet (iface_config, ip4_prefix))
+	if (iface_config && route_in_same_subnet (iface_config, ip4_dest, ip4_prefix))
 		return;
 
 	nlh = nm_netlink_get_default_handle ();

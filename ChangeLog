@@ -1,3 +1,11 @@
+2008-07-28  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Fabrice Bellet <fabrice@bellet.info>
+
+	* src/NetworkManagerSystem.c
+		- (route_in_same_subnet): mask addresses and compare them so that the
+			function actually does what it says it's going to do (rh #456685)
+
 2008-07-27  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/nm-setting-ip6-config.c
