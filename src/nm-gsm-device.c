@@ -301,21 +301,27 @@ automatic_registration_response (NMSerialDevice *device,
 {
 	switch (reply_index) {
 	case 0:
-		nm_info ("Registered on Home network");
-		automatic_registration_get_network (NM_GSM_DEVICE (device));
+		nm_warning ("Automatic registration failed: not registered and not searching.");
+		nm_device_state_changed (NM_DEVICE (device),
+		                         NM_DEVICE_STATE_FAILED,
+		                         NM_DEVICE_STATE_REASON_GSM_REGISTRATION_FAILED);
 		break;
 	case 1:
-		nm_info ("Registered on Roaming network");
+		nm_info ("Registered on Home network");
 		automatic_registration_get_network (NM_GSM_DEVICE (device));
 		break;
 	case 2:
 		NM_GSM_DEVICE_GET_PRIVATE (device)->pending_id = g_timeout_add (1000, automatic_registration_again, device);
 		break;
 	case 3:
-		nm_warning ("Automatic registration failed: not registered and not searching.");
+		nm_warning ("Automatic registration failed: registration denied.");
 		nm_device_state_changed (NM_DEVICE (device),
 		                         NM_DEVICE_STATE_FAILED,
 		                         NM_DEVICE_STATE_REASON_GSM_REGISTRATION_FAILED);
+		break;
+	case 4:
+		nm_info ("Registered on Roaming network");
+		automatic_registration_get_network (NM_GSM_DEVICE (device));
 		break;
 	case -1:
 		nm_warning ("Automatic registration timed out");
@@ -335,7 +341,7 @@ automatic_registration_response (NMSerialDevice *device,
 static void
 automatic_registration (NMGsmDevice *device)
 {
-	char *responses[] = { "+CREG: 0,1", "+CREG: 0,5", "+CREG: 0,2", "+CREG: 0,0", NULL };
+	char *responses[] = { "+CREG: 0,0", "+CREG: 0,1", "+CREG: 0,2", "+CREG: 0,3", "+CREG: 0,5", NULL };
 	char *terminators[] = { "OK", "ERROR", "ERR", NULL };
 
 	modem_wait_for_reply (device, "AT+CREG?", 60, responses, terminators, automatic_registration_response);

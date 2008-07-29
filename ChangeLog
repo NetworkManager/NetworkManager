@@ -1,5 +1,11 @@
 2008-07-29  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-gsm-device.c
+		- (automatic_registration_response, automatic_registration): recognize
+			denied registration and reorder responses
+
+2008-07-29  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-serial-device.c
 		- (nm_serial_device_wait_for_reply): fix timeout calculation.  Since
 			time(2) is used for current time, which returns seconds, we shouldn't
