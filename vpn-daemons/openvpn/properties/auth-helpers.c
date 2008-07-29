@@ -681,18 +681,26 @@ populate_cipher_combo (GtkComboBox *box, const char *user_cipher)
 	GtkListStore *store;
 	GtkTreeIter iter;
 	const char *openvpn_binary = NULL;
-	gchar *cmdline, *tmp, *token;
+	gchar *tmp, **items, **item;
 	gboolean user_added = FALSE;
+	char *argv[3];
+	GError *error = NULL;
+	gboolean success, found_blank = FALSE;
 
 	openvpn_binary = nm_find_openvpn ();
 	if (!openvpn_binary)
 		return;
 
-	cmdline = g_strdup_printf("/bin/sh -c \"%s --show-ciphers | /bin/awk '/^[A-Z][A-Z0-9]+-/ { print $1 }'\"", openvpn_binary);
-	if (!g_spawn_command_line_sync(cmdline, &tmp, NULL, NULL, NULL))
-		goto end;
+	argv[0] = (char *) openvpn_binary;
+	argv[1] = "--show-ciphers";
+	argv[2] = NULL;
 
-	token = strtok(tmp, "\n");
+	success = g_spawn_sync ("/", argv, NULL, 0, NULL, NULL, &tmp, NULL, NULL, &error);
+	if (!success) {
+		g_warning ("%s: couldn't determine ciphers: %s", __func__, error->message);
+		g_error_free (error);
+		return;
+	}
 
 	store = gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_INT);
 	gtk_combo_box_set_model (box, GTK_TREE_MODEL (store));
@@ -703,18 +711,32 @@ populate_cipher_combo (GtkComboBox *box, const char *user_cipher)
 	                    TLS_CIPHER_COL_NAME, _("Default"),
 	                    TLS_CIPHER_COL_DEFAULT, TRUE, -1);
 
-	while (token) {
-		if (strlen (token)) {
+	items = g_strsplit (tmp, "\n", 0);
+	g_free (tmp);
+
+	for (item = items; *item; item++) {
+		char *space = strchr (*item, ' ');
+
+		/* Don't add anything until after the first blank line */
+		if (!found_blank) {
+			if (!strlen (*item))
+				found_blank = TRUE;
+			continue;
+		}
+
+		if (space)
+			*space = '\0';
+
+		if (strlen (*item)) {
 			gtk_list_store_append (store, &iter);
 			gtk_list_store_set (store, &iter,
-			                    TLS_CIPHER_COL_NAME, token,
+			                    TLS_CIPHER_COL_NAME, *item,
 			                    TLS_CIPHER_COL_DEFAULT, FALSE, -1);
-			if (user_cipher && !strcmp (token, user_cipher)) {
+			if (user_cipher && !strcmp (*item, user_cipher)) {
 				gtk_combo_box_set_active_iter (box, &iter);
 				user_added = TRUE;
 			}
 		}
-		token = strtok (NULL, "\n");
 	}
 
 	/* Add the user-specified cipher if it exists wasn't found by openvpn */
@@ -731,7 +753,7 @@ populate_cipher_combo (GtkComboBox *box, const char *user_cipher)
 	g_object_unref (G_OBJECT (store));
 
  end:
-	g_free(tmp);
+	g_strfreev (items);
 }
 
 static void

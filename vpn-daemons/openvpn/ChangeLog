@@ -1,3 +1,9 @@
+2008-07-28  Dan Williams  <dcbw@redhat.com>
+
+	* properties/auth-helpers.c
+		- (populate_cipher_combo): don't depend on shell and utils which may not
+			always be there
+
 2008-07-27  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Michael Biebl <biebl@debian.org>
