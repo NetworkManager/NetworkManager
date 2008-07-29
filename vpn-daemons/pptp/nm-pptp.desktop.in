@@ -10,3 +10,4 @@ Type=Application
 DocPath=
 Categories=GNOME;Application;Network;
 MimeType=application/x-ppp-settings
+NoDisplay=true
