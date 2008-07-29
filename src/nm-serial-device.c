@@ -768,7 +768,7 @@ nm_serial_device_wait_for_reply (NMSerialDevice *device,
 	info->callback = callback;
 	info->user_data = user_data;
 	info->reply_index = -1;
-	info->timeout = timeout * 1000;
+	info->timeout = timeout;
 	info->start = time (NULL);
 
 	return nm_serial_device_set_pending (device, timeout, wait_for_reply_got_data, info, wait_for_reply_done);
