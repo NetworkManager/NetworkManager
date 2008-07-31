@@ -9,76 +9,283 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Project\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-12-26 09:02+0000\n"
+"POT-Creation-Date: 2008-07-31 10:41+0100\n"
 "PO-Revision-Date: 2007-12-26 09:20+0100\n"
 "Last-Translator: Djihed Afifi <djihed@gmail.com>\n"
 "Language-Team: Arabic <doc@arabeyes.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: Plural-Forms: nplurals=4; plural=n==1 ? 0 : n==2 ? 1 : n>=3 && n<=10 ? 2 : 3\n"
+"Plural-Forms: Plural-Forms: nplurals=4; plural=n==1 ? 0 : n==2 ? 1 : n>=3 && "
+"n<=10 ? 2 : 3\n"
 "X-Poedit-Language: Arabic\n"
 "X-Generator: KBabel 1.11.4\n"
 
-#: ../src/nm-netlink-monitor.c:188
-#: ../src/nm-netlink-monitor.c:448
+#: ../src/nm-netlink-monitor.c:193 ../src/nm-netlink-monitor.c:471
 #, c-format
 msgid "error processing netlink message: %s"
 msgstr "خطأ في قراءة رسالة نتلينك: %s"
 
-#: ../src/nm-netlink-monitor.c:245
+#: ../src/nm-netlink-monitor.c:250
 #, c-format
 msgid "unable to allocate netlink handle for monitoring link status: %s"
 msgstr "لم أتمكن من إنشاء مقبس نتلنك netlink لمراقبة حالة الوصلة: %s"
 
-#: ../src/nm-netlink-monitor.c:255
+#: ../src/nm-netlink-monitor.c:260
 #, c-format
 msgid "unable to connect to netlink for monitoring link status: %s"
 msgstr "لم أتمكن من الإتصال بنتلنك netlink لمراقبة حالة الوصلة: %s"
 
-#: ../src/nm-netlink-monitor.c:263
+#: ../src/nm-netlink-monitor.c:268
 #, c-format
 msgid "unable to join netlink group for monitoring link status: %s"
 msgstr "لم أتمكن من الإنضمام لمجموعة نتلنك netlink لمراقبة حالة الوصلة: %s"
 
-#: ../src/nm-netlink-monitor.c:271
+#: ../src/nm-netlink-monitor.c:276
 #, c-format
 msgid "unable to allocate netlink link cache for monitoring link status: %s"
 msgstr "لم أتمكن من تخصيص مخزن وصلة نتلنك netlink لمراقبة حالة الوصلة: %s"
 
-#: ../src/nm-netlink-monitor.c:471
+#: ../src/nm-netlink-monitor.c:494
 #, c-format
 msgid "error occurred while waiting for data on socket"
 msgstr "حدث خطأ بينما ننتظر البيانات على المقبس"
 
-#: ../src/NetworkManager.c:255
+#: ../src/NetworkManager.c:250
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr "خيار غير صحيح. استعمل --help لعرض قائمة الخيارات الممكنة.\n"
 
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:87
+msgid "# Created by NetworkManager\n"
+msgstr ""
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:93
+#, c-format
+msgid ""
+"# Merged from %s\n"
+"\n"
+msgstr ""
+
+#: ../src/named-manager/nm-named-manager.c:117
+msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
+msgstr ""
+
+#: ../src/named-manager/nm-named-manager.c:119
+msgid "The nameservers listed below may not be recognized."
+msgstr ""
+
+#: ../system-settings/src/main.c:365
+#, c-format
+msgid "Auto %s"
+msgstr ""
+
+#: ../libnm-util/crypto.c:125
+#, c-format
+msgid "PEM key file had no end tag '%s'."
+msgstr ""
+
+#: ../libnm-util/crypto.c:135
+#, c-format
+msgid "Doesn't look like a PEM private key file."
+msgstr ""
+
+#: ../libnm-util/crypto.c:143
+#, c-format
+msgid "Not enough memory to store PEM file data."
+msgstr ""
+
+#: ../libnm-util/crypto.c:159
+#, c-format
+msgid "Malformed PEM file: Proc-Type was not first tag."
+msgstr ""
+
+#: ../libnm-util/crypto.c:167
+#, c-format
+msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
+msgstr ""
+
+#: ../libnm-util/crypto.c:177
+#, c-format
+msgid "Malformed PEM file: DEK-Info was not the second tag."
+msgstr ""
+
+#: ../libnm-util/crypto.c:188
+#, c-format
+msgid "Malformed PEM file: no IV found in DEK-Info tag."
+msgstr ""
+
+#: ../libnm-util/crypto.c:195
+#, c-format
+msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
+msgstr ""
+
+#: ../libnm-util/crypto.c:208
+#, c-format
+msgid "Malformed PEM file: unknown private key cipher '%s'."
+msgstr ""
+
+#: ../libnm-util/crypto.c:227
+#, c-format
+msgid "Could not decode private key."
+msgstr ""
+
+#: ../libnm-util/crypto.c:271
+#, c-format
+msgid "PEM certificate '%s' had no end tag '%s'."
+msgstr ""
+
+#: ../libnm-util/crypto.c:281
+#, c-format
+msgid "Failed to decode certificate."
+msgstr ""
+
+#: ../libnm-util/crypto.c:290 ../libnm-util/crypto.c:298
+#, c-format
+msgid "Not enough memory to store certificate data."
+msgstr ""
+
+#: ../libnm-util/crypto.c:328
+#, c-format
+msgid "IV must be an even number of bytes in length."
+msgstr ""
+
+#: ../libnm-util/crypto.c:337
+#, c-format
+msgid "Not enough memory to store the IV."
+msgstr ""
+
+#: ../libnm-util/crypto.c:348
+#, c-format
+msgid "IV contains non-hexadecimal digits."
+msgstr ""
+
+#: ../libnm-util/crypto.c:386 ../libnm-util/crypto_gnutls.c:126
+#: ../libnm-util/crypto_nss.c:136
+#, c-format
+msgid "Private key cipher '%s' was unknown."
+msgstr ""
+
+#: ../libnm-util/crypto.c:395
+#, c-format
+msgid "Not enough memory to create private key decryption key."
+msgstr ""
+
+#: ../libnm-util/crypto.c:513
+#, c-format
+msgid "Not enough memory to store decrypted private key."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:73
+#, c-format
+msgid "Failed to initialize the MD5 engine: %s / %s."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:135 ../libnm-util/crypto_nss.c:145
+#, c-format
+msgid "Not enough memory for decrypted key buffer."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:143
+#, c-format
+msgid "Failed to initialize the decryption cipher context: %s / %s."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:152
+#, c-format
+msgid "Failed to set symmetric key for decryption: %s / %s."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:161
+#, c-format
+msgid "Failed to set IV for decryption: %s / %s."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:170
+#, c-format
+msgid "Failed to decrypt the private key: %s / %s."
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:208
+#, c-format
+msgid "Error initializing certificate data: %s"
+msgstr ""
+
+#: ../libnm-util/crypto_gnutls.c:220
+#, c-format
+msgid "Couldn't decode certificate: %s"
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:78
+#, c-format
+msgid "Failed to initialize the MD5 context: %d."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:153
+#, c-format
+msgid "Failed to initialize the decryption cipher slot."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:163
+#, c-format
+msgid "Failed to set symmetric key for decryption."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:173
+#, c-format
+msgid "Failed to set IV for decryption."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:181
+#, c-format
+msgid "Failed to initialize the decryption context."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:194
+#, c-format
+msgid "Failed to decrypt the private key: %d."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:206
+#, c-format
+msgid "Failed to finalize decryption of the private key: %d."
+msgstr ""
+
+#: ../libnm-util/crypto_nss.c:250
+#, c-format
+msgid "Couldn't decode certificate: %d"
+msgstr ""
+
 #~ msgid "Cannot add VPN connection"
 #~ msgstr "لا يمكن إضافة اتصال VPN"
+
 #~ msgid ""
 #~ "No suitable VPN software was found on your system. Contact your system "
 #~ "administrator."
 #~ msgstr "لم يُعثر على برمجيات VPN مناسبة على نظامك. اتصل بمدير نظامك."
+
 #~ msgid "Cannot import VPN connection"
 #~ msgstr "لا يمكن استيراد اتصال VPN"
+
 #~ msgid ""
 #~ "Cannot find suitable software for VPN connection type '%s' to import the "
 #~ "file '%s'. Contact your system administrator."
 #~ msgstr ""
 #~ "لم أجد برمجيات مناسبة لاتصال VPN من نوع '%s' لاستيرادها للملف '%s'. اتصل "
 #~ "بمدير نظامك."
+
 #~ msgid "Error retrieving VPN connection '%s'"
 #~ msgstr "خطأ أثناء فتح اتصال VPN '%s'"
+
 #~ msgid ""
 #~ "Could not find the UI files for VPN connection type '%s'. Contact your "
 #~ "system administrator."
 #~ msgstr ""
 #~ "لم أعثر على ملفات واجهة المستخدم لاتصال VPN من نوع '%s'. اتصل بمدير نظامك."
+
 #~ msgid "Delete VPN connection \"%s\"?"
 #~ msgstr "حذف اتصال VPN \"%s\"؟"
+
 #~ msgid ""
 #~ "All information about the VPN connection \"%s\" will be lost and you may "
 #~ "need your system administrator to provide information to create a new "
@@ -86,60 +293,87 @@ msgstr "خيار غير صحيح. استعمل --help لعرض قائمة الخ
 #~ msgstr ""
 #~ "ستُفقد كل معلومات اتصال VPN  \"%s\" و قد تحتاج أن يعطيك مدير نظامك معلومات "
 #~ "لإنشاء اتصال جديد."
+
 #~ msgid "Unable to load"
 #~ msgstr "تعذّر التحميل"
+
 #~ msgid "Cannot find some needed resources (the glade file)!"
 #~ msgstr "لم أعثر على بعض الموارد المطلوبة (ملف glade)!"
+
 #~ msgid "Create VPN Connection"
 #~ msgstr "انشيء اتصال VPN"
+
 #~ msgid "Edit VPN Connection"
 #~ msgstr "حرر اتصال VPN"
+
 #~ msgid "Add a new VPN connection"
 #~ msgstr "أضف اتصال VPN جديد"
+
 #~ msgid "Delete the selected VPN connection"
 #~ msgstr "احذف اتصال VPN المُنتقى"
+
 #~ msgid "E_xport"
 #~ msgstr "_صدِّر"
+
 #~ msgid "Edit the selected VPN connection"
 #~ msgstr "حرر  اتصال VPN المُنتقى"
+
 #~ msgid "Export the VPN settings to a file"
 #~ msgstr "صِّر اعدادات VPN إلى ملف"
+
 #~ msgid "Export the selected VPN connection to a file"
 #~ msgstr "صدِّر اعدادات VPN المنتقاة إلى ملف"
+
 #~ msgid "Manage Virtual Private Network Connections"
 #~ msgstr "أدر اتصالات الشبكة الخاصة التخيّليّة"
+
 #~ msgid "VPN Connections"
 #~ msgstr "إتّصالات VPN"
+
 #~ msgid "40-bit WEP"
 #~ msgstr "40-bit WEP"
+
 #~ msgid "104-bit WEP"
 #~ msgstr "104-bit WEP"
+
 #~ msgid "WPA TKIP"
 #~ msgstr "WPA TKIP"
+
 #~ msgid "WPA CCMP"
 #~ msgstr "WPA CCMP"
+
 #~ msgid "WPA Automatic"
 #~ msgstr "WPA آلي"
+
 #~ msgid "WPA2 TKIP"
 #~ msgstr "WPA2 TKIP"
+
 #~ msgid "WPA2 CCMP"
 #~ msgstr "WPA2 CCMP"
+
 #~ msgid "WPA2 Automatic"
 #~ msgstr "WPA2 آلي"
+
 #~ msgid "none"
 #~ msgstr "بلا"
+
 #~ msgid "operation took too long"
 #~ msgstr "استغرقت العملية زمنا طويلا"
+
 #~ msgid "received data from wrong type of sender"
 #~ msgstr "تلقيت بيانات من نوع خطأ من المرسلين"
+
 #~ msgid "received data from unexpected sender"
 #~ msgstr "تلقيت بيانات من مرسل غير متوقّع"
+
 #~ msgid "too much data was sent over socket and some of it was lost"
 #~ msgstr "أرسل الكثير جدا من البيانات عبر المقبس وفُقِد بعضها"
+
 #~ msgid "WPA2 Enterprise"
 #~ msgstr "WPA2 مشروعات"
+
 #~ msgid "WPA Enterprise"
 #~ msgstr "WPA مشروعات"
+
 #~ msgid "LEAP"
 #~ msgstr "LEAP"
-

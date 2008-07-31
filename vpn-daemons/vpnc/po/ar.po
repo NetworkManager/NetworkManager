@@ -9,14 +9,15 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Project\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-12-26 09:03+0000\n"
+"POT-Creation-Date: 2008-07-31 10:41+0100\n"
 "PO-Revision-Date: 2007-12-26 09:15+0100\n"
 "Last-Translator: Djihed Afifi <djihed@gmail.com>\n"
 "Language-Team: Arabic <doc@arabeyes.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: Plural-Forms: nplurals=4; plural=n==1 ? 0 : n==2 ? 1 : n>=3 && n<=10 ? 2 : 3\n"
+"Plural-Forms: Plural-Forms: nplurals=4; plural=n==1 ? 0 : n==2 ? 1 : n>=3 && "
+"n<=10 ? 2 : 3\n"
 "X-Poedit-Language: Arabic\n"
 "X-Generator: KBabel 1.11.4\n"
 
@@ -52,16 +53,16 @@ msgstr "_تذكّر كلمة سر هذه الجلسة"
 msgid "_Save passwords in keyring"
 msgstr "احفظ كلمة السر في _حلقة المفاتيح"
 
-#: ../auth-dialog/main.c:172
+#: ../auth-dialog/main.c:182
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "تحتاج إلى التوثيق لتَنفُذ إلى الشبكة الخاصة التخيلية '%s'."
 
-#: ../auth-dialog/main.c:173
+#: ../auth-dialog/main.c:183
 msgid "Authenticate VPN"
 msgstr "وثِّق VPN"
 
-#: ../auth-dialog/main.c:180
+#: ../auth-dialog/main.c:190
 msgid "_Group Password:"
 msgstr "كلمة سر ال_مجموعة:"
 
@@ -73,210 +74,249 @@ msgstr "أضِف، احذِف، و حرِّر اتصالات VPN"
 msgid "VPN Connection Manager (vpnc)"
 msgstr "مدير اتصالات VPN (vpnc)"
 
-#: ../properties/nm-vpnc.c:98
-msgid "Compatible Cisco VPN client (vpnc)"
+#: ../properties/nm-vpnc.c:51
+#, fuzzy
+msgid "Cisco Compatible VPN (vpnc)"
 msgstr "عميل متوافق مع VPN سيسكو (vpnc) "
 
-#: ../properties/nm-vpnc.c:543
-msgid "The following vpnc VPN connection will be created:"
-msgstr "سيُنشأ اتصال VPN التالي:"
+#: ../properties/nm-vpnc.c:52
+msgid ""
+"Compatible with various Cisco, Juniper, Netscreen, and Sonicwall IPSec-based "
+"VPN gateways."
+msgstr ""
 
-#: ../properties/nm-vpnc.c:545
-#, c-format
-msgid "Name:  %s"
-msgstr "الإسم: %s"
+#: ../properties/nm-vpnc.c:204
+msgid "Secure (default)"
+msgstr ""
 
-#: ../properties/nm-vpnc.c:548
-#, c-format
-msgid "Gateway:  %s"
-msgstr "البوّابة: %s"
+#: ../properties/nm-vpnc.c:207
+msgid "Weak (use with caution)"
+msgstr ""
 
-#: ../properties/nm-vpnc.c:550
-#, c-format
-msgid "Group Name:  %s"
-msgstr "اسم المجموعة:  %s"
+#: ../properties/nm-vpnc.c:215
+msgid "None (completely insecure)"
+msgstr ""
 
-#: ../properties/nm-vpnc.c:554
-#, c-format
-msgid "Username:  %s"
-msgstr "اسم المستخدم:  %s"
+#: ../properties/nm-vpnc.c:260
+msgid "NAT-T (default)"
+msgstr ""
 
-#: ../properties/nm-vpnc.c:559
-#, c-format
-msgid "Domain:  %s"
-msgstr "النطاق:  %s"
+#: ../properties/nm-vpnc.c:267
+msgid "Cisco UDP"
+msgstr ""
 
-#: ../properties/nm-vpnc.c:564
-#, c-format
-msgid "Routes:  %s"
-msgstr "المسارات:  %s"
+#: ../properties/nm-vpnc.c:274
+msgid "Disabled"
+msgstr ""
 
-#: ../properties/nm-vpnc.c:568
-#, c-format
-msgid "NAT-Keepalive packet interval:  %s"
-msgstr "فترة حياة رزمة NAT: %s"
-
-#: ../properties/nm-vpnc.c:572
-#, c-format
-msgid "Enable Single DES"
-msgstr "فعل DES أحادي"
-
-#: ../properties/nm-vpnc.c:576
-#, c-format
-msgid "Disable NAT Traversal"
-msgstr "عطل الإرسال عبر NAT"
-
-#: ../properties/nm-vpnc.c:580
-msgid "The connection details can be changed using the \"Edit\" button."
-msgstr "يمكن تتغيير تفاصيل الإتصال باستخدام زر \"حرِّر\"."
-
-#: ../properties/nm-vpnc.c:665
+#: ../properties/nm-vpnc.c:698
 msgid "TCP tunneling not supported"
 msgstr "أنفاق TCP ليست مدعومة"
 
-#: ../properties/nm-vpnc.c:667
+#: ../properties/nm-vpnc.c:700
 #, c-format
 msgid ""
-"The VPN settings file '%s' specifies that VPN traffic should be tunneled through TCP which is currently not supported in the vpnc software.\n"
+"The VPN settings file '%s' specifies that VPN traffic should be tunneled "
+"through TCP which is currently not supported in the vpnc software.\n"
 "\n"
-"The connection can still be created, with TCP tunneling disabled, however it may not work as expected."
+"The connection can still be created, with TCP tunneling disabled, however it "
+"may not work as expected."
 msgstr ""
-"ينص ملف اعدادات VPN '%s' على توجد تمرير حركة المرور عبر نفقة TCP وهو ما ليس مدعوما حاليا في برمجيات vpnc\n"
+"ينص ملف اعدادات VPN '%s' على توجد تمرير حركة المرور عبر نفقة TCP وهو ما ليس "
+"مدعوما حاليا في برمجيات vpnc\n"
 "\n"
-"ما زال بالإمكان إنشاء الإتصال مع تعطيل أنفاق TCP، بالرغم من أنها قد لا تعمل كما هو متوقع."
-
-#: ../properties/nm-vpnc.c:687
-msgid "Settings import incomplete"
-msgstr "استيراد الإعدادات غير كامل"
-
-#: ../properties/nm-vpnc.c:689
-#, c-format
-msgid "The VPN settings file '%s' is incomplete. You may not be able to connect without providing further information."
-msgstr "ملف إعدادات VPN المسمى '%s' غير كامل. يمكن أن لا تتمكن من الإتصل قبل إضافة معلومات أخرى."
-
-#: ../properties/nm-vpnc.c:709
-msgid "Cannot import settings"
-msgstr "تعذّر استيراد الإعدادات"
-
-#: ../properties/nm-vpnc.c:711
-#, c-format
-msgid "The VPN settings file '%s' could not be read or is invalid."
-msgstr "لا يحتوي ملف اعدادات VPN '%s' على بيانات صالحة أو لم يمكن قرائته."
-
-#: ../properties/nm-vpnc.c:726
-msgid "Select file to import"
-msgstr "انتقِ ملفّ للإستيراد"
-
-#: ../properties/nm-vpnc.c:908
-msgid "Save as..."
-msgstr "احفظ كـ..."
-
-#: ../properties/nm-vpnc.c:937
-#, c-format
-msgid "A file named \"%s\" already exists."
-msgstr "يوجد ملف بالإسم \"%s\" مسبقاً."
-
-#: ../properties/nm-vpnc.c:940
-msgid "Do you want to replace it with the one you are saving?"
-msgstr "أتريد استبداله بالملف الذي تقوم بحفظه؟"
-
-#: ../properties/nm-vpnc.c:954
-msgid "Failed to export configuration"
-msgstr "فشل تصدير الإعدادات"
-
-#: ../properties/nm-vpnc.c:956
-#, c-format
-msgid "Failed to save file %s"
-msgstr "فشب حفظ الملف %s"
+"ما زال بالإمكان إنشاء الإتصال مع تعطيل أنفاق TCP، بالرغم من أنها قد لا تعمل "
+"كما هو متوقع."
 
 #: ../properties/nm-vpnc-dialog.glade.h:1
-msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
-msgstr "<i>مثال: 172.16.0.0/16 10.11.12.0/24</i>"
+msgid " "
+msgstr ""
 
 #: ../properties/nm-vpnc-dialog.glade.h:2
-msgid "Connection na_me:"
-msgstr "إس_م الإتصال:"
+msgid "<b>General</b>"
+msgstr ""
 
 #: ../properties/nm-vpnc-dialog.glade.h:3
-msgid "Disable NAT _traversal"
-msgstr "عطل الإر_سال عبر NAT"
-
-#: ../properties/nm-vpnc-dialog.glade.h:4
-msgid "Enable _weak single DES encryption"
-msgstr "فعل الت_شفير الأحادي الضعيف DES"
-
-#: ../properties/nm-vpnc-dialog.glade.h:5
-msgid "G_roup name:"
-msgstr "اسم الم_جموعة:"
-
-#: ../properties/nm-vpnc-dialog.glade.h:6
-msgid "Import _Saved Configuration..."
-msgstr "ا_ستورد اعدادات محفوظة..."
-
-#: ../properties/nm-vpnc-dialog.glade.h:7
-msgid "Interval:"
-msgstr "فترة:"
-
-#: ../properties/nm-vpnc-dialog.glade.h:8
-msgid "Name used to identify the connection to the private network, e.g. \"Campus VPN\" or \"Corporate Network\""
-msgstr "الإ_سم المستخدم لتعريف الإتصال للشبكة الخاصة، مثلا: \"Campus VPN\" أو \"Corporate Network\""
-
-#: ../properties/nm-vpnc-dialog.glade.h:9
-msgid "Optional"
+#, fuzzy
+msgid "<b>Optional</b>"
 msgstr "خياري"
 
+#: ../properties/nm-vpnc-dialog.glade.h:4
+msgid "Disable Dead Peer Detection"
+msgstr ""
+
+#: ../properties/nm-vpnc-dialog.glade.h:5
+#, fuzzy
+msgid "Domain:"
+msgstr "ال_نطاق:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:6
+msgid "Encryption Method:"
+msgstr ""
+
+#: ../properties/nm-vpnc-dialog.glade.h:7
+#, fuzzy
+msgid "G_roup Name:"
+msgstr "اسم الم_جموعة:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:8
+#, fuzzy
+msgid "NAT Traversal:"
+msgstr "عطل الإرسال عبر NAT"
+
+#: ../properties/nm-vpnc-dialog.glade.h:9
+#, fuzzy
+msgid "User name:"
+msgstr "ا_سم المستخدم:"
+
 #: ../properties/nm-vpnc-dialog.glade.h:10
-msgid "Override _user name"
-msgstr "تخطّى اسم ال_مستخدم"
-
-#: ../properties/nm-vpnc-dialog.glade.h:11
-msgid "Please enter the information provided by your system administrator below. Do not enter your password here as you will be prompted when connecting."
-msgstr "من فضلك أدخل المعلومات التي وفرها مدير نظامك بأسفل. لا تدخل كلمة السر هنا حيث أنك ستسأل عنها عند الإتصال."
-
-#: ../properties/nm-vpnc-dialog.glade.h:12
-msgid "Please note that the file you import is not a Cisco VPN or VPNC configuration file. Ask your adminstrator for the file."
-msgstr "ملاحظة: الملف الذي تريد استيراده ليس ملف VPN أو VPNC. اتصل بالمدير حول هذا الملف."
-
-#: ../properties/nm-vpnc-dialog.glade.h:13
-msgid "Required"
-msgstr "ضروري"
-
-#: ../properties/nm-vpnc-dialog.glade.h:14
-msgid "Use NAT _keepalive packets"
-msgstr "ا_ستعمل رزمات NAT"
-
-#: ../properties/nm-vpnc-dialog.glade.h:15
-msgid "Use _domain for authentication"
-msgstr "استخدم ال_نطاق للتوثّق"
-
-#: ../properties/nm-vpnc-dialog.glade.h:16
 msgid "_Gateway:"
 msgstr "ال_بوّابة:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:17
-msgid "_Only use VPN connection for these addresses"
-msgstr "استخدم _فقط اتصالات VPN لهذه العناوين"
+#~ msgid "The following vpnc VPN connection will be created:"
+#~ msgstr "سيُنشأ اتصال VPN التالي:"
+
+#~ msgid "Name:  %s"
+#~ msgstr "الإسم: %s"
+
+#~ msgid "Gateway:  %s"
+#~ msgstr "البوّابة: %s"
+
+#~ msgid "Group Name:  %s"
+#~ msgstr "اسم المجموعة:  %s"
+
+#~ msgid "Username:  %s"
+#~ msgstr "اسم المستخدم:  %s"
+
+#~ msgid "Domain:  %s"
+#~ msgstr "النطاق:  %s"
+
+#~ msgid "Routes:  %s"
+#~ msgstr "المسارات:  %s"
+
+#~ msgid "NAT-Keepalive packet interval:  %s"
+#~ msgstr "فترة حياة رزمة NAT: %s"
+
+#~ msgid "Enable Single DES"
+#~ msgstr "فعل DES أحادي"
+
+#~ msgid "The connection details can be changed using the \"Edit\" button."
+#~ msgstr "يمكن تتغيير تفاصيل الإتصال باستخدام زر \"حرِّر\"."
+
+#~ msgid "Settings import incomplete"
+#~ msgstr "استيراد الإعدادات غير كامل"
+
+#~ msgid ""
+#~ "The VPN settings file '%s' is incomplete. You may not be able to connect "
+#~ "without providing further information."
+#~ msgstr ""
+#~ "ملف إعدادات VPN المسمى '%s' غير كامل. يمكن أن لا تتمكن من الإتصل قبل "
+#~ "إضافة معلومات أخرى."
+
+#~ msgid "Cannot import settings"
+#~ msgstr "تعذّر استيراد الإعدادات"
+
+#~ msgid "The VPN settings file '%s' could not be read or is invalid."
+#~ msgstr "لا يحتوي ملف اعدادات VPN '%s' على بيانات صالحة أو لم يمكن قرائته."
+
+#~ msgid "Select file to import"
+#~ msgstr "انتقِ ملفّ للإستيراد"
+
+#~ msgid "Save as..."
+#~ msgstr "احفظ كـ..."
+
+#~ msgid "A file named \"%s\" already exists."
+#~ msgstr "يوجد ملف بالإسم \"%s\" مسبقاً."
+
+#~ msgid "Do you want to replace it with the one you are saving?"
+#~ msgstr "أتريد استبداله بالملف الذي تقوم بحفظه؟"
+
+#~ msgid "Failed to export configuration"
+#~ msgstr "فشل تصدير الإعدادات"
+
+#~ msgid "Failed to save file %s"
+#~ msgstr "فشب حفظ الملف %s"
+
+#~ msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+#~ msgstr "<i>مثال: 172.16.0.0/16 10.11.12.0/24</i>"
+
+#~ msgid "Connection na_me:"
+#~ msgstr "إس_م الإتصال:"
+
+#~ msgid "Disable NAT _traversal"
+#~ msgstr "عطل الإر_سال عبر NAT"
+
+#~ msgid "Enable _weak single DES encryption"
+#~ msgstr "فعل الت_شفير الأحادي الضعيف DES"
+
+#~ msgid "Import _Saved Configuration..."
+#~ msgstr "ا_ستورد اعدادات محفوظة..."
+
+#~ msgid "Interval:"
+#~ msgstr "فترة:"
+
+#~ msgid ""
+#~ "Name used to identify the connection to the private network, e.g. "
+#~ "\"Campus VPN\" or \"Corporate Network\""
+#~ msgstr ""
+#~ "الإ_سم المستخدم لتعريف الإتصال للشبكة الخاصة، مثلا: \"Campus VPN\" أو "
+#~ "\"Corporate Network\""
+
+#~ msgid "Override _user name"
+#~ msgstr "تخطّى اسم ال_مستخدم"
+
+#~ msgid ""
+#~ "Please enter the information provided by your system administrator below. "
+#~ "Do not enter your password here as you will be prompted when connecting."
+#~ msgstr ""
+#~ "من فضلك أدخل المعلومات التي وفرها مدير نظامك بأسفل. لا تدخل كلمة السر هنا "
+#~ "حيث أنك ستسأل عنها عند الإتصال."
+
+#~ msgid ""
+#~ "Please note that the file you import is not a Cisco VPN or VPNC "
+#~ "configuration file. Ask your adminstrator for the file."
+#~ msgstr ""
+#~ "ملاحظة: الملف الذي تريد استيراده ليس ملف VPN أو VPNC. اتصل بالمدير حول "
+#~ "هذا الملف."
+
+#~ msgid "Required"
+#~ msgstr "ضروري"
+
+#~ msgid "Use NAT _keepalive packets"
+#~ msgstr "ا_ستعمل رزمات NAT"
+
+#~ msgid "Use _domain for authentication"
+#~ msgstr "استخدم ال_نطاق للتوثّق"
+
+#~ msgid "_Only use VPN connection for these addresses"
+#~ msgstr "استخدم _فقط اتصالات VPN لهذه العناوين"
 
 #~ msgid ""
 #~ "The VPN login failed because the user name and password were not accepted."
 #~ msgstr "فشل ولوج VPN لأن اسم المستخدم أو كلمة السر لم تُقبل."
+
 #~ msgid "The VPN login failed because the VPN program could not be started."
 #~ msgstr "فشل ولوج VPN لأن برنامج VPN لا يمكن بدأه."
+
 #~ msgid ""
 #~ "The VPN login failed because the VPN program could not connect to the VPN "
 #~ "server."
 #~ msgstr "فشل ولوج VPN لأن برنامج VPN لا يمكنه الإتصال بخادم VPN."
+
 #~ msgid ""
 #~ "The VPN login failed because the VPN configuration options were invalid."
 #~ msgstr "فشل ولوج VPN لأن خيارات اعدادات VPN غير صالحة."
+
 #~ msgid ""
 #~ "The VPN login failed because the VPN program received an invalid "
 #~ "configuration from the VPN server."
 #~ msgstr "فشل ولوج VPN لأن برنامج VPN لم يتلقى اعدادات صالحة من خادم VPN."
+
 #~ msgid "<b>Connection Information</b>"
 #~ msgstr "<b>معلومات الإتصال</b>"
+
 #~ msgid "<b>Connection Name</b>"
 #~ msgstr "<b>اسم الإتصال</b>"
+
 #~ msgid "O_ptional Information"
 #~ msgstr "معلومات ا_ختيارية"
-
