@@ -1,5 +1,14 @@
 2008-07-31  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-activation-request.c
+	  src/vpn-manager/nm-vpn-connection.c
+		- Correct GetSecrets D-Bus pending call usage; the GetSecrets call
+			itself should be attached to the activation request or the VPN
+			connection, not the NMConnection object, since the call is not
+			expected to live as long as the NMConnection itself
+
+2008-07-31  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-wifi.c
 		- (real_act_stage2_config): fix issue where association would continue
 			even though secrets were needed; 'goto out' was in wrong scope and

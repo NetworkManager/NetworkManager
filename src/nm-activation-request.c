@@ -35,8 +35,6 @@
 
 #include "nm-manager.h" /* FIXME! */
 
-#define CONNECTION_GET_SECRETS_CALL_TAG "get-secrets-call"
-
 G_DEFINE_TYPE (NMActRequest, nm_act_request, G_TYPE_OBJECT)
 
 #define NM_ACT_REQUEST_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_ACT_REQUEST, NMActRequestPrivate))
@@ -53,7 +51,11 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 
 typedef struct {
+	gboolean disposed;
+
 	NMConnection *connection;
+	DBusGProxyCall *secrets_call;
+
 	char *specific_object;
 	NMDevice *device;
 	gboolean user_requested;
@@ -168,32 +170,44 @@ nm_act_request_init (NMActRequest *req)
 }
 
 static void
+cleanup_secrets_dbus_call (NMActRequest *self)
+{
+	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
+	DBusGProxy *proxy;
+
+	g_return_if_fail (priv->connection != NULL);
+	g_return_if_fail (NM_IS_CONNECTION (priv->connection));
+
+	proxy = g_object_get_data (G_OBJECT (priv->connection), NM_MANAGER_CONNECTION_SECRETS_PROXY_TAG);
+	g_assert (proxy);
+
+	if (priv->secrets_call) {
+		dbus_g_proxy_cancel_call (proxy, priv->secrets_call);
+		priv->secrets_call = NULL;
+	}
+}
+
+static void
 dispose (GObject *object)
 {
 	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (object);
-	DBusGProxy *proxy;
-	DBusGProxyCall *call;
 
-	if (!priv->connection)
-		goto out;
+	if (priv->disposed) {
+		G_OBJECT_CLASS (nm_act_request_parent_class)->dispose (object);
+		return;
+	}
+	priv->disposed = TRUE;
+
+	g_assert (priv->connection);
 
 	g_signal_handlers_disconnect_by_func (G_OBJECT (priv->device),
 	                                      G_CALLBACK (device_state_changed),
 	                                      NM_ACT_REQUEST (object));
 
-	proxy = g_object_get_data (G_OBJECT (priv->connection),
-	                           NM_MANAGER_CONNECTION_SECRETS_PROXY_TAG);
-	call = g_object_get_data (G_OBJECT (priv->connection),
-	                          CONNECTION_GET_SECRETS_CALL_TAG);
+	cleanup_secrets_dbus_call (NM_ACT_REQUEST (object));
 
-	if (proxy && call)
-		dbus_g_proxy_cancel_call (proxy, call);
-
-	g_object_set_data (G_OBJECT (priv->connection),
-	                   CONNECTION_GET_SECRETS_CALL_TAG, NULL);
 	g_object_unref (priv->connection);
 
-out:
 	G_OBJECT_CLASS (nm_act_request_parent_class)->dispose (object);
 }
 
@@ -443,7 +457,9 @@ get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	g_return_if_fail (info->setting_name);
 
 	priv = NM_ACT_REQUEST_GET_PRIVATE (info->req);
-	g_object_set_data (G_OBJECT (priv->connection), CONNECTION_GET_SECRETS_CALL_TAG, NULL);
+
+	g_return_if_fail (call == priv->secrets_call);
+	priv->secrets_call = NULL;
 
 	if (!dbus_g_proxy_end_call (proxy, call, &err,
 								DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, &settings,
@@ -498,40 +514,31 @@ out:
 }
 
 gboolean
-nm_act_request_request_connection_secrets (NMActRequest *req,
+nm_act_request_request_connection_secrets (NMActRequest *self,
                                            const char *setting_name,
                                            gboolean request_new,
                                            RequestSecretsCaller caller,
                                            const char *hint1,
                                            const char *hint2)
 {
-	DBusGProxy *proxy;
-	DBusGProxyCall *call;
+	DBusGProxy *secrets_proxy;
 	GetSecretsInfo *info = NULL;
 	NMActRequestPrivate *priv = NULL;
 	GPtrArray *hints = NULL;
 
-	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (self), FALSE);
 	g_return_val_if_fail (setting_name != NULL, FALSE);
 
-	priv = NM_ACT_REQUEST_GET_PRIVATE (req);
-	proxy = g_object_get_data (G_OBJECT (priv->connection), NM_MANAGER_CONNECTION_SECRETS_PROXY_TAG);
-	if (!DBUS_IS_G_PROXY (proxy)) {
-		nm_warning ("Couldn't get dbus proxy for connection.");
-		goto error;
-	}
+	priv = NM_ACT_REQUEST_GET_PRIVATE (self);
+
+	cleanup_secrets_dbus_call (self);
 
 	info = g_malloc0 (sizeof (GetSecretsInfo));
-	if (!info) {
-		nm_warning ("Not enough memory to get secrets");
-		goto error;
-	}
+	g_return_val_if_fail (info != NULL, FALSE);
 
+	info->req = self;
+	info->caller = caller;
 	info->setting_name = g_strdup (setting_name);
-	if (!info->setting_name) {
-		nm_warning ("Not enough memory to get secrets");
-		goto error;
-	}
 
 	/* Empty for now */
 	hints = g_ptr_array_sized_new (2);
@@ -541,29 +548,30 @@ nm_act_request_request_connection_secrets (NMActRequest *req,
 	if (hint2)
 		g_ptr_array_add (hints, g_strdup (hint2));
 
-	info->req = req;
-	info->caller = caller;
-	call = dbus_g_proxy_begin_call_with_timeout (proxy, "GetSecrets",
-	                                             get_secrets_cb,
-	                                             info,
-	                                             free_get_secrets_info,
-	                                             G_MAXINT32,
-	                                             G_TYPE_STRING, setting_name,
-	                                             DBUS_TYPE_G_ARRAY_OF_STRING, hints,
-	                                             G_TYPE_BOOLEAN, request_new,
-	                                             G_TYPE_INVALID);
+	secrets_proxy = g_object_get_data (G_OBJECT (priv->connection), NM_MANAGER_CONNECTION_SECRETS_PROXY_TAG);
+	g_assert (secrets_proxy);
+
+	priv->secrets_call = dbus_g_proxy_begin_call_with_timeout (secrets_proxy, "GetSecrets",
+	                                                           get_secrets_cb,
+	                                                           info,
+	                                                           free_get_secrets_info,
+	                                                           G_MAXINT32,
+	                                                           G_TYPE_STRING, setting_name,
+	                                                           DBUS_TYPE_G_ARRAY_OF_STRING, hints,
+	                                                           G_TYPE_BOOLEAN, request_new,
+	                                                           G_TYPE_INVALID);
 	g_ptr_array_free (hints, TRUE);
-	if (!call) {
-		nm_warning ("Could not call GetSecrets");
+	if (!priv->secrets_call) {
+		nm_warning ("Could not call get secrets");
 		goto error;
 	}
 
-	g_object_set_data (G_OBJECT (priv->connection), CONNECTION_GET_SECRETS_CALL_TAG, call);
 	return TRUE;
 
 error:
 	if (info)
 		free_get_secrets_info (info);
+	cleanup_secrets_dbus_call (self);
 	return FALSE;
 }
 
