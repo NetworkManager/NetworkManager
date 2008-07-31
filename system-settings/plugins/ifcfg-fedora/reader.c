@@ -51,6 +51,7 @@
 #include "shvar.h"
 
 #include "reader.h"
+#include "nm-system-config-interface.h"
 
 #define TYPE_ETHERNET "Ethernet"
 #define TYPE_WIRELESS "Wireless"
@@ -604,12 +605,18 @@ error:
 static NMSetting *
 make_wireless_setting (shvarFile *ifcfg,
                        NMSetting *security,
+                       gboolean unmanaged,
                        GError **error)
 {
 	NMSettingWireless *s_wireless;
 	char *value;
 
 	s_wireless = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
+
+	if (!read_mac_address (ifcfg, &s_wireless->mac_address, error)) {
+		g_object_unref (s_wireless);
+		return NULL;
+	}
 
 	value = svGetValue (ifcfg, "ESSID");
 	if (value) {
@@ -627,40 +634,40 @@ make_wireless_setting (shvarFile *ifcfg,
 		g_byte_array_append (s_wireless->ssid, (const guint8 *) value, len);
 		g_free (value);
 	} else {
-		g_set_error (error, ifcfg_plugin_error_quark (), 0, "Missing SSID");
-		goto error;
-	}
-
-	value = svGetValue (ifcfg, "MODE");
-	if (value) {
-		char *lcase;
-
-		lcase = g_ascii_strdown (value, -1);
-		g_free (value);
-
-		if (!strcmp (lcase, "ad-hoc")) {
-			s_wireless->mode = g_strdup ("adhoc");
-		} else if (!strcmp (lcase, "managed")) {
-			s_wireless->mode = g_strdup ("infrastructure");
-		} else {
-			g_set_error (error, ifcfg_plugin_error_quark (), 0,
-			             "Invalid mode '%s' (not ad-hoc or managed)",
-			             lcase);
-			g_free (lcase);
+		/* Only fail on lack of SSID if device is managed */
+		if (!unmanaged) {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0, "Missing SSID");
 			goto error;
 		}
-		g_free (lcase);
 	}
 
-	if (security)
-		s_wireless->security = g_strdup (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	if (!unmanaged) {
+		value = svGetValue (ifcfg, "MODE");
+		if (value) {
+			char *lcase;
 
-	if (!read_mac_address (ifcfg, &s_wireless->mac_address, error)) {
-		g_object_unref (s_wireless);
-		s_wireless = NULL;
+			lcase = g_ascii_strdown (value, -1);
+			g_free (value);
+
+			if (!strcmp (lcase, "ad-hoc")) {
+				s_wireless->mode = g_strdup ("adhoc");
+			} else if (!strcmp (lcase, "managed")) {
+				s_wireless->mode = g_strdup ("infrastructure");
+			} else {
+				g_set_error (error, ifcfg_plugin_error_quark (), 0,
+				             "Invalid mode '%s' (not ad-hoc or managed)",
+				             lcase);
+				g_free (lcase);
+				goto error;
+			}
+			g_free (lcase);
+		}
+
+		if (security)
+			s_wireless->security = g_strdup (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+
+		// FIXME: channel/freq, other L2 parameters like RTS
 	}
-
-	// FIXME: channel/freq, other L2 parameters like RTS
 
 	return NM_SETTING (s_wireless);
 
@@ -671,12 +678,15 @@ error:
 }
 
 static NMConnection *
-wireless_connection_from_ifcfg (const char *file, shvarFile *ifcfg, GError **error)
+wireless_connection_from_ifcfg (const char *file,
+                                shvarFile *ifcfg,
+                                gboolean unmanaged,
+                                GError **error)
 {
 	NMConnection *connection = NULL;
 	NMSetting *con_setting = NULL;
 	NMSetting *wireless_setting = NULL;
-	NMSettingWireless *tmp;
+	NMSettingWireless *s_wireless;
 	NMSetting *security_setting = NULL;
 	char *printable_ssid = NULL;
 
@@ -694,49 +704,53 @@ wireless_connection_from_ifcfg (const char *file, shvarFile *ifcfg, GError **err
 
 	/* Wireless security */
 	security_setting = make_wireless_security_setting (ifcfg, file, error);
-	if (*error)
-		goto error;
+	if (*error) {
+		g_object_unref (connection);
+		return NULL;
+	}
 	if (security_setting)
 		nm_connection_add_setting (connection, security_setting);
 
 	/* Wireless */
-	wireless_setting = make_wireless_setting (ifcfg, security_setting, error);
-	if (!wireless_setting)
-		goto error;
-
+	wireless_setting = make_wireless_setting (ifcfg, security_setting, unmanaged, error);
+	if (!wireless_setting) {
+		g_object_unref (connection);
+		return NULL;
+	}
 	nm_connection_add_setting (connection, wireless_setting);
 
-	tmp = NM_SETTING_WIRELESS (wireless_setting);
-	printable_ssid = nm_utils_ssid_to_utf8 ((const char *) tmp->ssid->data,
-	                                        (guint32) tmp->ssid->len);
+	s_wireless = (NMSettingWireless *) wireless_setting;
+	if (s_wireless && s_wireless->ssid) {
+		printable_ssid = nm_utils_ssid_to_utf8 ((const char *) s_wireless->ssid->data,
+		                                        (guint32) s_wireless->ssid->len);
+	} else
+		printable_ssid = g_strdup_printf ("unmanaged");
 
 	con_setting = make_connection_setting (file, ifcfg,
 	                                       NM_SETTING_WIRELESS_SETTING_NAME,
 	                                       printable_ssid);
+	g_free (printable_ssid);
 	if (!con_setting) {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Failed to create connection setting.");
-		goto error;
+		g_object_unref (connection);
+		return NULL;
 	}
 	nm_connection_add_setting (connection, con_setting);
 
-	if (!nm_connection_verify (connection, error))
-		goto error;
+	/* Don't verify if unmanaged since we may not have an SSID or whatever */
+	if (!unmanaged) {
+		if (!nm_connection_verify (connection, error)) {
+			g_object_unref (connection);
+			return NULL;
+		}
+	}
 
 	return connection;
-
-error:
-	g_free (printable_ssid);
-	g_object_unref (connection);
-	if (con_setting)
-		g_object_unref (con_setting);
-	if (wireless_setting)
-		g_object_unref (wireless_setting);
-	return NULL;
 }
 
 static NMSetting *
-make_wired_setting (shvarFile *ifcfg, GError **error)
+make_wired_setting (shvarFile *ifcfg, gboolean unmanaged, GError **error)
 {
 	NMSettingWired *s_wired;
 	char *value;
@@ -750,10 +764,8 @@ make_wired_setting (shvarFile *ifcfg, GError **error)
 			if (mtu >= 0 && mtu < 65536)
 				s_wired->mtu = mtu;
 		} else {
-			g_set_error (error, ifcfg_plugin_error_quark (), 0,
-			             "Invalid MTU '%s'", value);
-			g_object_unref (s_wired);
-			s_wired = NULL;
+			/* Shouldn't be fatal... */
+			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    warning: invalid MTU '%s'", value);
 		}
 		g_free (value);
 	}
@@ -767,7 +779,10 @@ make_wired_setting (shvarFile *ifcfg, GError **error)
 }
 
 static NMConnection *
-wired_connection_from_ifcfg (const char *file, shvarFile *ifcfg, GError **error)
+wired_connection_from_ifcfg (const char *file,
+                             shvarFile *ifcfg,
+                             gboolean unmanaged,
+                             GError **error)
 {
 	NMConnection *connection = NULL;
 	NMSetting *con_setting = NULL;
@@ -787,28 +802,24 @@ wired_connection_from_ifcfg (const char *file, shvarFile *ifcfg, GError **error)
 	if (!con_setting) {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Failed to create connection setting.");
-		goto error;
+		g_object_unref (connection);
+		return NULL;
 	}
 	nm_connection_add_setting (connection, con_setting);
 
-	wired_setting = make_wired_setting (ifcfg, error);
-	if (!wired_setting)
-		goto error;
-
+	wired_setting = make_wired_setting (ifcfg, unmanaged, error);
+	if (!wired_setting) {
+		g_object_unref (connection);
+		return NULL;
+	}
 	nm_connection_add_setting (connection, wired_setting);
 
-	if (!nm_connection_verify (connection, error))
-		goto error;
+	if (!nm_connection_verify (connection, error)) {
+		g_object_unref (connection);
+		return NULL;
+	}
 
 	return connection;
-
-error:
-	g_object_unref (connection);
-	if (con_setting)
-		g_object_unref (con_setting);
-	if (wired_setting)
-		g_object_unref (wired_setting);
-	return NULL;
 }
 
 static gboolean
@@ -933,9 +944,9 @@ connection_from_file (const char *filename,
 	}
 
 	if (!strcmp (type, TYPE_ETHERNET))
-		connection = wired_connection_from_ifcfg (filename, parsed, error);
+		connection = wired_connection_from_ifcfg (filename, parsed, *ignored, error);
 	else if (!strcmp (type, TYPE_WIRELESS))
-		connection = wireless_connection_from_ifcfg (filename, parsed, error);
+		connection = wireless_connection_from_ifcfg (filename, parsed, *ignored, error);
 	else {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Unknown connection type '%s'", type);
@@ -943,7 +954,8 @@ connection_from_file (const char *filename,
 
 	g_free (type);
 
-	if (!connection)
+	/* Don't bother reading the connection fully if it's unmanaged */
+	if (!connection || *ignored)
 		goto done;
 
 	s_ip4 = make_ip4_setting (parsed, error);

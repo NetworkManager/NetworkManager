@@ -45,9 +45,6 @@
 #include "nm-system-config-interface.h"
 #include "nm-ifcfg-connection.h"
 
-#define IFCFG_PLUGIN_NAME "ifcfg-fedora"
-#define IFCFG_PLUGIN_INFO "(c) 2007 - 2008 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list."
-
 #define IFCFG_DIR SYSCONFDIR"/sysconfig/network-scripts/"
 
 static void system_config_interface_init (NMSystemConfigInterface *system_config_interface_class);

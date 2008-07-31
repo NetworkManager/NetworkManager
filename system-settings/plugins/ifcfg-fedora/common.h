@@ -28,6 +28,9 @@
 #define ORIG_TAG ".orig"
 #define REJ_TAG ".rej"
 
+#define IFCFG_PLUGIN_NAME "ifcfg-fedora"
+#define IFCFG_PLUGIN_INFO "(c) 2007 - 2008 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list."
+
 #include <glib.h>
 
 GQuark ifcfg_plugin_error_quark (void);

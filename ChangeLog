@@ -1,3 +1,10 @@
+2008-07-31  Dan Williams  <dcbw@redhat.com>
+
+	* system-settings/plugins/ifcfg-fedora/plugin.c
+	  system-settings/plugins/ifcfg-fedora/reader.c
+		- Don't ignore unmanaged devices if their ifcfg file doesn't make a
+			valid NM connection
+
 2008-07-29  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-gsm-device.c
