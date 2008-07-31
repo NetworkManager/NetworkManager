@@ -1,5 +1,14 @@
 2008-07-31  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-wifi.c
+		- (real_act_stage2_config): fix issue where association would continue
+			even though secrets were needed; 'goto out' was in wrong scope and
+			result of handle_auth_or_fail() should have been dumped directly to
+			'ret' to ensure that the association was postponed until secrets
+			are available
+
+2008-07-31  Dan Williams  <dcbw@redhat.com>
+
 	* system-settings/plugins/ifcfg-fedora/plugin.c
 	  system-settings/plugins/ifcfg-fedora/reader.c
 		- Don't ignore unmanaged devices if their ifcfg file doesn't make a

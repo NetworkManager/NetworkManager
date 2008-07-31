@@ -2770,6 +2770,7 @@ real_act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 	NMConnection *          connection;
 	NMSettingConnection *	s_connection;
 	const char *			setting_name;
+	NMSettingWireless *     s_wireless;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
@@ -2787,33 +2788,31 @@ real_act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 	s_connection = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 	g_assert (s_connection);
 
+	s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
+	g_assert (s_wireless);
+
 	/* If we need secrets, get them */
 	setting_name = nm_connection_need_secrets (connection, NULL);
 	if (setting_name) {
-		NMActStageReturn auth_ret;
-
 		nm_info ("Activation (%s/wireless): access point '%s' has security,"
 		         " but secrets are required.",
 		         iface, s_connection->id);
 
-		auth_ret = handle_auth_or_fail (self, req, FALSE);
-		if (auth_ret == NM_ACT_STAGE_RETURN_FAILURE) {
+		ret = handle_auth_or_fail (self, req, FALSE);
+		if (ret == NM_ACT_STAGE_RETURN_FAILURE)
 			*reason = NM_DEVICE_STATE_REASON_NO_SECRETS;
-			goto out;
-		}
-	} else {
-		NMSettingWireless *s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, 
-																		 NM_TYPE_SETTING_WIRELESS);
+		goto out;
+	}
 
-		if (s_wireless->security) {
-			nm_info ("Activation (%s/wireless): connection '%s' has security"
-			         ", and secrets exist.  No new secrets needed.",
-			         iface, s_connection->id);
-		} else {
-			nm_info ("Activation (%s/wireless): connection '%s' requires no "
-			         "security.  No secrets needed.",
-			         iface, s_connection->id);
-		}
+	/* have secrets, or no secrets required */
+	if (s_wireless->security) {
+		nm_info ("Activation (%s/wireless): connection '%s' has security"
+		         ", and secrets exist.  No new secrets needed.",
+		         iface, s_connection->id);
+	} else {
+		nm_info ("Activation (%s/wireless): connection '%s' requires no "
+		         "security.  No secrets needed.",
+		         iface, s_connection->id);
 	}
 
 	config = build_supplicant_config (self, connection, ap);
