@@ -38,6 +38,8 @@ typedef struct {
 	GType type;
 } ValidProperty;
 
+#define LEGACY_NAT_KEEPALIVE "NAT-Keepalive packet interval"
+
 static ValidProperty valid_properties[] = {
 	{ NM_VPNC_KEY_GATEWAY,               G_TYPE_STRING },
 	{ NM_VPNC_KEY_ID,                    G_TYPE_STRING },
@@ -53,6 +55,8 @@ static ValidProperty valid_properties[] = {
 	{ NM_VPNC_KEY_DPD_IDLE_TIMEOUT,      G_TYPE_INT },
 	{ NM_VPNC_KEY_NAT_TRAVERSAL_MODE,    G_TYPE_STRING },
 	{ NM_VPNC_KEY_CISCO_UDP_ENCAPS_PORT, G_TYPE_INT },
+	/* Legacy options that are ignored */
+	{ LEGACY_NAT_KEEPALIVE,              G_TYPE_STRING },
 	{ NULL,                              G_TYPE_NONE }
 };
 
