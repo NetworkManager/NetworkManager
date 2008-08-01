@@ -62,10 +62,10 @@ GQuark nm_setting_ip4_config_error_quark (void);
 #define NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID  "dhcp-client-id"
 #define NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME   "dhcp-hostname"
 
-#define NM_SETTING_IP4_CONFIG_METHOD_DHCP   "dhcp"
-#define NM_SETTING_IP4_CONFIG_METHOD_AUTOIP "autoip"
-#define NM_SETTING_IP4_CONFIG_METHOD_MANUAL "manual"
-#define NM_SETTING_IP4_CONFIG_METHOD_SHARED "shared"
+#define NM_SETTING_IP4_CONFIG_METHOD_AUTO       "auto"
+#define NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL "link-local"
+#define NM_SETTING_IP4_CONFIG_METHOD_MANUAL     "manual"
+#define NM_SETTING_IP4_CONFIG_METHOD_SHARED     "shared"
 
 typedef struct {
 	guint32 address;   /* network byte order */

@@ -108,11 +108,11 @@ make_ip4_setting (shvarFile *ifcfg)
 	str = svGetValue (ifcfg, "BOOTPROTO");
 	if (str) {
 		if (!g_ascii_strcasecmp (str, "bootp") || !g_ascii_strcasecmp (str, "dhcp"))
-			s_ip4->method = g_strdup (NM_SETTING_IP4_CONFIG_METHOD_DHCP);
+			s_ip4->method = g_strdup (NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 		else if (!g_ascii_strcasecmp (str, "static"))
 			s_ip4->method = g_strdup (NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
 		else if (!g_ascii_strcasecmp (str, "autoip"))
-			s_ip4->method = g_strdup (NM_SETTING_IP4_CONFIG_METHOD_AUTOIP);
+			s_ip4->method = g_strdup (NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL);
 
 		g_free (str);
 	}

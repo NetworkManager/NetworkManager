@@ -1,3 +1,17 @@
+2008-08-01  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-setting-ip4-config.c
+	  libnm-util/nm-setting-ip4-config.h
+		- Make IPv4 methods reflect their usage; 'dhcp' -> 'auto' and
+			'autoip' -> 'link-local'.  VPN & PPP connections can also have IPv4
+			settings, and they don't necessarily use DHCP.
+
+	* src/NetworkManagerPolicy.c
+	  src/nm-device.c
+	  system-settings/plugins/ifcfg-fedora/reader.c
+	  system-settings/plugins/ifcfg-suse/parser.c
+		- Fixup for method changes
+
 2008-07-31  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-activation-request.c

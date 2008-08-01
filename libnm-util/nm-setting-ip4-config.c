@@ -112,7 +112,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			             NM_SETTING_IP4_CONFIG_ADDRESSES);
 			return FALSE;
 		}
-	} else if (   !strcmp (self->method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP)
+	} else if (   !strcmp (self->method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)
 	           || !strcmp (self->method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
 		if (self->dns && self->dns->len) {
 			g_set_error (error,
@@ -137,7 +137,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			             NM_SETTING_IP4_CONFIG_ADDRESSES);
 			return FALSE;
 		}
-	} else if (!strcmp (self->method, NM_SETTING_IP4_CONFIG_METHOD_DHCP)) {
+	} else if (!strcmp (self->method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
 		/* nothing to do */
 	} else {
 		g_set_error (error,

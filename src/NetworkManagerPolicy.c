@@ -149,7 +149,7 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 
 		/* Never set the default route through an IPv4LL-addressed device */
 		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
-		if (s_ip4 && !strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP))
+		if (s_ip4 && !strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
 			continue;
 
 		/* Make sure at least one of this device's IP addresses has a gateway */

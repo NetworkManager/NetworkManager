@@ -649,7 +649,7 @@ nm_device_handle_autoip4_event (NMDevice *self,
 
 	/* Ignore if the connection isn't an AutoIP connection */
 	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
-	if (!s_ip4 || !s_ip4->method || strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP))
+	if (!s_ip4 || !s_ip4->method || strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
 		return;
 
 	iface = nm_device_get_iface (self);
@@ -828,7 +828,7 @@ real_act_stage3_ip_config_start (NMDevice *self, NMDeviceStateReason *reason)
 													NM_TYPE_SETTING_IP4_CONFIG);
 
 	/* If we did not receive IP4 configuration information, default to DHCP */
-	if (!s_ip4 || !strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_DHCP)) {
+	if (!s_ip4 || !strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
 		NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 		gboolean success;
 
@@ -850,7 +850,7 @@ real_act_stage3_ip_config_start (NMDevice *self, NMDeviceStateReason *reason)
 			*reason = NM_DEVICE_STATE_REASON_DHCP_START_FAILED;
 			ret = NM_ACT_STAGE_RETURN_FAILURE;
 		}
-	} else if (s_ip4 && !strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP)) {
+	} else if (s_ip4 && !strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)) {
 		GError *error = NULL;
 
 		/* Start avahi-autoipd */
@@ -1026,7 +1026,7 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 		g_assert (s_ip4);
 		g_assert (s_ip4->method);
 
-		if (!strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_AUTOIP)) {
+		if (!strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)) {
 			*config = aipd_get_ip4_config (self, reason);
 		} else if (!strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
 			*config = nm_ip4_config_new ();

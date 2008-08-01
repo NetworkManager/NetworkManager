@@ -169,12 +169,12 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 
 	value = svGetValue (ifcfg, "BOOTPROTO");
 	if (value && (!g_ascii_strcasecmp (value, "bootp") || !g_ascii_strcasecmp (value, "dhcp")))
-		method = NM_SETTING_IP4_CONFIG_METHOD_DHCP;
+		method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 
 	if (value && !g_ascii_strcasecmp (value, "autoip")) {
 		g_free (value);
 		s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
-		s_ip4->method = g_strdup (NM_SETTING_IP4_CONFIG_METHOD_AUTOIP);
+		s_ip4->method = g_strdup (NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL);
 		return NM_SETTING (s_ip4);
 	}
 
@@ -241,7 +241,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 	s_ip4->ignore_dhcp_dns = !svTrueValue (ifcfg, "PEERDNS", 1);
 
 	/* DHCP hostname for 'send host-name' option */
-	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_DHCP)) {
+	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
 		value = svGetValue (ifcfg, "DHCP_HOSTNAME");
 		if (value && strlen (value))
 			s_ip4->dhcp_hostname = g_strdup (value);
