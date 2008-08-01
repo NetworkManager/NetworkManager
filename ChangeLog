@@ -1,5 +1,14 @@
 2008-08-01  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/nm-device.c
+		- (proxy_get_string): util function for querying a HAL property
+		- (get_ancestor_device): split out from get_product_and_vendor()
+		- (get_product_and_vendor): simplify; get more accurate pid & vid info
+			from PCI devices by querying subsys properties
+		- (nm_device_update_description): simplify
+
+2008-08-01  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting-ip4-config.c
 	  libnm-util/nm-setting-ip4-config.h
 		- Make IPv4 methods reflect their usage; 'dhcp' -> 'auto' and

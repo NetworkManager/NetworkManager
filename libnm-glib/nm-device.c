@@ -547,19 +547,14 @@ nm_device_get_state (NMDevice *device)
 }
 
 static char *
-get_product_and_vendor (NMDevice *device,
-                        DBusGConnection *connection,
-                        const char *udi,
-                        gboolean want_origdev,
-                        gboolean warn,
-                        char **product,
-                        char **vendor)
+get_ancestor_device (NMDevice *device,
+                     DBusGConnection *connection,
+                     const char *udi,
+                     gboolean want_origdev)
 {
 	DBusGProxy *proxy;
 	GError *err = NULL;
 	char *parent = NULL;
-	char *tmp_product = NULL;
-	char *tmp_vendor = NULL;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (udi != NULL, NULL);
@@ -567,28 +562,6 @@ get_product_and_vendor (NMDevice *device,
 	proxy = dbus_g_proxy_new_for_name (connection, "org.freedesktop.Hal", udi, "org.freedesktop.Hal.Device");
 	if (!proxy)
 		return NULL;
-
-	if (!dbus_g_proxy_call (proxy, "GetPropertyString", &err,
-							G_TYPE_STRING, "info.product",
-							G_TYPE_INVALID,
-							G_TYPE_STRING, &tmp_product,
-							G_TYPE_INVALID)) {
-		if (warn)
-			g_warning ("Error getting device %s product from HAL: %s", udi, err->message);
-		g_error_free (err);
-		err = NULL;
-    }
-
-	if (!dbus_g_proxy_call (proxy, "GetPropertyString", &err,
-							G_TYPE_STRING, "info.vendor",
-							G_TYPE_INVALID,
-							G_TYPE_STRING, &tmp_vendor,
-							G_TYPE_INVALID)) {
-		if (warn)
-			g_warning ("Error getting device %s vendor from HAL: %s", udi, err->message);
-		g_error_free (err);
-		err = NULL;
-    }
 
 	if (want_origdev) {
 		gboolean serial = FALSE;
@@ -628,7 +601,79 @@ get_product_and_vendor (NMDevice *device,
 	    }
 	}
 
-	if (parent && tmp_product && tmp_vendor) {
+	g_object_unref (proxy);
+	return parent;
+}
+
+static char *
+proxy_get_string (DBusGProxy *proxy,
+                  const char *property,
+                  gboolean warn)
+{
+	GError *error = NULL;
+	char *result = NULL;
+
+	g_return_val_if_fail (proxy != NULL, NULL);
+	g_return_val_if_fail (property != NULL, NULL);
+
+	if (dbus_g_proxy_call (proxy, "GetPropertyString", &error,
+	                       G_TYPE_STRING, property, G_TYPE_INVALID,
+	                       G_TYPE_STRING, &result, G_TYPE_INVALID))
+		return result;
+
+	if (warn) {
+		g_warning ("Error getting HAL property '%s' from device '%s': %s",
+		           property, dbus_g_proxy_get_path (proxy),
+		           error ? error->message : "unknown");
+	}
+	g_error_free (error);
+	return NULL;
+}
+
+static gboolean
+get_product_and_vendor (DBusGConnection *connection,
+                        const char *udi,
+                        char **product,
+                        char **vendor)
+{
+	DBusGProxy *proxy;
+	char *tmp_product = NULL;
+	char *tmp_vendor = NULL;
+	char *subsys = NULL;
+	gboolean product_fallback = TRUE, vendor_fallback = TRUE;
+	gboolean warn = FALSE;
+
+	g_return_val_if_fail (connection != NULL, FALSE);
+	g_return_val_if_fail (udi != NULL, FALSE);
+
+	g_return_val_if_fail (product != NULL, FALSE);
+	g_return_val_if_fail (*product == NULL, FALSE);
+
+	g_return_val_if_fail (vendor != NULL, FALSE);
+	g_return_val_if_fail (*vendor == NULL, FALSE);
+
+	proxy = dbus_g_proxy_new_for_name (connection, "org.freedesktop.Hal", udi, "org.freedesktop.Hal.Device");
+	if (!proxy)
+		return FALSE;
+
+	subsys = proxy_get_string (proxy, "info.subsystem", warn);
+	if (subsys && !strcmp (subsys, "pci")) {
+		tmp_product = proxy_get_string (proxy, "pci.subsys_product", warn);
+		if (tmp_product)
+			product_fallback = FALSE;
+
+		tmp_vendor = proxy_get_string (proxy, "pci.subsys_vendor", warn);
+		if (tmp_vendor)
+			vendor_fallback = FALSE;
+	}
+	g_free (subsys);
+
+	if (product_fallback)
+		tmp_product = proxy_get_string (proxy, "info.product", warn);
+	if (vendor_fallback)
+		tmp_vendor = proxy_get_string (proxy, "info.vendor", warn);
+
+	if (tmp_product && tmp_vendor) {
 		*product = tmp_product;
 		*vendor = tmp_vendor;
 	} else {
@@ -637,7 +682,7 @@ get_product_and_vendor (NMDevice *device,
 	}
 	g_object_unref (proxy);
 
-	return parent;
+	return (*product && *vendor) ? TRUE : FALSE;
 }
 
 static void
@@ -647,7 +692,7 @@ nm_device_update_description (NMDevice *device)
 	DBusGConnection *connection;
 	const char *udi;
 	char *orig_dev_udi = NULL;
-	char *pd_parent_udi = NULL;
+	char *parent_udi = NULL;
 
 	g_return_if_fail (NM_IS_DEVICE (device));
 	priv = NM_DEVICE_GET_PRIVATE (device);
@@ -662,37 +707,18 @@ nm_device_update_description (NMDevice *device)
 
 	/* First, get the udi of the originating device */
 	udi = nm_device_get_udi (device);
-	orig_dev_udi = get_product_and_vendor (device, connection, udi, TRUE, FALSE,
-	                                       &priv->product, &priv->vendor);
-
-	/* Ignore product and vendor for the Network Interface */
-	if (priv->product || priv->vendor) {
-		g_free (priv->product);
-		priv->product = NULL;
-		g_free (priv->vendor);
-		priv->vendor = NULL;
-	}
+	orig_dev_udi = get_ancestor_device (device, connection, udi, TRUE);
 
 	/* Get product and vendor off the originating device if possible */
-	pd_parent_udi = get_product_and_vendor (device,
-	                                        connection,
-	                                        orig_dev_udi,
-	                                        FALSE,
-	                                        FALSE,
-	                                        &priv->product,
-	                                        &priv->vendor);
-	g_free (orig_dev_udi);
-
-	/* If one of the product/vendor isn't found on the originating device, try the
-	 * parent of the originating device.
-	 */
-	if (!priv->product || !priv->vendor) {
-		char *ignore;
-		ignore = get_product_and_vendor (device, connection, pd_parent_udi,
-		                                 FALSE, TRUE, &priv->product, &priv->vendor);
-		g_free (ignore);
+	if (!get_product_and_vendor (connection, orig_dev_udi, &priv->product, &priv->vendor)) {
+		 /* Try the parent of the originating device */
+		parent_udi = get_ancestor_device (device, connection, orig_dev_udi, FALSE);
+		if (parent_udi)
+			get_product_and_vendor (connection, parent_udi, &priv->product, &priv->vendor);
+		g_free (parent_udi);
 	}
-	g_free (pd_parent_udi);
+
+	g_free (orig_dev_udi);
 
 	nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_VENDOR);
 	nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_PRODUCT);
