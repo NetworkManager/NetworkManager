@@ -1,14 +1,14 @@
 # Bulgarian translation of NetworkManager-pptp po-file
-# Copyright (C) 2007 Free Software Foundation, Inc.
+# Copyright (C) 2007, 2008 Free Software Foundation, Inc.
 # This file is distributed under the same license as the NetworkManager-pptp package.
-# Alexander Shopov <ash@contact.bg>, 2007.
+# Alexander Shopov <ash@contact.bg>, 2007, 2008.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: NetworkManager-pptp\n"
+"Project-Id-Version: NetworkManager-pptp trunk\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-02-02 06:44+0200\n"
-"PO-Revision-Date: 2007-02-02 05:18+0200\n"
+"POT-Creation-Date: 2008-08-02 08:59+0300\n"
+"PO-Revision-Date: 2008-08-01 07:26+0300\n"
 "Last-Translator: Alexander Shopov <ash@contact.bg>\n"
 "Language-Team: Bulgarian <dict@fsa-bg.org>\n"
 "MIME-Version: 1.0\n"
@@ -16,570 +16,533 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n != 1;\n"
 
-#: ../auth-dialog-general/gnome-generic-auth-dialog.c:792
-msgid "Authentication Type:"
-msgstr "Вид на идентификацията:"
-
-#: ../auth-dialog-general/gnome-generic-auth-dialog.c:857
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:11
-msgid "_Remember for this session"
-msgstr "_Запомняне за тази сесия"
-
-#: ../auth-dialog-general/gnome-generic-auth-dialog.c:859
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:13
-msgid "_Save in keyring"
-msgstr "Запазване в клю_чодържателя"
-
-#: ../auth-dialog-general/main.c:48 ../auth-dialog/main.c:140
-#, c-format
-msgid "You need to authenticate to access '%s'."
-msgstr "Трябва да се идентифицирате, за да достъпите „%s“."
-
-#: ../auth-dialog-general/main.c:51 ../auth-dialog/main.c:141
-msgid "Authenticate Connection"
-msgstr "Идентифициране на връзката"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:2
-#, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Authentication Information</span>\n"
-"\n"
-"The connection '%s' may need some form of authentication.\n"
-"\n"
-"Please select an appropriate authentication type and provide the necessary "
-"credentials below:\n"
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">Информация за идентификация</span>\n"
-"\n"
-"Връзката „%s“ се нуждае от някаква форма на идентификация.\n"
-"\n"
-"Изберете подходящия вид идентификация и добавете необходимата за това "
-"информация отдолу:\n"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:8
-msgid "Authentication Required"
-msgstr "Изисква се идентификация"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:9
-msgid "_Authentication Type:"
-msgstr "_Вид на идентификацията:"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:10
-#: ../auth-dialog/gnome-two-password-dialog.c:272
-msgid "_Password:"
-msgstr "_Парола:"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:12
-msgid "_Remote name:"
-msgstr "_Отдалечено име:"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:14
-#: ../auth-dialog/gnome-two-password-dialog.c:268
-msgid "_Username:"
-msgstr "Потребителско _име:"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:15
-msgid "auth-chap-window"
-msgstr "прозорец-за-идентификация-с-chap"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:16
-msgid "auth-mschapv2-window"
-msgstr "прозорец-за-идентификация-с-mschapv2"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:17
-msgid "auth-none-window"
-msgstr "прозорец-за-никаква-идентификация"
-
-#: ../auth-dialog/gnome-two-password-dialog.c:147
+#: ../auth-dialog/gnome-two-password-dialog.c:144
 msgid "_Secondary Password:"
 msgstr "_Втора парола:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:270
+#: ../auth-dialog/gnome-two-password-dialog.c:258
+msgid "_Username:"
+msgstr "Потребителско _име:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:260
 msgid "_Domain:"
 msgstr "_Домейн:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:355
+#: ../auth-dialog/gnome-two-password-dialog.c:262
+msgid "_Password:"
+msgstr "_Парола:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:351
 msgid "Connect _anonymously"
 msgstr "_Анонимно свързване"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:360
+#: ../auth-dialog/gnome-two-password-dialog.c:356
 msgid "Connect as _user:"
 msgstr "Свързване _като потребителя:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:466
-msgid "_Remember password for this session"
+#: ../auth-dialog/gnome-two-password-dialog.c:465
+msgid "_Remember passwords for this session"
 msgstr "_Запомняне на паролата за тази сесия"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:468
-msgid "_Save password in keyring"
+#: ../auth-dialog/gnome-two-password-dialog.c:467
+msgid "_Save passwords in keyring"
 msgstr "Запазване на паролата в клю_чодържателя"
 
-#: ../nm-ppp.desktop.in.h:1
-msgid "Add, Remove, and Edit VPN Connections"
-msgstr "Добавяне, изтриване и редактиране на връзки към ВЧМ"
+#: ../auth-dialog/main.c:169
+#, c-format
+msgid "You need to authenticate to access the Virtual Private Network '%s'."
+msgstr "Трябва да се идентифицирате, за да достъпите ВЧМ „%s“."
 
-#: ../nm-ppp.desktop.in.h:2
-msgid "VPN Connection Manager (PPP generic)"
-msgstr "Управление на връзките към ВЧМ (за PPP)"
+#: ../auth-dialog/main.c:170
+msgid "Authenticate VPN"
+msgstr "Идентифициране на ВЧМ"
 
-#: ../properties/nm-ppp-dialog.glade.h:1
-msgid "00:00:00:00"
-msgstr "00:00:00:00"
+#: ../nm-pptp.desktop.in.h:1
+msgid "Add, Remove, and Edit PPTP VPN Connections"
+msgstr "Добавяне, изтриване и редактиране на връзки към ВЧМ по PPTP"
 
-#: ../properties/nm-ppp-dialog.glade.h:2
-msgid "<b>Compression</b>"
-msgstr "<b>Компресия</b>"
+#: ../nm-pptp.desktop.in.h:2
+msgid "PPTP VPN Connection Manager"
+msgstr "Управление на връзки за ВЧМ по PPTP"
 
-#: ../properties/nm-ppp-dialog.glade.h:3
-msgid "<b>Connection Name</b>"
-msgstr "<b>Име на връзката</b>"
+#: ../properties/advanced-dialog.c:173
+msgid "All Available (Default)"
+msgstr "Всички налични (стандартно)"
 
-#: ../properties/nm-ppp-dialog.glade.h:4
-msgid "<b>Delays and TImeouts</b>"
-msgstr "<b>Забавяния и изтичане на времето</b>"
+#: ../properties/advanced-dialog.c:177
+msgid "128-bit (most secure)"
+msgstr "128-битово (най-сигурно)"
 
-#: ../properties/nm-ppp-dialog.glade.h:5
-msgid "<b>Encryption</b>"
-msgstr "<b>Шифриране</b>"
+#: ../properties/advanced-dialog.c:186
+msgid "40-bit (less secure)"
+msgstr "40-битово (несигурно)"
 
-#: ../properties/nm-ppp-dialog.glade.h:6
-msgid "<b>IP Options</b>"
-msgstr "<b>Настройки на IP</b>"
+#: ../properties/advanced-dialog.c:257
+msgid "PAP"
+msgstr "PAP"
 
-#: ../properties/nm-ppp-dialog.glade.h:7
-msgid "<b>Packet Parameters</b>"
-msgstr "<b>Параметри на пакетите</b>"
+#: ../properties/advanced-dialog.c:263
+msgid "CHAP"
+msgstr "CHAP"
 
-#: ../properties/nm-ppp-dialog.glade.h:8
-msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
-msgstr "<i>например: 172.16.0.0/16 10.11.12.0/24</i>"
+#: ../properties/advanced-dialog.c:269
+msgid "MSCHAP"
+msgstr "MSCHAP"
 
-#: ../properties/nm-ppp-dialog.glade.h:9
-msgid "A list of extra options to pppd as would be typed on the command line"
-msgstr ""
-"Списък с допълнителните опции за pppd, които ще бъдат предадени през "
-"командния ред"
+#: ../properties/advanced-dialog.c:275
+msgid "MSCHAPv2"
+msgstr "MSCHAPv2"
 
-#: ../properties/nm-ppp-dialog.glade.h:10
-msgid "Allow BSD Compression"
+#: ../properties/nm-pptp-dialog.glade.h:1
+msgid "<b>Authentication</b>"
+msgstr "<b>Идентифициране</b>"
+
+#: ../properties/nm-pptp-dialog.glade.h:2
+msgid "<b>Echo</b>"
+msgstr "<b>Ехо</b>"
+
+#: ../properties/nm-pptp-dialog.glade.h:3
+msgid "<b>General</b>"
+msgstr "<b>Общи</b>"
+
+#: ../properties/nm-pptp-dialog.glade.h:4
+msgid "<b>Optional</b>"
+msgstr "<b>Допълнителни</b>"
+
+#: ../properties/nm-pptp-dialog.glade.h:5
+msgid "<b>Security and Compression</b>"
+msgstr "<b>Сигурност и компресия</b>"
+
+#: ../properties/nm-pptp-dialog.glade.h:6
+msgid "Ad_vanced..."
+msgstr "_Допълнителни…"
+
+#: ../properties/nm-pptp-dialog.glade.h:7
+msgid "Allow BSD data compression"
 msgstr "Разрешаване на компресия BSD"
 
-#: ../properties/nm-ppp-dialog.glade.h:11
-msgid "Allow Deflate compression"
+#: ../properties/nm-pptp-dialog.glade.h:8
+msgid "Allow Deflate data compression"
 msgstr "Разрешаване на компресия deflate"
 
-#: ../properties/nm-ppp-dialog.glade.h:12
-msgid "Authenticate Peer"
-msgstr "Идентифициране на съседа"
+#: ../properties/nm-pptp-dialog.glade.h:9
+msgid "Allow Stateful Encryption"
+msgstr "Разрешаване на компресия със запомняне на състояние"
 
-#: ../properties/nm-ppp-dialog.glade.h:13
-msgid "Authentication"
-msgstr "Идентифициране"
+#: ../properties/nm-pptp-dialog.glade.h:10
+msgid "Allow the following authentication methods:"
+msgstr "Разрешаване на следните методи за идентификация:"
 
-#: ../properties/nm-ppp-dialog.glade.h:14
-msgid "Compression & Encryption"
-msgstr "Компресия и шифриране"
+#: ../properties/nm-pptp-dialog.glade.h:11
+msgid "Default"
+msgstr "Стандартно"
 
-#: ../properties/nm-ppp-dialog.glade.h:15
-msgid "Connection"
-msgstr "Връзката"
+#: ../properties/nm-pptp-dialog.glade.h:12
+msgid "Domain:"
+msgstr "Домейн:"
 
-#: ../properties/nm-ppp-dialog.glade.h:16
-msgid "Debug Output"
-msgstr "Изход за изчистване на грешки"
+#: ../properties/nm-pptp-dialog.glade.h:13
+msgid "Security:"
+msgstr "Сигурност:"
 
-#: ../properties/nm-ppp-dialog.glade.h:17
-msgid "Disconnect after this many LCP echo requests fail"
-msgstr "Прекъсване на връзката след следния брой неуспешни заявки echo по LCP"
+#: ../properties/nm-pptp-dialog.glade.h:14
+msgid "Send PPP echo packets"
+msgstr "Пращане на пакети „echo“ по PPP"
 
-#: ../properties/nm-ppp-dialog.glade.h:18
-#: ../properties/nm-ppp-properties.c:216
-msgid "Enable stateful MPPE"
-msgstr "Включване на MPPE със запазване на състоянието"
+#: ../properties/nm-pptp-dialog.glade.h:15
+msgid "Use Point-to-Point Encryption (MPPE)"
+msgstr "Използване на шифриране точка до точка (MPPE)"
 
-#: ../properties/nm-ppp-dialog.glade.h:19
-msgid "Exclusive device access (UUCP-style lock)"
-msgstr "Изключителен достъп до устройство (заключване в стил UUCP)"
+#: ../properties/nm-pptp-dialog.glade.h:16
+msgid "Use TCP header compression"
+msgstr "Използване на компресия на заглавните части на TCP"
 
-#: ../properties/nm-ppp-dialog.glade.h:20
-msgid "Find Device"
-msgstr "Търсене на устройство"
+#: ../properties/nm-pptp-dialog.glade.h:17
+msgid "User name:"
+msgstr "Потребителско име:"
 
-#: ../properties/nm-ppp-dialog.glade.h:21
-msgid ""
-"For security reasons, options entered in the box above are checked against a "
-"list of allowed options before a connection is established.  Currently there "
-"are no options on the list."
-msgstr ""
-"По причини свързани със сигурността опциите въведени в полето отгоре се "
-"сравняват със списък на позволените опции, преди да се осъществи връзка. В "
-"момента няма опции в списъка."
-
-#: ../properties/nm-ppp-dialog.glade.h:22
-msgid "GPRS Options"
-msgstr "Опции за GPRS"
-
-#: ../properties/nm-ppp-dialog.glade.h:23
-msgid "Hardware RTS/CTS"
-msgstr "Хардуерна поддръжка на RTS/CTS"
-
-#: ../properties/nm-ppp-dialog.glade.h:24
-msgid "Host name or IP address of the PPTP server"
-msgstr "Име или адрес на сървъра за PPTP"
-
-#: ../properties/nm-ppp-dialog.glade.h:25
-msgid ""
-"If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
-msgstr ""
-"Ако компресията BSD не е позволена, на pppd се подава опцията „nobsdcomp“."
-
-#: ../properties/nm-ppp-dialog.glade.h:26
-msgid ""
-"If Deflate compression is not allowed the 'nodefate' option is passed to pppd"
-msgstr ""
-"Ако компресията deflate не е позволена, на pppd се подава опцията "
-"„nodeflate“."
-
-#: ../properties/nm-ppp-dialog.glade.h:27
-msgid "Maximum Receive Unit"
-msgstr "Максимален пакет за приемане"
-
-#: ../properties/nm-ppp-dialog.glade.h:28
-msgid "Maximum Transmit Unit"
-msgstr "Максимален пакет за предаване"
-
-#: ../properties/nm-ppp-dialog.glade.h:29
-msgid "Modem Connection"
-msgstr "Връзка през модем"
-
-#: ../properties/nm-ppp-dialog.glade.h:30
-msgid "PPP Options"
-msgstr "Настройки на PPP"
-
-#: ../properties/nm-ppp-dialog.glade.h:31
-msgid "Peer DNS through tunnel"
-msgstr "DNS от съседа през тунел"
-
-#: ../properties/nm-ppp-dialog.glade.h:32
-#: ../properties/nm-ppp-properties.c:251
-msgid "Refuse CHAP"
-msgstr "Отказване на CHAP"
-
-#: ../properties/nm-ppp-dialog.glade.h:33
-#: ../properties/nm-ppp-properties.c:246
-msgid "Refuse EAP"
-msgstr "Отказване на EAP"
-
-#: ../properties/nm-ppp-dialog.glade.h:34
-msgid "Refuse MS CHAP"
-msgstr "Отказване на MS CHAP"
-
-#: ../properties/nm-ppp-dialog.glade.h:35
-msgid "Require 128 bit MPPE encryption"
-msgstr "Изискване на 128-битово шифриране MPPE"
-
-#: ../properties/nm-ppp-dialog.glade.h:36
-msgid "Require Explicit IP Addr"
-msgstr "Изискване на изричен IP адрес"
-
-#: ../properties/nm-ppp-dialog.glade.h:37
-msgid "Require MPPC Compression"
-msgstr "Изискване на компресия MPPC"
-
-#: ../properties/nm-ppp-dialog.glade.h:38
-msgid "Require MPPE encryption"
-msgstr "Изискване на шифриране MPPE"
-
-#: ../properties/nm-ppp-dialog.glade.h:39
-msgid "Requires existing network connection"
-msgstr "Изисква съществуваща мрежова връзка"
-
-#: ../properties/nm-ppp-dialog.glade.h:40
-msgid "Routing"
-msgstr "Маршрутизация"
-
-#: ../properties/nm-ppp-dialog.glade.h:41
-msgid "Serial Options"
-msgstr "Настройки на серийния порт"
-
-#: ../properties/nm-ppp-dialog.glade.h:42
-msgid "Service providers GPRS access point from device config"
-msgstr ""
-"Точката за достъп на доставчика на услуги по GPRS от настройките на "
-"устройството"
-
-#: ../properties/nm-ppp-dialog.glade.h:43
-msgid "Service providers IP address"
-msgstr "IP адрес на доставчика на услуги"
-
-#: ../properties/nm-ppp-dialog.glade.h:44
-msgid "Telephone number to dial"
-msgstr "Телефонен номер за набиране"
-
-#: ../properties/nm-ppp-dialog.glade.h:45
-msgid ""
-"This is the friendly name that will be used to identify this network "
-"connection, \n"
-"e.g. \"Campus VPN\" or \"Corporate Network\""
-msgstr ""
-"Име, което се ползва за различаването на връзката към тази мрежа, напр. "
-"„Корпоративна мрежа“."
-
-#: ../properties/nm-ppp-dialog.glade.h:47
-msgid "Time in seconds between echo requests"
-msgstr "Интервал в секунди между заявките echo"
-
-#: ../properties/nm-ppp-dialog.glade.h:48
-msgid "Type:"
-msgstr "Вид:"
-
-#: ../properties/nm-ppp-dialog.glade.h:49
-#: ../properties/nm-ppp-properties.c:201
-msgid "Use Peer DNS"
-msgstr "Използване на DNS от съсед"
-
-#: ../properties/nm-ppp-dialog.glade.h:50
-msgid "When checked the \"refuse-chap\" option is passed to pppd."
-msgstr "Когато е избрано, на pppd се подава опцията „refuse-chap“."
-
-#: ../properties/nm-ppp-dialog.glade.h:51
-msgid "When checked the \"refuse-eap\" option is passed to pppd."
-msgstr "Когато е избрано, на pppd се подава опцията „refuse-eap“."
-
-#: ../properties/nm-ppp-dialog.glade.h:52
-msgid "When checked the \"refuse-mschap\" option is passed to pppd."
-msgstr "Когато е избрано, на pppd се подава опцията „refuse-mschap“."
-
-#: ../properties/nm-ppp-dialog.glade.h:53
-msgid "When checked the 'lock' option is passed to pppd"
-msgstr "Когато е избрано, на pppd се подава опцията „lock“."
-
-#: ../properties/nm-ppp-dialog.glade.h:54
-msgid "When checked the 'require-mppc' option is passed to pppd"
-msgstr "Когато е избрано, на pppd се подава опцията „require-mppc“."
-
-#: ../properties/nm-ppp-dialog.glade.h:55
-msgid ""
-"When checked this sets the pppd 'debug' option and adds some extra "
-"information from the NetworkManager plugin"
-msgstr ""
-"Когато е избрано, на pppd се подава опцията „debug“ и се добавя информация "
-"от приставката на NetworkManager."
-
-#: ../properties/nm-ppp-dialog.glade.h:56
-msgid "When checked this sets the pppd 'noipdefault' option"
-msgstr "Когато е избрано, на pppd се подава опцията „noipdefault“."
-
-#: ../properties/nm-ppp-dialog.glade.h:57
-msgid "When checked this sets the pppd 'usepeerdns' option"
-msgstr "Когато е избрано, на pppd се подава опцията „userpeerdns“."
-
-#: ../properties/nm-ppp-dialog.glade.h:58
-msgid "When this check box is cleared the \"noauth\" option is passed to pppd."
-msgstr "Когато е избрано, на pppd се подава опцията „noauth“."
-
-#: ../properties/nm-ppp-dialog.glade.h:59
-msgid "_Access Point Name:"
-msgstr "_Номер на точката за достъп:"
-
-#: ../properties/nm-ppp-dialog.glade.h:60
-msgid "_Channel:"
-msgstr "_Канал:"
-
-#: ../properties/nm-ppp-dialog.glade.h:61
-msgid "_Context Num"
-msgstr "Но_мер на контекста"
-
-#: ../properties/nm-ppp-dialog.glade.h:62
-msgid "_Custom PPP options:"
-msgstr "_Допълнителни опции на PPP"
-
-#: ../properties/nm-ppp-dialog.glade.h:63
-msgid "_Device Address:"
-msgstr "_Адрес на устройството:"
-
-#: ../properties/nm-ppp-dialog.glade.h:64
+#: ../properties/nm-pptp-dialog.glade.h:18
 msgid "_Gateway:"
 msgstr "_Шлюз:"
 
-#: ../properties/nm-ppp-dialog.glade.h:65
-msgid "_IP Address:"
-msgstr "IP а_дрес"
+#: ../properties/nm-pptp-dialog.glade.h:19
+msgid "gtk-cancel"
+msgstr "gtk-cancel"
 
-#: ../properties/nm-ppp-dialog.glade.h:66
-msgid "_Import Saved Configuration..."
-msgstr "_Внасяне на запазени настройки..."
+#: ../properties/nm-pptp-dialog.glade.h:20
+msgid "gtk-ok"
+msgstr "gtk-ok"
 
-#: ../properties/nm-ppp-dialog.glade.h:67
-msgid "_Only use VPN connection for these addresses"
-msgstr "Да се използва само връзката през _ВЧМ за тези адреси"
+#: ../properties/nm-pptp.c:50
+msgid "Point-to-Point Tunneling Protocol (PPTP)"
+msgstr "Тунелиращ протокол — точка до точка (PPTP)"
 
-#: ../properties/nm-ppp-dialog.glade.h:68
-msgid "_Packet Type"
-msgstr "Вид _пакет"
+#: ../properties/nm-pptp.c:51
+msgid "Compatible with Microsoft and other PPTP VPN servers."
+msgstr "Съвместим със сървърите на Microsoft и други за ВЧМ по PPTP."
 
-#: ../properties/nm-ppp-dialog.glade.h:69
-msgid "_Telephone Number:"
-msgstr "_Телефонен номер:"
+#~ msgid "Authentication Type:"
+#~ msgstr "Вид на идентификацията:"
 
-#: ../properties/nm-ppp-dialog.glade.h:70
-msgid "connect-delay"
-msgstr "забавяне при свързване"
+#~ msgid "_Remember for this session"
+#~ msgstr "_Запомняне за тази сесия"
 
-#: ../properties/nm-ppp-properties.c:45
-msgid "pppd tunnel (PPTP, BTGPRS, Dialup)"
-msgstr "Тунел по pppd (PPTP, BTGPRS, връзка по телефона)"
+#~ msgid "_Save in keyring"
+#~ msgstr "Запазване в клю_чодържателя"
 
-#: ../properties/nm-ppp-properties.c:134
-msgid "Name"
-msgstr "Име"
+#~ msgid "Authenticate Connection"
+#~ msgstr "Идентифициране на връзката"
 
-#: ../properties/nm-ppp-properties.c:146
-msgid "PPTP Server"
-msgstr "Сървър за PPTP"
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Authentication Information</span>\n"
+#~ "\n"
+#~ "The connection '%s' may need some form of authentication.\n"
+#~ "\n"
+#~ "Please select an appropriate authentication type and provide the "
+#~ "necessary credentials below:\n"
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">Информация за идентификация</span>\n"
+#~ "\n"
+#~ "Връзката „%s“ се нуждае от някаква форма на идентификация.\n"
+#~ "\n"
+#~ "Изберете подходящия вид идентификация и добавете необходимата за това "
+#~ "информация отдолу:\n"
 
-#: ../properties/nm-ppp-properties.c:151
-msgid "Telephone Number"
-msgstr "Телефонен номер"
+#~ msgid "Authentication Required"
+#~ msgstr "Изисква се идентификация"
 
-#: ../properties/nm-ppp-properties.c:156
-msgid "Bluetooth Address"
-msgstr "Адрес по Bluetooth"
+#~ msgid "_Authentication Type:"
+#~ msgstr "_Вид на идентификацията:"
 
-#: ../properties/nm-ppp-properties.c:161
-msgid "Bluetooth Channel"
-msgstr "Канал за Bluetooth"
+#~ msgid "_Remote name:"
+#~ msgstr "_Отдалечено име:"
 
-#: ../properties/nm-ppp-properties.c:166
-msgid "GPRS APN"
-msgstr "№ на точка за достъп по GPRS"
+#~ msgid "auth-chap-window"
+#~ msgstr "прозорец-за-идентификация-с-chap"
 
-#: ../properties/nm-ppp-properties.c:171
-msgid "GPRS IP"
-msgstr "IP по GPRS"
+#~ msgid "auth-mschapv2-window"
+#~ msgstr "прозорец-за-идентификация-с-mschapv2"
 
-#: ../properties/nm-ppp-properties.c:176
-msgid "GPRS Context No."
-msgstr "№ на контекста на GPRS"
+#~ msgid "auth-none-window"
+#~ msgstr "прозорец-за-никаква-идентификация"
 
-#: ../properties/nm-ppp-properties.c:181
-msgid "GPRS Packet Type"
-msgstr "Вид на пакетите по GPRS"
+#~ msgid "VPN Connection Manager (PPP generic)"
+#~ msgstr "Управление на връзките към ВЧМ (за PPP)"
 
-#: ../properties/nm-ppp-properties.c:186
-msgid "Use CTS/RTS flow control"
-msgstr "Използване на CTS/RTS"
+#~ msgid "00:00:00:00"
+#~ msgstr "00:00:00:00"
 
-#: ../properties/nm-ppp-properties.c:191
-msgid "Connect via a modem"
-msgstr "Свързване през модем"
+#~ msgid "<b>Connection Name</b>"
+#~ msgstr "<b>Име на връзката</b>"
 
-#: ../properties/nm-ppp-properties.c:196
-msgid "Require IP to be provided"
-msgstr "Изискване на предоставянето на IP"
+#~ msgid "<b>Delays and TImeouts</b>"
+#~ msgstr "<b>Забавяния и изтичане на времето</b>"
 
-#: ../properties/nm-ppp-properties.c:206
-msgid "Use MPPE encryption"
-msgstr "Използване на шифриране MPPE"
+#~ msgid "<b>Packet Parameters</b>"
+#~ msgstr "<b>Параметри на пакетите</b>"
 
-#: ../properties/nm-ppp-properties.c:211
-msgid "Use 128 bit MPPE encryption"
-msgstr "Използване на 128-битово шифриране MPPE"
+#~ msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+#~ msgstr "<i>например: 172.16.0.0/16 10.11.12.0/24</i>"
 
-#: ../properties/nm-ppp-properties.c:221
-msgid "Use MPPC compression"
-msgstr "Използване на компресия MPPC"
+#~ msgid ""
+#~ "A list of extra options to pppd as would be typed on the command line"
+#~ msgstr ""
+#~ "Списък с допълнителните опции за pppd, които ще бъдат предадени през "
+#~ "командния ред"
 
-#: ../properties/nm-ppp-properties.c:226
-msgid "Do not use deflate compression"
-msgstr "Без използване на компресия deflate"
+#~ msgid "Compression & Encryption"
+#~ msgstr "Компресия и шифриране"
 
-#: ../properties/nm-ppp-properties.c:231
-msgid "Do not use BSD compression"
-msgstr "Без използване на компресия BSD"
+#~ msgid "Connection"
+#~ msgstr "Връзката"
 
-#: ../properties/nm-ppp-properties.c:236
-msgid "Exclusive device access by pppd"
-msgstr "Изключителен достъп до устройството от pppd"
+#~ msgid "Debug Output"
+#~ msgstr "Изход за изчистване на грешки"
 
-#: ../properties/nm-ppp-properties.c:241
-msgid "Authenticate remote peer"
-msgstr "Идентифициране на отдалечен съсед"
+#~ msgid "Disconnect after this many LCP echo requests fail"
+#~ msgstr ""
+#~ "Прекъсване на връзката след следния брой неуспешни заявки „echo“ по LCP"
 
-#: ../properties/nm-ppp-properties.c:256
-msgid "Refuse MSCHAP"
-msgstr "Отказване на MSCHAP"
+#~ msgid "Enable stateful MPPE"
+#~ msgstr "Включване на MPPE със запомняне на състоянието"
 
-#: ../properties/nm-ppp-properties.c:261
-msgid "Maximum transmit unit (in bytes)"
-msgstr "Максимален пакет за предаване (в байтове)"
+#~ msgid "Exclusive device access (UUCP-style lock)"
+#~ msgstr "Изключителен достъп до устройство (заключване в стил UUCP)"
 
-#: ../properties/nm-ppp-properties.c:266
-msgid "Maximum receive unit (in bytes)"
-msgstr "Максимален пакет за приемане (в байтове)"
+#~ msgid "Find Device"
+#~ msgstr "Търсене на устройство"
 
-#: ../properties/nm-ppp-properties.c:271
-msgid "Number of failed LCP echos to cause disconnect"
-msgstr ""
-"Брой неуспешни заявки echo по LCP, които да предизвикат прекъсване на "
-"връзката"
+#~ msgid ""
+#~ "For security reasons, options entered in the box above are checked "
+#~ "against a list of allowed options before a connection is established.  "
+#~ "Currently there are no options on the list."
+#~ msgstr ""
+#~ "По причини свързани със сигурността опциите въведени в полето отгоре се "
+#~ "сравняват със списък на позволените опции, преди да се осъществи връзка. "
+#~ "В момента няма опции в списъка."
 
-#: ../properties/nm-ppp-properties.c:276
-msgid "Interval (in seconds) at which to issue LCP echos"
-msgstr "Интервал (в секунди) между две последователни заявки echo по LCP"
+#~ msgid "GPRS Options"
+#~ msgstr "Опции за GPRS"
 
-#: ../properties/nm-ppp-properties.c:281
-msgid "Interval (in milliseconds) to wait before connecting."
-msgstr "Интервал (в милисекунди) преди да се установи връзка."
+#~ msgid "Hardware RTS/CTS"
+#~ msgstr "Хардуерна поддръжка на RTS/CTS"
 
-#: ../properties/nm-ppp-properties.c:286
-msgid "Custom PPP options"
-msgstr "Допълнителни опции за PPP"
+#~ msgid "Host name or IP address of the PPTP server"
+#~ msgstr "Име или адрес на сървъра за PPTP"
 
-#: ../properties/nm-ppp-properties.c:296
-msgid "Use Peer DNS over the Tunnel"
-msgstr "Използване на DNS от съсед по тунел"
+#~ msgid ""
+#~ "If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
+#~ msgstr ""
+#~ "Ако компресията BSD не е позволена, на pppd се подава опцията „nobsdcomp“."
 
-#: ../properties/nm-ppp-properties.c:302
-msgid "Specific networks available"
-msgstr "Налични са специфични мрежи"
+#~ msgid ""
+#~ "If Deflate compression is not allowed the 'nodefate' option is passed to "
+#~ "pppd"
+#~ msgstr ""
+#~ "Ако компресията deflate не е позволена, на pppd се подава опцията "
+#~ "„nodeflate“."
 
-#: ../properties/nm-ppp-properties.c:308
-msgid "Limit to specific networks"
-msgstr "Ограничаване до специфични мрежи"
+#~ msgid "Maximum Receive Unit"
+#~ msgstr "Максимален пакет за приемане"
 
-#: ../properties/vpnui_impl.c:229
-#, c-format
-msgid "The following '%s' connection will be created:"
-msgstr "Ще бъде създадена следната връзка „%s“:"
+#~ msgid "Maximum Transmit Unit"
+#~ msgstr "Максимален пакет за предаване"
 
-#: ../properties/vpnui_impl.c:242
-#, c-format
-msgid "\t%s:  %s\n"
-msgstr "\t%s:  %s\n"
+#~ msgid "Modem Connection"
+#~ msgstr "Връзка през модем"
 
-#: ../properties/vpnui_impl.c:245
-msgid "The connection details can be changed using the \"Back\" button."
-msgstr "Настройките на връзката могат да се редактират с бутона „Назад“."
+#~ msgid "PPP Options"
+#~ msgstr "Настройки на PPP"
 
-#: ../properties/vpnui_impl.c:317
-msgid "Select file to import"
-msgstr "Избор на файл за внасяне"
+#~ msgid "Peer DNS through tunnel"
+#~ msgstr "DNS от съседа през тунел"
 
-#. printf ("in impl_export\n");
-#: ../properties/vpnui_impl.c:462
-msgid "Save as..."
-msgstr "Запазване като..."
+#~ msgid "Refuse CHAP"
+#~ msgstr "Отказване на CHAP"
 
-#: ../properties/vpnui_impl.c:491
-#, c-format
-msgid "A file named \"%s\" already exists."
-msgstr "Файл с име „%s“ вече съществува."
+#~ msgid "Refuse EAP"
+#~ msgstr "Отказване на EAP"
 
-#: ../properties/vpnui_impl.c:494
-msgid "Do you want to replace it with the one you are saving?"
-msgstr "Искате ли да го презапишете?"
+#~ msgid "Refuse MS CHAP"
+#~ msgstr "Отказване на MS CHAP"
 
-#: ../src/nm-ppp-starter.c:140
-msgid "VPN Connection failed"
-msgstr "Неуспешно свързване към ВЧМ"
+#~ msgid "Require 128 bit MPPE encryption"
+#~ msgstr "Изискване на 128-битово шифриране MPPE"
+
+#~ msgid "Require Explicit IP Addr"
+#~ msgstr "Изискване на изричен адрес по IP"
+
+#~ msgid "Require MPPC Compression"
+#~ msgstr "Изискване на компресия MPPC"
+
+#~ msgid "Require MPPE encryption"
+#~ msgstr "Изискване на шифриране MPPE"
+
+#~ msgid "Requires existing network connection"
+#~ msgstr "Изисква съществуваща мрежова връзка"
+
+#~ msgid "Routing"
+#~ msgstr "Маршрутизация"
+
+#~ msgid "Serial Options"
+#~ msgstr "Настройки на серийния порт"
+
+#~ msgid "Service providers GPRS access point from device config"
+#~ msgstr ""
+#~ "Точката за достъп на доставчика на услуги по GPRS от настройките на "
+#~ "устройството"
+
+#~ msgid "Service providers IP address"
+#~ msgstr "Адрес по IP на доставчика на услуги"
+
+#~ msgid "Telephone number to dial"
+#~ msgstr "Телефонен номер за набиране"
+
+#~ msgid ""
+#~ "This is the friendly name that will be used to identify this network "
+#~ "connection, \n"
+#~ "e.g. \"Campus VPN\" or \"Corporate Network\""
+#~ msgstr ""
+#~ "Име, което се ползва за различаването на връзката към тази мрежа, напр. "
+#~ "„Корпоративна мрежа“."
+
+#~ msgid "Time in seconds between echo requests"
+#~ msgstr "Интервал в секунди между заявките „echo“"
+
+#~ msgid "Type:"
+#~ msgstr "Вид:"
+
+#~ msgid "Use Peer DNS"
+#~ msgstr "Използване на DNS от съсед"
+
+#~ msgid "When checked the \"refuse-chap\" option is passed to pppd."
+#~ msgstr "Когато е избрано, на pppd се подава опцията „refuse-chap“."
+
+#~ msgid "When checked the \"refuse-eap\" option is passed to pppd."
+#~ msgstr "Когато е избрано, на pppd се подава опцията „refuse-eap“."
+
+#~ msgid "When checked the \"refuse-mschap\" option is passed to pppd."
+#~ msgstr "Когато е избрано, на pppd се подава опцията „refuse-mschap“."
+
+#~ msgid "When checked the 'lock' option is passed to pppd"
+#~ msgstr "Когато е избрано, на pppd се подава опцията „lock“."
+
+#~ msgid "When checked the 'require-mppc' option is passed to pppd"
+#~ msgstr "Когато е избрано, на pppd се подава опцията „require-mppc“."
+
+#~ msgid ""
+#~ "When checked this sets the pppd 'debug' option and adds some extra "
+#~ "information from the NetworkManager plugin"
+#~ msgstr ""
+#~ "Когато е избрано, на pppd се подава опцията „debug“ и се добавя "
+#~ "информация от приставката на NetworkManager."
+
+#~ msgid "When checked this sets the pppd 'noipdefault' option"
+#~ msgstr "Когато е избрано, на pppd се подава опцията „noipdefault“."
+
+#~ msgid "When checked this sets the pppd 'usepeerdns' option"
+#~ msgstr "Когато е избрано, на pppd се подава опцията „userpeerdns“."
+
+#~ msgid ""
+#~ "When this check box is cleared the \"noauth\" option is passed to pppd."
+#~ msgstr "Когато е избрано, на pppd се подава опцията „noauth“."
+
+#~ msgid "_Access Point Name:"
+#~ msgstr "_Номер на точката за достъп:"
+
+#~ msgid "_Channel:"
+#~ msgstr "_Канал:"
+
+#~ msgid "_Context Num"
+#~ msgstr "Но_мер на контекста"
+
+#~ msgid "_Custom PPP options:"
+#~ msgstr "_Допълнителни опции на PPP"
+
+#~ msgid "_Device Address:"
+#~ msgstr "_Адрес на устройството:"
+
+#~ msgid "_IP Address:"
+#~ msgstr "А_дрес по IP"
+
+#~ msgid "_Import Saved Configuration..."
+#~ msgstr "_Внасяне на запазени настройки…"
+
+#~ msgid "_Only use VPN connection for these addresses"
+#~ msgstr "Да се използва само връзката през _ВЧМ за тези адреси"
+
+#~ msgid "_Packet Type"
+#~ msgstr "Вид _пакет"
+
+#~ msgid "_Telephone Number:"
+#~ msgstr "_Телефонен номер:"
+
+#~ msgid "connect-delay"
+#~ msgstr "забавяне при свързване"
+
+#~ msgid "pppd tunnel (PPTP, BTGPRS, Dialup)"
+#~ msgstr "Тунел по pppd (PPTP, BTGPRS, връзка по телефона)"
+
+#~ msgid "Name"
+#~ msgstr "Име"
+
+#~ msgid "PPTP Server"
+#~ msgstr "Сървър за PPTP"
+
+#~ msgid "Telephone Number"
+#~ msgstr "Телефонен номер"
+
+#~ msgid "Bluetooth Address"
+#~ msgstr "Адрес по Bluetooth"
+
+#~ msgid "Bluetooth Channel"
+#~ msgstr "Канал за Bluetooth"
+
+#~ msgid "GPRS APN"
+#~ msgstr "№ на точка за достъп по GPRS"
+
+#~ msgid "GPRS IP"
+#~ msgstr "IP по GPRS"
+
+#~ msgid "GPRS Context No."
+#~ msgstr "№ на контекста на GPRS"
+
+#~ msgid "GPRS Packet Type"
+#~ msgstr "Вид на пакетите по GPRS"
+
+#~ msgid "Use CTS/RTS flow control"
+#~ msgstr "Използване на CTS/RTS"
+
+#~ msgid "Connect via a modem"
+#~ msgstr "Свързване през модем"
+
+#~ msgid "Require IP to be provided"
+#~ msgstr "Изискване на предоставянето на IP"
+
+#~ msgid "Use MPPE encryption"
+#~ msgstr "Използване на шифриране MPPE"
+
+#~ msgid "Use 128 bit MPPE encryption"
+#~ msgstr "Използване на 128-битово шифриране MPPE"
+
+#~ msgid "Do not use deflate compression"
+#~ msgstr "Без използване на компресия deflate"
+
+#~ msgid "Do not use BSD compression"
+#~ msgstr "Без използване на компресия BSD"
+
+#~ msgid "Exclusive device access by pppd"
+#~ msgstr "Изключителен достъп до устройството от pppd"
+
+#~ msgid "Authenticate remote peer"
+#~ msgstr "Идентифициране на отдалечен съсед"
+
+#~ msgid "Maximum transmit unit (in bytes)"
+#~ msgstr "Максимален пакет за предаване (в байтове)"
+
+#~ msgid "Maximum receive unit (in bytes)"
+#~ msgstr "Максимален пакет за приемане (в байтове)"
+
+#~ msgid "Number of failed LCP echos to cause disconnect"
+#~ msgstr ""
+#~ "Брой неуспешни заявки „echo“ по LCP, които да предизвикат прекъсване на "
+#~ "връзката"
+
+#~ msgid "Interval (in seconds) at which to issue LCP echos"
+#~ msgstr "Интервал (в секунди) между две последователни заявки „echo“ по LCP"
+
+#~ msgid "Interval (in milliseconds) to wait before connecting."
+#~ msgstr "Интервал (в милисекунди) преди да се установи връзка."
+
+#~ msgid "Custom PPP options"
+#~ msgstr "Допълнителни опции за PPP"
+
+#~ msgid "Use Peer DNS over the Tunnel"
+#~ msgstr "Използване на DNS от съсед по тунел"
+
+#~ msgid "Specific networks available"
+#~ msgstr "Налични са специфични мрежи"
+
+#~ msgid "Limit to specific networks"
+#~ msgstr "Ограничаване до специфични мрежи"
+
+#~ msgid "The following '%s' connection will be created:"
+#~ msgstr "Ще бъде създадена следната връзка „%s“:"
+
+#~ msgid "\t%s:  %s\n"
+#~ msgstr "\t%s:  %s\n"
+
+#~ msgid "The connection details can be changed using the \"Back\" button."
+#~ msgstr "Настройките на връзката могат да се редактират с бутона „Назад“."
+
+#~ msgid "Select file to import"
+#~ msgstr "Избор на файл за внасяне"
+
+#~ msgid "Save as..."
+#~ msgstr "Запазване като…"
+
+#~ msgid "A file named \"%s\" already exists."
+#~ msgstr "Файл с име „%s“ вече съществува."
+
+#~ msgid "Do you want to replace it with the one you are saving?"
+#~ msgstr "Искате ли да го презапишете?"
