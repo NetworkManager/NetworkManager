@@ -1,14 +1,14 @@
 # Bulgarian translation of NetworkManager po-file
-# Copyright (C) 2005, 2007 Free Software Foundation, Inc.
+# Copyright (C) 2005, 2007, 2008 Free Software Foundation, Inc.
 # This file is distributed under the same license as the NetworkManager package.
-# Alexander Shopov <ash@contact.bg>, 2005, 2007.
+# Alexander Shopov <ash@contact.bg>, 2005, 2007, 2008.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: NetworkManager HEAD\n"
+"Project-Id-Version: NetworkManager trunk\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-07-27 23:54+0300\n"
-"PO-Revision-Date: 2007-02-02 05:46+0200\n"
+"POT-Creation-Date: 2008-08-02 08:52+0300\n"
+"PO-Revision-Date: 2008-08-01 07:30+0300\n"
 "Last-Translator: Alexander Shopov <ash@contact.bg>\n"
 "Language-Team: Bulgarian <dict@fsa-bg.org>\n"
 "MIME-Version: 1.0\n"
@@ -19,35 +19,35 @@ msgstr ""
 #: ../src/nm-netlink-monitor.c:193 ../src/nm-netlink-monitor.c:471
 #, c-format
 msgid "error processing netlink message: %s"
-msgstr ""
+msgstr "грешка при обработката на следното съобщение от мрежовия слой: %s"
 
 #: ../src/nm-netlink-monitor.c:250
-#, fuzzy, c-format
+#, c-format
 msgid "unable to allocate netlink handle for monitoring link status: %s"
 msgstr ""
-"неуспешно създаване на мрежово гнездо за наблюдение на устройства за кабелен "
-"Етернет - %s"
+"не може да се зададе модул в мрежовия слой за наблюдение на състоянието на "
+"връзката — %s"
 
 #: ../src/nm-netlink-monitor.c:260
-#, fuzzy, c-format
+#, c-format
 msgid "unable to connect to netlink for monitoring link status: %s"
 msgstr ""
-"неуспешно свързване към мрежовото гнездо за наблюдение на устройства за "
-"кабелен Етернет - %s"
+"не може да се осъществи връзка с мрежовия слой за наблюдение на състоянието "
+"на връзката — %s"
 
 #: ../src/nm-netlink-monitor.c:268
-#, fuzzy, c-format
+#, c-format
 msgid "unable to join netlink group for monitoring link status: %s"
 msgstr ""
-"неуспешно свързване към мрежовото гнездо за наблюдение на устройства за "
-"кабелен Етернет - %s"
+"не може да се осъществи присъединяване към групата на мрежовия слой за "
+"наблюдение на състоянието на връзката — %s"
 
 #: ../src/nm-netlink-monitor.c:276
-#, fuzzy, c-format
+#, c-format
 msgid "unable to allocate netlink link cache for monitoring link status: %s"
 msgstr ""
-"неуспешно създаване на мрежово гнездо за наблюдение на устройства за кабелен "
-"Етернет - %s"
+"не може да се зададе временна памет в мрежовия слой за наблюдение на "
+"състоянието на връзката — %s"
 
 #: ../src/nm-netlink-monitor.c:494
 #, c-format
@@ -57,11 +57,11 @@ msgstr "грешка при изчакване за данни през гнез
 #: ../src/NetworkManager.c:250
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
-msgstr ""
+msgstr "Неправилна опция. Ползвайте --help, за да видите списъка с опции.\n"
 
 #: ../src/dhcp-manager/nm-dhcp-dhclient.c:87
 msgid "# Created by NetworkManager\n"
-msgstr ""
+msgstr "# Създаден от NetworkManager\n"
 
 #: ../src/dhcp-manager/nm-dhcp-dhclient.c:93
 #, c-format
@@ -69,195 +69,207 @@ msgid ""
 "# Merged from %s\n"
 "\n"
 msgstr ""
+"# Слят от %s\n"
+"\n"
 
 #: ../src/named-manager/nm-named-manager.c:117
 msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
-msgstr ""
+msgstr "БЕЛЕЖКА: стандартно glibc поддържа максимум 3 сървъра за имена."
 
 #: ../src/named-manager/nm-named-manager.c:119
 msgid "The nameservers listed below may not be recognized."
-msgstr ""
+msgstr "Сървърите за имена отдолу могат да не бъдат разпознати."
 
 #: ../system-settings/src/main.c:365
 #, c-format
 msgid "Auto %s"
-msgstr ""
+msgstr "Автоматично %s"
 
 #: ../libnm-util/crypto.c:125
 #, c-format
 msgid "PEM key file had no end tag '%s'."
-msgstr ""
+msgstr "Крайният етикет „%s“ липсва в сертификат във формат PEM."
 
 #: ../libnm-util/crypto.c:135
 #, c-format
 msgid "Doesn't look like a PEM private key file."
-msgstr ""
+msgstr "Това не изглежда да е сертификат във формат PEM с частен ключ."
 
 #: ../libnm-util/crypto.c:143
 #, c-format
 msgid "Not enough memory to store PEM file data."
 msgstr ""
+"Няма достатъчно памет за запазването на данните от сертификата във формат "
+"PEM."
 
 #: ../libnm-util/crypto.c:159
 #, c-format
 msgid "Malformed PEM file: Proc-Type was not first tag."
 msgstr ""
+"Неправилен сертификат във формат PEM: първият етикет не беше „Proc-Type“."
 
 #: ../libnm-util/crypto.c:167
 #, c-format
 msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
 msgstr ""
+"Неправилен сертификат във формат PEM: непознат етикет „Proc-Type“ — „%s“."
 
 #: ../libnm-util/crypto.c:177
 #, c-format
 msgid "Malformed PEM file: DEK-Info was not the second tag."
 msgstr ""
+"Неправилен сертификат във формат PEM: вторият етикет не беше „DEK-Info“."
 
 #: ../libnm-util/crypto.c:188
 #, c-format
 msgid "Malformed PEM file: no IV found in DEK-Info tag."
 msgstr ""
+"Неправилен сертификат във формат PEM: липсва първоначален вектор в етикета "
+"„DEK-Info“."
 
 #: ../libnm-util/crypto.c:195
 #, c-format
 msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
 msgstr ""
+"Неправилен сертификат във формат PEM: неправилен първоначален вектор в "
+"етикета „DEK-Info“."
 
 #: ../libnm-util/crypto.c:208
 #, c-format
 msgid "Malformed PEM file: unknown private key cipher '%s'."
 msgstr ""
+"Неправилен сертификат във формат PEM: непознат шифър за частен ключ „%s“."
 
 #: ../libnm-util/crypto.c:227
 #, c-format
 msgid "Could not decode private key."
-msgstr ""
+msgstr "Частният ключ не може да бъде декодиран."
 
 #: ../libnm-util/crypto.c:271
 #, c-format
 msgid "PEM certificate '%s' had no end tag '%s'."
-msgstr ""
+msgstr "Крайният етикет „1$%s“ липсва в сертификата във формат PEM — „2$%s“."
 
 #: ../libnm-util/crypto.c:281
 #, c-format
 msgid "Failed to decode certificate."
-msgstr ""
+msgstr "Сертификатът не може да бъде декодиран."
 
 #: ../libnm-util/crypto.c:290 ../libnm-util/crypto.c:298
 #, c-format
 msgid "Not enough memory to store certificate data."
-msgstr ""
+msgstr "Няма памет за запазването на данните от сертификат."
 
 #: ../libnm-util/crypto.c:328
 #, c-format
 msgid "IV must be an even number of bytes in length."
-msgstr ""
+msgstr "Началният вектор трябва да е четен брой байта на дължина."
 
 #: ../libnm-util/crypto.c:337
 #, c-format
 msgid "Not enough memory to store the IV."
-msgstr ""
+msgstr "Няма достатъчно памет за запазването на началния вектор."
 
 #: ../libnm-util/crypto.c:348
 #, c-format
 msgid "IV contains non-hexadecimal digits."
-msgstr ""
+msgstr "Началният вектор съдържа низ, който не е шестнайсетично число."
 
 #: ../libnm-util/crypto.c:386 ../libnm-util/crypto_gnutls.c:126
 #: ../libnm-util/crypto_nss.c:136
 #, c-format
 msgid "Private key cipher '%s' was unknown."
-msgstr ""
+msgstr "Шифърът за частен ключ „%s“ е непознат."
 
 #: ../libnm-util/crypto.c:395
 #, c-format
 msgid "Not enough memory to create private key decryption key."
-msgstr ""
+msgstr "Няма достатъчно памет за създаването на частен ключ за дешифриране."
 
 #: ../libnm-util/crypto.c:513
 #, c-format
 msgid "Not enough memory to store decrypted private key."
-msgstr ""
+msgstr "Няма достатъчно памет за запазването на частен ключ за дешифриране."
 
 #: ../libnm-util/crypto_gnutls.c:73
 #, c-format
 msgid "Failed to initialize the MD5 engine: %s / %s."
-msgstr ""
+msgstr "Модулът за MD5 не може да бъде инициализиран: %s / %s."
 
 #: ../libnm-util/crypto_gnutls.c:135 ../libnm-util/crypto_nss.c:145
 #, c-format
 msgid "Not enough memory for decrypted key buffer."
-msgstr ""
+msgstr "Няма достатъчно памет за буфера за дешифриране."
 
 #: ../libnm-util/crypto_gnutls.c:143
 #, c-format
 msgid "Failed to initialize the decryption cipher context: %s / %s."
-msgstr ""
+msgstr "Контекстът за дешифриране не може да бъде инициализиран: %s / %s."
 
 #: ../libnm-util/crypto_gnutls.c:152
 #, c-format
 msgid "Failed to set symmetric key for decryption: %s / %s."
-msgstr ""
+msgstr "Симетричният ключ за дешифриране не може да бъде зададен: %s / %s."
 
 #: ../libnm-util/crypto_gnutls.c:161
 #, c-format
 msgid "Failed to set IV for decryption: %s / %s."
-msgstr ""
+msgstr "Началният вектор за дешифриране не може да бъде зададен: %s / %s."
 
 #: ../libnm-util/crypto_gnutls.c:170
 #, c-format
 msgid "Failed to decrypt the private key: %s / %s."
-msgstr ""
+msgstr "Частният ключ не може да бъде дешифриран: %s / %s."
 
 #: ../libnm-util/crypto_gnutls.c:208
 #, c-format
 msgid "Error initializing certificate data: %s"
-msgstr ""
+msgstr "Грешка при инициализиране на данните от сертификата: %s"
 
 #: ../libnm-util/crypto_gnutls.c:220
 #, c-format
 msgid "Couldn't decode certificate: %s"
-msgstr ""
+msgstr "Сертификатът не може да бъде декодиран: %s"
 
 #: ../libnm-util/crypto_nss.c:78
 #, c-format
 msgid "Failed to initialize the MD5 context: %d."
-msgstr ""
+msgstr "Контекстът за MD5 не може да бъде инициализиран: %d."
 
 #: ../libnm-util/crypto_nss.c:153
 #, c-format
 msgid "Failed to initialize the decryption cipher slot."
-msgstr ""
+msgstr "Буферът за шифъра за дешифриране не може да бъде инициализиран."
 
 #: ../libnm-util/crypto_nss.c:163
 #, c-format
 msgid "Failed to set symmetric key for decryption."
-msgstr ""
+msgstr "Симетричният ключ за дешифриране не може да бъде зададен."
 
 #: ../libnm-util/crypto_nss.c:173
 #, c-format
 msgid "Failed to set IV for decryption."
-msgstr ""
+msgstr "Началният вектор за дешифриране не може да бъде зададен."
 
 #: ../libnm-util/crypto_nss.c:181
 #, c-format
 msgid "Failed to initialize the decryption context."
-msgstr ""
+msgstr "Контекстът за дешифриране не може да бъде инициализиран."
 
 #: ../libnm-util/crypto_nss.c:194
 #, c-format
 msgid "Failed to decrypt the private key: %d."
-msgstr ""
+msgstr "Частният ключ не може да бъде дешифриран: %d."
 
 #: ../libnm-util/crypto_nss.c:206
 #, c-format
 msgid "Failed to finalize decryption of the private key: %d."
-msgstr ""
+msgstr "Дешифрирането на частния ключ не може да приключи: %d."
 
 #: ../libnm-util/crypto_nss.c:250
 #, c-format
 msgid "Couldn't decode certificate: %d"
-msgstr ""
+msgstr "Сертификатът не може да бъде дешифриран: %d"
 
 #~ msgid "Passphrase for wireless network %s"
 #~ msgstr "Парола за безжичната мрежа %s"
@@ -296,8 +308,8 @@ msgstr ""
 #~ "Copyright © 2004-2006 Red Hat, Inc.\n"
 #~ "Copyright © 2005-2006 Novell, Inc."
 #~ msgstr ""
-#~ "Авторски права © 2004-2006 Red Hat, Inc.\n"
-#~ "Авторски права © 2004-2006 Novell, Inc."
+#~ "Авторски права © 2004—2006 Red Hat, Inc.\n"
+#~ "Авторски права © 2004—2006 Novell, Inc."
 
 #~ msgid ""
 #~ "Notification area applet for managing your network devices and "
@@ -318,8 +330,8 @@ msgstr ""
 #~ "Copyright © 2004-2005 Red Hat, Inc.\n"
 #~ "Copyright © 2005-2006 Novell, Inc."
 #~ msgstr ""
-#~ "Авторски права © 2004-2005 Red Hat, Inc.\n"
-#~ "Авторски права © 2005-2006 Novell, Inc."
+#~ "Авторски права © 2004—2005 Red Hat, Inc.\n"
+#~ "Авторски права © 2005—2006 Novell, Inc."
 
 #~ msgid "VPN Login Failure"
 #~ msgstr "Грешка при идентификация пред ВЧМ"
@@ -378,31 +390,31 @@ msgstr ""
 #~ msgstr "(не се знае)"
 
 #~ msgid "Preparing device %s for the wired network..."
-#~ msgstr "Подготвяне на устройството „%s“ за кабелната мрежа..."
+#~ msgstr "Подготвяне на устройството „%s“ за кабелната мрежа…"
 
 #~ msgid "Preparing device %s for the wireless network '%s'..."
-#~ msgstr "Подготвяне на устройството „%s“ за безжичната мрежа „%s“..."
+#~ msgstr "Подготвяне на устройството „%s“ за безжичната мрежа „%s“…"
 
 #~ msgid "Configuring device %s for the wired network..."
-#~ msgstr "Настройване на устройството „%s“ за кабелната мрежа..."
+#~ msgstr "Настройване на устройството „%s“ за кабелната мрежа…"
 
 #~ msgid "Attempting to join the wireless network '%s'..."
-#~ msgstr "Опит за свързване към безжичната мрежа „%s“..."
+#~ msgstr "Опит за свързване към безжичната мрежа „%s“…"
 
 #~ msgid "Waiting for Network Key for the wireless network '%s'..."
-#~ msgstr "Изчакване за мрежовия ключ за безжичната мрежа „%s“..."
+#~ msgstr "Изчакване за мрежовия ключ за безжичната мрежа „%s“…"
 
 #~ msgid "Requesting a network address from the wired network..."
-#~ msgstr "Запитване на кабелната мрежа за адрес..."
+#~ msgstr "Запитване на кабелната мрежа за адрес…"
 
 #~ msgid "Requesting a network address from the wireless network '%s'..."
-#~ msgstr "Запитване на безжичната мрежа „%s“ за адрес..."
+#~ msgstr "Запитване на безжичната мрежа „%s“ за адрес…"
 
 #~ msgid "Finishing connection to the wired network..."
-#~ msgstr "Завършване на връзката към кабелната мрежа..."
+#~ msgstr "Завършване на връзката към кабелната мрежа…"
 
 #~ msgid "Finishing connection to the wireless network '%s'..."
-#~ msgstr "Завършване на връзката към безжичната мрежа „%s“..."
+#~ msgstr "Завършване на връзката към безжичната мрежа „%s“…"
 
 #~ msgid "NetworkManager is not running"
 #~ msgstr "NetworkManager не е включен"
@@ -429,34 +441,34 @@ msgstr ""
 #~ msgstr "Свързване по ВЧМ към „%s“"
 
 #~ msgid "_Connect to Other Wireless Network..."
-#~ msgstr "_Свързване към други безжични мрежи..."
+#~ msgstr "_Свързване към други безжични мрежи…"
 
 #~ msgid "Create _New Wireless Network..."
-#~ msgstr "Създаване на _нова безжична мрежа..."
+#~ msgstr "Създаване на _нова безжична мрежа…"
 
 #~ msgid "_VPN Connections"
 #~ msgstr "_Връзки по ВЧМ"
 
 #~ msgid "_Configure VPN..."
-#~ msgstr "_Настройване на ВЧМ..."
+#~ msgstr "_Настройване на ВЧМ…"
 
 #~ msgid "_Disconnect VPN..."
-#~ msgstr "_Прекъсване на ВЧМ..."
+#~ msgstr "_Прекъсване на ВЧМ…"
 
 #~ msgid "_Dial Up Connections"
 #~ msgstr "_Връзки по телефонна линия"
 
 #~ msgid "Connect to %s..."
-#~ msgstr "Свързване към %s..."
+#~ msgstr "Свързване към %s…"
 
 #~ msgid "Disconnect from %s..."
-#~ msgstr "Прекъсване на връзката към %s..."
+#~ msgstr "Прекъсване на връзката към %s…"
 
 #~ msgid "No network devices have been found"
 #~ msgstr "Не са открити мрежови устройства"
 
 #~ msgid "NetworkManager is not running..."
-#~ msgstr "NetworkManager не е включен..."
+#~ msgstr "NetworkManager не е включен…"
 
 #~ msgid "Enable _Networking"
 #~ msgstr "_Включване на мрежата"
@@ -656,7 +668,7 @@ msgstr ""
 #~ "безжична мрежа</span>\n"
 #~ "\n"
 #~ "Избрали сте да се свържете към безжичната мрежа „%s“. Ако сте уверени, че "
-#~ "тя е сигурна и можете да й се доверите, задайте настройката отдолу и "
+#~ "тя е сигурна и можете да ѝ се доверите, задайте настройката отдолу и "
 #~ "NetworkManager няма да ви иска потвърждения при следващи влизания."
 
 #~ msgid "Anonymous Identity:"
@@ -732,7 +744,7 @@ msgstr ""
 #~ "Споделен ключ"
 
 #~ msgid "Other Wireless Network..."
-#~ msgstr "Друга безжична мрежа..."
+#~ msgstr "Друга безжична мрежа…"
 
 #~ msgid "Passphrase:"
 #~ msgstr "Парола:"
