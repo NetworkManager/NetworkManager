@@ -1,14 +1,14 @@
 # Bulgarian translation of NetworkManager-openvpn po-file
-# Copyright (C) 2007 Free Software Foundation, Inc.
+# Copyright (C) 2007, 2008 Free Software Foundation, Inc.
 # This file is distributed under the same license as the NetworkManager-openvpn package.
-# Alexander Shopov <ash@contact.bg>, 2007.
+# Alexander Shopov <ash@contact.bg>, 2007, 2008.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: NetworkManager-openvpn\n"
+"Project-Id-Version: NetworkManager-openvpn trunk\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-03-07 01:19+0200\n"
-"PO-Revision-Date: 2007-03-07 01:23+0200\n"
+"POT-Creation-Date: 2008-08-02 08:55+0300\n"
+"PO-Revision-Date: 2008-08-01 07:31+0300\n"
 "Last-Translator: Alexander Shopov <ash@contact.bg>\n"
 "Language-Team: Bulgarian <dict@fsa-bg.org>\n"
 "MIME-Version: 1.0\n"
@@ -48,421 +48,443 @@ msgstr "_Запомняне на паролата за тази сесия"
 msgid "_Save password in keyring"
 msgstr "Запазване на паролата в клю_чодържателя"
 
-#: ../auth-dialog/main.c:214
+#: ../auth-dialog/main.c:187
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Трябва да се идентифицирате, за да ползвате ВЧМ „%s“."
 
-#: ../auth-dialog/main.c:215
+#: ../auth-dialog/main.c:188
 msgid "Authenticate VPN"
 msgstr "Идентифициране пред ВЧМ"
 
-#: ../auth-dialog/main.c:227
+#: ../auth-dialog/main.c:201
 msgid "Certificate pass_word:"
 msgstr "Парола за _сертификата:"
 
-#: ../auth-dialog/main.c:252
+#: ../auth-dialog/main.c:216
 msgid "Certificate password:"
 msgstr "Парола за сертификата:"
 
-#: ../nm-openvpn.desktop.in.h:1
-msgid "Add, Remove, and Edit VPN Connections"
-msgstr "Добавяне, изтриване и редактиране на връзки към ВЧМ"
+#: ../properties/auth-helpers.c:68
+msgid "Choose a Certificate Authority certificate..."
+msgstr "Изберете сертификата на сертифициращата организация…"
 
-#: ../nm-openvpn.desktop.in.h:2
-msgid "VPN Connection Manager (OpenVPN)"
-msgstr "Управление на връзките към ВЧМ (за OpenVPN)"
+#: ../properties/auth-helpers.c:87
+msgid "Choose your personal certificate..."
+msgstr "Изберете личния си сертификат…"
 
-#: ../properties/nm-openvpn.c:143
-msgid "OpenVPN Client"
-msgstr "Клиент за OpenVPN"
+#: ../properties/auth-helpers.c:105
+msgid "Choose your private key..."
+msgstr "Изберете личния си ключ…"
 
-#: ../properties/nm-openvpn.c:799
-msgid "The following OpenVPN connection will be created:"
-msgstr "Ще бъде създадена следната връзка чрез OpenVPN:"
+#: ../properties/auth-helpers.c:158
+msgid "Choose an OpenVPN static key..."
+msgstr "Изберете статичния ключ на OpenVPN…"
 
-#: ../properties/nm-openvpn.c:801
-#, c-format
-msgid "Name:  %s"
-msgstr "Име: „%s“"
+#: ../properties/auth-helpers.c:176 ../properties/auth-helpers.c:886
+msgid "None"
+msgstr "Няма"
 
-#: ../properties/nm-openvpn.c:809
-msgid "Connection Type: X.509 Certificates"
-msgstr "Вид на връзката: сертификат по X.509"
+#: ../properties/auth-helpers.c:519
+msgid "PEM certificates (*.pem, *.crt, *.key)"
+msgstr "Сертификати във формат PEM (*.pem, *.crt, *.key)"
 
-#: ../properties/nm-openvpn.c:812 ../properties/nm-openvpn.c:839
-#: ../properties/nm-openvpn.c:851
-#, c-format
-msgid "CA:  %s"
-msgstr "Серт. орг.: %s"
+#: ../properties/auth-helpers.c:579
+msgid "OpenVPN Static Keys (*.key)"
+msgstr "Статични ключове за OpenVPN (*.key)"
 
-#: ../properties/nm-openvpn.c:815 ../properties/nm-openvpn.c:854
-#, c-format
-msgid "Cert:  %s"
-msgstr "Серт.: %s"
+#: ../properties/auth-helpers.c:711
+msgid "Default"
+msgstr "Стандартно"
 
-#: ../properties/nm-openvpn.c:818 ../properties/nm-openvpn.c:857
-#, c-format
-msgid "Key:  %s"
-msgstr "Ключ: %s"
+#: ../properties/nm-openvpn.c:53
+msgid "OpenVPN"
+msgstr "OpenVPN"
 
-#: ../properties/nm-openvpn.c:822
-msgid "Connection Type: Shared Key"
-msgstr "Вид на връзката: споделен ключ"
+#: ../properties/nm-openvpn.c:54
+msgid "Compatible with the OpenVPN server."
+msgstr "Съвместим със сървърите за OpenVPN."
 
-#: ../properties/nm-openvpn.c:825
-#, c-format
-msgid "Shared Key:  %s"
-msgstr "Споделен ключ: %s"
+#: ../properties/nm-openvpn.c:308 ../properties/nm-openvpn-dialog.glade.h:7
+msgid "Certificates (TLS)"
+msgstr "Сертификати (TLS)"
 
-#: ../properties/nm-openvpn.c:828
-#, c-format
-msgid "Local IP:  %s"
-msgstr "Локален адрес: %s"
-
-#: ../properties/nm-openvpn.c:831
-#, c-format
-msgid "Remote IP:  %s"
-msgstr "Отдалечен адрес: %s"
-
-#: ../properties/nm-openvpn.c:836
-msgid "Connection Type: Password"
-msgstr "Вид на връзката: парола"
-
-#: ../properties/nm-openvpn.c:842 ../properties/nm-openvpn.c:860
-#, c-format
-msgid "Username:  %s"
-msgstr "Потребителско име: %s"
-
-#: ../properties/nm-openvpn.c:848
-msgid "Connection Type: X.509 with Password Authentication"
-msgstr "Вид на връзката: X.509 с парола"
-
-#: ../properties/nm-openvpn.c:866
-#, c-format
-msgid "Remote:  %s"
-msgstr "Отдалечен хост: %s"
-
-#: ../properties/nm-openvpn.c:869
-#, c-format
-msgid "Port:  %s"
-msgstr "Порт: %s"
-
-#: ../properties/nm-openvpn.c:872
-#, c-format
-msgid "Device: %s"
-msgstr "Устройство: %s"
-
-#: ../properties/nm-openvpn.c:872
-msgid "TAP"
-msgstr "TAP"
-
-#: ../properties/nm-openvpn.c:872
-msgid "TUN"
-msgstr "TUN"
-
-#: ../properties/nm-openvpn.c:875
-#, c-format
-msgid "Protocol: %s"
-msgstr "Протокол: %s"
-
-#: ../properties/nm-openvpn.c:875
-msgid "TCP"
-msgstr "TCP"
-
-#: ../properties/nm-openvpn.c:875
-msgid "UDP"
-msgstr "UDP"
-
-#: ../properties/nm-openvpn.c:879
-#, c-format
-msgid "Routes:  %s"
-msgstr "Маршрути:  %s"
-
-#: ../properties/nm-openvpn.c:883
-#, c-format
-msgid "Use LZO Compression: %s"
-msgstr "Използване на компресия LZO: %s"
-
-#: ../properties/nm-openvpn.c:883
-msgid "Yes"
-msgstr "да"
-
-#: ../properties/nm-openvpn.c:883
-msgid "No"
-msgstr "не"
-
-#: ../properties/nm-openvpn.c:887
-#, c-format
-msgid "Cipher:  %s"
-msgstr "Шифриране:  %s"
-
-#: ../properties/nm-openvpn.c:892
-#, c-format
-msgid "TLS auth:  %s %s"
-msgstr "Ползване на TLS:  %s %s"
-
-#: ../properties/nm-openvpn.c:896
-msgid "The connection details can be changed using the \"Edit\" button."
-msgstr "Настройките на връзката могат да се редактират с бутона „Редактиране“."
-
-#: ../properties/nm-openvpn.c:1121
-msgid "Cannot import settings"
-msgstr "Настройките не могат да бъдат внесени."
-
-#: ../properties/nm-openvpn.c:1123
-#, c-format
-msgid "The VPN settings file '%s' does not contain valid data."
-msgstr "Файлът с настройки за ВЧМ „%s“ не съдържа валидни данни."
-
-#: ../properties/nm-openvpn.c:1161
-msgid "Select file to import"
-msgstr "Избор на файл за внасяне"
-
-#: ../properties/nm-openvpn.c:1220 ../properties/nm-openvpn.c:1232
-#: ../properties/nm-openvpn.c:1235
-msgid "Select CA to use"
-msgstr "Избор на сертифицираща организация"
-
-#: ../properties/nm-openvpn.c:1223 ../properties/nm-openvpn.c:1238
-msgid "Select certificate to use"
-msgstr "Избор на сертификат"
-
-#: ../properties/nm-openvpn.c:1226 ../properties/nm-openvpn.c:1241
-msgid "Select key to use"
-msgstr "Избор на ключ"
-
-#: ../properties/nm-openvpn.c:1229
-msgid "Select shared key to use"
-msgstr "Избор на споделен ключ"
-
-#: ../properties/nm-openvpn.c:1244
-msgid "Select TA to use"
-msgstr "Избор на TA"
-
-#. printf ("in impl_export\n");
-#: ../properties/nm-openvpn.c:1438
-msgid "Save as..."
-msgstr "Запазване като..."
-
-#: ../properties/nm-openvpn.c:1468
-#, c-format
-msgid "A file named \"%s\" already exists."
-msgstr "Файл с име „%s“ вече съществува."
-
-#: ../properties/nm-openvpn.c:1471
-msgid "Do you want to replace it with the one you are saving?"
-msgstr "Искате ли да го презапишете?"
-
-#: ../properties/nm-openvpn.c:1485
-msgid "Failed to export configuration"
-msgstr "Неуспех при изнасяне на настройките"
-
-#: ../properties/nm-openvpn.c:1487
-#, c-format
-msgid "Failed to save file %s"
-msgstr "Неуспех при запазването на файла „%s“"
-
-#: ../properties/nm-openvpn-dialog.glade.h:1
-msgid "(Default: 1194)"
-msgstr "(стандартно е: 1194)"
-
-#: ../properties/nm-openvpn-dialog.glade.h:2
-msgid "0"
-msgstr "0"
-
-#: ../properties/nm-openvpn-dialog.glade.h:3
-msgid "1"
-msgstr "1"
-
-#: ../properties/nm-openvpn-dialog.glade.h:4
-msgid "<b>Connection Information</b>"
-msgstr "<b>Информация за връзката</b>"
-
-#: ../properties/nm-openvpn-dialog.glade.h:5
-msgid "<b>Connection Name</b>"
-msgstr "<b>Име на връзката</b>"
-
-#: ../properties/nm-openvpn-dialog.glade.h:6
-msgid "<b>Required</b>"
-msgstr "<b>Задължителна</b>"
-
-#: ../properties/nm-openvpn-dialog.glade.h:7
-msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
-msgstr "<i>например: 172.16.0.0/16 10.11.12.0/24</i>"
-
-#: ../properties/nm-openvpn-dialog.glade.h:8
-msgid "CA  file:"
-msgstr "Файл за сертифициращите организации:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:9
-msgid "CA file:"
-msgstr "Файл за сертифициращите организации:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:10
-msgid "Certificate:"
-msgstr "Сертификат:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:11
-msgid "Connection Name"
-msgstr "Име на връзката"
-
-#: ../properties/nm-openvpn-dialog.glade.h:12
-msgid "Connection Type:"
-msgstr "Вид на връзката:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:13
-msgid "Direction:"
-msgstr "Посока:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:14
-msgid "Gateway _Port:"
-msgstr "_Порт на шлюза:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:15
-msgid "Key:"
-msgstr "Ключ:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:16
-msgid "Local IP:"
-msgstr "Локален адрес:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:17
-msgid ""
-"Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
-msgstr "Име, което се ползва за различаването на връзката към частната мрежа, напр. „Корпоративна мрежа“."
-
-#: ../properties/nm-openvpn-dialog.glade.h:18
-msgid "Optional"
-msgstr "Незадължителна"
-
-#: ../properties/nm-openvpn-dialog.glade.h:19
+#: ../properties/nm-openvpn.c:320
 msgid "Password"
 msgstr "Парола"
 
-#: ../properties/nm-openvpn-dialog.glade.h:20
+#: ../properties/nm-openvpn.c:334
+msgid "Password with Certificates (TLS)"
+msgstr "Парола със сертификати (TLS)"
+
+#: ../properties/nm-openvpn.c:346
+msgid "Static Key"
+msgstr "Статичен ключ"
+
+#: ../properties/nm-openvpn-dialog.glade.h:1
+msgid " "
+msgstr " "
+
+#: ../properties/nm-openvpn-dialog.glade.h:2
+msgid "<b>Authentication</b>"
+msgstr "<b>Идентификация</b>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:3
+msgid "<b>General</b>"
+msgstr "<b>Общи</b>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:4
 msgid ""
-"Please enter the information provided by your system administrator below. Do "
-"not enter your password here as you will be prompted when connecting."
+"<i>If key direction is used, it must be the opposite of that used on the VPN "
+"peer.  For example, if the peer uses '1', this connection must use '0'.  If "
+"you are unsure what value to use, contact your system administrator.</i>"
 msgstr ""
-"Въведете отдолу информацията предоставена от системния ви администратор. Не "
-"въвеждайте паролата си. За нея ще бъдете запитани при свързване."
+"<i>Ако се използва посока на ключа, тя трябва да е обратната на използваната "
+"от отсрещната страна по ВЧМ. Например — ако тя ползва „1“, тази връзка "
+"трябва да ползва „0“. Ако не сте сигурни, попитайте системния си "
+"администратор.</i>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:5
+msgid "Ad_vanced..."
+msgstr "_Допълнителни…"
+
+#: ../properties/nm-openvpn-dialog.glade.h:6
+msgid "CA Certificate:"
+msgstr "Сертификат на сертифициращата организация:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:8
+msgid "Cipher:"
+msgstr "Шифър:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:9
+msgid "General"
+msgstr "Общи"
+
+#: ../properties/nm-openvpn-dialog.glade.h:10
+msgid "Key Direction:"
+msgstr "Посока на ключа:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:11
+msgid "Key File:"
+msgstr "Файл-ключ:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:12
+msgid "OpenVPN Advanced Options"
+msgstr "Допълнителни настройки на OpenVPN"
+
+#: ../properties/nm-openvpn-dialog.glade.h:13
+msgid "Private Key:"
+msgstr "Частен ключ:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:14
+msgid "Static Key:"
+msgstr "Статичен ключ:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:15
+msgid "Type:"
+msgstr "Вид:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:16
+msgid "Use L_ZO data compression"
+msgstr "Използване на _компресия LZO"
+
+#: ../properties/nm-openvpn-dialog.glade.h:17
+msgid "Use a TA_P device"
+msgstr "Използване на _устройство TAP"
+
+#: ../properties/nm-openvpn-dialog.glade.h:18
+msgid "Use a _TCP connection"
+msgstr "Използване на _връзка по TCP"
+
+#: ../properties/nm-openvpn-dialog.glade.h:19
+msgid "Use additional TLS authentication"
+msgstr "Използване на допълнителна идентификация с TLS"
+
+#: ../properties/nm-openvpn-dialog.glade.h:20
+msgid "Use custom gateway p_ort:"
+msgstr "_Потребителски порт на шлюза:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:21
-msgid ""
-"Please note that the file you import is not an OpenVPN configuration file. "
-"Ask your adminstrator for the file."
-msgstr ""
-"Файлът, който се опитахте да внесете, не е конфигурационен файл за OpenVPN. "
-"Помолете системния си администратор за такъв файл."
+msgid "User Certificate:"
+msgstr "Потребителски сертификат:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:22
-msgid "Remote IP:"
-msgstr "Отдалечен адрес:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:23
-msgid "Shared Key:"
-msgstr "Споделен ключ:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:24
-msgid "Shared key"
-msgstr "Споделен ключ"
-
-#: ../properties/nm-openvpn-dialog.glade.h:25
-msgid "Use LZO compression"
-msgstr "Използване на компресия LZO"
-
-#: ../properties/nm-openvpn-dialog.glade.h:26
-msgid "Use TAP device"
-msgstr "Използване на устройство TAP"
-
-#: ../properties/nm-openvpn-dialog.glade.h:27
-msgid "Use TCP connection"
-msgstr "Използване на връзка по TCP"
-
-#: ../properties/nm-openvpn-dialog.glade.h:28
-msgid "Use TLS auth:"
-msgstr "Използване на TLS:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:29
-msgid "Use cipher:"
-msgstr "Ползване на шифриране:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:30
-msgid "Username:"
+msgid "User name:"
 msgstr "Потребителско име:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:31
-msgid "X.509"
-msgstr "X.509"
+#: ../properties/nm-openvpn-dialog.glade.h:23
+msgid "_Gateway:"
+msgstr "_Шлюз:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:32
-msgid ""
-"X.509 Certificates\n"
-"Pre-shared key\n"
-"Password Authentication\n"
-"X.509 with Password Authentication"
-msgstr ""
-"Сертификат по X.509\n"
-"Споделен ключ\n"
-"Парола\n"
-"X.509 с парола"
+#: ../properties/nm-openvpn-dialog.glade.h:24
+msgid "gtk-cancel"
+msgstr "gtk-отмяна"
 
-#: ../properties/nm-openvpn-dialog.glade.h:36
-msgid "X.509/Pass"
-msgstr "X.509/Парола"
+#: ../properties/nm-openvpn-dialog.glade.h:25
+msgid "gtk-ok"
+msgstr "gtk-добре"
 
-#: ../properties/nm-openvpn-dialog.glade.h:37
-msgid "_Gateway Address:"
-msgstr "Адрес на _шлюза:"
+#: ../properties/nm-openvpn-dialog.glade.h:26
+msgid "page 1"
+msgstr "страница 1"
 
-#: ../properties/nm-openvpn-dialog.glade.h:38
-msgid "_Import Saved Configuration..."
-msgstr "_Внасяне на запазени настройки..."
+#: ../properties/nm-openvpn-dialog.glade.h:27
+msgid "page 2"
+msgstr "страница 2"
 
-#: ../properties/nm-openvpn-dialog.glade.h:39
-msgid "_Only use VPN connection for these addresses"
-msgstr "Да се използва само връзката през _ВЧМ за тези адреси"
+#: ../properties/nm-openvpn-dialog.glade.h:28
+msgid "page 3"
+msgstr "страница 3"
 
-#: ../properties/nm-openvpn-dialog.glade.h:40
-msgid "none"
-msgstr "няма"
+#: ../properties/nm-openvpn-dialog.glade.h:29
+msgid "page 4"
+msgstr "страница 4"
 
-#: ../src/nm-openvpn-service.c:127
-msgid ""
-"The VPN login failed because the user name and password were not accepted or "
-"the certificate password was wrong."
-msgstr ""
-"Неуспешно свързване към ВЧМ  - името или паролата са отхвърлени или паролата "
-"за сертификата е неправилна."
+#~ msgid "Add, Remove, and Edit VPN Connections"
+#~ msgstr "Добавяне, изтриване и редактиране на връзки към ВЧМ"
 
-#: ../src/nm-openvpn-service.c:129
-msgid "The VPN login failed because the VPN program could not be started."
-msgstr ""
-"Неуспешно свързване към ВЧМ  - програмата за ВЧМ не може да бъде стартирана."
+#~ msgid "VPN Connection Manager (OpenVPN)"
+#~ msgstr "Управление на връзките към ВЧМ (за OpenVPN)"
 
-#: ../src/nm-openvpn-service.c:131
-msgid ""
-"The VPN login failed because the VPN program could not connect to the VPN "
-"server."
-msgstr ""
-"Неуспешно свързване към ВЧМ  - програмата за ВЧМ не успя да се свърже със "
-"сървъра за ВЧМ."
+#~ msgid "The following OpenVPN connection will be created:"
+#~ msgstr "Ще бъде създадена следната връзка чрез OpenVPN:"
 
-#: ../src/nm-openvpn-service.c:133
-msgid ""
-"The VPN login failed because the VPN configuration options were invalid."
-msgstr "Неуспешно свързване към ВЧМ  - настройките на ВЧМ са грешни."
+#~ msgid "Name:  %s"
+#~ msgstr "Име: „%s“"
 
-#: ../src/nm-openvpn-service.c:135
-msgid ""
-"The VPN login failed because the VPN program received an invalid "
-"configuration from the VPN server."
-msgstr ""
-"Неуспешно свързване към ВЧМ  - програмата за ВЧМ получи грешни настройки от "
-"сървъра за ВЧМ."
+#~ msgid "Connection Type: X.509 Certificates"
+#~ msgstr "Вид на връзката: сертификат по X.509"
 
-#: ../src/nm-openvpn-service.c:137
-msgid "VPN connection failed"
-msgstr "Неуспешно свързване към ВЧМ"
+#~ msgid "CA:  %s"
+#~ msgstr "Серт. орг.: %s"
+
+#~ msgid "Cert:  %s"
+#~ msgstr "Серт.: %s"
+
+#~ msgid "Key:  %s"
+#~ msgstr "Ключ: %s"
+
+#~ msgid "Connection Type: Shared Key"
+#~ msgstr "Вид на връзката: споделен ключ"
+
+#~ msgid "Shared Key:  %s"
+#~ msgstr "Споделен ключ: %s"
+
+#~ msgid "Local IP:  %s"
+#~ msgstr "Локален адрес: %s"
+
+#~ msgid "Remote IP:  %s"
+#~ msgstr "Отдалечен адрес: %s"
+
+#~ msgid "Connection Type: Password"
+#~ msgstr "Вид на връзката: парола"
+
+#~ msgid "Username:  %s"
+#~ msgstr "Потребителско име: %s"
+
+#~ msgid "Connection Type: X.509 with Password Authentication"
+#~ msgstr "Вид на връзката: X.509 с парола"
+
+#~ msgid "Remote:  %s"
+#~ msgstr "Отдалечен хост: %s"
+
+#~ msgid "Port:  %s"
+#~ msgstr "Порт: %s"
+
+#~ msgid "Device: %s"
+#~ msgstr "Устройство: %s"
+
+#~ msgid "TAP"
+#~ msgstr "TAP"
+
+#~ msgid "TUN"
+#~ msgstr "TUN"
+
+#~ msgid "Protocol: %s"
+#~ msgstr "Протокол: %s"
+
+#~ msgid "TCP"
+#~ msgstr "TCP"
+
+#~ msgid "UDP"
+#~ msgstr "UDP"
+
+#~ msgid "Routes:  %s"
+#~ msgstr "Маршрути:  %s"
+
+#~ msgid "Use LZO Compression: %s"
+#~ msgstr "Използване на компресия LZO: %s"
+
+#~ msgid "Yes"
+#~ msgstr "да"
+
+#~ msgid "No"
+#~ msgstr "не"
+
+#~ msgid "TLS auth:  %s %s"
+#~ msgstr "Ползване на TLS:  %s %s"
+
+#~ msgid "The connection details can be changed using the \"Edit\" button."
+#~ msgstr ""
+#~ "Настройките на връзката могат да се редактират с бутона „Редактиране“."
+
+#~ msgid "Cannot import settings"
+#~ msgstr "Настройките не могат да бъдат внесени."
+
+#~ msgid "The VPN settings file '%s' does not contain valid data."
+#~ msgstr "Файлът с настройки за ВЧМ „%s“ не съдържа валидни данни."
+
+#~ msgid "Select file to import"
+#~ msgstr "Избор на файл за внасяне"
+
+#~ msgid "Select CA to use"
+#~ msgstr "Избор на сертифицираща организация"
+
+#~ msgid "Select certificate to use"
+#~ msgstr "Избор на сертификат"
+
+#~ msgid "Select key to use"
+#~ msgstr "Избор на ключ"
+
+#~ msgid "Select shared key to use"
+#~ msgstr "Избор на споделен ключ"
+
+#~ msgid "Select TA to use"
+#~ msgstr "Избор на TA"
+
+#~ msgid "Save as..."
+#~ msgstr "Запазване като…"
+
+#~ msgid "A file named \"%s\" already exists."
+#~ msgstr "Файл с име „%s“ вече съществува."
+
+#~ msgid "Do you want to replace it with the one you are saving?"
+#~ msgstr "Искате ли да го презапишете?"
+
+#~ msgid "Failed to export configuration"
+#~ msgstr "Неуспех при изнасяне на настройките"
+
+#~ msgid "Failed to save file %s"
+#~ msgstr "Неуспех при запазването на файла „%s“"
+
+#~ msgid "0"
+#~ msgstr "0"
+
+#~ msgid "1"
+#~ msgstr "1"
+
+#~ msgid "<b>Connection Information</b>"
+#~ msgstr "<b>Информация за връзката</b>"
+
+#~ msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+#~ msgstr "<i>например: 172.16.0.0/16 10.11.12.0/24</i>"
+
+#~ msgid "CA  file:"
+#~ msgstr "Файл за сертифициращите организации:"
+
+#~ msgid "CA file:"
+#~ msgstr "Файл за сертифициращите организации:"
+
+#~ msgid "Connection Name"
+#~ msgstr "Име на връзката"
+
+#~ msgid "Connection Type:"
+#~ msgstr "Вид на връзката:"
+
+#~ msgid "Local IP:"
+#~ msgstr "Локален адрес:"
+
+#~ msgid ""
+#~ "Name used to identify the connection to the private network, e.g. "
+#~ "\"Campus VPN\" or \"Corporate Network\""
+#~ msgstr ""
+#~ "Име, което се ползва за различаването на връзката към частната мрежа, "
+#~ "напр. „Корпоративна мрежа“."
+
+#~ msgid "Optional"
+#~ msgstr "Незадължителна"
+
+#~ msgid ""
+#~ "Please enter the information provided by your system administrator below. "
+#~ "Do not enter your password here as you will be prompted when connecting."
+#~ msgstr ""
+#~ "Въведете отдолу информацията предоставена от системния ви администратор. "
+#~ "Не въвеждайте паролата си. За нея ще бъдете запитани при свързване."
+
+#~ msgid ""
+#~ "Please note that the file you import is not an OpenVPN configuration "
+#~ "file. Ask your adminstrator for the file."
+#~ msgstr ""
+#~ "Файлът, който се опитахте да внесете, не е конфигурационен файл за "
+#~ "OpenVPN. Помолете системния си администратор за такъв файл."
+
+#~ msgid "Remote IP:"
+#~ msgstr "Отдалечен адрес:"
+
+#~ msgid "Shared key"
+#~ msgstr "Споделен ключ"
+
+#~ msgid "Use TLS auth:"
+#~ msgstr "Използване на TLS:"
+
+#~ msgid "Use cipher:"
+#~ msgstr "Ползване на шифриране:"
+
+#~ msgid "X.509"
+#~ msgstr "X.509"
+
+#~ msgid ""
+#~ "X.509 Certificates\n"
+#~ "Pre-shared key\n"
+#~ "Password Authentication\n"
+#~ "X.509 with Password Authentication"
+#~ msgstr ""
+#~ "Сертификат по X.509\n"
+#~ "Споделен ключ\n"
+#~ "Парола\n"
+#~ "X.509 с парола"
+
+#~ msgid "X.509/Pass"
+#~ msgstr "X.509/Парола"
+
+#~ msgid "_Gateway Address:"
+#~ msgstr "Адрес на _шлюза:"
+
+#~ msgid "_Import Saved Configuration..."
+#~ msgstr "_Внасяне на запазени настройки…"
+
+#~ msgid "_Only use VPN connection for these addresses"
+#~ msgstr "Да се използва само връзката през _ВЧМ за тези адреси"
+
+#~ msgid ""
+#~ "The VPN login failed because the user name and password were not accepted "
+#~ "or the certificate password was wrong."
+#~ msgstr ""
+#~ "Неуспешно свързване към ВЧМ — името или паролата са отхвърлени или "
+#~ "паролата за сертификата е неправилна."
+
+#~ msgid "The VPN login failed because the VPN program could not be started."
+#~ msgstr ""
+#~ "Неуспешно свързване към ВЧМ — програмата за ВЧМ не може да бъде "
+#~ "стартирана."
+
+#~ msgid ""
+#~ "The VPN login failed because the VPN program could not connect to the VPN "
+#~ "server."
+#~ msgstr ""
+#~ "Неуспешно свързване към ВЧМ — програмата за ВЧМ не успя да се свърже със "
+#~ "сървъра за ВЧМ."
+
+#~ msgid ""
+#~ "The VPN login failed because the VPN configuration options were invalid."
+#~ msgstr "Неуспешно свързване към ВЧМ — настройките на ВЧМ са грешни."
+
+#~ msgid ""
+#~ "The VPN login failed because the VPN program received an invalid "
+#~ "configuration from the VPN server."
+#~ msgstr ""
+#~ "Неуспешно свързване към ВЧМ — програмата за ВЧМ получи грешни настройки "
+#~ "от сървъра за ВЧМ."
+
+#~ msgid "VPN connection failed"
+#~ msgstr "Неуспешно свързване към ВЧМ"
