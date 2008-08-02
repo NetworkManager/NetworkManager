@@ -1,14 +1,14 @@
 # Bulgarian translation of NetworkManager-vpnc po-file
-# Copyright (C) 2007 Free Software Foundation, Inc.
+# Copyright (C) 2007, 2008 Free Software Foundation, Inc.
 # This file is distributed under the same license as the NetworkManager package.
-# Alexander Shopov <ash@contact.bg>, 2007.
+# Alexander Shopov <ash@contact.bg>, 2007, 2008.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: NetworkManager-vpnc\n"
+"Project-Id-Version: NetworkManager-vpnc trunk\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-02-23 00:49+0200\n"
-"PO-Revision-Date: 2007-02-23 00:48+0200\n"
+"POT-Creation-Date: 2008-08-02 08:59+0300\n"
+"PO-Revision-Date: 2008-08-01 07:18+0300\n"
 "Last-Translator: Alexander Shopov <ash@contact.bg>\n"
 "Language-Team: Bulgarian <dict@fsa-bg.org>\n"
 "MIME-Version: 1.0\n"
@@ -48,16 +48,16 @@ msgstr "_Запомняне на паролата за тази сесия"
 msgid "_Save passwords in keyring"
 msgstr "Запазване на паролата в клю_чодържателя"
 
-#: ../auth-dialog/main.c:161
+#: ../auth-dialog/main.c:182
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Трябва да се идентифицирате, за да ползвате ВЧМ „%s“."
 
-#: ../auth-dialog/main.c:162
+#: ../auth-dialog/main.c:183
 msgid "Authenticate VPN"
 msgstr "Идентифициране пред ВЧМ"
 
-#: ../auth-dialog/main.c:169
+#: ../auth-dialog/main.c:190
 msgid "_Group Password:"
 msgstr "_Парола на групата:"
 
@@ -69,53 +69,47 @@ msgstr "Добавяне, изтриване и редактиране на вр
 msgid "VPN Connection Manager (vpnc)"
 msgstr "Управление на връзките към ВЧМ (за vpnc)"
 
-#: ../properties/nm-vpnc.c:84
-msgid "Compatible Cisco VPN client (vpnc)"
-msgstr "Клиент съвместим с ВЧМ на Cisco (vpnc)"
+#: ../properties/nm-vpnc.c:51
+msgid "Cisco Compatible VPN (vpnc)"
+msgstr "ВЧМ съвместима със Cisco (vpnc)"
 
-#: ../properties/nm-vpnc.c:448
-msgid "The following vpnc VPN connection will be created:"
-msgstr "Ще бъде създадена следната връзка чрез vpnc:"
+#: ../properties/nm-vpnc.c:52
+msgid ""
+"Compatible with various Cisco, Juniper, Netscreen, and Sonicwall IPSec-based "
+"VPN gateways."
+msgstr ""
+"Съвместима с шлюзове предоставящи ВЧМ чрез IPSec на Cisco, Juniper, "
+"Netscreen и Sonicwall."
 
-#: ../properties/nm-vpnc.c:450
-#, c-format
-msgid "Name:  %s"
-msgstr "Име: „%s“"
+#: ../properties/nm-vpnc.c:204
+msgid "Secure (default)"
+msgstr "Сигурна (стандартно)"
 
-#: ../properties/nm-vpnc.c:453
-#, c-format
-msgid "Gateway:  %s"
-msgstr "Шлюз: %s"
+#: ../properties/nm-vpnc.c:207
+msgid "Weak (use with caution)"
+msgstr "Несигурна (ползвайте с внимание)"
 
-#: ../properties/nm-vpnc.c:455
-#, c-format
-msgid "Group Name:  %s"
-msgstr "Име на групата: %s"
+#: ../properties/nm-vpnc.c:215
+msgid "None (completely insecure)"
+msgstr "Никаква (напълно несигурно)"
 
-#: ../properties/nm-vpnc.c:459
-#, c-format
-msgid "Username:  %s"
-msgstr "Потребителско име: %s"
+#: ../properties/nm-vpnc.c:260
+msgid "NAT-T (default)"
+msgstr "NAT-T (стандартно)"
 
-#: ../properties/nm-vpnc.c:464
-#, c-format
-msgid "Domain:  %s"
-msgstr "Домейн: %s"
+#: ../properties/nm-vpnc.c:267
+msgid "Cisco UDP"
+msgstr "UDP на Cisco"
 
-#: ../properties/nm-vpnc.c:469
-#, c-format
-msgid "Routes:  %s"
-msgstr "Маршрути:  %s"
+#: ../properties/nm-vpnc.c:274
+msgid "Disabled"
+msgstr "Изключено"
 
-#: ../properties/nm-vpnc.c:473
-msgid "The connection details can be changed using the \"Edit\" button."
-msgstr "Настройките на връзката могат да се редактират с бутона „Редактиране“."
-
-#: ../properties/nm-vpnc.c:542
+#: ../properties/nm-vpnc.c:698
 msgid "TCP tunneling not supported"
 msgstr "Не се поддържа тунелиране по TCP"
 
-#: ../properties/nm-vpnc.c:544
+#: ../properties/nm-vpnc.c:700
 #, c-format
 msgid ""
 "The VPN settings file '%s' specifies that VPN traffic should be tunneled "
@@ -124,147 +118,169 @@ msgid ""
 "The connection can still be created, with TCP tunneling disabled, however it "
 "may not work as expected."
 msgstr ""
-"Файлът с настройки за ВЧМ - „%s“ указва да се ползва тунелиране по TCP, "
+"Файлът с настройки за ВЧМ — „%s“ указва да се ползва тунелиране по TCP, "
 "което не се поддържа в момента от vpnc.\n"
 "\n"
 "Връзката ще бъде създадена без тунелиране по TCP, но може да не работи "
 "според очакванията."
 
-#: ../properties/nm-vpnc.c:565
-msgid "Cannot import settings"
-msgstr "Настройките не могат да бъдат внесени."
-
-#: ../properties/nm-vpnc.c:567
-#, c-format
-msgid "The VPN settings file '%s' does not contain valid data."
-msgstr "Файлът с настройки за ВЧМ „%s“ не съдържа валидни данни."
-
-#: ../properties/nm-vpnc.c:584
-msgid "Select file to import"
-msgstr "Избор на файл за внасяне"
-
-#. printf ("in impl_export\n");
-#: ../properties/nm-vpnc.c:744
-msgid "Save as..."
-msgstr "Запазване като..."
-
-#: ../properties/nm-vpnc.c:774
-#, c-format
-msgid "A file named \"%s\" already exists."
-msgstr "Файл с име „%s“ вече съществува."
-
-#: ../properties/nm-vpnc.c:777
-msgid "Do you want to replace it with the one you are saving?"
-msgstr "Искате ли да го презапишете?"
-
-#: ../properties/nm-vpnc.c:791
-msgid "Failed to export configuration"
-msgstr "Неуспех при изнасяне на настройките"
-
-#: ../properties/nm-vpnc.c:793
-#, c-format
-msgid "Failed to save file %s"
-msgstr "Неуспех при запазването на файла „%s“"
-
 #: ../properties/nm-vpnc-dialog.glade.h:1
-msgid "<b>Connection Information</b>"
-msgstr "<b>Информация за връзката</b>"
+msgid " "
+msgstr " "
 
 #: ../properties/nm-vpnc-dialog.glade.h:2
-msgid "<b>Connection Name</b>"
-msgstr "<b>Име на връзката</b>"
+msgid "<b>General</b>"
+msgstr "<b>Общи</b>"
 
 #: ../properties/nm-vpnc-dialog.glade.h:3
-msgid "<b>Required</b>"
-msgstr "<b>Задължителна</b>"
+msgid "<b>Optional</b>"
+msgstr "<b>Допълнителни</b>"
 
 #: ../properties/nm-vpnc-dialog.glade.h:4
-msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
-msgstr "<i>например: 172.16.0.0/16 10.11.12.0/24</i>"
+msgid "Disable Dead Peer Detection"
+msgstr "Изключване на откриването на забилите съседи"
 
 #: ../properties/nm-vpnc-dialog.glade.h:5
-msgid "Connection Name"
-msgstr "Име на връзката"
+msgid "Domain:"
+msgstr "Домейн:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:6
+msgid "Encryption Method:"
+msgstr "Метод на шифриране:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:7
 msgid "G_roup Name:"
 msgstr "Име на _групата:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:7
-msgid ""
-"Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
-msgstr ""
-"_Име, което се ползва за различаването на връзката към частната мрежа, напр. "
-"„Корпоративна мрежа“."
-
 #: ../properties/nm-vpnc-dialog.glade.h:8
-msgid "Optional"
-msgstr "Незадължителна"
+msgid "NAT Traversal:"
+msgstr "Преминаване на NAT:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:9
-msgid "Override _user name"
-msgstr "Задаване на друго _потребителско име"
+msgid "User name:"
+msgstr "Потребителско име:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:10
-msgid ""
-"Please enter the information provided by your system administrator below. Do "
-"not enter your password here as you will be prompted when connecting."
-msgstr ""
-"Въведете отдолу информацията предоставена от системния ви администратор. Не "
-"въвеждайте паролата си. За нея ще бъдете запитани при свързване."
-
-#: ../properties/nm-vpnc-dialog.glade.h:11
-msgid ""
-"Please note that the file you import is not a Cisco VPN or VPNC "
-"configuration file. Ask your adminstrator for the file."
-msgstr ""
-"Файлът, който внесохте, не е файл с настройки за ВЧМ на Cisco (VPNC). "
-"Помолете системния си администратор да ви предостави такъв файл."
-
-#: ../properties/nm-vpnc-dialog.glade.h:12
-msgid "Use _domain for authentication"
-msgstr "Използване на _домейн за идентификацията"
-
-#: ../properties/nm-vpnc-dialog.glade.h:13
 msgid "_Gateway:"
 msgstr "_Шлюз:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:14
-msgid "_Import Saved Configuration..."
-msgstr "_Внасяне на запазени настройки..."
+#~ msgid "The following vpnc VPN connection will be created:"
+#~ msgstr "Ще бъде създадена следната връзка чрез vpnc:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:15
-msgid "_Only use VPN connection for these addresses"
-msgstr "Да се използва само връзката през _ВЧМ за тези адреси"
+#~ msgid "Name:  %s"
+#~ msgstr "Име: „%s“"
 
-#: ../src/nm-vpnc-service.c:118
-msgid ""
-"The VPN login failed because the user name and password were not accepted."
-msgstr "Неуспешно свързване към ВЧМ  - името или паролата са отхвърлени."
+#~ msgid "Gateway:  %s"
+#~ msgstr "Шлюз: %s"
 
-#: ../src/nm-vpnc-service.c:120
-msgid "The VPN login failed because the VPN program could not be started."
-msgstr ""
-"Неуспешно свързване към ВЧМ  - програмата за ВЧМ не може да бъде стартирана."
+#~ msgid "Group Name:  %s"
+#~ msgstr "Име на групата: %s"
 
-#: ../src/nm-vpnc-service.c:122
-msgid ""
-"The VPN login failed because the VPN program could not connect to the VPN "
-"server."
-msgstr ""
-"Неуспешно свързване към ВЧМ  - програмата за ВЧМ не успя да се свърже със "
-"сървъра за ВЧМ."
+#~ msgid "Username:  %s"
+#~ msgstr "Потребителско име: %s"
 
-#: ../src/nm-vpnc-service.c:124
-msgid ""
-"The VPN login failed because the VPN configuration options were invalid."
-msgstr "Неуспешно свързване към ВЧМ  - настройките на ВЧМ са грешни."
+#~ msgid "Domain:  %s"
+#~ msgstr "Домейн: %s"
 
-#: ../src/nm-vpnc-service.c:126
-msgid ""
-"The VPN login failed because the VPN program received an invalid "
-"configuration from the VPN server."
-msgstr ""
-"Неуспешно свързване към ВЧМ  - програмата за ВЧМ получи грешни настройки от "
-"сървъра за ВЧМ."
+#~ msgid "Routes:  %s"
+#~ msgstr "Маршрути:  %s"
+
+#~ msgid "The connection details can be changed using the \"Edit\" button."
+#~ msgstr ""
+#~ "Настройките на връзката могат да се редактират с бутона „Редактиране“."
+
+#~ msgid "Cannot import settings"
+#~ msgstr "Настройките не могат да бъдат внесени."
+
+#~ msgid "The VPN settings file '%s' does not contain valid data."
+#~ msgstr "Файлът с настройки за ВЧМ „%s“ не съдържа валидни данни."
+
+#~ msgid "Select file to import"
+#~ msgstr "Избор на файл за внасяне"
+
+#~ msgid "Save as..."
+#~ msgstr "Запазване като…"
+
+#~ msgid "A file named \"%s\" already exists."
+#~ msgstr "Файл с име „%s“ вече съществува."
+
+#~ msgid "Do you want to replace it with the one you are saving?"
+#~ msgstr "Искате ли да го презапишете?"
+
+#~ msgid "Failed to export configuration"
+#~ msgstr "Неуспех при изнасяне на настройките"
+
+#~ msgid "Failed to save file %s"
+#~ msgstr "Неуспех при запазването на файла „%s“"
+
+#~ msgid "<b>Connection Information</b>"
+#~ msgstr "<b>Информация за връзката</b>"
+
+#~ msgid "<b>Connection Name</b>"
+#~ msgstr "<b>Име на връзката</b>"
+
+#~ msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+#~ msgstr "<i>например: 172.16.0.0/16 10.11.12.0/24</i>"
+
+#~ msgid "Connection Name"
+#~ msgstr "Име на връзката"
+
+#~ msgid ""
+#~ "Name used to identify the connection to the private network, e.g. "
+#~ "\"Campus VPN\" or \"Corporate Network\""
+#~ msgstr ""
+#~ "_Име, което се ползва за различаването на връзката към частната мрежа, "
+#~ "напр. „Корпоративна мрежа“."
+
+#~ msgid "Override _user name"
+#~ msgstr "Задаване на друго _потребителско име"
+
+#~ msgid ""
+#~ "Please enter the information provided by your system administrator below. "
+#~ "Do not enter your password here as you will be prompted when connecting."
+#~ msgstr ""
+#~ "Въведете отдолу информацията предоставена от системния ви администратор. "
+#~ "Не въвеждайте паролата си. За нея ще бъдете запитани при свързване."
+
+#~ msgid ""
+#~ "Please note that the file you import is not a Cisco VPN or VPNC "
+#~ "configuration file. Ask your adminstrator for the file."
+#~ msgstr ""
+#~ "Файлът, който внесохте, не е файл с настройки за ВЧМ на Cisco (VPNC). "
+#~ "Помолете системния си администратор да ви предостави такъв файл."
+
+#~ msgid "Use _domain for authentication"
+#~ msgstr "Използване на _домейн за идентификацията"
+
+#~ msgid "_Import Saved Configuration..."
+#~ msgstr "_Внасяне на запазени настройки…"
+
+#~ msgid "_Only use VPN connection for these addresses"
+#~ msgstr "Да се използва само връзката през _ВЧМ за тези адреси"
+
+#~ msgid ""
+#~ "The VPN login failed because the user name and password were not accepted."
+#~ msgstr "Неуспешно свързване към ВЧМ — името или паролата са отхвърлени."
+
+#~ msgid "The VPN login failed because the VPN program could not be started."
+#~ msgstr ""
+#~ "Неуспешно свързване към ВЧМ — програмата за ВЧМ не може да бъде "
+#~ "стартирана."
+
+#~ msgid ""
+#~ "The VPN login failed because the VPN program could not connect to the VPN "
+#~ "server."
+#~ msgstr ""
+#~ "Неуспешно свързване към ВЧМ — програмата за ВЧМ не успя да се свърже със "
+#~ "сървъра за ВЧМ."
+
+#~ msgid ""
+#~ "The VPN login failed because the VPN configuration options were invalid."
+#~ msgstr "Неуспешно свързване към ВЧМ — настройките на ВЧМ са грешни."
+
+#~ msgid ""
+#~ "The VPN login failed because the VPN program received an invalid "
+#~ "configuration from the VPN server."
+#~ msgstr ""
+#~ "Неуспешно свързване към ВЧМ — програмата за ВЧМ получи грешни настройки "
+#~ "от сървъра за ВЧМ."
