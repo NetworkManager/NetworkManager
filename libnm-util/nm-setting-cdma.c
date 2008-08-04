@@ -117,7 +117,40 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
+	if (self->username && !strlen (self->username)) {
+		g_set_error (error,
+		             NM_SETTING_CDMA_ERROR,
+		             NM_SETTING_CDMA_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_CDMA_USERNAME);
+		return FALSE;
+	}
+
+	if (self->password && !strlen (self->password)) {
+		g_set_error (error,
+		             NM_SETTING_CDMA_ERROR,
+		             NM_SETTING_CDMA_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_CDMA_PASSWORD);
+		return FALSE;
+	}
+
 	return TRUE;
+}
+
+static GPtrArray *
+need_secrets (NMSetting *setting)
+{
+	NMSettingCdma *self = NM_SETTING_CDMA (setting);
+	GPtrArray *secrets = NULL;
+
+	if (self->password)
+		return NULL;
+
+	if (self->username) {
+		secrets = g_ptr_array_sized_new (1);
+		g_ptr_array_add (secrets, NM_SETTING_CDMA_PASSWORD);
+	}
+
+	return secrets;
 }
 
 static void
@@ -196,6 +229,7 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *setting_class)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 	parent_class->verify       = verify;
+	parent_class->need_secrets = need_secrets;
 
 	/* Properties */
 	g_object_class_install_property

@@ -1,5 +1,12 @@
 2008-08-04  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting-cdma.c
+	  libnm-util/nm-setting-gsm.c
+		- (verify): validate username & password if they exist
+		- (need_secrets): if username given, require a password too
+
+2008-08-04  Dan Williams  <dcbw@redhat.com>
+
 	* src/dnsmasq-manager/nm-dnsmasq-manager.c
 		- (create_dm_cmd_line): really don't listen on lo, despite what the
 			manpage says about --listen-address without --interface

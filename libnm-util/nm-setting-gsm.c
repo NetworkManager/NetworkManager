@@ -133,7 +133,40 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
+	if (self->username && !strlen (self->username)) {
+		g_set_error (error,
+		             NM_SETTING_GSM_ERROR,
+		             NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_GSM_USERNAME);
+		return FALSE;
+	}
+
+	if (self->password && !strlen (self->password)) {
+		g_set_error (error,
+		             NM_SETTING_GSM_ERROR,
+		             NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_GSM_USERNAME);
+		return FALSE;
+	}
+
 	return TRUE;
+}
+
+static GPtrArray *
+need_secrets (NMSetting *setting)
+{
+	NMSettingGsm *self = NM_SETTING_GSM (setting);
+	GPtrArray *secrets = NULL;
+
+	if (self->password)
+		return NULL;
+
+	if (self->username) {
+		secrets = g_ptr_array_sized_new (1);
+		g_ptr_array_add (secrets, NM_SETTING_GSM_PASSWORD);
+	}
+
+	return secrets;
 }
 
 static void
@@ -256,6 +289,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 	parent_class->verify       = verify;
+	parent_class->need_secrets = need_secrets;
 
 	/* Properties */
 	g_object_class_install_property
