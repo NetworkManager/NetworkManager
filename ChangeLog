@@ -1,5 +1,14 @@
 2008-08-04  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Sjoerd Simons <sjoerd.simons@collabora.co.uk>
+
+	* src/NetworkManager.c
+	  src/nm-manager.c
+	  src/nm-manager.h
+		- More explicitly make the NMManager a singleton
+
+2008-08-04  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-connection.c
 	  libnm-util/nm-connection.h
 		- (nm_connection_verify): return error on missing 'connection' setting

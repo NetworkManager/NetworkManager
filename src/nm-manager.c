@@ -1353,49 +1353,54 @@ deferred_sync_devices (gpointer user_data)
 }
 
 NMManager *
-nm_manager_new (void)
+nm_manager_get (void)
 {
-	GObject *object;
+	static NMManager *singleton = NULL;
 	NMManagerPrivate *priv;
 
-	object = g_object_new (NM_TYPE_MANAGER, NULL);
-	priv = NM_MANAGER_GET_PRIVATE (object);
+	if (singleton)
+		return g_object_ref (singleton);
+
+	singleton = (NMManager *) g_object_new (NM_TYPE_MANAGER, NULL);
+	g_assert (singleton);
+
+	priv = NM_MANAGER_GET_PRIVATE (singleton);
 
 	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (priv->dbus_mgr),
 	                                     NM_DBUS_PATH,
-	                                     object);
+	                                     G_OBJECT (singleton));
 
 	g_signal_connect (priv->dbus_mgr,
 	                  "name-owner-changed",
 	                  G_CALLBACK (nm_manager_name_owner_changed),
-	                  NM_MANAGER (object));
+	                  singleton);
 
-	g_idle_add ((GSourceFunc) initial_get_connections, NM_MANAGER (object));
+	g_idle_add ((GSourceFunc) initial_get_connections, singleton);
 
 	priv->hal_mgr = nm_hal_manager_new ();
-	priv->sync_devices_id = g_idle_add (deferred_sync_devices, object);
+	priv->sync_devices_id = g_idle_add (deferred_sync_devices, singleton);
 
 	g_signal_connect (priv->hal_mgr,
 	                  "udi-added",
 	                  G_CALLBACK (hal_manager_udi_added_cb),
-	                  NM_MANAGER (object));
+	                  singleton);
 
 	g_signal_connect (priv->hal_mgr,
 	                  "udi-removed",
 	                  G_CALLBACK (hal_manager_udi_removed_cb),
-	                  NM_MANAGER (object));
+	                  singleton);
 
 	g_signal_connect (priv->hal_mgr,
 	                  "rfkill-changed",
 	                  G_CALLBACK (hal_manager_rfkill_changed_cb),
-	                  NM_MANAGER (object));
+	                  singleton);
 
 	g_signal_connect (priv->hal_mgr,
 	                  "hal-reappeared",
 	                  G_CALLBACK (hal_manager_hal_reappeared_cb),
-	                  NM_MANAGER (object));
+	                  singleton);
 
-	return NM_MANAGER (object);
+	return singleton;
 }
 
 static void

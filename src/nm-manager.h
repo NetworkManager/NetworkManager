@@ -52,7 +52,7 @@ typedef struct {
 
 GType nm_manager_get_type (void);
 
-NMManager *nm_manager_new (void);
+NMManager *nm_manager_get (void);
 
 /* Device handling */
 
