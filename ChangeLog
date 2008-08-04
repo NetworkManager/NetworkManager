@@ -1,3 +1,10 @@
+2008-08-04  Dan Williams  <dcbw@redhat.com>
+
+	* src/dnsmasq-manager/nm-dnsmasq-manager.c
+		- (create_dm_cmd_line): really don't listen on lo, despite what the
+			manpage says about --listen-address without --interface
+			(bgo #546033)
+
 2008-08-01  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-glib/nm-device.c

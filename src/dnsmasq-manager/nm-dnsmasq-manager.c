@@ -255,6 +255,7 @@ create_dm_cmd_line (const char *iface,
 	nm_cmd_line_add_string (cmd, "--keep-in-foreground");
 	nm_cmd_line_add_string (cmd, "--bind-interfaces");
 	nm_cmd_line_add_string (cmd, "--no-poll");
+	nm_cmd_line_add_string (cmd, "--except-interface=lo");
 
 	s = g_string_new ("--listen-address=");
 	addr.s_addr = tmp->address;
