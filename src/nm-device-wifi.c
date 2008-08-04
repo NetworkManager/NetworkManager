@@ -3416,7 +3416,8 @@ nm_device_wifi_set_enabled (NMDeviceWifi *self, gboolean enabled)
 		return;
 
 	if (enabled) {
-		g_warn_if_fail (state == NM_DEVICE_STATE_UNAVAILABLE);
+		if (state != NM_DEVICE_STATE_UNAVAILABLE);
+			nm_warning ("not in expected unavailable state!");
 
 		if (!nm_device_hw_bring_up (NM_DEVICE (self), TRUE)) {
 			/* The device sucks, or HAL was lying to us about the killswitch state */
