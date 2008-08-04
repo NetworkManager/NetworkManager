@@ -19,6 +19,8 @@
 #define NM_IS_PPP_MANAGER_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_PPP_MANAGER))
 #define NM_PPP_MANAGER_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_PPP_MANAGER, NMPPPManagerClass))
 
+#define NM_PPP_MANAGER_PARENT_IFACE "parent-iface"
+
 typedef struct {
 	GObject parent;
 } NMPPPManager;
@@ -34,12 +36,9 @@ typedef struct {
 
 GType nm_ppp_manager_get_type (void);
 
-NMPPPManager *nm_ppp_manager_new (void);
+NMPPPManager *nm_ppp_manager_new (const char *iface);
 
-gboolean nm_ppp_manager_start (NMPPPManager *manager,
-						 const char *device,
-						 NMActRequest *req,
-						 GError **err);
+gboolean nm_ppp_manager_start (NMPPPManager *manager, NMActRequest *req, GError **err);
 
 void     nm_ppp_manager_update_secrets (NMPPPManager *manager,
                                         const char *device,

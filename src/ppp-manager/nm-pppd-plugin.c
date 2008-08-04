@@ -91,9 +91,8 @@ nm_phasechange (void *data, int arg)
 
 	if (ppp_status != NM_PPP_STATUS_UNKNOWN) {
 		dbus_g_proxy_call_no_reply (proxy, "SetState",
-							   G_TYPE_UINT, ppp_status,
-							   G_TYPE_INVALID,
-							   G_TYPE_INVALID);
+		                            G_TYPE_UINT, ppp_status, G_TYPE_INVALID,
+		                            G_TYPE_INVALID);
 	}
 }
 
@@ -133,16 +132,18 @@ value_destroy (gpointer data)
 static void
 nm_ip_up (void *data, int arg)
 {
-	ipcp_options opts = ipcp_gotoptions[ifunit];
-	ipcp_options peer_opts = ipcp_hisoptions[ifunit];
+	ipcp_options opts = ipcp_gotoptions[0];
+	ipcp_options peer_opts = ipcp_hisoptions[0];
 	GHashTable *hash;
 	GArray *array;
 	GValue *val;
+	guint32 pppd_made_up_address = htonl (0x0a404040 + ifunit);
 
 	g_return_if_fail (DBUS_IS_G_PROXY (proxy));
 
 	if (!opts.ouraddr) {
-		g_warning ("Didn't receive an internal IP from pppd");
+		g_warning ("Didn't receive an internal IP from pppd!");
+		nm_phasechange (NULL, PHASE_DEAD);
 		return;
 	}
 
@@ -155,12 +156,20 @@ nm_ip_up (void *data, int arg)
 	g_hash_table_insert (hash, NM_PPP_IP4_CONFIG_ADDRESS, 
 					 uint_to_gvalue (opts.ouraddr));
 
-	if (opts.hisaddr) {
+	/* Prefer the peer options remote address first, _unless_ pppd made the
+	 * address up, at which point prefer the local options remote address,
+	 * and if that's not right, use the made-up address as a last resort.
+	 */
+	if (peer_opts.hisaddr && (peer_opts.hisaddr != pppd_made_up_address)) {
 		g_hash_table_insert (hash, NM_PPP_IP4_CONFIG_GATEWAY, 
-						 uint_to_gvalue (opts.hisaddr));
-	} else if (peer_opts.hisaddr) {
+		                     uint_to_gvalue (peer_opts.hisaddr));
+	} else if (opts.hisaddr) {
 		g_hash_table_insert (hash, NM_PPP_IP4_CONFIG_GATEWAY, 
-						 uint_to_gvalue (peer_opts.hisaddr));
+		                     uint_to_gvalue (opts.hisaddr));
+	} else if (peer_opts.hisaddr == pppd_made_up_address) {
+		/* As a last resort, use the made-up address */
+		g_hash_table_insert (hash, NM_PPP_IP4_CONFIG_GATEWAY, 
+		                     uint_to_gvalue (peer_opts.hisaddr));
 	}
 
 	g_hash_table_insert (hash, NM_PPP_IP4_CONFIG_PREFIX, uint_to_gvalue (32));
@@ -289,10 +298,13 @@ plugin_init (void)
 		return -1;
 	}
 
+	/* NM passes in the object path of the corresponding PPPManager
+	 * object as the 'ipparam' argument to pppd.
+	 */
 	proxy = dbus_g_proxy_new_for_name (bus,
-								NM_DBUS_SERVICE_PPP,
-								NM_DBUS_PATH_PPP,
-								NM_DBUS_INTERFACE_PPP);
+	                                   NM_DBUS_SERVICE_PPP,
+	                                   ipparam,
+	                                   NM_DBUS_INTERFACE_PPP);
 
 	dbus_g_connection_unref (bus);
 

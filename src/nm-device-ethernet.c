@@ -1178,11 +1178,8 @@ pppoe_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 	req = nm_device_get_act_request (NM_DEVICE (self));
 	g_assert (req);
 
-	priv->ppp_manager = nm_ppp_manager_new ();
-	if (nm_ppp_manager_start (priv->ppp_manager,
-						 nm_device_get_iface (NM_DEVICE (self)),
-						 req,
-						 &err)) {
+	priv->ppp_manager = nm_ppp_manager_new (nm_device_get_iface (NM_DEVICE (self)));
+	if (nm_ppp_manager_start (priv->ppp_manager, req, &err)) {
 		g_signal_connect (priv->ppp_manager, "state-changed",
 					   G_CALLBACK (ppp_state_changed),
 					   self);

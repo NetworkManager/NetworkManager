@@ -398,7 +398,6 @@ device_state_changed (NMDeviceInterface *device,
 
 	/* Make sure we don't leave the serial device open */
 	switch (new_state) {
-	case NM_DEVICE_STATE_NEED_AUTH:
 	case NM_DEVICE_STATE_UNMANAGED:
 	case NM_DEVICE_STATE_UNAVAILABLE:
 	case NM_DEVICE_STATE_FAILED:

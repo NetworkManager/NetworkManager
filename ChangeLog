@@ -1,5 +1,38 @@
 2008-08-04  Dan Williams  <dcbw@redhat.com>
 
+	Handle multiple concurrent PPP connections.
+
+	* src/ppp-manager/nm-ppp-manager.c
+	  src/ppp-manager/nm-ppp-manager.h
+		- (constructor): only PPP Manager request bus name once; each
+			NMPPPManager object gets a unique object path
+		- (nm_ppp_manager_class_init, get_property, set_property,
+		   nm_ppp_manager_new, nm_ppp_manager_start): pass parent interface in
+			at construct time
+		- (impl_ppp_manager_need_secrets, impl_ppp_manager_set_state): don't
+			remove timeout until PPP manager gets an IP4 config
+		- (create_pppd_cmd_line): pass dbus object path as 'ipparam' so that
+			the plugin can call back to this specific PPP manager instance
+
+	* src/nm-device-ethernet.c
+	  src/nm-serial-device.c
+		- Pass parent device in nm_ppp_manager_new()
+
+	* src/nm-gsm-device.c
+	  src/nm-cdma-device.c
+	  	- (device_state_changed): don't close serial device on NEED_AUTH
+	  		state changed, that's not a failure case like the rest are
+
+	* src/ppp-manager/nm-pppd-plugin.c
+		- (nm_ip_up): always use index 0 into the ipcp options, because NM always
+			binds one interface to any pppd process, thus the correct index
+			is always 0; send PHASE_DEAD on error to alert NM immediately of
+			problems; try harder to get a peer address in spite of pppd
+		- (plugin_init): use 'ipparam' as the object path back to our specific
+			PPP manager instance
+
+2008-08-04  Dan Williams  <dcbw@redhat.com>
+
 	* src/ppp-manager/nm-ppp-manager.c
 		- (impl_ppp_manager_need_secrets): rework to handle secrets better;
 			since the GSM and CDMA settings now implement need_secrets, we can

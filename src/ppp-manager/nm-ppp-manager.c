@@ -19,6 +19,7 @@
 #endif
 #include <linux/if_ppp.h>
 
+#include "NetworkManager.h"
 #include "nm-ppp-manager.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-ppp.h"
@@ -43,12 +44,15 @@ static gboolean impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 #include "nm-ppp-manager-glue.h"
 
 #define NM_PPPD_PLUGIN PLUGINDIR "/nm-pppd-plugin.so"
-#define NM_PPP_WAIT_PPPD 10000 /* 10 seconds */
+#define NM_PPP_WAIT_PPPD 15000 /* 10 seconds */
 #define PPP_MANAGER_SECRET_TRIES "ppp-manager-secret-tries"
 
 typedef struct {
 	GPid pid;
 	NMDBusManager *dbus_manager;
+	char *dbus_path;
+
+	char *parent_iface;
 
 	NMActRequest *act_req;
 	DBusGMethodInvocation *pending_secrets_context;
@@ -57,7 +61,7 @@ typedef struct {
 	guint32 ppp_timeout_handler;
 
 	/* Monitoring */
-	char *iface;
+	char *ip_iface;
 	int monitor_fd;
 	guint monitor_id;
 } NMPPPManagerPrivate;
@@ -75,6 +79,12 @@ enum {
 };
 
 static guint signals[LAST_SIGNAL] = { 0 };
+
+enum {
+	PROP_0,
+	PROP_PARENT_IFACE,
+	LAST_PROP
+};
 
 typedef enum {
 	NM_PPP_MANAGER_ERROR_UNKOWN
@@ -104,9 +114,8 @@ constructor (GType type,
 	GObject *object;
 	NMPPPManagerPrivate *priv;
 	DBusGConnection *connection;
-	DBusGProxy *proxy;
-	guint request_name_result;
-	GError *err = NULL;
+	static gboolean name_requested = FALSE;
+	static guint32 counter = 0;
 
 	object = G_OBJECT_CLASS (nm_ppp_manager_parent_class)->constructor (type,
 														   n_construct_params,
@@ -116,28 +125,48 @@ constructor (GType type,
 
 	priv = NM_PPP_MANAGER_GET_PRIVATE (object);
 	priv->dbus_manager = nm_dbus_manager_get ();
+	if (!priv->dbus_manager) {
+		g_object_unref (object);
+		return NULL;
+	}
 	connection = nm_dbus_manager_get_connection (priv->dbus_manager);
 
-	proxy = dbus_g_proxy_new_for_name (connection,
-								"org.freedesktop.DBus",
-								"/org/freedesktop/DBus",
-								"org.freedesktop.DBus");
+	/* Only need to request bus name the first time */
+	if (!name_requested) {
+		DBusGProxy *proxy;
+		gboolean success;
+		guint request_name_result;
+		GError *err = NULL;
 
-	if (dbus_g_proxy_call (proxy, "RequestName", &err,
-					   G_TYPE_STRING, NM_DBUS_SERVICE_PPP,
-					   G_TYPE_UINT, 0,
-					   G_TYPE_INVALID,
-					   G_TYPE_UINT, &request_name_result,
-					   G_TYPE_INVALID))
-		dbus_g_connection_register_g_object (connection, NM_DBUS_PATH_PPP, object);
+		proxy = dbus_g_proxy_new_for_name (connection,
+									"org.freedesktop.DBus",
+									"/org/freedesktop/DBus",
+									"org.freedesktop.DBus");
+		success = dbus_g_proxy_call (proxy, "RequestName", &err,
+		                             G_TYPE_STRING, NM_DBUS_SERVICE_PPP,
+		                             G_TYPE_UINT, 0,
+		                             G_TYPE_INVALID,
+		                             G_TYPE_UINT, &request_name_result,
+		                             G_TYPE_INVALID);
+		g_object_unref (proxy);
 
-	g_object_unref (proxy);
+		if (!success) {
+			nm_warning ("Failed to acquire PPP manager service: %s", err->message);
+			g_object_unref (object);
+			return NULL;
+		}
+
+		name_requested = TRUE;
+	}
+
+	priv->dbus_path = g_strdup_printf (NM_DBUS_PATH "/PPP/%d", counter++);
+	dbus_g_connection_register_g_object (connection, priv->dbus_path, object);
 
 	return object;
 }
 
 static void
-finalize (GObject *object)
+dispose (GObject *object)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (object);
 
@@ -146,7 +175,52 @@ finalize (GObject *object)
 	g_object_unref (priv->act_req);
 	g_object_unref (priv->dbus_manager);
 
+	G_OBJECT_CLASS (nm_ppp_manager_parent_class)->dispose (object);
+}
+
+static void
+finalize (GObject *object)
+{
+	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (object);
+
+	g_free (priv->ip_iface);
+	g_free (priv->parent_iface);
+
 	G_OBJECT_CLASS (nm_ppp_manager_parent_class)->finalize (object);
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+		    const GValue *value, GParamSpec *pspec)
+{
+	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_PARENT_IFACE:
+		if (priv->parent_iface)
+			g_free (priv->parent_iface);
+		priv->parent_iface = g_value_dup_string (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+get_property (GObject *object, guint prop_id,
+			  GValue *value, GParamSpec *pspec)
+{
+	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_PARENT_IFACE:
+		g_value_set_string (value, priv->parent_iface);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
 }
 
 static void
@@ -156,11 +230,20 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 
 	g_type_class_add_private (manager_class, sizeof (NMPPPManagerPrivate));
 
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (manager_class),
-							   &dbus_glib_nm_ppp_manager_object_info);
-
 	object_class->constructor = constructor;
+	object_class->dispose = dispose;
 	object_class->finalize = finalize;
+	object_class->get_property = get_property;
+	object_class->set_property = set_property;
+
+	/* Properties */
+	g_object_class_install_property
+		(object_class, PROP_PARENT_IFACE,
+		 g_param_spec_string (NM_PPP_MANAGER_PARENT_IFACE,
+							"ParentIface",
+							"Parent interface",
+							NULL,
+							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	/* signals */
 	signals[STATE_CHANGED] =
@@ -193,12 +276,19 @@ nm_ppp_manager_class_init (NMPPPManagerClass *manager_class)
 				    nm_marshal_VOID__UINT_UINT,
 				    G_TYPE_NONE, 2,
 				    G_TYPE_UINT, G_TYPE_UINT);
+
+	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (manager_class),
+							   &dbus_glib_nm_ppp_manager_object_info);
 }
 
 NMPPPManager *
-nm_ppp_manager_new (void)
+nm_ppp_manager_new (const char *iface)
 {
-	return (NMPPPManager *) g_object_new (NM_TYPE_PPP_MANAGER, NULL);
+	g_return_val_if_fail (iface != NULL, NULL);
+
+	return (NMPPPManager *) g_object_new (NM_TYPE_PPP_MANAGER,
+	                                      NM_PPP_MANAGER_PARENT_IFACE, iface,
+	                                      NULL);
 }
 
 /*******************************************/
@@ -213,7 +303,7 @@ monitor_cb (gpointer user_data)
 	memset (&req, 0, sizeof (req));
 	req.stats_ptr = (caddr_t) &req.stats;
 
-	strncpy (req.ifr__name, priv->iface, sizeof (req.ifr__name));
+	strncpy (req.ifr__name, priv->ip_iface, sizeof (req.ifr__name));
 	if (!ioctl (priv->monitor_fd, SIOCGPPPSTATS, &req) < 0)
 		nm_warning ("Could not read ppp stats: %s", strerror (errno));
 	else
@@ -225,15 +315,14 @@ monitor_cb (gpointer user_data)
 }
 
 static void
-monitor_stats (NMPPPManager *manager, const char *iface)
+monitor_stats (NMPPPManager *manager)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
 
 	priv->monitor_fd = socket (AF_INET, SOCK_DGRAM, 0);
-	if (priv->monitor_fd > 0) {
-		priv->iface = g_strdup (iface);
+	if (priv->monitor_fd > 0)
 		priv->monitor_id = g_timeout_add (5000, monitor_cb, manager);
-	} else
+	else
 		nm_warning ("Could not open pppd monitor: %s", strerror (errno));
 }
 
@@ -261,8 +350,6 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 	guint32 tries;
 	GPtrArray *hints = NULL;
 	const char *hint1 = NULL, *hint2 = NULL;
-
-	remove_timeout_handler (manager);
 
 	connection = nm_act_request_get_connection (priv->act_req);
 
@@ -338,7 +425,6 @@ static gboolean impl_ppp_manager_set_state (NMPPPManager *manager,
 								    guint32 state,
 								    GError **err)
 {
-	remove_timeout_handler (manager);
 	g_signal_emit (manager, signals[STATE_CHANGED], 0, state);
 
 	return TRUE;
@@ -354,7 +440,6 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 	NMIP4Config *config;
 	NMSettingIP4Address *addr;
 	GValue *val;
-	const char *iface;
 	int i;
 
 	nm_info ("PPP manager(IP Config Get) reply received.");
@@ -396,12 +481,11 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 	}
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_INTERFACE);
-	if (val)
-		iface = g_value_get_string (val);
-	else {
+	if (!val || !G_VALUE_HOLDS_STRING (val)) {
 		nm_warning ("No interface");
 		goto out;
 	}
+	priv->ip_iface = g_value_dup_string (val);
 
 	/* Got successful IP4 config; obviously the secrets worked */
 	connection = nm_act_request_get_connection (priv->act_req);
@@ -409,9 +493,9 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 	g_object_set_data (G_OBJECT (connection), PPP_MANAGER_SECRET_TRIES, NULL);
 
 	/* Push the IP4 config up to the device */
-	g_signal_emit (manager, signals[IP4_CONFIG], 0, iface, config);
+	g_signal_emit (manager, signals[IP4_CONFIG], 0, priv->ip_iface, config);
 
-	monitor_stats (manager, iface);
+	monitor_stats (manager);
 
  out:
 	g_object_unref (config);
@@ -610,11 +694,12 @@ pppd_timed_out (gpointer data)
 }
 
 static NMCmdLine *
-create_pppd_cmd_line (NMSettingPPP *setting, 
-				  NMSettingPPPOE *pppoe,
-				  const char *device,
-				  GError **err)
+create_pppd_cmd_line (NMPPPManager *self,
+                      NMSettingPPP *setting, 
+                      NMSettingPPPOE *pppoe,
+                      GError **err)
 {
+	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (self);
 	const char *ppp_binary;
 	NMCmdLine *cmd;
 
@@ -638,7 +723,7 @@ create_pppd_cmd_line (NMSettingPPP *setting,
 		nm_cmd_line_add_string (cmd, "plugin");
 		nm_cmd_line_add_string (cmd, "rp-pppoe.so");
 
-		dev_str = g_strdup_printf ("nic-%s", device);
+		dev_str = g_strdup_printf ("nic-%s", priv->parent_iface);
 		nm_cmd_line_add_string (cmd, dev_str);
 		g_free (dev_str);
 
@@ -650,7 +735,7 @@ create_pppd_cmd_line (NMSettingPPP *setting,
 		nm_cmd_line_add_string (cmd, "user");
 		nm_cmd_line_add_string (cmd, pppoe->username);
 	} else {
-		nm_cmd_line_add_string (cmd, device);
+		nm_cmd_line_add_string (cmd, priv->parent_iface);
 		/* Don't send some random address as the local address */
 		nm_cmd_line_add_string (cmd, "noipdefault");
 	}
@@ -708,6 +793,9 @@ create_pppd_cmd_line (NMSettingPPP *setting,
 		nm_cmd_line_add_int (cmd, setting->lcp_echo_interval);
 	}
 
+	nm_cmd_line_add_string (cmd, "ipparam");
+	nm_cmd_line_add_string (cmd, priv->dbus_path);
+
 	nm_cmd_line_add_string (cmd, "plugin");
 	nm_cmd_line_add_string (cmd, NM_PPPD_PLUGIN);
 
@@ -754,10 +842,7 @@ pppoe_fill_defaults (NMSettingPPP *setting)
 }
 
 gboolean
-nm_ppp_manager_start (NMPPPManager *manager,
-				  const char *device,
-				  NMActRequest *req,
-				  GError **err)
+nm_ppp_manager_start (NMPPPManager *manager, NMActRequest *req, GError **err)
 {
 	NMPPPManagerPrivate *priv;
 	NMConnection *connection;
@@ -767,7 +852,6 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	char *cmd_str;
 
 	g_return_val_if_fail (NM_IS_PPP_MANAGER (manager), FALSE);
-	g_return_val_if_fail (device != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
 
 	connection = nm_act_request_get_connection (req);
@@ -778,7 +862,7 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	if (pppoe_setting)
 		pppoe_fill_defaults (ppp_setting);
 
-	ppp_cmd = create_pppd_cmd_line (ppp_setting, pppoe_setting, device, err);
+	ppp_cmd = create_pppd_cmd_line (manager, ppp_setting, pppoe_setting, err);
 	if (!ppp_cmd)
 		return FALSE;
 
@@ -887,8 +971,6 @@ nm_ppp_manager_stop (NMPPPManager *manager)
 		close (priv->monitor_fd);
 		priv->monitor_fd = 0;
 	}
-
-	g_free (priv->iface);
 
 	if (priv->ppp_timeout_handler) {
 		g_source_remove (priv->ppp_timeout_handler);
