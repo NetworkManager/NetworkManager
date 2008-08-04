@@ -45,6 +45,18 @@ typedef enum {
 	NM_CONNECTION_SCOPE_USER
 } NMConnectionScope;
 
+typedef enum
+{
+	NM_CONNECTION_ERROR_UNKNOWN = 0,
+	NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND
+} NMConnectionError;
+
+#define NM_TYPE_CONNECTION_ERROR (nm_connection_error_get_type ()) 
+GType nm_connection_error_get_type (void);
+
+#define NM_CONNECTION_ERROR nm_connection_error_quark ()
+GQuark nm_connection_error_quark (void);
+
 #define NM_CONNECTION_SCOPE "scope"
 #define NM_CONNECTION_PATH "path"
 

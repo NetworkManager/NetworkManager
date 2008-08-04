@@ -1,5 +1,12 @@
 2008-08-04  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-connection.c
+	  libnm-util/nm-connection.h
+		- (nm_connection_verify): return error on missing 'connection' setting
+			(found by Sjoerd Simons)
+
+2008-08-04  Dan Williams  <dcbw@redhat.com>
+
 	Handle multiple concurrent PPP connections.
 
 	* src/ppp-manager/nm-ppp-manager.c
