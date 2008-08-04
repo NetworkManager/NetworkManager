@@ -257,10 +257,10 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	NMSetting *setting;
 	const char *setting_name;
 	guint32 tries;
-	char *hint1 = NULL;
+	GPtrArray *hints = NULL;
+	const char *hint1 = NULL, *hint2 = NULL;
 
 	remove_timeout_handler (manager);
 
@@ -271,47 +271,67 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 	g_assert (s_con->type);
 
 	nm_connection_clear_secrets (connection);
-	setting_name = nm_connection_need_secrets (connection, NULL);
-	if (setting_name) {
-		setting = nm_connection_get_setting_by_name (connection, setting_name);
-	} else {
-		/* Always ask for secrets unless the connection's type setting doesn't
-		 * even exist (which shouldn't happen).  Empty username and password are
-		 * valid, but we need to tell the pppd plugin that this is valid by
-		 * sending back blank secrets.
-		 */
+	setting_name = nm_connection_need_secrets (connection, &hints);
+	if (!setting_name) {
+		NMSetting *setting;
+
 		setting = nm_connection_get_setting_by_name (connection, s_con->type);
-		if (!setting) {
+		if (setting) {
+			const char *username = NULL;
+			const char *password = NULL;
+
+			/* FIXME: push this down to the settings and keep PPP manager generic */
+			if (NM_IS_SETTING_PPPOE (setting)) {
+				username = NM_SETTING_PPPOE (setting)->username;
+				password = NM_SETTING_PPPOE (setting)->password;
+			} else if (NM_IS_SETTING_GSM (setting)) {
+				username = NM_SETTING_GSM (setting)->username;
+				password = NM_SETTING_GSM (setting)->password;
+			} else if (NM_IS_SETTING_CDMA (setting)) {
+				username = NM_SETTING_CDMA (setting)->username;
+				password = NM_SETTING_CDMA (setting)->password;
+			}
+
+			/* If secrets are not required, send the existing username and password
+			 * back to the PPP plugin immediately.
+			 */
+			priv->pending_secrets_context = context;
+			nm_ppp_manager_update_secrets (manager,
+			                               NULL, /* FIXME: pass device name */
+			                               username ? username : "",
+			                               password ? password : "",
+			                               NULL);
+		} else {
 			GError *err = NULL;
 
 			g_set_error (&err, NM_PPP_MANAGER_ERROR, NM_PPP_MANAGER_ERROR_UNKOWN,
 					   "Missing type-specific setting; no secrets could be found.");
 			nm_warning ("%s", err->message);
 			dbus_g_method_return_error (context, err);
-			return;
 		}
-		setting_name = nm_setting_get_name (setting);
+		return;
 	}
 
-	/* FIXME: figure out some way of pushing this down to the settings
-	 * themselves and keeping the PPP Manager generic.
-	 */
-	if (NM_IS_SETTING_PPPOE (setting))
-		hint1 = NM_SETTING_PPPOE_PASSWORD;
-	else if (NM_IS_SETTING_GSM (setting))
-		hint1 = NM_SETTING_GSM_PASSWORD;
-	else if (NM_IS_SETTING_CDMA (setting))
-		hint1 = NM_SETTING_CDMA_PASSWORD;
+	/* Extract hints */
+	if (hints) {
+		if (hints->len > 0)
+			hint1 = g_ptr_array_index (hints, 0);
+		if (hints->len > 1)
+			hint2 = g_ptr_array_index (hints, 1);
+	}
 
 	tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), PPP_MANAGER_SECRET_TRIES));
 	nm_act_request_request_connection_secrets (priv->act_req,
 	                                           setting_name,
-	                                           tries == 0 ? TRUE : FALSE,
+	                                           tries ? TRUE : FALSE,
 	                                           SECRETS_CALLER_PPP,
 	                                           hint1,
-	                                           NULL);
+	                                           hint2);
 	g_object_set_data (G_OBJECT (connection), PPP_MANAGER_SECRET_TRIES, GUINT_TO_POINTER (++tries));
 	priv->pending_secrets_context = context;
+
+	if (hints)
+		g_ptr_array_free (hints, TRUE);
 }
 
 static gboolean impl_ppp_manager_set_state (NMPPPManager *manager,
@@ -329,6 +349,8 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 						   GHashTable *config_hash,
 						   GError **err)
 {
+	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
+	NMConnection *connection;
 	NMIP4Config *config;
 	NMSettingIP4Address *addr;
 	GValue *val;
@@ -381,6 +403,12 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 		goto out;
 	}
 
+	/* Got successful IP4 config; obviously the secrets worked */
+	connection = nm_act_request_get_connection (priv->act_req);
+	g_assert (connection);
+	g_object_set_data (G_OBJECT (connection), PPP_MANAGER_SECRET_TRIES, NULL);
+
+	/* Push the IP4 config up to the device */
 	g_signal_emit (manager, signals[IP4_CONFIG], 0, iface, config);
 
 	monitor_stats (manager, iface);
@@ -820,10 +848,7 @@ nm_ppp_manager_update_secrets (NMPPPManager *manager,
 		   the plugin would need to link against libnm-util just to parse this.
 		   So instead, let's just send what it needs */
 
-		/* FIXME: Do we have to strdup the values here? */
-		dbus_g_method_return (priv->pending_secrets_context,
-		                      g_strdup (username),
-		                      g_strdup (password));
+		dbus_g_method_return (priv->pending_secrets_context, username, password);
 	}
 	priv->pending_secrets_context = NULL;
 }

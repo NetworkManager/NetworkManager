@@ -1,5 +1,16 @@
 2008-08-04  Dan Williams  <dcbw@redhat.com>
 
+	* src/ppp-manager/nm-ppp-manager.c
+		- (impl_ppp_manager_need_secrets): rework to handle secrets better;
+			since the GSM and CDMA settings now implement need_secrets, we can
+			rely on them to do the right thing.  Where secrets are not required,
+			just pass empty strings back to the pppd plugin.
+		- (nm_ppp_manager_update_secrets): leak fix; don't need to dup the strings
+		- (impl_ppp_manager_set_ip4_config): clear the secrets tries counter
+			on successful IP4 config receipt
+
+2008-08-04  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting-cdma.c
 	  libnm-util/nm-setting-gsm.c
 		- (verify): validate username & password if they exist
