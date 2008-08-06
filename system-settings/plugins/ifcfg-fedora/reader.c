@@ -238,7 +238,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 	/* Yay, let's make an IP4 config */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
 	s_ip4->method = g_strdup (method);
-	s_ip4->ignore_dhcp_dns = !svTrueValue (ifcfg, "PEERDNS", 1);
+	s_ip4->ignore_auto_dns = !svTrueValue (ifcfg, "PEERDNS", 1);
 
 	/* DHCP hostname for 'send host-name' option */
 	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {

@@ -19,6 +19,7 @@ typedef struct {
 	GPtrArray *domains;
 	char *nis_domain;
 	GArray *nis_servers;
+	GSList *routes;
 } NMIP4ConfigPrivate;
 
 enum {
@@ -29,6 +30,7 @@ enum {
 	PROP_DOMAINS,
 	PROP_NIS_DOMAIN,
 	PROP_NIS_SERVERS,
+	PROP_ROUTES,
 
 	LAST_PROP
 };
@@ -76,6 +78,21 @@ demarshal_domains (NMObject *object, GParamSpec *pspec, GValue *value, gpointer 
 	return TRUE;
 }
 
+static gboolean
+demarshal_ip4_routes_array (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
+{
+	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
+
+	g_slist_foreach (priv->routes, (GFunc) g_free, NULL);
+	g_slist_free (priv->routes);
+	priv->routes = NULL;
+
+	priv->routes = nm_utils_ip4_routes_from_gvalue (value);
+	nm_object_queue_notify (object, NM_IP4_CONFIG_ROUTES);
+
+	return TRUE;
+}
+
 static void
 register_for_property_changed (NMIP4Config *config)
 {
@@ -87,6 +104,7 @@ register_for_property_changed (NMIP4Config *config)
 		{ NM_IP4_CONFIG_DOMAINS,     demarshal_domains,            &priv->domains },
 		{ NM_IP4_CONFIG_NIS_DOMAIN,  nm_object_demarshal_generic,  &priv->nis_domain },
 		{ NM_IP4_CONFIG_NIS_SERVERS, demarshal_ip4_array,          &priv->nis_servers },
+		{ NM_IP4_CONFIG_ROUTES,      demarshal_ip4_routes_array,   &priv->routes },
 		{ NULL },
 	};
 
@@ -131,6 +149,9 @@ finalize (GObject *object)
 	g_slist_foreach (priv->addresses, (GFunc) g_free, NULL);
 	g_slist_free (priv->addresses);
 
+	g_slist_foreach (priv->routes, (GFunc) g_free, NULL);
+	g_slist_free (priv->routes);
+
 	g_free (priv->hostname);
 	g_free (priv->nis_domain);
 	if (priv->nameservers)
@@ -173,6 +194,9 @@ get_property (GObject *object,
 		break;
 	case PROP_NIS_SERVERS:
 		g_value_set_boxed (value, nm_ip4_config_get_nis_servers (self));
+		break;
+	case PROP_ROUTES:
+		nm_utils_ip4_routes_to_gvalue (priv->routes, value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -239,6 +263,13 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 						    "NIS servers",
 						    NM_TYPE_UINT_ARRAY,
 						    G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_ROUTES,
+		 g_param_spec_pointer (NM_IP4_CONFIG_ROUTES,
+						       "Routes",
+						       "Routes",
+						       G_PARAM_READABLE));
 }
 
 GObject *
@@ -366,7 +397,7 @@ nm_ip4_config_get_nis_domain (NMIP4Config *config)
 	return priv->nis_domain;
 }
 
-GArray *
+const GArray *
 nm_ip4_config_get_nis_servers (NMIP4Config *config)
 {
 	NMIP4ConfigPrivate *priv;
@@ -392,3 +423,29 @@ nm_ip4_config_get_nis_servers (NMIP4Config *config)
 
 	return priv->nis_servers;
 }
+
+const GSList *
+nm_ip4_config_get_routes (NMIP4Config *config)
+{
+	NMIP4ConfigPrivate *priv;
+	GValue value = { 0, };
+
+	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), 0);
+
+	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	if (priv->routes)
+		return priv->routes;
+
+	if (!nm_object_get_property (NM_OBJECT (config),
+	                             "org.freedesktop.DBus.Properties",
+	                             "Routes",
+	                             &value)) {
+		return NULL;
+	}
+
+	demarshal_ip4_routes_array (NM_OBJECT (config), NULL, &value, &priv->routes);
+	g_value_unset (&value);
+
+	return priv->routes;
+}
+

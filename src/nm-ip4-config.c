@@ -58,7 +58,7 @@ typedef struct {
 	gchar *hostname;
 	gchar *nis_domain;
 	GArray *nis_servers;
-	GSList *static_routes;
+	GSList *routes;
 } NMIP4ConfigPrivate;
 
 
@@ -70,7 +70,7 @@ enum {
 	PROP_DOMAINS,
 	PROP_NIS_DOMAIN,
 	PROP_NIS_SERVERS,
-	PROP_STATIC_ROUTES,
+	PROP_ROUTES,
 
 	LAST_PROP
 };
@@ -133,13 +133,13 @@ NMIP4Config *nm_ip4_config_copy (NMIP4Config *src_config)
 	for (i = 0; i < len; i++)
 		nm_ip4_config_add_nis_server (dst_config, nm_ip4_config_get_nis_server (src_config, i));
 
-	for (iter = src_priv->static_routes; iter; iter = g_slist_next (iter)) {
-		NMSettingIP4Address *src_addr = (NMSettingIP4Address *) iter->data;
-		NMSettingIP4Address *dst_addr;
+	for (iter = src_priv->routes; iter; iter = g_slist_next (iter)) {
+		NMSettingIP4Route *src_route = (NMSettingIP4Route *) iter->data;
+		NMSettingIP4Route *dst_route;
 
-		dst_addr = g_malloc0 (sizeof (NMSettingIP4Address));
-		memcpy (dst_addr, src_addr, sizeof (NMSettingIP4Address));
-		nm_ip4_config_take_static_route (dst_config, dst_addr);
+		dst_route = g_malloc0 (sizeof (NMSettingIP4Route));
+		memcpy (dst_route, src_route, sizeof (NMSettingIP4Route));
+		nm_ip4_config_take_route (dst_config, dst_route);
 	}
 
 	return dst_config;
@@ -310,38 +310,38 @@ const char *nm_ip4_config_get_nis_domain (NMIP4Config *config)
 }
 
 void
-nm_ip4_config_take_static_route (NMIP4Config *config,
-						   NMSettingIP4Address *address)
+nm_ip4_config_take_route (NMIP4Config *config,
+						   NMSettingIP4Route *route)
 {
 	NMIP4ConfigPrivate *priv;
 
 	g_return_if_fail (NM_IS_IP4_CONFIG (config));
-	g_return_if_fail (address != NULL);
+	g_return_if_fail (route != NULL);
 
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	priv->static_routes = g_slist_append (priv->static_routes, address);
+	priv->routes = g_slist_append (priv->routes, route);
 }
 
 void
-nm_ip4_config_add_static_route (NMIP4Config *config,
-						  NMSettingIP4Address *address)
+nm_ip4_config_add_route (NMIP4Config *config,
+						  NMSettingIP4Route *route)
 {
 	NMIP4ConfigPrivate *priv;
-	NMSettingIP4Address *copy;
+	NMSettingIP4Route *copy;
 
 	g_return_if_fail (NM_IS_IP4_CONFIG (config));
-	g_return_if_fail (address != NULL);
+	g_return_if_fail (route != NULL);
 
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	copy = g_malloc0 (sizeof (NMSettingIP4Address));
-	memcpy (copy, address, sizeof (NMSettingIP4Address));
-	priv->static_routes = g_slist_append (priv->static_routes, copy);
+	copy = g_malloc0 (sizeof (NMSettingIP4Route));
+	memcpy (copy, route, sizeof (NMSettingIP4Route));
+	priv->routes = g_slist_append (priv->routes, copy);
 }
 
 void
-nm_ip4_config_replace_static_route (NMIP4Config *config,
+nm_ip4_config_replace_route (NMIP4Config *config,
 							 guint i,
-							 NMSettingIP4Address *new_address)
+							 NMSettingIP4Route *new_route)
 {
 	NMIP4ConfigPrivate *priv;
 	GSList *old;
@@ -349,28 +349,38 @@ nm_ip4_config_replace_static_route (NMIP4Config *config,
 	g_return_if_fail (NM_IS_IP4_CONFIG (config));
 
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	old = g_slist_nth (priv->static_routes, i);
+	old = g_slist_nth (priv->routes, i);
 	g_return_if_fail (old != NULL);
 
 	g_free (old->data);
-	old->data = new_address;
+	old->data = new_route;
 }
 
-const NMSettingIP4Address *
-nm_ip4_config_get_static_route (NMIP4Config *config, guint i)
+const NMSettingIP4Route *
+nm_ip4_config_get_route (NMIP4Config *config, guint i)
 {
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
 
-	return (const NMSettingIP4Address *) g_slist_nth_data (NM_IP4_CONFIG_GET_PRIVATE (config)->static_routes, i);
+	return (const NMSettingIP4Route *) g_slist_nth_data (NM_IP4_CONFIG_GET_PRIVATE (config)->routes, i);
 }
 
-guint32 nm_ip4_config_get_num_static_routes (NMIP4Config *config)
+guint32 nm_ip4_config_get_num_routes (NMIP4Config *config)
 {
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), 0);
 
-	return g_slist_length (NM_IP4_CONFIG_GET_PRIVATE (config)->static_routes);
+	return g_slist_length (NM_IP4_CONFIG_GET_PRIVATE (config)->routes);
 }
 
+void nm_ip4_config_reset_routes (NMIP4Config *config)
+{
+	NMIP4ConfigPrivate *priv;
+
+	g_return_if_fail (NM_IS_IP4_CONFIG (config));
+
+	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	g_slist_foreach (priv->routes, (GFunc) g_free, NULL);
+	priv->routes = NULL;
+}
 
 void nm_ip4_config_add_domain (NMIP4Config *config, const char *domain)
 {
@@ -572,7 +582,7 @@ finalize (GObject *object)
 	g_ptr_array_free (priv->domains, TRUE);
 	g_ptr_array_free (priv->searches, TRUE);
 	g_array_free (priv->nis_servers, TRUE);
-	nm_utils_slist_free (priv->static_routes, g_free);
+	nm_utils_slist_free (priv->routes, g_free);
 }
 
 static void
@@ -629,8 +639,8 @@ get_property (GObject *object, guint prop_id,
 	case PROP_NIS_SERVERS:
 		g_value_set_boxed (value, priv->nis_servers);
 		break;
-	case PROP_STATIC_ROUTES:
-		ip4_addresses_to_gvalue (priv->static_routes, value);
+	case PROP_ROUTES:
+		ip4_addresses_to_gvalue (priv->routes, value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -694,10 +704,10 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 							 G_PARAM_READABLE));
 
 	g_object_class_install_property
-		(object_class, PROP_STATIC_ROUTES,
-		 g_param_spec_boxed (NM_IP4_CONFIG_STATIC_ROUTES,
-						 "Static routes",
-						 "Static routes",
+		(object_class, PROP_ROUTES,
+		 g_param_spec_boxed (NM_IP4_CONFIG_ROUTES,
+						 "Routes",
+						 "Routes",
 						 DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
 						 G_PARAM_READABLE));
 

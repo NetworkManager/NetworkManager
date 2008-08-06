@@ -70,7 +70,6 @@ enum {
 	PROP_0,
 	PROP_SERVICE_TYPE,
 	PROP_USER_NAME,
-	PROP_ROUTES,
 
 	LAST_PROP
 };
@@ -127,7 +126,6 @@ finalize (GObject *object)
 
 	g_free (self->service_type);
 	g_free (self->user_name);
-	nm_utils_slist_free (self->routes, g_free);
 
 	G_OBJECT_CLASS (nm_setting_vpn_parent_class)->finalize (object);
 }
@@ -147,10 +145,6 @@ set_property (GObject *object, guint prop_id,
 		g_free (setting->user_name);
 		setting->user_name = g_value_dup_string (value);
 		break;
-	case PROP_ROUTES:
-		nm_utils_slist_free (setting->routes, g_free);
-		setting->routes = g_value_dup_boxed (value);
-		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -169,9 +163,6 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_USER_NAME:
 		g_value_set_string (value, setting->user_name);
-		break;
-	case PROP_ROUTES:
-		g_value_set_boxed (value, setting->routes);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -207,12 +198,4 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 						  "User name",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
-
-	g_object_class_install_property
-		(object_class, PROP_ROUTES,
-		 nm_param_spec_specialized (NM_SETTING_VPN_ROUTES,
-							   "Routes",
-							   "Routes",
-							   DBUS_TYPE_G_LIST_OF_STRING,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 }

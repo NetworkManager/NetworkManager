@@ -299,13 +299,15 @@ print_vpn_config (NMIP4Config *config,
 		    ip_address_to_string (nm_ip4_config_get_ptp_address (config)));
 	nm_info ("Maximum Segment Size (MSS): %d", nm_ip4_config_get_mss (config));
 
-	num = nm_ip4_config_get_num_static_routes (config);
+	num = nm_ip4_config_get_num_routes (config);
 	for (i = 0; i < num; i++) {
-		addr = nm_ip4_config_get_static_route (config, i);
-		nm_info ("Static Route: %s/%d Gateway: %s",
-			    ip_address_to_string (addr->address),
-			    addr->prefix,
-			    ip_address_to_string (addr->gateway));
+		const NMSettingIP4Route *route;
+
+		route = nm_ip4_config_get_route (config, i);
+		nm_info ("Static Route: %s/%d   Next Hop: %s",
+			    ip_address_to_string (route->address),
+			    route->prefix,
+			    ip_address_to_string (route->next_hop));
 	}
 
 	num = nm_ip4_config_get_num_nameservers (config);
@@ -319,57 +321,6 @@ print_vpn_config (NMIP4Config *config,
 	nm_info ("-----------------------------------------");
 	nm_info ("%s", banner);
 	nm_info ("-----------------------------------------");
-}
-
-static void
-merge_vpn_routes (NMVPNConnection *connection, NMIP4Config *config)
-{
-	NMSettingVPN *setting;
-	GSList *iter;
-
-	setting = NM_SETTING_VPN (nm_connection_get_setting (NM_VPN_CONNECTION_GET_PRIVATE (connection)->connection,
-											   NM_TYPE_SETTING_VPN));
-
-	/* FIXME: Shouldn't the routes from user (NMSettingVPN) be inserted in the beginning
-	   instead of appending to the end?
-	*/
-
-	for (iter = setting->routes; iter; iter = iter->next) {
-		struct in_addr tmp;
-		char *p, *route;
-		long int prefix = 32;
-
-		route = g_strdup ((char *) iter->data);
-		p = strchr (route, '/');
-		if (!p || !(*(p + 1))) {
-			nm_warning ("Ignoring invalid route '%s'", route);
-			goto next;
-		}
-
-		errno = 0;
-		prefix = strtol (p + 1, NULL, 10);
-		if (errno || prefix <= 0 || prefix > 32) {
-			nm_warning ("Ignoring invalid route '%s'", route);
-			goto next;
-		}
-
-		/* don't pass the prefix to inet_pton() */
-		*p = '\0';
-		if (inet_pton (AF_INET, route, &tmp) > 0) {
-			NMSettingIP4Address *addr;
-
-			addr = g_new0 (NMSettingIP4Address, 1);
-			addr->address = tmp.s_addr;
-			addr->prefix = (guint32) prefix;
-			addr->gateway = 0;
-
-			nm_ip4_config_take_static_route (config, addr);
-		} else
-			nm_warning ("Ignoring invalid route '%s'", route);
-
-next:
-		g_free (route);
-	}
 }
 
 static void
@@ -463,9 +414,9 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 		GSList *routes;
 		GSList *iter;
 
-		routes = nm_utils_ip4_addresses_from_gvalue (val);
+		routes = nm_utils_ip4_routes_from_gvalue (val);
 		for (iter = routes; iter; iter = iter->next)
-			nm_ip4_config_take_static_route (config, (NMSettingIP4Address *) iter->data);
+			nm_ip4_config_take_route (config, (NMSettingIP4Route *) iter->data);
 
 		g_slist_free (routes);
 	}
@@ -478,7 +429,6 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	/* Merge in user overrides from the NMConnection's IPv4 setting */
 	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (priv->connection, NM_TYPE_SETTING_IP4_CONFIG));
 	nm_utils_merge_ip4_config (config, s_ip4);
-	merge_vpn_routes (connection, config);
 
 	if (nm_system_vpn_device_set_from_ip4_config (priv->parent_dev, priv->tundev, priv->ip4_config)) {
 		nm_info ("VPN connection '%s' (IP Config Get) complete.",

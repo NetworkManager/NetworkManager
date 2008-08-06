@@ -54,14 +54,12 @@ GQuark nm_setting_vpn_error_quark (void);
 
 #define NM_SETTING_VPN_SERVICE_TYPE "service-type"
 #define NM_SETTING_VPN_USER_NAME    "user-name"
-#define NM_SETTING_VPN_ROUTES       "routes"
 
 typedef struct {
 	NMSetting parent;
 
 	char *service_type;
 	char *user_name;
-	GSList *routes;
 } NMSettingVPN;
 
 typedef struct {

@@ -53,14 +53,15 @@ GType nm_setting_ip4_config_error_get_type (void);
 #define NM_SETTING_IP4_CONFIG_ERROR nm_setting_ip4_config_error_quark ()
 GQuark nm_setting_ip4_config_error_quark (void);
 
-#define NM_SETTING_IP4_CONFIG_METHOD          "method"
-#define NM_SETTING_IP4_CONFIG_DNS             "dns"
-#define NM_SETTING_IP4_CONFIG_DNS_SEARCH      "dns-search"
-#define NM_SETTING_IP4_CONFIG_ADDRESSES       "addresses"
-#define NM_SETTING_IP4_CONFIG_ROUTES          "routes"
-#define NM_SETTING_IP4_CONFIG_IGNORE_DHCP_DNS "ignore-dhcp-dns"
-#define NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID  "dhcp-client-id"
-#define NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME   "dhcp-hostname"
+#define NM_SETTING_IP4_CONFIG_METHOD             "method"
+#define NM_SETTING_IP4_CONFIG_DNS                "dns"
+#define NM_SETTING_IP4_CONFIG_DNS_SEARCH         "dns-search"
+#define NM_SETTING_IP4_CONFIG_ADDRESSES          "addresses"
+#define NM_SETTING_IP4_CONFIG_ROUTES             "routes"
+#define NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES "ignore-auto-routes"
+#define NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS    "ignore-auto-dns"
+#define NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID     "dhcp-client-id"
+#define NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME      "dhcp-hostname"
 
 #define NM_SETTING_IP4_CONFIG_METHOD_AUTO       "auto"
 #define NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL "link-local"
@@ -74,14 +75,22 @@ typedef struct {
 } NMSettingIP4Address;
 
 typedef struct {
+	guint32 address;   /* network byte order */
+	guint32 prefix;
+	guint32 next_hop;   /* network byte order */
+	guint32 metric;    /* lower metric == more preferred */
+} NMSettingIP4Route;
+
+typedef struct {
 	NMSetting parent;
 
 	char *method;
 	GArray *dns;        /* array of guint32; elements in network byte order */
 	GSList *dns_search; /* list of strings */
 	GSList *addresses;  /* array of NMSettingIP4Address */
-	GSList *routes;     /* array of NMSettingIP4Address */
-	gboolean ignore_dhcp_dns;
+	GSList *routes;     /* array of NMSettingIP4Route */
+	gboolean ignore_auto_routes;
+	gboolean ignore_auto_dns;
 	char *dhcp_client_id;
 	char *dhcp_hostname;
 } NMSettingIP4Config;

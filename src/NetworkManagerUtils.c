@@ -278,10 +278,13 @@ nm_utils_merge_ip4_config (NMIP4Config *ip4_config, NMSettingIP4Config *setting)
 	if (!setting)
 		return; /* Defaults are just fine */
 
-	if (setting->ignore_dhcp_dns) {
+	if (setting->ignore_auto_dns) {
 		nm_ip4_config_reset_nameservers (ip4_config);
 		nm_ip4_config_reset_searches (ip4_config);
 	}
+
+	if (setting->ignore_auto_routes)
+		nm_ip4_config_reset_routes (ip4_config);
 
 	if (setting->dns) {
 		int i, j;
@@ -344,25 +347,27 @@ nm_utils_merge_ip4_config (NMIP4Config *ip4_config, NMSettingIP4Config *setting)
 			nm_ip4_config_add_address (ip4_config, setting_addr);
 	}
 
-	/* IPv4 static routes */
+	/* IPv4 routes */
 	for (iter = setting->routes; iter; iter = g_slist_next (iter)) {
-		NMSettingIP4Address *setting_route = (NMSettingIP4Address *) iter->data;
+		NMSettingIP4Route *setting_route = (NMSettingIP4Route *) iter->data;
 		guint32 i, num;
 
-		num = nm_ip4_config_get_num_static_routes (ip4_config);
+		num = nm_ip4_config_get_num_routes (ip4_config);
 		for (i = 0; i < num; i++) {
-			const NMSettingIP4Address *cfg_route;
+			const NMSettingIP4Route *cfg_route;
 
-			cfg_route = nm_ip4_config_get_static_route (ip4_config, i);
-			/* Dupe, override with user-specified address */
-			if (cfg_route->address == setting_route->address) {
-				nm_ip4_config_replace_static_route (ip4_config, i, setting_route);
+			cfg_route = nm_ip4_config_get_route (ip4_config, i);
+			/* Dupe, override with user-specified route */
+			if (   (cfg_route->address == setting_route->address)
+			    && (cfg_route->prefix == setting_route->prefix)
+			    && (cfg_route->next_hop == setting_route->next_hop)) {
+				nm_ip4_config_replace_route (ip4_config, i, setting_route);
 				break;
 			}
 		}
 
 		if (i == num)
-			nm_ip4_config_add_static_route (ip4_config, setting_route);
+			nm_ip4_config_add_route (ip4_config, setting_route);
 	}
 }
 

@@ -76,7 +76,8 @@ enum {
 	PROP_DNS_SEARCH,
 	PROP_ADDRESSES,
 	PROP_ROUTES,
-	PROP_IGNORE_DHCP_DNS,
+	PROP_IGNORE_AUTO_ROUTES,
+	PROP_IGNORE_AUTO_DNS,
 	PROP_DHCP_CLIENT_ID,
 	PROP_DHCP_HOSTNAME,
 
@@ -186,9 +187,9 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 
 	/* Validate routes */
 	for (iter = self->routes, i = 0; iter; iter = g_slist_next (iter), i++) {
-		NMSettingIP4Address *addr = (NMSettingIP4Address *) iter->data;
+		NMSettingIP4Route *route = (NMSettingIP4Route *) iter->data;
 
-		if (!addr->address) {
+		if (!route->address) {
 			g_set_error (error,
 			             NM_SETTING_IP4_CONFIG_ERROR,
 			             NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY,
@@ -196,7 +197,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			return FALSE;
 		}
 
-		if (!addr->prefix || addr->prefix > 32) {
+		if (!route->prefix || route->prefix > 32) {
 			g_set_error (error,
 			             NM_SETTING_IP4_CONFIG_ERROR,
 			             NM_SETTING_IP4_CONFIG_ERROR_INVALID_PROPERTY,
@@ -258,10 +259,13 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_ROUTES:
 		nm_utils_slist_free (setting->routes, g_free);
-		setting->routes = nm_utils_ip4_addresses_from_gvalue (value);
+		setting->routes = nm_utils_ip4_routes_from_gvalue (value);
 		break;
-	case PROP_IGNORE_DHCP_DNS:
-		setting->ignore_dhcp_dns = g_value_get_boolean (value);
+	case PROP_IGNORE_AUTO_ROUTES:
+		setting->ignore_auto_routes = g_value_get_boolean (value);
+		break;
+	case PROP_IGNORE_AUTO_DNS:
+		setting->ignore_auto_dns = g_value_get_boolean (value);
 		break;
 	case PROP_DHCP_CLIENT_ID:
 		g_free (setting->dhcp_client_id);
@@ -297,10 +301,13 @@ get_property (GObject *object, guint prop_id,
 		nm_utils_ip4_addresses_to_gvalue (setting->addresses, value);
 		break;
 	case PROP_ROUTES:
-		nm_utils_ip4_addresses_to_gvalue (setting->routes, value);
+		nm_utils_ip4_routes_to_gvalue (setting->routes, value);
 		break;
-	case PROP_IGNORE_DHCP_DNS:
-		g_value_set_boolean (value, setting->ignore_dhcp_dns);
+	case PROP_IGNORE_AUTO_ROUTES:
+		g_value_set_boolean (value, setting->ignore_auto_routes);
+		break;
+	case PROP_IGNORE_AUTO_DNS:
+		g_value_set_boolean (value, setting->ignore_auto_dns);
 		break;
 	case PROP_DHCP_CLIENT_ID:
 		g_value_set_string (value, setting->dhcp_client_id);
@@ -363,15 +370,23 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 		(object_class, PROP_ROUTES,
 		 nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_ROUTES,
 							   "Routes",
-							   "List of NMSettingIP4Addresses",
+							   "List of NMSettingIP4Routes",
 							   DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
-		(object_class, PROP_IGNORE_DHCP_DNS,
-		 g_param_spec_boolean (NM_SETTING_IP4_CONFIG_IGNORE_DHCP_DNS,
-						   "Ignore DHCP DNS",
-						   "Ignore DHCP DNS",
+		(object_class, PROP_IGNORE_AUTO_ROUTES,
+		 g_param_spec_boolean (NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES,
+						   "Ignore automatic routes",
+						   "Ignore automatic routes",
+						   FALSE,
+						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	g_object_class_install_property
+		(object_class, PROP_IGNORE_AUTO_DNS,
+		 g_param_spec_boolean (NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS,
+						   "Ignore automatic DNS",
+						   "Ignore automatic DNS",
 						   FALSE,
 						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 

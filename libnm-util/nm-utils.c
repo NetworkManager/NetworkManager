@@ -859,6 +859,58 @@ nm_utils_ip4_addresses_to_gvalue (GSList *list, GValue *value)
 	g_value_take_boxed (value, addresses);
 }
 
+GSList *
+nm_utils_ip4_routes_from_gvalue (const GValue *value)
+{
+	GPtrArray *routes;
+	int i;
+	GSList *list = NULL;
+
+	routes = (GPtrArray *) g_value_get_boxed (value);
+	for (i = 0; routes && (i < routes->len); i++) {
+		GArray *array = (GArray *) g_ptr_array_index (routes, i);
+		NMSettingIP4Route *route;
+
+		if (array->len != 4) {
+			nm_warning ("Ignoring invalid IP4 route");
+			continue;
+		}
+		
+		route = g_malloc0 (sizeof (NMSettingIP4Route));
+		route->address = g_array_index (array, guint32, 0);
+		route->prefix = g_array_index (array, guint32, 1);
+		route->next_hop = g_array_index (array, guint32, 2);
+		route->metric = g_array_index (array, guint32, 3);
+		list = g_slist_prepend (list, route);
+	}
+
+	return g_slist_reverse (list);
+}
+
+void
+nm_utils_ip4_routes_to_gvalue (GSList *list, GValue *value)
+{
+	GPtrArray *routes;
+	GSList *iter;
+
+	routes = g_ptr_array_new ();
+
+	for (iter = list; iter; iter = iter->next) {
+		NMSettingIP4Route *route = (NMSettingIP4Route *) iter->data;
+		GArray *array;
+
+		array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
+
+		g_array_append_val (array, route->address);
+		g_array_append_val (array, route->prefix);
+		g_array_append_val (array, route->next_hop);
+		g_array_append_val (array, route->metric);
+		g_ptr_array_add (routes, array);
+	}
+
+	g_value_take_boxed (value, routes);
+}
+
 /*
  * nm_utils_ip4_netmask_to_prefix
  *

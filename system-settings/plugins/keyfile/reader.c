@@ -61,6 +61,22 @@ read_array_of_uint (GKeyFile *file,
 	return TRUE;
 }
 
+static gboolean
+get_one_int (const char *str, guint32 max_val, const char *key_name, guint32 *out)
+{
+	long tmp;
+
+	errno = 0;
+	tmp = strtol (str, NULL, 10);
+	if (errno || (tmp < 0) || (tmp > max_val)) {
+		g_warning ("%s: ignoring invalid IPv4 %s item '%s'", __func__, key_name, str);
+		return FALSE;
+	}
+
+	*out = (guint32) tmp;
+	return TRUE;
+}
+
 static void
 free_one_address (gpointer data, gpointer user_data)
 {
@@ -69,8 +85,8 @@ free_one_address (gpointer data, gpointer user_data)
 
 static GPtrArray *
 read_addresses (GKeyFile *file,
-			 const char *setting_name,
-			 const char *key)
+			    const char *setting_name,
+			    const char *key)
 {
 	GPtrArray *addresses;
 	int i = 0;
@@ -105,18 +121,14 @@ read_addresses (GKeyFile *file,
 			struct in_addr addr;
 
 			if (j == 1) {
-				/* prefix */
-				long tmp_prefix;
-				guint32 prefix;
+				guint32 prefix = 0;
 
-				errno = 0;
-				tmp_prefix = strtol (*iter, NULL, 10);
-				if (errno || (tmp_prefix < 0) || (tmp_prefix > 32)) {
-					g_warning ("%s: ignoring invalid IPv4 %s prefix '%s'", __func__, key_name, *iter);
+				/* prefix */
+				if (!get_one_int (*iter, 32, key_name, &prefix)) {
 					g_array_free (address, TRUE);
 					goto next;
 				}
-				prefix = (guint32) tmp_prefix;
+
 				g_array_append_val (address, prefix);
 			} else {
 				/* address and gateway */
@@ -148,32 +160,132 @@ next:
 	return addresses;
 }
 
+static void
+free_one_route (gpointer data, gpointer user_data)
+{
+	g_array_free ((GArray *) data, TRUE);
+}
+
+static GPtrArray *
+read_routes (GKeyFile *file,
+			 const char *setting_name,
+			 const char *key)
+{
+	GPtrArray *routes;
+	int i = 0;
+
+	routes = g_ptr_array_sized_new (3);
+
+	/* Look for individual routes */
+	while (i++ < 1000) {
+		gchar **tmp, **iter;
+		char *key_name;
+		gsize length = 0;
+		int ret;
+		GArray *route;
+		int j;
+
+		key_name = g_strdup_printf ("%s%d", key, i);
+		tmp = g_key_file_get_string_list (file, setting_name, key_name, &length, NULL);
+		g_free (key_name);
+
+		if (!tmp || !length)
+			break; /* all done */
+
+		if (length != 4) {
+			g_warning ("%s: ignoring invalid IPv4 route item '%s'", __func__, key_name);
+			goto next;
+		}
+
+		/* convert the string array into IP addresses */
+		route = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 4);
+		for (iter = tmp, j = 0; *iter; iter++, j++) {
+			struct in_addr addr;
+
+			if (j == 1) {
+				guint32 prefix = 0;
+
+				/* prefix */
+				if (!get_one_int (*iter, 32, key_name, &prefix)) {
+					g_array_free (route, TRUE);
+					goto next;
+				}
+
+				g_array_append_val (route, prefix);
+			} else if (j == 3) {
+				guint32 metric = 0;
+
+				/* prefix */
+				if (!get_one_int (*iter, G_MAXUINT32, key_name, &metric)) {
+					g_array_free (route, TRUE);
+					goto next;
+				}
+
+				g_array_append_val (route, metric);
+			} else {
+				/* address and next hop */
+				ret = inet_pton (AF_INET, *iter, &addr);
+				if (ret <= 0) {
+					g_warning ("%s: ignoring invalid IPv4 %s element '%s'", __func__, key_name, *iter);
+					g_array_free (route, TRUE);
+					goto next;
+				}
+				g_array_append_val (route, addr.s_addr);
+			}
+		}
+		g_ptr_array_add (routes, route);
+
+next:
+		g_strfreev (tmp);
+	}
+
+	if (routes->len < 1) {
+		g_ptr_array_free (routes, TRUE);
+		routes = NULL;
+	}
+
+	return routes;
+}
+
 static gboolean
 read_array_of_array_of_uint (GKeyFile *file,
                              NMSetting *setting,
                              const char *key)
 {
-	GPtrArray *addresses;
+	gboolean success = FALSE;
 
 	/* Only handle IPv4 addresses and routes for now */
-	if (   !NM_IS_SETTING_IP4_CONFIG (setting) ||
-		  (strcmp (key, NM_SETTING_IP4_CONFIG_ADDRESSES) &&
-		   strcmp (key, NM_SETTING_IP4_CONFIG_ROUTES)))
-	    return FALSE;
+	if (!NM_IS_SETTING_IP4_CONFIG (setting))
+		return FALSE;
 
-	addresses = read_addresses (file, setting->name, key);
+	if (!strcmp (key, NM_SETTING_IP4_CONFIG_ADDRESSES)) {
+		GPtrArray *addresses;
 
-	/* Work around for previous syntax */
-	if (!addresses && !strcmp (key, NM_SETTING_IP4_CONFIG_ADDRESSES))
-		addresses = read_addresses (file, setting->name, "address");
+		addresses = read_addresses (file, setting->name, key);
 
-	if (addresses) {
-		g_object_set (setting, key, addresses, NULL);
-		g_ptr_array_foreach (addresses, free_one_address, NULL);
-		g_ptr_array_free (addresses, TRUE);
+		/* Work around for previous syntax */
+		if (!addresses && !strcmp (key, NM_SETTING_IP4_CONFIG_ADDRESSES))
+			addresses = read_addresses (file, setting->name, "address");
+
+		if (addresses) {
+			g_object_set (setting, key, addresses, NULL);
+			g_ptr_array_foreach (addresses, free_one_address, NULL);
+			g_ptr_array_free (addresses, TRUE);
+		}
+		success = TRUE;
+	} else if (!strcmp (key, NM_SETTING_IP4_CONFIG_ROUTES)) {
+		GPtrArray *routes;
+
+		routes = read_routes (file, setting->name, key);
+		if (routes) {
+			g_object_set (setting, key, routes, NULL);
+			g_ptr_array_foreach (routes, free_one_route, NULL);
+			g_ptr_array_free (routes, TRUE);
+		}
+		success = TRUE;
 	}
 
-	return TRUE;
+	return success;
 }
 
 static void

@@ -829,6 +829,7 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 			char **s;
 
 			for (s = searches; *s; s += 2) {
+				NMSettingIP4Route *route;
 				struct in_addr rt_addr;
 				struct in_addr rt_route;
 
@@ -843,13 +844,12 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 
 				// FIXME: ensure the IP addresse and route are sane
 
-				addr = g_malloc0 (sizeof (NMSettingIP4Address));
-				addr->address = (guint32) rt_addr.s_addr;
-				addr->prefix = 32; /* 255.255.255.255 */
-				addr->gateway = (guint32) rt_route.s_addr;
+				route = g_malloc0 (sizeof (NMSettingIP4Route));
+				route->address = (guint32) rt_addr.s_addr;
+				route->prefix = 32; /* 255.255.255.255 */
+				route->next_hop = (guint32) rt_route.s_addr;
 
-				nm_ip4_config_take_static_route (ip4_config, addr);
-				addr = NULL;
+				nm_ip4_config_take_route (ip4_config, route);
 				nm_info ("  static route %s gw %s", *s, *(s + 1));
 			}
 		} else {

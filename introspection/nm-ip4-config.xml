@@ -3,7 +3,7 @@
 <node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
   <interface name="org.freedesktop.NetworkManager.IP4Config">
     <property name="Addresses" type="aau" access="read">
-      <tp:docstring>Tuples of IPv4 address/prefix/gateway.  The gateway is optional, if not given should be 0.</tp:docstring>
+      <tp:docstring>Tuples of IPv4 address/prefix/gateway.</tp:docstring>
     </property>
     <property name="Hostname" type="s" access="read">
       <tp:docstring>The hostname associated with this IPv4 address. FIXME: what about multiple hostnames?</tp:docstring>
@@ -19,6 +19,9 @@
     </property>
     <property name="NisServers" type="au" access="read">
       <tp:docstring>The NIS servers associated with this address.</tp:docstring>
+    </property>
+    <property name="Routes" type="aau" access="read">
+      <tp:docstring>Tuples of IPv4 route/prefix/next-hop/metric.</tp:docstring>
     </property>
   </interface>
 </node>

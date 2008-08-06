@@ -107,6 +107,7 @@ nm_system_device_set_ip4_route (const char *iface,
 						  guint32 ip4_dest,
 						  guint32 ip4_prefix,
 						  guint32 ip4_gateway,
+						  guint32 metric,
 						  int mss)
 {
 	struct nl_handle *nlh;
@@ -147,6 +148,10 @@ nm_system_device_set_ip4_route (const char *iface,
 			return;
 		}
 	}
+
+	/* Metric */
+	if (metric)
+		rtnl_route_set_prio (route, metric);
 
 	/* Add the route */
 	err = rtnl_route_add (nlh, route, 0);
@@ -284,14 +289,15 @@ nm_system_device_set_from_ip4_config (const char *iface,
 
 	sleep (1);
 
-	len = nm_ip4_config_get_num_static_routes (config);
+	len = nm_ip4_config_get_num_routes (config);
 	for (i = 0; i < len; i++) {
-		const NMSettingIP4Address *route = nm_ip4_config_get_static_route (config, i);
+		const NMSettingIP4Route *route = nm_ip4_config_get_route (config, i);
 
 		nm_system_device_set_ip4_route (iface, config, 
 								  route->address,
 								  route->prefix,
-								  route->gateway,
+								  route->next_hop,
+								  route->metric,
 								  nm_ip4_config_get_mss (config));
 	}
 
@@ -344,7 +350,7 @@ nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
 			}
 
 			nm_system_device_set_ip4_route (nm_device_get_ip_iface (active_device),
-									  ad_config, vpn_gw, 32, ad_gw,
+									  ad_config, vpn_gw, 32, ad_gw, 0,
 									  nm_ip4_config_get_mss (config));
 		}
 	}
@@ -362,14 +368,15 @@ nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
 		nm_system_device_set_mtu (iface, nm_ip4_config_get_mtu (config));
 
 	/* Set routes */
-	num = nm_ip4_config_get_num_static_routes (config);
+	num = nm_ip4_config_get_num_routes (config);
 	for (i = 0; i < num; i++) {
-		const NMSettingIP4Address *route = nm_ip4_config_get_static_route (config, i);
+		const NMSettingIP4Route *route = nm_ip4_config_get_route (config, i);
 
 		nm_system_device_set_ip4_route (iface, config,
 								  route->address,
 								  route->prefix,
-								  route->gateway,
+								  route->next_hop,
+								  route->metric,
 								  nm_ip4_config_get_mss (config));
 	}
 
