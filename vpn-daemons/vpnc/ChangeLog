@@ -1,3 +1,11 @@
+2008-08-06  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-vpnc-service-vpnc-helper.c
+		- (get_routes): fixup for NM route metric changes
+
+	* properties/nm-vpnc.c
+		- (get_routes, export): fixup for NM route metric changes
+
 2008-07-27  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Michael Biebl <biebl@debian.org>

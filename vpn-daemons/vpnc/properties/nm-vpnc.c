@@ -547,39 +547,38 @@ get_routes (const char *routelist)
 	substrs = g_strsplit (routelist, " ", 0);
 	for (i = 0; substrs[i] != NULL; i++) {
 		struct in_addr tmp;
-		char *p, *route;
+		char *p, *str_route;
 		long int prefix = 32;
 
-		route = g_strdup (substrs[i]);
-		p = strchr (route, '/');
+		str_route = g_strdup (substrs[i]);
+		p = strchr (str_route, '/');
 		if (!p || !(*(p + 1))) {
-			g_warning ("Ignoring invalid route '%s'", route);
+			g_warning ("Ignoring invalid route '%s'", str_route);
 			goto next;
 		}
 
 		errno = 0;
 		prefix = strtol (p + 1, NULL, 10);
 		if (errno || prefix <= 0 || prefix > 32) {
-			g_warning ("Ignoring invalid route '%s'", route);
+			g_warning ("Ignoring invalid route '%s'", str_route);
 			goto next;
 		}
 
 		/* don't pass the prefix to inet_pton() */
 		*p = '\0';
-		if (inet_pton (AF_INET, route, &tmp) > 0) {
-			NMSettingIP4Address *addr;
+		if (inet_pton (AF_INET, str_route, &tmp) > 0) {
+			NMSettingIP4Route *route;
 
-			addr = g_new0 (NMSettingIP4Address, 1);
-			addr->address = tmp.s_addr;
-			addr->prefix = (guint32) prefix;
-			addr->gateway = 0;
+			route = g_new0 (NMSettingIP4Route, 1);
+			route->address = tmp.s_addr;
+			route->prefix = (guint32) prefix;
 
-			routes = g_slist_append (routes, addr);
+			routes = g_slist_append (routes, route);
 		} else
-			g_warning ("Ignoring invalid route '%s'", route);
+			g_warning ("Ignoring invalid route '%s'", str_route);
 
 next:
-		g_free (route);
+		g_free (str_route);
 	}
 
 	g_strfreev (substrs);
@@ -788,16 +787,16 @@ export (NMVpnPluginUiInterface *iface,
 		GSList *iter;
 
 		for (iter = s_ip4->routes; iter; iter = g_slist_next (iter)) {
-			NMSettingIP4Address *addr = (NMSettingIP4Address *) iter->data;
+			NMSettingIP4Route *route = (NMSettingIP4Route *) iter->data;
 			char str_addr[INET_ADDRSTRLEN + 1];
 			struct in_addr num_addr;
 
 			if (routes->len)
 				g_string_append_c (routes, ' ');
 
-			num_addr.s_addr = addr->address;
+			num_addr.s_addr = route->address;
 			if (inet_ntop (AF_INET, &num_addr, &str_addr[0], INET_ADDRSTRLEN + 1))
-				g_string_append_printf (routes, "%s/%d", str_addr, addr->prefix);
+				g_string_append_printf (routes, "%s/%d", str_addr, route->prefix);
 		}
 	}
 

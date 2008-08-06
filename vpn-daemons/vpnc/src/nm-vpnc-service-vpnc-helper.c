@@ -211,8 +211,8 @@ get_routes (void)
 		GArray *array;
 		char buf[BUFLEN];
 		struct in_addr network;
-		guint32 gateway = 0; /* no gateway */
-		guint32 prefix;
+		guint32 next_hop = 0; /* no next hop */
+		guint32 prefix, metric = 0;
 
 		snprintf (buf, BUFLEN, "CISCO_SPLIT_INC_%d_ADDR", i);
 		tmp = getenv (buf);
@@ -245,10 +245,11 @@ get_routes (void)
 			prefix = nm_utils_ip4_netmask_to_prefix (netmask.s_addr);
 		}
 
-		array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
+		array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 4);
 		g_array_append_val (array, network.s_addr);
 		g_array_append_val (array, prefix);
-		g_array_append_val (array, gateway);
+		g_array_append_val (array, next_hop);
+		g_array_append_val (array, metric);
 		g_ptr_array_add (routes, array);
 	}
 
