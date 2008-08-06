@@ -31,6 +31,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include <errno.h>
 #include <regex.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -197,7 +198,7 @@ get_routes (void)
 		struct in_addr network;
 		struct in_addr netmask;
 		struct in_addr gateway = { 0, };
-		guint32 prefix;
+		guint32 prefix, metric = 0;
 
 		snprintf (buf, BUFLEN, "route_network_%d", i);
 		tmp = getenv (buf);
@@ -218,16 +219,33 @@ get_routes (void)
 
 		snprintf (buf, BUFLEN, "route_gateway_%d", i);
 		tmp = getenv (buf);
-		if (!tmp || inet_pton (AF_INET, tmp, &gateway) <= 0) {
+		/* gateway can be missing */
+		if (tmp && (inet_pton (AF_INET, tmp, &gateway) <= 0)) {
 			nm_warning ("Ignoring invalid static route gateway '%s'", tmp ? tmp : "NULL");
 			continue;
 		}
 
-		array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
+		snprintf (buf, BUFLEN, "route_metric_%d", i);
+		tmp = getenv (buf);
+		/* metric can be missing */
+		if (tmp && strlen (tmp)) {
+			long int tmp_metric;
+
+			errno = 0;
+			tmp_metric = strtol (tmp, NULL, 10);
+			if (errno || tmp_metric < 0 || tmp_metric > G_MAXUINT32) {
+				nm_warning ("Ignoring invalid static route metric '%s'", tmp);
+				continue;
+			}
+			metric = (guint32) tmp_metric;
+		}
+
+		array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 4);
 		g_array_append_val (array, network.s_addr);
 		prefix = nm_utils_ip4_netmask_to_prefix (netmask.s_addr);
 		g_array_append_val (array, prefix);
 		g_array_append_val (array, gateway.s_addr);
+		g_array_append_val (array, metric);
 		g_ptr_array_add (routes, array);
 	}
 

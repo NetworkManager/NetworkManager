@@ -1,3 +1,8 @@
+2008-08-06  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-openvpn-service-openvpn-helper.c
+		- (get_routes): handle route metrics
+
 2008-07-28  Dan Williams  <dcbw@redhat.com>
 
 	* properties/auth-helpers.c
