@@ -105,6 +105,14 @@ nm_dhcp4_config_get_option (NMDHCP4Config *self, const char *key)
 	return value ? g_value_get_string (value) : NULL;
 }
 
+const char *
+nm_dhcp4_config_get_dbus_path (NMDHCP4Config *self)
+{
+	g_return_val_if_fail (NM_IS_DHCP4_CONFIG (self), NULL);
+
+	return NM_DHCP4_CONFIG_GET_PRIVATE (self)->dbus_path;
+}
+
 static void
 nm_gvalue_destroy (gpointer data)
 {

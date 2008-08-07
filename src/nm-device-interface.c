@@ -98,10 +98,10 @@ nm_device_interface_init (gpointer g_iface)
 
 	g_object_interface_install_property
 		(g_iface,
-		 g_param_spec_object (NM_DEVICE_INTERFACE_DHCP4_CONFIG,
+		 g_param_spec_boxed (NM_DEVICE_INTERFACE_DHCP4_CONFIG,
 							  "DHCP4 Config",
 							  "DHCP4 Config",
-							  G_TYPE_OBJECT,
+							  DBUS_TYPE_G_OBJECT_PATH,
 							  G_PARAM_READWRITE));
 
 	g_object_interface_install_property

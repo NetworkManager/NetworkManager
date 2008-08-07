@@ -28,6 +28,8 @@ typedef struct {
 	gboolean managed;
 	NMIP4Config *ip4_config;
 	gboolean null_ip4_config;
+	NMDHCP4Config *dhcp4_config;
+	gboolean null_dhcp4_config;
 	NMDeviceState state;
 	char *product;
 	char *vendor;
@@ -41,6 +43,7 @@ enum {
 	PROP_CAPABILITIES,
 	PROP_MANAGED,
 	PROP_IP4_CONFIG,
+	PROP_DHCP4_CONFIG,
 	PROP_STATE,
 	PROP_PRODUCT,
 	PROP_VENDOR,
@@ -106,6 +109,46 @@ demarshal_ip4_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoint
 	return TRUE;
 }
 
+static gboolean
+demarshal_dhcp4_config (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
+	const char *path;
+	NMDHCP4Config *config = NULL;
+	DBusGConnection *connection;
+
+	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
+		return FALSE;
+
+	priv->null_dhcp4_config = FALSE;
+
+	path = g_value_get_boxed (value);
+	if (path) {
+		if (!strcmp (path, "/"))
+			priv->null_dhcp4_config = TRUE;
+		else {
+			config = NM_DHCP4_CONFIG (nm_object_cache_get (path));
+			if (config)
+				config = g_object_ref (config);
+			else {
+				connection = nm_object_get_connection (object);
+				config = NM_DHCP4_CONFIG (nm_dhcp4_config_new (connection, path));
+			}
+		}
+	}
+
+	if (priv->dhcp4_config) {
+		g_object_unref (priv->dhcp4_config);
+		priv->dhcp4_config = NULL;
+	}
+
+	if (config)
+		priv->dhcp4_config = config;
+
+	nm_object_queue_notify (object, NM_DEVICE_DHCP4_CONFIG);
+	return TRUE;
+}
+
 static void
 register_for_property_changed (NMDevice *device)
 {
@@ -117,6 +160,7 @@ register_for_property_changed (NMDevice *device)
 		{ NM_DEVICE_CAPABILITIES, nm_object_demarshal_generic, &priv->capabilities },
 		{ NM_DEVICE_MANAGED,      nm_object_demarshal_generic, &priv->managed },
 		{ NM_DEVICE_IP4_CONFIG,   demarshal_ip4_config,        &priv->ip4_config },
+		{ NM_DEVICE_DHCP4_CONFIG, demarshal_dhcp4_config,      &priv->dhcp4_config },
 		{ NULL },
 	};
 
@@ -198,6 +242,8 @@ dispose (GObject *object)
 	g_object_unref (priv->proxy);
 	if (priv->ip4_config)
 		g_object_unref (priv->ip4_config);
+	if (priv->dhcp4_config)
+		g_object_unref (priv->dhcp4_config);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
 }
@@ -242,6 +288,9 @@ get_property (GObject *object,
 		break;
 	case PROP_IP4_CONFIG:
 		g_value_set_object (value, nm_device_get_ip4_config (device));
+		break;
+	case PROP_DHCP4_CONFIG:
+		g_value_set_object (value, nm_device_get_dhcp4_config (device));
 		break;
 	case PROP_STATE:
 		g_value_set_uint (value, nm_device_get_state (device));
@@ -318,6 +367,14 @@ nm_device_class_init (NMDeviceClass *device_class)
 						  "IP4 Config",
 						  "IP4 Config",
 						  NM_TYPE_IP4_CONFIG,
+						  G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_DHCP4_CONFIG,
+		 g_param_spec_object (NM_DEVICE_DHCP4_CONFIG,
+						  "DHCP4 Config",
+						  "DHCP4 Config",
+						  NM_TYPE_DHCP4_CONFIG,
 						  G_PARAM_READABLE));
 
 	g_object_class_install_property
@@ -527,6 +584,32 @@ nm_device_get_ip4_config (NMDevice *device)
 	}
 
 	return priv->ip4_config;
+}
+
+NMDHCP4Config *
+nm_device_get_dhcp4_config (NMDevice *device)
+{
+	NMDevicePrivate *priv;
+	char *path;
+	GValue value = { 0, };
+
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+	if (priv->dhcp4_config)
+		return priv->dhcp4_config;
+	if (priv->null_dhcp4_config)
+		return NULL;
+
+	path = nm_object_get_object_path_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Dhcp4Config");
+	if (path) {
+		g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
+		g_value_take_boxed (&value, path);
+		demarshal_dhcp4_config (NM_OBJECT (device), NULL, &value, &priv->dhcp4_config);
+		g_value_unset (&value);
+	}
+
+	return priv->dhcp4_config;
 }
 
 NMDeviceState

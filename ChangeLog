@@ -1,5 +1,31 @@
 2008-08-07  Dan Williams  <dcbw@redhat.com>
 
+	* include/NetworkManager.h
+		- Add the DHCP4Config D-Bus interface
+
+	* libnm-glib/Makefile.am
+	  libnm-glib/nm-dhcp4-config.c
+	  libnm-glib/nm-dhcp4-config.h
+		- Handle DHCP4 config objects exported by NM over D-Bus
+
+	* libnm-glib/nm-device.c
+	  libnm-glib/nm-device.h
+		- Add a 'dhcp4-config' property
+
+	* libnm-glib/libnm-glib-test.c
+		- Print out DHCP4 config for devices
+		- Fix some crashes when no connections are active
+
+	* src/nm-device-interface.c
+	  src/nm-device.c
+	  src/nm-dhcp4-config.c
+	  src/nm-dhcp4-config.h
+		- Treat dhcp4-config object as an object path at the D-Bus interface so
+			that when it doesn't exist we can proxy it as "/" which dbus-glib
+			doesn't let us do when the property type is G_TYPE_OBJECT
+
+2008-08-07  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManager.c
 	  src/NetworkManagerSystem.h
 	  src/backends/NetworkManagerArch.c

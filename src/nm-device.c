@@ -2062,9 +2062,9 @@ get_property (GObject *object, guint prop_id,
 	case NM_DEVICE_INTERFACE_PROP_DHCP4_CONFIG:
 		if (   ((state == NM_DEVICE_STATE_ACTIVATED) || (state == NM_DEVICE_STATE_IP_CONFIG))
 		    && nm_device_get_use_dhcp (self))
-			g_value_set_object (value, priv->dhcp4_config);
+			g_value_set_boxed (value, nm_dhcp4_config_get_dbus_path (priv->dhcp4_config));
 		else
-			g_value_set_object (value, NULL);
+			g_value_set_boxed (value, "/");
 		break;
 	case NM_DEVICE_INTERFACE_PROP_STATE:
 		g_value_set_uint (value, priv->state);
