@@ -33,10 +33,7 @@
  * implemented in the backend files in backends/ directory
  */
 
-void			nm_generic_init (void);
-
 void			nm_generic_enable_loopback				(void);
-void			nm_generic_kill_all_dhcp_daemons			(void);
 void			nm_generic_update_dns					(void);
 
 void			nm_generic_set_ip4_config_from_resolv_conf (const char *filename, NMIP4Config *ip4_config);

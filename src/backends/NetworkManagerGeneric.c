@@ -45,18 +45,6 @@
 #include <netlink/netlink.h>
 
 /*
- * nm_generic_init
- *
- * Initializes the distribution-specific system backend
- *
- */
-void nm_generic_init (void)
-{
-	/* Kill any dhclients lying around */
-	nm_system_kill_all_dhcp_daemons ();
-}
-
-/*
  * nm_generic_enable_loopback
  *
  * Bring up the loopback interface
@@ -110,17 +98,6 @@ out:
 	if (addr)
 		rtnl_addr_put (addr);
 }
-
-/*
- * nm_generic_kill_all_dhcp_daemons
- *
- * Kill all DHCP daemons currently running, done at startup.
- *
- */
-void nm_generic_kill_all_dhcp_daemons (void)
-{
-}
-
 
 /*
  * nm_generic_update_dns

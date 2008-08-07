@@ -1,3 +1,20 @@
+2008-08-07  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManager.c
+	  src/NetworkManagerSystem.h
+	  src/backends/NetworkManagerArch.c
+	  src/backends/NetworkManagerDebian.c
+	  src/backends/NetworkManagerFrugalware.c
+	  src/backends/NetworkManagerGeneric.c
+	  src/backends/NetworkManagerGeneric.h
+	  src/backends/NetworkManagerGentoo.c
+	  src/backends/NetworkManagerMandriva.c
+	  src/backends/NetworkManagerPaldo.c
+	  src/backends/NetworkManagerRedHat.c
+	  src/backends/NetworkManagerSlackware.c
+	  src/backends/NetworkManagerSuSE.c
+		- (nm_system_init, nm_system_kill_all_dhcp_daemons): remove, unused
+
 2008-08-06  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-glib/nm-ip4-config.c

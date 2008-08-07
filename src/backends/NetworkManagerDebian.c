@@ -41,17 +41,6 @@
 #include "nm-utils.h"
 
 /*
- * nm_system_init
- *
- * Initializes the distribution-specific system backend
- *
- */
-void nm_system_init (void)
-{
-	nm_generic_init ();
-}
-
-/*
  * nm_system_enable_loopback
  *
  * Bring up the loopback interface
@@ -61,18 +50,6 @@ void nm_system_enable_loopback (void)
 {
 	nm_spawn_process ("/sbin/ifup lo");
 }
-
-/*
- * nm_system_kill_all_dhcp_daemons
- *
- * Kill all DHCP daemons currently running, done at startup.
- *
- */
-void nm_system_kill_all_dhcp_daemons (void)
-{
-	nm_spawn_process ("/usr/bin/killall -q dhclient");
-}
-
 
 /*
  * nm_system_update_dns

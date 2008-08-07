@@ -32,8 +32,6 @@
  * implemented in the backend files in backends/ directory
  */
 
-void			nm_system_init (void);
-
 void			nm_system_device_flush_ip4_routes				(NMDevice *dev);
 void			nm_system_device_flush_ip4_routes_with_iface	(const char *iface);
 
@@ -45,7 +43,6 @@ void			nm_system_device_flush_ip4_addresses			(NMDevice *dev);
 void			nm_system_device_flush_ip4_addresses_with_iface	(const char *iface);
 
 void			nm_system_enable_loopback				(void);
-void			nm_system_kill_all_dhcp_daemons			(void);
 void			nm_system_update_dns					(void);
 
 gboolean		nm_system_device_set_from_ip4_config		(const char *iface,

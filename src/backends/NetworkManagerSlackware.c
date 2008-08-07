@@ -37,21 +37,6 @@
 #include "nm-utils.h"
 
 /*
- * Mostly a mix of the Gentoo and RedHat Backends
- */
-
-/*
- * nm_system_init
- *
- * Initializes the distribution-specific system backend
- *
- */
-void nm_system_init (void)
-{
-	nm_generic_init ();
-}
-
-/*
  * nm_system_enable_loopback
  *
  * Bring up the loopback interface
@@ -60,18 +45,6 @@ void nm_system_init (void)
 void nm_system_enable_loopback (void)
 {
 	nm_generic_enable_loopback ();
-}
-
-
-/*
- * nm_system_kill_all_dhcp_daemons
- *
- * Kill all DHCP daemons currently running, done at startup.
- *
- */
-void nm_system_kill_all_dhcp_daemons (void)
-{
-	nm_spawn_process ("/bin/killall -q dhcpcd");
 }
 
 

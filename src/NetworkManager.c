@@ -287,7 +287,6 @@ main (int argc, char *argv[])
 	nm_logging_setup (become_daemon);
 	nm_info ("starting...");
 
-	nm_system_init ();
 	main_loop = g_main_loop_new (NULL, FALSE);
 
 	/* Create watch functions that monitor cards for link status. */
