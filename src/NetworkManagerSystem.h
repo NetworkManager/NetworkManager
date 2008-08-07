@@ -63,8 +63,6 @@ gboolean        nm_system_device_is_up (NMDevice *device);
 gboolean        nm_system_device_is_up_with_iface (const char *iface);
 
 void			nm_system_set_hostname (NMIP4Config *config);
-void			nm_system_activate_nis (NMIP4Config *config);
-void			nm_system_shutdown_nis (void);
 
 gboolean		nm_system_device_set_mtu (const char *iface, guint32 mtu);
 

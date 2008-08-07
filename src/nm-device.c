@@ -1329,8 +1329,6 @@ nm_device_deactivate_quickly (NMDevice *self)
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
-	nm_system_shutdown_nis ();
-
 	/* Break the activation chain */
 	if (priv->act_source_id) {
 		g_source_remove (priv->act_source_id);
@@ -1760,7 +1758,6 @@ nm_device_set_ip4_config (NMDevice *self, NMIP4Config *config, NMDeviceStateReas
 	if (success) {
 		nm_device_update_ip4_address (self);
 		nm_system_set_hostname (config);
-		nm_system_activate_nis (config);
 	}
 
 	g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_IP4_CONFIG);

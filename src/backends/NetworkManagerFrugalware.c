@@ -63,26 +63,6 @@ void nm_system_update_dns (void)
 }
 
 /*
- * nm_system_activate_nis
- *
- * set up the nis domain and write a yp.conf
- *
- */
-void nm_system_activate_nis (NMIP4Config *config)
-{
-}
-
-/*
- * nm_system_shutdown_nis
- *
- * shutdown ypbind
- *
- */
-void nm_system_shutdown_nis (void)
-{
-}
-
-/*
  * nm_system_set_hostname
  *
  * set the hostname

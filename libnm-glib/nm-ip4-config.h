@@ -27,8 +27,6 @@ typedef struct {
 #define NM_IP4_CONFIG_HOSTNAME "hostname"
 #define NM_IP4_CONFIG_NAMESERVERS "nameservers"
 #define NM_IP4_CONFIG_DOMAINS "domains"
-#define NM_IP4_CONFIG_NIS_DOMAIN "nis-domain"
-#define NM_IP4_CONFIG_NIS_SERVERS "nis-servers"
 #define NM_IP4_CONFIG_ROUTES "routes"
 
 GType nm_ip4_config_get_type (void);
@@ -39,8 +37,6 @@ const GSList *   nm_ip4_config_get_addresses   (NMIP4Config *config);
 const char *     nm_ip4_config_get_hostname    (NMIP4Config *config);
 const GArray *   nm_ip4_config_get_nameservers (NMIP4Config *config);
 const GPtrArray *nm_ip4_config_get_domains     (NMIP4Config *config);
-const char *     nm_ip4_config_get_nis_domain  (NMIP4Config *config);
-const GArray *   nm_ip4_config_get_nis_servers (NMIP4Config *config);
 const GSList *   nm_ip4_config_get_routes      (NMIP4Config *config);
 
 G_END_DECLS

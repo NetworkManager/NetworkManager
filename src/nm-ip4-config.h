@@ -72,10 +72,6 @@ guint32		nm_ip4_config_get_nameserver		(NMIP4Config *config, guint i);
 guint32		nm_ip4_config_get_num_nameservers	(NMIP4Config *config);
 void			nm_ip4_config_reset_nameservers		(NMIP4Config *config);
 
-void			nm_ip4_config_add_nis_server		(NMIP4Config *config, guint32 nis_server);
-guint32		nm_ip4_config_get_nis_server		(NMIP4Config *config, guint i);
-guint32		nm_ip4_config_get_num_nis_servers	(NMIP4Config *config);
-
 void			nm_ip4_config_take_route		(NMIP4Config *config, NMSettingIP4Route *route);
 void			nm_ip4_config_add_route			(NMIP4Config *config, NMSettingIP4Route *route);
 void			nm_ip4_config_replace_route		(NMIP4Config *config, guint32 i, NMSettingIP4Route *new_route);
@@ -85,9 +81,6 @@ void            nm_ip4_config_reset_routes		(NMIP4Config *config);
 
 void			nm_ip4_config_set_hostname		(NMIP4Config *config, const char *hostname);
 const char * 	nm_ip4_config_get_hostname		(NMIP4Config *config);
-
-void			nm_ip4_config_set_nis_domain		(NMIP4Config *config, const char *domain);
-const char *	nm_ip4_config_get_nis_domain		(NMIP4Config *config);
 
 void			nm_ip4_config_add_domain			(NMIP4Config *config, const char *domain);
 const char *	nm_ip4_config_get_domain			(NMIP4Config *config, guint i);

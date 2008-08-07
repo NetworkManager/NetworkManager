@@ -811,27 +811,6 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 		g_strfreev (searches);
 	}
 
-	str = g_hash_table_lookup (device->options, "new_nis_domain");
-	if (str) {
-		nm_ip4_config_set_nis_domain (ip4_config, str);
-		nm_info ("  nis domain '%s'", str);
-	}
-
-	str = g_hash_table_lookup (device->options, "new_nis_servers");
-	if (str) {
-		char **searches = g_strsplit (str, " ", 0);
-		char **s;
-
-		for (s = searches; *s; s++) {
-			if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
-				nm_ip4_config_add_nis_server (ip4_config, tmp_addr.s_addr);
-				nm_info ("  nis server '%s'", *s);
-			} else
-				nm_warning ("Ignoring invalid nis server '%s'", *s);
-		}
-		g_strfreev (searches);
-	}
-
 	str = g_hash_table_lookup (device->options, "new_static_routes");
 	if (str) {
 		char **searches = g_strsplit (str, " ", 0);

@@ -14,12 +14,6 @@
     <property name="Domains" type="as" access="read">
       <tp:docstring>A list of domains this address belongs to.</tp:docstring>
     </property>
-    <property name="NisDomain" type="s" access="read">
-      <tp:docstring>The NIS domain this address belongs to.</tp:docstring>
-    </property>
-    <property name="NisServers" type="au" access="read">
-      <tp:docstring>The NIS servers associated with this address.</tp:docstring>
-    </property>
     <property name="Routes" type="aau" access="read">
       <tp:docstring>Tuples of IPv4 route/prefix/next-hop/metric.</tp:docstring>
     </property>

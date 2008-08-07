@@ -230,26 +230,6 @@ NMIP4Config *nm_generic_device_new_ip4_system_config (NMDevice *dev)
 }
 
 /*
- * nm_generic_activate_nis
- *
- * set up the nis domain and write a yp.conf
- *
- */
-void nm_generic_activate_nis (NMIP4Config *config)
-{
-}
-
-/*
- * nm_generic_shutdown_nis
- *
- * shutdown ypbind
- *
- */
-void nm_generic_shutdown_nis (void)
-{
-}
-
-/*
  * nm_generic_set_hostname
  *
  * set the hostname

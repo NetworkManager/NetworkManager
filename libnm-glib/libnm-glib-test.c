@@ -106,18 +106,6 @@ dump_ip4_config (NMIP4Config *cfg)
 		for (i = 0; i < ptr_array->len; i++)
 			g_print ("\t%s\n", (const char *) g_ptr_array_index (ptr_array, i));
 	}
-
-	g_print ("IP4 NIS domain: %s\n", nm_ip4_config_get_nis_domain (cfg));
-
-	array = nm_ip4_config_get_nis_servers (cfg);
-	if (array) {
-		g_print ("IP4 NIS servers:\n");
-		for (i = 0; i < array->len; i++) {
-			tmp = ip4_address_as_string (g_array_index (array, guint32, i));
-			g_print ("\t%s\n", tmp);
-			g_free (tmp);
-		}
-	}
 }
 
 static void

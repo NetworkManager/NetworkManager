@@ -56,8 +56,6 @@ typedef struct {
 	GPtrArray *searches;
 
 	gchar *hostname;
-	gchar *nis_domain;
-	GArray *nis_servers;
 	GSList *routes;
 } NMIP4ConfigPrivate;
 
@@ -68,8 +66,6 @@ enum {
 	PROP_HOSTNAME,
 	PROP_NAMESERVERS,
 	PROP_DOMAINS,
-	PROP_NIS_DOMAIN,
-	PROP_NIS_SERVERS,
 	PROP_ROUTES,
 
 	LAST_PROP
@@ -93,56 +89,6 @@ nm_ip4_config_new (void)
 	g_free (path);
 
 	return (NMIP4Config *) object;
-}
-
-NMIP4Config *nm_ip4_config_copy (NMIP4Config *src_config)
-{
-	NMIP4Config *dst_config;
-	NMIP4ConfigPrivate *src_priv;
-	int i;
-	int len;
-	GSList *iter;
-
-	g_return_val_if_fail (NM_IS_IP4_CONFIG (src_config), NULL);
-
-	dst_config = nm_ip4_config_new ();
-	src_priv = NM_IP4_CONFIG_GET_PRIVATE (src_config);
-
-	for (iter = src_priv->addresses; iter; iter = g_slist_next (iter)) {
-		NMSettingIP4Address *src_addr = (NMSettingIP4Address *) iter->data;
-		NMSettingIP4Address *dst_addr;
-
-		dst_addr = g_malloc0 (sizeof (NMSettingIP4Address));
-		memcpy (dst_addr, src_addr, sizeof (NMSettingIP4Address));
-		nm_ip4_config_take_address (dst_config, dst_addr);
-	}
-
-	nm_ip4_config_set_ptp_address (dst_config, nm_ip4_config_get_ptp_address (src_config));
-	nm_ip4_config_set_hostname    (dst_config, nm_ip4_config_get_hostname (src_config));
-	nm_ip4_config_set_nis_domain  (dst_config, nm_ip4_config_get_nis_domain (src_config));
-
-	len = nm_ip4_config_get_num_nameservers (src_config);
-	for (i = 0; i < len; i++)
-		nm_ip4_config_add_nameserver (dst_config, nm_ip4_config_get_nameserver (src_config, i));
-
-	len = nm_ip4_config_get_num_domains (src_config);
-	for (i = 0; i < len; i++)
-		nm_ip4_config_add_domain (dst_config, nm_ip4_config_get_domain (src_config, i));
-
-	len = nm_ip4_config_get_num_nis_servers (src_config);
-	for (i = 0; i < len; i++)
-		nm_ip4_config_add_nis_server (dst_config, nm_ip4_config_get_nis_server (src_config, i));
-
-	for (iter = src_priv->routes; iter; iter = g_slist_next (iter)) {
-		NMSettingIP4Route *src_route = (NMSettingIP4Route *) iter->data;
-		NMSettingIP4Route *dst_route;
-
-		dst_route = g_malloc0 (sizeof (NMSettingIP4Route));
-		memcpy (dst_route, src_route, sizeof (NMSettingIP4Route));
-		nm_ip4_config_take_route (dst_config, dst_route);
-	}
-
-	return dst_config;
 }
 
 void
@@ -253,27 +199,6 @@ void nm_ip4_config_reset_nameservers (NMIP4Config *config)
 		g_array_remove_range (priv->nameservers, 0, priv->nameservers->len);
 }
 
-void nm_ip4_config_add_nis_server (NMIP4Config *config, guint32 nis_server)
-{
-	g_return_if_fail (NM_IS_IP4_CONFIG (config));
-
-	g_array_append_val (NM_IP4_CONFIG_GET_PRIVATE (config)->nis_servers, nis_server);
-}
-
-guint32 nm_ip4_config_get_nis_server (NMIP4Config *config, guint i)
-{
-	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), 0);
-
-	return g_array_index (NM_IP4_CONFIG_GET_PRIVATE (config)->nis_servers, guint32, i);
-}
-
-guint32 nm_ip4_config_get_num_nis_servers (NMIP4Config *config)
-{
-	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), 0);
-
-	return NM_IP4_CONFIG_GET_PRIVATE (config)->nis_servers->len;
-}
-
 void nm_ip4_config_set_hostname (NMIP4Config *config, const char *hostname)
 {
 	g_return_if_fail (NM_IS_IP4_CONFIG (config));
@@ -290,23 +215,6 @@ const char *nm_ip4_config_get_hostname (NMIP4Config *config)
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
 
 	return NM_IP4_CONFIG_GET_PRIVATE (config)->hostname;
-}
-
-void nm_ip4_config_set_nis_domain (NMIP4Config *config, const char *domain) 
-{
-	g_return_if_fail (NM_IS_IP4_CONFIG (config));
-	g_return_if_fail (domain != NULL);
-	
-	if (!strlen (domain))
-		return;
-	
-	NM_IP4_CONFIG_GET_PRIVATE (config)->nis_domain = g_strdup (domain);
-}
-
-const char *nm_ip4_config_get_nis_domain (NMIP4Config *config)
-{
-	g_return_val_if_fail( NM_IS_IP4_CONFIG (config), NULL);
-	return NM_IP4_CONFIG_GET_PRIVATE (config)->nis_domain;
 }
 
 void
@@ -565,7 +473,6 @@ nm_ip4_config_init (NMIP4Config *config)
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
 	priv->nameservers = g_array_new (FALSE, TRUE, sizeof (guint32));
-	priv->nis_servers = g_array_new (FALSE, TRUE, sizeof (guint32));
 	priv->domains = g_ptr_array_new ();
 	priv->searches = g_ptr_array_new ();
 }
@@ -577,11 +484,9 @@ finalize (GObject *object)
 
 	nm_utils_slist_free (priv->addresses, g_free);
 	g_free (priv->hostname);
-	g_free (priv->nis_domain);
 	g_array_free (priv->nameservers, TRUE);
 	g_ptr_array_free (priv->domains, TRUE);
 	g_ptr_array_free (priv->searches, TRUE);
-	g_array_free (priv->nis_servers, TRUE);
 	nm_utils_slist_free (priv->routes, g_free);
 }
 
@@ -633,12 +538,6 @@ get_property (GObject *object, guint prop_id,
 	case PROP_DOMAINS:
 		g_value_set_boxed (value, priv->domains);
 		break;
-	case PROP_NIS_DOMAIN:
-		g_value_set_string (value, priv->nis_domain);
-		break;
-	case PROP_NIS_SERVERS:
-		g_value_set_boxed (value, priv->nis_servers);
-		break;
 	case PROP_ROUTES:
 		ip4_addresses_to_gvalue (priv->routes, value);
 		break;
@@ -687,20 +586,6 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 							 "Domains",
 							 "Domains",
 							 DBUS_TYPE_G_ARRAY_OF_STRING,
-							 G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_NIS_DOMAIN,
-		 g_param_spec_string (NM_IP4_CONFIG_NIS_DOMAIN,
-							  "NIS domain",
-							  "NIS domain name",
-							  NULL,
-							  G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_NIS_SERVERS,
-		 g_param_spec_boxed (NM_IP4_CONFIG_NIS_SERVERS,
-							 "NIS servers",
-							 "NIS servers",
-							 DBUS_TYPE_G_UINT_ARRAY,
 							 G_PARAM_READABLE));
 
 	g_object_class_install_property

@@ -1,5 +1,29 @@
 2008-08-07  Dan Williams  <dcbw@redhat.com>
 
+	* introspection/nm-ip4-config.xml
+	  libnm-glib/libnm-glib-test.c
+	  libnm-glib/nm-ip4-config.c
+	  libnm-glib/nm-ip4-config.h
+	  src/NetworkManagerSystem.h
+	  src/backends/NetworkManagerArch.c
+	  src/backends/NetworkManagerDebian.c
+	  src/backends/NetworkManagerFrugalware.c
+	  src/backends/NetworkManagerGeneric.c
+	  src/backends/NetworkManagerGeneric.h
+	  src/backends/NetworkManagerGentoo.c
+	  src/backends/NetworkManagerMandriva.c
+	  src/backends/NetworkManagerPaldo.c
+	  src/backends/NetworkManagerRedHat.c
+	  src/backends/NetworkManagerSlackware.c
+	  src/backends/NetworkManagerSuSE.c
+	  src/dhcp-manager/nm-dhcp-manager.c
+	  src/nm-device.c
+	  src/nm-ip4-config.c
+	  src/nm-ip4-config.h
+		- Remove NIS logic; should be done from dispatcher scripts instead
+
+2008-08-07  Dan Williams  <dcbw@redhat.com>
+
 	* src/dhcp-manager/nm-dhcp-manager.c
 		- (nm_dhcp_manager_get_ip4_config): fix regression which caused
 			mis-handling of DHCP responses that returned more than one router
