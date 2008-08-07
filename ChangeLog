@@ -1,5 +1,12 @@
 2008-08-07  Dan Williams  <dcbw@redhat.com>
 
+	* src/dhcp-manager/nm-dhcp-manager.c
+		- (nm_dhcp_manager_get_ip4_config): fix regression which caused
+			mis-handling of DHCP responses that returned more than one router
+			(found by Grant Williamson)
+
+2008-08-07  Dan Williams  <dcbw@redhat.com>
+
 	* callouts/nm-dispatcher-action.c
 		- (nm_dispatcher_action): grab device path and create the device; pass
 			the device's DHCP4 config to script caller
