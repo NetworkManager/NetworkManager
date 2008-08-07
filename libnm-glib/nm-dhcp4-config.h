@@ -28,7 +28,9 @@ GType nm_dhcp4_config_get_type (void);
 
 GObject *nm_dhcp4_config_new (DBusGConnection *connection, const char *object_path);
 
-const char * nm_dhcp4_config_get_option (NMDHCP4Config *config, const char *option);
+GHashTable * nm_dhcp4_config_get_options (NMDHCP4Config *config);
+
+const char * nm_dhcp4_config_get_one_option (NMDHCP4Config *config, const char *option);
 
 G_END_DECLS
 

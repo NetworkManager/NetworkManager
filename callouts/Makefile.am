@@ -59,6 +59,7 @@ nm_dispatcher_action_CPPFLAGS = \
 nm_dispatcher_action_LDADD = \
 	$(DBUS_LIBS) \
 	$(GTHREAD_LIBS) \
+	$(top_builddir)/libnm-glib/libnm_glib.la \
 	$(top_builddir)/libnm-util/libnm-util.la
 
 nm-dispatcher-glue.h: nm-dispatcher.xml

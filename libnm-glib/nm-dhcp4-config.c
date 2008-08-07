@@ -108,28 +108,6 @@ finalize (GObject *object)
 	G_OBJECT_CLASS (nm_dhcp4_config_parent_class)->finalize (object);
 }
 
-static GHashTable *
-nm_dhcp4_config_get_options (NMDHCP4Config *self)
-{
-	NMDHCP4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (self);
-	GValue value = { 0, };
-
-	if (g_hash_table_size (priv->options))
-		return priv->options;
-
-	if (!nm_object_get_property (NM_OBJECT (self),
-	                             "org.freedesktop.DBus.Properties",
-	                             "Options",
-	                             &value))
-		goto out;
-
-	demarshal_dhcp4_options (NM_OBJECT (self), NULL, &value, &priv->options);	
-	g_value_unset (&value);
-
-out:
-	return priv->options;
-}
-
 static void
 get_property (GObject *object,
               guint prop_id,
@@ -179,8 +157,30 @@ nm_dhcp4_config_new (DBusGConnection *connection, const char *object_path)
 									 NULL);
 }
 
+GHashTable *
+nm_dhcp4_config_get_options (NMDHCP4Config *self)
+{
+	NMDHCP4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (self);
+	GValue value = { 0, };
+
+	if (g_hash_table_size (priv->options))
+		return priv->options;
+
+	if (!nm_object_get_property (NM_OBJECT (self),
+	                             "org.freedesktop.DBus.Properties",
+	                             "Options",
+	                             &value))
+		goto out;
+
+	demarshal_dhcp4_options (NM_OBJECT (self), NULL, &value, &priv->options);	
+	g_value_unset (&value);
+
+out:
+	return priv->options;
+}
+
 const char *
-nm_dhcp4_config_get_option (NMDHCP4Config *self, const char *option)
+nm_dhcp4_config_get_one_option (NMDHCP4Config *self, const char *option)
 {
 	g_return_val_if_fail (NM_IS_DHCP4_CONFIG (self), NULL);
 

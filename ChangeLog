@@ -1,5 +1,18 @@
 2008-08-07  Dan Williams  <dcbw@redhat.com>
 
+	* callouts/nm-dispatcher-action.c
+		- (nm_dispatcher_action): grab device path and create the device; pass
+			the device's DHCP4 config to script caller
+		- (dispatch_scripts): dump the DHCP4 config to the environment of called
+			scripts
+
+	* libnm-glib/nm-dhcp4-config.c
+	  libnm-glib/nm-dhcp4-config.h
+		- (nm_dhcp4_config_get_options): expose
+		- (nm_dhcp4_config_get_one_option): renamed from nm_dhcp4_config_get_option
+
+2008-08-07  Dan Williams  <dcbw@redhat.com>
+
 	* include/NetworkManager.h
 		- Add the DHCP4Config D-Bus interface
 

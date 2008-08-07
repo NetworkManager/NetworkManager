@@ -37,6 +37,8 @@
 
 #include <NetworkManager.h>
 #include <libnm-util/nm-connection.h>
+#include <libnm-glib/nm-dhcp4-config.h>
+#include <libnm-glib/nm-device.h>
 
 #include "nm-dispatcher-action.h"
 
@@ -214,16 +216,54 @@ child_setup (gpointer user_data G_GNUC_UNUSED)
         setpgid (pid, pid);
 }
 
+typedef struct {
+	char **envp;
+	guint32 i;
+} EnvAddInfo;
+
+static void
+add_one_option_to_envp (gpointer key, gpointer value, gpointer user_data)
+{
+	EnvAddInfo *info = (EnvAddInfo *) user_data;
+	char *ucased;
+
+	ucased = g_ascii_strup (key, -1);
+	info->envp[info->i++] = g_strdup_printf ("DHCP4_%s=%s", ucased, (char *) value);
+	g_free (ucased);
+}
+
+static char **
+construct_envp (NMDHCP4Config *dhcp4_config)
+{
+	char **envp;
+	GHashTable *options;
+	EnvAddInfo info;
+
+	if (!dhcp4_config)
+		return g_new0 (char *, 1);
+
+	options = nm_dhcp4_config_get_options (dhcp4_config);
+	envp = g_new0 (char *, g_hash_table_size (options) + 1);
+
+	info.envp = envp;
+	info.i = 0;
+	g_hash_table_foreach (options, add_one_option_to_envp, &info);
+
+	return envp;
+}
+
 static void
 dispatch_scripts (const char *action,
                   const char *iface,
                   const char *parent_iface,
-                  NMDeviceType type)
+                  NMDeviceType type,
+                  NMDHCP4Config *dhcp4_config)
 {
 	GDir *dir;
 	const char *filename;
 	GSList *scripts = NULL, *iter;
 	GError *error = NULL;
+	char **envp = NULL;
 
 	if (!(dir = g_dir_open (NMD_SCRIPT_DIR, 0, &error))) {
 		g_warning ("g_dir_open() could not open '" NMD_SCRIPT_DIR "'.  '%s'",
@@ -261,9 +301,10 @@ dispatch_scripts (const char *action,
 	}
 	g_dir_close (dir);
 
+	envp = construct_envp (dhcp4_config);
+
 	for (iter = scripts; iter; iter = g_slist_next (iter)) {
 		gchar *argv[4];
-		gchar *envp[1] = { NULL };
 		gint status = -1;
 
 		argv[0] = (char *) iter->data;
@@ -286,6 +327,8 @@ dispatch_scripts (const char *action,
 		}
 	}
 
+	g_strfreev (envp);
+
 	g_slist_foreach (scripts, (GFunc) g_free, NULL);
 	g_slist_free (scripts);
 }
@@ -303,6 +346,9 @@ nm_dispatcher_action (Handler *h,
 	char *iface = NULL;
 	char *parent_iface = NULL;
 	NMDeviceType type = NM_DEVICE_TYPE_UNKNOWN;
+	NMDeviceState dev_state = NM_DEVICE_STATE_UNKNOWN;
+	NMDevice *device = NULL;
+	NMDHCP4Config *dhcp4_config = NULL;
 	GValue *value;
 
 	/* Back off the quit timeout */
@@ -322,6 +368,7 @@ nm_dispatcher_action (Handler *h,
 		*error = NULL;
 	}
 
+	/* interface name */
 	value = g_hash_table_lookup (device_props, NMD_DEVICE_PROPS_INTERFACE);
 	if (!value || !G_VALUE_HOLDS_STRING (value)) {
 		g_warning ("Missing or invalid required value " NMD_DEVICE_PROPS_INTERFACE "!");
@@ -329,6 +376,7 @@ nm_dispatcher_action (Handler *h,
 	}
 	iface = (char *) g_value_get_string (value);
 
+	/* IP interface name */
 	value = g_hash_table_lookup (device_props, NMD_DEVICE_PROPS_IP_INTERFACE);
 	if (value) {
 		if (!G_VALUE_HOLDS_STRING (value)) {
@@ -339,6 +387,7 @@ nm_dispatcher_action (Handler *h,
 		iface = (char *) g_value_get_string (value);
 	}
 
+	/* Device type */
 	value = g_hash_table_lookup (device_props, NMD_DEVICE_PROPS_TYPE);
 	if (!value || !G_VALUE_HOLDS_UINT (value)) {
 		g_warning ("Missing or invalid required value " NMD_DEVICE_PROPS_TYPE "!");
@@ -346,7 +395,30 @@ nm_dispatcher_action (Handler *h,
 	}
 	type = g_value_get_uint (value);
 
-	dispatch_scripts (action, iface, parent_iface, type);
+	/* Device state */
+	value = g_hash_table_lookup (device_props, NMD_DEVICE_PROPS_STATE);
+	if (!value || !G_VALUE_HOLDS_UINT (value)) {
+		g_warning ("Missing or invalid required value " NMD_DEVICE_PROPS_STATE "!");
+		goto out;
+	}
+	dev_state = g_value_get_uint (value);
+
+	/* device itself */
+	value = g_hash_table_lookup (device_props, NMD_DEVICE_PROPS_PATH);
+	if (!value || (G_VALUE_TYPE (value) != DBUS_TYPE_G_OBJECT_PATH)) {
+		g_warning ("Missing or invalid required value " NMD_DEVICE_PROPS_PATH "!");
+		goto out;
+	}
+	device = NM_DEVICE (nm_device_new (d->g_connection, (const char *) g_value_get_boxed (value)));
+
+	/* Get the DHCP4 config */
+	if (device && (dev_state == NM_DEVICE_STATE_ACTIVATED))
+		dhcp4_config = nm_device_get_dhcp4_config (device);
+
+	dispatch_scripts (action, iface, parent_iface, type, dhcp4_config);
+
+	if (device)
+		g_object_unref (device);
 
 out:
 	return TRUE;
