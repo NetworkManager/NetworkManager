@@ -894,7 +894,7 @@ copy_dhcp4_config_option (gpointer key,
 	char *tmp_key = NULL;
 	const char **p;
 	static const char *filter_options[] = {
-		"interface", "pid", "reason", NULL
+		"interface", "pid", "reason", "dhcp_message_type", NULL
 	};
 	
 	/* Filter out stuff that's not actually new DHCP options */
