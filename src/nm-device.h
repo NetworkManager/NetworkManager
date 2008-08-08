@@ -60,8 +60,6 @@ struct _NMDevice
 	NMDevicePrivate *priv;
 };
 
-struct NMData;
-
 struct _NMDeviceClass
 {
 	GObjectClass parent;
