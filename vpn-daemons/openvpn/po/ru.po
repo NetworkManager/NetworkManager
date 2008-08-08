@@ -1,18 +1,18 @@
-# translation of ru.po to
+# translation of ru.po to Russian
 # Ukrainian translation of NetworkManager openvpn
 # Copyright (C) Free Software Foundation, 2005
 # This file is distributed under the same license as the NetworkManager package.
 #
 # Maxim Dziumanenko <dziumanenko@gmail.com>, 2005-2007.
-# Leonid Kanter <leon@asplinux.ru>, 2007.
+# Leonid Kanter <leon@asplinux.ru>, 2007, 2008.
 msgid ""
 msgstr ""
 "Project-Id-Version: ru\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-02-16 17:14+0200\n"
-"PO-Revision-Date: 2007-06-19 12:32+0300\n"
+"POT-Creation-Date: 2008-08-08 14:53+0300\n"
+"PO-Revision-Date: 2008-08-08 15:13+0300\n"
 "Last-Translator: Leonid Kanter <leon@asplinux.ru>\n"
-"Language-Team:  <gnome-cyr@gnome.org>\n"
+"Language-Team: Russian <ru@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -51,384 +51,193 @@ msgstr "_Запомнить пароль для этого сеанса"
 msgid "_Save password in keyring"
 msgstr "_Сохранить пароль на брелоке"
 
-#: ../auth-dialog/main.c:214
+#: ../auth-dialog/main.c:187
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Для доступа к виртуальной частной сети '%s' требуется аутентификация."
 
-#: ../auth-dialog/main.c:215
+#: ../auth-dialog/main.c:188
 msgid "Authenticate VPN"
 msgstr "Аутентификация VPN"
 
-#: ../auth-dialog/main.c:227
+#: ../auth-dialog/main.c:201
 msgid "Certificate pass_word:"
 msgstr "Па_роль сертификата:"
 
-#: ../auth-dialog/main.c:252
+#: ../auth-dialog/main.c:216
 msgid "Certificate password:"
 msgstr "Пароль сертификата:"
 
-#: ../nm-openvpn.desktop.in.h:1
-msgid "Add, Remove, and Edit VPN Connections"
-msgstr "Добавление, изменение и удаление соединений VPN"
+#: ../properties/auth-helpers.c:68
+msgid "Choose a Certificate Authority certificate..."
+msgstr "Выберите сертификат Центра сертификации..."
 
-#: ../nm-openvpn.desktop.in.h:2
-msgid "VPN Connection Manager (OpenVPN)"
-msgstr "Менеджер соединений VPN (OpenVPN)"
+#: ../properties/auth-helpers.c:87
+msgid "Choose your personal certificate..."
+msgstr "Выберите ваш персональный сертификат..."
 
-#: ../properties/nm-openvpn.c:130
-msgid "OpenVPN Client"
-msgstr "Клиент OpenVPN"
+#: ../properties/auth-helpers.c:105
+msgid "Choose your private key..."
+msgstr "Выберите ваш личный ключ..."
 
-#: ../properties/nm-openvpn.c:729
-msgid "The following OpenVPN connection will be created:"
-msgstr "Будет создано следующее соединение OpenVPN:"
+#: ../properties/auth-helpers.c:158
+msgid "Choose an OpenVPN static key..."
+msgstr "Выберите статический ключ OpenVPN..."
 
-#: ../properties/nm-openvpn.c:731
-#, c-format
-msgid "Name:  %s"
-msgstr "Имя:  %s"
-
-#: ../properties/nm-openvpn.c:739
-msgid "Connection Type: X.509 Certificates"
-msgstr "Тип соединения: Сертификаты X.509"
-
-#: ../properties/nm-openvpn.c:742 ../properties/nm-openvpn.c:769
-#: ../properties/nm-openvpn.c:781
-#, c-format
-msgid "CA:  %s"
-msgstr "CA:  %s"
-
-#: ../properties/nm-openvpn.c:745 ../properties/nm-openvpn.c:784
-#, c-format
-msgid "Cert:  %s"
-msgstr "Сертификат:  %s"
-
-#: ../properties/nm-openvpn.c:748 ../properties/nm-openvpn.c:787
-#, c-format
-msgid "Key:  %s"
-msgstr "Ключ:  %s"
-
-#: ../properties/nm-openvpn.c:752
-msgid "Connection Type: Shared Key"
-msgstr "Тип соединения: общий ключ"
-
-#: ../properties/nm-openvpn.c:755
-#, c-format
-msgid "Shared Key:  %s"
-msgstr "Общий ключ:  %s"
-
-#: ../properties/nm-openvpn.c:758
-#, c-format
-msgid "Local IP:  %s"
-msgstr "Локальный IP:  %s"
-
-#: ../properties/nm-openvpn.c:761
-#, c-format
-msgid "Remote IP:  %s"
-msgstr "IP сервера:  %s"
-
-#: ../properties/nm-openvpn.c:766
-msgid "Connection Type: Password"
-msgstr "Тип соединения: Пароль"
-
-#: ../properties/nm-openvpn.c:772 ../properties/nm-openvpn.c:790
-#, c-format
-msgid "Username:  %s"
-msgstr "Имя пользователя:  %s"
-
-#: ../properties/nm-openvpn.c:778
-msgid "Connection Type: X.509 with Password Authentication"
-msgstr "Тип соединения: Аутентификация X.509 с паролем"
-
-#: ../properties/nm-openvpn.c:796
-#, c-format
-msgid "Remote:  %s"
-msgstr "Удалённый узел:  %s"
-
-#: ../properties/nm-openvpn.c:799
-#, c-format
-msgid "Device: %s"
-msgstr "Устройство: %s"
-
-#: ../properties/nm-openvpn.c:799
-msgid "TAP"
-msgstr "TAP"
-
-#: ../properties/nm-openvpn.c:799
-msgid "TUN"
-msgstr "TUN"
-
-#: ../properties/nm-openvpn.c:802
-#, c-format
-msgid "Protocol: %s"
-msgstr "Протокол: %s"
-
-#: ../properties/nm-openvpn.c:802
-msgid "TCP"
-msgstr "TCP"
-
-#: ../properties/nm-openvpn.c:802
-msgid "UDP"
-msgstr "UDP"
-
-#: ../properties/nm-openvpn.c:806
-#, c-format
-msgid "Routes:  %s"
-msgstr "Маршрутизатор:  %s"
-
-#: ../properties/nm-openvpn.c:810
-#, c-format
-msgid "Use LZO Compression: %s"
-msgstr "Использовать сжатие LZO: %s"
-
-#: ../properties/nm-openvpn.c:810
-msgid "Yes"
-msgstr "Да"
-
-#: ../properties/nm-openvpn.c:810
-msgid "No"
+#: ../properties/auth-helpers.c:176 ../properties/auth-helpers.c:886
+msgid "None"
 msgstr "Нет"
 
-#: ../properties/nm-openvpn.c:814
-#, c-format
-msgid "Cipher:  %s"
-msgstr "Шифр:  %s"
+#: ../properties/auth-helpers.c:519
+msgid "PEM certificates (*.pem, *.crt, *.key)"
+msgstr "Сертификаты PEM (*.pem, *.crt, *.key)"
 
-#: ../properties/nm-openvpn.c:819
-#, c-format
-msgid "TLS auth:  %s %s"
-msgstr "Аутентификация TLS:  %s %s"
+#: ../properties/auth-helpers.c:579
+msgid "OpenVPN Static Keys (*.key)"
+msgstr "Статические ключи OpenVPN (*.key)"
 
-#: ../properties/nm-openvpn.c:823
-msgid "The connection details can be changed using the \"Edit\" button."
-msgstr "Параметры соединения можно изменить, нажав кнопку \"Правка\"."
+#: ../properties/auth-helpers.c:711
+msgid "Default"
+msgstr "По умолчанию"
 
-#: ../properties/nm-openvpn.c:1003
-msgid "Cannot import settings"
-msgstr "Не удаётся импортировать параметры"
+#: ../properties/nm-openvpn.c:53
+msgid "OpenVPN"
+msgstr "OpenVPN"
 
-#: ../properties/nm-openvpn.c:1005
-#, c-format
-msgid "The VPN settings file '%s' does not contain valid data."
-msgstr "Файл параметров VPN '%s' содержит некорректные данные."
+#: ../properties/nm-openvpn.c:54
+msgid "Compatible with the OpenVPN server."
+msgstr "Совместим с сервером OpenVPN."
 
-#: ../properties/nm-openvpn.c:1042
-msgid "Select file to import"
-msgstr "Выберите файл для импорта"
+#: ../properties/nm-openvpn.c:308 ../properties/nm-openvpn-dialog.glade.h:7
+msgid "Certificates (TLS)"
+msgstr "Сертификаты (TLS)"
 
-#: ../properties/nm-openvpn.c:1122 ../properties/nm-openvpn.c:1134
-msgid "Select CA to use"
-msgstr "Выберите CA"
-
-#: ../properties/nm-openvpn.c:1125
-msgid "Select certificate to use"
-msgstr "Выберите сертификат"
-
-#: ../properties/nm-openvpn.c:1128
-msgid "Select key to use"
-msgstr "Выберите ключ"
-
-#: ../properties/nm-openvpn.c:1131
-msgid "Select shared key to use"
-msgstr "Выберите общий ключ"
-
-#: ../properties/nm-openvpn.c:1137
-msgid "Select TA to use"
-msgstr "Выберите TA"
-
-#. printf ("in impl_export\n");
-#: ../properties/nm-openvpn.c:1326
-msgid "Save as..."
-msgstr "Сохранить как..."
-
-#: ../properties/nm-openvpn.c:1356
-#, c-format
-msgid "A file named \"%s\" already exists."
-msgstr "Файл с именем \"%s\" уже существует."
-
-#: ../properties/nm-openvpn.c:1359
-msgid "Do you want to replace it with the one you are saving?"
-msgstr "Вы действительно хотите заменить его сохраняемым вами файлом?"
-
-#: ../properties/nm-openvpn.c:1373
-msgid "Failed to export configuration"
-msgstr "Сбой при экспорте конфигурации"
-
-#: ../properties/nm-openvpn.c:1375
-#, c-format
-msgid "Failed to save file %s"
-msgstr "Ошибка при сохранении файла %s"
-
-#: ../properties/nm-openvpn-dialog.glade.h:1
-msgid "0"
-msgstr "0"
-
-#: ../properties/nm-openvpn-dialog.glade.h:2
-msgid "1"
-msgstr "1"
-
-#: ../properties/nm-openvpn-dialog.glade.h:3
-msgid "<b>Connection Name</b>"
-msgstr "<b>Имя соединения</b>"
-
-#: ../properties/nm-openvpn-dialog.glade.h:4
-msgid "<b>Optional Information</b>"
-msgstr "<b>Дополнительная информация</b>"
-
-#: ../properties/nm-openvpn-dialog.glade.h:5
-msgid "<b>Required Information</b>"
-msgstr "<b>Требуемая информация</b>"
-
-#: ../properties/nm-openvpn-dialog.glade.h:6
-msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
-msgstr "<i>пример: 172.16.0.0/16 10.11.12.0/24</i>"
-
-#: ../properties/nm-openvpn-dialog.glade.h:7
-msgid "CA  file:"
-msgstr "Файл  CA:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:8
-msgid "CA file:"
-msgstr "Файл CA:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:9
-msgid "Certificate:"
-msgstr "Сертификат:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:10
-msgid "Connection Type:"
-msgstr "Тип соединения:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:11
-msgid "Direction:"
-msgstr "Направление:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:12
-msgid "Key:"
-msgstr "Ключ:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:13
-msgid "Local IP:"
-msgstr "Локальный IP:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:14
+#: ../properties/nm-openvpn.c:320
 msgid "Password"
 msgstr "Пароль"
 
-#: ../properties/nm-openvpn-dialog.glade.h:15
+#: ../properties/nm-openvpn.c:334
+msgid "Password with Certificates (TLS)"
+msgstr "Пароль с сертификатами (TLS)"
+
+#: ../properties/nm-openvpn.c:346
+msgid "Static Key"
+msgstr "Статический ключ"
+
+#: ../properties/nm-openvpn-dialog.glade.h:1
+msgid " "
+msgstr " "
+
+#: ../properties/nm-openvpn-dialog.glade.h:2
+msgid "<b>Authentication</b>"
+msgstr "<b>Аутентификация</b>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:3
+msgid "<b>General</b>"
+msgstr "<b>Общие</b>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:4
 msgid ""
-"Please enter the information provided by your system administrator below. Do "
-"not enter your password here as you will be prompted when connecting."
-msgstr "Введите ниже информацию, предоставленную вашим системным администратором. Не вводите пароль - он будет запрошен при соединении."
+"<i>If key direction is used, it must be the opposite of that used on the VPN "
+"peer.  For example, if the peer uses '1', this connection must use '0'.  If "
+"you are unsure what value to use, contact your system administrator.</i>"
+msgstr ""
+"<i>Если используется направление ключа, оно должно быть противоположно направлению, которое "
+"использует вторая сторона. Например, если вторая сторона использует \"1\", это соединение должно использовать \"0\". Если вы не уверены, какое значение использовать, свяжитесь с системным администратором.</i>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:5
+msgid "Ad_vanced..."
+msgstr "_Дополнительно..."
+
+#: ../properties/nm-openvpn-dialog.glade.h:6
+msgid "CA Certificate:"
+msgstr "Сертификат CA:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:8
+msgid "Cipher:"
+msgstr "Шифр:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:9
+msgid "General"
+msgstr "Общие"
+
+#: ../properties/nm-openvpn-dialog.glade.h:10
+msgid "Key Direction:"
+msgstr "Направление ключа:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:11
+msgid "Key File:"
+msgstr "Направление ключа:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:12
+msgid "OpenVPN Advanced Options"
+msgstr "Дополнительные параметры OpenVPN"
+
+#: ../properties/nm-openvpn-dialog.glade.h:13
+msgid "Private Key:"
+msgstr "Личный ключ:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:14
+msgid "Static Key:"
+msgstr "Статический ключ:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:15
+msgid "Type:"
+msgstr "Тип:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:16
-msgid ""
-"Please note that the file you import is not an OpenVPN configuration file. "
-"Ask your administrator for the file."
-msgstr "Импортируемый файл не фвляется файлом конфигурации OpenVPN. Попросите системного администратора предоставить вам требуемый файл."
+msgid "Use L_ZO data compression"
+msgstr "Использовать сжатие L_ZO"
 
 #: ../properties/nm-openvpn-dialog.glade.h:17
-msgid "Remote IP:"
-msgstr "IP-адрес сервера:"
+msgid "Use a TA_P device"
+msgstr "Использовать устройство TA_P"
 
 #: ../properties/nm-openvpn-dialog.glade.h:18
-msgid "Shared Key:"
-msgstr "Общий ключ:"
+msgid "Use a _TCP connection"
+msgstr "Использовать соединение _TCP"
 
 #: ../properties/nm-openvpn-dialog.glade.h:19
-msgid "Shared key"
-msgstr "Общий ключ"
+msgid "Use additional TLS authentication"
+msgstr "Дополнительная аутентификация TLS"
 
 #: ../properties/nm-openvpn-dialog.glade.h:20
-msgid "Use LZO compression"
-msgstr "Использовать сжатие LZO"
+msgid "Use custom gateway p_ort:"
+msgstr "Использовать другой _порт шлюза:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:21
-msgid "Use TAP device"
-msgstr "Использовать устройство TAP"
+msgid "User Certificate:"
+msgstr "Сертификат пользователя:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:22
-msgid "Use TCP connection"
-msgstr "Использовать соединение TCP"
+msgid "User name:"
+msgstr "Имя пользователя:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:23
-msgid "Use TLS auth:"
-msgstr "Использовать аутентификацию TLS:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:24
-msgid "Use cipher:"
-msgstr "Использовать шифр:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:25
-msgid "Username:"
-msgstr "Пользователь:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:26
-msgid "X.509"
-msgstr "X.509"
-
-#: ../properties/nm-openvpn-dialog.glade.h:27
-msgid ""
-"X.509 Certificates\n"
-"Pre-shared key\n"
-"Password Authentication\n"
-"X.509 with Password Authentication"
-msgstr ""
-"Сертификаты X.509\n"
-"Общий ключ\n"
-"Пароль\n"
-"X.509 з паролем"
-
-#: ../properties/nm-openvpn-dialog.glade.h:31
 msgid "_Gateway:"
 msgstr "_Шлюз:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:32
-msgid "_Import Saved Configuration..."
-msgstr "_Импорт сохранённой конфигурации..."
+#: ../properties/nm-openvpn-dialog.glade.h:24
+msgid "gtk-cancel"
+msgstr "gtk-cancel"
 
-#: ../properties/nm-openvpn-dialog.glade.h:33
-msgid ""
-"_Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
-msgstr "_Имя, которое используется для подключения к частной сети, например, \"Campus VPN\" или \"Corporate Network\""
+#: ../properties/nm-openvpn-dialog.glade.h:25
+msgid "gtk-ok"
+msgstr "gtk-ok"
 
-#: ../properties/nm-openvpn-dialog.glade.h:34
-msgid "_Only use VPN connection for these addresses"
-msgstr "Использовать VPN _только для этих адресов"
+#: ../properties/nm-openvpn-dialog.glade.h:26
+msgid "page 1"
+msgstr "страница 1"
 
-#: ../properties/nm-openvpn-dialog.glade.h:35
-msgid "none"
-msgstr "нет"
+#: ../properties/nm-openvpn-dialog.glade.h:27
+msgid "page 2"
+msgstr "страница 2"
 
-#: ../src/nm-openvpn-service.c:127
-msgid ""
-"The VPN login failed because the user name and password were not accepted or "
-"the certificate password was wrong."
-msgstr "Сбой подключения к VPN: имя пользователя или пароль не были приняты, или пароль сертификата неверный."
+#: ../properties/nm-openvpn-dialog.glade.h:28
+msgid "page 3"
+msgstr "страница 3"
 
-#: ../src/nm-openvpn-service.c:129
-msgid "The VPN login failed because the VPN program could not be started."
-msgstr "Сбой подключения к VPN: не удаётся запустить программу VPN."
-
-#: ../src/nm-openvpn-service.c:131
-msgid ""
-"The VPN login failed because the VPN program could not connect to the VPN "
-"server."
-msgstr "Произошёл сбой подключения к VPN, поскольку программа VPN не смогла подключиться к серверу VPN."
-
-#: ../src/nm-openvpn-service.c:133
-msgid "The VPN login failed because the VPN configuration options were invalid."
-msgstr "Произошёл сбой подключения к VPN, поскольку конфигурация VPN была неверной."
-
-#: ../src/nm-openvpn-service.c:135
-msgid ""
-"The VPN login failed because the VPN program received an invalid "
-"configuration from the VPN server."
-msgstr "Произошёл сбой подключения к VPN, поскольу программа VPN получила неправильную конфигурацию от сервера VPN."
-
-#: ../src/nm-openvpn-service.c:137
-msgid "VPN connection failed"
-msgstr "Сбой соединения VPN"
+#: ../properties/nm-openvpn-dialog.glade.h:29
+msgid "page 4"
+msgstr "страница 4"
 
