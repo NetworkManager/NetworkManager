@@ -1,3 +1,9 @@
+2008-08-08  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-openvpn-service.c
+		- (nm_openvpn_socket_data_cb): handle spaces in passwords and usernames
+			(bgo #482139)
+
 2008-08-06  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-openvpn-service-openvpn-helper.c

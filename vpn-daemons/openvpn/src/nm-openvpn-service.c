@@ -166,6 +166,26 @@ nm_openvpn_disconnect_management_socket (NMOpenvpnPlugin *plugin)
 	priv->io_data = NULL;
 }
 
+static char *
+ovpn_quote_string (const char *unquoted)
+{
+	char *quoted = NULL, *q;
+	char *u = (char *) unquoted;
+
+	g_return_val_if_fail (unquoted != NULL, NULL);
+
+	/* FIXME: use unpaged memory */
+	quoted = q = g_malloc0 (strlen (unquoted) * 2);
+	while (*u) {
+		/* Escape certain characters */
+		if (*u == ' ' || *u == '\\' || *u == '"')
+			*q++ = '\\';
+		*q++ = *u++;
+	}
+
+	return quoted;
+}
+
 static gboolean
 nm_openvpn_socket_data_cb (GIOChannel *source, GIOCondition condition, gpointer user_data)
 {
@@ -189,10 +209,19 @@ nm_openvpn_socket_data_cb (GIOChannel *source, GIOCondition condition, gpointer 
 	if (sscanf (str, ">PASSWORD:Need '%a[^']'", &auth) > 0 ) {
 		if (strcmp (auth, "Auth") == 0) {
 			if (io_data->username != NULL && io_data->password != NULL) {
-				buf = g_strdup_printf ("username \"%s\" %s\n"
-								   "password \"%s\" %s\n",
-								   auth, io_data->username,
-								   auth, io_data->password);
+				char *quser, *qpass;
+
+				/* Quote strings passed back to openvpn */
+				quser = ovpn_quote_string (io_data->username);
+				qpass = ovpn_quote_string (io_data->password);
+				buf = g_strdup_printf ("username \"%s\" \"%s\"\n"
+				                       "password \"%s\" \"%s\"\n",
+				                       auth, quser,
+				                       auth, qpass);
+				memset (qpass, 0, strlen (qpass));
+				g_free (qpass);
+				g_free (quser);
+
 				/* Will always write everything in blocking channels (on success) */
 				g_io_channel_write_chars (source, buf, strlen (buf), &written, NULL);
 				g_io_channel_flush (source, NULL);
@@ -200,7 +229,14 @@ nm_openvpn_socket_data_cb (GIOChannel *source, GIOCondition condition, gpointer 
 			}
 		} else if (!strcmp (auth, "Private Key")) {
 			if (io_data->certpass) {
-				buf = g_strdup_printf ("password \"%s\" %s\n", auth, io_data->certpass);
+				char *qpass;
+
+				/* Quote strings passed back to openvpn */
+				qpass = ovpn_quote_string (io_data->certpass);
+				buf = g_strdup_printf ("password \"%s\" \"%s\"\n", auth, qpass);
+				memset (qpass, 0, strlen (qpass));
+				g_free (qpass);
+
 				/* Will always write everything in blocking channels (on success) */
 				g_io_channel_write_chars (source, buf, strlen (buf), &written, NULL);
 				g_io_channel_flush (source, NULL);
@@ -213,7 +249,6 @@ nm_openvpn_socket_data_cb (GIOChannel *source, GIOCondition condition, gpointer 
 			nm_vpn_plugin_failure (NM_VPN_PLUGIN (plugin), NM_VPN_PLUGIN_FAILURE_CONNECT_FAILED);
 			nm_openvpn_disconnect_management_socket (plugin);
 		}
-
 	} else if (strstr (str, ">PASSWORD:Verification Failed: ") == str) {
 		nm_warning ("Password verification failed");
 		nm_vpn_plugin_failure (NM_VPN_PLUGIN (plugin), NM_VPN_PLUGIN_FAILURE_LOGIN_FAILED);
