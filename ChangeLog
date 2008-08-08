@@ -1,3 +1,8 @@
+2008-08-08  Tambet Ingo  <tambet@gmail.com>
+
+	* system-settings/plugins/ifcfg-suse/parser.c (make_ip4_setting):
+	Update the IP4 setting's method name.
+
 2008-08-07  Dan Williams  <dcbw@redhat.com>
 
 	* introspection/nm-ip4-config.xml

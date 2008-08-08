@@ -118,7 +118,7 @@ make_ip4_setting (shvarFile *ifcfg)
 	}
 
 	if (!s_ip4->method)
-		s_ip4->method = g_strdup (NM_SETTING_IP4_CONFIG_METHOD_DHCP);
+		s_ip4->method = g_strdup (NM_SETTING_IP4_CONFIG_METHOD_AUTO);
 
 	str = svGetValue (ifcfg, "IPADDR");
 	if (str) {
