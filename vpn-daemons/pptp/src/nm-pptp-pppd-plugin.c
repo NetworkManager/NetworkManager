@@ -154,8 +154,8 @@ value_destroy (gpointer data)
 static void
 nm_ip_up (void *data, int arg)
 {
-	ipcp_options opts = ipcp_gotoptions[ifunit];
-	ipcp_options peer_opts = ipcp_hisoptions[ifunit];
+	ipcp_options opts = ipcp_gotoptions[0];
+	ipcp_options peer_opts = ipcp_hisoptions[0];
 	GHashTable *hash;
 	GArray *array;
 	GValue *val;
