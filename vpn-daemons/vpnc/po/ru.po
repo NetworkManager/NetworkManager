@@ -1,18 +1,19 @@
+# translation of ru.po to Russian
 # translation of ru.po to
 # Ukrainian translation of NetworkManager openvpn
 # Copyright (C) Free Software Foundation, 2005
 # This file is distributed under the same license as the NetworkManager package.
 #
 # Maxim Dziumanenko <dziumanenko@gmail.com>, 2005-2007.
-# Leonid Kanter <leon@asplinux.ru>, 2007.
+# Leonid Kanter <leon@asplinux.ru>, 2007, 2008.
 msgid ""
 msgstr ""
-"Project-Id-Version: ru1\n"
+"Project-Id-Version: ru\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-06-19 17:40+0300\n"
-"PO-Revision-Date: 2007-06-19 18:45+0300\n"
+"POT-Creation-Date: 2008-08-08 15:14+0300\n"
+"PO-Revision-Date: 2008-08-08 15:19+0300\n"
 "Last-Translator: Leonid Kanter <leon@asplinux.ru>\n"
-"Language-Team:  <gnome-cyr@gnome.org>\n"
+"Language-Team: Russian <ru@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -51,16 +52,16 @@ msgstr "_Запомнить пароли для этого сеанса"
 msgid "_Save passwords in keyring"
 msgstr "_Сохранить пароли на брелоке"
 
-#: ../auth-dialog/main.c:161
+#: ../auth-dialog/main.c:182
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Для доступа к виртуальной частной сети '%s' требуется аутентификация."
 
-#: ../auth-dialog/main.c:162
+#: ../auth-dialog/main.c:183
 msgid "Authenticate VPN"
 msgstr "Аутентификация VPN"
 
-#: ../auth-dialog/main.c:169
+#: ../auth-dialog/main.c:190
 msgid "_Group Password:"
 msgstr "_Пароль группы:"
 
@@ -72,66 +73,45 @@ msgstr "Добавление, изменение и удаление соеди�
 msgid "VPN Connection Manager (vpnc)"
 msgstr "Менеджер соединений VPN (vpnc)"
 
-#: ../properties/nm-vpnc.c:91
-msgid "Compatible Cisco VPN client (vpnc)"
-msgstr "Совместимый клиент Cisco VPN (vpnc)"
+#: ../properties/nm-vpnc.c:51
+msgid "Cisco Compatible VPN (vpnc)"
+msgstr "Cisco-совместимый VPN (vpnc)"
 
-#: ../properties/nm-vpnc.c:510
-msgid "The following vpnc VPN connection will be created:"
-msgstr "Будет создано следующее соединение vpnc VPN:"
+#: ../properties/nm-vpnc.c:52
+msgid ""
+"Compatible with various Cisco, Juniper, Netscreen, and Sonicwall IPSec-based "
+"VPN gateways."
+msgstr "Совместим с различными роутерами Cisco, Juniper, Netscreen, Sonicwall."
 
-#: ../properties/nm-vpnc.c:512
-#, c-format
-msgid "Name:  %s"
-msgstr "Имя:  %s"
+#: ../properties/nm-vpnc.c:204
+msgid "Secure (default)"
+msgstr "Строгое (по умолчанию)"
 
-#: ../properties/nm-vpnc.c:515
-#, c-format
-msgid "Gateway:  %s"
-msgstr "Шлюз:  %s"
+#: ../properties/nm-vpnc.c:207
+msgid "Weak (use with caution)"
+msgstr "Слабое (использовать с осторожностью)"
 
-#: ../properties/nm-vpnc.c:517
-#, c-format
-msgid "Group Name:  %s"
-msgstr "Имя группы:  %s"
+#: ../properties/nm-vpnc.c:215
+msgid "None (completely insecure)"
+msgstr "Нет (без шифрования)"
 
-#: ../properties/nm-vpnc.c:521
-#, c-format
-msgid "Username:  %s"
-msgstr "Имя пользователя:  %s"
+#: ../properties/nm-vpnc.c:260
+msgid "NAT-T (default)"
+msgstr "NAT-T (по умолчанию)"
 
-#: ../properties/nm-vpnc.c:526
-#, c-format
-msgid "Domain:  %s"
-msgstr "Домен:  %s"
+#: ../properties/nm-vpnc.c:267
+msgid "Cisco UDP"
+msgstr "Cisco UDP"
 
-#: ../properties/nm-vpnc.c:531
-#, c-format
-msgid "Routes:  %s"
-msgstr "Маршрутизатор:  %s"
+#: ../properties/nm-vpnc.c:274
+msgid "Disabled"
+msgstr "Выключено"
 
-#: ../properties/nm-vpnc.c:535
-#, c-format
-msgid "NAT-Keepalive packet interval:  %s"
-msgstr "Интервал пакетов NAT Keepalive:  %s"
-
-#: ../properties/nm-vpnc.c:539
-msgid "Enable Single DES"
-msgstr "Включить Single DES"
-
-#: ../properties/nm-vpnc.c:543
-msgid "Disable NAT Traversal"
-msgstr "Отключить Traversal NAT"
-
-#: ../properties/nm-vpnc.c:547
-msgid "The connection details can be changed using the \"Edit\" button."
-msgstr "Параметры соединения можно изменить, нажав кнопку \"Правка\"."
-
-#: ../properties/nm-vpnc.c:625
+#: ../properties/nm-vpnc.c:697
 msgid "TCP tunneling not supported"
 msgstr "Туннелирование TCP не поддерживается"
 
-#: ../properties/nm-vpnc.c:627
+#: ../properties/nm-vpnc.c:699
 #, c-format
 msgid ""
 "The VPN settings file '%s' specifies that VPN traffic should be tunneled "
@@ -140,151 +120,50 @@ msgid ""
 "The connection can still be created, with TCP tunneling disabled, however it "
 "may not work as expected."
 msgstr ""
-"Файл параметров VPN \"%s\" указывает, что трафик VPN должен быть туннелирован через TCP. Эта функция сейчас не поддерживается программой vpnc.\n"
+"Файл параметров VPN \"%s\" указывает, что трафик VPN должен быть "
+"туннелирован через TCP. Эта функция сейчас не поддерживается программой "
+"vpnc.\n"
 "\n"
-"Подключение может быть создано с отключенным туннелированием TCP, но оно может работать не так, как ожидается."
-
-#: ../properties/nm-vpnc.c:648
-msgid "Cannot import settings"
-msgstr "Не удаётся импортировать параметры"
-
-#: ../properties/nm-vpnc.c:650
-#, c-format
-msgid "The VPN settings file '%s' does not contain valid data."
-msgstr "Файл параметров VPN '%s' содержит некорректные данные."
-
-#: ../properties/nm-vpnc.c:667
-msgid "Select file to import"
-msgstr "Выберите файл для импорта"
-
-#. printf ("in impl_export\n");
-#: ../properties/nm-vpnc.c:840
-msgid "Save as..."
-msgstr "Сохранить как..."
-
-#: ../properties/nm-vpnc.c:870
-#, c-format
-msgid "A file named \"%s\" already exists."
-msgstr "Файл с именем \"%s\" уже существует."
-
-#: ../properties/nm-vpnc.c:873
-msgid "Do you want to replace it with the one you are saving?"
-msgstr "Вы действительно хотите заменить его сохраняемым вами файлом?"
-
-#: ../properties/nm-vpnc.c:887
-msgid "Failed to export configuration"
-msgstr "Сбой при экспорте конфигурации"
-
-#: ../properties/nm-vpnc.c:889
-#, c-format
-msgid "Failed to save file %s"
-msgstr "Ошибка при сохранении файла %s"
+"Подключение может быть создано с отключенным туннелированием TCP, но оно "
+"может работать не так, как ожидается."
 
 #: ../properties/nm-vpnc-dialog.glade.h:1
-msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
-msgstr "<i>пример: 172.16.0.0/16 10.11.12.0/24</i>"
+msgid " "
+msgstr " "
 
 #: ../properties/nm-vpnc-dialog.glade.h:2
-msgid "Connection na_me:"
-msgstr "И_мя соединения:"
+msgid "<b>General</b>"
+msgstr "<b>Общие</b>"
 
 #: ../properties/nm-vpnc-dialog.glade.h:3
-msgid "Disable NAT _traversal"
-msgstr "Отключить NAT _traversal"
+msgid "<b>Optional</b>"
+msgstr "<b>Необязательные</b>"
 
 #: ../properties/nm-vpnc-dialog.glade.h:4
-msgid "Enable _weak single DES encryption"
-msgstr "Включить _уязвимое шифрование single DES"
+msgid "Disable Dead Peer Detection"
+msgstr "Отключить Dead Peer Detection"
 
 #: ../properties/nm-vpnc-dialog.glade.h:5
-msgid "G_roup name:"
-msgstr "Имя г_руппы:"
+msgid "Domain:"
+msgstr "Домен:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:6
-msgid "Import _Saved Configuration..."
-msgstr "Импорт _сохранённой конфигурации..."
+msgid "Encryption Method:"
+msgstr "Метод шифрования:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:7
-msgid "Interval:"
-msgstr "Интервал:"
+msgid "G_roup Name:"
+msgstr "Имя г_руппы:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:8
-msgid ""
-"Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
-msgstr ""
-"Имя, которое используется для подключения к частной сети, например, "
-"\"Campus VPN\" или \"Corporate Network\""
+msgid "NAT Traversal:"
+msgstr "Traversal NAT:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:9
-msgid "Optional"
-msgstr "Необязательные"
+msgid "User name:"
+msgstr "Имя пользователя:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:10
-msgid "Override _user name"
-msgstr "_Переопределять имя пользователя"
-
-#: ../properties/nm-vpnc-dialog.glade.h:11
-msgid ""
-"Please enter the information provided by your system administrator below. Do "
-"not enter your password here as you will be prompted when connecting."
-msgstr ""
-"Введите ниже информацию, предоставленную вашим системным администратором. Не "
-"вводите пароль - он будет запрошен при соединении."
-
-#: ../properties/nm-vpnc-dialog.glade.h:12
-msgid ""
-"Please note that the file you import is not a Cisco VPN or VPNC "
-"configuration file. Ask your adminstrator for the file."
-msgstr ""
-"Импортируемый файл не фвляется файлом конфигурации Cisco VPN или VPNC. Попросите "
-"системного администратора предоставить вам требуемый файл."
-
-#: ../properties/nm-vpnc-dialog.glade.h:13
-msgid "Required"
-msgstr "Обязательные"
-
-#: ../properties/nm-vpnc-dialog.glade.h:14
-msgid "Use NAT _keepalive packets"
-msgstr "Использовать пакеты NAT _keepalive"
-
-#: ../properties/nm-vpnc-dialog.glade.h:15
-msgid "Use _domain for authentication"
-msgstr "Использовать _домен для аутентификации"
-
-#: ../properties/nm-vpnc-dialog.glade.h:16
 msgid "_Gateway:"
 msgstr "_Шлюз:"
-
-#: ../properties/nm-vpnc-dialog.glade.h:17
-msgid "_Only use VPN connection for these addresses"
-msgstr "Использовать VPN _только для этих адресов"
-
-#: ../src/nm-vpnc-service.c:119
-msgid "The VPN login failed because the user name and password were not accepted."
-msgstr "Сбой подключения к VPN: имя пользователя или пароль не были приняты/"
-
-#: ../src/nm-vpnc-service.c:121
-msgid "The VPN login failed because the VPN program could not be started."
-msgstr "Сбой подключения к VPN: не удаётся запустить программу VPN."
-
-#: ../src/nm-vpnc-service.c:123
-msgid ""
-"The VPN login failed because the VPN program could not connect to the VPN "
-"server."
-msgstr ""
-"Произошёл сбой подключения к VPN, поскольку программа VPN не смогла "
-"подключиться к серверу VPN."
-
-#: ../src/nm-vpnc-service.c:125
-msgid "The VPN login failed because the VPN configuration options were invalid."
-msgstr "Произошёл сбой подключения к VPN, поскольку конфигурация VPN была неверной."
-
-#: ../src/nm-vpnc-service.c:127
-msgid ""
-"The VPN login failed because the VPN program received an invalid "
-"configuration from the VPN server."
-msgstr ""
-"Произошёл сбой подключения к VPN, поскольу программа VPN получила "
-"неправильную конфигурацию от сервера VPN."
 
