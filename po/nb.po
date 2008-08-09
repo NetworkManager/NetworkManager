@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager 0.9.x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-07-10 09:46+0200\n"
-"PO-Revision-Date: 2008-07-10 09:48+0200\n"
+"POT-Creation-Date: 2008-08-09 10:37+0200\n"
+"PO-Revision-Date: 2008-08-09 10:38+0200\n"
 "Last-Translator: Kjartan Maraas <kmaraas@gnome.org>\n"
 "Language-Team: Norwegian Bokmål <i18n-nb@lister.ping.uio.no>\n"
 "MIME-Version: 1.0\n"
@@ -58,16 +58,18 @@ msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr ""
 "Ugyldig flagg. Vennligst bruk --help for å se en liste med gyldige flagg.\n"
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:638
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:87
 msgid "# Created by NetworkManager\n"
 msgstr "# Laget av NetworkManager\n"
 
-#: ../src/dhcp-manager/nm-dhcp-manager.c:644
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:93
 #, c-format
 msgid ""
 "# Merged from %s\n"
 "\n"
-msgstr "# Flettet fra %s\n\n"
+msgstr ""
+"# Flettet fra %s\n"
+"\n"
 
 #: ../src/named-manager/nm-named-manager.c:117
 msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
@@ -82,211 +84,178 @@ msgstr "Navnetjenere listet under vil kanskje ikke bli gjenkjent."
 msgid "Auto %s"
 msgstr "Auto %s"
 
-#: ../libnm-util/crypto.c:123
+#: ../libnm-util/crypto.c:125
 #, c-format
 msgid "PEM key file had no end tag '%s'."
 msgstr "PEM-nøkkelfil hadde ikke avsluttende tagg «%s»."
 
-#: ../libnm-util/crypto.c:133
+#: ../libnm-util/crypto.c:135
 #, c-format
 msgid "Doesn't look like a PEM private key file."
 msgstr "Ser ikke ut som en privat PEM-nøkkelfil."
 
-#: ../libnm-util/crypto.c:141
+#: ../libnm-util/crypto.c:143
 #, c-format
 msgid "Not enough memory to store PEM file data."
 msgstr "Ikke nok minne til å lagre data for PEM-fil."
 
-#: ../libnm-util/crypto.c:157
+#: ../libnm-util/crypto.c:159
 #, c-format
 msgid "Malformed PEM file: Proc-Type was not first tag."
 msgstr "Feilutformet PEM-fil: Proc-Type var ikke første tagg."
 
-#: ../libnm-util/crypto.c:165
+#: ../libnm-util/crypto.c:167
 #, c-format
 msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
 msgstr ""
 
-#: ../libnm-util/crypto.c:175
+#: ../libnm-util/crypto.c:177
 #, c-format
 msgid "Malformed PEM file: DEK-Info was not the second tag."
 msgstr ""
 
-#: ../libnm-util/crypto.c:186
+#: ../libnm-util/crypto.c:188
 #, c-format
 msgid "Malformed PEM file: no IV found in DEK-Info tag."
 msgstr ""
 
-#: ../libnm-util/crypto.c:193
+#: ../libnm-util/crypto.c:195
 #, c-format
 msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
 msgstr ""
 
-#: ../libnm-util/crypto.c:206
+#: ../libnm-util/crypto.c:208
 #, c-format
 msgid "Malformed PEM file: unknown private key cipher '%s'."
 msgstr ""
 
-#: ../libnm-util/crypto.c:225
+#: ../libnm-util/crypto.c:227
 #, c-format
 msgid "Could not decode private key."
 msgstr "Kunne ikke dekode privat nøkkel."
 
-#: ../libnm-util/crypto.c:269
+#: ../libnm-util/crypto.c:271
 #, c-format
 msgid "PEM certificate '%s' had no end tag '%s'."
 msgstr ""
 
-#: ../libnm-util/crypto.c:279
+#: ../libnm-util/crypto.c:281
 #, c-format
 msgid "Failed to decode certificate."
 msgstr "Klarte ikke å dekode sertifikat."
 
-#: ../libnm-util/crypto.c:288 ../libnm-util/crypto.c:296
+#: ../libnm-util/crypto.c:290 ../libnm-util/crypto.c:298
 #, c-format
 msgid "Not enough memory to store certificate data."
 msgstr "Ikke nok minne til å lagre sertifikatdata."
 
-#: ../libnm-util/crypto.c:326
+#: ../libnm-util/crypto.c:328
 #, c-format
 msgid "IV must be an even number of bytes in length."
 msgstr ""
 
-#: ../libnm-util/crypto.c:335
+#: ../libnm-util/crypto.c:337
 #, c-format
 msgid "Not enough memory to store the IV."
 msgstr ""
 
-#: ../libnm-util/crypto.c:346
+#: ../libnm-util/crypto.c:348
 #, c-format
 msgid "IV contains non-hexadecimal digits."
 msgstr ""
 
-#: ../libnm-util/crypto.c:384 ../libnm-util/crypto_gnutls.c:125
-#: ../libnm-util/crypto_nss.c:134
+#: ../libnm-util/crypto.c:386 ../libnm-util/crypto_gnutls.c:126
+#: ../libnm-util/crypto_nss.c:136
 #, c-format
 msgid "Private key cipher '%s' was unknown."
 msgstr ""
 
-#: ../libnm-util/crypto.c:393
+#: ../libnm-util/crypto.c:395
 #, c-format
 msgid "Not enough memory to create private key decryption key."
 msgstr ""
 
-#: ../libnm-util/crypto.c:511
+#: ../libnm-util/crypto.c:513
 #, c-format
 msgid "Not enough memory to store decrypted private key."
 msgstr ""
 
-#: ../libnm-util/crypto_gnutls.c:72
+#: ../libnm-util/crypto_gnutls.c:73
 #, c-format
 msgid "Failed to initialize the MD5 engine: %s / %s."
 msgstr ""
 
-#: ../libnm-util/crypto_gnutls.c:134 ../libnm-util/crypto_nss.c:143
+#: ../libnm-util/crypto_gnutls.c:135 ../libnm-util/crypto_nss.c:145
 #, c-format
 msgid "Not enough memory for decrypted key buffer."
 msgstr ""
 
-#: ../libnm-util/crypto_gnutls.c:142
+#: ../libnm-util/crypto_gnutls.c:143
 #, c-format
 msgid "Failed to initialize the decryption cipher context: %s / %s."
 msgstr ""
 
-#: ../libnm-util/crypto_gnutls.c:151
+#: ../libnm-util/crypto_gnutls.c:152
 #, c-format
 msgid "Failed to set symmetric key for decryption: %s / %s."
 msgstr ""
 
-#: ../libnm-util/crypto_gnutls.c:160
+#: ../libnm-util/crypto_gnutls.c:161
 #, c-format
 msgid "Failed to set IV for decryption: %s / %s."
 msgstr ""
 
-#: ../libnm-util/crypto_gnutls.c:169
+#: ../libnm-util/crypto_gnutls.c:170
 #, c-format
 msgid "Failed to decrypt the private key: %s / %s."
 msgstr ""
 
-#: ../libnm-util/crypto_gnutls.c:207
+#: ../libnm-util/crypto_gnutls.c:208
 #, c-format
 msgid "Error initializing certificate data: %s"
 msgstr ""
 
-#: ../libnm-util/crypto_gnutls.c:219
+#: ../libnm-util/crypto_gnutls.c:220
 #, c-format
 msgid "Couldn't decode certificate: %s"
 msgstr "Kunne ikke dekode sertifikat: %s"
 
-#: ../libnm-util/crypto_nss.c:76
+#: ../libnm-util/crypto_nss.c:78
 #, c-format
 msgid "Failed to initialize the MD5 context: %d."
 msgstr ""
 
-#: ../libnm-util/crypto_nss.c:151
+#: ../libnm-util/crypto_nss.c:153
 #, c-format
 msgid "Failed to initialize the decryption cipher slot."
 msgstr ""
 
-#: ../libnm-util/crypto_nss.c:161
+#: ../libnm-util/crypto_nss.c:163
 #, c-format
 msgid "Failed to set symmetric key for decryption."
 msgstr ""
 
-#: ../libnm-util/crypto_nss.c:171
+#: ../libnm-util/crypto_nss.c:173
 #, c-format
 msgid "Failed to set IV for decryption."
 msgstr ""
 
-#: ../libnm-util/crypto_nss.c:179
+#: ../libnm-util/crypto_nss.c:181
 #, c-format
 msgid "Failed to initialize the decryption context."
 msgstr ""
 
-#: ../libnm-util/crypto_nss.c:192
+#: ../libnm-util/crypto_nss.c:194
 #, c-format
 msgid "Failed to decrypt the private key: %d."
 msgstr ""
 
-#: ../libnm-util/crypto_nss.c:204
+#: ../libnm-util/crypto_nss.c:206
 #, c-format
 msgid "Failed to finalize decryption of the private key: %d."
 msgstr ""
 
-#: ../libnm-util/crypto_nss.c:248
+#: ../libnm-util/crypto_nss.c:250
 #, c-format
 msgid "Couldn't decode certificate: %d"
 msgstr "Kunne ikke dekode sertifikat: %d"
-
-#: ../vpn-daemons/openvpn/properties/auth-helpers.c:68
-msgid "Choose a Certificate Authority certificate..."
-msgstr ""
-
-#: ../vpn-daemons/openvpn/properties/auth-helpers.c:87
-msgid "Choose your personal certificate..."
-msgstr ""
-
-#: ../vpn-daemons/openvpn/properties/auth-helpers.c:105
-msgid "Choose your private key..."
-msgstr "Velg din private nøkkel..."
-
-#: ../vpn-daemons/openvpn/properties/auth-helpers.c:158
-msgid "Choose an OpenVPN static key..."
-msgstr "Velg en statisk nøkkel for OpenVPN..."
-
-#: ../vpn-daemons/openvpn/properties/auth-helpers.c:176
-#: ../vpn-daemons/openvpn/properties/auth-helpers.c:864
-msgid "None"
-msgstr "Ingen"
-
-#: ../vpn-daemons/openvpn/properties/auth-helpers.c:519
-msgid "PEM certificates (*.pem, *.crt, *.key)"
-msgstr "PEM-sertifikater (*.pem, *.crt, *.key)"
-
-#: ../vpn-daemons/openvpn/properties/auth-helpers.c:579
-msgid "OpenVPN Static Keys (*.key)"
-msgstr "Statisk nøkkel for OpenVPN (*.key)"
-
-#: ../vpn-daemons/openvpn/properties/auth-helpers.c:703
-msgid "Default"
-msgstr "Forvalg"
