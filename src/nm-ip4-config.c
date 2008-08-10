@@ -126,6 +126,7 @@ nm_ip4_config_replace_address (NMIP4Config *config,
                                NMSettingIP4Address *new_address)
 {
 	NMIP4ConfigPrivate *priv;
+	NMSettingIP4Address *copy;
 	GSList *old;
 
 	g_return_if_fail (NM_IS_IP4_CONFIG (config));
@@ -133,9 +134,11 @@ nm_ip4_config_replace_address (NMIP4Config *config,
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 	old = g_slist_nth (priv->addresses, i);
 	g_return_if_fail (old != NULL);
-
 	g_free (old->data);
-	old->data = new_address;
+
+	copy = g_malloc0 (sizeof (NMSettingIP4Address));
+	memcpy (copy, new_address, sizeof (NMSettingIP4Address));
+	old->data = copy;
 }
 
 const NMSettingIP4Address *nm_ip4_config_get_address (NMIP4Config *config, guint i)
@@ -252,6 +255,7 @@ nm_ip4_config_replace_route (NMIP4Config *config,
 							 NMSettingIP4Route *new_route)
 {
 	NMIP4ConfigPrivate *priv;
+	NMSettingIP4Route *copy;
 	GSList *old;
 
 	g_return_if_fail (NM_IS_IP4_CONFIG (config));
@@ -259,9 +263,11 @@ nm_ip4_config_replace_route (NMIP4Config *config,
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 	old = g_slist_nth (priv->routes, i);
 	g_return_if_fail (old != NULL);
-
 	g_free (old->data);
-	old->data = new_route;
+
+	copy = g_malloc0 (sizeof (NMSettingIP4Route));
+	memcpy (copy, new_route, sizeof (NMSettingIP4Route));
+	old->data = copy;
 }
 
 const NMSettingIP4Route *
@@ -491,35 +497,6 @@ finalize (GObject *object)
 }
 
 static void
-ip4_addresses_to_gvalue (GSList *list, GValue *value)
-{
-	GPtrArray *addresses;
-	GSList *iter;
-
-	addresses = g_ptr_array_new ();
-
-	for (iter = list; iter; iter = iter->next) {
-		NMSettingIP4Address *ip4_addr = (NMSettingIP4Address *) iter->data;
-		GArray *array;
-		const guint32 empty_val = 0;
-
-		array = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
-
-		g_array_append_val (array, ip4_addr->address);
-		g_array_append_val (array, ip4_addr->prefix);
-
-		if (ip4_addr->gateway)
-			g_array_append_val (array, ip4_addr->gateway);
-		else
-			g_array_append_val (array, empty_val);
-
-		g_ptr_array_add (addresses, array);
-	}
-
-	g_value_take_boxed (value, addresses);
-}
-
-static void
 get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
@@ -527,7 +504,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_ADDRESSES:
-		ip4_addresses_to_gvalue (priv->addresses, value);
+		nm_utils_ip4_addresses_to_gvalue (priv->addresses, value);
 		break;
 	case PROP_HOSTNAME:
 		g_value_set_string (value, priv->hostname);
@@ -539,7 +516,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_boxed (value, priv->domains);
 		break;
 	case PROP_ROUTES:
-		ip4_addresses_to_gvalue (priv->routes, value);
+		nm_utils_ip4_routes_to_gvalue (priv->routes, value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);

@@ -1,3 +1,10 @@
+2008-08-10  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-ip4-config.c
+		- (get_property): use common ip4 address/route conversion functions
+		- (nm_ip4_config_replace_address, nm_ip4_config_replace_route): should
+			copy the new route here, not take ownership
+
 2008-08-08  Tambet Ingo  <tambet@gmail.com>
 
 	* system-settings/plugins/ifcfg-suse/parser.c (make_ip4_setting):
