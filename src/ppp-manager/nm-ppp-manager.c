@@ -384,7 +384,7 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 			 */
 			priv->pending_secrets_context = context;
 			nm_ppp_manager_update_secrets (manager,
-			                               NULL, /* FIXME: pass device name */
+			                               priv->parent_iface,
 			                               username ? username : "",
 			                               password ? password : "",
 			                               NULL);

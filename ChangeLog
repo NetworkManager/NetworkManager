@@ -1,5 +1,10 @@
 2008-08-11  Dan Williams  <dcbw@redhat.com>
 
+	* src/ppp-manager/nm-ppp-manager.c
+		- (impl_ppp_manager_need_secrets): pass interface as required
+
+2008-08-11  Dan Williams  <dcbw@redhat.com>
+
 	Merge the vpn-properties setting with the vpn setting since it was pointless
 	to keep both of them around.  Convert the vpn 'data' hash table to a hash
 	of string:string (instead of string:variant) so that system settings plugins
