@@ -8,6 +8,7 @@
 #include <dbus/dbus-glib.h>
 #include <nm-setting.h>
 #include <nm-setting-ip4-config.h>
+#include <nm-setting-vpn.h>
 #include <arpa/inet.h>
 #include <string.h>
 
@@ -289,6 +290,32 @@ read_array_of_array_of_uint (GKeyFile *file,
 }
 
 static void
+read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
+{
+	char **keys, **iter;
+	char *value;
+
+	keys = g_key_file_get_keys (file, setting->name, NULL, NULL);
+	if (!keys || !*keys)
+		return;
+
+	for (iter = keys; *iter; iter++) {
+		value = g_key_file_get_string (file, setting->name, *iter, NULL);
+		if (!value)
+			continue;
+
+		if (NM_IS_SETTING_VPN (setting)) {
+			NMSettingVPN *s_vpn = NM_SETTING_VPN (setting);
+
+			if (strcmp (*iter, NM_SETTING_VPN_SERVICE_TYPE))
+				g_hash_table_insert (s_vpn->data, g_strdup (*iter), g_strdup (value));
+		}
+		g_free (value);
+	}
+	g_strfreev (keys);
+}
+
+static void
 read_one_setting_value (NMSetting *setting,
 				    const char *key,
 				    const GValue *value,
@@ -395,9 +422,8 @@ read_one_setting_value (NMSetting *setting,
 
 		g_slist_free (list);
 		g_strfreev (sa);
-	} else if (type == dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE)) {
-		/* FIXME */
-		g_warning ("Implement me");
+	} else if (type == dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_STRING)) {
+		read_hash_of_string (file, setting, key);
 	} else if (type == DBUS_TYPE_G_UINT_ARRAY) {
 		if (!read_array_of_uint (file, setting, key)) {
 			g_warning ("Unhandled setting property type (read): '%s/%s' : '%s'",

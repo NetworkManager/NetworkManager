@@ -54,12 +54,27 @@ GQuark nm_setting_vpn_error_quark (void);
 
 #define NM_SETTING_VPN_SERVICE_TYPE "service-type"
 #define NM_SETTING_VPN_USER_NAME    "user-name"
+#define NM_SETTING_VPN_DATA         "data"
 
 typedef struct {
 	NMSetting parent;
 
 	char *service_type;
+
+	/* username of the user requesting this connection, thus
+	 * it's really only valid for user connections, and it also
+	 * should never be saved out to persistent config.
+	 */
 	char *user_name;
+
+	/* The hash table is created at setting object
+	 * init time and should not be replaced.  It is
+	 * a char * -> char * mapping, and both the key
+	 * and value are owned by the hash table, and should
+	 * be allocated with functions whose value can be
+	 * freed with g_free()
+	 */
+	GHashTable *data;
 } NMSettingVPN;
 
 typedef struct {

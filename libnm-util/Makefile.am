@@ -24,7 +24,6 @@ libnm_util_include_HEADERS = 		\
 	nm-setting-wireless.h		\
 	nm-setting-wireless-security.h	\
 	nm-setting-vpn.h		\
-	nm-setting-vpn-properties.h	\
 	nm-utils.h
 
 libnm_util_la_SOURCES=			\
@@ -47,7 +46,6 @@ libnm_util_la_SOURCES=			\
 	nm-setting-wireless.c		\
 	nm-setting-wireless-security.c	\
 	nm-setting-vpn.c		\
-	nm-setting-vpn-properties.c	\
 	nm-utils.c			\
 	$(libnm_util_include_HEADERS)
 

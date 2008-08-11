@@ -1,4 +1,4 @@
-/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
 /* NetworkManager -- Network link manager
  *
@@ -35,7 +35,6 @@
 #include "nm-vpn-connection.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-vpn.h"
-#include "nm-setting-vpn-properties.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-dbus-manager.h"
 #include "nm-manager.h"
@@ -477,7 +476,7 @@ nm_vpn_connection_connect_cb (DBusGProxy *proxy, GError *err, gpointer user_data
 		    nm_vpn_connection_get_name (connection));
 
 	if (err) {
-		nm_warning ("(VPN connection '%s' could not start.  dbus says: '%s'.", 
+		nm_warning ("(VPN connection '%s' failed to connect: '%s'.", 
 				  nm_vpn_connection_get_name (connection), err->message);
 		nm_vpn_connection_set_vpn_state (connection,
 		                                 NM_VPN_CONNECTION_STATE_FAILED,
@@ -660,11 +659,11 @@ update_vpn_properties_secrets (gpointer key, gpointer data, gpointer user_data)
 {
 	NMConnection *connection = NM_CONNECTION (user_data);
 
-	if (strcmp (key, NM_SETTING_VPN_PROPERTIES_SETTING_NAME))
+	if (strcmp (key, NM_SETTING_VPN_SETTING_NAME))
 		return;
 
 	nm_connection_update_secrets (connection,
-	                              NM_SETTING_VPN_PROPERTIES_SETTING_NAME,
+	                              NM_SETTING_VPN_SETTING_NAME,
 	                              (GHashTable *) data);
 }
 
@@ -802,9 +801,9 @@ call_need_secrets (NMVPNConnection *vpn_connection)
 }
 
 static void
-connection_vpn_state_changed (NMVPNConnection *connection,
-                              NMVPNConnectionState state,
-                              NMVPNConnectionStateReason reason)
+connection_state_changed (NMVPNConnection *connection,
+                          NMVPNConnectionState state,
+                          NMVPNConnectionStateReason reason)
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
@@ -977,7 +976,7 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 	g_type_class_add_private (connection_class, sizeof (NMVPNConnectionPrivate));
 
 	/* virtual methods */
-	connection_class->vpn_state_changed = connection_vpn_state_changed;
+	connection_class->vpn_state_changed = connection_state_changed;
 	object_class->get_property = get_property;
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;

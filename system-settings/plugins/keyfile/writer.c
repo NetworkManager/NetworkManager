@@ -7,6 +7,7 @@
 #include <nm-setting.h>
 #include <nm-setting-connection.h>
 #include <nm-setting-ip4-config.h>
+#include <nm-setting-vpn.h>
 #include <nm-utils.h>
 #include <string.h>
 #include <arpa/inet.h>
@@ -141,6 +142,42 @@ write_array_of_array_of_uint (GKeyFile *file,
 	return TRUE;
 }
 
+typedef struct {
+	GKeyFile *file;
+	const char *setting_name;
+} WriteStringHashInfo;
+
+static void
+write_hash_of_string_helper (gpointer key, gpointer data, gpointer user_data)
+{
+	WriteStringHashInfo *info = (WriteStringHashInfo *) user_data;
+	const char *property = (const char *) key;
+	const char *value = (const char *) data;
+
+	if (   !strcmp (info->setting_name, NM_SETTING_VPN_SETTING_NAME)
+	    && !strcmp (property, NM_SETTING_VPN_SERVICE_TYPE))
+		return;
+
+	g_key_file_set_string (info->file,
+	                       info->setting_name,
+	                       property,
+	                       value);
+}
+
+static void
+write_hash_of_string (GKeyFile *file,
+                      NMSetting *setting,
+                      const char *key,
+                      const GValue *value)
+{
+	GHashTable *hash = g_value_get_boxed (value);
+	WriteStringHashInfo info;
+
+	info.file = file;
+	info.setting_name = setting->name;
+	g_hash_table_foreach (hash, write_hash_of_string_helper, &info);
+}
+
 static void
 write_setting_value (NMSetting *setting,
 				 const char *key,
@@ -208,9 +245,8 @@ write_setting_value (NMSetting *setting,
 			g_key_file_set_string_list (file, setting->name, key, (const gchar **const) array, i);
 			g_free (array);
 		}
-	} else if (type == dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE)) {
-		/* FIXME */
-		g_warning ("Implement me");
+	} else if (type == dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_STRING)) {
+		write_hash_of_string (file, setting, key, value);
 	} else if (type == DBUS_TYPE_G_UINT_ARRAY) {
 		if (!write_array_of_uint (file, setting, key, value)) {
 			g_warning ("Unhandled setting property type (write) '%s/%s' : '%s'", 

@@ -70,6 +70,7 @@ enum {
 	PROP_0,
 	PROP_SERVICE_TYPE,
 	PROP_USER_NAME,
+	PROP_DATA,
 
 	LAST_PROP
 };
@@ -114,9 +115,24 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 }
 
 static void
+update_one_secret (NMSetting *setting, const char *key, GValue *value)
+{
+	NMSettingVPN *self = NM_SETTING_VPN (setting);
+
+	g_return_if_fail (key != NULL);
+	g_return_if_fail (value != NULL);
+	g_return_if_fail (G_VALUE_HOLDS_STRING (value));
+
+	/* Secrets are really only known to the VPNs themselves. */
+	g_hash_table_insert (self->data, g_strdup (key), g_value_dup_string (value));
+}
+
+static void
 nm_setting_vpn_init (NMSettingVPN *setting)
 {
-	((NMSetting *) setting)->name = g_strdup (NM_SETTING_VPN_SETTING_NAME);
+	NM_SETTING (setting)->name = g_strdup (NM_SETTING_VPN_SETTING_NAME);
+
+	setting->data = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 }
 
 static void
@@ -126,8 +142,15 @@ finalize (GObject *object)
 
 	g_free (self->service_type);
 	g_free (self->user_name);
+	g_hash_table_destroy (self->data);
 
 	G_OBJECT_CLASS (nm_setting_vpn_parent_class)->finalize (object);
+}
+
+static void
+copy_hash (gpointer key, gpointer value, gpointer user_data)
+{
+	g_hash_table_insert ((GHashTable *) user_data, g_strdup (key), g_strdup (value));
 }
 
 static void
@@ -144,6 +167,11 @@ set_property (GObject *object, guint prop_id,
 	case PROP_USER_NAME:
 		g_free (setting->user_name);
 		setting->user_name = g_value_dup_string (value);
+		break;
+	case PROP_DATA:
+		/* Must make a deep copy of the hash table here... */
+		g_hash_table_remove_all (setting->data);
+		g_hash_table_foreach (g_value_get_boxed (value), copy_hash, setting->data);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -164,6 +192,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_USER_NAME:
 		g_value_set_string (value, setting->user_name);
 		break;
+	case PROP_DATA:
+		g_value_set_boxed (value, setting->data);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -181,6 +212,7 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 	parent_class->verify       = verify;
+	parent_class->update_one_secret = update_one_secret;
 
 	/* Properties */
 	g_object_class_install_property
@@ -198,4 +230,12 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 						  "User name",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	g_object_class_install_property
+		(object_class, PROP_DATA,
+		 nm_param_spec_specialized (NM_SETTING_VPN_DATA,
+							   "Data",
+							   "VPN Service specific data",
+							   DBUS_TYPE_G_MAP_OF_STRING,
+							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 }

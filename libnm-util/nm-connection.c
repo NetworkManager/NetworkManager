@@ -39,7 +39,6 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-vpn.h"
-#include "nm-setting-vpn-properties.h"
 
 #include "nm-setting-serial.h"
 #include "nm-setting-gsm.h"
@@ -196,11 +195,6 @@ register_default_settings (void)
 	                      NM_TYPE_SETTING_VPN,
 	                      NM_SETTING_VPN_ERROR,
 	                      4);
-
-	register_one_setting (NM_SETTING_VPN_PROPERTIES_SETTING_NAME,
-	                      NM_TYPE_SETTING_VPN_PROPERTIES,
-	                      NM_SETTING_VPN_PROPERTIES_ERROR,
-	                      5);
 
 	register_one_setting (NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	                      NM_TYPE_SETTING_IP4_CONFIG,
