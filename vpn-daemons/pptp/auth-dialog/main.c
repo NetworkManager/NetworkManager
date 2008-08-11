@@ -30,7 +30,6 @@
 #include <gnome-keyring.h>
 
 #include <nm-setting-vpn.h>
-#include <nm-setting-vpn-properties.h>
 
 #include "../src/nm-pptp-service.h"
 #include "gnome-two-password-dialog.h"
@@ -58,7 +57,7 @@ find_one_password (const char *vpn_id,
 	                                      vpn_id,
 	                                      KEYRING_SN_TAG,
 	                                      GNOME_KEYRING_ATTRIBUTE_TYPE_STRING,
-	                                      NM_SETTING_VPN_PROPERTIES_SETTING_NAME,
+	                                      NM_SETTING_VPN_SETTING_NAME,
 	                                      KEYRING_SK_TAG,
 	                                      GNOME_KEYRING_ATTRIBUTE_TYPE_STRING,
 	                                      secret_name,
@@ -105,7 +104,7 @@ save_vpn_password (const char *vpn_id,
 	GnomeKeyringAttributeList *attrs = NULL;
 	guint32 id = 0;
 
-	display_name = g_strdup_printf ("VPN %s secret for %s/%s/" NM_SETTING_VPN_PROPERTIES_SETTING_NAME,
+	display_name = g_strdup_printf ("VPN %s secret for %s/%s/" NM_SETTING_VPN_SETTING_NAME,
 	                                secret_name,
 	                                vpn_name,
 	                                vpn_service);
@@ -116,7 +115,7 @@ save_vpn_password (const char *vpn_id,
 	                                            vpn_id);
 	gnome_keyring_attribute_list_append_string (attrs,
 	                                            KEYRING_SN_TAG,
-	                                            NM_SETTING_VPN_PROPERTIES_SETTING_NAME);
+	                                            NM_SETTING_VPN_SETTING_NAME);
 	gnome_keyring_attribute_list_append_string (attrs,
 	                                            KEYRING_SK_TAG,
 	                                            secret_name);

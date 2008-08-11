@@ -35,7 +35,6 @@
 #include <glib/gi18n-lib.h>
 
 #include <nm-setting-vpn.h>
-#include <nm-setting-vpn-properties.h>
 #include <nm-setting-connection.h>
 #include <nm-setting-ip4-config.h>
 

@@ -46,7 +46,6 @@
 #include <linux/if_ppp.h>
 
 #include <nm-setting-vpn.h>
-#include <nm-setting-vpn-properties.h>
 #include <nm-utils.h>
 
 #include "nm-pptp-service.h"
@@ -228,8 +227,6 @@ nm_pptp_ppp_service_cache_credentials (NMPptpPppService *self,
 {
 	NMPptpPppServicePrivate *priv = NM_PPTP_PPP_SERVICE_GET_PRIVATE (self);
 	NMSettingVPN *s_vpn;
-	NMSettingVPNProperties *s_vpn_props;
-	GValue *value;
 	const char *username, *password;
 
 	g_return_val_if_fail (self != NULL, FALSE);
@@ -239,7 +236,7 @@ nm_pptp_ppp_service_cache_credentials (NMPptpPppService *self,
 	memset (priv->password, 0, sizeof (priv->password));
 
 	s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
-	if (!s_vpn) {
+	if (!s_vpn || !s_vpn->data) {
 		g_set_error (error,
 		             NM_VPN_PLUGIN_ERROR,
 		             NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID,
@@ -248,20 +245,9 @@ nm_pptp_ppp_service_cache_credentials (NMPptpPppService *self,
 		return FALSE;
 	}
 
-	s_vpn_props = (NMSettingVPNProperties *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN_PROPERTIES);
-	if (!s_vpn_props || !s_vpn_props->data) {
-		g_set_error (error,
-		             NM_VPN_PLUGIN_ERROR,
-		             NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID,
-		             "%s",
-		             "Could not find secrets (connection invalid, no vpn-properties setting).");
-		return FALSE;
-	}
-
 	/* Username; try PPTP specific username first, then generic username */
-	value = g_hash_table_lookup (s_vpn_props->data, NM_PPTP_KEY_USER);
-	if (value && G_VALUE_HOLDS_STRING (value)) {
-		username = g_value_get_string (value);
+	username = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_USER);
+	if (username && strlen (username)) {
 		if (!username || !strlen (username)) {
 			g_set_error (error,
 			             NM_VPN_PLUGIN_ERROR,
@@ -282,23 +268,13 @@ nm_pptp_ppp_service_cache_credentials (NMPptpPppService *self,
 		}
 	}
 
-	value = g_hash_table_lookup (s_vpn_props->data, NM_PPTP_KEY_PASSWORD);
-	if (!value || !G_VALUE_HOLDS_STRING (value)) {
-		g_set_error (error,
-		             NM_VPN_PLUGIN_ERROR,
-		             NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID,
-		             "%s",
-		             "Missing VPN password.");
-		return FALSE;
-	}
-
-	password = g_value_get_string (value);
+	password = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_PASSWORD);
 	if (!password || !strlen (password)) {
 		g_set_error (error,
 		             NM_VPN_PLUGIN_ERROR,
 		             NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID,
 		             "%s",
-		             "Invalid VPN password.");
+		             "Missing or invalid VPN password.");
 		return FALSE;
 	}
 
@@ -407,9 +383,8 @@ static ValidProperty valid_properties[] = {
 };
 
 static gboolean
-validate_gateway (GValue *value)
+validate_gateway (const char *gateway)
 {
-	const char *gateway = g_value_get_string (value);
 	const char *p = gateway;
 
 	if (!gateway || !strlen (gateway))
@@ -426,12 +401,12 @@ validate_gateway (GValue *value)
 }
 
 static void
-validate_one_property (gpointer key, gpointer val, gpointer user_data)
+validate_one_property (gpointer key, gpointer value, gpointer user_data)
 {
-	gboolean *failed = (gboolean *) user_data;
+	GError **error = (GError **) user_data;
 	int i;
 
-	if (*failed)
+	if (*error)
 		return;
 
 	/* 'name' is the setting name; always allowed but unused */
@@ -440,47 +415,100 @@ validate_one_property (gpointer key, gpointer val, gpointer user_data)
 
 	for (i = 0; valid_properties[i].name; i++) {
 		ValidProperty prop = valid_properties[i];
+		long int tmp;
 
-		if (!strcmp (prop.name, (char *) key) && prop.type == G_VALUE_TYPE ((GValue *) val)) {
-			if (!strcmp (prop.name, NM_PPTP_KEY_GATEWAY)) {
-				if (!validate_gateway ((GValue *) val))
-					goto failed;
+		if (strcmp (prop.name, (char *) key))
+			continue;
+
+		switch (prop.type) {
+		case G_TYPE_STRING:
+			if (   !strcmp (prop.name, NM_PPTP_KEY_GATEWAY)
+			    && !validate_gateway (value)) {
+				g_set_error (error,
+				             NM_VPN_PLUGIN_ERROR,
+				             NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
+				             "invalid gateway '%s'",
+				             (const char *) key);
+				return;
 			}
-			/* Property is ok */
-			return;
+			return; /* valid */
+		case G_TYPE_UINT:
+			errno = 0;
+			tmp = strtol ((char *) value, NULL, 10);
+			if (errno == 0)
+				return; /* valid */
+
+			g_set_error (error,
+			             NM_VPN_PLUGIN_ERROR,
+			             NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
+			             "invalid integer property '%s'",
+			             (const char *) key);
+			break;
+		case G_TYPE_BOOLEAN:
+			if (!strcmp ((char *) value, "yes") || !strcmp ((char *) value, "no"))
+				return; /* valid */
+
+			g_set_error (error,
+			             NM_VPN_PLUGIN_ERROR,
+			             NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
+			             "invalid boolean property '%s' (not yes or no)",
+			             (const char *) key);
+			break;
+		default:
+			g_set_error (error,
+			             NM_VPN_PLUGIN_ERROR,
+			             NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
+			             "unhandled property '%s' type %d",
+			             (const char *) key, prop.type);
+			break;
 		}
 	}
 
-failed:
 	/* Did not find the property from valid_properties or the type did not match */
-	g_warning ("VPN property '%s' failed validation.", (char *) key);
-	*failed = TRUE;
+	if (!valid_properties[i].name) {
+		g_set_error (error,
+		             NM_VPN_PLUGIN_ERROR,
+		             NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
+		             "property '%s' invalid or not supported",
+		             (const char *) key);
+	}
 }
 
 static gboolean
-nm_pptp_properties_validate (GHashTable *properties)
+nm_pptp_properties_validate (GHashTable *properties, GError **error)
 {
-	gboolean failed = FALSE;
 	int i;
 
-	if (g_hash_table_size (properties) < 1)
-		return failed;
+	if (g_hash_table_size (properties) < 1) {
+		g_set_error (error,
+		             NM_VPN_PLUGIN_ERROR,
+		             NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
+		             "%s",
+		             "No VPN configuration options.");
+		return FALSE;
+	}
 
-	g_hash_table_foreach (properties, validate_one_property, &failed);
-	if (failed)
+	g_hash_table_foreach (properties, validate_one_property, error);
+	if (*error)
 		return FALSE;
 
 	/* Ensure required properties exist */
 	for (i = 0; valid_properties[i].name; i++) {
 		ValidProperty prop = valid_properties[i];
-		GValue *value;
+		const char *value;
 
 		if (!prop.required)
 			continue;
 
 		value = g_hash_table_lookup (properties, prop.name);
-		if (!value || (G_VALUE_TYPE (value) != prop.type))
+		if (!value || !strlen (value)) {
+			g_set_error (error,
+			             NM_VPN_PLUGIN_ERROR,
+			             NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
+			             "Missing required option '%s'.",
+			             prop.name);
 			return FALSE;
+		}
 	}
 
 	return TRUE;
@@ -602,13 +630,11 @@ free_pppd_args (GPtrArray *args)
 static GPtrArray *
 construct_pppd_args (NMPptpPlugin *plugin,
                      NMSettingVPN *s_vpn,
-                     NMSettingVPNProperties *s_vpn_props,
                      const char *pppd,
                      GError **error)
 {
 	GPtrArray *args = NULL;
-	GValue *value;
-	const char *pptp_binary;
+	const char *value, *pptp_binary;
 	char *ipparam, *tmp;
 
 	pptp_binary = nm_find_pptp ();
@@ -625,8 +651,8 @@ construct_pppd_args (NMPptpPlugin *plugin,
 	g_ptr_array_add (args, (gpointer) g_strdup (pppd));
 
 	/* PPTP options */
-	value = g_hash_table_lookup (s_vpn_props->data, NM_PPTP_KEY_GATEWAY);
-	if (!value || !G_VALUE_HOLDS_STRING (value)) {
+	value = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_GATEWAY);
+	if (!value || !strlen (value)) {
 		g_set_error (error,
 		             NM_VPN_PLUGIN_ERROR,
 		             NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID,
@@ -638,8 +664,7 @@ construct_pppd_args (NMPptpPlugin *plugin,
 	ipparam = g_strdup_printf ("nm-pptp-service-%d", getpid ());
 
 	g_ptr_array_add (args, (gpointer) g_strdup ("pty"));
-	tmp = g_strdup_printf ("%s %s --nolaunchpppd --logstring %s",
-	                       pptp_binary, g_value_get_string (value), ipparam);
+	tmp = g_strdup_printf ("%s %s --nolaunchpppd --logstring %s", pptp_binary, value, ipparam);
 	g_ptr_array_add (args, (gpointer) tmp);
 
 	/* PPP options */
@@ -651,66 +676,82 @@ construct_pppd_args (NMPptpPlugin *plugin,
 	g_ptr_array_add (args, (gpointer) g_strdup ("usepeerdns"));
 	g_ptr_array_add (args, (gpointer) g_strdup ("noipdefault"));
 
-	value = g_hash_table_lookup (s_vpn_props->data, NM_PPTP_KEY_REFUSE_EAP);
-	if (value && G_VALUE_HOLDS_BOOLEAN (value) && g_value_get_boolean (value))
+	value = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_REFUSE_EAP);
+	if (value && !strcmp (value, "yes"))
 		g_ptr_array_add (args, (gpointer) g_strdup ("refuse-eap"));
 
-	value = g_hash_table_lookup (s_vpn_props->data, NM_PPTP_KEY_REFUSE_PAP);
-	if (value && G_VALUE_HOLDS_BOOLEAN (value) && g_value_get_boolean (value))
+	value = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_REFUSE_PAP);
+	if (value && !strcmp (value, "yes"))
 		g_ptr_array_add (args, (gpointer) g_strdup ("refuse-pap"));
 
-	value = g_hash_table_lookup (s_vpn_props->data, NM_PPTP_KEY_REFUSE_CHAP);
-	if (value && G_VALUE_HOLDS_BOOLEAN (value) && g_value_get_boolean (value))
+	value = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_REFUSE_CHAP);
+	if (value && !strcmp (value, "yes"))
 		g_ptr_array_add (args, (gpointer) g_strdup ("refuse-chap"));
 
-	value = g_hash_table_lookup (s_vpn_props->data, NM_PPTP_KEY_REFUSE_MSCHAP);
-	if (value && G_VALUE_HOLDS_BOOLEAN (value) && g_value_get_boolean (value))
+	value = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_REFUSE_MSCHAP);
+	if (value && !strcmp (value, "yes"))
 		g_ptr_array_add (args, (gpointer) g_strdup ("refuse-mschap"));
 
-	value = g_hash_table_lookup (s_vpn_props->data, NM_PPTP_KEY_REFUSE_MSCHAPV2);
-	if (value && G_VALUE_HOLDS_BOOLEAN (value) && g_value_get_boolean (value))
+	value = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_REFUSE_MSCHAPV2);
+	if (value && !strcmp (value, "yes"))
 		g_ptr_array_add (args, (gpointer) g_strdup ("refuse-mschap-v2"));
 
-	value = g_hash_table_lookup (s_vpn_props->data, NM_PPTP_KEY_REQUIRE_MPPE);
-	if (value && G_VALUE_HOLDS_BOOLEAN (value) && g_value_get_boolean (value))
+	value = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_REQUIRE_MPPE);
+	if (value && !strcmp (value, "yes"))
 		g_ptr_array_add (args, (gpointer) g_strdup ("require-mppe"));
 
-	value = g_hash_table_lookup (s_vpn_props->data, NM_PPTP_KEY_REQUIRE_MPPE_40);
-	if (value && G_VALUE_HOLDS_BOOLEAN (value) && g_value_get_boolean (value))
+	value = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_REQUIRE_MPPE_40);
+	if (value && !strcmp (value, "yes"))
 		g_ptr_array_add (args, (gpointer) g_strdup ("require-mppe-40"));
 
-	value = g_hash_table_lookup (s_vpn_props->data, NM_PPTP_KEY_REQUIRE_MPPE_128);
-	if (value && G_VALUE_HOLDS_BOOLEAN (value) && g_value_get_boolean (value))
+	value = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_REQUIRE_MPPE_128);
+	if (value && !strcmp (value, "yes"))
 		g_ptr_array_add (args, (gpointer) g_strdup ("require-mppe-128"));
 
-	value = g_hash_table_lookup (s_vpn_props->data, NM_PPTP_KEY_MPPE_STATEFUL);
-	if (value && G_VALUE_HOLDS_BOOLEAN (value) && g_value_get_boolean (value))
+	value = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_MPPE_STATEFUL);
+	if (value && !strcmp (value, "yes"))
 		g_ptr_array_add (args, (gpointer) g_strdup ("mppe-stateful"));
 
-	value = g_hash_table_lookup (s_vpn_props->data, NM_PPTP_KEY_NOBSDCOMP);
-	if (value && G_VALUE_HOLDS_BOOLEAN (value) && g_value_get_boolean (value))
+	value = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_NOBSDCOMP);
+	if (value && !strcmp (value, "yes"))
 		g_ptr_array_add (args, (gpointer) g_strdup ("nobsdcomp"));
 
-	value = g_hash_table_lookup (s_vpn_props->data, NM_PPTP_KEY_NODEFLATE);
-	if (value && G_VALUE_HOLDS_BOOLEAN (value) && g_value_get_boolean (value))
+	value = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_NODEFLATE);
+	if (value && !strcmp (value, "yes"))
 		g_ptr_array_add (args, (gpointer) g_strdup ("nodeflate"));
 
-	value = g_hash_table_lookup (s_vpn_props->data, NM_PPTP_KEY_NO_VJ_COMP);
-	if (value && G_VALUE_HOLDS_BOOLEAN (value) && g_value_get_boolean (value))
+	value = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_NO_VJ_COMP);
+	if (value && !strcmp (value, "yes"))
 		g_ptr_array_add (args, (gpointer) g_strdup ("novj"));
 
-	value = g_hash_table_lookup (s_vpn_props->data, NM_PPTP_KEY_LCP_ECHO_FAILURE);
-	if (value && G_VALUE_HOLDS_UINT (value) && g_value_get_uint (value)) {
-		g_ptr_array_add (args, (gpointer) g_strdup ("lcp-echo-failure"));
-		tmp = g_strdup_printf ("%d", g_value_get_uint (value));
-		g_ptr_array_add (args, (gpointer) tmp);
+	value = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_LCP_ECHO_FAILURE);
+	if (value && strlen (value)) {
+		long int tmp_int;
+
+		/* Convert to integer and then back to string for security's sake
+		 * because strtol ignores some leading and trailing characters.
+		 */
+		errno = 0;
+		tmp_int = strtol (value, NULL, 10);
+		if (errno == 0) {
+			g_ptr_array_add (args, (gpointer) g_strdup ("lcp-echo-failure"));
+			g_ptr_array_add (args, (gpointer) g_strdup_printf ("%ld", tmp_int));
+		}
 	}
 
-	value = g_hash_table_lookup (s_vpn_props->data, NM_PPTP_KEY_LCP_ECHO_INTERVAL);
-	if (value && G_VALUE_HOLDS_UINT (value) && g_value_get_uint (value)) {
-		g_ptr_array_add (args, (gpointer) g_strdup ("lcp-echo-interval"));
-		tmp = g_strdup_printf ("%d", g_value_get_uint (value));
-		g_ptr_array_add (args, (gpointer) tmp);
+	value = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_LCP_ECHO_INTERVAL);
+	if (value && strlen (value)) {
+		long int tmp_int;
+
+		/* Convert to integer and then back to string for security's sake
+		 * because strtol ignores some leading and trailing characters.
+		 */
+		errno = 0;
+		tmp_int = strtol (value, NULL, 10);
+		if (errno == 0) {
+			g_ptr_array_add (args, (gpointer) g_strdup ("lcp-echo-interval"));
+			g_ptr_array_add (args, (gpointer) g_strdup_printf ("%ld", tmp_int));
+		}
 	}
 
 	g_ptr_array_add (args, (gpointer) g_strdup ("plugin"));
@@ -728,29 +769,30 @@ error:
 static gboolean
 nm_pptp_start_pppd_binary (NMPptpPlugin *plugin,
                            NMSettingVPN *s_vpn,
-                           NMSettingVPNProperties *s_vpn_props)
+                           GError **error)
 {
 	NMPptpPluginPrivate *priv = NM_PPTP_PLUGIN_GET_PRIVATE (plugin);
 	GPid pid;
 	const char *pppd_binary;
 	GPtrArray *pppd_argv;
-	GError *err = NULL;
 
 	pppd_binary = nm_find_pppd ();
 	if (!pppd_binary) {
-		nm_info ("Could not find pppd binary.");
+		g_set_error (error,
+		             NM_VPN_PLUGIN_ERROR,
+		             NM_VPN_PLUGIN_ERROR_LAUNCH_FAILED,
+		             "%s",
+		             "Could not find the pppd binary.");
 		return FALSE;
 	}
 
-	pppd_argv = construct_pppd_args (plugin, s_vpn, s_vpn_props, pppd_binary, &err);
+	pppd_argv = construct_pppd_args (plugin, s_vpn, pppd_binary, error);
 	if (!pppd_argv)
 		return FALSE;
 
 	if (!g_spawn_async (NULL, (char **) pppd_argv->pdata, NULL,
-	                    G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &pid, &err)) {
+	                    G_SPAWN_DO_NOT_REAP_CHILD, NULL, NULL, &pid, error)) {
 		g_ptr_array_free (pppd_argv, TRUE);
-		nm_warning ("pppd failed to start.  error: '%s'", err->message);
-		g_error_free (err);
 		return FALSE;
 	}
 	free_pppd_args (pppd_argv);
@@ -814,24 +856,15 @@ service_ip4_config_cb (NMPptpPppService *service,
 static gboolean
 real_connect (NMVPNPlugin   *plugin,
               NMConnection  *connection,
-              GError       **err)
+              GError       **error)
 {
 	NMPptpPluginPrivate *priv = NM_PPTP_PLUGIN_GET_PRIVATE (plugin);
 	NMSettingVPN *s_vpn;
-	NMSettingVPNProperties *s_vpn_props;
-
-	s_vpn_props = NM_SETTING_VPN_PROPERTIES (nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN_PROPERTIES));
-	if (!s_vpn_props || !nm_pptp_properties_validate (s_vpn_props->data)) {
-		g_set_error (err,
-				   NM_VPN_PLUGIN_ERROR,
-				   NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
-				   "%s",
-				   "Invalid arguments.");
-		return FALSE;
-	}
 
 	s_vpn = NM_SETTING_VPN (nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN));
 	g_assert (s_vpn);
+	if (!nm_pptp_properties_validate (s_vpn->data, error))
+		return FALSE;
 
 	/* Start our pppd plugin helper service */
 	if (priv->service)
@@ -839,7 +872,7 @@ real_connect (NMVPNPlugin   *plugin,
 
 	priv->service = nm_pptp_ppp_service_new ();
 	if (!priv->service) {
-		g_set_error (err,
+		g_set_error (error,
 		             NM_VPN_PLUGIN_ERROR,
 		             NM_VPN_PLUGIN_ERROR_LAUNCH_FAILED,
 		             "%s",
@@ -853,17 +886,11 @@ real_connect (NMVPNPlugin   *plugin,
 	/* Cache the username and password so we can relay the secrets to the pppd
 	 * plugin when it asks for them.
 	 */
-	if (!nm_pptp_ppp_service_cache_credentials (priv->service, connection, err))
+	if (!nm_pptp_ppp_service_cache_credentials (priv->service, connection, error))
 		return FALSE;
 
-	if (!nm_pptp_start_pppd_binary (NM_PPTP_PLUGIN (plugin), s_vpn, s_vpn_props)) {
-		g_set_error (err,
-		             NM_VPN_PLUGIN_ERROR,
-		             NM_VPN_PLUGIN_ERROR_LAUNCH_FAILED,
-		             "%s",
-		             "Could not start pppd binary.");
+	if (!nm_pptp_start_pppd_binary (NM_PPTP_PLUGIN (plugin), s_vpn, error))
 		return FALSE;
-	}
 
 	return TRUE;
 }
@@ -874,13 +901,13 @@ real_need_secrets (NMVPNPlugin *plugin,
                    char **setting_name,
                    GError **error)
 {
-	NMSettingVPNProperties *s_vpn_props;
+	NMSettingVPN *s_vpn;
 
 	g_return_val_if_fail (NM_IS_VPN_PLUGIN (plugin), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
-	s_vpn_props = NM_SETTING_VPN_PROPERTIES (nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN_PROPERTIES));
-	if (!s_vpn_props) {
+	s_vpn = NM_SETTING_VPN (nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN));
+	if (!s_vpn) {
         g_set_error (error,
 		             NM_VPN_PLUGIN_ERROR,
 		             NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID,
@@ -889,8 +916,8 @@ real_need_secrets (NMVPNPlugin *plugin,
 		return FALSE;
 	}
 
-	if (!g_hash_table_lookup (s_vpn_props->data, NM_PPTP_KEY_PASSWORD)) {
-		*setting_name = NM_SETTING_VPN_PROPERTIES_SETTING_NAME;
+	if (!g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_PASSWORD)) {
+		*setting_name = NM_SETTING_VPN_SETTING_NAME;
 		return TRUE;
 	}
 

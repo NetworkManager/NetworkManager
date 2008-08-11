@@ -38,7 +38,6 @@
 
 #include <nm-vpn-plugin-ui-interface.h>
 #include <nm-setting-vpn.h>
-#include <nm-setting-vpn-properties.h>
 #include <nm-setting-connection.h>
 #include <nm-setting-ip4-config.h>
 
@@ -213,14 +212,14 @@ static gboolean
 init_plugin_ui (PptpPluginUiWidget *self, NMConnection *connection, GError **error)
 {
 	PptpPluginUiWidgetPrivate *priv = PPTP_PLUGIN_UI_WIDGET_GET_PRIVATE (self);
-	NMSettingVPNProperties *s_vpn_props;
+	NMSettingVPN *s_vpn;
 	GtkWidget *widget;
 	GtkListStore *store;
 	GtkTreeIter iter;
 	int active = -1;
-	GValue *value;
+	const char *value;
 
-	s_vpn_props = (NMSettingVPNProperties *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN_PROPERTIES);
+	s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
 
 	priv->group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
 
@@ -228,10 +227,10 @@ init_plugin_ui (PptpPluginUiWidget *self, NMConnection *connection, GError **err
 	if (!widget)
 		return FALSE;
 	gtk_size_group_add_widget (priv->group, widget);
-	if (s_vpn_props) {
-		value = g_hash_table_lookup (s_vpn_props->data, NM_PPTP_KEY_GATEWAY);
-		if (value && G_VALUE_HOLDS_STRING (value))
-			gtk_entry_set_text (GTK_ENTRY (widget), g_value_get_string (value));
+	if (s_vpn) {
+		value = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_GATEWAY);
+		if (value && strlen (value))
+			gtk_entry_set_text (GTK_ENTRY (widget), value);
 	}
 	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
 
@@ -239,10 +238,10 @@ init_plugin_ui (PptpPluginUiWidget *self, NMConnection *connection, GError **err
 	if (!widget)
 		return FALSE;
 	gtk_size_group_add_widget (priv->group, widget);
-	if (s_vpn_props) {
-		value = g_hash_table_lookup (s_vpn_props->data, NM_PPTP_KEY_USER);
-		if (value && G_VALUE_HOLDS_STRING (value))
-			gtk_entry_set_text (GTK_ENTRY (widget), g_value_get_string (value));
+	if (s_vpn) {
+		value = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_USER);
+		if (value && strlen (value))
+			gtk_entry_set_text (GTK_ENTRY (widget), value);
 	}
 	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
 
@@ -250,10 +249,10 @@ init_plugin_ui (PptpPluginUiWidget *self, NMConnection *connection, GError **err
 	if (!widget)
 		return FALSE;
 	gtk_size_group_add_widget (priv->group, widget);
-	if (s_vpn_props) {
-		value = g_hash_table_lookup (s_vpn_props->data, NM_PPTP_KEY_DOMAIN);
-		if (value && G_VALUE_HOLDS_STRING (value))
-			gtk_entry_set_text (GTK_ENTRY (widget), g_value_get_string (value));
+	if (s_vpn) {
+		value = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_DOMAIN);
+		if (value && strlen (value))
+			gtk_entry_set_text (GTK_ENTRY (widget), value);
 	}
 	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
 
@@ -272,76 +271,12 @@ get_widget (NMVpnPluginUiWidgetInterface *iface)
 	return G_OBJECT (priv->widget);
 }
 
-GValue *
-str_to_gvalue (const char *str)
-{
-	GValue *value;
-
-	value = g_slice_new0 (GValue);
-	g_value_init (value, G_TYPE_STRING);
-	g_value_set_string (value, str);
-
-	return value;
-}
-
-GValue *
-bool_to_gvalue (gboolean b)
-{
-	GValue *value;
-
-	value = g_slice_new0 (GValue);
-	g_value_init (value, G_TYPE_BOOLEAN);
-	g_value_set_boolean (value, b);
-
-	return value;
-}
-
-GValue *
-int_to_gvalue (gint i)
-{
-	GValue *value;
-
-	value = g_slice_new0 (GValue);
-	g_value_init (value, G_TYPE_INT);
-	g_value_set_int (value, i);
-
-	return value;
-}
-
-GValue *
-uint_to_gvalue (guint32 u)
-{
-	GValue *value;
-
-	value = g_slice_new0 (GValue);
-	g_value_init (value, G_TYPE_UINT);
-	g_value_set_uint (value, u);
-
-	return value;
-}
-
 static void
 hash_copy_advanced (gpointer key, gpointer data, gpointer user_data)
 {
 	GHashTable *hash = (GHashTable *) user_data;
-	GValue *value = (GValue *) data;
 
-	if (G_VALUE_HOLDS_STRING (value)) {
-		g_hash_table_insert (hash,
-		                     g_strdup ((const char *) key),
-		                     str_to_gvalue (g_value_get_string (value)));
-	} else if (G_VALUE_HOLDS_INT (value)) {
-		g_hash_table_insert (hash,
-		                     g_strdup ((const char *) key),
-		                     int_to_gvalue (g_value_get_int (value)));
-	} else if (G_VALUE_HOLDS_BOOLEAN (value)) {
-		g_hash_table_insert (hash,
-		                     g_strdup ((const char *) key),
-		                     bool_to_gvalue (g_value_get_boolean (value)));
-	} else {
-		g_warning ("%s: unhandled key '%s' of type '%s'",
-		           __func__, (const char *) key, G_VALUE_TYPE_NAME (value));
-	}
+	g_hash_table_insert (hash, g_strdup ((const char *) key), g_strdup ((const char *) data));
 }
 
 static gboolean
@@ -352,9 +287,8 @@ update_connection (NMVpnPluginUiWidgetInterface *iface,
 	PptpPluginUiWidget *self = PPTP_PLUGIN_UI_WIDGET (iface);
 	PptpPluginUiWidgetPrivate *priv = PPTP_PLUGIN_UI_WIDGET_GET_PRIVATE (self);
 	NMSettingVPN *s_vpn;
-	NMSettingVPNProperties *s_vpn_props;
 	GtkWidget *widget;
-	char *str;
+	const char *str;
 	GtkTreeModel *model;
 	GtkTreeIter iter;
 	gboolean valid = FALSE;
@@ -364,41 +298,29 @@ update_connection (NMVpnPluginUiWidgetInterface *iface,
 
 	s_vpn = NM_SETTING_VPN (nm_setting_vpn_new ());
 	s_vpn->service_type = g_strdup (NM_DBUS_SERVICE_PPTP);
-	nm_connection_add_setting (connection, NM_SETTING (s_vpn));
-
-	s_vpn_props = NM_SETTING_VPN_PROPERTIES (nm_setting_vpn_properties_new ());
 
 	/* Gateway */
 	widget = glade_xml_get_widget (priv->xml, "gateway_entry");
-	str = (char *) gtk_entry_get_text (GTK_ENTRY (widget));
-	if (str && strlen (str)) {
-		g_hash_table_insert (s_vpn_props->data,
-		                     g_strdup (NM_PPTP_KEY_GATEWAY),
-		                     str_to_gvalue (str));
-	}
+	str = gtk_entry_get_text (GTK_ENTRY (widget));
+	if (str && strlen (str))
+		g_hash_table_insert (s_vpn->data, g_strdup (NM_PPTP_KEY_GATEWAY), g_strdup (str));
 
 	/* Username */
 	widget = glade_xml_get_widget (priv->xml, "user_entry");
-	str = (char *) gtk_entry_get_text (GTK_ENTRY (widget));
-	if (str && strlen (str)) {
-		g_hash_table_insert (s_vpn_props->data,
-		                     g_strdup (NM_PPTP_KEY_USER),
-		                     str_to_gvalue (str));
-	}
+	str = gtk_entry_get_text (GTK_ENTRY (widget));
+	if (str && strlen (str))
+		g_hash_table_insert (s_vpn->data, g_strdup (NM_PPTP_KEY_USER), g_strdup (str));
 
 	/* Domain */
 	widget = glade_xml_get_widget (priv->xml, "domain_entry");
-	str = (char *) gtk_entry_get_text (GTK_ENTRY (widget));
-	if (str && strlen (str)) {
-		g_hash_table_insert (s_vpn_props->data,
-		                     g_strdup (NM_PPTP_KEY_DOMAIN),
-		                     str_to_gvalue (str));
-	}
+	str = gtk_entry_get_text (GTK_ENTRY (widget));
+	if (str && strlen (str))
+		g_hash_table_insert (s_vpn->data, g_strdup (NM_PPTP_KEY_DOMAIN), g_strdup (str));
 
 	if (priv->advanced)
-		g_hash_table_foreach (priv->advanced, hash_copy_advanced, s_vpn_props->data);
+		g_hash_table_foreach (priv->advanced, hash_copy_advanced, s_vpn->data);
 
-	nm_connection_add_setting (connection, NM_SETTING (s_vpn_props));
+	nm_connection_add_setting (connection, NM_SETTING (s_vpn));
 	valid = TRUE;
 
 done:

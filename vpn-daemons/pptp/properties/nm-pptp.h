@@ -82,13 +82,5 @@ struct _PptpPluginUiWidgetClass {
 
 GType pptp_plugin_ui_widget_get_type (void);
 
-GValue *int_to_gvalue (gint i);
-
-GValue *uint_to_gvalue (guint32 u);
-
-GValue *bool_to_gvalue (gboolean b);
-
-GValue *str_to_gvalue (const char *str);
-
 #endif	/* _NM_PPTP_H_ */
 
