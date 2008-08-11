@@ -1,3 +1,8 @@
+2008-08-11  Dan Williams  <dcbw@redhat.com>
+
+	Update to match NM svn3924 vpn setting changes; verify options better;
+	return more informative errors on VPN launch failures.
+
 2008-08-06  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-vpnc-service-vpnc-helper.c
