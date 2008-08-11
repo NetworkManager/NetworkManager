@@ -190,7 +190,6 @@ nm_vpnc_start_vpnc_binary (NMVPNCPlugin *plugin, GError **error)
 	GPid	pid;
 	const char **vpnc_binary = NULL;
 	GPtrArray *vpnc_argv;
-	GError *err = NULL;
 	GSource *vpnc_watch;
 	gint	stdin_fd;
 
