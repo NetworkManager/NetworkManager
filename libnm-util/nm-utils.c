@@ -577,7 +577,7 @@ nm_utils_convert_ip4_addr_struct_array_to_string (const GValue *src_value, GValu
 }
 
 static void
-convert_one_hash_entry (gpointer key, gpointer value, gpointer user_data)
+convert_one_gvalue_hash_entry (gpointer key, gpointer value, gpointer user_data)
 {
 	GString *printable = (GString *) user_data;
 	char *value_as_string;
@@ -598,7 +598,33 @@ nm_utils_convert_gvalue_hash_to_string (const GValue *src_value, GValue *dest_va
 	hash = (GHashTable *) g_value_get_boxed (src_value);
 
 	printable = g_string_new ("[");
-	g_hash_table_foreach (hash, convert_one_hash_entry, printable);
+	g_hash_table_foreach (hash, convert_one_gvalue_hash_entry, printable);
+	g_string_append (printable, " ]");
+
+	g_value_take_string (dest_value, printable->str);
+	g_string_free (printable, FALSE);
+}
+
+static void
+convert_one_string_hash_entry (gpointer key, gpointer value, gpointer user_data)
+{
+	GString *printable = (GString *) user_data;
+
+	g_string_append_printf (printable, " { '%s': %s },", (const char *) key, (const char *) value);
+}
+
+static void
+nm_utils_convert_string_hash_to_string (const GValue *src_value, GValue *dest_value)
+{
+	GHashTable *hash;
+	GString *printable;
+
+	g_return_if_fail (g_type_is_a (G_VALUE_TYPE (src_value), DBUS_TYPE_G_MAP_OF_STRING));
+
+	hash = (GHashTable *) g_value_get_boxed (src_value);
+
+	printable = g_string_new ("[");
+	g_hash_table_foreach (hash, convert_one_string_hash_entry, printable);
 	g_string_append (printable, " ]");
 
 	g_value_take_string (dest_value, printable->str);
@@ -626,6 +652,9 @@ nm_utils_register_value_transformations (void)
 		g_value_register_transform_func (DBUS_TYPE_G_MAP_OF_VARIANT,
 		                                 G_TYPE_STRING, 
 		                                 nm_utils_convert_gvalue_hash_to_string);
+		g_value_register_transform_func (DBUS_TYPE_G_MAP_OF_STRING,
+		                                 G_TYPE_STRING, 
+		                                 nm_utils_convert_string_hash_to_string);
 		registered = TRUE;
 	}
 }

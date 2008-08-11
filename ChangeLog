@@ -1,3 +1,9 @@
+2008-08-11  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-utils.c
+		- (nm_utils_register_value_transformations): add value transform for
+			a hash table of string:string
+
 2008-08-10  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-glib/nm-vpn-plugin.c
