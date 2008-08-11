@@ -46,6 +46,7 @@ typedef struct {
 	/* Temporary stuff */
 	guint connect_timer;
 	guint quit_timer;
+	guint fail_stop_id;
 } NMVPNPluginPrivate;
 
 #define NM_VPN_PLUGIN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_VPN_PLUGIN, NMVPNPluginPrivate))
@@ -257,10 +258,20 @@ quit_timer_expired (gpointer data)
 }
 
 static gboolean
+fail_stop (gpointer data)
+{
+	NMVPNPlugin *plugin = NM_VPN_PLUGIN (data);
+
+	nm_vpn_plugin_set_state (plugin, NM_VPN_SERVICE_STATE_STOPPED);
+	return FALSE;
+}
+
+static gboolean
 nm_vpn_plugin_connect (NMVPNPlugin *plugin,
 				   NMConnection *connection,
 				   GError **err)
 {
+	NMVPNPluginPrivate *priv = NM_VPN_PLUGIN_GET_PRIVATE (plugin);
 	gboolean ret = FALSE;
 	NMVPNServiceState state;
 
@@ -293,8 +304,14 @@ nm_vpn_plugin_connect (NMVPNPlugin *plugin,
 	case NM_VPN_SERVICE_STATE_INIT:
 		nm_vpn_plugin_set_state (plugin, NM_VPN_SERVICE_STATE_STARTING);
 		ret = NM_VPN_PLUGIN_GET_CLASS (plugin)->connect (plugin, connection, err);
-		if (!ret)
-			nm_vpn_plugin_set_state (plugin, NM_VPN_SERVICE_STATE_STOPPED);
+		if (!ret) {
+			/* Stop the plugin from and idle handler so that the Connect
+			 * method return gets sent before the STOP StateChanged signal.
+			 */
+			if (priv->fail_stop_id)
+				g_source_remove (priv->fail_stop_id);
+			priv->fail_stop_id = g_idle_add (fail_stop, plugin);
+		}
 		break;
 
 	default:
@@ -584,6 +601,9 @@ dispose (GObject *object)
 
 	priv->disposed = TRUE;
 
+	if (priv->fail_stop_id)
+		g_source_remove (priv->fail_stop_id);
+
 	state = nm_vpn_plugin_get_state (plugin);
 
 	if (state == NM_VPN_SERVICE_STATE_STARTED ||
@@ -633,6 +653,11 @@ state_changed (NMVPNPlugin *plugin, NMVPNServiceState state)
 		if (priv->quit_timer)
 			g_source_remove (priv->quit_timer);
 
+		if (priv->fail_stop_id) {
+			g_source_remove (priv->fail_stop_id);
+			priv->fail_stop_id = 0;
+		}
+
 		/* Add a timer to make sure we do not wait indefinitely for the successful connect. */
 		priv->connect_timer = g_timeout_add_full (G_PRIORITY_DEFAULT,
 										  NM_VPN_PLUGIN_CONNECT_TIMER,
@@ -655,6 +680,10 @@ state_changed (NMVPNPlugin *plugin, NMVPNServiceState state)
 		if (priv->quit_timer)
 			g_source_remove (priv->quit_timer);
 
+		if (priv->fail_stop_id) {
+			g_source_remove (priv->fail_stop_id);
+			priv->fail_stop_id = 0;
+		}
 		break;
 	}
 }
