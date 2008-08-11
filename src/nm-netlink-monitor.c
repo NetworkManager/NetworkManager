@@ -487,7 +487,7 @@ nm_netlink_monitor_error_handler (GIOChannel       *channel,
 {
 	GError *socket_error;
  
-	g_return_val_if_fail (!(io_condition & ~(NM_NETLINK_MONITOR_ERROR_CONDITIONS)), FALSE);
+	g_return_val_if_fail (io_condition & NM_NETLINK_MONITOR_ERROR_CONDITIONS, FALSE);
 
 	socket_error = g_error_new (NM_NETLINK_MONITOR_ERROR,
 	                            NM_NETLINK_MONITOR_ERROR_WAITING_FOR_SOCKET_DATA,
