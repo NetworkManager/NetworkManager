@@ -1,5 +1,12 @@
 2008-08-11  Dan Williams  <dcbw@redhat.com>
 
+	Merge the vpn-properties setting with the vpn setting since it was pointless
+	to keep both of them around.  Convert the vpn 'data' hash table to a hash
+	of string:string (instead of string:variant) so that system settings plugins
+	can have an easier time dealing with the arbitrary key/value pairs.
+
+2008-08-11  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-utils.c
 		- (nm_utils_register_value_transformations): add value transform for
 			a hash table of string:string
