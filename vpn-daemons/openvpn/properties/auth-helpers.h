@@ -28,35 +28,35 @@
 #include <glade/glade.h>
 
 #include <nm-connection.h>
-#include <nm-setting-vpn-properties.h>
+#include <nm-setting-vpn.h>
 
 typedef void (*ChangedCallback) (GtkWidget *widget, gpointer user_data);
 
 void tls_pw_init_auth_widget (GladeXML *xml,
                               GtkSizeGroup *group,
-                              NMSettingVPNProperties *s_vpn_props,
-                              gint contype,
+                              NMSettingVPN *s_vpn,
+                              const char *contype,
                               const char *prefix,
                               ChangedCallback changed_cb,
                               gpointer user_data);
 
 void sk_init_auth_widget (GladeXML *xml,
                           GtkSizeGroup *group,
-                          NMSettingVPNProperties *s_vpn_props,
+                          NMSettingVPN *s_vpn,
                           ChangedCallback changed_cb,
                           gpointer user_data);
 
-gboolean auth_widget_check_validity (GladeXML *xml, gint contype, GError **error);
+gboolean auth_widget_check_validity (GladeXML *xml, const char *contype, GError **error);
 
 gboolean auth_widget_update_connection (GladeXML *xml,
-                                        gint contype,
-                                        NMSettingVPNProperties *s_vpn_props);
+                                        const char *contype,
+                                        NMSettingVPN *s_vpn);
 
 GtkFileFilter *tls_file_chooser_filter_new (void);
 
 GtkFileFilter *sk_file_chooser_filter_new (void);
 
-GtkWidget *advanced_dialog_new (GHashTable *hash, int contype);
+GtkWidget *advanced_dialog_new (GHashTable *hash, const char *contype);
 
 GHashTable *advanced_dialog_new_hash_from_connection (NMConnection *connection, GError **error);
 

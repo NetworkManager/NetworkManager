@@ -35,7 +35,6 @@
 #include <glib/gi18n-lib.h>
 
 #include <nm-setting-vpn.h>
-#include <nm-setting-vpn-properties.h>
 #include <nm-setting-connection.h>
 #include <nm-setting-ip4-config.h>
 
@@ -104,7 +103,7 @@ handle_path_item (const char *line,
 	if (leftover && *file)
 		*leftover = file + 1;
 
-	g_hash_table_insert (hash, g_strdup (key), str_to_gvalue (unquoted));
+	g_hash_table_insert (hash, g_strdup (key), g_strdup (unquoted));
 	g_free (unquoted);
 
 out:
@@ -143,9 +142,12 @@ handle_direction (const char *tag, const char *key, char *leftover, GHashTable *
 
 	errno = 0;
 	direction = strtol (leftover, NULL, 10);
-	if ((errno == 0) && ((direction == 0) || (direction == 1)))
-		g_hash_table_insert (hash, g_strdup (key), int_to_gvalue (direction));
-	else
+	if (errno == 0) {
+		if (direction == 0)
+			g_hash_table_insert (hash, g_strdup (key), g_strdup ("0"));
+		else if (direction == 1)
+			g_hash_table_insert (hash, g_strdup (key), g_strdup ("1"));
+	} else
 		g_warning ("%s: unknown %s direction '%s'", __func__, tag, leftover);
 }
 
@@ -155,12 +157,11 @@ do_import (const char *path, char **lines, GError **error)
 	NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
 	NMSettingVPN *s_vpn;
-	NMSettingVPNProperties *s_vpn_props;
 	char *last_dot;
 	char **line;
 	gboolean have_client = FALSE, have_remote = FALSE;
 	gboolean have_pass = FALSE, have_sk = FALSE;
-	int ctype = NM_OPENVPN_CONTYPE_INVALID;
+	const char *ctype = NULL;
 
 	connection = nm_connection_new ();
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
@@ -168,10 +169,6 @@ do_import (const char *path, char **lines, GError **error)
 
 	s_vpn = NM_SETTING_VPN (nm_setting_vpn_new ());
 	s_vpn->service_type = g_strdup (NM_DBUS_SERVICE_OPENVPN);
-	nm_connection_add_setting (connection, NM_SETTING (s_vpn));
-
-	s_vpn_props = NM_SETTING_VPN_PROPERTIES (nm_setting_vpn_properties_new ());
-	nm_connection_add_setting (connection, NM_SETTING (s_vpn_props));
 
 	s_con->id = g_path_get_basename (path);
 	last_dot = strrchr (s_con->id, '.');
@@ -195,9 +192,9 @@ do_import (const char *path, char **lines, GError **error)
 			if (strstr (*line, "tun")) {
 				/* ignore; default is tun */
 			} else if (strstr (*line, "tap")) {
-				g_hash_table_insert (s_vpn_props->data,
+				g_hash_table_insert (s_vpn->data,
 				                     g_strdup (NM_OPENVPN_KEY_TAP_DEV),
-				                     bool_to_gvalue (TRUE));
+				                     g_strdup ("yes"));
 			} else
 				g_warning ("%s: unknown dev option '%s'", __func__, *line);
 
@@ -208,9 +205,9 @@ do_import (const char *path, char **lines, GError **error)
 			if (strstr (*line, "udp")) {
 				/* ignore; udp is default */
 			} else if (strstr (*line, "tcp")) {
-				g_hash_table_insert (s_vpn_props->data,
+				g_hash_table_insert (s_vpn->data,
 				                     g_strdup (NM_OPENVPN_KEY_PROTO_TCP),
-				                     bool_to_gvalue (TRUE));
+				                     g_strdup ("yes"));
 			} else
 				g_warning ("%s: unknown proto option '%s'", __func__, *line);
 
@@ -218,9 +215,9 @@ do_import (const char *path, char **lines, GError **error)
 		}
 
 		if (!strncmp (*line, COMP_TAG, strlen (COMP_TAG))) {
-			g_hash_table_insert (s_vpn_props->data,
+			g_hash_table_insert (s_vpn->data,
 			                     g_strdup (NM_OPENVPN_KEY_COMP_LZO),
-			                     bool_to_gvalue (TRUE));
+			                     g_strdup ("yes"));
 			continue;
 		}
 
@@ -230,9 +227,9 @@ do_import (const char *path, char **lines, GError **error)
 				continue;
 
 			if (g_strv_length (items) >= 1) {
-				g_hash_table_insert (s_vpn_props->data,
+				g_hash_table_insert (s_vpn->data,
 				                     g_strdup (NM_OPENVPN_KEY_REMOTE),
-				                     str_to_gvalue (items[0]));
+				                     g_strdup (items[0]));
 				have_remote = TRUE;
 
 				if (g_strv_length (items) >= 2) {
@@ -241,44 +238,44 @@ do_import (const char *path, char **lines, GError **error)
 					errno = 0;
 					port = strtol (items[1], NULL, 10);
 					if ((errno == 0) && (port > 0) && (port < 65536)) {
-						g_hash_table_insert (s_vpn_props->data,
+						g_hash_table_insert (s_vpn->data,
 						                     g_strdup (NM_OPENVPN_KEY_PORT),
-						                     int_to_gvalue (port));
+						                     g_strdup_printf ("%d", (guint32) port));
 					} else
 						g_warning ("%s: invalid remote port in option '%s'", __func__, *line);
 				}
 			}
 			g_strfreev (items);
 
-			if (!g_hash_table_lookup (s_vpn_props->data, NM_OPENVPN_KEY_REMOTE))
+			if (!g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_REMOTE))
 				g_warning ("%s: unknown remote option '%s'", __func__, *line);
 			continue;
 		}
 
-		if (handle_path_item (*line, CA_TAG, NM_OPENVPN_KEY_CA, s_vpn_props->data, NULL))
+		if (handle_path_item (*line, CA_TAG, NM_OPENVPN_KEY_CA, s_vpn->data, NULL))
 			continue;
 
-		if (handle_path_item (*line, CERT_TAG, NM_OPENVPN_KEY_CERT, s_vpn_props->data, NULL))
+		if (handle_path_item (*line, CERT_TAG, NM_OPENVPN_KEY_CERT, s_vpn->data, NULL))
 			continue;
 
-		if (handle_path_item (*line, KEY_TAG, NM_OPENVPN_KEY_KEY, s_vpn_props->data, NULL))
+		if (handle_path_item (*line, KEY_TAG, NM_OPENVPN_KEY_KEY, s_vpn->data, NULL))
 			continue;
 
 		if (handle_path_item (*line, SECRET_TAG, NM_OPENVPN_KEY_SHARED_KEY,
-		                      s_vpn_props->data, &leftover)) {
+		                      s_vpn->data, &leftover)) {
 			handle_direction ("secret",
 			                  NM_OPENVPN_KEY_SHARED_KEY_DIRECTION,
 			                  leftover,
-			                  s_vpn_props->data);
+			                  s_vpn->data);
 			continue;
 		}
 
 		if (handle_path_item (*line, TLS_AUTH_TAG, NM_OPENVPN_KEY_TA,
-		                      s_vpn_props->data, &leftover)) {
+		                      s_vpn->data, &leftover)) {
 			handle_direction ("tls-auth",
 			                  NM_OPENVPN_KEY_TA_DIR,
 			                  leftover,
-			                  s_vpn_props->data);
+			                  s_vpn->data);
 			continue;
 		}
 
@@ -288,9 +285,9 @@ do_import (const char *path, char **lines, GError **error)
 				continue;
 
 			if (g_strv_length (items)) {
-				g_hash_table_insert (s_vpn_props->data,
+				g_hash_table_insert (s_vpn->data,
 				                     g_strdup (NM_OPENVPN_KEY_CIPHER),
-				                     str_to_gvalue (items[0]));
+				                     g_strdup (items[0]));
 			}
 			g_strfreev (items);
 			continue;
@@ -302,12 +299,12 @@ do_import (const char *path, char **lines, GError **error)
 				continue;
 
 			if (g_strv_length (items) == 2) {
-				g_hash_table_insert (s_vpn_props->data,
+				g_hash_table_insert (s_vpn->data,
 				                     g_strdup (NM_OPENVPN_KEY_LOCAL_IP),
-				                     str_to_gvalue (items[0]));
-				g_hash_table_insert (s_vpn_props->data,
+				                     g_strdup (items[0]));
+				g_hash_table_insert (s_vpn->data,
 				                     g_strdup (NM_OPENVPN_KEY_REMOTE_IP),
-				                     str_to_gvalue (items[1]));
+				                     g_strdup (items[1]));
 			} else
 				g_warning ("%s: unknown ifconfig option '%s'", __func__, *line);
 			g_strfreev (items);
@@ -318,7 +315,7 @@ do_import (const char *path, char **lines, GError **error)
 			have_pass = TRUE;
 	}
 
-	if (g_hash_table_lookup (s_vpn_props->data, NM_OPENVPN_KEY_SHARED_KEY))
+	if (g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_SHARED_KEY))
 		have_sk = TRUE;
 
 	if (!have_client && !have_sk) {
@@ -338,12 +335,12 @@ do_import (const char *path, char **lines, GError **error)
 	} else {
 		gboolean have_certs = FALSE, have_ca = FALSE;
 
-		if (g_hash_table_lookup (s_vpn_props->data, NM_OPENVPN_KEY_CA))
+		if (g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_CA))
 			have_ca = TRUE;
 
 		if (   have_ca
-		    && g_hash_table_lookup (s_vpn_props->data, NM_OPENVPN_KEY_CERT)
-		    && g_hash_table_lookup (s_vpn_props->data, NM_OPENVPN_KEY_KEY))
+		    && g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_CERT)
+		    && g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_KEY))
 			have_certs = TRUE;
 
 		/* Determine connection type */
@@ -357,14 +354,15 @@ do_import (const char *path, char **lines, GError **error)
 		} else if (have_sk)
 			ctype = NM_OPENVPN_CONTYPE_STATIC_KEY;
 
-		if (ctype == NM_OPENVPN_CONTYPE_INVALID)
+		if (!ctype)
 			ctype = NM_OPENVPN_CONTYPE_TLS;
 
-		g_hash_table_insert (s_vpn_props->data,
+		g_hash_table_insert (s_vpn->data,
 		                     g_strdup (NM_OPENVPN_KEY_CONNECTION_TYPE),
-		                     int_to_gvalue (ctype));
+		                     g_strdup (ctype));
 	}
 
+	nm_connection_add_setting (connection, NM_SETTING (s_vpn));
 	return connection;
 }
 
@@ -373,6 +371,5 @@ do_export (const char *path, NMConnection *connection, GError **error)
 {
 	return FALSE;
 }
-
 
 

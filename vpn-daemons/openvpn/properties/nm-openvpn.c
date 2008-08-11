@@ -41,7 +41,6 @@
 
 #include <nm-vpn-plugin-ui-interface.h>
 #include <nm-setting-vpn.h>
-#include <nm-setting-vpn-properties.h>
 #include <nm-setting-connection.h>
 #include <nm-setting-ip4-config.h>
 
@@ -133,7 +132,7 @@ check_validity (OpenvpnPluginUiWidget *self, GError **error)
 	const char *str;
 	GtkTreeModel *model;
 	GtkTreeIter iter;
-	gint contype = NM_OPENVPN_CONTYPE_INVALID;
+	const char *contype = NULL;
 
 	widget = glade_xml_get_widget (priv->xml, "gateway_entry");
 	str = gtk_entry_get_text (GTK_ENTRY (widget));
@@ -226,7 +225,7 @@ advanced_button_clicked_cb (GtkWidget *button, gpointer user_data)
 	GtkWidget *dialog, *toplevel, *widget;
 	GtkTreeModel *model;
 	GtkTreeIter iter;
-	int contype = NM_OPENVPN_CONTYPE_INVALID;
+	const char *contype = NULL;
 
 	toplevel = gtk_widget_get_toplevel (priv->widget);
 	g_return_if_fail (GTK_WIDGET_TOPLEVEL (toplevel));
@@ -259,15 +258,15 @@ static gboolean
 init_plugin_ui (OpenvpnPluginUiWidget *self, NMConnection *connection, GError **error)
 {
 	OpenvpnPluginUiWidgetPrivate *priv = OPENVPN_PLUGIN_UI_WIDGET_GET_PRIVATE (self);
-	NMSettingVPNProperties *s_vpn_props;
+	NMSettingVPN *s_vpn;
 	GtkWidget *widget;
 	GtkListStore *store;
 	GtkTreeIter iter;
 	int active = -1;
-	GValue *value;
-	gint contype = NM_OPENVPN_CONTYPE_TLS;
+	const char *value;
+	const char *contype = NM_OPENVPN_CONTYPE_TLS;
 
-	s_vpn_props = (NMSettingVPNProperties *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN_PROPERTIES);
+	s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
 
 	priv->group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
 
@@ -275,10 +274,10 @@ init_plugin_ui (OpenvpnPluginUiWidget *self, NMConnection *connection, GError **
 	if (!widget)
 		return FALSE;
 	gtk_size_group_add_widget (priv->group, widget);
-	if (s_vpn_props) {
-		value = g_hash_table_lookup (s_vpn_props->data, NM_OPENVPN_KEY_REMOTE);
-		if (value && G_VALUE_HOLDS_STRING (value))
-			gtk_entry_set_text (GTK_ENTRY (widget), g_value_get_string (value));
+	if (s_vpn) {
+		value = g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_REMOTE);
+		if (value)
+			gtk_entry_set_text (GTK_ENTRY (widget), value);
 	}
 	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
 
@@ -287,19 +286,22 @@ init_plugin_ui (OpenvpnPluginUiWidget *self, NMConnection *connection, GError **
 		return FALSE;
 	gtk_size_group_add_widget (priv->group, widget);
 
-	store = gtk_list_store_new (3, G_TYPE_STRING, G_TYPE_INT, G_TYPE_INT);
+	store = gtk_list_store_new (3, G_TYPE_STRING, G_TYPE_INT, G_TYPE_STRING);
 
-	if (s_vpn_props && s_vpn_props->data) {
-		value = g_hash_table_lookup (s_vpn_props->data, NM_OPENVPN_KEY_CONNECTION_TYPE);
-		if (value && G_VALUE_HOLDS_INT (value)) {
-			contype = g_value_get_int (value);
-			if ((contype < NM_OPENVPN_CONTYPE_TLS) || (contype > NM_OPENVPN_CONTYPE_PASSWORD_TLS))
+	if (s_vpn && s_vpn->data) {
+		contype = g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_CONNECTION_TYPE);
+		if (contype) {
+			if (   strcmp (contype, NM_OPENVPN_CONTYPE_TLS)
+			    && strcmp (contype, NM_OPENVPN_CONTYPE_STATIC_KEY)
+			    && strcmp (contype, NM_OPENVPN_CONTYPE_PASSWORD)
+			    && strcmp (contype, NM_OPENVPN_CONTYPE_PASSWORD_TLS))
 				contype = NM_OPENVPN_CONTYPE_TLS;
-		}
+		} else
+			contype = NM_OPENVPN_CONTYPE_TLS;
 	}
 
 	/* TLS auth widget */
-	tls_pw_init_auth_widget (priv->xml, priv->group, s_vpn_props,
+	tls_pw_init_auth_widget (priv->xml, priv->group, s_vpn,
 	                         NM_OPENVPN_CONTYPE_TLS, "tls",
 	                         stuff_changed_cb, self);
 
@@ -311,7 +313,7 @@ init_plugin_ui (OpenvpnPluginUiWidget *self, NMConnection *connection, GError **
 	                    -1);
 
 	/* Password auth widget */
-	tls_pw_init_auth_widget (priv->xml, priv->group, s_vpn_props,
+	tls_pw_init_auth_widget (priv->xml, priv->group, s_vpn,
 	                         NM_OPENVPN_CONTYPE_PASSWORD, "pw",
 	                         stuff_changed_cb, self);
 
@@ -321,11 +323,11 @@ init_plugin_ui (OpenvpnPluginUiWidget *self, NMConnection *connection, GError **
 	                    COL_AUTH_PAGE, 1,
 	                    COL_AUTH_TYPE, NM_OPENVPN_CONTYPE_PASSWORD,
 	                    -1);
-	if ((active < 0) && (contype == NM_OPENVPN_CONTYPE_PASSWORD))
+	if ((active < 0) && !strcmp (contype, NM_OPENVPN_CONTYPE_PASSWORD))
 		active = 1;
 
 	/* Password+TLS auth widget */
-	tls_pw_init_auth_widget (priv->xml, priv->group, s_vpn_props,
+	tls_pw_init_auth_widget (priv->xml, priv->group, s_vpn,
 	                         NM_OPENVPN_CONTYPE_PASSWORD_TLS, "pw_tls",
 	                         stuff_changed_cb, self);
 
@@ -335,11 +337,11 @@ init_plugin_ui (OpenvpnPluginUiWidget *self, NMConnection *connection, GError **
 	                    COL_AUTH_PAGE, 2,
 	                    COL_AUTH_TYPE, NM_OPENVPN_CONTYPE_PASSWORD_TLS,
 	                    -1);
-	if ((active < 0) && (contype == NM_OPENVPN_CONTYPE_PASSWORD_TLS))
+	if ((active < 0) && !strcmp (contype, NM_OPENVPN_CONTYPE_PASSWORD_TLS))
 		active = 2;
 
 	/* Static key auth widget */
-	sk_init_auth_widget (priv->xml, priv->group, s_vpn_props, stuff_changed_cb, self);
+	sk_init_auth_widget (priv->xml, priv->group, s_vpn, stuff_changed_cb, self);
 
 	gtk_list_store_append (store, &iter);
 	gtk_list_store_set (store, &iter,
@@ -347,7 +349,7 @@ init_plugin_ui (OpenvpnPluginUiWidget *self, NMConnection *connection, GError **
 	                    COL_AUTH_PAGE, 3,
 	                    COL_AUTH_TYPE, NM_OPENVPN_CONTYPE_STATIC_KEY,
 	                    -1);
-	if ((active < 0) && (contype == NM_OPENVPN_CONTYPE_STATIC_KEY))
+	if ((active < 0) && !strcmp (contype, NM_OPENVPN_CONTYPE_STATIC_KEY))
 		active = 3;
 
 	gtk_combo_box_set_model (GTK_COMBO_BOX (widget), GTK_TREE_MODEL (store));
@@ -370,64 +372,13 @@ get_widget (NMVpnPluginUiWidgetInterface *iface)
 	return G_OBJECT (priv->widget);
 }
 
-GValue *
-str_to_gvalue (const char *str)
-{
-	GValue *value;
-
-	value = g_slice_new0 (GValue);
-	g_value_init (value, G_TYPE_STRING);
-	g_value_set_string (value, str);
-
-	return value;
-}
-
-GValue *
-bool_to_gvalue (gboolean b)
-{
-	GValue *value;
-
-	value = g_slice_new0 (GValue);
-	g_value_init (value, G_TYPE_BOOLEAN);
-	g_value_set_boolean (value, b);
-
-	return value;
-}
-
-GValue *
-int_to_gvalue (gint i)
-{
-	GValue *value;
-
-	value = g_slice_new0 (GValue);
-	g_value_init (value, G_TYPE_INT);
-	g_value_set_int (value, i);
-
-	return value;
-}
-
 static void
 hash_copy_advanced (gpointer key, gpointer data, gpointer user_data)
 {
 	GHashTable *hash = (GHashTable *) user_data;
-	GValue *value = (GValue *) data;
+	const char *value = (const char *) data;
 
-	if (G_VALUE_HOLDS_STRING (value)) {
-		g_hash_table_insert (hash,
-		                     g_strdup ((const char *) key),
-		                     str_to_gvalue (g_value_get_string (value)));
-	} else if (G_VALUE_HOLDS_INT (value)) {
-		g_hash_table_insert (hash,
-		                     g_strdup ((const char *) key),
-		                     int_to_gvalue (g_value_get_int (value)));
-	} else if (G_VALUE_HOLDS_BOOLEAN (value)) {
-		g_hash_table_insert (hash,
-		                     g_strdup ((const char *) key),
-		                     bool_to_gvalue (g_value_get_boolean (value)));
-	} else {
-		g_warning ("%s: unhandled key '%s' of type '%s'",
-		           __func__, (const char *) key, G_VALUE_TYPE_NAME (value));
-	}
+	g_hash_table_insert (hash, g_strdup ((const char *) key), g_strdup (value));
 }
 
 static gboolean
@@ -438,55 +389,42 @@ update_connection (NMVpnPluginUiWidgetInterface *iface,
 	OpenvpnPluginUiWidget *self = OPENVPN_PLUGIN_UI_WIDGET (iface);
 	OpenvpnPluginUiWidgetPrivate *priv = OPENVPN_PLUGIN_UI_WIDGET_GET_PRIVATE (self);
 	NMSettingVPN *s_vpn;
-	NMSettingVPNProperties *s_vpn_props;
 	GtkWidget *widget;
 	char *str;
 	GtkTreeModel *model;
 	GtkTreeIter iter;
 	gboolean valid = FALSE;
-	int auth_type = NM_OPENVPN_CONTYPE_INVALID;
+	const char *auth_type = NULL;
 
 	if (!check_validity (self, error))
 		return FALSE;
 
 	s_vpn = NM_SETTING_VPN (nm_setting_vpn_new ());
 	s_vpn->service_type = g_strdup (NM_DBUS_SERVICE_OPENVPN);
-	nm_connection_add_setting (connection, NM_SETTING (s_vpn));
-
-	s_vpn_props = NM_SETTING_VPN_PROPERTIES (nm_setting_vpn_properties_new ());
 
 	/* Gateway */
 	widget = glade_xml_get_widget (priv->xml, "gateway_entry");
 	str = (char *) gtk_entry_get_text (GTK_ENTRY (widget));
 	if (str && strlen (str)) {
-		g_hash_table_insert (s_vpn_props->data,
+		g_hash_table_insert (s_vpn->data,
 		                     g_strdup (NM_OPENVPN_KEY_REMOTE),
-		                     str_to_gvalue (str));
+		                     g_strdup (str));
 	}
 
 	widget = glade_xml_get_widget (priv->xml, "auth_combo");
 	model = gtk_combo_box_get_model (GTK_COMBO_BOX (widget));
 	if (gtk_combo_box_get_active_iter (GTK_COMBO_BOX (widget), &iter)) {
 		gtk_tree_model_get (model, &iter, COL_AUTH_TYPE, &auth_type, -1);
-		if (   (auth_type > NM_OPENVPN_CONTYPE_INVALID)
-		    && (auth_type <= NM_OPENVPN_CONTYPE_PASSWORD_TLS)) {
-			g_hash_table_insert (s_vpn_props->data,
-			                     g_strdup (NM_OPENVPN_KEY_CONNECTION_TYPE),
-			                     int_to_gvalue (auth_type));
-			auth_widget_update_connection (priv->xml, auth_type, s_vpn_props);
-		} else {
-			g_set_error (error,
-			             OPENVPN_PLUGIN_UI_ERROR,
-			             OPENVPN_PLUGIN_UI_ERROR_INVALID_PROPERTY,
-			             NM_OPENVPN_KEY_CONNECTION_TYPE);
-			goto done;
-		}
+		g_hash_table_insert (s_vpn->data,
+		                     g_strdup (NM_OPENVPN_KEY_CONNECTION_TYPE),
+		                     g_strdup (auth_type));
+		auth_widget_update_connection (priv->xml, auth_type, s_vpn);
 	}
 
 	if (priv->advanced)
-		g_hash_table_foreach (priv->advanced, hash_copy_advanced, s_vpn_props->data);
+		g_hash_table_foreach (priv->advanced, hash_copy_advanced, s_vpn->data);
 
-	nm_connection_add_setting (connection, NM_SETTING (s_vpn_props));
+	nm_connection_add_setting (connection, NM_SETTING (s_vpn));
 	valid = TRUE;
 
 done:

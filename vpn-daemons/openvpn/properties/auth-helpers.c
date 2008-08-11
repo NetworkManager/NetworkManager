@@ -30,6 +30,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include <glib/gi18n-lib.h>
 
@@ -40,14 +41,14 @@
 void
 tls_pw_init_auth_widget (GladeXML *xml,
                          GtkSizeGroup *group,
-                         NMSettingVPNProperties *s_vpn_props,
-                         gint contype,
+                         NMSettingVPN *s_vpn,
+                         const char *contype,
                          const char *prefix,
                          ChangedCallback changed_cb,
                          gpointer user_data)
 {
 	GtkWidget *widget;
-	GValue *value;
+	const char *value;
 	char *tmp;
 	GtkFileFilter *filter;
 
@@ -68,13 +69,13 @@ tls_pw_init_auth_widget (GladeXML *xml,
 	                                   _("Choose a Certificate Authority certificate..."));
 	g_signal_connect (G_OBJECT (widget), "selection-changed", G_CALLBACK (changed_cb), user_data);
 
-	if (s_vpn_props && s_vpn_props->data) {
-		value = g_hash_table_lookup (s_vpn_props->data, NM_OPENVPN_KEY_CA);
-		if (value && G_VALUE_HOLDS_STRING (value))
-			gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (widget), g_value_get_string (value));
+	if (s_vpn && s_vpn->data) {
+		value = g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_CA);
+		if (value && strlen (value))
+			gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (widget), value);
 	}
 
-	if (contype == NM_OPENVPN_CONTYPE_TLS || contype == NM_OPENVPN_CONTYPE_PASSWORD_TLS) {
+	if (!strcmp (contype, NM_OPENVPN_CONTYPE_TLS) || !strcmp (contype, NM_OPENVPN_CONTYPE_PASSWORD_TLS)) {
 		tmp = g_strdup_printf ("%s_user_cert_chooser", prefix);
 		widget = glade_xml_get_widget (xml, tmp);
 		g_free (tmp);
@@ -87,10 +88,10 @@ tls_pw_init_auth_widget (GladeXML *xml,
 		                                   _("Choose your personal certificate..."));
 		g_signal_connect (G_OBJECT (widget), "selection-changed", G_CALLBACK (changed_cb), user_data);
 
-		if (s_vpn_props && s_vpn_props->data) {
-			value = g_hash_table_lookup (s_vpn_props->data, NM_OPENVPN_KEY_CERT);
-			if (value && G_VALUE_HOLDS_STRING (value))
-				gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (widget), g_value_get_string (value));
+		if (s_vpn && s_vpn->data) {
+			value = g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_CERT);
+			if (value && strlen (value))
+				gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (widget), value);
 		}
 
 		tmp = g_strdup_printf ("%s_private_key_chooser", prefix);
@@ -105,23 +106,23 @@ tls_pw_init_auth_widget (GladeXML *xml,
 		                                   _("Choose your private key..."));
 		g_signal_connect (G_OBJECT (widget), "selection-changed", G_CALLBACK (changed_cb), user_data);
 
-		if (s_vpn_props && s_vpn_props->data) {
-			value = g_hash_table_lookup (s_vpn_props->data, NM_OPENVPN_KEY_KEY);
-			if (value && G_VALUE_HOLDS_STRING (value))
-				gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (widget), g_value_get_string (value));
+		if (s_vpn && s_vpn->data) {
+			value = g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_KEY);
+			if (value && strlen (value))
+				gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (widget), value);
 		}
 	}
 
-	if (contype == NM_OPENVPN_CONTYPE_PASSWORD || contype == NM_OPENVPN_CONTYPE_PASSWORD_TLS) {
+	if (!strcmp (contype, NM_OPENVPN_CONTYPE_PASSWORD) || !strcmp (contype, NM_OPENVPN_CONTYPE_PASSWORD_TLS)) {
 		tmp = g_strdup_printf ("%s_username_entry", prefix);
 		widget = glade_xml_get_widget (xml, tmp);
 		g_free (tmp);
 
 		gtk_size_group_add_widget (group, widget);
-		if (s_vpn_props && s_vpn_props->data) {
-			value = g_hash_table_lookup (s_vpn_props->data, NM_OPENVPN_KEY_USERNAME);
-			if (value && G_VALUE_HOLDS_STRING (value))
-				gtk_entry_set_text (GTK_ENTRY (widget), g_value_get_string (value));
+		if (s_vpn && s_vpn->data) {
+			value = g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_USERNAME);
+			if (value && strlen (value))
+				gtk_entry_set_text (GTK_ENTRY (widget), value);
 		}
 		g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (changed_cb), user_data);
 	}
@@ -133,12 +134,12 @@ tls_pw_init_auth_widget (GladeXML *xml,
 void
 sk_init_auth_widget (GladeXML *xml,
                      GtkSizeGroup *group,
-                     NMSettingVPNProperties *s_vpn_props,
+                     NMSettingVPN *s_vpn,
                      ChangedCallback changed_cb,
                      gpointer user_data)
 {
 	GtkWidget *widget;
-	GValue *value = NULL;
+	const char *value = NULL;
 	GtkListStore *store;
 	GtkTreeIter iter;
 	gint active = -1;
@@ -158,18 +159,24 @@ sk_init_auth_widget (GladeXML *xml,
 	                                   _("Choose an OpenVPN static key..."));
 	g_signal_connect (G_OBJECT (widget), "selection-changed", G_CALLBACK (changed_cb), user_data);
 
-	if (s_vpn_props && s_vpn_props->data) {
-		value = g_hash_table_lookup (s_vpn_props->data, NM_OPENVPN_KEY_SHARED_KEY);
-		if (value && G_VALUE_HOLDS_STRING (value))
-			gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (widget), g_value_get_string (value));
+	if (s_vpn && s_vpn->data) {
+		value = g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_SHARED_KEY);
+		if (value && strlen (value))
+			gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (widget), value);
 	}
 
 	store = gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_INT);
 
-	if (s_vpn_props && s_vpn_props->data) {
-		value = g_hash_table_lookup (s_vpn_props->data, NM_OPENVPN_KEY_SHARED_KEY_DIRECTION);
-		if (value && G_VALUE_HOLDS_INT (value))
-			direction = g_value_get_int (value);
+	if (s_vpn && s_vpn->data) {
+		value = g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_SHARED_KEY_DIRECTION);
+		if (value && strlen (value)) {
+			long int tmp;
+
+			errno = 0;
+			tmp = strtol (value, NULL, 10);
+			if (errno == 0 && (tmp == 0 || tmp == 1))
+				direction = (guint32) tmp;
+		}
 	}
 
 	gtk_list_store_append (store, &iter);
@@ -177,17 +184,13 @@ sk_init_auth_widget (GladeXML *xml,
 
 	gtk_list_store_append (store, &iter);
 	gtk_list_store_set (store, &iter, SK_DIR_COL_NAME, "0", SK_DIR_COL_NUM, 0, -1);
-	if (value && G_VALUE_HOLDS_INT (value)) {
-		if (g_value_get_int (value) == 0)
-			active = 1;
-	}
+	if (direction == 0)
+		active = 1;
 
 	gtk_list_store_append (store, &iter);
 	gtk_list_store_set (store, &iter, SK_DIR_COL_NAME, "1", SK_DIR_COL_NUM, 1, -1);
-	if (value && G_VALUE_HOLDS_INT (value)) {
-		if (g_value_get_int (value) == 1)
-			active = 2;
-	}
+	if (direction == 1)
+		active = 2;
 
 	widget = glade_xml_get_widget (xml, "sk_direction_combo");
 	gtk_size_group_add_widget (group, widget);
@@ -256,21 +259,17 @@ validate_tls (GladeXML *xml, const char *prefix, GError **error)
 }
 
 gboolean
-auth_widget_check_validity (GladeXML *xml, gint contype, GError **error)
+auth_widget_check_validity (GladeXML *xml, const char *contype, GError **error)
 {
 	GtkWidget *widget;
-	gboolean is_valid = TRUE;
 	const char *str;
 
-	switch (contype) {
-	case NM_OPENVPN_CONTYPE_TLS:
-		is_valid = validate_tls (xml, "tls", error);
-		break;
-
-	case NM_OPENVPN_CONTYPE_PASSWORD_TLS:
-		is_valid = validate_tls (xml, "pw_tls", error);
-		if (!is_valid)
-			break;
+	if (!strcmp (contype, NM_OPENVPN_CONTYPE_TLS)) {
+		if (!validate_tls (xml, "tls", error))
+			return FALSE;
+	} else if (!strcmp (contype, NM_OPENVPN_CONTYPE_PASSWORD_TLS)) {
+		if (!validate_tls (xml, "pw_tls", error))
+			return FALSE;
 
 		widget = glade_xml_get_widget (xml, "pw_tls_username_entry");
 		str = gtk_entry_get_text (GTK_ENTRY (widget));
@@ -279,18 +278,15 @@ auth_widget_check_validity (GladeXML *xml, gint contype, GError **error)
 			             OPENVPN_PLUGIN_UI_ERROR,
 			             OPENVPN_PLUGIN_UI_ERROR_INVALID_PROPERTY,
 			             NM_OPENVPN_KEY_USERNAME);
-			is_valid = FALSE;
+			return FALSE;
 		}
-		break;
-
-	case NM_OPENVPN_CONTYPE_PASSWORD:
+	} else if (!strcmp (contype, NM_OPENVPN_CONTYPE_PASSWORD)) {
 		if (!validate_file_chooser (xml, "pw_ca_cert_chooser")) {
 			g_set_error (error,
 			             OPENVPN_PLUGIN_UI_ERROR,
 			             OPENVPN_PLUGIN_UI_ERROR_INVALID_PROPERTY,
 			             NM_OPENVPN_KEY_CA);
-			is_valid = FALSE;
-			break;
+			return FALSE;
 		}
 		widget = glade_xml_get_widget (xml, "pw_username_entry");
 		str = gtk_entry_get_text (GTK_ENTRY (widget));
@@ -299,26 +295,20 @@ auth_widget_check_validity (GladeXML *xml, gint contype, GError **error)
 			             OPENVPN_PLUGIN_UI_ERROR,
 			             OPENVPN_PLUGIN_UI_ERROR_INVALID_PROPERTY,
 			             NM_OPENVPN_KEY_USERNAME);
-			is_valid = FALSE;
+			return FALSE;
 		}
-		break;
-
-	case NM_OPENVPN_CONTYPE_STATIC_KEY:
+	} else if (!strcmp (contype, NM_OPENVPN_CONTYPE_STATIC_KEY)) {
 		if (!validate_file_chooser (xml, "sk_key_chooser")) {
 			g_set_error (error,
 			             OPENVPN_PLUGIN_UI_ERROR,
 			             OPENVPN_PLUGIN_UI_ERROR_INVALID_PROPERTY,
 			             NM_OPENVPN_KEY_SHARED_KEY);
-			is_valid = FALSE;
-			break;
+			return FALSE;
 		}
-		break;
-
-	default:
+	} else
 		g_assert_not_reached ();
-	}
 
-	return is_valid;
+	return TRUE;
 }
 
 static void
@@ -326,7 +316,7 @@ update_from_filechooser (GladeXML *xml,
                          const char *key,
                          const char *prefix,
                          const char *widget_name,
-                         NMSettingVPNProperties *s_vpn_props)
+                         NMSettingVPN *s_vpn)
 {
 	GtkWidget *widget;
 	char *tmp, *filename;
@@ -335,8 +325,8 @@ update_from_filechooser (GladeXML *xml,
 	g_return_if_fail (key != NULL);
 	g_return_if_fail (prefix != NULL);
 	g_return_if_fail (widget_name != NULL);
-	g_return_if_fail (s_vpn_props != NULL);
-	g_return_if_fail (s_vpn_props->data != NULL);
+	g_return_if_fail (s_vpn != NULL);
+	g_return_if_fail (s_vpn->data != NULL);
 
 	tmp = g_strdup_printf ("%s_%s", prefix, widget_name);
 	widget = glade_xml_get_widget (xml, tmp);
@@ -347,21 +337,21 @@ update_from_filechooser (GladeXML *xml,
 		return;
 
 	if (strlen (filename))
-		g_hash_table_insert (s_vpn_props->data, g_strdup (key), str_to_gvalue (filename));
+		g_hash_table_insert (s_vpn->data, g_strdup (key), g_strdup (filename));
 	
 	g_free (filename);
 }
 
 static void
-update_tls (GladeXML *xml, const char *prefix, NMSettingVPNProperties *s_vpn_props)
+update_tls (GladeXML *xml, const char *prefix, NMSettingVPN *s_vpn)
 {
-	update_from_filechooser (xml, NM_OPENVPN_KEY_CA, prefix, "ca_cert_chooser", s_vpn_props);
-	update_from_filechooser (xml, NM_OPENVPN_KEY_CERT, prefix, "user_cert_chooser", s_vpn_props);
-	update_from_filechooser (xml, NM_OPENVPN_KEY_KEY, prefix, "private_key_chooser", s_vpn_props);
+	update_from_filechooser (xml, NM_OPENVPN_KEY_CA, prefix, "ca_cert_chooser", s_vpn);
+	update_from_filechooser (xml, NM_OPENVPN_KEY_CERT, prefix, "user_cert_chooser", s_vpn);
+	update_from_filechooser (xml, NM_OPENVPN_KEY_KEY, prefix, "private_key_chooser", s_vpn);
 }
 
 static void
-update_username (GladeXML *xml, const char *prefix, NMSettingVPNProperties *s_vpn_props)
+update_username (GladeXML *xml, const char *prefix, NMSettingVPN *s_vpn)
 {
 	GtkWidget *widget;
 	char *tmp;
@@ -369,8 +359,8 @@ update_username (GladeXML *xml, const char *prefix, NMSettingVPNProperties *s_vp
 
 	g_return_if_fail (xml != NULL);
 	g_return_if_fail (prefix != NULL);
-	g_return_if_fail (s_vpn_props != NULL);
-	g_return_if_fail (s_vpn_props->data != NULL);
+	g_return_if_fail (s_vpn != NULL);
+	g_return_if_fail (s_vpn->data != NULL);
 
 	tmp = g_strdup_printf ("%s_username_entry", prefix);
 	widget = glade_xml_get_widget (xml, tmp);
@@ -378,38 +368,31 @@ update_username (GladeXML *xml, const char *prefix, NMSettingVPNProperties *s_vp
 
 	str = gtk_entry_get_text (GTK_ENTRY (widget));
 	if (str && strlen (str)) {
-		g_hash_table_insert (s_vpn_props->data,
+		g_hash_table_insert (s_vpn->data,
 		                     g_strdup (NM_OPENVPN_KEY_USERNAME),
-		                     str_to_gvalue (str));
+		                     g_strdup (str));
 	}
 }
 
 gboolean
 auth_widget_update_connection (GladeXML *xml,
-                               gint contype,
-                               NMSettingVPNProperties *s_vpn_props)
+                               const char *contype,
+                               NMSettingVPN *s_vpn)
 {
 	GtkTreeModel *model;
 	GtkTreeIter iter;
 	GtkWidget *widget;
 
-	switch (contype) {
-	case NM_OPENVPN_CONTYPE_TLS:
-		update_tls (xml, "tls", s_vpn_props);
-		break;
-
-	case NM_OPENVPN_CONTYPE_PASSWORD:
-		update_from_filechooser (xml, NM_OPENVPN_KEY_CA, "pw", "ca_cert_chooser", s_vpn_props);
-		update_username (xml, "pw", s_vpn_props);
-		break;
-
-	case NM_OPENVPN_CONTYPE_PASSWORD_TLS:
-		update_tls (xml, "pw_tls", s_vpn_props);
-		update_username (xml, "pw_tls", s_vpn_props);
-		break;
-
-	case NM_OPENVPN_CONTYPE_STATIC_KEY:
-		update_from_filechooser (xml, NM_OPENVPN_KEY_SHARED_KEY, "sk", "key_chooser", s_vpn_props);
+	if (!strcmp (contype, NM_OPENVPN_CONTYPE_TLS)) {
+		update_tls (xml, "tls", s_vpn);
+	} else if (!strcmp (contype, NM_OPENVPN_CONTYPE_PASSWORD)) {
+		update_from_filechooser (xml, NM_OPENVPN_KEY_CA, "pw", "ca_cert_chooser", s_vpn);
+		update_username (xml, "pw", s_vpn);
+	} else if (!strcmp (contype, NM_OPENVPN_CONTYPE_PASSWORD_TLS)) {
+		update_tls (xml, "pw_tls", s_vpn);
+		update_username (xml, "pw_tls", s_vpn);
+	} else if (!strcmp (contype, NM_OPENVPN_CONTYPE_STATIC_KEY)) {
+		update_from_filechooser (xml, NM_OPENVPN_KEY_SHARED_KEY, "sk", "key_chooser", s_vpn);
 		widget = glade_xml_get_widget (xml, "sk_direction_combo");
 		g_assert (widget);
 		model = gtk_combo_box_get_model (GTK_COMBO_BOX (widget));
@@ -418,16 +401,13 @@ auth_widget_update_connection (GladeXML *xml,
 
 			gtk_tree_model_get (model, &iter, SK_DIR_COL_NUM, &direction, -1);
 			if (direction > -1) {
-				g_hash_table_insert (s_vpn_props->data,
+				g_hash_table_insert (s_vpn->data,
 				                     g_strdup (NM_OPENVPN_KEY_SHARED_KEY_DIRECTION),
-				                     int_to_gvalue (direction));
+				                     g_strdup_printf ("%d", direction));
 			}
 		}
-		break;
-
-	default:
+	} else
 		g_assert_not_reached ();
-	}
 
 	return TRUE;
 }
@@ -580,15 +560,6 @@ sk_file_chooser_filter_new (void)
 	return filter;
 }
 
-static void
-nm_gvalue_destroy (gpointer data)
-{
-	GValue *value = (GValue *) data;
-
-	g_value_unset (value);
-	g_slice_free (GValue, value);
-}
-
 static const char *advanced_keys[] = {
 	NM_OPENVPN_KEY_PORT,
 	NM_OPENVPN_KEY_COMP_LZO,
@@ -604,26 +575,14 @@ static void
 copy_values (gpointer key, gpointer data, gpointer user_data)
 {
 	GHashTable *hash = (GHashTable *) user_data;
-	GValue *value = (GValue *) data;
+	const char *value = (const char *) data;
 	const char **i;
 
 	for (i = &advanced_keys[0]; *i; i++) {
 		if (strcmp ((const char *) key, *i))
 			continue;
 
-		if (G_VALUE_HOLDS_STRING (value)) {
-			g_hash_table_insert (hash,
-			                     g_strdup ((const char *) key),
-			                     str_to_gvalue (g_value_get_string (value)));
-		} else if (G_VALUE_HOLDS_INT (value)) {
-			g_hash_table_insert (hash,
-			                     g_strdup ((const char *) key),
-			                     int_to_gvalue (g_value_get_int (value)));
-		} else if (G_VALUE_HOLDS_BOOLEAN (value)) {
-			g_hash_table_insert (hash,
-			                     g_strdup ((const char *) key),
-			                     bool_to_gvalue (g_value_get_boolean (value)));
-		}
+		g_hash_table_insert (hash, g_strdup ((const char *) key), g_strdup (value));
 	}
 }
 
@@ -632,13 +591,13 @@ advanced_dialog_new_hash_from_connection (NMConnection *connection,
                                           GError **error)
 {
 	GHashTable *hash;
-	NMSettingVPNProperties *s_vpn_props;
+	NMSettingVPN *s_vpn;
 
-	hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, nm_gvalue_destroy);
+	hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 
-	s_vpn_props = (NMSettingVPNProperties *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN_PROPERTIES);
-	if (s_vpn_props && s_vpn_props->data)
-		g_hash_table_foreach (s_vpn_props->data, copy_values, hash);
+	s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
+	if (s_vpn && s_vpn->data)
+		g_hash_table_foreach (s_vpn->data, copy_values, hash);
 
 	return hash;
 }
@@ -781,13 +740,13 @@ tls_auth_toggled_cb (GtkWidget *widget, gpointer user_data)
 #define TA_DIR_COL_NUM 1
 
 GtkWidget *
-advanced_dialog_new (GHashTable *hash, int contype)
+advanced_dialog_new (GHashTable *hash, const char *contype)
 {
 	GladeXML *xml;
 	GtkWidget *dialog = NULL;
 	char *glade_file = NULL;
 	GtkWidget *widget;
-	GValue *value;
+	const char *value;
 
 	g_return_val_if_fail (hash != NULL, NULL);
 
@@ -811,12 +770,18 @@ advanced_dialog_new (GHashTable *hash, int contype)
 	g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK (port_toggled_cb), xml);
 
 	value = g_hash_table_lookup (hash, NM_OPENVPN_KEY_PORT);
-	if (value && G_VALUE_HOLDS_INT (value)) {
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), TRUE);
+	if (value && strlen (value)) {
+		long int tmp;
 
-		widget = glade_xml_get_widget (xml, "port_spinbutton");
-		gtk_spin_button_set_value (GTK_SPIN_BUTTON (widget),
-		                           (gdouble) g_value_get_int (value));
+		errno = 0;
+		tmp = strtol (value, NULL, 10);
+		if (errno == 0 && tmp > 0 && tmp < 65536 && tmp != 1194) {
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), TRUE);
+
+			widget = glade_xml_get_widget (xml, "port_spinbutton");
+			gtk_spin_button_set_value (GTK_SPIN_BUTTON (widget),
+			                           (gdouble) tmp);
+		}
 		gtk_widget_set_sensitive (widget, TRUE);
 	} else {
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), FALSE);
@@ -827,54 +792,46 @@ advanced_dialog_new (GHashTable *hash, int contype)
 	}
 
 	value = g_hash_table_lookup (hash, NM_OPENVPN_KEY_COMP_LZO);
-	if (value && G_VALUE_HOLDS_BOOLEAN (value)) {
+	if (value && !strcmp (value, "yes")) {
 		widget = glade_xml_get_widget (xml, "lzo_checkbutton");
-		if (g_value_get_boolean (value))
-			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), TRUE);
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), TRUE);
 	}
 
 	value = g_hash_table_lookup (hash, NM_OPENVPN_KEY_PROTO_TCP);
-	if (value && G_VALUE_HOLDS_BOOLEAN (value)) {
+	if (value && !strcmp (value, "yes")) {
 		widget = glade_xml_get_widget (xml, "tcp_checkbutton");
-		if (g_value_get_boolean (value))
-			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), TRUE);
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), TRUE);
 	}
 
 	value = g_hash_table_lookup (hash, NM_OPENVPN_KEY_TAP_DEV);
-	if (value && G_VALUE_HOLDS_BOOLEAN (value)) {
+	if (value && !strcmp (value, "yes")) {
 		widget = glade_xml_get_widget (xml, "tap_checkbutton");
-		if (g_value_get_boolean (value))
-			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), TRUE);
+		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), TRUE);
 	}
 
-	if (contype != NM_OPENVPN_CONTYPE_TLS && contype != NM_OPENVPN_CONTYPE_PASSWORD_TLS) {
+	if (strcmp (contype, NM_OPENVPN_CONTYPE_TLS) && strcmp (contype, NM_OPENVPN_CONTYPE_PASSWORD_TLS)) {
 		widget = glade_xml_get_widget (xml, "options_notebook");
 		gtk_notebook_remove_page (GTK_NOTEBOOK (widget), 1);
 	} else {
-		char *user_cipher = NULL;
 		GtkListStore *store;
 		GtkTreeIter iter;
 		int direction = -1, active = -1;
 
 		widget = glade_xml_get_widget (xml, "cipher_combo");
 		value = g_hash_table_lookup (hash, NM_OPENVPN_KEY_CIPHER);
-		if (value && G_VALUE_HOLDS_STRING (value))
-			user_cipher = (char *) g_value_get_string (value);
-		populate_cipher_combo (GTK_COMBO_BOX (widget), user_cipher);
+		populate_cipher_combo (GTK_COMBO_BOX (widget), value);
 
 		widget = glade_xml_get_widget (xml, "tls_auth_checkbutton");
 		value = g_hash_table_lookup (hash, NM_OPENVPN_KEY_TA);
-		if (value && G_VALUE_HOLDS_STRING (value)) {
-			if (strlen (g_value_get_string (value)))
-				gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), TRUE);
-		}
+		if (value && strlen (value))
+			gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), TRUE);
 		g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK (tls_auth_toggled_cb), xml);
 		tls_auth_toggled_cb (widget, xml);
 
 		widget = glade_xml_get_widget (xml, "direction_combo");
 		value = g_hash_table_lookup (hash, NM_OPENVPN_KEY_TA_DIR);
-		if (value && G_VALUE_HOLDS_STRING (value)) {
-			direction = (int) strtol (g_value_get_string (value), NULL, 10);
+		if (value && strlen (value)) {
+			direction = (int) strtol (value, NULL, 10);
 			/* If direction is not 0 or 1, use no direction */
 			if (direction != 0 && direction != 1)
 				direction = -1;
@@ -900,9 +857,9 @@ advanced_dialog_new (GHashTable *hash, int contype)
 		gtk_combo_box_set_active (GTK_COMBO_BOX (widget), active < 0 ? 0 : active);
 
 		value = g_hash_table_lookup (hash, NM_OPENVPN_KEY_TA);
-		if (value && G_VALUE_HOLDS_STRING (value)) {
+		if (value && strlen (value)) {
 			widget = glade_xml_get_widget (xml, "tls_auth_chooser");
-			gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (widget), g_value_get_string (value));
+			gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (widget), value);
 		}
 	}
 
@@ -917,7 +874,7 @@ advanced_dialog_new_hash_from_dialog (GtkWidget *dialog, GError **error)
 	GHashTable *hash;
 	GtkWidget *widget;
 	GladeXML *xml;
-	int contype = NM_OPENVPN_CONTYPE_INVALID;
+	const char *contype = NULL;
 
 	g_return_val_if_fail (dialog != NULL, NULL);
 	if (error)
@@ -926,7 +883,7 @@ advanced_dialog_new_hash_from_dialog (GtkWidget *dialog, GError **error)
 	xml = g_object_get_data (G_OBJECT (dialog), "glade-xml");
 	g_return_val_if_fail (xml != NULL, NULL);
 
-	hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, nm_gvalue_destroy);
+	hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 
 	widget = glade_xml_get_widget (xml, "port_checkbutton");
 	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget))) {
@@ -934,23 +891,23 @@ advanced_dialog_new_hash_from_dialog (GtkWidget *dialog, GError **error)
 
 		widget = glade_xml_get_widget (xml, "port_spinbutton");
 		port = gtk_spin_button_get_value_as_int (GTK_SPIN_BUTTON (widget));
-		g_hash_table_insert (hash, g_strdup (NM_OPENVPN_KEY_PORT), int_to_gvalue (port));
+		g_hash_table_insert (hash, g_strdup (NM_OPENVPN_KEY_PORT), g_strdup_printf ("%d", port));
 	}
 
 	widget = glade_xml_get_widget (xml, "lzo_checkbutton");
 	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
-		g_hash_table_insert (hash, g_strdup (NM_OPENVPN_KEY_COMP_LZO), bool_to_gvalue (TRUE));
+		g_hash_table_insert (hash, g_strdup (NM_OPENVPN_KEY_COMP_LZO), g_strdup ("yes"));
 
 	widget = glade_xml_get_widget (xml, "tcp_checkbutton");
 	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
-		g_hash_table_insert (hash, g_strdup (NM_OPENVPN_KEY_PROTO_TCP), bool_to_gvalue (TRUE));
+		g_hash_table_insert (hash, g_strdup (NM_OPENVPN_KEY_PROTO_TCP), g_strdup ("yes"));
 
 	widget = glade_xml_get_widget (xml, "tap_checkbutton");
 	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget)))
-		g_hash_table_insert (hash, g_strdup (NM_OPENVPN_KEY_TAP_DEV), bool_to_gvalue (TRUE));
+		g_hash_table_insert (hash, g_strdup (NM_OPENVPN_KEY_TAP_DEV), g_strdup ("yes"));
 
-	contype = GPOINTER_TO_INT (g_object_get_data (G_OBJECT (dialog), "connection-type"));
-	if (contype == NM_OPENVPN_CONTYPE_TLS || contype == NM_OPENVPN_CONTYPE_PASSWORD_TLS) {
+	contype = g_object_get_data (G_OBJECT (dialog), "connection-type");
+	if (!strcmp (contype, NM_OPENVPN_CONTYPE_TLS) || !strcmp (contype, NM_OPENVPN_CONTYPE_PASSWORD_TLS)) {
 		GtkTreeModel *model;
 		GtkTreeIter iter;
 
@@ -964,8 +921,7 @@ advanced_dialog_new_hash_from_dialog (GtkWidget *dialog, GError **error)
 			                    TLS_CIPHER_COL_NAME, &cipher,
 			                    TLS_CIPHER_COL_DEFAULT, &is_default, -1);
 			if (!is_default && cipher) {
-				g_hash_table_insert (hash, g_strdup (NM_OPENVPN_KEY_CIPHER),
-				                     str_to_gvalue (cipher));
+				g_hash_table_insert (hash, g_strdup (NM_OPENVPN_KEY_CIPHER), g_strdup (cipher));
 			}
 		}
 		
@@ -976,8 +932,7 @@ advanced_dialog_new_hash_from_dialog (GtkWidget *dialog, GError **error)
 			widget = glade_xml_get_widget (xml, "tls_auth_chooser");
 			filename = gtk_file_chooser_get_filename (GTK_FILE_CHOOSER (widget));
 			if (filename && strlen (filename)) {
-				g_hash_table_insert (hash, g_strdup (NM_OPENVPN_KEY_TA),
-				                     str_to_gvalue (filename));
+				g_hash_table_insert (hash, g_strdup (NM_OPENVPN_KEY_TA), g_strdup (filename));
 			}
 			g_free (filename);
 
@@ -988,11 +943,8 @@ advanced_dialog_new_hash_from_dialog (GtkWidget *dialog, GError **error)
 
 				gtk_tree_model_get (model, &iter, TA_DIR_COL_NUM, &direction, -1);
 				if (direction >= 0) {
-					char str_dir[2] = { '0', '\0' };
-
-					str_dir[0] = (direction == 0) ? '0' : '1';
 					g_hash_table_insert (hash, g_strdup (NM_OPENVPN_KEY_TA_DIR),
-					                     str_to_gvalue (str_dir));					
+					                     g_strdup_printf ("%d", direction));					
 				}
 			}
 		}

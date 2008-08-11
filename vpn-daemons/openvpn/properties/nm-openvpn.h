@@ -82,11 +82,5 @@ struct _OpenvpnPluginUiWidgetClass {
 
 GType openvpn_plugin_ui_widget_get_type (void);
 
-GValue *int_to_gvalue (gint i);
-
-GValue *bool_to_gvalue (gboolean b);
-
-GValue *str_to_gvalue (const char *str);
-
 #endif	/* _NM_OPENVPN_H_ */
 

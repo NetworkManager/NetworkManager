@@ -38,24 +38,15 @@
 #define NM_DBUS_INTERFACE_OPENVPN  "org.freedesktop.NetworkManager.openvpn"
 #define NM_DBUS_PATH_OPENVPN       "/org/freedesktop/NetworkManager/openvpn"
 
-/* Do not change numbers, only add if needed!
-   See properties/nm-openvpn.c:connection_type_changed() for details
- */
-#define NM_OPENVPN_CONTYPE_INVALID      -1
-#define NM_OPENVPN_CONTYPE_TLS          0
-#define NM_OPENVPN_CONTYPE_STATIC_KEY   1
-#define NM_OPENVPN_CONTYPE_PASSWORD     2
-#define NM_OPENVPN_CONTYPE_PASSWORD_TLS 3
-
 #define NM_OPENVPN_KEY_CA "ca"
 #define NM_OPENVPN_KEY_CERT "cert"
 #define NM_OPENVPN_KEY_CIPHER "cipher"
 #define NM_OPENVPN_KEY_COMP_LZO "comp-lzo"
 #define NM_OPENVPN_KEY_CONNECTION_TYPE "connection-type"
-#define NM_OPENVPN_KEY_TAP_DEV "dev"
+#define NM_OPENVPN_KEY_TAP_DEV "tap-dev"
 #define NM_OPENVPN_KEY_KEY "key"
 #define NM_OPENVPN_KEY_LOCAL_IP "local-ip"
-#define NM_OPENVPN_KEY_PROTO_TCP "proto"
+#define NM_OPENVPN_KEY_PROTO_TCP "proto-tcp"
 #define NM_OPENVPN_KEY_PORT "port"
 #define NM_OPENVPN_KEY_REMOTE "remote"
 #define NM_OPENVPN_KEY_REMOTE_IP "remote-ip"
@@ -68,6 +59,11 @@
 #define NM_OPENVPN_KEY_PASSWORD "password"
 #define NM_OPENVPN_KEY_CERTPASS "cert-pass"
 #define NM_OPENVPN_KEY_NOSECRET "no-secret"
+
+#define NM_OPENVPN_CONTYPE_TLS          "tls"
+#define NM_OPENVPN_CONTYPE_STATIC_KEY   "static-key"
+#define NM_OPENVPN_CONTYPE_PASSWORD     "password"
+#define NM_OPENVPN_CONTYPE_PASSWORD_TLS "password-tls"
 
 typedef struct {
 	NMVPNPlugin parent;

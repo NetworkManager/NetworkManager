@@ -32,6 +32,8 @@
 #include <libgnomeui/libgnomeui.h>
 #include <gconf/gconf-client.h>
 #include <gnome-keyring.h>
+#include <nm-setting-vpn.h>
+#include <nm-setting-connection.h>
 
 #include "../src/nm-openvpn-service.h"
 #include "gnome-two-password-dialog.h"
@@ -129,6 +131,7 @@ save_vpn_password (PasswordsInfo *info, const char *keyring)
 	}
 }
 
+#define PROC_TYPE_TAG "Proc-Type: 4,ENCRYPTED"
 
 /** Checks if a key is encrypted
  * The key file is read and it is checked if it contains a line reading
@@ -140,27 +143,24 @@ save_vpn_password (PasswordsInfo *info, const char *keyring)
 static gboolean
 pem_is_encrypted (const char *filename)
 {
-
 	GIOChannel *pem_chan;
 	char       *str = NULL;
 	gboolean encrypted = FALSE;
 
 	pem_chan = g_io_channel_new_file (filename, "r", NULL);
-
-	if ( pem_chan == NULL ) {
-		// We don't know
+	if (!pem_chan)
 		return FALSE;
-	}
 
-	while ( ! encrypted && (g_io_channel_read_line (pem_chan, &str, NULL, NULL, NULL) != G_IO_STATUS_EOF) ) {
-		if ( strstr (str, "Proc-Type: 4,ENCRYPTED") == str ) {
-			// encrypted!
+	while (g_io_channel_read_line (pem_chan, &str, NULL, NULL, NULL) != G_IO_STATUS_EOF) {
+		if (strncmp (str, PROC_TYPE_TAG, strlen (PROC_TYPE_TAG)) == 0) {
 			encrypted = TRUE;
+			break;
 		}
-
 		g_free (str);
 	}
 
+	g_io_channel_shutdown (pem_chan, FALSE, NULL);
+	g_object_unref (pem_chan);
 	return encrypted;
 }
 
@@ -270,7 +270,12 @@ get_password_types (PasswordsInfo *info)
 		return FALSE;
 
 	for (iter = conf_list; iter; iter = iter->next) {
-		key = g_strconcat ((char *) iter->data, "/connection/type", NULL);
+		const char *path = (const char *) iter->data;
+
+		key = g_strdup_printf ("%s/%s/%s", 
+		                       path,
+		                       NM_SETTING_CONNECTION_SETTING_NAME,
+		                       NM_SETTING_CONNECTION_TYPE);
 		str = gconf_client_get_string (gconf_client, key, NULL);
 		g_free (key);
 
@@ -279,7 +284,10 @@ get_password_types (PasswordsInfo *info)
 			continue;
 		}
 
-		key = g_strconcat ((char *) iter->data, "/connection/id", NULL);
+		key = g_strdup_printf ("%s/%s/%s", 
+		                       path,
+		                       NM_SETTING_CONNECTION_SETTING_NAME,
+		                       NM_SETTING_CONNECTION_ID);
 		str = gconf_client_get_string (gconf_client, key, NULL);
 		g_free (key);
 
@@ -289,7 +297,7 @@ get_password_types (PasswordsInfo *info)
 		}
 
 		/* Woo, found the connection */
-		connection_path = g_strdup ((char *) iter->data);
+		connection_path = g_strdup (path);
 		break;
 	}
 
@@ -297,37 +305,32 @@ get_password_types (PasswordsInfo *info)
 	g_slist_free (conf_list);
 
 	if (connection_path) {
-		int connection_type;
+		const char *connection_type;
 
-		key = g_strconcat (connection_path, "/vpn-properties/connection-type", NULL);
-		connection_type = gconf_client_get_int (gconf_client, key, NULL);
+		key = g_strdup_printf ("%s/%s/%s", connection_path, NM_SETTING_VPN_SETTING_NAME,
+		                       NM_OPENVPN_KEY_CONNECTION_TYPE);
+		connection_type = gconf_client_get_string (gconf_client, key, NULL);
 		g_free (key);
-
-		switch (connection_type) {
-		case NM_OPENVPN_CONTYPE_PASSWORD_TLS:
-			info->need_password = TRUE;
-			/* Fall through */
-		case NM_OPENVPN_CONTYPE_TLS:
+		
+		if (   !strcmp (connection_type, NM_OPENVPN_CONTYPE_TLS)
+		    || !strcmp (connection_type, NM_OPENVPN_CONTYPE_PASSWORD_TLS)) {
 			success = TRUE;
 
-			key = g_strconcat (connection_path, "/vpn-properties/", NM_OPENVPN_KEY_KEY, NULL);
+			if (!strcmp (connection_type, NM_OPENVPN_CONTYPE_PASSWORD_TLS))
+				info->need_password = TRUE;
+
+			key = g_strdup_printf ("%s/%s/%s", connection_path, NM_SETTING_VPN_SETTING_NAME,
+			                       NM_OPENVPN_KEY_KEY);
 			str = gconf_client_get_string (gconf_client, key, NULL);
-			g_free (key);
-			if (str) {
+			if (str)
 				info->need_certpass = pem_is_encrypted (str);
-				g_free (str);
-			}
-			break;
-		case NM_OPENVPN_CONTYPE_STATIC_KEY:
+			g_free (str);
+			g_free (key);
+		} else if (!strcmp (connection_type, NM_OPENVPN_CONTYPE_STATIC_KEY)) {
 			success = TRUE;
-			break;
-		case NM_OPENVPN_CONTYPE_PASSWORD:
+		} else if (!strcmp (connection_type, NM_OPENVPN_CONTYPE_PASSWORD)) {
 			success = TRUE;
 			info->need_password = TRUE;
-			break;
-		default:
-			/* Invalid connection type */
-			break;
 		}
 
 		g_free (connection_path);
