@@ -684,6 +684,9 @@ nm_client_get_active_connections (NMClient *client)
 	if (priv->active_connections)
 		return handle_ptr_array_return (priv->active_connections);
 
+	if (!priv->manager_running)
+		return NULL;
+
 	if (!nm_object_get_property (NM_OBJECT (client),
 	                             "org.freedesktop.DBus.Properties",
 	                             "ActiveConnections",
