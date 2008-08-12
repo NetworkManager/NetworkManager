@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE glade-interface SYSTEM "glade-2.0.dtd">
-<!--*- mode: xml -*-->
+<!--Generated with glade3 3.4.4 on Tue Aug 12 07:11:36 2008 -->
 <glade-interface>
   <widget class="GtkWindow" id="pptp-widget">
     <property name="title" translatable="yes">window1</property>
@@ -32,9 +32,8 @@
                 <child>
                   <widget class="GtkTable" id="table2">
                     <property name="visible">True</property>
-                    <property name="n_rows">1</property>
                     <property name="n_columns">2</property>
-                    <property name="column_spacing">6</property>
+                    <property name="column_spacing">12</property>
                     <property name="row_spacing">6</property>
                     <child>
                       <widget class="GtkLabel" id="label23">
@@ -45,7 +44,7 @@
                         <property name="mnemonic_widget">gateway_entry</property>
                       </widget>
                       <packing>
-                        <property name="x_options">GTK_FILL</property>
+                        <property name="x_options">GTK_SHRINK | GTK_FILL</property>
                         <property name="y_options"></property>
                       </packing>
                     </child>
@@ -97,7 +96,7 @@
                     <property name="visible">True</property>
                     <property name="n_rows">2</property>
                     <property name="n_columns">2</property>
-                    <property name="column_spacing">6</property>
+                    <property name="column_spacing">12</property>
                     <property name="row_spacing">6</property>
                     <child>
                       <widget class="GtkLabel" id="label26">
@@ -106,18 +105,7 @@
                         <property name="label" translatable="yes">User name:</property>
                       </widget>
                       <packing>
-                        <property name="x_options">GTK_FILL</property>
-                        <property name="y_options"></property>
-                      </packing>
-                    </child>
-                    <child>
-                      <widget class="GtkEntry" id="user_entry">
-                        <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                      </widget>
-                      <packing>
-                        <property name="left_attach">1</property>
-                        <property name="right_attach">2</property>
+                        <property name="x_options">GTK_SHRINK | GTK_FILL</property>
                         <property name="y_options"></property>
                       </packing>
                     </child>
@@ -130,7 +118,7 @@
                       <packing>
                         <property name="top_attach">1</property>
                         <property name="bottom_attach">2</property>
-                        <property name="x_options">GTK_FILL</property>
+                        <property name="x_options">GTK_SHRINK | GTK_FILL</property>
                         <property name="y_options"></property>
                       </packing>
                     </child>
@@ -144,6 +132,17 @@
                         <property name="right_attach">2</property>
                         <property name="top_attach">1</property>
                         <property name="bottom_attach">2</property>
+                        <property name="y_options"></property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkEntry" id="user_entry">
+                        <property name="visible">True</property>
+                        <property name="can_focus">True</property>
+                      </widget>
+                      <packing>
+                        <property name="left_attach">1</property>
+                        <property name="right_attach">2</property>
                         <property name="y_options"></property>
                       </packing>
                     </child>
@@ -170,7 +169,6 @@
               <widget class="GtkButton" id="advanced_button">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
                 <property name="response_id">0</property>
                 <child>
                   <widget class="GtkHBox" id="hbox2">
@@ -229,8 +227,8 @@
         <child>
           <widget class="GtkVBox" id="PppPage">
             <property name="visible">True</property>
-            <property name="border_width">12</property>
-            <property name="spacing">16</property>
+            <property name="border_width">5</property>
+            <property name="spacing">18</property>
             <child>
               <widget class="GtkVBox" id="vbox2">
                 <property name="visible">True</property>
@@ -317,14 +315,16 @@
                     <child>
                       <widget class="GtkVBox" id="vbox6">
                         <property name="visible">True</property>
+                        <property name="spacing">6</property>
                         <child>
                           <widget class="GtkVBox" id="vbox7">
                             <property name="visible">True</property>
+                            <property name="spacing">6</property>
                             <child>
                               <widget class="GtkCheckButton" id="ppp_use_mppe">
                                 <property name="visible">True</property>
                                 <property name="can_focus">True</property>
-                                <property name="label" translatable="yes">Use Point-to-Point Encryption (MPPE)</property>
+                                <property name="label" translatable="yes">Use _Point-to-Point encryption (MPPE)</property>
                                 <property name="use_underline">True</property>
                                 <property name="response_id">0</property>
                                 <property name="draw_indicator">True</property>
@@ -341,18 +341,21 @@
                                 <child>
                                   <widget class="GtkVBox" id="vbox1">
                                     <property name="visible">True</property>
+                                    <property name="spacing">6</property>
                                     <child>
                                       <widget class="GtkHBox" id="hbox1">
                                         <property name="visible">True</property>
+                                        <property name="spacing">12</property>
                                         <child>
                                           <widget class="GtkLabel" id="ppp_mppe_security_label">
                                             <property name="visible">True</property>
                                             <property name="xalign">0</property>
-                                            <property name="label" translatable="yes">Security:</property>
+                                            <property name="label" translatable="yes">_Security:</property>
+                                            <property name="use_underline">True</property>
+                                            <property name="mnemonic_widget">ppp_mppe_security_combo</property>
                                           </widget>
                                           <packing>
                                             <property name="expand">False</property>
-                                            <property name="padding">6</property>
                                           </packing>
                                         </child>
                                         <child>
@@ -361,6 +364,7 @@
                                             <property name="items" translatable="yes">Default</property>
                                           </widget>
                                           <packing>
+                                            <property name="expand">False</property>
                                             <property name="position">1</property>
                                           </packing>
                                         </child>
@@ -370,7 +374,7 @@
                                       <widget class="GtkCheckButton" id="ppp_allow_stateful_mppe">
                                         <property name="visible">True</property>
                                         <property name="can_focus">True</property>
-                                        <property name="label" translatable="yes">Allow Stateful Encryption</property>
+                                        <property name="label" translatable="yes">Allow st_ateful encryption</property>
                                         <property name="use_underline">True</property>
                                         <property name="response_id">0</property>
                                         <property name="draw_indicator">True</property>
@@ -398,7 +402,7 @@
                           <widget class="GtkCheckButton" id="ppp_allow_bsdcomp">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="label" translatable="yes">Allow BSD data compression</property>
+                            <property name="label" translatable="yes">Allow _BSD data compression</property>
                             <property name="use_underline">True</property>
                             <property name="response_id">0</property>
                             <property name="draw_indicator">True</property>
@@ -413,7 +417,7 @@
                           <widget class="GtkCheckButton" id="ppp_allow_deflate">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="label" translatable="yes">Allow Deflate data compression</property>
+                            <property name="label" translatable="yes">Allow _Deflate data compression</property>
                             <property name="use_underline">True</property>
                             <property name="response_id">0</property>
                             <property name="draw_indicator">True</property>
@@ -428,7 +432,7 @@
                           <widget class="GtkCheckButton" id="ppp_usevj">
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
-                            <property name="label" translatable="yes">Use TCP header compression</property>
+                            <property name="label" translatable="yes">Use TCP _header compression</property>
                             <property name="use_underline">True</property>
                             <property name="response_id">0</property>
                             <property name="draw_indicator">True</property>
@@ -477,7 +481,7 @@
                       <widget class="GtkCheckButton" id="ppp_send_echo_packets">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="label" translatable="yes">Send PPP echo packets</property>
+                        <property name="label" translatable="yes">Send PPP _echo packets</property>
                         <property name="use_underline">True</property>
                         <property name="response_id">0</property>
                         <property name="draw_indicator">True</property>
@@ -507,8 +511,7 @@
               <widget class="GtkButton" id="cancel_button">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="label" translatable="yes">gtk-cancel</property>
+                <property name="label">gtk-cancel</property>
                 <property name="use_stock">True</property>
                 <property name="response_id">-6</property>
               </widget>
@@ -517,8 +520,7 @@
               <widget class="GtkButton" id="ok_button">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="label" translatable="yes">gtk-ok</property>
+                <property name="label">gtk-ok</property>
                 <property name="use_stock">True</property>
                 <property name="response_id">-5</property>
               </widget>
