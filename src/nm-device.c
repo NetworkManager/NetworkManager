@@ -1754,10 +1754,8 @@ nm_device_set_ip4_config (NMDevice *self, NMIP4Config *config, NMDeviceStateReas
 	priv->ip4_config = g_object_ref (config);
 
 	success = nm_system_device_set_from_ip4_config (ip_iface, config);
-	if (success) {
+	if (success)
 		nm_device_update_ip4_address (self);
-		nm_system_set_hostname (config);
-	}
 
 	g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_IP4_CONFIG);
 

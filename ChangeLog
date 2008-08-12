@@ -1,5 +1,31 @@
 2008-08-12  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device.c
+		- (nm_device_set_ip4_config): don't touch hostnames here; distros
+			that want to use DHCP hostnames should use dispatcher scripts
+			for that
+
+	* src/NetworkManagerSystem.h
+	  src/backends/NetworkManagerArch.c
+	  src/backends/NetworkManagerDebian.c
+	  src/backends/NetworkManagerFrugalware.c
+	  src/backends/NetworkManagerGeneric.c
+	  src/backends/NetworkManagerGeneric.h
+	  src/backends/NetworkManagerGentoo.c
+	  src/backends/NetworkManagerMandriva.c
+	  src/backends/NetworkManagerPaldo.c
+	  src/backends/NetworkManagerRedHat.c
+	  src/backends/NetworkManagerSlackware.c
+	  src/backends/NetworkManagerSuSE.c
+		- Remove nm_system_set_hostname(), no longer used
+	  
+	* src/backends/Makefile.am
+	  src/backends/shvar.c
+	  src/backends/shvar.h
+		- Remove shvar.*; no longer used
+
+2008-08-12  Dan Williams  <dcbw@redhat.com>
+
 	Revert most of the 'hostname' patch.  Too much stuff still breaks when
 	hostname is updated at runtime.  Distros or users who want hostname updates
 	can use dispatcher scripts to update the hostname if they need it.

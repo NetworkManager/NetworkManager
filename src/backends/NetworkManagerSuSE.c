@@ -28,23 +28,13 @@
 #endif
 
 #include <stdio.h>
-#include <sys/types.h>
-#include <signal.h>
-#include <sys/stat.h>
-#include <arpa/inet.h>
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
-#include <netdb.h>
-#include <errno.h>
 
 #include "NetworkManagerGeneric.h"
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"
-#include "nm-device.h"
-#include "NetworkManagerPolicy.h"
 #include "nm-utils.h"
-#include "shvar.h"
 
 /*
  * nm_system_enable_loopback
@@ -70,64 +60,3 @@ void nm_system_update_dns (void)
 	nm_spawn_process ("/usr/sbin/nscd -i hosts");
 }
 
-/*
- * nm_system_set_hostname
- *
- * set the hostname
- *
- */
-void nm_system_set_hostname (NMIP4Config *config)
-{
-	char *filename, *h_name = NULL, *buf;
-	shvarFile *file;
-
-	g_return_if_fail (config != NULL);
-
-	filename = g_strdup_printf (SYSCONFDIR"/sysconfig/network/dhcp");
-	file = svNewFile (filename);
-	if (!file)
-		goto out_gfree;
-
-	buf = svGetValue (file, "DHCLIENT_SET_HOSTNAME");
-	if (!buf)
-		goto out_close;
-
-	if (!strcmp (buf, "yes")) 
-	{
-		const char *hostname;
-
-		hostname = nm_ip4_config_get_hostname (config);
-		if (!hostname)
-		{
-			struct in_addr temp_addr;
-			struct hostent *host;
-			const NMSettingIP4Address *ip_address;
-
-			/* try to get hostname via dns */
-			ip_address = nm_ip4_config_get_address (config, 0);
-			temp_addr.s_addr = ip_address->address;
-			host = gethostbyaddr ((char *) &temp_addr, sizeof (temp_addr), AF_INET);
-			if (host)
-			{
-				h_name = g_strdup (host->h_name);
-				hostname = strtok (h_name, ".");
-			}
-			else
-				nm_warning ("nm_system_set_hostname(): gethostbyaddr failed, h_errno = %d", h_errno);
-		}
-
-		if (hostname)
-		{
-			nm_info ("Setting hostname to '%s'", hostname);
-			if (sethostname (hostname, strlen (hostname)) < 0)
-				nm_warning ("Could not set hostname.");
-		}
-	}
-
-	g_free (h_name);
-	free (buf);
-out_close:
-	svCloseFile (file);
-out_gfree:
-	g_free (filename);
-}

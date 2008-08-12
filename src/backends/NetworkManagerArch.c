@@ -36,20 +36,12 @@
 #endif
 
 #include <stdio.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <signal.h>
-#include <arpa/inet.h>
-#include <glib/gprintf.h>
-#include <glib/gfileutils.h>
 #include <string.h>
 #include <stdlib.h>
 
 #include "NetworkManagerGeneric.h"
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"
-#include "nm-device.h"
-#include "nm-utils.h"
 
 /*
  * nm_system_enable_loopback
@@ -59,7 +51,7 @@
  */
 void nm_system_enable_loopback (void)
 {
-	nm_system_device_set_up_down_with_iface ("lo", TRUE);
+	nm_generic_enable_loopback ();
 }
 
 /*
@@ -73,18 +65,6 @@ void nm_system_update_dns (void)
 {
 	/* Check if the daemon was already running - do not start a new instance */
 	if (g_file_test("/var/run/daemons/nscd", G_FILE_TEST_EXISTS))
-	{
 		nm_spawn_process ("/etc/rc.d/nscd restart");
-	}
-}
-
-/*
- * nm_system_set_hostname
- *
- * set the hostname
- *
- */
-void nm_system_set_hostname (NMIP4Config *config)
-{
 }
 

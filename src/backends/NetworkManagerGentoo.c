@@ -28,18 +28,12 @@
 #endif
 
 #include <stdio.h>
-#include <sys/types.h>
-#include <signal.h>
 #include <string.h>
 #include <stdlib.h>
-#include <arpa/inet.h>
 
 #include "NetworkManagerGeneric.h"
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"
-#include "nm-device.h"
-#include "nm-utils.h"
-#include "shvar.h"
 
 /*
  * nm_system_enable_loopback
@@ -71,12 +65,3 @@ void nm_system_update_dns (void)
  #endif
 }
 
-/*
- * nm_system_set_hostname
- *
- * set the hostname
- *
- */
-void nm_system_set_hostname (NMIP4Config *config)
-{
-}
