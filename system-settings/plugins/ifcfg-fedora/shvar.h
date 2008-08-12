@@ -42,7 +42,6 @@ struct _shvarFile {
 	int		fd;		/* read-only */
 	char		*arena;		/* ignore */
 	GList		*lineList;	/* read-only */
-	GList		*freeList;	/* ignore */
 	GList		*current;	/* set implicitly or explicitly,
 					   points to element of lineList */
 	shvarFile	*parent;	/* set explicitly */

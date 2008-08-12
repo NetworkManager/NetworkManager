@@ -1,3 +1,9 @@
+2008-08-12  Dan Williams  <dcbw@redhat.com>
+
+	* system-settings/plugins/ifcfg-fedora/shvar.c
+	  system-settings/plugins/ifcfg-fedora/shvar.c
+		- Fix double-free caused by svSetValue() followed by svCloseFile()
+
 2008-08-12  Tambet Ingo  <tambet@gmail.com>
 
 	* Makefile.am: Fix distcheck.
