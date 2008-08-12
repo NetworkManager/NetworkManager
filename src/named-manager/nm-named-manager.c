@@ -269,7 +269,7 @@ update_resolv_conf (const char *iface,
 	}
 
 	if (fprintf (f, "%s%s%s\n",
-	             domain ? domain : "",
+	             domain_str ? domain_str : "",
 	             searches_str ? searches_str : "",
 	             nameservers_str ? nameservers_str : "") < 0) {
 		g_set_error (error,
