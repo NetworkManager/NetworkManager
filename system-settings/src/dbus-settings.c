@@ -649,7 +649,7 @@ impl_settings_set_hostname (NMSysconfigSettings *self,
 	guint32 count = 0;
 
 	/* do some minimal hostname validation:
-	 * 1) must have at least two '.'
+	 * 1) must have at least one '.'
 	 * 2) must not start with '.'
 	 * 3) must not have two '.' in succession
 	 */
@@ -663,7 +663,7 @@ impl_settings_set_hostname (NMSysconfigSettings *self,
 		}
 	} while (*p++);
 
-	if (count < 2 || malformed || (*hostname == '.')) {
+	if (count < 1 || malformed || (*hostname == '.')) {
 		error = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
 		                     NM_SYSCONFIG_SETTINGS_ERROR_INVALID_HOSTNAME,
 		                     "%s",
