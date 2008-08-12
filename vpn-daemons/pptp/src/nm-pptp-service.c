@@ -458,8 +458,8 @@ validate_one_property (gpointer key, gpointer value, gpointer user_data)
 			g_set_error (error,
 			             NM_VPN_PLUGIN_ERROR,
 			             NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
-			             "unhandled property '%s' type %d",
-			             (const char *) key, prop.type);
+			             "unhandled property '%s' type %s",
+			             (const char *) key, g_type_name (prop.type));
 			break;
 		}
 	}
