@@ -1,3 +1,21 @@
+2008-08-12  Dan Williams  <dcbw@redhat.com>
+
+	* properties/auth-helpers.c
+	  properties/nm-openvpn-dialog.glade
+		- Handle shared -> static change
+		- Hook up the Static Key "Local IP Address" entry
+
+	* properties/import-export.c
+		- Handle shared -> static change
+
+	* src/nm-openvpn-service.c
+	  src/nm-openvpn-service.h
+		- (nm_openvpn_start_openvpn_binary): always dup strings when adding to
+			the argument array so that freeing the array later actually works
+		- (validate_one_property): validate addresses too
+		- (nm_openvpn_properties_validate): fix determination of error/success
+		- (real_connect): fix stray ; causing all connection attempts to fail
+
 2008-08-11  Dan Williams  <dcbw@redhat.com>
 
 	Update to match NM svn3924 vpn setting changes; verify options better;

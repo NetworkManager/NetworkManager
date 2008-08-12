@@ -261,10 +261,10 @@ do_import (const char *path, char **lines, GError **error)
 		if (handle_path_item (*line, KEY_TAG, NM_OPENVPN_KEY_KEY, s_vpn->data, NULL))
 			continue;
 
-		if (handle_path_item (*line, SECRET_TAG, NM_OPENVPN_KEY_SHARED_KEY,
+		if (handle_path_item (*line, SECRET_TAG, NM_OPENVPN_KEY_STATIC_KEY,
 		                      s_vpn->data, &leftover)) {
 			handle_direction ("secret",
-			                  NM_OPENVPN_KEY_SHARED_KEY_DIRECTION,
+			                  NM_OPENVPN_KEY_STATIC_KEY_DIRECTION,
 			                  leftover,
 			                  s_vpn->data);
 			continue;
@@ -315,7 +315,7 @@ do_import (const char *path, char **lines, GError **error)
 			have_pass = TRUE;
 	}
 
-	if (g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_SHARED_KEY))
+	if (g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_STATIC_KEY))
 		have_sk = TRUE;
 
 	if (!have_client && !have_sk) {
