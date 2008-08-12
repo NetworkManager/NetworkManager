@@ -7,6 +7,13 @@
 #include "nm-dbus-glib-types.h"
 
 
+/**
+ * nm_settings_error_quark:
+ *
+ * Setting error quark.
+ *
+ * Returns: the setting error quark
+ **/
 GQuark
 nm_settings_error_quark (void)
 {
@@ -80,6 +87,14 @@ nm_settings_class_init (NMSettingsClass *settings_class)
 	settings_class->list_connections = NULL;
 
 	/* signals */
+
+	/**
+	 * NMSettings::new-connection:
+	 * @setting: the setting that received the signal
+	 * @connection: the new #NMExportedConnection
+	 *
+	 * Notifies that a new exported connection is added.
+	 **/
 	settings_signals[S_NEW_CONNECTION] =
 		g_signal_new ("new-connection",
 			      G_OBJECT_CLASS_TYPE (object_class),
@@ -94,6 +109,14 @@ nm_settings_class_init (NMSettingsClass *settings_class)
 					 &dbus_glib_nm_settings_object_info);
 }
 
+/**
+ * nm_settings_list_connections:
+ * @settings: 
+ *
+ * Lists all the available connections.
+ *
+ * Returns: the #GSList containing #NMExportedConnection<!-- -->s
+ **/
 GSList *
 nm_settings_list_connections (NMSettings *settings)
 {

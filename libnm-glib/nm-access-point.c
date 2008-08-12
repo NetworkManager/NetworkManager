@@ -53,6 +53,15 @@ enum {
 #define DBUS_PROP_MAX_BITRATE "MaxBitrate"
 #define DBUS_PROP_STRENGTH "Strength"
 
+/**
+ * nm_access_point_new:
+ * @connection: the #DBusGConnection
+ * @path: the DBusobject path of the access point
+ *
+ * Creates a new #NMAccessPoint.
+ *
+ * Returns: a new access point
+ **/
 GObject *
 nm_access_point_new (DBusGConnection *connection, const char *path)
 {
@@ -65,6 +74,14 @@ nm_access_point_new (DBusGConnection *connection, const char *path)
 								    NULL);
 }
 
+/**
+ * nm_access_point_get_flags:
+ * @ap: a #NMAccessPoint
+ *
+ * Gets the flags of the access point
+ *
+ * Returns: the flags
+ **/
 guint32
 nm_access_point_get_flags (NMAccessPoint *ap)
 {
@@ -82,6 +99,14 @@ nm_access_point_get_flags (NMAccessPoint *ap)
 	return priv->flags;
 }
 
+/**
+ * nm_access_point_get_wpa_flags:
+ * @ap: a #NMAccessPoint
+ *
+ * Gets the WPA flags of the access point.
+ *
+ * Returns: the WPA flags
+ **/
 guint32
 nm_access_point_get_wpa_flags (NMAccessPoint *ap)
 {
@@ -99,6 +124,14 @@ nm_access_point_get_wpa_flags (NMAccessPoint *ap)
 	return priv->wpa_flags;
 }
 
+/**
+ * nm_access_point_get_rsn_flags:
+ * @ap: a #NMAccessPoint
+ *
+ * Gets the RSN flags of the access point.
+ *
+ * Returns: the RSN flags
+ **/
 guint32
 nm_access_point_get_rsn_flags (NMAccessPoint *ap)
 {
@@ -116,6 +149,15 @@ nm_access_point_get_rsn_flags (NMAccessPoint *ap)
 	return priv->rsn_flags;
 }
 
+/**
+ * nm_access_point_get_ssid:
+ * @ap: a #NMAccessPoint
+ *
+ * Gets the SSID of the access point.
+ *
+ * Returns: the #GByteArray containing the SSID. This is the internal copy used by the
+ * access point, and must not be modified.
+ **/
 const GByteArray *
 nm_access_point_get_ssid (NMAccessPoint *ap)
 {
@@ -133,6 +175,14 @@ nm_access_point_get_ssid (NMAccessPoint *ap)
 	return priv->ssid;
 }
 
+/**
+ * nm_access_point_get_frequency:
+ * @ap: a #NMAccessPoint
+ *
+ * Gets the frequency of the access point.
+ *
+ * Returns: the frequency
+ **/
 guint32
 nm_access_point_get_frequency (NMAccessPoint *ap)
 {
@@ -150,6 +200,15 @@ nm_access_point_get_frequency (NMAccessPoint *ap)
 	return priv->frequency;
 }
 
+/**
+ * nm_access_point_get_hw_address:
+ * @ap: a #NMAccessPoint
+ *
+ * Gets the hardware (MAC) address of the access point.
+ *
+ * Returns: the hardware address of the access point. This is the internal string used by the
+ * access point and must not be modified.
+ **/
 const char *
 nm_access_point_get_hw_address (NMAccessPoint *ap)
 {
@@ -167,6 +226,14 @@ nm_access_point_get_hw_address (NMAccessPoint *ap)
 	return priv->hw_address;
 }
 
+/**
+ * nm_access_point_get_mode:
+ * @ap: a #NMAccessPoint
+ *
+ * Gets the mode of the access point.
+ *
+ * Returns: the mode
+ **/
 NM80211Mode
 nm_access_point_get_mode (NMAccessPoint *ap)
 {
@@ -184,6 +251,14 @@ nm_access_point_get_mode (NMAccessPoint *ap)
 	return priv->mode;
 }
 
+/**
+ * nm_access_point_get_max_bitrate:
+ * @ap: a #NMAccessPoint
+ *
+ * Gets the maximum bit rate of the access point.
+ *
+ * Returns: the maximum bit rate
+ **/
 guint32
 nm_access_point_get_max_bitrate (NMAccessPoint *ap)
 {
@@ -201,6 +276,14 @@ nm_access_point_get_max_bitrate (NMAccessPoint *ap)
 	return priv->max_bitrate;
 }
 
+/**
+ * nm_access_point_get_strength:
+ * @ap: 
+ *
+ * Gets the current signal strength of the access point.
+ *
+ * Returns: the signal strength
+ **/
 guint8
 nm_access_point_get_strength (NMAccessPoint *ap)
 {
@@ -371,6 +454,12 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 	object_class->finalize = finalize;
 
 	/* properties */
+
+	/**
+	 * NMAccessPoint:flags:
+	 *
+	 * The flags of the access point.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_FLAGS,
 		 g_param_spec_uint (NM_ACCESS_POINT_FLAGS,
@@ -381,6 +470,11 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 		                    NM_802_11_AP_FLAGS_NONE,
 		                    G_PARAM_READABLE));
 
+	/**
+	 * NMAccessPoint:wpa-flags:
+	 *
+	 * The WPA flags of the access point.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_WPA_FLAGS,
 		 g_param_spec_uint (NM_ACCESS_POINT_WPA_FLAGS,
@@ -389,6 +483,11 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 		                    0, G_MAXUINT32, 0,
 		                    G_PARAM_READABLE));
 
+	/**
+	 * NMAccessPoint:rsn-flags:
+	 *
+	 * The RSN flags of the access point.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_RSN_FLAGS,
 		 g_param_spec_uint (NM_ACCESS_POINT_RSN_FLAGS,
@@ -397,6 +496,11 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 		                    0, G_MAXUINT32, 0,
 		                    G_PARAM_READABLE));
 
+	/**
+	 * NMAccessPoint:ssid:
+	 *
+	 * The SSID of the access point.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_SSID,
 		 g_param_spec_boxed (NM_ACCESS_POINT_SSID,
@@ -405,6 +509,11 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 						 NM_TYPE_SSID,
 						 G_PARAM_READABLE));
 
+	/**
+	 * NMAccessPoint:frequency:
+	 *
+	 * The frequency of the access point.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_FREQUENCY,
 		 g_param_spec_uint (NM_ACCESS_POINT_FREQUENCY,
@@ -413,6 +522,11 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 						0, 10000, 0,
 						G_PARAM_READABLE));
 
+	/**
+	 * NMAccessPoint:hw-address:
+	 *
+	 * The hardware address of the access point.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,
 		 g_param_spec_string (NM_ACCESS_POINT_HW_ADDRESS,
@@ -421,6 +535,11 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 						  NULL,
 						  G_PARAM_READABLE));
 	
+	/**
+	 * NMAccessPoint:mode:
+	 *
+	 * The mode of the access point.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_MODE,
 		 g_param_spec_uint (NM_ACCESS_POINT_MODE,
@@ -429,6 +548,11 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 					    NM_802_11_MODE_ADHOC, NM_802_11_MODE_INFRA, NM_802_11_MODE_INFRA,
 					    G_PARAM_READABLE));
 
+	/**
+	 * NMAccessPoint:max-bitrate:
+	 *
+	 * The maximum bit rate of the access point.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_MAX_BITRATE,
 		 g_param_spec_uint (NM_ACCESS_POINT_MAX_BITRATE,
@@ -437,6 +561,11 @@ nm_access_point_class_init (NMAccessPointClass *ap_class)
 						0, G_MAXUINT32, 0,
 						G_PARAM_READABLE));
 
+	/**
+	 * NMAccessPoint:strength:
+	 *
+	 * The current signal strength of the access point.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_STRENGTH,
 		 g_param_spec_uchar (NM_ACCESS_POINT_STRENGTH,

@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
+               "http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+<book id="index" xmlns:xi="http://www.w3.org/2003/XInclude">
+  <bookinfo>
+    <title>libnm-glib Reference Manual</title>
+    <releaseinfo>
+      for libnm-glib [VERSION]
+      The latest version of this documentation can be found on-line at
+      <ulink role="online-location" url="http://[SERVER]/libnm-glib/index.html">http://[SERVER]/libnm-glib/</ulink>.
+    </releaseinfo>
+  </bookinfo>
+
+  <chapter>
+    <title>[Insert title here]</title>
+    <xi:include href="xml/nm-access-point.xml"/>
+    <xi:include href="xml/nm-cdma-device.xml"/>
+    <xi:include href="xml/nm-client.xml"/>
+    <xi:include href="xml/nm-gsm-device.xml"/>
+    <xi:include href="xml/nm-device.xml"/>
+    <xi:include href="xml/nm-ip4-config.xml"/>
+    <xi:include href="xml/nm-object.xml"/>
+    <xi:include href="xml/nm-settings.xml"/>
+    <xi:include href="xml/nm-vpn-connection.xml"/>
+    <xi:include href="xml/nm-vpn-plugin.xml"/>
+    <xi:include href="xml/nm-dbus-settings-system.xml"/>
+    <xi:include href="xml/nm-active-connection.xml"/>
+    <xi:include href="xml/nm-device-ethernet.xml"/>
+    <xi:include href="xml/nm-device-wifi.xml"/>
+    <xi:include href="xml/nm-dbus-connection.xml"/>
+    <xi:include href="xml/nm-serial-device.xml"/>
+    <xi:include href="xml/nm-dbus-settings.xml"/>
+    <xi:include href="xml/nm-dhcp4-config.xml"/>
+    <xi:include href="xml/nm-vpn-plugin-ui-interface.xml"/>
+    <xi:include href="xml/libnm_glib.xml"/>
+    <xi:include href="xml/nm-types.xml"/>
+  </chapter>
+</book>

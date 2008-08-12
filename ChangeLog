@@ -1,5 +1,9 @@
 2008-08-12  Tambet Ingo  <tambet@gmail.com>
 
+	* libnm-glib/*.c. Document some more.
+
+2008-08-12  Tambet Ingo  <tambet@gmail.com>
+
 	Start documenting libnm-glib public API using gtk-doc.
 
 	* libnm-glib/nm-serial-device.c: 

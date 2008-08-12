@@ -139,6 +139,12 @@ nm_dhcp4_config_class_init (NMDHCP4ConfigClass *config_class)
 	object_class->finalize = finalize;
 
 	/* properties */
+
+	/**
+	 * NMDHCP4Config:options:
+	 *
+	 * The #GHashTable containing options of the configuration.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_OPTIONS,
 		 g_param_spec_boxed (NM_DHCP4_CONFIG_OPTIONS,
@@ -148,6 +154,15 @@ nm_dhcp4_config_class_init (NMDHCP4ConfigClass *config_class)
 						       G_PARAM_READABLE));
 }
 
+/**
+ * nm_dhcp4_config_new:
+ * @connection: the #DBusGConnection
+ * @object_path: the DBus object path of the device
+ *
+ * Creates a new #NMDHCP4Config.
+ *
+ * Returns: a new configuration
+ **/
 GObject *
 nm_dhcp4_config_new (DBusGConnection *connection, const char *object_path)
 {
@@ -157,6 +172,15 @@ nm_dhcp4_config_new (DBusGConnection *connection, const char *object_path)
 									 NULL);
 }
 
+/**
+ * nm_dhcp4_config_get_options:
+ * @self: a #NMDHCP4Config
+ *
+ * Gets all the options contained in the configuration.
+ *
+ * Returns: the #GHashTable containing strings for keys and values.
+ * This is the internal copy used by the configuration, and must not be modified.
+ **/
 GHashTable *
 nm_dhcp4_config_get_options (NMDHCP4Config *self)
 {
@@ -179,6 +203,16 @@ out:
 	return priv->options;
 }
 
+/**
+ * nm_dhcp4_config_get_one_option:
+ * @self: a #NMDHCP4Config
+ * @option: the option to retrieve
+ *
+ * Gets one option by option name.
+ *
+ * Returns: the configuration option's value. This is the internal string used by the
+ * configuration, and must not be modified.
+ **/
 const char *
 nm_dhcp4_config_get_one_option (NMDHCP4Config *self, const char *option)
 {

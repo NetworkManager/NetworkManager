@@ -50,6 +50,15 @@ enum {
 #define DBUS_PROP_STATE "State"
 #define DBUS_PROP_DEFAULT "Default"
 
+/**
+ * nm_active_connection_new:
+ * @connection: the #DBusGConnection
+ * @path: the DBus object path of the device
+ *
+ * Creates a new #NMActiveConnection.
+ *
+ * Returns: a new active connection
+ **/
 GObject *
 nm_active_connection_new (DBusGConnection *connection, const char *path)
 {
@@ -73,6 +82,15 @@ get_scope_for_service_name (const char *service_name)
 	return NM_CONNECTION_SCOPE_UNKNOWN;
 }
 
+/**
+ * nm_active_connection_get_service_name:
+ * @connection: a #NMActiveConnection
+ *
+ * Gets the service name of the active connection.
+ *
+ * Returns: the service name. This is the internal string used by the
+ * connection, and must not be modified.
+ **/
 const char *
 nm_active_connection_get_service_name (NMActiveConnection *connection)
 {
@@ -91,6 +109,14 @@ nm_active_connection_get_service_name (NMActiveConnection *connection)
 	return priv->service_name;
 }
 
+/**
+ * nm_active_connection_get_scope:
+ * @connection: a #NMActiveConnection
+ *
+ * Gets the scope of the active connection.
+ *
+ * Returns: the connection's scope
+ **/
 NMConnectionScope
 nm_active_connection_get_scope (NMActiveConnection *connection)
 {
@@ -101,6 +127,15 @@ nm_active_connection_get_scope (NMActiveConnection *connection)
 	return NM_ACTIVE_CONNECTION_GET_PRIVATE (connection)->scope;
 }
 
+/**
+ * nm_active_connection_get_connection:
+ * @connection: a #NMActiveConnection
+ *
+ * Gets the #NMConnection<!-- -->'s DBus object path.
+ *
+ * Returns: the object path of the #NMConnection inside of #NMActiveConnection.
+ * This is the internal string used by the connection, and must not be modified.
+ **/
 const char *
 nm_active_connection_get_connection (NMActiveConnection *connection)
 {
@@ -118,6 +153,15 @@ nm_active_connection_get_connection (NMActiveConnection *connection)
 	return priv->connection;
 }
 
+/**
+ * nm_active_connection_get_specific_object:
+ * @connection: a #NMActiveConnection
+ *
+ * Gets the "specific object" used at the activation.
+ *
+ * Returns: the specific object's DBus path. This is the internal string used by the
+ * connection, and must not be modified.
+ **/
 const char *
 nm_active_connection_get_specific_object (NMActiveConnection *connection)
 {
@@ -135,6 +179,15 @@ nm_active_connection_get_specific_object (NMActiveConnection *connection)
 	return priv->specific_object;
 }
 
+/**
+ * nm_active_connection_get_devices:
+ * @connection: a #NMActiveConnection
+ *
+ * Gets the #NMDevice<!-- -->s used for the active connections.
+ *
+ * Returns: the #GPtrArray containing #NMDevice<!-- -->s.
+ * This is the internal copy used by the connection, and must not be modified.
+ **/
 const GPtrArray *
 nm_active_connection_get_devices (NMActiveConnection *connection)
 {
@@ -160,6 +213,14 @@ nm_active_connection_get_devices (NMActiveConnection *connection)
 	return handle_ptr_array_return (priv->devices);
 }
 
+/**
+ * nm_active_connection_get_state:
+ * @connection: a #NMActiveConnection
+ *
+ * Gets the active connection's state.
+ *
+ * Returns: the state
+ **/
 NMActiveConnectionState
 nm_active_connection_get_state (NMActiveConnection *connection)
 {
@@ -177,6 +238,15 @@ nm_active_connection_get_state (NMActiveConnection *connection)
 	return priv->state;
 }
 
+/**
+ * nm_active_connection_get_default:
+ * @connection: a #NMActiveConnection
+ *
+ * Whether the active connection is the default one (that is, is used for the default route
+ * and DNS information).
+ *
+ * Returns: %TRUE if the active connection is the default one
+ **/
 gboolean
 nm_active_connection_get_default (NMActiveConnection *connection)
 {
@@ -350,6 +420,12 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 	object_class->finalize = finalize;
 
 	/* properties */
+
+	/**
+	 * NMActiveConnection:service-name:
+	 *
+	 * The service name of the active connection.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_SERVICE_NAME,
 		 g_param_spec_string (NM_ACTIVE_CONNECTION_SERVICE_NAME,
@@ -358,6 +434,11 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 						  NULL,
 						  G_PARAM_READABLE));
 
+	/**
+	 * NMActiveConnection:connection:
+	 *
+	 * The connection's path of the active connection.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_CONNECTION,
 		 g_param_spec_string (NM_ACTIVE_CONNECTION_CONNECTION,
@@ -366,6 +447,11 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 						      NULL,
 						      G_PARAM_READABLE));
 
+	/**
+	 * NMActiveConnection:specific-object:
+	 *
+	 * The specific object's path of the active connection.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_SPECIFIC_OBJECT,
 		 g_param_spec_string (NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT,
@@ -374,6 +460,11 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 						      NULL,
 						      G_PARAM_READABLE));
 
+	/**
+	 * NMActiveConnection:device:
+	 *
+	 * The devices (#NMDevice) of the active connection.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_DEVICES,
 		 g_param_spec_boxed (NM_ACTIVE_CONNECTION_DEVICES,
@@ -382,6 +473,11 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 						       NM_TYPE_OBJECT_ARRAY,
 						       G_PARAM_READABLE));
 
+	/**
+	 * NMActiveConnection:state:
+	 *
+	 * The state of the active connection.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_STATE,
 		 g_param_spec_uint (NM_ACTIVE_CONNECTION_STATE,
@@ -392,6 +488,11 @@ nm_active_connection_class_init (NMActiveConnectionClass *ap_class)
 							  NM_ACTIVE_CONNECTION_STATE_UNKNOWN,
 							  G_PARAM_READABLE));
 
+	/**
+	 * NMActiveConnection:default:
+	 *
+	 * Whether the active connection is the default one.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_DEFAULT,
 		 g_param_spec_boolean (NM_ACTIVE_CONNECTION_DEFAULT,
