@@ -44,8 +44,10 @@
 #include "plugin.h"
 #include "nm-system-config-interface.h"
 #include "nm-ifcfg-connection.h"
+#include "shvar.h"
 
 #define IFCFG_DIR SYSCONFDIR"/sysconfig/network-scripts/"
+#define NETWORK_FILE SYSCONFDIR"/sysconfig/network"
 
 static void system_config_interface_init (NMSystemConfigInterface *system_config_interface_class);
 
@@ -73,9 +75,13 @@ typedef struct {
 	NMSystemConfigHalManager *hal_mgr;
 
 	GHashTable *connections;
+	char *hostname;
 
-	GFileMonitor *monitor;
-	guint monitor_id;
+	GFileMonitor *ifcfg_monitor;
+	guint ifcfg_monitor_id;
+
+	GFileMonitor *network_monitor;
+	guint network_monitor_id;
 } SCPluginIfcfgPrivate;
 
 
@@ -417,21 +423,119 @@ dir_changed (GFileMonitor *monitor,
 }
 
 static void
+read_hostname (SCPluginIfcfg *plugin, gboolean notify)
+{
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	shvarFile *network;
+	char *new_hostname;
+	gboolean changed = FALSE;
+
+	network = svNewFile (NETWORK_FILE);
+	if (!network)
+		return;
+
+	new_hostname = svGetValue (network, "HOSTNAME");
+	if (new_hostname && strlen (new_hostname)) {
+		g_free (priv->hostname);
+		priv->hostname = new_hostname;
+		changed = TRUE;
+	} else
+		g_free (new_hostname);
+	svCloseFile (network);
+
+	if (changed) {
+		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "system hostname '%s'.", priv->hostname);
+		if (notify)
+			g_object_notify (G_OBJECT (plugin), NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
+	}
+}
+
+static gboolean
+write_hostname (SCPluginIfcfg *plugin, const char *hostname, GError **error)
+{
+	shvarFile *network;
+	gboolean success = FALSE;
+
+	network = svNewFile (NETWORK_FILE);
+	if (!network) {
+		/* May not be created; try to create it */
+		network = svCreateFile (NETWORK_FILE);
+		if (!network)
+			return FALSE;
+	}
+
+	svSetValue (network, "HOSTNAME", hostname);
+	if (svWriteFile (network, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH) == 0)
+		success = TRUE;
+
+	svCloseFile (network);
+	return success;
+}
+
+static void
+network_changed (GFileMonitor *monitor,
+		         GFile *file,
+		         GFile *other_file,
+		         GFileMonitorEvent event_type,
+		         gpointer user_data)
+{
+	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (user_data);
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+
+	switch (event_type) {
+	case G_FILE_MONITOR_EVENT_DELETED:
+		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "system hostname cleared.");
+		g_free (priv->hostname);
+		priv->hostname = NULL;
+		g_object_notify (G_OBJECT (plugin), NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
+		break;
+	case G_FILE_MONITOR_EVENT_CREATED:
+	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
+		read_hostname (plugin, TRUE);
+		break;
+	default:
+		break;
+	}
+}
+
+static void
 setup_monitoring (SCPluginIfcfg *plugin)
 {
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
 	GFile *file;
 	GFileMonitor *monitor;
+	GError *error = NULL;
 
 	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
 
+	/* monitor the ifcfg file directory */
 	file = g_file_new_for_path (IFCFG_DIR);
-	monitor = g_file_monitor_directory (file, G_FILE_MONITOR_NONE, NULL, NULL);
+	monitor = g_file_monitor_directory (file, G_FILE_MONITOR_NONE, NULL, &error);
 	g_object_unref (file);
 
 	if (monitor) {
-		priv->monitor_id = g_signal_connect (monitor, "changed", G_CALLBACK (dir_changed), plugin);
-		priv->monitor = monitor;
+		priv->ifcfg_monitor_id = g_signal_connect (monitor, "changed", G_CALLBACK (dir_changed), plugin);
+		priv->ifcfg_monitor = monitor;
+	} else {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "unable to monitor %s for changes: (%d) %s.",
+		             IFCFG_DIR, error->code, error->message);
+		g_error_free (error);
+		error = NULL;
+	}
+
+	/* monitor the 'network' file */
+	file = g_file_new_for_path (NETWORK_FILE);
+	monitor = g_file_monitor_file (file, G_FILE_MONITOR_NONE, NULL, &error);
+	g_object_unref (file);
+
+	if (monitor) {
+		priv->network_monitor_id = g_signal_connect (monitor, "changed", G_CALLBACK (network_changed), plugin);
+		priv->network_monitor = monitor;
+	} else {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "unable to monitor %s for changes: (%d) %s.",
+		             NETWORK_FILE, error->code, error->message);
+		g_error_free (error);
+		error = NULL;
 	}
 }
 
@@ -462,6 +566,12 @@ get_connections (NMSystemConfigInterface *config)
 	return list;
 }
 
+static gboolean
+set_hostname (NMSystemConfigInterface *config, const char *hostname, GError **error)
+{
+	return write_hostname (SC_PLUGIN_IFCFG (config), hostname, error);
+}
+
 static void
 init (NMSystemConfigInterface *config, NMSystemConfigHalManager *hal_manager)
 {
@@ -483,6 +593,8 @@ sc_plugin_ifcfg_init (SCPluginIfcfg *plugin)
 		              error->message ? error->message : "(unknown)");
 		g_error_free (error);
 	}
+
+	read_hostname (plugin, FALSE);
 }
 
 static void
@@ -499,12 +611,22 @@ dispose (GObject *object)
 	if (priv->connections)
 		g_hash_table_destroy (priv->connections);
 
-	if (priv->monitor) {
-		if (priv->monitor_id)
-			g_signal_handler_disconnect (priv->monitor, priv->monitor_id);
+	g_free (priv->hostname);
 
-		g_file_monitor_cancel (priv->monitor);
-		g_object_unref (priv->monitor);
+	if (priv->ifcfg_monitor) {
+		if (priv->ifcfg_monitor_id)
+			g_signal_handler_disconnect (priv->ifcfg_monitor, priv->ifcfg_monitor_id);
+
+		g_file_monitor_cancel (priv->ifcfg_monitor);
+		g_object_unref (priv->ifcfg_monitor);
+	}
+
+	if (priv->network_monitor) {
+		if (priv->network_monitor_id)
+			g_signal_handler_disconnect (priv->network_monitor, priv->network_monitor_id);
+
+		g_file_monitor_cancel (priv->network_monitor);
+		g_object_unref (priv->network_monitor);
 	}
 
 	G_OBJECT_CLASS (sc_plugin_ifcfg_parent_class)->dispose (object);
@@ -520,12 +642,40 @@ static void
 get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
+	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (object);
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+
 	switch (prop_id) {
 	case NM_SYSTEM_CONFIG_INTERFACE_PROP_NAME:
 		g_value_set_string (value, IFCFG_PLUGIN_NAME);
 		break;
 	case NM_SYSTEM_CONFIG_INTERFACE_PROP_INFO:
 		g_value_set_string (value, IFCFG_PLUGIN_INFO);
+		break;
+	case NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME:
+		g_value_set_string (value, priv->hostname);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+			  const GValue *value, GParamSpec *pspec)
+{
+	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (object);
+	GError *error = NULL;
+
+	switch (prop_id) {
+	case NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME:
+		if (!write_hostname (plugin, g_value_get_string (value), &error)) {
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "Could not save hostname: %s",
+			             (error && error->message) ? error->message : "(unknown)");
+			if (error)
+				g_error_free (error);
+		}
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -543,6 +693,7 @@ sc_plugin_ifcfg_class_init (SCPluginIfcfgClass *req_class)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 
 	g_object_class_override_property (object_class,
 									  NM_SYSTEM_CONFIG_INTERFACE_PROP_NAME,
@@ -551,6 +702,10 @@ sc_plugin_ifcfg_class_init (SCPluginIfcfgClass *req_class)
 	g_object_class_override_property (object_class,
 									  NM_SYSTEM_CONFIG_INTERFACE_PROP_INFO,
 									  NM_SYSTEM_CONFIG_INTERFACE_INFO);
+
+	g_object_class_override_property (object_class,
+									  NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME,
+									  NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
 }
 
 static void
@@ -559,6 +714,7 @@ system_config_interface_init (NMSystemConfigInterface *system_config_interface_c
 	/* interface implementation */
 	system_config_interface_class->get_connections = get_connections;
 	system_config_interface_class->get_unmanaged_devices = get_unmanaged_devices;
+	system_config_interface_class->set_hostname = set_hostname;
 	system_config_interface_class->init = init;
 }
 

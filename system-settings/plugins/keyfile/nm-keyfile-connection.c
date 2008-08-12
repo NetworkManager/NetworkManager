@@ -55,14 +55,13 @@ get_id (NMExportedConnection *exported)
 static gboolean
 update (NMExportedConnection *exported,
 	   GHashTable *new_settings,
-	   GError **err)
+	   GError **error)
 {
 	gboolean success;
 
-	success = NM_EXPORTED_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->update (exported, new_settings, err);
-
+	success = NM_EXPORTED_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->update (exported, new_settings, error);
 	if (success)
-		write_connection (nm_exported_connection_get_connection (exported));
+		success = write_connection (nm_exported_connection_get_connection (exported), error);
 
 	return success;
 }

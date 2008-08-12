@@ -264,7 +264,7 @@ write_setting_value (NMSetting *setting,
 }
 
 gboolean
-write_connection (NMConnection *connection)
+write_connection (NMConnection *connection, GError **error)
 {
 	NMSettingConnection *s_con;
 	GKeyFile *key_file;

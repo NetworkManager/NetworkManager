@@ -1,4 +1,4 @@
-/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -47,6 +47,14 @@ interface_init (gpointer g_iface)
 							  "Plugin information",
 							  NULL,
 							  G_PARAM_READABLE));
+
+	g_object_interface_install_property
+		(g_iface,
+		 g_param_spec_string (NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME,
+							  "Hostname",
+							  "Configured system hostname",
+							  NULL,
+							  G_PARAM_READWRITE));
 
 	/* Signals */
 	g_signal_new ("connection-added",
@@ -139,7 +147,8 @@ nm_system_config_interface_supports_add (NMSystemConfigInterface *config)
 
 gboolean
 nm_system_config_interface_add_connection (NMSystemConfigInterface *config,
-								   NMConnection *connection)
+                                           NMConnection *connection,
+                                           GError **error)
 {
 	gboolean success = FALSE;
 
@@ -147,7 +156,23 @@ nm_system_config_interface_add_connection (NMSystemConfigInterface *config,
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
 	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->add_connection)
-		success = NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->add_connection (config, connection);
+		success = NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->add_connection (config, connection, error);
 
 	return success;
 }
+
+gboolean
+nm_system_config_interface_set_hostname (NMSystemConfigInterface *config,
+                                         const char *hostname,
+                                         GError **error)
+{
+	gboolean success = FALSE;
+
+	g_return_val_if_fail (config != NULL, FALSE);
+
+	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->set_hostname)
+		success = NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->set_hostname (config, hostname, error);
+
+	return success;
+}
+

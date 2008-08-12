@@ -6,6 +6,6 @@
 #include <glib.h>
 #include <nm-connection.h>
 
-gboolean write_connection (NMConnection *connection);
+gboolean write_connection (NMConnection *connection, GError **error);
 
 #endif /* _KEYFILE_PLUGIN_WRITER_H */

@@ -8,20 +8,39 @@
 
     <method name="AddConnection">
       <tp:docstring>
-	Add new connection.
+        Add new connection.
       </tp:docstring>
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_add_connection"/>
       <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
       <arg name="connection" type="a{sa{sv}}" direction="in">
-	<tp:docstring>
-	  Connection properties.
-	</tp:docstring>
+        <tp:docstring>
+          Connection properties.
+        </tp:docstring>
+      </arg>
+    </method>
+
+    <method name="SetHostname">
+      <tp:docstring>
+        Sets the configured machine hostname and domain.
+      </tp:docstring>
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_set_hostname"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+      <arg name="hostname" type="s" direction="in">
+        <tp:docstring>
+          Fully-qualified hostname to set in configuration.  To clear hostname, pass a zero-length string.  Example: "mycomputer.foobar.com"
+        </tp:docstring>
       </arg>
     </method>
 
     <property name="UnmanagedDevices" type="ao" access="read">
       <tp:docstring>
         The list of HAL UDIs of devices that should not be managed by NetworkManager.
+      </tp:docstring>
+    </property>
+
+    <property name="Hostname" type="s" access="readwrite">
+      <tp:docstring>
+        The configured hostname of the machine.
       </tp:docstring>
     </property>
 

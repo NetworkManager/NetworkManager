@@ -60,12 +60,14 @@ GObject * nm_system_config_factory (void);
 
 #define NM_SYSTEM_CONFIG_INTERFACE_NAME "name"
 #define NM_SYSTEM_CONFIG_INTERFACE_INFO "info"
+#define NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME "hostname"
 
 typedef enum {
 	NM_SYSTEM_CONFIG_INTERFACE_PROP_FIRST = 0x1000,
 
 	NM_SYSTEM_CONFIG_INTERFACE_PROP_NAME = NM_SYSTEM_CONFIG_INTERFACE_PROP_FIRST,
 	NM_SYSTEM_CONFIG_INTERFACE_PROP_INFO,
+	NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME,
 } NMSystemConfigInterfaceProp;
 
 
@@ -92,7 +94,13 @@ struct _NMSystemConfigInterface {
 	/*
 	 * Add a new connection.
 	 */
-	gboolean (*add_connection) (NMSystemConfigInterface *config, NMConnection *connection);
+	gboolean (*add_connection) (NMSystemConfigInterface *config, NMConnection *connection, GError **error);
+
+	/*
+	 * Set the configured hostname/domain in the plugin's backing configuration store.
+	 * Should _NOT_ call sethostname(2) or setdomainname(2).
+	 */
+	gboolean (*set_hostname) (NMSystemConfigInterface *config, const char *hostname, GError **error);
 
 	/* Signals */
 
@@ -115,7 +123,12 @@ GSList *nm_system_config_interface_get_unmanaged_devices (NMSystemConfigInterfac
 gboolean nm_system_config_interface_supports_add (NMSystemConfigInterface *config);
 
 gboolean nm_system_config_interface_add_connection (NMSystemConfigInterface *config,
-						    NMConnection *connection);
+                                                    NMConnection *connection,
+                                                    GError **error);
+
+gboolean nm_system_config_interface_set_hostname (NMSystemConfigInterface *config,
+                                                  const char *hostname,
+                                                  GError **error);
 
 G_END_DECLS
 

@@ -1,4 +1,4 @@
-/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
 #include <config.h>
 #include <sys/stat.h>
@@ -35,6 +35,8 @@ G_DEFINE_TYPE_EXTENDED (SCPluginKeyfile, sc_plugin_keyfile, G_TYPE_OBJECT, 0,
 
 typedef struct {
 	GHashTable *hash;
+
+	char *hostname;
 
 	GFileMonitor *monitor;
 	guint monitor_id;
@@ -182,9 +184,11 @@ get_connections (NMSystemConfigInterface *config)
 }
 
 static gboolean
-add_connection (NMSystemConfigInterface *config, NMConnection *connection)
+add_connection (NMSystemConfigInterface *config,
+                NMConnection *connection,
+                GError **error)
 {
-	return write_connection (connection);
+	return write_connection (connection, error);
 }
 
 /* GObject */
@@ -198,6 +202,8 @@ static void
 get_property (GObject *object, guint prop_id,
 		    GValue *value, GParamSpec *pspec)
 {
+	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (object);
+
 	switch (prop_id) {
 	case NM_SYSTEM_CONFIG_INTERFACE_PROP_NAME:
 		g_value_set_string (value, KEYFILE_PLUGIN_NAME);
@@ -205,6 +211,20 @@ get_property (GObject *object, guint prop_id,
 	case NM_SYSTEM_CONFIG_INTERFACE_PROP_INFO:
 		g_value_set_string (value, KEYFILE_PLUGIN_INFO);
 		break;
+	case NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME:
+		g_value_set_string (value, priv->hostname);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+		    const GValue *value, GParamSpec *pspec)
+{
+	switch (prop_id) {
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -232,6 +252,8 @@ dispose (GObject *object)
 	if (priv->hash)
 		g_hash_table_destroy (priv->hash);
 
+	g_free (priv->hostname);
+
 	G_OBJECT_CLASS (sc_plugin_keyfile_parent_class)->dispose (object);
 }
 
@@ -244,6 +266,7 @@ sc_plugin_keyfile_class_init (SCPluginKeyfileClass *req_class)
 
 	object_class->dispose = dispose;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 
 	g_object_class_override_property (object_class,
 							    NM_SYSTEM_CONFIG_INTERFACE_PROP_NAME,
@@ -252,6 +275,10 @@ sc_plugin_keyfile_class_init (SCPluginKeyfileClass *req_class)
 	g_object_class_override_property (object_class,
 							    NM_SYSTEM_CONFIG_INTERFACE_PROP_INFO,
 							    NM_SYSTEM_CONFIG_INTERFACE_INFO);
+
+	g_object_class_override_property (object_class,
+							    NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME,
+							    NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
 }
 
 static void
