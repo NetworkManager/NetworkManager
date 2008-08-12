@@ -1734,13 +1734,14 @@ nm_device_set_ip4_config (NMDevice *self, NMIP4Config *config, NMDeviceStateReas
 	g_return_val_if_fail (reason != NULL, FALSE);
 
 	priv = NM_DEVICE_GET_PRIVATE (self);
+	ip_iface = nm_device_get_ip_iface (self);
 
 	if (priv->ip4_config) {
 		NMNamedManager *named_mgr;
 
 		/* Remove any previous IP4 Config from the named manager */
 		named_mgr = nm_named_manager_get ();
-		nm_named_manager_remove_ip4_config (named_mgr, priv->ip4_config);
+		nm_named_manager_remove_ip4_config (named_mgr, ip_iface, priv->ip4_config);
 		g_object_unref (named_mgr);
 
 		g_object_unref (priv->ip4_config);
@@ -1751,8 +1752,6 @@ nm_device_set_ip4_config (NMDevice *self, NMIP4Config *config, NMDeviceStateReas
 		return TRUE;
 
 	priv->ip4_config = g_object_ref (config);
-
-	ip_iface = nm_device_get_ip_iface (self);
 
 	success = nm_system_device_set_from_ip4_config (ip_iface, config);
 	if (success) {

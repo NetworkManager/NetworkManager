@@ -385,7 +385,7 @@ nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
 
 out:
 	named_mgr = nm_named_manager_get ();
-	nm_named_manager_add_ip4_config (named_mgr, config, NM_NAMED_IP_CONFIG_TYPE_VPN);
+	nm_named_manager_add_ip4_config (named_mgr, iface, config, NM_NAMED_IP_CONFIG_TYPE_VPN);
 	g_object_unref (named_mgr);
 
 	return TRUE;
@@ -406,7 +406,7 @@ gboolean nm_system_vpn_device_unset_from_ip4_config (NMDevice *active_device, co
 	g_return_val_if_fail (config != NULL, FALSE);
 
 	named_mgr = nm_named_manager_get ();
-	nm_named_manager_remove_ip4_config (named_mgr, config);
+	nm_named_manager_remove_ip4_config (named_mgr, iface, config);
 	g_object_unref (named_mgr);
 
 	return TRUE;

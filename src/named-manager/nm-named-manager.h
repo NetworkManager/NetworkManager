@@ -68,10 +68,13 @@ GType nm_named_manager_get_type (void);
 NMNamedManager * nm_named_manager_get (void);
 
 gboolean nm_named_manager_add_ip4_config (NMNamedManager *mgr,
+					  const char *iface,
                                           NMIP4Config *config,
                                           NMNamedIPConfigType cfg_type);
 
-gboolean nm_named_manager_remove_ip4_config (NMNamedManager *mgr, NMIP4Config *config);
+gboolean nm_named_manager_remove_ip4_config (NMNamedManager *mgr,
+					     const char *iface,
+					     NMIP4Config *config);
 
 G_END_DECLS
 

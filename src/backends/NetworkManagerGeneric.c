@@ -238,14 +238,3 @@ NMIP4Config *nm_generic_device_new_ip4_system_config (NMDevice *dev)
 void nm_generic_set_hostname (NMIP4Config *config)
 {
 }
-
-/*
- * nm_generic_should_modify_resolv_conf
- *
- * Can NM update resolv.conf, or is it locked down?
- */
-gboolean nm_generic_should_modify_resolv_conf (void)
-{
-	return TRUE;
-}
-

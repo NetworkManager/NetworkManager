@@ -66,6 +66,4 @@ void			nm_system_set_hostname (NMIP4Config *config);
 
 gboolean		nm_system_device_set_mtu (const char *iface, guint32 mtu);
 
-gboolean		nm_system_should_modify_resolv_conf (void);
-
 #endif

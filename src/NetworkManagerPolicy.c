@@ -122,7 +122,6 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	NMActRequest *best_req = NULL;
 	GSList *devices, *iter;
 	NMNamedManager *named_mgr;
-	NMIP4Config *config;
 
 	devices = nm_manager_get_devices (policy->manager);
 	for (iter = devices; iter; iter = g_slist_next (iter)) {
@@ -196,8 +195,10 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	}
 
 	named_mgr = nm_named_manager_get ();
-	config = nm_device_get_ip4_config (best);
-	nm_named_manager_add_ip4_config (named_mgr, config, NM_NAMED_IP_CONFIG_TYPE_BEST_DEVICE);
+	nm_named_manager_add_ip4_config (named_mgr,
+									 nm_device_get_ip_iface (best),
+									 nm_device_get_ip4_config (best),
+									 NM_NAMED_IP_CONFIG_TYPE_BEST_DEVICE);
 	g_object_unref (named_mgr);
 
 	/* Now set new default active connection _after_ updating DNS info, so that

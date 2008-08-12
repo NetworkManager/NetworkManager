@@ -131,36 +131,3 @@ out_close:
 out_gfree:
 	g_free (filename);
 }
-
-/*
- * nm_system_should_modify_resolv_conf
- *
- * Can NM update resolv.conf, or is it locked down?
- */
-gboolean nm_system_should_modify_resolv_conf (void)
-{
-	char *name, *buf;
-	shvarFile *file;
-	gboolean ret = TRUE;
-
-	name = g_strdup_printf (SYSCONFDIR"/sysconfig/network/dhcp");
-	file = svNewFile (name);
-	if (!file)
-		goto out_gfree;
-
-	buf = svGetValue (file, "DHCLIENT_MODIFY_RESOLV_CONF");
-	if (!buf)
-		goto out_close;
-
-	if (strcmp (buf, "no") == 0)
-		ret = FALSE;
-
-	free (buf);
-out_close:
-	svCloseFile (file);
-out_gfree:
-	g_free (name);
-
-	return ret;
-}
-

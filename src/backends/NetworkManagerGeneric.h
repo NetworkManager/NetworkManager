@@ -52,6 +52,4 @@ gboolean		nm_generic_device_set_up_down_with_iface		(NMDevice *dev, const char *
 
 void			nm_generic_set_hostname (NMIP4Config *config);
 
-gboolean		nm_generic_should_modify_resolv_conf (void);
-
 #endif

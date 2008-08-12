@@ -69,14 +69,3 @@ void nm_system_update_dns (void)
 void nm_system_set_hostname (NMIP4Config *config)
 {
 }
-
-/*
- * nm_system_should_modify_resolv_conf
- *
- * Can NM update resolv.conf, or is it locked down?
- */
-gboolean nm_system_should_modify_resolv_conf (void)
-{
-	return TRUE;
-}
-

@@ -1,3 +1,13 @@
+2008-08-12  Tambet Ingo  <tambet@gmail.com>
+
+	* src/backends/*: Get rid of nm_system_should_modify_resolv_conf().
+
+	* src/named-manager/nm-named-manager.c (rewrite_resolv_conf): Calculate
+	the composite result of all the IP4 configurations and call a distro
+	specific update_resolv_conf().
+	(update_resolv_conf): Implement one for directly writing to 
+	/etc/resolv.conf and one for opensuse to call netconfig.
+
 2008-08-11  Dan Williams  <dcbw@redhat.com>
 
 	* src/ppp-manager/nm-ppp-manager.c
