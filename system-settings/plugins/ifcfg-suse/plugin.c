@@ -65,7 +65,6 @@ typedef struct {
 	gboolean initialized;
 	GHashTable *connections;
 	GHashTable *unmanaged_devices;
-	char *hostname;
 
 	guint32 default_gw;
 	GFileMonitor *default_gw_monitor;
@@ -352,7 +351,6 @@ dispose (GObject *object)
 
 	g_hash_table_destroy (priv->connections);
 	g_hash_table_destroy (priv->unmanaged_devices);
-	g_free (priv->hostname);
 
 	if (priv->default_gw_monitor) {
 		if (priv->default_gw_monitor_id)
@@ -374,8 +372,6 @@ static void
 get_property (GObject *object, guint prop_id,
 		    GValue *value, GParamSpec *pspec)
 {
-	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (object);
-
 	switch (prop_id) {
 	case NM_SYSTEM_CONFIG_INTERFACE_PROP_NAME:
 		g_value_set_string (value, IFCFG_PLUGIN_NAME);
@@ -383,20 +379,6 @@ get_property (GObject *object, guint prop_id,
 	case NM_SYSTEM_CONFIG_INTERFACE_PROP_INFO:
 		g_value_set_string (value, IFCFG_PLUGIN_INFO);
 		break;
-	case NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME:
-		g_value_set_string (value, priv->hostname);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-		    const GValue *value, GParamSpec *pspec)
-{
-	switch (prop_id) {
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -411,7 +393,6 @@ sc_plugin_ifcfg_class_init (SCPluginIfcfgClass *req_class)
 	g_type_class_add_private (req_class, sizeof (SCPluginIfcfgPrivate));
 
 	object_class->get_property = get_property;
-	object_class->set_property = set_property;
 	object_class->dispose = dispose;
 
 	g_object_class_override_property (object_class,
@@ -421,10 +402,6 @@ sc_plugin_ifcfg_class_init (SCPluginIfcfgClass *req_class)
 	g_object_class_override_property (object_class,
 							    NM_SYSTEM_CONFIG_INTERFACE_PROP_INFO,
 							    NM_SYSTEM_CONFIG_INTERFACE_INFO);
-
-	g_object_class_override_property (object_class,
-							    NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME,
-							    NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
 }
 
 static void

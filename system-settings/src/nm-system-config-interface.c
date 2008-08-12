@@ -48,14 +48,6 @@ interface_init (gpointer g_iface)
 							  NULL,
 							  G_PARAM_READABLE));
 
-	g_object_interface_install_property
-		(g_iface,
-		 g_param_spec_string (NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME,
-							  "Hostname",
-							  "Configured system hostname",
-							  NULL,
-							  G_PARAM_READWRITE));
-
 	/* Signals */
 	g_signal_new ("connection-added",
 				  iface_type,
@@ -160,19 +152,3 @@ nm_system_config_interface_add_connection (NMSystemConfigInterface *config,
 
 	return success;
 }
-
-gboolean
-nm_system_config_interface_set_hostname (NMSystemConfigInterface *config,
-                                         const char *hostname,
-                                         GError **error)
-{
-	gboolean success = FALSE;
-
-	g_return_val_if_fail (config != NULL, FALSE);
-
-	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->set_hostname)
-		success = NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->set_hostname (config, hostname, error);
-
-	return success;
-}
-

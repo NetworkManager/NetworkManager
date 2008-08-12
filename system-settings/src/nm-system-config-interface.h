@@ -96,12 +96,6 @@ struct _NMSystemConfigInterface {
 	 */
 	gboolean (*add_connection) (NMSystemConfigInterface *config, NMConnection *connection, GError **error);
 
-	/*
-	 * Set the configured hostname/domain in the plugin's backing configuration store.
-	 * Should _NOT_ call sethostname(2) or setdomainname(2).
-	 */
-	gboolean (*set_hostname) (NMSystemConfigInterface *config, const char *hostname, GError **error);
-
 	/* Signals */
 
 	/* Emitted when a new connection has been found by the plugin */
@@ -125,10 +119,6 @@ gboolean nm_system_config_interface_supports_add (NMSystemConfigInterface *confi
 gboolean nm_system_config_interface_add_connection (NMSystemConfigInterface *config,
                                                     NMConnection *connection,
                                                     GError **error);
-
-gboolean nm_system_config_interface_set_hostname (NMSystemConfigInterface *config,
-                                                  const char *hostname,
-                                                  GError **error);
 
 G_END_DECLS
 

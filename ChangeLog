@@ -1,5 +1,11 @@
 2008-08-12  Dan Williams  <dcbw@redhat.com>
 
+	Revert most of the 'hostname' patch.  Too much stuff still breaks when
+	hostname is updated at runtime.  Distros or users who want hostname updates
+	can use dispatcher scripts to update the hostname if they need it.
+
+2008-08-12  Dan Williams  <dcbw@redhat.com>
+
 	* introspection/nm-settings-system.xml
 	  system-settings/src/dbus-settings.c
 	  system-settings/src/dbus-settings.h

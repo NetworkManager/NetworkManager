@@ -39,7 +39,6 @@ typedef struct _NMSysconfigSettingsClass NMSysconfigSettingsClass;
 #define NM_SYSCONFIG_SETTINGS_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SYSCONFIG_SETTINGS, NMSysconfigSettingsClass))
 
 #define NM_SYSCONFIG_SETTINGS_UNMANAGED_DEVICES "unmanaged-devices"
-#define NM_SYSCONFIG_SETTINGS_HOSTNAME "hostname"
 
 struct _NMSysconfigSettings
 {
