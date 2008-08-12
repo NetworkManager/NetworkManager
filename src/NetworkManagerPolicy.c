@@ -205,7 +205,7 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	 * if the connection is shared dnsmasq picks up the right stuff.
 	 */
 	if (best_req)
-			nm_act_request_set_default (best_req, TRUE);
+		nm_act_request_set_default (best_req, TRUE);
 
 	nm_info ("Policy set (%s) as default device for routing and DNS.",
 	         nm_device_get_iface (best));
