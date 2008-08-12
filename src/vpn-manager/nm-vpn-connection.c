@@ -476,7 +476,7 @@ nm_vpn_connection_connect_cb (DBusGProxy *proxy, GError *err, gpointer user_data
 		    nm_vpn_connection_get_name (connection));
 
 	if (err) {
-		nm_warning ("(VPN connection '%s' failed to connect: '%s'.", 
+		nm_warning ("VPN connection '%s' failed to connect: '%s'.", 
 				  nm_vpn_connection_get_name (connection), err->message);
 		nm_vpn_connection_set_vpn_state (connection,
 		                                 NM_VPN_CONNECTION_STATE_FAILED,
