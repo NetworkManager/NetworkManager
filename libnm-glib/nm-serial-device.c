@@ -26,6 +26,15 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
+/**
+ * nm_serial_device_get_bytes_received:
+ * @self: a #NMSerialDevice
+ *
+ * Gets the amount of bytes received by the serial device.
+ * This counter is reset when the device is activated.
+ *
+ * Returns: bytes received
+ **/
 guint32
 nm_serial_device_get_bytes_received (NMSerialDevice *self)
 {
@@ -34,6 +43,15 @@ nm_serial_device_get_bytes_received (NMSerialDevice *self)
 	return NM_SERIAL_DEVICE_GET_PRIVATE (self)->in_bytes;
 }
 
+/**
+ * nm_serial_device_get_bytes_sent:
+ * @self: a #NMSerialDevice
+ *
+ * Gets the amount of bytes sent by the serial device.
+ * This counter is reset when the device is activated.
+ *
+ * Returns: bytes sent
+ **/
 guint32
 nm_serial_device_get_bytes_sent (NMSerialDevice *self)
 {
@@ -148,6 +166,15 @@ nm_serial_device_class_init (NMSerialDeviceClass *device_class)
 	object_class->dispose = dispose;
 
 	/* Signals */
+
+	/**
+	 * NMSerialDevice::ppp-stats:
+	 * @device: the serial device that received the signal
+	 * @in_bytes: the amount of bytes received
+	 * @out_bytes: the amount of bytes sent
+	 *
+	 * Notifies that a #NMAccessPoint is added to the wifi device.
+	 **/
 	signals[PPP_STATS] =
 		g_signal_new ("ppp-stats",
 					  G_OBJECT_CLASS_TYPE (object_class),

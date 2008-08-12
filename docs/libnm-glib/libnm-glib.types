@@ -1,0 +1,15 @@
+#include <nm-client.h>
+#include <nm-device-ethernet.h>
+#include <nm-device-wifi.h>
+#include <nm-cdma-device.h>
+#include <nm-gsm-device.h>
+#include <nm-serial-device.h>
+
+nm_object_get_type
+nm_client_get_type
+nm_device_get_type
+nm_device_ethernet_get_type
+nm_device_wifi_get_type
+nm_gsm_device_get_type
+nm_cdma_device_get_type
+nm_serial_device_get_type

@@ -381,6 +381,12 @@ nm_client_class_init (NMClientClass *client_class)
 	object_class->dispose = dispose;
 
 	/* properties */
+
+	/**
+	 * NMClient:state:
+	 *
+	 * The current daemon state.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_STATE,
 		 g_param_spec_uint (NM_CLIENT_STATE,
@@ -389,6 +395,11 @@ nm_client_class_init (NMClientClass *client_class)
 						    NM_STATE_UNKNOWN, NM_STATE_DISCONNECTED, NM_STATE_UNKNOWN,
 						    G_PARAM_READABLE));
 
+	/**
+	 * NMClient::manager-running:
+	 *
+	 * Whether the daemon is running.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_MANAGER_RUNNING,
 		 g_param_spec_boolean (NM_CLIENT_MANAGER_RUNNING,
@@ -397,6 +408,11 @@ nm_client_class_init (NMClientClass *client_class)
 						       FALSE,
 						       G_PARAM_READABLE));
 
+	/**
+	 * NMClient::wireless-enabled:
+	 *
+	 * Whether wireless is enabled.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_WIRELESS_ENABLED,
 		 g_param_spec_boolean (NM_CLIENT_WIRELESS_ENABLED,
@@ -405,6 +421,11 @@ nm_client_class_init (NMClientClass *client_class)
 						   TRUE,
 						   G_PARAM_READWRITE));
 
+	/**
+	 * NMClient::wireless-hardware-enabled:
+	 *
+	 * Whether the wireless hardware is enabled.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_WIRELESS_HARDWARE_ENABLED,
 		 g_param_spec_boolean (NM_CLIENT_WIRELESS_HARDWARE_ENABLED,
@@ -413,6 +434,11 @@ nm_client_class_init (NMClientClass *client_class)
 						   TRUE,
 						   G_PARAM_READABLE));
 
+	/**
+	 * NMClient::active-connections:
+	 *
+	 * The active connections.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_CONNECTIONS,
 		 g_param_spec_boxed (NM_CLIENT_ACTIVE_CONNECTIONS,
@@ -422,6 +448,14 @@ nm_client_class_init (NMClientClass *client_class)
 						   G_PARAM_READABLE));
 
 	/* signals */
+
+	/**
+	 * NMClient::device-added:
+	 * @client: the client that received the signal
+	 * @device: the new device
+	 *
+	 * Notifies that a #NMDevice is added.
+	 **/
 	signals[DEVICE_ADDED] =
 		g_signal_new ("device-added",
 					  G_OBJECT_CLASS_TYPE (object_class),
@@ -432,6 +466,13 @@ nm_client_class_init (NMClientClass *client_class)
 					  G_TYPE_NONE, 1,
 					  G_TYPE_OBJECT);
 
+	/**
+	 * NMClient::device-removed:
+	 * @widget: the client that received the signal
+	 * @device: the removed device
+	 *
+	 * Notifies that a #NMDevice is removed.
+	 **/
 	signals[DEVICE_REMOVED] =
 		g_signal_new ("device-removed",
 					  G_OBJECT_CLASS_TYPE (object_class),
@@ -443,6 +484,13 @@ nm_client_class_init (NMClientClass *client_class)
 					  G_TYPE_OBJECT);
 }
 
+/**
+ * nm_client_new:
+ *
+ * Creates a new #NMClient.
+ *
+ * Returns: a new #NMClient
+ **/
 NMClient *
 nm_client_new (void)
 {
@@ -541,6 +589,15 @@ client_device_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 	}
 }
 
+/**
+ * nm_client_get_devices:
+ * @client: a #NMClient
+ *
+ * Gets all the detected devices.
+ *
+ * Returns: a #GPtrArray containing all the #NMDevice<!-- -->s.
+ * The returned array is owned by the client and should not be modified.
+ **/
 const GPtrArray *
 nm_client_get_devices (NMClient *client)
 {
@@ -571,6 +628,15 @@ nm_client_get_devices (NMClient *client)
 	return handle_ptr_array_return (priv->devices);
 }
 
+/**
+ * nm_client_get_device_by_path:
+ * @client: a #NMClient
+ * @object_path: the object path to search for
+ *
+ * Gets a #NMDevice from a #NMClient.
+ *
+ * Returns: the #NMDevice for the given @object_path or %NULL if none is found.
+ **/
 NMDevice *
 nm_client_get_device_by_path (NMClient *client, const char *object_path)
 {
@@ -617,6 +683,19 @@ activate_cb (DBusGProxy *proxy,
 	g_slice_free (ActivateDeviceInfo, info);
 }
 
+/**
+ * nm_client_activate_connection:
+ * @client: a #NMClient
+ * @service_name: the connection's service name
+ * @connection_path: the connection's DBus path
+ * @device: the #NMDevice
+ * @specific_object: the device specific object (currently used only for
+ * activating wireless devices and should be the #NMAccessPoint<!-- -->'s path.
+ * @callback: the function to call when the call is done
+ * @user_data: user data to pass to the callback function
+ *
+ * Activates a connection with the given #NMDevice.
+ **/
 void
 nm_client_activate_connection (NMClient *client,
 					  const char *service_name,
@@ -653,6 +732,13 @@ nm_client_activate_connection (NMClient *client,
 											    info);
 }
 
+/**
+ * nm_client_deactivate_connection:
+ * @client: a #NMClient
+ * @active: the #NMActiveConnection to deactivate
+ *
+ * Deactivates an active #NMActiveConnection.
+ **/
 void
 nm_client_deactivate_connection (NMClient *client, NMActiveConnection *active)
 {
@@ -672,6 +758,15 @@ nm_client_deactivate_connection (NMClient *client, NMActiveConnection *active)
 	}
 }
 
+/**
+ * nm_client_get_active_connections:
+ * @client: a #NMClient
+ *
+ * Gets the active connections.
+ *
+ * Returns: a #GPtrArray containing all the active #NMActiveConnection<!-- -->s.
+ * The returned array is owned by the client and should not be modified.
+ **/
 const GPtrArray * 
 nm_client_get_active_connections (NMClient *client)
 {
@@ -700,6 +795,14 @@ nm_client_get_active_connections (NMClient *client)
 	return handle_ptr_array_return (priv->active_connections);
 }
 
+/**
+ * nm_client_wireless_get_enabled:
+ * @client: a #NMClient
+ *
+ * Determines whether the wireless is enabled.
+ *
+ * Returns: %TRUE if wireless is enabled
+ **/
 gboolean
 nm_client_wireless_get_enabled (NMClient *client)
 {
@@ -708,6 +811,13 @@ nm_client_wireless_get_enabled (NMClient *client)
 	return NM_CLIENT_GET_PRIVATE (client)->wireless_enabled;
 }
 
+/**
+ * nm_client_wireless_set_enabled:
+ * @client: a #NMClient
+ * @enabled: %TRUE to enable wireless
+ *
+ * Enables or disables wireless devices.
+ **/
 void
 nm_client_wireless_set_enabled (NMClient *client, gboolean enabled)
 {
@@ -724,6 +834,14 @@ nm_client_wireless_set_enabled (NMClient *client, gboolean enabled)
 					    &value);
 }
 
+/**
+ * nm_client_wireless_hardware_get_enabled:
+ * @client: a #NMClient
+ *
+ * Determines whether the wireless hardware is enabled.
+ *
+ * Returns: %TRUE if the wireless hardware is enabled
+ **/
 gboolean
 nm_client_wireless_hardware_get_enabled (NMClient *client)
 {
@@ -732,6 +850,14 @@ nm_client_wireless_hardware_get_enabled (NMClient *client)
 	return NM_CLIENT_GET_PRIVATE (client)->wireless_hw_enabled;
 }
 
+/**
+ * nm_client_get_state:
+ * @client: a #NMClient
+ *
+ * Gets the current daemon state.
+ *
+ * Returns: the current %NMState
+ **/
 NMState
 nm_client_get_state (NMClient *client)
 {
@@ -750,6 +876,14 @@ nm_client_get_state (NMClient *client)
 	return priv->state;
 }
 
+/**
+ * nm_client_sleep:
+ * @client: a #NMClient
+ * @sleep: %TRUE to put the daemon to sleep
+ *
+ * Enables or disables networking. When the daemon is put to sleep, it'll deactivate and disable
+ * all the active devices.
+ **/
 void
 nm_client_sleep (NMClient *client, gboolean sleep)
 {
@@ -763,6 +897,14 @@ nm_client_sleep (NMClient *client, gboolean sleep)
 	}
 }
 
+/**
+ * nm_client_get_manager_running:
+ * @client: a #NMClient
+ *
+ * Determines whether the daemon is running.
+ *
+ * Returns: %TRUE if the daemon is running
+ **/
 gboolean
 nm_client_get_manager_running (NMClient *client)
 {

@@ -14,6 +14,7 @@ PKG_NAME=NetworkManager
 }
 
 (cd $srcdir;
+    gtkdocize || exit 1
     autoreconf --install --symlink &&
     intltoolize --force &&
     autoreconf &&

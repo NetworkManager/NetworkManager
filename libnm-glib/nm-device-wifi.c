@@ -60,6 +60,15 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
+/**
+ * nm_device_wifi_new:
+ * @connection: the #DBusGConnection
+ * @path: the DBus object path of the device
+ *
+ * Creates a new #NMDeviceWifi.
+ *
+ * Returns: a new device
+ **/
 GObject *
 nm_device_wifi_new (DBusGConnection *connection, const char *path)
 {
@@ -72,6 +81,15 @@ nm_device_wifi_new (DBusGConnection *connection, const char *path)
 	                     NULL);
 }
 
+/**
+ * nm_device_wifi_get_hw_address:
+ * @device: a #NMDeviceWifi
+ *
+ * Gets the hardware (MAC) address of the #NMDeviceWifi
+ *
+ * Returns: the hardware address. This is the internal string used by the
+ * device, and must not be modified.
+ **/
 const char *
 nm_device_wifi_get_hw_address (NMDeviceWifi *device)
 {
@@ -89,6 +107,14 @@ nm_device_wifi_get_hw_address (NMDeviceWifi *device)
 	return priv->hw_address;
 }
 
+/**
+ * nm_device_wifi_get_mode:
+ * @device: a #NMDeviceWifi
+ *
+ * Gets the #NMDeviceWifi mode.
+ *
+ * Returns: the mode
+ **/
 NM80211Mode
 nm_device_wifi_get_mode (NMDeviceWifi *device)
 {
@@ -106,6 +132,14 @@ nm_device_wifi_get_mode (NMDeviceWifi *device)
 	return priv->mode;
 }
 
+/**
+ * nm_device_wifi_get_bitrate:
+ * @device: a #NMDeviceWifi
+ *
+ * Gets the bit rate of the #NMDeviceWifi.
+ *
+ * Returns: the bit rate
+ **/
 guint32
 nm_device_wifi_get_bitrate (NMDeviceWifi *device)
 {
@@ -137,6 +171,14 @@ nm_device_wifi_get_bitrate (NMDeviceWifi *device)
 	return priv->rate;
 }
 
+/**
+ * nm_device_wifi_get_capabilities:
+ * @device: a #NMDeviceWifi
+ *
+ * Gets the WIFI capabilities of the #NMDeviceWifi.
+ *
+ * Returns: the capabilities
+ **/
 guint32
 nm_device_wifi_get_capabilities (NMDeviceWifi *device)
 {
@@ -154,6 +196,14 @@ nm_device_wifi_get_capabilities (NMDeviceWifi *device)
 	return priv->wireless_caps;
 }
 
+/**
+ * nm_device_wifi_get_active_access_point:
+ * @self: a #NMDeviceWifi
+ *
+ * Gets the active #NMAccessPoint.
+ *
+ * Returns: the access point or %NULL if none is active
+ **/
 NMAccessPoint *
 nm_device_wifi_get_active_access_point (NMDeviceWifi *self)
 {
@@ -196,6 +246,15 @@ nm_device_wifi_get_active_access_point (NMDeviceWifi *self)
 	return priv->active_ap;
 }
 
+/**
+ * nm_device_wifi_get_access_points:
+ * @self: a #NMDeviceWifi
+ *
+ * Gets all the scanned access points of the #NMDeviceWifi.
+ *
+ * Returns: a #GPtrArray containing all the scanned #NMAccessPoint<!-- -->s.
+ * The returned array is owned by the client and should not be modified.
+ **/
 const GPtrArray *
 nm_device_wifi_get_access_points (NMDeviceWifi *self)
 {
@@ -226,6 +285,15 @@ nm_device_wifi_get_access_points (NMDeviceWifi *self)
 	return handle_ptr_array_return (priv->aps);
 }
 
+/**
+ * nm_device_wifi_get_access_point_by_path:
+ * @self: a #NMDeviceWifi
+ * @path: the object path of the access point
+ *
+ * Gets a #NMAccessPoint by path.
+ *
+ * Returns: the access point or %NULL if none is found.
+ **/
 NMAccessPoint *
 nm_device_wifi_get_access_point_by_path (NMDeviceWifi *self,
 											        const char *path)
@@ -323,6 +391,13 @@ clean_up_aps (NMDeviceWifi *self, gboolean notify)
 	}
 }
 
+/**
+ * nm_device_wifi_set_wireless_enabled:
+ * @device: a #NMDeviceWifi
+ * @enabled: %TRUE to enable the device
+ *
+ * Enables or disables the wireless device.
+ **/
 void
 nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device,
                                                 gboolean enabled)
@@ -547,6 +622,12 @@ nm_device_wifi_class_init (NMDeviceWifiClass *device_class)
 	object_class->finalize = finalize;
 
 	/* properties */
+
+	/**
+	 * NMDeviceWifi:hw-address:
+	 *
+	 * The hardware (MAC) address of the device.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,
 		 g_param_spec_string (NM_DEVICE_WIFI_HW_ADDRESS,
@@ -555,6 +636,11 @@ nm_device_wifi_class_init (NMDeviceWifiClass *device_class)
 						  NULL,
 						  G_PARAM_READABLE));
 
+	/**
+	 * NMDeviceWifi:mode:
+	 *
+	 * The mode of the device.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_MODE,
 		 g_param_spec_uint (NM_DEVICE_WIFI_MODE,
@@ -563,6 +649,11 @@ nm_device_wifi_class_init (NMDeviceWifiClass *device_class)
 					    NM_802_11_MODE_UNKNOWN, NM_802_11_MODE_INFRA, NM_802_11_MODE_INFRA,
 					    G_PARAM_READABLE));
 
+	/**
+	 * NMDeviceWifi:bitrate:
+	 *
+	 * The bit rate of the device.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_BITRATE,
 		 g_param_spec_uint (NM_DEVICE_WIFI_BITRATE,
@@ -571,6 +662,11 @@ nm_device_wifi_class_init (NMDeviceWifiClass *device_class)
 					    0, G_MAXUINT32, 0,
 					    G_PARAM_READABLE));
 
+	/**
+	 * NMDeviceWifi:active-access-point:
+	 *
+	 * The active #NMAccessPoint of the device.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_ACTIVE_ACCESS_POINT,
 		 g_param_spec_object (NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT,
@@ -579,6 +675,11 @@ nm_device_wifi_class_init (NMDeviceWifiClass *device_class)
 						 NM_TYPE_ACCESS_POINT,
 						 G_PARAM_READABLE));
 
+	/**
+	 * NMDeviceWifi:wireless-capabilities:
+	 *
+	 * The wireless capabilities of the device.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_WIRELESS_CAPABILITIES,
 		 g_param_spec_uint (NM_DEVICE_WIFI_CAPABILITIES,
@@ -588,6 +689,14 @@ nm_device_wifi_class_init (NMDeviceWifiClass *device_class)
 		                    G_PARAM_READABLE));
 
 	/* signals */
+
+	/**
+	 * NMDeviceWifi::access-point-added:
+	 * @device: the wifi device that received the signal
+	 * @ap: the new access point
+	 *
+	 * Notifies that a #NMAccessPoint is added to the wifi device.
+	 **/
 	signals[ACCESS_POINT_ADDED] =
 		g_signal_new ("access-point-added",
 				    G_OBJECT_CLASS_TYPE (object_class),
@@ -598,6 +707,13 @@ nm_device_wifi_class_init (NMDeviceWifiClass *device_class)
 				    G_TYPE_NONE, 1,
 				    G_TYPE_OBJECT);
 
+	/**
+	 * NMDeviceWifi::access-point-removed:
+	 * @device: the wifi device that received the signal
+	 * @ap: the removed access point
+	 *
+	 * Notifies that a #NMAccessPoint is removed from the wifi device.
+	 **/
 	signals[ACCESS_POINT_REMOVED] =
 		g_signal_new ("access-point-removed",
 				    G_OBJECT_CLASS_TYPE (object_class),

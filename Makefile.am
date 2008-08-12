@@ -40,7 +40,8 @@ SUBDIRS += \
 	   callouts \
 	   system-settings \
 	   tools \
-	   policy
+	   policy \
+	   docs/libnm-glib
 
 EXTRA_DIST =				\
 	CONTRIBUTING			\

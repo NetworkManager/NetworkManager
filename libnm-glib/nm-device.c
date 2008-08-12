@@ -321,6 +321,12 @@ nm_device_class_init (NMDeviceClass *device_class)
 	object_class->finalize = finalize;
 
 	/* properties */
+
+	/**
+	 * NMDevice:interface:
+	 *
+	 * The interface of the device.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_INTERFACE,
 		 g_param_spec_string (NM_DEVICE_INTERFACE,
@@ -329,6 +335,11 @@ nm_device_class_init (NMDeviceClass *device_class)
 						  NULL,
 						  G_PARAM_READABLE));
 
+	/**
+	 * NMDevice:udi:
+	 *
+	 * The HAL UDI of the device.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_UDI,
 		 g_param_spec_string (NM_DEVICE_UDI,
@@ -337,6 +348,11 @@ nm_device_class_init (NMDeviceClass *device_class)
 						  NULL,
 						  G_PARAM_READABLE));
 
+	/**
+	 * NMDevice:driver:
+	 *
+	 * The driver of the device.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_DRIVER,
 		 g_param_spec_string (NM_DEVICE_DRIVER,
@@ -345,6 +361,11 @@ nm_device_class_init (NMDeviceClass *device_class)
 						  NULL,
 						  G_PARAM_READABLE));
 
+	/**
+	 * NMDevice:capabilities:
+	 *
+	 * The capabilities of the device.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_CAPABILITIES,
 		 g_param_spec_uint (NM_DEVICE_CAPABILITIES,
@@ -353,6 +374,11 @@ nm_device_class_init (NMDeviceClass *device_class)
 						  0, G_MAXUINT32, 0,
 						  G_PARAM_READABLE));
 
+	/**
+	 * NMDevice:managed:
+	 *
+	 * Whether the device is managed by NetworkManager.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_MANAGED,
 		 g_param_spec_boolean (NM_DEVICE_MANAGED,
@@ -361,6 +387,11 @@ nm_device_class_init (NMDeviceClass *device_class)
 						  FALSE,
 						  G_PARAM_READABLE));
 
+	/**
+	 * NMDevice:ip4-config:
+	 *
+	 * The #NMIP4Config of the device.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_IP4_CONFIG,
 		 g_param_spec_object (NM_DEVICE_IP4_CONFIG,
@@ -369,6 +400,11 @@ nm_device_class_init (NMDeviceClass *device_class)
 						  NM_TYPE_IP4_CONFIG,
 						  G_PARAM_READABLE));
 
+	/**
+	 * NMDevice:dhcp4-config:
+	 *
+	 * The #NMDHCP4Config of the device.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_DHCP4_CONFIG,
 		 g_param_spec_object (NM_DEVICE_DHCP4_CONFIG,
@@ -377,6 +413,11 @@ nm_device_class_init (NMDeviceClass *device_class)
 						  NM_TYPE_DHCP4_CONFIG,
 						  G_PARAM_READABLE));
 
+	/**
+	 * NMDevice:state:
+	 *
+	 * The state of the device.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_STATE,
 		 g_param_spec_uint (NM_DEVICE_STATE,
@@ -385,6 +426,11 @@ nm_device_class_init (NMDeviceClass *device_class)
 						  0, G_MAXUINT32, 0,
 						  G_PARAM_READABLE));
 
+	/**
+	 * NMDevice:vendor:
+	 *
+	 * The vendor string of the device.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_VENDOR,
 		 g_param_spec_string (NM_DEVICE_VENDOR,
@@ -393,6 +439,11 @@ nm_device_class_init (NMDeviceClass *device_class)
 						  NULL,
 						  G_PARAM_READABLE));
 
+	/**
+	 * NMDevice:product:
+	 *
+	 * The product string of the device.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_PRODUCT,
 		 g_param_spec_string (NM_DEVICE_PRODUCT,
@@ -402,6 +453,14 @@ nm_device_class_init (NMDeviceClass *device_class)
 						  G_PARAM_READABLE));
 
 	/* signals */
+
+	/**
+	 * NMDevice::state-changed:
+	 * @device: the client that received the signal
+	 * @state: the new state of the device
+	 *
+	 * Notifies the state change of a #NMDevice.
+	 **/
 	signals[STATE_CHANGED] =
 		g_signal_new ("state-changed",
 				    G_OBJECT_CLASS_TYPE (object_class),
@@ -413,6 +472,15 @@ nm_device_class_init (NMDeviceClass *device_class)
 				    G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 }
 
+/**
+ * nm_device_new:
+ * @connection: the #DBusGConnection
+ * @path: the DBus object path of the device
+ *
+ * Creates a new #NMDevice.
+ *
+ * Returns: a new device
+ **/
 GObject *
 nm_device_new (DBusGConnection *connection, const char *path)
 {
@@ -475,6 +543,15 @@ out:
 	return G_OBJECT (device);
 }
 
+/**
+ * nm_device_get_iface:
+ * @device: a #NMDevice
+ *
+ * Gets the interface name of the #NMDevice.
+ *
+ * Returns: the interface of the device. This is the internal string used by the
+ * device, and must not be modified.
+ **/
 const char *
 nm_device_get_iface (NMDevice *device)
 {
@@ -492,6 +569,15 @@ nm_device_get_iface (NMDevice *device)
 	return priv->iface;
 }
 
+/**
+ * nm_device_get_udi:
+ * @device: a #NMDevice
+ *
+ * Gets the HAL UDI of the #NMDevice.
+ *
+ * Returns: the HAL UDI of the device. This is the internal string used by the
+ * device, and must not be modified.
+ **/
 const char *
 nm_device_get_udi (NMDevice *device)
 {
@@ -509,6 +595,15 @@ nm_device_get_udi (NMDevice *device)
 	return priv->udi;
 }
 
+/**
+ * nm_device_get_driver:
+ * @device: a #NMDevice
+ *
+ * Gets the driver of the #NMDevice.
+ *
+ * Returns: the driver of the device. This is the internal string used by the
+ * device, and must not be modified.
+ **/
 const char *
 nm_device_get_driver (NMDevice *device)
 {
@@ -526,6 +621,14 @@ nm_device_get_driver (NMDevice *device)
 	return priv->driver;
 }
 
+/**
+ * nm_device_get_capabilities:
+ * @device: a #NMDevice
+ *
+ * Gets the device' capabilities.
+ *
+ * Returns: the capabilities
+ **/
 guint32
 nm_device_get_capabilities (NMDevice *device)
 {
@@ -543,6 +646,14 @@ nm_device_get_capabilities (NMDevice *device)
 	return priv->capabilities;
 }
 
+/**
+ * nm_device_get_managed:
+ * @device: a #NMDevice
+ *
+ * Whether the #NMDevice is managed by NetworkManager.
+ *
+ * Returns: %TRUE if the device is managed by NetworkManager
+ **/
 gboolean
 nm_device_get_managed (NMDevice *device)
 {
@@ -560,6 +671,14 @@ nm_device_get_managed (NMDevice *device)
 	return priv->managed;
 }
 
+/**
+ * nm_device_get_ip4_config:
+ * @device: a #NMDevice
+ *
+ * Gets the current #NMIP4Config associated with the #NMDevice.
+ *
+ * Returns: the #NMIP4Config or %NULL if the device is not activated.
+ **/
 NMIP4Config *
 nm_device_get_ip4_config (NMDevice *device)
 {
@@ -586,6 +705,15 @@ nm_device_get_ip4_config (NMDevice *device)
 	return priv->ip4_config;
 }
 
+/**
+ * nm_device_get_dhcp4_config:
+ * @device: a #NMDevice
+ *
+ * Gets the current #NMDHCP4Config associated with the #NMDevice.
+ *
+ * Returns: the #NMDHCPConfig or %NULL if the device is not activated or not
+ * using DHCP.
+ **/
 NMDHCP4Config *
 nm_device_get_dhcp4_config (NMDevice *device)
 {
@@ -612,6 +740,14 @@ nm_device_get_dhcp4_config (NMDevice *device)
 	return priv->dhcp4_config;
 }
 
+/**
+ * nm_device_get_state:
+ * @device: a #NMDevice
+ *
+ * Gets the current #NMDevice state.
+ *
+ * Returns: the current device state
+ **/
 NMDeviceState
 nm_device_get_state (NMDevice *device)
 {
@@ -807,6 +943,15 @@ nm_device_update_description (NMDevice *device)
 	nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_PRODUCT);
 }
 
+/**
+ * nm_device_get_product:
+ * @device: a #NMDevice
+ *
+ * Gets the product string of the #NMDevice.
+ *
+ * Returns: the product name of the device. This is the internal string used by the
+ * device, and must not be modified.
+ **/
 const char *
 nm_device_get_product (NMDevice *device)
 {
@@ -820,6 +965,15 @@ nm_device_get_product (NMDevice *device)
 	return priv->product;
 }
 
+/**
+ * nm_device_get_vendor:
+ * @device: a #NMDevice
+ *
+ * Gets the vendor string of the #NMDevice.
+ *
+ * Returns: the vendor name of the device. This is the internal string used by the
+ * device, and must not be modified.
+ **/
 const char *
 nm_device_get_vendor (NMDevice *device)
 {

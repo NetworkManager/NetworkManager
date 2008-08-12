@@ -1,5 +1,26 @@
 2008-08-12  Tambet Ingo  <tambet@gmail.com>
 
+	Start documenting libnm-glib public API using gtk-doc.
+
+	* libnm-glib/nm-serial-device.c: 
+	* libnm-glib/nm-object.c: 
+	* libnm-glib/nm-gsm-device.c: 
+	* libnm-glib/nm-device.c: 
+	* libnm-glib/nm-device-wifi.c: 
+	* libnm-glib/nm-device-ethernet.c: 
+	* libnm-glib/nm-client.c: 
+	* libnm-glib/nm-cdma-device.c: Document the public API.
+
+	* docs/libnm-glib/libnm-glib.types: Implement.
+
+	* docs/libnm-glib/Makefile.am: Implement.
+
+	* autogen.sh: 
+	* configure.in: 
+	* Makefile.am: Add gtk-doc support.
+
+2008-08-12  Tambet Ingo  <tambet@gmail.com>
+
 	* src/backends/*: Get rid of nm_system_should_modify_resolv_conf().
 
 	* src/named-manager/nm-named-manager.c (rewrite_resolv_conf): Calculate

@@ -32,6 +32,15 @@ enum {
 #define DBUS_PROP_SPEED "Speed"
 #define DBUS_PROP_CARRIER "Carrier"
 
+/**
+ * nm_device_ethernet_new:
+ * @connection: the #DBusGConnection
+ * @path: the DBus object path of the device
+ *
+ * Creates a new #NMDeviceEthernet.
+ *
+ * Returns: a new device
+ **/
 GObject *
 nm_device_ethernet_new (DBusGConnection *connection, const char *path)
 {
@@ -44,6 +53,15 @@ nm_device_ethernet_new (DBusGConnection *connection, const char *path)
 	                     NULL);
 }
 
+/**
+ * nm_device_ethernet_get_hw_address:
+ * @device: a #NMDeviceEthernet
+ *
+ * Gets the hardware (MAC) address of the #NMDeviceEthernet
+ *
+ * Returns: the hardware address. This is the internal string used by the
+ * device, and must not be modified.
+ **/
 const char *
 nm_device_ethernet_get_hw_address (NMDeviceEthernet *device)
 {
@@ -61,6 +79,14 @@ nm_device_ethernet_get_hw_address (NMDeviceEthernet *device)
 	return priv->hw_address;
 }
 
+/**
+ * nm_device_ethernet_get_speed:
+ * @device: a #NMDeviceEthernet
+ *
+ * Gets the speed of the #NMDeviceEthernet.
+ *
+ * Returns: the speed of the device
+ **/
 guint32
 nm_device_ethernet_get_speed (NMDeviceEthernet *device)
 {
@@ -78,6 +104,14 @@ nm_device_ethernet_get_speed (NMDeviceEthernet *device)
 	return priv->speed;
 }
 
+/**
+ * nm_device_ethernet_get_carrier:
+ * @device: a #NMDeviceEthernet
+ *
+ * Whether the device has carrier.
+ *
+ * Returns: %TRUE if the device has carrier
+ **/
 gboolean
 nm_device_ethernet_get_carrier (NMDeviceEthernet *device)
 {
@@ -214,6 +248,12 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *device_class)
 	object_class->get_property = get_property;
 
 	/* properties */
+
+	/**
+	 * NMDeviceEthernet:hw-address:
+	 *
+	 * The hardware (MAC) address of the device.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_HW_ADDRESS,
 		 g_param_spec_string (NM_DEVICE_ETHERNET_HW_ADDRESS,
@@ -222,6 +262,11 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *device_class)
 						  NULL,
 						  G_PARAM_READABLE));
 
+	/**
+	 * NMDeviceEthernet:speed:
+	 *
+	 * The speed of the device.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_SPEED,
 		 g_param_spec_uint (NM_DEVICE_ETHERNET_SPEED,
@@ -230,6 +275,11 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *device_class)
 					    0, G_MAXUINT32, 0,
 					    G_PARAM_READABLE));
 
+	/**
+	 * NMDeviceEthernet:carrier:
+	 *
+	 * Whether the device has carrier.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_CARRIER,
 		 g_param_spec_boolean (NM_DEVICE_ETHERNET_CARRIER,

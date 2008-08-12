@@ -87,6 +87,15 @@ nm_gsm_device_class_init (NMGsmDeviceClass *device_class)
 	object_class->dispose = dispose;
 }
 
+/**
+ * nm_gsm_device_new:
+ * @connection: the #DBusGConnection
+ * @path: the DBus object path of the device
+ *
+ * Creates a new #NMGsmDevice.
+ *
+ * Returns: a new device
+ **/
 NMGsmDevice *
 nm_gsm_device_new (DBusGConnection *connection, const char *path)
 {

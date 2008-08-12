@@ -168,6 +168,12 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 	object_class->finalize = finalize;
 
 	/* porperties */
+
+	/**
+	 * NMObject:connection:
+	 *
+	 * The #DBusGConnection of the object.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_CONNECTION,
 		 g_param_spec_boxed (NM_OBJECT_DBUS_CONNECTION,
@@ -176,6 +182,11 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 							 DBUS_TYPE_G_CONNECTION,
 							 G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
+	/**
+	 * NMObject:path:
+	 *
+	 * The DBus object path.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_PATH,
 		 g_param_spec_string (NM_OBJECT_DBUS_PATH,
@@ -185,6 +196,14 @@ nm_object_class_init (NMObjectClass *nm_object_class)
 							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 }
 
+/**
+ * nm_object_get_connection:
+ * @object: a #NMObject
+ *
+ * Gets the #NMObject's DBusGConnection.
+ *
+ * Returns: the connection
+ **/
 DBusGConnection *
 nm_object_get_connection (NMObject *object)
 {
@@ -193,6 +212,15 @@ nm_object_get_connection (NMObject *object)
 	return NM_OBJECT_GET_PRIVATE (object)->connection;
 }
 
+/**
+ * nm_object_get_path:
+ * @object: a #NMObject
+ *
+ * Gets the DBus path of the #NMObject.
+ *
+ * Returns: the object's path. This is the internal string used by the
+ * device, and must not be modified.
+ **/
 const char *
 nm_object_get_path (NMObject *object)
 {

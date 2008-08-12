@@ -407,6 +407,8 @@ else
 	AC_MSG_RESULT(no)
 fi
 
+GTK_DOC_CHECK(1.0)
+
 AC_CONFIG_FILES([
 Makefile
 include/Makefile
@@ -457,6 +459,7 @@ man/NetworkManager.8
 man/nm-tool.1
 po/Makefile.in
 policy/Makefile
+docs/libnm-glib/Makefile
 NetworkManager.pc
 ])
 AC_OUTPUT

@@ -87,6 +87,15 @@ nm_cdma_device_class_init (NMCdmaDeviceClass *device_class)
 	object_class->dispose = dispose;
 }
 
+/**
+ * nm_cdma_device_new:
+ * @connection: the #DBusGConnection
+ * @path: the DBus object path of the device
+ *
+ * Creates a new #NMCdmaDevice.
+ *
+ * Returns: a new device
+ **/
 GObject *
 nm_cdma_device_new (DBusGConnection *connection, const char *path)
 {
