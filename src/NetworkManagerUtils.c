@@ -113,14 +113,14 @@ nm_print_device_capabilities (NMDevice *dev)
 		driver = "<unknown>";
 
 	if (caps == NM_DEVICE_CAP_NONE || !(NM_DEVICE_CAP_NM_SUPPORTED)) {
-		nm_info ("%s: Driver support level for '%s' is unsupported",
+		nm_info ("%s: driver '%s' is unsupported",
 				nm_device_get_iface (dev), driver);
 		return;
 	}
 
 	if (NM_IS_DEVICE_ETHERNET (dev)) {
 		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT)) {
-			nm_info ("%s: Driver '%s' does not support carrier detection.\n"
+			nm_info ("%s: driver '%s' does not support carrier detection.\n"
 					"\tYou must switch to it manually.",
 					nm_device_get_iface (dev), driver);
 			full_support = FALSE;
@@ -130,7 +130,7 @@ nm_print_device_capabilities (NMDevice *dev)
 	}
 
 	if (full_support) {
-		nm_info ("%s: Device is fully-supported using driver '%s'.",
+		nm_info ("%s: driver is '%s'.",
 				nm_device_get_iface (dev), driver);
 	}
 }
