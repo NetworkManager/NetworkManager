@@ -1,3 +1,8 @@
+2008-08-13  Dan Williams  <dcbw@redhat.com>
+
+	* callouts/nm-dispatcher-action.c
+		- Add IP4 config info to script environment
+
 2008-08-12  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device.c

@@ -29,6 +29,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <errno.h>
+#include <arpa/inet.h>
 
 #include <glib.h>
 #include <dbus/dbus.h>
@@ -37,6 +38,7 @@
 
 #include <NetworkManager.h>
 #include <libnm-util/nm-connection.h>
+#include <libnm-util/nm-setting-ip4-config.h>
 #include <libnm-glib/nm-dhcp4-config.h>
 #include <libnm-glib/nm-device.h>
 
@@ -45,6 +47,7 @@
 #define NMD_SCRIPT_DIR    SYSCONFDIR "/NetworkManager/dispatcher.d"
 
 static GMainLoop *loop = NULL;
+static gboolean debug = FALSE;
 
 static gboolean quit_timeout_cb (gpointer user_data);
 
@@ -233,21 +236,136 @@ add_one_option_to_envp (gpointer key, gpointer value, gpointer user_data)
 }
 
 static char **
-construct_envp (NMDHCP4Config *dhcp4_config)
+construct_envp (NMIP4Config *ip4_config, NMDHCP4Config *dhcp4_config)
 {
+	guint32 env_size = 0;
 	char **envp;
-	GHashTable *options;
-	EnvAddInfo info;
+	guint32 envp_idx = 0;
+	GHashTable *options = NULL;
+	GSList *addresses, *routes, *iter;
+	GArray *nameservers;
+	GPtrArray *domains;
+	guint32 num, i;
+	GString *tmp;
 
-	if (!dhcp4_config)
+	if (!ip4_config)
 		return g_new0 (char *, 1);
 
-	options = nm_dhcp4_config_get_options (dhcp4_config);
-	envp = g_new0 (char *, g_hash_table_size (options) + 1);
+	addresses = (GSList *) nm_ip4_config_get_addresses (ip4_config);
+	nameservers = (GArray *) nm_ip4_config_get_nameservers (ip4_config);
+	domains = (GPtrArray *) nm_ip4_config_get_domains (ip4_config);
+	routes = (GSList *) nm_ip4_config_get_routes (ip4_config);
 
-	info.envp = envp;
-	info.i = 0;
-	g_hash_table_foreach (options, add_one_option_to_envp, &info);
+	env_size =   g_slist_length (addresses)
+	           + 1 /* addresses length */
+	           + 1 /* nameservers */
+	           + 1 /* domains */
+	           + 1 /* hostname */
+	           + g_slist_length (routes)
+	           + 1 /* routes length */;
+
+	if (dhcp4_config) {
+		options = nm_dhcp4_config_get_options (dhcp4_config);
+		env_size += g_hash_table_size (options);
+	}
+
+	envp = g_new0 (char *, env_size + 1);
+
+	/* IP4 config stuff */
+	for (iter = addresses, num = 0; iter; iter = g_slist_next (iter)) {
+		NMSettingIP4Address *addr = (NMSettingIP4Address *) iter->data;
+		char str_addr[INET_ADDRSTRLEN + 1];
+		char str_gw[INET_ADDRSTRLEN + 1];
+		struct in_addr tmp_addr;
+
+		memset (str_addr, 0, sizeof (str_addr));
+		tmp_addr.s_addr = addr->address;
+		if (!inet_ntop (AF_INET, &tmp_addr, str_addr, sizeof (str_addr)))
+			continue;
+
+		memset (str_gw, 0, sizeof (str_gw));
+		tmp_addr.s_addr = addr->gateway;
+		inet_ntop (AF_INET, &tmp_addr, str_gw, sizeof (str_gw));
+
+		tmp = g_string_sized_new (25 + strlen (str_addr) + strlen (str_gw));
+		g_string_append_printf (tmp, "IP4_ADDRESS_%d=%s/%d %s", num++, str_addr, addr->prefix, str_gw);
+		envp[envp_idx++] = tmp->str;
+		g_string_free (tmp, FALSE);
+	}
+	if (num)
+		envp[envp_idx++] = g_strdup_printf ("IP4_NUM_ADDRESSES=%d", num);
+
+	if (nameservers && nameservers->len) {
+		gboolean first = TRUE;
+
+		tmp = g_string_new ("IP4_NAMESERVERS=");
+		for (i = 0; i < nameservers->len; i++) {
+			struct in_addr addr;
+			char buf[INET_ADDRSTRLEN + 1];
+
+			addr.s_addr = g_array_index (nameservers, guint32, i);
+			memset (buf, 0, sizeof (buf));
+			if (inet_ntop (AF_INET, &addr, buf, sizeof (buf))) {
+				if (!first)
+					g_string_append_c (tmp, ' ');
+				g_string_append (tmp, buf);
+				first = FALSE;
+			}
+		}
+		envp[envp_idx++] = tmp->str;
+		g_string_free (tmp, FALSE);
+	}
+
+	if (domains && domains->len) {
+		tmp = g_string_new ("IP4_DOMAINS=");
+		for (i = 0; i < domains->len; i++) {
+			if (i > 0)
+				g_string_append_c (tmp, ' ');
+			g_string_append (tmp, (char *) g_ptr_array_index (domains, i));
+		}
+		envp[envp_idx++] = tmp->str;
+		g_string_free (tmp, FALSE);
+	}
+
+	for (iter = routes, num = 0; iter; iter = g_slist_next (iter)) {
+		NMSettingIP4Route *route = (NMSettingIP4Route *) iter->data;
+		char str_addr[INET_ADDRSTRLEN + 1];
+		char str_nh[INET_ADDRSTRLEN + 1];
+		struct in_addr tmp_addr;
+
+		memset (str_addr, 0, sizeof (str_addr));
+		tmp_addr.s_addr = route->address;
+		if (!inet_ntop (AF_INET, &tmp_addr, str_addr, sizeof (str_addr)))
+			continue;
+
+		memset (str_nh, 0, sizeof (str_nh));
+		tmp_addr.s_addr = route->next_hop;
+		inet_ntop (AF_INET, &tmp_addr, str_nh, sizeof (str_nh));
+
+		tmp = g_string_sized_new (30 + strlen (str_addr) + strlen (str_nh));
+		g_string_append_printf (tmp, "IP4_ROUTE_%d=%s/%d %s %d", num++, str_addr, route->prefix, str_nh, route->metric);
+		envp[envp_idx++] = tmp->str;
+		g_string_free (tmp, FALSE);
+	}
+	envp[envp_idx++] = g_strdup_printf ("IP4_NUM_ROUTES=%d", num);
+
+	/* DHCP stuff */
+	if (dhcp4_config && options) {
+		EnvAddInfo info;
+
+		info.envp = envp;
+		info.i = envp_idx;
+		g_hash_table_foreach (options, add_one_option_to_envp, &info);
+	}
+
+	if (debug) {
+		char **p;
+
+		g_message ("-----------------------------------------");
+		for (p = envp; *p; p++)
+			g_message ("  %s", *p);
+		g_message ("\n");
+	}
 
 	return envp;
 }
@@ -257,6 +375,7 @@ dispatch_scripts (const char *action,
                   const char *iface,
                   const char *parent_iface,
                   NMDeviceType type,
+                  NMIP4Config *ip4_config,
                   NMDHCP4Config *dhcp4_config)
 {
 	GDir *dir;
@@ -301,7 +420,7 @@ dispatch_scripts (const char *action,
 	}
 	g_dir_close (dir);
 
-	envp = construct_envp (dhcp4_config);
+	envp = construct_envp (ip4_config, dhcp4_config);
 
 	for (iter = scripts; iter; iter = g_slist_next (iter)) {
 		gchar *argv[4];
@@ -349,6 +468,7 @@ nm_dispatcher_action (Handler *h,
 	NMDeviceState dev_state = NM_DEVICE_STATE_UNKNOWN;
 	NMDevice *device = NULL;
 	NMDHCP4Config *dhcp4_config = NULL;
+	NMIP4Config *ip4_config = NULL;
 	GValue *value;
 
 	/* Back off the quit timeout */
@@ -412,10 +532,12 @@ nm_dispatcher_action (Handler *h,
 	device = NM_DEVICE (nm_device_new (d->g_connection, (const char *) g_value_get_boxed (value)));
 
 	/* Get the DHCP4 config */
-	if (device && (dev_state == NM_DEVICE_STATE_ACTIVATED))
+	if (device && (dev_state == NM_DEVICE_STATE_ACTIVATED)) {
 		dhcp4_config = nm_device_get_dhcp4_config (device);
+		ip4_config = nm_device_get_ip4_config (device);
+	}
 
-	dispatch_scripts (action, iface, parent_iface, type, dhcp4_config);
+	dispatch_scripts (action, iface, parent_iface, type, ip4_config, dhcp4_config);
 
 	if (device)
 		g_object_unref (device);
@@ -591,7 +713,6 @@ main (int argc, char **argv)
 	Dispatcher *d = g_malloc0 (sizeof (Dispatcher));
 	GOptionContext *opt_ctx;
 	GError *error = NULL;
-	gboolean debug = FALSE;
 	gboolean persist = FALSE;
 
 	GOptionEntry entries[] = {
