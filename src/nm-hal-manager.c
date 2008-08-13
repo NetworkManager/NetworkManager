@@ -302,7 +302,7 @@ register_built_in_creators (NMHalManager *self)
 
 	/* Wireless device */
 	creator = g_slice_new0 (DeviceCreator);
-	creator->device_type_name = g_strdup ("wireless (802.11)");
+	creator->device_type_name = g_strdup ("802.11 WiFi");
 	creator->capability_str = g_strdup ("net.80211");
 	creator->is_device_fn = is_wireless_device;
 	creator->creator_fn = wireless_device_creator;
