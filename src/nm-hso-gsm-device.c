@@ -390,11 +390,31 @@ static void
 real_deactivate_quickly (NMDevice *device)
 {
 	NMHsoGsmDevicePrivate *priv = NM_HSO_GSM_DEVICE_GET_PRIVATE (device);
+	NMActRequest *req;
+	guint cid;
+	char *command;
 
 	if (priv->pending_ip4_config) {
 		g_object_unref (priv->pending_ip4_config);
 		priv->pending_ip4_config = NULL;
 	}
+
+	/* Don't leave the modem connected */
+	req = nm_device_get_act_request (device);
+	if (req) {
+		cid = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (req), GSM_CID));
+		if (cid) {
+			command = g_strdup_printf ("AT_OWANCALL=%d,0,1", cid);
+			nm_serial_device_send_command_string (NM_SERIAL_DEVICE (device), command);
+			g_free (command);
+
+			/* FIXME: doesn't seem to take the command otherwise, perhaps since
+			 * the serial port gets closed right away
+			 */
+			g_usleep (G_USEC_PER_SEC / 3);
+		}
+	}
+
 
 	if (NM_DEVICE_CLASS (nm_hso_gsm_device_parent_class)->deactivate_quickly)
 		NM_DEVICE_CLASS (nm_hso_gsm_device_parent_class)->deactivate_quickly (device);
@@ -410,6 +430,7 @@ real_deactivate (NMDevice *device)
 		nm_system_device_flush_ip4_addresses_with_iface (priv->netdev_iface);
 		nm_system_device_set_up_down_with_iface (priv->netdev_iface, FALSE);
 	}
+	nm_device_set_ip_iface (device, NULL);
 
 	if (NM_DEVICE_CLASS (nm_hso_gsm_device_parent_class)->deactivate)
 		NM_DEVICE_CLASS (nm_hso_gsm_device_parent_class)->deactivate (device);

@@ -1361,12 +1361,12 @@ nm_device_deactivate_quickly (NMDevice *self)
 
 	aipd_cleanup (self);
 
-	/* Tear down an existing activation request */
-	clear_act_request (self);
-
 	/* Call device type-specific deactivation */
 	if (NM_DEVICE_GET_CLASS (self)->deactivate_quickly)
 		NM_DEVICE_GET_CLASS (self)->deactivate_quickly (self);
+
+	/* Tear down an existing activation request */
+	clear_act_request (self);
 
 	return TRUE;
 }

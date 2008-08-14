@@ -1,5 +1,14 @@
 2008-08-14  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device.c
+		- (nm_device_deactivate_quickly): tear down activation request after
+			calling device-specific deactivation
+
+	* src/nm-hso-gsm-device.c
+		- (real_deactivate_quickly): terminate connection when deactivating
+
+2008-08-14  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-activation-request.h
 		- Add HSO secrets caller
 
