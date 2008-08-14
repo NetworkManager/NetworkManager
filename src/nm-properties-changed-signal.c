@@ -141,6 +141,10 @@ notify (GObject *object, GParamSpec *pspec)
 	PropertiesChangedInfo *info;
 	GValue *value;
 
+	/* Ignore properties that shouldn't be exported */
+	if (pspec->flags & NM_PROPERTY_PARAM_NO_EXPORT)
+		return;
+
 	info = (PropertiesChangedInfo *) g_object_get_data (object, NM_DBUS_PROPERTY_CHANGED);
 	if (!info) {
 		info = properties_changed_info_new ();

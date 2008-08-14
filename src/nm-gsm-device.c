@@ -920,7 +920,7 @@ nm_gsm_device_class_init (NMGsmDeviceClass *klass)
 						  "Monitoring interface",
 						  "Monitoring interface",
 						  NULL,
-						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	/* Signals */
 	signals[PROPERTIES_CHANGED] = 

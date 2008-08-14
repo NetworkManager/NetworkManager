@@ -556,7 +556,7 @@ nm_hso_gsm_device_class_init (NMHsoGsmDeviceClass *klass)
 						  "Network interface",
 						  "Network interface",
 						  NULL,
-						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
 									 &dbus_glib_nm_gsm_device_object_info);

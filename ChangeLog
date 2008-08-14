@@ -1,5 +1,17 @@
 2008-08-14  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-properties-changed-signal.c
+	  src/nm-properties-changed-signal.h
+		- Add a property spec flag for "don't export this property" in
+			property changed signals
+
+	* src/nm-hso-gsm-device.c
+	  src/nm-gsm-device.c
+	  src/nm-cdma-device.c
+		- Don't export monitor interface or netdev interface properties
+
+2008-08-14  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerPolicy.c
 		- (update_routing_and_dns): 'hso' devices can be default even if they
 			don't have a gateway
