@@ -1,5 +1,12 @@
 2008-08-14  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerSystem.c
+		- (nm_system_device_is_up_with_iface): ensure ifreq is cleared before using
+		- (nm_system_device_set_up_down_with_iface): cleanups; only return
+			success if the operation really was successful
+
+2008-08-14  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-netlink-monitor.c
 	  src/nm-netlink-monitor.h
 	  src/nm-device-ethernet.c
