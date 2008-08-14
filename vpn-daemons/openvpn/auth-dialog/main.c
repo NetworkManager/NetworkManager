@@ -160,7 +160,7 @@ pem_is_encrypted (const char *filename)
 	}
 
 	g_io_channel_shutdown (pem_chan, FALSE, NULL);
-	g_object_unref (pem_chan);
+	g_io_channel_unref (pem_chan);
 	return encrypted;
 }
 

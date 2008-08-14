@@ -1,3 +1,11 @@
+2008-08-14  Tambet Ingo  <tambet@gmail.com>
+
+	* src/nm-openvpn-service.c (nm_openvpn_socket_data_cb): Detect private key
+	verification errors too.
+
+	* auth-dialog/main.c (pem_is_encrypted): GIOChannel isn't a GObject, use the
+	correct unreferencing function for it.
+
 2008-08-12  Dan Williams  <dcbw@redhat.com>
 
 	* properties/auth-helpers.c

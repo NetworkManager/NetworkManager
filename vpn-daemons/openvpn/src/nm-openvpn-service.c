@@ -323,6 +323,11 @@ nm_openvpn_socket_data_cb (GIOChannel *source, GIOCondition condition, gpointer 
 		nm_vpn_plugin_failure (NM_VPN_PLUGIN (plugin), NM_VPN_PLUGIN_FAILURE_LOGIN_FAILED);
 		nm_openvpn_disconnect_management_socket (plugin);
 		again = FALSE;
+	} else if (strstr (str, "private key password verification failed")) {
+		nm_warning ("Private key verification failed");
+		nm_vpn_plugin_failure (NM_VPN_PLUGIN (plugin), NM_VPN_PLUGIN_FAILURE_LOGIN_FAILED);
+		nm_openvpn_disconnect_management_socket (plugin);
+		again = FALSE;
 	}
 
  out:
