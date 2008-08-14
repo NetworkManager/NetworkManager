@@ -291,7 +291,7 @@ constructor (GType type,
 											  dev);
 
 		if (!nm_netlink_monitor_request_status (monitor, &error)) {
-			nm_warning ("couldn't request carrier state: %s", error->message);
+			nm_warning ("couldn't request carrier state: %s", error ? error->message : "unknown");
 			g_error_free (error);
 		}
 

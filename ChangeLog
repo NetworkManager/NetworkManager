@@ -1,3 +1,11 @@
+2008-08-14  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-netlink-monitor.c
+	  src/nm-netlink-monitor.h
+	  src/nm-device-ethernet.c
+		- (nm_netlink_monitor_request_status): return an error on failure
+		- (constructor): don't segfault on missing error
+
 2008-08-13  Dan Williams  <dcbw@redhat.com>
 
 	* callouts/nm-dispatcher-action.c

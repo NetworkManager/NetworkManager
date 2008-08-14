@@ -434,7 +434,10 @@ nm_netlink_monitor_request_status (NMNetlinkMonitor  *monitor,
 
 	/* Update the link cache with latest state */
 	if (nl_cache_refill (priv->nlh, priv->nlh_link_cache)) {
-		nm_warning ("Error updating link cache: %s", nl_geterror ());
+		g_set_error (error, NM_NETLINK_MONITOR_ERROR,
+		             NM_NETLINK_MONITOR_ERROR_LINK_CACHE_UPDATE,
+		             _("error updating link cache: %s"),
+		             nl_geterror ());
 		return FALSE;
 	}
 
