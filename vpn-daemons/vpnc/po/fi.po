@@ -1,6 +1,6 @@
 # Finnish messages for NetworkManager-openvpn.
-# Copyright (C) 2006 Ilkka Tuohela
-# Ilkka Tuohela <hile@iki.fi>, 2006.
+# Copyright (C) 2006-2008 Free Software Foundation, Inc.
+# Ilkka Tuohela <hile@iki.fi>, 2006-2008.
 #
 # Suomennos: http://gnome.fi/
 #
@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-02-19 08:05+0300\n"
-"PO-Revision-Date: 2007-03-06 06:05+0300\n"
+"POT-Creation-Date: 2008-08-14 09:04+0300\n"
+"PO-Revision-Date: 2008-08-14 09:00+0300\n"
 "Last-Translator: Ilkka Tuohela <hile@iki.fi>\n"
 "Language-Team: Finnish <gnome-fi-laatu@lists.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
@@ -49,16 +49,16 @@ msgstr "_Muista salasana istunnon ajan"
 msgid "_Save passwords in keyring"
 msgstr "_Tallenna salasana avainrenkaaseen"
 
-#: ../auth-dialog/main.c:172
+#: ../auth-dialog/main.c:181
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Yhteydenotto VPN-verkkoon \"%s\" vaatii kirjautumista."
 
-#: ../auth-dialog/main.c:173
+#: ../auth-dialog/main.c:182
 msgid "Authenticate VPN"
 msgstr "Todenna VPN-yhteyden avaus"
 
-#: ../auth-dialog/main.c:180
+#: ../auth-dialog/main.c:189
 msgid "_Group Password:"
 msgstr "_Ryhmän salasana:"
 
@@ -70,68 +70,47 @@ msgstr "Lisää, poista tai muokkaa VPN-yhteyksiä"
 msgid "VPN Connection Manager (vpnc)"
 msgstr "VPN-yhteysohjelmisto (vpnc)"
 
-#: ../properties/nm-vpnc.c:98
-msgid "Compatible Cisco VPN client (vpnc)"
+#: ../properties/nm-vpnc.c:50
+msgid "Cisco Compatible VPN (vpnc)"
 msgstr "Cisco-yhteensopiva VPN-asiakas (vpnc)"
 
-#: ../properties/nm-vpnc.c:543
-msgid "The following vpnc VPN connection will be created:"
-msgstr "Seuraava vpnc-yhteys luodaan:"
+#: ../properties/nm-vpnc.c:51
+msgid ""
+"Compatible with various Cisco, Juniper, Netscreen, and Sonicwall IPSec-based "
+"VPN gateways."
+msgstr ""
+"Yhteensopiva useiden esimerkiksi Ciscon, Juniperin, Netscreenin ja Sonicwallin "
+"valmistamien IPSec-pohjaisten VPN-yhdyskäytävien kanssa."
 
-#: ../properties/nm-vpnc.c:545
-#, c-format
-msgid "Name:  %s"
-msgstr "Nimi: %s"
+#: ../properties/nm-vpnc.c:203
+msgid "Secure (default)"
+msgstr "Turvallinen (oletus)"
 
-#: ../properties/nm-vpnc.c:548
-#, c-format
-msgid "Gateway:  %s"
-msgstr "Yhdyskäytävä: %s"
+#: ../properties/nm-vpnc.c:206
+msgid "Weak (use with caution)"
+msgstr "Heikko (käytä varoen)"
 
-#: ../properties/nm-vpnc.c:550
-#, c-format
-msgid "Group Name:  %s"
-msgstr "Ryhmän nimi: %s"
+#: ../properties/nm-vpnc.c:214
+msgid "None (completely insecure)"
+msgstr "Ei salausta (täysin turvaton)"
 
-#: ../properties/nm-vpnc.c:554
-#, c-format
-msgid "Username:  %s"
-msgstr "Käyttäjätunnus: %s"
+#: ../properties/nm-vpnc.c:254
+msgid "NAT-T (default)"
+msgstr "NAT-T (oletus)"
 
-#: ../properties/nm-vpnc.c:559
-#, c-format
-msgid "Domain:  %s"
-msgstr "Toimialue: %s"
+#: ../properties/nm-vpnc.c:261
+msgid "Cisco UDP"
+msgstr "Cisco UDP"
 
-#: ../properties/nm-vpnc.c:564
-#, c-format
-msgid "Routes:  %s"
-msgstr "Reitit: %s"
+#: ../properties/nm-vpnc.c:268
+msgid "Disabled"
+msgstr "Ei käytössä"
 
-#: ../properties/nm-vpnc.c:568
-#, c-format
-msgid "NAT-Keepalive packet interval:  %s"
-msgstr "NAT-keepalive -pakettien aikaväli: %s"
-
-#: ../properties/nm-vpnc.c:572
-#, c-format
-msgid "Enable Single DES"
-msgstr "Single-DES -salaus"
-
-#: ../properties/nm-vpnc.c:576
-#, c-format
-msgid "Disable NAT Traversal"
-msgstr "Poista NAT-läpäisy käytöstä"
-
-#: ../properties/nm-vpnc.c:580
-msgid "The connection details can be changed using the \"Edit\" button."
-msgstr "Yhteyden yksityiskohtia voi muuttaa valitsemalla \"Muokkaa\"."
-
-#: ../properties/nm-vpnc.c:665
+#: ../properties/nm-vpnc.c:658
 msgid "TCP tunneling not supported"
 msgstr "TCP-tunnelointi ei ole tuettu"
 
-#: ../properties/nm-vpnc.c:667
+#: ../properties/nm-vpnc.c:660
 #, c-format
 msgid ""
 "The VPN settings file '%s' specifies that VPN traffic should be tunneled "
@@ -146,330 +125,43 @@ msgstr ""
 "Yhteys voidaan edelleen luoda ilman TCP-tunnelointia, mutta se ei ehkä toimi "
 "kuten oli tarkoitus."
 
-#: ../properties/nm-vpnc.c:687
-msgid "Settings import incomplete"
-msgstr "Tuodut asetukset olivat vajavaiset"
-
-#: ../properties/nm-vpnc.c:689
-#, c-format
-msgid ""
-"The VPN settings file '%s' is incomplete. You may not be able to connect "
-"without providing further information."
-msgstr ""
-"VPN-asetustiedosto \"%s\" ei sisällä kaikkia vaadittavia asetuksia. Voi "
-"olla, ettet voi ottaa yhteyttä antamatta lisätietoja."
-
-#: ../properties/nm-vpnc.c:709
-msgid "Cannot import settings"
-msgstr "Asetuksia ei voi tuoda"
-
-#: ../properties/nm-vpnc.c:711
-#, c-format
-msgid "The VPN settings file '%s' could not be read or is invalid."
-msgstr "VPN-asetustiedostoa \"%s\" ei voitu lukea tai se on viallinen."
-
-#: ../properties/nm-vpnc.c:726
-msgid "Select file to import"
-msgstr "Valitse tuotava tiedosto"
-
-#: ../properties/nm-vpnc.c:908
-msgid "Save as..."
-msgstr "Tallenna nimellä..."
-
-#: ../properties/nm-vpnc.c:937
-#, c-format
-msgid "A file named \"%s\" already exists."
-msgstr "Tiedosto \"%s\" on jo olemassa."
-
-#: ../properties/nm-vpnc.c:940
-msgid "Do you want to replace it with the one you are saving?"
-msgstr "Haluatko korvata sen tiedostolla jota olet tallentamassa?"
-
-#: ../properties/nm-vpnc.c:954
-msgid "Failed to export configuration"
-msgstr "Asetuksia ei voitu viedä"
-
-#: ../properties/nm-vpnc.c:956
-#, c-format
-msgid "Failed to save file %s"
-msgstr "Tiedostoa \"%s\" ei voitu tallentaa"
-
 #: ../properties/nm-vpnc-dialog.glade.h:1
-msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
-msgstr "<i>esimerkki: 172.16.0.0/16 10.11.12.0/24</i>"
+msgid " "
+msgstr " "
 
 #: ../properties/nm-vpnc-dialog.glade.h:2
-msgid "Connection na_me:"
-msgstr "Yhteyden ni_mi:"
+msgid "<b>General</b>"
+msgstr "<b>Yleisasetukset</b>"
 
 #: ../properties/nm-vpnc-dialog.glade.h:3
-msgid "Disable NAT _traversal"
-msgstr "Poista NAT-_läpäisy käytöstä"
+msgid "<b>Optional</b>"
+msgstr "<b>Lisäasetukset</b>"
 
 #: ../properties/nm-vpnc-dialog.glade.h:4
-msgid "Enable _weak single DES encryption"
-msgstr "Käytä _heikkoa single-DES -salausta"
+msgid "Disable Dead Peer Detection"
+msgstr "Älä havaitse vastapaan katoamista"
 
 #: ../properties/nm-vpnc-dialog.glade.h:5
-msgid "G_roup name:"
-msgstr "_Ryhmän nimi:"
+msgid "Domain:"
+msgstr "Toimialue:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:6
-msgid "Import _Saved Configuration..."
-msgstr "Tuo _tallennettu määrittely..."
+msgid "Encryption Method:"
+msgstr "Salausmenetelmä:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:7
-msgid "Interval:"
-msgstr "Aikaväli:"
+msgid "G_roup Name:"
+msgstr "_Ryhmän nimi:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:8
-msgid ""
-"Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
-msgstr ""
-"Yksilöllinen VPN-verkon nimi, esimerkiksi \"Kampusverkko\" tai \"Työpaikan "
-"verkko\"."
+msgid "NAT Traversal:"
+msgstr "NAT-läpäisytapa:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:9
-msgid "Optional"
-msgstr "Valinnaiset tiedot"
+msgid "User name:"
+msgstr "Käyttäjätunnus:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:10
-msgid "Override _user name"
-msgstr "Itsemääritelty _käyttäjätunnus"
-
-#: ../properties/nm-vpnc-dialog.glade.h:11
-msgid ""
-"Please enter the information provided by your system administrator below. Do "
-"not enter your password here as you will be prompted when connecting."
-msgstr ""
-"Syötä järjestelmän ylläpitäjältä saamasi tiedot alla oleviin kohtiin. Älä "
-"syötä tähän salasanaasi, sillä se kysytään vasta otettaessa yhteyttä."
-
-#: ../properties/nm-vpnc-dialog.glade.h:12
-msgid ""
-"Please note that the file you import is not a Cisco VPN or VPNC "
-"configuration file. Ask your adminstrator for the file."
-msgstr ""
-"Huomaa, että tuotava tiedosto ei ole Cisco VPN tai vpnc-asetustiedosto. Kysy "
-"ylläpitäjältäsi oikeaa tiedostoa."
-
-#: ../properties/nm-vpnc-dialog.glade.h:13
-msgid "Required"
-msgstr "Vaaditut"
-
-#: ../properties/nm-vpnc-dialog.glade.h:14
-msgid "Use NAT _keepalive packets"
-msgstr "Käytä NAT-_keepalive -paketteja"
-
-#: ../properties/nm-vpnc-dialog.glade.h:15
-msgid "Use _domain for authentication"
-msgstr "Käytä _aluenimeä tunnistautumiseen"
-
-#: ../properties/nm-vpnc-dialog.glade.h:16
 msgid "_Gateway:"
 msgstr "_Yhdyskäytävä:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:17
-msgid "_Only use VPN connection for these addresses"
-msgstr "_Käytä VPN-yhteyttä seuraaville osoitteille"
-
-#~ msgid ""
-#~ "The VPN login failed because the user name and password were not accepted."
-#~ msgstr ""
-#~ "VPN-kirjautuminen ei onnistunut, koska käyttäjätunnusta ja salasanaa ei "
-#~ "hyväksytty."
-
-#~ msgid "The VPN login failed because the VPN program could not be started."
-#~ msgstr ""
-#~ "VPN-kirjautuminen epäonnistui, koska VPN-ohjelmaa ei voitu käynnistää."
-
-#~ msgid ""
-#~ "The VPN login failed because the VPN program could not connect to the VPN "
-#~ "server."
-#~ msgstr ""
-#~ "VPN-kirjatuminen epäonnistui, koska VPN-ohjelma ei saanut yhteyttä VPN-"
-#~ "palvelimeen."
-
-#~ msgid ""
-#~ "The VPN login failed because the VPN configuration options were invalid."
-#~ msgstr ""
-#~ "VPN-kirjautuminen epäonnistui, koska VPN-asetuksten valinnat olivat "
-#~ "virheelliset."
-
-#~ msgid ""
-#~ "The VPN login failed because the VPN program received an invalid "
-#~ "configuration from the VPN server."
-#~ msgstr ""
-#~ "VPN-kirjautumien epäonnstui, koska VPN-ohjelma sai epäyhteensopivat "
-#~ "asetukset VPN-palvelimelta."
-
-#~ msgid "<b>Connection Information</b>"
-#~ msgstr "<b>Tietoja yhteydestä</b>"
-
-#~ msgid "<b>Connection Name</b>"
-#~ msgstr "<b>Yhteyden nimi</b>"
-
-#~ msgid "O_ptional Information"
-#~ msgstr "_Lisätiedot"
-
-#~ msgid "Certificate password:"
-#~ msgstr "Varmennettu salasana:"
-
-#~ msgid "OpenVPN Client"
-#~ msgstr "OpenVPN-asiakas"
-
-#~ msgid "Connection Type: X.509 Certificates"
-#~ msgstr "Yhteyden tyyppi: X.509-varmenteet"
-
-#~ msgid "CA:  %s"
-#~ msgstr "CA:  %s"
-
-#~ msgid "Cert:  %s"
-#~ msgstr "Varmenne:  %s"
-
-#~ msgid "Key:  %s"
-#~ msgstr "Avain:  %s"
-
-#~ msgid "Connection Type: Shared Key"
-#~ msgstr "Yhteyden tyyppi: jaettu avain"
-
-#~ msgid "Shared Key:  %s"
-#~ msgstr "Jaettu avain:  %s"
-
-#~ msgid "Local IP:  %s"
-#~ msgstr "Oma IP-osoite:  %s"
-
-#~ msgid "Remote IP:  %s"
-#~ msgstr "Palvelimen IP-osoite:  %s"
-
-#~ msgid "Connection Type: Password"
-#~ msgstr "Yhteyden tyyppi: Salasana"
-
-#~ msgid "Connection Type: X.509 with Password Authentication"
-#~ msgstr "Yhteyden tyyppi: X.509 salasanalla todennuksella"
-
-#~ msgid "Remote:  %s"
-#~ msgstr "Palvelin:  %s"
-
-#~ msgid "Device: %s"
-#~ msgstr "Laite: %s"
-
-#~ msgid "TAP"
-#~ msgstr "TAP"
-
-#~ msgid "TUN"
-#~ msgstr "TUN"
-
-#~ msgid "Protocol: %s"
-#~ msgstr "Protokolla: %s"
-
-#~ msgid "TCP"
-#~ msgstr "TCP"
-
-#~ msgid "UDP"
-#~ msgstr "UDP"
-
-#~ msgid "Use LZO Compression: %s"
-#~ msgstr "Käytä LZO-pakkausta: %s"
-
-#~ msgid "Yes"
-#~ msgstr "Kyllä"
-
-#~ msgid "No"
-#~ msgstr "Ei"
-
-#~ msgid "Cipher:  %s"
-#~ msgstr "Salausmenetelmä:  %s"
-
-#~ msgid "TLS auth:  %s %s"
-#~ msgstr "TLS-todentaminen: %s %s"
-
-#~ msgid "Select CA to use"
-#~ msgstr "Valitse käytettävä CA"
-
-#~ msgid "Select certificate to use"
-#~ msgstr "Valitse käytettävä varmenne"
-
-#~ msgid "Select key to use"
-#~ msgstr "Valitse käytettävä avain"
-
-#~ msgid "Select shared key to use"
-#~ msgstr "Valitse käytettävä jaettu avain"
-
-#~ msgid "Select TA to use"
-#~ msgstr "Valitse käytettävä TA"
-
-#~ msgid "0"
-#~ msgstr "0"
-
-#~ msgid "1"
-#~ msgstr "1"
-
-#~ msgid "CA  file:"
-#~ msgstr "CA-tiedosto:"
-
-#~ msgid "Certificate:"
-#~ msgstr "Varmenne:"
-
-#~ msgid "Connection Type:"
-#~ msgstr "Yhteyden tyyppi:"
-
-#~ msgid "Direction:"
-#~ msgstr "Suunta:"
-
-#~ msgid "Key:"
-#~ msgstr "Avain:"
-
-#~ msgid "Local IP:"
-#~ msgstr "Paikallinen IP-osoite:"
-
-#~ msgid "Password"
-#~ msgstr "Salasana"
-
-#~ msgid "Remote IP:"
-#~ msgstr "Palvelimen IP-osoite:"
-
-#~ msgid "Shared Key:"
-#~ msgstr "Jaettu avain:"
-
-#~ msgid "Shared key"
-#~ msgstr "Jaettu avain"
-
-#~ msgid "Use LZO compression"
-#~ msgstr "Käytä LZO-pakkausta"
-
-#~ msgid "Use TAP device"
-#~ msgstr "Käytä TAP-laitetta"
-
-#~ msgid "Use TCP connection"
-#~ msgstr "Käytä TCP-yhteyttä"
-
-#~ msgid "Use TLS auth:"
-#~ msgstr "Käytä TLS-todentamista:"
-
-#~ msgid "Use cipher:"
-#~ msgstr "Käytä salausmenetelmää:"
-
-#~ msgid "Username:"
-#~ msgstr "Käyttäjätunnus:"
-
-#~ msgid "X.509"
-#~ msgstr "X.509"
-
-#~ msgid ""
-#~ "X.509 Certificates\n"
-#~ "Pre-shared key\n"
-#~ "Password Authentication\n"
-#~ "X.509 with Password Authentication"
-#~ msgstr ""
-#~ "X.509-varmenteet\n"
-#~ "Jaettu avain\n"
-#~ "Salasanalla todentaminen\n"
-#~ "X.509 salasanatodennuksella"
-
-#~ msgid "none"
-#~ msgstr "ei mitään"
-
-#~ msgid "VPN connection failed"
-#~ msgstr "VPN-yhteys epäonnistui"
