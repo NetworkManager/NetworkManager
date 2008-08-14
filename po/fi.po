@@ -2,14 +2,14 @@
 # Copyright (C) 2005 Ilkka Tuohela.
 # This file is distributed under the same license as the NetworkManager package.
 #
-# Ilkka Tuohela <hile@iki.fi>, 2005.
+# Ilkka Tuohela <hile@iki.fi>, 2005-2008.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-03-14 09:44+0300\n"
-"PO-Revision-Date: 2007-01-31 10:50+0300\n"
+"POT-Creation-Date: 2008-08-13 17:50+0300\n"
+"PO-Revision-Date: 2008-08-14 08:00+0300\n"
 "Last-Translator: Ilkka Tuohela <hile@iki.fi>\n"
 "Language-Team: Finnish <gnome-fi-laatu@lists.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
@@ -17,54 +17,246 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../src/nm-netlink-monitor.c:188 ../src/nm-netlink-monitor.c:448
+#: ../src/nm-netlink-monitor.c:193 ../src/nm-netlink-monitor.c:471
 #, c-format
 msgid "error processing netlink message: %s"
 msgstr "virhe käsiteltäessä netlink-viestiä: %s"
 
-#: ../src/nm-netlink-monitor.c:245
+#: ../src/nm-netlink-monitor.c:250
 #, c-format
 msgid "unable to allocate netlink handle for monitoring link status: %s"
 msgstr "ei voitu varata netlink-kahvaa linkin tilan tarkkailulle: %s"
 
-#: ../src/nm-netlink-monitor.c:255
+#: ../src/nm-netlink-monitor.c:260
 #, c-format
 msgid "unable to connect to netlink for monitoring link status: %s"
 msgstr ""
 "ei voitu yhdistää netlink-pistokkeeseen linkin tilan tarkkailua varten: %s"
 
-#: ../src/nm-netlink-monitor.c:263
+#: ../src/nm-netlink-monitor.c:268
 #, c-format
 msgid "unable to join netlink group for monitoring link status: %s"
 msgstr "ei voit liittyä netlink-ryhmään linkin tilan tarkkailua varten: %s"
 
-#: ../src/nm-netlink-monitor.c:271
+#: ../src/nm-netlink-monitor.c:276
 #, c-format
 msgid "unable to allocate netlink link cache for monitoring link status: %s"
 msgstr ""
 "ei voitu varata netlink-linkin välimuistia inkin tilan tarkkailua varten %s"
 
-#: ../src/nm-netlink-monitor.c:471
+#: ../src/nm-netlink-monitor.c:494
 #, c-format
 msgid "error occurred while waiting for data on socket"
 msgstr "virhe odotettaessa tietoja pistokkeesta"
 
-#: ../src/NetworkManager.c:255
+#: ../src/NetworkManager.c:250
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr ""
 "Virheellinen valitsin: Antamalla --help näet luettelon kelvollisista\n"
 "valitsimista.\n"
 
-#: ../src/named-manager/nm-named-manager.c:218
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:87
+msgid "# Created by NetworkManager\n"
+msgstr "# NetworkManagerin luoma\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:93
+#, c-format
+msgid ""
+"# Merged from %s\n"
+"\n"
+msgstr ""
+"# Yhdistetty tiedostosta %s\n"
+"\n"
+
+#: ../src/named-manager/nm-named-manager.c:257
 msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
 msgstr "HUOMAUTUS: glibc-nimenselvennys ei tue kuin kolmea nimipalvelinta."
 
-#: ../src/named-manager/nm-named-manager.c:220
+#: ../src/named-manager/nm-named-manager.c:259
 msgid "The nameservers listed below may not be recognized."
 msgstr "Alla olevaa nimipalvelinluetteloa ei voitu tunnistaa."
 
-#: ../system-settings/plugins/ifcfg-fedora/plugin.c:94
-msgid "Auto Wired"
-msgstr "Automaattinen kiinteä"
+#: ../system-settings/src/main.c:365
+#, c-format
+msgid "Auto %s"
+msgstr "Auto-%s"
 
+#: ../libnm-util/crypto.c:125
+#, c-format
+msgid "PEM key file had no end tag '%s'."
+msgstr "PEM-avaintiedostossa ei ole loppumerkkiä \"%s\"."
+
+#: ../libnm-util/crypto.c:135
+#, c-format
+msgid "Doesn't look like a PEM private key file."
+msgstr "Tämä ei näytä PEM-muotoiselta salaisen avaimen tiedostolta."
+
+#: ../libnm-util/crypto.c:143
+#, c-format
+msgid "Not enough memory to store PEM file data."
+msgstr "Muisti ei riitä PEM-tiedoston sisällön tallentamiseen."
+
+#: ../libnm-util/crypto.c:159
+#, c-format
+msgid "Malformed PEM file: Proc-Type was not first tag."
+msgstr "Virheellinen PEM-tiedosto: ensimmäinen merkintä ei ollut Proc-Type."
+
+#: ../libnm-util/crypto.c:167
+#, c-format
+msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
+msgstr "Virheellinen PEM-tiedosto: tuntematon Proc-Type-merkintä \"%s\"."
+
+#: ../libnm-util/crypto.c:177
+#, c-format
+msgid "Malformed PEM file: DEK-Info was not the second tag."
+msgstr "Virheellinen PEM-tiedosto: DEK-Info ei ollut toinen merkintä."
+
+#: ../libnm-util/crypto.c:188
+#, c-format
+msgid "Malformed PEM file: no IV found in DEK-Info tag."
+msgstr "Virheellinen PEM-tiedosto: alustusvektoria ei löytynyt DEK-Infosta."
+
+#: ../libnm-util/crypto.c:195
+#, c-format
+msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
+msgstr "Virheellinen PEM-tiedosto: alustusvektori DEK-Infossa on virheellinen."
+
+#: ../libnm-util/crypto.c:208
+#, c-format
+msgid "Malformed PEM file: unknown private key cipher '%s'."
+msgstr "Virheellinen PEM-tiedosto: tuntematon salaisen avaimen sifferi \"%s\"."
+
+#: ../libnm-util/crypto.c:227
+#, c-format
+msgid "Could not decode private key."
+msgstr "Salaista avainta ei voitu purkaa."
+
+#: ../libnm-util/crypto.c:271
+#, c-format
+msgid "PEM certificate '%s' had no end tag '%s'."
+msgstr "PEM-varmenne \"%s\" ei sisällä päätösmerkkiä \"%s\"."
+
+#: ../libnm-util/crypto.c:281
+#, c-format
+msgid "Failed to decode certificate."
+msgstr "Varmennetta ei voitu purkaa."
+
+#: ../libnm-util/crypto.c:290 ../libnm-util/crypto.c:298
+#, c-format
+msgid "Not enough memory to store certificate data."
+msgstr "Muisti ei riitä varmenteen tietojen tallennukseen."
+
+#: ../libnm-util/crypto.c:328
+#, c-format
+msgid "IV must be an even number of bytes in length."
+msgstr "Alustusvektorin täytyy olla parillisen tavumäärän pituinen."
+
+#: ../libnm-util/crypto.c:337
+#, c-format
+msgid "Not enough memory to store the IV."
+msgstr "Muisti ei riitä alustusvektorin tallennukseen."
+
+#: ../libnm-util/crypto.c:348
+#, c-format
+msgid "IV contains non-hexadecimal digits."
+msgstr "Alustusvektori sisältää muita kuin heksadesimaalisia merkkejä."
+
+#: ../libnm-util/crypto.c:386 ../libnm-util/crypto_gnutls.c:126
+#: ../libnm-util/crypto_nss.c:136
+#, c-format
+msgid "Private key cipher '%s' was unknown."
+msgstr "Salaisen avaimen sifferi \"%s\" oli tuntematon."
+
+#: ../libnm-util/crypto.c:395
+#, c-format
+msgid "Not enough memory to create private key decryption key."
+msgstr "Muisti ei riitä luomaan salaisen avaimen purkuavainta."
+
+#: ../libnm-util/crypto.c:513
+#, c-format
+msgid "Not enough memory to store decrypted private key."
+msgstr "Muisti ei riitä puretun salaisen avaimen tallennukseen."
+
+#: ../libnm-util/crypto_gnutls.c:73
+#, c-format
+msgid "Failed to initialize the MD5 engine: %s / %s."
+msgstr "MD5-moottoria ei voitu alustaa: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:135 ../libnm-util/crypto_nss.c:145
+#, c-format
+msgid "Not enough memory for decrypted key buffer."
+msgstr "Muisti ei riitä puretulle avainpuskurille."
+
+#: ../libnm-util/crypto_gnutls.c:143
+#, c-format
+msgid "Failed to initialize the decryption cipher context: %s / %s."
+msgstr "Virhe alustettaessa purkusifferin kontekstia: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:152
+#, c-format
+msgid "Failed to set symmetric key for decryption: %s / %s."
+msgstr "Virhe asetettaessa symmetristä salausavainta: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:161
+#, c-format
+msgid "Failed to set IV for decryption: %s / %s."
+msgstr "Alustusvektoria purkua varten ei voitu alustaa: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:170
+#, c-format
+msgid "Failed to decrypt the private key: %s / %s."
+msgstr "Salaista avainta ei voitu purkaa: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:208
+#, c-format
+msgid "Error initializing certificate data: %s"
+msgstr "Virhe alustettaessa varmenteen tietoja: %s"
+
+#: ../libnm-util/crypto_gnutls.c:220
+#, c-format
+msgid "Couldn't decode certificate: %s"
+msgstr "Varmennetta ei voitu purkaa: %s"
+
+#: ../libnm-util/crypto_nss.c:78
+#, c-format
+msgid "Failed to initialize the MD5 context: %d."
+msgstr "MD5-kontekstia ei voitu alustaa: %d."
+
+#: ../libnm-util/crypto_nss.c:153
+#, c-format
+msgid "Failed to initialize the decryption cipher slot."
+msgstr "Salausmenetelmän lohkoa ei voitu alustaa."
+
+#: ../libnm-util/crypto_nss.c:163
+#, c-format
+msgid "Failed to set symmetric key for decryption."
+msgstr "Symmetristä salausavainta ei voitu asettaa."
+
+#: ../libnm-util/crypto_nss.c:173
+#, c-format
+msgid "Failed to set IV for decryption."
+msgstr "Salauksen purun aloitusvektorin asetus epäonnistui."
+
+#: ../libnm-util/crypto_nss.c:181
+#, c-format
+msgid "Failed to initialize the decryption context."
+msgstr "Salauksen purun kontekstia ei voitu alustaa."
+
+#: ../libnm-util/crypto_nss.c:194
+#, c-format
+msgid "Failed to decrypt the private key: %d."
+msgstr "Salaista avainta ei voitu purkaa: %d."
+
+#: ../libnm-util/crypto_nss.c:206
+#, c-format
+msgid "Failed to finalize decryption of the private key: %d."
+msgstr "Salaisen avaimen salauksen purkua ei voitu viimeistellä: %d."
+
+#: ../libnm-util/crypto_nss.c:250
+#, c-format
+msgid "Couldn't decode certificate: %d"
+msgstr "Varmennetta ei voitu tulkita: %d"
+
+#~ msgid "Auto Wired"
+#~ msgstr "Automaattinen kiinteä"
