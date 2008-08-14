@@ -1,5 +1,11 @@
 2008-08-14  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerPolicy.c
+		- (update_routing_and_dns): 'hso' devices can be default even if they
+			don't have a gateway
+
+2008-08-14  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device.c
 		- (nm_device_deactivate_quickly): tear down activation request after
 			calling device-specific deactivation

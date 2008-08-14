@@ -41,6 +41,7 @@
 #include "nm-device.h"
 #include "nm-device-wifi.h"
 #include "nm-device-ethernet.h"
+#include "nm-hso-gsm-device.h"
 #include "nm-gsm-device.h"
 #include "nm-cdma-device.h"
 #include "nm-dbus-manager.h"
@@ -132,7 +133,7 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 		NMSettingIP4Config *s_ip4;
 		guint32 prio;
 		guint i;
-		gboolean have_gateway = FALSE;
+		gboolean can_default = FALSE;
 		
 		if (nm_device_get_state (dev) != NM_DEVICE_STATE_ACTIVATED)
 			continue;
@@ -157,12 +158,13 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 
 			addr = nm_ip4_config_get_address (ip4_config, i);
 			if (addr->gateway) {
-				have_gateway = TRUE;
+				can_default = TRUE;
 				break;
 			}
 		}
 
-		if (!have_gateway)
+		/* 'hso' devices never get a gateway from the remote end */
+		if (!can_default && !NM_IS_HSO_GSM_DEVICE (dev))
 			continue;
 
 		prio = get_device_priority (dev);
