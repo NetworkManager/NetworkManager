@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: ru\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-08-07 13:56+0300\n"
-"PO-Revision-Date: 2008-08-07 18:43+0300\n"
+"POT-Creation-Date: 2008-08-14 17:22+0300\n"
+"PO-Revision-Date: 2008-08-14 17:23+0300\n"
 "Last-Translator: Leonid Kanter <leon@asplinux.ru>\n"
 "Language-Team: Russian <ru@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -49,14 +49,12 @@ msgstr "_Запомнить пароль для этого сеанса"
 msgid "_Save passwords in keyring"
 msgstr "_Сохранить пароль на брелоке"
 
-#: ../auth-dialog/main.c:169
+#: ../auth-dialog/main.c:168
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
-msgstr ""
-"Необходима аутентификация для доступа к виртуальной частной сети «%s»."
-"."
+msgstr "Необходима аутентификация для доступа к виртуальной частной сети «%s».."
 
-#: ../auth-dialog/main.c:170
+#: ../auth-dialog/main.c:169
 msgid "Authenticate VPN"
 msgstr "Аутентификация VPN"
 
@@ -68,31 +66,31 @@ msgstr "Добавить, удалить или изменить PPTP VPN сое
 msgid "PPTP VPN Connection Manager"
 msgstr "Менеджер соединений PPTP VPN"
 
-#: ../properties/advanced-dialog.c:173
+#: ../properties/advanced-dialog.c:147
 msgid "All Available (Default)"
 msgstr "Любое доступное (по умолчанию)"
 
-#: ../properties/advanced-dialog.c:177
+#: ../properties/advanced-dialog.c:151
 msgid "128-bit (most secure)"
 msgstr "128 бит (самое защищёное)"
 
-#: ../properties/advanced-dialog.c:186
+#: ../properties/advanced-dialog.c:160
 msgid "40-bit (less secure)"
 msgstr "40 бит (менее защищённое)"
 
-#: ../properties/advanced-dialog.c:257
+#: ../properties/advanced-dialog.c:231
 msgid "PAP"
 msgstr "PAP"
 
-#: ../properties/advanced-dialog.c:263
+#: ../properties/advanced-dialog.c:237
 msgid "CHAP"
 msgstr "CHAP"
 
-#: ../properties/advanced-dialog.c:269
+#: ../properties/advanced-dialog.c:243
 msgid "MSCHAP"
 msgstr "MSCHAP"
 
-#: ../properties/advanced-dialog.c:275
+#: ../properties/advanced-dialog.c:249
 msgid "MSCHAPv2"
 msgstr "MSCHAPv2"
 
@@ -121,16 +119,16 @@ msgid "Ad_vanced..."
 msgstr "_Дополнительно..."
 
 #: ../properties/nm-pptp-dialog.glade.h:7
-msgid "Allow BSD data compression"
-msgstr "Включить компрессию BSD"
+msgid "Allow _BSD data compression"
+msgstr "Включить компрессию _BSD"
 
 #: ../properties/nm-pptp-dialog.glade.h:8
-msgid "Allow Deflate data compression"
-msgstr "Включить компрессию Deflate"
+msgid "Allow _Deflate data compression"
+msgstr "Включить компрессию _Deflate"
 
 #: ../properties/nm-pptp-dialog.glade.h:9
-msgid "Allow Stateful Encryption"
-msgstr "Включить Stateful Encryption"
+msgid "Allow st_ateful encryption"
+msgstr "Включить _Stateful Encryption"
 
 #: ../properties/nm-pptp-dialog.glade.h:10
 msgid "Allow the following authentication methods:"
@@ -145,42 +143,34 @@ msgid "Domain:"
 msgstr "Домен:"
 
 #: ../properties/nm-pptp-dialog.glade.h:13
-msgid "Security:"
-msgstr "Шифрование:"
+msgid "Send PPP _echo packets"
+msgstr "Посылать _эхо-пакеты PPP"
 
 #: ../properties/nm-pptp-dialog.glade.h:14
-msgid "Send PPP echo packets"
-msgstr "Посылать эхо-пакеты PPP"
+msgid "Use TCP _header compression"
+msgstr "Использовать сжатие _заголовков TCP"
 
 #: ../properties/nm-pptp-dialog.glade.h:15
-msgid "Use Point-to-Point Encryption (MPPE)"
-msgstr "Использовать шифрование MPPE"
+msgid "Use _Point-to-Point encryption (MPPE)"
+msgstr "Использовать шифрование _MPPE"
 
 #: ../properties/nm-pptp-dialog.glade.h:16
-msgid "Use TCP header compression"
-msgstr "Использовать сжатие заголовков TCP"
-
-#: ../properties/nm-pptp-dialog.glade.h:17
 msgid "User name:"
 msgstr "Имя пользователя:"
 
-#: ../properties/nm-pptp-dialog.glade.h:18
+#: ../properties/nm-pptp-dialog.glade.h:17
 msgid "_Gateway:"
 msgstr "_Шлюз:"
 
-#: ../properties/nm-pptp-dialog.glade.h:19
-msgid "gtk-cancel"
-msgstr "gtk-cancel"
+#: ../properties/nm-pptp-dialog.glade.h:18
+msgid "_Security:"
+msgstr "_Шифрование:"
 
-#: ../properties/nm-pptp-dialog.glade.h:20
-msgid "gtk-ok"
-msgstr "gtk-ok"
-
-#: ../properties/nm-pptp.c:50
+#: ../properties/nm-pptp.c:49
 msgid "Point-to-Point Tunneling Protocol (PPTP)"
 msgstr "Point-to-Point Tunneling Protocol (PPTP)"
 
-#: ../properties/nm-pptp.c:51
+#: ../properties/nm-pptp.c:50
 msgid "Compatible with Microsoft and other PPTP VPN servers."
 msgstr "Совместим с серверами Microsoft и другими серверами PPTP VPN."
 
