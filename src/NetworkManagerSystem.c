@@ -428,10 +428,10 @@ gboolean nm_system_device_set_up_down (NMDevice *dev, gboolean up)
 
 gboolean nm_system_device_set_up_down_with_iface (const char *iface, gboolean up)
 {
+	struct rtnl_link *request = NULL, *old = NULL;
+	struct nl_handle *nlh;
 	gboolean success = FALSE;
 	guint32 idx;
-	struct rtnl_link *	request = NULL;
-	struct rtnl_link *	old = NULL;
 
 	g_return_val_if_fail (iface != NULL, FALSE);
 
@@ -446,16 +446,13 @@ gboolean nm_system_device_set_up_down_with_iface (const char *iface, gboolean up
 	idx = nm_netlink_iface_to_index (iface);
 	old = nm_netlink_index_to_rtnl_link (idx);
 	if (old) {
-		struct nl_handle *nlh;
-
 		nlh = nm_netlink_get_default_handle ();
 		if (nlh)
-			rtnl_link_change (nlh, old, request, 0);
+			success = (rtnl_link_change (nlh, old, request, 0) == 0) ? TRUE : FALSE;
 	}
 
 	rtnl_link_put (old);
 	rtnl_link_put (request);
-	success = TRUE;
 
 out:
 	return success;
@@ -483,6 +480,7 @@ nm_system_device_is_up_with_iface (const char *iface)
 	}
 
 	/* Get device's flags */
+	memset (&ifr, 0, sizeof (ifr));
 	strncpy (ifr.ifr_name, iface, IFNAMSIZ);
 	if (ioctl (fd, SIOCGIFFLAGS, &ifr) < 0) {
 		if (errno != ENODEV) {
