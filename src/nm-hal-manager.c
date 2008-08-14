@@ -14,6 +14,7 @@
 #include "nm-device-wifi.h"
 #include "nm-device-ethernet.h"
 #include "nm-gsm-device.h"
+#include "nm-hso-gsm-device.h"
 #include "nm-cdma-device.h"
 
 /* Killswitch poll frequency in seconds */
@@ -220,6 +221,50 @@ is_modem_device (NMHalManager *self, const char *udi)
 	return is_modem;
 }
 
+static char *
+get_hso_netdev (LibHalContext *ctx, const char *udi)
+{
+	char *serial_parent, *netdev = NULL;
+	char **netdevs;
+	int num, i;
+
+	/* Get the serial interface's originating device UDI, used to find the
+	 * originating device's netdev.
+	 */
+	serial_parent = libhal_device_get_property_string (ctx, udi, "serial.originating_device", NULL);
+	if (!serial_parent)
+		serial_parent = libhal_device_get_property_string (ctx, udi, "info.parent", NULL);
+	if (!serial_parent)
+		return NULL;
+
+	/* Look for the originating device's netdev */
+	netdevs = libhal_find_device_by_capability (ctx, "net", &num, NULL);
+	for (i = 0; netdevs && !netdev && (i < num); i++) {
+		char *netdev_parent, *tmp;
+
+		netdev_parent = libhal_device_get_property_string (ctx, netdevs[i], "net.originating_device", NULL);
+		if (!netdev_parent)
+			netdev_parent = libhal_device_get_property_string (ctx, netdevs[i], "net.physical_device", NULL);
+		if (!netdev_parent)
+			continue;
+
+		if (!strcmp (netdev_parent, serial_parent)) {
+			/* We found it */
+			tmp = libhal_device_get_property_string (ctx, netdevs[i], "net.interface", NULL);
+			if (tmp) {
+				netdev = g_strdup (tmp);
+				libhal_free_string (tmp);
+			}
+		}
+
+		libhal_free_string (netdev_parent);
+	}
+	libhal_free_string_array (netdevs);
+	libhal_free_string (serial_parent);
+
+	return netdev;
+}
+
 static GObject *
 modem_device_creator (NMHalManager *self, const char *udi, gboolean managed)
 {
@@ -231,6 +276,7 @@ modem_device_creator (NMHalManager *self, const char *udi, gboolean managed)
 	char **capabilities, **iter;
 	gboolean type_gsm = FALSE;
 	gboolean type_cdma = FALSE;
+	char *netdev = NULL;
 
 	serial_device = libhal_device_get_property_string (priv->hal_ctx, udi, "serial.device", NULL);
 
@@ -274,9 +320,16 @@ modem_device_creator (NMHalManager *self, const char *udi, gboolean managed)
 		g_strfreev (capabilities);
 	}
 
-	if (type_gsm)
-		device = (GObject *) nm_gsm_device_new (udi, serial_device + strlen ("/dev/"), NULL, driver_name, managed);
-	else if (type_cdma)
+	/* Special handling of 'hso' cards (until punted out to a modem manager) */
+	if (type_gsm && !strcmp (driver_name, "hso"))
+		netdev = get_hso_netdev (priv->hal_ctx, udi);
+
+	if (type_gsm) {
+		if (netdev)
+			device = (GObject *) nm_hso_gsm_device_new (udi, serial_device + strlen ("/dev/"), NULL, netdev, driver_name, managed);
+		else
+			device = (GObject *) nm_gsm_device_new (udi, serial_device + strlen ("/dev/"), NULL, driver_name, managed);
+	} else if (type_cdma)
 		device = (GObject *) nm_cdma_device_new (udi, serial_device + strlen ("/dev/"), NULL, driver_name, managed);
 
 out:

@@ -65,6 +65,8 @@ NetworkManager_SOURCES =				\
 		nm-gsm-device.h		\
 		nm-cdma-device.c		\
 		nm-cdma-device.h		\
+		nm-hso-gsm-device.c \
+		nm-hso-gsm-device.h \
 		wpa.c				\
 		wpa.h				\
 		nm-netlink.c			\

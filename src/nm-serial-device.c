@@ -21,7 +21,7 @@
 #include "nm-utils.h"
 #include "nm-serial-device-glue.h"
 
-/* #define NM_DEBUG_SERIAL 1 */
+#define NM_DEBUG_SERIAL 1
 
 #define SERIAL_BUF_SIZE 2048
 

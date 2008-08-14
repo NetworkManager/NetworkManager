@@ -23,6 +23,8 @@ typedef struct {
 typedef struct {
 	NMSerialDeviceClass parent;
 
+	void (*do_dial) (NMGsmDevice *device, guint cid);
+
 	/* Signals */
 	void (*properties_changed) (NMGsmDevice *device, GHashTable *properties);
 } NMGsmDeviceClass;

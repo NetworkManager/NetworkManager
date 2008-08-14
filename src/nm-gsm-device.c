@@ -1,4 +1,4 @@
-/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
 #include <stdio.h>
 #include <string.h>
@@ -74,13 +74,14 @@ modem_wait_for_reply (NMGsmDevice *self,
 				  guint timeout,
 				  char **responses,
 				  char **terminators,
-				  NMSerialWaitForReplyFn callback)
+				  NMSerialWaitForReplyFn callback,
+				  gpointer user_data)
 {
 	NMSerialDevice *serial = NM_SERIAL_DEVICE (self);
 	guint id = 0;
 
 	if (nm_serial_device_send_command_string (serial, command))
-		id = nm_serial_device_wait_for_reply (serial, timeout, responses, terminators, callback, NULL);
+		id = nm_serial_device_wait_for_reply (serial, timeout, responses, terminators, callback, user_data);
 
 	if (id == 0)
 		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_UNKNOWN);
@@ -163,7 +164,7 @@ dial_done (NMSerialDevice *device,
 }
 
 static void
-do_dial (NMGsmDevice *device, guint cid)
+real_do_dial (NMGsmDevice *device, guint cid)
 {
 	NMSettingGsm *setting;
 	char *command;
@@ -185,7 +186,7 @@ do_dial (NMGsmDevice *device, guint cid)
 	} else
 		command = g_strconcat ("ATDT", setting->number, NULL);
 
-	modem_wait_for_reply (device, command, 60, responses, responses, dial_done);
+	modem_wait_for_reply (device, command, 60, responses, responses, dial_done, NULL);
 	g_free (command);
 }
 
@@ -196,7 +197,7 @@ set_apn_done (NMSerialDevice *device,
 {
 	switch (reply_index) {
 	case 0:
-		do_dial (NM_GSM_DEVICE (device), 1);
+		NM_GSM_DEVICE_GET_CLASS (device)->do_dial (NM_GSM_DEVICE (device), GPOINTER_TO_UINT (user_data));
 		break;
 	default:
 		nm_warning ("Setting APN failed");
@@ -216,15 +217,14 @@ set_apn (NMGsmDevice *device)
 	guint cid = 1;
 
 	setting = NM_SETTING_GSM (gsm_device_get_setting (NM_GSM_DEVICE (device), NM_TYPE_SETTING_GSM));
-
 	if (!setting->apn) {
 		/* APN not set, nothing to do */
-		do_dial (device, 0);
+		NM_GSM_DEVICE_GET_CLASS (device)->do_dial (NM_GSM_DEVICE (device), 0);
 		return;
 	}
 
 	command = g_strdup_printf ("AT+CGDCONT=%d, \"IP\", \"%s\"", cid, setting->apn);
-	modem_wait_for_reply (device, command, 3, responses, responses, set_apn_done);
+	modem_wait_for_reply (device, command, 3, responses, responses, set_apn_done, GUINT_TO_POINTER (cid));
 	g_free (command);
 }
 
@@ -262,7 +262,7 @@ manual_registration (NMGsmDevice *device)
 	setting = NM_SETTING_GSM (gsm_device_get_setting (device, NM_TYPE_SETTING_GSM));
 
 	command = g_strdup_printf ("AT+COPS=1,2,\"%s\"", setting->network_id);
-	modem_wait_for_reply (device, command, 30, responses, responses, manual_registration_done);
+	modem_wait_for_reply (device, command, 30, responses, responses, manual_registration_done, NULL);
 	g_free (command);
 }
 
@@ -344,7 +344,7 @@ automatic_registration (NMGsmDevice *device)
 	char *responses[] = { "+CREG: 0,0", "+CREG: 0,1", "+CREG: 0,2", "+CREG: 0,3", "+CREG: 0,5", NULL };
 	char *terminators[] = { "OK", "ERROR", "ERR", NULL };
 
-	modem_wait_for_reply (device, "AT+CREG?", 60, responses, terminators, automatic_registration_response);
+	modem_wait_for_reply (device, "AT+CREG?", 60, responses, terminators, automatic_registration_response, NULL);
 }
 
 static void
@@ -393,7 +393,7 @@ init_modem_full (NMGsmDevice *device)
 	 * just breaks stuff since echo-ed commands are interpreted as replies.
 	 * rh #456770
 	 */
-	modem_wait_for_reply (device, "ATZ E0", 10, responses, responses, init_full_done);
+	modem_wait_for_reply (device, "ATZ E0", 10, responses, responses, init_full_done, NULL);
 }
 
 static void
@@ -473,7 +473,7 @@ enter_pin (NMGsmDevice *device, gboolean retry)
 		char *responses[] = { "OK", "ERROR", "ERR", NULL };
 
 		command = g_strdup_printf ("AT+CPIN=\"%s\"", secret);
-		modem_wait_for_reply (device, command, 3, responses, responses, enter_pin_done);
+		modem_wait_for_reply (device, command, 3, responses, responses, enter_pin_done, NULL);
 		g_free (command);
 	} else {
 		nm_info ("(%s): GSM %s secret required", nm_device_get_iface (NM_DEVICE (device)), secret_name);
@@ -527,7 +527,7 @@ check_pin (NMGsmDevice *self)
 	char *responses[] = { "READY", "SIM PIN", "SIM PUK", "ERROR", "ERR", NULL };
 	char *terminators[] = { "OK", "ERROR", "ERR", NULL };
 
-	modem_wait_for_reply (self, "AT+CPIN?", 3, responses, terminators, check_pin_done);
+	modem_wait_for_reply (self, "AT+CPIN?", 3, responses, terminators, check_pin_done, NULL);
 }
 
 static void
@@ -559,7 +559,7 @@ init_modem (NMSerialDevice *device, gpointer user_data)
 {
 	char *responses[] = { "OK", "ERROR", "ERR", NULL };
 
-	modem_wait_for_reply (NM_GSM_DEVICE (device), "AT E0", 10, responses, responses, init_done);
+	modem_wait_for_reply (NM_GSM_DEVICE (device), "AT E0", 10, responses, responses, init_done, NULL);
 }
 
 static NMActStageReturn
@@ -910,6 +910,8 @@ nm_gsm_device_class_init (NMGsmDeviceClass *klass)
 	device_class->act_stage1_prepare = real_act_stage1_prepare;
 	device_class->connection_secrets_updated = real_connection_secrets_updated;
 	device_class->deactivate_quickly = real_deactivate_quickly;
+
+	klass->do_dial = real_do_dial;
 
 	/* Properties */
 	g_object_class_install_property

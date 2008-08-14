@@ -1,5 +1,28 @@
 2008-08-14  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-activation-request.h
+		- Add HSO secrets caller
+
+	* src/nm-gsm-device.c
+	  src/nm-gsm-device.h
+		- (modem_wait_for_reply): add a 'user_data' argument so callers can pass
+			something to the callback function
+		- (set_apn, set_apn_done): call class dial function, not a static one
+		- (nm_gsm_device_class_init): add a class 'dial' function
+
+	* src/nm-hal-manager.c
+		- (get_hso_netdev): find the hso-driven hardware's net device
+		- (modem_device_creator): recognize hso-driven hardware and create the
+			right type of device object for it
+
+	* src/Makefile.am
+	  src/nm-hso-gsm-device.c
+	  src/nm-hso-gsm-device.h
+		- Implement support for devices driven by the 'hso' driver as a subclass
+			of NMGsmDevice
+
+2008-08-14  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerSystem.c
 		- (nm_system_device_is_up_with_iface): ensure ifreq is cleared before using
 		- (nm_system_device_set_up_down_with_iface): cleanups; only return
