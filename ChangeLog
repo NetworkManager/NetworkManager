@@ -2,7 +2,7 @@
 
 	Do connection sharing in a cleaner manner; all required iptables rules
 	are now stored in the activation request and pertain only to the device
-	which is being shared to other computers.
+	which is being shared to other computers. (rh #458625)
 
 	* src/nm-activation-request.c
 	  src/nm-activation-request.h
