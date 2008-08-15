@@ -1,5 +1,10 @@
 2008-08-15  Dan Williams  <dcbw@redhat.com>
 
+	* src/dnsmasq-manager/nm-dnsmasq-manager.c
+		- (create_dm_cmd_line): send the right router address
+
+2008-08-15  Dan Williams  <dcbw@redhat.com>
+
 	* src/ppp-manager/nm-ppp-manager.c
 		- (pppd_timed_out): ensure timeouts fail the connection
 

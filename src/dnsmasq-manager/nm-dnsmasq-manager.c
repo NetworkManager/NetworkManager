@@ -236,6 +236,7 @@ create_dm_cmd_line (const char *iface,
 	const NMSettingIP4Address *tmp;
 	struct in_addr addr;
 	char buf[INET_ADDRSTRLEN + 1];
+	char localaddr[INET_ADDRSTRLEN + 1];
 
 	dm_binary = nm_find_dnsmasq ();
 	if (!dm_binary) {
@@ -259,12 +260,12 @@ create_dm_cmd_line (const char *iface,
 
 	s = g_string_new ("--listen-address=");
 	addr.s_addr = tmp->address;
-	if (!inet_ntop (AF_INET, &addr, &buf[0], INET_ADDRSTRLEN)) {
+	if (!inet_ntop (AF_INET, &addr, &localaddr[0], INET_ADDRSTRLEN)) {
 		nm_warning ("%s: error converting IP4 address 0x%X",
 		            __func__, ntohl (addr.s_addr));
 		goto error;
 	}
-	g_string_append (s, buf);
+	g_string_append (s, localaddr);
 	nm_cmd_line_add_string (cmd, s->str);
 	g_string_free (s, TRUE);
 
@@ -294,7 +295,11 @@ create_dm_cmd_line (const char *iface,
 	nm_cmd_line_add_string (cmd, s->str);
 	g_string_free (s, TRUE);
 
-	nm_cmd_line_add_string (cmd, "--dhcp-option=option:router,0.0.0.0");
+	s = g_string_new ("--dhcp-option=option:router,");
+	g_string_append (s, localaddr);
+	nm_cmd_line_add_string (cmd, s->str);
+	g_string_free (s, TRUE);
+
 	nm_cmd_line_add_string (cmd, "--dhcp-lease-max=50");
 
 	s = g_string_new ("--pid-file=");
