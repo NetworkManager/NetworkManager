@@ -20,6 +20,9 @@
  */
 
 #include <string.h>
+#include <stdlib.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #include <dbus/dbus-glib.h>
 
 #include "nm-activation-request.h"
@@ -49,6 +52,10 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
+typedef struct {
+	char *table;
+	char *rule;
+} ShareRule;
 
 typedef struct {
 	gboolean disposed;
@@ -63,6 +70,7 @@ typedef struct {
 	NMActiveConnectionState state;
 	gboolean is_default;
 	gboolean shared;
+	GSList *share_rules;
 
 	char *ac_path;
 } NMActRequestPrivate;
@@ -206,9 +214,30 @@ dispose (GObject *object)
 
 	cleanup_secrets_dbus_call (NM_ACT_REQUEST (object));
 
+	/* Clear any share rules */
+	nm_act_request_set_shared (NM_ACT_REQUEST (object), FALSE);
+
 	g_object_unref (priv->connection);
 
 	G_OBJECT_CLASS (nm_act_request_parent_class)->dispose (object);
+}
+
+static void
+clear_share_rules (NMActRequest *req)
+{
+	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (req);
+	GSList *iter;
+
+	for (iter = priv->share_rules; iter; iter = g_slist_next (iter)) {
+		ShareRule *rule = (ShareRule *) iter->data;
+
+		g_free (rule->table);
+		g_free (rule->rule);
+		g_free (rule);
+	}
+
+	g_slist_free (priv->share_rules);
+	priv->share_rules = NULL;
 }
 
 static void
@@ -218,6 +247,8 @@ finalize (GObject *object)
 
 	g_free (priv->specific_object);
 	g_free (priv->ac_path);
+
+	clear_share_rules (NM_ACT_REQUEST (object));
 
 	G_OBJECT_CLASS (nm_act_request_parent_class)->finalize (object);
 }
@@ -646,12 +677,69 @@ nm_act_request_get_default (NMActRequest *req)
 	return NM_ACT_REQUEST_GET_PRIVATE (req)->is_default;
 }
 
+static void
+share_child_setup (gpointer user_data G_GNUC_UNUSED)
+{
+	/* We are in the child process at this point */
+	pid_t pid = getpid ();
+	setpgid (pid, pid);
+}
+
 void
 nm_act_request_set_shared (NMActRequest *req, gboolean shared)
 {
+	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (req);
+	GSList *list, *iter;
+
 	g_return_if_fail (NM_IS_ACT_REQUEST (req));
 
 	NM_ACT_REQUEST_GET_PRIVATE (req)->shared = shared;
+
+	/* Tear the rules down in reverse order when sharing is stopped */
+	list = g_slist_copy (priv->share_rules);
+	if (!shared)
+		list = g_slist_reverse (list);
+
+	/* Send the rules to iptables */
+	for (iter = list; iter; iter = g_slist_next (iter)) {
+		ShareRule *rule = (ShareRule *) iter->data;
+		char *envp[1] = { NULL };
+		char **argv;
+		char *cmd;
+		int status;
+		GError *error = NULL;
+
+		if (shared)
+			cmd = g_strdup_printf ("/sbin/iptables --table %s --insert %s", rule->table, rule->rule);
+		else
+			cmd = g_strdup_printf ("/sbin/iptables --table %s --delete %s", rule->table, rule->rule);
+
+		argv = g_strsplit (cmd, " ", 0);
+		if (!argv || !argv[0]) {
+			continue;
+			g_free (cmd);
+		}
+
+		nm_info ("Executing: %s", cmd);
+		g_free (cmd);
+
+		if (!g_spawn_sync ("/", argv, envp, G_SPAWN_STDOUT_TO_DEV_NULL | G_SPAWN_STDERR_TO_DEV_NULL,
+		                   share_child_setup, NULL, NULL, NULL, &status, &error)) {
+			nm_info ("Error executing command: (%d) %s",
+			         error ? error->code : 0, (error && error->message) ? error->message : "unknown");
+			if (error)
+				g_error_free (error);
+		} else if (WEXITSTATUS (status))
+			nm_info ("** Command returned exit status %d.", WEXITSTATUS (status));
+
+		g_strfreev (argv);
+	}
+
+	g_slist_free (list);
+
+	/* Clear the share rule list when sharing is stopped */
+	if (!shared)
+		clear_share_rules (req);
 }
 
 gboolean
@@ -660,6 +748,24 @@ nm_act_request_get_shared (NMActRequest *req)
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
 
 	return NM_ACT_REQUEST_GET_PRIVATE (req)->shared;
+}
+
+void
+nm_act_request_add_share_rule (NMActRequest *req,
+                               const char *table,
+                               const char *table_rule)
+{
+	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (req);
+	ShareRule *rule;
+
+	g_return_if_fail (NM_IS_ACT_REQUEST (req));
+	g_return_if_fail (table != NULL);
+	g_return_if_fail (table_rule != NULL);
+	
+	rule = g_malloc0 (sizeof (ShareRule));
+	rule->table = g_strdup (table);
+	rule->rule = g_strdup (table_rule);
+	priv->share_rules = g_slist_append (priv->share_rules, rule);
 }
 
 GObject *

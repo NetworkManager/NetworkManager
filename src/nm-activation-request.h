@@ -95,6 +95,10 @@ gboolean      nm_act_request_get_shared (NMActRequest *req);
 
 void          nm_act_request_set_shared (NMActRequest *req, gboolean shared);
 
+void          nm_act_request_add_share_rule (NMActRequest *req,
+                                             const char *table,
+                                             const char *rule);
+
 GObject *     nm_act_request_get_device (NMActRequest *req);
 
 #endif /* NM_ACTIVATION_REQUEST_H */

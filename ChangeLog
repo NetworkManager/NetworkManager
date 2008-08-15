@@ -1,5 +1,29 @@
 2008-08-15  Dan Williams  <dcbw@redhat.com>
 
+	Do connection sharing in a cleaner manner; all required iptables rules
+	are now stored in the activation request and pertain only to the device
+	which is being shared to other computers.
+
+	* src/nm-activation-request.c
+	  src/nm-activation-request.h
+		- (nm_act_request_add_share_rule): new function; add a sharing rule to
+			the activation request which will get torn down automatically when
+			the activation request dies
+		- (nm_act_request_set_shared): push sharing rules to iptables when sharing
+			is started, and tear them down when sharing is stopped
+
+	* src/nm-device.c
+		- (start_sharing): start up sharing by doing the required iptables magic
+		- (share_init): poke the right bits of the kernel and load the right
+			modules for NAT
+		- (nm_device_activate_stage5_ip_config_commit): start NAT-ing this
+			connection if it's a 'shared' connection
+
+	* src/NetworkManagerPolicy.c
+		- Remove all sharing stuff; done in the device code itself
+
+2008-08-15  Dan Williams  <dcbw@redhat.com>
+
 	* src/dnsmasq-manager/nm-dnsmasq-manager.c
 		- (create_dm_cmd_line): send the right router address
 
