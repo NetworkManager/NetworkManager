@@ -690,6 +690,8 @@ pppd_timed_out (gpointer data)
 	nm_warning ("Looks like pppd didn't initialize our dbus module");
 	nm_ppp_manager_stop (manager);
 
+	g_signal_emit (manager, signals[STATE_CHANGED], 0, NM_PPP_STATUS_DEAD);
+
 	return FALSE;
 }
 

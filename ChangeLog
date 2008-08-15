@@ -1,3 +1,8 @@
+2008-08-15  Dan Williams  <dcbw@redhat.com>
+
+	* src/ppp-manager/nm-ppp-manager.c
+		- (pppd_timed_out): ensure timeouts fail the connection
+
 2008-08-14  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-properties-changed-signal.c
