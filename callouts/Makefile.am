@@ -78,6 +78,10 @@ edit = @sed \
 	-e 's|@localstatedir[@]|$(localstatedir)|g' \
 	-e 's|@libexecdir[@]|$(libexecdir)|g'
 
+dispatcherdir=$(sysconfdir)/NetworkManager/dispatcher.d
+install-data-hook:
+	   $(mkinstalldirs) -m 0755 $(DESTDIR)$(dispatcherdir)
+
 BUILT_SOURCES = nm-dispatcher-glue.h
 
 CLEANFILES = $(BUILT_SOURCES) $(dbusactivation_DATA)

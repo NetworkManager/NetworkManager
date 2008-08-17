@@ -1,3 +1,12 @@
+2008-08-17  Dan Williams  <dcbw@redhat.com>
+
+	* callouts/Makefile.am
+	  src/Makefile.am
+		- Move dispatcher directory creation to callouts/Makefile.am
+
+	* system-settings/plugins/keyfile/Makefile.am
+		- Create keyfile connections directory in DESTDIR (bgo #546833)
+
 2008-08-15  Dan Williams  <dcbw@redhat.com>
 
 	Do connection sharing in a cleaner manner; all required iptables rules
