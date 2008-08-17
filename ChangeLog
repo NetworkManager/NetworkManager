@@ -1,5 +1,12 @@
 2008-08-17  Dan Williams  <dcbw@redhat.com>
 
+	* include/NetworkManager.h
+	  introspection/nm-device.xml
+	  src/nm-gsm-device.c
+		- Finer-grained GSM registration failure error codes
+
+2008-08-17  Dan Williams  <dcbw@redhat.com>
+
 	* callouts/Makefile.am
 	  src/Makefile.am
 		- Move dispatcher directory creation to callouts/Makefile.am

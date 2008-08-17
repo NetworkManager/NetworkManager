@@ -307,6 +307,15 @@ typedef enum {
 	/* Failed to select the specified APN */
 	NM_DEVICE_STATE_REASON_GSM_APN_FAILED,
 
+	/* Not searching for networks */
+	NM_DEVICE_STATE_REASON_GSM_REGISTRATION_NOT_SEARCHING,
+
+	/* Network registration denied */
+	NM_DEVICE_STATE_REASON_GSM_REGISTRATION_DENIED,
+
+	/* Network registration timed out */
+	NM_DEVICE_STATE_REASON_GSM_REGISTRATION_TIMEOUT,
+
 	/* Failed to register with the requested network */
 	NM_DEVICE_STATE_REASON_GSM_REGISTRATION_FAILED,
 

@@ -290,12 +290,27 @@
           Failed to select the specified GSM APN.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="GSM_REGISTRATION_FAILED" value="30">
+      <tp:enumvalue suffix="GSM_REGISTRATION_NOT_SEARCHING" value="30">
+        <tp:docstring>
+          Not searching for networks.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="GSM_REGISTRATION_DENIED" value="31">
+        <tp:docstring>
+          Network registration was denied.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="GSM_REGISTRATION_TIMEOUT" value="32">
+        <tp:docstring>
+          Network registration timed out.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="GSM_REGISTRATION_FAILED" value="33">
         <tp:docstring>
           Failed to register with the requested GSM network.
         </tp:docstring>
       </tp:enumvalue>
-      <tp:enumvalue suffix="GSM_PIN_CHECK_FAILED" value="31">
+      <tp:enumvalue suffix="GSM_PIN_CHECK_FAILED" value="34">
         <tp:docstring>
           PIN check failed.
         </tp:docstring>

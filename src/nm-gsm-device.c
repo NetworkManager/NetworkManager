@@ -241,7 +241,7 @@ manual_registration_done (NMSerialDevice *device,
 		nm_warning ("Manual registration timed out");
 		nm_device_state_changed (NM_DEVICE (device),
 		                         NM_DEVICE_STATE_FAILED,
-		                         NM_DEVICE_STATE_REASON_GSM_REGISTRATION_FAILED);
+		                         NM_DEVICE_STATE_REASON_GSM_REGISTRATION_TIMEOUT);
 		break;
 	default:
 		nm_warning ("Manual registration failed");
@@ -304,7 +304,7 @@ automatic_registration_response (NMSerialDevice *device,
 		nm_warning ("Automatic registration failed: not registered and not searching.");
 		nm_device_state_changed (NM_DEVICE (device),
 		                         NM_DEVICE_STATE_FAILED,
-		                         NM_DEVICE_STATE_REASON_GSM_REGISTRATION_FAILED);
+		                         NM_DEVICE_STATE_REASON_GSM_REGISTRATION_NOT_SEARCHING);
 		break;
 	case 1:
 		nm_info ("Registered on Home network");
@@ -317,7 +317,7 @@ automatic_registration_response (NMSerialDevice *device,
 		nm_warning ("Automatic registration failed: registration denied.");
 		nm_device_state_changed (NM_DEVICE (device),
 		                         NM_DEVICE_STATE_FAILED,
-		                         NM_DEVICE_STATE_REASON_GSM_REGISTRATION_FAILED);
+		                         NM_DEVICE_STATE_REASON_GSM_REGISTRATION_DENIED);
 		break;
 	case 4:
 		nm_info ("Registered on Roaming network");
@@ -327,7 +327,7 @@ automatic_registration_response (NMSerialDevice *device,
 		nm_warning ("Automatic registration timed out");
 		nm_device_state_changed (NM_DEVICE (device),
 		                         NM_DEVICE_STATE_FAILED,
-		                         NM_DEVICE_STATE_REASON_GSM_REGISTRATION_FAILED);
+		                         NM_DEVICE_STATE_REASON_GSM_REGISTRATION_TIMEOUT);
 		break;
 	default:
 		nm_warning ("Automatic registration failed");
