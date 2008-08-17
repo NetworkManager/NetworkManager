@@ -41,6 +41,6 @@ libnm_settings_plugin_keyfile_la_LIBADD += \
 endif
 
 install-data-hook:
-	mkdir -p $(keyfile_dir)
+	mkdir -p $(DESTDIR)$(keyfile_dir)
 
 
