@@ -1,3 +1,8 @@
+2008-08-17  Claude Paroz  <claude@2xlibre.net>
+
+	* LINGUAS: Added missing fr.
+	* fr.po: Updated translation by Robert-André Mauchin and Claude Paroz.
+
 2008-08-14  Leonid Kanter <leon@asplinux.ru>
 
 	* ru.po: Updated Russian translation
