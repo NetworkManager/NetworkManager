@@ -1,7 +1,7 @@
 AC_PREREQ(2.52)
 
 AC_INIT(NetworkManager, 0.7.0, dcbw@redhat.com, NetworkManager)
-AM_INIT_AUTOMAKE([subdir-objects tar-ustar])
+AM_INIT_AUTOMAKE([1.9 subdir-objects tar-ustar])
 AM_MAINTAINER_MODE
 
 AC_CONFIG_HEADERS(config.h)
