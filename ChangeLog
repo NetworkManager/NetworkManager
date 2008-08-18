@@ -1,3 +1,12 @@
+2008-08-18  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Robert Buchholz <rbu@gentoo.org>
+
+	* autogen.sh
+	  configure.in
+		- Change to automake 1.9 and 'ustar' tar format defined by POSIX
+			1003.1-1988, allowing for file names longer than 99 characters
+
 2008-08-17  Dan Williams  <dcbw@redhat.com>
 
 	* include/NetworkManager.h
