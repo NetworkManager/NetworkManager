@@ -1,4 +1,4 @@
-/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
 /* nm-dhcp-manager.c - Handle the DHCP daemon for NetworkManager
  *
@@ -265,10 +265,42 @@ string_to_state (const char *state)
 }
 
 static char *
-get_option (GHashTable * hash,
-            gpointer key)
+garray_to_string (GArray *array, const char *key)
 {
-	GValue * value;
+	GString *str;
+	int i;
+	char c;
+	char *converted = NULL;
+
+	g_return_val_if_fail (array != NULL, NULL);
+
+	/* Since the DHCP options come through environment variables, they should
+	 * already be UTF-8 safe, but just make sure.
+	 */
+	str = g_string_sized_new (array->len);
+	for (i = 0; i < array->len; i++) {
+		c = array->data[i];
+
+		/* Convert NULLs to spaces and non-ASCII characters to ? */
+		if (c == '\0')
+			c = ' ';
+		else if (c > 127)
+			c = '?';
+		str = g_string_append_c (str, c);
+	}
+	str = g_string_append_c (str, '\0');
+
+	converted = str->str;
+	if (!g_utf8_validate (converted, -1, NULL))
+		nm_warning ("%s: DHCP option '%s' couldn't be converted to UTF-8", __func__, key);
+	g_string_free (str, FALSE);
+	return converted;
+}
+
+static char *
+get_option (GHashTable *hash, const char *key)
+{
+	GValue *value;
 
 	value = g_hash_table_lookup (hash, key);
 	if (value == NULL)
@@ -281,7 +313,7 @@ get_option (GHashTable * hash,
 		return NULL;
 	}
 
-	return nm_utils_garray_to_string ((GArray *) g_value_get_boxed (value));
+	return garray_to_string ((GArray *) g_value_get_boxed (value), key);
 }
 
 static void
@@ -290,30 +322,19 @@ copy_option (gpointer key,
              gpointer user_data)
 {
 	NMDHCPDevice * device = (NMDHCPDevice *) user_data;
-	char * dup_key = NULL;
-	char * dup_value = NULL;
-
-	dup_key = g_strdup (key);
-	if (!dup_key)
-		goto error;
+	const char *str_key = (const char *) key;
+	char *str_value = NULL;
 
 	if (G_VALUE_TYPE (value) != DBUS_TYPE_G_UCHAR_ARRAY) {
 		nm_warning ("Unexpected key %s value type was not "
 		            "DBUS_TYPE_G_UCHAR_ARRAY",
-		            (char *) key);
-		goto error;
+		            str_key);
+		return;
 	}
 
-	dup_value = nm_utils_garray_to_string ((GArray *) g_value_get_boxed (value));
-	if (!dup_value)
-		goto error;
-
-	g_hash_table_insert (device->options, dup_key, dup_value);
-	return;
-
-error:
-	g_free (dup_key);
-	g_free (dup_value);
+	str_value = garray_to_string ((GArray *) g_value_get_boxed (value), str_key);
+	if (str_value)
+		g_hash_table_insert (device->options, g_strdup (str_key), str_value);
 }
 
 static void

@@ -1,5 +1,17 @@
 2008-08-18  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-utils.c
+	  libnm-util/nm-utils.h
+		- (nm_utils_garray_to_string): remove; NM was the only user and doesn't
+			export anything that needs to be converted with this function
+
+	* src/dhcp-manager/nm-dhcp-manager.c
+		- (garray_to_string): convert a byte array to a UTF-8 string with
+			minimal validation; the DHCP client sends it in ASCII anyway
+		- (get_option, copy_option): use garray_to_string()
+
+2008-08-18  Dan Williams  <dcbw@redhat.com>
+
 	* include/NetworkManager.h
 	  introspection/nm-device.xml
 		- Add a "missing firmware" device state reason

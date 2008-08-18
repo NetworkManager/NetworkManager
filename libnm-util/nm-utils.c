@@ -363,33 +363,6 @@ nm_utils_gvalue_hash_dup (GHashTable *hash)
 	return table;
 }
 
-/* Converts a GArray into a UTF-8 string */
-char *
-nm_utils_garray_to_string (GArray *array)
-{
-	GString *str;
-	int i;
-	char c;
-	char *converted = NULL;
-
-	g_return_val_if_fail (array != NULL, NULL);
-
-	str = g_string_sized_new (array->len);
-	for (i = 0; i < array->len; i++) {
-		c = array->data[i];
-
-		/* Convert NULLs to spaces to increase the readability. */
-		if (c == '\0')
-			c = ' ';
-		str = g_string_append_c (str, c);
-	}
-	str = g_string_append_c (str, '\0');
-
-	converted = string_to_utf8 (str->str, (gsize) str->len);
-	g_string_free (str, FALSE);
-	return converted;
-}
-
 void
 nm_utils_slist_free (GSList *list, GDestroyNotify elem_destroy_fn)
 {
