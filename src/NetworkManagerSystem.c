@@ -358,7 +358,7 @@ nm_system_vpn_device_set_from_ip4_config (NMDevice *active_device,
 	if (!iface || !strlen (iface))
 		goto out;
 
-	nm_system_device_set_up_down_with_iface (iface, TRUE);
+	nm_system_device_set_up_down_with_iface (iface, TRUE, NULL);
 
 	if (!add_ip4_addresses (config, iface))
 		goto out;
@@ -419,14 +419,20 @@ gboolean nm_system_vpn_device_unset_from_ip4_config (NMDevice *active_device, co
  * Mark the device as up or down.
  *
  */
-gboolean nm_system_device_set_up_down (NMDevice *dev, gboolean up)
+gboolean
+nm_system_device_set_up_down (NMDevice *dev,
+                              gboolean up,
+                              gboolean *no_firmware)
 {
 	g_return_val_if_fail (dev != NULL, FALSE);
 
-	return nm_system_device_set_up_down_with_iface (nm_device_get_iface (dev), up);
+	return nm_system_device_set_up_down_with_iface (nm_device_get_iface (dev), up, no_firmware);
 }
 
-gboolean nm_system_device_set_up_down_with_iface (const char *iface, gboolean up)
+gboolean
+nm_system_device_set_up_down_with_iface (const char *iface,
+                                         gboolean up,
+                                         gboolean *no_firmware)
 {
 	struct rtnl_link *request = NULL, *old = NULL;
 	struct nl_handle *nlh;
@@ -434,6 +440,8 @@ gboolean nm_system_device_set_up_down_with_iface (const char *iface, gboolean up
 	guint32 idx;
 
 	g_return_val_if_fail (iface != NULL, FALSE);
+	if (no_firmware)
+		g_return_val_if_fail (*no_firmware == FALSE, FALSE);
 
 	if (!(request = rtnl_link_alloc ()))
 		goto out;
@@ -447,8 +455,12 @@ gboolean nm_system_device_set_up_down_with_iface (const char *iface, gboolean up
 	old = nm_netlink_index_to_rtnl_link (idx);
 	if (old) {
 		nlh = nm_netlink_get_default_handle ();
-		if (nlh)
-			success = (rtnl_link_change (nlh, old, request, 0) == 0) ? TRUE : FALSE;
+		if (nlh) {
+			if (rtnl_link_change (nlh, old, request, 0) == 0)
+				success = TRUE;
+			else if ((nl_get_errno () == ENOENT) && no_firmware && up)
+				*no_firmware = TRUE;
+		}
 	}
 
 	rtnl_link_put (old);

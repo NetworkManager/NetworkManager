@@ -56,8 +56,12 @@ gboolean		nm_system_vpn_device_unset_from_ip4_config	(NMDevice *active_device,
 									 const char *iface,
 									 NMIP4Config *config);
 
-gboolean		nm_system_device_set_up_down				(NMDevice *dev, gboolean up);
-gboolean		nm_system_device_set_up_down_with_iface		(const char *iface, gboolean up);
+gboolean		nm_system_device_set_up_down				(NMDevice *dev,
+                                                             gboolean up,
+                                                             gboolean *no_firmware);
+gboolean		nm_system_device_set_up_down_with_iface		(const char *iface,
+                                                             gboolean up,
+                                                             gboolean *no_firmware);
 
 gboolean        nm_system_device_is_up (NMDevice *device);
 gboolean        nm_system_device_is_up_with_iface (const char *iface);

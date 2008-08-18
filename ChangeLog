@@ -1,5 +1,27 @@
 2008-08-18  Dan Williams  <dcbw@redhat.com>
 
+	* include/NetworkManager.h
+	  introspection/nm-device.xml
+		- Add a "missing firmware" device state reason
+
+	* src/NetworkManagerSystem.c
+	  src/NetworkManagerSystem.h
+		- (nm_system_device_set_up_down): add a no_firmware argument
+		- (nm_system_device_set_up_down_with_iface): if the result of setting
+			IFF_UP is ENOENT, that almost always means missing firmware
+
+	* src/backends/NetworkManagerGeneric.c
+	  src/nm-device-ethernet.c
+	  src/nm-device-private.h
+	  src/nm-device-wifi.c
+	  src/nm-device.c
+	  src/nm-device.h
+	  src/nm-hso-gsm-device.c
+	  src/vpn-manager/nm-vpn-connection.c
+		- Pass no_firmware along; check it where appropriate
+
+2008-08-18  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Robert Buchholz <rbu@gentoo.org>
 
 	* autogen.sh

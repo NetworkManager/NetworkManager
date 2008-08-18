@@ -361,13 +361,19 @@ real_act_stage4_get_ip4_config (NMDevice *device,
 {
 	NMHsoGsmDevice *self = NM_HSO_GSM_DEVICE (device);
 	NMHsoGsmDevicePrivate *priv = NM_HSO_GSM_DEVICE_GET_PRIVATE (self);
+	gboolean no_firmware = FALSE;
 
 	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
 	nm_device_set_ip_iface (device, priv->netdev_iface);
-	if (!nm_device_hw_bring_up (device, TRUE))
+	if (!nm_device_hw_bring_up (device, TRUE, &no_firmware)) {
+		if (no_firmware)
+			*reason = NM_DEVICE_STATE_REASON_FIRMWARE_MISSING;
+		else
+			*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
 
 	*config = priv->pending_ip4_config;
 	priv->pending_ip4_config = NULL;
@@ -428,7 +434,7 @@ real_deactivate (NMDevice *device)
 	if (priv->netdev_iface) {
 		nm_system_device_flush_ip4_routes_with_iface (priv->netdev_iface);
 		nm_system_device_flush_ip4_addresses_with_iface (priv->netdev_iface);
-		nm_system_device_set_up_down_with_iface (priv->netdev_iface, FALSE);
+		nm_system_device_set_up_down_with_iface (priv->netdev_iface, FALSE, NULL);
 	}
 	nm_device_set_ip_iface (device, NULL);
 
@@ -453,7 +459,7 @@ real_hw_is_up (NMDevice *device)
 }
 
 static gboolean
-real_hw_bring_up (NMDevice *device)
+real_hw_bring_up (NMDevice *device, gboolean *no_firmware)
 {
 	NMHsoGsmDevicePrivate *priv = NM_HSO_GSM_DEVICE_GET_PRIVATE (device);
 	NMDeviceState state;
@@ -463,7 +469,7 @@ real_hw_bring_up (NMDevice *device)
 	if (   priv->pending_ip4_config
 	    || (state == NM_DEVICE_STATE_IP_CONFIG)
 	    || (state == NM_DEVICE_STATE_ACTIVATED))
-		return nm_system_device_set_up_down_with_iface (priv->netdev_iface, TRUE);
+		return nm_system_device_set_up_down_with_iface (priv->netdev_iface, TRUE, no_firmware);
 
 	return TRUE;
 }

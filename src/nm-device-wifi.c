@@ -797,15 +797,15 @@ real_hw_is_up (NMDevice *device)
 }
 
 static gboolean
-real_hw_bring_up (NMDevice *dev)
+real_hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 {
-	return nm_system_device_set_up_down (dev, TRUE);
+	return nm_system_device_set_up_down (dev, TRUE, no_firmware);
 }
 
 static void
 real_hw_take_down (NMDevice *dev)
 {
-	nm_system_device_set_up_down (dev, FALSE);
+	nm_system_device_set_up_down (dev, FALSE, NULL);
 }
 
 static gboolean
@@ -3416,10 +3416,12 @@ nm_device_wifi_set_enabled (NMDeviceWifi *self, gboolean enabled)
 		return;
 
 	if (enabled) {
+		gboolean no_firmware = FALSE;
+
 		if (state != NM_DEVICE_STATE_UNAVAILABLE);
 			nm_warning ("not in expected unavailable state!");
 
-		if (!nm_device_hw_bring_up (NM_DEVICE (self), TRUE)) {
+		if (!nm_device_hw_bring_up (NM_DEVICE (self), TRUE, &no_firmware)) {
 			/* The device sucks, or HAL was lying to us about the killswitch state */
 			priv->enabled = FALSE;
 			return;

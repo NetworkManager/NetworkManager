@@ -315,6 +315,11 @@
           PIN check failed.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="FIRMWARE_MISSING" value="35">
+        <tp:docstring>
+          Necessary firmware for the device may be missing.
+        </tp:docstring>
+      </tp:enumvalue>
 	</tp:enum>
 
   </interface>

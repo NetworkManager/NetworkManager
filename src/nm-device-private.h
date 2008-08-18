@@ -34,9 +34,9 @@ void nm_device_state_changed (NMDevice *device,
                               NMDeviceState state,
                               NMDeviceStateReason reason);
 
-gboolean nm_device_hw_bring_up (NMDevice *self, gboolean wait);
+gboolean nm_device_hw_bring_up (NMDevice *self, gboolean wait, gboolean *no_firmware);
 
-void nm_device_hw_take_down (NMDevice *self, gboolean wait);
+void nm_device_hw_take_down (NMDevice *self, gboolean block);
 
 void nm_device_handle_autoip4_event (NMDevice *self,
                                      const char *event,

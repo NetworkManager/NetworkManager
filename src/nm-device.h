@@ -66,7 +66,7 @@ struct _NMDeviceClass
 
 	/* Hardware state, ie IFF_UP */
 	gboolean        (*hw_is_up)      (NMDevice *self);
-	gboolean        (*hw_bring_up)   (NMDevice *self);
+	gboolean        (*hw_bring_up)   (NMDevice *self, gboolean *no_firmware);
 	void            (*hw_take_down)  (NMDevice *self);
 
 	/* Additional stuff required to operate the device, like a 

@@ -357,15 +357,15 @@ real_hw_is_up (NMDevice *device)
 }
 
 static gboolean
-real_hw_bring_up (NMDevice *dev)
+real_hw_bring_up (NMDevice *dev, gboolean *no_firmware)
 {
-	return nm_system_device_set_up_down (dev, TRUE);
+	return nm_system_device_set_up_down (dev, TRUE, no_firmware);
 }
 
 static void
 real_hw_take_down (NMDevice *dev)
 {
-	nm_system_device_set_up_down (dev, FALSE);
+	nm_system_device_set_up_down (dev, FALSE, NULL);
 }
 
 NMDeviceEthernet *

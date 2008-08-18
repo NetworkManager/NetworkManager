@@ -322,6 +322,9 @@ typedef enum {
 	/* PIN check failed */
 	NM_DEVICE_STATE_REASON_GSM_PIN_CHECK_FAILED,
 
+	/* Necessary firmware for the device may be missing */
+	NM_DEVICE_STATE_REASON_FIRMWARE_MISSING,
+
 	/* Unused */
 	NM_DEVICE_STATE_REASON_LAST = 0xFFFF
 } NMDeviceStateReason;

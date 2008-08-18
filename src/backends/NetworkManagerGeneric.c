@@ -58,7 +58,7 @@ void nm_generic_enable_loopback (void)
 	int			iface_idx = -1;
 	int			err;
 
-	nm_system_device_set_up_down_with_iface ("lo", TRUE);
+	nm_system_device_set_up_down_with_iface ("lo", TRUE, NULL);
 
 	nlh = nm_netlink_get_default_handle ();
 	if (!nlh)
