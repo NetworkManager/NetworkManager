@@ -1,3 +1,8 @@
+2008-08-18  Claude Paroz  <claude@2xlibre.net>
+
+	* properties/nm-openvpn-dialog.glade: Removed translatable property on non
+	user-visible strings and stock labels.
+
 2008-08-14  Tambet Ingo  <tambet@gmail.com>
 
 	* src/nm-openvpn-service.c (nm_openvpn_socket_data_cb): Detect private key

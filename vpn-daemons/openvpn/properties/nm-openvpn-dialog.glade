@@ -241,7 +241,7 @@
                         <child>
                           <widget class="GtkLabel" id="label14">
                             <property name="visible">True</property>
-                            <property name="label" translatable="yes">page 1</property>
+                            <property name="label">page 1</property>
                           </widget>
                           <packing>
                             <property name="type">tab</property>
@@ -322,7 +322,7 @@
                         <child>
                           <widget class="GtkLabel" id="label15">
                             <property name="visible">True</property>
-                            <property name="label" translatable="yes">page 2</property>
+                            <property name="label">page 2</property>
                           </widget>
                           <packing>
                             <property name="type">tab</property>
@@ -466,7 +466,7 @@
                         <child>
                           <widget class="GtkLabel" id="label16">
                             <property name="visible">True</property>
-                            <property name="label" translatable="yes">page 3</property>
+                            <property name="label">page 3</property>
                           </widget>
                           <packing>
                             <property name="type">tab</property>
@@ -604,7 +604,7 @@
                         <child>
                           <widget class="GtkLabel" id="label17">
                             <property name="visible">True</property>
-                            <property name="label" translatable="yes">page 4</property>
+                            <property name="label">page 4</property>
                           </widget>
                           <packing>
                             <property name="type">tab</property>
@@ -955,7 +955,7 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="label" translatable="yes">gtk-cancel</property>
+                <property name="label">gtk-cancel</property>
                 <property name="use_stock">True</property>
                 <property name="response_id">-6</property>
               </widget>
@@ -965,7 +965,7 @@
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="label" translatable="yes">gtk-ok</property>
+                <property name="label">gtk-ok</property>
                 <property name="use_stock">True</property>
                 <property name="response_id">-5</property>
               </widget>
