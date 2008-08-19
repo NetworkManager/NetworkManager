@@ -1,55 +1,271 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-#
+# translation of networkmanager to Polish
+# Copyright (C) 2001-2008 Free Software Foundation, Inc.
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# Aviary.pl
+# Jeśli masz jakiekolwiek uwagi odnoszące się do tłumaczenia lub chcesz
+# pomóc w jego rozwijaniu i pielęgnowaniu, napisz do nas:
+# gnomepl@aviary.pl
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 msgid ""
 msgstr ""
-"Project-Id-Version: 1\n"
+"Project-Id-Version: networkmanager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-02-24 00:12+0100\n"
-"PO-Revision-Date: 2008-02-24 00:14+0100\n"
-"Last-Translator: wadim dziedzic <nikdo@aviary.pl>\n"
-"Language-Team: PL <PL@li.org>\n"
+"POT-Creation-Date: 2008-08-19 11:30+0200\n"
+"PO-Revision-Date: 2008-08-19 11:33+0100\n"
+"Last-Translator: Tomasz Dominikowski <dominikowski@gmail.com>\n"
+"Language-Team: Aviary.pl <gnomepl@aviary.pl>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2\n"
+"X-Poedit-Language: Polish\n"
+"X-Poedit-Country: Poland\n"
 
-#: ../src/nm-netlink-monitor.c:188
-#: ../src/nm-netlink-monitor.c:448
+#: ../src/nm-netlink-monitor.c:193
+#: ../src/nm-netlink-monitor.c:474
 #, c-format
 msgid "error processing netlink message: %s"
-msgstr "błąd przetwarzania komunikatu netlink: %s"
+msgstr "błąd podczas przetwarzania komunikatu netlink: %s"
 
-#: ../src/nm-netlink-monitor.c:245
+#: ../src/nm-netlink-monitor.c:250
 #, c-format
 msgid "unable to allocate netlink handle for monitoring link status: %s"
-msgstr "nie można utworzyć uchwytu netlink dla monitorowania statusu połączenia - %s"
+msgstr "nie można utworzyć uchwytu netlink dla monitorowania statusu połączenia: %s"
 
-#: ../src/nm-netlink-monitor.c:255
+#: ../src/nm-netlink-monitor.c:260
 #, c-format
 msgid "unable to connect to netlink for monitoring link status: %s"
-msgstr "nie można połączyć się z netlink dla monitorowania statusu połączenia - %s"
+msgstr "nie można połączyć się z netlink dla monitorowania statusu połączenia: %s"
 
-#: ../src/nm-netlink-monitor.c:263
+#: ../src/nm-netlink-monitor.c:268
 #, c-format
 msgid "unable to join netlink group for monitoring link status: %s"
-msgstr "nie można dołączyć do grupy netlink dla monitorowania statusu połączenia - %s"
+msgstr "nie można dołączyć do grupy netlink dla monitorowania statusu połączenia: %s"
 
-#: ../src/nm-netlink-monitor.c:271
+#: ../src/nm-netlink-monitor.c:276
 #, c-format
 msgid "unable to allocate netlink link cache for monitoring link status: %s"
-msgstr "nie można utworzyć buforaw połączenia netlink dla monitorowania statusu połączenia - %s"
+msgstr "nie można utworzyć buforów połączenia netlink dla monitorowania statusu połączenia: %s"
 
-#: ../src/nm-netlink-monitor.c:471
+#: ../src/nm-netlink-monitor.c:439
+#, c-format
+msgid "error updating link cache: %s"
+msgstr "błąd podczas aktualizacji bufora link: %s"
+
+#: ../src/nm-netlink-monitor.c:497
+#, c-format
 msgid "error occurred while waiting for data on socket"
 msgstr "napotkano błąd podczas oczekiwania na dane"
 
-#: ../src/NetworkManager.c:255
+#: ../src/NetworkManager.c:250
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
-msgstr "Błędna opcja. Parametr --help wyświetla listę poprawnych opcji/\n"
+msgstr "Błędna opcja. Parametr --help wyświetla listę poprawnych opcji.\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:87
+msgid "# Created by NetworkManager\n"
+msgstr "# Utworzony przez NetworkManager\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:93
+#, c-format
+msgid ""
+"# Merged from %s\n"
+"\n"
+msgstr ""
+"# Scalony od %s\n"
+"\n"
+
+#: ../src/named-manager/nm-named-manager.c:257
+msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
+msgstr "UWAGA: obsługa nazw glibc nie obsługuje więcej niż 3 serwery nazw."
+
+#: ../src/named-manager/nm-named-manager.c:259
+msgid "The nameservers listed below may not be recognized."
+msgstr "Poniższe serwery nazw nie mogą nie zostać rozpoznane."
+
+#: ../system-settings/src/main.c:365
+#, c-format
+msgid "Auto %s"
+msgstr "Auto %s"
+
+#: ../libnm-util/crypto.c:125
+#, c-format
+msgid "PEM key file had no end tag '%s'."
+msgstr "Plik klucza PEM nie zawiera znacznika końcowego \"%s\"."
+
+#: ../libnm-util/crypto.c:135
+#, c-format
+msgid "Doesn't look like a PEM private key file."
+msgstr "Nie wygląda na plik klucza prywatnego PEM."
+
+#: ../libnm-util/crypto.c:143
+#, c-format
+msgid "Not enough memory to store PEM file data."
+msgstr "Brak wystarczającej ilości pamięci do przechowania danych PEM."
+
+#: ../libnm-util/crypto.c:159
+#, c-format
+msgid "Malformed PEM file: Proc-Type was not first tag."
+msgstr "Uszkodzony plik PEM: Proc-Type nie był pierwszym znacznikiem."
+
+#: ../libnm-util/crypto.c:167
+#, c-format
+msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
+msgstr "Uszkodzony plik PEM: nieznany znacznik Proc-Type \"%s\"."
+
+#: ../libnm-util/crypto.c:177
+#, c-format
+msgid "Malformed PEM file: DEK-Info was not the second tag."
+msgstr "Uszkodzony plik PEM: DEK-Info nie był drugim znacznikiem."
+
+#: ../libnm-util/crypto.c:188
+#, c-format
+msgid "Malformed PEM file: no IV found in DEK-Info tag."
+msgstr "Uszkodzony plik PEM: brak IV w znaczniku DEK-Info."
+
+#: ../libnm-util/crypto.c:195
+#, c-format
+msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
+msgstr "Uszkodzony plik PEM: niepoprawny format IV w znaczniku DEK-Info."
+
+#: ../libnm-util/crypto.c:208
+#, c-format
+msgid "Malformed PEM file: unknown private key cipher '%s'."
+msgstr "Uszkodzony plik PEM: nieznany szyfr klucza prywatnego: \"%s\"."
+
+#: ../libnm-util/crypto.c:227
+#, c-format
+msgid "Could not decode private key."
+msgstr "Nie można było zdekodować klucza prywatnego."
+
+#: ../libnm-util/crypto.c:271
+#, c-format
+msgid "PEM certificate '%s' had no end tag '%s'."
+msgstr "Certyfikat PEM \"%s\" nie zawiera kończącego znacznika \"%s\"."
+
+#: ../libnm-util/crypto.c:281
+#, c-format
+msgid "Failed to decode certificate."
+msgstr "Nieudane zdekodowanie certyfikatu."
+
+#: ../libnm-util/crypto.c:290
+#: ../libnm-util/crypto.c:298
+#, c-format
+msgid "Not enough memory to store certificate data."
+msgstr "Brak wystarczającej ilości pamięci do przechowania danych certyfikatu."
+
+#: ../libnm-util/crypto.c:328
+#, c-format
+msgid "IV must be an even number of bytes in length."
+msgstr "Ilość bajtów w IV musi być parzystą liczbą."
+
+#: ../libnm-util/crypto.c:337
+#, c-format
+msgid "Not enough memory to store the IV."
+msgstr "Brak wystarczającej ilości pamięci do przechowania IV."
+
+#: ../libnm-util/crypto.c:348
+#, c-format
+msgid "IV contains non-hexadecimal digits."
+msgstr "IV zawiera nie-szesnastkowe cyfry."
+
+#: ../libnm-util/crypto.c:386
+#: ../libnm-util/crypto_gnutls.c:126
+#: ../libnm-util/crypto_nss.c:136
+#, c-format
+msgid "Private key cipher '%s' was unknown."
+msgstr "Nieznany szyfr klucza prywatnego \"%s\"."
+
+#: ../libnm-util/crypto.c:395
+#, c-format
+msgid "Not enough memory to create private key decryption key."
+msgstr "Brak wystarczającej ilości pamięci do utworzenia klucza deszyfrującego dla klucza prywatnego."
+
+#: ../libnm-util/crypto.c:513
+#, c-format
+msgid "Not enough memory to store decrypted private key."
+msgstr "Brak wystarczającej ilości pamięci do przechowania zdeszyfrowanego klucza prywatnego."
+
+#: ../libnm-util/crypto_gnutls.c:73
+#, c-format
+msgid "Failed to initialize the MD5 engine: %s / %s."
+msgstr "Nieudana inicjacja modułu MD5: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:135
+#: ../libnm-util/crypto_nss.c:145
+#, c-format
+msgid "Not enough memory for decrypted key buffer."
+msgstr "Brak wystarczającej ilości pamięci dla zdeszyfrowanego bufora klucza."
+
+#: ../libnm-util/crypto_gnutls.c:143
+#, c-format
+msgid "Failed to initialize the decryption cipher context: %s / %s."
+msgstr "Nieudana inicjacja kontekstu szyfru do deszyfrowania: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:152
+#, c-format
+msgid "Failed to set symmetric key for decryption: %s / %s."
+msgstr "Nieudane ustawienie klucza symetrycznego do deszyfrowania: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:161
+#, c-format
+msgid "Failed to set IV for decryption: %s / %s."
+msgstr "Nieudane ustawienie IV do deszyfrowania: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:170
+#, c-format
+msgid "Failed to decrypt the private key: %s / %s."
+msgstr "Nieudane zdeszyfrowanie klucza prywatnego: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:208
+#, c-format
+msgid "Error initializing certificate data: %s"
+msgstr "Błąd podczas inicjowania danych certyfikatu: %s"
+
+#: ../libnm-util/crypto_gnutls.c:220
+#, c-format
+msgid "Couldn't decode certificate: %s"
+msgstr "Nie można było zdekodować certyfikatu: %s"
+
+#: ../libnm-util/crypto_nss.c:78
+#, c-format
+msgid "Failed to initialize the MD5 context: %d."
+msgstr "Nieudana inicjacja kontekstu MD5: %d."
+
+#: ../libnm-util/crypto_nss.c:153
+#, c-format
+msgid "Failed to initialize the decryption cipher slot."
+msgstr "Nieudana inicjacja slotu szyfru do deszyfrowania."
+
+#: ../libnm-util/crypto_nss.c:163
+#, c-format
+msgid "Failed to set symmetric key for decryption."
+msgstr "Nieudane ustawienie klucza symetrycznego do deszyfrowania."
+
+#: ../libnm-util/crypto_nss.c:173
+#, c-format
+msgid "Failed to set IV for decryption."
+msgstr "Nieudane ustawienie IV do deszyfrowania."
+
+#: ../libnm-util/crypto_nss.c:181
+#, c-format
+msgid "Failed to initialize the decryption context."
+msgstr "Nieudana inicjacja kontekstu deszyfrowania."
+
+#: ../libnm-util/crypto_nss.c:194
+#, c-format
+msgid "Failed to decrypt the private key: %d."
+msgstr "Nieudane zdeszyfrowanie klucza prywatnego: %d."
+
+#: ../libnm-util/crypto_nss.c:206
+#, c-format
+msgid "Failed to finalize decryption of the private key: %d."
+msgstr "Nieudane ukończenie deszyfrowania klucza prywatnego: %d."
+
+#: ../libnm-util/crypto_nss.c:250
+#, c-format
+msgid "Couldn't decode certificate: %d"
+msgstr "Nie można było zdekodować certyfikatu: %d"
 
 #~ msgid "Cannot add VPN connection"
 #~ msgstr "Nie można dodać połączenia VPN"
