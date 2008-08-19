@@ -1,3 +1,18 @@
+2008-08-19  Dan Williams  <dcbw@redhat.com>
+
+	* configure.in
+	  test/Makefile.am
+		- Don't build test/test-common
+		- Remove unused stuff
+
+	* test/nm-set-fallback
+	  test/nmtestdevices.c
+	  test/test-common/.cvsignore
+	  test/test-common/Makefile.am
+	  test/test-common/test-common.c
+	  test/test-common/test-common.h
+		- delete
+
 2008-08-18  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/nm-utils.c

@@ -1,5 +1,3 @@
-SUBDIRS=test-common
-
 INCLUDES = -I${top_srcdir}                    \
            -I${top_srcdir}/libnm-util         \
            -I${top_srcdir}/libnm-glib         \
@@ -17,9 +15,7 @@ AM_CPPFLAGS =						\
 
 bin_PROGRAMS = nm-tool
 
-noinst_PROGRAMS = nm-online \
-                  nmtestdevices \
-                  libnm_glib_test
+noinst_PROGRAMS = nm-online libnm_glib_test
 
 nm_tool_SOURCES = nm-tool.c
 nm_tool_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS) $(HAL_LIBS)	\
@@ -29,10 +25,6 @@ nm_tool_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS) $(HAL_LIBS)	\
 nm_online_SOURCES = nm-online.c
 nm_online_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS) $(HAL_LIBS)	\
 		$(top_builddir)/libnm-util/libnm-util.la
-
-nmtestdevices_SOURCES = nmtestdevices.c
-nmtestdevices_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS)	\
-			$(top_builddir)/libnm-util/libnm-util.la
 
 libnm_glib_test_SOURCES = libnm_glib_test.c
 libnm_glib_test_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS) \
