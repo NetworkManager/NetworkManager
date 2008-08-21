@@ -585,7 +585,7 @@ nm_find_pppd (void)
 }
 
 static void
-ppp_exit_code (guint pppd_exit_status)
+ppp_exit_code (guint pppd_exit_status, GPid pid)
 {
 	const char *msg;
 
@@ -653,7 +653,7 @@ ppp_exit_code (guint pppd_exit_status)
 		msg = "Unknown error";
 	}
 
-	g_warning ("pppd exited with error: %s", msg);
+	nm_warning ("ppp pid %d exited with error: %s", pid, msg);
 }
 
 static void
@@ -666,15 +666,16 @@ ppp_watch_cb (GPid pid, gint status, gpointer user_data)
 	if (WIFEXITED (status)) {
 		err = WEXITSTATUS (status);
 		if (err != 0)
-			ppp_exit_code (err);
+			ppp_exit_code (err, priv->pid);
 	} else if (WIFSTOPPED (status))
-		g_warning ("ppp stopped unexpectedly with signal %d", WSTOPSIG (status));
+		nm_warning ("ppp pid %d stopped unexpectedly with signal %d", priv->pid, WSTOPSIG (status));
 	else if (WIFSIGNALED (status))
-		g_warning ("ppp died with signal %d", WTERMSIG (status));
+		nm_warning ("ppp pid %d died with signal %d", priv->pid, WTERMSIG (status));
 	else
-		g_warning ("ppp died from an unknown cause");
+		nm_warning ("ppp pid %d died from an unknown cause", priv->pid);
   
 	/* Reap child if needed. */
+	nm_debug ("ppp pid %d cleaned up", priv->pid);
 	waitpid (pid, NULL, WNOHANG);
 
 	priv->pid = 0;
@@ -949,6 +950,7 @@ ensure_killed (gpointer data)
 
 	/* ensure the child is reaped */
 	waitpid (pid, NULL, WNOHANG);
+	nm_debug ("ppp pid %d cleaned up", pid);
 
 	return FALSE;
 }
@@ -991,6 +993,7 @@ nm_ppp_manager_stop (NMPPPManager *manager)
 			kill (priv->pid, SIGKILL);
 			/* ensure the child is reaped */
 			waitpid (priv->pid, NULL, WNOHANG);
+			nm_debug ("ppp pid %d cleaned up", priv->pid);
 		}
 
 		priv->pid = 0;
