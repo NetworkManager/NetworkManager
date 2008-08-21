@@ -1,3 +1,8 @@
+2008-08-21  Runa Bhattacharjee <runab@redhat.com>
+
+	* ps.po: Added Pashto Translations by Zabeeh Khan
+	* LINGUAS: Added Pashto to the List of Languages
+
 2008-08-18  Claude Paroz  <claude@2xlibre.net>
 
 	* fr.po: Updated French translation by Robert-André Mauchin.
