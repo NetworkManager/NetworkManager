@@ -269,7 +269,7 @@ garray_to_string (GArray *array, const char *key)
 {
 	GString *str;
 	int i;
-	char c;
+	unsigned char c;
 	char *converted = NULL;
 
 	g_return_val_if_fail (array != NULL, NULL);
