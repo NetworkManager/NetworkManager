@@ -7,6 +7,11 @@
 	  libnm-util/libnm-util.ver
 		- Use linker version scripts to control the list of exported 
 		symbols. List each exported symbol explicitely.
+	* libnm-util/Makefile.am
+		- Fix compilation of the test-crypto binary. The crypto
+		functions are no longer part of the libnm-util API. Add 
+		crypto_*.c to test_crypto_SOURCES and link against the correct
+		crypto libraries.
 
 2008-08-19  Dan Williams  <dcbw@redhat.com>
 

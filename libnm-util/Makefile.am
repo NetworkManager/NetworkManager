@@ -69,9 +69,21 @@ libnm_util_includedir=$(includedir)/NetworkManager
 
 noinst_PROGRAMS = test-crypto
 
-test_crypto_SOURCES = test-crypto.c
+test_crypto_SOURCES = test-crypto.c crypto.c
 test_crypto_CPPFLAGS = $(GLIB_CFLAGS) -D_GNU_SOURCE
 test_crypto_LDADD = $(GLIB_LIBS) libnm-util.la
+
+if WITH_GNUTLS
+test_crypto_SOURCES += crypto_gnutls.c
+test_crypto_CPPFLAGS += $(LIBGCRYPT_CFLAGS) $(GNUTLS_CFLAGS)
+test_crypto_LDADD += $(LIBGCRYPT_LIBS) $(GNUTLS_LIBS)
+endif
+
+if WITH_NSS
+test_crypto_SOURCES += crypto_nss.c
+test_crypto_CPPFLAGS += $(NSS_CFLAGS)
+test_crypto_LDADD += $(NSS_LIBS)
+endif
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libnm-util.pc
