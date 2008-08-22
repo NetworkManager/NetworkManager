@@ -49,12 +49,15 @@ void nm_system_enable_loopback (void)
 /*
  * nm_system_update_dns
  *
- * Make glibc/nscd aware of any changes to the resolv.conf file by
- * restarting nscd.
+ * Invalidate the nscd host cache, if it exists, since
+ * we changed resolv.conf.
  *
  */
 void nm_system_update_dns (void)
 {
-	nm_spawn_process ("/usr/sbin/invoke-rc.d nscd restart");
+	if (g_file_test ("/usr/sbin/nscd", G_FILE_TEST_IS_EXECUTABLE)) {
+		nm_info ("Clearing nscd hosts cache.");
+		nm_spawn_process ("/usr/sbin/nscd -i hosts");
+	}
 }
 
