@@ -51,6 +51,8 @@ libnm_util_la_SOURCES=			\
 
 libnm_util_la_LIBADD = $(GLIB_LIBS) $(DBUS_LIBS)
 
+libnm_util_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm-util.ver
+
 if WITH_GNUTLS
 libnm_util_la_SOURCES += crypto_gnutls.c
 libnm_util_la_CPPFLAGS += $(LIBGCRYPT_CFLAGS) $(GNUTLS_CFLAGS)
@@ -76,6 +78,5 @@ pkgconfig_DATA = libnm-util.pc
 
 DISTCLEANFILES = libnm-util.pc
 
-EXTRA_DIST = \
-	libnm-util.pc.in
+EXTRA_DIST = libnm-util.pc.in libnm-util.ver
 

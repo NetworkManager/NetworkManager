@@ -91,6 +91,8 @@ libnm_glib_la_LIBADD = \
 	$(GCONF_LIBS)					\
 	$(GNOME_KEYRING_LIBS)
 
+libnm_glib_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm_glib.ver
+
 noinst_PROGRAMS = libnm-glib-test
 
 libnm_glib_test_SOURCES = libnm-glib-test.c
@@ -101,6 +103,7 @@ libnm_glib_test_LDADD = libnm_glib.la $(top_builddir)/libnm-util/libnm-util.la $
 libnm_glib_vpn_la_SOURCES = nm-vpn-plugin.c nm-vpn-plugin-ui-interface.c
 libnm_glib_vpn_la_CFLAGS = $(GLIB_CFLAGS) $(DBUS_CFLAGS)
 libnm_glib_vpn_la_LIBADD = $(top_builddir)/libnm-util/libnm-util.la $(GLIB_LIBS) $(DBUS_LIBS)
+libnm_glib_vpn_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm_glib_vpn.ver
 
 
 nm-client-bindings.h: $(top_srcdir)/introspection/nm-manager-client.xml
@@ -153,7 +156,7 @@ pkgconfig_DATA = libnm_glib.pc libnm_glib_vpn.pc
 
 DISTCLEANFILES = libnm_glib.pc libnm_glib.pc
 
-EXTRA_DIST = libnm_glib.pc.in libnm_glib_vpn.pc.in
+EXTRA_DIST = libnm_glib.pc.in libnm_glib_vpn.pc.in libnm_glib.ver libnm_glib_vpn.ver
 
 CLEANFILES = \
 	$(BUILT_SOURCES)
