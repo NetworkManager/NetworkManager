@@ -34,6 +34,7 @@
 #include "NetworkManagerGeneric.h"
 #include "NetworkManagerSystem.h"
 #include "NetworkManagerUtils.h"
+#include "nm-utils.h"
 
 /*
  * nm_system_enable_loopback
