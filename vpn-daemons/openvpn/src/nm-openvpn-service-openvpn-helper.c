@@ -127,6 +127,21 @@ str_to_gvalue (const char *str, gboolean try_convert)
 }
 
 static GValue *
+uint_to_gvalue (guint32 num)
+{
+	GValue *val;
+
+	if (num == 0)
+		return NULL;
+
+	val = g_slice_new0 (GValue);
+	g_value_init (val, G_TYPE_UINT);
+	g_value_set_uint (val, num);
+
+	return val;
+}
+
+static GValue *
 addr_to_gvalue (const char *str)
 {
 	struct in_addr	temp_addr;
@@ -355,6 +370,21 @@ main (int argc, char *argv[])
 		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_NBNS, nbns_list);
 	if (dns_domain)
 		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_DOMAIN, dns_domain);
+
+	/* Tunnel MTU */
+	tmp = getenv ("tun_mtu");
+	if (tmp && strlen (tmp)) {
+		long int mtu;
+
+		errno = 0;
+		mtu = strtol (tmp, NULL, 10);
+		if (errno || mtu < 0 || mtu > 20000) {
+			nm_warning ("Ignoring invalid tunnel MTU '%s'", tmp);
+		} else {
+			val = uint_to_gvalue ((guint32) mtu);
+			g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_MTU, val);
+		}
+	}
 
 	/* Send the config info to nm-openvpn-service */
 	send_ip4_config (connection, config);

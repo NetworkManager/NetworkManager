@@ -1,3 +1,8 @@
+2008-08-22  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-openvpn-service-openvpn-helper.c
+		- (main): grab tunnel MTU and push that through to NM
+
 2008-08-18  Claude Paroz  <claude@2xlibre.net>
 
 	* properties/nm-openvpn-dialog.glade: Removed translatable property on non
