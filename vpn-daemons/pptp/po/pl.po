@@ -1,20 +1,25 @@
-# Polish message file for YaST2 (@memory@).
-# Copyright (C) 2005 SUSE Linux Products GmbH.
-# Copyright (C) 2003 SuSE Linux AG.
-#
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# Aviary.pl
+# Jeśli masz jakiekolwiek uwagi odnoszące się do tłumaczenia lub chcesz
+# pomóc w jego rozwijaniu i pielęgnowaniu, napisz do nas:
+# gnomepl@aviary.pl
+# -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
+# Polish translation of networkmanager-pptp.
+# Copyright (C) 2008 Aviary.pl
+# This file is distributed under the same license as the networkmanager-pptp package.
+# Tomasz Dominikowski <tdominikowski@aviary.pl>, 2008.
 msgid ""
 msgstr ""
 "Project-Id-Version: networkmanager-pptp\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-08-24 17:20+0200\n"
+"POT-Creation-Date: 2008-08-12 11:38+0000\n"
 "PO-Revision-Date: 2008-08-24 17:16+0100\n"
 "Last-Translator: Tomasz Dominikowski <dominikowski@gmail.com>\n"
 "Language-Team: Aviary.pl <gnomepl@aviary.pl>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
-"|| n%100>=20) ? 1 : 2;\n"
+"Plural-Forms: nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
 "X-Poedit-Language: Polish\n"
 "X-Poedit-Country: Poland\n"
 
@@ -53,9 +58,7 @@ msgstr "Z_apamiętanie hasła w bazie kluczy"
 #: ../auth-dialog/main.c:168
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
-msgstr ""
-"Aby uzyskać dostęp do wirtualnej sieci prywatnej \"%s\", należy dokonać "
-"uwierzytelnienia."
+msgstr "Aby uzyskać dostęp do wirtualnej sieci prywatnej \"%s\", należy dokonać uwierzytelnienia."
 
 #: ../auth-dialog/main.c:169
 msgid "Authenticate VPN"
@@ -179,16 +182,12 @@ msgstr "Kompatybilny z serwerami Microsoft i innymi serwerami VPN PPTP."
 
 #~ msgid "Authentication Type:"
 #~ msgstr "Typ uwierzytelniania:"
-
 #~ msgid "_Remember for this session"
 #~ msgstr "_Zapamiętaj hasło w tej sesji"
-
 #~ msgid "_Save in keyring"
 #~ msgstr "Z_apamiętaj hasło"
-
 #~ msgid "Authenticate Connection"
 #~ msgstr "Uwierzytelnienie połączenia"
-
 #~ msgid ""
 #~ "<span weight=\"bold\" size=\"larger\">Authentication Information</span>\n"
 #~ "\n"
@@ -203,75 +202,52 @@ msgstr "Kompatybilny z serwerami Microsoft i innymi serwerami VPN PPTP."
 #~ "Połączenie '%s' może wymagać uwierzytelniania.\n"
 #~ "\n"
 #~ "Proszę wybrać odpowiednią metodę i podać odpowiednie dane poniżej:\n"
-
 #~ msgid "Authentication Required"
 #~ msgstr "Wymagane uwierzytelnienie"
-
 #~ msgid "_Authentication Type:"
 #~ msgstr "_Typ uwierzytelniania"
-
 #~ msgid "_Remote name:"
 #~ msgstr "Nazwa _użytkownika:"
-
 #~ msgid "VPN Connection Manager (PPP generic)"
 #~ msgstr "Połączenia VPN (PPP)"
-
 #~ msgid "00:00:00:00"
 #~ msgstr "00:00:00:00"
-
 #~ msgid "<b>Delays &amp; Timeouts</b>"
 #~ msgstr "<b>Opóźnienia i czas wygaśnięcia</b>"
-
 #~ msgid "<b>Packet Parameters</b>"
 #~ msgstr "<b>Parametry pakietów</b>"
-
 #~ msgid "<i>Example: 172.16.0.0/16 10.11.12.0/24</i>"
 #~ msgstr "<i>przykład: 172.16.0.0/16 10.11.12.0/24</i>"
-
 #~ msgid ""
 #~ "A list of extra options to pppd as would be typed on the command line"
 #~ msgstr ""
 #~ "Lista dodatkowych opcji pppd przekazywanych bezpośrednio do polecenia"
-
 #~ msgid "Allow B_SD Compression"
 #~ msgstr "Zezwól na kompresję _BSD"
-
 #~ msgid "C_hannel:"
 #~ msgstr "_Kanał:"
-
 #~ msgid "Co_nnect delay:"
 #~ msgstr "_Opóźnienie połączenia:"
-
 #~ msgid "Compression & Encryption"
 #~ msgstr "Kompresja i szyfrowanie"
-
 #~ msgid "Connection"
 #~ msgstr "Połączenie"
-
 #~ msgid "Connection na_me:"
 #~ msgstr "_Nazwa połączenia"
-
 #~ msgid "Context _number:"
 #~ msgstr "N_umer kontekstu:"
-
 #~ msgid "Custom _PPP options:"
 #~ msgstr "_Inne opcje PPP:"
-
 #~ msgid "Debug _output"
 #~ msgstr "Informacje de_bug"
-
 #~ msgid "Disconnect after this many LCP echo requests fail"
 #~ msgstr "Rozłącz po danej ilości błędów żądań LCP echo"
-
 #~ msgid "E_xclusive device access (UUCP-style lock)"
 #~ msgstr "_Wyłączny dostęp do urządzenia (blokada UUCP)"
-
 #~ msgid "Enable stateful _MPPE"
 #~ msgstr "Włącz stateful _MPPE"
-
 #~ msgid "Find Device"
 #~ msgstr "Znajdź urządzenie"
-
 #~ msgid ""
 #~ "For security reasons, options entered in the box above are checked "
 #~ "against a list of allowed options before a connection is established.  "
@@ -279,74 +255,53 @@ msgstr "Kompatybilny z serwerami Microsoft i innymi serwerami VPN PPTP."
 #~ msgstr ""
 #~ "Z powodów bezpieczeństwa, przed połączeniem, wyżej podane opcje "
 #~ "sprawdzane są z listę dozwolonych opcji. Obecnie brak opcji na tej liście."
-
 #~ msgid "GPRS Options"
 #~ msgstr "Opcje GPRS"
-
 #~ msgid "Host name or IP address of the PPTP server"
 #~ msgstr "Nazwa lub adres IP serwera PPTP"
-
 #~ msgid "IP a_ddress:"
 #~ msgstr "Adres I_P:"
-
 #~ msgid ""
 #~ "If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
 #~ msgstr ""
 #~ "Gdy kompresja BSD jest wyłączona, do pppd przekazywana jest opcja "
 #~ "'nobsdcomp'"
-
 #~ msgid ""
 #~ "If Deflate compression is not allowed the 'nodefate' option is passed to "
 #~ "pppd"
 #~ msgstr ""
 #~ "Gdy kompresja deflate jest wyłączona, do pppd przekazywana jest opcja "
 #~ "'nodeflate'"
-
 #~ msgid "Maximum Receive Unit"
 #~ msgstr "Maksymalna jednostka odbioru"
-
 #~ msgid "Maximum Transmit Unit"
 #~ msgstr "Maksymalna jednostka transmisji"
-
 #~ msgid "PPP Options"
 #~ msgstr "Opcje PPP"
-
 #~ msgid "Refuse C_HAP"
 #~ msgstr "Odrzuć C_HAP"
-
 #~ msgid "Refuse _EAP"
 #~ msgstr "Odrzuć _EAP"
-
 #~ msgid "Refuse _MS CHAP"
 #~ msgstr "Odrzuć _MS CHAP"
-
 #~ msgid "Require 128 bit M_PPE encryption"
 #~ msgstr "Wymagaj 128 bitowego szyfrowania M_PPE"
-
 #~ msgid "Require MPPE _encryption"
 #~ msgstr "Wymagaj szyfrowania MPP_E"
-
 #~ msgid "Require explicit IP _address"
 #~ msgstr "Wymagaj jawnego _adresu IP"
-
 #~ msgid "Requires existing network connection"
 #~ msgstr "Wymaga istniejącego połączenia sieciowego"
-
 #~ msgid "Routing"
 #~ msgstr "Routing"
-
 #~ msgid "Serial Options"
 #~ msgstr "Opcje szeregowe"
-
 #~ msgid "Service providers GPRS access point from device config"
 #~ msgstr "Punkt dostępowy GPRS dostawcy usług z konfiguracji urządzenia"
-
 #~ msgid "Service providers IP address"
 #~ msgstr "Adres UP dostawcy usług"
-
 #~ msgid "Telep_hone number:"
 #~ msgstr "Numer t_elefonu:"
-
 #~ msgid ""
 #~ "This is the friendly name that will be used to identify this network "
 #~ "connection, \n"
@@ -354,201 +309,137 @@ msgstr "Kompatybilny z serwerami Microsoft i innymi serwerami VPN PPTP."
 #~ msgstr ""
 #~ "Nazwa identyfikująca połączenie do sieci prywatnej. \n"
 #~ "Np. \"VPN kampusu\" lub \"Sieć firmowa\""
-
 #~ msgid "Time in seconds between echo requests"
 #~ msgstr "Czas w sekundach pomiędzy żadaniami echo"
-
 #~ msgid "Typ_e:"
 #~ msgstr "_Typ:"
-
 #~ msgid "Use peer _DNS"
 #~ msgstr "Użyj Peer _DNS"
-
 #~ msgid "When checked the \"refuse-chap\" option is passed to pppd."
 #~ msgstr "Gdy włączone, do pppd przekazywana jest opcja 'refuse-chap'"
-
 #~ msgid "When checked the \"refuse-eap\" option is passed to pppd."
 #~ msgstr "Gdy włączone, do pppd przekazywana jest opcja 'refuse-eap'"
-
 #~ msgid "When checked the \"refuse-mschap\" option is passed to pppd."
 #~ msgstr "Gdy włączone, do pppd przekazywana jest opcja 'refuse-mschap'"
-
 #~ msgid "When checked the 'lock' option is passed to pppd"
 #~ msgstr "Gdy włączone, do pppd przekazywana jest opcja 'lock'"
-
 #~ msgid "When checked the 'require-mppc' option is passed to pppd"
 #~ msgstr "Gdy włączone, do pppd przekazywana jest opcja 'require-mppc'"
-
 #~ msgid ""
 #~ "When checked this sets the pppd 'debug' option and adds some extra "
 #~ "information from the NetworkManager plugin"
 #~ msgstr ""
 #~ "Gdy włączone, ustawiana jest opcja 'debug' pppd i dodawane sa informacje "
 #~ "z wtyczki NetworkManagera"
-
 #~ msgid "When checked this sets the pppd 'noipdefault' option"
 #~ msgstr "Gdy włączone, ustawiana jest opcja 'noipdefault' pppd"
-
 #~ msgid "When checked this sets the pppd 'usepeerdns' option"
 #~ msgstr "Gdy włączone, ustawiana jest opcja 'usepeerdns' pppd"
-
 #~ msgid ""
 #~ "When this check box is cleared the \"noauth\" option is passed to pppd."
 #~ msgstr "Gdy włączone, do pppd przekazywana jest opcja 'noauth'"
-
 #~ msgid "_Access point name:"
 #~ msgstr "Nazwa punktu _dostępowego:"
-
 #~ msgid "_Device address:"
 #~ msgstr "_Adres urządzenia:"
-
 #~ msgid "_Hardware RTS/CTS"
 #~ msgstr "_Sprzętowe RTS/CTS"
-
 #~ msgid "_Import Saved Configuration..."
 #~ msgstr "_Importuj konfigurację..."
-
 #~ msgid "_Modem connection"
 #~ msgstr "Połączenie _modemowe"
-
 #~ msgid "_Only use VPN connection for these addresses:"
 #~ msgstr "_Używaj połączeń VPN tylko dla tych adresów:"
-
 #~ msgid "_Packet type:"
 #~ msgstr "Typ p_akietu"
-
 #~ msgid "_Peer DNS through tunnel"
 #~ msgstr "_Peer DNS poprzez tunel"
-
 #~ msgid "_Require MPPC compression"
 #~ msgstr "_Wymagaj kompresji MPPC"
-
 #~ msgid "pppd tunnel (PPTP, BTGPRS, Dialup)"
 #~ msgstr "tunel ppd (PPTP, BTGPRS, Dialup)"
-
 #~ msgid "Name"
 #~ msgstr "Nazwa"
-
 #~ msgid "PPTP Server"
 #~ msgstr "Serwer PPTP"
-
 #~ msgid "Telephone Number"
 #~ msgstr "Numer telefonu"
-
 #~ msgid "Bluetooth Address"
 #~ msgstr "Adres bluetooth"
-
 #~ msgid "Bluetooth Channel"
 #~ msgstr "Kanał bluetooth"
-
 #~ msgid "GPRS APN"
 #~ msgstr "GPRS APN"
-
 #~ msgid "GPRS IP"
 #~ msgstr "GPRS IP"
-
 #~ msgid "GPRS Context No."
 #~ msgstr "Nr kontekstu GPRS"
-
 #~ msgid "GPRS Packet Type"
 #~ msgstr "Typ pakietu GPRS"
-
 #~ msgid "Use CTS/RTS flow control"
 #~ msgstr "Używa kontroli przepływu CTS/RTS"
-
 #~ msgid "Connect via a modem"
 #~ msgstr "Połącz poprzez modem"
-
 #~ msgid "Require IP to be provided"
 #~ msgstr "Wymaga podania IP"
-
 #~ msgid "Use Peer DNS"
 #~ msgstr "Użyj Peer DNS"
-
 #~ msgid "Use 128 bit MPPE encryption"
 #~ msgstr "Używa 128 bitowego szyfrowania MPPE"
-
 #~ msgid "Enable stateful MPPE"
 #~ msgstr "Włącz stateful MPPE"
-
 #~ msgid "Do not use deflate compression"
 #~ msgstr "Nie używa kompresji deflate"
-
 #~ msgid "Do not use BSD compression"
 #~ msgstr "Nie używa kompresji BSD"
-
 #~ msgid "Exclusive device access by pppd"
 #~ msgstr "Wyłączny dostęp do urządzenia dla pppd"
-
 #~ msgid "Authenticate remote peer"
 #~ msgstr "Uwierzytelnianie zdalnego klienta"
-
 #~ msgid "Refuse EAP"
 #~ msgstr "Odrzuć EAP"
-
 #~ msgid "Refuse CHAP"
 #~ msgstr "Odrzuć CHAP"
-
 #~ msgid "Maximum transmit unit (in bytes)"
 #~ msgstr "Maksymalna jednostka transmisji (w bajtach)"
-
 #~ msgid "Maximum receive unit (in bytes)"
 #~ msgstr "Maksymalna jednostka odbioru (w bajtach)"
-
 #~ msgid "Number of failed LCP echos to cause disconnect"
 #~ msgstr "Ilość nieudanych żądań LCP echo, po których nastąpi rozłączenie"
-
 #~ msgid "Interval (in seconds) at which to issue LCP echos"
 #~ msgstr "Interwał (w sekundach) wysyłania żądań LCP echo"
-
 #~ msgid "Interval (in milliseconds) to wait before connecting."
 #~ msgstr "Czas oczekiwania (w milisekundach) przed połączeniem"
-
 #~ msgid "Custom PPP options"
 #~ msgstr "Inne opcje PPP"
-
 #~ msgid "Use Peer DNS over the Tunnel"
 #~ msgstr "Użyj Peer DNS poprzez tunel"
-
 #~ msgid "Specific networks available"
 #~ msgstr "Dostępne określone sieci"
-
 #~ msgid "Limit to specific networks"
 #~ msgstr "Ogranicz do określonych sieci"
-
 #~ msgid "The following '%s' connection will be created:"
 #~ msgstr "Utworzone zostanie poniższe połączenie %s:"
-
 #~ msgid "\t%s:  %s\n"
 #~ msgstr "\t%s:  %s\n"
-
 #~ msgid "The connection details can be changed using the \"Back\" button."
 #~ msgstr "Szczegóły połączenia można zmienić za pomocą przycisku \"Wstecz\"."
-
 #~ msgid "Select file to import"
 #~ msgstr "Plik do zaimportowania"
-
 #~ msgid "Save as..."
 #~ msgstr "Zapisz jako..."
-
 #~ msgid "A file named \"%s\" already exists."
 #~ msgstr "Plik \"%s\" już istnieje."
-
 #~ msgid "Do you want to replace it with the one you are saving?"
 #~ msgstr "Czy nadpisać go zapisywanym plikiem?"
-
 #~ msgid "auth-chap-window"
 #~ msgstr "auth-chap-window"
-
 #~ msgid "auth-mschapv2-window"
 #~ msgstr "auth-mschapv2-window"
-
 #~ msgid "auth-none-window"
 #~ msgstr "auth-none-window"
-
 #~ msgid "<b>Connection Name</b>"
 #~ msgstr "<b>Nazwa połączenia</b>"
-
 #~ msgid "Telephone number to dial"
 #~ msgstr "Numer telefonu do wybrania"
 
@@ -567,24 +458,20 @@ msgstr "Kompatybilny z serwerami Microsoft i innymi serwerami VPN PPTP."
 #, fuzzy
 #~ msgid "Connection Type: Password"
 #~ msgstr "Hasło _dodatkowe:"
-
 #~ msgid "Username:  %s"
 #~ msgstr "Nazwa użytkownika: %s"
 
 #, fuzzy
 #~ msgid "Remote:  %s"
 #~ msgstr "Trasy: %s"
-
 #~ msgid "Routes:  %s"
 #~ msgstr "Trasy: %s"
 
 #, fuzzy
 #~ msgid "Cipher:  %s"
 #~ msgstr "Nazwa: %s"
-
 #~ msgid "Cannot import settings"
 #~ msgstr "Nie można zaimportować ustawień"
-
 #~ msgid "The VPN settings file '%s' does not contain valid data."
 #~ msgstr "Plik ustawień VPN '%s' nie zawiera poprawnych danych."
 
@@ -595,24 +482,20 @@ msgstr "Kompatybilny z serwerami Microsoft i innymi serwerami VPN PPTP."
 #, fuzzy
 #~ msgid "Select key to use"
 #~ msgstr "Plik do zaimportowania"
-
 #~ msgid "Failed to export configuration"
 #~ msgstr "Eksport konfiguracji nie powiódł się."
-
 #~ msgid "Failed to save file %s"
 #~ msgstr "Zapis pliku %s zakończony niepowodzeniem"
 
 #, fuzzy
 #~ msgid "<b>Optional Information</b>"
 #~ msgstr "Informacje _dodatkowe"
-
 #~ msgid "<b>Required Information</b>"
 #~ msgstr "<b>Informacje wymagane</b>"
 
 #, fuzzy
 #~ msgid "Password"
 #~ msgstr "_Hasło:"
-
 #~ msgid ""
 #~ "Please enter the information provided by your system administrator below. "
 #~ "Do not enter your password here as you will be prompted when connecting."
@@ -627,50 +510,39 @@ msgstr "Kompatybilny z serwerami Microsoft i innymi serwerami VPN PPTP."
 #~ msgstr ""
 #~ "Logowanie VPN zakończone niepowodzeniem z powodu błędnego użytkownika i "
 #~ "hasła."
-
 #~ msgid "The VPN login failed because the VPN program could not be started."
 #~ msgstr ""
 #~ "Logowanie VPN zakończone niepowodzeniem z powodu niemożności uruchomienia "
 #~ "programu VPN."
-
 #~ msgid ""
 #~ "The VPN login failed because the VPN program could not connect to the VPN "
 #~ "server."
 #~ msgstr ""
 #~ "Logowanie VPN zakończone niepowodzeniem z powodu braku połączenia z "
 #~ "serwerem VPN."
-
 #~ msgid ""
 #~ "The VPN login failed because the VPN configuration options were invalid."
 #~ msgstr ""
 #~ "Logowanie VPN zakończone niepowodzeniem z powodu błędnych opcji "
 #~ "konfiguracyjnych."
-
 #~ msgid ""
 #~ "The VPN login failed because the VPN program received an invalid "
 #~ "configuration from the VPN server."
 #~ msgstr ""
 #~ "Logowanie VPN zakończone niepowodzeniem z powodu otrzymania od serwera "
 #~ "VPN błędnej konfiguracji."
-
 #~ msgid "_Group Password:"
 #~ msgstr "Hasło _grupy:"
-
 #~ msgid "Compatible Cisco VPN client (vpnc)"
 #~ msgstr "Klient kompatybilny z Cisco VPN (vpnc)"
-
 #~ msgid "Gateway:  %s"
 #~ msgstr "Brama: %s"
-
 #~ msgid "Group Name:  %s"
 #~ msgstr "Nazwa grupy: %s"
-
 #~ msgid "Domain:  %s"
 #~ msgstr "Domena: %s"
-
 #~ msgid "TCP tunneling not supported"
 #~ msgstr "Tunelowanie TCP nie jest obsługiwane"
-
 #~ msgid ""
 #~ "The VPN settings file '%s' specifies that VPN traffic should be tunneled "
 #~ "through TCP which is currently not supported in the vpnc software.\n"
@@ -682,12 +554,10 @@ msgstr "Kompatybilny z serwerami Microsoft i innymi serwerami VPN PPTP."
 #~ "TCP. Opcja nie jest jednak obsługiwana przez program vpnc\n"
 #~ "\n"
 #~ "Połączenie z wyłączonym tunelowaniem TCP może nie działać poprawnie."
-
 #~ msgid "G_roup Name:"
 #~ msgstr "Nazwa g_rupy:"
-
 #~ msgid "Override _user name"
 #~ msgstr "Wymuś _nazwę użytkownika"
-
 #~ msgid "Use _domain for authentication"
 #~ msgstr "Użyj _domeny do uwierzytelniania"
+
