@@ -4,567 +4,551 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: YaST (@memory@)\n"
+"Project-Id-Version: networkmanager-pptp\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-08-20 21:23+0200\n"
-"PO-Revision-Date: 2007-08-20 21:29+0100\n"
-"Last-Translator: wadim dziedzic <nikdo@aviary.pl>\n"
-"Language-Team: Polish <i18n@suse.de>\n"
+"POT-Creation-Date: 2008-08-24 17:20+0200\n"
+"PO-Revision-Date: 2008-08-24 17:16+0100\n"
+"Last-Translator: Tomasz Dominikowski <dominikowski@gmail.com>\n"
+"Language-Team: Aviary.pl <gnomepl@aviary.pl>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;\n"
-
-#: ../auth-dialog-general/gnome-generic-auth-dialog.c:792
-msgid "Authentication Type:"
-msgstr "Typ uwierzytelniania:"
-
-#: ../auth-dialog-general/gnome-generic-auth-dialog.c:857
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:11
-msgid "_Remember for this session"
-msgstr "_Zapamiętaj hasło w tej sesji"
-
-#: ../auth-dialog-general/gnome-generic-auth-dialog.c:859
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:13
-msgid "_Save in keyring"
-msgstr "Z_apamiętaj hasło"
-
-#: ../auth-dialog-general/main.c:48
-#: ../auth-dialog/main.c:140
-#, c-format
-msgid "You need to authenticate to access '%s'."
-msgstr "Aby uzyskać dostęp do '%s', należy wykonać uwierzytelnianie."
-
-#: ../auth-dialog-general/main.c:51
-#: ../auth-dialog/main.c:141
-msgid "Authenticate Connection"
-msgstr "Uwierzytelnienie połączenia"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:2
-#, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Authentication Information</span>\n"
-"\n"
-"The connection '%s' may need some form of authentication.\n"
-"\n"
-"Please select an appropriate authentication type and provide the necessary credentials below:\n"
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">Informacje o uwierzytelnianiu</span>\n"
-"\n"
-"Połączenie '%s' może wymagać uwierzytelniania.\n"
-"\n"
-"Proszę wybrać odpowiednią metodę i podać odpowiednie dane poniżej:\n"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:8
-msgid "Authentication Required"
-msgstr "Wymagane uwierzytelnienie"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:9
-msgid "_Authentication Type:"
-msgstr "_Typ uwierzytelniania"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:10
-#: ../auth-dialog/gnome-two-password-dialog.c:263
-msgid "_Password:"
-msgstr "_Hasło:"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:12
-msgid "_Remote name:"
-msgstr "Nazwa _użytkownika:"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:14
-#: ../auth-dialog/gnome-two-password-dialog.c:259
-msgid "_Username:"
-msgstr "Nazwa _użytkownika:"
+"Plural-Forms: nplurals=3; plural=n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 "
+"|| n%100>=20) ? 1 : 2;\n"
+"X-Poedit-Language: Polish\n"
+"X-Poedit-Country: Poland\n"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:144
 msgid "_Secondary Password:"
 msgstr "Hasło _dodatkowe:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:261
+#: ../auth-dialog/gnome-two-password-dialog.c:258
+msgid "_Username:"
+msgstr "Nazwa _użytkownika:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:260
 msgid "_Domain:"
 msgstr "_Domena:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:352
+#: ../auth-dialog/gnome-two-password-dialog.c:262
+msgid "_Password:"
+msgstr "_Hasło:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:351
 msgid "Connect _anonymously"
-msgstr "Połącz _anonimowo"
+msgstr "Połączenie _anonimowe"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:357
+#: ../auth-dialog/gnome-two-password-dialog.c:356
 msgid "Connect as _user:"
-msgstr "Połącz jako _użytkownik:"
+msgstr "Połączenie jako _użytkownik:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:466
-msgid "_Remember password for this session"
-msgstr "_Zapamiętaj hasło w tej sesji"
+#: ../auth-dialog/gnome-two-password-dialog.c:465
+msgid "_Remember passwords for this session"
+msgstr "_Zapamiętanie hasła na czas tej sesji"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:468
-msgid "_Save password in keyring"
-msgstr "Z_apamiętaj hasło"
+#: ../auth-dialog/gnome-two-password-dialog.c:467
+msgid "_Save passwords in keyring"
+msgstr "Z_apamiętanie hasła w bazie kluczy"
 
-#: ../nm-ppp.desktop.in.h:1
-msgid "Add, Remove, and Edit VPN Connections"
-msgstr "Dodawanie, usuwanie i edycja połączeń VPN"
-
-#: ../nm-ppp.desktop.in.h:2
-msgid "VPN Connection Manager (PPP generic)"
-msgstr "Połączenia VPN (PPP)"
-
-#: ../properties/nm-ppp-dialog.glade.h:1
-msgid "00:00:00:00"
-msgstr "00:00:00:00"
-
-#: ../properties/nm-ppp-dialog.glade.h:2
-msgid "<b>Compression</b>"
-msgstr "<b>Kompresja</b>"
-
-#: ../properties/nm-ppp-dialog.glade.h:3
-msgid "<b>Delays &amp; Timeouts</b>"
-msgstr "<b>Opóźnienia i czas wygaśnięcia</b>"
-
-#: ../properties/nm-ppp-dialog.glade.h:4
-msgid "<b>Encryption</b>"
-msgstr "<b>Szyfrowanie</b>"
-
-#: ../properties/nm-ppp-dialog.glade.h:5
-msgid "<b>IP Options</b>"
-msgstr "<b>Opcje IP</b>"
-
-#: ../properties/nm-ppp-dialog.glade.h:6
-msgid "<b>Packet Parameters</b>"
-msgstr "<b>Parametry pakietów</b>"
-
-#: ../properties/nm-ppp-dialog.glade.h:7
-msgid "<i>Example: 172.16.0.0/16 10.11.12.0/24</i>"
-msgstr "<i>przykład: 172.16.0.0/16 10.11.12.0/24</i>"
-
-#: ../properties/nm-ppp-dialog.glade.h:8
-msgid "A list of extra options to pppd as would be typed on the command line"
-msgstr "Lista dodatkowych opcji pppd przekazywanych bezpośrednio do polecenia"
-
-#: ../properties/nm-ppp-dialog.glade.h:9
-msgid "Allow B_SD Compression"
-msgstr "Zezwól na kompresję _BSD"
-
-#: ../properties/nm-ppp-dialog.glade.h:10
-msgid "Allow _Deflate compression"
-msgstr "Zezwól na kompresję _deflate"
-
-#: ../properties/nm-ppp-dialog.glade.h:11
-msgid "Authentication"
-msgstr "Uwierzytelnianie"
-
-#: ../properties/nm-ppp-dialog.glade.h:12
-msgid "C_hannel:"
-msgstr "_Kanał:"
-
-#: ../properties/nm-ppp-dialog.glade.h:13
-msgid "Co_nnect delay:"
-msgstr "_Opóźnienie połączenia:"
-
-#: ../properties/nm-ppp-dialog.glade.h:14
-msgid "Compression & Encryption"
-msgstr "Kompresja i szyfrowanie"
-
-#: ../properties/nm-ppp-dialog.glade.h:15
-msgid "Connection"
-msgstr "Połączenie"
-
-#: ../properties/nm-ppp-dialog.glade.h:16
-msgid "Connection na_me:"
-msgstr "_Nazwa połączenia"
-
-#: ../properties/nm-ppp-dialog.glade.h:17
-msgid "Context _number:"
-msgstr "N_umer kontekstu:"
-
-#: ../properties/nm-ppp-dialog.glade.h:18
-msgid "Custom _PPP options:"
-msgstr "_Inne opcje PPP:"
-
-#: ../properties/nm-ppp-dialog.glade.h:19
-msgid "Debug _output"
-msgstr "Informacje de_bug"
-
-#: ../properties/nm-ppp-dialog.glade.h:20
-msgid "Disconnect after this many LCP echo requests fail"
-msgstr "Rozłącz po danej ilości błędów żądań LCP echo"
-
-#: ../properties/nm-ppp-dialog.glade.h:21
-msgid "E_xclusive device access (UUCP-style lock)"
-msgstr "_Wyłączny dostęp do urządzenia (blokada UUCP)"
-
-#: ../properties/nm-ppp-dialog.glade.h:22
-msgid "Enable stateful _MPPE"
-msgstr "Włącz stateful _MPPE"
-
-#: ../properties/nm-ppp-dialog.glade.h:23
-msgid "Find Device"
-msgstr "Znajdź urządzenie"
-
-#: ../properties/nm-ppp-dialog.glade.h:24
-msgid "For security reasons, options entered in the box above are checked against a list of allowed options before a connection is established.  Currently there are no options on the list."
-msgstr "Z powodów bezpieczeństwa, przed połączeniem, wyżej podane opcje sprawdzane są z listę dozwolonych opcji. Obecnie brak opcji na tej liście."
-
-#: ../properties/nm-ppp-dialog.glade.h:25
-msgid "GPRS Options"
-msgstr "Opcje GPRS"
-
-#: ../properties/nm-ppp-dialog.glade.h:26
-msgid "Host name or IP address of the PPTP server"
-msgstr "Nazwa lub adres IP serwera PPTP"
-
-#: ../properties/nm-ppp-dialog.glade.h:27
-msgid "IP a_ddress:"
-msgstr "Adres I_P:"
-
-#: ../properties/nm-ppp-dialog.glade.h:28
-msgid "If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
-msgstr "Gdy kompresja BSD jest wyłączona, do pppd przekazywana jest opcja 'nobsdcomp'"
-
-#: ../properties/nm-ppp-dialog.glade.h:29
-msgid "If Deflate compression is not allowed the 'nodefate' option is passed to pppd"
-msgstr "Gdy kompresja deflate jest wyłączona, do pppd przekazywana jest opcja 'nodeflate'"
-
-#: ../properties/nm-ppp-dialog.glade.h:30
-msgid "Maximum Receive Unit"
-msgstr "Maksymalna jednostka odbioru"
-
-#: ../properties/nm-ppp-dialog.glade.h:31
-msgid "Maximum Transmit Unit"
-msgstr "Maksymalna jednostka transmisji"
-
-#: ../properties/nm-ppp-dialog.glade.h:32
-msgid "PPP Options"
-msgstr "Opcje PPP"
-
-#: ../properties/nm-ppp-dialog.glade.h:33
-msgid "Refuse C_HAP"
-msgstr "Odrzuć C_HAP"
-
-#: ../properties/nm-ppp-dialog.glade.h:34
-msgid "Refuse _EAP"
-msgstr "Odrzuć _EAP"
-
-#: ../properties/nm-ppp-dialog.glade.h:35
-msgid "Refuse _MS CHAP"
-msgstr "Odrzuć _MS CHAP"
-
-#: ../properties/nm-ppp-dialog.glade.h:36
-msgid "Require 128 bit M_PPE encryption"
-msgstr "Wymagaj 128 bitowego szyfrowania M_PPE"
-
-#: ../properties/nm-ppp-dialog.glade.h:37
-msgid "Require MPPE _encryption"
-msgstr "Wymagaj szyfrowania MPP_E"
-
-#: ../properties/nm-ppp-dialog.glade.h:38
-msgid "Require explicit IP _address"
-msgstr "Wymagaj jawnego _adresu IP"
-
-#: ../properties/nm-ppp-dialog.glade.h:39
-msgid "Requires existing network connection"
-msgstr "Wymaga istniejącego połączenia sieciowego"
-
-#: ../properties/nm-ppp-dialog.glade.h:40
-msgid "Routing"
-msgstr "Routing"
-
-#: ../properties/nm-ppp-dialog.glade.h:41
-msgid "Serial Options"
-msgstr "Opcje szeregowe"
-
-#: ../properties/nm-ppp-dialog.glade.h:42
-msgid "Service providers GPRS access point from device config"
-msgstr "Punkt dostępowy GPRS dostawcy usług z konfiguracji urządzenia"
-
-#: ../properties/nm-ppp-dialog.glade.h:43
-msgid "Service providers IP address"
-msgstr "Adres UP dostawcy usług"
-
-#: ../properties/nm-ppp-dialog.glade.h:44
-msgid "Telep_hone number:"
-msgstr "Numer t_elefonu:"
-
-#: ../properties/nm-ppp-dialog.glade.h:45
-msgid ""
-"This is the friendly name that will be used to identify this network connection, \n"
-"e.g. \"Campus VPN\" or \"Corporate Network\""
+#: ../auth-dialog/main.c:168
+#, c-format
+msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr ""
-"Nazwa identyfikująca połączenie do sieci prywatnej. \n"
-"Np. \"VPN kampusu\" lub \"Sieć firmowa\""
+"Aby uzyskać dostęp do wirtualnej sieci prywatnej \"%s\", należy dokonać "
+"uwierzytelnienia."
 
-#: ../properties/nm-ppp-dialog.glade.h:47
-msgid "Time in seconds between echo requests"
-msgstr "Czas w sekundach pomiędzy żadaniami echo"
+#: ../auth-dialog/main.c:169
+msgid "Authenticate VPN"
+msgstr "Uwierzytelnianie VPN"
 
-#: ../properties/nm-ppp-dialog.glade.h:48
-msgid "Typ_e:"
-msgstr "_Typ:"
+#: ../nm-pptp.desktop.in.h:1
+msgid "Add, Remove, and Edit PPTP VPN Connections"
+msgstr "Dodawanie, usuwanie i modyfikowanie połączeń PPTP VPN"
 
-#: ../properties/nm-ppp-dialog.glade.h:49
-msgid "Use peer _DNS"
-msgstr "Użyj Peer _DNS"
+#: ../nm-pptp.desktop.in.h:2
+msgid "PPTP VPN Connection Manager"
+msgstr "Menedżer połączeń PPTP VPN"
 
-#: ../properties/nm-ppp-dialog.glade.h:50
-msgid "When checked the \"refuse-chap\" option is passed to pppd."
-msgstr "Gdy włączone, do pppd przekazywana jest opcja 'refuse-chap'"
+#: ../properties/advanced-dialog.c:147
+msgid "All Available (Default)"
+msgstr "Wszystkie dostępne (domyślnie)"
 
-#: ../properties/nm-ppp-dialog.glade.h:51
-msgid "When checked the \"refuse-eap\" option is passed to pppd."
-msgstr "Gdy włączone, do pppd przekazywana jest opcja 'refuse-eap'"
+#: ../properties/advanced-dialog.c:151
+msgid "128-bit (most secure)"
+msgstr "128-bit (najbardziej bezpieczna)"
 
-#: ../properties/nm-ppp-dialog.glade.h:52
-msgid "When checked the \"refuse-mschap\" option is passed to pppd."
-msgstr "Gdy włączone, do pppd przekazywana jest opcja 'refuse-mschap'"
+#: ../properties/advanced-dialog.c:160
+msgid "40-bit (less secure)"
+msgstr "40-bit (mniej bezpieczna)"
 
-#: ../properties/nm-ppp-dialog.glade.h:53
-msgid "When checked the 'lock' option is passed to pppd"
-msgstr "Gdy włączone, do pppd przekazywana jest opcja 'lock'"
+#: ../properties/advanced-dialog.c:231
+msgid "PAP"
+msgstr "PAP"
 
-#: ../properties/nm-ppp-dialog.glade.h:54
-msgid "When checked the 'require-mppc' option is passed to pppd"
-msgstr "Gdy włączone, do pppd przekazywana jest opcja 'require-mppc'"
+#: ../properties/advanced-dialog.c:237
+msgid "CHAP"
+msgstr "CHAP"
 
-#: ../properties/nm-ppp-dialog.glade.h:55
-msgid "When checked this sets the pppd 'debug' option and adds some extra information from the NetworkManager plugin"
-msgstr "Gdy włączone, ustawiana jest opcja 'debug' pppd i dodawane sa informacje z wtyczki NetworkManagera"
+#: ../properties/advanced-dialog.c:243
+msgid "MSCHAP"
+msgstr "MSCHAP"
 
-#: ../properties/nm-ppp-dialog.glade.h:56
-msgid "When checked this sets the pppd 'noipdefault' option"
-msgstr "Gdy włączone, ustawiana jest opcja 'noipdefault' pppd"
+#: ../properties/advanced-dialog.c:249
+msgid "MSCHAPv2"
+msgstr "MSCHAPv2"
 
-#: ../properties/nm-ppp-dialog.glade.h:57
-msgid "When checked this sets the pppd 'usepeerdns' option"
-msgstr "Gdy włączone, ustawiana jest opcja 'usepeerdns' pppd"
+#: ../properties/nm-pptp-dialog.glade.h:1
+msgid "<b>Authentication</b>"
+msgstr "<b>Uwierzytelnianie</b>"
 
-#: ../properties/nm-ppp-dialog.glade.h:58
-msgid "When this check box is cleared the \"noauth\" option is passed to pppd."
-msgstr "Gdy włączone, do pppd przekazywana jest opcja 'noauth'"
+#: ../properties/nm-pptp-dialog.glade.h:2
+msgid "<b>Echo</b>"
+msgstr "<b>Echo</b>"
 
-#: ../properties/nm-ppp-dialog.glade.h:59
-msgid "_Access point name:"
-msgstr "Nazwa punktu _dostępowego:"
+#: ../properties/nm-pptp-dialog.glade.h:3
+msgid "<b>General</b>"
+msgstr "<b>Ogólne</b>"
 
-#: ../properties/nm-ppp-dialog.glade.h:60
-msgid "_Authenticate peer"
-msgstr "_Uwierzytelnianie klienta"
+#: ../properties/nm-pptp-dialog.glade.h:4
+msgid "<b>Optional</b>"
+msgstr "<b>Opcjonalne</b>"
 
-#: ../properties/nm-ppp-dialog.glade.h:61
-msgid "_Device address:"
-msgstr "_Adres urządzenia:"
+#: ../properties/nm-pptp-dialog.glade.h:5
+msgid "<b>Security and Compression</b>"
+msgstr "<b>Zabezpieczenia i kompresja</b>"
 
-#: ../properties/nm-ppp-dialog.glade.h:62
+#: ../properties/nm-pptp-dialog.glade.h:6
+msgid "Ad_vanced..."
+msgstr "Zaa_wansowane..."
+
+#: ../properties/nm-pptp-dialog.glade.h:7
+msgid "Allow _BSD data compression"
+msgstr "Kompresja danych _BSD"
+
+#: ../properties/nm-pptp-dialog.glade.h:8
+msgid "Allow _Deflate data compression"
+msgstr "Kompresja danych _Deflate"
+
+#: ../properties/nm-pptp-dialog.glade.h:9
+msgid "Allow st_ateful encryption"
+msgstr "Szyfrowanie st_ateful"
+
+#: ../properties/nm-pptp-dialog.glade.h:10
+msgid "Allow the following authentication methods:"
+msgstr "Zezwolenie na następujące metody uwierzytelniania:"
+
+#: ../properties/nm-pptp-dialog.glade.h:11
+msgid "Default"
+msgstr "Domyślne"
+
+#: ../properties/nm-pptp-dialog.glade.h:12
+msgid "Domain:"
+msgstr "Domena:"
+
+#: ../properties/nm-pptp-dialog.glade.h:13
+msgid "Send PPP _echo packets"
+msgstr "Wysyłanie pakietów _echo PPP"
+
+#: ../properties/nm-pptp-dialog.glade.h:14
+msgid "Use TCP _header compression"
+msgstr "Kompresja _nagłówków TCP"
+
+#: ../properties/nm-pptp-dialog.glade.h:15
+msgid "Use _Point-to-Point encryption (MPPE)"
+msgstr "Szyfrowanie _Point-to-Point (MPPE)"
+
+#: ../properties/nm-pptp-dialog.glade.h:16
+msgid "User name:"
+msgstr "Nazwa użytkownika:"
+
+#: ../properties/nm-pptp-dialog.glade.h:17
 msgid "_Gateway:"
 msgstr "_Brama:"
 
-#: ../properties/nm-ppp-dialog.glade.h:63
-msgid "_Hardware RTS/CTS"
-msgstr "_Sprzętowe RTS/CTS"
+#: ../properties/nm-pptp-dialog.glade.h:18
+msgid "_Security:"
+msgstr "Za_bezpieczenia:"
 
-#: ../properties/nm-ppp-dialog.glade.h:64
-msgid "_Import Saved Configuration..."
-msgstr "_Importuj konfigurację..."
+#: ../properties/nm-pptp.c:49
+msgid "Point-to-Point Tunneling Protocol (PPTP)"
+msgstr "Protokół tunelowania Point-to-Point (PPTP)"
 
-#: ../properties/nm-ppp-dialog.glade.h:65
-msgid "_Modem connection"
-msgstr "Połączenie _modemowe"
+#: ../properties/nm-pptp.c:50
+msgid "Compatible with Microsoft and other PPTP VPN servers."
+msgstr "Kompatybilny z serwerami Microsoft i innymi serwerami VPN PPTP."
 
-#: ../properties/nm-ppp-dialog.glade.h:66
-msgid "_Only use VPN connection for these addresses:"
-msgstr "_Używaj połączeń VPN tylko dla tych adresów:"
+#~ msgid "Authentication Type:"
+#~ msgstr "Typ uwierzytelniania:"
 
-#: ../properties/nm-ppp-dialog.glade.h:67
-msgid "_Packet type:"
-msgstr "Typ p_akietu"
+#~ msgid "_Remember for this session"
+#~ msgstr "_Zapamiętaj hasło w tej sesji"
 
-#: ../properties/nm-ppp-dialog.glade.h:68
-msgid "_Peer DNS through tunnel"
-msgstr "_Peer DNS poprzez tunel"
+#~ msgid "_Save in keyring"
+#~ msgstr "Z_apamiętaj hasło"
 
-#: ../properties/nm-ppp-dialog.glade.h:69
-msgid "_Require MPPC compression"
-msgstr "_Wymagaj kompresji MPPC"
+#~ msgid "Authenticate Connection"
+#~ msgstr "Uwierzytelnienie połączenia"
 
-#: ../properties/nm-ppp-properties.c:45
-msgid "pppd tunnel (PPTP, BTGPRS, Dialup)"
-msgstr "tunel ppd (PPTP, BTGPRS, Dialup)"
+#~ msgid ""
+#~ "<span weight=\"bold\" size=\"larger\">Authentication Information</span>\n"
+#~ "\n"
+#~ "The connection '%s' may need some form of authentication.\n"
+#~ "\n"
+#~ "Please select an appropriate authentication type and provide the "
+#~ "necessary credentials below:\n"
+#~ msgstr ""
+#~ "<span weight=\"bold\" size=\"larger\">Informacje o uwierzytelnianiu</"
+#~ "span>\n"
+#~ "\n"
+#~ "Połączenie '%s' może wymagać uwierzytelniania.\n"
+#~ "\n"
+#~ "Proszę wybrać odpowiednią metodę i podać odpowiednie dane poniżej:\n"
 
-#: ../properties/nm-ppp-properties.c:134
-msgid "Name"
-msgstr "Nazwa"
+#~ msgid "Authentication Required"
+#~ msgstr "Wymagane uwierzytelnienie"
 
-#: ../properties/nm-ppp-properties.c:146
-msgid "PPTP Server"
-msgstr "Serwer PPTP"
+#~ msgid "_Authentication Type:"
+#~ msgstr "_Typ uwierzytelniania"
 
-#: ../properties/nm-ppp-properties.c:151
-msgid "Telephone Number"
-msgstr "Numer telefonu"
+#~ msgid "_Remote name:"
+#~ msgstr "Nazwa _użytkownika:"
 
-#: ../properties/nm-ppp-properties.c:156
-msgid "Bluetooth Address"
-msgstr "Adres bluetooth"
+#~ msgid "VPN Connection Manager (PPP generic)"
+#~ msgstr "Połączenia VPN (PPP)"
 
-#: ../properties/nm-ppp-properties.c:161
-msgid "Bluetooth Channel"
-msgstr "Kanał bluetooth"
+#~ msgid "00:00:00:00"
+#~ msgstr "00:00:00:00"
 
-#: ../properties/nm-ppp-properties.c:166
-msgid "GPRS APN"
-msgstr "GPRS APN"
+#~ msgid "<b>Delays &amp; Timeouts</b>"
+#~ msgstr "<b>Opóźnienia i czas wygaśnięcia</b>"
 
-#: ../properties/nm-ppp-properties.c:171
-msgid "GPRS IP"
-msgstr "GPRS IP"
+#~ msgid "<b>Packet Parameters</b>"
+#~ msgstr "<b>Parametry pakietów</b>"
 
-#: ../properties/nm-ppp-properties.c:176
-msgid "GPRS Context No."
-msgstr "Nr kontekstu GPRS"
+#~ msgid "<i>Example: 172.16.0.0/16 10.11.12.0/24</i>"
+#~ msgstr "<i>przykład: 172.16.0.0/16 10.11.12.0/24</i>"
 
-#: ../properties/nm-ppp-properties.c:181
-msgid "GPRS Packet Type"
-msgstr "Typ pakietu GPRS"
+#~ msgid ""
+#~ "A list of extra options to pppd as would be typed on the command line"
+#~ msgstr ""
+#~ "Lista dodatkowych opcji pppd przekazywanych bezpośrednio do polecenia"
 
-#: ../properties/nm-ppp-properties.c:186
-msgid "Use CTS/RTS flow control"
-msgstr "Używa kontroli przepływu CTS/RTS"
+#~ msgid "Allow B_SD Compression"
+#~ msgstr "Zezwól na kompresję _BSD"
 
-#: ../properties/nm-ppp-properties.c:191
-msgid "Connect via a modem"
-msgstr "Połącz poprzez modem"
+#~ msgid "C_hannel:"
+#~ msgstr "_Kanał:"
 
-#: ../properties/nm-ppp-properties.c:196
-msgid "Require IP to be provided"
-msgstr "Wymaga podania IP"
+#~ msgid "Co_nnect delay:"
+#~ msgstr "_Opóźnienie połączenia:"
 
-#: ../properties/nm-ppp-properties.c:201
-msgid "Use Peer DNS"
-msgstr "Użyj Peer DNS"
+#~ msgid "Compression & Encryption"
+#~ msgstr "Kompresja i szyfrowanie"
 
-#: ../properties/nm-ppp-properties.c:206
-msgid "Use MPPE encryption"
-msgstr "Używa kompresji MPPE"
+#~ msgid "Connection"
+#~ msgstr "Połączenie"
 
-#: ../properties/nm-ppp-properties.c:211
-msgid "Use 128 bit MPPE encryption"
-msgstr "Używa 128 bitowego szyfrowania MPPE"
+#~ msgid "Connection na_me:"
+#~ msgstr "_Nazwa połączenia"
 
-#: ../properties/nm-ppp-properties.c:216
-msgid "Enable stateful MPPE"
-msgstr "Włącz stateful MPPE"
+#~ msgid "Context _number:"
+#~ msgstr "N_umer kontekstu:"
 
-#: ../properties/nm-ppp-properties.c:221
-msgid "Use MPPC compression"
-msgstr "Używa kompresji MPPC"
+#~ msgid "Custom _PPP options:"
+#~ msgstr "_Inne opcje PPP:"
 
-#: ../properties/nm-ppp-properties.c:226
-msgid "Do not use deflate compression"
-msgstr "Nie używa kompresji deflate"
+#~ msgid "Debug _output"
+#~ msgstr "Informacje de_bug"
 
-#: ../properties/nm-ppp-properties.c:231
-msgid "Do not use BSD compression"
-msgstr "Nie używa kompresji BSD"
+#~ msgid "Disconnect after this many LCP echo requests fail"
+#~ msgstr "Rozłącz po danej ilości błędów żądań LCP echo"
 
-#: ../properties/nm-ppp-properties.c:236
-msgid "Exclusive device access by pppd"
-msgstr "Wyłączny dostęp do urządzenia dla pppd"
+#~ msgid "E_xclusive device access (UUCP-style lock)"
+#~ msgstr "_Wyłączny dostęp do urządzenia (blokada UUCP)"
 
-#: ../properties/nm-ppp-properties.c:241
-msgid "Authenticate remote peer"
-msgstr "Uwierzytelnianie zdalnego klienta"
+#~ msgid "Enable stateful _MPPE"
+#~ msgstr "Włącz stateful _MPPE"
 
-#: ../properties/nm-ppp-properties.c:246
-msgid "Refuse EAP"
-msgstr "Odrzuć EAP"
+#~ msgid "Find Device"
+#~ msgstr "Znajdź urządzenie"
 
-#: ../properties/nm-ppp-properties.c:251
-msgid "Refuse CHAP"
-msgstr "Odrzuć CHAP"
+#~ msgid ""
+#~ "For security reasons, options entered in the box above are checked "
+#~ "against a list of allowed options before a connection is established.  "
+#~ "Currently there are no options on the list."
+#~ msgstr ""
+#~ "Z powodów bezpieczeństwa, przed połączeniem, wyżej podane opcje "
+#~ "sprawdzane są z listę dozwolonych opcji. Obecnie brak opcji na tej liście."
 
-#: ../properties/nm-ppp-properties.c:256
-msgid "Refuse MSCHAP"
-msgstr "Odrzuca MSCHAP"
+#~ msgid "GPRS Options"
+#~ msgstr "Opcje GPRS"
 
-#: ../properties/nm-ppp-properties.c:261
-msgid "Maximum transmit unit (in bytes)"
-msgstr "Maksymalna jednostka transmisji (w bajtach)"
+#~ msgid "Host name or IP address of the PPTP server"
+#~ msgstr "Nazwa lub adres IP serwera PPTP"
 
-#: ../properties/nm-ppp-properties.c:266
-msgid "Maximum receive unit (in bytes)"
-msgstr "Maksymalna jednostka odbioru (w bajtach)"
+#~ msgid "IP a_ddress:"
+#~ msgstr "Adres I_P:"
 
-#: ../properties/nm-ppp-properties.c:271
-msgid "Number of failed LCP echos to cause disconnect"
-msgstr "Ilość nieudanych żądań LCP echo, po których nastąpi rozłączenie"
+#~ msgid ""
+#~ "If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
+#~ msgstr ""
+#~ "Gdy kompresja BSD jest wyłączona, do pppd przekazywana jest opcja "
+#~ "'nobsdcomp'"
 
-#: ../properties/nm-ppp-properties.c:276
-msgid "Interval (in seconds) at which to issue LCP echos"
-msgstr "Interwał (w sekundach) wysyłania żądań LCP echo"
+#~ msgid ""
+#~ "If Deflate compression is not allowed the 'nodefate' option is passed to "
+#~ "pppd"
+#~ msgstr ""
+#~ "Gdy kompresja deflate jest wyłączona, do pppd przekazywana jest opcja "
+#~ "'nodeflate'"
 
-#: ../properties/nm-ppp-properties.c:281
-msgid "Interval (in milliseconds) to wait before connecting."
-msgstr "Czas oczekiwania (w milisekundach) przed połączeniem"
+#~ msgid "Maximum Receive Unit"
+#~ msgstr "Maksymalna jednostka odbioru"
 
-#: ../properties/nm-ppp-properties.c:286
-msgid "Custom PPP options"
-msgstr "Inne opcje PPP"
+#~ msgid "Maximum Transmit Unit"
+#~ msgstr "Maksymalna jednostka transmisji"
 
-#: ../properties/nm-ppp-properties.c:296
-msgid "Use Peer DNS over the Tunnel"
-msgstr "Użyj Peer DNS poprzez tunel"
+#~ msgid "PPP Options"
+#~ msgstr "Opcje PPP"
 
-#: ../properties/nm-ppp-properties.c:302
-msgid "Specific networks available"
-msgstr "Dostępne określone sieci"
+#~ msgid "Refuse C_HAP"
+#~ msgstr "Odrzuć C_HAP"
 
-#: ../properties/nm-ppp-properties.c:308
-msgid "Limit to specific networks"
-msgstr "Ogranicz do określonych sieci"
+#~ msgid "Refuse _EAP"
+#~ msgstr "Odrzuć _EAP"
 
-#: ../properties/vpnui_impl.c:229
-#, c-format
-msgid "The following '%s' connection will be created:"
-msgstr "Utworzone zostanie poniższe połączenie %s:"
+#~ msgid "Refuse _MS CHAP"
+#~ msgstr "Odrzuć _MS CHAP"
 
-#: ../properties/vpnui_impl.c:242
-#, c-format
-msgid "\t%s:  %s\n"
-msgstr "\t%s:  %s\n"
+#~ msgid "Require 128 bit M_PPE encryption"
+#~ msgstr "Wymagaj 128 bitowego szyfrowania M_PPE"
 
-#: ../properties/vpnui_impl.c:245
-msgid "The connection details can be changed using the \"Back\" button."
-msgstr "Szczegóły połączenia można zmienić za pomocą przycisku \"Wstecz\"."
+#~ msgid "Require MPPE _encryption"
+#~ msgstr "Wymagaj szyfrowania MPP_E"
 
-#: ../properties/vpnui_impl.c:317
-msgid "Select file to import"
-msgstr "Plik do zaimportowania"
+#~ msgid "Require explicit IP _address"
+#~ msgstr "Wymagaj jawnego _adresu IP"
 
-#. printf ("in impl_export\n");
-#: ../properties/vpnui_impl.c:462
-msgid "Save as..."
-msgstr "Zapisz jako..."
+#~ msgid "Requires existing network connection"
+#~ msgstr "Wymaga istniejącego połączenia sieciowego"
 
-#: ../properties/vpnui_impl.c:491
-#, c-format
-msgid "A file named \"%s\" already exists."
-msgstr "Plik \"%s\" już istnieje."
+#~ msgid "Routing"
+#~ msgstr "Routing"
 
-#: ../properties/vpnui_impl.c:494
-msgid "Do you want to replace it with the one you are saving?"
-msgstr "Czy nadpisać go zapisywanym plikiem?"
+#~ msgid "Serial Options"
+#~ msgstr "Opcje szeregowe"
 
-#: ../src/nm-ppp-starter.c:140
-msgid "VPN Connection failed"
-msgstr "Połączenie VPN zakończone niepowodzeniem"
+#~ msgid "Service providers GPRS access point from device config"
+#~ msgstr "Punkt dostępowy GPRS dostawcy usług z konfiguracji urządzenia"
+
+#~ msgid "Service providers IP address"
+#~ msgstr "Adres UP dostawcy usług"
+
+#~ msgid "Telep_hone number:"
+#~ msgstr "Numer t_elefonu:"
+
+#~ msgid ""
+#~ "This is the friendly name that will be used to identify this network "
+#~ "connection, \n"
+#~ "e.g. \"Campus VPN\" or \"Corporate Network\""
+#~ msgstr ""
+#~ "Nazwa identyfikująca połączenie do sieci prywatnej. \n"
+#~ "Np. \"VPN kampusu\" lub \"Sieć firmowa\""
+
+#~ msgid "Time in seconds between echo requests"
+#~ msgstr "Czas w sekundach pomiędzy żadaniami echo"
+
+#~ msgid "Typ_e:"
+#~ msgstr "_Typ:"
+
+#~ msgid "Use peer _DNS"
+#~ msgstr "Użyj Peer _DNS"
+
+#~ msgid "When checked the \"refuse-chap\" option is passed to pppd."
+#~ msgstr "Gdy włączone, do pppd przekazywana jest opcja 'refuse-chap'"
+
+#~ msgid "When checked the \"refuse-eap\" option is passed to pppd."
+#~ msgstr "Gdy włączone, do pppd przekazywana jest opcja 'refuse-eap'"
+
+#~ msgid "When checked the \"refuse-mschap\" option is passed to pppd."
+#~ msgstr "Gdy włączone, do pppd przekazywana jest opcja 'refuse-mschap'"
+
+#~ msgid "When checked the 'lock' option is passed to pppd"
+#~ msgstr "Gdy włączone, do pppd przekazywana jest opcja 'lock'"
+
+#~ msgid "When checked the 'require-mppc' option is passed to pppd"
+#~ msgstr "Gdy włączone, do pppd przekazywana jest opcja 'require-mppc'"
+
+#~ msgid ""
+#~ "When checked this sets the pppd 'debug' option and adds some extra "
+#~ "information from the NetworkManager plugin"
+#~ msgstr ""
+#~ "Gdy włączone, ustawiana jest opcja 'debug' pppd i dodawane sa informacje "
+#~ "z wtyczki NetworkManagera"
+
+#~ msgid "When checked this sets the pppd 'noipdefault' option"
+#~ msgstr "Gdy włączone, ustawiana jest opcja 'noipdefault' pppd"
+
+#~ msgid "When checked this sets the pppd 'usepeerdns' option"
+#~ msgstr "Gdy włączone, ustawiana jest opcja 'usepeerdns' pppd"
+
+#~ msgid ""
+#~ "When this check box is cleared the \"noauth\" option is passed to pppd."
+#~ msgstr "Gdy włączone, do pppd przekazywana jest opcja 'noauth'"
+
+#~ msgid "_Access point name:"
+#~ msgstr "Nazwa punktu _dostępowego:"
+
+#~ msgid "_Device address:"
+#~ msgstr "_Adres urządzenia:"
+
+#~ msgid "_Hardware RTS/CTS"
+#~ msgstr "_Sprzętowe RTS/CTS"
+
+#~ msgid "_Import Saved Configuration..."
+#~ msgstr "_Importuj konfigurację..."
+
+#~ msgid "_Modem connection"
+#~ msgstr "Połączenie _modemowe"
+
+#~ msgid "_Only use VPN connection for these addresses:"
+#~ msgstr "_Używaj połączeń VPN tylko dla tych adresów:"
+
+#~ msgid "_Packet type:"
+#~ msgstr "Typ p_akietu"
+
+#~ msgid "_Peer DNS through tunnel"
+#~ msgstr "_Peer DNS poprzez tunel"
+
+#~ msgid "_Require MPPC compression"
+#~ msgstr "_Wymagaj kompresji MPPC"
+
+#~ msgid "pppd tunnel (PPTP, BTGPRS, Dialup)"
+#~ msgstr "tunel ppd (PPTP, BTGPRS, Dialup)"
+
+#~ msgid "Name"
+#~ msgstr "Nazwa"
+
+#~ msgid "PPTP Server"
+#~ msgstr "Serwer PPTP"
+
+#~ msgid "Telephone Number"
+#~ msgstr "Numer telefonu"
+
+#~ msgid "Bluetooth Address"
+#~ msgstr "Adres bluetooth"
+
+#~ msgid "Bluetooth Channel"
+#~ msgstr "Kanał bluetooth"
+
+#~ msgid "GPRS APN"
+#~ msgstr "GPRS APN"
+
+#~ msgid "GPRS IP"
+#~ msgstr "GPRS IP"
+
+#~ msgid "GPRS Context No."
+#~ msgstr "Nr kontekstu GPRS"
+
+#~ msgid "GPRS Packet Type"
+#~ msgstr "Typ pakietu GPRS"
+
+#~ msgid "Use CTS/RTS flow control"
+#~ msgstr "Używa kontroli przepływu CTS/RTS"
+
+#~ msgid "Connect via a modem"
+#~ msgstr "Połącz poprzez modem"
+
+#~ msgid "Require IP to be provided"
+#~ msgstr "Wymaga podania IP"
+
+#~ msgid "Use Peer DNS"
+#~ msgstr "Użyj Peer DNS"
+
+#~ msgid "Use 128 bit MPPE encryption"
+#~ msgstr "Używa 128 bitowego szyfrowania MPPE"
+
+#~ msgid "Enable stateful MPPE"
+#~ msgstr "Włącz stateful MPPE"
+
+#~ msgid "Do not use deflate compression"
+#~ msgstr "Nie używa kompresji deflate"
+
+#~ msgid "Do not use BSD compression"
+#~ msgstr "Nie używa kompresji BSD"
+
+#~ msgid "Exclusive device access by pppd"
+#~ msgstr "Wyłączny dostęp do urządzenia dla pppd"
+
+#~ msgid "Authenticate remote peer"
+#~ msgstr "Uwierzytelnianie zdalnego klienta"
+
+#~ msgid "Refuse EAP"
+#~ msgstr "Odrzuć EAP"
+
+#~ msgid "Refuse CHAP"
+#~ msgstr "Odrzuć CHAP"
+
+#~ msgid "Maximum transmit unit (in bytes)"
+#~ msgstr "Maksymalna jednostka transmisji (w bajtach)"
+
+#~ msgid "Maximum receive unit (in bytes)"
+#~ msgstr "Maksymalna jednostka odbioru (w bajtach)"
+
+#~ msgid "Number of failed LCP echos to cause disconnect"
+#~ msgstr "Ilość nieudanych żądań LCP echo, po których nastąpi rozłączenie"
+
+#~ msgid "Interval (in seconds) at which to issue LCP echos"
+#~ msgstr "Interwał (w sekundach) wysyłania żądań LCP echo"
+
+#~ msgid "Interval (in milliseconds) to wait before connecting."
+#~ msgstr "Czas oczekiwania (w milisekundach) przed połączeniem"
+
+#~ msgid "Custom PPP options"
+#~ msgstr "Inne opcje PPP"
+
+#~ msgid "Use Peer DNS over the Tunnel"
+#~ msgstr "Użyj Peer DNS poprzez tunel"
+
+#~ msgid "Specific networks available"
+#~ msgstr "Dostępne określone sieci"
+
+#~ msgid "Limit to specific networks"
+#~ msgstr "Ogranicz do określonych sieci"
+
+#~ msgid "The following '%s' connection will be created:"
+#~ msgstr "Utworzone zostanie poniższe połączenie %s:"
+
+#~ msgid "\t%s:  %s\n"
+#~ msgstr "\t%s:  %s\n"
+
+#~ msgid "The connection details can be changed using the \"Back\" button."
+#~ msgstr "Szczegóły połączenia można zmienić za pomocą przycisku \"Wstecz\"."
+
+#~ msgid "Select file to import"
+#~ msgstr "Plik do zaimportowania"
+
+#~ msgid "Save as..."
+#~ msgstr "Zapisz jako..."
+
+#~ msgid "A file named \"%s\" already exists."
+#~ msgstr "Plik \"%s\" już istnieje."
+
+#~ msgid "Do you want to replace it with the one you are saving?"
+#~ msgstr "Czy nadpisać go zapisywanym plikiem?"
 
 #~ msgid "auth-chap-window"
 #~ msgstr "auth-chap-window"
+
 #~ msgid "auth-mschapv2-window"
 #~ msgstr "auth-mschapv2-window"
+
 #~ msgid "auth-none-window"
 #~ msgstr "auth-none-window"
+
 #~ msgid "<b>Connection Name</b>"
 #~ msgstr "<b>Nazwa połączenia</b>"
+
 #~ msgid "Telephone number to dial"
 #~ msgstr "Numer telefonu do wybrania"
 
@@ -583,20 +567,24 @@ msgstr "Połączenie VPN zakończone niepowodzeniem"
 #, fuzzy
 #~ msgid "Connection Type: Password"
 #~ msgstr "Hasło _dodatkowe:"
+
 #~ msgid "Username:  %s"
 #~ msgstr "Nazwa użytkownika: %s"
 
 #, fuzzy
 #~ msgid "Remote:  %s"
 #~ msgstr "Trasy: %s"
+
 #~ msgid "Routes:  %s"
 #~ msgstr "Trasy: %s"
 
 #, fuzzy
 #~ msgid "Cipher:  %s"
 #~ msgstr "Nazwa: %s"
+
 #~ msgid "Cannot import settings"
 #~ msgstr "Nie można zaimportować ustawień"
+
 #~ msgid "The VPN settings file '%s' does not contain valid data."
 #~ msgstr "Plik ustawień VPN '%s' nie zawiera poprawnych danych."
 
@@ -607,20 +595,24 @@ msgstr "Połączenie VPN zakończone niepowodzeniem"
 #, fuzzy
 #~ msgid "Select key to use"
 #~ msgstr "Plik do zaimportowania"
+
 #~ msgid "Failed to export configuration"
 #~ msgstr "Eksport konfiguracji nie powiódł się."
+
 #~ msgid "Failed to save file %s"
 #~ msgstr "Zapis pliku %s zakończony niepowodzeniem"
 
 #, fuzzy
 #~ msgid "<b>Optional Information</b>"
 #~ msgstr "Informacje _dodatkowe"
+
 #~ msgid "<b>Required Information</b>"
 #~ msgstr "<b>Informacje wymagane</b>"
 
 #, fuzzy
 #~ msgid "Password"
 #~ msgstr "_Hasło:"
+
 #~ msgid ""
 #~ "Please enter the information provided by your system administrator below. "
 #~ "Do not enter your password here as you will be prompted when connecting."
@@ -629,49 +621,56 @@ msgstr "Połączenie VPN zakończone niepowodzeniem"
 #~ "należy podać później, podczas łączenia."
 
 #, fuzzy
-#~ msgid "Username:"
-#~ msgstr "Nazwa _użytkownika:"
-
-#, fuzzy
 #~ msgid ""
 #~ "The VPN login failed because the user name and password were not accepted "
 #~ "or the certificate password was wrong."
 #~ msgstr ""
 #~ "Logowanie VPN zakończone niepowodzeniem z powodu błędnego użytkownika i "
 #~ "hasła."
+
 #~ msgid "The VPN login failed because the VPN program could not be started."
 #~ msgstr ""
 #~ "Logowanie VPN zakończone niepowodzeniem z powodu niemożności uruchomienia "
 #~ "programu VPN."
+
 #~ msgid ""
 #~ "The VPN login failed because the VPN program could not connect to the VPN "
 #~ "server."
 #~ msgstr ""
 #~ "Logowanie VPN zakończone niepowodzeniem z powodu braku połączenia z "
 #~ "serwerem VPN."
+
 #~ msgid ""
 #~ "The VPN login failed because the VPN configuration options were invalid."
 #~ msgstr ""
 #~ "Logowanie VPN zakończone niepowodzeniem z powodu błędnych opcji "
 #~ "konfiguracyjnych."
+
 #~ msgid ""
 #~ "The VPN login failed because the VPN program received an invalid "
 #~ "configuration from the VPN server."
 #~ msgstr ""
 #~ "Logowanie VPN zakończone niepowodzeniem z powodu otrzymania od serwera "
 #~ "VPN błędnej konfiguracji."
+
 #~ msgid "_Group Password:"
 #~ msgstr "Hasło _grupy:"
+
 #~ msgid "Compatible Cisco VPN client (vpnc)"
 #~ msgstr "Klient kompatybilny z Cisco VPN (vpnc)"
+
 #~ msgid "Gateway:  %s"
 #~ msgstr "Brama: %s"
+
 #~ msgid "Group Name:  %s"
 #~ msgstr "Nazwa grupy: %s"
+
 #~ msgid "Domain:  %s"
 #~ msgstr "Domena: %s"
+
 #~ msgid "TCP tunneling not supported"
 #~ msgstr "Tunelowanie TCP nie jest obsługiwane"
+
 #~ msgid ""
 #~ "The VPN settings file '%s' specifies that VPN traffic should be tunneled "
 #~ "through TCP which is currently not supported in the vpnc software.\n"
@@ -683,10 +682,12 @@ msgstr "Połączenie VPN zakończone niepowodzeniem"
 #~ "TCP. Opcja nie jest jednak obsługiwana przez program vpnc\n"
 #~ "\n"
 #~ "Połączenie z wyłączonym tunelowaniem TCP może nie działać poprawnie."
+
 #~ msgid "G_roup Name:"
 #~ msgstr "Nazwa g_rupy:"
+
 #~ msgid "Override _user name"
 #~ msgstr "Wymuś _nazwę użytkownika"
+
 #~ msgid "Use _domain for authentication"
 #~ msgstr "Użyj _domeny do uwierzytelniania"
-
