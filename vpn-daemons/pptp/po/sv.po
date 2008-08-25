@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-pptp\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-07-25 22:43+0200\n"
-"PO-Revision-Date: 2008-07-25 22:46+0100\n"
+"POT-Creation-Date: 2008-08-25 19:05+0200\n"
+"PO-Revision-Date: 2008-08-25 19:09+0100\n"
 "Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "MIME-Version: 1.0\n"
@@ -20,7 +20,7 @@ msgstr ""
 
 #: ../auth-dialog/gnome-two-password-dialog.c:144
 msgid "_Secondary Password:"
-msgstr "_Andrahandslösenord:"
+msgstr "_Sekundärt lösenord:"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:258
 msgid "_Username:"
@@ -50,12 +50,12 @@ msgstr "_Kom ihåg lösenord för denna session"
 msgid "_Save passwords in keyring"
 msgstr "_Spara lösenord i nyckelring"
 
-#: ../auth-dialog/main.c:169
+#: ../auth-dialog/main.c:168
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Du måsta autentisera dig för att komma åt det virtuella privata nätverket \"%s\"."
 
-#: ../auth-dialog/main.c:170
+#: ../auth-dialog/main.c:169
 msgid "Authenticate VPN"
 msgstr "Autentisera VPN"
 
@@ -67,31 +67,31 @@ msgstr "Lägg till, ta bort och redigera PPTP VPN-anslutningar"
 msgid "PPTP VPN Connection Manager"
 msgstr "PPTP VPN-anslutningshanterare"
 
-#: ../properties/advanced-dialog.c:173
+#: ../properties/advanced-dialog.c:147
 msgid "All Available (Default)"
 msgstr "Alla tillgängliga (Standard)"
 
-#: ../properties/advanced-dialog.c:177
+#: ../properties/advanced-dialog.c:151
 msgid "128-bit (most secure)"
 msgstr "128-bitar (säkrast)"
 
-#: ../properties/advanced-dialog.c:186
+#: ../properties/advanced-dialog.c:160
 msgid "40-bit (less secure)"
 msgstr "40-bitar (mindre säkert)"
 
-#: ../properties/advanced-dialog.c:257
+#: ../properties/advanced-dialog.c:231
 msgid "PAP"
 msgstr "PAP"
 
-#: ../properties/advanced-dialog.c:263
+#: ../properties/advanced-dialog.c:237
 msgid "CHAP"
 msgstr "CHAP"
 
-#: ../properties/advanced-dialog.c:269
+#: ../properties/advanced-dialog.c:243
 msgid "MSCHAP"
 msgstr "MSCHAP"
 
-#: ../properties/advanced-dialog.c:275
+#: ../properties/advanced-dialog.c:249
 msgid "MSCHAPv2"
 msgstr "MSCHAPv2"
 
@@ -120,16 +120,16 @@ msgid "Ad_vanced..."
 msgstr "A_vancerat..."
 
 #: ../properties/nm-pptp-dialog.glade.h:7
-msgid "Allow BSD data compression"
-msgstr "Tillåt BSD-datakomprimering"
+msgid "Allow _BSD data compression"
+msgstr "Tillåt _BSD-datakomprimering"
 
 #: ../properties/nm-pptp-dialog.glade.h:8
-msgid "Allow Deflate data compression"
+msgid "Allow _Deflate data compression"
 msgstr "Tillåt _Deflate-datakomprimering"
 
 #: ../properties/nm-pptp-dialog.glade.h:9
-msgid "Allow Stateful Encryption"
-msgstr "Tillåt Stateful Encryption"
+msgid "Allow st_ateful encryption"
+msgstr "Tillåt t_illståndsbaserad kryptering"
 
 #: ../properties/nm-pptp-dialog.glade.h:10
 msgid "Allow the following authentication methods:"
@@ -144,45 +144,41 @@ msgid "Domain:"
 msgstr "Domän:"
 
 #: ../properties/nm-pptp-dialog.glade.h:13
-msgid "Security:"
-msgstr "Säkerhet:"
+msgid "Send PPP _echo packets"
+msgstr "Skicka PPP-_ekopaket"
 
 #: ../properties/nm-pptp-dialog.glade.h:14
-msgid "Send PPP echo packets"
-msgstr "Skicka PPP-ekopaket"
+msgid "Use TCP _header compression"
+msgstr "Använd komprimering av TCP-_huvud"
 
 #: ../properties/nm-pptp-dialog.glade.h:15
-msgid "Use Point-to-Point Encryption (MPPE)"
-msgstr "Använd Point-to-Point-kryptering (MPPE)"
+msgid "Use _Point-to-Point encryption (MPPE)"
+msgstr "Använd _Point-to-Point-kryptering (MPPE)"
 
 #: ../properties/nm-pptp-dialog.glade.h:16
-msgid "Use TCP header compression"
-msgstr "Använd komprimering av TCP-huvud"
-
-#: ../properties/nm-pptp-dialog.glade.h:17
 msgid "User name:"
 msgstr "Användarnamn:"
 
-#: ../properties/nm-pptp-dialog.glade.h:18
+#: ../properties/nm-pptp-dialog.glade.h:17
 msgid "_Gateway:"
 msgstr "_Gateway:"
 
-#: ../properties/nm-pptp-dialog.glade.h:19
-msgid "gtk-cancel"
-msgstr "Avbryt"
+#: ../properties/nm-pptp-dialog.glade.h:18
+msgid "_Security:"
+msgstr "_Säkerhet:"
 
-#: ../properties/nm-pptp-dialog.glade.h:20
-msgid "gtk-ok"
-msgstr "OK"
-
-#: ../properties/nm-pptp.c:50
+#: ../properties/nm-pptp.c:49
 msgid "Point-to-Point Tunneling Protocol (PPTP)"
 msgstr "Point-to-Point Tunneling Protocol (PPTP)"
 
-#: ../properties/nm-pptp.c:51
+#: ../properties/nm-pptp.c:50
 msgid "Compatible with Microsoft and other PPTP VPN servers."
 msgstr "Kompatibel med Microsoft och andra PPTP VPN-servrar."
 
+#~ msgid "gtk-cancel"
+#~ msgstr "Avbryt"
+#~ msgid "gtk-ok"
+#~ msgstr "OK"
 #~ msgid "Authentication Type:"
 #~ msgstr "Autentiseringstyp:"
 #~ msgid "_Remember for this session"
