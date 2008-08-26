@@ -173,7 +173,7 @@ nm_netlink_monitor_class_init (NMNetlinkMonitorClass *monitor_class)
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_LAST,
 					  G_STRUCT_OFFSET (NMNetlinkMonitorClass, error),
-					  NULL, NULL, nm_marshal_VOID__POINTER,
+					  NULL, NULL, _nm_marshal_VOID__POINTER,
 					  G_TYPE_NONE, 1, G_TYPE_POINTER);
 }
 

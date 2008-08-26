@@ -37,7 +37,7 @@ nm_ssid_get_type (void)
 }
 
 gboolean
-nm_ssid_demarshal (GValue *value, GByteArray **dest)
+_nm_ssid_demarshal (GValue *value, GByteArray **dest)
 {
 	GByteArray *array;
 
@@ -90,7 +90,7 @@ nm_uint_array_get_type (void)
 }
 
 gboolean
-nm_uint_array_demarshal (GValue *value, GArray **dest)
+_nm_uint_array_demarshal (GValue *value, GArray **dest)
 {
 	GArray *array;
 
@@ -148,7 +148,7 @@ nm_string_array_get_type (void)
 }
 
 gboolean
-nm_string_array_demarshal (GValue *value, GPtrArray **dest)
+_nm_string_array_demarshal (GValue *value, GPtrArray **dest)
 {
 	GPtrArray *array;
 
@@ -209,7 +209,7 @@ nm_object_array_get_type (void)
 }
 
 gboolean
-nm_object_array_demarshal (GValue *value,
+_nm_object_array_demarshal (GValue *value,
                            GPtrArray **dest,
                            DBusGConnection *connection,
                            NMObjectCreatorFunc func)
@@ -230,7 +230,7 @@ nm_object_array_demarshal (GValue *value,
 			GObject *object;
 
 			path = g_ptr_array_index (array, i);
-			object = G_OBJECT (nm_object_cache_get (path));
+			object = G_OBJECT (_nm_object_cache_get (path));
 			if (object) {
 				g_ptr_array_add (temp, g_object_ref (object));
 			} else {

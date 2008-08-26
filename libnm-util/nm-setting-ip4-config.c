@@ -344,7 +344,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_DNS,
-		 nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_DNS,
+		 _nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_DNS,
 							   "DNS",
 							   "List of DNS servers",
 							   DBUS_TYPE_G_UINT_ARRAY,
@@ -352,7 +352,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_DNS_SEARCH,
-		 nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_DNS_SEARCH,
+		 _nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_DNS_SEARCH,
 							   "DNS search",
 							   "List of DNS search domains",
 							   DBUS_TYPE_G_LIST_OF_STRING,
@@ -360,7 +360,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_ADDRESSES,
-		 nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_ADDRESSES,
+		 _nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_ADDRESSES,
 							   "Addresses",
 							   "List of NMSettingIP4Addresses",
 							   DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
@@ -368,7 +368,7 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_ROUTES,
-		 nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_ROUTES,
+		 _nm_param_spec_specialized (NM_SETTING_IP4_CONFIG_ROUTES,
 							   "Routes",
 							   "List of NMSettingIP4Routes",
 							   DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,

@@ -57,7 +57,7 @@ constructor (GType type,
 	if (!object)
 		return NULL;
 
-	nm_object_cache_add (NM_OBJECT (object));
+	_nm_object_cache_add (NM_OBJECT (object));
 
 	priv = NM_OBJECT_GET_PRIVATE (object);
 
@@ -250,7 +250,7 @@ deferred_notify_cb (gpointer data)
 }
 
 void
-nm_object_queue_notify (NMObject *object, const char *property)
+_nm_object_queue_notify (NMObject *object, const char *property)
 {
 	NMObjectPrivate *priv;
 	gboolean found = FALSE;
@@ -345,7 +345,7 @@ properties_changed_proxy (DBusGProxy *proxy,
 }
 
 void
-nm_object_handle_properties_changed (NMObject *object,
+_nm_object_handle_properties_changed (NMObject *object,
                                      DBusGProxy *proxy,
                                      const NMPropertiesChangedInfo *info)
 {
@@ -397,7 +397,7 @@ nm_object_handle_properties_changed (NMObject *object,
 		}
 
 gboolean
-nm_object_demarshal_generic (NMObject *object,
+_nm_object_demarshal_generic (NMObject *object,
                              GParamSpec *pspec,
                              GValue *value,
                              gpointer field)
@@ -436,7 +436,7 @@ nm_object_demarshal_generic (NMObject *object,
 
 done:
 	if (success) {
-		nm_object_queue_notify (object, pspec->name);
+		_nm_object_queue_notify (object, pspec->name);
 	} else {
 		g_warning ("%s: %s/%s (type %s) couldn't be set with type %s.",
 		           __func__, G_OBJECT_TYPE_NAME (object), pspec->name,
@@ -446,7 +446,7 @@ done:
 }
 
 gboolean
-nm_object_get_property (NMObject *object,
+_nm_object_get_property (NMObject *object,
 						const char *interface,
 						const char *prop_name,
 						GValue *value)
@@ -478,7 +478,7 @@ nm_object_get_property (NMObject *object,
 }
 
 void
-nm_object_set_property (NMObject *object,
+_nm_object_set_property (NMObject *object,
 						const char *interface,
 						const char *prop_name,
 						GValue *value)
@@ -497,14 +497,14 @@ nm_object_set_property (NMObject *object,
 }
 
 char *
-nm_object_get_string_property (NMObject *object,
+_nm_object_get_string_property (NMObject *object,
 							   const char *interface,
 							   const char *prop_name)
 {
 	char *str = NULL;
 	GValue value = {0,};
 
-	if (nm_object_get_property (object, interface, prop_name, &value)) {
+	if (_nm_object_get_property (object, interface, prop_name, &value)) {
 		if (G_VALUE_HOLDS_STRING (&value))
 			str = g_strdup (g_value_get_string (&value));
 		else if (G_VALUE_HOLDS (&value, DBUS_TYPE_G_OBJECT_PATH))
@@ -516,14 +516,14 @@ nm_object_get_string_property (NMObject *object,
 }
 
 char *
-nm_object_get_object_path_property (NMObject *object,
+_nm_object_get_object_path_property (NMObject *object,
 									const char *interface,
 									const char *prop_name)
 {
 	char *path = NULL;
 	GValue value = {0,};
 
-	if (nm_object_get_property (object, interface, prop_name, &value)) {
+	if (_nm_object_get_property (object, interface, prop_name, &value)) {
 		path = g_strdup (g_value_get_boxed (&value));
 		g_value_unset (&value);
 	}
@@ -532,14 +532,14 @@ nm_object_get_object_path_property (NMObject *object,
 }
 
 gint32
-nm_object_get_int_property (NMObject *object,
+_nm_object_get_int_property (NMObject *object,
 							const char *interface,
 							const char *prop_name)
 {
 	gint32 i = 0;
 	GValue value = {0,};
 
-	if (nm_object_get_property (object, interface, prop_name, &value)) {
+	if (_nm_object_get_property (object, interface, prop_name, &value)) {
 		i = g_value_get_int (&value);
 		g_value_unset (&value);
 	}
@@ -548,14 +548,14 @@ nm_object_get_int_property (NMObject *object,
 }
 
 guint32
-nm_object_get_uint_property (NMObject *object,
+_nm_object_get_uint_property (NMObject *object,
 							 const char *interface,
 							 const char *prop_name)
 {
 	guint32 i = 0;
 	GValue value = {0,};
 
-	if (nm_object_get_property (object, interface, prop_name, &value)) {
+	if (_nm_object_get_property (object, interface, prop_name, &value)) {
 		i = g_value_get_uint (&value);
 		g_value_unset (&value);
 	}
@@ -564,14 +564,14 @@ nm_object_get_uint_property (NMObject *object,
 }
 
 gboolean
-nm_object_get_boolean_property (NMObject *object,
+_nm_object_get_boolean_property (NMObject *object,
 								const char *interface,
 								const char *prop_name)
 {
 	gboolean b = FALSE;  // FIXME: somehow convey failure if needed
 	GValue value = {0,};
 
-	if (nm_object_get_property (object, interface, prop_name, &value)) {
+	if (_nm_object_get_property (object, interface, prop_name, &value)) {
 		b = g_value_get_boolean (&value);
 		g_value_unset (&value);
 	}
@@ -580,14 +580,14 @@ nm_object_get_boolean_property (NMObject *object,
 }
 
 gint8
-nm_object_get_byte_property (NMObject *object,
+_nm_object_get_byte_property (NMObject *object,
 							 const char *interface,
 							 const char *prop_name)
 {
 	gint8 b = G_MAXINT8;
 	GValue value = {0,};
 
-	if (nm_object_get_property (object, interface, prop_name, &value)) {
+	if (_nm_object_get_property (object, interface, prop_name, &value)) {
 		b = g_value_get_uchar (&value);
 		g_value_unset (&value);
 	}
@@ -596,14 +596,14 @@ nm_object_get_byte_property (NMObject *object,
 }
 
 gdouble
-nm_object_get_double_property (NMObject *object,
+_nm_object_get_double_property (NMObject *object,
 							   const char *interface,
 							   const char *prop_name)
 {
 	gdouble d = G_MAXDOUBLE;
 	GValue value = {0,};
 
-	if (nm_object_get_property (object, interface, prop_name, &value)) {
+	if (_nm_object_get_property (object, interface, prop_name, &value)) {
 		d = g_value_get_double (&value);
 		g_value_unset (&value);
 	}
@@ -612,14 +612,14 @@ nm_object_get_double_property (NMObject *object,
 }
 
 GByteArray *
-nm_object_get_byte_array_property (NMObject *object,
+_nm_object_get_byte_array_property (NMObject *object,
 								   const char *interface,
 								   const char *prop_name)
 {
 	GByteArray * array = NULL;
 	GValue value = {0,};
 
-	if (nm_object_get_property (object, interface, prop_name, &value)) {
+	if (_nm_object_get_property (object, interface, prop_name, &value)) {
 		GArray * tmp = g_value_get_boxed (&value);
 		int i;
 		unsigned char byte;

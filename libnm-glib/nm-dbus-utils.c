@@ -1,7 +1,7 @@
 #include "nm-dbus-utils.h"
 
 char *
-nm_dbus_get_string_property (DBusGProxy *proxy,
+_nm_dbus_get_string_property (DBusGProxy *proxy,
 							 const char *interface,
 							 const char *prop_name)
 {
@@ -27,7 +27,7 @@ nm_dbus_get_string_property (DBusGProxy *proxy,
 }
 
 char *
-nm_dbus_get_object_path_property (DBusGProxy *proxy,
+_nm_dbus_get_object_path_property (DBusGProxy *proxy,
 								  const char *interface,
 								  const char *prop_name)
 {
@@ -53,7 +53,7 @@ nm_dbus_get_object_path_property (DBusGProxy *proxy,
 }
 
 gint32
-nm_dbus_get_int_property (DBusGProxy *proxy,
+_nm_dbus_get_int_property (DBusGProxy *proxy,
 						  const char *interface,
 						  const char *prop_name)
 {
@@ -79,7 +79,7 @@ nm_dbus_get_int_property (DBusGProxy *proxy,
 }
 
 guint32
-nm_dbus_get_uint_property (DBusGProxy *proxy,
+_nm_dbus_get_uint_property (DBusGProxy *proxy,
 						   const char *interface,
 						   const char *prop_name)
 {
@@ -105,7 +105,7 @@ nm_dbus_get_uint_property (DBusGProxy *proxy,
 }
 
 gboolean
-nm_dbus_get_property (DBusGProxy *proxy,
+_nm_dbus_get_property (DBusGProxy *proxy,
 					  const char *interface,
 					  const char *prop_name,
 					  GValue *value)
@@ -139,7 +139,7 @@ nm_dbus_get_property (DBusGProxy *proxy,
 }
 
 void
-nm_dbus_set_property (DBusGProxy *proxy,
+_nm_dbus_set_property (DBusGProxy *proxy,
 					  const char *interface,
 					  const char *prop_name,
 					  GValue *value)
@@ -164,7 +164,7 @@ nm_dbus_set_property (DBusGProxy *proxy,
 }
 
 char *
-nm_dbus_introspect (DBusGConnection *connection,
+_nm_dbus_introspect (DBusGConnection *connection,
 					const char *interface,
 					const char *path)
 {

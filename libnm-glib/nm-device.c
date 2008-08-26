@@ -87,7 +87,7 @@ demarshal_ip4_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoint
 		if (!strcmp (path, "/"))
 			priv->null_ip4_config = TRUE;
 		else {
-			config = NM_IP4_CONFIG (nm_object_cache_get (path));
+			config = NM_IP4_CONFIG (_nm_object_cache_get (path));
 			if (config)
 				config = g_object_ref (config);
 			else {
@@ -105,7 +105,7 @@ demarshal_ip4_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoint
 	if (config)
 		priv->ip4_config = config;
 
-	nm_object_queue_notify (object, NM_DEVICE_IP4_CONFIG);
+	_nm_object_queue_notify (object, NM_DEVICE_IP4_CONFIG);
 	return TRUE;
 }
 
@@ -127,7 +127,7 @@ demarshal_dhcp4_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoi
 		if (!strcmp (path, "/"))
 			priv->null_dhcp4_config = TRUE;
 		else {
-			config = NM_DHCP4_CONFIG (nm_object_cache_get (path));
+			config = NM_DHCP4_CONFIG (_nm_object_cache_get (path));
 			if (config)
 				config = g_object_ref (config);
 			else {
@@ -145,7 +145,7 @@ demarshal_dhcp4_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoi
 	if (config)
 		priv->dhcp4_config = config;
 
-	nm_object_queue_notify (object, NM_DEVICE_DHCP4_CONFIG);
+	_nm_object_queue_notify (object, NM_DEVICE_DHCP4_CONFIG);
 	return TRUE;
 }
 
@@ -154,17 +154,17 @@ register_for_property_changed (NMDevice *device)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_DEVICE_UDI,          nm_object_demarshal_generic, &priv->udi },
-		{ NM_DEVICE_INTERFACE,    nm_object_demarshal_generic, &priv->iface },
-		{ NM_DEVICE_DRIVER,       nm_object_demarshal_generic, &priv->driver },
-		{ NM_DEVICE_CAPABILITIES, nm_object_demarshal_generic, &priv->capabilities },
-		{ NM_DEVICE_MANAGED,      nm_object_demarshal_generic, &priv->managed },
+		{ NM_DEVICE_UDI,          _nm_object_demarshal_generic, &priv->udi },
+		{ NM_DEVICE_INTERFACE,    _nm_object_demarshal_generic, &priv->iface },
+		{ NM_DEVICE_DRIVER,       _nm_object_demarshal_generic, &priv->driver },
+		{ NM_DEVICE_CAPABILITIES, _nm_object_demarshal_generic, &priv->capabilities },
+		{ NM_DEVICE_MANAGED,      _nm_object_demarshal_generic, &priv->managed },
 		{ NM_DEVICE_IP4_CONFIG,   demarshal_ip4_config,        &priv->ip4_config },
 		{ NM_DEVICE_DHCP4_CONFIG, demarshal_dhcp4_config,      &priv->dhcp4_config },
 		{ NULL },
 	};
 
-	nm_object_handle_properties_changed (NM_OBJECT (device),
+	_nm_object_handle_properties_changed (NM_OBJECT (device),
 	                                     priv->proxy,
 	                                     property_changed_info);
 }
@@ -182,7 +182,7 @@ device_state_changed (DBusGProxy *proxy,
 	if (priv->state != new_state) {
 		priv->state = new_state;
 		g_signal_emit (self, signals[STATE_CHANGED], 0, new_state, old_state, reason);
-		nm_object_queue_notify (NM_OBJECT (self), "state");
+		_nm_object_queue_notify (NM_OBJECT (self), "state");
 	}
 }
 
@@ -209,7 +209,7 @@ constructor (GType type,
 
 	register_for_property_changed (NM_DEVICE (object));
 
-	dbus_g_object_register_marshaller (nm_marshal_VOID__UINT_UINT_UINT,
+	dbus_g_object_register_marshaller (_nm_marshal_VOID__UINT_UINT_UINT,
 									   G_TYPE_NONE,
 									   G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT,
 									   G_TYPE_INVALID);
@@ -467,7 +467,7 @@ nm_device_class_init (NMDeviceClass *device_class)
 				    G_SIGNAL_RUN_FIRST,
 				    G_STRUCT_OFFSET (NMDeviceClass, state_changed),
 				    NULL, NULL,
-				    nm_marshal_VOID__UINT_UINT_UINT,
+				    _nm_marshal_VOID__UINT_UINT_UINT,
 				    G_TYPE_NONE, 3,
 				    G_TYPE_UINT, G_TYPE_UINT, G_TYPE_UINT);
 }
@@ -561,7 +561,7 @@ nm_device_get_iface (NMDevice *device)
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
 	if (!priv->iface) {
-		priv->iface = nm_object_get_string_property (NM_OBJECT (device),
+		priv->iface = _nm_object_get_string_property (NM_OBJECT (device),
 		                                             NM_DBUS_INTERFACE_DEVICE,
 		                                             "Interface");
 	}
@@ -587,7 +587,7 @@ nm_device_get_udi (NMDevice *device)
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
 	if (!priv->udi) {
-		priv->udi = nm_object_get_string_property (NM_OBJECT (device),
+		priv->udi = _nm_object_get_string_property (NM_OBJECT (device),
 		                                           NM_DBUS_INTERFACE_DEVICE,
 		                                           "Udi");
 	}
@@ -613,7 +613,7 @@ nm_device_get_driver (NMDevice *device)
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
 	if (!priv->driver) {
-		priv->driver = nm_object_get_string_property (NM_OBJECT (device),
+		priv->driver = _nm_object_get_string_property (NM_OBJECT (device),
 		                                              NM_DBUS_INTERFACE_DEVICE,
 		                                              "Driver");
 	}
@@ -638,7 +638,7 @@ nm_device_get_capabilities (NMDevice *device)
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
 	if (!priv->capabilities) {
-		priv->capabilities = nm_object_get_uint_property (NM_OBJECT (device),
+		priv->capabilities = _nm_object_get_uint_property (NM_OBJECT (device),
 		                                                  NM_DBUS_INTERFACE_DEVICE,
 		                                                  "Capabilities");
 	}
@@ -663,7 +663,7 @@ nm_device_get_managed (NMDevice *device)
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
 	if (!priv->managed) {
-		priv->managed = nm_object_get_boolean_property (NM_OBJECT (device),
+		priv->managed = _nm_object_get_boolean_property (NM_OBJECT (device),
 		                                                NM_DBUS_INTERFACE_DEVICE,
 		                                                "Managed");
 	}
@@ -694,7 +694,7 @@ nm_device_get_ip4_config (NMDevice *device)
 	if (priv->null_ip4_config)
 		return NULL;
 
-	path = nm_object_get_object_path_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Ip4Config");
+	path = _nm_object_get_object_path_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Ip4Config");
 	if (path) {
 		g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
 		g_value_take_boxed (&value, path);
@@ -729,7 +729,7 @@ nm_device_get_dhcp4_config (NMDevice *device)
 	if (priv->null_dhcp4_config)
 		return NULL;
 
-	path = nm_object_get_object_path_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Dhcp4Config");
+	path = _nm_object_get_object_path_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Dhcp4Config");
 	if (path) {
 		g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
 		g_value_take_boxed (&value, path);
@@ -757,7 +757,7 @@ nm_device_get_state (NMDevice *device)
 
 	priv = NM_DEVICE_GET_PRIVATE (device);
 	if (priv->state == NM_DEVICE_STATE_UNKNOWN) {
-		priv->state = nm_object_get_uint_property (NM_OBJECT (device), 
+		priv->state = _nm_object_get_uint_property (NM_OBJECT (device), 
 		                                           NM_DBUS_INTERFACE_DEVICE,
 		                                           "State");
 	}
@@ -939,8 +939,8 @@ nm_device_update_description (NMDevice *device)
 
 	g_free (orig_dev_udi);
 
-	nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_VENDOR);
-	nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_PRODUCT);
+	_nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_VENDOR);
+	_nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_PRODUCT);
 }
 
 /**

@@ -205,7 +205,7 @@ nm_inotify_helper_class_init (NMInotifyHelperClass *klass)
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMInotifyHelperClass, event),
 		              NULL, NULL,
-		              nm_marshal_VOID__POINTER_STRING,
+		              _nm_marshal_VOID__POINTER_STRING,
 		              G_TYPE_NONE, 2, G_TYPE_POINTER, G_TYPE_STRING);
 }
 

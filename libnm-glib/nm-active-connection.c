@@ -100,7 +100,7 @@ nm_active_connection_get_service_name (NMActiveConnection *connection)
 
 	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
 	if (!priv->service_name) {
-		priv->service_name = nm_object_get_string_property (NM_OBJECT (connection),
+		priv->service_name = _nm_object_get_string_property (NM_OBJECT (connection),
 		                                                    NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
 		                                                    DBUS_PROP_SERVICE_NAME);
 		priv->scope = get_scope_for_service_name (priv->service_name);
@@ -145,7 +145,7 @@ nm_active_connection_get_connection (NMActiveConnection *connection)
 
 	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
 	if (!priv->connection) {
-		priv->connection = nm_object_get_string_property (NM_OBJECT (connection),
+		priv->connection = _nm_object_get_string_property (NM_OBJECT (connection),
 		                                                  NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
 		                                                  DBUS_PROP_CONNECTION);
 	}
@@ -171,7 +171,7 @@ nm_active_connection_get_specific_object (NMActiveConnection *connection)
 
 	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
 	if (!priv->specific_object) {
-		priv->specific_object = nm_object_get_string_property (NM_OBJECT (connection),
+		priv->specific_object = _nm_object_get_string_property (NM_OBJECT (connection),
 		                                                       NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
 		                                                       DBUS_PROP_SPECIFIC_OBJECT);
 	}
@@ -200,7 +200,7 @@ nm_active_connection_get_devices (NMActiveConnection *connection)
 	if (priv->devices)
 		return handle_ptr_array_return (priv->devices);
 
-	if (!nm_object_get_property (NM_OBJECT (connection),
+	if (!_nm_object_get_property (NM_OBJECT (connection),
 	                             NM_DBUS_INTERFACE,
 	                             DBUS_PROP_DEVICES,
 	                             &value)) {
@@ -230,7 +230,7 @@ nm_active_connection_get_state (NMActiveConnection *connection)
 
 	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
 	if (!priv->state) {
-		priv->state = nm_object_get_uint_property (NM_OBJECT (connection),
+		priv->state = _nm_object_get_uint_property (NM_OBJECT (connection),
 		                                           NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
 		                                           DBUS_PROP_STATE);
 	}
@@ -256,7 +256,7 @@ nm_active_connection_get_default (NMActiveConnection *connection)
 
 	priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
 	if (!priv->is_default) {
-		priv->is_default = nm_object_get_boolean_property (NM_OBJECT (connection),
+		priv->is_default = _nm_object_get_boolean_property (NM_OBJECT (connection),
 		                                                   NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
 		                                                   DBUS_PROP_DEFAULT);
 	}
@@ -341,10 +341,10 @@ demarshal_devices (NMObject *object, GParamSpec *pspec, GValue *value, gpointer 
 	DBusGConnection *connection;
 
 	connection = nm_object_get_connection (object);
-	if (!nm_object_array_demarshal (value, (GPtrArray **) field, connection, nm_device_new))
+	if (!_nm_object_array_demarshal (value, (GPtrArray **) field, connection, nm_device_new))
 		return FALSE;
 
-	nm_object_queue_notify (object, NM_ACTIVE_CONNECTION_DEVICES);
+	_nm_object_queue_notify (object, NM_ACTIVE_CONNECTION_DEVICES);
 	return TRUE;
 }
 
@@ -353,7 +353,7 @@ demarshal_service (NMObject *object, GParamSpec *pspec, GValue *value, gpointer 
 {
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (object);
 
-	if (nm_object_demarshal_generic (object, pspec, value, field)) {
+	if (_nm_object_demarshal_generic (object, pspec, value, field)) {
 		priv->scope = get_scope_for_service_name (priv->service_name);
 		return TRUE;
 	}
@@ -366,15 +366,15 @@ register_for_property_changed (NMActiveConnection *connection)
 	NMActiveConnectionPrivate *priv = NM_ACTIVE_CONNECTION_GET_PRIVATE (connection);
 	const NMPropertiesChangedInfo property_changed_info[] = {
 		{ NM_ACTIVE_CONNECTION_SERVICE_NAME,        demarshal_service,           &priv->service_name },
-		{ NM_ACTIVE_CONNECTION_CONNECTION,          nm_object_demarshal_generic, &priv->connection },
-		{ NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT,     nm_object_demarshal_generic, &priv->specific_object },
+		{ NM_ACTIVE_CONNECTION_CONNECTION,          _nm_object_demarshal_generic, &priv->connection },
+		{ NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT,     _nm_object_demarshal_generic, &priv->specific_object },
 		{ NM_ACTIVE_CONNECTION_DEVICES,             demarshal_devices,           &priv->devices },
-		{ NM_ACTIVE_CONNECTION_STATE,               nm_object_demarshal_generic, &priv->state },
-		{ NM_ACTIVE_CONNECTION_DEFAULT,             nm_object_demarshal_generic, &priv->is_default },
+		{ NM_ACTIVE_CONNECTION_STATE,               _nm_object_demarshal_generic, &priv->state },
+		{ NM_ACTIVE_CONNECTION_DEFAULT,             _nm_object_demarshal_generic, &priv->is_default },
 		{ NULL },
 	};
 
-	nm_object_handle_properties_changed (NM_OBJECT (connection),
+	_nm_object_handle_properties_changed (NM_OBJECT (connection),
 	                                     priv->proxy,
 	                                     property_changed_info);
 }

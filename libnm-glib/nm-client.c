@@ -20,7 +20,7 @@
 
 #include "nm-client-bindings.h"
 
-void nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enabled);
+void _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enabled);
 
 
 G_DEFINE_TYPE (NMClient, nm_client, NM_TYPE_OBJECT)
@@ -88,7 +88,7 @@ poke_wireless_devices_with_rf_status (NMClient *client)
 		NMDevice *device = g_ptr_array_index (priv->devices, i);
 
 		if (NM_IS_DEVICE_WIFI (device))
-			nm_device_wifi_set_wireless_enabled (NM_DEVICE_WIFI (device), priv->wireless_enabled);
+			_nm_device_wifi_set_wireless_enabled (NM_DEVICE_WIFI (device), priv->wireless_enabled);
 	}
 }
 
@@ -99,27 +99,27 @@ update_wireless_status (NMClient *client, gboolean notify)
 	gboolean val;
 	gboolean poke = FALSE;
 
-	val = nm_object_get_boolean_property (NM_OBJECT (client),
+	val = _nm_object_get_boolean_property (NM_OBJECT (client),
 										  NM_DBUS_INTERFACE,
 										  "WirelessHardwareEnabled");
 	if (val != priv->wireless_hw_enabled) {
 		priv->wireless_hw_enabled = val;
 		poke = TRUE;
 		if (notify)
-			nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_WIRELESS_HARDWARE_ENABLED);
+			_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_WIRELESS_HARDWARE_ENABLED);
 	}
 
 	if (priv->wireless_hw_enabled == FALSE)
 		val = FALSE;
 	else
-		val = nm_object_get_boolean_property (NM_OBJECT (client),
+		val = _nm_object_get_boolean_property (NM_OBJECT (client),
 				                              NM_DBUS_INTERFACE,
 				                              "WirelessEnabled");
 	if (val != priv->wireless_enabled) {
 		priv->wireless_enabled = val;
 		poke = TRUE;
 		if (notify)
-			nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_WIRELESS_ENABLED);
+			_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_WIRELESS_ENABLED);
 	}
 
 	if (poke)
@@ -181,10 +181,10 @@ demarshal_active_connections (NMObject *object,
 	DBusGConnection *connection;
 
 	connection = nm_object_get_connection (object);
-	if (!nm_object_array_demarshal (value, (GPtrArray **) field, connection, new_active_connection))
+	if (!_nm_object_array_demarshal (value, (GPtrArray **) field, connection, new_active_connection))
 		return FALSE;
 
-	nm_object_queue_notify (object, NM_CLIENT_ACTIVE_CONNECTIONS);
+	_nm_object_queue_notify (object, NM_CLIENT_ACTIVE_CONNECTIONS);
 	return TRUE;
 }
 
@@ -193,14 +193,14 @@ register_for_property_changed (NMClient *client)
 {
 	NMClientPrivate *priv = NM_CLIENT_GET_PRIVATE (client);
 	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_CLIENT_STATE,                     nm_object_demarshal_generic,  &priv->state },
-		{ NM_CLIENT_WIRELESS_ENABLED,          nm_object_demarshal_generic,  &priv->wireless_enabled },
-		{ NM_CLIENT_WIRELESS_HARDWARE_ENABLED, nm_object_demarshal_generic,  &priv->wireless_hw_enabled },
+		{ NM_CLIENT_STATE,                     _nm_object_demarshal_generic,  &priv->state },
+		{ NM_CLIENT_WIRELESS_ENABLED,          _nm_object_demarshal_generic,  &priv->wireless_enabled },
+		{ NM_CLIENT_WIRELESS_HARDWARE_ENABLED, _nm_object_demarshal_generic,  &priv->wireless_hw_enabled },
 		{ NM_CLIENT_ACTIVE_CONNECTIONS,        demarshal_active_connections, &priv->active_connections },
 		{ NULL },
 	};
 
-	nm_object_handle_properties_changed (NM_OBJECT (client),
+	_nm_object_handle_properties_changed (NM_OBJECT (client),
 	                                     priv->client_proxy,
 	                                     property_changed_info);
 }
@@ -320,14 +320,14 @@ set_property (GObject *object, guint prop_id,
 		b = g_value_get_boolean (value);
 		if (priv->wireless_enabled != b) {
 			priv->wireless_enabled = b;
-			nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WIRELESS_ENABLED);
+			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WIRELESS_ENABLED);
 		}
 		break;
 	case PROP_WIRELESS_HARDWARE_ENABLED:
 		b = g_value_get_boolean (value);
 		if (priv->wireless_hw_enabled != b) {
 			priv->wireless_hw_enabled = b;
-			nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WIRELESS_HARDWARE_ENABLED);
+			_nm_object_queue_notify (NM_OBJECT (object), NM_CLIENT_WIRELESS_HARDWARE_ENABLED);
 		}
 		break;
 	default:
@@ -537,14 +537,14 @@ proxy_name_owner_changed (DBusGProxy *proxy,
 	priv->manager_running = new_running;
 	if (!priv->manager_running) {
 		priv->state = NM_STATE_UNKNOWN;
-		nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
+		_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
 		poke_wireless_devices_with_rf_status (client);
 		free_object_array (&priv->devices);
 		free_object_array (&priv->active_connections);
 		priv->wireless_enabled = FALSE;
 		priv->wireless_hw_enabled = FALSE;
 	} else {
-		nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
+		_nm_object_queue_notify (NM_OBJECT (client), NM_CLIENT_MANAGER_RUNNING);
 		update_wireless_status (client, TRUE);
 	}
 }
@@ -560,7 +560,7 @@ client_device_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 	if (!device) {
 		DBusGConnection *connection = nm_object_get_connection (NM_OBJECT (client));
 
-		device = G_OBJECT (nm_object_cache_get (path));
+		device = G_OBJECT (_nm_object_cache_get (path));
 		if (device) {
 			g_ptr_array_add (priv->devices, g_object_ref (device));
 		} else {
@@ -622,7 +622,7 @@ nm_client_get_devices (NMClient *client)
 	g_value_init (&value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH);
 	g_value_take_boxed (&value, temp);
 	connection = nm_object_get_connection (NM_OBJECT (client));
-	nm_object_array_demarshal (&value, &priv->devices, connection, nm_device_new);
+	_nm_object_array_demarshal (&value, &priv->devices, connection, nm_device_new);
 	g_value_unset (&value);
 
 	return handle_ptr_array_return (priv->devices);
@@ -782,7 +782,7 @@ nm_client_get_active_connections (NMClient *client)
 	if (!priv->manager_running)
 		return NULL;
 
-	if (!nm_object_get_property (NM_OBJECT (client),
+	if (!_nm_object_get_property (NM_OBJECT (client),
 	                             "org.freedesktop.DBus.Properties",
 	                             "ActiveConnections",
 	                             &value)) {
@@ -828,7 +828,7 @@ nm_client_wireless_set_enabled (NMClient *client, gboolean enabled)
 	g_value_init (&value, G_TYPE_BOOLEAN);
 	g_value_set_boolean (&value, enabled);
 
-	nm_object_set_property (NM_OBJECT (client),
+	_nm_object_set_property (NM_OBJECT (client),
 					    NM_DBUS_INTERFACE,
 					    "WirelessEnabled",
 					    &value);
@@ -871,7 +871,7 @@ nm_client_get_state (NMClient *client)
 		return NM_STATE_UNKNOWN;
 
 	if (priv->state == NM_STATE_UNKNOWN)
-		priv->state = nm_object_get_uint_property (NM_OBJECT (client), NM_DBUS_INTERFACE, "State");
+		priv->state = _nm_object_get_uint_property (NM_OBJECT (client), NM_DBUS_INTERFACE, "State");
 
 	return priv->state;
 }

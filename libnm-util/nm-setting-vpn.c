@@ -233,7 +233,7 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_DATA,
-		 nm_param_spec_specialized (NM_SETTING_VPN_DATA,
+		 _nm_param_spec_specialized (NM_SETTING_VPN_DATA,
 							   "Data",
 							   "VPN Service specific data",
 							   DBUS_TYPE_G_MAP_OF_STRING,

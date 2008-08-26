@@ -6,10 +6,10 @@
 #include "nm-types.h"
 #include "nm-object-private.h"
 
-gboolean nm_ssid_demarshal (GValue *value, GByteArray **dest);
-gboolean nm_uint_array_demarshal (GValue *value, GArray **dest);
-gboolean nm_string_array_demarshal (GValue *value, GPtrArray **dest);
-gboolean nm_object_array_demarshal (GValue *value,
+gboolean _nm_ssid_demarshal (GValue *value, GByteArray **dest);
+gboolean _nm_uint_array_demarshal (GValue *value, GArray **dest);
+gboolean _nm_string_array_demarshal (GValue *value, GPtrArray **dest);
+gboolean _nm_object_array_demarshal (GValue *value,
                                     GPtrArray **dest,
                                     DBusGConnection *connection,
                                     NMObjectCreatorFunc func);

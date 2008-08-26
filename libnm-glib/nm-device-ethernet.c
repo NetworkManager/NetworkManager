@@ -71,7 +71,7 @@ nm_device_ethernet_get_hw_address (NMDeviceEthernet *device)
 
 	priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 	if (!priv->hw_address) {
-		priv->hw_address = nm_object_get_string_property (NM_OBJECT (device),
+		priv->hw_address = _nm_object_get_string_property (NM_OBJECT (device),
 		                                                  NM_DBUS_INTERFACE_DEVICE_WIRED,
 		                                                  DBUS_PROP_HW_ADDRESS);
 	}
@@ -96,7 +96,7 @@ nm_device_ethernet_get_speed (NMDeviceEthernet *device)
 
 	priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 	if (!priv->speed) {
-		priv->speed = nm_object_get_uint_property (NM_OBJECT (device),
+		priv->speed = _nm_object_get_uint_property (NM_OBJECT (device),
 		                                           NM_DBUS_INTERFACE_DEVICE_WIRED,
 		                                           DBUS_PROP_SPEED);
 	}
@@ -121,7 +121,7 @@ nm_device_ethernet_get_carrier (NMDeviceEthernet *device)
 
 	priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 	if (!priv->carrier_valid) {
-		priv->carrier = nm_object_get_boolean_property (NM_OBJECT (device),
+		priv->carrier = _nm_object_get_boolean_property (NM_OBJECT (device),
 		                                                NM_DBUS_INTERFACE_DEVICE_WIRED,
 		                                                DBUS_PROP_CARRIER);
 		priv->carrier_valid = TRUE;
@@ -145,13 +145,13 @@ register_for_property_changed (NMDeviceEthernet *device)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (device);
 	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_DEVICE_ETHERNET_HW_ADDRESS, nm_object_demarshal_generic, &priv->hw_address },
-		{ NM_DEVICE_ETHERNET_SPEED,      nm_object_demarshal_generic, &priv->speed },
-		{ NM_DEVICE_ETHERNET_CARRIER,    nm_object_demarshal_generic, &priv->carrier },
+		{ NM_DEVICE_ETHERNET_HW_ADDRESS, _nm_object_demarshal_generic, &priv->hw_address },
+		{ NM_DEVICE_ETHERNET_SPEED,      _nm_object_demarshal_generic, &priv->speed },
+		{ NM_DEVICE_ETHERNET_CARRIER,    _nm_object_demarshal_generic, &priv->carrier },
 		{ NULL },
 	};
 
-	nm_object_handle_properties_changed (NM_OBJECT (device),
+	_nm_object_handle_properties_changed (NM_OBJECT (device),
 	                                     priv->proxy,
 	                                     property_changed_info);
 }

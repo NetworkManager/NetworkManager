@@ -285,7 +285,7 @@ nm_manager_init (NMManager *manager)
 	                                              "/",
 	                                              NM_AUTOIP_DBUS_IFACE);
 	if (priv->aipd_proxy) {
-		dbus_g_object_register_marshaller (nm_marshal_VOID__STRING_STRING_STRING,
+		dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_STRING_STRING,
 										   G_TYPE_NONE,
 										   G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
 										   G_TYPE_INVALID);
@@ -630,7 +630,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMManagerClass, connection_added),
 					  NULL, NULL,
-				    nm_marshal_VOID__OBJECT_UINT,
+				    _nm_marshal_VOID__OBJECT_UINT,
 					  G_TYPE_NONE, 2,
 				    G_TYPE_OBJECT, G_TYPE_UINT);
 
@@ -640,7 +640,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMManagerClass, connection_updated),
 					  NULL, NULL,
-				      nm_marshal_VOID__OBJECT_UINT,
+				      _nm_marshal_VOID__OBJECT_UINT,
 					  G_TYPE_NONE, 2,
 				      G_TYPE_OBJECT, G_TYPE_UINT);
 
@@ -650,7 +650,7 @@ nm_manager_class_init (NMManagerClass *manager_class)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMManagerClass, connection_removed),
 					  NULL, NULL,
-				    nm_marshal_VOID__OBJECT_UINT,
+				    _nm_marshal_VOID__OBJECT_UINT,
 					  G_TYPE_NONE, 2,
 				    G_TYPE_OBJECT, G_TYPE_UINT);
 

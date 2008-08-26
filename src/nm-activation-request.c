@@ -365,7 +365,7 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMActRequestClass, connection_secrets_updated),
 					  NULL, NULL,
-					  nm_marshal_VOID__OBJECT_POINTER_UINT,
+					  _nm_marshal_VOID__OBJECT_POINTER_UINT,
 					  G_TYPE_NONE, 3,
 					  G_TYPE_OBJECT, G_TYPE_POINTER, G_TYPE_UINT);
 
@@ -375,7 +375,7 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMActRequestClass, connection_secrets_failed),
 					  NULL, NULL,
-					  nm_marshal_VOID__OBJECT_STRING_UINT,
+					  _nm_marshal_VOID__OBJECT_STRING_UINT,
 					  G_TYPE_NONE, 3,
 					  G_TYPE_OBJECT, G_TYPE_STRING, G_TYPE_UINT);
 

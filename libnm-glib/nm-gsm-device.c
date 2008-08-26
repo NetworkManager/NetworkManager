@@ -27,7 +27,7 @@ register_for_property_changed (NMGsmDevice *device)
 		{ NULL },
 	};
 
-	nm_object_handle_properties_changed (NM_OBJECT (device),
+	_nm_object_handle_properties_changed (NM_OBJECT (device),
 	                                     priv->proxy,
 	                                     property_changed_info);
 }

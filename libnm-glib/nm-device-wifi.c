@@ -17,7 +17,7 @@ G_DEFINE_TYPE (NMDeviceWifi, nm_device_wifi, NM_TYPE_DEVICE)
 
 static gboolean demarshal_active_ap (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field);
 
-void nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enabled);
+void _nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device, gboolean enabled);
 
 typedef struct {
 	gboolean disposed;
@@ -99,7 +99,7 @@ nm_device_wifi_get_hw_address (NMDeviceWifi *device)
 
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 	if (!priv->hw_address) {
-		priv->hw_address = nm_object_get_string_property (NM_OBJECT (device),
+		priv->hw_address = _nm_object_get_string_property (NM_OBJECT (device),
 		                                                  NM_DBUS_INTERFACE_DEVICE_WIRELESS,
 		                                                  DBUS_PROP_HW_ADDRESS);
 	}
@@ -124,7 +124,7 @@ nm_device_wifi_get_mode (NMDeviceWifi *device)
 
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 	if (!priv->mode) {
-		priv->mode = nm_object_get_uint_property (NM_OBJECT (device),
+		priv->mode = _nm_object_get_uint_property (NM_OBJECT (device),
 		                                          NM_DBUS_INTERFACE_DEVICE_WIRELESS,
 		                                          DBUS_PROP_MODE);
 	}
@@ -163,7 +163,7 @@ nm_device_wifi_get_bitrate (NMDeviceWifi *device)
 
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 	if (!priv->rate) {
-		priv->rate = nm_object_get_uint_property (NM_OBJECT (device),
+		priv->rate = _nm_object_get_uint_property (NM_OBJECT (device),
 		                                         NM_DBUS_INTERFACE_DEVICE_WIRELESS,
 		                                         DBUS_PROP_BITRATE);
 	}
@@ -188,7 +188,7 @@ nm_device_wifi_get_capabilities (NMDeviceWifi *device)
 
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 	if (!priv->wireless_caps) {
-		priv->wireless_caps = nm_object_get_uint_property (NM_OBJECT (device),
+		priv->wireless_caps = _nm_object_get_uint_property (NM_OBJECT (device),
 		                                                   NM_DBUS_INTERFACE_DEVICE_WIRELESS,
 		                                                   DBUS_PROP_WIRELESS_CAPABILITIES);
 	}
@@ -233,7 +233,7 @@ nm_device_wifi_get_active_access_point (NMDeviceWifi *self)
 	if (priv->null_active_ap)
 		return NULL;
 
-	path = nm_object_get_object_path_property (NM_OBJECT (self),
+	path = _nm_object_get_object_path_property (NM_OBJECT (self),
 	                                           NM_DBUS_INTERFACE_DEVICE_WIRELESS,
 	                                           DBUS_PROP_ACTIVE_ACCESS_POINT);
 	if (path) {
@@ -279,7 +279,7 @@ nm_device_wifi_get_access_points (NMDeviceWifi *self)
 	g_value_init (&value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH);
 	g_value_take_boxed (&value, temp);
 	connection = nm_object_get_connection (NM_OBJECT (self));
-	nm_object_array_demarshal (&value, &priv->aps, connection, nm_access_point_new);
+	_nm_object_array_demarshal (&value, &priv->aps, connection, nm_access_point_new);
 	g_value_unset (&value);
 
 	return handle_ptr_array_return (priv->aps);
@@ -334,7 +334,7 @@ access_point_added_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 		DBusGConnection *connection = nm_object_get_connection (NM_OBJECT (self));
 
 		priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-		ap = G_OBJECT (nm_object_cache_get (path));
+		ap = G_OBJECT (_nm_object_cache_get (path));
 		if (ap) {
 			g_ptr_array_add (priv->aps, g_object_ref (ap));
 		} else {
@@ -392,14 +392,14 @@ clean_up_aps (NMDeviceWifi *self, gboolean notify)
 }
 
 /**
- * nm_device_wifi_set_wireless_enabled:
+ * _nm_device_wifi_set_wireless_enabled:
  * @device: a #NMDeviceWifi
  * @enabled: %TRUE to enable the device
  *
  * Enables or disables the wireless device.
  **/
 void
-nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device,
+_nm_device_wifi_set_wireless_enabled (NMDeviceWifi *device,
                                                 gboolean enabled)
 {
 	g_return_if_fail (NM_IS_DEVICE_WIFI (device));
@@ -467,9 +467,9 @@ state_changed_cb (NMDevice *device, GParamSpec *pspec, gpointer user_data)
 			priv->active_ap = NULL;
 			priv->null_active_ap = FALSE;
 		}
-		nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT);
+		_nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT);
 		priv->rate = 0;
-		nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_WIFI_BITRATE);
+		_nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_WIFI_BITRATE);
 		break;
 	default:
 		break;
@@ -494,7 +494,7 @@ demarshal_active_ap (NMObject *object, GParamSpec *pspec, GValue *value, gpointe
 		if (!strcmp (path, "/"))
 			priv->null_active_ap = TRUE;
 		else {
-			ap = NM_ACCESS_POINT (nm_object_cache_get (path));
+			ap = NM_ACCESS_POINT (_nm_object_cache_get (path));
 			if (ap)
 				ap = g_object_ref (ap);
 			else {
@@ -512,7 +512,7 @@ demarshal_active_ap (NMObject *object, GParamSpec *pspec, GValue *value, gpointe
 	if (ap)
 		priv->active_ap = ap;
 
-	nm_object_queue_notify (object, NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT);
+	_nm_object_queue_notify (object, NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT);
 	return TRUE;
 }
 
@@ -521,15 +521,15 @@ register_for_property_changed (NMDeviceWifi *device)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_DEVICE_WIFI_HW_ADDRESS,          nm_object_demarshal_generic, &priv->hw_address },
-		{ NM_DEVICE_WIFI_MODE,                nm_object_demarshal_generic, &priv->mode },
-		{ NM_DEVICE_WIFI_BITRATE,             nm_object_demarshal_generic, &priv->rate },
+		{ NM_DEVICE_WIFI_HW_ADDRESS,          _nm_object_demarshal_generic, &priv->hw_address },
+		{ NM_DEVICE_WIFI_MODE,                _nm_object_demarshal_generic, &priv->mode },
+		{ NM_DEVICE_WIFI_BITRATE,             _nm_object_demarshal_generic, &priv->rate },
 		{ NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT, demarshal_active_ap,         &priv->active_ap },
-		{ NM_DEVICE_WIFI_CAPABILITIES,        nm_object_demarshal_generic, &priv->wireless_caps },
+		{ NM_DEVICE_WIFI_CAPABILITIES,        _nm_object_demarshal_generic, &priv->wireless_caps },
 		{ NULL },
 	};
 
-	nm_object_handle_properties_changed (NM_OBJECT (device),
+	_nm_object_handle_properties_changed (NM_OBJECT (device),
 	                                     priv->proxy,
 	                                     property_changed_info);
 }

@@ -91,7 +91,7 @@ nm_access_point_get_flags (NMAccessPoint *ap)
 
 	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
 	if (!priv->flags) {
-		priv->flags = nm_object_get_uint_property (NM_OBJECT (ap),
+		priv->flags = _nm_object_get_uint_property (NM_OBJECT (ap),
 		                                           NM_DBUS_INTERFACE_ACCESS_POINT,
 		                                           DBUS_PROP_FLAGS);
 	}
@@ -116,7 +116,7 @@ nm_access_point_get_wpa_flags (NMAccessPoint *ap)
 
 	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
 	if (!priv->wpa_flags) {
-		priv->wpa_flags = nm_object_get_uint_property (NM_OBJECT (ap),
+		priv->wpa_flags = _nm_object_get_uint_property (NM_OBJECT (ap),
 		                                               NM_DBUS_INTERFACE_ACCESS_POINT,
 		                                               DBUS_PROP_WPA_FLAGS);
 	}
@@ -141,7 +141,7 @@ nm_access_point_get_rsn_flags (NMAccessPoint *ap)
 
 	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
 	if (!priv->rsn_flags) {
-		priv->rsn_flags = nm_object_get_uint_property (NM_OBJECT (ap),
+		priv->rsn_flags = _nm_object_get_uint_property (NM_OBJECT (ap),
 		                                               NM_DBUS_INTERFACE_ACCESS_POINT,
 		                                               DBUS_PROP_RSN_FLAGS);
 	}
@@ -167,7 +167,7 @@ nm_access_point_get_ssid (NMAccessPoint *ap)
 
 	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
 	if (!priv->ssid) {
-		priv->ssid = nm_object_get_byte_array_property (NM_OBJECT (ap),
+		priv->ssid = _nm_object_get_byte_array_property (NM_OBJECT (ap),
 		                                                NM_DBUS_INTERFACE_ACCESS_POINT,
 		                                                DBUS_PROP_SSID);
 	}
@@ -192,7 +192,7 @@ nm_access_point_get_frequency (NMAccessPoint *ap)
 
 	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
 	if (!priv->frequency) {
-		priv->frequency = nm_object_get_uint_property (NM_OBJECT (ap),
+		priv->frequency = _nm_object_get_uint_property (NM_OBJECT (ap),
 		                                               NM_DBUS_INTERFACE_ACCESS_POINT,
 		                                               DBUS_PROP_FREQUENCY);
 	}
@@ -218,7 +218,7 @@ nm_access_point_get_hw_address (NMAccessPoint *ap)
 
 	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
 	if (!priv->hw_address) {
-		priv->hw_address = nm_object_get_string_property (NM_OBJECT (ap),
+		priv->hw_address = _nm_object_get_string_property (NM_OBJECT (ap),
 		                                                  NM_DBUS_INTERFACE_ACCESS_POINT,
 		                                                  DBUS_PROP_HW_ADDRESS);
 	}
@@ -243,7 +243,7 @@ nm_access_point_get_mode (NMAccessPoint *ap)
 
 	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
 	if (!priv->mode) {
-		priv->mode = nm_object_get_uint_property (NM_OBJECT (ap),
+		priv->mode = _nm_object_get_uint_property (NM_OBJECT (ap),
 		                                          NM_DBUS_INTERFACE_ACCESS_POINT,
 		                                          DBUS_PROP_MODE);
 	}
@@ -268,7 +268,7 @@ nm_access_point_get_max_bitrate (NMAccessPoint *ap)
 
 	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
 	if (!priv->max_bitrate) {
-		priv->max_bitrate = nm_object_get_uint_property (NM_OBJECT (ap),
+		priv->max_bitrate = _nm_object_get_uint_property (NM_OBJECT (ap),
 		                                              NM_DBUS_INTERFACE_ACCESS_POINT,
 		                                              DBUS_PROP_MAX_BITRATE);
 	}
@@ -293,7 +293,7 @@ nm_access_point_get_strength (NMAccessPoint *ap)
 
 	priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
 	if (!priv->strength) {
-		priv->strength = nm_object_get_byte_property (NM_OBJECT (ap),
+		priv->strength = _nm_object_get_byte_property (NM_OBJECT (ap),
 		                                              NM_DBUS_INTERFACE_ACCESS_POINT,
 		                                              DBUS_PROP_STRENGTH);
 	}
@@ -384,10 +384,10 @@ get_property (GObject *object,
 static gboolean
 demarshal_ssid (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
 {
-	if (!nm_ssid_demarshal (value, (GByteArray **) field))
+	if (!_nm_ssid_demarshal (value, (GByteArray **) field))
 		return FALSE;
 
-	nm_object_queue_notify (object, NM_ACCESS_POINT_SSID);
+	_nm_object_queue_notify (object, NM_ACCESS_POINT_SSID);
 	return TRUE;
 }
 
@@ -396,19 +396,19 @@ register_for_property_changed (NMAccessPoint *ap)
 {
 	NMAccessPointPrivate *priv = NM_ACCESS_POINT_GET_PRIVATE (ap);
 	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_ACCESS_POINT_FLAGS,       nm_object_demarshal_generic, &priv->flags },
-		{ NM_ACCESS_POINT_WPA_FLAGS,   nm_object_demarshal_generic, &priv->wpa_flags },
-		{ NM_ACCESS_POINT_RSN_FLAGS,   nm_object_demarshal_generic, &priv->rsn_flags },
+		{ NM_ACCESS_POINT_FLAGS,       _nm_object_demarshal_generic, &priv->flags },
+		{ NM_ACCESS_POINT_WPA_FLAGS,   _nm_object_demarshal_generic, &priv->wpa_flags },
+		{ NM_ACCESS_POINT_RSN_FLAGS,   _nm_object_demarshal_generic, &priv->rsn_flags },
 		{ NM_ACCESS_POINT_SSID,        demarshal_ssid,              &priv->ssid },
-		{ NM_ACCESS_POINT_FREQUENCY,   nm_object_demarshal_generic, &priv->frequency },
-		{ NM_ACCESS_POINT_HW_ADDRESS,  nm_object_demarshal_generic, &priv->hw_address },
-		{ NM_ACCESS_POINT_MODE,        nm_object_demarshal_generic, &priv->mode },
-		{ NM_ACCESS_POINT_MAX_BITRATE, nm_object_demarshal_generic, &priv->max_bitrate },
-		{ NM_ACCESS_POINT_STRENGTH,    nm_object_demarshal_generic, &priv->strength },
+		{ NM_ACCESS_POINT_FREQUENCY,   _nm_object_demarshal_generic, &priv->frequency },
+		{ NM_ACCESS_POINT_HW_ADDRESS,  _nm_object_demarshal_generic, &priv->hw_address },
+		{ NM_ACCESS_POINT_MODE,        _nm_object_demarshal_generic, &priv->mode },
+		{ NM_ACCESS_POINT_MAX_BITRATE, _nm_object_demarshal_generic, &priv->max_bitrate },
+		{ NM_ACCESS_POINT_STRENGTH,    _nm_object_demarshal_generic, &priv->strength },
 		{ NULL },
 	};
 
-	nm_object_handle_properties_changed (NM_OBJECT (ap),
+	_nm_object_handle_properties_changed (NM_OBJECT (ap),
 	                                     priv->proxy,
 	                                     property_changed_info);
 }

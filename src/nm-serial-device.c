@@ -1142,7 +1142,7 @@ nm_serial_device_class_init (NMSerialDeviceClass *klass)
 				    G_SIGNAL_RUN_FIRST,
 				    G_STRUCT_OFFSET (NMSerialDeviceClass, ppp_stats),
 				    NULL, NULL,
-				    nm_marshal_VOID__UINT_UINT,
+				    _nm_marshal_VOID__UINT_UINT,
 				    G_TYPE_NONE, 2,
 				    G_TYPE_UINT, G_TYPE_UINT);
 

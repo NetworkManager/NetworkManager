@@ -51,8 +51,8 @@ enum {
 };
 
 
-#define NM_CRYPTO_ERROR nm_crypto_error_quark ()
-GQuark nm_crypto_error_quark (void);
+#define NM_CRYPTO_ERROR _nm_crypto_error_quark ()
+GQuark _nm_crypto_error_quark (void);
 
 gboolean crypto_init (GError **error);
 

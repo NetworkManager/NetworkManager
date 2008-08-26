@@ -116,7 +116,7 @@ nm_dhcp_manager_class_init (NMDHCPManagerClass *manager_class)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMDHCPManagerClass, state_changed),
 					  NULL, NULL,
-					  nm_marshal_VOID__STRING_UCHAR,
+					  _nm_marshal_VOID__STRING_UCHAR,
 					  G_TYPE_NONE, 2,
 					  G_TYPE_STRING,
 					  G_TYPE_UCHAR);

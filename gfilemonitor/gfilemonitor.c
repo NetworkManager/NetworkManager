@@ -198,7 +198,7 @@ g_file_monitor_class_init (GFileMonitorClass *klass)
 		  G_SIGNAL_RUN_LAST,
 		  G_STRUCT_OFFSET (GFileMonitorClass, changed),
 		  NULL, NULL,
-		  nm_marshal_VOID__OBJECT_OBJECT_ENUM,
+		  _nm_marshal_VOID__OBJECT_OBJECT_ENUM,
 		  G_TYPE_NONE, 3,
 		  G_TYPE_FILE, G_TYPE_FILE, G_TYPE_FILE_MONITOR_EVENT);
 

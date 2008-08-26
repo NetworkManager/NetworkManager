@@ -873,7 +873,7 @@ nm_hal_manager_class_init (NMHalManagerClass *klass)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMHalManagerClass, udi_added),
 					  NULL, NULL,
-					  nm_marshal_VOID__STRING_STRING_POINTER,
+					  _nm_marshal_VOID__STRING_STRING_POINTER,
 					  G_TYPE_NONE, 3,
 					  G_TYPE_STRING, G_TYPE_STRING, G_TYPE_POINTER);
 

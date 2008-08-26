@@ -179,7 +179,7 @@ nm_supplicant_manager_class_init (NMSupplicantManagerClass *klass)
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMSupplicantManagerClass, state),
 		              NULL, NULL,
-		              nm_marshal_VOID__UINT_UINT,
+		              _nm_marshal_VOID__UINT_UINT,
 		              G_TYPE_NONE, 2, G_TYPE_UINT, G_TYPE_UINT);
 }
 

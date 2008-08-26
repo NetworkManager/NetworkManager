@@ -118,7 +118,7 @@ constructor (GType type,
 											 nm_object_get_path (NM_OBJECT (object)),
 											 NM_DBUS_INTERFACE_SERIAL_DEVICE);
 
-	dbus_g_object_register_marshaller (nm_marshal_VOID__UINT_UINT,
+	dbus_g_object_register_marshaller (_nm_marshal_VOID__UINT_UINT,
 	                                   G_TYPE_NONE,
 	                                   G_TYPE_UINT, G_TYPE_UINT,
 	                                   G_TYPE_INVALID);
@@ -181,7 +181,7 @@ nm_serial_device_class_init (NMSerialDeviceClass *device_class)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMSerialDeviceClass, ppp_stats),
 					  NULL, NULL,
-					  nm_marshal_VOID__UINT_UINT,
+					  _nm_marshal_VOID__UINT_UINT,
 					  G_TYPE_NONE, 2,
 					  G_TYPE_UINT, G_TYPE_UINT);
 }

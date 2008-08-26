@@ -285,7 +285,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_DNS,
-		 nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_DNS,
+		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_DNS,
 							   "DNS",
 							   "List of DNS servers",
 							   DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UCHAR,
@@ -293,7 +293,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_DNS_SEARCH,
-		 nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_DNS_SEARCH,
+		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_DNS_SEARCH,
 							   "DNS search",
 							   "List of DNS search domains",
 							   DBUS_TYPE_G_LIST_OF_STRING,
@@ -301,7 +301,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_ADDRESSES,
-		 nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_ADDRESSES,
+		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_ADDRESSES,
 							   "Addresses",
 							   "List of NMSettingIP6Addresses",
 							   DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,
@@ -309,7 +309,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_ROUTES,
-		 nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_ROUTES,
+		 _nm_param_spec_specialized (NM_SETTING_IP6_CONFIG_ROUTES,
 							   "Routes",
 							   "List of NMSettingIP6Addresses",
 							   DBUS_TYPE_G_ARRAY_OF_IP6_ADDRESS,

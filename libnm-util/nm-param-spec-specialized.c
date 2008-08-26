@@ -446,7 +446,7 @@ param_specialized_values_cmp (GParamSpec *pspec,
 }
 
 GType
-nm_param_spec_specialized_get_type (void)
+_nm_param_spec_specialized_get_type (void)
 {
 	static GType type;
 
@@ -468,7 +468,7 @@ nm_param_spec_specialized_get_type (void)
 }
 
 GParamSpec *
-nm_param_spec_specialized (const char *name,
+_nm_param_spec_specialized (const char *name,
 					  const char *nick,
 					  const char *blurb,
 					  GType specialized_type,

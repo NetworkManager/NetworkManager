@@ -46,7 +46,7 @@ demarshal_ip4_address_array (NMObject *object, GParamSpec *pspec, GValue *value,
 	priv->addresses = NULL;
 
 	priv->addresses = nm_utils_ip4_addresses_from_gvalue (value);
-	nm_object_queue_notify (object, NM_IP4_CONFIG_ADDRESSES);
+	_nm_object_queue_notify (object, NM_IP4_CONFIG_ADDRESSES);
 
 	return TRUE;
 }
@@ -54,21 +54,21 @@ demarshal_ip4_address_array (NMObject *object, GParamSpec *pspec, GValue *value,
 static gboolean
 demarshal_ip4_array (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
 {
-	if (!nm_uint_array_demarshal (value, (GArray **) field))
+	if (!_nm_uint_array_demarshal (value, (GArray **) field))
 		return FALSE;
 
 	if (!strcmp (pspec->name, NM_IP4_CONFIG_NAMESERVERS))
-		nm_object_queue_notify (object, NM_IP4_CONFIG_NAMESERVERS);
+		_nm_object_queue_notify (object, NM_IP4_CONFIG_NAMESERVERS);
 	return TRUE;
 }
 
 static gboolean
 demarshal_domains (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
 {
-	if (!nm_string_array_demarshal (value, (GPtrArray **) field))
+	if (!_nm_string_array_demarshal (value, (GPtrArray **) field))
 		return FALSE;
 
-	nm_object_queue_notify (object, NM_IP4_CONFIG_DOMAINS);
+	_nm_object_queue_notify (object, NM_IP4_CONFIG_DOMAINS);
 	return TRUE;
 }
 
@@ -82,7 +82,7 @@ demarshal_ip4_routes_array (NMObject *object, GParamSpec *pspec, GValue *value, 
 	priv->routes = NULL;
 
 	priv->routes = nm_utils_ip4_routes_from_gvalue (value);
-	nm_object_queue_notify (object, NM_IP4_CONFIG_ROUTES);
+	_nm_object_queue_notify (object, NM_IP4_CONFIG_ROUTES);
 
 	return TRUE;
 }
@@ -93,14 +93,14 @@ register_for_property_changed (NMIP4Config *config)
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 	const NMPropertiesChangedInfo property_changed_info[] = {
 		{ NM_IP4_CONFIG_ADDRESSES,   demarshal_ip4_address_array,  &priv->addresses },
-		{ NM_IP4_CONFIG_HOSTNAME,    nm_object_demarshal_generic,  &priv->hostname },
+		{ NM_IP4_CONFIG_HOSTNAME,    _nm_object_demarshal_generic,  &priv->hostname },
 		{ NM_IP4_CONFIG_NAMESERVERS, demarshal_ip4_array,          &priv->nameservers },
 		{ NM_IP4_CONFIG_DOMAINS,     demarshal_domains,            &priv->domains },
 		{ NM_IP4_CONFIG_ROUTES,      demarshal_ip4_routes_array,   &priv->routes },
 		{ NULL },
 	};
 
-	nm_object_handle_properties_changed (NM_OBJECT (config),
+	_nm_object_handle_properties_changed (NM_OBJECT (config),
 	                                     priv->proxy,
 	                                     property_changed_info);
 }
@@ -304,7 +304,7 @@ nm_ip4_config_get_addresses (NMIP4Config *config)
 	if (priv->addresses)
 		return priv->addresses;
 
-	if (!nm_object_get_property (NM_OBJECT (config),
+	if (!_nm_object_get_property (NM_OBJECT (config),
 	                             "org.freedesktop.DBus.Properties",
 	                             "Addresses",
 	                             &value)) {
@@ -335,7 +335,7 @@ nm_ip4_config_get_hostname (NMIP4Config *config)
 
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 	if (!priv->hostname) {
-		priv->hostname = nm_object_get_string_property (NM_OBJECT (config),
+		priv->hostname = _nm_object_get_string_property (NM_OBJECT (config),
 		                                                NM_DBUS_INTERFACE_IP4_CONFIG,
 		                                                "Hostname");
 	}
@@ -363,7 +363,7 @@ nm_ip4_config_get_nameservers (NMIP4Config *config)
 
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 	if (!priv->nameservers) {
-		if (nm_object_get_property (NM_OBJECT (config),
+		if (_nm_object_get_property (NM_OBJECT (config),
 		                            NM_DBUS_INTERFACE_IP4_CONFIG,
 		                            "Nameservers",
 		                            &value)) {
@@ -399,7 +399,7 @@ nm_ip4_config_get_domains (NMIP4Config *config)
 	if (priv->domains)
 		return handle_ptr_array_return (priv->domains);
 
-	if (nm_object_get_property (NM_OBJECT (config),
+	if (_nm_object_get_property (NM_OBJECT (config),
 								NM_DBUS_INTERFACE_IP4_CONFIG,
 								"Domains",
 								&value)) {
@@ -438,7 +438,7 @@ nm_ip4_config_get_routes (NMIP4Config *config)
 	if (priv->routes)
 		return priv->routes;
 
-	if (!nm_object_get_property (NM_OBJECT (config),
+	if (!_nm_object_get_property (NM_OBJECT (config),
 	                             "org.freedesktop.DBus.Properties",
 	                             "Routes",
 	                             &value)) {

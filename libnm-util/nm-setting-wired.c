@@ -250,7 +250,7 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
-		 nm_param_spec_specialized (NM_SETTING_WIRED_MAC_ADDRESS,
+		 _nm_param_spec_specialized (NM_SETTING_WIRED_MAC_ADDRESS,
 							   "MAC Address",
 							   "Harware address",
 							   DBUS_TYPE_G_UCHAR_ARRAY,

@@ -530,7 +530,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 	/* Properties */
 	g_object_class_install_property
 		(object_class, PROP_SSID,
-		 nm_param_spec_specialized (NM_SETTING_WIRELESS_SSID,
+		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_SSID,
 							   "SSID",
 							   "SSID",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
@@ -562,7 +562,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_BSSID,
-		 nm_param_spec_specialized (NM_SETTING_WIRELESS_BSSID,
+		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_BSSID,
 							   "BSSID",
 							   "BSSID",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
@@ -586,7 +586,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
-		 nm_param_spec_specialized (NM_SETTING_WIRELESS_MAC_ADDRESS,
+		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_MAC_ADDRESS,
 							   "MAC Address",
 							   "Harware address",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
@@ -594,7 +594,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_SEEN_BSSIDS,
-		 nm_param_spec_specialized (NM_SETTING_WIRELESS_SEEN_BSSIDS,
+		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_SEEN_BSSIDS,
 							   "Seen BSSIDS",
 							   "Seen BSSIDs",
 							   DBUS_TYPE_G_LIST_OF_STRING,

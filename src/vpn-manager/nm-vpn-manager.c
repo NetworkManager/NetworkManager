@@ -307,7 +307,7 @@ nm_vpn_manager_class_init (NMVPNManagerClass *manager_class)
 				    G_SIGNAL_RUN_FIRST,
 				    G_STRUCT_OFFSET (NMVPNManagerClass, connection_deactivated),
 				    NULL, NULL,
-				    nm_marshal_VOID__OBJECT_UINT_UINT,
+				    _nm_marshal_VOID__OBJECT_UINT_UINT,
 				    G_TYPE_NONE, 3,
 				    G_TYPE_OBJECT, G_TYPE_UINT, G_TYPE_UINT);
 

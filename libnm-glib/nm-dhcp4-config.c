@@ -49,7 +49,7 @@ demarshal_dhcp4_options (NMObject *object, GParamSpec *pspec, GValue *value, gpo
 	if (new_options)
 		g_hash_table_foreach (new_options, copy_options, priv->options);
 
-	nm_object_queue_notify (object, NM_DHCP4_CONFIG_OPTIONS);
+	_nm_object_queue_notify (object, NM_DHCP4_CONFIG_OPTIONS);
 	return TRUE;
 }
 
@@ -62,7 +62,7 @@ register_for_property_changed (NMDHCP4Config *config)
 		{ NULL },
 	};
 
-	nm_object_handle_properties_changed (NM_OBJECT (config),
+	_nm_object_handle_properties_changed (NM_OBJECT (config),
 	                                     priv->proxy,
 	                                     property_changed_info);
 }
@@ -190,7 +190,7 @@ nm_dhcp4_config_get_options (NMDHCP4Config *self)
 	if (g_hash_table_size (priv->options))
 		return priv->options;
 
-	if (!nm_object_get_property (NM_OBJECT (self),
+	if (!_nm_object_get_property (NM_OBJECT (self),
 	                             "org.freedesktop.DBus.Properties",
 	                             "Options",
 	                             &value))

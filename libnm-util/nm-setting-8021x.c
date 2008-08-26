@@ -767,7 +767,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	/* Properties */
 	g_object_class_install_property
 		(object_class, PROP_EAP,
-		 nm_param_spec_specialized (NM_SETTING_802_1X_EAP,
+		 _nm_param_spec_specialized (NM_SETTING_802_1X_EAP,
 							   "EAP",
 							   "EAP",
 							   DBUS_TYPE_G_LIST_OF_STRING,
@@ -791,7 +791,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_CA_CERT,
-		 nm_param_spec_specialized (NM_SETTING_802_1X_CA_CERT,
+		 _nm_param_spec_specialized (NM_SETTING_802_1X_CA_CERT,
 							   "CA certificate",
 							   "CA certificate",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
@@ -807,7 +807,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_CLIENT_CERT,
-		 nm_param_spec_specialized (NM_SETTING_802_1X_CLIENT_CERT,
+		 _nm_param_spec_specialized (NM_SETTING_802_1X_CLIENT_CERT,
 							   "Client certificate",
 							   "Client certificate",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
@@ -855,7 +855,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_CA_CERT,
-		 nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_CA_CERT,
+		 _nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_CA_CERT,
 							   "Phase2 CA certificate",
 							   "Phase2 CA certificate",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
@@ -871,7 +871,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_CLIENT_CERT,
-		 nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
+		 _nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
 							   "Phase2 client certificate",
 							   "Phase2 client certificate",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
@@ -887,7 +887,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_PRIVATE_KEY,
-		 nm_param_spec_specialized (NM_SETTING_802_1X_PRIVATE_KEY,
+		 _nm_param_spec_specialized (NM_SETTING_802_1X_PRIVATE_KEY,
 							   "Private key",
 							   "Private key",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
@@ -895,7 +895,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 
 	g_object_class_install_property
 		(object_class, PROP_PHASE2_PRIVATE_KEY,
-		 nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
+		 _nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
 							   "Phase2 private key",
 							   "Phase2 private key",
 							   DBUS_TYPE_G_UCHAR_ARRAY,

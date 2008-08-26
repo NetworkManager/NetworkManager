@@ -30,7 +30,7 @@
 #include "crypto.h"
 
 GQuark
-nm_crypto_error_quark (void)
+_nm_crypto_error_quark (void)
 {
 	static GQuark quark;
 

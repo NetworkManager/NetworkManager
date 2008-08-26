@@ -206,7 +206,7 @@ init_dbus (NMSystemConfigHalManager *manager, DBusGConnection *g_connection)
 	dbus_g_proxy_add_signal (priv->proxy, "DeviceRemoved", G_TYPE_STRING, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->proxy, "DeviceRemoved", G_CALLBACK (device_removed_cb), manager, NULL);
 
-	dbus_g_object_register_marshaller (nm_marshal_VOID__STRING_STRING,
+	dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_STRING,
 									   G_TYPE_NONE,
 									   G_TYPE_STRING, G_TYPE_STRING,
 									   G_TYPE_INVALID);
@@ -307,7 +307,7 @@ nm_system_config_hal_manager_class_init (NMSystemConfigHalManagerClass *manager_
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMSystemConfigHalManagerClass, device_added),
 					  NULL, NULL,
-					  nm_marshal_VOID__STRING_UINT,
+					  _nm_marshal_VOID__STRING_UINT,
 					  G_TYPE_NONE, 2,
 					  G_TYPE_STRING,
 					  G_TYPE_UINT);
@@ -318,7 +318,7 @@ nm_system_config_hal_manager_class_init (NMSystemConfigHalManagerClass *manager_
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMSystemConfigHalManagerClass, device_removed),
 					  NULL, NULL,
-					  nm_marshal_VOID__STRING_UINT,
+					  _nm_marshal_VOID__STRING_UINT,
 					  G_TYPE_NONE, 2,
 					  G_TYPE_STRING,
 					  G_TYPE_UINT);

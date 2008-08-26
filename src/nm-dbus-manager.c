@@ -98,7 +98,7 @@ nm_dbus_manager_class_init (NMDBusManagerClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMDBusManagerClass, dbus_connection_changed),
-		              NULL, NULL, nm_marshal_VOID__POINTER,
+		              NULL, NULL, _nm_marshal_VOID__POINTER,
 		              G_TYPE_NONE, 1, G_TYPE_POINTER);
 
 	nm_dbus_manager_signals[NAME_OWNER_CHANGED] =
@@ -106,7 +106,7 @@ nm_dbus_manager_class_init (NMDBusManagerClass *klass)
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
 		              G_STRUCT_OFFSET (NMDBusManagerClass, name_owner_changed),
-		              NULL, NULL, nm_marshal_VOID__STRING_STRING_STRING,
+		              NULL, NULL, _nm_marshal_VOID__STRING_STRING_STRING,
 		              G_TYPE_NONE, 3, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING);
 
 	g_type_class_add_private (klass, sizeof (NMDBusManagerPrivate));

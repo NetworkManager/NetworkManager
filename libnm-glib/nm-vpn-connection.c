@@ -72,7 +72,7 @@ nm_vpn_connection_get_banner (NMVPNConnection *vpn)
 		return NULL;
 
 	if (!priv->banner) {
-		priv->banner = nm_object_get_string_property (NM_OBJECT (vpn),
+		priv->banner = _nm_object_get_string_property (NM_OBJECT (vpn),
 		                                              NM_DBUS_INTERFACE_VPN_CONNECTION,
 		                                              "Banner");
 		if (priv->banner && !strlen (priv->banner)) {
@@ -92,7 +92,7 @@ nm_vpn_connection_get_vpn_state (NMVPNConnection *vpn)
 
 	priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn);
 	if (priv->vpn_state == NM_VPN_CONNECTION_STATE_UNKNOWN) {
-		priv->vpn_state = nm_object_get_uint_property (NM_OBJECT (vpn),
+		priv->vpn_state = _nm_object_get_uint_property (NM_OBJECT (vpn),
 		                                           NM_DBUS_INTERFACE_VPN_CONNECTION,
 		                                           "VpnState");
 	}
@@ -145,7 +145,7 @@ constructor (GType type,
 									 nm_object_get_path (object),
 									 NM_DBUS_INTERFACE_VPN_CONNECTION);
 
-	dbus_g_object_register_marshaller (nm_marshal_VOID__UINT_UINT,
+	dbus_g_object_register_marshaller (_nm_marshal_VOID__UINT_UINT,
 	                                   G_TYPE_NONE,
 	                                   G_TYPE_UINT, G_TYPE_UINT,
 	                                   G_TYPE_INVALID);
@@ -189,7 +189,7 @@ nm_vpn_connection_class_init (NMVPNConnectionClass *connection_class)
 				    G_SIGNAL_RUN_FIRST,
 				    G_STRUCT_OFFSET (NMVPNConnectionClass, vpn_state_changed),
 				    NULL, NULL,
-				    nm_marshal_VOID__UINT_UINT,
+				    _nm_marshal_VOID__UINT_UINT,
 				    G_TYPE_NONE, 2,
 				    G_TYPE_UINT, G_TYPE_UINT);
 }

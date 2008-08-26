@@ -556,7 +556,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 
 	g_object_class_install_property
 		(object_class, PROP_PROTO,
-		 nm_param_spec_specialized (NM_SETTING_WIRELESS_SECURITY_PROTO,
+		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_SECURITY_PROTO,
 							   "Proto",
 							   "Proto",
 							   DBUS_TYPE_G_LIST_OF_STRING,
@@ -564,7 +564,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 
 	g_object_class_install_property
 		(object_class, PROP_PAIRWISE,
-		 nm_param_spec_specialized (NM_SETTING_WIRELESS_SECURITY_PAIRWISE,
+		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_SECURITY_PAIRWISE,
 							   "Pairwise",
 							   "Pairwise",
 							   DBUS_TYPE_G_LIST_OF_STRING,
@@ -572,7 +572,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 
 	g_object_class_install_property
 		(object_class, PROP_GROUP,
-		 nm_param_spec_specialized (NM_SETTING_WIRELESS_SECURITY_GROUP,
+		 _nm_param_spec_specialized (NM_SETTING_WIRELESS_SECURITY_GROUP,
 							   "Group",
 							   "Group",
 							   DBUS_TYPE_G_LIST_OF_STRING,
