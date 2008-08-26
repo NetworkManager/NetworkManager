@@ -29,17 +29,23 @@
 
 #include "crypto.h"
 
+static guint32 refcount = 0;
+
 gboolean
 crypto_init (GError **error)
 {
-	gnutls_global_init();
+	if (refcount == 0)
+		gnutls_global_init();
+	refcount++;
 	return TRUE;
 }
 
 void
 crypto_deinit (void)
 {
-	gnutls_global_deinit();
+	refcount--;
+	if (refcount == 0)
+		gnutls_global_deinit();
 }
 
 gboolean
@@ -59,8 +65,9 @@ crypto_md5_hash (const char *salt,
 	char digest[MD5_HASH_LEN];
 	char *p = buffer;
 
-	g_return_val_if_fail (salt != NULL, FALSE);
-	g_return_val_if_fail (salt_len >= 8, FALSE);
+	if (salt)
+		g_return_val_if_fail (salt_len >= 8, FALSE);
+
 	g_return_val_if_fail (password != NULL, FALSE);
 	g_return_val_if_fail (password_len > 0, FALSE);
 	g_return_val_if_fail (buffer != NULL, FALSE);
@@ -81,7 +88,8 @@ crypto_md5_hash (const char *salt,
 		if (count++)
 			gcry_md_write (ctx, digest, digest_len);
 		gcry_md_write (ctx, password, password_len);
-		gcry_md_write (ctx, salt, 8); /* Only use 8 bytes of salt */
+		if (salt)
+			gcry_md_write (ctx, salt, 8); /* Only use 8 bytes of salt */
 		gcry_md_final (ctx);
 		memcpy (digest, gcry_md_read (ctx, 0), digest_len);
 		gcry_md_reset (ctx);

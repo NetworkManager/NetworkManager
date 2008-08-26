@@ -32,20 +32,27 @@
 
 #include "crypto.h"
 
+static guint32 refcount = 0;
 
 gboolean
 crypto_init (GError **error)
 {
-	PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 1);
-	NSS_NoDB_Init (NULL);
+	if (refcount == 0) {
+		PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 1);
+		NSS_NoDB_Init (NULL);
+	}
+	refcount++;
 	return TRUE;
 }
 
 void
 crypto_deinit (void)
 {
-	NSS_Shutdown ();
-	PR_Cleanup ();
+	refcount--;
+	if (refcount == 0) {
+		NSS_Shutdown ();
+		PR_Cleanup ();
+	}
 }
 
 gboolean
@@ -64,8 +71,9 @@ crypto_md5_hash (const char *salt,
 	char digest[MD5_HASH_LEN];
 	char *p = buffer;
 
-	g_return_val_if_fail (salt != NULL, FALSE);
-	g_return_val_if_fail (salt_len >= 8, FALSE);
+	if (salt)
+		g_return_val_if_fail (salt_len >= 8, FALSE);
+
 	g_return_val_if_fail (password != NULL, FALSE);
 	g_return_val_if_fail (password_len > 0, FALSE);
 	g_return_val_if_fail (buffer != NULL, FALSE);
@@ -87,7 +95,8 @@ crypto_md5_hash (const char *salt,
 		if (count++)
 			PK11_DigestOp (ctx, (const unsigned char *) digest, digest_len);
 		PK11_DigestOp (ctx, (const unsigned char *) password, password_len);
-		PK11_DigestOp (ctx, (const unsigned char *) salt, 8); /* Only use 8 bytes of salt */
+		if (salt)
+			PK11_DigestOp (ctx, (const unsigned char *) salt, 8); /* Only use 8 bytes of salt */
 		PK11_DigestFinal (ctx, (unsigned char *) digest, &digest_len, sizeof (digest));
 
 		while (nkey && (i < digest_len)) {

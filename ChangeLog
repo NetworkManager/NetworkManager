@@ -1,3 +1,10 @@
+2008-08-25  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/crypto_gnutls.c
+	  libnm-util/crypto_nss.c
+		- (crypto_init, crypto_deinit): refcount init/deinit
+		- (crypto_md5_hash): allow NULL salt
+
 2008-08-22  Michael Biebl  <mbiebl@gmail.com>
 
 	* libnm-glib/Makefile.am
