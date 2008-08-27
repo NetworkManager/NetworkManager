@@ -1,3 +1,10 @@
+2008-08-26  Dan Williams  <dcbw@redhat.com>
+
+	* auth-dialog/main.c
+		- Convert to connection UUIDs (requires NM svn 4013 or later)
+		- General cleanups
+		- Store secrets in the keyring the same way the pptp and vpnc plugins do
+
 2008-08-22  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-openvpn-service-openvpn-helper.c
