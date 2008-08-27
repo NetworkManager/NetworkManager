@@ -81,7 +81,6 @@ global:
 	nm_dhcp4_config_new;
 	nm_exported_connection_delete;
 	nm_exported_connection_get_connection;
-	nm_exported_connection_get_id;
 	nm_exported_connection_get_type;
 	nm_exported_connection_new;
 	nm_exported_connection_register_object;
