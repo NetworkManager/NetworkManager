@@ -1,4 +1,4 @@
-/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
 #include <string.h>
 #include <glib/gstdio.h>
@@ -31,8 +31,8 @@ nm_keyfile_connection_new (const char *filename)
 	g_return_val_if_fail (filename != NULL, NULL);
 
 	return (NMKeyfileConnection *) g_object_new (NM_TYPE_KEYFILE_CONNECTION,
-										NM_KEYFILE_CONNECTION_FILENAME, filename,
-										NULL);
+	                                             NM_KEYFILE_CONNECTION_FILENAME, filename,
+	                                             NULL);
 }
 
 const char *
@@ -51,14 +51,26 @@ get_settings (NMExportedConnection *exported)
 
 static gboolean
 update (NMExportedConnection *exported,
-	   GHashTable *new_settings,
-	   GError **error)
+        GHashTable *new_settings,
+        GError **error)
 {
+	NMKeyfileConnectionPrivate *priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (exported);
 	gboolean success;
 
 	success = NM_EXPORTED_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->update (exported, new_settings, error);
-	if (success)
-		success = write_connection (nm_exported_connection_get_connection (exported), error);
+	if (success) {
+		NMConnection *connection;
+		char *filename = NULL;
+
+		connection = nm_exported_connection_get_connection (exported);
+		success = write_connection (connection, &filename, error);
+		if (success && filename && strcmp (priv->filename, filename)) {
+			/* Update the filename if it changed */
+			g_free (priv->filename);
+			priv->filename = filename;
+		} else
+			g_free (filename);
+	}
 
 	return success;
 }
@@ -116,7 +128,7 @@ constructor (GType type,
 		GError *error = NULL;
 
 		s_con->uuid = nm_utils_uuid_generate ();
-		if (!write_connection (wrapped, &error)) {
+		if (!write_connection (wrapped, NULL, &error)) {
 			g_warning ("Couldn't update connection %s with a UUID: (%d) %s",
 			           s_con->id, error ? error->code : 0,
 			           error ? error->message : "unknown");

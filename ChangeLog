@@ -1,5 +1,19 @@
 2008-08-26  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/plugins/keyfile/nm-keyfile-connection.c
+		- (update): Update filename of the connection if the connection id
+			was changed
+
+	* system-settings/plugins/keyfile/plugin.c
+		- (dir_changed): first pass at handling connection renames correctly
+
+	* system-settings/plugins/keyfile/writer.c
+	  system-settings/plugins/keyfile/writer.h
+		- (write_connection): replace '/' with '*' when writing out the filename
+			from the connection id
+
+2008-08-26  Dan Williams  <dcbw@redhat.com>
+
 	Add connection UUIDs, since connection names can be changed, and since
 	old-style connection IDs could change over the life of the connection.  The
 	UUID should be assigned at connection creation time, be stable for a given

@@ -263,15 +263,38 @@ write_setting_value (NMSetting *setting,
 	}
 }
 
+char *
+writer_id_to_filename (const char *id)
+{
+	char *filename, *f;
+	const char *i = id;
+
+	f = filename = g_malloc0 (strlen (id) + 1);
+
+	/* Convert '/' to '*' */
+	while (*i) {
+		if (*i == '/')
+			*f++ = '*';
+		else
+			*f++ = *i;
+		i++;
+	}
+
+	return filename;
+}
+
 gboolean
-write_connection (NMConnection *connection, GError **error)
+write_connection (NMConnection *connection, char **out_path, GError **error)
 {
 	NMSettingConnection *s_con;
 	GKeyFile *key_file;
 	char *data;
 	gsize len;
 	gboolean success = FALSE;
-	GError *err = NULL;
+	char *filename, *path;
+
+	if (out_path)
+		g_return_val_if_fail (*out_path == NULL, FALSE);
 
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	if (!s_con)
@@ -279,30 +302,28 @@ write_connection (NMConnection *connection, GError **error)
 
 	key_file = g_key_file_new ();
 	nm_connection_for_each_setting_value (connection, write_setting_value, key_file);
-	data = g_key_file_to_data (key_file, &len, &err);
+	data = g_key_file_to_data (key_file, &len, error);
+	if (!data)
+		goto out;
 
-	if (!err) {
-		char *filename;
+	filename = writer_id_to_filename (s_con->id);
+	path = g_build_filename (KEYFILE_DIR, filename, NULL);
+	g_free (filename);
 
-		filename = g_build_filename (KEYFILE_DIR, s_con->id, NULL);
-		g_file_set_contents (filename, data, len, &err);
-		chmod (filename, S_IRUSR | S_IWUSR);
-		if (chown (filename, 0, 0) < 0) {
-			g_warning ("Error chowning '%s': %d", filename, errno);
-			unlink (filename);
-		} else
-			success = TRUE;
-
-		g_free (filename);
+	g_file_set_contents (path, data, len, error);
+	chmod (path, S_IRUSR | S_IWUSR);
+	if (chown (path, 0, 0) < 0) {
+		g_warning ("Error chowning '%s': %d", path, errno);
+		unlink (path);
+	} else {
+		if (out_path)
+			*out_path = g_strdup (path);
+		success = TRUE;
 	}
+	g_free (path);
 
-	if (err) {
-		g_warning ("Error while saving connection: %s", err->message);
-		g_error_free (err);
-	}
-
+out:
 	g_free (data);
 	g_key_file_free (key_file);
-
 	return success;
 }

@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <string.h>
 #include <gmodule.h>
 #include <glib.h>
 #include <glib/gstdio.h>
@@ -42,25 +43,10 @@ typedef struct {
 	gboolean disposed;
 } SCPluginKeyfilePrivate;
 
-static NMKeyfileConnection *
-read_one_connection (NMSystemConfigInterface *config, const char *filename)
-{
-	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (config);
-	NMKeyfileConnection *connection;
-
-	connection = nm_keyfile_connection_new (filename);
-	if (connection) {
-		g_hash_table_insert (priv->hash,
-						 (gpointer) nm_keyfile_connection_get_filename (connection),
-						 g_object_ref (connection));
-	}
-
-	return connection;
-}
-
 static void
 read_connections (NMSystemConfigInterface *config)
 {
+	SCPluginKeyfilePrivate *priv = SC_PLUGIN_KEYFILE_GET_PRIVATE (config);
 	GDir *dir;
 	GError *err = NULL;
 
@@ -69,10 +55,16 @@ read_connections (NMSystemConfigInterface *config)
 		const char *item;
 
 		while ((item = g_dir_read_name (dir))) {
+			NMKeyfileConnection *connection;
 			char *full_path;
 
 			full_path = g_build_filename (KEYFILE_DIR, item, NULL);
-			read_one_connection (config, full_path);
+			connection = nm_keyfile_connection_new (full_path);
+			if (connection) {
+				g_hash_table_insert (priv->hash,
+				                     (gpointer) nm_keyfile_connection_get_filename (connection),
+				                     connection);
+			}
 			g_free (full_path);
 		}
 
@@ -81,6 +73,45 @@ read_connections (NMSystemConfigInterface *config)
 		g_warning ("Can not read directory '%s': %s", KEYFILE_DIR, err->message);
 		g_error_free (err);
 	}
+}
+
+typedef struct {
+	const char *uuid;
+	NMKeyfileConnection *found;
+} FindByUUIDInfo;
+
+static void
+find_by_uuid (gpointer key, gpointer data, gpointer user_data)
+{
+	NMKeyfileConnection *keyfile = NM_KEYFILE_CONNECTION (key);
+	FindByUUIDInfo *info = user_data;
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+
+	if (info->found)
+		return;
+
+	connection = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (keyfile));
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	if (s_con && s_con->uuid) {
+		if (!strcmp (info->uuid, s_con->uuid))
+			info->found = keyfile;
+	}
+}
+
+static gboolean
+update_connection_settings (NMExportedConnection *orig,
+                            NMExportedConnection *new,
+                            GError **error)
+{
+	GHashTable *settings;
+	gboolean success;
+
+	settings = nm_connection_to_hash (nm_exported_connection_get_connection (new));
+	success = nm_exported_connection_update (orig, settings, error);
+	g_hash_table_destroy (settings);
+
+	return success;
 }
 
 /* Monitoring */
@@ -103,8 +134,11 @@ dir_changed (GFileMonitor *monitor,
 	switch (event_type) {
 	case G_FILE_MONITOR_EVENT_DELETED:
 		if (connection) {
+			/* Removing from the hash table should drop the last reference */
+			g_object_ref (connection);
 			g_hash_table_remove (priv->hash, name);
 			nm_exported_connection_signal_removed (NM_EXPORTED_CONNECTION (connection));
+			g_object_unref (connection);
 		}
 		break;
 	case G_FILE_MONITOR_EVENT_CREATED:
@@ -115,18 +149,75 @@ dir_changed (GFileMonitor *monitor,
 
 			tmp = (NMExportedConnection *) nm_keyfile_connection_new (name);
 			if (tmp) {
-				GHashTable *settings;
+				GError *error = NULL;
 
-				settings = nm_connection_to_hash (nm_exported_connection_get_connection (tmp));
-				nm_exported_connection_update (NM_EXPORTED_CONNECTION (connection), settings, NULL);
-				g_hash_table_destroy (settings);
+				if (!update_connection_settings (NM_EXPORTED_CONNECTION (connection), tmp, &error)) {
+					g_warning ("%s: couldn't update connection settings: (%d) %s",
+					           __func__, error ? error->code : 0,
+					           error ? error->message : "unknown");
+					g_error_free (error);
+				}
 				g_object_unref (tmp);
 			}
 		} else {
 			/* New */
-			connection = read_one_connection (config, name);
-			if (connection)
-				g_signal_emit_by_name (config, "connection-added", connection);
+			connection = nm_keyfile_connection_new (name);
+			if (connection) {
+				NMConnection *tmp;
+				NMSettingConnection *s_con;
+				NMKeyfileConnection *found = NULL;
+
+				/* Connection renames will show up as different files but with
+				 * the same UUID.  Try to find the original connection.
+				 */
+				tmp = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (connection));
+				s_con = (NMSettingConnection *) nm_connection_get_setting (tmp, NM_TYPE_SETTING_CONNECTION);
+				if (s_con && s_con->uuid) {
+					FindByUUIDInfo info = { .found = NULL, .uuid = s_con->uuid };
+
+					g_hash_table_foreach (priv->hash, find_by_uuid, &info);
+					found = info.found;
+				}
+
+				/* A connection rename is treated just like an update except
+				 * there's a bit more housekeeping with the hash table.
+				 */
+				if (found) {
+					const char *old_filename = nm_keyfile_connection_get_filename (connection);
+					GError *error = NULL;
+
+					/* Removing from the hash table should drop the last reference,
+					 * but of course we want to keep the connection around.
+					 */
+					g_object_ref (found);
+					g_hash_table_remove (priv->hash, old_filename);
+
+					/* Updating settings should update the NMKeyfileConnection's
+					 * filename property too.
+					 */
+					if (!update_connection_settings (NM_EXPORTED_CONNECTION (found),
+					                                 NM_EXPORTED_CONNECTION (connection),
+					                                 &error)) {
+						g_warning ("%s: couldn't update connection settings: (%d) %s",
+						           __func__, error ? error->code : 0,
+						           error ? error->message : "unknown");
+						g_error_free (error);
+					}
+
+					/* Re-insert the connection back into the hash with the new filename */
+					g_hash_table_insert (priv->hash,
+					                     (gpointer) nm_keyfile_connection_get_filename (found),
+					                     found);
+
+					/* Get rid of the temporary connection */
+					g_object_unref (connection);
+				} else {
+					g_hash_table_insert (priv->hash,
+					                     (gpointer) nm_keyfile_connection_get_filename (connection),
+					                     connection);
+					g_signal_emit_by_name (config, "connection-added", connection);
+				}
+			}
 		}
 		break;
 	default:
@@ -186,7 +277,7 @@ add_connection (NMSystemConfigInterface *config,
                 NMConnection *connection,
                 GError **error)
 {
-	return write_connection (connection, error);
+	return write_connection (connection, NULL, error);
 }
 
 /* GObject */
