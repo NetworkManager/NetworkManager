@@ -102,8 +102,6 @@ gboolean       nm_dhcp_manager_set_dhcp4_config     (NMDHCPManager *manager,
 gboolean       nm_dhcp_manager_process_signal       (NMDHCPManager *manager, DBusMessage *message);
 
 gboolean       nm_dhcp_client_start                 (NMDHCPDevice *device, NMSettingIP4Config *s_ip4);
-void           nm_dhcp_client_stop                  (const char * iface,
-						     pid_t pid,
-						     gboolean blocking);
+void           nm_dhcp_client_stop                  (const char *iface, pid_t pid);
 
 #endif /* NM_DHCP_MANAGER_H */

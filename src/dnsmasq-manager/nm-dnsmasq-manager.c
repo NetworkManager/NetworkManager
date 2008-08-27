@@ -216,9 +216,6 @@ dm_watch_cb (GPid pid, gint status, gpointer user_data)
 	else
 		g_warning ("dnsmasq died from an unknown cause");
   
-	/* Reap child if needed. */
-	waitpid (pid, NULL, WNOHANG);
-
 	priv->pid = 0;
 
 	g_signal_emit (manager, signals[STATE_CHANGED], 0, NM_DNSMASQ_STATUS_DEAD);
@@ -411,8 +408,10 @@ ensure_killed (gpointer data)
 	if (kill (pid, 0) == 0)
 		kill (pid, SIGKILL);
 
-	/* ensure child is reaped */
-	waitpid (pid, NULL, WNOHANG);
+	/* ensure the child is reaped */
+	nm_debug ("waiting for ppp pid %d to exit", pid);
+	waitpid (pid, NULL, 0);
+	nm_debug ("ppp pid %d cleaned up", pid);
 
 	return FALSE;
 }
@@ -434,11 +433,15 @@ nm_dnsmasq_manager_stop (NMDnsMasqManager *manager)
 	if (priv->pid) {
 		if (kill (priv->pid, SIGTERM) == 0)
 			g_timeout_add (2000, ensure_killed, GINT_TO_POINTER (priv->pid));
-		else
+		else {
 			kill (priv->pid, SIGKILL);
 
-		/* ensure child is reaped */
-		waitpid (priv->pid, NULL, WNOHANG);
+			/* ensure the child is reaped */
+			nm_debug ("waiting for ppp pid %d to exit", priv->pid);
+			waitpid (priv->pid, NULL, 0);
+			nm_debug ("ppp pid %d cleaned up", priv->pid);
+		}
+
 		priv->pid = 0;
 	}
 

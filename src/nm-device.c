@@ -563,8 +563,12 @@ aipd_cleanup (NMDevice *self)
 
 	if (priv->aipd_pid > 0) {
 		kill (priv->aipd_pid, SIGKILL);
-		/* Ensure child is reaped */
-		waitpid (priv->aipd_pid, NULL, WNOHANG);
+
+		/* ensure the child is reaped */
+		nm_debug ("waiting for ppp pid %d to exit", priv->aipd_pid);
+		waitpid (priv->aipd_pid, NULL, 0);
+		nm_debug ("ppp pid %d cleaned up", priv->aipd_pid);
+
 		priv->aipd_pid = -1;
 	}
 

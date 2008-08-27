@@ -663,6 +663,8 @@ ppp_watch_cb (GPid pid, gint status, gpointer user_data)
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
 	guint err;
 
+	g_assert (pid == priv->pid);
+
 	if (WIFEXITED (status)) {
 		err = WEXITSTATUS (status);
 		if (err != 0)
@@ -673,13 +675,9 @@ ppp_watch_cb (GPid pid, gint status, gpointer user_data)
 		nm_warning ("ppp pid %d died with signal %d", priv->pid, WTERMSIG (status));
 	else
 		nm_warning ("ppp pid %d died from an unknown cause", priv->pid);
-  
-	/* Reap child if needed. */
+
 	nm_debug ("ppp pid %d cleaned up", priv->pid);
-	waitpid (pid, NULL, WNOHANG);
-
 	priv->pid = 0;
-
 	g_signal_emit (manager, signals[STATE_CHANGED], 0, NM_PPP_STATUS_DEAD);
 }
 
@@ -949,7 +947,8 @@ ensure_killed (gpointer data)
 		kill (pid, SIGKILL);
 
 	/* ensure the child is reaped */
-	waitpid (pid, NULL, WNOHANG);
+	nm_debug ("waiting for ppp pid %d to exit", pid);
+	waitpid (pid, NULL, 0);
 	nm_debug ("ppp pid %d cleaned up", pid);
 
 	return FALSE;
@@ -991,8 +990,10 @@ nm_ppp_manager_stop (NMPPPManager *manager)
 			g_timeout_add (2000, ensure_killed, GINT_TO_POINTER (priv->pid));
 		else {
 			kill (priv->pid, SIGKILL);
+
 			/* ensure the child is reaped */
-			waitpid (priv->pid, NULL, WNOHANG);
+			nm_debug ("waiting for ppp pid %d to exit", priv->pid);
+			waitpid (priv->pid, NULL, 0);
 			nm_debug ("ppp pid %d cleaned up", priv->pid);
 		}
 

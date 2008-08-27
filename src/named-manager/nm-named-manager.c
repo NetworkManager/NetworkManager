@@ -129,25 +129,18 @@ netconfig_child_setup (gpointer user_data G_GNUC_UNUSED)
 static gint
 run_netconfig (GError **error)
 {
-	GPtrArray *argv;
+	char *argv[5];
 	gint stdin_fd;
 
-	argv = g_ptr_array_new ();
-	g_ptr_array_add (argv, "/sbin/netconfig");
-	g_ptr_array_add (argv, "modify");
-	g_ptr_array_add (argv, "--service");
-	g_ptr_array_add (argv, "NetworkManager");
-	g_ptr_array_add (argv, NULL);
+	argv[0] = "/sbin/netconfig";
+	argv[1] = "modify";
+	argv[2] = "--service";
+	argv[3] = "NetworkManager";
+	argv[4] = NULL;
 
-	if (!g_spawn_async_with_pipes (NULL, (char **) argv->pdata, NULL,
-							 G_SPAWN_DO_NOT_REAP_CHILD,
-							 netconfig_child_setup,
-							 NULL, NULL, &stdin_fd,
-							 NULL, NULL, error)) {
-		stdin_fd = -1;
-	}
-
-	g_ptr_array_free (argv, TRUE);
+	if (!g_spawn_async_with_pipes (NULL, argv, NULL, 0, netconfig_child_setup,
+	                               NULL, NULL, &stdin_fd, NULL, NULL, error))
+		return -1;
 
 	return stdin_fd;
 }

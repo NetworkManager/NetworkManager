@@ -236,7 +236,7 @@ nm_dhcp_client_start (NMDHCPDevice *device, NMSettingIP4Config *s_ip4)
 		unsigned long int tmp = strtoul (pid_contents, NULL, 10);
 
 		if (!((tmp == ULONG_MAX) && (errno == ERANGE)))
-			nm_dhcp_client_stop (device->iface, (pid_t) tmp, TRUE);
+			nm_dhcp_client_stop (device->iface, (pid_t) tmp);
 		remove (device->pid_file);
 	}
 
@@ -260,7 +260,7 @@ nm_dhcp_client_start (NMDHCPDevice *device, NMSettingIP4Config *s_ip4)
 	g_ptr_array_add (dhclient_argv, (gpointer) device->iface);
 	g_ptr_array_add (dhclient_argv, NULL);
 
-	if (!g_spawn_async (NULL, (char **) dhclient_argv->pdata, NULL, 0,
+	if (!g_spawn_async (NULL, (char **) dhclient_argv->pdata, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
 	                    &dhclient_child_setup, NULL, &pid, &error)) {
 		nm_warning ("dhclient failed to start.  error: '%s'", error->message);
 		g_error_free (error);

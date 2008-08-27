@@ -45,6 +45,7 @@ typedef struct {
 	GPid pid;
 	GSList *connections;
 	guint service_start_timeout;
+	guint service_child_watch;
 	gulong name_owner_id;
 } NMVPNServicePrivate;
 
@@ -207,9 +208,8 @@ vpn_service_watch_cb (GPid pid, gint status, gpointer user_data)
 		nm_warning ("VPN service '%s' died from an unknown cause", 
 				  nm_vpn_service_get_name (service));
 
-	/* Reap child if needed. */
-	waitpid (pid, NULL, WNOHANG);
 	priv->pid = 0;
+	priv->service_child_watch = 0;
 
 	nm_vpn_service_connections_stop (service, TRUE, NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
 }
@@ -232,8 +232,7 @@ static gboolean
 nm_vpn_service_daemon_exec (NMVPNService *service, GError **error)
 {
 	NMVPNServicePrivate *priv = NM_VPN_SERVICE_GET_PRIVATE (service);
-	GPtrArray *vpn_argv;
-	gboolean launched;
+	char *vpn_argv[2];
 	gboolean success = FALSE;
 	GError *spawn_error = NULL;
 
@@ -241,43 +240,29 @@ nm_vpn_service_daemon_exec (NMVPNService *service, GError **error)
 	g_return_val_if_fail (error != NULL, FALSE);
 	g_return_val_if_fail (*error == NULL, FALSE);
 
-	vpn_argv = g_ptr_array_new ();
-	g_ptr_array_add (vpn_argv, priv->program);
-	g_ptr_array_add (vpn_argv, NULL);
+	vpn_argv[0] = priv->program;
+	vpn_argv[1] = NULL;
 
-	launched = g_spawn_async (NULL,
-	                          (char **) vpn_argv->pdata,
-	                          NULL,
-	                          0,
-	                          nm_vpn_service_child_setup,
-	                          NULL,
-	                          &priv->pid,
-	                          &spawn_error);
-	g_ptr_array_free (vpn_argv, TRUE);
-
-	if (launched) {
-		GSource *vpn_watch;
-
-		vpn_watch = g_child_watch_source_new (priv->pid);
-		g_source_set_callback (vpn_watch, (GSourceFunc) vpn_service_watch_cb, service, NULL);
-		g_source_attach (vpn_watch, NULL);
-		g_source_unref (vpn_watch);
-
+	success = g_spawn_async (NULL, vpn_argv, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
+	                         nm_vpn_service_child_setup, NULL, &priv->pid,
+	                         &spawn_error);
+	if (success) {
 		nm_info ("VPN service '%s' started (%s), PID %d", 
 		         nm_vpn_service_get_name (service), priv->dbus_service, priv->pid);
 
+		priv->service_child_watch = g_child_watch_add (priv->pid, vpn_service_watch_cb, service);
 		priv->service_start_timeout = g_timeout_add (5000, nm_vpn_service_timeout, service);
-		success = TRUE;
 	} else {
 		nm_warning ("VPN service '%s': could not launch the VPN service. error: (%d) %s.",
 		            nm_vpn_service_get_name (service), spawn_error->code, spawn_error->message);
 
 		g_set_error (error,
 		             NM_VPN_MANAGER_ERROR, NM_VPN_MANAGER_ERROR_SERVICE_START_FAILED,
-		             "%s", spawn_error->message);
+		             "%s", spawn_error ? spawn_error->message : "unknown g_spawn_async() error");
 
 		nm_vpn_service_connections_stop (service, TRUE, NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_FAILED);
-		g_error_free (spawn_error);
+		if (spawn_error)
+			g_error_free (spawn_error);
 	}
 
 	return success;
@@ -418,6 +403,22 @@ nm_vpn_service_init (NMVPNService *service)
 									service);
 }
 
+static gboolean
+ensure_killed (gpointer data)
+{
+	int pid = GPOINTER_TO_INT (data);
+
+	if (kill (pid, 0) == 0)
+		kill (pid, SIGKILL);
+
+	/* ensure the child is reaped */
+	nm_debug ("waiting for vpn service pid %d to exit", pid);
+	waitpid (pid, NULL, 0);
+	nm_debug ("vpn service pid %d cleaned up", pid);
+
+	return FALSE;
+}
+
 static void
 finalize (GObject *object)
 {
@@ -431,6 +432,25 @@ finalize (GObject *object)
 	                                 NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
 
 	g_signal_handler_disconnect (priv->dbus_mgr, priv->name_owner_id);
+
+	if (priv->service_child_watch)
+		g_source_remove (priv->service_child_watch);
+
+	if (priv->pid) {
+		if (kill (priv->pid, SIGTERM) == 0)
+			g_timeout_add (2000, ensure_killed, GINT_TO_POINTER (priv->pid));
+		else {
+			kill (priv->pid, SIGKILL);
+
+			/* ensure the child is reaped */
+			nm_debug ("waiting for vpn service pid %d to exit", priv->pid);
+			waitpid (priv->pid, NULL, 0);
+			nm_debug ("vpn service pid %d cleaned up", priv->pid);
+		}
+
+		priv->pid = 0;
+	}
+
 	g_object_unref (priv->dbus_mgr);
 
 	g_free (priv->name);

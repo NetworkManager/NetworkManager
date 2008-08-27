@@ -68,7 +68,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 static NMDHCPManager *nm_dhcp_manager_new (void);
 
-static void nm_dhcp_manager_cancel_transaction_real (NMDHCPDevice *device, gboolean blocking);
+static void nm_dhcp_manager_cancel_transaction_real (NMDHCPDevice *device);
 
 NMDHCPManager *
 nm_dhcp_manager_get (void)
@@ -170,6 +170,9 @@ nm_dhcp_device_destroy (NMDHCPDevice *device)
 
 	nm_dhcp_device_timeout_cleanup (device);
 	nm_dhcp_device_watch_cleanup (device);
+
+	if (device->pid)
+		nm_dhcp_client_stop (device->iface, device->pid);
 
 	if (device->options)
 		g_hash_table_destroy (device->options);
@@ -525,8 +528,6 @@ nm_dhcp_device_new (NMDHCPManager *manager, const char *iface)
 	
 	device->manager = manager;
 
-	nm_dhcp_manager_cancel_transaction_real (device, FALSE);
-
 	/* Do this after the transaction cancel since that clears options out */
 	device->options = g_hash_table_new_full (g_str_hash,
 	                                         g_str_equal,
@@ -590,7 +591,7 @@ nm_dhcp_manager_begin_transaction (NMDHCPManager *manager,
 
 	if (state_is_bound (device->state) || (device->state == DHC_START)) {
 		/* Cancel any DHCP transaction already in progress */
-		nm_dhcp_manager_cancel_transaction_real (device, TRUE);
+		nm_dhcp_manager_cancel_transaction_real (device);
 	}
 
 	nm_info ("Activation (%s) Beginning DHCP transaction.", iface);
@@ -611,26 +612,26 @@ nm_dhcp_manager_begin_transaction (NMDHCPManager *manager,
 }
 
 void
-nm_dhcp_client_stop (const char * iface,
-		     pid_t pid,
-		     gboolean blocking)
+nm_dhcp_client_stop (const char * iface, pid_t pid)
 {
-	int i = 20; /* 4 seconds */
+	int i = 15; /* 3 seconds */
 
-	/* Tell it to quit */
+	/* Tell it to quit; maybe it wants to send out a RELEASE message */
 	kill (pid, SIGTERM);
 
-	while (blocking && i-- > 0) {
+	while (i-- > 0) {
 		gint child_status;
 		int ret;
+
 		ret = waitpid (pid, &child_status, WNOHANG);
-		if (ret > 0) {
+		if (ret > 0)
 			break;
-		} else if (ret == -1) {
+
+		if (ret == -1) {
 			/* Child already exited */
 			if (errno == ECHILD)
 				break;
-			/* Otherwise, force kill the process */
+			/* Took too long; shoot it in the head */
 			i = 0;
 			break;
 		}
@@ -640,16 +641,20 @@ nm_dhcp_client_stop (const char * iface,
 	if (i <= 0) {
 		nm_warning ("%s: dhcp client pid %d didn't exit, will kill it.", iface, pid);
 		kill (pid, SIGKILL);
+
+		nm_debug ("waiting for dhcp client pid %d to exit", pid);
+		waitpid (pid, NULL, 0);
+		nm_debug ("dhcp client pid %d cleaned up", pid);
 	}
 }
 
 static void
-nm_dhcp_manager_cancel_transaction_real (NMDHCPDevice *device, gboolean blocking)
+nm_dhcp_manager_cancel_transaction_real (NMDHCPDevice *device)
 {
 	if (!device->pid)
 		return;
 
-	nm_dhcp_client_stop (device->iface, device->pid, blocking);
+	nm_dhcp_client_stop (device->iface, device->pid);
 
 	nm_info ("%s: canceled DHCP transaction, dhcp client pid %d",
 	         device->iface,
@@ -705,7 +710,7 @@ nm_dhcp_manager_cancel_transaction (NMDHCPManager *manager,
 	if (!device || !device->pid)
 		return;
 
-	nm_dhcp_manager_cancel_transaction_real (device, TRUE);
+	nm_dhcp_manager_cancel_transaction_real (device);
 }
 
 

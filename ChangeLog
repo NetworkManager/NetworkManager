@@ -1,3 +1,44 @@
+2008-08-27  Dan Williams  <dcbw@redhat.com>
+
+	Ensure zombie children get cleaned up.  To get notifications when children
+	die abnormally, g_spawn_async() requires G_SPAWN_DO_NOT_REAP_CHILD, but
+	that requires calling waitpid() yourself if you've removed the child watch
+	handler before the process has actually died, which NM needs to do in a few
+	places.  So ensure that everything uses G_SPAWN_DO_NOT_REAP_CHILD and also
+	cleans up after the child when required.  Should fix problems trying to
+	activate mobile broadband connections after a previous failure.
+
+	* src/dhcp-manager/nm-dhcp-dhclient.c
+	  src/dhcp-manager/nm-dhcp-dhcpcd.c
+		- Use G_SPAWN_DO_NOT_REAP_CHILD
+
+	* src/dhcp-manager/nm-dhcp-manager.c
+		- (nm_dhcp_device_destroy): ensure child is cleaned up
+		- (nm_dhcp_client_stop, nm_dhcp_manager_cancel_transaction_real): always
+			block on child quitting, since the non-blocking functionality was
+			never actually used
+
+	* src/dnsmasq-manager/nm-dnsmasq-manager.c
+		- (dm_watch_cb): child is already reaped here
+		- (ensure_killed, nm_dnsmasq_manager_stop): block until child is dead
+
+	* src/nm-device.c
+		- (aipd_cleanup): block until child is dead
+
+	* src/named-manager/nm-named-manager.c
+		- (run_netconfig): don't use G_SPAWN_DO_NOT_REAP_CHILD if we aren't
+			event bothering to watch the child
+
+	* src/ppp-manager/nm-ppp-manager.c
+		- (ppp_watch_cb): child is already reaped here
+		- (ensure_killed, nm_ppp_manager_stop): block until child is dead
+
+	* src/vpn-manager/nm-vpn-service.c
+		- (vpn_service_watch_cb): child is already reaped here
+		- (nm_vpn_service_daemon_exec): use G_SPAWN_DO_NOT_REAP_CHILD so that
+			status of the child is actually tracked
+		- (ensure_killed, finalize): block until child is dead
+
 2008-08-26  Dan Williams  <dcbw@redhat.com>
 
 	* system-settings/plugins/keyfile/nm-keyfile-connection.c
