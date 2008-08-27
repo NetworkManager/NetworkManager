@@ -54,6 +54,7 @@ GType nm_setting_connection_error_get_type (void);
 GQuark nm_setting_connection_error_quark (void);
 
 #define NM_SETTING_CONNECTION_ID          "id"
+#define NM_SETTING_CONNECTION_UUID        "uuid"
 #define NM_SETTING_CONNECTION_TYPE        "type"
 #define NM_SETTING_CONNECTION_AUTOCONNECT "autoconnect"
 #define NM_SETTING_CONNECTION_TIMESTAMP   "timestamp"
@@ -62,6 +63,7 @@ typedef struct {
 	NMSetting parent;
 
 	char *id;
+	char *uuid;
 	char *type;
 	gboolean autoconnect;
 	guint64 timestamp;

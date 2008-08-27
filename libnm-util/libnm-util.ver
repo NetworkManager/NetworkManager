@@ -120,6 +120,8 @@ global:
 	nm_utils_string_in_list;
 	nm_utils_string_list_contains;
 	nm_utils_string_slist_validate;
+	nm_utils_uuid_generate;
+	nm_utils_uuid_generate_from_string;
 local:
 	*;
 };

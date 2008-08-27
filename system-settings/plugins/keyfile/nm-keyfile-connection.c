@@ -3,6 +3,9 @@
 #include <string.h>
 #include <glib/gstdio.h>
 #include <NetworkManager.h>
+#include <nm-setting-connection.h>
+#include <nm-utils.h>
+
 #include "nm-keyfile-connection.h"
 #include "reader.h"
 #include "writer.h"
@@ -44,12 +47,6 @@ static GHashTable *
 get_settings (NMExportedConnection *exported)
 {
 	return nm_connection_to_hash (nm_exported_connection_get_connection (exported));
-}
-
-static const char *
-get_id (NMExportedConnection *exported)
-{
-	return NM_KEYFILE_CONNECTION_GET_PRIVATE (exported)->filename;
 }
 
 static gboolean
@@ -95,6 +92,7 @@ constructor (GType type,
 	GObject *object;
 	NMKeyfileConnectionPrivate *priv;
 	NMConnection *wrapped;
+	NMSettingConnection *s_con;
 
 	object = G_OBJECT_CLASS (nm_keyfile_connection_parent_class)->constructor (type, n_construct_params, construct_params);
 
@@ -111,6 +109,20 @@ constructor (GType type,
 	wrapped = connection_from_file (priv->filename);
 	if (!wrapped)
 		goto err;
+
+	/* if for some reason the connection didn't have a UUID, add one */
+	s_con = (NMSettingConnection *) nm_connection_get_setting (wrapped, NM_TYPE_SETTING_CONNECTION);
+	if (s_con && !s_con->uuid) {
+		GError *error = NULL;
+
+		s_con->uuid = nm_utils_uuid_generate ();
+		if (!write_connection (wrapped, &error)) {
+			g_warning ("Couldn't update connection %s with a UUID: (%d) %s",
+			           s_con->id, error ? error->code : 0,
+			           error ? error->message : "unknown");
+			g_error_free (error);
+		}
+	}
 
 	g_object_set (object, NM_EXPORTED_CONNECTION_CONNECTION, wrapped, NULL);
 	g_object_unref (wrapped);
@@ -181,7 +193,6 @@ nm_keyfile_connection_class_init (NMKeyfileConnectionClass *keyfile_connection_c
 	object_class->finalize     = finalize;
 
 	connection_class->get_settings = get_settings;
-	connection_class->get_id       = get_id;
 	connection_class->update       = update;
 	connection_class->delete       = delete;
 

@@ -52,12 +52,6 @@ get_settings (NMExportedConnection *exported)
 	return nm_connection_to_hash (nm_exported_connection_get_connection (exported));
 }
 
-static const char *
-get_id (NMExportedConnection *exported)
-{
-	return NM_DBUS_CONNECTION_GET_PRIVATE (exported)->path;
-}
-
 static void
 get_secrets (NMExportedConnection *connection,
 		   const gchar *setting_name,
@@ -279,7 +273,6 @@ nm_dbus_connection_class_init (NMDBusConnectionClass *dbus_connection_class)
 	object_class->finalize     = finalize;
 
 	connection_class->get_settings = get_settings;
-	connection_class->get_id       = get_id;
 	connection_class->get_secrets  = get_secrets;
 	connection_class->update       = update;
 	connection_class->delete       = delete;

@@ -111,6 +111,8 @@ make_connection_setting (const char *file,
 
 	s_con->type = g_strdup (type);
 
+	s_con->uuid = nm_utils_uuid_generate_from_string (ifcfg->fileName);
+
 	/* Be somewhat conservative about autoconnect */
 	if (svTrueValue (ifcfg, "ONBOOT", FALSE))
 		s_con->autoconnect = TRUE;

@@ -318,12 +318,6 @@ get_settings (NMExportedConnection *exported)
 	return nm_connection_to_hash (nm_exported_connection_get_connection (exported));
 }
 
-static const char *
-get_id (NMExportedConnection *exported)
-{
-	return NM_IFCFG_CONNECTION_GET_PRIVATE (exported)->filename;
-}
-
 static gboolean
 update (NMExportedConnection *exported, GHashTable *new_settings, GError **error)
 {
@@ -448,7 +442,6 @@ nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 	object_class->finalize     = finalize;
 
 	connection_class->get_settings = get_settings;
-	connection_class->get_id       = get_id;
 	connection_class->update       = update;
 	connection_class->delete       = delete;
 

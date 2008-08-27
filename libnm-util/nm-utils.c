@@ -35,11 +35,14 @@
 #include <glib.h>
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
+#include <uuid/uuid.h>
+
 #include "nm-utils.h"
 #include "NetworkManager.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
+#include "crypto.h"
 
 struct EncodingTriplet
 {
@@ -1105,3 +1108,51 @@ nm_utils_ip6_dns_to_gvalue (GSList *list, GValue *value)
 
 	g_value_take_boxed (value, dns);
 }
+
+char *
+nm_utils_uuid_generate (void)
+{
+	uuid_t uuid;
+	char *buf;
+
+	buf = g_malloc0 (37);
+	uuid_generate_random (uuid);
+	uuid_unparse_lower (uuid, &buf[0]);
+	return buf;
+}
+
+char *
+nm_utils_uuid_generate_from_string (const char *s)
+{
+	GError *error = NULL;
+	uuid_t *uuid;
+	char *buf = NULL;
+
+	if (!crypto_init (&error)) {
+		nm_warning ("error initializing crypto: (%d) %s",
+		            error ? error->code : 0,
+		            error ? error->message : "unknown");
+		if (error)
+			g_error_free (error);
+		return NULL;
+	}
+
+	uuid = g_malloc0 (sizeof (uuid));
+	if (!crypto_md5_hash (NULL, 0, s, strlen (s), (char *) uuid, sizeof (uuid), &error)) {
+		nm_warning ("error generating UUID: (%d) %s",
+		            error ? error->code : 0,
+		            error ? error->message : "unknown");
+		if (error)
+			g_error_free (error);
+		goto out;
+	}
+
+	buf = g_malloc0 (37);
+	uuid_unparse_lower (*uuid, &buf[0]);
+
+out:
+	g_free (uuid);
+	crypto_deinit ();
+	return buf;
+}
+

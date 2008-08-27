@@ -1,3 +1,43 @@
+2008-08-26  Dan Williams  <dcbw@redhat.com>
+
+	Add connection UUIDs, since connection names can be changed, and since
+	old-style connection IDs could change over the life of the connection.  The
+	UUID should be assigned at connection creation time, be stable for a given
+	connection, and should be unique among all connections for a given settings
+	service.
+
+	* configure.in
+	  libnm-util/Makefile.am
+		- Require libuuid
+
+	* introspection/nm-exported-connection.xml
+		- Remove "GetID" method
+
+	* libnm-glib/nm-dbus-connection.c
+	  libnm-glib/nm-settings.c
+	  libnm-glib/nm-settings.h
+		- Remove id-related stuff
+
+	* libnm-util/nm-utils.c
+	  libnm-util/nm-utils.h
+	  libnm-util/libnm-util.ver
+		- (nm_utils_uuid_generate, nm_utils_uuid_generate_from_string): Add
+			utility functions to generate UUIDs
+
+	* libnm-util/nm-setting-connection.c
+	  libnm-util/nm-setting-connection.h
+		- Add 'uuid' member to the connection setting
+		- (verify): require valid 'uuid' for a valid connection
+
+	* system-settings/plugins/ifcfg-fedora/nm-ifcfg-connection.c
+	  system-settings/plugins/ifcfg-fedora/reader.c
+	  system-settings/plugins/ifcfg-suse/nm-suse-connection.c
+	  system-settings/plugins/ifcfg-suse/parser.c
+	  system-settings/plugins/keyfile/nm-keyfile-connection.c
+	  system-settings/src/main.c
+		- Remove id-related stuff
+		- Give connections UUIDs where needed
+
 2008-08-25  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/crypto_gnutls.c

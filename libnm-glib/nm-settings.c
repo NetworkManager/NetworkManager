@@ -145,9 +145,6 @@ nm_settings_signal_new_connection (NMSettings *settings, NMExportedConnection *c
  * NMExportedConnection implementation
  */
 
-static gboolean impl_exported_connection_get_id (NMExportedConnection *connection,
-						 gchar **id,
-						 GError **error);
 static gboolean impl_exported_connection_get_settings (NMExportedConnection *connection,
 						       GHashTable **settings,
 						       GError **error);
@@ -203,43 +200,6 @@ nm_exported_connection_new (NMConnection *wrapped)
 	return (NMExportedConnection *) g_object_new (NM_TYPE_EXPORTED_CONNECTION,
 						      NM_EXPORTED_CONNECTION_CONNECTION, wrapped,
 						      NULL);
-}
-
-const char *
-nm_exported_connection_get_id (NMExportedConnection *connection)
-{
-	NMExportedConnectionPrivate *priv;
-	NMSettingConnection *s_con;
-
-	g_return_val_if_fail (NM_IS_EXPORTED_CONNECTION (connection), NULL);
-
-	priv = NM_EXPORTED_CONNECTION_GET_PRIVATE (connection);
-	if (EXPORTED_CONNECTION_CLASS (connection)->get_id)
-		return EXPORTED_CONNECTION_CLASS (connection)->get_id (connection);
-
-	s_con = (NMSettingConnection *) nm_connection_get_setting (priv->wrapped, NM_TYPE_SETTING_CONNECTION);
-	if (NM_IS_SETTING_CONNECTION (s_con))
-		return s_con->id;
-
-	return NULL;
-}
-
-static gboolean
-impl_exported_connection_get_id (NMExportedConnection *connection,
-                                 gchar **id,
-                                 GError **error)
-{
-	g_return_val_if_fail (NM_IS_EXPORTED_CONNECTION (connection), FALSE);
-
-	*id = g_strdup (nm_exported_connection_get_id (connection));
-	if (!*id) {
-		g_set_error (error, NM_SETTINGS_ERROR, 1,
-		             "%s.%d - Could not get connection ID.",
-		             __FILE__, __LINE__);
-		return FALSE;
-	}
-
-	return TRUE;
 }
 
 static gboolean
@@ -406,7 +366,6 @@ nm_exported_connection_class_init (NMExportedConnectionClass *exported_connectio
 	object_class->get_property = get_property;
 	object_class->dispose = nm_exported_connection_dispose;
 
-	exported_connection_class->get_id = NULL;
 	exported_connection_class->get_settings = NULL;
 	exported_connection_class->get_secrets = NULL;
 

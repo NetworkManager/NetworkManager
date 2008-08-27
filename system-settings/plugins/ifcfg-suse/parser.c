@@ -64,7 +64,7 @@ get_int (const char *str, int *value)
 
 static NMSetting *
 make_connection_setting (shvarFile *file,
-					const char *iface,
+                         const char *iface,
                          const char *type,
                          const char *suggested)
 {
@@ -84,6 +84,8 @@ make_connection_setting (shvarFile *file,
 		s_con->id = g_strdup_printf ("System %s", iface);
 
 	s_con->type = g_strdup (type);
+
+	s_con->uuid = nm_utils_uuid_generate_from_string (file->fileName);
 
 	str = svGetValue (file, "STARTMODE");
 	if (str && !g_ascii_strcasecmp (str, "manual"))

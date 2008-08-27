@@ -2,10 +2,11 @@ INCLUDES = -I${top_srcdir} -I${top_srcdir}/include
 
 lib_LTLIBRARIES=libnm-util.la
 
-libnm_util_la_CPPFLAGS =				\
-	$(GLIB_CFLAGS)					\
-	$(DBUS_CFLAGS)					\
-	-DDBUS_API_SUBJECT_TO_CHANGE		\
+libnm_util_la_CPPFLAGS = \
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS) \
+	$(UUID_CFLAGS) \
+	-DDBUS_API_SUBJECT_TO_CHANGE \
 	-DG_DISABLE_DEPRECATED
 
 libnm_util_include_HEADERS = 		\
@@ -49,7 +50,7 @@ libnm_util_la_SOURCES=			\
 	nm-utils.c			\
 	$(libnm_util_include_HEADERS)
 
-libnm_util_la_LIBADD = $(GLIB_LIBS) $(DBUS_LIBS)
+libnm_util_la_LIBADD = $(GLIB_LIBS) $(DBUS_LIBS) $(UUID_LIBS)
 
 libnm_util_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm-util.ver
 

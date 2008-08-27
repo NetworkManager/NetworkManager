@@ -32,13 +32,12 @@ typedef struct {
 	GObjectClass parent_class;
 
 	/* virtual methods */
-	const gchar *(* get_id) (NMExportedConnection *connection);
-	GHashTable * (* get_settings) (NMExportedConnection *connection);
-	void         (* get_secrets) (NMExportedConnection *connection,
-	                              const gchar *setting_name,
-	                              const gchar **hints,
-	                              gboolean request_new,
-	                              DBusGMethodInvocation *context);
+	GHashTable * (*get_settings) (NMExportedConnection *connection);
+	void         (*get_secrets) (NMExportedConnection *connection,
+	                             const gchar *setting_name,
+	                             const gchar **hints,
+	                             gboolean request_new,
+	                             DBusGMethodInvocation *context);
 
 	gboolean (*update) (NMExportedConnection *connection,
 					GHashTable *new_settings,
@@ -61,8 +60,6 @@ void nm_exported_connection_register_object (NMExportedConnection *connection,
                                              DBusGConnection *dbus_connection);
 
 NMConnection *nm_exported_connection_get_connection (NMExportedConnection *connection);
-
-const char *nm_exported_connection_get_id (NMExportedConnection *connection);
 
 gboolean nm_exported_connection_update (NMExportedConnection *connection,
 								GHashTable *new_settings,

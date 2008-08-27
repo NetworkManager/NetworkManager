@@ -196,4 +196,7 @@ void nm_utils_ip6_addresses_to_gvalue (GSList *list, GValue *value);
 GSList *nm_utils_ip6_dns_from_gvalue (const GValue *value);
 void nm_utils_ip6_dns_to_gvalue (GSList *list, GValue *value);
 
+char *nm_utils_uuid_generate (void);
+char *nm_utils_uuid_generate_from_string (const char *s);
+
 #endif /* NM_UTILS_H */

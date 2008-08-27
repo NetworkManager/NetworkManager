@@ -40,6 +40,7 @@
 #include <nm-setting-wired.h>
 #include <nm-setting-pppoe.h>
 #include <nm-settings.h>
+#include <nm-utils.h>
 #include <NetworkManager.h>
 
 #include "dbus-settings.h"
@@ -365,6 +366,7 @@ add_default_dhcp_connection (gpointer user_data)
 	s_con->id = g_strdup_printf (_("Auto %s"), info->iface);
 	s_con->type = g_strdup (NM_SETTING_WIRED_SETTING_NAME);
 	s_con->autoconnect = TRUE;
+	s_con->uuid = nm_utils_uuid_generate ();
 	nm_connection_add_setting (wrapped, NM_SETTING (s_con));
 
 	g_message ("Adding default connection '%s' for %s", s_con->id, info->udi);
