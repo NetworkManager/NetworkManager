@@ -423,6 +423,8 @@ nm_exported_connection_register_object (NMExportedConnection *connection,
 	g_return_if_fail (dbus_connection != NULL);
 
 	priv = NM_EXPORTED_CONNECTION_GET_PRIVATE (connection);
+	/* Don't allow the connection to be exported twice */
+	g_return_if_fail (nm_connection_get_path (priv->wrapped) == NULL);
 
 	path = g_strdup_printf ("%s/%u", NM_DBUS_PATH_SETTINGS, ec_counter++);
 	nm_connection_set_path (priv->wrapped, path);
