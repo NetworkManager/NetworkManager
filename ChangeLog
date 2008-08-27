@@ -1,5 +1,10 @@
 2008-08-27  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/plugins/ifcfg-fedora/reader.c
+		- (make_ip4_setting): use DOMAIN not SEARCH (rh #459370)
+
+2008-08-27  Dan Williams  <dcbw@redhat.com>
+
 	Ensure zombie children get cleaned up.  To get notifications when children
 	die abnormally, g_spawn_async() requires G_SPAWN_DO_NOT_REAP_CHILD, but
 	that requires calling waitpid() yourself if you've removed the child watch

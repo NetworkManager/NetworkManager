@@ -269,7 +269,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 	}
 
 	/* DNS searches */
-	value = svGetValue (ifcfg, "SEARCH");
+	value = svGetValue (ifcfg, "DOMAIN");
 	if (value) {
 		char **searches = NULL;
 
@@ -281,6 +281,23 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 			g_free (searches);
 		}
 		g_free (value);
+	}
+
+	/* Legacy value NM used for a while but is incorrect (rh #459370) */
+	if (!g_slist_length (s_ip4->dns_search)) {
+		value = svGetValue (ifcfg, "SEARCH");
+		if (value) {
+			char **searches = NULL;
+
+			searches = g_strsplit (value, " ", 0);
+			if (searches) {
+				char **item;
+				for (item = searches; *item; item++)
+					s_ip4->dns_search = g_slist_append (s_ip4->dns_search, *item);
+				g_free (searches);
+			}
+			g_free (value);
+		}
 	}
 
 	return NM_SETTING (s_ip4);
