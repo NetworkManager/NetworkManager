@@ -58,6 +58,9 @@
 
 #define NM_OPENVPN_KEY_PASSWORD "password"
 #define NM_OPENVPN_KEY_CERTPASS "cert-pass"
+/* Internal auth-dialog -> service token indicating that no secrets are
+ * required for the connection.
+ */
 #define NM_OPENVPN_KEY_NOSECRET "no-secret"
 
 #define NM_OPENVPN_CONTYPE_TLS          "tls"
