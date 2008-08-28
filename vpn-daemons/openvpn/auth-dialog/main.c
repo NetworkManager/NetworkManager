@@ -251,7 +251,7 @@ get_secrets (PasswordsInfo *info, gboolean retry)
 	}
 	clear_secrets (info);
 
-	gtk_widget_show_all (GTK_WIDGET (dialog));
+	gtk_widget_show (GTK_WIDGET (dialog));
 
 	if (gnome_two_password_dialog_run_and_block (dialog)) {
 		gboolean save = FALSE;
