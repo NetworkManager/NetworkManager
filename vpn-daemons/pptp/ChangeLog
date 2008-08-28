@@ -1,3 +1,10 @@
+2008-08-28  Dan Williams  <dcbw@redhat.com>
+
+	* auth-dialog/main.c
+		- (get_secrets): don't gtk_widget_show_all() because that exposes
+			widgets that were supposed to be hidden
+		- (main): don't segfault on missing passwords (like hitting Cancel)
+
 2008-08-26  Dan Williams  <dcbw@redhat.com>
 
 	* auth-dialog/main.c

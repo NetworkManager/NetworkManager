@@ -164,7 +164,7 @@ get_secrets (const char *vpn_uuid,
 		*password = NULL;
 	}
 
-	gtk_widget_show_all (GTK_WIDGET (dialog));
+	gtk_widget_show (GTK_WIDGET (dialog));
 
 	if (gnome_two_password_dialog_run_and_block (dialog)) {
 		*password = gnome_two_password_dialog_get_password (dialog);
@@ -238,8 +238,10 @@ main (int argc, char *argv[])
 	printf ("%s\n%s\n", NM_PPTP_KEY_PASSWORD, password);
 	printf ("\n\n");
 
-	memset (password, 0, strlen (password));
-	g_free (password);
+	if (password) {
+		memset (password, 0, strlen (password));
+		g_free (password);
+	}
 	exit_status = 0;
 
 	/* for good measure, flush stdout since Kansas is going Bye-Bye */
