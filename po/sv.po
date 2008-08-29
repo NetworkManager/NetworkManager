@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-07-25 22:39+0200\n"
-"PO-Revision-Date: 2008-07-25 22:40+0100\n"
+"POT-Creation-Date: 2008-08-29 02:27+0200\n"
+"PO-Revision-Date: 2008-08-17 13:18+0100\n"
 "Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "MIME-Version: 1.0\n"
@@ -18,8 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../src/nm-netlink-monitor.c:193
-#: ../src/nm-netlink-monitor.c:471
+#: ../src/nm-netlink-monitor.c:193 ../src/nm-netlink-monitor.c:474
 #, c-format
 msgid "error processing netlink message: %s"
 msgstr "fel vid behandling av netlink-meddelande: %s"
@@ -44,7 +43,12 @@ msgstr "kan inte gå med i netlink-grupp för övervakning av länkstatus: %s"
 msgid "unable to allocate netlink link cache for monitoring link status: %s"
 msgstr "kan inte allokera netlink-länkcache för övervakning av länkstatus: %s"
 
-#: ../src/nm-netlink-monitor.c:494
+#: ../src/nm-netlink-monitor.c:439
+#, c-format
+msgid "error updating link cache: %s"
+msgstr "fel vid uppdatering av länkcache: %s"
+
+#: ../src/nm-netlink-monitor.c:497
 #, c-format
 msgid "error occurred while waiting for data on socket"
 msgstr "fel inträffade vid väntan på data i uttaget"
@@ -52,7 +56,8 @@ msgstr "fel inträffade vid väntan på data i uttaget"
 #: ../src/NetworkManager.c:250
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
-msgstr "Ogiltig flagga.  Använd --help för att se en lista över giltiga flaggor.\n"
+msgstr ""
+"Ogiltig flagga.  Använd --help för att se en lista över giltiga flaggor.\n"
 
 #: ../src/dhcp-manager/nm-dhcp-dhclient.c:87
 msgid "# Created by NetworkManager\n"
@@ -67,240 +72,260 @@ msgstr ""
 "# Sammanfogad från %s\n"
 "\n"
 
-#: ../src/named-manager/nm-named-manager.c:117
+#: ../src/named-manager/nm-named-manager.c:250
 msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
 msgstr "OBSERVERA: uppslag via glibc har inte stöd för mer än 3 namnservrar."
 
-#: ../src/named-manager/nm-named-manager.c:119
+#: ../src/named-manager/nm-named-manager.c:252
 msgid "The nameservers listed below may not be recognized."
 msgstr "Namnservrarna listade nedan kanske inte kommer att kännas igen."
 
-#: ../system-settings/src/main.c:365
+#: ../system-settings/src/main.c:366
 #, c-format
 msgid "Auto %s"
 msgstr "Automatisk %s"
 
-#: ../libnm-util/crypto.c:123
+#: ../libnm-util/crypto.c:125
 #, c-format
 msgid "PEM key file had no end tag '%s'."
 msgstr "PEM-nyckelfilen hade ingen sluttagg \"%s\"."
 
-#: ../libnm-util/crypto.c:133
+#: ../libnm-util/crypto.c:135
 #, c-format
 msgid "Doesn't look like a PEM private key file."
 msgstr "Ser inte ut som en privat PEM-nyckelfil."
 
-#: ../libnm-util/crypto.c:141
+#: ../libnm-util/crypto.c:143
 #, c-format
 msgid "Not enough memory to store PEM file data."
 msgstr "Inte tillräckligt mycket minne för att lagra PEM-fildata."
 
-#: ../libnm-util/crypto.c:157
+#: ../libnm-util/crypto.c:159
 #, c-format
 msgid "Malformed PEM file: Proc-Type was not first tag."
 msgstr "Felformulerad PEM-fil: Proc-Type var inte första taggen."
 
-#: ../libnm-util/crypto.c:165
+#: ../libnm-util/crypto.c:167
 #, c-format
 msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
 msgstr "Felformulerad PEM-fil: okänd Proc-Type-tagg \"%s\"."
 
-#: ../libnm-util/crypto.c:175
+#: ../libnm-util/crypto.c:177
 #, c-format
 msgid "Malformed PEM file: DEK-Info was not the second tag."
 msgstr "Felformulerad PEM-fil: DEK-Info var inte andra taggen."
 
-#: ../libnm-util/crypto.c:186
+#: ../libnm-util/crypto.c:188
 #, c-format
 msgid "Malformed PEM file: no IV found in DEK-Info tag."
 msgstr "Felformulerad PEM-fil: ingen IV hittades i DEK-Info-taggen."
 
-#: ../libnm-util/crypto.c:193
+#: ../libnm-util/crypto.c:195
 #, c-format
 msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
 msgstr "Felformulerad PEM-fil: ogiltigt format för IV i DEK-Info-taggen."
 
-#: ../libnm-util/crypto.c:206
+#: ../libnm-util/crypto.c:208
 #, c-format
 msgid "Malformed PEM file: unknown private key cipher '%s'."
 msgstr "Felformulerad PEM-fil: okänt chiffer för privat nyckel \"%s\"."
 
-#: ../libnm-util/crypto.c:225
+#: ../libnm-util/crypto.c:227
 #, c-format
 msgid "Could not decode private key."
 msgstr "Kunde inte avkoda privat nyckel."
 
-#: ../libnm-util/crypto.c:269
+#: ../libnm-util/crypto.c:271
 #, c-format
 msgid "PEM certificate '%s' had no end tag '%s'."
 msgstr "PEM-certifikatet \"%s\" hade ingen sluttagg \"%s\"."
 
-#: ../libnm-util/crypto.c:279
+#: ../libnm-util/crypto.c:281
 #, c-format
 msgid "Failed to decode certificate."
 msgstr "Misslyckades med att avkoda certifikat."
 
-#: ../libnm-util/crypto.c:288
-#: ../libnm-util/crypto.c:296
+#: ../libnm-util/crypto.c:290 ../libnm-util/crypto.c:298
 #, c-format
 msgid "Not enough memory to store certificate data."
 msgstr "Inte tillräckligt mycket minne för att lagra certifikatdata."
 
-#: ../libnm-util/crypto.c:326
+#: ../libnm-util/crypto.c:328
 #, c-format
 msgid "IV must be an even number of bytes in length."
 msgstr "IV måste vara ett jämnt antal byte i längd."
 
-#: ../libnm-util/crypto.c:335
+#: ../libnm-util/crypto.c:337
 #, c-format
 msgid "Not enough memory to store the IV."
 msgstr "Inte tillräckligt mycket minne för att lagra IV."
 
-#: ../libnm-util/crypto.c:346
+#: ../libnm-util/crypto.c:348
 #, c-format
 msgid "IV contains non-hexadecimal digits."
 msgstr "IV innehåller icke-hexadecimala siffror."
 
-#: ../libnm-util/crypto.c:384
-#: ../libnm-util/crypto_gnutls.c:125
-#: ../libnm-util/crypto_nss.c:134
+#: ../libnm-util/crypto.c:386 ../libnm-util/crypto_gnutls.c:134
+#: ../libnm-util/crypto_nss.c:145
 #, c-format
 msgid "Private key cipher '%s' was unknown."
 msgstr "Privata nyckelchiffret \"%s\" var okänt."
 
-#: ../libnm-util/crypto.c:393
+#: ../libnm-util/crypto.c:395
 #, c-format
 msgid "Not enough memory to create private key decryption key."
-msgstr "Inte tillräckligt mycket minne för att skapa dekrypteringsnyckel för privat nyckel."
+msgstr ""
+"Inte tillräckligt mycket minne för att skapa dekrypteringsnyckel för privat "
+"nyckel."
 
-#: ../libnm-util/crypto.c:511
+#: ../libnm-util/crypto.c:513
 #, c-format
 msgid "Not enough memory to store decrypted private key."
-msgstr "Inte tillräckligt mycket minne för att lagra dekrypterad privat nyckel."
+msgstr ""
+"Inte tillräckligt mycket minne för att lagra dekrypterad privat nyckel."
 
-#: ../libnm-util/crypto_gnutls.c:72
+#: ../libnm-util/crypto_gnutls.c:80
 #, c-format
 msgid "Failed to initialize the MD5 engine: %s / %s."
 msgstr "Misslyckades med att initiera MD5-motorn: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:134
-#: ../libnm-util/crypto_nss.c:143
+#: ../libnm-util/crypto_gnutls.c:143 ../libnm-util/crypto_nss.c:154
 #, c-format
 msgid "Not enough memory for decrypted key buffer."
 msgstr "Inte tillräckligt mycket minne för buffert för dekrypterade nycklar."
 
-#: ../libnm-util/crypto_gnutls.c:142
-#, c-format
-msgid "Failed to initialize the decryption cipher context: %s / %s."
-msgstr "Misslyckades med att initiera chifferkontexten för dekryptering: %s / %s."
-
 #: ../libnm-util/crypto_gnutls.c:151
 #, c-format
-msgid "Failed to set symmetric key for decryption: %s / %s."
-msgstr "Misslyckades med att ställa in symmetrisk nyckel för dekryptering: %s / %s."
+msgid "Failed to initialize the decryption cipher context: %s / %s."
+msgstr ""
+"Misslyckades med att initiera chifferkontexten för dekryptering: %s / %s."
 
 #: ../libnm-util/crypto_gnutls.c:160
+#, c-format
+msgid "Failed to set symmetric key for decryption: %s / %s."
+msgstr ""
+"Misslyckades med att ställa in symmetrisk nyckel för dekryptering: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:169
 #, c-format
 msgid "Failed to set IV for decryption: %s / %s."
 msgstr "Misslyckades med att ställa in IV för dekryptering: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:169
+#: ../libnm-util/crypto_gnutls.c:178
 #, c-format
 msgid "Failed to decrypt the private key: %s / %s."
 msgstr "Misslyckades med att dekryptera den privata nyckeln: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:207
+#: ../libnm-util/crypto_gnutls.c:216
 #, c-format
 msgid "Error initializing certificate data: %s"
 msgstr "Fel vid initiering av certifikatdata: %s"
 
-#: ../libnm-util/crypto_gnutls.c:219
+#: ../libnm-util/crypto_gnutls.c:228
 #, c-format
 msgid "Couldn't decode certificate: %s"
 msgstr "Kunde inte avkoda certifikat: %s"
 
-#: ../libnm-util/crypto_nss.c:76
+#: ../libnm-util/crypto_nss.c:86
 #, c-format
 msgid "Failed to initialize the MD5 context: %d."
 msgstr "Misslyckades med att initiera MD5-kontexten: %d."
 
-#: ../libnm-util/crypto_nss.c:151
+#: ../libnm-util/crypto_nss.c:162
 #, c-format
 msgid "Failed to initialize the decryption cipher slot."
 msgstr "Misslyckades med att initiera dekrypteringschifferplatsen."
 
-#: ../libnm-util/crypto_nss.c:161
+#: ../libnm-util/crypto_nss.c:172
 #, c-format
 msgid "Failed to set symmetric key for decryption."
 msgstr "Misslyckades med att ställa in symmetrisk nyckel för dekryptering."
 
-#: ../libnm-util/crypto_nss.c:171
+#: ../libnm-util/crypto_nss.c:182
 #, c-format
 msgid "Failed to set IV for decryption."
 msgstr "Misslyckades med att ställa in IV för dekryptering."
 
-#: ../libnm-util/crypto_nss.c:179
+#: ../libnm-util/crypto_nss.c:190
 #, c-format
 msgid "Failed to initialize the decryption context."
 msgstr "Misslyckades med att initiera dekrypteringskontexten."
 
-#: ../libnm-util/crypto_nss.c:192
+#: ../libnm-util/crypto_nss.c:203
 #, c-format
 msgid "Failed to decrypt the private key: %d."
 msgstr "Misslyckades med att dekryptera privata nyckeln: %d."
 
-#: ../libnm-util/crypto_nss.c:204
+#: ../libnm-util/crypto_nss.c:215
 #, c-format
 msgid "Failed to finalize decryption of the private key: %d."
-msgstr "Misslyckades med att färdigställa dekryptering av den privata nyckeln: %d."
+msgstr ""
+"Misslyckades med att färdigställa dekryptering av den privata nyckeln: %d."
 
-#: ../libnm-util/crypto_nss.c:248
+#: ../libnm-util/crypto_nss.c:259
 #, c-format
 msgid "Couldn't decode certificate: %d"
 msgstr "Kunde inte avkoda certifikat: %d"
 
 #~ msgid "operation took too long"
 #~ msgstr "åtgärden tog för lång tid"
+
 #~ msgid "received data from wrong type of sender"
 #~ msgstr "tog emot data från fel typ av avsändare"
+
 #~ msgid "received data from unexpected sender"
 #~ msgstr "tog emot data från oväntad avsändare"
+
 #~ msgid "too much data was sent over socket and some of it was lost"
 #~ msgstr "för mycket data skickades över uttaget och en del gick förlorat"
+
 #~ msgid "Passphrase for wireless network %s"
 #~ msgstr "Lösenfras för det trådlösa nätverket %s"
+
 #~ msgid "Connection to the wireless network '%s' failed."
 #~ msgstr "Anslutning till det trådlösa nätverket \"%s\" misslyckades."
+
 #~ msgid "Connection to the wired network failed."
 #~ msgstr "Anslutning till det trådburna nätverket misslyckades."
+
 #~ msgid "Error displaying connection information:"
 #~ msgstr "Fel vid visning av anslutningsinformation:"
+
 #~ msgid "Could not find some required resources (the glade file)!"
 #~ msgstr "Kunde inte hitta en del nödvändiga resurser (glade-filen)!"
+
 #~ msgid "No active connections!"
 #~ msgstr "Inga aktiva anslutningar!"
+
 #~ msgid "%d Mb/s"
 #~ msgstr "%d Mb/s"
+
 #~ msgid "Wired Ethernet (%s)"
 #~ msgstr "Trådbundet Ethernet (%s)"
+
 #~ msgid "Wireless Ethernet (%s)"
 #~ msgstr "Trådlöst Ethernet (%s)"
+
 #~ msgid "Unknown"
 #~ msgstr "Okänt"
+
 #~ msgid "NetworkManager Applet"
 #~ msgstr "Panelprogram för nätverkshantering"
+
 #~ msgid ""
 #~ "Copyright © 2004-2006 Red Hat, Inc.\n"
 #~ "Copyright © 2005-2006 Novell, Inc."
 #~ msgstr ""
 #~ "Copyright © 2004-2006 Red Hat, Inc.\n"
 #~ "Copyright © 2005-2006 Novell, Inc."
+
 #~ msgid ""
 #~ "Notification area applet for managing your network devices and "
 #~ "connections."
 #~ msgstr ""
 #~ "Panelprogram i notifieringsytan för hantering av dina nätverksenheter och "
 #~ "nätverksanslutningar."
+
 #~ msgid "translator-credits"
 #~ msgstr ""
 #~ "Daniel Nylander\n"
@@ -308,148 +333,208 @@ msgstr "Kunde inte avkoda certifikat: %d"
 #~ "\n"
 #~ "Skicka synpunkter på översättningen till\n"
 #~ "tp-sv@listor.tp-sv.se"
+
 #~ msgid ""
 #~ "Copyright © 2004-2005 Red Hat, Inc.\n"
 #~ "Copyright © 2005-2006 Novell, Inc."
 #~ msgstr ""
 #~ "Copyright © 2004-2005 Red Hat, Inc.\n"
 #~ "Copyright © 2005-2006 Novell, Inc."
+
 #~ msgid "VPN Login Failure"
 #~ msgstr "VPN-inloggningsfel"
+
 #~ msgid "Could not start the VPN connection '%s' due to a login failure."
 #~ msgstr ""
 #~ "Kunde inte starta VPN-anslutningen \"%s\" på grund av ett inloggningfel."
+
 #~ msgid "VPN Start Failure"
 #~ msgstr "VPN-startfel"
+
 #~ msgid ""
 #~ "Could not start the VPN connection '%s' due to a failure launching the "
 #~ "VPN program."
 #~ msgstr ""
 #~ "Kunde inte starta VPN-anslutningen \"%s\" på grund av ett fel vid start "
 #~ "av VPN-programmet."
+
 #~ msgid "VPN Connect Failure"
 #~ msgstr "VPN-anslutningsfel"
+
 #~ msgid "Could not start the VPN connection '%s' due to a connection error."
 #~ msgstr ""
 #~ "Kunde inte starta VPN-anslutningen \"%s\" på grund av ett anslutningsfel."
+
 #~ msgid "VPN Configuration Error"
 #~ msgstr "VPN-konfigurationsfel"
+
 #~ msgid "The VPN connection '%s' was not correctly configured."
 #~ msgstr "VPN-anslutningen \"%s\" konfigurerades inte korrekt."
+
 #~ msgid ""
 #~ "Could not start the VPN connection '%s' because the VPN server did not "
 #~ "return an adequate network configuration."
 #~ msgstr ""
 #~ "Kunde inte starta VPN-anslutningen \"%s\" eftersom VPN-servern inte "
 #~ "returnerade en lämplig nätverkskonfiguration."
+
 #~ msgid "VPN Login Message"
 #~ msgstr "VPN-inloggningsmeddelande"
+
 #~ msgid ""
 #~ "The NetworkManager Applet could not find some required resources (the "
 #~ "glade file was not found)."
 #~ msgstr ""
 #~ "Panelprogrammet för nätverkshantering kunde inte hitta en del nödvändiga "
 #~ "resurser (glade-filen hittades inte)."
+
 #~ msgid "The network device \"%s (%s)\" does not support wireless scanning."
 #~ msgstr "Nätverksenheten \"%s (%s)\" stöder inte trådlös genomsökning."
+
 #~ msgid "The network device \"%s (%s)\" does not support link detection."
 #~ msgstr "Nätverksenheten \"%s (%s)\" stöder inte länkdetektering."
+
 #~ msgid "(unknown)"
 #~ msgstr "(okänt)"
+
 #~ msgid "Preparing device %s for the wired network..."
 #~ msgstr "Förbereder enheten %s för det trådbundna nätverket..."
+
 #~ msgid "Preparing device %s for the wireless network '%s'..."
 #~ msgstr "Förbereder enheten %s för det trådlösa nätverket \"%s\"..."
+
 #~ msgid "Configuring device %s for the wired network..."
 #~ msgstr "Konfigurerar enheten %s för det trådbundna nätverket..."
+
 #~ msgid "Attempting to join the wireless network '%s'..."
 #~ msgstr "Försöker ansluta till det trådlösa nätverket \"%s\"..."
+
 #~ msgid "Waiting for Network Key for the wireless network '%s'..."
 #~ msgstr "Väntar på nätverksnyckel för det trådlösa nätverket \"%s\"..."
+
 #~ msgid "Requesting a network address from the wired network..."
 #~ msgstr "Begär en nätverksadress från det trådbundna nätverket..."
+
 #~ msgid "Requesting a network address from the wireless network '%s'..."
 #~ msgstr "Begär en nätverksadress från det trådlösa nätverket \"%s\"..."
+
 #~ msgid "Finishing connection to the wired network..."
 #~ msgstr "Slutför anslutning till det trådbundna nätverket..."
+
 #~ msgid "Finishing connection to the wireless network '%s'..."
 #~ msgstr "Slutför anslutning till det trådlösa nätverket \"%s\"..."
+
 #~ msgid "NetworkManager is not running"
 #~ msgstr "Nätverkshanteraren är inte igång"
+
 #~ msgid "Networking disabled"
 #~ msgstr "Nätverk inaktiverat"
+
 #~ msgid "No network connection"
 #~ msgstr "Ingen nätverksanslutning"
+
 #~ msgid "Wired network connection"
 #~ msgstr "Trådbunden nätverksanslutning"
+
 #~ msgid "Connected to an Ad-Hoc wireless network"
 #~ msgstr "Ansluten till ett trådlöst ad hoc-nätverk"
+
 #~ msgid "Wireless network connection to '%s' (%d%%)"
 #~ msgstr "Trådlös nätverksanslutning till \"%s\" (%d%%)"
+
 #~ msgid "VPN connection to '%s'"
 #~ msgstr "VPN-anslutning till \"%s\""
+
 #~ msgid "VPN connecting to '%s'"
 #~ msgstr "VPN-ansluter till \"%s\""
+
 #~ msgid "_Connect to Other Wireless Network..."
 #~ msgstr "_Anslut till annat trådlöst nätverk..."
+
 #~ msgid "Create _New Wireless Network..."
 #~ msgstr "Skapa _nytt trådlöst nätverk..."
+
 #~ msgid "_VPN Connections"
 #~ msgstr "_VPN-anslutningar"
+
 #~ msgid "_Configure VPN..."
 #~ msgstr "_Konfigurera VPN..."
+
 #~ msgid "_Disconnect VPN..."
 #~ msgstr "Koppla _från VPN..."
+
 #~ msgid "_Dial Up Connections"
 #~ msgstr "_Uppringda anslutningar"
+
 #~ msgid "Connect to %s..."
 #~ msgstr "Anslut till %s..."
+
 #~ msgid "Disconnect from %s..."
 #~ msgstr "Koppla från %s..."
+
 #~ msgid "No network devices have been found"
 #~ msgstr "Inga nätverksenheter har hittats"
+
 #~ msgid "NetworkManager is not running..."
 #~ msgstr "Nätverkshanteraren är inte igång..."
+
 #~ msgid "Enable _Networking"
 #~ msgstr "Aktivera _nätverk"
+
 #~ msgid "Enable _Wireless"
 #~ msgstr "Aktivera _trådlöst"
+
 #~ msgid "Connection _Information"
 #~ msgstr "Anslutnings_information"
+
 #~ msgid "_Help"
 #~ msgstr "_Hjälp"
+
 #~ msgid "_About"
 #~ msgstr "_Om"
+
 #~ msgid ""
 #~ "The NetworkManager applet could not find some required resources.  It "
 #~ "cannot continue.\n"
 #~ msgstr ""
 #~ "Panelprogrammet för nätverkshantering kunde inte hitta en del nödvändiga "
 #~ "resurser. Det kan inte fortsätta.\n"
+
 #~ msgid "Open System"
 #~ msgstr "Öppet system"
+
 #~ msgid "Shared Key"
 #~ msgstr "Delad nyckel"
+
 #~ msgid "Automatic (Default)"
 #~ msgstr "Automatiskt (standard)"
+
 #~ msgid "AES-CCMP"
 #~ msgstr "AES-CCMP"
+
 #~ msgid "TKIP"
 #~ msgstr "TKIP"
+
 #~ msgid "Dynamic WEP"
 #~ msgstr "Dynamisk WEP"
+
 #~ msgid "None"
 #~ msgstr "Ingen"
+
 #~ msgid "WEP 64/128-bit ASCII"
 #~ msgstr "WEP 64/128-bitars ASCII"
+
 #~ msgid "WEP 64/128-bit Hex"
 #~ msgstr "WEP 64/128-bitars hexadecimal"
+
 #~ msgid "WEP 128-bit Passphrase"
 #~ msgstr "WEP 128-bitars lösenfras"
+
 #~ msgid "PEAP"
 #~ msgstr "PEAP"
+
 #~ msgid "TLS"
 #~ msgstr "TLS"
+
 #~ msgid "TTLS"
 #~ msgstr "TTLS"
-
