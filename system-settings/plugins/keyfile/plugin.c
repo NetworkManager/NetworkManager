@@ -155,7 +155,8 @@ dir_changed (GFileMonitor *monitor,
 					g_warning ("%s: couldn't update connection settings: (%d) %s",
 					           __func__, error ? error->code : 0,
 					           error ? error->message : "unknown");
-					g_error_free (error);
+					if (error)
+						g_error_free (error);
 				}
 				g_object_unref (tmp);
 			}
