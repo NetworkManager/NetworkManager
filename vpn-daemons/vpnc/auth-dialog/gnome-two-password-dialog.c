@@ -38,6 +38,7 @@
 #include <gtk/gtkvbox.h>
 #include <gtk/gtkradiobutton.h>
 #include <gtk/gtkstock.h>
+#include <gnome-keyring-memory.h>
 
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
@@ -638,7 +639,7 @@ gnome_two_password_dialog_get_password (GnomeTwoPasswordDialog *password_dialog)
 {
 	g_return_val_if_fail (GNOME_IS_TWO_PASSWORD_DIALOG (password_dialog), NULL);
 
-	return g_strdup (gtk_entry_get_text (GTK_ENTRY (password_dialog->details->password_entry)));
+	return gnome_keyring_memory_strdup (gtk_entry_get_text (GTK_ENTRY (password_dialog->details->password_entry)));
 }
 
 char *
@@ -646,7 +647,7 @@ gnome_two_password_dialog_get_password_secondary (GnomeTwoPasswordDialog *passwo
 {
 	g_return_val_if_fail (GNOME_IS_TWO_PASSWORD_DIALOG (password_dialog), NULL);
 
-	return g_strdup (gtk_entry_get_text (GTK_ENTRY (password_dialog->details->password_entry_secondary)));
+	return gnome_keyring_memory_strdup (gtk_entry_get_text (GTK_ENTRY (password_dialog->details->password_entry_secondary)));
 }
 
 void

@@ -1,3 +1,29 @@
+2008-09-03  Dan Williams  <dcbw@redhat.com>
+
+	* common-gnome/Makefile.am
+	  common-gnome/keyring-helpers.c
+	  common-gnome/keyring-helpers.h
+	  Makefile.am
+		- Split out keyring read/write routines to common library
+
+	* configure.in
+		- Don't require libgnomeui anymore
+
+	* auth-dialog/main.c
+		- (get_secrets): use common keyring helpers
+		- (main): remove usage of libgnomeui
+
+	* auth-dialog/gnome-two-password-dialog.c
+		- (gnome_two_password_dialog_get_password,
+		   gnome_two_password_dialog_get_password_secondary): use gnome-keyring
+			secure memory
+
+	* properties/nm-vpnc.c
+	  properties/nm-vpnc-dialog.glade
+	  properties/Makefile.am
+		- Grab VPN passwords from the keyring if available and allow them to
+			be edited
+
 2008-08-28  Dan Williams  <dcbw@redhat.com>
 
 	* auth-dialog/main.c

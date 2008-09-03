@@ -69,10 +69,6 @@ if test x"$with_gnome" != xno; then
 	AC_SUBST(GLADE_CFLAGS)
 	AC_SUBST(GLADE_LIBS)
 
-	PKG_CHECK_MODULES(LIBGNOMEUI, libgnomeui-2.0)
-	AC_SUBST(LIBGNOMEUI_CFLAGS)
-	AC_SUBST(LIBGNOMEUI_LIBS)
-
 	PKG_CHECK_MODULES(GCONF, gconf-2.0)
 	AC_SUBST(GCONF_CFLAGS)
 	AC_SUBST(GCONF_LIBS)
@@ -122,6 +118,7 @@ fi
 AC_OUTPUT([
 Makefile
 src/Makefile
+common-gnome/Makefile
 auth-dialog/Makefile
 properties/Makefile
 po/Makefile.in

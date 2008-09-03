@@ -35,6 +35,8 @@
 #include <string.h>
 #include <gtk/gtk.h>
 #include <glade/glade.h>
+#include <gnome-keyring.h>
+#include <gnome-keyring-memory.h>
 
 #define NM_VPN_API_SUBJECT_TO_CHANGE
 
@@ -43,7 +45,8 @@
 #include <nm-setting-connection.h>
 #include <nm-setting-ip4-config.h>
 
-#include "../src/nm-vpnc-service.h"
+#include "src/nm-vpnc-service.h"
+#include "common-gnome/keyring-helpers.h"
 #include "pcf-file.h"
 #include "nm-vpnc.h"
 
@@ -155,6 +158,68 @@ stuff_changed_cb (GtkWidget *widget, gpointer user_data)
 }
 
 static gboolean
+fill_vpn_passwords (VpncPluginUiWidget *self, NMConnection *connection)
+{
+	VpncPluginUiWidgetPrivate *priv = VPNC_PLUGIN_UI_WIDGET_GET_PRIVATE (self);
+	GtkWidget *widget;
+	gboolean success = FALSE;
+	char *password = NULL;
+	char *group_password = NULL;
+
+	/* Grab secrets from the keyring */
+	if (connection) {
+		NMSettingConnection *s_con;
+
+		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+		keyring_helpers_lookup_secrets (s_con->uuid, &password, &group_password, NULL);
+	}
+
+	/* User password */
+	widget = glade_xml_get_widget (priv->xml, "user_password_entry");
+	gtk_size_group_add_widget (priv->group, GTK_WIDGET (widget));
+	if (!widget)
+		goto out;
+	if (password)
+		gtk_entry_set_text (GTK_ENTRY (widget), password);
+	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
+
+	/* Group password */
+	widget = glade_xml_get_widget (priv->xml, "group_password_entry");
+	gtk_size_group_add_widget (priv->group, GTK_WIDGET (widget));
+	if (!widget)
+		goto out;
+	if (group_password)
+		gtk_entry_set_text (GTK_ENTRY (widget), group_password);
+	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
+
+	success = TRUE;
+
+out:
+	gnome_keyring_memory_free (password);
+	gnome_keyring_memory_free (group_password);
+
+	return success;
+}
+
+static void
+show_toggled_cb (GtkCheckButton *button, VpncPluginUiWidget *self)
+{
+	VpncPluginUiWidgetPrivate *priv = VPNC_PLUGIN_UI_WIDGET_GET_PRIVATE (self);
+	GtkWidget *widget;
+	gboolean visible;
+
+	visible = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button));
+
+	widget = glade_xml_get_widget (priv->xml, "user_password_entry");
+	g_assert (widget);
+	gtk_entry_set_visibility (GTK_ENTRY (widget), visible);
+
+	widget = glade_xml_get_widget (priv->xml, "group_password_entry");
+	g_assert (widget);
+	gtk_entry_set_visibility (GTK_ENTRY (widget), visible);
+}
+
+static gboolean
 init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **error)
 {
 	VpncPluginUiWidgetPrivate *priv = VPNC_PLUGIN_UI_WIDGET_GET_PRIVATE (self);
@@ -171,8 +236,7 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 	priv->group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
 
 	widget = glade_xml_get_widget (priv->xml, "gateway_entry");
-	if (!widget)
-		return FALSE;
+	g_return_val_if_fail (widget != NULL, FALSE);
 	gtk_size_group_add_widget (priv->group, GTK_WIDGET (widget));
 	if (s_vpn) {
 		value = g_hash_table_lookup (s_vpn->data, NM_VPNC_KEY_GATEWAY);
@@ -182,8 +246,7 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
 
 	widget = glade_xml_get_widget (priv->xml, "group_entry");
-	if (!widget)
-		return FALSE;
+	g_return_val_if_fail (widget != NULL, FALSE);
 	gtk_size_group_add_widget (priv->group, GTK_WIDGET (widget));
 	if (s_vpn) {
 		value = g_hash_table_lookup (s_vpn->data, NM_VPNC_KEY_ID);
@@ -193,8 +256,7 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
 
 	widget = glade_xml_get_widget (priv->xml, "encryption_combo");
-	if (!widget)
-		return FALSE;
+	g_return_val_if_fail (widget != NULL, FALSE);
 	gtk_size_group_add_widget (priv->group, GTK_WIDGET (widget));
 
 	store = gtk_list_store_new (1, G_TYPE_STRING);
@@ -224,8 +286,7 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
 
 	widget = glade_xml_get_widget (priv->xml, "user_entry");
-	if (!widget)
-		return FALSE;
+	g_return_val_if_fail (widget != NULL, FALSE);
 	gtk_size_group_add_widget (priv->group, GTK_WIDGET (widget));
 	if (s_vpn) {
 		value = g_hash_table_lookup (s_vpn->data, NM_VPNC_KEY_XAUTH_USER);
@@ -235,8 +296,7 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
 
 	widget = glade_xml_get_widget (priv->xml, "domain_entry");
-	if (!widget)
-		return FALSE;
+	g_return_val_if_fail (widget != NULL, FALSE);
 	gtk_size_group_add_widget (priv->group, GTK_WIDGET (widget));
 	if (s_vpn) {
 		value = g_hash_table_lookup (s_vpn->data, NM_VPNC_KEY_DOMAIN);
@@ -272,8 +332,7 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 	}
 
 	widget = glade_xml_get_widget (priv->xml, "natt_combo");
-	if (!widget)
-		return FALSE;
+	g_return_val_if_fail (widget != NULL, FALSE);
 	gtk_size_group_add_widget (priv->group, GTK_WIDGET (widget));
 	gtk_combo_box_set_model (GTK_COMBO_BOX (widget), GTK_TREE_MODEL (store));
 	g_object_unref (store);
@@ -281,8 +340,7 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
 
 	widget = glade_xml_get_widget (priv->xml, "disable_dpd_checkbutton");
-	if (!widget)
-		return FALSE;
+	g_return_val_if_fail (widget != NULL, FALSE);
 	if (s_vpn) {
 		value = g_hash_table_lookup (s_vpn->data, NM_VPNC_KEY_DPD_IDLE_TIMEOUT);
 		if (value) {
@@ -298,6 +356,14 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 		}
 	}
 	g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK (stuff_changed_cb), self);
+
+	fill_vpn_passwords (self, connection);
+
+	widget = glade_xml_get_widget (priv->xml, "show_passwords_checkbutton");
+	g_return_val_if_fail (widget != NULL, FALSE);
+	g_signal_connect (G_OBJECT (widget), "toggled",
+	                  (GCallback) show_toggled_cb,
+	                  self);
 
 	return TRUE;
 }
