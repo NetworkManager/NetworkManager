@@ -452,7 +452,7 @@ nm_utils_call_dispatcher (const char *action,
 			g_hash_table_insert (connection_props,
 			                     NMD_CONNECTION_PROPS_SERVICE_NAME,
 			                     str_to_gvalue (NM_DBUS_SERVICE_USER_SETTINGS));
-		} else if (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_USER) {
+		} else if (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_SYSTEM) {
 			g_hash_table_insert (connection_props,
 			                     NMD_CONNECTION_PROPS_SERVICE_NAME,
 			                     str_to_gvalue (NM_DBUS_SERVICE_SYSTEM_SETTINGS));
