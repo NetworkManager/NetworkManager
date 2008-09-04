@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-vpnc\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-06-24 00:07+0200\n"
-"PO-Revision-Date: 2008-06-24 00:09+0100\n"
+"POT-Creation-Date: 2008-09-05 00:51+0200\n"
+"PO-Revision-Date: 2008-09-05 00:52+0100\n"
 "Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
 "Language-Team: Swedish <sv@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -18,48 +18,48 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:144
+#: ../auth-dialog/gnome-two-password-dialog.c:145
 msgid "_Secondary Password:"
-msgstr "_Andrahandslösenord:"
+msgstr "_Sekundärt lösenord:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:258
+#: ../auth-dialog/gnome-two-password-dialog.c:259
 msgid "_Username:"
 msgstr "_Användarnamn:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:260
+#: ../auth-dialog/gnome-two-password-dialog.c:261
 msgid "_Domain:"
 msgstr "_Domän:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:262
+#: ../auth-dialog/gnome-two-password-dialog.c:263
 msgid "_Password:"
 msgstr "_Lösenord:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:351
+#: ../auth-dialog/gnome-two-password-dialog.c:352
 msgid "Connect _anonymously"
 msgstr "Anslut anon_ymt"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:356
+#: ../auth-dialog/gnome-two-password-dialog.c:357
 msgid "Connect as _user:"
 msgstr "Anslut som _användare:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:465
+#: ../auth-dialog/gnome-two-password-dialog.c:466
 msgid "_Remember passwords for this session"
 msgstr "_Kom ihåg lösenord för denna session"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:467
+#: ../auth-dialog/gnome-two-password-dialog.c:468
 msgid "_Save passwords in keyring"
 msgstr "_Spara lösenord i nyckelring"
 
-#: ../auth-dialog/main.c:182
+#: ../auth-dialog/main.c:67
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Du måsta autentisera för att komma åt VPN-nätverket \"%s\"."
 
-#: ../auth-dialog/main.c:183
+#: ../auth-dialog/main.c:68
 msgid "Authenticate VPN"
 msgstr "Autentisera VPN"
 
-#: ../auth-dialog/main.c:190
+#: ../auth-dialog/main.c:75
 msgid "_Group Password:"
 msgstr "_Grupplösenord:"
 
@@ -71,43 +71,43 @@ msgstr "Lägg till, ta bort och redigera VPN-anslutningar"
 msgid "VPN Connection Manager (vpnc)"
 msgstr "VPN-anslutningshanterare (vpnc)"
 
-#: ../properties/nm-vpnc.c:51
+#: ../properties/nm-vpnc.c:53
 msgid "Cisco Compatible VPN (vpnc)"
 msgstr "Cisco-kompatibel VPN (vpnc)"
 
-#: ../properties/nm-vpnc.c:52
+#: ../properties/nm-vpnc.c:54
 msgid "Compatible with various Cisco, Juniper, Netscreen, and Sonicwall IPSec-based VPN gateways."
 msgstr "Kompatibel med olika Cisco, Juniper, Netscreen och Sonicwall IPSec-baserade VPN-gateway."
 
-#: ../properties/nm-vpnc.c:210
+#: ../properties/nm-vpnc.c:265
 msgid "Secure (default)"
 msgstr "Säker (standard)"
 
-#: ../properties/nm-vpnc.c:213
+#: ../properties/nm-vpnc.c:268
 msgid "Weak (use with caution)"
 msgstr "Svag (använd med försiktighet)"
 
-#: ../properties/nm-vpnc.c:221
+#: ../properties/nm-vpnc.c:276
 msgid "None (completely insecure)"
 msgstr "Ingen (totalt osäker)"
 
-#: ../properties/nm-vpnc.c:266
+#: ../properties/nm-vpnc.c:314
 msgid "NAT-T (default)"
 msgstr "NAT-T (standard)"
 
-#: ../properties/nm-vpnc.c:273
+#: ../properties/nm-vpnc.c:321
 msgid "Cisco UDP"
 msgstr "Cisco UDP"
 
-#: ../properties/nm-vpnc.c:280
+#: ../properties/nm-vpnc.c:328
 msgid "Disabled"
 msgstr "Inaktiverad"
 
-#: ../properties/nm-vpnc.c:706
+#: ../properties/nm-vpnc.c:724
 msgid "TCP tunneling not supported"
 msgstr "TCP-tunnling stöds inte"
 
-#: ../properties/nm-vpnc.c:708
+#: ../properties/nm-vpnc.c:726
 #, c-format
 msgid ""
 "The VPN settings file '%s' specifies that VPN traffic should be tunneled through TCP which is currently not supported in the vpnc software.\n"
@@ -139,25 +139,39 @@ msgid "Domain:"
 msgstr "Domän:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:6
-msgid "Encryption Method:"
+msgid "Encryption method:"
 msgstr "Krypteringsmetod:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:7
-msgid "G_roup Name:"
+msgid "G_roup name:"
 msgstr "G_ruppnamn:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:8
-msgid "NAT Traversal:"
-msgstr "NAT-traversering:"
+msgid "Gro_up password:"
+msgstr "Gr_upplösenord:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:9
+msgid "NAT traversal:"
+msgstr "NAT-traversering:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:10
+msgid "Show passwords"
+msgstr "Visa lösenord"
+
+#: ../properties/nm-vpnc-dialog.glade.h:11
 msgid "User name:"
 msgstr "Användarnamn:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:10
+#: ../properties/nm-vpnc-dialog.glade.h:12
 msgid "_Gateway:"
 msgstr "_Gateway:"
 
+#: ../properties/nm-vpnc-dialog.glade.h:13
+msgid "_User password:"
+msgstr "Användarlös_enord:"
+
+#~ msgid "G_roup Name:"
+#~ msgstr "G_ruppnamn:"
 #~ msgid "The following vpnc VPN connection will be created:"
 #~ msgstr "Följande VPN-anslutning av typen vpnc kommer att skapas:"
 #~ msgid "Name:  %s"
@@ -210,8 +224,6 @@ msgstr "_Gateway:"
 #~ msgstr "Inaktivera NAT-_traversering"
 #~ msgid "Enable _weak single DES encryption"
 #~ msgstr "Aktivera _svag single DES-kryptering"
-#~ msgid "G_roup name:"
-#~ msgstr "G_ruppnamn:"
 #~ msgid "Import _Saved Configuration..."
 #~ msgstr "Importera _sparad konfiguration..."
 #~ msgid "Interval:"
