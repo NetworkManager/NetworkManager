@@ -1,5 +1,10 @@
 2008-09-04  Dan Williams  <dcbw@redhat.com>
 
+	* src/supplicant-manager/nm-supplicant-settings-verify.c
+		- Allow WPA-NONE key management for Ad-Hoc WPA connections
+
+2008-09-04  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting-vpn.c
 	  libnm-util/nm-setting-vpn.h
 		- Split VPN secrets from VPN data so that settings services can actually
