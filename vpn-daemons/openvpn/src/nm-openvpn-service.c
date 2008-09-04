@@ -511,6 +511,8 @@ add_openvpn_arg_int (GPtrArray *args, const char *arg)
 static gboolean
 nm_openvpn_start_openvpn_binary (NMOpenvpnPlugin *plugin,
                                  GHashTable *properties,
+                                 GHashTable *secrets,
+                                 const char *default_username,
                                  GError **error)
 {
 	NMOpenvpnPluginPrivate *priv = NM_OPENVPN_PLUGIN_GET_PRIVATE (plugin);
@@ -765,11 +767,14 @@ nm_openvpn_start_openvpn_binary (NMOpenvpnPlugin *plugin,
 
 		tmp = g_hash_table_lookup (properties, NM_OPENVPN_KEY_USERNAME);
 		io_data->username = tmp ? g_strdup (tmp) : NULL;
+		/* Use the default username if it wasn't overridden by the user */
+		if (!io_data->username && default_username)
+			io_data->username = g_strdup (default_username);
 
-		tmp = g_hash_table_lookup (properties, NM_OPENVPN_KEY_PASSWORD);
+		tmp = g_hash_table_lookup (secrets, NM_OPENVPN_KEY_PASSWORD);
 		io_data->password = tmp ? g_strdup (tmp) : NULL;
 
-		tmp = g_hash_table_lookup (properties, NM_OPENVPN_KEY_CERTPASS);
+		tmp = g_hash_table_lookup (secrets, NM_OPENVPN_KEY_CERTPASS);
 		io_data->certpass = tmp ? g_strdup (tmp) : NULL;
 
 		priv->io_data = io_data;
@@ -786,14 +791,46 @@ real_connect (NMVPNPlugin   *plugin,
               GError       **error)
 {
 	NMSettingVPN *s_vpn;
+	const char *connection_type;
 
 	s_vpn = NM_SETTING_VPN (nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN));
-	g_assert (s_vpn);
+	if (!s_vpn) {
+		g_set_error (error,
+		             NM_VPN_PLUGIN_ERROR,
+		             NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID,
+		             "%s",
+		             "Could not process the request because the VPN connection settings were invalid.");
+		return FALSE;
+	}
 
+	connection_type = get_connection_type (s_vpn->data);
+
+	/* Need a username for any password-based connection types */
+	if (   !strcmp (connection_type, NM_OPENVPN_CONTYPE_PASSWORD_TLS)
+	    || !strcmp (connection_type, NM_OPENVPN_CONTYPE_PASSWORD)) {
+		if (!s_vpn->user_name && !g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_USERNAME)) {
+			g_set_error (error,
+			             NM_VPN_PLUGIN_ERROR,
+			             NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID,
+			             "%s",
+			             "Could not process the request because no username was provided.");
+			return FALSE;
+		}
+	}
+
+	/* Validate the properties and secrets */
 	if (!nm_openvpn_properties_validate (s_vpn->data, error))
 		return FALSE;
 
-	if (!nm_openvpn_start_openvpn_binary (NM_OPENVPN_PLUGIN (plugin), s_vpn->data, error))
+	if (!nm_openvpn_properties_validate (s_vpn->secrets, error))
+		return FALSE;
+
+	/* Finally try to start OpenVPN */
+	if (!nm_openvpn_start_openvpn_binary (NM_OPENVPN_PLUGIN (plugin),
+	                                      s_vpn->data,
+	                                      s_vpn->secrets,
+	                                      s_vpn->user_name,
+	                                      error))
 		return FALSE;
 
 	return TRUE;
@@ -824,21 +861,19 @@ real_need_secrets (NMVPNPlugin *plugin,
 
 	connection_type = get_connection_type (s_vpn->data);
 	if (!strcmp (connection_type, NM_OPENVPN_CONTYPE_PASSWORD_TLS)) {
-		/* Will require username and password and maybe certificate password */
-		if (!g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_CERTPASS))
+		/* Will require a password and maybe certificate password */
+		if (!g_hash_table_lookup (s_vpn->secrets, NM_OPENVPN_KEY_CERTPASS))
 			need_secrets = TRUE;
 
-		if (!g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_USERNAME) ||
-		    !g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_PASSWORD))
+		if (!g_hash_table_lookup (s_vpn->secrets, NM_OPENVPN_KEY_PASSWORD))
 			need_secrets = TRUE;
 	} else if (!strcmp (connection_type, NM_OPENVPN_CONTYPE_PASSWORD)) {
-		/* Will require username and password */
-		if (!g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_USERNAME) ||
-		    !g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_PASSWORD))
+		/* Will require a password */
+		if (!g_hash_table_lookup (s_vpn->secrets, NM_OPENVPN_KEY_PASSWORD))
 			need_secrets = TRUE;
 	} else if (!strcmp (connection_type, NM_OPENVPN_CONTYPE_TLS)) {
 		/* May require certificate password */
-		if (!g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_CERTPASS))
+		if (!g_hash_table_lookup (s_vpn->secrets, NM_OPENVPN_KEY_CERTPASS))
 			need_secrets = TRUE;
 	}
 

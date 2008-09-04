@@ -1,3 +1,9 @@
+2008-09-04  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-openvpn-service.c
+		- (nm_openvpn_start_openvpn_binary, real_connect, real_need_secrets):
+			handle split VPN secrets
+
 2008-08-28  Dan Williams  <dcbw@redhat.com>
 
 	* auth-dialog/main.c
