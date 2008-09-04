@@ -236,7 +236,7 @@ nm_pptp_ppp_service_cache_credentials (NMPptpPppService *self,
 	memset (priv->password, 0, sizeof (priv->password));
 
 	s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
-	if (!s_vpn || !s_vpn->data) {
+	if (!s_vpn || !s_vpn->secrets || !s_vpn->data) {
 		g_set_error (error,
 		             NM_VPN_PLUGIN_ERROR,
 		             NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID,
@@ -268,7 +268,7 @@ nm_pptp_ppp_service_cache_credentials (NMPptpPppService *self,
 		}
 	}
 
-	password = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_PASSWORD);
+	password = g_hash_table_lookup (s_vpn->secrets, NM_PPTP_KEY_PASSWORD);
 	if (!password || !strlen (password)) {
 		g_set_error (error,
 		             NM_VPN_PLUGIN_ERROR,
@@ -475,7 +475,9 @@ validate_one_property (gpointer key, gpointer value, gpointer user_data)
 }
 
 static gboolean
-nm_pptp_properties_validate (GHashTable *properties, GError **error)
+nm_pptp_properties_validate (GHashTable *properties,
+                             gboolean check_required,
+                             GError **error)
 {
 	int i;
 
@@ -492,22 +494,24 @@ nm_pptp_properties_validate (GHashTable *properties, GError **error)
 	if (*error)
 		return FALSE;
 
-	/* Ensure required properties exist */
-	for (i = 0; valid_properties[i].name; i++) {
-		ValidProperty prop = valid_properties[i];
-		const char *value;
+	if (check_required) {
+		/* Ensure required properties exist */
+		for (i = 0; valid_properties[i].name; i++) {
+			ValidProperty prop = valid_properties[i];
+			const char *value;
 
-		if (!prop.required)
-			continue;
+			if (!prop.required)
+				continue;
 
-		value = g_hash_table_lookup (properties, prop.name);
-		if (!value || !strlen (value)) {
-			g_set_error (error,
-			             NM_VPN_PLUGIN_ERROR,
-			             NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
-			             "Missing required option '%s'.",
-			             prop.name);
-			return FALSE;
+			value = g_hash_table_lookup (properties, prop.name);
+			if (!value || !strlen (value)) {
+				g_set_error (error,
+				             NM_VPN_PLUGIN_ERROR,
+				             NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
+				             "Missing required option '%s'.",
+				             prop.name);
+				return FALSE;
+			}
 		}
 	}
 
@@ -863,7 +867,11 @@ real_connect (NMVPNPlugin   *plugin,
 
 	s_vpn = NM_SETTING_VPN (nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN));
 	g_assert (s_vpn);
-	if (!nm_pptp_properties_validate (s_vpn->data, error))
+
+	if (!nm_pptp_properties_validate (s_vpn->data, TRUE, error))
+		return FALSE;
+
+	if (!nm_pptp_properties_validate (s_vpn->secrets, FALSE, error))
 		return FALSE;
 
 	/* Start our pppd plugin helper service */
@@ -907,7 +915,7 @@ real_need_secrets (NMVPNPlugin *plugin,
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 
 	s_vpn = NM_SETTING_VPN (nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN));
-	if (!s_vpn) {
+	if (!s_vpn || !s_vpn->secrets) {
         g_set_error (error,
 		             NM_VPN_PLUGIN_ERROR,
 		             NM_VPN_PLUGIN_ERROR_CONNECTION_INVALID,
@@ -916,7 +924,7 @@ real_need_secrets (NMVPNPlugin *plugin,
 		return FALSE;
 	}
 
-	if (!g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_PASSWORD)) {
+	if (!g_hash_table_lookup (s_vpn->secrets, NM_PPTP_KEY_PASSWORD)) {
 		*setting_name = NM_SETTING_VPN_SETTING_NAME;
 		return TRUE;
 	}

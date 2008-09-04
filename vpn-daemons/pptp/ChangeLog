@@ -1,5 +1,11 @@
 2008-08-28  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-pptp-service.c
+		- (nm_pptp_ppp_service_cache_credentials, nm_pptp_properties_validate,
+		   real_connect, real_need_secrets): handle split VPN secrets
+
+2008-08-28  Dan Williams  <dcbw@redhat.com>
+
 	* auth-dialog/main.c
 		- (get_secrets): don't gtk_widget_show_all() because that exposes
 			widgets that were supposed to be hidden
