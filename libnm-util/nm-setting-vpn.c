@@ -71,6 +71,7 @@ enum {
 	PROP_SERVICE_TYPE,
 	PROP_USER_NAME,
 	PROP_DATA,
+	PROP_SECRETS,
 
 	LAST_PROP
 };
@@ -123,8 +124,17 @@ update_one_secret (NMSetting *setting, const char *key, GValue *value)
 	g_return_if_fail (value != NULL);
 	g_return_if_fail (G_VALUE_HOLDS_STRING (value));
 
-	/* Secrets are really only known to the VPNs themselves. */
-	g_hash_table_insert (self->data, g_strdup (key), g_value_dup_string (value));
+	g_hash_table_insert (self->secrets, g_strdup (key), g_value_dup_string (value));
+}
+
+static void
+destroy_one_secret (gpointer data)
+{
+	char *secret = (char *) data;
+
+	/* Don't leave the secret lying around in memory */
+	memset (secret, 0, strlen (secret));
+	g_free (secret);
 }
 
 static void
@@ -133,6 +143,7 @@ nm_setting_vpn_init (NMSettingVPN *setting)
 	NM_SETTING (setting)->name = g_strdup (NM_SETTING_VPN_SETTING_NAME);
 
 	setting->data = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+	setting->secrets = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, destroy_one_secret);
 }
 
 static void
@@ -143,6 +154,7 @@ finalize (GObject *object)
 	g_free (self->service_type);
 	g_free (self->user_name);
 	g_hash_table_destroy (self->data);
+	g_hash_table_destroy (self->secrets);
 
 	G_OBJECT_CLASS (nm_setting_vpn_parent_class)->finalize (object);
 }
@@ -158,6 +170,7 @@ set_property (GObject *object, guint prop_id,
 		    const GValue *value, GParamSpec *pspec)
 {
 	NMSettingVPN *setting = NM_SETTING_VPN (object);
+	GHashTable *new_hash;
 
 	switch (prop_id) {
 	case PROP_SERVICE_TYPE:
@@ -171,7 +184,16 @@ set_property (GObject *object, guint prop_id,
 	case PROP_DATA:
 		/* Must make a deep copy of the hash table here... */
 		g_hash_table_remove_all (setting->data);
-		g_hash_table_foreach (g_value_get_boxed (value), copy_hash, setting->data);
+		new_hash = g_value_get_boxed (value);
+		if (new_hash)
+			g_hash_table_foreach (new_hash, copy_hash, setting->data);
+		break;
+	case PROP_SECRETS:
+		/* Must make a deep copy of the hash table here... */
+		g_hash_table_remove_all (setting->secrets);
+		new_hash = g_value_get_boxed (value);
+		if (new_hash)
+			g_hash_table_foreach (new_hash, copy_hash, setting->secrets);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -194,6 +216,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_DATA:
 		g_value_set_boxed (value, setting->data);
+		break;
+	case PROP_SECRETS:
+		g_value_set_boxed (value, setting->secrets);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -238,4 +263,13 @@ nm_setting_vpn_class_init (NMSettingVPNClass *setting_class)
 							   "VPN Service specific data",
 							   DBUS_TYPE_G_MAP_OF_STRING,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	g_object_class_install_property
+		(object_class, PROP_SECRETS,
+		 _nm_param_spec_specialized (NM_SETTING_VPN_SECRETS,
+							   "Secrets",
+							   "VPN Service specific secrets",
+							   DBUS_TYPE_G_MAP_OF_STRING,
+							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
 }
+

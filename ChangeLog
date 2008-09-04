@@ -1,3 +1,23 @@
+2008-09-04  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-setting-vpn.c
+	  libnm-util/nm-setting-vpn.h
+		- Split VPN secrets from VPN data so that settings services can actually
+			figure out that they are secrets and store them accordingly
+
+	* system-settings/plugins/keyfile/nm-keyfile-connection.c
+	  system-settings/plugins/keyfile/reader.c
+	  system-settings/plugins/keyfile/reader.h
+	  system-settings/plugins/keyfile/writer.c
+		- Store VPN secrets separately from VPN data so that they can be fetched
+			on demand
+		- Implement the get_secrets() call so that (a) secrets don't leak out
+			to unprivileged callers, and (b) secrets can be sent to privileged
+			callers when needed
+
+	* vpn-daemons/vpnc/src/nm-vpnc-service.c
+		- Handle split VPN secrets
+
 2008-08-27  Dan Williams  <dcbw@redhat.com>
 
 	* system-settings/plugins/ifcfg-fedora/reader.c

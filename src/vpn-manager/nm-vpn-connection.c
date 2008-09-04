@@ -658,13 +658,12 @@ static void
 update_vpn_properties_secrets (gpointer key, gpointer data, gpointer user_data)
 {
 	NMConnection *connection = NM_CONNECTION (user_data);
+	GHashTable *secrets = (GHashTable *) data;
 
 	if (strcmp (key, NM_SETTING_VPN_SETTING_NAME))
 		return;
 
-	nm_connection_update_secrets (connection,
-	                              NM_SETTING_VPN_SETTING_NAME,
-	                              (GHashTable *) data);
+	nm_connection_update_secrets (connection, NM_SETTING_VPN_SETTING_NAME, secrets);
 }
 
 static void

@@ -14,6 +14,7 @@
 
 #include "nm-dbus-glib-types.h"
 #include "writer.h"
+#include "reader.h"
 
 static gboolean
 write_array_of_uint (GKeyFile *file,
@@ -154,10 +155,6 @@ write_hash_of_string_helper (gpointer key, gpointer data, gpointer user_data)
 	const char *property = (const char *) key;
 	const char *value = (const char *) data;
 
-	if (   !strcmp (info->setting_name, NM_SETTING_VPN_SETTING_NAME)
-	    && !strcmp (property, NM_SETTING_VPN_SERVICE_TYPE))
-		return;
-
 	g_key_file_set_string (info->file,
 	                       info->setting_name,
 	                       property,
@@ -174,7 +171,14 @@ write_hash_of_string (GKeyFile *file,
 	WriteStringHashInfo info;
 
 	info.file = file;
-	info.setting_name = setting->name;
+
+	/* Write VPN secrets out to a different group to keep them separate */
+	if (   (G_OBJECT_TYPE (setting) == NM_TYPE_SETTING_VPN)
+	    && !strcmp (key, NM_SETTING_VPN_SECRETS)) {
+		info.setting_name = VPN_SECRETS_GROUP;
+	} else
+		info.setting_name = setting->name;
+
 	g_hash_table_foreach (hash, write_hash_of_string_helper, &info);
 }
 

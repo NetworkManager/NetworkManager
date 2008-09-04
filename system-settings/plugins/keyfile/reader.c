@@ -315,6 +315,11 @@ read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
 	g_strfreev (keys);
 }
 
+typedef struct {
+	GKeyFile *keyfile;
+	gboolean secrets;
+} ReadSettingInfo;
+
 static void
 read_one_setting_value (NMSetting *setting,
 				    const char *key,
@@ -322,7 +327,8 @@ read_one_setting_value (NMSetting *setting,
 				    gboolean secret,
 				    gpointer user_data)
 {
-	GKeyFile *file = (GKeyFile *) user_data;
+	ReadSettingInfo *info = (ReadSettingInfo *) user_data;
+	GKeyFile *file = info->keyfile;
 	GType type;
 	GError *err = NULL;
 	gboolean check_for_key = TRUE;
@@ -331,8 +337,14 @@ read_one_setting_value (NMSetting *setting,
 	if (!strcmp (key, NM_SETTING_NAME))
 		return;
 
-	/* IPv4 addresses don't have the exact key name */
+	/* Don't read in secrets unless we want to */
+	if (secret && !info->secrets)
+		return;
+
+	/* IPv4 addresses and VPN properties don't have the exact key name */
 	if (NM_IS_SETTING_IP4_CONFIG (setting) && !strcmp (key, NM_SETTING_IP4_CONFIG_ADDRESSES))
+		check_for_key = FALSE;
+	else if (NM_IS_SETTING_VPN (setting))
 		check_for_key = FALSE;
 
 	if (check_for_key && !g_key_file_has_key (file, setting->name, key, &err)) {
@@ -407,7 +419,7 @@ read_one_setting_value (NMSetting *setting,
 		g_object_set (setting, key, array, NULL);
 		g_byte_array_free (array, TRUE);
 		g_free (tmp);
- 	} else if (type == dbus_g_type_get_collection ("GSList", G_TYPE_STRING)) {
+ 	} else if (type == DBUS_TYPE_G_LIST_OF_STRING) {
 		gchar **sa;
 		gsize length;
 		int i;
@@ -422,7 +434,7 @@ read_one_setting_value (NMSetting *setting,
 
 		g_slist_free (list);
 		g_strfreev (sa);
-	} else if (type == dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_STRING)) {
+	} else if (type == DBUS_TYPE_G_MAP_OF_STRING) {
 		read_hash_of_string (file, setting, key);
 	} else if (type == DBUS_TYPE_G_UINT_ARRAY) {
 		if (!read_array_of_uint (file, setting, key)) {
@@ -441,21 +453,41 @@ read_one_setting_value (NMSetting *setting,
 }
 
 static NMSetting *
-read_setting (GKeyFile *file, const char *name)
+read_setting (GKeyFile *file, const char *name, gboolean secrets)
 {
 	NMSetting *setting;
+	ReadSettingInfo info;
+
+	info.keyfile = file;
+	info.secrets = secrets;
 
 	setting = nm_connection_create_setting (name);
-	if (setting) {
-		nm_setting_enumerate_values (setting, read_one_setting_value, file);
-	} else
+	if (setting)
+		nm_setting_enumerate_values (setting, read_one_setting_value, &info);
+	else
 		g_warning ("Invalid setting name '%s'", name);
 
 	return setting;
 }
 
+static void
+read_vpn_secrets (GKeyFile *file, NMSettingVPN *s_vpn)
+{
+	char **keys, **iter;
+
+	keys = g_key_file_get_keys (file, VPN_SECRETS_GROUP, NULL, NULL);
+	for (iter = keys; *iter; iter++) {
+		char *secret;
+
+		secret = g_key_file_get_string (file, VPN_SECRETS_GROUP, *iter, NULL);
+		if (secret)
+			g_hash_table_insert (s_vpn->secrets, g_strdup (*iter), secret);
+	}
+	g_strfreev (keys);
+}
+
 NMConnection *
-connection_from_file (const char *filename)
+connection_from_file (const char *filename, gboolean secrets)
 {
 	GKeyFile *key_file;
 	struct stat statbuf;
@@ -479,6 +511,7 @@ connection_from_file (const char *filename)
 		gchar **groups;
 		gsize length;
 		int i;
+		gboolean vpn_secrets = FALSE;
 
 		connection = nm_connection_new ();
 
@@ -486,9 +519,24 @@ connection_from_file (const char *filename)
 		for (i = 0; i < length; i++) {
 			NMSetting *setting;
 
-			setting = read_setting (key_file, groups[i]);
+			/* Only read out secrets when needed */
+			if (!strcmp (groups[i], VPN_SECRETS_GROUP)) {
+				vpn_secrets = TRUE;
+				continue;
+			}
+
+			setting = read_setting (key_file, groups[i], secrets);
 			if (setting)
 				nm_connection_add_setting (connection, setting);
+		}
+
+		/* Handle vpn secrets after the 'vpn' setting was read */
+		if (secrets && vpn_secrets) {
+			NMSettingVPN *s_vpn;
+
+			s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
+			if (s_vpn)
+				read_vpn_secrets (key_file, s_vpn);
 		}
 
 		g_strfreev (groups);

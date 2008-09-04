@@ -55,6 +55,7 @@ GQuark nm_setting_vpn_error_quark (void);
 #define NM_SETTING_VPN_SERVICE_TYPE "service-type"
 #define NM_SETTING_VPN_USER_NAME    "user-name"
 #define NM_SETTING_VPN_DATA         "data"
+#define NM_SETTING_VPN_SECRETS      "secrets"
 
 typedef struct {
 	NMSetting parent;
@@ -72,9 +73,18 @@ typedef struct {
 	 * a char * -> char * mapping, and both the key
 	 * and value are owned by the hash table, and should
 	 * be allocated with functions whose value can be
-	 * freed with g_free()
+	 * freed with g_free().  Should not contain secrets.
 	 */
 	GHashTable *data;
+
+	/* The hash table is created at setting object
+	 * init time and should not be replaced.  It is
+	 * a char * -> char * mapping, and both the key
+	 * and value are owned by the hash table, and should
+	 * be allocated with functions whose value can be
+	 * freed with g_free().  Should contain secrets only.
+	 */
+	GHashTable *secrets;
 } NMSettingVPN;
 
 typedef struct {

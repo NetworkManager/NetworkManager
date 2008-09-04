@@ -321,6 +321,7 @@ static gboolean
 nm_vpnc_config_write (gint vpnc_fd,
                       const char *default_user_name,
                       GHashTable *properties,
+                      GHashTable *secrets,
                       GError **error)
 {
 	WriteConfigInfo *info;
@@ -354,6 +355,7 @@ nm_vpnc_config_write (gint vpnc_fd,
 	info = g_malloc0 (sizeof (WriteConfigInfo));
 	info->fd = vpnc_fd;
 	g_hash_table_foreach (properties, write_one_property, info);
+	g_hash_table_foreach (secrets, write_one_property, info);
 	*error = info->error;
 	g_free (info);
 
@@ -373,12 +375,14 @@ real_connect (NMVPNPlugin   *plugin,
 	g_assert (s_vpn);
 	if (!nm_vpnc_properties_validate (s_vpn->data, error))
 		goto out;
+	if (!nm_vpnc_properties_validate (s_vpn->secrets, error))
+		goto out;
 
 	vpnc_fd = nm_vpnc_start_vpnc_binary (NM_VPNC_PLUGIN (plugin), error);
 	if (vpnc_fd < 0)
 		goto out;
 
-	if (!nm_vpnc_config_write (vpnc_fd, s_vpn->user_name, s_vpn->data, error))
+	if (!nm_vpnc_config_write (vpnc_fd, s_vpn->user_name, s_vpn->data, s_vpn->secrets, error))
 		goto out;
 
 	success = TRUE;
@@ -412,11 +416,11 @@ real_need_secrets (NMVPNPlugin *plugin,
 
 	// FIXME: there are some configurations where both passwords are not
 	// required.  Make sure they work somehow.
-	if (!g_hash_table_lookup (s_vpn->data, NM_VPNC_KEY_SECRET)) {
+	if (!g_hash_table_lookup (s_vpn->secrets, NM_VPNC_KEY_SECRET)) {
 		*setting_name = NM_SETTING_VPN_SETTING_NAME;
 		return TRUE;
 	}
-	if (!g_hash_table_lookup (s_vpn->data, NM_VPNC_KEY_XAUTH_PASSWORD)) {
+	if (!g_hash_table_lookup (s_vpn->secrets, NM_VPNC_KEY_XAUTH_PASSWORD)) {
 		*setting_name = NM_SETTING_VPN_SETTING_NAME;
 		return TRUE;
 	}
