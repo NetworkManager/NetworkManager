@@ -822,8 +822,11 @@ real_connect (NMVPNPlugin   *plugin,
 	if (!nm_openvpn_properties_validate (s_vpn->data, error))
 		return FALSE;
 
-	if (!nm_openvpn_properties_validate (s_vpn->secrets, error))
-		return FALSE;
+	/* Static Key doesn't need secrets; the rest do */
+	if (strcmp (connection_type, NM_OPENVPN_CONTYPE_STATIC_KEY)) {
+		if (!nm_openvpn_properties_validate (s_vpn->secrets, error))
+			return FALSE;
+	}
 
 	/* Finally try to start OpenVPN */
 	if (!nm_openvpn_start_openvpn_binary (NM_OPENVPN_PLUGIN (plugin),
