@@ -29,6 +29,7 @@
 #include <pk11pub.h>
 #include <pkcs11t.h>
 #include <cert.h>
+#include <prerror.h>
 
 #include "crypto.h"
 
@@ -38,8 +39,17 @@ gboolean
 crypto_init (GError **error)
 {
 	if (refcount == 0) {
+		SECStatus ret;
+
 		PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 1);
-		NSS_NoDB_Init (NULL);
+		ret = NSS_NoDB_Init (NULL);
+		if (ret != SECSuccess) {
+			g_set_error (error, NM_CRYPTO_ERROR,
+			             NM_CRYPTO_ERR_INIT_FAILED,
+			             _("Failed to initialize the crypto engine: %d."),
+			             PR_GetError ());
+			return FALSE;
+		}
 	}
 	refcount++;
 	return TRUE;

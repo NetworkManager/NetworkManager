@@ -1,5 +1,12 @@
 2008-09-05  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/crypto_nss.c
+	  libnm-util/crypto_gnutls.c
+	  libnm-util/crypto.h
+		- (crypto_init): return error when init fails
+
+2008-09-05  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/nm-device-wifi.c
 		- (access_point_removed_proxy): clean up the active access point too
 			just in case the active ap changed signal didn't come through yet
