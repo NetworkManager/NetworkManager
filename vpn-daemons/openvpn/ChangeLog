@@ -1,3 +1,10 @@
+2008-09-05  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-openvpn-service.c
+		- (nm_openvpn_start_openvpn_binary): send --script-security=2 to allow
+			the plugin's scripts to be run.  Requires OpenVPN 2.1-rc9 or later,
+			distros with older versions should patch this out.
+
 2008-09-04  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-openvpn-service.c

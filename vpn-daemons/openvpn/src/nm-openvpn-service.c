@@ -613,6 +613,13 @@ nm_openvpn_start_openvpn_binary (NMOpenvpnPlugin *plugin,
 	add_openvpn_arg (args, "--syslog");
 	add_openvpn_arg (args, "nm-openvpn");
 
+	/* Bash script security in the face; this option was added to OpenVPN 2.1-rc9
+	 * and defaults to disallowing any scripts, a behavior change from previous
+	 * versions.
+	 */
+	add_openvpn_arg (args, "--script-security");
+	add_openvpn_arg (args, "2");
+
 	/* Up script, called when connection has been established or has been restarted */
 	add_openvpn_arg (args, "--up");
 	add_openvpn_arg (args, NM_OPENVPN_HELPER_PATH);
