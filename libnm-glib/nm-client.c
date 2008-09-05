@@ -245,9 +245,6 @@ constructor (GType type,
 						    object,
 						    NULL);
 
-	update_wireless_status (NM_CLIENT (object), FALSE);
-	nm_client_get_state (NM_CLIENT (object));
-
 	priv->bus_proxy = dbus_g_proxy_new_for_name (connection,
 										"org.freedesktop.DBus",
 										"/org/freedesktop/DBus",
@@ -269,6 +266,11 @@ constructor (GType type,
 					    G_TYPE_INVALID)) {
 		g_warning ("Error on NameHasOwner DBUS call: %s", err->message);
 		g_error_free (err);
+	}
+
+	if (priv->manager_running) {
+		update_wireless_status (NM_CLIENT (object), FALSE);
+		nm_client_get_state (NM_CLIENT (object));
 	}
 
 	g_signal_connect (G_OBJECT (object), "notify::" NM_CLIENT_WIRELESS_ENABLED,
