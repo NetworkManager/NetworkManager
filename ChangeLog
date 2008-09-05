@@ -1,5 +1,14 @@
 2008-09-05  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Roy Marples <roy@marples.name> and others
+
+	* configure.in
+	  src/named-manager/nm-named-manager.c
+		- Add support for resolvconf; use --with-resolvconf at configure time
+			to enable it
+
+2008-09-05  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/crypto_nss.c
 	  libnm-util/crypto_gnutls.c
 	  libnm-util/crypto.h

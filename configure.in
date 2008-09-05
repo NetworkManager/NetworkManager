@@ -402,6 +402,39 @@ if test "$DHCP_CLIENT" != "dhclient" -a "$DHCP_CLIENT" != "dhcpcd"; then
 fi
 AC_SUBST(DHCP_CLIENT)
 
+# resolvconf support
+AC_ARG_WITH(crypto, AC_HELP_STRING([--with-crypto=nss | gnutls], [Cryptography library to use for certificate and key operations]),ac_crypto=$withval, ac_crypto=nss)
+AC_ARG_WITH([resolvconf],
+	    AS_HELP_STRING([--with-resolvconf=yes|no|path], [Enable resolvconf support]),
+	    with_resolvconf="$withval",with_resolvconf=no)
+# If a full path is given, use that and do not test if it works or not.
+case "${with_resolvconf}" in
+	/*)
+		RESOLVCONF_PATH="${with_resolvconf}"
+		AC_MSG_NOTICE(setting resolvconf path to ${RESOLVCONF_PATH})
+		;;
+	no)	AC_MSG_NOTICE(resolvconf support disabled)
+		;;
+	*)
+		AC_MSG_CHECKING(for resolvconf)
+		for path in /sbin /usr/sbin /usr/pkg/sbin /usr/local/sbin; do
+			if test -x "${path}/resolvconf"; then
+				RESOLVCONF_PATH="${path}/resolvconf"
+				break
+			fi
+		done
+		if test -n "${RESOLVCONF_PATH}"; then
+			AC_MSG_RESULT($RESOLVCONF_PATH)
+		else
+			AC_MSG_RESULT(no)
+		fi
+		;;
+esac
+AC_SUBST(RESOLVCONF_PATH)
+if test -n "${RESOLVCONF_PATH}"; then
+	AC_DEFINE_UNQUOTED(RESOLVCONF_PATH, "$RESOLVCONF_PATH", [Define if you have a resolvconf implementation])
+fi
+
 AC_ARG_ENABLE(more-warnings,
 AS_HELP_STRING([--enable-more-warnings], [Maximum compiler warnings]), set_more_warnings="$enableval",set_more_warnings=yes)
 AC_MSG_CHECKING(for more warnings, including -Werror)
