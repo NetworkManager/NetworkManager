@@ -1,3 +1,9 @@
+2008-09-05  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-glib/nm-ip4-config.c
+	  libnm-glib/nm-dhcp4-config.c
+		- (finalize): clean up the DBusGProxy
+
 2008-09-04  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-ip4-config.c

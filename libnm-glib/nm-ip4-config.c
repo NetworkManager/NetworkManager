@@ -153,6 +153,8 @@ finalize (GObject *object)
 		g_ptr_array_free (priv->domains, TRUE);
 	}
 
+	g_object_unref (priv->proxy);
+
 	G_OBJECT_CLASS (nm_ip4_config_parent_class)->finalize (object);
 }
 
