@@ -1,5 +1,12 @@
 2008-09-05  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/nm-device-wifi.c
+		- (access_point_removed_proxy): clean up the active access point too
+			just in case the active ap changed signal didn't come through yet
+		- (clean_up_aps): be sure to set priv->active_ap to NULL when cleaning up
+
+2008-09-05  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/nm-client.c
 		- (constructor): get initial state after we know whether NM is running
 			or not

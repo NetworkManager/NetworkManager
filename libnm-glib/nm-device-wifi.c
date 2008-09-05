@@ -359,6 +359,16 @@ access_point_removed_proxy (DBusGProxy *proxy, char *path, gpointer user_data)
 
 	ap = nm_device_wifi_get_access_point_by_path (self, path);
 	if (ap) {
+		if (ap == priv->active_ap) {
+			g_object_unref (priv->active_ap);
+			priv->active_ap = NULL;
+			priv->null_active_ap = FALSE;
+
+			_nm_object_queue_notify (NM_OBJECT (self), NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT);
+			priv->rate = 0;
+			_nm_object_queue_notify (NM_OBJECT (self), NM_DEVICE_WIFI_BITRATE);
+		}
+
 		g_signal_emit (self, signals[ACCESS_POINT_REMOVED], 0, ap);
 		g_ptr_array_remove (priv->aps, ap);
 		g_object_unref (G_OBJECT (ap));
@@ -374,8 +384,10 @@ clean_up_aps (NMDeviceWifi *self, gboolean notify)
 
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	if (priv->active_ap)
+	if (priv->active_ap) {
 		g_object_unref (priv->active_ap);
+		priv->active_ap = NULL;
+	}
 
 	if (priv->aps) {
 		while (priv->aps->len) {
