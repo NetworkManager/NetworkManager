@@ -45,6 +45,8 @@ G_DEFINE_TYPE (NMIP4Config, nm_ip4_config, G_TYPE_OBJECT)
 #define NM_IP4_CONFIG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IP4_CONFIG, NMIP4ConfigPrivate))
 
 typedef struct {
+	char *path;
+
 	GSList *addresses;
 	guint32	ptp_address;
 
@@ -75,20 +77,39 @@ enum {
 NMIP4Config *
 nm_ip4_config_new (void)
 {
-	GObject *object;
+	return (NMIP4Config *) g_object_new (NM_TYPE_IP4_CONFIG, NULL);
+}
+
+void
+nm_ip4_config_export (NMIP4Config *config)
+{
+	NMIP4ConfigPrivate *priv;
+	NMDBusManager *dbus_mgr;
 	DBusGConnection *connection;
-	char *path;
 	static guint32 counter = 0;
 
-	object = g_object_new (NM_TYPE_IP4_CONFIG, NULL);
+	g_return_if_fail (NM_IS_IP4_CONFIG (config));
 
-	connection = nm_dbus_manager_get_connection (nm_dbus_manager_get ());
-	path = g_strdup_printf (NM_DBUS_PATH "/IP4Config/%d", counter++);
+	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	g_return_if_fail (priv->path == NULL);
 
-	dbus_g_connection_register_g_object (connection, path, object);
-	g_free (path);
+	dbus_mgr = nm_dbus_manager_get ();
+	connection = nm_dbus_manager_get_connection (dbus_mgr);
+	priv->path = g_strdup_printf (NM_DBUS_PATH "/IP4Config/%d", counter++);
 
-	return (NMIP4Config *) object;
+	dbus_g_connection_register_g_object (connection, priv->path, G_OBJECT (config));
+	g_object_unref (dbus_mgr);
+}
+
+gboolean
+nm_ip4_config_is_exported (NMIP4Config *config)
+{
+	NMIP4ConfigPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), FALSE);
+
+	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	return !!priv->path;
 }
 
 void

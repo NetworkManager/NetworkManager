@@ -1,5 +1,19 @@
 2008-09-04  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-ip4-config.c
+	  src/nm-ip4-config.h
+		- (nm_ip4_config_new): don't export over D-Bus here
+		- (nm_ip4_config_export): new function; export the config over D-Bus
+		- (nm_ip4_config_is_exported): new function
+
+	* src/nm-device.c
+		- (nm_device_activate_stage5_ip_config_commit): fix leak of IP4Config
+			objects by balancing the IP4Config constructor; the device holds
+			a reference to the IP4Config already
+		- (nm_device_set_ip4_config): export the IP4Config when needed
+
+2008-09-04  Dan Williams  <dcbw@redhat.com>
+
 	* src/supplicant-manager/nm-supplicant-settings-verify.c
 		- Allow WPA-NONE key management for Ad-Hoc WPA connections
 

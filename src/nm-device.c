@@ -1392,6 +1392,10 @@ nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 out:
 	nm_info ("Activation (%s) Stage 5 of 5 (IP Configure Commit) complete.",
 	         iface);
+
+	/* Balance IP4Config creation; device takes ownership in set_ip4_config() */
+	g_object_unref (ip4_config);
+
 	return FALSE;
 }
 
@@ -1888,6 +1892,10 @@ nm_device_set_ip4_config (NMDevice *self, NMIP4Config *config, NMDeviceStateReas
 		return TRUE;
 
 	priv->ip4_config = g_object_ref (config);
+
+	/* Export over D-Bus if needed */
+	if (!nm_ip4_config_is_exported (config))
+		nm_ip4_config_export (config);
 
 	success = nm_system_device_set_from_ip4_config (ip_iface, config);
 	if (success)

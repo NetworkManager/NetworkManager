@@ -55,8 +55,9 @@ typedef struct {
 GType nm_ip4_config_get_type (void);
 
 
-NMIP4Config *	nm_ip4_config_new				(void);
-NMIP4Config *	nm_ip4_config_copy				(NMIP4Config *config);
+NMIP4Config * nm_ip4_config_new (void);
+void nm_ip4_config_export (NMIP4Config *config);
+gboolean nm_ip4_config_is_exported (NMIP4Config *config);
 
 void					nm_ip4_config_take_address		(NMIP4Config *config, NMSettingIP4Address *address);
 void					nm_ip4_config_add_address		(NMIP4Config *config, NMSettingIP4Address *address);
