@@ -902,8 +902,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
 
 	/* Initialize crypto lbrary. */
-	if (!crypto_init (&error)) {
-		g_warning ("Couldn't initilize crypto system: %d %s",
+	if (!nm_utils_init (&error)) {
+		g_warning ("Couldn't initilize nm-utils/crypto system: %d %s",
 		           error->code, error->message);
 		g_error_free (error);
 	}

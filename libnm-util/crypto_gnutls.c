@@ -29,30 +29,31 @@
 
 #include "crypto.h"
 
-static guint32 refcount = 0;
+static gboolean initialized = FALSE;
 
 gboolean
 crypto_init (GError **error)
 {
-	if (refcount == 0) {
-		if (gnutls_global_init() != 0) {
-			gnutls_global_deinit();
-			g_set_error (error, NM_CRYPTO_ERROR,
-			             NM_CRYPTO_ERR_INIT_FAILED,
-			             "%s",
-			             _("Failed to initialize the crypto engine."));
-			return FALSE;
-		}
+	if (initialized)
+		return TRUE;
+
+	if (gnutls_global_init() != 0) {
+		gnutls_global_deinit();
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_INIT_FAILED,
+		             "%s",
+		             _("Failed to initialize the crypto engine."));
+		return FALSE;
 	}
-	refcount++;
+
+	initialized = TRUE;
 	return TRUE;
 }
 
 void
 crypto_deinit (void)
 {
-	refcount--;
-	if (refcount == 0)
+	if (initialized)
 		gnutls_global_deinit();
 }
 

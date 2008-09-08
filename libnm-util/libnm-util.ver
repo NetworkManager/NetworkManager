@@ -99,8 +99,10 @@ global:
 	nm_setting_wireless_security_error_quark;
 	nm_setting_wireless_security_get_type;
 	nm_setting_wireless_security_new;
+	nm_utils_deinit;
 	nm_utils_escape_ssid;
 	nm_utils_gvalue_hash_dup;
+	nm_utils_init;
 	nm_utils_ip4_addresses_from_gvalue;
 	nm_utils_ip4_addresses_to_gvalue;
 	nm_utils_ip4_netmask_to_prefix;

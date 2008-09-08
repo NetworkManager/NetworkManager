@@ -1,3 +1,20 @@
+2008-09-08  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Alexander Sack <asac@ubuntu.com>
+
+	* libnm-util/crypto_gnutls.c
+	  libnm-util/crypto_nss.c
+		- (crypto_init, crypto_deinit): just use a boolean instead of a refcount
+
+	* libnm-util/nm-utils.c
+	  libnm-util/nm-utils.h
+	  libnm-util/libnm-util.ver
+		- (nm_utils_init): initialize libnm-util
+		- (nm_utils_deinit): de-initialize libnm-util and clean up resources
+
+	* libnm-util/nm-setting-8021x.c
+		- (nm_setting_802_1x_class_init): init libnm-util when needed
+
 2008-09-05  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Roy Marples <roy@marples.name> and others

@@ -136,6 +136,10 @@ G_STMT_START								\
 	G_BREAKPOINT ();						\
 } G_STMT_END
 
+/* init, deinit nm_utils */
+gboolean nm_utils_init (GError **error);
+void     nm_utils_deinit (void);
+
 /* SSID helpers */
 gboolean    nm_utils_is_empty_ssid    (const guint8 * ssid, int len);
 const char *nm_utils_escape_ssid      (const guint8 *ssid, guint32 len);

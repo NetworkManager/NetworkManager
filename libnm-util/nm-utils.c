@@ -242,6 +242,34 @@ string_to_utf8 (const char *str, gsize len)
 	return converted;
 }
 
+/* init, deinit for libnm_util */
+
+static gboolean initialized = FALSE;
+
+gboolean
+nm_utils_init (GError **error)
+{
+	if (!initialized) {
+		if (!crypto_init (error)) {
+			return FALSE;
+		}
+		atexit (nm_utils_deinit);
+		initialized = TRUE;
+	}
+	return TRUE;
+}
+
+void
+nm_utils_deinit (void)
+{
+	if (initialized) {
+		crypto_deinit ();
+		initialized = FALSE;
+	}
+}
+
+/* ssid helpers */
+
 char *
 nm_utils_ssid_to_utf8 (const char *ssid, guint32 len)
 {
@@ -1128,7 +1156,7 @@ nm_utils_uuid_generate_from_string (const char *s)
 	uuid_t *uuid;
 	char *buf = NULL;
 
-	if (!crypto_init (&error)) {
+	if (!nm_utils_init (&error)) {
 		nm_warning ("error initializing crypto: (%d) %s",
 		            error ? error->code : 0,
 		            error ? error->message : "unknown");
@@ -1152,7 +1180,6 @@ nm_utils_uuid_generate_from_string (const char *s)
 
 out:
 	g_free (uuid);
-	crypto_deinit ();
 	return buf;
 }
 

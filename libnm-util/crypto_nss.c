@@ -33,33 +33,35 @@
 
 #include "crypto.h"
 
-static guint32 refcount = 0;
+static gboolean initialized = FALSE;
 
 gboolean
 crypto_init (GError **error)
 {
-	if (refcount == 0) {
-		SECStatus ret;
+	SECStatus ret;
 
-		PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 1);
-		ret = NSS_NoDB_Init (NULL);
-		if (ret != SECSuccess) {
-			g_set_error (error, NM_CRYPTO_ERROR,
-			             NM_CRYPTO_ERR_INIT_FAILED,
-			             _("Failed to initialize the crypto engine: %d."),
-			             PR_GetError ());
-			return FALSE;
-		}
+	if (initialized)
+		return TRUE;
+
+	PR_Init(PR_USER_THREAD, PR_PRIORITY_NORMAL, 1);
+	ret = NSS_NoDB_Init (NULL);
+	if (ret != SECSuccess) {
+		PR_Cleanup ();
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_INIT_FAILED,
+		             _("Failed to initialize the crypto engine: %d."),
+		             PR_GetError ());
+		return FALSE;
 	}
-	refcount++;
+
+	initialized = TRUE;
 	return TRUE;
 }
 
 void
 crypto_deinit (void)
 {
-	refcount--;
-	if (refcount == 0) {
+	if (initialized) {
 		NSS_Shutdown ();
 		PR_Cleanup ();
 	}
