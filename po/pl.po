@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: networkmanager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-08-19 11:30+0200\n"
-"PO-Revision-Date: 2008-08-19 11:33+0100\n"
+"POT-Creation-Date: 2008-09-08 19:50+0200\n"
+"PO-Revision-Date: 2008-09-08 19:51+0100\n"
 "Last-Translator: Tomasz Dominikowski <dominikowski@gmail.com>\n"
 "Language-Team: Aviary.pl <gnomepl@aviary.pl>\n"
 "MIME-Version: 1.0\n"
@@ -75,15 +75,15 @@ msgstr ""
 "# Scalony od %s\n"
 "\n"
 
-#: ../src/named-manager/nm-named-manager.c:257
-msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
-msgstr "UWAGA: obsługa nazw glibc nie obsługuje więcej niż 3 serwery nazw."
+#: ../src/named-manager/nm-named-manager.c:240
+msgid "NOTE: the libc resolver may not support more than 3 nameservers."
+msgstr "UWAGA: obsługa nazw libc nie obsługuje więcej niż 3 serwery nazw."
 
-#: ../src/named-manager/nm-named-manager.c:259
+#: ../src/named-manager/nm-named-manager.c:242
 msgid "The nameservers listed below may not be recognized."
 msgstr "Poniższe serwery nazw nie mogą nie zostać rozpoznane."
 
-#: ../system-settings/src/main.c:365
+#: ../system-settings/src/main.c:366
 #, c-format
 msgid "Auto %s"
 msgstr "Auto %s"
@@ -170,8 +170,8 @@ msgid "IV contains non-hexadecimal digits."
 msgstr "IV zawiera nie-szesnastkowe cyfry."
 
 #: ../libnm-util/crypto.c:386
-#: ../libnm-util/crypto_gnutls.c:126
-#: ../libnm-util/crypto_nss.c:136
+#: ../libnm-util/crypto_gnutls.c:142
+#: ../libnm-util/crypto_nss.c:155
 #, c-format
 msgid "Private key cipher '%s' was unknown."
 msgstr "Nieznany szyfr klucza prywatnego \"%s\"."
@@ -186,83 +186,92 @@ msgstr "Brak wystarczającej ilości pamięci do utworzenia klucza deszyfrujące
 msgid "Not enough memory to store decrypted private key."
 msgstr "Brak wystarczającej ilości pamięci do przechowania zdeszyfrowanego klucza prywatnego."
 
-#: ../libnm-util/crypto_gnutls.c:73
+#: ../libnm-util/crypto_gnutls.c:43
+msgid "Failed to initialize the crypto engine."
+msgstr "Nieudana inicjacja modułu szyfrowania."
+
+#: ../libnm-util/crypto_gnutls.c:88
 #, c-format
 msgid "Failed to initialize the MD5 engine: %s / %s."
 msgstr "Nieudana inicjacja modułu MD5: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:135
-#: ../libnm-util/crypto_nss.c:145
+#: ../libnm-util/crypto_gnutls.c:151
+#: ../libnm-util/crypto_nss.c:164
 #, c-format
 msgid "Not enough memory for decrypted key buffer."
 msgstr "Brak wystarczającej ilości pamięci dla zdeszyfrowanego bufora klucza."
 
-#: ../libnm-util/crypto_gnutls.c:143
+#: ../libnm-util/crypto_gnutls.c:159
 #, c-format
 msgid "Failed to initialize the decryption cipher context: %s / %s."
 msgstr "Nieudana inicjacja kontekstu szyfru do deszyfrowania: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:152
+#: ../libnm-util/crypto_gnutls.c:168
 #, c-format
 msgid "Failed to set symmetric key for decryption: %s / %s."
 msgstr "Nieudane ustawienie klucza symetrycznego do deszyfrowania: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:161
+#: ../libnm-util/crypto_gnutls.c:177
 #, c-format
 msgid "Failed to set IV for decryption: %s / %s."
 msgstr "Nieudane ustawienie IV do deszyfrowania: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:170
+#: ../libnm-util/crypto_gnutls.c:186
 #, c-format
 msgid "Failed to decrypt the private key: %s / %s."
 msgstr "Nieudane zdeszyfrowanie klucza prywatnego: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:208
+#: ../libnm-util/crypto_gnutls.c:224
 #, c-format
 msgid "Error initializing certificate data: %s"
 msgstr "Błąd podczas inicjowania danych certyfikatu: %s"
 
-#: ../libnm-util/crypto_gnutls.c:220
+#: ../libnm-util/crypto_gnutls.c:236
 #, c-format
 msgid "Couldn't decode certificate: %s"
 msgstr "Nie można było zdekodować certyfikatu: %s"
 
-#: ../libnm-util/crypto_nss.c:78
+#: ../libnm-util/crypto_nss.c:49
+#, c-format
+msgid "Failed to initialize the crypto engine: %d."
+msgstr "Nieudana inicjacja modułu szyfrowania: %d."
+
+#: ../libnm-util/crypto_nss.c:96
 #, c-format
 msgid "Failed to initialize the MD5 context: %d."
 msgstr "Nieudana inicjacja kontekstu MD5: %d."
 
-#: ../libnm-util/crypto_nss.c:153
+#: ../libnm-util/crypto_nss.c:172
 #, c-format
 msgid "Failed to initialize the decryption cipher slot."
 msgstr "Nieudana inicjacja slotu szyfru do deszyfrowania."
 
-#: ../libnm-util/crypto_nss.c:163
+#: ../libnm-util/crypto_nss.c:182
 #, c-format
 msgid "Failed to set symmetric key for decryption."
 msgstr "Nieudane ustawienie klucza symetrycznego do deszyfrowania."
 
-#: ../libnm-util/crypto_nss.c:173
+#: ../libnm-util/crypto_nss.c:192
 #, c-format
 msgid "Failed to set IV for decryption."
 msgstr "Nieudane ustawienie IV do deszyfrowania."
 
-#: ../libnm-util/crypto_nss.c:181
+#: ../libnm-util/crypto_nss.c:200
 #, c-format
 msgid "Failed to initialize the decryption context."
 msgstr "Nieudana inicjacja kontekstu deszyfrowania."
 
-#: ../libnm-util/crypto_nss.c:194
+#: ../libnm-util/crypto_nss.c:213
 #, c-format
 msgid "Failed to decrypt the private key: %d."
 msgstr "Nieudane zdeszyfrowanie klucza prywatnego: %d."
 
-#: ../libnm-util/crypto_nss.c:206
+#: ../libnm-util/crypto_nss.c:225
 #, c-format
 msgid "Failed to finalize decryption of the private key: %d."
 msgstr "Nieudane ukończenie deszyfrowania klucza prywatnego: %d."
 
-#: ../libnm-util/crypto_nss.c:250
+#: ../libnm-util/crypto_nss.c:269
 #, c-format
 msgid "Couldn't decode certificate: %d"
 msgstr "Nie można było zdekodować certyfikatu: %d"
