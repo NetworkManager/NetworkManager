@@ -29,6 +29,8 @@
 #include <unistd.h>
 #include <stdio.h>
 
+#include <config.h>
+
 #include "nm-dhcp-manager.h"
 #include "nm-utils.h"
 
