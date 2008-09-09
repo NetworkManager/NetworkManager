@@ -1,64 +1,64 @@
-# translation of NetworkManager-vpnc.HEAD.po to Basque
+# translation of eu.po to Basque
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Iñaki Larrañaga Murgoitio <dooteo@euskalgnu.org>, 2008.
 msgid ""
 msgstr ""
-"Project-Id-Version: NetworkManager-vpnc.HEAD\n"
+"Project-Id-Version: eu\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-02-20 11:42+0100\n"
-"PO-Revision-Date: 2008-02-19 20:11+0100\n"
+"POT-Creation-Date: 2008-09-09 16:46+0200\n"
+"PO-Revision-Date: 2008-09-09 16:52+0200\n"
 "Last-Translator: Iñaki Larrañaga Murgoitio <dooteo@euskalgnu.org>\n"
-"Language-Team: Basque <eu@li.org>\n"
+"Language-Team: Basque <itzulpena@euskalgnu.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: KBabel 1.11.4\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:144
+#: ../auth-dialog/gnome-two-password-dialog.c:145
 msgid "_Secondary Password:"
 msgstr "_Bigarren pasahitza:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:258
+#: ../auth-dialog/gnome-two-password-dialog.c:259
 msgid "_Username:"
 msgstr "_Erabiltzaile-izena:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:260
+#: ../auth-dialog/gnome-two-password-dialog.c:261
 msgid "_Domain:"
 msgstr "_Domeinua:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:262
+#: ../auth-dialog/gnome-two-password-dialog.c:263
 msgid "_Password:"
 msgstr "_Pasahitza:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:351
+#: ../auth-dialog/gnome-two-password-dialog.c:352
 msgid "Connect _anonymously"
 msgstr "Konektatu _anonimo gisa"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:356
+#: ../auth-dialog/gnome-two-password-dialog.c:357
 msgid "Connect as _user:"
 msgstr "Konektatu _erabiltzaile gisa:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:465
+#: ../auth-dialog/gnome-two-password-dialog.c:466
 msgid "_Remember passwords for this session"
 msgstr "_Gogoratu pasahitza saio honetan"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:467
+#: ../auth-dialog/gnome-two-password-dialog.c:468
 msgid "_Save passwords in keyring"
 msgstr "_Gorde pasahitza gako-sortan"
 
-#: ../auth-dialog/main.c:172
+#: ../auth-dialog/main.c:67
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Autentifikatu egin behar zara '%s' VPN-ra sarbidetzeko."
 
-#: ../auth-dialog/main.c:173
+#: ../auth-dialog/main.c:68
 msgid "Authenticate VPN"
 msgstr "Autentifikatu VPN"
 
-#: ../auth-dialog/main.c:180
+#: ../auth-dialog/main.c:75
 msgid "_Group Password:"
 msgstr "_Taldearen pasahitza:"
 
@@ -70,66 +70,47 @@ msgstr "Gehitu, kendu eta editatu VPN konexioak"
 msgid "VPN Connection Manager (vpnc)"
 msgstr "VPN konexioen kudeatzailea (vpnc)"
 
-#: ../properties/nm-vpnc.c:98
-msgid "Compatible Cisco VPN client (vpnc)"
-msgstr "VPN bezeroa Cisco-rekin bateragarria (vpnc)"
+#: ../properties/nm-vpnc.c:53
+msgid "Cisco Compatible VPN (vpnc)"
+msgstr "VPN Cisco-rekin bateragarria (vpnc)"
 
-#: ../properties/nm-vpnc.c:543
-msgid "The following vpnc VPN connection will be created:"
-msgstr "Honako vpnc VPN konexioa sortuko da:"
+#: ../properties/nm-vpnc.c:54
+msgid ""
+"Compatible with various Cisco, Juniper, Netscreen, and Sonicwall IPSec-based "
+"VPN gateways."
+msgstr ""
+"Hainbat Cisco, Juniper, Netscreen eta Sonicwall IPSec-ean oinarritutako VPN atebideekin "
+"bateragarria."
 
-#: ../properties/nm-vpnc.c:545
-#, c-format
-msgid "Name:  %s"
-msgstr "Izena: %s"
+#: ../properties/nm-vpnc.c:265
+msgid "Secure (default)"
+msgstr "Segurua (lehenetsia)"
 
-#: ../properties/nm-vpnc.c:548
-#, c-format
-msgid "Gateway:  %s"
-msgstr "Atebidea: %s"
+#: ../properties/nm-vpnc.c:268
+msgid "Weak (use with caution)"
+msgstr "Ahula (erabili kontu handiz)"
 
-#: ../properties/nm-vpnc.c:550
-#, c-format
-msgid "Group Name:  %s"
-msgstr "Taldearen izena: %s"
+#: ../properties/nm-vpnc.c:276
+msgid "None (completely insecure)"
+msgstr "Bat ere ez (erabat ez-segurua)"
 
-#: ../properties/nm-vpnc.c:554
-#, c-format
-msgid "Username:  %s"
-msgstr "Erabiltzaile-izena: %s"
+#: ../properties/nm-vpnc.c:314
+msgid "NAT-T (default)"
+msgstr "NAT-T (lehenetsia)"
 
-#: ../properties/nm-vpnc.c:559
-#, c-format
-msgid "Domain:  %s"
-msgstr "Domeinua: %s"
+#: ../properties/nm-vpnc.c:321
+msgid "Cisco UDP"
+msgstr "Cisco UDP"
 
-#: ../properties/nm-vpnc.c:564
-#, c-format
-msgid "Routes:  %s"
-msgstr "Ibilbideak: %s"
+#: ../properties/nm-vpnc.c:328
+msgid "Disabled"
+msgstr "Desgaituta"
 
-#: ../properties/nm-vpnc.c:568
-#, c-format
-msgid "NAT-Keepalive packet interval:  %s"
-msgstr "NAT-Keepalive paketeen bitartea: %s"
-
-#: ../properties/nm-vpnc.c:572
-msgid "Enable Single DES"
-msgstr "Gaitu DES esklusiboa"
-
-#: ../properties/nm-vpnc.c:576
-msgid "Disable NAT Traversal"
-msgstr "Desgaitu zeharkako NAT-a"
-
-#: ../properties/nm-vpnc.c:580
-msgid "The connection details can be changed using the \"Edit\" button."
-msgstr "Konexioaren xehetasunak alda daitezke \"Editatu\" botoia erabiliz."
-
-#: ../properties/nm-vpnc.c:665
+#: ../properties/nm-vpnc.c:724
 msgid "TCP tunneling not supported"
 msgstr "TCP tunela ez dago onartuta"
 
-#: ../properties/nm-vpnc.c:667
+#: ../properties/nm-vpnc.c:726
 #, c-format
 msgid ""
 "The VPN settings file '%s' specifies that VPN traffic should be tunneled "
@@ -144,131 +125,55 @@ msgstr ""
 "Konexioa oraindik ere sor daiteke, TCP tunela desgaituta edukiz, baina agian "
 "ez du uste bezala funtzionatuko."
 
-#: ../properties/nm-vpnc.c:687
-msgid "Settings import incomplete"
-msgstr "Ezarpenen inportazioa osatu gabe"
-
-#: ../properties/nm-vpnc.c:689
-#, c-format
-msgid ""
-"The VPN settings file '%s' is incomplete. You may not be able to connect "
-"without providing further information."
-msgstr ""
-"VPN-ren '%s' ezarpen-fitxategia osatu gabe dago. Ezin izango da konektatu "
-"informazio gehiago eman gabe."
-
-#: ../properties/nm-vpnc.c:709
-msgid "Cannot import settings"
-msgstr "Ezin dira ezarpenak inportatu"
-
-#: ../properties/nm-vpnc.c:711
-#, c-format
-msgid "The VPN settings file '%s' could not be read or is invalid."
-msgstr ""
-"VPN-ren '%s' ezarpen-fitxategia ezin izan da irakurri edo baliogabea da."
-
-#: ../properties/nm-vpnc.c:726
-msgid "Select file to import"
-msgstr "Hautatu fitxategia inportatzeko"
-
-#: ../properties/nm-vpnc.c:908
-msgid "Save as..."
-msgstr "Gorde honela..."
-
-#: ../properties/nm-vpnc.c:937
-#, c-format
-msgid "A file named \"%s\" already exists."
-msgstr "\"%s\" izeneko fitxategia badago lehendik ere."
-
-#: ../properties/nm-vpnc.c:940
-msgid "Do you want to replace it with the one you are saving?"
-msgstr "Gordetzen ari zarenarekin ordeztea nahi duzu?"
-
-#: ../properties/nm-vpnc.c:954
-msgid "Failed to export configuration"
-msgstr "Huts egin du konfigurazioa esportatzean"
-
-#: ../properties/nm-vpnc.c:956
-#, c-format
-msgid "Failed to save file %s"
-msgstr "Huts egin du %s fitxategia gordetzean"
-
 #: ../properties/nm-vpnc-dialog.glade.h:1
-msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
-msgstr "<i>adibidea: 172.16.0.0/16 10.11.12.0/24</i>"
+msgid " "
+msgstr " "
 
 #: ../properties/nm-vpnc-dialog.glade.h:2
-msgid "Connection na_me:"
-msgstr "Konexioaren _izena:"
+msgid "<b>General</b>"
+msgstr "<b>Orokorra</b>"
 
 #: ../properties/nm-vpnc-dialog.glade.h:3
-msgid "Disable NAT _traversal"
-msgstr "Desgaitu _zeharretako NAT-a"
+msgid "<b>Optional</b>"
+msgstr "<b>Aukerakoa</b>"
 
 #: ../properties/nm-vpnc-dialog.glade.h:4
-msgid "Enable _weak single DES encryption"
-msgstr "Gaitu DES enkriptazio esklusibo _ahula"
+msgid "Disable Dead Peer Detection"
+msgstr "Desgaitu hildako parekoen detekzioa"
 
 #: ../properties/nm-vpnc-dialog.glade.h:5
+msgid "Domain:"
+msgstr "Domeinua:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:6
+msgid "Encryption method:"
+msgstr "Enkripzio-metodoa:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:7
 msgid "G_roup name:"
 msgstr "_Taldearen izena:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:6
-msgid "Import _Saved Configuration..."
-msgstr "Inportatu _gordetako konfigurazioa..."
-
-#: ../properties/nm-vpnc-dialog.glade.h:7
-msgid "Interval:"
-msgstr "Bitartea:"
-
 #: ../properties/nm-vpnc-dialog.glade.h:8
-msgid ""
-"Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
-msgstr ""
-"Sare pribatuaren konexioa identifikatzeko erabili den izena, adib. "
-"\"Ikastetxeko VPNa\" edo \"Enpresako sarea\""
+msgid "Gro_up password:"
+msgstr "_Taldearen pasahitza:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:9
-msgid "Optional"
-msgstr "Aukerakoa"
+msgid "NAT traversal:"
+msgstr "Zeharretako NAT-a:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:10
-msgid "Override _user name"
-msgstr "Gainidatzi _erabiltzaile-izena"
+msgid "Show passwords"
+msgstr "Erakutsi pasahitzak"
 
 #: ../properties/nm-vpnc-dialog.glade.h:11
-msgid ""
-"Please enter the information provided by your system administrator below. Do "
-"not enter your password here as you will be prompted when connecting."
-msgstr ""
-"Sistemako administratzaileak emandako informazioa azpian idatzi. Hor ez "
-"sartu zure pasahitza, konektatzean galdetuko zaizulako."
+msgid "User name:"
+msgstr "Erabiltzaile-izena:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:12
-msgid ""
-"Please note that the file you import is not a Cisco VPN or VPNC "
-"configuration file. Ask your adminstrator for the file."
-msgstr ""
-"Jakin ezazu inportatu duzun fitxategia ez dela Cisco VPN edo VPNC-ren "
-"konfigurazio-fitxategi bat. Galdetu administratzaileari fitxategiari buruz."
-
-#: ../properties/nm-vpnc-dialog.glade.h:13
-msgid "Required"
-msgstr "Beharrezkoa"
-
-#: ../properties/nm-vpnc-dialog.glade.h:14
-msgid "Use NAT _keepalive packets"
-msgstr "Erabili NAT _keepalive paketeak"
-
-#: ../properties/nm-vpnc-dialog.glade.h:15
-msgid "Use _domain for authentication"
-msgstr "Erabili _domeinua autentifikatzeko"
-
-#: ../properties/nm-vpnc-dialog.glade.h:16
 msgid "_Gateway:"
 msgstr "_Atebidea:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:17
-msgid "_Only use VPN connection for these addresses"
-msgstr "Erabili VPN konexioa _soilik honako helbideetan"
+#: ../properties/nm-vpnc-dialog.glade.h:13
+msgid "_User password:"
+msgstr "_Erabiltzailearen pasahitza:"
+
