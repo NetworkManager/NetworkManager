@@ -7,66 +7,270 @@ msgid ""
 msgstr ""
 "Project-Id-Version: eu\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-03-13 11:33+0100\n"
-"PO-Revision-Date: 2008-03-13 11:34+0100\n"
+"POT-Creation-Date: 2008-09-09 16:04+0200\n"
+"PO-Revision-Date: 2008-09-09 16:25+0200\n"
 "Last-Translator: Iñaki Larrañaga Murgoitio <dooteo@euskalgnu.org>\n"
 "Language-Team: Basque <itzulpena@euskalgnu.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: KBabel 1.11.4\n"
 "Plural-Forms:  nplurals=2; plural=(n > 1);\n"
+"X-Generator: KBabel 1.11.4\n"
 
-#: ../src/nm-netlink-monitor.c:188 ../src/nm-netlink-monitor.c:448
+#: ../src/nm-netlink-monitor.c:193 ../src/nm-netlink-monitor.c:474
 #, c-format
 msgid "error processing netlink message: %s"
 msgstr "errorea netlink-en mezua prozesatzean: %s"
 
-#: ../src/nm-netlink-monitor.c:245
+#: ../src/nm-netlink-monitor.c:250
 #, c-format
 msgid "unable to allocate netlink handle for monitoring link status: %s"
-msgstr ""
-"ezin da netlink-en kudeatzailea esleitu konexioaren egoera monitorizatzeko: %"
-"s"
+msgstr "ezin da netlink-ekin konektatu konexioaren egoera monitorizatzeko: %s"
 
-#: ../src/nm-netlink-monitor.c:255
+#: ../src/nm-netlink-monitor.c:260
 #, c-format
 msgid "unable to connect to netlink for monitoring link status: %s"
 msgstr "ezin da netlink-ekin konektatu konexioaren egoera monitorizatzeko: %s"
 
-#: ../src/nm-netlink-monitor.c:263
+#: ../src/nm-netlink-monitor.c:268
 #, c-format
 msgid "unable to join netlink group for monitoring link status: %s"
 msgstr "ezin da netlink taldearekin elkartu konexioaren egoera monitorizatzeko: %s"
 
-#: ../src/nm-netlink-monitor.c:271
+#: ../src/nm-netlink-monitor.c:276
 #, c-format
 msgid "unable to allocate netlink link cache for monitoring link status: %s"
 msgstr ""
 "ezin da netlink-en konexio-cachea esleitu konexioaren egoera "
 "monitorizatzeko: %s"
 
-#: ../src/nm-netlink-monitor.c:471
+#: ../src/nm-netlink-monitor.c:439
+#, c-format
+msgid "error updating link cache: %s"
+msgstr "errorea netlink-en konexio-cachea eguneratzean: %s"
+
+#: ../src/nm-netlink-monitor.c:497
 #, c-format
 msgid "error occurred while waiting for data on socket"
 msgstr "errorea gertatu da socket-eko datuen zai egotean"
 
-#: ../src/NetworkManager.c:255
+#: ../src/NetworkManager.c:250
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr "Aukera baliogabea. Erabili '--help' baliozko aukeren zerrenda ikusteko.\n"
 
-#: ../src/named-manager/nm-named-manager.c:218
-msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:89
+msgid "# Created by NetworkManager\n"
+msgstr "# NetworkManager-ek sortuta\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:95
+#, c-format
+msgid ""
+"# Merged from %s\n"
+"\n"
 msgstr ""
-"OHARRA: glibc-en gordetzaileak ez du 3 izen-zerbitzari baino gehiago "
+"# %s(e)ndik batuta\n"
+"\n"
+
+#: ../src/named-manager/nm-named-manager.c:240
+msgid "NOTE: the libc resolver may not support more than 3 nameservers."
+msgstr ""
+"OHARRA: libc-en ebaztaileak ez du 3 izen-zerbitzari baino gehiago "
 "onartzen."
 
-#: ../src/named-manager/nm-named-manager.c:220
+#: ../src/named-manager/nm-named-manager.c:242
 msgid "The nameservers listed below may not be recognized."
 msgstr "Azpian zerrendatutako izen-zenbitzariak ez dira ezagutuko."
 
-#: ../system-settings/plugins/ifcfg-fedora/plugin.c:94
-msgid "Auto Wired"
-msgstr "Automatikoki konektatuta"
+#: ../system-settings/src/main.c:366
+#, c-format
+msgid "Auto %s"
+msgstr "Auto %s"
+
+#: ../libnm-util/crypto.c:125
+#, c-format
+msgid "PEM key file had no end tag '%s'."
+msgstr "PEM gako-fitxategiak ez du amaierako '%s' etiketa."
+
+#: ../libnm-util/crypto.c:135
+#, c-format
+msgid "Doesn't look like a PEM private key file."
+msgstr "Ez dirudi PEM gako pribatuaren fitxategia denik."
+
+#: ../libnm-util/crypto.c:143
+#, c-format
+msgid "Not enough memory to store PEM file data."
+msgstr "Ez dago nahikoa memoria PEM fitxategiko datuak gordetzeko."
+
+#: ../libnm-util/crypto.c:159
+#, c-format
+msgid "Malformed PEM file: Proc-Type was not first tag."
+msgstr "Gaizki osatutako PEM fitxategia: Proc-Type ez da aurreneko etiketa."
+
+#: ../libnm-util/crypto.c:167
+#, c-format
+msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
+msgstr "Gaizki osatutako PEM fitxategia: Proc-Type '%s' etiketa ezezaguna."
+
+#: ../libnm-util/crypto.c:177
+#, c-format
+msgid "Malformed PEM file: DEK-Info was not the second tag."
+msgstr "Gaizki osatutako PEM fitxategia: DEK-Info ez da bigarren etiketa."
+
+#: ../libnm-util/crypto.c:188
+#, c-format
+msgid "Malformed PEM file: no IV found in DEK-Info tag."
+msgstr "Gaizki osatutako PEM fitxategia: ez da IV aurkitu DEK-Info etiketan."
+
+#: ../libnm-util/crypto.c:195
+#, c-format
+msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
+msgstr ""
+"Gaizki osatutako PEM fitxategia: IV-ek okerreko formatua du DEK-Info "
+"etiketan."
+
+#: ../libnm-util/crypto.c:208
+#, c-format
+msgid "Malformed PEM file: unknown private key cipher '%s'."
+msgstr "Gaizki osatutako PEM fitxategia: gako pribatuaren '%s' zifratua ezezaguna."
+
+#: ../libnm-util/crypto.c:227
+#, c-format
+msgid "Could not decode private key."
+msgstr "Ezin izan da gako pribatua deskodetu."
+
+#: ../libnm-util/crypto.c:271
+#, c-format
+msgid "PEM certificate '%s' had no end tag '%s'."
+msgstr "'%s' PEM ziurtagiriak ez du amaierako '%s' etiketa."
+
+#: ../libnm-util/crypto.c:281
+#, c-format
+msgid "Failed to decode certificate."
+msgstr "Huts egin du ziurtagiria deskodetzean."
+
+#: ../libnm-util/crypto.c:290 ../libnm-util/crypto.c:298
+#, c-format
+msgid "Not enough memory to store certificate data."
+msgstr "Ez dago nahikoa memoria ziurtagiriaren datuak gordetzeko."
+
+#: ../libnm-util/crypto.c:328
+#, c-format
+msgid "IV must be an even number of bytes in length."
+msgstr "IV-ek byte-kopuru bikoitia izan behar du luzeran."
+
+#: ../libnm-util/crypto.c:337
+#, c-format
+msgid "Not enough memory to store the IV."
+msgstr "Ez dago nahikoa memoria IV gordetzeko."
+
+#: ../libnm-util/crypto.c:348
+#, c-format
+msgid "IV contains non-hexadecimal digits."
+msgstr "IV-ek hamaseitarrak ez diren digituak ditu."
+
+#: ../libnm-util/crypto.c:386 ../libnm-util/crypto_gnutls.c:143
+#: ../libnm-util/crypto_nss.c:157
+#, c-format
+msgid "Private key cipher '%s' was unknown."
+msgstr "Gako pribatuaren '%s' zifratua ezezaguna da."
+
+#: ../libnm-util/crypto.c:395
+#, c-format
+msgid "Not enough memory to create private key decryption key."
+msgstr "Ez dago nahikoa memoria gako pribatuaren gako deszifratua sortzeko."
+
+#: ../libnm-util/crypto.c:513
+#, c-format
+msgid "Not enough memory to store decrypted private key."
+msgstr "Ez dago nahikoa memoria deszifratutako gako pribatua gordetzeko."
+
+#: ../libnm-util/crypto_gnutls.c:45
+msgid "Failed to initialize the crypto engine."
+msgstr "Huts egin du zifratzearen motorra hasieratzean."
+
+#: ../libnm-util/crypto_gnutls.c:89
+#, c-format
+msgid "Failed to initialize the MD5 engine: %s / %s."
+msgstr "Huts egin du MD5 motorra hasieratzean: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:152 ../libnm-util/crypto_nss.c:166
+#, c-format
+msgid "Not enough memory for decrypted key buffer."
+msgstr "Ez dago nahikoa memoria deszifratutako gako buferrarentzako."
+
+#: ../libnm-util/crypto_gnutls.c:160
+#, c-format
+msgid "Failed to initialize the decryption cipher context: %s / %s."
+msgstr "Huts egin du zifratze-testuingurua hasieratzean deszifratzeko: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:169
+#, c-format
+msgid "Failed to set symmetric key for decryption: %s / %s."
+msgstr "Huts egin du gako simetrikoa ezartzean deszifratzeko: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:178
+#, c-format
+msgid "Failed to set IV for decryption: %s / %s."
+msgstr "Huts egin du IV ezartzean deszifratzeko: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:187
+#, c-format
+msgid "Failed to decrypt the private key: %s / %s."
+msgstr "Huts egin du gako pribatua deszifratzean: %s /%s."
+
+#: ../libnm-util/crypto_gnutls.c:225
+#, c-format
+msgid "Error initializing certificate data: %s"
+msgstr "Errorea ziurtagiriaren datuak hasieratzean: %s"
+
+#: ../libnm-util/crypto_gnutls.c:237
+#, c-format
+msgid "Couldn't decode certificate: %s"
+msgstr "Ezin izan da ziurtagiria deskodetu: %s."
+
+#: ../libnm-util/crypto_nss.c:52
+#, c-format
+msgid "Failed to initialize the crypto engine: %d."
+msgstr "Huts egin du zifratzearen motorra hasieratzean: %d."
+
+#: ../libnm-util/crypto_nss.c:98
+#, c-format
+msgid "Failed to initialize the MD5 context: %d."
+msgstr "Huts egin du MD5-en testuingurua hasieratzean: %d."
+
+#: ../libnm-util/crypto_nss.c:174
+#, c-format
+msgid "Failed to initialize the decryption cipher slot."
+msgstr "Huts egin du zifratuaren erretena hasieratzean deszifratzeko."
+
+#: ../libnm-util/crypto_nss.c:184
+#, c-format
+msgid "Failed to set symmetric key for decryption."
+msgstr "Huts egin du gako simetrikoa ezartzean deszifratzeko."
+
+#: ../libnm-util/crypto_nss.c:194
+#, c-format
+msgid "Failed to set IV for decryption."
+msgstr "Huts egin du IV ezartzean deszifratzeko."
+
+#: ../libnm-util/crypto_nss.c:202
+#, c-format
+msgid "Failed to initialize the decryption context."
+msgstr "Huts egin du deszifratzearen testuingurua hasieratzean."
+
+#: ../libnm-util/crypto_nss.c:215
+#, c-format
+msgid "Failed to decrypt the private key: %d."
+msgstr "Huts egin du gako pribatua deszifratzean: %d."
+
+#: ../libnm-util/crypto_nss.c:227
+#, c-format
+msgid "Failed to finalize decryption of the private key: %d."
+msgstr "Huts egin du gako pribatuaren deszifratzea amaitzean: %d."
+
+#: ../libnm-util/crypto_nss.c:271
+#, c-format
+msgid "Couldn't decode certificate: %d"
+msgstr "Ezin izan da ziurtagiria dekodetu: %d"
 
