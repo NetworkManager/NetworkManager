@@ -103,6 +103,13 @@ struct _NMVpnPluginUiInterface {
 	 * by the caller.
 	 */
 	char * (*get_suggested_name) (NMVpnPluginUiInterface *iface, NMConnection *connection);
+
+	/* Called when the user has chosen to remove the connection (for user
+	 * connections only; system connections are handled by the system
+	 * settings service).  Should clear out any VPN-specific secrets or data
+	 * related to the connection.
+	 */
+	gboolean (*delete_connection) (NMVpnPluginUiInterface *iface, NMConnection *connection, GError **error);
 };
 
 GType nm_vpn_plugin_ui_interface_get_type (void);
@@ -124,6 +131,10 @@ gboolean nm_vpn_plugin_ui_interface_export (NMVpnPluginUiInterface *iface,
 
 char *nm_vpn_plugin_ui_interface_get_suggested_name (NMVpnPluginUiInterface *iface,
                                                      NMConnection *connection);
+
+gboolean nm_vpn_plugin_ui_interface_delete_connection (NMVpnPluginUiInterface *iface,
+                                                       NMConnection *connection,
+                                                       GError **error);
 
 
 /**************************************************/
@@ -152,6 +163,15 @@ struct _NMVpnPluginUiWidgetInterface {
 	                               NMConnection *connection,
 	                               GError **error);
 
+	/* Called when the user has chosen to save the connection (for user
+	 * connections only; system connections are handled by the system
+	 * settings service).  Should save VPN-specific connection secrets in
+	 * a way that the auth-dialog can read them.
+	 */
+	gboolean (*save_secrets) (NMVpnPluginUiWidgetInterface *iface,
+	                          NMConnection *connection,
+	                          GError **error);
+
 	/* Emitted when the value of a UI widget changes.  May trigger a validity
 	 * check via update_connection() to write values to the connection */
 	void (*changed) (NMVpnPluginUiWidgetInterface *iface);
@@ -164,6 +184,10 @@ GObject * nm_vpn_plugin_ui_widget_interface_get_widget (NMVpnPluginUiWidgetInter
 gboolean nm_vpn_plugin_ui_widget_interface_update_connection (NMVpnPluginUiWidgetInterface *iface,
                                                               NMConnection *connection,
                                                               GError **error);
+
+gboolean nm_vpn_plugin_ui_widget_interface_save_secrets (NMVpnPluginUiWidgetInterface *iface,
+                                                         NMConnection *connection,
+                                                         GError **error);
 
 G_END_DECLS
 

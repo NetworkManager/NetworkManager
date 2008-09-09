@@ -1,3 +1,14 @@
+2008-09-09  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-glib/nm-vpn-plugin-ui-interface.c
+	  libnm-glib/nm-vpn-plugin-ui-interface.h
+	  libnm-glib/libnm_glib_vpn.ver
+		- (nm_vpn_plugin_ui_interface_delete_connection): called when the plugin
+			should clean up resources related to the connection (like keyring
+			secrets)
+		- (nm_vpn_plugin_ui_widget_interface_save_secrets): called when the plugin
+			should save user-scope secrets (like to the keyring)
+
 2008-09-08  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Alexander Sack <asac@ubuntu.com>
