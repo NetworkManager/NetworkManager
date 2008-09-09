@@ -26,6 +26,9 @@
 #include <glib.h>
 #include <gnome-keyring.h>
 
+#define VPNC_USER_PASSWORD "password"
+#define VPNC_GROUP_PASSWORD "group-password"
+
 gboolean keyring_helpers_lookup_secrets (const char *vpn_uuid,
                                          char **password,
                                          char **group_password,
@@ -33,10 +36,12 @@ gboolean keyring_helpers_lookup_secrets (const char *vpn_uuid,
 
 GnomeKeyringResult keyring_helpers_save_secret (const char *vpn_uuid,
                                                 const char *vpn_name,
-                                                const char *vpn_service,
                                                 const char *keyring,
                                                 const char *secret_name,
                                                 const char *secret);
+
+gboolean keyring_helpers_delete_secret (const char *vpn_uuid,
+                                        const char *secret_name);
 
 #endif  /* KEYRING_HELPERS_H */
 

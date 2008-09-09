@@ -1,3 +1,25 @@
+2008-09-09  Dan Williams  <dcbw@redhat.com>
+
+	* common-gnome/keyring-helpers.c
+	  common-gnome/keyring-helpers.h
+		- Add defines for secret tags in the keyring
+		- (keyring_helpers_delete_secret): delete a secret from the keyring for
+			a given connection UUID
+		- (keyring_helpers_save_secret): vpn service is always going to be
+			vpnc's
+
+	* auth-dialog/main.c
+		- (get_secrets): use secret tag #defines; vpn service will always be
+			vpnc's
+
+	* properties/nm-vpnc.c
+	  properties/nm-vpnc.h
+		- (fill_vpn_passwords): fill secrets in the UI if the connection is
+			system-scope
+		- (update_connection): fill secrets if the connection is system-scope
+			so they can be saved with the system settings service
+		- (save_secrets, delete_connection): implement
+
 2008-09-03  Dan Williams  <dcbw@redhat.com>
 
 	* common-gnome/Makefile.am

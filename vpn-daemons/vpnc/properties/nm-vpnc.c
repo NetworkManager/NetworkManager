@@ -113,6 +113,8 @@ vpnc_plugin_ui_error_get_type (void)
 			ENUM_ENTRY (VPNC_PLUGIN_UI_ERROR_INVALID_PROPERTY, "InvalidProperty"),
 			/* The specified property was missing and is required. */
 			ENUM_ENTRY (VPNC_PLUGIN_UI_ERROR_MISSING_PROPERTY, "MissingProperty"),
+			/* The connection was missing invalid. */
+			ENUM_ENTRY (VPNC_PLUGIN_UI_ERROR_INVALID_CONNECTION, "InvalidConnection"),
 			{ 0, 0, 0 }
 		};
 		etype = g_enum_register_static ("VpncPluginUiError", values);
@@ -169,27 +171,42 @@ fill_vpn_passwords (VpncPluginUiWidget *self, NMConnection *connection)
 	/* Grab secrets from the keyring */
 	if (connection) {
 		NMSettingConnection *s_con;
+		NMSettingVPN *s_vpn;
+		const char *tmp;
 
-		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-		keyring_helpers_lookup_secrets (s_con->uuid, &password, &group_password, NULL);
+		if (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_SYSTEM) {
+			s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
+			if (s_vpn) {
+				tmp = g_hash_table_lookup (s_vpn->secrets, NM_VPNC_KEY_XAUTH_PASSWORD);
+				if (tmp)
+					password = gnome_keyring_memory_strdup (tmp);
+
+				tmp = g_hash_table_lookup (s_vpn->secrets, NM_VPNC_KEY_SECRET);
+				if (tmp)
+					group_password = gnome_keyring_memory_strdup (tmp);
+			}
+		} else {
+			s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+			keyring_helpers_lookup_secrets (s_con->uuid, &password, &group_password, NULL);
+		}
 	}
 
 	/* User password */
 	widget = glade_xml_get_widget (priv->xml, "user_password_entry");
-	gtk_size_group_add_widget (priv->group, GTK_WIDGET (widget));
 	if (!widget)
 		goto out;
 	if (password)
 		gtk_entry_set_text (GTK_ENTRY (widget), password);
+	gtk_size_group_add_widget (priv->group, GTK_WIDGET (widget));
 	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
 
 	/* Group password */
 	widget = glade_xml_get_widget (priv->xml, "group_password_entry");
-	gtk_size_group_add_widget (priv->group, GTK_WIDGET (widget));
 	if (!widget)
 		goto out;
 	if (group_password)
 		gtk_entry_set_text (GTK_ENTRY (widget), group_password);
+	gtk_size_group_add_widget (priv->group, GTK_WIDGET (widget));
 	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
 
 	success = TRUE;
@@ -473,7 +490,74 @@ update_connection (NMVpnPluginUiWidgetInterface *iface,
 		                     g_strdup_printf ("%d", priv->orig_dpd_timeout));
 	}
 
+	/* System secrets get stored in the connection, user secrets are saved
+	 * via the save_secrets() hook.
+	 */
+	if (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_SYSTEM) {
+		/* User password */
+		widget = glade_xml_get_widget (priv->xml, "user_password_entry");
+		str = (char *) gtk_entry_get_text (GTK_ENTRY (widget));
+		if (str && strlen (str)) {
+			g_hash_table_insert (s_vpn->secrets,
+			                     g_strdup (NM_VPNC_KEY_XAUTH_PASSWORD),
+			                     g_strdup (str));
+		}
+
+		/* Group password */
+		widget = glade_xml_get_widget (priv->xml, "group_password_entry");
+		str = (char *) gtk_entry_get_text (GTK_ENTRY (widget));
+		if (str && strlen (str)) {
+			g_hash_table_insert (s_vpn->secrets,
+			                     g_strdup (NM_VPNC_KEY_SECRET),
+			                     g_strdup (str));
+		}
+	}
+
 	nm_connection_add_setting (connection, NM_SETTING (s_vpn));
+	return TRUE;
+}
+
+static gboolean
+save_secrets (NMVpnPluginUiWidgetInterface *iface,
+              NMConnection *connection,
+              GError **error)
+{
+	VpncPluginUiWidget *self = VPNC_PLUGIN_UI_WIDGET (iface);
+	VpncPluginUiWidgetPrivate *priv = VPNC_PLUGIN_UI_WIDGET_GET_PRIVATE (self);
+	GnomeKeyringResult ret;
+	NMSettingConnection *s_con;
+	GtkWidget *widget;
+	const char *str;
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	if (!s_con) {
+		g_set_error (error,
+		             VPNC_PLUGIN_UI_ERROR,
+		             VPNC_PLUGIN_UI_ERROR_INVALID_CONNECTION,
+		             "missing 'connection' setting");
+		return FALSE;
+	}
+
+	widget = glade_xml_get_widget (priv->xml, "user_password_entry");
+	g_assert (widget);
+	str = gtk_entry_get_text (GTK_ENTRY (widget));
+	if (str && strlen (str)) {
+		ret = keyring_helpers_save_secret (s_con->uuid, s_con->id, NULL, VPNC_USER_PASSWORD, str);
+		if (ret != GNOME_KEYRING_RESULT_OK)
+			g_warning ("%s: failed to save user password to keyring.", __func__);
+	} else
+		keyring_helpers_delete_secret (s_con->uuid, VPNC_USER_PASSWORD);
+
+	widget = glade_xml_get_widget (priv->xml, "group_password_entry");
+	g_assert (widget);
+	str = gtk_entry_get_text (GTK_ENTRY (widget));
+	if (str && strlen (str)) {
+		ret = keyring_helpers_save_secret (s_con->uuid, s_con->id, NULL, VPNC_GROUP_PASSWORD, str);
+		if (ret != GNOME_KEYRING_RESULT_OK)
+			g_warning ("%s: failed to save group password to keyring.", __func__);
+	} else
+		keyring_helpers_delete_secret (s_con->uuid, VPNC_GROUP_PASSWORD);
+
 	return TRUE;
 }
 
@@ -561,6 +645,7 @@ vpnc_plugin_ui_widget_interface_init (NMVpnPluginUiWidgetInterface *iface_class)
 	/* interface implementation */
 	iface_class->get_widget = get_widget;
 	iface_class->update_connection = update_connection;
+	iface_class->save_secrets = save_secrets;
 }
 
 static GSList *
@@ -903,6 +988,32 @@ get_capabilities (NMVpnPluginUiInterface *iface)
 	return (NM_VPN_PLUGIN_UI_CAPABILITY_IMPORT | NM_VPN_PLUGIN_UI_CAPABILITY_EXPORT);
 }
 
+static gboolean
+delete_connection (NMVpnPluginUiInterface *iface,
+                   NMConnection *connection,
+                   GError **error)
+{
+	NMSettingConnection *s_con;
+
+	/* Remove any secrets in the keyring associated with this connection's UUID */
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	if (!s_con) {
+		g_set_error (error,
+		             VPNC_PLUGIN_UI_ERROR,
+		             VPNC_PLUGIN_UI_ERROR_INVALID_CONNECTION,
+		             "missing 'connection' setting");
+		return FALSE;
+	}
+
+	if (!keyring_helpers_delete_secret (s_con->uuid, VPNC_USER_PASSWORD))
+		g_message ("%s: couldn't delete user password for '%s'", __func__, s_con->id);
+
+	if (!keyring_helpers_delete_secret (s_con->uuid, VPNC_GROUP_PASSWORD))
+		g_message ("%s: couldn't delete group password for '%s'", __func__, s_con->id);
+
+	return TRUE;
+}
+
 static NMVpnPluginUiWidgetInterface *
 ui_factory (NMVpnPluginUiInterface *iface, NMConnection *connection, GError **error)
 {
@@ -963,6 +1074,7 @@ vpnc_plugin_ui_interface_init (NMVpnPluginUiInterface *iface_class)
 	iface_class->import = import;
 	iface_class->export = export;
 	iface_class->get_suggested_name = get_suggested_name;
+	iface_class->delete_connection = delete_connection;
 }
 
 

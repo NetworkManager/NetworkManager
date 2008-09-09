@@ -43,7 +43,6 @@
 static gboolean
 get_secrets (const char *vpn_uuid,
              const char *vpn_name,
-             const char *vpn_service,
              gboolean retry,
              char **password,
              char **group_password)
@@ -104,12 +103,12 @@ get_secrets (const char *vpn_uuid,
 
 		switch (gnome_two_password_dialog_get_remember (dialog)) {
 		case GNOME_TWO_PASSWORD_DIALOG_REMEMBER_SESSION:
-			keyring_helpers_save_secret (vpn_uuid, vpn_name, vpn_service, "session", "password", *password);
-			keyring_helpers_save_secret (vpn_uuid, vpn_name, vpn_service, "session", "group-password", *group_password);
+			keyring_helpers_save_secret (vpn_uuid, vpn_name, "session", VPNC_USER_PASSWORD, *password);
+			keyring_helpers_save_secret (vpn_uuid, vpn_name, "session", VPNC_GROUP_PASSWORD, *group_password);
 			break;
 		case GNOME_TWO_PASSWORD_DIALOG_REMEMBER_FOREVER:
-			keyring_helpers_save_secret (vpn_uuid, vpn_name, vpn_service, NULL, "password", *password);
-			keyring_helpers_save_secret (vpn_uuid, vpn_name, vpn_service, NULL, "group-password", *group_password);
+			keyring_helpers_save_secret (vpn_uuid, vpn_name, NULL, VPNC_USER_PASSWORD, *password);
+			keyring_helpers_save_secret (vpn_uuid, vpn_name, NULL, VPNC_GROUP_PASSWORD, *group_password);
 			break;
 		default:
 			break;
@@ -169,7 +168,7 @@ main (int argc, char *argv[])
 		return 1;
 	}
 
-	if (!get_secrets (vpn_uuid, vpn_name, vpn_service, retry, &password, &group_password))
+	if (!get_secrets (vpn_uuid, vpn_name, retry, &password, &group_password))
 		return 1;
 
 	/* dump the passwords to stdout */

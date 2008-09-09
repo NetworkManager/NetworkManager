@@ -26,6 +26,7 @@
 #include <nm-setting-vpn.h>
 
 #include "keyring-helpers.h"
+#include "../src/nm-vpnc-service.h"
 
 #define KEYRING_UUID_TAG "connection-uuid"
 #define KEYRING_SN_TAG "setting-name"
@@ -82,11 +83,11 @@ keyring_helpers_lookup_secrets (const char *vpn_uuid,
 	g_return_val_if_fail (group_password != NULL, FALSE);
 	g_return_val_if_fail (*group_password == NULL, FALSE);
 
-	*password = find_one_password (vpn_uuid, "password", is_session);
+	*password = find_one_password (vpn_uuid, VPNC_USER_PASSWORD, is_session);
 	if (!*password)
 		return FALSE;
 
-	*group_password = find_one_password (vpn_uuid, "group-password", is_session);
+	*group_password = find_one_password (vpn_uuid, VPNC_GROUP_PASSWORD, is_session);
 	if (!*group_password) {
 		memset (*password, 0, strlen (*password));
 		gnome_keyring_memory_free (*password);
@@ -100,7 +101,6 @@ keyring_helpers_lookup_secrets (const char *vpn_uuid,
 GnomeKeyringResult
 keyring_helpers_save_secret (const char *vpn_uuid,
                              const char *vpn_name,
-                             const char *vpn_service,
                              const char *keyring,
                              const char *secret_name,
                              const char *secret)
@@ -113,7 +113,7 @@ keyring_helpers_save_secret (const char *vpn_uuid,
 	display_name = g_strdup_printf ("VPN %s secret for %s/%s/" NM_SETTING_VPN_SETTING_NAME,
 	                                secret_name,
 	                                vpn_name,
-	                                vpn_service);
+	                                NM_DBUS_SERVICE_VPNC);
 
 	attrs = gnome_keyring_attribute_list_new ();
 	gnome_keyring_attribute_list_append_string (attrs,
@@ -136,5 +136,49 @@ keyring_helpers_save_secret (const char *vpn_uuid,
 	gnome_keyring_attribute_list_free (attrs);
 	g_free (display_name);
 	return ret;
+}
+
+static void
+ignore_callback (GnomeKeyringResult result, gpointer data)
+{
+}
+
+gboolean
+keyring_helpers_delete_secret (const char *vpn_uuid,
+                               const char *secret_name)
+{
+	GList *found = NULL, *iter;
+	GnomeKeyringResult ret;
+
+	g_return_val_if_fail (vpn_uuid != NULL, FALSE);
+	g_return_val_if_fail (secret_name != NULL, FALSE);
+
+	ret = gnome_keyring_find_itemsv_sync (GNOME_KEYRING_ITEM_GENERIC_SECRET,
+	                                      &found,
+	                                      KEYRING_UUID_TAG,
+	                                      GNOME_KEYRING_ATTRIBUTE_TYPE_STRING,
+	                                      vpn_uuid,
+	                                      KEYRING_SN_TAG,
+	                                      GNOME_KEYRING_ATTRIBUTE_TYPE_STRING,
+	                                      NM_SETTING_VPN_SETTING_NAME,
+	                                      KEYRING_SK_TAG,
+	                                      GNOME_KEYRING_ATTRIBUTE_TYPE_STRING,
+	                                      secret_name,
+	                                      NULL);
+	if (ret != GNOME_KEYRING_RESULT_OK && ret != GNOME_KEYRING_RESULT_NO_MATCH)
+		return FALSE;
+	if (g_list_length (found) == 0)
+		return TRUE;
+
+	/* delete them all */
+	for (iter = found; iter; iter = g_list_next (iter)) {
+		GnomeKeyringFound *item = (GnomeKeyringFound *) iter->data;
+
+		gnome_keyring_item_delete (item->keyring, item->item_id,
+		                           ignore_callback, NULL, NULL);
+	}
+
+	gnome_keyring_found_list_free (found);
+	return TRUE;
 }
 
