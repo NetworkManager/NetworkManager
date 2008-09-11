@@ -1,3 +1,12 @@
+2008-09-10  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-openvpn-service.c
+		- Clean up management socket and connect timer when the plugin stops;
+			becuase of this openvpn's output needs to be processed from the
+			child watch callback otherwise it gets lost when the management
+			socket is cleaned up during the state change to STOPPED.
+		- Fix parsing of private key auth failure
+
 2008-09-05  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-openvpn-service.c

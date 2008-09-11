@@ -219,7 +219,7 @@ nm_openvpn_disconnect_management_socket (NMOpenvpnPlugin *plugin)
 	NMOpenvpnPluginPrivate *priv = NM_OPENVPN_PLUGIN_GET_PRIVATE (plugin);
 	NMOpenvpnPluginIOData *io_data = priv->io_data;
 
-	/* This should no throw a warning since this can happen in
+	/* This should not throw a warning since this can happen in
 	   non-password modes */
 	if (!io_data)
 		return;
@@ -256,26 +256,26 @@ ovpn_quote_string (const char *unquoted)
 }
 
 static gboolean
-nm_openvpn_socket_data_cb (GIOChannel *source, GIOCondition condition, gpointer user_data)
+handle_management_socket (NMVPNPlugin *plugin,
+                          GIOChannel *source,
+                          GIOCondition condition,
+                          NMVPNPluginFailure *out_failure)
 {
-	NMOpenvpnPlugin *plugin = NM_OPENVPN_PLUGIN (user_data);
 	NMOpenvpnPluginIOData *io_data = NM_OPENVPN_PLUGIN_GET_PRIVATE (plugin)->io_data;
-	gboolean again = TRUE;
-	char *str = NULL;
-	char *auth;
+	gboolean again = TRUE, success = TRUE;
+	char *str = NULL, *auth, *buf;
 	gsize written;
-	char *buf;
 
 	if (!(condition & G_IO_IN))
 		return TRUE;
 
 	if (g_io_channel_read_line (source, &str, NULL, NULL, NULL) != G_IO_STATUS_NORMAL)
-		goto out;
+		return TRUE;
 
 	if (strlen (str) < 1)
 		goto out;
 
-	if (sscanf (str, ">PASSWORD:Need '%a[^']'", &auth) > 0 ) {
+	if (sscanf (str, ">PASSWORD:Need '%a[^']'", &auth) > 0) {
 		if (strcmp (auth, "Auth") == 0) {
 			if (io_data->username != NULL && io_data->password != NULL) {
 				char *quser, *qpass;
@@ -295,7 +295,8 @@ nm_openvpn_socket_data_cb (GIOChannel *source, GIOCondition condition, gpointer 
 				g_io_channel_write_chars (source, buf, strlen (buf), &written, NULL);
 				g_io_channel_flush (source, NULL);
 				g_free (buf);
-			}
+			} else
+				nm_warning ("Auth requested but one of username or password is missing");
 		} else if (!strcmp (auth, "Private Key")) {
 			if (io_data->certpass) {
 				char *qpass;
@@ -310,29 +311,48 @@ nm_openvpn_socket_data_cb (GIOChannel *source, GIOCondition condition, gpointer 
 				g_io_channel_write_chars (source, buf, strlen (buf), &written, NULL);
 				g_io_channel_flush (source, NULL);
 				g_free (buf);
-			} else {
+			} else
 				nm_warning ("Certificate password requested but certpass == NULL");
-			}
 		} else {
 			nm_warning ("No clue what to send for username/password request for '%s'", auth);
-			nm_vpn_plugin_failure (NM_VPN_PLUGIN (plugin), NM_VPN_PLUGIN_FAILURE_CONNECT_FAILED);
-			nm_openvpn_disconnect_management_socket (plugin);
+			if (out_failure)
+				*out_failure = NM_VPN_PLUGIN_FAILURE_CONNECT_FAILED;
+			again = FALSE;
 		}
-	} else if (strstr (str, ">PASSWORD:Verification Failed: ") == str) {
-		nm_warning ("Password verification failed");
-		nm_vpn_plugin_failure (NM_VPN_PLUGIN (plugin), NM_VPN_PLUGIN_FAILURE_LOGIN_FAILED);
-		nm_openvpn_disconnect_management_socket (plugin);
-		again = FALSE;
-	} else if (strstr (str, "private key password verification failed")) {
-		nm_warning ("Private key verification failed");
-		nm_vpn_plugin_failure (NM_VPN_PLUGIN (plugin), NM_VPN_PLUGIN_FAILURE_LOGIN_FAILED);
-		nm_openvpn_disconnect_management_socket (plugin);
+		free (auth);
+	} else if (sscanf (str, ">PASSWORD:Verification Failed: '%a[^']'", &auth) > 0) {
+		if (!strcmp (auth, "Auth"))
+			nm_warning ("Password verification failed");
+		else if (!strcmp (auth, "Private Key"))
+			nm_warning ("Private key verification failed");
+		else
+			nm_warning ("Unknown verification failed: %s", auth);
+
+		free (auth);
+
+		if (out_failure)
+			*out_failure = NM_VPN_PLUGIN_FAILURE_LOGIN_FAILED;
 		again = FALSE;
 	}
 
- out:
+out:
 	g_free (str);
 	return again;
+}
+
+static gboolean
+nm_openvpn_socket_data_cb (GIOChannel *source, GIOCondition condition, gpointer user_data)
+{
+	NMVPNPlugin *plugin = NM_VPN_PLUGIN (user_data);
+	NMVPNPluginFailure failure = NM_VPN_PLUGIN_FAILURE_CONNECT_FAILED;
+
+	if (!handle_management_socket (plugin, source, condition, &failure)) {
+		nm_vpn_plugin_failure (plugin, failure);
+		nm_vpn_plugin_set_state (plugin, NM_VPN_SERVICE_STATE_STOPPED);
+		return FALSE;
+	}
+
+	return TRUE;
 }
 
 static gboolean
@@ -345,7 +365,6 @@ nm_openvpn_connect_timer_cb (gpointer data)
 	gint                   socket_fd = -1;
 	NMOpenvpnPluginIOData *io_data = priv->io_data;
 
-	priv->connect_timer = 0;
 	priv->connect_count++;
 
 	/* open socket and start listener */
@@ -361,30 +380,31 @@ nm_openvpn_connect_timer_cb (gpointer data)
 	connected = (connect (socket_fd, (struct sockaddr *) &serv_addr, sizeof (serv_addr)) == 0);
 	if (!connected) {
 		close (socket_fd);
-		if (priv->connect_count <= 30) {
+		if (priv->connect_count <= 30)
 			return TRUE;
-		} else {
-			nm_warning ("Could not open management socket");
-			nm_vpn_plugin_failure (NM_VPN_PLUGIN (plugin), NM_VPN_PLUGIN_FAILURE_CONNECT_FAILED);
-			nm_vpn_plugin_set_state (NM_VPN_PLUGIN (plugin), NM_VPN_SERVICE_STATE_STOPPED);
-			return FALSE;
-		}
+
+		priv->connect_timer = 0;
+
+		nm_warning ("Could not open management socket");
+		nm_vpn_plugin_failure (NM_VPN_PLUGIN (plugin), NM_VPN_PLUGIN_FAILURE_CONNECT_FAILED);
+		nm_vpn_plugin_set_state (NM_VPN_PLUGIN (plugin), NM_VPN_SERVICE_STATE_STOPPED);
 	} else {
 		GIOChannel *openvpn_socket_channel;
 		guint openvpn_socket_channel_eventid;
 
 		openvpn_socket_channel = g_io_channel_unix_new (socket_fd);
 		openvpn_socket_channel_eventid = g_io_add_watch (openvpn_socket_channel,
-											    G_IO_IN,
-											    nm_openvpn_socket_data_cb,
-											    plugin);
+		                                                 G_IO_IN,
+		                                                 nm_openvpn_socket_data_cb,
+		                                                 plugin);
 
 		g_io_channel_set_encoding (openvpn_socket_channel, NULL, NULL);
 		io_data->socket_channel = openvpn_socket_channel;
 		io_data->socket_channel_eventid = openvpn_socket_channel_eventid;
-
-		return FALSE;
 	}
+
+	priv->connect_timer = 0;
+	return FALSE;
 }
 
 static void
@@ -401,7 +421,9 @@ openvpn_watch_cb (GPid pid, gint status, gpointer user_data)
 {
 	NMVPNPlugin *plugin = NM_VPN_PLUGIN (user_data);
 	NMOpenvpnPluginPrivate *priv = NM_OPENVPN_PLUGIN_GET_PRIVATE (plugin);
+	NMVPNPluginFailure failure = NM_VPN_PLUGIN_FAILURE_CONNECT_FAILED;
 	guint error = 0;
+	gboolean good_exit = FALSE;
 
 	if (WIFEXITED (status)) {
 		error = WEXITSTATUS (status);
@@ -419,20 +441,31 @@ openvpn_watch_cb (GPid pid, gint status, gpointer user_data)
 	waitpid (priv->pid, NULL, WNOHANG);
 	priv->pid = 0;
 
-	/* Must be after data->state is set since signals use data->state */
-	/* This is still code from vpnc, openvpn does not supply useful exit codes :-/ */
+	/* OpenVPN doesn't supply useful exit codes :( */
 	switch (error) {
-	case 2:
-		/* Couldn't log in due to bad user/pass */
-		nm_vpn_plugin_failure (plugin, NM_VPN_PLUGIN_FAILURE_LOGIN_FAILED);
-		break;
-	case 1:
-		/* Other error (couldn't bind to address, etc) */
-		nm_vpn_plugin_failure (plugin, NM_VPN_PLUGIN_FAILURE_CONNECT_FAILED);
+	case 0:
+		good_exit = TRUE;
 		break;
 	default:
+		failure = NM_VPN_PLUGIN_FAILURE_CONNECT_FAILED;
 		break;
 	}
+
+	/* Try to get the last bits of data from openvpn */
+	if (priv->io_data) {
+		GIOChannel *channel = priv->io_data->socket_channel;
+		GIOCondition condition;
+
+		while ((condition = g_io_channel_get_buffer_condition (channel)) & G_IO_IN) {
+			if (!handle_management_socket (plugin, channel, condition, &failure)) {
+				good_exit = FALSE;
+				break;
+			}
+		}
+	}
+
+	if (!good_exit)
+		nm_vpn_plugin_failure (plugin, failure);
 
 	nm_vpn_plugin_set_state (plugin, NM_VPN_SERVICE_STATE_STOPPED);
 }
@@ -613,7 +646,7 @@ nm_openvpn_start_openvpn_binary (NMOpenvpnPlugin *plugin,
 	add_openvpn_arg (args, "--syslog");
 	add_openvpn_arg (args, "nm-openvpn");
 
-	/* Bash script security in the face; this option was added to OpenVPN 2.1-rc9
+	/* Punch script security in the face; this option was added to OpenVPN 2.1-rc9
 	 * and defaults to disallowing any scripts, a behavior change from previous
 	 * versions.
 	 */
@@ -942,13 +975,44 @@ nm_openvpn_plugin_class_init (NMOpenvpnPluginClass *plugin_class)
 	parent_class->disconnect   = real_disconnect;
 }
 
+static void
+plugin_state_changed (NMOpenvpnPlugin *plugin,
+                      NMVPNServiceState state,
+                      gpointer user_data)
+{
+	NMOpenvpnPluginPrivate *priv = NM_OPENVPN_PLUGIN_GET_PRIVATE (plugin);
+
+	switch (state) {
+	case NM_VPN_SERVICE_STATE_UNKNOWN:
+	case NM_VPN_SERVICE_STATE_INIT:
+	case NM_VPN_SERVICE_STATE_SHUTDOWN:
+	case NM_VPN_SERVICE_STATE_STOPPING:
+	case NM_VPN_SERVICE_STATE_STOPPED:
+		/* Cleanup on failure */
+		if (priv->connect_timer) {
+			g_source_remove (priv->connect_timer);
+			priv->connect_timer = 0;
+		}
+		nm_openvpn_disconnect_management_socket (plugin);
+		break;
+	default:
+		break;
+	}
+}
+
 NMOpenvpnPlugin *
 nm_openvpn_plugin_new (void)
 {
-	return (NMOpenvpnPlugin *) g_object_new (NM_TYPE_OPENVPN_PLUGIN,
-									 NM_VPN_PLUGIN_DBUS_SERVICE_NAME,
-									 NM_DBUS_SERVICE_OPENVPN,
-									 NULL);
+	NMOpenvpnPlugin *plugin;
+
+	plugin =  (NMOpenvpnPlugin *) g_object_new (NM_TYPE_OPENVPN_PLUGIN,
+	                                            NM_VPN_PLUGIN_DBUS_SERVICE_NAME,
+	                                            NM_DBUS_SERVICE_OPENVPN,
+	                                            NULL);
+	if (plugin)
+		g_signal_connect (G_OBJECT (plugin), "state-changed", G_CALLBACK (plugin_state_changed), NULL);
+
+	return plugin;
 }
 
 static void
