@@ -236,6 +236,9 @@ nm_setting_compare (NMSetting *setting,
 		    && (prop_spec->flags & (NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_SECRET)))
 			continue;
 
+		if ((flags & COMPARE_FLAGS_IGNORE_SECRETS) && (prop_spec->flags & NM_SETTING_PARAM_SECRET))
+			continue;
+
 		if (   (flags & COMPARE_FLAGS_IGNORE_ID)
 		    && !strcmp (setting->name, NM_SETTING_CONNECTION_SETTING_NAME)
 		    && !strcmp (prop_spec->name, NM_SETTING_CONNECTION_ID))
