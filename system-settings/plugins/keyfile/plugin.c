@@ -99,19 +99,18 @@ find_by_uuid (gpointer key, gpointer data, gpointer user_data)
 	}
 }
 
-static gboolean
+static void
 update_connection_settings (NMExportedConnection *orig,
-                            NMExportedConnection *new,
-                            GError **error)
+                            NMExportedConnection *new)
 {
-	GHashTable *settings;
-	gboolean success;
+	NMConnection *wrapped;
+	GHashTable *new_settings;
 
-	settings = nm_connection_to_hash (nm_exported_connection_get_connection (new));
-	success = nm_exported_connection_update (orig, settings, error);
-	g_hash_table_destroy (settings);
-
-	return success;
+	new_settings = nm_connection_to_hash (nm_exported_connection_get_connection (new));
+	wrapped = nm_exported_connection_get_connection (orig);
+	nm_connection_replace_settings (wrapped, new_settings);
+	nm_exported_connection_signal_updated (orig, new_settings);
+	g_hash_table_destroy (new_settings);
 }
 
 /* Monitoring */
@@ -149,15 +148,7 @@ dir_changed (GFileMonitor *monitor,
 
 			tmp = (NMExportedConnection *) nm_keyfile_connection_new (name);
 			if (tmp) {
-				GError *error = NULL;
-
-				if (!update_connection_settings (NM_EXPORTED_CONNECTION (connection), tmp, &error)) {
-					g_warning ("%s: couldn't update connection settings: (%d) %s",
-					           __func__, error ? error->code : 0,
-					           error ? error->message : "unknown");
-					if (error)
-						g_error_free (error);
-				}
+				update_connection_settings (NM_EXPORTED_CONNECTION (connection), tmp);
 				g_object_unref (tmp);
 			}
 		} else {
@@ -185,7 +176,6 @@ dir_changed (GFileMonitor *monitor,
 				 */
 				if (found) {
 					const char *old_filename = nm_keyfile_connection_get_filename (connection);
-					GError *error = NULL;
 
 					/* Removing from the hash table should drop the last reference,
 					 * but of course we want to keep the connection around.
@@ -196,14 +186,8 @@ dir_changed (GFileMonitor *monitor,
 					/* Updating settings should update the NMKeyfileConnection's
 					 * filename property too.
 					 */
-					if (!update_connection_settings (NM_EXPORTED_CONNECTION (found),
-					                                 NM_EXPORTED_CONNECTION (connection),
-					                                 &error)) {
-						g_warning ("%s: couldn't update connection settings: (%d) %s",
-						           __func__, error ? error->code : 0,
-						           error ? error->message : "unknown");
-						g_error_free (error);
-					}
+					update_connection_settings (NM_EXPORTED_CONNECTION (found),
+					                            NM_EXPORTED_CONNECTION (connection));
 
 					/* Re-insert the connection back into the hash with the new filename */
 					g_hash_table_insert (priv->hash,

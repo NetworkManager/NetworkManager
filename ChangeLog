@@ -1,3 +1,11 @@
+2008-09-11  Dan Williams  <dcbw@redhat.com>
+
+	* system-settings/plugins/keyfile/plugin.c
+		- (update_connection_settings): update connection manually, since
+			nm_exported_connection_update() does authentication
+		- (dir_changed): update_connection_settings() doesn't need to return
+			an error
+
 2008-09-09  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-glib/nm-vpn-plugin-ui-interface.c
