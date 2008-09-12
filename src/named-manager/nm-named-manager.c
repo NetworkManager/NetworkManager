@@ -135,6 +135,7 @@ static gint
 run_netconfig (GError **error)
 {
 	char *argv[5];
+	char *tmp;
 	gint stdin_fd;
 
 	argv[0] = "/sbin/netconfig";
@@ -142,6 +143,10 @@ run_netconfig (GError **error)
 	argv[2] = "--service";
 	argv[3] = "NetworkManager";
 	argv[4] = NULL;
+
+	tmp = g_strjoinv (" ", argv);
+	nm_debug ("Spawning '%s'", tmp);
+	g_free (tmp);
 
 	if (!g_spawn_async_with_pipes (NULL, argv, NULL, 0, netconfig_child_setup,
 	                               NULL, NULL, &stdin_fd, NULL, NULL, error))
@@ -157,12 +162,14 @@ write_to_netconfig (gint fd, const char *key, const char *value)
 	int x;
 
 	str = g_strdup_printf ("%s='%s'\n", key, value);
+	nm_debug ("Writing to netconfig: %s", str);
 	x = write (fd, str, strlen (str));
 	g_free (str);
 }
 
 static gboolean
-dispatch_netconfig (char **searches,
+dispatch_netconfig (const char *domain,
+				char **searches,
 				char **nameservers,
 				const char *iface,
 				GError **error)
@@ -178,7 +185,16 @@ dispatch_netconfig (char **searches,
 
 	if (searches) {
 		str = g_strjoinv (" ", searches);
-		write_to_netconfig (fd, "DNSDOMAIN", str);
+
+		if (domain) {
+			char *tmp;
+
+			tmp = g_strconcat (domain, " ", str, NULL);
+			g_free (str);
+			str = tmp;
+		}
+
+		write_to_netconfig (fd, "DNSSEARCH", str);
 		g_free (str);
 	}
 
