@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-08-14 08:41+0300\n"
+"POT-Creation-Date: 2008-09-14 15:10+0300\n"
 "PO-Revision-Date: 2008-08-14 08:30+0300\n"
 "Last-Translator: Ilkka Tuohela <hile@iki.fi>\n"
 "Language-Team: Finnish <gnome-fi-laatu@lists.sourceforge.net>\n"
@@ -49,20 +49,20 @@ msgstr "_Muista salasana istunnon ajan"
 msgid "_Save password in keyring"
 msgstr "_Tallenna salasana avainrenkaaseen"
 
-#: ../auth-dialog/main.c:187
+#: ../auth-dialog/main.c:210
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Yhteydenotto VPN-verkkoon \"%s\" vaatii kirjautumista."
 
-#: ../auth-dialog/main.c:188
+#: ../auth-dialog/main.c:211
 msgid "Authenticate VPN"
 msgstr "Todenna VPN-yhteyden avaus"
 
-#: ../auth-dialog/main.c:201
+#: ../auth-dialog/main.c:232
 msgid "Certificate pass_word:"
 msgstr "Varmenteen _salasana:"
 
-#: ../auth-dialog/main.c:216
+#: ../auth-dialog/main.c:246
 msgid "Certificate password:"
 msgstr "Varmennettu salasana:"
 
@@ -221,29 +221,23 @@ msgstr "Käyttäjätunnus:"
 msgid "_Gateway:"
 msgstr "_Yhdyskäytävä:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:25
-msgid "gtk-cancel"
-msgstr "gtk-cancel"
+#~ msgid "gtk-cancel"
+#~ msgstr "gtk-cancel"
 
-#: ../properties/nm-openvpn-dialog.glade.h:26
-msgid "gtk-ok"
-msgstr "gtk-ok"
+#~ msgid "gtk-ok"
+#~ msgstr "gtk-ok"
 
-#: ../properties/nm-openvpn-dialog.glade.h:27
-msgid "page 1"
-msgstr "sivu 1"
+#~ msgid "page 1"
+#~ msgstr "sivu 1"
 
-#: ../properties/nm-openvpn-dialog.glade.h:28
-msgid "page 2"
-msgstr "sivu 2"
+#~ msgid "page 2"
+#~ msgstr "sivu 2"
 
-#: ../properties/nm-openvpn-dialog.glade.h:29
-msgid "page 3"
-msgstr "sivu 3"
+#~ msgid "page 3"
+#~ msgstr "sivu 3"
 
-#: ../properties/nm-openvpn-dialog.glade.h:30
-msgid "page 4"
-msgstr "sivu 4"
+#~ msgid "page 4"
+#~ msgstr "sivu 4"
 
 #~ msgid "The following OpenVPN connection will be created:"
 #~ msgstr "Seuraava OpenVPN-yhteys luodaan:"
