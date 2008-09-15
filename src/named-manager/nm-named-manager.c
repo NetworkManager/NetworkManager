@@ -307,7 +307,7 @@ dispatch_resolvconf (const char *domain,
 				     g_strerror (errno));
 		else {
 			retval = write_resolv_conf (f, domain, searches, nameservers, error);
-			pclose (f);
+			retval &= (pclose (f) == 0);
 		}
 	} else {
 		cmd = g_strconcat (RESOLVCONF_PATH, " -d ", "NetworkManager", NULL);
