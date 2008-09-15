@@ -1,4 +1,8 @@
-2008-09-10  Jorge Gonzalez  <jorgegonz@svn.gnome.org>  
+2008-09-15  Wouter Bolsterlee  <wbolster@svn.gnome.org>
+
+	* nl.po: Updated Dutch translation by Wouter Bolsterlee.
+
+2008-09-10  Jorge Gonzalez  <jorgegonz@svn.gnome.org>
 
 	* es.po: Updated Spanish translation
 
@@ -20,8 +24,8 @@
 
 2008-08-22  Chao-Hsiung Liao  <j_h_liau@yahoo.com.tw>
 
-        * zh_HK.po: Updated Traditional Chinese translation(Hong Kong).
-        * zh_TW.po: Updated Traditional Chinese translation(Taiwan).
+	* zh_HK.po: Updated Traditional Chinese translation(Hong Kong).
+	* zh_TW.po: Updated Traditional Chinese translation(Taiwan).
 
 2008-08-17  Claude Paroz  <claude@2xlibre.net>
 
@@ -40,11 +44,11 @@
 	* bg.po: Updated Bulgarian translation by
 	Alexander Shopov <ash@contact.bg>
 
-2008-07-31  Djihed Afifi <djihed@gmail.com> 
+2008-07-31  Djihed Afifi <djihed@gmail.com>
 
 	* ar.po: Updated Arabic Translation by Djihed Afifi.
 
-2008-07-31  Djihed Afifi <djihed@gmail.com> 
+2008-07-31  Djihed Afifi <djihed@gmail.com>
 
 	* ar.po: Updated Arabic Translation by Djihed Afifi.
 
@@ -58,7 +62,7 @@
 
 2008-07-06 Arangel Angov <arangel@linux.net.mk>
 
-        * mk.po: Updated Macedonian translation.
+	* mk.po: Updated Macedonian translation.
 
 2008-07-04  Leonardo Ferreira Fontenelle  <leonardof@gnome.org>
 
@@ -69,11 +73,11 @@
 
 	* sv.po: Updated Swedish translation.
 
-2008-06-21  Jorge Gonzalez  <jorgegonz@svn.gnome.org>   
+2008-06-21  Jorge Gonzalez  <jorgegonz@svn.gnome.org>
 
 	* es.po: Updated Spanish translation
 
-2008-06-06   Clytie Siddall <clytie@riverland.net.au>
+2008-06-06  Clytie Siddall <clytie@riverland.net.au>
 
 	* vi.po: Updated Vietnamese translation.
 
@@ -87,7 +91,7 @@
 
 2008-02-28 Arangel Angov <arangel@linux.net.mk>
 
-        * mk.po: Updated Macedonian translation.
+	* mk.po: Updated Macedonian translation.
 
 2008-02-28  Gil Forcada  <gforcada@gnome.org>
 
@@ -118,15 +122,15 @@
 
 	* ko.po: Updated Korean translation by Namhyung Kim.
 
-2007-12-26  Djihed Afifi <djihed@gmail.com> 
+2007-12-26  Djihed Afifi <djihed@gmail.com>
 
 	* ar.po: Updated Arabic Translation by Djihed Afifi.
 
-2007-12-26  Djihed Afifi <djihed@gmail.com> 
+2007-12-26  Djihed Afifi <djihed@gmail.com>
 
 	* ar.po: Updated Arabic Translation by Djihed Afifi.
 
-2007-12-26  Djihed Afifi <djihed@gmail.com> 
+2007-12-26  Djihed Afifi <djihed@gmail.com>
 
 	* ar.po: Updated Arabic Translation by Djihed Afifi.
 
@@ -197,7 +201,7 @@
 
 2007-08-15  Kostas Papadimas <pkst@gnome.org>
 
-	* el.po: Updated Greek Translation 
+	* el.po: Updated Greek Translation
 
 2007-08-11  Ilkka Tuohela  <hile@iki.fi>
 
@@ -217,13 +221,13 @@
 
 2007-06-07  Jorge Gonzalez <jorgegonz@svn.gnome.org>
 
-        * es.po: Updated Spanish translation 
+	* es.po: Updated Spanish translation
 
 2007-04-24  Daniel Nylander <po@danielnylander.se>
 
 	* sv.po: Updated Swedish translation.
 
-2007-04-14  Djihed Afifi <djihed@gmail.com> 
+2007-04-14  Djihed Afifi <djihed@gmail.com>
 
 	* ar.po: Updated Arabic Translation by Djihed Afifi.
 
@@ -234,11 +238,11 @@
 2007-03-10  Hendrik Richter  <hendrikr@gnome.org>
 
 	* de.po: Updated German translation, by
-	         Thomas Gier <info@thomasgier.de>
+	Thomas Gier <info@thomasgier.de>
 
 2007-03-07  Vladimer Sichinava  <vsichi@gnome.org>
 
-        * ka.po: Updated Georgian translation by
+	* ka.po: Updated Georgian translation by
 	Malkhaz Barkalaya  <malxaz@gmail.com>
 
 2007-03-06  Ilkka Tuohela  <hile@iki.fi>
@@ -313,7 +317,7 @@
 
 	* sv.po: Updated Swedish translation.
 
-2007-02-21  Djihed Afifi <djihed@gmail.com> 
+2007-02-21  Djihed Afifi <djihed@gmail.com>
 
 	* ar.po: Updated Arabic Translation by Djihed Afifi.
 
@@ -330,7 +334,7 @@
 
 	* da.po: Updated Danish translation.
 
-2007-02-9  Djihed Afifi <djihed@gmail.com> 
+2007-02-9  Djihed Afifi <djihed@gmail.com>
 
 	* ar.po: Updated Arabic Translation by Khaled Hosny.
 
@@ -383,7 +387,7 @@
 2007-01-13  Kostas Papadimas <pkst@gnome.org>
 
 	* el.po: Added Greek Translation
-	* LINGUAS: Added el to the list 
+	* LINGUAS: Added el to the list
 
 2007-01-12  Jovan Naumovski  <jovan@lugola.net>
 
@@ -407,7 +411,7 @@
 
 	* es.po: UPdated SPanish translation.
 
-2006-11-18  Djihed Afifi <djihed@gmail.com> 
+2006-11-18  Djihed Afifi <djihed@gmail.com>
 
 	* ar.po: Added Arabic Translation.
 	* LINGUAS: Added ar.
