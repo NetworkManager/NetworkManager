@@ -1,44 +1,43 @@
-# translation of cs.po to Czech
-# translation of cs.po to
-# This file is distributed under the same license as the PACKAGE package.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER.
+# Czech translation of NetworkManager-openvpn.
+# Copyright (C) 2008 the author(s) of NetworkManager-openvpn.
+# This file is distributed under the same license as the NetworkManager-openvpn package.
 # Jakub Friedl <jfriedl@suse.cz>, 2006.
+# Jiří Eischmann <jiri@eischmann.cz>, 2008.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: cs\n"
+"Project-Id-Version: NetworkManager-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-08-03 13:43+0200\n"
-"PO-Revision-Date: 2006-08-03 14:08+0200\n"
-"Last-Translator: Jakub Friedl <jfriedl@suse.cz>\n"
+"POT-Creation-Date: 2008-09-17 22:14+0200\n"
+"PO-Revision-Date: 2008-09-16 13:07+0100\n"
+"Last-Translator: Jiří Eischmann <jiri@eischmann.cz>\n"
 "Language-Team: Czech <gnome-cs-list@gnome.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: KBabel 1.10.2\n"
-"Plural-Forms:  nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:148
+#: ../auth-dialog/gnome-two-password-dialog.c:145
 msgid "_Password:"
 msgstr "_Heslo:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:149
+#: ../auth-dialog/gnome-two-password-dialog.c:146
 msgid "_Secondary Password:"
 msgstr "_Sekundární heslo:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:272
+#: ../auth-dialog/gnome-two-password-dialog.c:263
 msgid "_Username:"
 msgstr "_Uživ. jméno:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:274
+#: ../auth-dialog/gnome-two-password-dialog.c:265
 msgid "_Domain:"
 msgstr "_Doména:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:360
+#: ../auth-dialog/gnome-two-password-dialog.c:357
 msgid "Connect _anonymously"
 msgstr "Připojit _anonymně"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:365
+#: ../auth-dialog/gnome-two-password-dialog.c:362
 msgid "Connect as _user:"
 msgstr "Připojit jako _uživatel:"
 
@@ -50,384 +49,173 @@ msgstr "_Zapamatovat heslo pro toto sezení"
 msgid "_Save password in keyring"
 msgstr "_Uložit heslo do svazku klíčů"
 
-#: ../auth-dialog/main.c:214
+#: ../auth-dialog/main.c:210
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Pro přístup do VPN '%s' se musíte autentizovat."
 
-#: ../auth-dialog/main.c:215
+#: ../auth-dialog/main.c:211
 msgid "Authenticate VPN"
 msgstr "Ověřování VPN"
 
-#: ../auth-dialog/main.c:227 ../auth-dialog/main.c:252
+#: ../auth-dialog/main.c:232
+msgid "Certificate pass_word:"
+msgstr "Heslo _certifikátu:"
+
+#: ../auth-dialog/main.c:246
 msgid "Certificate password:"
 msgstr "Heslo certifikátu:"
 
-#: ../nm-openvpn.desktop.in.h:1
-msgid "Add, Remove, and Edit VPN Connections"
-msgstr "Přidat, odstranit a upravit VPN připojení"
+#: ../properties/auth-helpers.c:69
+msgid "Choose a Certificate Authority certificate..."
+msgstr "Zvolit certifikát certifikační autority..."
 
-#: ../nm-openvpn.desktop.in.h:2
-msgid "VPN Connection Manager (OpenVPN)"
-msgstr "Správce VPN připojení (OpenVPN)"
+#: ../properties/auth-helpers.c:88
+msgid "Choose your personal certificate..."
+msgstr "Zvolit váš osobní certifikát..."
 
-#: ../properties/nm-openvpn.c:130
-msgid "OpenVPN Client"
-msgstr "OpenVPN klient"
+#: ../properties/auth-helpers.c:106
+msgid "Choose your private key..."
+msgstr "Zvolit váš osobní klíč..."
 
-#: ../properties/nm-openvpn.c:729
-msgid "The following OpenVPN connection will be created:"
-msgstr "Bude vytvořeno následující OpenVPN připojení:"
+#: ../properties/auth-helpers.c:159
+msgid "Choose an OpenVPN static key..."
+msgstr "Zvolit statický klíč OpenVPN..."
 
-#: ../properties/nm-openvpn.c:731
-#, c-format
-msgid "Name:  %s"
-msgstr "Jméno:  %s"
+#: ../properties/auth-helpers.c:183 ../properties/auth-helpers.c:862
+msgid "None"
+msgstr "Žádný"
 
-#: ../properties/nm-openvpn.c:739
-msgid "Connection Type: X.509 Certificates"
-msgstr "Typ připojení: X.509 certifikáty"
+#: ../properties/auth-helpers.c:518
+msgid "PEM certificates (*.pem, *.crt, *.key)"
+msgstr "Certifikáty PEM (*.pem, *.crt, *.key)"
 
-#: ../properties/nm-openvpn.c:742 ../properties/nm-openvpn.c:769
-#: ../properties/nm-openvpn.c:781
-#, c-format
-msgid "CA:  %s"
-msgstr "CA:  %s"
+#: ../properties/auth-helpers.c:578
+msgid "OpenVPN Static Keys (*.key)"
+msgstr "Statické klíče OpenVPN (*.key)"
 
-#: ../properties/nm-openvpn.c:745 ../properties/nm-openvpn.c:784
-#, c-format
-msgid "Cert:  %s"
-msgstr "Cert:  %s"
+#: ../properties/auth-helpers.c:689
+msgid "Default"
+msgstr "Výchozí"
 
-#: ../properties/nm-openvpn.c:748 ../properties/nm-openvpn.c:787
-#, c-format
-msgid "Key:  %s"
-msgstr "Klíč:  %s"
+#: ../properties/nm-openvpn.c:52
+msgid "OpenVPN"
+msgstr "OpenVPN"
 
-#: ../properties/nm-openvpn.c:752
-msgid "Connection Type: Shared Key"
-msgstr "Typ připojení: sdílený klíč"
+#: ../properties/nm-openvpn.c:53
+msgid "Compatible with the OpenVPN server."
+msgstr "Kompatibilní s OpenVPN serverem."
 
-#: ../properties/nm-openvpn.c:755
-#, c-format
-msgid "Shared Key:  %s"
-msgstr "Sdílený klíč:  %s"
+#: ../properties/nm-openvpn.c:310 ../properties/nm-openvpn-dialog.glade.h:7
+msgid "Certificates (TLS)"
+msgstr "Certifikáty (TLS)"
 
-#: ../properties/nm-openvpn.c:758
-#, c-format
-msgid "Local IP:  %s"
-msgstr "Lokální IP: %s"
-
-#: ../properties/nm-openvpn.c:761
-#, c-format
-msgid "Remote IP:  %s"
-msgstr "Vzdálená IP: %s"
-
-#: ../properties/nm-openvpn.c:766
-msgid "Connection Type: Password"
-msgstr "Typ připojení: heslo"
-
-#: ../properties/nm-openvpn.c:772 ../properties/nm-openvpn.c:790
-#, c-format
-msgid "Username:  %s"
-msgstr "Uživatelské jméno:  %s"
-
-#: ../properties/nm-openvpn.c:778
-msgid "Connection Type: X.509 with Password Authentication"
-msgstr "Typ připojení: X.509 s ověřením hesla"
-
-#: ../properties/nm-openvpn.c:796
-#, c-format
-msgid "Remote:  %s"
-msgstr "Vzdálený:  %s"
-
-#: ../properties/nm-openvpn.c:799
-#, c-format
-msgid "Device: %s"
-msgstr "Zařízení:  %s"
-
-#: ../properties/nm-openvpn.c:799
-msgid "TAP"
-msgstr "TAP"
-
-#: ../properties/nm-openvpn.c:799
-msgid "TUN"
-msgstr "TUN"
-
-#: ../properties/nm-openvpn.c:802
-#, c-format
-msgid "Protocol: %s"
-msgstr "Protokol: %s"
-
-#: ../properties/nm-openvpn.c:802
-msgid "TCP"
-msgstr "TCP"
-
-#: ../properties/nm-openvpn.c:802
-msgid "UDP"
-msgstr "UDP"
-
-#: ../properties/nm-openvpn.c:806
-#, c-format
-msgid "Routes:  %s"
-msgstr "Směrování:  %s"
-
-#: ../properties/nm-openvpn.c:810
-#, c-format
-msgid "Use LZO Compression: %s"
-msgstr "Použít kompresi LZO:%s"
-
-#: ../properties/nm-openvpn.c:810
-msgid "Yes"
-msgstr "Ano"
-
-#: ../properties/nm-openvpn.c:810
-msgid "No"
-msgstr "Ne"
-
-#: ../properties/nm-openvpn.c:814
-#, c-format
-msgid "Cipher:  %s"
-msgstr "Šifra:  %s"
-
-#: ../properties/nm-openvpn.c:819
-#, c-format
-msgid "TLS auth:  %s %s"
-msgstr "TLS aut:  %s %s"
-
-#: ../properties/nm-openvpn.c:823
-msgid "The connection details can be changed using the \"Edit\" button."
-msgstr "Podrobnosti o připojení lze změnit kliknutím na tlačítko \"Upravit\"."
-
-#: ../properties/nm-openvpn.c:1003
-msgid "Cannot import settings"
-msgstr "Nelze importovat nastavení"
-
-#: ../properties/nm-openvpn.c:1005
-#, c-format
-msgid "The VPN settings file '%s' does not contain valid data."
-msgstr "Zadaný soubor s nastavením VPN '%s' neobsahuje platná data."
-
-#: ../properties/nm-openvpn.c:1042
-msgid "Select file to import"
-msgstr "Vyberte soubor k importu"
-
-#: ../properties/nm-openvpn.c:1122 ../properties/nm-openvpn.c:1134
-msgid "Select CA to use"
-msgstr "Vyberte CA"
-
-#: ../properties/nm-openvpn.c:1125
-msgid "Select certificate to use"
-msgstr "Vyberte certifikát"
-
-#: ../properties/nm-openvpn.c:1128
-msgid "Select key to use"
-msgstr "Vyberte klíč"
-
-#: ../properties/nm-openvpn.c:1131
-msgid "Select shared key to use"
-msgstr "Vyberte sdílený klíč"
-
-#: ../properties/nm-openvpn.c:1137
-msgid "Select TA to use"
-msgstr "Vyberte TA"
-
-#. printf ("in impl_export\n");
-#: ../properties/nm-openvpn.c:1326
-msgid "Save as..."
-msgstr "Uložit jako..."
-
-#: ../properties/nm-openvpn.c:1356
-#, c-format
-msgid "A file named \"%s\" already exists."
-msgstr "Soubor se jménem \"%s\" již existuje."
-
-#: ../properties/nm-openvpn.c:1359
-msgid "Do you want to replace it with the one you are saving?"
-msgstr "Chcete ho nahradit ukládaným souborem?"
-
-#: ../properties/nm-openvpn.c:1373
-msgid "Failed to export configuration"
-msgstr "Export konfigurace selhal"
-
-#: ../properties/nm-openvpn.c:1375
-#, c-format
-msgid "Failed to save file %s"
-msgstr "Selhalo ukládání souboru %s"
-
-#: ../properties/nm-openvpn-dialog.glade.h:1
-msgid "0"
-msgstr "0"
-
-#: ../properties/nm-openvpn-dialog.glade.h:2
-msgid "1"
-msgstr "1"
-
-#: ../properties/nm-openvpn-dialog.glade.h:3
-msgid "<b>Connection Name</b>"
-msgstr "<b>Název připojení</b>"
-
-#: ../properties/nm-openvpn-dialog.glade.h:4
-msgid "<b>Optional Information</b>"
-msgstr "<b>Volitelné informace</b>"
-
-#: ../properties/nm-openvpn-dialog.glade.h:5
-msgid "<b>Required Information</b>"
-msgstr "<b>Požadované informace</b>"
-
-#: ../properties/nm-openvpn-dialog.glade.h:6
-msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
-msgstr "<i>příklad: 172.16.0.0/16 10.11.12.0/24</i>"
-
-#: ../properties/nm-openvpn-dialog.glade.h:7
-msgid "CA  file:"
-msgstr "Soubor CA:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:8
-msgid "Certificate:"
-msgstr "Certifikát:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:9
-msgid "Connection Type:"
-msgstr "Typ připojení:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:10
-msgid "Direction:"
-msgstr "Směr:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:11
-msgid "Key:"
-msgstr "Klíč:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:12
-msgid "Local IP:"
-msgstr "Lokální IP:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:13
+#: ../properties/nm-openvpn.c:322
 msgid "Password"
 msgstr "Heslo"
 
-#: ../properties/nm-openvpn-dialog.glade.h:14
+#: ../properties/nm-openvpn.c:336
+msgid "Password with Certificates (TLS)"
+msgstr "Heslo s certifikáty (TLS)"
+
+#: ../properties/nm-openvpn.c:348
+msgid "Static Key"
+msgstr "Statický klíč"
+
+#: ../properties/nm-openvpn-dialog.glade.h:1
+msgid " "
+msgstr " "
+
+#: ../properties/nm-openvpn-dialog.glade.h:2
+msgid "<b>Authentication</b>"
+msgstr "<b>Autentizace</b>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:3
+msgid "<b>General</b>"
+msgstr "<b>Obecné</b>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:4
 msgid ""
-"Please enter the information provided by your system administrator below. Do "
-"not enter your password here as you will be prompted when connecting."
+"<i>If key direction is used, it must be the opposite of that used on the VPN "
+"peer.  For example, if the peer uses '1', this connection must use '0'.  If "
+"you are unsure what value to use, contact your system administrator.</i>"
 msgstr ""
-"Níže zadejte informace od svého správce systému. Nezadávejte své heslo, "
-"budete na něj dotázání později během připojování."
+"<i>Pokud se používá směr klíče, musí být opačný k VPN protějšku. Například, "
+"když protějšek používá '1', toto připojení musí použít '0'. Pokud si nejste "
+"jisti, jakou hodnotu použít, kontaktujte administrátora svého systému.</i>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:5
+msgid "Ad_vanced..."
+msgstr "P_okročilé..."
+
+#: ../properties/nm-openvpn-dialog.glade.h:6
+msgid "CA Certificate:"
+msgstr "Certifikát CA:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:8
+msgid "Cipher:"
+msgstr "Šifra:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:9
+msgid "General"
+msgstr "Obecné"
+
+#: ../properties/nm-openvpn-dialog.glade.h:10
+msgid "Key Direction:"
+msgstr "Směr klíče:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:11
+msgid "Key File:"
+msgstr "Soubor klíče:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:12
+msgid "Local IP Address:"
+msgstr "Lokální IP adresa:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:13
+msgid "OpenVPN Advanced Options"
+msgstr "Pokročilé volby OpenVPN"
+
+#: ../properties/nm-openvpn-dialog.glade.h:14
+msgid "Private Key:"
+msgstr "Soukromý klíč:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:15
-msgid ""
-"Please note that the file you import is not an OpenVPN configuration file. "
-"Ask your administrator for the file."
-msgstr ""
-"Pozor, importovaný soubor není soubor s nastavením OpenVPN.\n"
-"Potřebný soubor si vyžádejte u svého administrátora."
+msgid "Static Key:"
+msgstr "Statický klíč:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:16
-msgid "Remote IP:"
-msgstr "Vzdálená IP:"
+msgid "Type:"
+msgstr "Typ:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:17
-msgid "Shared Key:"
-msgstr "Sdílený klíč:"
+msgid "Use L_ZO data compression"
+msgstr "Použít kompresi L_ZO"
 
 #: ../properties/nm-openvpn-dialog.glade.h:18
-msgid "Shared key"
-msgstr "Sdílený klíč"
+msgid "Use a TA_P device"
+msgstr "Použít TA_P zařízení"
 
 #: ../properties/nm-openvpn-dialog.glade.h:19
-msgid "Use LZO compression"
-msgstr "Použít kompresi LZO"
+msgid "Use a _TCP connection"
+msgstr "Použít _TCP spojení"
 
 #: ../properties/nm-openvpn-dialog.glade.h:20
-msgid "Use TAP device"
-msgstr "Použít TAP zařízení"
+msgid "Use additional TLS authentication"
+msgstr "Použít dodatečnou autentizaci TLS"
 
 #: ../properties/nm-openvpn-dialog.glade.h:21
-msgid "Use TCP connection"
-msgstr "Použít TCP spojení"
+msgid "Use custom gateway p_ort:"
+msgstr "P_oužít vlastní port brány:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:22
-msgid "Use TLS auth:"
-msgstr "Použít TLS aut:"
+msgid "User Certificate:"
+msgstr "Uživatelský certifikát:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:23
-msgid "Use cipher:"
-msgstr "Použít šifru:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:24
-msgid "Username:"
+msgid "User name:"
 msgstr "Uživatelské jméno:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:25
-msgid "X.509"
-msgstr "X.509"
-
-#: ../properties/nm-openvpn-dialog.glade.h:26
-msgid ""
-"X.509 Certificates\n"
-"Pre-shared key\n"
-"Password Authentication\n"
-"X.509 with Password Authentication"
-msgstr ""
-"X.509 certifikáty\n"
-"Sdílený klíč\n"
-"Ověření hesla\n"
-"X.509 s ověřením hesla"
-
-#: ../properties/nm-openvpn-dialog.glade.h:30
+#: ../properties/nm-openvpn-dialog.glade.h:24
 msgid "_Gateway:"
 msgstr "_Brána:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:31
-msgid "_Import Saved Configuration..."
-msgstr "_Importovat uložené nastavení..."
-
-#: ../properties/nm-openvpn-dialog.glade.h:32
-msgid ""
-"_Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
-msgstr ""
-"_Jméno používané k identifikaci připojení k soukromé síti, např. \"Kolej\" "
-"nebo \"Firemní síť\""
-
-#: ../properties/nm-openvpn-dialog.glade.h:33
-msgid "_Only use VPN connection for these addresses"
-msgstr "_Použít VPN pouze pro tyto adresy"
-
-#: ../properties/nm-openvpn-dialog.glade.h:34
-msgid "none"
-msgstr "žádný"
-
-#: ../src/nm-openvpn-service.c:127
-msgid ""
-"The VPN login failed because the user name and password were not accepted or "
-"the certificate password was wrong."
-msgstr ""
-"Připojení do VPN selhalo. Uživatelské jméno a heslo bylo odmítnuto nebo bylo "
-"chybné heslo certifikátu."
-
-#: ../src/nm-openvpn-service.c:129
-msgid "The VPN login failed because the VPN program could not be started."
-msgstr "Připojení do VPN selhalo. VPN program nelze spustit."
-
-#: ../src/nm-openvpn-service.c:131
-msgid ""
-"The VPN login failed because the VPN program could not connect to the VPN "
-"server."
-msgstr "Připojení do VPN selhalo. Nelze se spojit s VPN serverem."
-
-#: ../src/nm-openvpn-service.c:133
-msgid "The VPN login failed because the VPN configuration options were invalid."
-msgstr "Připojení do VPN selhalo. Chybné volby VPN."
-
-#: ../src/nm-openvpn-service.c:135
-msgid ""
-"The VPN login failed because the VPN program received an invalid "
-"configuration from the VPN server."
-msgstr "Připojení do VPN selhalo. Byly obdrženy chybné volby od VPN serveru."
-
-#: ../src/nm-openvpn-service.c:137
-msgid "VPN connection failed"
-msgstr "VPN spojení selhalo"
-

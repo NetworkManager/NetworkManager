@@ -1,411 +1,175 @@
-# translation of cs.po to
-# This file is distributed under the same license as the PACKAGE package.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER.
+# Czech translation of NetworkManager-pptp.
+# Copyright (C) 2008 the author(s) of NetworkManager-pptp.
+# This file is distributed under the same license as the NetworkManager-pptp package.
 # Jakub Friedl <jfriedl@suse.cz>, 2006.
+# Jiří Eischmann <jiri@eischmann.cz>, 2008.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: cs\n"
+"Project-Id-Version: NetworkManager-pptp\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-06-28 12:29+0200\n"
-"PO-Revision-Date: 2006-06-28 12:55+0200\n"
-"Last-Translator: Jakub Friedl <jfriedl@suse.cz>\n"
-"Language-Team:  <cs@li.org>\n"
+"POT-Creation-Date: 2008-09-17 22:20+0200\n"
+"PO-Revision-Date: 2008-09-17 20:41+0100\n"
+"Last-Translator: Jiří Eischmann <jiri@eischmann.cz>\n"
+"Language-Team: Czech <gnome-cs-list@gnome.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: KBabel 1.10.2\n"
-"Plural-Forms:  nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:147
+#: ../auth-dialog/gnome-two-password-dialog.c:144
 msgid "_Secondary Password:"
 msgstr "_Sekundární heslo:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:268
+#: ../auth-dialog/gnome-two-password-dialog.c:258
 msgid "_Username:"
 msgstr "_Uživ. jméno:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:270
+#: ../auth-dialog/gnome-two-password-dialog.c:260
 msgid "_Domain:"
 msgstr "_Doména:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:272
+#: ../auth-dialog/gnome-two-password-dialog.c:262
 msgid "_Password:"
 msgstr "_Heslo:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:355
+#: ../auth-dialog/gnome-two-password-dialog.c:351
 msgid "Connect _anonymously"
 msgstr "Připojit _anonymně"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:360
+#: ../auth-dialog/gnome-two-password-dialog.c:356
 msgid "Connect as _user:"
 msgstr "Připojit jako _uživatel:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:466
-msgid "_Remember password for this session"
+#: ../auth-dialog/gnome-two-password-dialog.c:465
+msgid "_Remember passwords for this session"
 msgstr "_Zapamatovat heslo pro toto sezení"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:468
-msgid "_Save password in keyring"
-msgstr "_Uložit heslo do svazku klíčů"
+#: ../auth-dialog/gnome-two-password-dialog.c:467
+msgid "_Save passwords in keyring"
+msgstr "_Uložit hesla do svazku klíčů"
 
-#: ../auth-dialog/main.c:138
+#: ../auth-dialog/main.c:140
 #, c-format
-msgid "You need to authenticate to access '%s'."
-msgstr ""
-
-#: ../auth-dialog/main.c:139
-msgid "Authenticate Connection"
-msgstr ""
-
-#: ../nm-ppp.desktop.in.h:1
-msgid "Add, Remove, and Edit VPN Connections"
-msgstr "Přidat, odstranit a upravit VPN připojení"
-
-#: ../nm-ppp.desktop.in.h:2
-msgid "VPN Connection Manager (PPP generic)"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:45
-msgid "Tunnel via pppd"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:111
-msgid "Name"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:123
-msgid "PPTP Server"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:128
-msgid "Telephone Number"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:133
-msgid "Bluetooth Address"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:138
-msgid "Bluetooth Channel"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:143
-msgid "GPRS APN"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:148
-msgid "GPRS IP"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:153
-msgid "GPRS Context No."
-msgstr "GPRS kontext č."
-
-#: ../properties/nm-ppp-properties.c:158
-msgid "GPRS Packet Type"
-msgstr "GPRS typ paketu"
-
-#: ../properties/nm-ppp-properties.c:163
-msgid "Use CTS/RTS flow control"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:168
-msgid "Connect via a modem"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:173
-msgid "Require IP to be provided"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:178
-#: ../properties/nm-ppp-dialog.glade.h:35
-msgid "Use Peer DNS"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:183
-msgid "Use MPPE encryption"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:188
-msgid "Use MPPC compression"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:193
-msgid "Do not use deflate compression"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:198
-msgid "Do not use BSD compression"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:203
-msgid "Exclusive device access by pppd"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:208
-msgid "Authenticate remote peer"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:213
-msgid "Maximum transmit unit (in bytes)"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:218
-msgid "Maximum receive unit (in bytes)"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:223
-msgid "Number of failed LCP echos to cause disconnect"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:228
-msgid "Interval (in seconds) at which to issue LCP echos"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:233
-msgid "Interval (in milliseconds) to wait before connecting."
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:243
-msgid "Use Peer DNS over the Tunnel"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:249
-msgid "Specific networks available"
-msgstr ""
-
-#: ../properties/nm-ppp-properties.c:254
-msgid "Limit to specific networks"
-msgstr ""
-
-#: ../properties/vpnui_impl.c:225
-#, c-format
-msgid "The following '%s' connection will be created:"
-msgstr ""
-
-#: ../properties/vpnui_impl.c:238
-#, c-format
-msgid ""
-"\t%s:  %s\n"
-"\n"
-msgstr ""
-
-#: ../properties/vpnui_impl.c:241
-msgid "The connection details can be changed using the \"Back\" button."
-msgstr ""
-
-#: ../properties/vpnui_impl.c:302
-msgid "Select file to import"
-msgstr "Vyberte soubor k importu"
-
-#. printf ("in impl_export\n");
-#: ../properties/vpnui_impl.c:447
-msgid "Save as..."
-msgstr "Uložit jako..."
-
-#: ../properties/vpnui_impl.c:476
-#, c-format
-msgid "A file named \"%s\" already exists."
-msgstr "Soubor se jménem \"%s\" již existuje."
-
-#: ../properties/vpnui_impl.c:479
-msgid "Do you want to replace it with the one you are saving?"
-msgstr "Chcete ho nahradit ukládaným souborem?"
-
-#: ../properties/nm-ppp-dialog.glade.h:1
-msgid "00:00:00:00"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:2
-msgid "<b>Bluetooth options</b>"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:3
-msgid "<b>Connection Name</b>"
-msgstr "<b>Název připojení</b>"
-
-#: ../properties/nm-ppp-dialog.glade.h:4
-msgid "<b>Dial-up options</b>"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:5
-msgid "<b>GPRS options</b>"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:6
-msgid "<b>PPP options</b>"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:7
-msgid "<b>PPTP options</b>"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:8
-msgid "<b>Required Information</b>"
-msgstr "<b>Požadované informace</b>"
-
-#: ../properties/nm-ppp-dialog.glade.h:9
-msgid "<b>Routing options</b>"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:10
-msgid "<b>Serial options</b>"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:11
-msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
-msgstr "<i>příklad: 172.16.0.0/16 10.11.12.0/24</i>"
-
-#: ../properties/nm-ppp-dialog.glade.h:12
-msgid "Authenticate Peer"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:13
-msgid "BSD Compression"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:14
-msgid "Compression and encryption"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:15
-msgid "Connection Type:"
-msgstr "Typ připojení:"
-
-#: ../properties/nm-ppp-dialog.glade.h:16
-msgid "Connection type"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:17
-msgid "Debug Output"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:18
-msgid "Deflate compression"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:19
-msgid "Disconnect after this many LCP echo requests fail"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:20
-msgid "Exclusive device access (UUCP-style lock)"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:21
-msgid "Find Device"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:22
-msgid "Hardware RTS/CTS"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:23
-msgid "Host name or IP address of the PPTP server"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:24
-msgid "MPPC Compression"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:25
-msgid "MPPE encryption"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:26
-msgid "Maximum Receive Unit"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:27
-msgid "Maximum Transmit Unit"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:28
-msgid "Modem Connection"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:29
-msgid "Numeric Tweaks"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:30
-msgid "Peer DNS through tunnel"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:31
-msgid ""
-"Please enter the information provided by your system administrator below. Do "
-"not enter your password here as you will be prompted when connecting."
-msgstr ""
-"Níže zadejte informace od svého správce systému. Nezadávejte své heslo, "
-"budete na něj dotázání později během připojování."
-
-#: ../properties/nm-ppp-dialog.glade.h:32
-msgid "Require Explicit IP Addr"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:33
-msgid "Show on connection on menu"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:34
-msgid "Time in seconds between echo requests"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:36
-msgid "_Access Point Name:"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:37
-msgid "_Channel:"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:38
-msgid "_Context Num"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:39
-msgid "_Device Address:"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:40
+msgid "You need to authenticate to access the Virtual Private Network '%s'."
+msgstr "Pro přístup k virtuální privátní síti '%s' musíte provést autentizaci."
+
+#: ../auth-dialog/main.c:141
+msgid "Authenticate VPN"
+msgstr "Autentizovat VPN"
+
+#: ../nm-pptp.desktop.in.h:1
+msgid "Add, Remove, and Edit PPTP VPN Connections"
+msgstr "Přidat, odstranit a upravit PPTP VPN připojení"
+
+#: ../nm-pptp.desktop.in.h:2
+msgid "PPTP VPN Connection Manager"
+msgstr "Správce spojení PPTP VPN"
+
+#: ../properties/advanced-dialog.c:147
+msgid "All Available (Default)"
+msgstr "Vše dostupné (výchozí)"
+
+#: ../properties/advanced-dialog.c:151
+msgid "128-bit (most secure)"
+msgstr "128 bitů (nejbezpečnější)"
+
+#: ../properties/advanced-dialog.c:160
+msgid "40-bit (less secure)"
+msgstr "40 bitů (méně bezpečné)"
+
+#: ../properties/advanced-dialog.c:231
+msgid "PAP"
+msgstr "PAP"
+
+#: ../properties/advanced-dialog.c:237
+msgid "CHAP"
+msgstr "CHAP"
+
+#: ../properties/advanced-dialog.c:243
+msgid "MSCHAP"
+msgstr "MSCHAP"
+
+#: ../properties/advanced-dialog.c:249
+msgid "MSCHAPv2"
+msgstr "MSCHAPv2"
+
+#: ../properties/nm-pptp-dialog.glade.h:1
+msgid "<b>Authentication</b>"
+msgstr "<b>Autentizace</b>"
+
+#: ../properties/nm-pptp-dialog.glade.h:2
+msgid "<b>Echo</b>"
+msgstr "<b>Echo</b>"
+
+#: ../properties/nm-pptp-dialog.glade.h:3
+msgid "<b>General</b>"
+msgstr "<b>Obecné</b>"
+
+#: ../properties/nm-pptp-dialog.glade.h:4
+msgid "<b>Optional</b>"
+msgstr "<b>Volitelné</b>"
+
+#: ../properties/nm-pptp-dialog.glade.h:5
+msgid "<b>Security and Compression</b>"
+msgstr "<b>Bezpečnost a komprese</b>"
+
+#: ../properties/nm-pptp-dialog.glade.h:6
+msgid "Ad_vanced..."
+msgstr "P_okročilé..."
+
+#: ../properties/nm-pptp-dialog.glade.h:7
+msgid "Allow _BSD data compression"
+msgstr "Povolit kompresi _BSD dat"
+
+#: ../properties/nm-pptp-dialog.glade.h:8
+msgid "Allow _Deflate data compression"
+msgstr "Povolit kompresi dat _Deflate"
+
+#: ../properties/nm-pptp-dialog.glade.h:9
+msgid "Allow st_ateful encryption"
+msgstr "Povolit st_avové šifrování"
+
+#: ../properties/nm-pptp-dialog.glade.h:10
+msgid "Allow the following authentication methods:"
+msgstr "Povolit následující metody autentizace:"
+
+#: ../properties/nm-pptp-dialog.glade.h:11
+msgid "Default"
+msgstr "Výchozí"
+
+#: ../properties/nm-pptp-dialog.glade.h:12
+msgid "Domain:"
+msgstr "Doména:"
+
+#: ../properties/nm-pptp-dialog.glade.h:13
+msgid "Send PPP _echo packets"
+msgstr "Poslat PPP _echo pakety"
+
+#: ../properties/nm-pptp-dialog.glade.h:14
+msgid "Use TCP _header compression"
+msgstr "Použít kompresi TCP _záhlaví"
+
+#: ../properties/nm-pptp-dialog.glade.h:15
+msgid "Use _Point-to-Point encryption (MPPE)"
+msgstr "Použít _Point-to-Point šifrování (MPPE)"
+
+#: ../properties/nm-pptp-dialog.glade.h:16
+msgid "User name:"
+msgstr "Uživ. jméno:"
+
+#: ../properties/nm-pptp-dialog.glade.h:17
 msgid "_Gateway:"
 msgstr "_Brána:"
 
-#: ../properties/nm-ppp-dialog.glade.h:41
-msgid "_IP Address:"
-msgstr ""
+#: ../properties/nm-pptp-dialog.glade.h:18
+msgid "_Security:"
+msgstr "_Bezpečnost:"
 
-#: ../properties/nm-ppp-dialog.glade.h:42
-msgid "_Import Saved Configuration..."
-msgstr "_Importovat uložené nastavení..."
+#: ../properties/nm-pptp.c:49
+msgid "Point-to-Point Tunneling Protocol (PPTP)"
+msgstr "Point-to-Point Tunneling Protocol (PPTP)"
 
-#: ../properties/nm-ppp-dialog.glade.h:43
-msgid ""
-"_Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
-msgstr ""
-"_Jméno používané k identifikaci připojení k soukromé síti, např. \"Kolej\" "
-"nebo \"Firemní síť\""
-
-#: ../properties/nm-ppp-dialog.glade.h:44
-msgid "_Only use VPN connection for these addresses"
-msgstr "_Použít VPN pouze pro tyto adresy"
-
-#: ../properties/nm-ppp-dialog.glade.h:45
-msgid "_Packet Type"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:46
-msgid "_Telephone Number:"
-msgstr ""
-
-#: ../properties/nm-ppp-dialog.glade.h:47
-msgid "connect-delay"
-msgstr ""
-
-#: ../src/nm-ppp-starter.c:140
-msgid "VPN Connection failed"
-msgstr ""
-
+#: ../properties/nm-pptp.c:50
+msgid "Compatible with Microsoft and other PPTP VPN servers."
+msgstr "Kompatibilní s PPTP VPN servery od Microsoftu a ostatních."
