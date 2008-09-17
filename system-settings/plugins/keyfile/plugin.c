@@ -83,7 +83,7 @@ typedef struct {
 static void
 find_by_uuid (gpointer key, gpointer data, gpointer user_data)
 {
-	NMKeyfileConnection *keyfile = NM_KEYFILE_CONNECTION (key);
+	NMKeyfileConnection *keyfile = NM_KEYFILE_CONNECTION (data);
 	FindByUUIDInfo *info = user_data;
 	NMConnection *connection;
 	NMSettingConnection *s_con;
