@@ -39,6 +39,9 @@
 static gboolean
 impl_settings_add_connection (NMSysconfigSettings *self, GHashTable *hash, DBusGMethodInvocation *context);
 
+static gboolean
+impl_settings_save_hostname (NMSysconfigSettings *self, const char *hostname, DBusGMethodInvocation *context);
+
 #include "nm-settings-system-glue.h"
 
 static void unmanaged_devices_changed (NMSystemConfigInterface *config, gpointer user_data);
@@ -69,6 +72,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 enum {
 	PROP_0,
 	PROP_UNMANAGED_DEVICES,
+	PROP_HOSTNAME,
 
 	LAST_PROP
 };
@@ -99,10 +103,10 @@ load_connections (NMSysconfigSettings *self)
 		g_slist_free (plugin_connections);
 	}
 
+	priv->connections_loaded = TRUE;
+
 	/* FIXME: Bad hack */
 	unmanaged_devices_changed (NULL, self);
-
-	priv->connections_loaded = TRUE;
 }
 
 static void
@@ -219,10 +223,35 @@ get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
 	NMSysconfigSettings *self = NM_SYSCONFIG_SETTINGS (object);
+	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+	GSList *iter;
 
 	switch (prop_id) {
 	case PROP_UNMANAGED_DEVICES:
 		g_value_take_boxed (value, get_unmanaged_devices (self));
+		break;
+	case PROP_HOSTNAME:
+		/* Hostname returned is the hostname returned from the first plugin
+		 * that provides one.
+		 */
+		for (iter = priv->plugins; iter; iter = iter->next) {
+			NMSystemConfigInterfaceCapabilities caps = NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE;
+
+			g_object_get (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES, &caps, NULL);
+			if (caps & NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME) {
+				char *hostname = NULL;
+
+				g_object_get (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME, &hostname, NULL);
+				if (hostname && strlen (hostname)) {
+					g_value_take_string (value, hostname);
+					break;
+				}
+			}
+		}
+
+		/* Don't ever pass NULL through D-Bus */
+		if (!g_value_get_string (value))
+			g_value_set_static_string (value, "");
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -251,6 +280,14 @@ nm_sysconfig_settings_class_init (NMSysconfigSettingsClass *class)
 							 "Unamanged devices",
 							 "Unmanaged devices",
 							 DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
+							 G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_HOSTNAME,
+		 g_param_spec_string (NM_SYSCONFIG_SETTINGS_HOSTNAME,
+							 "Hostname",
+							 "Hostname",
+							 NULL,
 							 G_PARAM_READABLE));
 
 	/* signals */
@@ -339,6 +376,14 @@ unmanaged_devices_changed (NMSystemConfigInterface *config,
 	g_object_notify (G_OBJECT (self), NM_SYSCONFIG_SETTINGS_UNMANAGED_DEVICES);
 }
 
+static void
+hostname_changed (NMSystemConfigInterface *config,
+                  GParamSpec *pspec,
+                  gpointer user_data)
+{
+	g_object_notify (G_OBJECT (user_data), NM_SYSCONFIG_SETTINGS_HOSTNAME);
+}
+
 void
 nm_sysconfig_settings_add_plugin (NMSysconfigSettings *self,
 						    NMSystemConfigInterface *plugin)
@@ -356,6 +401,7 @@ nm_sysconfig_settings_add_plugin (NMSysconfigSettings *self,
 
 	g_signal_connect (plugin, "connection-added", G_CALLBACK (plugin_connection_added), self);
 	g_signal_connect (plugin, "unmanaged-devices-changed", G_CALLBACK (unmanaged_devices_changed), self);
+	g_signal_connect (plugin, "notify::hostname", G_CALLBACK (hostname_changed), self);
 
 	nm_system_config_interface_init (plugin, priv->hal_mgr);
 
@@ -441,10 +487,14 @@ impl_settings_add_connection (NMSysconfigSettings *self,
 	GError *err = NULL, *cnfh_error = NULL;
 	gboolean success;
 
-	/* Does any of the plugins support adding? */
+	/* Do any of the plugins support adding? */
 	success = FALSE;
-	for (iter = priv->plugins; iter && success == FALSE; iter = iter->next) 
-		success = nm_system_config_interface_supports_add (NM_SYSTEM_CONFIG_INTERFACE (iter->data));
+	for (iter = priv->plugins; iter && success == FALSE; iter = iter->next) {
+		NMSystemConfigInterfaceCapabilities caps = NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE;
+
+		g_object_get (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES, &caps, NULL);
+		success = (caps & NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS);
+	}
 
 	if (!success) {
 		err = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
@@ -477,10 +527,11 @@ impl_settings_add_connection (NMSysconfigSettings *self,
 
 		g_object_unref (connection);
 
-		if (!success)
+		if (!success) {
 			err = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
 						    NM_SYSCONFIG_SETTINGS_ERROR_ADD_FAILED,
 						    "%s", "Saving connection failed.");
+		}
 	} else {
 		/* Invalid connection hash */
 		err = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
@@ -489,6 +540,62 @@ impl_settings_add_connection (NMSysconfigSettings *self,
 					    g_type_name (nm_connection_lookup_setting_type_by_quark (cnfh_error->domain)),
 					    cnfh_error->message, cnfh_error->code);
 		g_error_free (cnfh_error);
+	}
+
+ out:
+	if (err) {
+		dbus_g_method_return_error (context, err);
+		g_error_free (err);
+		return FALSE;
+	} else {
+		dbus_g_method_return (context);
+		return TRUE;
+	}
+}
+
+static gboolean
+impl_settings_save_hostname (NMSysconfigSettings *self,
+                             const char *hostname,
+                             DBusGMethodInvocation *context)
+{
+	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+	gboolean success = FALSE;
+	GError *err = NULL;
+	GSList *iter;
+
+	/* Do any of the plugins support setting the hostname? */
+	for (iter = priv->plugins; iter && success == FALSE; iter = iter->next) {
+		NMSystemConfigInterfaceCapabilities caps = NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE;
+
+		g_object_get (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES, &caps, NULL);
+		success = (caps & NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME);
+	}
+
+	if (!success) {
+		err = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
+		                   NM_SYSCONFIG_SETTINGS_ERROR_SAVE_HOSTNAME_NOT_SUPPORTED,
+		                   "%s", "None of the registered plugins support setting the hostname.");
+		goto out;
+	}
+
+	if (!check_polkit_privileges (priv->g_connection, priv->pol_ctx, context, &err))
+		goto out;
+
+	/* Now actually set the hostname in all plugins */
+	for (iter = priv->plugins, success = FALSE; iter; iter = iter->next) {
+		NMSystemConfigInterfaceCapabilities caps = NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE;
+
+		g_object_get (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES, &caps, NULL);
+		if (caps & NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME) {
+			g_object_set (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME, hostname, NULL);
+			success = TRUE;
+		}
+	}
+
+	if (!success) {
+		err = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
+		                   NM_SYSCONFIG_SETTINGS_ERROR_SAVE_HOSTNAME_FAILED,
+		                   "%s", "Saving the hostname failed.");
 	}
 
  out:
