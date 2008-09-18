@@ -458,9 +458,16 @@ nm_connection_verify (NMConnection *connection, GError **error)
 	NMSetting *s_con;
 	VerifySettingsInfo info;
 
-	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
+
+	if (!NM_IS_CONNECTION (connection)) {
+		g_set_error (error,
+				NM_SETTING_CONNECTION_ERROR,
+				NM_SETTING_CONNECTION_ERROR_UNKNOWN,
+				"invalid connection; failed verification");
+		g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	}
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
 
