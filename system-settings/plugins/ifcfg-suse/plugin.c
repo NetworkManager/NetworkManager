@@ -379,6 +379,12 @@ get_property (GObject *object, guint prop_id,
 	case NM_SYSTEM_CONFIG_INTERFACE_PROP_INFO:
 		g_value_set_string (value, IFCFG_PLUGIN_INFO);
 		break;
+	case NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES:
+		g_value_set_uint (value, NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE);
+		break;
+	case NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME:
+		g_value_set_string (value, "");
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -402,6 +408,14 @@ sc_plugin_ifcfg_class_init (SCPluginIfcfgClass *req_class)
 	g_object_class_override_property (object_class,
 							    NM_SYSTEM_CONFIG_INTERFACE_PROP_INFO,
 							    NM_SYSTEM_CONFIG_INTERFACE_INFO);
+
+	g_object_class_override_property (object_class,
+							    NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES,
+							    NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES);
+
+	g_object_class_override_property (object_class,
+							    NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME,
+							    NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
 }
 
 static void

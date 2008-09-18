@@ -5,9 +5,6 @@
     <property name="Addresses" type="aau" access="read">
       <tp:docstring>Tuples of IPv4 address/prefix/gateway.</tp:docstring>
     </property>
-    <property name="Hostname" type="s" access="read">
-      <tp:docstring>The hostname associated with this IPv4 address. FIXME: what about multiple hostnames?</tp:docstring>
-    </property>
     <property name="Nameservers" type="au" access="read">
       <tp:docstring>The nameservers in use.</tp:docstring>
     </property>

@@ -70,6 +70,10 @@ static void hal_manager_rfkill_changed_cb (NMHalManager *hal_mgr,
 static void hal_manager_hal_reappeared_cb (NMHalManager *hal_mgr,
                                            gpointer user_data);
 
+static void system_settings_properties_changed_cb (DBusGProxy *proxy,
+                                                   GHashTable *properties,
+                                                   gpointer user_data);
+
 #define SSD_POKE_INTERVAL 120000
 
 typedef struct {
@@ -95,6 +99,7 @@ typedef struct {
 	DBusGProxy *system_proxy;
 	DBusGProxy *system_props_proxy;
 	GSList *unmanaged_udis;
+	char *hostname;
 
 	PendingConnectionInfo *pending_connection_info;
 	gboolean wireless_enabled;
@@ -138,6 +143,9 @@ enum {
 	PROP_WIRELESS_ENABLED,
 	PROP_WIRELESS_HARDWARE_ENABLED,
 	PROP_ACTIVE_CONNECTIONS,
+
+	/* Not exported */
+	PROP_HOSTNAME,
 
 	LAST_PROP
 };
@@ -280,6 +288,8 @@ nm_manager_init (NMManager *manager)
 	priv->vpn_manager_id = id;
 
 	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
+
+	/* avahi-autoipd stuff */
 	priv->aipd_proxy = dbus_g_proxy_new_for_name (g_connection,
 	                                              NM_AUTOIP_DBUS_SERVICE,
 	                                              "/",
@@ -300,7 +310,24 @@ nm_manager_init (NMManager *manager)
 									 manager,
 									 NULL);
 	} else
-		nm_warning ("Could not initialize avahi-autoipd D-Bus proxy");
+		nm_warning ("%s: could not initialize avahi-autoipd D-Bus proxy", __func__);
+
+	/* System settings stuff */
+	priv->system_props_proxy = dbus_g_proxy_new_for_name (g_connection,
+	                                                      NM_DBUS_SERVICE_SYSTEM_SETTINGS,
+	                                                      NM_DBUS_PATH_SETTINGS,
+	                                                      "org.freedesktop.NetworkManagerSettings.System");
+	if (priv->system_props_proxy) {
+		dbus_g_object_register_marshaller (g_cclosure_marshal_VOID__BOXED,
+									G_TYPE_NONE, G_TYPE_VALUE, G_TYPE_INVALID);
+		dbus_g_proxy_add_signal (priv->system_props_proxy, "PropertiesChanged",
+		                         DBUS_TYPE_G_MAP_OF_VARIANT, G_TYPE_INVALID);
+		dbus_g_proxy_connect_signal (priv->system_props_proxy, "PropertiesChanged",
+		                             G_CALLBACK (system_settings_properties_changed_cb),
+		                             manager,
+		                             NULL);
+	} else
+		nm_warning ("%s: could not initialize system settings properties D-Bus proxy", __func__);
 }
 
 NMState
@@ -434,6 +461,8 @@ dispose (GObject *object)
 	g_hash_table_destroy (priv->system_connections);
 	priv->system_connections = NULL;
 
+	g_free (priv->hostname);
+
 	if (priv->system_props_proxy) {
 		g_object_unref (priv->system_props_proxy);
 		priv->system_props_proxy = NULL;
@@ -526,6 +555,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_ACTIVE_CONNECTIONS:
 		g_value_take_boxed (value, get_active_connections (self, NULL));
 		break;
+	case PROP_HOSTNAME:
+		g_value_set_string (value, priv->hostname);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -578,6 +610,15 @@ nm_manager_class_init (NMManagerClass *manager_class)
 							  "Active connections",
 							  DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
 							  G_PARAM_READABLE));
+
+	/* Hostname is not exported over D-Bus */
+	g_object_class_install_property
+		(object_class, PROP_HOSTNAME,
+		 g_param_spec_string (NM_MANAGER_HOSTNAME,
+							  "Hostname",
+							  "Hostname",
+							  NULL,
+							  G_PARAM_READABLE | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	/* signals */
 	signals[DEVICE_ADDED] =
@@ -1128,6 +1169,22 @@ handle_unmanaged_devices (NMManager *manager, GPtrArray *ops)
 }
 
 static void
+handle_hostname (NMManager *manager, const char *hostname)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+
+	if (!hostname && !priv->hostname)
+		return;
+
+	if (hostname && priv->hostname && !strcmp (hostname, priv->hostname))
+		return;
+
+	g_free (priv->hostname);
+	priv->hostname = (hostname && strlen (hostname)) ? g_strdup (hostname) : NULL;
+	g_object_notify (G_OBJECT (manager), NM_MANAGER_HOSTNAME);
+}
+
+static void
 system_settings_properties_changed_cb (DBusGProxy *proxy,
                                        GHashTable *properties,
                                        gpointer user_data)
@@ -1136,10 +1193,12 @@ system_settings_properties_changed_cb (DBusGProxy *proxy,
 	GValue *value;
 
 	value = g_hash_table_lookup (properties, "UnmanagedDevices");
-	if (!value || !G_VALUE_HOLDS (value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH))
-		return;
+	if (value && G_VALUE_HOLDS (value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH))
+		handle_unmanaged_devices (manager, g_value_get_boxed (value));
 
-	handle_unmanaged_devices (manager, g_value_get_boxed (value));
+	value = g_hash_table_lookup (properties, "Hostname");
+	if (value && G_VALUE_HOLDS (value, G_TYPE_STRING))
+		handle_hostname (manager, g_value_get_string (value));
 }
 
 static void
@@ -1158,6 +1217,7 @@ system_settings_get_unmanaged_devices_cb (DBusGProxy *proxy,
 		            "settings service: (%d) %s",
 		            __func__, error->code, error->message);
 		g_error_free (error);
+		g_object_unref (proxy);
 		return;
 	}
 
@@ -1165,37 +1225,45 @@ system_settings_get_unmanaged_devices_cb (DBusGProxy *proxy,
 		handle_unmanaged_devices (manager, g_value_get_boxed (&value));
 
 	g_value_unset (&value);
-
 	g_object_unref (proxy);
 }
 
 static void
-query_unmanaged_devices (NMManager *manager)
+system_settings_get_hostname_cb (DBusGProxy *proxy,
+                                 DBusGProxyCall *call_id,
+                                 gpointer user_data)
+{
+	NMManager *manager = NM_MANAGER (user_data);
+	GError *error = NULL;
+	GValue value = { 0, };
+
+	if (!dbus_g_proxy_end_call (proxy, call_id, &error,
+	                            G_TYPE_VALUE, &value,
+	                            G_TYPE_INVALID)) {
+		nm_warning ("%s: Error getting hostname from the system settings service: (%d) %s",
+		            __func__, error->code, error->message);
+		g_error_free (error);
+		g_object_unref (proxy);
+		return;
+	}
+
+	if (G_VALUE_HOLDS (&value, G_TYPE_STRING))
+		handle_hostname (manager, g_value_get_string (&value));
+
+	g_value_unset (&value);
+	g_object_unref (proxy);
+}
+
+static void
+query_system_settings_property (NMManager *manager,
+                                const char *property,
+                                DBusGProxyCallNotify callback)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	DBusGConnection *g_connection;
 	DBusGProxy *get_proxy;
 
 	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
-	if (!priv->system_props_proxy) {
-		priv->system_props_proxy = dbus_g_proxy_new_for_name (g_connection,
-		                                                      NM_DBUS_SERVICE_SYSTEM_SETTINGS,
-		                                                      NM_DBUS_PATH_SETTINGS,
-		                                                      "org.freedesktop.NetworkManagerSettings.System");
-		if (!priv->system_props_proxy) {
-			nm_warning ("Error: could not init system settings properties proxy.");
-			return;
-		}
-
-		dbus_g_object_register_marshaller (g_cclosure_marshal_VOID__BOXED,
-									G_TYPE_NONE, G_TYPE_VALUE, G_TYPE_INVALID);
-		dbus_g_proxy_add_signal (priv->system_props_proxy, "PropertiesChanged",
-		                         DBUS_TYPE_G_MAP_OF_VARIANT, G_TYPE_INVALID);
-		dbus_g_proxy_connect_signal (priv->system_props_proxy, "PropertiesChanged",
-		                             G_CALLBACK (system_settings_properties_changed_cb),
-		                             manager,
-		                             NULL);
-	}
 
 	/* Get unmanaged devices */
 	get_proxy = dbus_g_proxy_new_for_name (g_connection,
@@ -1203,12 +1271,9 @@ query_unmanaged_devices (NMManager *manager)
 		                                   NM_DBUS_PATH_SETTINGS,
 		                                   "org.freedesktop.DBus.Properties");
 
-	dbus_g_proxy_begin_call (get_proxy, "Get",
-	                         system_settings_get_unmanaged_devices_cb,
-	                         manager,
-	                         NULL,
-	                         G_TYPE_STRING, "org.freedesktop.NetworkManagerSettings.System",
-	                         G_TYPE_STRING, "UnmanagedDevices",
+	dbus_g_proxy_begin_call (get_proxy, "Get", callback, manager, NULL,
+	                         G_TYPE_STRING, NM_DBUS_IFACE_SETTINGS_SYSTEM,
+	                         G_TYPE_STRING, property,
 	                         G_TYPE_INVALID);
 }
 
@@ -1240,7 +1305,8 @@ nm_manager_name_owner_changed (NMDBusManager *mgr,
 			}
 
 			/* System Settings service appeared, update stuff */
-			query_unmanaged_devices (manager);
+			query_system_settings_property (manager, "UnmanagedDevices", system_settings_get_unmanaged_devices_cb);
+			query_system_settings_property (manager, "Hostname", system_settings_get_hostname_cb);
 			query_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
 		} else {
 			/* System Settings service disappeared, throw them away (?) */
@@ -1299,7 +1365,8 @@ initial_get_connections (gpointer user_data)
 
 	if (nm_dbus_manager_name_has_owner (nm_dbus_manager_get (),
 	                                    NM_DBUS_SERVICE_SYSTEM_SETTINGS)) {
-		query_unmanaged_devices (manager);
+		query_system_settings_property (manager, "UnmanagedDevices", system_settings_get_unmanaged_devices_cb);
+		query_system_settings_property (manager, "Hostname", system_settings_get_hostname_cb);
 		query_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
 	} else {
 		/* Try to activate the system settings daemon */

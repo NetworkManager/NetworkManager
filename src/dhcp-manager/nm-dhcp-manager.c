@@ -793,10 +793,8 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 	addr = NULL;
 
 	str = g_hash_table_lookup (device->options, "new_host_name");
-	if (str) {
-		nm_ip4_config_set_hostname (ip4_config, str);
+	if (str)
 		nm_info ("  hostname '%s'", str);
-	}
 
 	str = g_hash_table_lookup (device->options, "new_domain_name_servers");
 	if (str) {

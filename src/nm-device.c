@@ -1853,6 +1853,19 @@ nm_device_set_use_dhcp (NMDevice *self,
 	}
 }
 
+NMDHCP4Config *
+nm_device_get_dhcp4_config (NMDevice *self)
+{
+	NMDevicePrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->dhcp_manager)
+		return priv->dhcp4_config;
+	return NULL;
+}
 
 NMIP4Config *
 nm_device_get_ip4_config (NMDevice *self)

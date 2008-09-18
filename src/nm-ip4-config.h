@@ -18,7 +18,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2004 Red Hat, Inc.
+ * (C) Copyright 2004 - 2008 Red Hat, Inc.
  */
 
 #ifndef NM_IP4_CONFIG_H
@@ -45,11 +45,8 @@ typedef struct {
 } NMIP4ConfigClass;
 
 #define NM_IP4_CONFIG_ADDRESSES "addresses"
-#define NM_IP4_CONFIG_HOSTNAME "hostname"
 #define NM_IP4_CONFIG_NAMESERVERS "nameservers"
 #define NM_IP4_CONFIG_DOMAINS "domains"
-#define NM_IP4_CONFIG_NIS_DOMAIN "nis-domain"
-#define NM_IP4_CONFIG_NIS_SERVERS "nis-servers"
 #define NM_IP4_CONFIG_ROUTES "routes"
 
 GType nm_ip4_config_get_type (void);
@@ -79,9 +76,6 @@ void			nm_ip4_config_replace_route		(NMIP4Config *config, guint32 i, NMSettingIP
 const NMSettingIP4Route *	nm_ip4_config_get_route		(NMIP4Config *config, guint32 i);
 guint32		nm_ip4_config_get_num_routes		(NMIP4Config *config);
 void            nm_ip4_config_reset_routes		(NMIP4Config *config);
-
-void			nm_ip4_config_set_hostname		(NMIP4Config *config, const char *hostname);
-const char * 	nm_ip4_config_get_hostname		(NMIP4Config *config);
 
 void			nm_ip4_config_add_domain			(NMIP4Config *config, const char *domain);
 const char *	nm_ip4_config_get_domain			(NMIP4Config *config, guint i);

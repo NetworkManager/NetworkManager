@@ -15,6 +15,7 @@ G_BEGIN_DECLS
 #define NM_DBUS_SETTINGS_SYSTEM_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DBUS_SETTINGS_SYSTEM, NMDBusSettingsSystemClass))
 
 #define NM_DBUS_SETTINGS_SYSTEM_UNMANAGED_DEVICES "unmanaged-devices"
+#define NM_DBUS_SETTINGS_SYSTEM_HOSTNAME "hostname"
 
 typedef struct {
 	NMDBusSettings parent;
@@ -34,6 +35,11 @@ gboolean nm_dbus_settings_system_add_connection (NMDBusSettingsSystem *self,
 
 GSList *nm_dbus_settings_system_get_unmanaged_devices (NMDBusSettingsSystem *self);
 
+const char *nm_dbus_settings_system_get_hostname (NMDBusSettingsSystem *self);
+
+gboolean nm_dbus_settings_system_save_hostname (NMDBusSettingsSystem *self,
+                                                const char *hostname,
+                                                GError **err);
 
 G_END_DECLS
 

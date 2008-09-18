@@ -17,7 +17,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 Red Hat, Inc.
+ * (C) Copyright 2007 - 2008 Red Hat, Inc.
  */
 
 #include "nm-system-config-interface.h"
@@ -47,6 +47,24 @@ interface_init (gpointer g_iface)
 							  "Plugin information",
 							  NULL,
 							  G_PARAM_READABLE));
+
+	g_object_interface_install_property
+		(g_iface,
+		 g_param_spec_uint (NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES,
+							  "Capabilities",
+							  "Plugin capabilties",
+							  NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE,
+							  NM_SYSTEM_CONFIG_INTERFACE_CAP_LAST - 1,
+							  NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE,
+							  G_PARAM_READABLE));
+
+	g_object_interface_install_property
+		(g_iface,
+		 g_param_spec_string (NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME,
+							  "Hostname",
+							  "Configured hostname",
+							  NULL,
+							  G_PARAM_READWRITE));
 
 	/* Signals */
 	g_signal_new ("connection-added",
@@ -127,14 +145,6 @@ nm_system_config_interface_get_unmanaged_devices (NMSystemConfigInterface *confi
 	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->get_unmanaged_devices)
 		return NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->get_unmanaged_devices (config);
 	return NULL;
-}
-
-gboolean
-nm_system_config_interface_supports_add (NMSystemConfigInterface *config)
-{
-	g_return_val_if_fail (config != NULL, FALSE);
-
-	return NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->add_connection != NULL;
 }
 
 gboolean

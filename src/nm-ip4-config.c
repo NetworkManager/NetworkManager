@@ -1,4 +1,4 @@
-/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
 /* NetworkManager -- Network link manager
  *
@@ -18,7 +18,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2005 Red Hat, Inc.
+ * (C) Copyright 2005 - 2008 Red Hat, Inc.
  */
 
 
@@ -57,7 +57,6 @@ typedef struct {
 	GPtrArray *domains;
 	GPtrArray *searches;
 
-	gchar *hostname;
 	GSList *routes;
 } NMIP4ConfigPrivate;
 
@@ -65,7 +64,6 @@ typedef struct {
 enum {
 	PROP_0,
 	PROP_ADDRESSES,
-	PROP_HOSTNAME,
 	PROP_NAMESERVERS,
 	PROP_DOMAINS,
 	PROP_ROUTES,
@@ -221,24 +219,6 @@ void nm_ip4_config_reset_nameservers (NMIP4Config *config)
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 	if (priv->nameservers->len)
 		g_array_remove_range (priv->nameservers, 0, priv->nameservers->len);
-}
-
-void nm_ip4_config_set_hostname (NMIP4Config *config, const char *hostname)
-{
-	g_return_if_fail (NM_IS_IP4_CONFIG (config));
-	g_return_if_fail (hostname != NULL);
-
-	if (!strlen (hostname))
-		return;
-
-	NM_IP4_CONFIG_GET_PRIVATE (config)->hostname = g_strdup (hostname);
-}
-
-const char *nm_ip4_config_get_hostname (NMIP4Config *config)
-{
-	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
-
-	return NM_IP4_CONFIG_GET_PRIVATE (config)->hostname;
 }
 
 void
@@ -510,7 +490,6 @@ finalize (GObject *object)
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
 
 	nm_utils_slist_free (priv->addresses, g_free);
-	g_free (priv->hostname);
 	g_array_free (priv->nameservers, TRUE);
 	g_ptr_array_free (priv->domains, TRUE);
 	g_ptr_array_free (priv->searches, TRUE);
@@ -526,9 +505,6 @@ get_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_ADDRESSES:
 		nm_utils_ip4_addresses_to_gvalue (priv->addresses, value);
-		break;
-	case PROP_HOSTNAME:
-		g_value_set_string (value, priv->hostname);
 		break;
 	case PROP_NAMESERVERS:
 		g_value_set_boxed (value, priv->nameservers);
@@ -564,13 +540,6 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 							"IP4 addresses",
 							DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
 							G_PARAM_READABLE));
-	g_object_class_install_property
-		(object_class, PROP_HOSTNAME,
-		 g_param_spec_string (NM_IP4_CONFIG_HOSTNAME,
-							  "Hostname",
-							  "Hostname",
-							  NULL,
-							  G_PARAM_READABLE));
 	g_object_class_install_property
 		(object_class, PROP_NAMESERVERS,
 		 g_param_spec_boxed (NM_IP4_CONFIG_NAMESERVERS,

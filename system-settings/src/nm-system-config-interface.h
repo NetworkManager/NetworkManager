@@ -60,13 +60,23 @@ GObject * nm_system_config_factory (void);
 
 #define NM_SYSTEM_CONFIG_INTERFACE_NAME "name"
 #define NM_SYSTEM_CONFIG_INTERFACE_INFO "info"
+#define NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES "capabilities"
 #define NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME "hostname"
+
+typedef enum {
+	NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE = 0x00000000,
+	NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS = 0x00000001,
+	NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME = 0x00000002,
+
+	NM_SYSTEM_CONFIG_INTERFACE_CAP_LAST = NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME
+} NMSystemConfigInterfaceCapabilities;
 
 typedef enum {
 	NM_SYSTEM_CONFIG_INTERFACE_PROP_FIRST = 0x1000,
 
 	NM_SYSTEM_CONFIG_INTERFACE_PROP_NAME = NM_SYSTEM_CONFIG_INTERFACE_PROP_FIRST,
 	NM_SYSTEM_CONFIG_INTERFACE_PROP_INFO,
+	NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES,
 	NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME,
 } NMSystemConfigInterfaceProp;
 
@@ -110,11 +120,9 @@ GType nm_system_config_interface_get_type (void);
 void nm_system_config_interface_init (NMSystemConfigInterface *config,
                                       NMSystemConfigHalManager *hal_manager);
 
-GSList * nm_system_config_interface_get_connections (NMSystemConfigInterface *config);
+GSList *nm_system_config_interface_get_connections (NMSystemConfigInterface *config);
 
 GSList *nm_system_config_interface_get_unmanaged_devices (NMSystemConfigInterface *config);
-
-gboolean nm_system_config_interface_supports_add (NMSystemConfigInterface *config);
 
 gboolean nm_system_config_interface_add_connection (NMSystemConfigInterface *config,
                                                     NMConnection *connection,

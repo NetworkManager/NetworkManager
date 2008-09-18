@@ -19,6 +19,9 @@
 #define NM_MANAGER_WIRELESS_HARDWARE_ENABLED "wireless-hardware-enabled"
 #define NM_MANAGER_ACTIVE_CONNECTIONS "active-connections"
 
+/* Not exported */
+#define NM_MANAGER_HOSTNAME "hostname"
+
 #define NM_MANAGER_CONNECTION_PROXY_TAG "dbus-proxy"
 #define NM_MANAGER_CONNECTION_SECRETS_PROXY_TAG "dbus-secrets-proxy"
 

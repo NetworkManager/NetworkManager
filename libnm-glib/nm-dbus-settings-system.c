@@ -16,12 +16,16 @@ typedef struct {
 	gboolean got_unmanaged_devices;
 	GSList *unmanaged_devices;
 
+	gboolean got_hostname;
+	char *hostname;
+
 	gboolean disposed;
 } NMDBusSettingsSystemPrivate;
 
 enum {
 	PROP_0,
 	PROP_UNMANAGED_DEVICES,
+	PROP_HOSTNAME,
 
 	LAST_PROP
 };
@@ -114,6 +118,68 @@ nm_dbus_settings_system_get_unmanaged_devices (NMDBusSettingsSystem *self)
 	return priv->unmanaged_devices;
 }
 
+gboolean
+nm_dbus_settings_system_save_hostname (NMDBusSettingsSystem *self,
+                                       const char *hostname,
+                                       GError **err)
+{
+	NMDBusSettingsSystemPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_DBUS_SETTINGS_SYSTEM (self), FALSE);
+
+	priv = NM_DBUS_SETTINGS_SYSTEM_GET_PRIVATE (self);
+
+	return org_freedesktop_NetworkManagerSettings_System_save_hostname (priv->settings_proxy, hostname ? hostname : "", err);
+}
+
+static void
+update_hostname (NMDBusSettingsSystem *self, GValue *value)
+{
+	NMDBusSettingsSystemPrivate *priv = NM_DBUS_SETTINGS_SYSTEM_GET_PRIVATE (self);
+
+	if (priv->hostname) {
+		g_free (priv->hostname);
+		priv->hostname = NULL;
+	}
+
+	if (G_VALUE_TYPE (value) == G_TYPE_STRING) {
+		priv->hostname = g_value_dup_string (value);
+		priv->got_hostname = TRUE;
+	} else
+		g_warning ("%s: Invalid return value type: %s", __func__, G_VALUE_TYPE_NAME (value));
+}
+
+const char *
+nm_dbus_settings_system_get_hostname (NMDBusSettingsSystem *self)
+{
+	NMDBusSettingsSystemPrivate *priv;
+	GValue value = { 0, };
+	GError *err = NULL;
+
+	g_return_val_if_fail (NM_IS_DBUS_SETTINGS_SYSTEM (self), NULL);
+
+	priv = NM_DBUS_SETTINGS_SYSTEM_GET_PRIVATE (self);
+
+	if (priv->got_hostname)
+		return priv->hostname;
+
+	if (!dbus_g_proxy_call (priv->props_proxy, "Get", &err,
+					    G_TYPE_STRING, NM_DBUS_SERVICE_SYSTEM_SETTINGS,
+					    G_TYPE_STRING, "Hostname",
+					    G_TYPE_INVALID,
+					    G_TYPE_VALUE, &value,
+					    G_TYPE_INVALID)) {
+		g_warning ("Could not retrieve hostname: %s", err->message);
+		g_error_free (err);
+		return NULL;
+	}
+
+	update_hostname (self, &value);
+	g_value_unset (&value);
+
+	return priv->hostname;
+}
+
 static void
 proxy_properties_changed (DBusGProxy *proxy,
                           GHashTable *properties,
@@ -126,6 +192,12 @@ proxy_properties_changed (DBusGProxy *proxy,
 	if (value) {
 		update_unmanaged_devices (self, value);
 		g_object_notify (G_OBJECT (self), NM_DBUS_SETTINGS_SYSTEM_UNMANAGED_DEVICES);
+	}
+
+	value = (GValue *) g_hash_table_lookup (properties, "Hostname");
+	if (value) {
+		update_hostname (self, value);
+		g_object_notify (G_OBJECT (self), NM_DBUS_SETTINGS_SYSTEM_HOSTNAME);
 	}
 }
 
@@ -184,6 +256,8 @@ dispose (GObject *object)
 
 	priv->disposed = TRUE;
 
+	g_free (priv->hostname);
+
 	if (priv->unmanaged_devices) {
 		g_slist_foreach (priv->unmanaged_devices, (GFunc) g_free, NULL);
 		g_slist_free (priv->unmanaged_devices);
@@ -204,6 +278,9 @@ get_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_UNMANAGED_DEVICES:
 		g_value_set_pointer (value, nm_dbus_settings_system_get_unmanaged_devices (self));
+		break;
+	case PROP_HOSTNAME:
+		g_value_set_string (value, nm_dbus_settings_system_get_hostname (self));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -230,4 +307,13 @@ nm_dbus_settings_system_class_init (NMDBusSettingsSystemClass *dbus_settings_cla
 						   "Unmanaged devices",
 						   "Unmanaged devices",
 						   G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_HOSTNAME,
+		 g_param_spec_string (NM_DBUS_SETTINGS_SYSTEM_HOSTNAME,
+						   "Hostname",
+						   "Configured hostname",
+						   NULL,
+						   G_PARAM_READABLE));
 }
+

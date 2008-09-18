@@ -1,5 +1,6 @@
 /* NetworkManager system settings service
  *
+ * Dan Williams <dcbw@redhat.com>
  * Søren Sandmann <sandmann@daimi.au.dk>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -44,6 +45,8 @@
 #include "plugin.h"
 #include "nm-system-config-interface.h"
 #include "nm-ifcfg-connection.h"
+#include "nm-inotify-helper.h"
+#include "shvar.h"
 
 #define IFCFG_DIR SYSCONFDIR"/sysconfig/network-scripts/"
 
@@ -73,6 +76,10 @@ typedef struct {
 	NMSystemConfigHalManager *hal_mgr;
 
 	GHashTable *connections;
+
+	gulong ih_event_id;
+	int sc_network_wd;
+	char *hostname;
 
 	GFileMonitor *monitor;
 	guint monitor_id;
@@ -417,7 +424,7 @@ dir_changed (GFileMonitor *monitor,
 }
 
 static void
-setup_monitoring (SCPluginIfcfg *plugin)
+setup_ifcfg_monitoring (SCPluginIfcfg *plugin)
 {
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
 	GFile *file;
@@ -453,13 +460,77 @@ get_connections (NMSystemConfigInterface *config)
 	GSList *list = NULL;
 
 	if (!priv->connections) {
-		setup_monitoring (plugin);
+		setup_ifcfg_monitoring (plugin);
 		read_connections (plugin);
 	}
 
 	g_hash_table_foreach (priv->connections, hash_to_slist, &list);
 
 	return list;
+}
+
+#define SC_NETWORK_FILE SYSCONFDIR"/sysconfig/network"
+
+static char *
+plugin_get_hostname (SCPluginIfcfg *plugin)
+{
+	shvarFile *network;
+	char *hostname;
+
+	network = svNewFile (SC_NETWORK_FILE);
+	if (!network) {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "Could not get hostname: failed to read " SC_NETWORK_FILE);
+		return FALSE;
+	}
+
+	hostname = svGetValue (network, "HOSTNAME");
+	svCloseFile (network);
+	return hostname;
+}
+
+static gboolean
+plugin_set_hostname (SCPluginIfcfg *plugin, const char *hostname)
+{
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	shvarFile *network;
+
+	network = svCreateFile (SC_NETWORK_FILE);
+	if (!network) {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "Could not save hostname: failed to create/open " SC_NETWORK_FILE);
+		return FALSE;
+	}
+
+	svSetValue (network, "HOSTNAME", hostname);
+	svWriteFile (network, 0644);
+	svCloseFile (network);
+
+	g_free (priv->hostname);
+	priv->hostname = hostname ? g_strdup (hostname) : NULL;
+	return TRUE;
+}
+
+static void
+sc_network_changed_cb (NMInotifyHelper *ih,
+                       struct inotify_event *evt,
+                       const char *path,
+                       gpointer user_data)
+{
+	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (user_data);
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	char *new_hostname;
+
+	if (evt->wd != priv->sc_network_wd)
+		return;
+
+	new_hostname = plugin_get_hostname (plugin);
+	if (   (new_hostname && !priv->hostname)
+	    || (!new_hostname && priv->hostname)
+	    || (priv->hostname && new_hostname && strcmp (priv->hostname, new_hostname))) {
+		g_free (priv->hostname);
+		priv->hostname = new_hostname;
+		g_object_notify (G_OBJECT (plugin), NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
+	} else
+		g_free (new_hostname);
 }
 
 static void
@@ -476,6 +547,7 @@ sc_plugin_ifcfg_init (SCPluginIfcfg *plugin)
 {
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
 	GError *error = NULL;
+	NMInotifyHelper *ih;
 
 	priv->g_connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &error);
 	if (!priv->g_connection) {
@@ -483,6 +555,12 @@ sc_plugin_ifcfg_init (SCPluginIfcfg *plugin)
 		              error->message ? error->message : "(unknown)");
 		g_error_free (error);
 	}
+
+	ih = nm_inotify_helper_get ();
+	priv->ih_event_id = g_signal_connect (ih, "event", G_CALLBACK (sc_network_changed_cb), plugin);
+	priv->sc_network_wd = nm_inotify_helper_add_watch (ih, SC_NETWORK_FILE);
+
+	priv->hostname = plugin_get_hostname (plugin);
 }
 
 static void
@@ -490,8 +568,18 @@ dispose (GObject *object)
 {
 	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (object);
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
+	NMInotifyHelper *ih;
 
 	g_object_unref (priv->hal_mgr);
+
+	ih = nm_inotify_helper_get ();
+
+	g_signal_handler_disconnect (ih, priv->ih_event_id);
+
+	if (priv->sc_network_wd >= 0)
+		nm_inotify_helper_remove_watch (ih, priv->sc_network_wd);
+
+	g_free (priv->hostname);
 
 	if (priv->g_connection)
 		dbus_g_connection_unref (priv->g_connection);
@@ -520,12 +608,40 @@ static void
 get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (object);
+
 	switch (prop_id) {
 	case NM_SYSTEM_CONFIG_INTERFACE_PROP_NAME:
 		g_value_set_string (value, IFCFG_PLUGIN_NAME);
 		break;
 	case NM_SYSTEM_CONFIG_INTERFACE_PROP_INFO:
 		g_value_set_string (value, IFCFG_PLUGIN_INFO);
+		break;
+	case NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES:
+		g_value_set_uint (value, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME);
+		break;
+	case NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME:
+		g_value_set_string (value, priv->hostname);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+			  const GValue *value, GParamSpec *pspec)
+{
+	const char *hostname;
+
+	switch (prop_id) {
+	case NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME:
+		hostname = g_value_get_string (value);
+		if (!strlen (hostname))
+			hostname = NULL;
+		plugin_set_hostname (SC_PLUGIN_IFCFG (object),
+		                     (hostname && strlen (hostname)) ? hostname : NULL);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -543,14 +659,23 @@ sc_plugin_ifcfg_class_init (SCPluginIfcfgClass *req_class)
 	object_class->dispose = dispose;
 	object_class->finalize = finalize;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 
 	g_object_class_override_property (object_class,
-									  NM_SYSTEM_CONFIG_INTERFACE_PROP_NAME,
-									  NM_SYSTEM_CONFIG_INTERFACE_NAME);
+	                                  NM_SYSTEM_CONFIG_INTERFACE_PROP_NAME,
+	                                  NM_SYSTEM_CONFIG_INTERFACE_NAME);
 
 	g_object_class_override_property (object_class,
-									  NM_SYSTEM_CONFIG_INTERFACE_PROP_INFO,
-									  NM_SYSTEM_CONFIG_INTERFACE_INFO);
+	                                  NM_SYSTEM_CONFIG_INTERFACE_PROP_INFO,
+	                                  NM_SYSTEM_CONFIG_INTERFACE_INFO);
+
+	g_object_class_override_property (object_class,
+	                                  NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES,
+	                                  NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES);
+
+	g_object_class_override_property (object_class,
+	                                  NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME,
+	                                  NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
 }
 
 static void

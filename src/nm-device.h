@@ -29,6 +29,7 @@
 #include "NetworkManager.h"
 #include "nm-activation-request.h"
 #include "nm-ip4-config.h"
+#include "nm-dhcp4-config.h"
 #include "nm-connection.h"
 
 typedef enum NMActStageReturn
@@ -133,6 +134,7 @@ struct in6_addr *	nm_device_get_ip6_address	(NMDevice *dev);
 gboolean		nm_device_get_use_dhcp	(NMDevice *dev);
 void			nm_device_set_use_dhcp	(NMDevice *dev,
 								 gboolean use_dhcp);
+NMDHCP4Config * nm_device_get_dhcp4_config (NMDevice *dev);
 
 NMIP4Config *	nm_device_get_ip4_config	(NMDevice *dev);
 gboolean		nm_device_set_ip4_config	(NMDevice *dev,

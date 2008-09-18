@@ -1,5 +1,92 @@
 2008-09-18  Dan Williams  <dcbw@redhat.com>
 
+	Implement support for honoring configured and automatic hostnames, and for
+	setting the configured hostname.
+
+	* introspection/nm-ip4-config.xml
+	  src/nm-ip4-config.c
+	  src/nm-ip4-config.h
+	  src/dhcp-manager/nm-dhcp-manager.c
+		- Remove useless hostname property; it's not really part of the IPv4
+			config
+
+	* introspection/nm-settings-system.xml
+	  libnm-glib/nm-dbus-settings-system.c
+	  libnm-glib/nm-dbus-settings-system.h
+		- Add SetHostname() call to system settings D-Bus interface
+		- Add Hostname property to system settings D-Bus interface
+		- (nm_dbus_settings_system_save_hostname,
+		   nm_dbus_settings_system_get_hostname): implement
+
+	* src/nm-device.c
+	  src/nm-device.h
+		- (nm_device_get_dhcp4_config): implement
+
+	* src/nm-manager.c
+	  src/nm-manager.h
+		- Fetch and track system settings service hostname changes, and proxy
+			the changes via a GObject property of the manager
+
+	* system-settings/src/nm-system-config-interface.c
+	  system-settings/src/nm-system-config-interface.h
+		- Replace nm_system_config_interface_supports_add() with a capabilities
+			bitfield
+
+	* system-settings/src/nm-system-config-error.c
+	  system-settings/src/nm-system-config-error.h
+		- Add additional errors
+
+	* system-settings/src/dbus-settings.c
+	  system-settings/src/dbus-settings.h
+		- (get_property, nm_sysconfig_settings_class_init): add hostname
+			property; first plugin returning a hostname wins
+		- (impl_settings_add_connection): use plugin capabilities instead of
+			nm_system_config_interface_supports_add()
+		- (impl_settings_save_hostname): implement hostname saving
+
+	* src/NetworkManagerPolicy.c
+		- (lookup_thread_run_cb, lookup_thread_worker, lookup_thread_new,
+		   lookup_thread_die): implement an asynchronous hostname lookup thread
+			which given an IPv4 address tries to look up the hostname for that
+			address with reverse DNS
+		- (get_best_device): split out best device code from
+			update_routing_and_dns()
+		- (update_etc_hosts): update /etc/hosts with the machine's new hostname
+			to preserve the 127.0.0.1 reverse mapping that so many things require
+		- (set_system_hostname): set a given hostname
+		- (update_system_hostname): implement hostname policy; a configured
+			hostname (from the system settings service) is used if available,
+			otherwise an automatically determined hostname from DHCP, VPN, etc.
+			If there was no automatically determined hostname, reverse DNS of
+			the best device's IP address will be used, and as a last resort the
+			hostname 'localhost.localdomain' is set.
+		- (update_routing_and_dns): use get_best_device(); update the system
+			hostname when the network config changes
+		- (hostname_changed): update system hostname if the system settings
+			service signals a hostname change
+		- (nm_policy_new): list for system settings service hostname changes
+		- (nm_policy_destroy): ensure that an in-progress hostname lookup thread
+			gets told to die
+
+	* system-settings/plugins/keyfile/plugin.c
+	  system-settings/plugins/ifcfg-suse/plugin.c
+		- (get_property, sc_plugin_ifcfg_class_init): implement hostname and
+			capabilities properties
+
+	* system-settings/plugins/ifcfg-fedora/shvar.c
+		- (svOpenFile): re-enable R/W access of ifcfg files since the plugin
+			writes out /etc/sysconfig/network now
+
+	* system-settings/plugins/ifcfg-fedora/plugin.c
+		- (plugin_get_hostname): get hostname from /etc/sysconfig/network
+		- (plugin_set_hostname): save hostname to /etc/sysconfig/network
+		- (sc_network_changed_cb): handle changes to /etc/sysconfig/network
+		- (sc_plugin_ifcfg_init): monitor /etc/sysconfig/network for changes
+		- (get_property, set_property, sc_plugin_ifcfg_class_init): implement
+			hostname get/set and capabilities get
+
+2008-09-18  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting-wireless.c
 		- (nm_setting_wireless_ap_security_compatible): only verify pairwise and
 			group ciphers if the wireless-security setting explicitly specified
