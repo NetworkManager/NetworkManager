@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-08-14 09:04+0300\n"
-"PO-Revision-Date: 2008-08-14 09:00+0300\n"
+"POT-Creation-Date: 2008-09-18 14:16+0300\n"
+"PO-Revision-Date: 2008-09-18 14:00+0300\n"
 "Last-Translator: Ilkka Tuohela <hile@iki.fi>\n"
 "Language-Team: Finnish <gnome-fi-laatu@lists.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
@@ -17,48 +17,48 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:144
+#: ../auth-dialog/gnome-two-password-dialog.c:145
 msgid "_Secondary Password:"
 msgstr "_Toissijainen salasana:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:258
+#: ../auth-dialog/gnome-two-password-dialog.c:259
 msgid "_Username:"
 msgstr "_Käyttäjätunnus:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:260
+#: ../auth-dialog/gnome-two-password-dialog.c:261
 msgid "_Domain:"
 msgstr "_Toimialue:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:262
+#: ../auth-dialog/gnome-two-password-dialog.c:263
 msgid "_Password:"
 msgstr "_Salasana:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:351
+#: ../auth-dialog/gnome-two-password-dialog.c:352
 msgid "Connect _anonymously"
 msgstr "Yhdistä _anonyymisti"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:356
+#: ../auth-dialog/gnome-two-password-dialog.c:357
 msgid "Connect as _user:"
 msgstr "Yhdistä _käyttäjänä:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:465
+#: ../auth-dialog/gnome-two-password-dialog.c:466
 msgid "_Remember passwords for this session"
 msgstr "_Muista salasana istunnon ajan"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:467
+#: ../auth-dialog/gnome-two-password-dialog.c:468
 msgid "_Save passwords in keyring"
 msgstr "_Tallenna salasana avainrenkaaseen"
 
-#: ../auth-dialog/main.c:181
+#: ../auth-dialog/main.c:66
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Yhteydenotto VPN-verkkoon \"%s\" vaatii kirjautumista."
 
-#: ../auth-dialog/main.c:182
+#: ../auth-dialog/main.c:67
 msgid "Authenticate VPN"
 msgstr "Todenna VPN-yhteyden avaus"
 
-#: ../auth-dialog/main.c:189
+#: ../auth-dialog/main.c:74
 msgid "_Group Password:"
 msgstr "_Ryhmän salasana:"
 
@@ -70,47 +70,47 @@ msgstr "Lisää, poista tai muokkaa VPN-yhteyksiä"
 msgid "VPN Connection Manager (vpnc)"
 msgstr "VPN-yhteysohjelmisto (vpnc)"
 
-#: ../properties/nm-vpnc.c:50
+#: ../properties/nm-vpnc.c:53
 msgid "Cisco Compatible VPN (vpnc)"
 msgstr "Cisco-yhteensopiva VPN-asiakas (vpnc)"
 
-#: ../properties/nm-vpnc.c:51
+#: ../properties/nm-vpnc.c:54
 msgid ""
 "Compatible with various Cisco, Juniper, Netscreen, and Sonicwall IPSec-based "
 "VPN gateways."
 msgstr ""
-"Yhteensopiva useiden esimerkiksi Ciscon, Juniperin, Netscreenin ja Sonicwallin "
-"valmistamien IPSec-pohjaisten VPN-yhdyskäytävien kanssa."
+"Yhteensopiva useiden esimerkiksi Ciscon, Juniperin, Netscreenin ja "
+"Sonicwallin valmistamien IPSec-pohjaisten VPN-yhdyskäytävien kanssa."
 
-#: ../properties/nm-vpnc.c:203
+#: ../properties/nm-vpnc.c:282
 msgid "Secure (default)"
 msgstr "Turvallinen (oletus)"
 
-#: ../properties/nm-vpnc.c:206
+#: ../properties/nm-vpnc.c:285
 msgid "Weak (use with caution)"
 msgstr "Heikko (käytä varoen)"
 
-#: ../properties/nm-vpnc.c:214
+#: ../properties/nm-vpnc.c:293
 msgid "None (completely insecure)"
 msgstr "Ei salausta (täysin turvaton)"
 
-#: ../properties/nm-vpnc.c:254
+#: ../properties/nm-vpnc.c:331
 msgid "NAT-T (default)"
 msgstr "NAT-T (oletus)"
 
-#: ../properties/nm-vpnc.c:261
+#: ../properties/nm-vpnc.c:338
 msgid "Cisco UDP"
 msgstr "Cisco UDP"
 
-#: ../properties/nm-vpnc.c:268
+#: ../properties/nm-vpnc.c:345
 msgid "Disabled"
 msgstr "Ei käytössä"
 
-#: ../properties/nm-vpnc.c:658
+#: ../properties/nm-vpnc.c:809
 msgid "TCP tunneling not supported"
 msgstr "TCP-tunnelointi ei ole tuettu"
 
-#: ../properties/nm-vpnc.c:660
+#: ../properties/nm-vpnc.c:811
 #, c-format
 msgid ""
 "The VPN settings file '%s' specifies that VPN traffic should be tunneled "
@@ -146,22 +146,34 @@ msgid "Domain:"
 msgstr "Toimialue:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:6
-msgid "Encryption Method:"
+msgid "Encryption method:"
 msgstr "Salausmenetelmä:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:7
-msgid "G_roup Name:"
+msgid "G_roup name:"
 msgstr "_Ryhmän nimi:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:8
-msgid "NAT Traversal:"
-msgstr "NAT-läpäisytapa:"
+msgid "Gro_up password:"
+msgstr "_Ryhmän salasana:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:9
+msgid "NAT traversal:"
+msgstr "NAT-läpäisytapa:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:10
+msgid "Show passwords"
+msgstr "Näytä salasanat"
+
+#: ../properties/nm-vpnc-dialog.glade.h:11
 msgid "User name:"
 msgstr "Käyttäjätunnus:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:10
+#: ../properties/nm-vpnc-dialog.glade.h:12
 msgid "_Gateway:"
 msgstr "_Yhdyskäytävä:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:13
+msgid "_User password:"
+msgstr "_Käyttäjän salasana:"
 
