@@ -174,25 +174,33 @@ nm_setting_wireless_ap_security_compatible (NMSettingWireless *s_wireless,
 			    || !(ap_wpa & (NM_802_11_AP_SEC_GROUP_WEP40 | NM_802_11_AP_SEC_GROUP_WEP104)))
 				return FALSE;
 
-			/* Match at least one pairwise cipher with AP's capability */
-			for (iter = s_wireless_sec->pairwise; iter; iter = g_slist_next (iter)) {
-				if ((found = match_cipher (iter->data, "wep40", ap_wpa, ap_wpa, NM_802_11_AP_SEC_PAIR_WEP40)))
-					break;
-				if ((found = match_cipher (iter->data, "wep104", ap_wpa, ap_wpa, NM_802_11_AP_SEC_PAIR_WEP104)))
-					break;
+			/* Match at least one pairwise cipher with AP's capability if the
+			 * wireless-security setting explicitly lists pairwise ciphers
+			 */
+			if (s_wireless_sec->pairwise) {
+				for (iter = s_wireless_sec->pairwise; iter; iter = g_slist_next (iter)) {
+					if ((found = match_cipher (iter->data, "wep40", ap_wpa, ap_wpa, NM_802_11_AP_SEC_PAIR_WEP40)))
+						break;
+					if ((found = match_cipher (iter->data, "wep104", ap_wpa, ap_wpa, NM_802_11_AP_SEC_PAIR_WEP104)))
+						break;
+				}
+				if (!found)
+					return FALSE;
 			}
-			if (!found)
-				return FALSE;
 
-			/* Match at least one group cipher with AP's capability */
-			for (iter = s_wireless_sec->group; iter; iter = g_slist_next (iter)) {
-				if ((found = match_cipher (iter->data, "wep40", ap_wpa, ap_wpa, NM_802_11_AP_SEC_GROUP_WEP40)))
-					break;
-				if ((found = match_cipher (iter->data, "wep104", ap_wpa, ap_wpa, NM_802_11_AP_SEC_GROUP_WEP104)))
-					break;
+			/* Match at least one group cipher with AP's capability if the
+			 * wireless-security setting explicitly lists group ciphers
+			 */
+			if (s_wireless_sec->group) {
+				for (iter = s_wireless_sec->group; iter; iter = g_slist_next (iter)) {
+					if ((found = match_cipher (iter->data, "wep40", ap_wpa, ap_wpa, NM_802_11_AP_SEC_GROUP_WEP40)))
+						break;
+					if ((found = match_cipher (iter->data, "wep104", ap_wpa, ap_wpa, NM_802_11_AP_SEC_GROUP_WEP104)))
+						break;
+				}
+				if (!found)
+					return FALSE;
 			}
-			if (!found)
-				return FALSE;
 		}
 		return TRUE;
 	}
@@ -204,9 +212,6 @@ nm_setting_wireless_ap_security_compatible (NMSettingWireless *s_wireless,
 		gboolean found = FALSE;
 
 		if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
-			return FALSE;
-
-		if (!s_wireless_sec->pairwise || !s_wireless_sec->group)
 			return FALSE;
 
 		if (!strcmp (s_wireless_sec->key_mgmt, "wpa-psk")) {
@@ -223,29 +228,37 @@ nm_setting_wireless_ap_security_compatible (NMSettingWireless *s_wireless,
 		// if the Connection only uses WPA we don't match a cipher against
 		// the AP's RSN IE instead
 
-		/* Match at least one pairwise cipher with AP's capability */
-		for (elt = s_wireless_sec->pairwise; elt; elt = g_slist_next (elt)) {
-			if ((found = match_cipher (elt->data, "tkip", ap_wpa, ap_rsn, NM_802_11_AP_SEC_PAIR_TKIP)))
-				break;
-			if ((found = match_cipher (elt->data, "ccmp", ap_wpa, ap_rsn, NM_802_11_AP_SEC_PAIR_CCMP)))
-				break;
+		/* Match at least one pairwise cipher with AP's capability if the
+		 * wireless-security setting explicitly lists pairwise ciphers
+		 */
+		if (s_wireless_sec->pairwise) {
+			for (elt = s_wireless_sec->pairwise; elt; elt = g_slist_next (elt)) {
+				if ((found = match_cipher (elt->data, "tkip", ap_wpa, ap_rsn, NM_802_11_AP_SEC_PAIR_TKIP)))
+					break;
+				if ((found = match_cipher (elt->data, "ccmp", ap_wpa, ap_rsn, NM_802_11_AP_SEC_PAIR_CCMP)))
+					break;
+			}
+			if (!found)
+				return FALSE;
 		}
-		if (!found)
-			return FALSE;
 
-		/* Match at least one group cipher with AP's capability */
-		for (elt = s_wireless_sec->group; elt; elt = g_slist_next (elt)) {
-			if ((found = match_cipher (elt->data, "wep40", ap_wpa, ap_rsn, NM_802_11_AP_SEC_GROUP_WEP40)))
-				break;
-			if ((found = match_cipher (elt->data, "wep104", ap_wpa, ap_rsn, NM_802_11_AP_SEC_GROUP_WEP104)))
-				break;
-			if ((found = match_cipher (elt->data, "tkip", ap_wpa, ap_rsn, NM_802_11_AP_SEC_GROUP_TKIP)))
-				break;
-			if ((found = match_cipher (elt->data, "ccmp", ap_wpa, ap_rsn, NM_802_11_AP_SEC_GROUP_CCMP)))
-				break;
+		/* Match at least one group cipher with AP's capability if the
+		 * wireless-security setting explicitly lists group ciphers
+		 */
+		if (s_wireless_sec->group) {
+			for (elt = s_wireless_sec->group; elt; elt = g_slist_next (elt)) {
+				if ((found = match_cipher (elt->data, "wep40", ap_wpa, ap_rsn, NM_802_11_AP_SEC_GROUP_WEP40)))
+					break;
+				if ((found = match_cipher (elt->data, "wep104", ap_wpa, ap_rsn, NM_802_11_AP_SEC_GROUP_WEP104)))
+					break;
+				if ((found = match_cipher (elt->data, "tkip", ap_wpa, ap_rsn, NM_802_11_AP_SEC_GROUP_TKIP)))
+					break;
+				if ((found = match_cipher (elt->data, "ccmp", ap_wpa, ap_rsn, NM_802_11_AP_SEC_GROUP_CCMP)))
+					break;
+			}
+			if (!found)
+				return FALSE;
 		}
-		if (!found)
-			return FALSE;
 
 		return TRUE;
 	}

@@ -1,3 +1,11 @@
+2008-09-18  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-setting-wireless.c
+		- (nm_setting_wireless_ap_security_compatible): only verify pairwise and
+			group ciphers if the wireless-security setting explicitly specified
+			them, effectively making the default be "all ciphers"  (idea from
+			Alexander Sack)
+
 2008-09-15  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Alexander Sack <asac@ubuntu.com>
