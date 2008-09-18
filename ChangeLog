@@ -1,5 +1,23 @@
 2008-09-18  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Alexander Sack <asac@ubuntu.com>
+
+	* configure.in
+	  system-settings/plugins/Makefile.am
+	  system-settings/plugins/ifupdown/Makefile.am
+	  system-settings/plugins/ifupdown/interface_parser.c
+	  system-settings/plugins/ifupdown/interface_parser.h
+	  system-settings/plugins/ifupdown/nm-ifupdown-connection.c
+	  system-settings/plugins/ifupdown/nm-ifupdown-connection.h
+	  system-settings/plugins/ifupdown/parser.c
+	  system-settings/plugins/ifupdown/parser.h
+	  system-settings/plugins/ifupdown/plugin.c
+	  system-settings/plugins/ifupdown/plugin.h
+		- Implement a Debian/Ubuntu legacy network configuration plugin
+			(gnome.org #551941)
+
+2008-09-18  Dan Williams  <dcbw@redhat.com>
+
 	Implement support for honoring configured and automatic hostnames, and for
 	setting the configured hostname.
 

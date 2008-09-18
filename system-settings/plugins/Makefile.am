@@ -11,3 +11,7 @@ endif
 if TARGET_MANDRIVA
 SUBDIRS+=ifcfg-fedora
 endif
+
+if TARGET_DEBIAN
+SUBDIRS+=ifupdown
+endif
