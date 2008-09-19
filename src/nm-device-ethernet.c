@@ -27,6 +27,7 @@
 #include <string.h>
 #include <net/ethernet.h>
 #include <stdlib.h>
+#include <linux/types.h>
 #include <linux/sockios.h>
 #include <linux/ethtool.h>
 #include <sys/ioctl.h>
