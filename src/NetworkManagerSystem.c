@@ -43,7 +43,7 @@
 #include <netdb.h>
 #include <glib.h>
 #include <ctype.h>
-#include <linux/if.h>
+#include <net/if.h>
 
 #include "NetworkManagerSystem.h"
 #include "nm-device.h"
