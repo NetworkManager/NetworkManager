@@ -360,7 +360,11 @@ set_system_hostname (const char *new_hostname, const char *msg)
 		if (!update_etc_hosts (name)) {
 			/* error updating /etc/hosts; fallback to localhost.localdomain */
 			nm_info ("Setting system hostname to '" FALLBACK_HOSTNAME "' (error updating /etc/hosts)");
-			sethostname (FALLBACK_HOSTNAME, strlen (FALLBACK_HOSTNAME));
+			ret = sethostname (FALLBACK_HOSTNAME, strlen (FALLBACK_HOSTNAME));
+			if (ret != 0) {
+				nm_warning ("%s: couldn't set the fallback system hostname (%s): (%d) %s",
+				            __func__, FALLBACK_HOSTNAME, errno, strerror (errno));
+			}
 		}
 	} else {
 		nm_warning ("%s: couldn't set the system hostname to '%s': (%d) %s",
