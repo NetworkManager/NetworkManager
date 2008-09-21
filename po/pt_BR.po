@@ -3,23 +3,23 @@
 # This file is distributed under the same license as the NetworkManager package.
 # Raphael Higino <phhigino@gmail.com>, 2004-2007
 # Luiz Armesto <luiz.armesto@gmail.com>, 2007.
-# Henrique P Machado <zehrique@gmail.com>, 2008.
+# Henrique P. Machado <zehrique@gmail.com>, 2008.
 # Og Maciel <ogmaciel@gnome.org>, 2008.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-08-01 18:12-0400\n"
-"PO-Revision-Date: 2008-08-01 18:41-0300\n"
-"Last-Translator: Henrique P Machado <zehrique@gmail.com>\n"
+"POT-Creation-Date: 2008-09-05 18:57+0000\n"
+"PO-Revision-Date: 2008-09-14 12:38-0300\n"
+"Last-Translator: Henrique P. Machado <zehrique@gmail.com>\n"
 "Language-Team: Brazilian Portuguese <gnome-l10n-br@listas.cipsga.org.br>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: ../src/nm-netlink-monitor.c:193 ../src/nm-netlink-monitor.c:471
+#: ../src/nm-netlink-monitor.c:193 ../src/nm-netlink-monitor.c:474
 #, c-format
 msgid "error processing netlink message: %s"
 msgstr "erro ao processar mensagem do netlink: %s"
@@ -28,33 +28,38 @@ msgstr "erro ao processar mensagem do netlink: %s"
 #, c-format
 msgid "unable to allocate netlink handle for monitoring link status: %s"
 msgstr ""
-"não foi possível alocar identificador do netlink para monitorar o status da "
-"conexão: %s"
+"não foi possível alocar identificador do netlink para monitorar o status do "
+"link: %s"
 
 #: ../src/nm-netlink-monitor.c:260
 #, c-format
 msgid "unable to connect to netlink for monitoring link status: %s"
 msgstr ""
-"não foi possível conectar ao netlink para monitorar o status da conexão: %s"
+"não foi possível conectar ao netlink para monitorar o status do link: %s"
 
 #: ../src/nm-netlink-monitor.c:268
 #, c-format
 msgid "unable to join netlink group for monitoring link status: %s"
 msgstr ""
-"não foi possível associar-se ao grupo do netlink para monitorar o status da "
-"conexão: %s"
+"não foi possível associar-se ao grupo do netlink para monitorar o status do "
+"link: %s"
 
 #: ../src/nm-netlink-monitor.c:276
 #, c-format
 msgid "unable to allocate netlink link cache for monitoring link status: %s"
 msgstr ""
-"não foi possível alocar cache da conexão netlink para monitorar o status da "
-"conexão: %s"
+"não foi possível alocar o cache de link do netlink para monitorar o status "
+"do link: %s"
 
-#: ../src/nm-netlink-monitor.c:494
+#: ../src/nm-netlink-monitor.c:439
+#, c-format
+msgid "error updating link cache: %s"
+msgstr "erro ao atualizar o cache de link: %s"
+
+#: ../src/nm-netlink-monitor.c:497
 #, c-format
 msgid "error occurred while waiting for data on socket"
-msgstr "ocorreu um erro ao esperar por dados no socket"
+msgstr "ocorreu um erro ao esperar por dados na conexão"
 
 #: ../src/NetworkManager.c:250
 #, c-format
@@ -73,19 +78,18 @@ msgid ""
 "# Merged from %s\n"
 "\n"
 msgstr ""
-"# Combinado de %s\n"
+"# Mesclado de %s\n"
 "\n"
 
-#: ../src/named-manager/nm-named-manager.c:117
-msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
-msgstr ""
-"NOTA: o resolvedor da glibc não suporta mais que 3 servidores de nomes."
+#: ../src/named-manager/nm-named-manager.c:240
+msgid "NOTE: the libc resolver may not support more than 3 nameservers."
+msgstr "NOTA: o resolvedor da libc não suporta mais que 3 servidores de nomes."
 
-#: ../src/named-manager/nm-named-manager.c:119
+#: ../src/named-manager/nm-named-manager.c:242
 msgid "The nameservers listed below may not be recognized."
 msgstr "Os servidores de nomes listados abaixo podem não ser reconhecidos."
 
-#: ../system-settings/src/main.c:365
+#: ../system-settings/src/main.c:366
 #, c-format
 msgid "Auto %s"
 msgstr "Auto %s"
@@ -93,7 +97,7 @@ msgstr "Auto %s"
 #: ../libnm-util/crypto.c:125
 #, c-format
 msgid "PEM key file had no end tag '%s'."
-msgstr "A Chave do arquivo PEM não tinha a etiqueta \"%s\"."
+msgstr "A chave do arquivo PEM não tinha a etiqueta de finalização \"%s\"."
 
 #: ../libnm-util/crypto.c:135
 #, c-format
@@ -108,32 +112,32 @@ msgstr "Memória insuficiente para armazenar os dados do arquivo PEM."
 #: ../libnm-util/crypto.c:159
 #, c-format
 msgid "Malformed PEM file: Proc-Type was not first tag."
-msgstr "Arquivo PEM mal-formado: Proc-Type não era a primera etiqueta."
+msgstr "Arquivo PEM defeituoso: Proc-Type não era a primeira etiqueta."
 
 #: ../libnm-util/crypto.c:167
 #, c-format
 msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
-msgstr "Arquivo PEM mal-formado: etiqueta Proc-Type desconhecida: \"%s\"."
+msgstr "Arquivo PEM defeituoso: etiqueta Proc-Type desconhecida: \"%s\"."
 
 #: ../libnm-util/crypto.c:177
 #, c-format
 msgid "Malformed PEM file: DEK-Info was not the second tag."
-msgstr "Arquivo PEM mal-formado: DEK-Info não era a segunda etiqueta."
+msgstr "Arquivo PEM defeituoso: DEK-Info não era a segunda etiqueta."
 
 #: ../libnm-util/crypto.c:188
 #, c-format
 msgid "Malformed PEM file: no IV found in DEK-Info tag."
-msgstr "Arquivo PEM mal-formado: nenhum IV encontrado na etiqueta DEK-Info."
+msgstr "Arquivo PEM defeituoso: nenhum IV encontrado na etiqueta DEK-Info."
 
 #: ../libnm-util/crypto.c:195
 #, c-format
 msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
-msgstr "Arquivo PEM mal-formado: formato inválido do IV na etiqueta DEK-Info."
+msgstr "Arquivo PEM defeituoso: formato inválido do IV na etiqueta DEK-Info."
 
 #: ../libnm-util/crypto.c:208
 #, c-format
 msgid "Malformed PEM file: unknown private key cipher '%s'."
-msgstr "Arquivo PEM mal-formado: cifra desconhecida da chave privada \"%s\"."
+msgstr "Arquivo PEM defeituoso: cifra desconhecida da chave privada \"%s\"."
 
 #: ../libnm-util/crypto.c:227
 #, c-format
@@ -158,7 +162,7 @@ msgstr "Memória insuficiente para armazenar os dados do certificado."
 #: ../libnm-util/crypto.c:328
 #, c-format
 msgid "IV must be an even number of bytes in length."
-msgstr "IV deve ter um número par de bytes no comprimento."
+msgstr "Tamanho do IV deve ser um número par de bytes."
 
 #: ../libnm-util/crypto.c:337
 #, c-format
@@ -170,8 +174,8 @@ msgstr "Memória insuficiente para armazenar o IV."
 msgid "IV contains non-hexadecimal digits."
 msgstr "IV contém dígitos não-hexadecimais."
 
-#: ../libnm-util/crypto.c:386 ../libnm-util/crypto_gnutls.c:126
-#: ../libnm-util/crypto_nss.c:136
+#: ../libnm-util/crypto.c:386 ../libnm-util/crypto_gnutls.c:142
+#: ../libnm-util/crypto_nss.c:155
 #, c-format
 msgid "Private key cipher '%s' was unknown."
 msgstr "Cifra da chave privada \"%s\" não foi reconhecida."
@@ -185,85 +189,93 @@ msgstr ""
 #: ../libnm-util/crypto.c:513
 #, c-format
 msgid "Not enough memory to store decrypted private key."
-msgstr ""
-"Memória insuficiente para armazenar a chave de descriptografia privada."
+msgstr "Memória insuficiente para armazenar chave de descriptografia privada."
 
-#: ../libnm-util/crypto_gnutls.c:73
+#: ../libnm-util/crypto_gnutls.c:43
+msgid "Failed to initialize the crypto engine."
+msgstr "Falha ao iniciar o motor de descriptografia."
+
+#: ../libnm-util/crypto_gnutls.c:88
 #, c-format
 msgid "Failed to initialize the MD5 engine: %s / %s."
-msgstr "Falhou ao inicializar o motor MD5: %s / %s."
+msgstr "Falha ao iniciar o motor MD5: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:135 ../libnm-util/crypto_nss.c:145
+#: ../libnm-util/crypto_gnutls.c:151 ../libnm-util/crypto_nss.c:164
 #, c-format
 msgid "Not enough memory for decrypted key buffer."
 msgstr "Memória insuficiente para o buffer de descriptografia."
 
-#: ../libnm-util/crypto_gnutls.c:143
+#: ../libnm-util/crypto_gnutls.c:159
 #, c-format
 msgid "Failed to initialize the decryption cipher context: %s / %s."
-msgstr "Falhou ao inicializar o contexto da cifra de descriptografia: %s / %s."
+msgstr "Falha ao iniciar o contexto da cifra de descriptografia: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:152
+#: ../libnm-util/crypto_gnutls.c:168
 #, c-format
 msgid "Failed to set symmetric key for decryption: %s / %s."
-msgstr "Falhou ao atribuir chave simétrica para descriptografia: %s / %s."
+msgstr "Falha ao atribuir chave simétrica para descriptografia: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:161
+#: ../libnm-util/crypto_gnutls.c:177
 #, c-format
 msgid "Failed to set IV for decryption: %s / %s."
-msgstr "Falhou ao atribuir IV para descriptografia: %s / %s."
+msgstr "Falha ao atribuir IV para descriptografia: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:170
+#: ../libnm-util/crypto_gnutls.c:186
 #, c-format
 msgid "Failed to decrypt the private key: %s / %s."
-msgstr "Falhou ao descriptografar a chave privada: %s / %s."
+msgstr "Falha ao descriptografar a chave privada: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:208
+#: ../libnm-util/crypto_gnutls.c:224
 #, c-format
 msgid "Error initializing certificate data: %s"
-msgstr "Erro ao inicializar od dados do certificado: %s"
+msgstr "Erro ao iniciar os dados do certificado: %s"
 
-#: ../libnm-util/crypto_gnutls.c:220
+#: ../libnm-util/crypto_gnutls.c:236
 #, c-format
 msgid "Couldn't decode certificate: %s"
-msgstr "Não pôde decodificar o certificado: %s"
+msgstr "Não foi possível decodificar o certificado: %s"
 
-#: ../libnm-util/crypto_nss.c:78
+#: ../libnm-util/crypto_nss.c:49
+#, c-format
+msgid "Failed to initialize the crypto engine: %d."
+msgstr "Falha ao iniciar o motor de criptografia: %d."
+
+#: ../libnm-util/crypto_nss.c:96
 #, c-format
 msgid "Failed to initialize the MD5 context: %d."
-msgstr "Falha ao inicializar o contexto MD5: %d."
+msgstr "Falha ao iniciar o contexto MD5: %d."
 
-#: ../libnm-util/crypto_nss.c:153
+#: ../libnm-util/crypto_nss.c:172
 #, c-format
 msgid "Failed to initialize the decryption cipher slot."
-msgstr "Falha ao inicializar o slot de cifra de descriptografia."
+msgstr "Falha ao iniciar o slot de cifra de descriptografia."
 
-#: ../libnm-util/crypto_nss.c:163
+#: ../libnm-util/crypto_nss.c:182
 #, c-format
 msgid "Failed to set symmetric key for decryption."
 msgstr "Falha ao atribuir chave simétrica para descriptografia."
 
-#: ../libnm-util/crypto_nss.c:173
+#: ../libnm-util/crypto_nss.c:192
 #, c-format
 msgid "Failed to set IV for decryption."
 msgstr "Falha ao atribuir IV para descriptografia."
 
-#: ../libnm-util/crypto_nss.c:181
+#: ../libnm-util/crypto_nss.c:200
 #, c-format
 msgid "Failed to initialize the decryption context."
-msgstr "Falha ao inicializar o contexto de descriptografia."
+msgstr "Falha ao iniciar o contexto de descriptografia."
 
-#: ../libnm-util/crypto_nss.c:194
+#: ../libnm-util/crypto_nss.c:213
 #, c-format
 msgid "Failed to decrypt the private key: %d."
 msgstr "Falha ao descriptografar a chave privada: %d."
 
-#: ../libnm-util/crypto_nss.c:206
+#: ../libnm-util/crypto_nss.c:225
 #, c-format
 msgid "Failed to finalize decryption of the private key: %d."
 msgstr "Falha ao finalizar a descriptografia da chave privada: %d."
 
-#: ../libnm-util/crypto_nss.c:250
+#: ../libnm-util/crypto_nss.c:269
 #, c-format
 msgid "Couldn't decode certificate: %d"
 msgstr "Não foi possível decodificar o certificado: %d"
