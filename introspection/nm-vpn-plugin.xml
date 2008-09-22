@@ -122,11 +122,30 @@
       <tp:docstring>
         Emitted when a failure in the VPN plugin occurs.
       </tp:docstring>
-      <arg name="reason" type="u" tp:type="NM_VPN_CONNECTION_STATE_REASON">
+      <arg name="reason" type="u" tp:type="NM_VPN_PLUGIN_FAILURE">
         <tp:docstring>
           Reason code for the failure.
         </tp:docstring>
       </arg>
     </signal>
+
+    <tp:enum name="NM_VPN_PLUGIN_FAILURE" type="u">
+      <tp:enumvalue suffix="LOGIN_FAILED" value="0">
+        <tp:docstring>
+          Login failed.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="CONNECT_FAILED" value="1">
+        <tp:docstring>
+          Connect failed.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="BAD_IP_CONFIG" value="2">
+        <tp:docstring>
+          Invalid IP configuration returned from the VPN plugin.
+        </tp:docstring>
+      </tp:enumvalue>
+    </tp:enum>
+
   </interface>
 </node>

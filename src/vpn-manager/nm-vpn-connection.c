@@ -65,6 +65,7 @@ typedef struct {
 	NMActiveConnectionState state;
 
 	NMVPNConnectionState vpn_state;
+	NMVPNConnectionStateReason failure_reason;
 	gulong device_monitor;
 	DBusGProxy *proxy;
 	guint ipconfig_timeout;
@@ -232,11 +233,33 @@ nm_vpn_connection_get_service (NMVPNConnection *connection)
 }
 
 static void
+plugin_failed (DBusGProxy *proxy,
+			   NMVPNPluginFailure plugin_failure,
+			   gpointer user_data)
+{
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (user_data);
+
+	nm_info ("VPN plugin failed: %d", plugin_failure);
+
+	switch (plugin_failure) {
+	case NM_VPN_PLUGIN_FAILURE_LOGIN_FAILED:
+		priv->failure_reason = NM_VPN_CONNECTION_STATE_REASON_LOGIN_FAILED;
+		break;
+	case NM_VPN_PLUGIN_FAILURE_BAD_IP_CONFIG:
+		priv->failure_reason = NM_VPN_CONNECTION_STATE_REASON_IP_CONFIG_INVALID;
+		break;
+	default:
+		priv->failure_reason = NM_VPN_CONNECTION_STATE_REASON_UNKNOWN;
+	}
+}
+
+static void
 plugin_state_changed (DBusGProxy *proxy,
 				  NMVPNServiceState state,
 				  gpointer user_data)
 {
 	NMVPNConnection *connection = NM_VPN_CONNECTION (user_data);
+	NMVPNConnectionPrivate *priv;
 
 	nm_info ("VPN plugin state changed: %d", state);
 
@@ -249,9 +272,16 @@ plugin_state_changed (DBusGProxy *proxy,
 	case NM_VPN_CONNECTION_STATE_CONNECT:
 	case NM_VPN_CONNECTION_STATE_IP_CONFIG_GET:
 	case NM_VPN_CONNECTION_STATE_ACTIVATED:
+
+		priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+
+		nm_info ("VPN plugin state change reason: %d", priv->failure_reason);
 		nm_vpn_connection_set_vpn_state (connection,
 		                                 NM_VPN_CONNECTION_STATE_FAILED,
-		                                 NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED);
+										 priv->failure_reason);
+
+		/* Reset the failure reason */
+		priv->failure_reason = NM_VPN_CONNECTION_STATE_REASON_UNKNOWN;
 		break;
 	default:
 		break;
@@ -538,6 +568,11 @@ nm_vpn_connection_activate (NMVPNConnection *connection)
 	                                         NM_VPN_DBUS_PLUGIN_PATH,
 	                                         NM_VPN_DBUS_PLUGIN_INTERFACE);
 	g_object_unref (dbus_mgr);
+
+	dbus_g_proxy_add_signal (priv->proxy, "Failure", G_TYPE_UINT, G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->proxy, "Failure",
+								 G_CALLBACK (plugin_failed),
+								 connection, NULL);
 
 	/* StateChanged signal */
 	dbus_g_proxy_add_signal (priv->proxy, "StateChanged", G_TYPE_UINT, G_TYPE_INVALID);

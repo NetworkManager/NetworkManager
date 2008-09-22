@@ -1,3 +1,17 @@
+2008-09-22  Tambet Ingo  <tambet@gmail.com>
+
+	* src/vpn-manager/nm-vpn-connection.c: Add a signal handler for the
+	"Failure" signal from VPN plugins, store the failure reason, and
+	use it when the state is changed to failure.
+
+	* introspection/nm-vpn-plugin.xml: Fix the "Failure" signal's type
+	description.
+
+	* include/NetworkManagerVPN.h (NMVPNConnectionStateReason): Add a new
+	reason to the end of the list to not break the API.
+	(NMVPNPluginFailure): Move it here (from libnm-glib/nm-vpn-plugin.h)
+	so it can be shared by plugins and daemon.
+
 2008-09-18  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Alexander Sack <asac@ubuntu.com>
