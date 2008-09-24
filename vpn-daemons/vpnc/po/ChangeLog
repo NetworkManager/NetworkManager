@@ -1,3 +1,8 @@
+2008-09-25  Žygimantas Beručka  <zygis@gnome.org>
+
+	* lt.po: Added Lithuanian translation.
+	* LINGUAS: Added "lt".
+
 2008-09-20  Luca Ferretti  <elle.uca@libero.it>
 
 	* it.po: Updated Italian translation by Francesco Marletta.
