@@ -91,12 +91,16 @@ nm_vpn_plugin_ui_interface_ui_factory (NMVpnPluginUiInterface *iface,
                                        NMConnection *connection,
                                        GError **error)
 {
+	g_return_val_if_fail (NM_IS_VPN_PLUGIN_UI_INTERFACE (iface), NULL);
+
 	return NM_VPN_PLUGIN_UI_INTERFACE_GET_INTERFACE (iface)->ui_factory (iface, connection, error);
 }
 
 guint32
 nm_vpn_plugin_ui_interface_get_capabilities (NMVpnPluginUiInterface *iface)
 {
+	g_return_val_if_fail (NM_IS_VPN_PLUGIN_UI_INTERFACE (iface), 0);
+
 	return NM_VPN_PLUGIN_UI_INTERFACE_GET_INTERFACE (iface)->get_capabilities (iface);
 }
 
@@ -105,6 +109,8 @@ nm_vpn_plugin_ui_interface_import (NMVpnPluginUiInterface *iface,
                                    const char *path,
                                    GError **error)
 {
+	g_return_val_if_fail (NM_IS_VPN_PLUGIN_UI_INTERFACE (iface), NULL);
+
 	if (nm_vpn_plugin_ui_interface_get_capabilities (iface) & NM_VPN_PLUGIN_UI_CAPABILITY_IMPORT) {
 		g_return_val_if_fail (NM_VPN_PLUGIN_UI_INTERFACE_GET_INTERFACE (iface)->import != NULL, NULL);
 		return NM_VPN_PLUGIN_UI_INTERFACE_GET_INTERFACE (iface)->import (iface, path, error);
@@ -118,6 +124,8 @@ nm_vpn_plugin_ui_interface_export (NMVpnPluginUiInterface *iface,
                                    NMConnection *connection,
                                    GError **error)
 {
+	g_return_val_if_fail (NM_IS_VPN_PLUGIN_UI_INTERFACE (iface), FALSE);
+
 	if (nm_vpn_plugin_ui_interface_get_capabilities (iface) & NM_VPN_PLUGIN_UI_CAPABILITY_EXPORT) {
 		g_return_val_if_fail (NM_VPN_PLUGIN_UI_INTERFACE_GET_INTERFACE (iface)->export != NULL, FALSE);
 		return NM_VPN_PLUGIN_UI_INTERFACE_GET_INTERFACE (iface)->export (iface, path, connection, error);
@@ -129,6 +137,8 @@ char *
 nm_vpn_plugin_ui_interface_get_suggested_name (NMVpnPluginUiInterface *iface,
                                                NMConnection *connection)
 {
+	g_return_val_if_fail (NM_IS_VPN_PLUGIN_UI_INTERFACE (iface), NULL);
+
 	if (NM_VPN_PLUGIN_UI_INTERFACE_GET_INTERFACE (iface)->get_suggested_name)
 		return NM_VPN_PLUGIN_UI_INTERFACE_GET_INTERFACE (iface)->get_suggested_name (iface, connection);
 	return NULL;
@@ -139,6 +149,8 @@ nm_vpn_plugin_ui_interface_delete_connection (NMVpnPluginUiInterface *iface,
                                               NMConnection *connection,
                                               GError **error)
 {
+	g_return_val_if_fail (NM_IS_VPN_PLUGIN_UI_INTERFACE (iface), FALSE);
+
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
 
@@ -199,6 +211,8 @@ nm_vpn_plugin_ui_widget_interface_get_type (void)
 GObject *
 nm_vpn_plugin_ui_widget_interface_get_widget (NMVpnPluginUiWidgetInterface *iface)
 {
+	g_return_val_if_fail (NM_IS_VPN_PLUGIN_UI_WIDGET_INTERFACE (iface), NULL);
+
 	return NM_VPN_PLUGIN_UI_WIDGET_INTERFACE_GET_INTERFACE (iface)->get_widget (iface);
 }
 
@@ -207,6 +221,8 @@ nm_vpn_plugin_ui_widget_interface_update_connection (NMVpnPluginUiWidgetInterfac
                                                      NMConnection *connection,
                                                      GError **error)
 {
+	g_return_val_if_fail (NM_IS_VPN_PLUGIN_UI_WIDGET_INTERFACE (iface), NULL);
+
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
 
@@ -218,6 +234,8 @@ nm_vpn_plugin_ui_widget_interface_save_secrets (NMVpnPluginUiWidgetInterface *if
                                                 NMConnection *connection,
                                                 GError **error)
 {
+	g_return_val_if_fail (NM_IS_VPN_PLUGIN_UI_WIDGET_INTERFACE (iface), NULL);
+
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
 

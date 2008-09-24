@@ -1,3 +1,8 @@
+2008-09-24  Tambet Ingo  <tambet@gmail.com>
+
+	* libnm-glib/nm-vpn-plugin-ui-interface.c: Add type checking to
+	all the public function arguments.
+
 2008-09-22  Tambet Ingo  <tambet@gmail.com>
 
 	* src/vpn-manager/nm-vpn-connection.c: Add a signal handler for the
