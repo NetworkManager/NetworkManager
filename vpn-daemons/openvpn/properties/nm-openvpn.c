@@ -44,7 +44,8 @@
 #include <nm-setting-connection.h>
 #include <nm-setting-ip4-config.h>
 
-#include "../src/nm-openvpn-service.h"
+#include "common-gnome/keyring-helpers.h"
+#include "src/nm-openvpn-service.h"
 #include "nm-openvpn.h"
 #include "auth-helpers.h"
 #include "import-export.h"
@@ -109,6 +110,8 @@ openvpn_plugin_ui_error_get_type (void)
 		static const GEnumValue values[] = {
 			/* Unknown error. */
 			ENUM_ENTRY (OPENVPN_PLUGIN_UI_ERROR_UNKNOWN, "UnknownError"),
+			/* The connection was missing invalid. */
+			ENUM_ENTRY (OPENVPN_PLUGIN_UI_ERROR_INVALID_CONNECTION, "InvalidConnection"),
 			/* The specified property was invalid. */
 			ENUM_ENTRY (OPENVPN_PLUGIN_UI_ERROR_INVALID_PROPERTY, "InvalidProperty"),
 			/* The specified property was missing and is required. */
@@ -304,6 +307,8 @@ init_plugin_ui (OpenvpnPluginUiWidget *self, NMConnection *connection, GError **
 	tls_pw_init_auth_widget (priv->xml, priv->group, s_vpn,
 	                         NM_OPENVPN_CONTYPE_TLS, "tls",
 	                         stuff_changed_cb, self);
+	fill_vpn_passwords (priv->xml, priv->group, connection,
+						NM_OPENVPN_CONTYPE_TLS, stuff_changed_cb, self);
 
 	gtk_list_store_append (store, &iter);
 	gtk_list_store_set (store, &iter,
@@ -316,6 +321,8 @@ init_plugin_ui (OpenvpnPluginUiWidget *self, NMConnection *connection, GError **
 	tls_pw_init_auth_widget (priv->xml, priv->group, s_vpn,
 	                         NM_OPENVPN_CONTYPE_PASSWORD, "pw",
 	                         stuff_changed_cb, self);
+	fill_vpn_passwords (priv->xml, priv->group, connection,
+						NM_OPENVPN_CONTYPE_PASSWORD, stuff_changed_cb, self);
 
 	gtk_list_store_append (store, &iter);
 	gtk_list_store_set (store, &iter,
@@ -330,6 +337,9 @@ init_plugin_ui (OpenvpnPluginUiWidget *self, NMConnection *connection, GError **
 	tls_pw_init_auth_widget (priv->xml, priv->group, s_vpn,
 	                         NM_OPENVPN_CONTYPE_PASSWORD_TLS, "pw_tls",
 	                         stuff_changed_cb, self);
+	fill_vpn_passwords (priv->xml, priv->group, connection,
+						NM_OPENVPN_CONTYPE_PASSWORD_TLS, stuff_changed_cb, self);
+
 
 	gtk_list_store_append (store, &iter);
 	gtk_list_store_set (store, &iter,
@@ -381,6 +391,22 @@ hash_copy_advanced (gpointer key, gpointer data, gpointer user_data)
 	g_hash_table_insert (hash, g_strdup ((const char *) key), g_strdup (value));
 }
 
+static const char *
+get_auth_type (GladeXML *glade_xml)
+{
+	GtkComboBox *combo;
+	GtkTreeModel *model;
+	GtkTreeIter iter;
+	const char *auth_type = NULL;
+
+	combo = GTK_COMBO_BOX (glade_xml_get_widget (glade_xml, "auth_combo"));
+	model = gtk_combo_box_get_model (combo);
+	if (gtk_combo_box_get_active_iter (combo, &iter))
+		gtk_tree_model_get (model, &iter, COL_AUTH_TYPE, &auth_type, -1);
+
+	return auth_type;
+}
+
 static gboolean
 update_connection (NMVpnPluginUiWidgetInterface *iface,
                    NMConnection *connection,
@@ -391,10 +417,8 @@ update_connection (NMVpnPluginUiWidgetInterface *iface,
 	NMSettingVPN *s_vpn;
 	GtkWidget *widget;
 	char *str;
-	GtkTreeModel *model;
-	GtkTreeIter iter;
+	const char *auth_type;
 	gboolean valid = FALSE;
-	const char *auth_type = NULL;
 
 	if (!check_validity (self, error))
 		return FALSE;
@@ -411,10 +435,8 @@ update_connection (NMVpnPluginUiWidgetInterface *iface,
 		                     g_strdup (str));
 	}
 
-	widget = glade_xml_get_widget (priv->xml, "auth_combo");
-	model = gtk_combo_box_get_model (GTK_COMBO_BOX (widget));
-	if (gtk_combo_box_get_active_iter (GTK_COMBO_BOX (widget), &iter)) {
-		gtk_tree_model_get (model, &iter, COL_AUTH_TYPE, &auth_type, -1);
+	auth_type = get_auth_type (priv->xml);
+	if (auth_type) {
 		g_hash_table_insert (s_vpn->data,
 		                     g_strdup (NM_OPENVPN_KEY_CONNECTION_TYPE),
 		                     g_strdup (auth_type));
@@ -427,8 +449,37 @@ update_connection (NMVpnPluginUiWidgetInterface *iface,
 	nm_connection_add_setting (connection, NM_SETTING (s_vpn));
 	valid = TRUE;
 
-done:
 	return valid;
+}
+
+static gboolean
+save_secrets (NMVpnPluginUiWidgetInterface *iface,
+              NMConnection *connection,
+              GError **error)
+{
+	OpenvpnPluginUiWidgetPrivate *priv = OPENVPN_PLUGIN_UI_WIDGET_GET_PRIVATE (iface);
+	NMSettingConnection *s_con;
+	const char *auth_type;
+	gboolean ret = FALSE;
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	if (!s_con) {
+		g_set_error (error,
+					 OPENVPN_PLUGIN_UI_ERROR,
+		             OPENVPN_PLUGIN_UI_ERROR_INVALID_CONNECTION,
+		             "%s", "missing 'connection' setting");
+		return FALSE;
+	}
+
+	auth_type = get_auth_type (priv->xml);
+	if (auth_type)
+		ret = auth_widget_save_secrets (priv->xml, auth_type, s_con->uuid, s_con->id);
+
+	if (!ret)
+		g_set_error (error, OPENVPN_PLUGIN_UI_ERROR,
+					 OPENVPN_PLUGIN_UI_ERROR_UNKNOWN,
+					 "%s", "Saving secrets to gnome keyring failed.");
+	return ret;
 }
 
 static NMVpnPluginUiWidgetInterface *
@@ -529,6 +580,7 @@ openvpn_plugin_ui_widget_interface_init (NMVpnPluginUiWidgetInterface *iface_cla
 	/* interface implementation */
 	iface_class->get_widget = get_widget;
 	iface_class->update_connection = update_connection;
+	iface_class->save_secrets = save_secrets;
 }
 
 static NMConnection *
@@ -606,6 +658,29 @@ get_capabilities (NMVpnPluginUiInterface *iface)
 	return (NM_VPN_PLUGIN_UI_CAPABILITY_IMPORT | NM_VPN_PLUGIN_UI_CAPABILITY_EXPORT);
 }
 
+static gboolean
+delete_connection (NMVpnPluginUiInterface *iface,
+                   NMConnection *connection,
+                   GError **error)
+{
+	NMSettingConnection *s_con;
+
+	/* Remove any secrets in the keyring associated with this connection's UUID */
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	if (!s_con) {
+		g_set_error (error,
+		             OPENVPN_PLUGIN_UI_ERROR,
+		             OPENVPN_PLUGIN_UI_ERROR_INVALID_CONNECTION,
+		             "missing 'connection' setting");
+		return FALSE;
+	}
+
+	keyring_helpers_delete_secret (s_con->uuid, NM_OPENVPN_KEY_PASSWORD);
+	keyring_helpers_delete_secret (s_con->uuid, NM_OPENVPN_KEY_CERTPASS);
+
+	return TRUE;
+}
+
 static NMVpnPluginUiWidgetInterface *
 ui_factory (NMVpnPluginUiInterface *iface, NMConnection *connection, GError **error)
 {
@@ -666,6 +741,7 @@ openvpn_plugin_ui_interface_init (NMVpnPluginUiInterface *iface_class)
 	iface_class->import = import;
 	iface_class->export = export;
 	iface_class->get_suggested_name = get_suggested_name;
+	iface_class->delete_connection = delete_connection;
 }
 
 

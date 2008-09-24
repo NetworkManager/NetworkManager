@@ -35,13 +35,13 @@
 #include <nm-setting-vpn.h>
 #include <nm-setting-connection.h>
 
-#include "../src/nm-openvpn-service.h"
+#include "common-gnome/keyring-helpers.h"
+#include "src/nm-openvpn-service.h"
 #include "gnome-two-password-dialog.h"
 
 typedef struct {
 	char *vpn_uuid;
 	char *vpn_name;
-	char *vpn_service;
 
 	gboolean need_password;
 	char *password;
@@ -49,89 +49,6 @@ typedef struct {
 	gboolean need_certpass;
 	char *certpass;
 } PasswordsInfo;
-
-#define KEYRING_UUID_TAG "connection-uuid"
-#define KEYRING_SN_TAG "setting-name"
-#define KEYRING_SK_TAG "setting-key"
-
-
-static char *
-find_one_secret (const char *vpn_uuid,
-                 const char *secret_name,
-                 gboolean *is_session)
-{
-	GList *found_list = NULL;
-	GnomeKeyringResult ret;
-	GnomeKeyringFound *found;
-	char *secret;
-
-	ret = gnome_keyring_find_itemsv_sync (GNOME_KEYRING_ITEM_GENERIC_SECRET,
-	                                      &found_list,
-	                                      KEYRING_UUID_TAG,
-	                                      GNOME_KEYRING_ATTRIBUTE_TYPE_STRING,
-	                                      vpn_uuid,
-	                                      KEYRING_SN_TAG,
-	                                      GNOME_KEYRING_ATTRIBUTE_TYPE_STRING,
-	                                      NM_SETTING_VPN_SETTING_NAME,
-	                                      KEYRING_SK_TAG,
-	                                      GNOME_KEYRING_ATTRIBUTE_TYPE_STRING,
-	                                      secret_name,
-	                                      NULL);
-	if ((ret != GNOME_KEYRING_RESULT_OK) || (g_list_length (found_list) == 0))
-		return NULL;
-
-	found = (GnomeKeyringFound *) found_list->data;
-
-	if (strcmp (found->keyring, "session") == 0)
-		*is_session = TRUE;
-	else
-		*is_session = FALSE;
-
-	secret = found->secret ? g_strdup (found->secret) : NULL;
-	gnome_keyring_found_list_free (found_list);
-
-	return secret;
-}
-
-static void
-save_vpn_password (const char *vpn_uuid,
-                   const char *vpn_name,
-                   const char *vpn_service,
-                   const char *keyring,
-                   const char *secret_name,
-                   const char *secret)
-{
-	char *display_name;
-	GnomeKeyringResult ret;
-	GnomeKeyringAttributeList *attrs = NULL;
-	guint32 id = 0;
-
-	display_name = g_strdup_printf ("VPN %s secret for %s/%s/" NM_SETTING_VPN_SETTING_NAME,
-	                                secret_name,
-	                                vpn_name,
-	                                vpn_service);
-
-	attrs = gnome_keyring_attribute_list_new ();
-	gnome_keyring_attribute_list_append_string (attrs,
-	                                            KEYRING_UUID_TAG,
-	                                            vpn_uuid);
-	gnome_keyring_attribute_list_append_string (attrs,
-	                                            KEYRING_SN_TAG,
-	                                            NM_SETTING_VPN_SETTING_NAME);
-	gnome_keyring_attribute_list_append_string (attrs,
-	                                            KEYRING_SK_TAG,
-	                                            secret_name);
-
-	ret = gnome_keyring_item_create_sync (keyring,
-	                                      GNOME_KEYRING_ITEM_GENERIC_SECRET,
-	                                      display_name,
-	                                      attrs,
-	                                      secret,
-	                                      TRUE,
-	                                      &id);
-	gnome_keyring_attribute_list_free (attrs);
-	g_free (display_name);
-}
 
 #define PROC_TYPE_TAG "Proc-Type: 4,ENCRYPTED"
 
@@ -192,17 +109,17 @@ get_secrets (PasswordsInfo *info, gboolean retry)
 	g_return_val_if_fail (info->vpn_name != NULL, FALSE);
 
 	if (info->need_password) {
-		info->password = find_one_secret (info->vpn_uuid, NM_OPENVPN_KEY_PASSWORD, &is_session);
+		info->password = keyring_helpers_lookup_secret (info->vpn_uuid, NM_OPENVPN_KEY_PASSWORD, &is_session);
 		if (!info->password)
 			need_secret = TRUE;
 	}
 
 	if (info->need_certpass) {
-		info->certpass = find_one_secret (info->vpn_uuid, NM_OPENVPN_KEY_CERTPASS, &is_session);
+		info->certpass = keyring_helpers_lookup_secret (info->vpn_uuid, NM_OPENVPN_KEY_CERTPASS, &is_session);
 		if (!info->certpass)
 			need_secret = TRUE;
 	}
-	
+
 	/* Have all passwords and we're not supposed to ask the user again */
 	if (!need_secret && !retry)
 		return TRUE;
@@ -278,12 +195,12 @@ get_secrets (PasswordsInfo *info, gboolean retry)
 
 		if (save) {
 			if (info->password) {
-				save_vpn_password (info->vpn_uuid, info->vpn_name, info->vpn_service,
-				                   keyring, NM_OPENVPN_KEY_PASSWORD, info->password);
+				keyring_helpers_save_secret (info->vpn_uuid, info->vpn_name,
+											 keyring, NM_OPENVPN_KEY_PASSWORD, info->password);
 			}
 			if (info->certpass) {
-				save_vpn_password (info->vpn_uuid, info->vpn_name, info->vpn_service,
-				                   keyring, NM_OPENVPN_KEY_CERTPASS, info->certpass);
+				keyring_helpers_save_secret (info->vpn_uuid, info->vpn_name,
+											 keyring, NM_OPENVPN_KEY_CERTPASS, info->certpass);
 			}
 		}
 
@@ -437,7 +354,6 @@ main (int argc, char *argv[])
 	memset (&info, 0, sizeof (PasswordsInfo));
 	info.vpn_uuid = vpn_uuid;
 	info.vpn_name = vpn_name;
-	info.vpn_service = vpn_service;
 
 	if (!get_password_types (&info)) {
 		fprintf (stderr, "Invalid connection");

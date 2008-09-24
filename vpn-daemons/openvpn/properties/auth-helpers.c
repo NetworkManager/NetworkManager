@@ -33,10 +33,92 @@
 #include <errno.h>
 
 #include <glib/gi18n-lib.h>
+#include <gnome-keyring-memory.h>
+#include <nm-setting-connection.h>
 
 #include "auth-helpers.h"
 #include "nm-openvpn.h"
-#include "../src/nm-openvpn-service.h"
+#include "src/nm-openvpn-service.h"
+#include "common-gnome/keyring-helpers.h"
+
+static GtkWidget *
+fill_password (GladeXML *xml,
+			   const char *widget_name,
+			   NMConnection *connection,
+			   gboolean cert_password)
+{
+	GtkWidget *widget;
+	char *password;
+
+	widget = glade_xml_get_widget (xml, widget_name);
+	g_assert (widget);
+
+	if (!connection)
+		return widget;
+
+	password = NULL;
+
+	if (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_SYSTEM) {
+		NMSettingVPN *s_vpn;
+
+		s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
+		if (s_vpn) {
+			const char *tmp;
+
+			tmp = g_hash_table_lookup (s_vpn->secrets,
+									   cert_password ? NM_OPENVPN_KEY_CERTPASS : NM_OPENVPN_KEY_PASSWORD);
+			if (tmp)
+				password = gnome_keyring_memory_strdup (tmp);
+		}
+	} else {
+		NMSettingConnection *s_con;
+		gboolean unused;
+
+		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+		password = keyring_helpers_lookup_secret (s_con->uuid,
+												  cert_password ? NM_OPENVPN_KEY_CERTPASS : NM_OPENVPN_KEY_PASSWORD,
+												  &unused);
+	}
+
+	if (password) {
+		gtk_entry_set_text (GTK_ENTRY (widget), password);
+		gnome_keyring_memory_free (password);
+	}
+
+	return widget;
+}
+
+void
+fill_vpn_passwords (GladeXML *xml,
+					GtkSizeGroup *group,
+					NMConnection *connection,
+					const char *contype,
+					ChangedCallback changed_cb,
+					gpointer user_data)
+{
+	GtkWidget *w = NULL;
+
+	if (!strcmp (contype, NM_OPENVPN_CONTYPE_TLS))
+		w = fill_password (xml, "tls_cert_password_entry", connection, TRUE);
+	else if (!strcmp (contype, NM_OPENVPN_CONTYPE_PASSWORD))
+		w = fill_password (xml, "pw_password_entry", connection, FALSE);
+	else if (!strcmp (contype, NM_OPENVPN_CONTYPE_PASSWORD_TLS)) {
+		GtkWidget *w2 = NULL;
+
+		w = fill_password (xml, "pw_tls_password_entry", connection, TRUE);
+	
+		w2 = fill_password (xml, "pw_tls_cert_password_entry", connection, FALSE);
+		if (w2) {
+			gtk_size_group_add_widget (group, w2);
+			g_signal_connect (w2, "changed", G_CALLBACK (changed_cb), user_data);
+		}
+	}
+
+	if (w) {
+		gtk_size_group_add_widget (group, w);
+		g_signal_connect (w, "changed", G_CALLBACK (changed_cb), user_data);
+	}
+}
 
 void
 tls_pw_init_auth_widget (GladeXML *xml,
@@ -431,6 +513,56 @@ auth_widget_update_connection (GladeXML *xml,
 	return TRUE;
 }
 
+static gboolean
+save_secret (GladeXML *xml,
+			 const char *widget_name,
+			 const char *vpn_uuid,
+			 const char *vpn_name,
+			 const char *secret_name)
+{
+	GtkWidget *w;
+	const char *secret;
+	GnomeKeyringResult result;
+	gboolean ret;
+
+	w = glade_xml_get_widget (xml, widget_name);
+	g_assert (w);
+	secret = gtk_entry_get_text (GTK_ENTRY (w));
+	if (secret && strlen (secret)) {
+		result = keyring_helpers_save_secret (vpn_uuid, vpn_name, NULL, secret_name, secret);
+		ret = result == GNOME_KEYRING_RESULT_OK;
+		if (!ret)
+			g_warning ("%s: failed to save user password to keyring.", __func__);
+	} else
+		ret = keyring_helpers_delete_secret (vpn_uuid, secret_name);
+
+	return ret;
+}
+
+gboolean
+auth_widget_save_secrets (GladeXML *xml,
+						  const char *contype,
+						  const char *uuid,
+						  const char *name)
+{
+	gboolean ret;
+
+	if (!strcmp (contype, NM_OPENVPN_CONTYPE_TLS))
+		ret = save_secret (xml, "tls_cert_password_entry", uuid, name, NM_OPENVPN_KEY_CERTPASS);
+	else if (!strcmp (contype, NM_OPENVPN_CONTYPE_PASSWORD))
+		ret = save_secret (xml, "pw_password_entry", uuid, name, NM_OPENVPN_KEY_PASSWORD);
+	else if (!strcmp (contype, NM_OPENVPN_CONTYPE_PASSWORD_TLS)) {
+		ret = save_secret (xml, "pw_tls_password_entry", uuid, name, NM_OPENVPN_KEY_PASSWORD);
+		ret = save_secret (xml, "pw_tls_cert_password_entry", uuid, name, NM_OPENVPN_KEY_CERTPASS);
+	} else if (!strcmp (contype, NM_OPENVPN_CONTYPE_STATIC_KEY))
+		/* No secrets here */
+		ret = TRUE;
+	else
+		g_assert_not_reached ();
+
+	return ret;
+}
+
 static const char *
 find_tag (const char *tag, const char *buf, gsize len)
 {
@@ -729,8 +861,6 @@ populate_cipher_combo (GtkComboBox *box, const char *user_cipher)
 	}
 
 	g_object_unref (G_OBJECT (store));
-
- end:
 	g_strfreev (items);
 }
 

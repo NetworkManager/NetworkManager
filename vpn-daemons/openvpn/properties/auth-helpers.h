@@ -32,6 +32,13 @@
 
 typedef void (*ChangedCallback) (GtkWidget *widget, gpointer user_data);
 
+void fill_vpn_passwords (GladeXML *xml,
+						 GtkSizeGroup *group,
+						 NMConnection *connection,
+						 const char *contype,
+						 ChangedCallback changed_cb,
+						 gpointer user_data);
+
 void tls_pw_init_auth_widget (GladeXML *xml,
                               GtkSizeGroup *group,
                               NMSettingVPN *s_vpn,
@@ -51,6 +58,11 @@ gboolean auth_widget_check_validity (GladeXML *xml, const char *contype, GError 
 gboolean auth_widget_update_connection (GladeXML *xml,
                                         const char *contype,
                                         NMSettingVPN *s_vpn);
+
+gboolean auth_widget_save_secrets (GladeXML *xml,
+								   const char *contype,
+								   const char *uuid,
+								   const char *name);
 
 GtkFileFilter *tls_file_chooser_filter_new (void);
 
