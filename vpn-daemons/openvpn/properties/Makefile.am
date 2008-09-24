@@ -18,6 +18,8 @@ libnm_openvpn_properties_la_CFLAGS =                    \
         $(GCONF_CFLAGS)                                 \
         $(LIBGNOMEUI_CFLAGS)                            \
         $(NETWORK_MANAGER_CFLAGS)                       \
+        $(GNOMEKEYRING_CFLAGS)                          \
+        -I$(top_srcdir)/                                \
         -DICONDIR=\""$(datadir)/pixmaps"\"              \
         -DGLADEDIR=\""$(gladedir)"\"                    \
         -DG_DISABLE_DEPRECATED                          \
@@ -32,7 +34,7 @@ libnm_openvpn_properties_la_LIBADD =    \
         $(GCONF_LIBS)                   \
         $(LIBGNOMEUI_LIBS)              \
         $(NETWORK_MANAGER_LIBS)         \
-	$(top_builddir)/common-gnome/libnm-openvpn-common-gnome.la
+        $(top_builddir)/common-gnome/libnm-openvpn-common-gnome.la
 
 libnm_openvpn_properties_la_LDFLAGS =   \
         -avoid-version

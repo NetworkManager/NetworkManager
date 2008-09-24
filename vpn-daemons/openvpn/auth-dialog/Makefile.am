@@ -5,6 +5,8 @@ nm_openvpn_auth_dialog_CPPFLAGS =			\
 	$(GTK_CFLAGS)				\
 	$(LIBGNOMEUI_CFLAGS)			\
 	$(NETWORK_MANAGER_CFLAGS)		\
+	$(GNOMEKEYRING_CFLAGS) \
+	-I$(top_srcdir)/
 	-DICONDIR=\""$(datadir)/pixmaps"\"	\
 	-DGLADEDIR=\""$(gladedir)"\"		\
 	-DBINDIR=\""$(bindir)"\"		\
