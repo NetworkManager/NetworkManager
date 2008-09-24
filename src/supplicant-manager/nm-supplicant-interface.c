@@ -902,26 +902,10 @@ disconnect_cb  (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 	}
 }
 
-static void
-interface_disconnect_done (gpointer data)
-{
-	NMSupplicantInfo *info = (NMSupplicantInfo *) data;
-	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (info->interface);
-
-	if (priv->net_proxy) {
-		g_object_unref (priv->net_proxy);
-		priv->net_proxy = NULL;
-	}
-
-	nm_supplicant_info_destroy (data);
-}
-
 void
 nm_supplicant_interface_disconnect (NMSupplicantInterface * self)
 {
 	NMSupplicantInterfacePrivate *priv;
-	NMSupplicantInfo *info;
-	DBusGProxyCall *call;
 
 	g_return_if_fail (NM_IS_SUPPLICANT_INTERFACE (self));
 
@@ -951,21 +935,17 @@ nm_supplicant_interface_disconnect (NMSupplicantInterface * self)
 
 	/* Remove any network that was added by NetworkManager */
 	if (priv->net_proxy) {
-		info = nm_supplicant_info_new (self, priv->iface_proxy, priv->other_pcalls);
-		call = dbus_g_proxy_begin_call (priv->iface_proxy, "removeNetwork", remove_network_cb,
-										info,
-										interface_disconnect_done,
-										DBUS_TYPE_G_OBJECT_PATH, dbus_g_proxy_get_path (priv->net_proxy),
-										G_TYPE_INVALID);
-		nm_supplicant_info_set_call (info, call);
+		dbus_g_proxy_begin_call (priv->iface_proxy, "removeNetwork", remove_network_cb,
+							NULL, NULL,
+							DBUS_TYPE_G_OBJECT_PATH, dbus_g_proxy_get_path (priv->net_proxy),
+							G_TYPE_INVALID);
+
+		g_object_unref (priv->net_proxy);
+		priv->net_proxy = NULL;
 	}
 
-	info = nm_supplicant_info_new (self, priv->iface_proxy, priv->other_pcalls);
-	call = dbus_g_proxy_begin_call (priv->iface_proxy, "disconnect", disconnect_cb,
-									info,
-									nm_supplicant_info_destroy,
-									G_TYPE_INVALID);
-	nm_supplicant_info_set_call (info, call);
+	dbus_g_proxy_begin_call (priv->iface_proxy, "disconnect", disconnect_cb,
+						NULL, NULL, G_TYPE_INVALID);
 }
 
 static void
