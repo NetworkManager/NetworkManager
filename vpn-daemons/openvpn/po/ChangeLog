@@ -1,5 +1,9 @@
 2008-09-25  Žygimantas Beručka  <zygis@gnome.org>
 
+	* LINGUAS: Added "lt".
+
+2008-09-25  Žygimantas Beručka  <zygis@gnome.org>
+
 	* lt.po: Added Lithuanian translation.
 
 2008-09-24  Daniel Nylander <po@danielnylander.se>
