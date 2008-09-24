@@ -357,7 +357,7 @@ static char *
 plugin_get_hostname (SCPluginKeyfile *plugin)
 {
 	GKeyFile *key_file;
-	char *hostname;
+	char *hostname = NULL;
 	GError *error = NULL;
 
 	key_file = g_key_file_new ();
