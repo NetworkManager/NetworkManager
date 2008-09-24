@@ -41,6 +41,12 @@
 #include "src/nm-openvpn-service.h"
 #include "common-gnome/keyring-helpers.h"
 
+static void
+show_password (GtkToggleButton *togglebutton, GtkEntry *password_entry)
+{
+	gtk_entry_set_visibility (password_entry, gtk_toggle_button_get_active (togglebutton));
+}
+
 static GtkWidget *
 fill_password (GladeXML *xml,
 			   const char *widget_name,
@@ -48,10 +54,14 @@ fill_password (GladeXML *xml,
 			   gboolean cert_password)
 {
 	GtkWidget *widget;
+	GtkWidget *show_passwords;
 	char *password;
 
 	widget = glade_xml_get_widget (xml, widget_name);
 	g_assert (widget);
+
+	show_passwords = glade_xml_get_widget (xml, "show_passwords");
+	g_signal_connect (show_passwords, "toggled", G_CALLBACK (show_password), widget);
 
 	if (!connection)
 		return widget;

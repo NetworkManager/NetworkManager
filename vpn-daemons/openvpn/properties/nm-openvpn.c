@@ -171,11 +171,14 @@ auth_combo_changed_cb (GtkWidget *combo, gpointer user_data)
 	OpenvpnPluginUiWidget *self = OPENVPN_PLUGIN_UI_WIDGET (user_data);
 	OpenvpnPluginUiWidgetPrivate *priv = OPENVPN_PLUGIN_UI_WIDGET_GET_PRIVATE (self);
 	GtkWidget *auth_notebook;
+	GtkWidget *show_passwords;
 	GtkTreeModel *model;
 	GtkTreeIter iter;
 	gint new_page = 0;
 
 	auth_notebook = glade_xml_get_widget (priv->xml, "auth_notebook");
+	g_assert (auth_notebook);
+	show_passwords = glade_xml_get_widget (priv->xml, "show_passwords");
 	g_assert (auth_notebook);
 
 	model = gtk_combo_box_get_model (GTK_COMBO_BOX (combo));
@@ -183,6 +186,10 @@ auth_combo_changed_cb (GtkWidget *combo, gpointer user_data)
 	g_assert (gtk_combo_box_get_active_iter (GTK_COMBO_BOX (combo), &iter));
 
 	gtk_tree_model_get (model, &iter, COL_AUTH_PAGE, &new_page, -1);
+
+	/* Static key page doesn't have any passwords */
+	gtk_widget_set_sensitive (show_passwords, new_page != 3);
+
 	gtk_notebook_set_current_page (GTK_NOTEBOOK (auth_notebook), new_page);
 
 	stuff_changed_cb (combo, self);

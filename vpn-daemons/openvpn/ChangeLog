@@ -1,5 +1,16 @@
 2008-09-24  Tambet Ingo  <tambet@gmail.com>
 
+	* properties/nm-openvpn-dialog.glade: Add "show passwords" checkbox.
+
+	* properties/nm-openvpn.c (auth_combo_changed_cb): Change the 
+	sensitivity of "show passwords" checkbox depending on whether the 
+	active page has any password entries.
+
+	* properties/auth-helpers.c (fill_password): Add a signal handler for
+	"show passwords" checkbox to change the password entry's visibility.
+
+2008-09-24  Tambet Ingo  <tambet@gmail.com>
+
 	* Implement required "save_secrets" and "delete_connection" methods of the
 	VPN plugin UI interface.
 	Add the password widgets to the properties UI so that the passwords can be
