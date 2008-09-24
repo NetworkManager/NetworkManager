@@ -221,7 +221,7 @@ nm_vpn_plugin_ui_widget_interface_update_connection (NMVpnPluginUiWidgetInterfac
                                                      NMConnection *connection,
                                                      GError **error)
 {
-	g_return_val_if_fail (NM_IS_VPN_PLUGIN_UI_WIDGET_INTERFACE (iface), NULL);
+	g_return_val_if_fail (NM_IS_VPN_PLUGIN_UI_WIDGET_INTERFACE (iface), FALSE);
 
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
@@ -234,7 +234,7 @@ nm_vpn_plugin_ui_widget_interface_save_secrets (NMVpnPluginUiWidgetInterface *if
                                                 NMConnection *connection,
                                                 GError **error)
 {
-	g_return_val_if_fail (NM_IS_VPN_PLUGIN_UI_WIDGET_INTERFACE (iface), NULL);
+	g_return_val_if_fail (NM_IS_VPN_PLUGIN_UI_WIDGET_INTERFACE (iface), FALSE);
 
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
