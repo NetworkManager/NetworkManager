@@ -17,6 +17,7 @@ libnm_settings_plugin_keyfile_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(GMODULE_CFLAGS) \
 	$(DBUS_CFLAGS) \
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DG_DISABLE_DEPRECATED \
 	-I${top_srcdir}/system-settings/src \
 	-I$(top_srcdir)/include \

@@ -1,5 +1,10 @@
 2008-09-24  Tambet Ingo  <tambet@gmail.com>
 
+	* system-settings/plugins/keyfile/plugin.c: Implement unmanaged_devices
+	method and get/set hostname property.
+
+2008-09-24  Tambet Ingo  <tambet@gmail.com>
+
 	* src/supplicant-manager/nm-supplicant-interface.c
 	(nm_supplicant_interface_disconnect): Don't increment the reference 
 	count when disconnecting. The problem is on shutdown, when the replies

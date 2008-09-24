@@ -638,10 +638,9 @@ set_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME:
 		hostname = g_value_get_string (value);
-		if (!strlen (hostname))
+		if (hostname && strlen (hostname) < 1)
 			hostname = NULL;
-		plugin_set_hostname (SC_PLUGIN_IFCFG (object),
-		                     (hostname && strlen (hostname)) ? hostname : NULL);
+		plugin_set_hostname (SC_PLUGIN_IFCFG (object), hostname);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
