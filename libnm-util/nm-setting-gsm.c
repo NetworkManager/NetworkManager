@@ -338,7 +338,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 					    "Network type",
 					    "Network type",
 					    NM_GSM_NETWORK_ANY,
-					    NM_GSM_NETWORK_PREFER_GSM,
+					    NM_GSM_NETWORK_PREFER_UMTS_HSPA,
 					    NM_GSM_NETWORK_ANY,
 					    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 

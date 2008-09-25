@@ -1,5 +1,12 @@
 2008-09-25  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting-gsm.c
+	  libnm-util/nm-setting-gsm.h
+		- Fix up NM_GSM_NETWORK_* constants to accurately reflect the network
+			technology terms (bgo #551361)
+
+2008-09-25  Dan Williams  <dcbw@redhat.com>
+
 	Fix bgo #549401 (inspired by patch from Alexander Sack)
 
 	* src/nm-device-ethernet.c
