@@ -1,3 +1,10 @@
+2008-09-25  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-pptp-service.c
+		- (nm_pptp_ppp_service_cache_credentials, impl_pptp_service_need_secrets):
+			when a domain is specified, synthesize the username passed to pppd
+			as username@domain
+
 2008-08-28  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-pptp-service.c

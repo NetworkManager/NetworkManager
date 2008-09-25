@@ -103,6 +103,7 @@ static gboolean impl_pptp_service_set_ip4_config (NMPptpPppService *self,
 
 typedef struct {
 	char username[100];
+	char domain[100];
 	char password[100];
 } NMPptpPppServicePrivate;
 
@@ -175,6 +176,7 @@ finalize (GObject *object)
 
 	/* Get rid of the cached username and password */
 	memset (priv->username, 0, sizeof (priv->username));
+	memset (priv->domain, 0, sizeof (priv->domain));
 	memset (priv->password, 0, sizeof (priv->password));
 }
 
@@ -227,12 +229,13 @@ nm_pptp_ppp_service_cache_credentials (NMPptpPppService *self,
 {
 	NMPptpPppServicePrivate *priv = NM_PPTP_PPP_SERVICE_GET_PRIVATE (self);
 	NMSettingVPN *s_vpn;
-	const char *username, *password;
+	const char *username, *password, *domain;
 
 	g_return_val_if_fail (self != NULL, FALSE);
 	g_return_val_if_fail (connection != NULL, FALSE);
 
 	memset (priv->username, 0, sizeof (priv->username));
+	memset (priv->domain, 0, sizeof (priv->domain));
 	memset (priv->password, 0, sizeof (priv->password));
 
 	s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
@@ -278,6 +281,10 @@ nm_pptp_ppp_service_cache_credentials (NMPptpPppService *self,
 		return FALSE;
 	}
 
+	domain = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_DOMAIN);
+	if (strlen (domain))
+		memcpy (priv->domain, domain, strlen (domain));
+
 	memcpy (priv->username, username, strlen (username));
 	memcpy (priv->password, password, strlen (password));
 	return TRUE;
@@ -303,7 +310,10 @@ impl_pptp_service_need_secrets (NMPptpPppService *self,
 	}
 
 	/* Success */
-	*out_username = g_strdup (priv->username);
+	if (strlen (priv->domain))
+		*out_username = g_strdup_printf ("%s@%s", priv->username, priv->domain);
+	else
+		*out_username = g_strdup (priv->username);
 	*out_password = g_strdup (priv->password);
 	return TRUE;
 
