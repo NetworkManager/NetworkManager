@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager.HEAD.hu\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-04-08 19:28+0100\n"
-"PO-Revision-Date: 2008-04-26 14:06+0200\n"
+"POT-Creation-Date: 2008-09-05 18:57+0000\n"
+"PO-Revision-Date: 2008-09-25 21:33+0200\n"
 "Last-Translator: Gabor Kelemen <kelemeng@gnome.hu>\n"
 "Language-Team: Hungarian <gnome@fsf.hu>\n"
 "MIME-Version: 1.0\n"
@@ -16,61 +16,264 @@ msgstr ""
 "Plural-Forms:  nplurals=2; plural=(n != 1);\n"
 "X-Generator: KBabel 1.11.4\n"
 
-#: ../src/nm-netlink-monitor.c:188 ../src/nm-netlink-monitor.c:448
+#: ../src/nm-netlink-monitor.c:193 ../src/nm-netlink-monitor.c:474
 #, c-format
 msgid "error processing netlink message: %s"
 msgstr "hiba a netlink üzenet feldolgozásakor: %s"
 
-#: ../src/nm-netlink-monitor.c:245
+#: ../src/nm-netlink-monitor.c:250
 #, c-format
 msgid "unable to allocate netlink handle for monitoring link status: %s"
 msgstr ""
 "nem lehet netlink kezelőt lefoglalni a kapcsolat állapotának megfigyelése "
 "érdekében: %s"
 
-#: ../src/nm-netlink-monitor.c:255
+#: ../src/nm-netlink-monitor.c:260
 #, c-format
 msgid "unable to connect to netlink for monitoring link status: %s"
 msgstr ""
 "nem lehet kapcsolódni a netlinkhez a kapcsolat állapotának megfigyelése "
 "érdekében: %s"
 
-#: ../src/nm-netlink-monitor.c:263
+#: ../src/nm-netlink-monitor.c:268
 #, c-format
 msgid "unable to join netlink group for monitoring link status: %s"
 msgstr ""
 "nem lehet csatlakozni a netlink csoporthoz a kapcsolat állapotának "
 "megfigyelése érdekében: %s"
 
-#: ../src/nm-netlink-monitor.c:271
+#: ../src/nm-netlink-monitor.c:276
 #, c-format
 msgid "unable to allocate netlink link cache for monitoring link status: %s"
 msgstr ""
 "nem lehet netlink kapcsolat-gyorsítótárat lefoglalni a kapcsolat állapotának "
 "megfigyelése érdekében: %s"
 
-#: ../src/nm-netlink-monitor.c:471
+#: ../src/nm-netlink-monitor.c:439
+#, c-format
+msgid "error updating link cache: %s"
+msgstr "hiba a kapcsolat gyorsítótárának frissítésekor: %s"
+
+#: ../src/nm-netlink-monitor.c:497
 #, c-format
 msgid "error occurred while waiting for data on socket"
 msgstr "hiba lépett fel adatokra várakozás közben a foglalaton"
 
-#: ../src/NetworkManager.c:263
+#: ../src/NetworkManager.c:250
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr ""
 "Érvénytelen kapcsoló. Az érvényes kapcsolók listájáért használja a --help "
 "kapcsolót.\n"
 
-#: ../src/named-manager/nm-named-manager.c:218
-msgid "NOTE: the glibc resolver does not support more than 3 nameservers."
-msgstr "MEGJEGYZÉS: a glibc feloldó nem támogat háromnál több névkiszolgálót."
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:87
+msgid "# Created by NetworkManager\n"
+msgstr "# Készítette a NetworkManager\n"
 
-#: ../src/named-manager/nm-named-manager.c:220
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:93
+#, c-format
+msgid ""
+"# Merged from %s\n"
+"\n"
+msgstr ""
+"# Összefésülve ebből: %s\n"
+"\n"
+
+#: ../src/named-manager/nm-named-manager.c:240
+msgid "NOTE: the libc resolver may not support more than 3 nameservers."
+msgstr "MEGJEGYZÉS: a libc feloldó nem támogat háromnál több névkiszolgálót."
+
+#: ../src/named-manager/nm-named-manager.c:242
 msgid "The nameservers listed below may not be recognized."
 msgstr "Az alább felsorolt névkiszolgálók lehet, hogy nem kerülnek felismerésre."
 
-#: ../system-settings/src/main.c:470
+#: ../system-settings/src/main.c:366
 #, c-format
 msgid "Auto %s"
 msgstr "Automatikus %s"
+
+#: ../libnm-util/crypto.c:125
+#, c-format
+msgid "PEM key file had no end tag '%s'."
+msgstr "A PEM kulcsfájl nem rendelkezik „%s” zárócímkével."
+
+#: ../libnm-util/crypto.c:135
+#, c-format
+msgid "Doesn't look like a PEM private key file."
+msgstr "Nem tűnik PEM személyes kulcs fájlnak."
+
+#: ../libnm-util/crypto.c:143
+#, c-format
+msgid "Not enough memory to store PEM file data."
+msgstr "Nincs elég memória a PEM fájl adatainak tárolásához."
+
+#: ../libnm-util/crypto.c:159
+#, c-format
+msgid "Malformed PEM file: Proc-Type was not first tag."
+msgstr "Rosszul formázott PEM fájl: a Proc-Type nem az első címke."
+
+#: ../libnm-util/crypto.c:167
+#, c-format
+msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
+msgstr "Rosszul formázott PEM fájl: ismeretlen Proc-Type címke („%s”)."
+
+#: ../libnm-util/crypto.c:177
+#, c-format
+msgid "Malformed PEM file: DEK-Info was not the second tag."
+msgstr "Rosszul formázott PEM fájl: A DEK-Info nem a második címke."
+
+#: ../libnm-util/crypto.c:188
+#, c-format
+msgid "Malformed PEM file: no IV found in DEK-Info tag."
+msgstr "Rosszul formázott PEM fájl: nem található IV a DEK-Info címkében."
+
+#: ../libnm-util/crypto.c:195
+#, c-format
+msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
+msgstr "Rosszul formázott PEM fájl: az IV formátuma érvénytelen a DEK-Info címkében."
+
+#: ../libnm-util/crypto.c:208
+#, c-format
+msgid "Malformed PEM file: unknown private key cipher '%s'."
+msgstr "Rosszul formázott PEM fájl: ismeretlen személyes kulcs titkosító: „%s”."
+
+#: ../libnm-util/crypto.c:227
+#, c-format
+msgid "Could not decode private key."
+msgstr "A személyes kulcs nem fejthető vissza."
+
+#: ../libnm-util/crypto.c:271
+#, c-format
+msgid "PEM certificate '%s' had no end tag '%s'."
+msgstr "A(z) „%s” PEM tanúsítvány nem tartalmaz záró „%s” címkét."
+
+#: ../libnm-util/crypto.c:281
+#, c-format
+msgid "Failed to decode certificate."
+msgstr "A tanúsítvány visszafejtése meghiúsult."
+
+#: ../libnm-util/crypto.c:290 ../libnm-util/crypto.c:298
+#, c-format
+msgid "Not enough memory to store certificate data."
+msgstr "Nincs elég memória a tanúsítvány adatainak tárolásához."
+
+#: ../libnm-util/crypto.c:328
+#, c-format
+msgid "IV must be an even number of bytes in length."
+msgstr "Az IV hosszának páros számú bájtnak kell lennie."
+
+#: ../libnm-util/crypto.c:337
+#, c-format
+msgid "Not enough memory to store the IV."
+msgstr "Nincs elég memória az IV tárolásához."
+
+#: ../libnm-util/crypto.c:348
+#, c-format
+msgid "IV contains non-hexadecimal digits."
+msgstr "Az IV nem hexadecimális számjegyeket tartalmaz."
+
+#: ../libnm-util/crypto.c:386 ../libnm-util/crypto_gnutls.c:142
+#: ../libnm-util/crypto_nss.c:155
+#, c-format
+msgid "Private key cipher '%s' was unknown."
+msgstr "A(z) „%s” személyeskulcs-titkosító ismeretlen."
+
+#: ../libnm-util/crypto.c:395
+#, c-format
+msgid "Not enough memory to create private key decryption key."
+msgstr "Nincs elég memória a személyes kulcs visszafejtési kulcsának létrehozásához."
+
+#: ../libnm-util/crypto.c:513
+#, c-format
+msgid "Not enough memory to store decrypted private key."
+msgstr "Nincs elég memória a visszafejtett személyes kulcs tárolásához."
+
+#: ../libnm-util/crypto_gnutls.c:43
+msgid "Failed to initialize the crypto engine."
+msgstr "A titkosító alrendszer előkészítése meghiúsult."
+
+#: ../libnm-util/crypto_gnutls.c:88
+#, c-format
+msgid "Failed to initialize the MD5 engine: %s / %s."
+msgstr "Az MD5 alrendszer előkészítése meghiúsult: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:151 ../libnm-util/crypto_nss.c:164
+#, c-format
+msgid "Not enough memory for decrypted key buffer."
+msgstr "Nincs elég memória a visszafejtett kulcspufferhez."
+
+#: ../libnm-util/crypto_gnutls.c:159
+#, c-format
+msgid "Failed to initialize the decryption cipher context: %s / %s."
+msgstr "A visszafejtési titkosító kontextusának előkészítése meghiúsult: %s /%s."
+
+#: ../libnm-util/crypto_gnutls.c:168
+#, c-format
+msgid "Failed to set symmetric key for decryption: %s / %s."
+msgstr "A szimmetrikus kulcs beállítása meghiúsult a visszafejtéshez: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:177
+#, c-format
+msgid "Failed to set IV for decryption: %s / %s."
+msgstr "Az IV beállítása meghiúsult a visszafejtéshez: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:186
+#, c-format
+msgid "Failed to decrypt the private key: %s / %s."
+msgstr "A személyes kulcs visszafejtése meghiúsult: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:224
+#, c-format
+msgid "Error initializing certificate data: %s"
+msgstr "Hiba a tanúsítvány adatainak előkészítésekor: %s"
+
+#: ../libnm-util/crypto_gnutls.c:236
+#, c-format
+msgid "Couldn't decode certificate: %s"
+msgstr "A tanúsítvány nem fejthető vissza: %s"
+
+#: ../libnm-util/crypto_nss.c:49
+#, c-format
+msgid "Failed to initialize the crypto engine: %d."
+msgstr "A titkosító alrendszer előkészítése meghiúsult: %d."
+
+#: ../libnm-util/crypto_nss.c:96
+#, c-format
+msgid "Failed to initialize the MD5 context: %d."
+msgstr "Az MD5 kontextus előkészítése meghiúsult: %d."
+
+#: ../libnm-util/crypto_nss.c:172
+#, c-format
+msgid "Failed to initialize the decryption cipher slot."
+msgstr "A visszafejtési titkosítóhely előkészítése meghiúsult."
+
+#: ../libnm-util/crypto_nss.c:182
+#, c-format
+msgid "Failed to set symmetric key for decryption."
+msgstr "A szimmetrikus kulcs nem állítható be a visszafejtéshez."
+
+#: ../libnm-util/crypto_nss.c:192
+#, c-format
+msgid "Failed to set IV for decryption."
+msgstr "Az IV nem állítható be a visszafejtéshez."
+
+#: ../libnm-util/crypto_nss.c:200
+#, c-format
+msgid "Failed to initialize the decryption context."
+msgstr "A visszafejtési kontextus előkészítése meghiúsult."
+
+#: ../libnm-util/crypto_nss.c:213
+#, c-format
+msgid "Failed to decrypt the private key: %d."
+msgstr "A személyes kulcs visszafejtése meghiúsult: %d."
+
+#: ../libnm-util/crypto_nss.c:225
+#, c-format
+msgid "Failed to finalize decryption of the private key: %d."
+msgstr "A személyes kulcs visszafejtésének befejezése meghiúsult: %d."
+
+#: ../libnm-util/crypto_nss.c:269
+#, c-format
+msgid "Couldn't decode certificate: %d"
+msgstr "A tanúsítvány nem fejthető vissza: %d"
 
