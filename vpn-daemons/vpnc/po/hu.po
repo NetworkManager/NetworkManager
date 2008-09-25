@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-vpnc HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-12-05 22:06+0000\n"
-"PO-Revision-Date: 2008-03-19 13:35+0100\n"
+"POT-Creation-Date: 2008-09-03 21:00+0000\n"
+"PO-Revision-Date: 2008-09-25 23:22+0200\n"
 "Last-Translator: Gabor Kelemen <kelemeng@gnome.hu>\n"
 "Language-Team: Hungarian <gnome@fsf.hu>\n"
 "MIME-Version: 1.0\n"
@@ -17,48 +17,48 @@ msgstr ""
 "X-Generator: KBabel 1.11.4\n"
 "Plural-Forms:  nplurals=2; plural=(n != 1);\n"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:144
+#: ../auth-dialog/gnome-two-password-dialog.c:145
 msgid "_Secondary Password:"
 msgstr "Jelszó _még egyszer:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:258
+#: ../auth-dialog/gnome-two-password-dialog.c:259
 msgid "_Username:"
 msgstr "_Felhasználónév:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:260
+#: ../auth-dialog/gnome-two-password-dialog.c:261
 msgid "_Domain:"
 msgstr "_Tartomány:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:262
+#: ../auth-dialog/gnome-two-password-dialog.c:263
 msgid "_Password:"
 msgstr "_Jelszó:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:351
+#: ../auth-dialog/gnome-two-password-dialog.c:352
 msgid "Connect _anonymously"
 msgstr "Kapcsolódás _névtelenül"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:356
+#: ../auth-dialog/gnome-two-password-dialog.c:357
 msgid "Connect as _user:"
 msgstr "Csatlakozás _mint:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:465
+#: ../auth-dialog/gnome-two-password-dialog.c:466
 msgid "_Remember passwords for this session"
 msgstr "_Jelszavak megjegyzése erre a munkamenetre"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:467
+#: ../auth-dialog/gnome-two-password-dialog.c:468
 msgid "_Save passwords in keyring"
 msgstr "Jelszavak mentése a k_ulcstartóra"
 
-#: ../auth-dialog/main.c:172
+#: ../auth-dialog/main.c:67
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Azonosítania kell magát a(z) „%s” virtuális magánhálózat eléréséhez."
 
-#: ../auth-dialog/main.c:173
+#: ../auth-dialog/main.c:68
 msgid "Authenticate VPN"
 msgstr "VPN azonosítás"
 
-#: ../auth-dialog/main.c:180
+#: ../auth-dialog/main.c:75
 msgid "_Group Password:"
 msgstr "_Csoportjelszó:"
 
@@ -70,66 +70,45 @@ msgstr "VPN kapcsolatok hozzáadása, szerkesztése és eltávolítása"
 msgid "VPN Connection Manager (vpnc)"
 msgstr "VPN kapcsolatkezelő (vpnc)"
 
-#: ../properties/nm-vpnc.c:98
-msgid "Compatible Cisco VPN client (vpnc)"
-msgstr "Kompatibilis Cisco VPN kliens (vpnc)"
+#: ../properties/nm-vpnc.c:53
+msgid "Cisco Compatible VPN (vpnc)"
+msgstr "Cisco-kompatibilis VPN kliens (vpnc)"
 
-#: ../properties/nm-vpnc.c:543
-msgid "The following vpnc VPN connection will be created:"
-msgstr "A következő vpnc VPN kapcsolat kerül létrehozásra:"
+#: ../properties/nm-vpnc.c:54
+msgid ""
+"Compatible with various Cisco, Juniper, Netscreen, and Sonicwall IPSec-based "
+"VPN gateways."
+msgstr "Kompatibilis számos Cisco, Juniper, Netscreen és Sonicwall IPSec-alapú VPN átjáróval."
 
-#: ../properties/nm-vpnc.c:545
-#, c-format
-msgid "Name:  %s"
-msgstr "Név: %s"
+#: ../properties/nm-vpnc.c:265
+msgid "Secure (default)"
+msgstr "Biztonságos (alapértelmezett)"
 
-#: ../properties/nm-vpnc.c:548
-#, c-format
-msgid "Gateway:  %s"
-msgstr "Átjáró: %s"
+#: ../properties/nm-vpnc.c:268
+msgid "Weak (use with caution)"
+msgstr "Gyenge (óvatosan használja)"
 
-#: ../properties/nm-vpnc.c:550
-#, c-format
-msgid "Group Name:  %s"
-msgstr "Csoportnév: %s"
+#: ../properties/nm-vpnc.c:276
+msgid "None (completely insecure)"
+msgstr "Nincs (nem biztonságos)"
 
-#: ../properties/nm-vpnc.c:554
-#, c-format
-msgid "Username:  %s"
-msgstr "Felhasználói név: %s"
+#: ../properties/nm-vpnc.c:314
+msgid "NAT-T (default)"
+msgstr "NAT-T (alapértelmezett)"
 
-#: ../properties/nm-vpnc.c:559
-#, c-format
-msgid "Domain:  %s"
-msgstr "Tartomány: %s"
+#: ../properties/nm-vpnc.c:321
+msgid "Cisco UDP"
+msgstr "Cisco UDP"
 
-#: ../properties/nm-vpnc.c:564
-#, c-format
-msgid "Routes:  %s"
-msgstr "Útvonalak: %s"
+#: ../properties/nm-vpnc.c:328
+msgid "Disabled"
+msgstr "Tiltva"
 
-#: ../properties/nm-vpnc.c:568
-#, c-format
-msgid "NAT-Keepalive packet interval:  %s"
-msgstr "NAT-kapcsolatfenntartási csomag időköze: %s"
-
-#: ../properties/nm-vpnc.c:572
-msgid "Enable Single DES"
-msgstr "Egyszeres DES engedélyezése"
-
-#: ../properties/nm-vpnc.c:576
-msgid "Disable NAT Traversal"
-msgstr "NAT bejárás letiltása"
-
-#: ../properties/nm-vpnc.c:580
-msgid "The connection details can be changed using the \"Edit\" button."
-msgstr "A kapcsolat paraméterei a „Szerkesztés” gombra kattintva módosíthatók."
-
-#: ../properties/nm-vpnc.c:665
+#: ../properties/nm-vpnc.c:724
 msgid "TCP tunneling not supported"
 msgstr "A TCP alagutazás nem támogatott"
 
-#: ../properties/nm-vpnc.c:667
+#: ../properties/nm-vpnc.c:726
 #, c-format
 msgid ""
 "The VPN settings file '%s' specifies that VPN traffic should be tunneled "
@@ -144,127 +123,55 @@ msgstr ""
 "A kapcsolat így is létrehozható letiltott TCP alagutazással, azonban "
 "lehetséges, hogy nem a várt módon fog működni."
 
-#: ../properties/nm-vpnc.c:687
-msgid "Settings import incomplete"
-msgstr "A beállítások importálása nem teljes"
-
-#: ../properties/nm-vpnc.c:689
-#, c-format
-msgid ""
-"The VPN settings file '%s' is incomplete. You may not be able to connect "
-"without providing further information."
-msgstr "A(z) „%s” VPN beállításfájl hiányos. További információk megadása nélkül lehet, hogy nem lesz képes kapcsolódni."
-
-#: ../properties/nm-vpnc.c:709
-msgid "Cannot import settings"
-msgstr "A beállítások nem importálhatók"
-
-#: ../properties/nm-vpnc.c:711
-#, c-format
-msgid "The VPN settings file '%s' could not be read or is invalid."
-msgstr "A(z) „%s” VPN beállításfájl nem olvasható vagy érvénytelen."
-
-#: ../properties/nm-vpnc.c:726
-msgid "Select file to import"
-msgstr "Válassza ki az importálandó fájlt"
-
-#: ../properties/nm-vpnc.c:908
-msgid "Save as..."
-msgstr "Mentés másként..."
-
-#: ../properties/nm-vpnc.c:937
-#, c-format
-msgid "A file named \"%s\" already exists."
-msgstr "A(z) „%s” nevű fájl már létezik."
-
-#: ../properties/nm-vpnc.c:940
-msgid "Do you want to replace it with the one you are saving?"
-msgstr "Le akarja cserélni azzal, amit épp menteni készül?"
-
-#: ../properties/nm-vpnc.c:954
-msgid "Failed to export configuration"
-msgstr "A beállítások exportálása meghiúsult"
-
-#: ../properties/nm-vpnc.c:956
-#, c-format
-msgid "Failed to save file %s"
-msgstr "A(z) %s fájl mentése nem sikerült"
-
 #: ../properties/nm-vpnc-dialog.glade.h:1
-msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
-msgstr "<i>például: 172.16.0.0/16 10.11.12.0/24</i>"
+msgid " "
+msgstr " "
 
 #: ../properties/nm-vpnc-dialog.glade.h:2
-msgid "Connection na_me:"
-msgstr "Kapcsolat ne_ve:"
+msgid "<b>General</b>"
+msgstr "<b>Általános</b>"
 
 #: ../properties/nm-vpnc-dialog.glade.h:3
-msgid "Disable NAT _traversal"
-msgstr "_NAT bejárás letiltása"
+msgid "<b>Optional</b>"
+msgstr "<b>Opcionális</b>"
 
 #: ../properties/nm-vpnc-dialog.glade.h:4
-msgid "Enable _weak single DES encryption"
-msgstr "Gyenge egyszeres _DES titkosítás engedélyezése"
+msgid "Disable Dead Peer Detection"
+msgstr "Halott partnerek felismerésének tiltása"
 
 #: ../properties/nm-vpnc-dialog.glade.h:5
+msgid "Domain:"
+msgstr "Tartomány:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:6
+msgid "Encryption method:"
+msgstr "Titkosítási mód:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:7
 msgid "G_roup name:"
 msgstr "Cso_portnév:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:6
-msgid "Import _Saved Configuration..."
-msgstr "Mentett beállítás _importálása..."
-
-#: ../properties/nm-vpnc-dialog.glade.h:7
-msgid "Interval:"
-msgstr "Időköz:"
-
 #: ../properties/nm-vpnc-dialog.glade.h:8
-msgid ""
-"Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
-msgstr "A magánhálózati kapcsolat azonosítására használt név, például „Egyetemi VPN” vagy „Vállalati hálózat”"
+msgid "Gro_up password:"
+msgstr "_Csoportjelszó:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:9
-msgid "Optional"
-msgstr "Elhagyható"
+msgid "NAT traversal:"
+msgstr "NAT bejárás:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:10
-msgid "Override _user name"
-msgstr "_Felhasználónév felülbírálása"
+msgid "Show passwords"
+msgstr "Jelszavak megjelenítése"
 
 #: ../properties/nm-vpnc-dialog.glade.h:11
-msgid ""
-"Please enter the information provided by your system administrator below. Do "
-"not enter your password here as you will be prompted when connecting."
-msgstr ""
-"Adja meg a rendszergazda által biztosított adatokat. A jelszó mezőt ne "
-"töltse ki, mivel jelszavát csak a kapcsolódás folyamán kell majd megadnia."
+msgid "User name:"
+msgstr "Felhasználónév:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:12
-msgid ""
-"Please note that the file you import is not a Cisco VPN or VPNC "
-"configuration file. Ask your adminstrator for the file."
-msgstr ""
-"Ne feledje, hogy az importálandó fájl nem egy Cisco VPN vagy VPNC "
-"konfigurációs fájl. Kérje le a rendszergazdától a fájlt."
-
-#: ../properties/nm-vpnc-dialog.glade.h:13
-msgid "Required"
-msgstr "Kötelező"
-
-#: ../properties/nm-vpnc-dialog.glade.h:14
-msgid "Use NAT _keepalive packets"
-msgstr "N_AT kapcsolatfenntartási csomagok használata"
-
-#: ../properties/nm-vpnc-dialog.glade.h:15
-msgid "Use _domain for authentication"
-msgstr "_Tartomány használata hitelesítéshez"
-
-#: ../properties/nm-vpnc-dialog.glade.h:16
 msgid "_Gateway:"
 msgstr "Á_tjáró:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:17
-msgid "_Only use VPN connection for these addresses"
-msgstr "_Csak ezekhez a címekhez használja a VPN kapcsolatot"
+#: ../properties/nm-vpnc-dialog.glade.h:13
+msgid "_User password:"
+msgstr "_Felhasználó jelszava:"
 
