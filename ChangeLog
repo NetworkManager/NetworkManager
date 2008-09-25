@@ -1,3 +1,44 @@
+2008-09-25  Dan Williams  <dcbw@redhat.com>
+
+	Fix bgo #549401 (inspired by patch from Alexander Sack)
+
+	* src/nm-device-ethernet.c
+		- (finish_supplicant_task): clean up scheduled tasks and free memory
+		- (remove_supplicant_interface_error_handler): remove the supplicant
+			error idle callback too
+		- (supplicant_interface_release): rename from supplicant_interface_clean
+			to match nm-device-wifi.c; clean up supplicant interface-related
+			state tasks when the supplicant interface is disposed of
+		- (schedule_state_handler): add scheduled tasks to a list so they can
+			be cleaned up later
+		- (supplicant_mgr_state_cb_handler, supplicant_iface_state_cb_handler,
+		   supplicant_iface_connection_state_cb_handler): use
+			finish_supplicant_task() to clean up each completed task
+		- (supplicant_iface_connection_error_cb_handler,
+		   supplicant_connection_timeout_cb): clear source id when the task is
+			complete
+		- (supplicant_iface_connection_error_cb): save scheduled task id for
+			later cleanup
+		- (nm_device_ethernet_dispose): clean up any pending supplicant state
+			tasks
+
+	* src/nm-device-wifi.c
+		- (finish_supplicant_task): clean up scheduled tasks and free memory
+		- (remove_supplicant_interface_error_handler): remove the supplicant
+			error idle callback too
+		- (supplicant_interface_release): clean up supplicant interface-related
+			state tasks when the supplicant interface is disposed of
+		- (schedule_state_handler): add scheduled tasks to a list so they can
+			be cleaned up later
+		- (supplicant_mgr_state_cb_handler, supplicant_iface_state_cb_handler,
+		   supplicant_iface_connection_state_cb_handler): use
+			finish_supplicant_task() to clean up each completed task
+		- (supplicant_iface_connection_error_cb_handler): clear source id when
+			the task is complete
+		- (supplicant_iface_connection_error_cb): save scheduled task id for
+			later cleanup
+		- (nm_device_wifi_dispose): clean up any pending supplicant state tasks
+
 2008-09-24  Tambet Ingo  <tambet@gmail.com>
 
 	* system-settings/plugins/keyfile/plugin.c: Implement unmanaged_devices

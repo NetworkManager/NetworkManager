@@ -18,7 +18,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2005 Red Hat, Inc.
+ * (C) Copyright 2005 - 2008 Red Hat, Inc.
  */
 
 #include <glib.h>
@@ -73,17 +73,30 @@ typedef enum
 #define NM_ETHERNET_ERROR (nm_ethernet_error_quark ())
 #define NM_TYPE_ETHERNET_ERROR (nm_ethernet_error_get_type ()) 
 
+typedef struct SupplicantStateTask {
+	NMDeviceEthernet *self;
+	guint32 new_state;
+	guint32 old_state;
+	gboolean mgr_task;
+	guint source_id;
+} SupplicantStateTask;
+
 typedef struct Supplicant {
 	NMSupplicantManager *mgr;
 	NMSupplicantInterface *iface;
 
 	/* signal handler ids */
-	guint                   mgr_state_id;
-	guint                   iface_error_id;
-	guint                   iface_state_id;
-	guint                   iface_con_state_id;
+	guint mgr_state_id;
+	guint iface_error_id;
+	guint iface_state_id;
+	guint iface_con_state_id;
 
-	guint                   con_timeout_id;
+	/* Timeouts and idles */
+	guint iface_con_error_cb_id;
+	guint con_timeout_id;
+
+	GSList *iface_tasks;
+	GSList *mgr_tasks;
 } Supplicant;
 
 typedef struct {
@@ -664,7 +677,31 @@ remove_supplicant_timeouts (NMDeviceEthernet *self)
 }
 
 static void
-remove_supplicant_interface_connection_error_handler (NMDeviceEthernet *self)
+finish_supplicant_task (SupplicantStateTask *task, gboolean remove_source)
+{
+	NMDeviceEthernet *self = task->self;
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+
+	/* idle/timeout handlers should pass FALSE for remove_source, since they
+	 * will tell glib to remove their source from the mainloop by returning
+	 * FALSE when they exit.  When called from this NMDevice's dispose handler,
+	 * remove_source should be TRUE to cancel all outstanding idle/timeout
+	 * handlers asynchronously.
+	 */
+	if (task->source_id && remove_source)
+		g_source_remove (task->source_id);
+
+	if (task->mgr_task)
+		priv->supplicant.mgr_tasks = g_slist_remove (priv->supplicant.mgr_tasks, task);
+	else
+		priv->supplicant.iface_tasks = g_slist_remove (priv->supplicant.iface_tasks, task);
+
+	memset (task, 0, sizeof (SupplicantStateTask));
+	g_slice_free (SupplicantStateTask, task);
+}
+
+static void
+remove_supplicant_interface_error_handler (NMDeviceEthernet *self)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
@@ -672,15 +709,24 @@ remove_supplicant_interface_connection_error_handler (NMDeviceEthernet *self)
 		g_signal_handler_disconnect (priv->supplicant.iface, priv->supplicant.iface_error_id);
 		priv->supplicant.iface_error_id = 0;
 	}
+
+	if (priv->supplicant.iface_con_error_cb_id > 0) {
+		g_source_remove (priv->supplicant.iface_con_error_cb_id);
+		priv->supplicant.iface_con_error_cb_id = 0;
+	}
 }
 
 static void
-supplicant_interface_clean (NMDeviceEthernet *self)
+supplicant_interface_release (NMDeviceEthernet *self)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
 	remove_supplicant_timeouts (self);
-	remove_supplicant_interface_connection_error_handler (self);
+	remove_supplicant_interface_error_handler (self);
+
+	/* Clean up all pending supplicant interface state idle tasks */
+	while (priv->supplicant.iface_tasks)
+		finish_supplicant_task ((SupplicantStateTask *) priv->supplicant.iface_tasks->data, TRUE);
 
 	if (priv->supplicant.iface_con_state_id) {
 		g_signal_handler_disconnect (priv->supplicant.iface, priv->supplicant.iface_con_state_id);
@@ -739,7 +785,7 @@ link_timeout_cb (gpointer user_data)
 
 	nm_info ("Activation (%s/wired): disconnected during authentication,"
 	         " asking for new key.", nm_device_get_iface (dev));
-	supplicant_interface_clean (self);
+	supplicant_interface_release (self);
 
 	nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
 	nm_act_request_request_connection_secrets (req, setting_name, TRUE,
@@ -754,42 +800,47 @@ time_out:
 	return FALSE;
 }
 
-struct state_cb_data {
-	NMDeviceEthernet *self;
-	guint32 new_state;
-	guint32 old_state;
-};
-
 static gboolean
 schedule_state_handler (NMDeviceEthernet *self,
                         GSourceFunc handler,
                         guint32 new_state,
-                        guint32 old_state)
+                        guint32 old_state,
+                        gboolean mgr_task)
 {
-	struct state_cb_data * cb_data;
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+	SupplicantStateTask *task;
 
 	if (new_state == old_state)
 		return TRUE;
 
-	cb_data = g_slice_new0 (struct state_cb_data);
-	cb_data->self = self;
-	cb_data->new_state = new_state;
-	cb_data->old_state = old_state;
+	task = g_slice_new0 (SupplicantStateTask);
+	if (!task) {
+		nm_warning ("Not enough memory to process supplicant manager state change.");
+		return FALSE;
+	}
 
-	g_idle_add (handler, cb_data);
+	task->self = self;
+	task->new_state = new_state;
+	task->old_state = old_state;
+	task->mgr_task = mgr_task;
 
+	task->source_id = g_idle_add (handler, task);
+	if (mgr_task)
+		priv->supplicant.mgr_tasks = g_slist_append (priv->supplicant.mgr_tasks, task);
+	else
+		priv->supplicant.iface_tasks = g_slist_append (priv->supplicant.iface_tasks, task);
 	return TRUE;
 }
 
 static gboolean
 supplicant_mgr_state_cb_handler (gpointer user_data)
 {
-	struct state_cb_data *info = (struct state_cb_data *) user_data;
-	NMDevice *device = NM_DEVICE (info->self);
+	SupplicantStateTask *task = (SupplicantStateTask *) user_data;
+	NMDevice *device = NM_DEVICE (task->self);
 
 	/* If the supplicant went away, release the supplicant interface */
-	if (info->new_state == NM_SUPPLICANT_MANAGER_STATE_DOWN) {
-		supplicant_interface_clean (info->self);
+	if (task->new_state == NM_SUPPLICANT_MANAGER_STATE_DOWN) {
+		supplicant_interface_release (task->self);
 
 		if (nm_device_get_state (device) > NM_DEVICE_STATE_UNAVAILABLE) {
 			nm_device_state_changed (device, NM_DEVICE_STATE_UNAVAILABLE,
@@ -797,8 +848,7 @@ supplicant_mgr_state_cb_handler (gpointer user_data)
 		}
 	}
 
-	g_slice_free (struct state_cb_data, info);
-
+	finish_supplicant_task (task, FALSE);
 	return FALSE;
 }
 
@@ -814,8 +864,10 @@ supplicant_mgr_state_cb (NMSupplicantInterface * iface,
 		    old_state);
 
 	schedule_state_handler (NM_DEVICE_ETHERNET (user_data),
-					    supplicant_mgr_state_cb_handler,
-					    new_state, old_state);
+	                        supplicant_mgr_state_cb_handler,
+	                        new_state,
+	                        old_state,
+	                        TRUE);
 }
 
 static NMSupplicantConfig *
@@ -848,17 +900,17 @@ build_supplicant_config (NMDeviceEthernet *self)
 static gboolean
 supplicant_iface_state_cb_handler (gpointer user_data)
 {
-	struct state_cb_data *info = (struct state_cb_data *) user_data;
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (info->self);
-	NMDevice *device = NM_DEVICE (info->self);
+	SupplicantStateTask *task = (SupplicantStateTask *) user_data;
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (task->self);
+	NMDevice *device = NM_DEVICE (task->self);
 
-	if (info->new_state == NM_SUPPLICANT_INTERFACE_STATE_READY) {
+	if (task->new_state == NM_SUPPLICANT_INTERFACE_STATE_READY) {
 		NMSupplicantConfig *config;
 		const char *iface;
 		gboolean success = FALSE;
 
 		iface = nm_device_get_iface (device);
-		config = build_supplicant_config (info->self);
+		config = build_supplicant_config (task->self);
 		if (config) {
 			success = nm_supplicant_interface_set_config (priv->supplicant.iface, config);
 			g_object_unref (config);
@@ -871,17 +923,16 @@ supplicant_iface_state_cb_handler (gpointer user_data)
 
 		if (!success)
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED);
-	} else if (info->new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
+	} else if (task->new_state == NM_SUPPLICANT_INTERFACE_STATE_DOWN) {
 		NMDeviceState state = nm_device_get_state (device);
 
-		supplicant_interface_clean (info->self);
+		supplicant_interface_release (task->self);
 
 		if (nm_device_is_activating (device) || state == NM_DEVICE_STATE_ACTIVATED)
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SUPPLICANT_FAILED);
 	}
 
-	g_slice_free (struct state_cb_data, info);
-
+	finish_supplicant_task (task, FALSE);
 	return FALSE;
 }
 
@@ -900,18 +951,19 @@ supplicant_iface_state_cb (NMSupplicantInterface * iface,
 	schedule_state_handler (NM_DEVICE_ETHERNET (user_data),
 	                        supplicant_iface_state_cb_handler,
 	                        new_state,
-	                        old_state);
+	                        old_state,
+	                        FALSE);
 }
 
 static gboolean
 supplicant_iface_connection_state_cb_handler (gpointer user_data)
 {
-	struct state_cb_data *info = (struct state_cb_data *) user_data;
-	NMDevice *dev = NM_DEVICE (info->self);
+	SupplicantStateTask *task = (SupplicantStateTask *) user_data;
+	NMDevice *dev = NM_DEVICE (task->self);
 
-	if (info->new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_COMPLETED) {
-		remove_supplicant_interface_connection_error_handler (info->self);
-		remove_supplicant_timeouts (info->self);
+	if (task->new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_COMPLETED) {
+		remove_supplicant_interface_error_handler (task->self);
+		remove_supplicant_timeouts (task->self);
 
 		/* If this is the initial association during device activation,
 		 * schedule the next activation stage.
@@ -921,9 +973,9 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 				    nm_device_get_iface (dev));
 			nm_device_activate_schedule_stage3_ip_config_start (dev);
 		}
-	} else if (info->new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED) {
+	} else if (task->new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED) {
 		if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED || nm_device_is_activating (dev)) {
-			NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (info->self);
+			NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (task->self);
 
 			/* Start the link timeout so we allow some time for reauthentication */
 			if (!priv->link_timeout_id)
@@ -931,8 +983,7 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 		}
 	}
 
-	g_slice_free (struct state_cb_data, info);
-
+	finish_supplicant_task (task, FALSE);
 	return FALSE;
 }
 
@@ -948,17 +999,20 @@ supplicant_iface_connection_state_cb (NMSupplicantInterface * iface,
 	schedule_state_handler (NM_DEVICE_ETHERNET (user_data),
 	                        supplicant_iface_connection_state_cb_handler,
 	                        new_state,
-	                        old_state);
+	                        old_state,
+	                        FALSE);
 }
 
 static gboolean
 supplicant_iface_connection_error_cb_handler (gpointer user_data)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (user_data);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
-	supplicant_interface_clean (self);
+	supplicant_interface_release (self);
 	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SUPPLICANT_CONFIG_FAILED);
 
+	priv->supplicant.iface_con_error_cb_id = 0;
 	return FALSE;
 }
 
@@ -968,12 +1022,18 @@ supplicant_iface_connection_error_cb (NMSupplicantInterface *iface,
                                       const char *message,
                                       gpointer user_data)
 {
-	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (user_data);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+	guint id;
 
 	nm_info ("Activation (%s/wired): association request to the supplicant failed: %s - %s",
-	         nm_device_get_iface (device), name, message);
+	         nm_device_get_iface (NM_DEVICE (self)), name, message);
 
-	g_idle_add (supplicant_iface_connection_error_cb_handler, device);
+	if (priv->supplicant.iface_con_error_cb_id)
+		g_source_remove (priv->supplicant.iface_con_error_cb_id);
+
+	id = g_idle_add (supplicant_iface_connection_error_cb_handler, self);
+	priv->supplicant.iface_con_error_cb_id = id;
 }
 
 static NMActStageReturn
@@ -1017,16 +1077,19 @@ static gboolean
 supplicant_connection_timeout_cb (gpointer user_data)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (user_data);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMDevice *device = NM_DEVICE (self);
 	NMActRequest *req;
 	const char *iface;
+
+	priv->supplicant.con_timeout_id = 0;
 
 	iface = nm_device_get_iface (device);
 
 	/* Authentication failed, encryption key is probably bad */
 	nm_info ("Activation (%s/wired): association took too long.", iface);
 
-	supplicant_interface_clean (self);
+	supplicant_interface_release (self);
 	req = nm_device_get_act_request (device);
 	g_assert (req);
 
@@ -1050,7 +1113,7 @@ supplicant_interface_init (NMDeviceEthernet *self)
 	priv->supplicant.iface = nm_supplicant_manager_get_iface (priv->supplicant.mgr, iface, FALSE);
 	if (!priv->supplicant.iface) {
 		nm_warning ("Couldn't initialize supplicant interface for %s.", iface);
-		supplicant_interface_clean (self);
+		supplicant_interface_release (self);
 
 		return FALSE;
 	}
@@ -1290,7 +1353,7 @@ real_deactivate_quickly (NMDevice *device)
 		priv->ppp_manager = NULL;
 	}
 
-	supplicant_interface_clean (NM_DEVICE_ETHERNET (device));
+	supplicant_interface_release (NM_DEVICE_ETHERNET (device));
 }
 
 static gboolean
@@ -1345,7 +1408,8 @@ real_check_connection_compatible (NMDevice *device,
 static void
 nm_device_ethernet_dispose (GObject *object)
 {
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (object);
+	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (object);
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMNetlinkMonitor *monitor;
 
 	if (priv->dispose_has_run) {
@@ -1354,6 +1418,12 @@ nm_device_ethernet_dispose (GObject *object)
 	}
 
 	priv->dispose_has_run = TRUE;
+
+	/* Clean up all pending supplicant tasks */
+	while (priv->supplicant.iface_tasks)
+		finish_supplicant_task ((SupplicantStateTask *) priv->supplicant.iface_tasks->data, TRUE);
+	while (priv->supplicant.mgr_tasks)
+		finish_supplicant_task ((SupplicantStateTask *) priv->supplicant.mgr_tasks->data, TRUE);
 
 	monitor = nm_netlink_monitor_get ();
 	if (priv->link_connected_id) {
