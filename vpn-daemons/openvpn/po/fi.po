@@ -1,6 +1,6 @@
 # Finnish messages for NetworkManager-openvpn.
-# Copyright (C) 2006 Ilkka Tuohela
-# Ilkka Tuohela <hile@iki.fi>, 2006.
+# Copyright (C) 2006-2008 Free Software Foundation.
+# Ilkka Tuohela <hile@iki.fi>, 2006-2008.
 #
 # Suomennos: http://gnome.fi/
 #
@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-09-14 15:10+0300\n"
-"PO-Revision-Date: 2008-08-14 08:30+0300\n"
+"POT-Creation-Date: 2008-09-25 06:10+0300\n"
+"PO-Revision-Date: 2008-09-25 06:00+0300\n"
 "Last-Translator: Ilkka Tuohela <hile@iki.fi>\n"
 "Language-Team: Finnish <gnome-fi-laatu@lists.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
@@ -49,76 +49,76 @@ msgstr "_Muista salasana istunnon ajan"
 msgid "_Save password in keyring"
 msgstr "_Tallenna salasana avainrenkaaseen"
 
-#: ../auth-dialog/main.c:210
+#: ../auth-dialog/main.c:127
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Yhteydenotto VPN-verkkoon \"%s\" vaatii kirjautumista."
 
-#: ../auth-dialog/main.c:211
+#: ../auth-dialog/main.c:128
 msgid "Authenticate VPN"
 msgstr "Todenna VPN-yhteyden avaus"
 
-#: ../auth-dialog/main.c:232
+#: ../auth-dialog/main.c:149
 msgid "Certificate pass_word:"
 msgstr "Varmenteen _salasana:"
 
-#: ../auth-dialog/main.c:246
+#: ../auth-dialog/main.c:163
 msgid "Certificate password:"
 msgstr "Varmennettu salasana:"
 
-#: ../properties/auth-helpers.c:69
+#: ../properties/auth-helpers.c:161
 msgid "Choose a Certificate Authority certificate..."
 msgstr "Valitse CA-varmenne..."
 
-#: ../properties/auth-helpers.c:88
+#: ../properties/auth-helpers.c:180
 msgid "Choose your personal certificate..."
 msgstr "Valitse oma varmenteesi..."
 
-#: ../properties/auth-helpers.c:106
+#: ../properties/auth-helpers.c:198
 msgid "Choose your private key..."
 msgstr "Valitse salainen avaimesi..."
 
-#: ../properties/auth-helpers.c:159
+#: ../properties/auth-helpers.c:251
 msgid "Choose an OpenVPN static key..."
 msgstr "Valitse OpenPVN:n staattinen avain..."
 
-#: ../properties/auth-helpers.c:183 ../properties/auth-helpers.c:862
+#: ../properties/auth-helpers.c:275 ../properties/auth-helpers.c:1002
 msgid "None"
 msgstr "Ei mitään"
 
-#: ../properties/auth-helpers.c:518
+#: ../properties/auth-helpers.c:660
 msgid "PEM certificates (*.pem, *.crt, *.key)"
 msgstr "PEM-varmenteet (*.pem, *.crt, *.key)"
 
-#: ../properties/auth-helpers.c:578
+#: ../properties/auth-helpers.c:720
 msgid "OpenVPN Static Keys (*.key)"
 msgstr "Pysyvät OpenVPN-avaimet (*.key)"
 
-#: ../properties/auth-helpers.c:689
+#: ../properties/auth-helpers.c:831
 msgid "Default"
 msgstr "Oletus"
 
-#: ../properties/nm-openvpn.c:52
+#: ../properties/nm-openvpn.c:53
 msgid "OpenVPN"
 msgstr "OpenVPN"
 
-#: ../properties/nm-openvpn.c:53
+#: ../properties/nm-openvpn.c:54
 msgid "Compatible with the OpenVPN server."
 msgstr "Yhteensopiva OpenVPN-palvelimen kanssa."
 
-#: ../properties/nm-openvpn.c:310 ../properties/nm-openvpn-dialog.glade.h:7
+#: ../properties/nm-openvpn.c:322 ../properties/nm-openvpn-dialog.glade.h:8
 msgid "Certificates (TLS)"
 msgstr "Varmenteet (TLS)"
 
-#: ../properties/nm-openvpn.c:322
+#: ../properties/nm-openvpn.c:336
 msgid "Password"
 msgstr "Salasana"
 
-#: ../properties/nm-openvpn.c:336
+#: ../properties/nm-openvpn.c:353
 msgid "Password with Certificates (TLS)"
 msgstr "Salasana varmenteiden kanssa (TLS)"
 
-#: ../properties/nm-openvpn.c:348
+#: ../properties/nm-openvpn.c:365
 msgid "Static Key"
 msgstr "Staattinen avain"
 
@@ -153,71 +153,87 @@ msgstr "_Lisäasetukset..."
 msgid "CA Certificate:"
 msgstr "CA-varmenne:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:8
+#: ../properties/nm-openvpn-dialog.glade.h:7
+msgid "Certificate Password:"
+msgstr "Varmenteen salasana:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:9
 msgid "Cipher:"
 msgstr "Salausmenetelmä:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:9
+#: ../properties/nm-openvpn-dialog.glade.h:10
 msgid "General"
 msgstr "Yleisasetukset"
 
-#: ../properties/nm-openvpn-dialog.glade.h:10
+#: ../properties/nm-openvpn-dialog.glade.h:11
 msgid "Key Direction:"
 msgstr "Avaimen suunta:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:11
+#: ../properties/nm-openvpn-dialog.glade.h:12
 msgid "Key File:"
 msgstr "Avaintiedosto:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:12
+#: ../properties/nm-openvpn-dialog.glade.h:13
 msgid "Local IP Address:"
 msgstr "Oma IP-osoite:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:13
+#: ../properties/nm-openvpn-dialog.glade.h:14
 msgid "OpenVPN Advanced Options"
 msgstr "OpenVPN-lisäasetukset"
 
-#: ../properties/nm-openvpn-dialog.glade.h:14
+#: ../properties/nm-openvpn-dialog.glade.h:15
+msgid "Password:"
+msgstr "Salasana:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:16
 msgid "Private Key:"
 msgstr "Salainen avain:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:15
+#: ../properties/nm-openvpn-dialog.glade.h:17
+msgid "Select A File"
+msgstr "Valitse tiedosto"
+
+#: ../properties/nm-openvpn-dialog.glade.h:18
+msgid "Show passwords"
+msgstr "Näytä salasanat"
+
+#: ../properties/nm-openvpn-dialog.glade.h:19
 msgid "Static Key:"
 msgstr "Kiinteä avain:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:16
+#: ../properties/nm-openvpn-dialog.glade.h:20
 msgid "Type:"
 msgstr "Tyyppi:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:17
+#: ../properties/nm-openvpn-dialog.glade.h:21
 msgid "Use L_ZO data compression"
 msgstr "Käytä L_ZO-pakkausta"
 
-#: ../properties/nm-openvpn-dialog.glade.h:18
+#: ../properties/nm-openvpn-dialog.glade.h:22
 msgid "Use a TA_P device"
 msgstr "Käytä TA_P-laitetta"
 
-#: ../properties/nm-openvpn-dialog.glade.h:19
+#: ../properties/nm-openvpn-dialog.glade.h:23
 msgid "Use a _TCP connection"
 msgstr "Käytä _TCP-yhteyttä"
 
-#: ../properties/nm-openvpn-dialog.glade.h:20
+#: ../properties/nm-openvpn-dialog.glade.h:24
 msgid "Use additional TLS authentication"
 msgstr "Käytä lisäksi TLS-tunnistatumista"
 
-#: ../properties/nm-openvpn-dialog.glade.h:21
+#: ../properties/nm-openvpn-dialog.glade.h:25
 msgid "Use custom gateway p_ort:"
 msgstr "Käytä _muuta yhdyskäytävän porttia:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:22
+#: ../properties/nm-openvpn-dialog.glade.h:26
 msgid "User Certificate:"
 msgstr "Käyttäjän varmenne:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:23
+#: ../properties/nm-openvpn-dialog.glade.h:27
 msgid "User name:"
 msgstr "Käyttäjätunnus:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:24
+#: ../properties/nm-openvpn-dialog.glade.h:28
 msgid "_Gateway:"
 msgstr "_Yhdyskäytävä:"
 
@@ -322,9 +338,6 @@ msgstr "_Yhdyskäytävä:"
 
 #~ msgid "Select file to import"
 #~ msgstr "Valitse tuotava tiedosto"
-
-#~ msgid "Select CA to use"
-#~ msgstr "Valitse käytettävä CA"
 
 #~ msgid "Select certificate to use"
 #~ msgstr "Valitse käytettävä varmenne"
