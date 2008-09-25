@@ -1,67 +1,67 @@
 # French translation of NetworkManager-vpnc.
-# Copyright (C) 2007 Free Software Foundation, Inc.
+# Copyright (C) 2007-2008 Free Software Foundation, Inc.
 # This file is distributed under the same license as the NetworkManager package.
 #
 # Jonathan Ernst <jonathan@ernstfamily.ch>, 2007.
-# Claude Paroz <claude@2xlibre.net>, 2007.
+# Claude Paroz <claude@2xlibre.net>, 2007-2008.
 # Robert-André Mauchin <zebob.m@pengzone.org>, 2007-2008.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-vpnc\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-08-17 20:46+0200\n"
-"PO-Revision-Date: 2008-08-13 11:15:43+0200\n"
-"Last-Translator: Robert-André Mauchin <zebob.m@pengzone.org>\n"
+"POT-Creation-Date: 2008-09-25 22:56+0200\n"
+"PO-Revision-Date: 2008-09-25 22:58+0200\n"
+"Last-Translator: Claude Paroz <claude@2xlibre.net>\n"
 "Language-Team: GNOME French Team <gnomefr@traduc.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=n>1;\n"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:144
+#: ../auth-dialog/gnome-two-password-dialog.c:145
 msgid "_Secondary Password:"
 msgstr "Mot de passe _secondaire :"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:258
+#: ../auth-dialog/gnome-two-password-dialog.c:259
 msgid "_Username:"
 msgstr "Nom d'_utilisateur :"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:260
+#: ../auth-dialog/gnome-two-password-dialog.c:261
 msgid "_Domain:"
 msgstr "_Domaine :"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:262
+#: ../auth-dialog/gnome-two-password-dialog.c:263
 msgid "_Password:"
 msgstr "Mot de _passe :"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:351
+#: ../auth-dialog/gnome-two-password-dialog.c:352
 msgid "Connect _anonymously"
 msgstr "Se connecter _anonymement"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:356
+#: ../auth-dialog/gnome-two-password-dialog.c:357
 msgid "Connect as _user:"
 msgstr "Se connecter en _tant que :"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:465
+#: ../auth-dialog/gnome-two-password-dialog.c:466
 msgid "_Remember passwords for this session"
 msgstr "_Conserver les mots de passe pour cette session"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:467
+#: ../auth-dialog/gnome-two-password-dialog.c:468
 msgid "_Save passwords in keyring"
 msgstr "_Enregistrer les mots de passe dans le trousseau"
 
-#: ../auth-dialog/main.c:181
+#: ../auth-dialog/main.c:66
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr ""
 "Vous devez vous authentifier pour accéder au réseau privé virtuel « %s »."
 
-#: ../auth-dialog/main.c:182
+#: ../auth-dialog/main.c:67
 msgid "Authenticate VPN"
 msgstr "Authentifier le VPN"
 
-#: ../auth-dialog/main.c:189
+#: ../auth-dialog/main.c:74
 msgid "_Group Password:"
 msgstr "Mot de passe du _groupe :"
 
@@ -73,11 +73,11 @@ msgstr "Ajoute, supprime et modifie des connexions VPN"
 msgid "VPN Connection Manager (vpnc)"
 msgstr "Gestionnaire de connexions VPN (vpnc)"
 
-#: ../properties/nm-vpnc.c:50
+#: ../properties/nm-vpnc.c:53
 msgid "Cisco Compatible VPN (vpnc)"
 msgstr "VPN compatible Cisco (vpnc)"
 
-#: ../properties/nm-vpnc.c:51
+#: ../properties/nm-vpnc.c:54
 msgid ""
 "Compatible with various Cisco, Juniper, Netscreen, and Sonicwall IPSec-based "
 "VPN gateways."
@@ -85,35 +85,35 @@ msgstr ""
 "Compatible avec de nombreuses passerelles VPN basées sur IPSec de Cisco, "
 "Juniper, Netscreen et Sonicwall."
 
-#: ../properties/nm-vpnc.c:203
+#: ../properties/nm-vpnc.c:282
 msgid "Secure (default)"
 msgstr "Sécurisé (par défaut)"
 
-#: ../properties/nm-vpnc.c:206
+#: ../properties/nm-vpnc.c:285
 msgid "Weak (use with caution)"
 msgstr "Faible (à utiliser avec précaution)"
 
-#: ../properties/nm-vpnc.c:214
+#: ../properties/nm-vpnc.c:293
 msgid "None (completely insecure)"
 msgstr "Aucun (complètement non sécurisé)"
 
-#: ../properties/nm-vpnc.c:254
+#: ../properties/nm-vpnc.c:331
 msgid "NAT-T (default)"
 msgstr "NAT-T (par défaut)"
 
-#: ../properties/nm-vpnc.c:261
+#: ../properties/nm-vpnc.c:338
 msgid "Cisco UDP"
 msgstr "UDP Cisco"
 
-#: ../properties/nm-vpnc.c:268
+#: ../properties/nm-vpnc.c:345
 msgid "Disabled"
 msgstr "Désactivé"
 
-#: ../properties/nm-vpnc.c:658
+#: ../properties/nm-vpnc.c:809
 msgid "TCP tunneling not supported"
 msgstr "Utilisation d'un tunnel TCP non pris en charge"
 
-#: ../properties/nm-vpnc.c:660
+#: ../properties/nm-vpnc.c:811
 #, c-format
 msgid ""
 "The VPN settings file '%s' specifies that VPN traffic should be tunneled "
@@ -150,21 +150,33 @@ msgid "Domain:"
 msgstr "Domaine :"
 
 #: ../properties/nm-vpnc-dialog.glade.h:6
-msgid "Encryption Method:"
+msgid "Encryption method:"
 msgstr "Méthode de chiffrement :"
 
 #: ../properties/nm-vpnc-dialog.glade.h:7
-msgid "G_roup Name:"
+msgid "G_roup name:"
 msgstr "Nom de g_roupe :"
 
 #: ../properties/nm-vpnc-dialog.glade.h:8
-msgid "NAT Traversal:"
-msgstr "Traversée du NAT :"
+msgid "Gro_up password:"
+msgstr "Mot de passe du _groupe :"
 
 #: ../properties/nm-vpnc-dialog.glade.h:9
+msgid "NAT traversal:"
+msgstr "Traversée du NAT :"
+
+#: ../properties/nm-vpnc-dialog.glade.h:10
+msgid "Show passwords"
+msgstr "Afficher les mots de passe"
+
+#: ../properties/nm-vpnc-dialog.glade.h:11
 msgid "User name:"
 msgstr "Nom d'utilisateur :"
 
-#: ../properties/nm-vpnc-dialog.glade.h:10
+#: ../properties/nm-vpnc-dialog.glade.h:12
 msgid "_Gateway:"
 msgstr "_Passerelle :"
+
+#: ../properties/nm-vpnc-dialog.glade.h:13
+msgid "_User password:"
+msgstr "Mot de passe _utilisateur :"
