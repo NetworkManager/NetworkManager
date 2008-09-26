@@ -282,7 +282,7 @@ nm_pptp_ppp_service_cache_credentials (NMPptpPppService *self,
 	}
 
 	domain = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_DOMAIN);
-	if (strlen (domain))
+	if (domain && strlen (domain))
 		memcpy (priv->domain, domain, strlen (domain));
 
 	memcpy (priv->username, username, strlen (username));
