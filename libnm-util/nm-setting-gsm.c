@@ -24,6 +24,7 @@
  */
 
 #include <string.h>
+#include <ctype.h>
 #include "nm-setting-gsm.h"
 #include "nm-setting-serial.h"
 #include "nm-utils.h"
@@ -147,6 +148,30 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
 		             NM_SETTING_GSM_USERNAME);
 		return FALSE;
+	}
+
+	if (self->network_id) {
+		guint32 nid_len = strlen (self->network_id);
+		guint32 i;
+
+		/* Accept both 5 and 6 digit MCC/MNC codes */
+		if ((nid_len < 5) || (nid_len > 6)) {
+			g_set_error (error,
+			             NM_SETTING_GSM_ERROR,
+			             NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
+			             NM_SETTING_GSM_NETWORK_ID);
+			return FALSE;
+		}
+
+		for (i = 0; i < nid_len; i++) {
+			if (!isdigit (self->network_id[i])) {
+				g_set_error (error,
+				             NM_SETTING_GSM_ERROR,
+				             NM_SETTING_GSM_ERROR_INVALID_PROPERTY,
+				             NM_SETTING_GSM_NETWORK_ID);
+				return FALSE;
+			}
+		}
 	}
 
 	return TRUE;
@@ -328,7 +353,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 		(object_class, PROP_NETWORK_ID,
 		 g_param_spec_string (NM_SETTING_GSM_NETWORK_ID,
 						  "Network ID",
-						  "Network ID",
+						  "Network ID (GSM LAI format)",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
