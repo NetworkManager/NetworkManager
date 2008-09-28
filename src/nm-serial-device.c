@@ -1,4 +1,4 @@
-/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
 #define _GNU_SOURCE  /* for strcasestr() */
 
@@ -363,7 +363,7 @@ config_fd (NMSerialDevice *device, NMSettingSerial *setting)
 
 gboolean
 nm_serial_device_open (NMSerialDevice *device,
-				   NMSettingSerial *setting)
+                       NMSettingSerial *setting)
 {
 	NMSerialDevicePrivate *priv;
 	const char *iface;
@@ -414,6 +414,12 @@ nm_serial_device_close (NMSerialDevice *device)
 	if (priv->pending_id)
 		g_source_remove (priv->pending_id);
 
+	if (priv->ppp_manager) {
+		nm_ppp_manager_stop (priv->ppp_manager);
+		g_object_unref (priv->ppp_manager);
+		priv->ppp_manager = NULL;
+	}
+
 	if (priv->fd) {
 		nm_debug ("Closing device '%s'", nm_device_get_iface (NM_DEVICE (device)));
 
@@ -433,32 +439,40 @@ nm_serial_device_send_command (NMSerialDevice *device, GByteArray *command)
 {
 	int fd;
 	NMSettingSerial *setting;
-	int i;
-	ssize_t status;
+	int i, eagain_count = 1000;
+	ssize_t written;
+	guint32 send_delay = G_USEC_PER_SEC / 1000;
 
 	g_return_val_if_fail (NM_IS_SERIAL_DEVICE (device), FALSE);
 	g_return_val_if_fail (command != NULL, FALSE);
 
 	fd = NM_SERIAL_DEVICE_GET_PRIVATE (device)->fd;
 	setting = NM_SETTING_SERIAL (serial_device_get_setting (device, NM_TYPE_SETTING_SERIAL));
+	if (setting && setting->send_delay)
+		send_delay = setting->send_delay;
 
 	serial_debug ("Sending:", (char *) command->data, command->len);
 
-	for (i = 0; i < command->len; i++) {
-	again:
-		status = write (fd, command->data + i, 1);
+	for (i = 0; i < command->len && eagain_count > 0;) {
+		written = write (fd, command->data + i, 1);
 
-		if (status < 0) {
-			if (errno == EAGAIN)
-				goto again;
-
-			g_warning ("Error in writing (errno %d)", errno);
-			return FALSE;
+		if (written > 0)
+			i += written;
+		else {
+			/* Treat written == 0 as EAGAIN to ensure we break out of the
+			 * for() loop eventually.
+			 */
+			if ((written < 0) && (errno != EAGAIN)) {
+				g_warning ("Error in writing (errno %d)", errno);
+				return FALSE;
+			}
+			eagain_count--;
 		}
-
-		if (setting->send_delay)
-			usleep (setting->send_delay);
+		g_usleep (send_delay);
 	}
+
+	if (eagain_count <= 0)
+		serial_debug ("Error: too many retries sending:", (char *) command->data, command->len);
 
 	return TRUE;
 }
@@ -482,152 +496,8 @@ nm_serial_device_send_command_string (NMSerialDevice *device, const char *str)
 	return ret;
 }
 
-typedef struct {
-	NMSerialDevice *device;
-	char *terminators;
-	GString *result;
-	NMSerialGetReplyFn callback;
-	gpointer user_data;
-} GetReplyInfo;
-
-static void
-get_reply_done (gpointer data)
-{
-	GetReplyInfo *info = (GetReplyInfo *) data;
-
-	nm_serial_device_pending_done (info->device);
-
-	/* Call the callback */
-	info->callback (info->device, info->result->str, info->user_data);
-
-	/* Free info */
-	g_free (info->terminators);
-	g_string_free (info->result, TRUE);
-
-	g_slice_free (GetReplyInfo, info);
-}
-
 static gboolean
-get_reply_got_data (GIOChannel *source,
-				GIOCondition condition,
-				gpointer data)
-{
-	GetReplyInfo *info = (GetReplyInfo *) data;
-	gsize bytes_read;
-	char buf[SERIAL_BUF_SIZE + 1];
-	GIOStatus status;
-	gboolean done = FALSE;
-	int i;
-
-	if (condition & G_IO_HUP || condition & G_IO_ERR) {
-		g_string_truncate (info->result, 0);
-		return FALSE;
-	}
-
-	do {
-		GError *err = NULL;
-
-		status = g_io_channel_read_chars (source, buf, SERIAL_BUF_SIZE, &bytes_read, &err);
-		if (status == G_IO_STATUS_ERROR) {
-			g_warning ("%s", err->message);
-			g_error_free (err);
-			err = NULL;
-		}
-
-		if (bytes_read > 0) {
-			char *p;
-
-			serial_debug ("Got:", buf, bytes_read);
-
-			p = &buf[0];
-			for (i = 0; i < bytes_read && !done; i++, p++) {
-				int j;
-				gboolean is_terminator = FALSE;
-
-				for (j = 0; j < strlen (info->terminators); j++) {
-					if (*p == info->terminators[j]) {
-						is_terminator = TRUE;
-						break;
-					}
-				}
-
-				if (is_terminator) {
-					/* Ignore terminators in the beginning of the output */
-					if (info->result->len > 0)
-						done = TRUE;
-				} else
-					g_string_append_c (info->result, *p);
-			}
-		}
-
-		/* Limit the size of the buffer */
-		if (info->result->len > SERIAL_BUF_SIZE) {
-			g_warning ("%s (%s): response buffer filled before repsonse received",
-			           __func__, nm_device_get_iface (NM_DEVICE (info->device)));
-			g_string_truncate (info->result, 0);
-			done = TRUE;
-		}
-	} while (!done || bytes_read == SERIAL_BUF_SIZE || status == G_IO_STATUS_AGAIN);
-
-	return !done;
-}
-
-guint
-nm_serial_device_get_reply (NMSerialDevice *device,
-					   guint timeout,
-					   const char *terminators,
-					   NMSerialGetReplyFn callback,
-					   gpointer user_data)
-{
-	GetReplyInfo *info;
-
-	g_return_val_if_fail (NM_IS_SERIAL_DEVICE (device), 0);
-	g_return_val_if_fail (terminators != NULL, 0);
-	g_return_val_if_fail (callback != NULL, 0);
-
-	info = g_slice_new0 (GetReplyInfo);
-	info->device = device;
-	info->terminators = g_strdup (terminators);
-	info->result = g_string_new (NULL);
-	info->callback = callback;
-	info->user_data = user_data;
-
-	return nm_serial_device_set_pending (device, timeout, get_reply_got_data, info, get_reply_done);
-}
-
-typedef struct {
-	NMSerialDevice *device;
-	char **str_needles;
-	char **terminators;
-	GString *result;
-	NMSerialWaitForReplyFn callback;
-	gpointer user_data;
-	int reply_index;
-	guint timeout;
-	time_t start;
-} WaitForReplyInfo;
-
-static void
-wait_for_reply_done (gpointer data)
-{
-	WaitForReplyInfo *info = (WaitForReplyInfo *) data;
-
-	nm_serial_device_pending_done (info->device);
-
-	/* Call the callback */
-	info->callback (info->device, info->reply_index, info->user_data);
-
-	/* Free info */
-	if (info->result)
-		g_string_free (info->result, TRUE);
-
-	g_strfreev (info->str_needles);
-	g_strfreev (info->terminators);
-	g_slice_free (WaitForReplyInfo, info);
-}
-
-static gboolean
-find_terminator (const char *line, char **terminators)
+find_terminator (const char *line, const char **terminators)
 {
 	int i;
 
@@ -638,8 +508,8 @@ find_terminator (const char *line, char **terminators)
 	return FALSE;
 }
 
-static gboolean
-find_response (const char *line, char **responses, gint *idx)
+static const char *
+find_response (const char *line, const char **responses, gint *idx)
 {
 	int i;
 
@@ -647,13 +517,134 @@ find_response (const char *line, char **responses, gint *idx)
 	for (i = 0; responses[i]; i++) {
 		if (strcasestr (line, responses[i])) {
 			*idx = i;
-			return TRUE;
+			return line;
 		}
 	}
-	return FALSE;
+	return NULL;
 }
 
 #define RESPONSE_LINE_MAX 128
+
+int
+nm_serial_device_wait_reply_blocking (NMSerialDevice *device,
+                                      guint32 timeout_secs,
+                                      const char **needles,
+                                      const char **terminators)
+{
+	char buf[SERIAL_BUF_SIZE + 1];
+	int fd, reply_index = -1, bytes_read;
+	GString *result = NULL;
+	time_t end;
+	const char *response = NULL;
+	gboolean done = FALSE;
+
+	g_return_val_if_fail (NM_IS_SERIAL_DEVICE (device), -1);
+	g_return_val_if_fail (timeout_secs <= 60, -1);
+	g_return_val_if_fail (needles != NULL, -1);
+
+	fd = NM_SERIAL_DEVICE_GET_PRIVATE (device)->fd;
+	if (fd < 0)
+		return -1;
+
+	end = time (NULL) + timeout_secs;
+	result = g_string_sized_new (20);
+	do {
+		bytes_read = read (fd, buf, SERIAL_BUF_SIZE);
+		if (bytes_read < 0 && errno != EAGAIN) {
+			nm_warning ("%s: read error: %d (%s)",
+			            nm_device_get_iface (NM_DEVICE (device)),
+			            errno,
+			            strerror (errno));
+			return -1;
+		}
+
+		if (bytes_read == 0)
+			break; /* EOF */
+		else if (bytes_read > 0) {
+			buf[bytes_read] = 0;
+			g_string_append (result, buf);
+
+			serial_debug ("Got:", result->str, result->len);
+		}
+
+		/* Look for needles and terminators */
+		if ((bytes_read > 0) && result->str) {
+			char *p = result->str;
+
+			/* Break the response up into lines and process each one */
+			while ((p < result->str + strlen (result->str)) && !done) {
+				char line[RESPONSE_LINE_MAX] = { '\0', };
+				char *tmp;
+				int i;
+				gboolean got_something = FALSE;
+
+				for (i = 0; *p && (i < RESPONSE_LINE_MAX - 1); p++) {
+					/* Ignore front CR/LF */
+					if ((*p == '\n') || (*p == '\r')) {
+						if (got_something)
+							break;
+					} else {
+						line[i++] = *p;
+						got_something = TRUE;
+					}
+				}
+				line[i] = '\0';
+
+				tmp = g_strstrip (line);
+				if (tmp && strlen (tmp)) {
+					done = find_terminator (tmp, terminators);
+					if (reply_index == -1)
+						response = find_response (tmp, needles, &reply_index);
+				}
+			}
+		}
+
+		/* Limit the size of the buffer */
+		if (result->len > SERIAL_BUF_SIZE) {
+			g_warning ("%s (%s): response buffer filled before repsonse received",
+			           __func__, nm_device_get_iface (NM_DEVICE (device)));
+			break;
+		}
+
+		if (!done)
+			g_usleep (100);
+	} while (!done && (time (NULL) < end));
+
+	return reply_index;
+}
+
+typedef struct {
+	NMSerialDevice *device;
+	char **str_needles;
+	char **terminators;
+	GString *result;
+	NMSerialWaitForReplyFn callback;
+	gpointer user_data;
+	int reply_index;
+	char *reply_line;
+	time_t end;
+} WaitForReplyInfo;
+
+static void
+wait_for_reply_done (gpointer data)
+{
+	WaitForReplyInfo *info = (WaitForReplyInfo *) data;
+
+	nm_serial_device_pending_done (info->device);
+
+	/* Call the callback */
+	info->callback (info->device, info->reply_index, info->reply_line, info->user_data);
+
+	/* Free info */
+	if (info->result)
+		g_string_free (info->result, TRUE);
+
+	g_free (info->reply_line);
+
+	g_strfreev (info->str_needles);
+	g_strfreev (info->terminators);
+	g_slice_free (WaitForReplyInfo, info);
+}
 
 static gboolean
 wait_for_reply_got_data (GIOChannel *source,
@@ -664,7 +655,6 @@ wait_for_reply_got_data (GIOChannel *source,
 	gchar buf[SERIAL_BUF_SIZE + 1];
 	gsize bytes_read;
 	GIOStatus status;
-	gboolean got_response = FALSE;
 	gboolean done = FALSE;
 
 	if (condition & G_IO_HUP || condition & G_IO_ERR)
@@ -692,8 +682,7 @@ wait_for_reply_got_data (GIOChannel *source,
 			char *p = info->result->str;
 
 			/* Break the response up into lines and process each one */
-			while (   (p < info->result->str + strlen (info->result->str))
-			       && !(done && got_response)) {
+			while ((p < info->result->str + strlen (info->result->str)) && !done) {
 				char line[RESPONSE_LINE_MAX] = { '\0', };
 				char *tmp;
 				int i;
@@ -713,20 +702,19 @@ wait_for_reply_got_data (GIOChannel *source,
 
 				tmp = g_strstrip (line);
 				if (tmp && strlen (tmp)) {
-					done = find_terminator (tmp, info->terminators);
-					if (info->reply_index == -1)
-						got_response = find_response (tmp, info->str_needles, &(info->reply_index));
+					done = find_terminator (tmp, (const char **) info->terminators);
+					if (info->reply_index == -1) {
+						if (find_response (tmp, (const char **) info->str_needles, &(info->reply_index)))
+							info->reply_line = g_strdup (tmp);
+					}
 				}
 			}
-
-			if (done && got_response)
-				break;
 		}
 
 		/* Limit the size of the buffer */
 		if (info->result->len > SERIAL_BUF_SIZE) {
-			g_warning ("%s (%s): response buffer filled before repsonse received",
-			           __func__, nm_device_get_iface (NM_DEVICE (info->device)));
+			nm_warning ("(%s): response buffer filled before repsonse received",
+			            nm_device_get_iface (NM_DEVICE (info->device)));
 			done = TRUE;
 			break;
 		}
@@ -736,10 +724,10 @@ wait_for_reply_got_data (GIOChannel *source,
 		 * terminate (terminator not found, whatever) then this should make
 		 * sure that NM doesn't spin the CPU forever.
 		 */
-		if (time (NULL) - info->start > info->timeout + 1) {
+		if (time (NULL) > info->end) {
 			done = TRUE;
 			break;
-		} else
+		} else if (!done)
 			g_usleep (50);
 	} while (!done || bytes_read == SERIAL_BUF_SIZE || status == G_IO_STATUS_AGAIN);
 
@@ -748,11 +736,11 @@ wait_for_reply_got_data (GIOChannel *source,
 
 guint
 nm_serial_device_wait_for_reply (NMSerialDevice *device,
-						   guint timeout,
-						   char **responses,
-						   char **terminators,
-						   NMSerialWaitForReplyFn callback,
-						   gpointer user_data)
+                                 guint timeout,
+                                 const char **responses,
+                                 const char **terminators,
+                                 NMSerialWaitForReplyFn callback,
+                                 gpointer user_data)
 {
 	WaitForReplyInfo *info;
 
@@ -762,14 +750,13 @@ nm_serial_device_wait_for_reply (NMSerialDevice *device,
 
 	info = g_slice_new0 (WaitForReplyInfo);
 	info->device = device;
-	info->str_needles = g_strdupv (responses);
-	info->terminators = g_strdupv (terminators);
+	info->str_needles = g_strdupv ((char **) responses);
+	info->terminators = g_strdupv ((char **) terminators);
 	info->result = g_string_new (NULL);
 	info->callback = callback;
 	info->user_data = user_data;
 	info->reply_index = -1;
-	info->timeout = timeout;
-	info->start = time (NULL);
+	info->end = time (NULL) + timeout;
 
 	return nm_serial_device_set_pending (device, timeout, wait_for_reply_got_data, info, wait_for_reply_done);
 }
@@ -1074,12 +1061,11 @@ real_act_stage4_get_ip4_config (NMDevice *device,
 }
 
 static void
-real_deactivate_quickly (NMDevice *device)
+cleanup_device (NMSerialDevice *device)
 {
-	NMSerialDevice *self = NM_SERIAL_DEVICE (device);
 	NMSerialDevicePrivate *priv = NM_SERIAL_DEVICE_GET_PRIVATE (device);
 
-	nm_device_set_ip_iface (device, NULL);
+	nm_device_set_ip_iface (NM_DEVICE (device), NULL);
 
 	if (priv->pending_ip4_config) {
 		g_object_unref (priv->pending_ip4_config);
@@ -1087,12 +1073,14 @@ real_deactivate_quickly (NMDevice *device)
 	}
 
 	priv->in_bytes = priv->out_bytes = 0;
+}
 
-	if (priv->ppp_manager) {
-		g_object_unref (priv->ppp_manager);
-		priv->ppp_manager = NULL;
-	}
+static void
+real_deactivate_quickly (NMDevice *device)
+{
+	NMSerialDevice *self = NM_SERIAL_DEVICE (device);
 
+	cleanup_device (self);
 	nm_serial_device_close (self);
 }
 
@@ -1114,6 +1102,7 @@ finalize (GObject *object)
 {
 	NMSerialDevice *self = NM_SERIAL_DEVICE (object);
 
+	cleanup_device (self);
 	nm_serial_device_close (self);
 
 	G_OBJECT_CLASS (nm_serial_device_parent_class)->finalize (object);

@@ -1,3 +1,58 @@
+2008-09-28  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-serial-device.c
+	  src/nm-serial-device.h
+		- (nm_serial_device_close): stop PPP manager here so that PPP gets
+			cleaned at the right times when subclasses close the serial port too
+		- (nm_serial_device_send_command): use a default send delay; don't
+			spin forever on EAGAIN
+		- (get_reply_done, get_reply_got_data, nm_serial_device_get_reply):
+			remove, no longer used
+		- (find_response): return the matched response if any
+		- (nm_serial_device_wait_reply_blocking): wait for a reply but block
+			while doing so
+		- (wait_for_reply_done): pass the matched response to the callback
+		- (wait_for_reply_got_data): save the matched response; simplify timeout
+			handling
+		- (nm_serial_device_wait_for_reply): make 'responses' and 'terminators'
+			const since they never get modified
+		- (cleanup_device): split out common cleanup stuff to a new function
+		- (real_deactivate_quickly, finalize): use cleanup_device()
+
+	* src/nm-gsm-device.c
+		- (modem_get_reply): remove, unused
+		- (set_apn): give the card a bit more time to respond
+		- (manual_registration_again, schedule_manual_registration_again,
+		   manual_registration_response, manual_registration): handle manual
+			registration timeouts better by retrying registration a few times
+			because cards are a bit slow after CFUN=1
+		- (automatic_registration_get_network, get_network_response): use
+			modem_wait_for_reply() because it interacts better with the serial
+			buffer and does more intelligent matching; need to wait for 'OK'
+			rather than just matching terminators
+		- (schedule_automatic_registration_again,
+		   automatic_registration_response, automatic_registration): retry
+			registration a few times on timeout or "searching" because cards
+			take a bit to find a network after being powered up with CFUN=1
+		- (power_up_response, power_up, init_full_done, enter_pin,
+		   check_pin_done): power up the card with CFUN=1 before trying to
+			register with the network
+		- (init_modem_full, init_modem): use more standard 3G init strings
+
+	* src/nm-hso-gsm-device.c
+		- (modem_get_reply): remove, unused
+		- (hso_ip4_config_response, real_act_stage3_ip_config_start): use
+			modem_wait_for_reply() to match actual responses instead of single
+			termination characters; it doesn't leave stuff in the serial buffer
+			that might confuse later calls
+		- (real_deactivate_quickly): use nm_serial_device_wait_reply_blocking()
+			to ensure that the call is really disconnected and not leave extra
+			stuff in the serial buffer
+
+	* src/nm-cdma-device.c
+		- (power_up_response, power_up, init_done): try Sierra-style modem
+			power up before attempting to connect
+
 2008-09-27  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/nm-setting-gsm.c

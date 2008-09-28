@@ -28,6 +28,8 @@ typedef struct {
 	NMGsmSecret need_secret;
 	guint pending_id;
 	guint state_to_disconnected_id;
+
+	guint reg_tries;
 } NMGsmDevicePrivate;
 
 enum {
@@ -46,6 +48,7 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 static void enter_pin (NMGsmDevice *device, gboolean retry);
+static void manual_registration (NMGsmDevice *device);
 static void automatic_registration (NMGsmDevice *device);
 
 NMGsmDevice *
@@ -70,35 +73,18 @@ nm_gsm_device_new (const char *udi,
 
 static void
 modem_wait_for_reply (NMGsmDevice *self,
-				  const char *command,
-				  guint timeout,
-				  char **responses,
-				  char **terminators,
-				  NMSerialWaitForReplyFn callback,
-				  gpointer user_data)
+                      const char *command,
+                      guint timeout,
+                      const char **responses,
+                      const char **terminators,
+                      NMSerialWaitForReplyFn callback,
+                      gpointer user_data)
 {
 	NMSerialDevice *serial = NM_SERIAL_DEVICE (self);
 	guint id = 0;
 
 	if (nm_serial_device_send_command_string (serial, command))
 		id = nm_serial_device_wait_for_reply (serial, timeout, responses, terminators, callback, user_data);
-
-	if (id == 0)
-		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_UNKNOWN);
-}
-
-static void
-modem_get_reply (NMGsmDevice *self,
-			  const char *command,
-			  guint timeout,
-			  const char *terminators,
-			  NMSerialGetReplyFn callback)
-{
-	NMSerialDevice *serial = NM_SERIAL_DEVICE (self);
-	guint id = 0;
-
-	if (nm_serial_device_send_command_string (serial, command))
-		id = nm_serial_device_get_reply (serial, timeout, terminators, callback, NULL);
 
 	if (id == 0)
 		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_UNKNOWN);
@@ -124,8 +110,9 @@ gsm_device_get_setting (NMGsmDevice *device, GType setting_type)
 
 static void
 dial_done (NMSerialDevice *device,
-		 int reply_index,
-		 gpointer user_data)
+           int reply_index,
+           const char *reply,
+           gpointer user_data)
 {
 	gboolean success = FALSE;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_UNKNOWN;
@@ -168,7 +155,7 @@ real_do_dial (NMGsmDevice *device, guint cid)
 {
 	NMSettingGsm *setting;
 	char *command;
-	char *responses[] = { "CONNECT", "BUSY", "NO DIAL TONE", "NO CARRIER", NULL };
+	const char *responses[] = { "CONNECT", "BUSY", "NO DIAL TONE", "NO CARRIER", NULL };
 
 	setting = NM_SETTING_GSM (gsm_device_get_setting (NM_GSM_DEVICE (device), NM_TYPE_SETTING_GSM));
 
@@ -192,8 +179,9 @@ real_do_dial (NMGsmDevice *device, guint cid)
 
 static void
 set_apn_done (NMSerialDevice *device,
-		    int reply_index,
-		    gpointer user_data)
+              int reply_index,
+              const char *reply,
+              gpointer user_data)
 {
 	switch (reply_index) {
 	case 0:
@@ -211,10 +199,13 @@ set_apn_done (NMSerialDevice *device,
 static void
 set_apn (NMGsmDevice *device)
 {
+	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
 	NMSettingGsm *setting;
 	char *command;
-	char *responses[] = { "OK", "ERROR", NULL };
+	const char *responses[] = { "OK", "ERROR", NULL };
 	guint cid = 1;
+
+	priv->reg_tries = 0;
 
 	setting = NM_SETTING_GSM (gsm_device_get_setting (NM_GSM_DEVICE (device), NM_TYPE_SETTING_GSM));
 	if (!setting->apn) {
@@ -224,24 +215,54 @@ set_apn (NMGsmDevice *device)
 	}
 
 	command = g_strdup_printf ("AT+CGDCONT=%d, \"IP\", \"%s\"", cid, setting->apn);
-	modem_wait_for_reply (device, command, 3, responses, responses, set_apn_done, GUINT_TO_POINTER (cid));
+	modem_wait_for_reply (device, command, 7, responses, responses, set_apn_done, GUINT_TO_POINTER (cid));
 	g_free (command);
 }
 
-static void
-manual_registration_done (NMSerialDevice *device,
-					 int reply_index,
-					 gpointer user_data)
+static gboolean
+manual_registration_again (gpointer data)
 {
+	manual_registration (NM_GSM_DEVICE (data));
+	return FALSE;
+}
+
+static void
+schedule_manual_registration_again (NMGsmDevice *self)
+{
+	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->pending_id)
+		g_source_remove (priv->pending_id);
+
+	priv->pending_id = g_idle_add (manual_registration_again, self);
+}
+
+static void
+manual_registration_response (NMSerialDevice *device,
+                              int reply_index,
+                              const char *reply,
+                              gpointer user_data)
+{
+	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
+
 	switch (reply_index) {
 	case 0:
 		set_apn (NM_GSM_DEVICE (device));
 		break;
 	case -1:
-		nm_warning ("Manual registration timed out");
-		nm_device_state_changed (NM_DEVICE (device),
-		                         NM_DEVICE_STATE_FAILED,
-		                         NM_DEVICE_STATE_REASON_GSM_REGISTRATION_TIMEOUT);
+		/* Some cards (ex. Sierra AC860) don't immediately respond to commands
+		 * after they are powered up with CFUN=1, but take a few seconds to come
+		 * back to life.  So try registration a few times.
+		 */
+		if (priv->reg_tries++ < 6) {
+			schedule_manual_registration_again (NM_GSM_DEVICE (device));
+		} else {
+			nm_warning ("Manual registration timed out");
+			priv->reg_tries = 0;
+			nm_device_state_changed (NM_DEVICE (device),
+			                         NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_GSM_REGISTRATION_TIMEOUT);
+		}
 		break;
 	default:
 		nm_warning ("Manual registration failed");
@@ -257,24 +278,29 @@ manual_registration (NMGsmDevice *device)
 {
 	NMSettingGsm *setting;
 	char *command;
-	char *responses[] = { "OK", "ERROR", "ERR", NULL };
+	const char *responses[] = { "OK", "ERROR", "ERR", NULL };
 
 	setting = NM_SETTING_GSM (gsm_device_get_setting (device, NM_TYPE_SETTING_GSM));
 
 	command = g_strdup_printf ("AT+COPS=1,2,\"%s\"", setting->network_id);
-	modem_wait_for_reply (device, command, 30, responses, responses, manual_registration_done, NULL);
+	modem_wait_for_reply (device, command, 15, responses, responses, manual_registration_response, NULL);
 	g_free (command);
 }
 
 static void
-get_network_done (NMSerialDevice *device,
-			   const char *response,
-			   gpointer user_data)
+get_network_response (NMSerialDevice *device,
+                      int reply_index,
+                      const char *reply,
+                      gpointer user_data)
 {
-	if (response)
-		nm_info ("Associated with network: %s", response);
-	else
+	switch (reply_index) {
+	case 0:
+		nm_info ("Associated with network: %s", reply);
+		break;
+	default:
 		nm_warning ("Couldn't read active network name");
+		break;
+	}
 
 	set_apn (NM_GSM_DEVICE (device));
 }
@@ -282,9 +308,10 @@ get_network_done (NMSerialDevice *device,
 static void
 automatic_registration_get_network (NMGsmDevice *device)
 {
-	const char terminators[] = { '\r', '\n', '\0' };
+	const char *responses[] = { "+COPS: ", NULL };
+	const char *terminators[] = { "OK", "ERROR", "ERR", NULL };
 
-	modem_get_reply (device, "AT+COPS?", 10, terminators, get_network_done);
+	modem_wait_for_reply (device, "AT+COPS?", 10, responses, terminators, get_network_response, NULL);
 }
 
 static gboolean
@@ -295,23 +322,49 @@ automatic_registration_again (gpointer data)
 }
 
 static void
-automatic_registration_response (NMSerialDevice *device,
-						   int reply_index,
-						   gpointer user_data)
+schedule_automatic_registration_again (NMGsmDevice *self)
 {
+	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->pending_id)
+		g_source_remove (priv->pending_id);
+
+	priv->pending_id = g_idle_add (automatic_registration_again, self);
+}
+
+static void
+automatic_registration_response (NMSerialDevice *device,
+                                 int reply_index,
+                                 const char *reply,
+                                 gpointer user_data)
+{
+	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
+
 	switch (reply_index) {
 	case 0:
-		nm_warning ("Automatic registration failed: not registered and not searching.");
-		nm_device_state_changed (NM_DEVICE (device),
-		                         NM_DEVICE_STATE_FAILED,
-		                         NM_DEVICE_STATE_REASON_GSM_REGISTRATION_NOT_SEARCHING);
+		/* Try autoregistration a few times here because the card is actually
+		 * responding to the query and thus we aren't waiting as long for
+		 * each CREG request.  Some cards (ex. Option iCON 225) return OK
+		 * immediately from CFUN, but take a bit to start searching for a network.
+		 */
+		if (priv->reg_tries++ < 15) {
+			/* Can happen a few times while the modem is powering up */
+			schedule_automatic_registration_again (NM_GSM_DEVICE (device));
+		} else {
+			priv->reg_tries = 0;
+			nm_warning ("Automatic registration failed: not registered and not searching.");
+			nm_device_state_changed (NM_DEVICE (device),
+			                         NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_GSM_REGISTRATION_NOT_SEARCHING);
+		}
 		break;
 	case 1:
 		nm_info ("Registered on Home network");
 		automatic_registration_get_network (NM_GSM_DEVICE (device));
 		break;
 	case 2:
-		NM_GSM_DEVICE_GET_PRIVATE (device)->pending_id = g_timeout_add (1000, automatic_registration_again, device);
+		nm_info ("Searching for a network...");
+		schedule_automatic_registration_again (NM_GSM_DEVICE (device));
 		break;
 	case 3:
 		nm_warning ("Automatic registration failed: registration denied.");
@@ -324,10 +377,19 @@ automatic_registration_response (NMSerialDevice *device,
 		automatic_registration_get_network (NM_GSM_DEVICE (device));
 		break;
 	case -1:
+		/* Some cards (ex. Sierra AC860) don't immediately respond to commands
+		 * after they are powered up with CFUN=1, but take a few seconds to come
+		 * back to life.  So try registration a few times.
+		 */
 		nm_warning ("Automatic registration timed out");
-		nm_device_state_changed (NM_DEVICE (device),
-		                         NM_DEVICE_STATE_FAILED,
-		                         NM_DEVICE_STATE_REASON_GSM_REGISTRATION_TIMEOUT);
+		if (priv->reg_tries++ < 6) {
+			schedule_automatic_registration_again (NM_GSM_DEVICE (device));
+		} else {
+			priv->reg_tries = 0;
+			nm_device_state_changed (NM_DEVICE (device),
+			                         NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_GSM_REGISTRATION_TIMEOUT);
+		}
 		break;
 	default:
 		nm_warning ("Automatic registration failed");
@@ -341,19 +403,21 @@ automatic_registration_response (NMSerialDevice *device,
 static void
 automatic_registration (NMGsmDevice *device)
 {
-	char *responses[] = { "+CREG: 0,0", "+CREG: 0,1", "+CREG: 0,2", "+CREG: 0,3", "+CREG: 0,5", NULL };
-	char *terminators[] = { "OK", "ERROR", "ERR", NULL };
+	const char *responses[] = { "+CREG: 0,0", "+CREG: 0,1", "+CREG: 0,2", "+CREG: 0,3", "+CREG: 0,5", NULL };
+	const char *terminators[] = { "OK", "ERROR", "ERR", NULL };
 
-	modem_wait_for_reply (device, "AT+CREG?", 60, responses, terminators, automatic_registration_response, NULL);
+	modem_wait_for_reply (device, "AT+CREG?", 15, responses, terminators, automatic_registration_response, NULL);
 }
 
 static void
 do_register (NMGsmDevice *device)
 {
+	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
 	NMSettingGsm *setting;
 
 	setting = NM_SETTING_GSM (gsm_device_get_setting (device, NM_TYPE_SETTING_GSM));
 
+	priv->reg_tries = 0;
 	if (setting->network_id)
 		manual_registration (device);
 	else
@@ -361,13 +425,33 @@ do_register (NMGsmDevice *device)
 }
 
 static void
+power_up_response (NMSerialDevice *device,
+                   int reply_index,
+                   const char *reply,
+                   gpointer user_data)
+{
+	/* Ignore errors */
+	do_register (NM_GSM_DEVICE (device));
+}
+
+static void
+power_up (NMGsmDevice *device)
+{
+	const char *responses[] = { "OK", "ERROR", "ERR", NULL };
+
+	nm_info ("(%s): powering up...", nm_device_get_iface (NM_DEVICE (device)));		
+	modem_wait_for_reply (device, "AT+CFUN=1", 10, responses, responses, power_up_response, NULL);
+}
+
+static void
 init_full_done (NMSerialDevice *device,
-			 int reply_index,
-			 gpointer user_data)
+                int reply_index,
+                const char *reply,
+                gpointer user_data)
 {
 	switch (reply_index) {
 	case 0:
-		do_register (NM_GSM_DEVICE (device));
+		power_up (NM_GSM_DEVICE (device));
 		break;
 	case -1:
 		nm_warning ("Modem second stage initialization timed out");
@@ -387,19 +471,20 @@ init_full_done (NMSerialDevice *device,
 static void
 init_modem_full (NMGsmDevice *device)
 {
-	char *responses[] = { "OK", "ERROR", "ERR", NULL };
+	const char *responses[] = { "OK", "ERROR", "ERR", NULL };
 
 	/* Send E0 too because some devices turn echo back on after CPIN which
 	 * just breaks stuff since echo-ed commands are interpreted as replies.
 	 * rh #456770
 	 */
-	modem_wait_for_reply (device, "ATZ E0", 10, responses, responses, init_full_done, NULL);
+	modem_wait_for_reply (device, "ATZ E0 V1 X4 &C1 +FCLASS=0", 10, responses, responses, init_full_done, NULL);
 }
 
 static void
 enter_pin_done (NMSerialDevice *device,
-			 int reply_index,
-			 gpointer user_data)
+                int reply_index,
+                const char *reply,
+                gpointer user_data)
 {
 	NMSettingGsm *setting;
 
@@ -464,13 +549,13 @@ enter_pin (NMGsmDevice *device, gboolean retry)
 		secret_name = NM_SETTING_GSM_PUK;
 		break;
 	default:
-		do_register (device);
+		power_up (device);
 		return;
 	}
 
 	if (secret) {
 		char *command;
-		char *responses[] = { "OK", "ERROR", "ERR", NULL };
+		const char *responses[] = { "OK", "ERROR", "ERR", NULL };
 
 		command = g_strdup_printf ("AT+CPIN=\"%s\"", secret);
 		modem_wait_for_reply (device, command, 3, responses, responses, enter_pin_done, NULL);
@@ -491,12 +576,13 @@ enter_pin (NMGsmDevice *device, gboolean retry)
 
 static void
 check_pin_done (NMSerialDevice *device,
-			 int reply_index,
-			 gpointer user_data)
+                int reply_index,
+                const char *reply,
+                gpointer user_data)
 {
 	switch (reply_index) {
 	case 0:
-		do_register (NM_GSM_DEVICE (device));
+		power_up (NM_GSM_DEVICE (device));
 		break;
 	case 1:
 		NM_GSM_DEVICE_GET_PRIVATE (device)->need_secret = NM_GSM_SECRET_PIN;
@@ -524,16 +610,17 @@ check_pin_done (NMSerialDevice *device,
 static void
 check_pin (NMGsmDevice *self)
 {
-	char *responses[] = { "READY", "SIM PIN", "SIM PUK", "ERROR", "ERR", NULL };
-	char *terminators[] = { "OK", "ERROR", "ERR", NULL };
+	const char *responses[] = { "READY", "SIM PIN", "SIM PUK", "ERROR", "ERR", NULL };
+	const char *terminators[] = { "OK", "ERROR", "ERR", NULL };
 
 	modem_wait_for_reply (self, "AT+CPIN?", 3, responses, terminators, check_pin_done, NULL);
 }
 
 static void
 init_done (NMSerialDevice *device,
-		 int reply_index,
-		 gpointer user_data)
+           int reply_index,
+           const char *reply,
+           gpointer user_data)
 {
 	switch (reply_index) {
 	case 0:
@@ -557,9 +644,9 @@ init_done (NMSerialDevice *device,
 static void
 init_modem (NMSerialDevice *device, gpointer user_data)
 {
-	char *responses[] = { "OK", "ERROR", "ERR", NULL };
+	const char *responses[] = { "OK", "ERROR", "ERR", NULL };
 
-	modem_wait_for_reply (NM_GSM_DEVICE (device), "AT E0", 10, responses, responses, init_done, NULL);
+	modem_wait_for_reply (NM_GSM_DEVICE (device), "ATZ E0 V1 X4 &C1 +FCLASS=0", 10, responses, responses, init_done, NULL);
 }
 
 static NMActStageReturn
@@ -680,12 +767,15 @@ real_deactivate_quickly (NMDevice *device)
 {
 	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
 
+	priv->reg_tries = 0;
+
 	if (priv->pending_id) {
 		g_source_remove (priv->pending_id);
 		priv->pending_id = 0;
 	}
 
-	NM_DEVICE_CLASS (nm_gsm_device_parent_class)->deactivate_quickly (device);
+	if (NM_DEVICE_CLASS (nm_gsm_device_parent_class)->deactivate_quickly)
+		NM_DEVICE_CLASS (nm_gsm_device_parent_class)->deactivate_quickly (device);
 }
 
 /*****************************************************************************/
@@ -793,10 +883,7 @@ device_state_changed (NMDeviceInterface *device,
 		priv->state_to_disconnected_id = 0;
 	}
 
-	/* If transitioning to UNAVAILBLE and we have a carrier, transition to
-	 * DISCONNECTED because the device is ready to use.  Otherwise the carrier-on
-	 * handler will handle the transition to DISCONNECTED when the carrier is detected.
-	 */
+	/* Transition to DISCONNECTED from an idle handler */
 	if (new_state == NM_DEVICE_STATE_UNAVAILABLE)
 		priv->state_to_disconnected_id = g_idle_add (unavailable_to_disconnected, self);
 

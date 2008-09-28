@@ -34,8 +34,9 @@ typedef void (*NMSerialGetReplyFn)     (NMSerialDevice *device,
 								gpointer user_data);
 
 typedef void (*NMSerialWaitForReplyFn) (NMSerialDevice *device,
-								int reply_index,
-								gpointer user_data);
+                                        int reply_index,
+                                        const char *reply,
+                                        gpointer user_data);
 
 typedef void (*NMSerialWaitQuietFn)    (NMSerialDevice *device,
 								gboolean timed_out,
@@ -56,16 +57,15 @@ gboolean nm_serial_device_send_command        (NMSerialDevice *device,
 gboolean nm_serial_device_send_command_string (NMSerialDevice *device,
 									  const char *str);
 
-guint    nm_serial_device_get_reply           (NMSerialDevice *device,
-									  guint timeout,
-									  const char *terminators,
-									  NMSerialGetReplyFn callback,
-									  gpointer user_data);
+int nm_serial_device_wait_reply_blocking (NMSerialDevice *device,
+                                          guint32 timeout_secs,
+                                          const char **needles,
+                                          const char **terminators);
 
 guint    nm_serial_device_wait_for_reply      (NMSerialDevice *device,
 									  guint timeout,
-									  char **responses,
-									  char **terminators,
+									  const char **responses,
+									  const char **terminators,
 									  NMSerialWaitForReplyFn callback,
 									  gpointer user_data);
 

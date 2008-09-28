@@ -79,6 +79,7 @@ cdma_device_get_setting (NMCdmaDevice *device, GType setting_type)
 static void
 dial_done (NMSerialDevice *device,
            int reply_index,
+           const char *reply,
            gpointer user_data)
 {
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_UNKNOWN;
@@ -122,7 +123,7 @@ do_dial (NMSerialDevice *device)
 	NMSettingCdma *setting;
 	char *command;
 	guint id = 0;
-	char *responses[] = { "CONNECT", "BUSY", "NO DIAL TONE", "NO CARRIER", NULL };
+	const char *responses[] = { "CONNECT", "BUSY", "NO DIAL TONE", "NO CARRIER", NULL };
 
 	setting = NM_SETTING_CDMA (cdma_device_get_setting (NM_CDMA_DEVICE (device), NM_TYPE_SETTING_CDMA));
 
@@ -138,13 +139,40 @@ do_dial (NMSerialDevice *device)
 }
 
 static void
+power_up_response (NMSerialDevice *device,
+                   int reply_index,
+                   const char *reply,
+                   gpointer user_data)
+{
+	/* Ignore errors */
+	do_dial (device);
+}
+
+static void
+power_up (NMSerialDevice *device)
+{
+	const char *responses[] = { "OK", "ERROR", "ERR", NULL };
+	guint id = 0;
+
+	/* Only works on Sierra cards */
+	nm_info ("(%s): powering up...", nm_device_get_iface (NM_DEVICE (device)));		
+	if (nm_serial_device_send_command_string (device, "at!pcstate=1"))
+		id = nm_serial_device_wait_for_reply (device, 10, responses, responses, power_up_response, NULL);
+
+	/* Ignore errors */
+	if (id == 0)
+		do_dial (device);
+}
+
+static void
 init_done (NMSerialDevice *device,
-		 int reply_index,
-		 gpointer user_data)
+           int reply_index,
+           const char *reply,
+           gpointer user_data)
 {
 	switch (reply_index) {
 	case 0:
-		do_dial (device);
+		power_up (device);
 		break;
 	case -1:
 		nm_warning ("Modem initialization timed out");
@@ -165,7 +193,7 @@ static void
 init_modem (NMSerialDevice *device, gpointer user_data)
 {
 	guint id = 0;
-	char *responses[] = { "OK", "ERROR", "ERR", NULL };
+	const char *responses[] = { "OK", "ERROR", "ERR", NULL };
 
 	if (nm_serial_device_send_command_string (device, "ATZ E0"))
 		id = nm_serial_device_wait_for_reply (device, 10, responses, responses, init_done, NULL);

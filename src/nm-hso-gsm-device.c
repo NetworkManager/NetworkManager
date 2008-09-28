@@ -64,35 +64,18 @@ nm_hso_gsm_device_new (const char *udi,
 
 static void
 modem_wait_for_reply (NMGsmDevice *self,
-				  const char *command,
-				  guint timeout,
-				  char **responses,
-				  char **terminators,
-				  NMSerialWaitForReplyFn callback,
-				  gpointer user_data)
+                      const char *command,
+                      guint timeout,
+                      const char **responses,
+                      const char **terminators,
+                      NMSerialWaitForReplyFn callback,
+                      gpointer user_data)
 {
 	NMSerialDevice *serial = NM_SERIAL_DEVICE (self);
 	guint id = 0;
 
 	if (nm_serial_device_send_command_string (serial, command))
 		id = nm_serial_device_wait_for_reply (serial, timeout, responses, terminators, callback, user_data);
-
-	if (id == 0)
-		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_UNKNOWN);
-}
-
-static void
-modem_get_reply (NMGsmDevice *self,
-			  const char *command,
-			  guint timeout,
-			  const char *terminators,
-			  NMSerialGetReplyFn callback)
-{
-	NMSerialDevice *serial = NM_SERIAL_DEVICE (self);
-	guint id = 0;
-
-	if (nm_serial_device_send_command_string (serial, command))
-		id = nm_serial_device_get_reply (serial, timeout, terminators, callback, NULL);
 
 	if (id == 0)
 		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_UNKNOWN);
@@ -119,6 +102,7 @@ gsm_device_get_setting (NMGsmDevice *device, GType setting_type)
 static void
 hso_call_done (NMSerialDevice *device,
                int reply_index,
+               const char *reply,
                gpointer user_data)
 {
 	gboolean success = FALSE;
@@ -141,10 +125,11 @@ hso_call_done (NMSerialDevice *device,
 
 static void
 hso_clear_done (NMSerialDevice *device,
-               int reply_index,
-               gpointer user_data)
+                int reply_index,
+                const char *reply,
+                gpointer user_data)
 {
-	char *responses[] = { "_OWANCALL: ", "ERROR", NULL };
+	const char *responses[] = { "_OWANCALL: ", "ERROR", NULL };
 	guint cid = GPOINTER_TO_UINT (user_data);
 	char *command;
 
@@ -157,10 +142,11 @@ hso_clear_done (NMSerialDevice *device,
 static void
 hso_auth_done (NMSerialDevice *device,
                int reply_index,
+               const char *reply,
                gpointer user_data)
 {
 	gboolean success = FALSE;
-	char *responses[] = { "_OWANCALL: ", "ERROR", "NO CARRIER", NULL };
+	const char *responses[] = { "_OWANCALL: ", "ERROR", "NO CARRIER", NULL };
 	guint cid = GPOINTER_TO_UINT (user_data);
 	char *command;
 
@@ -190,7 +176,7 @@ do_hso_auth (NMHsoGsmDevice *device)
 {
 	NMSettingGsm *s_gsm;
 	NMActRequest *req;
-	char *responses[] = { "OK", "ERROR", NULL };
+	const char *responses[] = { "OK", "ERROR", "ERR", NULL };
 	char *command;
 	guint cid;
 
@@ -269,9 +255,10 @@ real_do_dial (NMGsmDevice *device, guint cid)
 #define OWANDATA_TAG "_OWANDATA: "
 
 static void
-hso_ip4_config_done (NMSerialDevice *device,
-                     const char *response,
-                     gpointer user_data)
+hso_ip4_config_response (NMSerialDevice *device,
+                         int reply_index,
+                         const char *response,
+                         gpointer user_data)
 {
 	NMHsoGsmDevicePrivate *priv = NM_HSO_GSM_DEVICE_GET_PRIVATE (device);
 	NMActRequest *req;
@@ -280,7 +267,9 @@ hso_ip4_config_done (NMSerialDevice *device,
 	NMSettingIP4Address addr = { 0, 32, 0 };
 	guint32 dns1 = 0, dns2 = 0;
 
-	if (!response || strncmp (response, OWANDATA_TAG, strlen (OWANDATA_TAG))) {
+	if (   (reply_index < 0)
+	    || !response
+	    || strncmp (response, OWANDATA_TAG, strlen (OWANDATA_TAG))) {
 		nm_device_activate_schedule_stage4_ip_config_timeout (NM_DEVICE (device));
 		return;
 	}
@@ -338,17 +327,18 @@ out:
 static NMActStageReturn
 real_act_stage3_ip_config_start (NMDevice *device, NMDeviceStateReason *reason)
 {
-	const char terminators[] = { '\r', '\n', '\0' };
 	NMActRequest *req;
 	char *command;
 	gint cid;
+	const char *responses[] = { "_OWANDATA: ", NULL };
+	const char *terminators[] = { "OK", "ERROR", "ERR", NULL };
 
 	req = nm_device_get_act_request (device);
 	g_assert (req);
 
 	cid = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (req), GSM_CID));
 	command = g_strdup_printf ("AT_OWANDATA=%d", cid);
-	modem_get_reply (NM_GSM_DEVICE (device), command, 5, terminators, hso_ip4_config_done);
+	modem_wait_for_reply (NM_GSM_DEVICE (device), command, 5, responses, terminators, hso_ip4_config_response, NULL);
 	g_free (command);
 
 	return NM_ACT_STAGE_RETURN_POSTPONE;
@@ -410,17 +400,18 @@ real_deactivate_quickly (NMDevice *device)
 	if (req) {
 		cid = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (req), GSM_CID));
 		if (cid) {
-			command = g_strdup_printf ("AT_OWANCALL=%d,0,1", cid);
-			nm_serial_device_send_command_string (NM_SERIAL_DEVICE (device), command);
-			g_free (command);
+			const char *responses[] = { "OK", "ERROR", "ERR", NULL };
+			int reply;
 
-			/* FIXME: doesn't seem to take the command otherwise, perhaps since
-			 * the serial port gets closed right away
+			/* Disconnect and disable asynchonous notification to keep serial
+			 * buffer empty after the OK.
 			 */
-			g_usleep (G_USEC_PER_SEC / 3);
+			command = g_strdup_printf ("AT_OWANCALL=%d,0,0", cid);
+			nm_serial_device_send_command_string (NM_SERIAL_DEVICE (device), command);
+			reply = nm_serial_device_wait_reply_blocking (NM_SERIAL_DEVICE (device), 5, responses, responses);
+			g_free (command);
 		}
 	}
-
 
 	if (NM_DEVICE_CLASS (nm_hso_gsm_device_parent_class)->deactivate_quickly)
 		NM_DEVICE_CLASS (nm_hso_gsm_device_parent_class)->deactivate_quickly (device);
