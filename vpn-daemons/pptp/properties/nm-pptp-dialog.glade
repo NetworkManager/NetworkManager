@@ -113,7 +113,7 @@
                       <widget class="GtkLabel" id="label27">
                         <property name="visible">True</property>
                         <property name="xalign">0</property>
-                        <property name="label" translatable="yes">Domain:</property>
+                        <property name="label" translatable="yes">NT Domain:</property>
                       </widget>
                       <packing>
                         <property name="top_attach">1</property>

@@ -1,5 +1,10 @@
 2008-09-29  Dan Williams  <dcbw@redhat.com>
 
+	* properties/nm-pptp-dialog.glade
+		- "Domain" -> "NT Domain" to clarify what it's really for
+
+2008-09-29  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-pptp-serivce.c
 		- (impl_pptp_service_need_secrets): use the expected Windows-style
 			'domain\\username' format, not whatever I made up
