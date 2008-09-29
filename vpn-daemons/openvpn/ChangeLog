@@ -1,3 +1,11 @@
+2008-09-29  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Robert Buchholz <rbu@gentoo.org>
+
+	* src/nm-openvpn-service.c
+		- (openvpn_watch_cb): don't access socket_channel if it doesn't exist
+			because openvpn exited before the management socket could be set up
+
 2008-09-24  Dan Williams  <dcbw@redhat.com>
 
 	* common-gnome/*

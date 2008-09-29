@@ -452,7 +452,7 @@ openvpn_watch_cb (GPid pid, gint status, gpointer user_data)
 	}
 
 	/* Try to get the last bits of data from openvpn */
-	if (priv->io_data) {
+	if (priv->io_data && priv->io_data->socket_channel) {
 		GIOChannel *channel = priv->io_data->socket_channel;
 		GIOCondition condition;
 
