@@ -305,52 +305,98 @@ nm_device_wifi_update_signal_strength (NMDeviceWifi *self,
 }
 
 
+static gboolean
+wireless_get_range (NMDeviceWifi *self,
+                    struct iw_range *range,
+                    guint32 *response_len)
+{
+	int fd, err, i = 26;
+	gboolean success = FALSE;
+	const char *iface;
+	struct iwreq wrq;
+
+	g_return_val_if_fail (NM_IS_DEVICE_WIFI (self), FALSE);
+	g_return_val_if_fail (range != NULL, FALSE);
+
+	iface = nm_device_get_iface (NM_DEVICE (self));
+
+	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	if (fd < 0) {
+		nm_warning ("(%s): couldn't open control socket.", iface);
+		return FALSE;
+	}
+
+	memset (&wrq, 0, sizeof (struct iwreq));
+	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
+	wrq.u.data.pointer = (caddr_t) range;
+	wrq.u.data.length = sizeof (struct iw_range);
+
+	/* Need to give some drivers time to recover after suspend/resume
+	 * (ex ipw3945 takes a few seconds to talk to its regulatory daemon;
+	 * see rh bz#362421)
+	 */
+	while (i-- > 0) {
+		err = ioctl (fd, SIOCGIWRANGE, &wrq);
+		if (err == 0) {
+			if (response_len)
+				*response_len = wrq.u.data.length;
+			success = TRUE;
+			break;
+		} else if (errno != EAGAIN) {
+			nm_warning ("(%s): couldn't get driver range information (%d).", iface, errno);
+			break;
+		}
+
+		g_usleep (G_USEC_PER_SEC / 4);
+	}
+
+	if (i <= 0)
+		nm_warning ("(%s): driver took too long to responde to IWRANGE query.", iface);
+
+	close (fd);
+	return success;
+}
+
 static guint32
 real_get_generic_capabilities (NMDevice *dev)
 {
 	int fd, err;
-	guint32 caps = NM_DEVICE_CAP_NONE;
-	struct iw_range range;
+	guint32 caps = NM_DEVICE_CAP_NONE, response_len = 0;
 	struct iwreq wrq;
+	struct iw_range range;
 	const char *iface = nm_device_get_iface (dev);
+	gboolean success;
+
+	memset (&range, 0, sizeof (struct iw_range));
+	success = wireless_get_range (NM_DEVICE_WIFI (dev), &range, &response_len);
+	if (!success)
+		return NM_DEVICE_CAP_NONE;
 
 	/* Check for Wireless Extensions support >= 16 for wireless devices */
+	if ((response_len < 300) || (range.we_version_compiled < 16)) {
+		nm_warning ("(%s): driver's Wireless Extensions version (%d) is too old.",
+					iface, range.we_version_compiled);
+		return NM_DEVICE_CAP_NONE;
+	}
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
-		nm_warning ("couldn't open control socket.");
+		nm_warning ("(%s): couldn't open control socket.", iface);
 		goto out;
 	}
 
-	memset (&wrq, 0, sizeof (struct iwreq));
-	memset (&range, 0, sizeof (struct iw_range));
-	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
-	wrq.u.data.pointer = (caddr_t) &range;
-	wrq.u.data.length = sizeof (struct iw_range);
-
-	if (ioctl (fd, SIOCGIWRANGE, &wrq) < 0) {
-		nm_warning ("couldn't get driver range information.");
-		goto out;
-	}
-
-	if ((wrq.u.data.length < 300) || (range.we_version_compiled < 16)) {
-		nm_warning ("%s: driver's Wireless Extensions version (%d) is too old.",
-					iface, range.we_version_compiled);
-		goto out;
-	} else {
-		caps |= NM_DEVICE_CAP_NM_SUPPORTED;
-	}
-
-	/* Card's that don't scan aren't supported */
+	/* Cards that don't scan aren't supported */
 	memset (&wrq, 0, sizeof (struct iwreq));
 	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
 	err = ioctl (fd, SIOCSIWSCAN, &wrq);
+	close (fd);
+
 	if ((err == -1) && (errno == EOPNOTSUPP))
 		caps = NM_DEVICE_CAP_NONE;
+	else
+		caps |= NM_DEVICE_CAP_NM_SUPPORTED;
 
 out:
-	if (fd >= 0)
-		close (fd);
 	return caps;
 }
 
@@ -472,11 +518,11 @@ constructor (GType type,
 	GObjectClass *klass;
 	NMDeviceWifi *self;
 	NMDeviceWifiPrivate *priv;
-	const char *iface;
-	int fd, i, err;
 	struct iw_range range;
 	struct iw_range_with_scan_capa *scan_capa_range;
 	struct iwreq wrq;
+	gboolean success;
+	int i;
 
 	klass = G_OBJECT_CLASS (nm_device_wifi_parent_class);
 	object = klass->constructor (type, n_construct_params, construct_params);
@@ -486,20 +532,9 @@ constructor (GType type,
 	self = NM_DEVICE_WIFI (object);
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	iface = nm_device_get_iface (NM_DEVICE (self));
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0)
-		goto error;
-
-	memset (&wrq, 0, sizeof (struct iwreq));
 	memset (&range, 0, sizeof (struct iw_range));
-	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
-	wrq.u.data.pointer = (caddr_t) &range;
-	wrq.u.data.length = sizeof (struct iw_range);
-
-	err = ioctl (fd, SIOCGIWRANGE, &wrq);
-	close (fd);
-	if (err < 0)
+	success = wireless_get_range (NM_DEVICE_WIFI (object), &range, NULL);
+	if (!success)
 		goto error;
 
 	priv->max_qual.qual = range.max_qual.qual;
@@ -3364,6 +3399,12 @@ device_state_changed (NMDevice *device,
 		 * the device is now ready to use.
 		 */
 		if (priv->enabled) {
+			gboolean success;
+			struct iw_range range;
+
+			/* Wait for some drivers like ipw3945 to come back to life */
+			success = wireless_get_range (self, &range, NULL);
+
 			if (!priv->supplicant.iface)
 				supplicant_interface_acquire (self);
 
@@ -3466,7 +3507,8 @@ nm_device_wifi_set_enabled (NMDeviceWifi *self, gboolean enabled)
 		return;
 
 	if (enabled) {
-		gboolean no_firmware = FALSE;
+		gboolean no_firmware = FALSE, success;
+		struct iw_range range;
 
 		if (state != NM_DEVICE_STATE_UNAVAILABLE);
 			nm_warning ("not in expected unavailable state!");
@@ -3476,6 +3518,9 @@ nm_device_wifi_set_enabled (NMDeviceWifi *self, gboolean enabled)
 			priv->enabled = FALSE;
 			return;
 		}
+
+		/* Wait for some drivers like ipw3945 to come back to life */
+		success = wireless_get_range (self, &range, NULL);
 
 		if (!priv->supplicant.iface)
 			supplicant_interface_acquire (self);

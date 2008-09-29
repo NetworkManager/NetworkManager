@@ -1,3 +1,12 @@
+2008-09-29  Dan Williams  <dcbw@redhat.com>
+
+	Handle ipw3945 suspend/resume by retrying the GIWRANGE request a few times
+	when it returns EAGAIN (rh #362421)
+
+	* src/nm-device-wifi.c
+		- (wireless_get_range): try GIWRANGE a few times until the card responds
+		- (real_get_generic_capabilities, constructor): use wireless_get_range()
+
 2008-09-28  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-serial-device.c
