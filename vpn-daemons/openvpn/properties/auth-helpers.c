@@ -51,7 +51,7 @@ static GtkWidget *
 fill_password (GladeXML *xml,
 			   const char *widget_name,
 			   NMConnection *connection,
-			   gboolean cert_password)
+			   gboolean priv_key_password)
 {
 	GtkWidget *widget;
 	GtkWidget *show_passwords;
@@ -76,7 +76,7 @@ fill_password (GladeXML *xml,
 			const char *tmp;
 
 			tmp = g_hash_table_lookup (s_vpn->secrets,
-									   cert_password ? NM_OPENVPN_KEY_CERTPASS : NM_OPENVPN_KEY_PASSWORD);
+									   priv_key_password ? NM_OPENVPN_KEY_CERTPASS : NM_OPENVPN_KEY_PASSWORD);
 			if (tmp)
 				password = gnome_keyring_memory_strdup (tmp);
 		}
@@ -86,7 +86,7 @@ fill_password (GladeXML *xml,
 
 		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 		password = keyring_helpers_lookup_secret (s_con->uuid,
-												  cert_password ? NM_OPENVPN_KEY_CERTPASS : NM_OPENVPN_KEY_PASSWORD,
+												  priv_key_password ? NM_OPENVPN_KEY_CERTPASS : NM_OPENVPN_KEY_PASSWORD,
 												  &unused);
 	}
 
@@ -109,15 +109,15 @@ fill_vpn_passwords (GladeXML *xml,
 	GtkWidget *w = NULL;
 
 	if (!strcmp (contype, NM_OPENVPN_CONTYPE_TLS))
-		w = fill_password (xml, "tls_cert_password_entry", connection, TRUE);
+		w = fill_password (xml, "tls_private_key_password_entry", connection, TRUE);
 	else if (!strcmp (contype, NM_OPENVPN_CONTYPE_PASSWORD))
 		w = fill_password (xml, "pw_password_entry", connection, FALSE);
 	else if (!strcmp (contype, NM_OPENVPN_CONTYPE_PASSWORD_TLS)) {
 		GtkWidget *w2 = NULL;
 
-		w = fill_password (xml, "pw_tls_password_entry", connection, TRUE);
+		w = fill_password (xml, "pw_tls_password_entry", connection, FALSE);
 	
-		w2 = fill_password (xml, "pw_tls_cert_password_entry", connection, FALSE);
+		w2 = fill_password (xml, "pw_tls_private_key_password_entry", connection, TRUE);
 		if (w2) {
 			gtk_size_group_add_widget (group, w2);
 			g_signal_connect (w2, "changed", G_CALLBACK (changed_cb), user_data);
@@ -558,12 +558,12 @@ auth_widget_save_secrets (GladeXML *xml,
 	gboolean ret;
 
 	if (!strcmp (contype, NM_OPENVPN_CONTYPE_TLS))
-		ret = save_secret (xml, "tls_cert_password_entry", uuid, name, NM_OPENVPN_KEY_CERTPASS);
+		ret = save_secret (xml, "tls_private_key_password_entry", uuid, name, NM_OPENVPN_KEY_CERTPASS);
 	else if (!strcmp (contype, NM_OPENVPN_CONTYPE_PASSWORD))
 		ret = save_secret (xml, "pw_password_entry", uuid, name, NM_OPENVPN_KEY_PASSWORD);
 	else if (!strcmp (contype, NM_OPENVPN_CONTYPE_PASSWORD_TLS)) {
 		ret = save_secret (xml, "pw_tls_password_entry", uuid, name, NM_OPENVPN_KEY_PASSWORD);
-		ret = save_secret (xml, "pw_tls_cert_password_entry", uuid, name, NM_OPENVPN_KEY_CERTPASS);
+		ret = save_secret (xml, "pw_tls_private_key_password_entry", uuid, name, NM_OPENVPN_KEY_CERTPASS);
 	} else if (!strcmp (contype, NM_OPENVPN_CONTYPE_STATIC_KEY))
 		/* No secrets here */
 		ret = TRUE;

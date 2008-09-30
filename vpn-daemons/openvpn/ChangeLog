@@ -1,3 +1,21 @@
+2008-09-30  Dan Williams  <dcbw@redhat.com>
+
+	* properties/nm-openvpn-dialog.glade
+		- Fix the User and CA certificate entries in Password TLS mode, they
+			were swapped with their labels (rh #464765)
+		- Move private key password entries below private key chooser
+		- Rename "Certificate Password" to "Private key password" since that's
+			what they actually are
+
+	* properties/auth-helpers.c
+		- (fill_password): s/cert_password/priv_key_password/s
+		- (fill_vpn_passwords): fix up for corrected widget names; fix mis-filling
+			of pw_tls secret widgets where passwords were reversed
+		- (auth_widget_save_secrets): fix up for corrected widget names
+
+	* src/nm-openvpn-service.c
+		- s/certpass/priv_key_pass/s becuase that's what it is
+
 2008-09-29  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Robert Buchholz <rbu@gentoo.org>

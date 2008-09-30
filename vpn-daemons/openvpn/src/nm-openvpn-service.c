@@ -62,7 +62,7 @@ G_DEFINE_TYPE (NMOpenvpnPlugin, nm_openvpn_plugin, NM_TYPE_VPN_PLUGIN)
 typedef struct {
 	char *username;
 	char *password;
-	char *certpass;
+	char *priv_key_pass;
 	GIOChannel *socket_channel;
 	guint socket_channel_eventid;
 } NMOpenvpnPluginIOData;
@@ -298,11 +298,11 @@ handle_management_socket (NMVPNPlugin *plugin,
 			} else
 				nm_warning ("Auth requested but one of username or password is missing");
 		} else if (!strcmp (auth, "Private Key")) {
-			if (io_data->certpass) {
+			if (io_data->priv_key_pass) {
 				char *qpass;
 
 				/* Quote strings passed back to openvpn */
-				qpass = ovpn_quote_string (io_data->certpass);
+				qpass = ovpn_quote_string (io_data->priv_key_pass);
 				buf = g_strdup_printf ("password \"%s\" \"%s\"\n", auth, qpass);
 				memset (qpass, 0, strlen (qpass));
 				g_free (qpass);
@@ -312,7 +312,7 @@ handle_management_socket (NMVPNPlugin *plugin,
 				g_io_channel_flush (source, NULL);
 				g_free (buf);
 			} else
-				nm_warning ("Certificate password requested but certpass == NULL");
+				nm_warning ("Certificate password requested but private key password == NULL");
 		} else {
 			nm_warning ("No clue what to send for username/password request for '%s'", auth);
 			if (out_failure)
@@ -815,7 +815,7 @@ nm_openvpn_start_openvpn_binary (NMOpenvpnPlugin *plugin,
 		io_data->password = tmp ? g_strdup (tmp) : NULL;
 
 		tmp = g_hash_table_lookup (secrets, NM_OPENVPN_KEY_CERTPASS);
-		io_data->certpass = tmp ? g_strdup (tmp) : NULL;
+		io_data->priv_key_pass = tmp ? g_strdup (tmp) : NULL;
 
 		priv->io_data = io_data;
 
@@ -904,7 +904,7 @@ real_need_secrets (NMVPNPlugin *plugin,
 
 	connection_type = get_connection_type (s_vpn->data);
 	if (!strcmp (connection_type, NM_OPENVPN_CONTYPE_PASSWORD_TLS)) {
-		/* Will require a password and maybe certificate password */
+		/* Will require a password and maybe private key password */
 		if (!g_hash_table_lookup (s_vpn->secrets, NM_OPENVPN_KEY_CERTPASS))
 			need_secrets = TRUE;
 
@@ -915,7 +915,7 @@ real_need_secrets (NMVPNPlugin *plugin,
 		if (!g_hash_table_lookup (s_vpn->secrets, NM_OPENVPN_KEY_PASSWORD))
 			need_secrets = TRUE;
 	} else if (!strcmp (connection_type, NM_OPENVPN_CONTYPE_TLS)) {
-		/* May require certificate password */
+		/* May require private key password */
 		if (!g_hash_table_lookup (s_vpn->secrets, NM_OPENVPN_KEY_CERTPASS))
 			need_secrets = TRUE;
 	}
