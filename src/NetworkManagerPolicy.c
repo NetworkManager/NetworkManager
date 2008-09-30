@@ -58,7 +58,6 @@ struct LookupThread {
 	guint32 ip4_addr;
 	char hostname[NI_MAXHOST + 1];
 
-	guint done_id;
 	LookupCallback callback;
 	gpointer user_data;
 };
@@ -110,7 +109,11 @@ lookup_thread_worker (gpointer data)
 			thread->hostname[i] = tolower (thread->hostname[i]);
 	}
 
-	thread->done_id = g_idle_add (lookup_thread_run_cb, thread);
+	/* Don't track the idle handler ID because by the time the g_idle_add()
+	 * returns the ID, the handler may already have run and freed the
+	 * LookupThread.
+	 */
+	g_idle_add (lookup_thread_run_cb, thread);
 	return (gpointer) TRUE;
 }
 

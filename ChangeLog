@@ -1,3 +1,10 @@
+2008-09-30  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerPolicy.c
+		- (lookup_thread_worker): don't store the idle handler ID becuase the
+			idle handler could have already run and freed the LookupThread
+			structure
+
 2008-09-30  Tambet Ingo  <tambet@gmail.com>
 
 	* src/nm-device.c (nm_device_get_priority): Implement.
