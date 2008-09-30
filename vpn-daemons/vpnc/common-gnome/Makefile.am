@@ -1,4 +1,4 @@
-lib_LTLIBRARIES=libnm-vpnc-common-gnome.la
+noinst_LTLIBRARIES=libnm-vpnc-common-gnome.la
 
 libnm_vpnc_common_gnome_la_CPPFLAGS = \
 	$(NM_UTILS_CFLAGS) \

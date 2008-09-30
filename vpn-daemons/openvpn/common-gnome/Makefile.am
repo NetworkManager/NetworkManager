@@ -1,4 +1,4 @@
-lib_LTLIBRARIES=libnm-openvpn-common-gnome.la
+noinst_LTLIBRARIES=libnm-openvpn-common-gnome.la
 
 libnm_openvpn_common_gnome_la_CPPFLAGS = \
 	$(NETWORK_MANAGER_CFLAGS) \
