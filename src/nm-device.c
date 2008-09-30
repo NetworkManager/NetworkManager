@@ -303,6 +303,15 @@ nm_device_set_device_type (NMDevice *dev, NMDeviceType type)
 }
 
 
+int
+nm_device_get_priority (NMDevice *dev)
+{
+	g_return_val_if_fail (NM_IS_DEVICE (dev), -1);
+
+	return (int) nm_device_get_device_type (dev);
+}
+
+
 /*
  * Accessor for capabilities
  */
@@ -1910,7 +1919,7 @@ nm_device_set_ip4_config (NMDevice *self, NMIP4Config *config, NMDeviceStateReas
 	if (!nm_ip4_config_is_exported (config))
 		nm_ip4_config_export (config);
 
-	success = nm_system_device_set_from_ip4_config (ip_iface, config);
+	success = nm_system_device_set_from_ip4_config (ip_iface, config, nm_device_get_priority (self));
 	if (success)
 		nm_device_update_ip4_address (self);
 

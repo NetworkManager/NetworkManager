@@ -46,7 +46,8 @@ void			nm_system_enable_loopback				(void);
 void			nm_system_update_dns					(void);
 
 gboolean		nm_system_device_set_from_ip4_config		(const char *iface,
-												 NMIP4Config *config);
+												 NMIP4Config *config,
+												 int priority);
 
 gboolean		nm_system_vpn_device_set_from_ip4_config	(NMDevice *active_device,
 									 const char *iface,

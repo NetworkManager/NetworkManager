@@ -127,6 +127,8 @@ NMDeviceType	nm_device_get_device_type	(NMDevice *dev);
 guint32		nm_device_get_capabilities	(NMDevice *dev);
 guint32		nm_device_get_type_capabilities	(NMDevice *dev);
 
+int			nm_device_get_priority (NMDevice *dev);
+
 guint32			nm_device_get_ip4_address	(NMDevice *dev);
 void				nm_device_update_ip4_address	(NMDevice *dev);
 struct in6_addr *	nm_device_get_ip6_address	(NMDevice *dev);

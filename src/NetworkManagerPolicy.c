@@ -172,30 +172,12 @@ get_connection_id (NMConnection *connection)
 	return s_con->id;
 }
 
-static guint32
-get_device_priority (NMDevice *dev)
-{
-	if (NM_IS_CDMA_DEVICE (dev))
-		return 2;
-
-	if (NM_IS_GSM_DEVICE (dev))
-		return 3;
-
-	if (NM_IS_DEVICE_WIFI (dev))
-		return 4;
-
-	if (NM_IS_DEVICE_ETHERNET (dev))
-		return 5;
-
-	return 1;
-}
-
 static NMDevice *
 get_best_device (NMManager *manager, NMActRequest **out_req)
 {
 	GSList *devices, *iter;
 	NMDevice *best = NULL;
-	guint32 best_prio = 0;
+	int best_prio = G_MAXINT;
 
 	g_return_val_if_fail (manager != NULL, NULL);
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NULL);
@@ -209,7 +191,7 @@ get_best_device (NMManager *manager, NMActRequest **out_req)
 		NMConnection *connection;
 		NMIP4Config *ip4_config;
 		NMSettingIP4Config *s_ip4;
-		guint32 prio;
+		int prio;
 		guint i;
 		gboolean can_default = FALSE;
 		
@@ -245,8 +227,8 @@ get_best_device (NMManager *manager, NMActRequest **out_req)
 		if (!can_default && !NM_IS_HSO_GSM_DEVICE (dev))
 			continue;
 
-		prio = get_device_priority (dev);
-		if (prio > best_prio) {
+		prio = nm_device_get_priority (dev);
+		if (prio > 0 && prio < best_prio) {
 			best = dev;
 			best_prio = prio;
 			*out_req = req;

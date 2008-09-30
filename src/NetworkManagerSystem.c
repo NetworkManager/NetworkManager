@@ -61,6 +61,10 @@
 #include <netlink/utils.h>
 #include <netlink/route/link.h>
 
+static void nm_system_device_set_priority (const char *iface,
+								   NMIP4Config *config,
+								   int priority);
+
 static gboolean
 route_in_same_subnet (NMIP4Config *config, guint32 dest, guint32 prefix)
 {
@@ -277,7 +281,8 @@ add_ip4_addresses (NMIP4Config *config, const char *iface)
  */
 gboolean
 nm_system_device_set_from_ip4_config (const char *iface,
-							   NMIP4Config *config)
+							   NMIP4Config *config,
+							   int priority)
 {
 	int len, i;
 
@@ -303,6 +308,9 @@ nm_system_device_set_from_ip4_config (const char *iface,
 
 	if (nm_ip4_config_get_mtu (config))
 		nm_system_device_set_mtu (iface, nm_ip4_config_get_mtu (config));
+
+	if (priority > 0)
+		nm_system_device_set_priority (iface, config, priority);
 
 	return TRUE;
 }
@@ -692,9 +700,24 @@ void nm_system_device_flush_ip4_routes (NMDevice *dev)
 	nm_system_device_flush_ip4_routes_with_iface (nm_device_get_iface (dev));
 }
 
+
+static void
+foreach_route (void (*callback)(struct nl_object *, gpointer),
+			gpointer user_data)
+{
+	struct nl_handle *nlh;
+	struct nl_cache *route_cache;
+
+	nlh = nm_netlink_get_default_handle ();
+	route_cache = rtnl_route_alloc_cache (nlh);
+	nl_cache_mngt_provide (route_cache);
+	nl_cache_foreach (route_cache, callback, user_data);
+	nl_cache_free (route_cache);
+}
+
+
 typedef struct {
 	const char *iface;
-	struct nl_handle *nlh;
 	int iface_idx;
 } RouteCheckData;
 
@@ -711,7 +734,7 @@ check_one_route (struct nl_object *object, void *user_data)
 	if (rtnl_route_get_family (route) != AF_INET)
 		return;
 
-	err = rtnl_route_del (data->nlh, route, 0);
+	err = rtnl_route_del (nm_netlink_get_default_handle (), route, 0);
 	if (err < 0) {
 		nm_warning ("(%s) error %d returned from rtnl_route_del(): %s",
 		            data->iface, err, nl_geterror());
@@ -726,8 +749,6 @@ check_one_route (struct nl_object *object, void *user_data)
  */
 void nm_system_device_flush_ip4_routes_with_iface (const char *iface)
 {
-	struct nl_handle *nlh = NULL;
-	struct nl_cache *route_cache = NULL;
 	int iface_idx;
 	RouteCheckData check_data;
 
@@ -735,20 +756,72 @@ void nm_system_device_flush_ip4_routes_with_iface (const char *iface)
 	iface_idx = nm_netlink_iface_to_index (iface);
 	g_return_if_fail (iface_idx >= 0);
 
-	nlh = nm_netlink_get_default_handle ();
-	g_return_if_fail (nlh != NULL);
-
 	memset (&check_data, 0, sizeof (check_data));
 	check_data.iface = iface;
-	check_data.nlh = nlh;
 	check_data.iface_idx = iface_idx;
 
-	route_cache = rtnl_route_alloc_cache (nlh);
-	g_return_if_fail (route_cache != NULL);
-	nl_cache_mngt_provide (route_cache);
+	foreach_route (check_one_route, &check_data);
+}
 
-	/* Remove routing table entries */
-	nl_cache_foreach (route_cache, check_one_route, &check_data);
+typedef struct {
+	struct rtnl_route *route;
+	NMIP4Config *config;
+	int iface;
+} SetPriorityInfo;
 
-	nl_cache_free (route_cache);
+static void
+find_route (struct nl_object *object, gpointer user_data)
+{
+	struct rtnl_route *route = (struct rtnl_route *) object;
+	SetPriorityInfo *info = (SetPriorityInfo *) user_data;
+	struct nl_addr *dst;
+	struct in_addr *dst_addr;
+	int num;
+	int i;
+
+	if (info->route ||
+	    rtnl_route_get_oif (route) != info->iface ||
+	    rtnl_route_get_scope (route) != RT_SCOPE_LINK)
+		return;
+
+	dst = rtnl_route_get_dst (route);
+	if (nl_addr_get_family (dst) != AF_INET)
+		return;
+
+	dst_addr = nl_addr_get_binary_addr (dst);
+	num = nm_ip4_config_get_num_addresses (info->config);
+	for (i = 0; i < num; i++) {
+		const NMSettingIP4Address *addr = nm_ip4_config_get_address (info->config, i);
+
+		if (addr->prefix == nl_addr_get_prefixlen (dst) &&
+		    (addr->address & nm_utils_ip4_prefix_to_netmask (addr->prefix)) == dst_addr->s_addr) {
+
+			info->route = route;
+			break;
+		}
+	}
+}
+
+static void
+nm_system_device_set_priority (const char *iface,
+						 NMIP4Config *config,
+						 int priority)
+{
+	SetPriorityInfo info;
+
+	info.route = NULL;
+	info.config = config;
+	info.iface = nm_netlink_iface_to_index (iface);
+	g_return_if_fail (info.iface >= 0);
+
+	foreach_route (find_route, &info);
+	if (info.route) {
+		struct nl_handle *nlh;
+
+		nlh = nm_netlink_get_default_handle ();
+		rtnl_route_del (nlh, info.route, 0);
+
+		rtnl_route_set_prio (info.route, priority);
+		rtnl_route_add (nlh, info.route, 0);
+	}
 }
