@@ -7,14 +7,14 @@
 #
 # Priit Laes <amd@store20.com>, 2006, 2007.
 # Ivar Smolin <okul at linux.ee> 2006, 2007.
-# Mattias Põldaru <mattias@gmail.com>, 2007.
+# Mattias Põldaru <mattias@gmail.com>, 2007-2008.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: Networkmanager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-10-28 11:52+0000\n"
-"PO-Revision-Date: 2007-10-31 23:13+0300\n"
+"POT-Creation-Date: 2008-09-05 18:57+0000\n"
+"PO-Revision-Date: 2008-09-28 21:10+0300\n"
 "Last-Translator: Mattias Põldaru <mahfiaz@gmail.com>\n"
 "Language-Team: Estonian <gnome-et@linux.ee>\n"
 "MIME-Version: 1.0\n"
@@ -22,33 +22,268 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../src/nm-netlink-monitor.c:165
+#: ../src/nm-netlink-monitor.c:193
+#: ../src/nm-netlink-monitor.c:474
 #, c-format
-msgid "unable to create netlink socket for monitoring wired ethernet devices - %s"
-msgstr "netlink soklit traadita võrguühenduse jälgimiseks ei suudeta luua - %s"
+msgid "error processing netlink message: %s"
+msgstr "viga netlink sõnumi töötlemisel: %s"
 
-#: ../src/nm-netlink-monitor.c:183
+#: ../src/nm-netlink-monitor.c:250
 #, c-format
-msgid "unable to bind to netlink socket for monitoring wired ethernet devices - %s"
-msgstr "netlink soklit juhtmega võrguühenduse jälgimiseks ei suudeta luua - %s"
+msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgstr "võrguoleku monitooringu jaoks netlink pideme eraldamine võimatu: %s"
 
-#: ../src/nm-netlink-monitor.c:407
-msgid "operation took too long"
-msgstr "operatsiooniks kulus liiga palju aega"
+#: ../src/nm-netlink-monitor.c:260
+#, c-format
+msgid "unable to connect to netlink for monitoring link status: %s"
+msgstr "võrguoleku monitooringu jaoks netlink'iga ühendumine võimatu: %s"
 
-#: ../src/nm-netlink-monitor.c:504
-msgid "received data from wrong type of sender"
-msgstr "vastuvõetud andmed on valet tüüpi saatjalt"
+#: ../src/nm-netlink-monitor.c:268
+#, c-format
+msgid "unable to join netlink group for monitoring link status: %s"
+msgstr "võrguoleku monitooringu jaoks netlink grupiga liitumine võimatu: %s"
 
-#: ../src/nm-netlink-monitor.c:517
-msgid "received data from unexpected sender"
-msgstr "vastuvõetud andmed on ootamatult saatjalt"
+#: ../src/nm-netlink-monitor.c:276
+#, c-format
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
+msgstr "võrguoleku monitooringu jaoks netlink lingi puhvri eraldamine võimatu: %s"
 
-#: ../src/nm-netlink-monitor.c:646
-msgid "too much data was sent over socket and some of it was lost"
-msgstr "sokli kaudu saadeti liiga palju andmeid ning osa sellest läks kaotsi"
+#: ../src/nm-netlink-monitor.c:439
+#, c-format
+msgid "error updating link cache: %s"
+msgstr "viga lingi puhvri uuendamisel: %s"
 
-#: ../src/nm-netlink-monitor.c:724
+#: ../src/nm-netlink-monitor.c:497
+#, c-format
 msgid "error occurred while waiting for data on socket"
 msgstr "soklist andmete ootamisel tekkis viga"
+
+#: ../src/NetworkManager.c:250
+#, c-format
+msgid "Invalid option.  Please use --help to see a list of valid options.\n"
+msgstr "Vigane valik.  Kasuta --help võtit sobivate valikute nimistu nägemiseks.\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:87
+msgid "# Created by NetworkManager\n"
+msgstr "# Loodud NetworkManager'i poolt\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:93
+#, c-format
+msgid ""
+"# Merged from %s\n"
+"\n"
+msgstr ""
+"# Liidetud allikast %s\n"
+"\n"
+
+#: ../src/named-manager/nm-named-manager.c:240
+msgid "NOTE: the libc resolver may not support more than 3 nameservers."
+msgstr "MÄRKUS: libc lahendaja ei pruugi toetada rohkem kui 3 nimeserverit."
+
+#: ../src/named-manager/nm-named-manager.c:242
+msgid "The nameservers listed below may not be recognized."
+msgstr "Järgneva nimistu nimeservereid ei tuntud ära."
+
+#: ../system-settings/src/main.c:366
+#, c-format
+msgid "Auto %s"
+msgstr "Automaatne %s"
+
+#: ../libnm-util/crypto.c:125
+#, c-format
+msgid "PEM key file had no end tag '%s'."
+msgstr "PEM võtmefaili lõpus ei olnud '%s'."
+
+#: ../libnm-util/crypto.c:135
+#, c-format
+msgid "Doesn't look like a PEM private key file."
+msgstr "Ei paista nagu PEM-eravõtme fail."
+
+#: ../libnm-util/crypto.c:143
+#, c-format
+msgid "Not enough memory to store PEM file data."
+msgstr "PEM faili andmete hoidmiseks pole piisavalt mälu."
+
+#: ../libnm-util/crypto.c:159
+#, c-format
+msgid "Malformed PEM file: Proc-Type was not first tag."
+msgstr "Vigane PEM fail: Proc-Type ei olnud esimene silt."
+
+#: ../libnm-util/crypto.c:167
+#, c-format
+msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
+msgstr "Vigane PEM fail: tundmatu Proc-Type silt '%s'."
+
+#: ../libnm-util/crypto.c:177
+#, c-format
+msgid "Malformed PEM file: DEK-Info was not the second tag."
+msgstr "Vigane PEM fail: DEK-info ei olnud teine silt."
+
+#: ../libnm-util/crypto.c:188
+#, c-format
+msgid "Malformed PEM file: no IV found in DEK-Info tag."
+msgstr "Vigane PEM fail: IV ei leitud DEK-Info sildis."
+
+#: ../libnm-util/crypto.c:195
+#, c-format
+msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
+msgstr "Vigane PEM fail: IV vigane vorming DEK-Info sildis."
+
+#: ../libnm-util/crypto.c:208
+#, c-format
+msgid "Malformed PEM file: unknown private key cipher '%s'."
+msgstr "Vigane PEM fail: tunmatu privaatvõtme šiffer '%s'."
+
+#: ../libnm-util/crypto.c:227
+#, c-format
+msgid "Could not decode private key."
+msgstr "Privaatvõtit ei saa dešifreerida."
+
+#: ../libnm-util/crypto.c:271
+#, c-format
+msgid "PEM certificate '%s' had no end tag '%s'."
+msgstr "PEM-sertifikaadil '%s' pole lõpusilti '%s'."
+
+#: ../libnm-util/crypto.c:281
+#, c-format
+msgid "Failed to decode certificate."
+msgstr "Sertifikaadi dešifreerimine nurjus."
+
+#: ../libnm-util/crypto.c:290
+#: ../libnm-util/crypto.c:298
+#, c-format
+msgid "Not enough memory to store certificate data."
+msgstr "Sertifikaadi andmete salvestamiseks pole piisavalt mälu."
+
+#: ../libnm-util/crypto.c:328
+#, c-format
+msgid "IV must be an even number of bytes in length."
+msgstr "IV pikkus baitides peab olema paarisarv."
+
+#: ../libnm-util/crypto.c:337
+#, c-format
+msgid "Not enough memory to store the IV."
+msgstr "IV hoidmiseks pole piisavalt mälu."
+
+#: ../libnm-util/crypto.c:348
+#, c-format
+msgid "IV contains non-hexadecimal digits."
+msgstr "IV sisaldab mitte-oktaalarvu."
+
+#: ../libnm-util/crypto.c:386
+#: ../libnm-util/crypto_gnutls.c:142
+#: ../libnm-util/crypto_nss.c:155
+#, c-format
+msgid "Private key cipher '%s' was unknown."
+msgstr "Privaatvõtme šiffer '%s' oli tundmatu."
+
+#: ../libnm-util/crypto.c:395
+#, c-format
+msgid "Not enough memory to create private key decryption key."
+msgstr "Privaatvõtme dešifreerimise võtme loomiseks pole piisavalt mälu."
+
+#: ../libnm-util/crypto.c:513
+#, c-format
+msgid "Not enough memory to store decrypted private key."
+msgstr "Dešifreeritud privaatvõtme hoidmiseks pole piisavalt mälu."
+
+#: ../libnm-util/crypto_gnutls.c:43
+msgid "Failed to initialize the crypto engine."
+msgstr "Šifreerimismootori lähtestamine nurjus."
+
+#: ../libnm-util/crypto_gnutls.c:88
+#, c-format
+msgid "Failed to initialize the MD5 engine: %s / %s."
+msgstr "MD5-mootori lähtestamine nurjus: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:151
+#: ../libnm-util/crypto_nss.c:164
+#, c-format
+msgid "Not enough memory for decrypted key buffer."
+msgstr "Dešifreeritud võtme puhvri jaoks pole piisavalt mälu."
+
+#: ../libnm-util/crypto_gnutls.c:159
+#, c-format
+msgid "Failed to initialize the decryption cipher context: %s / %s."
+msgstr "Dešifreerimise šifri konteksti lähtestamine nurjus: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:168
+#, c-format
+msgid "Failed to set symmetric key for decryption: %s / %s."
+msgstr "Sümmeetrilise võtme määramine dešifreerimiseks nurjus: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:177
+#, c-format
+msgid "Failed to set IV for decryption: %s / %s."
+msgstr "IV määramine dešifreerimiseks nurjus: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:186
+#, c-format
+msgid "Failed to decrypt the private key: %s / %s."
+msgstr "Privaatvõtme dešifreerimine nurjus: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:224
+#, c-format
+msgid "Error initializing certificate data: %s"
+msgstr "Sertifikaadi andmete lähtestamine nurjus: %s"
+
+#: ../libnm-util/crypto_gnutls.c:236
+#, c-format
+msgid "Couldn't decode certificate: %s"
+msgstr "Sertifikaati ei saa dešifreerida: %s"
+
+#: ../libnm-util/crypto_nss.c:49
+#, c-format
+msgid "Failed to initialize the crypto engine: %d."
+msgstr "Šifrimootori lähtestamine nurjus: %d."
+
+#: ../libnm-util/crypto_nss.c:96
+#, c-format
+msgid "Failed to initialize the MD5 context: %d."
+msgstr "MD5 konteksti lähtestamine nurjus: %d."
+
+#: ../libnm-util/crypto_nss.c:172
+#, c-format
+msgid "Failed to initialize the decryption cipher slot."
+msgstr "Šifripesa lähtestamine nurjus."
+
+#: ../libnm-util/crypto_nss.c:182
+#, c-format
+msgid "Failed to set symmetric key for decryption."
+msgstr "Sümmeetrilise võtme määramine dešifreerimiseks nurjus."
+
+#: ../libnm-util/crypto_nss.c:192
+#, c-format
+msgid "Failed to set IV for decryption."
+msgstr "IV määramine dešifreerimiseks nurjus."
+
+#: ../libnm-util/crypto_nss.c:200
+#, c-format
+msgid "Failed to initialize the decryption context."
+msgstr "Dešifreerimise konteksti lähtestamine nurjus."
+
+#: ../libnm-util/crypto_nss.c:213
+#, c-format
+msgid "Failed to decrypt the private key: %d."
+msgstr "Privaatvõtme dešifreerimine nurjus: %d."
+
+#: ../libnm-util/crypto_nss.c:225
+#, c-format
+msgid "Failed to finalize decryption of the private key: %d."
+msgstr "Privaatvõtme dešifreerimise lõpetamine nurjus: %d."
+
+#: ../libnm-util/crypto_nss.c:269
+#, c-format
+msgid "Couldn't decode certificate: %d"
+msgstr "Sertifikaati ei suudetud dekodeerida: %d"
+
+#~ msgid "operation took too long"
+#~ msgstr "operatsiooniks kulus liiga palju aega"
+#~ msgid "received data from wrong type of sender"
+#~ msgstr "vastuvõetud andmed on valet tüüpi saatjalt"
+#~ msgid "received data from unexpected sender"
+#~ msgstr "vastuvõetud andmed on ootamatult saatjalt"
+#~ msgid "too much data was sent over socket and some of it was lost"
+#~ msgstr ""
+#~ "sokli kaudu saadeti liiga palju andmeid ning osa sellest läks kaotsi"
 
