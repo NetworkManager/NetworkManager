@@ -6,62 +6,62 @@
 #
 # Priit Laes <amd@store20.com>, 2007.
 # Ivar Smolin <okul@linux.ee>, 2007.
-# Mattias Põldaru <mahfiaz@gmail.com>, 2007.
+# Mattias Põldaru <mahfiaz@gmail.com>, 2007-2008.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-vpnc\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-09-13 03:41+0100\n"
-"PO-Revision-Date: 2007-10-17 03:18+0300\n"
-"Last-Translator: Priit Laes <amd@store20.com>\n"
+"POT-Creation-Date: 2008-09-03 21:00+0000\n"
+"PO-Revision-Date: 2008-09-28 03:25+0300\n"
+"Last-Translator: Mattias Põldaru <mahfiaz@gmail.com>\n"
 "Language-Team: Estonian <gnome-et@linux.ee>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:144
+#: ../auth-dialog/gnome-two-password-dialog.c:145
 msgid "_Secondary Password:"
 msgstr "_Teisene parool:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:258
+#: ../auth-dialog/gnome-two-password-dialog.c:259
 msgid "_Username:"
 msgstr "_Kasutajanimi:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:260
+#: ../auth-dialog/gnome-two-password-dialog.c:261
 msgid "_Domain:"
 msgstr "_Domeen:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:262
+#: ../auth-dialog/gnome-two-password-dialog.c:263
 msgid "_Password:"
 msgstr "_Parool:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:351
+#: ../auth-dialog/gnome-two-password-dialog.c:352
 msgid "Connect _anonymously"
 msgstr "Ühendu _anonüümselt"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:356
+#: ../auth-dialog/gnome-two-password-dialog.c:357
 msgid "Connect as _user:"
 msgstr "Ühendu ka_sutajana:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:465
+#: ../auth-dialog/gnome-two-password-dialog.c:466
 msgid "_Remember passwords for this session"
 msgstr "_Jäta selle seansi jaoks parool meelde"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:467
+#: ../auth-dialog/gnome-two-password-dialog.c:468
 msgid "_Save passwords in keyring"
 msgstr "_Salvesta parool võtmerõngasse"
 
-#: ../auth-dialog/main.c:160
+#: ../auth-dialog/main.c:67
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Virtuaalse eravõrguga '%s' ühendumiseks pead end autentima."
 
-#: ../auth-dialog/main.c:161
+#: ../auth-dialog/main.c:68
 msgid "Authenticate VPN"
 msgstr "VPN-i autentimine"
 
-#: ../auth-dialog/main.c:168
+#: ../auth-dialog/main.c:75
 msgid "_Group Password:"
 msgstr "_Grupiparool:"
 
@@ -73,197 +73,183 @@ msgstr "VPN-ühenduste lisamine, muutmine ja eemaldamine"
 msgid "VPN Connection Manager (vpnc)"
 msgstr "VPN-ühenduste haldur (vpnc)"
 
-#: ../properties/nm-vpnc.c:94
-msgid "Compatible Cisco VPN client (vpnc)"
+#: ../properties/nm-vpnc.c:53
+msgid "Cisco Compatible VPN (vpnc)"
 msgstr "Cisco VPN kliendiga ühilduv (vpnc)"
 
-#: ../properties/nm-vpnc.c:523
-msgid "The following vpnc VPN connection will be created:"
-msgstr "Luuakse alljärgnev VPN ühendus:"
+#: ../properties/nm-vpnc.c:54
+msgid "Compatible with various Cisco, Juniper, Netscreen, and Sonicwall IPSec-based VPN gateways."
+msgstr "Ühilduv erinevate Cisco, Juniper, Netscreen, ja Sonicwall IPSec seadmetel baseeruvate VPN võrgulüüsidega."
 
-#: ../properties/nm-vpnc.c:525
-#, c-format
-msgid "Name:  %s"
-msgstr "Nimi:  %s"
+#: ../properties/nm-vpnc.c:265
+msgid "Secure (default)"
+msgstr "Turvaline (vaikimisi)"
 
-#: ../properties/nm-vpnc.c:528
-#, c-format
-msgid "Gateway:  %s"
-msgstr "Värav:  %s"
+#: ../properties/nm-vpnc.c:268
+msgid "Weak (use with caution)"
+msgstr "Nõrk (kasuta ettevaatlikult)"
 
-#: ../properties/nm-vpnc.c:530
-#, c-format
-msgid "Group Name:  %s"
-msgstr "Grupinimi:  %s"
+#: ../properties/nm-vpnc.c:276
+msgid "None (completely insecure)"
+msgstr "Pole (täiesti turvamata)"
 
-#: ../properties/nm-vpnc.c:534
-#, c-format
-msgid "Username:  %s"
-msgstr "Kasutajanimi:  %s"
+#: ../properties/nm-vpnc.c:314
+msgid "NAT-T (default)"
+msgstr "NAT-T (vaikimisi)"
 
-#: ../properties/nm-vpnc.c:539
-#, c-format
-msgid "Domain:  %s"
-msgstr "Domeen:  %s"
+#: ../properties/nm-vpnc.c:321
+msgid "Cisco UDP"
+msgstr "Cisco UDP"
 
-#: ../properties/nm-vpnc.c:544
-#, c-format
-msgid "Routes:  %s"
-msgstr "Marsruudid: %s"
+#: ../properties/nm-vpnc.c:328
+msgid "Disabled"
+msgstr "Keelatud"
 
-#: ../properties/nm-vpnc.c:548
-#, c-format
-msgid "NAT-Keepalive packet interval:  %s"
-msgstr "NAT-Keepalive pakettide intervall: %s"
-
-#: ../properties/nm-vpnc.c:552
-msgid "Enable Single DES"
-msgstr "Ühekordse DES krüptimise lubamine"
-
-#: ../properties/nm-vpnc.c:556
-msgid "Disable NAT Traversal"
-msgstr "Keela NAT-traversal"
-
-#: ../properties/nm-vpnc.c:560
-msgid "The connection details can be changed using the \"Edit\" button."
-msgstr "Ühenduse üksikasjade muutmiseks kasuta \"Redigeeri\" nuppu."
-
-#: ../properties/nm-vpnc.c:638
+#: ../properties/nm-vpnc.c:724
 msgid "TCP tunneling not supported"
 msgstr "TCP-tunneldamine pole toetatud"
 
-#: ../properties/nm-vpnc.c:640
+#: ../properties/nm-vpnc.c:726
 #, c-format
 msgid ""
-"The VPN settings file '%s' specifies that VPN traffic should be tunneled "
-"through TCP which is currently not supported in the vpnc software.\n"
+"The VPN settings file '%s' specifies that VPN traffic should be tunneled through TCP which is currently not supported in the vpnc software.\n"
 "\n"
-"The connection can still be created, with TCP tunneling disabled, however it "
-"may not work as expected."
+"The connection can still be created, with TCP tunneling disabled, however it may not work as expected."
 msgstr ""
-"VPN-i seadete fail '%s' määrab, et VPN liikluse tunnel tuleks teha TCP "
-"kaudu. Kahjuks ei toeta seda vpnc tarkvara.\n"
+"VPN-i seadete fail '%s' määrab, et VPN liikluse tunnel tuleks teha TCP kaudu. Kahjuks ei toeta seda vpnc tarkvara.\n"
 "\n"
-"Siiski saab tekitada ilma TCP tunnelita ühenduse, kuid see ei pruugi toimida "
-"soovitud viisil."
-
-#: ../properties/nm-vpnc.c:661
-msgid "Cannot import settings"
-msgstr "Sätteid pole võimalik importida"
-
-#: ../properties/nm-vpnc.c:663
-#, c-format
-msgid "The VPN settings file '%s' does not contain valid data."
-msgstr "VPN seadete fail '%s' ei sisalda sobivat infot."
-
-#: ../properties/nm-vpnc.c:680
-msgid "Select file to import"
-msgstr "Imporditava faili valimine"
-
-#. printf ("in impl_export\n");
-#: ../properties/nm-vpnc.c:860
-msgid "Save as..."
-msgstr "Salvesta kui..."
-
-#: ../properties/nm-vpnc.c:890
-#, c-format
-msgid "A file named \"%s\" already exists."
-msgstr "Fail nimega \"%s\" on juba olemas."
-
-#: ../properties/nm-vpnc.c:893
-msgid "Do you want to replace it with the one you are saving?"
-msgstr "Kas sa tahad seda asendada sellega, mida sa salvestad?"
-
-#: ../properties/nm-vpnc.c:907
-msgid "Failed to export configuration"
-msgstr "Tõrge sätete eksportimisel"
-
-#: ../properties/nm-vpnc.c:909
-#, c-format
-msgid "Failed to save file %s"
-msgstr "Tõrge faili %s salvestamisel"
+"Siiski saab tekitada ilma TCP tunnelita ühenduse, kuid see ei pruugi toimida soovitud viisil."
 
 #: ../properties/nm-vpnc-dialog.glade.h:1
-msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
-msgstr "<i>näide: 172.16.0.0/16 10.11.12.0/24</i>"
+msgid " "
+msgstr " "
 
 #: ../properties/nm-vpnc-dialog.glade.h:2
-msgid "Connection na_me:"
-msgstr "Ühe_nduse nimi:"
+msgid "<b>General</b>"
+msgstr "<b>Üldine</b>"
 
 #: ../properties/nm-vpnc-dialog.glade.h:3
-msgid "Disable NAT _traversal"
-msgstr "Keela NAT-_traversal"
+msgid "<b>Optional</b>"
+msgstr "<b>Valikuline</b>"
 
 #: ../properties/nm-vpnc-dialog.glade.h:4
-msgid "Enable _weak single DES encryption"
-msgstr "Luba _nõrga ühekordse DES krüptimisalgoritmi kasutamist"
+#, fuzzy
+msgid "Disable Dead Peer Detection"
+msgstr "Keela surnud masina tuvastamine"
 
 #: ../properties/nm-vpnc-dialog.glade.h:5
+msgid "Domain:"
+msgstr "Domeen:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:6
+msgid "Encryption method:"
+msgstr "Krüpteerimise meetod:"
+
+#: ../properties/nm-vpnc-dialog.glade.h:7
 msgid "G_roup name:"
 msgstr "G_rupi nimi:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:6
-msgid "Import _Saved Configuration..."
-msgstr "_Impordi salvestatud sätted..."
-
-#: ../properties/nm-vpnc-dialog.glade.h:7
-msgid "Interval:"
-msgstr "Intervall:"
-
 #: ../properties/nm-vpnc-dialog.glade.h:8
-msgid ""
-"Name used to identify the connection to the private network, e.g. \"Campus "
-"VPN\" or \"Corporate Network\""
-msgstr "Privaatvõrgu eristamise nimi, nt \"Ülikooli VPN\" või \"Firma võrk\""
+msgid "Gro_up password:"
+msgstr "_Grupiparool:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:9
-msgid "Optional"
-msgstr "Valikuline"
+msgid "NAT traversal:"
+msgstr "NAT-traversal:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:10
-msgid "Override _user name"
-msgstr "Kasutaja_nime ülimuslikkus"
+msgid "Show passwords"
+msgstr "Näita paroole"
 
 #: ../properties/nm-vpnc-dialog.glade.h:11
-msgid ""
-"Please enter the information provided by your system administrator below. Do "
-"not enter your password here as you will be prompted when connecting."
-msgstr ""
-"Palun sisesta siia süsteemiadministraatorilt saadud info. Ära sisesta siia "
-"oma parooli, seda küsitakse ühendumiselt."
+msgid "User name:"
+msgstr "Kasutajanimi:"
 
 #: ../properties/nm-vpnc-dialog.glade.h:12
-msgid ""
-"Please note that the file you import is not a Cisco VPN or VPNC "
-"configuration file. Ask your adminstrator for the file."
-msgstr ""
-"Võta teadmiseks, et imporditav fail ei ole ei Cisco VPN-i ega VPNC "
-"seadistamise fail. Küsi õiget faili oma administraatorilt."
-
-#: ../properties/nm-vpnc-dialog.glade.h:13
-msgid "Required"
-msgstr "Vajalik"
-
-#: ../properties/nm-vpnc-dialog.glade.h:14
-msgid "Use NAT _keepalive packets"
-msgstr "_NAT-keepalive pakettide kasutamine"
-
-#: ../properties/nm-vpnc-dialog.glade.h:15
-msgid "Use _domain for authentication"
-msgstr "Autentimiseks _domeeni kasutamine"
-
-#: ../properties/nm-vpnc-dialog.glade.h:16
 msgid "_Gateway:"
 msgstr "_Gateway:"
 
-#: ../properties/nm-vpnc-dialog.glade.h:17
-msgid "_Only use VPN connection for these addresses"
-msgstr "_Ainult neile aadressidele kasutatakse VPN-i"
+#: ../properties/nm-vpnc-dialog.glade.h:13
+msgid "_User password:"
+msgstr "_Kasutaja parool:"
 
-msgid "<b>Required Information</b>"
-msgstr "<b>Vajalik teave</b>"
-
-msgid "O_ptional Information"
-msgstr "_Valikulised andmed"
+#~ msgid "The following vpnc VPN connection will be created:"
+#~ msgstr "Luuakse alljärgnev VPN ühendus:"
+#~ msgid "Name:  %s"
+#~ msgstr "Nimi:  %s"
+#~ msgid "Gateway:  %s"
+#~ msgstr "Värav:  %s"
+#~ msgid "Group Name:  %s"
+#~ msgstr "Grupinimi:  %s"
+#~ msgid "Username:  %s"
+#~ msgstr "Kasutajanimi:  %s"
+#~ msgid "Domain:  %s"
+#~ msgstr "Domeen:  %s"
+#~ msgid "Routes:  %s"
+#~ msgstr "Marsruudid: %s"
+#~ msgid "NAT-Keepalive packet interval:  %s"
+#~ msgstr "NAT-Keepalive pakettide intervall: %s"
+#~ msgid "Enable Single DES"
+#~ msgstr "Ühekordse DES krüptimise lubamine"
+#~ msgid "Disable NAT Traversal"
+#~ msgstr "Keela NAT-traversal"
+#~ msgid "The connection details can be changed using the \"Edit\" button."
+#~ msgstr "Ühenduse üksikasjade muutmiseks kasuta \"Redigeeri\" nuppu."
+#~ msgid "Cannot import settings"
+#~ msgstr "Sätteid pole võimalik importida"
+#~ msgid "The VPN settings file '%s' does not contain valid data."
+#~ msgstr "VPN seadete fail '%s' ei sisalda sobivat infot."
+#~ msgid "Select file to import"
+#~ msgstr "Imporditava faili valimine"
+#~ msgid "Save as..."
+#~ msgstr "Salvesta kui..."
+#~ msgid "A file named \"%s\" already exists."
+#~ msgstr "Fail nimega \"%s\" on juba olemas."
+#~ msgid "Do you want to replace it with the one you are saving?"
+#~ msgstr "Kas sa tahad seda asendada sellega, mida sa salvestad?"
+#~ msgid "Failed to export configuration"
+#~ msgstr "Tõrge sätete eksportimisel"
+#~ msgid "Failed to save file %s"
+#~ msgstr "Tõrge faili %s salvestamisel"
+#~ msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+#~ msgstr "<i>näide: 172.16.0.0/16 10.11.12.0/24</i>"
+#~ msgid "Connection na_me:"
+#~ msgstr "Ühe_nduse nimi:"
+#~ msgid "Enable _weak single DES encryption"
+#~ msgstr "Luba _nõrga ühekordse DES krüptimisalgoritmi kasutamist"
+#~ msgid "Import _Saved Configuration..."
+#~ msgstr "_Impordi salvestatud sätted..."
+#~ msgid "Interval:"
+#~ msgstr "Intervall:"
+#~ msgid ""
+#~ "Name used to identify the connection to the private network, e.g. "
+#~ "\"Campus VPN\" or \"Corporate Network\""
+#~ msgstr ""
+#~ "Privaatvõrgu eristamise nimi, nt \"Ülikooli VPN\" või \"Firma võrk\""
+#~ msgid "Override _user name"
+#~ msgstr "Kasutaja_nime ülimuslikkus"
+#~ msgid ""
+#~ "Please enter the information provided by your system administrator below. "
+#~ "Do not enter your password here as you will be prompted when connecting."
+#~ msgstr ""
+#~ "Palun sisesta siia süsteemiadministraatorilt saadud info. Ära sisesta "
+#~ "siia oma parooli, seda küsitakse ühendumiselt."
+#~ msgid ""
+#~ "Please note that the file you import is not a Cisco VPN or VPNC "
+#~ "configuration file. Ask your adminstrator for the file."
+#~ msgstr ""
+#~ "Võta teadmiseks, et imporditav fail ei ole ei Cisco VPN-i ega VPNC "
+#~ "seadistamise fail. Küsi õiget faili oma administraatorilt."
+#~ msgid "Required"
+#~ msgstr "Vajalik"
+#~ msgid "Use NAT _keepalive packets"
+#~ msgstr "_NAT-keepalive pakettide kasutamine"
+#~ msgid "Use _domain for authentication"
+#~ msgstr "Autentimiseks _domeeni kasutamine"
+#~ msgid "_Only use VPN connection for these addresses"
+#~ msgstr "_Ainult neile aadressidele kasutatakse VPN-i"
+#~ msgid "<b>Required Information</b>"
+#~ msgstr "<b>Vajalik teave</b>"
+#~ msgid "O_ptional Information"
+#~ msgstr "_Valikulised andmed"
 
