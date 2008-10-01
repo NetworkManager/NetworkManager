@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-pptp\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-08-25 19:05+0200\n"
-"PO-Revision-Date: 2008-08-25 19:09+0100\n"
+"POT-Creation-Date: 2008-10-01 07:39+0200\n"
+"PO-Revision-Date: 2008-10-01 07:39+0100\n"
 "Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "MIME-Version: 1.0\n"
@@ -50,12 +50,12 @@ msgstr "_Kom ihåg lösenord för denna session"
 msgid "_Save passwords in keyring"
 msgstr "_Spara lösenord i nyckelring"
 
-#: ../auth-dialog/main.c:168
+#: ../auth-dialog/main.c:140
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Du måsta autentisera dig för att komma åt det virtuella privata nätverket \"%s\"."
 
-#: ../auth-dialog/main.c:169
+#: ../auth-dialog/main.c:141
 msgid "Authenticate VPN"
 msgstr "Autentisera VPN"
 
@@ -140,8 +140,8 @@ msgid "Default"
 msgstr "Standard"
 
 #: ../properties/nm-pptp-dialog.glade.h:12
-msgid "Domain:"
-msgstr "Domän:"
+msgid "NT Domain:"
+msgstr "NT-domän:"
 
 #: ../properties/nm-pptp-dialog.glade.h:13
 msgid "Send PPP _echo packets"
