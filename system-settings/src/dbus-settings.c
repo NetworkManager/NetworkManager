@@ -407,7 +407,7 @@ nm_sysconfig_settings_add_plugin (NMSysconfigSettings *self,
 
 	g_object_get (G_OBJECT (plugin),
 	              NM_SYSTEM_CONFIG_INTERFACE_NAME, &pname,
-			    NM_SYSTEM_CONFIG_INTERFACE_INFO, &pinfo,
+	              NM_SYSTEM_CONFIG_INTERFACE_INFO, &pinfo,
 	              NULL);
 
 	g_message ("Loaded plugin %s: %s", pname, pinfo);
