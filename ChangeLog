@@ -1,3 +1,14 @@
+2008-10-01  Dan Williams  <dcbw@redhat.com>
+
+	Fix setting value comparison issue that caused some settings to look the
+	same when they were really different (rh #464417)
+
+	* libnm-util/nm-param-spec-specialized.c
+		- (type_is_fixed_size): return fundamental size of the fixed type too
+		- (nm_gvalues_compare_collection): use the fundamental fixed type size
+			in the comparison so that the _entire_ fixed type collection gets
+			compared rather than just the first 'len1' bytes
+
 2008-09-30  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerPolicy.c

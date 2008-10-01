@@ -39,20 +39,41 @@ struct _NMParamSpecSpecialized {
 static gint nm_gvalues_compare (const GValue *value1, const GValue *value2);
 
 static gboolean
-type_is_fixed_size (GType type)
+type_is_fixed_size (GType type, gsize *tsize)
 {
 	switch (type) {
 	case G_TYPE_CHAR:
+		if (tsize) *tsize = sizeof (char);
+		return TRUE;
 	case G_TYPE_UCHAR:
+		if (tsize) *tsize = sizeof (guchar);
+		return TRUE;
 	case G_TYPE_BOOLEAN:
+		if (tsize) *tsize = sizeof (gboolean);
+		return TRUE;
 	case G_TYPE_LONG:
+		if (tsize) *tsize = sizeof (glong);
+		return TRUE;
 	case G_TYPE_ULONG:
+		if (tsize) *tsize = sizeof (gulong);
+		return TRUE;
 	case G_TYPE_INT:
+		if (tsize) *tsize = sizeof (gint);
+		return TRUE;
 	case G_TYPE_UINT:
+		if (tsize) *tsize = sizeof (guint);
+		return TRUE;
 	case G_TYPE_INT64:
+		if (tsize) *tsize = sizeof (gint64);
+		return TRUE;
 	case G_TYPE_UINT64:
+		if (tsize) *tsize = sizeof (guint64);
+		return TRUE;
 	case G_TYPE_FLOAT:
+		if (tsize) *tsize = sizeof (gfloat);
+		return TRUE;
 	case G_TYPE_DOUBLE:
+		if (tsize) *tsize = sizeof (gdouble);
 		return TRUE;
 	default:
 		return FALSE;
@@ -232,8 +253,9 @@ nm_gvalues_compare_collection (const GValue *value1, const GValue *value2)
 	guint len1;
 	guint len2;
 	GType value_type = dbus_g_type_get_collection_specialization (G_VALUE_TYPE (value1));
+	gsize element_size = 0;
 
-	if (type_is_fixed_size (value_type)) {
+	if (type_is_fixed_size (value_type, &element_size)) {
 		gpointer data1 = NULL;
 		gpointer data2 = NULL;
 
@@ -243,7 +265,7 @@ nm_gvalues_compare_collection (const GValue *value1, const GValue *value2)
 		if (len1 != len2)
 			ret = len1 < len2 ? -1 : len1 > len2;
 		else
-			ret = memcmp (data1, data2, len1);
+			ret = memcmp (data1, data2, len1 * element_size);
 	} else {
 		GSList *list1 = NULL;
 		GSList *list2 = NULL;
@@ -372,8 +394,7 @@ nm_gvalues_compare (const GValue *value1, const GValue *value2)
 	if (type1 != type2)
 		return type1 < type2 ? -1 : type1 > type2;
 
-
-	if (type_is_fixed_size (type1))
+	if (type_is_fixed_size (type1, NULL))
 		ret = nm_gvalues_compare_fixed (value1, value2);
 	else if (type1 == G_TYPE_STRING) 
 		ret = nm_gvalues_compare_string (value1, value2);
