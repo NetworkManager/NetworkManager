@@ -24,10 +24,12 @@
  * (C) Copyright 2008 Novell, Inc.
  */
 
+#include <unistd.h>
+#include <string.h>
+
 #include <NetworkManager.h>
 #include <nm-connection.h>
 #include <dbus/dbus.h>
-#include <string.h>
 #include <nm-setting-connection.h>
 
 #include "nm-dbus-glib-types.h"
@@ -55,6 +57,7 @@ typedef struct {
 	gboolean connections_loaded;
 	GHashTable *connections;
 	GHashTable *unmanaged_devices;
+	char *orig_hostname;
 } NMSysconfigSettingsPrivate;
 
 G_DEFINE_TYPE (NMSysconfigSettings, nm_sysconfig_settings, NM_TYPE_SETTINGS);
@@ -148,6 +151,8 @@ settings_finalize (GObject *object)
 
 	g_object_unref (priv->hal_mgr);
 	dbus_g_connection_unref (priv->g_connection);
+
+	g_free (priv->orig_hostname);
 
 	G_OBJECT_CLASS (nm_sysconfig_settings_parent_class)->finalize (object);
 }
@@ -249,6 +254,10 @@ get_property (GObject *object, guint prop_id,
 			}
 		}
 
+		/* If no plugin provided a hostname, try the original hostname of the machine */
+		if (!g_value_get_string (value) && priv->orig_hostname)
+			g_value_set_string (value, priv->orig_hostname);
+
 		/* Don't ever pass NULL through D-Bus */
 		if (!g_value_get_string (value))
 			g_value_set_static_string (value, "");
@@ -312,11 +321,20 @@ static void
 nm_sysconfig_settings_init (NMSysconfigSettings *self)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+	char hostname[HOST_NAME_MAX + 2];
 
 	priv->connections = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
 	priv->unmanaged_devices = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
 	priv->pol_ctx = create_polkit_context ();
+
+	/* Grab hostname on startup and use that if no plugins provide one */
+	memset (hostname, 0, sizeof (hostname));
+	if (gethostname (&hostname[0], HOST_NAME_MAX) == 0) {
+		/* only cache it if it's a valid hostname */
+		if (strlen (hostname) && strcmp (hostname, "localhost") && strcmp (hostname, "localhost.localdomain"))
+			priv->orig_hostname = g_strdup (hostname);
+	}
 }
 
 NMSysconfigSettings *

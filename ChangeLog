@@ -1,5 +1,13 @@
 2008-10-01  Dan Williams  <dcbw@redhat.com>
 
+	* system-settings/src/dbus-settings.c
+		- (nm_sysconfig_settings_init): cache system hostname on startup as
+			a fallback if no plugin provides a hostname
+		- (get_property): fall back to cached hostname if no plugin provides
+			a hostname
+
+2008-10-01  Dan Williams  <dcbw@redhat.com>
+
 	Fix setting value comparison issue that caused some settings to look the
 	same when they were really different (rh #464417)
 
