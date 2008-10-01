@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-09-24 19:01+0200\n"
-"PO-Revision-Date: 2008-09-24 19:02+0100\n"
+"POT-Creation-Date: 2008-10-01 07:40+0200\n"
+"PO-Revision-Date: 2008-10-01 07:40+0100\n"
 "Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "MIME-Version: 1.0\n"
@@ -109,7 +109,7 @@ msgid "Compatible with the OpenVPN server."
 msgstr "Kompatibel med OpenVPN-servern."
 
 #: ../properties/nm-openvpn.c:322
-#: ../properties/nm-openvpn-dialog.glade.h:8
+#: ../properties/nm-openvpn-dialog.glade.h:7
 msgid "Certificates (TLS)"
 msgstr "Certifikat (TLS)"
 
@@ -149,90 +149,90 @@ msgstr "A_vancerat..."
 msgid "CA Certificate:"
 msgstr "CA-certifikat:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:7
-msgid "Certificate Password:"
-msgstr "Certifikatlösenord:"
-
-#: ../properties/nm-openvpn-dialog.glade.h:9
+#: ../properties/nm-openvpn-dialog.glade.h:8
 msgid "Cipher:"
 msgstr "Skiffer:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:10
+#: ../properties/nm-openvpn-dialog.glade.h:9
 msgid "General"
 msgstr "Allmänt"
 
-#: ../properties/nm-openvpn-dialog.glade.h:11
+#: ../properties/nm-openvpn-dialog.glade.h:10
 msgid "Key Direction:"
 msgstr "Nyckelriktning:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:12
+#: ../properties/nm-openvpn-dialog.glade.h:11
 msgid "Key File:"
 msgstr "Nyckelfil:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:13
+#: ../properties/nm-openvpn-dialog.glade.h:12
 msgid "Local IP Address:"
 msgstr "Lokal IP-adress:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:14
+#: ../properties/nm-openvpn-dialog.glade.h:13
 msgid "OpenVPN Advanced Options"
 msgstr "Avancerade alternativ för OpenVPN"
 
-#: ../properties/nm-openvpn-dialog.glade.h:15
+#: ../properties/nm-openvpn-dialog.glade.h:14
 msgid "Password:"
 msgstr "Lösenord:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:15
+msgid "Private Key Password:"
+msgstr "Lösenord för privat nyckel:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:16
 msgid "Private Key:"
 msgstr "Privat nyckel:"
 
 #: ../properties/nm-openvpn-dialog.glade.h:17
-msgid "Select A File"
-msgstr "Välj en fil"
-
-#: ../properties/nm-openvpn-dialog.glade.h:18
 msgid "Show passwords"
 msgstr "Visa lösenord"
 
-#: ../properties/nm-openvpn-dialog.glade.h:19
+#: ../properties/nm-openvpn-dialog.glade.h:18
 msgid "Static Key:"
 msgstr "Statisk nyckel:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:20
+#: ../properties/nm-openvpn-dialog.glade.h:19
 msgid "Type:"
 msgstr "Typ:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:21
+#: ../properties/nm-openvpn-dialog.glade.h:20
 msgid "Use L_ZO data compression"
 msgstr "Använd L_ZO-datakomprimering"
 
-#: ../properties/nm-openvpn-dialog.glade.h:22
+#: ../properties/nm-openvpn-dialog.glade.h:21
 msgid "Use a TA_P device"
 msgstr "Använd en TA_P-enhet"
 
-#: ../properties/nm-openvpn-dialog.glade.h:23
+#: ../properties/nm-openvpn-dialog.glade.h:22
 msgid "Use a _TCP connection"
 msgstr "Använd en _TCP-anslutning"
 
-#: ../properties/nm-openvpn-dialog.glade.h:24
+#: ../properties/nm-openvpn-dialog.glade.h:23
 msgid "Use additional TLS authentication"
 msgstr "Använd ytterligare TLS-autentisering"
 
-#: ../properties/nm-openvpn-dialog.glade.h:25
+#: ../properties/nm-openvpn-dialog.glade.h:24
 msgid "Use custom gateway p_ort:"
 msgstr "Använd anpassad gatewayp_ort:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:26
+#: ../properties/nm-openvpn-dialog.glade.h:25
 msgid "User Certificate:"
 msgstr "Användarcertifikat:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:27
+#: ../properties/nm-openvpn-dialog.glade.h:26
 msgid "User name:"
 msgstr "Användarnamn:"
 
-#: ../properties/nm-openvpn-dialog.glade.h:28
+#: ../properties/nm-openvpn-dialog.glade.h:27
 msgid "_Gateway:"
 msgstr "_Gateway:"
 
+#~ msgid "Certificate Password:"
+#~ msgstr "Certifikatlösenord:"
+#~ msgid "Select A File"
+#~ msgstr "Välj en fil"
 #~ msgid "gtk-cancel"
 #~ msgstr "Avbryt"
 #~ msgid "gtk-ok"
