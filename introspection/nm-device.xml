@@ -57,12 +57,12 @@
 
 
     <signal name="StateChanged">
-      <arg name="new-state" type="u" tp:type="NM_DEVICE_STATE">
+      <arg name="new_state" type="u" tp:type="NM_DEVICE_STATE">
         <tp:docstring>
           The new state of the device.
         </tp:docstring>
       </arg>
-      <arg name="old-state" type="u" tp:type="NM_DEVICE_STATE">
+      <arg name="old_state" type="u" tp:type="NM_DEVICE_STATE">
         <tp:docstring>
           The previous state of the device.
         </tp:docstring>
