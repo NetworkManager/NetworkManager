@@ -427,16 +427,26 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 		if(nameserver_v)
 			nameservers_list_i = nameservers_list = g_slist_append(nameservers_list, g_strdup(nameserver_v));
 
+		if (!address_v)
+			address_v = g_strdup ("0.0.0.0");
+
 		if (inet_pton (AF_INET, address_v, &tmp_ip4_addr))
 			ip4config->address = tmp_ip4_addr.s_addr;
 		else
 			g_set_error (&error, eni_plugin_error_quark (), 0,
 					   "Invalid %s IP4 address '%s'", "address", address_v);
+		if (!netmask_v)
+			netmask_v = g_strdup( "255.255.255.255");
+
 		if (inet_pton (AF_INET, netmask_v, &tmp_ip4_addr))
 			ip4config->prefix = nm_utils_ip4_netmask_to_prefix(tmp_ip4_addr.s_addr);
 		else
 			g_set_error (&error, eni_plugin_error_quark (), 0,
 					   "Invalid %s IP4 address '%s'", "netmask", netmask_v);
+
+		if (!gateway_v)
+			gateway_v = g_strdup (address_v);
+
 		if (inet_pton (AF_INET, gateway_v, &tmp_ip4_addr))
 			ip4config->gateway = tmp_ip4_addr.s_addr;
 		else

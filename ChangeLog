@@ -1,5 +1,14 @@
 2008-10-02  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Alexander Sack <asac ubuntu com>
+
+	* system-settings/plugins/ifupdown/parser.c
+		- Implement more graceful ip4 config parsing for cases where
+		  /etc/network/interfaces omits basic ip4 settings, such as gateway etc
+		  by using default values
+
+2008-10-02  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerPolicy.c
 		- (device_state_changed): when marking a connection invalid, clear its
 			secrets too so that fresh secrets get requested the next time
