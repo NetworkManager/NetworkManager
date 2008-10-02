@@ -1,5 +1,13 @@
 2008-10-02  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-gsm-device.c
+		- (enter_pin_done, enter_pin, check_pin_done, real_act_stage1_prepare):
+			pass the required GSM secret along via user_data rather than keeping
+			it around in the private data where it sometimes didn't get cleared
+		- (real_get_ppp_name): implement using the GSM username
+
+2008-10-02  Dan Williams  <dcbw@redhat.com>
+
 	* src/ppp-manager/nm-ppp-manager.c
 	  src/ppp-manager/nm-ppp-manager.h
 		- (impl_ppp_manager_need_secrets): tries secrets twice before asking

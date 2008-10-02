@@ -25,7 +25,6 @@ typedef struct {
 	char *monitor_iface;
 	NMSerialDevice *monitor_device;
 
-	NMGsmSecret need_secret;
 	guint pending_id;
 	guint state_to_disconnected_id;
 
@@ -47,7 +46,7 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-static void enter_pin (NMGsmDevice *device, gboolean retry);
+static void enter_pin (NMGsmDevice *device, NMGsmSecret secret_type, gboolean retry);
 static void manual_registration (NMGsmDevice *device);
 static void automatic_registration (NMGsmDevice *device);
 
@@ -487,6 +486,7 @@ enter_pin_done (NMSerialDevice *device,
                 gpointer user_data)
 {
 	NMSettingGsm *setting;
+	NMGsmSecret secret = GPOINTER_TO_UINT (user_data);
 
 	switch (reply_index) {
 	case 0:
@@ -505,7 +505,7 @@ enter_pin_done (NMSerialDevice *device,
 		/* Make sure we don't use the invalid PIN/PUK again
 		   as it may lock up the SIM card */
 
-		switch (NM_GSM_DEVICE_GET_PRIVATE (device)->need_secret) {
+		switch (secret) {
 		case NM_GSM_SECRET_PIN:
 			g_free (setting->pin);
 			setting->pin = NULL;
@@ -518,13 +518,13 @@ enter_pin_done (NMSerialDevice *device,
 			break;
 		}
 
-		enter_pin (NM_GSM_DEVICE (device), TRUE);
+		enter_pin (NM_GSM_DEVICE (device), secret, TRUE);
 		break;
 	}
 }
 
 static void
-enter_pin (NMGsmDevice *device, gboolean retry)
+enter_pin (NMGsmDevice *device, NMGsmSecret secret_type, gboolean retry)
 {
 	NMSettingGsm *setting;
 	NMActRequest *req;
@@ -539,7 +539,7 @@ enter_pin (NMGsmDevice *device, gboolean retry)
 
 	setting = NM_SETTING_GSM (nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM));
 
-	switch (NM_GSM_DEVICE_GET_PRIVATE (device)->need_secret) {
+	switch (secret_type) {
 	case NM_GSM_SECRET_PIN:
 		secret = setting->pin;
 		secret_name = NM_SETTING_GSM_PIN;
@@ -558,7 +558,7 @@ enter_pin (NMGsmDevice *device, gboolean retry)
 		const char *responses[] = { "OK", "ERROR", "ERR", NULL };
 
 		command = g_strdup_printf ("AT+CPIN=\"%s\"", secret);
-		modem_wait_for_reply (device, command, 3, responses, responses, enter_pin_done, NULL);
+		modem_wait_for_reply (device, command, 3, responses, responses, enter_pin_done, GUINT_TO_POINTER (secret_type));
 		g_free (command);
 	} else {
 		nm_info ("(%s): GSM %s secret required", nm_device_get_iface (NM_DEVICE (device)), secret_name);
@@ -585,12 +585,10 @@ check_pin_done (NMSerialDevice *device,
 		power_up (NM_GSM_DEVICE (device));
 		break;
 	case 1:
-		NM_GSM_DEVICE_GET_PRIVATE (device)->need_secret = NM_GSM_SECRET_PIN;
-		enter_pin (NM_GSM_DEVICE (device), FALSE);
+		enter_pin (NM_GSM_DEVICE (device), NM_GSM_SECRET_PIN, FALSE);
 		break;
 	case 2:
-		NM_GSM_DEVICE_GET_PRIVATE (device)->need_secret = NM_GSM_SECRET_PUK;
-		enter_pin (NM_GSM_DEVICE (device), FALSE);
+		enter_pin (NM_GSM_DEVICE (device), NM_GSM_SECRET_PUK, FALSE);
 		break;
 	case -1:
 		nm_warning ("PIN checking timed out");
@@ -652,12 +650,9 @@ init_modem (NMSerialDevice *device, gpointer user_data)
 static NMActStageReturn
 real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
-	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
 	NMSerialDevice *serial_device = NM_SERIAL_DEVICE (device);
 	NMSettingSerial *setting;
 	guint id;
-
-	priv->need_secret = NM_GSM_SECRET_NONE;
 
 	setting = NM_SETTING_SERIAL (gsm_device_get_setting (NM_GSM_DEVICE (device), NM_TYPE_SETTING_SERIAL));
 
@@ -776,6 +771,21 @@ real_deactivate_quickly (NMDevice *device)
 
 	if (NM_DEVICE_CLASS (nm_gsm_device_parent_class)->deactivate_quickly)
 		NM_DEVICE_CLASS (nm_gsm_device_parent_class)->deactivate_quickly (device);
+}
+
+static const char *
+real_get_ppp_name (NMSerialDevice *device, NMActRequest *req)
+{
+	NMConnection *connection;
+	NMSettingGsm *s_gsm;
+
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+
+	s_gsm = (NMSettingGsm *) nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM);
+	g_assert (s_gsm);
+
+	return s_gsm->username;
 }
 
 /*****************************************************************************/
@@ -984,6 +994,7 @@ nm_gsm_device_class_init (NMGsmDeviceClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
+	NMSerialDeviceClass *serial_class = NM_SERIAL_DEVICE_CLASS (klass);
 
 	g_type_class_add_private (object_class, sizeof (NMGsmDevicePrivate));
 
@@ -999,6 +1010,8 @@ nm_gsm_device_class_init (NMGsmDeviceClass *klass)
 	device_class->deactivate_quickly = real_deactivate_quickly;
 
 	klass->do_dial = real_do_dial;
+
+	serial_class->get_ppp_name = real_get_ppp_name;
 
 	/* Properties */
 	g_object_class_install_property
