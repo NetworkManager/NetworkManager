@@ -1,5 +1,31 @@
 2008-10-02  Dan Williams  <dcbw@redhat.com>
 
+	* src/ppp-manager/nm-ppp-manager.c
+	  src/ppp-manager/nm-ppp-manager.h
+		- (impl_ppp_manager_need_secrets): tries secrets twice before asking
+			the settings daemon for completely new ones
+		- (create_pppd_cmd_line): new parameter 'ppp_name' used to set the
+			local PPP peer name; allow PPP debuging by launching NM with
+			the environment variable NM_PPP_DEBUG defined
+		- (nm_ppp_manager_start): new parameter 'ppp_name' passed to
+			create_pppd_cmd_line()
+
+	* src/nm-serial-device.c
+	  src/nm-serial-device.h
+		- New 'get_ppp_name' function for subclasses to implement to return the
+			local PPP peer name
+		- (real_act_stage2_config): call 'get_ppp_name' function of subclasses
+			and pass that name to the PPP manager
+
+	* src/nm-device-ethernet.c
+		- (pppoe_stage2_config): pass the PPPoE username to the PPP manager as
+			the local peer name
+
+	* src/nm-cdma-device.c
+		- (real_get_ppp_name): implement using the CDMA username
+
+2008-10-02  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Alexander Sack <asac ubuntu com>
 
 	* system-settings/plugins/ifupdown/parser.c

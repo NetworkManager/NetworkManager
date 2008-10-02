@@ -1013,15 +1013,20 @@ static NMActStageReturn
 real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMSerialDevicePrivate *priv = NM_SERIAL_DEVICE_GET_PRIVATE (device);
+	NMSerialDeviceClass *serial_class = NM_SERIAL_DEVICE_GET_CLASS (device);
 	NMActRequest *req;
 	GError *err = NULL;
 	NMActStageReturn ret;
+	const char *ppp_name = NULL;
 
 	req = nm_device_get_act_request (device);
 	g_assert (req);
 
+	if (serial_class->get_ppp_name)
+		ppp_name = serial_class->get_ppp_name (NM_SERIAL_DEVICE (device), req);
+
 	priv->ppp_manager = nm_ppp_manager_new (nm_device_get_iface (device));
-	if (nm_ppp_manager_start (priv->ppp_manager, req, &err)) {
+	if (nm_ppp_manager_start (priv->ppp_manager, req, ppp_name, &err)) {
 		g_signal_connect (priv->ppp_manager, "state-changed",
 					   G_CALLBACK (ppp_state_changed),
 					   device);

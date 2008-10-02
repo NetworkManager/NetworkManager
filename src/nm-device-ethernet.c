@@ -1235,6 +1235,8 @@ static NMActStageReturn
 pppoe_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
+	NMConnection *connection;
+	NMSettingPPPOE *s_pppoe;
 	NMActRequest *req;
 	GError *err = NULL;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
@@ -1242,8 +1244,14 @@ pppoe_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 	req = nm_device_get_act_request (NM_DEVICE (self));
 	g_assert (req);
 
+	connection = nm_act_request_get_connection (req);
+	g_assert (req);
+
+	s_pppoe = (NMSettingPPPOE *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPPOE);
+	g_assert (s_pppoe);
+
 	priv->ppp_manager = nm_ppp_manager_new (nm_device_get_iface (NM_DEVICE (self)));
-	if (nm_ppp_manager_start (priv->ppp_manager, req, &err)) {
+	if (nm_ppp_manager_start (priv->ppp_manager, req, s_pppoe->username, &err)) {
 		g_signal_connect (priv->ppp_manager, "state-changed",
 					   G_CALLBACK (ppp_state_changed),
 					   self);

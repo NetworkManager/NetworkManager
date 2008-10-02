@@ -38,7 +38,10 @@ GType nm_ppp_manager_get_type (void);
 
 NMPPPManager *nm_ppp_manager_new (const char *iface);
 
-gboolean nm_ppp_manager_start (NMPPPManager *manager, NMActRequest *req, GError **err);
+gboolean nm_ppp_manager_start (NMPPPManager *manager,
+                               NMActRequest *req,
+                               const char *ppp_name,
+                               GError **err);
 
 void     nm_ppp_manager_update_secrets (NMPPPManager *manager,
                                         const char *device,

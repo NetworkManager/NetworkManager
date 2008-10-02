@@ -6,6 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <stdlib.h>
 
 #include <errno.h>
 #include <sys/socket.h>
@@ -408,9 +409,13 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 	}
 
 	tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), PPP_MANAGER_SECRET_TRIES));
+	/* Only ask for completely new secrets after retrying them once; some PPP
+	 * servers (T-Mobile USA) appear to ask a few times when they actually don't
+	 * even care what you pass back.
+	 */
 	nm_act_request_request_connection_secrets (priv->act_req,
 	                                           setting_name,
-	                                           tries ? TRUE : FALSE,
+	                                           tries > 1 ? TRUE : FALSE,
 	                                           SECRETS_CALLER_PPP,
 	                                           hint1,
 	                                           hint2);
@@ -698,11 +703,13 @@ static NMCmdLine *
 create_pppd_cmd_line (NMPPPManager *self,
                       NMSettingPPP *setting, 
                       NMSettingPPPOE *pppoe,
+                      const char *ppp_name,
                       GError **err)
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (self);
 	const char *ppp_binary;
 	NMCmdLine *cmd;
+	const char *ppp_debug;
 
 	ppp_binary = nm_find_pppd ();
 	if (!ppp_binary) {
@@ -718,6 +725,15 @@ create_pppd_cmd_line (NMPPPManager *self,
 	nm_cmd_line_add_string (cmd, "nodetach");
 	nm_cmd_line_add_string (cmd, "lock");
 
+	ppp_debug = getenv ("NM_PPP_DEBUG");
+	if (ppp_debug)
+		nm_cmd_line_add_string (cmd, "debug");
+
+	if (ppp_name) {
+		nm_cmd_line_add_string (cmd, "user");
+		nm_cmd_line_add_string (cmd, ppp_name);
+	}
+
 	if (pppoe) {
 		char *dev_str;
 
@@ -732,9 +748,6 @@ create_pppd_cmd_line (NMPPPManager *self,
 			nm_cmd_line_add_string (cmd, "rp_pppoe_service");
 			nm_cmd_line_add_string (cmd, pppoe->service);
 		}
-
-		nm_cmd_line_add_string (cmd, "user");
-		nm_cmd_line_add_string (cmd, pppoe->username);
 	} else {
 		nm_cmd_line_add_string (cmd, priv->parent_iface);
 		/* Don't send some random address as the local address */
@@ -843,7 +856,10 @@ pppoe_fill_defaults (NMSettingPPP *setting)
 }
 
 gboolean
-nm_ppp_manager_start (NMPPPManager *manager, NMActRequest *req, GError **err)
+nm_ppp_manager_start (NMPPPManager *manager,
+                      NMActRequest *req,
+                      const char *ppp_name,
+                      GError **err)
 {
 	NMPPPManagerPrivate *priv;
 	NMConnection *connection;
@@ -863,7 +879,7 @@ nm_ppp_manager_start (NMPPPManager *manager, NMActRequest *req, GError **err)
 	if (pppoe_setting)
 		pppoe_fill_defaults (ppp_setting);
 
-	ppp_cmd = create_pppd_cmd_line (manager, ppp_setting, pppoe_setting, err);
+	ppp_cmd = create_pppd_cmd_line (manager, ppp_setting, pppoe_setting, ppp_name, err);
 	if (!ppp_cmd)
 		return FALSE;
 

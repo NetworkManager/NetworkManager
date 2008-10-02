@@ -312,6 +312,21 @@ real_connection_secrets_updated (NMDevice *dev,
 	nm_device_activate_schedule_stage1_device_prepare (dev);
 }
 
+static const char *
+real_get_ppp_name (NMSerialDevice *device, NMActRequest *req)
+{
+	NMConnection *connection;
+	NMSettingCdma *s_cdma;
+
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+
+	s_cdma = (NMSettingCdma *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CDMA);
+	g_assert (s_cdma);
+
+	return s_cdma->username;
+}
+
 /*****************************************************************************/
 /* Monitor device handling */
 
@@ -521,6 +536,7 @@ nm_cdma_device_class_init (NMCdmaDeviceClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
+	NMSerialDeviceClass *serial_class = NM_SERIAL_DEVICE_CLASS (klass);
 
 	g_type_class_add_private (object_class, sizeof (NMCdmaDevicePrivate));
 
@@ -533,6 +549,8 @@ nm_cdma_device_class_init (NMCdmaDeviceClass *klass)
 	device_class->get_generic_capabilities = real_get_generic_capabilities;
 	device_class->act_stage1_prepare = real_act_stage1_prepare;
 	device_class->connection_secrets_updated = real_connection_secrets_updated;
+
+	serial_class->get_ppp_name = real_get_ppp_name;
 
 	/* Properties */
 	g_object_class_install_property

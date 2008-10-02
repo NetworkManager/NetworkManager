@@ -23,6 +23,8 @@ typedef struct {
 typedef struct {
 	NMDeviceClass parent;
 
+	const char * (*get_ppp_name) (NMSerialDevice *device, NMActRequest *req);
+
 	/* Signals */
 	void (*ppp_stats) (NMSerialDevice *device, guint32 in_bytes, guint32 out_bytes);
 } NMSerialDeviceClass;
