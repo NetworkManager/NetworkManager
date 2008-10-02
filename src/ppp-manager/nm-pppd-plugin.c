@@ -226,8 +226,8 @@ get_pap_check()
 static int
 get_credentials (char *username, char *password)
 {
-	char *my_username;
-	char *my_password;
+	char *my_username = NULL;
+	char *my_password = NULL;
 	size_t len;
 	GError *err = NULL;
 
@@ -238,7 +238,6 @@ get_credentials (char *username, char *password)
 
 	g_return_val_if_fail (DBUS_IS_G_PROXY (proxy), -1);
 
-	my_username = my_password = NULL;
 	dbus_g_proxy_call (proxy, "NeedSecrets", &err,
 				    G_TYPE_INVALID,
 				    G_TYPE_STRING, &my_username,
