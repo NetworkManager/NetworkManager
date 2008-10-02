@@ -687,6 +687,7 @@ device_state_changed (NMDevice *device,
 		if (connection) {
 			g_object_set_data (G_OBJECT (connection), INVALID_TAG, GUINT_TO_POINTER (TRUE));
 			nm_info ("Marking connection '%s' invalid.", get_connection_id (connection));
+			nm_connection_clear_secrets (connection);
 		}
 		schedule_activate_check (policy, device);
 		break;

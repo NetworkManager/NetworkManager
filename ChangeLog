@@ -1,3 +1,9 @@
+2008-10-02  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerPolicy.c
+		- (device_state_changed): when marking a connection invalid, clear its
+			secrets too so that fresh secrets get requested the next time
+
 2008-10-01  Dan Williams  <dcbw@redhat.com>
 
 	* system-settings/src/dbus-settings.c
