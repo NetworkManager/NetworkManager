@@ -392,7 +392,7 @@ make_des_key (const char *cipher,
 	if (!key) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_OUT_OF_MEMORY,
-		             _("Not enough memory to create private key decryption key."));
+		             _("Not enough memory to decrypt private key."));
 		return NULL;
 	}
 
