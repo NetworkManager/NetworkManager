@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-pptp\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-08-14 08:58+0300\n"
+"POT-Creation-Date: 2008-10-04 21:34+0300\n"
 "PO-Revision-Date: 2008-08-14 08:00+0300\n"
 "Last-Translator: Ilkka Tuohela <hile@iki.fi>\n"
 "Language-Team: Finnish <gnome-fi-laatu@lists.sourceforge.net>\n"
@@ -49,12 +49,12 @@ msgstr "_Muista salasana istunnon ajan"
 msgid "_Save passwords in keyring"
 msgstr "_Tallenna salasana avainrenkaaseen"
 
-#: ../auth-dialog/main.c:168
+#: ../auth-dialog/main.c:140
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Yhteydenotto VPN-verkkoon \"%s\" vaatii todentamista."
 
-#: ../auth-dialog/main.c:169
+#: ../auth-dialog/main.c:141
 msgid "Authenticate VPN"
 msgstr "Todenna VPN-yhteys"
 
@@ -139,8 +139,8 @@ msgid "Default"
 msgstr "Oletus"
 
 #: ../properties/nm-pptp-dialog.glade.h:12
-msgid "Domain:"
-msgstr "Toimialue:"
+msgid "NT Domain:"
+msgstr "NT-toimialue:"
 
 #: ../properties/nm-pptp-dialog.glade.h:13
 msgid "Send PPP _echo packets"
