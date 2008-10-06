@@ -10,9 +10,7 @@ libnm_settings_plugin_ifcfg_fedora_la_SOURCES = \
 	nm-ifcfg-connection.h \
 	reader.c \
 	reader.h \
-	common.h \
-	nm-inotify-helper.c \
-	nm-inotify-helper.h
+	common.h
 
 libnm_settings_plugin_ifcfg_fedora_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \

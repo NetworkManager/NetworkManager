@@ -13,6 +13,8 @@ nm_system_settings_SOURCES = \
 	dbus-settings.c \
 	dbus-settings.h \
 	main.c \
+	nm-inotify-helper.c \
+	nm-inotify-helper.h \
 	nm-polkit-helpers.c \
 	nm-polkit-helpers.h \
 	nm-system-config-error.c \

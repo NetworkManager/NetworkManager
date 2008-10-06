@@ -1,5 +1,16 @@
 2008-10-03  Alexander Sack  <asac@ubuntu.com>
 
+	* system-settings/plugins/ifcfg-fedora/nm-inotify-helper.c
+	  system-settings/plugins/ifcfg-fedora/nm-inotify-helper.h
+	  system-settings/plugins/ifcfg-fedora/Makefile.am
+	  system-settings/src/nm-inotify-helper.c
+	  system-settings/src/nm-inotify-helper.h
+	  src/Makefile.am
+		- Move ifcfg-fedora inotify helpers to the system settings service so
+			they are available to all plugins
+
+2008-10-03  Alexander Sack  <asac@ubuntu.com>
+
 	Implement support for wep-tx-keyidx in ifupdown system
 	config plugin.
 
