@@ -1,5 +1,19 @@
 2008-10-03  Alexander Sack  <asac@ubuntu.com>
 
+	Implement system hostname support for debian/ubuntu
+
+	* system-settings/plugins/ifupdown/plugin.c
+		- (GObject__get_property): extend announced capabilities; add
+			NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME support
+		- (GObject__set_property,write_system_hostname): implement
+			NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME capability.
+		- (GObject__set_property, GObject__get_property, SCPluginIfupdown_init,
+		   update_system_hostname, get_hostname):
+			implement hostname property that watches and
+			parses /etc/hostname
+
+2008-10-03  Alexander Sack  <asac@ubuntu.com>
+
 	* system-settings/plugins/ifcfg-fedora/nm-inotify-helper.c
 	  system-settings/plugins/ifcfg-fedora/nm-inotify-helper.h
 	  system-settings/plugins/ifcfg-fedora/Makefile.am

@@ -41,6 +41,7 @@
 #include "nm-ifupdown-connection.h"
 #include "plugin.h"
 #include "parser.h"
+#include "nm-inotify-helper.h"
 
 #include <nm-utils.h>
 #include <sha1.h>
@@ -49,6 +50,7 @@
 
 #define IFUPDOWN_PLUGIN_NAME "ifupdown"
 #define IFUPDOWN_PLUGIN_INFO "(C) 2008 Canonical Ltd.  To report bugs please use the NetworkManager mailing list."
+#define IFUPDOWN_SYSTEM_HOSTNAME_FILE "/etc/hostname"
 
 typedef struct {
 
@@ -56,7 +58,10 @@ typedef struct {
 	NMSystemConfigHalManager *hal_mgr;
 
 	GHashTable *iface_connections;
-	
+	gchar* hostname;
+
+	gulong inotify_event_id;
+	int inotify_system_hostname_wd;
 } SCPluginIfupdownPrivate;
 
 static void
@@ -105,10 +110,25 @@ GObject__get_property (GObject *object, guint prop_id,
 				   GValue *value, GParamSpec *pspec);
 
 static void
+GObject__set_property (GObject *object, guint prop_id,
+				   const GValue *value, GParamSpec *pspec);
+
+static void
 GObject__dispose (GObject *object);
 
 static void
 GObject__finalize (GObject *object);
+
+/* other helpers */
+static const char *
+get_hostname (NMSystemConfigInterface *config);
+
+
+static void
+update_system_hostname(NMInotifyHelper *inotify_helper,
+                       struct inotify_event *evt,
+                       const char *path,
+                       NMSystemConfigInterface *config);
 
 
 static void
@@ -131,6 +151,7 @@ sc_plugin_ifupdown_class_init (SCPluginIfupdownClass *req_class)
 	object_class->dispose = GObject__dispose;
 	object_class->finalize = GObject__finalize;
 	object_class->get_property = GObject__get_property;
+	object_class->set_property = GObject__set_property;
 
 	g_object_class_override_property (object_class,
 	                                  NM_SYSTEM_CONFIG_INTERFACE_PROP_NAME,
@@ -156,12 +177,24 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config,
 	SCPluginIfupdownPrivate *priv = SC_PLUGIN_IFUPDOWN_GET_PRIVATE (config);
 	GHashTable *auto_ifaces = g_hash_table_new (g_str_hash, g_str_equal);
 	if_block *block = NULL;
+	NMInotifyHelper *inotify_helper;
 
 	if(!priv->iface_connections)
 		priv->iface_connections = g_hash_table_new (g_str_hash, g_str_equal);
 
 	PLUGIN_PRINT("SCPlugin-Ifupdown", "init!");
 	priv->hal_mgr = g_object_ref (hal_manager);
+
+	inotify_helper = nm_inotify_helper_get ();
+	priv->inotify_event_id = g_signal_connect (inotify_helper,
+									   "event",
+									   G_CALLBACK (update_system_hostname),
+									   config);
+
+	priv->inotify_system_hostname_wd =
+		nm_inotify_helper_add_watch (inotify_helper, IFUPDOWN_SYSTEM_HOSTNAME_FILE);
+
+	update_system_hostname(inotify_helper, NULL, NULL, config);
 
 	ifparser_init();
 	block = ifparser_getfirst();
@@ -265,6 +298,71 @@ SCPluginIfupdown_unmanaged_devices_changed (NMSystemConfigInterface *config)
 	PLUGIN_PRINT("SCPlugin-Ifdown", "unmanaged_devices_changed ... ended");
 }
 
+static const char *
+get_hostname (NMSystemConfigInterface *config)
+{
+	SCPluginIfupdownPrivate *priv = SC_PLUGIN_IFUPDOWN_GET_PRIVATE (config);
+	return priv->hostname;
+}
+
+static void
+update_system_hostname(NMInotifyHelper *inotify_helper,
+                       struct inotify_event *evt,
+                       const char *path,
+                       NMSystemConfigInterface *config)
+{
+	SCPluginIfupdownPrivate *priv = SC_PLUGIN_IFUPDOWN_GET_PRIVATE (config);
+	gchar *hostname_file = NULL;
+	gsize hostname_file_len = 0;
+	GError *error = NULL;
+
+	PLUGIN_PRINT ("SCPlugin-Ifupdown", "update_system_hostname");
+
+	if (evt && evt->wd != priv->inotify_system_hostname_wd)
+		return;
+
+	if(!g_file_get_contents ( IFUPDOWN_SYSTEM_HOSTNAME_FILE,
+						 &hostname_file,
+						 &hostname_file_len,
+						 &error)) {
+		nm_warning ("update_system_hostname() - couldn't read "
+				  IFUPDOWN_SYSTEM_HOSTNAME_FILE " (%d/%s)",
+				  error->code, error->message);
+		return;
+	}
+
+	if (priv->hostname)
+		g_free(priv->hostname);
+
+	priv->hostname = g_strstrip(hostname_file);
+
+	g_object_notify (G_OBJECT (config), NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
+}
+
+static void
+write_system_hostname(NMSystemConfigInterface *config,
+				  const char *newhostname)
+{
+	GError *error = NULL;
+	SCPluginIfupdownPrivate *priv = SC_PLUGIN_IFUPDOWN_GET_PRIVATE (config);
+	PLUGIN_PRINT ("SCPlugin-Ifupdown", "write_system_hostname: %s", newhostname);
+
+	g_return_if_fail (newhostname);
+
+	if(!g_file_set_contents ( IFUPDOWN_SYSTEM_HOSTNAME_FILE,
+						 newhostname,
+						 -1,
+						 &error)) {
+		nm_warning ("update_system_hostname() - couldn't write hostname (%s) to "
+				  IFUPDOWN_SYSTEM_HOSTNAME_FILE " (%d/%s)",
+				  newhostname, error->code, error->message);	
+	} else {
+		priv->hostname = g_strdup (newhostname);
+	}
+	g_object_notify (G_OBJECT (config), NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
+}
+
+
 static void
 sc_plugin_ifupdown_init (SCPluginIfupdown *plugin)
 {
@@ -273,7 +371,7 @@ sc_plugin_ifupdown_init (SCPluginIfupdown *plugin)
 
 	priv->g_connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &error);
 	if (!priv->g_connection) {
-		PLUGIN_PRINT (IFUPDOWN_PLUGIN_NAME, "    dbus-glib error: %s",
+		PLUGIN_PRINT ("SCPlugin-Ifupdown", "    dbus-glib error: %s",
 		              error->message ? error->message : "(unknown)");
 		g_error_free (error);
 	}
@@ -283,6 +381,8 @@ static void
 GObject__get_property (GObject *object, guint prop_id,
 				   GValue *value, GParamSpec *pspec)
 {
+	NMSystemConfigInterface *self = NM_SYSTEM_CONFIG_INTERFACE (object);
+
 	switch (prop_id) {
 	case NM_SYSTEM_CONFIG_INTERFACE_PROP_NAME:
 		g_value_set_string (value, IFUPDOWN_PLUGIN_NAME);
@@ -291,11 +391,33 @@ GObject__get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, IFUPDOWN_PLUGIN_INFO);
 		break;
 	case NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES:
-		g_value_set_uint (value, NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE);
+		g_value_set_uint (value, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME);
 		break;
 	case NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME:
-		g_value_set_string (value, "");
+		{
+			g_value_set_string (value, get_hostname(self));
+			break;
+		}
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
+	}
+}
+
+static void
+GObject__set_property (GObject *object, guint prop_id,
+				   const GValue *value, GParamSpec *pspec)
+{
+	switch (prop_id) {
+	case NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME:
+		{
+			const gchar *hostname = g_value_get_string (value);
+			if (hostname && strlen (hostname) < 1)
+				hostname = NULL;
+			write_system_hostname(NM_SYSTEM_CONFIG_INTERFACE(object),
+							  hostname);
+			break;
+		}
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -307,6 +429,12 @@ GObject__dispose (GObject *object)
 {
 	SCPluginIfupdown *plugin = SC_PLUGIN_IFUPDOWN (object);
 	SCPluginIfupdownPrivate *priv = SC_PLUGIN_IFUPDOWN_GET_PRIVATE (plugin);
+	NMInotifyHelper *inotify_helper = nm_inotify_helper_get ();
+
+	g_signal_handler_disconnect (inotify_helper, priv->inotify_event_id);
+
+	if (priv->inotify_system_hostname_wd >= 0)
+		nm_inotify_helper_remove_watch (inotify_helper, priv->inotify_system_hostname_wd);
 
 	g_object_unref (priv->hal_mgr);
 	G_OBJECT_CLASS (sc_plugin_ifupdown_parent_class)->dispose (object);
