@@ -1,3 +1,19 @@
+2008-10-06  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-ip4-config.c
+	  src/nm-ip4-config.h
+		- nm_ip4_config_is_exported -> nm_ip4_config_get_dbus_path
+
+	* src/nm-device-interface.c
+		- (nm_device_interface_init): make 'ip4-config' a boxed property of type
+			DBUS_TYPE_G_OBJECT_PATH so that we can make it NULL when we need to
+			by using '/' for the object path
+
+	* src/nm-device.c
+		- (src/nm-device.c): marshal missing/unexported ip4-config through
+			dbus as '/' since dbus-glib can't handle NULL objects nor can
+			dbus handle NULL object paths
+
 2008-10-03  Alexander Sack  <asac@ubuntu.com>
 
 	Implement system hostname support for debian/ubuntu

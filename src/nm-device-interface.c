@@ -90,10 +90,10 @@ nm_device_interface_init (gpointer g_iface)
 
 	g_object_interface_install_property
 		(g_iface,
-		 g_param_spec_object (NM_DEVICE_INTERFACE_IP4_CONFIG,
+		 g_param_spec_boxed (NM_DEVICE_INTERFACE_IP4_CONFIG,
 							  "IP4 Config",
 							  "IP4 Config",
-							  G_TYPE_OBJECT,
+							  DBUS_TYPE_G_OBJECT_PATH,
 							  G_PARAM_READWRITE));
 
 	g_object_interface_install_property

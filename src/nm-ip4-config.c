@@ -99,15 +99,12 @@ nm_ip4_config_export (NMIP4Config *config)
 	g_object_unref (dbus_mgr);
 }
 
-gboolean
-nm_ip4_config_is_exported (NMIP4Config *config)
+const char *
+nm_ip4_config_get_dbus_path (NMIP4Config *config)
 {
-	NMIP4ConfigPrivate *priv;
-
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), FALSE);
 
-	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	return !!priv->path;
+	return NM_IP4_CONFIG_GET_PRIVATE (config)->path;
 }
 
 void

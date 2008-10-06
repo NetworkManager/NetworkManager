@@ -1916,7 +1916,7 @@ nm_device_set_ip4_config (NMDevice *self, NMIP4Config *config, NMDeviceStateReas
 	priv->ip4_config = g_object_ref (config);
 
 	/* Export over D-Bus if needed */
-	if (!nm_ip4_config_is_exported (config))
+	if (!nm_ip4_config_get_dbus_path (config))
 		nm_ip4_config_export (config);
 
 	success = nm_system_device_set_from_ip4_config (ip_iface, config, nm_device_get_priority (self));
@@ -2212,9 +2212,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case NM_DEVICE_INTERFACE_PROP_IP4_CONFIG:
 		if ((state == NM_DEVICE_STATE_ACTIVATED) || (state == NM_DEVICE_STATE_IP_CONFIG))
-			g_value_set_object (value, priv->ip4_config);
+			g_value_set_boxed (value, nm_ip4_config_get_dbus_path (priv->ip4_config));
 		else
-			g_value_set_object (value, NULL);
+			g_value_set_boxed (value, "/");
 		break;
 	case NM_DEVICE_INTERFACE_PROP_DHCP4_CONFIG:
 		if (   ((state == NM_DEVICE_STATE_ACTIVATED) || (state == NM_DEVICE_STATE_IP_CONFIG))
