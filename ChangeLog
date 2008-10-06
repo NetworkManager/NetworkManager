@@ -1,3 +1,10 @@
+2008-10-03  Alexander Sack  <asac@ubuntu.com>
+
+	* system-settings/src/main.c:
+		- (add_default_dhcp_connection, device_removed_cb): ensure the UDI is
+			always used as the hash key; fixes a crash when removing wired
+			devices
+
 2008-10-02  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-gsm-device.c

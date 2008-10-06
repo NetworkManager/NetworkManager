@@ -382,7 +382,7 @@ add_default_dhcp_connection (gpointer user_data)
 	return FALSE;
 
 ignore:
-	g_hash_table_remove (info->app->wired_devices, info);
+	g_hash_table_remove (info->app->wired_devices, info->udi);
 	return FALSE;
 }
 
@@ -407,13 +407,8 @@ static void
 device_removed_cb (DBusGProxy *proxy, const char *udi, NMDeviceType devtype, gpointer user_data)
 {
 	Application *app = (Application *) user_data;
-	WiredDeviceInfo *info;
 
-	info = g_hash_table_lookup (app->wired_devices, udi);
-	if (!info)
-		return;
-
-	g_hash_table_remove (app->wired_devices, info);
+	g_hash_table_remove (app->wired_devices, udi);
 }
 
 /******************************************************************/
