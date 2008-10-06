@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-09-12 08:19+0200\n"
-"PO-Revision-Date: 2008-09-12 08:20+0100\n"
+"POT-Creation-Date: 2008-10-06 08:59+0200\n"
+"PO-Revision-Date: 2008-10-06 08:59+0100\n"
 "Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "MIME-Version: 1.0\n"
@@ -72,11 +72,11 @@ msgstr ""
 "# Sammanfogad från %s\n"
 "\n"
 
-#: ../src/named-manager/nm-named-manager.c:240
+#: ../src/named-manager/nm-named-manager.c:256
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
 msgstr "OBSERVERA: uppslag via glibc kanske inte har stöd för fler än 3 namnservrar."
 
-#: ../src/named-manager/nm-named-manager.c:242
+#: ../src/named-manager/nm-named-manager.c:258
 msgid "The nameservers listed below may not be recognized."
 msgstr "Namnservrarna listade nedan kanske inte kommer att kännas igen."
 
@@ -175,8 +175,8 @@ msgstr "Privata nyckelchiffret \"%s\" var okänt."
 
 #: ../libnm-util/crypto.c:395
 #, c-format
-msgid "Not enough memory to create private key decryption key."
-msgstr "Inte tillräckligt mycket minne för att skapa dekrypteringsnyckel för privat nyckel."
+msgid "Not enough memory to decrypt private key."
+msgstr "Inte tillräckligt mycket minne för att dekryptera privat nyckel."
 
 #: ../libnm-util/crypto.c:513
 #, c-format
@@ -273,6 +273,10 @@ msgstr "Misslyckades med att färdigställa dekryptering av den privata nyckeln:
 msgid "Couldn't decode certificate: %d"
 msgstr "Kunde inte avkoda certifikat: %d"
 
+#~ msgid "Not enough memory to create private key decryption key."
+#~ msgstr ""
+#~ "Inte tillräckligt mycket minne för att skapa dekrypteringsnyckel för "
+#~ "privat nyckel."
 #~ msgid "operation took too long"
 #~ msgstr "åtgärden tog för lång tid"
 #~ msgid "received data from wrong type of sender"
