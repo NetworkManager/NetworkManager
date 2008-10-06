@@ -23,6 +23,8 @@
 
 #include <string.h>
 #include <arpa/inet.h>
+#include <stdlib.h>
+#include <errno.h>
 
 #include <nm-connection.h>
 #include <NetworkManager.h>
@@ -207,6 +209,13 @@ static char *normalize_psk (gpointer value, gpointer data) {
 }
 
 static gpointer
+string_to_gpointerint(const gchar* data)
+{
+	gint result = (gint) strtol (data, NULL, 10);
+	return GINT_TO_POINTER(result);
+}
+	
+static gpointer
 string_to_glist_of_strings(const gchar* data)
 {
 	GSList *ret = NULL;
@@ -231,6 +240,14 @@ string_to_glist_of_strings(const gchar* data)
 }
 
 static void
+slist_free_all(gpointer slist)
+{
+	GSList *list = (GSList *) slist;
+	g_slist_foreach (list, (GFunc) g_free, NULL);
+	g_slist_free (list);
+}
+
+static void
 update_wireless_security_setting_from_if_block(NMConnection *connection,
 									  if_block *block)
 {
@@ -252,6 +269,7 @@ update_wireless_security_setting_from_if_block(NMConnection *connection,
 		{"wep-key1", "wep-key1"},
 		{"wep-key2", "wep-key2"},
 		{"wep-key3", "wep-key3"},
+		{"wep-tx-keyidx", "wep-tx-keyidx"},
 		{ NULL, NULL}
 	};
 
@@ -269,6 +287,7 @@ update_wireless_security_setting_from_if_block(NMConnection *connection,
 		{"wep-key1", normalize_dupe},
 		{"wep-key2", normalize_dupe},
 		{"wep-key3", normalize_dupe},
+		{"wep-tx-keyidx", normalize_dupe},
 		{ NULL, NULL}
 	};
 
@@ -276,9 +295,16 @@ update_wireless_security_setting_from_if_block(NMConnection *connection,
 		{"group", string_to_glist_of_strings},
 		{"pairwise", string_to_glist_of_strings},
 		{"proto", string_to_glist_of_strings},
+		{"wep-tx-keyidx", string_to_gpointerint},
 		{ NULL, NULL}
 	};
 
+	struct _Mapping free_type_mapping[] = {
+		{"group", slist_free_all},
+		{"pairwise", slist_free_all},
+		{"proto", slist_free_all},
+		{ NULL, NULL}
+	};
 
 	NMSettingWirelessSecurity *wireless_security_setting;
 	NMSettingWireless *s_wireless;
@@ -301,39 +327,49 @@ update_wireless_security_setting_from_if_block(NMConnection *connection,
 		   !strncmp("wireless-", curr->key, wireless_l)) {
 
 			gchar *property_value = NULL;
-			gpointer property_value2 = NULL;
+			gpointer typed_property_value = NULL;
 			const gchar* newkey = map_by_mapping(mapping, curr->key+wireless_l);
-			IfupdownStrDupeFunc func = map_by_mapping (dupe_mapping, curr->key+wireless_l);
-			IfupdownStrToTypeFunc func1 = map_by_mapping (type_mapping, curr->key+wireless_l);
-			if(!newkey || !func) {
+			IfupdownStrDupeFunc dupe_func = map_by_mapping (dupe_mapping, curr->key+wireless_l);
+			IfupdownStrToTypeFunc type_map_func = map_by_mapping (type_mapping, curr->key+wireless_l);
+			GFreeFunc free_func = map_by_mapping (free_type_mapping, curr->key+wireless_l);
+			if(!newkey || !dupe_func) {
 				g_warning("no (wireless) mapping found for key: %s", curr->key);
 				goto next;
 			}
-			property_value = (*func) (curr->data, connection);
+			property_value = (*dupe_func) (curr->data, connection);
 			PLUGIN_PRINT ("SCPlugin-Ifupdown", "setting wireless security key: %s=%s",
 					    newkey, property_value);
-			if(func1)
-				property_value2 = (*func1) (property_value);
+
+			if (type_map_func) {
+				errno = 0;
+				typed_property_value = (*type_map_func) (property_value);
+				if(errno)
+					goto wireless_next;
+			}
 		    
 			g_object_set(wireless_security_setting,
-					   newkey, property_value2 ? property_value2 : property_value,
+					   newkey, typed_property_value ? typed_property_value : property_value,
 					   NULL);
 			security = TRUE;
+
+		wireless_next:
 			g_free(property_value);
-			if(property_value)
-				g_free(property_value2);
+			if (typed_property_value && free_func)
+				(*free_func) (typed_property_value);
+
 		} else if(strlen(curr->key) > wpa_l &&
 				!strncmp("wpa-", curr->key, wpa_l)) {
 
 			gchar *property_value = NULL;
-			gpointer property_value2 = NULL;
+			gpointer typed_property_value = NULL;
 			const gchar* newkey = map_by_mapping(mapping, curr->key+wpa_l);
-			IfupdownStrDupeFunc func = map_by_mapping (dupe_mapping, curr->key+wpa_l);
-			IfupdownStrToTypeFunc func1 = map_by_mapping (type_mapping, curr->key+wpa_l);
-			if(!newkey || !func) {
+			IfupdownStrDupeFunc dupe_func = map_by_mapping (dupe_mapping, curr->key+wpa_l);
+			IfupdownStrToTypeFunc type_map_func = map_by_mapping (type_mapping, curr->key+wpa_l);
+			GFreeFunc free_func = map_by_mapping (free_type_mapping, curr->key+wpa_l);
+			if(!newkey || !dupe_func) {
 				goto next;
 			}
-			property_value = (*func) (curr->data, connection);
+			property_value = (*dupe_func) (curr->data, connection);
 			PLUGIN_PRINT ("SCPlugin-Ifupdown", "setting wpa security key: %s=%s",
 					    newkey,
 #ifdef DEBUG_SECRETS
@@ -352,14 +388,22 @@ update_wireless_security_setting_from_if_block(NMConnection *connection,
 #endif // DEBUG_SECRETS
 					    );
 
-			if(func1)
-				property_value2 = (*func1) (property_value);
+			if (type_map_func) {
+				errno = 0;
+				typed_property_value = (*type_map_func) (property_value);
+				if(errno)
+					goto wpa_next;
+			}
 		    
 			g_object_set(wireless_security_setting,
-					   newkey, property_value2 ? property_value2 : property_value,
+					   newkey, typed_property_value ? typed_property_value : property_value,
 					   NULL);
 			security = TRUE;
+
+		wpa_next:
 			g_free(property_value);
+			if (free_func && typed_property_value)
+				(*free_func) (typed_property_value);
 		}
 	next:
 		curr = curr->next;

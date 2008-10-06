@@ -1,5 +1,19 @@
 2008-10-03  Alexander Sack  <asac@ubuntu.com>
 
+	Implement support for wep-tx-keyidx in ifupdown system
+	config plugin.
+
+	* system-settings/plugins/ifupdown/parser.c
+		- (update_wireless_security_setting_from_if_block): introduce
+			free_type_mapping func table; rename a few local
+			variables to improve readability; add wpa security mapping
+			for wep-tx-keyidx property
+		- (string_to_gpointerint): new function used for the auto_type_mapping
+			of new wep-tx-keyidx property
+		- (slist_free_all): free func used for mapped slist types
+
+2008-10-03  Alexander Sack  <asac@ubuntu.com>
+
 	* system-settings/src/main.c:
 		- (add_default_dhcp_connection, device_removed_cb): ensure the UDI is
 			always used as the hash key; fixes a crash when removing wired
