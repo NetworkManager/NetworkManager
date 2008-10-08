@@ -351,6 +351,7 @@ set_system_hostname (const char *new_hostname, const char *msg)
 				            __func__, FALLBACK_HOSTNAME, errno, strerror (errno));
 			}
 		}
+		nm_utils_call_dispatcher ("hostname", NULL, NULL, NULL);
 	} else {
 		nm_warning ("%s: couldn't set the system hostname to '%s': (%d) %s",
 		            __func__, name, errno, strerror (errno));

@@ -361,7 +361,7 @@ construct_envp (NMIP4Config *ip4_config, NMDHCP4Config *dhcp4_config)
 	if (debug) {
 		char **p;
 
-		g_message ("-----------------------------------------");
+		g_message ("------------ Script Environment ------------");
 		for (p = envp; *p; p++)
 			g_message ("  %s", *p);
 		g_message ("\n");
@@ -427,9 +427,12 @@ dispatch_scripts (const char *action,
 		gint status = -1;
 
 		argv[0] = (char *) iter->data;
-		argv[1] = (char *) iface;
+		argv[1] = iface ? (char *) iface : "none";
 		argv[2] = (char *) action;
 		argv[3] = NULL;
+
+		if (debug)
+			g_message ("Script: %s %s %s", (char *) iter->data, iface ? (char *) iface : "(none)", (char *) action);
 
 		error = NULL;
 		if (g_spawn_sync ("/", argv, envp, 0, child_setup, NULL, NULL, NULL, &status, &error)) {
@@ -488,6 +491,10 @@ nm_dispatcher_action (Handler *h,
 		*error = NULL;
 	}
 
+	/* Hostname changes don't require a device */
+	if (!strcmp (action, "hostname"))
+		goto dispatch;
+
 	/* interface name */
 	value = g_hash_table_lookup (device_props, NMD_DEVICE_PROPS_INTERFACE);
 	if (!value || !G_VALUE_HOLDS_STRING (value)) {
@@ -537,6 +544,7 @@ nm_dispatcher_action (Handler *h,
 		ip4_config = nm_device_get_ip4_config (device);
 	}
 
+dispatch:
 	dispatch_scripts (action, iface, parent_iface, type, ip4_config, dhcp4_config);
 
 	if (device)

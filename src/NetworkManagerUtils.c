@@ -427,7 +427,10 @@ nm_utils_call_dispatcher (const char *action,
 	GHashTable *device_props;
 
 	g_return_if_fail (action != NULL);
-	g_return_if_fail (NM_IS_DEVICE (device));
+
+	/* All actions except 'hostname' require a device */
+	if (strcmp (action, "hostname"))
+		g_return_if_fail (NM_IS_DEVICE (device));
 
 	dbus_mgr = nm_dbus_manager_get ();
 	g_connection = nm_dbus_manager_get_connection (dbus_mgr);
@@ -470,29 +473,32 @@ nm_utils_call_dispatcher (const char *action,
 	device_props = g_hash_table_new_full (g_str_hash, g_str_equal,
 	                                      NULL, nm_gvalue_destroy);
 
-	/* interface */
-	g_hash_table_insert (device_props, NMD_DEVICE_PROPS_INTERFACE,
-	                     str_to_gvalue (nm_device_get_iface (device)));
+	/* Hostname actions do not require a device */
+	if (strcmp (action, "hostname")) {
+		/* interface */
+		g_hash_table_insert (device_props, NMD_DEVICE_PROPS_INTERFACE,
+		                     str_to_gvalue (nm_device_get_iface (device)));
 
-	/* IP interface */
-	if (vpn_iface) {
-		g_hash_table_insert (device_props, NMD_DEVICE_PROPS_IP_INTERFACE,
-		                     str_to_gvalue (vpn_iface));
-	} else if (nm_device_get_ip_iface (device)) {
-		g_hash_table_insert (device_props, NMD_DEVICE_PROPS_IP_INTERFACE,
-		                     str_to_gvalue (nm_device_get_ip_iface (device)));
+		/* IP interface */
+		if (vpn_iface) {
+			g_hash_table_insert (device_props, NMD_DEVICE_PROPS_IP_INTERFACE,
+			                     str_to_gvalue (vpn_iface));
+		} else if (nm_device_get_ip_iface (device)) {
+			g_hash_table_insert (device_props, NMD_DEVICE_PROPS_IP_INTERFACE,
+			                     str_to_gvalue (nm_device_get_ip_iface (device)));
+		}
+
+		/* type */
+		g_hash_table_insert (device_props, NMD_DEVICE_PROPS_TYPE,
+		                     uint_to_gvalue (nm_device_get_device_type (device)));
+
+		/* state */
+		g_hash_table_insert (device_props, NMD_DEVICE_PROPS_STATE,
+		                     uint_to_gvalue (nm_device_get_state (device)));
+
+		g_hash_table_insert (device_props, NMD_DEVICE_PROPS_PATH,
+		                     op_to_gvalue (nm_device_get_udi (device)));
 	}
-
-	/* type */
-	g_hash_table_insert (device_props, NMD_DEVICE_PROPS_TYPE,
-	                     uint_to_gvalue (nm_device_get_device_type (device)));
-
-	/* state */
-	g_hash_table_insert (device_props, NMD_DEVICE_PROPS_STATE,
-	                     uint_to_gvalue (nm_device_get_state (device)));
-
-	g_hash_table_insert (device_props, NMD_DEVICE_PROPS_PATH,
-	                     op_to_gvalue (nm_device_get_udi (device)));
 
 	dbus_g_proxy_call_no_reply (proxy, "Action",
 	                            G_TYPE_STRING, action,

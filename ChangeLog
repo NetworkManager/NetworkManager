@@ -1,5 +1,18 @@
 2008-10-08  Dan Williams  <dcbw@redhat.com>
 
+	Add a 'hostname' dispatcher action triggered on hostname changes (bgo #552983)
+
+	* src/NetworkManagerUtils.c
+		- (nm_utils_call_dispatcher): add a 'hostname' action
+
+	* src/NetworkManagerPolicy.c
+		- (set_system_hostname): dispatch hostname changes
+
+	* callouts/nm-dispatcher-action.c
+		- (nm_dispatcher_action): handle 'hostname' actions
+
+2008-10-08  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerSystem.c
 		- (find_route): ref the route so it doesn't get destroyed when the cache
 			is cleared
