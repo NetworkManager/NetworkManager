@@ -1,3 +1,8 @@
+2008-10-08  Tambet Ingo  <tambet@gmail.com>
+
+	* system-settings/plugins/keyfile/nm-keyfile-connection.c (update): Update the
+	connection with new settings before saving it.
+
 2008-10-06  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-ip4-config.c

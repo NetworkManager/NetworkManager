@@ -195,6 +195,7 @@ update (NMExportedConnection *exported,
 		char *filename = NULL;
 
 		connection = nm_exported_connection_get_connection (exported);
+		nm_connection_replace_settings (connection, new_settings);
 		success = write_connection (connection, &filename, error);
 		if (success && filename && strcmp (priv->filename, filename)) {
 			/* Update the filename if it changed */
