@@ -1,5 +1,13 @@
 2008-10-08  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerSystem.c
+		- (find_route): ref the route so it doesn't get destroyed when the cache
+			is cleared
+		- (nm_system_device_set_priority): unref the route here after it's done
+			being used
+
+2008-10-08  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-serial-device.c
 		- Turn on serial debugging when NM_SERIAL_DEBUG is set in the environment
 

@@ -796,6 +796,8 @@ find_route (struct nl_object *object, gpointer user_data)
 		if (addr->prefix == nl_addr_get_prefixlen (dst) &&
 		    (addr->address & nm_utils_ip4_prefix_to_netmask (addr->prefix)) == dst_addr->s_addr) {
 
+			/* Ref the route so it sticks around after the cache is cleared */
+			rtnl_route_put (route);
 			info->route = route;
 			break;
 		}
@@ -823,5 +825,6 @@ nm_system_device_set_priority (const char *iface,
 
 		rtnl_route_set_prio (info.route, priority);
 		rtnl_route_add (nlh, info.route, 0);
+		rtnl_route_put (info.route);
 	}
 }
