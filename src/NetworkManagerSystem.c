@@ -797,7 +797,7 @@ find_route (struct nl_object *object, gpointer user_data)
 		    (addr->address & nm_utils_ip4_prefix_to_netmask (addr->prefix)) == dst_addr->s_addr) {
 
 			/* Ref the route so it sticks around after the cache is cleared */
-			rtnl_route_put (route);
+			rtnl_route_get (route);
 			info->route = route;
 			break;
 		}
