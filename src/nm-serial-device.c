@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <string.h>
+#include <stdlib.h>
 #include <glib.h>
 
 #include "nm-serial-device.h"
@@ -21,7 +22,7 @@
 #include "nm-utils.h"
 #include "nm-serial-device-glue.h"
 
-/* #define NM_DEBUG_SERIAL 1 */
+static gboolean serial_debug = FALSE;
 
 #define SERIAL_BUF_SIZE 2048
 
@@ -186,12 +187,14 @@ parse_stopbits (guint i)
 	return stopbits;
 }
 
-#ifdef NM_DEBUG_SERIAL
 static inline void
-serial_debug (const char *prefix, const char *data, int len)
+nm_serial_debug (const char *prefix, const char *data, int len)
 {
 	GString *str;
 	int i;
+
+	if (!serial_debug)
+		return;
 
 	str = g_string_sized_new (len);
 	for (i = 0; i < len; i++) {
@@ -206,12 +209,6 @@ serial_debug (const char *prefix, const char *data, int len)
 	nm_debug ("%s '%s'", prefix, str->str);
 	g_string_free (str, TRUE);
 }
-#else
-static inline void
-serial_debug (const char *prefix, const char *data, int len)
-{
-}
-#endif /* NM_DEBUG_SERIAL */
 
 static NMSetting *
 serial_device_get_setting (NMSerialDevice *device, GType setting_type)
@@ -451,7 +448,7 @@ nm_serial_device_send_command (NMSerialDevice *device, GByteArray *command)
 	if (setting && setting->send_delay)
 		send_delay = setting->send_delay;
 
-	serial_debug ("Sending:", (char *) command->data, command->len);
+	nm_serial_debug ("Sending:", (char *) command->data, command->len);
 
 	for (i = 0; i < command->len && eagain_count > 0;) {
 		written = write (fd, command->data + i, 1);
@@ -472,7 +469,7 @@ nm_serial_device_send_command (NMSerialDevice *device, GByteArray *command)
 	}
 
 	if (eagain_count <= 0)
-		serial_debug ("Error: too many retries sending:", (char *) command->data, command->len);
+		nm_serial_debug ("Error: too many retries sending:", (char *) command->data, command->len);
 
 	return TRUE;
 }
@@ -564,7 +561,7 @@ nm_serial_device_wait_reply_blocking (NMSerialDevice *device,
 			buf[bytes_read] = 0;
 			g_string_append (result, buf);
 
-			serial_debug ("Got:", result->str, result->len);
+			nm_serial_debug ("Got:", result->str, result->len);
 		}
 
 		/* Look for needles and terminators */
@@ -674,7 +671,7 @@ wait_for_reply_got_data (GIOChannel *source,
 			buf[bytes_read] = 0;
 			g_string_append (info->result, buf);
 
-			serial_debug ("Got:", info->result->str, info->result->len);
+			nm_serial_debug ("Got:", info->result->str, info->result->len);
 		}
 
 		/* Look for needles and terminators */
@@ -1100,6 +1097,8 @@ real_get_generic_capabilities (NMDevice *dev)
 static void
 nm_serial_device_init (NMSerialDevice *self)
 {
+	if (getenv ("NM_SERIAL_DEBUG"))
+		serial_debug = TRUE;
 }
 
 static void

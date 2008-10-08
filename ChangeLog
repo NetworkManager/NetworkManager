@@ -1,3 +1,8 @@
+2008-10-08  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-serial-device.c
+		- Turn on serial debugging when NM_SERIAL_DEBUG is set in the environment
+
 2008-10-08  Tambet Ingo  <tambet@gmail.com>
 
 	* system-settings/plugins/keyfile/nm-keyfile-connection.c (update): Update the
