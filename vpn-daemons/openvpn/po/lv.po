@@ -1,0 +1,457 @@
+# English (British) translation for NetworkManager-openvpn
+# Copyright (C) 2006 THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the NetworkManager-openvpn package.
+# David Lodge <dave@cirt.net>, 2006
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager OpenVPN plugin\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2008-03-09 15:20+0000\n"
+"PO-Revision-Date: 2008-10-07 20:22+0300\n"
+"Last-Translator: Ivars Strazdiņš <ivars.strazdins@gmail.com>\n"
+"Language-Team: lv_LV <ivars.strazdins@gmail.com>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Poedit-Language: Latvian\n"
+"X-Poedit-Country: LATVIA\n"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:145
+msgid "_Password:"
+msgstr "_Parole:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:146
+msgid "_Secondary Password:"
+msgstr "_Sekundārā parole:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:263
+msgid "_Username:"
+msgstr "_Lietotājvārds:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:265
+msgid "_Domain:"
+msgstr "_Domēns:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:357
+msgid "Connect _anonymously"
+msgstr "Pievienoties _anonīmi"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:362
+msgid "Connect as _user:"
+msgstr "Pievienoties kā _lietotājam:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:471
+msgid "_Remember password for this session"
+msgstr "Atce_rēties paroli šai sesijai"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:473
+msgid "_Save password in keyring"
+msgstr "_Saglabāt paroli saišķī"
+
+#: ../auth-dialog/main.c:181
+#, c-format
+msgid "You need to authenticate to access the Virtual Private Network '%s'."
+msgstr "Jums jāpiesakās, lai lietotu virtuālo privāto tīklu '%s'."
+
+#: ../auth-dialog/main.c:182
+msgid "Authenticate VPN"
+msgstr "Pieteikties VPN"
+
+#: ../auth-dialog/main.c:195
+msgid "Certificate pass_word:"
+msgstr "Sertifikāta _parole:"
+
+#: ../auth-dialog/main.c:210
+msgid "Certificate password:"
+msgstr "Sertifikāta parole:"
+
+#: ../properties/nm-openvpn.c:150
+msgid "OpenVPN Client"
+msgstr "OpenVPN klients"
+
+#: ../properties/nm-openvpn.c:814
+msgid "The following OpenVPN connection will be created:"
+msgstr "Tiks izveidots OpenVPN savienojums:"
+
+#: ../properties/nm-openvpn.c:816
+#, c-format
+msgid "Name:  %s"
+msgstr "Vārds:  %s"
+
+#: ../properties/nm-openvpn.c:824
+msgid "Connection Type: X.509 Certificates"
+msgstr "Savienojuma tips: X.509 sertifikāti"
+
+#: ../properties/nm-openvpn.c:827
+#: ../properties/nm-openvpn.c:854
+#: ../properties/nm-openvpn.c:866
+#, c-format
+msgid "CA:  %s"
+msgstr "Sertificēšanas institūcija (CA):  %s"
+
+#: ../properties/nm-openvpn.c:830
+#: ../properties/nm-openvpn.c:869
+#, c-format
+msgid "Cert:  %s"
+msgstr "Sertif.:  %s"
+
+#: ../properties/nm-openvpn.c:833
+#: ../properties/nm-openvpn.c:872
+#, c-format
+msgid "Key:  %s"
+msgstr "Atslēga:  %s"
+
+#: ../properties/nm-openvpn.c:837
+msgid "Connection Type: Shared Key"
+msgstr "Savienojuma tips: kopīgā atslēga"
+
+#: ../properties/nm-openvpn.c:840
+#, c-format
+msgid "Shared Key:  %s"
+msgstr "Kopīgā atslēga:  %s"
+
+#: ../properties/nm-openvpn.c:843
+#, c-format
+msgid "Local IP:  %s"
+msgstr "Lokālā IP adrese:  %s"
+
+#: ../properties/nm-openvpn.c:846
+#, c-format
+msgid "Remote IP:  %s"
+msgstr "Attālinātā IP adrese:  %s"
+
+#: ../properties/nm-openvpn.c:851
+msgid "Connection Type: Password"
+msgstr "Savienojuma tips: parole"
+
+#: ../properties/nm-openvpn.c:857
+#: ../properties/nm-openvpn.c:875
+#, c-format
+msgid "Username:  %s"
+msgstr "Lietotājvārds:  %s"
+
+#: ../properties/nm-openvpn.c:863
+msgid "Connection Type: X.509 with Password Authentication"
+msgstr "Savienojuma tips: X.509 ar paroles autentificēšanu"
+
+#: ../properties/nm-openvpn.c:881
+#, c-format
+msgid "Remote:  %s"
+msgstr "Attālinātais:  %s"
+
+#: ../properties/nm-openvpn.c:884
+#, c-format
+msgid "Port:  %s"
+msgstr "Ports:  %s"
+
+#: ../properties/nm-openvpn.c:887
+#, c-format
+msgid "Device: %s"
+msgstr "Iekārta: %s"
+
+#: ../properties/nm-openvpn.c:887
+msgid "TAP"
+msgstr "TAP"
+
+#: ../properties/nm-openvpn.c:887
+msgid "TUN"
+msgstr "TUN"
+
+#: ../properties/nm-openvpn.c:890
+#, c-format
+msgid "Protocol: %s"
+msgstr "Protokols: %s"
+
+#: ../properties/nm-openvpn.c:890
+msgid "TCP"
+msgstr "TCP"
+
+#: ../properties/nm-openvpn.c:890
+msgid "UDP"
+msgstr "UDP"
+
+#: ../properties/nm-openvpn.c:894
+#, c-format
+msgid "Routes:  %s"
+msgstr "Maršruti:  %s"
+
+#: ../properties/nm-openvpn.c:898
+#, c-format
+msgid "Use LZO Compression: %s"
+msgstr "Lietot LZO kompresiju: %s"
+
+#: ../properties/nm-openvpn.c:898
+msgid "Yes"
+msgstr "Jā"
+
+#: ../properties/nm-openvpn.c:898
+msgid "No"
+msgstr "Nē"
+
+#: ../properties/nm-openvpn.c:902
+#, c-format
+msgid "Cipher:  %s"
+msgstr "Šifrs:  %s"
+
+#: ../properties/nm-openvpn.c:907
+#, c-format
+msgid "TLS auth:  %s %s"
+msgstr "TLS autentificēšana:  %s %s"
+
+#: ../properties/nm-openvpn.c:911
+msgid "The connection details can be changed using the \"Edit\" button."
+msgstr "Savienojuma īpašības var mainīt, lietojot \"Labot\" pogu."
+
+#: ../properties/nm-openvpn.c:1141
+msgid "Cannot import settings"
+msgstr "Nav iespējams importēt iestatījumus"
+
+#: ../properties/nm-openvpn.c:1143
+#, c-format
+msgid "The VPN settings file '%s' does not contain valid data."
+msgstr "VPN iestatījumu datne '%s' nesatur derīgus datus."
+
+#: ../properties/nm-openvpn.c:1190
+msgid "Select file to import"
+msgstr "Izvēlieties datni importam"
+
+#: ../properties/nm-openvpn.c:1249
+#: ../properties/nm-openvpn.c:1261
+#: ../properties/nm-openvpn.c:1264
+msgid "Select CA to use"
+msgstr "Izvēlieties savienojuma CA"
+
+#: ../properties/nm-openvpn.c:1252
+#: ../properties/nm-openvpn.c:1267
+msgid "Select certificate to use"
+msgstr "Izvēlieties savienojuma sertifikātu"
+
+#: ../properties/nm-openvpn.c:1255
+#: ../properties/nm-openvpn.c:1270
+msgid "Select key to use"
+msgstr "Izvēlieties savienojuma atslēgu"
+
+#: ../properties/nm-openvpn.c:1258
+msgid "Select shared key to use"
+msgstr "Izvēlieties savienojuma kopīgo atslēgu"
+
+#: ../properties/nm-openvpn.c:1273
+msgid "Select TA to use"
+msgstr "Izvēlieties savienojuma TA atslēgu"
+
+#. printf ("in impl_export\n");
+#: ../properties/nm-openvpn.c:1515
+msgid "Save as..."
+msgstr "Saglabāt kā..."
+
+#: ../properties/nm-openvpn.c:1544
+#, c-format
+msgid "A file named \"%s\" already exists."
+msgstr "Datne \"%s\" jau eksistē."
+
+#: ../properties/nm-openvpn.c:1547
+msgid "Do you want to replace it with the one you are saving?"
+msgstr "Vai vēlaties aizvietot to ar pašreiz saglabājamo?"
+
+#: ../properties/nm-openvpn.c:1561
+msgid "Failed to export configuration"
+msgstr "Neizdevās eksportēt konfigurāciju"
+
+#: ../properties/nm-openvpn.c:1563
+#, c-format
+msgid "Failed to save file %s"
+msgstr "Neizdevās saglabāt datni %s"
+
+#: ../properties/nm-openvpn-dialog.glade.h:1
+msgid "(Default: 1194)"
+msgstr "(Noklusētais: 1194)"
+
+#: ../properties/nm-openvpn-dialog.glade.h:2
+msgid "65536"
+msgstr "65536"
+
+#: ../properties/nm-openvpn-dialog.glade.h:3
+msgid "<i>example: 172.16.0.0/16 10.11.12.0/24</i>"
+msgstr "<i>piemērs: 172.16.0.0/16 10.11.12.0/24</i>"
+
+#: ../properties/nm-openvpn-dialog.glade.h:4
+msgid "Ad_vanced"
+msgstr "_Paplašināts"
+
+#: ../properties/nm-openvpn-dialog.glade.h:5
+msgid "C_A file:"
+msgstr "C_A datne:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:6
+msgid "C_ertificate:"
+msgstr "S_ertifikāts:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:7
+msgid "Co_nnection type:"
+msgstr "Savie_nojuma tips:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:8
+msgid "Connection na_me:"
+msgstr "Savienoju_ma nosaukums:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:9
+msgid "Direction:"
+msgstr "Virziens:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:10
+msgid "Import _Saved Configuration..."
+msgstr "Importēt _saglabāto konfigurāciju..."
+
+#: ../properties/nm-openvpn-dialog.glade.h:11
+msgid "Name used to identify the connection to the private network, e.g. \"Campus VPN\" or \"Corporate Network\""
+msgstr "Nosaukums savienojumam ar privāto tīklu, piem. \"Universitātes VPN\" or \"Korporatīvais tīkls\""
+
+#: ../properties/nm-openvpn-dialog.glade.h:12
+msgid "Network"
+msgstr "Tīkls"
+
+#: ../properties/nm-openvpn-dialog.glade.h:13
+msgid "Only use _VPN connection for these addresses:"
+msgstr "Lietot VPN savienojumu tikai šīm adresēm:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:14
+msgid "OpenVPN Advanced Options"
+msgstr "OpenVPN paplašinātie parametri"
+
+#: ../properties/nm-openvpn-dialog.glade.h:15
+msgid "OpenVPN Configuration"
+msgstr "OpenVPN konfigurācija"
+
+#: ../properties/nm-openvpn-dialog.glade.h:16
+msgid "Please enter the information provided by your system administrator below. Do not enter your password here as you will be prompted when connecting."
+msgstr "Lūdzu, zemāk ievadiet no jūsu sistēmas administratora saņemto informāciju. Paroli šeit neievadiet, tā tiks pieprasīta savienojoties."
+
+#: ../properties/nm-openvpn-dialog.glade.h:17
+msgid "Please note that the file you import is not an OpenVPN configuration file. Ask your administrator for the file."
+msgstr "Ņemiet vērā, ka importējamā datne nav OpenVPN konfigurācijas datne. Konfigurācijas datni jautājiet sistēmas administratoram."
+
+#: ../properties/nm-openvpn-dialog.glade.h:18
+msgid "Shared _key:"
+msgstr "_Kopējā atslēga:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:19
+msgid "TLS-Auth"
+msgstr "TLS-autentifikācija"
+
+#: ../properties/nm-openvpn-dialog.glade.h:20
+msgid "Use L_ZO compression"
+msgstr "Lietot L_ZO kompresiju"
+
+#: ../properties/nm-openvpn-dialog.glade.h:21
+msgid "Use TA_P device"
+msgstr "Lietot TA_P iekārtu"
+
+#: ../properties/nm-openvpn-dialog.glade.h:22
+msgid "Use _TCP connection"
+msgstr "Lietot _TCP savienojumu"
+
+#: ../properties/nm-openvpn-dialog.glade.h:23
+msgid "Use _TLS auth:"
+msgstr "Lietot _TLS autentifikāciju:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:24
+msgid "Use cip_her:"
+msgstr "Lietot ši_fru:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:25
+msgid ""
+"X.509 Certificates\n"
+"Pre-shared key\n"
+"Password Authentication\n"
+"X.509 with Password Authentication"
+msgstr ""
+"X.509 sertifikāts\n"
+"Koplietojamā atslēga\n"
+"Paroles autentifikācija\n"
+"X.509 ar paroles autentifikāciju"
+
+#: ../properties/nm-openvpn-dialog.glade.h:29
+msgid "_0"
+msgstr "_0"
+
+#: ../properties/nm-openvpn-dialog.glade.h:30
+msgid "_1"
+msgstr "_1"
+
+#: ../properties/nm-openvpn-dialog.glade.h:31
+msgid "_Gateway address:"
+msgstr "_Vārtejas adrese:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:32
+msgid "_Gateway port:"
+msgstr "Vā_rtejas ports:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:33
+msgid "_Key:"
+msgstr "_Atslēga:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:34
+msgid "_Local IP:"
+msgstr "_Lokālā IP adrese:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:35
+msgid "_Remote IP:"
+msgstr "Attālinātā IP ad_rese:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:36
+msgid "_User name:"
+msgstr "_Lietotājvārds:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:37
+msgid "_none"
+msgstr "_nekas"
+
+#~ msgid "Add, Remove, and Edit VPN Connections"
+#~ msgstr "Add, Remove, and Edit VPN Connections"
+#~ msgid "VPN Connection Manager (OpenVPN)"
+#~ msgstr "VPN Connection Manager (OpenVPN)"
+#~ msgid ""
+#~ "The VPN login failed because the user name and password were not accepted "
+#~ "or the certificate password was wrong."
+#~ msgstr ""
+#~ "The VPN login failed because the user name and password were not accepted "
+#~ "or the certificate password was wrong."
+#~ msgid "The VPN login failed because the VPN program could not be started."
+#~ msgstr "The VPN login failed because the VPN program could not be started."
+#~ msgid ""
+#~ "The VPN login failed because the VPN program could not connect to the VPN "
+#~ "server."
+#~ msgstr ""
+#~ "The VPN login failed because the VPN program could not connect to the VPN "
+#~ "server."
+#~ msgid ""
+#~ "The VPN login failed because the VPN configuration options were invalid."
+#~ msgstr ""
+#~ "The VPN login failed because the VPN configuration options were invalid."
+#~ msgid ""
+#~ "The VPN login failed because the VPN program received an invalid "
+#~ "configuration from the VPN server."
+#~ msgstr ""
+#~ "The VPN login failed because the VPN program received an invalid "
+#~ "configuration from the VPN server."
+#~ msgid "VPN connection failed"
+#~ msgstr "VPN connection failed"
+#~ msgid "<b>Connection Name</b>"
+#~ msgstr "<b>Connection Name</b>"
+#~ msgid "<b>Optional Information</b>"
+#~ msgstr "<b>Optional Information</b>"
+#~ msgid "<b>Required Information</b>"
+#~ msgstr "<b>Required Information</b>"
+#~ msgid "CA  file:"
+#~ msgstr "CA  file:"
+#~ msgid "Password"
+#~ msgstr "Password"
+#~ msgid "Shared Key:"
+#~ msgstr "Shared Key:"
+#~ msgid "Username:"
+#~ msgstr "Username:"
+#~ msgid "X.509"
+#~ msgstr "X.509"
+
