@@ -1,3 +1,9 @@
+2008-10-09  Dan Williams  <dcbw@redhat.com>
+
+	* properties/nm-vpnc.c
+		- (update_connection): only set DPD timeout if it was something other
+			than the default value
+
 2008-09-09  Dan Williams  <dcbw@redhat.com>
 
 	* common-gnome/keyring-helpers.c

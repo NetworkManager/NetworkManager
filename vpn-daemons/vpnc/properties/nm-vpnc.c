@@ -485,9 +485,15 @@ update_connection (NMVpnPluginUiWidgetInterface *iface,
 		                     g_strdup (NM_VPNC_KEY_DPD_IDLE_TIMEOUT),
 		                     g_strdup ("0"));
 	} else {
-		g_hash_table_insert (s_vpn->data,
-		                     g_strdup (NM_VPNC_KEY_DPD_IDLE_TIMEOUT),
-		                     g_strdup_printf ("%d", priv->orig_dpd_timeout));
+		/* If DPD was disabled and now the user wishes to enable it, just
+		 * don't pass the DPD_IDLE_TIMEOUT option to vpnc and thus use the
+		 * default DPD idle time.  Otherwise keep the original DPD idle timeout.
+		 */
+		if (priv->orig_dpd_timeout >= 10) {
+			g_hash_table_insert (s_vpn->data,
+			                     g_strdup (NM_VPNC_KEY_DPD_IDLE_TIMEOUT),
+			                     g_strdup_printf ("%d", priv->orig_dpd_timeout));
+		}
 	}
 
 	/* System secrets get stored in the connection, user secrets are saved
