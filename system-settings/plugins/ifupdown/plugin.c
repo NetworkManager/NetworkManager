@@ -60,6 +60,8 @@ typedef struct {
 	GHashTable *iface_connections;
 	gchar* hostname;
 
+	GHashTable *well_known_udis;
+
 	gulong inotify_event_id;
 	int inotify_system_hostname_wd;
 } SCPluginIfupdownPrivate;
@@ -159,6 +161,98 @@ sc_plugin_ifupdown_class_init (SCPluginIfupdownClass *req_class)
 	                                  NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
 }
 
+static gchar*
+get_iface_for_udi (DBusGConnection *g_connection,
+			    const gchar* udi,
+			    GError **error)
+{
+	DBusGProxy *dev_proxy;
+	char *iface = NULL;
+	dev_proxy = dbus_g_proxy_new_for_name (g_connection,
+								    "org.freedesktop.Hal",
+								    udi,
+								    "org.freedesktop.Hal.Device");
+	if (!dev_proxy)
+		return NULL;
+
+	if (dbus_g_proxy_call_with_timeout (dev_proxy,
+								 "GetPropertyString", 10000, error,
+								 G_TYPE_STRING, "net.interface", G_TYPE_INVALID,
+								 G_TYPE_STRING, &iface, G_TYPE_INVALID)) {
+		g_object_unref (dev_proxy);
+		return iface;
+	}
+	g_object_unref (dev_proxy);
+	return NULL;
+}
+
+static void
+hal_device_added_cb (NMSystemConfigHalManager *hal_mgr,
+				 const gchar* udi,
+				 NMDeviceType devtype,
+				 NMSystemConfigInterface *config)
+{
+	SCPluginIfupdownPrivate *priv = SC_PLUGIN_IFUPDOWN_GET_PRIVATE (config);
+	gchar *iface;
+	GError *error = NULL;
+	gpointer exported_iface_connection;
+	NMConnection *iface_connection = NULL;
+
+	iface = get_iface_for_udi (priv->g_connection,
+						  udi,
+						  &error);
+
+	PLUGIN_PRINT("SCPlugin-Ifupdown",
+			   "devices added (udi: %s, iface: %s)", udi, iface);
+
+	if(!iface)
+		return;
+
+	exported_iface_connection =
+		NM_EXPORTED_CONNECTION (g_hash_table_lookup (priv->iface_connections, iface));
+	/* if we have a configured connection for this particular iface
+	 * we want to either unmanage the device or lock it
+	 */
+	if(!exported_iface_connection)
+		return;
+
+	iface_connection = nm_exported_connection_get_connection (exported_iface_connection);
+
+	if(!iface_connection)
+		return;
+
+	g_hash_table_insert (priv->well_known_udis, (gpointer)udi, "nothing");
+}
+
+static void
+hal_device_removed_cb (NMSystemConfigHalManager *hal_mgr,
+				   const gchar* udi,
+ 				   NMDeviceType devtype,
+				   NMSystemConfigInterface *config)
+{
+	SCPluginIfupdownPrivate *priv = SC_PLUGIN_IFUPDOWN_GET_PRIVATE (config);
+
+	PLUGIN_PRINT("SCPlugin-Ifupdown",
+			   "devices removed (udi: %s)", udi);
+
+	g_hash_table_remove (priv->well_known_udis, udi);
+}
+
+static void
+hal_device_added_cb2 (gpointer data,
+				  gpointer user_data)
+{
+	NMSystemConfigHalManager *hal_mgr = ((gpointer*)user_data)[0];
+	NMSystemConfigInterface *config = ((gpointer*)user_data)[1];
+	NMDeviceType devtype = GPOINTER_TO_INT(((gpointer*)user_data)[2]);
+	const gchar *udi  = data;
+
+	hal_device_added_cb (hal_mgr,
+					 udi,
+					 devtype,
+					 config);
+}
+
 static void
 SCPluginIfupdown_init (NMSystemConfigInterface *config,
 				   NMSystemConfigHalManager *hal_manager)
@@ -171,9 +265,22 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config,
 	if(!priv->iface_connections)
 		priv->iface_connections = g_hash_table_new (g_str_hash, g_str_equal);
 
+	if(!priv->well_known_udis)
+		priv->well_known_udis = g_hash_table_new (g_str_hash, g_str_equal);
+
 	PLUGIN_PRINT("SCPlugin-Ifupdown", "init!");
 	priv->hal_mgr = g_object_ref (hal_manager);
 
+	g_signal_connect (G_OBJECT(hal_manager),
+				   "device-added",
+				   G_CALLBACK(hal_device_added_cb),
+				   config);
+
+	g_signal_connect (G_OBJECT(hal_manager),
+				   "device-removed",
+				   G_CALLBACK(hal_device_removed_cb),
+				   config);
+ 
 	inotify_helper = nm_inotify_helper_get ();
 	priv->inotify_event_id = g_signal_connect (inotify_helper,
 									   "event",
@@ -226,6 +333,32 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config,
 			key_it = key_it -> next;
 		}
 	}
+
+	{
+		/* init well_known_udis */
+		GSList *wired_devices = nm_system_config_hal_manager_get_devices_of_type (hal_manager, NM_DEVICE_TYPE_ETHERNET);
+		GSList *wifi_devices = nm_system_config_hal_manager_get_devices_of_type (hal_manager, NM_DEVICE_TYPE_WIFI);
+		gpointer *user_data;
+
+		/* 3g in /etc/network/interfaces? no clue if thats mappable
+
+		GSList *gsm_devices = nm_system_config_hal_manager_get_devices_of_type (hal_manager, NM_DEVICE_TYPE_GSM);
+		GSList *cdma_devices = nm_system_config_hal_manager_get_devices_of_type (hal_manager, NM_DEVICE_TYPE_CDMA);
+		*/
+
+		user_data = g_new0 (gpointer, 3);
+		user_data[0] = hal_manager;
+		user_data[1] = config;
+		user_data[2] = GINT_TO_POINTER (NM_DEVICE_TYPE_ETHERNET);
+
+		g_slist_foreach (wired_devices, hal_device_added_cb2, user_data);
+
+		user_data[0] = hal_manager;
+		user_data[1] = config;
+		user_data[2] = GINT_TO_POINTER (NM_DEVICE_TYPE_ETHERNET);
+		g_slist_foreach (wifi_devices, hal_device_added_cb2, user_data);
+	}		
+
 	g_hash_table_unref(auto_ifaces);
 	PLUGIN_PRINT("SCPlugin-Ifupdown", "end _init.");
 }
@@ -402,6 +535,9 @@ GObject__dispose (GObject *object)
 
 	if (priv->inotify_system_hostname_wd >= 0)
 		nm_inotify_helper_remove_watch (inotify_helper, priv->inotify_system_hostname_wd);
+
+	if (priv->well_known_udis)
+		g_hash_table_destroy(priv->well_known_udis);
 
 	g_object_unref (priv->hal_mgr);
 	G_OBJECT_CLASS (sc_plugin_ifupdown_parent_class)->dispose (object);
