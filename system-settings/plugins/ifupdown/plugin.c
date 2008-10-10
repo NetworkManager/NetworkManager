@@ -52,6 +52,11 @@
 #define IFUPDOWN_PLUGIN_INFO "(C) 2008 Canonical Ltd.  To report bugs please use the NetworkManager mailing list."
 #define IFUPDOWN_SYSTEM_HOSTNAME_FILE "/etc/hostname"
 
+/* #define ALWAYS_UNMANAGE TRUE */
+#ifndef ALWAYS_UNMANAGE
+#	define ALWAYS_UNMANAGE FALSE
+#endif
+
 typedef struct {
 
 	DBusGConnection *g_connection;
@@ -61,6 +66,7 @@ typedef struct {
 	gchar* hostname;
 
 	GHashTable *well_known_udis;
+	gboolean unmanage_well_known;
 
 	gulong inotify_event_id;
 	int inotify_system_hostname_wd;
@@ -222,6 +228,9 @@ hal_device_added_cb (NMSystemConfigHalManager *hal_mgr,
 		return;
 
 	g_hash_table_insert (priv->well_known_udis, (gpointer)udi, "nothing");
+
+	if (ALWAYS_UNMANAGE || priv->unmanage_well_known)
+		g_signal_emit_by_name (G_OBJECT(config), "unmanaged-devices-changed");
 }
 
 static void
@@ -235,7 +244,11 @@ hal_device_removed_cb (NMSystemConfigHalManager *hal_mgr,
 	PLUGIN_PRINT("SCPlugin-Ifupdown",
 			   "devices removed (udi: %s)", udi);
 
-	g_hash_table_remove (priv->well_known_udis, udi);
+	if(!g_hash_table_remove (priv->well_known_udis, udi))
+		return;
+
+	if (ALWAYS_UNMANAGE || priv->unmanage_well_known)
+		g_signal_emit_by_name (G_OBJECT(config), "unmanaged-devices-changed");
 }
 
 static void
@@ -393,8 +406,20 @@ SCPluginIfupdown_get_connections (NMSystemConfigInterface *config)
 static GSList*
 SCPluginIfupdown_get_unmanaged_devices (NMSystemConfigInterface *config)
 {
-	// XXX implement this.
-	return NULL;
+	SCPluginIfupdownPrivate *priv = SC_PLUGIN_IFUPDOWN_GET_PRIVATE (config);
+	GList *keys;
+	GSList *udis = NULL;
+
+	if (!ALWAYS_UNMANAGE && !priv->unmanage_well_known)
+		return NULL;
+
+	keys = g_hash_table_get_keys (priv->well_known_udis);
+	PLUGIN_PRINT("Ifupdown", "get unmanaged devices count: %d", g_list_length(keys));
+ 	while(keys) {
+		udis = g_slist_append(udis, g_strdup(keys->data));
+		keys = g_list_next(keys);
+	}
+	return udis;
 }
 
 

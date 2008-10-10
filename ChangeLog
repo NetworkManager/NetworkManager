@@ -1,5 +1,19 @@
 2008-10-10  Alexander Sack  <asac@ubuntu.com>
 
+	Implement unmanaged mode that will prevent all devices in the
+	well_known_udis set from being touched by NetworkManager
+
+	* system-settings/plugins/ifupdown/plugin.c
+		- (typedef struct SCPluginIfupdownPrivate): add gboolean
+			unmanage_well_known field used to turn on/off unmanaged
+			mode
+		- (hal_device_added_cb,hal_device_remove_cb): emit |unmanaged-devices-changed|
+			signal when well_known_udis get added/removed
+		- (SCPluginIfupdown_get_unmanaged_devices): return all well_known_udis
+			if we are in unmanaged mode
+
+2008-10-10  Alexander Sack  <asac@ubuntu.com>
+
 	Add support to track network devices that have a configuration
 	with a matching interface.name in /etc/network/interfaces
 
