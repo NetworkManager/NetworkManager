@@ -1,5 +1,21 @@
 2008-10-10  Alexander Sack  <asac@ubuntu.com>
 
+	Implement managed mode. We bind devices configured in /etc/network/interfaces
+	to their connections by updating wired/wireless setting with the
+	mac address of the device.
+
+	* system-settings/plugins/ifupdown/plugin.c
+		- (get_net_address_for_udi): implement function to retrieve MAC
+			address of udi from hal in GByteArray format
+		- (bind_device_to_connection): bind mac address of device to
+			wired/wireless system connection
+		- (hal_device_added_cb): call bind_device_to_connection for
+			system connections with a matching interface.name
+		- (hal_device_added_cb): ensure that all code paths
+			properly free the "iface" string.
+
+2008-10-10  Alexander Sack  <asac@ubuntu.com>
+
 	Parse nm-system-settings.conf and allow admins to either use managed and unmanaged
 	mode of the ifupdown system config plugin.
 

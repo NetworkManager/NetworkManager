@@ -24,6 +24,9 @@
 #include <string.h>
 #include <sys/inotify.h>
 
+#include <net/ethernet.h>
+#include <netinet/ether.h>
+
 #include <gmodule.h>
 #include <glib-object.h>
 #include <glib/gi18n.h>
@@ -172,6 +175,41 @@ sc_plugin_ifupdown_class_init (SCPluginIfupdownClass *req_class)
 	                                  NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME);
 }
 
+static GByteArray*
+get_net_address_for_udi (DBusGConnection *g_connection,
+					const gchar* udi,
+					GError **error)
+{
+	DBusGProxy *dev_proxy;
+	char *address = NULL;
+	GByteArray *mac_address = NULL;
+	dev_proxy = dbus_g_proxy_new_for_name (g_connection,
+								    "org.freedesktop.Hal",
+								    udi,
+								    "org.freedesktop.Hal.Device");
+	if (!dev_proxy)
+		return NULL;
+
+	if (!dbus_g_proxy_call_with_timeout (dev_proxy,
+								  "GetPropertyString", 10000, error,
+								  G_TYPE_STRING, "net.address", G_TYPE_INVALID,
+								  G_TYPE_STRING, &address, G_TYPE_INVALID)) {
+		goto out;
+	}
+
+	if (address && strlen (address)) {
+		struct ether_addr *dev_mac;
+		mac_address = g_byte_array_new();
+		dev_mac = ether_aton (address);
+		g_byte_array_append (mac_address, dev_mac->ether_addr_octet, ETH_ALEN);
+	}
+
+ out:
+	g_free(address);
+	g_object_unref (dev_proxy);
+	return mac_address;
+}
+
 static gchar*
 get_iface_for_udi (DBusGConnection *g_connection,
 			    const gchar* udi,
@@ -198,13 +236,55 @@ get_iface_for_udi (DBusGConnection *g_connection,
 }
 
 static void
+bind_device_to_connection (NMSystemConfigInterface *config,
+					 DBusGConnection *g_connection,
+					 const gchar* udi,
+					 NMExportedConnection *exported_iface_connection)
+{
+	GByteArray *mac_address;
+	GError *error = NULL;
+	NMConnection *iface_connection;
+	NMSetting *wired_setting = NULL;
+	NMSetting *wireless_setting = NULL;
+
+	iface_connection = nm_exported_connection_get_connection (exported_iface_connection);
+	if (!iface_connection) {
+		nm_warning ("no device locking possible. NMExportedConnection doesnt have a real connection.");
+		return;
+	}
+
+	mac_address = get_net_address_for_udi (g_connection, udi, &error);
+
+	if(error) {
+		PLUGIN_PRINT ("SCPluginIfupdown", "getting mac address for managed device"
+				    "failed: %s (%d)", error->message, error->code);
+		return;
+	}
+
+	wired_setting = nm_connection_get_setting (iface_connection,
+									   NM_TYPE_SETTING_WIRED);
+	wireless_setting = nm_connection_get_setting (iface_connection,
+										 NM_TYPE_SETTING_WIRELESS);
+	if (wired_setting) {
+		PLUGIN_PRINT ("SCPluginIfupdown", "locking wired connection setting");
+		g_object_set (wired_setting, NM_SETTING_WIRED_MAC_ADDRESS, mac_address, NULL);
+	} else if (wireless_setting) {
+		PLUGIN_PRINT ("SCPluginIfupdown", "locking wireless connection setting");
+		g_object_set (wireless_setting, NM_SETTING_WIRELESS_MAC_ADDRESS, mac_address, NULL);
+	}
+
+	if(mac_address)
+		g_byte_array_free (mac_address, TRUE);
+}    
+
+static void
 hal_device_added_cb (NMSystemConfigHalManager *hal_mgr,
 				 const gchar* udi,
 				 NMDeviceType devtype,
 				 NMSystemConfigInterface *config)
 {
 	SCPluginIfupdownPrivate *priv = SC_PLUGIN_IFUPDOWN_GET_PRIVATE (config);
-	gchar *iface;
+	gchar *iface = NULL;
 	GError *error = NULL;
 	gpointer exported_iface_connection;
 	NMConnection *iface_connection = NULL;
@@ -221,21 +301,27 @@ hal_device_added_cb (NMSystemConfigHalManager *hal_mgr,
 
 	exported_iface_connection =
 		NM_EXPORTED_CONNECTION (g_hash_table_lookup (priv->iface_connections, iface));
+
 	/* if we have a configured connection for this particular iface
 	 * we want to either unmanage the device or lock it
 	 */
 	if(!exported_iface_connection)
-		return;
+		goto out;
 
 	iface_connection = nm_exported_connection_get_connection (exported_iface_connection);
 
 	if(!iface_connection)
-		return;
+		goto out;
 
 	g_hash_table_insert (priv->well_known_udis, (gpointer)udi, "nothing");
 
 	if (ALWAYS_UNMANAGE || priv->unmanage_well_known)
 		g_signal_emit_by_name (G_OBJECT(config), "unmanaged-devices-changed");
+	else
+		bind_device_to_connection (config, priv->g_connection, udi, exported_iface_connection);
+
+ out:
+	g_free (iface);
 }
 
 static void
