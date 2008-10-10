@@ -1,3 +1,12 @@
+2008-10-10  Alexander Sack  <asac@ubuntu.com>
+
+	Remove implementation for not used NMSystemConfigInterface callback functions
+	in ifupdown plugin
+
+	* system-settings/plugins/ifupdown/plugin.c
+		- (SCPluginIfupdown_unmanaged_devices_changed): removed
+		- (SCPluginIfupdown_connection_added): removed
+
 2008-10-08  Dan Williams  <dcbw@redhat.com>
 
 	Add a 'hostname' dispatcher action triggered on hostname changes (bgo #552983)

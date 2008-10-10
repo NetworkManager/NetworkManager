@@ -94,17 +94,8 @@ SCPluginIfupdown_get_connections (NMSystemConfigInterface *config);
 static GSList*
 SCPluginIfupdown_get_unmanaged_devices (NMSystemConfigInterface *config);
 
-/* Signals */
 
-/* Emitted when a new connection has been found by the plugin */
-static void 
-SCPluginIfupdown_connection_added (NMSystemConfigInterface *config,
-							NMExportedConnection *connection);
-
-/* Emitted when the list of unmanaged devices changes */
-static void
-SCPluginIfupdown_unmanaged_devices_changed (NMSystemConfigInterface *config);
-
+/*  GObject */
 static void
 GObject__get_property (GObject *object, guint prop_id,
 				   GValue *value, GParamSpec *pspec);
@@ -137,8 +128,6 @@ system_config_interface_init (NMSystemConfigInterface *system_config_interface_c
 	system_config_interface_class->init = SCPluginIfupdown_init;
 	system_config_interface_class->get_connections = SCPluginIfupdown_get_connections;
 	system_config_interface_class->get_unmanaged_devices = SCPluginIfupdown_get_unmanaged_devices;
-	system_config_interface_class->connection_added = SCPluginIfupdown_connection_added;
-	system_config_interface_class->unmanaged_devices_changed = SCPluginIfupdown_unmanaged_devices_changed;
 }
 
 static void
@@ -275,28 +264,6 @@ SCPluginIfupdown_get_unmanaged_devices (NMSystemConfigInterface *config)
 	return NULL;
 }
 
-/* Signals */
-
-/* Emitted when a new connection has been found by the plugin */
-static void 
-SCPluginIfupdown_connection_added (NMSystemConfigInterface *config,
-							NMExportedConnection *connection)
-{
-	PLUGIN_PRINT("SCPlugin-Ifdown", "connection_added ... started");
-	g_return_if_fail (config != NULL);
-	g_return_if_fail (NM_IS_CONNECTION (connection));
-	PLUGIN_PRINT("SCPlugin-Ifdown", "connection_added ... ended");
-}
-
-/* Emitted when the list of unmanaged devices changes */
-static void
-SCPluginIfupdown_unmanaged_devices_changed (NMSystemConfigInterface *config)
-{
-	PLUGIN_PRINT("SCPlugin-Ifdown", "unmanaged_devices_changed ... started");
-	g_return_if_fail (config != NULL);
-
-	PLUGIN_PRINT("SCPlugin-Ifdown", "unmanaged_devices_changed ... ended");
-}
 
 static const char *
 get_hostname (NMSystemConfigInterface *config)
