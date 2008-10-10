@@ -52,6 +52,11 @@
 #define IFUPDOWN_PLUGIN_INFO "(C) 2008 Canonical Ltd.  To report bugs please use the NetworkManager mailing list."
 #define IFUPDOWN_SYSTEM_HOSTNAME_FILE "/etc/hostname"
 
+#define IFUPDOWN_SYSTEM_SETTINGS_KEY_FILE SYSCONFDIR "/NetworkManager/nm-system-settings.conf"
+#define IFUPDOWN_KEY_FILE_GROUP "ifupdown"
+#define IFUPDOWN_KEY_FILE_KEY_MANAGED "managed"
+#define IFUPDOWN_UNMANAGE_WELL_KNOWN_DEFAULT TRUE
+
 /* #define ALWAYS_UNMANAGE TRUE */
 #ifndef ALWAYS_UNMANAGE
 #	define ALWAYS_UNMANAGE FALSE
@@ -274,6 +279,8 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config,
 	GHashTable *auto_ifaces = g_hash_table_new (g_str_hash, g_str_equal);
 	if_block *block = NULL;
 	NMInotifyHelper *inotify_helper;
+	GKeyFile* keyfile;
+	GError *error = NULL;
 
 	if(!priv->iface_connections)
 		priv->iface_connections = g_hash_table_new (g_str_hash, g_str_equal);
@@ -346,6 +353,38 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config,
 			key_it = key_it -> next;
 		}
 	}
+
+	priv->unmanage_well_known = IFUPDOWN_UNMANAGE_WELL_KNOWN_DEFAULT;
+	keyfile = g_key_file_new ();
+	if (!g_key_file_load_from_file (keyfile,
+							  IFUPDOWN_SYSTEM_SETTINGS_KEY_FILE,
+							  G_KEY_FILE_NONE,
+							  &error)) {
+		nm_info ("loading system config file (%s) caused error: %s (%d)",
+			    IFUPDOWN_SYSTEM_SETTINGS_KEY_FILE,
+			    error->message,
+			    error->code);
+	} else {
+		gboolean manage_well_known;
+		error = NULL;
+
+		manage_well_known = g_key_file_get_boolean (keyfile,
+										    IFUPDOWN_KEY_FILE_GROUP,
+										    IFUPDOWN_KEY_FILE_KEY_MANAGED,
+										    &error);
+		if (error) {
+			nm_info ("getting keyfile key '%s' in group '%s' failed: %s (%d)",
+				    IFUPDOWN_KEY_FILE_GROUP,
+				    IFUPDOWN_KEY_FILE_KEY_MANAGED,
+				    error->message,
+				    error->code);
+		} else {
+			priv->unmanage_well_known = !manage_well_known;
+		}
+	}
+	PLUGIN_PRINT ("SCPluginIfupdown", "management mode: %s", priv->unmanage_well_known ? "unmanaged" : "managed");
+	if (keyfile)
+		g_key_file_free (keyfile);
 
 	{
 		/* init well_known_udis */

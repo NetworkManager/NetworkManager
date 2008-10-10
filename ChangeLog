@@ -1,5 +1,14 @@
 2008-10-10  Alexander Sack  <asac@ubuntu.com>
 
+	Parse nm-system-settings.conf and allow admins to either use managed and unmanaged
+	mode of the ifupdown system config plugin.
+
+	* system-settings/plugins/ifupdown/plugin.c
+		- (SCPluginIfupdown_init): parse nm-system-settings.conf keyfile and set
+			private unmanage_well_known state field accordingly
+
+2008-10-10  Alexander Sack  <asac@ubuntu.com>
+
 	Implement unmanaged mode that will prevent all devices in the
 	well_known_udis set from being touched by NetworkManager
 
