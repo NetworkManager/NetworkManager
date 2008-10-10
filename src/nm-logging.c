@@ -147,7 +147,7 @@ void
 nm_logging_setup (gboolean become_daemon)
 {
 	if (become_daemon)
-		openlog (G_LOG_DOMAIN, LOG_CONS, LOG_DAEMON);
+		openlog (G_LOG_DOMAIN, 0, LOG_DAEMON);
 	else
 		openlog (G_LOG_DOMAIN, LOG_CONS | LOG_PERROR, LOG_USER);
 
