@@ -1,3 +1,59 @@
+2008-10-10  Dan Williams  <dcbw@redhat.com>
+
+	Rework default route handling to consolidate decisions in the policy,
+	and to take active VPN connections into account when changing the default
+	route (bgo #545912)
+
+	* src/NetworkManager.c
+		- (main): pass the vpn_manager to the policy so it knows about active
+			VPN connections; clean up the named manager which wasn't done before
+
+	* src/NetworkManagerPolicy.c
+	  src/NetworkManagerPolicy.h
+		- (nm_policy_new): get a clue about the vpn_manager
+		- (update_default_route): remove, fold into update_routing_and_dns()
+		- (update_routing_and_dns): handle active VPN connections too; an
+			active VPN connection becomes the default route if it does not have
+			server-specified or user-specified custom routes.  Otherwise, the
+			best active device gets the default route
+		- (vpn_connection_activated, vpn_connection_deactivated, nm_policy_new,
+		   nm_policy_destroy): track VPN connection activation and deactivation
+			and update the default route when appropriate
+
+	* src/NetworkManagerSystem.c
+	  src/NetworkManagerSystem.h
+		- (nm_system_vpn_device_unset_from_ip4_config): remove, put functionality
+			in the VPN connection itself
+		- (nm_system_vpn_device_set_from_ip4_config,
+		   nm_system_device_set_from_ip4_config): merge together to make
+			nm_system_apply_ip4_config()
+		- (add_vpn_gateway_route): add a route to the VPN's external gateway
+			via the parent device
+		- (nm_system_apply_ip4_config): simplify
+		- (add_ip4_route_to_gateway): new function; add a direct route to the
+			gateway if needed
+		- (nm_system_device_replace_default_ip4_route): simplify, break gateway
+			route stuff out into add_ip4_route_to_gateway() for clarity
+
+	* src/nm-device.c
+		- (nm_device_set_ip4_config): update for nm_system_apply_ip4_config()
+
+	* src/vpn-manager/nm-vpn-connection.c
+	  src/vpn-manager/nm-vpn-connection.h
+		- (nm_vpn_connection_get_ip4_config, nm_vpn_connection_get_ip_iface,
+		   nm_vpn_connection_get_parent_device): add
+		- (nm_vpn_connection_ip4_config_get): make the requirement of a tunnel
+			device explicit
+		- (connection_state_changed): update the named manager now that
+			nm_system_vpn_device_unset_from_ip4_config() is gone; do something
+			useful on errors
+
+	* src/vpn-manager/nm-vpn-manager.c
+	  src/vpn-manager/nm-vpn-manager.h
+		- Add a 'connection-activated' signal
+		- (nm_vpn_manager_get_active_connections): new function; mainly for the
+			policy to find out about active VPN connections
+
 2008-10-10  Tambet Ingo  <tambet@gmail.com>
 
 	* src/nm-logging.c (nm_logging_setup): Don't use LOG_CONS when running as

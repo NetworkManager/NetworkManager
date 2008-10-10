@@ -46,6 +46,7 @@
 #include "nm-properties-changed-signal.h"
 #include "nm-dbus-glib-types.h"
 #include "NetworkManagerUtils.h"
+#include "nm-named-manager.h"
 
 #include "nm-vpn-connection-glue.h"
 
@@ -354,8 +355,8 @@ print_vpn_config (NMIP4Config *config,
 
 static void
 nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
-						    GHashTable *config_hash,
-						    gpointer user_data)
+                                  GHashTable *config_hash,
+                                  gpointer user_data)
 {
 	NMVPNConnection *connection = NM_VPN_CONNECTION (user_data);
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
@@ -376,6 +377,14 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	addr = g_malloc0 (sizeof (NMSettingIP4Address));
 	addr->prefix = 24; /* default to class C */
 
+	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_TUNDEV);
+	if (val)
+		priv->tundev = g_strdup (g_value_get_string (val));
+	else {
+		nm_warning ("%s: invalid or missing tunnel device received!", __func__);
+		goto error;
+	}
+
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_GATEWAY);
 	if (val)
 		addr->gateway = g_value_get_uint (val);
@@ -395,8 +404,9 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	if (addr->address && addr->prefix) {
 		nm_ip4_config_take_address (config, addr);
 	} else {
-		g_warning ("%s: invalid IP4 config received!", __func__);
+		nm_warning ("%s: invalid IP4 config received!", __func__);
 		g_free (addr);
+		goto error;
 	}
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_DNS);
@@ -423,10 +433,6 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	if (val)
 		nm_ip4_config_set_mtu (config, g_value_get_uint (val));
 
-	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_TUNDEV);
-	if (val)
-		priv->tundev = g_strdup (g_value_get_string (val));
-
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_DOMAIN);
 	if (val)
 		nm_ip4_config_add_domain (config, g_value_get_string (val));
@@ -452,26 +458,37 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 
 	print_vpn_config (config, priv->tundev, priv->banner);
 
-	priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
-	priv->ip4_config = config;
-
 	/* Merge in user overrides from the NMConnection's IPv4 setting */
 	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (priv->connection, NM_TYPE_SETTING_IP4_CONFIG));
 	nm_utils_merge_ip4_config (config, s_ip4);
 
-	if (nm_system_vpn_device_set_from_ip4_config (priv->parent_dev, priv->tundev, priv->ip4_config)) {
+	nm_system_device_set_up_down_with_iface (priv->tundev, TRUE, NULL);
+
+	if (nm_system_apply_ip4_config (priv->parent_dev, priv->tundev, config, 0, TRUE)) {
+		NMNamedManager *named_mgr;
+
+		/* Add the VPN to DNS */
+		named_mgr = nm_named_manager_get ();
+		nm_named_manager_add_ip4_config (named_mgr, priv->tundev, config, NM_NAMED_IP_CONFIG_TYPE_VPN);
+		g_object_unref (named_mgr);
+
+		priv->ip4_config = config;
+
 		nm_info ("VPN connection '%s' (IP Config Get) complete.",
 			    nm_vpn_connection_get_name (connection));
 		nm_vpn_connection_set_vpn_state (connection,
 		                                 NM_VPN_CONNECTION_STATE_ACTIVATED,
 		                                 NM_VPN_CONNECTION_STATE_REASON_NONE);
-	} else {
-		nm_warning ("VPN connection '%s' did not receive valid IP config information.",
-				  nm_vpn_connection_get_name (connection));
-		nm_vpn_connection_set_vpn_state (connection,
-		                                 NM_VPN_CONNECTION_STATE_FAILED,
-		                                 NM_VPN_CONNECTION_STATE_REASON_IP_CONFIG_INVALID);
+		return;
 	}
+
+error:
+	nm_warning ("VPN connection '%s' did not receive valid IP config information.",
+	            nm_vpn_connection_get_name (connection));
+	nm_vpn_connection_set_vpn_state (connection,
+	                                 NM_VPN_CONNECTION_STATE_FAILED,
+	                                 NM_VPN_CONNECTION_STATE_REASON_IP_CONFIG_INVALID);
+	g_object_unref (config);
 }
 
 static gboolean
@@ -629,6 +646,30 @@ nm_vpn_connection_get_banner (NMVPNConnection *connection)
 	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), NULL);
 
 	return NM_VPN_CONNECTION_GET_PRIVATE (connection)->banner;
+}
+
+NMIP4Config *
+nm_vpn_connection_get_ip4_config (NMVPNConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), NULL);
+
+	return NM_VPN_CONNECTION_GET_PRIVATE (connection)->ip4_config;
+}
+
+const char *
+nm_vpn_connection_get_ip_iface (NMVPNConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), NULL);
+
+	return NM_VPN_CONNECTION_GET_PRIVATE (connection)->tundev;
+}
+
+NMDevice *
+nm_vpn_connection_get_parent_device (NMVPNConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), NULL);
+
+	return NM_VPN_CONNECTION_GET_PRIVATE (connection)->parent_dev;
 }
 
 void
@@ -870,9 +911,12 @@ connection_state_changed (NMVPNConnection *connection,
 
 		if (priv->ip4_config) {
 			NMIP4Config *dev_ip4_config;
+			NMNamedManager *named_mgr;
 
 			/* Remove attributes of the VPN's IP4 Config */
-			nm_system_vpn_device_unset_from_ip4_config (priv->parent_dev, priv->tundev, priv->ip4_config);
+			named_mgr = nm_named_manager_get ();
+			nm_named_manager_remove_ip4_config (named_mgr, priv->tundev, priv->ip4_config);
+			g_object_unref (named_mgr);
 
 			/* Reset routes, nameservers, and domains of the currently active device */
 			dev_ip4_config = nm_device_get_ip4_config (priv->parent_dev);

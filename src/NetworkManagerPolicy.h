@@ -24,12 +24,13 @@
 
 #include "NetworkManager.h"
 #include "nm-manager.h"
+#include "nm-vpn-manager.h"
 #include "nm-device.h"
 #include "nm-activation-request.h"
 
 typedef struct NMPolicy NMPolicy;
 
-NMPolicy *nm_policy_new (NMManager *manager);
+NMPolicy *nm_policy_new (NMManager *manager, NMVPNManager *vpn_manager);
 void nm_policy_destroy (NMPolicy *policy);
 
 #endif /* NETWORK_MANAGER_POLICY_H */

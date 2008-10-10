@@ -20,6 +20,7 @@ typedef struct {
 } NMVPNManagerPrivate;
 
 enum {
+	CONNECTION_ACTIVATED,
 	CONNECTION_DEACTIVATED,
 
 	LAST_SIGNAL
@@ -128,6 +129,9 @@ connection_vpn_state_changed (NMVPNConnection *connection,
 	NMVPNManager *manager = NM_VPN_MANAGER (user_data);
 
 	switch (state) {
+	case NM_VPN_CONNECTION_STATE_ACTIVATED:
+		g_signal_emit (manager, signals[CONNECTION_ACTIVATED], 0, connection);
+		break;
 	case NM_VPN_CONNECTION_STATE_FAILED:
 	case NM_VPN_CONNECTION_STATE_DISCONNECTED:
 		g_signal_emit (manager, signals[CONNECTION_DEACTIVATED], 0, connection, state, reason);
@@ -259,6 +263,27 @@ nm_vpn_manager_add_active_connections (NMVPNManager *manager,
 	}
 }
 
+GSList *
+nm_vpn_manager_get_active_connections (NMVPNManager *manager)
+{
+	NMVPNManagerPrivate *priv;
+	GSList *iter;
+	GSList *list = NULL;
+
+	g_return_val_if_fail (NM_IS_VPN_MANAGER (manager), NULL);
+
+	priv = NM_VPN_MANAGER_GET_PRIVATE (manager);
+	for (iter = priv->services; iter; iter = g_slist_next (iter)) {
+		GSList *active, *elt;
+
+		active = nm_vpn_service_get_active_connections (NM_VPN_SERVICE (iter->data));
+		for (elt = active; elt; elt = g_slist_next (elt))
+			list = g_slist_append (list, g_object_ref (NM_VPN_CONNECTION (elt->data)));
+	}
+
+	return list;
+}
+
 NMVPNManager *
 nm_vpn_manager_get (void)
 {
@@ -301,6 +326,14 @@ nm_vpn_manager_class_init (NMVPNManagerClass *manager_class)
 	object_class->finalize = finalize;
 
 	/* signals */
+	signals[CONNECTION_ACTIVATED] =
+		g_signal_new ("connection-activated",
+				    G_OBJECT_CLASS_TYPE (object_class),
+				    G_SIGNAL_RUN_FIRST,
+				    0, NULL, NULL,
+				    g_cclosure_marshal_VOID__OBJECT,
+				    G_TYPE_NONE, 1, G_TYPE_OBJECT);
+
 	signals[CONNECTION_DEACTIVATED] =
 		g_signal_new ("connection-deactivated",
 				    G_OBJECT_CLASS_TYPE (object_class),

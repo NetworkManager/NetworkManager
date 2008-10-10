@@ -1919,7 +1919,7 @@ nm_device_set_ip4_config (NMDevice *self, NMIP4Config *config, NMDeviceStateReas
 	if (!nm_ip4_config_get_dbus_path (config))
 		nm_ip4_config_export (config);
 
-	success = nm_system_device_set_from_ip4_config (ip_iface, config, nm_device_get_priority (self));
+	success = nm_system_apply_ip4_config (self, ip_iface, config, nm_device_get_priority (self), FALSE);
 	if (success)
 		nm_device_update_ip4_address (self);
 

@@ -1,5 +1,4 @@
-/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
-
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* NetworkManager -- Network link manager
  *
  * Dan Williams <dcbw@redhat.com>
@@ -37,7 +36,9 @@ void			nm_system_device_flush_ip4_routes_with_iface	(const char *iface);
 
 void			nm_system_device_replace_default_ip4_route   (const char *iface,
                                                              guint32 gw,
-                                                             guint32 mss);
+                                                             guint32 mss,
+                                                             const char *parent_iface,
+                                                             guint32 parent_mss);
 
 void			nm_system_device_flush_ip4_addresses			(NMDevice *dev);
 void			nm_system_device_flush_ip4_addresses_with_iface	(const char *iface);
@@ -45,17 +46,11 @@ void			nm_system_device_flush_ip4_addresses_with_iface	(const char *iface);
 void			nm_system_enable_loopback				(void);
 void			nm_system_update_dns					(void);
 
-gboolean		nm_system_device_set_from_ip4_config		(const char *iface,
-												 NMIP4Config *config,
-												 int priority);
-
-gboolean		nm_system_vpn_device_set_from_ip4_config	(NMDevice *active_device,
-									 const char *iface,
-									 NMIP4Config *config);
-
-gboolean		nm_system_vpn_device_unset_from_ip4_config	(NMDevice *active_device, 
-									 const char *iface,
-									 NMIP4Config *config);
+gboolean		nm_system_apply_ip4_config              (NMDevice *device,
+                                                         const char *iface,
+                                                         NMIP4Config *config,
+                                                         int priority,
+                                                         gboolean is_vpn);
 
 gboolean		nm_system_device_set_up_down				(NMDevice *dev,
                                                              gboolean up,

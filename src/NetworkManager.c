@@ -308,7 +308,7 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	policy = nm_policy_new (manager);
+	policy = nm_policy_new (manager, vpn_manager);
 	if (policy == NULL) {
 		nm_error ("Failed to initialize the policy.");
 		goto done;
@@ -351,6 +351,9 @@ done:
 
 	if (vpn_manager)
 		g_object_unref (vpn_manager);
+
+	if (named_mgr)
+		g_object_unref (named_mgr);
 
 	if (sup_mgr)
 		g_object_unref (sup_mgr);

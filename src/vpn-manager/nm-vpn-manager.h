@@ -61,4 +61,6 @@ void nm_vpn_manager_add_active_connections (NMVPNManager *manager,
                                             NMConnection *filter,
                                             GPtrArray *list);
 
+GSList *nm_vpn_manager_get_active_connections (NMVPNManager *manager);
+
 #endif /* NM_VPN_VPN_MANAGER_H */

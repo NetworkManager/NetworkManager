@@ -43,6 +43,7 @@
 #include "nm-setting-connection.h"
 #include "NetworkManagerSystem.h"
 #include "nm-named-manager.h"
+#include "nm-vpn-manager.h"
 
 typedef struct LookupThread LookupThread;
 
@@ -68,6 +69,10 @@ struct NMPolicy {
 	GSList *pending_activation_checks;
 	GSList *signal_ids;
 	GSList *dev_signal_ids;
+
+	NMVPNManager *vpn_manager;
+	gulong vpn_activated_id;
+	gulong vpn_deactivated_id;
 
 	NMDevice *default_device;
 
@@ -462,34 +467,21 @@ update_system_hostname (NMPolicy *policy, NMDevice *best)
 }
 
 static void
-update_default_route (NMPolicy *policy, NMDevice *new)
-{
-	const char *ip_iface;
-
-	/* FIXME: Not sure if the following makes any sense. */
-	/* If iface and ip_iface are the same, it's a regular network device and we
-	   treat it as such. However, if they differ, it's most likely something like
-	   a serial device with ppp interface, so route all the traffic to it. */
-	ip_iface = nm_device_get_ip_iface (new);
-	if (strcmp (ip_iface, nm_device_get_iface (new))) {
-		nm_system_device_replace_default_ip4_route (ip_iface, 0, 0);
-	} else {
-		NMIP4Config *config;
-		const NMSettingIP4Address *def_addr;
-
-		config = nm_device_get_ip4_config (new);
-		def_addr = nm_ip4_config_get_address (config, 0);
-		nm_system_device_replace_default_ip4_route (ip_iface, def_addr->gateway, nm_ip4_config_get_mss (config));
-	}
-}
-
-static void
 update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 {
+	NMNamedIPConfigType dns_type = NM_NAMED_IP_CONFIG_TYPE_BEST_DEVICE;
 	NMDevice *best = NULL;
 	NMActRequest *best_req = NULL;
 	NMNamedManager *named_mgr;
-	GSList *devices = NULL, *iter;
+	GSList *devices = NULL, *iter, *vpns;
+	NMIP4Config *ip4_config = NULL;
+	const char *ip_iface = NULL;
+	const char *parent_iface = NULL;
+	NMVPNConnection *vpn = NULL;
+	NMConnection *connection = NULL;
+	NMSettingConnection *s_con = NULL;
+	guint32 parent_mss = 0;
+	guint32 gateway = 0;
 
 	best = get_best_device (policy->manager, &best_req);
 	if (!best)
@@ -497,8 +489,69 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	if (!force_update && (best == policy->default_device))
 		goto out;
 
-	update_default_route (policy, best);
-	
+	/* If a VPN connection is active, it is preferred */
+	vpns = nm_vpn_manager_get_active_connections (policy->vpn_manager);
+	for (iter = vpns; iter; iter = g_slist_next (iter)) {
+		NMVPNConnection *candidate = NM_VPN_CONNECTION (iter->data);
+
+		if (!vpn && (nm_vpn_connection_get_vpn_state (candidate) == NM_VPN_CONNECTION_STATE_ACTIVATED))
+			vpn = g_object_ref (candidate);
+		g_object_unref (candidate);
+	}
+	g_slist_free (vpns);
+
+	/* VPNs are the default route only if they don't have custom routes */
+	if (vpn) {
+		NMIP4Config *vpn_config;
+
+		vpn_config = nm_vpn_connection_get_ip4_config (vpn);
+		if (nm_ip4_config_get_num_routes (vpn_config) == 0) {
+			NMIP4Config *parent_ip4;
+			NMDevice *parent;
+
+			connection = nm_vpn_connection_get_connection (vpn);
+			ip_iface = nm_vpn_connection_get_ip_iface (vpn);
+			ip4_config = vpn_config;
+
+			parent = nm_vpn_connection_get_parent_device (vpn);
+			parent_iface = nm_device_get_ip_iface (parent);
+			parent_ip4 = nm_device_get_ip4_config (parent);
+			if (parent_ip4)
+				parent_mss = nm_ip4_config_get_mss (parent_ip4);
+
+			dns_type = NM_NAMED_IP_CONFIG_TYPE_VPN;
+		}
+		g_object_unref (vpn);
+	}
+
+	/* The best device gets the default route if a VPN connection didn't */
+	if (!ip_iface || !ip4_config) {
+		const NMSettingIP4Address *addr;
+
+		connection = nm_act_request_get_connection (best_req);
+		ip_iface = nm_device_get_ip_iface (best);
+		ip4_config = nm_device_get_ip4_config (best);
+		if (ip4_config) {
+			addr = nm_ip4_config_get_address (ip4_config, 0);
+			gateway = addr->gateway;
+		}
+
+		dns_type = NM_NAMED_IP_CONFIG_TYPE_BEST_DEVICE;
+	}
+
+	if (!ip_iface || !ip4_config) {
+		nm_warning ("%s: couldn't determine IP interface (%p) or IPv4 config (%p)!",
+		            __func__, ip_iface, ip4_config);
+		goto out;
+	}
+
+	/* Set the new default route */
+	nm_system_device_replace_default_ip4_route (ip_iface,
+	                                            gateway,
+	                                            nm_ip4_config_get_mss (ip4_config),
+	                                            parent_iface,
+	                                            parent_mss);
+
 	/* Update the default active connection.  Only mark the new default
 	 * active connection after setting default = FALSE on all other connections
 	 * first.  The order is important, we don't want two connections marked
@@ -515,10 +568,7 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	}
 
 	named_mgr = nm_named_manager_get ();
-	nm_named_manager_add_ip4_config (named_mgr,
-									 nm_device_get_ip_iface (best),
-									 nm_device_get_ip4_config (best),
-									 NM_NAMED_IP_CONFIG_TYPE_BEST_DEVICE);
+	nm_named_manager_add_ip4_config (named_mgr, ip_iface, ip4_config, dns_type);
 	g_object_unref (named_mgr);
 
 	/* Now set new default active connection _after_ updating DNS info, so that
@@ -527,8 +577,13 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	if (best_req)
 		nm_act_request_set_default (best_req, TRUE);
 
-	nm_info ("Policy set (%s) as default device for routing and DNS.",
-	         nm_device_get_iface (best));
+	if (connection)
+		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+
+	if (s_con && s_con->id)
+		nm_info ("Policy set '%s' (%s) as default for routing and DNS.", s_con->id, ip_iface);
+	else
+		nm_info ("Policy set (%s) as default for routing and DNS.", ip_iface);
 
 out:
 	/* Update the system hostname */
@@ -616,6 +671,24 @@ auto_activate_device (gpointer user_data)
 }
 
 /*****************************************************************************/
+
+static void
+vpn_connection_activated (NMVPNManager *manager,
+                          NMVPNConnection *vpn,
+                          gpointer user_data)
+{
+	update_routing_and_dns ((NMPolicy *) user_data, TRUE);
+}
+
+static void
+vpn_connection_deactivated (NMVPNManager *manager,
+                            NMVPNConnection *vpn,
+                            NMVPNConnectionState state,
+                            NMVPNConnectionStateReason reason,
+                            gpointer user_data)
+{
+	update_routing_and_dns ((NMPolicy *) user_data, TRUE);
+}
 
 static void
 global_state_changed (NMManager *manager, NMState state, gpointer user_data)
@@ -868,7 +941,7 @@ connection_removed (NMManager *manager,
 }
 
 NMPolicy *
-nm_policy_new (NMManager *manager)
+nm_policy_new (NMManager *manager, NMVPNManager *vpn_manager)
 {
 	NMPolicy *policy;
 	static gboolean initialized = FALSE;
@@ -880,6 +953,14 @@ nm_policy_new (NMManager *manager)
 	policy = g_malloc0 (sizeof (NMPolicy));
 	policy->manager = g_object_ref (manager);
 	policy->update_state_id = 0;
+
+	policy->vpn_manager = g_object_ref (vpn_manager);
+	id = g_signal_connect (policy->vpn_manager, "connection-activated",
+	                       G_CALLBACK (vpn_connection_activated), policy);
+	policy->vpn_activated_id = id;
+	id = g_signal_connect (policy->vpn_manager, "connection-deactivated",
+	                       G_CALLBACK (vpn_connection_deactivated), policy);
+	policy->vpn_deactivated_id = id;
 
 	id = g_signal_connect (manager, "state-changed",
 	                       G_CALLBACK (global_state_changed), policy);
@@ -943,6 +1024,9 @@ nm_policy_destroy (NMPolicy *policy)
 		g_free (data);
 	}
 	g_slist_free (policy->pending_activation_checks);
+
+	g_signal_handler_disconnect (policy->vpn_manager, policy->vpn_activated_id);
+	g_signal_handler_disconnect (policy->vpn_manager, policy->vpn_deactivated_id);
 
 	for (iter = policy->signal_ids; iter; iter = g_slist_next (iter))
 		g_signal_handler_disconnect (policy->manager, (gulong) iter->data);
