@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
 #ifndef NM_DEVICE_INTERFACE_H
 #define NM_DEVICE_INTERFACE_H
@@ -62,7 +63,7 @@ struct _NMDeviceInterface {
 	                      NMActRequest *req,
 	                      GError **error);
 
-	void (*deactivate) (NMDeviceInterface *device);
+	void (*deactivate) (NMDeviceInterface *device, NMDeviceStateReason reason);
 
 	/* Signals */
 	void (*state_changed) (NMDeviceInterface *device,
@@ -84,7 +85,7 @@ gboolean nm_device_interface_activate (NMDeviceInterface *device,
 				       NMActRequest *req,
 				       GError **error);
 
-void nm_device_interface_deactivate (NMDeviceInterface *device);
+void nm_device_interface_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason);
 
 NMDeviceState nm_device_interface_get_state (NMDeviceInterface *device);
 

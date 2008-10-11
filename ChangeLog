@@ -1,5 +1,36 @@
 2008-10-11  Dan Williams  <dcbw@redhat.com>
 
+	* include/NetworkManager.h
+	  introspection/nm-device.xml
+	  include/NetworkManagerVPN.h
+		- Add a few more state reasons for the device deactivated state
+
+	* src/nm-device-interface.c
+	  src/nm-device-interface.h
+		- (nm_device_interface_deactivate): add a 'reason' argument
+
+	* src/nm-device.c
+	  src/nm-device.h
+		- (nm_device_deactivate, nm_device_take_down): add a 'reason' argument
+		- (nm_device_state_changed): pass the state change reason to
+			nm_device_take_down()
+		- (nm_device_set_managed): take a 'reason' argument, and pass it along
+			to the state change function
+
+	* src/nm-manager.c
+	  src/nm-manager.h
+		- (remove_one_device, handle_unmanaged_devices, sync_devices,
+		   impl_manager_sleep): pass a reason code to nm_device_set_managed()
+		- (nm_manager_deactivate_connection): add a 'reason' argument and pass
+			something reasonable along to VPN deactivation
+
+	* src/vpn-manager/nm-vpn-manager.c
+	  src/vpn-manager/nm-vpn-manager.h
+		- (nm_vpn_manager_deactivate_connection): add a 'reason' argument and
+			pass that along to nm_vpn_connection_disconnect()
+
+2008-10-11  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-wifi.c
 		- (can_scan): remove old madwifi hack for not scanning while connected
 

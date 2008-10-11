@@ -206,7 +206,9 @@ nm_vpn_manager_activate_connection (NMVPNManager *manager,
 }
 
 gboolean
-nm_vpn_manager_deactivate_connection (NMVPNManager *manager, const char *path)
+nm_vpn_manager_deactivate_connection (NMVPNManager *manager,
+                                      const char *path,
+                                      NMVPNConnectionStateReason reason)
 {
 	NMVPNManagerPrivate *priv;
 	GSList *iter;
@@ -226,7 +228,7 @@ nm_vpn_manager_deactivate_connection (NMVPNManager *manager, const char *path)
 
 			vpn_path = nm_vpn_connection_get_active_connection_path (vpn);
 			if (!strcmp (path, vpn_path)) {
-				nm_vpn_connection_disconnect (vpn, NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED);
+				nm_vpn_connection_disconnect (vpn, reason);
 				found = TRUE;
 			}
 		}

@@ -70,6 +70,7 @@ const char * nm_manager_activate_connection (NMManager *manager,
 
 gboolean nm_manager_deactivate_connection (NMManager *manager,
                                            const char *connection_path,
+                                           NMDeviceStateReason reason,
                                            GError **error);
 
 /* State handling */

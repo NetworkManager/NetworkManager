@@ -143,8 +143,6 @@ gboolean		nm_device_set_ip4_config	(NMDevice *dev,
                                              NMIP4Config *config,
                                              NMDeviceStateReason *reason);
 
-void		nm_device_take_down (NMDevice *dev, gboolean wait);
-
 void *		nm_device_get_system_config_data	(NMDevice *dev);
 
 NMActRequest *	nm_device_get_act_request	(NMDevice *dev);
@@ -166,7 +164,9 @@ gboolean		nm_device_can_interrupt_activation		(NMDevice *self);
 NMDeviceState nm_device_get_state (NMDevice *device);
 
 gboolean nm_device_get_managed (NMDevice *device);
-void nm_device_set_managed (NMDevice *device, gboolean managed);
+void nm_device_set_managed (NMDevice *device,
+                            gboolean managed,
+                            NMDeviceStateReason reason);
 
 G_END_DECLS
 

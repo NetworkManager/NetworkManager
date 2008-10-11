@@ -114,7 +114,9 @@ static gboolean nm_device_activate (NMDeviceInterface *device,
                                     GError **error);
 
 static void	nm_device_activate_schedule_stage5_ip_config_commit (NMDevice *self);
-static void nm_device_deactivate (NMDeviceInterface *device);
+static void nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason);
+
+static void nm_device_take_down (NMDevice *dev, gboolean wait, NMDeviceStateReason reason);
 
 static gboolean nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware);
 static gboolean nm_device_is_up (NMDevice *self);
@@ -1527,19 +1529,21 @@ nm_device_deactivate_quickly (NMDevice *self)
  *
  */
 static void
-nm_device_deactivate (NMDeviceInterface *device)
+nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
 {
 	NMDevice *self = NM_DEVICE (device);
-	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
+	NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
 
 	g_return_if_fail (self != NULL);
 
-	nm_info ("(%s): deactivating device.", nm_device_get_iface (self));
+	nm_info ("(%s): deactivating device (reason: %d).",
+	         nm_device_get_iface (self),
+	         reason);
 
 	nm_device_deactivate_quickly (self);
 
 	/* Clean up nameservers and addresses */
-	nm_device_set_ip4_config (self, NULL, &reason);
+	nm_device_set_ip4_config (self, NULL, &ignored);
 
 	/* Take out any entries in the routing table and any IP address the device had. */
 	nm_system_device_flush_ip4_routes (self);
@@ -2061,13 +2065,13 @@ nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware)
 	return success;
 }
 
-void
-nm_device_take_down (NMDevice *self, gboolean block)
+static void
+nm_device_take_down (NMDevice *self, gboolean block, NMDeviceStateReason reason)
 {
 	g_return_if_fail (NM_IS_DEVICE (self));
 
 	if (nm_device_get_act_request (self))
-		nm_device_interface_deactivate (NM_DEVICE_INTERFACE (self));
+		nm_device_interface_deactivate (NM_DEVICE_INTERFACE (self), reason);
 
 	if (nm_device_is_up (self)) {
 		nm_info ("(%s): cleaning up...", nm_device_get_iface (self));
@@ -2107,10 +2111,10 @@ nm_device_dispose (GObject *object)
 	 */
 
 	if (self->priv->managed) {
-		NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
+		NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
 
-		nm_device_take_down (self, FALSE);
-		nm_device_set_ip4_config (self, NULL, &reason);
+		nm_device_take_down (self, FALSE, NM_DEVICE_STATE_REASON_REMOVED);
+		nm_device_set_ip4_config (self, NULL, &ignored);
 	}
 
 	clear_act_request (self);
@@ -2348,7 +2352,7 @@ nm_info ("(%s): device state change: %d -> %d", nm_device_get_iface (device), ol
 	switch (state) {
 	case NM_DEVICE_STATE_UNMANAGED:
 		if (old_state > NM_DEVICE_STATE_UNMANAGED)
-			nm_device_take_down (device, TRUE);
+			nm_device_take_down (device, TRUE, reason);
 		break;
 	case NM_DEVICE_STATE_UNAVAILABLE:
 		if (old_state == NM_DEVICE_STATE_UNMANAGED) {
@@ -2359,7 +2363,7 @@ nm_info ("(%s): device state change: %d -> %d", nm_device_get_iface (device), ol
 		 * eg carrier changes we actually deactivate it */
 	case NM_DEVICE_STATE_DISCONNECTED:
 		if (old_state != NM_DEVICE_STATE_UNAVAILABLE)
-			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device));
+			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device), reason);
 		break;
 	default:
 		break;
@@ -2408,7 +2412,9 @@ nm_device_get_managed (NMDevice *device)
 }
 
 void
-nm_device_set_managed (NMDevice *device, gboolean managed)
+nm_device_set_managed (NMDevice *device,
+                       gboolean managed,
+                       NMDeviceStateReason reason)
 {
 	NMDevicePrivate *priv;
 
@@ -2430,8 +2436,8 @@ nm_device_set_managed (NMDevice *device, gboolean managed)
 
 	/* If now managed, jump to unavailable */
 	if (managed)
-		nm_device_state_changed (device, NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
+		nm_device_state_changed (device, NM_DEVICE_STATE_UNAVAILABLE, reason);
 	else
-		nm_device_state_changed (device, NM_DEVICE_STATE_UNMANAGED, NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
+		nm_device_state_changed (device, NM_DEVICE_STATE_UNMANAGED, reason);
 }
 

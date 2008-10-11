@@ -420,7 +420,7 @@ static void
 remove_one_device (NMManager *manager, NMDevice *device)
 {
 	if (nm_device_get_managed (device))
-		nm_device_set_managed (device, FALSE);
+		nm_device_set_managed (device, FALSE, NM_DEVICE_STATE_REASON_REMOVED);
 
 	g_signal_handlers_disconnect_by_func (device, manager_device_state_changed, manager);
 
@@ -1153,7 +1153,7 @@ handle_unmanaged_devices (NMManager *manager, GPtrArray *ops)
 		device = nm_manager_get_device_by_udi (manager, udi);
 		if (device) {
 			unmanaged = g_slist_prepend (unmanaged, device);
-			nm_device_set_managed (device, FALSE);
+			nm_device_set_managed (device, FALSE, NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
 		}
 	}
 
@@ -1162,7 +1162,7 @@ handle_unmanaged_devices (NMManager *manager, GPtrArray *ops)
 		NMDevice *device = NM_DEVICE (iter->data);
 
 		if (!g_slist_find (unmanaged, device))
-			nm_device_set_managed (device, TRUE);
+			nm_device_set_managed (device, TRUE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
 	}
 
 	g_slist_free (unmanaged);
@@ -1394,7 +1394,10 @@ sync_devices (NMManager *self)
 		const char *udi = nm_device_get_udi (device);
 
 		if (nm_hal_manager_udi_exists (priv->hal_mgr, udi)) {
-			nm_device_set_managed (device, nm_manager_udi_is_managed (self, udi));
+			if (nm_manager_udi_is_managed (self, udi))
+				nm_device_set_managed (device, TRUE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
+			else
+				nm_device_set_managed (device, FALSE, NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
 		} else {
 			priv->devices = g_slist_delete_link (priv->devices, iter);
 			remove_one_device (self, device);
@@ -2006,12 +2009,14 @@ impl_manager_activate_connection (NMManager *manager,
 gboolean
 nm_manager_deactivate_connection (NMManager *manager,
                                   const char *connection_path,
+                                  NMDeviceStateReason reason,
                                   GError **error)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	NMVPNManager *vpn_manager;
 	GSList *iter;
 	gboolean success = FALSE;
+	NMVPNConnectionStateReason vpn_reason = NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED;
 
 	/* Check for device connections first */
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
@@ -2025,7 +2030,7 @@ nm_manager_deactivate_connection (NMManager *manager,
 		if (!strcmp (connection_path, nm_act_request_get_active_connection_path (req))) {
 			nm_device_state_changed (device,
 			                         NM_DEVICE_STATE_DISCONNECTED,
-			                         NM_DEVICE_STATE_REASON_NONE);
+			                         reason);
 			success = TRUE;
 			goto done;
 		}
@@ -2033,7 +2038,9 @@ nm_manager_deactivate_connection (NMManager *manager,
 
 	/* Check for VPN connections next */
 	vpn_manager = nm_vpn_manager_get ();
-	if (nm_vpn_manager_deactivate_connection (vpn_manager, connection_path)) {
+	if (reason == NM_DEVICE_STATE_REASON_CONNECTION_REMOVED)
+		vpn_reason = NM_VPN_CONNECTION_STATE_REASON_CONNECTION_REMOVED;
+	if (nm_vpn_manager_deactivate_connection (vpn_manager, connection_path, vpn_reason)) {
 		success = TRUE;
 	} else {
 		g_set_error (error,
@@ -2052,7 +2059,10 @@ impl_manager_deactivate_connection (NMManager *manager,
                                     const char *connection_path,
                                     GError **error)
 {
-	return nm_manager_deactivate_connection (manager, connection_path, error);
+	return nm_manager_deactivate_connection (manager,
+	                                         connection_path,
+	                                         NM_DEVICE_STATE_REASON_USER_REQUESTED,
+	                                         error);
 }
 
 static gboolean
@@ -2082,7 +2092,7 @@ impl_manager_sleep (NMManager *manager, gboolean sleep, GError **error)
 		 * we'll remove them in 'wake' for speed's sake.
 		 */
 		for (iter = priv->devices; iter; iter = iter->next)
-			nm_device_set_managed (NM_DEVICE (iter->data), FALSE);
+			nm_device_set_managed (NM_DEVICE (iter->data), FALSE, NM_DEVICE_STATE_REASON_SLEEPING);
 	} else {
 		nm_info  ("Waking up...");
 

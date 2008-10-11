@@ -325,6 +325,18 @@ typedef enum {
 	/* Necessary firmware for the device may be missing */
 	NM_DEVICE_STATE_REASON_FIRMWARE_MISSING,
 
+	/* The device was removed */
+	NM_DEVICE_STATE_REASON_REMOVED,
+
+	/* NetworkManager went to sleep */
+	NM_DEVICE_STATE_REASON_SLEEPING,
+
+	/* The device's active connection disappeared */
+	NM_DEVICE_STATE_REASON_CONNECTION_REMOVED,
+
+	/* Device disconnected by user or client */
+	NM_DEVICE_STATE_REASON_USER_REQUESTED,
+
 	/* Unused */
 	NM_DEVICE_STATE_REASON_LAST = 0xFFFF
 } NMDeviceStateReason;

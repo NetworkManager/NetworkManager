@@ -921,7 +921,7 @@ connection_removed (NMManager *manager,
 		char *path = g_ptr_array_index (list, i);
 		GError *error = NULL;
 
-		if (!nm_manager_deactivate_connection (manager, path, &error)) {
+		if (!nm_manager_deactivate_connection (manager, path, NM_DEVICE_STATE_REASON_CONNECTION_REMOVED, &error)) {
 			nm_warning ("Connection '%s' disappeared, but error deactivating it: (%d) %s",
 			            s_con->id, error->code, error->message);
 			g_error_free (error);

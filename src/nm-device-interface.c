@@ -1,4 +1,4 @@
-/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
 #include "nm-marshal.h"
 #include "nm-setting-connection.h"
@@ -234,11 +234,11 @@ nm_device_interface_activate (NMDeviceInterface *device,
 }
 
 void
-nm_device_interface_deactivate (NMDeviceInterface *device)
+nm_device_interface_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
 {
 	g_return_if_fail (NM_IS_DEVICE_INTERFACE (device));
 
-	NM_DEVICE_INTERFACE_GET_INTERFACE (device)->deactivate (device);
+	NM_DEVICE_INTERFACE_GET_INTERFACE (device)->deactivate (device, reason);
 }
 
 NMDeviceState

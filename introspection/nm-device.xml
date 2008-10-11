@@ -320,6 +320,26 @@
           Necessary firmware for the device may be missing.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="REMOVED" value="36">
+        <tp:docstring>
+          The device was removed.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="SLEEPING" value="37">
+        <tp:docstring>
+          NetworkManager went to sleep.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="CONNECTION_REMOVED" value="38">
+        <tp:docstring>
+          The device's active connection was removed or disappeared.
+        </tp:docstring>
+      </tp:enumvalue>
+      <tp:enumvalue suffix="USER_REQUESTED" value="39">
+        <tp:docstring>
+          A user or client requested the disconnection.
+        </tp:docstring>
+      </tp:enumvalue>
 	</tp:enum>
 
   </interface>

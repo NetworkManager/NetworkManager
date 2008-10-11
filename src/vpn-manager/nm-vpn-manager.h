@@ -55,7 +55,8 @@ const char *nm_vpn_manager_activate_connection (NMVPNManager *manager,
                                                 GError **error);
 
 gboolean nm_vpn_manager_deactivate_connection (NMVPNManager *manager,
-                                               const char *path);
+                                               const char *path,
+                                               NMVPNConnectionStateReason reason);
 
 void nm_vpn_manager_add_active_connections (NMVPNManager *manager,
                                             NMConnection *filter,
