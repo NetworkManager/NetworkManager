@@ -9,12 +9,12 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-pptp.HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-08-12 11:38+0000\n"
-"PO-Revision-Date: 2008-08-14 09:23+0200\n"
+"POT-Creation-Date: 2008-09-29 21:27+0000\n"
+"PO-Revision-Date: 2008-10-11 17:36+0200\n"
 "Last-Translator: Jorge González <jorgegonz@svn.gnome.org>\n"
 "Language-Team: Español <gnome-es-list@gnome.org>\n"
 "MIME-Version: 1.0\n"
-"Content-Type:  text/plain; charset=UTF-8\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: KBabel 1.11.4\n"
 "Plural-Forms:  nplurals=2; plural=(n != 1);\n"
@@ -51,12 +51,12 @@ msgstr "_Recordar las contraseñas para esta sesión"
 msgid "_Save passwords in keyring"
 msgstr "_Guardar las contraseña en el depósito de claves"
 
-#: ../auth-dialog/main.c:168
+#: ../auth-dialog/main.c:140
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Necesita autenticarse para acceder a la red privada virtual «%s»"
 
-#: ../auth-dialog/main.c:169
+#: ../auth-dialog/main.c:141
 msgid "Authenticate VPN"
 msgstr "Autenticar VPN"
 
@@ -141,8 +141,8 @@ msgid "Default"
 msgstr "Predeterminado"
 
 #: ../properties/nm-pptp-dialog.glade.h:12
-msgid "Domain:"
-msgstr "Dominio:"
+msgid "NT Domain:"
+msgstr "Dominio de red:"
 
 #: ../properties/nm-pptp-dialog.glade.h:13
 msgid "Send PPP _echo packets"
