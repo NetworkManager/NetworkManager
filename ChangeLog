@@ -1,5 +1,10 @@
 2008-10-11  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-wifi.c
+		- (can_scan): remove old madwifi hack for not scanning while connected
+
+2008-10-11  Dan Williams  <dcbw@redhat.com>
+
 	Add support for VPN subnet gateways (bgo #549196)
 
 	* include/NetworkManager.h

@@ -1669,16 +1669,7 @@ can_scan (NMDeviceWifi *self)
 			return FALSE;
 	}
 
-	/* Devices supporting only B/G frequencies can scan when disconnected 
-	 * and activated, but not when activating.  We don't allow a/b/g devices to
-	 * scan when activated, because there are just too many channels to scan and
-	 * it takes too long to scan them, so users get angry when their SSH
-	 * sessions lag.
-	 */
-	if ((priv->num_freqs <= 14) && (dev_state == NM_DEVICE_STATE_ACTIVATED))
-		return TRUE;
-
-	return FALSE;
+	return TRUE;
 }
 
 static gboolean
