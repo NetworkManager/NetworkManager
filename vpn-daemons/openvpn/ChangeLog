@@ -1,3 +1,8 @@
+2008-10-11  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-openvpn-service-openvpn-helper.c
+		- (main): handle route_vpn_gateway (requires NM svn r4169) (bgo #549196)
+
 2008-09-30  Dan Williams  <dcbw@redhat.com>
 
 	* properties/nm-openvpn-dialog.glade

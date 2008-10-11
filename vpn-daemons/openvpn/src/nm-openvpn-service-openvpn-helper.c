@@ -1,4 +1,4 @@
-/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* nm-openvpn-service-openvpn-helper - helper called after OpenVPN established
  * a connection, uses DBUS to send information back to nm-openvpn-service
  *
@@ -298,12 +298,17 @@ main (int argc, char *argv[])
 
 	config = g_hash_table_new (g_str_hash, g_str_equal);
 
-	/* Gateway */
+	/* External world-visible VPN gateway */
 	val = addr_to_gvalue (getenv ("trusted_ip"));
 	if (val)
-		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_GATEWAY, val);
+		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY, val);
 	else
 		helper_failed (connection, "VPN Gateway");
+
+	/* Internal VPN subnet gateway */
+	val = addr_to_gvalue (getenv ("route_vpn_gateway"));
+	if (val)
+		g_hash_table_insert (config, NM_VPN_PLUGIN_IP4_CONFIG_INT_GATEWAY, val);
 
 	/* Tunnel device */
 	val = str_to_gvalue (getenv ("dev"), FALSE);
