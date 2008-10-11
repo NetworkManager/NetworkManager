@@ -34,11 +34,16 @@
 void			nm_system_device_flush_ip4_routes				(NMDevice *dev);
 void			nm_system_device_flush_ip4_routes_with_iface	(const char *iface);
 
-void			nm_system_device_replace_default_ip4_route   (const char *iface,
-                                                             guint32 gw,
-                                                             guint32 mss,
-                                                             const char *parent_iface,
-                                                             guint32 parent_mss);
+gboolean		nm_system_replace_default_ip4_route   (const char *iface,
+                                                       guint32 gw,
+                                                       guint32 mss);
+
+gboolean		nm_system_replace_default_ip4_route_vpn (const char *iface,
+                                                         guint32 ext_gw,
+                                                         guint32 int_gw,
+                                                         guint32 mss,
+                                                         const char *parent_iface,
+                                                         guint32 parent_mss);
 
 void			nm_system_device_flush_ip4_addresses			(NMDevice *dev);
 void			nm_system_device_flush_ip4_addresses_with_iface	(const char *iface);

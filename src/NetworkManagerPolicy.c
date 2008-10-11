@@ -475,13 +475,11 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	NMNamedManager *named_mgr;
 	GSList *devices = NULL, *iter, *vpns;
 	NMIP4Config *ip4_config = NULL;
+	const NMSettingIP4Address *addr;
 	const char *ip_iface = NULL;
-	const char *parent_iface = NULL;
 	NMVPNConnection *vpn = NULL;
 	NMConnection *connection = NULL;
 	NMSettingConnection *s_con = NULL;
-	guint32 parent_mss = 0;
-	guint32 gateway = 0;
 
 	best = get_best_device (policy->manager, &best_req);
 	if (!best)
@@ -502,22 +500,24 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 
 	/* VPNs are the default route only if they don't have custom routes */
 	if (vpn) {
-		NMIP4Config *vpn_config;
-
-		vpn_config = nm_vpn_connection_get_ip4_config (vpn);
-		if (nm_ip4_config_get_num_routes (vpn_config) == 0) {
+		ip4_config = nm_vpn_connection_get_ip4_config (vpn);
+		if (nm_ip4_config_get_num_routes (ip4_config) == 0) {
 			NMIP4Config *parent_ip4;
 			NMDevice *parent;
 
-			connection = nm_vpn_connection_get_connection (vpn);
 			ip_iface = nm_vpn_connection_get_ip_iface (vpn);
-			ip4_config = vpn_config;
+			connection = nm_vpn_connection_get_connection (vpn);
+			addr = nm_ip4_config_get_address (ip4_config, 0);
 
 			parent = nm_vpn_connection_get_parent_device (vpn);
-			parent_iface = nm_device_get_ip_iface (parent);
 			parent_ip4 = nm_device_get_ip4_config (parent);
-			if (parent_ip4)
-				parent_mss = nm_ip4_config_get_mss (parent_ip4);
+
+			nm_system_replace_default_ip4_route_vpn (ip_iface,
+			                                         addr->gateway,
+			                                         nm_vpn_connection_get_ip4_internal_gateway (vpn),
+			                                         nm_ip4_config_get_mss (ip4_config),
+			                                         nm_device_get_ip_iface (parent),
+			                                         nm_ip4_config_get_mss (parent_ip4));
 
 			dns_type = NM_NAMED_IP_CONFIG_TYPE_VPN;
 		}
@@ -526,15 +526,13 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 
 	/* The best device gets the default route if a VPN connection didn't */
 	if (!ip_iface || !ip4_config) {
-		const NMSettingIP4Address *addr;
-
 		connection = nm_act_request_get_connection (best_req);
 		ip_iface = nm_device_get_ip_iface (best);
 		ip4_config = nm_device_get_ip4_config (best);
-		if (ip4_config) {
-			addr = nm_ip4_config_get_address (ip4_config, 0);
-			gateway = addr->gateway;
-		}
+		g_assert (ip4_config);
+		addr = nm_ip4_config_get_address (ip4_config, 0);
+
+		nm_system_replace_default_ip4_route (ip_iface, addr->gateway, nm_ip4_config_get_mss (ip4_config));
 
 		dns_type = NM_NAMED_IP_CONFIG_TYPE_BEST_DEVICE;
 	}
@@ -544,13 +542,6 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 		            __func__, ip_iface, ip4_config);
 		goto out;
 	}
-
-	/* Set the new default route */
-	nm_system_device_replace_default_ip4_route (ip_iface,
-	                                            gateway,
-	                                            nm_ip4_config_get_mss (ip4_config),
-	                                            parent_iface,
-	                                            parent_mss);
 
 	/* Update the default active connection.  Only mark the new default
 	 * active connection after setting default = FALSE on all other connections

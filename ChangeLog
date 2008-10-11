@@ -1,3 +1,31 @@
+2008-10-11  Dan Williams  <dcbw@redhat.com>
+
+	Add support for VPN subnet gateways (bgo #549196)
+
+	* include/NetworkManager.h
+		- Add key for internal VPN subnet gateway
+
+	* src/vpn-manager/nm-vpn-connection.c
+		- (ip_address_to_string): return a const from a static buffer so we
+			don't leak a lot of strings
+		- (print_vpn_config): print internal VPN gateway as well
+		- (nm_vpn_connection_ip4_config_get): grab internal VPN gateway from
+			VPN service too
+		- (nm_vpn_connection_get_ip4_internal_gateway): new function
+
+	* src/NetworkManagerSystem.c
+	  src/NetworkManagerSystem.h
+		- (nm_system_device_replace_default_ip4_route): split into two, one for
+			VPN connections and one for normal devices
+		- (replace_default_ip4_route): break out route stuff into its own function
+		- (nm_system_replace_default_ip4_route_vpn,
+		   nm_system_replace_default_ip4_route): simplify by having two cases,
+			one for VPNs and one for normal devices
+
+	* src/NetworkManagerPolicy.c
+		- (update_routing_and_dns): simplify, use split default route replacement
+			functions
+
 2008-10-10  Dan Williams  <dcbw@redhat.com>
 
 	Rework default route handling to consolidate decisions in the policy,

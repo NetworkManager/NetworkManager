@@ -71,6 +71,7 @@ typedef struct {
 	DBusGProxy *proxy;
 	guint ipconfig_timeout;
 	NMIP4Config *ip4_config;
+	guint32 ip4_internal_gw;
 	char *tundev;
 	char *tapdev;
 	char *banner;
@@ -293,13 +294,13 @@ static const char *
 ip_address_to_string (guint32 numeric)
 {
 	struct in_addr temp_addr;
-	char buf[INET_ADDRSTRLEN+1];
+	static char buf[INET_ADDRSTRLEN + 1];
 
 	memset (&buf, '\0', sizeof (buf));
 	temp_addr.s_addr = numeric;
 
 	if (inet_ntop (AF_INET, &temp_addr, buf, INET_ADDRSTRLEN)) {
-		return g_strdup (buf);
+		return buf;
 	} else {
 		nm_warning ("%s: error converting IP4 address 0x%X",
 		            __func__, ntohl (temp_addr.s_addr));
@@ -309,8 +310,9 @@ ip_address_to_string (guint32 numeric)
 
 static void
 print_vpn_config (NMIP4Config *config,
-			   const char *tundev,
-			   const char *banner)
+                  guint32 internal_gw,
+                  const char *tundev,
+                  const char *banner)
 {
 	const NMSettingIP4Address *addr;
 	char *         dns_domain = NULL;
@@ -322,6 +324,8 @@ print_vpn_config (NMIP4Config *config,
 	addr = nm_ip4_config_get_address (config, 0);
 
 	nm_info ("VPN Gateway: %s", ip_address_to_string (addr->gateway));
+	if (internal_gw)
+		nm_info ("Internal Gateway: %s", ip_address_to_string (internal_gw));
 	nm_info ("Tunnel Device: %s", tundev);
 	nm_info ("Internal IP4 Address: %s", ip_address_to_string (addr->address));
 	nm_info ("Internal IP4 Prefix: %d", addr->prefix);
@@ -385,7 +389,13 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 		goto error;
 	}
 
-	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_GATEWAY);
+	/* Internal address of the VPN subnet's gateway */
+	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_INT_GATEWAY);
+	if (val)
+		priv->ip4_internal_gw = g_value_get_uint (val);
+
+	/* External world-visible address of the VPN server */
+	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY);
 	if (val)
 		addr->gateway = g_value_get_uint (val);
 
@@ -456,7 +466,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 		g_slist_free (routes);
 	}
 
-	print_vpn_config (config, priv->tundev, priv->banner);
+	print_vpn_config (config, priv->ip4_internal_gw, priv->tundev, priv->banner);
 
 	/* Merge in user overrides from the NMConnection's IPv4 setting */
 	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (priv->connection, NM_TYPE_SETTING_IP4_CONFIG));
@@ -670,6 +680,14 @@ nm_vpn_connection_get_parent_device (NMVPNConnection *connection)
 	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), NULL);
 
 	return NM_VPN_CONNECTION_GET_PRIVATE (connection)->parent_dev;
+}
+
+guint32
+nm_vpn_connection_get_ip4_internal_gateway (NMVPNConnection *connection)
+{
+	g_return_val_if_fail (NM_IS_VPN_CONNECTION (connection), 0);
+
+	return NM_VPN_CONNECTION_GET_PRIVATE (connection)->ip4_internal_gw;
 }
 
 void

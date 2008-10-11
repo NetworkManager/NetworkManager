@@ -112,17 +112,23 @@ typedef enum {
 	NM_VPN_PLUGIN_FAILURE_BAD_IP_CONFIG
 } NMVPNPluginFailure;
 
-#define NM_VPN_PLUGIN_IP4_CONFIG_GATEWAY "gateway"
-#define NM_VPN_PLUGIN_IP4_CONFIG_ADDRESS "address"
-#define NM_VPN_PLUGIN_IP4_CONFIG_PTP     "ptp"
-#define NM_VPN_PLUGIN_IP4_CONFIG_PREFIX  "prefix"
-#define NM_VPN_PLUGIN_IP4_CONFIG_DNS     "dns"
-#define NM_VPN_PLUGIN_IP4_CONFIG_NBNS    "nbns"
-#define NM_VPN_PLUGIN_IP4_CONFIG_MSS     "mss"
-#define NM_VPN_PLUGIN_IP4_CONFIG_MTU     "mtu"
-#define NM_VPN_PLUGIN_IP4_CONFIG_TUNDEV  "tundev"
-#define NM_VPN_PLUGIN_IP4_CONFIG_DOMAIN  "domain"
-#define NM_VPN_PLUGIN_IP4_CONFIG_BANNER  "banner"
-#define NM_VPN_PLUGIN_IP4_CONFIG_ROUTES  "routes"
+
+#define NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY "gateway"
+#define NM_VPN_PLUGIN_IP4_CONFIG_INT_GATEWAY "internal-gateway"
+#define NM_VPN_PLUGIN_IP4_CONFIG_ADDRESS     "address"
+#define NM_VPN_PLUGIN_IP4_CONFIG_PTP         "ptp"
+#define NM_VPN_PLUGIN_IP4_CONFIG_PREFIX      "prefix"
+#define NM_VPN_PLUGIN_IP4_CONFIG_DNS         "dns"
+#define NM_VPN_PLUGIN_IP4_CONFIG_NBNS        "nbns"
+#define NM_VPN_PLUGIN_IP4_CONFIG_MSS         "mss"
+#define NM_VPN_PLUGIN_IP4_CONFIG_MTU         "mtu"
+#define NM_VPN_PLUGIN_IP4_CONFIG_TUNDEV      "tundev"
+#define NM_VPN_PLUGIN_IP4_CONFIG_DOMAIN      "domain"
+#define NM_VPN_PLUGIN_IP4_CONFIG_BANNER      "banner"
+#define NM_VPN_PLUGIN_IP4_CONFIG_ROUTES      "routes"
+
+/* Deprecated */
+#define NM_VPN_PLUGIN_IP4_CONFIG_GATEWAY   NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY
+
 
 #endif /* NETWORK_MANAGER_VPN_H */

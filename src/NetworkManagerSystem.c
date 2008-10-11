@@ -533,35 +533,25 @@ error:
 	return NULL;
 }
 
-/*
- * nm_system_replace_default_ip4_route
- *
- * Replace default IPv4 route with one via the current device
- *
- */
-void
-nm_system_device_replace_default_ip4_route (const char *iface,
-                                            guint32 gw,
-                                            guint32 mss,
-                                            const char *parent_iface,
-                                            guint32 parent_mss)
+static int
+replace_default_ip4_route (const char *iface, guint32 gw, guint32 mss)
 {
 	struct rtnl_route *route = NULL;
-	struct rtnl_route *gw_route = NULL;
 	struct nl_handle *nlh;
 	struct nl_addr *gw_addr = NULL;
-	int iface_idx, err;
-	gboolean success = FALSE;
+	int iface_idx, err = -1;
+
+	g_return_val_if_fail (iface != NULL, -1);
 
 	nlh = nm_netlink_get_default_handle ();
-	g_return_if_fail (nlh != NULL);
+	g_return_val_if_fail (nlh != NULL, -1);
 
 	iface_idx = nm_netlink_iface_to_index (iface);
 	if (iface_idx < 0)
-		return;
+		return -1;
 
 	route = rtnl_route_alloc();
-	g_return_if_fail (route != NULL);
+	g_return_val_if_fail (route != NULL, -1);
 
 	rtnl_route_set_scope (route, RT_SCOPE_UNIVERSE);
 	rtnl_route_set_oif (route, iface_idx);
@@ -580,36 +570,97 @@ nm_system_device_replace_default_ip4_route (const char *iface,
 
 	/* Add the new default route */
 	err = rtnl_route_add (nlh, route, NLM_F_REPLACE);
-	if (err == 0) {
-		/* Everything good */
-		success = TRUE;
-		goto out;
-	} else if (err != -ESRCH) {
-		nm_warning ("rtnl_route_add() returned error %s (%d)\n%s",
-		            strerror (err), err, nl_geterror());
-		goto out;
+
+out:
+	rtnl_route_put (route);
+	return err;
+}
+
+/*
+ * nm_system_replace_default_ip4_route_vpn
+ *
+ * Replace default IPv4 route with one via the current device
+ *
+ */
+gboolean
+nm_system_replace_default_ip4_route_vpn (const char *iface,
+                                         guint32 ext_gw,
+                                         guint32 int_gw,
+                                         guint32 mss,
+                                         const char *parent_iface,
+                                         guint32 parent_mss)
+{
+	struct rtnl_route *gw_route = NULL;
+	struct nl_handle *nlh;
+	gboolean success = FALSE;
+	int err;
+
+	nlh = nm_netlink_get_default_handle ();
+	g_return_val_if_fail (nlh != NULL, FALSE);
+
+	err = replace_default_ip4_route (iface, int_gw, mss);
+	if (err != -ESRCH) {
+		nm_warning ("replace_default_ip4_route() returned error %s (%d)",
+		            strerror (err), err);
+		return FALSE;
 	}
 
 	/* Try adding a direct route to the gateway first */
-	gw_route = add_ip4_route_to_gateway (parent_iface ? parent_iface : iface,
-	                                     gw,
-	                                     parent_iface ? parent_mss : mss);
+	gw_route = add_ip4_route_to_gateway (parent_iface, ext_gw, parent_mss);
 	if (!gw_route)
-		goto out;
+		return FALSE;
 
 	/* Try adding the original route again */
-	err = rtnl_route_add (nlh, route, NLM_F_REPLACE);
+	err = replace_default_ip4_route (iface, int_gw, mss);
 	if (err != 0) {
 		rtnl_route_del (nlh, gw_route, 0);
 		nm_warning ("Failed to set IPv4 default route on '%s': %s", iface, nl_geterror ());
+	} else
+		success = TRUE;
+
+	rtnl_route_put (gw_route);
+	return success;
+}
+
+/*
+ * nm_system_replace_default_ip4_route
+ *
+ * Replace default IPv4 route with one via the current device
+ *
+ */
+gboolean
+nm_system_replace_default_ip4_route (const char *iface, guint32 gw, guint32 mss)
+{
+	struct rtnl_route *gw_route = NULL;
+	struct nl_handle *nlh;
+	gboolean success = FALSE;
+	int err;
+
+	nlh = nm_netlink_get_default_handle ();
+	g_return_val_if_fail (nlh != NULL, FALSE);
+
+	err = replace_default_ip4_route (iface, gw, mss);
+	if (err != -ESRCH) {
+		nm_warning ("replace_default_ip4_route() returned error %s (%d)",
+		            strerror (err), err);
+		return FALSE;
 	}
 
-out:
-	if (gw_route)
-		rtnl_route_put (gw_route);
+	/* Try adding a direct route to the gateway first */
+	gw_route = add_ip4_route_to_gateway (iface, gw, mss);
+	if (!gw_route)
+		return FALSE;
 
-	if (route)
-		rtnl_route_put (route);
+	/* Try adding the original route again */
+	err = replace_default_ip4_route (iface, gw, mss);
+	if (err != 0) {
+		rtnl_route_del (nlh, gw_route, 0);
+		nm_warning ("Failed to set IPv4 default route on '%s': %s", iface, nl_geterror ());
+	} else
+		success = TRUE;
+
+	rtnl_route_put (gw_route);
+	return success;
 }
 
 /*
