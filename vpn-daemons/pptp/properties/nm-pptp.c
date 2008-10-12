@@ -288,7 +288,7 @@ fill_vpn_passwords (GladeXML *xml,
 		gtk_size_group_add_widget (group, w);
 		g_signal_connect (w, "changed", G_CALLBACK (changed_cb), user_data);
 	} else {
-		nm_error ("No user_password_entry in glade file!");
+		g_error ("No user_password_entry in glade file!");
 	}
 }
 
