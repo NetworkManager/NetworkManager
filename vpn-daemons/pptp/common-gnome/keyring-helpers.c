@@ -26,7 +26,7 @@
 #include <nm-setting-vpn.h>
 
 #include "keyring-helpers.h"
-#include "src/nm-pptp-service.h"
+#include "../src/nm-pptp-service.h"
 
 #define KEYRING_UUID_TAG "connection-uuid"
 #define KEYRING_SN_TAG "setting-name"

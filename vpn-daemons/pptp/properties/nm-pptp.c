@@ -41,8 +41,8 @@
 #include <nm-setting-connection.h>
 #include <nm-setting-ip4-config.h>
 
-#include "src/nm-pptp-service.h"
-#include "common-gnome/keyring-helpers.h"
+#include "../src/nm-pptp-service.h"
+#include "../common-gnome/keyring-helpers.h"
 #include "nm-pptp.h"
 #include "import-export.h"
 #include "advanced-dialog.h"
