@@ -41,7 +41,8 @@
 #include <nm-setting-connection.h>
 #include <nm-setting-ip4-config.h>
 
-#include "../src/nm-pptp-service.h"
+#include "src/nm-pptp-service.h"
+#include "common-gnome/keyring-helpers.h"
 #include "nm-pptp.h"
 #include "import-export.h"
 #include "advanced-dialog.h"
@@ -50,6 +51,8 @@
 #define PPTP_PLUGIN_DESC    _("Compatible with Microsoft and other PPTP VPN servers.")
 #define PPTP_PLUGIN_SERVICE NM_DBUS_SERVICE_PPTP
 
+
+typedef void (*ChangedCallback) (GtkWidget *widget, gpointer user_data);
 
 /************** plugin class **************/
 
@@ -102,6 +105,8 @@ pptp_plugin_ui_error_get_type (void)
 		static const GEnumValue values[] = {
 			/* Unknown error. */
 			ENUM_ENTRY (PPTP_PLUGIN_UI_ERROR_UNKNOWN, "UnknownError"),
+			/* The connection was missing invalid. */
+			ENUM_ENTRY (PPTP_PLUGIN_UI_ERROR_INVALID_CONNECTION, "InvalidConnection"),
 			/* The specified property was invalid. */
 			ENUM_ENTRY (PPTP_PLUGIN_UI_ERROR_INVALID_PROPERTY, "InvalidProperty"),
 			/* The specified property was missing and is required. */
@@ -208,6 +213,85 @@ advanced_button_clicked_cb (GtkWidget *button, gpointer user_data)
 	gtk_widget_show_all (dialog);
 }
 
+static void
+show_toggled_cb (GtkCheckButton *button, PptpPluginUiWidget *self)
+{
+	PptpPluginUiWidgetPrivate *priv = PPTP_PLUGIN_UI_WIDGET_GET_PRIVATE (self);
+	GtkWidget *widget;
+	gboolean visible;
+
+	visible = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (button));
+
+	widget = glade_xml_get_widget (priv->xml, "user_password_entry");
+	g_assert (widget);
+	gtk_entry_set_visibility (GTK_ENTRY (widget), visible);
+}
+
+static GtkWidget *
+fill_password (GladeXML *xml,
+               const char *widget_name,
+               NMConnection *connection,
+               const char *password_type)
+{
+	GtkWidget *widget = NULL;
+	gchar *password = NULL;
+
+	widget = glade_xml_get_widget (xml, widget_name);
+	g_assert (widget);
+
+	if (!connection)
+		return widget;
+
+	password = NULL;
+
+	if (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_SYSTEM) {
+		NMSettingVPN *s_vpn;
+
+		s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
+		if (s_vpn) {
+			const gchar *tmp = NULL;
+
+			tmp = g_hash_table_lookup (s_vpn->secrets, password_type);
+			if (tmp)
+				password = gnome_keyring_memory_strdup (tmp);
+		}
+	} else {
+		NMSettingConnection *s_con = NULL;
+		gboolean unused;
+
+		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+
+		password = keyring_helpers_lookup_secret (s_con->uuid,
+		                                          password_type,
+		                                          &unused);
+	}
+
+	if (password) {
+		gtk_entry_set_text (GTK_ENTRY (widget), password);
+		gnome_keyring_memory_free (password);
+	}
+
+	return widget;
+}
+
+static void
+fill_vpn_passwords (GladeXML *xml,
+                    GtkSizeGroup *group,
+                    NMConnection *connection,
+                    ChangedCallback changed_cb,
+                    gpointer user_data)
+{
+	GtkWidget *w = NULL;
+
+	w = fill_password (xml, "user_password_entry", connection, NM_PPTP_KEY_PASSWORD);
+	if (w) {
+		gtk_size_group_add_widget (group, w);
+		g_signal_connect (w, "changed", G_CALLBACK (changed_cb), user_data);
+	} else {
+		nm_error ("No user_password_entry in glade file!");
+	}
+}
+
 static gboolean
 init_plugin_ui (PptpPluginUiWidget *self, NMConnection *connection, GError **error)
 {
@@ -258,6 +342,14 @@ init_plugin_ui (PptpPluginUiWidget *self, NMConnection *connection, GError **err
 
 	widget = glade_xml_get_widget (priv->xml, "advanced_button");
 	g_signal_connect (G_OBJECT (widget), "clicked", G_CALLBACK (advanced_button_clicked_cb), self);
+
+	widget = glade_xml_get_widget (priv->xml, "show_passwords_checkbutton");
+	g_return_val_if_fail (widget != NULL, FALSE);
+	g_signal_connect (G_OBJECT (widget), "toggled",
+	                  (GCallback) show_toggled_cb,
+	                  self);
+
+	fill_vpn_passwords (priv->xml, priv->group, connection, stuff_changed_cb, self);
 
 	return TRUE;
 }
@@ -325,6 +417,40 @@ update_connection (NMVpnPluginUiWidgetInterface *iface,
 
 done:
 	return valid;
+}
+
+static gboolean
+save_secrets (NMVpnPluginUiWidgetInterface *iface,
+              NMConnection *connection,
+              GError **error)
+{
+	PptpPluginUiWidget *self = PPTP_PLUGIN_UI_WIDGET (iface);
+	PptpPluginUiWidgetPrivate *priv = PPTP_PLUGIN_UI_WIDGET_GET_PRIVATE (self);
+	GnomeKeyringResult ret;
+	NMSettingConnection *s_con;
+	GtkWidget *widget;
+	const char *str;
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	if (!s_con) {
+		g_set_error (error,
+		             PPTP_PLUGIN_UI_ERROR,
+		             PPTP_PLUGIN_UI_ERROR_INVALID_CONNECTION,
+		             "missing 'connection' setting");
+		return FALSE;
+	}
+
+    widget = glade_xml_get_widget (priv->xml, "user_password_entry");
+    g_assert (widget);
+    str = gtk_entry_get_text (GTK_ENTRY (widget));
+    if (str && strlen (str)) {
+        ret = keyring_helpers_save_secret (s_con->uuid, s_con->id, NULL, NM_PPTP_KEY_PASSWORD, str);
+        if (ret != GNOME_KEYRING_RESULT_OK)
+            g_warning ("%s: failed to save user password to keyring.", __func__);
+    } else
+        keyring_helpers_delete_secret (s_con->uuid, NM_PPTP_KEY_PASSWORD);
+
+	return TRUE;
 }
 
 static NMVpnPluginUiWidgetInterface *
@@ -425,6 +551,30 @@ pptp_plugin_ui_widget_interface_init (NMVpnPluginUiWidgetInterface *iface_class)
 	/* interface implementation */
 	iface_class->get_widget = get_widget;
 	iface_class->update_connection = update_connection;
+	iface_class->save_secrets = save_secrets;
+}
+
+static gboolean
+delete_connection (NMVpnPluginUiInterface *iface,
+                   NMConnection *connection,
+                   GError **error)
+{
+	NMSettingConnection *s_con = NULL;
+
+	/* Remove any secrets in the keyring associated with this connection's UUID */
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection,
+			NM_TYPE_SETTING_CONNECTION);
+	if (!s_con) {
+		g_set_error (error,
+		             PPTP_PLUGIN_UI_ERROR,
+		             PPTP_PLUGIN_UI_ERROR_INVALID_CONNECTION,
+		             "missing 'connection' setting");
+		return FALSE;
+	}
+
+	keyring_helpers_delete_secret (s_con->uuid, NM_PPTP_KEY_PASSWORD);
+
+	return TRUE;
 }
 
 static NMConnection *
@@ -562,6 +712,7 @@ pptp_plugin_ui_interface_init (NMVpnPluginUiInterface *iface_class)
 	iface_class->import = import;
 	iface_class->export = export;
 	iface_class->get_suggested_name = get_suggested_name;
+	iface_class->delete_connection = delete_connection;
 }
 
 

@@ -28,94 +28,16 @@
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
 #include <libgnomeui/libgnomeui.h>
-#include <gnome-keyring.h>
 
 #include <nm-setting-vpn.h>
 
-#include "../src/nm-pptp-service.h"
+#include "src/nm-pptp-service.h"
+#include "common-gnome/keyring-helpers.h"
 #include "gnome-two-password-dialog.h"
 
 #define KEYRING_UUID_TAG "connection-uuid"
 #define KEYRING_SN_TAG "setting-name"
 #define KEYRING_SK_TAG "setting-key"
-
-static char *
-find_one_secret (const char *vpn_uuid,
-                 const char *secret_name,
-                 gboolean *is_session)
-{
-	GList *found_list = NULL;
-	GnomeKeyringResult ret;
-	GnomeKeyringFound *found;
-	char *secret;
-
-	ret = gnome_keyring_find_itemsv_sync (GNOME_KEYRING_ITEM_GENERIC_SECRET,
-	                                      &found_list,
-	                                      KEYRING_UUID_TAG,
-	                                      GNOME_KEYRING_ATTRIBUTE_TYPE_STRING,
-	                                      vpn_uuid,
-	                                      KEYRING_SN_TAG,
-	                                      GNOME_KEYRING_ATTRIBUTE_TYPE_STRING,
-	                                      NM_SETTING_VPN_SETTING_NAME,
-	                                      KEYRING_SK_TAG,
-	                                      GNOME_KEYRING_ATTRIBUTE_TYPE_STRING,
-	                                      secret_name,
-	                                      NULL);
-	if ((ret != GNOME_KEYRING_RESULT_OK) || (g_list_length (found_list) == 0))
-		return NULL;
-
-	found = (GnomeKeyringFound *) found_list->data;
-
-	if (strcmp (found->keyring, "session") == 0)
-		*is_session = TRUE;
-	else
-		*is_session = FALSE;
-
-	secret = found->secret ? g_strdup (found->secret) : NULL;
-	gnome_keyring_found_list_free (found_list);
-
-	return secret;
-}
-
-static void
-save_vpn_password (const char *vpn_uuid,
-                   const char *vpn_name,
-                   const char *vpn_service,
-                   const char *keyring,
-                   const char *secret_name,
-                   const char *secret)
-{
-	char *display_name;
-	GnomeKeyringResult ret;
-	GnomeKeyringAttributeList *attrs = NULL;
-	guint32 id = 0;
-
-	display_name = g_strdup_printf ("VPN %s secret for %s/%s/" NM_SETTING_VPN_SETTING_NAME,
-	                                secret_name,
-	                                vpn_name,
-	                                vpn_service);
-
-	attrs = gnome_keyring_attribute_list_new ();
-	gnome_keyring_attribute_list_append_string (attrs,
-	                                            KEYRING_UUID_TAG,
-	                                            vpn_uuid);
-	gnome_keyring_attribute_list_append_string (attrs,
-	                                            KEYRING_SN_TAG,
-	                                            NM_SETTING_VPN_SETTING_NAME);
-	gnome_keyring_attribute_list_append_string (attrs,
-	                                            KEYRING_SK_TAG,
-	                                            secret_name);
-
-	ret = gnome_keyring_item_create_sync (keyring,
-	                                      GNOME_KEYRING_ITEM_GENERIC_SECRET,
-	                                      display_name,
-	                                      attrs,
-	                                      secret,
-	                                      TRUE,
-	                                      &id);
-	gnome_keyring_attribute_list_free (attrs);
-	g_free (display_name);
-}
 
 static gboolean
 get_secrets (const char *vpn_uuid,
@@ -133,7 +55,7 @@ get_secrets (const char *vpn_uuid,
 	g_return_val_if_fail (password != NULL, FALSE);
 	g_return_val_if_fail (*password == NULL, FALSE);
 
-	*password = find_one_secret (vpn_uuid, "password", &is_session);
+	*password = keyring_helpers_lookup_secret (vpn_uuid, NM_PPTP_KEY_PASSWORD, &is_session);
 	if (!retry && *password)
 		return TRUE;
 
@@ -167,19 +89,28 @@ get_secrets (const char *vpn_uuid,
 	gtk_widget_show (GTK_WIDGET (dialog));
 
 	if (gnome_two_password_dialog_run_and_block (dialog)) {
+		const char *keyring = NULL;
+		gboolean save = FALSE;
+
 		*password = gnome_two_password_dialog_get_password (dialog);
 
 		switch (gnome_two_password_dialog_get_remember (dialog)) {
 		case GNOME_TWO_PASSWORD_DIALOG_REMEMBER_SESSION:
-			save_vpn_password (vpn_uuid, vpn_name, vpn_service, "session", "password", *password);
-			break;
+			keyring = "session";
+			/* Fall through */
 		case GNOME_TWO_PASSWORD_DIALOG_REMEMBER_FOREVER:
-			save_vpn_password (vpn_uuid, vpn_name, vpn_service, NULL, "password", *password);
+			save = TRUE;
 			break;
 		default:
 			break;
 		}
 
+		if (save) {
+			if (*password) {
+				keyring_helpers_save_secret (vpn_uuid, vpn_name, keyring,
+					   	NM_PPTP_KEY_PASSWORD, *password);
+			}
+		}
 	}
 
 	gtk_widget_hide (GTK_WIDGET (dialog));

@@ -1,3 +1,21 @@
+2008-10-12  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Bin Li <libin.charles@gmail.com>, based on patches by Tambet 
+	(openvpn) and Dan (vpnc)
+
+	* common-gnome/*
+		- Copy over common keyring functions
+
+	* auth-dialog/Makefile.am
+	  auth-dialog/main.c
+	  	- Use common keyring functions
+
+	* properties/Makefile.am
+	  properties/nm-pptp-dialog.glade
+	  properties/nm-pptp.c
+	  properties/nm-pptp.h
+		- Add a 'password' entry and read/write the password when appropriate
+
 2008-09-29  Dan Williams  <dcbw@redhat.com>
 
 	* properties/nm-pptp-dialog.glade

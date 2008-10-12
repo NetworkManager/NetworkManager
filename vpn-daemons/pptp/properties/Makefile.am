@@ -17,7 +17,8 @@ libnm_pptp_properties_la_CFLAGS =                    \
         $(GTK_CFLAGS)                                   \
         $(GCONF_CFLAGS)                                 \
         $(LIBGNOMEUI_CFLAGS)                            \
-        $(NM_UTILS_CFLAGS)                       \
+        $(GNOMEKEYRING_CFLAGS)                          \
+        $(NM_UTILS_CFLAGS)                              \
         -DICONDIR=\""$(datadir)/pixmaps"\"              \
         -DGLADEDIR=\""$(gladedir)"\"                    \
         -DG_DISABLE_DEPRECATED                          \
@@ -31,6 +32,7 @@ libnm_pptp_properties_la_LIBADD =    \
         $(GTK_LIBS)                     \
         $(GCONF_LIBS)                   \
         $(LIBGNOMEUI_LIBS)              \
+        $(top_builddir)/common-gnome/libnm-pptp-common-gnome.la	\
         $(NM_UTILS_LIBS)
 
 libnm_pptp_properties_la_LDFLAGS =   \

@@ -28,7 +28,7 @@ nm_pptp_auth_dialog_SOURCES =			\
 nm_pptp_auth_dialog_LDADD =			\
 	$(GTK_LIBS)				\
 	$(LIBGNOMEUI_LIBS)			\
-	$(GNOMEKEYRING_LIBS)			\
+	$(top_builddir)/common-gnome/libnm-pptp-common-gnome.la  \
 	$(NULL)
 
 CLEANFILES = *~
