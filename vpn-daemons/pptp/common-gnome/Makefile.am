@@ -1,4 +1,4 @@
-lib_LTLIBRARIES=libnm-pptp-common-gnome.la
+noinst_LTLIBRARIES=libnm-pptp-common-gnome.la
 
 libnm_pptp_common_gnome_la_CPPFLAGS = \
 	$(NM_UTILS_CFLAGS) \
