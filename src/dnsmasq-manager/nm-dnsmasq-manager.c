@@ -409,9 +409,9 @@ ensure_killed (gpointer data)
 		kill (pid, SIGKILL);
 
 	/* ensure the child is reaped */
-	nm_debug ("waiting for ppp pid %d to exit", pid);
+	nm_debug ("waiting for dnsmasq pid %d to exit", pid);
 	waitpid (pid, NULL, 0);
-	nm_debug ("ppp pid %d cleaned up", pid);
+	nm_debug ("dnsmasq pid %d cleaned up", pid);
 
 	return FALSE;
 }
@@ -437,9 +437,9 @@ nm_dnsmasq_manager_stop (NMDnsMasqManager *manager)
 			kill (priv->pid, SIGKILL);
 
 			/* ensure the child is reaped */
-			nm_debug ("waiting for ppp pid %d to exit", priv->pid);
+			nm_debug ("waiting for dnsmasq pid %d to exit", priv->pid);
 			waitpid (priv->pid, NULL, 0);
-			nm_debug ("ppp pid %d cleaned up", priv->pid);
+			nm_debug ("dnsmasq pid %d cleaned up", priv->pid);
 		}
 
 		priv->pid = 0;
