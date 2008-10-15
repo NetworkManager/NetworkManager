@@ -1,3 +1,8 @@
+2008-10-14  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-pptp-pppd-plugin.c
+		- (nm_ip_up): pass VPN gateway up to nm-pptp-service
+
 2008-10-12  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Bin Li <libin.charles@gmail.com>, based on patches by Tambet 

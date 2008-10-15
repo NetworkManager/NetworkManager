@@ -154,6 +154,7 @@ value_destroy (gpointer data)
 static void
 nm_ip_up (void *data, int arg)
 {
+	guint32 pppd_made_up_address = htonl (0x0a404040 + ifunit);
 	ipcp_options opts = ipcp_gotoptions[0];
 	ipcp_options peer_opts = ipcp_hisoptions[0];
 	GHashTable *hash;
@@ -172,6 +173,22 @@ nm_ip_up (void *data, int arg)
 
 	g_hash_table_insert (hash, NM_VPN_PLUGIN_IP4_CONFIG_TUNDEV, 
 					 str_to_gvalue (ifname));
+
+	/* Prefer the peer options remote address first, _unless_ pppd made the
+	 * address up, at which point prefer the local options remote address,
+	 * and if that's not right, use the made-up address as a last resort.
+	 */
+	if (peer_opts.hisaddr && (peer_opts.hisaddr != pppd_made_up_address)) {
+		g_hash_table_insert (hash, NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY,
+		                     uint_to_gvalue (peer_opts.hisaddr));
+	} else if (opts.hisaddr) {
+		g_hash_table_insert (hash, NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY,
+		                     uint_to_gvalue (opts.hisaddr));
+	} else if (peer_opts.hisaddr == pppd_made_up_address) {
+		/* As a last resort, use the made-up address */
+		g_hash_table_insert (hash, NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY,
+		                     uint_to_gvalue (peer_opts.hisaddr));
+	}
 
 	g_hash_table_insert (hash, NM_VPN_PLUGIN_IP4_CONFIG_ADDRESS, 
 					 uint_to_gvalue (opts.ouraddr));
@@ -192,23 +209,6 @@ nm_ip_up (void *data, int arg)
 
 		g_hash_table_insert (hash, NM_VPN_PLUGIN_IP4_CONFIG_DNS, val);
 	}
-
-/*
-	if (opts.winsaddr[0] || opts.winsaddr[1]) {
-		array = g_array_new (FALSE, FALSE, sizeof (guint32));
-
-		if (opts.winsaddr[0])
-			g_array_append_val (array, opts.winsaddr[0]);
-		if (opts.winsaddr[1])
-			g_array_append_val (array, opts.winsaddr[1]);
-
-		val = g_slice_new0 (GValue);
-		g_value_init (val, DBUS_TYPE_G_UINT_ARRAY);
-		g_value_set_boxed (val, array);
-
-		g_hash_table_insert (hash, NM_VPN_PLUGIN_IP4_CONFIG_WINS, val);
-	}
-*/
 
 	dbus_g_proxy_call_no_reply (proxy, "SetIp4Config",
 						   DBUS_TYPE_G_MAP_OF_VARIANT, hash, G_TYPE_INVALID,
