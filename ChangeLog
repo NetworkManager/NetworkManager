@@ -1,3 +1,16 @@
+2008-10-15  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerSystem.c
+		- (ip4_dest_in_same_subnet): tighter checks on subnet matching,
+			if the ip4_dest is in a smaller subnet contained within a subnet
+			the machine is currently on, the destination is in the same subnet
+		- (nm_system_device_set_ip4_route): move subnet checks to callers
+		- (add_vpn_gateway_route): check if the VPN gateway is in the same
+			subnet as the parent device, and if so, don't add the direct
+			host route via the parent device's gateway (bgo #481620)
+		- (nm_system_apply_ip4_config): check whether the route to be added
+			is contained within a subnet the device is already on
+
 2008-10-11  Dan Williams  <dcbw@redhat.com>
 
 	* include/NetworkManager.h

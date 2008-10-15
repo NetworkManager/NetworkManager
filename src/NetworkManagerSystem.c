@@ -66,7 +66,7 @@ static void nm_system_device_set_priority (const char *iface,
 								   int priority);
 
 static gboolean
-route_in_same_subnet (NMIP4Config *config, guint32 dest, guint32 prefix)
+ip4_dest_in_same_subnet (NMIP4Config *config, guint32 dest, guint32 dest_prefix)
 {
 	int num;
 	int i;
@@ -76,9 +76,9 @@ route_in_same_subnet (NMIP4Config *config, guint32 dest, guint32 prefix)
 		const NMSettingIP4Address *addr;
 
 		addr = nm_ip4_config_get_address (config, i);
-		if (prefix == addr->prefix) {
-			guint32 masked_addr = addr->address >> (32 - addr->prefix);
-			guint32 masked_dest = dest >> (32 - prefix);
+		if (addr->prefix <= dest_prefix) {
+			guint32 masked_addr = ntohl(addr->address) >> (32 - addr->prefix);
+			guint32 masked_dest = ntohl(dest) >> (32 - addr->prefix);
 
 			if (masked_addr == masked_dest)
 				return TRUE;
@@ -107,21 +107,17 @@ create_route (int iface_idx, int mss)
 
 static void
 nm_system_device_set_ip4_route (const char *iface, 
-						  NMIP4Config *iface_config,
-						  guint32 ip4_dest,
-						  guint32 ip4_prefix,
-						  guint32 ip4_gateway,
-						  guint32 metric,
-						  int mss)
+                                guint32 ip4_dest,
+                                guint32 ip4_prefix,
+                                guint32 ip4_gateway,
+                                guint32 metric,
+                                int mss)
 {
 	struct nl_handle *nlh;
 	struct rtnl_route *route;
 	struct nl_addr *dest_addr;
 	struct nl_addr *gw_addr = NULL;
 	int err, iface_idx;
-
-	if (iface_config && route_in_same_subnet (iface_config, ip4_dest, ip4_prefix))
-		return;
 
 	nlh = nm_netlink_get_default_handle ();
 	g_return_if_fail (nlh != NULL);
@@ -274,30 +270,31 @@ add_ip4_addresses (NMIP4Config *config, const char *iface)
 }
 
 static void
-add_vpn_gateway_route (NMDevice *device, const char *iface, NMIP4Config *config)
+add_vpn_gateway_route (NMDevice *parent_device,
+                       const char *iface,
+                       NMIP4Config *config)
 {
-	NMIP4Config *ad_config;
-	guint32 ad_gw = 0, vpn_gw = 0, i;
+	NMIP4Config *parent_config;
+	guint32 parent_gw = 0, parent_prefix = 0, vpn_gw = 0, i;
 	const NMSettingIP4Address *tmp;
 
-	g_return_if_fail (NM_IS_DEVICE (device));
-
-	ad_config = nm_device_get_ip4_config (device);
-	g_return_if_fail (ad_config != NULL);
+	g_return_if_fail (NM_IS_DEVICE (parent_device));
 
 	/* Set up a route to the VPN gateway's public IP address through the default
-	 * network device.
+	 * network device if the VPN gateway is on a different subnet.
 	 */
-	for (i = 0; i < nm_ip4_config_get_num_addresses (ad_config); i++) {
-		tmp = nm_ip4_config_get_address (ad_config, i);
+
+	parent_config = nm_device_get_ip4_config (parent_device);
+	g_return_if_fail (parent_config != NULL);
+
+	for (i = 0; i < nm_ip4_config_get_num_addresses (parent_config); i++) {
+		tmp = nm_ip4_config_get_address (parent_config, i);
 		if (tmp->gateway) {
-			ad_gw = tmp->gateway;
+			parent_gw = tmp->gateway;
+			parent_prefix = tmp->prefix;
 			break;
 		}
 	}
-
-	if (!ad_gw)
-		return;
 
 	for (i = 0; i < nm_ip4_config_get_num_addresses (config); i++) {
 		tmp = nm_ip4_config_get_address (config, i);
@@ -307,9 +304,20 @@ add_vpn_gateway_route (NMDevice *device, const char *iface, NMIP4Config *config)
 		}
 	}
 
-	nm_system_device_set_ip4_route (nm_device_get_ip_iface (device),
-	                                ad_config, vpn_gw, 32, ad_gw, 0,
-	                                nm_ip4_config_get_mss (ad_config));
+	if (!parent_gw || !vpn_gw)
+		return;
+
+	/* If the VPN gateway is in the same subnet as one of the parent device's
+	 * IP addresses, don't add the host route to it, but a route through the
+	 * parent device.
+	 */
+	if (ip4_dest_in_same_subnet (parent_config, vpn_gw, parent_prefix)) {
+		nm_system_device_set_ip4_route (nm_device_get_ip_iface (parent_device),
+		                                vpn_gw, 32, 0, 0, nm_ip4_config_get_mss (parent_config));
+	} else {
+		nm_system_device_set_ip4_route (nm_device_get_ip_iface (parent_device),
+		                                vpn_gw, 32, parent_gw, 0, nm_ip4_config_get_mss (parent_config));
+	}
 }
 
 /*
@@ -341,12 +349,18 @@ nm_system_apply_ip4_config (NMDevice *device,
 	for (i = 0; i < nm_ip4_config_get_num_routes (config); i++) {
 		const NMSettingIP4Route *route = nm_ip4_config_get_route (config, i);
 
-		nm_system_device_set_ip4_route (iface, config, 
-								  route->address,
-								  route->prefix,
-								  route->next_hop,
-								  route->metric,
-								  nm_ip4_config_get_mss (config));
+		/* Don't add the route if it's more specific than one of the subnets
+		 * the device already has an IP address on.
+		 */
+		if (ip4_dest_in_same_subnet (config, route->address, route->prefix))
+			continue;
+
+		nm_system_device_set_ip4_route (iface,
+		                                route->address,
+		                                route->prefix,
+		                                route->next_hop,
+		                                route->metric,
+		                                nm_ip4_config_get_mss (config));
 	}
 
 	if (nm_ip4_config_get_mtu (config))
