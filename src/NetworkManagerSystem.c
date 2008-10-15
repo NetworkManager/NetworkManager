@@ -656,7 +656,9 @@ nm_system_replace_default_ip4_route (const char *iface, guint32 gw, guint32 mss)
 	g_return_val_if_fail (nlh != NULL, FALSE);
 
 	err = replace_default_ip4_route (iface, gw, mss);
-	if (err != -ESRCH) {
+	if (err == 0) {
+		return TRUE;
+	} else if (err != -ESRCH) {
 		nm_warning ("replace_default_ip4_route() returned error %s (%d)",
 		            strerror (err), err);
 		return FALSE;
