@@ -1350,7 +1350,7 @@ max_qual->updated);
 
 		level = CLAMP (level, FALLBACK_NOISE_FLOOR_DBM, FALLBACK_SIGNAL_MAX_DBM);
 
-		if ((qual->noise > 0) && (!qual->updated & IW_QUAL_NOISE_INVALID))
+		if ((qual->noise > 0) && !(qual->updated & IW_QUAL_NOISE_INVALID))
 			noise = qual->noise - 0x100;
 		else if ((max_qual->noise > 0) && !(max_qual->updated & IW_QUAL_NOISE_INVALID))
 			noise = max_qual->noise - 0x100;

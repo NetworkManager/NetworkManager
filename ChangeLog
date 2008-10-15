@@ -1,5 +1,11 @@
 2008-10-15  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-wifi.c
+		- (wireless_qual_to_percent): fix quality calculation in a fallback case
+			(Johannes Berg)
+
+2008-10-15  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerSystem.c
 		- (ip4_dest_in_same_subnet): tighter checks on subnet matching,
 			if the ip4_dest is in a smaller subnet contained within a subnet
