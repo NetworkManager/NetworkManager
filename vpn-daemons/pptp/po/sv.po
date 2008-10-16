@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-pptp\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-10-01 07:39+0200\n"
-"PO-Revision-Date: 2008-10-01 07:39+0100\n"
+"POT-Creation-Date: 2008-10-16 19:23+0200\n"
+"PO-Revision-Date: 2008-10-16 19:23+0100\n"
 "Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "MIME-Version: 1.0\n"
@@ -50,12 +50,12 @@ msgstr "_Kom ihåg lösenord för denna session"
 msgid "_Save passwords in keyring"
 msgstr "_Spara lösenord i nyckelring"
 
-#: ../auth-dialog/main.c:140
+#: ../auth-dialog/main.c:62
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Du måsta autentisera dig för att komma åt det virtuella privata nätverket \"%s\"."
 
-#: ../auth-dialog/main.c:141
+#: ../auth-dialog/main.c:63
 msgid "Authenticate VPN"
 msgstr "Autentisera VPN"
 
@@ -144,34 +144,42 @@ msgid "NT Domain:"
 msgstr "NT-domän:"
 
 #: ../properties/nm-pptp-dialog.glade.h:13
+msgid "Password:"
+msgstr "Lösenord:"
+
+#: ../properties/nm-pptp-dialog.glade.h:14
 msgid "Send PPP _echo packets"
 msgstr "Skicka PPP-_ekopaket"
 
-#: ../properties/nm-pptp-dialog.glade.h:14
+#: ../properties/nm-pptp-dialog.glade.h:15
+msgid "Show password"
+msgstr "Visa lösenordet"
+
+#: ../properties/nm-pptp-dialog.glade.h:16
 msgid "Use TCP _header compression"
 msgstr "Använd komprimering av TCP-_huvud"
 
-#: ../properties/nm-pptp-dialog.glade.h:15
+#: ../properties/nm-pptp-dialog.glade.h:17
 msgid "Use _Point-to-Point encryption (MPPE)"
 msgstr "Använd _Point-to-Point-kryptering (MPPE)"
 
-#: ../properties/nm-pptp-dialog.glade.h:16
+#: ../properties/nm-pptp-dialog.glade.h:18
 msgid "User name:"
 msgstr "Användarnamn:"
 
-#: ../properties/nm-pptp-dialog.glade.h:17
+#: ../properties/nm-pptp-dialog.glade.h:19
 msgid "_Gateway:"
 msgstr "_Gateway:"
 
-#: ../properties/nm-pptp-dialog.glade.h:18
+#: ../properties/nm-pptp-dialog.glade.h:20
 msgid "_Security:"
 msgstr "_Säkerhet:"
 
-#: ../properties/nm-pptp.c:49
+#: ../properties/nm-pptp.c:50
 msgid "Point-to-Point Tunneling Protocol (PPTP)"
 msgstr "Point-to-Point Tunneling Protocol (PPTP)"
 
-#: ../properties/nm-pptp.c:50
+#: ../properties/nm-pptp.c:51
 msgid "Compatible with Microsoft and other PPTP VPN servers."
 msgstr "Kompatibel med Microsoft och andra PPTP VPN-servrar."
 
@@ -506,8 +514,6 @@ msgstr "Kompatibel med Microsoft och andra PPTP VPN-servrar."
 #~ msgstr "Gateway:"
 #~ msgid "Only use VPN connection for these addresses"
 #~ msgstr "Använd endast VPN-anslutning för dessa adresser"
-#~ msgid "_Group Password:"
-#~ msgstr "_Grupplösenord:"
 #~ msgid "Group Name:"
 #~ msgstr "Gruppnamn:"
 #~ msgid "Override user name"
