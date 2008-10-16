@@ -351,7 +351,7 @@ wireless_get_range (NMDeviceWifi *self,
 	}
 
 	if (i <= 0)
-		nm_warning ("(%s): driver took too long to responde to IWRANGE query.", iface);
+		nm_warning ("(%s): driver took too long to respond to IWRANGE query.", iface);
 
 	close (fd);
 	return success;
@@ -520,7 +520,7 @@ constructor (GType type,
 	NMDeviceWifiPrivate *priv;
 	struct iw_range range;
 	struct iw_range_with_scan_capa *scan_capa_range;
-	struct iwreq wrq;
+	guint32 response_len = 0;
 	gboolean success;
 	int i;
 
@@ -533,7 +533,7 @@ constructor (GType type,
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
 	memset (&range, 0, sizeof (struct iw_range));
-	success = wireless_get_range (NM_DEVICE_WIFI (object), &range, NULL);
+	success = wireless_get_range (NM_DEVICE_WIFI (object), &range, &response_len);
 	if (!success)
 		goto error;
 
@@ -570,7 +570,7 @@ constructor (GType type,
 	}
 
 	/* 802.11 wireless-specific capabilities */
-	priv->capabilities = get_wireless_capabilities (self, &range, wrq.u.data.length);
+	priv->capabilities = get_wireless_capabilities (self, &range, response_len);
 
 	/* Connect to the supplicant manager */
 	priv->supplicant.mgr = nm_supplicant_manager_get ();

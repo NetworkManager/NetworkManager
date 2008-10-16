@@ -1,3 +1,8 @@
+2008-10-16  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-device-wifi.c
+		- (constructor): correctly determine encryption capabilities
+
 2008-10-15  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-wifi.c
