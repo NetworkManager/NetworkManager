@@ -968,10 +968,9 @@ advanced_dialog_new (GHashTable *hash, const char *contype)
 		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (widget), TRUE);
 	}
 
-	if (strcmp (contype, NM_OPENVPN_CONTYPE_TLS) && strcmp (contype, NM_OPENVPN_CONTYPE_PASSWORD_TLS)) {
-		widget = glade_xml_get_widget (xml, "options_notebook");
-		gtk_notebook_remove_page (GTK_NOTEBOOK (widget), 1);
-	} else {
+	if (   !strcmp (contype, NM_OPENVPN_CONTYPE_TLS)
+	    || !strcmp (contype, NM_OPENVPN_CONTYPE_PASSWORD_TLS)
+	    || !strcmp (contype, NM_OPENVPN_CONTYPE_PASSWORD)) {
 		GtkListStore *store;
 		GtkTreeIter iter;
 		int direction = -1, active = -1;
@@ -1020,6 +1019,9 @@ advanced_dialog_new (GHashTable *hash, const char *contype)
 			widget = glade_xml_get_widget (xml, "tls_auth_chooser");
 			gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (widget), value);
 		}
+	} else {
+		widget = glade_xml_get_widget (xml, "options_notebook");
+		gtk_notebook_remove_page (GTK_NOTEBOOK (widget), 1);
 	}
 
 out:
