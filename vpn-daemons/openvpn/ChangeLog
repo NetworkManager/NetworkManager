@@ -1,3 +1,9 @@
+2008-10-17  Dan Williams  <dcbw@redhat.com>
+
+	* properties/auth-helpers.c
+		- (tls_default_filter, tls_file_chooser_filter_new): accept ".cer"
+			extension too
+
 2008-10-11  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-openvpn-service-openvpn-helper.c
