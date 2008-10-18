@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager 0.9.x\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-10-07 17:26+0200\n"
-"PO-Revision-Date: 2008-10-07 17:28+0200\n"
+"POT-Creation-Date: 2008-10-18 12:26+0200\n"
+"PO-Revision-Date: 2008-10-18 12:26+0200\n"
 "Last-Translator: Kjartan Maraas <kmaraas@gnome.org>\n"
 "Language-Team: Norwegian Bokmål <i18n-nb@lister.ping.uio.no>\n"
 "MIME-Version: 1.0\n"
@@ -162,7 +162,7 @@ msgstr ""
 #: ../libnm-util/crypto.c:337
 #, c-format
 msgid "Not enough memory to store the IV."
-msgstr ""
+msgstr "Ikke nok minne til å lagre IV."
 
 #: ../libnm-util/crypto.c:348
 #, c-format
