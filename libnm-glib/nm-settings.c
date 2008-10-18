@@ -1,4 +1,4 @@
-/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
 #include <NetworkManager.h>
 #include <nm-utils.h>
@@ -157,10 +157,10 @@ static gboolean impl_exported_connection_delete (NMExportedConnection *connectio
 									    DBusGMethodInvocation *context);
 
 static void impl_exported_connection_get_secrets (NMExportedConnection *connection,
-						      const gchar *setting_name,
-						      const gchar **hints,
-						      gboolean request_new,
-						      DBusGMethodInvocation *context);
+                                                  const gchar *setting_name,
+                                                  const gchar **hints,
+                                                  gboolean request_new,
+                                                  DBusGMethodInvocation *context);
 
 #include "nm-exported-connection-glue.h"
 
@@ -277,23 +277,23 @@ impl_exported_connection_get_secrets (NMExportedConnection *connection,
 
 	if (!NM_IS_EXPORTED_CONNECTION (connection)) {
 		g_set_error (&error, NM_SETTINGS_ERROR, 1,
-		             "%s.%d - Invalid connection in ConnectionSettings::get_secrets.",
+		             "%s.%d - Invalid connection in ConnectionSettings::GetSecrets.",
 		             __FILE__, __LINE__);
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
 		return;
 	}
 
-	if (!EXPORTED_CONNECTION_CLASS (connection)->get_secrets) {
+	if (!EXPORTED_CONNECTION_CLASS (connection)->service_get_secrets) {
 		g_set_error (&error, NM_SETTINGS_ERROR, 1,
-		             "%s.%d - Missing implementation for ConnectionSettings::get_secrets.",
+		             "%s.%d - Missing implementation for ConnectionSettings::GetSecrets.",
 		             __FILE__, __LINE__);
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
 		return;
 	}
 
-	EXPORTED_CONNECTION_CLASS (connection)->get_secrets (connection, setting_name, hints, request_new, context);
+	EXPORTED_CONNECTION_CLASS (connection)->service_get_secrets (connection, setting_name, hints, request_new, context);
 }
 
 static void
@@ -365,9 +365,6 @@ nm_exported_connection_class_init (NMExportedConnectionClass *exported_connectio
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->dispose = nm_exported_connection_dispose;
-
-	exported_connection_class->get_settings = NULL;
-	exported_connection_class->get_secrets = NULL;
 
 	/* Properties */
 	g_object_class_install_property

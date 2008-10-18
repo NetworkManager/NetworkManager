@@ -1,3 +1,20 @@
+2008-10-18  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-glib/nm-settings.c
+	  libnm-glib/nm-settings.h
+		- Rename the "get_secrets" virtual function "service_get_secrets" to
+			clarify when it's used; NMExportedConnetion is a base-class for both
+			the client and service side, which is sort of confusing, and
+			get_secrets only makes sense on the service side.
+
+	* libnm-glib/nm-dbus-connection.c
+		- (get_secrets): remove, unused, and clients need to do extra work to
+			get secrets anyway since the call can block on the remote side
+
+	* system-settings/plugins/ifupdown/nm-ifupdown-connection.c
+	  system-settings/plugins/keyfile/nm-keyfile-connection.c
+		- Fix up for get_secrets -> service_get_secrets
+
 2008-10-16  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-device-wifi.c

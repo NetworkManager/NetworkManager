@@ -1,4 +1,4 @@
-/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
 #include <string.h>
 #include <NetworkManager.h>
@@ -50,17 +50,6 @@ static GHashTable *
 get_settings (NMExportedConnection *exported)
 {
 	return nm_connection_to_hash (nm_exported_connection_get_connection (exported));
-}
-
-static void
-get_secrets (NMExportedConnection *connection,
-		   const gchar *setting_name,
-		   const gchar **hints,
-		   gboolean request_new,
-		   DBusGMethodInvocation *context)
-{
-	/* FIXME: */
-	g_warning ("Implement me");
 }
 
 static gboolean
@@ -273,7 +262,6 @@ nm_dbus_connection_class_init (NMDBusConnectionClass *dbus_connection_class)
 	object_class->finalize     = finalize;
 
 	connection_class->get_settings = get_settings;
-	connection_class->get_secrets  = get_secrets;
 	connection_class->update       = update;
 	connection_class->delete       = delete;
 

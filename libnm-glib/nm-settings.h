@@ -1,4 +1,4 @@
-/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
 #ifndef __NM_SETTINGS_H__
 #define __NM_SETTINGS_H__
@@ -33,22 +33,26 @@ typedef struct {
 
 	/* virtual methods */
 	GHashTable * (*get_settings) (NMExportedConnection *connection);
-	void         (*get_secrets) (NMExportedConnection *connection,
-	                             const gchar *setting_name,
-	                             const gchar **hints,
-	                             gboolean request_new,
-	                             DBusGMethodInvocation *context);
+
+	/* service_get_secrets is used in a D-Bus service (like the system settings
+	 * service) to respond to GetSecrets requests from clients.
+	 */
+	void         (*service_get_secrets) (NMExportedConnection *connection,
+	                                     const gchar *setting_name,
+	                                     const gchar **hints,
+	                                     gboolean request_new,
+	                                     DBusGMethodInvocation *context);
 
 	gboolean (*update) (NMExportedConnection *connection,
-					GHashTable *new_settings,
-					GError **err);
+	                    GHashTable *new_settings,
+	                    GError **err);
 
 	gboolean (*delete) (NMExportedConnection *connection,
-					GError **err);
+	                    GError **err);
 
 	/* signals */
-	void (* updated) (NMExportedConnection *connection, GHashTable *settings);
-	void (* removed) (NMExportedConnection *connection);
+	void (*updated) (NMExportedConnection *connection, GHashTable *settings);
+	void (*removed) (NMExportedConnection *connection);
 } NMExportedConnectionClass;
 
 GType nm_exported_connection_get_type (void);

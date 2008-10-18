@@ -137,11 +137,11 @@ extract_secrets (NMKeyfileConnection *exported,
 }
 
 static void
-get_secrets (NMExportedConnection *exported,
-             const gchar *setting_name,
-             const gchar **hints,
-             gboolean request_new,
-             DBusGMethodInvocation *context)
+service_get_secrets (NMExportedConnection *exported,
+                     const gchar *setting_name,
+                     const gchar **hints,
+                     gboolean request_new,
+                     DBusGMethodInvocation *context)
 {
 	NMConnection *connection;
 	GError *error = NULL;
@@ -338,7 +338,7 @@ nm_keyfile_connection_class_init (NMKeyfileConnectionClass *keyfile_connection_c
 	object_class->finalize     = finalize;
 
 	connection_class->get_settings = get_settings;
-	connection_class->get_secrets  = get_secrets;
+	connection_class->service_get_secrets  = service_get_secrets;
 	connection_class->update       = update;
 	connection_class->delete       = delete;
 

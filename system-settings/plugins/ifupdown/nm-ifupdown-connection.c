@@ -49,11 +49,11 @@ enum {
 
 
 static void
-get_secrets (NMExportedConnection *exported,
-		   const gchar *setting_name,
-		   const gchar **hints,
-		   gboolean request_new,
-		   DBusGMethodInvocation *context);
+service_get_secrets (NMExportedConnection *exported,
+                     const gchar *setting_name,
+                     const gchar **hints,
+                     gboolean request_new,
+                     DBusGMethodInvocation *context);
 
 
 NMIfupdownConnection*
@@ -187,7 +187,7 @@ nm_ifupdown_connection_class_init (NMIfupdownConnectionClass *ifupdown_connectio
 	connection_class->get_settings = get_settings;
 	connection_class->update       = update;
 	connection_class->delete       = delete;
-	connection_class->get_secrets       = get_secrets;
+	connection_class->service_get_secrets = service_get_secrets;
 
 	/* Properties */
 	g_object_class_install_property
@@ -199,11 +199,11 @@ nm_ifupdown_connection_class_init (NMIfupdownConnectionClass *ifupdown_connectio
 }
 
 static void
-get_secrets (NMExportedConnection *exported,
-		   const gchar *setting_name,
-		   const gchar **hints,
-		   gboolean request_new,
-		   DBusGMethodInvocation *context)
+service_get_secrets (NMExportedConnection *exported,
+                     const gchar *setting_name,
+                     const gchar **hints,
+                     gboolean request_new,
+                     DBusGMethodInvocation *context)
 {
 	NMConnection *connection;
 	GError *error = NULL;
