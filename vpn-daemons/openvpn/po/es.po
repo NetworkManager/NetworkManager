@@ -13,8 +13,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn.HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-09-30 19:55+0000\n"
-"PO-Revision-Date: 2008-10-11 17:36+0200\n"
+"POT-Creation-Date: 2008-10-17 11:06+0000\n"
+"PO-Revision-Date: 2008-10-18 12:39+0200\n"
 "Last-Translator: Jorge González <jorgegonz@svn.gnome.org>\n"
 "Language-Team: Español <gnome-es-list@gnome.org>\n"
 "MIME-Version: 1.0\n"
@@ -100,8 +100,8 @@ msgid "None"
 msgstr "Ninguno"
 
 #: ../properties/auth-helpers.c:660
-msgid "PEM certificates (*.pem, *.crt, *.key)"
-msgstr "Certificados PEM (*.pem, *.crt, *.key)"
+msgid "PEM certificates (*.pem, *.crt, *.key, *.cer)"
+msgstr "Certificados PEM (*.pem, *.crt, *.key, *.cer)"
 
 #: ../properties/auth-helpers.c:720
 msgid "OpenVPN Static Keys (*.key)"
