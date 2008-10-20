@@ -507,10 +507,10 @@ nm_utils_call_dispatcher (const char *action,
 	                            DBUS_TYPE_G_MAP_OF_VARIANT, device_props,
 	                            G_TYPE_INVALID);
 
+	g_object_unref (proxy);
 	g_hash_table_destroy (connection_hash);
 	g_hash_table_destroy (connection_props);
 	g_hash_table_destroy (device_props);
-	g_object_unref (proxy);
 	g_object_unref (dbus_mgr);
 }
 
