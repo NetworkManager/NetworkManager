@@ -1363,7 +1363,7 @@ initial_get_connections (gpointer user_data)
 	NMManager *manager = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
-	if (nm_dbus_manager_name_has_owner (nm_dbus_manager_get (),
+	if (nm_dbus_manager_name_has_owner (priv->dbus_mgr,
 	                                    NM_DBUS_SERVICE_SYSTEM_SETTINGS)) {
 		query_system_settings_property (manager, "UnmanagedDevices", system_settings_get_unmanaged_devices_cb);
 		query_system_settings_property (manager, "Hostname", system_settings_get_hostname_cb);
@@ -1373,7 +1373,7 @@ initial_get_connections (gpointer user_data)
 		priv->poke_id = g_idle_add (poke_system_settings_daemon_cb, (gpointer) manager);
 	}
 
-	if (nm_dbus_manager_name_has_owner (nm_dbus_manager_get (),
+	if (nm_dbus_manager_name_has_owner (priv->dbus_mgr,
 	                                    NM_DBUS_SERVICE_USER_SETTINGS))
 		query_connections (manager, NM_CONNECTION_SCOPE_USER);
 

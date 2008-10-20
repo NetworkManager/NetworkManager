@@ -1,3 +1,10 @@
+2008-10-20  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-manager.c
+		- (initial_get_connections): use private dbus manager, don't keep
+			ref-ing the singleton.  Fixes mismatched refcounts of the dbus
+			manager object.
+
 2008-10-18  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-glib/nm-settings.c
