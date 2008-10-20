@@ -1,5 +1,10 @@
 2008-10-20  Dan Williams  <dcbw@redhat.com>
 
+	* src/supplicant-manager/nm-supplicant-config.c
+		- (ADD_STRING_LIST_VAL): don't add empty values to the supplicant config
+
+2008-10-20  Dan Williams  <dcbw@redhat.com>
+
 	* src/dhcp-manager/nm-dhcp-manager.c
 		- (nm_dhcp_manager_get): fix mismatched refcount; creating the dhcp
 			manager object already refs it once
