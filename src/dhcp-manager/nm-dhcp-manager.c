@@ -77,8 +77,10 @@ nm_dhcp_manager_get (void)
 
 	if (!singleton)
 		singleton = nm_dhcp_manager_new ();
-	g_object_ref (singleton);
+	else
+		g_object_ref (singleton);
 
+	g_assert (singleton);
 	return singleton;
 }
 
@@ -185,6 +187,7 @@ nm_dhcp_device_destroy (NMDHCPDevice *device)
 	g_free (device->pid_file);
 	g_free (device->lease_file);
 	g_free (device->iface);
+
 	g_slice_free (NMDHCPDevice, device);
 }
 
@@ -667,18 +670,21 @@ nm_dhcp_manager_cancel_transaction_real (NMDHCPDevice *device)
 	if (device->pid_file) {
 		remove (device->pid_file);
 		g_free (device->pid_file);
+		device->pid_file = NULL;
 	}
 
 	/* Clean up the leasefile if it got left around */
 	if (device->lease_file) {
 		remove (device->lease_file);
 		g_free (device->lease_file);
+		device->lease_file = NULL;
 	}
 
 	/* Clean up config file if it got left around */
 	if (device->conf_file) {
 		remove (device->conf_file);
 		g_free (device->conf_file);
+		device->conf_file = NULL;
 	}
 
 	nm_dhcp_device_watch_cleanup (device);

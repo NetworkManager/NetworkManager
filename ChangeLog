@@ -1,5 +1,14 @@
 2008-10-20  Dan Williams  <dcbw@redhat.com>
 
+	* src/dhcp-manager/nm-dhcp-manager.c
+		- (nm_dhcp_manager_get): fix mismatched refcount; creating the dhcp
+			manager object already refs it once
+		- (nm_dhcp_manager_cancel_transaction_real): clear freed variables that
+			also get cleaned up by nm_dhcp_device_destroy() to prevent
+			double-frees
+
+2008-10-20  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-manager.c
 		- (initial_get_connections): use private dbus manager, don't keep
 			ref-ing the singleton.  Fixes mismatched refcounts of the dbus
