@@ -1,5 +1,10 @@
 2008-10-20  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting-wireless-security.c
+		- (verify): accept 'none' as a pairwise cipher with Ad-Hoc WPA connections
+
+2008-10-20  Dan Williams  <dcbw@redhat.com>
+
 	* src/supplicant-manager/nm-supplicant-config.c
 		- (ADD_STRING_LIST_VAL): don't add empty values to the supplicant config
 

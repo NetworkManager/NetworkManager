@@ -339,12 +339,38 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (self->pairwise && !nm_utils_string_slist_validate (self->pairwise, valid_pairwise)) {
-		g_set_error (error,
-		             NM_SETTING_WIRELESS_SECURITY_ERROR,
-		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
-		             NM_SETTING_WIRELESS_SECURITY_PAIRWISE);
-		return FALSE;
+	if (self->pairwise) {
+		const char *wpa_none[] = { "wpa-none", NULL };
+
+		/* For ad-hoc connections, pairwise must be "none" */
+		if (nm_utils_string_in_list (self->key_mgmt, wpa_none)) {
+			GSList *iter;
+			gboolean found = FALSE;
+
+			for (iter = self->pairwise; iter; iter = g_slist_next (iter)) {
+				if (!strcmp ((char *) iter->data, "none")) {
+					found = TRUE;
+					break;
+				}
+			}
+
+			/* pairwise cipher list didn't contain "none", which is invalid
+			 * for WPA adhoc connections.
+			 */
+			if (!found) {
+				g_set_error (error,
+				             NM_SETTING_WIRELESS_SECURITY_ERROR,
+				             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+				             NM_SETTING_WIRELESS_SECURITY_PAIRWISE);
+				return FALSE;
+			}
+		} else if (!nm_utils_string_slist_validate (self->pairwise, valid_pairwise)) {
+			g_set_error (error,
+			             NM_SETTING_WIRELESS_SECURITY_ERROR,
+			             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+			             NM_SETTING_WIRELESS_SECURITY_PAIRWISE);
+			return FALSE;
+		}
 	}
 
 	if (self->group && !nm_utils_string_slist_validate (self->group, valid_groups)) {
