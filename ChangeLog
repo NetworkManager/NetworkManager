@@ -1,3 +1,10 @@
+2008-10-21  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManager.c
+		- (main): keep the DHCP manager around since it's a singleton; fixes
+			a use-after-free exposed by r4196 since the DHCP manager singleton
+			variable isn't cleared when the DHCP manager object is finalized
+
 2008-10-20  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/nm-setting-wireless-security.c

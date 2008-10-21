@@ -47,6 +47,7 @@
 #include "nm-named-manager.h"
 #include "nm-dbus-manager.h"
 #include "nm-supplicant-manager.h"
+#include "nm-dhcp-manager.h"
 #include "nm-netlink-monitor.h"
 #include "nm-vpn-manager.h"
 #include "nm-logging.h"
@@ -215,8 +216,9 @@ main (int argc, char *argv[])
 	NMPolicy *policy = NULL;
 	NMVPNManager *vpn_manager = NULL;
 	NMNamedManager *named_mgr = NULL;
-	NMDBusManager *	dbus_mgr = NULL;
-	NMSupplicantManager * sup_mgr = NULL;
+	NMDBusManager *dbus_mgr = NULL;
+	NMSupplicantManager *sup_mgr = NULL;
+	NMDHCPManager *dhcp_mgr = NULL;
 
 	GOptionEntry options[] = {
 		{"no-daemon", 0, 0, G_OPTION_ARG_NONE, &become_daemon, "Don't become a daemon", NULL},
@@ -327,6 +329,12 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
+	dhcp_mgr = nm_dhcp_manager_get ();
+	if (!dhcp_mgr) {
+		nm_warning ("Failed to start the DHCP manager.");
+		goto done;
+	}
+
 	/* Start our DBus service */
 	if (!nm_dbus_manager_start_service (dbus_mgr)) {
 		nm_warning ("Failed to start the dbus manager.");
@@ -354,6 +362,9 @@ done:
 
 	if (named_mgr)
 		g_object_unref (named_mgr);
+
+	if (dhcp_mgr)
+		g_object_unref (dhcp_mgr);
 
 	if (sup_mgr)
 		g_object_unref (sup_mgr);
