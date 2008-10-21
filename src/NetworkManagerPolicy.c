@@ -266,6 +266,8 @@ update_etc_hosts (const char *hostname)
 		nm_warning ("%s: couldn't read " SYSCONFDIR "/hosts: (%d) %s",
 		            __func__, error ? error->code : 0,
 		            (error && error->message) ? error->message : "(unknown)");
+		if (error)
+			g_error_free (error);
 	} else {
 		lines = g_strsplit_set (contents, "\n\r", 0);
 		g_free (contents);
@@ -312,10 +314,13 @@ update_etc_hosts (const char *hostname)
 		g_string_append (new_contents, "127.0.0.1\t" FALLBACK_HOSTNAME "\tlocalhost");
 	}
 
+	error = NULL;
 	if (!g_file_set_contents (SYSCONFDIR "/hosts", new_contents->str, -1, &error)) {
 		nm_warning ("%s: couldn't update " SYSCONFDIR "/hosts: (%d) %s",
 		            __func__, error ? error->code : 0,
 		            (error && error->message) ? error->message : "(unknown)");
+		if (error)
+			g_error_free (error);
 	} else
 		success = TRUE;
 

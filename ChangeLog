@@ -1,5 +1,11 @@
 2008-10-21  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerPolicy.c
+		- (update_etc_hosts): don't leak errors, and ensure that
+			g_file_set_contents() gets a valid error placeholder (rh #461933)
+
+2008-10-21  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-manager.c
 		- (free_get_settings_info): don't use the DBusGProxy which could be
 			disposed of by the time the function is called
