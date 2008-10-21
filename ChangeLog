@@ -1,5 +1,17 @@
 2008-10-21  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-manager.c
+		- (free_get_settings_info): don't use the DBusGProxy which could be
+			disposed of by the time the function is called
+		- (internal_new_connection_cb): save connection scope
+		- (connection_get_settings_cb): don't replace a connection unless it's
+			actually different from the existing one; fixes an issue where
+			killing the settings service wouldn't deactivate an active connection
+			provided by that settings service, because it was using a connection
+			that had already been replaced in the system or user hash
+
+2008-10-21  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManager.c
 		- (main): keep the DHCP manager around since it's a singleton; fixes
 			a use-after-free exposed by r4196 since the DHCP manager singleton

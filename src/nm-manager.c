@@ -732,6 +732,7 @@ typedef struct GetSettingsInfo {
 	DBusGProxyCall *call;
 	DBusGProxy *secrets_proxy;
 	GSList **calls;
+	NMConnectionScope scope;
 } GetSettingsInfo;
 
 static void
@@ -747,10 +748,7 @@ free_get_settings_info (gpointer data)
 		if (g_slist_length (*(info->calls)) == 0) {
 			g_slist_free (*(info->calls));
 			g_slice_free (GSList, (gpointer) info->calls);
-			g_signal_emit (info->manager,
-			               signals[CONNECTIONS_ADDED],
-			               0,
-			               get_scope_for_proxy (info->proxy));
+			g_signal_emit (info->manager, signals[CONNECTIONS_ADDED], 0, info->scope);
 		}
 	}
 
@@ -794,6 +792,7 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 		const char *path = dbus_g_proxy_get_path (proxy);
 		NMManagerPrivate *priv;
 		GError *error = NULL;
+		NMConnection *existing = NULL;
 
 		connection = nm_connection_new_from_hash (settings, &error);
 		if (connection == NULL) {
@@ -820,17 +819,32 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 		                        info->secrets_proxy,
 		                        (GDestroyNotify) g_object_unref);
 
+		/* Add the new connection to the internal hashes only if the same
+		 * connection isn't already there.
+		 */
 		priv = NM_MANAGER_GET_PRIVATE (manager);
 		switch (scope) {
 			case NM_CONNECTION_SCOPE_USER:
-				g_hash_table_insert (priv->user_connections,
-				                     g_strdup (path),
-				                     connection);
+				existing = g_hash_table_lookup (priv->user_connections, path);
+				if (!existing || !nm_connection_compare (existing, connection, COMPARE_FLAGS_EXACT)) {
+					g_hash_table_insert (priv->user_connections,
+					                     g_strdup (path),
+					                     connection);
+					existing = NULL;
+				} else {
+					g_object_unref (connection);
+				}
 				break;
 			case NM_CONNECTION_SCOPE_SYSTEM:
-				g_hash_table_insert (priv->system_connections,
-				                     g_strdup (path),
-				                     connection);
+				existing = g_hash_table_lookup (priv->system_connections, path);
+				if (!existing || !nm_connection_compare (existing, connection, COMPARE_FLAGS_EXACT)) {
+					g_hash_table_insert (priv->system_connections,
+					                     g_strdup (path),
+					                     connection);
+					existing = NULL;
+				} else {
+					g_object_unref (connection);
+				}
 				break;
 			default:
 				nm_warning ("Connection wasn't a user connection or a system connection.");
@@ -839,9 +853,10 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 		}
 
 		/* If the connection-added signal is supposed to be batched, don't
-		 * emit the single connection-added here.
+		 * emit the single connection-added here.  Also, don't emit the signal
+		 * if the connection wasn't actually added to the system or user hashes.
 		 */
-		if (!info->calls)
+		if (!info->calls && !existing)
 			g_signal_emit (manager, signals[CONNECTION_ADDED], 0, connection, scope);
 	} else {
 		// FIXME: merge settings? or just replace?
@@ -996,6 +1011,7 @@ internal_new_connection_cb (DBusGProxy *proxy,
 	info = g_slice_new0 (GetSettingsInfo);
 	info->manager = g_object_ref (manager);
 	info->calls = calls;
+	info->scope = get_scope_for_proxy (con_proxy);
 	call = dbus_g_proxy_begin_call (con_proxy, "GetSettings",
 	                                connection_get_settings_cb,
 	                                info,
