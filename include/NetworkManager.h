@@ -337,6 +337,9 @@ typedef enum {
 	/* Device disconnected by user or client */
 	NM_DEVICE_STATE_REASON_USER_REQUESTED,
 
+	/* Carrier/link changed */
+	NM_DEVICE_STATE_REASON_CARRIER,
+
 	/* Unused */
 	NM_DEVICE_STATE_REASON_LAST = 0xFFFF
 } NMDeviceStateReason;

@@ -1,3 +1,13 @@
+2008-10-22  Dan Williams  <dcbw@redhat.com>
+
+	* include/NetworkManager.h
+	  introspection/nm-device.xml
+		- Add device state change reason for carrier changes
+
+	* src/nm-device-ethernet.c
+		- (set_carrier): use the carrier change reason when changing device
+			state in response to carrier changes
+
 2008-10-21  Dan Williams  <dcbw@redhat.com>
 
 	* src/NetworkManagerPolicy.c

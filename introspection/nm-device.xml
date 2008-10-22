@@ -340,6 +340,11 @@
           A user or client requested the disconnection.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="CARRIER" value="40">
+        <tp:docstring>
+          The device's carrier/link changed.
+        </tp:docstring>
+      </tp:enumvalue>
 	</tp:enum>
 
   </interface>
