@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-10-01 07:40+0200\n"
-"PO-Revision-Date: 2008-10-01 07:40+0100\n"
+"POT-Creation-Date: 2008-10-22 16:44+0200\n"
+"PO-Revision-Date: 2008-10-22 16:45+0100\n"
 "Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "MIME-Version: 1.0\n"
@@ -84,13 +84,13 @@ msgid "Choose an OpenVPN static key..."
 msgstr "Välj en statisk OpenVPN-nyckel..."
 
 #: ../properties/auth-helpers.c:275
-#: ../properties/auth-helpers.c:1002
+#: ../properties/auth-helpers.c:1001
 msgid "None"
 msgstr "Ingen"
 
 #: ../properties/auth-helpers.c:660
-msgid "PEM certificates (*.pem, *.crt, *.key)"
-msgstr "PEM-certifikat (*.pem, *.crt, *.key)"
+msgid "PEM certificates (*.pem, *.crt, *.key, *.cer)"
+msgstr "PEM-certifikat (*.pem, *.crt, *.key, *.cer)"
 
 #: ../properties/auth-helpers.c:720
 msgid "OpenVPN Static Keys (*.key)"
