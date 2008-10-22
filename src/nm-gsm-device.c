@@ -328,7 +328,7 @@ schedule_automatic_registration_again (NMGsmDevice *self)
 	if (priv->pending_id)
 		g_source_remove (priv->pending_id);
 
-	priv->pending_id = g_idle_add (automatic_registration_again, self);
+	priv->pending_id = g_timeout_add (1000, automatic_registration_again, self);
 }
 
 static void

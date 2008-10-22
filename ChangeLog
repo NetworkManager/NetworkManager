@@ -1,5 +1,12 @@
 2008-10-22  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-gsm-device.c
+		- (schedule_automatic_registration_again): use a short timeout here
+			instead of an idle handler to avoid using too much CPU polling for
+			something we should be waiting a bit for anyway
+
+2008-10-22  Dan Williams  <dcbw@redhat.com>
+
 	* include/NetworkManager.h
 	  introspection/nm-device.xml
 		- Add device state change reason for carrier changes
