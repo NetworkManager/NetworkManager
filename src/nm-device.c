@@ -814,7 +814,7 @@ aipd_exec (NMDevice *self, GError **error)
 	argv[0] = (char *) (*aipd_binary);
 	argv[1] = "--script";
 	argv[2] = LIBEXECDIR "/nm-avahi-autoipd.action";
-	argv[3] = (char *) nm_device_get_iface (self);
+	argv[3] = (char *) nm_device_get_ip_iface (self);
 	argv[4] = NULL;
 
 	success = g_spawn_async ("/", argv, NULL, G_SPAWN_DO_NOT_REAP_CHILD,
@@ -837,15 +837,16 @@ real_act_stage3_ip_config_start (NMDevice *self, NMDeviceStateReason *reason)
 	NMSettingIP4Config *s_ip4;
 	NMActRequest *req;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
-	const char *iface;
+	const char *ip_iface;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	iface = nm_device_get_iface (self);
+	/* Use the IP interface (not the control interface) for IP stuff */
+	ip_iface = nm_device_get_ip_iface (self);
 
 	req = nm_device_get_act_request (self);
 	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (nm_act_request_get_connection (req),
-													NM_TYPE_SETTING_IP4_CONFIG);
+	                                                          NM_TYPE_SETTING_IP4_CONFIG);
 
 	/* If we did not receive IP4 configuration information, default to DHCP */
 	if (!s_ip4 || !strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
@@ -858,7 +859,7 @@ real_act_stage3_ip_config_start (NMDevice *self, NMDeviceStateReason *reason)
 		/* DHCP manager will cancel any transaction already in progress and we do not
 		   want to cancel this activation if we get "down" state from that. */
 		g_signal_handler_block (priv->dhcp_manager, priv->dhcp_state_sigid);
-		success = nm_dhcp_manager_begin_transaction (priv->dhcp_manager, iface, s_ip4, 45);
+		success = nm_dhcp_manager_begin_transaction (priv->dhcp_manager, ip_iface, s_ip4, 45);
 		g_signal_handler_unblock (priv->dhcp_manager, priv->dhcp_state_sigid);
 
 		if (success) {
@@ -872,6 +873,7 @@ real_act_stage3_ip_config_start (NMDevice *self, NMDeviceStateReason *reason)
 		}
 	} else if (s_ip4 && !strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)) {
 		GError *error = NULL;
+		const char *iface = nm_device_get_iface (self);
 
 		/* Start avahi-autoipd */
 		if (aipd_exec (self, &error)) {
@@ -1019,13 +1021,14 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_FAILURE;
 	NMConnection *connection;
 	NMSettingIP4Config *s_ip4;
-	const char *iface;
+	const char *ip_iface;
 
 	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	iface = nm_device_get_iface (self);
+	/* Use the IP interface (not the control interface) for IP stuff */
+	ip_iface = nm_device_get_ip_iface (self);
 
 	connection = nm_act_request_get_connection (nm_device_get_act_request (self));
 	g_assert (connection);
@@ -1033,11 +1036,11 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
 
 	if (nm_device_get_use_dhcp (self)) {
-		*config = nm_dhcp_manager_get_ip4_config (priv->dhcp_manager, iface);
+		*config = nm_dhcp_manager_get_ip4_config (priv->dhcp_manager, ip_iface);
 		if (*config) {
 			nm_utils_merge_ip4_config (*config, s_ip4);
 
-			nm_dhcp_manager_set_dhcp4_config (priv->dhcp_manager, iface, priv->dhcp4_config);
+			nm_dhcp_manager_set_dhcp4_config (priv->dhcp_manager, ip_iface, priv->dhcp4_config);
 			/* Notify of new DHCP4 config */
 			g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_DHCP4_CONFIG);
 		} else
@@ -1057,7 +1060,7 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 		} else if (!strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
 			*config = nm_device_new_ip4_shared_config (self, reason);
 			if (*config)
-				priv->dnsmasq_manager = nm_dnsmasq_manager_new (iface);
+				priv->dnsmasq_manager = nm_dnsmasq_manager_new (ip_iface);
 		}
 	}
 
@@ -1300,11 +1303,9 @@ start_sharing (NMDevice *self)
 	guint32 netmask, network;
 	NMIP4Config *ip4_config;
 	const NMSettingIP4Address *ip4_addr;
-	const char *iface;
+	const char *ip_iface;
 
-	iface = nm_device_get_ip_iface (self);
-	if (!iface)
-		iface = nm_device_get_iface (self);
+	ip_iface = nm_device_get_ip_iface (self);
 
 	ip4_config = nm_device_get_ip4_config (self);
 	if (!ip4_config)
@@ -1328,21 +1329,22 @@ start_sharing (NMDevice *self)
 	req = nm_device_get_act_request (self);
 	g_assert (req);
 
-	add_share_rule (req, "filter", "INPUT --in-interface %s --protocol tcp --destination-port 53 --jump ACCEPT", iface);
-	add_share_rule (req, "filter", "INPUT --in-interface %s --protocol udp --destination-port 53 --jump ACCEPT", iface);
-	add_share_rule (req, "filter", "INPUT --in-interface %s --protocol tcp --destination-port 67 --jump ACCEPT", iface);
-	add_share_rule (req, "filter", "INPUT --in-interface %s --protocol udp --destination-port 67 --jump ACCEPT", iface);
-	add_share_rule (req, "filter", "FORWARD --in-interface %s --jump REJECT", iface);
-	add_share_rule (req, "filter", "FORWARD --out-interface %s --jump REJECT", iface);
-	add_share_rule (req, "filter", "FORWARD --in-interface %s --out-interface %s --jump ACCEPT", iface, iface);
-	add_share_rule (req, "filter", "FORWARD --source %s/%s --in-interface %s --jump ACCEPT", str_addr, str_mask, iface);
-	add_share_rule (req, "filter", "FORWARD --destination %s/%s --out-interface %s --match state --state ESTABLISHED,RELATED --jump ACCEPT", str_addr, str_mask, iface);
+	add_share_rule (req, "filter", "INPUT --in-interface %s --protocol tcp --destination-port 53 --jump ACCEPT", ip_iface);
+	add_share_rule (req, "filter", "INPUT --in-interface %s --protocol udp --destination-port 53 --jump ACCEPT", ip_iface);
+	add_share_rule (req, "filter", "INPUT --in-interface %s --protocol tcp --destination-port 67 --jump ACCEPT", ip_iface);
+	add_share_rule (req, "filter", "INPUT --in-interface %s --protocol udp --destination-port 67 --jump ACCEPT", ip_iface);
+	add_share_rule (req, "filter", "FORWARD --in-interface %s --jump REJECT", ip_iface);
+	add_share_rule (req, "filter", "FORWARD --out-interface %s --jump REJECT", ip_iface);
+	add_share_rule (req, "filter", "FORWARD --in-interface %s --out-interface %s --jump ACCEPT", ip_iface, ip_iface);
+	add_share_rule (req, "filter", "FORWARD --source %s/%s --in-interface %s --jump ACCEPT", str_addr, str_mask, ip_iface);
+	add_share_rule (req, "filter", "FORWARD --destination %s/%s --out-interface %s --match state --state ESTABLISHED,RELATED --jump ACCEPT", str_addr, str_mask, ip_iface);
 	add_share_rule (req, "nat", "POSTROUTING --source %s/%s --destination ! %s/%s --jump MASQUERADE", str_addr, str_mask, str_addr, str_mask);
 
 	nm_act_request_set_shared (req, TRUE);
 
 	if (!nm_dnsmasq_manager_start (priv->dnsmasq_manager, ip4_config, &error)) {
-		nm_warning ("(%s): failed to start dnsmasq: %s", iface, error->message);
+		nm_warning ("(%s/%s): failed to start dnsmasq: %s",
+		            nm_device_get_iface (self), ip_iface, error->message);
 		g_error_free (error);
 		nm_act_request_set_shared (req, FALSE);
 		return FALSE;
@@ -1494,7 +1496,7 @@ nm_device_deactivate_quickly (NMDevice *self)
 	/* Stop any ongoing DHCP transaction on this device */
 	if (nm_device_get_act_request (self)) {
 		if (nm_device_get_use_dhcp (self)) {
-			nm_dhcp_manager_cancel_transaction (priv->dhcp_manager, nm_device_get_iface (self));
+			nm_dhcp_manager_cancel_transaction (priv->dhcp_manager, nm_device_get_ip_iface (self));
 			nm_device_set_use_dhcp (self, FALSE);
 			/* Notify of invalid DHCP4 config */
 			g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_DHCP4_CONFIG);
@@ -1714,14 +1716,16 @@ handle_dhcp_lease_change (NMDevice *device)
 	NMConnection *connection;
 	NMActRequest *req;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
+	const char *ip_iface;
 
 	if (!nm_device_get_use_dhcp (device)) {
 		nm_warning ("got DHCP rebind for device that wasn't using DHCP.");
 		return;
 	}
 
-	config = nm_dhcp_manager_get_ip4_config (NM_DEVICE_GET_PRIVATE (device)->dhcp_manager,
-											 nm_device_get_iface (device));
+	ip_iface = nm_device_get_ip_iface (device);
+
+	config = nm_dhcp_manager_get_ip4_config (priv->dhcp_manager, ip_iface);
 	if (!config) {
 		nm_warning ("failed to get DHCP config for rebind");
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_IP_CONFIG_EXPIRED);
@@ -1743,7 +1747,7 @@ handle_dhcp_lease_change (NMDevice *device)
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
 	}
 
-	nm_dhcp_manager_set_dhcp4_config (priv->dhcp_manager, nm_device_get_iface (device), priv->dhcp4_config);
+	nm_dhcp_manager_set_dhcp4_config (priv->dhcp_manager, ip_iface, priv->dhcp4_config);
 }
 
 static void
@@ -1756,7 +1760,7 @@ dhcp_state_changed (NMDHCPManager *dhcp_manager,
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 	NMDeviceState dev_state;
 
-	if (strcmp (nm_device_get_iface (device), iface) != 0)
+	if (strcmp (nm_device_get_ip_iface (device), iface) != 0)
 		return;
 
 	if (!nm_device_get_act_request (device))
@@ -1806,7 +1810,7 @@ dhcp_timeout (NMDHCPManager *dhcp_manager,
 {
 	NMDevice * device = NM_DEVICE (user_data);
 
-	if (strcmp (nm_device_get_iface (device), iface) != 0)
+	if (strcmp (nm_device_get_ip_iface (device), iface) != 0)
 		return;
 
 	if (nm_device_get_state (device) == NM_DEVICE_STATE_IP_CONFIG)
@@ -1964,7 +1968,7 @@ nm_device_update_ip4_address (NMDevice *self)
 	}
 
 	memset (&req, 0, sizeof (struct ifreq));
-	strncpy (req.ifr_name, nm_device_get_iface (self), IFNAMSIZ);
+	strncpy (req.ifr_name, nm_device_get_ip_iface (self), IFNAMSIZ);
 	err = ioctl (fd, SIOCGIFADDR, &req);
 	close (fd);
 

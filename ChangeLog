@@ -1,5 +1,11 @@
 2008-10-22  Dan Williams  <dcbw@redhat.com>
 
+	* src/NetworkManagerSystem.c
+	  src/nm-device.c
+		- Use the device's IP interface where appropriate (Per Hallsmark)
+
+2008-10-22  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-gsm-device.c
 		- (schedule_automatic_registration_again): use a short timeout here
 			instead of an idle handler to avoid using too much CPU polling for

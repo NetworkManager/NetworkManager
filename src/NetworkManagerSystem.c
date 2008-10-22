@@ -385,7 +385,7 @@ nm_system_device_set_up_down (NMDevice *dev,
 {
 	g_return_val_if_fail (dev != NULL, FALSE);
 
-	return nm_system_device_set_up_down_with_iface (nm_device_get_iface (dev), up, no_firmware);
+	return nm_system_device_set_up_down_with_iface (nm_device_get_ip_iface (dev), up, no_firmware);
 }
 
 gboolean
@@ -434,7 +434,7 @@ nm_system_device_is_up (NMDevice *device)
 {
 	g_return_val_if_fail (device != NULL, FALSE);
 
-	return nm_system_device_is_up_with_iface (nm_device_get_iface (device));
+	return nm_system_device_is_up_with_iface (nm_device_get_ip_iface (device));
 }
 
 gboolean
@@ -691,7 +691,7 @@ void nm_system_device_flush_ip4_addresses (NMDevice *dev)
 {
 	g_return_if_fail (dev != NULL);
 
-	nm_system_device_flush_ip4_addresses_with_iface (nm_device_get_iface (dev));
+	nm_system_device_flush_ip4_addresses_with_iface (nm_device_get_ip_iface (dev));
 }
 
 
@@ -742,7 +742,7 @@ void nm_system_device_flush_ip4_routes (NMDevice *dev)
 {
 	g_return_if_fail (dev != NULL);
 
-	nm_system_device_flush_ip4_routes_with_iface (nm_device_get_iface (dev));
+	nm_system_device_flush_ip4_routes_with_iface (nm_device_get_ip_iface (dev));
 }
 
 
