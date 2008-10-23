@@ -725,6 +725,9 @@ create_pppd_cmd_line (NMPPPManager *self,
 	nm_cmd_line_add_string (cmd, "nodetach");
 	nm_cmd_line_add_string (cmd, "lock");
 
+	/* NM handles setting the default route */
+	nm_cmd_line_add_string (cmd, "nodefaultroute");
+
 	ppp_debug = getenv ("NM_PPP_DEBUG");
 	if (ppp_debug)
 		nm_cmd_line_add_string (cmd, "debug");
@@ -797,15 +800,11 @@ create_pppd_cmd_line (NMPPPManager *self,
 		nm_cmd_line_add_int (cmd, setting->mtu);
 	}
 
-	if (setting->lcp_echo_failure) {
-		nm_cmd_line_add_string (cmd, "lcp-echo-failure");
-		nm_cmd_line_add_int (cmd, setting->lcp_echo_failure);
-	}
+	nm_cmd_line_add_string (cmd, "lcp-echo-failure");
+	nm_cmd_line_add_int (cmd, setting->lcp_echo_failure);
 
-	if (setting->lcp_echo_interval) {
-		nm_cmd_line_add_string (cmd, "lcp-echo-interval");
-		nm_cmd_line_add_int (cmd, setting->lcp_echo_interval);
-	}
+	nm_cmd_line_add_string (cmd, "lcp-echo-interval");
+	nm_cmd_line_add_int (cmd, setting->lcp_echo_interval);
 
 	nm_cmd_line_add_string (cmd, "ipparam");
 	nm_cmd_line_add_string (cmd, priv->dbus_path);
