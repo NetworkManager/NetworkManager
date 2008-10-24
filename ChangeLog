@@ -1,3 +1,8 @@
+2008-10-24  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-gsm-device.c
+		- (set_apn): remove erroneous spaces in AT+CGDCONT command (Jerone Young)
+
 2008-10-23  Dan Williams  <dcbw@redhat.com>
 
 	* src/ppp-manager/nm-ppp-manager.c

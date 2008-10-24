@@ -213,7 +213,7 @@ set_apn (NMGsmDevice *device)
 		return;
 	}
 
-	command = g_strdup_printf ("AT+CGDCONT=%d, \"IP\", \"%s\"", cid, setting->apn);
+	command = g_strdup_printf ("AT+CGDCONT=%d,\"IP\",\"%s\"", cid, setting->apn);
 	modem_wait_for_reply (device, command, 7, responses, responses, set_apn_done, GUINT_TO_POINTER (cid));
 	g_free (command);
 }
