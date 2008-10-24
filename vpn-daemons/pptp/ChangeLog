@@ -1,3 +1,10 @@
+2008-10-24  Dan Williams  <dcbw@redhat.com>
+
+	* src/nm-pptp-service.c
+		- (construct_pppd_args): pppd always parses /etc/ppp/options, so always
+			add really important stuff to the command line to ensure that NM
+			overrides /etc/ppp/options (bgo #556781)
+
 2008-10-14  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-pptp-pppd-plugin.c

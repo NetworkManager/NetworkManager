@@ -650,6 +650,7 @@ construct_pppd_args (NMPptpPlugin *plugin,
 	GPtrArray *args = NULL;
 	const char *value, *pptp_binary;
 	char *ipparam, *tmp;
+	gboolean set = FALSE;
 
 	pptp_binary = nm_find_pptp ();
 	if (!pptp_binary) {
@@ -689,6 +690,7 @@ construct_pppd_args (NMPptpPlugin *plugin,
 	g_ptr_array_add (args, (gpointer) g_strdup ("lock"));
 	g_ptr_array_add (args, (gpointer) g_strdup ("usepeerdns"));
 	g_ptr_array_add (args, (gpointer) g_strdup ("noipdefault"));
+	g_ptr_array_add (args, (gpointer) g_strdup ("nodefaultroute"));
 
 	value = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_REFUSE_EAP);
 	if (value && !strcmp (value, "yes"))
@@ -750,7 +752,12 @@ construct_pppd_args (NMPptpPlugin *plugin,
 		if (errno == 0) {
 			g_ptr_array_add (args, (gpointer) g_strdup ("lcp-echo-failure"));
 			g_ptr_array_add (args, (gpointer) g_strdup_printf ("%ld", tmp_int));
+		} else {
+			nm_warning ("failed to convert lcp-echo-failure value '%s'", value);
 		}
+	} else {
+		g_ptr_array_add (args, (gpointer) g_strdup ("lcp-echo-failure"));
+		g_ptr_array_add (args, (gpointer) g_strdup ("0"));
 	}
 
 	value = g_hash_table_lookup (s_vpn->data, NM_PPTP_KEY_LCP_ECHO_INTERVAL);
@@ -765,7 +772,12 @@ construct_pppd_args (NMPptpPlugin *plugin,
 		if (errno == 0) {
 			g_ptr_array_add (args, (gpointer) g_strdup ("lcp-echo-interval"));
 			g_ptr_array_add (args, (gpointer) g_strdup_printf ("%ld", tmp_int));
+		} else {
+			nm_warning ("failed to convert lcp-echo-interval value '%s'", value);
 		}
+	} else {
+		g_ptr_array_add (args, (gpointer) g_strdup ("lcp-echo-interval"));
+		g_ptr_array_add (args, (gpointer) g_strdup ("0"));
 	}
 
 	g_ptr_array_add (args, (gpointer) g_strdup ("plugin"));
