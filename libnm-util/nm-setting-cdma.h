@@ -59,10 +59,6 @@ GQuark nm_setting_cdma_error_quark (void);
 
 typedef struct {
 	NMSetting parent;
-
-	char *number; /* For dialing, duh */
-	char *username;
-	char *password;
 } NMSettingCdma;
 
 typedef struct {
@@ -71,7 +67,10 @@ typedef struct {
 
 GType nm_setting_cdma_get_type (void);
 
-NMSetting *nm_setting_cdma_new (void);
+NMSetting  *nm_setting_cdma_new          (void);
+const char *nm_setting_cdma_get_number   (NMSettingCdma *setting);
+const char *nm_setting_cdma_get_username (NMSettingCdma *setting);
+const char *nm_setting_cdma_get_password (NMSettingCdma *setting);
 
 G_END_DECLS
 

@@ -40,6 +40,9 @@ global:
 	nm_setting_cdma_error_quark;
 	nm_setting_cdma_get_type;
 	nm_setting_cdma_new;
+	nm_setting_cdma_get_number;
+	nm_setting_cdma_get_username;
+	nm_setting_cdma_get_password;
 	nm_setting_clear_secrets;
 	nm_setting_compare;
 	nm_setting_connection_error_get_type;

@@ -127,7 +127,7 @@ do_dial (NMSerialDevice *device)
 
 	setting = NM_SETTING_CDMA (cdma_device_get_setting (NM_CDMA_DEVICE (device), NM_TYPE_SETTING_CDMA));
 
-	command = g_strconcat ("ATDT", setting->number, NULL);
+	command = g_strconcat ("ATDT", nm_setting_cdma_get_number (setting), NULL);
 	if (nm_serial_device_send_command_string (device, command))
 		id = nm_serial_device_wait_for_reply (device, 60, responses, responses, dial_done, NULL);
 	g_free (command);
@@ -280,10 +280,13 @@ real_connection_secrets_updated (NMDevice *dev,
 			                               NULL,
 			                               "missing CDMA setting; no secrets could be found.");
 		} else {
+			const char *cdma_username = nm_setting_cdma_get_username (s_cdma);
+			const char *cdma_password = nm_setting_cdma_get_password (s_cdma);
+
 			nm_ppp_manager_update_secrets (ppp_manager,
 			                               nm_device_get_iface (dev),
-			                               s_cdma->username ? s_cdma->username : "",
-			                               s_cdma->password ? s_cdma->password : "",
+			                               cdma_username ? cdma_username : "",
+			                               cdma_password ? cdma_password : "",
 			                               NULL);
 		}
 		return;
@@ -324,7 +327,7 @@ real_get_ppp_name (NMSerialDevice *device, NMActRequest *req)
 	s_cdma = (NMSettingCdma *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CDMA);
 	g_assert (s_cdma);
 
-	return s_cdma->username;
+	return nm_setting_cdma_get_username (s_cdma);
 }
 
 /*****************************************************************************/

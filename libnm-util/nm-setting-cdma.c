@@ -64,6 +64,14 @@ nm_setting_cdma_error_get_type (void)
 
 G_DEFINE_TYPE (NMSettingCdma, nm_setting_cdma, NM_TYPE_SETTING)
 
+#define NM_SETTING_CDMA_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_CDMA, NMSettingCdmaPrivate))
+
+typedef struct {
+	char *number; /* For dialing, duh */
+	char *username;
+	char *password;
+} NMSettingCdmaPrivate;
+
 enum {
 	PROP_0,
 	PROP_NUMBER,
@@ -79,6 +87,30 @@ nm_setting_cdma_new (void)
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_CDMA, NULL);
 }
 
+const char *
+nm_setting_cdma_get_number (NMSettingCdma *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CDMA (setting), NULL);
+
+	return NM_SETTING_CDMA_GET_PRIVATE (setting)->number;
+}
+
+const char *
+nm_setting_cdma_get_username (NMSettingCdma *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CDMA (setting), NULL);
+
+	return NM_SETTING_CDMA_GET_PRIVATE (setting)->username;
+}
+
+const char *
+nm_setting_cdma_get_password (NMSettingCdma *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CDMA (setting), NULL);
+
+	return NM_SETTING_CDMA_GET_PRIVATE (setting)->password;
+}
+
 static gint
 find_setting_by_name (gconstpointer a, gconstpointer b)
 {
@@ -91,7 +123,7 @@ find_setting_by_name (gconstpointer a, gconstpointer b)
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
-	NMSettingCdma *self = NM_SETTING_CDMA (setting);
+	NMSettingCdmaPrivate *priv = NM_SETTING_CDMA_GET_PRIVATE (setting);
 
 	/* Serial connections require a PPP setting */
 	if (all_settings && 
@@ -103,13 +135,13 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (!self->number) {
+	if (!priv->number) {
 		g_set_error (error,
 		             NM_SETTING_CDMA_ERROR,
 		             NM_SETTING_CDMA_ERROR_MISSING_PROPERTY,
 		             NM_SETTING_CDMA_NUMBER);
 		return FALSE;
-	} else if (!strlen (self->number)) {
+	} else if (!strlen (priv->number)) {
 		g_set_error (error,
 		             NM_SETTING_CDMA_ERROR,
 		             NM_SETTING_CDMA_ERROR_INVALID_PROPERTY,
@@ -117,7 +149,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (self->username && !strlen (self->username)) {
+	if (priv->username && !strlen (priv->username)) {
 		g_set_error (error,
 		             NM_SETTING_CDMA_ERROR,
 		             NM_SETTING_CDMA_ERROR_INVALID_PROPERTY,
@@ -125,7 +157,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (self->password && !strlen (self->password)) {
+	if (priv->password && !strlen (priv->password)) {
 		g_set_error (error,
 		             NM_SETTING_CDMA_ERROR,
 		             NM_SETTING_CDMA_ERROR_INVALID_PROPERTY,
@@ -139,13 +171,13 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 static GPtrArray *
 need_secrets (NMSetting *setting)
 {
-	NMSettingCdma *self = NM_SETTING_CDMA (setting);
+	NMSettingCdmaPrivate *priv = NM_SETTING_CDMA_GET_PRIVATE (setting);
 	GPtrArray *secrets = NULL;
 
-	if (self->password)
+	if (priv->password)
 		return NULL;
 
-	if (self->username) {
+	if (priv->username) {
 		secrets = g_ptr_array_sized_new (1);
 		g_ptr_array_add (secrets, NM_SETTING_CDMA_PASSWORD);
 	}
@@ -162,11 +194,11 @@ nm_setting_cdma_init (NMSettingCdma *setting)
 static void
 finalize (GObject *object)
 {
-	NMSettingCdma *self = NM_SETTING_CDMA (object);
+	NMSettingCdmaPrivate *priv = NM_SETTING_CDMA_GET_PRIVATE (object);
 
-	g_free (self->number);
-	g_free (self->username);
-	g_free (self->password);
+	g_free (priv->number);
+	g_free (priv->username);
+	g_free (priv->password);
 
 	G_OBJECT_CLASS (nm_setting_cdma_parent_class)->finalize (object);
 }
@@ -175,20 +207,20 @@ static void
 set_property (GObject *object, guint prop_id,
 		    const GValue *value, GParamSpec *pspec)
 {
-	NMSettingCdma *setting = NM_SETTING_CDMA (object);
+	NMSettingCdmaPrivate *priv = NM_SETTING_CDMA_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_NUMBER:
-		g_free (setting->number);
-		setting->number = g_value_dup_string (value);
+		g_free (priv->number);
+		priv->number = g_value_dup_string (value);
 		break;
 	case PROP_USERNAME:
-		g_free (setting->username);
-		setting->username = g_value_dup_string (value);
+		g_free (priv->username);
+		priv->username = g_value_dup_string (value);
 		break;
 	case PROP_PASSWORD:
-		g_free (setting->password);
-		setting->password = g_value_dup_string (value);
+		g_free (priv->password);
+		priv->password = g_value_dup_string (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -204,13 +236,13 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_NUMBER:
-		g_value_set_string (value, setting->number);
+		g_value_set_string (value, nm_setting_cdma_get_number (setting));
 		break;
 	case PROP_USERNAME:
-		g_value_set_string (value, setting->username);
+		g_value_set_string (value, nm_setting_cdma_get_username (setting));
 		break;
 	case PROP_PASSWORD:
-		g_value_set_string (value, setting->password);
+		g_value_set_string (value, nm_setting_cdma_get_password (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -223,6 +255,8 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *setting_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
 	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+
+	g_type_class_add_private (setting_class, sizeof (NMSettingCdmaPrivate));
 
 	/* virtual methods */
 	object_class->set_property = set_property;

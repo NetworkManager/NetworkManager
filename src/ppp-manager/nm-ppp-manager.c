@@ -376,8 +376,8 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 				username = NM_SETTING_GSM (setting)->username;
 				password = NM_SETTING_GSM (setting)->password;
 			} else if (NM_IS_SETTING_CDMA (setting)) {
-				username = NM_SETTING_CDMA (setting)->username;
-				password = NM_SETTING_CDMA (setting)->password;
+				username = nm_setting_cdma_get_username (NM_SETTING_CDMA (setting));
+				password = nm_setting_cdma_get_password (NM_SETTING_CDMA (setting));
 			}
 
 			/* If secrets are not required, send the existing username and password
