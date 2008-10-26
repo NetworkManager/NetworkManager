@@ -370,8 +370,8 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 
 			/* FIXME: push this down to the settings and keep PPP manager generic */
 			if (NM_IS_SETTING_PPPOE (setting)) {
-				username = NM_SETTING_PPPOE (setting)->username;
-				password = NM_SETTING_PPPOE (setting)->password;
+				username = nm_setting_pppoe_get_username (NM_SETTING_PPPOE (setting));
+				password = nm_setting_pppoe_get_password (NM_SETTING_PPPOE (setting));
 			} else if (NM_IS_SETTING_GSM (setting)) {
 				username = NM_SETTING_GSM (setting)->username;
 				password = NM_SETTING_GSM (setting)->password;
@@ -739,6 +739,7 @@ create_pppd_cmd_line (NMPPPManager *self,
 
 	if (pppoe) {
 		char *dev_str;
+		const char *pppoe_service;
 
 		nm_cmd_line_add_string (cmd, "plugin");
 		nm_cmd_line_add_string (cmd, "rp-pppoe.so");
@@ -747,9 +748,10 @@ create_pppd_cmd_line (NMPPPManager *self,
 		nm_cmd_line_add_string (cmd, dev_str);
 		g_free (dev_str);
 
-		if (pppoe->service) {
+		pppoe_service = nm_setting_pppoe_get_service (pppoe);
+		if (pppoe_service) {
 			nm_cmd_line_add_string (cmd, "rp_pppoe_service");
-			nm_cmd_line_add_string (cmd, pppoe->service);
+			nm_cmd_line_add_string (cmd, pppoe_service);
 		}
 	} else {
 		nm_cmd_line_add_string (cmd, priv->parent_iface);

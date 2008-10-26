@@ -610,10 +610,13 @@ real_connection_secrets_updated (NMDevice *dev,
 			                               NULL,
 			                               "missing PPPoE setting; no secrets could be found.");
 		} else {
+			const char *pppoe_username = nm_setting_pppoe_get_username (s_pppoe);
+			const char *pppoe_password = nm_setting_pppoe_get_password (s_pppoe);
+
 			nm_ppp_manager_update_secrets (priv->ppp_manager,
 			                               nm_device_get_iface (dev),
-			                               s_pppoe->username ? s_pppoe->username : "",
-			                               s_pppoe->password ? s_pppoe->password : "",
+			                               pppoe_username ? pppoe_username : "",
+			                               pppoe_password ? pppoe_password : "",
 			                               NULL);
 		}
 		return;
@@ -1255,7 +1258,7 @@ pppoe_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 	g_assert (s_pppoe);
 
 	priv->ppp_manager = nm_ppp_manager_new (nm_device_get_iface (NM_DEVICE (self)));
-	if (nm_ppp_manager_start (priv->ppp_manager, req, s_pppoe->username, &err)) {
+	if (nm_ppp_manager_start (priv->ppp_manager, req, nm_setting_pppoe_get_username (s_pppoe), &err)) {
 		g_signal_connect (priv->ppp_manager, "state-changed",
 					   G_CALLBACK (ppp_state_changed),
 					   self);

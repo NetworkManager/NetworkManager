@@ -59,10 +59,6 @@ GQuark nm_setting_pppoe_error_quark (void);
 
 typedef struct {
 	NMSetting parent;
-
-	char *service;
-	char *username;
-	char *password;
 } NMSettingPPPOE;
 
 typedef struct {
@@ -71,7 +67,10 @@ typedef struct {
 
 GType nm_setting_pppoe_get_type (void);
 
-NMSetting *nm_setting_pppoe_new (void);
+NMSetting  *nm_setting_pppoe_new          (void);
+const char *nm_setting_pppoe_get_service  (NMSettingPPPOE *setting);
+const char *nm_setting_pppoe_get_username (NMSettingPPPOE *setting);
+const char *nm_setting_pppoe_get_password (NMSettingPPPOE *setting);
 
 G_END_DECLS
 

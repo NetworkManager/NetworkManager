@@ -65,6 +65,14 @@ nm_setting_pppoe_error_get_type (void)
 
 G_DEFINE_TYPE (NMSettingPPPOE, nm_setting_pppoe, NM_TYPE_SETTING)
 
+#define NM_SETTING_PPPOE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_PPPOE, NMSettingPPPOEPrivate))
+
+typedef struct {
+	char *service;
+	char *username;
+	char *password;
+} NMSettingPPPOEPrivate;
+
 enum {
 	PROP_0,
 	PROP_SERVICE,
@@ -80,6 +88,30 @@ nm_setting_pppoe_new (void)
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_PPPOE, NULL);
 }
 
+const char *
+nm_setting_pppoe_get_service  (NMSettingPPPOE *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_PPPOE (setting), NULL);
+
+	return NM_SETTING_PPPOE_GET_PRIVATE (setting)->service;
+}
+
+const char *
+nm_setting_pppoe_get_username (NMSettingPPPOE *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_PPPOE (setting), NULL);
+
+	return NM_SETTING_PPPOE_GET_PRIVATE (setting)->username;
+}
+
+const char *
+nm_setting_pppoe_get_password (NMSettingPPPOE *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_PPPOE (setting), NULL);
+
+	return NM_SETTING_PPPOE_GET_PRIVATE (setting)->password;
+}
+
 static gint
 find_setting_by_name (gconstpointer a, gconstpointer b)
 {
@@ -92,15 +124,15 @@ find_setting_by_name (gconstpointer a, gconstpointer b)
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
-	NMSettingPPPOE *self = NM_SETTING_PPPOE (setting);
+	NMSettingPPPOEPrivate *priv = NM_SETTING_PPPOE_GET_PRIVATE (setting);
 
-	if (!self->username) {
+	if (!priv->username) {
 		g_set_error (error,
 		             NM_SETTING_PPPOE_ERROR,
 		             NM_SETTING_PPPOE_ERROR_MISSING_PROPERTY,
 		             NM_SETTING_PPPOE_USERNAME);
 		return FALSE;
-	} else if (!strlen (self->username)) {
+	} else if (!strlen (priv->username)) {
 		g_set_error (error,
 		             NM_SETTING_PPPOE_ERROR,
 		             NM_SETTING_PPPOE_ERROR_INVALID_PROPERTY,
@@ -108,7 +140,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (self->service && !strlen (self->service)) {
+	if (priv->service && !strlen (priv->service)) {
 		g_set_error (error,
 		             NM_SETTING_PPPOE_ERROR,
 		             NM_SETTING_PPPOE_ERROR_INVALID_PROPERTY,
@@ -130,10 +162,10 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 static GPtrArray *
 need_secrets (NMSetting *setting)
 {
-	NMSettingPPPOE *self = NM_SETTING_PPPOE (setting);
+	NMSettingPPPOEPrivate *priv = NM_SETTING_PPPOE_GET_PRIVATE (setting);
 	GPtrArray *secrets;
 
-	if (self->password)
+	if (priv->password)
 		return NULL;
 
 	secrets = g_ptr_array_sized_new (1);
@@ -152,20 +184,20 @@ static void
 set_property (GObject *object, guint prop_id,
 		    const GValue *value, GParamSpec *pspec)
 {
-	NMSettingPPPOE *setting = NM_SETTING_PPPOE (object);
+	NMSettingPPPOEPrivate *priv = NM_SETTING_PPPOE_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_SERVICE:
-		g_free (setting->service);
-		setting->service = g_value_dup_string (value);
+		g_free (priv->service);
+		priv->service = g_value_dup_string (value);
 		break;
 	case PROP_USERNAME:
-		g_free (setting->username);
-		setting->username = g_value_dup_string (value);
+		g_free (priv->username);
+		priv->username = g_value_dup_string (value);
 		break;
 	case PROP_PASSWORD:
-		g_free (setting->password);
-		setting->password = g_value_dup_string (value);
+		g_free (priv->password);
+		priv->password = g_value_dup_string (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -181,13 +213,13 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_SERVICE:
-		g_value_set_string (value, setting->service);
+		g_value_set_string (value, nm_setting_pppoe_get_service (setting));
 		break;
 	case PROP_USERNAME:
-		g_value_set_string (value, setting->username);
+		g_value_set_string (value, nm_setting_pppoe_get_username (setting));
 		break;
 	case PROP_PASSWORD:
-		g_value_set_string (value, setting->password);
+		g_value_set_string (value, nm_setting_pppoe_get_password (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -200,6 +232,8 @@ nm_setting_pppoe_class_init (NMSettingPPPOEClass *setting_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
 	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+
+	g_type_class_add_private (setting_class, sizeof (NMSettingPPPOEPrivate));
 
 	/* virtual methods */
 	object_class->set_property = set_property;
