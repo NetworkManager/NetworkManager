@@ -373,8 +373,8 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 				username = nm_setting_pppoe_get_username (NM_SETTING_PPPOE (setting));
 				password = nm_setting_pppoe_get_password (NM_SETTING_PPPOE (setting));
 			} else if (NM_IS_SETTING_GSM (setting)) {
-				username = NM_SETTING_GSM (setting)->username;
-				password = NM_SETTING_GSM (setting)->password;
+				username = nm_setting_gsm_get_username (NM_SETTING_GSM (setting));
+				password = nm_setting_gsm_get_password (NM_SETTING_GSM (setting));
 			} else if (NM_IS_SETTING_CDMA (setting)) {
 				username = nm_setting_cdma_get_username (NM_SETTING_CDMA (setting));
 				password = nm_setting_cdma_get_password (NM_SETTING_CDMA (setting));

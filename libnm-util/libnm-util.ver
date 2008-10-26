@@ -58,6 +58,15 @@ global:
 	nm_setting_gsm_error_quark;
 	nm_setting_gsm_get_type;
 	nm_setting_gsm_new;
+	nm_setting_gsm_get_number;
+	nm_setting_gsm_get_username;
+	nm_setting_gsm_get_password;
+	nm_setting_gsm_get_apn;
+	nm_setting_gsm_get_network_id;
+	nm_setting_gsm_get_network_type;
+	nm_setting_gsm_get_band;
+	nm_setting_gsm_get_pin;
+	nm_setting_gsm_get_puk;
 	nm_setting_ip4_config_error_get_type;
 	nm_setting_ip4_config_error_quark;
 	nm_setting_ip4_config_get_type;

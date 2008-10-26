@@ -73,18 +73,6 @@ enum {
 
 typedef struct {
 	NMSetting parent;
-
-	char *number; /* For dialing, duh */
-	char *username;
-	char *password;
-
-	char *apn; /* NULL for dynamic */
-	char *network_id; /* for manual registration or NULL for automatic */
-	int network_type; /* One of the NM_GSM_NETWORK_* */
-	int band;
-
-	char *pin;
-	char *puk;
 } NMSettingGsm;
 
 typedef struct {
@@ -93,7 +81,16 @@ typedef struct {
 
 GType nm_setting_gsm_get_type (void);
 
-NMSetting *nm_setting_gsm_new (void);
+NMSetting *nm_setting_gsm_new               (void);
+const char *nm_setting_gsm_get_number       (NMSettingGsm *setting);
+const char *nm_setting_gsm_get_username     (NMSettingGsm *setting);
+const char *nm_setting_gsm_get_password     (NMSettingGsm *setting);
+const char *nm_setting_gsm_get_apn          (NMSettingGsm *setting);
+const char *nm_setting_gsm_get_network_id   (NMSettingGsm *setting);
+int         nm_setting_gsm_get_network_type (NMSettingGsm *setting);
+int         nm_setting_gsm_get_band         (NMSettingGsm *setting);
+const char *nm_setting_gsm_get_pin          (NMSettingGsm *setting);
+const char *nm_setting_gsm_get_puk          (NMSettingGsm *setting);
 
 G_END_DECLS
 

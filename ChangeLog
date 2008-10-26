@@ -3,6 +3,20 @@
 	Patch from Tambet Ingo <tambet@gmail.com>
 
 	* libnm-util/libnm-util.ver
+	  libnm-util/nm-setting-gsm.c
+	  libnm-util/nm-setting-gsm.h
+		- Make properties private and add accessor functions
+
+	* src/nm-gsm-device.c
+	  src/nm-hso-gsm-device.c
+	  src/ppp-manager/nm-ppp-manager.c
+		- Use those accessors
+
+2008-10-26  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Tambet Ingo <tambet@gmail.com>
+
+	* libnm-util/libnm-util.ver
 	  libnm-util/nm-setting-cdma.c
 	  libnm-util/nm-setting-cdma.h
 		- Make properties private and add accessor functions

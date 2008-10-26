@@ -178,6 +178,8 @@ do_hso_auth (NMHsoGsmDevice *device)
 	NMActRequest *req;
 	const char *responses[] = { "OK", "ERROR", "ERR", NULL };
 	char *command;
+	const char *gsm_username;
+	const char *gsm_password;
 	guint cid;
 
 	req = nm_device_get_act_request (NM_DEVICE (device));
@@ -187,10 +189,13 @@ do_hso_auth (NMHsoGsmDevice *device)
 
 	s_gsm = NM_SETTING_GSM (gsm_device_get_setting (NM_GSM_DEVICE (device), NM_TYPE_SETTING_GSM));
 
+	gsm_username = nm_setting_gsm_get_username (s_gsm);
+	gsm_password = nm_setting_gsm_get_password (s_gsm);
+
 	command = g_strdup_printf ("AT$QCPDPP=%d,1,\"%s\",\"%s\"",
 	                           cid,
-	                           s_gsm->password ? s_gsm->password : "",
-	                           s_gsm->username ? s_gsm->username : "");
+	                           gsm_password ? gsm_password : "",
+	                           gsm_username ? gsm_username : "");
 	modem_wait_for_reply (NM_GSM_DEVICE (device), command, 5, responses, responses, hso_auth_done, GUINT_TO_POINTER (cid));
 	g_free (command);
 }

@@ -154,23 +154,25 @@ real_do_dial (NMGsmDevice *device, guint cid)
 {
 	NMSettingGsm *setting;
 	char *command;
+	const char *number;
 	const char *responses[] = { "CONNECT", "BUSY", "NO DIAL TONE", "NO CARRIER", NULL };
 
 	setting = NM_SETTING_GSM (gsm_device_get_setting (NM_GSM_DEVICE (device), NM_TYPE_SETTING_GSM));
+	number = nm_setting_gsm_get_number (setting);
 
 	if (cid) {
 		GString *str;
 
 		str = g_string_new ("ATD");
-		if (g_str_has_suffix (setting->number, "#"))
-			str = g_string_append_len (str, setting->number, strlen (setting->number) - 1);
+		if (g_str_has_suffix (number, "#"))
+			str = g_string_append_len (str, number, strlen (number) - 1);
 		else
-			str = g_string_append (str, setting->number);
+			str = g_string_append (str, number);
 
 		g_string_append_printf (str, "***%d#", cid);
 		command = g_string_free (str, FALSE);
 	} else
-		command = g_strconcat ("ATDT", setting->number, NULL);
+		command = g_strconcat ("ATDT", number, NULL);
 
 	modem_wait_for_reply (device, command, 60, responses, responses, dial_done, NULL);
 	g_free (command);
@@ -201,19 +203,22 @@ set_apn (NMGsmDevice *device)
 	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
 	NMSettingGsm *setting;
 	char *command;
+	const char *apn;
 	const char *responses[] = { "OK", "ERROR", NULL };
 	guint cid = 1;
 
 	priv->reg_tries = 0;
 
 	setting = NM_SETTING_GSM (gsm_device_get_setting (NM_GSM_DEVICE (device), NM_TYPE_SETTING_GSM));
-	if (!setting->apn) {
+
+	apn = nm_setting_gsm_get_apn (setting);
+	if (!apn) {
 		/* APN not set, nothing to do */
 		NM_GSM_DEVICE_GET_CLASS (device)->do_dial (NM_GSM_DEVICE (device), 0);
 		return;
 	}
 
-	command = g_strdup_printf ("AT+CGDCONT=%d,\"IP\",\"%s\"", cid, setting->apn);
+	command = g_strdup_printf ("AT+CGDCONT=%d,\"IP\",\"%s\"", cid, apn);
 	modem_wait_for_reply (device, command, 7, responses, responses, set_apn_done, GUINT_TO_POINTER (cid));
 	g_free (command);
 }
@@ -281,7 +286,7 @@ manual_registration (NMGsmDevice *device)
 
 	setting = NM_SETTING_GSM (gsm_device_get_setting (device, NM_TYPE_SETTING_GSM));
 
-	command = g_strdup_printf ("AT+COPS=1,2,\"%s\"", setting->network_id);
+	command = g_strdup_printf ("AT+COPS=1,2,\"%s\"", nm_setting_gsm_get_network_id (setting));
 	modem_wait_for_reply (device, command, 15, responses, responses, manual_registration_response, NULL);
 	g_free (command);
 }
@@ -417,7 +422,7 @@ do_register (NMGsmDevice *device)
 	setting = NM_SETTING_GSM (gsm_device_get_setting (device, NM_TYPE_SETTING_GSM));
 
 	priv->reg_tries = 0;
-	if (setting->network_id)
+	if (nm_setting_gsm_get_network_id (setting))
 		manual_registration (device);
 	else
 		automatic_registration (device);
@@ -507,12 +512,10 @@ enter_pin_done (NMSerialDevice *device,
 
 		switch (secret) {
 		case NM_GSM_SECRET_PIN:
-			g_free (setting->pin);
-			setting->pin = NULL;
+			g_object_set (setting, NM_SETTING_GSM_PIN, NULL, NULL);
 			break;
 		case NM_GSM_SECRET_PUK:
-			g_free (setting->puk);
-			setting->puk = NULL;
+			g_object_set (setting, NM_SETTING_GSM_PUK, NULL, NULL);
 			break;
 		default:
 			break;
@@ -529,7 +532,7 @@ enter_pin (NMGsmDevice *device, NMGsmSecret secret_type, gboolean retry)
 	NMSettingGsm *setting;
 	NMActRequest *req;
 	NMConnection *connection;
-	char *secret;
+	const char *secret;
 	char *secret_name = NULL;
 
 	req = nm_device_get_act_request (NM_DEVICE (device));
@@ -541,11 +544,9 @@ enter_pin (NMGsmDevice *device, NMGsmSecret secret_type, gboolean retry)
 
 	switch (secret_type) {
 	case NM_GSM_SECRET_PIN:
-		secret = setting->pin;
 		secret_name = NM_SETTING_GSM_PIN;
 		break;
 	case NM_GSM_SECRET_PUK:
-		secret = setting->puk;
 		secret_name = NM_SETTING_GSM_PUK;
 		break;
 	default:
@@ -553,6 +554,7 @@ enter_pin (NMGsmDevice *device, NMGsmSecret secret_type, gboolean retry)
 		return;
 	}
 
+	g_object_get (setting, secret_name, &secret, NULL);
 	if (secret) {
 		char *command;
 		const char *responses[] = { "OK", "ERROR", "ERR", NULL };
@@ -725,10 +727,13 @@ real_connection_secrets_updated (NMDevice *dev,
 			                               NULL,
 			                               "missing GSM setting; no secrets could be found.");
 		} else {
+			const char *gsm_username = nm_setting_gsm_get_username (s_gsm);
+			const char *gsm_password = nm_setting_gsm_get_password (s_gsm);
+
 			nm_ppp_manager_update_secrets (ppp_manager,
 			                               nm_device_get_iface (dev),
-			                               s_gsm->username ? s_gsm->username : "",
-			                               s_gsm->password ? s_gsm->password : "",
+			                               gsm_username ? gsm_username : "",
+			                               gsm_password ? gsm_password : "",
 			                               NULL);
 		}
 		return;
@@ -785,7 +790,7 @@ real_get_ppp_name (NMSerialDevice *device, NMActRequest *req)
 	s_gsm = (NMSettingGsm *) nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM);
 	g_assert (s_gsm);
 
-	return s_gsm->username;
+	return nm_setting_gsm_get_username (s_gsm);
 }
 
 /*****************************************************************************/
