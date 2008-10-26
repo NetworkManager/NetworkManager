@@ -503,10 +503,27 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	}
 	g_slist_free (vpns);
 
-	/* VPNs are the default route only if they don't have custom routes */
+	/* VPNs are the default route only if they don't have custom non-host (ie, /32)
+	 * routes.  Custom non-host routes are redundant when the VPN is the default
+	 * route because any traffic meant for the custom route would be routed over
+	 * the VPN anyway.
+	 */
 	if (vpn) {
+		gboolean have_non_host_routes = FALSE;
+		int i;
+
 		ip4_config = nm_vpn_connection_get_ip4_config (vpn);
-		if (nm_ip4_config_get_num_routes (ip4_config) == 0) {
+		for (i = 0; i < nm_ip4_config_get_num_routes (ip4_config); i++) {
+			const NMSettingIP4Route *route = nm_ip4_config_get_route (ip4_config, i);
+
+			if (route->prefix != 32) {
+				have_non_host_routes = TRUE;
+				break;
+			}
+		}
+
+
+		if (!have_non_host_routes) {
 			NMIP4Config *parent_ip4;
 			NMDevice *parent;
 
