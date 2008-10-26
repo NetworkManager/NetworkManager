@@ -3,6 +3,21 @@
 	Patch from Tambet Ingo <tambet@gmail.com>
 
 	* libnm-util/libnm-util.ver
+	  libnm-util/nm-setting-wired.c
+	  libnm-util/nm-setting-wired.h
+		- Make properties private and add accessor functions
+
+	* src/nm-device-ethernet.c
+	  system-settings/plugins/ifcfg-fedora/nm-ifcfg-connection.c
+	  system-settings/plugins/ifcfg-suse/parser.c
+	  system-settings/src/main.c
+		- Use those accessors
+
+2008-10-26  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Tambet Ingo <tambet@gmail.com>
+
+	* libnm-util/libnm-util.ver
 	  libnm-util/nm-setting-serial.c
 	  libnm-util/nm-setting-serial.h
 	  src/nm-serial-device.c

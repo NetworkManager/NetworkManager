@@ -79,7 +79,7 @@ enum {
 static guint signals[LAST_SIGNAL] = { 0 };
 
 static char *
-get_ether_device_udi (DBusGConnection *g_connection, GByteArray *mac, GSList *devices)
+get_ether_device_udi (DBusGConnection *g_connection, const GByteArray *mac, GSList *devices)
 {
 	GError *error = NULL;
 	GSList *iter;
@@ -168,7 +168,7 @@ get_udi_for_connection (NMConnection *connection,
 		s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
 		if (s_wired) {
 			devices = nm_system_config_hal_manager_get_devices_of_type (hal_mgr, NM_DEVICE_TYPE_ETHERNET);
-			udi = get_ether_device_udi (g_connection, s_wired->mac_address, devices);
+			udi = get_ether_device_udi (g_connection, nm_setting_wired_get_mac_address (s_wired), devices);
 		}
 		break;
 

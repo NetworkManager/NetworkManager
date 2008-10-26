@@ -199,7 +199,7 @@ make_wired_setting (shvarFile *ifcfg)
 			;
 		else if (get_int (str, &mtu)) {
 			if (mtu >= 0 && mtu < G_MAXINT)
-				s_wired->mtu = mtu;
+				g_object_set (s_wired, NM_SETTING_WIRED_MTU, mtu, NULL);
 		} else
 			g_warning ("Ignoring invalid MTU: '%s'", str);
 		g_free (str);

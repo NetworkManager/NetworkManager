@@ -570,8 +570,10 @@ real_get_best_auto_connection (NMDevice *dev,
 			continue;
 
 		if (s_wired) {
-			if (   s_wired->mac_address
-				&& memcmp (s_wired->mac_address->data, priv->hw_addr.ether_addr_octet, ETH_ALEN))
+			const GByteArray *mac;
+
+			mac = nm_setting_wired_get_mac_address (s_wired);
+			if (mac && memcmp (mac->data, priv->hw_addr.ether_addr_octet, ETH_ALEN))
 				continue;
 		}
 
@@ -1326,6 +1328,7 @@ real_act_stage4_get_ip4_config (NMDevice *device,
 		if (ret == NM_ACT_STAGE_RETURN_SUCCESS) {
 			NMConnection *connection;
 			NMSettingWired *s_wired;
+			guint32 mtu;
 
 			connection = nm_act_request_get_connection (nm_device_get_act_request (device));
 			g_assert (connection);
@@ -1333,8 +1336,9 @@ real_act_stage4_get_ip4_config (NMDevice *device,
 			g_assert (s_wired);
 
 			/* MTU override */
-			if (s_wired->mtu)
-				nm_ip4_config_set_mtu (*config, s_wired->mtu);
+			mtu = nm_setting_wired_get_mtu (s_wired);
+			if (mtu)
+				nm_ip4_config_set_mtu (*config, mtu);
 		}
 	} else {
 		/* PPPoE */
@@ -1401,8 +1405,10 @@ real_check_connection_compatible (NMDevice *device,
 	}
 
 	if (s_wired) {
-		if (   s_wired->mac_address
-			&& memcmp (s_wired->mac_address->data, &(priv->hw_addr.ether_addr_octet), ETH_ALEN)) {
+		const GByteArray *mac;
+
+		mac = nm_setting_wired_get_mac_address (s_wired);
+		if (mac && memcmp (mac->data, &(priv->hw_addr.ether_addr_octet), ETH_ALEN)) {
 			g_set_error (error,
 			             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_INCOMPATIBLE,
 			             "The connection's MAC address did not match this device.");

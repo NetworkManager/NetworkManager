@@ -61,13 +61,6 @@ GQuark nm_setting_wired_error_quark (void);
 
 typedef struct {
 	NMSetting parent;
-
-	char *port;
-	guint32 speed;
-	char *duplex;
-	gboolean auto_negotiate;
-	GByteArray *mac_address;
-	guint32 mtu;
 } NMSettingWired;
 
 typedef struct {
@@ -76,7 +69,13 @@ typedef struct {
 
 GType nm_setting_wired_get_type (void);
 
-NMSetting *nm_setting_wired_new (void);
+NMSetting        *nm_setting_wired_new                (void);
+const char       *nm_setting_wired_get_port           (NMSettingWired *setting);
+guint32           nm_setting_wired_get_speed          (NMSettingWired *setting);
+const char       *nm_setting_wired_get_duplex         (NMSettingWired *setting);
+gboolean          nm_setting_wired_get_auto_negotiate (NMSettingWired *setting);
+const GByteArray *nm_setting_wired_get_mac_address    (NMSettingWired *setting);
+guint32           nm_setting_wired_get_mtu            (NMSettingWired *setting);
 
 G_END_DECLS
 

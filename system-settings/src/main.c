@@ -281,6 +281,7 @@ have_connection_for_device (Application *app, GByteArray *mac)
 	GSList *list, *iter;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
+	const GByteArray *setting_mac;
 	gboolean ret = FALSE;
 
 	g_return_val_if_fail (app != NULL, FALSE);
@@ -311,9 +312,10 @@ have_connection_for_device (Application *app, GByteArray *mac)
 			break;
 		}
 
-		if (s_wired->mac_address) {
+		setting_mac = nm_setting_wired_get_mac_address (s_wired);
+		if (setting_mac) {
 			/* A connection mac-locked to this device */
-			if (!memcmp (s_wired->mac_address->data, mac->data, ETH_ALEN)) {
+			if (!memcmp (setting_mac->data, mac->data, ETH_ALEN)) {
 				ret = TRUE;
 				break;
 			}
@@ -337,6 +339,7 @@ add_default_dhcp_connection (gpointer user_data)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMConnection *wrapped;
+	GByteArray *setting_mac;
 
 	if (info->add_id)
 		info->add_id = 0;
@@ -373,8 +376,12 @@ add_default_dhcp_connection (gpointer user_data)
 
 	/* Lock the connection to this device */
 	s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());
-	s_wired->mac_address = g_byte_array_sized_new (ETH_ALEN);
-	g_byte_array_append (s_wired->mac_address, info->mac->data, ETH_ALEN);
+
+	setting_mac = g_byte_array_sized_new (ETH_ALEN);
+	g_byte_array_append (setting_mac, info->mac->data, ETH_ALEN);
+	g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, setting_mac, NULL);
+	g_byte_array_free (setting_mac, TRUE);
+
 	nm_connection_add_setting (wrapped, NM_SETTING (s_wired));
 
 	nm_sysconfig_settings_add_connection (info->app->settings, info->connection);

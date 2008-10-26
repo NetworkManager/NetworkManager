@@ -65,6 +65,17 @@ nm_setting_wired_error_get_type (void)
 
 G_DEFINE_TYPE (NMSettingWired, nm_setting_wired, NM_TYPE_SETTING)
 
+#define NM_SETTING_WIRED_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_WIRED, NMSettingWiredPrivate))
+
+typedef struct {
+	char *port;
+	guint32 speed;
+	char *duplex;
+	gboolean auto_negotiate;
+	GByteArray *mac_address;
+	guint32 mtu;
+} NMSettingWiredPrivate;
+
 enum {
 	PROP_0,
 	PROP_PORT,
@@ -83,14 +94,62 @@ nm_setting_wired_new (void)
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_WIRED, NULL);
 }
 
+const char *
+nm_setting_wired_get_port (NMSettingWired *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), NULL);
+
+	return NM_SETTING_WIRED_GET_PRIVATE (setting)->port;
+}
+
+guint32
+nm_setting_wired_get_speed (NMSettingWired *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), 0);
+
+	return NM_SETTING_WIRED_GET_PRIVATE (setting)->speed;
+}
+
+const char *
+nm_setting_wired_get_duplex (NMSettingWired *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), NULL);
+
+	return NM_SETTING_WIRED_GET_PRIVATE (setting)->duplex;
+}
+
+gboolean
+nm_setting_wired_get_auto_negotiate (NMSettingWired *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), FALSE);
+
+	return NM_SETTING_WIRED_GET_PRIVATE (setting)->auto_negotiate;
+}
+
+const GByteArray *
+nm_setting_wired_get_mac_address (NMSettingWired *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), NULL);
+
+	return NM_SETTING_WIRED_GET_PRIVATE (setting)->mac_address;
+}
+
+guint32
+nm_setting_wired_get_mtu (NMSettingWired *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRED (setting), 0);
+
+	return NM_SETTING_WIRED_GET_PRIVATE (setting)->mtu;
+}
+
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
-	NMSettingWired *self = NM_SETTING_WIRED (setting);
+	NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE (setting);
 	const char *valid_ports[] = { "tp", "aui", "bnc", "mii", NULL };
 	const char *valid_duplex[] = { "half", "full", NULL };
 
-	if (self->port && !nm_utils_string_in_list (self->port, valid_ports)) {
+	if (priv->port && !nm_utils_string_in_list (priv->port, valid_ports)) {
 		g_set_error (error,
 		             NM_SETTING_WIRED_ERROR,
 		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
@@ -98,7 +157,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (self->duplex && !nm_utils_string_in_list (self->duplex, valid_duplex)) {
+	if (priv->duplex && !nm_utils_string_in_list (priv->duplex, valid_duplex)) {
 		g_set_error (error,
 		             NM_SETTING_WIRED_ERROR,
 		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
@@ -106,7 +165,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (self->mac_address && self->mac_address->len != ETH_ALEN) {
+	if (priv->mac_address && priv->mac_address->len != ETH_ALEN) {
 		g_set_error (error,
 		             NM_SETTING_WIRED_ERROR,
 		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
@@ -126,13 +185,13 @@ nm_setting_wired_init (NMSettingWired *setting)
 static void
 finalize (GObject *object)
 {
-	NMSettingWired *self = NM_SETTING_WIRED (object);
+	NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE (object);
 
-	g_free (self->port);
-	g_free (self->duplex);
+	g_free (priv->port);
+	g_free (priv->duplex);
 
-	if (self->mac_address)
-		g_byte_array_free (self->mac_address, TRUE);
+	if (priv->mac_address)
+		g_byte_array_free (priv->mac_address, TRUE);
 
 	G_OBJECT_CLASS (nm_setting_wired_parent_class)->finalize (object);
 }
@@ -141,30 +200,30 @@ static void
 set_property (GObject *object, guint prop_id,
 		    const GValue *value, GParamSpec *pspec)
 {
-	NMSettingWired *setting = NM_SETTING_WIRED (object);
+	NMSettingWiredPrivate *priv = NM_SETTING_WIRED_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_PORT:
-		g_free (setting->port);
-		setting->port = g_value_dup_string (value);
+		g_free (priv->port);
+		priv->port = g_value_dup_string (value);
 		break;
 	case PROP_SPEED:
-		setting->speed = g_value_get_uint (value);
+		priv->speed = g_value_get_uint (value);
 		break;
 	case PROP_DUPLEX:
-		g_free (setting->duplex);
-		setting->duplex = g_value_dup_string (value);
+		g_free (priv->duplex);
+		priv->duplex = g_value_dup_string (value);
 		break;
 	case PROP_AUTO_NEGOTIATE:
-		setting->auto_negotiate = g_value_get_boolean (value);
+		priv->auto_negotiate = g_value_get_boolean (value);
 		break;
 	case PROP_MAC_ADDRESS:
-		if (setting->mac_address)
-			g_byte_array_free (setting->mac_address, TRUE);
-		setting->mac_address = g_value_dup_boxed (value);
+		if (priv->mac_address)
+			g_byte_array_free (priv->mac_address, TRUE);
+		priv->mac_address = g_value_dup_boxed (value);
 		break;
 	case PROP_MTU:
-		setting->mtu = g_value_get_uint (value);
+		priv->mtu = g_value_get_uint (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -180,22 +239,22 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_PORT:
-		g_value_set_string (value, setting->port);
+		g_value_set_string (value, nm_setting_wired_get_port (setting));
 		break;
 	case PROP_SPEED:
-		g_value_set_uint (value, setting->speed);
+		g_value_set_uint (value, nm_setting_wired_get_speed (setting));
 		break;
 	case PROP_DUPLEX:
-		g_value_set_string (value, setting->duplex);
+		g_value_set_string (value, nm_setting_wired_get_duplex (setting));
 		break;
 	case PROP_AUTO_NEGOTIATE:
-		g_value_set_boolean (value, setting->auto_negotiate);
+		g_value_set_boolean (value, nm_setting_wired_get_auto_negotiate (setting));
 		break;
 	case PROP_MAC_ADDRESS:
-		g_value_set_boxed (value, setting->mac_address);
+		g_value_set_boxed (value, nm_setting_wired_get_mac_address (setting));
 		break;
 	case PROP_MTU:
-		g_value_set_uint (value, setting->mtu);
+		g_value_set_uint (value, nm_setting_wired_get_mtu (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -208,6 +267,8 @@ nm_setting_wired_class_init (NMSettingWiredClass *setting_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
 	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+
+	g_type_class_add_private (setting_class, sizeof (NMSettingWiredPrivate));
 
 	/* virtual methods */
 	object_class->set_property = set_property;

@@ -95,6 +95,12 @@ global:
 	nm_setting_wired_error_quark;
 	nm_setting_wired_get_type;
 	nm_setting_wired_new;
+	nm_setting_wired_get_port;
+	nm_setting_wired_get_speed;
+	nm_setting_wired_get_duplex;
+	nm_setting_wired_get_auto_negotiate;
+	nm_setting_wired_get_mac_address;
+	nm_setting_wired_get_mtu;
 	nm_setting_wireless_ap_security_compatible;
 	nm_setting_wireless_error_get_type;
 	nm_setting_wireless_error_quark;
