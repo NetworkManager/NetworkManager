@@ -774,6 +774,7 @@ make_wired_setting (shvarFile *ifcfg, gboolean unmanaged, GError **error)
 	NMSettingWired *s_wired;
 	char *value;
 	int mtu;
+	GByteArray *mac = NULL;
 
 	s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());
 
@@ -781,7 +782,7 @@ make_wired_setting (shvarFile *ifcfg, gboolean unmanaged, GError **error)
 	if (value) {
 		if (get_int (value, &mtu)) {
 			if (mtu >= 0 && mtu < 65536)
-				s_wired->mtu = mtu;
+				g_object_set (s_wired, NM_SETTING_WIRED_MTU, mtu, NULL);
 		} else {
 			/* Shouldn't be fatal... */
 			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    warning: invalid MTU '%s'", value);
@@ -789,7 +790,10 @@ make_wired_setting (shvarFile *ifcfg, gboolean unmanaged, GError **error)
 		g_free (value);
 	}
 
-	if (!read_mac_address (ifcfg, &s_wired->mac_address, error)) {
+	if (read_mac_address (ifcfg, &mac, error)) {
+		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
+		g_byte_array_free (mac, TRUE);
+	} else {
 		g_object_unref (s_wired);
 		s_wired = NULL;
 	}
