@@ -126,22 +126,25 @@ get_device_type_for_connection (NMConnection *connection)
 {
 	NMDeviceType devtype = NM_DEVICE_TYPE_UNKNOWN;
 	NMSettingConnection *s_con;
+	const char *ctype;
 
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	if (!s_con)
 		return NM_DEVICE_TYPE_UNKNOWN;
 
-	if (   !strcmp (s_con->type, NM_SETTING_WIRED_SETTING_NAME)
-	    || !strcmp (s_con->type, NM_SETTING_PPPOE_SETTING_NAME)) {
+	ctype = nm_setting_connection_get_connection_type (s_con);
+
+	if (   !strcmp (ctype, NM_SETTING_WIRED_SETTING_NAME)
+	    || !strcmp (ctype, NM_SETTING_PPPOE_SETTING_NAME)) {
 		if (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED))
 			devtype = NM_DEVICE_TYPE_ETHERNET;
-	} else if (!strcmp (s_con->type, NM_SETTING_WIRELESS_SETTING_NAME)) {
+	} else if (!strcmp (ctype, NM_SETTING_WIRELESS_SETTING_NAME)) {
 		if (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS))
 			devtype = NM_DEVICE_TYPE_WIFI;
-	} else if (!strcmp (s_con->type, NM_SETTING_GSM_SETTING_NAME)) {
+	} else if (!strcmp (ctype, NM_SETTING_GSM_SETTING_NAME)) {
 		if (nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM))
 			devtype = NM_DEVICE_TYPE_GSM;
-	} else if (!strcmp (s_con->type, NM_SETTING_CDMA_SETTING_NAME)) {
+	} else if (!strcmp (ctype, NM_SETTING_CDMA_SETTING_NAME)) {
 		if (nm_connection_get_setting (connection, NM_TYPE_SETTING_CDMA))
 			devtype = NM_DEVICE_TYPE_CDMA;
 	}

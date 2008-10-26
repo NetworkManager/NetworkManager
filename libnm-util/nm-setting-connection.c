@@ -64,6 +64,16 @@ nm_setting_connection_error_get_type (void)
 
 G_DEFINE_TYPE (NMSettingConnection, nm_setting_connection, NM_TYPE_SETTING)
 
+#define NM_SETTING_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_CONNECTION, NMSettingConnectionPrivate))
+
+typedef struct {
+	char *id;
+	char *uuid;
+	char *type;
+	gboolean autoconnect;
+	guint64 timestamp;
+} NMSettingConnectionPrivate;
+
 enum {
 	PROP_0,
 	PROP_ID,
@@ -80,6 +90,46 @@ NMSetting *nm_setting_connection_new (void)
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_CONNECTION, NULL);
 }
 
+const char *
+nm_setting_connection_get_id (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), NULL);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->id;
+}
+
+const char *
+nm_setting_connection_get_uuid (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), NULL);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->uuid;
+}
+
+const char *
+nm_setting_connection_get_connection_type (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), NULL);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->type;
+}
+
+gboolean
+nm_setting_connection_get_autoconnect (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), FALSE);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->autoconnect;
+}
+
+guint64
+nm_setting_connection_get_timestamp (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), 0);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->timestamp;
+}
+
 static gint
 find_setting_by_name (gconstpointer a, gconstpointer b)
 {
@@ -92,15 +142,15 @@ find_setting_by_name (gconstpointer a, gconstpointer b)
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
-	NMSettingConnection *self = NM_SETTING_CONNECTION (setting);
+	NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE (setting);
 
-	if (!self->id) {
+	if (!priv->id) {
 		g_set_error (error,
 		             NM_SETTING_CONNECTION_ERROR,
 		             NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
 		             NM_SETTING_CONNECTION_ID);
 		return FALSE;
-	} else if (!strlen (self->id)) {
+	} else if (!strlen (priv->id)) {
 		g_set_error (error,
 		             NM_SETTING_CONNECTION_ERROR,
 		             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -108,13 +158,13 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (!self->uuid) {
+	if (!priv->uuid) {
 		g_set_error (error,
 		             NM_SETTING_CONNECTION_ERROR,
 		             NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
 		             NM_SETTING_CONNECTION_UUID);
 		return FALSE;
-	} else if (!strlen (self->uuid)) {
+	} else if (!strlen (priv->uuid)) {
 		g_set_error (error,
 		             NM_SETTING_CONNECTION_ERROR,
 		             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -122,13 +172,13 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (!self->type) {
+	if (!priv->type) {
 		g_set_error (error,
 		             NM_SETTING_CONNECTION_ERROR,
 		             NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY,
 		             NM_SETTING_CONNECTION_TYPE);
 		return FALSE;
-	} else if (!strlen (self->type)) {
+	} else if (!strlen (priv->type)) {
 		g_set_error (error,
 		             NM_SETTING_CONNECTION_ERROR,
 		             NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY,
@@ -137,7 +187,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	}
 
 	/* Make sure the corresponding 'type' item is present */
-	if (all_settings && !g_slist_find_custom (all_settings, self->type, find_setting_by_name)) {
+	if (all_settings && !g_slist_find_custom (all_settings, priv->type, find_setting_by_name)) {
 		g_set_error (error,
 		             NM_SETTING_CONNECTION_ERROR,
 		             NM_SETTING_CONNECTION_ERROR_TYPE_SETTING_NOT_FOUND,
@@ -157,11 +207,11 @@ nm_setting_connection_init (NMSettingConnection *setting)
 static void
 finalize (GObject *object)
 {
-	NMSettingConnection *self = NM_SETTING_CONNECTION (object);
+	NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE (object);
 
-	g_free (self->id);
-	g_free (self->uuid);
-	g_free (self->type);
+	g_free (priv->id);
+	g_free (priv->uuid);
+	g_free (priv->type);
 
 	G_OBJECT_CLASS (nm_setting_connection_parent_class)->finalize (object);
 }
@@ -170,26 +220,26 @@ static void
 set_property (GObject *object, guint prop_id,
 		    const GValue *value, GParamSpec *pspec)
 {
-	NMSettingConnection *setting = NM_SETTING_CONNECTION (object);
+	NMSettingConnectionPrivate *priv = NM_SETTING_CONNECTION_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_ID:
-		g_free (setting->id);
-		setting->id = g_value_dup_string (value);
+		g_free (priv->id);
+		priv->id = g_value_dup_string (value);
 		break;
 	case PROP_UUID:
-		g_free (setting->uuid);
-		setting->uuid = g_value_dup_string (value);
+		g_free (priv->uuid);
+		priv->uuid = g_value_dup_string (value);
 		break;
 	case PROP_TYPE:
-		g_free (setting->type);
-		setting->type = g_value_dup_string (value);
+		g_free (priv->type);
+		priv->type = g_value_dup_string (value);
 		break;
 	case PROP_AUTOCONNECT:
-		setting->autoconnect = g_value_get_boolean (value);
+		priv->autoconnect = g_value_get_boolean (value);
 		break;
 	case PROP_TIMESTAMP:
-		setting->timestamp = g_value_get_uint64 (value);
+		priv->timestamp = g_value_get_uint64 (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -205,19 +255,19 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_ID:
-		g_value_set_string (value, setting->id);
+		g_value_set_string (value, nm_setting_connection_get_id (setting));
 		break;
 	case PROP_UUID:
-		g_value_set_string (value, setting->uuid);
+		g_value_set_string (value, nm_setting_connection_get_uuid (setting));
 		break;
 	case PROP_TYPE:
-		g_value_set_string (value, setting->type);
+		g_value_set_string (value, nm_setting_connection_get_connection_type (setting));
 		break;
 	case PROP_AUTOCONNECT:
-		g_value_set_boolean (value, setting->autoconnect);
+		g_value_set_boolean (value, nm_setting_connection_get_autoconnect (setting));
 		break;
 	case PROP_TIMESTAMP:
-		g_value_set_uint64 (value, setting->timestamp);
+		g_value_set_uint64 (value, nm_setting_connection_get_timestamp (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -230,6 +280,8 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
 	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+
+	g_type_class_add_private (setting_class, sizeof (NMSettingConnectionPrivate));
 
 	/* virtual methods */
 	object_class->set_property = set_property;

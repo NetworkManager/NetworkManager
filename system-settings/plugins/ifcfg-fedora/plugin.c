@@ -166,21 +166,24 @@ read_one_connection (SCPluginIfcfg *plugin, const char *filename)
 	if (connection) {
 		NMConnection *wrapped;
 		NMSettingConnection *s_con;
+		const char *cid;
 
 		wrapped = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (connection));
 		g_assert (wrapped);
 		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (wrapped, NM_TYPE_SETTING_CONNECTION));
 		g_assert (s_con);
-		g_assert (s_con->id);
+
+		cid = nm_setting_connection_get_id (s_con);
+		g_assert (cid);
 
 		g_hash_table_insert (priv->connections,
 		                     (gpointer) nm_ifcfg_connection_get_filename (connection),
 		                     g_object_ref (connection));
-		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    read connection '%s'", s_con->id);
+		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    read connection '%s'", cid);
 
 		if (nm_ifcfg_connection_get_unmanaged (connection)) {
 			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Ignoring connection '%s' and its "
-			              "device because NM_CONTROLLED was false.", s_con->id);
+			              "device because NM_CONTROLLED was false.", cid);
 			g_signal_emit_by_name (plugin, "unmanaged-devices-changed");
 		} else {
 			/* Wait for the connection to become unmanaged once it knows the
@@ -321,13 +324,16 @@ connection_changed_handler (SCPluginIfcfg *plugin,
 
 		if (old_unmanaged) {  /* no longer unmanaged */
 			NMSettingConnection *s_con;
+			const char *cid;
 
 			s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (new_wrapped, NM_TYPE_SETTING_CONNECTION));
 			g_assert (s_con);
-			g_assert (s_con->id);
+
+			cid = nm_setting_connection_get_id (s_con);
+			g_assert (cid);
 
 			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Managing connection '%s' and its "
-			              "device because NM_CONTROLLED was true.", s_con->id);
+			              "device because NM_CONTROLLED was true.", cid);
 			g_signal_emit_by_name (plugin, "connection-added", connection);
 		}
 

@@ -1846,7 +1846,7 @@ nm_manager_activate_connection (NMManager *manager,
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_con);
 
-	if (!strcmp (s_con->type, NM_SETTING_VPN_SETTING_NAME)) {
+	if (!strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_VPN_SETTING_NAME)) {
 		NMActRequest *req;
 		NMVPNManager *vpn_manager;
 
@@ -2163,15 +2163,15 @@ connection_sort (gconstpointer pa, gconstpointer pb)
 	con_b = (NMSettingConnection *) nm_connection_get_setting (b, NM_TYPE_SETTING_CONNECTION);
 	g_assert (con_b);
 
-	if (con_a->autoconnect != con_b->autoconnect) {
-		if (con_a->autoconnect)
+	if (nm_setting_connection_get_autoconnect (con_a) != nm_setting_connection_get_autoconnect (con_b)) {
+		if (nm_setting_connection_get_autoconnect (con_a))
 			return -1;
 		return 1;
 	}
 
-	if (con_a->timestamp > con_b->timestamp)
+	if (nm_setting_connection_get_timestamp (con_a) > nm_setting_connection_get_timestamp (con_b))
 		return -1;
-	else if (con_a->timestamp == con_b->timestamp)
+	else if (nm_setting_connection_get_timestamp (con_a) == nm_setting_connection_get_timestamp (con_b))
 		return 0;
 	return 1;
 }

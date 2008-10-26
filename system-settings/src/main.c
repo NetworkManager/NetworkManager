@@ -294,20 +294,23 @@ have_connection_for_device (Application *app, GByteArray *mac)
 	for (iter = list; iter; iter = g_slist_next (iter)) {
 		NMExportedConnection *exported = NM_EXPORTED_CONNECTION (iter->data);
 		NMConnection *connection;
+		const char *connection_type;
 
 		connection = nm_exported_connection_get_connection (exported);
 		if (!connection)
 			continue;
 
 		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-		if (   strcmp (s_con->type, NM_SETTING_WIRED_SETTING_NAME)
-		    && strcmp (s_con->type, NM_SETTING_PPPOE_SETTING_NAME))
+		connection_type = nm_setting_connection_get_connection_type (s_con);
+
+		if (   strcmp (connection_type, NM_SETTING_WIRED_SETTING_NAME)
+		    && strcmp (connection_type, NM_SETTING_PPPOE_SETTING_NAME))
 			continue;
 
 		s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
 
 		/* No wired setting; therefore the PPPoE connection applies to any device */
-		if (!s_wired && !strcmp (s_con->type, NM_SETTING_PPPOE_SETTING_NAME)) {
+		if (!s_wired && !strcmp (connection_type, NM_SETTING_PPPOE_SETTING_NAME)) {
 			ret = TRUE;
 			break;
 		}
@@ -340,6 +343,8 @@ add_default_dhcp_connection (gpointer user_data)
 	NMSettingWired *s_wired;
 	NMConnection *wrapped;
 	GByteArray *setting_mac;
+	char *id;
+	char *uuid;
 
 	if (info->add_id)
 		info->add_id = 0;
@@ -366,13 +371,23 @@ add_default_dhcp_connection (gpointer user_data)
 	g_object_unref (wrapped);
 
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
-	s_con->id = g_strdup_printf (_("Auto %s"), info->iface);
-	s_con->type = g_strdup (NM_SETTING_WIRED_SETTING_NAME);
-	s_con->autoconnect = TRUE;
-	s_con->uuid = nm_utils_uuid_generate ();
+
+	id = g_strdup_printf (_("Auto %s"), info->iface);
+	uuid = nm_utils_uuid_generate ();
+
+	g_object_set (s_con,
+		      NM_SETTING_CONNECTION_ID, id,
+		      NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+		      NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+		      NM_SETTING_CONNECTION_UUID, uuid,
+		      NULL);
+
 	nm_connection_add_setting (wrapped, NM_SETTING (s_con));
 
-	g_message ("Adding default connection '%s' for %s", s_con->id, info->udi);
+	g_message ("Adding default connection '%s' for %s", id, info->udi);
+		
+	g_free (id);
+	g_free (uuid);
 
 	/* Lock the connection to this device */
 	s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());

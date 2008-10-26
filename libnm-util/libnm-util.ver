@@ -49,6 +49,11 @@ global:
 	nm_setting_connection_error_quark;
 	nm_setting_connection_get_type;
 	nm_setting_connection_new;
+	nm_setting_connection_get_id;
+	nm_setting_connection_get_uuid;
+	nm_setting_connection_get_connection_type;
+	nm_setting_connection_get_autoconnect;
+	nm_setting_connection_get_timestamp;
 	nm_setting_duplicate;
 	nm_setting_enumerate_values;
 	nm_setting_from_hash;

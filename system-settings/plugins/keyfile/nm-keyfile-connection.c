@@ -257,13 +257,17 @@ constructor (GType type,
 
 	/* if for some reason the connection didn't have a UUID, add one */
 	s_con = (NMSettingConnection *) nm_connection_get_setting (wrapped, NM_TYPE_SETTING_CONNECTION);
-	if (s_con && !s_con->uuid) {
+	if (s_con && !nm_setting_connection_get_uuid (s_con)) {
 		GError *error = NULL;
+		char *uuid;
 
-		s_con->uuid = nm_utils_uuid_generate ();
+		uuid = nm_utils_uuid_generate ();
+		g_object_set (s_con, NM_SETTING_CONNECTION_UUID, uuid, NULL);
+		g_free (uuid);
+
 		if (!write_connection (wrapped, NULL, &error)) {
 			g_warning ("Couldn't update connection %s with a UUID: (%d) %s",
-			           s_con->id, error ? error->code : 0,
+			           nm_setting_connection_get_id (s_con), error ? error->code : 0,
 			           error ? error->message : "unknown");
 			g_error_free (error);
 		}

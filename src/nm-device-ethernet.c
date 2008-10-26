@@ -551,17 +551,19 @@ real_get_best_auto_connection (NMDevice *dev,
 		NMConnection *connection = NM_CONNECTION (iter->data);
 		NMSettingConnection *s_con;
 		NMSettingWired *s_wired;
+		const char *connection_type;
 		gboolean is_pppoe = FALSE;
 
 		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 		g_assert (s_con);
 
-		if (!strcmp (s_con->type, NM_SETTING_PPPOE_SETTING_NAME))
+		connection_type = nm_setting_connection_get_connection_type (s_con);
+		if (!strcmp (connection_type, NM_SETTING_PPPOE_SETTING_NAME))
 			is_pppoe = TRUE;
 
-		if (!is_pppoe && strcmp (s_con->type, NM_SETTING_WIRED_SETTING_NAME))
+		if (!is_pppoe && strcmp (connection_type, NM_SETTING_WIRED_SETTING_NAME))
 			continue;
-		if (!s_con->autoconnect)
+		if (!nm_setting_connection_get_autoconnect (s_con))
 			continue;
 
 		s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
@@ -1181,14 +1183,14 @@ nm_8021x_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 		NMActRequest *req = nm_device_get_act_request (NM_DEVICE (self));
 
 		nm_info ("Activation (%s/wired): connection '%s' has security, but secrets are required.",
-			    iface, s_connection->id);
+				 iface, nm_setting_connection_get_id (s_connection));
 
 		ret = handle_auth_or_fail (self, req, FALSE);
 		if (ret != NM_ACT_STAGE_RETURN_POSTPONE)
 			*reason = NM_DEVICE_STATE_REASON_NO_SECRETS;
 	} else {
 		nm_info ("Activation (%s/wired): connection '%s' requires no security. No secrets needed.",
-			    iface, s_connection->id);
+				 iface, nm_setting_connection_get_id (s_connection));
 
 		if (supplicant_interface_init (self))
 			ret = NM_ACT_STAGE_RETURN_POSTPONE;
@@ -1284,6 +1286,7 @@ static NMActStageReturn
 real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMSettingConnection *s_connection;
+	const char *connection_type;
 	NMActStageReturn ret;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
@@ -1291,7 +1294,8 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	s_connection = NM_SETTING_CONNECTION (device_get_setting (device, NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_connection);
 
-	if (!strcmp (s_connection->type, NM_SETTING_WIRED_SETTING_NAME)) {
+	connection_type = nm_setting_connection_get_connection_type (s_connection);
+	if (!strcmp (connection_type, NM_SETTING_WIRED_SETTING_NAME)) {
 		NMSetting8021x *security;
 
 		security = (NMSetting8021x *) device_get_setting (device, NM_TYPE_SETTING_802_1X);
@@ -1299,10 +1303,10 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 			ret = nm_8021x_stage2_config (NM_DEVICE_ETHERNET (device), reason);
 		else
 			ret = NM_ACT_STAGE_RETURN_SUCCESS;
-	} else if (!strcmp (s_connection->type, NM_SETTING_PPPOE_SETTING_NAME))
+	} else if (!strcmp (connection_type, NM_SETTING_PPPOE_SETTING_NAME))
 		ret = pppoe_stage2_config (NM_DEVICE_ETHERNET (device), reason);
 	else {
-		nm_warning ("Invalid connection type '%s' for ethernet device", s_connection->type);
+		nm_warning ("Invalid connection type '%s' for ethernet device", connection_type);
 		*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 		ret = NM_ACT_STAGE_RETURN_FAILURE;
 	}
@@ -1382,20 +1386,22 @@ real_check_connection_compatible (NMDevice *device,
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
+	const char *connection_type;
 	gboolean is_pppoe = FALSE;
 
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_con);
 
-	if (   strcmp (s_con->type, NM_SETTING_WIRED_SETTING_NAME)
-	    && strcmp (s_con->type, NM_SETTING_PPPOE_SETTING_NAME)) {
+	connection_type = nm_setting_connection_get_connection_type (s_con);
+	if (   strcmp (connection_type, NM_SETTING_WIRED_SETTING_NAME)
+	    && strcmp (connection_type, NM_SETTING_PPPOE_SETTING_NAME)) {
 		g_set_error (error,
 		             NM_ETHERNET_ERROR, NM_ETHERNET_ERROR_CONNECTION_NOT_WIRED,
 		             "The connection was not a wired or PPPoE connection.");
 		return FALSE;
 	}
 
-	if (!strcmp (s_con->type, NM_SETTING_PPPOE_SETTING_NAME))
+	if (!strcmp (connection_type, NM_SETTING_PPPOE_SETTING_NAME))
 		is_pppoe = TRUE;
 
 	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);

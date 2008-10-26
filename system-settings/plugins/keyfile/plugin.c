@@ -95,16 +95,17 @@ find_by_uuid (gpointer key, gpointer data, gpointer user_data)
 	FindByUUIDInfo *info = user_data;
 	NMConnection *connection;
 	NMSettingConnection *s_con;
+	const char *uuid;
 
 	if (info->found)
 		return;
 
 	connection = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (keyfile));
 	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
-	if (s_con && s_con->uuid) {
-		if (!strcmp (info->uuid, s_con->uuid))
-			info->found = keyfile;
-	}
+
+	uuid = s_con ? nm_setting_connection_get_uuid (s_con) : NULL;
+	if (uuid && !strcmp (info->uuid, uuid))
+		info->found = keyfile;
 }
 
 static void
@@ -165,6 +166,7 @@ dir_changed (GFileMonitor *monitor,
 			if (connection) {
 				NMConnection *tmp;
 				NMSettingConnection *s_con;
+				const char *connection_uuid;
 				NMKeyfileConnection *found = NULL;
 
 				/* Connection renames will show up as different files but with
@@ -172,8 +174,10 @@ dir_changed (GFileMonitor *monitor,
 				 */
 				tmp = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (connection));
 				s_con = (NMSettingConnection *) nm_connection_get_setting (tmp, NM_TYPE_SETTING_CONNECTION);
-				if (s_con && s_con->uuid) {
-					FindByUUIDInfo info = { .found = NULL, .uuid = s_con->uuid };
+				connection_uuid = s_con ? nm_setting_connection_get_uuid (s_con) : NULL;
+
+				if (connection_uuid) {
+					FindByUUIDInfo info = { .found = NULL, .uuid = connection_uuid };
 
 					g_hash_table_foreach (priv->hash, find_by_uuid, &info);
 					found = info.found;

@@ -177,7 +177,7 @@ get_connection_id (NMConnection *connection)
 	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 	g_return_val_if_fail (s_con != NULL, NULL);
 
-	return s_con->id;
+	return nm_setting_connection_get_id (s_con);
 }
 
 static NMDevice *
@@ -485,6 +485,7 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	NMVPNConnection *vpn = NULL;
 	NMConnection *connection = NULL;
 	NMSettingConnection *s_con = NULL;
+	const char *connection_id;
 
 	best = get_best_device (policy->manager, &best_req);
 	if (!best)
@@ -593,8 +594,9 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	if (connection)
 		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 
-	if (s_con && s_con->id)
-		nm_info ("Policy set '%s' (%s) as default for routing and DNS.", s_con->id, ip_iface);
+	connection_id = s_con ? nm_setting_connection_get_id (s_con) : NULL;
+	if (connection_id)
+		nm_info ("Policy set '%s' (%s) as default for routing and DNS.", connection_id, ip_iface);
 	else
 		nm_info ("Policy set (%s) as default for routing and DNS.", ip_iface);
 
@@ -666,7 +668,7 @@ auto_activate_device (gpointer user_data)
 			g_assert (s_con);
 
 			nm_warning ("Connection '%s' auto-activation failed: (%d) %s",
-			            s_con->id, error->code, error->message);
+			            nm_setting_connection_get_id (s_con), error->code, error->message);
 			g_error_free (error);
 		}
 	}
@@ -945,7 +947,7 @@ connection_removed (NMManager *manager,
 
 		if (!nm_manager_deactivate_connection (manager, path, NM_DEVICE_STATE_REASON_CONNECTION_REMOVED, &error)) {
 			nm_warning ("Connection '%s' disappeared, but error deactivating it: (%d) %s",
-			            s_con->id, error->code, error->message);
+			            nm_setting_connection_get_id (s_con), error->code, error->message);
 			g_error_free (error);
 		}
 		g_free (path);

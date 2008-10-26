@@ -3,6 +3,35 @@
 	Patch from Tambet Ingo <tambet@gmail.com>
 
 	* libnm-util/libnm-util.ver
+	  libnm-util/nm-setting-connection.c
+	  libnm-util/nm-setting-connection.h
+		- Make properties private and add accessor functions
+
+	* src/NetworkManagerPolicy.c
+	  src/nm-cdma-device.c
+	  src/nm-device-ethernet.c
+	  src/nm-device-interface.c
+	  src/nm-device-wifi.c
+	  src/nm-gsm-device.c
+	  src/nm-manager.c
+	  src/ppp-manager/nm-ppp-manager.c
+	  src/vpn-manager/nm-vpn-connection.c
+	  system-settings/plugins/ifcfg-fedora/nm-ifcfg-connection.c
+	  system-settings/plugins/ifcfg-fedora/plugin.c
+	  system-settings/plugins/ifcfg-fedora/reader.c
+	  system-settings/plugins/ifcfg-suse/parser.c
+	  system-settings/plugins/ifupdown/parser.c
+	  system-settings/plugins/keyfile/nm-keyfile-connection.c
+	  system-settings/plugins/keyfile/plugin.c
+	  system-settings/plugins/keyfile/writer.c
+	  system-settings/src/main.c
+		- Use those accessors
+
+2008-10-26  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Tambet Ingo <tambet@gmail.com>
+
+	* libnm-util/libnm-util.ver
 	  libnm-util/nm-setting-gsm.c
 	  libnm-util/nm-setting-gsm.h
 		- Make properties private and add accessor functions

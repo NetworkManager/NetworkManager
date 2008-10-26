@@ -347,6 +347,7 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
 	NMConnection *connection;
 	NMSettingConnection *s_con;
+	const char *connection_type;
 	const char *setting_name;
 	guint32 tries;
 	GPtrArray *hints = NULL;
@@ -356,14 +357,16 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_con);
-	g_assert (s_con->type);
+
+	connection_type = nm_setting_connection_get_connection_type (s_con);
+	g_assert (connection_type);
 
 	nm_connection_clear_secrets (connection);
 	setting_name = nm_connection_need_secrets (connection, &hints);
 	if (!setting_name) {
 		NMSetting *setting;
 
-		setting = nm_connection_get_setting_by_name (connection, s_con->type);
+		setting = nm_connection_get_setting_by_name (connection, connection_type);
 		if (setting) {
 			const char *username = NULL;
 			const char *password = NULL;

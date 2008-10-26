@@ -61,12 +61,6 @@ GQuark nm_setting_connection_error_quark (void);
 
 typedef struct {
 	NMSetting parent;
-
-	char *id;
-	char *uuid;
-	char *type;
-	gboolean autoconnect;
-	guint64 timestamp;
 } NMSettingConnection;
 
 typedef struct {
@@ -75,7 +69,12 @@ typedef struct {
 
 GType nm_setting_connection_get_type (void);
 
-NMSetting *nm_setting_connection_new (void);
+NMSetting *nm_setting_connection_new                  (void);
+const char *nm_setting_connection_get_id              (NMSettingConnection *setting);
+const char *nm_setting_connection_get_uuid            (NMSettingConnection *setting);
+const char *nm_setting_connection_get_connection_type (NMSettingConnection *setting);
+gboolean    nm_setting_connection_get_autoconnect     (NMSettingConnection *setting);
+guint64     nm_setting_connection_get_timestamp       (NMSettingConnection *setting);
 
 G_END_DECLS
 

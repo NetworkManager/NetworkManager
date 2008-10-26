@@ -684,10 +684,10 @@ real_get_best_auto_connection (NMDevice *dev,
 		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 		g_assert (s_con);
 
-		if (!s_con->autoconnect)
+		if (!nm_setting_connection_get_autoconnect (s_con))
 			continue;
 
-		if (strcmp (s_con->type, NM_SETTING_GSM_SETTING_NAME))
+		if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_GSM_SETTING_NAME))
 			continue;
 
 		return connection;

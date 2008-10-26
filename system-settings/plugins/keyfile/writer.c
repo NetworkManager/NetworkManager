@@ -310,7 +310,7 @@ write_connection (NMConnection *connection, char **out_path, GError **error)
 	if (!data)
 		goto out;
 
-	filename = writer_id_to_filename (s_con->id);
+	filename = writer_id_to_filename (nm_setting_connection_get_id (s_con));
 	path = g_build_filename (KEYFILE_DIR, filename, NULL);
 	g_free (filename);
 

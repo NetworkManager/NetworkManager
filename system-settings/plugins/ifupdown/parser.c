@@ -536,7 +536,8 @@ ifupdown_update_connection_from_if_block(NMConnection *connection,
 	const char *type = NULL;
 	char *idstr = NULL;
 	char *uuid_base = NULL;
-	GError *verify_error =NULL;
+	GError *verify_error = NULL;
+	char *uuid = NULL;
 
 	NMSettingConnection *connection_setting =
 		NM_SETTING_CONNECTION(nm_connection_get_setting
@@ -551,18 +552,19 @@ ifupdown_update_connection_from_if_block(NMConnection *connection,
 	idstr = g_strconcat("Ifupdown (", block->name,")", NULL);
 	uuid_base = idstr;
 
+	uuid = nm_utils_uuid_generate_from_string(uuid_base);
 	g_object_set (connection_setting,
-			    "type", type,
-			    "id", idstr,	    
-			    NULL);
-	connection_setting->uuid =
-		nm_utils_uuid_generate_from_string(uuid_base);
+	              NM_SETTING_CONNECTION_TYPE, type,
+	              NM_SETTING_CONNECTION_ID, idstr,
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NULL);
+	g_free (uuid);
 
 	PLUGIN_PRINT("SCPlugin-Ifupdown", "update_connection_setting_from_if_block: name:%s, type:%s, autoconnect:%d, id:%s, uuid: %s",
 			   block->name, type,
 			   ((gboolean) strcmp("dhcp", type) == 0),
 			   idstr,
-			   connection_setting->uuid);
+			   nm_setting_connection_get_uuid (connection_setting));
 
 	if(!strcmp (NM_SETTING_WIRED_SETTING_NAME, type)) {
 		update_wired_setting_from_if_block (connection, block);	

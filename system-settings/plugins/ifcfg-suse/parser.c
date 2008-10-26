@@ -69,7 +69,7 @@ make_connection_setting (shvarFile *file,
                          const char *suggested)
 {
 	NMSettingConnection *s_con;
-	char *str;
+	char *str = NULL;
 
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
  	if (suggested) {
@@ -77,21 +77,28 @@ make_connection_setting (shvarFile *file,
 		 * the ifcfg files name, don't use it.
 		 */
 		if (strcmp (iface, suggested))
-			s_con->id = g_strdup_printf ("System %s (%s)", suggested, iface);
+			str = g_strdup_printf ("System %s (%s)", suggested, iface);
 	}
 
-	if (!s_con->id)
-		s_con->id = g_strdup_printf ("System %s", iface);
+	if (!str)
+		str = g_strdup_printf ("System %s", iface);
 
-	s_con->type = g_strdup (type);
+	g_object_set (s_con,
+			    NM_SETTING_CONNECTION_ID, str,
+			    NM_SETTING_CONNECTION_TYPE, type,
+			    NULL);
 
-	s_con->uuid = nm_utils_uuid_generate_from_string (file->fileName);
+	g_free (str);
+
+	str = nm_utils_uuid_generate_from_string (file->fileName);
+	g_object_set (s_con, NM_SETTING_CONNECTION_UUID, str, NULL);
+	g_free (str);
 
 	str = svGetValue (file, "STARTMODE");
 	if (str && !g_ascii_strcasecmp (str, "manual"))
-		s_con->autoconnect = FALSE;
+		g_object_set (s_con, NM_SETTING_CONNECTION_AUTOCONNECT, FALSE, NULL);
 	else
-		s_con->autoconnect = TRUE;
+		g_object_set (s_con, NM_SETTING_CONNECTION_AUTOCONNECT, TRUE, NULL);
 	g_free (str);
 
 	return (NMSetting *) s_con;

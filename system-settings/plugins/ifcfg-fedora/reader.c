@@ -91,6 +91,7 @@ make_connection_setting (const char *file,
 {
 	NMSettingConnection *s_con;
 	char *ifcfg_name = NULL;
+	char *new_id = NULL, *uuid = NULL;
 
 	ifcfg_name = get_ifcfg_name (file);
 	if (!ifcfg_name)
@@ -102,23 +103,32 @@ make_connection_setting (const char *file,
 		/* For cosmetic reasons, if the suggested name is the same as
 		 * the ifcfg files name, don't use it.
 		 */
-		if (strcmp (ifcfg_name, suggested))
-			s_con->id = g_strdup_printf ("System %s (%s)", suggested, ifcfg_name);
+		if (strcmp (ifcfg_name, suggested)) {
+			new_id = g_strdup_printf ("System %s (%s)", suggested, ifcfg_name);
+			g_object_set (s_con, NM_SETTING_CONNECTION_ID, new_id, NULL);
+		}
 	}
 
-	if (!s_con->id)
-		s_con->id = g_strdup_printf ("System %s", ifcfg_name);
+	if (!nm_setting_connection_get_id (s_con)) {
+		new_id = g_strdup_printf ("System %s", ifcfg_name);
+		g_object_set (s_con, NM_SETTING_CONNECTION_ID, new_id, NULL);
+	}
 
-	s_con->type = g_strdup (type);
+	g_free (new_id);
 
-	s_con->uuid = nm_utils_uuid_generate_from_string (ifcfg->fileName);
+	uuid = nm_utils_uuid_generate_from_string (ifcfg->fileName);
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_TYPE, type,
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NULL);
+	g_free (uuid);
 
 	/* Be somewhat conservative about autoconnect */
 	if (svTrueValue (ifcfg, "ONBOOT", FALSE))
-		s_con->autoconnect = TRUE;
+		g_object_set (s_con, NM_SETTING_CONNECTION_AUTOCONNECT, TRUE, NULL);
 
 	g_free (ifcfg_name);
-	return (NMSetting *) s_con;
+	return NM_SETTING (s_con);
 }
 
 static void
