@@ -77,6 +77,11 @@ global:
 	nm_setting_serial_error_quark;
 	nm_setting_serial_get_type;
 	nm_setting_serial_new;
+	nm_setting_serial_get_baud;
+	nm_setting_serial_get_bits;
+	nm_setting_serial_get_parity;
+	nm_setting_serial_get_stopbits;
+	nm_setting_serial_get_send_delay;
 	nm_setting_to_hash;
 	nm_setting_to_string;
 	nm_setting_unregister;

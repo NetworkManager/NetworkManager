@@ -1,5 +1,15 @@
 2008-10-26  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Tambet Ingo <tambet@gmail.com>
+
+	* libnm-util/libnm-util.ver
+	  libnm-util/nm-setting-serial.c
+	  libnm-util/nm-setting-serial.h
+	  src/nm-serial-device.c
+		- Make properties private and use accessors instead
+
+2008-10-26  Dan Williams  <dcbw@redhat.com>
+
 	* src/supplicant-manager/nm-supplicant-interface.c
 	  src/supplicant-manager/nm-supplicant-interface.h
 	  src/supplicant-manager/nm-supplicant-manager.c

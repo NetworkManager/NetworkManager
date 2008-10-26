@@ -66,6 +66,17 @@ nm_setting_serial_error_get_type (void)
 
 G_DEFINE_TYPE (NMSettingSerial, nm_setting_serial, NM_TYPE_SETTING)
 
+#define NM_SETTING_SERIAL_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_SERIAL, NMSettingSerialPrivate))
+
+typedef struct {
+	guint baud;
+	guint bits;
+	char parity;
+	guint stopbits;
+	guint64 send_delay;
+} NMSettingSerialPrivate;
+
+
 enum {
 	PROP_0,
 	PROP_BAUD,
@@ -81,6 +92,46 @@ NMSetting *
 nm_setting_serial_new (void)
 {
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_SERIAL, NULL);
+}
+
+guint
+nm_setting_serial_get_baud (NMSettingSerial *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_SERIAL (setting), 0);
+
+	return NM_SETTING_SERIAL_GET_PRIVATE (setting)->baud;
+}
+
+guint
+nm_setting_serial_get_bits (NMSettingSerial *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_SERIAL (setting), 0);
+
+	return NM_SETTING_SERIAL_GET_PRIVATE (setting)->bits;
+}
+
+char
+nm_setting_serial_get_parity (NMSettingSerial *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_SERIAL (setting), 0);
+
+	return NM_SETTING_SERIAL_GET_PRIVATE (setting)->parity;
+}
+
+guint
+nm_setting_serial_get_stopbits (NMSettingSerial *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_SERIAL (setting), 0);
+
+	return NM_SETTING_SERIAL_GET_PRIVATE (setting)->stopbits;
+}
+
+guint64
+nm_setting_serial_get_send_delay (NMSettingSerial *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_SERIAL (setting), 0);
+
+	return NM_SETTING_SERIAL_GET_PRIVATE (setting)->send_delay;
 }
 
 static gint
@@ -118,23 +169,23 @@ static void
 set_property (GObject *object, guint prop_id,
 		    const GValue *value, GParamSpec *pspec)
 {
-	NMSettingSerial *setting = NM_SETTING_SERIAL (object);
+	NMSettingSerialPrivate *priv = NM_SETTING_SERIAL_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_BAUD:
-		setting->baud = g_value_get_uint (value);
+		priv->baud = g_value_get_uint (value);
 		break;
 	case PROP_BITS:
-		setting->bits = g_value_get_uint (value);
+		priv->bits = g_value_get_uint (value);
 		break;
 	case PROP_PARITY:
-		setting->parity = g_value_get_char (value);
+		priv->parity = g_value_get_char (value);
 		break;
 	case PROP_STOPBITS:
-		setting->stopbits = g_value_get_uint (value);
+		priv->stopbits = g_value_get_uint (value);
 		break;
 	case PROP_SEND_DELAY:
-		setting->send_delay = g_value_get_uint64 (value);
+		priv->send_delay = g_value_get_uint64 (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -150,19 +201,19 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_BAUD:
-		g_value_set_uint (value, setting->baud);
+		g_value_set_uint (value, nm_setting_serial_get_baud (setting));
 		break;
 	case PROP_BITS:
-		g_value_set_uint (value, setting->bits);
+		g_value_set_uint (value, nm_setting_serial_get_bits (setting));
 		break;
 	case PROP_PARITY:
-		g_value_set_char (value, setting->parity);
+		g_value_set_char (value, nm_setting_serial_get_parity (setting));
 		break;
 	case PROP_STOPBITS:
-		g_value_set_uint (value, setting->stopbits);
+		g_value_set_uint (value, nm_setting_serial_get_stopbits (setting));
 		break;
 	case PROP_SEND_DELAY:
-		g_value_set_uint64 (value, setting->send_delay);
+		g_value_set_uint64 (value, nm_setting_serial_get_send_delay (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -175,6 +226,8 @@ nm_setting_serial_class_init (NMSettingSerialClass *setting_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
 	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+
+	g_type_class_add_private (setting_class, sizeof (NMSettingSerialPrivate));
 
 	/* virtual methods */
 	object_class->set_property = set_property;

@@ -61,12 +61,6 @@ GQuark nm_setting_serial_error_quark (void);
 
 typedef struct {
 	NMSetting parent;
-
-	guint baud;
-	guint bits;
-	char parity;
-	guint stopbits;
-	guint64 send_delay;
 } NMSettingSerial;
 
 typedef struct {
@@ -75,7 +69,12 @@ typedef struct {
 
 GType nm_setting_serial_get_type (void);
 
-NMSetting *nm_setting_serial_new (void);
+NMSetting *nm_setting_serial_new            (void);
+guint      nm_setting_serial_get_baud       (NMSettingSerial *setting);
+guint      nm_setting_serial_get_bits       (NMSettingSerial *setting);
+char       nm_setting_serial_get_parity     (NMSettingSerial *setting);
+guint      nm_setting_serial_get_stopbits   (NMSettingSerial *setting);
+guint64    nm_setting_serial_get_send_delay (NMSettingSerial *setting);
 
 G_END_DECLS
 

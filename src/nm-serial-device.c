@@ -331,10 +331,10 @@ config_fd (NMSerialDevice *device, NMSettingSerial *setting)
 	int parity;
 	int stopbits;
 
-	speed = parse_baudrate (setting->baud);
-	bits = parse_bits (setting->bits);
-	parity = parse_parity (setting->parity);
-	stopbits = parse_stopbits (setting->stopbits);
+	speed = parse_baudrate (nm_setting_serial_get_baud (setting));
+	bits = parse_bits (nm_setting_serial_get_bits (setting));
+	parity = parse_parity (nm_setting_serial_get_parity (setting));
+	stopbits = parse_stopbits (nm_setting_serial_get_stopbits (setting));
 
 	ioctl (priv->fd, TCGETA, &stbuf);
 
@@ -438,15 +438,17 @@ nm_serial_device_send_command (NMSerialDevice *device, GByteArray *command)
 	NMSettingSerial *setting;
 	int i, eagain_count = 1000;
 	ssize_t written;
-	guint32 send_delay = G_USEC_PER_SEC / 1000;
+	guint32 send_delay = 0;
 
 	g_return_val_if_fail (NM_IS_SERIAL_DEVICE (device), FALSE);
 	g_return_val_if_fail (command != NULL, FALSE);
 
 	fd = NM_SERIAL_DEVICE_GET_PRIVATE (device)->fd;
 	setting = NM_SETTING_SERIAL (serial_device_get_setting (device, NM_TYPE_SETTING_SERIAL));
-	if (setting && setting->send_delay)
-		send_delay = setting->send_delay;
+	if (setting)
+		send_delay = nm_setting_serial_get_send_delay (setting);
+	if (send_delay == 0)
+		send_delay = G_USEC_PER_SEC / 1000;
 
 	nm_serial_debug ("Sending:", (char *) command->data, command->len);
 
