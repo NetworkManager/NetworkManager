@@ -1,5 +1,17 @@
 2008-10-26  Dan Williams  <dcbw@redhat.com>
 
+	* src/supplicant-manager/nm-supplicant-interface.c
+	  src/supplicant-manager/nm-supplicant-interface.h
+	  src/supplicant-manager/nm-supplicant-manager.c
+	  src/supplicant-manager/nm-supplicant-manager.h
+		- Add state-to-string conversion functions
+
+	* src/nm-device-wifi.c
+	  src/nm-device-ethernet.c
+		- Normalize state info logging and use strings instead of numbers
+
+2008-10-26  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerPolicy.c
 		- (update_routing_and_dns): ignore host routes when determining whether
 			a VPN connection should own the default route (bgo #552594)

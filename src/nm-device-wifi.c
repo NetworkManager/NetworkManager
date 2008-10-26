@@ -2191,10 +2191,10 @@ supplicant_iface_state_cb_handler (gpointer user_data)
 	self = task->self;
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	nm_info ("(%s): supplicant interface state change: %d -> %d.",
-             nm_device_get_iface (NM_DEVICE (self)),
-             task->old_state,
-             task->new_state);
+	nm_info ("(%s): supplicant interface state:  %s -> %s",
+	         nm_device_get_iface (NM_DEVICE (self)),
+	         nm_supplicant_interface_state_to_string (task->old_state),
+	         nm_supplicant_interface_state_to_string (task->new_state));
 
 	if (task->new_state == NM_SUPPLICANT_INTERFACE_STATE_READY) {
 		priv->scan_interval = SCAN_INTERVAL_MIN;
@@ -2243,8 +2243,10 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 		goto out;
 	}
 
-	nm_info ("(%s): supplicant connection state change: %d -> %d",
-	         nm_device_get_iface (dev), task->old_state, task->new_state);
+	nm_info ("(%s): supplicant connection state:  %s -> %s",
+	         nm_device_get_iface (dev),
+	         nm_supplicant_interface_connection_state_to_string (task->old_state),
+	         nm_supplicant_interface_connection_state_to_string (task->new_state));
 
 	priv->scanning = (task->new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_SCANNING);
 
@@ -2315,9 +2317,10 @@ supplicant_mgr_state_cb_handler (gpointer user_data)
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	dev = NM_DEVICE (self);
 
-	nm_info ("(%s): supplicant manager is now in state %d (from %d).",
-             nm_device_get_iface (NM_DEVICE (self)),
-             task->new_state, task->old_state);
+	nm_info ("(%s): supplicant manager state:  %s -> %s",
+	         nm_device_get_iface (NM_DEVICE (self)),
+	         nm_supplicant_manager_state_to_string (task->old_state),
+	         nm_supplicant_manager_state_to_string (task->new_state));
 
 	/* If the supplicant went away, release the supplicant interface */
 	if (task->new_state == NM_SUPPLICANT_MANAGER_STATE_DOWN) {

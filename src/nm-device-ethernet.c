@@ -858,10 +858,10 @@ supplicant_mgr_state_cb (NMSupplicantInterface * iface,
                          guint32 old_state,
                          gpointer user_data)
 {
-	nm_info ("(%s) supplicant manager is now in state %d (from %d).",
-		    nm_device_get_iface (NM_DEVICE (user_data)),
-		    new_state,
-		    old_state);
+	nm_info ("(%s): supplicant manager state:  %s -> %s",
+	         nm_device_get_iface (NM_DEVICE (user_data)),
+	         nm_supplicant_manager_state_to_string (old_state),
+	         nm_supplicant_manager_state_to_string (new_state));
 
 	schedule_state_handler (NM_DEVICE_ETHERNET (user_data),
 	                        supplicant_mgr_state_cb_handler,
@@ -943,10 +943,10 @@ supplicant_iface_state_cb (NMSupplicantInterface * iface,
                            gpointer user_data)
 {
 
-	nm_info ("(%s) supplicant interface is now in state %d (from %d).",
-		    nm_device_get_iface (NM_DEVICE (user_data)),
-		    new_state,
-		    old_state);
+	nm_info ("(%s): supplicant interface state:  %s -> %s",
+	         nm_device_get_iface (NM_DEVICE (user_data)),
+	         nm_supplicant_interface_state_to_string (old_state),
+	         nm_supplicant_interface_state_to_string (new_state));
 
 	schedule_state_handler (NM_DEVICE_ETHERNET (user_data),
 	                        supplicant_iface_state_cb_handler,
@@ -993,8 +993,10 @@ supplicant_iface_connection_state_cb (NMSupplicantInterface * iface,
                                       guint32 old_state,
                                       gpointer user_data)
 {
-	nm_info ("(%s) Supplicant interface state change: %d -> %d",
-	         nm_device_get_iface (NM_DEVICE (user_data)), old_state, new_state);
+	nm_info ("(%s) supplicant connection state:  %s -> %s",
+	         nm_device_get_iface (NM_DEVICE (user_data)),
+	         nm_supplicant_interface_connection_state_to_string (old_state),
+	         nm_supplicant_interface_connection_state_to_string (new_state));
 
 	schedule_state_handler (NM_DEVICE_ETHERNET (user_data),
 	                        supplicant_iface_connection_state_cb_handler,

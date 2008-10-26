@@ -321,3 +321,19 @@ nm_supplicant_manager_release_iface (NMSupplicantManager * self,
 		}
 	}
 }
+
+const char *
+nm_supplicant_manager_state_to_string (guint32 state)
+{
+	switch (state) {
+	case NM_SUPPLICANT_MANAGER_STATE_DOWN:
+		return "down";
+	case NM_SUPPLICANT_MANAGER_STATE_IDLE:
+		return "idle";
+	default:
+		break;
+	}
+	return "unknown";
+}
+
+

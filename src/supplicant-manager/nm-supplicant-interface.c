@@ -1250,3 +1250,48 @@ nm_supplicant_interface_get_connection_state (NMSupplicantInterface * self)
 
 	return NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self)->con_state;
 }
+
+const char *
+nm_supplicant_interface_state_to_string (guint32 state)
+{
+	switch (state) {
+	case NM_SUPPLICANT_INTERFACE_STATE_INIT:
+		return "init";
+	case NM_SUPPLICANT_INTERFACE_STATE_STARTING:
+		return "starting";
+	case NM_SUPPLICANT_INTERFACE_STATE_READY:
+		return "ready";
+	case NM_SUPPLICANT_INTERFACE_STATE_DOWN:
+		return "down";
+	default:
+		break;
+	}
+	return "unknown";
+}
+
+const char *
+nm_supplicant_interface_connection_state_to_string (guint32 state)
+{
+	switch (state) {
+	case NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED:
+		return "disconnected";
+	case NM_SUPPLICANT_INTERFACE_CON_STATE_INACTIVE:
+		return "inactive";
+	case NM_SUPPLICANT_INTERFACE_CON_STATE_SCANNING:
+		return "scanning";
+	case NM_SUPPLICANT_INTERFACE_CON_STATE_ASSOCIATING:
+		return "associating";
+	case NM_SUPPLICANT_INTERFACE_CON_STATE_ASSOCIATED:
+		return "associated";
+	case NM_SUPPLICANT_INTERFACE_CON_STATE_4WAY_HANDSHAKE:
+		return "4-way handshake";
+	case NM_SUPPLICANT_INTERFACE_CON_STATE_GROUP_HANDSHAKE:
+		return "group handshake";
+	case NM_SUPPLICANT_INTERFACE_CON_STATE_COMPLETED:
+		return "completed";
+	default:
+		break;
+	}
+	return "unknown";
+}
+

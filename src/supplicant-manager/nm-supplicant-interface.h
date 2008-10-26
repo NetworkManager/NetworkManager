@@ -124,6 +124,10 @@ guint32 nm_supplicant_interface_get_state (NMSupplicantInterface * self);
 
 guint32 nm_supplicant_interface_get_connection_state (NMSupplicantInterface * self);
 
+const char *nm_supplicant_interface_state_to_string (guint32 state);
+
+const char *nm_supplicant_interface_connection_state_to_string (guint32 state);
+
 G_END_DECLS
 
 #endif	/* NM_SUPPLICANT_INTERFACE_H */

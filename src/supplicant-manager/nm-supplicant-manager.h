@@ -83,4 +83,6 @@ NMSupplicantInterface * nm_supplicant_manager_get_iface (NMSupplicantManager * m
 void nm_supplicant_manager_release_iface (NMSupplicantManager * mgr,
                                           NMSupplicantInterface * iface);
 
+const char *nm_supplicant_manager_state_to_string (guint32 state);
+
 #endif /* NM_SUPPLICANT_MANAGER_H */
