@@ -187,7 +187,8 @@ fill_vpn_passwords (VpncPluginUiWidget *self, NMConnection *connection)
 			}
 		} else {
 			s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-			keyring_helpers_lookup_secrets (s_con->uuid, &password, &group_password, NULL);
+			keyring_helpers_lookup_secrets (nm_setting_connection_get_uuid (s_con),
+			                                &password, &group_password, NULL);
 		}
 	}
 
@@ -533,7 +534,7 @@ save_secrets (NMVpnPluginUiWidgetInterface *iface,
 	GnomeKeyringResult ret;
 	NMSettingConnection *s_con;
 	GtkWidget *widget;
-	const char *str;
+	const char *str, *id, *uuid;
 
 	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 	if (!s_con) {
@@ -544,25 +545,28 @@ save_secrets (NMVpnPluginUiWidgetInterface *iface,
 		return FALSE;
 	}
 
+	id = nm_setting_connection_get_id (s_con);
+	uuid = nm_setting_connection_get_uuid (s_con);
+
 	widget = glade_xml_get_widget (priv->xml, "user_password_entry");
 	g_assert (widget);
 	str = gtk_entry_get_text (GTK_ENTRY (widget));
 	if (str && strlen (str)) {
-		ret = keyring_helpers_save_secret (s_con->uuid, s_con->id, NULL, VPNC_USER_PASSWORD, str);
+		ret = keyring_helpers_save_secret (uuid, id, NULL, VPNC_USER_PASSWORD, str);
 		if (ret != GNOME_KEYRING_RESULT_OK)
 			g_warning ("%s: failed to save user password to keyring.", __func__);
 	} else
-		keyring_helpers_delete_secret (s_con->uuid, VPNC_USER_PASSWORD);
+		keyring_helpers_delete_secret (uuid, VPNC_USER_PASSWORD);
 
 	widget = glade_xml_get_widget (priv->xml, "group_password_entry");
 	g_assert (widget);
 	str = gtk_entry_get_text (GTK_ENTRY (widget));
 	if (str && strlen (str)) {
-		ret = keyring_helpers_save_secret (s_con->uuid, s_con->id, NULL, VPNC_GROUP_PASSWORD, str);
+		ret = keyring_helpers_save_secret (uuid, id, NULL, VPNC_GROUP_PASSWORD, str);
 		if (ret != GNOME_KEYRING_RESULT_OK)
 			g_warning ("%s: failed to save group password to keyring.", __func__);
 	} else
-		keyring_helpers_delete_secret (s_con->uuid, VPNC_GROUP_PASSWORD);
+		keyring_helpers_delete_secret (uuid, VPNC_GROUP_PASSWORD);
 
 	return TRUE;
 }
@@ -729,7 +733,7 @@ import (NMVpnPluginUiInterface *iface, const char *path, GError **error)
 
 	/* Connection name */
 	if ((buf = pcf_file_lookup_value (pcf, "main", "Description")))
-		s_con->id = g_strdup (buf);
+		g_object_set (s_con, NM_SETTING_CONNECTION_ID, buf, NULL);
 	else {
 		g_set_error (error, 0, 0, "does not look like a %s VPN connection (parse failed)",
 		             VPNC_PLUGIN_NAME);
@@ -955,7 +959,7 @@ export (NMVpnPluginUiInterface *iface,
 		 "SingleDES=%s\n"
 		 "SPPhonebook=\n"
 		 "%s",
-		 /* Description */ s_con->id,
+		 /* Description */ nm_setting_connection_get_id (s_con),
 		 /* Host */        gateway,
 		 /* GroupName */   groupname,
 		 /* Username */    username != NULL ? username : "",
@@ -978,14 +982,17 @@ static char *
 get_suggested_name (NMVpnPluginUiInterface *iface, NMConnection *connection)
 {
 	NMSettingConnection *s_con;
+	const char *id;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	g_return_val_if_fail (s_con != NULL, NULL);
-	g_return_val_if_fail (s_con->id != NULL, NULL);
 
-	return g_strdup_printf ("%s.pcf", s_con->id);
+	id = nm_setting_connection_get_id (s_con);
+	g_return_val_if_fail (id != NULL, NULL);
+
+	return g_strdup_printf ("%s.pcf", id);
 }
 
 static guint32
@@ -1000,6 +1007,7 @@ delete_connection (NMVpnPluginUiInterface *iface,
                    GError **error)
 {
 	NMSettingConnection *s_con;
+	const char *id, *uuid;
 
 	/* Remove any secrets in the keyring associated with this connection's UUID */
 	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
@@ -1011,11 +1019,14 @@ delete_connection (NMVpnPluginUiInterface *iface,
 		return FALSE;
 	}
 
-	if (!keyring_helpers_delete_secret (s_con->uuid, VPNC_USER_PASSWORD))
-		g_message ("%s: couldn't delete user password for '%s'", __func__, s_con->id);
+	id = nm_setting_connection_get_id (s_con);
+	uuid = nm_setting_connection_get_uuid (s_con);
 
-	if (!keyring_helpers_delete_secret (s_con->uuid, VPNC_GROUP_PASSWORD))
-		g_message ("%s: couldn't delete group password for '%s'", __func__, s_con->id);
+	if (!keyring_helpers_delete_secret (uuid, VPNC_USER_PASSWORD))
+		g_message ("%s: couldn't delete user password for '%s'", __func__, id);
+
+	if (!keyring_helpers_delete_secret (uuid, VPNC_GROUP_PASSWORD))
+		g_message ("%s: couldn't delete group password for '%s'", __func__, id);
 
 	return TRUE;
 }
