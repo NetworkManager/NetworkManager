@@ -9,6 +9,7 @@
 #include <nm-setting.h>
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-vpn.h>
+#include <nm-setting-connection.h>
 #include <arpa/inet.h>
 #include <string.h>
 
@@ -339,6 +340,11 @@ read_one_setting_value (NMSetting *setting,
 
 	/* Don't read in secrets unless we want to */
 	if (secret && !info->secrets)
+		return;
+
+	/* Don't read the NMSettingConnection object's 'read-only' property */
+	if (   NM_IS_SETTING_CONNECTION (setting)
+	    && !strcmp (key, NM_SETTING_CONNECTION_READ_ONLY))
 		return;
 
 	/* IPv4 addresses and VPN properties don't have the exact key name */

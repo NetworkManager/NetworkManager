@@ -1,3 +1,20 @@
+2008-10-27  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/libnm-util.ver
+	  libnm-util/nm-setting-connection.c
+	  libnm-util/nm-setting-connection.h
+		- Add a 'read-only' property that indicates the connection cannot be
+			modified
+
+	* system-settings/plugins/ifcfg-fedora/reader.c
+	  system-settings/plugins/ifcfg-suse/parser.c
+	  system-settings/plugins/ifupdown/parser.c
+		- These plugins are read-only at the moment
+
+	* system-settings/plugins/keyfile/reader.c
+	  system-settings/plugins/keyfile/writer.c
+		- Read-only shouldn't get saved out to files or read in from them
+
 2008-10-27  Tambet Ingo  <tambet@gmail.com>
 
 	* src/nm-device-ethernet.c (nm_device_ethernet_get_speed): Implement

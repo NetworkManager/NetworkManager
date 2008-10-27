@@ -198,6 +198,11 @@ write_setting_value (NMSetting *setting,
 	if (!strcmp (key, NM_SETTING_NAME))
 		return;
 
+	/* Don't write the NMSettingConnection object's 'read-only' property */
+	if (   NM_IS_SETTING_CONNECTION (setting)
+	    && !strcmp (key, NM_SETTING_CONNECTION_READ_ONLY))
+		return;
+
 	if (type == G_TYPE_STRING) {
 		const char *str;
 

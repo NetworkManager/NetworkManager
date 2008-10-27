@@ -557,6 +557,7 @@ ifupdown_update_connection_from_if_block(NMConnection *connection,
 	              NM_SETTING_CONNECTION_TYPE, type,
 	              NM_SETTING_CONNECTION_ID, idstr,
 	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_READ_ONLY, TRUE,
 	              NULL);
 	g_free (uuid);
 

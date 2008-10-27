@@ -86,6 +86,7 @@ make_connection_setting (shvarFile *file,
 	g_object_set (s_con,
 			    NM_SETTING_CONNECTION_ID, str,
 			    NM_SETTING_CONNECTION_TYPE, type,
+			    NM_SETTING_CONNECTION_READ_ONLY, TRUE,
 			    NULL);
 
 	g_free (str);

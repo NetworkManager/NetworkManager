@@ -72,6 +72,7 @@ typedef struct {
 	char *type;
 	gboolean autoconnect;
 	guint64 timestamp;
+	gboolean read_only;
 } NMSettingConnectionPrivate;
 
 enum {
@@ -81,6 +82,7 @@ enum {
 	PROP_TYPE,
 	PROP_AUTOCONNECT,
 	PROP_TIMESTAMP,
+	PROP_READ_ONLY,
 
 	LAST_PROP
 };
@@ -128,6 +130,14 @@ nm_setting_connection_get_timestamp (NMSettingConnection *setting)
 	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), 0);
 
 	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->timestamp;
+}
+
+gboolean
+nm_setting_connection_get_read_only (NMSettingConnection *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_CONNECTION (setting), TRUE);
+
+	return NM_SETTING_CONNECTION_GET_PRIVATE (setting)->read_only;
 }
 
 static gint
@@ -241,6 +251,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_TIMESTAMP:
 		priv->timestamp = g_value_get_uint64 (value);
 		break;
+	case PROP_READ_ONLY:
+		priv->read_only = g_value_get_boolean (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -268,6 +281,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_TIMESTAMP:
 		g_value_set_uint64 (value, nm_setting_connection_get_timestamp (setting));
+		break;
+	case PROP_READ_ONLY:
+		g_value_set_boolean (value, nm_setting_connection_get_read_only (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -329,4 +345,12 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 						  "Connection timestamp",
 						  0, G_MAXUINT64, 0,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+
+	g_object_class_install_property
+	    (object_class, PROP_READ_ONLY,
+	     g_param_spec_boolean (NM_SETTING_CONNECTION_READ_ONLY,
+	                      "Read-Only",
+	                      "Read-Only",
+	                      FALSE,
+	                      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 }
