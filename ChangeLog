@@ -1,5 +1,15 @@
 2008-10-26  Dan Williams  <dcbw@redhat.com>
 
+	Attempt to compensate for modems that don't enable full AT parsing before
+	the PIN has been entered.
+
+	* src/nm-gsm-device.c
+		- (init_modem): accept different init strings
+		- (init_done): try different init strings on failure
+		- (check_pin_done): on PIN success, do full modem init
+
+2008-10-26  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Tambet Ingo <tambet@gmail.com>
 
 	* libnm-util/libnm-util.ver

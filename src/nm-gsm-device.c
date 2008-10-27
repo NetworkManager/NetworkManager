@@ -29,6 +29,7 @@ typedef struct {
 	guint state_to_disconnected_id;
 
 	guint reg_tries;
+	guint init_tries;
 } NMGsmDevicePrivate;
 
 enum {
@@ -49,6 +50,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 static void enter_pin (NMGsmDevice *device, NMGsmSecret secret_type, gboolean retry);
 static void manual_registration (NMGsmDevice *device);
 static void automatic_registration (NMGsmDevice *device);
+static void init_modem (NMSerialDevice *device, gpointer user_data);
 
 NMGsmDevice *
 nm_gsm_device_new (const char *udi,
@@ -584,7 +586,7 @@ check_pin_done (NMSerialDevice *device,
 {
 	switch (reply_index) {
 	case 0:
-		power_up (NM_GSM_DEVICE (device));
+		init_modem_full (NM_GSM_DEVICE (device));
 		break;
 	case 1:
 		enter_pin (NM_GSM_DEVICE (device), NM_GSM_SECRET_PIN, FALSE);
@@ -622,8 +624,11 @@ init_done (NMSerialDevice *device,
            const char *reply,
            gpointer user_data)
 {
+	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
+
 	switch (reply_index) {
 	case 0:
+		priv->init_tries = 0;
 		check_pin (NM_GSM_DEVICE (device));
 		break;
 	case -1:
@@ -633,10 +638,23 @@ init_done (NMSerialDevice *device,
 		                         NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
 		break;
 	default:
-		nm_warning ("Modem initialization failed");
-		nm_device_state_changed (NM_DEVICE (device),
-		                         NM_DEVICE_STATE_FAILED,
-		                         NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
+		switch (priv->init_tries) {
+		case 0:
+			nm_warning ("Trying alternate modem initialization");
+			init_modem (device, "ATZ E0 V1 &C1");
+			break;
+		case 1:
+			nm_warning ("Trying second alternate modem initialization");
+			init_modem (device, "AT&F E0 V1");
+			break;
+		default:
+			nm_warning ("Modem initialization failed");
+			nm_device_state_changed (NM_DEVICE (device),
+			                         NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
+			break;
+		}
+		priv->init_tries++;
 		return;
 	}
 }
@@ -645,8 +663,12 @@ static void
 init_modem (NMSerialDevice *device, gpointer user_data)
 {
 	const char *responses[] = { "OK", "ERROR", "ERR", NULL };
+	const char *init_string = user_data;
 
-	modem_wait_for_reply (NM_GSM_DEVICE (device), "ATZ E0 V1 X4 &C1 +FCLASS=0", 10, responses, responses, init_done, NULL);
+	if (!init_string)
+		init_string = "ATZ E0 V1 X4 &C1 +FCLASS=0";
+
+	modem_wait_for_reply (NM_GSM_DEVICE (device), init_string, 10, responses, responses, init_done, NULL);
 }
 
 static NMActStageReturn
@@ -662,6 +684,8 @@ real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 		*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
+
+	NM_GSM_DEVICE_GET_PRIVATE (device)->init_tries = 0;
 
 	id = nm_serial_device_flash (serial_device, 100, init_modem, NULL);
 	if (!id)
