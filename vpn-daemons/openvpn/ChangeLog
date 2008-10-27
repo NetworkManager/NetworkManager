@@ -1,3 +1,10 @@
+2008-10-26  Dan Williams  <dcbw@redhat.com>
+
+	* properties/auth-helpers.c
+	  properties/import-export.c
+	  properties/nm-openvpn.c
+		- Update for setting accessor changes
+
 2008-10-17  Dan Williams  <dcbw@redhat.com>
 
 	* properties/auth-helpers.c

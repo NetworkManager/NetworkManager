@@ -162,6 +162,7 @@ do_import (const char *path, char **lines, GError **error)
 	gboolean have_client = FALSE, have_remote = FALSE;
 	gboolean have_pass = FALSE, have_sk = FALSE;
 	const char *ctype = NULL;
+	const char *basename;
 
 	connection = nm_connection_new ();
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
@@ -170,10 +171,12 @@ do_import (const char *path, char **lines, GError **error)
 	s_vpn = NM_SETTING_VPN (nm_setting_vpn_new ());
 	s_vpn->service_type = g_strdup (NM_DBUS_SERVICE_OPENVPN);
 
-	s_con->id = g_path_get_basename (path);
-	last_dot = strrchr (s_con->id, '.');
+	basename = g_path_get_basename (path);
+	last_dot = strrchr (basename, '.');
 	if (last_dot)
 		*last_dot = '\0';
+	g_object_set (s_con, NM_SETTING_CONNECTION_ID, basename, NULL);
+	g_free (basename);
 
 	for (line = lines; *line; line++) {
 		char *comment, **items, *leftover = NULL;

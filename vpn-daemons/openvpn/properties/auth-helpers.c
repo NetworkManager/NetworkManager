@@ -85,9 +85,9 @@ fill_password (GladeXML *xml,
 		gboolean unused;
 
 		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-		password = keyring_helpers_lookup_secret (s_con->uuid,
-												  priv_key_password ? NM_OPENVPN_KEY_CERTPASS : NM_OPENVPN_KEY_PASSWORD,
-												  &unused);
+		password = keyring_helpers_lookup_secret (nm_setting_connection_get_uuid (s_con),
+		                                          priv_key_password ? NM_OPENVPN_KEY_CERTPASS : NM_OPENVPN_KEY_PASSWORD,
+		                                          &unused);
 	}
 
 	if (password) {

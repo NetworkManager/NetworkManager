@@ -466,7 +466,7 @@ save_secrets (NMVpnPluginUiWidgetInterface *iface,
 {
 	OpenvpnPluginUiWidgetPrivate *priv = OPENVPN_PLUGIN_UI_WIDGET_GET_PRIVATE (iface);
 	NMSettingConnection *s_con;
-	const char *auth_type;
+	const char *auth_type, *uuid, *id;
 	gboolean ret = FALSE;
 
 	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
@@ -478,9 +478,12 @@ save_secrets (NMVpnPluginUiWidgetInterface *iface,
 		return FALSE;
 	}
 
+	id = nm_setting_connection_get_id (s_con);
+	uuid = nm_setting_connection_get_uuid (s_con);
+
 	auth_type = get_auth_type (priv->xml);
 	if (auth_type)
-		ret = auth_widget_save_secrets (priv->xml, auth_type, s_con->uuid, s_con->id);
+		ret = auth_widget_save_secrets (priv->xml, auth_type, uuid, id);
 
 	if (!ret)
 		g_set_error (error, OPENVPN_PLUGIN_UI_ERROR,
@@ -649,14 +652,17 @@ static char *
 get_suggested_name (NMVpnPluginUiInterface *iface, NMConnection *connection)
 {
 	NMSettingConnection *s_con;
+	const char *id;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	g_return_val_if_fail (s_con != NULL, NULL);
-	g_return_val_if_fail (s_con->id != NULL, NULL);
 
-	return g_strdup_printf ("%s (openvpn).conf", s_con->id);
+	id = nm_setting_connection_get_id (s_con);
+	g_return_val_if_fail (id != NULL, NULL);
+
+	return g_strdup_printf ("%s (openvpn).conf", id);
 }
 
 static guint32
@@ -671,6 +677,7 @@ delete_connection (NMVpnPluginUiInterface *iface,
                    GError **error)
 {
 	NMSettingConnection *s_con;
+	const char *uuid;
 
 	/* Remove any secrets in the keyring associated with this connection's UUID */
 	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
@@ -682,8 +689,9 @@ delete_connection (NMVpnPluginUiInterface *iface,
 		return FALSE;
 	}
 
-	keyring_helpers_delete_secret (s_con->uuid, NM_OPENVPN_KEY_PASSWORD);
-	keyring_helpers_delete_secret (s_con->uuid, NM_OPENVPN_KEY_CERTPASS);
+	uuid = nm_setting_connection_get_uuid (s_con);
+	keyring_helpers_delete_secret (uuid, NM_OPENVPN_KEY_PASSWORD);
+	keyring_helpers_delete_secret (uuid, NM_OPENVPN_KEY_CERTPASS);
 
 	return TRUE;
 }
