@@ -258,10 +258,11 @@ fill_password (GladeXML *xml,
 	} else {
 		NMSettingConnection *s_con = NULL;
 		gboolean unused;
+		const char *uuid;
 
 		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-
-		password = keyring_helpers_lookup_secret (s_con->uuid,
+		uuid = nm_setting_connection_get_uuid (s_con);
+		password = keyring_helpers_lookup_secret (uuid,
 		                                          password_type,
 		                                          &unused);
 	}
@@ -429,7 +430,7 @@ save_secrets (NMVpnPluginUiWidgetInterface *iface,
 	GnomeKeyringResult ret;
 	NMSettingConnection *s_con;
 	GtkWidget *widget;
-	const char *str;
+	const char *str, *uuid, *id;
 
 	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 	if (!s_con) {
@@ -440,15 +441,18 @@ save_secrets (NMVpnPluginUiWidgetInterface *iface,
 		return FALSE;
 	}
 
+	id = nm_setting_connection_get_id (s_con);
+	uuid = nm_setting_connection_get_uuid (s_con);
+
     widget = glade_xml_get_widget (priv->xml, "user_password_entry");
     g_assert (widget);
     str = gtk_entry_get_text (GTK_ENTRY (widget));
     if (str && strlen (str)) {
-        ret = keyring_helpers_save_secret (s_con->uuid, s_con->id, NULL, NM_PPTP_KEY_PASSWORD, str);
+        ret = keyring_helpers_save_secret (uuid, id, NULL, NM_PPTP_KEY_PASSWORD, str);
         if (ret != GNOME_KEYRING_RESULT_OK)
             g_warning ("%s: failed to save user password to keyring.", __func__);
     } else
-        keyring_helpers_delete_secret (s_con->uuid, NM_PPTP_KEY_PASSWORD);
+        keyring_helpers_delete_secret (uuid, NM_PPTP_KEY_PASSWORD);
 
 	return TRUE;
 }
@@ -560,6 +564,7 @@ delete_connection (NMVpnPluginUiInterface *iface,
                    GError **error)
 {
 	NMSettingConnection *s_con = NULL;
+	const char *uuid;
 
 	/* Remove any secrets in the keyring associated with this connection's UUID */
 	s_con = (NMSettingConnection *) nm_connection_get_setting (connection,
@@ -572,7 +577,8 @@ delete_connection (NMVpnPluginUiInterface *iface,
 		return FALSE;
 	}
 
-	keyring_helpers_delete_secret (s_con->uuid, NM_PPTP_KEY_PASSWORD);
+	uuid = nm_setting_connection_get_uuid (s_con);
+	keyring_helpers_delete_secret (uuid, NM_PPTP_KEY_PASSWORD);
 
 	return TRUE;
 }
@@ -636,14 +642,17 @@ static char *
 get_suggested_name (NMVpnPluginUiInterface *iface, NMConnection *connection)
 {
 	NMSettingConnection *s_con;
+	const char *id;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	g_return_val_if_fail (s_con != NULL, NULL);
-	g_return_val_if_fail (s_con->id != NULL, NULL);
 
-	return g_strdup_printf ("%s (pptp).conf", s_con->id);
+	id = nm_setting_connection_get_id (s_con);
+	g_return_val_if_fail (id != NULL, NULL);
+
+	return g_strdup_printf ("%s (pptp).conf", id);
 }
 
 static guint32

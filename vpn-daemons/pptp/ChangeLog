@@ -1,3 +1,8 @@
+2008-10-26  Dan Williams  <dcbw@redhat.com>
+
+	* properties/nm-pptp.c
+		- Update for setting accessor changes
+
 2008-10-24  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-pptp-service.c
