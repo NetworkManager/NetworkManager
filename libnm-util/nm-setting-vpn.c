@@ -140,7 +140,7 @@ destroy_one_secret (gpointer data)
 static void
 nm_setting_vpn_init (NMSettingVPN *setting)
 {
-	NM_SETTING (setting)->name = g_strdup (NM_SETTING_VPN_SETTING_NAME);
+	g_object_set (setting, NM_SETTING_NAME, NM_SETTING_VPN_SETTING_NAME, NULL);
 
 	setting->data = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 	setting->secrets = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, destroy_one_secret);

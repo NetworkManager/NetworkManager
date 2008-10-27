@@ -1,5 +1,32 @@
 2008-10-27  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Tambet Ingo <tambet@gmail.com>
+
+	* libnm-util/nm-setting.h
+	  libnm-util/nm-setting.c
+		- Make properties private and add accessor functions
+
+	* libnm-util/nm-connection.c
+	  libnm-util/nm-setting-8021x.c
+	  libnm-util/nm-setting-cdma.c
+	  libnm-util/nm-setting-connection.c
+	  libnm-util/nm-setting-gsm.c
+	  libnm-util/nm-setting-ip4-config.c
+	  libnm-util/nm-setting-ip6-config.c
+	  libnm-util/nm-setting-ppp.c
+	  libnm-util/nm-setting-pppoe.c
+	  libnm-util/nm-setting-serial.c
+	  libnm-util/nm-setting-template.c
+	  libnm-util/nm-setting-vpn.c
+	  libnm-util/nm-setting-wired.c
+	  libnm-util/nm-setting-wireless-security.c
+	  libnm-util/nm-setting-wireless.c
+	  system-settings/plugins/keyfile/reader.c
+	  system-settings/plugins/keyfile/writer.c
+		- Use setting accessors
+
+2008-10-27  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/libnm-util.ver
 	  libnm-util/nm-setting-connection.c
 	  libnm-util/nm-setting-connection.h

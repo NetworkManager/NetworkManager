@@ -29,7 +29,7 @@ read_array_of_uint (GKeyFile *file,
 		char **list, **iter;
 		int ret;
 
-		list = g_key_file_get_string_list (file, setting->name, key, &length, NULL);
+		list = g_key_file_get_string_list (file, nm_setting_get_name (setting), key, &length, NULL);
 		if (!list || !g_strv_length (list))
 			return TRUE;
 
@@ -48,7 +48,7 @@ read_array_of_uint (GKeyFile *file,
 	} else {
 		gint *tmp;
 
-		tmp = g_key_file_get_integer_list (file, setting->name, key, &length, NULL);
+		tmp = g_key_file_get_integer_list (file, nm_setting_get_name (setting), key, &length, NULL);
 
 		array = g_array_sized_new (FALSE, FALSE, sizeof (guint32), length);
 		for (i = 0; i < length; i++)
@@ -255,19 +255,22 @@ read_array_of_array_of_uint (GKeyFile *file,
                              const char *key)
 {
 	gboolean success = FALSE;
+	const char *setting_name;
 
 	/* Only handle IPv4 addresses and routes for now */
 	if (!NM_IS_SETTING_IP4_CONFIG (setting))
 		return FALSE;
 
+	setting_name = nm_setting_get_name (setting);
+
 	if (!strcmp (key, NM_SETTING_IP4_CONFIG_ADDRESSES)) {
 		GPtrArray *addresses;
 
-		addresses = read_addresses (file, setting->name, key);
+		addresses = read_addresses (file, setting_name, key);
 
 		/* Work around for previous syntax */
 		if (!addresses && !strcmp (key, NM_SETTING_IP4_CONFIG_ADDRESSES))
-			addresses = read_addresses (file, setting->name, "address");
+			addresses = read_addresses (file, setting_name, "address");
 
 		if (addresses) {
 			g_object_set (setting, key, addresses, NULL);
@@ -278,7 +281,7 @@ read_array_of_array_of_uint (GKeyFile *file,
 	} else if (!strcmp (key, NM_SETTING_IP4_CONFIG_ROUTES)) {
 		GPtrArray *routes;
 
-		routes = read_routes (file, setting->name, key);
+		routes = read_routes (file, setting_name, key);
 		if (routes) {
 			g_object_set (setting, key, routes, NULL);
 			g_ptr_array_foreach (routes, free_one_route, NULL);
@@ -295,13 +298,14 @@ read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
 {
 	char **keys, **iter;
 	char *value;
+	const char *setting_name = nm_setting_get_name (setting);
 
-	keys = g_key_file_get_keys (file, setting->name, NULL, NULL);
+	keys = g_key_file_get_keys (file, setting_name, NULL, NULL);
 	if (!keys || !*keys)
 		return;
 
 	for (iter = keys; *iter; iter++) {
-		value = g_key_file_get_string (file, setting->name, *iter, NULL);
+		value = g_key_file_get_string (file, setting_name, *iter, NULL);
 		if (!value)
 			continue;
 
@@ -330,6 +334,7 @@ read_one_setting_value (NMSetting *setting,
 {
 	ReadSettingInfo *info = (ReadSettingInfo *) user_data;
 	GKeyFile *file = info->keyfile;
+	const char *setting_name;
 	GType type;
 	GError *err = NULL;
 	gboolean check_for_key = TRUE;
@@ -347,15 +352,17 @@ read_one_setting_value (NMSetting *setting,
 	    && !strcmp (key, NM_SETTING_CONNECTION_READ_ONLY))
 		return;
 
+	setting_name = nm_setting_get_name (setting);
+
 	/* IPv4 addresses and VPN properties don't have the exact key name */
 	if (NM_IS_SETTING_IP4_CONFIG (setting) && !strcmp (key, NM_SETTING_IP4_CONFIG_ADDRESSES))
 		check_for_key = FALSE;
 	else if (NM_IS_SETTING_VPN (setting))
 		check_for_key = FALSE;
 
-	if (check_for_key && !g_key_file_has_key (file, setting->name, key, &err)) {
+	if (check_for_key && !g_key_file_has_key (file, setting_name, key, &err)) {
 		if (err) {
-			g_warning ("Error loading setting '%s' value: %s", setting->name, err->message);
+			g_warning ("Error loading setting '%s' value: %s", setting_name, err->message);
 			g_error_free (err);
 		}
 
@@ -367,30 +374,30 @@ read_one_setting_value (NMSetting *setting,
 	if (type == G_TYPE_STRING) {
 		char *str_val;
 
-		str_val = g_key_file_get_string (file, setting->name, key, NULL);
+		str_val = g_key_file_get_string (file, setting_name, key, NULL);
 		g_object_set (setting, key, str_val, NULL);
 		g_free (str_val);
 	} else if (type == G_TYPE_UINT) {
 		int int_val;
 
-		int_val = g_key_file_get_integer (file, setting->name, key, NULL);
+		int_val = g_key_file_get_integer (file, setting_name, key, NULL);
 		if (int_val < 0)
 			g_warning ("Casting negative value (%i) to uint", int_val);
 		g_object_set (setting, key, int_val, NULL);
 	} else if (type == G_TYPE_INT) {
 		int int_val;
 
-		int_val = g_key_file_get_integer (file, setting->name, key, NULL);
+		int_val = g_key_file_get_integer (file, setting_name, key, NULL);
 		g_object_set (setting, key, int_val, NULL);
 	} else if (type == G_TYPE_BOOLEAN) {
 		gboolean bool_val;
 
-		bool_val = g_key_file_get_boolean (file, setting->name, key, NULL);
+		bool_val = g_key_file_get_boolean (file, setting_name, key, NULL);
 		g_object_set (setting, key, bool_val, NULL);
 	} else if (type == G_TYPE_CHAR) {
 		int int_val;
 
-		int_val = g_key_file_get_integer (file, setting->name, key, NULL);
+		int_val = g_key_file_get_integer (file, setting_name, key, NULL);
 		if (int_val < G_MININT8 || int_val > G_MAXINT8)
 			g_warning ("Casting value (%i) to char", int_val);
 
@@ -399,7 +406,7 @@ read_one_setting_value (NMSetting *setting,
 		char *tmp_str;
 		guint64 uint_val;
 
-		tmp_str = g_key_file_get_value (file, setting->name, key, NULL);
+		tmp_str = g_key_file_get_value (file, setting_name, key, NULL);
 		uint_val = g_ascii_strtoull (tmp_str, NULL, 10);
 		g_free (tmp_str);
 		g_object_set (setting, key, uint_val, NULL);
@@ -409,7 +416,7 @@ read_one_setting_value (NMSetting *setting,
 		gsize length;
 		int i;
 
-		tmp = g_key_file_get_integer_list (file, setting->name, key, &length, NULL);
+		tmp = g_key_file_get_integer_list (file, setting_name, key, &length, NULL);
 
 		array = g_byte_array_sized_new (length);
 		for (i = 0; i < length; i++) {
@@ -431,7 +438,7 @@ read_one_setting_value (NMSetting *setting,
 		int i;
 		GSList *list = NULL;
 
-		sa = g_key_file_get_string_list (file, setting->name, key, &length, NULL);
+		sa = g_key_file_get_string_list (file, setting_name, key, &length, NULL);
 		for (i = 0; i < length; i++)
 			list = g_slist_prepend (list, sa[i]);
 
@@ -445,16 +452,16 @@ read_one_setting_value (NMSetting *setting,
 	} else if (type == DBUS_TYPE_G_UINT_ARRAY) {
 		if (!read_array_of_uint (file, setting, key)) {
 			g_warning ("Unhandled setting property type (read): '%s/%s' : '%s'",
-					 setting->name, key, G_VALUE_TYPE_NAME (value));
+					 setting_name, key, G_VALUE_TYPE_NAME (value));
 		}
 	} else if (type == DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT) {
 		if (!read_array_of_array_of_uint (file, setting, key)) {
 			g_warning ("Unhandled setting property type (read): '%s/%s' : '%s'",
-					 setting->name, key, G_VALUE_TYPE_NAME (value));
+					 setting_name, key, G_VALUE_TYPE_NAME (value));
 		}
 	} else {
 		g_warning ("Unhandled setting property type (read): '%s/%s' : '%s'",
-				 setting->name, key, G_VALUE_TYPE_NAME (value));
+				 setting_name, key, G_VALUE_TYPE_NAME (value));
 	}
 }
 

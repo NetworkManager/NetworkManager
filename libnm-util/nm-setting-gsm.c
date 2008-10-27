@@ -285,7 +285,7 @@ need_secrets (NMSetting *setting)
 static void
 nm_setting_gsm_init (NMSettingGsm *setting)
 {
-	((NMSetting *) setting)->name = g_strdup (NM_SETTING_GSM_SETTING_NAME);
+	g_object_set (setting, NM_SETTING_NAME, NM_SETTING_GSM_SETTING_NAME, NULL);
 }
 
 static void

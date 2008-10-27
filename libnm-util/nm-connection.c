@@ -605,8 +605,8 @@ add_one_setting_to_hash (gpointer key, gpointer data, gpointer user_data)
 	setting_hash = nm_setting_to_hash (setting);
 	if (setting_hash)
 		g_hash_table_insert (connection_hash,
-						 g_strdup (setting->name),
-						 setting_hash);
+							 g_strdup (nm_setting_get_name (setting)),
+							 setting_hash);
 }
 
 GHashTable *

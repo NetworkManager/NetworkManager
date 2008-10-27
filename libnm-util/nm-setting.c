@@ -31,6 +31,12 @@
 
 G_DEFINE_ABSTRACT_TYPE (NMSetting, nm_setting, G_TYPE_OBJECT)
 
+#define NM_SETTING_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING, NMSettingPrivate))
+
+typedef struct {
+	char *name;
+} NMSettingPrivate;
+
 enum {
 	PROP_0,
 	PROP_NAME,
@@ -187,7 +193,7 @@ nm_setting_get_name (NMSetting *setting)
 {
 	g_return_val_if_fail (NM_IS_SETTING (setting), NULL);
 
-	return setting->name;
+	return NM_SETTING_GET_PRIVATE (setting)->name;
 }
 
 gboolean
@@ -240,7 +246,7 @@ nm_setting_compare (NMSetting *setting,
 			continue;
 
 		if (   (flags & COMPARE_FLAGS_IGNORE_ID)
-		    && !strcmp (setting->name, NM_SETTING_CONNECTION_SETTING_NAME)
+			   && !strcmp (nm_setting_get_name (setting), NM_SETTING_CONNECTION_SETTING_NAME)
 		    && !strcmp (prop_spec->name, NM_SETTING_CONNECTION_ID))
 			continue;
 
@@ -389,7 +395,7 @@ nm_setting_to_string (NMSetting *setting)
 	if (!property_specs)
 		return NULL;
 
-	string = g_string_new (setting->name);
+	string = g_string_new (nm_setting_get_name (setting));
 	g_string_append_c (string, '\n');
 
 	for (i = 0; i < n_property_specs; i++) {
@@ -442,7 +448,7 @@ constructor (GType type,
 		   GObjectConstructParam *construct_params)
 {
 	GObject *object;
-	NMSetting *setting;
+	NMSettingPrivate *priv;
 
 	object = G_OBJECT_CLASS (nm_setting_parent_class)->constructor (type,
 													    n_construct_params,
@@ -450,8 +456,8 @@ constructor (GType type,
 	if (!object)
 		return NULL;
 
-	setting = NM_SETTING (object);
-	if (!setting->name) {
+	priv = NM_SETTING_GET_PRIVATE (object);
+	if (!priv->name) {
 		nm_warning ("Setting name is not set.");
 		g_object_unref (object);
 		object = NULL;
@@ -463,9 +469,9 @@ constructor (GType type,
 static void
 finalize (GObject *object)
 {
-	NMSetting *self = NM_SETTING (object);
+	NMSettingPrivate *priv = NM_SETTING_GET_PRIVATE (object);
 
-	g_free (self->name);
+	g_free (priv->name);
 
 	G_OBJECT_CLASS (nm_setting_parent_class)->finalize (object);
 }
@@ -474,12 +480,12 @@ static void
 set_property (GObject *object, guint prop_id,
 		    const GValue *value, GParamSpec *pspec)
 {
-	NMSetting *setting = NM_SETTING (object);
+	NMSettingPrivate *priv = NM_SETTING_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_NAME:
-		g_free (setting->name);
-		setting->name = g_value_dup_string (value);
+		g_free (priv->name);
+		priv->name = g_value_dup_string (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -495,7 +501,7 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_NAME:
-		g_value_set_string (value, setting->name);
+		g_value_set_string (value, nm_setting_get_name (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -507,6 +513,8 @@ static void
 nm_setting_class_init (NMSettingClass *setting_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
+
+	g_type_class_add_private (setting_class, sizeof (NMSettingPrivate));
 
 	/* virtual methods */
 	object_class->constructor  = constructor;

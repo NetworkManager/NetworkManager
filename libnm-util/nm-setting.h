@@ -47,8 +47,6 @@ G_BEGIN_DECLS
 
 typedef struct {
 	GObject parent;
-
-	char *name;
 } NMSetting;
 
 typedef struct {

@@ -559,7 +559,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 static void
 nm_setting_802_1x_init (NMSetting8021x *setting)
 {
-	((NMSetting *) setting)->name = g_strdup (NM_SETTING_802_1X_SETTING_NAME);
+	g_object_set (setting, NM_SETTING_NAME, NM_SETTING_802_1X_SETTING_NAME, NULL);
 }
 
 static void

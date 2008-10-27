@@ -211,7 +211,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 static void
 nm_setting_connection_init (NMSettingConnection *setting)
 {
-	((NMSetting *) setting)->name = g_strdup (NM_SETTING_CONNECTION_SETTING_NAME);
+	g_object_set (setting, NM_SETTING_NAME, NM_SETTING_CONNECTION_SETTING_NAME, NULL);
 }
 
 static void

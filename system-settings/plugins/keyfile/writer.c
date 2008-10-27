@@ -48,7 +48,7 @@ write_array_of_uint (GKeyFile *file,
 			}
 		}
 
-		g_key_file_set_string_list (file, setting->name, key, (const char **) list, array->len);
+		g_key_file_set_string_list (file, nm_setting_get_name (setting), key, (const char **) list, array->len);
 		g_strfreev (list);
 	} else {
 		int *tmp_array;
@@ -57,7 +57,7 @@ write_array_of_uint (GKeyFile *file,
 		for (i = 0; i < array->len; i++)
 			tmp_array[i] = g_array_index (array, int, i);
 
-		g_key_file_set_integer_list (file, setting->name, key, tmp_array, array->len);
+		g_key_file_set_integer_list (file, nm_setting_get_name (setting), key, tmp_array, array->len);
 		g_free (tmp_array);
 	}
 
@@ -136,9 +136,9 @@ write_array_of_array_of_uint (GKeyFile *file,
 		return TRUE;
 
 	if (!strcmp (key, NM_SETTING_IP4_CONFIG_ADDRESSES))
-		write_ip4_values (file, setting->name, key, array, 3, 0, 2);
+		write_ip4_values (file, nm_setting_get_name (setting), key, array, 3, 0, 2);
 	else if (!strcmp (key, NM_SETTING_IP4_CONFIG_ROUTES))
-		write_ip4_values (file, setting->name, key, array, 4, 0, 2);
+		write_ip4_values (file, nm_setting_get_name (setting), key, array, 4, 0, 2);
 
 	return TRUE;
 }
@@ -177,7 +177,7 @@ write_hash_of_string (GKeyFile *file,
 	    && !strcmp (key, NM_SETTING_VPN_SECRETS)) {
 		info.setting_name = VPN_SECRETS_GROUP;
 	} else
-		info.setting_name = setting->name;
+		info.setting_name = nm_setting_get_name (setting);
 
 	g_hash_table_foreach (hash, write_hash_of_string_helper, &info);
 }
@@ -190,6 +190,7 @@ write_setting_value (NMSetting *setting,
 				 gpointer user_data)
 {
 	GKeyFile *file = (GKeyFile *) user_data;
+	const char *setting_name;
 	GType type;
 
 	type = G_VALUE_TYPE (value);
@@ -203,26 +204,28 @@ write_setting_value (NMSetting *setting,
 	    && !strcmp (key, NM_SETTING_CONNECTION_READ_ONLY))
 		return;
 
+	setting_name = nm_setting_get_name (setting);
+
 	if (type == G_TYPE_STRING) {
 		const char *str;
 
 		str = g_value_get_string (value);
 		if (str)
-			g_key_file_set_string (file, setting->name, key, str);
+			g_key_file_set_string (file, setting_name, key, str);
 	} else if (type == G_TYPE_UINT)
-		g_key_file_set_integer (file, setting->name, key, (int) g_value_get_uint (value));
+		g_key_file_set_integer (file, setting_name, key, (int) g_value_get_uint (value));
 	else if (type == G_TYPE_INT)
-		g_key_file_set_integer (file, setting->name, key, g_value_get_int (value));
+		g_key_file_set_integer (file, setting_name, key, g_value_get_int (value));
 	else if (type == G_TYPE_UINT64) {
 		char *numstr;
 
 		numstr = g_strdup_printf ("%" G_GUINT64_FORMAT, g_value_get_uint64 (value));
-		g_key_file_set_value (file, setting->name, key, numstr);
+		g_key_file_set_value (file, setting_name, key, numstr);
 		g_free (numstr);
 	} else if (type == G_TYPE_BOOLEAN) {
-		g_key_file_set_boolean (file, setting->name, key, g_value_get_boolean (value));
+		g_key_file_set_boolean (file, setting_name, key, g_value_get_boolean (value));
 	} else if (type == G_TYPE_CHAR) {
-		g_key_file_set_integer (file, setting->name, key, (int) g_value_get_char (value));
+		g_key_file_set_integer (file, setting_name, key, (int) g_value_get_char (value));
 	} else if (type == DBUS_TYPE_G_UCHAR_ARRAY) {
 		GByteArray *array;
 
@@ -235,7 +238,7 @@ write_setting_value (NMSetting *setting,
 			for (i = 0; i < array->len; i++)
 				tmp_array[i] = (int) array->data[i];
 
-			g_key_file_set_integer_list (file, setting->name, key, tmp_array, array->len);
+			g_key_file_set_integer_list (file, setting_name, key, tmp_array, array->len);
 			g_free (tmp_array);
 		}
 	} else if (type == dbus_g_type_get_collection ("GSList", G_TYPE_STRING)) {
@@ -251,7 +254,7 @@ write_setting_value (NMSetting *setting,
 			for (iter = list; iter; iter = iter->next)
 				array[i++] = iter->data;
 
-			g_key_file_set_string_list (file, setting->name, key, (const gchar **const) array, i);
+			g_key_file_set_string_list (file, setting_name, key, (const gchar **const) array, i);
 			g_free (array);
 		}
 	} else if (type == dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_STRING)) {
@@ -259,16 +262,16 @@ write_setting_value (NMSetting *setting,
 	} else if (type == DBUS_TYPE_G_UINT_ARRAY) {
 		if (!write_array_of_uint (file, setting, key, value)) {
 			g_warning ("Unhandled setting property type (write) '%s/%s' : '%s'", 
-					 setting->name, key, g_type_name (type));
+					 setting_name, key, g_type_name (type));
 		}
 	} else if (type == DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT) {
 		if (!write_array_of_array_of_uint (file, setting, key, value)) {
 			g_warning ("Unhandled setting property type (write) '%s/%s' : '%s'", 
-					 setting->name, key, g_type_name (type));
+					 setting_name, key, g_type_name (type));
 		}
 	} else {
 		g_warning ("Unhandled setting property type (write) '%s/%s' : '%s'", 
-				 setting->name, key, g_type_name (type));
+				 setting_name, key, g_type_name (type));
 	}
 }
 
