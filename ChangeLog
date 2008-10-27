@@ -1,3 +1,8 @@
+2008-10-27  Tambet Ingo  <tambet@gmail.com>
+
+	* src/nm-device-ethernet.c (nm_device_ethernet_get_speed): Implement
+	correct speed reporting for fast devices (kernel >= 2.6.27).
+
 2008-10-26  Dan Williams  <dcbw@redhat.com>
 
 	Attempt to compensate for modems that don't enable full AT parsing before

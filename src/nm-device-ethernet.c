@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <linux/types.h>
 #include <linux/sockios.h>
+#include <linux/version.h>
 #include <linux/ethtool.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
@@ -453,7 +454,14 @@ nm_device_ethernet_get_speed (NMDeviceEthernet *self)
 	if (ioctl (fd, SIOCETHTOOL, &ifr) == -1)
 		goto out;
 
-	speed = edata.speed != G_MAXUINT16 ? edata.speed : 0;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
+	speed = edata.speed;
+#else
+	speed = ethtool_cmd_speed (&edata);
+#endif
+
+	if (speed == G_MAXUINT16 || speed == G_MAXUINT32)
+		speed = 0;
 
 out:
 	close (fd);
