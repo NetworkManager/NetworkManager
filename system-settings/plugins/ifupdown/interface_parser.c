@@ -98,7 +98,9 @@ void ifparser_init(void)
 			break;
 		// If the line did not match, skip it
 		if (ret == 0) {
-			fgets(rline, 255, inp);
+			char *ignored;
+
+			ignored = fgets(rline, 255, inp);
 			continue;
 		}
 
