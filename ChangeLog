@@ -2,6 +2,18 @@
 
 	Patch from Tambet Ingo <tambet@gmail.com>
 
+	* libnm-util/libnm-util.ver
+	  libnm-util/nm-setting-ppp.c
+	  libnm-util/nm-setting-ppp.h
+		- Make properties private and add accessor functions
+
+	* src/ppp-manager/nm-ppp-manager.c
+		- Use ppp setting accessors
+
+2008-10-27  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Tambet Ingo <tambet@gmail.com>
+
 	* libnm-util/nm-setting.h
 	  libnm-util/nm-setting.c
 		- Make properties private and add accessor functions

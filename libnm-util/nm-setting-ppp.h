@@ -74,26 +74,6 @@ GQuark nm_setting_ppp_error_quark (void);
 
 typedef struct {
 	NMSetting parent;
-
-	gboolean noauth;
-	gboolean refuse_eap;
-	gboolean refuse_pap;
-	gboolean refuse_chap;
-	gboolean refuse_mschap;
-	gboolean refuse_mschapv2;
-	gboolean nobsdcomp;
-	gboolean nodeflate;
-	gboolean no_vj_comp;
-	gboolean require_mppe;
-	gboolean require_mppe_128;
-	gboolean mppe_stateful;
-	gboolean crtscts;
-
-	guint32 baud;
-	guint32 mru;
-	guint32 mtu;
-	guint32 lcp_echo_failure;
-	guint32 lcp_echo_interval;
 } NMSettingPPP;
 
 typedef struct {
@@ -102,7 +82,25 @@ typedef struct {
 
 GType nm_setting_ppp_get_type (void);
 
-NMSetting *nm_setting_ppp_new (void);
+NMSetting *nm_setting_ppp_new                   (void);
+gboolean   nm_setting_ppp_get_noauth            (NMSettingPPP *setting);
+gboolean   nm_setting_ppp_get_refuse_eap        (NMSettingPPP *setting);
+gboolean   nm_setting_ppp_get_refuse_pap        (NMSettingPPP *setting);
+gboolean   nm_setting_ppp_get_refuse_chap       (NMSettingPPP *setting);
+gboolean   nm_setting_ppp_get_refuse_mschap     (NMSettingPPP *setting);
+gboolean   nm_setting_ppp_get_refuse_mschapv2   (NMSettingPPP *setting);
+gboolean   nm_setting_ppp_get_nobsdcomp         (NMSettingPPP *setting);
+gboolean   nm_setting_ppp_get_nodeflate         (NMSettingPPP *setting);
+gboolean   nm_setting_ppp_get_no_vj_comp        (NMSettingPPP *setting);
+gboolean   nm_setting_ppp_get_require_mppe      (NMSettingPPP *setting);
+gboolean   nm_setting_ppp_get_require_mppe_128  (NMSettingPPP *setting);
+gboolean   nm_setting_ppp_get_mppe_stateful     (NMSettingPPP *setting);
+gboolean   nm_setting_ppp_get_crtscts           (NMSettingPPP *setting);
+guint32    nm_setting_ppp_get_baud              (NMSettingPPP *setting);
+guint32    nm_setting_ppp_get_mru               (NMSettingPPP *setting);
+guint32    nm_setting_ppp_get_mtu               (NMSettingPPP *setting);
+guint32    nm_setting_ppp_get_lcp_echo_failure  (NMSettingPPP *setting);
+guint32    nm_setting_ppp_get_lcp_echo_interval (NMSettingPPP *setting);
 
 G_END_DECLS
 

@@ -762,32 +762,32 @@ create_pppd_cmd_line (NMPPPManager *self,
 		nm_cmd_line_add_string (cmd, "noipdefault");
 	}
 
-	if (setting->baud)
-		nm_cmd_line_add_int (cmd, setting->baud);
+	if (nm_setting_ppp_get_baud (setting))
+		nm_cmd_line_add_int (cmd, nm_setting_ppp_get_baud (setting));
 
-	if (setting->noauth)
+	if (nm_setting_ppp_get_noauth (setting))
 		nm_cmd_line_add_string (cmd, "noauth");
-	if (setting->refuse_eap)
+	if (nm_setting_ppp_get_refuse_eap (setting))
 		nm_cmd_line_add_string (cmd, "refuse-eap");
-	if (setting->refuse_pap)
+	if (nm_setting_ppp_get_refuse_pap (setting))
 		nm_cmd_line_add_string (cmd, "refuse-pap");
-	if (setting->refuse_chap)
+	if (nm_setting_ppp_get_refuse_chap (setting))
 		nm_cmd_line_add_string (cmd, "refuse-chap");
-	if (setting->refuse_mschap)
+	if (nm_setting_ppp_get_refuse_mschap (setting))
 		nm_cmd_line_add_string (cmd, "refuse-mschap");
-	if (setting->refuse_mschapv2)
+	if (nm_setting_ppp_get_refuse_mschapv2 (setting))
 		nm_cmd_line_add_string (cmd, "refuse-mschap-v2");
-	if (setting->nobsdcomp)
+	if (nm_setting_ppp_get_nobsdcomp (setting))
 		nm_cmd_line_add_string (cmd, "nobsdcomp");
-	if (setting->nodeflate)
+	if (nm_setting_ppp_get_nodeflate (setting))
 		nm_cmd_line_add_string (cmd, "nodeflate");
-	if (setting->require_mppe)
+	if (nm_setting_ppp_get_require_mppe (setting))
 		nm_cmd_line_add_string (cmd, "require-mppe");
-	if (setting->require_mppe_128)
+	if (nm_setting_ppp_get_require_mppe_128 (setting))
 		nm_cmd_line_add_string (cmd, "require-mppe-128");
-	if (setting->mppe_stateful)
+	if (nm_setting_ppp_get_mppe_stateful (setting))
 		nm_cmd_line_add_string (cmd, "mppe-stateful");
-	if (setting->crtscts)
+	if (nm_setting_ppp_get_crtscts (setting))
 		nm_cmd_line_add_string (cmd, "crtscts");
 
 	/* Always ask for DNS, we don't have to use them if the connection
@@ -795,21 +795,21 @@ create_pppd_cmd_line (NMPPPManager *self,
 	 */
 	nm_cmd_line_add_string (cmd, "usepeerdns");
 
-	if (setting->mru) {
+	if (nm_setting_ppp_get_mru (setting)) {
 		nm_cmd_line_add_string (cmd, "mru");
-		nm_cmd_line_add_int (cmd, setting->mru);
+		nm_cmd_line_add_int (cmd, nm_setting_ppp_get_mru (setting));
 	}
 
-	if (setting->mtu) {
+	if (nm_setting_ppp_get_mtu (setting)) {
 		nm_cmd_line_add_string (cmd, "mtu");
-		nm_cmd_line_add_int (cmd, setting->mtu);
+		nm_cmd_line_add_int (cmd, nm_setting_ppp_get_mtu (setting));
 	}
 
 	nm_cmd_line_add_string (cmd, "lcp-echo-failure");
-	nm_cmd_line_add_int (cmd, setting->lcp_echo_failure);
+	nm_cmd_line_add_int (cmd, nm_setting_ppp_get_lcp_echo_failure (setting));
 
 	nm_cmd_line_add_string (cmd, "lcp-echo-interval");
-	nm_cmd_line_add_int (cmd, setting->lcp_echo_interval);
+	nm_cmd_line_add_int (cmd, nm_setting_ppp_get_lcp_echo_interval (setting));
 
 	nm_cmd_line_add_string (cmd, "ipparam");
 	nm_cmd_line_add_string (cmd, priv->dbus_path);
@@ -831,20 +831,22 @@ pppd_child_setup (gpointer user_data G_GNUC_UNUSED)
 static void
 pppoe_fill_defaults (NMSettingPPP *setting)
 {
-	if (!setting->mtu)
-		setting->mtu = 1492;
+	if (!nm_setting_ppp_get_mtu (setting))
+		g_object_set (setting, NM_SETTING_PPP_MTU, (guint32) 1492, NULL);
 
-	if (!setting->mru)
-		setting->mru = 1492;
+	if (!nm_setting_ppp_get_mru (setting))
+		g_object_set (setting, NM_SETTING_PPP_MRU, (guint32) 1492, NULL);
 
-	if (!setting->lcp_echo_interval)
-		setting->lcp_echo_interval = 20;
+	if (!nm_setting_ppp_get_lcp_echo_interval (setting))
+		g_object_set (setting, NM_SETTING_PPP_LCP_ECHO_INTERVAL, (guint32) 20, NULL);
 
-	if (!setting->lcp_echo_failure)
-		setting->lcp_echo_failure = 3;
+	if (!nm_setting_ppp_get_lcp_echo_failure (setting))
+		g_object_set (setting, NM_SETTING_PPP_LCP_ECHO_FAILURE, (guint32) 3, NULL);
 
-	setting->noauth = TRUE;
-	setting->nodeflate = TRUE;
+	g_object_set (setting,
+			    NM_SETTING_PPP_NOAUTH, TRUE,
+			    NM_SETTING_PPP_NODEFLATE, TRUE,
+			    NULL);
 
 	/* FIXME: These commented settings should be set as well, update NMSettingPPP first. */
 #if 0

@@ -63,6 +63,29 @@ nm_setting_ppp_error_get_type (void)
 
 G_DEFINE_TYPE (NMSettingPPP, nm_setting_ppp, NM_TYPE_SETTING)
 
+#define NM_SETTING_PPP_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_PPP, NMSettingPPPPrivate))
+
+typedef struct {
+	gboolean noauth;
+	gboolean refuse_eap;
+	gboolean refuse_pap;
+	gboolean refuse_chap;
+	gboolean refuse_mschap;
+	gboolean refuse_mschapv2;
+	gboolean nobsdcomp;
+	gboolean nodeflate;
+	gboolean no_vj_comp;
+	gboolean require_mppe;
+	gboolean require_mppe_128;
+	gboolean mppe_stateful;
+	gboolean crtscts;
+	guint32 baud;
+	guint32 mru;
+	guint32 mtu;
+	guint32 lcp_echo_failure;
+	guint32 lcp_echo_interval;
+} NMSettingPPPPrivate;
+
 enum {
 	PROP_0,
 	PROP_NOAUTH,
@@ -93,13 +116,157 @@ nm_setting_ppp_new (void)
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_PPP, NULL);
 }
 
+gboolean
+nm_setting_ppp_get_noauth (NMSettingPPP *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
+
+	return NM_SETTING_PPP_GET_PRIVATE (setting)->noauth;
+}
+
+gboolean
+nm_setting_ppp_get_refuse_eap (NMSettingPPP *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
+
+	return NM_SETTING_PPP_GET_PRIVATE (setting)->refuse_eap;
+}
+
+gboolean
+nm_setting_ppp_get_refuse_pap (NMSettingPPP *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
+
+	return NM_SETTING_PPP_GET_PRIVATE (setting)->refuse_pap;
+}
+
+gboolean
+nm_setting_ppp_get_refuse_chap (NMSettingPPP *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
+
+	return NM_SETTING_PPP_GET_PRIVATE (setting)->refuse_chap;
+}
+
+gboolean
+nm_setting_ppp_get_refuse_mschap (NMSettingPPP *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
+
+	return NM_SETTING_PPP_GET_PRIVATE (setting)->refuse_mschap;
+}
+
+gboolean
+nm_setting_ppp_get_refuse_mschapv2 (NMSettingPPP *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
+
+	return NM_SETTING_PPP_GET_PRIVATE (setting)->refuse_mschapv2;
+}
+
+gboolean
+nm_setting_ppp_get_nobsdcomp (NMSettingPPP *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
+
+	return NM_SETTING_PPP_GET_PRIVATE (setting)->nobsdcomp;
+}
+
+gboolean
+nm_setting_ppp_get_nodeflate (NMSettingPPP *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
+
+	return NM_SETTING_PPP_GET_PRIVATE (setting)->nodeflate;
+}
+
+gboolean
+nm_setting_ppp_get_no_vj_comp (NMSettingPPP *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
+
+	return NM_SETTING_PPP_GET_PRIVATE (setting)->no_vj_comp;
+}
+
+gboolean
+nm_setting_ppp_get_require_mppe (NMSettingPPP *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
+
+	return NM_SETTING_PPP_GET_PRIVATE (setting)->require_mppe;
+}
+
+gboolean
+nm_setting_ppp_get_require_mppe_128 (NMSettingPPP *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
+
+	return NM_SETTING_PPP_GET_PRIVATE (setting)->require_mppe_128;
+}
+
+gboolean
+nm_setting_ppp_get_mppe_stateful (NMSettingPPP *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
+
+	return NM_SETTING_PPP_GET_PRIVATE (setting)->mppe_stateful;
+}
+
+gboolean
+nm_setting_ppp_get_crtscts (NMSettingPPP *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), FALSE);
+
+	return NM_SETTING_PPP_GET_PRIVATE (setting)->crtscts;
+}
+
+guint32
+nm_setting_ppp_get_baud (NMSettingPPP *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), 0);
+
+	return NM_SETTING_PPP_GET_PRIVATE (setting)->baud;
+}
+
+guint32
+nm_setting_ppp_get_mru (NMSettingPPP *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), 0);
+
+	return NM_SETTING_PPP_GET_PRIVATE (setting)->mru;
+}
+
+guint32
+nm_setting_ppp_get_mtu (NMSettingPPP *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), 0);
+
+	return NM_SETTING_PPP_GET_PRIVATE (setting)->mtu;
+}
+
+guint32
+nm_setting_ppp_get_lcp_echo_failure (NMSettingPPP *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), 0);
+
+	return NM_SETTING_PPP_GET_PRIVATE (setting)->lcp_echo_failure;
+}
+
+guint32
+nm_setting_ppp_get_lcp_echo_interval (NMSettingPPP *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_PPP (setting), 0);
+
+	return NM_SETTING_PPP_GET_PRIVATE (setting)->lcp_echo_interval;
+}
+
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
-	NMSettingPPP *self = NM_SETTING_PPP (setting);
+	NMSettingPPPPrivate *priv = NM_SETTING_PPP_GET_PRIVATE (setting);
 
-	if (self->noauth) {
-		if (self->require_mppe) {
+	if (priv->noauth) {
+		if (priv->require_mppe) {
 			g_set_error (error,
 			             NM_SETTING_PPP_ERROR,
 			             NM_SETTING_PPP_ERROR_REQUIRE_MPPE_NOT_ALLOWED,
@@ -122,62 +289,62 @@ static void
 set_property (GObject *object, guint prop_id,
 		    const GValue *value, GParamSpec *pspec)
 {
-	NMSettingPPP *setting = NM_SETTING_PPP (object);
+	NMSettingPPPPrivate *priv = NM_SETTING_PPP_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_NOAUTH:
-		setting->noauth = g_value_get_boolean (value);
+		priv->noauth = g_value_get_boolean (value);
 		break;
 	case PROP_REFUSE_EAP:
-		setting->refuse_eap = g_value_get_boolean (value);
+		priv->refuse_eap = g_value_get_boolean (value);
 		break;
 	case PROP_REFUSE_PAP:
-		setting->refuse_pap = g_value_get_boolean (value);
+		priv->refuse_pap = g_value_get_boolean (value);
 		break;
 	case PROP_REFUSE_CHAP:
-		setting->refuse_chap = g_value_get_boolean (value);
+		priv->refuse_chap = g_value_get_boolean (value);
 		break;
 	case PROP_REFUSE_MSCHAP:
-		setting->refuse_mschap = g_value_get_boolean (value);
+		priv->refuse_mschap = g_value_get_boolean (value);
 		break;
 	case PROP_REFUSE_MSCHAPV2:
-		setting->refuse_mschapv2 = g_value_get_boolean (value);
+		priv->refuse_mschapv2 = g_value_get_boolean (value);
 		break;
 	case PROP_NOBSDCOMP:
-		setting->nobsdcomp = g_value_get_boolean (value);
+		priv->nobsdcomp = g_value_get_boolean (value);
 		break;
 	case PROP_NODEFLATE:
-		setting->nodeflate = g_value_get_boolean (value);
+		priv->nodeflate = g_value_get_boolean (value);
 		break;
 	case PROP_NO_VJ_COMP:
-		setting->no_vj_comp = g_value_get_boolean (value);
+		priv->no_vj_comp = g_value_get_boolean (value);
 		break;
 	case PROP_REQUIRE_MPPE:
-		setting->require_mppe = g_value_get_boolean (value);
+		priv->require_mppe = g_value_get_boolean (value);
 		break;
 	case PROP_REQUIRE_MPPE_128:
-		setting->require_mppe_128 = g_value_get_boolean (value);
+		priv->require_mppe_128 = g_value_get_boolean (value);
 		break;
 	case PROP_MPPE_STATEFUL:
-		setting->mppe_stateful = g_value_get_boolean (value);
+		priv->mppe_stateful = g_value_get_boolean (value);
 		break;
 	case PROP_CRTSCTS:
-		setting->crtscts = g_value_get_boolean (value);
+		priv->crtscts = g_value_get_boolean (value);
 		break;
 	case PROP_BAUD:
-		setting->baud = g_value_get_uint (value);
+		priv->baud = g_value_get_uint (value);
 		break;
 	case PROP_MRU:
-		setting->mru = g_value_get_uint (value);
+		priv->mru = g_value_get_uint (value);
 		break;
 	case PROP_MTU:
-		setting->mtu = g_value_get_uint (value);
+		priv->mtu = g_value_get_uint (value);
 		break;
 	case PROP_LCP_ECHO_FAILURE:
-		setting->lcp_echo_failure = g_value_get_uint (value);
+		priv->lcp_echo_failure = g_value_get_uint (value);
 		break;
 	case PROP_LCP_ECHO_INTERVAL:
-		setting->lcp_echo_interval = g_value_get_uint (value);
+		priv->lcp_echo_interval = g_value_get_uint (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -193,58 +360,58 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_NOAUTH:
-		g_value_set_boolean (value, setting->noauth);
+		g_value_set_boolean (value, nm_setting_ppp_get_noauth (setting));
 		break;
 	case PROP_REFUSE_EAP:
-		g_value_set_boolean (value, setting->refuse_eap);
+		g_value_set_boolean (value, nm_setting_ppp_get_refuse_eap (setting));
 		break;
 	case PROP_REFUSE_PAP:
-		g_value_set_boolean (value, setting->refuse_pap);
+		g_value_set_boolean (value, nm_setting_ppp_get_refuse_pap (setting));
 		break;
 	case PROP_REFUSE_CHAP:
-		g_value_set_boolean (value, setting->refuse_chap);
+		g_value_set_boolean (value, nm_setting_ppp_get_refuse_chap (setting));
 		break;
 	case PROP_REFUSE_MSCHAP:
-		g_value_set_boolean (value, setting->refuse_mschap);
+		g_value_set_boolean (value, nm_setting_ppp_get_refuse_mschap (setting));
 		break;
 	case PROP_REFUSE_MSCHAPV2:
-		g_value_set_boolean (value, setting->refuse_mschapv2);
+		g_value_set_boolean (value, nm_setting_ppp_get_refuse_mschapv2 (setting));
 		break;
 	case PROP_NOBSDCOMP:
-		g_value_set_boolean (value, setting->nobsdcomp);
+		g_value_set_boolean (value, nm_setting_ppp_get_nobsdcomp (setting));
 		break;
 	case PROP_NODEFLATE:
-		g_value_set_boolean (value, setting->nodeflate);
+		g_value_set_boolean (value, nm_setting_ppp_get_nodeflate (setting));
 		break;
 	case PROP_NO_VJ_COMP:
-		g_value_set_boolean (value, setting->no_vj_comp);
+		g_value_set_boolean (value, nm_setting_ppp_get_no_vj_comp (setting));
 		break;
 	case PROP_REQUIRE_MPPE:
-		g_value_set_boolean (value, setting->require_mppe);
+		g_value_set_boolean (value, nm_setting_ppp_get_require_mppe (setting));
 		break;
 	case PROP_REQUIRE_MPPE_128:
-		g_value_set_boolean (value, setting->require_mppe_128);
+		g_value_set_boolean (value, nm_setting_ppp_get_require_mppe_128 (setting));
 		break;
 	case PROP_MPPE_STATEFUL:
-		g_value_set_boolean (value, setting->mppe_stateful);
+		g_value_set_boolean (value, nm_setting_ppp_get_mppe_stateful (setting));
 		break;
 	case PROP_CRTSCTS:
-		g_value_set_boolean (value, setting->crtscts);
+		g_value_set_boolean (value, nm_setting_ppp_get_crtscts (setting));
 		break;
 	case PROP_BAUD:
-		g_value_set_uint (value, setting->baud);
+		g_value_set_uint (value, nm_setting_ppp_get_baud (setting));
 		break;
 	case PROP_MRU:
-		g_value_set_uint (value, setting->mru);
+		g_value_set_uint (value, nm_setting_ppp_get_mru (setting));
 		break;
 	case PROP_MTU:
-		g_value_set_uint (value, setting->mtu);
+		g_value_set_uint (value, nm_setting_ppp_get_mtu (setting));
 		break;
 	case PROP_LCP_ECHO_FAILURE:
-		g_value_set_uint (value, setting->lcp_echo_failure);
+		g_value_set_uint (value, nm_setting_ppp_get_lcp_echo_failure (setting));
 		break;
 	case PROP_LCP_ECHO_INTERVAL:
-		g_value_set_uint (value, setting->lcp_echo_interval);
+		g_value_set_uint (value, nm_setting_ppp_get_lcp_echo_interval (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -257,6 +424,8 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
 	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+
+	g_type_class_add_private (setting_class, sizeof (NMSettingPPPPrivate));
 
 	/* virtual methods */
 	object_class->set_property = set_property;
