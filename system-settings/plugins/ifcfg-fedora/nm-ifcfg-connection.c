@@ -179,7 +179,7 @@ get_udi_for_connection (NMConnection *connection,
 		s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
 		if (s_wireless) {
 			devices = nm_system_config_hal_manager_get_devices_of_type (hal_mgr, NM_DEVICE_TYPE_WIFI);
-			udi = get_ether_device_udi (g_connection, s_wireless->mac_address, devices);
+			udi = get_ether_device_udi (g_connection, nm_setting_wireless_get_mac_address (s_wireless), devices);
 		}
 		break;
 

@@ -1,3 +1,22 @@
+2008-10-28  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Tambet Ingo <tambet@gmail.com>
+
+	* libnm-util/libnm-util.ver
+	  libnm-util/nm-setting-wireless.c
+	  libnm-util/nm-setting-wireless.h
+		- Make properties private and add accessor functions
+
+	* src/NetworkManagerAP.c
+	  src/nm-device-wifi.c
+	  src/nm-manager.c
+	  src/supplicant-manager/nm-supplicant-config.c
+	  system-settings/plugins/ifcfg-fedora/nm-ifcfg-connection.c
+	  system-settings/plugins/ifcfg-fedora/reader.c
+	  system-settings/plugins/ifcfg-suse/parser.c
+	  system-settings/plugins/ifupdown/parser.c
+		- Use wireless setting accessors
+
 2008-10-27  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Tambet Ingo <tambet@gmail.com>

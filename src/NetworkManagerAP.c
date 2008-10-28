@@ -545,32 +545,32 @@ nm_ap_new_fake_from_connection (NMConnection *connection)
 	NMAccessPoint *ap;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wireless_sec;
-	GByteArray *ssid;
-	guint32 len;
+	const GByteArray *ssid;
+	const char *mode;
+	const char *band;
+	guint32 channel;
 	guint32 flags;
 
 	g_return_val_if_fail (connection != NULL, NULL);
 
 	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
 	g_return_val_if_fail (s_wireless != NULL, NULL);
-	g_return_val_if_fail (s_wireless->ssid != NULL, NULL);
-	g_return_val_if_fail (s_wireless->ssid->len > 0, NULL);
+
+	ssid = nm_setting_wireless_get_ssid (s_wireless);
+	g_return_val_if_fail (ssid != NULL, NULL);
+	g_return_val_if_fail (ssid->len > 0, NULL);
 
 	ap = nm_ap_new ();
 	nm_ap_set_fake (ap, TRUE);
-
-	len = s_wireless->ssid->len;
-	ssid = g_byte_array_sized_new (len);
-	g_byte_array_append (ssid, (const guint8 *) s_wireless->ssid->data, len);
 	nm_ap_set_ssid (ap, ssid);
-	g_byte_array_free (ssid, TRUE);
 
 	// FIXME: bssid too?
 
-	if (s_wireless->mode) {
-		if (!strcmp (s_wireless->mode, "infrastructure"))
+	mode = nm_setting_wireless_get_mode (s_wireless);
+	if (mode) {
+		if (!strcmp (mode, "infrastructure"))
 			nm_ap_set_mode (ap, NM_802_11_MODE_INFRA);
-		else if (!strcmp (s_wireless->mode, "adhoc"))
+		else if (!strcmp (mode, "adhoc"))
 			nm_ap_set_mode (ap, NM_802_11_MODE_ADHOC);
 		else
 			goto error;
@@ -578,8 +578,11 @@ nm_ap_new_fake_from_connection (NMConnection *connection)
 		nm_ap_set_mode (ap, NM_802_11_MODE_INFRA);
 	}
 
-	if (s_wireless->band && s_wireless->channel) {
-		guint32 freq = channel_to_freq (s_wireless->channel, s_wireless->band);
+	band = nm_setting_wireless_get_band (s_wireless);
+	channel = nm_setting_wireless_get_channel (s_wireless);
+
+	if (band && channel) {
+		guint32 freq = channel_to_freq (channel, band);
 
 		if (freq == 0)
 			goto error;
@@ -1196,6 +1199,10 @@ nm_ap_check_compatible (NMAccessPoint *self,
 	NMAccessPointPrivate *priv;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wireless_sec;
+	const char *mode;
+	const char *band;
+	const GByteArray *bssid;
+	guint32 channel;
 
 	g_return_val_if_fail (NM_IS_AP (self), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
@@ -1206,37 +1213,37 @@ nm_ap_check_compatible (NMAccessPoint *self,
 	if (s_wireless == NULL)
 		return FALSE;
 	
-	if (!nm_utils_same_ssid (s_wireless->ssid, priv->ssid, TRUE))
+	if (!nm_utils_same_ssid (nm_setting_wireless_get_ssid (s_wireless), priv->ssid, TRUE))
 		return FALSE;
 
-	if (s_wireless->bssid) {
-		if (memcmp (s_wireless->bssid->data, &priv->address, ETH_ALEN))
+	bssid = nm_setting_wireless_get_bssid (s_wireless);
+	if (bssid && memcmp (bssid->data, &priv->address, ETH_ALEN))
+		return FALSE;
+
+	mode = nm_setting_wireless_get_mode (s_wireless);
+	if (mode) {
+		if (!strcmp (mode, "infrastructure") && (priv->mode != NM_802_11_MODE_INFRA))
+			return FALSE;
+		if (!strcmp (mode, "adhoc") && (priv->mode != NM_802_11_MODE_ADHOC))
 			return FALSE;
 	}
 
-	if (s_wireless->mode) {
-		if (   !strcmp (s_wireless->mode, "infrastructure")
-		    && (priv->mode != NM_802_11_MODE_INFRA))
-			return FALSE;
-		if (   !strcmp (s_wireless->mode, "adhoc")
-		    && (priv->mode != NM_802_11_MODE_ADHOC))
-			return FALSE;
-	}
-
-	if (s_wireless->band) {
-		if (!strcmp (s_wireless->band, "a")) {
+	band = nm_setting_wireless_get_band (s_wireless);
+	if (band) {
+		if (!strcmp (band, "a")) {
 			if (priv->freq < 4915 || priv->freq > 5825)
 				return FALSE;
-		} else if (!strcmp (s_wireless->band, "bg")) {
+		} else if (!strcmp (band, "bg")) {
 			if (priv->freq < 2412 || priv->freq > 2484)
 				return FALSE;
 		}
 	}
 
-	if (s_wireless->channel) {
+	channel = nm_setting_wireless_get_channel (s_wireless);
+	if (channel) {
 		guint32 ap_chan = freq_to_channel (priv->freq);
 
-		if (s_wireless->channel != ap_chan)
+		if (channel != ap_chan)
 			return FALSE;
 	}
 

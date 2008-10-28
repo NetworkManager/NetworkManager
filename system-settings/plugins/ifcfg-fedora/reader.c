@@ -638,11 +638,15 @@ make_wireless_setting (shvarFile *ifcfg,
                        GError **error)
 {
 	NMSettingWireless *s_wireless;
+	GByteArray *array;
 	char *value;
 
 	s_wireless = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
 
-	if (!read_mac_address (ifcfg, &s_wireless->mac_address, error)) {
+	if (read_mac_address (ifcfg, &array, error)) {
+		g_object_set (s_wireless, NM_SETTING_WIRELESS_MAC_ADDRESS, array, NULL);
+		g_byte_array_free (array, TRUE);
+	} else {
 		g_object_unref (s_wireless);
 		return NULL;
 	}
@@ -659,9 +663,11 @@ make_wireless_setting (shvarFile *ifcfg,
 			goto error;
 		}
 
-		s_wireless->ssid = g_byte_array_sized_new (strlen (value));
-		g_byte_array_append (s_wireless->ssid, (const guint8 *) value, len);
+		array = g_byte_array_sized_new (strlen (value));
+		g_byte_array_append (array, (const guint8 *) value, len);
 		g_free (value);
+		g_object_set (s_wireless, NM_SETTING_WIRELESS_SSID, array, NULL);
+		g_byte_array_free (array, TRUE);
 	} else {
 		/* Only fail on lack of SSID if device is managed */
 		if (!unmanaged) {
@@ -674,14 +680,15 @@ make_wireless_setting (shvarFile *ifcfg,
 		value = svGetValue (ifcfg, "MODE");
 		if (value) {
 			char *lcase;
+			const char *mode = NULL;
 
 			lcase = g_ascii_strdown (value, -1);
 			g_free (value);
 
 			if (!strcmp (lcase, "ad-hoc")) {
-				s_wireless->mode = g_strdup ("adhoc");
+				mode = "adhoc";
 			} else if (!strcmp (lcase, "managed")) {
-				s_wireless->mode = g_strdup ("infrastructure");
+				mode = "infrastructure";
 			} else {
 				g_set_error (error, ifcfg_plugin_error_quark (), 0,
 				             "Invalid mode '%s' (not ad-hoc or managed)",
@@ -690,10 +697,13 @@ make_wireless_setting (shvarFile *ifcfg,
 				goto error;
 			}
 			g_free (lcase);
+
+			g_object_set (s_wireless, NM_SETTING_WIRELESS_MODE, mode, NULL);
 		}
 
 		if (security)
-			s_wireless->security = g_strdup (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+			g_object_set (s_wireless, NM_SETTING_WIRELESS_SEC,
+						  NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NULL);
 
 		// FIXME: channel/freq, other L2 parameters like RTS
 	}
@@ -715,7 +725,7 @@ wireless_connection_from_ifcfg (const char *file,
 	NMConnection *connection = NULL;
 	NMSetting *con_setting = NULL;
 	NMSetting *wireless_setting = NULL;
-	NMSettingWireless *s_wireless;
+	const GByteArray *ssid;
 	NMSetting *security_setting = NULL;
 	char *printable_ssid = NULL;
 
@@ -748,11 +758,10 @@ wireless_connection_from_ifcfg (const char *file,
 	}
 	nm_connection_add_setting (connection, wireless_setting);
 
-	s_wireless = (NMSettingWireless *) wireless_setting;
-	if (s_wireless && s_wireless->ssid) {
-		printable_ssid = nm_utils_ssid_to_utf8 ((const char *) s_wireless->ssid->data,
-		                                        (guint32) s_wireless->ssid->len);
-	} else
+	ssid = nm_setting_wireless_get_ssid (NM_SETTING_WIRELESS (wireless_setting));
+	if (ssid)
+		printable_ssid = nm_utils_ssid_to_utf8 ((const char *) ssid->data, ssid->len);
+	else
 		printable_ssid = g_strdup_printf ("unmanaged");
 
 	con_setting = make_connection_setting (file, ifcfg,

@@ -336,13 +336,16 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 {
 	NMSupplicantConfigPrivate *priv;
 	gboolean is_adhoc;
+	const char *mode;
+	const GByteArray *id;
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
 	g_return_val_if_fail (setting != NULL, FALSE);
 
 	priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
-	
-	is_adhoc = (setting->mode && !strcmp (setting->mode, "adhoc")) ? TRUE : FALSE;
+
+	mode = nm_setting_wireless_get_mode (setting);
+	is_adhoc = (mode && !strcmp (mode, "adhoc")) ? TRUE : FALSE;
 	if (is_adhoc)
 		priv->ap_scan = 2;
 	else if (is_broadcast == FALSE) {
@@ -352,10 +355,8 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 		priv->ap_scan = has_scan_capa_ssid ? 1 : 2;
 	}
 
-	if (!nm_supplicant_config_add_option (self, "ssid",
-					      (char *) setting->ssid->data,
-					      setting->ssid->len,
- 	                                     FALSE)) {
+	id = nm_setting_wireless_get_ssid (setting);
+	if (!nm_supplicant_config_add_option (self, "ssid", (char *) id->data, id->len, FALSE)) {
 		nm_warning ("Error adding SSID to supplicant config.");
 		return FALSE;
 	}
@@ -387,10 +388,11 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 			return FALSE;
 	}
 
-	if (setting->bssid && setting->bssid->len) {
+	id = nm_setting_wireless_get_bssid (setting);
+	if (id && id->len) {
 		char *str_bssid;
 
-		str_bssid = g_strdup_printf (MAC_FMT, MAC_ARG (setting->bssid->data));
+		str_bssid = g_strdup_printf (MAC_FMT, MAC_ARG (id->data));
 		if (!nm_supplicant_config_add_option (self, "bssid",
 		                                      str_bssid, strlen (str_bssid),
 		                                      FALSE)) {

@@ -161,10 +161,14 @@ update_wireless_setting_from_if_block(NMConnection *connection,
 			const gchar* newkey = map_by_mapping(mapping, curr->key+wpa_l);
 
 			if(newkey && !strcmp("ssid", newkey)) {
+				GByteArray *ssid;
 				gint len = strlen(curr->data);
-				wireless_setting->ssid = g_byte_array_sized_new (len);
-				g_byte_array_append (wireless_setting->ssid, (const guint8 *) curr->data, len);
-				PLUGIN_PRINT("SCPlugin-Ifupdown", "setting wpa ssid = %d", wireless_setting->ssid->len);
+
+				ssid = g_byte_array_sized_new (len);
+				g_byte_array_append (ssid, (const guint8 *) curr->data, len);
+				g_object_set (wireless_setting, NM_SETTING_WIRELESS_SSID, ssid, NULL);
+				g_byte_array_free (ssid, TRUE);
+				PLUGIN_PRINT("SCPlugin-Ifupdown", "setting wpa ssid = %d", len);
 			} else if(newkey) {
 
 				g_object_set(wireless_setting,
@@ -200,8 +204,11 @@ static char *normalize_psk (gpointer value, gpointer data) {
 		normalized = g_strdup (value);
 	} else {
 		/* passphrase */
+		const GByteArray *ssid;
 		unsigned char *buf = g_malloc0 (WPA_PMK_LEN * 2);
-		pbkdf2_sha1 (value, (char *) s_wireless->ssid->data, s_wireless->ssid->len, 4096, buf, WPA_PMK_LEN);
+
+		ssid = nm_setting_wireless_get_ssid (s_wireless);
+		pbkdf2_sha1 (value, (char *) ssid->data, ssid->len, 4096, buf, WPA_PMK_LEN);
 		normalized = utils_bin2hexstr ((const char *) buf, WPA_PMK_LEN, WPA_PMK_LEN * 2);
 		g_free (buf);
 	}

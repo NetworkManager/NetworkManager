@@ -426,8 +426,10 @@ read_wpa_psk_settings (shvarFile *ifcfg,
 			security->psk = g_strdup (value);
 		} else {
 			/* passphrase */
+			const GByteArray *ssid = nm_setting_wireless_get_mac_address (s_wireless);
 			unsigned char *buf = g_malloc0 (WPA_PMK_LEN * 2);
-			pbkdf2_sha1 (value, (char *) s_wireless->ssid->data, s_wireless->ssid->len, 4096, buf, WPA_PMK_LEN);
+
+			pbkdf2_sha1 (value, (char *) ssid->data, ssid->len, 4096, buf, WPA_PMK_LEN);
 			security->psk = utils_bin2hexstr ((const char *) buf, WPA_PMK_LEN, WPA_PMK_LEN * 2);
 			g_free (buf);
 		}
@@ -558,8 +560,12 @@ make_wireless_setting (shvarFile *ifcfg)
 		gsize len = strlen (str);
 
 		if (len > 0 && len <= 32) {
-			s_wireless->ssid = g_byte_array_sized_new (len);
-			g_byte_array_append (s_wireless->ssid, (const guint8 *) str, len);
+			GByteArray *ssid;
+
+			ssid = g_byte_array_sized_new (len);
+			g_byte_array_append (ssid, (const guint8 *) str, len);
+			g_object_set (s_wireless, NM_SETTING_WIRELESS_SSID, ssid, NULL);
+			g_byte_array_free (ssid, TRUE);
 		} else
 			g_warning ("Ignoring invalid ESSID '%s', (size %zu not between 1 and 32 inclusive)", str, len);
 
@@ -568,10 +574,17 @@ make_wireless_setting (shvarFile *ifcfg)
 
 	str = svGetValue (ifcfg, "WIRLESS_MODE");
 	if (str) {
+		const char *mode;
+
 		if (!g_ascii_strcasecmp (str, "ad-hoc"))
-			s_wireless->mode = g_strdup ("adhoc");
+			mode = "adhoc";
 		else if (!g_ascii_strcasecmp (str, "managed"))
-			s_wireless->mode = g_strdup ("infrastructure");
+			mode = "infrastructure";
+		else
+			mode = NULL;
+
+		if (mode)
+			g_object_set (s_wireless, NM_SETTING_WIRELESS_MODE, mode, NULL);
 
 		g_free (str);
 	}
@@ -584,12 +597,12 @@ make_wireless_setting (shvarFile *ifcfg)
 static char *
 get_printable_ssid (NMSetting *setting)
 {
-	NMSettingWireless *s_wireless = NM_SETTING_WIRELESS (setting);
+	const GByteArray *ssid;
 	char *printable_ssid = NULL;
 
-	if (s_wireless->ssid)
-		printable_ssid = nm_utils_ssid_to_utf8 ((const char *) s_wireless->ssid->data,
-										(guint32) s_wireless->ssid->len);
+	ssid = nm_setting_wireless_get_ssid (NM_SETTING_WIRELESS (setting));
+	if (ssid)
+		printable_ssid = nm_utils_ssid_to_utf8 ((const char *) ssid->data, ssid->len);
 
 	return printable_ssid;
 }

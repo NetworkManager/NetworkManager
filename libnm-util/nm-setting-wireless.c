@@ -75,6 +75,21 @@ nm_setting_wireless_error_get_type (void)
 
 G_DEFINE_TYPE (NMSettingWireless, nm_setting_wireless, NM_TYPE_SETTING)
 
+#define NM_SETTING_WIRELESS_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_WIRELESS, NMSettingWirelessPrivate))
+
+typedef struct {
+	GByteArray *ssid;
+	char *mode;
+	char *band;
+	guint32 channel;
+	GByteArray *bssid;
+	guint32 rate;
+	guint32 tx_power;
+	GByteArray *mac_address;
+	guint32 mtu;
+	GSList *seen_bssids;
+	char *security;
+} NMSettingWirelessPrivate;
 enum {
 	PROP_0,
 	PROP_SSID,
@@ -116,9 +131,13 @@ nm_setting_wireless_ap_security_compatible (NMSettingWireless *s_wireless,
 								    guint32 ap_rsn,
 								    guint32 ap_mode)
 {
+	NMSettingWirelessPrivate *priv;
+
 	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (s_wireless), FALSE);
 
-	if (!s_wireless->security) {
+	priv = NM_SETTING_WIRELESS_GET_PRIVATE (s_wireless);
+
+	if (!priv->security) {
 		if (   (ap_flags & NM_802_11_AP_FLAGS_PRIVACY)
 		    || (ap_wpa != NM_802_11_AP_SEC_NONE)
 		    || (ap_rsn != NM_802_11_AP_SEC_NONE))
@@ -126,7 +145,7 @@ nm_setting_wireless_ap_security_compatible (NMSettingWireless *s_wireless,
 		return TRUE;
 	}
 
-	if (strcmp (s_wireless->security, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) != 0)
+	if (strcmp (priv->security, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) != 0)
 		return FALSE;
 
 	if (s_wireless_sec == NULL || !s_wireless_sec->key_mgmt)
@@ -272,6 +291,136 @@ nm_setting_wireless_new (void)
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_WIRELESS, NULL);
 }
 
+const GByteArray *
+nm_setting_wireless_get_ssid (NMSettingWireless *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), NULL);
+
+	return NM_SETTING_WIRELESS_GET_PRIVATE (setting)->ssid;
+}
+
+const char *
+nm_setting_wireless_get_mode (NMSettingWireless *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), NULL);
+
+	return NM_SETTING_WIRELESS_GET_PRIVATE (setting)->mode;
+}
+
+const char *
+nm_setting_wireless_get_band (NMSettingWireless *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), NULL);
+
+	return NM_SETTING_WIRELESS_GET_PRIVATE (setting)->band;
+}
+
+guint32
+nm_setting_wireless_get_channel (NMSettingWireless *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), 0);
+
+	return NM_SETTING_WIRELESS_GET_PRIVATE (setting)->channel;
+}
+
+const GByteArray *
+nm_setting_wireless_get_bssid (NMSettingWireless *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), NULL);
+
+	return NM_SETTING_WIRELESS_GET_PRIVATE (setting)->bssid;
+}
+
+guint32
+nm_setting_wireless_get_rate (NMSettingWireless *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), 0);
+
+	return NM_SETTING_WIRELESS_GET_PRIVATE (setting)->rate;
+}
+
+guint32
+nm_setting_wireless_get_tx_power (NMSettingWireless *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), 0);
+
+	return NM_SETTING_WIRELESS_GET_PRIVATE (setting)->tx_power;
+}
+
+const GByteArray *
+nm_setting_wireless_get_mac_address (NMSettingWireless *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), NULL);
+
+	return NM_SETTING_WIRELESS_GET_PRIVATE (setting)->mac_address;
+}
+
+guint32
+nm_setting_wireless_get_mtu (NMSettingWireless *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), 0);
+
+	return NM_SETTING_WIRELESS_GET_PRIVATE (setting)->mtu;
+}
+
+const char *
+nm_setting_wireless_get_security (NMSettingWireless *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), NULL);
+
+	return NM_SETTING_WIRELESS_GET_PRIVATE (setting)->security;
+}
+
+gboolean
+nm_setting_wireless_add_seen_bssid (NMSettingWireless *setting,
+									const char *bssid)
+{
+	NMSettingWirelessPrivate *priv;
+	char *lower_bssid;
+	GSList *iter;
+	gboolean found = FALSE;
+
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), FALSE);
+	g_return_val_if_fail (bssid != NULL, FALSE);
+
+	lower_bssid = g_ascii_strdown (bssid, -1);
+	if (!lower_bssid)
+		return FALSE;
+
+	priv = NM_SETTING_WIRELESS_GET_PRIVATE (setting);
+
+	for (iter = priv->seen_bssids; iter; iter = iter->next) {
+		if (!strcmp ((char *) iter->data, lower_bssid)) {
+			found = TRUE;
+			break;
+		}
+	}
+
+	if (!found)
+		priv->seen_bssids = g_slist_prepend (priv->seen_bssids, lower_bssid);
+	else
+		g_free (lower_bssid);
+
+	return !found;
+}
+
+guint32
+nm_setting_wireless_get_num_seen_bssids (NMSettingWireless *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), 0);
+
+	return g_slist_length (NM_SETTING_WIRELESS_GET_PRIVATE (setting)->seen_bssids);
+}
+
+const char *
+nm_setting_wireless_get_seen_bssid (NMSettingWireless *setting,
+									guint32 i)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), NULL);
+
+	return (const char *) g_slist_nth (NM_SETTING_WIRELESS_GET_PRIVATE (setting)->seen_bssids, i);
+}
+
 static gint
 find_setting_by_name (gconstpointer a, gconstpointer b)
 {
@@ -284,12 +433,12 @@ find_setting_by_name (gconstpointer a, gconstpointer b)
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
-	NMSettingWireless *self = NM_SETTING_WIRELESS (setting);
+	NMSettingWirelessPrivate *priv = NM_SETTING_WIRELESS_GET_PRIVATE (setting);
 	const char *valid_modes[] = { "infrastructure", "adhoc", NULL };
 	const char *valid_bands[] = { "a", "bg", NULL };
 	GSList *iter;
 
-	if (!self->ssid) {
+	if (!priv->ssid) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_ERROR,
 		             NM_SETTING_WIRELESS_ERROR_MISSING_PROPERTY,
@@ -297,7 +446,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (!self->ssid->len || self->ssid->len > 32) {
+	if (!priv->ssid->len || priv->ssid->len > 32) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_ERROR,
 		             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
@@ -305,7 +454,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (self->mode && !nm_utils_string_in_list (self->mode, valid_modes)) {
+	if (priv->mode && !nm_utils_string_in_list (priv->mode, valid_modes)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_ERROR,
 		             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
@@ -313,7 +462,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (self->band && !nm_utils_string_in_list (self->band, valid_bands)) {
+	if (priv->band && !nm_utils_string_in_list (priv->band, valid_bands)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_ERROR,
 		             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
@@ -321,7 +470,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (self->channel && !self->band) {
+	if (priv->channel && !priv->band) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_ERROR,
 		             NM_SETTING_WIRELESS_ERROR_CHANNEL_REQUIRES_BAND,
@@ -329,8 +478,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (self->channel) {
-		if (!strcmp (self->band, "a")) {
+	if (priv->channel) {
+		if (!strcmp (priv->band, "a")) {
 			int i;
 			int valid_channels[] = { 7, 8, 9, 11, 12, 16, 34, 36, 40, 44, 48,
 			                         52, 56, 60, 64, 100, 104, 108, 112, 116,
@@ -339,7 +488,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			                         192, 196, 0 };
 
 			for (i = 0; valid_channels[i]; i++) {
-				if (self->channel == valid_channels[i])
+				if (priv->channel == valid_channels[i])
 					break;
 			}
 
@@ -350,7 +499,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 				             NM_SETTING_WIRELESS_CHANNEL);
 				return FALSE;
 			}
-		} else if (!strcmp (self->band, "bg") && self->channel > 14) {
+		} else if (!strcmp (priv->band, "bg") && priv->channel > 14) {
 				g_set_error (error,
 				             NM_SETTING_WIRELESS_ERROR,
 				             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
@@ -359,7 +508,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		}
 	}
 
-	if (self->bssid && self->bssid->len != ETH_ALEN) {
+	if (priv->bssid && priv->bssid->len != ETH_ALEN) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_ERROR,
 		             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
@@ -367,7 +516,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (self->mac_address && self->mac_address->len != ETH_ALEN) {
+	if (priv->mac_address && priv->mac_address->len != ETH_ALEN) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_ERROR,
 		             NM_SETTING_WIRELESS_ERROR_INVALID_PROPERTY,
@@ -375,7 +524,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	for (iter = self->seen_bssids; iter; iter = iter->next) {
+	for (iter = priv->seen_bssids; iter; iter = iter->next) {
 		struct ether_addr addr;
 
 		if (!ether_aton_r (iter->data, &addr)) {
@@ -387,8 +536,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		}
 	}
 
-	if (   self->security
-	    && !g_slist_find_custom (all_settings, self->security, find_setting_by_name)) {
+	if (   priv->security
+	    && !g_slist_find_custom (all_settings, priv->security, find_setting_by_name)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_ERROR,
 		             NM_SETTING_WIRELESS_ERROR_MISSING_SECURITY_SETTING,
@@ -408,20 +557,20 @@ nm_setting_wireless_init (NMSettingWireless *setting)
 static void
 finalize (GObject *object)
 {
-	NMSettingWireless *self = NM_SETTING_WIRELESS (object);
+	NMSettingWirelessPrivate *priv = NM_SETTING_WIRELESS_GET_PRIVATE (object);
 
-	g_free (self->mode);
-	g_free (self->band);
-	g_free (self->security);
+	g_free (priv->mode);
+	g_free (priv->band);
+	g_free (priv->security);
 
-	if (self->ssid)
-		g_byte_array_free (self->ssid, TRUE);
-	if (self->bssid)
-		g_byte_array_free (self->bssid, TRUE);
-	if (self->mac_address)
-		g_byte_array_free (self->mac_address, TRUE);
+	if (priv->ssid)
+		g_byte_array_free (priv->ssid, TRUE);
+	if (priv->bssid)
+		g_byte_array_free (priv->bssid, TRUE);
+	if (priv->mac_address)
+		g_byte_array_free (priv->mac_address, TRUE);
 
-	nm_utils_slist_free (self->seen_bssids, g_free);
+	nm_utils_slist_free (priv->seen_bssids, g_free);
 
 	G_OBJECT_CLASS (nm_setting_wireless_parent_class)->finalize (object);
 }
@@ -430,51 +579,51 @@ static void
 set_property (GObject *object, guint prop_id,
 		    const GValue *value, GParamSpec *pspec)
 {
-	NMSettingWireless *setting = NM_SETTING_WIRELESS (object);
+	NMSettingWirelessPrivate *priv = NM_SETTING_WIRELESS_GET_PRIVATE (object);
 
 	switch (prop_id) {
 	case PROP_SSID:
-		if (setting->ssid)
-			g_byte_array_free (setting->ssid, TRUE);
-		setting->ssid = g_value_dup_boxed (value);
+		if (priv->ssid)
+			g_byte_array_free (priv->ssid, TRUE);
+		priv->ssid = g_value_dup_boxed (value);
 		break;
 	case PROP_MODE:
-		g_free (setting->mode);
-		setting->mode = g_value_dup_string (value);
+		g_free (priv->mode);
+		priv->mode = g_value_dup_string (value);
 		break;
 	case PROP_BAND:
-		g_free (setting->band);
-		setting->band = g_value_dup_string (value);
+		g_free (priv->band);
+		priv->band = g_value_dup_string (value);
 		break;
 	case PROP_CHANNEL:
-		setting->channel = g_value_get_uint (value);
+		priv->channel = g_value_get_uint (value);
 		break;
 	case PROP_BSSID:
-		if (setting->bssid)
-			g_byte_array_free (setting->bssid, TRUE);
-		setting->bssid = g_value_dup_boxed (value);
+		if (priv->bssid)
+			g_byte_array_free (priv->bssid, TRUE);
+		priv->bssid = g_value_dup_boxed (value);
 		break;
 	case PROP_RATE:
-		setting->rate = g_value_get_uint (value);
+		priv->rate = g_value_get_uint (value);
 		break;
 	case PROP_TX_POWER:
-		setting->tx_power = g_value_get_uint (value);
+		priv->tx_power = g_value_get_uint (value);
 		break;
 	case PROP_MAC_ADDRESS:
-		if (setting->mac_address)
-			g_byte_array_free (setting->mac_address, TRUE);
-		setting->mac_address = g_value_dup_boxed (value);
+		if (priv->mac_address)
+			g_byte_array_free (priv->mac_address, TRUE);
+		priv->mac_address = g_value_dup_boxed (value);
 		break;
 	case PROP_MTU:
-		setting->mtu = g_value_get_uint (value);
+		priv->mtu = g_value_get_uint (value);
 		break;
 	case PROP_SEEN_BSSIDS:
-		nm_utils_slist_free (setting->seen_bssids, g_free);
-		setting->seen_bssids = g_value_dup_boxed (value);
+		nm_utils_slist_free (priv->seen_bssids, g_free);
+		priv->seen_bssids = g_value_dup_boxed (value);
 		break;
 	case PROP_SEC:
-		g_free (setting->security);
-		setting->security = g_value_dup_string (value);
+		g_free (priv->security);
+		priv->security = g_value_dup_string (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -490,37 +639,37 @@ get_property (GObject *object, guint prop_id,
 
 	switch (prop_id) {
 	case PROP_SSID:
-		g_value_set_boxed (value, setting->ssid);
+		g_value_set_boxed (value, nm_setting_wireless_get_ssid (setting));
 		break;
 	case PROP_MODE:
-		g_value_set_string (value, setting->mode);
+		g_value_set_string (value, nm_setting_wireless_get_mode (setting));
 		break;
 	case PROP_BAND:
-		g_value_set_string (value, setting->band);
+		g_value_set_string (value, nm_setting_wireless_get_band (setting));
 		break;
 	case PROP_CHANNEL:
-		g_value_set_uint (value, setting->channel);
+		g_value_set_uint (value, nm_setting_wireless_get_channel (setting));
 		break;
 	case PROP_BSSID:
-		g_value_set_boxed (value, setting->bssid);
+		g_value_set_boxed (value, nm_setting_wireless_get_bssid (setting));
 		break;
 	case PROP_RATE:
-		g_value_set_uint (value, setting->rate);
+		g_value_set_uint (value, nm_setting_wireless_get_rate (setting));
 		break;
 	case PROP_TX_POWER:
-		g_value_set_uint (value, setting->tx_power);
+		g_value_set_uint (value, nm_setting_wireless_get_tx_power (setting));
 		break;
 	case PROP_MAC_ADDRESS:
-		g_value_set_boxed (value, setting->mac_address);
+		g_value_set_boxed (value, nm_setting_wireless_get_mac_address (setting));
 		break;
 	case PROP_MTU:
-		g_value_set_uint (value, setting->mtu);
+		g_value_set_uint (value, nm_setting_wireless_get_mtu (setting));
 		break;
 	case PROP_SEEN_BSSIDS:
-		g_value_set_boxed (value, setting->seen_bssids);
+		g_value_set_boxed (value, NM_SETTING_WIRELESS_GET_PRIVATE (setting)->seen_bssids);
 		break;
 	case PROP_SEC:
-		g_value_set_string (value, setting->security);
+		g_value_set_string (value, nm_setting_wireless_get_security (setting));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -533,6 +682,8 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
 	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+
+	g_type_class_add_private (setting_class, sizeof (NMSettingWirelessPrivate));
 
 	/* virtual methods */
 	object_class->set_property = set_property;

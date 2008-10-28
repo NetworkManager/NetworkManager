@@ -986,6 +986,7 @@ real_check_connection_compatible (NMDevice *device,
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
+	const GByteArray *mac;
 
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	g_assert (s_con);
@@ -1005,8 +1006,8 @@ real_check_connection_compatible (NMDevice *device,
 		return FALSE;
 	}
 
-	if (   s_wireless->mac_address
-		&& memcmp (s_wireless->mac_address->data, &(priv->hw_addr.ether_addr_octet), ETH_ALEN)) {
+	mac = nm_setting_wireless_get_mac_address (s_wireless);
+	if (mac && memcmp (mac->data, &(priv->hw_addr.ether_addr_octet), ETH_ALEN)) {
 		g_set_error (error,
 		             NM_WIFI_ERROR, NM_WIFI_ERROR_CONNECTION_INCOMPATIBLE,
 		             "The connection's MAC address did not match this device.");
@@ -1055,6 +1056,7 @@ real_get_best_auto_connection (NMDevice *dev,
 		NMConnection *connection = NM_CONNECTION (iter->data);
 		NMSettingConnection *s_con;
 		NMSettingWireless *s_wireless;
+		const GByteArray *mac;
 		NMSettingIP4Config *s_ip4;
 
 		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
@@ -1069,10 +1071,9 @@ real_get_best_auto_connection (NMDevice *dev,
 		if (!s_wireless)
 			continue;
 
-		if (s_wireless->mac_address) {
-			if (memcmp (s_wireless->mac_address->data, priv->hw_addr.ether_addr_octet, ETH_ALEN))
+		mac = nm_setting_wireless_get_mac_address (s_wireless);
+		if (mac && memcmp (mac->data, priv->hw_addr.ether_addr_octet, ETH_ALEN))
 				continue;
-		}
 
 		/* Use the connection if it's a shared connection */
 		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
@@ -2635,9 +2636,11 @@ build_supplicant_config (NMDeviceWifi *self,
 	 * nothing was specified then pick something usable.
 	 */
 	if ((nm_ap_get_mode (ap) == NM_802_11_MODE_ADHOC) && nm_ap_get_user_created (ap)) {
+		const char *band = nm_setting_wireless_get_band (s_wireless);
+
 		adhoc_freq = nm_ap_get_freq (ap);
 		if (!adhoc_freq) {
-			if (s_wireless->band && !strcmp (s_wireless->band, "a")) {
+			if (band && !strcmp (band, "a")) {
 				guint32 a_freqs[] = {5180, 5200, 5220, 5745, 5765, 5785, 5805, 0};
 				adhoc_freq = find_supported_frequency (self, a_freqs);
 			} else {
@@ -2647,7 +2650,7 @@ build_supplicant_config (NMDeviceWifi *self,
 		}
 
 		if (!adhoc_freq) {
-			if (s_wireless->band && !strcmp (s_wireless->band, "a"))
+			if (band && !strcmp (band, "a"))
 				adhoc_freq = 5180;
 			else
 				adhoc_freq = 2462;
@@ -2878,7 +2881,7 @@ real_act_stage2_config (NMDevice *dev, NMDeviceStateReason *reason)
 	}
 
 	/* have secrets, or no secrets required */
-	if (s_wireless->security) {
+	if (nm_setting_wireless_get_security (s_wireless)) {
 		nm_info ("Activation (%s/wireless): connection '%s' has security"
 		         ", and secrets exist.  No new secrets needed.",
 		         iface, nm_setting_connection_get_id (s_connection));
@@ -2949,6 +2952,7 @@ real_act_stage4_get_ip4_config (NMDevice *dev,
 	if ((ret == NM_ACT_STAGE_RETURN_SUCCESS) && *config) {
 		NMConnection *connection;
 		NMSettingWireless *s_wireless;
+		guint32 mtu;
 
 		connection = nm_act_request_get_connection (nm_device_get_act_request (dev));
 		g_assert (connection);
@@ -2956,8 +2960,9 @@ real_act_stage4_get_ip4_config (NMDevice *dev,
 		g_assert (s_wireless);
 
 		/* MTU override */
-		if (s_wireless->mtu)
-			nm_ip4_config_set_mtu (*config, s_wireless->mtu);
+		mtu = nm_setting_wireless_get_mtu (s_wireless);
+		if (mtu)
+			nm_ip4_config_set_mtu (*config, mtu);
 	}
 
 	return ret;

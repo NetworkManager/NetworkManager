@@ -69,18 +69,6 @@ GQuark nm_setting_wireless_error_quark (void);
 
 typedef struct {
 	NMSetting parent;
-
-	GByteArray *ssid;
-	char *mode;
-	char *band;
-	guint32 channel;
-	GByteArray *bssid;
-	guint32 rate;
-	guint32 tx_power;
-	GByteArray *mac_address;
-	guint32 mtu;
-	GSList *seen_bssids;
-	char *security;
 } NMSettingWireless;
 
 typedef struct {
@@ -91,12 +79,30 @@ GType nm_setting_wireless_get_type (void);
 
 NMSetting *nm_setting_wireless_new (void);
 
-gboolean   nm_setting_wireless_ap_security_compatible (NMSettingWireless *s_wireless,
-											NMSettingWirelessSecurity *s_wireless_sec,
-											guint32 ap_flags,
-											guint32 ap_wpa,
-											guint32 ap_rsn,
-											guint32 ap_mode);
+const GByteArray *nm_setting_wireless_get_ssid               (NMSettingWireless *setting);
+const char       *nm_setting_wireless_get_mode               (NMSettingWireless *setting);
+const char       *nm_setting_wireless_get_band               (NMSettingWireless *setting);
+guint32           nm_setting_wireless_get_channel            (NMSettingWireless *setting);
+const GByteArray *nm_setting_wireless_get_bssid              (NMSettingWireless *setting);
+guint32           nm_setting_wireless_get_rate               (NMSettingWireless *setting);
+guint32           nm_setting_wireless_get_tx_power           (NMSettingWireless *setting);
+const GByteArray *nm_setting_wireless_get_mac_address        (NMSettingWireless *setting);
+guint32           nm_setting_wireless_get_mtu                (NMSettingWireless *setting);
+const char       *nm_setting_wireless_get_security           (NMSettingWireless *setting);
+
+gboolean          nm_setting_wireless_add_seen_bssid         (NMSettingWireless *setting,
+															  const char *bssid);
+
+guint32           nm_setting_wireless_get_num_seen_bssids    (NMSettingWireless *setting);
+const char       *nm_setting_wireless_get_seen_bssid         (NMSettingWireless *setting,
+															  guint32 i);
+
+gboolean          nm_setting_wireless_ap_security_compatible (NMSettingWireless *s_wireless,
+															  NMSettingWirelessSecurity *s_wireless_sec,
+															  guint32 ap_flags,
+															  guint32 ap_wpa,
+															  guint32 ap_rsn,
+															  guint32 ap_mode);
 
 G_END_DECLS
 
