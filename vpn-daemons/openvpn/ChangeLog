@@ -1,3 +1,10 @@
+2008-10-28  Tambet Ingo  <tambet@gmail.com>
+
+	Patch from Bin Li <libin.charles@gmail.com>.
+
+	* properties/import-export.c (handle_path_item): Search for certificates
+	from the directory where the configuration file is from.
+
 2008-10-26  Dan Williams  <dcbw@redhat.com>
 
 	* properties/auth-helpers.c

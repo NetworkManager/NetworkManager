@@ -61,9 +61,10 @@ handle_path_item (const char *line,
                   const char *tag,
                   const char *key,
                   GHashTable *hash,
+                  const char *path,
                   char **leftover)
 {
-	char *tmp, *file, *unquoted, *p;
+	char *tmp, *file, *unquoted, *p, *full_path;
 	gboolean quoted = FALSE;
 
 	if (leftover)
@@ -76,6 +77,12 @@ handle_path_item (const char *line,
 	file = g_strstrip (tmp);
 	if (!strlen (file))
 		goto out;
+
+	/* If file isn't an absolute file name, add the default path */
+	if (!g_path_is_absolute (file)) {
+		full_path = g_build_filename (path, file, NULL);
+		file = full_path;
+	}
 
 	/* Simple unquote */
 	if ((file[0] == '"') || (file[0] == '\'')) {
@@ -108,6 +115,8 @@ handle_path_item (const char *line,
 
 out:
 	g_free (tmp);
+	if (full_path)
+		g_free (full_path);
 	return TRUE;
 }
 
@@ -162,7 +171,8 @@ do_import (const char *path, char **lines, GError **error)
 	gboolean have_client = FALSE, have_remote = FALSE;
 	gboolean have_pass = FALSE, have_sk = FALSE;
 	const char *ctype = NULL;
-	const char *basename;
+	char *basename;
+	char *default_path;
 
 	connection = nm_connection_new ();
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
@@ -170,6 +180,10 @@ do_import (const char *path, char **lines, GError **error)
 
 	s_vpn = NM_SETTING_VPN (nm_setting_vpn_new ());
 	s_vpn->service_type = g_strdup (NM_DBUS_SERVICE_OPENVPN);
+	
+	/* Get the default path for ca, cert, key file, these files maybe
+	 * in same path with the configuration file */
+	default_path = g_path_get_dirname (path);
 
 	basename = g_path_get_basename (path);
 	last_dot = strrchr (basename, '.');
@@ -255,17 +269,17 @@ do_import (const char *path, char **lines, GError **error)
 			continue;
 		}
 
-		if (handle_path_item (*line, CA_TAG, NM_OPENVPN_KEY_CA, s_vpn->data, NULL))
+		if (handle_path_item (*line, CA_TAG, NM_OPENVPN_KEY_CA, s_vpn->data, default_path, NULL))
 			continue;
 
-		if (handle_path_item (*line, CERT_TAG, NM_OPENVPN_KEY_CERT, s_vpn->data, NULL))
+		if (handle_path_item (*line, CERT_TAG, NM_OPENVPN_KEY_CERT, s_vpn->data, default_path, NULL))
 			continue;
 
-		if (handle_path_item (*line, KEY_TAG, NM_OPENVPN_KEY_KEY, s_vpn->data, NULL))
+		if (handle_path_item (*line, KEY_TAG, NM_OPENVPN_KEY_KEY, s_vpn->data, default_path, NULL))
 			continue;
 
 		if (handle_path_item (*line, SECRET_TAG, NM_OPENVPN_KEY_STATIC_KEY,
-		                      s_vpn->data, &leftover)) {
+		                      s_vpn->data, default_path, &leftover)) {
 			handle_direction ("secret",
 			                  NM_OPENVPN_KEY_STATIC_KEY_DIRECTION,
 			                  leftover,
@@ -274,7 +288,7 @@ do_import (const char *path, char **lines, GError **error)
 		}
 
 		if (handle_path_item (*line, TLS_AUTH_TAG, NM_OPENVPN_KEY_TA,
-		                      s_vpn->data, &leftover)) {
+		                      s_vpn->data, default_path, &leftover)) {
 			handle_direction ("tls-auth",
 			                  NM_OPENVPN_KEY_TA_DIR,
 			                  leftover,
@@ -364,6 +378,8 @@ do_import (const char *path, char **lines, GError **error)
 		                     g_strdup (NM_OPENVPN_KEY_CONNECTION_TYPE),
 		                     g_strdup (ctype));
 	}
+
+	g_free (default_path);
 
 	nm_connection_add_setting (connection, NM_SETTING (s_vpn));
 	return connection;
