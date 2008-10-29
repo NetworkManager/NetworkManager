@@ -45,9 +45,7 @@ typedef struct {
 static ValidProperty valid_properties[] = {
 	{ NM_VPNC_KEY_GATEWAY,               G_TYPE_STRING, 0, 0 },
 	{ NM_VPNC_KEY_ID,                    G_TYPE_STRING, 0, 0 },
-	{ NM_VPNC_KEY_SECRET,                G_TYPE_STRING, 0, 0 },
 	{ NM_VPNC_KEY_XAUTH_USER,            G_TYPE_STRING, 0, 0 },
-	{ NM_VPNC_KEY_XAUTH_PASSWORD,        G_TYPE_STRING, 0, 0 },
 	{ NM_VPNC_KEY_DOMAIN,                G_TYPE_STRING, 0, 0 },
 	{ NM_VPNC_KEY_DHGROUP,               G_TYPE_STRING, 0, 0 },
 	{ NM_VPNC_KEY_PERFECT_FORWARD,       G_TYPE_STRING, 0, 0 },
@@ -62,24 +60,38 @@ static ValidProperty valid_properties[] = {
 	{ NULL,                              G_TYPE_NONE, 0, 0 }
 };
 
+static ValidProperty valid_secrets[] = {
+	{ NM_VPNC_KEY_SECRET,                G_TYPE_STRING, 0, 0 },
+	{ NM_VPNC_KEY_XAUTH_PASSWORD,        G_TYPE_STRING, 0, 0 },
+	{ NULL,                              G_TYPE_NONE, 0, 0 }
+};
+
+typedef struct ValidateInfo {
+	ValidProperty *table;
+	GError **error;
+	gboolean have_items;
+} ValidateInfo;
+
 static void
-validate_one_property (gpointer key, gpointer value, gpointer user_data)
+validate_one_property (const char *key, const char *value, gpointer user_data)
 {
-	GError **error = (GError **) user_data;
+	ValidateInfo *info = (ValidateInfo *) user_data;
 	int i;
 
-	if (*error)
+	if (*(info->error))
 		return;
+
+	info->have_items = TRUE;
 
 	/* 'name' is the setting name; always allowed but unused */
-	if (!strcmp ((char *) key, NM_SETTING_NAME))
+	if (!strcmp (key, NM_SETTING_NAME))
 		return;
 
-	for (i = 0; valid_properties[i].name; i++) {
-		ValidProperty prop = valid_properties[i];
+	for (i = 0; info->table[i].name; i++) {
+		ValidProperty prop = info->table[i];
 		long int tmp;
 
-		if (strcmp (prop.name, (char *) key))
+		if (strcmp (prop.name, key))
 			continue;
 
 		switch (prop.type) {
@@ -87,50 +99,53 @@ validate_one_property (gpointer key, gpointer value, gpointer user_data)
 			return; /* valid */
 		case G_TYPE_INT:
 			errno = 0;
-			tmp = strtol ((char *) value, NULL, 10);
+			tmp = strtol (value, NULL, 10);
 			if (errno == 0 && tmp >= prop.int_min && tmp <= prop.int_max)
 				return; /* valid */
 
-			g_set_error (error,
+			g_set_error (info->error,
 			             NM_VPN_PLUGIN_ERROR,
 			             NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
 			             "invalid integer property '%s' or out of range [%d -> %d]",
-			             (const char *) key, prop.int_min, prop.int_max);
+			             key, prop.int_min, prop.int_max);
 			break;
 		case G_TYPE_BOOLEAN:
-			if (!strcmp ((char *) value, "yes") || !strcmp ((char *) value, "no"))
+			if (!strcmp (value, "yes") || !strcmp (value, "no"))
 				return; /* valid */
 
-			g_set_error (error,
+			g_set_error (info->error,
 			             NM_VPN_PLUGIN_ERROR,
 			             NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
 			             "invalid boolean property '%s' (not yes or no)",
-			             (const char *) key);
+			             key);
 			break;
 		default:
-			g_set_error (error,
+			g_set_error (info->error,
 			             NM_VPN_PLUGIN_ERROR,
 			             NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
 			             "unhandled property '%s' type %s",
-			             (const char *) key, g_type_name (prop.type));
+			             key, g_type_name (prop.type));
 			break;
 		}
 	}
 
 	/* Did not find the property from valid_properties or the type did not match */
-	if (!valid_properties[i].name) {
-		g_set_error (error,
+	if (!info->table[i].name) {
+		g_set_error (info->error,
 		             NM_VPN_PLUGIN_ERROR,
 		             NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
 		             "property '%s' invalid or not supported",
-		             (const char *) key);
+		             key);
 	}
 }
 
 static gboolean
-nm_vpnc_properties_validate (GHashTable *properties, GError **error)
+nm_vpnc_properties_validate (NMSettingVPN *s_vpn, GError **error)
 {
-	if (g_hash_table_size (properties) < 1) {
+	ValidateInfo info = { &valid_properties[0], error, FALSE };
+
+	nm_setting_vpn_foreach_data_item (s_vpn, validate_one_property, &info);
+	if (!info.have_items) {
 		g_set_error (error,
 		             NM_VPN_PLUGIN_ERROR,
 		             NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
@@ -139,7 +154,23 @@ nm_vpnc_properties_validate (GHashTable *properties, GError **error)
 		return FALSE;
 	}
 
-	g_hash_table_foreach (properties, validate_one_property, error);
+	return *error ? FALSE : TRUE;
+}
+
+static gboolean
+nm_vpnc_secrets_validate (NMSettingVPN *s_vpn, GError **error)
+{
+	ValidateInfo info = { &valid_secrets[0], error, FALSE };
+
+	nm_setting_vpn_foreach_secret (s_vpn, validate_one_property, &info);
+	if (!info.have_items) {
+		g_set_error (error,
+		             NM_VPN_PLUGIN_ERROR,
+		             NM_VPN_PLUGIN_ERROR_BAD_ARGUMENTS,
+		             "%s",
+		             "No VPN secrets!");
+		return FALSE;
+	}
 
 	return *error ? FALSE : TRUE;
 }
@@ -257,7 +288,7 @@ typedef struct {
 } WriteConfigInfo;
 
 static void
-write_one_property (gpointer key, gpointer value, gpointer user_data)
+write_one_property (const char *key, const char *value, gpointer user_data)
 {
 	WriteConfigInfo *info = (WriteConfigInfo *) user_data;
 	GType type = G_TYPE_INVALID;
@@ -271,8 +302,19 @@ write_one_property (gpointer key, gpointer value, gpointer user_data)
 		ValidProperty prop = valid_properties[i];
 
 		if (!strcmp (prop.name, (char *) key)) {
-			/* Property is ok */
-			type = prop.type;
+  			/* Property is ok */
+  			type = prop.type;
+			break;
+		}
+	}
+
+	/* Try the valid secrets table */
+	for (i = 0; type == G_TYPE_INVALID && valid_secrets[i].name; i++) {
+		ValidProperty prop = valid_secrets[i];
+
+		if (!strcmp (prop.name, (char *) key)) {
+  			/* Property is ok */
+  			type = prop.type;
 			break;
 		}
 	}
@@ -319,14 +361,15 @@ write_one_property (gpointer key, gpointer value, gpointer user_data)
 
 static gboolean
 nm_vpnc_config_write (gint vpnc_fd,
-                      const char *default_user_name,
-                      GHashTable *properties,
-                      GHashTable *secrets,
+                      NMSettingVPN *s_vpn,
                       GError **error)
 {
 	WriteConfigInfo *info;
-	const char *props_user_name;
+	const char *props_username;
 	const char *props_natt_mode;
+	const char *default_username;
+
+	default_username = nm_setting_vpn_get_user_name (s_vpn);
 
 	write_config_option (vpnc_fd, "Script " NM_VPNC_HELPER_PATH "\n");
 
@@ -335,17 +378,17 @@ nm_vpnc_config_write (gint vpnc_fd,
 	                     NM_VPNC_UDP_ENCAPSULATION_PORT);
 
 	/* Fill username if it's not present */
-	props_user_name = g_hash_table_lookup (properties, NM_VPNC_KEY_XAUTH_USER);
-	if (   default_user_name
-	    && strlen (default_user_name)
-	    && (!props_user_name || !strlen (props_user_name))) {
+	props_username = nm_setting_vpn_get_data_item (s_vpn, NM_VPNC_KEY_XAUTH_USER);
+	if (   default_username
+	    && strlen (default_username)
+	    && (!props_username || !strlen (props_username))) {
 		write_config_option (vpnc_fd,
 		                     NM_VPNC_KEY_XAUTH_USER " %s\n",
-		                     default_user_name);
+		                     default_username);
 	}
 	
 	/* Use NAT-T by default */
-	props_natt_mode = g_hash_table_lookup (properties, NM_VPNC_KEY_NAT_TRAVERSAL_MODE);
+	props_natt_mode = nm_setting_vpn_get_data_item (s_vpn, NM_VPNC_KEY_NAT_TRAVERSAL_MODE);
 	if (!props_natt_mode || !strlen (props_natt_mode)) {
 		write_config_option (vpnc_fd,
 		                     NM_VPNC_KEY_NAT_TRAVERSAL_MODE " %s\n",
@@ -354,8 +397,8 @@ nm_vpnc_config_write (gint vpnc_fd,
 
 	info = g_malloc0 (sizeof (WriteConfigInfo));
 	info->fd = vpnc_fd;
-	g_hash_table_foreach (properties, write_one_property, info);
-	g_hash_table_foreach (secrets, write_one_property, info);
+	nm_setting_vpn_foreach_data_item (s_vpn, write_one_property, info);
+	nm_setting_vpn_foreach_secret (s_vpn, write_one_property, info);
 	*error = info->error;
 	g_free (info);
 
@@ -373,16 +416,17 @@ real_connect (NMVPNPlugin   *plugin,
 
 	s_vpn = NM_SETTING_VPN (nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN));
 	g_assert (s_vpn);
-	if (!nm_vpnc_properties_validate (s_vpn->data, error))
+
+	if (!nm_vpnc_properties_validate (s_vpn, error))
 		goto out;
-	if (!nm_vpnc_properties_validate (s_vpn->secrets, error))
+	if (!nm_vpnc_secrets_validate (s_vpn, error))
 		goto out;
 
 	vpnc_fd = nm_vpnc_start_vpnc_binary (NM_VPNC_PLUGIN (plugin), error);
 	if (vpnc_fd < 0)
 		goto out;
 
-	if (!nm_vpnc_config_write (vpnc_fd, s_vpn->user_name, s_vpn->data, s_vpn->secrets, error))
+	if (!nm_vpnc_config_write (vpnc_fd, s_vpn, error))
 		goto out;
 
 	success = TRUE;
@@ -416,11 +460,11 @@ real_need_secrets (NMVPNPlugin *plugin,
 
 	// FIXME: there are some configurations where both passwords are not
 	// required.  Make sure they work somehow.
-	if (!g_hash_table_lookup (s_vpn->secrets, NM_VPNC_KEY_SECRET)) {
+	if (!nm_setting_vpn_get_secret (s_vpn, NM_VPNC_KEY_SECRET)) {
 		*setting_name = NM_SETTING_VPN_SETTING_NAME;
 		return TRUE;
 	}
-	if (!g_hash_table_lookup (s_vpn->secrets, NM_VPNC_KEY_XAUTH_PASSWORD)) {
+	if (!nm_setting_vpn_get_secret (s_vpn, NM_VPNC_KEY_XAUTH_PASSWORD)) {
 		*setting_name = NM_SETTING_VPN_SETTING_NAME;
 		return TRUE;
 	}

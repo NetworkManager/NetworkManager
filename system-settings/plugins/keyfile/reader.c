@@ -310,10 +310,8 @@ read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
 			continue;
 
 		if (NM_IS_SETTING_VPN (setting)) {
-			NMSettingVPN *s_vpn = NM_SETTING_VPN (setting);
-
 			if (strcmp (*iter, NM_SETTING_VPN_SERVICE_TYPE))
-				g_hash_table_insert (s_vpn->data, g_strdup (*iter), g_strdup (value));
+				nm_setting_vpn_add_data_item (NM_SETTING_VPN (setting), *iter, value);
 		}
 		g_free (value);
 	}
@@ -493,8 +491,10 @@ read_vpn_secrets (GKeyFile *file, NMSettingVPN *s_vpn)
 		char *secret;
 
 		secret = g_key_file_get_string (file, VPN_SECRETS_GROUP, *iter, NULL);
-		if (secret)
-			g_hash_table_insert (s_vpn->secrets, g_strdup (*iter), secret);
+		if (secret) {
+			nm_setting_vpn_add_secret (s_vpn, *iter, secret);
+			g_free (secret);
+		}
 	}
 	g_strfreev (keys);
 }

@@ -171,7 +171,7 @@ main (int argc, char *argv[])
 
 	if (password) {
 		memset (password, 0, strlen (password));
-		g_free (password);
+		gnome_keyring_memory_free (password);
 	}
 	exit_status = 0;
 

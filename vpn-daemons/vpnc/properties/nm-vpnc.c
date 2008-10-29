@@ -177,11 +177,11 @@ fill_vpn_passwords (VpncPluginUiWidget *self, NMConnection *connection)
 		if (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_SYSTEM) {
 			s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
 			if (s_vpn) {
-				tmp = g_hash_table_lookup (s_vpn->secrets, NM_VPNC_KEY_XAUTH_PASSWORD);
+				tmp = nm_setting_vpn_get_secret (s_vpn, NM_VPNC_KEY_XAUTH_PASSWORD);
 				if (tmp)
 					password = gnome_keyring_memory_strdup (tmp);
 
-				tmp = g_hash_table_lookup (s_vpn->secrets, NM_VPNC_KEY_SECRET);
+				tmp = nm_setting_vpn_get_secret (s_vpn, NM_VPNC_KEY_SECRET);
 				if (tmp)
 					group_password = gnome_keyring_memory_strdup (tmp);
 			}
@@ -245,7 +245,7 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 	GtkWidget *widget;
 	GtkListStore *store;
 	GtkTreeIter iter;
-	char *value;
+	const char *value;
 	int active = -1;
 	const char *natt_mode = NULL;
 
@@ -257,7 +257,7 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 	g_return_val_if_fail (widget != NULL, FALSE);
 	gtk_size_group_add_widget (priv->group, GTK_WIDGET (widget));
 	if (s_vpn) {
-		value = g_hash_table_lookup (s_vpn->data, NM_VPNC_KEY_GATEWAY);
+		value = nm_setting_vpn_get_data_item (s_vpn, NM_VPNC_KEY_GATEWAY);
 		if (value && strlen (value))
 			gtk_entry_set_text (GTK_ENTRY (widget), value);
 	}
@@ -267,7 +267,7 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 	g_return_val_if_fail (widget != NULL, FALSE);
 	gtk_size_group_add_widget (priv->group, GTK_WIDGET (widget));
 	if (s_vpn) {
-		value = g_hash_table_lookup (s_vpn->data, NM_VPNC_KEY_ID);
+		value = nm_setting_vpn_get_data_item (s_vpn, NM_VPNC_KEY_ID);
 		if (value && strlen (value))
 			gtk_entry_set_text (GTK_ENTRY (widget), value);
 	}
@@ -285,7 +285,7 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 	gtk_list_store_append (store, &iter);
 	gtk_list_store_set (store, &iter, 0, _("Weak (use with caution)"), -1);
 	if (s_vpn && (active < 0)) {
-		value = g_hash_table_lookup (s_vpn->data, NM_VPNC_KEY_SINGLE_DES);
+		value = nm_setting_vpn_get_data_item (s_vpn, NM_VPNC_KEY_SINGLE_DES);
 		if (value && !strcmp (value, "yes"))
 			active = 1;
 	}
@@ -293,7 +293,7 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 	gtk_list_store_append (store, &iter);
 	gtk_list_store_set (store, &iter, 0, _("None (completely insecure)"), -1);
 	if (s_vpn && (active < 0)) {
-		value = g_hash_table_lookup (s_vpn->data, NM_VPNC_KEY_NO_ENCRYPTION);
+		value = nm_setting_vpn_get_data_item (s_vpn, NM_VPNC_KEY_NO_ENCRYPTION);
 		if (value && !strcmp (value, "yes"))
 			active = 2;
 	}
@@ -307,7 +307,7 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 	g_return_val_if_fail (widget != NULL, FALSE);
 	gtk_size_group_add_widget (priv->group, GTK_WIDGET (widget));
 	if (s_vpn) {
-		value = g_hash_table_lookup (s_vpn->data, NM_VPNC_KEY_XAUTH_USER);
+		value = nm_setting_vpn_get_data_item (s_vpn, NM_VPNC_KEY_XAUTH_USER);
 		if (value && strlen (value))
 			gtk_entry_set_text (GTK_ENTRY (widget), value);
 	}
@@ -317,7 +317,7 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 	g_return_val_if_fail (widget != NULL, FALSE);
 	gtk_size_group_add_widget (priv->group, GTK_WIDGET (widget));
 	if (s_vpn) {
-		value = g_hash_table_lookup (s_vpn->data, NM_VPNC_KEY_DOMAIN);
+		value = nm_setting_vpn_get_data_item (s_vpn, NM_VPNC_KEY_DOMAIN);
 		if (value && strlen (value))
 			gtk_entry_set_text (GTK_ENTRY (widget), value);
 	}
@@ -326,7 +326,7 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 	active = -1;
 	store = gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_STRING);
 	if (s_vpn)
-		natt_mode = g_hash_table_lookup (s_vpn->data, NM_VPNC_KEY_NAT_TRAVERSAL_MODE);
+		natt_mode = nm_setting_vpn_get_data_item (s_vpn, NM_VPNC_KEY_NAT_TRAVERSAL_MODE);
 
 	gtk_list_store_append (store, &iter);
 	gtk_list_store_set (store, &iter, 0, _("NAT-T (default)"), 1, NM_VPNC_NATT_MODE_NATT, -1);
@@ -360,7 +360,7 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 	widget = glade_xml_get_widget (priv->xml, "disable_dpd_checkbutton");
 	g_return_val_if_fail (widget != NULL, FALSE);
 	if (s_vpn) {
-		value = g_hash_table_lookup (s_vpn->data, NM_VPNC_KEY_DPD_IDLE_TIMEOUT);
+		value = nm_setting_vpn_get_data_item (s_vpn, NM_VPNC_KEY_DPD_IDLE_TIMEOUT);
 		if (value) {
 			long int tmp;
 
@@ -412,53 +412,37 @@ update_connection (NMVpnPluginUiWidgetInterface *iface,
 		return FALSE;
 
 	s_vpn = NM_SETTING_VPN (nm_setting_vpn_new ());
-	s_vpn->service_type = g_strdup (NM_DBUS_SERVICE_VPNC);
+	g_object_set (s_vpn, NM_SETTING_VPN_SERVICE_TYPE, NM_DBUS_SERVICE_VPNC, NULL);
 
 	/* Gateway */
 	widget = glade_xml_get_widget (priv->xml, "gateway_entry");
 	str = (char *) gtk_entry_get_text (GTK_ENTRY (widget));
-	if (str && strlen (str)) {
-		g_hash_table_insert (s_vpn->data,
-		                     g_strdup (NM_VPNC_KEY_GATEWAY),
-		                     g_strdup (str));
-	}
+	if (str && strlen (str))
+		nm_setting_vpn_add_data_item (s_vpn, NM_VPNC_KEY_GATEWAY, str);
 
 	/* Group name */
 	widget = glade_xml_get_widget (priv->xml, "group_entry");
 	str = (char *) gtk_entry_get_text (GTK_ENTRY (widget));
-	if (str && strlen (str)) {
-		g_hash_table_insert (s_vpn->data,
-		                     g_strdup (NM_VPNC_KEY_ID),
-		                     g_strdup (str));
-	}
+	if (str && strlen (str))
+		nm_setting_vpn_add_data_item (s_vpn, NM_VPNC_KEY_ID, str);
 
 	widget = glade_xml_get_widget (priv->xml, "user_entry");
 	str = (char *) gtk_entry_get_text (GTK_ENTRY (widget));
-	if (str && strlen (str)) {
-		g_hash_table_insert (s_vpn->data,
-		                     g_strdup (NM_VPNC_KEY_XAUTH_USER),
-		                     g_strdup (str));
-	}
+	if (str && strlen (str))
+		nm_setting_vpn_add_data_item (s_vpn, NM_VPNC_KEY_XAUTH_USER, str);
 
 	widget = glade_xml_get_widget (priv->xml, "domain_entry");
 	str = (char *) gtk_entry_get_text (GTK_ENTRY (widget));
-	if (str && strlen (str)) {
-		g_hash_table_insert (s_vpn->data,
-		                     g_strdup (NM_VPNC_KEY_DOMAIN),
-		                     g_strdup (str));
-	}
+	if (str && strlen (str))
+		nm_setting_vpn_add_data_item (s_vpn, NM_VPNC_KEY_DOMAIN, str);
 
 	widget = glade_xml_get_widget (priv->xml, "encryption_combo");
 	switch (gtk_combo_box_get_active (GTK_COMBO_BOX (widget))) {
 	case ENC_TYPE_WEAK:
-		g_hash_table_insert (s_vpn->data,
-		                     g_strdup (NM_VPNC_KEY_SINGLE_DES),
-		                     g_strdup ("yes"));
+		nm_setting_vpn_add_data_item (s_vpn, NM_VPNC_KEY_SINGLE_DES, "yes");
 		break;
 	case ENC_TYPE_NONE:
-		g_hash_table_insert (s_vpn->data,
-		                     g_strdup (NM_VPNC_KEY_NO_ENCRYPTION),
-		                     g_strdup ("yes"));
+		nm_setting_vpn_add_data_item (s_vpn, NM_VPNC_KEY_NO_ENCRYPTION, "yes");
 		break;
 	case ENC_TYPE_SECURE:
 	default:
@@ -471,29 +455,22 @@ update_connection (NMVpnPluginUiWidgetInterface *iface,
 		const char *mode;
 
 		gtk_tree_model_get (model, &iter, 1, &mode, -1);
-		g_hash_table_insert (s_vpn->data,
-		                     g_strdup (NM_VPNC_KEY_NAT_TRAVERSAL_MODE),
-		                     g_strdup (mode));
-	} else {
-		g_hash_table_insert (s_vpn->data,
-		                     g_strdup (NM_VPNC_KEY_NAT_TRAVERSAL_MODE),
-		                     g_strdup (NM_VPNC_NATT_MODE_NATT));
-	}
+		nm_setting_vpn_add_data_item (s_vpn, NM_VPNC_KEY_NAT_TRAVERSAL_MODE, mode);
+	} else
+		nm_setting_vpn_add_data_item (s_vpn, NM_VPNC_KEY_NAT_TRAVERSAL_MODE, NM_VPNC_NATT_MODE_NATT);
 	
 	widget = glade_xml_get_widget (priv->xml, "disable_dpd_checkbutton");
 	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget))) {
-		g_hash_table_insert (s_vpn->data,
-		                     g_strdup (NM_VPNC_KEY_DPD_IDLE_TIMEOUT),
-		                     g_strdup ("0"));
+		nm_setting_vpn_add_data_item (s_vpn, NM_VPNC_KEY_DPD_IDLE_TIMEOUT, "0");
 	} else {
 		/* If DPD was disabled and now the user wishes to enable it, just
 		 * don't pass the DPD_IDLE_TIMEOUT option to vpnc and thus use the
 		 * default DPD idle time.  Otherwise keep the original DPD idle timeout.
 		 */
 		if (priv->orig_dpd_timeout >= 10) {
-			g_hash_table_insert (s_vpn->data,
-			                     g_strdup (NM_VPNC_KEY_DPD_IDLE_TIMEOUT),
-			                     g_strdup_printf ("%d", priv->orig_dpd_timeout));
+			char *tmp = g_strdup_printf ("%d", priv->orig_dpd_timeout);
+			nm_setting_vpn_add_data_item (s_vpn, NM_VPNC_KEY_DPD_IDLE_TIMEOUT, tmp);
+			g_free (tmp);
 		}
 	}
 
@@ -504,20 +481,14 @@ update_connection (NMVpnPluginUiWidgetInterface *iface,
 		/* User password */
 		widget = glade_xml_get_widget (priv->xml, "user_password_entry");
 		str = (char *) gtk_entry_get_text (GTK_ENTRY (widget));
-		if (str && strlen (str)) {
-			g_hash_table_insert (s_vpn->secrets,
-			                     g_strdup (NM_VPNC_KEY_XAUTH_PASSWORD),
-			                     g_strdup (str));
-		}
+		if (str && strlen (str))
+			nm_setting_vpn_add_secret (s_vpn, NM_VPNC_KEY_XAUTH_PASSWORD, str);
 
 		/* Group password */
 		widget = glade_xml_get_widget (priv->xml, "group_password_entry");
 		str = (char *) gtk_entry_get_text (GTK_ENTRY (widget));
-		if (str && strlen (str)) {
-			g_hash_table_insert (s_vpn->secrets,
-			                     g_strdup (NM_VPNC_KEY_SECRET),
-			                     g_strdup (str));
-		}
+		if (str && strlen (str))
+			nm_setting_vpn_add_secret (s_vpn, NM_VPNC_KEY_SECRET, str);
 	}
 
 	nm_connection_add_setting (connection, NM_SETTING (s_vpn));
@@ -728,7 +699,7 @@ import (NMVpnPluginUiInterface *iface, const char *path, GError **error)
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
 	s_vpn = NM_SETTING_VPN (nm_setting_vpn_new ());
-	s_vpn->service_type = g_strdup (VPNC_PLUGIN_SERVICE);
+	g_object_set (s_vpn, NM_SETTING_VPN_SERVICE_TYPE, NM_DBUS_SERVICE_VPNC, NULL);
 	nm_connection_add_setting (connection, NM_SETTING (s_vpn));
 
 	/* Connection name */
@@ -743,7 +714,7 @@ import (NMVpnPluginUiInterface *iface, const char *path, GError **error)
 
 	/* Gateway */
 	if ((buf = pcf_file_lookup_value (pcf, "main", "Host")))
-		g_hash_table_insert (s_vpn->data, g_strdup (NM_VPNC_KEY_GATEWAY), g_strdup (buf));
+		nm_setting_vpn_add_data_item (s_vpn, NM_VPNC_KEY_GATEWAY, buf);
 	else {
 		g_set_error (error, 0, 0, "does not look like a %s VPN connection (no Host)",
 		             VPNC_PLUGIN_NAME);
@@ -753,7 +724,7 @@ import (NMVpnPluginUiInterface *iface, const char *path, GError **error)
 
 	/* Group name */
 	if ((buf = pcf_file_lookup_value (pcf, "main", "GroupName")))
-		g_hash_table_insert (s_vpn->data, g_strdup (NM_VPNC_KEY_ID), g_strdup (buf));
+		nm_setting_vpn_add_data_item (s_vpn, NM_VPNC_KEY_ID, buf);
 	else {
 		g_set_error (error, 0, 0, "does not look like a %s VPN connection (no GroupName)",
 		             VPNC_PLUGIN_NAME);
@@ -766,23 +737,23 @@ import (NMVpnPluginUiInterface *iface, const char *path, GError **error)
 	buf = pcf_file_lookup_value (pcf, "main", "UserName");
 	have_value = buf == NULL ? FALSE : strlen (buf) > 0;
 	if (have_value)
-		g_hash_table_insert (s_vpn->data, g_strdup (NM_VPNC_KEY_XAUTH_USER), g_strdup (buf));
+		nm_setting_vpn_add_data_item (s_vpn, NM_VPNC_KEY_XAUTH_USER, buf);
 
 	buf = pcf_file_lookup_value (pcf, "main", "NTDomain");
 	have_value = buf == NULL ? FALSE : strlen (buf) > 0;
 	if (have_value)
-		g_hash_table_insert (s_vpn->data, g_strdup (NM_VPNC_KEY_DOMAIN), g_strdup (buf));
+		nm_setting_vpn_add_data_item (s_vpn, NM_VPNC_KEY_DOMAIN, buf);
 
 	buf = pcf_file_lookup_value (pcf, "main", "SingleDES");
 	have_value = (buf == NULL ? FALSE : strcmp (buf, "0") != 0);
 	if (have_value)
-		g_hash_table_insert (s_vpn->data, g_strdup (NM_VPNC_KEY_SINGLE_DES), g_strdup ("yes"));
+		nm_setting_vpn_add_data_item (s_vpn, NM_VPNC_KEY_SINGLE_DES, "yes");
 
 	/* Default is enabled, only disabled if explicit EnableNat=0 exists */
 	buf = pcf_file_lookup_value (pcf, "main", "EnableNat");
 	have_value = (buf ? strncmp (buf, "0", 1) == 0 : FALSE);
 	if (have_value)
-		g_hash_table_insert (s_vpn->data, g_strdup (NM_VPNC_KEY_NAT_TRAVERSAL_MODE), g_strdup (NM_VPNC_NATT_MODE_NATT));
+		nm_setting_vpn_add_data_item (s_vpn, NM_VPNC_KEY_NAT_TRAVERSAL_MODE, NM_VPNC_NATT_MODE_NATT);
 
 	if ((buf = pcf_file_lookup_value (pcf, "main", "PeerTimeout"))) {
 		long int val;
@@ -790,9 +761,9 @@ import (NMVpnPluginUiInterface *iface, const char *path, GError **error)
 		errno = 0;
 		val = strtol (buf, NULL, 10);
 		if ((errno == 0) && ((val == 0) || ((val >= 10) && (val <= 86400)))) {
-			g_hash_table_insert (s_vpn->data,
-			                     g_strdup (NM_VPNC_KEY_DPD_IDLE_TIMEOUT),
-			                     g_strdup_printf ("%d", (gint) val));
+			char *tmp = g_strdup_printf ("%d", (gint) val);
+			nm_setting_vpn_add_data_item (s_vpn, NM_VPNC_KEY_DPD_IDLE_TIMEOUT, tmp);
+			g_free (tmp);
 		}
 	}
 
@@ -855,10 +826,6 @@ export (NMVpnPluginUiInterface *iface,
 	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
 
 	s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
-	if (!s_vpn || !s_vpn->data) {
-		g_set_error (error, 0, 0, "connection was incomplete");
-		return FALSE;
-	}
 
 	f = fopen (path, "w");
 	if (!f) {
@@ -866,7 +833,7 @@ export (NMVpnPluginUiInterface *iface,
 		return FALSE;
 	}
 
-	value = g_hash_table_lookup (s_vpn->data, NM_VPNC_KEY_GATEWAY);
+	value = nm_setting_vpn_get_data_item (s_vpn, NM_VPNC_KEY_GATEWAY);
 	if (value && strlen (value))
 		gateway = value;
 	else {
@@ -874,7 +841,7 @@ export (NMVpnPluginUiInterface *iface,
 		goto done;
 	}
 
-	value = g_hash_table_lookup (s_vpn->data, NM_VPNC_KEY_ID);
+	value = nm_setting_vpn_get_data_item (s_vpn, NM_VPNC_KEY_ID);
 	if (value && strlen (value))
 		groupname = value;
 	else {
@@ -882,23 +849,23 @@ export (NMVpnPluginUiInterface *iface,
 		goto done;
 	}
 
-	value = g_hash_table_lookup (s_vpn->data, NM_VPNC_KEY_XAUTH_USER);
+	value = nm_setting_vpn_get_data_item (s_vpn, NM_VPNC_KEY_XAUTH_USER);
 	if (value && strlen (value))
 		username = value;
 
-	value = g_hash_table_lookup (s_vpn->data, NM_VPNC_KEY_DOMAIN);
+	value = nm_setting_vpn_get_data_item (s_vpn, NM_VPNC_KEY_DOMAIN);
 	if (value && strlen (value))
 		domain =  value;
 
-	value = g_hash_table_lookup (s_vpn->data, NM_VPNC_KEY_SINGLE_DES);
+	value = nm_setting_vpn_get_data_item (s_vpn, NM_VPNC_KEY_SINGLE_DES);
 	if (value && !strcmp (value, "yes"))
 		singledes = TRUE;
 
-	value = g_hash_table_lookup (s_vpn->data, NM_VPNC_KEY_NAT_TRAVERSAL_MODE);
+	value = nm_setting_vpn_get_data_item (s_vpn, NM_VPNC_KEY_NAT_TRAVERSAL_MODE);
 	if (value && strlen (value) && strcmp (value, NM_VPNC_NATT_MODE_NONE))
 		enablenat = TRUE;
 
-	value = g_hash_table_lookup (s_vpn->data, NM_VPNC_KEY_DPD_IDLE_TIMEOUT);
+	value = nm_setting_vpn_get_data_item (s_vpn, NM_VPNC_KEY_DPD_IDLE_TIMEOUT);
 	if (value && strlen (value))
 		peertimeout = value;
 

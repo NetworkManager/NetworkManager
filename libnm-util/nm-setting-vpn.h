@@ -59,41 +59,41 @@ GQuark nm_setting_vpn_error_quark (void);
 
 typedef struct {
 	NMSetting parent;
-
-	char *service_type;
-
-	/* username of the user requesting this connection, thus
-	 * it's really only valid for user connections, and it also
-	 * should never be saved out to persistent config.
-	 */
-	char *user_name;
-
-	/* The hash table is created at setting object
-	 * init time and should not be replaced.  It is
-	 * a char * -> char * mapping, and both the key
-	 * and value are owned by the hash table, and should
-	 * be allocated with functions whose value can be
-	 * freed with g_free().  Should not contain secrets.
-	 */
-	GHashTable *data;
-
-	/* The hash table is created at setting object
-	 * init time and should not be replaced.  It is
-	 * a char * -> char * mapping, and both the key
-	 * and value are owned by the hash table, and should
-	 * be allocated with functions whose value can be
-	 * freed with g_free().  Should contain secrets only.
-	 */
-	GHashTable *secrets;
 } NMSettingVPN;
 
 typedef struct {
 	NMSettingClass parent;
 } NMSettingVPNClass;
 
+typedef void (*VPNIterFunc) (const char *key, const char *value, gpointer user_data);
+
 GType nm_setting_vpn_get_type (void);
 
-NMSetting *nm_setting_vpn_new (void);
+NMSetting        *nm_setting_vpn_new               (void);
+const char       *nm_setting_vpn_get_service_type  (NMSettingVPN *setting);
+const char       *nm_setting_vpn_get_user_name     (NMSettingVPN *setting);
+
+void              nm_setting_vpn_add_data_item     (NMSettingVPN *setting,
+                                                    const char *key,
+                                                    const char *item);
+const char *      nm_setting_vpn_get_data_item     (NMSettingVPN *setting,
+                                                    const char *key);
+void              nm_setting_vpn_remove_data_item  (NMSettingVPN *setting,
+                                                    const char *key);
+void              nm_setting_vpn_foreach_data_item (NMSettingVPN *setting,
+                                                    VPNIterFunc func,
+                                                    gpointer user_data);
+
+void              nm_setting_vpn_add_secret        (NMSettingVPN *setting,
+                                                    const char *key,
+                                                    const char *secret);
+const char *      nm_setting_vpn_get_secret        (NMSettingVPN *setting,
+                                                    const char *key);
+void              nm_setting_vpn_remove_secret     (NMSettingVPN *setting,
+                                                    const char *key);
+void              nm_setting_vpn_foreach_secret    (NMSettingVPN *setting,
+                                                    VPNIterFunc func,
+                                                    gpointer user_data);
 
 G_END_DECLS
 

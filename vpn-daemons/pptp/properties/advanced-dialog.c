@@ -70,16 +70,15 @@ static const char *advanced_keys[] = {
 };
 
 static void
-copy_values (gpointer key, gpointer data, gpointer user_data)
+copy_values (const char *key, const char *value, gpointer user_data)
 {
 	GHashTable *hash = (GHashTable *) user_data;
 	const char **i;
 
 	for (i = &advanced_keys[0]; *i; i++) {
-		if (strcmp ((const char *) key, *i))
+		if (strcmp (key, *i))
 			continue;
-
-		g_hash_table_insert (hash, g_strdup ((const char *) key), g_strdup ((const char *) data));
+		g_hash_table_insert (hash, g_strdup (key), g_strdup (value));
 	}
 }
 
@@ -93,9 +92,7 @@ advanced_dialog_new_hash_from_connection (NMConnection *connection,
 	hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 
 	s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
-	if (s_vpn && s_vpn->data)
-		g_hash_table_foreach (s_vpn->data, copy_values, hash);
-
+	nm_setting_vpn_foreach_data_item (s_vpn, copy_values, hash);
 	return hash;
 }
 

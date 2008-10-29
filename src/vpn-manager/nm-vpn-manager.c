@@ -152,6 +152,7 @@ nm_vpn_manager_activate_connection (NMVPNManager *manager,
 	NMVPNService *service;
 	char *path = NULL;
 	NMVPNConnection *vpn;
+	const char *service_type;
 
 	g_return_val_if_fail (NM_IS_VPN_MANAGER (manager), NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
@@ -181,9 +182,10 @@ nm_vpn_manager_activate_connection (NMVPNManager *manager,
 		vpn = NULL;
 	}
 
-	service = nm_vpn_manager_get_service (manager, vpn_setting->service_type);
+	service_type = nm_setting_vpn_get_service_type (vpn_setting);
+	service = nm_vpn_manager_get_service (manager, service_type);
 	if (!service) {
-		service = nm_vpn_service_new (vpn_setting->service_type);
+		service = nm_vpn_service_new (service_type);
 		if (service)
 			nm_vpn_manager_add_service (manager, service);
 	}

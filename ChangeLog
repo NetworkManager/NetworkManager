@@ -1,3 +1,27 @@
+2008-10-29  Tambet Ingo  <tambet@gmail.com>
+
+	Half of it by Dan Williams <dcbw@redhat.com>
+
+	* libnm-util/libnm-util.ver
+	libnm-util/nm-setting-vpn.c
+	libnm-util/nm-setting-vpn.h
+		- Make properties private and add accessor functions.
+
+	* src/vpn-manager/nm-vpn-connection.c
+	src/vpn-manager/nm-vpn-manager.c
+	system-settings/plugins/keyfile/reader.c
+	vpn-daemons/openvpn/properties/auth-helpers.c
+	vpn-daemons/openvpn/properties/import-export.c
+	vpn-daemons/openvpn/properties/nm-openvpn.c
+	vpn-daemons/openvpn/src/nm-openvpn-service.c
+	vpn-daemons/pptp/auth-dialog/main.c
+	vpn-daemons/pptp/properties/advanced-dialog.c
+	vpn-daemons/pptp/properties/nm-pptp.c
+	vpn-daemons/pptp/src/nm-pptp-service.c
+	vpn-daemons/vpnc/properties/nm-vpnc.c
+	vpn-daemons/vpnc/src/nm-vpnc-service.c
+		- Use VPN setting accessors.
+
 2008-10-28  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Tambet Ingo <tambet@gmail.com>

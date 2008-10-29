@@ -285,7 +285,7 @@ init_plugin_ui (OpenvpnPluginUiWidget *self, NMConnection *connection, GError **
 		return FALSE;
 	gtk_size_group_add_widget (priv->group, widget);
 	if (s_vpn) {
-		value = g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_REMOTE);
+		value = nm_setting_vpn_get_data_item (s_vpn, NM_OPENVPN_KEY_REMOTE);
 		if (value)
 			gtk_entry_set_text (GTK_ENTRY (widget), value);
 	}
@@ -298,8 +298,8 @@ init_plugin_ui (OpenvpnPluginUiWidget *self, NMConnection *connection, GError **
 
 	store = gtk_list_store_new (3, G_TYPE_STRING, G_TYPE_INT, G_TYPE_STRING);
 
-	if (s_vpn && s_vpn->data) {
-		contype = g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_CONNECTION_TYPE);
+	if (s_vpn) {
+		contype = nm_setting_vpn_get_data_item (s_vpn, NM_OPENVPN_KEY_CONNECTION_TYPE);
 		if (contype) {
 			if (   strcmp (contype, NM_OPENVPN_CONTYPE_TLS)
 			    && strcmp (contype, NM_OPENVPN_CONTYPE_STATIC_KEY)
@@ -392,10 +392,10 @@ get_widget (NMVpnPluginUiWidgetInterface *iface)
 static void
 hash_copy_advanced (gpointer key, gpointer data, gpointer user_data)
 {
-	GHashTable *hash = (GHashTable *) user_data;
+	NMSettingVPN *s_vpn = NM_SETTING_VPN (user_data);
 	const char *value = (const char *) data;
 
-	g_hash_table_insert (hash, g_strdup ((const char *) key), g_strdup (value));
+	nm_setting_vpn_add_data_item (s_vpn, (const char *) key, value);
 }
 
 static const char *
@@ -431,27 +431,22 @@ update_connection (NMVpnPluginUiWidgetInterface *iface,
 		return FALSE;
 
 	s_vpn = NM_SETTING_VPN (nm_setting_vpn_new ());
-	s_vpn->service_type = g_strdup (NM_DBUS_SERVICE_OPENVPN);
+	g_object_set (s_vpn, NM_SETTING_VPN_SERVICE_TYPE, NM_DBUS_SERVICE_OPENVPN, NULL);
 
 	/* Gateway */
 	widget = glade_xml_get_widget (priv->xml, "gateway_entry");
 	str = (char *) gtk_entry_get_text (GTK_ENTRY (widget));
-	if (str && strlen (str)) {
-		g_hash_table_insert (s_vpn->data,
-		                     g_strdup (NM_OPENVPN_KEY_REMOTE),
-		                     g_strdup (str));
-	}
+	if (str && strlen (str))
+		nm_setting_vpn_add_data_item (s_vpn, NM_OPENVPN_KEY_REMOTE, str);
 
 	auth_type = get_auth_type (priv->xml);
 	if (auth_type) {
-		g_hash_table_insert (s_vpn->data,
-		                     g_strdup (NM_OPENVPN_KEY_CONNECTION_TYPE),
-		                     g_strdup (auth_type));
+		nm_setting_vpn_add_data_item (s_vpn, NM_OPENVPN_KEY_CONNECTION_TYPE, auth_type);
 		auth_widget_update_connection (priv->xml, auth_type, s_vpn);
 	}
 
 	if (priv->advanced)
-		g_hash_table_foreach (priv->advanced, hash_copy_advanced, s_vpn->data);
+		g_hash_table_foreach (priv->advanced, hash_copy_advanced, s_vpn);
 
 	nm_connection_add_setting (connection, NM_SETTING (s_vpn));
 	valid = TRUE;

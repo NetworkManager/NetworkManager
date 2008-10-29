@@ -224,14 +224,14 @@ nm_vpn_connection_new (NMConnection *connection,
 	return vpn_connection;
 }
 
-static char *
+static const char *
 nm_vpn_connection_get_service (NMVPNConnection *connection)
 {
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 	NMSettingVPN *setting;
 
 	setting = (NMSettingVPN *) nm_connection_get_setting (priv->connection, NM_TYPE_SETTING_VPN);
-	return setting->service_type;
+	return nm_setting_vpn_get_service_type (setting);
 }
 
 static void

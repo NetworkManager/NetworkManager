@@ -75,8 +75,7 @@ fill_password (GladeXML *xml,
 		if (s_vpn) {
 			const char *tmp;
 
-			tmp = g_hash_table_lookup (s_vpn->secrets,
-									   priv_key_password ? NM_OPENVPN_KEY_CERTPASS : NM_OPENVPN_KEY_PASSWORD);
+			tmp = nm_setting_vpn_get_secret (s_vpn, priv_key_password ? NM_OPENVPN_KEY_CERTPASS : NM_OPENVPN_KEY_PASSWORD);
 			if (tmp)
 				password = gnome_keyring_memory_strdup (tmp);
 		}
@@ -161,8 +160,8 @@ tls_pw_init_auth_widget (GladeXML *xml,
 	                                   _("Choose a Certificate Authority certificate..."));
 	g_signal_connect (G_OBJECT (widget), "selection-changed", G_CALLBACK (changed_cb), user_data);
 
-	if (s_vpn && s_vpn->data) {
-		value = g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_CA);
+	if (s_vpn) {
+		value = nm_setting_vpn_get_data_item (s_vpn, NM_OPENVPN_KEY_CA);
 		if (value && strlen (value))
 			gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (widget), value);
 	}
@@ -180,8 +179,8 @@ tls_pw_init_auth_widget (GladeXML *xml,
 		                                   _("Choose your personal certificate..."));
 		g_signal_connect (G_OBJECT (widget), "selection-changed", G_CALLBACK (changed_cb), user_data);
 
-		if (s_vpn && s_vpn->data) {
-			value = g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_CERT);
+		if (s_vpn) {
+			value = nm_setting_vpn_get_data_item (s_vpn, NM_OPENVPN_KEY_CERT);
 			if (value && strlen (value))
 				gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (widget), value);
 		}
@@ -198,8 +197,8 @@ tls_pw_init_auth_widget (GladeXML *xml,
 		                                   _("Choose your private key..."));
 		g_signal_connect (G_OBJECT (widget), "selection-changed", G_CALLBACK (changed_cb), user_data);
 
-		if (s_vpn && s_vpn->data) {
-			value = g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_KEY);
+		if (s_vpn) {
+			value = nm_setting_vpn_get_data_item (s_vpn, NM_OPENVPN_KEY_KEY);
 			if (value && strlen (value))
 				gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (widget), value);
 		}
@@ -211,8 +210,8 @@ tls_pw_init_auth_widget (GladeXML *xml,
 		g_free (tmp);
 
 		gtk_size_group_add_widget (group, widget);
-		if (s_vpn && s_vpn->data) {
-			value = g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_USERNAME);
+		if (s_vpn) {
+			value = nm_setting_vpn_get_data_item (s_vpn, NM_OPENVPN_KEY_USERNAME);
 			if (value && strlen (value))
 				gtk_entry_set_text (GTK_ENTRY (widget), value);
 		}
@@ -251,16 +250,16 @@ sk_init_auth_widget (GladeXML *xml,
 	                                   _("Choose an OpenVPN static key..."));
 	g_signal_connect (G_OBJECT (widget), "selection-changed", G_CALLBACK (changed_cb), user_data);
 
-	if (s_vpn && s_vpn->data) {
-		value = g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_STATIC_KEY);
+	if (s_vpn) {
+		value = nm_setting_vpn_get_data_item (s_vpn, NM_OPENVPN_KEY_STATIC_KEY);
 		if (value && strlen (value))
 			gtk_file_chooser_set_filename (GTK_FILE_CHOOSER (widget), value);
 	}
 
 	store = gtk_list_store_new (2, G_TYPE_STRING, G_TYPE_INT);
 
-	if (s_vpn && s_vpn->data) {
-		value = g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_STATIC_KEY_DIRECTION);
+	if (s_vpn) {
+		value = nm_setting_vpn_get_data_item (s_vpn, NM_OPENVPN_KEY_STATIC_KEY_DIRECTION);
 		if (value && strlen (value)) {
 			long int tmp;
 
@@ -297,8 +296,8 @@ sk_init_auth_widget (GladeXML *xml,
 	widget = glade_xml_get_widget (xml, "sk_local_address_entry");
 	gtk_size_group_add_widget (group, widget);
 	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (changed_cb), user_data);
-	if (s_vpn && s_vpn->data) {
-		value = g_hash_table_lookup (s_vpn->data, NM_OPENVPN_KEY_LOCAL_IP);
+	if (s_vpn) {
+		value = nm_setting_vpn_get_data_item (s_vpn, NM_OPENVPN_KEY_LOCAL_IP);
 		if (value && strlen (value))
 			gtk_entry_set_text (GTK_ENTRY (widget), value);
 	}
@@ -437,7 +436,6 @@ update_from_filechooser (GladeXML *xml,
 	g_return_if_fail (prefix != NULL);
 	g_return_if_fail (widget_name != NULL);
 	g_return_if_fail (s_vpn != NULL);
-	g_return_if_fail (s_vpn->data != NULL);
 
 	tmp = g_strdup_printf ("%s_%s", prefix, widget_name);
 	widget = glade_xml_get_widget (xml, tmp);
@@ -448,7 +446,7 @@ update_from_filechooser (GladeXML *xml,
 		return;
 
 	if (strlen (filename))
-		g_hash_table_insert (s_vpn->data, g_strdup (key), g_strdup (filename));
+		nm_setting_vpn_add_data_item (s_vpn, key, filename);
 	
 	g_free (filename);
 }
@@ -471,18 +469,14 @@ update_username (GladeXML *xml, const char *prefix, NMSettingVPN *s_vpn)
 	g_return_if_fail (xml != NULL);
 	g_return_if_fail (prefix != NULL);
 	g_return_if_fail (s_vpn != NULL);
-	g_return_if_fail (s_vpn->data != NULL);
 
 	tmp = g_strdup_printf ("%s_username_entry", prefix);
 	widget = glade_xml_get_widget (xml, tmp);
 	g_free (tmp);
 
 	str = gtk_entry_get_text (GTK_ENTRY (widget));
-	if (str && strlen (str)) {
-		g_hash_table_insert (s_vpn->data,
-		                     g_strdup (NM_OPENVPN_KEY_USERNAME),
-		                     g_strdup (str));
-	}
+	if (str && strlen (str))
+		nm_setting_vpn_add_data_item (s_vpn, NM_OPENVPN_KEY_USERNAME, str);
 }
 
 gboolean
@@ -512,9 +506,9 @@ auth_widget_update_connection (GladeXML *xml,
 
 			gtk_tree_model_get (model, &iter, SK_DIR_COL_NUM, &direction, -1);
 			if (direction > -1) {
-				g_hash_table_insert (s_vpn->data,
-				                     g_strdup (NM_OPENVPN_KEY_STATIC_KEY_DIRECTION),
-				                     g_strdup_printf ("%d", direction));
+				char *tmp = g_strdup_printf ("%d", direction);
+				nm_setting_vpn_add_data_item (s_vpn, NM_OPENVPN_KEY_STATIC_KEY_DIRECTION, tmp);
+				g_free (tmp);
 			}
 		}
 	} else
@@ -733,17 +727,16 @@ static const char *advanced_keys[] = {
 };
 
 static void
-copy_values (gpointer key, gpointer data, gpointer user_data)
+copy_values (const char *key, const char *value, gpointer user_data)
 {
 	GHashTable *hash = (GHashTable *) user_data;
-	const char *value = (const char *) data;
 	const char **i;
 
 	for (i = &advanced_keys[0]; *i; i++) {
-		if (strcmp ((const char *) key, *i))
+		if (strcmp (key, *i))
 			continue;
 
-		g_hash_table_insert (hash, g_strdup ((const char *) key), g_strdup (value));
+		g_hash_table_insert (hash, g_strdup (key), g_strdup (value));
 	}
 }
 
@@ -757,9 +750,7 @@ advanced_dialog_new_hash_from_connection (NMConnection *connection,
 	hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
 
 	s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
-	if (s_vpn && s_vpn->data)
-		g_hash_table_foreach (s_vpn->data, copy_values, hash);
-
+	nm_setting_vpn_foreach_data_item (s_vpn, copy_values, hash);
 	return hash;
 }
 
