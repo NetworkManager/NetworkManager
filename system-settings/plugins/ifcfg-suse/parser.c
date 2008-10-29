@@ -111,24 +111,26 @@ make_ip4_setting (shvarFile *ifcfg)
 {
 	NMSettingIP4Config *s_ip4;
 	char *str;
-	NMSettingIP4Address tmp = { 0, 0, 0 };
+	NMIP4Address *addr;
 
 	s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
 
 	str = svGetValue (ifcfg, "BOOTPROTO");
 	if (str) {
 		if (!g_ascii_strcasecmp (str, "bootp") || !g_ascii_strcasecmp (str, "dhcp"))
-			s_ip4->method = g_strdup (NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+			g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 		else if (!g_ascii_strcasecmp (str, "static"))
-			s_ip4->method = g_strdup (NM_SETTING_IP4_CONFIG_METHOD_MANUAL);
+			g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NULL);
 		else if (!g_ascii_strcasecmp (str, "autoip"))
-			s_ip4->method = g_strdup (NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL);
+			g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL, NULL);
 
 		g_free (str);
 	}
 
-	if (!s_ip4->method)
-		s_ip4->method = g_strdup (NM_SETTING_IP4_CONFIG_METHOD_AUTO);
+	if (!nm_setting_ip4_config_get_method (s_ip4))
+		g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+
+	addr = nm_ip4_address_new ();
 
 	str = svGetValue (ifcfg, "IPADDR");
 	if (str) {
@@ -138,10 +140,10 @@ make_ip4_setting (shvarFile *ifcfg)
 		pieces = g_strsplit (str, "/", 2);
 
 		if (inet_pton (AF_INET, pieces[0], &ip4_addr) > 0) {
-			tmp.address = ip4_addr.s_addr;
+			nm_ip4_address_set_address (addr, ip4_addr.s_addr);
 
 			if (g_strv_length (pieces) == 2)
-				tmp.prefix = atoi (pieces[1]);
+				nm_ip4_address_set_prefix (addr, atoi (pieces[1]));
 		} else
 			g_warning ("Ignoring invalid IP4 address '%s'", str);
 
@@ -149,42 +151,42 @@ make_ip4_setting (shvarFile *ifcfg)
 		g_free (str);
 	}
 
-	if (tmp.address && tmp.prefix == 0) {
+	if (nm_ip4_address_get_address (addr) && nm_ip4_address_get_prefix (addr) == 0) {
 		str = svGetValue (ifcfg, "PREFIXLEN");
 		if (str) {
-			tmp.prefix = atoi (str);
+			nm_ip4_address_set_prefix (addr, atoi (str));
 			g_free (str);
 		}
 	}
 
-	if (tmp.address && tmp.prefix == 0) {
+	if (nm_ip4_address_get_address (addr) && nm_ip4_address_get_prefix (addr) == 0) {
 		str = svGetValue (ifcfg, "NETMASK");
 		if (str) {
 			struct in_addr mask_addr;
 
 			if (inet_pton (AF_INET, str, &mask_addr) > 0)
-				tmp.prefix = nm_utils_ip4_netmask_to_prefix (mask_addr.s_addr);
+				nm_ip4_address_set_prefix (addr, nm_utils_ip4_netmask_to_prefix (mask_addr.s_addr));
 			else {
-				g_warning ("Ignoring invalid IP4 addres: invalid netmask: '%s'", str);
-				tmp.address = 0;
-				tmp.prefix = 0;
+				g_warning ("Ignoring invalid IP4 address: invalid netmask: '%s'", str);
+				nm_ip4_address_set_address (addr, 0);
+				nm_ip4_address_set_prefix (addr, 0);
 			}
 			g_free (str);
 		}
 	}
 
-	if (!tmp.prefix || tmp.prefix > 32) {
-		g_warning ("Ignoring invalid IP4 addres: invalid prefix: '%d'", tmp.prefix);
-		tmp.address = 0;
-		tmp.prefix = 0;
+	if (!nm_ip4_address_get_prefix (addr) || nm_ip4_address_get_prefix (addr) > 32) {
+		g_warning ("Ignoring invalid IP4 address: invalid prefix: '%d'", nm_ip4_address_get_prefix (addr));
+		nm_ip4_address_set_address (addr, 0);
+		nm_ip4_address_set_prefix (addr, 0);
 	}
 
-	if (tmp.address) {
-		NMSettingIP4Address *addr;
-		addr = g_new0 (NMSettingIP4Address, 1);
-		memcpy (addr, &tmp, sizeof (NMSettingIP4Address));
-		s_ip4->addresses = g_slist_append (s_ip4->addresses, addr);
+	if (nm_ip4_address_get_address (addr)) {
+		if (!nm_setting_ip4_config_add_address (s_ip4, addr))
+			g_warning ("Ignoring duplicate IP4 address");
 	}
+
+	nm_ip4_address_unref (addr);
 
 	return NM_SETTING (s_ip4);
 }

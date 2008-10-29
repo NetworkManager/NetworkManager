@@ -108,8 +108,7 @@ nm_ip4_config_get_dbus_path (NMIP4Config *config)
 }
 
 void
-nm_ip4_config_take_address (NMIP4Config *config,
-                            NMSettingIP4Address *address)
+nm_ip4_config_take_address (NMIP4Config *config, NMIP4Address *address)
 {
 	NMIP4ConfigPrivate *priv;
 
@@ -122,27 +121,23 @@ nm_ip4_config_take_address (NMIP4Config *config,
 
 void
 nm_ip4_config_add_address (NMIP4Config *config,
-                           NMSettingIP4Address *address)
+                           NMIP4Address *address)
 {
 	NMIP4ConfigPrivate *priv;
-	NMSettingIP4Address *copy;
 
 	g_return_if_fail (NM_IS_IP4_CONFIG (config));
 	g_return_if_fail (address != NULL);
 
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	copy = g_malloc0 (sizeof (NMSettingIP4Address));
-	memcpy (copy, address, sizeof (NMSettingIP4Address));
-	priv->addresses = g_slist_append (priv->addresses, copy);
+	priv->addresses = g_slist_append (priv->addresses, nm_ip4_address_dup (address));
 }
 
 void
 nm_ip4_config_replace_address (NMIP4Config *config,
                                guint i,
-                               NMSettingIP4Address *new_address)
+                               NMIP4Address *new_address)
 {
 	NMIP4ConfigPrivate *priv;
-	NMSettingIP4Address *copy;
 	GSList *old;
 
 	g_return_if_fail (NM_IS_IP4_CONFIG (config));
@@ -150,18 +145,16 @@ nm_ip4_config_replace_address (NMIP4Config *config,
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 	old = g_slist_nth (priv->addresses, i);
 	g_return_if_fail (old != NULL);
-	g_free (old->data);
+	nm_ip4_address_unref ((NMIP4Address *) old->data);
 
-	copy = g_malloc0 (sizeof (NMSettingIP4Address));
-	memcpy (copy, new_address, sizeof (NMSettingIP4Address));
-	old->data = copy;
+	old->data = nm_ip4_address_dup (new_address);
 }
 
-const NMSettingIP4Address *nm_ip4_config_get_address (NMIP4Config *config, guint i)
+NMIP4Address *nm_ip4_config_get_address (NMIP4Config *config, guint i)
 {
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
 
-	return (const NMSettingIP4Address *) g_slist_nth_data (NM_IP4_CONFIG_GET_PRIVATE (config)->addresses, i);
+	return (NMIP4Address *) g_slist_nth_data (NM_IP4_CONFIG_GET_PRIVATE (config)->addresses, i);
 }
 
 guint32 nm_ip4_config_get_num_addresses (NMIP4Config *config)
@@ -219,8 +212,7 @@ void nm_ip4_config_reset_nameservers (NMIP4Config *config)
 }
 
 void
-nm_ip4_config_take_route (NMIP4Config *config,
-						   NMSettingIP4Route *route)
+nm_ip4_config_take_route (NMIP4Config *config, NMIP4Route *route)
 {
 	NMIP4ConfigPrivate *priv;
 
@@ -232,28 +224,23 @@ nm_ip4_config_take_route (NMIP4Config *config,
 }
 
 void
-nm_ip4_config_add_route (NMIP4Config *config,
-						  NMSettingIP4Route *route)
+nm_ip4_config_add_route (NMIP4Config *config, NMIP4Route *route)
 {
 	NMIP4ConfigPrivate *priv;
-	NMSettingIP4Route *copy;
 
 	g_return_if_fail (NM_IS_IP4_CONFIG (config));
 	g_return_if_fail (route != NULL);
 
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	copy = g_malloc0 (sizeof (NMSettingIP4Route));
-	memcpy (copy, route, sizeof (NMSettingIP4Route));
-	priv->routes = g_slist_append (priv->routes, copy);
+	priv->routes = g_slist_append (priv->routes, nm_ip4_route_dup (route));
 }
 
 void
 nm_ip4_config_replace_route (NMIP4Config *config,
 							 guint i,
-							 NMSettingIP4Route *new_route)
+							 NMIP4Route *new_route)
 {
 	NMIP4ConfigPrivate *priv;
-	NMSettingIP4Route *copy;
 	GSList *old;
 
 	g_return_if_fail (NM_IS_IP4_CONFIG (config));
@@ -261,19 +248,17 @@ nm_ip4_config_replace_route (NMIP4Config *config,
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 	old = g_slist_nth (priv->routes, i);
 	g_return_if_fail (old != NULL);
-	g_free (old->data);
+	nm_ip4_route_unref ((NMIP4Route *) old->data);
 
-	copy = g_malloc0 (sizeof (NMSettingIP4Route));
-	memcpy (copy, new_route, sizeof (NMSettingIP4Route));
-	old->data = copy;
+	old->data = nm_ip4_route_dup (new_route);
 }
 
-const NMSettingIP4Route *
+NMIP4Route *
 nm_ip4_config_get_route (NMIP4Config *config, guint i)
 {
 	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
 
-	return (const NMSettingIP4Route *) g_slist_nth_data (NM_IP4_CONFIG_GET_PRIVATE (config)->routes, i);
+	return (NMIP4Route *) g_slist_nth_data (NM_IP4_CONFIG_GET_PRIVATE (config)->routes, i);
 }
 
 guint32 nm_ip4_config_get_num_routes (NMIP4Config *config)
@@ -431,7 +416,7 @@ struct rtnl_addr *
 nm_ip4_config_to_rtnl_addr (NMIP4Config *config, guint32 i, guint32 flags)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	const NMSettingIP4Address *config_addr;
+	NMIP4Address *config_addr;
 	struct rtnl_addr *addr;
 	gboolean success = TRUE;
 
@@ -444,19 +429,19 @@ nm_ip4_config_to_rtnl_addr (NMIP4Config *config, guint32 i, guint32 flags)
 		return NULL;
 
 	if (flags & NM_RTNL_ADDR_ADDR)
-		success = (ip4_addr_to_rtnl_local (config_addr->address, addr) >= 0);
+		success = (ip4_addr_to_rtnl_local (nm_ip4_address_get_address (config_addr), addr) >= 0);
 
 	if (flags & NM_RTNL_ADDR_PTP_ADDR)
 		success = (ip4_addr_to_rtnl_peer (priv->ptp_address, addr) >= 0);
 
 	if (flags & NM_RTNL_ADDR_PREFIX)
-		rtnl_addr_set_prefixlen (addr, config_addr->prefix);
+		rtnl_addr_set_prefixlen (addr, nm_ip4_address_get_prefix (config_addr));
 
 	if (flags & NM_RTNL_ADDR_BROADCAST) {
 		guint32 hostmask, network, bcast, netmask;
 
-		netmask = nm_utils_ip4_prefix_to_netmask (config_addr->prefix);
-		network = ntohl (config_addr->address) & ntohl (netmask);
+		netmask = nm_utils_ip4_prefix_to_netmask (nm_ip4_address_get_prefix (config_addr));
+		network = ntohl (nm_ip4_address_get_address (config_addr)) & ntohl (netmask);
 		hostmask = ~ntohl (netmask);
 		bcast = htonl (network | hostmask);
 
@@ -486,11 +471,11 @@ finalize (GObject *object)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
 
-	nm_utils_slist_free (priv->addresses, g_free);
+	nm_utils_slist_free (priv->addresses, (GDestroyNotify) nm_ip4_address_unref);
+	nm_utils_slist_free (priv->routes, (GDestroyNotify) nm_ip4_route_unref);
 	g_array_free (priv->nameservers, TRUE);
 	g_ptr_array_free (priv->domains, TRUE);
 	g_ptr_array_free (priv->searches, TRUE);
-	nm_utils_slist_free (priv->routes, g_free);
 }
 
 static void

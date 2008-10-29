@@ -1,4 +1,4 @@
-/* -*- Mode: C; tab-width: 5; indent-tabs-mode: t; c-basic-offset: 5 -*- */
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -446,7 +446,7 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
 	NMConnection *connection;
 	NMIP4Config *config;
-	NMSettingIP4Address *addr;
+	NMIP4Address *addr;
 	GValue *val;
 	int i;
 
@@ -455,28 +455,28 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 	remove_timeout_handler (manager);
 
 	config = nm_ip4_config_new ();
-	addr = g_malloc0 (sizeof (NMSettingIP4Address));
-	addr->prefix = 32;
+	addr = nm_ip4_address_new ();
+	nm_ip4_address_set_prefix (addr, 32);
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_GATEWAY);
 	if (val) {
-		addr->gateway = g_value_get_uint (val);
+		nm_ip4_address_set_gateway (addr, g_value_get_uint (val));
 		nm_ip4_config_set_ptp_address (config, g_value_get_uint (val));
 	}
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_ADDRESS);
 	if (val)
-		addr->address = g_value_get_uint (val);
+		nm_ip4_address_set_address (addr, g_value_get_uint (val));
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_PREFIX);
 	if (val)
-		addr->prefix = g_value_get_uint (val);
+		nm_ip4_address_set_prefix (addr, g_value_get_uint (val));
 
-	if (addr->address && addr->prefix) {
+	if (nm_ip4_address_get_address (addr) && nm_ip4_address_get_prefix (addr)) {
 		nm_ip4_config_take_address (config, addr);
 	} else {
 		nm_warning ("%s: invalid IPv4 address received!", __func__);
-		g_free (addr);
+		nm_ip4_address_unref (addr);
 		goto out;
 	}
 

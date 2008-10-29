@@ -102,12 +102,12 @@ merge_dhclient_config (NMDHCPDevice *device,
 				continue;
 
 			if (   s_ip4
-			    && s_ip4->dhcp_client_id
+			    && nm_setting_ip4_config_get_dhcp_client_id (s_ip4)
 			    && !strncmp (*line, DHCP_CLIENT_ID_TAG, strlen (DHCP_CLIENT_ID_TAG)))
 				ignore = TRUE;
 
 			if (   s_ip4
-			    && s_ip4->dhcp_client_id
+			    && nm_setting_ip4_config_get_dhcp_hostname (s_ip4)
 			    && !strncmp (*line, DHCP_HOSTNAME_TAG, strlen (DHCP_HOSTNAME_TAG)))
 				ignore = TRUE;
 
@@ -123,11 +123,17 @@ merge_dhclient_config (NMDHCPDevice *device,
 		g_string_append_c (new_contents, '\n');
 
 	/* Add NM options from connection */
-	if (s_ip4 && s_ip4->dhcp_client_id)
-		g_string_append_printf (new_contents, DHCP_CLIENT_ID_FORMAT "\n", s_ip4->dhcp_client_id);
+	if (s_ip4) {
+		const char *tmp;
 
-	if (s_ip4 && s_ip4->dhcp_hostname)
-		g_string_append_printf (new_contents, DHCP_HOSTNAME_FORMAT "\n", s_ip4->dhcp_hostname);
+		tmp = nm_setting_ip4_config_get_dhcp_client_id (s_ip4);
+		if (tmp)
+			g_string_append_printf (new_contents, DHCP_CLIENT_ID_FORMAT "\n", tmp);
+
+		tmp = nm_setting_ip4_config_get_dhcp_hostname (s_ip4);
+		if (tmp)
+			g_string_append_printf (new_contents, DHCP_HOSTNAME_FORMAT "\n", tmp);
+	}
 
 	if (g_file_set_contents (device->conf_file, new_contents->str, -1, error))
 		success = TRUE;

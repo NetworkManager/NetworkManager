@@ -593,7 +593,7 @@ aipd_get_ip4_config (NMDevice *self, NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMIP4Config *config = NULL;
-	NMSettingIP4Address *addr;
+	NMIP4Address *addr;
 
 	g_return_val_if_fail (priv->aipd_addr > 0, NULL);
 
@@ -603,9 +603,9 @@ aipd_get_ip4_config (NMDevice *self, NMDeviceStateReason *reason)
 		return NULL;
 	}
 
-	addr = g_malloc0 (sizeof (NMSettingIP4Address));
-	addr->address = (guint32) priv->aipd_addr;
-	addr->prefix = 16;
+	addr = nm_ip4_address_new ();
+	nm_ip4_address_set_address (addr, (guint32) priv->aipd_addr);
+	nm_ip4_address_set_prefix (addr, 16);
 	nm_ip4_config_take_address (config, addr);
 
 	return config;	
@@ -655,7 +655,7 @@ nm_device_handle_autoip4_event (NMDevice *self,
 	NMConnection *connection = NULL;
 	NMSettingIP4Config *s_ip4 = NULL;
 	NMDeviceState state;
-	const char *iface;
+	const char *iface, *method = NULL;
 
 	g_return_if_fail (event != NULL);
 
@@ -669,7 +669,10 @@ nm_device_handle_autoip4_event (NMDevice *self,
 
 	/* Ignore if the connection isn't an AutoIP connection */
 	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
-	if (!s_ip4 || !s_ip4->method || strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
+	if (s_ip4)
+		method = nm_setting_ip4_config_get_method (s_ip4);
+
+	if (!s_ip4 || !method || strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
 		return;
 
 	iface = nm_device_get_iface (self);
@@ -837,7 +840,7 @@ real_act_stage3_ip_config_start (NMDevice *self, NMDeviceStateReason *reason)
 	NMSettingIP4Config *s_ip4;
 	NMActRequest *req;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
-	const char *ip_iface;
+	const char *ip_iface, *method = NULL;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
@@ -849,7 +852,10 @@ real_act_stage3_ip_config_start (NMDevice *self, NMDeviceStateReason *reason)
 	                                                          NM_TYPE_SETTING_IP4_CONFIG);
 
 	/* If we did not receive IP4 configuration information, default to DHCP */
-	if (!s_ip4 || !strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
+	if (s_ip4)
+		method = nm_setting_ip4_config_get_method (s_ip4);
+
+	if (!s_ip4 || !method || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
 		NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 		gboolean success;
 
@@ -871,7 +877,7 @@ real_act_stage3_ip_config_start (NMDevice *self, NMDeviceStateReason *reason)
 			*reason = NM_DEVICE_STATE_REASON_DHCP_START_FAILED;
 			ret = NM_ACT_STAGE_RETURN_FAILURE;
 		}
-	} else if (s_ip4 && !strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)) {
+	} else if (s_ip4 && !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)) {
 		GError *error = NULL;
 		const char *iface = nm_device_get_iface (self);
 
@@ -985,7 +991,7 @@ static NMIP4Config *
 nm_device_new_ip4_shared_config (NMDevice *self, NMDeviceStateReason *reason)
 {
 	NMIP4Config *config = NULL;
-	NMSettingIP4Address *addr;
+	NMIP4Address *addr;
 	guint32 tmp_addr;
 
 	g_return_val_if_fail (self != NULL, NULL);
@@ -1000,14 +1006,14 @@ nm_device_new_ip4_shared_config (NMDevice *self, NMDeviceStateReason *reason)
 	}
 
 	config = nm_ip4_config_new ();
-	addr = g_malloc0 (sizeof (NMSettingIP4Address));
-	addr->address = tmp_addr;
-	addr->prefix = 24; /* 255.255.255.0 */
+	addr = nm_ip4_address_new ();
+	nm_ip4_address_set_address (addr, tmp_addr);
+	nm_ip4_address_set_prefix (addr, 24);
 	nm_ip4_config_take_address (config, addr);
 
 	/* Remove the address lock when the object gets disposed */
 	g_object_set_data_full (G_OBJECT (config), "shared-ip",
-	                        GUINT_TO_POINTER (addr->address), release_shared_ip);
+	                        GUINT_TO_POINTER (tmp_addr), release_shared_ip);
 
 	return config;
 }
@@ -1046,18 +1052,22 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 		} else
 			*reason = NM_DEVICE_STATE_REASON_DHCP_ERROR;
 	} else {
-		g_assert (s_ip4);
-		g_assert (s_ip4->method);
+		const char *method;
 
-		if (!strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)) {
+		g_assert (s_ip4);
+
+		method = nm_setting_ip4_config_get_method (s_ip4);
+		g_assert (method);
+
+		if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL)) {
 			*config = aipd_get_ip4_config (self, reason);
-		} else if (!strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
+		} else if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
 			*config = nm_ip4_config_new ();
 			if (*config)
 				nm_utils_merge_ip4_config (*config, s_ip4);
 			else
 				*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
-		} else if (!strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
+		} else if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
 			*config = nm_device_new_ip4_shared_config (self, reason);
 			if (*config)
 				priv->dnsmasq_manager = nm_dnsmasq_manager_new (ip_iface);
@@ -1302,7 +1312,7 @@ start_sharing (NMDevice *self)
 	char str_mask[INET_ADDRSTRLEN + 1];
 	guint32 netmask, network;
 	NMIP4Config *ip4_config;
-	const NMSettingIP4Address *ip4_addr;
+	NMIP4Address *ip4_addr;
 	const char *ip_iface;
 
 	ip_iface = nm_device_get_ip_iface (self);
@@ -1312,14 +1322,14 @@ start_sharing (NMDevice *self)
 		return FALSE;
 
 	ip4_addr = nm_ip4_config_get_address (ip4_config, 0);
-	if (!ip4_addr || !ip4_addr->address)
+	if (!ip4_addr || !nm_ip4_address_get_address (ip4_addr))
 		return FALSE;
 
-	netmask = nm_utils_ip4_prefix_to_netmask (ip4_addr->prefix);
+	netmask = nm_utils_ip4_prefix_to_netmask (nm_ip4_address_get_prefix (ip4_addr));
 	if (!inet_ntop (AF_INET, &netmask, str_mask, sizeof (str_mask)))
 		return FALSE;
 
-	network = ip4_addr->address & netmask;
+	network = nm_ip4_address_get_address (ip4_addr) & netmask;
 	if (!inet_ntop (AF_INET, &network, str_addr, sizeof (str_addr)))
 		return FALSE;
 
@@ -1368,7 +1378,7 @@ nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 	NMDevice *self = NM_DEVICE (user_data);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMIP4Config *ip4_config = NULL;
-	const char *iface;
+	const char *iface, *method = NULL;
 	NMConnection *connection;
 	NMSettingIP4Config *s_ip4;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
@@ -1392,7 +1402,10 @@ nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 
 	connection = nm_act_request_get_connection (nm_device_get_act_request (self));
 	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
-	if (s_ip4 && !strcmp (s_ip4->method, "shared")) {
+	if (s_ip4)
+		method = nm_setting_ip4_config_get_method (s_ip4);
+
+	if (s_ip4 && !strcmp (method, "shared")) {
 		if (!start_sharing (self)) {
 			nm_warning ("Activation (%s) Stage 5 of 5 (IP Configure Commit) start sharing failed.", iface);
 			nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_SHARED_START_FAILED);

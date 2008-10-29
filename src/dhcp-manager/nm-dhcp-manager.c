@@ -734,7 +734,7 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 	NMDHCPDevice *device;
 	NMIP4Config *ip4_config = NULL;
 	struct in_addr tmp_addr;
-	NMSettingIP4Address *addr = NULL;
+	NMIP4Address *addr = NULL;
 	char *str = NULL;
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (manager), NULL);
@@ -759,7 +759,7 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 		return NULL;
 	}
 
-	addr = g_malloc0 (sizeof (NMSettingIP4Address));
+	addr = nm_ip4_address_new ();
 	if (!addr) {
 		nm_warning ("%s: couldn't allocate memory for an IP4 Address!", device->iface);
 		goto error;
@@ -767,15 +767,15 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 
 	str = g_hash_table_lookup (device->options, "new_ip_address");
 	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
-		addr->address = tmp_addr.s_addr;
+		nm_ip4_address_set_address (addr, tmp_addr.s_addr);
 		nm_info ("  address %s", str);
 	} else
 		goto error;
 
 	str = g_hash_table_lookup (device->options, "new_subnet_mask");
 	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
-		addr->prefix = nm_utils_ip4_netmask_to_prefix (tmp_addr.s_addr);
-		nm_info ("  prefix %d (%s)", addr->prefix, str);
+		nm_ip4_address_set_prefix (addr, nm_utils_ip4_netmask_to_prefix (tmp_addr.s_addr));
+		nm_info ("  prefix %d (%s)", nm_ip4_address_get_prefix (addr), str);
 	}
 
 	str = g_hash_table_lookup (device->options, "new_routers");
@@ -786,7 +786,7 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 		for (s = routers; *s; s++) {
 			/* FIXME: how to handle multiple routers? */
 			if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
-				addr->gateway = tmp_addr.s_addr;
+				nm_ip4_address_set_gateway (addr, tmp_addr.s_addr);
 				nm_info ("  gateway %s", *s);
 				break;
 			} else
@@ -849,7 +849,7 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 			char **s;
 
 			for (s = searches; *s; s += 2) {
-				NMSettingIP4Route *route;
+				NMIP4Route *route;
 				struct in_addr rt_addr;
 				struct in_addr rt_route;
 
@@ -864,10 +864,10 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 
 				// FIXME: ensure the IP addresse and route are sane
 
-				route = g_malloc0 (sizeof (NMSettingIP4Route));
-				route->address = (guint32) rt_addr.s_addr;
-				route->prefix = 32; /* 255.255.255.255 */
-				route->next_hop = (guint32) rt_route.s_addr;
+				route = nm_ip4_route_new ();
+				nm_ip4_route_set_dest (route, (guint32) rt_addr.s_addr);
+				nm_ip4_route_set_prefix (route, 32); /* 255.255.255.255 */
+				nm_ip4_route_set_next_hop (route, (guint32) rt_route.s_addr);
 
 				nm_ip4_config_take_route (ip4_config, route);
 				nm_info ("  static route %s gw %s", *s, *(s + 1));

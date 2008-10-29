@@ -52,45 +52,45 @@ typedef struct {
 GType nm_ip4_config_get_type (void);
 
 
-NMIP4Config * nm_ip4_config_new (void);
-void nm_ip4_config_export (NMIP4Config *config);
-const char *nm_ip4_config_get_dbus_path (NMIP4Config *config);
+NMIP4Config * nm_ip4_config_new                 (void);
+void          nm_ip4_config_export              (NMIP4Config *config);
+const char *  nm_ip4_config_get_dbus_path       (NMIP4Config *config);
 
-void					nm_ip4_config_take_address		(NMIP4Config *config, NMSettingIP4Address *address);
-void					nm_ip4_config_add_address		(NMIP4Config *config, NMSettingIP4Address *address);
-void					nm_ip4_config_replace_address		(NMIP4Config *config, guint32 i, NMSettingIP4Address *new_address);
-const NMSettingIP4Address *	nm_ip4_config_get_address		(NMIP4Config *config, guint32 i);
-guint32					nm_ip4_config_get_num_addresses	(NMIP4Config *config);
+void          nm_ip4_config_take_address        (NMIP4Config *config, NMIP4Address *address);
+void          nm_ip4_config_add_address         (NMIP4Config *config, NMIP4Address *address);
+void          nm_ip4_config_replace_address     (NMIP4Config *config, guint32 i, NMIP4Address *new_address);
+NMIP4Address *nm_ip4_config_get_address         (NMIP4Config *config, guint32 i);
+guint32       nm_ip4_config_get_num_addresses   (NMIP4Config *config);
 
-guint32		nm_ip4_config_get_ptp_address		(NMIP4Config *config);
-void			nm_ip4_config_set_ptp_address		(NMIP4Config *config, guint32 ptp_addr);
+guint32       nm_ip4_config_get_ptp_address     (NMIP4Config *config);
+void          nm_ip4_config_set_ptp_address     (NMIP4Config *config, guint32 ptp_addr);
 
-void			nm_ip4_config_add_nameserver		(NMIP4Config *config, guint32 nameserver);
-guint32		nm_ip4_config_get_nameserver		(NMIP4Config *config, guint i);
-guint32		nm_ip4_config_get_num_nameservers	(NMIP4Config *config);
-void			nm_ip4_config_reset_nameservers		(NMIP4Config *config);
+void          nm_ip4_config_add_nameserver      (NMIP4Config *config, guint32 nameserver);
+guint32       nm_ip4_config_get_nameserver      (NMIP4Config *config, guint i);
+guint32       nm_ip4_config_get_num_nameservers (NMIP4Config *config);
+void          nm_ip4_config_reset_nameservers   (NMIP4Config *config);
 
-void			nm_ip4_config_take_route		(NMIP4Config *config, NMSettingIP4Route *route);
-void			nm_ip4_config_add_route			(NMIP4Config *config, NMSettingIP4Route *route);
-void			nm_ip4_config_replace_route		(NMIP4Config *config, guint32 i, NMSettingIP4Route *new_route);
-const NMSettingIP4Route *	nm_ip4_config_get_route		(NMIP4Config *config, guint32 i);
-guint32		nm_ip4_config_get_num_routes		(NMIP4Config *config);
-void            nm_ip4_config_reset_routes		(NMIP4Config *config);
+void          nm_ip4_config_take_route          (NMIP4Config *config, NMIP4Route *route);
+void          nm_ip4_config_add_route           (NMIP4Config *config, NMIP4Route *route);
+void          nm_ip4_config_replace_route       (NMIP4Config *config, guint32 i, NMIP4Route *new_route);
+NMIP4Route *  nm_ip4_config_get_route           (NMIP4Config *config, guint32 i);
+guint32       nm_ip4_config_get_num_routes      (NMIP4Config *config);
+void          nm_ip4_config_reset_routes        (NMIP4Config *config);
 
-void			nm_ip4_config_add_domain			(NMIP4Config *config, const char *domain);
-const char *	nm_ip4_config_get_domain			(NMIP4Config *config, guint i);
-guint32		nm_ip4_config_get_num_domains		(NMIP4Config *config);
+void          nm_ip4_config_add_domain          (NMIP4Config *config, const char *domain);
+const char *  nm_ip4_config_get_domain          (NMIP4Config *config, guint i);
+guint32       nm_ip4_config_get_num_domains     (NMIP4Config *config);
 
-void			nm_ip4_config_add_search			(NMIP4Config *config, const char *search);
-const char *	nm_ip4_config_get_search			(NMIP4Config *config, guint i);
-guint32		nm_ip4_config_get_num_searches		(NMIP4Config *config);
-void			nm_ip4_config_reset_searches		(NMIP4Config *config);
+void          nm_ip4_config_add_search          (NMIP4Config *config, const char *search);
+const char *  nm_ip4_config_get_search          (NMIP4Config *config, guint i);
+guint32       nm_ip4_config_get_num_searches    (NMIP4Config *config);
+void          nm_ip4_config_reset_searches      (NMIP4Config *config);
 
-guint32		nm_ip4_config_get_mtu			(NMIP4Config *config);
-void			nm_ip4_config_set_mtu			(NMIP4Config *config, guint32 mtu);
+guint32       nm_ip4_config_get_mtu             (NMIP4Config *config);
+void          nm_ip4_config_set_mtu             (NMIP4Config *config, guint32 mtu);
 
-guint32		nm_ip4_config_get_mss			(NMIP4Config *config);
-void			nm_ip4_config_set_mss			(NMIP4Config *config, guint32 mss);
+guint32       nm_ip4_config_get_mss             (NMIP4Config *config);
+void          nm_ip4_config_set_mss             (NMIP4Config *config, guint32 mss);
 
 /* Flags for nm_ip4_config_to_rtnl_addr() */
 #define NM_RTNL_ADDR_NONE		0x0000

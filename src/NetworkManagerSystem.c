@@ -73,12 +73,13 @@ ip4_dest_in_same_subnet (NMIP4Config *config, guint32 dest, guint32 dest_prefix)
 
 	num = nm_ip4_config_get_num_addresses (config);
 	for (i = 0; i < num; i++) {
-		const NMSettingIP4Address *addr;
+		NMIP4Address *addr = nm_ip4_config_get_address (config, i);
+		guint32 prefix = nm_ip4_address_get_prefix (addr);
+		guint32 address = nm_ip4_address_get_address (addr);
 
-		addr = nm_ip4_config_get_address (config, i);
-		if (addr->prefix <= dest_prefix) {
-			guint32 masked_addr = ntohl(addr->address) >> (32 - addr->prefix);
-			guint32 masked_dest = ntohl(dest) >> (32 - addr->prefix);
+		if (prefix <= dest_prefix) {
+			guint32 masked_addr = ntohl(address) >> (32 - prefix);
+			guint32 masked_dest = ntohl(dest) >> (32 - prefix);
 
 			if (masked_addr == masked_dest)
 				return TRUE;
@@ -239,14 +240,14 @@ add_ip4_addresses (NMIP4Config *config, const char *iface)
 	nl_cache_foreach (addr_cache, check_one_address, &check_data);
 
 	for (i = 0; i < nm_ip4_config_get_num_addresses (config); i++) {
-		const NMSettingIP4Address *addr;
+		NMIP4Address *addr;
 		struct rtnl_addr *nl_addr = NULL;
 
 		addr = nm_ip4_config_get_address (config, i);
 		g_assert (addr);
 
 		flags = NM_RTNL_ADDR_DEFAULT;
-		if (addr->gateway && !did_gw) {
+		if (nm_ip4_address_get_gateway (addr) && !did_gw) {
 			if (nm_ip4_config_get_ptp_address (config))
 				flags |= NM_RTNL_ADDR_PTP_ADDR;
 			did_gw = TRUE;
@@ -276,7 +277,7 @@ add_vpn_gateway_route (NMDevice *parent_device,
 {
 	NMIP4Config *parent_config;
 	guint32 parent_gw = 0, parent_prefix = 0, vpn_gw = 0, i;
-	const NMSettingIP4Address *tmp;
+	NMIP4Address *tmp;
 
 	g_return_if_fail (NM_IS_DEVICE (parent_device));
 
@@ -289,17 +290,17 @@ add_vpn_gateway_route (NMDevice *parent_device,
 
 	for (i = 0; i < nm_ip4_config_get_num_addresses (parent_config); i++) {
 		tmp = nm_ip4_config_get_address (parent_config, i);
-		if (tmp->gateway) {
-			parent_gw = tmp->gateway;
-			parent_prefix = tmp->prefix;
+		if (nm_ip4_address_get_gateway (tmp)) {
+			parent_gw = nm_ip4_address_get_gateway (tmp);
+			parent_prefix = nm_ip4_address_get_prefix (tmp);
 			break;
 		}
 	}
 
 	for (i = 0; i < nm_ip4_config_get_num_addresses (config); i++) {
 		tmp = nm_ip4_config_get_address (config, i);
-		if (tmp->gateway) {
-			vpn_gw = tmp->gateway;
+		if (nm_ip4_address_get_gateway (tmp)) {
+			vpn_gw = nm_ip4_address_get_gateway (tmp);
 			break;
 		}
 	}
@@ -347,19 +348,21 @@ nm_system_apply_ip4_config (NMDevice *device,
 	sleep (1);
 
 	for (i = 0; i < nm_ip4_config_get_num_routes (config); i++) {
-		const NMSettingIP4Route *route = nm_ip4_config_get_route (config, i);
+		NMIP4Route *route = nm_ip4_config_get_route (config, i);
 
 		/* Don't add the route if it's more specific than one of the subnets
 		 * the device already has an IP address on.
 		 */
-		if (ip4_dest_in_same_subnet (config, route->address, route->prefix))
+		if (ip4_dest_in_same_subnet (config,
+		                             nm_ip4_route_get_dest (route),
+		                             nm_ip4_route_get_prefix (route)))
 			continue;
 
 		nm_system_device_set_ip4_route (iface,
-		                                route->address,
-		                                route->prefix,
-		                                route->next_hop,
-		                                route->metric,
+		                                nm_ip4_route_get_dest (route),
+		                                nm_ip4_route_get_prefix (route),
+		                                nm_ip4_route_get_next_hop (route),
+		                                nm_ip4_route_get_metric (route),
 		                                nm_ip4_config_get_mss (config));
 	}
 
@@ -836,10 +839,12 @@ find_route (struct nl_object *object, gpointer user_data)
 	dst_addr = nl_addr_get_binary_addr (dst);
 	num = nm_ip4_config_get_num_addresses (info->config);
 	for (i = 0; i < num; i++) {
-		const NMSettingIP4Address *addr = nm_ip4_config_get_address (info->config, i);
+		NMIP4Address *addr = nm_ip4_config_get_address (info->config, i);
+		guint32 prefix = nm_ip4_address_get_prefix (addr);
+		guint32 address = nm_ip4_address_get_address (addr);
 
-		if (addr->prefix == nl_addr_get_prefixlen (dst) &&
-		    (addr->address & nm_utils_ip4_prefix_to_netmask (addr->prefix)) == dst_addr->s_addr) {
+		if (prefix == nl_addr_get_prefixlen (dst) &&
+		    (address & nm_utils_ip4_prefix_to_netmask (prefix)) == dst_addr->s_addr) {
 
 			/* Ref the route so it sticks around after the cache is cleared */
 			rtnl_route_get (route);

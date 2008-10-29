@@ -629,10 +629,9 @@ vpnc_plugin_ui_widget_interface_init (NMVpnPluginUiWidgetInterface *iface_class)
 	iface_class->save_secrets = save_secrets;
 }
 
-static GSList *
-get_routes (const char *routelist)
+static void
+add_routes (NMSettingIP4Config *s_ip4, const char *routelist)
 {
-	GSList *routes = NULL;
 	char **substrs;
 	unsigned int i;
 
@@ -659,13 +658,12 @@ get_routes (const char *routelist)
 		/* don't pass the prefix to inet_pton() */
 		*p = '\0';
 		if (inet_pton (AF_INET, str_route, &tmp) > 0) {
-			NMSettingIP4Route *route;
+			NMIP4Route *route = nm_ip4_route_new ();
 
-			route = g_new0 (NMSettingIP4Route, 1);
-			route->address = tmp.s_addr;
-			route->prefix = (guint32) prefix;
+			nm_ip4_route_set_dest (route, tmp.s_addr);
+			nm_ip4_route_set_prefix (route, (guint32) prefix);
 
-			routes = g_slist_append (routes, route);
+			nm_setting_ip4_config_add_route (s_ip4, route);
 		} else
 			g_warning ("Ignoring invalid route '%s'", str_route);
 
@@ -674,7 +672,6 @@ next:
 	}
 
 	g_strfreev (substrs);
-	return routes;
 }
 
 static NMConnection *
@@ -774,7 +771,7 @@ import (NMVpnPluginUiInterface *iface, const char *path, GError **error)
 
 		s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
 		nm_connection_add_setting (connection, NM_SETTING (s_ip4));
-		s_ip4->routes = get_routes (buf);
+		add_routes (s_ip4, buf);
 	}
 
 	if ((buf = pcf_file_lookup_value (pcf, "main", "TunnelingMode"))) {
@@ -870,20 +867,20 @@ export (NMVpnPluginUiInterface *iface,
 		peertimeout = value;
 
 	routes = g_string_new ("");
-	if (s_ip4 && s_ip4->routes) {
-		GSList *iter;
+	if (s_ip4 && nm_setting_ip4_config_get_num_routes (s_ip4)) {
+		int i;
 
-		for (iter = s_ip4->routes; iter; iter = g_slist_next (iter)) {
-			NMSettingIP4Route *route = (NMSettingIP4Route *) iter->data;
+		for (i = 0; i < nm_setting_ip4_config_get_num_routes (s_ip4); i++) {
+			NMIP4Route *route = nm_setting_ip4_config_get_route (s_ip4, i);
 			char str_addr[INET_ADDRSTRLEN + 1];
 			struct in_addr num_addr;
 
 			if (routes->len)
 				g_string_append_c (routes, ' ');
 
-			num_addr.s_addr = route->address;
+			num_addr.s_addr = nm_ip4_route_get_dest (route);
 			if (inet_ntop (AF_INET, &num_addr, &str_addr[0], INET_ADDRSTRLEN + 1))
-				g_string_append_printf (routes, "%s/%d", str_addr, route->prefix);
+				g_string_append_printf (routes, "%s/%d", str_addr, nm_ip4_route_get_prefix (route));
 		}
 	}
 

@@ -1,5 +1,6 @@
 #include <string.h>
 
+#include <nm-setting-ip4-config.h>
 #include "nm-ip4-config.h"
 #include "NetworkManager.h"
 #include "nm-types-private.h"
@@ -41,7 +42,7 @@ demarshal_ip4_address_array (NMObject *object, GParamSpec *pspec, GValue *value,
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (object);
 
-	g_slist_foreach (priv->addresses, (GFunc) g_free, NULL);
+	g_slist_foreach (priv->addresses, (GFunc) nm_ip4_address_unref, NULL);
 	g_slist_free (priv->addresses);
 	priv->addresses = NULL;
 

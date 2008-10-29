@@ -460,9 +460,7 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 				   NULL);
 	} else {
  		struct in_addr tmp_ip4_addr;
-		NMSettingIP4Address *ip4config = g_new0(NMSettingIP4Address, 1);
-		GSList *ip4_addresses = NULL;
-		GArray *nameserver = g_array_new (TRUE, TRUE, sizeof(guint32));
+		NMIP4Address *ip4_addr = nm_ip4_address_new ();
 
 		const char *address_v = ifparser_getkey(block, "address");
 		const char *netmask_v = ifparser_getkey(block, "netmask");
@@ -482,7 +480,7 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 			address_v = g_strdup ("0.0.0.0");
 
 		if (inet_pton (AF_INET, address_v, &tmp_ip4_addr))
-			ip4config->address = tmp_ip4_addr.s_addr;
+			nm_ip4_address_set_address (ip4_addr, tmp_ip4_addr.s_addr);
 		else
 			g_set_error (&error, eni_plugin_error_quark (), 0,
 					   "Invalid %s IP4 address '%s'", "address", address_v);
@@ -490,7 +488,7 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 			netmask_v = g_strdup( "255.255.255.255");
 
 		if (inet_pton (AF_INET, netmask_v, &tmp_ip4_addr))
-			ip4config->prefix = nm_utils_ip4_netmask_to_prefix(tmp_ip4_addr.s_addr);
+			nm_ip4_address_set_prefix (ip4_addr, nm_utils_ip4_netmask_to_prefix(tmp_ip4_addr.s_addr));
 		else
 			g_set_error (&error, eni_plugin_error_quark (), 0,
 					   "Invalid %s IP4 address '%s'", "netmask", netmask_v);
@@ -499,31 +497,32 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 			gateway_v = g_strdup (address_v);
 
 		if (inet_pton (AF_INET, gateway_v, &tmp_ip4_addr))
-			ip4config->gateway = tmp_ip4_addr.s_addr;
+			nm_ip4_address_set_gateway (ip4_addr, tmp_ip4_addr.s_addr);
 		else
 			g_set_error (&error, eni_plugin_error_quark (), 0,
 					   "Invalid %s IP4 address '%s'", "gateway", gateway_v);
 
-		ip4_addresses = g_slist_append(ip4_addresses, ip4config);
-
-		PLUGIN_PRINT("SCPlugin-Ifupdown", "addresses count: %d", g_slist_length(ip4_addresses));
+		if (nm_setting_ip4_config_add_address (ip4_setting, ip4_addr)) {
+			PLUGIN_PRINT("SCPlugin-Ifupdown", "addresses count: %d",
+			             nm_setting_ip4_config_get_num_addresses (ip4_setting));
+		} else {
+			PLUGIN_PRINT("SCPlugin-Ifupdown", "ignoring duplicate IP4 address");
+		}
 
 		while(nameservers_list_i) {
 			gchar *dns = nameservers_list_i->data;
 			nameservers_list_i = nameservers_list_i -> next;
 			if(!dns)
 				continue;
-			if (inet_pton (AF_INET, dns, &tmp_ip4_addr))
-				g_array_append_vals(nameserver, &tmp_ip4_addr.s_addr, 1);
-			else
+			if (inet_pton (AF_INET, dns, &tmp_ip4_addr)) {
+				if (!nm_setting_ip4_config_add_dns (ip4_setting, tmp_ip4_addr.s_addr))
+					PLUGIN_PRINT("SCPlugin-Ifupdown", "ignoring duplicate DNS server '%s'", dns);
+			} else
 				g_set_error (&error, eni_plugin_error_quark (), 0,
 						   "Invalid %s IP4 address nameserver '%s'", "nameserver", dns);
 		}
-		if (!nameserver->len)
+		if (!nm_setting_ip4_config_get_num_dns (ip4_setting))
 			PLUGIN_PRINT("SCPlugin-Ifupdown", "No dns-nameserver configured in /etc/network/interfaces");
-
-		ip4_setting->addresses = ip4_addresses;
-		ip4_setting->dns = nameserver;
 
 		g_object_set(ip4_setting,
 				   NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,

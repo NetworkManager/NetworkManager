@@ -1058,6 +1058,7 @@ real_get_best_auto_connection (NMDevice *dev,
 		NMSettingWireless *s_wireless;
 		const GByteArray *mac;
 		NMSettingIP4Config *s_ip4;
+		const char *method = NULL;
 
 		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
 		if (s_con == NULL)
@@ -1077,7 +1078,10 @@ real_get_best_auto_connection (NMDevice *dev,
 
 		/* Use the connection if it's a shared connection */
 		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
-		if (s_ip4 && !strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
+		if (s_ip4)
+			method = nm_setting_ip4_config_get_method (s_ip4);
+
+		if (s_ip4 && !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
 			return connection;
 
 		for (ap_iter = priv->ap_list; ap_iter; ap_iter = g_slist_next (ap_iter)) {
@@ -1659,10 +1663,14 @@ can_scan (NMDeviceWifi *self)
 		NMConnection *connection;
 		NMSettingIP4Config *s_ip4;
 		NMSettingIP6Config *s_ip6;
+		const char *ip4_method = NULL;
 
 		connection = nm_act_request_get_connection (req);
 		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
-		if (s_ip4 && !strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
+		if (s_ip4)
+			ip4_method = nm_setting_ip4_config_get_method (s_ip4);
+
+		if (s_ip4 && !strcmp (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
 			return FALSE;
 
 		s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);

@@ -1,3 +1,34 @@
+2008-10-29  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/libnm-util.ver
+	  libnm-util/nm-setting-ip4-config.c
+	  libnm-util/nm-setting-ip4-config.h
+		- Make properties private and add accessor functions
+
+	* callouts/nm-dispatcher-action.c
+	  libnm-glib/libnm-glib-test.c
+	  libnm-util/nm-utils.c
+	  src/NetworkManagerPolicy.c
+	  src/NetworkManagerSystem.c
+	  src/NetworkManagerUtils.c
+	  src/dhcp-manager/nm-dhcp-dhclient.c
+	  src/dhcp-manager/nm-dhcp-manager.c
+	  src/dnsmasq-manager/nm-dnsmasq-manager.c
+	  src/nm-device-wifi.c
+	  src/nm-device.c
+	  src/nm-hso-gsm-device.c
+	  src/nm-ip4-config.c
+	  src/nm-ip4-config.h
+	  src/ppp-manager/nm-ppp-manager.c
+	  src/vpn-manager/nm-vpn-connection.c
+	  system-settings/plugins/ifcfg-fedora/reader.c
+	  system-settings/plugins/ifcfg-suse/parser.c
+	  system-settings/plugins/ifcfg-suse/plugin.c
+	  system-settings/plugins/ifupdown/parser.c
+	  test/nm-tool.c
+	  vpn-daemons/vpnc/properties/nm-vpnc.c
+		- Use IP4 accessor functions
+
 2008-10-29  Tambet Ingo  <tambet@gmail.com>
 
 	Half of it by Dan Williams <dcbw@redhat.com>

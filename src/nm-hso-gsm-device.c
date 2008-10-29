@@ -269,8 +269,7 @@ hso_ip4_config_response (NMSerialDevice *device,
 	NMActRequest *req;
 	char **items, **iter;
 	guint cid, i;
-	NMSettingIP4Address addr = { 0, 32, 0 };
-	guint32 dns1 = 0, dns2 = 0;
+	guint32 dns1 = 0, dns2 = 0, ip4_address = 0;
 
 	if (   (reply_index < 0)
 	    || !response
@@ -297,8 +296,8 @@ hso_ip4_config_response (NMSerialDevice *device,
 				goto out;
 			}
 		} else if (i == 1) { /* IP address */
-			if (inet_pton (AF_INET, *iter, &(addr.address)) <= 0)
-				addr.address = 0;
+			if (inet_pton (AF_INET, *iter, &ip4_address) <= 0)
+				ip4_address = 0;
 		} else if (i == 3) { /* DNS 1 */
 			if (inet_pton (AF_INET, *iter, &dns1) <= 0)
 				dns1 = 0;
@@ -311,10 +310,16 @@ hso_ip4_config_response (NMSerialDevice *device,
 out:
 	g_strfreev (items);
 
-	if (addr.address) {
+	if (ip4_address) {
+		NMIP4Address *addr;
+
 		priv->pending_ip4_config = nm_ip4_config_new ();
 
-		nm_ip4_config_add_address (priv->pending_ip4_config, &addr);
+		addr = nm_ip4_address_new ();
+		nm_ip4_address_set_address (addr, ip4_address);
+		nm_ip4_address_set_prefix (addr, 32);
+
+		nm_ip4_config_take_address (priv->pending_ip4_config, addr);
 
 		if (dns1)
 			nm_ip4_config_add_nameserver (priv->pending_ip4_config, dns1);

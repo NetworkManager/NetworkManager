@@ -314,34 +314,33 @@ print_vpn_config (NMIP4Config *config,
                   const char *tundev,
                   const char *banner)
 {
-	const NMSettingIP4Address *addr;
-	char *         dns_domain = NULL;
-	guint32        num;
-	guint32        i;
+	NMIP4Address *addr;
+	char *dns_domain = NULL;
+	guint32 num, i;
 
 	g_return_if_fail (config != NULL);
 
 	addr = nm_ip4_config_get_address (config, 0);
 
-	nm_info ("VPN Gateway: %s", ip_address_to_string (addr->gateway));
+	nm_info ("VPN Gateway: %s", ip_address_to_string (nm_ip4_address_get_gateway (addr)));
 	if (internal_gw)
 		nm_info ("Internal Gateway: %s", ip_address_to_string (internal_gw));
 	nm_info ("Tunnel Device: %s", tundev);
-	nm_info ("Internal IP4 Address: %s", ip_address_to_string (addr->address));
-	nm_info ("Internal IP4 Prefix: %d", addr->prefix);
+	nm_info ("Internal IP4 Address: %s", ip_address_to_string (nm_ip4_address_get_address (addr)));
+	nm_info ("Internal IP4 Prefix: %d", nm_ip4_address_get_prefix (addr));
 	nm_info ("Internal IP4 Point-to-Point Address: %s",
 		    ip_address_to_string (nm_ip4_config_get_ptp_address (config)));
 	nm_info ("Maximum Segment Size (MSS): %d", nm_ip4_config_get_mss (config));
 
 	num = nm_ip4_config_get_num_routes (config);
 	for (i = 0; i < num; i++) {
-		const NMSettingIP4Route *route;
+		NMIP4Route *route;
 
 		route = nm_ip4_config_get_route (config, i);
 		nm_info ("Static Route: %s/%d   Next Hop: %s",
-			    ip_address_to_string (route->address),
-			    route->prefix,
-			    ip_address_to_string (route->next_hop));
+			    ip_address_to_string (nm_ip4_route_get_dest (route)),
+			    nm_ip4_route_get_prefix (route),
+			    ip_address_to_string (nm_ip4_route_get_next_hop (route)));
 	}
 
 	num = nm_ip4_config_get_num_nameservers (config);
@@ -365,7 +364,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	NMVPNConnection *connection = NM_VPN_CONNECTION (user_data);
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 	NMSettingIP4Config *s_ip4;
-	NMSettingIP4Address *addr;
+	NMIP4Address *addr;
 	NMIP4Config *config;
 	GValue *val;
 	int i;
@@ -378,9 +377,6 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 
 	config = nm_ip4_config_new ();
 
-	addr = g_malloc0 (sizeof (NMSettingIP4Address));
-	addr->prefix = 24; /* default to class C */
-
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_TUNDEV);
 	if (val)
 		priv->tundev = g_strdup (g_value_get_string (val));
@@ -388,6 +384,9 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 		nm_warning ("%s: invalid or missing tunnel device received!", __func__);
 		goto error;
 	}
+
+	addr = nm_ip4_address_new ();
+	nm_ip4_address_set_prefix (addr, 24); /* default to class C */
 
 	/* Internal address of the VPN subnet's gateway */
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_INT_GATEWAY);
@@ -397,11 +396,11 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	/* External world-visible address of the VPN server */
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY);
 	if (val)
-		addr->gateway = g_value_get_uint (val);
+		nm_ip4_address_set_gateway (addr, g_value_get_uint (val));
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_ADDRESS);
 	if (val)
-		addr->address = g_value_get_uint (val);
+		nm_ip4_address_set_address (addr, g_value_get_uint (val));
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_PTP);
 	if (val)
@@ -409,13 +408,13 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_PREFIX);
 	if (val)
-		addr->prefix = g_value_get_uint (val);
+		nm_ip4_address_set_prefix (addr, g_value_get_uint (val));
 
-	if (addr->address && addr->prefix) {
+	if (nm_ip4_address_get_address (addr) && nm_ip4_address_get_prefix (addr)) {
 		nm_ip4_config_take_address (config, addr);
 	} else {
 		nm_warning ("%s: invalid IP4 config received!", __func__);
-		g_free (addr);
+		nm_ip4_address_unref (addr);
 		goto error;
 	}
 
@@ -461,7 +460,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 
 		routes = nm_utils_ip4_routes_from_gvalue (val);
 		for (iter = routes; iter; iter = iter->next)
-			nm_ip4_config_take_route (config, (NMSettingIP4Route *) iter->data);
+			nm_ip4_config_take_route (config, (NMIP4Route *) iter->data);
 
 		g_slist_free (routes);
 	}

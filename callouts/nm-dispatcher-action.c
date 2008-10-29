@@ -273,22 +273,23 @@ construct_envp (NMIP4Config *ip4_config, NMDHCP4Config *dhcp4_config)
 
 	/* IP4 config stuff */
 	for (iter = addresses, num = 0; iter; iter = g_slist_next (iter)) {
-		NMSettingIP4Address *addr = (NMSettingIP4Address *) iter->data;
+		NMIP4Address *addr = (NMIP4Address *) iter->data;
 		char str_addr[INET_ADDRSTRLEN + 1];
 		char str_gw[INET_ADDRSTRLEN + 1];
 		struct in_addr tmp_addr;
+		guint32 prefix = nm_ip4_address_get_prefix (addr);
 
 		memset (str_addr, 0, sizeof (str_addr));
-		tmp_addr.s_addr = addr->address;
+		tmp_addr.s_addr = nm_ip4_address_get_address (addr);
 		if (!inet_ntop (AF_INET, &tmp_addr, str_addr, sizeof (str_addr)))
 			continue;
 
 		memset (str_gw, 0, sizeof (str_gw));
-		tmp_addr.s_addr = addr->gateway;
+		tmp_addr.s_addr = nm_ip4_address_get_gateway (addr);
 		inet_ntop (AF_INET, &tmp_addr, str_gw, sizeof (str_gw));
 
 		tmp = g_string_sized_new (25 + strlen (str_addr) + strlen (str_gw));
-		g_string_append_printf (tmp, "IP4_ADDRESS_%d=%s/%d %s", num++, str_addr, addr->prefix, str_gw);
+		g_string_append_printf (tmp, "IP4_ADDRESS_%d=%s/%d %s", num++, str_addr, prefix, str_gw);
 		envp[envp_idx++] = tmp->str;
 		g_string_free (tmp, FALSE);
 	}
@@ -328,22 +329,24 @@ construct_envp (NMIP4Config *ip4_config, NMDHCP4Config *dhcp4_config)
 	}
 
 	for (iter = routes, num = 0; iter; iter = g_slist_next (iter)) {
-		NMSettingIP4Route *route = (NMSettingIP4Route *) iter->data;
+		NMIP4Route *route = (NMIP4Route *) iter->data;
 		char str_addr[INET_ADDRSTRLEN + 1];
 		char str_nh[INET_ADDRSTRLEN + 1];
 		struct in_addr tmp_addr;
+		guint32 prefix = nm_ip4_route_get_prefix (route);
+		guint32 metric = nm_ip4_route_get_metric (route);
 
 		memset (str_addr, 0, sizeof (str_addr));
-		tmp_addr.s_addr = route->address;
+		tmp_addr.s_addr = nm_ip4_route_get_dest (route);
 		if (!inet_ntop (AF_INET, &tmp_addr, str_addr, sizeof (str_addr)))
 			continue;
 
 		memset (str_nh, 0, sizeof (str_nh));
-		tmp_addr.s_addr = route->next_hop;
+		tmp_addr.s_addr = nm_ip4_route_get_next_hop (route);
 		inet_ntop (AF_INET, &tmp_addr, str_nh, sizeof (str_nh));
 
 		tmp = g_string_sized_new (30 + strlen (str_addr) + strlen (str_nh));
-		g_string_append_printf (tmp, "IP4_ROUTE_%d=%s/%d %s %d", num++, str_addr, route->prefix, str_nh, route->metric);
+		g_string_append_printf (tmp, "IP4_ROUTE_%d=%s/%d %s %d", num++, str_addr, prefix, str_nh, metric);
 		envp[envp_idx++] = tmp->str;
 		g_string_free (tmp, FALSE);
 	}

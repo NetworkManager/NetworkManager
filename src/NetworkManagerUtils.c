@@ -273,100 +273,92 @@ nm_ether_ntop (const struct ether_addr *mac)
 void
 nm_utils_merge_ip4_config (NMIP4Config *ip4_config, NMSettingIP4Config *setting)
 {
-	GSList *iter;
+	int i, j;
 
 	if (!setting)
 		return; /* Defaults are just fine */
 
-	if (setting->ignore_auto_dns) {
+	if (nm_setting_ip4_config_get_ignore_auto_dns (setting)) {
 		nm_ip4_config_reset_nameservers (ip4_config);
 		nm_ip4_config_reset_searches (ip4_config);
 	}
 
-	if (setting->ignore_auto_routes)
+	if (nm_setting_ip4_config_get_ignore_auto_routes (setting))
 		nm_ip4_config_reset_routes (ip4_config);
 
-	if (setting->dns) {
-		int i, j;
-
-		for (i = 0; i < setting->dns->len; i++) {
-			guint32 ns;
-			gboolean found = FALSE;
-
-			/* Avoid dupes */
-			ns = g_array_index (setting->dns, guint32, i);
-			for (j = 0; j < nm_ip4_config_get_num_nameservers (ip4_config); j++) {
-				if (nm_ip4_config_get_nameserver (ip4_config, j) == ns) {
-					found = TRUE;
-					break;
-				}
-			}
-
-			if (!found)
-				nm_ip4_config_add_nameserver (ip4_config, ns);
-		}
-	}
-
-	/* DNS search domains */
-	for (iter = setting->dns_search; iter; iter = iter->next) {
-		int i;
+	for (i = 0; i < nm_setting_ip4_config_get_num_dns (setting); i++) {
+		guint32 ns;
 		gboolean found = FALSE;
 
 		/* Avoid dupes */
-		for (i = 0; i < nm_ip4_config_get_num_searches (ip4_config); i++) {
-			const char *search = nm_ip4_config_get_search (ip4_config, i);
-
-			if (!strcmp (search, (char *) iter->data)) {
+		ns = nm_setting_ip4_config_get_dns (setting, i);
+		for (j = 0; j < nm_ip4_config_get_num_nameservers (ip4_config); j++) {
+			if (nm_ip4_config_get_nameserver (ip4_config, j) == ns) {
 				found = TRUE;
 				break;
 			}
 		}
 
 		if (!found)
-			nm_ip4_config_add_search (ip4_config, (char *) iter->data);
+			nm_ip4_config_add_nameserver (ip4_config, ns);
 	}
 
-	/* IPv4 addresses */
-	for (iter = setting->addresses; iter; iter = g_slist_next (iter)) {
-		NMSettingIP4Address *setting_addr = (NMSettingIP4Address *) iter->data;
-		guint32 i, num;
+	/* DNS search domains */
+	for (i = 0; i < nm_setting_ip4_config_get_num_dns_searches (setting); i++) {
+		const char *search = nm_setting_ip4_config_get_dns_search (setting, i);
+		gboolean found = FALSE;
 
-		num = nm_ip4_config_get_num_addresses (ip4_config);
-		for (i = 0; i < num; i++) {
-			const NMSettingIP4Address *cfg_addr;
-
-			cfg_addr = nm_ip4_config_get_address (ip4_config, i);
-			/* Dupe, override with user-specified address */
-			if (cfg_addr->address == setting_addr->address) {
-				nm_ip4_config_replace_address (ip4_config, i, setting_addr);
+		/* Avoid dupes */
+		for (j = 0; j < nm_ip4_config_get_num_searches (ip4_config); j++) {
+			if (!strcmp (search, nm_ip4_config_get_search (ip4_config, j))) {
+				found = TRUE;
 				break;
 			}
 		}
 
-		if (i == num)
+		if (!found)
+			nm_ip4_config_add_search (ip4_config, search);
+	}
+
+	/* IPv4 addresses */
+	for (i = 0; i < nm_setting_ip4_config_get_num_addresses (setting); i++) {
+		NMIP4Address *setting_addr = nm_setting_ip4_config_get_address (setting, i);
+		guint32 num;
+
+		num = nm_ip4_config_get_num_addresses (ip4_config);
+		for (j = 0; j < num; j++) {
+			NMIP4Address *cfg_addr = nm_ip4_config_get_address (ip4_config, j);
+
+			/* Dupe, override with user-specified address */
+			if (nm_ip4_address_get_address (cfg_addr) == nm_ip4_address_get_address (setting_addr)) {
+				nm_ip4_config_replace_address (ip4_config, j, setting_addr);
+				break;
+			}
+		}
+
+		if (j == num)
 			nm_ip4_config_add_address (ip4_config, setting_addr);
 	}
 
 	/* IPv4 routes */
-	for (iter = setting->routes; iter; iter = g_slist_next (iter)) {
-		NMSettingIP4Route *setting_route = (NMSettingIP4Route *) iter->data;
-		guint32 i, num;
+	for (i = 0; i < nm_setting_ip4_config_get_num_routes (setting); i++) {
+		NMIP4Route *setting_route = nm_setting_ip4_config_get_route (setting, i);
+		guint32 num;
 
 		num = nm_ip4_config_get_num_routes (ip4_config);
-		for (i = 0; i < num; i++) {
-			const NMSettingIP4Route *cfg_route;
+		for (j = 0; j < num; j++) {
+			NMIP4Route *cfg_route = nm_ip4_config_get_route (ip4_config, j);
 
-			cfg_route = nm_ip4_config_get_route (ip4_config, i);
 			/* Dupe, override with user-specified route */
-			if (   (cfg_route->address == setting_route->address)
-			    && (cfg_route->prefix == setting_route->prefix)
-			    && (cfg_route->next_hop == setting_route->next_hop)) {
-				nm_ip4_config_replace_route (ip4_config, i, setting_route);
+			if (   (nm_ip4_route_get_dest (cfg_route) == nm_ip4_route_get_dest (setting_route))
+			    && (nm_ip4_route_get_prefix (cfg_route) == nm_ip4_route_get_prefix (setting_route))
+			    && (nm_ip4_route_get_next_hop (cfg_route) == nm_ip4_route_get_next_hop (setting_route))) {
+				nm_ip4_config_replace_route (ip4_config, j, setting_route);
 				break;
 			}
 		}
 
-		if (i == num)
+		if (j == num)
 			nm_ip4_config_add_route (ip4_config, setting_route);
 	}
 }

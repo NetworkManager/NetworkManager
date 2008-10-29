@@ -94,14 +94,14 @@ update_one_connection (gpointer key, gpointer val, gpointer user_data)
 	if (!ip4_config)
 		return;
 
-	if (ip4_config->addresses) {
+	if (nm_setting_ip4_config_get_num_addresses (ip4_config)) {
 		/* suse only has one address per device */
-		NMSettingIP4Address *ip4_address = (NMSettingIP4Address *) ip4_config->addresses->data;
+		NMIP4Address *ip4_address = nm_setting_ip4_config_get_address (ip4_config, 0);
 		SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (user_data);
 		GHashTable *settings;
 
-		if (ip4_address->gateway != priv->default_gw) {
-			ip4_address->gateway = priv->default_gw;
+		if (nm_ip4_address_get_gateway (ip4_address) != priv->default_gw) {
+			nm_ip4_address_set_gateway (ip4_address, priv->default_gw);
 			settings = nm_connection_to_hash (connection);
 			nm_exported_connection_signal_updated (exported, settings);
 			g_hash_table_destroy (settings);

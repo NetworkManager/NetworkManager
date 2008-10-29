@@ -338,20 +338,21 @@ detail_device (gpointer data, gpointer user_data)
 		printf ("\n  IPv4 Settings:\n");
 
 		for (iter = (GSList *) nm_ip4_config_get_addresses (cfg); iter; iter = g_slist_next (iter)) {
-			NMSettingIP4Address *addr = iter->data;
+			NMIP4Address *addr = (NMIP4Address *) iter->data;
+			guint32 prefix = nm_ip4_address_get_prefix (addr);
 			char *tmp2;
 
-			tmp = ip4_address_as_string (addr->address);
+			tmp = ip4_address_as_string (nm_ip4_address_get_address (addr));
 			print_string ("  Address", tmp);
 			g_free (tmp);
 
-			tmp2 = ip4_address_as_string (nm_utils_ip4_prefix_to_netmask (addr->prefix));
-			tmp = g_strdup_printf ("%d (%s)", addr->prefix, tmp2);
+			tmp2 = ip4_address_as_string (nm_utils_ip4_prefix_to_netmask (prefix));
+			tmp = g_strdup_printf ("%d (%s)", prefix, tmp2);
 			g_free (tmp2);
 			print_string ("  Prefix", tmp);
 			g_free (tmp);
 
-			tmp = ip4_address_as_string (addr->gateway);
+			tmp = ip4_address_as_string (nm_ip4_address_get_gateway (addr));
 			print_string ("  Gateway", tmp);
 			g_free (tmp);
 			printf ("\n");

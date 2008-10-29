@@ -202,7 +202,8 @@ get_best_device (NMManager *manager, NMActRequest **out_req)
 		int prio;
 		guint i;
 		gboolean can_default = FALSE;
-		
+		const char *method = NULL;
+
 		if (nm_device_get_state (dev) != NM_DEVICE_STATE_ACTIVATED)
 			continue;
 
@@ -217,15 +218,18 @@ get_best_device (NMManager *manager, NMActRequest **out_req)
 
 		/* Never set the default route through an IPv4LL-addressed device */
 		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
-		if (s_ip4 && !strcmp (s_ip4->method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
+		if (s_ip4)
+			method = nm_setting_ip4_config_get_method (s_ip4);
+
+		if (s_ip4 && !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL))
 			continue;
 
 		/* Make sure at least one of this device's IP addresses has a gateway */
 		for (i = 0; i < nm_ip4_config_get_num_addresses (ip4_config); i++) {
-			const NMSettingIP4Address *addr;
+			NMIP4Address *addr;
 
 			addr = nm_ip4_config_get_address (ip4_config, i);
-			if (addr->gateway) {
+			if (nm_ip4_address_get_gateway (addr)) {
 				can_default = TRUE;
 				break;
 			}
@@ -401,7 +405,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best)
 	NMActRequest *best_req = NULL;
 	NMDHCP4Config *dhcp4_config;
 	NMIP4Config *ip4_config;
-	const NMSettingIP4Address *addr;
+	NMIP4Address *addr;
 
 	g_return_if_fail (policy != NULL);
 
@@ -464,7 +468,7 @@ update_system_hostname (NMPolicy *policy, NMDevice *best)
 	g_assert (addr); /* checked for > 1 address above */
 
 	/* Start the hostname lookup thread */
-	policy->lookup = lookup_thread_new (addr->address, lookup_callback, policy);
+	policy->lookup = lookup_thread_new (nm_ip4_address_get_address (addr), lookup_callback, policy);
 	if (!policy->lookup) {
 		/* Fall back to 'localhost.localdomain' */
 		set_system_hostname (NULL, "error starting hostname thread");
@@ -480,7 +484,7 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	NMNamedManager *named_mgr;
 	GSList *devices = NULL, *iter, *vpns;
 	NMIP4Config *ip4_config = NULL;
-	const NMSettingIP4Address *addr;
+	NMIP4Address *addr;
 	const char *ip_iface = NULL;
 	NMVPNConnection *vpn = NULL;
 	NMConnection *connection = NULL;
@@ -515,9 +519,9 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 
 		ip4_config = nm_vpn_connection_get_ip4_config (vpn);
 		for (i = 0; i < nm_ip4_config_get_num_routes (ip4_config); i++) {
-			const NMSettingIP4Route *route = nm_ip4_config_get_route (ip4_config, i);
+			NMIP4Route *route = nm_ip4_config_get_route (ip4_config, i);
 
-			if (route->prefix != 32) {
+			if (nm_ip4_route_get_prefix (route) != 32) {
 				have_non_host_routes = TRUE;
 				break;
 			}
@@ -536,7 +540,7 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 			parent_ip4 = nm_device_get_ip4_config (parent);
 
 			nm_system_replace_default_ip4_route_vpn (ip_iface,
-			                                         addr->gateway,
+			                                         nm_ip4_address_get_gateway (addr),
 			                                         nm_vpn_connection_get_ip4_internal_gateway (vpn),
 			                                         nm_ip4_config_get_mss (ip4_config),
 			                                         nm_device_get_ip_iface (parent),
@@ -555,7 +559,7 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 		g_assert (ip4_config);
 		addr = nm_ip4_config_get_address (ip4_config, 0);
 
-		nm_system_replace_default_ip4_route (ip_iface, addr->gateway, nm_ip4_config_get_mss (ip4_config));
+		nm_system_replace_default_ip4_route (ip_iface, nm_ip4_address_get_gateway (addr), nm_ip4_config_get_mss (ip4_config));
 
 		dns_type = NM_NAMED_IP_CONFIG_TYPE_BEST_DEVICE;
 	}

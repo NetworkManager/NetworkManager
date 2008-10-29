@@ -165,8 +165,10 @@ get_one_ip4_addr (shvarFile *ifcfg,
 		get_one_ip4_addr (ifcfg, tag, &dns, error); \
 		if (*error) \
 			goto error; \
-		if (dns) \
-			g_array_append_val (s_ip4->dns, dns); \
+		if (dns) { \
+			if (!nm_setting_ip4_config_add_dns (s_ip4, dns)) \
+				PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    warning: duplicate DNS server %s", tag); \
+		} \
 	}
 		
 
@@ -175,9 +177,9 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 {
 	NMSettingIP4Config *s_ip4 = NULL;
 	char *value = NULL;
-	NMSettingIP4Address tmp = { 0, 0, 0 };
+	NMIP4Address *addr = NULL;
 	char *method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
-	guint32 netmask = 0;
+	guint32 netmask = 0, tmp = 0;
 
 	value = svGetValue (ifcfg, "BOOTPROTO");
 	if (value && (!g_ascii_strcasecmp (value, "bootp") || !g_ascii_strcasecmp (value, "dhcp")))
@@ -186,7 +188,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 	if (value && !g_ascii_strcasecmp (value, "autoip")) {
 		g_free (value);
 		s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
-		s_ip4->method = g_strdup (NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL);
+		g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL, NULL);
 		return NM_SETTING (s_ip4);
 	}
 
@@ -194,24 +196,29 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 
 	/* Handle manual settings */
 	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
-		get_one_ip4_addr (ifcfg, "IPADDR", &tmp.address, error);
-		if (*error)
-			goto error;
+		addr = nm_ip4_address_new ();
 
-		get_one_ip4_addr (ifcfg, "GATEWAY", &tmp.gateway, error);
+		get_one_ip4_addr (ifcfg, "IPADDR", &tmp, error);
 		if (*error)
 			goto error;
+		nm_ip4_address_set_address (addr, tmp);
+
+		get_one_ip4_addr (ifcfg, "GATEWAY", &tmp, error);
+		if (*error)
+			goto error;
+		nm_ip4_address_set_gateway (addr, tmp);
 
 		/* If no gateway in the ifcfg, try /etc/sysconfig/network instead */
-		if (!tmp.gateway) {
+		if (!nm_ip4_address_get_gateway (addr)) {
 			shvarFile *network;
 
 			network = svNewFile ("/etc/sysconfig/network");
 			if (network) {
-				get_one_ip4_addr (network, "GATEWAY", &tmp.gateway, error);
+				get_one_ip4_addr (network, "GATEWAY", &tmp, error);
 				svCloseFile (network);
 				if (*error)
 					goto error;
+				nm_ip4_address_set_gateway (addr, tmp);
 			}
 		}
 
@@ -227,56 +234,51 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 				g_free (value);
 				goto error;
 			}
-			tmp.prefix = (guint32) prefix;
+			nm_ip4_address_set_prefix (addr, (guint32) prefix);
 			g_free (value);
 		}
 
 		/* Fall back to NETMASK if no PREFIX was specified */
-		if (!tmp.prefix) {
+		if (!nm_ip4_address_get_prefix (addr)) {
 			get_one_ip4_addr (ifcfg, "NETMASK", &netmask, error);
 			if (*error)
 				goto error;
-			tmp.prefix = nm_utils_ip4_netmask_to_prefix (netmask);
+			nm_ip4_address_set_prefix (addr, nm_utils_ip4_netmask_to_prefix (netmask));
 		}
 
 		/* Validate the prefix */
-		if (!tmp.prefix || tmp.prefix > 32) {
+		if (  !nm_ip4_address_get_prefix (addr)
+		    || nm_ip4_address_get_prefix (addr) > 32) {
 			g_set_error (error, ifcfg_plugin_error_quark (), 0,
-			             "Invalid IP4 prefix '%d'", tmp.prefix);
+			             "Invalid IP4 prefix '%d'",
+			             nm_ip4_address_get_prefix (addr));
 			goto error;
 		}
 	}
 
 	/* Yay, let's make an IP4 config */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
-	s_ip4->method = g_strdup (method);
-	s_ip4->ignore_auto_dns = !svTrueValue (ifcfg, "PEERDNS", 1);
+	g_object_set (s_ip4,
+	              NM_SETTING_IP4_CONFIG_METHOD, method,
+	              NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS, !svTrueValue (ifcfg, "PEERDNS", 1),
+	              NULL);
 
 	/* DHCP hostname for 'send host-name' option */
 	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
 		value = svGetValue (ifcfg, "DHCP_HOSTNAME");
 		if (value && strlen (value))
-			s_ip4->dhcp_hostname = g_strdup (value);
+			g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, value, NULL);
 		g_free (value);
 	}
 
-	if (tmp.address && tmp.prefix) {
-		NMSettingIP4Address *addr;
-		addr = g_new0 (NMSettingIP4Address, 1);
-		memcpy (addr, &tmp, sizeof (NMSettingIP4Address));
-		s_ip4->addresses = g_slist_append (s_ip4->addresses, addr);
+	if (nm_ip4_address_get_address (addr) && nm_ip4_address_get_prefix (addr)) {
+		if (!nm_setting_ip4_config_add_address (s_ip4, addr))
+			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    warning: duplicate IP4 address");
 	}
-
-	s_ip4->dns = g_array_sized_new (FALSE, TRUE, sizeof (guint32), 3);
 
 	GET_ONE_DNS("DNS1");
 	GET_ONE_DNS("DNS2");
 	GET_ONE_DNS("DNS3");
-
-	if (s_ip4->dns && !s_ip4->dns->len) {
-		g_array_free (s_ip4->dns, TRUE);
-		s_ip4->dns = NULL;
-	}
 
 	/* DNS searches */
 	value = svGetValue (ifcfg, "DOMAIN");
@@ -286,15 +288,19 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 		searches = g_strsplit (value, " ", 0);
 		if (searches) {
 			char **item;
-			for (item = searches; *item; item++)
-				s_ip4->dns_search = g_slist_append (s_ip4->dns_search, *item);
-			g_free (searches);
+			for (item = searches; *item; item++) {
+				if (strlen (*item)) {
+					if (!nm_setting_ip4_config_add_dns_search (s_ip4, *item))
+						PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    warning: duplicate DNS domain '%s'", *item);
+				}
+			}
+			g_strfreev (searches);
 		}
 		g_free (value);
 	}
 
 	/* Legacy value NM used for a while but is incorrect (rh #459370) */
-	if (!g_slist_length (s_ip4->dns_search)) {
+	if (!nm_setting_ip4_config_get_num_dns_searches (s_ip4)) {
 		value = svGetValue (ifcfg, "SEARCH");
 		if (value) {
 			char **searches = NULL;
@@ -302,17 +308,26 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 			searches = g_strsplit (value, " ", 0);
 			if (searches) {
 				char **item;
-				for (item = searches; *item; item++)
-					s_ip4->dns_search = g_slist_append (s_ip4->dns_search, *item);
-				g_free (searches);
+				for (item = searches; *item; item++) {
+					if (strlen (*item)) {
+						if (!nm_setting_ip4_config_add_dns_search (s_ip4, *item))
+							PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    warning: duplicate DNS search '%s'", *item);
+					}
+				}
+				g_strfreev (searches);
 			}
 			g_free (value);
 		}
 	}
 
+	if (addr)
+		nm_ip4_address_unref (addr);
+
 	return NM_SETTING (s_ip4);
 
 error:
+	if (addr)
+		nm_ip4_address_unref (addr);
 	if (s_ip4)
 		g_object_unref (s_ip4);
 	return NULL;

@@ -68,31 +68,56 @@ GQuark nm_setting_ip4_config_error_quark (void);
 #define NM_SETTING_IP4_CONFIG_METHOD_MANUAL     "manual"
 #define NM_SETTING_IP4_CONFIG_METHOD_SHARED     "shared"
 
-typedef struct {
-	guint32 address;   /* network byte order */
-	guint32 prefix;
-	guint32 gateway;   /* network byte order */
-} NMSettingIP4Address;
 
-typedef struct {
-	guint32 address;   /* network byte order */
-	guint32 prefix;
-	guint32 next_hop;   /* network byte order */
-	guint32 metric;    /* lower metric == more preferred */
-} NMSettingIP4Route;
+typedef struct NMIP4Address NMIP4Address;
+
+NMIP4Address * nm_ip4_address_new         (void);
+NMIP4Address * nm_ip4_address_dup         (NMIP4Address *source);
+void           nm_ip4_address_ref         (NMIP4Address *address);
+void           nm_ip4_address_unref       (NMIP4Address *address);
+/* Return TRUE if addresses are identical */
+gboolean       nm_ip4_address_compare     (NMIP4Address *address, NMIP4Address *other);
+
+guint32        nm_ip4_address_get_address (NMIP4Address *address);
+void           nm_ip4_address_set_address (NMIP4Address *address,
+                                           guint32 addr);  /* network byte order */
+
+guint32        nm_ip4_address_get_prefix  (NMIP4Address *address);
+void           nm_ip4_address_set_prefix  (NMIP4Address *address,
+                                           guint32 prefix);
+
+guint32        nm_ip4_address_get_gateway (NMIP4Address *address);
+void           nm_ip4_address_set_gateway (NMIP4Address *address,
+                                           guint32 gateway);  /* network byte order */
+
+typedef struct NMIP4Route NMIP4Route;
+
+NMIP4Route * nm_ip4_route_new          (void);
+NMIP4Route * nm_ip4_route_dup          (NMIP4Route *route);
+void         nm_ip4_route_ref          (NMIP4Route *route);
+void         nm_ip4_route_unref        (NMIP4Route *route);
+/* Return TRUE if routes are identical */
+gboolean     nm_ip4_route_compare      (NMIP4Route *route, NMIP4Route *other);
+
+guint32      nm_ip4_route_get_dest     (NMIP4Route *route);
+void         nm_ip4_route_set_dest     (NMIP4Route *route,
+                                        guint32 dest);  /* network byte order */
+
+guint32      nm_ip4_route_get_prefix   (NMIP4Route *route);
+void         nm_ip4_route_set_prefix   (NMIP4Route *route,
+                                        guint32 prefix);
+
+guint32      nm_ip4_route_get_next_hop (NMIP4Route *route);
+void         nm_ip4_route_set_next_hop (NMIP4Route *route,
+                                        guint32 next_hop);  /* network byte order */
+
+guint32      nm_ip4_route_get_metric   (NMIP4Route *route);
+void         nm_ip4_route_set_metric   (NMIP4Route *route,
+                                        guint32 metric);
+
 
 typedef struct {
 	NMSetting parent;
-
-	char *method;
-	GArray *dns;        /* array of guint32; elements in network byte order */
-	GSList *dns_search; /* list of strings */
-	GSList *addresses;  /* array of NMSettingIP4Address */
-	GSList *routes;     /* array of NMSettingIP4Route */
-	gboolean ignore_auto_routes;
-	gboolean ignore_auto_dns;
-	char *dhcp_client_id;
-	char *dhcp_hostname;
 } NMSettingIP4Config;
 
 typedef struct {
@@ -101,7 +126,37 @@ typedef struct {
 
 GType nm_setting_ip4_config_get_type (void);
 
-NMSetting *nm_setting_ip4_config_new (void);
+NMSetting *   nm_setting_ip4_config_new                    (void);
+const char *  nm_setting_ip4_config_get_method             (NMSettingIP4Config *setting);
+
+guint32       nm_setting_ip4_config_get_num_dns            (NMSettingIP4Config *setting);
+guint32       nm_setting_ip4_config_get_dns                (NMSettingIP4Config *setting, guint32 i);
+gboolean      nm_setting_ip4_config_add_dns                (NMSettingIP4Config *setting, guint32 dns);
+void          nm_setting_ip4_config_remove_dns             (NMSettingIP4Config *setting, guint32 i);
+void          nm_setting_ip4_config_clear_dns              (NMSettingIP4Config *setting);
+
+guint32       nm_setting_ip4_config_get_num_dns_searches   (NMSettingIP4Config *setting);
+const char *  nm_setting_ip4_config_get_dns_search         (NMSettingIP4Config *setting, guint32 i);
+gboolean      nm_setting_ip4_config_add_dns_search         (NMSettingIP4Config *setting, const char *dns_search);
+void          nm_setting_ip4_config_remove_dns_search      (NMSettingIP4Config *setting, guint32 i);
+void          nm_setting_ip4_config_clear_dns_searches     (NMSettingIP4Config *setting);
+
+guint32       nm_setting_ip4_config_get_num_addresses      (NMSettingIP4Config *setting);
+NMIP4Address *nm_setting_ip4_config_get_address            (NMSettingIP4Config *setting, guint32 i);
+gboolean      nm_setting_ip4_config_add_address            (NMSettingIP4Config *setting, NMIP4Address *address);
+void          nm_setting_ip4_config_remove_address         (NMSettingIP4Config *setting, guint32 i);
+void          nm_setting_ip4_config_clear_addresses        (NMSettingIP4Config *setting);
+
+guint32       nm_setting_ip4_config_get_num_routes         (NMSettingIP4Config *setting);
+NMIP4Route *  nm_setting_ip4_config_get_route              (NMSettingIP4Config *setting, guint32 i);
+gboolean      nm_setting_ip4_config_add_route              (NMSettingIP4Config *setting, NMIP4Route *route);
+void          nm_setting_ip4_config_remove_route           (NMSettingIP4Config *setting, guint32 i);
+void          nm_setting_ip4_config_clear_routes           (NMSettingIP4Config *setting);
+
+gboolean      nm_setting_ip4_config_get_ignore_auto_routes (NMSettingIP4Config *setting);
+gboolean      nm_setting_ip4_config_get_ignore_auto_dns    (NMSettingIP4Config *setting);
+const char *  nm_setting_ip4_config_get_dhcp_client_id     (NMSettingIP4Config *setting);
+const char *  nm_setting_ip4_config_get_dhcp_hostname      (NMSettingIP4Config *setting);
 
 G_END_DECLS
 

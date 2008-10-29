@@ -73,17 +73,19 @@ dump_ip4_config (NMIP4Config *cfg)
 	int i;
 
 	for (iter = (GSList *) nm_ip4_config_get_addresses (cfg); iter; iter = g_slist_next (iter)) {
-		NMSettingIP4Address *addr = iter->data;
+		NMIP4Address *addr = iter->data;
+		guint32 u;
 
-		tmp = ip4_address_as_string (addr->address);
+		tmp = ip4_address_as_string (nm_ip4_address_get_address (addr));
 		g_print ("IP4 address: %s\n", tmp);
 		g_free (tmp);
 
-		tmp = ip4_address_as_string (nm_utils_ip4_prefix_to_netmask (addr->prefix));
-		g_print ("IP4 prefix: %d (%s)\n", addr->prefix, tmp);
+		u = nm_ip4_address_get_prefix (addr);
+		tmp = ip4_address_as_string (nm_utils_ip4_prefix_to_netmask (u));
+		g_print ("IP4 prefix: %d (%s)\n", u, tmp);
 		g_free (tmp);
 
-		tmp = ip4_address_as_string (addr->gateway);
+		tmp = ip4_address_as_string (nm_ip4_address_get_gateway (addr));
 		g_print ("IP4 gateway: %s\n\n", tmp);
 		g_free (tmp);
 	}
