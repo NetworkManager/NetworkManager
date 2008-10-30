@@ -75,26 +75,6 @@ GQuark nm_setting_802_1x_error_quark (void);
 
 typedef struct {
 	NMSetting parent;
-
-	GSList *eap; /* GSList of strings */
-	char *identity;
-	char *anonymous_identity;
-	GByteArray *ca_cert;
-	char *ca_path;
-	GByteArray *client_cert;
-	char *phase1_peapver;
-	char *phase1_peaplabel;
-	char *phase1_fast_provisioning;
-	char *phase2_auth;
-	char *phase2_autheap;
-	GByteArray *phase2_ca_cert;
-	char *phase2_ca_path;
-	GByteArray *phase2_client_cert;
-	char *password;
-	char *pin;
-	char *psk;
-	GByteArray *private_key;
-	GByteArray *phase2_private_key;
 } NMSetting8021x;
 
 typedef struct {
@@ -105,31 +85,65 @@ GType nm_setting_802_1x_get_type (void);
 
 NMSetting *nm_setting_802_1x_new (void);
 
-gboolean nm_setting_802_1x_set_ca_cert (NMSetting8021x *self,
-								const char *filename,
-								GError **err);
+guint32           nm_setting_802_1x_get_num_eap_methods              (NMSetting8021x *setting);
+const char *      nm_setting_802_1x_get_eap_method                   (NMSetting8021x *setting, guint32 i);
+gboolean          nm_setting_802_1x_add_eap_method                   (NMSetting8021x *setting, const char *eap);
+void              nm_setting_802_1x_remove_eap_method                (NMSetting8021x *setting, guint32 i);
+void              nm_setting_802_1x_clear_eap_methods                (NMSetting8021x *setting);
 
-gboolean nm_setting_802_1x_set_client_cert (NMSetting8021x *self,
-								    const char *filename,
-								    GError **err);
+const char *      nm_setting_802_1x_get_identity                     (NMSetting8021x *setting);
 
-gboolean nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *self,
-									  const char *filename,
-									  GError **err);
+const char *      nm_setting_802_1x_get_anonymous_identity           (NMSetting8021x *setting);
 
-gboolean nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *self,
-										 const char *filename,
-										 GError **err);
+const GByteArray *nm_setting_802_1x_get_ca_cert                      (NMSetting8021x *setting);
+const char *      nm_setting_802_1x_get_ca_path                      (NMSetting8021x *setting);
+gboolean          nm_setting_802_1x_set_ca_cert_from_file            (NMSetting8021x *setting,
+                                                                      const char *filename,
+                                                                      GError **err);
 
-gboolean nm_setting_802_1x_set_private_key (NMSetting8021x *self,
-								    const char *filename,
-								    const char *password,
-								    GError **err);
+const GByteArray *nm_setting_802_1x_get_client_cert                  (NMSetting8021x *setting);
+gboolean          nm_setting_802_1x_set_client_cert_from_file        (NMSetting8021x *setting,
+                                                                      const char *filename,
+                                                                      GError **err);
 
-gboolean nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
-										 const char *filename,
-										 const char *password,
-										 GError **err);
+const char *      nm_setting_802_1x_get_phase1_peapver               (NMSetting8021x *setting);
+
+const char *      nm_setting_802_1x_get_phase1_peaplabel             (NMSetting8021x *setting);
+
+const char *      nm_setting_802_1x_get_phase1_fast_provisioning     (NMSetting8021x *setting);
+
+const char *      nm_setting_802_1x_get_phase2_auth                  (NMSetting8021x *setting);
+
+const char *      nm_setting_802_1x_get_phase2_autheap               (NMSetting8021x *setting);
+
+const GByteArray *nm_setting_802_1x_get_phase2_ca_cert               (NMSetting8021x *setting);
+const char *      nm_setting_802_1x_get_phase2_ca_path               (NMSetting8021x *setting);
+gboolean          nm_setting_802_1x_set_phase2_ca_cert_from_file     (NMSetting8021x *setting,
+                                                                      const char *filename,
+                                                                      GError **err);
+
+const GByteArray *nm_setting_802_1x_get_phase2_client_cert           (NMSetting8021x *setting);
+gboolean          nm_setting_802_1x_set_phase2_client_cert_from_file (NMSetting8021x *setting,
+                                                                      const char *filename,
+                                                                      GError **err);
+
+const char *      nm_setting_802_1x_get_password                     (NMSetting8021x *setting);
+
+const char *      nm_setting_802_1x_get_pin                          (NMSetting8021x *setting);
+
+const char *      nm_setting_802_1x_get_psk                          (NMSetting8021x *setting);
+
+const GByteArray *nm_setting_802_1x_get_private_key                  (NMSetting8021x *setting);
+gboolean          nm_setting_802_1x_set_private_key_from_file        (NMSetting8021x *setting,
+                                                                      const char *filename,
+                                                                      const char *password,
+                                                                      GError **err);
+
+const GByteArray *nm_setting_802_1x_get_phase2_private_key           (NMSetting8021x *setting);
+gboolean          nm_setting_802_1x_set_phase2_private_key_from_file (NMSetting8021x *setting,
+                                                                      const char *filename,
+                                                                      const char *password,
+                                                                      GError **err);
 
 G_END_DECLS
 

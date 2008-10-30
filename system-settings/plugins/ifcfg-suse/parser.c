@@ -440,21 +440,35 @@ read_wpa_eap_settings (shvarFile *ifcfg)
 
 		pieces = g_strsplit (str, " ", 0);
 		for (i = 0; pieces[i]; i++)
-			s_802_1x->eap = g_slist_append (s_802_1x->eap, pieces[i]);
+			nm_setting_802_1x_add_eap_method (s_802_1x, pieces[i]);
 
 		g_free (pieces);
 		g_free (str);
 	}
 
-	s_802_1x->anonymous_identity = svGetValue (ifcfg, "WIRELESS_WPA_ANONID");
-	s_802_1x->phase1_peapver = svGetValue (ifcfg, "WIRELESS_PEAP_VERSION");
-	s_802_1x->phase2_auth = svGetValue (ifcfg, "WIRELESS_EAP_AUTH");
-	s_802_1x->identity = svGetValue (ifcfg, "WIRELESS_WPA_IDENTITY");
-	s_802_1x->password = svGetValue (ifcfg, "WIRELESS_WPA_PASSWORD");
+	str = svGetValue (ifcfg, "WIRELESS_WPA_ANONID");
+	g_object_set (s_802_1x, NM_SETTING_802_1X_ANONYMOUS_IDENTITY, str, NULL);
+	g_free (str);
+
+	str = svGetValue (ifcfg, "WIRELESS_PEAP_VERSION");
+	g_object_set (s_802_1x, NM_SETTING_802_1X_PHASE1_PEAPVER, str, NULL);
+	g_free (str);
+
+	str = svGetValue (ifcfg, "WIRELESS_EAP_AUTH");
+	g_object_set (s_802_1x, NM_SETTING_802_1X_PHASE2_AUTH, str, NULL);
+	g_free (str);
+
+	str = svGetValue (ifcfg, "WIRELESS_WPA_IDENTITY");
+	g_object_set (s_802_1x, NM_SETTING_802_1X_IDENTITY, str, NULL);
+	g_free (str);
+
+	str = svGetValue (ifcfg, "WIRELESS_WPA_PASSWORD");
+	g_object_set (s_802_1x, NM_SETTING_802_1X_PASSWORD, str, NULL);
+	g_free (str);
 
 	str = svGetValue (ifcfg, "WIRELESS_CA_CERT");
 	if (str) {
-		nm_setting_802_1x_set_ca_cert (s_802_1x, str, &err);
+		nm_setting_802_1x_set_ca_cert_from_file (s_802_1x, str, &err);
 		if (err) {
 			g_warning ("Error loading WIRELESS_CA_CERT: %s", err->message);
 			g_error_free (err);
@@ -465,7 +479,7 @@ read_wpa_eap_settings (shvarFile *ifcfg)
 
 	str = svGetValue (ifcfg, "WIRELESS_CLIENT_CERT");
 	if (str) {
-		nm_setting_802_1x_set_client_cert (s_802_1x, str, &err);
+		nm_setting_802_1x_set_client_cert_from_file (s_802_1x, str, &err);
 		if (err) {
 			g_warning ("Error loading WIRELESS_CLIENT_CERT: %s", err->message);
 			g_error_free (err);
@@ -480,7 +494,7 @@ read_wpa_eap_settings (shvarFile *ifcfg)
 
 		password = svGetValue (ifcfg, "WIRELESS_CLIENT_KEY_PASSWORD");
 		if (password) {
-			nm_setting_802_1x_set_private_key (s_802_1x, str, password, &err);
+			nm_setting_802_1x_set_private_key_from_file (s_802_1x, str, password, &err);
 			if (err) {
 				g_warning ("Error loading WIRELESS_CLIENT_KEY: %s", err->message);
 				g_error_free (err);

@@ -426,12 +426,12 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 		} \
 	}
 
-#define ADD_STRING_LIST_VAL(setting, field, field_plural, name, ucase, secret) \
-	if (nm_setting_wireless_security_get_num_##field_plural (setting)) { \
+#define ADD_STRING_LIST_VAL(setting, setting_name, field, field_plural, name, ucase, secret) \
+	if (nm_setting_##setting_name##_get_num_##field_plural (setting)) { \
 		guint32 k; \
 		GString *str = g_string_new (NULL); \
-		for (k = 0; k < nm_setting_wireless_security_get_num_##field_plural (setting); k++) { \
-			const char *item = nm_setting_wireless_security_get_##field (setting, k); \
+		for (k = 0; k < nm_setting_##setting_name##_get_num_##field_plural (setting); k++) { \
+			const char *item = nm_setting_##setting_name##_get_##field (setting, k); \
 			if (!str->len) { \
 				g_string_append (str, item); \
 			} else { \
@@ -504,9 +504,9 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 	if (   !strcmp (key_mgmt, "wpa-none")
 	    || !strcmp (key_mgmt, "wpa-psk")
 	    || !strcmp (key_mgmt, "wpa-eap")) {
-		ADD_STRING_LIST_VAL (setting, proto, protos, "proto", TRUE, FALSE);
-		ADD_STRING_LIST_VAL (setting, pairwise, pairwise, "pairwise", TRUE, FALSE);
-		ADD_STRING_LIST_VAL (setting, group, groups, "group", TRUE, FALSE);
+		ADD_STRING_LIST_VAL (setting, wireless_security, proto, protos, "proto", TRUE, FALSE);
+		ADD_STRING_LIST_VAL (setting, wireless_security, pairwise, pairwise, "pairwise", TRUE, FALSE);
+		ADD_STRING_LIST_VAL (setting, wireless_security, group, groups, "group", TRUE, FALSE);
 	}
 
 	/* WEP keys if required */
@@ -572,8 +572,8 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 
 	priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
 
-	ADD_STRING_VAL (setting->password, "password", FALSE, FALSE, TRUE);
-	ADD_STRING_VAL (setting->pin, "pin", FALSE, FALSE, TRUE);
+	ADD_STRING_VAL (nm_setting_802_1x_get_password (setting), "password", FALSE, FALSE, TRUE);
+	ADD_STRING_VAL (nm_setting_802_1x_get_pin (setting), "pin", FALSE, FALSE, TRUE);
 
 	if (wired) {
 		ADD_STRING_VAL ("IEEE8021X", "key_mgmt", TRUE, FALSE, FALSE);
@@ -581,51 +581,20 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		ADD_STRING_VAL ("0", "eapol_flags", FALSE, FALSE, FALSE);
 	}
 
-	/* Private key passwords are never passed to wpa_supplicant because the
-	 * user agent is responsible for decoding and decrypting the private key,
-	 * and file paths are never passed to wpa_supplicant to ensure that
-	 * the supplicant can be locked down and doesn't try to read stuff from
-	 * all over the drive.
-	 */
-
-	/* FIXME: go back to using ADD_STRING_LIST_VAL when 802.1x setting is
-	 * converted to accessors */
-	if (setting->eap) {
-		GSList *elt;
-		GString *str = g_string_new (NULL);
-
-		for (elt = setting->eap; elt; elt = g_slist_next (elt)) {
-			if (!str->len) {
-				g_string_append (str, elt->data);
-			} else {
-				g_string_append_c (str, ' ');
-				g_string_append (str, elt->data);
-			}
-		}
-		g_string_ascii_up (str);
-		if (str->len)
-			success = nm_supplicant_config_add_option (self, "eap", str->str, -1, FALSE);
-		else
-			success = TRUE;
-		g_string_free (str, TRUE);
-		if (!success) {
-			nm_warning ("Error adding %s to supplicant config.", "eap");
-			return FALSE;
-		}
-	}
+	ADD_STRING_LIST_VAL (setting, 802_1x, eap_method, eap_methods, "eap", TRUE, FALSE);
 
 	/* Drop the fragment size a bit for better compatibility */
 	if (!nm_supplicant_config_add_option (self, "fragment_size", "1300", -1, FALSE))
 		return FALSE;
 
 	phase1 = g_string_new (NULL);
-	if (setting->phase1_peapver)
-		g_string_append_printf (phase1, "peapver=%s", setting->phase1_peapver);
+	if (nm_setting_802_1x_get_phase1_peapver (setting))
+		g_string_append_printf (phase1, "peapver=%s", nm_setting_802_1x_get_phase1_peapver (setting));
 
-	if (setting->phase1_peaplabel) {
+	if (nm_setting_802_1x_get_phase1_peaplabel (setting)) {
 		if (phase1->len)
 			g_string_append_c (phase1, ' ');
-		g_string_append_printf (phase1, "peaplabel=%s", setting->phase1_peaplabel);
+		g_string_append_printf (phase1, "peaplabel=%s", nm_setting_802_1x_get_phase1_peaplabel (setting));
 	}
 
 	if (phase1->len)
@@ -633,16 +602,16 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	g_string_free (phase1, TRUE);
 
 	phase2 = g_string_new (NULL);
-	if (setting->phase2_auth) {
-		tmp = g_ascii_strup (setting->phase2_auth, -1);
+	if (nm_setting_802_1x_get_phase2_auth (setting)) {
+		tmp = g_ascii_strup (nm_setting_802_1x_get_phase2_auth (setting), -1);
 		g_string_append_printf (phase2, "auth=%s", tmp);
 		g_free (tmp);
 	}
 
-	if (setting->phase2_autheap) {
+	if (nm_setting_802_1x_get_phase2_autheap (setting)) {
 		if (phase2->len)
 			g_string_append_c (phase2, ' ');
-		tmp = g_ascii_strup (setting->phase2_autheap, -1);
+		tmp = g_ascii_strup (nm_setting_802_1x_get_phase2_autheap (setting), -1);
 		g_string_append_printf (phase2, "autheap=%s", tmp);
 		g_free (tmp);
 	}
@@ -651,15 +620,21 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		ADD_STRING_VAL (phase2->str, "phase2", FALSE, FALSE, FALSE);
 	g_string_free (phase2, TRUE);
 
-	ADD_BLOB_VAL (setting->ca_cert, "ca_cert", connection_uid);
-	ADD_BLOB_VAL (setting->client_cert, "client_cert", connection_uid);
-	ADD_BLOB_VAL (setting->private_key, "private_key", connection_uid);
-	ADD_BLOB_VAL (setting->phase2_ca_cert, "ca_cert2", connection_uid);
-	ADD_BLOB_VAL (setting->phase2_client_cert, "client_cert2", connection_uid);
-	ADD_BLOB_VAL (setting->phase2_private_key, "private_key2", connection_uid);
+	/* Private key passwords are never passed to wpa_supplicant because the
+	 * user agent is responsible for decoding and decrypting the private key,
+	 * and file paths are never passed to wpa_supplicant to ensure that
+	 * the supplicant can be locked down and doesn't try to read stuff from
+	 * all over the drive.
+	 */
+	ADD_BLOB_VAL (nm_setting_802_1x_get_ca_cert (setting), "ca_cert", connection_uid);
+	ADD_BLOB_VAL (nm_setting_802_1x_get_client_cert (setting), "client_cert", connection_uid);
+	ADD_BLOB_VAL (nm_setting_802_1x_get_private_key (setting), "private_key", connection_uid);
+	ADD_BLOB_VAL (nm_setting_802_1x_get_phase2_ca_cert (setting), "ca_cert2", connection_uid);
+	ADD_BLOB_VAL (nm_setting_802_1x_get_phase2_client_cert (setting), "client_cert2", connection_uid);
+	ADD_BLOB_VAL (nm_setting_802_1x_get_phase2_private_key (setting), "private_key2", connection_uid);
 
-	ADD_STRING_VAL (setting->identity, "identity", FALSE, FALSE, FALSE);
-	ADD_STRING_VAL (setting->anonymous_identity, "anonymous_identity", FALSE, FALSE, FALSE);
+	ADD_STRING_VAL (nm_setting_802_1x_get_identity (setting), "identity", FALSE, FALSE, FALSE);
+	ADD_STRING_VAL (nm_setting_802_1x_get_anonymous_identity (setting), "anonymous_identity", FALSE, FALSE, FALSE);
 
 	return TRUE;
 }

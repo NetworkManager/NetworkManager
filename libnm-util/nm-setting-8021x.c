@@ -68,6 +68,30 @@ nm_setting_802_1x_error_get_type (void)
 
 G_DEFINE_TYPE (NMSetting8021x, nm_setting_802_1x, NM_TYPE_SETTING)
 
+#define NM_SETTING_802_1X_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_802_1X, NMSetting8021xPrivate))
+
+typedef struct {
+	GSList *eap; /* GSList of strings */
+	char *identity;
+	char *anonymous_identity;
+	GByteArray *ca_cert;
+	char *ca_path;
+	GByteArray *client_cert;
+	char *phase1_peapver;
+	char *phase1_peaplabel;
+	char *phase1_fast_provisioning;
+	char *phase2_auth;
+	char *phase2_autheap;
+	GByteArray *phase2_ca_cert;
+	char *phase2_ca_path;
+	GByteArray *phase2_client_cert;
+	char *password;
+	char *pin;
+	char *psk;
+	GByteArray *private_key;
+	GByteArray *phase2_private_key;
+} NMSetting8021xPrivate;
+
 enum {
 	PROP_0,
 	PROP_EAP,
@@ -99,115 +123,343 @@ nm_setting_802_1x_new (void)
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_802_1X, NULL);
 }
 
-gboolean
-nm_setting_802_1x_set_ca_cert (NMSetting8021x *self,
-						 const char *filename,
-						 GError **err)
+guint32
+nm_setting_802_1x_get_num_eap_methods (NMSetting8021x *setting)
 {
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
-	g_return_val_if_fail (filename != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), 0);
 
-	if (self->ca_cert)
-		g_byte_array_free (self->ca_cert, TRUE);
+	return g_slist_length (NM_SETTING_802_1X_GET_PRIVATE (setting)->eap);
+}
 
-	self->ca_cert = crypto_load_and_verify_certificate (filename, err);
+const char *
+nm_setting_802_1x_get_eap_method (NMSetting8021x *setting, guint32 i)
+{
+	NMSetting8021xPrivate *priv;
 
-	return self->ca_cert != NULL;
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
+	g_return_val_if_fail (i <= g_slist_length (priv->eap), NULL);
+
+	return (const char *) g_slist_nth_data (priv->eap, i);
 }
 
 gboolean
-nm_setting_802_1x_set_client_cert (NMSetting8021x *self,
-							const char *filename,
-							GError **err)
+nm_setting_802_1x_add_eap_method (NMSetting8021x *setting, const char *eap)
 {
-	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
-	g_return_val_if_fail (filename != NULL, FALSE);
+	NMSetting8021xPrivate *priv;
+	GSList *iter;
 
-	if (self->client_cert)
-		g_byte_array_free (self->client_cert, TRUE);
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
+	g_return_val_if_fail (eap != NULL, FALSE);
 
-	self->client_cert = crypto_load_and_verify_certificate (filename, err);
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
+	for (iter = priv->eap; iter; iter = g_slist_next (iter)) {
+		if (!strcmp (eap, (char *) iter->data))
+			return FALSE;
+	}
 
-	return self->client_cert != NULL;
+	priv->eap = g_slist_append (priv->eap, g_ascii_strdown (eap, -1));
+	return TRUE;
+}
+
+void
+nm_setting_802_1x_remove_eap_method (NMSetting8021x *setting, guint32 i)
+{
+	NMSetting8021xPrivate *priv;
+	GSList *elt;
+
+	g_return_if_fail (NM_IS_SETTING_802_1X (setting));
+
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
+	elt = g_slist_nth (priv->eap, i);
+	g_return_if_fail (elt != NULL);
+
+	g_free (elt->data);
+	priv->eap = g_slist_delete_link (priv->eap, elt);
+}
+
+void
+nm_setting_802_1x_clear_eap_methods (NMSetting8021x *setting)
+{
+	NMSetting8021xPrivate *priv;
+
+	g_return_if_fail (NM_IS_SETTING_802_1X (setting));
+
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
+	nm_utils_slist_free (priv->eap, g_free);
+	priv->eap = NULL;
+}
+
+const char *
+nm_setting_802_1x_get_identity (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->identity;
+}
+
+const char *
+nm_setting_802_1x_get_anonymous_identity (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->anonymous_identity;
+}
+
+const GByteArray *
+nm_setting_802_1x_get_ca_cert (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->ca_cert;
+}
+
+const char *
+nm_setting_802_1x_get_ca_path (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->ca_path;
 }
 
 gboolean
-nm_setting_802_1x_set_phase2_ca_cert (NMSetting8021x *self,
-							   const char *filename,
-							   GError **err)
+nm_setting_802_1x_set_ca_cert_from_file (NMSetting8021x *self,
+                                         const char *filename,
+                                         GError **err)
 {
+	NMSetting8021xPrivate *priv;
+
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
 	g_return_val_if_fail (filename != NULL, FALSE);
 
-	if (self->phase2_ca_cert)
-		g_byte_array_free (self->phase2_ca_cert, TRUE);
+	priv = NM_SETTING_802_1X_GET_PRIVATE (self);
+	if (priv->ca_cert)
+		g_byte_array_free (priv->ca_cert, TRUE);
 
-	self->phase2_ca_cert = crypto_load_and_verify_certificate (filename, err);
+	priv->ca_cert = crypto_load_and_verify_certificate (filename, err);
 
-	return self->phase2_ca_cert != NULL;
+	return priv->ca_cert != NULL;
+}
 
+const GByteArray *
+nm_setting_802_1x_get_client_cert (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->client_cert;
 }
 
 gboolean
-nm_setting_802_1x_set_phase2_client_cert (NMSetting8021x *self,
-								  const char *filename,
-								  GError **err)
+nm_setting_802_1x_set_client_cert_from_file (NMSetting8021x *self,
+                                             const char *filename,
+                                             GError **err)
 {
+	NMSetting8021xPrivate *priv;
+
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
 	g_return_val_if_fail (filename != NULL, FALSE);
 
-	if (self->phase2_client_cert)
-		g_byte_array_free (self->phase2_client_cert, TRUE);
+	priv = NM_SETTING_802_1X_GET_PRIVATE (self);
+	if (priv->client_cert)
+		g_byte_array_free (priv->client_cert, TRUE);
 
-	self->phase2_client_cert = crypto_load_and_verify_certificate (filename, err);
+	priv->client_cert = crypto_load_and_verify_certificate (filename, err);
 
-	return self->phase2_client_cert != NULL;
+	return priv->client_cert != NULL;
+}
+
+const char *
+nm_setting_802_1x_get_phase1_peapver (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->phase1_peapver;
+}
+
+const char *
+nm_setting_802_1x_get_phase1_peaplabel (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->phase1_peaplabel;
+}
+
+const char *
+nm_setting_802_1x_get_phase1_fast_provisioning (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->phase1_fast_provisioning;
+}
+
+const char *
+nm_setting_802_1x_get_phase2_auth (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_auth;
+}
+
+const char *
+nm_setting_802_1x_get_phase2_autheap (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_autheap;
+}
+
+const GByteArray *
+nm_setting_802_1x_get_phase2_ca_cert (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_ca_cert;
+}
+
+const char *
+nm_setting_802_1x_get_phase2_ca_path (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_ca_path;
 }
 
 gboolean
-nm_setting_802_1x_set_private_key (NMSetting8021x *self,
-							const char *filename,
-							const char *password,
-							GError **err)
+nm_setting_802_1x_set_phase2_ca_cert_from_file (NMSetting8021x *self,
+                                                const char *filename,
+                                                GError **err)
 {
+	NMSetting8021xPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
+	g_return_val_if_fail (filename != NULL, FALSE);
+
+	priv = NM_SETTING_802_1X_GET_PRIVATE (self);
+	if (priv->phase2_ca_cert)
+		g_byte_array_free (priv->phase2_ca_cert, TRUE);
+
+	priv->phase2_ca_cert = crypto_load_and_verify_certificate (filename, err);
+
+	return priv->phase2_ca_cert != NULL;
+
+}
+
+const GByteArray *
+nm_setting_802_1x_get_phase2_client_cert (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_client_cert;
+}
+
+gboolean
+nm_setting_802_1x_set_phase2_client_cert_from_file (NMSetting8021x *self,
+                                                    const char *filename,
+                                                    GError **err)
+{
+	NMSetting8021xPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
+	g_return_val_if_fail (filename != NULL, FALSE);
+
+	priv = NM_SETTING_802_1X_GET_PRIVATE (self);
+	if (priv->phase2_client_cert)
+		g_byte_array_free (priv->phase2_client_cert, TRUE);
+
+	priv->phase2_client_cert = crypto_load_and_verify_certificate (filename, err);
+
+	return priv->phase2_client_cert != NULL;
+}
+
+const char *
+nm_setting_802_1x_get_password (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->password;
+}
+
+const char *
+nm_setting_802_1x_get_pin (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->pin;
+}
+
+const char *
+nm_setting_802_1x_get_psk (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->psk;
+}
+
+const GByteArray *
+nm_setting_802_1x_get_private_key (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->private_key;
+}
+
+gboolean
+nm_setting_802_1x_set_private_key_from_file (NMSetting8021x *self,
+                                             const char *filename,
+                                             const char *password,
+                                             GError **err)
+{
+	NMSetting8021xPrivate *priv;
 	guint32 ignore;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
 	g_return_val_if_fail (filename != NULL, FALSE);
 	g_return_val_if_fail (password != NULL, FALSE);
 
-	if (self->private_key) {
+	priv = NM_SETTING_802_1X_GET_PRIVATE (self);
+	if (priv->private_key) {
 		/* Try not to leave the decrypted private key around in memory */
-		memset (self->private_key, 0, self->private_key->len);
-		g_byte_array_free (self->private_key, TRUE);
+		memset (priv->private_key, 0, priv->private_key->len);
+		g_byte_array_free (priv->private_key, TRUE);
 	}
 
-	self->private_key = crypto_get_private_key (filename, password, &ignore, err);
+	priv->private_key = crypto_get_private_key (filename, password, &ignore, err);
 
-	return self->private_key != NULL;
+	return priv->private_key != NULL;
+}
+
+const GByteArray *
+nm_setting_802_1x_get_phase2_private_key (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_private_key;
 }
 
 gboolean
-nm_setting_802_1x_set_phase2_private_key (NMSetting8021x *self,
-								  const char *filename,
-								  const char *password,
-								  GError **err)
+nm_setting_802_1x_set_phase2_private_key_from_file (NMSetting8021x *self,
+                                                    const char *filename,
+                                                    const char *password,
+                                                    GError **err)
 {
+	NMSetting8021xPrivate *priv;
 	guint32 ignore;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
 	g_return_val_if_fail (filename != NULL, FALSE);
 	g_return_val_if_fail (password != NULL, FALSE);
 
-	if (self->phase2_private_key) {
+	priv = NM_SETTING_802_1X_GET_PRIVATE (self);
+	if (priv->phase2_private_key) {
 		/* Try not to leave the decrypted private key around in memory */
-		memset (self->phase2_private_key, 0, self->phase2_private_key->len);
-		g_byte_array_free (self->phase2_private_key, TRUE);
+		memset (priv->phase2_private_key, 0, priv->phase2_private_key->len);
+		g_byte_array_free (priv->phase2_private_key, TRUE);
 	}
 
-	self->phase2_private_key = crypto_get_private_key (filename, password, &ignore, err);
+	priv->phase2_private_key = crypto_get_private_key (filename, password, &ignore, err);
 
-	return self->phase2_private_key != NULL;
+	return priv->phase2_private_key != NULL;
 }
 
 static void
@@ -215,7 +467,9 @@ need_secrets_password (NMSetting8021x *self,
                        GPtrArray *secrets,
                        gboolean phase2)
 {
-	if (!self->password || !strlen (self->password))
+	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (self);
+
+	if (!priv->password || !strlen (priv->password))
 		g_ptr_array_add (secrets, NM_SETTING_802_1X_PASSWORD);
 }
 
@@ -224,7 +478,9 @@ need_secrets_sim (NMSetting8021x *self,
                   GPtrArray *secrets,
                   gboolean phase2)
 {
-	if (!self->pin || !strlen (self->pin))
+	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (self);
+
+	if (!priv->pin || !strlen (priv->pin))
 		g_ptr_array_add (secrets, NM_SETTING_802_1X_PIN);
 }
 
@@ -233,13 +489,15 @@ need_secrets_tls (NMSetting8021x *self,
                   GPtrArray *secrets,
                   gboolean phase2)
 {
+	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (self);
+
 	if (phase2) {
-		if (   self->phase2_client_cert
-		    && (!self->phase2_private_key || !self->phase2_private_key->len))
+		if (   priv->phase2_client_cert
+		    && (!priv->phase2_private_key || !priv->phase2_private_key->len))
 			g_ptr_array_add (secrets, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
 	} else {
-		if (self->client_cert
-		    && (!self->private_key || !self->private_key->len))
+		if (priv->client_cert
+		    && (!priv->private_key || !priv->private_key->len))
 			g_ptr_array_add (secrets, NM_SETTING_802_1X_PRIVATE_KEY);
 	}
 }
@@ -247,14 +505,16 @@ need_secrets_tls (NMSetting8021x *self,
 static gboolean
 verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 {
+	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (self);
+
 	if (phase2) {
-		if (!self->phase2_client_cert) {
+		if (!priv->phase2_client_cert) {
 			g_set_error (error,
 			             NM_SETTING_802_1X_ERROR,
 			             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
 			             NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
 			return FALSE;
-		} else if (!self->phase2_client_cert->len) {
+		} else if (!priv->phase2_client_cert->len) {
 			g_set_error (error,
 			             NM_SETTING_802_1X_ERROR,
 			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -262,13 +522,13 @@ verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 			return FALSE;
 		}
 	} else {
-		if (!self->client_cert) {
+		if (!priv->client_cert) {
 			g_set_error (error,
 			             NM_SETTING_802_1X_ERROR,
 			             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
 			             NM_SETTING_802_1X_CLIENT_CERT);
 			return FALSE;
-		} else if (!self->client_cert->len) {
+		} else if (!priv->client_cert->len) {
 			g_set_error (error,
 			             NM_SETTING_802_1X_ERROR,
 			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -283,19 +543,21 @@ verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 static gboolean
 verify_ttls (NMSetting8021x *self, gboolean phase2, GError **error)
 {
-	if (   (!self->identity || !strlen (self->identity))
-	    && (!self->anonymous_identity || !strlen (self->anonymous_identity))) {
-		if (!self->identity) {
+	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (self);
+
+	if (   (!priv->identity || !strlen (priv->identity))
+	    && (!priv->anonymous_identity || !strlen (priv->anonymous_identity))) {
+		if (!priv->identity) {
 			g_set_error (error,
 			             NM_SETTING_802_1X_ERROR,
 			             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
 			             NM_SETTING_802_1X_IDENTITY);
-		} else if (!strlen (self->identity)) {
+		} else if (!strlen (priv->identity)) {
 			g_set_error (error,
 			             NM_SETTING_802_1X_ERROR,
 			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
 			             NM_SETTING_802_1X_IDENTITY);
-		} else if (!self->anonymous_identity) {
+		} else if (!priv->anonymous_identity) {
 			g_set_error (error,
 			             NM_SETTING_802_1X_ERROR,
 			             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
@@ -309,19 +571,19 @@ verify_ttls (NMSetting8021x *self, gboolean phase2, GError **error)
 		return FALSE;
 	}
 
-	if (   (!self->phase2_auth || !strlen (self->phase2_auth))
-	    && (!self->phase2_autheap || !strlen (self->phase2_autheap))) {
-		if (!self->phase2_auth) {
+	if (   (!priv->phase2_auth || !strlen (priv->phase2_auth))
+	    && (!priv->phase2_autheap || !strlen (priv->phase2_autheap))) {
+		if (!priv->phase2_auth) {
 			g_set_error (error,
 			             NM_SETTING_802_1X_ERROR,
 			             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
 			             NM_SETTING_802_1X_PHASE2_AUTH);
-		} else if (!strlen (self->phase2_auth)) {
+		} else if (!strlen (priv->phase2_auth)) {
 			g_set_error (error,
 			             NM_SETTING_802_1X_ERROR,
 			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
 			             NM_SETTING_802_1X_PHASE2_AUTH);
-		} else if (!self->phase2_autheap) {
+		} else if (!priv->phase2_autheap) {
 			g_set_error (error,
 			             NM_SETTING_802_1X_ERROR,
 			             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
@@ -341,12 +603,14 @@ verify_ttls (NMSetting8021x *self, gboolean phase2, GError **error)
 static gboolean
 verify_identity (NMSetting8021x *self, gboolean phase2, GError **error)
 {
-	if (!self->identity) {
+	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (self);
+
+	if (!priv->identity) {
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
 		             NM_SETTING_802_1X_IDENTITY);
-	} else if (!strlen (self->identity)) {
+	} else if (!strlen (priv->identity)) {
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -398,15 +662,16 @@ need_secrets_phase2 (NMSetting8021x *self,
                      GPtrArray *secrets,
                      gboolean phase2)
 {
+	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (self);
 	char *method = NULL;
 	int i;
 
 	g_return_if_fail (phase2 == FALSE);
 
 	/* Check phase2_auth and phase2_autheap */
-	method = self->phase2_auth;
-	if (!method && self->phase2_autheap)
-		method = self->phase2_autheap;
+	method = priv->phase2_auth;
+	if (!method && priv->phase2_autheap)
+		method = priv->phase2_autheap;
 
 	if (!method) {
 		g_warning ("Couldn't find EAP method.");
@@ -430,6 +695,7 @@ static GPtrArray *
 need_secrets (NMSetting *setting)
 {
 	NMSetting8021x *self = NM_SETTING_802_1X (setting);
+	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (self);
 	GSList *iter;
 	GPtrArray *secrets;
 	gboolean eap_method_found = FALSE;
@@ -437,7 +703,7 @@ need_secrets (NMSetting *setting)
 	secrets = g_ptr_array_sized_new (4);
 
 	/* Ask each configured EAP method if it needs secrets */
-	for (iter = self->eap; iter && !eap_method_found; iter = g_slist_next (iter)) {
+	for (iter = priv->eap; iter && !eap_method_found; iter = g_slist_next (iter)) {
 		const char *method = (const char *) iter->data;
 		int i;
 
@@ -469,6 +735,7 @@ static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSetting8021x *self = NM_SETTING_802_1X (setting);
+	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (self);
 	const char *valid_eap[] = { "leap", "md5", "tls", "peap", "ttls", "sim", "fast", NULL };
 	const char *valid_phase1_peapver[] = { "0", "1", NULL };
 	const char *valid_phase1_peaplabel[] = { "0", "1", NULL };
@@ -479,7 +746,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
 
-	if (!self->eap) {
+	if (!priv->eap) {
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_MISSING_PROPERTY,
@@ -487,7 +754,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (!nm_utils_string_slist_validate (self->eap, valid_eap)) {
+	if (!nm_utils_string_slist_validate (priv->eap, valid_eap)) {
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -496,7 +763,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	}
 
 	/* Ask each configured EAP method if its valid */
-	for (iter = self->eap; iter; iter = g_slist_next (iter)) {
+	for (iter = priv->eap; iter; iter = g_slist_next (iter)) {
 		const char *method = (const char *) iter->data;
 		int i;
 
@@ -511,7 +778,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		}
 	}
 
-	if (self->phase1_peapver && !nm_utils_string_in_list (self->phase1_peapver, valid_phase1_peapver)) {
+	if (priv->phase1_peapver && !nm_utils_string_in_list (priv->phase1_peapver, valid_phase1_peapver)) {
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -519,7 +786,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (self->phase1_peaplabel && !nm_utils_string_in_list (self->phase1_peaplabel, valid_phase1_peaplabel)) {
+	if (priv->phase1_peaplabel && !nm_utils_string_in_list (priv->phase1_peaplabel, valid_phase1_peaplabel)) {
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -527,7 +794,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (self->phase1_fast_provisioning && strcmp (self->phase1_fast_provisioning, "1")) {
+	if (priv->phase1_fast_provisioning && strcmp (priv->phase1_fast_provisioning, "1")) {
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -535,7 +802,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (self->phase2_auth && !nm_utils_string_in_list (self->phase2_auth, valid_phase2_auth)) {
+	if (priv->phase2_auth && !nm_utils_string_in_list (priv->phase2_auth, valid_phase2_auth)) {
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -543,7 +810,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (self->phase2_autheap && !nm_utils_string_in_list (self->phase2_autheap, valid_phase2_autheap)) {
+	if (priv->phase2_autheap && !nm_utils_string_in_list (priv->phase2_autheap, valid_phase2_autheap)) {
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -566,34 +833,35 @@ static void
 finalize (GObject *object)
 {
 	NMSetting8021x *self = NM_SETTING_802_1X (object);
+	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (self);
 
 	/* Strings first. g_free() already checks for NULLs so we don't have to */
 
-	g_free (self->identity);
-	g_free (self->anonymous_identity);
-	g_free (self->ca_path);
-	g_free (self->phase1_peapver);
-	g_free (self->phase1_peaplabel);
-	g_free (self->phase1_fast_provisioning);
-	g_free (self->phase2_auth);
-	g_free (self->phase2_autheap);
-	g_free (self->phase2_ca_path);
-	g_free (self->password);
+	g_free (priv->identity);
+	g_free (priv->anonymous_identity);
+	g_free (priv->ca_path);
+	g_free (priv->phase1_peapver);
+	g_free (priv->phase1_peaplabel);
+	g_free (priv->phase1_fast_provisioning);
+	g_free (priv->phase2_auth);
+	g_free (priv->phase2_autheap);
+	g_free (priv->phase2_ca_path);
+	g_free (priv->password);
 
-	nm_utils_slist_free (self->eap, g_free);
+	nm_utils_slist_free (priv->eap, g_free);
 
-	if (self->ca_cert)
-		g_byte_array_free (self->ca_cert, TRUE);
-	if (self->client_cert)
-		g_byte_array_free (self->client_cert, TRUE);
-	if (self->private_key)
-		g_byte_array_free (self->private_key, TRUE);
-	if (self->phase2_ca_cert)
-		g_byte_array_free (self->phase2_ca_cert, TRUE);
-	if (self->phase2_client_cert)
-		g_byte_array_free (self->phase2_client_cert, TRUE);
-	if (self->phase2_private_key)
-		g_byte_array_free (self->phase2_private_key, TRUE);
+	if (priv->ca_cert)
+		g_byte_array_free (priv->ca_cert, TRUE);
+	if (priv->client_cert)
+		g_byte_array_free (priv->client_cert, TRUE);
+	if (priv->private_key)
+		g_byte_array_free (priv->private_key, TRUE);
+	if (priv->phase2_ca_cert)
+		g_byte_array_free (priv->phase2_ca_cert, TRUE);
+	if (priv->phase2_client_cert)
+		g_byte_array_free (priv->phase2_client_cert, TRUE);
+	if (priv->phase2_private_key)
+		g_byte_array_free (priv->phase2_private_key, TRUE);
 
 	G_OBJECT_CLASS (nm_setting_802_1x_parent_class)->finalize (object);
 }
@@ -603,81 +871,82 @@ set_property (GObject *object, guint prop_id,
 		    const GValue *value, GParamSpec *pspec)
 {
 	NMSetting8021x *setting = NM_SETTING_802_1X (object);
+	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
 
 	switch (prop_id) {
 	case PROP_EAP:
-		nm_utils_slist_free (setting->eap, g_free);
-		setting->eap = g_value_dup_boxed (value);
+		nm_utils_slist_free (priv->eap, g_free);
+		priv->eap = g_value_dup_boxed (value);
 		break;
 	case PROP_IDENTITY:
-		g_free (setting->identity);
-		setting->identity = g_value_dup_string (value);
+		g_free (priv->identity);
+		priv->identity = g_value_dup_string (value);
 		break;
 	case PROP_ANONYMOUS_IDENTITY:
-		g_free (setting->anonymous_identity);
-		setting->anonymous_identity = g_value_dup_string (value);
+		g_free (priv->anonymous_identity);
+		priv->anonymous_identity = g_value_dup_string (value);
 		break;
 	case PROP_CA_CERT:
-		if (setting->ca_cert)
-			g_byte_array_free (setting->ca_cert, TRUE);
-		setting->ca_cert = g_value_dup_boxed (value);
+		if (priv->ca_cert)
+			g_byte_array_free (priv->ca_cert, TRUE);
+		priv->ca_cert = g_value_dup_boxed (value);
 		break;
 	case PROP_CA_PATH:
-		g_free (setting->ca_path);
-		setting->ca_path = g_value_dup_string (value);
+		g_free (priv->ca_path);
+		priv->ca_path = g_value_dup_string (value);
 		break;
 	case PROP_CLIENT_CERT:
-		if (setting->client_cert)
-			g_byte_array_free (setting->client_cert, TRUE);
-		setting->client_cert = g_value_dup_boxed (value);
+		if (priv->client_cert)
+			g_byte_array_free (priv->client_cert, TRUE);
+		priv->client_cert = g_value_dup_boxed (value);
 		break;
 	case PROP_PHASE1_PEAPVER:
-		g_free (setting->phase1_peapver);
-		setting->phase1_peapver = g_value_dup_string (value);
+		g_free (priv->phase1_peapver);
+		priv->phase1_peapver = g_value_dup_string (value);
 		break;
 	case PROP_PHASE1_PEAPLABEL:
-		g_free (setting->phase1_peaplabel);
-		setting->phase1_peaplabel = g_value_dup_string (value);
+		g_free (priv->phase1_peaplabel);
+		priv->phase1_peaplabel = g_value_dup_string (value);
 		break;
 	case PROP_PHASE1_FAST_PROVISIONING:
-		g_free (setting->phase1_fast_provisioning);
-		setting->phase1_fast_provisioning = g_value_dup_string (value);
+		g_free (priv->phase1_fast_provisioning);
+		priv->phase1_fast_provisioning = g_value_dup_string (value);
 		break;
 	case PROP_PHASE2_AUTH:
-		g_free (setting->phase2_auth);
-		setting->phase2_auth = g_value_dup_string (value);
+		g_free (priv->phase2_auth);
+		priv->phase2_auth = g_value_dup_string (value);
 		break;
 	case PROP_PHASE2_AUTHEAP:
-		g_free (setting->phase2_autheap);
-		setting->phase2_autheap = g_value_dup_string (value);
+		g_free (priv->phase2_autheap);
+		priv->phase2_autheap = g_value_dup_string (value);
 		break;
 	case PROP_PHASE2_CA_CERT:
-		if (setting->phase2_ca_cert)
-			g_byte_array_free (setting->phase2_ca_cert, TRUE);
-		setting->phase2_ca_cert = g_value_dup_boxed (value);
+		if (priv->phase2_ca_cert)
+			g_byte_array_free (priv->phase2_ca_cert, TRUE);
+		priv->phase2_ca_cert = g_value_dup_boxed (value);
 		break;
 	case PROP_PHASE2_CA_PATH:
-		g_free (setting->phase2_ca_path);
-		setting->phase2_ca_path = g_value_dup_string (value);
+		g_free (priv->phase2_ca_path);
+		priv->phase2_ca_path = g_value_dup_string (value);
 		break;
 	case PROP_PHASE2_CLIENT_CERT:
-		if (setting->phase2_client_cert)
-			g_byte_array_free (setting->phase2_client_cert, TRUE);
-		setting->phase2_client_cert = g_value_dup_boxed (value);
+		if (priv->phase2_client_cert)
+			g_byte_array_free (priv->phase2_client_cert, TRUE);
+		priv->phase2_client_cert = g_value_dup_boxed (value);
 		break;
 	case PROP_PASSWORD:
-		g_free (setting->password);
-		setting->password = g_value_dup_string (value);
+		g_free (priv->password);
+		priv->password = g_value_dup_string (value);
 		break;
 	case PROP_PRIVATE_KEY:
-		if (setting->private_key)
-			g_byte_array_free (setting->private_key, TRUE);
-		setting->private_key = g_value_dup_boxed (value);
+		if (priv->private_key)
+			g_byte_array_free (priv->private_key, TRUE);
+		priv->private_key = g_value_dup_boxed (value);
 		break;
 	case PROP_PHASE2_PRIVATE_KEY:
-		if (setting->phase2_private_key)
-			g_byte_array_free (setting->phase2_private_key, TRUE);
-		setting->phase2_private_key = g_value_dup_boxed (value);
+		if (priv->phase2_private_key)
+			g_byte_array_free (priv->phase2_private_key, TRUE);
+		priv->phase2_private_key = g_value_dup_boxed (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -690,58 +959,59 @@ get_property (GObject *object, guint prop_id,
 		    GValue *value, GParamSpec *pspec)
 {
 	NMSetting8021x *setting = NM_SETTING_802_1X (object);
+	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
 
 	switch (prop_id) {
 	case PROP_EAP:
-		g_value_set_boxed (value, setting->eap);
+		g_value_set_boxed (value, priv->eap);
 		break;
 	case PROP_IDENTITY:
-		g_value_set_string (value, setting->identity);
+		g_value_set_string (value, priv->identity);
 		break;
 	case PROP_ANONYMOUS_IDENTITY:
-		g_value_set_string (value, setting->anonymous_identity);
+		g_value_set_string (value, priv->anonymous_identity);
 		break;
 	case PROP_CA_CERT:
-		g_value_set_boxed (value, setting->ca_cert);
+		g_value_set_boxed (value, priv->ca_cert);
 		break;
 	case PROP_CA_PATH:
-		g_value_set_string (value, setting->ca_path);
+		g_value_set_string (value, priv->ca_path);
 		break;
 	case PROP_CLIENT_CERT:
-		g_value_set_boxed (value, setting->client_cert);
+		g_value_set_boxed (value, priv->client_cert);
 		break;
 	case PROP_PHASE1_PEAPVER:
-		g_value_set_string (value, setting->phase1_peapver);
+		g_value_set_string (value, priv->phase1_peapver);
 		break;
 	case PROP_PHASE1_PEAPLABEL:
-		g_value_set_string (value, setting->phase1_peaplabel);
+		g_value_set_string (value, priv->phase1_peaplabel);
 		break;
 	case PROP_PHASE1_FAST_PROVISIONING:
-		g_value_set_string (value, setting->phase1_fast_provisioning);
+		g_value_set_string (value, priv->phase1_fast_provisioning);
 		break;
 	case PROP_PHASE2_AUTH:
-		g_value_set_string (value, setting->phase2_auth);
+		g_value_set_string (value, priv->phase2_auth);
 		break;
 	case PROP_PHASE2_AUTHEAP:
-		g_value_set_string (value, setting->phase2_autheap);
+		g_value_set_string (value, priv->phase2_autheap);
 		break;
 	case PROP_PHASE2_CA_CERT:
-		g_value_set_boxed (value, setting->phase2_ca_cert);
+		g_value_set_boxed (value, priv->phase2_ca_cert);
 		break;
 	case PROP_PHASE2_CA_PATH:
-		g_value_set_string (value, setting->phase2_ca_path);
+		g_value_set_string (value, priv->phase2_ca_path);
 		break;
 	case PROP_PHASE2_CLIENT_CERT:
-		g_value_set_boxed (value, setting->phase2_client_cert);
+		g_value_set_boxed (value, priv->phase2_client_cert);
 		break;
 	case PROP_PASSWORD:
-		g_value_set_string (value, setting->password);
+		g_value_set_string (value, priv->password);
 		break;
 	case PROP_PRIVATE_KEY:
-		g_value_set_boxed (value, setting->private_key);
+		g_value_set_boxed (value, priv->private_key);
 		break;
 	case PROP_PHASE2_PRIVATE_KEY:
-		g_value_set_boxed (value, setting->phase2_private_key);
+		g_value_set_boxed (value, priv->phase2_private_key);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -755,6 +1025,8 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
 	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
 	GError *error = NULL;
+
+	g_type_class_add_private (setting_class, sizeof (NMSetting8021xPrivate));
 
 	/* virtual methods */
 	object_class->set_property = set_property;
