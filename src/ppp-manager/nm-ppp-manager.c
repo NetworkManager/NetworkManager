@@ -875,13 +875,14 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	NMCmdLine *ppp_cmd;
 	char *cmd_str;
 	struct stat st;
+	int ignored;
 
 	g_return_val_if_fail (NM_IS_PPP_MANAGER (manager), FALSE);
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
 
 	/* Make sure /dev/ppp exists (bgo #533064) */
 	if (stat ("/dev/ppp", &st) || !S_ISCHR (st.st_mode))
-		system ("/sbin/modprobe ppp_generic");
+		ignored = system ("/sbin/modprobe ppp_generic");
 
 	connection = nm_act_request_get_connection (req);
 	ppp_setting = NM_SETTING_PPP (nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP));
