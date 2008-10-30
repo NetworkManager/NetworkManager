@@ -462,16 +462,7 @@ add_one_wep_key (shvarFile *ifcfg,
 	}
 
 	if (key) {
-		if (key_idx == 0)
-			s_wsec->wep_key0 = key;
-		else if (key_idx == 1)
-			s_wsec->wep_key1 = key;
-		else if (key_idx == 2)
-			s_wsec->wep_key2 = key;
-		else if (key_idx == 3)
-			s_wsec->wep_key3 = key;
-		else
-			g_assert_not_reached ();
+		nm_setting_wireless_security_set_wep_key (s_wsec, key_idx, key);
 		success = TRUE;
 	}
 
@@ -557,7 +548,7 @@ make_wireless_security_setting (shvarFile *ifcfg,
 		success = get_int (value, &default_key_idx);
 		if (success && (default_key_idx >= 1) && (default_key_idx <= 4)) {
 			default_key_idx--;  /* convert to [0...3] */
-			s_wireless_sec->wep_tx_keyidx = default_key_idx;
+			g_object_set (s_wireless_sec, NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, default_key_idx, NULL);
 		} else {
 			g_set_error (error, ifcfg_plugin_error_quark (), 0,
 			             "Invalid default WEP key '%s'", value);
@@ -582,15 +573,15 @@ make_wireless_security_setting (shvarFile *ifcfg,
 	}
 
 	/* If there's a default key, ensure that key exists */
-	if ((default_key_idx == 1) && !s_wireless_sec->wep_key1) {
+	if ((default_key_idx == 1) && !nm_setting_wireless_security_get_wep_key (s_wireless_sec, 1)) {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Default WEP key index was 2, but no valid KEY2 exists.");
 		goto error;
-	} else if ((default_key_idx == 2) && !s_wireless_sec->wep_key2) {
+	} else if ((default_key_idx == 2) && !nm_setting_wireless_security_get_wep_key (s_wireless_sec, 2)) {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Default WEP key index was 3, but no valid KEY3 exists.");
 		goto error;
-	} else if ((default_key_idx == 3) && !s_wireless_sec->wep_key3) {
+	} else if ((default_key_idx == 3) && !nm_setting_wireless_security_get_wep_key (s_wireless_sec, 3)) {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Default WEP key index was 4, but no valid KEY4 exists.");
 		goto error;
@@ -604,9 +595,9 @@ make_wireless_security_setting (shvarFile *ifcfg,
 		g_free (value);
 
 		if (!strcmp (lcase, "open")) {
-			s_wireless_sec->auth_alg = g_strdup ("open");
+			g_object_set (s_wireless_sec, NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", NULL);
 		} else if (!strcmp (lcase, "restricted")) {
-			s_wireless_sec->auth_alg = g_strdup ("shared");
+			g_object_set (s_wireless_sec, NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "shared", NULL);
 		} else {
 			g_set_error (error, ifcfg_plugin_error_quark (), 0,
 			             "Invalid WEP authentication algoritm '%s'",
@@ -617,12 +608,15 @@ make_wireless_security_setting (shvarFile *ifcfg,
 		g_free (lcase);
 	}
 
-	if (   !s_wireless_sec->wep_key0
-	    && !s_wireless_sec->wep_key1
-	    && !s_wireless_sec->wep_key2
-	    && !s_wireless_sec->wep_key3
-	    && !s_wireless_sec->wep_tx_keyidx) {
-		if (s_wireless_sec->auth_alg && !strcmp (s_wireless_sec->auth_alg, "shared")) {
+	if (   !nm_setting_wireless_security_get_wep_key (s_wireless_sec, 0)
+	    && !nm_setting_wireless_security_get_wep_key (s_wireless_sec, 1)
+	    && !nm_setting_wireless_security_get_wep_key (s_wireless_sec, 2)
+	    && !nm_setting_wireless_security_get_wep_key (s_wireless_sec, 3)
+	    && !nm_setting_wireless_security_get_wep_tx_keyidx (s_wireless_sec)) {
+		const char *auth_alg;
+
+		auth_alg = nm_setting_wireless_security_get_auth_alg (s_wireless_sec);
+		if (auth_alg && !strcmp (auth_alg, "shared")) {
 			g_set_error (error, ifcfg_plugin_error_quark (), 0,
 			             "WEP Shared Key authentication is invalid for "
 			             "unencrypted connections.");
@@ -634,7 +628,7 @@ make_wireless_security_setting (shvarFile *ifcfg,
 		s_wireless_sec = NULL;
 	} else {
 		// FIXME: WEP-only for now
-		s_wireless_sec->key_mgmt = g_strdup ("none");
+		g_object_set (s_wireless_sec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none", NULL);
 	}
 
 	return (NMSetting *) s_wireless_sec;

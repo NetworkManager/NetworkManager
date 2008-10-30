@@ -489,11 +489,12 @@ nm_ap_new_from_properties (GHashTable *properties)
 static gboolean
 has_proto (NMSettingWirelessSecurity *sec, const char *proto)
 {
-	GSList *iter;
+	guint32 i;
 
-	for (iter = sec->proto; iter; iter = g_slist_next (iter))
-		if (!strcmp (iter->data, proto))
+	for (i = 0; i < nm_setting_wireless_security_get_num_protos (sec); i++) {
+		if (!strcmp (nm_setting_wireless_security_get_proto (sec, i), proto))
 			return TRUE;
+	}
 	return FALSE;
 }
 
@@ -512,20 +513,26 @@ has_proto_rsn (NMSettingWirelessSecurity *sec)
 static void
 add_ciphers (NMAccessPoint *ap, NMSettingWirelessSecurity *sec, gboolean group)
 {
-	GSList *iter;
-	GSList *ciphers = group ? sec->group : sec->pairwise;
+	guint32 i, num;
 
-	for (iter = ciphers; iter; iter = g_slist_next (iter)) {
+	num = group ? nm_setting_wireless_security_get_num_groups (sec) :
+	              nm_setting_wireless_security_get_num_pairwise (sec);
+	
+	for (i = 0; i < num; i++) {
+		const char *cipher;
 		guint32 flags = NM_802_11_AP_SEC_NONE;
 		guint32 orig_flags;
 
-		if (!strcmp (iter->data, "wep40"))
+		cipher = group ? nm_setting_wireless_security_get_group (sec, i) :
+		                 nm_setting_wireless_security_get_pairwise (sec, i);
+
+		if (!strcmp (cipher, "wep40"))
 			flags |= group ? NM_802_11_AP_SEC_GROUP_WEP40 : NM_802_11_AP_SEC_PAIR_WEP40;
-		else if (!strcmp (iter->data, "wep104"))
+		else if (!strcmp (cipher, "wep104"))
 			flags |= group ? NM_802_11_AP_SEC_GROUP_WEP104 : NM_802_11_AP_SEC_PAIR_WEP104;
-		else if (!strcmp (iter->data, "tkip"))
+		else if (!strcmp (cipher, "tkip"))
 			flags |= group ? NM_802_11_AP_SEC_GROUP_TKIP : NM_802_11_AP_SEC_PAIR_TKIP;
-		else if (!strcmp (iter->data, "ccmp"))
+		else if (!strcmp (cipher, "ccmp"))
 			flags |= group ? NM_802_11_AP_SEC_GROUP_CCMP : NM_802_11_AP_SEC_PAIR_CCMP;
 
 		if (has_proto_wpa (sec)) {
@@ -546,8 +553,7 @@ nm_ap_new_fake_from_connection (NMConnection *connection)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wireless_sec;
 	const GByteArray *ssid;
-	const char *mode;
-	const char *band;
+	const char *mode, *band, *key_mgmt;
 	guint32 channel;
 	guint32 flags;
 
@@ -597,13 +603,15 @@ nm_ap_new_fake_from_connection (NMConnection *connection)
 
 	flags = nm_ap_get_flags (ap);
 
+	key_mgmt = nm_setting_wireless_security_get_key_mgmt (s_wireless_sec);
+
 	/* Static WEP or no security */
-	if (!strcmp (s_wireless_sec->key_mgmt, "none")) {
+	if (!strcmp (key_mgmt, "none")) {
 		/* static wep? */
-		if (   s_wireless_sec->wep_key0
-		    || s_wireless_sec->wep_key1
-		    || s_wireless_sec->wep_key2
-		    || s_wireless_sec->wep_key3)
+		if (   nm_setting_wireless_security_get_wep_key (s_wireless_sec, 0)
+		    || nm_setting_wireless_security_get_wep_key (s_wireless_sec, 1)
+		    || nm_setting_wireless_security_get_wep_key (s_wireless_sec, 2)
+		    || nm_setting_wireless_security_get_wep_key (s_wireless_sec, 3))
 			nm_ap_set_flags (ap, flags | NM_802_11_AP_FLAGS_PRIVACY);		
 
 		goto done;
@@ -611,8 +619,7 @@ nm_ap_new_fake_from_connection (NMConnection *connection)
 
 	nm_ap_set_flags (ap, flags | NM_802_11_AP_FLAGS_PRIVACY);
 
-	if (   !strcmp (s_wireless_sec->key_mgmt, "wpa-psk")
-	    || !strcmp (s_wireless_sec->key_mgmt, "wpa-none")) {
+	if (!strcmp (key_mgmt, "wpa-psk") || !strcmp (key_mgmt, "wpa-none")) {
 		if (has_proto_wpa (s_wireless_sec)) {
 			flags = nm_ap_get_wpa_flags (ap);
 			nm_ap_set_wpa_flags (ap, flags | NM_802_11_AP_SEC_KEY_MGMT_PSK);
@@ -624,8 +631,7 @@ nm_ap_new_fake_from_connection (NMConnection *connection)
 		}
 	}
 		
-	if (   !strcmp (s_wireless_sec->key_mgmt, "ieee8021x")
-	    || !strcmp (s_wireless_sec->key_mgmt, "wpa-eap")) {
+	if (!strcmp (key_mgmt, "ieee8021x") || !strcmp (key_mgmt, "wpa-eap")) {
 		if (has_proto_wpa (s_wireless_sec)) {
 			flags = nm_ap_get_wpa_flags (ap);
 			nm_ap_set_wpa_flags (ap, flags | NM_802_11_AP_SEC_KEY_MGMT_802_1X);

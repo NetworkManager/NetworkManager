@@ -1,5 +1,20 @@
 2008-10-30  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/libnm-util.ver
+	  libnm-util/nm-setting-wireless-security.c
+	  libnm-util/nm-setting-wireless-security.h
+		- Make properties private and add accessor functions
+
+	* libnm-util/nm-setting-wireless.c
+	  src/NetworkManagerAP.c
+	  src/nm-device-wifi.c
+	  src/supplicant-manager/nm-supplicant-config.c
+	  system-settings/plugins/ifcfg-fedora/reader.c
+	  system-settings/plugins/ifcfg-suse/parser.c
+		- Use wireless security accessors
+
+2008-10-30  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-device-ethernet.c
 	  src/nm-device-wifi.c
 	  src/nm-device.c

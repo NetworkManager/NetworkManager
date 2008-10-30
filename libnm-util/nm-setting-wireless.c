@@ -132,6 +132,9 @@ nm_setting_wireless_ap_security_compatible (NMSettingWireless *s_wireless,
 								    guint32 ap_mode)
 {
 	NMSettingWirelessPrivate *priv;
+	const char *key_mgmt = NULL, *cipher;
+	guint32 num, i;
+	gboolean found = FALSE;
 
 	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (s_wireless), FALSE);
 
@@ -148,11 +151,14 @@ nm_setting_wireless_ap_security_compatible (NMSettingWireless *s_wireless,
 	if (strcmp (priv->security, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) != 0)
 		return FALSE;
 
-	if (s_wireless_sec == NULL || !s_wireless_sec->key_mgmt)
+	if (s_wireless_sec)
+		key_mgmt = nm_setting_wireless_security_get_key_mgmt (s_wireless_sec);
+
+	if (s_wireless_sec == NULL || !key_mgmt)
 		return FALSE;
 
 	/* Static WEP */
-	if (!strcmp (s_wireless_sec->key_mgmt, "none")) {
+	if (!strcmp (key_mgmt, "none")) {
 		if (   !(ap_flags & NM_802_11_AP_FLAGS_PRIVACY)
 		    || (ap_wpa != NM_802_11_AP_SEC_NONE)
 		    || (ap_rsn != NM_802_11_AP_SEC_NONE))
@@ -161,7 +167,7 @@ nm_setting_wireless_ap_security_compatible (NMSettingWireless *s_wireless,
 	}
 
 	/* Adhoc WPA */
-	if (!strcmp (s_wireless_sec->key_mgmt, "wpa-none")) {
+	if (!strcmp (key_mgmt, "wpa-none")) {
 		if (ap_mode != NM_802_11_MODE_ADHOC)
 			return FALSE;
 		// FIXME: validate ciphers if the BSSID actually puts WPA/RSN IE in
@@ -174,15 +180,12 @@ nm_setting_wireless_ap_security_compatible (NMSettingWireless *s_wireless,
 		return FALSE;
 
 	/* Dynamic WEP or LEAP */
-	if (!strcmp (s_wireless_sec->key_mgmt, "ieee8021x")) {
+	if (!strcmp (key_mgmt, "ieee8021x")) {
 		if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
 			return FALSE;
 
 		/* If the AP is advertising a WPA IE, make sure it supports WEP ciphers */
 		if (ap_wpa != NM_802_11_AP_SEC_NONE) {
-			gboolean found = FALSE;
-			GSList *iter;
-
 			if (!(ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_802_1X))
 				return FALSE;
 
@@ -196,48 +199,46 @@ nm_setting_wireless_ap_security_compatible (NMSettingWireless *s_wireless,
 			/* Match at least one pairwise cipher with AP's capability if the
 			 * wireless-security setting explicitly lists pairwise ciphers
 			 */
-			if (s_wireless_sec->pairwise) {
-				for (iter = s_wireless_sec->pairwise; iter; iter = g_slist_next (iter)) {
-					if ((found = match_cipher (iter->data, "wep40", ap_wpa, ap_wpa, NM_802_11_AP_SEC_PAIR_WEP40)))
-						break;
-					if ((found = match_cipher (iter->data, "wep104", ap_wpa, ap_wpa, NM_802_11_AP_SEC_PAIR_WEP104)))
-						break;
-				}
-				if (!found)
-					return FALSE;
+			num = nm_setting_wireless_security_get_num_pairwise (s_wireless_sec);
+			for (i = 0, found = FALSE; i < num; i++) {
+				cipher = nm_setting_wireless_security_get_pairwise (s_wireless_sec, i);
+				if ((found = match_cipher (cipher, "wep40", ap_wpa, ap_wpa, NM_802_11_AP_SEC_PAIR_WEP40)))
+					break;
+				if ((found = match_cipher (cipher, "wep104", ap_wpa, ap_wpa, NM_802_11_AP_SEC_PAIR_WEP104)))
+					break;
 			}
+			if (!found && num)
+				return FALSE;
 
 			/* Match at least one group cipher with AP's capability if the
 			 * wireless-security setting explicitly lists group ciphers
 			 */
-			if (s_wireless_sec->group) {
-				for (iter = s_wireless_sec->group; iter; iter = g_slist_next (iter)) {
-					if ((found = match_cipher (iter->data, "wep40", ap_wpa, ap_wpa, NM_802_11_AP_SEC_GROUP_WEP40)))
-						break;
-					if ((found = match_cipher (iter->data, "wep104", ap_wpa, ap_wpa, NM_802_11_AP_SEC_GROUP_WEP104)))
-						break;
-				}
-				if (!found)
-					return FALSE;
+			num = nm_setting_wireless_security_get_num_groups (s_wireless_sec);
+			for (i = 0, found = FALSE; i < num; i++) {
+				cipher = nm_setting_wireless_security_get_group (s_wireless_sec, i);
+				if ((found = match_cipher (cipher, "wep40", ap_wpa, ap_wpa, NM_802_11_AP_SEC_GROUP_WEP40)))
+					break;
+				if ((found = match_cipher (cipher, "wep104", ap_wpa, ap_wpa, NM_802_11_AP_SEC_GROUP_WEP104)))
+					break;
 			}
+			if (!found && num)
+				return FALSE;
 		}
 		return TRUE;
 	}
 
 	/* WPA[2]-PSK and WPA[2] Enterprise */
-	if (   !strcmp (s_wireless_sec->key_mgmt, "wpa-psk")
-	    || !strcmp (s_wireless_sec->key_mgmt, "wpa-eap")) {
-		GSList * elt;
-		gboolean found = FALSE;
+	if (   !strcmp (key_mgmt, "wpa-psk")
+	    || !strcmp (key_mgmt, "wpa-eap")) {
 
 		if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
 			return FALSE;
 
-		if (!strcmp (s_wireless_sec->key_mgmt, "wpa-psk")) {
+		if (!strcmp (key_mgmt, "wpa-psk")) {
 			if (   !(ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_PSK)
 			    && !(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_PSK))
 				return FALSE;
-		} else if (!strcmp (s_wireless_sec->key_mgmt, "wpa-eap")) {
+		} else if (!strcmp (key_mgmt, "wpa-eap")) {
 			if (   !(ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_802_1X)
 			    && !(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_802_1X))
 				return FALSE;
@@ -250,34 +251,35 @@ nm_setting_wireless_ap_security_compatible (NMSettingWireless *s_wireless,
 		/* Match at least one pairwise cipher with AP's capability if the
 		 * wireless-security setting explicitly lists pairwise ciphers
 		 */
-		if (s_wireless_sec->pairwise) {
-			for (elt = s_wireless_sec->pairwise; elt; elt = g_slist_next (elt)) {
-				if ((found = match_cipher (elt->data, "tkip", ap_wpa, ap_rsn, NM_802_11_AP_SEC_PAIR_TKIP)))
-					break;
-				if ((found = match_cipher (elt->data, "ccmp", ap_wpa, ap_rsn, NM_802_11_AP_SEC_PAIR_CCMP)))
-					break;
-			}
-			if (!found)
-				return FALSE;
+		num = nm_setting_wireless_security_get_num_pairwise (s_wireless_sec);
+		for (i = 0, found = FALSE; i < num; i++) {
+			cipher = nm_setting_wireless_security_get_pairwise (s_wireless_sec, i);
+			if ((found = match_cipher (cipher, "tkip", ap_wpa, ap_rsn, NM_802_11_AP_SEC_PAIR_TKIP)))
+				break;
+			if ((found = match_cipher (cipher, "ccmp", ap_wpa, ap_rsn, NM_802_11_AP_SEC_PAIR_CCMP)))
+				break;
 		}
+		if (!found && num)
+			return FALSE;
 
 		/* Match at least one group cipher with AP's capability if the
 		 * wireless-security setting explicitly lists group ciphers
 		 */
-		if (s_wireless_sec->group) {
-			for (elt = s_wireless_sec->group; elt; elt = g_slist_next (elt)) {
-				if ((found = match_cipher (elt->data, "wep40", ap_wpa, ap_rsn, NM_802_11_AP_SEC_GROUP_WEP40)))
-					break;
-				if ((found = match_cipher (elt->data, "wep104", ap_wpa, ap_rsn, NM_802_11_AP_SEC_GROUP_WEP104)))
-					break;
-				if ((found = match_cipher (elt->data, "tkip", ap_wpa, ap_rsn, NM_802_11_AP_SEC_GROUP_TKIP)))
-					break;
-				if ((found = match_cipher (elt->data, "ccmp", ap_wpa, ap_rsn, NM_802_11_AP_SEC_GROUP_CCMP)))
-					break;
-			}
-			if (!found)
-				return FALSE;
+		num = nm_setting_wireless_security_get_num_groups (s_wireless_sec);
+		for (i = 0, found = FALSE; i < num; i++) {
+			cipher = nm_setting_wireless_security_get_group (s_wireless_sec, i);
+
+			if ((found = match_cipher (cipher, "wep40", ap_wpa, ap_rsn, NM_802_11_AP_SEC_GROUP_WEP40)))
+				break;
+			if ((found = match_cipher (cipher, "wep104", ap_wpa, ap_rsn, NM_802_11_AP_SEC_GROUP_WEP104)))
+				break;
+			if ((found = match_cipher (cipher, "tkip", ap_wpa, ap_rsn, NM_802_11_AP_SEC_GROUP_TKIP)))
+				break;
+			if ((found = match_cipher (cipher, "ccmp", ap_wpa, ap_rsn, NM_802_11_AP_SEC_GROUP_CCMP)))
+				break;
 		}
+		if (!found && num)
+			return FALSE;
 
 		return TRUE;
 	}

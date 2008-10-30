@@ -72,20 +72,6 @@ GQuark nm_setting_wireless_security_error_quark (void);
 
 typedef struct {
 	NMSetting parent;
-
-	char *key_mgmt;
-	guint32 wep_tx_keyidx;
-	char *auth_alg;
-	GSList *proto; /* GSList of strings */
-	GSList *pairwise; /* GSList of strings */
-	GSList *group; /* GSList of strings */
-	char *leap_username;
-	char *wep_key0;
-	char *wep_key1;
-	char *wep_key2;
-	char *wep_key3;
-	char *psk;
-	char *leap_password;
 } NMSettingWirelessSecurity;
 
 typedef struct {
@@ -94,7 +80,37 @@ typedef struct {
 
 GType nm_setting_wireless_security_get_type (void);
 
-NMSetting *nm_setting_wireless_security_new (void);
+NMSetting * nm_setting_wireless_security_new               (void);
+
+const char *nm_setting_wireless_security_get_key_mgmt      (NMSettingWirelessSecurity *setting);
+
+guint32     nm_setting_wireless_security_get_num_protos    (NMSettingWirelessSecurity *setting);
+const char *nm_setting_wireless_security_get_proto         (NMSettingWirelessSecurity *setting, guint32 i);
+gboolean    nm_setting_wireless_security_add_proto         (NMSettingWirelessSecurity *setting, const char *proto);
+void        nm_setting_wireless_security_remove_proto      (NMSettingWirelessSecurity *setting, guint32 i);
+void        nm_setting_wireless_security_clear_protos      (NMSettingWirelessSecurity *setting);
+
+guint32     nm_setting_wireless_security_get_num_pairwise  (NMSettingWirelessSecurity *setting);
+const char *nm_setting_wireless_security_get_pairwise      (NMSettingWirelessSecurity *setting, guint32 i);
+gboolean    nm_setting_wireless_security_add_pairwise      (NMSettingWirelessSecurity *setting, const char *pairwise);
+void        nm_setting_wireless_security_remove_pairwise   (NMSettingWirelessSecurity *setting, guint32 i);
+void        nm_setting_wireless_security_clear_pairwise    (NMSettingWirelessSecurity *setting);
+
+guint32     nm_setting_wireless_security_get_num_groups    (NMSettingWirelessSecurity *setting);
+const char *nm_setting_wireless_security_get_group         (NMSettingWirelessSecurity *setting, guint32 i);
+gboolean    nm_setting_wireless_security_add_group         (NMSettingWirelessSecurity *setting, const char *group);
+void        nm_setting_wireless_security_remove_group      (NMSettingWirelessSecurity *setting, guint32 i);
+void        nm_setting_wireless_security_clear_groups      (NMSettingWirelessSecurity *setting);
+
+const char *nm_setting_wireless_security_get_psk           (NMSettingWirelessSecurity *setting);
+
+const char *nm_setting_wireless_security_get_leap_username (NMSettingWirelessSecurity *setting);
+const char *nm_setting_wireless_security_get_leap_password (NMSettingWirelessSecurity *setting);
+
+const char *nm_setting_wireless_security_get_wep_key       (NMSettingWirelessSecurity *setting, guint32 idx);
+void        nm_setting_wireless_security_set_wep_key       (NMSettingWirelessSecurity *setting, guint32 idx, const char *key);
+guint32     nm_setting_wireless_security_get_wep_tx_keyidx (NMSettingWirelessSecurity *setting);
+const char *nm_setting_wireless_security_get_auth_alg      (NMSettingWirelessSecurity *setting);
 
 G_END_DECLS
 

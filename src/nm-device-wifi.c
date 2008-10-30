@@ -1815,16 +1815,18 @@ ap_auth_enforced (NMConnection *connection,
         && (wpa_flags == NM_802_11_AP_SEC_NONE)
         && (rsn_flags == NM_802_11_AP_SEC_NONE)) {
 		NMSettingWirelessSecurity *s_wireless_sec;
+		const char *auth_alg;
 
 		/* No way to tell if the key is wrong with Open System
 		 * auth mode in WEP.  Auth is not enforced like Shared Key.
 		 */
 		s_wireless_sec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, 
 																    NM_TYPE_SETTING_WIRELESS_SECURITY);
-		if (s_wireless_sec &&
-		    (!s_wireless_sec->auth_alg ||
-		     !strcmp (s_wireless_sec->auth_alg, "open")))
-			goto out;
+		if (s_wireless_sec) {
+			auth_alg = nm_setting_wireless_security_get_auth_alg (s_wireless_sec);
+			if (!auth_alg || !strcmp (auth_alg, "open"))
+				goto out;
+		}
 
 		enforced = TRUE;
 	} else if (wpa_flags != NM_802_11_AP_SEC_NONE) { /* WPA */

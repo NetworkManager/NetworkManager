@@ -339,7 +339,7 @@ read_wep_settings (shvarFile *ifcfg, NMSettingWirelessSecurity *security)
 	READ_WEP_KEY(3)
 
 	if (have_key)
-		security->key_mgmt = g_strdup ("none");
+		g_object_set (security, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none", NULL);
 
 	value = svGetValue (ifcfg, "WIRELESS_DEFAULT_KEY");
 	if (value) {
@@ -348,7 +348,7 @@ read_wep_settings (shvarFile *ifcfg, NMSettingWirelessSecurity *security)
 
 		success = get_int (value, &key_idx);
 		if (success && (key_idx >= 0) && (key_idx <= 3))
-			security->wep_tx_keyidx = key_idx;
+			g_object_set (security, NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, key_idx, NULL);
 		else
 			g_warning ("Invalid default WEP key: '%s'", value);
 
@@ -360,25 +360,6 @@ error:
 		g_warning ("%s", err->message);
 		g_error_free (err);
 	}
-}
-
-/* Copied from applet/src/wireless-secuirty/wireless-security.c */
-static void
-ws_wpa_fill_default_ciphers (NMSettingWirelessSecurity *s_wireless_sec)
-{
-	// FIXME: allow protocol selection and filter on device capabilities
-	s_wireless_sec->proto = g_slist_append (s_wireless_sec->proto, g_strdup ("wpa"));
-	s_wireless_sec->proto = g_slist_append (s_wireless_sec->proto, g_strdup ("rsn"));
-
-	// FIXME: allow pairwise cipher selection and filter on device capabilities
-	s_wireless_sec->pairwise = g_slist_append (s_wireless_sec->pairwise, g_strdup ("tkip"));
-	s_wireless_sec->pairwise = g_slist_append (s_wireless_sec->pairwise, g_strdup ("ccmp"));
-
-	// FIXME: allow group cipher selection and filter on device capabilities
-	s_wireless_sec->group = g_slist_append (s_wireless_sec->group, g_strdup ("wep40"));
-	s_wireless_sec->group = g_slist_append (s_wireless_sec->group, g_strdup ("wep104"));
-	s_wireless_sec->group = g_slist_append (s_wireless_sec->group, g_strdup ("tkip"));
-	s_wireless_sec->group = g_slist_append (s_wireless_sec->group, g_strdup ("ccmp"));
 }
 
 /*
@@ -425,20 +406,20 @@ read_wpa_psk_settings (shvarFile *ifcfg,
 	if (value) {
 		if (strlen (value) == 64) {
 			/* Hex PSK */
-			security->psk = g_strdup (value);
+			g_object_set (security, NM_SETTING_WIRELESS_SECURITY_PSK, value, NULL);
 		} else {
 			/* passphrase */
 			const GByteArray *ssid = nm_setting_wireless_get_mac_address (s_wireless);
 			unsigned char *buf = g_malloc0 (WPA_PMK_LEN * 2);
+			char *tmp;
 
 			pbkdf2_sha1 (value, (char *) ssid->data, ssid->len, 4096, buf, WPA_PMK_LEN);
-			security->psk = utils_bin2hexstr ((const char *) buf, WPA_PMK_LEN, WPA_PMK_LEN * 2);
+			tmp = utils_bin2hexstr ((const char *) buf, WPA_PMK_LEN, WPA_PMK_LEN * 2);
+			g_object_set (security, NM_SETTING_WIRELESS_SECURITY_PSK, tmp, NULL);
+			g_free (tmp);
 			g_free (buf);
 		}
-
 		g_free (value);
-
-		ws_wpa_fill_default_ciphers (security);
 	} else
 		g_warning ("Missing WPA-PSK key");
 }
@@ -533,13 +514,13 @@ make_wireless_security_setting (shvarFile *ifcfg, NMSettingWireless *s_wireless)
 	security = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
 
 	if (!g_ascii_strcasecmp (str, "open")) {
-		security->auth_alg = g_strdup ("open");
+		g_object_set (security, NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "open", NULL);
 		read_wep_settings (ifcfg, security);
 	} else if (!g_ascii_strcasecmp (str, "sharedkey")) {
-		security->auth_alg = g_strdup ("shared");
+		g_object_set (security, NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "shared", NULL);
 		read_wep_settings (ifcfg, security);
 	} else if (!g_ascii_strcasecmp (str, "psk")) {
-		security->key_mgmt = g_strdup ("wpa-psk");
+		g_object_set (security, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk", NULL);
 		read_wpa_psk_settings (ifcfg, security, s_wireless);
 	} else
 		g_warning ("Invalid authentication algorithm: '%s'", str);

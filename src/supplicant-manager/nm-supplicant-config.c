@@ -426,16 +426,17 @@ nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
 		} \
 	}
 
-#define ADD_STRING_LIST_VAL(field, name, ucase, secret) \
-	if (field) { \
-		GSList *elt; \
+#define ADD_STRING_LIST_VAL(setting, field, field_plural, name, ucase, secret) \
+	if (nm_setting_wireless_security_get_num_##field_plural (setting)) { \
+		guint32 k; \
 		GString *str = g_string_new (NULL); \
-		for (elt = field; elt; elt = g_slist_next (elt)) { \
+		for (k = 0; k < nm_setting_wireless_security_get_num_##field_plural (setting); k++) { \
+			const char *item = nm_setting_wireless_security_get_##field (setting, k); \
 			if (!str->len) { \
-				g_string_append (str, elt->data); \
+				g_string_append (str, item); \
 			} else { \
 				g_string_append_c (str, ' '); \
-				g_string_append (str, elt->data); \
+				g_string_append (str, item); \
 			} \
 		} \
 		if (ucase) \
@@ -481,8 +482,9 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
                                                     const char *connection_uid)
 {
 	NMSupplicantConfigPrivate *priv;
-	char * value;
+	char *value;
 	gboolean success;
+	const char *key_mgmt, *auth_alg;
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
 	g_return_val_if_fail (setting != NULL, FALSE);
@@ -490,28 +492,37 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 
 	priv = NM_SUPPLICANT_CONFIG_GET_PRIVATE (self);
 
-	ADD_STRING_VAL (setting->key_mgmt, "key_mgmt", TRUE, FALSE, FALSE);
-	ADD_STRING_VAL (setting->auth_alg, "auth_alg", TRUE, FALSE, FALSE);
-	ADD_STRING_VAL (setting->psk, "psk", FALSE, TRUE, TRUE);
+	key_mgmt = nm_setting_wireless_security_get_key_mgmt (setting);
+	ADD_STRING_VAL (key_mgmt, "key_mgmt", TRUE, FALSE, FALSE);
+
+	auth_alg = nm_setting_wireless_security_get_auth_alg (setting);
+	ADD_STRING_VAL (auth_alg, "auth_alg", TRUE, FALSE, FALSE);
+
+	ADD_STRING_VAL (nm_setting_wireless_security_get_psk (setting), "psk", FALSE, TRUE, TRUE);
 
 	/* Only WPA-specific things when using WPA */
-	if (   !strcmp (setting->key_mgmt, "wpa-none")
-	    || !strcmp (setting->key_mgmt, "wpa-psk")
-	    || !strcmp (setting->key_mgmt, "wpa-eap")) {
-		ADD_STRING_LIST_VAL (setting->proto, "proto", TRUE, FALSE);
-		ADD_STRING_LIST_VAL (setting->pairwise, "pairwise", TRUE, FALSE);
-		ADD_STRING_LIST_VAL (setting->group, "group", TRUE, FALSE);
+	if (   !strcmp (key_mgmt, "wpa-none")
+	    || !strcmp (key_mgmt, "wpa-psk")
+	    || !strcmp (key_mgmt, "wpa-eap")) {
+		ADD_STRING_LIST_VAL (setting, proto, protos, "proto", TRUE, FALSE);
+		ADD_STRING_LIST_VAL (setting, pairwise, pairwise, "pairwise", TRUE, FALSE);
+		ADD_STRING_LIST_VAL (setting, group, groups, "group", TRUE, FALSE);
 	}
 
 	/* WEP keys if required */
-	if (!strcmp (setting->key_mgmt, "none")) {
-		ADD_STRING_VAL (setting->wep_key0, "wep_key0", FALSE, TRUE, TRUE);
-		ADD_STRING_VAL (setting->wep_key1, "wep_key1", FALSE, TRUE, TRUE);
-		ADD_STRING_VAL (setting->wep_key2, "wep_key2", FALSE, TRUE, TRUE);
-		ADD_STRING_VAL (setting->wep_key3, "wep_key3", FALSE, TRUE, TRUE);
+	if (!strcmp (key_mgmt, "none")) {
+		const char *wep0 = nm_setting_wireless_security_get_wep_key (setting, 0);
+		const char *wep1 = nm_setting_wireless_security_get_wep_key (setting, 1);
+		const char *wep2 = nm_setting_wireless_security_get_wep_key (setting, 2);
+		const char *wep3 = nm_setting_wireless_security_get_wep_key (setting, 3);
 
-		if (setting->wep_key0 || setting->wep_key1 || setting->wep_key2 || setting->wep_key3) {
-			value = g_strdup_printf ("%d", setting->wep_tx_keyidx);
+		ADD_STRING_VAL (wep0, "wep_key0", FALSE, TRUE, TRUE);
+		ADD_STRING_VAL (wep1, "wep_key1", FALSE, TRUE, TRUE);
+		ADD_STRING_VAL (wep2, "wep_key2", FALSE, TRUE, TRUE);
+		ADD_STRING_VAL (wep3, "wep_key3", FALSE, TRUE, TRUE);
+
+		if (wep0 || wep1 || wep2 || wep3) {
+			value = g_strdup_printf ("%d", nm_setting_wireless_security_get_wep_tx_keyidx (setting));
 			success = nm_supplicant_config_add_option (self, "wep_tx_keyidx", value, -1, FALSE);
 			g_free (value);
 			if (!success) {
@@ -521,19 +532,18 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 		}
 	}
 
-	if (setting->auth_alg && !strcmp (setting->auth_alg, "leap")) {
+	if (auth_alg && !strcmp (auth_alg, "leap")) {
 		/* LEAP */
-		if (!strcmp (setting->key_mgmt, "ieee8021x")) {
-			ADD_STRING_VAL (setting->leap_username, "identity", FALSE, FALSE, FALSE);
-			ADD_STRING_VAL (setting->leap_password, "password", FALSE, FALSE, TRUE);
+		if (!strcmp (key_mgmt, "ieee8021x")) {
+			ADD_STRING_VAL (nm_setting_wireless_security_get_leap_username (setting), "identity", FALSE, FALSE, FALSE);
+			ADD_STRING_VAL (nm_setting_wireless_security_get_leap_password (setting), "password", FALSE, FALSE, TRUE);
 			ADD_STRING_VAL ("leap", "eap", TRUE, FALSE, FALSE);
 		} else {
 			return FALSE;
 		}
 	} else {
 		/* 802.1x for Dynamic WEP and WPA-Enterprise */
-		if (   !strcmp (setting->key_mgmt, "ieee8021x")
-		    || !strcmp (setting->key_mgmt, "wpa-eap")) {
+		if (!strcmp (key_mgmt, "ieee8021x") || !strcmp (key_mgmt, "wpa-eap")) {
 		    if (!setting_8021x)
 		    	return FALSE;
 			if (!nm_supplicant_config_add_setting_8021x (self, setting_8021x, connection_uid, FALSE))
@@ -578,7 +588,31 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 	 * all over the drive.
 	 */
 
-	ADD_STRING_LIST_VAL (setting->eap, "eap", TRUE, FALSE);
+	/* FIXME: go back to using ADD_STRING_LIST_VAL when 802.1x setting is
+	 * converted to accessors */
+	if (setting->eap) {
+		GSList *elt;
+		GString *str = g_string_new (NULL);
+
+		for (elt = setting->eap; elt; elt = g_slist_next (elt)) {
+			if (!str->len) {
+				g_string_append (str, elt->data);
+			} else {
+				g_string_append_c (str, ' ');
+				g_string_append (str, elt->data);
+			}
+		}
+		g_string_ascii_up (str);
+		if (str->len)
+			success = nm_supplicant_config_add_option (self, "eap", str->str, -1, FALSE);
+		else
+			success = TRUE;
+		g_string_free (str, TRUE);
+		if (!success) {
+			nm_warning ("Error adding %s to supplicant config.", "eap");
+			return FALSE;
+		}
+	}
 
 	/* Drop the fragment size a bit for better compatibility */
 	if (!nm_supplicant_config_add_option (self, "fragment_size", "1300", -1, FALSE))

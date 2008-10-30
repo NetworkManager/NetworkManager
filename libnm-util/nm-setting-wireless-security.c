@@ -76,6 +76,24 @@ nm_setting_wireless_security_error_get_type (void)
 
 G_DEFINE_TYPE (NMSettingWirelessSecurity, nm_setting_wireless_security, NM_TYPE_SETTING)
 
+#define NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING_WIRELESS_SECURITY, NMSettingWirelessSecurityPrivate))
+
+typedef struct {
+	char *key_mgmt;
+	guint32 wep_tx_keyidx;
+	char *auth_alg;
+	GSList *proto; /* GSList of strings */
+	GSList *pairwise; /* GSList of strings */
+	GSList *group; /* GSList of strings */
+	char *leap_username;
+	char *wep_key0;
+	char *wep_key1;
+	char *wep_key2;
+	char *wep_key3;
+	char *psk;
+	char *leap_password;
+} NMSettingWirelessSecurityPrivate;
+
 enum {
 	PROP_0,
 	PROP_KEY_MGMT,
@@ -99,6 +117,311 @@ NMSetting *
 nm_setting_wireless_security_new (void)
 {
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_WIRELESS_SECURITY, NULL);
+}
+
+const char *
+nm_setting_wireless_security_get_key_mgmt (NMSettingWirelessSecurity *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), NULL);
+
+	return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->key_mgmt;
+}
+
+guint32
+nm_setting_wireless_security_get_num_protos (NMSettingWirelessSecurity *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), 0);
+
+	return g_slist_length (NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->proto);
+}
+
+const char *
+nm_setting_wireless_security_get_proto (NMSettingWirelessSecurity *setting, guint32 i)
+{
+	NMSettingWirelessSecurityPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), NULL);
+
+	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
+	g_return_val_if_fail (i <= g_slist_length (priv->proto), NULL);
+
+	return (const char *) g_slist_nth_data (priv->proto, i);
+}
+
+gboolean
+nm_setting_wireless_security_add_proto (NMSettingWirelessSecurity *setting, const char *proto)
+{
+	NMSettingWirelessSecurityPrivate *priv;
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), FALSE);
+	g_return_val_if_fail (proto != NULL, FALSE);
+
+	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
+	for (iter = priv->proto; iter; iter = g_slist_next (iter)) {
+		if (!strcmp (proto, (char *) iter->data))
+			return FALSE;
+	}
+
+	priv->proto = g_slist_append (priv->proto, g_ascii_strdown (proto, -1));
+	return TRUE;
+}
+
+void
+nm_setting_wireless_security_remove_proto (NMSettingWirelessSecurity *setting, guint32 i)
+{
+	NMSettingWirelessSecurityPrivate *priv;
+	GSList *elt;
+
+	g_return_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting));
+
+	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
+	elt = g_slist_nth (priv->proto, i);
+	g_return_if_fail (elt != NULL);
+
+	g_free (elt->data);
+	priv->proto = g_slist_delete_link (priv->proto, elt);
+}
+
+void
+nm_setting_wireless_security_clear_protos (NMSettingWirelessSecurity *setting)
+{
+	NMSettingWirelessSecurityPrivate *priv;
+
+	g_return_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting));
+
+	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
+	nm_utils_slist_free (priv->proto, g_free);
+	priv->proto = NULL;
+}
+
+guint32
+nm_setting_wireless_security_get_num_pairwise (NMSettingWirelessSecurity *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), 0);
+
+	return g_slist_length (NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->pairwise);
+}
+
+const char *
+nm_setting_wireless_security_get_pairwise (NMSettingWirelessSecurity *setting, guint32 i)
+{
+	NMSettingWirelessSecurityPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), NULL);
+
+	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
+	g_return_val_if_fail (i <= g_slist_length (priv->pairwise), NULL);
+
+	return (const char *) g_slist_nth_data (priv->pairwise, i);
+}
+
+gboolean
+nm_setting_wireless_security_add_pairwise (NMSettingWirelessSecurity *setting, const char *pairwise)
+{
+	NMSettingWirelessSecurityPrivate *priv;
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), FALSE);
+	g_return_val_if_fail (pairwise != NULL, FALSE);
+
+	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
+	for (iter = priv->pairwise; iter; iter = g_slist_next (iter)) {
+		if (!strcmp (pairwise, (char *) iter->data))
+			return FALSE;
+	}
+
+	priv->pairwise = g_slist_append (priv->pairwise, g_ascii_strdown (pairwise, -1));
+	return TRUE;
+}
+
+void
+nm_setting_wireless_security_remove_pairwise (NMSettingWirelessSecurity *setting, guint32 i)
+{
+	NMSettingWirelessSecurityPrivate *priv;
+	GSList *elt;
+
+	g_return_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting));
+
+	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
+	elt = g_slist_nth (priv->pairwise, i);
+	g_return_if_fail (elt != NULL);
+
+	g_free (elt->data);
+	priv->pairwise = g_slist_delete_link (priv->pairwise, elt);
+}
+
+void
+nm_setting_wireless_security_clear_pairwise (NMSettingWirelessSecurity *setting)
+{
+	NMSettingWirelessSecurityPrivate *priv;
+
+	g_return_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting));
+
+	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
+	nm_utils_slist_free (priv->pairwise, g_free);
+	priv->pairwise = NULL;
+}
+
+guint32
+nm_setting_wireless_security_get_num_groups (NMSettingWirelessSecurity *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), 0);
+
+	return g_slist_length (NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->group);
+}
+
+const char *
+nm_setting_wireless_security_get_group (NMSettingWirelessSecurity *setting, guint32 i)
+{
+	NMSettingWirelessSecurityPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), NULL);
+
+	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
+	g_return_val_if_fail (i <= g_slist_length (priv->group), NULL);
+
+	return (const char *) g_slist_nth_data (priv->group, i);
+}
+
+gboolean
+nm_setting_wireless_security_add_group (NMSettingWirelessSecurity *setting, const char *group)
+{
+	NMSettingWirelessSecurityPrivate *priv;
+	GSList *iter;
+
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), FALSE);
+	g_return_val_if_fail (group != NULL, FALSE);
+
+	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
+	for (iter = priv->group; iter; iter = g_slist_next (iter)) {
+		if (!strcmp (group, (char *) iter->data))
+			return FALSE;
+	}
+
+	priv->group = g_slist_append (priv->group, g_ascii_strdown (group, -1));
+	return TRUE;
+}
+
+void
+nm_setting_wireless_security_remove_group (NMSettingWirelessSecurity *setting, guint32 i)
+{
+	NMSettingWirelessSecurityPrivate *priv;
+	GSList *elt;
+
+	g_return_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting));
+
+	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
+	elt = g_slist_nth (priv->group, i);
+	g_return_if_fail (elt != NULL);
+
+	g_free (elt->data);
+	priv->group = g_slist_delete_link (priv->group, elt);
+}
+
+void
+nm_setting_wireless_security_clear_groups (NMSettingWirelessSecurity *setting)
+{
+	NMSettingWirelessSecurityPrivate *priv;
+
+	g_return_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting));
+
+	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
+	nm_utils_slist_free (priv->group, g_free);
+	priv->group = NULL;
+}
+
+const char *
+nm_setting_wireless_security_get_psk (NMSettingWirelessSecurity *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), NULL);
+
+	return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->psk;
+}
+
+const char *
+nm_setting_wireless_security_get_leap_username (NMSettingWirelessSecurity *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), NULL);
+
+	return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->leap_username;
+}
+
+const char *
+nm_setting_wireless_security_get_leap_password (NMSettingWirelessSecurity *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), NULL);
+
+	return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->leap_password;
+}
+
+const char *
+nm_setting_wireless_security_get_wep_key (NMSettingWirelessSecurity *setting, guint32 idx)
+{
+	NMSettingWirelessSecurityPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), NULL);
+	g_return_val_if_fail (idx < 4, NULL);
+
+	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
+	if (idx == 0)
+		return priv->wep_key0;
+	else if (idx == 1)
+		return priv->wep_key1;
+	else if (idx == 2)
+		return priv->wep_key2;
+	else if (idx == 3)
+		return priv->wep_key3;
+
+	g_assert_not_reached ();
+	return NULL;
+}
+
+void
+nm_setting_wireless_security_set_wep_key (NMSettingWirelessSecurity *setting, guint32 idx, const char *key)
+{
+	NMSettingWirelessSecurityPrivate *priv;
+
+	g_return_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting));
+	g_return_if_fail (idx < 4);
+
+	priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
+	switch (idx) {
+	case 0:
+		g_free (priv->wep_key0);
+		priv->wep_key0 = g_strdup (key);
+		break;
+	case 1:
+		g_free (priv->wep_key1);
+		priv->wep_key1 = g_strdup (key);
+		break;
+	case 2:
+		g_free (priv->wep_key2);
+		priv->wep_key2 = g_strdup (key);
+		break;
+	case 3:
+		g_free (priv->wep_key3);
+		priv->wep_key3 = g_strdup (key);
+		break;
+	default:
+		g_assert_not_reached ();
+	}
+}
+
+guint32
+nm_setting_wireless_security_get_wep_tx_keyidx (NMSettingWirelessSecurity *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), 0);
+
+	return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->wep_tx_keyidx;
+}
+
+const char *
+nm_setting_wireless_security_get_auth_alg (NMSettingWirelessSecurity *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), NULL);
+
+	return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->auth_alg;
 }
 
 static gboolean
@@ -146,6 +469,7 @@ static GPtrArray *
 need_secrets (NMSetting *setting)
 {
 	NMSettingWirelessSecurity *self = NM_SETTING_WIRELESS_SECURITY (setting);
+	NMSettingWirelessSecurityPrivate *priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (self);
 	GPtrArray *secrets;
 
 	secrets = g_ptr_array_sized_new (4);
@@ -154,23 +478,23 @@ need_secrets (NMSetting *setting)
 		return NULL;
 	}
 
-	g_assert (self->key_mgmt);
+	g_assert (priv->key_mgmt);
 
 	/* Static WEP */
-	if (strcmp (self->key_mgmt, "none") == 0) {
-		if ((self->wep_tx_keyidx == 0) && !verify_wep_key (self->wep_key0)) {
+	if (strcmp (priv->key_mgmt, "none") == 0) {
+		if ((priv->wep_tx_keyidx == 0) && !verify_wep_key (priv->wep_key0)) {
 			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
 			return secrets;
 		}
-		if ((self->wep_tx_keyidx == 1) && !verify_wep_key (self->wep_key1)) {
+		if ((priv->wep_tx_keyidx == 1) && !verify_wep_key (priv->wep_key1)) {
 			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY1);
 			return secrets;
 		}
-		if ((self->wep_tx_keyidx == 2) && !verify_wep_key (self->wep_key2)) {
+		if ((priv->wep_tx_keyidx == 2) && !verify_wep_key (priv->wep_key2)) {
 			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY2);
 			return secrets;
 		}
-		if ((self->wep_tx_keyidx == 3) && !verify_wep_key (self->wep_key3)) {
+		if ((priv->wep_tx_keyidx == 3) && !verify_wep_key (priv->wep_key3)) {
 			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
 			return secrets;
 		}
@@ -178,9 +502,9 @@ need_secrets (NMSetting *setting)
 	}
 
 	/* WPA-PSK infrastructure and adhoc */
-	if (   (strcmp (self->key_mgmt, "wpa-none") == 0)
-	    || (strcmp (self->key_mgmt, "wpa-psk") == 0)) {
-		if (!verify_wpa_psk (self->psk)) {
+	if (   (strcmp (priv->key_mgmt, "wpa-none") == 0)
+	    || (strcmp (priv->key_mgmt, "wpa-psk") == 0)) {
+		if (!verify_wpa_psk (priv->psk)) {
 			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_PSK);
 			return secrets;
 		}
@@ -188,18 +512,18 @@ need_secrets (NMSetting *setting)
 	}
 
 	/* LEAP */
-	if (   self->auth_alg
-	    && !strcmp (self->auth_alg, "leap")
-	    && !strcmp (self->key_mgmt, "ieee8021x")) {
-		if (!self->leap_password || !strlen (self->leap_password)) {
+	if (   priv->auth_alg
+	    && !strcmp (priv->auth_alg, "leap")
+	    && !strcmp (priv->key_mgmt, "ieee8021x")) {
+		if (!priv->leap_password || !strlen (priv->leap_password)) {
 			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD);
 			return secrets;
 		}
 		goto no_secrets;
 	}
 
-	if (   (strcmp (self->key_mgmt, "ieee8021x") == 0)
-	    || (strcmp (self->key_mgmt, "wpa-eap") == 0)) {
+	if (   (strcmp (priv->key_mgmt, "ieee8021x") == 0)
+	    || (strcmp (priv->key_mgmt, "wpa-eap") == 0)) {
 		/* Let caller check the 802.1x setting for secrets */
 		goto no_secrets;
 	}
@@ -226,13 +550,14 @@ static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
 	NMSettingWirelessSecurity *self = NM_SETTING_WIRELESS_SECURITY (setting);
+	NMSettingWirelessSecurityPrivate *priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (self);
 	const char *valid_key_mgmt[] = { "none", "ieee8021x", "wpa-none", "wpa-psk", "wpa-eap", NULL };
 	const char *valid_auth_algs[] = { "open", "shared", "leap", NULL };
 	const char *valid_protos[] = { "wpa", "rsn", NULL };
 	const char *valid_pairwise[] = { "wep40", "wep104", "tkip", "ccmp", NULL };
 	const char *valid_groups[] = { "wep40", "wep104", "tkip", "ccmp", NULL };
 
-	if (!self->key_mgmt) {
+	if (!priv->key_mgmt) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_MISSING_PROPERTY,
@@ -240,7 +565,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (!nm_utils_string_in_list (self->key_mgmt, valid_key_mgmt)) {
+	if (!nm_utils_string_in_list (priv->key_mgmt, valid_key_mgmt)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
@@ -248,16 +573,16 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (self->auth_alg && !strcmp (self->auth_alg, "leap")) {
+	if (priv->auth_alg && !strcmp (priv->auth_alg, "leap")) {
 		/* LEAP must use ieee8021x key management */
-		if (strcmp (self->key_mgmt, "ieee8021x")) {
+		if (strcmp (priv->key_mgmt, "ieee8021x")) {
 			g_set_error (error,
 			             NM_SETTING_WIRELESS_SECURITY_ERROR,
 			             NM_SETTING_WIRELESS_SECURITY_ERROR_LEAP_REQUIRES_802_1X,
 			             NM_SETTING_WIRELESS_SECURITY_AUTH_ALG);
 			return FALSE;
 		}
-		if (!self->leap_username) {
+		if (!priv->leap_username) {
 			g_set_error (error,
 			             NM_SETTING_WIRELESS_SECURITY_ERROR,
 			             NM_SETTING_WIRELESS_SECURITY_ERROR_LEAP_REQUIRES_USERNAME,
@@ -265,8 +590,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			return FALSE;
 		}
 	} else {
-		if (   (strcmp (self->key_mgmt, "ieee8021x") == 0)
-	        || (strcmp (self->key_mgmt, "wpa-eap") == 0)) {
+		if (   (strcmp (priv->key_mgmt, "ieee8021x") == 0)
+		    || (strcmp (priv->key_mgmt, "wpa-eap") == 0)) {
 			/* Need an 802.1x setting too */
 			if (!g_slist_find_custom (all_settings, NM_SETTING_802_1X_SETTING_NAME, find_setting_by_name)) {
 				g_set_error (error,
@@ -278,7 +603,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		}
 	}
 
-	if (self->leap_username && !strlen (self->leap_username)) {
+	if (priv->leap_username && !strlen (priv->leap_username)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
@@ -286,7 +611,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (self->wep_tx_keyidx > 3) {
+	if (priv->wep_tx_keyidx > 3) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
@@ -294,28 +619,28 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (self->wep_key0 && !strlen (self->wep_key0)) {
+	if (priv->wep_key0 && !strlen (priv->wep_key0)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
 		             NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
 		return FALSE;
 	}
-	if (self->wep_key1 && !strlen (self->wep_key1)) {
+	if (priv->wep_key1 && !strlen (priv->wep_key1)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
 		             NM_SETTING_WIRELESS_SECURITY_WEP_KEY1);
 		return FALSE;
 	}
-	if (self->wep_key2 && !strlen (self->wep_key2)) {
+	if (priv->wep_key2 && !strlen (priv->wep_key2)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
 		             NM_SETTING_WIRELESS_SECURITY_WEP_KEY2);
 		return FALSE;
 	}
-	if (self->wep_key3 && !strlen (self->wep_key3)) {
+	if (priv->wep_key3 && !strlen (priv->wep_key3)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
@@ -323,7 +648,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (self->auth_alg && !nm_utils_string_in_list (self->auth_alg, valid_auth_algs)) {
+	if (priv->auth_alg && !nm_utils_string_in_list (priv->auth_alg, valid_auth_algs)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
@@ -331,7 +656,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (self->proto && !nm_utils_string_slist_validate (self->proto, valid_protos)) {
+	if (priv->proto && !nm_utils_string_slist_validate (priv->proto, valid_protos)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
@@ -339,15 +664,15 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (self->pairwise) {
+	if (priv->pairwise) {
 		const char *wpa_none[] = { "wpa-none", NULL };
 
 		/* For ad-hoc connections, pairwise must be "none" */
-		if (nm_utils_string_in_list (self->key_mgmt, wpa_none)) {
+		if (nm_utils_string_in_list (priv->key_mgmt, wpa_none)) {
 			GSList *iter;
 			gboolean found = FALSE;
 
-			for (iter = self->pairwise; iter; iter = g_slist_next (iter)) {
+			for (iter = priv->pairwise; iter; iter = g_slist_next (iter)) {
 				if (!strcmp ((char *) iter->data, "none")) {
 					found = TRUE;
 					break;
@@ -364,7 +689,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 				             NM_SETTING_WIRELESS_SECURITY_PAIRWISE);
 				return FALSE;
 			}
-		} else if (!nm_utils_string_slist_validate (self->pairwise, valid_pairwise)) {
+		} else if (!nm_utils_string_slist_validate (priv->pairwise, valid_pairwise)) {
 			g_set_error (error,
 			             NM_SETTING_WIRELESS_SECURITY_ERROR,
 			             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
@@ -373,7 +698,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		}
 	}
 
-	if (self->group && !nm_utils_string_slist_validate (self->group, valid_groups)) {
+	if (priv->group && !nm_utils_string_slist_validate (priv->group, valid_groups)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
@@ -382,8 +707,8 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	}
 
 	/* Shared Key auth can only be used with WEP */
-	if (self->auth_alg && !strcmp (self->auth_alg, "shared")) {
-		if (self->key_mgmt && strcmp (self->key_mgmt, "none")) {
+	if (priv->auth_alg && !strcmp (priv->auth_alg, "shared")) {
+		if (priv->key_mgmt && strcmp (priv->key_mgmt, "none")) {
 			g_set_error (error,
 			             NM_SETTING_WIRELESS_SECURITY_ERROR,
 			             NM_SETTING_WIRELESS_SECURITY_ERROR_SHARED_KEY_REQUIRES_WEP,
@@ -405,22 +730,23 @@ static void
 finalize (GObject *object)
 {
 	NMSettingWirelessSecurity *self = NM_SETTING_WIRELESS_SECURITY (object);
+	NMSettingWirelessSecurityPrivate *priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (self);
 
 	/* Strings first. g_free() already checks for NULLs so we don't have to */
 
-	g_free (self->key_mgmt);
-	g_free (self->auth_alg);
-	g_free (self->leap_username);
-	g_free (self->wep_key0);
-	g_free (self->wep_key1);
-	g_free (self->wep_key2);
-	g_free (self->wep_key3);
-	g_free (self->psk);
-	g_free (self->leap_password);
+	g_free (priv->key_mgmt);
+	g_free (priv->auth_alg);
+	g_free (priv->leap_username);
+	g_free (priv->wep_key0);
+	g_free (priv->wep_key1);
+	g_free (priv->wep_key2);
+	g_free (priv->wep_key3);
+	g_free (priv->psk);
+	g_free (priv->leap_password);
 
-	nm_utils_slist_free (self->proto, g_free);
-	nm_utils_slist_free (self->pairwise, g_free);
-	nm_utils_slist_free (self->group, g_free);
+	nm_utils_slist_free (priv->proto, g_free);
+	nm_utils_slist_free (priv->pairwise, g_free);
+	nm_utils_slist_free (priv->group, g_free);
 
 	G_OBJECT_CLASS (nm_setting_wireless_security_parent_class)->finalize (object);
 }
@@ -430,58 +756,59 @@ set_property (GObject *object, guint prop_id,
 		    const GValue *value, GParamSpec *pspec)
 {
 	NMSettingWirelessSecurity *setting = NM_SETTING_WIRELESS_SECURITY (object);
+	NMSettingWirelessSecurityPrivate *priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
+	const char *str;
 
 	switch (prop_id) {
 	case PROP_KEY_MGMT:
-		g_free (setting->key_mgmt);
-		setting->key_mgmt = g_value_dup_string (value);
+		g_free (priv->key_mgmt);
+		str = g_value_get_string (value);
+		priv->key_mgmt = str ? g_ascii_strdown (str, -1) : NULL;
 		break;
 	case PROP_WEP_TX_KEYIDX:
-		setting->wep_tx_keyidx = g_value_get_uint (value);
+		priv->wep_tx_keyidx = g_value_get_uint (value);
 		break;
 	case PROP_AUTH_ALG:
-		g_free (setting->auth_alg);
-		setting->auth_alg = g_value_dup_string (value);
+		g_free (priv->auth_alg);
+		str = g_value_get_string (value);
+		priv->auth_alg = str ? g_ascii_strdown (str, -1) : NULL;
 		break;
 	case PROP_PROTO:
-		nm_utils_slist_free (setting->proto, g_free);
-		setting->proto = g_value_dup_boxed (value);
+		nm_utils_slist_free (priv->proto, g_free);
+		priv->proto = g_value_dup_boxed (value);
 		break;
 	case PROP_PAIRWISE:
-		nm_utils_slist_free (setting->pairwise, g_free);
-		setting->pairwise = g_value_dup_boxed (value);
+		nm_utils_slist_free (priv->pairwise, g_free);
+		priv->pairwise = g_value_dup_boxed (value);
 		break;
 	case PROP_GROUP:
-		nm_utils_slist_free (setting->group, g_free);
-		setting->group = g_value_dup_boxed (value);
+		nm_utils_slist_free (priv->group, g_free);
+		priv->group = g_value_dup_boxed (value);
 		break;
 	case PROP_LEAP_USERNAME:
-		g_free (setting->leap_username);
-		setting->leap_username = g_value_dup_string (value);
+		g_free (priv->leap_username);
+		str = g_value_get_string (value);
+		priv->leap_username = str ? g_ascii_strdown (str, -1) : NULL;
 		break;
 	case PROP_WEP_KEY0:
-		g_free (setting->wep_key0);
-		setting->wep_key0 = g_value_dup_string (value);
+		nm_setting_wireless_security_set_wep_key (setting, 0, g_value_get_string (value));
 		break;
 	case PROP_WEP_KEY1:
-		g_free (setting->wep_key1);
-		setting->wep_key1 = g_value_dup_string (value);
+		nm_setting_wireless_security_set_wep_key (setting, 1, g_value_get_string (value));
 		break;
 	case PROP_WEP_KEY2:
-		g_free (setting->wep_key2);
-		setting->wep_key2 = g_value_dup_string (value);
+		nm_setting_wireless_security_set_wep_key (setting, 2, g_value_get_string (value));
 		break;
 	case PROP_WEP_KEY3:
-		g_free (setting->wep_key3);
-		setting->wep_key3 = g_value_dup_string (value);
+		nm_setting_wireless_security_set_wep_key (setting, 3, g_value_get_string (value));
 		break;
 	case PROP_PSK:
-		g_free (setting->psk);
-		setting->psk = g_value_dup_string (value);
+		g_free (priv->psk);
+		priv->psk = g_value_dup_string (value);
 		break;
 	case PROP_LEAP_PASSWORD:
-		g_free (setting->leap_password);
-		setting->leap_password = g_value_dup_string (value);
+		g_free (priv->leap_password);
+		priv->leap_password = g_value_dup_string (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -494,46 +821,47 @@ get_property (GObject *object, guint prop_id,
 		    GValue *value, GParamSpec *pspec)
 {
 	NMSettingWirelessSecurity *setting = NM_SETTING_WIRELESS_SECURITY (object);
+	NMSettingWirelessSecurityPrivate *priv = NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting);
 
 	switch (prop_id) {
 	case PROP_KEY_MGMT:
-		g_value_set_string (value, setting->key_mgmt);
+		g_value_set_string (value, priv->key_mgmt);
 		break;
 	case PROP_WEP_TX_KEYIDX:
-		g_value_set_uint (value, setting->wep_tx_keyidx);
+		g_value_set_uint (value, priv->wep_tx_keyidx);
 		break;
 	case PROP_AUTH_ALG:
-		g_value_set_string (value, setting->auth_alg);
+		g_value_set_string (value, priv->auth_alg);
 		break;
 	case PROP_PROTO:
-		g_value_set_boxed (value, setting->proto);
+		g_value_set_boxed (value, priv->proto);
 		break;
 	case PROP_PAIRWISE:
-		g_value_set_boxed (value, setting->pairwise);
+		g_value_set_boxed (value, priv->pairwise);
 		break;
 	case PROP_GROUP:
-		g_value_set_boxed (value, setting->group);
+		g_value_set_boxed (value, priv->group);
 		break;
 	case PROP_LEAP_USERNAME:
-		g_value_set_string (value, setting->leap_username);
+		g_value_set_string (value, priv->leap_username);
 		break;
 	case PROP_WEP_KEY0:
-		g_value_set_string (value, setting->wep_key0);
+		g_value_set_string (value, priv->wep_key0);
 		break;
 	case PROP_WEP_KEY1:
-		g_value_set_string (value, setting->wep_key1);
+		g_value_set_string (value, priv->wep_key1);
 		break;
 	case PROP_WEP_KEY2:
-		g_value_set_string (value, setting->wep_key2);
+		g_value_set_string (value, priv->wep_key2);
 		break;
 	case PROP_WEP_KEY3:
-		g_value_set_string (value, setting->wep_key3);
+		g_value_set_string (value, priv->wep_key3);
 		break;
 	case PROP_PSK:
-		g_value_set_string (value, setting->psk);
+		g_value_set_string (value, priv->psk);
 		break;
 	case PROP_LEAP_PASSWORD:
-		g_value_set_string (value, setting->leap_password);
+		g_value_set_string (value, priv->leap_password);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -546,6 +874,8 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (setting_class);
 	NMSettingClass *parent_class = NM_SETTING_CLASS (setting_class);
+
+	g_type_class_add_private (setting_class, sizeof (NMSettingWirelessSecurityPrivate));
 
 	/* virtual methods */
 	object_class->set_property = set_property;
