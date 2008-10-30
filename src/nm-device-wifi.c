@@ -1658,7 +1658,6 @@ can_scan (NMDeviceWifi *self)
 	if (req) {
 		NMConnection *connection;
 		NMSettingIP4Config *s_ip4;
-		NMSettingIP6Config *s_ip6;
 		const char *ip4_method = NULL;
 
 		connection = nm_act_request_get_connection (req);
@@ -1667,10 +1666,6 @@ can_scan (NMDeviceWifi *self)
 			ip4_method = nm_setting_ip4_config_get_method (s_ip4);
 
 		if (s_ip4 && !strcmp (ip4_method, NM_SETTING_IP4_CONFIG_METHOD_SHARED))
-			return FALSE;
-
-		s_ip6 = (NMSettingIP6Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP6_CONFIG);
-		if (s_ip6 && !strcmp (s_ip6->method, NM_SETTING_IP6_CONFIG_METHOD_SHARED))
 			return FALSE;
 	}
 

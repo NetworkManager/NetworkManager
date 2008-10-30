@@ -194,12 +194,6 @@ void nm_utils_ip4_routes_to_gvalue (GSList *list, GValue *value);
 guint32 nm_utils_ip4_netmask_to_prefix (guint32 ip4_netmask);
 guint32 nm_utils_ip4_prefix_to_netmask (guint32 ip4_prefix);
 
-GSList *nm_utils_ip6_addresses_from_gvalue (const GValue *value);
-void nm_utils_ip6_addresses_to_gvalue (GSList *list, GValue *value);
-
-GSList *nm_utils_ip6_dns_from_gvalue (const GValue *value);
-void nm_utils_ip6_dns_to_gvalue (GSList *list, GValue *value);
-
 char *nm_utils_uuid_generate (void);
 char *nm_utils_uuid_generate_from_string (const char *s);
 

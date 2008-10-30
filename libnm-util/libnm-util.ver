@@ -125,10 +125,6 @@ global:
 	nm_setting_ip4_config_get_ignore_auto_dns;
 	nm_setting_ip4_config_get_dhcp_client_id;
 	nm_setting_ip4_config_get_dhcp_hostname;
-	nm_setting_ip6_config_error_get_type;
-	nm_setting_ip6_config_error_quark;
-	nm_setting_ip6_config_get_type;
-	nm_setting_ip6_config_new;
 	nm_setting_need_secrets;
 	nm_setting_ppp_error_get_type;
 	nm_setting_ppp_error_quark;
@@ -253,10 +249,6 @@ global:
 	nm_utils_ip4_prefix_to_netmask;
 	nm_utils_ip4_routes_from_gvalue;
 	nm_utils_ip4_routes_to_gvalue;
-	nm_utils_ip6_addresses_from_gvalue;
-	nm_utils_ip6_addresses_to_gvalue;
-	nm_utils_ip6_dns_from_gvalue;
-	nm_utils_ip6_dns_to_gvalue;
 	nm_utils_is_empty_ssid;
 	nm_utils_register_value_transformations;
 	nm_utils_same_ssid;

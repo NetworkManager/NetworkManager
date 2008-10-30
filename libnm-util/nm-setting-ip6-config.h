@@ -59,9 +59,9 @@ GQuark nm_setting_ip6_config_error_quark (void);
 #define NM_SETTING_IP6_CONFIG_DNS_SEARCH        "dns-search"
 #define NM_SETTING_IP6_CONFIG_ADDRESSES         "addresses"
 #define NM_SETTING_IP6_CONFIG_ROUTES            "routes"
-#define NM_SETTING_IP6_CONFIG_IGNORE_DHCPV6_DNS "ignore-dhcpv6-dns"
-#define NM_SETTING_IP6_CONFIG_DISABLE_RA        "disable-ra"
-#define NM_SETTING_IP6_CONFIG_DHCPV6_MODE       "dhcpv6-mode"
+#define NM_SETTING_IP6_CONFIG_IGNORE_AUTO_DNS   "ignore-auto-dns"
+#define NM_SETTING_IP6_CONFIG_IGNORE_ROUTER_ADV "ignore-router-adv"
+#define NM_SETTING_IP6_CONFIG_DHCP_MODE         "dhcp-mode"
 
 #define NM_SETTING_IP6_CONFIG_METHOD_AUTO   "auto"
 #define NM_SETTING_IP6_CONFIG_METHOD_MANUAL "manual"
@@ -70,32 +70,95 @@ GQuark nm_setting_ip6_config_error_quark (void);
 #define NM_SETTING_IP6_CONFIG_DHCPV6_MODE_INFO    "info"
 #define NM_SETTING_IP6_CONFIG_DHCPV6_MODE_REQUEST "request"
 
-typedef struct {
-	struct in6_addr address;
-	guint32 prefix;
-	struct in6_addr gateway;
-} NMSettingIP6Address;
+
+typedef struct NMIP6Address NMIP6Address;
+
+NMIP6Address *         nm_ip6_address_new         (void);
+NMIP6Address *         nm_ip6_address_dup         (NMIP6Address *source);
+void                   nm_ip6_address_ref         (NMIP6Address *address);
+void                   nm_ip6_address_unref       (NMIP6Address *address);
+/* Return TRUE if addresses are identical */
+gboolean               nm_ip6_address_compare     (NMIP6Address *address, NMIP6Address *other);
+
+const struct in6_addr *nm_ip6_address_get_address (NMIP6Address *address);
+void                   nm_ip6_address_set_address (NMIP6Address *address,
+                                                   const struct in6_addr *addr);  /* network byte order */
+
+guint32                nm_ip6_address_get_prefix  (NMIP6Address *address);
+void                   nm_ip6_address_set_prefix  (NMIP6Address *address,
+                                                   guint32 prefix);
+
+const struct in6_addr *nm_ip6_address_get_gateway (NMIP6Address *address);
+void                   nm_ip6_address_set_gateway (NMIP6Address *address,
+                                                   const struct in6_addr *addr);  /* network byte order */
+
+typedef struct NMIP6Route NMIP6Route;
+
+NMIP6Route *           nm_ip6_route_new          (void);
+NMIP6Route *           nm_ip6_route_dup          (NMIP6Route *route);
+void                   nm_ip6_route_ref          (NMIP6Route *route);
+void                   nm_ip6_route_unref        (NMIP6Route *route);
+/* Return TRUE if routes are identical */
+gboolean               nm_ip6_route_compare      (NMIP6Route *route, NMIP6Route *other);
+
+const struct in6_addr *nm_ip6_route_get_dest     (NMIP6Route *route);
+void                   nm_ip6_route_set_dest     (NMIP6Route *route,
+                                                  const struct in6_addr *dest);  /* network byte order */
+
+guint32                nm_ip6_route_get_prefix   (NMIP6Route *route);
+void                   nm_ip6_route_set_prefix   (NMIP6Route *route,
+                                        guint32 prefix);
+
+const struct in6_addr *nm_ip6_route_get_next_hop (NMIP6Route *route);
+void                   nm_ip6_route_set_next_hop (NMIP6Route *route,
+                                                  const struct in6_addr *next_hop);  /* network byte order */
+
+guint32                nm_ip6_route_get_metric   (NMIP6Route *route);
+void                   nm_ip6_route_set_metric   (NMIP6Route *route,
+                                                  guint32 metric);
 
 typedef struct {
 	NMSetting parent;
-
-	char *method;
-	GSList *dns;        /* array of struct in6_addr */
-	GSList *dns_search; /* list of strings */
-	GSList *addresses;  /* array of NMSettingIP6Address */
-	GSList *routes;     /* array of NMSettingIP6Address */
-	gboolean ignore_dhcpv6_dns;
-	gboolean disable_ra;
-	char *dhcpv6_mode;
 } NMSettingIP6Config;
 
 typedef struct {
 	NMSettingClass parent;
 } NMSettingIP6ConfigClass;
 
+/* IPv6 support is currently incomplete.  Do not use. */
+
 GType nm_setting_ip6_config_get_type (void);
 
-NMSetting *nm_setting_ip6_config_new (void);
+NMSetting *            nm_setting_ip6_config_new                   (void);
+const char *           nm_setting_ip6_config_get_method            (NMSettingIP6Config *setting);
+
+guint32                nm_setting_ip6_config_get_num_dns           (NMSettingIP6Config *setting);
+const struct in6_addr *nm_setting_ip6_config_get_dns               (NMSettingIP6Config *setting, guint32 i);
+gboolean               nm_setting_ip6_config_add_dns               (NMSettingIP6Config *setting, const struct in6_addr *dns);
+void                   nm_setting_ip6_config_remove_dns            (NMSettingIP6Config *setting, guint32 i);
+void                   nm_setting_ip6_config_clear_dns             (NMSettingIP6Config *setting);
+
+guint32                nm_setting_ip6_config_get_num_dns_searches  (NMSettingIP6Config *setting);
+const char *           nm_setting_ip6_config_get_dns_search        (NMSettingIP6Config *setting, guint32 i);
+gboolean               nm_setting_ip6_config_add_dns_search        (NMSettingIP6Config *setting, const char *dns_search);
+void                   nm_setting_ip6_config_remove_dns_search     (NMSettingIP6Config *setting, guint32 i);
+void                   nm_setting_ip6_config_clear_dns_searches    (NMSettingIP6Config *setting);
+
+guint32                nm_setting_ip6_config_get_num_addresses     (NMSettingIP6Config *setting);
+NMIP6Address *         nm_setting_ip6_config_get_address           (NMSettingIP6Config *setting, guint32 i);
+gboolean               nm_setting_ip6_config_add_address           (NMSettingIP6Config *setting, NMIP6Address *address);
+void                   nm_setting_ip6_config_remove_address        (NMSettingIP6Config *setting, guint32 i);
+void                   nm_setting_ip6_config_clear_addresses       (NMSettingIP6Config *setting);
+
+guint32                nm_setting_ip6_config_get_num_routes        (NMSettingIP6Config *setting);
+NMIP6Route *           nm_setting_ip6_config_get_route             (NMSettingIP6Config *setting, guint32 i);
+gboolean               nm_setting_ip6_config_add_route             (NMSettingIP6Config *setting, NMIP6Route *route);
+void                   nm_setting_ip6_config_remove_route          (NMSettingIP6Config *setting, guint32 i);
+void                   nm_setting_ip6_config_clear_routes          (NMSettingIP6Config *setting);
+
+gboolean               nm_setting_ip6_config_get_ignore_auto_dns   (NMSettingIP6Config *setting);
+gboolean               nm_setting_ip6_config_get_ignore_router_adv (NMSettingIP6Config *setting);
+const char *           nm_setting_ip6_config_get_dhcp_mode         (NMSettingIP6Config *setting);
 
 G_END_DECLS
 

@@ -44,6 +44,14 @@
 #include "nm-setting-ip6-config.h"
 #include "crypto.h"
 
+/* IP6 currently incomplete */
+GSList *nm_utils_ip6_addresses_from_gvalue (const GValue *value);
+void nm_utils_ip6_addresses_to_gvalue (GSList *list, GValue *value);
+
+GSList *nm_utils_ip6_dns_from_gvalue (const GValue *value);
+void nm_utils_ip6_dns_to_gvalue (GSList *list, GValue *value);
+
+
 struct EncodingTriplet
 {
 	const char *encoding1;
@@ -1027,7 +1035,7 @@ nm_utils_ip6_addresses_from_gvalue (const GValue *value)
 		GValueArray *elements = (GValueArray *) g_ptr_array_index (addresses, i);
 		GValue *tmp;
 		GByteArray *ba_addr, *ba_gw;
-		NMSettingIP6Address *addr;
+		NMIP6Address *addr;
 		guint32 prefix;
 
 		if (   (elements->n_values != 3)
@@ -1061,11 +1069,11 @@ nm_utils_ip6_addresses_from_gvalue (const GValue *value)
 			            __func__, ba_gw->len);
 			continue;
 		}
-		
-		addr = g_malloc0 (sizeof (NMSettingIP6Address));
-		addr->prefix = prefix;
-		memcpy (addr->address.s6_addr, ba_addr->data, 16);
-		memcpy (addr->gateway.s6_addr, ba_gw->data, 16);
+
+		addr = nm_ip6_address_new ();
+		nm_ip6_address_set_prefix (addr, prefix);
+		nm_ip6_address_set_address (addr, (const struct in6_addr *) ba_addr->data);
+		nm_ip6_address_set_gateway (addr, (const struct in6_addr *) ba_gw->data);
 		list = g_slist_prepend (list, addr);
 	}
 
@@ -1081,7 +1089,7 @@ nm_utils_ip6_addresses_to_gvalue (GSList *list, GValue *value)
 	addresses = g_ptr_array_new ();
 
 	for (iter = list; iter; iter = iter->next) {
-		NMSettingIP6Address *addr = (NMSettingIP6Address *) iter->data;
+		NMIP6Address *addr = (NMIP6Address *) iter->data;
 		GValue element = { 0, };
 		GByteArray *ba_addr, *ba_gw;
 
@@ -1089,14 +1097,14 @@ nm_utils_ip6_addresses_to_gvalue (GSList *list, GValue *value)
 		g_value_take_boxed (&element, dbus_g_type_specialized_construct (DBUS_TYPE_G_IP6_ADDRESS));
 
 		ba_addr = g_byte_array_sized_new (16);
-		g_byte_array_append (ba_addr, (guint8 *) addr->address.s6_addr, 16);
+		g_byte_array_append (ba_addr, (guint8 *) nm_ip6_address_get_address (addr), 16);
 
 		ba_gw = g_byte_array_sized_new (16);
-		g_byte_array_append (ba_gw, (guint8 *) addr->gateway.s6_addr, 16);
+		g_byte_array_append (ba_gw, (guint8 *) nm_ip6_address_get_gateway (addr), 16);
 
 		dbus_g_type_struct_set (&element,
 		                        0, ba_addr,
-		                        1, addr->prefix,
+		                        1, nm_ip6_address_get_prefix (addr),
 		                        2, ba_gw,
 		                        G_MAXUINT);
 
