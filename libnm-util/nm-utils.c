@@ -1056,7 +1056,7 @@ nm_utils_ip6_addresses_from_gvalue (const GValue *value)
 
 		tmp = g_value_array_get_nth (elements, 1);
 		prefix = g_value_get_uint (tmp);
-		if (prefix > 32) {
+		if (prefix > 128) {
 			nm_warning ("%s: ignoring invalid IP6 prefix %d",
 			            __func__, prefix);
 			continue;
