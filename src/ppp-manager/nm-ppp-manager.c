@@ -306,7 +306,7 @@ monitor_cb (gpointer user_data)
 	req.stats_ptr = (caddr_t) &req.stats;
 
 	strncpy (req.ifr__name, priv->ip_iface, sizeof (req.ifr__name));
-	if (!ioctl (priv->monitor_fd, SIOCGPPPSTATS, &req) < 0)
+	if (ioctl (priv->monitor_fd, SIOCGPPPSTATS, &req) < 0)
 		nm_warning ("Could not read ppp stats: %s", strerror (errno));
 	else
 		g_signal_emit (manager, signals[STATS], 0, 

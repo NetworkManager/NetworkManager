@@ -1,5 +1,16 @@
 2008-10-30  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-device-ethernet.c
+	  src/nm-device-wifi.c
+	  src/nm-device.c
+	  src/ppp-manager/nm-ppp-manager.c
+		- Harmonize return checking of ioctl
+
+	* system-settings/plugins/ifcfg-fedora/reader.c
+		- (is_wireless_device): fall back to SIOCGIWNAME (rh #466340)
+
+2008-10-30  Dan Williams  <dcbw@redhat.com>
+
 	* src/ppp-manager/nm-ppp-manager.c
 		- (nm_ppp_manager_start): if /dev/ppp doesn't exist, load the
 			ppp_generic module to create it (bgo #533064)

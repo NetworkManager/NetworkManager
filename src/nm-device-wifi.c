@@ -310,7 +310,7 @@ wireless_get_range (NMDeviceWifi *self,
                     struct iw_range *range,
                     guint32 *response_len)
 {
-	int fd, err, i = 26;
+	int fd, i = 26;
 	gboolean success = FALSE;
 	const char *iface;
 	struct iwreq wrq;
@@ -336,8 +336,7 @@ wireless_get_range (NMDeviceWifi *self,
 	 * see rh bz#362421)
 	 */
 	while (i-- > 0) {
-		err = ioctl (fd, SIOCGIWRANGE, &wrq);
-		if (err == 0) {
+		if (ioctl (fd, SIOCGIWRANGE, &wrq) == 0) {
 			if (response_len)
 				*response_len = wrq.u.data.length;
 			success = TRUE;
@@ -390,8 +389,7 @@ real_get_generic_capabilities (NMDevice *dev)
 	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
 	err = ioctl (fd, SIOCSIWSCAN, &wrq);
 	close (fd);
-
-	if ((err == -1) && (errno == EOPNOTSUPP))
+	if ((err < 0) && (errno == EOPNOTSUPP))
 		caps = NM_DEVICE_CAP_NONE;
 	else
 		caps |= NM_DEVICE_CAP_NM_SUPPORTED;
@@ -1239,14 +1237,13 @@ nm_device_wifi_set_mode (NMDeviceWifi *self, const NM80211Mode mode)
 	iface = nm_device_get_iface (NM_DEVICE (self));
 	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
 
-	if (ioctl (fd, SIOCSIWMODE, &wrq) == 0)
-		success = TRUE;
-	else {
+	if (ioctl (fd, SIOCSIWMODE, &wrq) < 0) {
 		if (errno != ENODEV) {
 			nm_warning ("error setting card %s to mode %d: %s",
 			            iface, mode, strerror (errno));
 		}
-	}
+	} else
+		success = TRUE;
 	close (fd);
 
 out:
@@ -1263,7 +1260,7 @@ out:
 static guint32
 nm_device_wifi_get_frequency (NMDeviceWifi *self)
 {
-	int err, fd;
+	int fd;
 	guint32 freq = 0;
 	const char *iface;
 	struct iwreq wrq;
@@ -1278,11 +1275,10 @@ nm_device_wifi_get_frequency (NMDeviceWifi *self)
 	iface = nm_device_get_iface (NM_DEVICE (self));
 	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
 
-	err = ioctl (fd, SIOCGIWFREQ, &wrq);
-	if (err >= 0)
-		freq = iw_freq_to_uint32 (&wrq.u.freq);
-	else if (err == -1)
+	if (ioctl (fd, SIOCGIWFREQ, &wrq) < 0)
 		nm_warning ("(%s): error getting frequency: %s", iface, strerror (errno));
+	else
+		freq = iw_freq_to_uint32 (&wrq.u.freq);
 
 	close (fd);
 	return freq;
@@ -1555,7 +1551,7 @@ nm_device_wifi_get_bitrate (NMDeviceWifi *self)
 	err = ioctl (fd, SIOCGIWRATE, &wrq);
 	close (fd);
 
-	return ((err >= 0) ? wrq.u.bitrate.value / 1000 : 0);
+	return ((err == 0) ? wrq.u.bitrate.value / 1000 : 0);
 }
 
 /*
@@ -1584,7 +1580,7 @@ nm_device_wifi_get_bssid (NMDeviceWifi *self,
 
 	memset (&wrq, 0, sizeof (wrq));
 	strncpy (wrq.ifr_name, nm_device_get_iface (NM_DEVICE (self)), IFNAMSIZ);
-	if (ioctl (fd, SIOCGIWAP, &wrq) >= 0)
+	if (ioctl (fd, SIOCGIWAP, &wrq) == 0)
 		memcpy (bssid->ether_addr_octet, &(wrq.u.ap_addr.sa_data), ETH_ALEN);
 
 	close (fd);
@@ -1619,7 +1615,7 @@ nm_device_wifi_disable_encryption (NMDeviceWifi *self)
 	iface = nm_device_get_iface (NM_DEVICE (self));
 	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
 
-	if (ioctl (fd, SIOCSIWENCODE, &wrq) == -1) {
+	if (ioctl (fd, SIOCSIWENCODE, &wrq) < 0) {
 		if (errno != ENODEV) {
 			nm_warning ("error setting key for device %s: %s",
 			            iface, strerror (errno));
@@ -2714,7 +2710,7 @@ real_update_hw_address (NMDevice *dev)
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	struct ifreq req;
-	int ret, fd;
+	int fd;
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
@@ -2724,8 +2720,7 @@ real_update_hw_address (NMDevice *dev)
 
 	memset (&req, 0, sizeof (struct ifreq));
 	strncpy (req.ifr_name, nm_device_get_iface (dev), IFNAMSIZ);
-	ret = ioctl (fd, SIOCGIFHWADDR, &req);
-	if (ret) {
+	if (ioctl (fd, SIOCGIFHWADDR, &req) < 0) {
 		nm_warning ("%s: (%s) error getting hardware address: %d",
 		            __func__, nm_device_get_iface (dev), errno);
 		goto out;

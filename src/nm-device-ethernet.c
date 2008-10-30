@@ -451,7 +451,7 @@ nm_device_ethernet_get_speed (NMDeviceEthernet *self)
 	strncpy (ifr.ifr_name, nm_device_get_iface (NM_DEVICE (self)), IFNAMSIZ);
 	ifr.ifr_data = (char *) &edata;
 
-	if (ioctl (fd, SIOCETHTOOL, &ifr) == -1)
+	if (ioctl (fd, SIOCETHTOOL, &ifr) < 0)
 		goto out;
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2,6,27)
@@ -474,7 +474,7 @@ real_update_hw_address (NMDevice *dev)
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (dev);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	struct ifreq req;
-	int ret, fd;
+	int fd;
 
 	fd = socket (PF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
@@ -484,8 +484,7 @@ real_update_hw_address (NMDevice *dev)
 
 	memset (&req, 0, sizeof (struct ifreq));
 	strncpy (req.ifr_name, nm_device_get_iface (dev), IFNAMSIZ);
-	ret = ioctl (fd, SIOCGIFHWADDR, &req);
-	if (ret) {
+	if (ioctl (fd, SIOCGIFHWADDR, &req) < 0) {
 		nm_warning ("%s: (%s) error getting hardware address: %d",
 		            __func__, nm_device_get_iface (dev), errno);
 		goto out;
@@ -1616,7 +1615,7 @@ supports_ethtool_carrier_detect (NMDeviceEthernet *self)
 	edata.cmd = ETHTOOL_GLINK;
 	ifr.ifr_data = (char *) &edata;
 
-	if (ioctl (fd, SIOCETHTOOL, &ifr) == -1)
+	if (ioctl (fd, SIOCETHTOOL, &ifr) < 0)
 		goto out;
 
 	supports_ethtool = TRUE;
@@ -1649,7 +1648,7 @@ mdio_read (NMDeviceEthernet *self, int fd, struct ifreq *ifr, int location)
 	mii = (struct mii_ioctl_data *) &ifr->ifr_ifru;
 	mii->reg_num = location;
 
-	if (ioctl (fd, SIOCGMIIREG, ifr) >= 0)
+	if (ioctl (fd, SIOCGMIIREG, ifr) == 0)
 		val = mii->val_out;
 
 	return val;
@@ -1658,7 +1657,7 @@ mdio_read (NMDeviceEthernet *self, int fd, struct ifreq *ifr, int location)
 static gboolean
 supports_mii_carrier_detect (NMDeviceEthernet *self)
 {
-	int err, fd, bmsr;
+	int fd, bmsr;
 	struct ifreq ifr;
 	gboolean supports_mii = FALSE;
 
@@ -1673,8 +1672,7 @@ supports_mii_carrier_detect (NMDeviceEthernet *self)
 	memset (&ifr, 0, sizeof (struct ifreq));
 	strncpy (ifr.ifr_name, nm_device_get_iface (NM_DEVICE (self)), IFNAMSIZ);
 
-	err = ioctl (fd, SIOCGMIIPHY, &ifr);
-	if (err < 0)
+	if (ioctl (fd, SIOCGMIIPHY, &ifr) < 0)
 		goto out;
 
 	/* If we can read the BMSR register, we assume that the card supports MII link detection */

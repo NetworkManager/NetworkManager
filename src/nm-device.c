@@ -1970,7 +1970,7 @@ nm_device_update_ip4_address (NMDevice *self)
 {
 	struct ifreq req;
 	guint32 new_address;
-	int fd, err;
+	int fd;
 	
 	g_return_if_fail (self  != NULL);
 
@@ -1982,15 +1982,12 @@ nm_device_update_ip4_address (NMDevice *self)
 
 	memset (&req, 0, sizeof (struct ifreq));
 	strncpy (req.ifr_name, nm_device_get_ip_iface (self), IFNAMSIZ);
-	err = ioctl (fd, SIOCGIFADDR, &req);
+	if (ioctl (fd, SIOCGIFADDR, &req) == 0) {
+		new_address = ((struct sockaddr_in *)(&req.ifr_addr))->sin_addr.s_addr;
+		if (new_address != nm_device_get_ip4_address (self))
+			self->priv->ip4_address = new_address;
+	}
 	close (fd);
-
-	if (err != 0)
-		return;
-
-	new_address = ((struct sockaddr_in *)(&req.ifr_addr))->sin_addr.s_addr;
-	if (new_address != nm_device_get_ip4_address (self))
-		self->priv->ip4_address = new_address;
 }
 
 static gboolean

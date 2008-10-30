@@ -880,17 +880,14 @@ wired_connection_from_ifcfg (const char *file,
 }
 
 static gboolean
-is_wireless_device (const char *iface, gboolean *is_wireless)
+is_wireless_device (const char *iface)
 {
 	int fd;
 	struct iw_range range;
 	struct iwreq wrq;
-	gboolean success = FALSE;
+	gboolean is_wireless = FALSE;
 
 	g_return_val_if_fail (iface != NULL, FALSE);
-	g_return_val_if_fail (is_wireless != NULL, FALSE);
-
-	*is_wireless = FALSE;
 
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (!fd)
@@ -902,18 +899,25 @@ is_wireless_device (const char *iface, gboolean *is_wireless)
 	wrq.u.data.pointer = (caddr_t) &range;
 	wrq.u.data.length = sizeof (struct iw_range);
 
-	if (ioctl (fd, SIOCGIWRANGE, &wrq) < 0) {
+	if (ioctl (fd, SIOCGIWRANGE, &wrq) == 0)
+		is_wireless = TRUE;
+	else {
 		if (errno == EOPNOTSUPP)
-			success = TRUE;
-		goto out;
+			is_wireless = FALSE;
+		else {
+			/* Sigh... some wired devices (kvm/qemu) return EINVAL when the
+			 * device is down even though it's not a wireless device.  So try
+			 * IWNAME as a fallback.
+			 */
+			memset (&wrq, 0, sizeof (struct iwreq));
+			strncpy (wrq.ifr_name, iface, IFNAMSIZ);
+			if (ioctl (fd, SIOCGIWNAME, &wrq) == 0)
+				is_wireless = TRUE;
+		}
 	}
 
-	*is_wireless = TRUE;
-	success = TRUE;
-
-out:
 	close (fd);
-	return success;
+	return is_wireless;
 }
 
 NMConnection *
@@ -953,7 +957,6 @@ connection_from_file (const char *filename,
 	type = svGetValue (parsed, "TYPE");
 	if (!type) {
 		char *device;
-		gboolean is_wireless = FALSE;
 
 		/* If no type, if the device has wireless extensions, it's wifi,
 		 * otherwise it's ethernet.
@@ -973,15 +976,7 @@ connection_from_file (const char *filename,
 		}
 
 		/* Test wireless extensions */
-		if (!is_wireless_device (device, &is_wireless)) {
-			g_set_error (error, ifcfg_plugin_error_quark (), 0,
-			             "File '%s' specified device '%s', but the device's "
-			             "type could not be determined.", filename, device);
-			g_free (device);
-			goto done;
-		}
-
-		if (is_wireless)
+		if (is_wireless_device (device))
 			type = g_strdup (TYPE_WIRELESS);
 		else
 			type = g_strdup (TYPE_ETHERNET);
