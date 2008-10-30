@@ -1,3 +1,17 @@
+2008-10-30  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Alexander Sack <asac@canonical.com>
+
+	Fix "ppp connections don't honour ip4 connection settings"
+
+	* src/nm-device-ethernet.c
+		- (real_act_stage4_get_ip4_config): merge ip4config settings
+			with results from ppp manager
+
+	* src/nm-serial-device.c
+		- (real_act_stage4_get_ip4_config): merge ip4config settings
+			with results from ppp manager
+
 2008-10-29  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/libnm-util.ver

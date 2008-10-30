@@ -21,6 +21,7 @@
 #include "nm-marshal.h"
 #include "nm-utils.h"
 #include "nm-serial-device-glue.h"
+#include "NetworkManagerUtils.h"
 
 static gboolean serial_debug = FALSE;
 
@@ -1057,9 +1058,21 @@ real_act_stage4_get_ip4_config (NMDevice *device,
                                 NMDeviceStateReason *reason)
 {
 	NMSerialDevicePrivate *priv = NM_SERIAL_DEVICE_GET_PRIVATE (device);
+	NMConnection *connection;
+	NMSettingIP4Config *s_ip4;
+
+	g_return_val_if_fail (config != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+	g_return_val_if_fail (*config == NULL, NM_ACT_STAGE_RETURN_FAILURE);
+	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	connection = nm_act_request_get_connection (nm_device_get_act_request (device));
+	g_assert (connection);
+
+	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
 
 	*config = priv->pending_ip4_config;
 	priv->pending_ip4_config = NULL;
+	nm_utils_merge_ip4_config (*config, s_ip4);
 
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
