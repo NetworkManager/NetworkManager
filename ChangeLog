@@ -1,5 +1,11 @@
 2008-10-30  Dan Williams  <dcbw@redhat.com>
 
+	* src/ppp-manager/nm-ppp-manager.c
+		- (nm_ppp_manager_start): if /dev/ppp doesn't exist, load the
+			ppp_generic module to create it (bgo #533064)
+
+2008-10-30  Dan Williams  <dcbw@redhat.com>
+
 	Patch from Alexander Sack <asac@canonical.com>
 
 	Fix "ppp connections don't honour ip4 connection settings"
