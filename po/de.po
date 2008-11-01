@@ -6,60 +6,284 @@
 # Hendrik Richter <hendrikr@gnome.org>, 2006.
 # Thomas Gier <info@thomasgier.de>, 2007.
 # Andre Klapper <ak-47@gmx.net>, 2007.
+# Hauke Mehrtens <hauke@hauke-m.de>, 2008.
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-12-11 21:47+0100\n"
-"PO-Revision-Date: 2007-03-10 15:04+0100\n"
-"Last-Translator: Thomas Gier <info@thomasgier.de>\n"
+"POT-Creation-Date: 2008-10-22 18:45+0200\n"
+"PO-Revision-Date: 2008-10-22 18:58+0100\n"
+"Last-Translator: Hauke Mehrtens <hauke@hauke-m.de>\n"
 "Language-Team: German <gnome-de@gnome.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../src/nm-netlink-monitor.c:165
+#: ../src/nm-netlink-monitor.c:193
+#: ../src/nm-netlink-monitor.c:474
 #, c-format
-msgid ""
-"unable to create netlink socket for monitoring wired ethernet devices - %s"
-msgstr ""
-"Erstellen eines Netlink-Socket zur Überwachung von Kabelnetzwerkgeräten "
-"gescheitert - %s"
+msgid "error processing netlink message: %s"
+msgstr "Fehler beim Verarbeiten der netlink Nachricht: %s"
 
-#: ../src/nm-netlink-monitor.c:183
+#: ../src/nm-netlink-monitor.c:250
 #, c-format
-msgid ""
-"unable to bind to netlink socket for monitoring wired ethernet devices - %s"
-msgstr ""
-"Bindung an den Netlink-Socket zur Überwachung von Kabelnetzwerkgeräten "
-"gescheitert - %s"
+msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgstr "Kann netlink handle zur Überwachung von Netzwerkverbindung nicht belegen: %s"
 
-#: ../src/nm-netlink-monitor.c:407
-msgid "operation took too long"
-msgstr "Vorgang dauerte zu lange"
+#: ../src/nm-netlink-monitor.c:260
+#, c-format
+msgid "unable to connect to netlink for monitoring link status: %s"
+msgstr "Kann nicht mit netlink zur Überwachung von Netzwerkverbindung verbinden: %s"
 
-#: ../src/nm-netlink-monitor.c:504
-msgid "received data from wrong type of sender"
-msgstr "Daten von einem falschen Absendertyp erhalten"
+#: ../src/nm-netlink-monitor.c:268
+#, c-format
+msgid "unable to join netlink group for monitoring link status: %s"
+msgstr "Kann nicht mit netlink Gruppe zur Überwachung der Netzwerkverbindung verbinden: %s"
 
-#: ../src/nm-netlink-monitor.c:517
-msgid "received data from unexpected sender"
-msgstr "Daten von einem unerwarteten Absender erhalten"
+#: ../src/nm-netlink-monitor.c:276
+#, c-format
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
+msgstr "Kann netlink Cache zur Überwachung der Netzwerkverbindung nicht belegen: %s"
 
-#: ../src/nm-netlink-monitor.c:646
-msgid "too much data was sent over socket and some of it was lost"
-msgstr ""
-"Es wurden zu viele Daten über den Socket gesendet und einige davon sind "
-"verloren gegangen"
+#: ../src/nm-netlink-monitor.c:439
+#, c-format
+msgid "error updating link cache: %s"
+msgstr "Fehler beim aktualisieren des Verbindungscaches: %s"
 
-#: ../src/nm-netlink-monitor.c:724
+#: ../src/nm-netlink-monitor.c:497
+#, c-format
 msgid "error occurred while waiting for data on socket"
 msgstr "Während des Wartens auf Daten am Socket ist ein Fehler aufgetreten"
 
-#: ../src/NetworkManager.c:255
+#: ../src/NetworkManager.c:252
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
+msgstr "Ungültige Option.  Benutzen Sie --help um eine Liste der gültigen Optionen zu erhalten.\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:89
+#, fuzzy
+msgid "# Created by NetworkManager\n"
+msgstr "# Hergestellt vom NetworkManager\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:95
+#, fuzzy, c-format
+msgid ""
+"# Merged from %s\n"
+"\n"
 msgstr ""
-"Ungültige Option. Benutzen Sie »--help« um eine Liste der gültigen "
-"Optionen zu erhalten.\n"
+"# Merged aus %s\n"
+"\n"
+
+#: ../src/named-manager/nm-named-manager.c:256
+msgid "NOTE: the libc resolver may not support more than 3 nameservers."
+msgstr "Achtung: der libc resolver unterstützt wahrscheinlich nicht mehr als 3 Nameserver."
+
+#: ../src/named-manager/nm-named-manager.c:258
+msgid "The nameservers listed below may not be recognized."
+msgstr "Die Nameserver unter diesem werden wahrscheinlich nicht benutzt."
+
+#: ../system-settings/src/main.c:366
+#, fuzzy, c-format
+msgid "Auto %s"
+msgstr "Auto %s"
+
+#: ../libnm-util/crypto.c:125
+#, c-format
+msgid "PEM key file had no end tag '%s'."
+msgstr "PEM Schlüssel Datei hat keine abschließendes Tag '%s'."
+
+#: ../libnm-util/crypto.c:135
+#, c-format
+msgid "Doesn't look like a PEM private key file."
+msgstr "Das sieht nicht nach einem privatem PEM Schlüssel aus."
+
+#: ../libnm-util/crypto.c:143
+#, c-format
+msgid "Not enough memory to store PEM file data."
+msgstr "Es steht nicht genug Speicher zum Speichern der PEM Datei zur Verfügung."
+
+#: ../libnm-util/crypto.c:159
+#, c-format
+msgid "Malformed PEM file: Proc-Type was not first tag."
+msgstr "Fehlerhafte PEM Datei: Proc-Type ist nicht der erste Tag."
+
+#: ../libnm-util/crypto.c:167
+#, c-format
+msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
+msgstr "Fehlerhafte PEM Datei: unbekannter Proc-Type Tag '%s'."
+
+#: ../libnm-util/crypto.c:177
+#, c-format
+msgid "Malformed PEM file: DEK-Info was not the second tag."
+msgstr "Fehlerhafte PEM Datei: DEK-Info ist nicht der zweite Tag."
+
+#: ../libnm-util/crypto.c:188
+#, c-format
+msgid "Malformed PEM file: no IV found in DEK-Info tag."
+msgstr "Fehlerhafte PEM Datei: kein IV im DEK-Info Tag gefunden."
+
+#: ../libnm-util/crypto.c:195
+#, c-format
+msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
+msgstr "Fehlerhafte PEM Datei: falsches Format des IV in DEK-Info Tag."
+
+#: ../libnm-util/crypto.c:208
+#, c-format
+msgid "Malformed PEM file: unknown private key cipher '%s'."
+msgstr "Fehlerhafte PEM Datei: unbekannte Verschlüsselung '%s' des privaten Schlüssels."
+
+#: ../libnm-util/crypto.c:227
+#, c-format
+msgid "Could not decode private key."
+msgstr "Kann privaten Schlüssel nicht dekodieren."
+
+#: ../libnm-util/crypto.c:271
+#, c-format
+msgid "PEM certificate '%s' had no end tag '%s'."
+msgstr "PEM Zertifikat '%s' hat keine abschließendes Tag '%s'."
+
+#: ../libnm-util/crypto.c:281
+#, c-format
+msgid "Failed to decode certificate."
+msgstr "Fehler beim dekodieren des Zertifikats."
+
+#: ../libnm-util/crypto.c:290
+#: ../libnm-util/crypto.c:298
+#, c-format
+msgid "Not enough memory to store certificate data."
+msgstr "Nicht genug Speicher zum Speichern des Zertifikates."
+
+#: ../libnm-util/crypto.c:328
+#, c-format
+msgid "IV must be an even number of bytes in length."
+msgstr "IV muss eine gerade Anzahl an Zeichen lang sein."
+
+#: ../libnm-util/crypto.c:337
+#, c-format
+msgid "Not enough memory to store the IV."
+msgstr "Nicht genug Speicher zum Speicher des IV."
+
+#: ../libnm-util/crypto.c:348
+#, c-format
+msgid "IV contains non-hexadecimal digits."
+msgstr "IV enthält nicht hexadezimale Zeichen."
+
+#: ../libnm-util/crypto.c:386
+#: ../libnm-util/crypto_gnutls.c:143
+#: ../libnm-util/crypto_nss.c:157
+#, c-format
+msgid "Private key cipher '%s' was unknown."
+msgstr "Unbekannte Verschlüsselung '%s' des privaten Schlüssels."
+
+#: ../libnm-util/crypto.c:395
+#, c-format
+msgid "Not enough memory to decrypt private key."
+msgstr "Nicht genug Speicher zum entschlüsseln des privaten Schlüssels."
+
+#: ../libnm-util/crypto.c:513
+#, c-format
+msgid "Not enough memory to store decrypted private key."
+msgstr "Nicht genug Speicher zum Speichern des entschlüsselten privaten Schlüssels."
+
+#: ../libnm-util/crypto_gnutls.c:45
+msgid "Failed to initialize the crypto engine."
+msgstr "Fehler beim Initialisieren der Verschlüsselung."
+
+#: ../libnm-util/crypto_gnutls.c:89
+#, c-format
+msgid "Failed to initialize the MD5 engine: %s / %s."
+msgstr "Fehler beim Initialisieren von MD5: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:152
+#: ../libnm-util/crypto_nss.c:166
+#, c-format
+msgid "Not enough memory for decrypted key buffer."
+msgstr "Nicht genug Speicher für den Entschlüsselungs-Puffer."
+
+#: ../libnm-util/crypto_gnutls.c:160
+#, c-format
+msgid "Failed to initialize the decryption cipher context: %s / %s."
+msgstr "Fehler beim Initialisieren des Entschlüsselungs-Kontextes: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:169
+#, c-format
+msgid "Failed to set symmetric key for decryption: %s / %s."
+msgstr "Fehler beim setzen des symmetrischen Schlüssels für die Entschlüsselung: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:178
+#, c-format
+msgid "Failed to set IV for decryption: %s / %s."
+msgstr "Fehler beim setzen des IV für die Verschlüsselung: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:187
+#, c-format
+msgid "Failed to decrypt the private key: %s / %s."
+msgstr "Fehler beim Entschlüsseln des privaten Schlüssels: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:225
+#, c-format
+msgid "Error initializing certificate data: %s"
+msgstr "Fehler beim Initialisieren des Zertifikates: %s"
+
+#: ../libnm-util/crypto_gnutls.c:237
+#, c-format
+msgid "Couldn't decode certificate: %s"
+msgstr "Kann Zertifikat nicht dekodieren: %s"
+
+#: ../libnm-util/crypto_nss.c:52
+#, c-format
+msgid "Failed to initialize the crypto engine: %d."
+msgstr "Fehler beim Initialisieren der Verschlüsselung: %d."
+
+#: ../libnm-util/crypto_nss.c:98
+#, c-format
+msgid "Failed to initialize the MD5 context: %d."
+msgstr "Fehler beim Initialisieren des MD5-Kontextes: %d."
+
+#: ../libnm-util/crypto_nss.c:174
+#, c-format
+msgid "Failed to initialize the decryption cipher slot."
+msgstr "Fehler beim Initialisieren des Verschlüsselungs-Slots."
+
+#: ../libnm-util/crypto_nss.c:184
+#, c-format
+msgid "Failed to set symmetric key for decryption."
+msgstr "Fehler beim Setzen des symmetrischen Schlüssels für die Entschlüsselung."
+
+#: ../libnm-util/crypto_nss.c:194
+#, c-format
+msgid "Failed to set IV for decryption."
+msgstr "Fehler beim Setzten des IV für die Entschlüsselung."
+
+#: ../libnm-util/crypto_nss.c:202
+#, c-format
+msgid "Failed to initialize the decryption context."
+msgstr "Fehler beim Erstellen des Entschlüsselungs-Kontextes."
+
+#: ../libnm-util/crypto_nss.c:215
+#, c-format
+msgid "Failed to decrypt the private key: %d."
+msgstr "Fehler beim Entschlüsseln des privaten Schlüssels: %d."
+
+#: ../libnm-util/crypto_nss.c:227
+#, c-format
+msgid "Failed to finalize decryption of the private key: %d."
+msgstr "Fehler beim Beenden der Entschlüsselung des privaten Schlüssels: %d."
+
+#: ../libnm-util/crypto_nss.c:271
+#, c-format
+msgid "Couldn't decode certificate: %d"
+msgstr "Kann Zertifikate nicht Dekodieren: %d"
+
+#~ msgid "operation took too long"
+#~ msgstr "Vorgang dauerte zu lange"
+#~ msgid "received data from wrong type of sender"
+#~ msgstr "Daten von einem falschen Absendertyp erhalten"
+#~ msgid "received data from unexpected sender"
+#~ msgstr "Daten von einem unerwarteten Absender erhalten"
+#~ msgid "too much data was sent over socket and some of it was lost"
+#~ msgstr ""
+#~ "Es wurden zu viele Daten über den Socket gesendet und einige davon sind "
+#~ "verloren gegangen"
+
