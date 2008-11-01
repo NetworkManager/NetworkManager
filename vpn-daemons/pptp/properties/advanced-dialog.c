@@ -139,7 +139,7 @@ setup_security_combo (GladeXML *xml, GHashTable *hash)
 
 	store = gtk_list_store_new (1, G_TYPE_STRING);
 
-	/* Default */
+	/* Default (allow use of all encryption types that both server and client support) */
 	gtk_list_store_append (store, &iter);
 	gtk_list_store_set (store, &iter, 0, _("All Available (Default)"), -1);
 
