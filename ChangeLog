@@ -1,3 +1,10 @@
+2008-11-02  Dan Williams  <dcbw@redhat.com>
+
+	* src/NetworkManagerAP.c
+		- (nm_ap_new_fake_from_connection): treat only lack of a wireless security
+			setting as unencrypted; fixes a bug where NM wouldn't ask for new
+			secrets when connecting to an encrypted network failed
+
 2008-10-30  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/libnm-util.ver

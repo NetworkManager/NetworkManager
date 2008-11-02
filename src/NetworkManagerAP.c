@@ -598,6 +598,7 @@ nm_ap_new_fake_from_connection (NMConnection *connection)
 
 	s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (nm_connection_get_setting (connection,
 															    NM_TYPE_SETTING_WIRELESS_SECURITY));
+	/* Assume presence of a security setting means the AP is encrypted */
 	if (!s_wireless_sec)
 		goto done;
 
@@ -605,15 +606,9 @@ nm_ap_new_fake_from_connection (NMConnection *connection)
 
 	key_mgmt = nm_setting_wireless_security_get_key_mgmt (s_wireless_sec);
 
-	/* Static WEP or no security */
+	/* Static WEP */
 	if (!strcmp (key_mgmt, "none")) {
-		/* static wep? */
-		if (   nm_setting_wireless_security_get_wep_key (s_wireless_sec, 0)
-		    || nm_setting_wireless_security_get_wep_key (s_wireless_sec, 1)
-		    || nm_setting_wireless_security_get_wep_key (s_wireless_sec, 2)
-		    || nm_setting_wireless_security_get_wep_key (s_wireless_sec, 3))
-			nm_ap_set_flags (ap, flags | NM_802_11_AP_FLAGS_PRIVACY);		
-
+		nm_ap_set_flags (ap, flags | NM_802_11_AP_FLAGS_PRIVACY);
 		goto done;
 	}
 
