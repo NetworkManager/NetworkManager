@@ -1,5 +1,9 @@
 2008-11-02  Dan Williams  <dcbw@redhat.com>
 
+	* Tag 0.7.0-rc1
+
+2008-11-02  Dan Williams  <dcbw@redhat.com>
+
 	* src/NetworkManagerAP.c
 		- (nm_ap_new_fake_from_connection): treat only lack of a wireless security
 			setting as unencrypted; fixes a bug where NM wouldn't ask for new
