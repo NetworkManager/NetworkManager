@@ -990,9 +990,9 @@ connection_from_file (const char *filename,
 		g_free (lower);
 	}
 
-	if (!strcmp (type, TYPE_ETHERNET))
+	if (!strcasecmp (type, TYPE_ETHERNET))
 		connection = wired_connection_from_ifcfg (filename, parsed, *ignored, error);
-	else if (!strcmp (type, TYPE_WIRELESS))
+	else if (!strcasecmp (type, TYPE_WIRELESS))
 		connection = wireless_connection_from_ifcfg (filename, parsed, *ignored, error);
 	else {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
