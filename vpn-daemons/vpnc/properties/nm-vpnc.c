@@ -174,8 +174,9 @@ fill_vpn_passwords (VpncPluginUiWidget *self, NMConnection *connection)
 		NMSettingVPN *s_vpn;
 		const char *tmp;
 
+		s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
+
 		if (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_SYSTEM) {
-			s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
 			if (s_vpn) {
 				tmp = nm_setting_vpn_get_secret (s_vpn, NM_VPNC_KEY_XAUTH_PASSWORD);
 				if (tmp)
@@ -189,6 +190,14 @@ fill_vpn_passwords (VpncPluginUiWidget *self, NMConnection *connection)
 			s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 			keyring_helpers_lookup_secrets (nm_setting_connection_get_uuid (s_con),
 			                                &password, &group_password, NULL);
+
+			/* If they weren't in the keyring, maybe they are already in the conneciton
+			 * (from import, perhaps).
+			 */
+			if (!password)
+				password = gnome_keyring_memory_strdup (nm_setting_vpn_get_secret (s_vpn, NM_VPNC_KEY_XAUTH_PASSWORD));
+			if (!group_password)
+				group_password = gnome_keyring_memory_strdup (nm_setting_vpn_get_secret (s_vpn, NM_VPNC_KEY_SECRET));
 		}
 	}
 
@@ -674,6 +683,111 @@ next:
 	g_strfreev (substrs);
 }
 
+static void
+decrypt_child_finished_cb (GPid pid, gint status, gpointer userdata)
+{
+	int *child_status = (gint *) userdata;
+
+	*child_status = status;
+}
+
+static gboolean
+child_stdout_data_cb (GIOChannel *source, GIOCondition condition, gpointer userdata)
+{
+	char *str;
+	char **output = (char **) userdata;
+
+	if (*output || !(condition & (G_IO_IN | G_IO_ERR)))
+		return TRUE;
+
+	if (g_io_channel_read_line (source, &str, NULL, NULL, NULL) == G_IO_STATUS_NORMAL) {
+		int len;
+
+		len = strlen (str);
+		if (len > 0) {
+			/* remove terminating newline */
+			*output = g_strchomp (str);
+		} else
+			g_free (str);
+	}
+	return TRUE;
+}
+
+static char *
+decrypt_cisco_key (const char* enc_key)
+{
+	int child_stdout, child_status;
+	GPid child_pid;
+	guint32 ioid;
+	char *key = NULL;
+	GIOChannel *channel;
+	const char **decrypt_path;
+	GError *error = NULL;
+
+	const char *decrypt_possible_paths[] = {
+		"/usr/lib/vpnc/cisco-decrypt",
+		"/usr/bin/cisco-decrypt",
+		NULL
+	};
+
+	const char *argv[] = {
+		NULL, /* The path we figure out later. */
+		enc_key, /* The key in encrypted form */
+		NULL
+	};
+
+	/* Find the binary. */
+	decrypt_path = decrypt_possible_paths;
+	while (*decrypt_path != NULL){
+		if (g_file_test (*decrypt_path, G_FILE_TEST_EXISTS))
+			break;
+		++decrypt_path;
+	}
+
+	if (*decrypt_path == NULL){
+		g_warning ("Couldn't find cisco-decrypt.\n");
+		return NULL;
+	}
+
+	/* Now that we know where it is, we call the decrypter. */
+	argv[0] = *decrypt_path;
+	child_status = -1;
+
+	if (!g_spawn_async_with_pipes ("/", /* working directory */
+	                               (gchar **) argv, /* argv */
+	                               NULL , /* envp */
+	                               G_SPAWN_DO_NOT_REAP_CHILD, /* flags */
+	                               NULL, /* child setup */
+	                               NULL, /* user data */
+	                               &child_pid, /* child pid */
+	                               NULL, /* child stdin */
+	                               &child_stdout, /* child stdout */
+	                               NULL, /* child stderr */
+	                               &error)) { /* error */
+		/* The child did not spawn */
+		g_warning ("Error processing password: %s", error ? error->message : "(none)");
+		if (error)
+			g_error_free (error);
+		return NULL;
+	}
+
+	g_child_watch_add (child_pid, decrypt_child_finished_cb, (gpointer) &child_status);
+
+	/* Grab child output and wait for it to exit */
+	channel = g_io_channel_unix_new (child_stdout);
+	g_io_channel_set_encoding (channel, NULL, NULL);
+	ioid = g_io_add_watch (channel, G_IO_IN | G_IO_ERR, child_stdout_data_cb, &key);
+
+	while (child_status == -1) /* Wait until the child has finished. */
+		g_main_context_iteration (NULL, TRUE);
+
+	g_source_remove (ioid);
+	g_io_channel_shutdown (channel, TRUE, NULL);
+	g_io_channel_unref (channel);
+
+	return key;
+}
+
 static NMConnection *
 import (NMVpnPluginUiInterface *iface, const char *path, GError **error)
 {
@@ -735,6 +849,31 @@ import (NMVpnPluginUiInterface *iface, const char *path, GError **error)
 	have_value = buf == NULL ? FALSE : strlen (buf) > 0;
 	if (have_value)
 		nm_setting_vpn_add_data_item (s_vpn, NM_VPNC_KEY_XAUTH_USER, buf);
+
+	buf = pcf_file_lookup_value (pcf, "main", "UserPassword");
+	have_value = buf == NULL ? FALSE : strlen (buf) > 0;
+	if (have_value)
+		nm_setting_vpn_add_secret (s_vpn, NM_VPNC_KEY_XAUTH_PASSWORD, buf);
+
+	buf = pcf_file_lookup_value (pcf, "main", "GroupPwd");
+	have_value = buf == NULL ? FALSE : strlen (buf) > 0;
+	if (have_value)
+		nm_setting_vpn_add_secret (s_vpn, NM_VPNC_KEY_SECRET, buf);
+	else {
+		/* Handle encrypted passwords */
+		buf = pcf_file_lookup_value (pcf, "main", "enc_GroupPwd");
+		have_value = buf == NULL ? FALSE : strlen (buf) > 0;
+		if (have_value) {
+			char *decrypted;
+
+			decrypted = decrypt_cisco_key (buf);
+			if (decrypted) {
+				nm_setting_vpn_add_secret (s_vpn, NM_VPNC_KEY_SECRET, decrypted);
+				memset (decrypted, 0, strlen (decrypted));
+				g_free (decrypted);
+			}
+		}
+	}
 
 	buf = pcf_file_lookup_value (pcf, "main", "NTDomain");
 	have_value = buf == NULL ? FALSE : strlen (buf) > 0;

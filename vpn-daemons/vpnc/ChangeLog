@@ -1,3 +1,13 @@
+2008-11-03  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Carlos Martín Nieto <carlos@cmartin.tk> (and me) (bgo #547582)
+
+	* properties/nm-vpnc.c
+		- (import, fill_vpn_passwords): import passwords too
+		- (decrypt_cisco_key, child_stdout_data_cb, decrypt_child_finished_cb):
+			call out to cisco-decrypt if present to de-obfuscate the group
+			password
+
 2008-10-26  Dan Williams  <dcbw@redhat.com>
 
 	* properties/nm-vpnc.c
