@@ -1,3 +1,25 @@
+2008-11-03  Dan Williams  <dcbw@redhat.com>
+
+	* system-settings/src/main.c
+		- (add_default_dhcp_connection): make the fallback connection read-only
+
+	* libnm-glib/nm-settings.c
+	  libnm-glib/nm-settings.h
+		- Add detailed errors
+		- (impl_exported_connection_update, impl_exported_connection_delete):
+			return an error if the connection is read-only
+
+	* system-settings/plugins/ifupdown/nm-ifupdown-connection.c
+	  system-settings/plugins/keyfile/nm-keyfile-connection.c
+	  system-settings/src/main.c
+		- Use more detailed errors
+
+	* system-settings/src/nm-system-config-error.c
+	  system-settings/src/nm-system-config-error.h
+	  system-settings/src/dbus-settings.c
+		- Remove NM_SYSCONFIG_SETTINGS_ERROR_INVALID_CONNECTION, replaced by
+			NM_SETTINGS_ERROR_INVALID_CONNECTION
+
 2008-11-02  Dan Williams  <dcbw@redhat.com>
 
 	* Add license headers to everything in src/

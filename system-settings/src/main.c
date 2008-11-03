@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /* NetworkManager system settings service
  *
  * Søren Sandmann <sandmann@daimi.au.dk>
@@ -380,6 +381,7 @@ add_default_dhcp_connection (gpointer user_data)
 		      NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
 		      NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
 		      NM_SETTING_CONNECTION_UUID, uuid,
+		      NM_SETTING_CONNECTION_READ_ONLY, TRUE,
 		      NULL);
 
 	nm_connection_add_setting (wrapped, NM_SETTING (s_con));

@@ -10,8 +10,18 @@
 
 G_BEGIN_DECLS
 
-#define NM_SETTINGS_ERROR nm_settings_error_quark ()
+typedef enum
+{
+	NM_SETTINGS_ERROR_INVALID_CONNECTION = 0,
+	NM_SETTINGS_ERROR_READ_ONLY_CONNECTION,
+	NM_SETTINGS_ERROR_INTERNAL_ERROR,
+	NM_SETTINGS_ERROR_SECRETS_UNAVAILABLE,
+	NM_SETTINGS_ERROR_SECRETS_REQUEST_CANCELED
+} NMSettingsError;
+
+#define NM_SETTINGS_ERROR (nm_settings_error_quark ())
 GQuark nm_settings_error_quark (void);
+
 
 #define NM_TYPE_EXPORTED_CONNECTION            (nm_exported_connection_get_type ())
 #define NM_EXPORTED_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_EXPORTED_CONNECTION, NMExportedConnection))

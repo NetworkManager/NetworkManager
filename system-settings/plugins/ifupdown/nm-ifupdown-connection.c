@@ -28,6 +28,7 @@
 #include <nm-setting-wireless-security.h>
 #include <nm-system-config-interface.h>
 #include <nm-system-config-error.h>
+#include <nm-settings.h>
 #include "nm-ifupdown-connection.h"
 #include "parser.h"
 
@@ -217,8 +218,8 @@ service_get_secrets (NMExportedConnection *exported,
 	setting = nm_connection_get_setting_by_name (connection, setting_name);
 
 	if (!setting) {
-		g_set_error (&error, NM_SYSCONFIG_SETTINGS_ERROR,
-				   NM_SYSCONFIG_SETTINGS_ERROR_INVALID_CONNECTION,
+		g_set_error (&error, NM_SETTINGS_ERROR,
+				   NM_SETTINGS_ERROR_INVALID_CONNECTION,
 				   "%s.%d - Connection didn't have requested setting '%s'.",
 				   __FILE__, __LINE__, setting_name);
 		PLUGIN_PRINT ("SCPlugin-Ifupdown", "%s", error->message);
@@ -231,7 +232,7 @@ service_get_secrets (NMExportedConnection *exported,
 							    g_free, (GDestroyNotify) g_hash_table_destroy);
 
 	if (!settings) {
-		g_set_error (&error, NM_SETTINGS_ERROR, 0,
+		g_set_error (&error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INTERNAL_ERROR,
 				   "%s.%d - failed to hash setting (OOM?)",
 				   __FILE__, __LINE__);
 		dbus_g_method_return_error (context, error);
@@ -245,7 +246,7 @@ service_get_secrets (NMExportedConnection *exported,
 			g_hash_table_insert(settings, g_strdup(setting_name), secrets);
 			dbus_g_method_return (context, settings);
 		} else {
-			g_set_error (&error, NM_SETTINGS_ERROR, 0,
+			g_set_error (&error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INTERNAL_ERROR,
 					   "%s.%d - nm_setting_to_hash failed (OOM?)",
 					   __FILE__, __LINE__);
 			dbus_g_method_return_error (context, error);

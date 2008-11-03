@@ -22,6 +22,7 @@
 #include <string.h>
 #include <glib/gstdio.h>
 #include <NetworkManager.h>
+#include <nm-settings.h>
 #include <nm-setting-connection.h>
 #include <nm-utils.h>
 
@@ -131,7 +132,7 @@ extract_secrets (NMKeyfileConnection *exported,
 
 	tmp = connection_from_file (priv->filename, TRUE);
 	if (!tmp) {
-		g_set_error (error, NM_SETTINGS_ERROR, 1,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_SECRETS_UNAVAILABLE,
 		             "%s.%d - Could not read secrets from file %s.",
 		             __FILE__, __LINE__, priv->filename);
 		return NULL;
@@ -140,7 +141,7 @@ extract_secrets (NMKeyfileConnection *exported,
 	setting = nm_connection_get_setting_by_name (tmp, setting_name);
 	if (!setting) {
 		g_object_unref (tmp);
-		g_set_error (error, NM_SETTINGS_ERROR, 1,
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_SECRETS_UNAVAILABLE,
 		             "%s.%d - Could not read secrets from file %s.",
 		             __FILE__, __LINE__, priv->filename);
 		return NULL;
@@ -171,7 +172,7 @@ service_get_secrets (NMExportedConnection *exported,
 	connection = nm_exported_connection_get_connection (exported);
 	setting = nm_connection_get_setting_by_name (connection, setting_name);
 	if (!setting) {
-		g_set_error (&error, NM_SETTINGS_ERROR, 1,
+		g_set_error (&error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "%s.%d - Connection didn't have requested setting '%s'.",
 		             __FILE__, __LINE__, setting_name);
 		goto error;

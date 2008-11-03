@@ -7,6 +7,8 @@
 #include "nm-dbus-glib-types.h"
 
 
+#define NM_TYPE_SETTINGS_ERROR (nm_settings_error_get_type ()) 
+
 /**
  * nm_settings_error_quark:
  *
@@ -23,6 +25,34 @@ nm_settings_error_quark (void)
 		quark = g_quark_from_static_string ("nm-settings-error-quark");
 	return quark;
 }
+
+/* This should really be standard. */
+#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
+
+static GType
+nm_settings_error_get_type (void)
+{
+	static GType etype = 0;
+
+	if (etype == 0) {
+		static const GEnumValue values[] = {
+			/* The connection was invalid. */
+			ENUM_ENTRY (NM_SETTINGS_ERROR_INVALID_CONNECTION, "InvalidConnection"),
+			/* The connection is read-only; modifications are not allowed. */
+			ENUM_ENTRY (NM_SETTINGS_ERROR_READ_ONLY_CONNECTION, "ReadOnlyConnection"),
+			/* A bug in the settings service caused the error. */
+			ENUM_ENTRY (NM_SETTINGS_ERROR_INTERNAL_ERROR, "InternalError"),
+			/* Retrieval or request of secrets failed. */
+			ENUM_ENTRY (NM_SETTINGS_ERROR_SECRETS_UNAVAILABLE, "SecretsUnavailable"),
+			/* The request for secrets was canceled. */
+			ENUM_ENTRY (NM_SETTINGS_ERROR_SECRETS_REQUEST_CANCELED, "SecretsRequestCanceled"),
+			{ 0, 0, 0 },
+		};
+		etype = g_enum_register_static ("NMSettingsError", values);
+	}
+	return etype;
+}
+
 
 /*
  * NMSettings implementation
@@ -107,6 +137,8 @@ nm_settings_class_init (NMSettingsClass *settings_class)
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (settings_class),
 					 &dbus_glib_nm_settings_object_info);
+
+	dbus_g_error_domain_register (NM_SETTINGS_ERROR, NULL, NM_TYPE_SETTINGS_ERROR);
 }
 
 /**
@@ -227,12 +259,28 @@ impl_exported_connection_update (NMExportedConnection *connection,
 						   DBusGMethodInvocation *context)
 {
 	GError *err = NULL;
-	gboolean success;
+	NMConnection *wrapped;
+	gboolean success = FALSE;
 
-	/* A hack to share the DBusGMethodInvocation with the possible overriders of connection::delete */
-	g_object_set_data (G_OBJECT (connection), NM_EXPORTED_CONNECTION_DBUS_METHOD_INVOCATION, context);
-	success = nm_exported_connection_update (connection, new_settings, &err);
-	g_object_set_data (G_OBJECT (connection), NM_EXPORTED_CONNECTION_DBUS_METHOD_INVOCATION, NULL);
+	/* Read-only connections obviously cannot be changed */
+	wrapped = nm_exported_connection_get_connection (connection);
+	if (wrapped) {
+		NMSettingConnection *s_con;
+
+		s_con = (NMSettingConnection *) nm_connection_get_setting (wrapped, NM_TYPE_SETTING_CONNECTION);
+		if (s_con && nm_setting_connection_get_read_only (s_con)) {
+			g_set_error (&err, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_READ_ONLY_CONNECTION,
+			             "%s.%d - Read-only connections may not be modified.",
+			             __FILE__, __LINE__);
+		}
+	}
+
+	if (!err) {
+		/* A hack to share the DBusGMethodInvocation with the possible overriders of connection::update */
+		g_object_set_data (G_OBJECT (connection), NM_EXPORTED_CONNECTION_DBUS_METHOD_INVOCATION, context);
+		success = nm_exported_connection_update (connection, new_settings, &err);
+		g_object_set_data (G_OBJECT (connection), NM_EXPORTED_CONNECTION_DBUS_METHOD_INVOCATION, NULL);
+	}
 
 	if (success) {
 		dbus_g_method_return (context);
@@ -249,12 +297,28 @@ impl_exported_connection_delete (NMExportedConnection *connection,
 						   DBusGMethodInvocation *context)
 {
 	GError *err = NULL;
-	gboolean success;
+	NMConnection *wrapped;
+	gboolean success = FALSE;
 
-	/* A hack to share the DBusGMethodInvocation with the possible overriders of connection::delete */
-	g_object_set_data (G_OBJECT (connection), NM_EXPORTED_CONNECTION_DBUS_METHOD_INVOCATION, context);
-	success = nm_exported_connection_delete (connection, &err);
-	g_object_set_data (G_OBJECT (connection), NM_EXPORTED_CONNECTION_DBUS_METHOD_INVOCATION, NULL);
+	/* Read-only connections obviously cannot be changed */
+	wrapped = nm_exported_connection_get_connection (connection);
+	if (wrapped) {
+		NMSettingConnection *s_con;
+
+		s_con = (NMSettingConnection *) nm_connection_get_setting (wrapped, NM_TYPE_SETTING_CONNECTION);
+		if (s_con && nm_setting_connection_get_read_only (s_con)) {
+			g_set_error (&err, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_READ_ONLY_CONNECTION,
+			             "%s.%d - Read-only connections may not be deleted.",
+			             __FILE__, __LINE__);
+		}
+	}
+
+	if (!err) {
+		/* A hack to share the DBusGMethodInvocation with the possible overriders of connection::delete */
+		g_object_set_data (G_OBJECT (connection), NM_EXPORTED_CONNECTION_DBUS_METHOD_INVOCATION, context);
+		success = nm_exported_connection_delete (connection, &err);
+		g_object_set_data (G_OBJECT (connection), NM_EXPORTED_CONNECTION_DBUS_METHOD_INVOCATION, NULL);
+	}
 
 	if (success) {
 		dbus_g_method_return (context);
@@ -276,7 +340,7 @@ impl_exported_connection_get_secrets (NMExportedConnection *connection,
 	GError *error = NULL;
 
 	if (!NM_IS_EXPORTED_CONNECTION (connection)) {
-		g_set_error (&error, NM_SETTINGS_ERROR, 1,
+		g_set_error (&error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
 		             "%s.%d - Invalid connection in ConnectionSettings::GetSecrets.",
 		             __FILE__, __LINE__);
 		dbus_g_method_return_error (context, error);
@@ -285,7 +349,7 @@ impl_exported_connection_get_secrets (NMExportedConnection *connection,
 	}
 
 	if (!EXPORTED_CONNECTION_CLASS (connection)->service_get_secrets) {
-		g_set_error (&error, NM_SETTINGS_ERROR, 1,
+		g_set_error (&error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_SECRETS_UNAVAILABLE,
 		             "%s.%d - Missing implementation for ConnectionSettings::GetSecrets.",
 		             __FILE__, __LINE__);
 		dbus_g_method_return_error (context, error);

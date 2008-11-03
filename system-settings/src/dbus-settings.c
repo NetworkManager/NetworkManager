@@ -564,11 +564,10 @@ impl_settings_add_connection (NMSysconfigSettings *self,
 		}
 	} else {
 		/* Invalid connection hash */
-		err = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
-					    NM_SYSCONFIG_SETTINGS_ERROR_INVALID_CONNECTION,
-					    "Invalid connection: '%s' / '%s' invalid: %d",
-					    g_type_name (nm_connection_lookup_setting_type_by_quark (cnfh_error->domain)),
-					    cnfh_error->message, cnfh_error->code);
+		err = g_error_new (NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		                   "Invalid connection: '%s' / '%s' invalid: %d",
+		                   g_type_name (nm_connection_lookup_setting_type_by_quark (cnfh_error->domain)),
+		                   cnfh_error->message, cnfh_error->code);
 		g_error_free (cnfh_error);
 	}
 
