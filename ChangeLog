@@ -1,5 +1,9 @@
 2008-11-02  Dan Williams  <dcbw@redhat.com>
 
+	* Add license headers to everything in src/
+
+2008-11-02  Dan Williams  <dcbw@redhat.com>
+
 	* Tag 0.7.0-rc1
 
 2008-11-02  Dan Williams  <dcbw@redhat.com>
