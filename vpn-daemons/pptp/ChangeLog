@@ -1,3 +1,19 @@
+2008-11-04  Dan Williams  <dcbw@redhat.com>
+
+	Fix bgo #559152
+
+	* src/nm-pptp-pppd-plugin.c
+		- (nm_ip_up): remote peer's address is the PTP address, not the external
+			gateway address
+
+	* src/nm-pptp-service.c
+		- (construct_pppd_args): allow easier PPP debugging
+		- (service_ip4_config_cb): insert the VPN gateway's public IP address
+			into the IP4 config
+		- (real_connect, real_disconnect, state_changed_cb, dispose): cache
+			the connection so that the VPN gateway's public IP address can be
+			retrieved from it when the IP4 config comes back from pppd
+
 2008-10-26  Dan Williams  <dcbw@redhat.com>
 
 	* properties/nm-pptp.c

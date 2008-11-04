@@ -179,14 +179,14 @@ nm_ip_up (void *data, int arg)
 	 * and if that's not right, use the made-up address as a last resort.
 	 */
 	if (peer_opts.hisaddr && (peer_opts.hisaddr != pppd_made_up_address)) {
-		g_hash_table_insert (hash, NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY,
+		g_hash_table_insert (hash, NM_VPN_PLUGIN_IP4_CONFIG_PTP,
 		                     uint_to_gvalue (peer_opts.hisaddr));
 	} else if (opts.hisaddr) {
-		g_hash_table_insert (hash, NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY,
+		g_hash_table_insert (hash, NM_VPN_PLUGIN_IP4_CONFIG_PTP,
 		                     uint_to_gvalue (opts.hisaddr));
 	} else if (peer_opts.hisaddr == pppd_made_up_address) {
 		/* As a last resort, use the made-up address */
-		g_hash_table_insert (hash, NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY,
+		g_hash_table_insert (hash, NM_VPN_PLUGIN_IP4_CONFIG_PTP,
 		                     uint_to_gvalue (peer_opts.hisaddr));
 	}
 

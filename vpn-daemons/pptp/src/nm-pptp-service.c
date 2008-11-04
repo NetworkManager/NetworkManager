@@ -35,6 +35,7 @@
 #include <sys/ioctl.h>
 #include <asm/types.h>
 #include <net/if.h>
+#include <arpa/inet.h>
 
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
@@ -357,6 +358,7 @@ typedef struct {
 	GPid pid;
 	guint32 ppp_timeout_handler;
 	NMPptpPppService *service;
+	NMConnection *connection;
 } NMPptpPluginPrivate;
 
 #define NM_PPTP_PLUGIN_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_PPTP_PLUGIN, NMPptpPluginPrivate))
@@ -710,6 +712,9 @@ construct_pppd_args (NMPptpPlugin *plugin,
 	tmp = g_strdup_printf ("%s %s --nolaunchpppd --logstring %s", pptp_binary, value, ipparam);
 	g_ptr_array_add (args, (gpointer) tmp);
 
+	if (getenv ("NM_PPP_DEBUG"))
+		g_ptr_array_add (args, (gpointer) g_strdup ("debug"));
+
 	/* PPP options */
 	g_ptr_array_add (args, (gpointer) g_strdup ("ipparam"));
 	g_ptr_array_add (args, (gpointer) ipparam);
@@ -900,11 +905,85 @@ service_ppp_state_cb (NMPptpPppService *service,
 }
 
 static void
+nm_gvalue_destroy (gpointer data)
+{
+	g_value_unset ((GValue *) data);
+	g_slice_free (GValue, data);
+}
+
+static GValue *
+nm_gvalue_dup (const GValue *value)
+{
+	GValue *dup;
+
+	dup = g_slice_new0 (GValue);
+	g_value_init (dup, G_VALUE_TYPE (value));
+	g_value_copy (value, dup);
+
+	return dup;
+}
+
+static void
+copy_hash (gpointer key, gpointer value, gpointer user_data)
+{
+	g_hash_table_insert ((GHashTable *) user_data, g_strdup (key), nm_gvalue_dup ((GValue *) value));
+}
+
+static GValue *
+get_pptp_gw_address_as_gvalue (NMConnection *connection)
+{
+	NMSettingVPN *s_vpn;
+	const char *tmp;
+	GValue *value;
+	struct in_addr addr;
+
+	s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
+	if (!s_vpn) {
+		nm_warning ("couldn't get VPN setting");
+		return NULL;
+	}
+
+	tmp = nm_setting_vpn_get_data_item (s_vpn, NM_PPTP_KEY_GATEWAY);
+	if (!tmp || !strlen (tmp)) {
+		nm_warning ("couldn't get PPTP VPN gateway IP address");
+		return NULL;
+	}
+	
+	errno = 0;
+	if (inet_pton (AF_INET, tmp, &addr) <= 0) {
+		nm_warning ("couldn't convert PPTP VPN gateway IP address '%s' (%d)", tmp, errno);
+		return NULL;
+	}
+	
+	value = g_slice_new0 (GValue);
+	g_value_init (value, G_TYPE_UINT);
+	g_value_set_uint (value, (guint32) addr.s_addr);
+
+	return value;
+}
+
+static void
 service_ip4_config_cb (NMPptpPppService *service,
                        GHashTable *config_hash,
                        NMPptpPlugin *plugin)
 {
-	nm_vpn_plugin_set_ip4_config (NM_VPN_PLUGIN (plugin), config_hash);
+	NMPptpPluginPrivate *priv = NM_PPTP_PLUGIN_GET_PRIVATE (plugin);
+	GHashTable *hash;
+	GValue *value;
+
+	hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, nm_gvalue_destroy);
+	g_hash_table_foreach (config_hash, copy_hash, hash);
+
+	/* Insert the external VPN gateway into the table, which the pppd plugin
+	 * simply doesn't know about.
+	 */
+	value = get_pptp_gw_address_as_gvalue (priv->connection);
+	if (value)
+		g_hash_table_insert (hash, g_strdup (NM_PPTP_KEY_GATEWAY), value);
+
+	nm_vpn_plugin_set_ip4_config (NM_VPN_PLUGIN (plugin), hash);
+
+	g_hash_table_destroy (hash);
 }
 
 static gboolean
@@ -927,6 +1006,10 @@ real_connect (NMVPNPlugin   *plugin,
 	/* Start our pppd plugin helper service */
 	if (priv->service)
 		g_object_unref (priv->service);
+	if (priv->connection) {
+		g_object_unref (priv->connection);
+		priv->connection = NULL;
+	}
 
 	priv->service = nm_pptp_ppp_service_new ();
 	if (!priv->service) {
@@ -937,6 +1020,9 @@ real_connect (NMVPNPlugin   *plugin,
 		             "Could not start pppd plugin helper service.");
 		return FALSE;
 	}
+
+	priv->connection = g_object_ref (connection);
+
 	g_signal_connect (G_OBJECT (priv->service), "plugin-alive", G_CALLBACK (service_plugin_alive_cb), plugin);
 	g_signal_connect (G_OBJECT (priv->service), "ppp-state", G_CALLBACK (service_ppp_state_cb), plugin);
 	g_signal_connect (G_OBJECT (priv->service), "ip4-config", G_CALLBACK (service_ip4_config_cb), plugin);
@@ -1001,6 +1087,11 @@ real_disconnect (NMVPNPlugin   *plugin,
 		priv->pid = 0;
 	}
 
+	if (priv->connection) {
+		g_object_unref (priv->connection);
+		priv->connection = NULL;
+	}
+
 	if (priv->service) {
 		g_object_unref (priv->service);
 		priv->service = NULL;
@@ -1015,13 +1106,19 @@ state_changed_cb (GObject *object, NMVPNServiceState state, gpointer user_data)
 	NMPptpPluginPrivate *priv = NM_PPTP_PLUGIN_GET_PRIVATE (object);
 
 	switch (state) {
+	case NM_VPN_SERVICE_STATE_STARTED:
+		remove_timeout_handler (NM_PPTP_PLUGIN (object));
+		break;
 	case NM_VPN_SERVICE_STATE_UNKNOWN:
 	case NM_VPN_SERVICE_STATE_INIT:
 	case NM_VPN_SERVICE_STATE_SHUTDOWN:
-	case NM_VPN_SERVICE_STATE_STARTED:
 	case NM_VPN_SERVICE_STATE_STOPPING:
 	case NM_VPN_SERVICE_STATE_STOPPED:
 		remove_timeout_handler (NM_PPTP_PLUGIN (object));
+		if (priv->connection) {
+			g_object_unref (priv->connection);
+			priv->connection = NULL;
+		}
 		if (priv->service) {
 			g_object_unref (priv->service);
 			priv->service = NULL;
@@ -1036,6 +1133,9 @@ static void
 dispose (GObject *object)
 {
 	NMPptpPluginPrivate *priv = NM_PPTP_PLUGIN_GET_PRIVATE (object);
+
+	if (priv->connection)
+		g_object_unref (priv->connection);
 
 	if (priv->service)
 		g_object_unref (priv->service);
