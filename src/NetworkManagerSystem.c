@@ -270,7 +270,7 @@ add_ip4_addresses (NMIP4Config *config, const char *iface)
 static void
 add_vpn_gateway_route (NMDevice *parent_device,
                        const char *iface,
-                       NMIP4Config *config)
+                       NMIP4Config *vpn_config)
 {
 	NMIP4Config *parent_config;
 	guint32 parent_gw = 0, parent_prefix = 0, vpn_gw = 0, i;
@@ -294,8 +294,8 @@ add_vpn_gateway_route (NMDevice *parent_device,
 		}
 	}
 
-	for (i = 0; i < nm_ip4_config_get_num_addresses (config); i++) {
-		tmp = nm_ip4_config_get_address (config, i);
+	for (i = 0; i < nm_ip4_config_get_num_addresses (vpn_config); i++) {
+		tmp = nm_ip4_config_get_address (vpn_config, i);
 		if (nm_ip4_address_get_gateway (tmp)) {
 			vpn_gw = nm_ip4_address_get_gateway (tmp);
 			break;
