@@ -500,6 +500,7 @@ initscript/RedHat/NetworkManager
 initscript/Gentoo/Makefile
 initscript/Gentoo/NetworkManager
 initscript/Debian/Makefile
+initscript/Debian/NetworkManager
 initscript/Slackware/Makefile
 initscript/Slackware/rc.networkmanager
 initscript/SUSE/Makefile
