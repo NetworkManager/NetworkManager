@@ -17,6 +17,7 @@ set -e
 prefix=@prefix@
 exec_prefix=@prefix@
 sbindir=@sbindir@
+localstatedir=@localstatedir@
 
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 DESC="network connection manager"
@@ -24,7 +25,7 @@ NAME="NetworkManager"
 
 DAEMON=${sbindir}/$NAME
 
-PIDDIR=/var/run/NetworkManager
+PIDDIR=${localstatedir}/run/NetworkManager
 PIDFILE=$PIDDIR/$NAME.pid
 
 USER=root
