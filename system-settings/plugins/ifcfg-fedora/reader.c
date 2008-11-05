@@ -271,7 +271,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 		g_free (value);
 	}
 
-	if (nm_ip4_address_get_address (addr) && nm_ip4_address_get_prefix (addr)) {
+	if (addr) {
 		if (!nm_setting_ip4_config_add_address (s_ip4, addr))
 			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    warning: duplicate IP4 address");
 	}
