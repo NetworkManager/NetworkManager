@@ -649,7 +649,7 @@ static EAPMethodsTable eap_methods_table[] = {
 	{ "mschapv2", need_secrets_password, verify_identity },
 	{ "fast", need_secrets_password, verify_identity },
 	{ "tls", need_secrets_tls, verify_tls },
-	{ "peap", need_secrets_phase2, NULL },
+	{ "peap", need_secrets_phase2, verify_ttls },
 	{ "ttls", need_secrets_phase2, verify_ttls },
 	{ "sim", need_secrets_sim, NULL },
 	{ "gtc", NULL, NULL },  // FIXME: implement

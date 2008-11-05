@@ -1,3 +1,7 @@
+2008-11-05  Tambet Ingo  <tambet@gmail.com>
+
+	* libnm-util/nm-setting-8021x.c: Verify PEAP settings as well.
+
 2008-11-03  Dan Williams  <dcbw@redhat.com>
 
 	* system-settings/src/main.c
