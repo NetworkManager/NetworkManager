@@ -36,6 +36,7 @@
 #define NM_DHCP_MANAGER_PID_FILENAME	"dhclient"
 #define NM_DHCP_MANAGER_PID_FILE_EXT	"pid"
 
+#define NM_DHCP_MANAGER_LEASE_DIR       LOCALSTATEDIR "/lib/dhclient"
 #define NM_DHCP_MANAGER_LEASE_FILENAME	"dhclient"
 #define NM_DHCP_MANAGER_LEASE_FILE_EXT	"lease"
 
@@ -57,7 +58,7 @@ static char *
 get_leasefile_for_iface (const char * iface)
 {
 	return g_strdup_printf ("%s/%s-%s.%s",
-	                        NM_DHCP_MANAGER_RUN_DIR,
+	                        NM_DHCP_MANAGER_LEASE_DIR,
 	                        NM_DHCP_MANAGER_LEASE_FILENAME,
 	                        iface,
 	                        NM_DHCP_MANAGER_LEASE_FILE_EXT);
