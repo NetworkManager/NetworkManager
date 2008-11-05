@@ -306,7 +306,9 @@ update_etc_hosts (const char *hostname)
 
 		if (add_line) {
 			g_string_append (new_contents, *line);
-			g_string_append_c (new_contents, '\n');
+			/* Only append the new line if this isn't the last line in the file */
+			if (*(line+1))
+				g_string_append_c (new_contents, '\n');
 		}
 	}
 
