@@ -101,4 +101,18 @@ void          nm_ip4_config_set_mss             (NMIP4Config *config, guint32 ms
 
 struct rtnl_addr *nm_ip4_config_to_rtnl_addr (NMIP4Config *config, guint32 i, guint32 flags);
 
+typedef enum {
+	NM_IP4_COMPARE_FLAG_EXACT       = 0x00000000,  /* match exactly */
+	NM_IP4_COMPARE_FLAG_ADDRESSES   = 0x00000001,
+	NM_IP4_COMPARE_FLAG_PTP_ADDRESS = 0x00000002,
+	NM_IP4_COMPARE_FLAG_NAMESERVERS = 0x00000004,
+	NM_IP4_COMPARE_FLAG_ROUTES      = 0x00000008,
+	NM_IP4_COMPARE_FLAG_DOMAINS     = 0x00000010,
+	NM_IP4_COMPARE_FLAG_SEARCHES    = 0x00000020,
+	NM_IP4_COMPARE_FLAG_MTU         = 0x00000040,
+	NM_IP4_COMPARE_FLAG_MSS         = 0x00000080
+} NMIP4ConfigCompareFlags;
+
+gboolean nm_ip4_config_compare (NMIP4Config *a, NMIP4Config *b, NMIP4ConfigCompareFlags flags);
+
 #endif /* NM_IP4_CONFIG_H */

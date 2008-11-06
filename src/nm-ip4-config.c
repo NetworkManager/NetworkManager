@@ -453,6 +453,188 @@ nm_ip4_config_to_rtnl_addr (NMIP4Config *config, guint32 i, guint32 flags)
 	return addr;
 }
 
+static gboolean
+addr_slist_compare (GSList *a, GSList *b)
+{
+	GSList *iter_a, *iter_b;
+	gboolean found = FALSE;
+
+	for (iter_a = a; iter_a; iter_a = g_slist_next (iter_a)) {
+		NMIP4Address *addr_a = (NMIP4Address *) iter_a->data;
+
+		for (iter_b = b, found = FALSE; iter_b; iter_b = g_slist_next (iter_b)) {
+			NMIP4Address *addr_b = (NMIP4Address *) iter_b->data;
+
+			if (nm_ip4_address_compare (addr_a, addr_b)) {
+				found = TRUE;
+				break;
+			}
+		}
+
+		if (!found)
+			return FALSE;
+	}
+	return TRUE;
+}
+
+static gboolean
+route_slist_compare (GSList *a, GSList *b)
+{
+	GSList *iter_a, *iter_b;
+	gboolean found = FALSE;
+
+	for (iter_a = a; iter_a; iter_a = g_slist_next (iter_a)) {
+		NMIP4Route *route_a = (NMIP4Route *) iter_a->data;
+
+		for (iter_b = b, found = FALSE; iter_b; iter_b = g_slist_next (iter_b)) {
+			NMIP4Route *route_b = (NMIP4Route *) iter_b->data;
+
+			if (nm_ip4_route_compare (route_a, route_b)) {
+				found = TRUE;
+				break;
+			}
+		}
+
+		if (!found)
+			return FALSE;
+	}
+	return TRUE;
+}
+
+static gboolean
+string_array_compare (GPtrArray *a, GPtrArray *b)
+{
+	int i, j;
+	gboolean found = FALSE;
+
+	for (i = 0; i < a->len; i++) {
+		for (j = 0, found = FALSE; j < b->len; j++) {
+			const char *item_a = g_ptr_array_index (a, i);
+			const char *item_b = g_ptr_array_index (b, j);
+
+			if ((!item_a && !item_b) || (item_a && item_b && !strcmp (item_a, item_b))) {
+				found = TRUE;
+				break;
+			}
+		}
+
+		if (!found)
+			return FALSE;
+	}
+	return TRUE;
+}
+
+static gboolean
+addr_array_compare (GArray *a, GArray *b)
+{
+	int i, j;
+	gboolean found = FALSE;
+
+	for (i = 0; i < a->len; i++) {
+		for (j = 0, found = FALSE; j < b->len; j++) {
+			if (g_array_index (a, guint32, i) == g_array_index (b, guint32, j)) {
+				found = TRUE;
+				break;
+			}
+		}
+
+		if (!found)
+			return FALSE;
+	}
+	return TRUE;
+}
+
+gboolean
+nm_ip4_config_compare (NMIP4Config *a,
+                       NMIP4Config *b,
+                       NMIP4ConfigCompareFlags flags)
+{
+	NMIP4ConfigPrivate *a_priv = NM_IP4_CONFIG_GET_PRIVATE (a);
+	NMIP4ConfigPrivate *b_priv = NM_IP4_CONFIG_GET_PRIVATE (b);
+
+	g_return_val_if_fail (NM_IS_IP4_CONFIG (a), FALSE);
+	g_return_val_if_fail (NM_IS_IP4_CONFIG (b), FALSE);
+
+	if (flags == NM_IP4_COMPARE_FLAG_EXACT)
+		flags = 0xFFFFFFFF;
+
+	if (flags & NM_IP4_COMPARE_FLAG_ADDRESSES) {
+		/* Ensure all A exist in B */
+		if (!addr_slist_compare (a_priv->addresses, b_priv->addresses))
+			return FALSE;
+
+		/* Ensure all B exist in A */
+		if (!addr_slist_compare (b_priv->addresses, a_priv->addresses))
+			return FALSE;
+	}
+
+	if (flags & NM_IP4_COMPARE_FLAG_PTP_ADDRESS) {
+		if (a_priv->ptp_address != b_priv->ptp_address)
+			return FALSE;
+	}
+
+	if (flags & NM_IP4_COMPARE_FLAG_NAMESERVERS) {
+		if (a_priv->nameservers->len != b_priv->nameservers->len) /* Shortcut */
+			return FALSE;
+
+		/* Ensure all A exist in B */
+		if (!addr_array_compare (a_priv->nameservers, b_priv->nameservers))
+			return FALSE;
+
+		/* Ensure all B exist in A */
+		if (!addr_array_compare (b_priv->nameservers, a_priv->nameservers))
+			return FALSE;
+	}
+
+	if (flags & NM_IP4_COMPARE_FLAG_ROUTES) {
+		/* Ensure all A exist in B */
+		if (!route_slist_compare (a_priv->routes, b_priv->routes))
+			return FALSE;
+
+		/* Ensure all B exist in A */
+		if (!route_slist_compare (b_priv->routes, a_priv->routes))
+			return FALSE;
+	}
+
+	if (flags & NM_IP4_COMPARE_FLAG_DOMAINS) {
+		if (a_priv->domains->len != b_priv->domains->len) /* Shortcut */
+			return FALSE;
+
+		/* Ensure all A exist in B */
+		if (!string_array_compare (a_priv->domains, b_priv->domains))
+			return FALSE;
+
+		/* Ensure all B exist in A */
+		if (!string_array_compare (b_priv->domains, a_priv->domains))
+			return FALSE;
+	}
+
+	if (flags & NM_IP4_COMPARE_FLAG_SEARCHES) {
+		if (a_priv->searches->len != b_priv->searches->len) /* Shortcut */
+			return FALSE;
+
+		/* Ensure all A exist in B */
+		if (!string_array_compare (a_priv->searches, b_priv->searches))
+			return FALSE;
+
+		/* Ensure all B exist in A */
+		if (!string_array_compare (b_priv->searches, a_priv->searches))
+			return FALSE;
+	}
+
+	if (flags & NM_IP4_COMPARE_FLAG_MTU) {
+		if (a_priv->mtu != b_priv->mtu)
+			return FALSE;
+	}
+
+	if (flags & NM_IP4_COMPARE_FLAG_MSS) {
+		if (a_priv->mss != b_priv->mss)
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
 static void
 nm_ip4_config_init (NMIP4Config *config)
 {
