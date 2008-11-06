@@ -18,7 +18,7 @@
       <tp:docstring>The radio channel frequency in use by the access point, in MHz.</tp:docstring>
     </property>
     <property name="HwAddress" type="s" access="read">
-      <tp:docstring>The hardware address of the access point.</tp:docstring>
+      <tp:docstring>The hardware address (BSSID) of the access point.</tp:docstring>
     </property>
 
     <property name="Mode" type="u" access="read" tp:type="NM_802_11_MODE">
@@ -28,7 +28,7 @@
       <tp:docstring>The maximum bitrate this access point is capable of, in kilobits/second (Kb/s).</tp:docstring>
     </property>
     <property name="Strength" type="y" access="read">
-      <tp:docstring>The current signal strength received from this access point.</tp:docstring>
+      <tp:docstring>The current signal quality of the access point, in percent.</tp:docstring>
     </property>
 
     <signal name="PropertiesChanged">
