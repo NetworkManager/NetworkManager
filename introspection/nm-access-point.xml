@@ -69,16 +69,16 @@
         <tp:docstring>Access point supports pairwise CCMP encryption.</tp:docstring>
       </tp:flag>
       <tp:flag suffix="GROUP_WEP40" value="0x10">
-        <tp:docstring>Access point supports a group 40-bit WEP cypher.</tp:docstring>
+        <tp:docstring>Access point supports a group 40-bit WEP cipher.</tp:docstring>
       </tp:flag>
       <tp:flag suffix="GROUP_WEP104" value="0x20">
-        <tp:docstring>Access point supports a group 104-bit WEP cypher.</tp:docstring>
+        <tp:docstring>Access point supports a group 104-bit WEP cipher.</tp:docstring>
       </tp:flag>
       <tp:flag suffix="GROUP_TKIP" value="0x40">
-        <tp:docstring>Access point supports a group TKIP cypher.</tp:docstring>
+        <tp:docstring>Access point supports a group TKIP cipher.</tp:docstring>
       </tp:flag>
       <tp:flag suffix="GROUP_CCMP" value="0x80">
-        <tp:docstring>Access point supports a group CCMP cypher.</tp:docstring>
+        <tp:docstring>Access point supports a group CCMP cipher.</tp:docstring>
       </tp:flag>
       <tp:flag suffix="KEY_MGMT_PSK" value="0x100">
         <tp:docstring>Access point supports PSK key management.</tp:docstring>

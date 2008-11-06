@@ -82,16 +82,16 @@
         <tp:docstring>Null capability - syntactic sugar for no capabilities supported.  Do not AND this with other capabilities!</tp:docstring>
       </tp:flag>
       <tp:flag suffix="CIPHER_WEP40" value="0x1">
-        <tp:docstring>The device supports the 40-bit WEP cypher.</tp:docstring>
+        <tp:docstring>The device supports the 40-bit WEP cipher.</tp:docstring>
       </tp:flag>
       <tp:flag suffix="CIPHER_WEP104" value="0x2">
-        <tp:docstring>The device supports the 104-bit WEP cypher.</tp:docstring>
+        <tp:docstring>The device supports the 104-bit WEP cipher.</tp:docstring>
       </tp:flag>
       <tp:flag suffix="CIPHER_TKIP" value="0x4">
-        <tp:docstring>The device supports the TKIP cypher.</tp:docstring>
+        <tp:docstring>The device supports the TKIP cipher.</tp:docstring>
       </tp:flag>
       <tp:flag suffix="CIPHER_CCMP" value="0x8">
-        <tp:docstring>The device supports the CCMP cypher.</tp:docstring>
+        <tp:docstring>The device supports the CCMP cipher.</tp:docstring>
       </tp:flag>
       <tp:flag suffix="WPA" value="0x10">
         <tp:docstring>The device supports the WPA encryption/authentication protocol.</tp:docstring>
