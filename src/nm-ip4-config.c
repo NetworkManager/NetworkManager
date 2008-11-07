@@ -544,95 +544,54 @@ addr_array_compare (GArray *a, GArray *b)
 	return TRUE;
 }
 
-gboolean
-nm_ip4_config_compare (NMIP4Config *a,
-                       NMIP4Config *b,
-                       NMIP4ConfigCompareFlags flags)
+NMIP4ConfigCompareFlags
+nm_ip4_config_diff (NMIP4Config *a, NMIP4Config *b)
 {
-	NMIP4ConfigPrivate *a_priv = NM_IP4_CONFIG_GET_PRIVATE (a);
-	NMIP4ConfigPrivate *b_priv = NM_IP4_CONFIG_GET_PRIVATE (b);
+	NMIP4ConfigPrivate *a_priv;
+	NMIP4ConfigPrivate *b_priv;
+	NMIP4ConfigCompareFlags flags = NM_IP4_COMPARE_FLAG_NONE;
 
-	g_return_val_if_fail (NM_IS_IP4_CONFIG (a), FALSE);
-	g_return_val_if_fail (NM_IS_IP4_CONFIG (b), FALSE);
+	if ((a && !b) || (b && !a))
+		return 0xFFFFFFFF;
+	if (!a && !b)
+		return NM_IP4_COMPARE_FLAG_NONE;
 
-	if (flags == NM_IP4_COMPARE_FLAG_EXACT)
-		flags = 0xFFFFFFFF;
+	a_priv = NM_IP4_CONFIG_GET_PRIVATE (a);
+	b_priv = NM_IP4_CONFIG_GET_PRIVATE (b);
 
-	if (flags & NM_IP4_COMPARE_FLAG_ADDRESSES) {
-		/* Ensure all A exist in B */
-		if (!addr_slist_compare (a_priv->addresses, b_priv->addresses))
-			return FALSE;
+	if (   !addr_slist_compare (a_priv->addresses, b_priv->addresses)
+	    || !addr_slist_compare (b_priv->addresses, a_priv->addresses))
+		flags |= NM_IP4_COMPARE_FLAG_ADDRESSES;
 
-		/* Ensure all B exist in A */
-		if (!addr_slist_compare (b_priv->addresses, a_priv->addresses))
-			return FALSE;
-	}
+	if (a_priv->ptp_address != b_priv->ptp_address)
+		flags |= NM_IP4_COMPARE_FLAG_PTP_ADDRESS;
 
-	if (flags & NM_IP4_COMPARE_FLAG_PTP_ADDRESS) {
-		if (a_priv->ptp_address != b_priv->ptp_address)
-			return FALSE;
-	}
+	if (   (a_priv->nameservers->len != b_priv->nameservers->len)
+	    || !addr_array_compare (a_priv->nameservers, b_priv->nameservers)
+	    || !addr_array_compare (b_priv->nameservers, a_priv->nameservers))
+		flags |= NM_IP4_COMPARE_FLAG_NAMESERVERS;
 
-	if (flags & NM_IP4_COMPARE_FLAG_NAMESERVERS) {
-		if (a_priv->nameservers->len != b_priv->nameservers->len) /* Shortcut */
-			return FALSE;
+	if (   !route_slist_compare (a_priv->routes, b_priv->routes)
+	    || !route_slist_compare (b_priv->routes, a_priv->routes))
+		flags |= NM_IP4_COMPARE_FLAG_ROUTES;
 
-		/* Ensure all A exist in B */
-		if (!addr_array_compare (a_priv->nameservers, b_priv->nameservers))
-			return FALSE;
+	if (   (a_priv->domains->len != b_priv->domains->len)
+	    || !string_array_compare (a_priv->domains, b_priv->domains)
+	    || !string_array_compare (b_priv->domains, a_priv->domains))
+		flags |= NM_IP4_COMPARE_FLAG_DOMAINS;
 
-		/* Ensure all B exist in A */
-		if (!addr_array_compare (b_priv->nameservers, a_priv->nameservers))
-			return FALSE;
-	}
+	if (   (a_priv->searches->len != b_priv->searches->len)
+	    || !string_array_compare (a_priv->searches, b_priv->searches)
+	    || !string_array_compare (b_priv->searches, a_priv->searches))
+		flags |= NM_IP4_COMPARE_FLAG_SEARCHES;
 
-	if (flags & NM_IP4_COMPARE_FLAG_ROUTES) {
-		/* Ensure all A exist in B */
-		if (!route_slist_compare (a_priv->routes, b_priv->routes))
-			return FALSE;
+	if (a_priv->mtu != b_priv->mtu)
+		flags |= NM_IP4_COMPARE_FLAG_MTU;
 
-		/* Ensure all B exist in A */
-		if (!route_slist_compare (b_priv->routes, a_priv->routes))
-			return FALSE;
-	}
+	if (a_priv->mss != b_priv->mss)
+		flags |= NM_IP4_COMPARE_FLAG_MSS;
 
-	if (flags & NM_IP4_COMPARE_FLAG_DOMAINS) {
-		if (a_priv->domains->len != b_priv->domains->len) /* Shortcut */
-			return FALSE;
-
-		/* Ensure all A exist in B */
-		if (!string_array_compare (a_priv->domains, b_priv->domains))
-			return FALSE;
-
-		/* Ensure all B exist in A */
-		if (!string_array_compare (b_priv->domains, a_priv->domains))
-			return FALSE;
-	}
-
-	if (flags & NM_IP4_COMPARE_FLAG_SEARCHES) {
-		if (a_priv->searches->len != b_priv->searches->len) /* Shortcut */
-			return FALSE;
-
-		/* Ensure all A exist in B */
-		if (!string_array_compare (a_priv->searches, b_priv->searches))
-			return FALSE;
-
-		/* Ensure all B exist in A */
-		if (!string_array_compare (b_priv->searches, a_priv->searches))
-			return FALSE;
-	}
-
-	if (flags & NM_IP4_COMPARE_FLAG_MTU) {
-		if (a_priv->mtu != b_priv->mtu)
-			return FALSE;
-	}
-
-	if (flags & NM_IP4_COMPARE_FLAG_MSS) {
-		if (a_priv->mss != b_priv->mss)
-			return FALSE;
-	}
-
-	return TRUE;
+	return flags;
 }
 
 static void
