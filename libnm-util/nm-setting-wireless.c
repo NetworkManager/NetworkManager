@@ -90,6 +90,7 @@ typedef struct {
 	GSList *seen_bssids;
 	char *security;
 } NMSettingWirelessPrivate;
+
 enum {
 	PROP_0,
 	PROP_SSID,
@@ -420,7 +421,7 @@ nm_setting_wireless_get_seen_bssid (NMSettingWireless *setting,
 {
 	g_return_val_if_fail (NM_IS_SETTING_WIRELESS (setting), NULL);
 
-	return (const char *) g_slist_nth (NM_SETTING_WIRELESS_GET_PRIVATE (setting)->seen_bssids, i);
+	return (const char *) g_slist_nth_data (NM_SETTING_WIRELESS_GET_PRIVATE (setting)->seen_bssids, i);
 }
 
 static gint

@@ -1,5 +1,12 @@
 2008-11-07  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-setting-wireless.c
+		- (nm_setting_wireless_get_seen_bssid): fix bug from accessor conversion
+			that cased this function to return garbage, breaking hidden AP
+			detection
+
+2008-11-07  Dan Williams  <dcbw@redhat.com>
+
 	Fix deletion of VPN gateway route on DHCP renew (bgo #558133)
 
 	* src/NetworkManagerSystem.c
