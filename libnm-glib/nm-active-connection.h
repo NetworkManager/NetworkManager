@@ -19,8 +19,6 @@ G_BEGIN_DECLS
 #define NM_ACTIVE_CONNECTION_SERVICE_NAME        "service-name"
 #define NM_ACTIVE_CONNECTION_CONNECTION          "connection"
 #define NM_ACTIVE_CONNECTION_SPECIFIC_OBJECT     "specific-object"
-#define NM_ACTIVE_CONNECTION_SHARED_SERVICE_NAME "shared-service-name"
-#define NM_ACTIVE_CONNECTION_SHARED_CONNECTION   "shared-connection"
 #define NM_ACTIVE_CONNECTION_DEVICES             "devices"
 #define NM_ACTIVE_CONNECTION_STATE               "state"
 #define NM_ACTIVE_CONNECTION_DEFAULT             "default"
@@ -41,8 +39,6 @@ const char * nm_active_connection_get_service_name        (NMActiveConnection *c
 NMConnectionScope nm_active_connection_get_scope          (NMActiveConnection *connection);
 const char * nm_active_connection_get_connection          (NMActiveConnection *connection);
 const char * nm_active_connection_get_specific_object     (NMActiveConnection *connection);
-const char * nm_active_connection_get_shared_service_name (NMActiveConnection *connection);
-const char * nm_active_connection_get_shared_connection   (NMActiveConnection *connection);
 const GPtrArray *nm_active_connection_get_devices         (NMActiveConnection *connection);
 NMActiveConnectionState nm_active_connection_get_state    (NMActiveConnection *connection);
 gboolean nm_active_connection_get_default                 (NMActiveConnection *connection);
