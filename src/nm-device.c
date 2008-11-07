@@ -120,6 +120,8 @@ static void nm_device_take_down (NMDevice *dev, gboolean wait, NMDeviceStateReas
 static gboolean nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware);
 static gboolean nm_device_is_up (NMDevice *self);
 
+static gboolean nm_device_set_ip4_config (NMDevice *dev, NMIP4Config *config, NMDeviceStateReason *reason);
+
 static void
 device_interface_init (NMDeviceInterface *device_interface_class)
 {
@@ -1754,12 +1756,12 @@ handle_dhcp_lease_change (NMDevice *device)
 
 	g_object_set_data (G_OBJECT (req), NM_ACT_REQUEST_IP4_CONFIG, config);
 
-	if (!nm_device_set_ip4_config (device, config, &reason)) {
+	if (nm_device_set_ip4_config (device, config, &reason))
+		nm_dhcp_manager_set_dhcp4_config (priv->dhcp_manager, ip_iface, priv->dhcp4_config);
+	else {
 		nm_warning ("Failed to update IP4 config in response to DHCP event.");
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
 	}
-
-	nm_dhcp_manager_set_dhcp4_config (priv->dhcp_manager, ip_iface, priv->dhcp4_config);
 }
 
 static void
@@ -1905,12 +1907,17 @@ nm_device_get_ip4_config (NMDevice *self)
 }
 
 
-gboolean
-nm_device_set_ip4_config (NMDevice *self, NMIP4Config *config, NMDeviceStateReason *reason)
+static gboolean
+nm_device_set_ip4_config (NMDevice *self,
+                          NMIP4Config *new_config,
+                          NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv;
 	const char *ip_iface;
-	gboolean success;
+	NMIP4Config *old_config = NULL;
+	gboolean success = TRUE;
+	NMIP4ConfigCompareFlags diff = NM_IP4_COMPARE_FLAG_ALL;
+	NMNamedManager *named_mgr;
 
 	g_return_val_if_fail (NM_IS_DEVICE (self), FALSE);
 	g_return_val_if_fail (reason != NULL, FALSE);
@@ -1918,30 +1925,39 @@ nm_device_set_ip4_config (NMDevice *self, NMIP4Config *config, NMDeviceStateReas
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	ip_iface = nm_device_get_ip_iface (self);
 
-	if (priv->ip4_config) {
-		NMNamedManager *named_mgr;
+	old_config = priv->ip4_config;
 
+	if (new_config && old_config)
+		diff = nm_ip4_config_diff (new_config, old_config);
+
+	/* No actual change, do nothing */
+	if (diff == NM_IP4_COMPARE_FLAG_NONE)
+		return TRUE;
+
+	named_mgr = nm_named_manager_get ();
+	if (old_config) {
 		/* Remove any previous IP4 Config from the named manager */
-		named_mgr = nm_named_manager_get ();
-		nm_named_manager_remove_ip4_config (named_mgr, ip_iface, priv->ip4_config);
-		g_object_unref (named_mgr);
-
-		g_object_unref (priv->ip4_config);
+		nm_named_manager_remove_ip4_config (named_mgr, ip_iface, old_config);
+		g_object_unref (old_config);
 		priv->ip4_config = NULL;
 	}
 
-	if (!config)
-		return TRUE;
+	if (new_config) {
+		priv->ip4_config = g_object_ref (new_config);
 
-	priv->ip4_config = g_object_ref (config);
+		success = nm_system_apply_ip4_config (ip_iface, new_config, nm_device_get_priority (self), diff);
+		if (success) {
+			/* Export over D-Bus */
+			if (!nm_ip4_config_get_dbus_path (new_config))
+				nm_ip4_config_export (new_config);
 
-	/* Export over D-Bus if needed */
-	if (!nm_ip4_config_get_dbus_path (config))
-		nm_ip4_config_export (config);
+			/* Add the DNS information to the named manager */
+			nm_named_manager_add_ip4_config (named_mgr, ip_iface, new_config, NM_NAMED_IP_CONFIG_TYPE_DEFAULT);
 
-	success = nm_system_apply_ip4_config (self, ip_iface, config, nm_device_get_priority (self), FALSE);
-	if (success)
-		nm_device_update_ip4_address (self);
+			nm_device_update_ip4_address (self);
+		}
+	}
+	g_object_unref (named_mgr);
 
 	g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_IP4_CONFIG);
 

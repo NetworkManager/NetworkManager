@@ -1,5 +1,37 @@
 2008-11-07  Dan Williams  <dcbw@redhat.com>
 
+	Fix deletion of VPN gateway route on DHCP renew (bgo #558133)
+
+	* src/NetworkManagerSystem.c
+	  src/NetworkManagerSystem.h
+		- (nm_system_device_set_ip4_route): return the route that was added
+		- (nm_system_add_ip4_vpn_gateway_route): make add_vpn_gateway_route()
+			public, clean up, and return the route that was added
+		- (nm_system_apply_ip4_config): remove VPN related stuff to simplify,
+			since nm_system_add_ip4_vpn_gateway_route() is now available; add
+			flags to allow only certain attributes of the NMIP4Config to be
+			applied
+
+	* src/nm-device.c
+		- (handle_dhcp_lease_change): don't touch the DHCP4 config on failure
+		- (nm_device_set_ip4_config): use nm_ip4_config_diff() to only apply
+			what's really changed between the old and new configs; don't export
+			the new IP4 config on failure; always send the DNS info to the
+			named manager
+
+	* src/vpn-manager/nm-vpn-connection.c
+		- (device_ip4_config_changed, nm_vpn_connection_new, dispose): track the
+			parent device's IP4Config and re-add the VPN gateway route when it
+			changes
+		- (nm_vpn_connection_ip4_config_get): add the VPN gateway route (since
+			nm_system_apply_ip4_config() no longer does) and cache it for later
+		- (connection_state_changed): move cleanup code to its own function
+		- (vpn_cleanup): delete any previously added VPN gateway route; and
+			re-apply the parent device's addresses and routes using
+			nm_system_apply_ip4_config(), not nm_device_set_ip4_config()
+
+2008-11-07  Dan Williams  <dcbw@redhat.com>
+
 	* src/nm-ip4-config.c
 	  src/nm-ip4-config.h
 		- (nm_ip4_config_diff): new function; return the difference between two

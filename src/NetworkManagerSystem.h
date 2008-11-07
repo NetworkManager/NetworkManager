@@ -22,6 +22,9 @@
 #ifndef NETWORK_MANAGER_SYSTEM_H
 #define NETWORK_MANAGER_SYSTEM_H
 
+#include <netlink/route/rtnl.h>
+#include <netlink/route/route.h>
+
 #include <glib.h>
 #include "nm-device.h"
 #include "nm-ip4-config.h"
@@ -44,17 +47,19 @@ gboolean		nm_system_replace_default_ip4_route_vpn (const char *iface,
                                                          const char *parent_iface,
                                                          guint32 parent_mss);
 
+struct rtnl_route *nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device, NMIP4Config *vpn_config);
+
+
 void			nm_system_device_flush_ip4_addresses			(NMDevice *dev);
 void			nm_system_device_flush_ip4_addresses_with_iface	(const char *iface);
 
 void			nm_system_enable_loopback				(void);
 void			nm_system_update_dns					(void);
 
-gboolean		nm_system_apply_ip4_config              (NMDevice *device,
-                                                         const char *iface,
+gboolean		nm_system_apply_ip4_config              (const char *iface,
                                                          NMIP4Config *config,
                                                          int priority,
-                                                         gboolean is_vpn);
+                                                         NMIP4ConfigCompareFlags flags);
 
 gboolean		nm_system_device_set_up_down				(NMDevice *dev,
                                                              gboolean up,

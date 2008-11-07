@@ -44,6 +44,7 @@
 #include "nm-dbus-glib-types.h"
 #include "NetworkManagerUtils.h"
 #include "nm-named-manager.h"
+#include "nm-netlink.h"
 
 #include "nm-vpn-connection-glue.h"
 
@@ -56,22 +57,25 @@ typedef struct {
 	DBusGProxyCall *secrets_call;
 
 	NMActRequest *act_request;
-	NMDevice *parent_dev;
 	char *ac_path;
+
+	NMDevice *parent_dev;
+	gulong device_monitor;
+	gulong device_ip4;
 
 	gboolean is_default;
 	NMActiveConnectionState state;
 
 	NMVPNConnectionState vpn_state;
 	NMVPNConnectionStateReason failure_reason;
-	gulong device_monitor;
 	DBusGProxy *proxy;
 	guint ipconfig_timeout;
 	NMIP4Config *ip4_config;
 	guint32 ip4_internal_gw;
 	char *tundev;
-	char *tapdev;
 	char *banner;
+
+	struct rtnl_route *gw_route;
 } NMVPNConnectionPrivate;
 
 #define NM_VPN_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_VPN_CONNECTION, NMVPNConnectionPrivate))
@@ -155,7 +159,7 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 		nm_utils_call_dispatcher ("vpn-up",
 		                          priv->connection,
 		                          priv->parent_dev,
-		                          priv->tapdev ? priv->tapdev : priv->tundev);
+		                          priv->tundev);
 		break;
 	case NM_VPN_CONNECTION_STATE_FAILED:
 	case NM_VPN_CONNECTION_STATE_DISCONNECTED:
@@ -163,7 +167,7 @@ nm_vpn_connection_set_vpn_state (NMVPNConnection *connection,
 			nm_utils_call_dispatcher ("vpn-down",
 			                          priv->connection,
 			                          priv->parent_dev,
-			                          priv->tapdev ? priv->tapdev : priv->tundev);
+			                          priv->tundev);
 		}
 		break;
 	default:
@@ -193,6 +197,24 @@ device_state_changed (NMDevice *device,
 	}
 }
 
+static void
+device_ip4_config_changed (NMDevice *device,
+                           GParamSpec *pspec,
+                           gpointer user_data)
+{
+	NMVPNConnection *vpn = NM_VPN_CONNECTION (user_data);
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn);
+
+	if (priv->vpn_state != NM_VPN_CONNECTION_STATE_ACTIVATED)
+		return;
+
+	if (priv->gw_route)
+		rtnl_route_put (priv->gw_route);
+
+	/* Re-add the VPN gateway route */
+	priv->gw_route = nm_system_add_ip4_vpn_gateway_route (priv->parent_dev, priv->ip4_config);
+}
+
 NMVPNConnection *
 nm_vpn_connection_new (NMConnection *connection,
                        NMActRequest *act_request,
@@ -218,6 +240,10 @@ nm_vpn_connection_new (NMConnection *connection,
 	priv->device_monitor = g_signal_connect (parent_device, "state-changed",
 									 G_CALLBACK (device_state_changed),
 									 vpn_connection);
+
+	priv->device_ip4 = g_signal_connect (parent_device, "notify::" NM_DEVICE_INTERFACE_IP4_CONFIG,
+	                                     G_CALLBACK (device_ip4_config_changed),
+	                                     vpn_connection);
 	return vpn_connection;
 }
 
@@ -470,8 +496,11 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 
 	nm_system_device_set_up_down_with_iface (priv->tundev, TRUE, NULL);
 
-	if (nm_system_apply_ip4_config (priv->parent_dev, priv->tundev, config, 0, TRUE)) {
+	if (nm_system_apply_ip4_config (priv->tundev, config, 0, NM_IP4_COMPARE_FLAG_ALL)) {
 		NMNamedManager *named_mgr;
+
+		/* Add any explicit route to the VPN gateway through the parent device */
+		priv->gw_route = nm_system_add_ip4_vpn_gateway_route (priv->parent_dev, config);
 
 		/* Add the VPN to DNS */
 		named_mgr = nm_named_manager_get ();
@@ -890,6 +919,58 @@ call_need_secrets (NMVPNConnection *vpn_connection)
 }
 
 static void
+vpn_cleanup (NMVPNConnection *connection)
+{
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
+
+	if (priv->tundev) {
+		nm_system_device_set_up_down_with_iface (priv->tundev, FALSE, NULL);
+		nm_system_device_flush_ip4_routes_with_iface (priv->tundev);
+		nm_system_device_flush_ip4_addresses_with_iface (priv->tundev);
+	}
+
+	if (priv->ip4_config) {
+		NMIP4Config *parent_config;
+		NMNamedManager *named_mgr;
+
+		/* Remove attributes of the VPN's IP4 Config */
+		named_mgr = nm_named_manager_get ();
+		nm_named_manager_remove_ip4_config (named_mgr, priv->tundev, priv->ip4_config);
+		g_object_unref (named_mgr);
+
+		/* Remove any previously added VPN gateway host route */
+		if (priv->gw_route)
+			rtnl_route_del (nm_netlink_get_default_handle (), priv->gw_route, 0);
+
+		/* Reset routes and addresses of the currently active device */
+		parent_config = nm_device_get_ip4_config (priv->parent_dev);
+		if (parent_config) {
+			if (!nm_system_apply_ip4_config (nm_device_get_ip_iface (priv->parent_dev),
+			                                 nm_device_get_ip4_config (priv->parent_dev),
+			                                 nm_device_get_priority (priv->parent_dev),
+			                                 NM_IP4_COMPARE_FLAG_ADDRESSES | NM_IP4_COMPARE_FLAG_ROUTES)) {
+				nm_warning ("%s: failed to re-apply VPN parent device addresses and routes.", __func__);
+			}
+		}
+	}
+
+	if (priv->gw_route) {
+		rtnl_route_put (priv->gw_route);
+		priv->gw_route = NULL;
+	}
+
+	if (priv->banner) {
+		g_free (priv->banner);
+		priv->banner = NULL;
+	}
+
+	if (priv->tundev) {
+		g_free (priv->tundev);
+		priv->tundev = NULL;
+	}
+}
+
+static void
 connection_state_changed (NMVPNConnection *connection,
                           NMVPNConnectionState state,
                           NMVPNConnectionStateReason reason)
@@ -916,41 +997,7 @@ connection_state_changed (NMVPNConnection *connection,
 			g_object_unref (priv->proxy);
 			priv->proxy = NULL;
 		}
-
-		if (priv->tundev) {
-			nm_system_device_set_up_down_with_iface (priv->tundev, FALSE, NULL);
-			nm_system_device_flush_ip4_routes_with_iface (priv->tundev);
-			nm_system_device_flush_ip4_addresses_with_iface (priv->tundev);
-		}
-
-		if (priv->ip4_config) {
-			NMIP4Config *dev_ip4_config;
-			NMNamedManager *named_mgr;
-
-			/* Remove attributes of the VPN's IP4 Config */
-			named_mgr = nm_named_manager_get ();
-			nm_named_manager_remove_ip4_config (named_mgr, priv->tundev, priv->ip4_config);
-			g_object_unref (named_mgr);
-
-			/* Reset routes, nameservers, and domains of the currently active device */
-			dev_ip4_config = nm_device_get_ip4_config (priv->parent_dev);
-			if (dev_ip4_config) {
-				NMDeviceStateReason dev_reason = NM_DEVICE_STATE_REASON_NONE;
-
-				/* Since the config we're setting is also the device's current
-				 * config, have to ref the config to ensure it doesn't get
-				 * destroyed when the device unrefs it in nm_device_set_ip4_config().
-				 */
-				nm_device_set_ip4_config (priv->parent_dev,
-				                          g_object_ref (dev_ip4_config),
-				                          &dev_reason);
-			}
-		}
-
-		if (priv->banner) {
-			g_free (priv->banner);
-			priv->banner = NULL;
-		}
+		vpn_cleanup (connection);
 		break;
 	default:
 		break;
@@ -987,7 +1034,13 @@ dispose (GObject *object)
 
 	cleanup_secrets_dbus_call (NM_VPN_CONNECTION (object));
 
+	if (priv->gw_route)
+		rtnl_route_put (priv->gw_route);
+
 	if (priv->parent_dev) {
+		if (priv->device_ip4)
+			g_signal_handler_disconnect (priv->parent_dev, priv->device_ip4);
+
 		if (priv->device_monitor)
 			g_signal_handler_disconnect (priv->parent_dev, priv->device_monitor);
 
