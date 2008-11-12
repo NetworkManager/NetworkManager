@@ -1,3 +1,8 @@
+2008-11-12  Tambet Ingo  <tambet@gmail.com>
+
+	* system-settings/plugins/keyfile/nm-keyfile-connection.c (copy_one_secret)
+	(add_secrets): Don't add empty secrets to the secrets hash table.
+
 2008-11-07  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/nm-setting-wireless.c

@@ -85,9 +85,12 @@ string_to_gvalue (const char *str)
 static void
 copy_one_secret (gpointer key, gpointer value, gpointer user_data)
 {
-	g_hash_table_insert ((GHashTable *) user_data,
-	                     g_strdup ((char *) key),
-	                     string_to_gvalue (value));
+	const char *value_str = (const char *) value;
+
+	if (value_str)
+		g_hash_table_insert ((GHashTable *) user_data,
+							 g_strdup ((char *) key),
+							 string_to_gvalue (value_str));
 }
 
 static void
@@ -103,7 +106,11 @@ add_secrets (NMSetting *setting,
 		return;
 
 	if (G_VALUE_HOLDS_STRING (value)) {
-		g_hash_table_insert (secrets, g_strdup (key), string_to_gvalue (g_value_get_string (value)));
+		const char *tmp;
+
+		tmp = g_value_get_string (value);
+		if (tmp)
+			g_hash_table_insert (secrets, g_strdup (key), string_to_gvalue (tmp));
 	} else if (G_VALUE_HOLDS (value, DBUS_TYPE_G_MAP_OF_STRING)) {
 		/* Flatten the string hash by pulling its keys/values out */
 		g_hash_table_foreach (g_value_get_boxed (value), copy_one_secret, secrets);
