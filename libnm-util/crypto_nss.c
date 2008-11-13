@@ -21,6 +21,8 @@
  * (C) Copyright 2007 - 2008 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <glib.h>
 #include <glib/gi18n.h>
 
@@ -30,6 +32,9 @@
 #include <pkcs11t.h>
 #include <cert.h>
 #include <prerror.h>
+#include <p12.h>
+#include <ciferfam.h>
+#include <p12plcy.h>
 
 #include "crypto.h"
 
@@ -53,6 +58,14 @@ crypto_init (GError **error)
 		             PR_GetError ());
 		return FALSE;
 	}
+
+	SEC_PKCS12EnableCipher(PKCS12_RC4_40, 1);
+	SEC_PKCS12EnableCipher(PKCS12_RC4_128, 1);
+	SEC_PKCS12EnableCipher(PKCS12_RC2_CBC_40, 1);
+	SEC_PKCS12EnableCipher(PKCS12_RC2_CBC_128, 1);
+	SEC_PKCS12EnableCipher(PKCS12_DES_56, 1);
+	SEC_PKCS12EnableCipher(PKCS12_DES_EDE3_168, 1);
+	SEC_PKCS12SetPreferredCipher(PKCS12_DES_EDE3_168, 1);
 
 	initialized = TRUE;
 	return TRUE;
@@ -125,8 +138,7 @@ crypto_md5_hash (const char *salt,
 char *
 crypto_decrypt (const char *cipher,
                 int key_type,
-                const char *data,
-                gsize data_len,
+                GByteArray *data,
                 const char *iv,
                 const gsize iv_len,
                 const char *key,
@@ -159,7 +171,7 @@ crypto_decrypt (const char *cipher,
 		return NULL;
 	}
 
-	output = g_malloc0 (data_len + 1);
+	output = g_malloc0 (data->len + 1);
 	if (!output) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_OUT_OF_MEMORY,
@@ -206,9 +218,9 @@ crypto_decrypt (const char *cipher,
 	s = PK11_CipherOp (ctx,
 	                   (unsigned char *) output,
 	                   &tmp1_len,
-	                   data_len,
-	                   (unsigned char *) data,
-	                   data_len);
+	                   data->len,
+	                   data->data,
+	                   data->len);
 	if (s != SECSuccess) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
@@ -220,7 +232,7 @@ crypto_decrypt (const char *cipher,
 	s = PK11_DigestFinal (ctx,
 	                      (unsigned char *) (output + tmp1_len),
 	                      &tmp2_len,
-	                      data_len - tmp1_len);
+	                      data->len - tmp1_len);
 	if (s != SECSuccess) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
@@ -229,7 +241,7 @@ crypto_decrypt (const char *cipher,
 		goto out;
 	}
 	len = tmp1_len + tmp2_len;
-	if (len > data_len)
+	if (len > data->len)
 		goto out;
 
 	*out_len = len;
@@ -249,7 +261,7 @@ out:
 	if (!success) {
 		if (output) {
 			/* Don't expose key material */
-			memset (output, 0, data_len);
+			memset (output, 0, data->len);
 			g_free (output);
 			output = NULL;
 		}
@@ -257,23 +269,114 @@ out:
 	return output;
 }
 
-gboolean
+NMCryptoFileFormat
 crypto_verify_cert (const unsigned char *data,
                     gsize len,
                     GError **error)
 {
 	CERTCertificate *cert;
 
+	/* Try DER/PEM first */
 	cert = CERT_DecodeCertFromPackage ((char *) data, len);
 	if (!cert) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_CERT_FORMAT_INVALID,
 		             _("Couldn't decode certificate: %d"),
 		             PORT_GetError());
-		return FALSE;
+		return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	}
 
-    CERT_DestroyCertificate (cert);
+	CERT_DestroyCertificate (cert);
+	return NM_CRYPTO_FILE_FORMAT_X509;
+}
+
+gboolean
+crypto_verify_pkcs12 (const GByteArray *data,
+                      const char *password,
+                      GError **error)
+{
+	SEC_PKCS12DecoderContext *p12ctx = NULL;
+	SECItem pw = { 0 };
+	PK11SlotInfo *slot = NULL;
+	SECStatus s;
+	char *ucs2_password;
+	glong ucs2_chars = 0;
+	guint16 *p;
+
+	if (error)
+		g_return_val_if_fail (*error == NULL, FALSE);
+
+	/* PKCS#12 passwords are apparently UCS2 BIG ENDIAN, and NSS doesn't do
+	 * any conversions for us.
+	 */
+	if (password && strlen (password)) {
+		ucs2_password = (char *) g_utf8_to_utf16 (password, strlen (password), NULL, &ucs2_chars, NULL);
+		if (!ucs2_password || !ucs2_chars) {
+			g_set_error (error, NM_CRYPTO_ERROR,
+			             NM_CRYPTO_ERR_INVALID_PASSWORD,
+			             _("Couldn't convert password to UCS2: %d"),
+			             PORT_GetError());
+			return FALSE;
+		}
+
+		ucs2_chars *= 2;  /* convert # UCS2 characters -> bytes */
+		pw.data = PORT_ZAlloc(ucs2_chars + 2);
+		memcpy (pw.data, ucs2_password, ucs2_chars);
+		pw.len = ucs2_chars + 2;  /* include terminating NULL */
+
+		memset (ucs2_password, 0, ucs2_chars);
+		g_free (ucs2_password);
+
+#ifndef WORDS_BIGENDIAN
+		for (p = (guint16 *) pw.data; p < (guint16 *) (pw.data + pw.len); p++)
+			*p = GUINT16_SWAP_LE_BE (*p);
+#endif
+	} else {
+		/* NULL password */
+		pw.data = NULL;
+		pw.len = 0;
+	}
+
+	slot = PK11_GetInternalKeySlot();
+	p12ctx = SEC_PKCS12DecoderStart (&pw, slot, NULL, NULL, NULL, NULL, NULL, NULL);
+	if (!p12ctx) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_DECODE_FAILED,
+		             _("Couldn't initialize PKCS#12 decoder: %d"),
+		             PORT_GetError());
+		goto error;
+	}
+
+	s = SEC_PKCS12DecoderUpdate (p12ctx, data->data, data->len);
+	if (s != SECSuccess) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_FILE_FORMAT_INVALID,
+		             _("Couldn't decode PKCS#12 file: %d"),
+		             PORT_GetError());
+		goto error;
+	}
+
+	s = SEC_PKCS12DecoderVerify (p12ctx);
+	if (s != SECSuccess) {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
+		             _("Couldn't verify PKCS#12 file: %d"),
+		             PORT_GetError());
+		goto error;
+	}
+
+	SEC_PKCS12DecoderFinish (p12ctx);
+	SECITEM_ZfreeItem (&pw, PR_FALSE);
 	return TRUE;
+
+error:
+	if (p12ctx)
+		SEC_PKCS12DecoderFinish (p12ctx);
+
+	if (slot)
+		PK11_FreeSlot(slot);
+
+	SECITEM_ZfreeItem (&pw, PR_FALSE);
+	return FALSE;
 }
 

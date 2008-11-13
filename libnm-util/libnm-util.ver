@@ -52,9 +52,13 @@ global:
 	nm_setting_802_1x_set_phase2_client_cert_from_file;
 	nm_setting_802_1x_get_phase2_private_key;
 	nm_setting_802_1x_set_phase2_private_key_from_file;
+	nm_setting_802_1x_get_phase2_private_key_password;
+	nm_setting_802_1x_get_phase2_private_key_type;
 	nm_setting_802_1x_get_pin;
 	nm_setting_802_1x_get_private_key;
 	nm_setting_802_1x_set_private_key_from_file;
+	nm_setting_802_1x_get_private_key_password;
+	nm_setting_802_1x_get_private_key_type;
 	nm_setting_802_1x_get_psk;
 	nm_setting_802_1x_get_type;
 	nm_setting_802_1x_new;

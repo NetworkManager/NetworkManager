@@ -89,7 +89,9 @@ typedef struct {
 	char *pin;
 	char *psk;
 	GByteArray *private_key;
+	char *private_key_password;
 	GByteArray *phase2_private_key;
+	char *phase2_private_key_password;
 } NMSetting8021xPrivate;
 
 enum {
@@ -110,7 +112,9 @@ enum {
 	PROP_PHASE2_CLIENT_CERT,
 	PROP_PASSWORD,
 	PROP_PRIVATE_KEY,
+	PROP_PRIVATE_KEY_PASSWORD,
 	PROP_PHASE2_PRIVATE_KEY,
+	PROP_PHASE2_PRIVATE_KEY_PASSWORD,
 	PROP_PIN,
 	PROP_PSK,
 
@@ -226,18 +230,39 @@ nm_setting_802_1x_get_ca_path (NMSetting8021x *setting)
 gboolean
 nm_setting_802_1x_set_ca_cert_from_file (NMSetting8021x *self,
                                          const char *filename,
+                                         NMSetting8021xCKType *out_ck_type,
                                          GError **err)
 {
 	NMSetting8021xPrivate *priv;
+	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
 	g_return_val_if_fail (filename != NULL, FALSE);
+	if (out_ck_type)
+		g_return_val_if_fail (*out_ck_type == NM_SETTING_802_1X_CK_TYPE_UNKNOWN, FALSE);
 
 	priv = NM_SETTING_802_1X_GET_PRIVATE (self);
 	if (priv->ca_cert)
 		g_byte_array_free (priv->ca_cert, TRUE);
 
-	priv->ca_cert = crypto_load_and_verify_certificate (filename, err);
+	priv->ca_cert = crypto_load_and_verify_certificate (filename, &format, err);
+	if (priv->ca_cert) {
+		/* wpa_supplicant can only use raw x509 CA certs */
+		switch (format) {
+		case NM_CRYPTO_FILE_FORMAT_X509:
+			if (out_ck_type)
+				*out_ck_type = NM_SETTING_802_1X_CK_TYPE_X509;
+			break;
+		default:
+			g_byte_array_free (priv->ca_cert, TRUE);
+			priv->ca_cert = NULL;
+			g_set_error (err,
+			             NM_SETTING_802_1X_ERROR,
+			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			             NM_SETTING_802_1X_CA_CERT);
+			break;
+		} 
+	}
 
 	return priv->ca_cert != NULL;
 }
@@ -253,18 +278,42 @@ nm_setting_802_1x_get_client_cert (NMSetting8021x *setting)
 gboolean
 nm_setting_802_1x_set_client_cert_from_file (NMSetting8021x *self,
                                              const char *filename,
+                                             NMSetting8021xCKType *out_ck_type,
                                              GError **err)
 {
 	NMSetting8021xPrivate *priv;
+	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
 	g_return_val_if_fail (filename != NULL, FALSE);
+	if (out_ck_type)
+		g_return_val_if_fail (*out_ck_type == NM_SETTING_802_1X_CK_TYPE_UNKNOWN, FALSE);
 
 	priv = NM_SETTING_802_1X_GET_PRIVATE (self);
 	if (priv->client_cert)
 		g_byte_array_free (priv->client_cert, TRUE);
 
-	priv->client_cert = crypto_load_and_verify_certificate (filename, err);
+	priv->client_cert = crypto_load_and_verify_certificate (filename, &format, err);
+	if (priv->client_cert) {
+		switch (format) {
+		case NM_CRYPTO_FILE_FORMAT_X509:
+			if (out_ck_type)
+				*out_ck_type = NM_SETTING_802_1X_CK_TYPE_X509;
+			break;
+		case NM_CRYPTO_FILE_FORMAT_PKCS12:
+			if (out_ck_type)
+				*out_ck_type = NM_SETTING_802_1X_CK_TYPE_PKCS12;
+			break;
+		default:
+			g_byte_array_free (priv->client_cert, TRUE);
+			priv->client_cert = NULL;
+			g_set_error (err,
+			             NM_SETTING_802_1X_ERROR,
+			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			             NM_SETTING_802_1X_CLIENT_CERT);
+			break;
+		} 
+	}
 
 	return priv->client_cert != NULL;
 }
@@ -328,21 +377,41 @@ nm_setting_802_1x_get_phase2_ca_path (NMSetting8021x *setting)
 gboolean
 nm_setting_802_1x_set_phase2_ca_cert_from_file (NMSetting8021x *self,
                                                 const char *filename,
+                                                NMSetting8021xCKType *out_ck_type,
                                                 GError **err)
 {
 	NMSetting8021xPrivate *priv;
+	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
 	g_return_val_if_fail (filename != NULL, FALSE);
+	if (out_ck_type)
+		g_return_val_if_fail (*out_ck_type == NM_SETTING_802_1X_CK_TYPE_UNKNOWN, FALSE);
 
 	priv = NM_SETTING_802_1X_GET_PRIVATE (self);
 	if (priv->phase2_ca_cert)
 		g_byte_array_free (priv->phase2_ca_cert, TRUE);
 
-	priv->phase2_ca_cert = crypto_load_and_verify_certificate (filename, err);
+	priv->phase2_ca_cert = crypto_load_and_verify_certificate (filename, &format, err);
+	if (priv->phase2_ca_cert) {
+		/* wpa_supplicant can only use X509 CA certs */
+		switch (format) {
+		case NM_CRYPTO_FILE_FORMAT_X509:
+			if (out_ck_type)
+				*out_ck_type = NM_SETTING_802_1X_CK_TYPE_X509;
+			break;
+		default:
+			g_byte_array_free (priv->phase2_ca_cert, TRUE);
+			priv->phase2_ca_cert = NULL;
+			g_set_error (err,
+			             NM_SETTING_802_1X_ERROR,
+			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			             NM_SETTING_802_1X_PHASE2_CA_CERT);
+			break;
+		} 
+	}
 
 	return priv->phase2_ca_cert != NULL;
-
 }
 
 const GByteArray *
@@ -356,18 +425,43 @@ nm_setting_802_1x_get_phase2_client_cert (NMSetting8021x *setting)
 gboolean
 nm_setting_802_1x_set_phase2_client_cert_from_file (NMSetting8021x *self,
                                                     const char *filename,
+                                                    NMSetting8021xCKType *out_ck_type,
                                                     GError **err)
 {
 	NMSetting8021xPrivate *priv;
+	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
 	g_return_val_if_fail (filename != NULL, FALSE);
+	if (out_ck_type)
+		g_return_val_if_fail (*out_ck_type == NM_SETTING_802_1X_CK_TYPE_UNKNOWN, FALSE);
 
 	priv = NM_SETTING_802_1X_GET_PRIVATE (self);
 	if (priv->phase2_client_cert)
 		g_byte_array_free (priv->phase2_client_cert, TRUE);
 
-	priv->phase2_client_cert = crypto_load_and_verify_certificate (filename, err);
+	priv->phase2_client_cert = crypto_load_and_verify_certificate (filename, &format, err);
+	if (priv->phase2_client_cert) {
+		/* Only X509 client certs should be used; not pkcs#12 */
+		switch (format) {
+		case NM_CRYPTO_FILE_FORMAT_X509:
+			if (out_ck_type)
+				*out_ck_type = NM_SETTING_802_1X_CK_TYPE_X509;
+			break;
+		case NM_CRYPTO_FILE_FORMAT_PKCS12:
+			if (out_ck_type)
+				*out_ck_type = NM_SETTING_802_1X_CK_TYPE_PKCS12;
+			break;
+		default:
+			g_byte_array_free (priv->phase2_client_cert, TRUE);
+			priv->phase2_client_cert = NULL;
+			g_set_error (err,
+			             NM_SETTING_802_1X_ERROR,
+			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+			             NM_SETTING_802_1X_CLIENT_CERT);
+			break;
+		} 
+	}
 
 	return priv->phase2_client_cert != NULL;
 }
@@ -404,18 +498,29 @@ nm_setting_802_1x_get_private_key (NMSetting8021x *setting)
 	return NM_SETTING_802_1X_GET_PRIVATE (setting)->private_key;
 }
 
+const char *
+nm_setting_802_1x_get_private_key_password (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->private_key_password;
+}
+
 gboolean
 nm_setting_802_1x_set_private_key_from_file (NMSetting8021x *self,
                                              const char *filename,
                                              const char *password,
+                                             NMSetting8021xCKType *out_ck_type,
                                              GError **err)
 {
 	NMSetting8021xPrivate *priv;
-	guint32 ignore;
+	NMCryptoKeyType ignore = NM_CRYPTO_KEY_TYPE_UNKNOWN;
+	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
 	g_return_val_if_fail (filename != NULL, FALSE);
-	g_return_val_if_fail (password != NULL, FALSE);
+	if (out_ck_type)
+		g_return_val_if_fail (*out_ck_type == NM_SETTING_802_1X_CK_TYPE_UNKNOWN, FALSE);
 
 	priv = NM_SETTING_802_1X_GET_PRIVATE (self);
 	if (priv->private_key) {
@@ -424,9 +529,59 @@ nm_setting_802_1x_set_private_key_from_file (NMSetting8021x *self,
 		g_byte_array_free (priv->private_key, TRUE);
 	}
 
-	priv->private_key = crypto_get_private_key (filename, password, &ignore, err);
+	g_free (priv->private_key_password);
+	priv->private_key_password = NULL;
+
+	priv->private_key = crypto_get_private_key (filename, password, &ignore, &format, err);
+	if (priv->private_key) {
+		switch (format) {
+		case NM_CRYPTO_FILE_FORMAT_RAW_KEY:
+			if (out_ck_type)
+				*out_ck_type = NM_SETTING_802_1X_CK_TYPE_RAW_KEY;
+			break;
+		case NM_CRYPTO_FILE_FORMAT_PKCS12:
+			// FIXME: use secure memory
+			priv->private_key_password = g_strdup (password);
+			if (out_ck_type)
+				*out_ck_type = NM_SETTING_802_1X_CK_TYPE_PKCS12;
+			break;
+		default:
+			g_assert_not_reached ();
+			break;
+		} 
+
+		/* As required by NM, set the client-cert property to the same PKCS#12 data */
+		if (priv->client_cert)
+			g_byte_array_free (priv->client_cert, TRUE);
+
+		priv->client_cert = g_byte_array_sized_new (priv->private_key->len);
+		g_byte_array_append (priv->client_cert, priv->private_key->data, priv->private_key->len);
+	} else {
+		/* As a special case for private keys, even if the decrypt fails,
+		 * return the key's file type.
+		 */
+		if (out_ck_type && crypto_is_pkcs12_file (filename))
+			*out_ck_type = NM_SETTING_802_1X_CK_TYPE_PKCS12;
+	}
 
 	return priv->private_key != NULL;
+}
+
+NMSetting8021xCKType
+nm_setting_802_1x_get_private_key_type (NMSetting8021x *setting)
+{
+	NMSetting8021xPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_802_1X_CK_TYPE_UNKNOWN);
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
+
+	if (!priv->private_key)
+		return NM_SETTING_802_1X_CK_TYPE_UNKNOWN;
+
+	if (crypto_is_pkcs12_data (priv->private_key))
+		return NM_SETTING_802_1X_CK_TYPE_PKCS12;
+
+	return NM_SETTING_802_1X_CK_TYPE_X509;
 }
 
 const GByteArray *
@@ -437,18 +592,29 @@ nm_setting_802_1x_get_phase2_private_key (NMSetting8021x *setting)
 	return NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_private_key;
 }
 
+const char *
+nm_setting_802_1x_get_phase2_private_key_password (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NULL);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->phase2_private_key_password;
+}
+
 gboolean
 nm_setting_802_1x_set_phase2_private_key_from_file (NMSetting8021x *self,
                                                     const char *filename,
                                                     const char *password,
+                                                    NMSetting8021xCKType *out_ck_type,
                                                     GError **err)
 {
 	NMSetting8021xPrivate *priv;
-	guint32 ignore;
+	NMCryptoKeyType ignore = NM_CRYPTO_KEY_TYPE_UNKNOWN;
+	NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 
 	g_return_val_if_fail (NM_IS_SETTING_802_1X (self), FALSE);
 	g_return_val_if_fail (filename != NULL, FALSE);
-	g_return_val_if_fail (password != NULL, FALSE);
+	if (out_ck_type)
+		g_return_val_if_fail (*out_ck_type == NM_SETTING_802_1X_CK_TYPE_UNKNOWN, FALSE);
 
 	priv = NM_SETTING_802_1X_GET_PRIVATE (self);
 	if (priv->phase2_private_key) {
@@ -457,9 +623,59 @@ nm_setting_802_1x_set_phase2_private_key_from_file (NMSetting8021x *self,
 		g_byte_array_free (priv->phase2_private_key, TRUE);
 	}
 
-	priv->phase2_private_key = crypto_get_private_key (filename, password, &ignore, err);
+	g_free (priv->phase2_private_key_password);
+	priv->phase2_private_key_password = NULL;
+
+	priv->phase2_private_key = crypto_get_private_key (filename, password, &ignore, &format, err);
+	if (priv->phase2_private_key) {
+		switch (format) {
+		case NM_CRYPTO_FILE_FORMAT_RAW_KEY:
+			if (out_ck_type)
+				*out_ck_type = NM_SETTING_802_1X_CK_TYPE_RAW_KEY;
+			break;
+		case NM_CRYPTO_FILE_FORMAT_PKCS12:
+			// FIXME: use secure memory
+			priv->phase2_private_key_password = g_strdup (password);
+			if (out_ck_type)
+				*out_ck_type = NM_SETTING_802_1X_CK_TYPE_PKCS12;
+			break;
+		default:
+			g_assert_not_reached ();
+			break;
+		} 
+
+		/* As required by NM, set the client-cert property to the same PKCS#12 data */
+		if (priv->phase2_client_cert)
+			g_byte_array_free (priv->phase2_client_cert, TRUE);
+
+		priv->phase2_client_cert = g_byte_array_sized_new (priv->phase2_private_key->len);
+		g_byte_array_append (priv->phase2_client_cert, priv->phase2_private_key->data, priv->phase2_private_key->len);
+	} else {
+		/* As a special case for private keys, even if the decrypt fails,
+		 * return the key's file type.
+		 */
+		if (out_ck_type && crypto_is_pkcs12_file (filename))
+			*out_ck_type = NM_SETTING_802_1X_CK_TYPE_PKCS12;
+	}
 
 	return priv->phase2_private_key != NULL;
+}
+
+NMSetting8021xCKType
+nm_setting_802_1x_get_phase2_private_key_type (NMSetting8021x *setting)
+{
+	NMSetting8021xPrivate *priv;
+
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), NM_SETTING_802_1X_CK_TYPE_UNKNOWN);
+	priv = NM_SETTING_802_1X_GET_PRIVATE (setting);
+
+	if (!priv->phase2_private_key)
+		return NM_SETTING_802_1X_CK_TYPE_UNKNOWN;
+
+	if (crypto_is_pkcs12_data (priv->phase2_private_key))
+		return NM_SETTING_802_1X_CK_TYPE_PKCS12;
+
+	return NM_SETTING_802_1X_CK_TYPE_X509;
 }
 
 static void
@@ -484,6 +700,30 @@ need_secrets_sim (NMSetting8021x *self,
 		g_ptr_array_add (secrets, NM_SETTING_802_1X_PIN);
 }
 
+static gboolean
+need_private_key_password (GByteArray *key, const char *password)
+{
+	GError *error = NULL;
+	gboolean needed = TRUE;
+
+	/* See if a private key password is needed, which basically is whether
+	 * or not the private key is a PKCS#12 file or not, since PKCS#1 files
+	 * are decrypted by the settings service.
+	 */
+	if (!crypto_is_pkcs12_data (key))
+		return FALSE;
+
+	if (crypto_verify_pkcs12 (key, password, &error))
+		return FALSE;  /* pkcs#12 validation successful */
+
+	/* If the error was a decryption error then a password is needed */
+	if (!error || g_error_matches (error, NM_CRYPTO_ERROR, NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED))
+		needed = TRUE;
+
+	g_clear_error (&error);
+	return needed;
+}
+
 static void
 need_secrets_tls (NMSetting8021x *self,
                   GPtrArray *secrets,
@@ -492,13 +732,15 @@ need_secrets_tls (NMSetting8021x *self,
 	NMSetting8021xPrivate *priv = NM_SETTING_802_1X_GET_PRIVATE (self);
 
 	if (phase2) {
-		if (   priv->phase2_client_cert
-		    && (!priv->phase2_private_key || !priv->phase2_private_key->len))
+		if (!priv->phase2_private_key || !priv->phase2_private_key->len)
 			g_ptr_array_add (secrets, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
+		else if (need_private_key_password (priv->phase2_private_key, priv->phase2_private_key_password))
+			g_ptr_array_add (secrets, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD);
 	} else {
-		if (priv->client_cert
-		    && (!priv->private_key || !priv->private_key->len))
+		if (!priv->private_key || !priv->private_key->len)
 			g_ptr_array_add (secrets, NM_SETTING_802_1X_PRIVATE_KEY);
+		else if (need_private_key_password (priv->private_key, priv->private_key_password))
+			g_ptr_array_add (secrets, NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
 	}
 }
 
@@ -521,6 +763,27 @@ verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 			             NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
 			return FALSE;
 		}
+
+		/* If the private key is PKCS#12, check that it matches the client cert */
+		if (priv->phase2_private_key && crypto_is_pkcs12_data (priv->phase2_private_key)) {
+			if (priv->phase2_private_key->len != priv->phase2_client_cert->len) {
+				g_set_error (error,
+				             NM_SETTING_802_1X_ERROR,
+				             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+				             NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
+				return FALSE;
+			}
+
+			if (memcmp (priv->phase2_private_key->data,
+			            priv->phase2_client_cert->data,
+			            priv->phase2_private_key->len)) {
+				g_set_error (error,
+				             NM_SETTING_802_1X_ERROR,
+				             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+				             NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
+				return FALSE;
+			}
+		}
 	} else {
 		if (!priv->client_cert) {
 			g_set_error (error,
@@ -534,6 +797,27 @@ verify_tls (NMSetting8021x *self, gboolean phase2, GError **error)
 			             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
 			             NM_SETTING_802_1X_CLIENT_CERT);
 			return FALSE;
+		}
+
+		/* If the private key is PKCS#12, check that it matches the client cert */
+		if (priv->private_key && crypto_is_pkcs12_data (priv->private_key)) {
+			if (priv->private_key->len != priv->client_cert->len) {
+				g_set_error (error,
+				             NM_SETTING_802_1X_ERROR,
+				             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+				             NM_SETTING_802_1X_CLIENT_CERT);
+				return FALSE;
+			}
+
+			if (memcmp (priv->private_key->data,
+			            priv->client_cert->data,
+			            priv->private_key->len)) {
+				g_set_error (error,
+				             NM_SETTING_802_1X_ERROR,
+				             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
+				             NM_SETTING_802_1X_CLIENT_CERT);
+				return FALSE;
+			}
 		}
 	}
 
@@ -856,12 +1140,14 @@ finalize (GObject *object)
 		g_byte_array_free (priv->client_cert, TRUE);
 	if (priv->private_key)
 		g_byte_array_free (priv->private_key, TRUE);
+	g_free (priv->private_key_password);
 	if (priv->phase2_ca_cert)
 		g_byte_array_free (priv->phase2_ca_cert, TRUE);
 	if (priv->phase2_client_cert)
 		g_byte_array_free (priv->phase2_client_cert, TRUE);
 	if (priv->phase2_private_key)
 		g_byte_array_free (priv->phase2_private_key, TRUE);
+	g_free (priv->phase2_private_key_password);
 
 	G_OBJECT_CLASS (nm_setting_802_1x_parent_class)->finalize (object);
 }
@@ -943,10 +1229,18 @@ set_property (GObject *object, guint prop_id,
 			g_byte_array_free (priv->private_key, TRUE);
 		priv->private_key = g_value_dup_boxed (value);
 		break;
+	case PROP_PRIVATE_KEY_PASSWORD:
+		g_free (priv->private_key_password);
+		priv->private_key_password = g_value_dup_string (value);
+		break;
 	case PROP_PHASE2_PRIVATE_KEY:
 		if (priv->phase2_private_key)
 			g_byte_array_free (priv->phase2_private_key, TRUE);
 		priv->phase2_private_key = g_value_dup_boxed (value);
+		break;
+	case PROP_PHASE2_PRIVATE_KEY_PASSWORD:
+		g_free (priv->phase2_private_key_password);
+		priv->phase2_private_key_password = g_value_dup_string (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1010,8 +1304,14 @@ get_property (GObject *object, guint prop_id,
 	case PROP_PRIVATE_KEY:
 		g_value_set_boxed (value, priv->private_key);
 		break;
+	case PROP_PRIVATE_KEY_PASSWORD:
+		g_value_set_string (value, priv->private_key_password);
+		break;
 	case PROP_PHASE2_PRIVATE_KEY:
 		g_value_set_boxed (value, priv->phase2_private_key);
+		break;
+	case PROP_PHASE2_PRIVATE_KEY_PASSWORD:
+		g_value_set_string (value, priv->phase2_private_key_password);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1166,12 +1466,28 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
 
 	g_object_class_install_property
+		(object_class, PROP_PRIVATE_KEY_PASSWORD,
+		 g_param_spec_string (NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD,
+						  "Private key password",
+						  "Private key password",
+						  NULL,
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+
+	g_object_class_install_property
 		(object_class, PROP_PHASE2_PRIVATE_KEY,
 		 _nm_param_spec_specialized (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
 							   "Phase2 private key",
 							   "Phase2 private key",
 							   DBUS_TYPE_G_UCHAR_ARRAY,
 							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+
+	g_object_class_install_property
+		(object_class, PROP_PHASE2_PRIVATE_KEY_PASSWORD,
+		 g_param_spec_string (NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD,
+						  "Phase2 private key password",
+						  "Phase2 private key password",
+						  NULL,
+						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
 
 	/* Initialize crypto lbrary. */
 	if (!nm_utils_init (&error)) {

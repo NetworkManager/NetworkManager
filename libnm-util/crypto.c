@@ -68,26 +68,24 @@ find_tag (const char *tag, const char *buf, gsize len)
 #define DEK_INFO_TAG "DEK-Info: "
 #define PROC_TYPE_TAG "Proc-Type: "
 
-static char *
-parse_key_file (const char *filename,
-                int key_type,
-                gsize *out_length,
-                char **out_cipher,
-                char **out_iv,
-                GError **error)
+static GByteArray *
+parse_old_openssl_key_file (GByteArray *contents,
+                            int key_type,
+                            char **out_cipher,
+                            char **out_iv,
+                            GError **error)
 {
-	char *contents = NULL;
+	GByteArray *bindata = NULL;
 	char **lines = NULL;
 	char **ln = NULL;
-	gsize length = 0;
 	const char *pos;
 	const char *end;
 	GString *str = NULL;
 	int enc_tags = 0;
 	char *iv = NULL;
 	char *cipher = NULL;
-	char *bindata = NULL;
-	gsize bindata_len = 0;
+	unsigned char *tmp = NULL;
+	gsize tmp_len = 0;
 	const char *start_tag;
 	const char *end_tag;
 
@@ -109,19 +107,16 @@ parse_key_file (const char *filename,
 		return NULL;
 	}
 
-	if (!g_file_get_contents (filename, &contents, &length, error))
-		return NULL;
-
-	pos = find_tag (start_tag, contents, length);
+	pos = find_tag (start_tag, (const char *) contents->data, contents->len);
 	if (!pos)
 		goto parse_error;
 
 	pos += strlen (start_tag);
 
-	end = find_tag (end_tag, pos, contents + length - pos);
+	end = find_tag (end_tag, pos, (const char *) contents->data + contents->len - pos);
 	if (end == NULL) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_PEM_FORMAT_INVALID,
+		             NM_CRYPTO_ERR_FILE_FORMAT_INVALID,
 		             _("PEM key file had no end tag '%s'."),
 		             end_tag);
 		goto parse_error;
@@ -131,7 +126,7 @@ parse_key_file (const char *filename,
 	lines = g_strsplit (pos, "\n", 0);
 	if (!lines || g_strv_length (lines) <= 1) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_PEM_FORMAT_INVALID,
+		             NM_CRYPTO_ERR_FILE_FORMAT_INVALID,
 		             _("Doesn't look like a PEM private key file."));
 		goto parse_error;
 	}
@@ -155,7 +150,7 @@ parse_key_file (const char *filename,
 		if (!strncmp (p, PROC_TYPE_TAG, strlen (PROC_TYPE_TAG))) {
 			if (enc_tags++ != 0) {
 				g_set_error (error, NM_CRYPTO_ERROR,
-				             NM_CRYPTO_ERR_PEM_FORMAT_INVALID,
+				             NM_CRYPTO_ERR_FILE_FORMAT_INVALID,
 				             _("Malformed PEM file: Proc-Type was not first tag."));
 				goto parse_error;
 			}
@@ -163,7 +158,7 @@ parse_key_file (const char *filename,
 			p += strlen (PROC_TYPE_TAG);
 			if (strcmp (p, "4,ENCRYPTED")) {
 				g_set_error (error, NM_CRYPTO_ERROR,
-				             NM_CRYPTO_ERR_PEM_FORMAT_INVALID,
+				             NM_CRYPTO_ERR_FILE_FORMAT_INVALID,
 				             _("Malformed PEM file: unknown Proc-Type tag '%s'."),
 				             p);
 				goto parse_error;
@@ -173,7 +168,7 @@ parse_key_file (const char *filename,
 
 			if (enc_tags++ != 1) {
 				g_set_error (error, NM_CRYPTO_ERROR,
-				             NM_CRYPTO_ERR_PEM_FORMAT_INVALID,
+				             NM_CRYPTO_ERR_FILE_FORMAT_INVALID,
 				             _("Malformed PEM file: DEK-Info was not the second tag."));
 				goto parse_error;
 			}
@@ -184,14 +179,14 @@ parse_key_file (const char *filename,
 			comma = strchr (p, ',');
 			if (!comma || (*(comma + 1) == '\0')) {
 				g_set_error (error, NM_CRYPTO_ERROR,
-				             NM_CRYPTO_ERR_PEM_FORMAT_INVALID,
+				             NM_CRYPTO_ERR_FILE_FORMAT_INVALID,
 				             _("Malformed PEM file: no IV found in DEK-Info tag."));
 				goto parse_error;
 			}
 			*comma++ = '\0';
 			if (!g_ascii_isxdigit (*comma)) {
 				g_set_error (error, NM_CRYPTO_ERROR,
-				             NM_CRYPTO_ERR_PEM_FORMAT_INVALID,
+				             NM_CRYPTO_ERR_FILE_FORMAT_INVALID,
 				             _("Malformed PEM file: invalid format of IV in DEK-Info tag."));
 				goto parse_error;
 			}
@@ -212,7 +207,7 @@ parse_key_file (const char *filename,
 		} else {
 			if ((enc_tags != 0) && (enc_tags != 2)) {
 				g_set_error (error, NM_CRYPTO_ERROR,
-				             NM_CRYPTO_ERR_PEM_FORMAT_INVALID,
+				             NM_CRYPTO_ERR_FILE_FORMAT_INVALID,
 				             "Malformed PEM file: both Proc-Type and DEK-Info tags are required.");
 				goto parse_error;
 			}
@@ -220,8 +215,8 @@ parse_key_file (const char *filename,
 		}
 	}
 
-	bindata = (char *) g_base64_decode (str->str, &bindata_len);
-	if (bindata == NULL || !bindata_len) {
+	tmp = g_base64_decode (str->str, &tmp_len);
+	if (tmp == NULL || !tmp_len) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_DECODE_FAILED,
 		             _("Could not decode private key."));
@@ -230,36 +225,37 @@ parse_key_file (const char *filename,
 
 	if (lines)
 		g_strfreev (lines);
-	g_free (contents);
 
+	bindata = g_byte_array_sized_new (tmp_len);
+	g_byte_array_append (bindata, tmp, tmp_len);
 	*out_iv = iv;
 	*out_cipher = cipher;
-	*out_length = bindata_len;
 	return bindata;
 
 parse_error:
-	g_free (bindata);
 	g_free (cipher);
 	g_free (iv);
 	if (lines)
 		g_strfreev (lines);
-	g_free (contents);
 	return NULL;
 }
 
 static GByteArray *
 file_to_g_byte_array (const char *filename,
+                      gboolean privkey,
                       GError **error)
 {
 	char *contents, *der = NULL;
 	GByteArray *array = NULL;
 	gsize length = 0;
-	const char *pos;
+	const char *pos = NULL;
 
 	if (!g_file_get_contents (filename, &contents, &length, error))
 		return NULL;
 
-	pos = find_tag (pem_cert_begin, contents, length);
+	if (!privkey)
+		pos = find_tag (pem_cert_begin, contents, length);
+
 	if (pos) {
 		const char *end;
 
@@ -267,7 +263,7 @@ file_to_g_byte_array (const char *filename,
 		end = find_tag (pem_cert_end, pos, contents + length - pos);
 		if (end == NULL) {
 			g_set_error (error, NM_CRYPTO_ERROR,
-			             NM_CRYPTO_ERR_PEM_FORMAT_INVALID,
+			             NM_CRYPTO_ERR_FILE_FORMAT_INVALID,
 			             _("PEM certificate '%s' had no end tag '%s'."),
 			             filename, pem_cert_end);
 			goto done;
@@ -295,7 +291,7 @@ file_to_g_byte_array (const char *filename,
 	if (array->len != length) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_OUT_OF_MEMORY,
-		             _("Not enough memory to store certificate data."));
+		             _("Not enough memory to store file data."));
 		g_byte_array_free (array, TRUE);
 		array = NULL;
 	}
@@ -420,8 +416,7 @@ error:
 static char *
 decrypt_key (const char *cipher,
              int key_type,
-             const char *data,
-             gsize data_len,
+             GByteArray *data,
              const char *iv,
              const char *password,
              gsize *out_len,
@@ -443,7 +438,7 @@ decrypt_key (const char *cipher,
 		goto out;
 
 	output = crypto_decrypt (cipher, key_type,
-	                         data, data_len,
+	                         data,
 	                         bin_iv, bin_iv_len,
 	                         key, key_len,
 	                         out_len,
@@ -467,38 +462,60 @@ out:
 	return output;
 }
 
-
 GByteArray *
-crypto_get_private_key (const char *file,
-                        const char *password,
-                        guint32 *out_key_type,
-                        GError **error)
+crypto_get_private_key_data (GByteArray *contents,
+                             const char *password,
+                             NMCryptoKeyType *out_key_type,
+                             NMCryptoFileFormat *out_file_type,
+                             GError **error)
 {
 	GByteArray *array = NULL;
-	guint32 key_type = NM_CRYPTO_KEY_TYPE_RSA;
-	char *data = NULL;
-	gsize data_len = 0;
+	NMCryptoKeyType key_type = NM_CRYPTO_KEY_TYPE_RSA;
+	GByteArray *data;
 	char *iv = NULL;
 	char *cipher = NULL;
 	char *decrypted = NULL;
 	gsize decrypted_len = 0;
 
-	/* Try RSA first */
-	data = parse_key_file (file, key_type, &data_len, &cipher, &iv, error);
+	g_return_val_if_fail (contents != NULL, NULL);
+	g_return_val_if_fail (password != NULL, NULL);
+	g_return_val_if_fail (out_key_type != NULL, NULL);
+	g_return_val_if_fail (out_key_type == NM_CRYPTO_KEY_TYPE_UNKNOWN, NULL);
+	g_return_val_if_fail (out_file_type != NULL, NULL);
+	g_return_val_if_fail (out_file_type == NM_CRYPTO_FILE_FORMAT_UNKNOWN, NULL);
+
+	/* Try PKCS#12 first */
+	if (crypto_verify_pkcs12 (contents, password, NULL)) {
+		*out_key_type = NM_CRYPTO_KEY_TYPE_ENCRYPTED;
+		*out_file_type = NM_CRYPTO_FILE_FORMAT_PKCS12;
+
+		array = g_byte_array_sized_new (contents->len);
+		g_byte_array_append (array, contents->data, contents->len);
+		return array;
+	}
+
+	/* OpenSSL non-standard legacy PEM files */
+
+	/* Try RSA keys first */
+	data = parse_old_openssl_key_file (contents, key_type, &cipher, &iv, error);
 	if (!data) {
 		g_clear_error (error);
 
 		/* DSA next */
 		key_type = NM_CRYPTO_KEY_TYPE_DSA;
-		data = parse_key_file (file, key_type, &data_len, &cipher, &iv, error);
-		if (!data)
+		data = parse_old_openssl_key_file (contents, key_type, &cipher, &iv, error);
+		if (!data) {
+			g_clear_error (error);
+			g_set_error (error, NM_CRYPTO_ERROR,
+			             NM_CRYPTO_ERR_FILE_FORMAT_INVALID,
+			             _("Unable to determine private key type."));
 			goto out;
+		}
 	}
 
 	decrypted = decrypt_key (cipher,
 	                         key_type,
 	                         data,
-	                         data_len,
 	                         iv,
 	                         password,
 	                         &decrypted_len,
@@ -516,6 +533,7 @@ crypto_get_private_key (const char *file,
 
 	g_byte_array_append (array, (const guint8 *) decrypted, decrypted_len);
 	*out_key_type = key_type;
+	*out_file_type = NM_CRYPTO_FILE_FORMAT_RAW_KEY;
 
 out:
 	if (decrypted) {
@@ -523,27 +541,96 @@ out:
 		memset (decrypted, 0, decrypted_len);
 		g_free (decrypted);
 	}
-	g_free (data);
+	if (data)
+		g_byte_array_free (data, TRUE);
 	g_free (cipher);
 	g_free (iv);
 	return array;
 }
 
 GByteArray *
+crypto_get_private_key (const char *file,
+                        const char *password,
+                        NMCryptoKeyType *out_key_type,
+                        NMCryptoFileFormat *out_file_type,
+                        GError **error)
+{
+	GByteArray *contents;
+	GByteArray *key = NULL;
+
+	contents = file_to_g_byte_array (file, TRUE, error);
+	if (contents) {
+		key = crypto_get_private_key_data (contents, password, out_key_type, out_file_type, error);
+		g_byte_array_free (contents, TRUE);
+	}
+	return key;
+}
+
+GByteArray *
 crypto_load_and_verify_certificate (const char *file,
+                                    NMCryptoFileFormat *out_file_format,
                                     GError **error)
 {
 	GByteArray *array;
 
-	array = file_to_g_byte_array (file, error);
+	g_return_val_if_fail (file != NULL, NULL);
+	g_return_val_if_fail (out_file_format != NULL, NULL);
+	g_return_val_if_fail (*out_file_format == NM_CRYPTO_FILE_FORMAT_UNKNOWN, NULL);
+
+	array = file_to_g_byte_array (file, FALSE, error);
 	if (!array)
 		return NULL;
 
-	if (!crypto_verify_cert (array->data, array->len, error)) {
-		g_byte_array_free (array, TRUE);
-		array = NULL;
+	*out_file_format = crypto_verify_cert (array->data, array->len, error);
+	if (*out_file_format == NM_CRYPTO_FILE_FORMAT_UNKNOWN) {
+		/* Try PKCS#12 */
+		if (crypto_is_pkcs12_data (array)) {
+			*out_file_format = NM_CRYPTO_FILE_FORMAT_PKCS12;
+			g_clear_error (error);
+		} else {
+			g_byte_array_free (array, TRUE);
+			array = NULL;
+		}
 	}
 
 	return array;
+}
+
+gboolean
+crypto_is_pkcs12_data (const GByteArray *data)
+{
+	GError *error = NULL;
+	gboolean success;
+
+	g_return_val_if_fail (data != NULL, FALSE);
+
+	success = crypto_verify_pkcs12 (data, NULL, &error);
+	if (success)
+		return TRUE;
+
+	/* If the error was just a decryption error, then it's pkcs#12 */
+	if (error) {
+		if (g_error_matches (error, NM_CRYPTO_ERROR, NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED))
+			success = TRUE;
+		g_error_free (error);		
+	}
+
+	return success;
+}
+
+gboolean
+crypto_is_pkcs12_file (const char *file)
+{
+	GByteArray *contents;
+	gboolean success = FALSE;
+
+	g_return_val_if_fail (file != NULL, FALSE);
+
+	contents = file_to_g_byte_array (file, TRUE, NULL);
+	if (contents) {
+		success = crypto_is_pkcs12_data (contents);
+		g_byte_array_free (contents, TRUE);
+	}
+	return success;
 }
 

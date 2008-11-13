@@ -103,7 +103,6 @@ usage (const char *prgname)
 
 int main (int argc, char **argv)
 {
-	guint32 key_type = 0;
 	int mode = 0;
 	const char *file;
 	GError *error = NULL;
@@ -140,26 +139,54 @@ int main (int argc, char **argv)
 
 	if (mode == MODE_CERT) {
 		GByteArray *array;
+		NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 
-		array = crypto_load_and_verify_certificate (file, &error);
+		array = crypto_load_and_verify_certificate (file, &format, &error);
 		if (!array) {
 			g_warning ("Couldn't read certificate file '%s': %d %s",
 			           file, error->code, error->message);
 			goto out;
 		}
+
+		switch (format) {
+		case NM_CRYPTO_FILE_FORMAT_X509:
+			g_message ("Format: pkcs#1");
+			break;
+		case NM_CRYPTO_FILE_FORMAT_PKCS12:
+			g_message ("Format: pkcs#12");
+			break;
+		default:
+			g_message ("Format: unknown");
+			break;
+		}
+
 		g_byte_array_free (array, TRUE);
 	} else if (mode == MODE_KEY) {
+		NMCryptoKeyType key_type = NM_CRYPTO_KEY_TYPE_UNKNOWN;
+		NMCryptoFileFormat format = NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 		const char *password = argv[3];
 		GByteArray *array;
 
-		array = crypto_get_private_key (file, password, &key_type, &error);
+		array = crypto_get_private_key (file, password, &key_type, &format, &error);
 		if (!array) {
 			g_warning ("Couldn't read key file '%s': %d %s",
 			           file, error->code, error->message);
 			goto out;
 		}
 
-		dump_key_to_pem ((const char *) array->data, array->len, key_type);
+		switch (format) {
+		case NM_CRYPTO_FILE_FORMAT_RAW_KEY:
+			g_message ("Original format: pkcs#1\n");
+			dump_key_to_pem ((const char *) array->data, array->len, key_type);
+			break;
+		case NM_CRYPTO_FILE_FORMAT_PKCS12:
+			g_message ("Original format: pkcs#12");
+			break;
+		default:
+			g_message ("Original format: unknown");
+			break;
+		}
+
 		g_byte_array_free (array, TRUE);
 	} else {
 		g_assert_not_reached ();

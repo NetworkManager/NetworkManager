@@ -1,3 +1,65 @@
+2008-11-13  Dan Williams  <dcbw@redhat.com>
+
+	Add support for PKCS#12 private keys (bgo #558982)
+
+	* libnm-util/crypto.c
+	  libnm-util/crypto.h
+		- (parse_old_openssl_key_file): rename from parse_key_file(); adapt to
+			take a GByteArray instead of a filename
+		- (file_to_g_byte_array): handle private key files too
+		- (decrypt_key): take a GByteArray rather than data + len
+		- (crypto_get_private_key_data): refactor crypto_get_private_key() into
+			one function that takes a filename, and one that takes raw data;
+			detect pkcs#12 files as well
+		- (crypto_load_and_verify_certificate): detect file type
+		- (crypto_is_pkcs12_data, crypto_is_pkcs12_file): add pkcs#12 detection
+			functions
+
+	* libnm-util/crypto_gnutls.c
+		- (crypto_decrypt): take GByteArray rather than data + len; fix a bug
+			whereby tail padding was incorrectly handled, leading to erroneous
+			successes when trying to decrypt the data
+		- (crypto_verify_cert): rework somewhat
+		- (crypto_verify_pkcs12): validate pkcs#12 keys
+
+	* libnm-util/crypto_nss.c
+		- (crypto_init): enable various pkcs#12 ciphers
+		- (crypto_decrypt): take a GByteArray rather than data + len
+		- (crypto_verify_cert): clean up
+		- (crypto_verify_pkcs12): validate pkcs#12 keys
+
+	* libnm-util/test-crypto.c
+		- Handle pkcs#12 keys
+
+	* libnm-util/nm-setting-8021x.c
+	  libnm-util/nm-setting-8021x.h
+	  libnm-util/libnm-util.ver
+		- Add two new properties, 'private-key-password' and
+			'phase2-private-key-password', to be used in conjunction with
+			pkcs#12 keys
+		- (nm_setting_802_1x_set_ca_cert_from_file,
+		   nm_setting_802_1x_set_client_cert_from_file,
+		   nm_setting_802_1x_set_phase2_ca_cert_from_file,
+		   nm_setting_802_1x_set_phase2_client_from_file): return certificate
+			type
+		- (nm_setting_802_1x_get_private_key_password,
+		   nm_setting_802_1x_get_phase2_private_key_password): return private
+			key passwords
+		- (nm_setting_802_1x_set_private_key_from_file,
+		   nm_setting_802_1x_set_phase2_private_key_from_file): set the private
+			key from a file, and update the private key password at the same time
+		- (nm_setting_802_1x_get_private_key_type,
+		   nm_setting_802_1x_get_phase2_private_key_type): return the private
+			key type
+
+	* src/supplicant-manager/nm-supplicant-settings-verify.c
+		- Whitelist private key passwords
+
+	* src/supplicant-manager/nm-supplicant-config.c
+		- (nm_supplicant_config_add_setting_8021x): for pkcs#12 private keys,
+			add the private key password to the supplicant config, but do not
+			add the client certificate (as required by wpa_supplicant)
+
 2008-11-12  Tambet Ingo  <tambet@gmail.com>
 
 	* system-settings/plugins/keyfile/nm-keyfile-connection.c (copy_one_secret)

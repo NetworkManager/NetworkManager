@@ -26,6 +26,7 @@
 #include <gcrypt.h>
 #include <gnutls/gnutls.h>
 #include <gnutls/x509.h>
+#include <gnutls/pkcs12.h>
 
 #include "crypto.h"
 
@@ -117,8 +118,7 @@ crypto_md5_hash (const char *salt,
 char *
 crypto_decrypt (const char *cipher,
                 int key_type,
-                const char *data,
-                gsize data_len,
+                GByteArray *data,
                 const char *iv,
                 const gsize iv_len,
                 const char *key,
@@ -128,10 +128,10 @@ crypto_decrypt (const char *cipher,
 {
 	gcry_cipher_hd_t ctx;
 	gcry_error_t err;
-	int cipher_mech;
+	int cipher_mech, i;
 	char *output = NULL;
 	gboolean success = FALSE;
-	gsize len;
+	gsize pad_len;
 
 	if (!strcmp (cipher, CIPHER_DES_EDE3_CBC))
 		cipher_mech = GCRY_CIPHER_3DES;
@@ -145,7 +145,7 @@ crypto_decrypt (const char *cipher,
 		return NULL;
 	}
 
-	output = g_malloc0 (data_len + 1);
+	output = g_malloc0 (data->len + 1);
 	if (!output) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_OUT_OF_MEMORY,
@@ -180,7 +180,7 @@ crypto_decrypt (const char *cipher,
 		goto out;
 	}
 
-	err = gcry_cipher_decrypt (ctx, output, data_len, data, data_len);
+	err = gcry_cipher_decrypt (ctx, output, data->len, data->data, data->len);
 	if (err) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
@@ -188,11 +188,21 @@ crypto_decrypt (const char *cipher,
 		             gcry_strsource (err), gcry_strerror (err));
 		goto out;
 	}
-	len = data_len - output[data_len - 1];
-	if (len > data_len)
-		goto out;
+	pad_len = output[data->len - 1];
 
-	*out_len = len;
+	/* Validate tail padding; last byte is the padding size, and all pad bytes
+	 * should contain the padding size.
+	 */
+	for (i = 1; i <= pad_len; ++i) {
+		if (output[data->len - i] != pad_len) {
+			g_set_error (error, NM_CRYPTO_ERROR,
+			             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
+			             _("Failed to decrypt the private key."));
+			goto out;
+		}
+	}
+
+	*out_len = data->len - pad_len;
 	output[*out_len] = '\0';
 	success = TRUE;
 
@@ -200,7 +210,7 @@ out:
 	if (!success) {
 		if (output) {
 			/* Don't expose key material */
-			memset (output, 0, data_len);
+			memset (output, 0, data->len);
 			g_free (output);
 			output = NULL;
 		}
@@ -209,37 +219,96 @@ out:
 	return output;
 }
 
-gboolean
+NMCryptoFileFormat
 crypto_verify_cert (const unsigned char *data,
                     gsize len,
                     GError **error)
 {
-	gnutls_x509_crt_t crt;
+	gnutls_x509_crt_t der;
 	gnutls_datum dt;
 	int err;
 
-	err = gnutls_x509_crt_init (&crt);
+	err = gnutls_x509_crt_init (&der);
 	if (err < 0) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_CERT_FORMAT_INVALID,
 		             _("Error initializing certificate data: %s"),
 		             gnutls_strerror (err));
-		return FALSE;
+		return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
 	}
 
+	/* Try DER first */
 	dt.data = (unsigned char *) data;
 	dt.size = len;
+	err = gnutls_x509_crt_import (der, &dt, GNUTLS_X509_FMT_DER);
+	if (err == GNUTLS_E_SUCCESS) {
+		gnutls_x509_crt_deinit (der);
+		return NM_CRYPTO_FILE_FORMAT_X509;
+	}
 
-	err = gnutls_x509_crt_import (crt, &dt, GNUTLS_X509_FMT_DER);
+	/* And PEM next */
+	err = gnutls_x509_crt_import (der, &dt, GNUTLS_X509_FMT_PEM);
+	gnutls_x509_crt_deinit (der);
+	if (err == GNUTLS_E_SUCCESS)
+		return NM_CRYPTO_FILE_FORMAT_X509;
+
+	g_set_error (error, NM_CRYPTO_ERROR,
+	             NM_CRYPTO_ERR_CERT_FORMAT_INVALID,
+	             _("Couldn't decode certificate: %s"),
+	             gnutls_strerror (err));
+	return NM_CRYPTO_FILE_FORMAT_UNKNOWN;
+}
+
+gboolean
+crypto_verify_pkcs12 (const GByteArray *data,
+                      const char *password,
+                      GError **error)
+{
+	gnutls_pkcs12_t p12;
+	gnutls_datum dt;
+	gboolean success = FALSE;
+	int err;
+
+	g_return_val_if_fail (data != NULL, FALSE);
+
+	dt.data = (unsigned char *) data->data;
+	dt.size = data->len;
+
+	err = gnutls_pkcs12_init (&p12);
 	if (err < 0) {
 		g_set_error (error, NM_CRYPTO_ERROR,
-		             NM_CRYPTO_ERR_CERT_FORMAT_INVALID,
-		             _("Couldn't decode certificate: %s"),
+		             NM_CRYPTO_ERR_DECODE_FAILED,
+		             _("Couldn't initialize PKCS#12 decoder: %s"),
 		             gnutls_strerror (err));
 		return FALSE;
 	}
 
-	gnutls_x509_crt_deinit (crt);
-	return TRUE;
+	/* DER first */
+	err = gnutls_pkcs12_import (p12, &dt, GNUTLS_X509_FMT_DER, 0);
+	if (err < 0) {
+		/* PEM next */
+		err = gnutls_pkcs12_import (p12, &dt, GNUTLS_X509_FMT_PEM, 0);
+		if (err < 0) {
+			g_set_error (error, NM_CRYPTO_ERROR,
+			             NM_CRYPTO_ERR_FILE_FORMAT_INVALID,
+			             _("Couldn't decode PKCS#12 file: %s"),
+			             gnutls_strerror (err));
+			goto out;
+		}
+	}
+
+	err = gnutls_pkcs12_verify_mac (p12, password);
+	if (err == GNUTLS_E_SUCCESS)
+		success = TRUE;
+	else {
+		g_set_error (error, NM_CRYPTO_ERROR,
+		             NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
+		             _("Couldn't verify PKCS#12 file: %s"),
+		             gnutls_strerror (err));
+	}
+
+out:
+	gnutls_pkcs12_deinit (p12);
+	return success;
 }
 

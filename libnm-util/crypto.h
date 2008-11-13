@@ -31,7 +31,7 @@ enum {
 	NM_CRYPTO_ERR_NONE = 0,
 	NM_CRYPTO_ERR_INIT_FAILED,
 	NM_CRYPTO_ERR_CANT_READ_FILE,
-	NM_CRYPTO_ERR_PEM_FORMAT_INVALID,
+	NM_CRYPTO_ERR_FILE_FORMAT_INVALID,
 	NM_CRYPTO_ERR_CERT_FORMAT_INVALID,
 	NM_CRYPTO_ERR_DECODE_FAILED,
 	NM_CRYPTO_ERR_OUT_OF_MEMORY,
@@ -43,14 +43,22 @@ enum {
 	NM_CRYPTO_ERR_CIPHER_SET_KEY_FAILED,
 	NM_CRYPTO_ERR_CIPHER_SET_IV_FAILED,
 	NM_CRYPTO_ERR_CIPHER_DECRYPT_FAILED,
+	NM_CRYPTO_ERR_INVALID_PASSWORD,
 };
 
-enum {
+typedef enum {
 	NM_CRYPTO_KEY_TYPE_UNKNOWN = 0,
 	NM_CRYPTO_KEY_TYPE_RSA,
 	NM_CRYPTO_KEY_TYPE_DSA,
-};
+	NM_CRYPTO_KEY_TYPE_ENCRYPTED
+} NMCryptoKeyType;
 
+typedef enum {
+	NM_CRYPTO_FILE_FORMAT_UNKNOWN = 0,
+	NM_CRYPTO_FILE_FORMAT_X509,
+	NM_CRYPTO_FILE_FORMAT_RAW_KEY,
+	NM_CRYPTO_FILE_FORMAT_PKCS12
+} NMCryptoFileFormat;
 
 #define NM_CRYPTO_ERROR _nm_crypto_error_quark ()
 GQuark _nm_crypto_error_quark (void);
@@ -59,13 +67,26 @@ gboolean crypto_init (GError **error);
 
 void crypto_deinit (void);
 
+GByteArray * crypto_get_private_key_data (GByteArray *contents,
+                                          const char *password,
+                                          NMCryptoKeyType *out_key_type,
+                                          NMCryptoFileFormat *out_file_format,
+                                          GError **error);
+
 GByteArray * crypto_get_private_key (const char *file,
                                      const char *password,
-                                     guint32 *out_key_type,
+                                     NMCryptoKeyType *out_key_type,
+                                     NMCryptoFileFormat *out_file_format,
                                      GError **error);
 
 GByteArray * crypto_load_and_verify_certificate (const char *file,
+                                                 NMCryptoFileFormat *out_file_format,
                                                  GError **error);
+
+gboolean crypto_is_pkcs12_file (const char *file);
+
+gboolean crypto_is_pkcs12_data (const GByteArray *data);
+
 
 /* Internal utils API bits for crypto providers */
 
@@ -79,8 +100,7 @@ gboolean crypto_md5_hash (const char *salt,
 
 char * crypto_decrypt (const char *cipher,
                        int key_type,
-                       const char *data,
-                       gsize data_len,
+                       GByteArray *data,
                        const char *iv,
                        const gsize iv_len,
                        const char *key,
@@ -88,8 +108,11 @@ char * crypto_decrypt (const char *cipher,
                        gsize *out_len,
                        GError **error);
 
-gboolean crypto_verify_cert (const unsigned char *data,
-                             gsize len,
-                             GError **error);
+NMCryptoFileFormat crypto_verify_cert (const unsigned char *data,
+                                       gsize len,
+                                       GError **error);
 
+gboolean crypto_verify_pkcs12 (const GByteArray *data,
+                               const char *password,
+                               GError **error);
 

@@ -30,6 +30,13 @@
 
 G_BEGIN_DECLS
 
+typedef enum {
+	NM_SETTING_802_1X_CK_TYPE_UNKNOWN = 0,
+	NM_SETTING_802_1X_CK_TYPE_X509,
+	NM_SETTING_802_1X_CK_TYPE_RAW_KEY,
+	NM_SETTING_802_1X_CK_TYPE_PKCS12
+} NMSetting8021xCKType;
+
 #define NM_TYPE_SETTING_802_1X            (nm_setting_802_1x_get_type ())
 #define NM_SETTING_802_1X(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTING_802_1X, NMSetting8021x))
 #define NM_SETTING_802_1X_CLASS(klass)    (G_TYPE_CHECK_CLASS_CAST ((klass), NM_TYPE_SETTING_802_1X, NMSetting8021xClass))
@@ -69,7 +76,9 @@ GQuark nm_setting_802_1x_error_quark (void);
 #define NM_SETTING_802_1X_PHASE2_CLIENT_CERT "phase2-client-cert"
 #define NM_SETTING_802_1X_PASSWORD "password"
 #define NM_SETTING_802_1X_PRIVATE_KEY "private-key"
+#define NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD "private-key-password"
 #define NM_SETTING_802_1X_PHASE2_PRIVATE_KEY "phase2-private-key"
+#define NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD "phase2-private-key-password"
 #define NM_SETTING_802_1X_PIN "pin"
 #define NM_SETTING_802_1X_PSK "psk"
 
@@ -99,11 +108,13 @@ const GByteArray *nm_setting_802_1x_get_ca_cert                      (NMSetting8
 const char *      nm_setting_802_1x_get_ca_path                      (NMSetting8021x *setting);
 gboolean          nm_setting_802_1x_set_ca_cert_from_file            (NMSetting8021x *setting,
                                                                       const char *filename,
+                                                                      NMSetting8021xCKType *out_ck_type,
                                                                       GError **err);
 
 const GByteArray *nm_setting_802_1x_get_client_cert                  (NMSetting8021x *setting);
 gboolean          nm_setting_802_1x_set_client_cert_from_file        (NMSetting8021x *setting,
                                                                       const char *filename,
+                                                                      NMSetting8021xCKType *out_ck_type,
                                                                       GError **err);
 
 const char *      nm_setting_802_1x_get_phase1_peapver               (NMSetting8021x *setting);
@@ -120,11 +131,13 @@ const GByteArray *nm_setting_802_1x_get_phase2_ca_cert               (NMSetting8
 const char *      nm_setting_802_1x_get_phase2_ca_path               (NMSetting8021x *setting);
 gboolean          nm_setting_802_1x_set_phase2_ca_cert_from_file     (NMSetting8021x *setting,
                                                                       const char *filename,
+                                                                      NMSetting8021xCKType *out_ck_type,
                                                                       GError **err);
 
 const GByteArray *nm_setting_802_1x_get_phase2_client_cert           (NMSetting8021x *setting);
 gboolean          nm_setting_802_1x_set_phase2_client_cert_from_file (NMSetting8021x *setting,
                                                                       const char *filename,
+                                                                      NMSetting8021xCKType *out_ck_type,
                                                                       GError **err);
 
 const char *      nm_setting_802_1x_get_password                     (NMSetting8021x *setting);
@@ -133,17 +146,39 @@ const char *      nm_setting_802_1x_get_pin                          (NMSetting8
 
 const char *      nm_setting_802_1x_get_psk                          (NMSetting8021x *setting);
 
+/* PRIVATE KEY NOTE: when PKCS#12 private keys are used, the PKCS#12 data must
+ * be passed to NetworkManager as PKCS#12 (ie, shrouded).  In this case, the
+ * private key password must also be passed to NetworkManager, and the
+ * appropriate "client-cert" (or "phase2-client-cert") property of the
+ * NMSetting8021x object must also contain the exact same PKCS#12 data that the
+ * private key will when NetworkManager requests secrets.
+ *
+ * When OpenSSL-derived "traditional" format (ie S/MIME style, not PKCS#8) RSA
+ * and DSA keys are used, they must passed to NetworkManager completely
+ * decrypted because the OpenSSL "traditional" format is non-standard and is not
+ * complete enough for all crypto libraries to use.  Thus, for OpenSSL
+ * "traditional" format keys, the private key password is not passed to
+ * NetworkManager, and the appropriate "client-cert" (or "phase2-client-cert")
+ * property of the NMSetting8021x object must be a valid client certificate.
+ */
+
 const GByteArray *nm_setting_802_1x_get_private_key                  (NMSetting8021x *setting);
+const char *      nm_setting_802_1x_get_private_key_password         (NMSetting8021x *setting);
 gboolean          nm_setting_802_1x_set_private_key_from_file        (NMSetting8021x *setting,
                                                                       const char *filename,
                                                                       const char *password,
+                                                                      NMSetting8021xCKType *out_ck_type,
                                                                       GError **err);
+NMSetting8021xCKType nm_setting_802_1x_get_private_key_type          (NMSetting8021x *setting);
 
 const GByteArray *nm_setting_802_1x_get_phase2_private_key           (NMSetting8021x *setting);
+const char *      nm_setting_802_1x_get_phase2_private_key_password  (NMSetting8021x *setting);
 gboolean          nm_setting_802_1x_set_phase2_private_key_from_file (NMSetting8021x *setting,
                                                                       const char *filename,
                                                                       const char *password,
+                                                                      NMSetting8021xCKType *out_ck_type,
                                                                       GError **err);
+NMSetting8021xCKType nm_setting_802_1x_get_phase2_private_key_type   (NMSetting8021x *setting);
 
 G_END_DECLS
 

@@ -561,10 +561,10 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
                                         gboolean wired)
 {
 	NMSupplicantConfigPrivate *priv;
-	char * value;
+	char *value, *tmp;
 	gboolean success;
 	GString *phase1, *phase2;
-	char *tmp;
+	const GByteArray *array;
 
 	g_return_val_if_fail (NM_IS_SUPPLICANT_CONFIG (self), FALSE);
 	g_return_val_if_fail (setting != NULL, FALSE);
@@ -620,18 +620,41 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		ADD_STRING_VAL (phase2->str, "phase2", FALSE, FALSE, FALSE);
 	g_string_free (phase2, TRUE);
 
-	/* Private key passwords are never passed to wpa_supplicant because the
-	 * user agent is responsible for decoding and decrypting the private key,
-	 * and file paths are never passed to wpa_supplicant to ensure that
-	 * the supplicant can be locked down and doesn't try to read stuff from
-	 * all over the drive.
-	 */
 	ADD_BLOB_VAL (nm_setting_802_1x_get_ca_cert (setting), "ca_cert", connection_uid);
-	ADD_BLOB_VAL (nm_setting_802_1x_get_client_cert (setting), "client_cert", connection_uid);
-	ADD_BLOB_VAL (nm_setting_802_1x_get_private_key (setting), "private_key", connection_uid);
+
+	array = nm_setting_802_1x_get_private_key (setting);
+	if (array) {
+		ADD_BLOB_VAL (array, "private_key", connection_uid);
+
+		switch (nm_setting_802_1x_get_private_key_type (setting)) {
+		case NM_SETTING_802_1X_CK_TYPE_PKCS12:
+			/* Only add the private key password for PKCS#12 keys */
+			ADD_STRING_VAL (nm_setting_802_1x_get_private_key_password (setting), "private_key_passwd", FALSE, FALSE, TRUE);
+			break;
+		default:
+			/* Only add the client cert if the private key is not PKCS#12 */
+			ADD_BLOB_VAL (nm_setting_802_1x_get_client_cert (setting), "client_cert", connection_uid);
+			break;
+		}
+	}
+
 	ADD_BLOB_VAL (nm_setting_802_1x_get_phase2_ca_cert (setting), "ca_cert2", connection_uid);
-	ADD_BLOB_VAL (nm_setting_802_1x_get_phase2_client_cert (setting), "client_cert2", connection_uid);
-	ADD_BLOB_VAL (nm_setting_802_1x_get_phase2_private_key (setting), "private_key2", connection_uid);
+
+	array = nm_setting_802_1x_get_phase2_private_key (setting);
+	if (array) {
+		ADD_BLOB_VAL (array, "private_key2", connection_uid);
+
+		switch (nm_setting_802_1x_get_phase2_private_key_type (setting)) {
+		case NM_SETTING_802_1X_CK_TYPE_PKCS12:
+			/* Only add the private key password for PKCS#12 keys */
+			ADD_STRING_VAL (nm_setting_802_1x_get_phase2_private_key_password (setting), "private_key2_passwd", FALSE, FALSE, TRUE);
+			break;
+		default:
+			/* Only add the client cert if the private key is not PKCS#12 */
+			ADD_BLOB_VAL (nm_setting_802_1x_get_phase2_client_cert (setting), "client_cert2", connection_uid);
+			break;
+		}
+	}
 
 	ADD_STRING_VAL (nm_setting_802_1x_get_identity (setting), "identity", FALSE, FALSE, FALSE);
 	ADD_STRING_VAL (nm_setting_802_1x_get_anonymous_identity (setting), "anonymous_identity", FALSE, FALSE, FALSE);
