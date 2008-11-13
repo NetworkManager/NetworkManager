@@ -1,5 +1,11 @@
 2008-11-13  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/crypto.c
+		- (crypto_get_private_key_data): fix bad initial arg type checking
+			from pkcs#12 patch
+
+2008-11-13  Dan Williams  <dcbw@redhat.com>
+
 	Add support for PKCS#12 private keys (bgo #558982)
 
 	* libnm-util/crypto.c

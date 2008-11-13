@@ -480,9 +480,9 @@ crypto_get_private_key_data (GByteArray *contents,
 	g_return_val_if_fail (contents != NULL, NULL);
 	g_return_val_if_fail (password != NULL, NULL);
 	g_return_val_if_fail (out_key_type != NULL, NULL);
-	g_return_val_if_fail (out_key_type == NM_CRYPTO_KEY_TYPE_UNKNOWN, NULL);
+	g_return_val_if_fail (*out_key_type == NM_CRYPTO_KEY_TYPE_UNKNOWN, NULL);
 	g_return_val_if_fail (out_file_type != NULL, NULL);
-	g_return_val_if_fail (out_file_type == NM_CRYPTO_FILE_FORMAT_UNKNOWN, NULL);
+	g_return_val_if_fail (*out_file_type == NM_CRYPTO_FILE_FORMAT_UNKNOWN, NULL);
 
 	/* Try PKCS#12 first */
 	if (crypto_verify_pkcs12 (contents, password, NULL)) {
