@@ -525,12 +525,15 @@ add_ip4_route_to_gateway (const char *iface, guint32 gw, guint32 mss)
 	if (route == NULL)
 		return NULL;
 
+	rtnl_route_set_family (route, AF_INET);
+	rtnl_route_set_table (route, RT_TABLE_MAIN);
 	rtnl_route_set_oif (route, iface_idx);
-	rtnl_route_set_scope (route, RT_SCOPE_UNIVERSE);
+	rtnl_route_set_scope (route, RT_SCOPE_LINK);
 
 	gw_addr = nl_addr_build (AF_INET, &gw, sizeof (gw));
 	if (!gw_addr)
 		goto error;
+	nl_addr_set_prefixlen (gw_addr, 32);
 	rtnl_route_set_dst (route, gw_addr);
 	nl_addr_put (gw_addr);
 
@@ -542,8 +545,7 @@ add_ip4_route_to_gateway (const char *iface, guint32 gw, guint32 mss)
 	/* Add direct route to the gateway */
 	err = rtnl_route_add (nlh, route, 0);
 	if (err) {
-		nm_warning ("Failed to add IPv4 default route on '%s': (%d) %s",
-		            iface, err, nl_geterror ());
+		nm_warning ("(%s): failed to add IPv4 route to gateway (%d)", iface, err);
 		goto error;
 	}
 
@@ -559,6 +561,8 @@ replace_default_ip4_route (const char *iface, guint32 gw, guint32 mss)
 {
 	struct rtnl_route *route = NULL;
 	struct nl_handle *nlh;
+	struct nl_addr *dst_addr = NULL;
+	guint32 dst = 0;
 	struct nl_addr *gw_addr = NULL;
 	int iface_idx, err = -1;
 
@@ -574,15 +578,28 @@ replace_default_ip4_route (const char *iface, guint32 gw, guint32 mss)
 	route = rtnl_route_alloc();
 	g_return_val_if_fail (route != NULL, -1);
 
+	rtnl_route_set_family (route, AF_INET);
+	rtnl_route_set_table (route, RT_TABLE_MAIN);
 	rtnl_route_set_scope (route, RT_SCOPE_UNIVERSE);
 	rtnl_route_set_oif (route, iface_idx);
 
+	/* Build up the destination address */
+	dst_addr = nl_addr_build (AF_INET, &dst, sizeof (dst));
+	if (!dst_addr) {
+		err = -1;
+		goto out;
+	}
+	nl_addr_set_prefixlen (dst_addr, 0);
+	rtnl_route_set_dst (route, dst_addr);
+
 	/* Build up the gateway address */
 	gw_addr = nl_addr_build (AF_INET, &gw, sizeof (gw));
-	if (!gw_addr)
+	if (!gw_addr) {
+		err = -1;
 		goto out;
+	}
+	nl_addr_set_prefixlen (gw_addr, 0);
 	rtnl_route_set_gateway (route, gw_addr);
-	nl_addr_put (gw_addr);
 
 	if (mss > 0) {
 		if (rtnl_route_set_metric (route, RTAX_ADVMSS, mss) < 0)
@@ -593,6 +610,10 @@ replace_default_ip4_route (const char *iface, guint32 gw, guint32 mss)
 	err = rtnl_route_add (nlh, route, NLM_F_REPLACE);
 
 out:
+	if (dst_addr)
+		nl_addr_put (dst_addr);
+	if (gw_addr)
+		nl_addr_put (gw_addr);
 	rtnl_route_put (route);
 	return err;
 }
@@ -623,8 +644,7 @@ nm_system_replace_default_ip4_route_vpn (const char *iface,
 	if (err == 0) {
 		return TRUE;
 	} else if (err != -ESRCH) {
-		nm_warning ("replace_default_ip4_route() returned error %s (%d)",
-		            strerror (err), err);
+		nm_warning ("(%s): failed to set IPv4 default route (%d)", iface, err);
 		return FALSE;
 	}
 
@@ -637,7 +657,7 @@ nm_system_replace_default_ip4_route_vpn (const char *iface,
 	err = replace_default_ip4_route (iface, int_gw, mss);
 	if (err != 0) {
 		rtnl_route_del (nlh, gw_route, 0);
-		nm_warning ("Failed to set IPv4 default route on '%s': %s", iface, nl_geterror ());
+		nm_warning ("(%s): failed to set IPv4 default route (%d)", iface, err);
 	} else
 		success = TRUE;
 
@@ -680,7 +700,7 @@ nm_system_replace_default_ip4_route (const char *iface, guint32 gw, guint32 mss)
 	err = replace_default_ip4_route (iface, gw, mss);
 	if (err != 0) {
 		rtnl_route_del (nlh, gw_route, 0);
-		nm_warning ("Failed to set IPv4 default route on '%s': %s", iface, nl_geterror ());
+		nm_warning ("Failed to set IPv4 default route on '%s': %d", iface, err);
 	} else
 		success = TRUE;
 

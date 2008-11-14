@@ -1,5 +1,15 @@
 2008-11-14  Dan Williams  <dcbw@redhat.com>
 
+	Handle gateways on different subnets
+
+	* src/NetworkManagerSystem.c
+		- (add_ip4_route_to_gateway): gateway route should be link scope and
+			a host route
+		- (replace_default_ip4_route): use a destination address too; gateway
+			address should be /0; don't leak the gateway route object
+
+2008-11-14  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/libnm_glib.ver
 	  libnm-glib/nm-dbus-settings-system.c
 	  libnm-glib/nm-dbus-settings-system.h
