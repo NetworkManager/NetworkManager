@@ -284,7 +284,7 @@ plugin_state_changed (DBusGProxy *proxy,
 				  gpointer user_data)
 {
 	NMVPNConnection *connection = NM_VPN_CONNECTION (user_data);
-	NMVPNConnectionPrivate *priv;
+	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
 	nm_info ("VPN plugin state changed: %d", state);
 
@@ -297,9 +297,6 @@ plugin_state_changed (DBusGProxy *proxy,
 	case NM_VPN_CONNECTION_STATE_CONNECT:
 	case NM_VPN_CONNECTION_STATE_IP_CONFIG_GET:
 	case NM_VPN_CONNECTION_STATE_ACTIVATED:
-
-		priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
-
 		nm_info ("VPN plugin state change reason: %d", priv->failure_reason);
 		nm_vpn_connection_set_vpn_state (connection,
 		                                 NM_VPN_CONNECTION_STATE_FAILED,
@@ -311,6 +308,11 @@ plugin_state_changed (DBusGProxy *proxy,
 	default:
 		break;
 	}
+
+	/* Clear connection secrets too so the auth dialogs get asked
+	 * for them next time.
+	 */
+	nm_connection_clear_secrets (priv->connection);
 }
 
 static const char *
