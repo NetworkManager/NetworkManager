@@ -1,5 +1,9 @@
 2008-11-14  Dan Williams  <dcbw@redhat.com>
 
+	Relicense libnm-glib to LGPLv2+ with agreement from contributors
+
+2008-11-14  Dan Williams  <dcbw@redhat.com>
+
 	* vpn-manager/nm-vpn-connection.c
 		- (plugin_state_changed): clear VPN secrets on error to ensure they
 			are always requested from the settings service (rh #429287)
