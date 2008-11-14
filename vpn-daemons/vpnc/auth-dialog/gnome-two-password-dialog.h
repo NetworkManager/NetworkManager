@@ -77,8 +77,10 @@ void gnome_two_password_dialog_set_show_domain             (GnomeTwoPasswordDial
 							    gboolean                show);
 void gnome_two_password_dialog_set_show_password           (GnomeTwoPasswordDialog *password_dialog,
 							    gboolean                show);
+void gnome_two_password_dialog_focus_password              (GnomeTwoPasswordDialog *password_dialog);
 void gnome_two_password_dialog_set_show_password_secondary (GnomeTwoPasswordDialog *password_dialog,
 							    gboolean                show);
+void gnome_two_password_dialog_focus_password_secondary    (GnomeTwoPasswordDialog *password_dialog);
 void gnome_two_password_dialog_set_username                (GnomeTwoPasswordDialog  *password_dialog,
 							    const char              *username);
 void gnome_two_password_dialog_set_domain                  (GnomeTwoPasswordDialog  *password_dialog,

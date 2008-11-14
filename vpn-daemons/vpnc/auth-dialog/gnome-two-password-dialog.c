@@ -593,6 +593,26 @@ gnome_two_password_dialog_set_show_password_secondary (GnomeTwoPasswordDialog *p
 }
 
 void
+gnome_two_password_dialog_focus_password (GnomeTwoPasswordDialog *password_dialog)
+{
+	g_return_if_fail (password_dialog != NULL);
+	g_return_if_fail (GNOME_IS_TWO_PASSWORD_DIALOG (password_dialog));
+
+	if (password_dialog->details->show_password)
+		gtk_widget_grab_focus (password_dialog->details->password_entry);
+}
+
+void
+gnome_two_password_dialog_focus_password_secondary (GnomeTwoPasswordDialog *password_dialog)
+{
+	g_return_if_fail (password_dialog != NULL);
+	g_return_if_fail (GNOME_IS_TWO_PASSWORD_DIALOG (password_dialog));
+
+	if (password_dialog->details->show_password_secondary)
+		gtk_widget_grab_focus (password_dialog->details->password_entry_secondary);
+}
+
+void
 gnome_two_password_dialog_set_readonly_username (GnomeTwoPasswordDialog	*password_dialog,
 						gboolean		readonly)
 {

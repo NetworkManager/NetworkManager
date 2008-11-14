@@ -58,6 +58,10 @@
 #define ENC_TYPE_WEAK   1
 #define ENC_TYPE_NONE   2
 
+#define PW_TYPE_SAVE   0
+#define PW_TYPE_ASK	   1
+#define PW_TYPE_UNUSED 2
+
 /************** plugin class **************/
 
 static void vpnc_plugin_ui_interface_init (NMVpnPluginUiInterface *iface_class);
@@ -188,14 +192,21 @@ fill_vpn_passwords (VpncPluginUiWidget *self, NMConnection *connection)
 			}
 		} else {
 			s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-			keyring_helpers_lookup_secrets (nm_setting_connection_get_uuid (s_con),
-			                                &password, &group_password, NULL);
 
-			/* If they weren't in the keyring, maybe they are already in the conneciton
-			 * (from import, perhaps).
+			/* Lookup passwords in the keyring, and if they weren't there, try
+			 * the connection itself, which is where they'd be right after import.
 			 */
+			keyring_helpers_get_one_secret (nm_setting_connection_get_uuid (s_con),
+			                                VPNC_USER_PASSWORD,
+			                                &password,
+			                                NULL);
 			if (!password)
 				password = gnome_keyring_memory_strdup (nm_setting_vpn_get_secret (s_vpn, NM_VPNC_KEY_XAUTH_PASSWORD));
+
+			keyring_helpers_get_one_secret (nm_setting_connection_get_uuid (s_con),
+			                                VPNC_GROUP_PASSWORD,
+			                                &group_password,
+			                                NULL);
 			if (!group_password)
 				group_password = gnome_keyring_memory_strdup (nm_setting_vpn_get_secret (s_vpn, NM_VPNC_KEY_SECRET));
 		}
@@ -246,6 +257,101 @@ show_toggled_cb (GtkCheckButton *button, VpncPluginUiWidget *self)
 	gtk_entry_set_visibility (GTK_ENTRY (widget), visible);
 }
 
+static void
+pw_type_changed_helper (VpncPluginUiWidget *self, GtkWidget *combo)
+{
+	VpncPluginUiWidgetPrivate *priv = VPNC_PLUGIN_UI_WIDGET_GET_PRIVATE (self);
+	const char *entry = NULL;
+	GtkWidget *widget;
+	GtkTreeModel *model;
+
+	/* If the user chose "Not required", desensitize and clear the correct
+	 * password entry.
+	 */
+	widget = glade_xml_get_widget (priv->xml, "user_pass_type_combo");
+	if (combo == widget)
+		entry = "user_password_entry";
+	else {
+		widget = glade_xml_get_widget (priv->xml, "group_pass_type_combo");
+		if (combo == widget)
+			entry = "group_password_entry";
+	}
+	if (!entry)
+		return;
+
+	widget = glade_xml_get_widget (priv->xml, entry);
+	g_assert (widget);
+
+	model = gtk_combo_box_get_model (GTK_COMBO_BOX (combo));
+	switch (gtk_combo_box_get_active (GTK_COMBO_BOX (combo))) {
+	case PW_TYPE_ASK:
+	case PW_TYPE_UNUSED:
+		gtk_entry_set_text (GTK_ENTRY (widget), "");
+		gtk_widget_set_sensitive (widget, FALSE);
+		break;
+	default:
+		gtk_widget_set_sensitive (widget, TRUE);
+		break;
+	}
+}
+
+static void
+pw_type_combo_changed_cb (GtkWidget *combo, gpointer user_data)
+{
+	VpncPluginUiWidget *self = VPNC_PLUGIN_UI_WIDGET (user_data);
+
+	pw_type_changed_helper (self, combo);
+	stuff_changed_cb (combo, self);
+}
+
+static void
+init_one_pw_combo (VpncPluginUiWidget *self,
+                   NMSettingVPN *s_vpn,
+                   const char *combo_name,
+                   const char *key)
+{
+	VpncPluginUiWidgetPrivate *priv = VPNC_PLUGIN_UI_WIDGET_GET_PRIVATE (self);
+	int active = -1;
+	GtkWidget *widget;
+	GtkListStore *store;
+	GtkTreeIter iter;
+	const char *value = NULL;
+
+	store = gtk_list_store_new (1, G_TYPE_STRING);
+	if (s_vpn)
+		value = nm_setting_vpn_get_data_item (s_vpn, key);
+
+	gtk_list_store_append (store, &iter);
+	gtk_list_store_set (store, &iter, 0, _("Saved"), -1);
+	if ((active < 0) && value) {
+		if (!strcmp (value, NM_VPNC_PW_TYPE_SAVE))
+			active = 0;
+	}
+
+	gtk_list_store_append (store, &iter);
+	gtk_list_store_set (store, &iter, 0, _("Always Ask"), -1);
+	if ((active < 0) && value) {
+		if (!strcmp (value, NM_VPNC_PW_TYPE_ASK))
+			active = 1;
+	}
+
+	gtk_list_store_append (store, &iter);
+	gtk_list_store_set (store, &iter, 0, _("Not Required"), -1);
+	if ((active < 0) && value) {
+		if (!strcmp (value, NM_VPNC_PW_TYPE_UNUSED))
+			active = 2;
+	}
+
+	widget = glade_xml_get_widget (priv->xml, combo_name);
+	g_assert (widget);
+	gtk_combo_box_set_model (GTK_COMBO_BOX (widget), GTK_TREE_MODEL (store));
+	g_object_unref (store);
+	gtk_combo_box_set_active (GTK_COMBO_BOX (widget), active < 0 ? 0 : active);
+	pw_type_changed_helper (self, widget);
+
+	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (pw_type_combo_changed_cb), self);
+}
+
 static gboolean
 init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **error)
 {
@@ -254,7 +360,7 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 	GtkWidget *widget;
 	GtkListStore *store;
 	GtkTreeIter iter;
-	const char *value;
+	const char *value = NULL;
 	int active = -1;
 	const char *natt_mode = NULL;
 
@@ -311,6 +417,9 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 	g_object_unref (store);
 	gtk_combo_box_set_active (GTK_COMBO_BOX (widget), active < 0 ? 0 : active);
 	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
+
+	init_one_pw_combo (self, s_vpn, "user_pass_type_combo", NM_VPNC_KEY_XAUTH_PASSWORD_TYPE);
+	init_one_pw_combo (self, s_vpn, "group_pass_type_combo", NM_VPNC_KEY_SECRET_TYPE);
 
 	widget = glade_xml_get_widget (priv->xml, "user_entry");
 	g_return_val_if_fail (widget != NULL, FALSE);
@@ -404,6 +513,34 @@ get_widget (NMVpnPluginUiWidgetInterface *iface)
 	return G_OBJECT (priv->widget);
 }
 
+static guint32
+handle_one_pw_type (NMSettingVPN *s_vpn, GladeXML *xml, const char *name, const char *key)
+{
+	GtkWidget *widget;
+	GtkTreeModel *model;
+	guint32 pw_type;
+
+	widget = glade_xml_get_widget (xml, name);
+	model = gtk_combo_box_get_model (GTK_COMBO_BOX (widget));
+
+	pw_type = gtk_combo_box_get_active (GTK_COMBO_BOX (widget));
+	switch (pw_type) {
+	case PW_TYPE_SAVE:
+		nm_setting_vpn_add_data_item (s_vpn, key, NM_VPNC_PW_TYPE_SAVE);
+		break;
+	case PW_TYPE_UNUSED:
+		nm_setting_vpn_add_data_item (s_vpn, key, NM_VPNC_PW_TYPE_UNUSED);
+		break;
+	case PW_TYPE_ASK:
+	default:
+		pw_type = PW_TYPE_ASK;
+		nm_setting_vpn_add_data_item (s_vpn, key, NM_VPNC_PW_TYPE_ASK);
+		break;
+	}
+
+	return pw_type;
+}
+
 static gboolean
 update_connection (NMVpnPluginUiWidgetInterface *iface,
                    NMConnection *connection,
@@ -416,6 +553,7 @@ update_connection (NMVpnPluginUiWidgetInterface *iface,
 	char *str;
 	GtkTreeModel *model;
 	GtkTreeIter iter;
+	guint32 upw_type, gpw_type;
 
 	if (!check_validity (self, error))
 		return FALSE;
@@ -461,13 +599,13 @@ update_connection (NMVpnPluginUiWidgetInterface *iface,
 	widget = glade_xml_get_widget (priv->xml, "natt_combo");
 	model = gtk_combo_box_get_model (GTK_COMBO_BOX (widget));
 	if (gtk_combo_box_get_active_iter (GTK_COMBO_BOX (widget), &iter)) {
-		const char *mode;
+		const char *mode = NULL;
 
 		gtk_tree_model_get (model, &iter, 1, &mode, -1);
 		nm_setting_vpn_add_data_item (s_vpn, NM_VPNC_KEY_NAT_TRAVERSAL_MODE, mode);
 	} else
 		nm_setting_vpn_add_data_item (s_vpn, NM_VPNC_KEY_NAT_TRAVERSAL_MODE, NM_VPNC_NATT_MODE_NATT);
-	
+
 	widget = glade_xml_get_widget (priv->xml, "disable_dpd_checkbutton");
 	if (gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget))) {
 		nm_setting_vpn_add_data_item (s_vpn, NM_VPNC_KEY_DPD_IDLE_TIMEOUT, "0");
@@ -483,6 +621,9 @@ update_connection (NMVpnPluginUiWidgetInterface *iface,
 		}
 	}
 
+	upw_type = handle_one_pw_type (s_vpn, priv->xml, "user_pass_type_combo", NM_VPNC_KEY_XAUTH_PASSWORD_TYPE);
+	gpw_type = handle_one_pw_type (s_vpn, priv->xml, "group_pass_type_combo", NM_VPNC_KEY_SECRET_TYPE);
+
 	/* System secrets get stored in the connection, user secrets are saved
 	 * via the save_secrets() hook.
 	 */
@@ -490,18 +631,53 @@ update_connection (NMVpnPluginUiWidgetInterface *iface,
 		/* User password */
 		widget = glade_xml_get_widget (priv->xml, "user_password_entry");
 		str = (char *) gtk_entry_get_text (GTK_ENTRY (widget));
-		if (str && strlen (str))
+		if (str && strlen (str) && (upw_type != PW_TYPE_UNUSED))
 			nm_setting_vpn_add_secret (s_vpn, NM_VPNC_KEY_XAUTH_PASSWORD, str);
 
 		/* Group password */
 		widget = glade_xml_get_widget (priv->xml, "group_password_entry");
 		str = (char *) gtk_entry_get_text (GTK_ENTRY (widget));
-		if (str && strlen (str))
+		if (str && strlen (str) && (gpw_type != PW_TYPE_UNUSED))
 			nm_setting_vpn_add_secret (s_vpn, NM_VPNC_KEY_SECRET, str);
 	}
 
 	nm_connection_add_setting (connection, NM_SETTING (s_vpn));
 	return TRUE;
+}
+
+static void
+save_one_password (GladeXML *xml,
+                   const char *keyring_tag,
+                   const char *uuid,
+                   const char *id,
+                   const char *entry,
+                   const char *combo,
+                   const char *desc)
+{
+	GnomeKeyringResult ret;
+	GtkWidget *widget;
+	const char *password;
+	GtkTreeModel *model;
+	gboolean saved = FALSE;
+
+	widget = glade_xml_get_widget (xml, combo);
+	g_assert (widget);
+	model = gtk_combo_box_get_model (GTK_COMBO_BOX (widget));
+	if (gtk_combo_box_get_active (GTK_COMBO_BOX (widget)) == PW_TYPE_SAVE) {
+		widget = glade_xml_get_widget (xml, entry);
+		g_assert (widget);
+		password = gtk_entry_get_text (GTK_ENTRY (widget));
+		if (password && strlen (password)) {
+			ret = keyring_helpers_save_secret (uuid, id, NULL, keyring_tag, password);
+			if (ret == GNOME_KEYRING_RESULT_OK)
+				saved = TRUE;
+			else
+				g_warning ("%s: failed to save %s to keyring.", __func__, desc);
+		}
+	}
+
+	if (!saved)
+		keyring_helpers_delete_secret (uuid, keyring_tag);
 }
 
 static gboolean
@@ -511,9 +687,7 @@ save_secrets (NMVpnPluginUiWidgetInterface *iface,
 {
 	VpncPluginUiWidget *self = VPNC_PLUGIN_UI_WIDGET (iface);
 	VpncPluginUiWidgetPrivate *priv = VPNC_PLUGIN_UI_WIDGET_GET_PRIVATE (self);
-	GnomeKeyringResult ret;
 	NMSettingConnection *s_con;
-	GtkWidget *widget;
 	const char *str, *id, *uuid;
 
 	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
@@ -528,25 +702,10 @@ save_secrets (NMVpnPluginUiWidgetInterface *iface,
 	id = nm_setting_connection_get_id (s_con);
 	uuid = nm_setting_connection_get_uuid (s_con);
 
-	widget = glade_xml_get_widget (priv->xml, "user_password_entry");
-	g_assert (widget);
-	str = gtk_entry_get_text (GTK_ENTRY (widget));
-	if (str && strlen (str)) {
-		ret = keyring_helpers_save_secret (uuid, id, NULL, VPNC_USER_PASSWORD, str);
-		if (ret != GNOME_KEYRING_RESULT_OK)
-			g_warning ("%s: failed to save user password to keyring.", __func__);
-	} else
-		keyring_helpers_delete_secret (uuid, VPNC_USER_PASSWORD);
-
-	widget = glade_xml_get_widget (priv->xml, "group_password_entry");
-	g_assert (widget);
-	str = gtk_entry_get_text (GTK_ENTRY (widget));
-	if (str && strlen (str)) {
-		ret = keyring_helpers_save_secret (uuid, id, NULL, VPNC_GROUP_PASSWORD, str);
-		if (ret != GNOME_KEYRING_RESULT_OK)
-			g_warning ("%s: failed to save group password to keyring.", __func__);
-	} else
-		keyring_helpers_delete_secret (uuid, VPNC_GROUP_PASSWORD);
+	save_one_password (priv->xml, VPNC_USER_PASSWORD, uuid, id,
+	                   "user_password_entry", "user_pass_type_combo", "user password");
+	save_one_password (priv->xml, VPNC_GROUP_PASSWORD, uuid, id,
+	                   "group_password_entry", "group_pass_type_combo", "group password");
 
 	return TRUE;
 }

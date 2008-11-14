@@ -98,6 +98,22 @@ keyring_helpers_lookup_secrets (const char *vpn_uuid,
 	return TRUE;
 }
 
+gboolean
+keyring_helpers_get_one_secret (const char *vpn_uuid,
+                                const char *which_secret,
+                                char **password,
+                                gboolean *is_session)
+{
+	g_return_val_if_fail (password != NULL, FALSE);
+	g_return_val_if_fail (*password == NULL, FALSE);
+
+	*password = find_one_password (vpn_uuid, which_secret, is_session);
+	if (!*password)
+		return FALSE;
+
+	return TRUE;
+}
+
 GnomeKeyringResult
 keyring_helpers_save_secret (const char *vpn_uuid,
                              const char *vpn_name,

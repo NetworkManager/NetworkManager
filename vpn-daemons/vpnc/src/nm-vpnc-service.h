@@ -21,8 +21,10 @@
 #define NM_VPNC_KEY_GATEWAY "IPSec gateway"
 #define NM_VPNC_KEY_ID "IPSec ID"
 #define NM_VPNC_KEY_SECRET "IPSec secret"
+#define NM_VPNC_KEY_SECRET_TYPE "ipsec-secret-type"
 #define NM_VPNC_KEY_XAUTH_USER "Xauth username"
 #define NM_VPNC_KEY_XAUTH_PASSWORD "Xauth password"
+#define NM_VPNC_KEY_XAUTH_PASSWORD_TYPE "xauth-password-type"
 #define NM_VPNC_KEY_DOMAIN "Domain"
 #define NM_VPNC_KEY_DHGROUP "IKE DH Group"
 #define NM_VPNC_KEY_PERFECT_FORWARD "Perfect Forward Secrecy"
@@ -36,6 +38,10 @@
 #define NM_VPNC_NATT_MODE_NATT "natt"
 #define NM_VPNC_NATT_MODE_NONE "none"
 #define NM_VPNC_NATT_MODE_CISCO "cisco-udp"
+
+#define NM_VPNC_PW_TYPE_SAVE   "save"
+#define NM_VPNC_PW_TYPE_ASK    "ask"
+#define NM_VPNC_PW_TYPE_UNUSED "unused"
 
 typedef struct {
 	NMVPNPlugin parent;

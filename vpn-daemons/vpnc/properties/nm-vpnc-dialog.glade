@@ -33,11 +33,44 @@
                   <widget class="GtkTable" id="table2">
                     <property name="visible">True</property>
                     <property name="n_rows">5</property>
-                    <property name="n_columns">2</property>
+                    <property name="n_columns">3</property>
                     <property name="column_spacing">6</property>
                     <property name="row_spacing">6</property>
                     <child>
                       <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <placeholder/>
+                    </child>
+                    <child>
+                      <widget class="GtkComboBox" id="group_pass_type_combo">
+                        <property name="visible">True</property>
+                        <property name="items" translatable="yes"> </property>
+                      </widget>
+                      <packing>
+                        <property name="left_attach">2</property>
+                        <property name="right_attach">3</property>
+                        <property name="top_attach">3</property>
+                        <property name="bottom_attach">4</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <widget class="GtkComboBox" id="user_pass_type_combo">
+                        <property name="visible">True</property>
+                        <property name="items" translatable="yes"> </property>
+                      </widget>
+                      <packing>
+                        <property name="left_attach">2</property>
+                        <property name="right_attach">3</property>
+                        <property name="top_attach">2</property>
+                        <property name="bottom_attach">3</property>
+                      </packing>
                     </child>
                     <child>
                       <widget class="GtkCheckButton" id="show_passwords_checkbutton">

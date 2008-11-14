@@ -55,6 +55,9 @@ static ValidProperty valid_properties[] = {
 	{ NM_VPNC_KEY_DPD_IDLE_TIMEOUT,      G_TYPE_INT, 0, 86400 },
 	{ NM_VPNC_KEY_NAT_TRAVERSAL_MODE,    G_TYPE_STRING, 0, 0 },
 	{ NM_VPNC_KEY_CISCO_UDP_ENCAPS_PORT, G_TYPE_INT, 0, 65535 },
+	/* Ignored option for internal use */
+	{ NM_VPNC_KEY_SECRET_TYPE,           G_TYPE_NONE, 0, 0 },
+	{ NM_VPNC_KEY_XAUTH_PASSWORD_TYPE,   G_TYPE_NONE, 0, 0 },
 	/* Legacy options that are ignored */
 	{ LEGACY_NAT_KEEPALIVE,              G_TYPE_STRING, 0, 0 },
 	{ NULL,                              G_TYPE_NONE, 0, 0 }
@@ -95,6 +98,8 @@ validate_one_property (const char *key, const char *value, gpointer user_data)
 			continue;
 
 		switch (prop.type) {
+		case G_TYPE_NONE:
+			return; /* technically valid, but unused */
 		case G_TYPE_STRING:
 			return; /* valid */
 		case G_TYPE_INT:
@@ -285,6 +290,8 @@ write_config_option (int fd, const char *format, ...)
 typedef struct {
 	int fd;
 	GError *error;
+	gboolean upw_ignored;
+	gboolean gpw_ignored;
 } WriteConfigInfo;
 
 static void
@@ -327,6 +334,12 @@ write_one_property (const char *key, const char *value, gpointer user_data)
 		             (const char *) key);
 	}	
 
+	/* Don't write ignored secrets */
+	if (!strcmp (key, NM_VPNC_KEY_XAUTH_PASSWORD) && info->upw_ignored)
+		return;
+	if (!strcmp (key, NM_VPNC_KEY_SECRET) && info->gpw_ignored)
+		return;
+
 	if (type == G_TYPE_STRING)
 		write_config_option (info->fd, "%s %s\n", (char *) key, (char *) value);
 	else if (type == G_TYPE_BOOLEAN) {
@@ -352,6 +365,8 @@ write_one_property (const char *key, const char *value, gpointer user_data)
 			             "Config option '%s' not an integer.",
 			             (const char *) key);
 		}
+	} else if (type == G_TYPE_NONE) {
+		/* ignored */
 	} else {
 		/* Just ignore unknown properties */
 		nm_warning ("Don't know how to write property '%s' with type %s",
@@ -368,6 +383,7 @@ nm_vpnc_config_write (gint vpnc_fd,
 	const char *props_username;
 	const char *props_natt_mode;
 	const char *default_username;
+	const char *pw_type;
 
 	default_username = nm_setting_vpn_get_user_name (s_vpn);
 
@@ -397,6 +413,17 @@ nm_vpnc_config_write (gint vpnc_fd,
 
 	info = g_malloc0 (sizeof (WriteConfigInfo));
 	info->fd = vpnc_fd;
+
+	/* Check for ignored user password */
+	pw_type = nm_setting_vpn_get_data_item (s_vpn, NM_VPNC_KEY_XAUTH_PASSWORD_TYPE);
+	if (pw_type && !strcmp (pw_type, NM_VPNC_PW_TYPE_UNUSED))
+		info->upw_ignored = TRUE;
+
+	/* Check for ignored group password */
+	pw_type = nm_setting_vpn_get_data_item (s_vpn, NM_VPNC_KEY_SECRET_TYPE);
+	if (pw_type && !strcmp (pw_type, NM_VPNC_PW_TYPE_UNUSED))
+		info->gpw_ignored = TRUE;
+
 	nm_setting_vpn_foreach_data_item (s_vpn, write_one_property, info);
 	nm_setting_vpn_foreach_secret (s_vpn, write_one_property, info);
 	*error = info->error;
@@ -444,6 +471,7 @@ real_need_secrets (NMVPNPlugin *plugin,
                    GError **error)
 {
 	NMSettingVPN *s_vpn;
+	const char *pw_type;
 
 	g_return_val_if_fail (NM_IS_VPN_PLUGIN (plugin), FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
@@ -458,15 +486,20 @@ real_need_secrets (NMVPNPlugin *plugin,
 		return FALSE;
 	}
 
-	// FIXME: there are some configurations where both passwords are not
-	// required.  Make sure they work somehow.
-	if (!nm_setting_vpn_get_secret (s_vpn, NM_VPNC_KEY_SECRET)) {
-		*setting_name = NM_SETTING_VPN_SETTING_NAME;
-		return TRUE;
+	pw_type = nm_setting_vpn_get_data_item (s_vpn, NM_VPNC_KEY_SECRET_TYPE);
+	if (!pw_type || strcmp (pw_type, NM_VPNC_PW_TYPE_UNUSED)) {
+		if (!nm_setting_vpn_get_secret (s_vpn, NM_VPNC_KEY_SECRET)) {
+			*setting_name = NM_SETTING_VPN_SETTING_NAME;
+			return TRUE;
+		}
 	}
-	if (!nm_setting_vpn_get_secret (s_vpn, NM_VPNC_KEY_XAUTH_PASSWORD)) {
-		*setting_name = NM_SETTING_VPN_SETTING_NAME;
-		return TRUE;
+
+	pw_type = nm_setting_vpn_get_data_item (s_vpn, NM_VPNC_KEY_XAUTH_PASSWORD_TYPE);
+	if (!pw_type || strcmp (pw_type, NM_VPNC_PW_TYPE_UNUSED)) {
+		if (!nm_setting_vpn_get_secret (s_vpn, NM_VPNC_KEY_XAUTH_PASSWORD)) {
+			*setting_name = NM_SETTING_VPN_SETTING_NAME;
+			return TRUE;
+		}
 	}
 
 	return FALSE;

@@ -1,3 +1,43 @@
+2008-11-14  Dan Williams  <dcbw@redhat.com>
+
+	Add password types to better support OTP/token use-cases, and for people
+	who want to be asked every time for one or both passwords (bgo #346547).
+	Heavily based on a patch from Mathieu Trudel-Lapierre <mathieu.tl@gmail.com>
+
+	* common-gnome/keyring-helpers.c
+	  common-gnome/keyring-helpers.h
+		- (keyring_helpers_get_one_secret): accessor to get just one secret
+
+	* auth-dialog/gnome-two-password-dialog.c
+	  auth-dialog/gnome-two-password-dialog.h
+		- (gnome_two_password_dialog_focus_password,
+		   gnome_two_password_dialog_focus_password_secondary): add functions to
+			focus specific password entries
+
+	* auth-dialog/Makefile.am
+	  auth-dialog/main.c
+		- Retrieve password types from GConf, and handle them correctly when
+			asking the user for passwords
+
+	* properties/nm-vpnc-dialog.glade
+	  properties/nm-vpnc.c
+		- Add combo boxes for both passwords with options for saving, asking,
+			or not requiring the password
+		- (fill_vpn_passwords): handle passwords individually
+		- (pw_type_changed_helper): disable the password entry when the user
+			picks "Not Required" or "Always Ask"
+		- (init_one_pw_combo, init_plugin_ui): set up password combos
+		- (handle_one_pw_type, update_connection): save password type
+		- (save_one_password): handle saving/clearing passwords based on what
+			each password's type is
+
+	* src/nm-vpnc-service.c
+	  src/nm-vpnc-service.h
+		- (validate_one_property): ignore password type properties
+		- (nm_vpnc_config_write, write_one_property): don't write secrets if
+			they aren't used
+		- (real_need_secrets): only ask for secrets when needed
+
 2008-11-03  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Carlos Martín Nieto <carlos@cmartin.tk> (and me) (bgo #547582)
