@@ -12,9 +12,10 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-vpnc.HEAD\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-09-03 21:00+0000\n"
-"PO-Revision-Date: 2008-09-10 21:04+0200\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?"
+"product=NetworkManager&amp;component=general\n"
+"POT-Creation-Date: 2008-11-14 17:04+0000\n"
+"PO-Revision-Date: 2008-11-14 20:24+0100\n"
 "Last-Translator: Jorge González <jorgegonz@svn.gnome.org>\n"
 "Language-Team: Español <gnome-es-list@gnome.org>\n"
 "MIME-Version: 1.0\n"
@@ -62,16 +63,16 @@ msgstr "_Recordar contraseñas para esta sesión"
 msgid "_Save passwords in keyring"
 msgstr "_Guardar contraseñas en el depósito de claves"
 
-#: ../auth-dialog/main.c:67
+#: ../auth-dialog/main.c:105
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Debe autenticarse para acceder a la red privada virtual «%s»."
 
-#: ../auth-dialog/main.c:68
+#: ../auth-dialog/main.c:106
 msgid "Authenticate VPN"
 msgstr "Autenticación VPN"
 
-#: ../auth-dialog/main.c:75
+#: ../auth-dialog/main.c:113
 msgid "_Group Password:"
 msgstr "Contraseña del _grupo:"
 
@@ -96,35 +97,47 @@ msgstr ""
 "Compatible con varias puertas de enlace VPN basadas en IpSec como Cisco, "
 "Juniper, Netscreen y Sonicwall."
 
-#: ../properties/nm-vpnc.c:265
+#: ../properties/nm-vpnc.c:325
+msgid "Saved"
+msgstr "Guardado"
+
+#: ../properties/nm-vpnc.c:332
+msgid "Always Ask"
+msgstr "Preguntar siempre"
+
+#: ../properties/nm-vpnc.c:339
+msgid "Not Required"
+msgstr "No requerido"
+
+#: ../properties/nm-vpnc.c:398
 msgid "Secure (default)"
 msgstr "Seguro (predeterminado)"
 
-#: ../properties/nm-vpnc.c:268
+#: ../properties/nm-vpnc.c:401
 msgid "Weak (use with caution)"
 msgstr "Débil (usar con cautela)"
 
-#: ../properties/nm-vpnc.c:276
+#: ../properties/nm-vpnc.c:409
 msgid "None (completely insecure)"
 msgstr "Ninguno (completamente inseguro)"
 
-#: ../properties/nm-vpnc.c:314
-msgid "NAT-T (default)"
-msgstr "NAT-T (predeterminado)"
+#: ../properties/nm-vpnc.c:450
+msgid "Cisco UDP (default)"
+msgstr "Cisco UDP (predeterminado)"
 
-#: ../properties/nm-vpnc.c:321
-msgid "Cisco UDP"
-msgstr "Cisco UDP"
+#: ../properties/nm-vpnc.c:457
+msgid "NAT-T"
+msgstr "NAT-T"
 
-#: ../properties/nm-vpnc.c:328
+#: ../properties/nm-vpnc.c:464
 msgid "Disabled"
 msgstr "Desactivado"
 
-#: ../properties/nm-vpnc.c:724
+#: ../properties/nm-vpnc.c:1085
 msgid "TCP tunneling not supported"
 msgstr "No se soporta el túnel por TCP"
 
-#: ../properties/nm-vpnc.c:726
+#: ../properties/nm-vpnc.c:1087
 #, c-format
 msgid ""
 "The VPN settings file '%s' specifies that VPN traffic should be tunneled "
@@ -194,3 +207,6 @@ msgstr "_Pasarela:"
 #: ../properties/nm-vpnc-dialog.glade.h:13
 msgid "_User password:"
 msgstr "Contraseña del _usuario:"
+
+#~ msgid "NAT-T (default)"
+#~ msgstr "NAT-T (predeterminado)"
