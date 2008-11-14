@@ -301,7 +301,9 @@ crypto_verify_pkcs12 (const GByteArray *data,
 	SECStatus s;
 	char *ucs2_password;
 	glong ucs2_chars = 0;
+#ifndef WORDS_BIGENDIAN
 	guint16 *p;
+#endif /* WORDS_BIGENDIAN */
 
 	if (error)
 		g_return_val_if_fail (*error == NULL, FALSE);
@@ -330,7 +332,7 @@ crypto_verify_pkcs12 (const GByteArray *data,
 #ifndef WORDS_BIGENDIAN
 		for (p = (guint16 *) pw.data; p < (guint16 *) (pw.data + pw.len); p++)
 			*p = GUINT16_SWAP_LE_BE (*p);
-#endif
+#endif /* WORDS_BIGENDIAN */
 	} else {
 		/* NULL password */
 		pw.data = NULL;
