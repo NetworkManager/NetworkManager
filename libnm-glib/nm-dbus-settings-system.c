@@ -40,6 +40,9 @@ typedef struct {
 	gboolean got_hostname;
 	char *hostname;
 
+	gboolean got_can_modify;
+	gboolean can_modify;
+
 	gboolean disposed;
 } NMDBusSettingsSystemPrivate;
 
@@ -47,6 +50,7 @@ enum {
 	PROP_0,
 	PROP_UNMANAGED_DEVICES,
 	PROP_HOSTNAME,
+	PROP_CAN_MODIFY,
 
 	LAST_PROP
 };
@@ -201,12 +205,44 @@ nm_dbus_settings_system_get_hostname (NMDBusSettingsSystem *self)
 	return priv->hostname;
 }
 
+gboolean
+nm_dbus_settings_system_get_can_modify (NMDBusSettingsSystem *self)
+{
+	NMDBusSettingsSystemPrivate *priv;
+	GValue value = { 0, };
+	GError *err = NULL;
+
+	g_return_val_if_fail (NM_IS_DBUS_SETTINGS_SYSTEM (self), FALSE);
+
+	priv = NM_DBUS_SETTINGS_SYSTEM_GET_PRIVATE (self);
+
+	if (priv->got_can_modify)
+		return priv->can_modify;
+
+	if (!dbus_g_proxy_call (priv->props_proxy, "Get", &err,
+					    G_TYPE_STRING, NM_DBUS_SERVICE_SYSTEM_SETTINGS,
+					    G_TYPE_STRING, "CanModify",
+					    G_TYPE_INVALID,
+					    G_TYPE_VALUE, &value,
+					    G_TYPE_INVALID)) {
+		g_warning ("Could not retrieve can-modify: %s", err->message);
+		g_error_free (err);
+		return FALSE;
+	}
+
+	priv->can_modify = g_value_get_boolean (&value);
+	g_value_unset (&value);
+
+	return priv->can_modify;
+}
+
 static void
 proxy_properties_changed (DBusGProxy *proxy,
                           GHashTable *properties,
                           gpointer user_data)
 {
 	NMDBusSettingsSystem *self = NM_DBUS_SETTINGS_SYSTEM (user_data);
+	NMDBusSettingsSystemPrivate *	priv = NM_DBUS_SETTINGS_SYSTEM_GET_PRIVATE (self);
 	GValue *value;
 
 	value = (GValue *) g_hash_table_lookup (properties, "UnmanagedDevices");
@@ -219,6 +255,12 @@ proxy_properties_changed (DBusGProxy *proxy,
 	if (value) {
 		update_hostname (self, value);
 		g_object_notify (G_OBJECT (self), NM_DBUS_SETTINGS_SYSTEM_HOSTNAME);
+	}
+
+	value = (GValue *) g_hash_table_lookup (properties, "CanModify");
+	if (value) {
+		priv->can_modify = g_value_get_boolean (value);
+		g_object_notify (G_OBJECT (self), NM_DBUS_SETTINGS_SYSTEM_CAN_MODIFY);
 	}
 }
 
@@ -303,6 +345,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_HOSTNAME:
 		g_value_set_string (value, nm_dbus_settings_system_get_hostname (self));
 		break;
+	case PROP_CAN_MODIFY:
+		g_value_set_boolean (value, nm_dbus_settings_system_get_can_modify (self));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -335,6 +380,14 @@ nm_dbus_settings_system_class_init (NMDBusSettingsSystemClass *dbus_settings_cla
 						   "Hostname",
 						   "Configured hostname",
 						   NULL,
+						   G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_HOSTNAME,
+		 g_param_spec_boolean (NM_DBUS_SETTINGS_SYSTEM_CAN_MODIFY,
+						   "Can modify",
+						   "Can modify",
+						   FALSE,
 						   G_PARAM_READABLE));
 }
 

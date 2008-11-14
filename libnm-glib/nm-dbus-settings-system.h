@@ -37,6 +37,7 @@ G_BEGIN_DECLS
 
 #define NM_DBUS_SETTINGS_SYSTEM_UNMANAGED_DEVICES "unmanaged-devices"
 #define NM_DBUS_SETTINGS_SYSTEM_HOSTNAME "hostname"
+#define NM_DBUS_SETTINGS_SYSTEM_CAN_MODIFY "can-modify"
 
 typedef struct {
 	NMDBusSettings parent;
@@ -61,6 +62,8 @@ const char *nm_dbus_settings_system_get_hostname (NMDBusSettingsSystem *self);
 gboolean nm_dbus_settings_system_save_hostname (NMDBusSettingsSystem *self,
                                                 const char *hostname,
                                                 GError **err);
+
+gboolean nm_dbus_settings_system_get_can_modify (NMDBusSettingsSystem *self);
 
 G_END_DECLS
 

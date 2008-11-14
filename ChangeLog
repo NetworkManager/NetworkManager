@@ -1,5 +1,12 @@
 2008-11-14  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-glib/libnm_glib.ver
+	  libnm-glib/nm-dbus-settings-system.c
+	  libnm-glib/nm-dbus-settings-system.h
+		- Add libnm-glib bits for CanModify
+
+2008-11-14  Dan Williams  <dcbw@redhat.com>
+
 	* introspection/nm-settings-system.xml
 	  system-settings/src/dbus-settings.c
 	  system-settings/src/dbus-settings.h
