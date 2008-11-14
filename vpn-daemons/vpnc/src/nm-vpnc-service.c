@@ -403,12 +403,12 @@ nm_vpnc_config_write (gint vpnc_fd,
 		                     default_username);
 	}
 	
-	/* Use NAT-T by default */
+	/* Use Cisco UDP by default */
 	props_natt_mode = nm_setting_vpn_get_data_item (s_vpn, NM_VPNC_KEY_NAT_TRAVERSAL_MODE);
 	if (!props_natt_mode || !strlen (props_natt_mode)) {
 		write_config_option (vpnc_fd,
 		                     NM_VPNC_KEY_NAT_TRAVERSAL_MODE " %s\n",
-		                     NM_VPNC_NATT_MODE_NATT);
+		                     NM_VPNC_NATT_MODE_CISCO);
 	}
 
 	info = g_malloc0 (sizeof (WriteConfigInfo));

@@ -1,5 +1,12 @@
 2008-11-14  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-vpnc-service.c
+	  properties/nm-vpnc.c
+		- Switch default NAT Traversal mode back to Cisco UDP until the plugin
+			natively supports more vendors (bgo #512675)
+
+2008-11-14  Dan Williams  <dcbw@redhat.com>
+
 	Add password types to better support OTP/token use-cases, and for people
 	who want to be asked every time for one or both passwords (bgo #346547).
 	Heavily based on a patch from Mathieu Trudel-Lapierre <mathieu.tl@gmail.com>

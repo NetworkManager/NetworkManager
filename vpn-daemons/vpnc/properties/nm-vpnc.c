@@ -447,16 +447,16 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 		natt_mode = nm_setting_vpn_get_data_item (s_vpn, NM_VPNC_KEY_NAT_TRAVERSAL_MODE);
 
 	gtk_list_store_append (store, &iter);
-	gtk_list_store_set (store, &iter, 0, _("NAT-T (default)"), 1, NM_VPNC_NATT_MODE_NATT, -1);
+	gtk_list_store_set (store, &iter, 0, _("Cisco UDP (default)"), 1, NM_VPNC_NATT_MODE_CISCO, -1);
 	if ((active < 0) && natt_mode) {
-		if (!strcmp (natt_mode, NM_VPNC_NATT_MODE_NATT))
+		if (!strcmp (natt_mode, NM_VPNC_NATT_MODE_CISCO))
 			active = 0;
 	}
 
 	gtk_list_store_append (store, &iter);
-	gtk_list_store_set (store, &iter, 0, _("Cisco UDP"), 1, NM_VPNC_NATT_MODE_CISCO, -1);
+	gtk_list_store_set (store, &iter, 0, _("NAT-T"), 1, NM_VPNC_NATT_MODE_NATT, -1);
 	if ((active < 0) && natt_mode) {
-		if (!strcmp (natt_mode, NM_VPNC_NATT_MODE_CISCO))
+		if (!strcmp (natt_mode, NM_VPNC_NATT_MODE_NATT))
 			active = 1;
 	}
 
