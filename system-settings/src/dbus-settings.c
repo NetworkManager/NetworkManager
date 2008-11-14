@@ -75,6 +75,7 @@ enum {
 	PROP_0,
 	PROP_UNMANAGED_DEVICES,
 	PROP_HOSTNAME,
+	PROP_CAN_MODIFY,
 
 	LAST_PROP
 };
@@ -222,6 +223,27 @@ get_unmanaged_devices (NMSysconfigSettings *self)
 	return devices;
 }
 
+static NMSystemConfigInterface *
+get_first_plugin_by_capability (NMSysconfigSettings *self,
+                                guint32 capability)
+{
+	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+	GSList *iter;
+
+	g_return_val_if_fail (self != NULL, NULL);
+
+	/* Do any of the plugins support setting the hostname? */
+	for (iter = priv->plugins; iter; iter = iter->next) {
+		NMSystemConfigInterfaceCapabilities caps = NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE;
+
+		g_object_get (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES, &caps, NULL);
+		if (caps & capability)
+			return NM_SYSTEM_CONFIG_INTERFACE (iter->data);
+	}
+
+	return NULL;
+}
+
 static void
 get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
@@ -229,6 +251,7 @@ get_property (GObject *object, guint prop_id,
 	NMSysconfigSettings *self = NM_SYSCONFIG_SETTINGS (object);
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 	GSList *iter;
+
 
 	switch (prop_id) {
 	case PROP_UNMANAGED_DEVICES:
@@ -260,6 +283,9 @@ get_property (GObject *object, guint prop_id,
 		/* Don't ever pass NULL through D-Bus */
 		if (!g_value_get_string (value))
 			g_value_set_static_string (value, "");
+		break;
+	case PROP_CAN_MODIFY:
+		g_value_set_boolean (value, !!get_first_plugin_by_capability (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -296,6 +322,14 @@ nm_sysconfig_settings_class_init (NMSysconfigSettingsClass *class)
 							 "Hostname",
 							 "Hostname",
 							 NULL,
+							 G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_CAN_MODIFY,
+		 g_param_spec_boolean (NM_SYSCONFIG_SETTINGS_CAN_MODIFY,
+							 "CanModify",
+							 "Can modify",
+							 FALSE,
 							 G_PARAM_READABLE));
 
 	/* signals */
@@ -491,27 +525,6 @@ nm_sysconfig_settings_is_device_managed (NMSysconfigSettings *self,
 	if (g_hash_table_lookup (priv->unmanaged_devices, udi))
 		return FALSE;
 	return TRUE;
-}
-
-static NMSystemConfigInterface *
-get_first_plugin_by_capability (NMSysconfigSettings *self,
-                                guint32 capability)
-{
-	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
-	GSList *iter;
-
-	g_return_val_if_fail (self != NULL, NULL);
-
-	/* Do any of the plugins support setting the hostname? */
-	for (iter = priv->plugins; iter; iter = iter->next) {
-		NMSystemConfigInterfaceCapabilities caps = NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE;
-
-		g_object_get (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES, &caps, NULL);
-		if (caps & capability)
-			return NM_SYSTEM_CONFIG_INTERFACE (iter->data);
-	}
-
-	return NULL;
 }
 
 static gboolean

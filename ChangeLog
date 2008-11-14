@@ -1,5 +1,13 @@
 2008-11-14  Dan Williams  <dcbw@redhat.com>
 
+	* introspection/nm-settings-system.xml
+	  system-settings/src/dbus-settings.c
+	  system-settings/src/dbus-settings.h
+		- Add a "CanModify" property to indicate if any plugins support
+			connection modification
+
+2008-11-14  Dan Williams  <dcbw@redhat.com>
+
 	Relicense libnm-glib to LGPLv2+ with agreement from contributors
 
 2008-11-14  Dan Williams  <dcbw@redhat.com>

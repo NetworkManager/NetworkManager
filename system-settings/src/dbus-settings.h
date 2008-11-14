@@ -44,6 +44,7 @@ typedef struct _NMSysconfigSettingsClass NMSysconfigSettingsClass;
 
 #define NM_SYSCONFIG_SETTINGS_UNMANAGED_DEVICES "unmanaged-devices"
 #define NM_SYSCONFIG_SETTINGS_HOSTNAME "hostname"
+#define NM_SYSCONFIG_SETTINGS_CAN_MODIFY "can-modify"
 
 struct _NMSysconfigSettings
 {
