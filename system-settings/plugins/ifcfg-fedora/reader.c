@@ -250,7 +250,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 		if (  !nm_ip4_address_get_prefix (addr)
 		    || nm_ip4_address_get_prefix (addr) > 32) {
 			g_set_error (error, ifcfg_plugin_error_quark (), 0,
-			             "Invalid IP4 prefix '%d'",
+			             "Missing or invalid IP4 prefix '%d'",
 			             nm_ip4_address_get_prefix (addr));
 			goto error;
 		}
