@@ -1,3 +1,13 @@
+2008-11-17  Dan Williams  <dcbw@redhat.com>
+
+	* system-settings/plugins/ifcfg-fedora/reader.c
+		- (read_mac_address): clean up
+		- (make_wireless_setting): pass NULL array to read_mac_address() like it
+			expects
+
+	* system-settings/plugins/ifcfg-fedora/plugin.c
+		- (read_one_connection): don't segfault on NULL errors
+
 2008-11-14  Dan Williams  <dcbw@redhat.com>
 
 	* Tag 0.7.0-rc2

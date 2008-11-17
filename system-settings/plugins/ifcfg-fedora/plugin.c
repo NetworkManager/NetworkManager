@@ -199,7 +199,7 @@ read_one_connection (SCPluginIfcfg *plugin, const char *filename)
 		                  G_CALLBACK (connection_ifcfg_changed), plugin);
 	} else {
 		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    error: %s",
-		              error->message ? error->message : "(unknown)");
+		              (error && error->message) ? error->message : "(unknown)");
 		g_error_free (error);
 	}
 

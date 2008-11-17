@@ -386,24 +386,16 @@ read_mac_address (shvarFile *ifcfg, GByteArray **array, GError **error)
 
 	mac = ether_aton (value);
 	if (!mac) {
+		g_free (value);
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "The MAC address '%s' was invalid.", value);
-		goto error;
+		return FALSE;
 	}
 
 	g_free (value);
 	*array = g_byte_array_sized_new (ETH_ALEN);
 	g_byte_array_append (*array, (guint8 *) mac->ether_addr_octet, ETH_ALEN);
-
 	return TRUE;
-
-error:
-	g_free (value);
-	if (*array) {
-		g_byte_array_free (*array, TRUE);
-		*array = NULL;
-	}
-	return FALSE;
 }
 
 static gboolean
@@ -647,7 +639,7 @@ make_wireless_setting (shvarFile *ifcfg,
                        GError **error)
 {
 	NMSettingWireless *s_wireless;
-	GByteArray *array;
+	GByteArray *array = NULL;
 	char *value;
 
 	s_wireless = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
