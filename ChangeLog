@@ -1,5 +1,11 @@
 2008-11-17  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-hso-gsm-device.c
+		- (real_connection_secrets_updated): handle PIN/PUK correctly for HSO
+			devices
+
+2008-11-17  Dan Williams  <dcbw@redhat.com>
+
 	* system-settings/plugins/ifcfg-fedora/reader.c
 		- (read_mac_address): clean up
 		- (make_wireless_setting): pass NULL array to read_mac_address() like it

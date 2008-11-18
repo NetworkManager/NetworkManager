@@ -404,10 +404,15 @@ real_connection_secrets_updated (NMDevice *device,
                                  GSList *updated_settings,
                                  RequestSecretsCaller caller)
 {
-	g_return_if_fail (caller == SECRETS_CALLER_HSO_GSM);
 	g_return_if_fail (nm_device_get_state (device) == NM_DEVICE_STATE_NEED_AUTH);
 
-	nm_device_activate_schedule_stage2_device_config (device);
+	if (caller == SECRETS_CALLER_HSO_GSM)  { /* HSO PPP auth */
+		nm_device_activate_schedule_stage2_device_config (device);
+		return;
+	}
+
+	/* Let parent handle other auth like PIN/PUK */
+	NM_DEVICE_CLASS (nm_hso_gsm_device_parent_class)->connection_secrets_updated (device, connection, updated_settings, caller);
 }
 
 static void
