@@ -41,7 +41,8 @@ SUBDIRS += \
 	   system-settings \
 	   tools \
 	   policy \
-	   docs/libnm-glib
+	   docs/libnm-glib \
+	   docs/libnm-util
 
 EXTRA_DIST =				\
 	CONTRIBUTING			\

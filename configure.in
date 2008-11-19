@@ -518,6 +518,7 @@ man/nm-tool.1
 po/Makefile.in
 policy/Makefile
 docs/libnm-glib/Makefile
+docs/libnm-util/Makefile
 NetworkManager.pc
 ])
 AC_OUTPUT

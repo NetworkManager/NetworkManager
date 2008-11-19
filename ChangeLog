@@ -1,5 +1,13 @@
 2008-11-19  Dan Williams  <dcbw@redhat.com>
 
+	* configure.in
+	  Makefile.am
+	  docs/libnm-util/Makefile.am
+	  docs/libnm-util/libnm-util.types
+		- Start to document libnm-util
+
+2008-11-19  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-connection.h
 	  libnm-util/nm-connection.c
 		- Document public functions
