@@ -44,6 +44,13 @@
 #include "nm-setting-gsm.h"
 #include "nm-setting-cdma.h"
 
+/**
+ * nm_connection_error_quark:
+ *
+ * Registers an error quark for #NMConnection if necessary.
+ *
+ * Returns: the error quark used for NMConnection errors.
+ **/
 GQuark
 nm_connection_error_quark (void)
 {
@@ -244,6 +251,14 @@ get_priority_for_setting_type (GType type)
 	return G_MAXUINT32;
 }
 
+/**
+ * nm_connection_lookup_setting_type:
+ * @name: a setting name
+ *
+ * Returns the #GType of the setting's class for a given setting name.
+ *
+ * Returns: the #GType of the setting's class
+ **/
 GType
 nm_connection_lookup_setting_type (const char *name)
 {
@@ -263,6 +278,15 @@ nm_connection_lookup_setting_type (const char *name)
 	return type;
 }
 
+/**
+ * nm_connection_lookup_setting_type_by_quark:
+ * @error_quark: a setting error quark
+ *
+ * Returns the #GType of the setting's class for a given setting error quark.
+ * Useful for figuring out which setting a returned error is for.
+ *
+ * Returns: the #GType of the setting's class
+ **/
 GType
 nm_connection_lookup_setting_type_by_quark (GQuark error_quark)
 {
@@ -276,6 +300,14 @@ nm_connection_lookup_setting_type_by_quark (GQuark error_quark)
 	return G_TYPE_INVALID;
 }
 
+/**
+ * nm_connection_create_setting:
+ * @name: a setting name
+ *
+ * Create a new #NMSetting object of the desired type, given a setting name.
+ *
+ * Returns: the new setting object, or NULL if the setting name was unknown
+ **/
 NMSetting *
 nm_connection_create_setting (const char *name)
 {
@@ -305,6 +337,16 @@ parse_one_setting (gpointer key, gpointer value, gpointer user_data)
 		nm_connection_add_setting (connection, setting);
 }
 
+/**
+ * nm_connection_add_setting:
+ * @connection: a #NMConnection
+ * @setting: the #NMSetting to add to the connection object
+ *
+ * Adds a #NMSetting to the connection, replacing any previous #NMSetting of the
+ * same name which has previously been added to the #NMConnection.  The
+ * connection takes ownership of the #NMSetting object and does not increase
+ * the setting object's reference count.
+ **/
 void
 nm_connection_add_setting (NMConnection *connection, NMSetting *setting)
 {
@@ -315,6 +357,14 @@ nm_connection_add_setting (NMConnection *connection, NMSetting *setting)
 					 g_strdup (G_OBJECT_TYPE_NAME (setting)), setting);
 }
 
+/**
+ * nm_connection_remove_setting:
+ * @connection: a #NMConnection
+ * @type: the #GType of the setting object to remove
+ *
+ * Removes the #NMSetting with the given #GType from the #NMConnection.  This
+ * operation dereferences the #NMSetting object.
+ **/
 void
 nm_connection_remove_setting (NMConnection *connection, GType type)
 {
@@ -324,6 +374,17 @@ nm_connection_remove_setting (NMConnection *connection, GType type)
 	g_hash_table_remove (NM_CONNECTION_GET_PRIVATE (connection)->settings, g_type_name (type));
 }
 
+/**
+ * nm_connection_get_setting:
+ * @connection: a #NMConnection
+ * @type: the #GType of the setting object to return
+ *
+ * Gets the #NMSetting with the given #GType, if one has been previously added
+ * to the #NMConnection.
+ *
+ * Returns: the #NMSetting, or NULL if no setting of that type was previously
+ * added to the #NMConnection
+ **/
 NMSetting *
 nm_connection_get_setting (NMConnection *connection, GType type)
 {
@@ -334,6 +395,17 @@ nm_connection_get_setting (NMConnection *connection, GType type)
 									  g_type_name (type));
 }
 
+/**
+ * nm_connection_get_setting_by_name:
+ * @connection: a #NMConnection
+ * @name: a setting name
+ *
+ * Gets the #NMSetting with the given name, if one has been previously added
+ * the the #NMConnection.
+ *
+ * Returns: the #NMSetting, or NULL if no setting with that name was previously
+ * added to the #NMConnection
+ **/
 NMSetting *
 nm_connection_get_setting_by_name (NMConnection *connection, const char *name)
 {
@@ -396,29 +468,41 @@ compare_one_setting (gpointer key, gpointer value, gpointer user_data)
 		info->failed = TRUE;
 }
 
+/**
+ * nm_connection_compare:
+ * @a: a #NMConnection
+ * @b: a second #NMConnection to compare with the first
+ * @flags: compare flags, e.g. %NM_SETTING_COMPARE_FLAG_EXACT
+ *
+ * Compares to #NMConnection objects for similarity, with comparison behavior
+ * modified by a set of flags.  See nm_setting_compare() for a description of
+ * each flag's behavior.
+ *
+ * Returns: TRUE if the comparison succeeds, FALSE if it does not
+ **/
 gboolean
-nm_connection_compare (NMConnection *connection,
-                       NMConnection *other,
+nm_connection_compare (NMConnection *a,
+                       NMConnection *b,
                        NMSettingCompareFlags flags)
 {
 	NMConnectionPrivate *priv;
-	CompareConnectionInfo info = { other, FALSE, flags };
+	CompareConnectionInfo info = { b, FALSE, flags };
 
-	if (!connection && !other)
+	if (!a && !b)
 		return TRUE;
 
-	if (!connection || !other)
+	if (!a || !b)
 		return FALSE;
 
-	priv = NM_CONNECTION_GET_PRIVATE (connection);
+	priv = NM_CONNECTION_GET_PRIVATE (a);
 	g_hash_table_foreach (priv->settings, compare_one_setting, &info);
 	if (info.failed == FALSE) {
 		/* compare A to B, then if that is the same compare B to A to ensure
 		 * that keys that are in B but not A will make the comparison fail.
 		 */
 		info.failed = FALSE;
-		info.other = connection;
-		priv = NM_CONNECTION_GET_PRIVATE (other);
+		info.other = a;
+		priv = NM_CONNECTION_GET_PRIVATE (b);
 		g_hash_table_foreach (priv->settings, compare_one_setting, &info);
 	}
 
@@ -449,6 +533,23 @@ hash_values_to_slist (gpointer key, gpointer value, gpointer user_data)
 	*list = g_slist_prepend (*list, value);
 }
 
+/**
+ * nm_connection_verify:
+ * @connection: the #NMConnection to verify
+ * @error: location to store error, or %NULL
+ *
+ * Validates the connection and all its settings.  Each setting's properties
+ * have allowed values, and some values are dependent on other values.  For
+ * example, if a WiFi connection is security enabled, the #NMSettingWireless
+ * setting object's 'security' property must contain the setting name of the
+ * #NMSettingWirelessSecurity object, which must also be present in the 
+ * connection for the connection to be valid.  As another example, the
+ * #NMSettingWired object's 'mac-address' property must be a validly formatted
+ * MAC address.  The returned #GError contains information about which
+ * setting and which property failed validation, and how it failed validation.
+ *
+ * Returns: TRUE if the connection is valid, FALSE if it is not
+ **/
 gboolean
 nm_connection_verify (NMConnection *connection, GError **error)
 {
@@ -490,25 +591,39 @@ nm_connection_verify (NMConnection *connection, GError **error)
 	return info.success;
 }
 
-void
+/**
+ * nm_connection_update_secrets:
+ * @connection: the #NMConnection to verify
+ * @setting_name: the setting object name to which the secrets apply
+ * @secrets: a #GHashTable mapping string:#GValue of setting properties and secrets
+ *
+ * Update the specified setting's secrets, given a hash table of secrets
+ * intended for that setting (deserialized from D-Bus for example).
+ * 
+ * Returns: TRUE if the secrets were successfully updated and the connection
+ * is valid, FALSE on failure or if the setting was never added to the connection
+ **/
+gboolean
 nm_connection_update_secrets (NMConnection *connection,
                               const char *setting_name,
                               GHashTable *secrets)
 {
 	NMSetting *setting;
 
-	g_return_if_fail (NM_IS_CONNECTION (connection));
-	g_return_if_fail (setting_name != NULL);
-	g_return_if_fail (secrets != NULL);
+	g_return_val_if_fail (connection != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+	g_return_val_if_fail (setting_name != NULL, FALSE);
+	g_return_val_if_fail (secrets != NULL, FALSE);
 
 	setting = nm_connection_get_setting (connection, nm_connection_lookup_setting_type (setting_name));
 	if (!setting) {
 		g_warning ("Unhandled settings object for secrets update.");
-		return;
+		return FALSE;
 	}
 
 	nm_setting_update_secrets (setting, secrets);
 	g_signal_emit (connection, signals[SECRETS_UPDATED], 0, setting_name);
+	return TRUE;
 }
 
 static gint
@@ -534,6 +649,24 @@ add_setting_to_list (gpointer key, gpointer data, gpointer user_data)
 	*list = g_slist_insert_sorted (*list, NM_SETTING (data), setting_priority_compare);
 }
 
+/**
+ * nm_connection_need_secrets:
+ * @connection: the #NMConnection
+ * @hints: the address of a pointer to a #GPtrArray, initialized to NULL, which
+ * on return points to an allocated #GPtrArray containing the property names of
+ * secrets of the #NMSetting which may be required; the caller owns the array
+ * and must free the each array element with g_free(), as well as the array
+ * itself with g_ptr_array_free()
+ *
+ * Returns the name of the first setting object in the connection which would
+ * need secrets to make a successful connection.  The returned hints are only
+ * intended as a guide to what secrets may be required, because in some
+ * circumstances, there is no way to conclusively determine exactly which
+ * secrets are needed.
+ *
+ * Returns: the setting name of the #NMSetting object which has invalid or
+ * missing secrets
+ **/
 const char *
 nm_connection_need_secrets (NMConnection *connection,
                             GPtrArray **hints)
@@ -543,7 +676,10 @@ nm_connection_need_secrets (NMConnection *connection,
 	GSList *iter;
 	char *name = NULL;
 
+	g_return_val_if_fail (connection != NULL, NULL);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
+	if (hints)
+		g_return_val_if_fail (*hints == NULL, NULL);
 
 	priv = NM_CONNECTION_GET_PRIVATE (connection);
 
@@ -579,6 +715,13 @@ clear_setting_secrets (gpointer key, gpointer data, gpointer user_data)
 	nm_setting_clear_secrets (NM_SETTING (data));
 }
 
+/**
+ * nm_connection_clear_secrets:
+ * @connection: the #NMConnection
+ *
+ * Clears and frees any secrets that may be stored in the connection, to avoid
+ * keeping secret data in memory when not needed.
+ **/
 void
 nm_connection_clear_secrets (NMConnection *connection)
 {
@@ -607,6 +750,21 @@ add_one_setting_to_hash (gpointer key, gpointer data, gpointer user_data)
 							 setting_hash);
 }
 
+/**
+ * nm_connection_to_hash:
+ * @connection: the #NMConnection
+ *
+ * Converts the #NMConnection into a #GHashTable describing the connection,
+ * suitable for marshalling over D-Bus or serializing.  The hash table mapping
+ * is string:#GHashTable with each element in the returned hash representing
+ * a #NMSetting object.  The keys are setting object names, and the values
+ * are #GHashTables mapping string:GValue, each of which represents the
+ * properties of the #NMSetting object.
+ *
+ * Returns: a new #GHashTable describing the connection, its settings, and
+ * each setting's properties.  The caller owns the hash table and must unref
+ * the hash table with g_hash_table_unref() when it is no longer needed.
+ **/
 GHashTable *
 nm_connection_to_hash (NMConnection *connection)
 {
@@ -643,10 +801,19 @@ for_each_setting (gpointer key, gpointer value, gpointer user_data)
 	nm_setting_enumerate_values (NM_SETTING (value), info->func, info->user_data);
 }
 
+/**
+ * nm_connection_for_each_setting_value:
+ * @connection: the #NMConnection
+ * @func: user-supplied function called for each setting's property
+ * @user_data: user data passed to @func at each invocation
+ *
+ * Iterates over the properties of each #NMSetting object in the #NMConnection,
+ * calling the supplied user function for each property.
+ **/
 void
 nm_connection_for_each_setting_value (NMConnection *connection,
-                                       NMSettingValueIterFn func,
-                                       gpointer user_data)
+                                      NMSettingValueIterFn func,
+                                      gpointer user_data)
 {
 	NMConnectionPrivate *priv;
 	ForEachValueInfo *info;
@@ -679,6 +846,14 @@ dump_setting (gpointer key, gpointer value, gpointer user_data)
 	g_free (str);
 }
 
+/**
+ * nm_connection_dump:
+ * @connection: the #NMConnection
+ *
+ * Print the connection to stdout.  For debugging purposes ONLY, should NOT
+ * be used for serialization of the connection or machine-parsed in any way. The
+ * output format is not guaranteed to be stable and may change at any time.
+ **/
 void
 nm_connection_dump (NMConnection *connection)
 {
@@ -687,6 +862,18 @@ nm_connection_dump (NMConnection *connection)
 	g_hash_table_foreach (NM_CONNECTION_GET_PRIVATE (connection)->settings, dump_setting, NULL);
 }
 
+/**
+ * nm_connection_set_scope:
+ * @connection: the #NMConnection
+ * @scope: the scope of the connection
+ *
+ * Sets the scope of the connection.  This property is not serialized, and is
+ * only for the reference of the caller.  A connection may have no scope
+ * (internal, temporary connections), "system" scope (provided by the system
+ * settings service), or "user" scope, provided by a user settings service.  The
+ * creator of the #NMConnection object is responsible for setting the
+ * connection's scope if needed.  Sets the #NMConnection:scope property.
+ **/
 void
 nm_connection_set_scope (NMConnection *connection, NMConnectionScope scope)
 {
@@ -695,6 +882,15 @@ nm_connection_set_scope (NMConnection *connection, NMConnectionScope scope)
 	NM_CONNECTION_GET_PRIVATE (connection)->scope = scope;
 }
 
+/**
+ * nm_connection_get_scope:
+ * @connection: the #NMConnection
+ *
+ * Returns the connection scope.
+ *
+ * Returns: the scope of the connection, previously set by a call to
+ * nm_connection_set_scope().
+ **/
 NMConnectionScope
 nm_connection_get_scope (NMConnection *connection)
 {
@@ -703,6 +899,16 @@ nm_connection_get_scope (NMConnection *connection)
 	return NM_CONNECTION_GET_PRIVATE (connection)->scope;
 }
 
+/**
+ * nm_connection_set_path:
+ * @connection: the #NMConnection
+ * @path: the D-Bus path of the connection as given by the settings service
+ * which provides the connection
+ *
+ * Sets the D-Bus path of the connection.  This property is not serialized, and
+ * is only for the reference of the caller.  Sets the #NMConnection:path
+ * property.
+ **/
 void
 nm_connection_set_path (NMConnection *connection, const char *path)
 {
@@ -721,6 +927,15 @@ nm_connection_set_path (NMConnection *connection, const char *path)
 		priv->path = g_strdup (path);
 }
 
+/**
+ * nm_connection_get_path:
+ * @connection: the #NMConnection
+ *
+ * Returns the connection's D-Bus path.
+ *
+ * Returns: the D-Bus path of the connection, previously set by a call to
+ * nm_connection_set_path().
+ **/
 const char *
 nm_connection_get_path (NMConnection *connection)
 {
@@ -729,6 +944,13 @@ nm_connection_get_path (NMConnection *connection)
 	return NM_CONNECTION_GET_PRIVATE (connection)->path;
 }
 
+/**
+ * nm_connection_new:
+ *
+ * Creates a new #NMConnection object with no #NMSetting objects.
+ *
+ * Returns: the new blank #NMConnection object
+ **/
 NMConnection *
 nm_connection_new (void)
 {
@@ -742,6 +964,17 @@ nm_connection_new (void)
 	return NM_CONNECTION (object);
 }
 
+/**
+ * nm_connection_new_from_hash:
+ * @hash: the #GHashTable describing the connection
+ *
+ * Creates a new #NMConnection from a hash table describing the connection.  See
+ * nm_connection_to_hash() for a description of the expected hash table.
+ *
+ * Returns: the new #NMConnection object, populated with settings created
+ * from the values in the hash table, or NULL if the connection failed to
+ * validate
+ **/
 NMConnection *
 nm_connection_new_from_hash (GHashTable *hash, GError **error)
 {
@@ -769,6 +1002,15 @@ duplicate_cb (gpointer key, gpointer value, gpointer user_data)
 	nm_connection_add_setting (NM_CONNECTION (user_data), nm_setting_duplicate (NM_SETTING (value)));
 }
 
+/**
+ * nm_connection_duplicate:
+ * @connection: the #NMConnection to duplicate
+ *
+ * Duplicates a #NMConnection.
+ *
+ * Returns: a new #NMConnection containing the same settings and properties
+ * as the source #NMConnection
+ **/
 NMConnection *
 nm_connection_duplicate (NMConnection *connection)
 {
@@ -778,6 +1020,7 @@ nm_connection_duplicate (NMConnection *connection)
 
 	dup = nm_connection_new ();
 	nm_connection_set_scope (dup, nm_connection_get_scope (connection));
+	nm_connection_set_path (dup, nm_connection_get_path (connection));
 	g_hash_table_foreach (NM_CONNECTION_GET_PRIVATE (connection)->settings, duplicate_cb, dup);
 
 	return dup;
@@ -857,6 +1100,14 @@ nm_connection_class_init (NMConnectionClass *klass)
 	object_class->finalize = finalize;
 
 	/* Properties */
+
+	/**
+	 * NMConnection:scope:
+	 *
+	 * The connection's scope, used only by the calling process as a record
+	 * of which settings service the connection is provided by.  One of the
+	 * NM_CONNECTION_SCOPE_* defines.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_SCOPE,
 		 g_param_spec_uint (NM_CONNECTION_SCOPE,
@@ -867,6 +1118,12 @@ nm_connection_class_init (NMConnectionClass *klass)
 						    NM_CONNECTION_SCOPE_UNKNOWN,
 						    G_PARAM_READWRITE));
 
+	/**
+	 * NMConnection:path:
+	 *
+	 * The connection's D-Bus path, used only by the calling process as a record
+	 * of the D-Bus path of the connection as provided by a settings service.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_PATH,
 		 g_param_spec_string (NM_CONNECTION_PATH,

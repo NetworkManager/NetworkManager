@@ -1,5 +1,11 @@
 2008-11-19  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-connection.h
+	  libnm-util/nm-connection.c
+		- Document public functions
+
+2008-11-19  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting.h
 	  libnm-util/nm-setting.c
 	  src/nm-device.c

@@ -39,9 +39,15 @@ G_BEGIN_DECLS
 #define NM_IS_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_CONNECTION))
 #define NM_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_CONNECTION, NMConnectionClass))
 
+/* connection scope, used only by the caller for tracking connections
+ * provided by multiple settings services.
+ */
 typedef enum {
+	/* The connection's scope is unknown, or not yet set */
 	NM_CONNECTION_SCOPE_UNKNOWN = 0,
+	/* The connection is provided by the system settings service */
 	NM_CONNECTION_SCOPE_SYSTEM,
+	/* The connection is provided by a user settings service */
 	NM_CONNECTION_SCOPE_USER
 } NMConnectionScope;
 
@@ -96,8 +102,8 @@ gboolean      nm_connection_replace_settings (NMConnection *connection,
                                               GError **error);
 
 /* Returns TRUE if the connections are the same */
-gboolean      nm_connection_compare       (NMConnection *connection,
-                                           NMConnection *other,
+gboolean      nm_connection_compare       (NMConnection *a,
+                                           NMConnection *b,
                                            NMSettingCompareFlags flags);
 
 gboolean      nm_connection_verify        (NMConnection *connection, GError **error);
@@ -107,7 +113,7 @@ const char *  nm_connection_need_secrets  (NMConnection *connection,
 
 void          nm_connection_clear_secrets (NMConnection *connection);
 
-void          nm_connection_update_secrets (NMConnection *connection,
+gboolean      nm_connection_update_secrets (NMConnection *connection,
                                             const char *setting_name,
                                             GHashTable *secrets);
 
