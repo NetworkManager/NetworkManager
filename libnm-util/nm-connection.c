@@ -117,6 +117,33 @@ static struct SettingInfo {
 } default_map[DEFAULT_MAP_SIZE] = { { NULL } };
 
 static void
+setting_register (const char *name, GType type)
+{
+	g_return_if_fail (name != NULL);
+	g_return_if_fail (G_TYPE_IS_INSTANTIATABLE (type));
+
+	if (G_UNLIKELY (!registered_settings)) {
+		registered_settings = g_hash_table_new_full (g_str_hash, g_str_equal, 
+		                                             (GDestroyNotify) g_free,
+		                                             (GDestroyNotify) g_free);
+	}
+
+	if (g_hash_table_lookup (registered_settings, name))
+		g_warning ("Already have a creator function for '%s', overriding", name);
+
+	g_hash_table_insert (registered_settings, g_strdup (name), g_strdup (g_type_name (type)));
+}
+
+#if UNUSED
+static void
+setting_unregister (const char *name)
+{
+	if (registered_settings)
+		g_hash_table_remove (registered_settings, name);
+}
+#endif
+
+static void
 register_one_setting (const char *name, GType type, GQuark error_quark, guint32 priority)
 {
 	static guint32 i = 0;
@@ -130,7 +157,7 @@ register_one_setting (const char *name, GType type, GQuark error_quark, guint32 
 	default_map[i].priority = priority;
 	i++;
 
-	nm_setting_register (name, type);
+	setting_register (name, type);
 }
 
 static void
@@ -215,31 +242,6 @@ get_priority_for_setting_type (GType type)
 	}
 
 	return G_MAXUINT32;
-}
-
-void
-nm_setting_register (const char *name, GType type)
-{
-	g_return_if_fail (name != NULL);
-	g_return_if_fail (G_TYPE_IS_INSTANTIATABLE (type));
-
-	if (G_UNLIKELY (!registered_settings)) {
-		registered_settings = g_hash_table_new_full (g_str_hash, g_str_equal, 
-		                                             (GDestroyNotify) g_free,
-		                                             (GDestroyNotify) g_free);
-	}
-
-	if (g_hash_table_lookup (registered_settings, name))
-		g_warning ("Already have a creator function for '%s', overriding", name);
-
-	g_hash_table_insert (registered_settings, g_strdup (name), g_strdup (g_type_name (type)));
-}
-
-void
-nm_setting_unregister (const char *name)
-{
-	if (registered_settings)
-		g_hash_table_remove (registered_settings, name);
 }
 
 GType

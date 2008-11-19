@@ -1,3 +1,10 @@
+2008-11-19  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/libnm-util.ver
+	  libnm-util/nm-connection.c
+		- (nm_setting_register, nm_setting_unregister): unexport; they are
+			private and don't have a use outside libnm-util
+
 2008-11-17  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-hso-gsm-device.c

@@ -159,7 +159,6 @@ global:
 	nm_setting_pppoe_get_service;
 	nm_setting_pppoe_get_username;
 	nm_setting_pppoe_get_password;
-	nm_setting_register;
 	nm_setting_serial_error_get_type;
 	nm_setting_serial_error_quark;
 	nm_setting_serial_get_type;
@@ -171,7 +170,6 @@ global:
 	nm_setting_serial_get_send_delay;
 	nm_setting_to_hash;
 	nm_setting_to_string;
-	nm_setting_unregister;
 	nm_setting_update_secrets;
 	nm_setting_verify;
 	nm_setting_vpn_error_get_type;
