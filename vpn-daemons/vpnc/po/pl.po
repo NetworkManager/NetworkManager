@@ -10,8 +10,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-vpnc\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-09-08 19:48+0200\n"
-"PO-Revision-Date: 2008-09-08 19:49+0100\n"
+"POT-Creation-Date: 2008-11-19 20:20+0100\n"
+"PO-Revision-Date: 2008-11-19 20:21+0100\n"
 "Last-Translator: Tomasz Dominikowski <dominikowski@gmail.com>\n"
 "Language-Team: Aviary.pl <gnomepl@aviary.pl>\n"
 "MIME-Version: 1.0\n"
@@ -53,16 +53,16 @@ msgstr "Zapamiętanie _hasła na czas tej sesji"
 msgid "_Save passwords in keyring"
 msgstr "_Zapamiętanie hasła w bazie kluczy"
 
-#: ../auth-dialog/main.c:67
+#: ../auth-dialog/main.c:105
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Aby uzyskać dostęp do wirtualnej sieci prywatnej \"%s\", należy dokonać uwierzytelnienia."
 
-#: ../auth-dialog/main.c:68
+#: ../auth-dialog/main.c:106
 msgid "Authenticate VPN"
 msgstr "Uwierzytelnianie VPN"
 
-#: ../auth-dialog/main.c:75
+#: ../auth-dialog/main.c:113
 msgid "_Group Password:"
 msgstr "Hasło g_rupy:"
 
@@ -82,35 +82,47 @@ msgstr "Klient kompatybilny z Cisco VPN (vpnc)"
 msgid "Compatible with various Cisco, Juniper, Netscreen, and Sonicwall IPSec-based VPN gateways."
 msgstr "Kompatybilny z wieloma bramami VPN IPSec, jak Cisco, Juniper, Netscreen i Sonicwall."
 
-#: ../properties/nm-vpnc.c:265
+#: ../properties/nm-vpnc.c:325
+msgid "Saved"
+msgstr "Zapisano"
+
+#: ../properties/nm-vpnc.c:332
+msgid "Always Ask"
+msgstr "Pytanie zawsze"
+
+#: ../properties/nm-vpnc.c:339
+msgid "Not Required"
+msgstr "Niewymagane"
+
+#: ../properties/nm-vpnc.c:398
 msgid "Secure (default)"
 msgstr "Bezpieczne (domyślne)"
 
-#: ../properties/nm-vpnc.c:268
+#: ../properties/nm-vpnc.c:401
 msgid "Weak (use with caution)"
 msgstr "Słabe (używać z ostrożnością)"
 
-#: ../properties/nm-vpnc.c:276
+#: ../properties/nm-vpnc.c:409
 msgid "None (completely insecure)"
 msgstr "Brak (całkowity brak zabezpieczeń)"
 
-#: ../properties/nm-vpnc.c:314
-msgid "NAT-T (default)"
-msgstr "NAT-T (domyślne)"
+#: ../properties/nm-vpnc.c:450
+msgid "Cisco UDP (default)"
+msgstr "Cisco UDP (domyślne)"
 
-#: ../properties/nm-vpnc.c:321
-msgid "Cisco UDP"
-msgstr "Cisco UDP"
+#: ../properties/nm-vpnc.c:457
+msgid "NAT-T"
+msgstr "NAT-T"
 
-#: ../properties/nm-vpnc.c:328
+#: ../properties/nm-vpnc.c:464
 msgid "Disabled"
 msgstr "Wyłączone"
 
-#: ../properties/nm-vpnc.c:724
+#: ../properties/nm-vpnc.c:1085
 msgid "TCP tunneling not supported"
 msgstr "Tunelowanie TCP nie jest obsługiwane"
 
-#: ../properties/nm-vpnc.c:726
+#: ../properties/nm-vpnc.c:1087
 #, c-format
 msgid ""
 "The VPN settings file '%s' specifies that VPN traffic should be tunneled through TCP which is currently not supported in the vpnc software.\n"
@@ -173,6 +185,8 @@ msgstr "_Brama:"
 msgid "_User password:"
 msgstr "Hasło _użytkownika:"
 
+#~ msgid "NAT-T (default)"
+#~ msgstr "NAT-T (domyślne)"
 #~ msgid "The following vpnc VPN connection will be created:"
 #~ msgstr "Utworzone zostanie poniższe połączenie VPN vpnc:"
 #~ msgid "Name:  %s"
@@ -250,8 +264,6 @@ msgstr "Hasło _użytkownika:"
 #~ msgstr ""
 #~ "Uwaga: importowany plik nie jest plikiem konfiguracyjnym Cisco VPN ani "
 #~ "VPNC. Proszę poprosić administratora o poprawny plik."
-#~ msgid "Required"
-#~ msgstr "Wymagane"
 #~ msgid "Use NAT _keepalive packets"
 #~ msgstr "Użyj pakietów NAT _keepalive"
 #~ msgid "Use _domain for authentication"
