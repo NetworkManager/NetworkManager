@@ -845,7 +845,7 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 		switch (scope) {
 			case NM_CONNECTION_SCOPE_USER:
 				existing = g_hash_table_lookup (priv->user_connections, path);
-				if (!existing || !nm_connection_compare (existing, connection, COMPARE_FLAGS_EXACT)) {
+				if (!existing || !nm_connection_compare (existing, connection, NM_SETTING_COMPARE_FLAG_EXACT)) {
 					g_hash_table_insert (priv->user_connections,
 					                     g_strdup (path),
 					                     connection);
@@ -856,7 +856,7 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 				break;
 			case NM_CONNECTION_SCOPE_SYSTEM:
 				existing = g_hash_table_lookup (priv->system_connections, path);
-				if (!existing || !nm_connection_compare (existing, connection, COMPARE_FLAGS_EXACT)) {
+				if (!existing || !nm_connection_compare (existing, connection, NM_SETTING_COMPARE_FLAG_EXACT)) {
 					g_hash_table_insert (priv->system_connections,
 					                     g_strdup (path),
 					                     connection);

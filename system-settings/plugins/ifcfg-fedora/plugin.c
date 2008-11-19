@@ -339,7 +339,7 @@ connection_changed_handler (SCPluginIfcfg *plugin,
 		}
 
 		/* Only update if different */
-		if (!nm_connection_compare (new_wrapped, old_wrapped, COMPARE_FLAGS_EXACT)) {
+		if (!nm_connection_compare (new_wrapped, old_wrapped, NM_SETTING_COMPARE_FLAG_EXACT)) {
 			settings = nm_connection_to_hash (new_wrapped);
 			nm_exported_connection_update (NM_EXPORTED_CONNECTION (connection), settings, NULL);
 			g_hash_table_destroy (settings);

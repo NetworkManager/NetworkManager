@@ -238,14 +238,14 @@ nm_setting_compare (NMSetting *setting,
 		/* Fuzzy compare ignores secrets and properties defined with the
 		 * FUZZY_IGNORE flag
 		 */
-		if (   (flags & COMPARE_FLAGS_FUZZY)
+		if (   (flags & NM_SETTING_COMPARE_FLAG_FUZZY)
 		    && (prop_spec->flags & (NM_SETTING_PARAM_FUZZY_IGNORE | NM_SETTING_PARAM_SECRET)))
 			continue;
 
-		if ((flags & COMPARE_FLAGS_IGNORE_SECRETS) && (prop_spec->flags & NM_SETTING_PARAM_SECRET))
+		if ((flags & NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS) && (prop_spec->flags & NM_SETTING_PARAM_SECRET))
 			continue;
 
-		if (   (flags & COMPARE_FLAGS_IGNORE_ID)
+		if (   (flags & NM_SETTING_COMPARE_FLAG_IGNORE_ID)
 			   && !strcmp (nm_setting_get_name (setting), NM_SETTING_CONNECTION_SETTING_NAME)
 		    && !strcmp (prop_spec->name, NM_SETTING_CONNECTION_ID))
 			continue;

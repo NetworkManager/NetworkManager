@@ -88,16 +88,16 @@ gboolean    nm_setting_verify        (NMSetting *setting,
 
 typedef enum {
 	/* Match all attributes exactly */
-	COMPARE_FLAGS_EXACT = 0x00000000,
+	NM_SETTING_COMPARE_FLAG_EXACT = 0x00000000,
 
 	/* Match only important attributes, like SSID, type, security settings, etc */
-	COMPARE_FLAGS_FUZZY = 0x00000001,
+	NM_SETTING_COMPARE_FLAG_FUZZY = 0x00000001,
 
 	/* Ignore the connection ID */
-	COMPARE_FLAGS_IGNORE_ID = 0x00000002,
+	NM_SETTING_COMPARE_FLAG_IGNORE_ID = 0x00000002,
 
 	/* Ignore secrets */
-	COMPARE_FLAGS_IGNORE_SECRETS = 0x00000004
+	NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS = 0x00000004
 } NMSettingCompareFlags;
 
 /* Returns TRUE if the connections are the same */
