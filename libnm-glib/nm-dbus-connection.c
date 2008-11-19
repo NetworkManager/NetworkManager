@@ -94,12 +94,20 @@ connection_updated_cb (DBusGProxy *proxy, GHashTable *settings, gpointer user_da
 {
 	NMExportedConnection *exported = NM_EXPORTED_CONNECTION (user_data);
 	NMConnection *wrapped;
+	GError *error = NULL;
 
 	wrapped = nm_exported_connection_get_connection (exported);
-	if (nm_connection_replace_settings (wrapped, settings))
+	if (nm_connection_replace_settings (wrapped, settings, &error))
 		nm_exported_connection_signal_updated (exported, settings);
-	else
+	else {
+		g_warning ("%s: '%s' / '%s' invalid: %d",
+		           __func__,
+		           error ? g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)) : "(none)",
+		           (error && error->message) ? error->message : "(none)",
+		           error ? error->code : -1);
+		g_clear_error (&error);
 		nm_exported_connection_signal_removed (exported);
+	}
 }
 
 static void

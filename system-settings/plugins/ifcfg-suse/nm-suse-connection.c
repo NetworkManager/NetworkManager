@@ -37,9 +37,20 @@ file_changed (GFileMonitor *monitor,
 	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
 		new_connection = parse_ifcfg (priv->iface, priv->dev_type);
 		if (new_connection) {
+			GError *error = NULL;
+
 			new_settings = nm_connection_to_hash (new_connection);
-			nm_connection_replace_settings (nm_exported_connection_get_connection (exported), new_settings);
-			nm_exported_connection_signal_updated (exported, new_settings);
+			if (nm_connection_replace_settings (nm_exported_connection_get_connection (exported), new_settings, &error))
+				nm_exported_connection_signal_updated (exported, new_settings);
+			else {
+				g_warning ("%s: '%s' / '%s' invalid: %d",
+				           __func__,
+				           error ? g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)) : "(none)",
+				           (error && error->message) ? error->message : "(none)",
+				           error ? error->code : -1);
+				g_clear_error (&error);
+				nm_exported_connection_signal_removed (exported);
+			}
 
 			g_hash_table_destroy (new_settings);
 			g_object_unref (new_connection);

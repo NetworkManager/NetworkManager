@@ -970,7 +970,7 @@ connection_updated_cb (DBusGProxy *proxy, GHashTable *settings, gpointer user_da
 	}
 	g_object_unref (new_connection);
 
-	valid = nm_connection_replace_settings (old_connection, settings);
+	valid = nm_connection_replace_settings (old_connection, settings, NULL);
 	if (valid) {
 		g_signal_emit (manager, signals[CONNECTION_UPDATED], 0,
 		               old_connection,

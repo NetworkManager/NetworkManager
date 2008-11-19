@@ -347,29 +347,30 @@ nm_connection_get_setting_by_name (NMConnection *connection, const char *name)
 	return type ? nm_connection_get_setting (connection, type) : NULL;
 }
 
+/**
+ * nm_connection_replace_settings:
+ * @connection: a #NMConnection
+ * @new_settings: a #GHashTable of settings
+ * @error: location to store error, or %NULL
+ *
+ * Returns: TRUE if the settings were valid and added to the connection, FALSE
+ * if they were not
+ **/
 gboolean
 nm_connection_replace_settings (NMConnection *connection,
-                                GHashTable *new_settings)
+                                GHashTable *new_settings,
+                                GError **error)
 {
-	GError *error = NULL;
-
+	g_return_val_if_fail (connection != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (new_settings != NULL, FALSE);
+	if (error)
+		g_return_val_if_fail (*error == NULL, FALSE);
 
 	g_hash_table_remove_all (NM_CONNECTION_GET_PRIVATE (connection)->settings);
 	g_hash_table_foreach (new_settings, parse_one_setting, connection);
 
-	if (!nm_connection_verify (connection, &error)) {
-		g_warning ("%s: '%s' / '%s' invalid: %d",
-		           __func__,
-		           g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)),
-		           error->message,
-		           error->code);
-		g_error_free (error);
-		return FALSE;
-	}
-
-	return TRUE;
+	return nm_connection_verify (connection, error);
 }
 
 typedef struct {

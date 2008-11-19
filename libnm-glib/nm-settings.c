@@ -524,6 +524,7 @@ nm_exported_connection_update (NMExportedConnection *connection,
 						 GError **err)
 {
 	gboolean success = TRUE;
+	GError *error = NULL;
 
 	g_return_val_if_fail (NM_IS_EXPORTED_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (new_settings != NULL, FALSE);
@@ -532,8 +533,16 @@ nm_exported_connection_update (NMExportedConnection *connection,
 		success = EXPORTED_CONNECTION_CLASS (connection)->update (connection, new_settings, err);
 
 	if (success) {
-		nm_connection_replace_settings (NM_EXPORTED_CONNECTION_GET_PRIVATE (connection)->wrapped, new_settings);
-		nm_exported_connection_signal_updated (connection, new_settings);
+		if (!nm_connection_replace_settings (NM_EXPORTED_CONNECTION_GET_PRIVATE (connection)->wrapped, new_settings, &error)) {
+			g_warning ("%s: '%s' / '%s' invalid: %d",
+			           __func__,
+			           error ? g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)) : "(none)",
+			           (error && error->message) ? error->message : "(none)",
+			           error ? error->code : -1);
+			g_clear_error (&error);
+			success = FALSE;
+		} else
+			nm_exported_connection_signal_updated (connection, new_settings);
 	}
 
 	return success;

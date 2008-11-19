@@ -1,5 +1,19 @@
 2008-11-19  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-connection.c
+	  libnm-util/nm-connection.h
+		- (nm_connection_replace_settings): take a GError
+
+	* libnm-glib/nm-settings.c
+	  libnm-glib/nm-dbus-connection.c
+	  src/nm-manager.c
+	  system-settings/plugins/ifcfg-suse/nm-suse-connection.c
+	  system-settings/plugins/keyfile/nm-keyfile-connection.c
+	  system-settings/plugins/keyfile/plugin.c
+		- Handle, or don't handle, errors from nm_connection_replace_settings()
+
+2008-11-19  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/libnm-util.ver
 	  libnm-util/nm-connection.c
 		- (nm_setting_register, nm_setting_unregister): unexport; they are

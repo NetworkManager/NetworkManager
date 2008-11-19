@@ -133,11 +133,22 @@ update_connection_settings (NMExportedConnection *orig,
 {
 	NMConnection *wrapped;
 	GHashTable *new_settings;
+	GError *error = NULL;
 
 	new_settings = nm_connection_to_hash (nm_exported_connection_get_connection (new));
 	wrapped = nm_exported_connection_get_connection (orig);
-	nm_connection_replace_settings (wrapped, new_settings);
-	nm_exported_connection_signal_updated (orig, new_settings);
+	if (nm_connection_replace_settings (wrapped, new_settings, &error))
+		nm_exported_connection_signal_updated (orig, new_settings);
+	else {
+		g_warning ("%s: '%s' / '%s' invalid: %d",
+		           __func__,
+		           error ? g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)) : "(none)",
+		           (error && error->message) ? error->message : "(none)",
+		           error ? error->code : -1);
+		g_clear_error (&error);
+		nm_exported_connection_signal_removed (orig);
+	}
+
 	g_hash_table_destroy (new_settings);
 }
 
