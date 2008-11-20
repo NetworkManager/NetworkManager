@@ -53,6 +53,16 @@ destroy_gvalue (gpointer data)
 	g_slice_free (GValue, value);
 }
 
+/**
+ * nm_setting_to_hash:
+ * @setting: the #NMSetting
+ *
+ * Converts the #NMSetting into a #GHashTable mapping each setting property
+ * name to a GValue describing that property, suitable for marshalling over
+ * D-Bus or serializing.  The mapping is string:GValue.
+ * 
+ * Returns: a new #GHashTable describing the setting's properties
+ **/
 GHashTable *
 nm_setting_to_hash (NMSetting *setting)
 {
