@@ -812,9 +812,30 @@ device_supports_ap_ciphers (guint32 dev_caps,
 	return (have_pair && have_group);
 }
 
+/**
+ * nm_utils_security_valid:
+ * @type: the security type to check AP flags and device capabilties against,
+ * e.g. #NMU_SEC_STATIC_WEP
+ * @wifi_caps: bitfield of the capabilities of the specific WiFi device, e.g.
+ * #NM_WIFI_DEVICE_CAP_CIPHER_WEP40
+ * @have_ap: whether the @ap_flags, @ap_wpa, and @ap_rsn arguments are valid
+ * @adhoc: whether the capabilities being tested are from an Ad-Hoc AP (IBSS)
+ * @ap_flags: bitfield of AP capabilities, e.g. #NM_802_11_AP_FLAGS_PRIVACY
+ * @ap_wpa: bitfield of AP capabilties derived from the AP's WPA beacon,
+ * e.g. (#NM_802_11_AP_SEC_PAIR_TKIP | #NM_802_11_AP_SEC_KEY_MGMT_PSK)
+ * @ap_rsn: bitfield of AP capabilties derived from the AP's RSN/WPA2 beacon,
+ * e.g. (#NM_802_11_AP_SEC_PAIR_CCMP | #NM_802_11_AP_SEC_PAIR_TKIP)
+ *
+ * Given a set of device capabilities, and a desired security type to check
+ * against, determines whether the combination of device, desired security
+ * type, and AP capabilities intersect.
+ *
+ * Returns: TRUE if the device capabilities and AP capabilties intersect and are
+ * compatible with the desired @type, FALSE if they are not
+ **/
 gboolean
 nm_utils_security_valid (NMUtilsSecurityType type,
-                         guint32 dev_caps,
+                         guint32 wifi_caps,
                          gboolean have_ap,
                          gboolean adhoc,
                          guint32 ap_flags,
@@ -829,7 +850,7 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		if (   (type == NMU_SEC_STATIC_WEP)
 		    || ((type == NMU_SEC_DYNAMIC_WEP) && !adhoc)
 		    || ((type == NMU_SEC_LEAP) && !adhoc)) {
-			if (dev_caps & (NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104))
+			if (wifi_caps & (NM_WIFI_DEVICE_CAP_CIPHER_WEP40 | NM_WIFI_DEVICE_CAP_CIPHER_WEP104))
 				return TRUE;
 		}
 	}
@@ -851,8 +872,8 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
 			return FALSE;
 		if (ap_wpa || ap_rsn) {
-			if (!device_supports_ap_ciphers (dev_caps, ap_wpa, TRUE))
-				if (!device_supports_ap_ciphers (dev_caps, ap_rsn, TRUE))
+			if (!device_supports_ap_ciphers (wifi_caps, ap_wpa, TRUE))
+				if (!device_supports_ap_ciphers (wifi_caps, ap_rsn, TRUE))
 					return FALSE;
 		}
 		break;
@@ -866,12 +887,12 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		if (ap_wpa) {
 			if (!(ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_802_1X))
 				return FALSE;
-			if (!device_supports_ap_ciphers (dev_caps, ap_wpa, FALSE))
+			if (!device_supports_ap_ciphers (wifi_caps, ap_wpa, FALSE))
 				return FALSE;
 		}
 		break;
 	case NMU_SEC_WPA_PSK:
-		if (!(dev_caps & NM_WIFI_DEVICE_CAP_WPA))
+		if (!(wifi_caps & NM_WIFI_DEVICE_CAP_WPA))
 			return FALSE;
 		if (have_ap) {
 			if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
@@ -879,17 +900,17 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 
 			if (ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_PSK) {
 				if (   (ap_wpa & NM_802_11_AP_SEC_PAIR_TKIP)
-				    && (dev_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP))
+				    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP))
 					return TRUE;
 				if (   (ap_wpa & NM_802_11_AP_SEC_PAIR_CCMP)
-				    && (dev_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
+				    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
 					return TRUE;
 			}
 			return FALSE;
 		}
 		break;
 	case NMU_SEC_WPA2_PSK:
-		if (!(dev_caps & NM_WIFI_DEVICE_CAP_RSN))
+		if (!(wifi_caps & NM_WIFI_DEVICE_CAP_RSN))
 			return FALSE;
 		if (have_ap) {
 			if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
@@ -897,10 +918,10 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 
 			if (ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_PSK) {
 				if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_TKIP)
-				    && (dev_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP))
+				    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP))
 					return TRUE;
 				if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_CCMP)
-				    && (dev_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
+				    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_CCMP))
 					return TRUE;
 			}
 			return FALSE;
@@ -909,7 +930,7 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 	case NMU_SEC_WPA_ENTERPRISE:
 		if (adhoc)
 			return FALSE;
-		if (!(dev_caps & NM_WIFI_DEVICE_CAP_WPA))
+		if (!(wifi_caps & NM_WIFI_DEVICE_CAP_WPA))
 			return FALSE;
 		if (have_ap) {
 			if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
@@ -917,14 +938,14 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 			if (!(ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_802_1X))
 				return FALSE;
 			/* Ensure at least one WPA cipher is supported */
-			if (!device_supports_ap_ciphers (dev_caps, ap_wpa, FALSE))
+			if (!device_supports_ap_ciphers (wifi_caps, ap_wpa, FALSE))
 				return FALSE;
 		}
 		break;
 	case NMU_SEC_WPA2_ENTERPRISE:
 		if (adhoc)
 			return FALSE;
-		if (!(dev_caps & NM_WIFI_DEVICE_CAP_RSN))
+		if (!(wifi_caps & NM_WIFI_DEVICE_CAP_RSN))
 			return FALSE;
 		if (have_ap) {
 			if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
@@ -932,7 +953,7 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 			if (!(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_802_1X))
 				return FALSE;
 			/* Ensure at least one WPA cipher is supported */
-			if (!device_supports_ap_ciphers (dev_caps, ap_rsn, FALSE))
+			if (!device_supports_ap_ciphers (wifi_caps, ap_rsn, FALSE))
 				return FALSE;
 		}
 		break;
@@ -944,6 +965,18 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 	return good;
 }
 
+/**
+ * nm_utils_ip4_addresses_from_gvalue:
+ * @value: gvalue containing a GPtrArray of GArrays of guint32s
+ *
+ * Utility function to convert a #GPtrArray of #GArrays of guint32s representing
+ * a list of NetworkManager IPv4 addresses (which is a tuple of address, gateway,
+ * and prefix) into a GSList of #NMIP4Address objects.  The specific format of
+ * this serialization is not guaranteed to be stable and the #GArray may be
+ * extended in the future.
+ *
+ * Returns: a newly allocated #GSList of #NMIP4Address objects
+ **/
 GSList *
 nm_utils_ip4_addresses_from_gvalue (const GValue *value)
 {
@@ -956,7 +989,7 @@ nm_utils_ip4_addresses_from_gvalue (const GValue *value)
 		GArray *array = (GArray *) g_ptr_array_index (addresses, i);
 		NMIP4Address *addr;
 
-		if (array->len != 3) {
+		if (array->len < 3) {
 			nm_warning ("Ignoring invalid IP4 address");
 			continue;
 		}
@@ -971,6 +1004,19 @@ nm_utils_ip4_addresses_from_gvalue (const GValue *value)
 	return g_slist_reverse (list);
 }
 
+/**
+ * nm_utils_ip4_addresses_to_gvalue:
+ * @list: a list of #NMIP4Address objects
+ * @value: a pointer to a #GValue into which to place the converted addresses,
+ * which should be unset by the caller (when no longer needed) with
+ * g_value_unset().
+ *
+ * Utility function to convert a #GSList of #NMIP4Address objects into a
+ * GPtrArray of GArrays of guint32s representing a list of NetworkManager IPv4
+ * addresses (which is a tuple of address, gateway, and prefix).   The specific
+ * format of this serialization is not guaranteed to be stable and may be
+ * extended in the future.
+ **/
 void
 nm_utils_ip4_addresses_to_gvalue (GSList *list, GValue *value)
 {
@@ -1001,6 +1047,18 @@ nm_utils_ip4_addresses_to_gvalue (GSList *list, GValue *value)
 	g_value_take_boxed (value, addresses);
 }
 
+/**
+ * nm_utils_ip4_routes_from_gvalue:
+ * @value: gvalue containing a GPtrArray of GArrays of guint32s
+ *
+ * Utility function to convert a GPtrArray of GArrays of guint32s representing
+ * a list of NetworkManager IPv4 routes (which is a tuple of route, next hop,
+ * prefix, and metric) into a GSList of #NMIP4Route objects.  The specific
+ * format of this serialization is not guaranteed to be stable and may be
+ * extended in the future.
+ *
+ * Returns: a newly allocated #GSList of #NMIP4Route objects
+ **/
 GSList *
 nm_utils_ip4_routes_from_gvalue (const GValue *value)
 {
@@ -1013,7 +1071,7 @@ nm_utils_ip4_routes_from_gvalue (const GValue *value)
 		GArray *array = (GArray *) g_ptr_array_index (routes, i);
 		NMIP4Route *route;
 
-		if (array->len != 4) {
+		if (array->len < 4) {
 			nm_warning ("Ignoring invalid IP4 route");
 			continue;
 		}
@@ -1029,6 +1087,19 @@ nm_utils_ip4_routes_from_gvalue (const GValue *value)
 	return g_slist_reverse (list);
 }
 
+/**
+ * nm_utils_ip4_routes_to_gvalue:
+ * @list: a list of #NMIP4Route objects
+ * @value: a pointer to a #GValue into which to place the converted routes,
+ * which should be unset by the caller (when no longer needed) with
+ * g_value_unset().
+ *
+ * Utility function to convert a #GSList of #NMIP4Route objects into a
+ * GPtrArray of GArrays of guint32s representing a list of NetworkManager IPv4
+ * routes (which is a tuple of route, next hop, prefix, and metric).   The
+ * specific format of this serialization is not guaranteed to be stable and may
+ * be extended in the future.
+ **/
 void
 nm_utils_ip4_routes_to_gvalue (GSList *list, GValue *value)
 {
@@ -1062,13 +1133,12 @@ nm_utils_ip4_routes_to_gvalue (GSList *list, GValue *value)
 	g_value_take_boxed (value, routes);
 }
 
-/*
- * nm_utils_ip4_netmask_to_prefix
+/**
+ * nm_utils_ip4_netmask_to_prefix:
+ * @netmask: an IPv4 netmask in network byte order
  *
- * Figure out the network prefix from a netmask.  Netmask
- * MUST be in network byte order.
- *
- */
+ * Returns: the CIDR prefix represented by the netmask
+ **/
 guint32
 nm_utils_ip4_netmask_to_prefix (guint32 netmask)
 {
@@ -1095,12 +1165,12 @@ nm_utils_ip4_netmask_to_prefix (guint32 netmask)
 	return prefix;
 }
 
-/*
- * nm_utils_ip4_prefix_to_netmask
+/**
+ * nm_utils_ip4_prefix_to_netmask:
+ * @prefix: a CIDR prefix
  *
- * Figure out the netmask from a prefix.
- *
- */
+ * Returns: the netmask represented by the prefix
+ **/
 guint32
 nm_utils_ip4_prefix_to_netmask (guint32 prefix)
 {
@@ -1115,6 +1185,7 @@ nm_utils_ip4_prefix_to_netmask (guint32 prefix)
 
 	return (guint32) htonl (netmask);
 }
+
 
 GSList *
 nm_utils_ip6_addresses_from_gvalue (const GValue *value)
@@ -1255,6 +1326,12 @@ nm_utils_ip6_dns_to_gvalue (GSList *list, GValue *value)
 	g_value_take_boxed (value, dns);
 }
 
+/**
+ * nm_utils_uuid_generate:
+ *
+ * Returns: a newly allocated UUID suitable for use as the #NMSettingConnection
+ * object's #NMSettingConnection:id: property.  Should be freed with g_free()
+ **/
 char *
 nm_utils_uuid_generate (void)
 {
@@ -1267,6 +1344,15 @@ nm_utils_uuid_generate (void)
 	return buf;
 }
 
+/**
+ * nm_utils_uuid_generate_from_string:
+ * @s: a string to use as the seed for the UUID
+ *
+ * For a given @s, this function will always return the same UUID.
+ *
+ * Returns: a newly allocated UUID suitable for use as the #NMSettingConnection
+ * object's #NMSettingConnection:id: property
+ **/
 char *
 nm_utils_uuid_generate_from_string (const char *s)
 {

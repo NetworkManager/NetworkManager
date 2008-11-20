@@ -1,5 +1,11 @@
 2008-11-20  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/nm-utils.c
+	  libnm-util/nm-utils.h
+		- More documentation updates
+
+2008-11-20  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/libnm-util.ver
 	  libnm-util/nm-utils.c
 	  libnm-util/nm-utils.h
