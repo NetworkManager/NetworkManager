@@ -344,10 +344,10 @@ typedef struct {
 
 static void
 read_one_setting_value (NMSetting *setting,
-				    const char *key,
-				    const GValue *value,
-				    gboolean secret,
-				    gpointer user_data)
+                        const char *key,
+                        const GValue *value,
+                        GParamFlags flags,
+                        gpointer user_data)
 {
 	ReadSettingInfo *info = (ReadSettingInfo *) user_data;
 	GKeyFile *file = info->keyfile;
@@ -356,12 +356,16 @@ read_one_setting_value (NMSetting *setting,
 	GError *err = NULL;
 	gboolean check_for_key = TRUE;
 
+	/* Property is not writable */
+	if (!(flags & G_PARAM_WRITABLE))
+		return;
+
 	/* Setting name gets picked up from the keyfile's section name instead */
 	if (!strcmp (key, NM_SETTING_NAME))
 		return;
 
 	/* Don't read in secrets unless we want to */
-	if (secret && !info->secrets)
+	if ((flags & NM_SETTING_PARAM_SECRET) && !info->secrets)
 		return;
 
 	/* Don't read the NMSettingConnection object's 'read-only' property */

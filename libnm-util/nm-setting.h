@@ -80,10 +80,10 @@ typedef struct {
 } NMSettingClass;
 
 typedef void (*NMSettingValueIterFn) (NMSetting *setting,
-							   const char *key,
-							   const GValue *value,
-							   gboolean secret,
-							   gpointer user_data);
+                                      const char *key,
+                                      const GValue *value,
+                                      GParamFlags flags,
+                                      gpointer user_data);
 
 
 GType nm_setting_get_type (void);

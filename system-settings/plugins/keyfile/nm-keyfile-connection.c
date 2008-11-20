@@ -97,12 +97,12 @@ static void
 add_secrets (NMSetting *setting,
              const char *key,
              const GValue *value,
-             gboolean secret,
+             GParamFlags flags,
              gpointer user_data)
 {
 	GHashTable *secrets = user_data;
 
-	if (!secret)
+	if (!(flags & NM_SETTING_PARAM_SECRET))
 		return;
 
 	if (G_VALUE_HOLDS_STRING (value)) {

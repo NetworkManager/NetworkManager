@@ -203,10 +203,10 @@ write_hash_of_string (GKeyFile *file,
 
 static void
 write_setting_value (NMSetting *setting,
-				 const char *key,
-				 const GValue *value,
-				 gboolean secret,
-				 gpointer user_data)
+                     const char *key,
+                     const GValue *value,
+                     GParamFlags flag,
+                     gpointer user_data)
 {
 	GKeyFile *file = (GKeyFile *) user_data;
 	const char *setting_name;

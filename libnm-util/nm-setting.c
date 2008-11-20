@@ -230,14 +230,13 @@ nm_setting_new_from_hash (GType setting_type,
 
 static void
 duplicate_setting (NMSetting *setting,
-			    const char *name,
-			    const GValue *value,
-			    gboolean secret,
-			    gpointer user_data)
+                   const char *name,
+                   const GValue *value,
+                   GParamFlags flags,
+                   gpointer user_data)
 {
-	GObject *dup = (GObject *) user_data;
-
-	g_object_set_property (dup, name, value);
+	if (flags & G_PARAM_WRITABLE)
+		g_object_set_property (G_OBJECT (user_data), name, value);
 }
 
 /**
@@ -407,9 +406,7 @@ nm_setting_enumerate_values (NMSetting *setting,
 
 		g_value_init (&value, G_PARAM_SPEC_VALUE_TYPE (prop_spec));
 		g_object_get_property (G_OBJECT (setting), prop_spec->name, &value);
-		func (setting, prop_spec->name, &value,
-			 prop_spec->flags & NM_SETTING_PARAM_SECRET,
-			 user_data);
+		func (setting, prop_spec->name, &value, prop_spec->flags, user_data);
 		g_value_unset (&value);
 	}
 

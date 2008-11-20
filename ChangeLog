@@ -1,5 +1,19 @@
 2008-11-20  Dan Williams  <dcbw@redhat.com>
 
+	Patch from Tambet Ingo <tambet@gmail.com>
+
+	* libnm-util/nm-setting.c
+	  libnm-util/nm-setting.h
+		- (NMSettingValueIterFn): instead of just a gboolean for secrets, take
+			all the GParamSpec flags of the property
+
+	* system-settings/plugins/keyfile/nm-keyfile-connection.c
+	  system-settings/plugins/keyfile/reader.c
+	  system-settings/plugins/keyfile/writer.c
+		- Update for NMSettingValueIterFn change
+
+2008-11-20  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-utils.c
 	  libnm-util/nm-utils.h
 		- More documentation updates
