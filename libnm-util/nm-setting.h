@@ -74,8 +74,8 @@ typedef void (*NMSettingValueIterFn) (NMSetting *setting,
 GType nm_setting_get_type (void);
 
 GHashTable *nm_setting_to_hash       (NMSetting *setting);
-NMSetting  *nm_setting_from_hash     (GType setting_type,
-							   GHashTable *hash);
+NMSetting  *nm_setting_new_from_hash (GType setting_type,
+                                      GHashTable *hash);
 
 NMSetting *nm_setting_duplicate      (NMSetting *setting);
 

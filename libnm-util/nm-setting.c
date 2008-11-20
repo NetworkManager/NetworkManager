@@ -141,8 +141,8 @@ one_property_cb (gpointer key, gpointer val, gpointer user_data)
 }
 
 NMSetting *
-nm_setting_from_hash (GType setting_type,
-				  GHashTable *hash)
+nm_setting_new_from_hash (GType setting_type,
+                          GHashTable *hash)
 {
 	NMSetting *setting;
 	NMSettingFromHashInfo info;

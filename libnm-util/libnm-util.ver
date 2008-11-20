@@ -84,7 +84,7 @@ global:
 	nm_setting_connection_get_read_only;
 	nm_setting_duplicate;
 	nm_setting_enumerate_values;
-	nm_setting_from_hash;
+	nm_setting_new_from_hash;
 	nm_setting_get_name;
 	nm_setting_get_type;
 	nm_setting_gsm_error_get_type;

@@ -418,7 +418,7 @@ update_one_setting (const char* key,
 	if (type == 0)
 		return;
 
-	setting = nm_setting_from_hash (type, setting_hash);
+	setting = nm_setting_new_from_hash (type, setting_hash);
 	if (setting) {
 		NMSetting *s_8021x = NULL;
 		GSList *all_settings = NULL;

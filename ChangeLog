@@ -1,3 +1,15 @@
+2008-11-20  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/nm-setting.c
+	  libnm-util/nm-setting.h
+	  libnm-util/libnm-util.ver
+		- (nm_setting_new_from_hash): rename from nm_setting_from_hash() to be
+			consistent with nm_connection_new_from_hash()
+
+	* src/nm-activation-request.c
+	  libnm-util/nm-connection.c
+		- Handle rename
+
 2008-11-19  Dan Williams  <dcbw@redhat.com>
 
 	* configure.in

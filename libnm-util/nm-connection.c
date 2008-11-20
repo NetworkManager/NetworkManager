@@ -332,7 +332,7 @@ parse_one_setting (gpointer key, gpointer value, gpointer user_data)
 
 	type = nm_connection_lookup_setting_type ((char *) key);
 	if (type)
-		setting = nm_setting_from_hash (type, (GHashTable *) value);
+		setting = nm_setting_new_from_hash (type, (GHashTable *) value);
 	if (setting)
 		nm_connection_add_setting (connection, setting);
 }
