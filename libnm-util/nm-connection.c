@@ -1142,6 +1142,16 @@ nm_connection_class_init (NMConnectionClass *klass)
 						  G_PARAM_READWRITE));
 
 	/* Signals */
+
+	/**
+	* NMConnection::secrets-updated:
+	* @connection: the object on which the signal is emitted
+	* @setting_name: the setting name of the #NMSetting for which secrets were
+	* updated
+	*
+	* The ::secrets-updated signal is emitted when the secrets of a setting
+	* have been changed.
+	*/
 	signals[SECRETS_UPDATED] =
 		g_signal_new ("secrets-updated",
 					  G_OBJECT_CLASS_TYPE (object_class),
