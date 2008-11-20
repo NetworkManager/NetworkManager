@@ -474,7 +474,7 @@ compare_one_setting (gpointer key, gpointer value, gpointer user_data)
  * @b: a second #NMConnection to compare with the first
  * @flags: compare flags, e.g. %NM_SETTING_COMPARE_FLAG_EXACT
  *
- * Compares to #NMConnection objects for similarity, with comparison behavior
+ * Compares two #NMConnection objects for similarity, with comparison behavior
  * modified by a set of flags.  See nm_setting_compare() for a description of
  * each flag's behavior.
  *
@@ -593,9 +593,10 @@ nm_connection_verify (NMConnection *connection, GError **error)
 
 /**
  * nm_connection_update_secrets:
- * @connection: the #NMConnection to verify
+ * @connection: the #NMConnection
  * @setting_name: the setting object name to which the secrets apply
- * @secrets: a #GHashTable mapping string:#GValue of setting properties and secrets
+ * @secrets: a #GHashTable mapping string:#GValue of setting property names and
+ * secrets
  *
  * Update the specified setting's secrets, given a hash table of secrets
  * intended for that setting (deserialized from D-Bus for example).

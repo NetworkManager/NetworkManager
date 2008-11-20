@@ -140,6 +140,22 @@ one_property_cb (gpointer key, gpointer val, gpointer user_data)
 	}
 }
 
+/**
+ * nm_setting_new_from_hash:
+ * @setting_type: the #NMSetting type which the hash contains properties for
+ * @hash: the #GHashTable containing a string:GValue mapping of properties
+ * that apply to the setting
+ *
+ * Creates a new #NMSetting object and populates that object with the properties
+ * contained in the hash table, using each hash key as the property to set,
+ * and each hash value as the value to set that property to.  Setting properties
+ * are strongly typed, thus the GValue type of the hash value must be correct.
+ * See the documentation on each #NMSetting object subclass for the correct
+ * property names and value types.
+ * 
+ * Returns: a new #NMSetting object populated with the properties from the
+ * hash table, or NULL on failure
+ **/
 NMSetting *
 nm_setting_new_from_hash (GType setting_type,
                           GHashTable *hash)
@@ -182,6 +198,15 @@ duplicate_setting (NMSetting *setting,
 	g_object_set_property (dup, name, value);
 }
 
+/**
+ * nm_setting_duplicate:
+ * @setting: the #NMSetting to duplicate
+ *
+ * Duplicates a #NMSetting.
+ *
+ * Returns: a new #NMSetting containing the same properties and values as the
+ * source #NMSetting
+ **/
 NMSetting *
 nm_setting_duplicate (NMSetting *setting)
 {
@@ -198,6 +223,15 @@ nm_setting_duplicate (NMSetting *setting)
 	return NM_SETTING (dup);
 }
 
+/**
+ * nm_setting_get_name:
+ * @setting: the #NMSetting
+ *
+ * Returns the type name of the #NMSetting object
+ *
+ * Returns: a string containing the type name of the #NMSetting object,
+ * like 'ppp' or 'wireless' or 'wired'.
+ **/
 const char *
 nm_setting_get_name (NMSetting *setting)
 {
@@ -206,6 +240,20 @@ nm_setting_get_name (NMSetting *setting)
 	return NM_SETTING_GET_PRIVATE (setting)->name;
 }
 
+/**
+ * nm_setting_verify:
+ * @setting: the #NMSetting to verify
+ * @all_settings: a #GSList of all settings in the connection from which @setting
+ * came
+ * @error: location to store error, or %NULL
+ *
+ * Validates the setting.  Each setting's properties have allowed values, and
+ * some are dependent on other values (hence the need for @all_settings).  The
+ * returned #GError contains information about which property of the setting
+ * failed validation, and in what way that property failed validation.
+ *
+ * Returns: TRUE if the setting is valid, FALSE if it is not
+ **/
 gboolean
 nm_setting_verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
@@ -219,6 +267,18 @@ nm_setting_verify (NMSetting *setting, GSList *all_settings, GError **error)
 	return TRUE;
 }
 
+/**
+ * nm_setting_compare:
+ * @a: a #NMSetting
+ * @b: a second #NMSetting to compare with the first
+ * @flags: compare flags, e.g. %NM_SETTING_COMPARE_FLAG_EXACT
+ *
+ * Compares two #NMSetting objects for similarity, with comparison behavior
+ * modified by a set of flags.  See the documentation for #NMSettingCompareFlags
+ * for a description of each flag's behavior.
+ *
+ * Returns: TRUE if the comparison succeeds, FALSE if it does not
+ **/
 gboolean
 nm_setting_compare (NMSetting *setting,
                     NMSetting *other,
@@ -277,6 +337,15 @@ nm_setting_compare (NMSetting *setting,
 	return different == 0 ? TRUE : FALSE;
 }
 
+/**
+ * nm_setting_enumerate_values:
+ * @setting: the #NMSetting
+ * @func: user-supplied function called for each property of the setting
+ * @user_data: user data passed to @func at each invocation
+ *
+ * Iterates over each property of the #NMSetting object, calling the supplied
+ * user function for each property.
+ **/
 void
 nm_setting_enumerate_values (NMSetting *setting,
 					    NMSettingValueIterFn func,
@@ -305,6 +374,14 @@ nm_setting_enumerate_values (NMSetting *setting,
 	g_free (property_specs);
 }
 
+/**
+ * nm_setting_clear_secrets:
+ * @setting: the #NMSetting
+ *
+ * Resets and clears any secrets in the setting.  Secrets should be added to the
+ * setting only when needed, and cleared immediately after use to prevent
+ * leakage of information.
+ **/
 void
 nm_setting_clear_secrets (NMSetting *setting)
 {
@@ -331,6 +408,20 @@ nm_setting_clear_secrets (NMSetting *setting)
 	g_free (property_specs);
 }
 
+/**
+ * nm_setting_need_secrets:
+ * @setting: the #NMSetting
+ *
+ * Returns an array of property names for each secret which may be required
+ * to make a successful connection.  The returned hints are only intended as a
+ * guide to what secrets may be required, because in some circumstances, there
+ * is no way to conclusively determine exactly which secrets are needed.
+ *
+ * Returns: a #GPtrArray containing the property names of secrets of the
+ * #NMSetting which may be required; the caller owns the array
+ * and must free the each array element with g_free(), as well as the array
+ * itself with g_ptr_array_free()
+ **/
 GPtrArray *
 nm_setting_need_secrets (NMSetting *setting)
 {
