@@ -360,7 +360,7 @@ nm_connection_add_setting (NMConnection *connection, NMSetting *setting)
 /**
  * nm_connection_remove_setting:
  * @connection: a #NMConnection
- * @type: the #GType of the setting object to remove
+ * @setting_type: the #GType of the setting object to remove
  *
  * Removes the #NMSetting with the given #GType from the #NMConnection.  This
  * operation dereferences the #NMSetting object.
@@ -377,7 +377,7 @@ nm_connection_remove_setting (NMConnection *connection, GType setting_type)
 /**
  * nm_connection_get_setting:
  * @connection: a #NMConnection
- * @type: the #GType of the setting object to return
+ * @setting_type: the #GType of the setting object to return
  *
  * Gets the #NMSetting with the given #GType, if one has been previously added
  * to the #NMConnection.
