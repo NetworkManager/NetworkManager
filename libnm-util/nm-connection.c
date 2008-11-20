@@ -366,12 +366,12 @@ nm_connection_add_setting (NMConnection *connection, NMSetting *setting)
  * operation dereferences the #NMSetting object.
  **/
 void
-nm_connection_remove_setting (NMConnection *connection, GType type)
+nm_connection_remove_setting (NMConnection *connection, GType setting_type)
 {
 	g_return_if_fail (NM_IS_CONNECTION (connection));
-	g_return_if_fail (g_type_is_a (type, NM_TYPE_SETTING));
+	g_return_if_fail (g_type_is_a (setting_type, NM_TYPE_SETTING));
 
-	g_hash_table_remove (NM_CONNECTION_GET_PRIVATE (connection)->settings, g_type_name (type));
+	g_hash_table_remove (NM_CONNECTION_GET_PRIVATE (connection)->settings, g_type_name (setting_type));
 }
 
 /**
@@ -386,13 +386,13 @@ nm_connection_remove_setting (NMConnection *connection, GType type)
  * added to the #NMConnection
  **/
 NMSetting *
-nm_connection_get_setting (NMConnection *connection, GType type)
+nm_connection_get_setting (NMConnection *connection, GType setting_type)
 {
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), NULL);
-	g_return_val_if_fail (g_type_is_a (type, NM_TYPE_SETTING), NULL);
+	g_return_val_if_fail (g_type_is_a (setting_type, NM_TYPE_SETTING), NULL);
 
 	return (NMSetting *) g_hash_table_lookup (NM_CONNECTION_GET_PRIVATE (connection)->settings,
-									  g_type_name (type));
+									  g_type_name (setting_type));
 }
 
 /**

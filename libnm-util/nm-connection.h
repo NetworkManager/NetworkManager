@@ -89,10 +89,10 @@ void          nm_connection_add_setting   (NMConnection *connection,
 								   NMSetting    *setting);
 
 void          nm_connection_remove_setting (NMConnection *connection,
-								    GType         setting_type);
+                                            GType         setting_type);
 
 NMSetting    *nm_connection_get_setting   (NMConnection *connection,
-								   GType         setting_type);
+                                           GType         setting_type);
 
 NMSetting    *nm_connection_get_setting_by_name (NMConnection *connection,
 									    const char *name);
