@@ -1,5 +1,15 @@
 2008-11-20  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/libnm-util.ver
+	  libnm-util/nm-utils.c
+	  libnm-util/nm-utils.h
+	  libnm-util/nm-utils-private.h
+	  libnm-util/nm-connection.c
+		- (nm_utils_register_value_transformations): make private, called
+			from NMConnection registration anyway
+
+2008-11-20  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/Makefile.am
 	  libnm-util/nm-utils-private.h
 		- New header for internal utils private functions

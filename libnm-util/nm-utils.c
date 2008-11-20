@@ -738,7 +738,7 @@ nm_utils_convert_string_hash_to_string (const GValue *src_value, GValue *dest_va
 }
 
 void
-nm_utils_register_value_transformations (void)
+_nm_utils_register_value_transformations (void)
 {
 	static gboolean registered = FALSE;
 

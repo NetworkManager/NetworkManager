@@ -28,6 +28,7 @@
 #include <string.h>
 #include "nm-connection.h"
 #include "nm-utils.h"
+#include "nm-utils-private.h"
 
 #include "nm-setting-8021x.h"
 #include "nm-setting-connection.h"
@@ -170,7 +171,7 @@ register_one_setting (const char *name, GType type, GQuark error_quark, guint32 
 static void
 register_default_settings (void)
 {
-	nm_utils_register_value_transformations ();
+	_nm_utils_register_value_transformations ();
 
 	if (G_LIKELY (default_map[0].name))
 		return;

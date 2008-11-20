@@ -32,4 +32,6 @@ gboolean    _nm_utils_string_in_list   (const char *str,
 gboolean    _nm_utils_string_slist_validate (GSList *list,
                                              const char **valid_values);
 
+void        _nm_utils_register_value_transformations (void);
+
 #endif

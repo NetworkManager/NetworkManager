@@ -254,7 +254,6 @@ global:
 	nm_utils_ip4_routes_from_gvalue;
 	nm_utils_ip4_routes_to_gvalue;
 	nm_utils_is_empty_ssid;
-	nm_utils_register_value_transformations;
 	nm_utils_same_ssid;
 	nm_utils_security_valid;
 	nm_utils_slist_free;
