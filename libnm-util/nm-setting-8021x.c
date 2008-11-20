@@ -31,6 +31,7 @@
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
 #include "crypto.h"
+#include "nm-utils-private.h"
 
 GQuark
 nm_setting_802_1x_error_quark (void)
@@ -1038,7 +1039,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (!nm_utils_string_slist_validate (priv->eap, valid_eap)) {
+	if (!_nm_utils_string_slist_validate (priv->eap, valid_eap)) {
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -1062,7 +1063,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		}
 	}
 
-	if (priv->phase1_peapver && !nm_utils_string_in_list (priv->phase1_peapver, valid_phase1_peapver)) {
+	if (priv->phase1_peapver && !_nm_utils_string_in_list (priv->phase1_peapver, valid_phase1_peapver)) {
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -1070,7 +1071,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->phase1_peaplabel && !nm_utils_string_in_list (priv->phase1_peaplabel, valid_phase1_peaplabel)) {
+	if (priv->phase1_peaplabel && !_nm_utils_string_in_list (priv->phase1_peaplabel, valid_phase1_peaplabel)) {
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -1086,7 +1087,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->phase2_auth && !nm_utils_string_in_list (priv->phase2_auth, valid_phase2_auth)) {
+	if (priv->phase2_auth && !_nm_utils_string_in_list (priv->phase2_auth, valid_phase2_auth)) {
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,
@@ -1094,7 +1095,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->phase2_autheap && !nm_utils_string_in_list (priv->phase2_autheap, valid_phase2_autheap)) {
+	if (priv->phase2_autheap && !_nm_utils_string_in_list (priv->phase2_autheap, valid_phase2_autheap)) {
 		g_set_error (error,
 		             NM_SETTING_802_1X_ERROR,
 		             NM_SETTING_802_1X_ERROR_INVALID_PROPERTY,

@@ -31,6 +31,7 @@
 #include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-utils-private.h"
 
 GQuark
 nm_setting_wireless_security_error_quark (void)
@@ -565,7 +566,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (!nm_utils_string_in_list (priv->key_mgmt, valid_key_mgmt)) {
+	if (!_nm_utils_string_in_list (priv->key_mgmt, valid_key_mgmt)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
@@ -648,7 +649,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->auth_alg && !nm_utils_string_in_list (priv->auth_alg, valid_auth_algs)) {
+	if (priv->auth_alg && !_nm_utils_string_in_list (priv->auth_alg, valid_auth_algs)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
@@ -656,7 +657,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->proto && !nm_utils_string_slist_validate (priv->proto, valid_protos)) {
+	if (priv->proto && !_nm_utils_string_slist_validate (priv->proto, valid_protos)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
@@ -668,7 +669,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		const char *wpa_none[] = { "wpa-none", NULL };
 
 		/* For ad-hoc connections, pairwise must be "none" */
-		if (nm_utils_string_in_list (priv->key_mgmt, wpa_none)) {
+		if (_nm_utils_string_in_list (priv->key_mgmt, wpa_none)) {
 			GSList *iter;
 			gboolean found = FALSE;
 
@@ -689,7 +690,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 				             NM_SETTING_WIRELESS_SECURITY_PAIRWISE);
 				return FALSE;
 			}
-		} else if (!nm_utils_string_slist_validate (priv->pairwise, valid_pairwise)) {
+		} else if (!_nm_utils_string_slist_validate (priv->pairwise, valid_pairwise)) {
 			g_set_error (error,
 			             NM_SETTING_WIRELESS_SECURITY_ERROR,
 			             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
@@ -698,7 +699,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		}
 	}
 
-	if (priv->group && !nm_utils_string_slist_validate (priv->group, valid_groups)) {
+	if (priv->group && !_nm_utils_string_slist_validate (priv->group, valid_groups)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,

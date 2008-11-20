@@ -1,5 +1,26 @@
 2008-11-20  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/Makefile.am
+	  libnm-util/nm-utils-private.h
+		- New header for internal utils private functions
+
+	* libnm-util/libnm-util.ver
+	  libnm-util/nm-utils.c
+	  libnm-util/nm-utils.h
+		- Document some functions
+		- (nm_utils_string_in_list, nm_utils_string_list_contains,
+		   nm_utils_string_slist_validate): un-export, only used within
+			libnm-util or of limited use in general, and very easy to
+			re-implement by apps if needed
+
+	* libnm-util/nm-setting-8021x.c
+	  libnm-util/nm-setting-wired.c
+	  libnm-util/nm-setting-wireless-security.c
+	  libnm-util/nm-setting-wireless.c
+		- Update for private nm_utils_string_* functions
+
+2008-11-20  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/libnm-util.ver
 	  libnm-util/nm-setting.c
 	  libnm-util/nm-setting.h

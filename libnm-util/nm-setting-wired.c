@@ -28,6 +28,7 @@
 #include "nm-setting-wired.h"
 #include "nm-param-spec-specialized.h"
 #include "nm-utils.h"
+#include "nm-utils-private.h"
 
 GQuark
 nm_setting_wired_error_quark (void)
@@ -149,7 +150,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	const char *valid_ports[] = { "tp", "aui", "bnc", "mii", NULL };
 	const char *valid_duplex[] = { "half", "full", NULL };
 
-	if (priv->port && !nm_utils_string_in_list (priv->port, valid_ports)) {
+	if (priv->port && !_nm_utils_string_in_list (priv->port, valid_ports)) {
 		g_set_error (error,
 		             NM_SETTING_WIRED_ERROR,
 		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,
@@ -157,7 +158,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->duplex && !nm_utils_string_in_list (priv->duplex, valid_duplex)) {
+	if (priv->duplex && !_nm_utils_string_in_list (priv->duplex, valid_duplex)) {
 		g_set_error (error,
 		             NM_SETTING_WIRED_ERROR,
 		             NM_SETTING_WIRED_ERROR_INVALID_PROPERTY,

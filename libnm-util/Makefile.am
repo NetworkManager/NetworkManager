@@ -47,6 +47,7 @@ libnm_util_la_SOURCES=			\
 	nm-setting-wireless-security.c	\
 	nm-setting-vpn.c		\
 	nm-utils.c			\
+	nm-utils-private.h \
 	$(libnm_util_include_HEADERS)
 
 libnm_util_la_LIBADD = $(GLIB_LIBS) $(DBUS_LIBS) $(UUID_LIBS)

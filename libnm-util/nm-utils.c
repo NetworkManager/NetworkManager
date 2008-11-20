@@ -38,6 +38,7 @@
 #include <uuid/uuid.h>
 
 #include "nm-utils.h"
+#include "nm-utils-private.h"
 #include "NetworkManager.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-setting-ip4-config.h"
@@ -254,19 +255,38 @@ string_to_utf8 (const char *str, gsize len)
 
 static gboolean initialized = FALSE;
 
+/**
+ * nm_utils_init:
+ * @error: location to store error, or %NULL
+ *
+ * Initializes libnm-util; should be called when starting and program that
+ * uses libnm-util.  Sets up an atexit() handler to ensure de-initialization
+ * is performed, but calling nm_utils_deinit() to explicitly deinitialize
+ * libnm-util can also be done.  This function can be called more than once.
+ * 
+ * Returns: TRUE if the initialization was successful, FALSE on failure.
+ **/
 gboolean
 nm_utils_init (GError **error)
 {
 	if (!initialized) {
-		if (!crypto_init (error)) {
+		if (!crypto_init (error))
 			return FALSE;
-		}
+
 		atexit (nm_utils_deinit);
 		initialized = TRUE;
 	}
 	return TRUE;
 }
 
+/**
+ * nm_utils_deinit:
+ *
+ * Frees all resources used internally by libnm-util.  This function is called
+ * from an atexit() handler, set up by nm_utils_init(), but is safe to be called
+ * more than once.  Subsequent calls have no effect until nm_utils_init() is
+ * called again.
+ **/
 void
 nm_utils_deinit (void)
 {
@@ -278,6 +298,38 @@ nm_utils_deinit (void)
 
 /* ssid helpers */
 
+/**
+ * nm_utils_ssid_to_utf8:
+ * @ssid: pointer to a buffer containing the SSID data
+ * @len: length of the SSID data in @ssid
+ *
+ * WiFi SSIDs are byte arrays, they are _not_ strings.  Thus, an SSID may
+ * contain embedded NULLs and other unprintable characters.  Often it is
+ * useful to print the SSID out for debugging purposes, but that should be the
+ * _only_ use of this function.  Do not use this function for any persistent
+ * storage of the SSID, since the printable SSID returned from this function
+ * cannot be converted back into the real SSID of the access point.
+ *
+ * This function does almost everything humanly possible to convert the input
+ * into a printable UTF-8 string, using roughly the following procedure:
+ *
+ * 1) if the input data is already UTF-8 safe, no conversion is performed
+ * 2) attempts to get the current system language from the LANG environment
+ *    variable, and depending on the language, uses a table of alternative
+ *    encodings to try.  For example, if LANG=hu_HU, the table may first try
+ *    the ISO-8859-2 encoding, and if that fails, try the Windows-1250 encoding.
+ *    If all fallback encodings fail, replaces non-UTF-8 characters with '?'.
+ * 3) If the system language was unable to be determined, falls back to the
+ *    ISO-8859-1 encoding, then to the Windows-1251 encoding.
+ * 4) If step 3 fails, replaces non-UTF-8 characters with '?'.
+ *
+ * Again, this function should be used for debugging and display purposes
+ * _only_.
+ *
+ * Returns: an allocated string containing a UTF-8 representation of the
+ * SSID, which must be freed by the caller using g_free().  Returns NULL
+ * on errors.
+ **/
 char *
 nm_utils_ssid_to_utf8 (const char *ssid, guint32 len)
 {
@@ -295,6 +347,17 @@ nm_utils_ssid_to_utf8 (const char *ssid, guint32 len)
 }
 
 /* Shamelessly ripped from the Linux kernel ieee80211 stack */
+/**
+ * nm_utils_deinit:
+ * @ssid: pointer to a buffer containing the SSID data
+ * @len: length of the SSID data in @ssid
+ *
+ * Different manufacturers use different mechanisms for not broadcasting the
+ * AP's SSID.  This function attempts to detect blank/empty SSIDs using a
+ * number of known SSID-cloaking methods.
+ *
+ * Returns: TRUE if the SSID is "empty", FALSE if it is not
+ **/
 gboolean
 nm_utils_is_empty_ssid (const guint8 * ssid, int len)
 {
@@ -310,6 +373,19 @@ nm_utils_is_empty_ssid (const guint8 * ssid, int len)
         return TRUE;
 }
 
+/**
+ * nm_utils_escape_ssid:
+ * @ssid: pointer to a buffer containing the SSID data
+ * @len: length of the SSID data in @ssid
+ *
+ * This function does a quick printable character conversion of the SSID, simply
+ * replacing embedded NULLs and non-printable characters with the hexadecimal
+ * representation of that character.  Intended for debugging only, should not
+ * be used for display of SSIDs.
+ *
+ * Returns: pointer to the escaped SSID, which uses an internal static buffer
+ * and will be overwritten by subsequent calls to this function
+ **/
 const char *
 nm_utils_escape_ssid (const guint8 * ssid, guint32 len)
 {
@@ -336,6 +412,21 @@ nm_utils_escape_ssid (const guint8 * ssid, guint32 len)
 	return escaped;
 }
 
+/**
+ * nm_utils_escape_ssid:
+ * @ssid1: first SSID data to compare
+ * @ssid2: second SSID data to compare
+ * @ignore_trailing_null: TRUE to ignore one trailing NULL byte
+ *
+ * Earlier versions of the Linux kernel added a NULL byte to the end of the
+ * SSID to enable easy printing of the SSID on the console or in a terminal,
+ * but this behavior was problematic (SSIDs are simply byte arrays, not strings)
+ * and thus was changed.  This function compensates for that behavior at the
+ * cost of some compatibility with odd SSIDs that may legitimately have trailing
+ * NULLs, even though that is functionally pointless.
+ *
+ * Returns: TRUE if the SSIDs are the same, FALSE if they are not
+ **/
 gboolean
 nm_utils_same_ssid (const GByteArray * ssid1,
                     const GByteArray * ssid2,
@@ -386,6 +477,15 @@ value_dup (gpointer key, gpointer val, gpointer user_data)
 	g_hash_table_insert (table, g_strdup ((char *) key), dup_value);
 }
 
+/**
+ * nm_utils_gvalue_hash_dup:
+ * @hash: a #GHashTable mapping string:GValue
+ *
+ * Utility function to duplicate a hash table of GValues.
+ *
+ * Returns: a newly allocated duplicated #GHashTable, caller must free the
+ * returned hash with g_hash_table_unref() or g_hash_table_destroy()
+ **/
 GHashTable *
 nm_utils_gvalue_hash_dup (GHashTable *hash)
 {
@@ -402,6 +502,13 @@ nm_utils_gvalue_hash_dup (GHashTable *hash)
 	return table;
 }
 
+/**
+ * nm_utils_slist_free:
+ * @list: a #GSList
+ * @elem_destroy_fn: user function called for each element in @list
+ *
+ * Utility function to free a #GSList.
+ **/
 void
 nm_utils_slist_free (GSList *list, GDestroyNotify elem_destroy_fn)
 {
@@ -415,7 +522,7 @@ nm_utils_slist_free (GSList *list, GDestroyNotify elem_destroy_fn)
 }
 
 gboolean
-nm_utils_string_in_list (const char *str, const char **valid_strings)
+_nm_utils_string_in_list (const char *str, const char **valid_strings)
 {
 	int i;
 
@@ -427,25 +534,12 @@ nm_utils_string_in_list (const char *str, const char **valid_strings)
 }
 
 gboolean
-nm_utils_string_list_contains (GSList *list, const char *string)
-{
-	GSList *iter;
-
-	g_return_val_if_fail (string != NULL, FALSE);
-
-	for (iter = list; iter; iter = g_slist_next (iter))
-		if (!strcmp (iter->data, string))
-			return TRUE;
-	return FALSE;
-}
-
-gboolean
-nm_utils_string_slist_validate (GSList *list, const char **valid_values)
+_nm_utils_string_slist_validate (GSList *list, const char **valid_values)
 {
 	GSList *iter;
 
 	for (iter = list; iter; iter = iter->next) {
-		if (!nm_utils_string_in_list ((char *) iter->data, valid_values))
+		if (!_nm_utils_string_in_list ((char *) iter->data, valid_values))
 			return FALSE;
 	}
 
