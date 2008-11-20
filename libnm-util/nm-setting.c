@@ -566,6 +566,18 @@ nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets, GError **err
 	return *(info->error) ? FALSE : TRUE;
 }
 
+/**
+ * nm_setting_to_string:
+ * @setting: the #NMSetting
+ *
+ * Convert the setting into a string.  For debugging purposes ONLY, should NOT
+ * be used for serialization of the setting, or machine-parsed in any way. The
+ * output format is not guaranteed to be stable and may change at any time.
+ *
+ * Returns: an allocated string containing a textual representation of the
+ * setting's properties and values (including secrets!), which the caller should
+ * free with g_free()
+ **/
 char *
 nm_setting_to_string (NMSetting *setting)
 {
@@ -710,6 +722,14 @@ nm_setting_class_init (NMSettingClass *setting_class)
 	setting_class->update_one_secret = update_one_secret;
 
 	/* Properties */
+
+	/**
+	 * NMSetting:name:
+	 *
+	 * The setting's name, which uniquely identifies the setting within the
+	 * connection.  Each setting type has a name unique to that type, for
+	 * example 'ppp' or 'wireless' or 'wired'.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_NAME,
 		 g_param_spec_string (NM_SETTING_NAME,
@@ -718,3 +738,4 @@ nm_setting_class_init (NMSettingClass *setting_class)
 						  NULL,
 						  G_PARAM_READWRITE));
 }
+
