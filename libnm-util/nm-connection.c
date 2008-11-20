@@ -597,6 +597,7 @@ nm_connection_verify (NMConnection *connection, GError **error)
  * @setting_name: the setting object name to which the secrets apply
  * @secrets: a #GHashTable mapping string:#GValue of setting property names and
  * secrets
+ * @error: location to store error, or %NULL
  *
  * Update the specified setting's secrets, given a hash table of secrets
  * intended for that setting (deserialized from D-Bus for example).
@@ -607,24 +608,31 @@ nm_connection_verify (NMConnection *connection, GError **error)
 gboolean
 nm_connection_update_secrets (NMConnection *connection,
                               const char *setting_name,
-                              GHashTable *secrets)
+                              GHashTable *secrets,
+                              GError **error)
 {
 	NMSetting *setting;
+	gboolean success;
 
 	g_return_val_if_fail (connection != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (setting_name != NULL, FALSE);
 	g_return_val_if_fail (secrets != NULL, FALSE);
+	if (error)
+		g_return_val_if_fail (*error == NULL, FALSE);
 
 	setting = nm_connection_get_setting (connection, nm_connection_lookup_setting_type (setting_name));
 	if (!setting) {
-		g_warning ("Unhandled settings object for secrets update.");
+		g_set_error (error, NM_CONNECTION_ERROR,
+		             NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND,
+		             "%s", setting_name);
 		return FALSE;
 	}
 
-	nm_setting_update_secrets (setting, secrets);
-	g_signal_emit (connection, signals[SECRETS_UPDATED], 0, setting_name);
-	return TRUE;
+	success = nm_setting_update_secrets (setting, secrets, error);
+	if (success)
+		g_signal_emit (connection, signals[SECRETS_UPDATED], 0, setting_name);
+	return success;
 }
 
 static gint

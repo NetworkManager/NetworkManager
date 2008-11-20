@@ -1,5 +1,22 @@
 2008-11-20  Dan Williams  <dcbw@redhat.com>
 
+	* libnm-util/libnm-util.ver
+	  libnm-util/nm-setting.c
+	  libnm-util/nm-setting.h
+		- Add NMSetting errors
+		- (nm_setting_update_secrets): return errors
+
+	* libnm-util/nm-connection.c
+	  libnm-util/nm-connection.h
+		- (nm_connection_update_secrets): return errors
+
+	* libnm-util/nm-setting-vpn.c
+	  src/nm-activation-request.c
+	  src/vpn-manager/nm-vpn-connection.c
+		- Handle update secrets errors
+
+2008-11-20  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-util/nm-setting.c
 	  libnm-util/nm-setting.h
 	  libnm-util/libnm-util.ver

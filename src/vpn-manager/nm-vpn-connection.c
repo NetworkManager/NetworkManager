@@ -780,11 +780,17 @@ update_vpn_properties_secrets (gpointer key, gpointer data, gpointer user_data)
 {
 	NMConnection *connection = NM_CONNECTION (user_data);
 	GHashTable *secrets = (GHashTable *) data;
+	GError *error = NULL;
 
 	if (strcmp (key, NM_SETTING_VPN_SETTING_NAME))
 		return;
 
-	nm_connection_update_secrets (connection, NM_SETTING_VPN_SETTING_NAME, secrets);
+	if (!nm_connection_update_secrets (connection, NM_SETTING_VPN_SETTING_NAME, secrets, &error)) {
+		nm_warning ("Failed to update VPN secrets: %d %s",
+		            error ? error->code : -1,
+		            error && error->message ? error->message : "(none)");
+		g_clear_error (&error);
+	}
 }
 
 static void

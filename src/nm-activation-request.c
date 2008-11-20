@@ -409,6 +409,7 @@ update_one_setting (const char* key,
 {
 	GType type;
 	NMSetting *setting = NULL;
+	GError *error = NULL;
 
 	/* Check whether a complete & valid NMSetting object was returned.  If
 	 * yes, replace the setting object in the connection.  If not, just try
@@ -441,8 +442,14 @@ update_one_setting (const char* key,
 
 	if (setting)
 		nm_connection_add_setting (connection, setting);
-	else
-		nm_connection_update_secrets (connection, key, setting_hash);
+	else {
+		if (!nm_connection_update_secrets (connection, key, setting_hash, &error)) {
+			nm_warning ("Failed to update connection secrets: %d %s",
+			            error ? error->code : -1,
+			            error && error->message ? error->message : "(none)");
+			g_clear_error (&error);
+		}
+	}
 
 	*updated = g_slist_append (*updated, (gpointer) key);
 }

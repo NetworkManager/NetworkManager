@@ -29,6 +29,48 @@
 #include "nm-setting-connection.h"
 #include "nm-utils.h"
 
+/**
+ * nm_setting_error_quark:
+ *
+ * Registers an error quark for #NMSetting if necessary.
+ *
+ * Returns: the error quark used for NMSetting errors.
+ **/
+GQuark
+nm_setting_error_quark (void)
+{
+	static GQuark quark;
+
+	if (G_UNLIKELY (!quark))
+		quark = g_quark_from_static_string ("nm-setting-error-quark");
+	return quark;
+}
+
+/* This should really be standard. */
+#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
+
+GType
+nm_setting_error_get_type (void)
+{
+	static GType etype = 0;
+
+	if (etype == 0) {
+		static const GEnumValue values[] = {
+			/* Unknown error. */
+			ENUM_ENTRY (NM_SETTING_ERROR_UNKNOWN, "UnknownError"),
+			/* The property was not found. */
+			ENUM_ENTRY (NM_SETTING_ERROR_PROPERTY_NOT_FOUND, "PropertyNotFound"),
+			/* The property was not a secret. */
+			ENUM_ENTRY (NM_SETTING_ERROR_PROPERTY_NOT_SECRET, "PropertyNotSecret"),
+			/* The property type didn't match the required property type. */
+			ENUM_ENTRY (NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH, "PropertyTypeMismatch"),
+			{ 0, 0, 0 }
+		};
+		etype = g_enum_register_static ("NMSettingError", values);
+	}
+	return etype;
+}
+
 G_DEFINE_ABSTRACT_TYPE (NMSetting, nm_setting, G_TYPE_OBJECT)
 
 #define NM_SETTING_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SETTING, NMSettingPrivate))
@@ -435,51 +477,93 @@ nm_setting_need_secrets (NMSetting *setting)
 	return secrets;
 }
 
-static void
-update_one_secret (NMSetting *setting, const char *key, GValue *value)
+typedef struct {
+	NMSetting *setting;
+	GError **error;
+} UpdateSecretsInfo;
+
+static gboolean
+update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **error)
 {
 	GParamSpec *prop_spec;
 	GValue transformed_value = { 0 };
+	gboolean success = FALSE;
 
 	prop_spec = g_object_class_find_property (G_OBJECT_GET_CLASS (setting), key);
 	if (!prop_spec) {
-		nm_warning ("Ignoring invalid secret '%s'.", key);
-		return;
+		g_set_error (error,
+		             NM_SETTING_ERROR,
+		             NM_SETTING_ERROR_PROPERTY_NOT_FOUND,
+		             "%s", key);
+		return FALSE;
 	}
 
 	if (!(prop_spec->flags & NM_SETTING_PARAM_SECRET)) {
-		nm_warning ("Ignoring secret '%s' as it's not marked as a secret.", key);
-		return;
+		g_set_error (error,
+		             NM_SETTING_ERROR,
+		             NM_SETTING_ERROR_PROPERTY_NOT_SECRET,
+		             "%s", key);
+		return FALSE;
 	}
 
-	if (g_value_type_compatible (G_VALUE_TYPE (value), G_PARAM_SPEC_VALUE_TYPE (prop_spec)))
+	if (g_value_type_compatible (G_VALUE_TYPE (value), G_PARAM_SPEC_VALUE_TYPE (prop_spec))) {
 		g_object_set_property (G_OBJECT (setting), prop_spec->name, value);
-	else if (g_value_transform (value, &transformed_value)) {
+		success = TRUE;
+	} else if (g_value_transform (value, &transformed_value)) {
 		g_object_set_property (G_OBJECT (setting), prop_spec->name, &transformed_value);
 		g_value_unset (&transformed_value);
+		success = TRUE;
 	} else {
-		nm_warning ("Ignoring secret property '%s' with invalid type (%s)",
-		            key, G_VALUE_TYPE_NAME (value));
+		g_set_error (error,
+		             NM_SETTING_ERROR,
+		             NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
+		             "%s", key);
 	}
+	return success;
 }
 
 static void
 update_one_cb (gpointer key, gpointer val, gpointer user_data)
 {
-	NMSetting *setting = (NMSetting *) user_data;
+	UpdateSecretsInfo *info = user_data;
 	const char *secret_key = (const char *) key;
 	GValue *secret_value = (GValue *) val;
 
-	NM_SETTING_GET_CLASS (setting)->update_one_secret (setting, secret_key, secret_value);
+	if (*(info->error) == NULL)
+		NM_SETTING_GET_CLASS (info->setting)->update_one_secret (info->setting, secret_key, secret_value, info->error);
 }
 
-void
-nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets)
+/**
+ * nm_setting_update_secrets:
+ * @setting: the #NMSetting
+ * @secrets: a #GHashTable mapping string:#GValue of setting property names and
+ * secrets
+ * @error: location to store error, or %NULL
+ *
+ * Update the setting's secrets, given a hash table of secrets intended for that
+ * setting (deserialized from D-Bus for example).
+ * 
+ * Returns: TRUE if the secrets were successfully updated and the connection
+ * is valid, FALSE on failure or if the setting was never added to the connection
+ **/
+gboolean
+nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets, GError **error)
 {
-	g_return_if_fail (NM_IS_SETTING (setting));
-	g_return_if_fail (secrets != NULL);
+	UpdateSecretsInfo *info;
 
-	g_hash_table_foreach (secrets, update_one_cb, setting);
+	g_return_val_if_fail (setting != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
+	g_return_val_if_fail (secrets != NULL, FALSE);
+	if (error)
+		g_return_val_if_fail (*error == NULL, FALSE);
+
+	info = g_malloc0 (sizeof (UpdateSecretsInfo));
+	info->setting = setting;
+	info->error = error;
+	g_hash_table_foreach (secrets, update_one_cb, info);
+	g_free (info);
+
+	return *(info->error) ? FALSE : TRUE;
 }
 
 char *

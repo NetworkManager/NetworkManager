@@ -38,6 +38,20 @@ G_BEGIN_DECLS
 #define NM_IS_SETTING_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_SETTING))
 #define NM_SETTING_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_SETTING, NMSettingClass))
 
+typedef enum
+{
+	NM_SETTING_ERROR_UNKNOWN = 0,
+	NM_SETTING_ERROR_PROPERTY_NOT_FOUND,
+	NM_SETTING_ERROR_PROPERTY_NOT_SECRET,
+	NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH
+} NMSettingError;
+
+#define NM_TYPE_SETTING_ERROR (nm_setting_error_get_type ()) 
+GType nm_setting_error_get_type (void);
+
+#define NM_SETTING_ERROR nm_setting_error_quark ()
+GQuark nm_setting_error_quark (void);
+
 #define NM_SETTING_PARAM_SERIALIZE    (1 << (0 + G_PARAM_USER_SHIFT))
 #define NM_SETTING_PARAM_REQUIRED     (1 << (1 + G_PARAM_USER_SHIFT))
 #define NM_SETTING_PARAM_SECRET       (1 << (2 + G_PARAM_USER_SHIFT))
@@ -59,9 +73,10 @@ typedef struct {
 
 	GPtrArray  *(*need_secrets)      (NMSetting  *setting);
 
-	void        (*update_one_secret) (NMSetting  *setting,
+	gboolean    (*update_one_secret) (NMSetting  *setting,
 	                                  const char *key,
-	                                  GValue     *value);
+	                                  GValue     *value,
+	                                  GError    **error);
 } NMSettingClass;
 
 typedef void (*NMSettingValueIterFn) (NMSetting *setting,
@@ -90,13 +105,15 @@ typedef enum {
 	/* Match all attributes exactly */
 	NM_SETTING_COMPARE_FLAG_EXACT = 0x00000000,
 
-	/* Match only important attributes, like SSID, type, security settings, etc */
+	/* Match only important attributes, like SSID, type, security settings, etc;
+	 * For example, does not match connection ID or UUID.
+	 */
 	NM_SETTING_COMPARE_FLAG_FUZZY = 0x00000001,
 
 	/* Ignore the connection ID */
 	NM_SETTING_COMPARE_FLAG_IGNORE_ID = 0x00000002,
 
-	/* Ignore secrets */
+	/* Ignore connection secrets */
 	NM_SETTING_COMPARE_FLAG_IGNORE_SECRETS = 0x00000004
 } NMSettingCompareFlags;
 
@@ -114,8 +131,9 @@ char       *nm_setting_to_string      (NMSetting *setting);
 /* Secrets */
 void        nm_setting_clear_secrets  (NMSetting *setting);
 GPtrArray  *nm_setting_need_secrets   (NMSetting *setting);
-void        nm_setting_update_secrets (NMSetting *setting,
-							    GHashTable *secrets);
+gboolean    nm_setting_update_secrets (NMSetting *setting,
+                                       GHashTable *secrets,
+                                       GError **error);
 
 G_END_DECLS
 

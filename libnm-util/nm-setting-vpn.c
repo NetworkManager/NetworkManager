@@ -1,5 +1,4 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-
 /*
  * Dan Williams <dcbw@redhat.com>
  * Tambet Ingo <tambet@gmail.com>
@@ -237,16 +236,23 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 	return TRUE;
 }
 
-static void
-update_one_secret (NMSetting *setting, const char *key, GValue *value)
+static gboolean
+update_one_secret (NMSetting *setting, const char *key, GValue *value, GError **error)
 {
 	NMSettingVPNPrivate *priv = NM_SETTING_VPN_GET_PRIVATE (setting);
 
-	g_return_if_fail (key != NULL);
-	g_return_if_fail (value != NULL);
-	g_return_if_fail (G_VALUE_HOLDS_STRING (value));
+	g_return_val_if_fail (key != NULL, FALSE);
+	g_return_val_if_fail (value != NULL, FALSE);
+
+	if (!G_VALUE_HOLDS_STRING (value)) {
+		g_set_error (error, NM_SETTING_ERROR,
+		             NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH,
+		             "%s", key);
+		return FALSE;
+	}
 
 	g_hash_table_insert (priv->secrets, g_strdup (key), g_value_dup_string (value));
+	return FALSE;
 }
 
 static void
