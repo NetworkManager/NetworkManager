@@ -1,3 +1,8 @@
+2008-11-21  Dan Williams  <dcbw@redhat.com>
+
+	* gfilemonitor/inotify-sub.c
+		- (dup_dirname): actually remove trailing '/' (bgo #561807)
+
 2008-11-21  Tambet Ingo  <tambet@gmail.com>
 
 	* system-settings/plugins/ifcfg-suse/parser.c (read_wpa_eap_settings): Make suse
