@@ -163,22 +163,23 @@ start_reconnection_timeout (NMDBusManager *self)
 
 char *
 nm_dbus_manager_get_name_owner (NMDBusManager *self,
-                                const char *name)
+                                const char *name,
+                                GError **error)
 {
 	char *owner = NULL;
-	GError *err = NULL;
 
 	g_return_val_if_fail (NM_IS_DBUS_MANAGER (self), NULL);
 	g_return_val_if_fail (name != NULL, NULL);
+	if (error)
+		g_return_val_if_fail (*error == NULL, NULL);
 
-	if (!dbus_g_proxy_call (NM_DBUS_MANAGER_GET_PRIVATE (self)->proxy,
-					    "GetNameOwner", &err,
-					    G_TYPE_STRING, name,
-					    G_TYPE_INVALID,
-					    G_TYPE_STRING, &owner,
-					    G_TYPE_INVALID)) {
-		nm_warning ("Error on GetNameOwner DBUS call: %s", err->message);
-		g_error_free (err);
+	if (!dbus_g_proxy_call_with_timeout (NM_DBUS_MANAGER_GET_PRIVATE (self)->proxy,
+	                                     "GetNameOwner", 2000, error,
+	                                     G_TYPE_STRING, name,
+	                                     G_TYPE_INVALID,
+	                                     G_TYPE_STRING, &owner,
+	                                     G_TYPE_INVALID)) {
+		return NULL;
 	}
 
 	return owner;

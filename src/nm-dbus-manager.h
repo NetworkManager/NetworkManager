@@ -62,7 +62,8 @@ GType nm_dbus_manager_get_type (void);
 NMDBusManager * nm_dbus_manager_get       (void);
 
 char * nm_dbus_manager_get_name_owner     (NMDBusManager *self,
-                                           const char *name);
+                                           const char *name,
+                                           GError **error);
 
 gboolean nm_dbus_manager_start_service    (NMDBusManager *self);
 

@@ -1,5 +1,18 @@
 2008-11-21  Dan Williams  <dcbw@redhat.com>
 
+	* src/nm-dbus-manager.c
+	  src/nm-dbus-manager.h
+		- (nm_dbus_manager_get_name_owner): return error
+
+	* src/nm-manager.c
+		- (impl_manager_activate_connection): perform additional validation on
+			ActivateConnection calls of user connections
+		- (is_user_request_authorized): ensure that the requestor is the same
+			UID as the UID that owns the user settings service; users shouldn't
+			be able to control another user's connections
+
+2008-11-21  Dan Williams  <dcbw@redhat.com>
+
 	* gfilemonitor/inotify-sub.c
 		- (dup_dirname): actually remove trailing '/' (bgo #561807)
 

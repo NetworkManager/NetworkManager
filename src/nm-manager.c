@@ -21,6 +21,8 @@
 
 #include <netinet/ether.h>
 #include <string.h>
+#include <dbus/dbus-glib-lowlevel.h>
+#include <dbus/dbus-glib.h>
 
 #include "nm-manager.h"
 #include "nm-utils.h"
@@ -1973,13 +1975,109 @@ connection_added_default_handler (NMManager *manager,
 	pending_connection_info_destroy (info);
 }
 
+static gboolean
+is_user_request_authorized (NMManager *manager,
+                            DBusGMethodInvocation *context,
+                            GError **error)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	DBusConnection *connection;
+	char *sender = NULL;
+	gulong sender_uid = G_MAXULONG;
+	DBusError dbus_error;
+	char *service_owner = NULL;
+	const char *service_name;
+	gulong service_uid = G_MAXULONG;
+	gboolean success = FALSE;
+
+	/* Ensure the request to activate the user connection came from the
+	 * same session as the user settings service.  FIXME: use ConsoleKit
+	 * too.
+	 */
+	if (!priv->user_proxy) {
+		g_set_error (error, NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_INVALID_SERVICE,
+		             "%s", "No user settings service available");
+		goto out;
+	}
+
+	sender = dbus_g_method_get_sender (context);
+	if (!sender) {
+		g_set_error (error, NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		             "%s", "Could not determine D-Bus requestor");
+		goto out;
+	}
+
+	connection = nm_dbus_manager_get_dbus_connection (priv->dbus_mgr);
+	if (!connection) {
+		g_set_error (error, NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		             "%s", "Could not get the D-Bus system bus");
+		goto out;
+	}
+
+	dbus_error_init (&dbus_error);
+	/* FIXME: do this async */
+	sender_uid = dbus_bus_get_unix_user (connection, sender, &dbus_error);
+	if (dbus_error_is_set (&dbus_error)) {
+		dbus_error_free (&dbus_error);
+		g_set_error (error, NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		             "%s", "Could not determine the Unix user ID of the requestor");
+		goto out;
+	}
+
+	service_name = dbus_g_proxy_get_bus_name (priv->user_proxy);
+	if (!service_name) {
+		g_set_error (error, NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		             "%s", "Could not determine user settings service name");
+		goto out;
+	}
+
+	service_owner = nm_dbus_manager_get_name_owner (priv->dbus_mgr, service_name, NULL);
+	if (!service_owner) {
+		g_set_error (error, NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		             "%s", "Could not determine D-Bus owner of the user settings service");
+		goto out;
+	}
+
+	dbus_error_init (&dbus_error);
+	/* FIXME: do this async */
+	service_uid = dbus_bus_get_unix_user (connection, service_owner, &dbus_error);
+	if (dbus_error_is_set (&dbus_error)) {
+		dbus_error_free (&dbus_error);
+		g_set_error (error, NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		             "%s", "Could not determine the Unix UID of the sender of the request");
+		goto out;
+	}
+
+	/* And finally, the actual UID check */
+	if (sender_uid != service_uid) {
+		g_set_error (error, NM_MANAGER_ERROR,
+		             NM_MANAGER_ERROR_PERMISSION_DENIED,
+		             "%s", "Requestor UID does not match the UID of the user settings service");
+		goto out;
+	}
+
+	success = TRUE;
+
+out:
+	g_free (sender);
+	g_free (service_owner);
+	return success;
+}
+
 static void
 impl_manager_activate_connection (NMManager *manager,
-						const char *service_name,
-						const char *connection_path,
-						const char *device_path,
-						const char *specific_object_path,
-						DBusGMethodInvocation *context)
+                                  const char *service_name,
+                                  const char *connection_path,
+                                  const char *device_path,
+                                  const char *specific_object_path,
+                                  DBusGMethodInvocation *context)
 {
 	NMConnectionScope scope = NM_CONNECTION_SCOPE_UNKNOWN;
 	NMConnection *connection;
@@ -1987,9 +2085,12 @@ impl_manager_activate_connection (NMManager *manager,
 	char *real_sop = NULL;
 	char *path = NULL;
 
-	if (!strcmp (service_name, NM_DBUS_SERVICE_USER_SETTINGS))
+	if (!strcmp (service_name, NM_DBUS_SERVICE_USER_SETTINGS)) {
+		if (!is_user_request_authorized (manager, context, &error))
+			goto err;
+
 		scope = NM_CONNECTION_SCOPE_USER;
-	else if (!strcmp (service_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS))
+	} else if (!strcmp (service_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS))
 		scope = NM_CONNECTION_SCOPE_SYSTEM;
 	else {
 		g_set_error (&error,
