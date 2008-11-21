@@ -60,6 +60,7 @@ global:
 	nm_setting_802_1x_get_private_key_password;
 	nm_setting_802_1x_get_private_key_type;
 	nm_setting_802_1x_get_psk;
+	nm_setting_802_1x_get_system_ca_certs;
 	nm_setting_802_1x_get_type;
 	nm_setting_802_1x_new;
 	nm_setting_802_1x_remove_eap_method;

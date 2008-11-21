@@ -101,6 +101,7 @@ static const struct Opt opt_table[] = {
 	{ "eap",                TYPE_KEYWORD, 0, 0, FALSE,  eap_allowed },
 	{ "identity",           TYPE_BYTES,   0, 0, FALSE,  NULL },
 	{ "password",           TYPE_BYTES,   0, 0, FALSE,  NULL },
+	{ "ca_path",            TYPE_BYTES,   0, 0, FALSE,  NULL },
 	{ "ca_cert",            TYPE_BYTES,   0, 65536, FALSE,  NULL },
 	{ "client_cert",        TYPE_BYTES,   0, 65536, FALSE,  NULL },
 	{ "private_key",        TYPE_BYTES,   0, 65536, FALSE,  NULL },

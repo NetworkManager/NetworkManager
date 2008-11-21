@@ -93,6 +93,7 @@ typedef struct {
 	char *private_key_password;
 	GByteArray *phase2_private_key;
 	char *phase2_private_key_password;
+	gboolean system_ca_certs;
 } NMSetting8021xPrivate;
 
 enum {
@@ -118,6 +119,7 @@ enum {
 	PROP_PHASE2_PRIVATE_KEY_PASSWORD,
 	PROP_PIN,
 	PROP_PSK,
+	PROP_SYSTEM_CA_CERTS,
 
 	LAST_PROP
 };
@@ -266,6 +268,14 @@ nm_setting_802_1x_set_ca_cert_from_file (NMSetting8021x *self,
 	}
 
 	return priv->ca_cert != NULL;
+}
+
+gboolean
+nm_setting_802_1x_get_system_ca_certs (NMSetting8021x *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_802_1X (setting), FALSE);
+
+	return NM_SETTING_802_1X_GET_PRIVATE (setting)->system_ca_certs;
 }
 
 const GByteArray *
@@ -1243,6 +1253,9 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->phase2_private_key_password);
 		priv->phase2_private_key_password = g_value_dup_string (value);
 		break;
+	case PROP_SYSTEM_CA_CERTS:
+		priv->system_ca_certs = g_value_get_boolean (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -1313,6 +1326,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_PHASE2_PRIVATE_KEY_PASSWORD:
 		g_value_set_string (value, priv->phase2_private_key_password);
+		break;
+	case PROP_SYSTEM_CA_CERTS:
+		g_value_set_boolean (value, priv->system_ca_certs);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1489,6 +1505,14 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 						  "Phase2 private key password",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+
+	g_object_class_install_property
+		(object_class, PROP_SYSTEM_CA_CERTS,
+		 g_param_spec_boolean (NM_SETTING_802_1X_SYSTEM_CA_CERTS,
+							   "Use system CA certificates",
+							   "Use system CA certificates",
+							   FALSE,
+							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	/* Initialize crypto lbrary. */
 	if (!nm_utils_init (&error)) {

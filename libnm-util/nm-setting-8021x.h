@@ -81,6 +81,7 @@ GQuark nm_setting_802_1x_error_quark (void);
 #define NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD "phase2-private-key-password"
 #define NM_SETTING_802_1X_PIN "pin"
 #define NM_SETTING_802_1X_PSK "psk"
+#define NM_SETTING_802_1X_SYSTEM_CA_CERTS "system-ca-certs"
 
 typedef struct {
 	NMSetting parent;
@@ -133,6 +134,7 @@ gboolean          nm_setting_802_1x_set_phase2_ca_cert_from_file     (NMSetting8
                                                                       const char *filename,
                                                                       NMSetting8021xCKType *out_ck_type,
                                                                       GError **err);
+gboolean          nm_setting_802_1x_get_system_ca_certs              (NMSetting8021x *setting);
 
 const GByteArray *nm_setting_802_1x_get_phase2_client_cert           (NMSetting8021x *setting);
 gboolean          nm_setting_802_1x_set_phase2_client_cert_from_file (NMSetting8021x *setting,

@@ -19,6 +19,10 @@
  * Copyright (C) 2007 - 2008 Novell, Inc.
  */
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif
+
 #include <string.h>
 #include <stdlib.h>
 #include <glib.h>
@@ -620,7 +624,11 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		ADD_STRING_VAL (phase2->str, "phase2", FALSE, FALSE, FALSE);
 	g_string_free (phase2, TRUE);
 
-	ADD_BLOB_VAL (nm_setting_802_1x_get_ca_cert (setting), "ca_cert", connection_uid);
+	if (nm_setting_802_1x_get_system_ca_certs (setting)) {
+		ADD_STRING_VAL (SYSTEM_CA_PATH, "ca_path", FALSE, FALSE, FALSE);
+	} else {
+		ADD_BLOB_VAL (nm_setting_802_1x_get_ca_cert (setting), "ca_cert", connection_uid);
+	}
 
 	array = nm_setting_802_1x_get_private_key (setting);
 	if (array) {
@@ -638,7 +646,11 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		}
 	}
 
-	ADD_BLOB_VAL (nm_setting_802_1x_get_phase2_ca_cert (setting), "ca_cert2", connection_uid);
+	if (nm_setting_802_1x_get_system_ca_certs (setting)) {
+		ADD_STRING_VAL (SYSTEM_CA_PATH, "ca_path2", FALSE, FALSE, FALSE);
+	} else {
+		ADD_BLOB_VAL (nm_setting_802_1x_get_phase2_ca_cert (setting), "ca_cert2", connection_uid);
+	}
 
 	array = nm_setting_802_1x_get_phase2_private_key (setting);
 	if (array) {
