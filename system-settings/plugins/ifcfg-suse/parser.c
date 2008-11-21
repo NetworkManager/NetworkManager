@@ -430,6 +430,7 @@ read_wpa_eap_settings (shvarFile *ifcfg)
 	NMSetting8021x *s_802_1x;
 	char *str;
 	GError *err = NULL;
+	NMSetting8021xCKType cert_type;
 
 	s_802_1x = NM_SETTING_802_1X (nm_setting_802_1x_new ());
 
@@ -468,7 +469,7 @@ read_wpa_eap_settings (shvarFile *ifcfg)
 
 	str = svGetValue (ifcfg, "WIRELESS_CA_CERT");
 	if (str) {
-		nm_setting_802_1x_set_ca_cert_from_file (s_802_1x, str, &err);
+		nm_setting_802_1x_set_ca_cert_from_file (s_802_1x, str, &cert_type, &err);
 		if (err) {
 			g_warning ("Error loading WIRELESS_CA_CERT: %s", err->message);
 			g_error_free (err);
@@ -479,7 +480,7 @@ read_wpa_eap_settings (shvarFile *ifcfg)
 
 	str = svGetValue (ifcfg, "WIRELESS_CLIENT_CERT");
 	if (str) {
-		nm_setting_802_1x_set_client_cert_from_file (s_802_1x, str, &err);
+		nm_setting_802_1x_set_client_cert_from_file (s_802_1x, str, &cert_type, &err);
 		if (err) {
 			g_warning ("Error loading WIRELESS_CLIENT_CERT: %s", err->message);
 			g_error_free (err);
@@ -494,7 +495,7 @@ read_wpa_eap_settings (shvarFile *ifcfg)
 
 		password = svGetValue (ifcfg, "WIRELESS_CLIENT_KEY_PASSWORD");
 		if (password) {
-			nm_setting_802_1x_set_private_key_from_file (s_802_1x, str, password, &err);
+			nm_setting_802_1x_set_private_key_from_file (s_802_1x, str, password,  &cert_type, &err);
 			if (err) {
 				g_warning ("Error loading WIRELESS_CLIENT_KEY: %s", err->message);
 				g_error_free (err);
