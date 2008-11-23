@@ -181,8 +181,8 @@ void nm_utils_ip4_addresses_to_gvalue (GSList *list, GValue *value);
 GSList *nm_utils_ip4_routes_from_gvalue (const GValue *value);
 void nm_utils_ip4_routes_to_gvalue (GSList *list, GValue *value);
 
-guint32 nm_utils_ip4_netmask_to_prefix (guint32 ip4_netmask);
-guint32 nm_utils_ip4_prefix_to_netmask (guint32 ip4_prefix);
+guint32 nm_utils_ip4_netmask_to_prefix (guint32 netmask);
+guint32 nm_utils_ip4_prefix_to_netmask (guint32 prefix);
 
 char *nm_utils_uuid_generate (void);
 char *nm_utils_uuid_generate_from_string (const char *s);

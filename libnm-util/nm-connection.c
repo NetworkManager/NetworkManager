@@ -426,7 +426,7 @@ nm_connection_get_setting_by_name (NMConnection *connection, const char *name)
  * @new_settings: a #GHashTable of settings
  * @error: location to store error, or %NULL
  *
- * Returns: TRUE if the settings were valid and added to the connection, FALSE
+ * Returns: %TRUE if the settings were valid and added to the connection, %FALSE
  * if they were not
  **/
 gboolean
@@ -479,7 +479,7 @@ compare_one_setting (gpointer key, gpointer value, gpointer user_data)
  * modified by a set of flags.  See nm_setting_compare() for a description of
  * each flag's behavior.
  *
- * Returns: TRUE if the comparison succeeds, FALSE if it does not
+ * Returns: %TRUE if the comparison succeeds, %FALSE if it does not
  **/
 gboolean
 nm_connection_compare (NMConnection *a,
@@ -549,7 +549,7 @@ hash_values_to_slist (gpointer key, gpointer value, gpointer user_data)
  * MAC address.  The returned #GError contains information about which
  * setting and which property failed validation, and how it failed validation.
  *
- * Returns: TRUE if the connection is valid, FALSE if it is not
+ * Returns: %TRUE if the connection is valid, %FALSE if it is not
  **/
 gboolean
 nm_connection_verify (NMConnection *connection, GError **error)
@@ -603,8 +603,8 @@ nm_connection_verify (NMConnection *connection, GError **error)
  * Update the specified setting's secrets, given a hash table of secrets
  * intended for that setting (deserialized from D-Bus for example).
  * 
- * Returns: TRUE if the secrets were successfully updated and the connection
- * is valid, FALSE on failure or if the setting was never added to the connection
+ * Returns: %TRUE if the secrets were successfully updated and the connection
+ * is valid, %FALSE on failure or if the setting was never added to the connection
  **/
 gboolean
 nm_connection_update_secrets (NMConnection *connection,

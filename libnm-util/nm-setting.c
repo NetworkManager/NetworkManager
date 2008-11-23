@@ -293,7 +293,7 @@ nm_setting_get_name (NMSetting *setting)
  * returned #GError contains information about which property of the setting
  * failed validation, and in what way that property failed validation.
  *
- * Returns: TRUE if the setting is valid, FALSE if it is not
+ * Returns: %TRUE if the setting is valid, %FALSE if it is not
  **/
 gboolean
 nm_setting_verify (NMSetting *setting, GSList *all_settings, GError **error)
@@ -318,11 +318,11 @@ nm_setting_verify (NMSetting *setting, GSList *all_settings, GError **error)
  * modified by a set of flags.  See the documentation for #NMSettingCompareFlags
  * for a description of each flag's behavior.
  *
- * Returns: TRUE if the comparison succeeds, FALSE if it does not
+ * Returns: %TRUE if the comparison succeeds, %FALSE if it does not
  **/
 gboolean
-nm_setting_compare (NMSetting *setting,
-                    NMSetting *other,
+nm_setting_compare (NMSetting *a,
+                    NMSetting *b,
                     NMSettingCompareFlags flags)
 {
 	GParamSpec **property_specs;
@@ -330,15 +330,15 @@ nm_setting_compare (NMSetting *setting,
 	gint different;
 	guint i;
 
-	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
-	g_return_val_if_fail (NM_IS_SETTING (other), FALSE);
+	g_return_val_if_fail (NM_IS_SETTING (a), FALSE);
+	g_return_val_if_fail (NM_IS_SETTING (b), FALSE);
 
 	/* First check that both have the same type */
-	if (G_OBJECT_TYPE (setting) != G_OBJECT_TYPE (other))
+	if (G_OBJECT_TYPE (a) != G_OBJECT_TYPE (b))
 		return FALSE;
 
 	/* And now all properties */
-	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (setting), &n_property_specs);
+	property_specs = g_object_class_list_properties (G_OBJECT_GET_CLASS (a), &n_property_specs);
 	different = FALSE;
 
 	for (i = 0; i < n_property_specs && !different; i++) {
@@ -357,15 +357,15 @@ nm_setting_compare (NMSetting *setting,
 			continue;
 
 		if (   (flags & NM_SETTING_COMPARE_FLAG_IGNORE_ID)
-			   && !strcmp (nm_setting_get_name (setting), NM_SETTING_CONNECTION_SETTING_NAME)
+			   && !strcmp (nm_setting_get_name (a), NM_SETTING_CONNECTION_SETTING_NAME)
 		    && !strcmp (prop_spec->name, NM_SETTING_CONNECTION_ID))
 			continue;
 
 		g_value_init (&value1, prop_spec->value_type);
-		g_object_get_property (G_OBJECT (setting), prop_spec->name, &value1);
+		g_object_get_property (G_OBJECT (a), prop_spec->name, &value1);
 
 		g_value_init (&value2, prop_spec->value_type);
-		g_object_get_property (G_OBJECT (other), prop_spec->name, &value2);
+		g_object_get_property (G_OBJECT (b), prop_spec->name, &value2);
 
 		different = g_param_values_cmp (prop_spec, &value1, &value2);
 
@@ -540,8 +540,8 @@ update_one_cb (gpointer key, gpointer val, gpointer user_data)
  * Update the setting's secrets, given a hash table of secrets intended for that
  * setting (deserialized from D-Bus for example).
  * 
- * Returns: TRUE if the secrets were successfully updated and the connection
- * is valid, FALSE on failure or if the setting was never added to the connection
+ * Returns: %TRUE if the secrets were successfully updated and the connection
+ * is valid, %FALSE on failure or if the setting was never added to the connection
  **/
 gboolean
 nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets, GError **error)

@@ -118,8 +118,8 @@ typedef enum {
 } NMSettingCompareFlags;
 
 /* Returns TRUE if the connections are the same */
-gboolean    nm_setting_compare       (NMSetting *setting,
-                                      NMSetting *other,
+gboolean    nm_setting_compare       (NMSetting *a,
+                                      NMSetting *b,
                                       NMSettingCompareFlags flags);
 
 void        nm_setting_enumerate_values (NMSetting *setting,

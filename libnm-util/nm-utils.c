@@ -413,7 +413,7 @@ nm_utils_escape_ssid (const guint8 * ssid, guint32 len)
 }
 
 /**
- * nm_utils_escape_ssid:
+ * nm_utils_same_ssid:
  * @ssid1: first SSID data to compare
  * @ssid2: second SSID data to compare
  * @ignore_trailing_null: TRUE to ignore one trailing NULL byte
