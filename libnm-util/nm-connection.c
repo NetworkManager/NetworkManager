@@ -76,7 +76,7 @@
  *
  * Registers an error quark for #NMConnection if necessary.
  *
- * Returns: the error quark used for NMConnection errors.
+ * Returns: the error quark used for #NMConnection errors.
  **/
 GQuark
 nm_connection_error_quark (void)
@@ -98,9 +98,7 @@ nm_connection_error_get_type (void)
 
 	if (etype == 0) {
 		static const GEnumValue values[] = {
-			/* Unknown error. */
 			ENUM_ENTRY (NM_CONNECTION_ERROR_UNKNOWN, "UnknownError"),
-			/* The required 'connection' setting was not found. */
 			ENUM_ENTRY (NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND, "ConnectionSettingNotFound"),
 			{ 0, 0, 0 }
 		};
@@ -985,7 +983,7 @@ nm_connection_get_path (NMConnection *connection)
  *
  * Creates a new #NMConnection object with no #NMSetting objects.
  *
- * Returns: the new blank #NMConnection object
+ * Returns: the new empty #NMConnection object
  **/
 NMConnection *
 nm_connection_new (void)

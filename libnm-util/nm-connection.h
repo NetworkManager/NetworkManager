@@ -39,18 +39,34 @@ G_BEGIN_DECLS
 #define NM_IS_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_CONNECTION))
 #define NM_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_CONNECTION, NMConnectionClass))
 
-/* connection scope, used only by the caller for tracking connections
- * provided by multiple settings services.
- */
+/**
+ * NMConnectionScope:
+ * @NM_CONNECTION_SCOPE_UNKNOWN: scope not known or not yet set
+ * @NM_CONNECTION_SCOPE_SYSTEM: connection is provided by the system settings
+ *   service
+ * @NM_CONNECTION_SCOPE_USER: connection is provided by a user settings service
+ *
+ * Connection scope indicated what settings service, if any, provides the
+ * connection.
+ *
+ **/
 typedef enum {
-	/* The connection's scope is unknown, or not yet set */
 	NM_CONNECTION_SCOPE_UNKNOWN = 0,
-	/* The connection is provided by the system settings service */
 	NM_CONNECTION_SCOPE_SYSTEM,
-	/* The connection is provided by a user settings service */
 	NM_CONNECTION_SCOPE_USER
 } NMConnectionScope;
 
+
+/**
+ * NMConnectionError:
+ * @NM_CONNECTION_ERROR_UNKNOWN: unknown or unclassified error
+ * @NM_CONNECTION_ERROR_CONNECTION_SETTING_NOT_FOUND: the #NMConnection object
+ *   did not contain the required #NMSettingConnection object, which must be
+ *   present for all connections
+ *
+ * Describes errors that may result from operations involving a #NMConnection.
+ *
+ **/
 typedef enum
 {
 	NM_CONNECTION_ERROR_UNKNOWN = 0,
@@ -66,6 +82,12 @@ GQuark nm_connection_error_quark (void);
 #define NM_CONNECTION_SCOPE "scope"
 #define NM_CONNECTION_PATH "path"
 
+/**
+ * NMConnection:
+ *
+ * The NMConnection struct contains only private data.
+ * It should only be accessed through the functions described below.
+ */
 typedef struct {
 	GObject parent;
 } NMConnection;
@@ -101,7 +123,6 @@ gboolean      nm_connection_replace_settings (NMConnection *connection,
                                               GHashTable *new_settings,
                                               GError **error);
 
-/* Returns TRUE if the connections are the same */
 gboolean      nm_connection_compare       (NMConnection *a,
                                            NMConnection *b,
                                            NMSettingCompareFlags flags);

@@ -30,6 +30,19 @@
 #include "nm-utils.h"
 
 /**
+ * SECTION:nm-setting
+ * @short_description: Describes related configuration information
+ * @include: nm-setting.h
+ *
+ * Each #NMSetting contains properties that describe configuration that applies
+ * to a specific network layer (like IPv4 or IPv6 configuration) or device type
+ * (like Ethernet, or WiFi).  A collection of individual settings together
+ * make up an #NMConnection. Each property is strongly typed and usually has
+ * a number of allowed values.  See each #NMSetting subclass for a description
+ * of properties and allowed values.
+ */
+
+/**
  * nm_setting_error_quark:
  *
  * Registers an error quark for #NMSetting if necessary.
@@ -56,13 +69,9 @@ nm_setting_error_get_type (void)
 
 	if (etype == 0) {
 		static const GEnumValue values[] = {
-			/* Unknown error. */
 			ENUM_ENTRY (NM_SETTING_ERROR_UNKNOWN, "UnknownError"),
-			/* The property was not found. */
 			ENUM_ENTRY (NM_SETTING_ERROR_PROPERTY_NOT_FOUND, "PropertyNotFound"),
-			/* The property was not a secret. */
 			ENUM_ENTRY (NM_SETTING_ERROR_PROPERTY_NOT_SECRET, "PropertyNotSecret"),
-			/* The property type didn't match the required property type. */
 			ENUM_ENTRY (NM_SETTING_ERROR_PROPERTY_TYPE_MISMATCH, "PropertyTypeMismatch"),
 			{ 0, 0, 0 }
 		};

@@ -39,6 +39,21 @@ G_BEGIN_DECLS
 
 #define NM_SETTING_CONNECTION_SETTING_NAME "connection"
 
+/**
+ * NMSettingConnectionError:
+ * @NM_SETTING_CONNECTION_ERROR_UNKNOWN: unknown or unclassified error
+ * @NM_SETTING_CONNECTION_ERROR_INVALID_PROPERTY: the property's value is
+ *   invalid
+ * @NM_SETTING_CONNECTION_ERROR_MISSING_PROPERTY: a required property is not
+ *   present
+ * @NM_SETTING_CONNECTION_ERROR_TYPE_SETTING_NOT_FOUND: the #NMSetting object
+ *   referenced by the setting name contained in the
+ *   #NMSettingConnection:type property was not present in the #NMConnection
+ *
+ * Describes errors that may result from operations involving a
+ * #NMSettingConnection.
+ *
+ **/
 typedef enum
 {
 	NM_SETTING_CONNECTION_ERROR_UNKNOWN = 0,
@@ -60,6 +75,12 @@ GQuark nm_setting_connection_error_quark (void);
 #define NM_SETTING_CONNECTION_TIMESTAMP   "timestamp"
 #define NM_SETTING_CONNECTION_READ_ONLY   "read-only"
 
+/**
+ * NMSettingConnection:
+ *
+ * The NMSettingConnection struct contains only private data.
+ * It should only be accessed through the functions described below.
+ */
 typedef struct {
 	NMSetting parent;
 } NMSettingConnection;
