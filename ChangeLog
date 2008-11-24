@@ -1,3 +1,9 @@
+2008-11-23  Dan Williams  <dcbw@redhat.com>
+
+	* callouts/nm-dispatcher-action.c
+		- (construct_envp, nm_dispatcher_action): pass connection UUID to
+			scripts in the environment
+
 2008-11-21  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Tambet Ingo  <tambet@gmail.com>
