@@ -137,11 +137,6 @@ void          nm_connection_dump          (NMConnection *connection);
 
 NMSetting    *nm_connection_create_setting (const char *name);
 
-void nm_setting_register   (const char *name,
-					   GType type);
-
-void nm_setting_unregister (const char *name);
-
 GType nm_connection_lookup_setting_type (const char *name);
 
 GType nm_connection_lookup_setting_type_by_quark (GQuark error_quark);

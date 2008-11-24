@@ -46,6 +46,32 @@
 #include "nm-setting-cdma.h"
 
 /**
+ * SECTION:nm-connection
+ * @short_description: Describes a connection to specific network or provider
+ * @include: nm-connection.h
+ *
+ * An #NMConnection describes all the settings and configuration values that
+ * are necessary to configure network devices for operation on a specific
+ * network.  Connections are the fundamental operating object for
+ * NetworkManager; no device is connected without a #NMConnection, or
+ * disconnected without having been connected with a #NMConnection.
+ *
+ * Each #NMConnection contains a list of #NMSetting objects usually referenced
+ * by name (using nm_connection_get_setting_by_name()) or by type (with
+ * nm_connection_get_setting()).  The settings describe the actual parameters
+ * with which the network devices are configured, including device-specific
+ * parameters (MTU, SSID, APN, channel, rate, etc) and IP-level parameters
+ * (addresses, routes, addressing methods, etc).
+ *
+ * Most connections also have a %NMConnectionScope; a connection will be
+ * provided over D-Bus either by the user settings service
+ * (org.freedesktop.NetworkManagerUserSettings) running in an active user
+ * session, or by the system-wide system settings service
+ * (org.freedesktop.NetworkManagerSystemSettings) which provides  connections
+ * for all users.
+ */
+
+/**
  * nm_connection_error_quark:
  *
  * Registers an error quark for #NMConnection if necessary.
