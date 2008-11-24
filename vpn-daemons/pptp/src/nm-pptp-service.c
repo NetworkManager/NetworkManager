@@ -678,6 +678,8 @@ construct_pppd_args (NMPptpPlugin *plugin,
                      const char *pppd,
                      GError **error)
 {
+	NMPptpPluginPrivate *priv = NM_PPTP_PLUGIN_GET_PRIVATE (plugin);
+	NMPptpPppServicePrivate *service_priv = NULL;
 	GPtrArray *args = NULL;
 	const char *value, *pptp_binary;
 	char *ipparam, *tmp;
@@ -724,6 +726,13 @@ construct_pppd_args (NMPptpPlugin *plugin,
 	g_ptr_array_add (args, (gpointer) g_strdup ("usepeerdns"));
 	g_ptr_array_add (args, (gpointer) g_strdup ("noipdefault"));
 	g_ptr_array_add (args, (gpointer) g_strdup ("nodefaultroute"));
+
+	if (priv->service)
+		service_priv = NM_PPTP_PPP_SERVICE_GET_PRIVATE (priv->service);
+	if (service_priv && strlen (service_priv->username)) {
+		g_ptr_array_add (args, (gpointer) g_strdup ("user"));
+		g_ptr_array_add (args, (gpointer) g_strdup (service_priv->username));
+	}
 
 	value = nm_setting_vpn_get_data_item (s_vpn, NM_PPTP_KEY_REFUSE_EAP);
 	if (value && !strcmp (value, "yes"))
