@@ -32,7 +32,9 @@ CFILE_GLOB=
 IGNORE_HFILES= \
 	crypto.h \
 	nm-setting-ip6-config.h \
-	nm-setting-template.h
+	nm-setting-template.h \
+	nm-utils-private.h \
+	nm-param-spec-specialized.h
 
 # Images to copy into HTML directory.
 HTML_IMAGES = 

@@ -45,6 +45,15 @@
 #include "nm-setting-ip6-config.h"
 #include "crypto.h"
 
+/**
+ * SECTION:nm-utils
+ * @short_description: Utility functions
+ * @include: nm-utils.h
+ *
+ * A collection of utility functions for working SSIDs, IP addresses, WiFi
+ * access points and devices, among other things.
+ */
+
 /* IP6 currently incomplete */
 GSList *nm_utils_ip6_addresses_from_gvalue (const GValue *value);
 void nm_utils_ip6_addresses_to_gvalue (GSList *list, GValue *value);

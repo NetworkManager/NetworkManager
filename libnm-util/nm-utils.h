@@ -35,6 +35,11 @@
 /* The API defined here is _NOT_ guaranteed in any way!! */
 /*********************************************************/
 
+/**
+ * nm_print_backtrace:
+ *
+ * Prints a backtrace of the calling process to the logging location.
+ */
 #define nm_print_backtrace()						\
 G_STMT_START								\
 {									\
@@ -59,6 +64,12 @@ G_STMT_START								\
 }									\
 G_STMT_END
 
+/**
+ * nm_get_timestamp:
+ * @timestamp: location in which to place the current timestamp
+ *
+ * For debugging only.
+ */
 #define nm_get_timestamp(timestamp)					\
 G_STMT_START								\
 {									\
@@ -152,8 +163,6 @@ GHashTable *nm_utils_gvalue_hash_dup  (GHashTable *hash);
 
 void        nm_utils_slist_free       (GSList *list,
 							    GDestroyNotify elem_destroy_fn);
-
-void        nm_utils_register_value_transformations (void);
 
 typedef enum {
 	NMU_SEC_INVALID = 0,
