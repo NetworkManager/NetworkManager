@@ -3,190 +3,241 @@
 # This file is distributed under the same license as the NetworkManager package.
 # Thomas Gier <info@thomasgier.de>, 2007.
 # Hauke Mehrtens <hauke@hauke-m.de>, 2008.
+# Christian Kirbach <Christian.Kirbach@googlemail.com>, 2008.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-11-22 00:10+0100\n"
-"PO-Revision-Date: 2008-11-22 00:07+0100\n"
-"Last-Translator: Hauke Mehrtens <hauke@hauke-m.de>\n"
+"POT-Creation-Date: 2008-11-25 21:55+0100\n"
+"PO-Revision-Date: 2008-10-24 00:11+0200\n"
+"Last-Translator: Christian Kirbach <Christian.Kirbach@googlemail.com>\n"
 "Language-Team: German <gnome-de@gnome.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural(n != 1);\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:144
-msgid "_Secondary Password:"
-msgstr "_Sekundäres Passwort:"
-
-# CHECK: accelerator
-#: ../auth-dialog/gnome-two-password-dialog.c:258
-msgid "_Username:"
-msgstr "_Benutzername:"
-
-#: ../auth-dialog/gnome-two-password-dialog.c:260
-msgid "_Domain:"
-msgstr "_Domäne"
-
-#: ../auth-dialog/gnome-two-password-dialog.c:262
+#: ../auth-dialog/gnome-two-password-dialog.c:145
 msgid "_Password:"
 msgstr "_Passwort:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:351
+#: ../auth-dialog/gnome-two-password-dialog.c:146
+msgid "_Secondary Password:"
+msgstr "_Sekundäres Passwort:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:263
+msgid "_Username:"
+msgstr "_Benutzername:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:265
+msgid "_Domain:"
+msgstr "_Domäne:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:357
 msgid "Connect _anonymously"
 msgstr "_Anonym verbinden"
 
-# CHECK: accelerator
-#: ../auth-dialog/gnome-two-password-dialog.c:356
+# CHECK ACCELERATOR
+#: ../auth-dialog/gnome-two-password-dialog.c:362
 msgid "Connect as _user:"
-msgstr "Verbinden als _Benutzer:"
+msgstr "Als _Benutzer verbinden:"
 
-# CHECK: accelerator
-#: ../auth-dialog/gnome-two-password-dialog.c:465
-msgid "_Remember passwords for this session"
-msgstr "Passwort für _diese Sitzung behalten"
+# CHECK ACCELERATOR
+#: ../auth-dialog/gnome-two-password-dialog.c:471
+msgid "_Remember password for this session"
+msgstr "_Passwort für dieser Sitzung behalten"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:467
-msgid "_Save passwords in keyring"
+#: ../auth-dialog/gnome-two-password-dialog.c:473
+msgid "_Save password in keyring"
 msgstr "Passwort im _Schlüsselbund speichern"
 
-#: ../auth-dialog/main.c:62
+#: ../auth-dialog/main.c:127
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr ""
-"Sie müssen sich legitimieren, um auf das Virtuelle Private Netz »%s« "
+"Sie müssen sich authentifizieren, um auf das Virtuelle Private Netz »%s« "
 "zuzugreifen."
 
-#: ../auth-dialog/main.c:63
+#: ../auth-dialog/main.c:128
 msgid "Authenticate VPN"
-msgstr "VPN wird legitimiert"
+msgstr "VPN authentifizieren"
 
-#: ../nm-pptp.desktop.in.h:1
-msgid "Add, Remove, and Edit PPTP VPN Connections"
-msgstr "Hinzufügen, Entfernen und Bearbeiten von PPTP VPN-Verbindungen"
+#: ../auth-dialog/main.c:149
+msgid "Certificate pass_word:"
+msgstr "Zertifikatspass_wort:"
 
-#: ../nm-pptp.desktop.in.h:2
-msgid "PPTP VPN Connection Manager"
-msgstr "PPTP VPN-Verbindungsmanager"
+#: ../auth-dialog/main.c:163
+msgid "Certificate password:"
+msgstr "Zertifikatspasswort:"
 
-#: ../properties/advanced-dialog.c:144
-msgid "All Available (Default)"
-msgstr "Alle Verfügbaren (Standard)"
+#: ../properties/auth-helpers.c:160
+msgid "Choose a Certificate Authority certificate..."
+msgstr "Zertifikat einer Zertifizierungsstelle auswählen..."
 
-#: ../properties/advanced-dialog.c:148
-msgid "128-bit (most secure)"
-msgstr "128-bit (am sichersten)"
+#: ../properties/auth-helpers.c:179
+msgid "Choose your personal certificate..."
+msgstr "Persönliches Zertifikat auswählen..."
 
-#: ../properties/advanced-dialog.c:157
-msgid "40-bit (less secure)"
-msgstr "40-bit (weniger sicher)"
+#: ../properties/auth-helpers.c:197
+msgid "Choose your private key..."
+msgstr "Privaten Schlüssel auswählen..."
 
-#: ../properties/advanced-dialog.c:228
-msgid "PAP"
-msgstr "PAP"
+#: ../properties/auth-helpers.c:250
+msgid "Choose an OpenVPN static key..."
+msgstr "Statischen OpenVPN-Schlüssel auswählen..."
 
-#: ../properties/advanced-dialog.c:234
-msgid "CHAP"
-msgstr "CHAP"
+# CHECK keine/keiner
+#: ../properties/auth-helpers.c:274 ../properties/auth-helpers.c:992
+msgid "None"
+msgstr "keine"
 
-#: ../properties/advanced-dialog.c:240
-msgid "MSCHAP"
-msgstr "MSCHAP"
+#: ../properties/auth-helpers.c:654
+msgid "PEM certificates (*.pem, *.crt, *.key, *.cer)"
+msgstr "PEM-Zertifikate (*.pem, *.crt, *.key, *.cer)"
 
-#: ../properties/advanced-dialog.c:246
-msgid "MSCHAPv2"
-msgstr "MSCHAPv2"
+#: ../properties/auth-helpers.c:714
+msgid "OpenVPN Static Keys (*.key)"
+msgstr "Statische OpenVPN-Schlüssel (*.key)"
 
-#: ../properties/nm-pptp-dialog.glade.h:1
+#: ../properties/auth-helpers.c:822
+msgid "Default"
+msgstr "Vorgabe"
+
+#: ../properties/nm-openvpn.c:53
+msgid "OpenVPN"
+msgstr "OpenVPN"
+
+#: ../properties/nm-openvpn.c:54
+msgid "Compatible with the OpenVPN server."
+msgstr "Kompatibel zum OpenVPN-Server"
+
+#: ../properties/nm-openvpn.c:322 ../properties/nm-openvpn-dialog.glade.h:7
+msgid "Certificates (TLS)"
+msgstr "Zertifikate (TLS):"
+
+#: ../properties/nm-openvpn.c:336
+msgid "Password"
+msgstr "Passwort"
+
+#: ../properties/nm-openvpn.c:353
+msgid "Password with Certificates (TLS)"
+msgstr "Passwort und Zertifikate (TLS)"
+
+#: ../properties/nm-openvpn.c:365
+msgid "Static Key"
+msgstr "Statischer Schlüssel"
+
+#: ../properties/nm-openvpn-dialog.glade.h:1
+msgid " "
+msgstr " "
+
+#: ../properties/nm-openvpn-dialog.glade.h:2
 msgid "<b>Authentication</b>"
-msgstr "<b>Legitimierung</b>"
+msgstr "<b>Authentifizierung</b>"
 
-#: ../properties/nm-pptp-dialog.glade.h:2
-msgid "<b>Echo</b>"
-msgstr "<b>Echo</b>"
-
-#: ../properties/nm-pptp-dialog.glade.h:3
+#: ../properties/nm-openvpn-dialog.glade.h:3
 msgid "<b>General</b>"
 msgstr "<b>Allgemein</b>"
 
-#: ../properties/nm-pptp-dialog.glade.h:4
-msgid "<b>Optional</b>"
-msgstr "<b>Optional</b>"
+#: ../properties/nm-openvpn-dialog.glade.h:4
+msgid ""
+"<i>If key direction is used, it must be the opposite of that used on the VPN "
+"peer.  For example, if the peer uses '1', this connection must use '0'.  If "
+"you are unsure what value to use, contact your system administrator.</i>"
+msgstr ""
+"<i>Falls eine Schlüsselrichtung verwendet wird, muss sie dem Gegenteil der "
+"Gegenstelle entsprechen. Falls die Gegenstelle zum Beispiel »1« benutzt, muss "
+"hier »0« gewählt werden. Sollten Sie sich nicht sicher sein, setzen Sie sich "
+"mit Ihrem Systemadministrator in Verbindung.</i>"
 
-#: ../properties/nm-pptp-dialog.glade.h:5
-msgid "<b>Security and Compression</b>"
-msgstr "<b>Sicherheit und Komprimierung</b>"
-
-#: ../properties/nm-pptp-dialog.glade.h:6
+#: ../properties/nm-openvpn-dialog.glade.h:5
 msgid "Ad_vanced..."
-msgstr "Er_weitert …"
+msgstr "Er_weitert..."
 
-#: ../properties/nm-pptp-dialog.glade.h:7
-msgid "Allow _BSD data compression"
-msgstr "_BSD-Datenkomprimierung erlauben"
+#: ../properties/nm-openvpn-dialog.glade.h:6
+msgid "CA Certificate:"
+msgstr "Zertifikat der Zertifizierungsstelle:"
 
-#: ../properties/nm-pptp-dialog.glade.h:8
-msgid "Allow _Deflate data compression"
-msgstr "_Deflate-Datenkomprimierung erlauben"
+#: ../properties/nm-openvpn-dialog.glade.h:8
+msgid "Cipher:"
+msgstr "Chiffre:"
 
-#: ../properties/nm-pptp-dialog.glade.h:9
-msgid "Allow st_ateful encryption"
-msgstr "Erlaube st_ateful Verschlüsselung"
+#: ../properties/nm-openvpn-dialog.glade.h:9
+msgid "General"
+msgstr "Allgemein"
 
-#: ../properties/nm-pptp-dialog.glade.h:10
-msgid "Allow the following authentication methods:"
-msgstr "Erlaube die folgenden Methoden zur Legitimierung:"
+#: ../properties/nm-openvpn-dialog.glade.h:10
+msgid "Key Direction:"
+msgstr "Schlüsselrichtung:"
 
-#: ../properties/nm-pptp-dialog.glade.h:11
-msgid "Default"
-msgstr "Standard"
+#: ../properties/nm-openvpn-dialog.glade.h:11
+msgid "Key File:"
+msgstr "Schlüsseldatei:"
 
-#: ../properties/nm-pptp-dialog.glade.h:12
-msgid "NT Domain:"
-msgstr "NT-Domäne:"
+#: ../properties/nm-openvpn-dialog.glade.h:12
+msgid "Local IP Address:"
+msgstr "Lokale IP-Adresse:"
 
-#: ../properties/nm-pptp-dialog.glade.h:13
+#: ../properties/nm-openvpn-dialog.glade.h:13
+msgid "OpenVPN Advanced Options"
+msgstr "Erweiterte OpenVPN-Einstellungen"
+
+#: ../properties/nm-openvpn-dialog.glade.h:14
 msgid "Password:"
 msgstr "Passwort:"
 
-#: ../properties/nm-pptp-dialog.glade.h:14
-msgid "Send PPP _echo packets"
-msgstr "Sende PPP-_Echo Pakete"
+#: ../properties/nm-openvpn-dialog.glade.h:15
+msgid "Private Key Password:"
+msgstr "Passwort für prrivater Schlüssel:"
 
-#: ../properties/nm-pptp-dialog.glade.h:15
-msgid "Show password"
-msgstr "Zeige Passwort:"
+#: ../properties/nm-openvpn-dialog.glade.h:16
+msgid "Private Key:"
+msgstr "Privater Schlüssel:"
 
-#: ../properties/nm-pptp-dialog.glade.h:16
-msgid "Use TCP _header compression"
-msgstr "TCP-_Header-Komprimierung verwenden"
+#: ../properties/nm-openvpn-dialog.glade.h:17
+msgid "Show passwords"
+msgstr "Passwort anzeigen"
 
-#: ../properties/nm-pptp-dialog.glade.h:17
-msgid "Use _Point-to-Point encryption (MPPE)"
-msgstr "_Point-to-Point Verschlüsselung (MPPE) verwenden"
+#: ../properties/nm-openvpn-dialog.glade.h:18
+msgid "Static Key:"
+msgstr "Statischer Schlüssel:"
 
-# CHECK: accelerator
-#: ../properties/nm-pptp-dialog.glade.h:18
+#: ../properties/nm-openvpn-dialog.glade.h:19
+msgid "Type:"
+msgstr "Art:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:20
+msgid "Use L_ZO data compression"
+msgstr "L_ZO-Komprimierung verwenden"
+
+#: ../properties/nm-openvpn-dialog.glade.h:21
+msgid "Use a TA_P device"
+msgstr "TA_P-Gerät verwenden"
+
+#: ../properties/nm-openvpn-dialog.glade.h:22
+msgid "Use a _TCP connection"
+msgstr "_TCP-Verbindung verwenden"
+
+#: ../properties/nm-openvpn-dialog.glade.h:23
+msgid "Use additional TLS authentication"
+msgstr "Zusätzliche TLS-Authentifizierung verwenden"
+
+#: ../properties/nm-openvpn-dialog.glade.h:24
+msgid "Use custom gateway p_ort:"
+msgstr "_Gateway-Port:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:25
+msgid "User Certificate:"
+msgstr "Zertifikat des Benutzers:"
+
+#: ../properties/nm-openvpn-dialog.glade.h:26
 msgid "User name:"
 msgstr "Benutzername:"
 
-#: ../properties/nm-pptp-dialog.glade.h:19
+#: ../properties/nm-openvpn-dialog.glade.h:27
 msgid "_Gateway:"
 msgstr "_Gateway:"
 
-#: ../properties/nm-pptp-dialog.glade.h:20
-msgid "_Security:"
-msgstr "_Sicherheit"
-
-#: ../properties/nm-pptp.c:50
-msgid "Point-to-Point Tunneling Protocol (PPTP)"
-msgstr "Point-to-Point Tunneling Protocol (PPTP)"
-
-#: ../properties/nm-pptp.c:51
-msgid "Compatible with Microsoft and other PPTP VPN servers."
-msgstr "Kompatibel mit Microsofts und anderen PPTP-VPN-Servern."
-
-#~ msgid "Authentication Type:"
-#~ msgstr "Authentifikationstyp:"
+#~ msgid "Ca Certificate:"
+#~ msgstr "Zertifikat der Zertifizierungsstelle:"
