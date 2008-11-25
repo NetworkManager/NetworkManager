@@ -111,31 +111,35 @@ load_plugins (Application *app, const char *plugins, GError **error)
 {
 	GSList *list = NULL;
 	char **plist;
-	char **pname;
+	char **iter;
 
 	plist = g_strsplit (plugins, ",", 0);
 	if (!plist)
 		return FALSE;
 
-	for (pname = plist; *pname; pname++) {
+	for (iter = plist; *iter; iter++) {
 		GModule *plugin;
-		char *full_name;
-		char *path;
+		char *full_name, *path;
+		const char *pname = *iter;
 		GObject *obj;
 		GObject * (*factory_func) (void);
 
-		obj = find_plugin (list, *pname);
+		/* ifcfg-fedora was renamed ifcfg-rh; handle old configs here */
+		if (!strcmp (pname, "ifcfg-fedora"))
+			pname = "ifcfg-rh";
+
+		obj = find_plugin (list, pname);
 		if (obj)
 			continue;
 
-		full_name = g_strdup_printf ("nm-settings-plugin-%s", *pname);
+		full_name = g_strdup_printf ("nm-settings-plugin-%s", pname);
 		path = g_module_build_path (PLUGINDIR, full_name);
 
 		plugin = g_module_open (path, G_MODULE_BIND_LOCAL);
 		if (!plugin) {
 			g_set_error (error, plugins_error_quark (), 0,
 			             "Could not load plugin '%s': %s",
-			             *pname, g_module_error ());
+			             pname, g_module_error ());
 			g_free (full_name);
 			g_free (path);
 			break;
@@ -147,7 +151,7 @@ load_plugins (Application *app, const char *plugins, GError **error)
 		if (!g_module_symbol (plugin, "nm_system_config_factory", (gpointer) (&factory_func))) {
 			g_set_error (error, plugins_error_quark (), 0,
 			             "Could not find plugin '%s' factory function.",
-			             *pname);
+			             pname);
 			break;
 		}
 
@@ -155,7 +159,7 @@ load_plugins (Application *app, const char *plugins, GError **error)
 		if (!obj || !NM_IS_SYSTEM_CONFIG_INTERFACE (obj)) {
 			g_set_error (error, plugins_error_quark (), 0,
 			             "Plugin '%s' returned invalid system config object.",
-			             *pname);
+			             pname);
 			break;
 		}
 

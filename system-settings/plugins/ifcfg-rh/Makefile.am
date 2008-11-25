@@ -1,7 +1,7 @@
 
-pkglib_LTLIBRARIES = libnm-settings-plugin-ifcfg-fedora.la
+pkglib_LTLIBRARIES = libnm-settings-plugin-ifcfg-rh.la
 
-libnm_settings_plugin_ifcfg_fedora_la_SOURCES = \
+libnm_settings_plugin_ifcfg_rh_la_SOURCES = \
 	shvar.c \
 	shvar.h \
 	plugin.c \
@@ -12,7 +12,7 @@ libnm_settings_plugin_ifcfg_fedora_la_SOURCES = \
 	reader.h \
 	common.h
 
-libnm_settings_plugin_ifcfg_fedora_la_CPPFLAGS = \
+libnm_settings_plugin_ifcfg_rh_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(GMODULE_CFLAGS) \
 	$(DBUS_CFLAGS) \
@@ -24,8 +24,8 @@ libnm_settings_plugin_ifcfg_fedora_la_CPPFLAGS = \
 	-I$(top_builddir)/marshallers \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
 
-libnm_settings_plugin_ifcfg_fedora_la_LDFLAGS = -module -avoid-version
-libnm_settings_plugin_ifcfg_fedora_la_LIBADD = \
+libnm_settings_plugin_ifcfg_rh_la_LDFLAGS = -module -avoid-version
+libnm_settings_plugin_ifcfg_rh_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(GMODULE_LIBS) \
 	$(top_builddir)/libnm-util/libnm-util.la \
@@ -33,10 +33,10 @@ libnm_settings_plugin_ifcfg_fedora_la_LIBADD = \
 	$(top_builddir)/marshallers/libmarshallers.la
 
 if NO_GIO
-libnm_settings_plugin_ifcfg_fedora_la_LIBADD += \
+libnm_settings_plugin_ifcfg_rh_la_LIBADD += \
 	$(top_builddir)/gfilemonitor/libgfilemonitor.la
 else
-libnm_settings_plugin_ifcfg_fedora_la_LIBADD += \
+libnm_settings_plugin_ifcfg_rh_la_LIBADD += \
 	$(GIO_LIBS)
 endif
 
