@@ -1,3 +1,18 @@
+2008-11-25  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Tambet Ingo <tambet@gmail.com>
+
+	Fix mishandling of netlink error floods (rh #459205, novell #443429, lp #284507)
+
+	* src/nm-netlink-monitor.c
+		- Remove bits for using a non-default GMainContext, which weren't used
+		- (nm_netlink_monitor_error_handler): don't leak the GError, and report
+			the actual error code
+
+	* src/NetworkManager.c
+		- (nm_error_monitoring_device_link_state): disconnect error handler when
+			an error flood occurs to avoid pegging the CPU
+
 2008-11-23  Dan Williams  <dcbw@redhat.com>
 
 	* callouts/nm-dispatcher-action.c

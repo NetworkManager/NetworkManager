@@ -60,14 +60,51 @@
 static NMManager *manager = NULL;
 static GMainLoop *main_loop = NULL;
 
+typedef struct {
+	time_t time;
+	GQuark domain;
+	guint32 code;
+	guint32 count;
+} MonitorInfo;
+
+static gboolean
+detach_monitor (gpointer data)
+{
+	nm_info ("Detaching netlink event monitor");
+	nm_netlink_monitor_detach (NM_NETLINK_MONITOR (data));
+	return FALSE;
+}
+
 static void
 nm_error_monitoring_device_link_state (NMNetlinkMonitor *monitor,
 									   GError *error,
 									   gpointer user_data)
 {
-	/* FIXME: Try to handle the error instead of just printing it. */
-	nm_warning ("error monitoring wired ethernet link state: %s\n",
-				error->message);
+	MonitorInfo *info = (MonitorInfo *) user_data;
+	time_t now;
+
+	now = time (NULL);
+
+	if (info->domain != error->domain || info->code != error->code || (info->time && now > info->time + 10)) {
+		/* FIXME: Try to handle the error instead of just printing it. */
+		nm_warning ("error monitoring device for netlink events: %s\n",
+					error->message);
+
+		info->time = now;
+		info->domain = error->domain;
+		info->code = error->code;
+		info->count = 0;
+	}
+
+	info->count++;
+	if (info->count > 100) {
+		/* Broken drivers will sometimes cause a flood of netlink errors.
+		 * rh #459205, novell #443429, lp #284507
+		 */
+		nm_warning ("Excessive netlink errors ocurred, disabling netlink monitor.");
+		nm_warning ("Link change events will not be processed.");
+		g_idle_add_full (G_PRIORITY_HIGH, detach_monitor, monitor, NULL);
+	}
 }
 
 static gboolean
@@ -75,6 +112,7 @@ nm_monitor_setup (void)
 {
 	GError *error = NULL;
 	NMNetlinkMonitor *monitor;
+	MonitorInfo *info;
 
 	monitor = nm_netlink_monitor_get ();
 	nm_netlink_monitor_open_connection (monitor, &error);
@@ -87,11 +125,14 @@ nm_monitor_setup (void)
 		return FALSE;
 	}
 
-	g_signal_connect (G_OBJECT (monitor), "error",
-			  G_CALLBACK (nm_error_monitoring_device_link_state),
-			  NULL);
+	info = g_new0 (MonitorInfo, 1);
+	g_signal_connect_data (G_OBJECT (monitor), "error",
+						   G_CALLBACK (nm_error_monitoring_device_link_state),
+						   info,
+						   (GClosureNotify) g_free,
+						   0);
 
-	nm_netlink_monitor_attach (monitor, NULL);
+	nm_netlink_monitor_attach (monitor);
 
 	/* Request initial status of cards */
 	nm_netlink_monitor_request_status (monitor, NULL);

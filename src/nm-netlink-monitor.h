@@ -70,8 +70,7 @@ NMNetlinkMonitor *nm_netlink_monitor_get (void);
 gboolean          nm_netlink_monitor_open_connection (NMNetlinkMonitor *monitor,
 													  GError **error);
 void              nm_netlink_monitor_close_connection (NMNetlinkMonitor *monitor);
-void              nm_netlink_monitor_attach	          (NMNetlinkMonitor	*monitor,
-													   GMainContext *context);
+void              nm_netlink_monitor_attach	          (NMNetlinkMonitor	*monitor);
 void              nm_netlink_monitor_detach	          (NMNetlinkMonitor *monitor);
 gboolean          nm_netlink_monitor_request_status   (NMNetlinkMonitor *monitor,
 													   GError **error);
