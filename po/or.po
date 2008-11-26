@@ -8,7 +8,7 @@ msgstr ""
 "Project-Id-Version: or\n"
 "Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?product=NetworkManager&amp;component=general\n"
 "POT-Creation-Date: 2008-11-25 21:02+0000\n"
-"PO-Revision-Date: 2008-11-26 14:41+0530\n"
+"PO-Revision-Date: 2008-11-26 19:09+0530\n"
 "Last-Translator: Manoj Kumar Giri <mgiri@redhat.com>\n"
 "Language-Team: Oriya\n"
 "MIME-Version: 1.0\n"
@@ -20,45 +20,45 @@ msgstr ""
 #: ../src/nm-netlink-monitor.c:194 ../src/nm-netlink-monitor.c:454
 #, c-format
 msgid "error processing netlink message: %s"
-msgstr ""
+msgstr "netlink ସନ୍ଦେଶ ପଠାଇବାରେ ତ୍ରୁଟି: %s"
 
 #: ../src/nm-netlink-monitor.c:251
 #, c-format
 msgid "unable to allocate netlink handle for monitoring link status: %s"
-msgstr ""
+msgstr "ସଂଯୋଗ ସ୍ଥିତି ଅନ୍ୱେଷଣ କରିବା ପାଇଁ netlink ନିୟନ୍ତ୍ରଣ ଦର୍ଶାଇବାରେ ଅସମର୍ଥ: %s"
 
 #: ../src/nm-netlink-monitor.c:261
 #, c-format
 msgid "unable to connect to netlink for monitoring link status: %s"
-msgstr ""
+msgstr "ସଂଯୋଗ ସ୍ଥିତି ଅନ୍ୱେଷଣ କରିବା ପାଇଁ netlink ସହିତ ସଂଯୋଗ ହେବାରେ ଅସମର୍ଥ: %s"
 
 #: ../src/nm-netlink-monitor.c:269
 #, c-format
 msgid "unable to join netlink group for monitoring link status: %s"
-msgstr ""
+msgstr "ସଂଯୋଗ ସ୍ଥିତି ଅନ୍ୱେଷଣ କରିବା ପାଇଁ netlink ଶ୍ରେଣୀରେ ମିଶିବାରେ ଅସମର୍ଥ: %s"
 
 #: ../src/nm-netlink-monitor.c:277
 #, c-format
 msgid "unable to allocate netlink link cache for monitoring link status: %s"
-msgstr ""
+msgstr "ସଂଯୋଗ ସ୍ଥିତି ଅନ୍ୱେଷଣ କରିବା ପାଇଁ netlink କ୍ୟାଶେ ଦର୍ଶାଇବାରେ ଅସମର୍ଥ: %s"
 
 #: ../src/nm-netlink-monitor.c:418
 #, c-format
 msgid "error updating link cache: %s"
-msgstr ""
+msgstr "ସଂଯୋଗ କ୍ୟାଶେ ଅଦ୍ୟତନ କରିବାରେ ତ୍ରୁଟି: %s"
 
 #: ../src/nm-netlink-monitor.c:484
 msgid "error occurred while waiting for data on socket"
-msgstr ""
+msgstr "ସକେଟରେ ତଥ୍ୟ ପାଇଁ ଅପେକ୍ଷା କରିବା ସମୟରେ ତ୍ରୁଟି"
 
 #: ../src/NetworkManager.c:293
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
-msgstr ""
+msgstr "ଅବୈଧ ବିକଳ୍ପ.   ବୈଧ ବିକଳ୍ପର ତାଲିକା ଦେଖିବା ପାଇଁ ଦୟାକରି --ସହାୟତା ବ୍ୟବହାର କରନ୍ତୁ.\n"
 
 #: ../src/dhcp-manager/nm-dhcp-dhclient.c:88
 msgid "# Created by NetworkManager\n"
-msgstr ""
+msgstr "# NetworkManager ଦ୍ୱାରା ନିର୍ମିତ\n"
 
 #: ../src/dhcp-manager/nm-dhcp-dhclient.c:94
 #, c-format
@@ -66,10 +66,12 @@ msgid ""
 "# Merged from %s\n"
 "\n"
 msgstr ""
+"# %s ରୁ ମିଶ୍ରିତ\n"
+"\n"
 
 #: ../src/named-manager/nm-named-manager.c:256
 msgid "NOTE: the libc resolver may not support more than 3 nameservers."
-msgstr ""
+msgstr "ଟିପ୍ପଣୀ: libc resolver 3 ରୁ ଅଧିକ nameserverଗୁଡ଼ିକୁ ସମର୍ଥନ କରିନପାରେ."
 
 #: ../src/named-manager/nm-named-manager.c:258
 msgid "The nameservers listed below may not be recognized."
@@ -83,235 +85,235 @@ msgstr "ସ୍ୱୟଂ %s"
 #: ../libnm-util/crypto.c:120
 #, c-format
 msgid "PEM key file had no end tag '%s'."
-msgstr ""
+msgstr "PEM କି ଫାଇଲରେ କୌଣସି ଅନ୍ତ ଟ୍ୟାଗ ନାହିଁ '%s'."
 
 #: ../libnm-util/crypto.c:130
 #, c-format
 msgid "Doesn't look like a PEM private key file."
-msgstr ""
+msgstr "PEM ବ୍ୟକ୍ତିଗତ କି ଫାଇଲ ପରି ଦେଖାଯାଉନାହିଁ."
 
 #: ../libnm-util/crypto.c:138
 #, c-format
 msgid "Not enough memory to store PEM file data."
-msgstr ""
+msgstr "PEM ଫାଇଲ ତଥ୍ୟକୁ ସଂରକ୍ଷଣ କରିବା ପାଇଁ ଯଥେଷ୍ଟ ସ୍ଥାନ ନାହିଁ."
 
 #: ../libnm-util/crypto.c:154
 #, c-format
 msgid "Malformed PEM file: Proc-Type was not first tag."
-msgstr ""
+msgstr "ତ୍ରୁଟିଯୁକ୍ତ PEM ଫାଇଲ: Proc-ପ୍ରକାରଟି ପ୍ରଥମ ଟ୍ୟାଗ ନୁହଁ."
 
 #: ../libnm-util/crypto.c:162
 #, c-format
 msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
-msgstr ""
+msgstr "ତ୍ରୁଟିଯୁକ୍ତ PEM ଫାଇଲ: ଅଜଣା Proc-ପ୍ରକାର ଟ୍ୟାଗ '%s'."
 
 #: ../libnm-util/crypto.c:172
 #, c-format
 msgid "Malformed PEM file: DEK-Info was not the second tag."
-msgstr ""
+msgstr "ତ୍ରୁଟିଯୁକ୍ତ PEM ଫାଇଲ: DEK-ସୂଚନାଟି ଦ୍ୱିତୀୟ ଟ୍ୟାଗ ନୁହଁ."
 
 #: ../libnm-util/crypto.c:183
 #, c-format
 msgid "Malformed PEM file: no IV found in DEK-Info tag."
-msgstr ""
+msgstr "ତ୍ରୁଟିଯୁକ୍ତ PEM ଫାଇଲ: DEK-ସୂଚନା ଟ୍ୟାଗରେ କୌଣସି IV ମିଳିଲା ନାହିଁ."
 
 #: ../libnm-util/crypto.c:190
 #, c-format
 msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
-msgstr ""
+msgstr "ତ୍ରୁଟିଯୁକ୍ତ PEM ଫାଇଲ: DEK-ସୂଚନା ଟ୍ୟାଗରେ IVର ଅବୈଧ ଶୈଳୀ."
 
 #: ../libnm-util/crypto.c:203
 #, c-format
 msgid "Malformed PEM file: unknown private key cipher '%s'."
-msgstr ""
+msgstr "ତ୍ରୁଟିଯୁକ୍ତ PEM ଫାଇଲ: ଅଜଣା ବ୍ୟକ୍ତିଗତ କି କୁଞ୍ଜି '%s'."
 
 #: ../libnm-util/crypto.c:222
 #, c-format
 msgid "Could not decode private key."
-msgstr ""
+msgstr "ବ୍ୟକ୍ତିଗତ କି କୁ ଅବସଂକେତ କରିହେବ ନାହିଁ."
 
 #: ../libnm-util/crypto.c:267
 #, c-format
 msgid "PEM certificate '%s' had no end tag '%s'."
-msgstr ""
+msgstr "PEM ପ୍ରମାଣ ପତ୍ର '%s' ରେ ଅନ୍ତ ଟ୍ୟାଗ ନାହିଁ '%s'."
 
 #: ../libnm-util/crypto.c:277
 #, c-format
 msgid "Failed to decode certificate."
-msgstr ""
+msgstr "ପ୍ରମାଣପତ୍ର ଅବସଂକେତକ କରିବାରେ ବିଫଳ."
 
 #: ../libnm-util/crypto.c:286
 #, c-format
 msgid "Not enough memory to store certificate data."
-msgstr ""
+msgstr "ପ୍ରମାଣପତ୍ର ତଥ୍ୟ ସଂରକ୍ଷଣ ପାଇଁ ଯଥେଷ୍ଟ ସ୍ଥାନ ନାହିଁ."
 
 #: ../libnm-util/crypto.c:294
 #, c-format
 msgid "Not enough memory to store file data."
-msgstr ""
+msgstr "ଫାଇଲ ତଥ୍ୟ ସଂରକ୍ଷଣ ପାଇଁ ଯଥେଷ୍ଟ ସ୍ଥାନ ନାହିଁ."
 
 #: ../libnm-util/crypto.c:324
 #, c-format
 msgid "IV must be an even number of bytes in length."
-msgstr ""
+msgstr "IV ଆକାରରେ ନିଶ୍ଚିତ ରୂପେ ଗୋଟିଏ ଯୁଗ୍ମ ସଂଖ୍ୟକ ବାଇଟ ହୋଇଥିବା ଉଚିତ."
 
 #: ../libnm-util/crypto.c:333
 #, c-format
 msgid "Not enough memory to store the IV."
-msgstr ""
+msgstr "IV କୁ ସଂରକ୍ଷଣ କରିବା ପାଇଁ ଯଥେଷ୍ଟ ସ୍ଥାନ ନାହିଁ."
 
 #: ../libnm-util/crypto.c:344
 #, c-format
 msgid "IV contains non-hexadecimal digits."
-msgstr ""
+msgstr "IV ଷୋହଳମିକ ସଂଖ୍ୟା ଧାରଣ କରିନଥାଏ."
 
 #: ../libnm-util/crypto.c:382 ../libnm-util/crypto_gnutls.c:143
 #: ../libnm-util/crypto_nss.c:169
 #, c-format
 msgid "Private key cipher '%s' was unknown."
-msgstr ""
+msgstr "ବ୍ୟକ୍ତିଗତ କି କୁଞ୍ଜି '%s' ଅଜଣା ଥିଲା."
 
 #: ../libnm-util/crypto.c:391
 #, c-format
 msgid "Not enough memory to decrypt private key."
-msgstr ""
+msgstr "ବ୍ୟକ୍ତିଗତ କି କୁ ବିକୋଡ଼ନ କରିବା ପାଇଁ ଯଥେଷ୍ଟ ସ୍ଥାନ ନାହିଁ."
 
 #: ../libnm-util/crypto.c:511
 #, c-format
 msgid "Unable to determine private key type."
-msgstr ""
+msgstr "ବ୍ୟକ୍ତିଗତ କି ପ୍ରକାର ନିର୍ଧାରଣ କରିବାରେ ଅସମର୍ଥ."
 
 #: ../libnm-util/crypto.c:530
 #, c-format
 msgid "Not enough memory to store decrypted private key."
-msgstr ""
+msgstr "ବିକୋଡ଼ନ ବ୍ୟକ୍ତିଗତ ତଥ୍ୟ ସଂରକ୍ଷଣ କରିବା ପାଇଁ ଯଥେଷ୍ଟ ସ୍ଥାନ ନାହିଁ."
 
 #: ../libnm-util/crypto_gnutls.c:46
 msgid "Failed to initialize the crypto engine."
-msgstr ""
+msgstr "କ୍ରିପ୍ଟ ଯନ୍ତ୍ରକୁ ଆରମ୍ଭ କରିବାରେ ବିଫଳ."
 
 #: ../libnm-util/crypto_gnutls.c:90
 #, c-format
 msgid "Failed to initialize the MD5 engine: %s / %s."
-msgstr ""
+msgstr "MD5 ଯନ୍ତ୍ରକୁ ଆରମ୍ଭ କରିବାରେ ବିଫଳ: %s / %s."
 
 #: ../libnm-util/crypto_gnutls.c:152 ../libnm-util/crypto_nss.c:178
 #, c-format
 msgid "Not enough memory for decrypted key buffer."
-msgstr ""
+msgstr "କି ବଫରକୁ ବିକୋଡ଼ନ କରିବା ପାଇଁ ଯଥେଷ୍ଟ ସ୍ଥାନ ନାହିଁ."
 
 #: ../libnm-util/crypto_gnutls.c:160
 #, c-format
 msgid "Failed to initialize the decryption cipher context: %s / %s."
-msgstr ""
+msgstr "ବିକୋଡ଼ନ କୁଞ୍ଜି ପ୍ରସଙ୍ଗକୁ ଆରମ୍ଭ କରିବାରେ ବିଫଳ: %s / %s."
 
 #: ../libnm-util/crypto_gnutls.c:169
 #, c-format
 msgid "Failed to set symmetric key for decryption: %s / %s."
-msgstr ""
+msgstr "ବିକୋଡ଼ନ ପାଇଁ ସମମିତ କି ବିନ୍ୟାସ କରିବାରେ ବିଫଳ: %s / %s."
 
 #: ../libnm-util/crypto_gnutls.c:178
 #, c-format
 msgid "Failed to set IV for decryption: %s / %s."
-msgstr ""
+msgstr "ବିକୋଡ଼ନ ପାଇଁ IV ବିନ୍ୟାସ କରିବାରେ ବିଫଳ: %s / %s."
 
 #: ../libnm-util/crypto_gnutls.c:187
 #, c-format
 msgid "Failed to decrypt the private key: %s / %s."
-msgstr ""
+msgstr "ବ୍ୟକ୍ତିଗତ କି କୁ ବିକୋଡ଼ନ କରିବାରେ ବିଫଳ: %s / %s."
 
 #: ../libnm-util/crypto_gnutls.c:200
 #, c-format
 msgid "Failed to decrypt the private key."
-msgstr ""
+msgstr "ବ୍ୟକ୍ତିଗତ କି କୁ ବିକୋଡ଼ନ କରିବାରେ ବିଫଳ."
 
 #: ../libnm-util/crypto_gnutls.c:235
 #, c-format
 msgid "Error initializing certificate data: %s"
-msgstr ""
+msgstr "ପ୍ରମାଣପତ୍ର ତଥ୍ୟକୁ ଆରମ୍ଭ କରିବାରେ ତ୍ରୁଟି: %s"
 
 #: ../libnm-util/crypto_gnutls.c:257
 #, c-format
 msgid "Couldn't decode certificate: %s"
-msgstr ""
+msgstr "ପ୍ରମାଣପତ୍ରକୁ ଅବସଂକେତ କରିପାରିଲେ ନାହିଁ: %s"
 
 #: ../libnm-util/crypto_gnutls.c:281
 #, c-format
 msgid "Couldn't initialize PKCS#12 decoder: %s"
-msgstr ""
+msgstr "PKCS#12 ଅବସଂକେତକକୁ ଆରମ୍ଭ କରିପାରିଲେ ନାହିଁ: %s"
 
 #: ../libnm-util/crypto_gnutls.c:294
 #, c-format
 msgid "Couldn't decode PKCS#12 file: %s"
-msgstr ""
+msgstr "PKCS#12 ଫାଇଲକୁ ଅବସଂକେତ କରିହେବ ନାହିଁ: %s"
 
 #: ../libnm-util/crypto_gnutls.c:306
 #, c-format
 msgid "Couldn't verify PKCS#12 file: %s"
-msgstr ""
+msgstr "PKCS#12 ଫାଇଲକୁ ଯାଞ୍ଚ କରିହେଲା ନାହିଁ: %s"
 
 #: ../libnm-util/crypto_nss.c:57
 #, c-format
 msgid "Failed to initialize the crypto engine: %d."
-msgstr ""
+msgstr "କ୍ରିପ୍ଟ ଯନ୍ତ୍ରକୁ ଆରମ୍ଭ କରିବାରେ ବିଫଳ: %d."
 
 #: ../libnm-util/crypto_nss.c:111
 #, c-format
 msgid "Failed to initialize the MD5 context: %d."
-msgstr ""
+msgstr "MD5 ପ୍ରସଙ୍ଗକୁ ଆରମ୍ଭ କରିବାରେ ବିଫଳ: %d."
 
 #: ../libnm-util/crypto_nss.c:186
 #, c-format
 msgid "Failed to initialize the decryption cipher slot."
-msgstr ""
+msgstr "ଅବସଂକେତନ କୁଞ୍ଜି ସ୍ଥାନକୁ ଆରମ୍ଭ କରିବାରେ ବିଫଳ."
 
 #: ../libnm-util/crypto_nss.c:196
 #, c-format
 msgid "Failed to set symmetric key for decryption."
-msgstr ""
+msgstr "ଅବସଂକେତନ ପାଇଁ ସମମିତ କିକୁ ବିନ୍ୟାସ କରିବାରେ ବିଫଳ."
 
 #: ../libnm-util/crypto_nss.c:206
 #, c-format
 msgid "Failed to set IV for decryption."
-msgstr ""
+msgstr "ଅବସଂକେତନ ପାଇଁ IV ବିନ୍ୟାସ କରିବାରେ ବିଫଳ."
 
 #: ../libnm-util/crypto_nss.c:214
 #, c-format
 msgid "Failed to initialize the decryption context."
-msgstr ""
+msgstr "ଅବସଂକେତନ ପ୍ରସଙ୍ଗକୁ ଆରମ୍ଭ କରିବାରେ ବିଫଳ."
 
 #: ../libnm-util/crypto_nss.c:227
 #, c-format
 msgid "Failed to decrypt the private key: %d."
-msgstr ""
+msgstr "ବ୍ୟକ୍ତିଗତ କିକୁ ଅବସଂକେତ କରିବାରେ ବିଫଳ: %d."
 
 #: ../libnm-util/crypto_nss.c:239
 #, c-format
 msgid "Failed to finalize decryption of the private key: %d."
-msgstr ""
+msgstr "ବ୍ୟକ୍ତିଗତ କିର ଅବସଂକେତନକୁ ନିଶ୍ଚୟ କରିବାରେ ବିଫଳ: %d."
 
 #: ../libnm-util/crypto_nss.c:284
 #, c-format
 msgid "Couldn't decode certificate: %d"
-msgstr ""
+msgstr "ପ୍ରମାଣପତ୍ରକୁ ଅବସଂକେତନ କରିହେଲା ନାହିଁ: %d"
 
 #: ../libnm-util/crypto_nss.c:319
 #, c-format
 msgid "Couldn't convert password to UCS2: %d"
-msgstr ""
+msgstr "ପ୍ରବେଶସଙ୍କେତକୁ UCS2ରେ ପରିବର୍ତ୍ତନ କରିହେଲା ନାହିଁ: %d"
 
 #: ../libnm-util/crypto_nss.c:347
 #, c-format
 msgid "Couldn't initialize PKCS#12 decoder: %d"
-msgstr ""
+msgstr "PKCS#12 ଅବସଂକେତକକୁ ଆରମ୍ଭ କରିହେଲା ନାହିଁ: %d"
 
 #: ../libnm-util/crypto_nss.c:356
 #, c-format
 msgid "Couldn't decode PKCS#12 file: %d"
-msgstr ""
+msgstr "PKCS#12 ଫାଇଲକୁ ଅବସଂକେତନ କରିହେଲା ନାହିଁ: %d"
 
 #: ../libnm-util/crypto_nss.c:365
 #, c-format
 msgid "Couldn't verify PKCS#12 file: %d"
-msgstr ""
+msgstr "PKCS#12 ଫାଇଲକୁ ଯାଞ୍ଚ କରିହେଲାନାହିଁ: %d"
 
