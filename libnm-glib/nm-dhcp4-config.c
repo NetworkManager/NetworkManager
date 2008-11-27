@@ -199,7 +199,7 @@ nm_dhcp4_config_new (DBusGConnection *connection, const char *object_path)
 
 /**
  * nm_dhcp4_config_get_options:
- * @self: a #NMDHCP4Config
+ * @config: a #NMDHCP4Config
  *
  * Gets all the options contained in the configuration.
  *
@@ -207,21 +207,21 @@ nm_dhcp4_config_new (DBusGConnection *connection, const char *object_path)
  * This is the internal copy used by the configuration, and must not be modified.
  **/
 GHashTable *
-nm_dhcp4_config_get_options (NMDHCP4Config *self)
+nm_dhcp4_config_get_options (NMDHCP4Config *config)
 {
-	NMDHCP4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (self);
+	NMDHCP4ConfigPrivate *priv = NM_DHCP4_CONFIG_GET_PRIVATE (config);
 	GValue value = { 0, };
 
 	if (g_hash_table_size (priv->options))
 		return priv->options;
 
-	if (!_nm_object_get_property (NM_OBJECT (self),
+	if (!_nm_object_get_property (NM_OBJECT (config),
 	                             "org.freedesktop.DBus.Properties",
 	                             "Options",
 	                             &value))
 		goto out;
 
-	demarshal_dhcp4_options (NM_OBJECT (self), NULL, &value, &priv->options);	
+	demarshal_dhcp4_options (NM_OBJECT (config), NULL, &value, &priv->options);	
 	g_value_unset (&value);
 
 out:
@@ -230,7 +230,7 @@ out:
 
 /**
  * nm_dhcp4_config_get_one_option:
- * @self: a #NMDHCP4Config
+ * @config: a #NMDHCP4Config
  * @option: the option to retrieve
  *
  * Gets one option by option name.
@@ -239,10 +239,10 @@ out:
  * configuration, and must not be modified.
  **/
 const char *
-nm_dhcp4_config_get_one_option (NMDHCP4Config *self, const char *option)
+nm_dhcp4_config_get_one_option (NMDHCP4Config *config, const char *option)
 {
-	g_return_val_if_fail (NM_IS_DHCP4_CONFIG (self), NULL);
+	g_return_val_if_fail (NM_IS_DHCP4_CONFIG (config), NULL);
 
-	return g_hash_table_lookup (nm_dhcp4_config_get_options (self), option);
+	return g_hash_table_lookup (nm_dhcp4_config_get_options (config), option);
 }
 

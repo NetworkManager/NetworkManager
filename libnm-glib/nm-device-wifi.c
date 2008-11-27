@@ -219,23 +219,23 @@ nm_device_wifi_get_capabilities (NMDeviceWifi *device)
 
 /**
  * nm_device_wifi_get_active_access_point:
- * @self: a #NMDeviceWifi
+ * @device: a #NMDeviceWifi
  *
  * Gets the active #NMAccessPoint.
  *
  * Returns: the access point or %NULL if none is active
  **/
 NMAccessPoint *
-nm_device_wifi_get_active_access_point (NMDeviceWifi *self)
+nm_device_wifi_get_active_access_point (NMDeviceWifi *device)
 {
 	NMDeviceWifiPrivate *priv;
 	NMDeviceState state;
 	char *path;
 	GValue value = { 0, };
 
-	g_return_val_if_fail (NM_IS_DEVICE_WIFI (self), NULL);
+	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), NULL);
 
-	state = nm_device_get_state (NM_DEVICE (self));
+	state = nm_device_get_state (NM_DEVICE (device));
 	switch (state) {
 	case NM_DEVICE_STATE_PREPARE:
 	case NM_DEVICE_STATE_CONFIG:
@@ -248,19 +248,19 @@ nm_device_wifi_get_active_access_point (NMDeviceWifi *self)
 		break;
 	}
 
-	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 	if (priv->active_ap)
 		return priv->active_ap;
 	if (priv->null_active_ap)
 		return NULL;
 
-	path = _nm_object_get_object_path_property (NM_OBJECT (self),
+	path = _nm_object_get_object_path_property (NM_OBJECT (device),
 	                                           NM_DBUS_INTERFACE_DEVICE_WIRELESS,
 	                                           DBUS_PROP_ACTIVE_ACCESS_POINT);
 	if (path) {
 		g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
 		g_value_take_boxed (&value, path);
-		demarshal_active_ap (NM_OBJECT (self), NULL, &value, &priv->active_ap);
+		demarshal_active_ap (NM_OBJECT (device), NULL, &value, &priv->active_ap);
 		g_value_unset (&value);
 	}
 
@@ -269,7 +269,7 @@ nm_device_wifi_get_active_access_point (NMDeviceWifi *self)
 
 /**
  * nm_device_wifi_get_access_points:
- * @self: a #NMDeviceWifi
+ * @device: a #NMDeviceWifi
  *
  * Gets all the scanned access points of the #NMDeviceWifi.
  *
@@ -277,7 +277,7 @@ nm_device_wifi_get_active_access_point (NMDeviceWifi *self)
  * The returned array is owned by the client and should not be modified.
  **/
 const GPtrArray *
-nm_device_wifi_get_access_points (NMDeviceWifi *self)
+nm_device_wifi_get_access_points (NMDeviceWifi *device)
 {
 	NMDeviceWifiPrivate *priv;
 	DBusGConnection *connection;
@@ -285,9 +285,9 @@ nm_device_wifi_get_access_points (NMDeviceWifi *self)
 	GError *error = NULL;
 	GPtrArray *temp;
 
-	g_return_val_if_fail (NM_IS_DEVICE_WIFI (self), NULL);
+	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), NULL);
 
-	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	priv = NM_DEVICE_WIFI_GET_PRIVATE (device);
 	if (priv->aps)
 		return handle_ptr_array_return (priv->aps);
 
@@ -299,7 +299,7 @@ nm_device_wifi_get_access_points (NMDeviceWifi *self)
 
 	g_value_init (&value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH);
 	g_value_take_boxed (&value, temp);
-	connection = nm_object_get_connection (NM_OBJECT (self));
+	connection = nm_object_get_connection (NM_OBJECT (device));
 	_nm_object_array_demarshal (&value, &priv->aps, connection, nm_access_point_new);
 	g_value_unset (&value);
 
@@ -308,7 +308,7 @@ nm_device_wifi_get_access_points (NMDeviceWifi *self)
 
 /**
  * nm_device_wifi_get_access_point_by_path:
- * @self: a #NMDeviceWifi
+ * @device: a #NMDeviceWifi
  * @path: the object path of the access point
  *
  * Gets a #NMAccessPoint by path.
@@ -316,17 +316,17 @@ nm_device_wifi_get_access_points (NMDeviceWifi *self)
  * Returns: the access point or %NULL if none is found.
  **/
 NMAccessPoint *
-nm_device_wifi_get_access_point_by_path (NMDeviceWifi *self,
-											        const char *path)
+nm_device_wifi_get_access_point_by_path (NMDeviceWifi *device,
+                                         const char *path)
 {
 	const GPtrArray *aps;
 	int i;
 	NMAccessPoint *ap = NULL;
 
-	g_return_val_if_fail (NM_IS_DEVICE_WIFI (self), NULL);
+	g_return_val_if_fail (NM_IS_DEVICE_WIFI (device), NULL);
 	g_return_val_if_fail (path != NULL, NULL);
 
-	aps = nm_device_wifi_get_access_points (self);
+	aps = nm_device_wifi_get_access_points (device);
 	if (!aps)
 		return NULL;
 
