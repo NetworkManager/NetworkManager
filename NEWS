@@ -1,4 +1,20 @@
 ==============================================
+NetworkManager-0.7.0
+Overview of changes since NetworkManager-0.6.6
+==============================================
+
+This is a new major stable release of NetworkManager.  Notable changes include:
+
+* Multiple active devices
+* Internet connection sharing
+* Support for many mobile broadband devices
+* Full static IP support
+* More reliable connections
+* Rich, flexible D-Bus API
+* Boot-time connections (no logins required)
+
+
+==============================================
 NetworkManager-0.6.2
 Overview of changes since NetworkManager-0.6.2
 ==============================================
