@@ -1,5 +1,9 @@
 2008-11-26  Dan Williams  <dcbw@redhat.com>
 
+	* Release NetworkManager 0.7
+
+2008-11-26  Dan Williams  <dcbw@redhat.com>
+
 	* libnm-glib/nm-settings.c
 	  libnm-glib/nm-settings.h
 		- (nm_exported_connection_delete): rename 'delete' to 'do_delete' to
