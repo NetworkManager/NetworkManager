@@ -124,7 +124,7 @@ update (NMExportedConnection *exported,
 }
 
 static gboolean
-delete (NMExportedConnection *exported, GError **err)
+do_delete (NMExportedConnection *exported, GError **err)
 {
 	g_set_error (err, NM_SYSCONFIG_SETTINGS_ERROR,
 			   NM_SYSCONFIG_SETTINGS_ERROR_DELETE_NOT_SUPPORTED,
@@ -171,5 +171,5 @@ nm_suse_connection_class_init (NMSuseConnectionClass *suse_connection_class)
 
 	connection_class->get_settings = get_settings;
 	connection_class->update       = update;
-	connection_class->delete       = delete;
+	connection_class->do_delete    = do_delete;
 }

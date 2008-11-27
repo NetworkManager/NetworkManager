@@ -78,7 +78,7 @@ typedef struct {
 	                    GHashTable *new_settings,
 	                    GError **err);
 
-	gboolean (*delete) (NMExportedConnection *connection,
+	gboolean (*do_delete) (NMExportedConnection *connection,
 	                    GError **err);
 
 	/* signals */

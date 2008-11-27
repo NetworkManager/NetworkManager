@@ -1,3 +1,18 @@
+2008-11-26  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-glib/nm-settings.c
+	  libnm-glib/nm-settings.h
+		- (nm_exported_connection_delete): rename 'delete' to 'do_delete' to
+			avoid using C++ reserved keywords in headers
+
+	* libnm-glib/nm-dbus-connection.c
+	  system-settings/plugins/ifcfg-rh/nm-ifcfg-connection.c
+	  system-settings/plugins/ifcfg-suse/nm-suse-connection.c
+	  system-settings/plugins/ifupdown/nm-ifupdown-connection.c
+	  system-settings/plugins/keyfile/nm-keyfile-connection.c
+	  system-settings/src/nm-sysconfig-connection.c
+		- Change 'delete' to 'do_delete'
+
 2008-11-25  Dan Williams  <dcbw@redhat.com>
 
 	* system-settings/plugins/ifcfg-rh

@@ -46,7 +46,7 @@ update (NMExportedConnection *exported,
 }
 
 static gboolean
-delete (NMExportedConnection *exported, GError **err)
+do_delete (NMExportedConnection *exported, GError **err)
 {
 	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (exported);
 	DBusGMethodInvocation *context;
@@ -100,5 +100,5 @@ nm_sysconfig_connection_class_init (NMSysconfigConnectionClass *sysconfig_connec
 	object_class->finalize = finalize;
 
 	connection_class->update = update;
-	connection_class->delete = delete;
+	connection_class->do_delete = do_delete;
 }

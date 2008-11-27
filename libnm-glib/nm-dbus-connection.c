@@ -82,7 +82,7 @@ update (NMExportedConnection *exported, GHashTable *new_settings, GError **err)
 }
 
 static gboolean
-delete (NMExportedConnection *exported, GError **err)
+do_delete (NMExportedConnection *exported, GError **err)
 {
 	NMDBusConnectionPrivate *priv = NM_DBUS_CONNECTION_GET_PRIVATE (exported);
 
@@ -292,7 +292,7 @@ nm_dbus_connection_class_init (NMDBusConnectionClass *dbus_connection_class)
 
 	connection_class->get_settings = get_settings;
 	connection_class->update       = update;
-	connection_class->delete       = delete;
+	connection_class->do_delete       = do_delete;
 
 	/* Properties */
 	g_object_class_install_property

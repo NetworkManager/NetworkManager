@@ -329,7 +329,7 @@ update (NMExportedConnection *exported, GHashTable *new_settings, GError **error
 }
 
 static gboolean
-delete (NMExportedConnection *exported, GError **error)
+do_delete (NMExportedConnection *exported, GError **error)
 {
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (exported);
 
@@ -446,7 +446,7 @@ nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 
 	connection_class->get_settings = get_settings;
 	connection_class->update       = update;
-	connection_class->delete       = delete;
+	connection_class->do_delete    = do_delete;
 
 	/* Properties */
 	g_object_class_install_property

@@ -238,12 +238,12 @@ update (NMExportedConnection *exported,
 }
 
 static gboolean
-delete (NMExportedConnection *exported, GError **err)
+do_delete (NMExportedConnection *exported, GError **err)
 {
 	NMKeyfileConnectionPrivate *priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (exported);
 	gboolean success;
 
-	success = NM_EXPORTED_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->delete (exported, err);
+	success = NM_EXPORTED_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->do_delete (exported, err);
 
 	if (success)
 		g_unlink (priv->filename);
@@ -373,7 +373,7 @@ nm_keyfile_connection_class_init (NMKeyfileConnectionClass *keyfile_connection_c
 	connection_class->get_settings = get_settings;
 	connection_class->service_get_secrets  = service_get_secrets;
 	connection_class->update       = update;
-	connection_class->delete       = delete;
+	connection_class->do_delete    = do_delete;
 
 	/* Properties */
 	g_object_class_install_property

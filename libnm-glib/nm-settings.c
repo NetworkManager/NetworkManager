@@ -555,8 +555,8 @@ nm_exported_connection_delete (NMExportedConnection *connection, GError **err)
 
 	g_return_val_if_fail (NM_IS_EXPORTED_CONNECTION (connection), FALSE);
 
-	if (EXPORTED_CONNECTION_CLASS (connection)->delete)
-		success = EXPORTED_CONNECTION_CLASS (connection)->delete (connection, err);
+	if (EXPORTED_CONNECTION_CLASS (connection)->do_delete)
+		success = EXPORTED_CONNECTION_CLASS (connection)->do_delete (connection, err);
 
 	if (success)
 		nm_exported_connection_signal_removed (connection);
