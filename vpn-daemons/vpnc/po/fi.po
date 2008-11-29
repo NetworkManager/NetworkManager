@@ -1,4 +1,4 @@
-# Finnish messages for NetworkManager-openvpn.
+# Finnish messages for network-manager-vpnc.
 # Copyright (C) 2006-2008 Free Software Foundation, Inc.
 # Ilkka Tuohela <hile@iki.fi>, 2006-2008.
 #
@@ -6,10 +6,10 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: NetworkManager-openvpn\n"
+"Project-Id-Version: network-manager-vpnc\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-09-18 14:16+0300\n"
-"PO-Revision-Date: 2008-09-18 14:00+0300\n"
+"POT-Creation-Date: 2008-11-29 20:22+0300\n"
+"PO-Revision-Date: 2008-11-29 20:25+0300\n"
 "Last-Translator: Ilkka Tuohela <hile@iki.fi>\n"
 "Language-Team: Finnish <gnome-fi-laatu@lists.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
@@ -49,16 +49,16 @@ msgstr "_Muista salasana istunnon ajan"
 msgid "_Save passwords in keyring"
 msgstr "_Tallenna salasana avainrenkaaseen"
 
-#: ../auth-dialog/main.c:66
+#: ../auth-dialog/main.c:105
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Yhteydenotto VPN-verkkoon \"%s\" vaatii kirjautumista."
 
-#: ../auth-dialog/main.c:67
+#: ../auth-dialog/main.c:106
 msgid "Authenticate VPN"
 msgstr "Todenna VPN-yhteyden avaus"
 
-#: ../auth-dialog/main.c:74
+#: ../auth-dialog/main.c:113
 msgid "_Group Password:"
 msgstr "_Ryhmän salasana:"
 
@@ -82,35 +82,47 @@ msgstr ""
 "Yhteensopiva useiden esimerkiksi Ciscon, Juniperin, Netscreenin ja "
 "Sonicwallin valmistamien IPSec-pohjaisten VPN-yhdyskäytävien kanssa."
 
-#: ../properties/nm-vpnc.c:282
+#: ../properties/nm-vpnc.c:325
+msgid "Saved"
+msgstr "Tallennettu"
+
+#: ../properties/nm-vpnc.c:332
+msgid "Always Ask"
+msgstr "Kysy aina"
+
+#: ../properties/nm-vpnc.c:339
+msgid "Not Required"
+msgstr "Ei vaadittu"
+
+#: ../properties/nm-vpnc.c:398
 msgid "Secure (default)"
 msgstr "Turvallinen (oletus)"
 
-#: ../properties/nm-vpnc.c:285
+#: ../properties/nm-vpnc.c:401
 msgid "Weak (use with caution)"
 msgstr "Heikko (käytä varoen)"
 
-#: ../properties/nm-vpnc.c:293
+#: ../properties/nm-vpnc.c:409
 msgid "None (completely insecure)"
 msgstr "Ei salausta (täysin turvaton)"
 
-#: ../properties/nm-vpnc.c:331
-msgid "NAT-T (default)"
-msgstr "NAT-T (oletus)"
+#: ../properties/nm-vpnc.c:450
+msgid "Cisco UDP (default)"
+msgstr "Cisco UDP (oletus)"
 
-#: ../properties/nm-vpnc.c:338
-msgid "Cisco UDP"
-msgstr "Cisco UDP"
+#: ../properties/nm-vpnc.c:457
+msgid "NAT-T"
+msgstr "NAT-T"
 
-#: ../properties/nm-vpnc.c:345
+#: ../properties/nm-vpnc.c:464
 msgid "Disabled"
 msgstr "Ei käytössä"
 
-#: ../properties/nm-vpnc.c:809
+#: ../properties/nm-vpnc.c:1085
 msgid "TCP tunneling not supported"
 msgstr "TCP-tunnelointi ei ole tuettu"
 
-#: ../properties/nm-vpnc.c:811
+#: ../properties/nm-vpnc.c:1087
 #, c-format
 msgid ""
 "The VPN settings file '%s' specifies that VPN traffic should be tunneled "
@@ -177,3 +189,5 @@ msgstr "_Yhdyskäytävä:"
 msgid "_User password:"
 msgstr "_Käyttäjän salasana:"
 
+#~ msgid "NAT-T (default)"
+#~ msgstr "NAT-T (oletus)"

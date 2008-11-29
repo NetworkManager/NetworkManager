@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-openvpn\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-10-04 21:33+0300\n"
-"PO-Revision-Date: 2008-09-25 06:00+0300\n"
+"POT-Creation-Date: 2008-11-29 20:22+0300\n"
+"PO-Revision-Date: 2008-11-29 20:00+0300\n"
 "Last-Translator: Ilkka Tuohela <hile@iki.fi>\n"
 "Language-Team: Finnish <gnome-fi-laatu@lists.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
@@ -66,35 +66,35 @@ msgstr "Varmenteen _salasana:"
 msgid "Certificate password:"
 msgstr "Varmennettu salasana:"
 
-#: ../properties/auth-helpers.c:161
+#: ../properties/auth-helpers.c:160
 msgid "Choose a Certificate Authority certificate..."
 msgstr "Valitse CA-varmenne..."
 
-#: ../properties/auth-helpers.c:180
+#: ../properties/auth-helpers.c:179
 msgid "Choose your personal certificate..."
 msgstr "Valitse oma varmenteesi..."
 
-#: ../properties/auth-helpers.c:198
+#: ../properties/auth-helpers.c:197
 msgid "Choose your private key..."
 msgstr "Valitse salainen avaimesi..."
 
-#: ../properties/auth-helpers.c:251
+#: ../properties/auth-helpers.c:250
 msgid "Choose an OpenVPN static key..."
 msgstr "Valitse OpenPVN:n staattinen avain..."
 
-#: ../properties/auth-helpers.c:275 ../properties/auth-helpers.c:1002
+#: ../properties/auth-helpers.c:274 ../properties/auth-helpers.c:992
 msgid "None"
 msgstr "Ei mitään"
 
-#: ../properties/auth-helpers.c:660
-msgid "PEM certificates (*.pem, *.crt, *.key)"
-msgstr "PEM-varmenteet (*.pem, *.crt, *.key)"
+#: ../properties/auth-helpers.c:654
+msgid "PEM certificates (*.pem, *.crt, *.key, *.cer)"
+msgstr "PEM-varmenteet (*.pem, *.crt, *.key tai *.cer)"
 
-#: ../properties/auth-helpers.c:720
+#: ../properties/auth-helpers.c:714
 msgid "OpenVPN Static Keys (*.key)"
 msgstr "Pysyvät OpenVPN-avaimet (*.key)"
 
-#: ../properties/auth-helpers.c:831
+#: ../properties/auth-helpers.c:822
 msgid "Default"
 msgstr "Oletus"
 

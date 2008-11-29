@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-10-06 08:59+0200\n"
-"PO-Revision-Date: 2008-10-06 08:59+0100\n"
+"POT-Creation-Date: 2008-11-27 20:53+0100\n"
+"PO-Revision-Date: 2008-11-27 20:55+0100\n"
 "Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "MIME-Version: 1.0\n"
@@ -18,182 +18,124 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../src/nm-netlink-monitor.c:193
-#: ../src/nm-netlink-monitor.c:474
-#, c-format
-msgid "error processing netlink message: %s"
-msgstr "fel vid behandling av netlink-meddelande: %s"
-
-#: ../src/nm-netlink-monitor.c:250
-#, c-format
-msgid "unable to allocate netlink handle for monitoring link status: %s"
-msgstr "kan inte allokera netlink-handtag för övervakning av länkstatus: %s"
-
-#: ../src/nm-netlink-monitor.c:260
-#, c-format
-msgid "unable to connect to netlink for monitoring link status: %s"
-msgstr "kan inte ansluta till netlink för övervakning av länkstatus: %s"
-
-#: ../src/nm-netlink-monitor.c:268
-#, c-format
-msgid "unable to join netlink group for monitoring link status: %s"
-msgstr "kan inte gå med i netlink-grupp för övervakning av länkstatus: %s"
-
-#: ../src/nm-netlink-monitor.c:276
-#, c-format
-msgid "unable to allocate netlink link cache for monitoring link status: %s"
-msgstr "kan inte allokera netlink-länkcache för övervakning av länkstatus: %s"
-
-#: ../src/nm-netlink-monitor.c:439
-#, c-format
-msgid "error updating link cache: %s"
-msgstr "fel vid uppdatering av länkcache: %s"
-
-#: ../src/nm-netlink-monitor.c:497
-#, c-format
-msgid "error occurred while waiting for data on socket"
-msgstr "fel inträffade vid väntan på data i uttaget"
-
-#: ../src/NetworkManager.c:250
-#, c-format
-msgid "Invalid option.  Please use --help to see a list of valid options.\n"
-msgstr "Ogiltig flagga.  Använd --help för att se en lista över giltiga flaggor.\n"
-
-#: ../src/dhcp-manager/nm-dhcp-dhclient.c:89
-msgid "# Created by NetworkManager\n"
-msgstr "# Skapad av Nätverkshanterare\n"
-
-#: ../src/dhcp-manager/nm-dhcp-dhclient.c:95
-#, c-format
-msgid ""
-"# Merged from %s\n"
-"\n"
-msgstr ""
-"# Sammanfogad från %s\n"
-"\n"
-
-#: ../src/named-manager/nm-named-manager.c:256
-msgid "NOTE: the libc resolver may not support more than 3 nameservers."
-msgstr "OBSERVERA: uppslag via glibc kanske inte har stöd för fler än 3 namnservrar."
-
-#: ../src/named-manager/nm-named-manager.c:258
-msgid "The nameservers listed below may not be recognized."
-msgstr "Namnservrarna listade nedan kanske inte kommer att kännas igen."
-
-#: ../system-settings/src/main.c:366
-#, c-format
-msgid "Auto %s"
-msgstr "Automatisk %s"
-
-#: ../libnm-util/crypto.c:125
+#: ../libnm-util/crypto.c:120
 #, c-format
 msgid "PEM key file had no end tag '%s'."
 msgstr "PEM-nyckelfilen hade ingen sluttagg \"%s\"."
 
-#: ../libnm-util/crypto.c:135
+#: ../libnm-util/crypto.c:130
 #, c-format
 msgid "Doesn't look like a PEM private key file."
 msgstr "Ser inte ut som en privat PEM-nyckelfil."
 
-#: ../libnm-util/crypto.c:143
+#: ../libnm-util/crypto.c:138
 #, c-format
 msgid "Not enough memory to store PEM file data."
 msgstr "Inte tillräckligt mycket minne för att lagra PEM-fildata."
 
-#: ../libnm-util/crypto.c:159
+#: ../libnm-util/crypto.c:154
 #, c-format
 msgid "Malformed PEM file: Proc-Type was not first tag."
 msgstr "Felformulerad PEM-fil: Proc-Type var inte första taggen."
 
-#: ../libnm-util/crypto.c:167
+#: ../libnm-util/crypto.c:162
 #, c-format
 msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
 msgstr "Felformulerad PEM-fil: okänd Proc-Type-tagg \"%s\"."
 
-#: ../libnm-util/crypto.c:177
+#: ../libnm-util/crypto.c:172
 #, c-format
 msgid "Malformed PEM file: DEK-Info was not the second tag."
 msgstr "Felformulerad PEM-fil: DEK-Info var inte andra taggen."
 
-#: ../libnm-util/crypto.c:188
+#: ../libnm-util/crypto.c:183
 #, c-format
 msgid "Malformed PEM file: no IV found in DEK-Info tag."
 msgstr "Felformulerad PEM-fil: ingen IV hittades i DEK-Info-taggen."
 
-#: ../libnm-util/crypto.c:195
+#: ../libnm-util/crypto.c:190
 #, c-format
 msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
 msgstr "Felformulerad PEM-fil: ogiltigt format för IV i DEK-Info-taggen."
 
-#: ../libnm-util/crypto.c:208
+#: ../libnm-util/crypto.c:203
 #, c-format
 msgid "Malformed PEM file: unknown private key cipher '%s'."
 msgstr "Felformulerad PEM-fil: okänt chiffer för privat nyckel \"%s\"."
 
-#: ../libnm-util/crypto.c:227
+#: ../libnm-util/crypto.c:222
 #, c-format
 msgid "Could not decode private key."
 msgstr "Kunde inte avkoda privat nyckel."
 
-#: ../libnm-util/crypto.c:271
+#: ../libnm-util/crypto.c:267
 #, c-format
 msgid "PEM certificate '%s' had no end tag '%s'."
 msgstr "PEM-certifikatet \"%s\" hade ingen sluttagg \"%s\"."
 
-#: ../libnm-util/crypto.c:281
+#: ../libnm-util/crypto.c:277
 #, c-format
 msgid "Failed to decode certificate."
 msgstr "Misslyckades med att avkoda certifikat."
 
-#: ../libnm-util/crypto.c:290
-#: ../libnm-util/crypto.c:298
+#: ../libnm-util/crypto.c:286
 #, c-format
 msgid "Not enough memory to store certificate data."
 msgstr "Inte tillräckligt mycket minne för att lagra certifikatdata."
 
-#: ../libnm-util/crypto.c:328
+#: ../libnm-util/crypto.c:294
+#, c-format
+msgid "Not enough memory to store file data."
+msgstr "Inte tillräckligt mycket minne för att lagra fildata."
+
+#: ../libnm-util/crypto.c:324
 #, c-format
 msgid "IV must be an even number of bytes in length."
 msgstr "IV måste vara ett jämnt antal byte i längd."
 
-#: ../libnm-util/crypto.c:337
+#: ../libnm-util/crypto.c:333
 #, c-format
 msgid "Not enough memory to store the IV."
 msgstr "Inte tillräckligt mycket minne för att lagra IV."
 
-#: ../libnm-util/crypto.c:348
+#: ../libnm-util/crypto.c:344
 #, c-format
 msgid "IV contains non-hexadecimal digits."
 msgstr "IV innehåller icke-hexadecimala siffror."
 
-#: ../libnm-util/crypto.c:386
+#: ../libnm-util/crypto.c:382
 #: ../libnm-util/crypto_gnutls.c:143
-#: ../libnm-util/crypto_nss.c:157
+#: ../libnm-util/crypto_nss.c:169
 #, c-format
 msgid "Private key cipher '%s' was unknown."
 msgstr "Privata nyckelchiffret \"%s\" var okänt."
 
-#: ../libnm-util/crypto.c:395
+#: ../libnm-util/crypto.c:391
 #, c-format
 msgid "Not enough memory to decrypt private key."
 msgstr "Inte tillräckligt mycket minne för att dekryptera privat nyckel."
 
-#: ../libnm-util/crypto.c:513
+#: ../libnm-util/crypto.c:511
+#, c-format
+msgid "Unable to determine private key type."
+msgstr "Kunde inte bestämma typ av privat nyckel."
+
+#: ../libnm-util/crypto.c:530
 #, c-format
 msgid "Not enough memory to store decrypted private key."
 msgstr "Inte tillräckligt mycket minne för att lagra dekrypterad privat nyckel."
 
-#: ../libnm-util/crypto_gnutls.c:45
+#: ../libnm-util/crypto_gnutls.c:46
 msgid "Failed to initialize the crypto engine."
 msgstr "Misslyckades med att initiera krypteringsmotorn."
 
-#: ../libnm-util/crypto_gnutls.c:89
+#: ../libnm-util/crypto_gnutls.c:90
 #, c-format
 msgid "Failed to initialize the MD5 engine: %s / %s."
 msgstr "Misslyckades med att initiera MD5-motorn: %s / %s."
 
 #: ../libnm-util/crypto_gnutls.c:152
-#: ../libnm-util/crypto_nss.c:166
+#: ../libnm-util/crypto_nss.c:178
 #, c-format
 msgid "Not enough memory for decrypted key buffer."
 msgstr "Inte tillräckligt mycket minne för buffert för dekrypterade nycklar."
@@ -218,60 +160,166 @@ msgstr "Misslyckades med att ställa in IV för dekryptering: %s / %s."
 msgid "Failed to decrypt the private key: %s / %s."
 msgstr "Misslyckades med att dekryptera den privata nyckeln: %s / %s."
 
-#: ../libnm-util/crypto_gnutls.c:225
+#: ../libnm-util/crypto_gnutls.c:200
+#, c-format
+msgid "Failed to decrypt the private key."
+msgstr "Misslyckades med att dekryptera privata nyckeln."
+
+#: ../libnm-util/crypto_gnutls.c:235
 #, c-format
 msgid "Error initializing certificate data: %s"
 msgstr "Fel vid initiering av certifikatdata: %s"
 
-#: ../libnm-util/crypto_gnutls.c:237
+#: ../libnm-util/crypto_gnutls.c:257
 #, c-format
 msgid "Couldn't decode certificate: %s"
 msgstr "Kunde inte avkoda certifikat: %s"
 
-#: ../libnm-util/crypto_nss.c:52
+#: ../libnm-util/crypto_gnutls.c:281
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %s"
+msgstr "Kunde inte initiera PKCS#12-avkodare: %s"
+
+#: ../libnm-util/crypto_gnutls.c:294
+#, c-format
+msgid "Couldn't decode PKCS#12 file: %s"
+msgstr "Kunde inte avkoda PKCS#12-fil: %s"
+
+#: ../libnm-util/crypto_gnutls.c:306
+#, c-format
+msgid "Couldn't verify PKCS#12 file: %s"
+msgstr "Kunde inte verifiera PKCS#12-fil: %s"
+
+#: ../libnm-util/crypto_nss.c:57
 #, c-format
 msgid "Failed to initialize the crypto engine: %d."
 msgstr "Misslyckades med att initiera krypteringsmotorn: %d."
 
-#: ../libnm-util/crypto_nss.c:98
+#: ../libnm-util/crypto_nss.c:111
 #, c-format
 msgid "Failed to initialize the MD5 context: %d."
 msgstr "Misslyckades med att initiera MD5-kontexten: %d."
 
-#: ../libnm-util/crypto_nss.c:174
+#: ../libnm-util/crypto_nss.c:186
 #, c-format
 msgid "Failed to initialize the decryption cipher slot."
 msgstr "Misslyckades med att initiera dekrypteringschifferplatsen."
 
-#: ../libnm-util/crypto_nss.c:184
+#: ../libnm-util/crypto_nss.c:196
 #, c-format
 msgid "Failed to set symmetric key for decryption."
 msgstr "Misslyckades med att ställa in symmetrisk nyckel för dekryptering."
 
-#: ../libnm-util/crypto_nss.c:194
+#: ../libnm-util/crypto_nss.c:206
 #, c-format
 msgid "Failed to set IV for decryption."
 msgstr "Misslyckades med att ställa in IV för dekryptering."
 
-#: ../libnm-util/crypto_nss.c:202
+#: ../libnm-util/crypto_nss.c:214
 #, c-format
 msgid "Failed to initialize the decryption context."
 msgstr "Misslyckades med att initiera dekrypteringskontexten."
 
-#: ../libnm-util/crypto_nss.c:215
+#: ../libnm-util/crypto_nss.c:227
 #, c-format
 msgid "Failed to decrypt the private key: %d."
 msgstr "Misslyckades med att dekryptera privata nyckeln: %d."
 
-#: ../libnm-util/crypto_nss.c:227
+#: ../libnm-util/crypto_nss.c:239
 #, c-format
 msgid "Failed to finalize decryption of the private key: %d."
 msgstr "Misslyckades med att färdigställa dekryptering av den privata nyckeln: %d."
 
-#: ../libnm-util/crypto_nss.c:271
+#: ../libnm-util/crypto_nss.c:284
 #, c-format
 msgid "Couldn't decode certificate: %d"
 msgstr "Kunde inte avkoda certifikat: %d"
+
+#: ../libnm-util/crypto_nss.c:319
+#, c-format
+msgid "Couldn't convert password to UCS2: %d"
+msgstr "Kunde inte konvertera lösenord till UCS2: %d"
+
+#: ../libnm-util/crypto_nss.c:347
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %d"
+msgstr "Kunde inte initiera PKCS#12-avkodare: %d"
+
+#: ../libnm-util/crypto_nss.c:356
+#, c-format
+msgid "Couldn't decode PKCS#12 file: %d"
+msgstr "Kunde inte avkoda PKCS#12-fil: %d"
+
+#: ../libnm-util/crypto_nss.c:365
+#, c-format
+msgid "Couldn't verify PKCS#12 file: %d"
+msgstr "Kunde inte verifiera PKCS#12-fil: %d"
+
+#: ../src/nm-netlink-monitor.c:194
+#: ../src/nm-netlink-monitor.c:454
+#, c-format
+msgid "error processing netlink message: %s"
+msgstr "fel vid behandling av netlink-meddelande: %s"
+
+#: ../src/nm-netlink-monitor.c:251
+#, c-format
+msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgstr "kan inte allokera netlink-handtag för övervakning av länkstatus: %s"
+
+#: ../src/nm-netlink-monitor.c:261
+#, c-format
+msgid "unable to connect to netlink for monitoring link status: %s"
+msgstr "kan inte ansluta till netlink för övervakning av länkstatus: %s"
+
+#: ../src/nm-netlink-monitor.c:269
+#, c-format
+msgid "unable to join netlink group for monitoring link status: %s"
+msgstr "kan inte gå med i netlink-grupp för övervakning av länkstatus: %s"
+
+#: ../src/nm-netlink-monitor.c:277
+#, c-format
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
+msgstr "kan inte allokera netlink-länkcache för övervakning av länkstatus: %s"
+
+#: ../src/nm-netlink-monitor.c:418
+#, c-format
+msgid "error updating link cache: %s"
+msgstr "fel vid uppdatering av länkcache: %s"
+
+#: ../src/nm-netlink-monitor.c:484
+msgid "error occurred while waiting for data on socket"
+msgstr "fel inträffade vid väntan på data i uttaget"
+
+#: ../src/NetworkManager.c:293
+#, c-format
+msgid "Invalid option.  Please use --help to see a list of valid options.\n"
+msgstr "Ogiltig flagga.  Använd --help för att se en lista över giltiga flaggor.\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:88
+msgid "# Created by NetworkManager\n"
+msgstr "# Skapad av Nätverkshanterare\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:94
+#, c-format
+msgid ""
+"# Merged from %s\n"
+"\n"
+msgstr ""
+"# Sammanfogad från %s\n"
+"\n"
+
+#: ../src/named-manager/nm-named-manager.c:256
+msgid "NOTE: the libc resolver may not support more than 3 nameservers."
+msgstr "OBSERVERA: uppslag via glibc kanske inte har stöd för fler än 3 namnservrar."
+
+#: ../src/named-manager/nm-named-manager.c:258
+msgid "The nameservers listed below may not be recognized."
+msgstr "Namnservrarna listade nedan kanske inte kommer att kännas igen."
+
+#: ../system-settings/src/main.c:380
+#, c-format
+msgid "Auto %s"
+msgstr "Automatisk %s"
 
 #~ msgid "Not enough memory to create private key decryption key."
 #~ msgstr ""
