@@ -46,10 +46,11 @@
 #define COL_VALUE 1
 #define COL_TAG 2
 
-#define TAG_PAP 0
-#define TAG_CHAP 1
-#define TAG_MSCHAP 2
+#define TAG_PAP      0
+#define TAG_CHAP     1
+#define TAG_MSCHAP   2
 #define TAG_MSCHAPV2 3
+#define TAG_EAP      4
 
 static const char *advanced_keys[] = {
 	NM_PPTP_KEY_REFUSE_EAP,
@@ -239,11 +240,17 @@ auth_methods_setup (GladeXML *xml, GHashTable *hash)
 	gtk_list_store_append (store, &iter);
 	gtk_list_store_set (store, &iter, COL_NAME, _("MSCHAP"), COL_VALUE, allowed, COL_TAG, TAG_MSCHAP, -1);
 
-	/* PAP */
+	/* MSCHAPv2 */
 	value = g_hash_table_lookup (hash, NM_PPTP_KEY_REFUSE_MSCHAPV2);
 	allowed = (value && !strcmp (value, "yes")) ? FALSE : TRUE;
 	gtk_list_store_append (store, &iter);
 	gtk_list_store_set (store, &iter, COL_NAME, _("MSCHAPv2"), COL_VALUE, allowed, COL_TAG, TAG_MSCHAPV2, -1);
+
+	/* EAP */
+	value = g_hash_table_lookup (hash, NM_PPTP_KEY_REFUSE_EAP);
+	allowed = (value && !strcmp (value, "yes")) ? FALSE : TRUE;
+	gtk_list_store_append (store, &iter);
+	gtk_list_store_set (store, &iter, COL_NAME, _("EAP"), COL_VALUE, allowed, COL_TAG, TAG_EAP, -1);
 
 	/* Set up the tree view */
 	widget = glade_xml_get_widget (xml, "ppp_auth_methods");
@@ -295,7 +302,6 @@ advanced_dialog_new (GHashTable *hash)
 
 	g_object_set_data_full (G_OBJECT (dialog), "glade-xml",
 	                        xml, (GDestroyNotify) g_object_unref);
-
 
 	setup_security_combo (xml, hash);
 
@@ -430,6 +436,10 @@ advanced_dialog_new_hash_from_dialog (GtkWidget *dialog, GError **error)
 		case TAG_MSCHAPV2:
 			if (!allowed)
 				g_hash_table_insert (hash, g_strdup (NM_PPTP_KEY_REFUSE_MSCHAPV2), g_strdup ("yes"));
+			break;
+		case TAG_EAP:
+			if (!allowed)
+				g_hash_table_insert (hash, g_strdup (NM_PPTP_KEY_REFUSE_EAP), g_strdup ("yes"));
 			break;
 		default:
 			break;

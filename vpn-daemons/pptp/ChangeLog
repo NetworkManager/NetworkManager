@@ -1,3 +1,9 @@
+2008-11-29  Dan Williams  <dcbw@redhat.com>
+
+	* properties/nm-pptp.c
+		- (auth_methods_setup, advanced_dialog_new_hash_from_dialog): add EAP
+			to the auth method list
+
 2008-11-24  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-pptp-service.c
