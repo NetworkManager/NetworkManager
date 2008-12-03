@@ -485,6 +485,7 @@ nm_netlink_monitor_error_handler (GIOChannel       *channel,
 
 	socket_error = g_error_new (NM_NETLINK_MONITOR_ERROR,
 	                            NM_NETLINK_MONITOR_ERROR_WAITING_FOR_SOCKET_DATA,
+	                            "%s",
 	                            err_msg);
 
 	g_signal_emit (G_OBJECT (monitor), 
