@@ -91,7 +91,8 @@ libnm_glib_la_LIBADD = \
 	$(GCONF_LIBS)					\
 	$(GNOME_KEYRING_LIBS)
 
-libnm_glib_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm_glib.ver
+libnm_glib_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm_glib.ver \
+	-version-info "1:0:1"
 
 noinst_PROGRAMS = libnm-glib-test
 
@@ -103,7 +104,8 @@ libnm_glib_test_LDADD = libnm_glib.la $(top_builddir)/libnm-util/libnm-util.la $
 libnm_glib_vpn_la_SOURCES = nm-vpn-plugin.c nm-vpn-plugin-ui-interface.c
 libnm_glib_vpn_la_CFLAGS = $(GLIB_CFLAGS) $(DBUS_CFLAGS)
 libnm_glib_vpn_la_LIBADD = $(top_builddir)/libnm-util/libnm-util.la $(GLIB_LIBS) $(DBUS_LIBS)
-libnm_glib_vpn_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm_glib_vpn.ver
+libnm_glib_vpn_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm_glib_vpn.ver \
+	-version-info "0:0:0"
 
 
 nm-client-bindings.h: $(top_srcdir)/introspection/nm-manager-client.xml

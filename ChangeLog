@@ -1,3 +1,14 @@
+2008-12-05  Dan Williams  <dcbw@redhat.com>
+
+	Patch from Michael Biebl  <mbiebl@gmail.com>
+
+	* libnm-glib/Makefile.am
+		- Bump libnm-glib revision to indicate new API
+		- Give libnm-util version info
+
+	* libnm-util/Makefile.am
+		- Bump libnm-util soname to indicate API/ABI break with 0.6
+
 2008-11-26  Dan Williams  <dcbw@redhat.com>
 
 	* Release NetworkManager 0.7
