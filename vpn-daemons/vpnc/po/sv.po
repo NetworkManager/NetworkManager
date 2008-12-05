@@ -9,8 +9,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-vpnc\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-09-05 00:51+0200\n"
-"PO-Revision-Date: 2008-09-05 00:52+0100\n"
+"POT-Creation-Date: 2008-11-27 20:55+0100\n"
+"PO-Revision-Date: 2008-11-27 20:55+0100\n"
 "Last-Translator: Daniel Nylander <po@danielnylander.se>\n"
 "Language-Team: Swedish <sv@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -50,16 +50,16 @@ msgstr "_Kom ihåg lösenord för denna session"
 msgid "_Save passwords in keyring"
 msgstr "_Spara lösenord i nyckelring"
 
-#: ../auth-dialog/main.c:67
+#: ../auth-dialog/main.c:105
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Du måsta autentisera för att komma åt VPN-nätverket \"%s\"."
 
-#: ../auth-dialog/main.c:68
+#: ../auth-dialog/main.c:106
 msgid "Authenticate VPN"
 msgstr "Autentisera VPN"
 
-#: ../auth-dialog/main.c:75
+#: ../auth-dialog/main.c:113
 msgid "_Group Password:"
 msgstr "_Grupplösenord:"
 
@@ -79,35 +79,47 @@ msgstr "Cisco-kompatibel VPN (vpnc)"
 msgid "Compatible with various Cisco, Juniper, Netscreen, and Sonicwall IPSec-based VPN gateways."
 msgstr "Kompatibel med olika Cisco, Juniper, Netscreen och Sonicwall IPSec-baserade VPN-gateway."
 
-#: ../properties/nm-vpnc.c:265
+#: ../properties/nm-vpnc.c:325
+msgid "Saved"
+msgstr "Sparat"
+
+#: ../properties/nm-vpnc.c:332
+msgid "Always Ask"
+msgstr "Fråga alltid"
+
+#: ../properties/nm-vpnc.c:339
+msgid "Not Required"
+msgstr "Krävs inte"
+
+#: ../properties/nm-vpnc.c:398
 msgid "Secure (default)"
 msgstr "Säker (standard)"
 
-#: ../properties/nm-vpnc.c:268
+#: ../properties/nm-vpnc.c:401
 msgid "Weak (use with caution)"
 msgstr "Svag (använd med försiktighet)"
 
-#: ../properties/nm-vpnc.c:276
+#: ../properties/nm-vpnc.c:409
 msgid "None (completely insecure)"
 msgstr "Ingen (totalt osäker)"
 
-#: ../properties/nm-vpnc.c:314
-msgid "NAT-T (default)"
-msgstr "NAT-T (standard)"
+#: ../properties/nm-vpnc.c:450
+msgid "Cisco UDP (default)"
+msgstr "Cisco UDP (standard)"
 
-#: ../properties/nm-vpnc.c:321
-msgid "Cisco UDP"
-msgstr "Cisco UDP"
+#: ../properties/nm-vpnc.c:457
+msgid "NAT-T"
+msgstr "NAT-T"
 
-#: ../properties/nm-vpnc.c:328
+#: ../properties/nm-vpnc.c:464
 msgid "Disabled"
 msgstr "Inaktiverad"
 
-#: ../properties/nm-vpnc.c:724
+#: ../properties/nm-vpnc.c:1085
 msgid "TCP tunneling not supported"
 msgstr "TCP-tunnling stöds inte"
 
-#: ../properties/nm-vpnc.c:726
+#: ../properties/nm-vpnc.c:1087
 #, c-format
 msgid ""
 "The VPN settings file '%s' specifies that VPN traffic should be tunneled through TCP which is currently not supported in the vpnc software.\n"
@@ -170,6 +182,8 @@ msgstr "_Gateway:"
 msgid "_User password:"
 msgstr "Användarlös_enord:"
 
+#~ msgid "NAT-T (default)"
+#~ msgstr "NAT-T (standard)"
 #~ msgid "G_roup Name:"
 #~ msgstr "G_ruppnamn:"
 #~ msgid "The following vpnc VPN connection will be created:"
@@ -249,8 +263,6 @@ msgstr "Användarlös_enord:"
 #~ msgstr ""
 #~ "Observera att filen som du importerar inte är en konfigurationsfil för "
 #~ "Cisco VPN eller VPNC. Fråga din adminstratör om filen."
-#~ msgid "Required"
-#~ msgstr "Krävs"
 #~ msgid "Use NAT _keepalive packets"
 #~ msgstr "Använd NAT-_keepalivepaket"
 #~ msgid "Use _domain for authentication"

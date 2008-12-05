@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager-pptp\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-10-04 21:34+0300\n"
-"PO-Revision-Date: 2008-08-14 08:00+0300\n"
+"POT-Creation-Date: 2008-11-29 20:26+0300\n"
+"PO-Revision-Date: 2008-11-29 20:00+0300\n"
 "Last-Translator: Ilkka Tuohela <hile@iki.fi>\n"
 "Language-Team: Finnish <gnome-fi-laatu@lists.sourceforge.net>\n"
 "MIME-Version: 1.0\n"
@@ -49,12 +49,12 @@ msgstr "_Muista salasana istunnon ajan"
 msgid "_Save passwords in keyring"
 msgstr "_Tallenna salasana avainrenkaaseen"
 
-#: ../auth-dialog/main.c:140
+#: ../auth-dialog/main.c:62
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr "Yhteydenotto VPN-verkkoon \"%s\" vaatii todentamista."
 
-#: ../auth-dialog/main.c:141
+#: ../auth-dialog/main.c:63
 msgid "Authenticate VPN"
 msgstr "Todenna VPN-yhteys"
 
@@ -66,31 +66,31 @@ msgstr "Lisää, poista tai muokkaa PPTP VPN -yhteyksiä"
 msgid "PPTP VPN Connection Manager"
 msgstr "PPTP VPN -yhteyksien hallinta"
 
-#: ../properties/advanced-dialog.c:147
+#: ../properties/advanced-dialog.c:144
 msgid "All Available (Default)"
 msgstr "Kaikki mahdolliset (oletus)"
 
-#: ../properties/advanced-dialog.c:151
+#: ../properties/advanced-dialog.c:148
 msgid "128-bit (most secure)"
 msgstr "128-bittinen (turvallisempi)"
 
-#: ../properties/advanced-dialog.c:160
+#: ../properties/advanced-dialog.c:157
 msgid "40-bit (less secure)"
 msgstr "40-bittinen (vähemmän turvallinen"
 
-#: ../properties/advanced-dialog.c:231
+#: ../properties/advanced-dialog.c:228
 msgid "PAP"
 msgstr "PAP"
 
-#: ../properties/advanced-dialog.c:237
+#: ../properties/advanced-dialog.c:234
 msgid "CHAP"
 msgstr "CHAP"
 
-#: ../properties/advanced-dialog.c:243
+#: ../properties/advanced-dialog.c:240
 msgid "MSCHAP"
 msgstr "MSCHAP"
 
-#: ../properties/advanced-dialog.c:249
+#: ../properties/advanced-dialog.c:246
 msgid "MSCHAPv2"
 msgstr "MSCHAPv2"
 
@@ -143,34 +143,42 @@ msgid "NT Domain:"
 msgstr "NT-toimialue:"
 
 #: ../properties/nm-pptp-dialog.glade.h:13
+msgid "Password:"
+msgstr "Salasana:"
+
+#: ../properties/nm-pptp-dialog.glade.h:14
 msgid "Send PPP _echo packets"
 msgstr "Lähetä PPP:n _echo-paketteja"
 
-#: ../properties/nm-pptp-dialog.glade.h:14
+#: ../properties/nm-pptp-dialog.glade.h:15
+msgid "Show password"
+msgstr "Näytä salasana"
+
+#: ../properties/nm-pptp-dialog.glade.h:16
 msgid "Use TCP _header compression"
 msgstr "Käytä TCP-_otsakkeiden pakkausta"
 
-#: ../properties/nm-pptp-dialog.glade.h:15
+#: ../properties/nm-pptp-dialog.glade.h:17
 msgid "Use _Point-to-Point encryption (MPPE)"
 msgstr "Käytä _Point-to-Point-salausta (MPPE)"
 
-#: ../properties/nm-pptp-dialog.glade.h:16
+#: ../properties/nm-pptp-dialog.glade.h:18
 msgid "User name:"
 msgstr "Käyttäjätunnus:"
 
-#: ../properties/nm-pptp-dialog.glade.h:17
+#: ../properties/nm-pptp-dialog.glade.h:19
 msgid "_Gateway:"
 msgstr "_Yhdyskäytävä:"
 
-#: ../properties/nm-pptp-dialog.glade.h:18
+#: ../properties/nm-pptp-dialog.glade.h:20
 msgid "_Security:"
 msgstr "_Salaus:"
 
-#: ../properties/nm-pptp.c:49
+#: ../properties/nm-pptp.c:50
 msgid "Point-to-Point Tunneling Protocol (PPTP)"
 msgstr "Point-to-Point Tunneling Protocol (PPTP)"
 
-#: ../properties/nm-pptp.c:50
+#: ../properties/nm-pptp.c:51
 msgid "Compatible with Microsoft and other PPTP VPN servers."
 msgstr "Yhteensopiva Microsoftin ja muiden PPTP VPN-palvelinten kanssa."
 
@@ -670,9 +678,6 @@ msgstr "Yhteensopiva Microsoftin ja muiden PPTP VPN-palvelinten kanssa."
 
 #~ msgid "Local IP:"
 #~ msgstr "Paikallinen IP-osoite:"
-
-#~ msgid "Password"
-#~ msgstr "Salasana"
 
 #~ msgid ""
 #~ "Please enter the information provided by your system administrator below. "
