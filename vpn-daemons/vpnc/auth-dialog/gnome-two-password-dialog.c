@@ -23,7 +23,6 @@
 */
 
 #include <config.h>
-//#include "gnome-i18nP.h"
 #include "gnome-two-password-dialog.h"
 #include <gtk/gtkbox.h>
 #include <gtk/gtkcheckbutton.h>
@@ -38,20 +37,22 @@
 #include <gtk/gtkvbox.h>
 #include <gtk/gtkradiobutton.h>
 #include <gtk/gtkstock.h>
+#include <gtk/gtkcombobox.h>
 #include <gnome-keyring-memory.h>
 
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
 
+#include "src/nm-vpnc-service.h"
 
-struct GnomeTwoPasswordDialogDetails
-{
+G_DEFINE_TYPE (VpnPasswordDialog, vpn_password_dialog, GTK_TYPE_DIALOG)
+
+#define VPN_PASSWORD_DIALOG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
+                                            VPN_TYPE_PASSWORD_DIALOG, \
+                                            VpnPasswordDialogPrivate))
+
+typedef struct {
 	/* Attributes */
-	gboolean readonly_username;
-	gboolean readonly_domain;
-
-	gboolean show_username;
-	gboolean show_domain;
 	gboolean show_password;
 	gboolean show_password_secondary;
 	
@@ -60,154 +61,80 @@ struct GnomeTwoPasswordDialogDetails
 	char *remember_label_text;
 
 	/* Internal widgetry and flags */
-	GtkWidget *username_entry;
 	GtkWidget *password_entry;
 	GtkWidget *password_entry_secondary;
-	GtkWidget *domain_entry;
+	GtkWidget *show_passwords_checkbox;
 
 	GtkWidget *table_alignment;
 	GtkWidget *table;
+	GtkSizeGroup *group;
 	
 	GtkWidget *remember_session_button;
 	GtkWidget *remember_forever_button;
 
-	GtkWidget *radio_vbox;
-	GtkWidget *connect_with_no_userpass_button;
-	GtkWidget *connect_with_userpass_button;
-
-	gboolean anon_support_on;
-
 	char *secondary_password_label;
-};
+} VpnPasswordDialogPrivate;
 
-/* Caption table rows indices */
-static const guint CAPTION_TABLE_USERNAME_ROW = 0;
-static const guint CAPTION_TABLE_PASSWORD_ROW = 1;
-
-/* GnomeTwoPasswordDialogClass methods */
-static void gnome_two_password_dialog_class_init (GnomeTwoPasswordDialogClass *password_dialog_class);
-static void gnome_two_password_dialog_init       (GnomeTwoPasswordDialog      *password_dialog);
-
-/* GObjectClass methods */
-static void gnome_two_password_dialog_finalize         (GObject                *object);
-
+/* VpnPasswordDialogClass methods */
+static void vpn_password_dialog_class_init (VpnPasswordDialogClass *password_dialog_class);
+static void vpn_password_dialog_init       (VpnPasswordDialog      *password_dialog);
 
 /* GtkDialog callbacks */
-static void dialog_show_callback                 (GtkWidget              *widget,
-						  gpointer                callback_data);
-static void dialog_close_callback                (GtkWidget              *widget,
-						  gpointer                callback_data);
-
-static gpointer parent_class;
-
-GType
-gnome_two_password_dialog_get_type (void)
-{
-	static GType type = 0;
-
-	if (!type) {
-		static const GTypeInfo info = {
-			sizeof (GnomeTwoPasswordDialogClass),
-                        NULL, NULL,
-			(GClassInitFunc) gnome_two_password_dialog_class_init,
-                        NULL, NULL,
-			sizeof (GnomeTwoPasswordDialog), 0,
-			(GInstanceInitFunc) gnome_two_password_dialog_init,
-			NULL
-		};
-
-                type = g_type_register_static (gtk_dialog_get_type(), 
-					       "GnomeTwoPasswordDialog", 
-					       &info, 0);
-
-		parent_class = g_type_class_ref (gtk_dialog_get_type());
-	}
-
-	return type;
-}
-
+static void dialog_show_callback (GtkWidget *widget, gpointer callback_data);
+static void dialog_close_callback (GtkWidget *widget, gpointer callback_data);
 
 static void
-gnome_two_password_dialog_class_init (GnomeTwoPasswordDialogClass * klass)
+finalize (GObject *object)
 {
-	G_OBJECT_CLASS (klass)->finalize = gnome_two_password_dialog_finalize;
-}
-
-static void
-gnome_two_password_dialog_init (GnomeTwoPasswordDialog *password_dialog)
-{
-	password_dialog->details = g_new0 (GnomeTwoPasswordDialogDetails, 1);
-	password_dialog->details->show_username = TRUE;
-	password_dialog->details->show_password = TRUE;
-	password_dialog->details->show_password_secondary = TRUE;
-	password_dialog->details->anon_support_on = FALSE;
-
-	password_dialog->details->secondary_password_label = g_strdup ( _("_Secondary Password:") );
-}
-
-/* GObjectClass methods */
-static void
-gnome_two_password_dialog_finalize (GObject *object)
-{
-	GnomeTwoPasswordDialog *password_dialog;
+	VpnPasswordDialogPrivate *priv = VPN_PASSWORD_DIALOG_GET_PRIVATE (object);
 	
-	password_dialog = GNOME_TWO_PASSWORD_DIALOG (object);
+	g_object_unref (priv->password_entry);
+	g_object_unref (priv->password_entry_secondary);
+	g_object_unref (priv->group);
 
-	g_object_unref (password_dialog->details->username_entry);
-	g_object_unref (password_dialog->details->domain_entry);
-	g_object_unref (password_dialog->details->password_entry);
-	g_object_unref (password_dialog->details->password_entry_secondary);
+	g_free (priv->remember_label_text);
+	g_free (priv->secondary_password_label);
 
-	g_free (password_dialog->details->remember_label_text);
-	g_free (password_dialog->details->secondary_password_label);
-	g_free (password_dialog->details);
+	G_OBJECT_CLASS (vpn_password_dialog_parent_class)->finalize (object);
+}
 
-	if (G_OBJECT_CLASS (parent_class)->finalize != NULL)
-		(* G_OBJECT_CLASS (parent_class)->finalize) (object);
+static void
+vpn_password_dialog_class_init (VpnPasswordDialogClass *klass)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (klass);
+
+	g_type_class_add_private (object_class, sizeof (VpnPasswordDialogPrivate));
+
+	object_class->finalize = finalize;
+}
+
+static void
+vpn_password_dialog_init (VpnPasswordDialog *dialog)
+{
+	VpnPasswordDialogPrivate *priv = VPN_PASSWORD_DIALOG_GET_PRIVATE (dialog);
+
+	priv->show_password = TRUE;
+	priv->show_password_secondary = TRUE;
+	priv->secondary_password_label = g_strdup ( _("_Secondary Password:") );
 }
 
 /* GtkDialog callbacks */
 static void
 dialog_show_callback (GtkWidget *widget, gpointer callback_data)
 {
-	GnomeTwoPasswordDialog *password_dialog;
+	VpnPasswordDialog *dialog = VPN_PASSWORD_DIALOG (callback_data);
+	VpnPasswordDialogPrivate *priv = VPN_PASSWORD_DIALOG_GET_PRIVATE (dialog);
 
-	password_dialog = GNOME_TWO_PASSWORD_DIALOG (callback_data);
-
-	if (GTK_WIDGET_VISIBLE (password_dialog->details->username_entry) &&
-	    !password_dialog->details->readonly_username) {
-		gtk_widget_grab_focus (password_dialog->details->username_entry);
-	} else if (GTK_WIDGET_VISIBLE (password_dialog->details->domain_entry) &&
-		   !password_dialog->details->readonly_domain) {
-		gtk_widget_grab_focus (password_dialog->details->domain_entry);
-	} else if (GTK_WIDGET_VISIBLE (password_dialog->details->password_entry)) {
-		gtk_widget_grab_focus (password_dialog->details->password_entry);
-	} else if (GTK_WIDGET_VISIBLE (password_dialog->details->password_entry_secondary)) {
-		gtk_widget_grab_focus (password_dialog->details->password_entry_secondary);
-	}
+	if (GTK_WIDGET_VISIBLE (priv->password_entry))
+		gtk_widget_grab_focus (priv->password_entry);
+	else if (GTK_WIDGET_VISIBLE (priv->password_entry_secondary))
+		gtk_widget_grab_focus (priv->password_entry_secondary);
 }
 
 static void
 dialog_close_callback (GtkWidget *widget, gpointer callback_data)
 {
 	gtk_widget_hide (widget);
-}
-
-static void
-userpass_radio_button_clicked (GtkWidget *widget, gpointer callback_data)
-{
-	GnomeTwoPasswordDialog *password_dialog;
-
-	password_dialog = GNOME_TWO_PASSWORD_DIALOG (callback_data);
-
-	if (widget == password_dialog->details->connect_with_no_userpass_button) {
-		gtk_widget_set_sensitive (
-			password_dialog->details->table, FALSE);
-	}
-	else { /* the other button */
-		gtk_widget_set_sensitive (
-                        password_dialog->details->table, TRUE);
-	}	
 }
 
 static void
@@ -218,10 +145,8 @@ add_row (GtkWidget *table, int row, const char *label_text, GtkWidget *entry)
 	label = gtk_label_new_with_mnemonic (label_text);
 	gtk_misc_set_alignment (GTK_MISC (label), 0.0, 0.5);
 
-	gtk_table_attach_defaults (GTK_TABLE (table), label,
-				   0, 1, row, row + 1);
-	gtk_table_attach_defaults (GTK_TABLE (table), entry,
-				   1, 2, row, row + 1);
+	gtk_table_attach_defaults (GTK_TABLE (table), label, 0, 1, row, row + 1);
+	gtk_table_attach_defaults (GTK_TABLE (table), entry, 1, 2, row, row + 1);
 
 	gtk_label_set_mnemonic_widget (GTK_LABEL (label), entry);
 }
@@ -233,86 +158,49 @@ remove_child (GtkWidget *child, GtkWidget *table)
 }
 
 static void
-add_table_rows (GnomeTwoPasswordDialog *password_dialog)
+add_table_rows (VpnPasswordDialog *dialog)
 {
+	VpnPasswordDialogPrivate *priv = VPN_PASSWORD_DIALOG_GET_PRIVATE (dialog);
 	int row;
-	GtkWidget *table;
-	int offset;
+	int offset = 0;
 
-	if (password_dialog->details->anon_support_on) {
-		offset = 12;
-	}
-	else {
-		offset = 0;
-	}
+	gtk_alignment_set_padding (GTK_ALIGNMENT (priv->table_alignment), 0, 0, offset, 0);
 
-	gtk_alignment_set_padding (GTK_ALIGNMENT (password_dialog->details->table_alignment),
-				   0, 0, offset, 0);
-
-	table = password_dialog->details->table;
 	/* This will not kill the entries, since they are ref:ed */
-	gtk_container_foreach (GTK_CONTAINER (table),
-			       (GtkCallback)remove_child, table);
+	gtk_container_foreach (GTK_CONTAINER (priv->table), (GtkCallback) remove_child, priv->table);
 	
 	row = 0;
-	if (password_dialog->details->show_username)
-		add_row (table, row++, _("_Username:"), password_dialog->details->username_entry);
-	if (password_dialog->details->show_domain)
-		add_row (table, row++, _("_Domain:"), password_dialog->details->domain_entry);
-	if (password_dialog->details->show_password)
-		add_row (table, row++, _("_Password:"), password_dialog->details->password_entry);
-	if (password_dialog->details->show_password_secondary)
-		add_row (table, row++, password_dialog->details->secondary_password_label, 
-			 password_dialog->details->password_entry_secondary);
+	if (priv->show_password)
+		add_row (priv->table, row++, _("_Password:"), priv->password_entry);
+	if (priv->show_password_secondary)
+		add_row (priv->table, row++, priv->secondary_password_label,  priv->password_entry_secondary);
 
-	gtk_widget_show_all (table);
+	gtk_table_attach_defaults (GTK_TABLE (priv->table), priv->show_passwords_checkbox, 1, 2, row, row + 1);
+
+	gtk_widget_show_all (priv->table);
 }
 
 static void
-username_entry_activate (GtkWidget *widget, GtkWidget *dialog)
+show_passwords_toggled_cb (GtkWidget *widget, gpointer user_data)
 {
-	GnomeTwoPasswordDialog *password_dialog;
+	VpnPasswordDialog *dialog = VPN_PASSWORD_DIALOG (user_data);
+	VpnPasswordDialogPrivate *priv = VPN_PASSWORD_DIALOG_GET_PRIVATE (dialog);
+	gboolean visible;
 
-	password_dialog = GNOME_TWO_PASSWORD_DIALOG (dialog);
-	
-	if (GTK_WIDGET_VISIBLE (password_dialog->details->domain_entry) &&
-	    GTK_WIDGET_SENSITIVE (password_dialog->details->domain_entry))
-		gtk_widget_grab_focus (password_dialog->details->domain_entry);
-	else if (GTK_WIDGET_VISIBLE (password_dialog->details->password_entry) &&
-		 GTK_WIDGET_SENSITIVE (password_dialog->details->password_entry))
-		gtk_widget_grab_focus (password_dialog->details->password_entry);
-	else if (GTK_WIDGET_VISIBLE (password_dialog->details->password_entry_secondary) &&
-		 GTK_WIDGET_SENSITIVE (password_dialog->details->password_entry_secondary))
-		gtk_widget_grab_focus (password_dialog->details->password_entry_secondary);
+	visible = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (widget));
+
+	gtk_entry_set_visibility (GTK_ENTRY (priv->password_entry), visible);
+	gtk_entry_set_visibility (GTK_ENTRY (priv->password_entry_secondary), visible);
 }
 
-static void
-domain_entry_activate (GtkWidget *widget, GtkWidget *dialog)
-{
-	GnomeTwoPasswordDialog *password_dialog;
-
-	password_dialog = GNOME_TWO_PASSWORD_DIALOG (dialog);
-	
-	if (GTK_WIDGET_VISIBLE (password_dialog->details->password_entry) &&
-	    GTK_WIDGET_SENSITIVE (password_dialog->details->password_entry))
-		gtk_widget_grab_focus (password_dialog->details->password_entry);
-	else if (GTK_WIDGET_VISIBLE (password_dialog->details->password_entry_secondary) &&
-		 GTK_WIDGET_SENSITIVE (password_dialog->details->password_entry_secondary))
-		gtk_widget_grab_focus (password_dialog->details->password_entry_secondary);
-}
-
-
-/* Public GnomeTwoPasswordDialog methods */
+/* Public VpnPasswordDialog methods */
 GtkWidget *
-gnome_two_password_dialog_new (const char	*dialog_title,
-			   const char	*message,
-			   const char	*username,
-			   const char	*password,
-			   gboolean	 readonly_username)
+vpn_password_dialog_new (const char *title,
+                         const char *message,
+                         const char *password)
 {
-	GnomeTwoPasswordDialog *password_dialog;
-	GtkDialog *dialog;
-	GtkWidget *table;
+	GtkWidget *dialog;
+	VpnPasswordDialogPrivate *priv;
 	GtkLabel *message_label;
 	GtkWidget *hbox;
 	GtkWidget *vbox;
@@ -320,110 +208,83 @@ gnome_two_password_dialog_new (const char	*dialog_title,
 	GtkWidget *dialog_icon;
 	GSList *group;
 
-	password_dialog = GNOME_TWO_PASSWORD_DIALOG (gtk_widget_new (gnome_two_password_dialog_get_type (), NULL));
-	dialog = GTK_DIALOG (password_dialog);
+	dialog = gtk_widget_new (VPN_TYPE_PASSWORD_DIALOG, NULL);
+	if (!dialog)
+		return NULL;
+	priv = VPN_PASSWORD_DIALOG_GET_PRIVATE (dialog);
 
-	gtk_window_set_title (GTK_WINDOW (password_dialog), dialog_title);
+	gtk_window_set_title (GTK_WINDOW (dialog), title);
 	gtk_window_set_resizable (GTK_WINDOW (dialog), FALSE);
 
-	gtk_dialog_add_buttons (dialog,
-				GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
-				GTK_STOCK_OK, GTK_RESPONSE_OK,
-				NULL);
-	gtk_dialog_set_default_response (GTK_DIALOG (password_dialog), GTK_RESPONSE_OK);
+	gtk_dialog_add_buttons (GTK_DIALOG (dialog),
+	                        GTK_STOCK_CANCEL, GTK_RESPONSE_CANCEL,
+	                        GTK_STOCK_OK, GTK_RESPONSE_OK,
+	                        NULL);
+	gtk_dialog_set_default_response (GTK_DIALOG (dialog), GTK_RESPONSE_OK);
 
 	/* Setup the dialog */
-	gtk_dialog_set_has_separator (dialog, FALSE);
-        gtk_container_set_border_width (GTK_CONTAINER (dialog), 5);
-        gtk_box_set_spacing (GTK_BOX (dialog->vbox), 2); /* 2 * 5 + 2 = 12 */
-        gtk_container_set_border_width (GTK_CONTAINER (dialog->action_area), 5);
-        gtk_box_set_spacing (GTK_BOX (dialog->action_area), 6);
+	gtk_dialog_set_has_separator (GTK_DIALOG (dialog), FALSE);
+	gtk_container_set_border_width (GTK_CONTAINER (dialog), 5);
+	gtk_box_set_spacing (GTK_BOX (GTK_DIALOG (dialog)->vbox), 2); /* 2 * 5 + 2 = 12 */
+	gtk_container_set_border_width (GTK_CONTAINER (GTK_DIALOG (dialog)->action_area), 5);
+	gtk_box_set_spacing (GTK_BOX (GTK_DIALOG (dialog)->action_area), 6);
 
- 	gtk_window_set_position (GTK_WINDOW (password_dialog), GTK_WIN_POS_CENTER);
-	gtk_window_set_modal (GTK_WINDOW (password_dialog), TRUE);
+ 	gtk_window_set_position (GTK_WINDOW (dialog), GTK_WIN_POS_CENTER);
+	gtk_window_set_modal (GTK_WINDOW (dialog), TRUE);
 
-	g_signal_connect (password_dialog, "show",
-			  G_CALLBACK (dialog_show_callback), password_dialog);
-	g_signal_connect (password_dialog, "close",
-			  G_CALLBACK (dialog_close_callback), password_dialog);
-
-	/* the radio buttons for anonymous login */
-	password_dialog->details->connect_with_no_userpass_button =
-                gtk_radio_button_new_with_mnemonic (NULL, _("Connect _anonymously"));
-	group = gtk_radio_button_get_group (
-			GTK_RADIO_BUTTON (password_dialog->details->connect_with_no_userpass_button));
-        password_dialog->details->connect_with_userpass_button =
-                gtk_radio_button_new_with_mnemonic (
-			group, _("Connect as _user:"));
-
-	if (username != NULL && *username != 0) {
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (password_dialog->details->connect_with_userpass_button), TRUE);
-	} else {
-		gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (password_dialog->details->connect_with_no_userpass_button), TRUE);
-	}
-	
-	password_dialog->details->radio_vbox = gtk_vbox_new (FALSE, 6);
-	gtk_box_pack_start (GTK_BOX (password_dialog->details->radio_vbox),
-		password_dialog->details->connect_with_no_userpass_button,
-		FALSE, FALSE, 0);	
-	gtk_box_pack_start (GTK_BOX (password_dialog->details->radio_vbox),
-                password_dialog->details->connect_with_userpass_button,
-                FALSE, FALSE, 0);
-	g_signal_connect (password_dialog->details->connect_with_no_userpass_button, "clicked",
-                          G_CALLBACK (userpass_radio_button_clicked), password_dialog);
-	g_signal_connect (password_dialog->details->connect_with_userpass_button, "clicked",
-                          G_CALLBACK (userpass_radio_button_clicked), password_dialog);	
+	g_signal_connect (dialog, "show",
+	                  G_CALLBACK (dialog_show_callback),
+	                  dialog);
+	g_signal_connect (dialog, "close",
+	                  G_CALLBACK (dialog_close_callback),
+	                  dialog);
 
 	/* The table that holds the captions */
-	password_dialog->details->table_alignment = gtk_alignment_new (0.0, 0.0, 0.0, 0.0);
+	priv->table_alignment = gtk_alignment_new (0.0, 0.0, 0.0, 0.0);
 
-	password_dialog->details->table = table = gtk_table_new (3, 2, FALSE);
-	gtk_table_set_col_spacings (GTK_TABLE (table), 12);
-	gtk_table_set_row_spacings (GTK_TABLE (table), 6);
-	gtk_container_add (GTK_CONTAINER (password_dialog->details->table_alignment), table);
+	priv->group = gtk_size_group_new (GTK_SIZE_GROUP_HORIZONTAL);
 
-	password_dialog->details->username_entry = gtk_entry_new ();
-	password_dialog->details->domain_entry = gtk_entry_new ();
-	password_dialog->details->password_entry = gtk_entry_new ();
-	password_dialog->details->password_entry_secondary = gtk_entry_new ();
+	priv->table = gtk_table_new (4, 2, FALSE);
+	gtk_table_set_col_spacings (GTK_TABLE (priv->table), 12);
+	gtk_table_set_row_spacings (GTK_TABLE (priv->table), 6);
+	gtk_container_add (GTK_CONTAINER (priv->table_alignment), priv->table);
+
+	priv->password_entry = gtk_entry_new ();
+	priv->password_entry_secondary = gtk_entry_new ();
+
+	priv->show_passwords_checkbox = gtk_check_button_new_with_mnemonic (_("Sh_ow passwords"));
 
 	/* We want to hold on to these during the table rearrangement */
 #if GLIB_CHECK_VERSION (2, 10, 0)
-	g_object_ref_sink (password_dialog->details->username_entry);
-	g_object_ref_sink (password_dialog->details->domain_entry);
-        g_object_ref_sink (password_dialog->details->password_entry);
-        g_object_ref_sink (password_dialog->details->password_entry_secondary);
+	g_object_ref_sink (priv->password_entry);
+	g_object_ref_sink (priv->password_entry_secondary);
+	g_object_ref_sink (priv->show_passwords_checkbox);
 #else
-	g_object_ref (password_dialog->details->username_entry);
-	gtk_object_sink (GTK_OBJECT (password_dialog->details->username_entry));
-	g_object_ref (password_dialog->details->domain_entry);
-	gtk_object_sink (GTK_OBJECT (password_dialog->details->domain_entry));
-        g_object_ref (password_dialog->details->password_entry);
-	gtk_object_sink (GTK_OBJECT (password_dialog->details->password_entry));
-        g_object_ref (password_dialog->details->password_entry_secondary);
-	gtk_object_sink (GTK_OBJECT (password_dialog->details->password_entry_secondary));
+	g_object_ref (priv->password_entry);
+	gtk_object_sink (GTK_OBJECT (priv->password_entry));
+
+	g_object_ref (priv->password_entry_secondary);
+	gtk_object_sink (GTK_OBJECT (priv->password_entry_secondary));
+
+	g_object_ref (priv->show_passwords_checkbox);
+	gtk_object_sink (GTK_OBJECT (priv->show_passwords_checkbox));
 #endif
 	
-	gtk_entry_set_visibility (GTK_ENTRY (password_dialog->details->password_entry), FALSE);
-	gtk_entry_set_visibility (GTK_ENTRY (password_dialog->details->password_entry_secondary), FALSE);
+	gtk_entry_set_visibility (GTK_ENTRY (priv->password_entry), FALSE);
+	gtk_entry_set_visibility (GTK_ENTRY (priv->password_entry_secondary), FALSE);
 
-	g_signal_connect (password_dialog->details->username_entry,
-			  "activate",
-			  G_CALLBACK (username_entry_activate),
-			  password_dialog);
-	g_signal_connect (password_dialog->details->domain_entry,
-			  "activate",
-			  G_CALLBACK (domain_entry_activate),
-			  password_dialog);
-	g_signal_connect_swapped (password_dialog->details->password_entry,
-				  "activate",
-				  G_CALLBACK (gtk_window_activate_default),
-				  password_dialog);
-	g_signal_connect_swapped (password_dialog->details->password_entry_secondary,
-				  "activate",
-				  G_CALLBACK (gtk_window_activate_default),
-				  password_dialog);
-	add_table_rows (password_dialog);
+	g_signal_connect_swapped (priv->password_entry, "activate",
+	                          G_CALLBACK (gtk_window_activate_default),
+	                          dialog);
+	g_signal_connect_swapped (priv->password_entry_secondary, "activate",
+	                          G_CALLBACK (gtk_window_activate_default),
+	                          dialog);
+
+	g_signal_connect (priv->show_passwords_checkbox, "toggled",
+	                  G_CALLBACK (show_passwords_toggled_cb),
+	                  dialog);
+
+	add_table_rows (VPN_PASSWORD_DIALOG (dialog));
 
 	/* Adds some eye-candy to the dialog */
 	hbox = gtk_hbox_new (FALSE, 12);
@@ -439,326 +300,224 @@ gnome_two_password_dialog_new (const char	*dialog_title,
 		message_label = GTK_LABEL (gtk_label_new (message));
 		gtk_label_set_justify (message_label, GTK_JUSTIFY_LEFT);
 		gtk_label_set_line_wrap (message_label, TRUE);
-
-		gtk_box_pack_start (GTK_BOX (main_vbox), GTK_WIDGET (message_label),
-				    FALSE, FALSE, 0);
+		gtk_size_group_add_widget (priv->group, GTK_WIDGET (message_label));
+		gtk_box_pack_start (GTK_BOX (main_vbox), GTK_WIDGET (message_label), FALSE, FALSE, 0);
+		gtk_size_group_add_widget (priv->group, priv->table_alignment);
 	}
 
 	vbox = gtk_vbox_new (FALSE, 6);
 	gtk_box_pack_start (GTK_BOX (main_vbox), vbox, FALSE, FALSE, 0);
-
-	gtk_box_pack_start (GTK_BOX (vbox), password_dialog->details->radio_vbox,
-                            FALSE, FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (vbox), password_dialog->details->table_alignment,
-			    FALSE, FALSE, 0);
-
+	gtk_box_pack_start (GTK_BOX (vbox), priv->table_alignment, FALSE, FALSE, 0);
 	gtk_box_pack_start (GTK_BOX (hbox), main_vbox, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (GTK_DIALOG (dialog)->vbox), hbox, FALSE, FALSE, 0);
+	gtk_widget_show_all (GTK_DIALOG (dialog)->vbox);
 
-	gtk_box_pack_start (GTK_BOX (GTK_DIALOG (password_dialog)->vbox),
-			    hbox,
-			    TRUE,	/* expand */
-			    TRUE,	/* fill */
-			    0);       	/* padding */
+	priv->remember_session_button = gtk_check_button_new_with_mnemonic (_("_Remember passwords for this session"));
+	priv->remember_forever_button = gtk_check_button_new_with_mnemonic (_("_Save passwords in keyring"));
+
+	gtk_box_pack_start (GTK_BOX (vbox), priv->remember_session_button, FALSE, FALSE, 0);
+	gtk_box_pack_start (GTK_BOX (vbox), priv->remember_forever_button, FALSE, FALSE, 0);
+
+	vpn_password_dialog_set_password (VPN_PASSWORD_DIALOG (dialog), password);
 	
-	gtk_widget_show_all (GTK_DIALOG (password_dialog)->vbox);
-
-	password_dialog->details->remember_session_button =
-		gtk_check_button_new_with_mnemonic (_("_Remember passwords for this session"));
-	password_dialog->details->remember_forever_button =
-		gtk_check_button_new_with_mnemonic (_("_Save passwords in keyring"));
-
-	gtk_box_pack_start (GTK_BOX (vbox), password_dialog->details->remember_session_button, 
-			    FALSE, FALSE, 0);
-	gtk_box_pack_start (GTK_BOX (vbox), password_dialog->details->remember_forever_button, 
-			    FALSE, FALSE, 0);
-
-	gnome_two_password_dialog_set_username (password_dialog, username);
-	gnome_two_password_dialog_set_password (password_dialog, password);
-	gnome_two_password_dialog_set_readonly_domain (password_dialog, readonly_username);
-	
-	return GTK_WIDGET (password_dialog);
+	return GTK_WIDGET (dialog);
 }
 
 gboolean
-gnome_two_password_dialog_run_and_block (GnomeTwoPasswordDialog *password_dialog)
+vpn_password_dialog_run_and_block (VpnPasswordDialog *dialog)
 {
 	gint button_clicked;
 
-	g_return_val_if_fail (password_dialog != NULL, FALSE);
-	g_return_val_if_fail (GNOME_IS_TWO_PASSWORD_DIALOG (password_dialog), FALSE);
+	g_return_val_if_fail (dialog != NULL, FALSE);
+	g_return_val_if_fail (VPN_IS_PASSWORD_DIALOG (dialog), FALSE);
 
-	button_clicked = gtk_dialog_run (GTK_DIALOG (password_dialog));
-	gtk_widget_hide (GTK_WIDGET (password_dialog));
+	button_clicked = gtk_dialog_run (GTK_DIALOG (dialog));
+	gtk_widget_hide (GTK_WIDGET (dialog));
 
 	return button_clicked == GTK_RESPONSE_OK;
 }
 
 void
-gnome_two_password_dialog_set_username (GnomeTwoPasswordDialog	*password_dialog,
-				       const char		*username)
+vpn_password_dialog_set_password (VpnPasswordDialog	*dialog,
+                                  const char *password)
 {
-	g_return_if_fail (GNOME_IS_TWO_PASSWORD_DIALOG (password_dialog));
-	g_return_if_fail (password_dialog->details->username_entry != NULL);
+	VpnPasswordDialogPrivate *priv;
 
-	gtk_entry_set_text (GTK_ENTRY (password_dialog->details->username_entry),
-			    username?username:"");
+	g_return_if_fail (VPN_IS_PASSWORD_DIALOG (dialog));
+
+	priv = VPN_PASSWORD_DIALOG_GET_PRIVATE (dialog);
+	gtk_entry_set_text (GTK_ENTRY (priv->password_entry), password ? password : "");
 }
 
 void
-gnome_two_password_dialog_set_password (GnomeTwoPasswordDialog	*password_dialog,
-				       const char		*password)
+vpn_password_dialog_set_password_secondary (VpnPasswordDialog *dialog,
+                                            const char *password_secondary)
 {
-	g_return_if_fail (GNOME_IS_TWO_PASSWORD_DIALOG (password_dialog));
+	VpnPasswordDialogPrivate *priv;
 
-	gtk_entry_set_text (GTK_ENTRY (password_dialog->details->password_entry),
-			    password ? password : "");
+	g_return_if_fail (VPN_IS_PASSWORD_DIALOG (dialog));
+
+	priv = VPN_PASSWORD_DIALOG_GET_PRIVATE (dialog);
+	gtk_entry_set_text (GTK_ENTRY (priv->password_entry_secondary),
+	                    password_secondary ? password_secondary : "");
 }
 
 void
-gnome_two_password_dialog_set_password_secondary (GnomeTwoPasswordDialog	*password_dialog,
-						  const char		        *password_secondary)
+vpn_password_dialog_set_show_password (VpnPasswordDialog *dialog, gboolean show)
 {
-	g_return_if_fail (GNOME_IS_TWO_PASSWORD_DIALOG (password_dialog));
+	VpnPasswordDialogPrivate *priv;
 
-	gtk_entry_set_text (GTK_ENTRY (password_dialog->details->password_entry_secondary),
-			    password_secondary ? password_secondary : "");
-}
+	g_return_if_fail (dialog != NULL);
+	g_return_if_fail (VPN_IS_PASSWORD_DIALOG (dialog));
 
-void
-gnome_two_password_dialog_set_domain (GnomeTwoPasswordDialog	*password_dialog,
-				  const char		*domain)
-{
-	g_return_if_fail (GNOME_IS_TWO_PASSWORD_DIALOG (password_dialog));
-	g_return_if_fail (password_dialog->details->domain_entry != NULL);
-
-	gtk_entry_set_text (GTK_ENTRY (password_dialog->details->domain_entry),
-			    domain ? domain : "");
-}
-
-
-void
-gnome_two_password_dialog_set_show_username (GnomeTwoPasswordDialog *password_dialog,
-					 gboolean             show)
-{
-	g_return_if_fail (password_dialog != NULL);
-	g_return_if_fail (GNOME_IS_TWO_PASSWORD_DIALOG (password_dialog));
+	priv = VPN_PASSWORD_DIALOG_GET_PRIVATE (dialog);
 
 	show = !!show;
-	if (password_dialog->details->show_username != show) {
-		password_dialog->details->show_username = show;
-		add_table_rows (password_dialog);
+	if (priv->show_password != show) {
+		priv->show_password = show;
+		add_table_rows (dialog);
 	}
 }
 
 void
-gnome_two_password_dialog_set_show_domain (GnomeTwoPasswordDialog *password_dialog,
-				       gboolean             show)
+vpn_password_dialog_set_show_password_secondary (VpnPasswordDialog *dialog,
+                                                 gboolean show)
 {
-	g_return_if_fail (password_dialog != NULL);
-	g_return_if_fail (GNOME_IS_TWO_PASSWORD_DIALOG (password_dialog));
+	VpnPasswordDialogPrivate *priv;
+
+	g_return_if_fail (dialog != NULL);
+	g_return_if_fail (VPN_IS_PASSWORD_DIALOG (dialog));
+
+	priv = VPN_PASSWORD_DIALOG_GET_PRIVATE (dialog);
 
 	show = !!show;
-	if (password_dialog->details->show_domain != show) {
-		password_dialog->details->show_domain = show;
-		add_table_rows (password_dialog);
+	if (priv->show_password_secondary != show) {
+		priv->show_password_secondary = show;
+		add_table_rows (dialog);
 	}
 }
 
 void
-gnome_two_password_dialog_set_show_password (GnomeTwoPasswordDialog *password_dialog,
-					 gboolean             show)
+vpn_password_dialog_focus_password (VpnPasswordDialog *dialog)
 {
-	g_return_if_fail (password_dialog != NULL);
-	g_return_if_fail (GNOME_IS_TWO_PASSWORD_DIALOG (password_dialog));
+	VpnPasswordDialogPrivate *priv;
 
-	show = !!show;
-	if (password_dialog->details->show_password != show) {
-		password_dialog->details->show_password = show;
-		add_table_rows (password_dialog);
-	}
+	g_return_if_fail (dialog != NULL);
+	g_return_if_fail (VPN_IS_PASSWORD_DIALOG (dialog));
+
+	priv = VPN_PASSWORD_DIALOG_GET_PRIVATE (dialog);
+	if (priv->show_password)
+		gtk_widget_grab_focus (priv->password_entry);
 }
 
 void
-gnome_two_password_dialog_set_show_password_secondary (GnomeTwoPasswordDialog *password_dialog,
-						       gboolean             show)
+vpn_password_dialog_focus_password_secondary (VpnPasswordDialog *dialog)
 {
-	g_return_if_fail (password_dialog != NULL);
-	g_return_if_fail (GNOME_IS_TWO_PASSWORD_DIALOG (password_dialog));
+	VpnPasswordDialogPrivate *priv;
 
-	show = !!show;
-	if (password_dialog->details->show_password_secondary != show) {
-		password_dialog->details->show_password_secondary = show;
-		add_table_rows (password_dialog);
-	}
+	g_return_if_fail (dialog != NULL);
+	g_return_if_fail (VPN_IS_PASSWORD_DIALOG (dialog));
+
+	priv = VPN_PASSWORD_DIALOG_GET_PRIVATE (dialog);
+	if (priv->show_password_secondary)
+		gtk_widget_grab_focus (priv->password_entry_secondary);
+}
+
+const char *
+vpn_password_dialog_get_password (VpnPasswordDialog *dialog)
+{
+	VpnPasswordDialogPrivate *priv;
+
+	g_return_val_if_fail (VPN_IS_PASSWORD_DIALOG (dialog), NULL);
+
+	priv = VPN_PASSWORD_DIALOG_GET_PRIVATE (dialog);
+	return gtk_entry_get_text (GTK_ENTRY (priv->password_entry));
+}
+
+const char *
+vpn_password_dialog_get_password_secondary (VpnPasswordDialog *dialog)
+{
+	VpnPasswordDialogPrivate *priv;
+
+	g_return_val_if_fail (VPN_IS_PASSWORD_DIALOG (dialog), NULL);
+
+	priv = VPN_PASSWORD_DIALOG_GET_PRIVATE (dialog);
+	return gtk_entry_get_text (GTK_ENTRY (priv->password_entry_secondary));
 }
 
 void
-gnome_two_password_dialog_focus_password (GnomeTwoPasswordDialog *password_dialog)
+vpn_password_dialog_set_show_remember (VpnPasswordDialog *dialog,
+                                       gboolean show_remember)
 {
-	g_return_if_fail (password_dialog != NULL);
-	g_return_if_fail (GNOME_IS_TWO_PASSWORD_DIALOG (password_dialog));
+	VpnPasswordDialogPrivate *priv;
 
-	if (password_dialog->details->show_password)
-		gtk_widget_grab_focus (password_dialog->details->password_entry);
-}
+	g_return_if_fail (VPN_IS_PASSWORD_DIALOG (dialog));
 
-void
-gnome_two_password_dialog_focus_password_secondary (GnomeTwoPasswordDialog *password_dialog)
-{
-	g_return_if_fail (password_dialog != NULL);
-	g_return_if_fail (GNOME_IS_TWO_PASSWORD_DIALOG (password_dialog));
-
-	if (password_dialog->details->show_password_secondary)
-		gtk_widget_grab_focus (password_dialog->details->password_entry_secondary);
-}
-
-void
-gnome_two_password_dialog_set_readonly_username (GnomeTwoPasswordDialog	*password_dialog,
-						gboolean		readonly)
-{
-	g_return_if_fail (password_dialog != NULL);
-	g_return_if_fail (GNOME_IS_TWO_PASSWORD_DIALOG (password_dialog));
-
-	password_dialog->details->readonly_username = readonly;
-
-	gtk_widget_set_sensitive (password_dialog->details->username_entry,
-				  !readonly);
-}
-
-void
-gnome_two_password_dialog_set_readonly_domain (GnomeTwoPasswordDialog	*password_dialog,
-					   gboolean		readonly)
-{
-	g_return_if_fail (password_dialog != NULL);
-	g_return_if_fail (GNOME_IS_TWO_PASSWORD_DIALOG (password_dialog));
-
-	password_dialog->details->readonly_domain = readonly;
-
-	gtk_widget_set_sensitive (password_dialog->details->domain_entry,
-				  !readonly);
-}
-
-char *
-gnome_two_password_dialog_get_username (GnomeTwoPasswordDialog *password_dialog)
-{
-	g_return_val_if_fail (GNOME_IS_TWO_PASSWORD_DIALOG (password_dialog), NULL);
-
-	return g_strdup (gtk_entry_get_text (GTK_ENTRY (password_dialog->details->username_entry)));
-}
-
-char *
-gnome_two_password_dialog_get_domain (GnomeTwoPasswordDialog *password_dialog)
-{
-	g_return_val_if_fail (GNOME_IS_TWO_PASSWORD_DIALOG (password_dialog), NULL);
-	
-	return g_strdup (gtk_entry_get_text (GTK_ENTRY (password_dialog->details->domain_entry)));
-}
-
-char *
-gnome_two_password_dialog_get_password (GnomeTwoPasswordDialog *password_dialog)
-{
-	g_return_val_if_fail (GNOME_IS_TWO_PASSWORD_DIALOG (password_dialog), NULL);
-
-	return gnome_keyring_memory_strdup (gtk_entry_get_text (GTK_ENTRY (password_dialog->details->password_entry)));
-}
-
-char *
-gnome_two_password_dialog_get_password_secondary (GnomeTwoPasswordDialog *password_dialog)
-{
-	g_return_val_if_fail (GNOME_IS_TWO_PASSWORD_DIALOG (password_dialog), NULL);
-
-	return gnome_keyring_memory_strdup (gtk_entry_get_text (GTK_ENTRY (password_dialog->details->password_entry_secondary)));
-}
-
-void
-gnome_two_password_dialog_set_show_userpass_buttons (GnomeTwoPasswordDialog         *password_dialog,
-						     gboolean                     show_userpass_buttons)
-{
-        if (show_userpass_buttons) {
-                password_dialog->details->anon_support_on = TRUE;
-                gtk_widget_show (password_dialog->details->radio_vbox);
-                if (gtk_toggle_button_get_active (
-                        GTK_TOGGLE_BUTTON (password_dialog->details->connect_with_no_userpass_button))) {
-                        gtk_widget_set_sensitive (password_dialog->details->table, FALSE);
-                }
-                else {
-                        gtk_widget_set_sensitive (password_dialog->details->table, TRUE);
-                }
-        } else {
-                password_dialog->details->anon_support_on = FALSE;
-                gtk_widget_hide (password_dialog->details->radio_vbox);
-                gtk_widget_set_sensitive (password_dialog->details->table, TRUE);
-        }
-                                                                                                                             
-        add_table_rows (password_dialog);
-}
-
-gboolean
-gnome_two_password_dialog_anon_selected (GnomeTwoPasswordDialog *password_dialog)
-{
-	return password_dialog->details->anon_support_on &&
-		gtk_toggle_button_get_active (
-        		GTK_TOGGLE_BUTTON (
-				password_dialog->details->connect_with_no_userpass_button));
-}
-
-void
-gnome_two_password_dialog_set_show_remember (GnomeTwoPasswordDialog         *password_dialog,
-					 gboolean                     show_remember)
-{
+	priv = VPN_PASSWORD_DIALOG_GET_PRIVATE (dialog);
 	if (show_remember) {
-		gtk_widget_show (password_dialog->details->remember_session_button);
-		gtk_widget_show (password_dialog->details->remember_forever_button);
+		gtk_widget_show (priv->remember_session_button);
+		gtk_widget_show (priv->remember_forever_button);
 	} else {
-		gtk_widget_hide (password_dialog->details->remember_session_button);
-		gtk_widget_hide (password_dialog->details->remember_forever_button);
+		gtk_widget_hide (priv->remember_session_button);
+		gtk_widget_hide (priv->remember_forever_button);
 	}
 }
 
 void
-gnome_two_password_dialog_set_remember      (GnomeTwoPasswordDialog         *password_dialog,
-					 GnomeTwoPasswordDialogRemember  remember)
+vpn_password_dialog_set_remember (VpnPasswordDialog *dialog,
+                                  VpnPasswordRemember remember)
 {
-	gboolean session, forever;
+	VpnPasswordDialogPrivate *priv;
+	gboolean session = FALSE, forever = FALSE;
 
-	session = FALSE;
-	forever = FALSE;
-	if (remember == GNOME_TWO_PASSWORD_DIALOG_REMEMBER_SESSION) {
+	g_return_if_fail (VPN_IS_PASSWORD_DIALOG (dialog));
+
+	priv = VPN_PASSWORD_DIALOG_GET_PRIVATE (dialog);
+
+	if (remember == VPN_PASSWORD_REMEMBER_SESSION)
 		session = TRUE;
-	} else if (remember == GNOME_TWO_PASSWORD_DIALOG_REMEMBER_FOREVER){
+	else if (remember == VPN_PASSWORD_REMEMBER_FOREVER)
 		forever = TRUE;
-	}
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (password_dialog->details->remember_session_button),
-				      session);
-	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (password_dialog->details->remember_forever_button),
-				      forever);
+
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (priv->remember_session_button), session);
+	gtk_toggle_button_set_active (GTK_TOGGLE_BUTTON (priv->remember_forever_button), forever);
 }
 
-GnomeTwoPasswordDialogRemember
-gnome_two_password_dialog_get_remember (GnomeTwoPasswordDialog         *password_dialog)
+VpnPasswordRemember
+vpn_password_dialog_get_remember (VpnPasswordDialog *dialog)
 {
+	VpnPasswordDialogPrivate *priv;
 	gboolean session, forever;
 
-	session = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (password_dialog->details->remember_session_button));
-	forever = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (password_dialog->details->remember_forever_button));
-	if (forever) {
-		return GNOME_TWO_PASSWORD_DIALOG_REMEMBER_FOREVER;
-	} else if (session) {
-		return GNOME_TWO_PASSWORD_DIALOG_REMEMBER_SESSION;
-	}
-	return GNOME_TWO_PASSWORD_DIALOG_REMEMBER_NOTHING;
+	g_return_val_if_fail (dialog != NULL, VPN_PASSWORD_REMEMBER_NOTHING);
+	g_return_val_if_fail (VPN_IS_PASSWORD_DIALOG (dialog), VPN_PASSWORD_REMEMBER_NOTHING);
+
+	priv = VPN_PASSWORD_DIALOG_GET_PRIVATE (dialog);
+
+	session = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (priv->remember_session_button));
+	forever = gtk_toggle_button_get_active (GTK_TOGGLE_BUTTON (priv->remember_forever_button));
+	if (forever)
+		return VPN_PASSWORD_REMEMBER_FOREVER;
+	else if (session)
+		return VPN_PASSWORD_REMEMBER_SESSION;
+
+	return VPN_PASSWORD_REMEMBER_NOTHING;
 }
 
-void gnome_two_password_dialog_set_password_secondary_label (GnomeTwoPasswordDialog  *password_dialog,
-							     const char              *password_secondary_label)
+void vpn_password_dialog_set_password_secondary_label (VpnPasswordDialog *dialog,
+                                                       const char *label)
 {
-	g_return_if_fail (password_dialog != NULL);
-	g_return_if_fail (GNOME_IS_TWO_PASSWORD_DIALOG (password_dialog));
+	VpnPasswordDialogPrivate *priv;
 
-	g_free (password_dialog->details->secondary_password_label);
-	password_dialog->details->secondary_password_label = g_strdup (password_secondary_label);
+	g_return_if_fail (dialog != NULL);
+	g_return_if_fail (VPN_IS_PASSWORD_DIALOG (dialog));
 
-	if (password_dialog->details->show_password_secondary) {
-		add_table_rows (password_dialog);
-	}
+	priv = VPN_PASSWORD_DIALOG_GET_PRIVATE (dialog);
+
+	g_free (priv->secondary_password_label);
+	priv->secondary_password_label = g_strdup (label);
+
+	if (priv->show_password_secondary)
+		add_table_rows (dialog);
 }
+

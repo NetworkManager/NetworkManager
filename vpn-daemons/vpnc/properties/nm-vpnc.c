@@ -308,7 +308,8 @@ static void
 init_one_pw_combo (VpncPluginUiWidget *self,
                    NMSettingVPN *s_vpn,
                    const char *combo_name,
-                   const char *key)
+                   const char *key,
+                   const char *entry_name)
 {
 	VpncPluginUiWidgetPrivate *priv = VPNC_PLUGIN_UI_WIDGET_GET_PRIVATE (self);
 	int active = -1;
@@ -316,6 +317,19 @@ init_one_pw_combo (VpncPluginUiWidget *self,
 	GtkListStore *store;
 	GtkTreeIter iter;
 	const char *value = NULL;
+	guint32 default_idx = 1;
+
+	/* If there's already a password and the password type can't be found in
+	 * the VPN settings, default to saving it.  Otherwise, always ask for it.
+	 */
+	widget = glade_xml_get_widget (priv->xml, entry_name);
+	if (widget) {
+		const char *tmp;
+
+		tmp = gtk_entry_get_text (GTK_ENTRY (widget));
+		if (tmp && strlen (tmp))
+			default_idx = 0;
+	}
 
 	store = gtk_list_store_new (1, G_TYPE_STRING);
 	if (s_vpn)
@@ -346,7 +360,7 @@ init_one_pw_combo (VpncPluginUiWidget *self,
 	g_assert (widget);
 	gtk_combo_box_set_model (GTK_COMBO_BOX (widget), GTK_TREE_MODEL (store));
 	g_object_unref (store);
-	gtk_combo_box_set_active (GTK_COMBO_BOX (widget), active < 0 ? 0 : active);
+	gtk_combo_box_set_active (GTK_COMBO_BOX (widget), active < 0 ? default_idx : active);
 	pw_type_changed_helper (self, widget);
 
 	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (pw_type_combo_changed_cb), self);
@@ -418,8 +432,15 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 	gtk_combo_box_set_active (GTK_COMBO_BOX (widget), active < 0 ? 0 : active);
 	g_signal_connect (G_OBJECT (widget), "changed", G_CALLBACK (stuff_changed_cb), self);
 
-	init_one_pw_combo (self, s_vpn, "user_pass_type_combo", NM_VPNC_KEY_XAUTH_PASSWORD_TYPE);
-	init_one_pw_combo (self, s_vpn, "group_pass_type_combo", NM_VPNC_KEY_SECRET_TYPE);
+	/* Fill the VPN passwords *before* initializing the PW type combos, since
+	 * knowing if there are passwords when initializing the combos is helpful.
+	 */
+	fill_vpn_passwords (self, connection);
+
+	init_one_pw_combo (self, s_vpn, "user_pass_type_combo",
+	                   NM_VPNC_KEY_XAUTH_PASSWORD_TYPE, "user_password_entry");
+	init_one_pw_combo (self, s_vpn, "group_pass_type_combo",
+	                   NM_VPNC_KEY_SECRET_TYPE, "group_password_entry");
 
 	widget = glade_xml_get_widget (priv->xml, "user_entry");
 	g_return_val_if_fail (widget != NULL, FALSE);
@@ -492,8 +513,6 @@ init_plugin_ui (VpncPluginUiWidget *self, NMConnection *connection, GError **err
 		}
 	}
 	g_signal_connect (G_OBJECT (widget), "toggled", G_CALLBACK (stuff_changed_cb), self);
-
-	fill_vpn_passwords (self, connection);
 
 	widget = glade_xml_get_widget (priv->xml, "show_passwords_checkbutton");
 	g_return_val_if_fail (widget != NULL, FALSE);

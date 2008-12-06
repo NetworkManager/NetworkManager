@@ -1,3 +1,25 @@
+2008-12-05  Dan Williams  <dcbw@redhat.com>
+
+	* auth-dialog/gnome-two-password-dialog.c
+	  auth-dialog/gnome-two-password-dialog.h
+		- Simplify to only what the VPN plugin actually needs
+
+	* auth-dialog/main.c
+		- (find_connection_path): split out into separate function
+		- (get_secrets): be more intelligent about requesting password when
+			the password type cannot be found in the VPN details; use new VPN
+			password dialog stuff
+		- (get_connection_info): rename from get_password_types(); get
+			connection name too
+		- (main): don't require a connection name too; it's pointless
+
+	* properties/nm-vpnc.c
+		- (init_one_pw_combo): if the password was found, but the password type
+			wasn't, default to saving the password in the keyring.  Otherwise
+			if both the type and the password couldn't be found, default to
+			always asking for it.
+		- (init_plugin_ui): get VPN passwords before setting up the type combos
+
 2008-11-14  Dan Williams  <dcbw@redhat.com>
 
 	* src/nm-vpnc-service.c
