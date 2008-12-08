@@ -1,4 +1,4 @@
-# German translations for NetworkManager-vpn package.
+# German translations for NetworkManager-vpnc package.
 # Copyright (C) 2007 THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 # Thomas Gier <info@thomasgier.de>, 2007.
@@ -8,58 +8,46 @@ msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-11-28 15:42+0100\n"
-"PO-Revision-Date: 2008-11-28 15:58+0100\n"
+"POT-Creation-Date: 2008-12-06 21:11+0100\n"
+"PO-Revision-Date: 2008-12-06 21:12+0100\n"
 "Last-Translator: Mario Blättermann <mariobl@gnome.org>\n"
 "Language-Team: de <gnome-de@gnome.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=utf-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:145
+#: ../auth-dialog/gnome-two-password-dialog.c:118
 msgid "_Secondary Password:"
 msgstr "_Zweitpasswort:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:259
-msgid "_Username:"
-msgstr "_Benutzername:"
-
-#: ../auth-dialog/gnome-two-password-dialog.c:261
-msgid "_Domain:"
-msgstr "_Domäne:"
-
-#: ../auth-dialog/gnome-two-password-dialog.c:263
+#: ../auth-dialog/gnome-two-password-dialog.c:174
 msgid "_Password:"
 msgstr "_Passwort:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:352
-msgid "Connect _anonymously"
-msgstr "_Anonym verbinden"
+#: ../auth-dialog/gnome-two-password-dialog.c:255
+msgid "Sh_ow passwords"
+msgstr "Passwörter an_zeigen"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:357
-msgid "Connect as _user:"
-msgstr "Als Ben_utzer verbinden:"
-
-#: ../auth-dialog/gnome-two-password-dialog.c:466
+#: ../auth-dialog/gnome-two-password-dialog.c:315
 msgid "_Remember passwords for this session"
 msgstr "Passwo_rt für diese Sitzung behalten"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:468
+#: ../auth-dialog/gnome-two-password-dialog.c:316
 msgid "_Save passwords in keyring"
 msgstr "Passwort im _Schlüsselbund speichern"
 
-#: ../auth-dialog/main.c:105
+#: ../auth-dialog/main.c:170
 #, c-format
 msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr ""
 "Sie müssen sich legitimieren, um auf das Virtuelle private Netzwerk »%s« "
 "zugreifen zu können."
 
-#: ../auth-dialog/main.c:106
+#: ../auth-dialog/main.c:171
 msgid "Authenticate VPN"
 msgstr "VPN legitimieren"
 
-#: ../auth-dialog/main.c:113
+#: ../auth-dialog/main.c:175
 msgid "_Group Password:"
 msgstr "_Gruppenpasswort:"
 
@@ -83,47 +71,47 @@ msgstr ""
 "Kompatibel zu verschiedenen VPN-Gateways von Cisco, Juniper, Netscreen und "
 "Sonicwall (IPSec-basiert)."
 
-#: ../properties/nm-vpnc.c:325
+#: ../properties/nm-vpnc.c:339
 msgid "Saved"
 msgstr "Gespeichert"
 
-#: ../properties/nm-vpnc.c:332
+#: ../properties/nm-vpnc.c:346
 msgid "Always Ask"
 msgstr "Immer fragen"
 
-#: ../properties/nm-vpnc.c:339
+#: ../properties/nm-vpnc.c:353
 msgid "Not Required"
 msgstr "Nicht notwendig"
 
-#: ../properties/nm-vpnc.c:398
+#: ../properties/nm-vpnc.c:412
 msgid "Secure (default)"
 msgstr "Sicher (Vorgabe)"
 
-#: ../properties/nm-vpnc.c:401
+#: ../properties/nm-vpnc.c:415
 msgid "Weak (use with caution)"
 msgstr "Weich (mit Vorsicht zu verwenden)"
 
-#: ../properties/nm-vpnc.c:409
+#: ../properties/nm-vpnc.c:423
 msgid "None (completely insecure)"
 msgstr "Keine (komplett unsicher)"
 
-#: ../properties/nm-vpnc.c:450
+#: ../properties/nm-vpnc.c:471
 msgid "Cisco UDP (default)"
 msgstr "Cisco-UDP (Vorgabe)"
 
-#: ../properties/nm-vpnc.c:457
+#: ../properties/nm-vpnc.c:478
 msgid "NAT-T"
 msgstr "NAT-T"
 
-#: ../properties/nm-vpnc.c:464
+#: ../properties/nm-vpnc.c:485
 msgid "Disabled"
 msgstr "Deaktiviert"
 
-#: ../properties/nm-vpnc.c:1085
+#: ../properties/nm-vpnc.c:1104
 msgid "TCP tunneling not supported"
 msgstr "TCP-Tunneling wird nicht unterstützt"
 
-#: ../properties/nm-vpnc.c:1087
+#: ../properties/nm-vpnc.c:1106
 #, c-format
 msgid ""
 "The VPN settings file '%s' specifies that VPN traffic should be tunneled "
@@ -190,6 +178,18 @@ msgstr "_Gateway:"
 #: ../properties/nm-vpnc-dialog.glade.h:13
 msgid "_User password:"
 msgstr "Ben_utzerpasswort:"
+
+#~ msgid "_Username:"
+#~ msgstr "_Benutzername:"
+
+#~ msgid "_Domain:"
+#~ msgstr "_Domäne:"
+
+#~ msgid "Connect _anonymously"
+#~ msgstr "_Anonym verbinden"
+
+#~ msgid "Connect as _user:"
+#~ msgstr "Als Ben_utzer verbinden:"
 
 #~ msgid "The following vpnc VPN connection will be created:"
 #~ msgstr "Folgende vpnc-VPN-Verbindung wird erzeugt:"

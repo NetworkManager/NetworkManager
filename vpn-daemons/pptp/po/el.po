@@ -1,599 +1,191 @@
-# translation of el.po to Greek
+# translation of NetworkManager-pptp.HEAD.po to
 # Copyright (C) 2007 THE PACKAGE'S COPYRIGHT HOLDER
 # This file is distributed under the same license as the PACKAGE package.
 #
 # Kostas Papadimas <pkst@gnome.org>, 2007.
+# Jennie Petoumenou <epetoumenou@gmail.com>, 2008.
 msgid ""
 msgstr ""
-"Project-Id-Version: el\n"
+"Project-Id-Version: NetworkManager-pptp.HEAD\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2007-08-15 13:07+0300\n"
-"PO-Revision-Date: 2007-08-15 13:07+0300\n"
-"Last-Translator: Kostas Papadimas <pkst@gnome.org>\n"
+"POT-Creation-Date: 2008-12-07 15:33+0000\n"
+"PO-Revision-Date: 2008-12-07 01:18+0200\n"
+"Last-Translator: Jennie Petoumenou <epetoumenou@gmail.com>\n"
 "Language-Team: Greek <team@gnome.gr>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-
-#: ../auth-dialog-general/gnome-generic-auth-dialog.c:792
-msgid "Authentication Type:"
-msgstr "Τύπος πιστοποίησης:"
-
-#: ../auth-dialog-general/gnome-generic-auth-dialog.c:857
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:11
-msgid "_Remember for this session"
-msgstr "Απο_μνημόνευση για αυτή τη συνεδρία"
-
-#: ../auth-dialog-general/gnome-generic-auth-dialog.c:859
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:13
-msgid "_Save in keyring"
-msgstr "Απο_θήκευση στο keyring"
-
-#: ../auth-dialog-general/main.c:48 ../auth-dialog/main.c:140
-#, c-format
-msgid "You need to authenticate to access '%s'."
-msgstr "Χρειάζεστε πιστοποίηση για αν έχετε πρόσβαση στο  '%s'."
-
-#: ../auth-dialog-general/main.c:51 ../auth-dialog/main.c:141
-msgid "Authenticate Connection"
-msgstr "Πιστοποίηση σύνδεσης"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:2
-#, no-c-format
-msgid ""
-"<span weight=\"bold\" size=\"larger\">Authentication Information</span>\n"
-"\n"
-"The connection '%s' may need some form of authentication.\n"
-"\n"
-"Please select an appropriate authentication type and provide the necessary "
-"credentials below:\n"
-msgstr ""
-"<span weight=\"bold\" size=\"larger\">Πληροφορίες πιστοποίησης</span>\n"
-"\n"
-"Η σύνδεση '%s' πιθανώς να χρειάζεται κάποια μορφή πιστοποίησης.\n"
-"\n"
-"Παρακαλώ επιλέξτε την κατάλληλη μέθοδο πιστοποίησης και εισάγετε παρακάτω τα "
-"απαραίτητα διαπιστευτήρια:\n"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:8
-msgid "Authentication Required"
-msgstr "Απαιτείται πιστοποίηση"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:9
-msgid "_Authentication Type:"
-msgstr "Τύπος _πιστοποίησης:"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:10
-#: ../auth-dialog/gnome-two-password-dialog.c:263
-msgid "_Password:"
-msgstr "_Κωδικός:"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:12
-msgid "_Remote name:"
-msgstr "Απο_μακρυσμένο όνομα:"
-
-#: ../auth-dialog-general/nm-ppp-auth.glade.h:14
-#: ../auth-dialog/gnome-two-password-dialog.c:259
-msgid "_Username:"
-msgstr "Ό_νομα χρήστη:"
+"X-Generator: Lokalize 0.2\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: ../auth-dialog/gnome-two-password-dialog.c:144
 msgid "_Secondary Password:"
-msgstr "_Δευτερεύων κωδικός πρόσβασης:"
+msgstr "_Δευτερεύον συνθηματικό:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:261
+#: ../auth-dialog/gnome-two-password-dialog.c:258
+msgid "_Username:"
+msgstr "Ό_νομα χρήστη:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:260
 msgid "_Domain:"
 msgstr "_Τομέας:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:352
+#: ../auth-dialog/gnome-two-password-dialog.c:262
+msgid "_Password:"
+msgstr "_Συνθηματικό:"
+
+#: ../auth-dialog/gnome-two-password-dialog.c:351
 msgid "Connect _anonymously"
 msgstr "_Ανώνυμη σύνδεση"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:357
+#: ../auth-dialog/gnome-two-password-dialog.c:356
 msgid "Connect as _user:"
 msgstr "Σύνδεση ως _χρήστης:"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:466
-msgid "_Remember password for this session"
-msgstr "Απομνη_μόνευση κωδικού για αυτή τη συνεδρία"
+#: ../auth-dialog/gnome-two-password-dialog.c:465
+msgid "_Remember passwords for this session"
+msgstr "Απομνη_μόνευση συνθηματικών για αυτή τη συνεδρία"
 
-#: ../auth-dialog/gnome-two-password-dialog.c:468
-msgid "_Save password in keyring"
-msgstr "Απο_θήκευση κωδικού πρόσβασης στο keyring"
+#: ../auth-dialog/gnome-two-password-dialog.c:467
+msgid "_Save passwords in keyring"
+msgstr "Απο_θήκευση συνθηματικών στην κλειδοθήκη"
 
-#: ../nm-ppp.desktop.in.h:1
-msgid "Add, Remove, and Edit VPN Connections"
-msgstr "Προσθήκη, απομάκρυνση και επεξεργασία συνδέσεων VPN"
-
-#: ../nm-ppp.desktop.in.h:2
-msgid "VPN Connection Manager (PPP generic)"
-msgstr "Διαχείριση σύνδεσης VPN  (PPP generic)"
-
-#: ../properties/nm-ppp-dialog.glade.h:1
-msgid "00:00:00:00"
-msgstr "00:00:00:00"
-
-#: ../properties/nm-ppp-dialog.glade.h:2
-msgid "<b>Compression</b>"
-msgstr "<b>Συμπίεση</b>"
-
-#: ../properties/nm-ppp-dialog.glade.h:3
-msgid "<b>Delays &amp; Timeouts</b>"
-msgstr "<b>Καθυστερήσεις &amp; διακοπές</b>"
-
-#: ../properties/nm-ppp-dialog.glade.h:4
-msgid "<b>Encryption</b>"
-msgstr "<b>Κρυπτογράφηση</b>"
-
-#: ../properties/nm-ppp-dialog.glade.h:5
-msgid "<b>IP Options</b>"
-msgstr "<b>Επιλογές IP</b>"
-
-#: ../properties/nm-ppp-dialog.glade.h:6
-msgid "<b>Packet Parameters</b>"
-msgstr "<b>Παράμετροι πακέτου</b>"
-
-#: ../properties/nm-ppp-dialog.glade.h:7
-msgid "<i>Example: 172.16.0.0/16 10.11.12.0/24</i>"
-msgstr "<i>Παράδειγμα: 172.16.0.0/16 10.11.12.0/24</i>"
-
-#: ../properties/nm-ppp-dialog.glade.h:8
-msgid "A list of extra options to pppd as would be typed on the command line"
+#: ../auth-dialog/main.c:62
+#, c-format
+msgid "You need to authenticate to access the Virtual Private Network '%s'."
 msgstr ""
-"Μια λίστα επιπρόσθετων επιλογών για το pppd σαν να τα πληκτρολογούσατε στη "
-"γραμμή εντολών"
+"Χρειάζεστε πιστοποίηση για να αποκτήσετε πρόσβαση στο Ιδιωτικό Εικονικό "
+"Δίκτυο (VPN) '%s'."
 
-#: ../properties/nm-ppp-dialog.glade.h:9
-msgid "Allow B_SD Compression"
-msgstr "Να επιτρέπεται η συμπίεση B_SD"
+#: ../auth-dialog/main.c:63
+msgid "Authenticate VPN"
+msgstr "Πιστοποίηση VPN"
 
-#: ../properties/nm-ppp-dialog.glade.h:10
-msgid "Allow _Deflate compression"
-msgstr "Να επιτρέπεται συμπίεση _Deflate"
+#: ../nm-pptp.desktop.in.h:1
+msgid "Add, Remove, and Edit PPTP VPN Connections"
+msgstr "Προσθήκη, απομάκρυνση και επεξεργασία συνδέσεων PPTP VPN"
 
-#: ../properties/nm-ppp-dialog.glade.h:11
-msgid "Authentication"
-msgstr "Πιστοποίηση"
+#: ../nm-pptp.desktop.in.h:2
+msgid "PPTP VPN Connection Manager"
+msgstr "Διαχείριση συνδέσεων PPTP VPN"
 
-#: ../properties/nm-ppp-dialog.glade.h:12
-msgid "C_hannel:"
-msgstr "_Κανάλι:"
+#: ../properties/advanced-dialog.c:145
+msgid "All Available (Default)"
+msgstr "Όλες οι διαθέσιμες (προεπιλογή)"
 
-#: ../properties/nm-ppp-dialog.glade.h:13
-msgid "Co_nnect delay:"
-msgstr "Καθυστέρηση σύ_νδεσης:"
+#: ../properties/advanced-dialog.c:149
+msgid "128-bit (most secure)"
+msgstr "128-bit (μέγιστη ασφάλεια)"
 
-#: ../properties/nm-ppp-dialog.glade.h:14
-msgid "Compression & Encryption"
-msgstr "Συμπίεση & κρυπτογράφηση"
+#: ../properties/advanced-dialog.c:158
+msgid "40-bit (less secure)"
+msgstr "40-bit (μικρότερη ασφάλεια)"
 
-#: ../properties/nm-ppp-dialog.glade.h:15
-msgid "Connection"
-msgstr "Σύνδεση"
+#: ../properties/advanced-dialog.c:229
+msgid "PAP"
+msgstr "PAP"
 
-#: ../properties/nm-ppp-dialog.glade.h:16
-msgid "Connection na_me:"
-msgstr "Όνομα σύ_νδεσης:"
+#: ../properties/advanced-dialog.c:235
+msgid "CHAP"
+msgstr "CHAP"
 
-#: ../properties/nm-ppp-dialog.glade.h:17
-msgid "Context _number:"
-msgstr "Context _number:"
+#: ../properties/advanced-dialog.c:241
+msgid "MSCHAP"
+msgstr "MSCHAP"
 
-#: ../properties/nm-ppp-dialog.glade.h:18
-msgid "Custom _PPP options:"
-msgstr "_Προσαρμοσμένες επιλογές PPP:"
+#: ../properties/advanced-dialog.c:247
+msgid "MSCHAPv2"
+msgstr "MSCHAPv2"
 
-#: ../properties/nm-ppp-dialog.glade.h:19
-msgid "Debug _output"
-msgstr "Αποτέ_λεσμα εκσφαλμάτωσης"
+#: ../properties/advanced-dialog.c:253
+msgid "EAP"
+msgstr "EAP"
 
-#: ../properties/nm-ppp-dialog.glade.h:20
-msgid "Disconnect after this many LCP echo requests fail"
-msgstr "Αποσύνδεση μετά από αποτυχία πολλών αιτήσεων LCP echo"
+#: ../properties/nm-pptp-dialog.glade.h:1
+msgid "<b>Authentication</b>"
+msgstr "<b>Πιστοποίηση</b>"
 
-#: ../properties/nm-ppp-dialog.glade.h:21
-msgid "E_xclusive device access (UUCP-style lock)"
-msgstr "Απ_οκλειστική πρόσβαση συσκευής (UUCP-style lock)"
+#: ../properties/nm-pptp-dialog.glade.h:2
+msgid "<b>Echo</b>"
+msgstr "<b>Echo</b>"
 
-#: ../properties/nm-ppp-dialog.glade.h:22
-msgid "Enable stateful _MPPE"
-msgstr "Ενεργοποίηση stateful MPPE"
+#: ../properties/nm-pptp-dialog.glade.h:3
+msgid "<b>General</b>"
+msgstr "<b>Γενικά</b>"
 
-#: ../properties/nm-ppp-dialog.glade.h:23
-msgid "Find Device"
-msgstr "Εύρεση συσκευής"
+#: ../properties/nm-pptp-dialog.glade.h:4
+msgid "<b>Optional</b>"
+msgstr "<b>Προαιρετικά</b>"
 
-#: ../properties/nm-ppp-dialog.glade.h:24
-msgid ""
-"For security reasons, options entered in the box above are checked against a "
-"list of allowed options before a connection is established.  Currently there "
-"are no options on the list."
-msgstr ""
-"Για λόγους ασφαλείας, οι επιλογές που εισάγετε το παραπάνω πεδίο ελέγχονται "
-"μέσω μιας λίστας με επιτρεπόμενες  επιλογές, πριν να γίνει η σύνδεση. Αυτή "
-"τη στιγμή δεν υπάρχουν επιλογές στη λίστα."
+#: ../properties/nm-pptp-dialog.glade.h:5
+msgid "<b>Security and Compression</b>"
+msgstr "<b>Ασφάλεια και Συμπίεση</b>"
 
-#: ../properties/nm-ppp-dialog.glade.h:25
-msgid "GPRS Options"
-msgstr "Επιλογές GPRS"
+#: ../properties/nm-pptp-dialog.glade.h:6
+msgid "Ad_vanced..."
+msgstr "Για π_ροχωρημένους..."
 
-#: ../properties/nm-ppp-dialog.glade.h:26
-msgid "Host name or IP address of the PPTP server"
-msgstr "Όνομα συστήματος ή διεύθυνση IP για τον εξυπηρετητή PPTP"
+#: ../properties/nm-pptp-dialog.glade.h:7
+msgid "Allow _BSD data compression"
+msgstr "Να επιτρέπεται η συμπίεση _BSD"
 
-#: ../properties/nm-ppp-dialog.glade.h:27
-msgid "IP a_ddress:"
-msgstr "Διεύθυνση _IP:"
+#: ../properties/nm-pptp-dialog.glade.h:8
+msgid "Allow _Deflate data compression"
+msgstr "Να επιτρέπεται η συμπίεση _Deflate"
 
-#: ../properties/nm-ppp-dialog.glade.h:28
-msgid ""
-"If BSD compression is not allowed the 'nobsdcomp' option is passed to pppd"
-msgstr ""
-"Αν δεν επιτρέπεται η συμπίεση BSD η επιλογή 'nobsdcomp' περνάει στο pppd"
+#: ../properties/nm-pptp-dialog.glade.h:9
+msgid "Allow st_ateful encryption"
+msgstr "Να επιτρέπεται η _stateful κρυπτογράφηση"
 
-#: ../properties/nm-ppp-dialog.glade.h:29
-msgid ""
-"If Deflate compression is not allowed the 'nodefate' option is passed to pppd"
-msgstr ""
-"Αν δεν επιτρέπεται η συμπίεση Deflate η επιλογή 'nodefate' περνάει στο pppd"
+#: ../properties/nm-pptp-dialog.glade.h:10
+msgid "Allow the following authentication methods:"
+msgstr "Να επιτρέπονται οι ακόλουθες μέθοδοι πιστοποίησης:"
 
-#: ../properties/nm-ppp-dialog.glade.h:30
-msgid "Maximum Receive Unit"
-msgstr "Μέγιστη μονάδα λήψης"
+#: ../properties/nm-pptp-dialog.glade.h:11
+msgid "Default"
+msgstr "Προεπιλεγμένη"
 
-#: ../properties/nm-ppp-dialog.glade.h:31
-msgid "Maximum Transmit Unit"
-msgstr "Μέγιστη μονάδα μετάδοσης"
+#: ../properties/nm-pptp-dialog.glade.h:12
+msgid "NT Domain:"
+msgstr "Τομέας ΝΤ:"
 
-#: ../properties/nm-ppp-dialog.glade.h:32
-msgid "PPP Options"
-msgstr "Επιλογές PPP"
+#: ../properties/nm-pptp-dialog.glade.h:13
+msgid "Password:"
+msgstr "Συνθηματικό:"
 
-#: ../properties/nm-ppp-dialog.glade.h:33
-msgid "Refuse C_HAP"
-msgstr "Άρνηση C_HAP"
+#: ../properties/nm-pptp-dialog.glade.h:14
+msgid "Send PPP _echo packets"
+msgstr "Αποστολή πακέτων _echo PPP"
 
-#: ../properties/nm-ppp-dialog.glade.h:34
-msgid "Refuse _EAP"
-msgstr "Άρνηση _EAP"
+#: ../properties/nm-pptp-dialog.glade.h:15
+msgid "Show password"
+msgstr "Εμφάνιση συνθηματικού"
 
-#: ../properties/nm-ppp-dialog.glade.h:35
-msgid "Refuse _MS CHAP"
-msgstr "Άρνηση _MS CHAP"
+#: ../properties/nm-pptp-dialog.glade.h:16
+msgid "Use TCP _header compression"
+msgstr "Χρήση συμπίεσης _κεφαλίδων TCP"
 
-#: ../properties/nm-ppp-dialog.glade.h:36
-msgid "Require 128 bit M_PPE encryption"
-msgstr "Απαιτεί κρυπτογράφηση 128 bit M_PPE"
+#: ../properties/nm-pptp-dialog.glade.h:17
+msgid "Use _Point-to-Point encryption (MPPE)"
+msgstr "Χρήση κρυπτογράφησης _Point-to-Point (MPPE)"
 
-#: ../properties/nm-ppp-dialog.glade.h:37
-msgid "Require MPPE _encryption"
-msgstr "Απαιτεί _κρυπτογράφηση MPPE"
+#: ../properties/nm-pptp-dialog.glade.h:18
+msgid "User name:"
+msgstr "Όνομα χρήστη:"
 
-#: ../properties/nm-ppp-dialog.glade.h:38
-msgid "Require explicit IP _address"
-msgstr "Απαιτεί Explicit IP Addr"
-
-#: ../properties/nm-ppp-dialog.glade.h:39
-msgid "Requires existing network connection"
-msgstr "Απαιτεί υπάρχουσα σύνδεση δικτύου"
-
-#: ../properties/nm-ppp-dialog.glade.h:40
-msgid "Routing"
-msgstr "Δρομολόγηση"
-
-#: ../properties/nm-ppp-dialog.glade.h:41
-msgid "Serial Options"
-msgstr "Επιλογές σειριακής:"
-
-#: ../properties/nm-ppp-dialog.glade.h:42
-msgid "Service providers GPRS access point from device config"
-msgstr "Σημείο πρόσβασης παρόχων υπηρεσίας GPRS από τη ρύθμιση της συσκευής"
-
-#: ../properties/nm-ppp-dialog.glade.h:43
-msgid "Service providers IP address"
-msgstr "Διεύθυνση IP παρόχων υπηρεσίας"
-
-#: ../properties/nm-ppp-dialog.glade.h:44
-msgid "Telep_hone number:"
-msgstr "Αριθμός _τηλεφώνου:"
-
-#: ../properties/nm-ppp-dialog.glade.h:45
-msgid ""
-"This is the friendly name that will be used to identify this network "
-"connection, \n"
-"e.g. \"Campus VPN\" or \"Corporate Network\""
-msgstr ""
-"Αυτό είναι ένα φιλικό όνομα που θα χρησιμοποιηθεί για την ταυτότητα της "
-"σύνδεσης αυτού του δικτύου, \n"
-"π.χ. \"Campus VPN\" ή \"Corporate Network\""
-
-#: ../properties/nm-ppp-dialog.glade.h:47
-msgid "Time in seconds between echo requests"
-msgstr "Διάστημα σε δευτερόλεπτα μεταξύ echo requests"
-
-#: ../properties/nm-ppp-dialog.glade.h:48
-msgid "Typ_e:"
-msgstr "Τύπ_ος:"
-
-#: ../properties/nm-ppp-dialog.glade.h:49
-msgid "Use peer _DNS"
-msgstr "Χρήση Peer _DNS"
-
-#: ../properties/nm-ppp-dialog.glade.h:50
-msgid "When checked the \"refuse-chap\" option is passed to pppd."
-msgstr ""
-"Αν αυτό το πεδίο είναι ενεργό η επιλογή \"refuse-chap\" περνάει στο pppd"
-
-#: ../properties/nm-ppp-dialog.glade.h:51
-msgid "When checked the \"refuse-eap\" option is passed to pppd."
-msgstr ""
-"Αν αυτό το πεδίο είναι ενεργό η επιλογή \"refuse-eap\" περνάει στο pppd"
-
-#: ../properties/nm-ppp-dialog.glade.h:52
-msgid "When checked the \"refuse-mschap\" option is passed to pppd."
-msgstr ""
-"Αν αυτό το πεδίο είναι ενεργό η επιλογή \"refuse-mschap\" περνάει στο pppd"
-
-#: ../properties/nm-ppp-dialog.glade.h:53
-msgid "When checked the 'lock' option is passed to pppd"
-msgstr "Αν αυτό το πεδίο είναι ενεργό η επιλογή 'κλείδωμα' περνάει στο pppd"
-
-#: ../properties/nm-ppp-dialog.glade.h:54
-msgid "When checked the 'require-mppc' option is passed to pppd"
-msgstr ""
-"Αν αυτό το πεδίο είναι ενεργό η επιλογή 'require-mppc' περνάει στο pppd"
-
-#: ../properties/nm-ppp-dialog.glade.h:55
-msgid ""
-"When checked this sets the pppd 'debug' option and adds some extra "
-"information from the NetworkManager plugin"
-msgstr ""
-"Αν αυτό το πεδίο είναι ενεργό η επιλογή 'debug'  περνάει στο pppd, και "
-"προσθέτει μερικές επιπρόσθετες πληροφορίες από την πρόσθετη λειτουργία του "
-"NetworkManager"
-
-#: ../properties/nm-ppp-dialog.glade.h:56
-msgid "When checked this sets the pppd 'noipdefault' option"
-msgstr ""
-"Αν αυτό το πεδίο είναι ενεργό η επιλογή 'noipdefault'  περνάει στο pppd"
-
-#: ../properties/nm-ppp-dialog.glade.h:57
-msgid "When checked this sets the pppd 'usepeerdns' option"
-msgstr "Αν αυτό το πεδίο είναι ενεργό η επιλογή 'usepeerdns'  περνάει στο pppd"
-
-#: ../properties/nm-ppp-dialog.glade.h:58
-msgid "When this check box is cleared the \"noauth\" option is passed to pppd."
-msgstr ""
-"Αν αυτό το πεδίο δεν είναι ενεργό η επιλογή \"noauth\" περνάει στο pppd"
-
-#: ../properties/nm-ppp-dialog.glade.h:59
-msgid "_Access point name:"
-msgstr "Όνομα σημείου πρόσβ_ασης:"
-
-#: ../properties/nm-ppp-dialog.glade.h:60
-msgid "_Authenticate peer"
-msgstr "Πιστο_ποίηση Peer"
-
-#: ../properties/nm-ppp-dialog.glade.h:61
-msgid "_Device address:"
-msgstr "Διεύθυνση _συσκευής:"
-
-#: ../properties/nm-ppp-dialog.glade.h:62
+#: ../properties/nm-pptp-dialog.glade.h:19
 msgid "_Gateway:"
-msgstr "_Gateway:"
+msgstr "Πύ_λη:"
 
-#: ../properties/nm-ppp-dialog.glade.h:63
-msgid "_Hardware RTS/CTS"
-msgstr "Υ_λικό RTS/CTS"
+#: ../properties/nm-pptp-dialog.glade.h:20
+msgid "_Security:"
+msgstr "_Ασφάλεια:"
 
-#: ../properties/nm-ppp-dialog.glade.h:64
-msgid "_Import Saved Configuration..."
-msgstr "Ε_ισαγωγή αποθηκευμένης ρύθμισης..."
+#: ../properties/nm-pptp.c:50
+msgid "Point-to-Point Tunneling Protocol (PPTP)"
+msgstr "Πρωτόκολλο Point-to-Point Tunneling (PPTP)"
 
-#: ../properties/nm-ppp-dialog.glade.h:65
-msgid "_Modem connection"
-msgstr "Σύνδεση _μόντεμ"
-
-#: ../properties/nm-ppp-dialog.glade.h:66
-msgid "_Only use VPN connection for these addresses:"
-msgstr "Να γίνεται _χρήση σύνδεσης VPN μόνο για αυτές τις διευθύνσεις:"
-
-#: ../properties/nm-ppp-dialog.glade.h:67
-msgid "_Packet type:"
-msgstr "Τύπος _πακέτου:"
-
-#: ../properties/nm-ppp-dialog.glade.h:68
-msgid "_Peer DNS through tunnel"
-msgstr "_Peer DNS μέσω tunnel"
-
-#: ../properties/nm-ppp-dialog.glade.h:69
-msgid "_Require MPPC compression"
-msgstr "Απαι_τεί συμπίεση MPPC"
-
-#: ../properties/nm-ppp-properties.c:45
-msgid "pppd tunnel (PPTP, BTGPRS, Dialup)"
-msgstr "pppd tunnel (PPTP, BTGPRS, Dialup)"
-
-#: ../properties/nm-ppp-properties.c:134
-msgid "Name"
-msgstr "Όνομα"
-
-#: ../properties/nm-ppp-properties.c:146
-msgid "PPTP Server"
-msgstr "Εξυπηρετητής PPTP"
-
-#: ../properties/nm-ppp-properties.c:151
-msgid "Telephone Number"
-msgstr "Αριθμός τηλεφώνου"
-
-#: ../properties/nm-ppp-properties.c:156
-msgid "Bluetooth Address"
-msgstr "Διεύθυνση Bluetooth"
-
-#: ../properties/nm-ppp-properties.c:161
-msgid "Bluetooth Channel"
-msgstr "Κανάλι Bluetooth"
-
-#: ../properties/nm-ppp-properties.c:166
-msgid "GPRS APN"
-msgstr "GPRS APN"
-
-#: ../properties/nm-ppp-properties.c:171
-msgid "GPRS IP"
-msgstr "GPRS IP"
-
-#: ../properties/nm-ppp-properties.c:176
-msgid "GPRS Context No."
-msgstr "GPRS Context No."
-
-#: ../properties/nm-ppp-properties.c:181
-msgid "GPRS Packet Type"
-msgstr "Τύπος πακέτων GPRS"
-
-#: ../properties/nm-ppp-properties.c:186
-msgid "Use CTS/RTS flow control"
-msgstr "Χρήση ελέγχου ροής CTS/RTS"
-
-#: ../properties/nm-ppp-properties.c:191
-msgid "Connect via a modem"
-msgstr "Σύνδεση μέσω μόντεμ"
-
-#: ../properties/nm-ppp-properties.c:196
-msgid "Require IP to be provided"
-msgstr "Απαιτεί καταχώριση IP"
-
-#: ../properties/nm-ppp-properties.c:201
-msgid "Use Peer DNS"
-msgstr "Χρήση Peer DNS"
-
-#: ../properties/nm-ppp-properties.c:206
-msgid "Use MPPE encryption"
-msgstr "Χρήση κρυπτογράφησης MPPE "
-
-#: ../properties/nm-ppp-properties.c:211
-msgid "Use 128 bit MPPE encryption"
-msgstr "Χρήση κρυπτογράφησης  128 bit MPPE"
-
-#: ../properties/nm-ppp-properties.c:216
-msgid "Enable stateful MPPE"
-msgstr "Ενεργοποίηση stateful MPPE"
-
-#: ../properties/nm-ppp-properties.c:221
-msgid "Use MPPC compression"
-msgstr "Χρήση συμπίεσης MPPC"
-
-#: ../properties/nm-ppp-properties.c:226
-msgid "Do not use deflate compression"
-msgstr "Να μην γίνει χρήση συμπίεσης deflate"
-
-#: ../properties/nm-ppp-properties.c:231
-msgid "Do not use BSD compression"
-msgstr "Να μην γίνεται χρήση συμπίεσης BSD "
-
-#: ../properties/nm-ppp-properties.c:236
-msgid "Exclusive device access by pppd"
-msgstr "Αποκλειστική πρόσβαση στη συσκευή από το pppd"
-
-#: ../properties/nm-ppp-properties.c:241
-msgid "Authenticate remote peer"
-msgstr "Πιστοποίηση απομακρυσμένου peer"
-
-#: ../properties/nm-ppp-properties.c:246
-msgid "Refuse EAP"
-msgstr "Άρνηση EAP"
-
-#: ../properties/nm-ppp-properties.c:251
-msgid "Refuse CHAP"
-msgstr "Άρνηση CHAP"
-
-#: ../properties/nm-ppp-properties.c:256
-msgid "Refuse MSCHAP"
-msgstr "Άρνηση MSCHAP"
-
-#: ../properties/nm-ppp-properties.c:261
-msgid "Maximum transmit unit (in bytes)"
-msgstr "Μέγιστη μονάδα μετάδοσης (σε bytes)"
-
-#: ../properties/nm-ppp-properties.c:266
-msgid "Maximum receive unit (in bytes)"
-msgstr "Μέγιστη μονάδα λήψης (σε bytes)"
-
-#: ../properties/nm-ppp-properties.c:271
-msgid "Number of failed LCP echos to cause disconnect"
-msgstr "Αριθμός αποτυχημένων LCP echos που θα προκαλούν αποσύνδεση"
-
-#: ../properties/nm-ppp-properties.c:276
-msgid "Interval (in seconds) at which to issue LCP echos"
-msgstr "Διάστημα (σε δευτερόλεπτα) στο οποίο θα εκδίδονται LCP echos"
-
-#: ../properties/nm-ppp-properties.c:281
-msgid "Interval (in milliseconds) to wait before connecting."
-msgstr "Μεσοδιάστημα (σε χιλ. δευτερολ) αναμονής πριν τη σύνδεση"
-
-#: ../properties/nm-ppp-properties.c:286
-msgid "Custom PPP options"
-msgstr "Προσαρμοσμένες επιλογές PPP"
-
-#: ../properties/nm-ppp-properties.c:296
-msgid "Use Peer DNS over the Tunnel"
-msgstr "Χρήση Peer DNS over the Tunnel"
-
-#: ../properties/nm-ppp-properties.c:302
-msgid "Specific networks available"
-msgstr "Συγκεκριμένα δίκτυα διαθέσιμα"
-
-#: ../properties/nm-ppp-properties.c:308
-msgid "Limit to specific networks"
-msgstr "Περιορισμός σε συγκεκριμένα δίκτυα"
-
-#: ../properties/vpnui_impl.c:229
-#, c-format
-msgid "The following '%s' connection will be created:"
-msgstr "Θα δημιουργηθεί η ακόλουθη '%s' σύνδεση:"
-
-#: ../properties/vpnui_impl.c:242
-#, c-format
-msgid "\t%s:  %s\n"
-msgstr "\t%s:  %s\n"
-
-#: ../properties/vpnui_impl.c:245
-msgid "The connection details can be changed using the \"Back\" button."
+#: ../properties/nm-pptp.c:51
+msgid "Compatible with Microsoft and other PPTP VPN servers."
 msgstr ""
-"Η ρυθμίσεις σύνδεσης μπορούν να τροποποιηθούν πατώντας το κουμπί \"Πίσω'"
-
-#: ../properties/vpnui_impl.c:317
-msgid "Select file to import"
-msgstr "Επιλογή αρχείου για εισαγωγή"
-
-#. printf ("in impl_export\n");
-#: ../properties/vpnui_impl.c:462
-msgid "Save as..."
-msgstr "Αποθήκευση ως..."
-
-#: ../properties/vpnui_impl.c:491
-#, c-format
-msgid "A file named \"%s\" already exists."
-msgstr "Ένα αρχείο με το όνομα \"%s\" υπάρχει ήδη."
-
-#: ../properties/vpnui_impl.c:494
-msgid "Do you want to replace it with the one you are saving?"
-msgstr "Θέλετε να το αντικαταστήσετε με αυτό που αποθηκεύετε;"
-
-#: ../src/nm-ppp-starter.c:140
-msgid "VPN Connection failed"
-msgstr "Αποτυχία σύνδεσης VPN"
-
-#~ msgid "auth-chap-window"
-#~ msgstr "auth-chap-window"
-
-#~ msgid "auth-mschapv2-window"
-#~ msgstr "auth-mschapv2-window"
-
-#~ msgid "auth-none-window"
-#~ msgstr "auth-none-window"
-
-#~ msgid "<b>Connection Name</b>"
-#~ msgstr "<b>Όνομα σύνδεσης</b>"
-
-#~ msgid "Telephone number to dial"
-#~ msgstr "Αριθμός τηλεφώνου για κλήση"
+"Συμβατό με τους εξυπηρετητές PPTP VPN της Microsoft και άλλων εταιρειών."
