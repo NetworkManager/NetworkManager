@@ -280,39 +280,38 @@ plugin_failed (DBusGProxy *proxy,
 
 static void
 plugin_state_changed (DBusGProxy *proxy,
-				  NMVPNServiceState state,
-				  gpointer user_data)
+                      NMVPNServiceState state,
+                      gpointer user_data)
 {
 	NMVPNConnection *connection = NM_VPN_CONNECTION (user_data);
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (connection);
 
 	nm_info ("VPN plugin state changed: %d", state);
 
-	if (state != NM_VPN_SERVICE_STATE_STOPPED)
-		return;
+	if (state == NM_VPN_SERVICE_STATE_STOPPED) {
+		/* Clear connection secrets to ensure secrets get requested each time the
+		 * connection is activated.
+		 */
+		nm_connection_clear_secrets (priv->connection);
 
-	switch (nm_vpn_connection_get_vpn_state (connection)) {
-	case NM_VPN_CONNECTION_STATE_PREPARE:
-	case NM_VPN_CONNECTION_STATE_NEED_AUTH:
-	case NM_VPN_CONNECTION_STATE_CONNECT:
-	case NM_VPN_CONNECTION_STATE_IP_CONFIG_GET:
-	case NM_VPN_CONNECTION_STATE_ACTIVATED:
-		nm_info ("VPN plugin state change reason: %d", priv->failure_reason);
-		nm_vpn_connection_set_vpn_state (connection,
-		                                 NM_VPN_CONNECTION_STATE_FAILED,
-										 priv->failure_reason);
+		switch (nm_vpn_connection_get_vpn_state (connection)) {
+		case NM_VPN_CONNECTION_STATE_PREPARE:
+		case NM_VPN_CONNECTION_STATE_NEED_AUTH:
+		case NM_VPN_CONNECTION_STATE_CONNECT:
+		case NM_VPN_CONNECTION_STATE_IP_CONFIG_GET:
+		case NM_VPN_CONNECTION_STATE_ACTIVATED:
+			nm_info ("VPN plugin state change reason: %d", priv->failure_reason);
+			nm_vpn_connection_set_vpn_state (connection,
+			                                 NM_VPN_CONNECTION_STATE_FAILED,
+											 priv->failure_reason);
 
-		/* Reset the failure reason */
-		priv->failure_reason = NM_VPN_CONNECTION_STATE_REASON_UNKNOWN;
-		break;
-	default:
-		break;
+			/* Reset the failure reason */
+			priv->failure_reason = NM_VPN_CONNECTION_STATE_REASON_UNKNOWN;
+			break;
+		default:
+			break;
+		}
 	}
-
-	/* Clear connection secrets too so the auth dialogs get asked
-	 * for them next time.
-	 */
-	nm_connection_clear_secrets (priv->connection);
 }
 
 static const char *
@@ -631,8 +630,8 @@ nm_vpn_connection_activate (NMVPNConnection *connection)
 	/* StateChanged signal */
 	dbus_g_proxy_add_signal (priv->proxy, "StateChanged", G_TYPE_UINT, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->proxy, "StateChanged",
-						    G_CALLBACK (plugin_state_changed),
-						    connection, NULL);
+	                             G_CALLBACK (plugin_state_changed),
+	                             connection, NULL);
 
 	nm_vpn_connection_set_vpn_state (connection,
 	                                 NM_VPN_CONNECTION_STATE_NEED_AUTH,

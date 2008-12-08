@@ -1,3 +1,11 @@
+2008-12-08  Dan Williams  <dcbw@redhat.com>
+
+	* src/vpn-manager/nm-vpn-connection.c
+		- (plugin_state_changed): clear secrets before setting the connection
+			state to FAILED, since doing so may destroy the connection itself,
+			since the NMVPNService owning this NMVPNConnection will unref it
+			when the NMVPNConnection is failed or stopped
+
 2008-12-05  Dan Williams  <dcbw@redhat.com>
 
 	Patch from Michael Biebl  <mbiebl@gmail.com>
