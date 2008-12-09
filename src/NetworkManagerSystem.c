@@ -358,6 +358,13 @@ nm_system_apply_ip4_config (const char *iface,
 			                             nm_ip4_route_get_prefix (route)))
 				continue;
 
+			/* Don't add the route if it doesn't have a gateway and the connection
+			 * is never supposed to be the default connection.
+			 */
+			if (   nm_ip4_config_get_never_default (config)
+			    && nm_ip4_route_get_dest (route) == 0)
+				continue;
+
 			tmp = nm_system_device_set_ip4_route (iface,
 			                                      nm_ip4_route_get_dest (route),
 			                                      nm_ip4_route_get_prefix (route),

@@ -238,6 +238,10 @@ get_best_device (NMManager *manager, NMActRequest **out_req)
 		if (!can_default && !NM_IS_HSO_GSM_DEVICE (dev))
 			continue;
 
+		/* 'never-default' devices can't ever be the default */
+		if (s_ip4 && nm_setting_ip4_config_get_never_default (s_ip4))
+			continue;
+
 		prio = nm_device_get_priority (dev);
 		if (prio > 0 && prio < best_prio) {
 			best = dev;
@@ -487,7 +491,6 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	NMIP4Config *ip4_config = NULL;
 	NMIP4Address *addr;
 	const char *ip_iface = NULL;
-	NMVPNConnection *vpn = NULL;
 	NMConnection *connection = NULL;
 	NMSettingConnection *s_con = NULL;
 	const char *connection_id;
@@ -502,55 +505,43 @@ update_routing_and_dns (NMPolicy *policy, gboolean force_update)
 	vpns = nm_vpn_manager_get_active_connections (policy->vpn_manager);
 	for (iter = vpns; iter; iter = g_slist_next (iter)) {
 		NMVPNConnection *candidate = NM_VPN_CONNECTION (iter->data);
+		NMConnection *vpn_connection;
+		NMSettingIP4Config *s_ip4;
+		gboolean can_default = TRUE;
+		NMVPNConnectionState vpn_state;
 
-		if (!vpn && (nm_vpn_connection_get_vpn_state (candidate) == NM_VPN_CONNECTION_STATE_ACTIVATED))
-			vpn = g_object_ref (candidate);
-		g_object_unref (candidate);
-	}
-	g_slist_free (vpns);
+		/* If it's marked 'never-default', don't make it default */
+		vpn_connection = nm_vpn_connection_get_connection (candidate);
+		g_assert (vpn_connection);
+		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (vpn_connection, NM_TYPE_SETTING_IP4_CONFIG);
+		if (s_ip4 && nm_setting_ip4_config_get_never_default (s_ip4))
+			can_default = FALSE;
 
-	/* VPNs are the default route only if they don't have custom non-host (ie, /32)
-	 * routes.  Custom non-host routes are redundant when the VPN is the default
-	 * route because any traffic meant for the custom route would be routed over
-	 * the VPN anyway.
-	 */
-	if (vpn) {
-		gboolean have_non_host_routes = FALSE;
-		int i;
-
-		ip4_config = nm_vpn_connection_get_ip4_config (vpn);
-		for (i = 0; i < nm_ip4_config_get_num_routes (ip4_config); i++) {
-			NMIP4Route *route = nm_ip4_config_get_route (ip4_config, i);
-
-			if (nm_ip4_route_get_prefix (route) != 32) {
-				have_non_host_routes = TRUE;
-				break;
-			}
-		}
-
-
-		if (!have_non_host_routes) {
+		vpn_state = nm_vpn_connection_get_vpn_state (candidate);
+		if (can_default && (vpn_state == NM_VPN_CONNECTION_STATE_ACTIVATED)) {
 			NMIP4Config *parent_ip4;
 			NMDevice *parent;
 
-			ip_iface = nm_vpn_connection_get_ip_iface (vpn);
-			connection = nm_vpn_connection_get_connection (vpn);
+			ip_iface = nm_vpn_connection_get_ip_iface (candidate);
+			connection = nm_vpn_connection_get_connection (candidate);
+			ip4_config = nm_vpn_connection_get_ip4_config (candidate);
 			addr = nm_ip4_config_get_address (ip4_config, 0);
 
-			parent = nm_vpn_connection_get_parent_device (vpn);
+			parent = nm_vpn_connection_get_parent_device (candidate);
 			parent_ip4 = nm_device_get_ip4_config (parent);
 
 			nm_system_replace_default_ip4_route_vpn (ip_iface,
 			                                         nm_ip4_address_get_gateway (addr),
-			                                         nm_vpn_connection_get_ip4_internal_gateway (vpn),
+			                                         nm_vpn_connection_get_ip4_internal_gateway (candidate),
 			                                         nm_ip4_config_get_mss (ip4_config),
 			                                         nm_device_get_ip_iface (parent),
 			                                         nm_ip4_config_get_mss (parent_ip4));
 
 			dns_type = NM_NAMED_IP_CONFIG_TYPE_VPN;
 		}
-		g_object_unref (vpn);
+		g_object_unref (candidate);
 	}
+	g_slist_free (vpns);
 
 	/* The best device gets the default route if a VPN connection didn't */
 	if (!ip_iface || !ip4_config) {

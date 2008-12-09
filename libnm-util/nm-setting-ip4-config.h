@@ -62,6 +62,7 @@ GQuark nm_setting_ip4_config_error_quark (void);
 #define NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS    "ignore-auto-dns"
 #define NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID     "dhcp-client-id"
 #define NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME      "dhcp-hostname"
+#define NM_SETTING_IP4_CONFIG_NEVER_DEFAULT      "never-default"
 
 #define NM_SETTING_IP4_CONFIG_METHOD_AUTO       "auto"
 #define NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL "link-local"
@@ -157,6 +158,8 @@ gboolean      nm_setting_ip4_config_get_ignore_auto_routes (NMSettingIP4Config *
 gboolean      nm_setting_ip4_config_get_ignore_auto_dns    (NMSettingIP4Config *setting);
 const char *  nm_setting_ip4_config_get_dhcp_client_id     (NMSettingIP4Config *setting);
 const char *  nm_setting_ip4_config_get_dhcp_hostname      (NMSettingIP4Config *setting);
+
+gboolean      nm_setting_ip4_config_get_never_default      (NMSettingIP4Config *setting);
 
 G_END_DECLS
 

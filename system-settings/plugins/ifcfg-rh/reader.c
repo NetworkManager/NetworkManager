@@ -180,6 +180,27 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 	NMIP4Address *addr = NULL;
 	char *method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
 	guint32 netmask = 0, tmp = 0;
+	shvarFile *network_ifcfg;
+	gboolean never_default = FALSE;
+
+	network_ifcfg = svNewFile (SYSCONFDIR "/sysconfig/network");
+	if (network_ifcfg) {
+		char *gatewaydev;
+
+		/* Get the connection ifcfg device name and the global gateway device */
+		value = svGetValue (ifcfg, "DEVICE");
+		gatewaydev = svGetValue (network_ifcfg, "GATEWAYDEV");
+
+		/* If there was a global gateway device specified, then only connections
+		 * for that device can be the default connection.
+		 */
+		if (gatewaydev && value && strcmp (value, gatewaydev))
+			never_default = TRUE;
+
+		g_free (gatewaydev);
+		g_free (value);
+		svCloseFile (network_ifcfg);
+	}
 
 	value = svGetValue (ifcfg, "BOOTPROTO");
 	if (value && (!g_ascii_strcasecmp (value, "bootp") || !g_ascii_strcasecmp (value, "dhcp")))
@@ -188,7 +209,10 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 	if (value && !g_ascii_strcasecmp (value, "autoip")) {
 		g_free (value);
 		s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
-		g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL, NULL);
+		g_object_set (s_ip4,
+		              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
+		              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default,
+		              NULL);
 		return NM_SETTING (s_ip4);
 	}
 
@@ -210,12 +234,10 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 
 		/* If no gateway in the ifcfg, try /etc/sysconfig/network instead */
 		if (!nm_ip4_address_get_gateway (addr)) {
-			shvarFile *network;
-
-			network = svNewFile ("/etc/sysconfig/network");
-			if (network) {
-				get_one_ip4_addr (network, "GATEWAY", &tmp, error);
-				svCloseFile (network);
+			network_ifcfg = svNewFile (SYSCONFDIR "/sysconfig/network");
+			if (network_ifcfg) {
+				get_one_ip4_addr (network_ifcfg, "GATEWAY", &tmp, error);
+				svCloseFile (network_ifcfg);
 				if (*error)
 					goto error;
 				nm_ip4_address_set_gateway (addr, tmp);
@@ -261,6 +283,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 	g_object_set (s_ip4,
 	              NM_SETTING_IP4_CONFIG_METHOD, method,
 	              NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS, !svTrueValue (ifcfg, "PEERDNS", 1),
+	              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default,
 	              NULL);
 
 	/* DHCP hostname for 'send host-name' option */

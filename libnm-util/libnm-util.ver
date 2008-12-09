@@ -132,6 +132,7 @@ global:
 	nm_setting_ip4_config_get_ignore_auto_dns;
 	nm_setting_ip4_config_get_dhcp_client_id;
 	nm_setting_ip4_config_get_dhcp_hostname;
+	nm_setting_ip4_config_get_never_default;
 	nm_setting_need_secrets;
 	nm_setting_ppp_error_get_type;
 	nm_setting_ppp_error_quark;

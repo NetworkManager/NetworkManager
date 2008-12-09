@@ -55,6 +55,8 @@ typedef struct {
 	GPtrArray *searches;
 
 	GSList *routes;
+
+	gboolean never_default;
 } NMIP4ConfigPrivate;
 
 
@@ -362,6 +364,22 @@ void nm_ip4_config_set_mss (NMIP4Config *config, guint32 mss)
 	g_return_if_fail (NM_IS_IP4_CONFIG (config));
 
 	NM_IP4_CONFIG_GET_PRIVATE (config)->mss = mss;
+}
+
+gboolean
+nm_ip4_config_get_never_default (NMIP4Config *config)
+{
+	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), FALSE);
+
+	return NM_IP4_CONFIG_GET_PRIVATE (config)->never_default;
+}
+
+void
+nm_ip4_config_set_never_default (NMIP4Config *config, gboolean never_default)
+{
+	g_return_if_fail (NM_IS_IP4_CONFIG (config));
+
+	NM_IP4_CONFIG_GET_PRIVATE (config)->never_default = never_default;
 }
 
 /* libnl convenience/conversion functions */

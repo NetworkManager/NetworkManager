@@ -359,6 +359,9 @@ nm_utils_merge_ip4_config (NMIP4Config *ip4_config, NMSettingIP4Config *setting)
 		if (j == num)
 			nm_ip4_config_add_route (ip4_config, setting_route);
 	}
+
+	if (nm_setting_ip4_config_get_never_default (setting))
+		nm_ip4_config_set_never_default (ip4_config, TRUE);
 }
 
 static void

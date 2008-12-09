@@ -81,6 +81,7 @@ typedef struct {
 	gboolean ignore_auto_dns;
 	char *dhcp_client_id;
 	char *dhcp_hostname;
+	gboolean never_default;
 } NMSettingIP4ConfigPrivate;
 
 enum {
@@ -94,6 +95,7 @@ enum {
 	PROP_IGNORE_AUTO_DNS,
 	PROP_DHCP_CLIENT_ID,
 	PROP_DHCP_HOSTNAME,
+	PROP_NEVER_DEFAULT,
 
 	LAST_PROP
 };
@@ -418,6 +420,14 @@ nm_setting_ip4_config_get_dhcp_hostname (NMSettingIP4Config *setting)
 	return NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->dhcp_hostname;
 }
 
+gboolean
+nm_setting_ip4_config_get_never_default (NMSettingIP4Config *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), FALSE);
+
+	return NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->never_default;
+}
+
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
@@ -611,6 +621,9 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->dhcp_hostname);
 		priv->dhcp_hostname = g_value_dup_string (value);
 		break;
+	case PROP_NEVER_DEFAULT:
+		priv->never_default = g_value_get_boolean (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -651,6 +664,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_DHCP_HOSTNAME:
 		g_value_set_string (value, nm_setting_ip4_config_get_dhcp_hostname (setting));
+		break;
+	case PROP_NEVER_DEFAULT:
+		g_value_set_boolean (value, priv->never_default);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -743,6 +759,14 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 						   "DHCP Hostname",
 						   "DHCP Hostname",
 						   NULL,
+						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	g_object_class_install_property
+		(object_class, PROP_NEVER_DEFAULT,
+		 g_param_spec_boolean (NM_SETTING_IP4_CONFIG_NEVER_DEFAULT,
+						   "Never default",
+						   "Never make this connection the default IPv4 connection",
+						   FALSE,
 						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 }
 

@@ -89,6 +89,9 @@ void          nm_ip4_config_set_mtu             (NMIP4Config *config, guint32 mt
 guint32       nm_ip4_config_get_mss             (NMIP4Config *config);
 void          nm_ip4_config_set_mss             (NMIP4Config *config, guint32 mss);
 
+gboolean      nm_ip4_config_get_never_default   (NMIP4Config *config);
+void          nm_ip4_config_set_never_default   (NMIP4Config *config, gboolean never_default);
+
 /* Flags for nm_ip4_config_to_rtnl_addr() */
 #define NM_RTNL_ADDR_NONE		0x0000
 #define NM_RTNL_ADDR_ADDR		0x0001

@@ -1,3 +1,31 @@
+2008-12-09  Dan Williams  <dcbw@redhat.com>
+
+	* libnm-util/libnm-util.ver
+	  libnm-util/nm-setting-ip4-config.c
+	  libnm-util/nm-setting-ip4-config.h
+		- Add 'never-default' property, which when true indicates that a
+			connection should never be the default connection
+
+	* src/nm-ip4-config.c
+	  src/nm-ip4-config.h
+		- (nm_ip4_config_get_never_default, nm_ip4_config_set_never_default):
+			Add never-default helpers
+
+	* src/NetworkManagerUtils.c
+		- (nm_utils_merge_ip4_config): update never-default when merging the
+			IP4 setting to the IP4 config
+
+	* src/NetworkManagerSystem.c
+		- (nm_system_apply_ip4_config): if the connection is never-default,
+			don't add routes without a gateway
+
+	* src/NetworkManagerPolicy.c
+		- (get_best_device): don't let never-default connections be the best
+		- (update_routing_and_dns): handle never-default for VPN connections
+
+	* system-settings/plugins/ifcfg-rh/reader.c
+		- (make_ip4_setting): handle never-default by checking GATEWAYDEV
+
 2008-12-08  Dan Williams  <dcbw@redhat.com>
 
 	* src/vpn-manager/nm-vpn-connection.c
