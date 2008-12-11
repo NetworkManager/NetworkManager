@@ -1,3 +1,8 @@
+2008-12-11  Dan Williams  <dcbw@redhat.com>
+
+	* Move NetworkManager to git.freedesktop.org
+		- git clone git://git.freedesktop.org/git/NetworkManager/NetworkManager.git
+
 2008-12-09  Dan Williams  <dcbw@redhat.com>
 
 	* libnm-util/libnm-util.ver

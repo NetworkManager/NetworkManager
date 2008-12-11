@@ -1,3 +1,11 @@
+
+******************
+2008-12-11: NetworkManager core daemon has moved to git.freedesktop.org!
+
+git clone git://git.freedesktop.org/git/NetworkManager/NetworkManager.git
+******************
+
+
 Networking that Just Works
 --------------------------
 
