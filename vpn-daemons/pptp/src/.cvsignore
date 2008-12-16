@@ -1,7 +1,0 @@
-Makefile.in
-Makefile
-nm-ppp-starter
-nm-pppd-plugin.so
-nm-pptp-service
-.libs
-.deps

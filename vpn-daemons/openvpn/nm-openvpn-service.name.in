@@ -1,9 +1,0 @@
-[VPN Connection]
-name=openvpn
-service=org.freedesktop.NetworkManager.openvpn
-program=@LIBEXECDIR@/nm-openvpn-service
-
-[GNOME]
-auth-dialog=nm-openvpn-auth-dialog
-properties=libnm-openvpn-properties
-
