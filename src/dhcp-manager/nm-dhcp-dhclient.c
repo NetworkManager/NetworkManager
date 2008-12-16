@@ -36,7 +36,11 @@
 #define NM_DHCP_MANAGER_PID_FILENAME	"dhclient"
 #define NM_DHCP_MANAGER_PID_FILE_EXT	"pid"
 
+#if defined(TARGET_DEBIAN)
+#define NM_DHCP_MANAGER_LEASE_DIR       LOCALSTATEDIR "/lib/dhcp3"
+#else
 #define NM_DHCP_MANAGER_LEASE_DIR       LOCALSTATEDIR "/lib/dhclient"
+#endif
 #define NM_DHCP_MANAGER_LEASE_FILENAME	"dhclient"
 #define NM_DHCP_MANAGER_LEASE_FILE_EXT	"lease"
 
