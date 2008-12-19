@@ -112,8 +112,6 @@ dump_ip4_config (NMIP4Config *cfg)
 		g_free (tmp);
 	}
 
-	g_print ("IP4 hostname: %s\n", nm_ip4_config_get_hostname (cfg));
-
 	array = nm_ip4_config_get_nameservers (cfg);
 	if (array) {
 		g_print ("IP4 DNS:\n");
@@ -129,6 +127,16 @@ dump_ip4_config (NMIP4Config *cfg)
 		g_print ("IP4 domains:\n");
 		for (i = 0; i < ptr_array->len; i++)
 			g_print ("\t%s\n", (const char *) g_ptr_array_index (ptr_array, i));
+	}
+
+	array = nm_ip4_config_get_wins_servers (cfg);
+	if (array) {
+		g_print ("IP4 WINS:\n");
+		for (i = 0; i < array->len; i++) {
+			tmp = ip4_address_as_string (g_array_index (array, guint32, i));
+			g_print ("\t%s\n", tmp);
+			g_free (tmp);
+		}
 	}
 }
 

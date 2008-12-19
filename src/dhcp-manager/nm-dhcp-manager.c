@@ -840,6 +840,21 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 		g_strfreev (searches);
 	}
 
+	str = g_hash_table_lookup (device->options, "new_netbios_name_servers");
+	if (str) {
+		char **searches = g_strsplit (str, " ", 0);
+		char **s;
+
+		for (s = searches; *s; s++) {
+			if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
+				nm_ip4_config_add_wins (ip4_config, tmp_addr.s_addr);
+				nm_info ("  wins '%s'", *s);
+			} else
+				nm_warning ("Ignoring invalid WINS server '%s'", *s);
+		}
+		g_strfreev (searches);
+	}
+
 	str = g_hash_table_lookup (device->options, "new_static_routes");
 	if (str) {
 		char **searches = g_strsplit (str, " ", 0);

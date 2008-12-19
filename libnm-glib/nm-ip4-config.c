@@ -42,6 +42,7 @@ typedef struct {
 	GArray *nameservers;
 	GPtrArray *domains;
 	GSList *routes;
+	GArray *wins;
 } NMIP4ConfigPrivate;
 
 enum {
@@ -51,6 +52,7 @@ enum {
 	PROP_NAMESERVERS,
 	PROP_DOMAINS,
 	PROP_ROUTES,
+	PROP_WINS_SERVERS,
 
 	LAST_PROP
 };
@@ -83,6 +85,9 @@ demarshal_ip4_array (NMObject *object, GParamSpec *pspec, GValue *value, gpointe
 
 	if (!strcmp (pspec->name, NM_IP4_CONFIG_NAMESERVERS))
 		_nm_object_queue_notify (object, NM_IP4_CONFIG_NAMESERVERS);
+	else if (!strcmp (pspec->name, NM_IP4_CONFIG_WINS_SERVERS))
+		_nm_object_queue_notify (object, NM_IP4_CONFIG_WINS_SERVERS);
+
 	return TRUE;
 }
 
@@ -116,11 +121,12 @@ register_for_property_changed (NMIP4Config *config)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_IP4_CONFIG_ADDRESSES,   demarshal_ip4_address_array,  &priv->addresses },
-		{ NM_IP4_CONFIG_HOSTNAME,    _nm_object_demarshal_generic,  &priv->hostname },
-		{ NM_IP4_CONFIG_NAMESERVERS, demarshal_ip4_array,          &priv->nameservers },
-		{ NM_IP4_CONFIG_DOMAINS,     demarshal_domains,            &priv->domains },
-		{ NM_IP4_CONFIG_ROUTES,      demarshal_ip4_routes_array,   &priv->routes },
+		{ NM_IP4_CONFIG_ADDRESSES,    demarshal_ip4_address_array,  &priv->addresses },
+		{ NM_IP4_CONFIG_HOSTNAME,     _nm_object_demarshal_generic, &priv->hostname },
+		{ NM_IP4_CONFIG_NAMESERVERS,  demarshal_ip4_array,          &priv->nameservers },
+		{ NM_IP4_CONFIG_DOMAINS,      demarshal_domains,            &priv->domains },
+		{ NM_IP4_CONFIG_ROUTES,       demarshal_ip4_routes_array,   &priv->routes },
+		{ NM_IP4_CONFIG_WINS_SERVERS, demarshal_ip4_array,          &priv->wins },
 		{ NULL },
 	};
 
@@ -172,6 +178,9 @@ finalize (GObject *object)
 	if (priv->nameservers)
 		g_array_free (priv->nameservers, TRUE);
 
+	if (priv->wins)
+		g_array_free (priv->wins, TRUE);
+
 	if (priv->domains) {
 		g_ptr_array_foreach (priv->domains, (GFunc) g_free, NULL);
 		g_ptr_array_free (priv->domains, TRUE);
@@ -206,6 +215,9 @@ get_property (GObject *object,
 		break;
 	case PROP_ROUTES:
 		nm_utils_ip4_routes_to_gvalue (priv->routes, value);
+		break;
+	case PROP_WINS_SERVERS:
+		g_value_set_boxed (value, nm_ip4_config_get_wins_servers (self));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -289,6 +301,19 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 						       "Routes",
 						       "Routes",
 						       G_PARAM_READABLE));
+
+	/**
+	 * NMIP4Config:wins-servers:
+	 *
+	 * The #GArray containing WINS servers (%guint32<!-- -->es) of the configuration.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_WINS_SERVERS,
+		 g_param_spec_boxed (NM_IP4_CONFIG_WINS_SERVERS,
+						    "WINS Servers",
+						    "WINS Servers",
+						    NM_TYPE_UINT_ARRAY,
+						    G_PARAM_READABLE));
 }
 
 /**
@@ -404,6 +429,7 @@ nm_ip4_config_get_nameservers (NMIP4Config *config)
 
 	return priv->nameservers;
 }
+
 /**
  * nm_ip4_config_get_domains:
  * @config: a #NMIP4Config
@@ -441,6 +467,42 @@ nm_ip4_config_get_domains (NMIP4Config *config)
 	}
 
 	return handle_ptr_array_return (priv->domains);
+}
+
+/**
+ * nm_ip4_config_get_wins_servers:
+ * @config: a #NMIP4Config
+ *
+ * Gets the Windows Internet Name Service servers (WINS).
+ *
+ * Returns: the #GArray containing %guint32<!-- -->s. This is the internal copy used by the
+ * configuration and must not be modified.
+ **/
+const GArray *
+nm_ip4_config_get_wins_servers (NMIP4Config *config)
+{
+	NMIP4ConfigPrivate *priv;
+	GArray *array = NULL;
+	GValue value = {0,};
+
+	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
+
+	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	if (!priv->nameservers) {
+		if (_nm_object_get_property (NM_OBJECT (config),
+		                            NM_DBUS_INTERFACE_IP4_CONFIG,
+		                            "Nameservers",
+		                            &value)) {
+			array = (GArray *) g_value_get_boxed (&value);
+			if (array && array->len) {
+				priv->nameservers = g_array_sized_new (FALSE, TRUE, sizeof (guint32), array->len);
+				g_array_append_vals (priv->nameservers, array->data, array->len);
+			}
+			g_value_unset (&value);
+		}
+	}
+
+	return priv->nameservers;
 }
 
 /**

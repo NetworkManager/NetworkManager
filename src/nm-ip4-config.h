@@ -45,6 +45,7 @@ typedef struct {
 #define NM_IP4_CONFIG_NAMESERVERS "nameservers"
 #define NM_IP4_CONFIG_DOMAINS "domains"
 #define NM_IP4_CONFIG_ROUTES "routes"
+#define NM_IP4_CONFIG_WINS_SERVERS "wins-servers"
 
 GType nm_ip4_config_get_type (void);
 
@@ -66,6 +67,11 @@ void          nm_ip4_config_add_nameserver      (NMIP4Config *config, guint32 na
 guint32       nm_ip4_config_get_nameserver      (NMIP4Config *config, guint i);
 guint32       nm_ip4_config_get_num_nameservers (NMIP4Config *config);
 void          nm_ip4_config_reset_nameservers   (NMIP4Config *config);
+
+void          nm_ip4_config_add_wins            (NMIP4Config *config, guint32 wins);
+guint32       nm_ip4_config_get_wins            (NMIP4Config *config, guint i);
+guint32       nm_ip4_config_get_num_wins        (NMIP4Config *config);
+void          nm_ip4_config_reset_wins          (NMIP4Config *config);
 
 void          nm_ip4_config_take_route          (NMIP4Config *config, NMIP4Route *route);
 void          nm_ip4_config_add_route           (NMIP4Config *config, NMIP4Route *route);
@@ -114,6 +120,7 @@ typedef enum {
 	NM_IP4_COMPARE_FLAG_SEARCHES    = 0x00000020,
 	NM_IP4_COMPARE_FLAG_MTU         = 0x00000040,
 	NM_IP4_COMPARE_FLAG_MSS         = 0x00000080,
+	NM_IP4_COMPARE_FLAG_WINS_SERVERS= 0x00000100,
 	NM_IP4_COMPARE_FLAG_ALL         = 0xFFFFFFFF   /* match everything */
 } NMIP4ConfigCompareFlags;
 
