@@ -51,6 +51,7 @@ typedef struct {
 #define NM_IP4_CONFIG_NAMESERVERS "nameservers"
 #define NM_IP4_CONFIG_DOMAINS "domains"
 #define NM_IP4_CONFIG_ROUTES "routes"
+#define NM_IP4_CONFIG_WINS_SERVERS "wins-servers"
 
 GType nm_ip4_config_get_type (void);
 
@@ -61,6 +62,7 @@ const char *     nm_ip4_config_get_hostname    (NMIP4Config *config); /* DEPRECA
 const GArray *   nm_ip4_config_get_nameservers (NMIP4Config *config);
 const GPtrArray *nm_ip4_config_get_domains     (NMIP4Config *config);
 const GSList *   nm_ip4_config_get_routes      (NMIP4Config *config);
+const GArray *   nm_ip4_config_get_wins_servers (NMIP4Config *config);
 
 G_END_DECLS
 
