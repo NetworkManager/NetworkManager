@@ -112,8 +112,6 @@ dump_ip4_config (NMIP4Config *cfg)
 		g_free (tmp);
 	}
 
-	g_print ("IP4 hostname: %s\n", nm_ip4_config_get_hostname (cfg));
-
 	array = nm_ip4_config_get_nameservers (cfg);
 	if (array) {
 		g_print ("IP4 DNS:\n");
