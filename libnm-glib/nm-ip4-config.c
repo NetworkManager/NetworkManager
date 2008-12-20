@@ -38,7 +38,6 @@ typedef struct {
 	DBusGProxy *proxy;
 
 	GSList *addresses;
-	char *hostname;
 	GArray *nameservers;
 	GPtrArray *domains;
 	GSList *routes;
@@ -117,7 +116,6 @@ register_for_property_changed (NMIP4Config *config)
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 	const NMPropertiesChangedInfo property_changed_info[] = {
 		{ NM_IP4_CONFIG_ADDRESSES,   demarshal_ip4_address_array,  &priv->addresses },
-		{ NM_IP4_CONFIG_HOSTNAME,    _nm_object_demarshal_generic,  &priv->hostname },
 		{ NM_IP4_CONFIG_NAMESERVERS, demarshal_ip4_array,          &priv->nameservers },
 		{ NM_IP4_CONFIG_DOMAINS,     demarshal_domains,            &priv->domains },
 		{ NM_IP4_CONFIG_ROUTES,      demarshal_ip4_routes_array,   &priv->routes },
@@ -168,7 +166,6 @@ finalize (GObject *object)
 	g_slist_foreach (priv->routes, (GFunc) g_free, NULL);
 	g_slist_free (priv->routes);
 
-	g_free (priv->hostname);
 	if (priv->nameservers)
 		g_array_free (priv->nameservers, TRUE);
 
@@ -196,7 +193,7 @@ get_property (GObject *object,
 		nm_utils_ip4_addresses_to_gvalue (priv->addresses, value);
 		break;
 	case PROP_HOSTNAME:
-		g_value_set_string (value, nm_ip4_config_get_hostname (self));
+		g_value_set_string (value, NULL);
 		break;
 	case PROP_NAMESERVERS:
 		g_value_set_boxed (value, nm_ip4_config_get_nameservers (self));
@@ -242,7 +239,7 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 	/**
 	 * NMIP4Config:hostname:
 	 *
-	 * The host name string of the configuration.
+	 * DEPRECATED.  Don't use.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_HOSTNAME,
@@ -347,26 +344,14 @@ nm_ip4_config_get_addresses (NMIP4Config *config)
  * nm_ip4_config_get_hostname:
  * @config: a #NMIP4Config
  *
- * Gets the host name.
+ * DEPRECATED.  Don't use.
  *
- * Returns: the host name from the configuration. This is the internal copy used by the
- * configuration and must not be modified.
+ * Returns: NULL
  **/
 const char *
 nm_ip4_config_get_hostname (NMIP4Config *config)
 {
-	NMIP4ConfigPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), NULL);
-
-	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	if (!priv->hostname) {
-		priv->hostname = _nm_object_get_string_property (NM_OBJECT (config),
-		                                                NM_DBUS_INTERFACE_IP4_CONFIG,
-		                                                "Hostname");
-	}
-
-	return priv->hostname;
+	return NULL;
 }
 
 /**
