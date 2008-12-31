@@ -41,6 +41,7 @@
 #include <linux/if_ppp.h>
 
 #include "NetworkManager.h"
+#include "nm-glib-compat.h"
 #include "nm-ppp-manager.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-ppp.h"
@@ -65,7 +66,7 @@ static gboolean impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 #include "nm-ppp-manager-glue.h"
 
 #define NM_PPPD_PLUGIN PLUGINDIR "/nm-pppd-plugin.so"
-#define NM_PPP_WAIT_PPPD 15000 /* 10 seconds */
+#define NM_PPP_WAIT_PPPD 15 /* 15 seconds */
 #define PPP_MANAGER_SECRET_TRIES "ppp-manager-secret-tries"
 
 typedef struct {
@@ -342,7 +343,7 @@ monitor_stats (NMPPPManager *manager)
 
 	priv->monitor_fd = socket (AF_INET, SOCK_DGRAM, 0);
 	if (priv->monitor_fd > 0)
-		priv->monitor_id = g_timeout_add (5000, monitor_cb, manager);
+		priv->monitor_id = g_timeout_add_seconds (5, monitor_cb, manager);
 	else
 		nm_warning ("Could not open pppd monitor: %s", strerror (errno));
 }
@@ -936,7 +937,7 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	nm_debug ("ppp started with pid %d", priv->pid);
 
 	priv->ppp_watch_id = g_child_watch_add (priv->pid, (GChildWatchFunc) ppp_watch_cb, manager);
-	priv->ppp_timeout_handler = g_timeout_add (NM_PPP_WAIT_PPPD, pppd_timed_out, manager);
+	priv->ppp_timeout_handler = g_timeout_add_seconds (NM_PPP_WAIT_PPPD, pppd_timed_out, manager);
 	priv->act_req = g_object_ref (req);
 
  out:
@@ -1035,7 +1036,7 @@ nm_ppp_manager_stop (NMPPPManager *manager)
 
 	if (priv->pid) {
 		if (kill (priv->pid, SIGTERM) == 0)
-			g_timeout_add (2000, ensure_killed, GINT_TO_POINTER (priv->pid));
+			g_timeout_add_seconds (2, ensure_killed, GINT_TO_POINTER (priv->pid));
 		else {
 			kill (priv->pid, SIGKILL);
 

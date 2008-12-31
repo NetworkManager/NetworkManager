@@ -31,6 +31,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-call-store.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-glib-compat.h"
 
 #define WPAS_DBUS_IFACE_INTERFACE   WPAS_DBUS_INTERFACE ".Interface"
 #define WPAS_DBUS_IFACE_BSSID       WPAS_DBUS_INTERFACE ".BSSID"
@@ -579,7 +580,7 @@ wpas_iface_query_scan_results (DBusGProxy *proxy, gpointer user_data)
 		return;
 
 	/* Only fetch scan results every 4s max, but initially do it right away */
-	priv->scan_results_timeout = g_timeout_add (priv->last_scan ? 4000 : 0,
+	priv->scan_results_timeout = g_timeout_add_seconds (priv->last_scan ? 4 : 0,
 	                                            request_scan_results,
 	                                            user_data);
 }

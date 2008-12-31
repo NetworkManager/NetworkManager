@@ -41,6 +41,7 @@
 #include "nm-utils.h"
 #include "nm-dbus-manager.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-glib-compat.h"
 
 #define NM_DHCP_CLIENT_DBUS_SERVICE "org.freedesktop.nm_dhcp_client"
 #define NM_DHCP_CLIENT_DBUS_IFACE   "org.freedesktop.nm_dhcp_client"
@@ -603,9 +604,9 @@ nm_dhcp_manager_begin_transaction (NMDHCPManager *manager,
 		timeout = NM_DHCP_TIMEOUT;
 
 	/* Set up a timeout on the transaction to kill it after the timeout */
-	device->timeout_id = g_timeout_add (timeout * 1000,
-	                                    nm_dhcp_manager_handle_timeout,
-	                                    device);
+	device->timeout_id = g_timeout_add_seconds (timeout,
+	                                            nm_dhcp_manager_handle_timeout,
+	                                            device);
 
 	nm_dhcp_client_start (device, s_ip4);
 	device->watch_id = g_child_watch_add (device->pid,

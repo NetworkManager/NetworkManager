@@ -34,6 +34,7 @@
 #include <net/if.h>
 #include <errno.h>
 
+#include "nm-glib-compat.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
@@ -991,7 +992,7 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 
 			/* Start the link timeout so we allow some time for reauthentication */
 			if (!priv->link_timeout_id)
-				priv->link_timeout_id = g_timeout_add (15000, link_timeout_cb, dev);
+				priv->link_timeout_id = g_timeout_add_seconds (15, link_timeout_cb, dev);
 		}
 	}
 
@@ -1156,7 +1157,7 @@ supplicant_interface_init (NMDeviceEthernet *self)
 											self);
 
 	/* Set up a timeout on the connection attempt to fail it after 25 seconds */
-	priv->supplicant.con_timeout_id = g_timeout_add (25000, supplicant_connection_timeout_cb, self);
+	priv->supplicant.con_timeout_id = g_timeout_add_seconds (25, supplicant_connection_timeout_cb, self);
 
 	return TRUE;
 }

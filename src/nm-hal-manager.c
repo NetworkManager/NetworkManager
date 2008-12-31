@@ -26,6 +26,7 @@
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
+#include "nm-glib-compat.h"
 #include "nm-hal-manager.h"
 #include "nm-marshal.h"
 #include "nm-dbus-manager.h"
@@ -500,7 +501,7 @@ killswitch_getpower_done (gpointer user_data)
 	killswitch_poll_cleanup (self);
 
 	/* Schedule next poll */
-	priv->killswitch_poll_id = g_timeout_add (RFKILL_POLL_FREQUENCY * 1000,
+	priv->killswitch_poll_id = g_timeout_add_seconds (RFKILL_POLL_FREQUENCY,
 	                                          poll_killswitches,
 	                                          self);
 }

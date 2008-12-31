@@ -34,6 +34,7 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 
+#include "nm-glib-compat.h"
 #include "nm-device-interface.h"
 #include "nm-device.h"
 #include "nm-device-private.h"
@@ -204,7 +205,7 @@ constructor (GType type,
 	 * system settings service a chance to figure out whether the device is
 	 * managed or not.
 	 */
-	priv->start_timer = g_timeout_add (4000, device_start, dev);
+	priv->start_timer = g_timeout_add_seconds (4, device_start, dev);
 
 	priv->initialized = TRUE;
 	return object;
@@ -830,7 +831,7 @@ aipd_exec (NMDevice *self, GError **error)
 	priv->aipd_watch = g_child_watch_add (priv->aipd_pid, aipd_watch_cb, self);
 
 	/* Start a timeout to bound the address attempt */
-	priv->aipd_timeout = g_timeout_add (20000, aipd_timeout_cb, self);
+	priv->aipd_timeout = g_timeout_add_seconds (20, aipd_timeout_cb, self);
 
 	return TRUE;
 }

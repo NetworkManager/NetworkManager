@@ -71,7 +71,11 @@ _im_add (inotify_sub *sub)
   if (!scan_missing_running)
     {
       scan_missing_running = TRUE;
+#if !GLIB_CHECK_VERSION(2,14,0)
+      g_timeout_add (SCAN_MISSING_TIME * G_USEC_PER_SEC, im_scan_missing, NULL);
+#else
       g_timeout_add_seconds (SCAN_MISSING_TIME, im_scan_missing, NULL);
+#endif
     }
 }
 

@@ -24,6 +24,7 @@
 #include <dbus/dbus-glib-lowlevel.h>
 #include <dbus/dbus-glib.h>
 
+#include "nm-glib-compat.h"
 #include "nm-manager.h"
 #include "nm-utils.h"
 #include "nm-dbus-manager.h"
@@ -95,7 +96,7 @@ static void system_settings_properties_changed_cb (DBusGProxy *proxy,
                                                    GHashTable *properties,
                                                    gpointer user_data);
 
-#define SSD_POKE_INTERVAL 120000
+#define SSD_POKE_INTERVAL 120
 
 typedef struct {
 	DBusGMethodInvocation *context;
@@ -1389,7 +1390,7 @@ poke_system_settings_daemon_cb (gpointer user_data)
 
 out:
 	/* Reschedule the poke */
-	priv->poke_id = g_timeout_add (SSD_POKE_INTERVAL, poke_system_settings_daemon_cb, (gpointer) manager);
+	priv->poke_id = g_timeout_add_seconds (SSD_POKE_INTERVAL, poke_system_settings_daemon_cb, (gpointer) manager);
 
 	return FALSE;
 }
@@ -2134,7 +2135,7 @@ impl_manager_activate_connection (NMManager *manager,
 		info->scope = scope;
 		info->connection_path = g_strdup (connection_path);
 		info->specific_object_path = g_strdup (real_sop);
-		info->timeout_id = g_timeout_add (5000, wait_for_connection_expired, manager);
+		info->timeout_id = g_timeout_add_seconds (5, wait_for_connection_expired, manager);
 
 		// FIXME: should probably be per-device, not global to the manager
 		NM_MANAGER_GET_PRIVATE (manager)->pending_connection_info = info;

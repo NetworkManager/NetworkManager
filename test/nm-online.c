@@ -44,6 +44,7 @@
 #include <dbus/dbus-glib.h>
 
 #include "NetworkManager.h"
+#include "nm-glib-compat.h"
 
 typedef struct 
 {
@@ -200,7 +201,7 @@ int main (int argc, char *argv[])
 
 	if (timeout.value) {
 		timeout.norm = (double) timeout.value / (double) PROGRESS_STEPS;
-		g_timeout_add (1000, handle_timeout, &timeout);
+		g_timeout_add_seconds (1, handle_timeout, &timeout);
 	}
 	timeout.quiet = quiet;
 
