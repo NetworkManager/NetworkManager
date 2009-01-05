@@ -54,6 +54,8 @@ typedef struct {
 	GPtrArray *domains;
 	GPtrArray *searches;
 
+	GArray *wins;
+
 	GSList *routes;
 
 	gboolean never_default;
@@ -66,6 +68,7 @@ enum {
 	PROP_NAMESERVERS,
 	PROP_DOMAINS,
 	PROP_ROUTES,
+	PROP_WINS_SERVERS,
 
 	LAST_PROP
 };
@@ -179,10 +182,21 @@ void nm_ip4_config_set_ptp_address (NMIP4Config *config, guint32 ptp_addr)
 
 void nm_ip4_config_add_nameserver (NMIP4Config *config, guint32 nameserver)
 {
-	g_return_if_fail (NM_IS_IP4_CONFIG (config));
+	NMIP4ConfigPrivate *priv;
+	int i;
 
-	if (nameserver != 0)
-		g_array_append_val (NM_IP4_CONFIG_GET_PRIVATE (config)->nameservers, nameserver);
+	g_return_if_fail (NM_IS_IP4_CONFIG (config));
+	g_return_if_fail (nameserver > 0);
+
+	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	for (i = 0; i < priv->nameservers->len; i++) {
+		guint32 s = g_array_index (priv->nameservers, guint32, i);
+
+		/* No dupes */
+		g_return_if_fail (nameserver != s);
+	}
+
+	g_array_append_val (priv->nameservers, nameserver);
 }
 
 guint32 nm_ip4_config_get_nameserver (NMIP4Config *config, guint i)
@@ -208,6 +222,50 @@ void nm_ip4_config_reset_nameservers (NMIP4Config *config)
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 	if (priv->nameservers->len)
 		g_array_remove_range (priv->nameservers, 0, priv->nameservers->len);
+}
+
+void nm_ip4_config_add_wins (NMIP4Config *config, guint32 wins)
+{
+	NMIP4ConfigPrivate *priv;
+	int i;
+
+	g_return_if_fail (NM_IS_IP4_CONFIG (config));
+	g_return_if_fail (wins > 0);
+
+	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	for (i = 0; i < priv->wins->len; i++) {
+		guint32 s = g_array_index (priv->wins, guint32, i);
+
+		/* No dupes */
+		g_return_if_fail (wins != s);
+	}
+
+	g_array_append_val (priv->wins, wins);
+}
+
+guint32 nm_ip4_config_get_wins (NMIP4Config *config, guint i)
+{
+	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), 0);
+
+	return g_array_index (NM_IP4_CONFIG_GET_PRIVATE (config)->wins, guint32, i);
+}
+
+guint32 nm_ip4_config_get_num_wins (NMIP4Config *config)
+{
+	g_return_val_if_fail (NM_IS_IP4_CONFIG (config), 0);
+
+	return NM_IP4_CONFIG_GET_PRIVATE (config)->wins->len;
+}
+
+void nm_ip4_config_reset_wins (NMIP4Config *config)
+{
+	NMIP4ConfigPrivate *priv;
+
+	g_return_if_fail (NM_IS_IP4_CONFIG (config));
+
+	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	if (priv->wins->len)
+		g_array_remove_range (priv->wins, 0, priv->wins->len);
 }
 
 void
@@ -589,6 +647,11 @@ nm_ip4_config_diff (NMIP4Config *a, NMIP4Config *b)
 	    || !addr_array_compare (b_priv->nameservers, a_priv->nameservers))
 		flags |= NM_IP4_COMPARE_FLAG_NAMESERVERS;
 
+	if (   (a_priv->wins->len != b_priv->wins->len)
+	    || !addr_array_compare (a_priv->wins, b_priv->wins)
+	    || !addr_array_compare (b_priv->wins, a_priv->wins))
+		flags |= NM_IP4_COMPARE_FLAG_WINS_SERVERS;
+
 	if (   !route_slist_compare (a_priv->routes, b_priv->routes)
 	    || !route_slist_compare (b_priv->routes, a_priv->routes))
 		flags |= NM_IP4_COMPARE_FLAG_ROUTES;
@@ -618,6 +681,7 @@ nm_ip4_config_init (NMIP4Config *config)
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
 	priv->nameservers = g_array_new (FALSE, TRUE, sizeof (guint32));
+	priv->wins = g_array_new (FALSE, TRUE, sizeof (guint32));
 	priv->domains = g_ptr_array_new ();
 	priv->searches = g_ptr_array_new ();
 }
@@ -629,6 +693,7 @@ finalize (GObject *object)
 
 	nm_utils_slist_free (priv->addresses, (GDestroyNotify) nm_ip4_address_unref);
 	nm_utils_slist_free (priv->routes, (GDestroyNotify) nm_ip4_route_unref);
+	g_array_free (priv->wins, TRUE);
 	g_array_free (priv->nameservers, TRUE);
 	g_ptr_array_free (priv->domains, TRUE);
 	g_ptr_array_free (priv->searches, TRUE);
@@ -652,6 +717,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_ROUTES:
 		nm_utils_ip4_routes_to_gvalue (priv->routes, value);
+		break;
+	case PROP_WINS_SERVERS:
+		g_value_set_boxed (value, priv->wins);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -692,7 +760,6 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 							 "Domains",
 							 DBUS_TYPE_G_ARRAY_OF_STRING,
 							 G_PARAM_READABLE));
-
 	g_object_class_install_property
 		(object_class, PROP_ROUTES,
 		 g_param_spec_boxed (NM_IP4_CONFIG_ROUTES,
@@ -700,6 +767,13 @@ nm_ip4_config_class_init (NMIP4ConfigClass *config_class)
 						 "Routes",
 						 DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT,
 						 G_PARAM_READABLE));
+	g_object_class_install_property
+		(object_class, PROP_WINS_SERVERS,
+		 g_param_spec_boxed (NM_IP4_CONFIG_WINS_SERVERS,
+							 "WinsServers",
+							 "WINS server list",
+							 DBUS_TYPE_G_UINT_ARRAY,
+							 G_PARAM_READABLE));
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (config_class),
 									 &dbus_glib_nm_ip4_config_object_info);

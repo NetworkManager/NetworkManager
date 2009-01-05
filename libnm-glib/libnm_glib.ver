@@ -94,6 +94,7 @@ global:
 	nm_ip4_config_get_domains;
 	nm_ip4_config_get_hostname;
 	nm_ip4_config_get_nameservers;
+	nm_ip4_config_get_wins_servers;
 	nm_ip4_config_get_routes;
 	nm_ip4_config_get_type;
 	nm_ip4_config_new;

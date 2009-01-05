@@ -8,6 +8,9 @@
     <property name="Nameservers" type="au" access="read">
       <tp:docstring>The nameservers in use.</tp:docstring>
     </property>
+    <property name="WinsServers" type="au" access="read">
+      <tp:docstring>The Windows Internet Name Service servers associated with the connection.</tp:docstring>
+    </property>
     <property name="Domains" type="as" access="read">
       <tp:docstring>A list of domains this address belongs to.</tp:docstring>
     </property>

@@ -509,6 +509,14 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 			nm_ip4_config_add_nameserver (config, g_array_index (dns, guint, i));
 	}
 
+	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_WINS);
+	if (val) {
+		GArray *wins = (GArray *) g_value_get_boxed (val);
+
+		for (i = 0; i < wins->len; i++)
+			nm_ip4_config_add_wins (config, g_array_index (wins, guint, i));
+	}
+
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_PPP_IP4_CONFIG_INTERFACE);
 	if (!val || !G_VALUE_HOLDS_STRING (val)) {
 		nm_warning ("No interface");
