@@ -25,7 +25,12 @@
 #include <glib.h>
 #include <nm-connection.h>
 
-gboolean write_connection (NMConnection *connection, char **out_path, GError **error);
+gboolean write_connection (NMConnection *connection,
+                           const char *keyfile_dir,
+                           uid_t owner_uid,
+                           pid_t owner_grp,
+                           char **out_path,
+                           GError **error);
 
 char *writer_id_to_filename (const char *id);
 

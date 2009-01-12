@@ -29,7 +29,10 @@
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-vpn.h>
 #include <nm-setting-connection.h>
+#include <nm-setting-wired.h>
+#include <nm-setting-wireless.h>
 #include <arpa/inet.h>
+#include <netinet/ether.h>
 #include <string.h>
 
 #include "nm-dbus-glib-types.h"
@@ -43,36 +46,12 @@ read_array_of_uint (GKeyFile *file,
 	GArray *array = NULL;
 	gsize length;
 	int i;
+	gint *tmp;
 
-	if (NM_IS_SETTING_IP4_CONFIG (setting) && !strcmp (key, NM_SETTING_IP4_CONFIG_DNS)) {
-		char **list, **iter;
-		int ret;
-
-		list = g_key_file_get_string_list (file, nm_setting_get_name (setting), key, &length, NULL);
-		if (!list || !g_strv_length (list))
-			return TRUE;
-
-		array = g_array_sized_new (FALSE, FALSE, sizeof (guint32), length);
-		for (iter = list; *iter; iter++) {
-			struct in_addr addr;
-
-			ret = inet_pton (AF_INET, *iter, &addr);
-			if (ret <= 0) {
-				g_warning ("%s: ignoring invalid DNS server address '%s'", __func__, *iter);
-				continue;
-			}
-
-			g_array_append_val (array, addr.s_addr);			
-		}
-	} else {
-		gint *tmp;
-
-		tmp = g_key_file_get_integer_list (file, nm_setting_get_name (setting), key, &length, NULL);
-
-		array = g_array_sized_new (FALSE, FALSE, sizeof (guint32), length);
-		for (i = 0; i < length; i++)
-			g_array_append_val (array, tmp[i]);
-	}
+	tmp = g_key_file_get_integer_list (file, nm_setting_get_name (setting), key, &length, NULL);
+	array = g_array_sized_new (FALSE, FALSE, sizeof (guint32), length);
+	for (i = 0; i < length; i++)
+		g_array_append_val (array, tmp[i]);
 
 	if (array) {
 		g_object_set (setting, key, array, NULL);
@@ -182,6 +161,25 @@ next:
 }
 
 static void
+ip4_addr_parser (NMSetting *setting, const char *key, GKeyFile *keyfile)
+{
+	GPtrArray *addresses;
+	const char *setting_name = nm_setting_get_name (setting);
+
+	addresses = read_addresses (keyfile, setting_name, key);
+
+	/* Work around for previous syntax */
+	if (!addresses && !strcmp (key, NM_SETTING_IP4_CONFIG_ADDRESSES))
+		addresses = read_addresses (keyfile, setting_name, "address");
+
+	if (addresses) {
+		g_object_set (setting, key, addresses, NULL);
+		g_ptr_array_foreach (addresses, free_one_address, NULL);
+		g_ptr_array_free (addresses, TRUE);
+	}
+}
+
+static void
 free_one_route (gpointer data, gpointer user_data)
 {
 	g_array_free ((GArray *) data, TRUE);
@@ -236,7 +234,7 @@ read_routes (GKeyFile *file,
 			} else if (j == 3) {
 				guint32 metric = 0;
 
-				/* prefix */
+				/* metric */
 				if (!get_one_int (*iter, G_MAXUINT32, key_name, &metric)) {
 					g_array_free (route, TRUE);
 					goto next;
@@ -268,48 +266,110 @@ next:
 	return routes;
 }
 
-static gboolean
-read_array_of_array_of_uint (GKeyFile *file,
-                             NMSetting *setting,
-                             const char *key)
+static void
+ip4_route_parser (NMSetting *setting, const char *key, GKeyFile *keyfile)
 {
-	gboolean success = FALSE;
-	const char *setting_name;
+	GPtrArray *routes;
+	const char *setting_name = nm_setting_get_name (setting);
 
-	/* Only handle IPv4 addresses and routes for now */
-	if (!NM_IS_SETTING_IP4_CONFIG (setting))
-		return FALSE;
+	routes = read_routes (keyfile, setting_name, key);
+	if (routes) {
+		g_object_set (setting, key, routes, NULL);
+		g_ptr_array_foreach (routes, free_one_route, NULL);
+		g_ptr_array_free (routes, TRUE);
+	}
+}
 
-	setting_name = nm_setting_get_name (setting);
+static void
+ip4_dns_parser (NMSetting *setting, const char *key, GKeyFile *keyfile)
+{
+	const char *setting_name = nm_setting_get_name (setting);
+	GArray *array = NULL;
+	gsize length;
+	char **list, **iter;
+	int ret;
 
-	if (!strcmp (key, NM_SETTING_IP4_CONFIG_ADDRESSES)) {
-		GPtrArray *addresses;
+	list = g_key_file_get_string_list (keyfile, setting_name, key, &length, NULL);
+	if (!list || !g_strv_length (list))
+		return;
 
-		addresses = read_addresses (file, setting_name, key);
+	array = g_array_sized_new (FALSE, FALSE, sizeof (guint32), length);
+	for (iter = list; *iter; iter++) {
+		struct in_addr addr;
 
-		/* Work around for previous syntax */
-		if (!addresses && !strcmp (key, NM_SETTING_IP4_CONFIG_ADDRESSES))
-			addresses = read_addresses (file, setting_name, "address");
-
-		if (addresses) {
-			g_object_set (setting, key, addresses, NULL);
-			g_ptr_array_foreach (addresses, free_one_address, NULL);
-			g_ptr_array_free (addresses, TRUE);
+		ret = inet_pton (AF_INET, *iter, &addr);
+		if (ret <= 0) {
+			g_warning ("%s: ignoring invalid DNS server address '%s'", __func__, *iter);
+			continue;
 		}
-		success = TRUE;
-	} else if (!strcmp (key, NM_SETTING_IP4_CONFIG_ROUTES)) {
-		GPtrArray *routes;
 
-		routes = read_routes (file, setting_name, key);
-		if (routes) {
-			g_object_set (setting, key, routes, NULL);
-			g_ptr_array_foreach (routes, free_one_route, NULL);
-			g_ptr_array_free (routes, TRUE);
-		}
-		success = TRUE;
+		g_array_append_val (array, addr.s_addr);			
 	}
 
-	return success;
+	if (array) {
+		g_object_set (setting, key, array, NULL);
+		g_array_free (array, TRUE);
+	}
+}
+
+
+static void
+mac_address_parser (NMSetting *setting, const char *key, GKeyFile *keyfile)
+{
+	const char *setting_name = nm_setting_get_name (setting);
+	struct ether_addr *eth;
+	char *tmp_string = NULL, *p;
+	gint *tmp_list;
+	GByteArray *array = NULL;
+	gsize length;
+	int i;
+
+	p = tmp_string = g_key_file_get_string (keyfile, setting_name, key, NULL);
+	if (tmp_string) {
+		/* Look for enough ':' characters to signify a MAC address */
+		i = 0;
+		while (*p) {
+			if (*p == ':')
+				i++;
+			p++;
+		}
+		if (i == 5) {
+			/* parse as a MAC address */
+			eth = ether_aton (tmp_string);
+			if (eth) {
+				g_free (tmp_string);
+				array = g_byte_array_sized_new (ETH_ALEN);
+				g_byte_array_append (array, eth->ether_addr_octet, ETH_ALEN);
+				goto done;
+			}
+		}
+	}
+	g_free (tmp_string);
+
+	/* Old format; list of ints */
+	tmp_list = g_key_file_get_integer_list (keyfile, setting_name, key, &length, NULL);
+	array = g_byte_array_sized_new (length);
+	for (i = 0; i < length; i++) {
+		int val = tmp_list[i];
+		unsigned char v = (unsigned char) (val & 0xFF);
+
+		if (val < 0 || val > 255) {
+			g_warning ("%s: %s / %s ignoring invalid byte element '%d' (not "
+			           " between 0 and 255 inclusive)", __func__, setting_name,
+			           key, val);
+		} else
+			g_byte_array_append (array, (const unsigned char *) &v, sizeof (v));
+	}
+	g_free (tmp_list);
+
+done:
+	if (array->len == ETH_ALEN) {
+		g_object_set (setting, key, array, NULL);
+	} else {
+		g_warning ("%s: ignoring invalid MAC address for %s / %s",
+		           __func__, setting_name, key);
+	}
+	g_byte_array_free (array, TRUE);
 }
 
 static void
@@ -337,10 +397,47 @@ read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
 	g_strfreev (keys);
 }
 
+
 typedef struct {
 	GKeyFile *keyfile;
 	gboolean secrets;
 } ReadSettingInfo;
+
+typedef struct {
+	const char *setting_name;
+	const char *key;
+	gboolean check_for_key;
+	void (*parser) (NMSetting *setting, const char *key, GKeyFile *keyfile);
+} KeyParser;
+
+/* A table of keys that require further parsing/conversion becuase they are
+ * stored in a format that can't be automatically read using the key's type.
+ * i.e. IP addresses, which are stored in NetworkManager as guint32, but are
+ * stored in keyfiles as strings, eg "10.1.1.2".
+ */
+static KeyParser key_parsers[] = {
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	  NM_SETTING_IP4_CONFIG_ADDRESSES,
+	  FALSE,
+	  ip4_addr_parser },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	  NM_SETTING_IP4_CONFIG_ROUTES,
+	  FALSE,
+	  ip4_route_parser },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	  NM_SETTING_IP4_CONFIG_DNS,
+	  FALSE,
+	  ip4_dns_parser },
+	{ NM_SETTING_WIRED_SETTING_NAME,
+	  NM_SETTING_WIRED_MAC_ADDRESS,
+	  TRUE,
+	  mac_address_parser },
+	{ NM_SETTING_WIRELESS_SETTING_NAME,
+	  NM_SETTING_WIRELESS_MAC_ADDRESS,
+	  TRUE,
+	  mac_address_parser },
+	{ NULL, NULL, FALSE }
+};
 
 static void
 read_one_setting_value (NMSetting *setting,
@@ -355,6 +452,7 @@ read_one_setting_value (NMSetting *setting,
 	GType type;
 	GError *err = NULL;
 	gboolean check_for_key = TRUE;
+	KeyParser *parser = &key_parsers[0];
 
 	/* Property is not writable */
 	if (!(flags & G_PARAM_WRITABLE))
@@ -375,18 +473,38 @@ read_one_setting_value (NMSetting *setting,
 
 	setting_name = nm_setting_get_name (setting);
 
-	/* IPv4 addresses and VPN properties don't have the exact key name */
-	if (NM_IS_SETTING_IP4_CONFIG (setting) && !strcmp (key, NM_SETTING_IP4_CONFIG_ADDRESSES))
-		check_for_key = FALSE;
-	else if (NM_IS_SETTING_VPN (setting))
+	/* Look through the list of handlers for non-standard format key values */
+	while (parser->setting_name) {
+		if (!strcmp (parser->setting_name, setting_name) && !strcmp (parser->key, key)) {
+			check_for_key = parser->check_for_key;
+			break;
+		}
+		parser++;
+	}
+
+	/* VPN properties don't have the exact key name */
+	if (NM_IS_SETTING_VPN (setting))
 		check_for_key = FALSE;
 
+	/* Check for the exact key in the GKeyFile if required.  Most setting
+	 * properties map 1:1 to a key in the GKeyFile, but for those properties
+	 * like IP addresses and routes where more than one value is actually
+	 * encoded by the setting property, this won't be true.
+	 */
 	if (check_for_key && !g_key_file_has_key (file, setting_name, key, &err)) {
+		/* Key doesn't exist or an error ocurred, thus nothing to do. */
 		if (err) {
 			g_warning ("Error loading setting '%s' value: %s", setting_name, err->message);
 			g_error_free (err);
 		}
+		return;
+	}
 
+	/* If there's a custom parser for this key, handle that before the generic
+	 * parsers below.
+	 */
+	if (parser && parser->setting_name) {
+		(*parser->parser) (setting, key, file);
 		return;
 	}
 
@@ -444,9 +562,11 @@ read_one_setting_value (NMSetting *setting,
 			int val = tmp[i];
 			unsigned char v = (unsigned char) (val & 0xFF);
 
-			if (val < 0 || val > 255)
-				g_warning ("Value out of range for a byte value");
-			else
+			if (val < 0 || val > 255) {
+				g_warning ("%s: %s / %s ignoring invalid byte element '%d' (not "
+				           " between 0 and 255 inclusive)", __func__, setting_name,
+				           key, val);
+			} else
 				g_byte_array_append (array, (const unsigned char *) &v, sizeof (v));
 		}
 
@@ -472,11 +592,6 @@ read_one_setting_value (NMSetting *setting,
 		read_hash_of_string (file, setting, key);
 	} else if (type == DBUS_TYPE_G_UINT_ARRAY) {
 		if (!read_array_of_uint (file, setting, key)) {
-			g_warning ("Unhandled setting property type (read): '%s/%s' : '%s'",
-					 setting_name, key, G_VALUE_TYPE_NAME (value));
-		}
-	} else if (type == DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT) {
-		if (!read_array_of_array_of_uint (file, setting, key)) {
 			g_warning ("Unhandled setting property type (read): '%s/%s' : '%s'",
 					 setting_name, key, G_VALUE_TYPE_NAME (value));
 		}

@@ -30,6 +30,7 @@
 #include <nm-utils.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <nm-settings.h>
 
 #include "nm-dbus-glib-types.h"
 #include "writer.h"
@@ -315,7 +316,12 @@ writer_id_to_filename (const char *id)
 }
 
 gboolean
-write_connection (NMConnection *connection, char **out_path, GError **error)
+write_connection (NMConnection *connection,
+                  const char *keyfile_dir,
+                  uid_t owner_uid,
+                  pid_t owner_grp,
+                  char **out_path,
+                  GError **error)
 {
 	NMSettingConnection *s_con;
 	GKeyFile *key_file;
@@ -323,6 +329,7 @@ write_connection (NMConnection *connection, char **out_path, GError **error)
 	gsize len;
 	gboolean success = FALSE;
 	char *filename, *path;
+	int err;
 
 	if (out_path)
 		g_return_val_if_fail (*out_path == NULL, FALSE);
@@ -338,18 +345,27 @@ write_connection (NMConnection *connection, char **out_path, GError **error)
 		goto out;
 
 	filename = writer_id_to_filename (nm_setting_connection_get_id (s_con));
-	path = g_build_filename (KEYFILE_DIR, filename, NULL);
+	path = g_build_filename (keyfile_dir, filename, NULL);
 	g_free (filename);
 
 	g_file_set_contents (path, data, len, error);
-	chmod (path, S_IRUSR | S_IWUSR);
-	if (chown (path, 0, 0) < 0) {
-		g_warning ("Error chowning '%s': %d", path, errno);
+	if (chown (path, owner_uid, owner_grp) < 0) {
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INTERNAL_ERROR,
+		             "%s.%d: error chowning '%s': %d", __FILE__, __LINE__,
+		             path, errno);
 		unlink (path);
 	} else {
-		if (out_path)
-			*out_path = g_strdup (path);
-		success = TRUE;
+		err = chmod (path, S_IRUSR | S_IWUSR);
+		if (err > 0) {
+			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INTERNAL_ERROR,
+			             "%s.%d: error setting permissions on '%s': %d", __FILE__,
+			             __LINE__, path, errno);
+			unlink (path);
+		} else {
+			if (out_path)
+				*out_path = g_strdup (path);
+			success = TRUE;
+		}
 	}
 	g_free (path);
 
