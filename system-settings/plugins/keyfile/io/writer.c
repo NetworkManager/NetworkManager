@@ -27,9 +27,13 @@
 #include <nm-setting-connection.h>
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-vpn.h>
+#include <nm-setting-wired.h>
+#include <nm-setting-wireless.h>
+#include <nm-setting-ip4-config.h>
 #include <nm-utils.h>
 #include <string.h>
 #include <arpa/inet.h>
+#include <netinet/ether.h>
 #include <nm-settings.h>
 
 #include "nm-dbus-glib-types.h"
@@ -44,44 +48,53 @@ write_array_of_uint (GKeyFile *file,
 {
 	GArray *array;
 	int i;
+	int *tmp_array;
 
 	array = (GArray *) g_value_get_boxed (value);
 	if (!array || !array->len)
 		return TRUE;
 
-	if (NM_IS_SETTING_IP4_CONFIG (setting) && !strcmp (key, NM_SETTING_IP4_CONFIG_DNS)) {
-		char **list;
+	tmp_array = g_new (gint, array->len);
+	for (i = 0; i < array->len; i++)
+		tmp_array[i] = g_array_index (array, int, i);
 
-		list = g_new0 (char *, array->len + 1);
+	g_key_file_set_integer_list (file, nm_setting_get_name (setting), key, tmp_array, array->len);
+	g_free (tmp_array);
+	return TRUE;
+}
 
-		for (i = 0; i < array->len; i++) {
-			char buf[INET_ADDRSTRLEN + 1];
-			struct in_addr addr;
+static void
+ip4_dns_writer (GKeyFile *file,
+                NMSetting *setting,
+                const char *key,
+                const GValue *value)
+{
+	GArray *array;
+	char **list;
+	int i, num = 0;
 
-			addr.s_addr = g_array_index (array, guint32, i);
-			if (!inet_ntop (AF_INET, &addr, buf, sizeof (buf))) {
-				nm_warning ("%s: error converting IP4 address 0x%X",
-				            __func__, ntohl (addr.s_addr));
-				list[i] = NULL;
-			} else {
-				list[i] = g_strdup (buf);
-			}
-		}
+	g_return_if_fail (G_VALUE_HOLDS (value, DBUS_TYPE_G_UINT_ARRAY));
 
-		g_key_file_set_string_list (file, nm_setting_get_name (setting), key, (const char **) list, array->len);
-		g_strfreev (list);
-	} else {
-		int *tmp_array;
+	array = (GArray *) g_value_get_boxed (value);
+	if (!array || !array->len)
+		return;
 
-		tmp_array = g_new (gint, array->len);
-		for (i = 0; i < array->len; i++)
-			tmp_array[i] = g_array_index (array, int, i);
+	list = g_new0 (char *, array->len + 1);
 
-		g_key_file_set_integer_list (file, nm_setting_get_name (setting), key, tmp_array, array->len);
-		g_free (tmp_array);
+	for (i = 0; i < array->len; i++) {
+		char buf[INET_ADDRSTRLEN + 1];
+		struct in_addr addr;
+
+		addr.s_addr = g_array_index (array, guint32, i);
+		if (!inet_ntop (AF_INET, &addr, buf, sizeof (buf))) {
+			nm_warning ("%s: error converting IP4 address 0x%X",
+			            __func__, ntohl (addr.s_addr));
+		} else
+			list[num++] = g_strdup (buf);
 	}
 
-	return TRUE;
+	g_key_file_set_string_list (file, nm_setting_get_name (setting), key, (const char **) list, num);
+	g_strfreev (list);
 }
 
 static void
@@ -96,7 +109,7 @@ write_ip4_values (GKeyFile *file,
 	char **list = NULL;
 	int i, j;
 
-	list = g_malloc (tuple_len);
+	list = g_new (char *, tuple_len);
 
 	for (i = 0, j = 0; i < array->len; i++, j++) {
 		GArray *tuple = g_ptr_array_index (array, i);
@@ -104,7 +117,7 @@ write_ip4_values (GKeyFile *file,
 		char *key_name;
 		int k;
 
-		memset (list, 0, tuple_len);
+		memset (list, 0, tuple_len * sizeof (char *));
 
 		for (k = 0; k < tuple_len; k++) {
 			if (k == addr1_pos || k == addr2_pos) {
@@ -139,28 +152,64 @@ write_ip4_values (GKeyFile *file,
 	g_free (list);
 }
 
-static gboolean
-write_array_of_array_of_uint (GKeyFile *file,
-                              NMSetting *setting,
-                              const char *key,
-                              const GValue *value)
+static void
+ip4_addr_writer (GKeyFile *file,
+                 NMSetting *setting,
+                 const char *key,
+                 const GValue *value)
 {
 	GPtrArray *array;
+	const char *setting_name = nm_setting_get_name (setting);
 
-	/* Only handle IPv4 addresses and routes for now */
-	if (!NM_IS_SETTING_IP4_CONFIG (setting))
-		return FALSE;
+	g_return_if_fail (G_VALUE_HOLDS (value, DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT));
 
 	array = (GPtrArray *) g_value_get_boxed (value);
-	if (!array || !array->len)
-		return TRUE;
+	if (array && array->len)
+		write_ip4_values (file, setting_name, key, array, 3, 0, 2);
+}
 
-	if (!strcmp (key, NM_SETTING_IP4_CONFIG_ADDRESSES))
-		write_ip4_values (file, nm_setting_get_name (setting), key, array, 3, 0, 2);
-	else if (!strcmp (key, NM_SETTING_IP4_CONFIG_ROUTES))
-		write_ip4_values (file, nm_setting_get_name (setting), key, array, 4, 0, 2);
+static void
+ip4_route_writer (GKeyFile *file,
+                  NMSetting *setting,
+                  const char *key,
+                  const GValue *value)
+{
+	GPtrArray *array;
+	const char *setting_name = nm_setting_get_name (setting);
 
-	return TRUE;
+	g_return_if_fail (G_VALUE_HOLDS (value, DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT));
+
+	array = (GPtrArray *) g_value_get_boxed (value);
+	if (array && array->len)
+		write_ip4_values (file, setting_name, key, array, 4, 0, 2);
+}
+
+static void
+mac_address_writer (GKeyFile *file,
+                    NMSetting *setting,
+                    const char *key,
+                    const GValue *value)
+{
+	GByteArray *array;
+	const char *setting_name = nm_setting_get_name (setting);
+	char *mac;
+	struct ether_addr tmp;
+
+	g_return_if_fail (G_VALUE_HOLDS (value, DBUS_TYPE_G_UCHAR_ARRAY));
+
+	array = (GByteArray *) g_value_get_boxed (value);
+	if (!array)
+		return;
+
+	if (array->len != ETH_ALEN) {
+		nm_warning ("%s: invalid %s / %s MAC address length %d",
+		            __func__, setting_name, key, array->len);
+		return;
+	}
+
+	memcpy (tmp.ether_addr_octet, array->data, ETH_ALEN);
+	mac = ether_ntoa (&tmp);
+	g_key_file_set_string (file, setting_name, key, mac);
 }
 
 typedef struct {
@@ -202,6 +251,36 @@ write_hash_of_string (GKeyFile *file,
 	g_hash_table_foreach (hash, write_hash_of_string_helper, &info);
 }
 
+typedef struct {
+	const char *setting_name;
+	const char *key;
+	void (*writer) (GKeyFile *keyfile, NMSetting *setting, const char *key, const GValue *value);
+} KeyWriter;
+
+/* A table of keys that require further parsing/conversion becuase they are
+ * stored in a format that can't be automatically read using the key's type.
+ * i.e. IP addresses, which are stored in NetworkManager as guint32, but are
+ * stored in keyfiles as strings, eg "10.1.1.2".
+ */
+static KeyWriter key_writers[] = {
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	  NM_SETTING_IP4_CONFIG_ADDRESSES,
+	  ip4_addr_writer },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	  NM_SETTING_IP4_CONFIG_ROUTES,
+	  ip4_route_writer },
+	{ NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	  NM_SETTING_IP4_CONFIG_DNS,
+	  ip4_dns_writer },
+	{ NM_SETTING_WIRED_SETTING_NAME,
+	  NM_SETTING_WIRED_MAC_ADDRESS,
+	  mac_address_writer },
+	{ NM_SETTING_WIRELESS_SETTING_NAME,
+	  NM_SETTING_WIRELESS_MAC_ADDRESS,
+	  mac_address_writer },
+	{ NULL, NULL, NULL }
+};
+
 static void
 write_setting_value (NMSetting *setting,
                      const char *key,
@@ -212,6 +291,7 @@ write_setting_value (NMSetting *setting,
 	GKeyFile *file = (GKeyFile *) user_data;
 	const char *setting_name;
 	GType type;
+	KeyWriter *writer = &key_writers[0];
 
 	type = G_VALUE_TYPE (value);
 
@@ -225,6 +305,15 @@ write_setting_value (NMSetting *setting,
 		return;
 
 	setting_name = nm_setting_get_name (setting);
+
+	/* Look through the list of handlers for non-standard format key values */
+	while (writer->setting_name) {
+		if (!strcmp (writer->setting_name, setting_name) && !strcmp (writer->key, key)) {
+			(*writer->writer) (file, setting, key, value);
+			return;
+		}
+		writer++;
+	}
 
 	if (type == G_TYPE_STRING) {
 		const char *str;
@@ -261,7 +350,7 @@ write_setting_value (NMSetting *setting,
 			g_key_file_set_integer_list (file, setting_name, key, tmp_array, array->len);
 			g_free (tmp_array);
 		}
-	} else if (type == dbus_g_type_get_collection ("GSList", G_TYPE_STRING)) {
+	} else if (type == DBUS_TYPE_G_LIST_OF_STRING) {
 		GSList *list;
 		GSList *iter;
 
@@ -277,15 +366,10 @@ write_setting_value (NMSetting *setting,
 			g_key_file_set_string_list (file, setting_name, key, (const gchar **const) array, i);
 			g_free (array);
 		}
-	} else if (type == dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_STRING)) {
+	} else if (type == DBUS_TYPE_G_MAP_OF_STRING) {
 		write_hash_of_string (file, setting, key, value);
 	} else if (type == DBUS_TYPE_G_UINT_ARRAY) {
 		if (!write_array_of_uint (file, setting, key, value)) {
-			g_warning ("Unhandled setting property type (write) '%s/%s' : '%s'", 
-					 setting_name, key, g_type_name (type));
-		}
-	} else if (type == DBUS_TYPE_G_ARRAY_OF_ARRAY_OF_UINT) {
-		if (!write_array_of_array_of_uint (file, setting, key, value)) {
 			g_warning ("Unhandled setting property type (write) '%s/%s' : '%s'", 
 					 setting_name, key, g_type_name (type));
 		}

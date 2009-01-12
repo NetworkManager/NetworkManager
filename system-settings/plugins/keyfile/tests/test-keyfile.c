@@ -298,6 +298,52 @@ test_read_valid_wired_connection (void)
 }
 
 static void
+add_one_ip4_address (NMSettingIP4Config *s_ip4,
+                     const char *addr,
+                     const char *gw,
+                     guint32 prefix)
+{
+	struct in_addr tmp;
+	NMIP4Address *ip4_addr;
+
+	ip4_addr = nm_ip4_address_new ();
+	nm_ip4_address_set_prefix (ip4_addr, prefix);
+
+	inet_pton (AF_INET, addr, &tmp);
+	nm_ip4_address_set_address (ip4_addr, tmp.s_addr);
+
+	inet_pton (AF_INET, gw, &tmp);
+	nm_ip4_address_set_gateway (ip4_addr, tmp.s_addr);
+
+	nm_setting_ip4_config_add_address (s_ip4, ip4_addr);
+	nm_ip4_address_unref (ip4_addr);
+}
+
+static void
+add_one_ip4_route (NMSettingIP4Config *s_ip4,
+                   const char *dest,
+                   const char *nh,
+                   guint32 prefix,
+                   guint32 metric)
+{
+	struct in_addr addr;
+	NMIP4Route *route;
+
+	route = nm_ip4_route_new ();
+	nm_ip4_route_set_prefix (route, prefix);
+	nm_ip4_route_set_metric (route, metric);
+
+	inet_pton (AF_INET, dest, &addr);
+	nm_ip4_route_set_dest (route, addr.s_addr);
+
+	inet_pton (AF_INET, nh, &addr);
+	nm_ip4_route_set_next_hop (route, addr.s_addr);
+
+	nm_setting_ip4_config_add_route (s_ip4, route);
+	nm_ip4_route_unref (route);
+}
+
+static void
 test_write_wired_connection (void)
 {
 	NMConnection *connection;
@@ -313,10 +359,23 @@ test_write_wired_connection (void)
 	GError *error = NULL;
 	pid_t owner_grp;
 	uid_t owner_uid;
+	struct in_addr addr;
+	const char *dns1 = "4.2.2.1";
+	const char *dns2 = "4.2.2.2";
+	const char *address1 = "192.168.0.5";
+	const char *address1_gw = "192.168.0.1";
+	const char *address2 = "1.2.3.4";
+	const char *address2_gw = "1.2.1.1";
+	const char *route1 = "10.10.10.2";
+	const char *route1_nh = "10.10.10.1";
+	const char *route2 = "0.0.0.0";
+	const char *route2_nh = "1.2.1.1";
 
 	connection = nm_connection_new ();
 	ASSERT (connection != NULL,
 			"connection-write", "failed to allocate new connection");
+
+	/* Connection setting */
 
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
 	ASSERT (s_con != NULL,
@@ -334,6 +393,8 @@ test_write_wired_connection (void)
 	              NULL);
 	g_free (uuid);
 
+	/* Wired setting */
+
 	s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());
 	ASSERT (s_wired != NULL,
 			"connection-write", "failed to allocate new %s setting",
@@ -348,11 +409,31 @@ test_write_wired_connection (void)
 	              NULL);
 	g_byte_array_free (mac, TRUE);
 
+	/* IP4 setting */
+
 	s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
 	ASSERT (s_ip4 != NULL,
 			"connection-write", "failed to allocate new %s setting",
 			NM_SETTING_WIRED_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4,
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NULL);
+
+	/* Addresses */
+	add_one_ip4_address (s_ip4, address1, address1_gw, 24);
+	add_one_ip4_address (s_ip4, address2, address2_gw, 8);
+
+	/* Routes */
+	add_one_ip4_route (s_ip4, route1, route1_nh, 24, 3);
+	add_one_ip4_route (s_ip4, route2, route2_nh, 8, 1);
+
+	/* DNS servers */
+	inet_pton (AF_INET, dns1, &addr);
+	nm_setting_ip4_config_add_dns (s_ip4, addr.s_addr);
+	inet_pton (AF_INET, dns2, &addr);
+	nm_setting_ip4_config_add_dns (s_ip4, addr.s_addr);
 
 	/* Write out the connection */
 	owner_uid = geteuid ();
