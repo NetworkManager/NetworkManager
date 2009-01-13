@@ -436,6 +436,10 @@ static KeyParser key_parsers[] = {
 	  NM_SETTING_WIRELESS_MAC_ADDRESS,
 	  TRUE,
 	  mac_address_parser },
+	{ NM_SETTING_WIRELESS_SETTING_NAME,
+	  NM_SETTING_WIRELESS_BSSID,
+	  TRUE,
+	  mac_address_parser },
 	{ NULL, NULL, FALSE }
 };
 

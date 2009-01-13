@@ -38,7 +38,8 @@
 #include "reader.h"
 #include "writer.h"
 
-#define TEST_WIRED_FILE TEST_KEYFILES_DIR"/Test_Wired_Connection"
+#define TEST_WIRED_FILE    TEST_KEYFILES_DIR"/Test_Wired_Connection"
+#define TEST_WIRELESS_FILE TEST_KEYFILES_DIR"/Test_Wireless_Connection"
 
 static void
 FAIL(const char *test_name, const char *fmt, ...)
@@ -370,6 +371,7 @@ test_write_wired_connection (void)
 	const char *route1_nh = "10.10.10.1";
 	const char *route2 = "0.0.0.0";
 	const char *route2_nh = "1.2.1.1";
+	guint64 timestamp = 0x12345678L;
 
 	connection = nm_connection_new ();
 	ASSERT (connection != NULL,
@@ -385,11 +387,11 @@ test_write_wired_connection (void)
 
 	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
-	              NM_SETTING_CONNECTION_ID, "Work Wireless",
+	              NM_SETTING_CONNECTION_ID, "Work Wired",
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-	              NM_SETTING_CONNECTION_TIMESTAMP, 0x12345678L,
+	              NM_SETTING_CONNECTION_TIMESTAMP, timestamp,
 	              NULL);
 	g_free (uuid);
 
@@ -414,7 +416,7 @@ test_write_wired_connection (void)
 	s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
 	ASSERT (s_ip4 != NULL,
 			"connection-write", "failed to allocate new %s setting",
-			NM_SETTING_WIRED_SETTING_NAME);
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4,
@@ -461,6 +463,226 @@ test_write_wired_connection (void)
 	g_object_unref (connection);
 }
 
+static void
+test_read_valid_wireless_connection (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wireless;
+	NMSettingIP4Config *s_ip4;
+	GError *error = NULL;
+	const GByteArray *array;
+	char expected_bssid[ETH_ALEN] = { 0x00, 0x1a, 0x33, 0x44, 0x99, 0x82 };
+	const char *tmp;
+	const char *expected_id = "Test Wireless Connection";
+	const char *expected_uuid = "2f962388-e5f3-45af-a62c-ac220b8f7baa";
+	const guint64 expected_timestamp = 1226604314;
+	guint64 timestamp;
+
+	connection = connection_from_file (TEST_WIRELESS_FILE, TRUE);
+	ASSERT (connection != NULL,
+			"connection-read", "failed to read %s", TEST_WIRELESS_FILE);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "connection-verify", "failed to verify %s: %s", TEST_WIRELESS_FILE, error->message);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "connection-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_WIRELESS_FILE,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "connection-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_WIRELESS_FILE,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "connection-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_WIRELESS_FILE,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	/* UUID */
+	tmp = nm_setting_connection_get_uuid (s_con);
+	ASSERT (tmp != NULL,
+	        "connection-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_WIRELESS_FILE,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_UUID);
+	ASSERT (strcmp (tmp, expected_uuid) == 0,
+	        "connection-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_WIRELESS_FILE,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_UUID);
+
+	/* Timestamp */
+	timestamp = nm_setting_connection_get_timestamp (s_con);
+	ASSERT (timestamp == expected_timestamp,
+	        "connection-verify-connection", "failed to verify %s: unexpected %s /%s key value",
+	        TEST_WIRELESS_FILE,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_TIMESTAMP);
+
+	/* Autoconnect */
+	ASSERT (nm_setting_connection_get_autoconnect (s_con) == FALSE,
+	        "connection-verify-connection", "failed to verify %s: unexpected %s /%s key value",
+	        TEST_WIRELESS_FILE,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_AUTOCONNECT);
+
+	/* ===== WIRED SETTING ===== */
+
+	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	ASSERT (s_wireless != NULL,
+	        "connection-verify-wireless", "failed to verify %s: missing %s setting",
+	        TEST_WIRELESS_FILE,
+	        NM_SETTING_WIRED_SETTING_NAME);
+
+	/* BSSID */
+	array = nm_setting_wireless_get_bssid (s_wireless);
+	ASSERT (array != NULL,
+	        "connection-verify-wireless", "failed to verify %s: missing %s / %s key",
+	        TEST_WIRELESS_FILE,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_BSSID);
+	ASSERT (array->len == ETH_ALEN,
+	        "connection-verify-wireless", "failed to verify %s: unexpected %s / %s key value length",
+	        TEST_WIRELESS_FILE,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_BSSID);
+	ASSERT (memcmp (array->data, &expected_bssid[0], sizeof (expected_bssid)) == 0,
+	        "connection-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_WIRELESS_FILE,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_BSSID);
+
+	/* ===== IPv4 SETTING ===== */
+
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	ASSERT (s_ip4 != NULL,
+	        "connection-verify-ip4", "failed to verify %s: missing %s setting",
+	        TEST_WIRELESS_FILE,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
+	        "connection-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_WIRELESS_FILE,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_METHOD);
+
+	g_object_unref (connection);
+}
+
+static void
+test_write_wireless_connection (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wireless;
+	NMSettingIP4Config *s_ip4;
+	char *uuid;
+	GByteArray *bssid;
+	unsigned char tmpbssid[] = { 0xaa, 0xb9, 0xa1, 0x74, 0x55, 0x44 };
+	GByteArray *ssid;
+	unsigned char tmpssid[] = { 0x31, 0x33, 0x33, 0x37 };
+	gboolean success;
+	NMConnection *reread;
+	char *testfile = NULL;
+	GError *error = NULL;
+	pid_t owner_grp;
+	uid_t owner_uid;
+	guint64 timestamp = 0x12344433L;
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "connection-write", "failed to allocate new connection");
+
+	/* Connection setting */
+
+	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
+	ASSERT (s_con != NULL,
+	        "connection-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Work Wireless",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NM_SETTING_CONNECTION_TIMESTAMP, timestamp,
+	              NULL);
+	g_free (uuid);
+
+	/* Wireless setting */
+
+	s_wireless = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
+	ASSERT (s_wireless != NULL,
+			"connection-write", "failed to allocate new %s setting",
+			NM_SETTING_WIRELESS_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wireless));
+
+	bssid = g_byte_array_sized_new (ETH_ALEN);
+	g_byte_array_append (bssid, &tmpbssid[0], sizeof (tmpbssid));
+
+	ssid = g_byte_array_sized_new (sizeof (tmpssid));
+	g_byte_array_append (ssid, &tmpssid[0], sizeof (tmpssid));
+
+	g_object_set (s_wireless,
+	              NM_SETTING_WIRELESS_BSSID, bssid,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRED_MTU, 1000,
+	              NULL);
+
+	g_byte_array_free (bssid, TRUE);
+	g_byte_array_free (ssid, TRUE);
+
+	/* IP4 setting */
+
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_setting_ip4_config_new ());
+	ASSERT (s_ip4 != NULL,
+			"connection-write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4,
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NULL);
+
+	/* Write out the connection */
+	owner_uid = geteuid ();
+	owner_grp = getegid ();
+	success = write_connection (connection, TEST_SCRATCH_DIR, owner_uid, owner_grp, &testfile, &error);
+	ASSERT (success == TRUE,
+			"connection-write", "failed to allocate write keyfile: %s",
+			error ? error->message : "(none)");
+
+	ASSERT (testfile != NULL,
+			"connection-write", "didn't get keyfile name back after writing connection");
+
+	/* Read the connection back in and compare it to the one we just wrote out */
+	reread = connection_from_file (testfile, TRUE);
+	ASSERT (reread != NULL, "connection-write", "failed to re-read test connection");
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+			"connection-write", "written and re-read connection weren't the same");
+
+	g_clear_error (&error);
+	unlink (testfile);
+	g_free (testfile);
+
+	g_object_unref (reread);
+	g_object_unref (connection);
+}
+
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
@@ -476,6 +698,9 @@ int main (int argc, char **argv)
 	/* The tests */
 	test_read_valid_wired_connection ();
 	test_write_wired_connection ();
+
+	test_read_valid_wireless_connection ();
+	test_write_wireless_connection ();
 
 	basename = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", basename);

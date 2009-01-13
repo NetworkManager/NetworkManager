@@ -278,6 +278,9 @@ static KeyWriter key_writers[] = {
 	{ NM_SETTING_WIRELESS_SETTING_NAME,
 	  NM_SETTING_WIRELESS_MAC_ADDRESS,
 	  mac_address_writer },
+	{ NM_SETTING_WIRELESS_SETTING_NAME,
+	  NM_SETTING_WIRELESS_BSSID,
+	  mac_address_writer },
 	{ NULL, NULL, NULL }
 };
 
