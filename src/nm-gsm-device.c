@@ -74,6 +74,7 @@ const gchar *modem_init_sequences[] = {
 	"AT&F E0 V1 X4 &C1 +FCLASS=0",
 	"AT&F E0 V1 &C1",
 	"AT&F E0 V1",
+	"\rAT&F E0 V1 X4 &C1 +CREG=0 +FCLASS=0",  /* USBModem by MobileStream for Palm */
 	NULL
 };
 
