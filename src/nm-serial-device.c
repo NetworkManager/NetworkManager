@@ -416,6 +416,7 @@ nm_serial_device_open (NMSerialDevice *device,
 	}
 
 	priv->channel = g_io_channel_unix_new (priv->fd);
+	g_io_channel_set_encoding (priv->channel, NULL, NULL);
 
 	return TRUE;
 }
