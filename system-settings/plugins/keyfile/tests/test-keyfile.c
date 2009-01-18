@@ -35,30 +35,13 @@
 #include <nm-setting-wireless.h>
 #include <nm-setting-ip4-config.h>
 
+#include "nm-test-helpers.h"
+
 #include "reader.h"
 #include "writer.h"
 
 #define TEST_WIRED_FILE    TEST_KEYFILES_DIR"/Test_Wired_Connection"
 #define TEST_WIRELESS_FILE TEST_KEYFILES_DIR"/Test_Wireless_Connection"
-
-static void
-FAIL(const char *test_name, const char *fmt, ...)
-{
-    va_list args;
-    char buf[500];
-
-	snprintf (buf, 500, "FAIL: (%s) %s\n", test_name, fmt);
-
-    va_start (args, fmt);
-	vfprintf (stderr, buf, args);
-    va_end (args);
-	_exit (1);
-}
-
-#define ASSERT(x, test_name, fmt, ...) \
-	if (!(x)) { \
-		FAIL (test_name, fmt, ## __VA_ARGS__); \
-	}
 
 static void
 test_read_valid_wired_connection (void)
