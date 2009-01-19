@@ -133,20 +133,6 @@ nm_print_device_capabilities (NMDevice *dev)
 	}
 }
 
-
-struct nl_addr *
-nm_utils_ip4_addr_to_nl_addr (guint32 ip4_addr)
-{
-	struct nl_addr * nla = NULL;
-
-	if (!(nla = nl_addr_alloc (sizeof (in_addr_t))))
-		return NULL;
-	nl_addr_set_family (nla, AF_INET);
-	nl_addr_set_binary_addr (nla, &ip4_addr, sizeof (guint32));
-
-	return nla;
-}
-
 /*
  * nm_utils_ip4_netmask_to_prefix
  *
