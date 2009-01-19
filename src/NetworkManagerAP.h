@@ -23,7 +23,6 @@
 #define NM_ACCESS_POINT_H
 
 #include <glib.h>
-#include <glib/gtypes.h>
 #include <glib-object.h>
 #include <time.h>
 #include "NetworkManager.h"

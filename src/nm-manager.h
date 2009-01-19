@@ -22,7 +22,7 @@
 #ifndef NM_MANAGER_H
 #define NM_MANAGER_H 1
 
-#include <glib/gtypes.h>
+#include <glib.h>
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
 #include "nm-device.h"

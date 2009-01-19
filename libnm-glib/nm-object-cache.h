@@ -23,7 +23,7 @@
 #ifndef NM_OBJECT_CACHE_H
 #define NM_OBJECT_CACHE_H
 
-#include <glib/gtypes.h>
+#include <glib.h>
 #include <glib-object.h>
 #include "nm-object.h"
 

@@ -26,7 +26,7 @@
 #ifndef NM_SETTING_H
 #define NM_SETTING_H
 
-#include <glib/gtypes.h>
+#include <glib.h>
 #include <glib-object.h>
 
 G_BEGIN_DECLS

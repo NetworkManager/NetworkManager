@@ -22,7 +22,7 @@
 #ifndef NM_DHCP_MANAGER_H
 #define NM_DHCP_MANAGER_H
 
-#include <glib/gtypes.h>
+#include <glib.h>
 #include <glib-object.h>
 
 #include <nm-setting-ip4-config.h>

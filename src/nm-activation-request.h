@@ -21,7 +21,7 @@
 #ifndef NM_ACTIVATION_REQUEST_H
 #define NM_ACTIVATION_REQUEST_H
 
-#include <glib/gtypes.h>
+#include <glib.h>
 #include <glib-object.h>
 #include "nm-connection.h"
 #include "nm-active-connection.h"

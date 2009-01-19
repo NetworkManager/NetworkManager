@@ -30,7 +30,7 @@
 #include <gmodule.h>
 #include <glib-object.h>
 #include <glib/gi18n.h>
-#include <glib/gslist.h>
+#include <glib.h>
 #include <nm-setting-connection.h>
 
 #include "interface_parser.h"

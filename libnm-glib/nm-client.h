@@ -24,7 +24,7 @@
 #ifndef NM_CLIENT_H
 #define NM_CLIENT_H
 
-#include <glib/gtypes.h>
+#include <glib.h>
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
 #include <NetworkManager.h>

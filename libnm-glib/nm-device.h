@@ -24,7 +24,7 @@
 #ifndef NM_DEVICE_H
 #define NM_DEVICE_H
 
-#include <glib/gtypes.h>
+#include <glib.h>
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
 #include "nm-object.h"

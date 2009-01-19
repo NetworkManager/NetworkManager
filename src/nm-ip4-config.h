@@ -21,7 +21,7 @@
 #ifndef NM_IP4_CONFIG_H
 #define NM_IP4_CONFIG_H
 
-#include <glib/gtypes.h>
+#include <glib.h>
 #include <glib-object.h>
 
 #include "nm-setting-ip4-config.h"
