@@ -26,6 +26,8 @@
 #include <errno.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include <config.h>
 
@@ -288,3 +290,133 @@ out:
 	g_ptr_array_free (dhclient_argv, TRUE);
 	return success;
 }
+
+static const char **
+process_rfc3442_route (const char **octets, NMIP4Route **out_route)
+{
+	const char **o = octets;
+	int addr_len = 0, i = 0;
+	long int tmp;
+	NMIP4Route *route;
+	char *next_hop;
+	struct in_addr tmp_addr;
+
+	if (!*o)
+		return o; /* no prefix */
+
+	tmp = strtol (*o, NULL, 10);
+	if (tmp < 0 || tmp > 32)  /* 32 == max IP4 prefix length */
+		return o;
+
+	route = nm_ip4_route_new ();
+	nm_ip4_route_set_prefix (route, (guint32) tmp);
+	o++;
+
+	if (tmp > 0)
+		addr_len = ((tmp - 1) / 8) + 1;
+
+	/* ensure there's at least the address + next hop left */
+	if (g_strv_length ((char **) o) < addr_len + 4)
+		goto error;
+
+	if (tmp) {
+		const char *addr[4] = { "0", "0", "0", "0" };
+		char *str_addr;
+
+		for (i = 0; i < addr_len; i++)
+			addr[i] = *o++;
+
+		str_addr = g_strjoin (".", addr[0], addr[1], addr[2], addr[3], NULL);
+		if (inet_pton (AF_INET, str_addr, &tmp_addr) <= 0) {
+			g_free (str_addr);
+			goto error;
+		}
+		tmp_addr.s_addr &= nm_utils_ip4_prefix_to_netmask ((guint32) tmp);
+		nm_ip4_route_set_dest (route, tmp_addr.s_addr);
+	}
+
+	/* Handle next hop */
+	next_hop = g_strjoin (".", o[0], o[1], o[2], o[3], NULL);
+	if (inet_pton (AF_INET, next_hop, &tmp_addr) <= 0) {
+		g_free (next_hop);
+		goto error;
+	}
+	nm_ip4_route_set_next_hop (route, tmp_addr.s_addr);
+	g_free (next_hop);
+
+	*out_route = route;
+	return o + 4; /* advance to past the next hop */
+
+error:
+	nm_ip4_route_unref (route);
+	return o;
+}
+
+gboolean
+nm_dhcp_client_process_classless_routes (GHashTable *options,
+                                         NMIP4Config *ip4_config,
+                                         guint32 *gwaddr)
+{
+	const char *str;
+	char **octets, **o;
+	gboolean have_routes = FALSE;
+	NMIP4Route *route = NULL;
+
+	/* dhclient doesn't have actual support for rfc3442 classless static routes
+	 * upstream.  Thus, people resort to defining the option in dhclient.conf
+	 * and using arbitrary formats like so:
+	 *
+	 * option rfc3442-classless-static-routes code 121 = array of unsigned integer 8;
+	 *
+	 * See https://lists.isc.org/pipermail/dhcp-users/2008-December/007629.html
+	 */
+
+	str = g_hash_table_lookup (options, "new_rfc3442_classless_static_routes");
+	/* Microsoft version; same as rfc3442 but with a different option # (249) */
+	if (!str)
+		str = g_hash_table_lookup (options, "new_ms_classless_static_routes");
+
+	if (!str || !strlen (str))
+		return FALSE;
+
+	o = octets = g_strsplit (str, " ", 0);
+	if (g_strv_length (octets) < 5) {
+		nm_warning ("Ignoring invalid classless static routes '%s'", str);
+		goto out;
+	}
+
+	while (*o) {
+		route = NULL;
+		o = (char **) process_rfc3442_route ((const char **) o, &route);
+		if (!route) {
+			nm_warning ("Ignoring invalid classless static routes");
+			break;
+		}
+
+		have_routes = TRUE;
+		if (nm_ip4_route_get_prefix (route) == 0) {
+			/* gateway passed as classless static route */
+			*gwaddr = nm_ip4_route_get_next_hop (route);
+			nm_ip4_route_unref (route);
+		} else {
+			char addr[INET_ADDRSTRLEN + 1];
+			char nh[INET_ADDRSTRLEN + 1];
+			struct in_addr tmp;
+
+			/* normal route */
+			nm_ip4_config_take_route (ip4_config, route);
+
+			tmp.s_addr = nm_ip4_route_get_dest (route);
+			inet_ntop (AF_INET, &tmp, addr, sizeof (addr));
+			tmp.s_addr = nm_ip4_route_get_next_hop (route);
+			inet_ntop (AF_INET, &tmp, nh, sizeof (nh));
+			nm_info ("  classless static route %s/%d gw %s",
+			         addr, nm_ip4_route_get_prefix (route), nh);
+		}
+	}
+
+out:
+	g_strfreev (octets);
+	return have_routes;
+}
+

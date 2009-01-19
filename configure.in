@@ -496,6 +496,7 @@ AC_CONFIG_FILES([
 Makefile
 include/Makefile
 src/Makefile
+src/tests/Makefile
 marshallers/Makefile
 src/named-manager/Makefile
 src/vpn-manager/Makefile

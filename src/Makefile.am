@@ -5,7 +5,8 @@ SUBDIRS= \
 	supplicant-manager \
 	ppp-manager \
 	backends \
-	dnsmasq-manager
+	dnsmasq-manager \
+	tests
 
 INCLUDES = -I${top_srcdir}                   \
            -I${top_srcdir}/include           \
@@ -139,19 +140,19 @@ NetworkManager_CPPFLAGS = 							\
 	-DARP_DEBUG
 
 NetworkManager_LDADD = 							\
-			$(DBUS_LIBS)						\
-			$(GTHREAD_LIBS)					\
-			$(HAL_LIBS)						\
-			$(LIBNL_LIBS)						\
-			$(top_builddir)/marshallers/libmarshallers.la	\
-			./named-manager/libnamed-manager.la	\
-			./vpn-manager/libvpn-manager.la		\
-			./dhcp-manager/libdhcp-manager.la		\
-			./supplicant-manager/libsupplicant-manager.la		\
-			./dnsmasq-manager/libdnsmasq-manager.la		\
-			./ppp-manager/libppp-manager.la		\
-			./backends/libnmbackend.la			\
-			$(top_builddir)/libnm-util/libnm-util.la
+	$(DBUS_LIBS)						\
+	$(GTHREAD_LIBS)					\
+	$(HAL_LIBS)						\
+	$(LIBNL_LIBS)						\
+	$(top_builddir)/marshallers/libmarshallers.la	\
+	./named-manager/libnamed-manager.la	\
+	./vpn-manager/libvpn-manager.la		\
+	./dhcp-manager/libdhcp-manager.la		\
+	./supplicant-manager/libsupplicant-manager.la		\
+	./dnsmasq-manager/libdnsmasq-manager.la		\
+	./ppp-manager/libppp-manager.la		\
+	./backends/libnmbackend.la			\
+	$(top_builddir)/libnm-util/libnm-util.la
 
 NetworkManager_LDFLAGS = -rdynamic
 
