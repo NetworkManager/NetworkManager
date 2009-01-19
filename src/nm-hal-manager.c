@@ -33,9 +33,6 @@
 #include "nm-utils.h"
 #include "nm-device-wifi.h"
 #include "nm-device-ethernet.h"
-#include "nm-gsm-device.h"
-#include "nm-hso-gsm-device.h"
-#include "nm-cdma-device.h"
 
 /* Killswitch poll frequency in seconds */
 #define RFKILL_POLL_FREQUENCY 6
@@ -220,145 +217,6 @@ wireless_device_creator (NMHalManager *self, const char *udi, gboolean managed)
 	return device;
 }
 
-/* Modem device creator */
-
-static gboolean
-is_modem_device (NMHalManager *self, const char *udi)
-{
-	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
-	gboolean is_modem = FALSE;
-
-	if (libhal_device_property_exists (priv->hal_ctx, udi, "info.category", NULL)) {
-		char *category;
-
-		category = libhal_device_get_property_string (priv->hal_ctx, udi, "info.category", NULL);
-		if (category) {
-			is_modem = strcmp (category, "serial") == 0;
-			libhal_free_string (category);
-		}
-	}
-
-	return is_modem;
-}
-
-static char *
-get_hso_netdev (LibHalContext *ctx, const char *udi)
-{
-	char *serial_parent, *netdev = NULL;
-	char **netdevs;
-	int num, i;
-
-	/* Get the serial interface's originating device UDI, used to find the
-	 * originating device's netdev.
-	 */
-	serial_parent = libhal_device_get_property_string (ctx, udi, "serial.originating_device", NULL);
-	if (!serial_parent)
-		serial_parent = libhal_device_get_property_string (ctx, udi, "info.parent", NULL);
-	if (!serial_parent)
-		return NULL;
-
-	/* Look for the originating device's netdev */
-	netdevs = libhal_find_device_by_capability (ctx, "net", &num, NULL);
-	for (i = 0; netdevs && !netdev && (i < num); i++) {
-		char *netdev_parent, *tmp;
-
-		netdev_parent = libhal_device_get_property_string (ctx, netdevs[i], "net.originating_device", NULL);
-		if (!netdev_parent)
-			netdev_parent = libhal_device_get_property_string (ctx, netdevs[i], "net.physical_device", NULL);
-		if (!netdev_parent)
-			continue;
-
-		if (!strcmp (netdev_parent, serial_parent)) {
-			/* We found it */
-			tmp = libhal_device_get_property_string (ctx, netdevs[i], "net.interface", NULL);
-			if (tmp) {
-				netdev = g_strdup (tmp);
-				libhal_free_string (tmp);
-			}
-		}
-
-		libhal_free_string (netdev_parent);
-	}
-	libhal_free_string_array (netdevs);
-	libhal_free_string (serial_parent);
-
-	return netdev;
-}
-
-static GObject *
-modem_device_creator (NMHalManager *self, const char *udi, gboolean managed)
-{
-	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
-	char *serial_device;
-	char *parent_udi;
-	char *driver_name = NULL;
-	GObject *device = NULL;
-	char **capabilities, **iter;
-	gboolean type_gsm = FALSE;
-	gboolean type_cdma = FALSE;
-	char *netdev = NULL;
-
-	serial_device = libhal_device_get_property_string (priv->hal_ctx, udi, "serial.device", NULL);
-
-	/* Get the driver */
-	parent_udi = libhal_device_get_property_string (priv->hal_ctx, udi, "info.parent", NULL);
-	if (parent_udi) {
-		driver_name = libhal_device_get_property_string (priv->hal_ctx, parent_udi, "info.linux.driver", NULL);
-		libhal_free_string (parent_udi);
-	}
-
-	if (!serial_device || !driver_name)
-		goto out;
-
-	capabilities = libhal_device_get_property_strlist (priv->hal_ctx, udi, "modem.command_sets", NULL);
-	/* 'capabilites' may be NULL */
-	for (iter = capabilities; iter && *iter; iter++) {
-		if (!strcmp (*iter, "GSM-07.07")) {
-			type_gsm = TRUE;
-			break;
-		}
-		if (!strcmp (*iter, "IS-707-A")) {
-			type_cdma = TRUE;
-			break;
-		}
-	}
-	g_strfreev (capabilities);
-
-	/* Compatiblity with the pre-specification bits */
-	if (!type_gsm && !type_cdma) {
-		capabilities = libhal_device_get_property_strlist (priv->hal_ctx, udi, "info.capabilities", NULL);
-		for (iter = capabilities; *iter; iter++) {
-			if (!strcmp (*iter, "gsm")) {
-				type_gsm = TRUE;
-				break;
-			}
-			if (!strcmp (*iter, "cdma")) {
-				type_cdma = TRUE;
-				break;
-			}
-		}
-		g_strfreev (capabilities);
-	}
-
-	/* Special handling of 'hso' cards (until punted out to a modem manager) */
-	if (type_gsm && !strcmp (driver_name, "hso"))
-		netdev = get_hso_netdev (priv->hal_ctx, udi);
-
-	if (type_gsm) {
-		if (netdev)
-			device = (GObject *) nm_hso_gsm_device_new (udi, serial_device + strlen ("/dev/"), NULL, netdev, driver_name, managed);
-		else
-			device = (GObject *) nm_gsm_device_new (udi, serial_device + strlen ("/dev/"), NULL, driver_name, managed);
-	} else if (type_cdma)
-		device = (GObject *) nm_cdma_device_new (udi, serial_device + strlen ("/dev/"), NULL, driver_name, managed);
-
-out:
-	libhal_free_string (serial_device);
-	libhal_free_string (driver_name);
-
-	return device;
-}
-
 static void
 register_built_in_creators (NMHalManager *self)
 {
@@ -379,14 +237,6 @@ register_built_in_creators (NMHalManager *self)
 	creator->capability_str = g_strdup ("net.80211");
 	creator->is_device_fn = is_wireless_device;
 	creator->creator_fn = wireless_device_creator;
-	priv->device_creators = g_slist_append (priv->device_creators, creator);
-
-	/* Modem */
-	creator = g_slice_new0 (DeviceCreator);
-	creator->device_type_name = g_strdup ("Modem");
-	creator->capability_str = g_strdup ("modem");
-	creator->is_device_fn = is_modem_device;
-	creator->creator_fn = modem_device_creator;
 	priv->device_creators = g_slist_append (priv->device_creators, creator);
 }
 

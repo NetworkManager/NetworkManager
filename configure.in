@@ -504,6 +504,7 @@ src/dhcp-manager/Makefile
 src/supplicant-manager/Makefile
 src/ppp-manager/Makefile
 src/dnsmasq-manager/Makefile
+src/modem-manager/Makefile
 src/backends/Makefile
 libnm-util/libnm-util.pc
 libnm-util/Makefile

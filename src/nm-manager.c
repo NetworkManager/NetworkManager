@@ -29,6 +29,7 @@
 #include "nm-utils.h"
 #include "nm-dbus-manager.h"
 #include "nm-vpn-manager.h"
+#include "nm-modem-manager.h"
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
 #include "nm-device-wifi.h"
@@ -96,6 +97,9 @@ static void system_settings_properties_changed_cb (DBusGProxy *proxy,
                                                    GHashTable *properties,
                                                    gpointer user_data);
 
+static void add_device (NMManager *self, NMDevice *device, const char *type_name);
+static void remove_one_device (NMManager *manager, NMDevice *device);
+
 #define SSD_POKE_INTERVAL 120
 
 typedef struct {
@@ -133,6 +137,10 @@ typedef struct {
 
 	NMVPNManager *vpn_manager;
 	guint vpn_manager_id;
+
+	NMModemManager *modem_manager;
+	guint modem_added_id;
+	guint modem_removed_id;
 
 	DBusGProxy *aipd_proxy;
 
@@ -242,6 +250,36 @@ vpn_manager_connection_deactivated_cb (NMVPNManager *manager,
 }
 
 static void
+modem_added (NMModemManager *modem_manager,
+			 NMDevice *modem,
+			 gpointer user_data)
+{
+	NMDeviceType type;
+	const char *type_name;
+
+	type = nm_device_get_device_type (NM_DEVICE (modem));
+	if (type == NM_DEVICE_TYPE_GSM)
+		type_name = "GSM modem";
+	else if (type == NM_DEVICE_TYPE_CDMA)
+		type_name = "CDMA modem";
+	else
+		type_name = "Unknown modem";
+
+	add_device (NM_MANAGER (user_data), NM_DEVICE (g_object_ref (modem)), type_name);
+}
+
+static void
+modem_removed (NMModemManager *modem_manager,
+			   NMDevice *modem,
+			   gpointer user_data)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (user_data);
+
+	remove_one_device (NM_MANAGER (user_data), modem);
+	priv->devices = g_slist_remove (priv->devices, modem);
+}
+
+static void
 aipd_handle_event (DBusGProxy *proxy,
                    const char *event,
                    const char *iface,
@@ -303,6 +341,12 @@ nm_manager_init (NMManager *manager)
 	                                                g_str_equal,
 	                                                g_free,
 	                                                g_object_unref);
+
+	priv->modem_manager = nm_modem_manager_get ();
+	priv->modem_added_id = g_signal_connect (priv->modem_manager, "device-added",
+									 G_CALLBACK (modem_added), manager);
+	priv->modem_removed_id = g_signal_connect (priv->modem_manager, "device-removed",
+									   G_CALLBACK (modem_removed), manager);
 
 	priv->vpn_manager = nm_vpn_manager_get ();
 	id = g_signal_connect (G_OBJECT (priv->vpn_manager), "connection-deactivated",
@@ -502,6 +546,16 @@ dispose (GObject *object)
 		priv->vpn_manager_id = 0;
 	}
 	g_object_unref (priv->vpn_manager);
+
+	if (priv->modem_added_id) {
+		g_source_remove (priv->modem_added_id);
+		priv->modem_added_id = 0;
+	}
+	if (priv->modem_removed_id) {
+		g_source_remove (priv->modem_removed_id);
+		priv->modem_removed_id = 0;
+	}
+	g_object_unref (priv->modem_manager);
 
 	g_object_unref (priv->dbus_mgr);
 	g_object_unref (priv->hal_mgr);
@@ -1645,6 +1699,41 @@ next:
 }
 
 static void
+add_device (NMManager *self, NMDevice *device, const char *type_name)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	const char *iface;
+
+	priv->devices = g_slist_append (priv->devices, device);
+
+	g_signal_connect (device, "state-changed",
+				   G_CALLBACK (manager_device_state_changed),
+				   self);
+
+	/* Attach to the access-point-added signal so that the manager can fill
+	 * non-SSID-broadcasting APs with an SSID.
+	 */
+	if (NM_IS_DEVICE_WIFI (device)) {
+		g_signal_connect (device, "hidden-ap-found",
+					   G_CALLBACK (manager_hidden_ap_found),
+					   self);
+
+		/* Set initial rfkill state */
+		nm_device_wifi_set_enabled (NM_DEVICE_WIFI (device), priv->wireless_enabled);
+	}
+
+	iface = nm_device_get_iface (device);
+	nm_info ("Found new %s device '%s'.", type_name, iface);
+
+	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (priv->dbus_mgr),
+								  nm_device_get_udi (NM_DEVICE (device)),
+								  G_OBJECT (device));
+	nm_info ("(%s): exported as %s", iface, nm_device_get_udi (device));
+
+	g_signal_emit (self, signals[DEVICE_ADDED], 0, device);
+}
+
+static void
 hal_manager_udi_added_cb (NMHalManager *hal_mgr,
                           const char *udi,
                           const char *type_name,
@@ -1654,7 +1743,6 @@ hal_manager_udi_added_cb (NMHalManager *hal_mgr,
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GObject *device;
-	const char *iface;
 
 	if (priv->sleeping)
 		return;
@@ -1667,33 +1755,7 @@ hal_manager_udi_added_cb (NMHalManager *hal_mgr,
 	if (!device)
 		return;
 
-	priv->devices = g_slist_append (priv->devices, device);
-
-	g_signal_connect (device, "state-changed",
-					  G_CALLBACK (manager_device_state_changed),
-					  self);
-
-	/* Attach to the access-point-added signal so that the manager can fill
-	 * non-SSID-broadcasting APs with an SSID.
-	 */
-	if (NM_IS_DEVICE_WIFI (device)) {
-		g_signal_connect (device, "hidden-ap-found",
-						  G_CALLBACK (manager_hidden_ap_found),
-						  self);
-
-		/* Set initial rfkill state */
-		nm_device_wifi_set_enabled (NM_DEVICE_WIFI (device), priv->wireless_enabled);
-	}
-
-	iface = nm_device_get_iface (NM_DEVICE (device));
-	nm_info ("Found new %s device '%s'.", type_name, iface);
-
-	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (priv->dbus_mgr),
-								  nm_device_get_udi (NM_DEVICE (device)),
-								  device);
-	nm_info ("(%s): exported as %s", iface, udi);
-
-	g_signal_emit (self, signals[DEVICE_ADDED], 0, device);
+	add_device (self, NM_DEVICE (device), type_name);
 }
 
 static void

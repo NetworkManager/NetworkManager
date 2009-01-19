@@ -6,6 +6,7 @@ SUBDIRS= \
 	ppp-manager \
 	backends \
 	dnsmasq-manager \
+	modem-manager \
 	. \
 	tests
 
@@ -17,6 +18,7 @@ INCLUDES = -I${top_srcdir}                   \
            -I${top_srcdir}/src/dhcp-manager  \
            -I${top_srcdir}/src/supplicant-manager  \
            -I${top_srcdir}/src/dnsmasq-manager  \
+           -I${top_srcdir}/src/modem-manager  \
            -I${top_srcdir}/libnm-util \
            -I${top_srcdir}/callouts
 
@@ -87,14 +89,6 @@ NetworkManager_SOURCES =				\
 		nm-activation-request.h		\
 		nm-properties-changed-signal.c	\
 		nm-properties-changed-signal.h	\
-		nm-serial-device.c		\
-		nm-serial-device.h		\
-		nm-gsm-device.c		\
-		nm-gsm-device.h		\
-		nm-cdma-device.c		\
-		nm-cdma-device.h		\
-		nm-hso-gsm-device.c \
-		nm-hso-gsm-device.h \
 		wpa.c				\
 		wpa.h				\
 		nm-netlink.c			\
@@ -117,15 +111,6 @@ nm-device-ethernet-glue.h: $(top_srcdir)/introspection/nm-device-ethernet.xml
 nm-device-wifi-glue.h: $(top_srcdir)/introspection/nm-device-wifi.xml
 	dbus-binding-tool --prefix=nm_device_wifi --mode=glib-server --output=$@ $<
 
-nm-serial-device-glue.h: $(top_srcdir)/introspection/nm-device-serial.xml
-	dbus-binding-tool --prefix=nm_serial_device --mode=glib-server --output=$@ $<
-
-nm-cdma-device-glue.h: $(top_srcdir)/introspection/nm-device-cdma.xml
-	dbus-binding-tool --prefix=nm_cdma_device --mode=glib-server --output=$@ $<
-
-nm-gsm-device-glue.h: $(top_srcdir)/introspection/nm-device-gsm.xml
-	dbus-binding-tool --prefix=nm_gsm_device --mode=glib-server --output=$@ $<
-
 nm-ip4-config-glue.h: $(top_srcdir)/introspection/nm-ip4-config.xml
 	dbus-binding-tool --prefix=nm_ip4_config --mode=glib-server --output=$@ $<
 
@@ -141,9 +126,6 @@ BUILT_SOURCES = 					\
 	nm-device-interface-glue.h			\
 	nm-device-ethernet-glue.h			\
 	nm-device-wifi-glue.h		\
-	nm-serial-device-glue.h \
-	nm-cdma-device-glue.h \
-	nm-gsm-device-glue.h \
 	nm-ip4-config-glue.h				\
 	nm-active-connection-glue.h \
 	nm-dhcp4-config-glue.h
@@ -175,11 +157,12 @@ NetworkManager_LDADD = 							\
 	./named-manager/libnamed-manager.la	\
 	./vpn-manager/libvpn-manager.la		\
 	./dhcp-manager/libdhcp-manager.la		\
-	./supplicant-manager/libsupplicant-manager.la		\
-	./dnsmasq-manager/libdnsmasq-manager.la		\
-	./ppp-manager/libppp-manager.la		\
-	./backends/libnmbackend.la			\
-	$(top_builddir)/libnm-util/libnm-util.la
+			./supplicant-manager/libsupplicant-manager.la		\
+			./dnsmasq-manager/libdnsmasq-manager.la		\
+			./ppp-manager/libppp-manager.la		\
+			./modem-manager/libmodem-manager.la		\
+			./backends/libnmbackend.la			\
+			$(top_builddir)/libnm-util/libnm-util.la
 
 NetworkManager_LDFLAGS = -rdynamic
 
