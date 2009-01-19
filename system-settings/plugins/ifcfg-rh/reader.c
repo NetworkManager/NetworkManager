@@ -143,6 +143,7 @@ get_one_ip4_addr (shvarFile *ifcfg,
 	g_return_if_fail (ifcfg != NULL);
 	g_return_if_fail (tag != NULL);
 	g_return_if_fail (out_addr != NULL);
+	g_return_if_fail (*out_addr == 0);
 	g_return_if_fail (error != NULL);
 	g_return_if_fail (*error == NULL);
 
