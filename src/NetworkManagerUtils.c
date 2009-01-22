@@ -350,48 +350,6 @@ nm_utils_merge_ip4_config (NMIP4Config *ip4_config, NMSettingIP4Config *setting)
 		nm_ip4_config_set_never_default (ip4_config, TRUE);
 }
 
-static void
-nm_gvalue_destroy (gpointer data)
-{
-	GValue *value = (GValue *) data;
-
-	g_value_unset (value);
-	g_slice_free (GValue, value);
-}
-
-static GValue *
-str_to_gvalue (const char *str)
-{
-	GValue *value;
-
-	value = g_slice_new0 (GValue);
-	g_value_init (value, G_TYPE_STRING);
-	g_value_set_string (value, str);
-	return value;
-}
-
-static GValue *
-op_to_gvalue (const char *op)
-{
-	GValue *value;
-
-	value = g_slice_new0 (GValue);
-	g_value_init (value, DBUS_TYPE_G_OBJECT_PATH);
-	g_value_set_boxed (value, op);
-	return value;
-}
-
-static GValue *
-uint_to_gvalue (guint32 val)
-{
-	GValue *value;
-
-	value = g_slice_new0 (GValue);
-	g_value_init (value, G_TYPE_UINT);
-	g_value_set_uint (value, val);
-	return value;
-}
-
 void
 nm_utils_call_dispatcher (const char *action,
                           NMConnection *connection,
@@ -426,57 +384,48 @@ nm_utils_call_dispatcher (const char *action,
 	if (connection) {
 		connection_hash = nm_connection_to_hash (connection);
 
-		connection_props = g_hash_table_new_full (g_str_hash, g_str_equal,
-		                                          NULL, nm_gvalue_destroy);
+		connection_props = value_hash_create ();
 
 		/* Service name */
 		if (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_USER) {
-			g_hash_table_insert (connection_props,
-			                     NMD_CONNECTION_PROPS_SERVICE_NAME,
-			                     str_to_gvalue (NM_DBUS_SERVICE_USER_SETTINGS));
+			value_hash_add_str (connection_props,
+								NMD_CONNECTION_PROPS_SERVICE_NAME,
+								NM_DBUS_SERVICE_USER_SETTINGS);
 		} else if (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_SYSTEM) {
-			g_hash_table_insert (connection_props,
-			                     NMD_CONNECTION_PROPS_SERVICE_NAME,
-			                     str_to_gvalue (NM_DBUS_SERVICE_SYSTEM_SETTINGS));
+			value_hash_add_str (connection_props,
+								NMD_CONNECTION_PROPS_SERVICE_NAME,
+								NM_DBUS_SERVICE_SYSTEM_SETTINGS);
 		}
 
 		/* path */
-		g_hash_table_insert (connection_props,
-		                     NMD_CONNECTION_PROPS_PATH,
-		                     op_to_gvalue (nm_connection_get_path (connection)));
+		value_hash_add_object_path (connection_props,
+									NMD_CONNECTION_PROPS_PATH,
+									nm_connection_get_path (connection));
 	} else {
-		connection_hash = g_hash_table_new (g_direct_hash, g_direct_equal);
-		connection_props = g_hash_table_new (g_direct_hash, g_direct_equal);
+		connection_hash = value_hash_create ();
+		connection_props = value_hash_create ();
 	}
 
-	device_props = g_hash_table_new_full (g_str_hash, g_str_equal,
-	                                      NULL, nm_gvalue_destroy);
+	device_props = value_hash_create ();
 
 	/* Hostname actions do not require a device */
 	if (strcmp (action, "hostname")) {
 		/* interface */
-		g_hash_table_insert (device_props, NMD_DEVICE_PROPS_INTERFACE,
-		                     str_to_gvalue (nm_device_get_iface (device)));
+		value_hash_add_str (device_props, NMD_DEVICE_PROPS_INTERFACE, nm_device_get_iface (device));
 
 		/* IP interface */
 		if (vpn_iface) {
-			g_hash_table_insert (device_props, NMD_DEVICE_PROPS_IP_INTERFACE,
-			                     str_to_gvalue (vpn_iface));
+			value_hash_add_str (device_props, NMD_DEVICE_PROPS_IP_INTERFACE, vpn_iface);
 		} else if (nm_device_get_ip_iface (device)) {
-			g_hash_table_insert (device_props, NMD_DEVICE_PROPS_IP_INTERFACE,
-			                     str_to_gvalue (nm_device_get_ip_iface (device)));
+			value_hash_add_str (device_props, NMD_DEVICE_PROPS_IP_INTERFACE, nm_device_get_ip_iface (device));
 		}
 
 		/* type */
-		g_hash_table_insert (device_props, NMD_DEVICE_PROPS_TYPE,
-		                     uint_to_gvalue (nm_device_get_device_type (device)));
+		value_hash_add_uint (device_props, NMD_DEVICE_PROPS_TYPE, nm_device_get_device_type (device));
 
 		/* state */
-		g_hash_table_insert (device_props, NMD_DEVICE_PROPS_STATE,
-		                     uint_to_gvalue (nm_device_get_state (device)));
-
-		g_hash_table_insert (device_props, NMD_DEVICE_PROPS_PATH,
-		                     op_to_gvalue (nm_device_get_udi (device)));
+		value_hash_add_uint (device_props, NMD_DEVICE_PROPS_STATE, nm_device_get_state (device));
+		value_hash_add_object_path (device_props, NMD_DEVICE_PROPS_PATH, nm_device_get_udi (device));
 	}
 
 	dbus_g_proxy_call_no_reply (proxy, "Action",
@@ -493,3 +442,69 @@ nm_utils_call_dispatcher (const char *action,
 	g_object_unref (dbus_mgr);
 }
 
+/*********************************/
+
+static void
+nm_gvalue_destroy (gpointer data)
+{
+	GValue *value = (GValue *) data;
+
+	g_value_unset (value);
+	g_slice_free (GValue, value);
+}
+
+GHashTable *
+value_hash_create (void)
+{
+	return g_hash_table_new_full (g_str_hash, g_str_equal, g_free, nm_gvalue_destroy);
+}
+
+void
+value_hash_add (GHashTable *hash,
+				const char *key,
+				GValue *value)
+{
+	g_hash_table_insert (hash, g_strdup (key), value);
+}
+
+void
+value_hash_add_str (GHashTable *hash,
+					const char *key,
+					const char *str)
+{
+	GValue *value;
+
+	value = g_slice_new0 (GValue);
+	g_value_init (value, G_TYPE_STRING);
+	g_value_set_string (value, str);
+
+	value_hash_add (hash, key, value);
+}
+
+void
+value_hash_add_object_path (GHashTable *hash,
+							const char *key,
+							const char *op)
+{
+	GValue *value;
+
+	value = g_slice_new0 (GValue);
+	g_value_init (value, DBUS_TYPE_G_OBJECT_PATH);
+	g_value_set_boxed (value, op);
+
+	value_hash_add (hash, key, value);
+}
+
+void
+value_hash_add_uint (GHashTable *hash,
+					 const char *key,
+					 guint32 val)
+{
+	GValue *value;
+
+	value = g_slice_new0 (GValue);
+	g_value_init (value, G_TYPE_UINT);
+	g_value_set_uint (value, val);
+
+	value_hash_add (hash, key, value);
+}

@@ -48,5 +48,23 @@ void nm_utils_call_dispatcher (const char *action,
                                NMDevice *device,
                                const char *vpn_iface);
 
-#endif
 
+GHashTable *value_hash_create          (void);
+void        value_hash_add             (GHashTable *hash,
+										const char *key,
+										GValue *value);
+
+void        value_hash_add_str         (GHashTable *hash,
+										const char *key,
+										const char *str);
+
+void        value_hash_add_object_path (GHashTable *hash,
+										const char *key,
+										const char *op);
+
+void        value_hash_add_uint        (GHashTable *hash,
+										const char *key,
+										guint32 val);
+
+
+#endif /* NETWORK_MANAGER_UTILS_H */
