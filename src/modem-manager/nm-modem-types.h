@@ -7,6 +7,7 @@
 #define MM_DBUS_PATH                 "/org/freedesktop/ModemManager"
 #define MM_DBUS_INTERFACE            "org.freedesktop.ModemManager"
 #define MM_DBUS_INTERFACE_MODEM      "org.freedesktop.ModemManager.Modem"
+#define MM_DBUS_INTERFACE_MODEM_SIMPLE "org.freedesktop.ModemManager.Modem.Simple"
 #define MM_DBUS_INTERFACE_MODEM_CDMA "org.freedesktop.ModemManager.Modem.Cdma"
 
 #define MM_DBUS_INTERFACE_MODEM_GSM_CARD    "org.freedesktop.ModemManager.Modem.Gsm.Card"

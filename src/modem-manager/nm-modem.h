@@ -25,9 +25,6 @@ typedef struct {
 typedef struct {
 	NMDeviceClass parent;
 
-	void (*connect) (NMModem *self,
-					 const char *number);
-
 	const char *(*get_ppp_name) (NMModem *self,
 								 NMConnection *connection);
 
@@ -43,9 +40,6 @@ GType nm_modem_get_type (void);
 NMPPPManager *nm_modem_get_ppp_manager (NMModem *self);
 DBusGProxy	 *nm_modem_get_proxy	   (NMModem *self,
 										const char *interface);
-
-void		  nm_modem_connect		   (NMModem *self,
-										const char *number);
 
 const char	 *nm_modem_get_ppp_name	   (NMModem *self,
 										NMConnection *connection);

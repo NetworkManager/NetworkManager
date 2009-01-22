@@ -10,30 +10,11 @@
 #include "nm-setting-connection.h"
 #include "nm-setting-cdma.h"
 #include "nm-utils.h"
+#include "NetworkManagerUtils.h"
 
 #include "nm-device-cdma-glue.h"
 
 G_DEFINE_TYPE (NMModemCdma, nm_modem_cdma, NM_TYPE_MODEM)
-
-#define NM_MODEM_CDMA_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_MODEM_CDMA, NMModemCdmaPrivate))
-
-enum {
-	MODEM_STATE_BEGIN,
-	MODEM_STATE_ENABLE,
-	MODEM_STATE_CONNECT
-};
-
-typedef struct {
-	int modem_state;
-} NMModemCdmaPrivate;
-
-enum {
-	SIGNAL_QUALITY,
-
-	LAST_SIGNAL
-};
-
-static guint signals[LAST_SIGNAL] = { 0 };
 
 NMDevice *
 nm_modem_cdma_new (const char *path,
@@ -53,77 +34,55 @@ nm_modem_cdma_new (const char *path,
 									  NULL);
 }
 
-static NMSetting *
-get_setting (NMModemCdma *self, GType setting_type)
-{
-	NMActRequest *req;
-	NMSetting *setting = NULL;
-
-	req = nm_device_get_act_request (NM_DEVICE (self));
-	if (req) {
-		NMConnection *connection;
-
-		connection = nm_act_request_get_connection (req);
-		if (connection)
-			setting = nm_connection_get_setting (connection, setting_type);
-	}
-
-	return setting;
-}
-
 static void
-state_machine (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
+stage1_prepare_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 {
-	NMModemCdma *modem = NM_MODEM_CDMA (user_data);
-	NMModemCdmaPrivate *priv = NM_MODEM_CDMA_GET_PRIVATE (modem);
-	NMSettingCdma *setting;
+	NMDevice *device = NM_DEVICE (user_data);
 	GError *error = NULL;
 
-	setting = NM_SETTING_CDMA (get_setting (modem, NM_TYPE_SETTING_CDMA));
-
-	if (call_id)
-		dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID);
-
-	if (error) {
+	dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID);
+	if (!error)
+		nm_device_activate_schedule_stage2_device_config (device);
+	else {
 		nm_warning ("CDMA modem connection failed: %s", error->message);
-		nm_device_state_changed (NM_DEVICE (modem), NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NONE);
-		return;
+		g_error_free (error);
+		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NONE);
 	}
+}
 
-	switch (priv->modem_state) {
-	case MODEM_STATE_BEGIN:
-		priv->modem_state = MODEM_STATE_ENABLE;
-		dbus_g_proxy_begin_call (nm_modem_get_proxy (NM_MODEM (modem), NULL),
-								 "Enable", state_machine,
-								 modem, NULL,
-								 G_TYPE_BOOLEAN, TRUE,
-								 G_TYPE_INVALID);
-		break;
-	case MODEM_STATE_ENABLE:
-		priv->modem_state = MODEM_STATE_CONNECT;
-		dbus_g_proxy_begin_call (nm_modem_get_proxy (NM_MODEM (modem), NULL),
-								 "Connect", state_machine,
-								 modem, NULL,
-								 G_TYPE_STRING, nm_setting_cdma_get_number (setting),
-								 G_TYPE_INVALID);
-		break;
-	case MODEM_STATE_CONNECT:
-		nm_device_activate_schedule_stage2_device_config (NM_DEVICE (modem));
-		break;
-	default:
-		nm_warning ("Invalid modem state %d", priv->modem_state);
-		nm_device_state_changed (NM_DEVICE (modem), NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NONE);
-		break;
-	}
+static GHashTable *
+create_connect_properties (NMConnection *connection)
+{
+	NMSettingCdma *setting;
+	GHashTable *properties;
+	const char *str;
+
+	setting = NM_SETTING_CDMA (nm_connection_get_setting (connection, NM_TYPE_SETTING_CDMA));
+	properties = value_hash_create ();
+
+	str = nm_setting_cdma_get_number (setting);
+	if (str)
+		value_hash_add_str (properties, "number", str);
+
+	return properties;
 }
 
 static NMActStageReturn
 real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
-	NMModemCdmaPrivate *priv = NM_MODEM_CDMA_GET_PRIVATE (device);
+	NMConnection *connection;
+	GHashTable *properties;
 
-	priv->modem_state = MODEM_STATE_BEGIN;
-	state_machine (NULL, NULL, device);
+	connection = nm_act_request_get_connection (nm_device_get_act_request (device));
+	g_assert (connection);
+
+	properties = create_connect_properties (connection);
+	dbus_g_proxy_begin_call_with_timeout (nm_modem_get_proxy (NM_MODEM (device), MM_DBUS_INTERFACE_MODEM_SIMPLE),
+										  "Connect", stage1_prepare_done,
+										  device, NULL, 120000,
+										  dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
+										  properties,
+										  G_TYPE_INVALID);
 
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
@@ -236,28 +195,14 @@ nm_modem_cdma_init (NMModemCdma *self)
 static void
 nm_modem_cdma_class_init (NMModemCdmaClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 	NMModemClass *modem_class = NM_MODEM_CLASS (klass);
-
-	g_type_class_add_private (object_class, sizeof (NMModemCdmaPrivate));
 
 	/* Virtual methods */
 	device_class->get_best_auto_connection = real_get_best_auto_connection;
 	device_class->connection_secrets_updated = real_connection_secrets_updated;
 	device_class->act_stage1_prepare = real_act_stage1_prepare;
 	modem_class->get_ppp_name = real_get_ppp_name;
-
-	/* Signals */
-	signals[SIGNAL_QUALITY] =
-		g_signal_new ("signal-quality",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMModemCdmaClass, signal_quality),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__UINT,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_UINT);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
 									 &dbus_glib_nm_device_cdma_object_info);

@@ -8,27 +8,11 @@
 #include "nm-setting-gsm.h"
 #include "nm-modem-types.h"
 #include "nm-utils.h"
+#include "NetworkManagerUtils.h"
 
 #include "nm-device-gsm-glue.h"
 
 G_DEFINE_TYPE (NMModemGsm, nm_modem_gsm, NM_TYPE_MODEM)
-
-#define NM_MODEM_GSM_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_MODEM_GSM, NMModemGsmPrivate))
-
-enum {
-	MODEM_STATE_BEGIN,
-	MODEM_STATE_ENABLE,
-	MODEM_STATE_SET_PIN,
-	MODEM_STATE_SET_APN,
-	MODEM_STATE_SET_BAND,
-	MODEM_STATE_SET_NETWORK_MODE,
-	MODEM_STATE_REGISTER,
-	MODEM_STATE_FAILED,
-};
-
-typedef struct {
-	int modem_state;
-} NMModemGsmPrivate;
 
 NMDevice *
 nm_modem_gsm_new (const char *path,
@@ -48,183 +32,100 @@ nm_modem_gsm_new (const char *path,
 									  NULL);
 }
 
-static NMSetting *
-get_setting (NMModemGsm *modem, GType setting_type)
-{
-	NMActRequest *req;
-	NMSetting *setting = NULL;
-
-	req = nm_device_get_act_request (NM_DEVICE (modem));
-	if (req) {
-		NMConnection *connection;
-
-		connection = nm_act_request_get_connection (req);
-		if (connection)
-			setting = nm_connection_get_setting (connection, setting_type);
-	}
-
-	return setting;
-}
-
-#define get_proxy(dev,iface) (nm_modem_get_proxy(NM_MODEM (dev), iface))
-
 static void
-state_machine (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
+stage1_prepare_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 {
-	NMModemGsm *modem = NM_MODEM_GSM (user_data);
-	NMModemGsmPrivate *priv = NM_MODEM_GSM_GET_PRIVATE (modem);
-	NMSettingGsm *setting;
-	const char *secret = NULL;
-	const char *secret_name = NULL;
-	const char *str;
+	NMDevice *device = NM_DEVICE (user_data);
 	GError *error = NULL;
-	int i;
-	gboolean retry_secret = FALSE;
 
-	setting = NM_SETTING_GSM (get_setting (modem, NM_TYPE_SETTING_GSM));
+	dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID);
+	if (!error)
+		nm_device_activate_schedule_stage2_device_config (device);
+	else {
+		const char *required_secret = NULL;
+		gboolean retry_secret = FALSE;
 
-	if (call_id)
-		dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID);
-
-	if (error) {
-		g_debug ("%s", dbus_g_error_get_name (error));
-
-		if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_PIN)) {
-			secret = nm_setting_gsm_get_pin (setting);
-			secret_name = NM_SETTING_GSM_PIN;
-			priv->modem_state = MODEM_STATE_SET_PIN;
-		} else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_PUK)) {
-			secret = nm_setting_gsm_get_puk (setting);
-			secret_name = NM_SETTING_GSM_PUK;
-			priv->modem_state = MODEM_STATE_SET_PIN;
-		} else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_WRONG)) {
-			g_object_set (setting, NM_SETTING_GSM_PIN, NULL, NULL);
-			secret_name = NM_SETTING_GSM_PIN;
+		if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_PIN))
+			required_secret = NM_SETTING_GSM_PIN;
+		else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_PUK))
+			required_secret = NM_SETTING_GSM_PUK;
+		else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_WRONG)) {
+			/* FIXME: Unset the wrong PIN: g_object_set (setting, NM_SETTING_GSM_PIN, NULL, NULL); */
+			required_secret = NM_SETTING_GSM_PIN;
 			retry_secret = TRUE;
-			priv->modem_state = MODEM_STATE_SET_PIN;
-		}
-
-		/* FIXME: Hacks to ignore failures of setting band and network mode for now
-		   since only Huawei module supports it. Remove when ModemManager rules.
-		*/
-		else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_OPERATION_NOT_SUPPORTED) &&
-				 (priv->modem_state == MODEM_STATE_SET_BAND ||
-				  priv->modem_state == MODEM_STATE_SET_NETWORK_MODE)) {
-
-			nm_warning ("Modem does not support setting %s, ignoring",
-						priv->modem_state == MODEM_STATE_SET_BAND ? "band" : "network mode");
-		} else {
-			priv->modem_state = MODEM_STATE_FAILED;
+		} else
 			nm_warning ("GSM modem connection failed: %s", error->message);
-		}
 
-		g_error_free (error);
-	}
-
- again:
-
-	switch (priv->modem_state) {
-	case MODEM_STATE_BEGIN:
-		priv->modem_state = MODEM_STATE_ENABLE;
-		dbus_g_proxy_begin_call (get_proxy (modem, MM_DBUS_INTERFACE_MODEM),
-								 "Enable", state_machine,
-								 modem, NULL,
-								 G_TYPE_BOOLEAN, TRUE,
-								 G_TYPE_INVALID);
-		break;
-
-	case MODEM_STATE_SET_PIN:
-		if (secret) {
-			priv->modem_state = MODEM_STATE_ENABLE;
-			dbus_g_proxy_begin_call (get_proxy (modem, MM_DBUS_INTERFACE_MODEM_GSM_CARD),
-									 "SendPin", state_machine,
-									 modem, NULL,
-									 G_TYPE_STRING, secret,
-									 G_TYPE_INVALID);
-		} else {
-			nm_device_state_changed (NM_DEVICE (modem), NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
-			nm_act_request_request_connection_secrets (nm_device_get_act_request (NM_DEVICE (modem)),
+		if (required_secret) {
+			nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
+			nm_act_request_request_connection_secrets (nm_device_get_act_request (device),
 													   NM_SETTING_GSM_SETTING_NAME,
 													   retry_secret,
 													   SECRETS_CALLER_GSM,
-													   secret_name,
+													   required_secret,
 													   NULL);
+		} else
+			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NONE);
 
-		}
-		break;
-
-	case MODEM_STATE_ENABLE:
-		priv->modem_state = MODEM_STATE_SET_APN;
-		str = nm_setting_gsm_get_apn (setting);
-
-		if (str)
-			dbus_g_proxy_begin_call (get_proxy (modem, MM_DBUS_INTERFACE_MODEM_GSM_NETWORK),
-									 "SetApn", state_machine,
-									 modem, NULL,
-									 G_TYPE_STRING, str,
-									 G_TYPE_INVALID);
-		else
-			goto again;
-
-		break;
-	case MODEM_STATE_SET_APN:
-		priv->modem_state = MODEM_STATE_SET_BAND;
-		i = nm_setting_gsm_get_band (setting);
-
-		if (i)
-			dbus_g_proxy_begin_call (get_proxy (modem, MM_DBUS_INTERFACE_MODEM_GSM_NETWORK),
-									 "SetBand", state_machine,
-									 modem, NULL,
-									 G_TYPE_UINT, (guint32) i,
-									 G_TYPE_INVALID);
-		else
-			goto again;
-
-		break;
-
-	case MODEM_STATE_SET_BAND:
-		priv->modem_state = MODEM_STATE_SET_NETWORK_MODE;
-		i = nm_setting_gsm_get_network_type (setting);
-
-		if (i)
-			dbus_g_proxy_begin_call (get_proxy (modem, MM_DBUS_INTERFACE_MODEM_GSM_NETWORK),
-									 "SetNetworkMode", state_machine,
-									 modem, NULL,
-									 G_TYPE_UINT, (guint32) i,
-									 G_TYPE_INVALID);
-		else
-			goto again;
-
-		break;
-
-	case MODEM_STATE_SET_NETWORK_MODE:
-		priv->modem_state = MODEM_STATE_REGISTER;
-
-		str = nm_setting_gsm_get_network_id (setting);
-		dbus_g_proxy_begin_call_with_timeout (get_proxy (modem, MM_DBUS_INTERFACE_MODEM_GSM_NETWORK),
-											  "Register", state_machine,
-											  modem, NULL, 120000,
-											  G_TYPE_STRING, str ? str : "",
-											  G_TYPE_INVALID);
-		break;
-
-	case MODEM_STATE_REGISTER:
-		nm_modem_connect (NM_MODEM (modem), nm_setting_gsm_get_number (setting));
-		break;
-	case MODEM_STATE_FAILED:
-	default:
-		nm_device_state_changed (NM_DEVICE (modem), NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NONE);
-		break;
+		g_error_free (error);
 	}
+}
+
+static GHashTable *
+create_connect_properties (NMConnection *connection)
+{
+	NMSettingGsm *setting;
+	GHashTable *properties;
+	const char *str;
+
+	setting = NM_SETTING_GSM (nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM));
+	properties = value_hash_create ();
+
+	str = nm_setting_gsm_get_number (setting);
+	if (str)
+		value_hash_add_str (properties, "number", str);
+
+	str = nm_setting_gsm_get_apn (setting);
+	if (str)
+		value_hash_add_str (properties, "apn", str);
+
+	str = nm_setting_gsm_get_network_id (setting);
+	if (str)
+		value_hash_add_str (properties, "network_id", str);
+
+	str = nm_setting_gsm_get_pin (setting);
+	if (str)
+		value_hash_add_str (properties, "pin", str);
+
+	str = nm_setting_gsm_get_username (setting);
+	if (str)
+		value_hash_add_str (properties, "username", str);
+
+	str = nm_setting_gsm_get_password (setting);
+	if (str)
+		value_hash_add_str (properties, "password", str);
+
+	/* FIXME: network_type, band */
+
+	return properties;
 }
 
 static NMActStageReturn
 real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
-	NMModemGsmPrivate *priv = NM_MODEM_GSM_GET_PRIVATE (device);
+	NMConnection *connection;
+	GHashTable *properties;
 
-	priv->modem_state = MODEM_STATE_BEGIN;
-	state_machine (NULL, NULL, device);
+	connection = nm_act_request_get_connection (nm_device_get_act_request (device));
+	g_assert (connection);
+
+	properties = create_connect_properties (connection);
+	dbus_g_proxy_begin_call_with_timeout (nm_modem_get_proxy (NM_MODEM (device), MM_DBUS_INTERFACE_MODEM_SIMPLE),
+										  "Connect", stage1_prepare_done,
+										  device, NULL, 120000,
+										  dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
+										  properties,
+										  G_TYPE_INVALID);
 
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
@@ -337,11 +238,8 @@ nm_modem_gsm_init (NMModemGsm *self)
 static void
 nm_modem_gsm_class_init (NMModemGsmClass *klass)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
 	NMModemClass *modem_class = NM_MODEM_CLASS (klass);
-
-	g_type_class_add_private (object_class, sizeof (NMModemGsmPrivate));
 
 	/* Virtual methods */
 	device_class->get_best_auto_connection = real_get_best_auto_connection;

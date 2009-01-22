@@ -84,62 +84,8 @@ nm_modem_gsm_hso_new (const char *path,
 
 /*****************************************************************************/
 
-static NMSetting *
-get_setting (NMModemGsmHso *modem, GType setting_type)
-{
-	NMActRequest *req;
-	NMSetting *setting = NULL;
-
-	req = nm_device_get_act_request (NM_DEVICE (modem));
-	if (req) {
-		NMConnection *connection;
-
-		connection = nm_act_request_get_connection (req);
-		if (connection)
-			setting = nm_connection_get_setting (connection, setting_type);
-	}
-
-	return setting;
-}
-
-static void
-hso_auth_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
-{
-	NMDevice *device = NM_DEVICE (user_data);
-	GError *error = NULL;
-
-	if (dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID))
-		nm_device_activate_schedule_stage3_ip_config_start (device);
-	else {
-		nm_warning ("Authentication failed: %s", error->message);
-		g_error_free (error);
-		nm_device_state_changed (device,
-								 NM_DEVICE_STATE_FAILED,
-								 NM_DEVICE_STATE_REASON_MODEM_DIAL_FAILED);
-	}
-}
-
-static void
-do_hso_auth (NMModemGsmHso *device)
-{
-	NMSettingGsm *s_gsm;
-	const char *username;
-	const char *password;
-
-	s_gsm = NM_SETTING_GSM (get_setting (device, NM_TYPE_SETTING_GSM));
-	username = nm_setting_gsm_get_username (s_gsm);
-	password = nm_setting_gsm_get_password (s_gsm);
-
-	dbus_g_proxy_begin_call (nm_modem_get_proxy (NM_MODEM (device), MM_DBUS_INTERFACE_MODEM_GSM_HSO),
-							 "Authenticate", hso_auth_done,
-							 device, NULL,
-							 G_TYPE_STRING, username ? username : "",
-							 G_TYPE_STRING, password ? password : "",
-							 G_TYPE_INVALID);
-}
-
 static NMActStageReturn
-real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
+real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMActRequest *req;
 	NMConnection *connection;
@@ -154,10 +100,8 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	g_assert (connection);
 
 	setting_name = nm_connection_need_secrets (connection, &hints);
-	if (!setting_name) {
-		do_hso_auth (NM_MODEM_GSM_HSO (device));
-		return NM_ACT_STAGE_RETURN_POSTPONE;
-	}
+	if (!setting_name)
+		return NM_DEVICE_CLASS (nm_modem_gsm_hso_parent_class)->act_stage1_prepare (device, reason);
 
 	if (hints) {
 		if (hints->len > 0)
@@ -303,12 +247,6 @@ real_hw_bring_up (NMDevice *device, gboolean *no_firmware)
 	return TRUE;
 }
 
-static void
-real_connect (NMModem *modem, const char *number)
-{
-	nm_device_activate_schedule_stage2_device_config (NM_DEVICE (modem));
-}
-
 /*****************************************************************************/
 
 static void
@@ -331,18 +269,15 @@ nm_modem_gsm_hso_class_init (NMModemGsmHsoClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
-	NMModemClass *modem_class = NM_MODEM_CLASS (klass);
 
 	g_type_class_add_private (object_class, sizeof (NMModemGsmHsoPrivate));
 
 	object_class->finalize = finalize;
 
-	device_class->act_stage2_config = real_act_stage2_config;
+	device_class->act_stage1_prepare = real_act_stage1_prepare;
 	device_class->act_stage3_ip_config_start = real_act_stage3_ip_config_start;
 	device_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 	device_class->deactivate = real_deactivate;
 	device_class->hw_is_up = real_hw_is_up;
 	device_class->hw_bring_up = real_hw_bring_up;
-
-	modem_class->connect = real_connect;
 }

@@ -216,12 +216,6 @@ real_hw_bring_up (NMDevice *device, gboolean *no_firmware)
 	return TRUE;
 }
 
-static void
-real_connect (NMModem *modem, const char *number)
-{
-	nm_device_activate_schedule_stage2_device_config (NM_DEVICE (modem));
-}
-
 /*****************************************************************************/
 
 static void
@@ -244,7 +238,6 @@ nm_modem_gsm_mbm_class_init (NMModemGsmMbmClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	NMDeviceClass *device_class = NM_DEVICE_CLASS (klass);
-	NMModemClass *modem_class = NM_MODEM_CLASS (klass);
 
 	g_type_class_add_private (object_class, sizeof (NMModemGsmMbmPrivate));
 
@@ -256,6 +249,4 @@ nm_modem_gsm_mbm_class_init (NMModemGsmMbmClass *klass)
 	device_class->deactivate = real_deactivate;
 	device_class->hw_is_up = real_hw_is_up;
 	device_class->hw_bring_up = real_hw_bring_up;
-
-	modem_class->connect = real_connect;
 }

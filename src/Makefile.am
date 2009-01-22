@@ -157,12 +157,12 @@ NetworkManager_LDADD = 							\
 	./named-manager/libnamed-manager.la	\
 	./vpn-manager/libvpn-manager.la		\
 	./dhcp-manager/libdhcp-manager.la		\
-			./supplicant-manager/libsupplicant-manager.la		\
-			./dnsmasq-manager/libdnsmasq-manager.la		\
-			./ppp-manager/libppp-manager.la		\
-			./modem-manager/libmodem-manager.la		\
-			./backends/libnmbackend.la			\
-			$(top_builddir)/libnm-util/libnm-util.la
+	./supplicant-manager/libsupplicant-manager.la		\
+	./dnsmasq-manager/libdnsmasq-manager.la		\
+	./ppp-manager/libppp-manager.la		\
+	./modem-manager/libmodem-manager.la		\
+	./backends/libnmbackend.la			\
+	$(top_builddir)/libnm-util/libnm-util.la
 
 NetworkManager_LDFLAGS = -rdynamic
 

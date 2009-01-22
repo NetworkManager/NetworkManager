@@ -77,15 +77,6 @@ nm_modem_get_proxy (NMModem *self,
 	return priv->proxy;
 }
 
-void
-nm_modem_connect (NMModem *self,
-				  const char *number)
-{
-	g_return_if_fail (NM_IS_MODEM (self));
-
-	NM_MODEM_GET_CLASS (self)->connect (self, number);
-}
-
 const char *
 nm_modem_get_ppp_name (NMModem *self,
 					   NMConnection *connection)
@@ -234,32 +225,6 @@ static guint32
 real_get_generic_capabilities (NMDevice *dev)
 {
 	return NM_DEVICE_CAP_NM_SUPPORTED;
-}
-
-
-static void
-connect_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
-{
-	NMDevice *device = NM_DEVICE (user_data);
-	GError *error = NULL;
-
-	if (dbus_g_proxy_end_call (proxy, call_id, &error, G_TYPE_INVALID))
-		nm_device_activate_schedule_stage2_device_config (device);
-	else {
-		nm_warning ("Connect failed: %s", error->message);
-		g_error_free (error);
-		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_MODEM_DIAL_FAILED);
-	}
-}
-
-static void
-real_connect (NMModem *modem, const char *number)
-{
-	dbus_g_proxy_begin_call_with_timeout (nm_modem_get_proxy (modem, MM_DBUS_INTERFACE_MODEM),
-										  "Connect", connect_done,
-										  modem, NULL, 60000,
-										  G_TYPE_STRING, number ? number : "",
-										  G_TYPE_INVALID);
 }
 
 static gboolean
@@ -425,8 +390,6 @@ nm_modem_class_init (NMModemClass *klass)
 	device_class->act_stage2_config = real_act_stage2_config;
 	device_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 	device_class->deactivate_quickly = real_deactivate_quickly;
-
-	klass->connect = real_connect;
 
 	/* Properties */
 	g_object_class_install_property
