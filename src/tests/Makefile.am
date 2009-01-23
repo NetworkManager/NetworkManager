@@ -2,8 +2,9 @@ INCLUDES = \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_srcdir)/src/dhcp-manager \
-	-I$(top_srcdir)/marshallers \
-	-I$(top_srcdir)/src
+	-I$(top_builddir)/marshallers \
+	-I$(top_srcdir)/src \
+	-I$(top_builddir)/src
 
 noinst_PROGRAMS = test-dhcp-options
 
