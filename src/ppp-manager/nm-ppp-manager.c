@@ -466,6 +466,7 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
 	NMConnection *connection;
+	NMSettingPPP *s_ppp;
 	NMIP4Config *config;
 	NMIP4Address *addr;
 	GValue *val;
@@ -528,6 +529,15 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 	connection = nm_act_request_get_connection (priv->act_req);
 	g_assert (connection);
 	g_object_set_data (G_OBJECT (connection), PPP_MANAGER_SECRET_TRIES, NULL);
+
+	/* Merge in custom MTU */
+	s_ppp = (NMSettingPPP *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP);
+	if (s_ppp) {
+		guint32 mtu = nm_setting_ppp_get_mtu (s_ppp);
+
+		if (mtu)
+			nm_ip4_config_set_mtu (config, mtu);
+	}
 
 	/* Push the IP4 config up to the device */
 	g_signal_emit (manager, signals[IP4_CONFIG], 0, priv->ip_iface, config);
