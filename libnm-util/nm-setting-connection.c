@@ -431,14 +431,14 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * Whether or not the connection should be automatically connected by
 	 * NetworkManager when the resources for the connection are available.
 	 * %TRUE to automatically activate the connection, %FALSE to require manual
-	 * intervention to activate the connection.
+	 * intervention to activate the connection.  Defaults to %TRUE.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_AUTOCONNECT,
 		 g_param_spec_boolean (NM_SETTING_CONNECTION_AUTOCONNECT,
 						   "Autoconnect",
 						   "Connection autoconnect",
-						   FALSE,
+						   TRUE,
 						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
