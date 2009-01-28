@@ -804,8 +804,12 @@ create_pppd_cmd_line (NMPPPManager *self,
 	if (nm_setting_ppp_get_baud (setting))
 		nm_cmd_line_add_int (cmd, nm_setting_ppp_get_baud (setting));
 
-	if (nm_setting_ppp_get_noauth (setting))
-		nm_cmd_line_add_string (cmd, "noauth");
+	/* noauth by default, because we certainly don't have any information
+	 * with which to verify anything the peer gives us if we ask it to
+	 * authenticate itself, which is what 'auth' really means.
+	 */
+	nm_cmd_line_add_string (cmd, "noauth");
+
 	if (nm_setting_ppp_get_refuse_eap (setting))
 		nm_cmd_line_add_string (cmd, "refuse-eap");
 	if (nm_setting_ppp_get_refuse_pap (setting))
