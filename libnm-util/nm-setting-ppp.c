@@ -51,7 +51,7 @@ nm_setting_ppp_error_get_type (void)
 			ENUM_ENTRY (NM_SETTING_PPP_ERROR_INVALID_PROPERTY, "InvalidProperty"),
 			/* The specified property was missing and is required. */
 			ENUM_ENTRY (NM_SETTING_PPP_ERROR_MISSING_PROPERTY, "MissingProperty"),
-			/* The 'require-mppe' option is not allowed in conjunction with 'noauth'. */
+			/* The 'require-mppe' option is not allowed in conjunction with the specified authentication. */
 			ENUM_ENTRY (NM_SETTING_PPP_ERROR_REQUIRE_MPPE_NOT_ALLOWED, "RequireMPPENotAllowed"),
 			{ 0, 0, 0 }
 		};
@@ -263,18 +263,6 @@ nm_setting_ppp_get_lcp_echo_interval (NMSettingPPP *setting)
 static gboolean
 verify (NMSetting *setting, GSList *all_settings, GError **error)
 {
-	NMSettingPPPPrivate *priv = NM_SETTING_PPP_GET_PRIVATE (setting);
-
-	if (priv->noauth) {
-		if (priv->require_mppe) {
-			g_set_error (error,
-			             NM_SETTING_PPP_ERROR,
-			             NM_SETTING_PPP_ERROR_REQUIRE_MPPE_NOT_ALLOWED,
-			             NM_SETTING_PPP_REQUIRE_MPPE);
-			return FALSE;
-		}
-	}
-
 	/* FIXME: Do we even want this or can we just let pppd evaluate the options? */
 	return TRUE;
 }
@@ -438,7 +426,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 		 g_param_spec_boolean (NM_SETTING_PPP_NOAUTH,
 						   "NoAuth",
 						   "NoAuth",
-						   FALSE,
+						   TRUE,
 						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
