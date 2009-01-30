@@ -67,6 +67,10 @@ find_service_file (const char *name)
 		char *path;
 		gboolean found = FALSE;
 
+		/* only parse filenames that end with .name */
+		if (!g_str_has_suffix (fn, ".name"))
+			continue;
+
 		key_file = g_key_file_new ();
 		path = g_build_filename (VPN_NAME_FILES_DIR, fn, NULL);
 
