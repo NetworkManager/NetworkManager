@@ -654,7 +654,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 						   "Ignore DHCPv6 DNS",
 						   "Ignore DHCPv6 DNS",
 						   FALSE,
-						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_IGNORE_ROUTER_ADV,
@@ -662,7 +662,7 @@ nm_setting_ip6_config_class_init (NMSettingIP6ConfigClass *setting_class)
 						   "Ignore Router Advertisements",
 						   "Ignore Router Advertisements",
 						   FALSE,
-						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_DHCP_MODE,

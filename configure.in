@@ -507,6 +507,7 @@ src/dnsmasq-manager/Makefile
 src/backends/Makefile
 libnm-util/libnm-util.pc
 libnm-util/Makefile
+libnm-util/tests/Makefile
 libnm-glib/libnm_glib.pc
 libnm-glib/libnm_glib_vpn.pc
 libnm-glib/Makefile

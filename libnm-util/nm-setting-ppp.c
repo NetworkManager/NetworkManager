@@ -427,7 +427,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "NoAuth",
 						   "NoAuth",
 						   TRUE,
-						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_REFUSE_EAP,
@@ -435,7 +435,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "Refuse EAP",
 						   "Refuse EAP",
 						   FALSE,
-						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_REFUSE_PAP,
@@ -443,7 +443,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "Refuse PAP",
 						   "Refuse PAP",
 						   FALSE,
-						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_REFUSE_CHAP,
@@ -451,7 +451,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "Refuse CHAP",
 						   "Refuse CHAP",
 						   FALSE,
-						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_REFUSE_MSCHAP,
@@ -459,7 +459,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "Refuse MSCHAP",
 						   "Refuse MSCHAP",
 						   FALSE,
-						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_REFUSE_MSCHAPV2,
@@ -467,7 +467,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "Refuse MSCHAPv2",
 						   "Refuse MSCHAPv2",
 						   FALSE,
-						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_NOBSDCOMP,
@@ -475,7 +475,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "No BSD compression",
 						   "No BSD compression",
 						   FALSE,
-						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	g_object_class_install_property
 		(object_class, PROP_NODEFLATE,
@@ -483,7 +483,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "No deflate",
 						   "No deflate",
 						   FALSE,
-						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	g_object_class_install_property
 		(object_class, PROP_NO_VJ_COMP,
@@ -491,7 +491,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "No VJ compression",
 						   "No VJ compression",
 						   FALSE,
-						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	g_object_class_install_property
 		(object_class, PROP_REQUIRE_MPPE,
@@ -499,7 +499,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "Require MPPE",
 						   "Require MPPE",
 						   FALSE,
-						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_REQUIRE_MPPE_128,
@@ -507,7 +507,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "Require MPPE 128",
 						   "Require MPPE 128",
 						   FALSE,
-						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE  | G_PARAM_CONSTRUCT| NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_MPPE_STATEFUL,
@@ -515,7 +515,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "MPPE stateful",
 						   "MPPE stateful",
 						   FALSE,
-						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_CRTSCTS,
@@ -523,7 +523,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						   "CRTSCTS",
 						   "CRTSCTS",
 						   FALSE,
-						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_BAUD,
@@ -531,7 +531,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						"Baud",
 						"Baud",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	g_object_class_install_property
 		(object_class, PROP_MRU,
@@ -539,7 +539,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						"MRU",
 						"MRU",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_MTU,
@@ -547,7 +547,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						"MTU",
 						"MTU",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	g_object_class_install_property
 		(object_class, PROP_LCP_ECHO_FAILURE,
@@ -555,7 +555,7 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						"LCP echo failure",
 						"LCP echo failure",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	g_object_class_install_property
 		(object_class, PROP_LCP_ECHO_INTERVAL,
@@ -563,5 +563,5 @@ nm_setting_ppp_class_init (NMSettingPPPClass *setting_class)
 						"LCP echo interval",
 						"LCP echo interval",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 }

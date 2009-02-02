@@ -1512,7 +1512,7 @@ nm_setting_802_1x_class_init (NMSetting8021xClass *setting_class)
 							   "Use system CA certificates",
 							   "Use system CA certificates",
 							   FALSE,
-							   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+							   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	/* Initialize crypto lbrary. */
 	if (!nm_utils_init (&error)) {

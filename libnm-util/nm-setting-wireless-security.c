@@ -916,7 +916,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 						"WEP TX key index",
 						"WEP TX key index",
 						0, 3, 0,
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_AUTH_ALG,
