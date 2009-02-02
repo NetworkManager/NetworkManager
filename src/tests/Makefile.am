@@ -9,21 +9,18 @@ INCLUDES = \
 noinst_PROGRAMS = test-dhcp-options
 
 test_dhcp_options_SOURCES = \
-	test-dhcp-options.c \
-	../nm-ip4-config.c \
-	../nm-dbus-manager.c
+	test-dhcp-options.c
 
 test_dhcp_options_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
-	$(DBUS_CFLAGS) \
-	$(LIBNL_CFLAGS)
+	$(DBUS_CFLAGS)
 
 test_dhcp_options_LDADD = \
 	$(GTHREAD_LIBS) \
 	$(DBUS_LIBS) \
-	$(LIBNL_LIBS) \
 	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/src/dhcp-manager/libdhcp-manager.la
+	$(top_builddir)/src/dhcp-manager/libdhcp-manager.la \
+	$(top_builddir)/src/libtest-dhcp.la
 
 if WITH_TESTS
 

@@ -6,6 +6,7 @@ SUBDIRS= \
 	ppp-manager \
 	backends \
 	dnsmasq-manager \
+	. \
 	tests
 
 INCLUDES = -I${top_srcdir}                   \
@@ -18,6 +19,32 @@ INCLUDES = -I${top_srcdir}                   \
            -I${top_srcdir}/src/dnsmasq-manager  \
            -I${top_srcdir}/libnm-util \
            -I${top_srcdir}/callouts
+
+###########################################
+# DHCP test library
+###########################################
+
+noinst_LTLIBRARIES = libtest-dhcp.la
+
+libtest_dhcp_la_SOURCES = \
+	nm-ip4-config.c \
+	nm-dbus-manager.c
+
+libtest_dhcp_la_CPPFLAGS = \
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS) \
+	$(LIBNL_CFLAGS)
+
+libtest_dhcp_la_LIBADD = \
+	$(GLIB_LIBS) \
+	$(DBUS_LIBS) \
+	$(LIBNL_LIBS) \
+	$(top_builddir)/libnm-util/libnm-util.la
+
+
+###########################################
+# NetworkManager
+###########################################
 
 sbin_PROGRAMS = NetworkManager
 
