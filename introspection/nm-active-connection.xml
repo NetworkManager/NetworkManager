@@ -20,6 +20,9 @@
     <property name="Default" type="b" access="read">
       <tp:docstring>Whether this active connection is the default connection, i.e. whether it currently owns the default route.</tp:docstring>
     </property>
+    <property name="Vpn" type="b" access="read">
+      <tp:docstring>Whether this active connection is also a VPN connection.</tp:docstring>
+    </property>
 
     <signal name="PropertiesChanged">
         <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
