@@ -16,7 +16,8 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2005 Red Hat, Inc.
+ * (C) Copyright 2005 - 2009 Red Hat, Inc.
+ * (C) Copyright 2007 Novell, Inc.
  */
 
 #include <glib.h>
@@ -38,6 +39,13 @@
 #include <nm-cdma-device.h>
 #include <nm-utils.h>
 #include <nm-setting-ip4-config.h>
+#include <nm-vpn-connection.h>
+#include <nm-setting-connection.h>
+
+#include "nm-dbus-glib-types.h"
+
+static GHashTable *user_connections = NULL;
+static GHashTable *system_connections = NULL;
 
 static gboolean
 get_nm_state (NMClient *client)
@@ -75,6 +83,26 @@ get_nm_state (NMClient *client)
 	printf ("State: %s\n\n", state_string);
 
 	return success;
+}
+
+static void
+print_header (const char *label, const char *iface, const char *connection)
+{
+	GString *string;
+
+	string = g_string_sized_new (79);
+	g_string_append_printf (string, "- %s: ", label);
+	if (iface)
+		g_string_append_printf (string, "%s ", iface);
+	if (connection)
+		g_string_append_printf (string, " [%s] ", connection);
+
+	while (string->len < 80)
+		g_string_append_c (string, '-');
+
+	printf ("%s\n", string->str);
+
+	g_string_free (string, TRUE);
 }
 
 static void
@@ -122,12 +150,12 @@ detail_access_point (gpointer data, gpointer user_data)
 
 	str = g_string_new (NULL);
 	g_string_append_printf (str,
-							"%s, %s, Freq %d MHz, Rate %d Mb/s, Strength %d",
-							(nm_access_point_get_mode (ap) == NM_802_11_MODE_INFRA) ? "Infra" : "Ad-Hoc",
-							nm_access_point_get_hw_address (ap),
-							nm_access_point_get_frequency (ap),
-							nm_access_point_get_max_bitrate (ap) / 1000,
-							nm_access_point_get_strength (ap));
+	                        "%s, %s, Freq %d MHz, Rate %d Mb/s, Strength %d",
+	                        (nm_access_point_get_mode (ap) == NM_802_11_MODE_INFRA) ? "Infra" : "Ad-Hoc",
+	                        nm_access_point_get_hw_address (ap),
+	                        nm_access_point_get_frequency (ap),
+	                        nm_access_point_get_max_bitrate (ap) / 1000,
+	                        nm_access_point_get_strength (ap));
 
 	if (   !(flags & NM_802_11_AP_FLAGS_PRIVACY)
 	    &&  (wpa_flags != NM_802_11_AP_SEC_NONE)
@@ -200,24 +228,75 @@ get_dev_state_string (NMDeviceState state)
 	return "unknown";
 }
 
+static NMConnection *
+get_connection_for_active (NMActiveConnection *active)
+{
+	NMConnectionScope scope;
+	const char *path;
+
+	g_return_val_if_fail (active != NULL, NULL);
+
+	path = nm_active_connection_get_connection (active);
+	g_return_val_if_fail (path != NULL, NULL);
+
+	scope = nm_active_connection_get_scope (active);
+	if (scope == NM_CONNECTION_SCOPE_USER)
+		return (NMConnection *) g_hash_table_lookup (user_connections, path);
+	else if (scope == NM_CONNECTION_SCOPE_SYSTEM)
+		return (NMConnection *) g_hash_table_lookup (system_connections, path);
+
+	g_warning ("error: unknown connection scope");
+	return NULL;
+}
+
+struct cb_info {
+	NMClient *client;
+	const GPtrArray *active;
+};
+
 static void
 detail_device (gpointer data, gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (data);
-	NMClient *client = NM_CLIENT (user_data);
+	struct cb_info *info = user_data;
 	char *tmp;
 	NMDeviceState state;
 	guint32 caps;
 	guint32 speed;
 	const GArray *array;
-	const GPtrArray *connections;
 	int j;
 	gboolean is_default = FALSE;
+	const char *id = NULL;
 
 	state = nm_device_get_state (device);
 
-	printf ("- Device: %s ----------------------------------------------------------------\n",
-	        nm_device_get_iface (device));
+	for (j = 0; info->active && (j < info->active->len); j++) {
+		NMActiveConnection *candidate = g_ptr_array_index (info->active, j);
+		const GPtrArray *devices = nm_active_connection_get_devices (candidate);
+		NMDevice *candidate_dev;
+		NMConnection *connection;
+		NMSettingConnection *s_con;
+
+		if (!devices || !devices->len)
+			continue;
+		candidate_dev = g_ptr_array_index (devices, 0);
+
+		if (candidate_dev == device) {
+			if (nm_active_connection_get_default (candidate))
+				is_default = TRUE;
+
+			connection = get_connection_for_active (candidate);
+			if (!connection)
+				break;
+
+			s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+			if (s_con)
+				id = nm_setting_connection_get_id (s_con);
+			break;
+		}
+	}
+
+	print_header ("Device", nm_device_get_iface (device), id);
 
 	/* General information */
 	if (NM_IS_DEVICE_ETHERNET (device))
@@ -232,20 +311,6 @@ detail_device (gpointer data, gpointer user_data)
 	print_string ("Driver", nm_device_get_driver (device) ? nm_device_get_driver (device) : "(unknown)");
 
 	print_string ("State", get_dev_state_string (state));
-
-	connections = nm_client_get_active_connections (client);
-	for (j = 0; connections && (j < connections->len); j++) {
-		NMActiveConnection *candidate = g_ptr_array_index (connections, j);
-		const GPtrArray *devices = nm_active_connection_get_devices (candidate);
-		NMDevice *candidate_dev;
-
-		if (!devices || !devices->len)
-			continue;
-		candidate_dev = g_ptr_array_index (devices, 0);
-
-		if ((candidate_dev == device) && nm_active_connection_get_default(candidate))
-			is_default = TRUE;
-	}
 
 	if (is_default)
 		print_string ("Default", "yes");
@@ -310,7 +375,7 @@ detail_device (gpointer data, gpointer user_data)
 			active_bssid = active_ap ? nm_access_point_get_hw_address (active_ap) : NULL;
 		}
 
-		printf ("\n  Wireless Access Points%s\n", active_ap ? "(* = Current AP)" : "");
+		printf ("\n  Wireless Access Points %s\n", active_ap ? "(* = current AP)" : "");
 
 		aps = nm_device_wifi_get_access_points (NM_DEVICE_WIFI (device));
 		if (aps && aps->len)
@@ -367,12 +432,195 @@ detail_device (gpointer data, gpointer user_data)
 	printf ("\n\n");
 }
 
+static const char *
+get_vpn_state_string (NMVPNConnectionState state)
+{
+	switch (state) {
+	case NM_VPN_CONNECTION_STATE_PREPARE:
+		return "connecting (prepare)";
+	case NM_VPN_CONNECTION_STATE_NEED_AUTH:
+		return "connecting (need authentication)";
+	case NM_VPN_CONNECTION_STATE_CONNECT:
+		return "connecting";
+	case NM_VPN_CONNECTION_STATE_IP_CONFIG_GET:
+		return "connecting (getting IP configuration)";
+	case NM_VPN_CONNECTION_STATE_ACTIVATED:
+		return "connected";
+	case NM_VPN_CONNECTION_STATE_FAILED:
+		return "connection failed";
+	case NM_VPN_CONNECTION_STATE_DISCONNECTED:
+		return "disconnected";
+	default:
+		break;
+	}
+
+	return "unknown";
+}
+
+static void
+detail_vpn (gpointer data, gpointer user_data)
+{
+	NMActiveConnection *active = NM_ACTIVE_CONNECTION (data);
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMVPNConnectionState state;
+	const char *banner;
+
+	if (!NM_IS_VPN_CONNECTION (active))
+		return;
+
+	connection = get_connection_for_active (active);
+	g_return_if_fail (connection != NULL);
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	g_return_if_fail (connection != NULL);
+
+	print_header ("VPN", NULL, nm_setting_connection_get_id (s_con));
+
+	state = nm_vpn_connection_get_vpn_state (NM_VPN_CONNECTION (active));
+	print_string ("State", get_vpn_state_string (state));
+
+	if (nm_active_connection_get_default (active))
+		print_string ("Default", "yes");
+	else
+		print_string ("Default", "no");
+
+	banner = nm_vpn_connection_get_banner (NM_VPN_CONNECTION (active));
+	if (banner) {
+		char **lines, **iter;
+
+		printf ("\n  Message:\n");
+		lines = g_strsplit_set (banner, "\n\r", -1);
+		for (iter = lines; *iter; iter++) {
+			if (*iter && strlen (*iter))
+				printf ("    %s\n", *iter);
+		}
+		g_strfreev (lines);
+	}
+
+	printf ("\n\n");
+}
+
+static void
+get_one_connection (DBusGConnection *bus,
+                    const char *path,
+                    NMConnectionScope scope,
+                    GHashTable *table)
+{
+	DBusGProxy *proxy;
+	NMConnection *connection;
+	const char *service;
+	GError *error = NULL;
+	GHashTable *settings = NULL;
+
+	g_return_if_fail (bus != NULL);
+	g_return_if_fail (path != NULL);
+	g_return_if_fail (table != NULL);
+
+	service = (scope == NM_CONNECTION_SCOPE_SYSTEM) ?
+		NM_DBUS_SERVICE_SYSTEM_SETTINGS : NM_DBUS_SERVICE_USER_SETTINGS;
+
+	proxy = dbus_g_proxy_new_for_name (bus, service, path, NM_DBUS_IFACE_SETTINGS_CONNECTION);
+	if (!proxy)
+		return;
+
+	if (!dbus_g_proxy_call (proxy, "GetSettings", &error,
+	                        G_TYPE_INVALID,
+	                        DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, &settings,
+	                        G_TYPE_INVALID)) {
+		nm_warning ("error: cannot retrieve connection: %s", error ? error->message : "(unknown)");
+		goto out;
+	}
+
+	connection = nm_connection_new_from_hash (settings, &error);
+	g_hash_table_destroy (settings);
+
+	if (!connection) {
+		nm_warning ("error: invalid connection: '%s' / '%s' invalid: %d",
+		            error ? g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)) : "(unknown)",
+		            error ? error->message : "(unknown)",
+		            error ? error->code : -1);
+		goto out;
+	}
+
+	nm_connection_set_scope (connection, scope);
+	nm_connection_set_path (connection, path);
+	g_hash_table_insert (table, g_strdup (path), g_object_ref (connection));
+
+out:
+	g_clear_error (&error);
+	g_object_unref (connection);
+	g_object_unref (proxy);
+}
+
+static void
+get_connections_for_service (DBusGConnection *bus,
+                             NMConnectionScope scope,
+                             GHashTable *table)
+{
+	GError *error = NULL;
+	DBusGProxy *proxy;
+	GPtrArray *paths = NULL;
+	int i;
+	const char *service;
+
+	service = (scope == NM_CONNECTION_SCOPE_SYSTEM) ?
+		NM_DBUS_SERVICE_SYSTEM_SETTINGS : NM_DBUS_SERVICE_USER_SETTINGS;
+
+	proxy = dbus_g_proxy_new_for_name (bus,
+	                                   service,
+	                                   NM_DBUS_PATH_SETTINGS,
+	                                   NM_DBUS_IFACE_SETTINGS);
+	if (!proxy) {
+		g_warning ("error: failed to create DBus proxy for %s", service);
+		return;
+	}
+
+	if (!dbus_g_proxy_call (proxy, "ListConnections", &error,
+                                G_TYPE_INVALID,
+                                DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH, &paths,
+                                G_TYPE_INVALID)) {
+		g_warning ("error: failed to read connections from %s:\n    %s",
+		           service, error ? error->message : "(unknown)");
+		g_clear_error (&error);
+		goto out;
+	}
+
+	for (i = 0; paths && (i < paths->len); i++)
+		get_one_connection (bus, g_ptr_array_index (paths, i), scope, table);
+
+out:
+	g_object_unref (proxy);
+}
+
+static gboolean
+get_all_connections (void)
+{
+	DBusGConnection *bus;
+	GError *error = NULL;
+
+	bus = dbus_g_bus_get (DBUS_BUS_SYSTEM, &error);
+	if (error || !bus) {
+		g_warning ("error: could not connect to dbus");
+		return FALSE;
+	}
+
+	user_connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
+	get_connections_for_service (bus, NM_CONNECTION_SCOPE_USER, user_connections);
+
+	system_connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
+	get_connections_for_service (bus, NM_CONNECTION_SCOPE_SYSTEM, system_connections);
+
+	dbus_g_connection_unref (bus);
+	return TRUE;
+}
 
 int
 main (int argc, char *argv[])
 {
 	NMClient *client;
 	const GPtrArray *devices;
+	struct cb_info info;
 
 	g_type_init ();
 
@@ -384,14 +632,27 @@ main (int argc, char *argv[])
 	printf ("\nNetworkManager Tool\n\n");
 
 	if (!get_nm_state (client)) {
-		fprintf (stderr, "\n\nNetworkManager appears not to be running (could not get its state).\n");
+		g_warning ("error: could not connect to NetworkManager");
 		exit (1);
 	}
 
+	if (!get_all_connections ())
+		exit (1);
+
+	info.client = client;
+	info.active = nm_client_get_active_connections (client);
+
+
 	devices = nm_client_get_devices (client);
-	g_ptr_array_foreach ((GPtrArray *) devices, detail_device, client);
+	if (devices)
+		g_ptr_array_foreach ((GPtrArray *) devices, detail_device, &info);
+
+	if (info.active)
+		g_ptr_array_foreach ((GPtrArray *) info.active, detail_vpn, &info);
 
 	g_object_unref (client);
+	g_hash_table_unref (user_connections);
+	g_hash_table_unref (system_connections);
 
 	return 0;
 }
