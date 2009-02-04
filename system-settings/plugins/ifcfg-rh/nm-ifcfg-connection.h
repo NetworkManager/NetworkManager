@@ -50,7 +50,8 @@ GType nm_ifcfg_connection_get_type (void);
 NMIfcfgConnection *nm_ifcfg_connection_new (const char *filename,
                                             DBusGConnection *g_connection,
                                             NMSystemConfigHalManager *hal_mgr,
-                                            GError **error);
+                                            GError **error,
+                                            gboolean *ignore_error);
 
 const char *nm_ifcfg_connection_get_filename (NMIfcfgConnection *self);
 

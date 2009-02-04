@@ -27,6 +27,7 @@
 NMConnection *connection_from_file (const char *filename,
                                     gboolean *ignored,
                                     char **keyfile,
-                                    GError **error);
+                                    GError **error,
+                                    gboolean *ignore_error);
 
 #endif  /* __READER_H__ */

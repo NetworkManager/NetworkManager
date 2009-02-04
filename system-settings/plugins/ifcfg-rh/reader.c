@@ -938,7 +938,8 @@ NMConnection *
 connection_from_file (const char *filename,
                       gboolean *ignored,
                       char **keyfile,
-                      GError **error)
+                      GError **error,
+                      gboolean *ignore_error)
 {
 	NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
@@ -983,6 +984,7 @@ connection_from_file (const char *filename,
 		}
 
 		if (!strcmp (device, "lo")) {
+			*ignore_error = TRUE;
 			g_set_error (error, ifcfg_plugin_error_quark (), 0,
 			             "Ignoring loopback device config.");
 			g_free (device);
