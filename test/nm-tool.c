@@ -266,10 +266,6 @@ detail_device (gpointer data, gpointer user_data)
 	/* Capabilities */
 	caps = nm_device_get_capabilities (device);
 	printf ("\n  Capabilities:\n");
-	if (caps & NM_DEVICE_CAP_NM_SUPPORTED)
-		print_string ("  Supported", "yes");
-	else
-		print_string ("  Supported", "no");
 	if (caps & NM_DEVICE_CAP_CARRIER_DETECT)
 		print_string ("  Carrier Detect", "yes");
 
@@ -298,7 +294,7 @@ detail_device (gpointer data, gpointer user_data)
 		const char *active_bssid = NULL;
 		const GPtrArray *aps;
 
-		printf ("\n  Wireless Settings\n");
+		printf ("\n  Wireless Properties\n");
 
 		wcaps = nm_device_wifi_get_capabilities (NM_DEVICE_WIFI (device));
 
@@ -320,14 +316,12 @@ detail_device (gpointer data, gpointer user_data)
 		if (aps && aps->len)
 			g_ptr_array_foreach ((GPtrArray *) aps, detail_access_point, (gpointer) active_bssid);
 	} else if (NM_IS_DEVICE_ETHERNET (device)) {
-		printf ("\n  Wired Settings\n");
-		/* FIXME */
-#if 0
-		if (link_active)
-			print_string ("  Hardware Link", "yes");
+		printf ("\n  Wired Properties\n");
+
+		if (nm_device_ethernet_get_carrier (NM_DEVICE_ETHERNET (device)))
+			print_string ("  Carrier", "on");
 		else
-			print_string ("  Hardware Link", "no");
-#endif
+			print_string ("  Carrier", "off");
 	}
 
 	/* IP Setup info */
