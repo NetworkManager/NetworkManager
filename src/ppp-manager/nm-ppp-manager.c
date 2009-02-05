@@ -136,12 +136,11 @@ constructor (GType type,
 	GObject *object;
 	NMPPPManagerPrivate *priv;
 	DBusGConnection *connection;
-	static gboolean name_requested = FALSE;
 	static guint32 counter = 0;
 
 	object = G_OBJECT_CLASS (nm_ppp_manager_parent_class)->constructor (type,
-														   n_construct_params,
-														   construct_params);
+	                                                                    n_construct_params,
+	                                                                    construct_params);
 	if (!object)
 		return NULL;
 
@@ -151,36 +150,8 @@ constructor (GType type,
 		g_object_unref (object);
 		return NULL;
 	}
+
 	connection = nm_dbus_manager_get_connection (priv->dbus_manager);
-
-	/* Only need to request bus name the first time */
-	if (!name_requested) {
-		DBusGProxy *proxy;
-		gboolean success;
-		guint request_name_result;
-		GError *err = NULL;
-
-		proxy = dbus_g_proxy_new_for_name (connection,
-									"org.freedesktop.DBus",
-									"/org/freedesktop/DBus",
-									"org.freedesktop.DBus");
-		success = dbus_g_proxy_call (proxy, "RequestName", &err,
-		                             G_TYPE_STRING, NM_DBUS_SERVICE_PPP,
-		                             G_TYPE_UINT, 0,
-		                             G_TYPE_INVALID,
-		                             G_TYPE_UINT, &request_name_result,
-		                             G_TYPE_INVALID);
-		g_object_unref (proxy);
-
-		if (!success) {
-			nm_warning ("Failed to acquire PPP manager service: %s", err->message);
-			g_object_unref (object);
-			return NULL;
-		}
-
-		name_requested = TRUE;
-	}
-
 	priv->dbus_path = g_strdup_printf (NM_DBUS_PATH "/PPP/%d", counter++);
 	dbus_g_connection_register_g_object (connection, priv->dbus_path, object);
 
