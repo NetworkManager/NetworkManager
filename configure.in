@@ -480,7 +480,7 @@ GTK_DOC_CHECK(1.0)
 dnl
 dnl Tests
 dnl
-AC_ARG_WITH(tests, AC_HELP_STRING([--with-tests], [Build NetworkManager documentation]))
+AC_ARG_WITH(tests, AC_HELP_STRING([--with-tests], [Build NetworkManager tests]))
 AM_CONDITIONAL(WITH_TESTS, test "x$with_tests" = "xyes")
 case $with_tests in
     yes)
