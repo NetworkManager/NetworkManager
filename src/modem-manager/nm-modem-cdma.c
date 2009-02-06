@@ -2,6 +2,7 @@
 
 #include <string.h>
 
+#include "nm-dbus-glib-types.h"
 #include "nm-modem-cdma.h"
 #include "nm-modem-types.h"
 #include "nm-device-interface.h"
@@ -80,8 +81,7 @@ real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	dbus_g_proxy_begin_call_with_timeout (nm_modem_get_proxy (NM_MODEM (device), MM_DBUS_INTERFACE_MODEM_SIMPLE),
 										  "Connect", stage1_prepare_done,
 										  device, NULL, 120000,
-										  dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
-										  properties,
+										  DBUS_TYPE_G_MAP_OF_VARIANT, properties,
 										  G_TYPE_INVALID);
 
 	return NM_ACT_STAGE_RETURN_POSTPONE;

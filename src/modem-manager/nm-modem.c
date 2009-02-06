@@ -275,10 +275,6 @@ static_stage4 (NMDevice *device, NMIP4Config **config, NMDeviceStateReason *reas
 }
 
 /*****************************************************************************/
-/* IP method DHCP */
-
-
-/*****************************************************************************/
 
 static NMActStageReturn
 real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
@@ -386,9 +382,6 @@ real_deactivate_quickly (NMDevice *device)
 		g_warning ("Invalid IP method");
 		break;
 	}
-
-	/* FIXME: This shouldn't be needed */
-	dbus_g_proxy_call_no_reply (nm_modem_get_proxy (NM_MODEM (device), NULL), "Disconnect", G_TYPE_INVALID);
 
 	if (NM_DEVICE_CLASS (nm_modem_parent_class)->deactivate)
 		NM_DEVICE_CLASS (nm_modem_parent_class)->deactivate (device);
