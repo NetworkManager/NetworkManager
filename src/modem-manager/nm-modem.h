@@ -16,7 +16,8 @@ G_BEGIN_DECLS
 #define NM_IS_MODEM_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE ((klass),	NM_TYPE_MODEM))
 #define NM_MODEM_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj),	NM_TYPE_MODEM, NMModemClass))
 
-#define NM_MODEM_PATH "path"
+#define NM_MODEM_PATH      "path"
+#define NM_MODEM_IP_METHOD "ip-method"
 
 typedef struct {
 	NMDevice parent;

@@ -40,7 +40,7 @@
 #include "NetworkManagerSystem.h"
 #include "nm-named-manager.h"
 #include "nm-vpn-manager.h"
-#include "nm-modem-gsm-hso.h"
+#include "nm-modem.h"
 
 typedef struct LookupThread LookupThread;
 
@@ -232,8 +232,7 @@ get_best_device (NMManager *manager, NMActRequest **out_req)
 			}
 		}
 
-		/* 'hso' devices never get a gateway from the remote end */
-		if (!can_default && !NM_IS_MODEM_GSM_HSO (dev))
+		if (!can_default && !NM_IS_MODEM (dev))
 			continue;
 
 		/* 'never-default' devices can't ever be the default */

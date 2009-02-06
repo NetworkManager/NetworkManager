@@ -3,6 +3,7 @@
 #include <string.h>
 #include "nm-modem.h"
 #include "nm-device-private.h"
+#include "NetworkManagerSystem.h"
 #include "nm-device-interface.h"
 #include "nm-dbus-manager.h"
 #include "nm-setting-connection.h"
@@ -21,6 +22,7 @@ G_DEFINE_TYPE (NMModem, nm_modem, NM_TYPE_DEVICE)
 enum {
 	PROP_0,
 	PROP_PATH,
+	PROP_IP_METHOD,
 
 	LAST_PROP
 };
@@ -31,6 +33,7 @@ typedef struct {
 	DBusGProxy *proxy;
 	NMPPPManager *ppp_manager;
 	NMIP4Config	 *pending_ip4_config;
+	guint32 ip_method;
 
 	guint state_to_disconnected_id;
 
@@ -90,6 +93,9 @@ nm_modem_get_ppp_name (NMModem *self,
 	return NULL;
 }
 
+/*****************************************************************************/
+/* IP method PPP */
+
 static void
 ppp_state_changed (NMPPPManager *ppp_manager, NMPPPStatus status, gpointer user_data)
 {
@@ -144,7 +150,7 @@ ppp_stats (NMPPPManager *ppp_manager,
 }
 
 static NMActStageReturn
-real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
+ppp_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (device);
 	NMActRequest *req;
@@ -186,10 +192,9 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 }
 
 static NMActStageReturn
-real_act_stage4_get_ip4_config (NMDevice *device,
-								NMIP4Config **config,
-								NMDeviceStateReason *reason)
+ppp_stage4 (NMDevice *device, NMIP4Config **config, NMDeviceStateReason *reason)
 {
+
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (device);
 
 	*config = priv->pending_ip4_config;
@@ -198,12 +203,162 @@ real_act_stage4_get_ip4_config (NMDevice *device,
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
 
+/*****************************************************************************/
+/* IP method static */
+
+static void
+static_stage3_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (user_data);
+	GValueArray *ret_array = NULL;
+	GError *error = NULL;
+
+	if (dbus_g_proxy_end_call (proxy, call_id, &error,
+							   G_TYPE_VALUE_ARRAY, &ret_array,
+							   G_TYPE_INVALID)) {
+
+		NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (device);
+		NMIP4Address *addr;
+		int i;
+
+		addr = nm_ip4_address_new ();
+		nm_ip4_address_set_address (addr, g_value_get_uint (g_value_array_get_nth (ret_array, 0)));
+		nm_ip4_address_set_prefix (addr, 32);
+
+		priv->pending_ip4_config = nm_ip4_config_new ();
+		nm_ip4_config_take_address (priv->pending_ip4_config, addr);
+
+		for (i = 1; i < ret_array->n_values; i++)
+			nm_ip4_config_add_nameserver (priv->pending_ip4_config,
+										  g_value_get_uint (g_value_array_get_nth (ret_array, i)));
+
+		g_value_array_free (ret_array);
+		nm_device_activate_schedule_stage4_ip_config_get (device);
+	} else {
+		nm_warning ("Retrieving IP4 configuration failed: %s", error->message);
+		g_error_free (error);
+		nm_device_state_changed (device,
+								 NM_DEVICE_STATE_FAILED,
+								 NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE);
+	}
+}
+
+static NMActStageReturn
+static_stage3_config (NMDevice *device, NMDeviceStateReason *reason)
+{
+	dbus_g_proxy_begin_call (nm_modem_get_proxy (NM_MODEM (device), MM_DBUS_INTERFACE_MODEM),
+							 "GetIP4Config", static_stage3_done,
+							 device, NULL,
+							 G_TYPE_INVALID);
+
+	return NM_ACT_STAGE_RETURN_POSTPONE;
+}
+
+static NMActStageReturn
+static_stage4 (NMDevice *device, NMIP4Config **config, NMDeviceStateReason *reason)
+{
+	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (device);
+	gboolean no_firmware = FALSE;
+
+	if (!nm_device_hw_bring_up (device, TRUE, &no_firmware)) {
+		if (no_firmware)
+			*reason = NM_DEVICE_STATE_REASON_FIRMWARE_MISSING;
+		else
+			*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
+
+	*config = priv->pending_ip4_config;
+	priv->pending_ip4_config = NULL;
+
+	return NM_ACT_STAGE_RETURN_SUCCESS;
+}
+
+/*****************************************************************************/
+/* IP method DHCP */
+
+
+/*****************************************************************************/
+
+static NMActStageReturn
+real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
+{
+	NMActStageReturn ret;
+
+	switch (NM_MODEM_GET_PRIVATE (device)->ip_method) {
+	case MM_MODEM_IP_METHOD_PPP:
+		ret = ppp_stage2_config (device, reason);
+		break;
+	case MM_MODEM_IP_METHOD_STATIC:
+		ret = NM_ACT_STAGE_RETURN_SUCCESS;
+		break;
+	case MM_MODEM_IP_METHOD_DHCP:
+		ret = NM_ACT_STAGE_RETURN_SUCCESS;
+		break;
+	default:
+		g_warning ("Invalid IP method");
+		ret = NM_ACT_STAGE_RETURN_FAILURE;
+		break;
+	}
+
+	return ret;
+}
+
+static NMActStageReturn
+real_act_stage3_ip_config_start (NMDevice *device, NMDeviceStateReason *reason)
+{
+	NMActStageReturn ret;
+
+	switch (NM_MODEM_GET_PRIVATE (device)->ip_method) {
+	case MM_MODEM_IP_METHOD_PPP:
+		ret = NM_ACT_STAGE_RETURN_SUCCESS;
+		break;
+	case MM_MODEM_IP_METHOD_STATIC:
+		ret = static_stage3_config (device, reason);
+		break;
+	case MM_MODEM_IP_METHOD_DHCP:
+		ret = NM_DEVICE_CLASS (nm_modem_parent_class)->act_stage3_ip_config_start (device, reason);
+		break;
+	default:
+		g_warning ("Invalid IP method");
+		ret = NM_ACT_STAGE_RETURN_FAILURE;
+		break;
+	}
+
+	return ret;
+}
+
+static NMActStageReturn
+real_act_stage4_get_ip4_config (NMDevice *device,
+								NMIP4Config **config,
+								NMDeviceStateReason *reason)
+{
+	NMActStageReturn ret;
+
+	switch (NM_MODEM_GET_PRIVATE (device)->ip_method) {
+	case MM_MODEM_IP_METHOD_PPP:
+		ret = ppp_stage4 (device, config, reason);
+		break;
+	case MM_MODEM_IP_METHOD_STATIC:
+		ret = static_stage4 (device, config, reason);
+		break;
+	case MM_MODEM_IP_METHOD_DHCP:
+		ret = NM_DEVICE_CLASS (nm_modem_parent_class)->act_stage4_get_ip4_config (device, config, reason);
+		break;
+	default:
+		g_warning ("Invalid IP method");
+		ret = NM_ACT_STAGE_RETURN_FAILURE;
+		break;
+	}
+
+	return ret;
+}
+
 static void
 real_deactivate_quickly (NMDevice *device)
 {
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (device);
-
-	nm_device_set_ip_iface (device, NULL);
+	const char *iface;
 
 	if (priv->pending_ip4_config) {
 		g_object_unref (priv->pending_ip4_config);
@@ -212,13 +367,31 @@ real_deactivate_quickly (NMDevice *device)
 
 	priv->in_bytes = priv->out_bytes = 0;
 
-	if (priv->ppp_manager) {
-		g_object_unref (priv->ppp_manager);
-		priv->ppp_manager = NULL;
+	switch (NM_MODEM_GET_PRIVATE (device)->ip_method) {
+	case MM_MODEM_IP_METHOD_PPP:
+		if (priv->ppp_manager) {
+			g_object_unref (priv->ppp_manager);
+			priv->ppp_manager = NULL;
+		}
+		break;
+	case MM_MODEM_IP_METHOD_STATIC:
+	case MM_MODEM_IP_METHOD_DHCP:
+		iface = nm_device_get_iface (device);
+
+		nm_system_device_flush_ip4_routes_with_iface (iface);
+		nm_system_device_flush_ip4_addresses_with_iface (iface);
+		nm_system_device_set_up_down_with_iface (iface, FALSE, NULL);
+		break;
+	default:
+		g_warning ("Invalid IP method");
+		break;
 	}
 
-	dbus_g_proxy_call_no_reply (nm_modem_get_proxy (NM_MODEM (device), NULL),
-								"Enable", G_TYPE_BOOLEAN, FALSE, G_TYPE_INVALID);
+	/* FIXME: This shouldn't be needed */
+	dbus_g_proxy_call_no_reply (nm_modem_get_proxy (NM_MODEM (device), NULL), "Disconnect", G_TYPE_INVALID);
+
+	if (NM_DEVICE_CLASS (nm_modem_parent_class)->deactivate)
+		NM_DEVICE_CLASS (nm_modem_parent_class)->deactivate (device);
 }
 
 static guint32
@@ -277,6 +450,40 @@ device_state_changed (NMDeviceInterface *device,
 	}
 }
 
+static gboolean
+real_hw_is_up (NMDevice *device)
+{
+	guint32 ip_method = NM_MODEM_GET_PRIVATE (device)->ip_method;
+
+	if (ip_method == MM_MODEM_IP_METHOD_STATIC || ip_method == MM_MODEM_IP_METHOD_DHCP) {
+		NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (device);
+		NMDeviceState state;
+
+		state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (device));
+		if (priv->pending_ip4_config || state == NM_DEVICE_STATE_IP_CONFIG || state == NM_DEVICE_STATE_ACTIVATED)
+			return nm_system_device_is_up (device);
+	}
+
+	return TRUE;
+}
+
+static gboolean
+real_hw_bring_up (NMDevice *device, gboolean *no_firmware)
+{
+	guint32 ip_method = NM_MODEM_GET_PRIVATE (device)->ip_method;
+
+	if (ip_method == MM_MODEM_IP_METHOD_STATIC || ip_method == MM_MODEM_IP_METHOD_DHCP) {
+		NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (device);
+		NMDeviceState state;
+
+		state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (device));
+		if (priv->pending_ip4_config || state == NM_DEVICE_STATE_IP_CONFIG || state == NM_DEVICE_STATE_ACTIVATED)
+			return nm_system_device_set_up_down (device, TRUE, no_firmware);
+	}
+
+	return TRUE;
+}
+
 /*****************************************************************************/
 
 static void
@@ -330,6 +537,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_PATH:
 		g_value_set_string (value, priv->path);
 		break;
+	case PROP_IP_METHOD:
+		g_value_set_uint (value, priv->ip_method);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -347,6 +557,9 @@ set_property (GObject *object, guint prop_id,
 	case PROP_PATH:
 		/* Construct only */
 		priv->path = g_value_dup_string (value);
+		break;
+	case PROP_IP_METHOD:
+		priv->ip_method = g_value_get_uint (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -388,8 +601,11 @@ nm_modem_class_init (NMModemClass *klass)
 
 	device_class->get_generic_capabilities = real_get_generic_capabilities;
 	device_class->act_stage2_config = real_act_stage2_config;
+	device_class->act_stage3_ip_config_start = real_act_stage3_ip_config_start;
 	device_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 	device_class->deactivate_quickly = real_deactivate_quickly;
+	device_class->hw_is_up = real_hw_is_up;
+	device_class->hw_bring_up = real_hw_bring_up;
 
 	/* Properties */
 	g_object_class_install_property
@@ -399,6 +615,16 @@ nm_modem_class_init (NMModemClass *klass)
 							  "DBus path",
 							  NULL,
 							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
+		(object_class, PROP_IP_METHOD,
+		 g_param_spec_uint (NM_MODEM_IP_METHOD,
+							"IP method",
+							"IP method",
+							MM_MODEM_IP_METHOD_PPP,
+							MM_MODEM_IP_METHOD_DHCP,
+							MM_MODEM_IP_METHOD_PPP,
+							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	/* Signals */
 	signals[PPP_STATS] =

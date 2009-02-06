@@ -4,8 +4,6 @@
 #include "nm-modem-manager.h"
 #include "nm-modem.h"
 #include "nm-modem-gsm.h"
-#include "nm-modem-gsm-hso.h"
-#include "nm-modem-gsm-mbm.h"
 #include "nm-modem-cdma.h"
 #include "nm-dbus-manager.h"
 #include "nm-utils.h"
@@ -54,7 +52,8 @@ get_modem_properties (DBusGConnection *connection,
 					  const char *path,
 					  char **data_device,
 					  char **driver,
-					  guint32 *type)
+					  guint32 *type,
+					  guint32 *ip_method)
 {
 	DBusGProxy *proxy;
 	GValue value = { 0 };
@@ -80,7 +79,20 @@ get_modem_properties (DBusGConnection *connection,
 
 	if (dbus_g_proxy_call_with_timeout (proxy, "Get", 15000, &err,
 										G_TYPE_STRING, MM_DBUS_INTERFACE_MODEM,
-										G_TYPE_STRING, "DataDevice",
+										G_TYPE_STRING, "IpMethod",
+										G_TYPE_INVALID,
+										G_TYPE_VALUE, &value,
+										G_TYPE_INVALID)) {
+		*ip_method = g_value_get_uint (&value);
+		g_value_unset (&value);
+	} else {
+		g_warning ("Could not get IP method: %s", err->message);
+		goto out;
+	}
+
+	if (dbus_g_proxy_call_with_timeout (proxy, "Get", 15000, &err,
+										G_TYPE_STRING, MM_DBUS_INTERFACE_MODEM,
+										G_TYPE_STRING, "Device",
 										G_TYPE_INVALID,
 										G_TYPE_VALUE, &value,
 										G_TYPE_INVALID)) {
@@ -121,6 +133,7 @@ create_modem (NMModemManager *manager, const char *path)
 	char *data_device = NULL;
 	char *driver = NULL;
 	uint modem_type = MM_MODEM_TYPE_UNKNOWN;
+	uint ip_method = MM_MODEM_IP_METHOD_PPP;
 
 	if (g_hash_table_lookup (priv->modems, path)) {
 		nm_warning ("Modem with path %s already exists, ignoring", path);
@@ -128,7 +141,7 @@ create_modem (NMModemManager *manager, const char *path)
 	}
 
 	if (!get_modem_properties (nm_dbus_manager_get_connection (priv->dbus_mgr), path,
-							   &data_device, &driver, &modem_type))
+							   &data_device, &driver, &modem_type, &ip_method))
 		return;
 
 	if (modem_type == MM_MODEM_TYPE_UNKNOWN) {
@@ -146,14 +159,9 @@ create_modem (NMModemManager *manager, const char *path)
 		return;
 	}
 
-	if (modem_type == MM_MODEM_TYPE_GSM) {
-		if (!strcmp (driver, "hso"))
-			device = nm_modem_gsm_hso_new (path, data_device, driver);
-		else if (!strcmp (driver, "mbm"))
-			device = nm_modem_gsm_mbm_new (path, data_device, driver);
-		else
-			device = nm_modem_gsm_new (path, data_device, driver);
-	} else if (modem_type == MM_MODEM_TYPE_CDMA)
+	if (modem_type == MM_MODEM_TYPE_GSM)
+		device = nm_modem_gsm_new (path, data_device, driver, ip_method);
+	else if (modem_type == MM_MODEM_TYPE_CDMA)
 		device = nm_modem_cdma_new (path, data_device, driver);
 	else
 		g_error ("Invalid modem type");

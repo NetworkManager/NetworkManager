@@ -11,10 +11,6 @@ libmodem_manager_la_SOURCES = \
 	nm-modem-cdma.h \
 	nm-modem-gsm.c \
 	nm-modem-gsm.h \
-	nm-modem-gsm-hso.c \
-	nm-modem-gsm-hso.h \
-	nm-modem-gsm-mbm.c \
-	nm-modem-gsm-mbm.h \
 	nm-modem.c \
 	nm-modem.h \
 	nm-modem-manager.h \

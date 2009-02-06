@@ -12,12 +12,14 @@
 
 #define MM_DBUS_INTERFACE_MODEM_GSM_CARD    "org.freedesktop.ModemManager.Modem.Gsm.Card"
 #define MM_DBUS_INTERFACE_MODEM_GSM_NETWORK "org.freedesktop.ModemManager.Modem.Gsm.Network"
-#define MM_DBUS_INTERFACE_MODEM_GSM_HSO     "org.freedesktop.ModemManager.Modem.Gsm.Hso"
-#define MM_DBUS_INTERFACE_MODEM_GSM_MBM     "org.freedesktop.ModemManager.Modem.Gsm.Mbm"
 
 #define MM_MODEM_TYPE_UNKNOWN  0
 #define MM_MODEM_TYPE_GSM      1
 #define MM_MODEM_TYPE_CDMA     2
+
+#define MM_MODEM_IP_METHOD_PPP    0
+#define MM_MODEM_IP_METHOD_STATIC 1
+#define MM_MODEM_IP_METHOD_DHCP   2
 
 /* Errors */
 

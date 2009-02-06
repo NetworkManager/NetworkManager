@@ -12,12 +12,15 @@
 
 #include "nm-device-gsm-glue.h"
 
+#define GSM_SECRETS_TRIES "gsm-secrets-tries"
+
 G_DEFINE_TYPE (NMModemGsm, nm_modem_gsm, NM_TYPE_MODEM)
 
 NMDevice *
 nm_modem_gsm_new (const char *path,
 				  const char *data_device,
-				  const char *driver)
+				  const char *driver,
+				  guint32 ip_method)
 {
 	g_return_val_if_fail (path != NULL, NULL);
 	g_return_val_if_fail (data_device != NULL, NULL);
@@ -29,6 +32,7 @@ nm_modem_gsm_new (const char *path,
 									  NM_DEVICE_INTERFACE_DRIVER, driver,
 									  NM_DEVICE_INTERFACE_MANAGED, TRUE,
 									  NM_MODEM_PATH, path,
+									  NM_MODEM_IP_METHOD, ip_method,
 									  NULL);
 }
 
@@ -113,19 +117,53 @@ create_connect_properties (NMConnection *connection)
 static NMActStageReturn
 real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 {
+	NMActRequest *req;
 	NMConnection *connection;
-	GHashTable *properties;
+	const char *setting_name;
+	GPtrArray *hints = NULL;
+	const char *hint1 = NULL, *hint2 = NULL;
+	guint32 tries;
 
-	connection = nm_act_request_get_connection (nm_device_get_act_request (device));
+	req = nm_device_get_act_request (device);
+	g_assert (req);
+	connection = nm_act_request_get_connection (req);
 	g_assert (connection);
 
-	properties = create_connect_properties (connection);
-	dbus_g_proxy_begin_call_with_timeout (nm_modem_get_proxy (NM_MODEM (device), MM_DBUS_INTERFACE_MODEM_SIMPLE),
-										  "Connect", stage1_prepare_done,
-										  device, NULL, 120000,
-										  dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
-										  properties,
-										  G_TYPE_INVALID);
+	setting_name = nm_connection_need_secrets (connection, &hints);
+	if (!setting_name) {
+		GHashTable *properties;
+
+		properties = create_connect_properties (connection);
+		dbus_g_proxy_begin_call_with_timeout (nm_modem_get_proxy (NM_MODEM (device), MM_DBUS_INTERFACE_MODEM_SIMPLE),
+											  "Connect", stage1_prepare_done,
+											  device, NULL, 120000,
+											  dbus_g_type_get_map ("GHashTable", G_TYPE_STRING, G_TYPE_VALUE),
+											  properties,
+											  G_TYPE_INVALID);
+
+		return NM_ACT_STAGE_RETURN_POSTPONE;
+	}
+
+	if (hints) {
+		if (hints->len > 0)
+			hint1 = g_ptr_array_index (hints, 0);
+		if (hints->len > 1)
+			hint2 = g_ptr_array_index (hints, 1);
+	}
+
+	nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
+
+	tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), GSM_SECRETS_TRIES));
+	nm_act_request_request_connection_secrets (req,
+											   setting_name,
+											   tries ? TRUE : FALSE,
+											   SECRETS_CALLER_HSO_GSM,
+											   hint1,
+											   hint2);
+	g_object_set_data (G_OBJECT (connection), GSM_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
+
+	if (hints)
+		g_ptr_array_free (hints, TRUE);
 
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
