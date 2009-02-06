@@ -904,9 +904,6 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		if (!(wifi_caps & NM_WIFI_DEVICE_CAP_WPA))
 			return FALSE;
 		if (have_ap) {
-			if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
-				return FALSE;
-
 			if (ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_PSK) {
 				if (   (ap_wpa & NM_802_11_AP_SEC_PAIR_TKIP)
 				    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP))
@@ -922,9 +919,6 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		if (!(wifi_caps & NM_WIFI_DEVICE_CAP_RSN))
 			return FALSE;
 		if (have_ap) {
-			if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
-				return FALSE;
-
 			if (ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_PSK) {
 				if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_TKIP)
 				    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP))
@@ -942,8 +936,6 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		if (!(wifi_caps & NM_WIFI_DEVICE_CAP_WPA))
 			return FALSE;
 		if (have_ap) {
-			if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
-				return FALSE;
 			if (!(ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_802_1X))
 				return FALSE;
 			/* Ensure at least one WPA cipher is supported */
@@ -957,8 +949,6 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		if (!(wifi_caps & NM_WIFI_DEVICE_CAP_RSN))
 			return FALSE;
 		if (have_ap) {
-			if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
-				return FALSE;
 			if (!(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_802_1X))
 				return FALSE;
 			/* Ensure at least one WPA cipher is supported */

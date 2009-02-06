@@ -233,9 +233,6 @@ nm_setting_wireless_ap_security_compatible (NMSettingWireless *s_wireless,
 	if (   !strcmp (key_mgmt, "wpa-psk")
 	    || !strcmp (key_mgmt, "wpa-eap")) {
 
-		if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
-			return FALSE;
-
 		if (!strcmp (key_mgmt, "wpa-psk")) {
 			if (   !(ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_PSK)
 			    && !(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_PSK))
