@@ -37,6 +37,58 @@ nm_modem_gsm_new (const char *path,
 									  NULL);
 }
 
+static NMDeviceStateReason
+translate_mm_error (GError *error)
+{
+	NMDeviceStateReason reason;
+
+	if (dbus_g_error_has_name (error, MM_MODEM_CONNECT_ERROR_NO_CARRIER))
+		reason = NM_DEVICE_STATE_REASON_MODEM_NO_CARRIER;
+	if (dbus_g_error_has_name (error, MM_MODEM_CONNECT_ERROR_NO_DIALTONE))
+		reason = NM_DEVICE_STATE_REASON_MODEM_DIAL_TIMEOUT;
+	if (dbus_g_error_has_name (error, MM_MODEM_CONNECT_ERROR_BUSY))
+		reason = NM_DEVICE_STATE_REASON_MODEM_BUSY;
+	if (dbus_g_error_has_name (error, MM_MODEM_CONNECT_ERROR_NO_ANSWER))
+		reason = NM_DEVICE_STATE_REASON_MODEM_DIAL_TIMEOUT;
+	if (dbus_g_error_has_name (error, MM_MODEM_ERROR_NETWORK_NOT_ALLOWED))
+		reason = NM_DEVICE_STATE_REASON_GSM_REGISTRATION_DENIED;
+	if (dbus_g_error_has_name (error, MM_MODEM_ERROR_NETWORK_TIMEOUT))
+		reason = NM_DEVICE_STATE_REASON_GSM_REGISTRATION_TIMEOUT;
+	if (dbus_g_error_has_name (error, MM_MODEM_ERROR_NO_NETWORK))
+		reason = NM_DEVICE_STATE_REASON_GSM_REGISTRATION_NOT_SEARCHING;
+
+	/* FIXME: We have only GSM error messages here, and we have no idea which 
+	   activation state failed. Reasons like:
+	   NM_DEVICE_STATE_REASON_MODEM_DIAL_FAILED,
+	   NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED,
+	   NM_DEVICE_STATE_REASON_GSM_APN_FAILED,
+	   NM_DEVICE_STATE_REASON_GSM_REGISTRATION_FAILED,
+	   NM_DEVICE_STATE_REASON_GSM_PIN_CHECK_FAILED
+	   are not used.
+	*/
+	else
+		reason = NM_DEVICE_STATE_REASON_UNKNOWN;
+
+	return reason;
+}
+
+static void
+clear_pin (NMDevice *device)
+{
+	NMActRequest *req;
+	NMConnection *connection;
+	NMSettingGsm *setting;
+
+	req = nm_device_get_act_request (device);
+	g_assert (req);
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+	setting = NM_SETTING_GSM (nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM));
+	g_assert (setting);
+
+	g_object_set (G_OBJECT (setting), NM_SETTING_GSM_PIN, NULL, NULL);
+}
+
 static void
 stage1_prepare_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 {
@@ -55,7 +107,7 @@ stage1_prepare_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_d
 		else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_PUK))
 			required_secret = NM_SETTING_GSM_PUK;
 		else if (dbus_g_error_has_name (error, MM_MODEM_ERROR_SIM_WRONG)) {
-			/* FIXME: Unset the wrong PIN: g_object_set (setting, NM_SETTING_GSM_PIN, NULL, NULL); */
+			clear_pin (device);
 			required_secret = NM_SETTING_GSM_PIN;
 			retry_secret = TRUE;
 		} else
@@ -70,7 +122,7 @@ stage1_prepare_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_d
 													   required_secret,
 													   NULL);
 		} else
-			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NONE);
+			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, translate_mm_error (error));
 
 		g_error_free (error);
 	}
