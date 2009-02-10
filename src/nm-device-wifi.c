@@ -3508,7 +3508,7 @@ nm_device_wifi_set_enabled (NMDeviceWifi *self, gboolean enabled)
 		gboolean no_firmware = FALSE, success;
 		struct iw_range range;
 
-		if (state != NM_DEVICE_STATE_UNAVAILABLE);
+		if (state != NM_DEVICE_STATE_UNAVAILABLE)
 			nm_warning ("not in expected unavailable state!");
 
 		if (!nm_device_hw_bring_up (NM_DEVICE (self), TRUE, &no_firmware)) {
