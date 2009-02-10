@@ -2091,6 +2091,14 @@ is_user_request_authorized (NMManager *manager,
 		goto out;
 	}
 
+	/* Let root activate anything.
+	 * FIXME: use a PolicyKit permission instead
+	 */
+	if (0 == sender_uid) {
+		success = TRUE;
+		goto out;
+	}
+
 	service_name = dbus_g_proxy_get_bus_name (priv->user_proxy);
 	if (!service_name) {
 		g_set_error (error, NM_MANAGER_ERROR,
