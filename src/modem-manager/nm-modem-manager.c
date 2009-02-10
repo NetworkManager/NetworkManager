@@ -254,12 +254,12 @@ modem_manager_appeared (NMModemManager *self, gboolean enumerate_devices)
 	priv->proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (priv->dbus_mgr),
 											 MM_DBUS_SERVICE, MM_DBUS_PATH, MM_DBUS_INTERFACE);
 
-	dbus_g_proxy_add_signal (priv->proxy, "DeviceAdded", G_TYPE_STRING, G_TYPE_INVALID);
+	dbus_g_proxy_add_signal (priv->proxy, "DeviceAdded", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->proxy, "DeviceAdded",
 								 G_CALLBACK (modem_added), self,
 								 NULL);
 
-	dbus_g_proxy_add_signal (priv->proxy, "DeviceRemoved", G_TYPE_STRING, G_TYPE_INVALID);
+	dbus_g_proxy_add_signal (priv->proxy, "DeviceRemoved", DBUS_TYPE_G_OBJECT_PATH, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->proxy, "DeviceRemoved",
 								 G_CALLBACK (modem_removed), self,
 								 NULL);
