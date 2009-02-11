@@ -87,7 +87,7 @@ static void hal_manager_udi_removed_cb (NMHalManager *hal_mgr,
                                         gpointer user_data);
 
 static void hal_manager_rfkill_changed_cb (NMHalManager *hal_mgr,
-                                           gboolean rfkilled,
+                                           RfKillState state,
                                            gpointer user_data);
 
 static void hal_manager_hal_reappeared_cb (NMHalManager *hal_mgr,
@@ -1782,12 +1782,12 @@ hal_manager_udi_removed_cb (NMHalManager *manager,
 
 static void
 hal_manager_rfkill_changed_cb (NMHalManager *hal_mgr,
-                               gboolean rfkilled,
+                               RfKillState state,
                                gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	gboolean enabled = !rfkilled;
+	gboolean enabled = (state == RFKILL_UNBLOCKED);
 
 	if (priv->wireless_hw_enabled != enabled) {
 		nm_info ("Wireless now %s by radio killswitch", enabled ? "enabled" : "disabled");

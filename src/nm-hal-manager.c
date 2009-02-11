@@ -40,18 +40,40 @@
 #define HAL_DBUS_SERVICE "org.freedesktop.Hal"
 
 typedef struct {
+	char *udi;
+	gboolean polled;
+	RfKillState state;
+
+	/* For polling */
+	DBusGProxy *proxy;
+
+	NMHalManager *self;
+} Killswitch;
+
+typedef struct {
 	LibHalContext *hal_ctx;
 	NMDBusManager *dbus_mgr;
 	GSList *device_creators;
-	gboolean rfkilled;  /* Authoritative rfkill state */
 
-	/* Killswitch handling */
-	GSList *killswitch_list;
+	/* Authoritative rfkill state (RFKILL_* enum)
+	 */
+	RfKillState rfkill_state;
+
+	/* Killswitch handling:
+	 * There are two types of killswitches:
+	 *  a) old-style: require polling
+	 *  b) new-style: requires hal 0.5.12 as of 2008-11-19, and 2.6.27 kernel
+	 *       or later; emit PropertyChanged for the 'state' property when the
+	 *       rfkill status changes
+	 *
+	 * If new-style switches are found, they are used.  Otherwise, old-style
+	 * switches are used.
+	 */
+	GSList *killswitches;
+
+	/* Old-style killswitch polling stuff */
 	guint32 killswitch_poll_id;
 	char *kswitch_err;
-	gboolean poll_rfkilled;
-	guint32 pending_polls;
-	GSList *poll_proxies;
 
 	gboolean disposed;
 } NMHalManagerPrivate;
@@ -280,6 +302,75 @@ device_new_capability (LibHalContext *ctx, const char *udi, const char *capabili
 		g_signal_emit (self, signals[UDI_ADDED], 0, udi, creator->device_type_name, creator->creator_fn);
 }
 
+static RfKillState
+hal_to_nm_rfkill_state (int hal_state)
+{
+	switch (hal_state) {
+	case 0:
+		return RFKILL_SOFT_BLOCKED;
+	case 2:
+		return RFKILL_HARD_BLOCKED;
+	case 1:
+	default:
+		return RFKILL_UNBLOCKED;
+	}
+}
+
+static void
+device_property_changed (LibHalContext *ctx,
+                         const char *udi,
+                         const char *key,
+                         dbus_bool_t is_removed,
+                         dbus_bool_t is_added)
+{
+	NMHalManager *self = NM_HAL_MANAGER (libhal_ctx_get_user_data (ctx));
+	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+	gboolean found = FALSE;
+	DBusError error;
+	int state;
+	RfKillState new_state = RFKILL_UNBLOCKED;
+
+	/* Ignore event if it's not a killswitch state change */
+	if (strcmp (key, "killswitch.state") || is_removed)
+		return;
+
+	/* Check all killswitches, and if any switch is blocked, the new rfkill
+	 * state becomes blocked.
+	 */
+	for (iter = priv->killswitches; iter; iter = iter->next) {
+		Killswitch *ks = iter->data;
+
+		if (!strcmp (ks->udi, udi)) {
+			found = TRUE;
+
+			/* Get switch state */
+			dbus_error_init (&error);
+			state = libhal_device_get_property_int (ctx, ks->udi, "killswitch.state", &error);
+			if (dbus_error_is_set (&error)) {
+				nm_warning ("(%s) Error reading killswitch state: %s.",
+				            ks->udi,
+				            error.message ? error.message : "unknown");
+				dbus_error_free (&error);
+			} else
+				ks->state = hal_to_nm_rfkill_state (state);
+		}
+
+		/* If any switch is blocked, overall state is blocked */
+		if (ks->state > new_state)
+			new_state = ks->state;
+	}
+
+	/* Notify of new rfkill state change; but only if the killswitch which
+	 * this event is for was one we care about
+	 */
+	if (found && (new_state != priv->rfkill_state)) {
+		priv->rfkill_state = new_state;
+		g_signal_emit (self, signals[RFKILL_CHANGED], 0, priv->rfkill_state);
+	}
+}
+
+
 static void
 add_initial_devices (NMHalManager *self)
 {
@@ -318,51 +409,51 @@ add_initial_devices (NMHalManager *self)
 }
 
 static void
-killswitch_poll_cleanup (NMHalManager *self)
-{
-	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
-
-	if (priv->poll_proxies) {
-		g_slist_foreach (priv->poll_proxies, (GFunc) g_object_unref, NULL);
-		g_slist_free (priv->poll_proxies);
-		priv->poll_proxies = NULL;
-	}
-
-	priv->pending_polls = 0;
-	priv->poll_rfkilled = FALSE;
-}
-
-static void
 killswitch_getpower_done (gpointer user_data)
 {
-	NMHalManager *self = NM_HAL_MANAGER (user_data);
-	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
+	Killswitch *ks = user_data;
+	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (ks->self);
+	GSList *iter;
+	RfKillState new_state = RFKILL_UNBLOCKED;
 
-	priv->pending_polls--;
-
-	if (priv->pending_polls > 0)
-		return;
-
-	if (priv->poll_rfkilled != priv->rfkilled) {
-		priv->rfkilled = priv->poll_rfkilled;
-		g_signal_emit (self, signals[RFKILL_CHANGED], 0, priv->rfkilled);
+	if (ks->proxy) {
+		g_object_unref (ks->proxy);
+		ks->proxy = NULL;
 	}
 
-	killswitch_poll_cleanup (self);
+	/* Check all killswitches, and if any switch is blocked, the new rfkill
+	 * state becomes blocked.  But emit final state until the last killswitch
+	 * has been updated.
+	 */
+	for (iter = priv->killswitches; iter; iter = g_slist_next (iter)) {
+		Killswitch *candidate = iter->data;
+
+		/* If any GetPower call has yet to complete; don't emit final state */
+		if (candidate->proxy)
+			return;
+
+		if (candidate->state > new_state)
+			new_state = candidate->state;
+	}
+
+	if (new_state != priv->rfkill_state) {
+		priv->rfkill_state = new_state;
+		g_signal_emit (ks->self, signals[RFKILL_CHANGED], 0, priv->rfkill_state);
+	}
 
 	/* Schedule next poll */
 	priv->killswitch_poll_id = g_timeout_add_seconds (RFKILL_POLL_FREQUENCY,
-	                                          poll_killswitches,
-	                                          self);
+	                                                  poll_killswitches,
+	                                                  ks->self);
 }
 
 static void 
 killswitch_getpower_reply (DBusGProxy *proxy,
-					  DBusGProxyCall *call_id,
-					  gpointer user_data)
+                           DBusGProxyCall *call_id,
+                           gpointer user_data)
 {
-	NMHalManager *self = NM_HAL_MANAGER (user_data);
-	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
+	Killswitch *ks = user_data;
+	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (ks->self);
 	int power = 1;
 	GError *err = NULL;
 
@@ -370,7 +461,7 @@ killswitch_getpower_reply (DBusGProxy *proxy,
 	                           G_TYPE_INT, &power,
 	                           G_TYPE_INVALID)) {
 		if (power == 0)
-			priv->poll_rfkilled = TRUE;
+			ks->state = RFKILL_HARD_BLOCKED;
 	} else {
 		if (err->message) {
 			/* Only print the error if we haven't seen it before */
@@ -392,7 +483,7 @@ killswitch_getpower_reply (DBusGProxy *proxy,
 				if (strstr (err->message, "Did not receive a reply")) {
 					nm_warning ("HAL did not reply to killswitch power request;"
 					            " assuming radio is blocked.");
-					priv->poll_rfkilled = TRUE;
+					ks->state = RFKILL_HARD_BLOCKED;
 				}
 			}
 		}
@@ -400,69 +491,56 @@ killswitch_getpower_reply (DBusGProxy *proxy,
 	}
 }
 
-static void
-poll_one_killswitch (gpointer data, gpointer user_data)
-{
-	NMHalManager *self = NM_HAL_MANAGER (user_data);
-	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
-	DBusGProxy *proxy;
-
-	proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (priv->dbus_mgr),
-								"org.freedesktop.Hal",
-								(char *) data,
-								"org.freedesktop.Hal.Device.KillSwitch");
-
-	dbus_g_proxy_begin_call (proxy, "GetPower",
-						killswitch_getpower_reply,
-						self,
-						killswitch_getpower_done,
-						G_TYPE_INVALID);
-	priv->pending_polls++;
-	priv->poll_proxies = g_slist_prepend (priv->poll_proxies, proxy);
-}
-
 static gboolean
 poll_killswitches (gpointer user_data)
 {
 	NMHalManager *self = NM_HAL_MANAGER (user_data);
 	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
 
-	killswitch_poll_cleanup (self);
+	for (iter = priv->killswitches; iter; iter = g_slist_next (iter)) {
+		Killswitch *ks = iter->data;
 
-	g_slist_foreach (priv->killswitch_list, poll_one_killswitch, self);
+		ks->state = RFKILL_UNBLOCKED;
+		ks->proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (priv->dbus_mgr),
+		                                       "org.freedesktop.Hal",
+		                                       ks->udi,
+		                                       "org.freedesktop.Hal.Device.KillSwitch");
+		dbus_g_proxy_begin_call (ks->proxy, "GetPower",
+		                         killswitch_getpower_reply,
+		                         ks,
+		                         killswitch_getpower_done,
+		                         G_TYPE_INVALID);
+	}
 	return FALSE;
 }
 
-static void
-add_killswitch_device (NMHalManager *self, const char *udi)
+static Killswitch *
+killswitch_new (const char *udi,
+                int state,
+                gboolean polled,
+                NMHalManager *self)
 {
-	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
-	char *type;
-	GSList *iter;
+	Killswitch *ks;
 
-	type = libhal_device_get_property_string (priv->hal_ctx, udi, "killswitch.type", NULL);
-	if (!type)
-		return;
+	ks = g_malloc0 (sizeof (Killswitch));
+	ks->udi = g_strdup (udi);
+	ks->state = state;
+	ks->self = self;
+	ks->polled = polled;
 
-	if (strcmp (type, "wlan"))
-		goto out;
+	return ks;
+}
 
-	/* see if it's already in the list */
-	for (iter = priv->killswitch_list; iter; iter = iter->next) {
-		const char *list_udi = (const char *) iter->data;
-		if (!strcmp (list_udi, udi))
-			goto out;
-	}
+static void
+killswitch_free (gpointer user_data)
+{
+	Killswitch *ks = user_data;
 
-	/* Poll switches if this is the first switch we've found */
-	if (!priv->killswitch_list)
-		priv->killswitch_poll_id = g_idle_add (poll_killswitches, self);
-
-	priv->killswitch_list = g_slist_append (priv->killswitch_list, g_strdup (udi));
-	nm_info ("Found radio killswitch %s", udi);
-
-out:
-	libhal_free_string (type);
+	if (ks->proxy)
+		g_object_unref (ks->proxy);
+	g_free (ks->udi);
+	g_free (ks);
 }
 
 static void
@@ -470,9 +548,9 @@ add_killswitch_devices (NMHalManager *self)
 {
 	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
 	char **udis;
-	int num_udis;
-	int i;
-	DBusError	err;
+	int num_udis, i;
+	DBusError err;
+	GSList *polled = NULL, *active = NULL, *iter;
 
 	dbus_error_init (&err);
 	udis = libhal_find_device_by_capability (priv->hal_ctx, "killswitch", &num_udis, &err);
@@ -485,9 +563,72 @@ add_killswitch_devices (NMHalManager *self)
 		return;
 	}
 
-	for (i = 0; i < num_udis; i++)
-		add_killswitch_device (self, udis[i]);
+	/* filter switches we care about */
+	for (i = 0; i < num_udis; i++) {
+		Killswitch *ks;
+		char *type;
+		int state;
+		gboolean found = FALSE;
 
+		type = libhal_device_get_property_string (priv->hal_ctx, udis[i], "killswitch.type", NULL);
+		if (!type)
+			continue;
+
+		/* Only care about WLAN for now */
+		if (strcmp (type, "wlan")) {
+			libhal_free_string (type);
+			continue;
+		}
+
+		/* see if it's already in the list */
+		for (iter = priv->killswitches; iter; iter = g_slist_next (iter)) {
+			ks = iter->data;
+			if (!strcmp (udis[i], ks->udi)) {
+				found = TRUE;
+				break;
+			}
+		}
+		if (found)
+			continue;
+
+		dbus_error_init (&err);
+		state = libhal_device_get_property_int (priv->hal_ctx, udis[i], "killswitch.state", &err);
+		if (dbus_error_is_set (&err)) {
+			dbus_error_free (&err);
+			nm_info ("Found radio killswitch %s (polled)", udis[i]);
+			ks = killswitch_new (udis[i], RFKILL_UNBLOCKED, TRUE, self);
+			polled = g_slist_append (polled, ks);
+		} else {
+			nm_info ("Found radio killswitch %s (monitored)", udis[i]);
+			ks = killswitch_new (udis[i], hal_to_nm_rfkill_state (state), FALSE, self);
+			active = g_slist_append (active, ks);
+		}
+	}
+
+	/* Active killswitches are used in preference to polled killswitches */
+	if (active) {
+		for (iter = active; iter; iter = g_slist_next (iter))
+			priv->killswitches = g_slist_append (priv->killswitches, iter->data);
+
+		if (priv->killswitches)
+			nm_info ("Watching killswitches for radio status");
+
+		/* Dispose of any polled killswitches found */
+		g_slist_foreach (polled, (GFunc) killswitch_free, NULL);
+	} else {
+		for (iter = polled; iter; iter = g_slist_next (iter))
+			priv->killswitches = g_slist_append (priv->killswitches, iter->data);
+
+		/* Poll switches if this is the first switch we've found */
+		if (priv->killswitches) {
+			if (!priv->killswitch_poll_id)
+				priv->killswitch_poll_id = g_idle_add (poll_killswitches, self);
+			nm_info ("Polling killswitches for radio status");
+		}
+	}
+
+	g_slist_free (active);
+	g_slist_free (polled);
 	libhal_free_string_array (udis);
 }
 
@@ -520,6 +661,7 @@ hal_init (NMHalManager *self)
 	libhal_ctx_set_device_added (priv->hal_ctx, device_added);
 	libhal_ctx_set_device_removed (priv->hal_ctx, device_removed);
 	libhal_ctx_set_device_new_capability (priv->hal_ctx, device_new_capability);
+	libhal_ctx_set_device_property_modified (priv->hal_ctx, device_property_changed);
 
 	libhal_device_property_watch_all (priv->hal_ctx, &error);
 	if (dbus_error_is_set (&error)) {
@@ -550,12 +692,11 @@ hal_deinit (NMHalManager *self)
 		g_source_remove (priv->killswitch_poll_id);
 		priv->killswitch_poll_id = 0;
 	}
-	killswitch_poll_cleanup (self);
 
-	if (priv->killswitch_list) {
-		g_slist_foreach (priv->killswitch_list, (GFunc) g_free, NULL);
-		g_slist_free (priv->killswitch_list);
-		priv->killswitch_list = NULL;
+	if (priv->killswitches) {
+		g_slist_foreach (priv->killswitches, (GFunc) killswitch_free, NULL);
+		g_slist_free (priv->killswitches);
+		priv->killswitches = NULL;
 	}
 
 	if (!priv->hal_ctx)
@@ -666,7 +807,7 @@ nm_hal_manager_init (NMHalManager *self)
 {
 	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
 
-	priv->rfkilled = FALSE;
+	priv->rfkill_state = RFKILL_UNBLOCKED;
 
 	priv->dbus_mgr = nm_dbus_manager_get ();
 
@@ -763,9 +904,9 @@ nm_hal_manager_class_init (NMHalManagerClass *klass)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMHalManagerClass, rfkill_changed),
 					  NULL, NULL,
-					  g_cclosure_marshal_VOID__BOOLEAN,
+					  g_cclosure_marshal_VOID__UINT,
 					  G_TYPE_NONE, 1,
-					  G_TYPE_BOOLEAN);
+					  G_TYPE_UINT);
 
 	signals[HAL_REAPPEARED] =
 		g_signal_new ("hal-reappeared",
