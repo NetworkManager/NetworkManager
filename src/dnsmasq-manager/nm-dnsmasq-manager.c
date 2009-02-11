@@ -28,6 +28,7 @@
 
 #include "nm-dnsmasq-manager.h"
 #include "nm-utils.h"
+#include "nm-glib-compat.h"
 
 typedef struct {
 	char *iface;
@@ -450,7 +451,7 @@ nm_dnsmasq_manager_stop (NMDnsMasqManager *manager)
 
 	if (priv->pid) {
 		if (kill (priv->pid, SIGTERM) == 0)
-			g_timeout_add (2000, ensure_killed, GINT_TO_POINTER (priv->pid));
+			g_timeout_add_seconds (2, ensure_killed, GINT_TO_POINTER (priv->pid));
 		else {
 			kill (priv->pid, SIGKILL);
 

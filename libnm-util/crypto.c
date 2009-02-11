@@ -311,9 +311,9 @@ convert_iv (const char *src,
             GError **error)
 {
 	int num;
-    int i;
-    char conv[3];
-    char *c;
+	int i;
+	char conv[3];
+	char *c;
 
 	g_return_val_if_fail (src != NULL, NULL);
 
@@ -326,16 +326,16 @@ convert_iv (const char *src,
 	}
 
 	num /= 2;
-    c = g_malloc0 (num + 1);
-    if (c == NULL) {
+	c = g_malloc0 (num + 1);
+	if (c == NULL) {
 		g_set_error (error, NM_CRYPTO_ERROR,
 		             NM_CRYPTO_ERR_OUT_OF_MEMORY,
 		             _("Not enough memory to store the IV."));
         return NULL;
 	}
 
-    conv[2] = '\0';
-    for (i = 0; i < num; i++) {
+	conv[2] = '\0';
+	for (i = 0; i < num; i++) {
         conv[0] = src[(i * 2)];
         conv[1] = src[(i * 2) + 1];
 		if (!g_ascii_isxdigit (conv[0]) || !g_ascii_isxdigit (conv[1])) {
@@ -345,10 +345,10 @@ convert_iv (const char *src,
 			goto error;
 		}
 
-        c[i] = strtol(conv, NULL, 16);
-    }
-    *out_len = num;
-    return c;
+		c[i] = strtol(conv, NULL, 16);
+	}
+	*out_len = num;
+	return c;
 
 error:
 	g_free (c);

@@ -31,6 +31,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-utils.h"
 #include "nm-vpn-manager.h"
+#include "nm-glib-compat.h"
 
 G_DEFINE_TYPE (NMVPNService, nm_vpn_service, G_TYPE_OBJECT)
 
@@ -65,6 +66,10 @@ find_service_file (const char *name)
 	while ((fn = g_dir_read_name (dir))) {
 		char *path;
 		gboolean found = FALSE;
+
+		/* only parse filenames that end with .name */
+		if (!g_str_has_suffix (fn, ".name"))
+			continue;
 
 		key_file = g_key_file_new ();
 		path = g_build_filename (VPN_NAME_FILES_DIR, fn, NULL);
@@ -249,7 +254,7 @@ nm_vpn_service_daemon_exec (NMVPNService *service, GError **error)
 		         nm_vpn_service_get_name (service), priv->dbus_service, priv->pid);
 
 		priv->service_child_watch = g_child_watch_add (priv->pid, vpn_service_watch_cb, service);
-		priv->service_start_timeout = g_timeout_add (5000, nm_vpn_service_timeout, service);
+		priv->service_start_timeout = g_timeout_add_seconds (5, nm_vpn_service_timeout, service);
 	} else {
 		nm_warning ("VPN service '%s': could not launch the VPN service. error: (%d) %s.",
 		            nm_vpn_service_get_name (service), spawn_error->code, spawn_error->message);
@@ -291,7 +296,7 @@ connection_vpn_state_changed (NMVPNConnection *connection,
 
 		if (priv->connections == NULL) {
 			/* schedule a timeout (10 seconds) to destroy the service */
-			g_timeout_add (10000, destroy_service, user_data);
+			g_timeout_add_seconds (10, destroy_service, user_data);
 		}
 		break;
 	default:
@@ -436,7 +441,7 @@ finalize (GObject *object)
 
 	if (priv->pid) {
 		if (kill (priv->pid, SIGTERM) == 0)
-			g_timeout_add (2000, ensure_killed, GINT_TO_POINTER (priv->pid));
+			g_timeout_add_seconds (2, ensure_killed, GINT_TO_POINTER (priv->pid));
 		else {
 			kill (priv->pid, SIGKILL);
 

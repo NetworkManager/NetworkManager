@@ -1,3 +1,5 @@
+SUBDIRS=. tests
+
 INCLUDES = -I${top_srcdir} -I${top_srcdir}/include
 
 lib_LTLIBRARIES=libnm-util.la
@@ -69,23 +71,34 @@ endif
 
 libnm_util_includedir=$(includedir)/NetworkManager
 
-noinst_PROGRAMS = test-crypto
 
-test_crypto_SOURCES = test-crypto.c crypto.c
-test_crypto_CPPFLAGS = $(GLIB_CFLAGS) -D_GNU_SOURCE
-test_crypto_LDADD = $(GLIB_LIBS) libnm-util.la
+###########################################
+# Crypto test library
+###########################################
+
+noinst_LTLIBRARIES = libtest-crypto.la
+
+libtest_crypto_la_SOURCES = crypto.c
+
+libtest_crypto_la_CPPFLAGS = \
+	$(GLIB_CFLAGS)
+
+libtest_crypto_la_LIBADD = \
+	$(GLIB_LIBS)
 
 if WITH_GNUTLS
-test_crypto_SOURCES += crypto_gnutls.c
-test_crypto_CPPFLAGS += $(LIBGCRYPT_CFLAGS) $(GNUTLS_CFLAGS)
-test_crypto_LDADD += $(LIBGCRYPT_LIBS) $(GNUTLS_LIBS)
+libtest_crypto_la_SOURCES += crypto_gnutls.c
+libtest_crypto_la_CPPFLAGS += $(LIBGCRYPT_CFLAGS) $(GNUTLS_CFLAGS)
+libtest_crypto_la_LIBADD += $(LIBGCRYPT_LIBS) $(GNUTLS_LIBS)
 endif
 
 if WITH_NSS
-test_crypto_SOURCES += crypto_nss.c
-test_crypto_CPPFLAGS += $(NSS_CFLAGS)
-test_crypto_LDADD += $(NSS_LIBS)
+libtest_crypto_la_SOURCES += crypto_nss.c
+libtest_crypto_la_CPPFLAGS += $(NSS_CFLAGS)
+libtest_crypto_la_LIBADD += $(NSS_LIBS)
 endif
+
+
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libnm-util.pc

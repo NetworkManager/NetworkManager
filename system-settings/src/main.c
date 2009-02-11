@@ -43,6 +43,7 @@
 #include <nm-settings.h>
 #include <nm-utils.h>
 #include <NetworkManager.h>
+#include "nm-glib-compat.h"
 
 #include "dbus-settings.h"
 #include "nm-system-config-hal-manager.h"
@@ -426,7 +427,7 @@ device_added_cb (DBusGProxy *proxy, const char *udi, NMDeviceType devtype, gpoin
 	/* Wait for a plugin to figure out if the device should be managed or not */
 	info = g_malloc0 (sizeof (WiredDeviceInfo));
 	info->app = app;
-	info->add_id = g_timeout_add (4000, add_default_dhcp_connection, info);
+	info->add_id = g_timeout_add_seconds (4, add_default_dhcp_connection, info);
 	info->udi = g_strdup (udi);
 	g_hash_table_insert (app->wired_devices, info->udi, info);
 }

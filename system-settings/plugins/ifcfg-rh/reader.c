@@ -143,6 +143,7 @@ get_one_ip4_addr (shvarFile *ifcfg,
 	g_return_if_fail (ifcfg != NULL);
 	g_return_if_fail (tag != NULL);
 	g_return_if_fail (out_addr != NULL);
+	g_return_if_fail (*out_addr == 0);
 	g_return_if_fail (error != NULL);
 	g_return_if_fail (*error == NULL);
 
@@ -222,11 +223,13 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
 		addr = nm_ip4_address_new ();
 
+		tmp = 0;
 		get_one_ip4_addr (ifcfg, "IPADDR", &tmp, error);
 		if (*error)
 			goto error;
 		nm_ip4_address_set_address (addr, tmp);
 
+		tmp = 0;
 		get_one_ip4_addr (ifcfg, "GATEWAY", &tmp, error);
 		if (*error)
 			goto error;
@@ -236,6 +239,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 		if (!nm_ip4_address_get_gateway (addr)) {
 			network_ifcfg = svNewFile (SYSCONFDIR "/sysconfig/network");
 			if (network_ifcfg) {
+				tmp = 0;
 				get_one_ip4_addr (network_ifcfg, "GATEWAY", &tmp, error);
 				svCloseFile (network_ifcfg);
 				if (*error)
@@ -262,6 +266,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 
 		/* Fall back to NETMASK if no PREFIX was specified */
 		if (!nm_ip4_address_get_prefix (addr)) {
+			netmask = 0;
 			get_one_ip4_addr (ifcfg, "NETMASK", &netmask, error);
 			if (*error)
 				goto error;
@@ -933,7 +938,8 @@ NMConnection *
 connection_from_file (const char *filename,
                       gboolean *ignored,
                       char **keyfile,
-                      GError **error)
+                      GError **error,
+                      gboolean *ignore_error)
 {
 	NMConnection *connection = NULL;
 	NMSettingConnection *s_con;
@@ -978,6 +984,7 @@ connection_from_file (const char *filename,
 		}
 
 		if (!strcmp (device, "lo")) {
+			*ignore_error = TRUE;
 			g_set_error (error, ifcfg_plugin_error_quark (), 0,
 			             "Ignoring loopback device config.");
 			g_free (device);

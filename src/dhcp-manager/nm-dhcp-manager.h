@@ -22,7 +22,7 @@
 #ifndef NM_DHCP_MANAGER_H
 #define NM_DHCP_MANAGER_H
 
-#include <glib/gtypes.h>
+#include <glib.h>
 #include <glib-object.h>
 
 #include <nm-setting-ip4-config.h>
@@ -96,13 +96,21 @@ void           nm_dhcp_manager_cancel_transaction   (NMDHCPManager *manager,
 NMIP4Config *  nm_dhcp_manager_get_ip4_config       (NMDHCPManager *manager, const char *iface);
 NMDHCPState    nm_dhcp_manager_get_state_for_device (NMDHCPManager *manager, const char *iface);
 
-gboolean       nm_dhcp_manager_set_dhcp4_config     (NMDHCPManager *manager,
+gboolean       nm_dhcp_manager_foreach_dhcp4_option (NMDHCPManager *self,
                                                      const char *iface,
-                                                     NMDHCP4Config *config);
+                                                     GHFunc func,
+                                                     gpointer user_data);
 
-gboolean       nm_dhcp_manager_process_signal       (NMDHCPManager *manager, DBusMessage *message);
-
+/* The following are implemented by the DHCP client backends */
 gboolean       nm_dhcp_client_start                 (NMDHCPDevice *device, NMSettingIP4Config *s_ip4);
 void           nm_dhcp_client_stop                  (const char *iface, pid_t pid);
+
+gboolean       nm_dhcp_client_process_classless_routes (GHashTable *options,
+                                                        NMIP4Config *ip4_config,
+                                                        guint32 *gwaddr);
+
+/* Test functions */
+NMIP4Config *nm_dhcp_manager_options_to_ip4_config (const char *iface,
+                                                    GHashTable *options);
 
 #endif /* NM_DHCP_MANAGER_H */

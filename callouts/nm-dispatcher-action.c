@@ -36,6 +36,7 @@
 #include <dbus/dbus-glib.h>
 
 #include <NetworkManager.h>
+#include "nm-glib-compat.h"
 #include <libnm-util/nm-connection.h>
 #include <libnm-util/nm-setting-ip4-config.h>
 #include <libnm-util/nm-setting-connection.h>
@@ -486,7 +487,7 @@ nm_dispatcher_action (Handler *h,
 	if (d->quit_timeout)
 		g_source_remove (d->quit_timeout);
 	if (!d->persist)
-		d->quit_timeout = g_timeout_add (10000, quit_timeout_cb, NULL);
+		d->quit_timeout = g_timeout_add_seconds (10, quit_timeout_cb, NULL);
 
 	connection = nm_connection_new_from_hash (connection_hash, error);
 	if (connection) {
@@ -780,7 +781,7 @@ main (int argc, char **argv)
 	                                     G_OBJECT (d->handler));
 
 	if (!persist)
-		d->quit_timeout = g_timeout_add (10000, quit_timeout_cb, NULL);
+		d->quit_timeout = g_timeout_add_seconds (10, quit_timeout_cb, NULL);
 
 	g_main_loop_run (loop);
 

@@ -31,6 +31,7 @@
 #include <signal.h>
 #include <unistd.h>
 
+#include "nm-glib-compat.h"
 #include "nm-device.h"
 #include "nm-device-wifi.h"
 #include "nm-device-interface.h"
@@ -910,7 +911,7 @@ real_bring_up (NMDevice *dev)
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	priv->periodic_source_id = g_timeout_add (6000, nm_device_wifi_periodic_update, self);
+	priv->periodic_source_id = g_timeout_add_seconds (6, nm_device_wifi_periodic_update, self);
 	return TRUE;
 }
 
@@ -1717,9 +1718,9 @@ schedule_scan (NMDeviceWifi *self, gboolean backoff)
 		    || (nm_device_get_state (NM_DEVICE (self)) == NM_DEVICE_STATE_ACTIVATED))
 			factor = 1;
 
-		priv->pending_scan_id = g_timeout_add (priv->scan_interval * 1000,
-											   request_wireless_scan,
-											   self);
+		priv->pending_scan_id = g_timeout_add_seconds (priv->scan_interval,
+		                                               request_wireless_scan,
+		                                               self);
 
 		priv->scheduled_scan_time = now.tv_sec + priv->scan_interval;
 		if (backoff && (priv->scan_interval < (SCAN_INTERVAL_MAX / factor))) {
@@ -2274,8 +2275,8 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 			 * while to scan.
 			 */
 			if (!priv->link_timeout_id) {
-				priv->link_timeout_id = g_timeout_add (priv->scanning ? 30000 : 15000,
-				                                       link_timeout_cb, self);
+				priv->link_timeout_id = g_timeout_add_seconds (priv->scanning ? 30 : 15,
+				                                               link_timeout_cb, self);
 			}
 		}
 	}
@@ -2573,7 +2574,7 @@ start_supplicant_connection_timeout (NMDeviceWifi *self)
 	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
 	/* Set up a timeout on the connection attempt to fail it after 25 seconds */
-	id = g_timeout_add (25000, supplicant_connection_timeout_cb, self);
+	id = g_timeout_add_seconds (25, supplicant_connection_timeout_cb, self);
 	if (id <= 0) {
 		nm_warning ("Activation (%s/wireless): couldn't start supplicant "
 		            "timeout timer.",

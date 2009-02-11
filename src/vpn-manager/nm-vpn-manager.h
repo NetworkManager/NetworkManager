@@ -22,7 +22,7 @@
 #ifndef NM_VPN_MANAGER_H
 #define NM_VPN_MANAGER_H
 
-#include <glib/gtypes.h>
+#include <glib.h>
 #include <glib-object.h>
 #include "nm-vpn-connection.h"
 #include "nm-activation-request.h"

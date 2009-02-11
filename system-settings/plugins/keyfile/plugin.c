@@ -350,7 +350,7 @@ add_connection (NMSystemConfigInterface *config,
                 NMConnection *connection,
                 GError **error)
 {
-	return write_connection (connection, NULL, error);
+	return write_connection (connection, KEYFILE_DIR, 0, 0, NULL, error);
 }
 
 static GSList *

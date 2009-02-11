@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <glib.h>
 
+#include "nm-glib-compat.h"
 #include "nm-serial-device.h"
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
@@ -285,11 +286,11 @@ nm_serial_device_add_timeout (NMSerialDevice *self, guint timeout)
 		g_source_remove (priv->timeout_id);
 	}
 
-	priv->timeout_id = g_timeout_add_full (G_PRIORITY_DEFAULT,
-								    timeout * 1000,
-								    nm_serial_device_timed_out,
-								    self,
-								    nm_serial_device_timeout_removed);
+	priv->timeout_id = g_timeout_add_seconds_full (G_PRIORITY_DEFAULT,
+	                                               timeout,
+	                                               nm_serial_device_timed_out,
+	                                               self,
+	                                               nm_serial_device_timeout_removed);
 	if (G_UNLIKELY (priv->timeout_id == 0))
 		nm_warning ("Registering serial device time out failed.");
 }
@@ -415,6 +416,7 @@ nm_serial_device_open (NMSerialDevice *device,
 	}
 
 	priv->channel = g_io_channel_unix_new (priv->fd);
+	g_io_channel_set_encoding (priv->channel, NULL, NULL);
 
 	return TRUE;
 }

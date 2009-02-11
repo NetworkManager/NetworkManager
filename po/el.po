@@ -8,9 +8,10 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: NetworkManager.HEAD\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2008-12-07 22:30+0000\n"
-"PO-Revision-Date: 2008-12-07 01:52+0200\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug."
+"cgi?product=NetworkManager&amp;component=general\n"
+"POT-Creation-Date: 2008-12-07 22:31+0000\n"
+"PO-Revision-Date: 2008-12-18 16:53+0100\n"
 "Last-Translator: Jennie Petoumenou <epetoumenou@gmail.com>\n"
 "Language-Team: Greek <team@gnome.gr>\n"
 "MIME-Version: 1.0\n"
@@ -308,7 +309,7 @@ msgstr "σφάλμα κατά την αναμονή για δεδομένα στ
 #, c-format
 msgid "Invalid option.  Please use --help to see a list of valid options.\n"
 msgstr ""
-"Άκυρη επιλογή. Παρακαλώ χρησιμοποιείστε --help για να δείτε τη λίστα των "
+"Άκυρη επιλογή. Παρακαλώ χρησιμοποιήστε --help για να δείτε τη λίστα των "
 "έγκυρων επιλογών.\n"
 
 #: ../src/dhcp-manager/nm-dhcp-dhclient.c:88
@@ -338,3 +339,4 @@ msgstr "Οι κάτωθι εξυπηρετητές ονομάτων ίσως ν�
 #, c-format
 msgid "Auto %s"
 msgstr "Αυτόματο %s"
+

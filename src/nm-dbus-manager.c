@@ -23,6 +23,7 @@
 #include "NetworkManager.h"
 #include "nm-dbus-manager.h"
 #include "nm-marshal.h"
+#include "nm-glib-compat.h"
 
 #include <dbus/dbus.h>
 #include <dbus/dbus-glib.h>
@@ -158,7 +159,7 @@ static void
 start_reconnection_timeout (NMDBusManager *self)
 {
 	/* Schedule timeout for reconnection attempts */
-	g_timeout_add (3000, nm_dbus_manager_reconnect, self);
+	g_timeout_add_seconds (3, nm_dbus_manager_reconnect, self);
 }
 
 char *

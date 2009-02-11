@@ -22,7 +22,7 @@
 #ifndef NM_SYSTEM_CONFIG_HAL_MANAGER_H
 #define NM_SYSTEM_CONFIG_HAL_MANAGER_H
 
-#include <glib/gtypes.h>
+#include <glib.h>
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
 #include "NetworkManager.h"

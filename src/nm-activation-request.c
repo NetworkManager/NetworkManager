@@ -402,7 +402,7 @@ free_get_secrets_info (gpointer data)
 }
 
 static void
-update_one_setting (const char* key,
+update_one_setting (const char* setting_name,
                     GHashTable *setting_hash,
                     NMConnection *connection,
                     GSList **updated)
@@ -415,7 +415,7 @@ update_one_setting (const char* key,
 	 * yes, replace the setting object in the connection.  If not, just try
 	 * updating the secrets.
 	 */
-	type = nm_connection_lookup_setting_type (key);
+	type = nm_connection_lookup_setting_type (setting_name);
 	if (type == 0)
 		return;
 
@@ -443,7 +443,7 @@ update_one_setting (const char* key,
 	if (setting)
 		nm_connection_add_setting (connection, setting);
 	else {
-		if (!nm_connection_update_secrets (connection, key, setting_hash, &error)) {
+		if (!nm_connection_update_secrets (connection, setting_name, setting_hash, &error)) {
 			nm_warning ("Failed to update connection secrets: %d %s",
 			            error ? error->code : -1,
 			            error && error->message ? error->message : "(none)");
@@ -451,7 +451,7 @@ update_one_setting (const char* key,
 		}
 	}
 
-	*updated = g_slist_append (*updated, (gpointer) key);
+	*updated = g_slist_append (*updated, (gpointer) setting_name);
 }
 
 static void

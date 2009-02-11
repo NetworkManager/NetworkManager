@@ -28,8 +28,9 @@
 #include "nm-dbus-manager.h"
 #include "nm-marshal.h"
 #include "nm-utils.h"
+#include "nm-glib-compat.h"
 
-#define SUPPLICANT_POKE_INTERVAL 120000
+#define SUPPLICANT_POKE_INTERVAL 120
 
 typedef struct {
 	NMDBusManager *	dbus_mgr;
@@ -106,7 +107,7 @@ poke_supplicant_cb (gpointer user_data)
 
 out:
 	/* Reschedule the poke */	
-	priv->poke_id = g_timeout_add (SUPPLICANT_POKE_INTERVAL,
+	priv->poke_id = g_timeout_add_seconds (SUPPLICANT_POKE_INTERVAL,
 	                               poke_supplicant_cb,
 	                               (gpointer) self);
 

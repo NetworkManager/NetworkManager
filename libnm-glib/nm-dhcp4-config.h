@@ -24,7 +24,7 @@
 #ifndef NM_DHCP4_CONFIG_H
 #define NM_DHCP4_CONFIG_H
 
-#include <glib/gtypes.h>
+#include <glib.h>
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
 #include "nm-object.h"

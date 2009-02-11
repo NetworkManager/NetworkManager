@@ -1,9 +1,0 @@
-# List of source files containing translatable strings.
-# Please keep this file sorted alphabetically.
-auth-dialog/gnome-two-password-dialog.c
-auth-dialog/main.c
-nm-pptp.desktop.in
-properties/advanced-dialog.c
-properties/nm-pptp-dialog.glade
-properties/nm-pptp.c
-src/nm-pptp-service.c

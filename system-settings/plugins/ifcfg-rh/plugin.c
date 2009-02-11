@@ -160,10 +160,11 @@ read_one_connection (SCPluginIfcfg *plugin, const char *filename)
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
 	NMIfcfgConnection *connection;
 	GError *error = NULL;
+	gboolean ignore_error = FALSE;
 
 	PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "parsing %s ... ", filename);
 
-	connection = nm_ifcfg_connection_new (filename, priv->g_connection, priv->hal_mgr, &error);
+	connection = nm_ifcfg_connection_new (filename, priv->g_connection, priv->hal_mgr, &error, &ignore_error);
 	if (connection) {
 		NMConnection *wrapped;
 		NMSettingConnection *s_con;
@@ -198,8 +199,10 @@ read_one_connection (SCPluginIfcfg *plugin, const char *filename)
 		g_signal_connect (G_OBJECT (connection), "ifcfg-changed",
 		                  G_CALLBACK (connection_ifcfg_changed), plugin);
 	} else {
-		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    error: %s",
-		              (error && error->message) ? error->message : "(unknown)");
+		if (!ignore_error) {
+			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    error: %s",
+			              (error && error->message) ? error->message : "(unknown)");
+		}
 		g_error_free (error);
 	}
 
@@ -284,7 +287,7 @@ connection_changed_handler (SCPluginIfcfg *plugin,
 	NMIfcfgConnection *tmp;
 	GError *error = NULL;
 	GHashTable *settings;
-	gboolean new_unmanaged, old_unmanaged;
+	gboolean new_unmanaged, old_unmanaged, ignore_error = FALSE;
 
 	g_return_if_fail (plugin != NULL);
 	g_return_if_fail (path != NULL);
@@ -294,12 +297,16 @@ connection_changed_handler (SCPluginIfcfg *plugin,
 
 	PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "updating %s", path);
 
-	tmp = (NMIfcfgConnection *) nm_ifcfg_connection_new (path, priv->g_connection, priv->hal_mgr, &error);
+	tmp = (NMIfcfgConnection *) nm_ifcfg_connection_new (path, priv->g_connection,
+	                                                     priv->hal_mgr,
+	                                                     &error,
+	                                                     &ignore_error);
 	if (!tmp) {
-		/* couldn't read connection; remove it */
-
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error: %s",
-		             error->message ? error->message : "(unknown)");
+		/* errors reading connection; remove it */
+		if (!ignore_error) {
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error: %s",
+			             error->message ? error->message : "(unknown)");
+		}
 		g_error_free (error);
 
 		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "removed %s.", path);

@@ -21,6 +21,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "nm-glib-compat.h"
 #include "nm-gsm-device.h"
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
@@ -66,10 +67,21 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
+/* Various possible init sequences */
+const gchar *modem_init_sequences[] = {
+	"ATZ E0 V1 X4 &C1 +FCLASS=0",
+	"ATZ E0 V1 &C1",
+	"AT&F E0 V1 X4 &C1 +FCLASS=0",
+	"AT&F E0 V1 &C1",
+	"AT&F E0 V1",
+	"\rAT&F E0 V1 X4 &C1 +CREG=0 +FCLASS=0",  /* USBModem by MobileStream for Palm */
+	NULL
+};
+
 static void enter_pin (NMGsmDevice *device, NMGsmSecret secret_type, gboolean retry);
 static void manual_registration (NMGsmDevice *device);
 static void automatic_registration (NMGsmDevice *device);
-static void init_modem (NMSerialDevice *device, gpointer user_data);
+static void init_modem (NMSerialDevice *device);
 
 NMGsmDevice *
 nm_gsm_device_new (const char *udi,
@@ -354,7 +366,7 @@ schedule_automatic_registration_again (NMGsmDevice *self)
 	if (priv->pending_id)
 		g_source_remove (priv->pending_id);
 
-	priv->pending_id = g_timeout_add (1000, automatic_registration_again, self);
+	priv->pending_id = g_timeout_add_seconds (1, automatic_registration_again, self);
 }
 
 static void
@@ -496,13 +508,14 @@ init_full_done (NMSerialDevice *device,
 static void
 init_modem_full (NMGsmDevice *device)
 {
+	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
 	const char *responses[] = { "OK", "ERROR", "ERR", NULL };
 
 	/* Send E0 too because some devices turn echo back on after CPIN which
 	 * just breaks stuff since echo-ed commands are interpreted as replies.
 	 * rh #456770
 	 */
-	modem_wait_for_reply (device, "ATZ E0 V1 X4 &C1 +FCLASS=0", 10, responses, responses, init_full_done, NULL);
+	modem_wait_for_reply (device, modem_init_sequences[priv->init_tries], 10, responses, responses, init_full_done, NULL);
 }
 
 static void
@@ -647,7 +660,6 @@ init_done (NMSerialDevice *device,
 
 	switch (reply_index) {
 	case 0:
-		priv->init_tries = 0;
 		check_pin (NM_GSM_DEVICE (device));
 		break;
 	case -1:
@@ -657,35 +669,27 @@ init_done (NMSerialDevice *device,
 		                         NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
 		break;
 	default:
-		switch (priv->init_tries) {
-		case 0:
-			nm_warning ("Trying alternate modem initialization");
-			init_modem (device, "ATZ E0 V1 &C1");
-			break;
-		case 1:
-			nm_warning ("Trying second alternate modem initialization");
-			init_modem (device, "AT&F E0 V1");
-			break;
-		default:
+		priv->init_tries++;
+		if (modem_init_sequences[priv->init_tries] != NULL) {
+			nm_warning ("Trying alternate modem initialization (%d)",
+			            priv->init_tries);
+			init_modem (device);
+		} else {
 			nm_warning ("Modem initialization failed");
 			nm_device_state_changed (NM_DEVICE (device),
 			                         NM_DEVICE_STATE_FAILED,
 			                         NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
-			break;
 		}
-		priv->init_tries++;
-		return;
+		break;
 	}
 }
 
 static void
-init_modem (NMSerialDevice *device, gpointer user_data)
+init_modem (NMSerialDevice *device)
 {
+	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
 	const char *responses[] = { "OK", "ERROR", "ERR", NULL };
-	const char *init_string = user_data;
-
-	if (!init_string)
-		init_string = "ATZ E0 V1 X4 &C1 +FCLASS=0";
+	const char *init_string = modem_init_sequences[priv->init_tries];
 
 	modem_wait_for_reply (NM_GSM_DEVICE (device), init_string, 10, responses, responses, init_done, NULL);
 }
@@ -706,7 +710,7 @@ real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 
 	NM_GSM_DEVICE_GET_PRIVATE (device)->init_tries = 0;
 
-	id = nm_serial_device_flash (serial_device, 100, init_modem, NULL);
+	id = nm_serial_device_flash (serial_device, 100, (NMSerialFlashFn) init_modem, NULL);
 	if (!id)
 		*reason = NM_DEVICE_STATE_REASON_UNKNOWN;
 

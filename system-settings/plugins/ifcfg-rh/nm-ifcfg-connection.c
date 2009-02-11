@@ -242,7 +242,8 @@ NMIfcfgConnection *
 nm_ifcfg_connection_new (const char *filename,
                          DBusGConnection *g_connection,
                          NMSystemConfigHalManager *hal_mgr,
-                         GError **error)
+                         GError **error,
+                         gboolean *ignore_error)
 {
 	GObject *object;
 	NMIfcfgConnectionPrivate *priv;
@@ -254,7 +255,7 @@ nm_ifcfg_connection_new (const char *filename,
 
 	g_return_val_if_fail (filename != NULL, NULL);
 
-	wrapped = connection_from_file (filename, &unmanaged, &keyfile, error);
+	wrapped = connection_from_file (filename, &unmanaged, &keyfile, error, ignore_error);
 	if (!wrapped)
 		return NULL;
 

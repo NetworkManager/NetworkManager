@@ -1,0 +1,22 @@
+[connection]
+id=Test Wireless Connection
+uuid=2f962388-e5f3-45af-a62c-ac220b8f7baa
+type=802-11-wireless
+autoconnect=false
+timestamp=1226604314
+
+[802-11-wireless]
+ssid=110;109;45;116;101;115;116;45;97;112;
+mode=infrastructure
+channel=0
+rate=0
+tx-power=0
+mtu=0
+bssid=00:1a:33:44:99:82
+
+[ipv4]
+method=auto
+ignore-auto-routes=false
+ignore-auto-dns=false
+never-default=false
+

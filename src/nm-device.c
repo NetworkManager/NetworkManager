@@ -34,6 +34,7 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 
+#include "nm-glib-compat.h"
 #include "nm-device-interface.h"
 #include "nm-device.h"
 #include "nm-device-private.h"
@@ -204,7 +205,7 @@ constructor (GType type,
 	 * system settings service a chance to figure out whether the device is
 	 * managed or not.
 	 */
-	priv->start_timer = g_timeout_add (4000, device_start, dev);
+	priv->start_timer = g_timeout_add_seconds (4, device_start, dev);
 
 	priv->initialized = TRUE;
 	return object;
@@ -830,7 +831,7 @@ aipd_exec (NMDevice *self, GError **error)
 	priv->aipd_watch = g_child_watch_add (priv->aipd_pid, aipd_watch_cb, self);
 
 	/* Start a timeout to bound the address attempt */
-	priv->aipd_timeout = g_timeout_add (20000, aipd_timeout_cb, self);
+	priv->aipd_timeout = g_timeout_add_seconds (20, aipd_timeout_cb, self);
 
 	return TRUE;
 }
@@ -1019,6 +1020,14 @@ nm_device_new_ip4_shared_config (NMDevice *self, NMDeviceStateReason *reason)
 	return config;
 }
 
+static void
+dhcp4_add_option_cb (gpointer key, gpointer value, gpointer user_data)
+{
+	nm_dhcp4_config_add_option (NM_DHCP4_CONFIG (user_data),
+	                            (const char *) key,
+	                            (const char *) value);
+}
+
 static NMActStageReturn
 real_act_stage4_get_ip4_config (NMDevice *self,
                                 NMIP4Config **config,
@@ -1047,7 +1056,12 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 		if (*config) {
 			nm_utils_merge_ip4_config (*config, s_ip4);
 
-			nm_dhcp_manager_set_dhcp4_config (priv->dhcp_manager, ip_iface, priv->dhcp4_config);
+			nm_dhcp4_config_reset (priv->dhcp4_config);
+			nm_dhcp_manager_foreach_dhcp4_option (priv->dhcp_manager,
+			                                      ip_iface,
+			                                      dhcp4_add_option_cb,
+			                                      priv->dhcp4_config);
+
 			/* Notify of new DHCP4 config */
 			g_object_notify (G_OBJECT (self), NM_DEVICE_INTERFACE_DHCP4_CONFIG);
 		} else
@@ -1756,9 +1770,13 @@ handle_dhcp_lease_change (NMDevice *device)
 
 	g_object_set_data (G_OBJECT (req), NM_ACT_REQUEST_IP4_CONFIG, config);
 
-	if (nm_device_set_ip4_config (device, config, &reason))
-		nm_dhcp_manager_set_dhcp4_config (priv->dhcp_manager, ip_iface, priv->dhcp4_config);
-	else {
+	if (nm_device_set_ip4_config (device, config, &reason)) {
+		nm_dhcp4_config_reset (priv->dhcp4_config);
+		nm_dhcp_manager_foreach_dhcp4_option (priv->dhcp_manager,
+		                                      ip_iface,
+		                                      dhcp4_add_option_cb,
+		                                      priv->dhcp4_config);
+	} else {
 		nm_warning ("Failed to update IP4 config in response to DHCP event.");
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, reason);
 	}

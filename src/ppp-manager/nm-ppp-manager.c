@@ -41,6 +41,7 @@
 #include <linux/if_ppp.h>
 
 #include "NetworkManager.h"
+#include "nm-glib-compat.h"
 #include "nm-ppp-manager.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-ppp.h"
@@ -65,7 +66,7 @@ static gboolean impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 #include "nm-ppp-manager-glue.h"
 
 #define NM_PPPD_PLUGIN PLUGINDIR "/nm-pppd-plugin.so"
-#define NM_PPP_WAIT_PPPD 15000 /* 10 seconds */
+#define NM_PPP_WAIT_PPPD 15 /* 15 seconds */
 #define PPP_MANAGER_SECRET_TRIES "ppp-manager-secret-tries"
 
 typedef struct {
@@ -135,12 +136,11 @@ constructor (GType type,
 	GObject *object;
 	NMPPPManagerPrivate *priv;
 	DBusGConnection *connection;
-	static gboolean name_requested = FALSE;
 	static guint32 counter = 0;
 
 	object = G_OBJECT_CLASS (nm_ppp_manager_parent_class)->constructor (type,
-														   n_construct_params,
-														   construct_params);
+	                                                                    n_construct_params,
+	                                                                    construct_params);
 	if (!object)
 		return NULL;
 
@@ -150,36 +150,8 @@ constructor (GType type,
 		g_object_unref (object);
 		return NULL;
 	}
+
 	connection = nm_dbus_manager_get_connection (priv->dbus_manager);
-
-	/* Only need to request bus name the first time */
-	if (!name_requested) {
-		DBusGProxy *proxy;
-		gboolean success;
-		guint request_name_result;
-		GError *err = NULL;
-
-		proxy = dbus_g_proxy_new_for_name (connection,
-									"org.freedesktop.DBus",
-									"/org/freedesktop/DBus",
-									"org.freedesktop.DBus");
-		success = dbus_g_proxy_call (proxy, "RequestName", &err,
-		                             G_TYPE_STRING, NM_DBUS_SERVICE_PPP,
-		                             G_TYPE_UINT, 0,
-		                             G_TYPE_INVALID,
-		                             G_TYPE_UINT, &request_name_result,
-		                             G_TYPE_INVALID);
-		g_object_unref (proxy);
-
-		if (!success) {
-			nm_warning ("Failed to acquire PPP manager service: %s", err->message);
-			g_object_unref (object);
-			return NULL;
-		}
-
-		name_requested = TRUE;
-	}
-
 	priv->dbus_path = g_strdup_printf (NM_DBUS_PATH "/PPP/%d", counter++);
 	dbus_g_connection_register_g_object (connection, priv->dbus_path, object);
 
@@ -342,7 +314,7 @@ monitor_stats (NMPPPManager *manager)
 
 	priv->monitor_fd = socket (AF_INET, SOCK_DGRAM, 0);
 	if (priv->monitor_fd > 0)
-		priv->monitor_id = g_timeout_add (5000, monitor_cb, manager);
+		priv->monitor_id = g_timeout_add_seconds (5, monitor_cb, manager);
 	else
 		nm_warning ("Could not open pppd monitor: %s", strerror (errno));
 }
@@ -465,6 +437,7 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 {
 	NMPPPManagerPrivate *priv = NM_PPP_MANAGER_GET_PRIVATE (manager);
 	NMConnection *connection;
+	NMSettingPPP *s_ppp;
 	NMIP4Config *config;
 	NMIP4Address *addr;
 	GValue *val;
@@ -527,6 +500,15 @@ impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 	connection = nm_act_request_get_connection (priv->act_req);
 	g_assert (connection);
 	g_object_set_data (G_OBJECT (connection), PPP_MANAGER_SECRET_TRIES, NULL);
+
+	/* Merge in custom MTU */
+	s_ppp = (NMSettingPPP *) nm_connection_get_setting (connection, NM_TYPE_SETTING_PPP);
+	if (s_ppp) {
+		guint32 mtu = nm_setting_ppp_get_mtu (s_ppp);
+
+		if (mtu)
+			nm_ip4_config_set_mtu (config, mtu);
+	}
 
 	/* Push the IP4 config up to the device */
 	g_signal_emit (manager, signals[IP4_CONFIG], 0, priv->ip_iface, config);
@@ -793,8 +775,12 @@ create_pppd_cmd_line (NMPPPManager *self,
 	if (nm_setting_ppp_get_baud (setting))
 		nm_cmd_line_add_int (cmd, nm_setting_ppp_get_baud (setting));
 
-	if (nm_setting_ppp_get_noauth (setting))
-		nm_cmd_line_add_string (cmd, "noauth");
+	/* noauth by default, because we certainly don't have any information
+	 * with which to verify anything the peer gives us if we ask it to
+	 * authenticate itself, which is what 'auth' really means.
+	 */
+	nm_cmd_line_add_string (cmd, "noauth");
+
 	if (nm_setting_ppp_get_refuse_eap (setting))
 		nm_cmd_line_add_string (cmd, "refuse-eap");
 	if (nm_setting_ppp_get_refuse_pap (setting))
@@ -944,7 +930,7 @@ nm_ppp_manager_start (NMPPPManager *manager,
 	nm_debug ("ppp started with pid %d", priv->pid);
 
 	priv->ppp_watch_id = g_child_watch_add (priv->pid, (GChildWatchFunc) ppp_watch_cb, manager);
-	priv->ppp_timeout_handler = g_timeout_add (NM_PPP_WAIT_PPPD, pppd_timed_out, manager);
+	priv->ppp_timeout_handler = g_timeout_add_seconds (NM_PPP_WAIT_PPPD, pppd_timed_out, manager);
 	priv->act_req = g_object_ref (req);
 
  out:
@@ -1043,7 +1029,7 @@ nm_ppp_manager_stop (NMPPPManager *manager)
 
 	if (priv->pid) {
 		if (kill (priv->pid, SIGTERM) == 0)
-			g_timeout_add (2000, ensure_killed, GINT_TO_POINTER (priv->pid));
+			g_timeout_add_seconds (2, ensure_killed, GINT_TO_POINTER (priv->pid));
 		else {
 			kill (priv->pid, SIGKILL);
 

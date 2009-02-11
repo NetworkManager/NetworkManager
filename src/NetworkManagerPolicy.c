@@ -860,19 +860,33 @@ static void
 device_removed (NMManager *manager, NMDevice *device, gpointer user_data)
 {
 	NMPolicy *policy = (NMPolicy *) user_data;
-	GSList *iter = policy->dev_signal_ids;
+	GSList *iter;
+
+	/* Clear any idle callbacks for this device */
+	iter = policy->pending_activation_checks;
+	while (iter) {
+		ActivateData *data = (ActivateData *) iter->data;
+		GSList *next = g_slist_next (iter);
+
+		if (data->device == device) {
+			g_source_remove (data->id);
+			g_object_unref (data->device);
+			g_free (data);
+			policy->pending_activation_checks = g_slist_delete_link (policy->pending_activation_checks, iter);
+		}
+		iter = next;
+	}
 
 	/* Clear any signal handlers for this device */
+	iter = policy->dev_signal_ids;
 	while (iter) {
 		DeviceSignalID *data = (DeviceSignalID *) iter->data;
 		GSList *next = g_slist_next (iter);
 
 		if (data->device == device) {
-			policy->dev_signal_ids = g_slist_remove_link (policy->dev_signal_ids, iter);
-			
 			g_signal_handler_disconnect (data->device, data->id);
 			g_free (data);
-			g_slist_free (iter);
+			policy->dev_signal_ids = g_slist_delete_link (policy->dev_signal_ids, iter);
 		}
 		iter = next;
 	}

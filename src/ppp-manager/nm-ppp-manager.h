@@ -22,7 +22,7 @@
 #ifndef NM_PPP_MANAGER_H
 #define NM_PPP_MANAGER_H
 
-#include <glib/gtypes.h>
+#include <glib.h>
 #include <glib-object.h>
 
 #include "nm-ppp-status.h"

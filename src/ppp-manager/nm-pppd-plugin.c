@@ -26,10 +26,11 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <glib/gtypes.h>
+#include <glib.h>
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
 
+#include "NetworkManager.h"
 #include "nm-pppd-plugin.h"
 #include "nm-ppp-status.h"
 #include "nm-dbus-glib-types.h"
@@ -319,10 +320,7 @@ plugin_init (void)
 	/* NM passes in the object path of the corresponding PPPManager
 	 * object as the 'ipparam' argument to pppd.
 	 */
-	proxy = dbus_g_proxy_new_for_name (bus,
-	                                   NM_DBUS_SERVICE_PPP,
-	                                   ipparam,
-	                                   NM_DBUS_INTERFACE_PPP);
+	proxy = dbus_g_proxy_new_for_name (bus, NM_DBUS_SERVICE, ipparam, NM_DBUS_INTERFACE_PPP);
 
 	dbus_g_connection_unref (bus);
 

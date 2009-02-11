@@ -224,7 +224,7 @@ update (NMExportedConnection *exported,
 		connection = nm_exported_connection_get_connection (exported);
 		success = nm_connection_replace_settings (connection, new_settings, error);
 		if (success) {
-			success = write_connection (connection, &filename, error);
+			success = write_connection (connection, KEYFILE_DIR, 0, 0, &filename, error);
 			if (success && filename && strcmp (priv->filename, filename)) {
 				/* Update the filename if it changed */
 				g_free (priv->filename);
@@ -294,7 +294,7 @@ constructor (GType type,
 		g_object_set (s_con, NM_SETTING_CONNECTION_UUID, uuid, NULL);
 		g_free (uuid);
 
-		if (!write_connection (wrapped, NULL, &error)) {
+		if (!write_connection (wrapped, KEYFILE_DIR, 0, 0, NULL, &error)) {
 			g_warning ("Couldn't update connection %s with a UUID: (%d) %s",
 			           nm_setting_connection_get_id (s_con), error ? error->code : 0,
 			           error ? error->message : "unknown");

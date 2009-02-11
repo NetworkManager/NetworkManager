@@ -24,7 +24,7 @@
 #ifndef NM_IP4_CONFIG_H
 #define NM_IP4_CONFIG_H
 
-#include <glib/gtypes.h>
+#include <glib.h>
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
 #include "nm-object.h"
@@ -57,11 +57,11 @@ GType nm_ip4_config_get_type (void);
 
 GObject *nm_ip4_config_new (DBusGConnection *connection, const char *object_path);
 
-const GSList *   nm_ip4_config_get_addresses   (NMIP4Config *config);
-const char *     nm_ip4_config_get_hostname    (NMIP4Config *config); /* DEPRECATED */
-const GArray *   nm_ip4_config_get_nameservers (NMIP4Config *config);
-const GPtrArray *nm_ip4_config_get_domains     (NMIP4Config *config);
-const GSList *   nm_ip4_config_get_routes      (NMIP4Config *config);
+const GSList *   nm_ip4_config_get_addresses    (NMIP4Config *config);
+const char *     nm_ip4_config_get_hostname     (NMIP4Config *config); /* DEPRECATED */
+const GArray *   nm_ip4_config_get_nameservers  (NMIP4Config *config);
+const GPtrArray *nm_ip4_config_get_domains      (NMIP4Config *config);
+const GSList *   nm_ip4_config_get_routes       (NMIP4Config *config);
 const GArray *   nm_ip4_config_get_wins_servers (NMIP4Config *config);
 
 G_END_DECLS

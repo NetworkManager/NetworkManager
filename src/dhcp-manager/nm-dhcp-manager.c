@@ -41,6 +41,7 @@
 #include "nm-utils.h"
 #include "nm-dbus-manager.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-glib-compat.h"
 
 #define NM_DHCP_CLIENT_DBUS_SERVICE "org.freedesktop.nm_dhcp_client"
 #define NM_DHCP_CLIENT_DBUS_IFACE   "org.freedesktop.nm_dhcp_client"
@@ -603,9 +604,9 @@ nm_dhcp_manager_begin_transaction (NMDHCPManager *manager,
 		timeout = NM_DHCP_TIMEOUT;
 
 	/* Set up a timeout on the transaction to kill it after the timeout */
-	device->timeout_id = g_timeout_add (timeout * 1000,
-	                                    nm_dhcp_manager_handle_timeout,
-	                                    device);
+	device->timeout_id = g_timeout_add_seconds (timeout,
+	                                            nm_dhcp_manager_handle_timeout,
+	                                            device);
 
 	nm_dhcp_client_start (device, s_ip4);
 	device->watch_id = g_child_watch_add (device->pid,
@@ -719,6 +720,209 @@ nm_dhcp_manager_cancel_transaction (NMDHCPManager *manager,
 	nm_dhcp_manager_cancel_transaction_real (device);
 }
 
+static void
+process_classful_routes (GHashTable *options, NMIP4Config *ip4_config)
+{
+	const char *str;
+	char **searches, **s;
+
+	str = g_hash_table_lookup (options, "new_static_routes");
+	if (!str)
+		return;
+
+	searches = g_strsplit (str, " ", 0);
+	if ((g_strv_length (searches) % 2)) {
+		nm_info ("  static routes provided, but invalid");
+		goto out;
+	}
+
+	for (s = searches; *s; s += 2) {
+		NMIP4Route *route;
+		struct in_addr rt_addr;
+		struct in_addr rt_route;
+
+		if (inet_pton (AF_INET, *s, &rt_addr) <= 0) {
+			nm_warning ("DHCP provided invalid static route address: '%s'", *s);
+			continue;
+		}
+		if (inet_pton (AF_INET, *(s + 1), &rt_route) <= 0) {
+			nm_warning ("DHCP provided invalid static route gateway: '%s'", *(s + 1));
+			continue;
+		}
+
+		// FIXME: ensure the IP addresse and route are sane
+
+		route = nm_ip4_route_new ();
+		nm_ip4_route_set_dest (route, (guint32) rt_addr.s_addr);
+		nm_ip4_route_set_prefix (route, 32); /* 255.255.255.255 */
+		nm_ip4_route_set_next_hop (route, (guint32) rt_route.s_addr);
+
+		nm_ip4_config_take_route (ip4_config, route);
+		nm_info ("  static route %s gw %s", *s, *(s + 1));
+	}
+
+out:
+	g_strfreev (searches);
+}
+
+/* Given a table of DHCP options from the client, convert into an IP4Config */
+NMIP4Config *
+nm_dhcp_manager_options_to_ip4_config (const char *iface, GHashTable *options)
+{
+	NMIP4Config *ip4_config = NULL;
+	struct in_addr tmp_addr;
+	NMIP4Address *addr = NULL;
+	char *str = NULL;
+	guint32 gwaddr = 0;
+	gboolean have_classless = FALSE;
+
+	g_return_val_if_fail (iface != NULL, NULL);
+	g_return_val_if_fail (options != NULL, NULL);
+
+	ip4_config = nm_ip4_config_new ();
+	if (!ip4_config) {
+		nm_warning ("%s: couldn't allocate memory for an IP4Config!", iface);
+		return NULL;
+	}
+
+	addr = nm_ip4_address_new ();
+	if (!addr) {
+		nm_warning ("%s: couldn't allocate memory for an IP4 Address!", iface);
+		goto error;
+	}
+
+	str = g_hash_table_lookup (options, "new_ip_address");
+	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
+		nm_ip4_address_set_address (addr, tmp_addr.s_addr);
+		nm_info ("  address %s", str);
+	} else
+		goto error;
+
+	str = g_hash_table_lookup (options, "new_subnet_mask");
+	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
+		nm_ip4_address_set_prefix (addr, nm_utils_ip4_netmask_to_prefix (tmp_addr.s_addr));
+		nm_info ("  prefix %d (%s)", nm_ip4_address_get_prefix (addr), str);
+	}
+
+	/* Routes: if the server returns classless static routes, we MUST ignore
+	 * the 'static_routes' option.
+	 */
+	have_classless = nm_dhcp_client_process_classless_routes (options, ip4_config, &gwaddr);
+	if (!have_classless) {
+		gwaddr = 0;  /* Ensure client code doesn't lie */
+		process_classful_routes (options, ip4_config);
+	}
+
+	if (gwaddr) {
+		char buf[INET_ADDRSTRLEN + 1];
+
+		inet_ntop (AF_INET, &gwaddr, buf, sizeof (buf));
+		nm_info ("  gateway %s", buf);
+		nm_ip4_address_set_gateway (addr, gwaddr);
+	} else {
+		/* If the gateway wasn't provided as a classless static route with a
+		 * subnet length of 0, try to find it using the old-style 'routers' option.
+		 */
+		str = g_hash_table_lookup (options, "new_routers");
+		if (str) {
+			char **routers = g_strsplit (str, " ", 0);
+			char **s;
+
+			for (s = routers; *s; s++) {
+				/* FIXME: how to handle multiple routers? */
+				if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
+					nm_ip4_address_set_gateway (addr, tmp_addr.s_addr);
+					nm_info ("  gateway %s", *s);
+					break;
+				} else
+					nm_warning ("Ignoring invalid gateway '%s'", *s);
+			}
+			g_strfreev (routers);
+		}
+	}
+
+	nm_ip4_config_take_address (ip4_config, addr);
+	addr = NULL;
+
+	str = g_hash_table_lookup (options, "new_host_name");
+	if (str)
+		nm_info ("  hostname '%s'", str);
+
+	str = g_hash_table_lookup (options, "new_domain_name_servers");
+	if (str) {
+		char **searches = g_strsplit (str, " ", 0);
+		char **s;
+
+		for (s = searches; *s; s++) {
+			if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
+				nm_ip4_config_add_nameserver (ip4_config, tmp_addr.s_addr);
+				nm_info ("  nameserver '%s'", *s);
+			} else
+				nm_warning ("Ignoring invalid nameserver '%s'", *s);
+		}
+		g_strfreev (searches);
+	}
+
+	str = g_hash_table_lookup (options, "new_domain_name");
+	if (str) {
+		char **domains = g_strsplit (str, " ", 0);
+		char **s;
+
+		for (s = domains; *s; s++) {
+			nm_info ("  domain name '%s'", *s);
+			nm_ip4_config_add_domain (ip4_config, *s);
+		}
+		g_strfreev (domains);
+	}
+
+	str = g_hash_table_lookup (options, "new_domain_search");
+	if (str) {
+		char **searches = g_strsplit (str, " ", 0);
+		char **s;
+
+		for (s = searches; *s; s++) {
+			nm_info ("  domain search '%s'", *s);
+			nm_ip4_config_add_search (ip4_config, *s);
+		}
+		g_strfreev (searches);
+	}
+
+	str = g_hash_table_lookup (options, "new_netbios_name_servers");
+	if (str) {
+		char **searches = g_strsplit (str, " ", 0);
+		char **s;
+
+		for (s = searches; *s; s++) {
+			if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
+				nm_ip4_config_add_wins (ip4_config, tmp_addr.s_addr);
+				nm_info ("  wins '%s'", *s);
+			} else
+				nm_warning ("Ignoring invalid WINS server '%s'", *s);
+		}
+		g_strfreev (searches);
+	}
+
+	str = g_hash_table_lookup (options, "new_interface_mtu");
+	if (str) {
+		int int_mtu;
+
+		errno = 0;
+		int_mtu = strtol (str, NULL, 10);
+		if ((errno == EINVAL) || (errno == ERANGE))
+			goto error;
+
+		if (int_mtu)
+			nm_ip4_config_set_mtu (ip4_config, int_mtu);
+	}
+
+	return ip4_config;
+
+error:
+	if (addr)
+		nm_ip4_address_unref (addr);
+	g_object_unref (ip4_config);
+	return NULL;
+}
 
 /*
  * nm_dhcp_manager_get_ip4_config
@@ -732,10 +936,6 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 {
 	NMDHCPManagerPrivate *priv;
 	NMDHCPDevice *device;
-	NMIP4Config *ip4_config = NULL;
-	struct in_addr tmp_addr;
-	NMIP4Address *addr = NULL;
-	char *str = NULL;
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (manager), NULL);
 	g_return_val_if_fail (iface != NULL, NULL);
@@ -753,179 +953,23 @@ nm_dhcp_manager_get_ip4_config (NMDHCPManager *manager,
 		return NULL;
 	}
 
-	ip4_config = nm_ip4_config_new ();
-	if (!ip4_config) {
-		nm_warning ("%s: couldn't allocate memory for an IP4Config!", device->iface);
-		return NULL;
-	}
-
-	addr = nm_ip4_address_new ();
-	if (!addr) {
-		nm_warning ("%s: couldn't allocate memory for an IP4 Address!", device->iface);
-		goto error;
-	}
-
-	str = g_hash_table_lookup (device->options, "new_ip_address");
-	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
-		nm_ip4_address_set_address (addr, tmp_addr.s_addr);
-		nm_info ("  address %s", str);
-	} else
-		goto error;
-
-	str = g_hash_table_lookup (device->options, "new_subnet_mask");
-	if (str && (inet_pton (AF_INET, str, &tmp_addr) > 0)) {
-		nm_ip4_address_set_prefix (addr, nm_utils_ip4_netmask_to_prefix (tmp_addr.s_addr));
-		nm_info ("  prefix %d (%s)", nm_ip4_address_get_prefix (addr), str);
-	}
-
-	str = g_hash_table_lookup (device->options, "new_routers");
-	if (str) {
-		char **routers = g_strsplit (str, " ", 0);
-		char **s;
-
-		for (s = routers; *s; s++) {
-			/* FIXME: how to handle multiple routers? */
-			if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
-				nm_ip4_address_set_gateway (addr, tmp_addr.s_addr);
-				nm_info ("  gateway %s", *s);
-				break;
-			} else
-				nm_warning ("Ignoring invalid gateway '%s'", *s);
-		}
-		g_strfreev (routers);
-	}
-
-	nm_ip4_config_take_address (ip4_config, addr);
-	addr = NULL;
-
-	str = g_hash_table_lookup (device->options, "new_host_name");
-	if (str)
-		nm_info ("  hostname '%s'", str);
-
-	str = g_hash_table_lookup (device->options, "new_domain_name_servers");
-	if (str) {
-		char **searches = g_strsplit (str, " ", 0);
-		char **s;
-
-		for (s = searches; *s; s++) {
-			if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
-				nm_ip4_config_add_nameserver (ip4_config, tmp_addr.s_addr);
-				nm_info ("  nameserver '%s'", *s);
-			} else
-				nm_warning ("Ignoring invalid nameserver '%s'", *s);
-		}
-		g_strfreev (searches);
-	}
-
-	str = g_hash_table_lookup (device->options, "new_domain_name");
-	if (str) {
-		char **domains = g_strsplit (str, " ", 0);
-		char **s;
-
-		for (s = domains; *s; s++) {
-			nm_info ("  domain name '%s'", *s);
-			nm_ip4_config_add_domain (ip4_config, *s);
-		}
-		g_strfreev (domains);
-	}
-
-	str = g_hash_table_lookup (device->options, "new_domain_search");
-	if (str) {
-		char **searches = g_strsplit (str, " ", 0);
-		char **s;
-
-		for (s = searches; *s; s++) {
-			nm_info ("  domain search '%s'", *s);
-			nm_ip4_config_add_search (ip4_config, *s);
-		}
-		g_strfreev (searches);
-	}
-
-	str = g_hash_table_lookup (device->options, "new_netbios_name_servers");
-	if (str) {
-		char **searches = g_strsplit (str, " ", 0);
-		char **s;
-
-		for (s = searches; *s; s++) {
-			if (inet_pton (AF_INET, *s, &tmp_addr) > 0) {
-				nm_ip4_config_add_wins (ip4_config, tmp_addr.s_addr);
-				nm_info ("  wins '%s'", *s);
-			} else
-				nm_warning ("Ignoring invalid WINS server '%s'", *s);
-		}
-		g_strfreev (searches);
-	}
-
-	str = g_hash_table_lookup (device->options, "new_static_routes");
-	if (str) {
-		char **searches = g_strsplit (str, " ", 0);
-
-		if ((g_strv_length (searches) % 2) == 0) {
-			char **s;
-
-			for (s = searches; *s; s += 2) {
-				NMIP4Route *route;
-				struct in_addr rt_addr;
-				struct in_addr rt_route;
-
-				if (inet_pton (AF_INET, *s, &rt_addr) <= 0) {
-					nm_warning ("DHCP provided invalid static route address: '%s'", *s);
-					continue;
-				}
-				if (inet_pton (AF_INET, *(s + 1), &rt_route) <= 0) {
-					nm_warning ("DHCP provided invalid static route gateway: '%s'", *(s + 1));
-					continue;
-				}
-
-				// FIXME: ensure the IP addresse and route are sane
-
-				route = nm_ip4_route_new ();
-				nm_ip4_route_set_dest (route, (guint32) rt_addr.s_addr);
-				nm_ip4_route_set_prefix (route, 32); /* 255.255.255.255 */
-				nm_ip4_route_set_next_hop (route, (guint32) rt_route.s_addr);
-
-				nm_ip4_config_take_route (ip4_config, route);
-				nm_info ("  static route %s gw %s", *s, *(s + 1));
-			}
-		} else {
-			nm_info ("  static routes provided, but invalid");
-		}
-		g_strfreev (searches);
-	}
-
-	str = g_hash_table_lookup (device->options, "new_interface_mtu");
-	if (str) {
-		int int_mtu;
-
-		errno = 0;
-		int_mtu = strtol (str, NULL, 10);
-		if ((errno == EINVAL) || (errno == ERANGE))
-			goto error;
-
-		if (int_mtu)
-			nm_ip4_config_set_mtu (ip4_config, int_mtu);
-	}
-
-	return ip4_config;
-
-error:
-	if (addr)
-		g_free (addr);
-
-	g_object_unref (ip4_config);
-
-	return NULL;
+	return nm_dhcp_manager_options_to_ip4_config (iface, device->options);
 }
 
 #define NEW_TAG "new_"
 #define OLD_TAG "old_"
 
+typedef struct {
+	GHFunc func;
+	gpointer user_data;
+} Dhcp4ForeachInfo;
+
 static void
-copy_dhcp4_config_option (gpointer key,
-                          gpointer value,
-                          gpointer user_data)
+iterate_dhcp4_config_option (gpointer key,
+                             gpointer value,
+                             gpointer user_data)
 {
-	NMDHCP4Config *config = NM_DHCP4_CONFIG (user_data);
+	Dhcp4ForeachInfo *info = (Dhcp4ForeachInfo *) user_data;
 	char *tmp_key = NULL;
 	const char **p;
 	static const char *filter_options[] = {
@@ -946,21 +990,23 @@ copy_dhcp4_config_option (gpointer key,
 	else
 		tmp_key = g_strdup ((const char *) key);
 
-	nm_dhcp4_config_add_option (config, tmp_key, (const char *) value);
+	(*info->func) ((gpointer) tmp_key, value, info->user_data);
 	g_free (tmp_key);
 }
 
 gboolean
-nm_dhcp_manager_set_dhcp4_config (NMDHCPManager *self,
-                                  const char *iface,
-                                  NMDHCP4Config *config)
+nm_dhcp_manager_foreach_dhcp4_option (NMDHCPManager *self,
+                                      const char *iface,
+                                      GHFunc func,
+                                      gpointer user_data)
 {
 	NMDHCPManagerPrivate *priv;
 	NMDHCPDevice *device;
+	Dhcp4ForeachInfo info = { NULL, NULL };
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), FALSE);
 	g_return_val_if_fail (iface != NULL, FALSE);
-	g_return_val_if_fail (config != NULL, FALSE);
+	g_return_val_if_fail (func != NULL, FALSE);
 
 	priv = NM_DHCP_MANAGER_GET_PRIVATE (self);
 
@@ -975,8 +1021,9 @@ nm_dhcp_manager_set_dhcp4_config (NMDHCPManager *self,
 		return FALSE;
 	}
 
-	nm_dhcp4_config_reset (config);
-	g_hash_table_foreach (device->options, copy_dhcp4_config_option, config);
+	info.func = func;
+	info.user_data = user_data;
+	g_hash_table_foreach (device->options, iterate_dhcp4_config_option, &info);
 	return TRUE;
 }
 

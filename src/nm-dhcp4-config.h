@@ -21,7 +21,7 @@
 #ifndef NM_DHCP4_CONFIG_H
 #define NM_DHCP4_CONFIG_H
 
-#include <glib/gtypes.h>
+#include <glib.h>
 #include <glib-object.h>
 
 #define NM_TYPE_DHCP4_CONFIG            (nm_dhcp4_config_get_type ())

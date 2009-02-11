@@ -455,7 +455,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 					    NM_GSM_NETWORK_ANY,
 					    NM_GSM_NETWORK_PREFER_UMTS_HSPA,
 					    NM_GSM_NETWORK_ANY,
-					    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+					    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_BAND,
@@ -463,7 +463,7 @@ nm_setting_gsm_class_init (NMSettingGsmClass *setting_class)
 					    "Band",
 					    "Band",
 					    -1, 5, -1, /* FIXME: Use an enum for it */
-					    G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+					    G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_PIN,

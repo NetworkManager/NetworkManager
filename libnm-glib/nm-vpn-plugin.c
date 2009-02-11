@@ -22,6 +22,7 @@
  */
 
 #include <signal.h>
+#include "nm-glib-compat.h"
 #include "nm-vpn-plugin.h"
 #include "nm-utils.h"
 #include "nm-connection.h"
@@ -49,8 +50,8 @@ static gboolean impl_vpn_plugin_set_failure (NMVPNPlugin *plugin,
 
 #include "nm-vpn-plugin-glue.h"
 
-#define NM_VPN_PLUGIN_CONNECT_TIMER 60000
-#define NM_VPN_PLUGIN_QUIT_TIMER    20000
+#define NM_VPN_PLUGIN_CONNECT_TIMER 60
+#define NM_VPN_PLUGIN_QUIT_TIMER    20
 
 G_DEFINE_ABSTRACT_TYPE (NMVPNPlugin, nm_vpn_plugin, G_TYPE_OBJECT)
 
@@ -680,18 +681,18 @@ state_changed (NMVPNPlugin *plugin, NMVPNServiceState state)
 		}
 
 		/* Add a timer to make sure we do not wait indefinitely for the successful connect. */
-		priv->connect_timer = g_timeout_add_full (G_PRIORITY_DEFAULT,
-										  NM_VPN_PLUGIN_CONNECT_TIMER,
-										  connect_timer_expired,
-										  plugin,
-										  connect_timer_removed);
+		priv->connect_timer = g_timeout_add_seconds_full (G_PRIORITY_DEFAULT,
+		                                                  NM_VPN_PLUGIN_CONNECT_TIMER,
+		                                                  connect_timer_expired,
+		                                                  plugin,
+		                                                  connect_timer_removed);
 		break;
 	case NM_VPN_SERVICE_STATE_STOPPED:
-		priv->quit_timer = g_timeout_add_full (G_PRIORITY_DEFAULT, 
-									    NM_VPN_PLUGIN_QUIT_TIMER,
-									    quit_timer_expired,
-									    plugin,
-									    quit_timer_removed);
+		priv->quit_timer = g_timeout_add_seconds_full (G_PRIORITY_DEFAULT,
+		                                               NM_VPN_PLUGIN_QUIT_TIMER,
+		                                               quit_timer_expired,
+		                                               plugin,
+		                                               quit_timer_removed);
 		break;
 	default:
 		/* Clean up all timers we might have set up. */

@@ -28,6 +28,8 @@
 #include <errno.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 #include "nm-dhcp-manager.h"
 #include "nm-utils.h"
@@ -118,3 +120,80 @@ out:
 	g_ptr_array_free (argv, TRUE);
 	return success;
 }
+
+gboolean
+nm_dhcp_client_process_classless_routes (GHashTable *options,
+                                         NMIP4Config *ip4_config,
+                                         guint32 *gwaddr)
+{
+	const char *str;
+	char **routes, **r;
+	gboolean have_routes = FALSE;
+
+	/* Classless static routes over-ride any static routes and routers
+	 * provided. We should also check for MS classless static routes as
+	 * they implemented the draft RFC using their own code.
+	 */
+	str = g_hash_table_lookup (options, "new_classless_static_routes");
+	if (!str)
+		str = g_hash_table_lookup (options, "new_ms_classless_static_routes");
+
+	if (!str || !strlen (str))
+		return FALSE;
+
+	routes = g_strsplit (str, " ", 0);
+	if (g_strv_length (routes) == 0)
+		goto out;
+
+	if ((g_strv_length (routes) % 2) != 0) {
+		nm_info ("  classless static routes provided, but invalid");
+		goto out;
+	}
+
+	for (r = routes; *r; r += 2) {
+		char *slash;
+		NMIP4Route *route;
+		int rt_cidr = 32;
+		struct in_addr rt_addr;
+		struct in_addr rt_route;
+
+		slash = strchr(*r, '/');
+		if (slash) {
+			*slash = '\0';
+			errno = 0;
+			rt_cidr = strtol (slash + 1, NULL, 10);
+			if ((errno == EINVAL) || (errno == ERANGE)) {
+				nm_warning ("DHCP provided invalid classless static route cidr: '%s'", slash + 1);
+				continue;
+			}
+		}
+		if (inet_pton (AF_INET, *r, &rt_addr) <= 0) {
+			nm_warning ("DHCP provided invalid classless static route address: '%s'", *r);
+			continue;
+		}
+		if (inet_pton (AF_INET, *(r + 1), &rt_route) <= 0) {
+			nm_warning ("DHCP provided invalid classless static route gateway: '%s'", *(r + 1));
+			continue;
+		}
+
+		have_routes = TRUE;
+		if (rt_cidr == 0 && rt_addr.s_addr == 0) {
+			/* FIXME: how to handle multiple routers? */
+			*gwaddr = rt_addr.s_addr;
+		} else {
+			route = nm_ip4_route_new ();
+			nm_ip4_route_set_dest (route, (guint32) rt_addr.s_addr);
+			nm_ip4_route_set_prefix (route, rt_cidr);
+			nm_ip4_route_set_next_hop (route, (guint32) rt_route.s_addr);
+
+
+			nm_ip4_config_take_route (ip4_config, route);
+			nm_info ("  classless static route %s/%d gw %s", *r, rt_cidr, *(r + 1));
+		}
+	}
+
+out:
+	g_strfreev (routes);
+	return have_routes;
+}
+

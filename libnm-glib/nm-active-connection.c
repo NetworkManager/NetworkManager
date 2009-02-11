@@ -222,7 +222,7 @@ nm_active_connection_get_devices (NMActiveConnection *connection)
 		return handle_ptr_array_return (priv->devices);
 
 	if (!_nm_object_get_property (NM_OBJECT (connection),
-	                             NM_DBUS_INTERFACE,
+	                             NM_DBUS_INTERFACE_ACTIVE_CONNECTION,
 	                             DBUS_PROP_DEVICES,
 	                             &value)) {
 		return NULL;

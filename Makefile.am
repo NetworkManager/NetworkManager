@@ -51,9 +51,10 @@ EXTRA_DIST =				\
 	intltool-merge.in		\
 	intltool-update.in		
 
-DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc
+DISTCHECK_CONFIGURE_FLAGS = --enable-gtk-doc --with-tests=yes
 
 DISTCLEANFILES = intltool-extract intltool-merge intltool-update
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = NetworkManager.pc
+

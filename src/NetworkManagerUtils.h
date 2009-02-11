@@ -37,8 +37,6 @@ int nm_spawn_process (const char *args);
 
 void nm_print_device_capabilities (NMDevice *dev);
 
-struct nl_addr *nm_utils_ip4_addr_to_nl_addr (guint32 ip4_addr);
-
 char *nm_utils_hexstr2bin (const char *hex, size_t len);
 
 char *nm_ether_ntop (const struct ether_addr *mac);

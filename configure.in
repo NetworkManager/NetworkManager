@@ -477,10 +477,26 @@ fi
 
 GTK_DOC_CHECK(1.0)
 
+dnl
+dnl Tests
+dnl
+AC_ARG_WITH(tests, AC_HELP_STRING([--with-tests], [Build NetworkManager tests]))
+AM_CONDITIONAL(WITH_TESTS, test "x$with_tests" = "xyes")
+case $with_tests in
+    yes)
+        with_tests=yes
+        ;;
+    *)
+        with_tests=no
+        ;;
+esac
+
+
 AC_CONFIG_FILES([
 Makefile
 include/Makefile
 src/Makefile
+src/tests/Makefile
 marshallers/Makefile
 src/named-manager/Makefile
 src/vpn-manager/Makefile
@@ -491,6 +507,8 @@ src/dnsmasq-manager/Makefile
 src/backends/Makefile
 libnm-util/libnm-util.pc
 libnm-util/Makefile
+libnm-util/tests/Makefile
+libnm-util/tests/certs/Makefile
 libnm-glib/libnm_glib.pc
 libnm-glib/libnm_glib_vpn.pc
 libnm-glib/Makefile
@@ -504,6 +522,9 @@ system-settings/plugins/ifupdown/Makefile
 system-settings/plugins/ifcfg-rh/Makefile
 system-settings/plugins/ifcfg-suse/Makefile
 system-settings/plugins/keyfile/Makefile
+system-settings/plugins/keyfile/io/Makefile
+system-settings/plugins/keyfile/tests/Makefile
+system-settings/plugins/keyfile/tests/keyfiles/Makefile
 test/Makefile
 initscript/Makefile
 initscript/RedHat/Makefile
@@ -540,5 +561,7 @@ echo 'if this is not correct, please specifiy your distro with --with-distro=DIS
 
 echo
 echo Building documentation: ${with_docs}
+echo
+echo Building tests: ${with_tests}
 echo
 

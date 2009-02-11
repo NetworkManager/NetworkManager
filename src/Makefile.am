@@ -5,7 +5,9 @@ SUBDIRS= \
 	supplicant-manager \
 	ppp-manager \
 	backends \
-	dnsmasq-manager
+	dnsmasq-manager \
+	. \
+	tests
 
 INCLUDES = -I${top_srcdir}                   \
            -I${top_srcdir}/include           \
@@ -17,6 +19,32 @@ INCLUDES = -I${top_srcdir}                   \
            -I${top_srcdir}/src/dnsmasq-manager  \
            -I${top_srcdir}/libnm-util \
            -I${top_srcdir}/callouts
+
+###########################################
+# DHCP test library
+###########################################
+
+noinst_LTLIBRARIES = libtest-dhcp.la
+
+libtest_dhcp_la_SOURCES = \
+	nm-ip4-config.c \
+	nm-dbus-manager.c
+
+libtest_dhcp_la_CPPFLAGS = \
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS) \
+	$(LIBNL_CFLAGS)
+
+libtest_dhcp_la_LIBADD = \
+	$(GLIB_LIBS) \
+	$(DBUS_LIBS) \
+	$(LIBNL_LIBS) \
+	$(top_builddir)/libnm-util/libnm-util.la
+
+
+###########################################
+# NetworkManager
+###########################################
 
 sbin_PROGRAMS = NetworkManager
 
@@ -139,19 +167,19 @@ NetworkManager_CPPFLAGS = 							\
 	-DARP_DEBUG
 
 NetworkManager_LDADD = 							\
-			$(DBUS_LIBS)						\
-			$(GTHREAD_LIBS)					\
-			$(HAL_LIBS)						\
-			$(LIBNL_LIBS)						\
-			$(top_builddir)/marshallers/libmarshallers.la	\
-			./named-manager/libnamed-manager.la	\
-			./vpn-manager/libvpn-manager.la		\
-			./dhcp-manager/libdhcp-manager.la		\
-			./supplicant-manager/libsupplicant-manager.la		\
-			./dnsmasq-manager/libdnsmasq-manager.la		\
-			./ppp-manager/libppp-manager.la		\
-			./backends/libnmbackend.la			\
-			$(top_builddir)/libnm-util/libnm-util.la
+	$(DBUS_LIBS)						\
+	$(GTHREAD_LIBS)					\
+	$(HAL_LIBS)						\
+	$(LIBNL_LIBS)						\
+	$(top_builddir)/marshallers/libmarshallers.la	\
+	./named-manager/libnamed-manager.la	\
+	./vpn-manager/libvpn-manager.la		\
+	./dhcp-manager/libdhcp-manager.la		\
+	./supplicant-manager/libsupplicant-manager.la		\
+	./dnsmasq-manager/libdnsmasq-manager.la		\
+	./ppp-manager/libppp-manager.la		\
+	./backends/libnmbackend.la			\
+	$(top_builddir)/libnm-util/libnm-util.la
 
 NetworkManager_LDFLAGS = -rdynamic
 

@@ -22,7 +22,7 @@
 #ifndef NM_HAL_MANAGER_H
 #define NM_HAL_MANAGER_H
 
-#include <glib/gtypes.h>
+#include <glib.h>
 #include <glib-object.h>
 
 G_BEGIN_DECLS

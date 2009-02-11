@@ -45,6 +45,7 @@
 #include "NetworkManagerUtils.h"
 #include "nm-named-manager.h"
 #include "nm-netlink.h"
+#include "nm-glib-compat.h"
 
 #include "nm-vpn-connection-glue.h"
 
@@ -570,7 +571,7 @@ nm_vpn_connection_connect_cb (DBusGProxy *proxy, GError *err, gpointer user_data
 		                                 NM_VPN_CONNECTION_STATE_REASON_NONE);
 		
 		/* 40 second timeout waiting for IP config signal from VPN service */
-		priv->ipconfig_timeout = g_timeout_add (40000, nm_vpn_connection_ip_config_timeout, connection);
+		priv->ipconfig_timeout = g_timeout_add_seconds (40, nm_vpn_connection_ip_config_timeout, connection);
 	}
 }
 

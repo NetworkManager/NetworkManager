@@ -590,6 +590,13 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			             NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
 			return FALSE;
 		}
+		if (priv->leap_password && !strlen (priv->leap_password)) {
+			g_set_error (error,
+			             NM_SETTING_WIRELESS_SECURITY_ERROR,
+			             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+			             NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD);
+			return FALSE;
+		}
 	} else {
 		if (   (strcmp (priv->key_mgmt, "ieee8021x") == 0)
 		    || (strcmp (priv->key_mgmt, "wpa-eap") == 0)) {
@@ -654,6 +661,14 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
 		             NM_SETTING_WIRELESS_SECURITY_AUTH_ALG);
+		return FALSE;
+	}
+
+	if (priv->psk && !strlen (priv->psk)) {
+		g_set_error (error,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRELESS_SECURITY_PSK);
 		return FALSE;
 	}
 
@@ -901,7 +916,7 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 						"WEP TX key index",
 						"WEP TX key index",
 						0, 3, 0,
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_AUTH_ALG,

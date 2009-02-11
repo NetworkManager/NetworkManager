@@ -806,7 +806,7 @@ nm_client_get_active_connections (NMClient *client)
 		return NULL;
 
 	if (!_nm_object_get_property (NM_OBJECT (client),
-	                             "org.freedesktop.DBus.Properties",
+	                             "org.freedesktop.NetworkManager",
 	                             "ActiveConnections",
 	                             &value)) {
 		return NULL;

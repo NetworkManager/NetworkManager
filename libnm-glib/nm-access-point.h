@@ -24,7 +24,7 @@
 #ifndef NM_ACCESS_POINT_H
 #define NM_ACCESS_POINT_H
 
-#include <glib/gtypes.h>
+#include <glib.h>
 #include <glib-object.h>
 #include <NetworkManager.h>
 #include "nm-object.h"

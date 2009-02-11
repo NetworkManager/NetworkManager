@@ -22,7 +22,7 @@
 #ifndef NM_SYSTEM_CONFIG_ERROR_H
 #define NM_SYSTEM_CONFIG_ERROR_H
 
-#include <glib/gtypes.h>
+#include <glib.h>
 #include <glib-object.h>
 
 enum {

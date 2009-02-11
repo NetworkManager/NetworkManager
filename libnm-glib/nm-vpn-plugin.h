@@ -24,7 +24,7 @@
 #ifndef NM_VPN_PLUGIN_H
 #define NM_VPN_PLUGIN_H
 
-#include <glib/gtypes.h>
+#include <glib.h>
 #include <glib-object.h>
 #include <dbus/dbus-glib.h>
 #include <NetworkManagerVPN.h>

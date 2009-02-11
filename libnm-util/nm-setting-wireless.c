@@ -233,9 +233,6 @@ nm_setting_wireless_ap_security_compatible (NMSettingWireless *s_wireless,
 	if (   !strcmp (key_mgmt, "wpa-psk")
 	    || !strcmp (key_mgmt, "wpa-eap")) {
 
-		if (!(ap_flags & NM_802_11_AP_FLAGS_PRIVACY))
-			return FALSE;
-
 		if (!strcmp (key_mgmt, "wpa-psk")) {
 			if (   !(ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_PSK)
 			    && !(ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_PSK))
@@ -726,7 +723,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 						"Channel",
 						"Channel",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_BSSID,
@@ -742,7 +739,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 						"Rate",
 						"Rate",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	g_object_class_install_property
 		(object_class, PROP_TX_POWER,
@@ -750,7 +747,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 						"TX Power",
 						"TX Power",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	g_object_class_install_property
 		(object_class, PROP_MAC_ADDRESS,
@@ -774,7 +771,7 @@ nm_setting_wireless_class_init (NMSettingWirelessClass *setting_class)
 						"MTU",
 						"MTU",
 						0, G_MAXUINT32, 0,
-						G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	g_object_class_install_property
 		(object_class, PROP_SEC,

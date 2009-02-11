@@ -431,15 +431,15 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	 * Whether or not the connection should be automatically connected by
 	 * NetworkManager when the resources for the connection are available.
 	 * %TRUE to automatically activate the connection, %FALSE to require manual
-	 * intervention to activate the connection.
+	 * intervention to activate the connection.  Defaults to %TRUE.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_AUTOCONNECT,
 		 g_param_spec_boolean (NM_SETTING_CONNECTION_AUTOCONNECT,
 						   "Autoconnect",
 						   "Connection autoconnect",
-						   FALSE,
-						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						   TRUE,
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingConnection:timestamp:
@@ -453,7 +453,7 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 						  "Timestamp",
 						  "Connection timestamp",
 						  0, G_MAXUINT64, 0,
-						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 
 	/**
 	 * NMSettingConnection:read-only:
@@ -468,5 +468,5 @@ nm_setting_connection_class_init (NMSettingConnectionClass *setting_class)
 	                      "Read-Only",
 	                      "Read-Only",
 	                      FALSE,
-	                      G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
+	                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_FUZZY_IGNORE));
 }

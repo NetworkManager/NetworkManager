@@ -120,10 +120,10 @@ register_for_property_changed (NMIP4Config *config)
 {
 	NMIP4ConfigPrivate *priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 	const NMPropertiesChangedInfo property_changed_info[] = {
-		{ NM_IP4_CONFIG_ADDRESSES,   demarshal_ip4_address_array,  &priv->addresses },
-		{ NM_IP4_CONFIG_NAMESERVERS, demarshal_ip4_array,          &priv->nameservers },
-		{ NM_IP4_CONFIG_DOMAINS,     demarshal_domains,            &priv->domains },
-		{ NM_IP4_CONFIG_ROUTES,      demarshal_ip4_routes_array,   &priv->routes },
+		{ NM_IP4_CONFIG_ADDRESSES,    demarshal_ip4_address_array,  &priv->addresses },
+		{ NM_IP4_CONFIG_NAMESERVERS,  demarshal_ip4_array,          &priv->nameservers },
+		{ NM_IP4_CONFIG_DOMAINS,      demarshal_domains,            &priv->domains },
+		{ NM_IP4_CONFIG_ROUTES,       demarshal_ip4_routes_array,   &priv->routes },
 		{ NM_IP4_CONFIG_WINS_SERVERS, demarshal_ip4_array,          &priv->wins },
 		{ NULL },
 	};
