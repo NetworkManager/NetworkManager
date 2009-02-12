@@ -1408,7 +1408,7 @@ nm_device_wifi_get_ssid (NMDeviceWifi *self)
 	NMDeviceWifiPrivate *priv;
 	int	sk;
 	struct iwreq wrq;
-	char ssid[IW_ESSID_MAX_SIZE + 1];
+	char ssid[IW_ESSID_MAX_SIZE + 2];
 	guint32 len;
 
 	g_return_val_if_fail (self != NULL, NULL);	
@@ -1429,7 +1429,7 @@ nm_device_wifi_get_ssid (NMDeviceWifi *self)
 	if (ioctl (sk, SIOCGIWESSID, &wrq) < 0) {
 		nm_warning ("Couldn't get SSID: %d", errno);
 		goto out;
-    }
+	}
 
 	if (priv->ssid) {
 		g_byte_array_free (priv->ssid, TRUE);
