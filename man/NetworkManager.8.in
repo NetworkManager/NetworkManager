@@ -1,27 +1,62 @@
 .\" NetworkManager(8) manual page
 .\"
+.\" Copyright (C) 2005 - 2009 Red Hat, Inc.
+.\" Copyright (C) 2005 - 2009 Novell, Inc.
 .\" Copyright (C) 2005 Robert Love
 .\"
 .TH NETWORKMANAGER "8"
 .SH NAME
 NetworkManager \- network management daemon
 .SH SYNOPSIS
-.B NetworkManager [\-\-no-daemon] [\-\-enable-test-devices]
+.B NetworkManager [\-\-no-daemon]
 .SH DESCRIPTION
-The \fINetworkManager\fP daemon attempts to keep an active network connection
-available at all times.  The point of NetworkManager is to make networking
-configuration and setup as painless and automatic as possible.  If using DHCP,
-NetworkManager is intended to replace default routes, obtain IP addresses from
-a DHCP server, and change nameservers whenever it sees fit, with the aim of
-making networking Just Work.
+The \fINetworkManager\fP daemon attempts to make  networking configuration and
+operation as painless and automatic as possible by managing the primary network
+connection and other network interfaces, like Ethernet, WiFi, and Mobile
+Broadband devices.  NetworkManager will connect any network device when a
+connection for that device becomes available, unless that behavior is disabled.
+Information about networking is exported via a D-Bus interface to any interested
+application, providing a rich API with which to inspect and control network
+settings and operation.
+.TP
+NetworkManager will execute scripts in the /etc/NetworkManager/dispatcher.d
+directory in alphabetical order in response to network events.  Each script
+should be (a) a regular file, (b) owned by root, (c) not writable by group or
+other, (d) not set-uid, (e) and executable by the owner.  Each script receives
+two arguments, the first being the interface name of the device just activated,
+and second an action.
+.TP
+.I "up"
+The interface has been activated.  The environment contains more information
+about the interface; CONNECTION_UUID contains the UUID of the connection.  Other
+variables are IP4_ADDRESS_N where N is a number from 0 to (# IPv4 addresses - 1),
+in the format "address/prefix gateway".  IP4_NUM_ADDRESSES contains the number
+addresses the script may expect.  IP4_NAMESERVERS contains a space-separated
+list of the DNS servers, and IP4_DOMAINS contains a space-separated list of the
+search domains.  Routes use the format IP4_ROUTE_N where N is a number from 0
+to (# IPv4 routes - 1), in the format "address/prefix next-hop metric", and
+IP4_NUM_ROUTES contains the number of routes to expect.  If the connection used
+DHCP for address configuration, the received DHCP configuration is passed in the
+environment using standard DHCP option names, prefixed with "DHCP4_", like
+"DHCP4_HOST_NAME=foobar".
+.TP
+.I "down"
+The interface has been deactivated.
+.TP
+.I "vpn-up"
+A VPN connection has been activated.  The environment contains the connection
+UUID in the variable CONNECTION_UUID.
+.TP
+.I "vpn-down"
+A VPN connection has been deactivated.
+.TP
+.I "hostname"
+The system hostname has been updated.  Use gethostname(2) to retrieve it.
 .SH OPTIONS
 The following options are supported:
 .TP
 .I "--no-daemon"
-Do not daemonize.  This is useful for debugging.
-.TP
-.I "--enable-test-devices"
-Enable support for virtual test devices.  These are useful for debugging.
+Do not daemonize.  This is useful for debugging, and directs log output to the
+controlling terminal in addition to syslog.
 .SH SEE ALSO
-.BR NetworkManagerDispatcher (8),
 .BR nm-tool (1)
