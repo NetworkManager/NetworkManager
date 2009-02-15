@@ -233,7 +233,7 @@ dbus_init (void)
 {
 	DBusConnection * connection;
 	DBusError error;
-	int ret, flags;
+	int ret;
 
 	dbus_connection_set_change_sigpipe (TRUE);
 
@@ -249,16 +249,10 @@ dbus_init (void)
 
 	dbus_connection_set_exit_on_disconnect (connection, FALSE);
 
-#if (DBUS_VERSION_MAJOR == 0) && (DBUS_VERSION_MINOR < 60)
-	flags = DBUS_NAME_FLAG_PROHIBIT_REPLACEMENT;
-#else
-	flags = DBUS_NAME_FLAG_DO_NOT_QUEUE;
-#endif
-
 	dbus_error_init (&error);
 	ret = dbus_bus_request_name (connection,
 	                             NM_DHCP_CLIENT_DBUS_SERVICE,
-	                             flags,
+	                             DBUS_NAME_FLAG_DO_NOT_QUEUE,
 	                             &error);
 	if (dbus_error_is_set (&error)) {
 		fprintf (stderr, "Error: Could not acquire the NM DHCP client service. "

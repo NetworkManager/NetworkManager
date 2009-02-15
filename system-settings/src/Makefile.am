@@ -30,7 +30,7 @@ nm_system_settings_SOURCES = \
 
 nm_system_settings_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
-	$(GTHREAD_CFLAGS) \
+	$(GLIB_CFLAGS) \
 	$(GMODULE_CFLAGS) \
 	$(POLKIT_CFLAGS) \
 	-DDBUS_API_SUBJECT_TO_CHANGE \
@@ -46,7 +46,7 @@ nm_system_settings_CPPFLAGS = \
 
 nm_system_settings_LDADD = \
 	$(DBUS_LIBS) \
-	$(GTHREAD_LIBS) \
+	$(GLIB_LIBS) \
 	$(GMODULE_LIBS) \
 	$(POLKIT_LIBS) \
 	$(top_builddir)/libnm-util/libnm-util.la \

@@ -16,7 +16,7 @@ test_dhcp_options_CPPFLAGS = \
 	$(DBUS_CFLAGS)
 
 test_dhcp_options_LDADD = \
-	$(GTHREAD_LIBS) \
+	$(GLIB_LIBS) \
 	$(DBUS_LIBS) \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(top_builddir)/src/dhcp-manager/libdhcp-manager.la \

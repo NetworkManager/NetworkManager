@@ -306,8 +306,7 @@ gboolean
 nm_dbus_manager_start_service (NMDBusManager *self)
 {
 	NMDBusManagerPrivate *priv;
-	int flags;
-	int request_name_result;
+	int result;
 	GError *err = NULL;
 
 	g_return_val_if_fail (NM_IS_DBUS_MANAGER (self), FALSE);
@@ -319,17 +318,11 @@ nm_dbus_manager_start_service (NMDBusManager *self)
 		return FALSE;
 	}
 
-#if (DBUS_VERSION_MAJOR == 0) && (DBUS_VERSION_MINOR < 60)
-	flags = DBUS_NAME_FLAG_PROHIBIT_REPLACEMENT;
-#else
-	flags = DBUS_NAME_FLAG_DO_NOT_QUEUE;
-#endif
-
 	if (!dbus_g_proxy_call (priv->proxy, "RequestName", &err,
 	                        G_TYPE_STRING, NM_DBUS_SERVICE,
-	                        G_TYPE_UINT, flags,
+	                        G_TYPE_UINT, DBUS_NAME_FLAG_DO_NOT_QUEUE,
 	                        G_TYPE_INVALID,
-	                        G_TYPE_UINT, &request_name_result,
+	                        G_TYPE_UINT, &result,
 	                        G_TYPE_INVALID)) {
 		nm_warning ("Could not acquire the NetworkManager service.\n"
 		            "  Error: '%s'",
@@ -338,7 +331,7 @@ nm_dbus_manager_start_service (NMDBusManager *self)
 		return FALSE;
 	}
 
-	if (request_name_result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
+	if (result != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) {
 		nm_warning ("Could not acquire the NetworkManager service as it is already taken.");
 		return FALSE;
 	}

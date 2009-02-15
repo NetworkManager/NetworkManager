@@ -10,7 +10,7 @@ libdnsmasq_manager_la_SOURCES = \
 	nm-dnsmasq-manager.c
 
 libdnsmasq_manager_la_CPPFLAGS = \
-	$(GTHREAD_CFLAGS) \
+	$(GLIB_CFLAGS) \
 	-DLOCALSTATEDIR=\"$(localstatedir)\"
 
-libdnsmasq_manager_la_LIBADD = $(GTHREAD_LIBS)
+libdnsmasq_manager_la_LIBADD = $(GLIB_LIBS)

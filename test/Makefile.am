@@ -6,7 +6,7 @@ INCLUDES = -I${top_srcdir}                    \
 
 AM_CPPFLAGS =						\
 	$(DBUS_CFLAGS)					\
-	$(GTHREAD_CFLAGS)				\
+	$(GLIB_CFLAGS)				\
 	$(HAL_CFLAGS)					\
 	-DDBUS_API_SUBJECT_TO_CHANGE		\
 	-DBINDIR=\"$(bindir)\"			\
@@ -18,16 +18,24 @@ bin_PROGRAMS = nm-tool
 noinst_PROGRAMS = nm-online libnm_glib_test
 
 nm_tool_SOURCES = nm-tool.c
-nm_tool_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS) $(HAL_LIBS)	\
-		$(top_builddir)/libnm-glib/libnm_glib.la \
-		$(top_builddir)/libnm-util/libnm-util.la
+nm_tool_LDADD = \
+	$(DBUS_LIBS) \
+	$(GLIB_LIBS) \
+	$(HAL_LIBS) \
+	$(top_builddir)/libnm-glib/libnm_glib.la \
+	$(top_builddir)/libnm-util/libnm-util.la
 
 nm_online_SOURCES = nm-online.c
-nm_online_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS) $(HAL_LIBS)	\
-		$(top_builddir)/libnm-util/libnm-util.la
+nm_online_LDADD = \
+	$(DBUS_LIBS) \
+	$(GLIB_LIBS) \
+	$(HAL_LIBS) \
+	$(top_builddir)/libnm-util/libnm-util.la
 
 libnm_glib_test_SOURCES = libnm_glib_test.c
-libnm_glib_test_LDADD =	$(DBUS_LIBS) $(GTHREAD_LIBS) \
-			$(top_builddir)/libnm-glib/libnm_glib.la \
-			$(top_builddir)/libnm-util/libnm-util.la
+libnm_glib_test_LDADD = \
+	$(DBUS_LIBS) \
+	$(GLIB_LIBS) \
+	$(top_builddir)/libnm-glib/libnm_glib.la \
+	$(top_builddir)/libnm-util/libnm-util.la
 

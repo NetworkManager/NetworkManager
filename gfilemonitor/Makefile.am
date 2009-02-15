@@ -24,6 +24,6 @@ libgfilemonitor_la_SOURCES = \
 	inotify-sub.c \
 	inotify-sub.h
 
-libgfilemonitor_la_CPPFLAGS = $(GTHREAD_CFLAGS)
+libgfilemonitor_la_CPPFLAGS = $(GLIB_CFLAGS)
 
-libgfilemonitor_la_LIBADD = $(GTHREAD_LIBS)
+libgfilemonitor_la_LIBADD = $(GLIB_LIBS)

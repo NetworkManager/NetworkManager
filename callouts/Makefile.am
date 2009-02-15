@@ -12,17 +12,17 @@ libexec_PROGRAMS = \
 nm_dhcp_client_action_SOURCES = \
 	nm-dhcp-client-action.c
 
-nm_dhcp_client_action_CPPFLAGS = 		\
-	$(DBUS_CFLAGS)						\
-	$(GTHREAD_CFLAGS)					\
-	-DDBUS_API_SUBJECT_TO_CHANGE		\
-	-DG_DISABLE_DEPRECATED				\
-	-DSYSCONFDIR=\"$(sysconfdir)\"		\
+nm_dhcp_client_action_CPPFLAGS = \
+	$(DBUS_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	-DDBUS_API_SUBJECT_TO_CHANGE \
+	-DG_DISABLE_DEPRECATED \
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DLIBEXECDIR=\"$(libexecdir)\"
 
 nm_dhcp_client_action_LDADD = \
 	$(DBUS_LIBS) \
-	$(GTHREAD_LIBS)
+	$(GLIB_LIBS)
 
 
 nm_avahi_autoipd_action_SOURCES = \
@@ -30,7 +30,7 @@ nm_avahi_autoipd_action_SOURCES = \
 
 nm_avahi_autoipd_action_CPPFLAGS = 		\
 	$(DBUS_CFLAGS)						\
-	$(GTHREAD_CFLAGS)					\
+	$(GLIB_CFLAGS)					\
 	-DDBUS_API_SUBJECT_TO_CHANGE		\
 	-DG_DISABLE_DEPRECATED				\
 	-DSYSCONFDIR=\"$(sysconfdir)\"		\
@@ -38,7 +38,7 @@ nm_avahi_autoipd_action_CPPFLAGS = 		\
 
 nm_avahi_autoipd_action_LDADD = \
 	$(DBUS_LIBS) \
-	$(GTHREAD_LIBS)
+	$(GLIB_LIBS)
 
 
 nm_dispatcher_action_SOURCES = \
@@ -50,7 +50,7 @@ nm_dispatcher_action_CPPFLAGS = \
 	-I${top_srcdir}/include \
 	-I${top_srcdir}/libnm-util \
 	$(DBUS_CFLAGS) \
-	$(GTHREAD_CFLAGS) \
+	$(GLIB_CFLAGS) \
 	-DDBUS_API_SUBJECT_TO_CHANGE \
 	-DG_DISABLE_DEPRECATED \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
@@ -58,7 +58,7 @@ nm_dispatcher_action_CPPFLAGS = \
 
 nm_dispatcher_action_LDADD = \
 	$(DBUS_LIBS) \
-	$(GTHREAD_LIBS) \
+	$(GLIB_LIBS) \
 	$(top_builddir)/libnm-glib/libnm_glib.la \
 	$(top_builddir)/libnm-util/libnm-util.la
 

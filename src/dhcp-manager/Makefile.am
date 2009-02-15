@@ -15,7 +15,7 @@ libdhcp_manager_la_SOURCES = \
 
 libdhcp_manager_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
-	$(GTHREAD_CFLAGS) \
+	$(GLIB_CFLAGS) \
 	$(HAL_CFLAGS) \
 	-DDBUS_API_SUBJECT_TO_CHANGE \
 	-DG_DISABLE_DEPRECATED \
@@ -28,7 +28,7 @@ libdhcp_manager_la_CPPFLAGS = \
 
 libdhcp_manager_la_LIBADD = \
 	$(DBUS_LIBS) \
-	$(GTHREAD_LIBS) \
+	$(GLIB_LIBS) \
 	$(top_builddir)/marshallers/libmarshallers.la
 
 EXTRA_DIST = \

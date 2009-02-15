@@ -150,7 +150,7 @@ BUILT_SOURCES = 					\
 
 NetworkManager_CPPFLAGS = 							\
 	$(DBUS_CFLAGS)									\
-	$(GTHREAD_CFLAGS)								\
+	$(GLIB_CFLAGS)								\
 	$(HAL_CFLAGS)									\
 	$(OPENSSL_CFLAGS)								\
 	$(LIBNL_CFLAGS)								\
@@ -168,7 +168,7 @@ NetworkManager_CPPFLAGS = 							\
 
 NetworkManager_LDADD = 							\
 	$(DBUS_LIBS)						\
-	$(GTHREAD_LIBS)					\
+	$(GLIB_LIBS)					\
 	$(HAL_LIBS)						\
 	$(LIBNL_LIBS)						\
 	$(top_builddir)/marshallers/libmarshallers.la	\
@@ -186,14 +186,14 @@ NetworkManager_LDFLAGS = -rdynamic
 libexec_PROGRAMS = nm-crash-logger
 nm_crash_logger_SOURCES = nm-crash-logger.c
 nm_crash_logger_CPPFLAGS = \
-	$(GTHREAD_CFLAGS)								\
+	$(GLIB_CFLAGS)								\
 	-DG_DISABLE_DEPRECATED							\
 	-DBINDIR=\"$(bindir)\"							\
 	-DSBINDIR=\"$(sbindir)\"							\
 	-DDATADIR=\"$(datadir)\"							\
 	-DSYSCONFDIR=\"$(sysconfdir)\"					\
 	-DLOCALSTATEDIR=\"$(localstatedir)\"
-nm_crash_logger_LDADD = $(GTHREAD_LIBS)
+nm_crash_logger_LDADD = $(GLIB_LIBS)
 
 
 NetworkManagerdir = $(datadir)/NetworkManager
