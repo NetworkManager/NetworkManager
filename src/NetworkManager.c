@@ -328,7 +328,9 @@ main (int argc, char *argv[])
 	setup_signals ();
 
 	nm_logging_setup (become_daemon);
+
 	nm_info ("starting...");
+	success = FALSE;
 
 	main_loop = g_main_loop_new (NULL, FALSE);
 
@@ -378,12 +380,14 @@ main (int argc, char *argv[])
 
 	/* Start our DBus service */
 	if (!nm_dbus_manager_start_service (dbus_mgr)) {
-		nm_warning ("Failed to start the dbus manager.");
+		nm_warning ("Failed to start the dbus service.");
 		goto done;
 	}
 
 	/* Bring up the loopback interface. */
 	nm_system_enable_loopback ();
+
+	success = TRUE;
 
 	/* Told to quit before getting to the mainloop by the signal handler */
 	if (quit_early == TRUE)
@@ -419,5 +423,6 @@ done:
 		unlink (pidfile);
 	g_free (pidfile);
 
-	exit (0);
+	nm_info ("exiting (%s)", success ? "success" : "error");
+	exit (success ? 0 : 1);
 }
