@@ -8,11 +8,11 @@ libmarshallers_la_SOURCES = \
 	nm-marshal-main.c
 
 libmarshallers_la_CPPFLAGS = \
-	$(GTHREAD_CFLAGS) \
+	$(GLIB_CFLAGS) \
 	-DG_DISABLE_DEPRECATED
 
 
-libmarshallers_la_LIBADD = $(GTHREAD_LIBS)
+libmarshallers_la_LIBADD = $(GLIB_LIBS)
 
 EXTRA_DIST = nm-marshal.list
 CLEANFILES = $(BUILT_SOURCES)

@@ -20,7 +20,7 @@ libsupplicant_manager_la_SOURCES = \
 
 libsupplicant_manager_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
-	$(GTHREAD_CFLAGS) \
+	$(GLIB_CFLAGS) \
 	$(HAL_CFLAGS) \
 	-DNM_PKGDATADIR=\"$(pkgdatadir)\" \
 	-DNM_LOCALSTATEDIR=\"$(localstatedir)\" \
@@ -28,6 +28,6 @@ libsupplicant_manager_la_CPPFLAGS = \
 
 libsupplicant_manager_la_LIBADD = \
 	$(DBUS_LIBS) \
-	$(GTHREAD_LIBS) \
+	$(GLIB_LIBS) \
 	$(top_builddir)/marshallers/libmarshallers.la
 

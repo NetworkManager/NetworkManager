@@ -20,11 +20,12 @@ libvpn_manager_la_SOURCES =	\
 
 libvpn_manager_la_CPPFLAGS =	\
 	$(DBUS_CFLAGS)		\
+	$(GLIB_CFLAGS)		\
 	-DG_DISABLE_DEPRECATED
 
 libvpn_manager_la_LIBADD =	\
 	$(DBUS_LIBS)		\
-	$(GTHREAD_LIBS)		\
+	$(GLIB_LIBS)		\
 	$(top_builddir)/marshallers/libmarshallers.la \
 	$(top_builddir)/libnm-util/libnm-util.la
 

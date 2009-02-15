@@ -16,5 +16,5 @@ libkeyfile_io_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS)
 
-libkeyfile_io_la_LIBADD = $(GTHREAD_LIBS)
+libkeyfile_io_la_LIBADD = $(GLIB_LIBS)
 

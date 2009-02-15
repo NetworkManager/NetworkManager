@@ -49,9 +49,9 @@ if TARGET_MANDRIVA
 libnmbackend_la_SOURCES += NetworkManagerMandriva.c
 endif
 
-libnmbackend_la_LIBADD += $(DBUS_LIBS) $(GTHREAD_LIBS)
+libnmbackend_la_LIBADD += $(DBUS_LIBS) $(GLIB_LIBS)
 libnmbackend_la_CPPFLAGS =	$(DBUS_CFLAGS)				\
-					$(GTHREAD_CFLAGS)				\
+					$(GLIB_CFLAGS)				\
 					$(HAL_CFLAGS)					\
 					-DDBUS_API_SUBJECT_TO_CHANGE		\
 					-DG_DISABLE_DEPRECATED			\

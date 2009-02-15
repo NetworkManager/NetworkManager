@@ -24,7 +24,6 @@ lib_LTLIBRARIES = libnm_glib.la libnm_glib_vpn.la
 
 libnm_glib_la_CFLAGS = 		\
 	$(GLIB_CFLAGS)		\
-	$(GTHREAD_CFLAGS)	\
 	$(DBUS_CFLAGS)		\
 	$(GCONF_CFLAGS)		\
 	$(GNOME_KEYRING_CFLAGS)
@@ -86,7 +85,6 @@ libnm_glib_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la	\
 	$(top_builddir)/marshallers/libmarshallers.la	\
 	$(GLIB_LIBS)					\
-	$(GTHREAD_LIBS)					\
 	$(DBUS_LIBS)					\
 	$(GCONF_LIBS)					\
 	$(GNOME_KEYRING_LIBS)
