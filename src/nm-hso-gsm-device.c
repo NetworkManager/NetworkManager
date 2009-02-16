@@ -43,6 +43,7 @@ G_DEFINE_TYPE (NMHsoGsmDevice, nm_hso_gsm_device, NM_TYPE_GSM_DEVICE)
 extern const DBusGObjectInfo dbus_glib_nm_gsm_device_object_info;
 
 #define GSM_CID "gsm-cid"
+#define HSO_CALL_STARTED "call-started"
 #define HSO_SECRETS_TRIES "gsm-secrets-tries"
 
 typedef struct {
@@ -123,12 +124,17 @@ hso_call_done (NMSerialDevice *device,
                const char *reply,
                gpointer user_data)
 {
+	NMActRequest *req;
 	gboolean success = FALSE;
 
 	switch (reply_index) {
 	case 0:
 		nm_info ("Connected, Woo!");
 		success = TRUE;
+
+		req = nm_device_get_act_request (NM_DEVICE (device));
+		g_assert (req);
+		g_object_set_data (G_OBJECT (req), HSO_CALL_STARTED, GUINT_TO_POINTER (TRUE));
 		break;
 	default:
 		nm_warning ("Connect request failed");
@@ -426,7 +432,7 @@ real_deactivate_quickly (NMDevice *device)
 	NMHsoGsmDevicePrivate *priv = NM_HSO_GSM_DEVICE_GET_PRIVATE (device);
 	NMActRequest *req;
 	NMConnection *connection;
-	guint cid;
+	guint cid, call_started;
 	char *command;
 
 	if (priv->pending_ip4_config) {
@@ -438,7 +444,8 @@ real_deactivate_quickly (NMDevice *device)
 	req = nm_device_get_act_request (device);
 	if (req) {
 		cid = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (req), GSM_CID));
-		if (cid) {
+		call_started = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (req), HSO_CALL_STARTED));
+		if (cid && call_started) {
 			const char *responses[] = { "OK", "ERROR", "ERR", NULL };
 			int reply;
 
