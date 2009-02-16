@@ -356,6 +356,7 @@ static NMActStageReturn
 real_act_stage3_ip_config_start (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMActRequest *req;
+	NMConnection *connection;
 	char *command;
 	gint cid;
 	const char *responses[] = { "_OWANDATA: ", NULL };
@@ -363,6 +364,10 @@ real_act_stage3_ip_config_start (NMDevice *device, NMDeviceStateReason *reason)
 
 	req = nm_device_get_act_request (device);
 	g_assert (req);
+
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+	g_object_set_data (G_OBJECT (connection), HSO_SECRETS_TRIES, NULL);
 
 	cid = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (req), GSM_CID));
 	command = g_strdup_printf ("AT_OWANDATA=%d", cid);
@@ -420,6 +425,7 @@ real_deactivate_quickly (NMDevice *device)
 {
 	NMHsoGsmDevicePrivate *priv = NM_HSO_GSM_DEVICE_GET_PRIVATE (device);
 	NMActRequest *req;
+	NMConnection *connection;
 	guint cid;
 	char *command;
 
@@ -444,6 +450,11 @@ real_deactivate_quickly (NMDevice *device)
 			reply = nm_serial_device_wait_reply_blocking (NM_SERIAL_DEVICE (device), 5, responses, responses);
 			g_free (command);
 		}
+
+		/* Clear the secrets attempts counter */
+		connection = nm_act_request_get_connection (req);
+		g_assert (connection);
+		g_object_set_data (G_OBJECT (connection), HSO_SECRETS_TRIES, NULL);
 	}
 
 	if (NM_DEVICE_CLASS (nm_hso_gsm_device_parent_class)->deactivate_quickly)
