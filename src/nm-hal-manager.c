@@ -99,8 +99,9 @@ static gboolean poll_killswitches (gpointer user_data);
 /* Device creators */
 
 typedef struct {
-	char *device_type_name;
+	GType device_type;
 	char *capability_str;
+	char *category;
 	gboolean (*is_device_fn) (NMHalManager *self, const char *udi);
 	NMDeviceCreatorFn creator_fn;
 } DeviceCreator;
@@ -128,24 +129,15 @@ get_creator (NMHalManager *self, const char *udi)
 /* Common helpers for built-in device creators */
 
 static char *
-nm_get_device_driver_name (LibHalContext *ctx, const char *udi)
+nm_get_device_driver_name (LibHalContext *ctx, const char *origdev_udi)
 {
-	char *origdev_udi;
 	char *driver_name = NULL;
-
-	origdev_udi = libhal_device_get_property_string (ctx, udi, "net.originating_device", NULL);
-	if (!origdev_udi) {
-		/* Older HAL uses 'physical_device' */
-		origdev_udi = libhal_device_get_property_string (ctx, udi, "net.physical_device", NULL);
-	}
 
 	if (origdev_udi && libhal_device_property_exists (ctx, origdev_udi, "info.linux.driver", NULL)) {
 		char *drv = libhal_device_get_property_string (ctx, origdev_udi, "info.linux.driver", NULL);
 		driver_name = g_strdup (drv);
 		libhal_free_string (drv);
 	}
-	libhal_free_string (origdev_udi);
-
 	return driver_name;
 }
 
@@ -172,7 +164,10 @@ is_wired_device (NMHalManager *self, const char *udi)
 }
 
 static GObject *
-wired_device_creator (NMHalManager *self, const char *udi, gboolean managed)
+wired_device_creator (NMHalManager *self,
+                      const char *udi,
+                      const char *origdev_udi,
+                      gboolean managed)
 {
 	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
 	GObject *device;
@@ -185,7 +180,7 @@ wired_device_creator (NMHalManager *self, const char *udi, gboolean managed)
 		return NULL;
 	}
 
-	driver = nm_get_device_driver_name (priv->hal_ctx, udi);
+	driver = nm_get_device_driver_name (priv->hal_ctx, origdev_udi);
 	device = (GObject *) nm_device_ethernet_new (udi, iface, driver, managed);
 
 	libhal_free_string (iface);
@@ -217,7 +212,10 @@ is_wireless_device (NMHalManager *self, const char *udi)
 }
 
 static GObject *
-wireless_device_creator (NMHalManager *self, const char *udi, gboolean managed)
+wireless_device_creator (NMHalManager *self,
+                         const char *udi,
+                         const char *origdev_udi,
+                         gboolean managed)
 {
 	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
 	GObject *device;
@@ -230,7 +228,7 @@ wireless_device_creator (NMHalManager *self, const char *udi, gboolean managed)
 		return NULL;
 	}
 
-	driver = nm_get_device_driver_name (priv->hal_ctx, udi);
+	driver = nm_get_device_driver_name (priv->hal_ctx, origdev_udi);
 	device = (GObject *) nm_device_wifi_new (udi, iface, driver, managed);
 
 	libhal_free_string (iface);
@@ -247,19 +245,51 @@ register_built_in_creators (NMHalManager *self)
 
 	/* Wired device */
 	creator = g_slice_new0 (DeviceCreator);
-	creator->device_type_name = g_strdup ("Ethernet");
+	creator->device_type = NM_TYPE_DEVICE_ETHERNET;
 	creator->capability_str = g_strdup ("net.80203");
+	creator->category = g_strdup ("net");
 	creator->is_device_fn = is_wired_device;
 	creator->creator_fn = wired_device_creator;
 	priv->device_creators = g_slist_append (priv->device_creators, creator);
 
 	/* Wireless device */
 	creator = g_slice_new0 (DeviceCreator);
-	creator->device_type_name = g_strdup ("802.11 WiFi");
+	creator->device_type = NM_TYPE_DEVICE_WIFI;
 	creator->capability_str = g_strdup ("net.80211");
+	creator->category = g_strdup ("net");
 	creator->is_device_fn = is_wireless_device;
 	creator->creator_fn = wireless_device_creator;
 	priv->device_creators = g_slist_append (priv->device_creators, creator);
+}
+
+static void
+emit_udi_added (NMHalManager *self, const char *udi, DeviceCreator *creator)
+{
+	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
+	char *od, *tmp;
+
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (udi != NULL);
+	g_return_if_fail (creator != NULL);
+
+	tmp = g_strdup_printf ("%s.originating_device", creator->category);
+	od = libhal_device_get_property_string (priv->hal_ctx, udi, tmp, NULL);
+	g_free (tmp);
+
+	if (!od) {
+		/* Older HAL uses 'physical_device' */
+		tmp = g_strdup_printf ("%s.physical_device", creator->category);
+		od = libhal_device_get_property_string (priv->hal_ctx, udi, tmp, NULL);
+		g_free (tmp);
+	}
+
+	g_signal_emit (self, signals[UDI_ADDED], 0,
+	               udi,
+	               od,
+	               GSIZE_TO_POINTER (creator->device_type),
+	               creator->creator_fn);
+
+	libhal_free_string (od);
 }
 
 static void
@@ -268,23 +298,19 @@ device_added (LibHalContext *ctx, const char *udi)
 	NMHalManager *self = NM_HAL_MANAGER (libhal_ctx_get_user_data (ctx));
 	DeviceCreator *creator;
 
-//	nm_debug ("New device added (hal udi is '%s').", udi );
-
-	/* Sometimes the device's properties (like net.interface) are not set up yet,
-	 * so this call will fail, and it will actually be added when hal sets the device's
-	 * capabilities a bit later on.
+	/* If not all the device's properties are set up yet (like net.interface),
+	 * the device will actually get added later when HAL signals new device
+	 * capabilties.
 	 */
 	creator = get_creator (self, udi);
 	if (creator)
-		g_signal_emit (self, signals[UDI_ADDED], 0, udi, creator->device_type_name, creator->creator_fn);
+		emit_udi_added (self, udi, creator);
 }
 
 static void
 device_removed (LibHalContext *ctx, const char *udi)
 {
 	NMHalManager *self = NM_HAL_MANAGER (libhal_ctx_get_user_data (ctx));
-
-//	nm_debug ("Device removed (hal udi is '%s').", udi );
 
 	g_signal_emit (self, signals[UDI_REMOVED], 0, udi);
 }
@@ -295,11 +321,9 @@ device_new_capability (LibHalContext *ctx, const char *udi, const char *capabili
 	NMHalManager *self = NM_HAL_MANAGER (libhal_ctx_get_user_data (ctx));
 	DeviceCreator *creator;
 
-//	nm_debug ("nm_hal_device_new_capability() called with udi = %s, capability = %s", udi, capability );
-
 	creator = get_creator (self, udi);
 	if (creator)
-		g_signal_emit (self, signals[UDI_ADDED], 0, udi, creator->device_type_name, creator->creator_fn);
+		emit_udi_added (self, udi, creator);
 }
 
 static RfKillState
@@ -387,21 +411,20 @@ add_initial_devices (NMHalManager *self)
 
 		dbus_error_init (&err);
 		devices = libhal_find_device_by_capability (priv->hal_ctx,
-													creator->capability_str,
-													&num_devices,
-													&err);
-
+		                                            creator->capability_str,
+		                                            &num_devices,
+		                                            &err);
 		if (dbus_error_is_set (&err)) {
 			nm_warning ("could not find existing devices: %s", err.message);
 			dbus_error_free (&err);
+			continue;
 		}
+		if (!devices)
+			continue;
 
-		if (devices) {
-			for (i = 0; i < num_devices; i++) {
-				if (!creator->is_device_fn (self, devices[i]))
-					continue;
-				g_signal_emit (self, signals[UDI_ADDED], 0, devices[i], creator->device_type_name, creator->creator_fn);
-			}
+		for (i = 0; i < num_devices; i++) {
+			if (creator->is_device_fn (self, devices[i]))
+				emit_udi_added (self, devices[i], creator);
 		}
 
 		libhal_free_string_array (devices);
@@ -828,8 +851,8 @@ destroy_creator (gpointer data, gpointer user_data)
 {
 	DeviceCreator *creator = (DeviceCreator *) data;
 
-	g_free (creator->device_type_name);
 	g_free (creator->capability_str);
+	g_free (creator->category);
 	g_slice_free (DeviceCreator, data);
 }
 
@@ -884,9 +907,9 @@ nm_hal_manager_class_init (NMHalManagerClass *klass)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMHalManagerClass, udi_added),
 					  NULL, NULL,
-					  _nm_marshal_VOID__STRING_STRING_POINTER,
-					  G_TYPE_NONE, 3,
-					  G_TYPE_STRING, G_TYPE_STRING, G_TYPE_POINTER);
+					  _nm_marshal_VOID__STRING_STRING_POINTER_POINTER,
+					  G_TYPE_NONE, 4,
+					  G_TYPE_STRING, G_TYPE_STRING, G_TYPE_POINTER, G_TYPE_POINTER);
 
 	signals[UDI_REMOVED] =
 		g_signal_new ("udi-removed",

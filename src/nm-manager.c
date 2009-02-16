@@ -32,6 +32,7 @@
 #include "nm-modem-manager.h"
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
+#include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
 #include "NetworkManagerSystem.h"
 #include "nm-properties-changed-signal.h"
@@ -78,7 +79,8 @@ static void connection_added_default_handler (NMManager *manager,
 
 static void hal_manager_udi_added_cb (NMHalManager *hal_mgr,
                                       const char *udi,
-                                      const char *type_name,
+                                      const char *originating_device,
+                                      gpointer general_type_ptr,
                                       NMDeviceCreatorFn creator_fn,
                                       gpointer user_data);
 
@@ -97,10 +99,11 @@ static void system_settings_properties_changed_cb (DBusGProxy *proxy,
                                                    GHashTable *properties,
                                                    gpointer user_data);
 
-static void add_device (NMManager *self, NMDevice *device, const char *type_name);
+static void add_device (NMManager *self, NMDevice *device);
 static void remove_one_device (NMManager *manager, NMDevice *device);
 
 #define SSD_POKE_INTERVAL 120
+#define ORIGDEV_TAG "originating-device"
 
 typedef struct {
 	DBusGMethodInvocation *context;
@@ -265,7 +268,7 @@ modem_added (NMModemManager *modem_manager,
 	else
 		type_name = "Unknown modem";
 
-	add_device (NM_MANAGER (user_data), NM_DEVICE (g_object_ref (modem)), type_name);
+	add_device (NM_MANAGER (user_data), NM_DEVICE (g_object_ref (modem)));
 }
 
 static void
@@ -1699,7 +1702,7 @@ next:
 }
 
 static void
-add_device (NMManager *self, NMDevice *device, const char *type_name)
+add_device (NMManager *self, NMDevice *device)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	const char *iface;
@@ -1707,23 +1710,32 @@ add_device (NMManager *self, NMDevice *device, const char *type_name)
 	priv->devices = g_slist_append (priv->devices, device);
 
 	g_signal_connect (device, "state-changed",
-				   G_CALLBACK (manager_device_state_changed),
-				   self);
+					  G_CALLBACK (manager_device_state_changed),
+					  self);
 
 	/* Attach to the access-point-added signal so that the manager can fill
 	 * non-SSID-broadcasting APs with an SSID.
 	 */
 	if (NM_IS_DEVICE_WIFI (device)) {
 		g_signal_connect (device, "hidden-ap-found",
-					   G_CALLBACK (manager_hidden_ap_found),
-					   self);
+						  G_CALLBACK (manager_hidden_ap_found),
+						  self);
 
 		/* Set initial rfkill state */
 		nm_device_wifi_set_enabled (NM_DEVICE_WIFI (device), priv->wireless_enabled);
 	}
 
 	iface = nm_device_get_iface (device);
-	nm_info ("Found new %s device '%s'.", type_name, iface);
+	if (NM_IS_DEVICE_ETHERNET (device))
+		nm_info ("Found new Ethernet device '%s'.", iface);
+	else if (NM_IS_DEVICE_WIFI (device))
+		nm_info ("Found new 802.11 WiFi device '%s'.", iface);
+	else if (nm_device_get_device_type (device) == NM_DEVICE_TYPE_GSM)
+		nm_info ("Found new GSM device '%s'.", iface);
+	else if (nm_device_get_device_type (device) == NM_DEVICE_TYPE_CDMA)
+		nm_info ("Found new CDMA device '%s'.", iface);
+	else
+		g_assert_not_reached ();
 
 	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (priv->dbus_mgr),
 								  nm_device_get_udi (NM_DEVICE (device)),
@@ -1736,7 +1748,8 @@ add_device (NMManager *self, NMDevice *device, const char *type_name)
 static void
 hal_manager_udi_added_cb (NMHalManager *hal_mgr,
                           const char *udi,
-                          const char *type_name,
+                          const char *originating_device,
+                          gpointer general_type_ptr,
                           NMDeviceCreatorFn creator_fn,
                           gpointer user_data)
 {
@@ -1751,11 +1764,11 @@ hal_manager_udi_added_cb (NMHalManager *hal_mgr,
 	if (nm_manager_get_device_by_udi (self, udi))
 		return;
 
-	device = creator_fn (hal_mgr, udi, nm_manager_udi_is_managed (self, udi));
+	device = creator_fn (hal_mgr, udi, originating_device, nm_manager_udi_is_managed (self, udi));
 	if (!device)
 		return;
 
-	add_device (self, NM_DEVICE (device), type_name);
+	add_device (self, NM_DEVICE (device));
 }
 
 static void

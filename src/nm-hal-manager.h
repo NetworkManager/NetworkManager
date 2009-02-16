@@ -46,6 +46,7 @@ typedef struct {
 
 typedef GObject *(*NMDeviceCreatorFn) (NMHalManager *manager,
                                        const char *udi,
+                                       const char *origdev_udi,
                                        gboolean managed);
 
 typedef struct {
@@ -54,7 +55,8 @@ typedef struct {
 	/* Virtual functions */
 	void (*udi_added) (NMHalManager *manager,
 	                   const char *udi,
-	                   const char *type_name,
+	                   const char *originating_device,
+	                   gpointer general_device_type,
 	                   NMDeviceCreatorFn creator_fn);
 
 	void (*udi_removed) (NMHalManager *manager, const char *udi);
