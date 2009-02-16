@@ -148,37 +148,39 @@ BUILT_SOURCES = 					\
 	nm-active-connection-glue.h \
 	nm-dhcp4-config-glue.h
 
-NetworkManager_CPPFLAGS = 							\
-	$(DBUS_CFLAGS)									\
-	$(GLIB_CFLAGS)								\
-	$(HAL_CFLAGS)									\
-	$(OPENSSL_CFLAGS)								\
-	$(LIBNL_CFLAGS)								\
-	-DDBUS_API_SUBJECT_TO_CHANGE						\
-	-DG_DISABLE_DEPRECATED							\
-	-DBINDIR=\"$(bindir)\"							\
-	-DSBINDIR=\"$(sbindir)\"							\
-	-DLIBEXECDIR=\"$(libexecdir)\"					\
-	-DDATADIR=\"$(datadir)\"							\
-	-DSYSCONFDIR=\"$(sysconfdir)\"					\
-	-DLOCALSTATEDIR=\"$(localstatedir)\"				\
-	-DNM_RUN_DIR=\"$(rundir)\"						\
-	-DNMLOCALEDIR=\"$(datadir)/locale\"				\
+NetworkManager_CPPFLAGS = \
+	$(DBUS_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(HAL_CFLAGS) \
+	$(OPENSSL_CFLAGS) \
+	$(LIBNL_CFLAGS) \
+	$(LIBUDEV_CFLAGS) \
+	-DDBUS_API_SUBJECT_TO_CHANGE \
+	-DG_DISABLE_DEPRECATED \
+	-DBINDIR=\"$(bindir)\" \
+	-DSBINDIR=\"$(sbindir)\" \
+	-DLIBEXECDIR=\"$(libexecdir)\" \
+	-DDATADIR=\"$(datadir)\" \
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
+	-DLOCALSTATEDIR=\"$(localstatedir)\" \
+	-DNM_RUN_DIR=\"$(rundir)\" \
+	-DNMLOCALEDIR=\"$(datadir)/locale\" \
 	-DARP_DEBUG
 
-NetworkManager_LDADD = 							\
-	$(DBUS_LIBS)						\
-	$(GLIB_LIBS)					\
-	$(HAL_LIBS)						\
-	$(LIBNL_LIBS)						\
-	$(top_builddir)/marshallers/libmarshallers.la	\
-	./named-manager/libnamed-manager.la	\
-	./vpn-manager/libvpn-manager.la		\
-	./dhcp-manager/libdhcp-manager.la		\
-	./supplicant-manager/libsupplicant-manager.la		\
-	./dnsmasq-manager/libdnsmasq-manager.la		\
-	./ppp-manager/libppp-manager.la		\
-	./backends/libnmbackend.la			\
+NetworkManager_LDADD = \
+	$(DBUS_LIBS) \
+	$(GLIB_LIBS) \
+	$(HAL_LIBS) \
+	$(LIBNL_LIBS) \
+	$(LIBUDEV_LIBS) \
+	$(top_builddir)/marshallers/libmarshallers.la \
+	./named-manager/libnamed-manager.la \
+	./vpn-manager/libvpn-manager.la \
+	./dhcp-manager/libdhcp-manager.la \
+	./supplicant-manager/libsupplicant-manager.la \
+	./dnsmasq-manager/libdnsmasq-manager.la \
+	./ppp-manager/libppp-manager.la \
+	./backends/libnmbackend.la \
 	$(top_builddir)/libnm-util/libnm-util.la
 
 NetworkManager_LDFLAGS = -rdynamic

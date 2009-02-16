@@ -19,12 +19,20 @@
  * Copyright (C) 2007 - 2008 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/wait.h>
 #include <libhal.h>
 #include <dbus/dbus-glib.h>
 #include <dbus/dbus-glib-lowlevel.h>
+
+#if HAVE_LIBUDEV
+#define LIBUDEV_I_KNOW_THE_API_IS_SUBJECT_TO_CHANGE
+#include <libudev.h>
+#endif /* HAVE_LIBUDEV */
 
 #include "nm-glib-compat.h"
 #include "nm-hal-manager.h"
@@ -80,8 +88,9 @@ static gboolean poll_killswitches (gpointer user_data);
 /* Device creators */
 
 typedef struct {
-	char *device_type_name;
+	GType device_type;
 	char *capability_str;
+	char *category;
 	gboolean (*is_device_fn) (NMHalManager *self, const char *udi);
 	NMDeviceCreatorFn creator_fn;
 } DeviceCreator;
@@ -109,24 +118,15 @@ get_creator (NMHalManager *self, const char *udi)
 /* Common helpers for built-in device creators */
 
 static char *
-nm_get_device_driver_name (LibHalContext *ctx, const char *udi)
+nm_get_device_driver_name (LibHalContext *ctx, const char *origdev_udi)
 {
-	char *origdev_udi;
 	char *driver_name = NULL;
-
-	origdev_udi = libhal_device_get_property_string (ctx, udi, "net.originating_device", NULL);
-	if (!origdev_udi) {
-		/* Older HAL uses 'physical_device' */
-		origdev_udi = libhal_device_get_property_string (ctx, udi, "net.physical_device", NULL);
-	}
 
 	if (origdev_udi && libhal_device_property_exists (ctx, origdev_udi, "info.linux.driver", NULL)) {
 		char *drv = libhal_device_get_property_string (ctx, origdev_udi, "info.linux.driver", NULL);
 		driver_name = g_strdup (drv);
 		libhal_free_string (drv);
 	}
-	libhal_free_string (origdev_udi);
-
 	return driver_name;
 }
 
@@ -153,7 +153,10 @@ is_wired_device (NMHalManager *self, const char *udi)
 }
 
 static GObject *
-wired_device_creator (NMHalManager *self, const char *udi, gboolean managed)
+wired_device_creator (NMHalManager *self,
+                      const char *udi,
+                      const char *origdev_udi,
+                      gboolean managed)
 {
 	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
 	GObject *device;
@@ -166,7 +169,7 @@ wired_device_creator (NMHalManager *self, const char *udi, gboolean managed)
 		return NULL;
 	}
 
-	driver = nm_get_device_driver_name (priv->hal_ctx, udi);
+	driver = nm_get_device_driver_name (priv->hal_ctx, origdev_udi);
 	device = (GObject *) nm_device_ethernet_new (udi, iface, driver, managed);
 
 	libhal_free_string (iface);
@@ -198,7 +201,10 @@ is_wireless_device (NMHalManager *self, const char *udi)
 }
 
 static GObject *
-wireless_device_creator (NMHalManager *self, const char *udi, gboolean managed)
+wireless_device_creator (NMHalManager *self,
+                         const char *udi,
+                         const char *origdev_udi,
+                         gboolean managed)
 {
 	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
 	GObject *device;
@@ -211,7 +217,7 @@ wireless_device_creator (NMHalManager *self, const char *udi, gboolean managed)
 		return NULL;
 	}
 
-	driver = nm_get_device_driver_name (priv->hal_ctx, udi);
+	driver = nm_get_device_driver_name (priv->hal_ctx, origdev_udi);
 	device = (GObject *) nm_device_wifi_new (udi, iface, driver, managed);
 
 	libhal_free_string (iface);
@@ -285,76 +291,284 @@ get_hso_netdev (LibHalContext *ctx, const char *udi)
 	return netdev;
 }
 
-static GObject *
-modem_device_creator (NMHalManager *self, const char *udi, gboolean managed)
+#define PROP_GSM   "ID_MODEM_GSM"
+#define PROP_CDMA  "ID_MODEM_IS707_A"
+#define PROP_EVDO1 "ID_MODEM_IS856"
+#define PROP_EVDOA "ID_MODEM_IS856_A"
+
+#if HAVE_LIBUDEV
+
+typedef struct {
+	gboolean gsm;
+	gboolean cdma;
+} UdevIterData;
+
+#if UDEV_VERSION >= 129
+static const char *
+get_udev_property (struct udev_device *device, const char *name)
 {
-	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
-	char *serial_device;
-	char *parent_udi;
-	char *driver_name = NULL;
-	GObject *device = NULL;
-	char **capabilities, **iter;
-	gboolean type_gsm = FALSE;
-	gboolean type_cdma = FALSE;
-	char *netdev = NULL;
+	struct udev_list_entry *entry;
 
-	serial_device = libhal_device_get_property_string (priv->hal_ctx, udi, "serial.device", NULL);
-
-	/* Get the driver */
-	parent_udi = libhal_device_get_property_string (priv->hal_ctx, udi, "info.parent", NULL);
-	if (parent_udi) {
-		driver_name = libhal_device_get_property_string (priv->hal_ctx, parent_udi, "info.linux.driver", NULL);
-		libhal_free_string (parent_udi);
+	udev_list_entry_foreach (entry, udev_device_get_properties_list_entry (device)) {
+		if (strcmp (udev_list_entry_get_name (entry), name) == 0)
+			return udev_list_entry_get_value (entry);
 	}
 
-	if (!serial_device || !driver_name)
-		goto out;
+	return NULL;
+}
+#else
+static int udev_device_prop_iter(struct udev_device *udev_device,
+                                 const char *key,
+                                 const char *value,
+                                 void *data)
+{
+	UdevIterData *types = data;
 
-	capabilities = libhal_device_get_property_strlist (priv->hal_ctx, udi, "modem.command_sets", NULL);
+	if (!strcmp (key, PROP_GSM) && !strcmp (value, "1"))
+		types->gsm = TRUE;
+	if (!strcmp (key, PROP_CDMA) && !strcmp (value, "1"))
+		types->cdma = TRUE;
+	if (!strcmp (key, PROP_EVDO1) && !strcmp (value, "1"))
+		types->cdma = TRUE;
+	if (!strcmp (key, PROP_EVDOA) && !strcmp (value, "1"))
+		types->cdma = TRUE;
+
+	/* Return 0 to continue looking */
+	return types->gsm && types->cdma;
+}
+#endif
+
+static gboolean
+libudev_get_modem_capabilities (const char *sysfs_path,
+                                gboolean *gsm,
+                                gboolean *cdma)
+{
+	struct udev *udev;
+	struct udev_device *device;
+
+	g_return_val_if_fail (sysfs_path != NULL, FALSE);
+	g_return_val_if_fail (gsm != NULL, FALSE);
+	g_return_val_if_fail (*gsm == FALSE, FALSE);
+	g_return_val_if_fail (cdma != NULL, FALSE);
+	g_return_val_if_fail (*cdma == FALSE, FALSE);
+
+	udev = udev_new ();
+	if (!udev)
+		return FALSE;
+
+#if UDEV_VERSION >= 129
+	device = udev_device_new_from_syspath (udev, sysfs_path);
+#else
+	/* udev_device_new_from_devpath() requires the sysfs mount point to be
+	 * stripped off the path.
+	 */
+	if (!strncmp (sysfs_path, "/sys", 4))
+		sysfs_path += 4;
+	device = udev_device_new_from_devpath (udev, sysfs_path);
+#endif
+	if (!device) {
+		udev_unref (udev);
+		nm_warning ("couldn't inspect device '%s' with libudev", sysfs_path);
+		return FALSE;
+	}
+
+#if UDEV_VERSION >= 129
+	{
+		const char *gsm_val = get_udev_property (device, PROP_GSM);
+		const char *cdma_val = get_udev_property (device, PROP_CDMA);
+		const char *evdo1_val = get_udev_property (device, PROP_EVDO1);
+		const char *evdoa_val = get_udev_property (device, PROP_EVDOA);
+
+		if (gsm_val && !strcmp (gsm_val, "1"))
+			*gsm = TRUE;
+		if (cdma_val && !strcmp (cdma_val, "1"))
+			*cdma = TRUE;
+		if (evdo1_val && !strcmp (evdo1_val, "1"))
+			*cdma = TRUE;
+		if (evdoa_val && !strcmp (evdoa_val, "1"))
+			*cdma = TRUE;
+	}
+#else
+	{
+		UdevIterData iterdata = { FALSE, FALSE };
+
+		udev_device_get_properties (device, udev_device_prop_iter, &iterdata);
+		*gsm = iterdata.gsm;
+		*cdma = iterdata.cdma;
+	}
+#endif
+
+	udev_device_unref (device);
+	udev_unref (udev);
+	return TRUE;
+}
+#else
+static gboolean
+udevadm_get_modem_capabilities (const char *sysfs_path,
+                                gboolean *gsm,
+                                gboolean *cdma)
+{
+	char *udevadm_argv[] = { "/sbin/udevadm", "info", "--query=env", NULL, NULL };
+	char *syspath_arg = NULL;
+	char *udevadm_stdout = NULL;
+	int exitcode;
+	GError *error = NULL;
+	char **lines = NULL, **iter;
+	gboolean success = FALSE;
+
+	g_return_val_if_fail (sysfs_path != NULL, FALSE);
+	g_return_val_if_fail (gsm != NULL, FALSE);
+	g_return_val_if_fail (*gsm == FALSE, FALSE);
+	g_return_val_if_fail (cdma != NULL, FALSE);
+	g_return_val_if_fail (*cdma == FALSE, FALSE);
+
+	udevadm_argv[3] = syspath_arg = g_strdup_printf ("--path=%s", sysfs_path);
+	if (g_spawn_sync ("/", udevadm_argv, NULL, 0, NULL, NULL,
+			  &udevadm_stdout,
+			  NULL,
+			  &exitcode,
+			  &error) != TRUE) {
+		nm_warning ("could not run udevadm to get modem capabilities for '%s': %s",
+		            sysfs_path,
+		            (error && error->message) ? error->message : "(unknown)");
+		g_clear_error (&error);
+		goto error;
+	}
+
+	if (exitcode != 0) {
+		nm_warning ("udevadm error while getting modem capabilities for '%s': %d",
+		            sysfs_path, WEXITSTATUS (exitcode));
+		goto error;
+	}
+
+	lines = g_strsplit_set (udevadm_stdout, "\n\r", -1);
+	for (iter = lines; *iter; iter++) {
+		if (!strcmp (*iter, PROP_GSM "=1")) {
+			*gsm = TRUE;
+			break;
+		} else if (   !strcmp (*iter, PROP_CDMA "=1")
+		           || !strcmp (*iter, PROP_EVDO1 "=1")
+		           || !strcmp (*iter, PROP_EVDOA "=1")) {
+			*cdma = TRUE;
+			break;
+		}
+	}
+	success = TRUE;
+
+error:
+	if (lines)
+		g_strfreev (lines);
+	g_free (udevadm_stdout);
+	g_free (syspath_arg);
+	return success;
+}
+#endif
+
+static gboolean
+hal_get_modem_capabilities (LibHalContext *ctx,
+                            const char *udi,
+                            gboolean *gsm,
+                            gboolean *cdma)
+{
+	char **capabilities, **iter;
+
+	g_return_val_if_fail (ctx != NULL, FALSE);
+	g_return_val_if_fail (udi != NULL, FALSE);
+	g_return_val_if_fail (gsm != NULL, FALSE);
+	g_return_val_if_fail (*gsm == FALSE, FALSE);
+	g_return_val_if_fail (cdma != NULL, FALSE);
+	g_return_val_if_fail (*cdma == FALSE, FALSE);
+
+	/* Make sure it has the 'modem' capability first */
+	if (!libhal_device_query_capability (ctx, udi, "modem", NULL))
+		return TRUE;
+
+	capabilities = libhal_device_get_property_strlist (ctx, udi, "modem.command_sets", NULL);
 	/* 'capabilites' may be NULL */
 	for (iter = capabilities; iter && *iter; iter++) {
 		if (!strcmp (*iter, "GSM-07.07")) {
-			type_gsm = TRUE;
+			*gsm = TRUE;
 			break;
 		}
 		if (!strcmp (*iter, "IS-707-A")) {
-			type_cdma = TRUE;
+			*cdma = TRUE;
 			break;
 		}
 	}
 	g_strfreev (capabilities);
 
 	/* Compatiblity with the pre-specification bits */
-	if (!type_gsm && !type_cdma) {
-		capabilities = libhal_device_get_property_strlist (priv->hal_ctx, udi, "info.capabilities", NULL);
+	if (!*gsm && !*cdma) {
+		capabilities = libhal_device_get_property_strlist (ctx, udi, "info.capabilities", NULL);
 		for (iter = capabilities; *iter; iter++) {
 			if (!strcmp (*iter, "gsm")) {
-				type_gsm = TRUE;
+				*gsm = TRUE;
 				break;
 			}
 			if (!strcmp (*iter, "cdma")) {
-				type_cdma = TRUE;
+				*cdma = TRUE;
 				break;
 			}
 		}
-		g_strfreev (capabilities);
 	}
 
+	if (capabilities)
+		g_strfreev (capabilities);
+	return TRUE;
+}
+
+static GObject *
+modem_device_creator (NMHalManager *self,
+                      const char *udi,
+                      const char *origdev_udi,
+                      gboolean managed)
+{
+	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
+	char *serial_device;
+	char *sysfs_path;
+	char *driver = NULL;
+	GObject *device = NULL;
+	gboolean type_gsm = FALSE;
+	gboolean type_cdma = FALSE;
+	char *netdev = NULL;
+
+	serial_device = libhal_device_get_property_string (priv->hal_ctx, udi, "serial.device", NULL);
+	driver = nm_get_device_driver_name (priv->hal_ctx, origdev_udi);
+	if (!serial_device || !driver)
+		goto out;
+
+	/* Try udev first */
+	sysfs_path = libhal_device_get_property_string (priv->hal_ctx, udi, "linux.sysfs_path", NULL);
+	if (!sysfs_path) {
+		nm_warning ("could not determine sysfs path for '%s'", serial_device);
+		goto out;
+	}
+#if HAVE_LIBUDEV
+	libudev_get_modem_capabilities (sysfs_path, &type_gsm, &type_cdma);
+#else
+	udevadm_get_modem_capabilities (sysfs_path, &type_gsm, &type_cdma);
+#endif
+	libhal_free_string (sysfs_path);
+
+	/* If udev didn't know anything, try deprecated HAL modem capabilities */
+	if (!type_gsm && !type_cdma)
+		hal_get_modem_capabilities (priv->hal_ctx, udi, &type_gsm, &type_cdma);
+
 	/* Special handling of 'hso' cards (until punted out to a modem manager) */
-	if (type_gsm && !strcmp (driver_name, "hso"))
+	if (type_gsm && !strcmp (driver, "hso"))
 		netdev = get_hso_netdev (priv->hal_ctx, udi);
 
 	if (type_gsm) {
 		if (netdev)
-			device = (GObject *) nm_hso_gsm_device_new (udi, serial_device + strlen ("/dev/"), NULL, netdev, driver_name, managed);
+			device = (GObject *) nm_hso_gsm_device_new (udi, serial_device + strlen ("/dev/"), NULL, netdev, driver, managed);
 		else
-			device = (GObject *) nm_gsm_device_new (udi, serial_device + strlen ("/dev/"), NULL, driver_name, managed);
+			device = (GObject *) nm_gsm_device_new (udi, serial_device + strlen ("/dev/"), NULL, driver, managed);
 	} else if (type_cdma)
-		device = (GObject *) nm_cdma_device_new (udi, serial_device + strlen ("/dev/"), NULL, driver_name, managed);
+		device = (GObject *) nm_cdma_device_new (udi, serial_device + strlen ("/dev/"), NULL, driver, managed);
 
 out:
 	libhal_free_string (serial_device);
-	libhal_free_string (driver_name);
+	g_free (driver);
 
 	return device;
 }
@@ -367,27 +581,60 @@ register_built_in_creators (NMHalManager *self)
 
 	/* Wired device */
 	creator = g_slice_new0 (DeviceCreator);
-	creator->device_type_name = g_strdup ("Ethernet");
+	creator->device_type = NM_TYPE_DEVICE_ETHERNET;
 	creator->capability_str = g_strdup ("net.80203");
+	creator->category = g_strdup ("net");
 	creator->is_device_fn = is_wired_device;
 	creator->creator_fn = wired_device_creator;
 	priv->device_creators = g_slist_append (priv->device_creators, creator);
 
 	/* Wireless device */
 	creator = g_slice_new0 (DeviceCreator);
-	creator->device_type_name = g_strdup ("802.11 WiFi");
+	creator->device_type = NM_TYPE_DEVICE_WIFI;
 	creator->capability_str = g_strdup ("net.80211");
+	creator->category = g_strdup ("net");
 	creator->is_device_fn = is_wireless_device;
 	creator->creator_fn = wireless_device_creator;
 	priv->device_creators = g_slist_append (priv->device_creators, creator);
 
 	/* Modem */
 	creator = g_slice_new0 (DeviceCreator);
-	creator->device_type_name = g_strdup ("Modem");
-	creator->capability_str = g_strdup ("modem");
+	creator->device_type = NM_TYPE_SERIAL_DEVICE;
+	creator->capability_str = g_strdup ("serial");
+	creator->category = g_strdup ("serial");
 	creator->is_device_fn = is_modem_device;
 	creator->creator_fn = modem_device_creator;
 	priv->device_creators = g_slist_append (priv->device_creators, creator);
+}
+
+static void
+emit_udi_added (NMHalManager *self, const char *udi, DeviceCreator *creator)
+{
+	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
+	char *od, *tmp;
+
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (udi != NULL);
+	g_return_if_fail (creator != NULL);
+
+	tmp = g_strdup_printf ("%s.originating_device", creator->category);
+	od = libhal_device_get_property_string (priv->hal_ctx, udi, tmp, NULL);
+	g_free (tmp);
+
+	if (!od) {
+		/* Older HAL uses 'physical_device' */
+		tmp = g_strdup_printf ("%s.physical_device", creator->category);
+		od = libhal_device_get_property_string (priv->hal_ctx, udi, tmp, NULL);
+		g_free (tmp);
+	}
+
+	g_signal_emit (self, signals[UDI_ADDED], 0,
+	               udi,
+	               od,
+	               GSIZE_TO_POINTER (creator->device_type),
+	               creator->creator_fn);
+
+	libhal_free_string (od);
 }
 
 static void
@@ -396,23 +643,19 @@ device_added (LibHalContext *ctx, const char *udi)
 	NMHalManager *self = NM_HAL_MANAGER (libhal_ctx_get_user_data (ctx));
 	DeviceCreator *creator;
 
-//	nm_debug ("New device added (hal udi is '%s').", udi );
-
-	/* Sometimes the device's properties (like net.interface) are not set up yet,
-	 * so this call will fail, and it will actually be added when hal sets the device's
-	 * capabilities a bit later on.
+	/* If not all the device's properties are set up yet (like net.interface),
+	 * the device will actually get added later when HAL signals new device
+	 * capabilties.
 	 */
 	creator = get_creator (self, udi);
 	if (creator)
-		g_signal_emit (self, signals[UDI_ADDED], 0, udi, creator->device_type_name, creator->creator_fn);
+		emit_udi_added (self, udi, creator);
 }
 
 static void
 device_removed (LibHalContext *ctx, const char *udi)
 {
 	NMHalManager *self = NM_HAL_MANAGER (libhal_ctx_get_user_data (ctx));
-
-//	nm_debug ("Device removed (hal udi is '%s').", udi );
 
 	g_signal_emit (self, signals[UDI_REMOVED], 0, udi);
 }
@@ -423,11 +666,9 @@ device_new_capability (LibHalContext *ctx, const char *udi, const char *capabili
 	NMHalManager *self = NM_HAL_MANAGER (libhal_ctx_get_user_data (ctx));
 	DeviceCreator *creator;
 
-//	nm_debug ("nm_hal_device_new_capability() called with udi = %s, capability = %s", udi, capability );
-
 	creator = get_creator (self, udi);
 	if (creator)
-		g_signal_emit (self, signals[UDI_ADDED], 0, udi, creator->device_type_name, creator->creator_fn);
+		emit_udi_added (self, udi, creator);
 }
 
 static void
@@ -446,21 +687,20 @@ add_initial_devices (NMHalManager *self)
 
 		dbus_error_init (&err);
 		devices = libhal_find_device_by_capability (priv->hal_ctx,
-													creator->capability_str,
-													&num_devices,
-													&err);
-
+		                                            creator->capability_str,
+		                                            &num_devices,
+		                                            &err);
 		if (dbus_error_is_set (&err)) {
 			nm_warning ("could not find existing devices: %s", err.message);
 			dbus_error_free (&err);
+			continue;
 		}
+		if (!devices)
+			continue;
 
-		if (devices) {
-			for (i = 0; i < num_devices; i++) {
-				if (!creator->is_device_fn (self, devices[i]))
-					continue;
-				g_signal_emit (self, signals[UDI_ADDED], 0, devices[i], creator->device_type_name, creator->creator_fn);
-			}
+		for (i = 0; i < num_devices; i++) {
+			if (creator->is_device_fn (self, devices[i]))
+				emit_udi_added (self, devices[i], creator);
 		}
 
 		libhal_free_string_array (devices);
@@ -837,8 +1077,8 @@ destroy_creator (gpointer data, gpointer user_data)
 {
 	DeviceCreator *creator = (DeviceCreator *) data;
 
-	g_free (creator->device_type_name);
 	g_free (creator->capability_str);
+	g_free (creator->category);
 	g_slice_free (DeviceCreator, data);
 }
 
@@ -893,9 +1133,9 @@ nm_hal_manager_class_init (NMHalManagerClass *klass)
 					  G_SIGNAL_RUN_FIRST,
 					  G_STRUCT_OFFSET (NMHalManagerClass, udi_added),
 					  NULL, NULL,
-					  _nm_marshal_VOID__STRING_STRING_POINTER,
-					  G_TYPE_NONE, 3,
-					  G_TYPE_STRING, G_TYPE_STRING, G_TYPE_POINTER);
+					  _nm_marshal_VOID__STRING_STRING_POINTER_POINTER,
+					  G_TYPE_NONE, 4,
+					  G_TYPE_STRING, G_TYPE_STRING, G_TYPE_POINTER, G_TYPE_POINTER);
 
 	signals[UDI_REMOVED] =
 		g_signal_new ("udi-removed",

@@ -31,7 +31,9 @@
 #include "nm-vpn-manager.h"
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
+#include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
+#include "nm-serial-device.h"
 #include "NetworkManagerSystem.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-setting-connection.h"
@@ -77,7 +79,8 @@ static void connection_added_default_handler (NMManager *manager,
 
 static void hal_manager_udi_added_cb (NMHalManager *hal_mgr,
                                       const char *udi,
-                                      const char *type_name,
+                                      const char *originating_device,
+                                      gpointer general_type_ptr,
                                       NMDeviceCreatorFn creator_fn,
                                       gpointer user_data);
 
@@ -97,6 +100,7 @@ static void system_settings_properties_changed_cb (DBusGProxy *proxy,
                                                    gpointer user_data);
 
 #define SSD_POKE_INTERVAL 120
+#define ORIGDEV_TAG "originating-device"
 
 typedef struct {
 	DBusGMethodInvocation *context;
@@ -1156,6 +1160,29 @@ nm_manager_get_device_by_udi (NMManager *manager, const char *udi)
 	return NULL;
 }
 
+static NMDevice *
+nm_manager_get_device_by_originating_device (NMManager *manager, const char *od)
+{
+	GSList *iter;
+
+	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
+		const char *candidate_od = g_object_get_data (G_OBJECT (iter->data), ORIGDEV_TAG);
+
+		if (candidate_od && !strcmp (candidate_od, od))
+			return NM_DEVICE (iter->data);
+	}
+	return NULL;
+}
+
+static void
+nm_manager_set_originating_device (NMDevice *device, const char *originating_device)
+{
+	g_return_if_fail (device != NULL);
+	g_return_if_fail (originating_device != NULL);
+
+	g_object_set_data_full (G_OBJECT (device), ORIGDEV_TAG, g_strdup (originating_device), g_free);
+}
+
 static gboolean
 nm_manager_udi_is_managed (NMManager *self, const char *udi)
 {
@@ -1647,7 +1674,8 @@ next:
 static void
 hal_manager_udi_added_cb (NMHalManager *hal_mgr,
                           const char *udi,
-                          const char *type_name,
+                          const char *originating_device,
+                          gpointer general_type_ptr,
                           NMDeviceCreatorFn creator_fn,
                           gpointer user_data)
 {
@@ -1655,6 +1683,7 @@ hal_manager_udi_added_cb (NMHalManager *hal_mgr,
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GObject *device;
 	const char *iface;
+	GType general_type = GPOINTER_TO_SIZE (general_type_ptr);
 
 	if (priv->sleeping)
 		return;
@@ -1663,9 +1692,17 @@ hal_manager_udi_added_cb (NMHalManager *hal_mgr,
 	if (nm_manager_get_device_by_udi (self, udi))
 		return;
 
-	device = creator_fn (hal_mgr, udi, nm_manager_udi_is_managed (self, udi));
+	/* Only ignore multiple ports for serial devices */
+	if (general_type == NM_TYPE_SERIAL_DEVICE) {
+		if (nm_manager_get_device_by_originating_device (self, originating_device))
+			return;
+	}
+
+	device = creator_fn (hal_mgr, udi, originating_device, nm_manager_udi_is_managed (self, udi));
 	if (!device)
 		return;
+
+	nm_manager_set_originating_device (NM_DEVICE (device), originating_device);
 
 	priv->devices = g_slist_append (priv->devices, device);
 
@@ -1686,7 +1723,14 @@ hal_manager_udi_added_cb (NMHalManager *hal_mgr,
 	}
 
 	iface = nm_device_get_iface (NM_DEVICE (device));
-	nm_info ("Found new %s device '%s'.", type_name, iface);
+	if (general_type == NM_TYPE_DEVICE_ETHERNET)
+		nm_info ("Found new Ethernet device '%s'.", iface);
+	else if (general_type == NM_TYPE_DEVICE_WIFI)
+		nm_info ("Found new 802.11 WiFi device '%s'.", iface);
+	else if (general_type == NM_TYPE_SERIAL_DEVICE)
+		nm_info ("Found new Modem device '%s'.", iface);
+	else
+		g_assert_not_reached ();
 
 	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (priv->dbus_mgr),
 								  nm_device_get_udi (NM_DEVICE (device)),
