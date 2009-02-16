@@ -50,6 +50,9 @@ typedef struct {
 
 	guint reg_tries;
 	guint init_tries;
+
+	gboolean needs_cgreg;
+	gboolean checked_cgmm;
 } NMGsmDevicePrivate;
 
 enum {
@@ -440,10 +443,15 @@ automatic_registration_response (NMSerialDevice *device,
 static void
 automatic_registration (NMGsmDevice *device)
 {
-	const char *responses[] = { "+CREG: 0,0", "+CREG: 0,1", "+CREG: 0,2", "+CREG: 0,3", "+CREG: 0,5", NULL };
+	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
+	const char *creg_responses[] = { "+CREG: 0,0", "+CREG: 0,1", "+CREG: 0,2", "+CREG: 0,3", "+CREG: 0,5", NULL };
+	const char *cgreg_responses[] = { "+CGREG: 0,0", "+CGREG: 0,1", "+CGREG: 0,2", "+CGREG: 0,3", "+CGREG: 0,5", NULL };
 	const char *terminators[] = { "OK", "ERROR", "ERR", NULL };
 
-	modem_wait_for_reply (device, "AT+CREG?", 15, responses, terminators, automatic_registration_response, NULL);
+	if (priv->needs_cgreg)
+		modem_wait_for_reply (device, "AT+CGREG?", 15, cgreg_responses, terminators, automatic_registration_response, NULL);
+	else
+		modem_wait_for_reply (device, "AT+CREG?", 15, creg_responses, terminators, automatic_registration_response, NULL);
 }
 
 static void
@@ -462,13 +470,42 @@ do_register (NMGsmDevice *device)
 }
 
 static void
+get_model_done (NMSerialDevice *device,
+                int reply_index,
+                const char *reply,
+                gpointer user_data)
+{
+	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
+
+	priv->checked_cgmm = TRUE;
+
+	switch (reply_index) {
+	case 0:
+		priv->needs_cgreg = TRUE;
+		break;
+	default:
+		break;
+	}
+
+	do_register (NM_GSM_DEVICE (device));
+}
+
+static void
 power_up_response (NMSerialDevice *device,
                    int reply_index,
                    const char *reply,
                    gpointer user_data)
 {
-	/* Ignore errors */
-	do_register (NM_GSM_DEVICE (device));
+	NMGsmDevice *self = NM_GSM_DEVICE (device);
+	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (self);
+	const char *responses[] = { "E160G", NULL };
+	const char *terminators[] = { "OK", "ERROR", "ERR", NULL };
+
+	/* Get the model the first time */
+	if (!priv->checked_cgmm)
+		modem_wait_for_reply (self, "AT+CGMM", 5, responses, terminators, get_model_done, NULL);
+	else
+		do_register (NM_GSM_DEVICE (device));
 }
 
 static void
