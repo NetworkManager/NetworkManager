@@ -525,6 +525,7 @@ modem_device_creator (NMHalManager *self,
 {
 	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
 	char *serial_device;
+	const char *ttyname;
 	char *sysfs_path;
 	char *driver = NULL;
 	GObject *device = NULL;
@@ -554,17 +555,40 @@ modem_device_creator (NMHalManager *self,
 	if (!type_gsm && !type_cdma)
 		hal_get_modem_capabilities (priv->hal_ctx, udi, &type_gsm, &type_cdma);
 
+	ttyname = serial_device + strlen ("/dev/");
+
 	/* Special handling of 'hso' cards (until punted out to a modem manager) */
-	if (type_gsm && !strcmp (driver, "hso"))
+	if (type_gsm && !strcmp (driver, "hso")) {
+		char *hsotype_path;
+		char *contents = NULL;
+		gboolean success;
+
+		/* We only want the "Control" interface, since that's the only
+		 * one that gives us the unsolicited OWANCALL responses.  Ignore
+		 * errors since we didn't care about them before.
+		 */
+		hsotype_path = g_strdup_printf ("/sys/class/tty/%s/hsotype", ttyname);
+		success = g_file_get_contents (hsotype_path, &contents, NULL, NULL);
+		g_free (hsotype_path);
+		if (success && contents) {
+			if (   !strstr (contents, "Control")
+			    && !strstr (contents, "control")) {
+				g_free (contents);
+				goto out;
+			}
+			g_free (contents);
+		}
+
 		netdev = get_hso_netdev (priv->hal_ctx, udi);
+	}
 
 	if (type_gsm) {
 		if (netdev)
-			device = (GObject *) nm_hso_gsm_device_new (udi, serial_device + strlen ("/dev/"), NULL, netdev, driver, managed);
+			device = (GObject *) nm_hso_gsm_device_new (udi, ttyname, NULL, netdev, driver, managed);
 		else
-			device = (GObject *) nm_gsm_device_new (udi, serial_device + strlen ("/dev/"), NULL, driver, managed);
+			device = (GObject *) nm_gsm_device_new (udi, ttyname, NULL, driver, managed);
 	} else if (type_cdma)
-		device = (GObject *) nm_cdma_device_new (udi, serial_device + strlen ("/dev/"), NULL, driver, managed);
+		device = (GObject *) nm_cdma_device_new (udi, ttyname, NULL, driver, managed);
 
 out:
 	libhal_free_string (serial_device);
