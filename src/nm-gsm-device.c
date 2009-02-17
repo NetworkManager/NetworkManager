@@ -915,10 +915,8 @@ setup_monitor_device (NMGsmDevice *device)
 	GIOChannel *channel;
 	NMSettingSerial *setting;
 
-	if (!priv->monitor_iface) {
-		nm_debug ("No monitoring udi provided");
+	if (!priv->monitor_iface)
 		return FALSE;
-	}
 
 	priv->monitor_device = g_object_new (NM_TYPE_SERIAL_DEVICE,
 								  NM_DEVICE_INTERFACE_UDI, nm_device_get_udi (NM_DEVICE (device)),
