@@ -30,6 +30,8 @@
 
 NMSystemConfigHalManager *nm_system_config_hal_manager_get (DBusGConnection *g_connection);
 
+void nm_system_config_hal_manager_shutdown (NMSystemConfigHalManager *self);
+
 #define NUM_DEVICE_TYPES	NM_DEVICE_TYPE_CDMA
 
 typedef struct {
@@ -221,30 +223,6 @@ init_dbus (NMSystemConfigHalManager *manager, DBusGConnection *g_connection)
 	return TRUE;
 }
 
-static void
-remove_all_devices (gpointer key, gpointer data, gpointer user_data)
-{
-	NMSystemConfigHalManager *manager = NM_SYSTEM_CONFIG_HAL_MANAGER (user_data);
-
-	g_signal_emit (manager, signals[DEVICE_REMOVED], 0, key, GPOINTER_TO_UINT (data));
-}
-
-static void
-cleanup_dbus (NMSystemConfigHalManager *manager)
-{
-	NMSystemConfigHalManagerPrivate *priv = NM_SYSTEM_CONFIG_HAL_MANAGER_GET_PRIVATE (manager);
-
-	g_hash_table_foreach (priv->devices, (GHFunc) remove_all_devices, manager);
-	g_hash_table_remove_all (priv->devices);
-
-	if (priv->proxy) {
-		g_object_unref (priv->proxy);
-		priv->proxy = NULL;
-	}
-
-	priv->g_connection = NULL;
-}
-
 static NMSystemConfigHalManager *
 nm_system_config_hal_manager_new (DBusGConnection *g_connection)
 {
@@ -284,9 +262,38 @@ nm_system_config_hal_manager_init (NMSystemConfigHalManager *manager)
 }
 
 static void
+signal_removed (gpointer key, gpointer data, gpointer user_data)
+{
+	NMSystemConfigHalManager *manager = NM_SYSTEM_CONFIG_HAL_MANAGER (user_data);
+
+	g_signal_emit (manager, signals[DEVICE_REMOVED], 0, key, GPOINTER_TO_UINT (data));
+}
+
+void
+nm_system_config_hal_manager_shutdown (NMSystemConfigHalManager *self)
+{
+	NMSystemConfigHalManagerPrivate *priv = NM_SYSTEM_CONFIG_HAL_MANAGER_GET_PRIVATE (self);
+
+	g_hash_table_foreach (priv->devices, (GHFunc) signal_removed, self);
+	g_hash_table_remove_all (priv->devices);
+}
+
+static void
 dispose (GObject *object)
 {
-	cleanup_dbus (NM_SYSTEM_CONFIG_HAL_MANAGER (object));
+	NMSystemConfigHalManagerPrivate *priv = NM_SYSTEM_CONFIG_HAL_MANAGER_GET_PRIVATE (object);
+
+	if (priv->devices) {
+		g_hash_table_remove_all (priv->devices);
+		g_hash_table_destroy (priv->devices);
+	}
+
+	if (priv->proxy) {
+		g_object_unref (priv->proxy);
+		priv->proxy = NULL;
+	}
+
+	priv->g_connection = NULL;
 
 	G_OBJECT_CLASS (nm_system_config_hal_manager_parent_class)->dispose (object);
 }

@@ -28,6 +28,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/ether.h>
+#include <signal.h>
 
 #include <glib.h>
 #include <glib/gi18n.h>
@@ -49,6 +50,9 @@
 #include "nm-system-config-hal-manager.h"
 #include "nm-system-config-interface.h"
 
+static GMainLoop *loop = NULL;
+static gboolean debug = FALSE;
+
 typedef struct {
 	DBusConnection *connection;
 	DBusGConnection *g_connection;
@@ -57,13 +61,13 @@ typedef struct {
 	NMSystemConfigHalManager *hal_mgr;
 
 	NMSysconfigSettings *settings;
-	GMainLoop *loop;
 
 	GHashTable *wired_devices;
 } Application;
 
 
 NMSystemConfigHalManager *nm_system_config_hal_manager_get (DBusGConnection *g_connection);
+void nm_system_config_hal_manager_shutdown (NMSystemConfigHalManager *self);
 
 static gboolean dbus_init (Application *app);
 static gboolean start_dbus_service (Application *app);
@@ -194,7 +198,7 @@ load_stuff (gpointer user_data)
 	g_slist_free (devs);
 
 	if (!start_dbus_service (app)) {
-		g_main_loop_quit (app->loop);
+		g_main_loop_quit (loop);
 		return FALSE;
 	}
 
@@ -461,11 +465,9 @@ dbus_cleanup (Application *app)
 static void
 destroy_cb (DBusGProxy *proxy, gpointer user_data)
 {
-	Application *app = (Application *) user_data;
-
 	/* Clean up existing connection */
 	g_warning ("disconnected from the system bus, exiting.");
-	g_main_loop_quit (app->loop);
+	g_main_loop_quit (loop);
 }
 
 static gboolean
@@ -608,6 +610,30 @@ logging_shutdown (void)
 	closelog ();
 }
 
+static void
+signal_handler (int signo)
+{
+	if (signo == SIGINT || signo == SIGTERM) {
+		if (debug)
+			g_message ("Caught signal %d, shutting down...", signo);
+		g_main_loop_quit (loop);
+	}
+}
+
+static void
+setup_signals (void)
+{
+	struct sigaction action;
+	sigset_t mask;
+
+	sigemptyset (&mask);
+	action.sa_handler = signal_handler;
+	action.sa_mask = mask;
+	action.sa_flags = 0;
+	sigaction (SIGTERM,  &action, NULL);
+	sigaction (SIGINT,  &action, NULL);
+}
+
 int
 main (int argc, char **argv)
 {
@@ -616,7 +642,6 @@ main (int argc, char **argv)
 	GError *error = NULL;
 	char *plugins = NULL;
 	char *config = NULL;
-	gboolean debug = FALSE;
 
 	GOptionEntry entries[] = {
 		{ "config", 0, 0, G_OPTION_ARG_FILENAME, &config, "Config file location", "/path/to/config.file" },
@@ -656,7 +681,7 @@ main (int argc, char **argv)
 		return 1;
 	}
 
-	app->loop = g_main_loop_new (NULL, FALSE);
+	loop = g_main_loop_new (NULL, FALSE);
 
 	if (!debug)
 		logging_setup ();
@@ -682,15 +707,18 @@ main (int argc, char **argv)
 	}
 	g_free (plugins);
 
+	setup_signals ();
+
 	g_idle_add (load_stuff, app);
 
-	g_main_loop_run (app->loop);
+	g_main_loop_run (loop);
 
-	g_object_unref (app->settings);
+	nm_system_config_hal_manager_shutdown (app->hal_mgr);
 	g_object_unref (app->hal_mgr);
 
 	g_hash_table_destroy (app->wired_devices);
 
+	g_object_unref (app->settings);
 	dbus_cleanup (app);
 
 	if (!debug)
