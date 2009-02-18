@@ -102,8 +102,8 @@ gboolean       nm_dhcp_manager_foreach_dhcp4_option (NMDHCPManager *self,
                                                      gpointer user_data);
 
 /* The following are implemented by the DHCP client backends */
-gboolean       nm_dhcp_client_start                 (NMDHCPDevice *device, NMSettingIP4Config *s_ip4);
-void           nm_dhcp_client_stop                  (const char *iface, pid_t pid);
+GPid           nm_dhcp_client_start                 (NMDHCPDevice *device, NMSettingIP4Config *s_ip4);
+void           nm_dhcp_client_stop                  (NMDHCPDevice *device, pid_t pid);
 
 gboolean       nm_dhcp_client_process_classless_routes (GHashTable *options,
                                                         NMIP4Config *ip4_config,
