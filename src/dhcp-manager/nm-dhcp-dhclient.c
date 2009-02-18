@@ -215,14 +215,13 @@ dhclient_child_setup (gpointer user_data G_GNUC_UNUSED)
 }
 
 
-gboolean
+GPid
 nm_dhcp_client_start (NMDHCPDevice *device, NMSettingIP4Config *s_ip4)
 {
-	GPtrArray *		dhclient_argv = NULL;
-	GPid			pid;
-	GError *		error = NULL;
-	gboolean		success = FALSE;
-	char *			pid_contents = NULL;
+	GPtrArray *dhclient_argv = NULL;
+	GPid pid = 0;
+	GError *error = NULL;
+	char *pid_contents = NULL;
 
 	if (!g_file_test (DHCP_CLIENT_PATH, G_FILE_TEST_EXISTS)) {
 		nm_warning (DHCP_CLIENT_PATH " does not exist.");
@@ -249,7 +248,7 @@ nm_dhcp_client_start (NMDHCPDevice *device, NMSettingIP4Config *s_ip4)
 		unsigned long int tmp = strtoul (pid_contents, NULL, 10);
 
 		if (!((tmp == ULONG_MAX) && (errno == ERANGE)))
-			nm_dhcp_client_stop (device->iface, (pid_t) tmp);
+			nm_dhcp_client_stop (device, (pid_t) tmp);
 		remove (device->pid_file);
 	}
 
@@ -282,13 +281,10 @@ nm_dhcp_client_start (NMDHCPDevice *device, NMSettingIP4Config *s_ip4)
 
 	nm_info ("dhclient started with pid %d", pid);
 
-	device->pid = pid;
-	success = TRUE;
-
 out:
 	g_free (pid_contents);
 	g_ptr_array_free (dhclient_argv, TRUE);
-	return success;
+	return pid;
 }
 
 static const char **
