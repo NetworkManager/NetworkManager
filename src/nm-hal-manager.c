@@ -495,12 +495,13 @@ hal_get_modem_capabilities (LibHalContext *ctx,
 			break;
 		}
 	}
-	g_strfreev (capabilities);
+	if (capabilities)
+		g_strfreev (capabilities);
 
 	/* Compatiblity with the pre-specification bits */
 	if (!*gsm && !*cdma) {
 		capabilities = libhal_device_get_property_strlist (ctx, udi, "info.capabilities", NULL);
-		for (iter = capabilities; *iter; iter++) {
+		for (iter = capabilities; iter && *iter; iter++) {
 			if (!strcmp (*iter, "gsm")) {
 				*gsm = TRUE;
 				break;
@@ -510,10 +511,10 @@ hal_get_modem_capabilities (LibHalContext *ctx,
 				break;
 			}
 		}
+		if (capabilities)
+			g_strfreev (capabilities);
 	}
 
-	if (capabilities)
-		g_strfreev (capabilities);
 	return TRUE;
 }
 
@@ -532,6 +533,7 @@ modem_device_creator (NMHalManager *self,
 	gboolean type_gsm = FALSE;
 	gboolean type_cdma = FALSE;
 	char *netdev = NULL;
+	gboolean udev = TRUE;
 
 	serial_device = libhal_device_get_property_string (priv->hal_ctx, udi, "serial.device", NULL);
 	driver = nm_get_device_driver_name (priv->hal_ctx, origdev_udi);
@@ -544,6 +546,9 @@ modem_device_creator (NMHalManager *self,
 		nm_warning ("could not determine sysfs path for '%s'", serial_device);
 		goto out;
 	}
+
+	ttyname = serial_device + strlen ("/dev/");
+
 #if HAVE_LIBUDEV
 	libudev_get_modem_capabilities (sysfs_path, &type_gsm, &type_cdma);
 #else
@@ -552,10 +557,18 @@ modem_device_creator (NMHalManager *self,
 	libhal_free_string (sysfs_path);
 
 	/* If udev didn't know anything, try deprecated HAL modem capabilities */
-	if (!type_gsm && !type_cdma)
+	if (!type_gsm && !type_cdma) {
 		hal_get_modem_capabilities (priv->hal_ctx, udi, &type_gsm, &type_cdma);
+		udev = FALSE;
+	}
 
-	ttyname = serial_device + strlen ("/dev/");
+	if (!type_gsm && !type_cdma)
+		goto out;
+
+	nm_info ("(%s): detected %s modem via %s capabilities",
+	         ttyname,
+	         type_gsm ? "GSM" : "CDMA",
+	         udev ? "udev" : "HAL");
 
 	/* Special handling of 'hso' cards (until punted out to a modem manager) */
 	if (type_gsm && !strcmp (driver, "hso")) {
