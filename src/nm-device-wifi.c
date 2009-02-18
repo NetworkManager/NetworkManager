@@ -557,11 +557,11 @@ constructor (GType type,
 	scan_capa_range = (struct iw_range_with_scan_capa *) &range;
 	if (scan_capa_range->scan_capa & NM_IW_SCAN_CAPA_ESSID) {
 		priv->has_scan_capa_ssid = TRUE;
-		nm_info ("%s: driver supports SSID scans (scan_capa 0x%02X).",
+		nm_info ("(%s): driver supports SSID scans (scan_capa 0x%02X).",
 		         nm_device_get_iface (NM_DEVICE (self)),
 		         scan_capa_range->scan_capa);
 	} else {
-		nm_info ("%s: driver does not support SSID scans (scan_capa 0x%02X).",
+		nm_info ("(%s): driver does not support SSID scans (scan_capa 0x%02X).",
 		         nm_device_get_iface (NM_DEVICE (self)),
 		         scan_capa_range->scan_capa);
 	}

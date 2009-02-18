@@ -1682,7 +1682,7 @@ hal_manager_udi_added_cb (NMHalManager *hal_mgr,
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GObject *device;
-	const char *iface;
+	const char *iface, *driver;
 	GType general_type = GPOINTER_TO_SIZE (general_type_ptr);
 
 	if (priv->sleeping)
@@ -1723,12 +1723,16 @@ hal_manager_udi_added_cb (NMHalManager *hal_mgr,
 	}
 
 	iface = nm_device_get_iface (NM_DEVICE (device));
+	driver = nm_device_get_driver (NM_DEVICE (device));
+	if (!driver)
+		driver = "unknown";
+
 	if (general_type == NM_TYPE_DEVICE_ETHERNET)
-		nm_info ("Found new Ethernet device '%s'.", iface);
+		nm_info ("(%s): new Ethernet device (driver: '%s')", iface, driver);
 	else if (general_type == NM_TYPE_DEVICE_WIFI)
-		nm_info ("Found new 802.11 WiFi device '%s'.", iface);
+		nm_info ("(%s): new 802.11 WiFi device (driver: '%s')", iface, driver);
 	else if (general_type == NM_TYPE_SERIAL_DEVICE)
-		nm_info ("Found new Modem device '%s'.", iface);
+		nm_info ("(%s): new Modem device (driver: '%s')", iface, driver);
 	else
 		g_assert_not_reached ();
 
