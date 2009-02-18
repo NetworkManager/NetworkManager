@@ -126,7 +126,10 @@ nm_suse_connection_new (const char *iface, NMDeviceType dev_type)
 static GHashTable *
 get_settings (NMExportedConnection *exported)
 {
-	return nm_connection_to_hash (nm_exported_connection_get_connection (exported));
+	NMConnection *connection = nm_exported_connection_get_connection (exported);
+
+	nm_connection_clear_secrets (connection);
+	return nm_connection_to_hash (connection);
 }
 
 static gboolean
