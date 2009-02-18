@@ -1705,7 +1705,7 @@ static void
 add_device (NMManager *self, NMDevice *device)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	const char *iface;
+	const char *iface, *driver;
 
 	priv->devices = g_slist_append (priv->devices, device);
 
@@ -1726,14 +1726,18 @@ add_device (NMManager *self, NMDevice *device)
 	}
 
 	iface = nm_device_get_iface (device);
+	driver = nm_device_get_driver (NM_DEVICE (device));
+	if (!driver)
+		driver = "unknown";
+
 	if (NM_IS_DEVICE_ETHERNET (device))
-		nm_info ("Found new Ethernet device '%s'.", iface);
+		nm_info ("(%s): new Ethernet device (driver: '%s')", iface, driver);
 	else if (NM_IS_DEVICE_WIFI (device))
-		nm_info ("Found new 802.11 WiFi device '%s'.", iface);
+		nm_info ("(%s): new 802.11 WiFi device (driver: '%s')", iface, driver);
 	else if (nm_device_get_device_type (device) == NM_DEVICE_TYPE_GSM)
-		nm_info ("Found new GSM device '%s'.", iface);
+		nm_info ("(%s): new GSM device (driver: '%s')", iface, driver);
 	else if (nm_device_get_device_type (device) == NM_DEVICE_TYPE_CDMA)
-		nm_info ("Found new CDMA device '%s'.", iface);
+		nm_info ("(%s): new CDMA device (driver: '%s')", iface, driver);
 	else
 		g_assert_not_reached ();
 

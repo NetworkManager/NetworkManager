@@ -99,37 +99,32 @@ nm_spawn_process (const char *args)
 void
 nm_print_device_capabilities (NMDevice *dev)
 {
-	gboolean		full_support = TRUE;
-	guint32		caps;
-	const char *	driver = NULL;
+	gboolean full_support = TRUE;
+	guint32 caps;
+	const char *driver, *iface;
 
 	g_return_if_fail (dev != NULL);
 
 	caps = nm_device_get_capabilities (dev);
+	iface = nm_device_get_iface (dev);
 	driver = nm_device_get_driver (dev);
 	if (!driver)
 		driver = "<unknown>";
 
 	if (caps == NM_DEVICE_CAP_NONE || !(NM_DEVICE_CAP_NM_SUPPORTED)) {
-		nm_info ("%s: driver '%s' is unsupported",
-				nm_device_get_iface (dev), driver);
+		nm_info ("(%s): driver '%s' is unsupported", iface, driver);
 		return;
 	}
 
 	if (NM_IS_DEVICE_ETHERNET (dev)) {
 		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT)) {
-			nm_info ("%s: driver '%s' does not support carrier detection.\n"
+			nm_info ("(%s): driver '%s' does not support carrier detection.\n"
 					"\tYou must switch to it manually.",
-					nm_device_get_iface (dev), driver);
+					iface, driver);
 			full_support = FALSE;
 		}
 	} else if (NM_IS_DEVICE_WIFI (dev)) {
 		/* Print out WPA support */
-	}
-
-	if (full_support) {
-		nm_info ("%s: driver is '%s'.",
-				nm_device_get_iface (dev), driver);
 	}
 }
 
