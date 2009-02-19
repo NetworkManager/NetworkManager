@@ -423,6 +423,14 @@ AC_DEFINE_UNQUOTED(HAVE_LIBUDEV, $HAVE_LIBUDEV, [Define if libudev is present])
 AC_SUBST(LIBUDEV_CFLAGS)
 AC_SUBST(LIBUDEV_LIBS)
 
+AC_ARG_WITH(udev-dir, AS_HELP_STRING([--with-udev-dir=DIR], [where the udev base directory is]))
+if test -n "$with_udev_dir" ; then
+    UDEV_BASE_DIR="$with_udev_dir"
+else
+    UDEV_BASE_DIR="/lib/udev"
+fi
+AC_SUBST(UDEV_BASE_DIR)
+
 AC_ARG_ENABLE(more-warnings,
 AS_HELP_STRING([--enable-more-warnings], [Maximum compiler warnings]), set_more_warnings="$enableval",set_more_warnings=yes)
 AC_MSG_CHECKING(for more warnings, including -Werror)

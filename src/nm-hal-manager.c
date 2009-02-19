@@ -291,10 +291,10 @@ get_hso_netdev (LibHalContext *ctx, const char *udi)
 	return netdev;
 }
 
-#define PROP_GSM   "ID_MODEM_GSM"
-#define PROP_CDMA  "ID_MODEM_IS707_A"
-#define PROP_EVDO1 "ID_MODEM_IS856"
-#define PROP_EVDOA "ID_MODEM_IS856_A"
+#define PROP_GSM   "ID_NM_MODEM_GSM"
+#define PROP_CDMA  "ID_NM_MODEM_IS707_A"
+#define PROP_EVDO1 "ID_NM_MODEM_IS856"
+#define PROP_EVDOA "ID_NM_MODEM_IS856_A"
 
 #if HAVE_LIBUDEV
 
