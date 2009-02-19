@@ -99,5 +99,6 @@ CLEANFILES = $(BUILT_SOURCES) $(dbusactivation_DATA)
 EXTRA_DIST = \
 	$(dbusservice_DATA) \
 	$(dbusactivation_in_files) \
-	nm-dispatcher.xml
+	nm-dispatcher.xml \
+	$(udevrules_DATA)
 
