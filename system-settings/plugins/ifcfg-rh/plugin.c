@@ -499,6 +499,15 @@ plugin_get_hostname (SCPluginIfcfg *plugin)
 
 	hostname = svGetValue (network, "HOSTNAME");
 	svCloseFile (network);
+
+	/* Ignore a hostname of 'localhost' or 'localhost.localdomain' to preserve
+	 * 'network' service behavior.
+	 */
+	if (hostname && (!strcmp (hostname, "localhost") || !strcmp (hostname, "localhost.localdomain"))) {
+		g_free (hostname);
+		hostname = NULL;
+	}
+
 	return hostname;
 }
 
