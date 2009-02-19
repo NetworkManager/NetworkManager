@@ -566,6 +566,7 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 {
 	NMSupplicantConfigPrivate *priv;
 	char *value, *tmp;
+	const char *peapver;
 	gboolean success;
 	GString *phase1, *phase2;
 	const GByteArray *array;
@@ -592,8 +593,13 @@ nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
 		return FALSE;
 
 	phase1 = g_string_new (NULL);
-	if (nm_setting_802_1x_get_phase1_peapver (setting))
-		g_string_append_printf (phase1, "peapver=%s", nm_setting_802_1x_get_phase1_peapver (setting));
+	peapver = nm_setting_802_1x_get_phase1_peapver (setting);
+	if (peapver) {
+		if (!strcmp (peapver, "0"))
+			g_string_append (phase1, "peapver=0");
+		else if (!strcmp (peapver, "1"))
+			g_string_append (phase1, "peapver=1");
+	}
 
 	if (nm_setting_802_1x_get_phase1_peaplabel (setting)) {
 		if (phase1->len)
