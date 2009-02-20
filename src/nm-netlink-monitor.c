@@ -32,7 +32,7 @@
 #include <linux/types.h>
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
-#include <net/if.h>
+#include <linux/if.h>
 #include <linux/unistd.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -206,14 +206,18 @@ netlink_object_message_handler (struct nl_object *obj, void *arg)
 
 	link_obj = (struct rtnl_link *) obj;
 	flags = rtnl_link_get_flags (link_obj);
-	if (flags & IFF_RUNNING) {
-        g_signal_emit (G_OBJECT (monitor), 
-                                signals[CARRIER_ON],
-                                0, rtnl_link_get_ifindex (link_obj));
+
+	/* IFF_LOWER_UP is the indicator of carrier status since kernel commit
+	 * b00055aacdb172c05067612278ba27265fcd05ce in 2.6.17.
+	 */
+	if (flags & IFF_LOWER_UP) {
+		g_signal_emit (G_OBJECT (monitor),
+		               signals[CARRIER_ON],
+		               0, rtnl_link_get_ifindex (link_obj));
 	} else {
-        g_signal_emit (G_OBJECT (monitor), 
-                                signals[CARRIER_OFF],
-                                0, rtnl_link_get_ifindex (link_obj));
+		g_signal_emit (G_OBJECT (monitor),
+		               signals[CARRIER_OFF],
+		               0, rtnl_link_get_ifindex (link_obj));
 	}
 
 out:
