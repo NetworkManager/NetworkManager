@@ -67,7 +67,7 @@ test_read_valid_wired_connection (void)
 	const char *expected_address2_gw = "1.2.1.1";
 	NMIP4Address *ip4_addr;
 
-	connection = connection_from_file (TEST_WIRED_FILE, TRUE);
+	connection = connection_from_file (TEST_WIRED_FILE);
 	ASSERT (connection != NULL,
 			"connection-read", "failed to read %s", TEST_WIRED_FILE);
 
@@ -432,7 +432,7 @@ test_write_wired_connection (void)
 			"connection-write", "didn't get keyfile name back after writing connection");
 
 	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = connection_from_file (testfile, TRUE);
+	reread = connection_from_file (testfile);
 	ASSERT (reread != NULL, "connection-write", "failed to re-read test connection");
 
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
@@ -462,7 +462,7 @@ test_read_valid_wireless_connection (void)
 	const guint64 expected_timestamp = 1226604314;
 	guint64 timestamp;
 
-	connection = connection_from_file (TEST_WIRELESS_FILE, TRUE);
+	connection = connection_from_file (TEST_WIRELESS_FILE);
 	ASSERT (connection != NULL,
 			"connection-read", "failed to read %s", TEST_WIRELESS_FILE);
 
@@ -652,7 +652,7 @@ test_write_wireless_connection (void)
 			"connection-write", "didn't get keyfile name back after writing connection");
 
 	/* Read the connection back in and compare it to the one we just wrote out */
-	reread = connection_from_file (testfile, TRUE);
+	reread = connection_from_file (testfile);
 	ASSERT (reread != NULL, "connection-write", "failed to re-read test connection");
 
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,

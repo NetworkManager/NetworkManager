@@ -27,6 +27,6 @@
 #include <glib.h>
 #include <nm-connection.h>
 
-NMConnection *connection_from_file (const char *filename, gboolean secrets);
+NMConnection *connection_from_file (const char *filename);
 
 #endif /* _KEYFILE_PLUGIN_READER_H */

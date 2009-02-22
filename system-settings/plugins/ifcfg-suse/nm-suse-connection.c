@@ -123,15 +123,6 @@ nm_suse_connection_new (const char *iface, NMDeviceType dev_type)
 	return exported;
 }
 
-static GHashTable *
-get_settings (NMExportedConnection *exported)
-{
-	NMConnection *connection = nm_exported_connection_get_connection (exported);
-
-	nm_connection_clear_secrets (connection);
-	return nm_connection_to_hash (connection);
-}
-
 static gboolean
 update (NMExportedConnection *exported,
 	   GHashTable *new_settings,
@@ -190,7 +181,6 @@ nm_suse_connection_class_init (NMSuseConnectionClass *suse_connection_class)
 	/* Virtual methods */
 	object_class->finalize = finalize;
 
-	connection_class->get_settings = get_settings;
 	connection_class->update       = update;
 	connection_class->do_delete    = do_delete;
 }

@@ -64,153 +64,6 @@ nm_keyfile_connection_get_filename (NMKeyfileConnection *self)
 	return NM_KEYFILE_CONNECTION_GET_PRIVATE (self)->filename;
 }
 
-static GHashTable *
-get_settings (NMExportedConnection *exported)
-{
-	NMConnection *connection = nm_exported_connection_get_connection (exported);
-
-	nm_connection_clear_secrets (connection);
-	return nm_connection_to_hash (connection);
-}
-
-static GValue *
-string_to_gvalue (const char *str)
-{
-	GValue *val;
-
-	val = g_slice_new0 (GValue);
-	g_value_init (val, G_TYPE_STRING);
-	g_value_set_string (val, str);
-
-	return val;
-}
-
-static void
-copy_one_secret (gpointer key, gpointer value, gpointer user_data)
-{
-	const char *value_str = (const char *) value;
-
-	if (value_str)
-		g_hash_table_insert ((GHashTable *) user_data,
-							 g_strdup ((char *) key),
-							 string_to_gvalue (value_str));
-}
-
-static void
-add_secrets (NMSetting *setting,
-             const char *key,
-             const GValue *value,
-             GParamFlags flags,
-             gpointer user_data)
-{
-	GHashTable *secrets = user_data;
-
-	if (!(flags & NM_SETTING_PARAM_SECRET))
-		return;
-
-	if (G_VALUE_HOLDS_STRING (value)) {
-		const char *tmp;
-
-		tmp = g_value_get_string (value);
-		if (tmp)
-			g_hash_table_insert (secrets, g_strdup (key), string_to_gvalue (tmp));
-	} else if (G_VALUE_HOLDS (value, DBUS_TYPE_G_MAP_OF_STRING)) {
-		/* Flatten the string hash by pulling its keys/values out */
-		g_hash_table_foreach (g_value_get_boxed (value), copy_one_secret, secrets);
-	} else
-		g_message ("%s: unhandled secret %s type %s", __func__, key, G_VALUE_TYPE_NAME (value));
-}
-
-static void
-destroy_gvalue (gpointer data)
-{
-	GValue *value = (GValue *) data;
-
-	g_value_unset (value);
-	g_slice_free (GValue, value);
-}
-
-static GHashTable *
-extract_secrets (NMKeyfileConnection *exported,
-                 const char *setting_name,
-                 GError **error)
-{
-	NMKeyfileConnectionPrivate *priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (exported);
-	NMConnection *tmp;
-	GHashTable *secrets;
-	NMSetting *setting;
-
-	tmp = connection_from_file (priv->filename, TRUE);
-	if (!tmp) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_SECRETS_UNAVAILABLE,
-		             "%s.%d - Could not read secrets from file %s.",
-		             __FILE__, __LINE__, priv->filename);
-		return NULL;
-	}
-
-	setting = nm_connection_get_setting_by_name (tmp, setting_name);
-	if (!setting) {
-		g_object_unref (tmp);
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_SECRETS_UNAVAILABLE,
-		             "%s.%d - Could not read secrets from file %s.",
-		             __FILE__, __LINE__, priv->filename);
-		return NULL;
-	}
-
-	/* Add the secrets from this setting to the secrets hash */
-	secrets = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, destroy_gvalue);
-	nm_setting_enumerate_values (setting, add_secrets, secrets);
-
-	g_object_unref (tmp);
-
-	return secrets;
-}
-
-static void
-service_get_secrets (NMExportedConnection *exported,
-                     const gchar *setting_name,
-                     const gchar **hints,
-                     gboolean request_new,
-                     DBusGMethodInvocation *context)
-{
-	NMConnection *connection;
-	GError *error = NULL;
-	GHashTable *settings = NULL;
-	GHashTable *secrets = NULL;
-	NMSetting *setting;
-
-	connection = nm_exported_connection_get_connection (exported);
-	setting = nm_connection_get_setting_by_name (connection, setting_name);
-	if (!setting) {
-		g_set_error (&error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "%s.%d - Connection didn't have requested setting '%s'.",
-		             __FILE__, __LINE__, setting_name);
-		goto error;
-	}
-
-	/* Returned secrets are a{sa{sv}}; this is the outer a{s...} hash that
-	 * will contain all the individual settings hashes.
-	 */
-	settings = g_hash_table_new_full (g_str_hash, g_str_equal,
-	                                  g_free, (GDestroyNotify) g_hash_table_destroy);
-
-	/* Read in a temporary connection and just extract the secrets */
-	secrets = extract_secrets (NM_KEYFILE_CONNECTION (exported), setting_name, &error);
-	if (!secrets)
-		goto error;
-
-	g_hash_table_insert (settings, g_strdup (setting_name), secrets);
-
-	dbus_g_method_return (context, settings);
-	g_hash_table_destroy (settings);
-	return;
-
-error:
-	nm_warning ("%s", error->message);
-	dbus_g_method_return_error (context, error);
-	g_error_free (error);
-}
-
 static gboolean
 update (NMExportedConnection *exported,
         GHashTable *new_settings,
@@ -283,7 +136,7 @@ constructor (GType type,
 		goto err;
 	}
 
-	wrapped = connection_from_file (priv->filename, FALSE);
+	wrapped = connection_from_file (priv->filename);
 	if (!wrapped)
 		goto err;
 
@@ -373,8 +226,6 @@ nm_keyfile_connection_class_init (NMKeyfileConnectionClass *keyfile_connection_c
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	connection_class->get_settings = get_settings;
-	connection_class->service_get_secrets  = service_get_secrets;
 	connection_class->update       = update;
 	connection_class->do_delete    = do_delete;
 

@@ -67,15 +67,6 @@ nm_ifupdown_connection_new (if_block *block)
 										 NULL);
 }
 
-static GHashTable *
-get_settings (NMExportedConnection *exported)
-{
-	NMConnection *connection = nm_exported_connection_get_connection (exported);
-
-	nm_connection_clear_secrets (connection);
-	return nm_connection_to_hash (connection);
-}
-
 static gboolean
 update (NMExportedConnection *exported,
 	   GHashTable *new_settings,
@@ -188,7 +179,6 @@ nm_ifupdown_connection_class_init (NMIfupdownConnectionClass *ifupdown_connectio
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	connection_class->get_settings = get_settings;
 	connection_class->update       = update;
 	connection_class->do_delete    = do_delete;
 	connection_class->service_get_secrets = service_get_secrets;
@@ -209,54 +199,14 @@ service_get_secrets (NMExportedConnection *exported,
                      gboolean request_new,
                      DBusGMethodInvocation *context)
 {
-	NMConnection *connection;
 	GError *error = NULL;
-	GHashTable *settings = NULL;
-	GHashTable *secrets = NULL;
-	NMSetting *setting;
 
 	PLUGIN_PRINT ("SCPlugin-Ifupdown", "get_secrets for setting_name:'%s')", setting_name);
 
-	connection = nm_exported_connection_get_connection (exported);
-	setting = nm_connection_get_setting_by_name (connection, setting_name);
-
-	if (!setting) {
-		g_set_error (&error, NM_SETTINGS_ERROR,
-				   NM_SETTINGS_ERROR_INVALID_CONNECTION,
-				   "%s.%d - Connection didn't have requested setting '%s'.",
-				   __FILE__, __LINE__, setting_name);
-		PLUGIN_PRINT ("SCPlugin-Ifupdown", "%s", error->message);
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-		return;
-	}
-
-	settings = g_hash_table_new_full (g_str_hash, g_str_equal,
-							    g_free, (GDestroyNotify) g_hash_table_destroy);
-
-	if (!settings) {
-		g_set_error (&error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INTERNAL_ERROR,
-				   "%s.%d - failed to hash setting (OOM?)",
-				   __FILE__, __LINE__);
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-		return;
-	}
-
-	if (!strcmp (setting_name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME)) {
-		secrets = nm_setting_to_hash (setting);
-		if (secrets) {
-			g_hash_table_insert(settings, g_strdup(setting_name), secrets);
-			dbus_g_method_return (context, settings);
-		} else {
-			g_set_error (&error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INTERNAL_ERROR,
-					   "%s.%d - nm_setting_to_hash failed (OOM?)",
-					   __FILE__, __LINE__);
-			dbus_g_method_return_error (context, error);
-			g_error_free (error);
-			g_hash_table_destroy (settings);
-		}
-	} else {
+	/* FIXME: Only wifi secrets are supported for now */
+	if (!strcmp (setting_name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME))
+		NM_EXPORTED_CONNECTION_CLASS (nm_ifupdown_connection_parent_class)->service_get_secrets (exported, setting_name, hints, request_new, context);
+	else {
 		g_set_error (&error, NM_SETTING_WIRELESS_SECURITY_ERROR, 1,
 				   "%s.%d - security setting name not supported '%s'.",
 				   __FILE__, __LINE__, setting_name);
@@ -265,3 +215,4 @@ service_get_secrets (NMExportedConnection *exported,
 		g_error_free (error);
 	}
 }
+
