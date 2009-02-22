@@ -316,15 +316,6 @@ nm_ifcfg_connection_get_unmanaged (NMIfcfgConnection *self)
 	return NM_IFCFG_CONNECTION_GET_PRIVATE (self)->unmanaged;
 }
 
-static GHashTable *
-get_settings (NMExportedConnection *exported)
-{
-	NMConnection *connection = nm_exported_connection_get_connection (exported);
-
-	nm_connection_clear_secrets (connection);
-	return nm_connection_to_hash (connection);
-}
-
 static gboolean
 update (NMExportedConnection *exported, GHashTable *new_settings, GError **error)
 {
@@ -448,7 +439,6 @@ nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
 
-	connection_class->get_settings = get_settings;
 	connection_class->update       = update;
 	connection_class->do_delete    = do_delete;
 

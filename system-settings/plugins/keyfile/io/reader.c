@@ -399,11 +399,6 @@ read_hash_of_string (GKeyFile *file, NMSetting *setting, const char *key)
 
 
 typedef struct {
-	GKeyFile *keyfile;
-	gboolean secrets;
-} ReadSettingInfo;
-
-typedef struct {
 	const char *setting_name;
 	const char *key;
 	gboolean check_for_key;
@@ -450,8 +445,7 @@ read_one_setting_value (NMSetting *setting,
                         GParamFlags flags,
                         gpointer user_data)
 {
-	ReadSettingInfo *info = (ReadSettingInfo *) user_data;
-	GKeyFile *file = info->keyfile;
+	GKeyFile *file = user_data;
 	const char *setting_name;
 	GType type;
 	GError *err = NULL;
@@ -464,10 +458,6 @@ read_one_setting_value (NMSetting *setting,
 
 	/* Setting name gets picked up from the keyfile's section name instead */
 	if (!strcmp (key, NM_SETTING_NAME))
-		return;
-
-	/* Don't read in secrets unless we want to */
-	if ((flags & NM_SETTING_PARAM_SECRET) && !info->secrets)
 		return;
 
 	/* Don't read the NMSettingConnection object's 'read-only' property */
@@ -606,17 +596,13 @@ read_one_setting_value (NMSetting *setting,
 }
 
 static NMSetting *
-read_setting (GKeyFile *file, const char *name, gboolean secrets)
+read_setting (GKeyFile *file, const char *name)
 {
 	NMSetting *setting;
-	ReadSettingInfo info;
-
-	info.keyfile = file;
-	info.secrets = secrets;
 
 	setting = nm_connection_create_setting (name);
 	if (setting)
-		nm_setting_enumerate_values (setting, read_one_setting_value, &info);
+		nm_setting_enumerate_values (setting, read_one_setting_value, (gpointer) file);
 	else
 		g_warning ("Invalid setting name '%s'", name);
 
@@ -642,7 +628,7 @@ read_vpn_secrets (GKeyFile *file, NMSettingVPN *s_vpn)
 }
 
 NMConnection *
-connection_from_file (const char *filename, gboolean secrets)
+connection_from_file (const char *filename)
 {
 	GKeyFile *key_file;
 	struct stat statbuf;
@@ -656,10 +642,10 @@ connection_from_file (const char *filename, gboolean secrets)
 	bad_owner = getuid () != statbuf.st_uid;
 	bad_permissions = statbuf.st_mode & 0077;
 
-    if (bad_owner || bad_permissions) {
-	    g_warning ("Ignorning insecure configuration file '%s'", filename);
-	    return NULL;
-    }
+	if (bad_owner || bad_permissions) {
+		g_warning ("Ignorning insecure configuration file '%s'", filename);
+		return NULL;
+	}
 
 	key_file = g_key_file_new ();
 	if (g_key_file_load_from_file (key_file, filename, G_KEY_FILE_NONE, &err)) {
@@ -680,13 +666,13 @@ connection_from_file (const char *filename, gboolean secrets)
 				continue;
 			}
 
-			setting = read_setting (key_file, groups[i], secrets);
+			setting = read_setting (key_file, groups[i]);
 			if (setting)
 				nm_connection_add_setting (connection, setting);
 		}
 
 		/* Handle vpn secrets after the 'vpn' setting was read */
-		if (secrets && vpn_secrets) {
+		if (vpn_secrets) {
 			NMSettingVPN *s_vpn;
 
 			s_vpn = (NMSettingVPN *) nm_connection_get_setting (connection, NM_TYPE_SETTING_VPN);
