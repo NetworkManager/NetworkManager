@@ -60,7 +60,7 @@ IT_PROG_INTLTOOL([0.35.0])
 AM_GLIB_GNU_GETTEXT
 
 dnl
-dnl GNOME support
+dnl Documentation
 dnl
 AC_ARG_WITH(docs, AC_HELP_STRING([--with-docs], [Build NetworkManager documentation]))
 AM_CONDITIONAL(WITH_DOCS, test "x$with_docs" = "xyes")
