@@ -16,8 +16,9 @@ OTHER_FILES= \
 GENERATED_FILES = spec.html
 
 spec.html: $(XMLS) $(OTHER_FILES)
-	@install -d docs
 	$(XSLTPROC) $(top_srcdir)/tools/doc-generator.xsl $(top_srcdir)/introspection/all.xml > $@
+
+all: $(GENERATED_FILES)
 
 EXTRA_DIST = $(GENERATED_FILES)
 
