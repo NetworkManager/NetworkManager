@@ -4,8 +4,7 @@ ACTION!="add|change", GOTO="nm_modem_probe_end"
 SUBSYSTEM!="tty", GOTO="nm_modem_probe_end"
 KERNEL!="tty*", GOTO="nm_modem_probe_end"
 
-DRIVERS=="option|sierra|hso", IMPORT{program}="nm-modem-probe --export $tempnode"
-DRIVERS=="serial_cs|cdc_acm", IMPORT{program}="nm-modem-probe --delay 2000 --export $tempnode"
+DRIVERS=="option|sierra|hso|serial_cs|cdc_acm", IMPORT{program}="nm-modem-probe --delay 2000 --export $tempnode"
 
 LABEL="nm_modem_probe_end"
 
