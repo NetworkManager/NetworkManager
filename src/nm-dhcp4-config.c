@@ -142,6 +142,8 @@ finalize (GObject *object)
 
 	g_free (priv->dbus_path);
 	g_hash_table_destroy (priv->options);
+
+	G_OBJECT_CLASS (nm_dhcp4_config_parent_class)->finalize (object);
 }
 
 static void
