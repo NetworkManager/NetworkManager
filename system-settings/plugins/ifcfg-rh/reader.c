@@ -204,20 +204,38 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 	}
 
 	value = svGetValue (ifcfg, "BOOTPROTO");
-	if (value && (!g_ascii_strcasecmp (value, "bootp") || !g_ascii_strcasecmp (value, "dhcp")))
-		method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
-
-	if (value && !g_ascii_strcasecmp (value, "autoip")) {
+	if (value) {
+		if (!g_ascii_strcasecmp (value, "bootp") || !g_ascii_strcasecmp (value, "dhcp"))
+			method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
+		else if (!g_ascii_strcasecmp (value, "autoip")) {
+			g_free (value);
+			s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+			g_object_set (s_ip4,
+			              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
+			              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default,
+			              NULL);
+			return NM_SETTING (s_ip4);
+		}
 		g_free (value);
-		s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
-		g_object_set (s_ip4,
-		              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
-		              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default,
-		              NULL);
-		return NM_SETTING (s_ip4);
-	}
+	} else {
+		char *tmp_ip4, *tmp_prefix, *tmp_netmask;
 
-	g_free (value);
+		/* If there is no BOOTPROTO, no IPADDR, no PREFIX, and no NETMASK,
+		 * assume DHCP is to be used.  Happens with minimal ifcfg files like:
+		 *
+		 * DEVICE=eth0
+		 * HWADDR=11:22:33:44:55:66
+		 *
+		 */
+		tmp_ip4 = svGetValue (ifcfg, "IPADDR");
+		tmp_prefix = svGetValue (ifcfg, "PREFIX");
+		tmp_netmask = svGetValue (ifcfg, "NETMASK");
+		if (!tmp_ip4 && !tmp_prefix && !tmp_netmask)
+			method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
+		g_free (tmp_ip4);
+		g_free (tmp_prefix);
+		g_free (tmp_netmask);
+	}
 
 	/* Handle manual settings */
 	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
