@@ -22,6 +22,7 @@
 #ifndef _KEYFILE_PLUGIN_WRITER_H
 #define _KEYFILE_PLUGIN_WRITER_H
 
+#include <sys/types.h>
 #include <glib.h>
 #include <nm-connection.h>
 
