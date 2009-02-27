@@ -10,7 +10,9 @@ libnm_settings_plugin_ifcfg_rh_la_SOURCES = \
 	nm-ifcfg-connection.h \
 	reader.c \
 	reader.h \
-	common.h
+	common.h \
+	sha1.c \
+	sha1.h
 
 libnm_settings_plugin_ifcfg_rh_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \

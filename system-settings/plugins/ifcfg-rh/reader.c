@@ -45,10 +45,12 @@
 #include <nm-setting-ip4-config.h>
 #include <nm-setting-wired.h>
 #include <nm-setting-wireless.h>
+#include <nm-setting-8021x.h>
 #include <nm-utils.h>
 
 #include "common.h"
 #include "shvar.h"
+#include "sha1.h"
 
 #include "reader.h"
 #include "nm-system-config-interface.h"
@@ -91,7 +93,7 @@ make_connection_setting (const char *file,
 {
 	NMSettingConnection *s_con;
 	char *ifcfg_name = NULL;
-	char *new_id = NULL, *uuid = NULL;
+	char *new_id = NULL, *uuid = NULL, *value;
 
 	ifcfg_name = get_ifcfg_name (file);
 	if (!ifcfg_name)
@@ -116,7 +118,12 @@ make_connection_setting (const char *file,
 
 	g_free (new_id);
 
-	uuid = nm_utils_uuid_generate_from_string (ifcfg->fileName);
+	/* Try for a UUID key before falling back to hashing the file name */
+	uuid = svGetValue (ifcfg, "UUID");
+	if (!uuid || !strlen (uuid)) {
+		g_free (uuid);
+		uuid = nm_utils_uuid_generate_from_string (ifcfg->fileName);
+	}
 	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_TYPE, type,
 	              NM_SETTING_CONNECTION_UUID, uuid,
@@ -126,6 +133,19 @@ make_connection_setting (const char *file,
 	/* Be somewhat conservative about autoconnect */
 	if (svTrueValue (ifcfg, "ONBOOT", FALSE))
 		g_object_set (s_con, NM_SETTING_CONNECTION_AUTOCONNECT, TRUE, NULL);
+
+	value = svGetValue (ifcfg, "LAST_CONNECT");
+	if (value) {
+		unsigned long int tmp;
+
+		errno = 0;
+		tmp = strtoul (value, NULL, 10);
+		if (errno == 0)
+			g_object_set (s_con, NM_SETTING_CONNECTION_TIMESTAMP, tmp, NULL);
+		else
+			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    warning: invalid LAST_CONNECT time");
+		g_free (value);
+	}
 
 	g_free (ifcfg_name);
 	return NM_SETTING (s_con);
@@ -568,9 +588,9 @@ read_wep_keys (shvarFile *ifcfg,
 }
 
 static NMSetting *
-make_wireless_security_setting (shvarFile *ifcfg,
-                                const char *file,
-                                GError **error)
+make_wep_setting (shvarFile *ifcfg,
+                  const char *file,
+                  GError **error)
 {
 	NMSettingWirelessSecurity *s_wireless_sec;
 	char *value;
@@ -578,6 +598,7 @@ make_wireless_security_setting (shvarFile *ifcfg,
 	int default_key_idx = 0;
 
 	s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
+	g_object_set (s_wireless_sec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none", NULL);
 
 	value = svGetValue (ifcfg, "DEFAULTKEY");
 	if (value) {
@@ -664,9 +685,6 @@ make_wireless_security_setting (shvarFile *ifcfg,
 		/* Unencrypted */
 		g_object_unref (s_wireless_sec);
 		s_wireless_sec = NULL;
-	} else {
-		// FIXME: WEP-only for now
-		g_object_set (s_wireless_sec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none", NULL);
 	}
 
 	return (NMSetting *) s_wireless_sec;
@@ -677,10 +695,229 @@ error:
 	return NULL;
 }
 
+static gboolean
+fill_wpa_ciphers (shvarFile *ifcfg,
+                  NMSettingWirelessSecurity *wsec,
+                  gboolean group)
+{
+	char *value = NULL, *p;
+	char **list = NULL, **iter;
+
+	p = value = svGetValue (ifcfg, group ? "CIPHER_GROUP" : "CIPHER_PAIRWISE");
+	if (!value)
+		return TRUE;
+
+	/* Strip quotes */
+	if (p[0] == '"')
+		p++;
+	if (p[strlen (p) - 1] == '"')
+		p[strlen (p) - 1] = '\0';
+
+	list = g_strsplit_set (p, " ", 0);
+	for (iter = list; iter && *iter; iter++) {
+		if (!strcmp (*iter, "CCMP")) {
+			if (group)
+				nm_setting_wireless_security_add_group (wsec, "ccmp");
+			else
+				nm_setting_wireless_security_add_pairwise (wsec, "ccmp");
+		} else if (!strcmp (*iter, "TKIP")) {
+			if (group)
+				nm_setting_wireless_security_add_group (wsec, "tkip");
+			else
+				nm_setting_wireless_security_add_pairwise (wsec, "tkip");
+		} else if (group && !strcmp (*iter, "WEP104"))
+			nm_setting_wireless_security_add_group (wsec, "wep104");
+		else if (group && !strcmp (*iter, "WEP40"))
+			nm_setting_wireless_security_add_group (wsec, "wep40");
+		else {
+			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    warning: ignoring invalid %s cipher '%s'",
+			              group ? "CIPHER_GROUP" : "CIPHER_PAIRWISE",
+			              *iter);
+		}
+	}
+
+	if (list)
+		g_strfreev (list);
+	g_free (value);
+	return TRUE;
+}
+
+#define WPA_PMK_LEN 32
+
+static char *
+parse_wpa_psk (shvarFile *ifcfg,
+               const char *file,
+               const GByteArray *ssid,
+               GError **error)
+{
+	shvarFile *keys_ifcfg;
+	char *psk = NULL, *p, *hashed = NULL;
+
+	/* Passphrase must be between 10 and 66 characters in length becuase WPA
+	 * hex keys are exactly 64 characters (no quoting), and WPA passphrases
+	 * are between 8 and 63 characters (inclusive), plus optional quoting if
+	 * the passphrase contains spaces.
+	 */
+
+	/* Try to get keys from the "shadow" key file */
+	keys_ifcfg = get_keys_ifcfg (file);
+	if (keys_ifcfg) {
+		psk = svGetValue (keys_ifcfg, "WPA_PSK");
+		svCloseFile (keys_ifcfg);
+	}
+
+	/* Fall back to the original ifcfg */
+	if (!psk)
+		psk = svGetValue (ifcfg, "WPA_PSK");
+
+	if (!psk) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Missing WPA_PSK for WPA-PSK key management");
+		return NULL;
+	}
+
+	p = psk;
+	if (p[0] == '"' && psk[strlen (psk) - 1] == '"') {
+		unsigned char *buf;
+
+		/* Get rid of the quotes */
+		p++;
+		p[strlen (p) - 1] = '\0';
+
+		/* Length check */
+		if (strlen (p) < 8 || strlen (p) > 63) {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Invalid WPA_PSK (passphrases must be between "
+			             "8 and 63 characters long (inclusive))");
+			goto out;
+		}
+
+		/* hash the passphrase to a hex key */
+		buf = g_malloc0 (WPA_PMK_LEN * 2);
+		pbkdf2_sha1 (psk, (char *) ssid->data, ssid->len, 4096, buf, WPA_PMK_LEN);
+		hashed = utils_bin2hexstr ((const char *) buf, WPA_PMK_LEN, WPA_PMK_LEN * 2);
+		g_free (buf);
+	} else if (strlen (psk) == 64) {
+		/* Verify the hex PSK; 64 digits */
+		while (*p) {
+			if (!isxdigit (*p++)) {
+				g_set_error (error, ifcfg_plugin_error_quark (), 0,
+				             "Invalid WPA_PSK (contains non-hexadecimal characters)");
+				goto out;
+			}
+		}
+		hashed = g_strdup (psk);
+	} else {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Invalid WPA_PSK (doesn't look like a passphrase or hex key)");
+		goto out;
+	}
+
+out:
+	g_free (psk);
+	return hashed;
+}
+
+#if 0
+static NMSetting8021x *
+fill_8021x (shvarFile *ifcfg,
+            const char *file,
+            const char *key_mgmt,
+            GError **error)
+{
+	return NULL;
+}
+#endif
+
+static NMSetting *
+make_wpa_setting (shvarFile *ifcfg,
+                  const char *file,
+                  const GByteArray *ssid,
+                  gboolean adhoc,
+                  NMSetting8021x **s_8021x,
+                  GError **error)
+{
+	NMSettingWirelessSecurity *wsec;
+	char *value, *psk;
+
+	wsec = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
+
+	value = svGetValue (ifcfg, "KEY_MGMT");
+	if (!value)
+		goto error; /* Not WPA or Dynamic WEP */
+
+	/* Pairwise and Group ciphers */
+	fill_wpa_ciphers (ifcfg, wsec, FALSE);
+	fill_wpa_ciphers (ifcfg, wsec, TRUE);
+
+	/* WPA and/or RSN */
+	if (svTrueValue (ifcfg, "WPA_ALLOW_WPA", TRUE))
+		nm_setting_wireless_security_add_proto (wsec, "wpa");
+	if (svTrueValue (ifcfg, "WPA_ALLOW_WPA2", TRUE))
+		nm_setting_wireless_security_add_proto (wsec, "rsn");
+
+	if (!strcmp (value, "WPA-PSK")) {
+		psk = parse_wpa_psk (ifcfg, file, ssid, error);
+		if (!psk)
+			goto error;
+		g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_PSK, psk, NULL);
+		g_free (psk);
+#if 0
+	} else if (!strcmp (value, "WPA-EAP") || !strcmp (value, "IEEE8021X")) {
+		/* Adhoc mode is mutually exclusive with any 802.1x-based authentication */
+		if (adhoc) {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Ad-Hoc mode cannot be used with KEY_MGMT type '%s'", value);
+			goto error;
+		}
+
+		*s_8021x = fill_8021x (ifcfg, file, value, error);
+		if (!*s_8021x)
+			goto error;
+#endif
+	} else {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Unknown wireless KEY_MGMT type '%s'", value);
+		goto error;
+	}
+
+	g_free (value);
+	return (NMSetting *) wsec;
+
+error:
+	g_free (value);
+	if (wsec)
+		g_object_unref (wsec);
+	return NULL;
+}
+
+static NMSetting *
+make_wireless_security_setting (shvarFile *ifcfg,
+                                const char *file,
+                                const GByteArray *ssid,
+                                gboolean adhoc,
+                                NMSetting8021x **s_8021x,
+                                GError **error)
+{
+	NMSetting *wsec;
+
+	wsec = make_wpa_setting (ifcfg, file, ssid, adhoc, s_8021x, error);
+	if (wsec)
+		return wsec;
+	else if (*error)
+		return NULL;
+
+	wsec = make_wep_setting (ifcfg, file, error);
+	if (wsec)
+		return wsec;
+	else if (*error)
+		return NULL;
+
+	return NULL; /* unencrypted */
+}
 
 static NMSetting *
 make_wireless_setting (shvarFile *ifcfg,
-                       NMSetting *security,
                        gboolean unmanaged,
                        GError **error)
 {
@@ -747,11 +984,6 @@ make_wireless_setting (shvarFile *ifcfg,
 
 			g_object_set (s_wireless, NM_SETTING_WIRELESS_MODE, mode, NULL);
 		}
-
-		if (security)
-			g_object_set (s_wireless, NM_SETTING_WIRELESS_SEC,
-						  NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NULL);
-
 		// FIXME: channel/freq, other L2 parameters like RTS
 	}
 
@@ -772,9 +1004,12 @@ wireless_connection_from_ifcfg (const char *file,
 	NMConnection *connection = NULL;
 	NMSetting *con_setting = NULL;
 	NMSetting *wireless_setting = NULL;
+	NMSetting8021x *s_8021x = NULL;
 	const GByteArray *ssid;
 	NMSetting *security_setting = NULL;
 	char *printable_ssid = NULL;
+	const char *mode;
+	gboolean adhoc = FALSE;
 
 	g_return_val_if_fail (file != NULL, NULL);
 	g_return_val_if_fail (ifcfg != NULL, NULL);
@@ -788,17 +1023,8 @@ wireless_connection_from_ifcfg (const char *file,
 		return NULL;
 	}
 
-	/* Wireless security */
-	security_setting = make_wireless_security_setting (ifcfg, file, error);
-	if (*error) {
-		g_object_unref (connection);
-		return NULL;
-	}
-	if (security_setting)
-		nm_connection_add_setting (connection, security_setting);
-
 	/* Wireless */
-	wireless_setting = make_wireless_setting (ifcfg, security_setting, unmanaged, error);
+	wireless_setting = make_wireless_setting (ifcfg, unmanaged, error);
 	if (!wireless_setting) {
 		g_object_unref (connection);
 		return NULL;
@@ -811,6 +1037,28 @@ wireless_connection_from_ifcfg (const char *file,
 	else
 		printable_ssid = g_strdup_printf ("unmanaged");
 
+	if (!unmanaged) {
+		mode = nm_setting_wireless_get_mode (NM_SETTING_WIRELESS (wireless_setting));
+		if (mode && !strcmp (mode, "adhoc"))
+			adhoc = TRUE;
+
+		/* Wireless security */
+		security_setting = make_wireless_security_setting (ifcfg, file, ssid, adhoc, &s_8021x, error);
+		if (*error) {
+			g_object_unref (connection);
+			return NULL;
+		}
+		if (security_setting) {
+			nm_connection_add_setting (connection, security_setting);
+			if (s_8021x)
+				nm_connection_add_setting (connection, NM_SETTING (s_8021x));
+
+			g_object_set (wireless_setting, NM_SETTING_WIRELESS_SEC,
+			              NM_SETTING_WIRELESS_SECURITY_SETTING_NAME, NULL);
+		}
+	}
+
+	/* Connection */
 	con_setting = make_connection_setting (file, ifcfg,
 	                                       NM_SETTING_WIRELESS_SETTING_NAME,
 	                                       printable_ssid);
