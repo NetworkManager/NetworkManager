@@ -46,7 +46,5 @@ struct _SCPluginIfcfgClass {
 
 GType sc_plugin_ifcfg_get_type (void);
 
-GQuark ifcfg_plugin_error_quark (void);
-
 #endif	/* _PLUGIN_H_ */
 
