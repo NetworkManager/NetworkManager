@@ -53,7 +53,12 @@
 #include "sha1.h"
 
 #include "reader.h"
-#include "nm-system-config-interface.h"
+
+#define PLUGIN_PRINT(pname, fmt, args...) \
+	{ g_message ("   " pname ": " fmt, ##args); }
+
+#define PLUGIN_WARN(pname, fmt, args...) \
+	{ g_warning ("   " pname ": " fmt, ##args); }
 
 #define TYPE_ETHERNET "Ethernet"
 #define TYPE_WIRELESS "Wireless"
@@ -143,7 +148,7 @@ make_connection_setting (const char *file,
 		if (errno == 0)
 			g_object_set (s_con, NM_SETTING_CONNECTION_TIMESTAMP, tmp, NULL);
 		else
-			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    warning: invalid LAST_CONNECT time");
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid LAST_CONNECT time");
 		g_free (value);
 	}
 
@@ -188,7 +193,7 @@ get_one_ip4_addr (shvarFile *ifcfg,
 			goto error; \
 		if (dns) { \
 			if (!nm_setting_ip4_config_add_dns (s_ip4, dns)) \
-				PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    warning: duplicate DNS server %s", tag); \
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate DNS server %s", tag); \
 		} \
 	}
 		
@@ -339,7 +344,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 
 	if (addr) {
 		if (!nm_setting_ip4_config_add_address (s_ip4, addr))
-			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    warning: duplicate IP4 address");
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate IP4 address");
 	}
 
 	GET_ONE_DNS("DNS1");
@@ -357,7 +362,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 			for (item = searches; *item; item++) {
 				if (strlen (*item)) {
 					if (!nm_setting_ip4_config_add_dns_search (s_ip4, *item))
-						PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    warning: duplicate DNS domain '%s'", *item);
+						PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate DNS domain '%s'", *item);
 				}
 			}
 			g_strfreev (searches);
@@ -377,7 +382,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 				for (item = searches; *item; item++) {
 					if (strlen (*item)) {
 						if (!nm_setting_ip4_config_add_dns_search (s_ip4, *item))
-							PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    warning: duplicate DNS search '%s'", *item);
+							PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate DNS search '%s'", *item);
 					}
 				}
 				g_strfreev (searches);
@@ -730,9 +735,9 @@ fill_wpa_ciphers (shvarFile *ifcfg,
 		else if (group && !strcmp (*iter, "WEP40"))
 			nm_setting_wireless_security_add_group (wsec, "wep40");
 		else {
-			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    warning: ignoring invalid %s cipher '%s'",
-			              group ? "CIPHER_GROUP" : "CIPHER_PAIRWISE",
-			              *iter);
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignoring invalid %s cipher '%s'",
+			             group ? "CIPHER_GROUP" : "CIPHER_PAIRWISE",
+			             *iter);
 		}
 	}
 
@@ -1099,7 +1104,7 @@ make_wired_setting (shvarFile *ifcfg, gboolean unmanaged, GError **error)
 				g_object_set (s_wired, NM_SETTING_WIRED_MTU, mtu, NULL);
 		} else {
 			/* Shouldn't be fatal... */
-			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    warning: invalid MTU '%s'", value);
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid MTU '%s'", value);
 		}
 		g_free (value);
 	}

@@ -18,23 +18,18 @@
  * (C) Copyright 2008 - 2009 Red Hat, Inc.
  */
 
-#ifndef __COMMON_H__
-#define __COMMON_H__
-
-#define IFCFG_TAG "ifcfg-"
-#define KEYS_TAG "keys-"
-#define BAK_TAG ".bak"
-#define TILDE_TAG "~"
-#define ORIG_TAG ".orig"
-#define REJ_TAG ".rej"
-
-#define IFCFG_PLUGIN_NAME "ifcfg-rh"
-#define IFCFG_PLUGIN_INFO "(c) 2007 - 2008 Red Hat, Inc.  To report bugs please use the NetworkManager mailing list."
-
 #include <glib.h>
+#include "common.h"
 
-GQuark ifcfg_plugin_error_quark (void);
+GQuark
+ifcfg_plugin_error_quark (void)
+{
+	static GQuark error_quark = 0;
 
+	if (G_UNLIKELY (error_quark == 0))
+		error_quark = g_quark_from_static_string ("ifcfg-plugin-error-quark");
 
-#endif  /* __COMMON_H__ */
+	return error_quark;
+}
+
 
