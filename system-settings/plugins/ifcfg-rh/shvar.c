@@ -182,7 +182,7 @@ escape(const char *s) {
  * be freed by the caller.
  */
 char *
-svGetValue(shvarFile *s, const char *key)
+svGetValue(shvarFile *s, const char *key, gboolean verbatim)
 {
     char *value = NULL;
     char *line;
@@ -201,7 +201,8 @@ svGetValue(shvarFile *s, const char *key)
 	line = s->current->data;
 	if (!strncmp(keyString, line, len)) {
 	    value = g_strdup(line + len);
-	    unescape(value);
+	    if (!verbatim)
+	      unescape(value);
 	    break;
 	}
     }
@@ -215,7 +216,7 @@ svGetValue(shvarFile *s, const char *key)
 	    return NULL;
 	}
     }
-    if (s->parent) value = svGetValue(s->parent, key);
+    if (s->parent) value = svGetValue(s->parent, key, verbatim);
     return value;
 }
 
@@ -229,7 +230,7 @@ svTrueValue(shvarFile *s, const char *key, int def)
     char *tmp;
     int returnValue = def;
 
-    tmp = svGetValue(s, key);
+    tmp = svGetValue(s, key, FALSE);
     if (!tmp) return returnValue;
 
     if ( (!strcasecmp("yes", tmp)) ||
@@ -283,9 +284,9 @@ svSetValue(shvarFile *s, const char *key, const char *value)
     if (value) newval = escape(value);
     keyValue = g_strdup_printf("%s=%s", key, newval ? newval : "");
 
-    val1 = svGetValue(s, key);
+    val1 = svGetValue(s, key, FALSE);
     if (val1 && newval && !strcmp(val1, newval)) goto bail;
-    if (s->parent) val2 = svGetValue(s->parent, key);
+    if (s->parent) val2 = svGetValue(s->parent, key, FALSE);
 
     if (!newval || !newval[0]) {
 	/* delete value somehow */

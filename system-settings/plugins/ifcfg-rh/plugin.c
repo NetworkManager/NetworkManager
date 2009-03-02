@@ -486,7 +486,7 @@ plugin_get_hostname (SCPluginIfcfg *plugin)
 		return FALSE;
 	}
 
-	hostname = svGetValue (network, "HOSTNAME");
+	hostname = svGetValue (network, "HOSTNAME", FALSE);
 	svCloseFile (network);
 
 	/* Ignore a hostname of 'localhost' or 'localhost.localdomain' to preserve

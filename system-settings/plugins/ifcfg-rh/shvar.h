@@ -62,7 +62,7 @@ svNewFile(const char *name);
  * be freed by the caller.
  */
 char *
-svGetValue(shvarFile *s, const char *key);
+svGetValue(shvarFile *s, const char *key, gboolean verbatim);
 
 /* return 1 if <key> resolves to any truth value (e.g. "yes", "y", "true")
  * return 0 if <key> resolves to any non-truth value (e.g. "no", "n", "false")

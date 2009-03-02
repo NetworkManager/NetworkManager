@@ -1,0 +1,10 @@
+# Intel Corporation 82540EP Gigabit Ethernet Controller (Mobile)
+TYPE=Ethernet
+DEVICE=eth4
+HWADDR=00:11:22:33:44:ee
+BOOTPROTO=dhcp
+ONBOOT=yes
+USERCTL=yes
+NM_CONTROLLED=yes
+PEERDNS=yes
+
