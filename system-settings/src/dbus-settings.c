@@ -101,7 +101,7 @@ load_connections (NMSysconfigSettings *self)
 		// priority plugin.
 
 		for (elt = plugin_connections; elt; elt = g_slist_next (elt))
-			nm_sysconfig_settings_add_connection (self, NM_EXPORTED_CONNECTION (elt->data));
+			nm_sysconfig_settings_add_connection (self, NM_EXPORTED_CONNECTION (elt->data), TRUE);
 
 		g_slist_free (plugin_connections);
 	}
@@ -223,9 +223,9 @@ get_unmanaged_devices (NMSysconfigSettings *self)
 	return devices;
 }
 
-static NMSystemConfigInterface *
-get_first_plugin_by_capability (NMSysconfigSettings *self,
-                                guint32 capability)
+NMSystemConfigInterface *
+nm_sysconfig_settings_get_plugin (NMSysconfigSettings *self,
+                                  guint32 capability)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 	GSList *iter;
@@ -285,7 +285,7 @@ get_property (GObject *object, guint prop_id,
 			g_value_set_static_string (value, "");
 		break;
 	case PROP_CAN_MODIFY:
-		g_value_set_boolean (value, !!get_first_plugin_by_capability (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS));
+		g_value_set_boolean (value, !!nm_sysconfig_settings_get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -391,10 +391,10 @@ nm_sysconfig_settings_new (DBusGConnection *g_conn, NMSystemConfigHalManager *ha
 
 static void
 plugin_connection_added (NMSystemConfigInterface *config,
-					NMExportedConnection *connection,
-					gpointer user_data)
+                         NMExportedConnection *connection,
+                         gpointer user_data)
 {
-	nm_sysconfig_settings_add_connection (NM_SYSCONFIG_SETTINGS (user_data), connection);
+	nm_sysconfig_settings_add_connection (NM_SYSCONFIG_SETTINGS (user_data), connection, TRUE);
 }
 
 static void
@@ -477,7 +477,8 @@ connection_removed (NMExportedConnection *connection,
 
 void
 nm_sysconfig_settings_add_connection (NMSysconfigSettings *self,
-							   NMExportedConnection *connection)
+                                      NMExportedConnection *connection,
+                                      gboolean do_export)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 
@@ -491,13 +492,16 @@ nm_sysconfig_settings_add_connection (NMSysconfigSettings *self,
 	g_hash_table_insert (priv->connections, g_object_ref (connection), GINT_TO_POINTER (1));
 	g_signal_connect (connection, "removed", G_CALLBACK (connection_removed), self);
 
-	nm_exported_connection_register_object (connection, NM_CONNECTION_SCOPE_SYSTEM, priv->g_connection);
-	nm_settings_signal_new_connection (NM_SETTINGS (self), connection);
+	if (do_export) {
+		nm_exported_connection_register_object (connection, NM_CONNECTION_SCOPE_SYSTEM, priv->g_connection);
+		nm_settings_signal_new_connection (NM_SETTINGS (self), connection);
+	}
 }
 
 void
 nm_sysconfig_settings_remove_connection (NMSysconfigSettings *self,
-								 NMExportedConnection *connection)
+                                         NMExportedConnection *connection,
+                                         gboolean do_signal)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 
@@ -527,19 +531,67 @@ nm_sysconfig_settings_is_device_managed (NMSysconfigSettings *self,
 	return TRUE;
 }
 
-static gboolean
-impl_settings_add_connection (NMSysconfigSettings *self,
-						GHashTable *hash,
-						DBusGMethodInvocation *context)
+gboolean
+nm_sysconfig_settings_add_new_connection (NMSysconfigSettings *self,
+                                          GHashTable *hash,
+                                          GError **error)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 	NMConnection *connection;
+	GError *tmp_error = NULL, *last_error = NULL;
 	GSList *iter;
-	GError *err = NULL, *cnfh_error = NULL;
 	gboolean success = FALSE;
 
+	connection = nm_connection_new_from_hash (hash, &tmp_error);
+	if (!connection) {
+		/* Invalid connection hash */
+		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
+		             "Invalid connection: '%s' / '%s' invalid: %d",
+		             tmp_error ? g_type_name (nm_connection_lookup_setting_type_by_quark (tmp_error->domain)) : "(unknown)",
+		             tmp_error ? tmp_error->message : "(unknown)", tmp_error ? tmp_error->code : -1);
+		g_clear_error (&tmp_error);
+		return FALSE;
+	}
+
+	/* Here's how it works:
+	   1) plugin writes a connection.
+	   2) plugin notices that a new connection is available for reading.
+	   3) plugin reads the new connection (the one it wrote in 1) and emits 'connection-added' signal.
+	   4) NMSysconfigSettings receives the signal and adds it to it's connection list.
+	*/
+
+	for (iter = priv->plugins; iter && !success; iter = iter->next) {
+		success = nm_system_config_interface_add_connection (NM_SYSTEM_CONFIG_INTERFACE (iter->data),
+		                                                     connection, &tmp_error);
+		g_clear_error (&last_error);
+		if (!success)
+			last_error = tmp_error;
+	}
+
+	g_object_unref (connection);
+
+	if (!success) {
+		g_set_error (error, NM_SYSCONFIG_SETTINGS_ERROR,
+		             NM_SYSCONFIG_SETTINGS_ERROR_ADD_FAILED,
+		             "Saving connection failed: (%d) %s",
+		             last_error ? last_error->code : -1,
+		             last_error && last_error->message ? last_error->message : "(unknown)");
+		g_clear_error (&last_error);
+	}
+
+	return success;
+}
+
+static gboolean
+impl_settings_add_connection (NMSysconfigSettings *self,
+                              GHashTable *hash,
+                              DBusGMethodInvocation *context)
+{
+	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+	GError *err = NULL;
+
 	/* Do any of the plugins support adding? */
-	if (!get_first_plugin_by_capability (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS)) {
+	if (!nm_sysconfig_settings_get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS)) {
 		err = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
 					    NM_SYSCONFIG_SETTINGS_ERROR_ADD_NOT_SUPPORTED,
 					    "%s", "None of the registered plugins support add.");
@@ -549,40 +601,7 @@ impl_settings_add_connection (NMSysconfigSettings *self,
 	if (!check_polkit_privileges (priv->g_connection, priv->pol_ctx, context, &err))
 		goto out;
 
-	connection = nm_connection_new_from_hash (hash, &cnfh_error);
-	if (connection) {
-		GError *add_error = NULL;
-
-		/* Here's how it works:
-		   1) plugin writes a connection.
-		   2) plugin notices that a new connection is available for reading.
-		   3) plugin reads the new connection (the one it wrote in 1) and emits 'connection-added' signal.
-		   4) NMSysconfigSettings receives the signal and adds it to it's connection list.
-		*/
-
-		success = FALSE;
-		for (iter = priv->plugins; iter && success == FALSE; iter = iter->next) {
-			success = nm_system_config_interface_add_connection (NM_SYSTEM_CONFIG_INTERFACE (iter->data),
-													   connection, &add_error);
-			if (!success && add_error)
-				g_error_free (add_error);
-		}
-
-		g_object_unref (connection);
-
-		if (!success) {
-			err = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
-						    NM_SYSCONFIG_SETTINGS_ERROR_ADD_FAILED,
-						    "%s", "Saving connection failed.");
-		}
-	} else {
-		/* Invalid connection hash */
-		err = g_error_new (NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		                   "Invalid connection: '%s' / '%s' invalid: %d",
-		                   g_type_name (nm_connection_lookup_setting_type_by_quark (cnfh_error->domain)),
-		                   cnfh_error->message, cnfh_error->code);
-		g_error_free (cnfh_error);
-	}
+	nm_sysconfig_settings_add_new_connection (self, hash, &err);
 
  out:
 	if (err) {
@@ -606,7 +625,7 @@ impl_settings_save_hostname (NMSysconfigSettings *self,
 	gboolean success = FALSE;
 
 	/* Do any of the plugins support setting the hostname? */
-	if (!get_first_plugin_by_capability (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME)) {
+	if (!nm_sysconfig_settings_get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME)) {
 		err = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
 		                   NM_SYSCONFIG_SETTINGS_ERROR_SAVE_HOSTNAME_NOT_SUPPORTED,
 		                   "%s", "None of the registered plugins support setting the hostname.");

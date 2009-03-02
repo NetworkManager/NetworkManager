@@ -67,16 +67,29 @@ NMSysconfigSettings *nm_sysconfig_settings_new (DBusGConnection *g_conn,
 void nm_sysconfig_settings_add_plugin     (NMSysconfigSettings *settings,
 					   NMSystemConfigInterface *plugin);
 
+/* Registers an exising connection with the settings service */
 void nm_sysconfig_settings_add_connection (NMSysconfigSettings *settings,
-                                           NMExportedConnection *connection);
+                                           NMExportedConnection *connection,
+                                           gboolean do_export);
 
 void nm_sysconfig_settings_remove_connection (NMSysconfigSettings *settings,
-                                              NMExportedConnection *connection);
+                                              NMExportedConnection *connection,
+                                              gboolean do_signal);
 
 void nm_sysconfig_settings_update_unamanged_devices (NMSysconfigSettings *settings,
                                                      GSList *new_list);
 
 gboolean nm_sysconfig_settings_is_device_managed (NMSysconfigSettings *settings,
                                                   const char *udi);
+
+NMSystemConfigInterface *nm_sysconfig_settings_get_plugin (NMSysconfigSettings *self,
+                                                           guint32 capability);
+
+/* Adds a new connection from a hash of that connection's settings,
+ * potentially saving the new connection to persistent storage.
+ */
+gboolean nm_sysconfig_settings_add_new_connection (NMSysconfigSettings *self,
+                                                   GHashTable *hash,
+                                                   GError **error);
 
 #endif  /* __DBUS_SETTINGS_H__ */

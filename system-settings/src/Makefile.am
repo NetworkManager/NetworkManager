@@ -25,6 +25,8 @@ nm_system_settings_SOURCES = \
 	nm-system-config-hal-manager.h \
 	nm-sysconfig-connection.c \
 	nm-sysconfig-connection.h \
+	nm-default-wired-connection.c \
+	nm-default-wired-connection.h \
 	sha1.c \
 	sha1.h
 

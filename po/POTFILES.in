@@ -9,4 +9,5 @@ src/NetworkManager.c
 src/dhcp-manager/nm-dhcp-dhclient.c
 src/named-manager/nm-named-manager.c
 system-settings/src/main.c
+system-settings/src/nm-default-wired-connection.c
 
