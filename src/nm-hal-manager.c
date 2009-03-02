@@ -570,7 +570,7 @@ modem_device_creator (NMHalManager *self,
 	         type_gsm ? "GSM" : "CDMA",
 	         udev ? "udev" : "HAL");
 
-	/* Special handling of 'hso' cards (until punted out to a modem manager) */
+	/* Special handling of 'hso' cards (until punted to ModemManager) */
 	if (type_gsm && !strcmp (driver, "hso")) {
 		char *hsotype_path;
 		char *contents = NULL;
@@ -593,6 +593,28 @@ modem_device_creator (NMHalManager *self,
 		}
 
 		netdev = get_hso_netdev (priv->hal_ctx, udi);
+	}
+
+	/* Special handling of Option cards (until punted to ModemManager).  Only
+	 * the first USB interface can be used for control and PPP.
+	 */
+	if (type_gsm && !strcmp (driver, "option")) {
+		char *parent;
+		guint32 vendor_id = 0, usb_interface = 0;
+
+		parent = libhal_device_get_property_string (priv->hal_ctx, udi, "info.parent", NULL);
+		if (!parent)
+			goto out;
+
+		vendor_id = libhal_device_get_property_int (priv->hal_ctx, parent, "usb.vendor_id", NULL);
+		if (vendor_id == 0x0AF0) {
+			usb_interface = libhal_device_get_property_int (priv->hal_ctx, parent, "usb.interface.number", NULL);
+			if (usb_interface > 0) {
+				g_free (parent);
+				goto out;
+			}
+		}
+		g_free (parent);
 	}
 
 	if (type_gsm) {
