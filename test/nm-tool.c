@@ -508,7 +508,7 @@ get_one_connection (DBusGConnection *bus,
                     GHashTable *table)
 {
 	DBusGProxy *proxy;
-	NMConnection *connection;
+	NMConnection *connection = NULL;
 	const char *service;
 	GError *error = NULL;
 	GHashTable *settings = NULL;
@@ -549,7 +549,8 @@ get_one_connection (DBusGConnection *bus,
 
 out:
 	g_clear_error (&error);
-	g_object_unref (connection);
+	if (connection)
+		g_object_unref (connection);
 	g_object_unref (proxy);
 }
 
