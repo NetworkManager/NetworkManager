@@ -49,6 +49,9 @@
 #include "dbus-settings.h"
 #include "nm-system-config-hal-manager.h"
 #include "nm-system-config-interface.h"
+#include "nm-default-wired-connection.h"
+
+#define CONFIG_KEY_NO_AUTO_DEFAULT "no-auto-default"
 
 static GMainLoop *loop = NULL;
 static gboolean debug = FALSE;
@@ -63,6 +66,8 @@ typedef struct {
 	NMSysconfigSettings *settings;
 
 	GHashTable *wired_devices;
+
+	const char *config;
 } Application;
 
 
@@ -207,11 +212,11 @@ load_stuff (gpointer user_data)
 
 typedef struct {
 	Application *app;
-	NMExportedConnection *connection;
+	NMDefaultWiredConnection *connection;
 	guint add_id;
+	guint updated_id;
+	guint deleted_id;
 	char *udi;
-	GByteArray *mac;
-	char *iface;
 } WiredDeviceInfo;
 
 static void
@@ -219,13 +224,16 @@ wired_device_info_destroy (gpointer user_data)
 {
 	WiredDeviceInfo *info = (WiredDeviceInfo *) user_data;
 
-	g_free (info->iface);
-	if (info->mac)
-		g_byte_array_free (info->mac, TRUE);
 	if (info->add_id)
 		g_source_remove (info->add_id);
+	if (info->updated_id)
+		g_source_remove (info->updated_id);
+	if (info->deleted_id)
+		g_source_remove (info->deleted_id);
 	if (info->connection) {
-		nm_sysconfig_settings_remove_connection (info->app->settings, info->connection);
+		nm_sysconfig_settings_remove_connection (info->app->settings,
+		                                         NM_EXPORTED_CONNECTION (info->connection),
+		                                         TRUE);
 		g_object_unref (info->connection);
 	}
 	g_free (info);
@@ -297,9 +305,7 @@ have_connection_for_device (Application *app, GByteArray *mac)
 	g_return_val_if_fail (app != NULL, FALSE);
 	g_return_val_if_fail (mac != NULL, FALSE);
 
-	/* If the device doesn't have a connection advertised by any of the
-	 * plugins, create a new default DHCP-enabled connection for it.
-	 */
+	/* Find a wired connection locked to the given MAC address, if any */
 	list = nm_settings_list_connections (NM_SETTINGS (app->settings));
 	for (iter = list; iter; iter = g_slist_next (iter)) {
 		NMExportedConnection *exported = NM_EXPORTED_CONNECTION (iter->data);
@@ -345,76 +351,240 @@ have_connection_for_device (Application *app, GByteArray *mac)
 	return ret;
 }
 
+/* Search through the list of blacklisted MAC addresses in the config file. */
 static gboolean
-add_default_dhcp_connection (gpointer user_data)
+is_mac_auto_wired_blacklisted (const GByteArray *mac, const char *filename)
+{
+	GKeyFile *config;
+	char **list, **iter;
+	gboolean found = FALSE;
+
+	g_return_val_if_fail (mac != NULL, FALSE);
+	g_return_val_if_fail (filename != NULL, FALSE);
+
+	config = g_key_file_new ();
+	if (!config) {
+		g_warning ("%s: not enough memory to load config file.", __func__);
+		return FALSE;
+	}
+
+	g_key_file_set_list_separator (config, ',');
+	if (!g_key_file_load_from_file (config, filename, G_KEY_FILE_NONE, NULL))
+		goto out;
+
+	list = g_key_file_get_string_list (config, "main", CONFIG_KEY_NO_AUTO_DEFAULT, NULL, NULL);
+	for (iter = list; iter && *iter; iter++) {
+		struct ether_addr *candidate;
+
+		candidate = ether_aton (*iter);
+		if (candidate && !memcmp (mac->data, candidate->ether_addr_octet, ETH_ALEN)) {
+			found = TRUE;
+			break;
+		}
+	}
+
+	if (list)
+		g_strfreev (list);
+
+out:
+	g_key_file_free (config);
+	return found;
+}
+
+static void
+default_wired_deleted (NMDefaultWiredConnection *wired,
+                       const GByteArray *mac,
+                       WiredDeviceInfo *info)
+{
+	NMConnection *wrapped;
+	NMSettingConnection *s_con;
+	char *tmp;
+	GKeyFile *config;
+	char **list, **iter, **updated;
+	gboolean found = FALSE;
+	gsize len = 0;
+	char *data;
+
+	/* If there was no config file specified, there's nothing to do */
+	if (!info->app->config)
+		goto cleanup;
+
+	/* When the default wired connection is removed (either deleted or saved
+	 * to a new persistent connection by a plugin), write the MAC address of
+	 * the wired device to the config file and don't create a new default wired
+	 * connection for that device again.
+	 */
+
+	wrapped = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (wired));
+	g_assert (wrapped);
+	s_con = (NMSettingConnection *) nm_connection_get_setting (wrapped, NM_TYPE_SETTING_CONNECTION);
+	g_assert (s_con);
+
+	/* Ignore removals of read-only connections, since they couldn't have
+	 * been removed by the user.
+	 */
+	if (nm_setting_connection_get_read_only (s_con))
+		goto cleanup;
+
+	config = g_key_file_new ();
+	if (!config)
+		goto cleanup;
+
+	g_key_file_set_list_separator (config, ',');
+	g_key_file_load_from_file (config, info->app->config, G_KEY_FILE_KEEP_COMMENTS, NULL);
+
+	list = g_key_file_get_string_list (config, "main", CONFIG_KEY_NO_AUTO_DEFAULT, &len, NULL);
+	/* Traverse entire list to get count of # items */
+	for (iter = list; iter && *iter; iter++) {
+		struct ether_addr *candidate;
+
+		candidate = ether_aton (*iter);
+		if (candidate && !memcmp (mac->data, candidate->ether_addr_octet, ETH_ALEN))
+			found = TRUE;
+	}
+
+	/* Add this device's MAC to the list */
+	if (!found) {
+		tmp = g_strdup_printf ("%02x:%02x:%02x:%02x:%02x:%02x",
+		                       mac->data[0], mac->data[1], mac->data[2],
+		                       mac->data[3], mac->data[4], mac->data[5]);
+
+		updated = g_malloc0 (sizeof (char*) * (len + 2));
+		if (list && len)
+			memcpy (updated, list, len);
+		updated[len] = tmp;
+
+		g_key_file_set_string_list (config,
+		                            "main", CONFIG_KEY_NO_AUTO_DEFAULT,
+		                            (const char **) updated,
+		                            len + 1);
+		/* g_free() not g_strfreev() since 'updated' isn't a deep-copy */
+		g_free (updated);
+		g_free (tmp);
+
+		data = g_key_file_to_data (config, &len, NULL);
+		if (data) {
+			g_file_set_contents (info->app->config, data, len, NULL);
+			g_free (data);
+		}
+	}
+
+	if (list)
+		g_strfreev (list);
+	g_key_file_free (config);
+
+cleanup:
+	/* Clear the connection first so that a 'removed' signal doesn't get emitted
+	 * during wired_device_info_destroy(), becuase this connection removal
+	 * is expected and already handled.
+	 */
+	g_object_unref (wired);
+	info->connection = NULL;
+
+	g_hash_table_remove (info->app->wired_devices, info->udi);
+}
+
+static GError *
+default_wired_try_update (NMDefaultWiredConnection *wired,
+                          GHashTable *new_settings,
+                          WiredDeviceInfo *info)
+{
+	GError *error = NULL;
+	NMConnection *wrapped;
+	NMSettingConnection *s_con;
+	const char *id;
+
+	/* Try to move this default wired conneciton to a plugin so that it has
+	 * persistent storage.
+	 */
+
+	wrapped = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (wired));
+	g_assert (wrapped);
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (wrapped, NM_TYPE_SETTING_CONNECTION));
+	g_assert (s_con);
+	id = nm_setting_connection_get_id (s_con);
+	g_assert (id);
+
+	nm_sysconfig_settings_remove_connection (info->app->settings, NM_EXPORTED_CONNECTION (wired), FALSE);
+	if (nm_sysconfig_settings_add_new_connection (info->app->settings, new_settings, &error)) {
+		g_message ("Saved default wired connection '%s' to persistent storage", id);
+		return NULL;
+	}
+
+	g_warning ("%s: couldn't save default wired connection '%s': %d / %s",
+	           __func__, id, error ? error->code : -1,
+	           (error && error->message) ? error->message : "(unknown)");
+
+	/* If there was an error, don't destroy the default wired connection,
+	 * but add it back to the system settings service. Connection is already
+	 * exported on the bus, don't export it again, thus do_export == FALSE.
+	 */
+	nm_sysconfig_settings_add_connection (info->app->settings, NM_EXPORTED_CONNECTION (wired), FALSE);
+
+	return error;
+}
+
+static gboolean
+add_default_wired_connection (gpointer user_data)
 {
 	WiredDeviceInfo *info = (WiredDeviceInfo *) user_data;
+	GByteArray *mac = NULL;
+	struct ether_addr tmp;
+	char *iface = NULL;
 	NMSettingConnection *s_con;
-	NMSettingWired *s_wired;
 	NMConnection *wrapped;
-	GByteArray *setting_mac;
-	char *id;
-	char *uuid;
+	gboolean read_only = TRUE;
+	const char *id;
 
-	if (info->add_id)
-		info->add_id = 0;
+	info->add_id = 0;
+	g_assert (info->connection == NULL);
 
 	/* If the device isn't managed, ignore it */
 	if (!nm_sysconfig_settings_is_device_managed (info->app->settings, info->udi))
 		goto ignore;
 
-	if (!info->iface) {
-		struct ether_addr mac;
-
-		info->iface = get_details_for_udi (info->app, info->udi, &mac);
-		if (!info->iface)
-			goto ignore;
-		info->mac = g_byte_array_sized_new (ETH_ALEN);
-		g_byte_array_append (info->mac, mac.ether_addr_octet, ETH_ALEN);
-	}
-
-	if (have_connection_for_device (info->app, info->mac))
+	iface = get_details_for_udi (info->app, info->udi, &tmp);
+	if (!iface)
 		goto ignore;
 
-	wrapped = nm_connection_new ();
-	info->connection = nm_exported_connection_new (wrapped);
-	g_object_unref (wrapped);
+	mac = g_byte_array_sized_new (ETH_ALEN);
+	g_byte_array_append (mac, tmp.ether_addr_octet, ETH_ALEN);
 
-	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
+	if (have_connection_for_device (info->app, mac))
+		goto ignore;
 
-	id = g_strdup_printf (_("Auto %s"), info->iface);
-	uuid = nm_utils_uuid_generate ();
+	if (info->app->config && is_mac_auto_wired_blacklisted (mac, info->app->config))
+		goto ignore;
 
-	g_object_set (s_con,
-		      NM_SETTING_CONNECTION_ID, id,
-		      NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
-		      NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
-		      NM_SETTING_CONNECTION_UUID, uuid,
-		      NM_SETTING_CONNECTION_READ_ONLY, TRUE,
-		      NULL);
+	if (nm_sysconfig_settings_get_plugin (info->app->settings, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS))
+		read_only = FALSE;
 
-	nm_connection_add_setting (wrapped, NM_SETTING (s_con));
+	info->connection = nm_default_wired_connection_new (mac, iface, read_only);
+	if (!info->connection)
+		goto ignore;
 
-	g_message ("Adding default connection '%s' for %s", id, info->udi);
-		
-	g_free (id);
-	g_free (uuid);
+	wrapped = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (info->connection));
+	g_assert (wrapped);
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (wrapped, NM_TYPE_SETTING_CONNECTION));
+	g_assert (s_con);
+	id = nm_setting_connection_get_id (s_con);
+	g_assert (id);
 
-	/* Lock the connection to this device */
-	s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());
+	g_message ("Added default wired connection '%s' for %s", id, info->udi);
 
-	setting_mac = g_byte_array_sized_new (ETH_ALEN);
-	g_byte_array_append (setting_mac, info->mac->data, ETH_ALEN);
-	g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, setting_mac, NULL);
-	g_byte_array_free (setting_mac, TRUE);
-
-	nm_connection_add_setting (wrapped, NM_SETTING (s_wired));
-
-	nm_sysconfig_settings_add_connection (info->app->settings, info->connection);
-
+	info->updated_id = g_signal_connect (info->connection, "try-update",
+	                                     (GCallback) default_wired_try_update, info);
+	info->deleted_id = g_signal_connect (info->connection, "deleted",
+	                                     (GCallback) default_wired_deleted, info);
+	nm_sysconfig_settings_add_connection (info->app->settings,
+	                                      NM_EXPORTED_CONNECTION (info->connection),
+	                                      TRUE);
 	return FALSE;
 
 ignore:
+	if (mac)
+		g_byte_array_free (mac, TRUE);
+	g_free (iface);
 	g_hash_table_remove (info->app->wired_devices, info->udi);
 	return FALSE;
 }
@@ -431,7 +601,7 @@ device_added_cb (DBusGProxy *proxy, const char *udi, NMDeviceType devtype, gpoin
 	/* Wait for a plugin to figure out if the device should be managed or not */
 	info = g_malloc0 (sizeof (WiredDeviceInfo));
 	info->app = app;
-	info->add_id = g_timeout_add_seconds (4, add_default_dhcp_connection, info);
+	info->add_id = g_timeout_add_seconds (4, add_default_wired_connection, info);
 	info->udi = g_strdup (udi);
 	g_hash_table_insert (app->wired_devices, info->udi, info);
 }
@@ -663,7 +833,8 @@ main (int argc, char **argv)
 	g_option_context_free (opt_ctx);
 
 	if (config) {
-		if (!parse_config_file (config, &plugins, &error)) {
+		app->config = config;
+		if (!parse_config_file (app->config, &plugins, &error)) {
 			g_warning ("Invalid config file: %s.", error->message);
 			return 1;
 		}
