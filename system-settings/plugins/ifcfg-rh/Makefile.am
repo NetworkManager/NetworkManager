@@ -1,3 +1,4 @@
+SUBDIRS=. tests
 
 pkglib_LTLIBRARIES = libnm-settings-plugin-ifcfg-rh.la
 

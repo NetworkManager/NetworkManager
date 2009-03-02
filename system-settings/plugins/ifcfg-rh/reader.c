@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2008 - 2009 Red Hat, Inc.
  */
 
 #include <stdlib.h>
@@ -59,9 +59,6 @@
 
 #define PLUGIN_WARN(pname, fmt, args...) \
 	{ g_warning ("   " pname ": " fmt, ##args); }
-
-#define TYPE_ETHERNET "Ethernet"
-#define TYPE_WIRELESS "Wireless"
 
 static char *
 get_ifcfg_name (const char *file)
@@ -124,7 +121,7 @@ make_connection_setting (const char *file,
 	g_free (new_id);
 
 	/* Try for a UUID key before falling back to hashing the file name */
-	uuid = svGetValue (ifcfg, "UUID");
+	uuid = svGetValue (ifcfg, "UUID", FALSE);
 	if (!uuid || !strlen (uuid)) {
 		g_free (uuid);
 		uuid = nm_utils_uuid_generate_from_string (ifcfg->fileName);
@@ -136,10 +133,11 @@ make_connection_setting (const char *file,
 	g_free (uuid);
 
 	/* Be somewhat conservative about autoconnect */
-	if (svTrueValue (ifcfg, "ONBOOT", FALSE))
-		g_object_set (s_con, NM_SETTING_CONNECTION_AUTOCONNECT, TRUE, NULL);
+	g_object_set (s_con, NM_SETTING_CONNECTION_AUTOCONNECT,
+	              svTrueValue (ifcfg, "ONBOOT", FALSE),
+	              NULL);
 
-	value = svGetValue (ifcfg, "LAST_CONNECT");
+	value = svGetValue (ifcfg, "LAST_CONNECT", FALSE);
 	if (value) {
 		unsigned long int tmp;
 
@@ -172,7 +170,7 @@ get_one_ip4_addr (shvarFile *ifcfg,
 	g_return_if_fail (error != NULL);
 	g_return_if_fail (*error == NULL);
 
-	value = svGetValue (ifcfg, tag);
+	value = svGetValue (ifcfg, tag, FALSE);
 	if (!value)
 		return;
 
@@ -199,7 +197,7 @@ get_one_ip4_addr (shvarFile *ifcfg,
 		
 
 static NMSetting *
-make_ip4_setting (shvarFile *ifcfg, GError **error)
+make_ip4_setting (shvarFile *ifcfg, const char *network_file, GError **error)
 {
 	NMSettingIP4Config *s_ip4 = NULL;
 	char *value = NULL;
@@ -209,13 +207,13 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 	shvarFile *network_ifcfg;
 	gboolean never_default = FALSE;
 
-	network_ifcfg = svNewFile (SYSCONFDIR "/sysconfig/network");
+	network_ifcfg = svNewFile (network_file);
 	if (network_ifcfg) {
 		char *gatewaydev;
 
 		/* Get the connection ifcfg device name and the global gateway device */
-		value = svGetValue (ifcfg, "DEVICE");
-		gatewaydev = svGetValue (network_ifcfg, "GATEWAYDEV");
+		value = svGetValue (ifcfg, "DEVICE", FALSE);
+		gatewaydev = svGetValue (network_ifcfg, "GATEWAYDEV", FALSE);
 
 		/* If there was a global gateway device specified, then only connections
 		 * for that device can be the default connection.
@@ -228,7 +226,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 		svCloseFile (network_ifcfg);
 	}
 
-	value = svGetValue (ifcfg, "BOOTPROTO");
+	value = svGetValue (ifcfg, "BOOTPROTO", FALSE);
 	if (value) {
 		if (!g_ascii_strcasecmp (value, "bootp") || !g_ascii_strcasecmp (value, "dhcp"))
 			method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
@@ -252,9 +250,9 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 		 * HWADDR=11:22:33:44:55:66
 		 *
 		 */
-		tmp_ip4 = svGetValue (ifcfg, "IPADDR");
-		tmp_prefix = svGetValue (ifcfg, "PREFIX");
-		tmp_netmask = svGetValue (ifcfg, "NETMASK");
+		tmp_ip4 = svGetValue (ifcfg, "IPADDR", FALSE);
+		tmp_prefix = svGetValue (ifcfg, "PREFIX", FALSE);
+		tmp_netmask = svGetValue (ifcfg, "NETMASK", FALSE);
 		if (!tmp_ip4 && !tmp_prefix && !tmp_netmask)
 			method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 		g_free (tmp_ip4);
@@ -280,7 +278,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 
 		/* If no gateway in the ifcfg, try /etc/sysconfig/network instead */
 		if (!nm_ip4_address_get_gateway (addr)) {
-			network_ifcfg = svNewFile (SYSCONFDIR "/sysconfig/network");
+			network_ifcfg = svNewFile (network_file);
 			if (network_ifcfg) {
 				tmp = 0;
 				get_one_ip4_addr (network_ifcfg, "GATEWAY", &tmp, error);
@@ -291,7 +289,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 			}
 		}
 
-		value = svGetValue (ifcfg, "PREFIX");
+		value = svGetValue (ifcfg, "PREFIX", FALSE);
 		if (value) {
 			long int prefix;
 
@@ -336,7 +334,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 
 	/* DHCP hostname for 'send host-name' option */
 	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
-		value = svGetValue (ifcfg, "DHCP_HOSTNAME");
+		value = svGetValue (ifcfg, "DHCP_HOSTNAME", FALSE);
 		if (value && strlen (value))
 			g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, value, NULL);
 		g_free (value);
@@ -352,7 +350,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 	GET_ONE_DNS("DNS3");
 
 	/* DNS searches */
-	value = svGetValue (ifcfg, "DOMAIN");
+	value = svGetValue (ifcfg, "DOMAIN", FALSE);
 	if (value) {
 		char **searches = NULL;
 
@@ -372,7 +370,7 @@ make_ip4_setting (shvarFile *ifcfg, GError **error)
 
 	/* Legacy value NM used for a while but is incorrect (rh #459370) */
 	if (!nm_setting_ip4_config_get_num_dns_searches (s_ip4)) {
-		value = svGetValue (ifcfg, "SEARCH");
+		value = svGetValue (ifcfg, "SEARCH", FALSE);
 		if (value) {
 			char **searches = NULL;
 
@@ -449,7 +447,7 @@ read_mac_address (shvarFile *ifcfg, GByteArray **array, GError **error)
 	g_return_val_if_fail (error != NULL, FALSE);
 	g_return_val_if_fail (*error == NULL, FALSE);
 
-	value = svGetValue (ifcfg, "HWADDR");
+	value = svGetValue (ifcfg, "HWADDR", FALSE);
 	if (!value || !strlen (value)) {
 		g_free (value);
 		return TRUE;
@@ -485,7 +483,7 @@ add_one_wep_key (shvarFile *ifcfg,
 	g_return_val_if_fail (key_idx <= 3, FALSE);
 	g_return_val_if_fail (s_wsec != NULL, FALSE);
 
-	value = svGetValue (ifcfg, shvar_key);
+	value = svGetValue (ifcfg, shvar_key, FALSE);
 	if (!value || !strlen (value)) {
 		g_free (value);
 		return TRUE;
@@ -605,7 +603,7 @@ make_wep_setting (shvarFile *ifcfg,
 	s_wireless_sec = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
 	g_object_set (s_wireless_sec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none", NULL);
 
-	value = svGetValue (ifcfg, "DEFAULTKEY");
+	value = svGetValue (ifcfg, "DEFAULTKEY", FALSE);
 	if (value) {
 		gboolean success;
 
@@ -651,7 +649,7 @@ make_wep_setting (shvarFile *ifcfg,
 		goto error;
 	}
 
-	value = svGetValue (ifcfg, "SECURITYMODE");
+	value = svGetValue (ifcfg, "SECURITYMODE", FALSE);
 	if (value) {
 		char *lcase;
 
@@ -703,12 +701,14 @@ error:
 static gboolean
 fill_wpa_ciphers (shvarFile *ifcfg,
                   NMSettingWirelessSecurity *wsec,
-                  gboolean group)
+                  gboolean group,
+                  gboolean adhoc)
 {
 	char *value = NULL, *p;
 	char **list = NULL, **iter;
+	int i = 0;
 
-	p = value = svGetValue (ifcfg, group ? "CIPHER_GROUP" : "CIPHER_PAIRWISE");
+	p = value = svGetValue (ifcfg, group ? "CIPHER_GROUP" : "CIPHER_PAIRWISE", TRUE);
 	if (!value)
 		return TRUE;
 
@@ -719,7 +719,23 @@ fill_wpa_ciphers (shvarFile *ifcfg,
 		p[strlen (p) - 1] = '\0';
 
 	list = g_strsplit_set (p, " ", 0);
-	for (iter = list; iter && *iter; iter++) {
+	for (iter = list; iter && *iter; iter++, i++) {
+		/* Ad-Hoc configurations cannot have pairwise ciphers, and can only
+		 * have one group cipher.  Ignore any additional group ciphers and
+		 * any pairwise ciphers specified.
+		 */
+		if (adhoc) {
+			if (group && (i > 0)) {
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignoring group cipher '%s' (only one group cipher allowed in Ad-Hoc mode)",
+				             *iter);
+				continue;
+			} else if (!group) {
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignoring pairwise cipher '%s' (pairwise not used in Ad-Hoc mode)",
+				             *iter);
+				continue;
+			}
+		}
+
 		if (!strcmp (*iter, "CCMP")) {
 			if (group)
 				nm_setting_wireless_security_add_group (wsec, "ccmp");
@@ -767,13 +783,13 @@ parse_wpa_psk (shvarFile *ifcfg,
 	/* Try to get keys from the "shadow" key file */
 	keys_ifcfg = get_keys_ifcfg (file);
 	if (keys_ifcfg) {
-		psk = svGetValue (keys_ifcfg, "WPA_PSK");
+		psk = svGetValue (keys_ifcfg, "WPA_PSK", TRUE);
 		svCloseFile (keys_ifcfg);
 	}
 
 	/* Fall back to the original ifcfg */
 	if (!psk)
-		psk = svGetValue (ifcfg, "WPA_PSK");
+		psk = svGetValue (ifcfg, "WPA_PSK", TRUE);
 
 	if (!psk) {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
@@ -799,7 +815,7 @@ parse_wpa_psk (shvarFile *ifcfg,
 
 		/* hash the passphrase to a hex key */
 		buf = g_malloc0 (WPA_PMK_LEN * 2);
-		pbkdf2_sha1 (psk, (char *) ssid->data, ssid->len, 4096, buf, WPA_PMK_LEN);
+		pbkdf2_sha1 (p, (char *) ssid->data, ssid->len, 4096, buf, WPA_PMK_LEN);
 		hashed = utils_bin2hexstr ((const char *) buf, WPA_PMK_LEN, WPA_PMK_LEN * 2);
 		g_free (buf);
 	} else if (strlen (psk) == 64) {
@@ -847,19 +863,24 @@ make_wpa_setting (shvarFile *ifcfg,
 
 	wsec = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
 
-	value = svGetValue (ifcfg, "KEY_MGMT");
+	value = svGetValue (ifcfg, "KEY_MGMT", FALSE);
 	if (!value)
 		goto error; /* Not WPA or Dynamic WEP */
 
 	/* Pairwise and Group ciphers */
-	fill_wpa_ciphers (ifcfg, wsec, FALSE);
-	fill_wpa_ciphers (ifcfg, wsec, TRUE);
+	fill_wpa_ciphers (ifcfg, wsec, FALSE, adhoc);
+	fill_wpa_ciphers (ifcfg, wsec, TRUE, adhoc);
 
 	/* WPA and/or RSN */
-	if (svTrueValue (ifcfg, "WPA_ALLOW_WPA", TRUE))
+	if (adhoc) {
+		/* Ad-Hoc mode only supports WPA proto for now */
 		nm_setting_wireless_security_add_proto (wsec, "wpa");
-	if (svTrueValue (ifcfg, "WPA_ALLOW_WPA2", TRUE))
-		nm_setting_wireless_security_add_proto (wsec, "rsn");
+	} else {
+		if (svTrueValue (ifcfg, "WPA_ALLOW_WPA", TRUE))
+			nm_setting_wireless_security_add_proto (wsec, "wpa");
+		if (svTrueValue (ifcfg, "WPA_ALLOW_WPA2", TRUE))
+			nm_setting_wireless_security_add_proto (wsec, "rsn");
+	}
 
 	if (!strcmp (value, "WPA-PSK")) {
 		psk = parse_wpa_psk (ifcfg, file, ssid, error);
@@ -867,6 +888,11 @@ make_wpa_setting (shvarFile *ifcfg,
 			goto error;
 		g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_PSK, psk, NULL);
 		g_free (psk);
+
+		if (adhoc)
+			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-none", NULL);
+		else
+			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk", NULL);
 #if 0
 	} else if (!strcmp (value, "WPA-EAP") || !strcmp (value, "IEEE8021X")) {
 		/* Adhoc mode is mutually exclusive with any 802.1x-based authentication */
@@ -940,7 +966,7 @@ make_wireless_setting (shvarFile *ifcfg,
 		return NULL;
 	}
 
-	value = svGetValue (ifcfg, "ESSID");
+	value = svGetValue (ifcfg, "ESSID", FALSE);
 	if (value) {
 		gsize len = strlen (value);
 
@@ -966,7 +992,7 @@ make_wireless_setting (shvarFile *ifcfg,
 	}
 
 	if (!unmanaged) {
-		value = svGetValue (ifcfg, "MODE");
+		value = svGetValue (ifcfg, "MODE", FALSE);
 		if (value) {
 			char *lcase;
 			const char *mode = NULL;
@@ -980,7 +1006,7 @@ make_wireless_setting (shvarFile *ifcfg,
 				mode = "infrastructure";
 			} else {
 				g_set_error (error, ifcfg_plugin_error_quark (), 0,
-				             "Invalid mode '%s' (not ad-hoc or managed)",
+				             "Invalid mode '%s' (not 'Ad-Hoc' or 'Managed')",
 				             lcase);
 				g_free (lcase);
 				goto error;
@@ -1097,7 +1123,7 @@ make_wired_setting (shvarFile *ifcfg, gboolean unmanaged, GError **error)
 
 	s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());
 
-	value = svGetValue (ifcfg, "MTU");
+	value = svGetValue (ifcfg, "MTU", FALSE);
 	if (value) {
 		if (get_int (value, &mtu)) {
 			if (mtu >= 0 && mtu < 65536)
@@ -1207,6 +1233,8 @@ is_wireless_device (const char *iface)
 
 NMConnection *
 connection_from_file (const char *filename,
+                      const char *network_file,
+                      const char *test_type,  /* for unit tests only */
                       gboolean *ignored,
                       char **keyfile,
                       GError **error,
@@ -1225,6 +1253,10 @@ connection_from_file (const char *filename,
 	g_return_val_if_fail (keyfile != NULL, NULL);
 	g_return_val_if_fail (*keyfile == NULL, NULL);
 
+	/* Non-NULL only for unit tests; normally use /etc/sysconfig/network */
+	if (!network_file)
+		network_file = SYSCONFDIR "/sysconfig/network";
+
 	ifcfg_name = get_ifcfg_name (filename);
 	if (!ifcfg_name) {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
@@ -1240,14 +1272,14 @@ connection_from_file (const char *filename,
 		return NULL;
 	}
 
-	type = svGetValue (parsed, "TYPE");
+	type = svGetValue (parsed, "TYPE", FALSE);
 	if (!type) {
 		char *device;
 
 		/* If no type, if the device has wireless extensions, it's wifi,
 		 * otherwise it's ethernet.
 		 */
-		device = svGetValue (parsed, "DEVICE");
+		device = svGetValue (parsed, "DEVICE", FALSE);
 		if (!device) {
 			g_set_error (error, ifcfg_plugin_error_quark (), 0,
 			             "File '%s' had neither TYPE nor DEVICE keys.", filename);
@@ -1262,16 +1294,24 @@ connection_from_file (const char *filename,
 			goto done;
 		}
 
-		/* Test wireless extensions */
-		if (is_wireless_device (device))
-			type = g_strdup (TYPE_WIRELESS);
-		else
-			type = g_strdup (TYPE_ETHERNET);
+		if (!test_type) {
+			/* Test wireless extensions */
+			if (is_wireless_device (device))
+				type = g_strdup (TYPE_WIRELESS);
+			else
+				type = g_strdup (TYPE_ETHERNET);
+		} else {
+			/* For the unit tests, there won't necessarily be any
+			 * adapters of the connection's type in the system so the
+			 * type can't be tested with ioctls.
+			 */
+			type = g_strdup (test_type);
+		}
 
 		g_free (device);
 	}
 
-	nmc = svGetValue (parsed, "NM_CONTROLLED");
+	nmc = svGetValue (parsed, "NM_CONTROLLED", FALSE);
 	if (nmc) {
 		char *lower;
 
@@ -1305,7 +1345,7 @@ connection_from_file (const char *filename,
 	if (!connection || *ignored)
 		goto done;
 
-	s_ip4 = make_ip4_setting (parsed, error);
+	s_ip4 = make_ip4_setting (parsed, network_file, error);
 	if (*error) {
 		g_object_unref (connection);
 		connection = NULL;

@@ -24,7 +24,12 @@
 #include <glib.h>
 #include <nm-connection.h>
 
+#define TYPE_ETHERNET "Ethernet"
+#define TYPE_WIRELESS "Wireless"
+
 NMConnection *connection_from_file (const char *filename,
+                                    const char *network_file,
+                                    const char *test_type,
                                     gboolean *ignored,
                                     char **keyfile,
                                     GError **error,

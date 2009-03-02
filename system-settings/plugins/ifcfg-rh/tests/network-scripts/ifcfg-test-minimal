@@ -1,0 +1,4 @@
+# Intel Corporation 82540EP Gigabit Ethernet Controller (Mobile)
+DEVICE=eth0
+HWADDR=00:16:41:11:22:33
+
