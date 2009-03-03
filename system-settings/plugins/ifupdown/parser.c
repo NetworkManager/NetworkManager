@@ -301,9 +301,9 @@ update_wireless_security_setting_from_if_block(NMConnection *connection,
 	const gchar* value = ifparser_getkey (block, "inet");
 	struct _Mapping mapping[] = {
 		{"psk", "psk"},
-		{"identity", "identity"},
-		{"password", "password"},
-		{"key", "key"},
+		{"identity", "leap-username"},
+		{"password", "leap-password"},
+		{"key", "wep-key0"},
 		{"key-mgmt", "key-mgmt"},
 		{"group", "group"},
 		{"pairwise", "pairwise"},
@@ -420,7 +420,7 @@ update_wireless_security_setting_from_if_block(NMConnection *connection,
 					    property_value
 #else // DEBUG_SECRETS
 					    !strcmp("key", newkey) ||
-					    !strcmp("password", newkey) ||
+					    !strcmp("leap-password", newkey) ||
 					    !strcmp("pin", newkey) ||
 					    !strcmp("psk", newkey) ||
 					    !strcmp("wep-key0", newkey) ||
