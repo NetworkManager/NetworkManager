@@ -15,7 +15,7 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2005 - 2008 Red Hat, Inc.
+ * Copyright (C) 2005 - 2009 Red Hat, Inc.
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
@@ -731,48 +731,106 @@ get_active_ap (NMDeviceWifi *self,
                gboolean match_hidden)
 {
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	const char *iface = nm_device_get_iface (NM_DEVICE (self));
 	struct ether_addr bssid;
 	const GByteArray *ssid;
 	GSList *iter;
 	int i = 0;
+	gboolean ap_debug = getenv ("NM_ACTIVE_AP_DEBUG") ? TRUE : FALSE;
 
 	nm_device_wifi_get_bssid (self, &bssid);
+	if (G_UNLIKELY (ap_debug)) {
+		nm_debug ("(%s) BSSID: %02x:%02x:%02x:%02x:%02x:%02x",
+		          iface,
+		          bssid.ether_addr_octet[0], bssid.ether_addr_octet[1],
+		          bssid.ether_addr_octet[2], bssid.ether_addr_octet[3],
+		          bssid.ether_addr_octet[4], bssid.ether_addr_octet[5]);
+	}
 	if (!nm_ethernet_address_is_valid (&bssid))
 		return NULL;
 
 	ssid = nm_device_wifi_get_ssid (self);
+	if G_UNLIKELY (ap_debug) {
+		nm_debug ("(%s) SSID: %s%s%s",
+		          iface,
+		          ssid ? "'" : "",
+		          ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(none)",
+		          ssid ? "'" : "");
+	}
 
 	/* When matching hidden APs, do a second pass that ignores the SSID check,
 	 * because NM might not yet know the SSID of the hidden AP in the scan list
 	 * and therefore it won't get matched the first time around.
 	 */
 	while (i++ < (match_hidden ? 2 : 1)) {
+		if G_UNLIKELY (ap_debug)
+			nm_debug ("  Pass #%d %s", i, i > 1 ? "(ignoring SSID)" : "");
+
 		/* Find this SSID + BSSID in the device's AP list */
 		for (iter = priv->ap_list; iter; iter = g_slist_next (iter)) {
 			NMAccessPoint *ap = NM_AP (iter->data);
 			const struct ether_addr	*ap_bssid = nm_ap_get_address (ap);
 			const GByteArray *ap_ssid = nm_ap_get_ssid (ap);
+			NM80211Mode devmode, apmode;
+			guint32 devfreq, apfreq;
 
-			if (ignore_ap && (ap == ignore_ap))
-				continue;
+			if G_UNLIKELY (ap_debug) {
+				nm_debug ("    AP: %s%s%s  %02x:%02x:%02x:%02x:%02x:%02x",
+				          ap_ssid ? "'" : "",
+				          ap_ssid ? nm_utils_escape_ssid (ap_ssid->data, ap_ssid->len) : "(none)",
+				          ap_ssid ? "'" : "",
+				          ap_bssid->ether_addr_octet[0], ap_bssid->ether_addr_octet[1],
+				          ap_bssid->ether_addr_octet[2], ap_bssid->ether_addr_octet[3],
+				          ap_bssid->ether_addr_octet[4], ap_bssid->ether_addr_octet[5]);
+			}
 
-			if (memcmp (bssid.ether_addr_octet, ap_bssid->ether_addr_octet, ETH_ALEN))
+			if (ignore_ap && (ap == ignore_ap)) {
+				if G_UNLIKELY (ap_debug)
+					nm_debug ("      ignored");
 				continue;
+			}
 
-		    if ((i == 0) && !nm_utils_same_ssid (ssid, ap_ssid, TRUE))
+			if (memcmp (bssid.ether_addr_octet, ap_bssid->ether_addr_octet, ETH_ALEN)) {
+				if G_UNLIKELY (ap_debug)
+					nm_debug ("      BSSID mismatch");
 				continue;
+			}
 
-			if (nm_device_wifi_get_mode (self) != nm_ap_get_mode (ap))
+			if ((i == 0) && !nm_utils_same_ssid (ssid, ap_ssid, TRUE)) {
+				if G_UNLIKELY (ap_debug)
+					nm_debug ("      SSID mismatch");
 				continue;
+			}
 
-			if (nm_device_wifi_get_frequency (self) != nm_ap_get_freq (ap))
+			devmode = nm_device_wifi_get_mode (self);
+			apmode = nm_ap_get_mode (ap);
+			if (devmode != apmode) {
+				if G_UNLIKELY (ap_debug) {
+					nm_debug ("      mode mismatch (device %d, ap %d)",
+					          devmode, apmode);
+				}
 				continue;
+			}
+
+			devfreq = nm_device_wifi_get_frequency (self);
+			apfreq = nm_ap_get_freq (ap);
+			if (devfreq != apfreq) {
+				if G_UNLIKELY (ap_debug) {
+					nm_debug ("      frequency mismatch (device %u, ap %u)",
+					          devfreq, apfreq);
+				}
+				continue;
+			}
 
 			// FIXME: handle security settings here too
+			if G_UNLIKELY (ap_debug)
+				nm_debug ("      matched");
 			return ap;
 		}
 	}
 
+	if G_UNLIKELY (ap_debug)
+		nm_debug ("  No matching AP found.");
 	return NULL;
 }
 
