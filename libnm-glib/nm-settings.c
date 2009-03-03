@@ -67,6 +67,8 @@ nm_settings_error_get_type (void)
 			ENUM_ENTRY (NM_SETTINGS_ERROR_SECRETS_UNAVAILABLE, "SecretsUnavailable"),
 			/* The request for secrets was canceled. */
 			ENUM_ENTRY (NM_SETTINGS_ERROR_SECRETS_REQUEST_CANCELED, "SecretsRequestCanceled"),
+			/* The request could not be completed because permission was denied. */
+			ENUM_ENTRY (NM_SETTINGS_ERROR_PERMISSION_DENIED, "PermissionDenied"),
 			{ 0, 0, 0 },
 		};
 		etype = g_enum_register_static ("NMSettingsError", values);
