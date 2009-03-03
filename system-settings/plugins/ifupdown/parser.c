@@ -153,9 +153,20 @@ update_wireless_setting_from_if_block(NMConnection *connection,
 			const gchar* newkey = map_by_mapping(mapping, curr->key+wireless_l);
 			PLUGIN_PRINT ("SCPlugin-Ifupdown", "wireless setting key: %s='%s'",
 					    newkey, curr->data);
-			g_object_set(wireless_setting,
+			if(newkey && !strcmp("ssid", newkey)) {
+				GByteArray *ssid;
+				gint len = strlen(curr->data);
+
+				ssid = g_byte_array_sized_new (len);
+				g_byte_array_append (ssid, (const guint8 *) curr->data, len);
+				g_object_set (wireless_setting, NM_SETTING_WIRELESS_SSID, ssid, NULL);
+				g_byte_array_free (ssid, TRUE);
+				PLUGIN_PRINT("SCPlugin-Ifupdown", "setting wireless ssid = %d", len);
+			} else {
+				g_object_set(wireless_setting,
 					   newkey, curr->data,
 					   NULL);
+			}
 		} else if(strlen(curr->key) > wpa_l &&
 				!strncmp("wpa-", curr->key, wpa_l)) {
 			const gchar* newkey = map_by_mapping(mapping, curr->key+wpa_l);
