@@ -197,6 +197,32 @@ typedef gchar* (*IfupdownStrDupeFunc) (gpointer value, gpointer data);
 typedef gpointer (*IfupdownStrToTypeFunc) (const gchar* value);
 
 static char*
+normalize_dupe_wireless_key (gpointer value, gpointer data) {
+	char* valuec = value;
+	char* endc = valuec + strlen (valuec);
+	char* delim = valuec;
+	char* next = delim;
+	char* result = malloc (strlen (valuec) + 1);
+	char* result_cur = result;
+
+	while (*delim && (next = strchr (delim, '-')) != NULL) {
+		if (next == delim) {
+			delim++;
+			continue;
+		}
+		strncpy (result_cur, delim, next - delim);
+		result_cur += next - delim;
+		delim = next + 1;
+	}
+	if (*delim && strlen (valuec) > GPOINTER_TO_UINT(delim - valuec)) {
+		strncpy (result_cur, delim, endc - delim);
+		result_cur += endc - delim;
+	}
+	*result_cur = '\0';
+	return result;
+}
+
+static char*
 normalize_dupe (gpointer value, gpointer data) {
 	return g_strdup(value);
 }
@@ -295,16 +321,16 @@ update_wireless_security_setting_from_if_block(NMConnection *connection,
 		{"psk", normalize_psk},
 		{"identity", normalize_dupe},
 		{"password", normalize_dupe},
-		{"key", normalize_dupe},
+		{"key", normalize_dupe_wireless_key},
 		{"key-mgmt", normalize_tolower},
 		{"group", normalize_tolower},
 		{"pairwise", normalize_tolower},
 		{"proto", normalize_tolower},
 		{"pin", normalize_dupe},
-		{"wep-key0", normalize_dupe},
-		{"wep-key1", normalize_dupe},
-		{"wep-key2", normalize_dupe},
-		{"wep-key3", normalize_dupe},
+		{"wep-key0", normalize_dupe_wireless_key},
+		{"wep-key1", normalize_dupe_wireless_key},
+		{"wep-key2", normalize_dupe_wireless_key},
+		{"wep-key3", normalize_dupe_wireless_key},
 		{"wep-tx-keyidx", normalize_dupe},
 		{ NULL, NULL}
 	};
