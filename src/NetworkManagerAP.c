@@ -1261,6 +1261,9 @@ nm_ap_check_compatible (NMAccessPoint *self,
 static gboolean
 capabilities_compatible (guint32 a_flags, guint32 b_flags)
 {
+	if (a_flags == b_flags)
+		return TRUE;
+
 	/* Make sure there's a common key management method */
 	if (!((a_flags & 0x300) & (b_flags & 0x300)))
 		return FALSE;
