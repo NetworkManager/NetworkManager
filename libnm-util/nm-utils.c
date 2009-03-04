@@ -904,7 +904,8 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		if (!(wifi_caps & NM_WIFI_DEVICE_CAP_WPA))
 			return FALSE;
 		if (have_ap) {
-			if (ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_PSK) {
+			/* Ad-Hoc WPA APs won't necessarily have the PSK flag set */
+			if ((ap_wpa & NM_802_11_AP_SEC_KEY_MGMT_PSK) || adhoc) {
 				if (   (ap_wpa & NM_802_11_AP_SEC_PAIR_TKIP)
 				    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP))
 					return TRUE;
@@ -919,7 +920,8 @@ nm_utils_security_valid (NMUtilsSecurityType type,
 		if (!(wifi_caps & NM_WIFI_DEVICE_CAP_RSN))
 			return FALSE;
 		if (have_ap) {
-			if (ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_PSK) {
+			/* Ad-Hoc WPA APs won't necessarily have the PSK flag set */
+			if ((ap_rsn & NM_802_11_AP_SEC_KEY_MGMT_PSK) || adhoc) {
 				if (   (ap_rsn & NM_802_11_AP_SEC_PAIR_TKIP)
 				    && (wifi_caps & NM_WIFI_DEVICE_CAP_CIPHER_TKIP))
 					return TRUE;
