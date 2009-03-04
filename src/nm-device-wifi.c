@@ -1044,25 +1044,26 @@ real_deactivate_quickly (NMDevice *dev)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	NMAccessPoint *orig_ap;
+	NMAccessPoint *orig_ap = nm_device_wifi_get_activation_ap (self);
 
 	cleanup_association_attempt (self, TRUE);
 
-	/* If the AP is 'fake', i.e. it wasn't actually found from
-	 * a scan but the user tried to connect to it manually (maybe it
-	 * was non-broadcasting or something) clear the 'fake' flag here,
-	 * becuase 'fake' APs should only live for as long as we're
-	 * connected to them.  Fixes a bug where user-created Ad-Hoc APs
-	 * are never removed from the scan list, because scanning is
-	 * disabled while in Ad-Hoc mode (for stability), and thus the
-	 * AP culling never happens. (bgo #569241)
-	 */
-	orig_ap = nm_device_wifi_get_activation_ap (self);
-	if (orig_ap && nm_ap_get_fake (orig_ap))
-		nm_ap_set_fake (orig_ap, FALSE);
-
 	set_current_ap (self, NULL);
 	priv->rate = 0;
+
+	/* If the AP is 'fake', i.e. it wasn't actually found from
+	 * a scan but the user tried to connect to it manually (maybe it
+	 * was non-broadcasting or something) get rid of it, because 'fake'
+	 * APs should only live for as long as we're connected to them.  Fixes
+	 * a bug where user-created Ad-Hoc APs are never removed from the scan
+	 * list, because scanning is disabled while in Ad-Hoc mode (for stability),
+	 * and thus the AP culling never happens. (bgo #569241)
+	 */
+	if (orig_ap && nm_ap_get_fake (orig_ap)) {
+		access_point_removed (self, orig_ap);
+		priv->ap_list = g_slist_remove (priv->ap_list, orig_ap);
+		g_object_unref (orig_ap);
+	}
 
 	/* Clean up stuff, don't leave the card associated */
 	nm_device_wifi_set_ssid (self, NULL);
@@ -3175,6 +3176,8 @@ activation_success_handler (NMDevice *dev)
 		nm_ap_set_address (ap, &bssid);
 	if (!nm_ap_get_freq (ap))
 		nm_ap_set_freq (ap, nm_device_wifi_get_frequency (self));
+	if (!nm_ap_get_max_bitrate (ap) && nm_ap_get_user_created (ap))
+		nm_ap_set_max_bitrate (ap, nm_device_wifi_get_bitrate (self));
 
 	tmp_ap = get_active_ap (self, ap, TRUE);
 	if (tmp_ap) {
