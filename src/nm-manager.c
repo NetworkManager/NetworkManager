@@ -1479,12 +1479,11 @@ static void
 sync_devices (NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *devices;
+	GSList *devices = NULL;
 	GSList *iter;
 
-	/* Remove devices which are no longer known to HAL */
-	devices = g_slist_copy (priv->devices);
-	for (iter = devices; iter; iter = iter->next) {
+	/* Keep devices still known to HAL; get rid of ones HAL no longer knows about */
+	for (iter = priv->devices; iter; iter = iter->next) {
 		NMDevice *device = NM_DEVICE (iter->data);
 		const char *udi = nm_device_get_udi (device);
 
@@ -1493,15 +1492,14 @@ sync_devices (NMManager *self)
 				nm_device_set_managed (device, TRUE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
 			else
 				nm_device_set_managed (device, FALSE, NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
-		} else {
-			priv->devices = g_slist_delete_link (priv->devices, iter);
+			devices = g_slist_prepend (devices, device);
+		} else
 			remove_one_device (self, device);
-		}
 	}
+	g_slist_free (priv->devices);
+	priv->devices = devices;
 
-	g_slist_free (devices);
-
-	/* Get any new ones */
+	/* Ask HAL for new devices */
 	nm_hal_manager_query_devices (priv->hal_mgr);
 }
 
