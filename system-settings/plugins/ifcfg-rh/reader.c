@@ -839,16 +839,91 @@ out:
 	return hashed;
 }
 
-#if 0
+static gboolean
+add_eap_methods (NMSetting8021x *s_8021x,
+                 const char **list,
+                 gboolean wifi,
+                 gboolean phase2,
+                 GError **error)
+{
+	const char *allowed[] = { "MD5", "MSCHAPV2", "TLS", "PEAP", "TTLS", "LEAP", NULL };
+	const char **iter, **allowed_iter;
+	char *lower;
+	guint32 num = 0;
+
+	for (iter = list; iter && *iter; iter++) {
+		gboolean found = FALSE;
+
+		/* MD5 only allowed for wired or phase2 */
+		if (!strcmp (*iter, "MD5") && (wifi && !phase2)) {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Ignored invalid IEEE_8021X_EAP_METHOD 'MD5'; not allowed for wifi.");
+			continue;
+		}
+
+		for (allowed_iter = allowed; allowed_iter && *allowed_iter; allowed_iter++) {
+			if (!strcmp (*iter, *allowed_iter)) {
+				lower = g_ascii_strdown (*iter, -1);
+				nm_setting_802_1x_add_eap_method (s_8021x, lower);
+				g_free (lower);
+				num++;
+				found = TRUE;
+			}
+		}
+
+		if (!found) {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Ignored unknown IEEE_8021X_EAP_METHOD '%s'.",
+			             *iter);
+		}
+	}
+
+	if (num == 0) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "No valid EAP methods found in IEEE_8021X_EAP_METHODS.");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 static NMSetting8021x *
 fill_8021x (shvarFile *ifcfg,
             const char *file,
             const char *key_mgmt,
+            gboolean wifi,
             GError **error)
 {
+	NMSetting8021x *s_8021x;
+	char *value;
+	char **list;
+
+	value = svGetValue (ifcfg, "IEEE_8021X_EAP_METHODS", FALSE);
+	if (!value) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Missing IEEE_8021X_EAP_METHODS for key management '%s'",
+		             key_mgmt);
+		return NULL;
+	}
+
+	list = g_strsplit (value, " ", 0);
+	g_free (value);
+
+	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
+
+	if (!add_eap_methods (s_8021x, (const char **) list, wifi, FALSE, error)) {
+		g_strfreev (list);
+		goto error;
+	}
+
+	
+
+	return s_8021x;
+
+error:
+	g_object_unref (s_8021x);
 	return NULL;
 }
-#endif
 
 static NMSetting *
 make_wpa_setting (shvarFile *ifcfg,
@@ -893,7 +968,6 @@ make_wpa_setting (shvarFile *ifcfg,
 			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-none", NULL);
 		else
 			g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk", NULL);
-#if 0
 	} else if (!strcmp (value, "WPA-EAP") || !strcmp (value, "IEEE8021X")) {
 		/* Adhoc mode is mutually exclusive with any 802.1x-based authentication */
 		if (adhoc) {
@@ -902,10 +976,9 @@ make_wpa_setting (shvarFile *ifcfg,
 			goto error;
 		}
 
-		*s_8021x = fill_8021x (ifcfg, file, value, error);
+		*s_8021x = fill_8021x (ifcfg, file, value, TRUE, error);
 		if (!*s_8021x)
 			goto error;
-#endif
 	} else {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Unknown wireless KEY_MGMT type '%s'", value);
