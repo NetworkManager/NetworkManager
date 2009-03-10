@@ -60,6 +60,35 @@
 #define PLUGIN_WARN(pname, fmt, args...) \
 	{ g_warning ("   " pname ": " fmt, ##args); }
 
+static gboolean eap_simple_reader (const char *eap_method,
+                                   shvarFile *ifcfg,
+                                   shvarFile *keys,
+                                   NMSetting8021x *s_8021x,
+                                   gboolean phase2,
+                                   GError **error);
+
+static gboolean eap_tls_reader (const char *eap_method,
+                                shvarFile *ifcfg,
+                                shvarFile *keys,
+                                NMSetting8021x *s_8021x,
+                                gboolean phase2,
+                                GError **error);
+
+static gboolean eap_peap_reader (const char *eap_method,
+                                 shvarFile *ifcfg,
+                                 shvarFile *keys,
+                                 NMSetting8021x *s_8021x,
+                                 gboolean phase2,
+                                 GError **error);
+
+static gboolean eap_ttls_reader (const char *eap_method,
+                                 shvarFile *ifcfg,
+                                 shvarFile *keys,
+                                 NMSetting8021x *s_8021x,
+                                 gboolean phase2,
+                                 GError **error);
+
+
 static char *
 get_ifcfg_name (const char *file)
 {
@@ -839,51 +868,270 @@ out:
 	return hashed;
 }
 
+typedef struct {
+	const char *method;
+	gboolean (*reader)(const char *eap_method,
+	                   shvarFile *ifcfg,
+	                   shvarFile *keys,
+	                   NMSetting8021x *s_8021x,
+	                   gboolean phase2,
+	                   GError **error);
+	gboolean wifi_phase2_only;
+} EAPReader;
+
+static EAPReader eap_readers[] = {
+	{ "md5", eap_simple_reader, TRUE },
+	{ "pap", eap_simple_reader, TRUE },
+	{ "chap", eap_simple_reader, TRUE },
+	{ "mschap", eap_simple_reader, TRUE },
+	{ "mschapv2", eap_simple_reader, TRUE },
+	{ "leap", eap_simple_reader, FALSE },
+	{ "tls", eap_tls_reader, FALSE },
+	{ "peap", eap_peap_reader, FALSE },
+	{ "ttls", eap_ttls_reader, FALSE },
+	{ NULL, NULL }
+};
+
 static gboolean
-add_eap_methods (NMSetting8021x *s_8021x,
-                 const char **list,
-                 gboolean wifi,
-                 gboolean phase2,
-                 GError **error)
+eap_simple_reader (const char *eap_method,
+                   shvarFile *ifcfg,
+                   shvarFile *keys,
+                   NMSetting8021x *s_8021x,
+                   gboolean phase2,
+                   GError **error)
 {
-	const char *allowed[] = { "MD5", "MSCHAPV2", "TLS", "PEAP", "TTLS", "LEAP", NULL };
-	const char **iter, **allowed_iter;
-	char *lower;
-	guint32 num = 0;
+	char *value;
 
-	for (iter = list; iter && *iter; iter++) {
-		gboolean found = FALSE;
+	value = svGetValue (ifcfg, "IEEE_8021X_IDENTITY", FALSE);
+	if (!value) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Missing IEEE_8021X_IDENTITY for EAP method '%s'.",
+		             eap_method);
+		return FALSE;
+	}
+	g_object_set (s_8021x, NM_SETTING_802_1X_IDENTITY, value, NULL);
+	g_free (value);
 
-		/* MD5 only allowed for wired or phase2 */
-		if (!strcmp (*iter, "MD5") && (wifi && !phase2)) {
-			g_set_error (error, ifcfg_plugin_error_quark (), 0,
-			             "Ignored invalid IEEE_8021X_EAP_METHOD 'MD5'; not allowed for wifi.");
-			continue;
-		}
-
-		for (allowed_iter = allowed; allowed_iter && *allowed_iter; allowed_iter++) {
-			if (!strcmp (*iter, *allowed_iter)) {
-				lower = g_ascii_strdown (*iter, -1);
-				nm_setting_802_1x_add_eap_method (s_8021x, lower);
-				g_free (lower);
-				num++;
-				found = TRUE;
-			}
-		}
-
-		if (!found) {
-			g_set_error (error, ifcfg_plugin_error_quark (), 0,
-			             "Ignored unknown IEEE_8021X_EAP_METHOD '%s'.",
-			             *iter);
-		}
+	value = svGetValue (ifcfg, "IEEE_8021X_PASSWORD", FALSE);
+	if (!value && keys) {
+		/* Try the lookaside keys file */
+		value = svGetValue (ifcfg, "IEEE_8021X_PASSWORD", FALSE);
 	}
 
-	if (num == 0) {
+	if (!value) {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
-		             "No valid EAP methods found in IEEE_8021X_EAP_METHODS.");
+		             "Missing IEEE_8021X_PASSWORD for EAP method '%s'.",
+		             eap_method);
 		return FALSE;
 	}
 
+	g_object_set (s_8021x, NM_SETTING_802_1X_PASSWORD, value, NULL);
+	g_free (value);
+
+	return TRUE;
+}
+
+static gboolean
+eap_tls_reader (const char *eap_method,
+                shvarFile *ifcfg,
+                shvarFile *keys,
+                NMSetting8021x *s_8021x,
+                gboolean phase2,
+                GError **error)
+{
+	char *ca_cert = NULL;
+	char *client_cert = NULL;
+	char *privkey = NULL;
+	char *privkey_password = NULL;
+	gboolean success = FALSE;
+	NMSetting8021xCKType privkey_type = NM_SETTING_802_1X_CK_TYPE_UNKNOWN;
+
+	ca_cert = svGetValue (ifcfg,
+	                      phase2 ? "IEEE_8021X_INNER_CA_CERT" : "IEEE_8021X_CA_CERT",
+	                      FALSE);
+	if (ca_cert) {
+		if (phase2) {
+			if (!nm_setting_802_1x_set_phase2_ca_cert_from_file (s_8021x, ca_cert, NULL, error))
+				goto done;
+		} else {
+			if (!nm_setting_802_1x_set_ca_cert_from_file (s_8021x, ca_cert, NULL, error))
+				goto done;
+		}
+	} else {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: missing %s for EAP"
+		             " method '%s'; this is insecure!",
+	                     phase2 ? "IEEE_8021X_INNER_CA_CERT" : "IEEE_8021X_CA_CERT",
+		             eap_method);
+	}
+
+	privkey_password = svGetValue (ifcfg,
+	                               phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD": "IEEE_8021X_PRIVATE_KEY_PASSWORD",
+	                               FALSE);
+	if (!privkey_password && keys) {
+		/* Try the lookaside keys file */
+		privkey_password = svGetValue (ifcfg,
+		                               phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD": "IEEE_8021X_PRIVATE_KEY_PASSWORD",
+		                               FALSE);
+	}
+
+	if (!privkey_password) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Missing %s for EAP method '%s'.",
+		             phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD" : "IEEE_8021X_PRIVATE_KEY_PASSWORD",
+		             eap_method);
+		goto done;
+	}
+
+	privkey = svGetValue (ifcfg,
+	                      phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY" : "IEEE_8021X_PRIVATE_KEY",
+	                      FALSE);
+	if (!privkey) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Missing %s for EAP method '%s'.",
+	                      phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY" : "IEEE_8021X_PRIVATE_KEY",
+		             eap_method);
+		goto done;
+	}
+
+	if (phase2) {
+		if (!nm_setting_802_1x_set_phase2_private_key_from_file (s_8021x, privkey, privkey_password, &privkey_type, error))
+			goto done;
+	} else {
+		if (!nm_setting_802_1x_set_private_key_from_file (s_8021x, privkey, privkey_password, &privkey_type, error))
+			goto done;
+	}
+
+	/* Per NM requirements, if the private key is pkcs12, set the client cert to the
+	 * same data as the private key, since pkcs12 files contain both.
+	 */
+	if (privkey_type == NM_SETTING_802_1X_CK_TYPE_PKCS12) {
+		if (phase2) {
+			if (!nm_setting_802_1x_set_phase2_client_cert_from_file (s_8021x, privkey, NULL, error))
+				goto done;
+		} else {
+			if (!nm_setting_802_1x_set_client_cert_from_file (s_8021x, privkey, NULL, error))
+				goto done;
+		}
+	} else {
+		/* Otherwise, private key is "traditional" OpenSSL format, so
+		 * client certificate will be a separate file.
+		 */
+		client_cert = svGetValue (ifcfg,
+		                          phase2 ? "IEEE_8021X_INNER_CLIENT_CERT" : "IEEE_8021X_CLIENT_CERT",
+		                          FALSE);
+		if (!client_cert) {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Missing %s for EAP method '%s'.",
+			             phase2 ? "IEEE_8021X_INNER_CLIENT_CERT" : "IEEE_8021X_CLIENT_CERT",
+			             eap_method);
+			goto done;
+		}
+
+		if (phase2) {
+			if (!nm_setting_802_1x_set_phase2_client_cert_from_file (s_8021x, client_cert, NULL, error))
+				goto done;
+		} else {
+			if (!nm_setting_802_1x_set_client_cert_from_file (s_8021x, client_cert, NULL, error))
+				goto done;
+		}
+	}
+
+	success = TRUE;
+
+done:
+	g_free (ca_cert);
+	g_free (client_cert);
+	g_free (privkey);
+	g_free (privkey_password);
+	return success;
+}
+
+static gboolean
+eap_peap_reader (const char *eap_method,
+                 shvarFile *ifcfg,
+                 shvarFile *keys,
+                 NMSetting8021x *s_8021x,
+                 gboolean phase2,
+                 GError **error)
+{
+	char *ca_cert = NULL;
+	char *inner_auth = NULL;
+	char *peapver = NULL;
+	char **list = NULL, **iter;
+	gboolean success = FALSE;
+
+	ca_cert = svGetValue (ifcfg, "IEEE_8021X_CA_CERT", FALSE);
+	if (ca_cert) {
+		if (!nm_setting_802_1x_set_ca_cert_from_file (s_8021x, ca_cert, NULL, error))
+			goto done;
+	} else {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: missing %s for EAP"
+		             " method '%s'; this is insecure!",
+	                     phase2 ? "IEEE_8021X_INNER_CA_CERT" : "IEEE_8021X_CA_CERT",
+		             eap_method);
+	}
+
+	peapver = svGetValue (ifcfg, "IEEE_8021X_PEAP_VERSION", FALSE);
+	if (peapver) {
+		if (!strcmp (peapver, "0"))
+			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE1_PEAPVER, "0", NULL);
+		else if (!strcmp (peapver, "1"))
+			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE1_PEAPVER, "1", NULL);
+		else {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Unknown IEEE_8021X_PEAP_VERSION value '%s'",
+			             peapver);
+			goto done;
+		}
+	}
+
+	if (svTrueValue (ifcfg, "IEEE_8021X_PEAP_FORCE_NEW_LABEL", FALSE))
+		g_object_set (s_8021x, NM_SETTING_802_1X_PHASE1_PEAPLABEL, "1", NULL);
+
+	inner_auth = svGetValue (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS", FALSE);
+	if (!inner_auth) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Missing IEEE_8021X_INNER_AUTH_METHODS.");
+		goto done;
+	}
+
+	/* Handle options for the inner auth method */
+	list = g_strsplit (inner_auth, " ", 0);
+	for (iter = list; iter && *iter; iter++) {
+		if (!strlen (*iter))
+			continue;
+
+		if (!strcmp (*iter, "MSCHAPV2") || !strcmp (*iter, "MD5")) {
+			if (!eap_simple_reader (*iter, ifcfg, keys, s_8021x, TRUE, error))
+				goto done;
+		} else if (!strcmp (*iter, "TLS")) {
+			if (!eap_tls_reader (*iter, ifcfg, keys, s_8021x, TRUE, error))
+				goto done;
+		}
+		// FIXME: OTP & GTC too
+		g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTH, *iter, NULL);
+		break;
+	}
+
+	success = TRUE;
+
+done:
+	if (list)
+		g_strfreev (list);
+	g_free (inner_auth);
+	g_free (peapver);
+	g_free (ca_cert);
+	return success;
+}
+
+static gboolean
+eap_ttls_reader (const char *eap_method,
+                 shvarFile *ifcfg,
+                 shvarFile *keys,
+                 NMSetting8021x *s_8021x,
+                 gboolean phase2,
+                 GError **error)
+{
 	return TRUE;
 }
 
@@ -895,8 +1143,9 @@ fill_8021x (shvarFile *ifcfg,
             GError **error)
 {
 	NMSetting8021x *s_8021x;
+	shvarFile *keys = NULL;
 	char *value;
-	char **list;
+	char **list, **iter;
 
 	value = svGetValue (ifcfg, "IEEE_8021X_EAP_METHODS", FALSE);
 	if (!value) {
@@ -911,16 +1160,64 @@ fill_8021x (shvarFile *ifcfg,
 
 	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
 
-	if (!add_eap_methods (s_8021x, (const char **) list, wifi, FALSE, error)) {
-		g_strfreev (list);
+	/* Read in the lookaside keys file, if present */
+	keys = get_keys_ifcfg (file);
+
+	/* Validate and handle each EAP method */
+	for (iter = list; iter && *iter; iter++) {
+		EAPReader *eap = &eap_readers[0];
+		gboolean found = FALSE;
+		char *lower = NULL;
+
+		lower = g_ascii_strdown (*iter, -1);
+		while (*eap->method && !found) {
+			if (!strcmp (eap->method, lower)) {
+				eap++;
+				continue;
+			}
+
+			/* Some EAP methods don't provide keying material, thus they
+			 * cannot be used with WiFi unless they are an inner method
+			 * used with TTLS or PEAP or whatever.
+			 */
+			if (wifi && eap->wifi_phase2_only) {
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignored invalid "
+				             "IEEE_8021X_EAP_METHOD '%s'; not allowed for wifi.",
+				             lower);
+				continue;
+			}
+
+			/* Parse EAP method specific options */
+			if (!(*eap->reader)(lower, ifcfg, keys, s_8021x, FALSE, error)) {
+				g_free (lower);
+				goto error;
+			}
+			nm_setting_802_1x_add_eap_method (s_8021x, lower);
+			found = TRUE;
+		}
+
+		if (!found) {
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: ignored unknown"
+			             "IEEE_8021X_EAP_METHOD '%s'.",
+			             lower);
+		}
+		g_free (lower);
+	}
+	g_strfreev (list);
+
+	if (nm_setting_802_1x_get_num_eap_methods (s_8021x) == 0) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "No valid EAP methods found in IEEE_8021X_EAP_METHODS.");
 		goto error;
 	}
 
-	
-
+	if (keys)
+		svCloseFile (keys);
 	return s_8021x;
 
 error:
+	if (keys)
+		svCloseFile (keys);
 	g_object_unref (s_8021x);
 	return NULL;
 }
