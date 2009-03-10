@@ -7,6 +7,7 @@ EXTRA_DIST = \
 	network-test-wired-global-gateway \
 	ifcfg-test-wired-never-default \
 	network-test-wired-never-default \
+	ifcfg-test-onboot-no \
 	ifcfg-test-wifi-open \
 	ifcfg-test-wifi-wep \
 	keys-test-wifi-wep \
