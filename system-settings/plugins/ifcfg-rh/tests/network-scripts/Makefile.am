@@ -7,6 +7,8 @@ EXTRA_DIST = \
 	network-test-wired-global-gateway \
 	ifcfg-test-wired-never-default \
 	network-test-wired-never-default \
+	ifcfg-test-wired-8021x-peap-mschapv2 \
+	keys-test-wired-8021x-peap-mschapv2 \
 	ifcfg-test-onboot-no \
 	ifcfg-test-wifi-open \
 	ifcfg-test-wifi-wep \
@@ -18,7 +20,9 @@ EXTRA_DIST = \
 	ifcfg-test-wifi-wpa-psk-adhoc \
 	keys-test-wifi-wpa-psk-adhoc \
 	ifcfg-test-wifi-wpa-psk-hex \
-	keys-test-wifi-wpa-psk-hex
+	keys-test-wifi-wpa-psk-hex \
+	test_ca_cert.pem \
+	test1_key_and_cert.pem
 
 check-local:
 	@for f in $(EXTRA_DIST); do \
