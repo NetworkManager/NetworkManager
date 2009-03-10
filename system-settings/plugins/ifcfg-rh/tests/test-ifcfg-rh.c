@@ -35,6 +35,7 @@
 #include <nm-setting-wireless.h>
 #include <nm-setting-wireless-security.h>
 #include <nm-setting-ip4-config.h>
+#include <nm-setting-8021x.h>
 
 #include "nm-test-helpers.h"
 
@@ -877,7 +878,7 @@ test_read_onboot_no (void)
 	        "onboot-no-verify", "failed to verify %s: %s", TEST_IFCFG_ONBOOT_NO, error->message);
 
 	ASSERT (unmanaged == FALSE,
-	        "onboot-no-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_DHCP);
+	        "onboot-no-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_ONBOOT_NO);
 
 	/* ===== CONNECTION SETTING ===== */
 
@@ -893,6 +894,193 @@ test_read_onboot_no (void)
 	        TEST_IFCFG_ONBOOT_NO,
 	        NM_SETTING_CONNECTION_SETTING_NAME,
 	        NM_SETTING_CONNECTION_AUTOCONNECT);
+
+	g_object_unref (connection);
+}
+
+#define TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2 TEST_DIR"/network-scripts/ifcfg-test-wired-8021x-peap-mschapv2"
+#define TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2_CA_CERT TEST_DIR"/network-scripts/test_ca_cert.pem"
+
+static void
+test_read_wired_8021x_peap_mschapv2 (void)
+{
+	NMConnection *connection;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	NMSetting8021x *s_8021x;
+	NMSetting8021x *tmp_8021x;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const char *expected_identity = "David Smith";
+	const char *expected_password = "foobar baz";
+	gboolean success = FALSE;
+	const GByteArray *expected_ca_cert;
+	const GByteArray *read_ca_cert;
+
+	connection = connection_from_file (TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "wired-8021x-peap-mschapv2-read", "failed to read %s: %s", TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wired-8021x-peap-mschapv2-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2, error->message);
+
+	ASSERT (unmanaged == FALSE,
+	        "wired-8021x-peap-mschapv2-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2);
+
+	/* ===== WIRED SETTING ===== */
+
+	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	ASSERT (s_wired != NULL,
+	        "wired-8021x-peap-mschapv2-verify-wired", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_WIRED_SETTING_NAME);
+
+	/* ===== IPv4 SETTING ===== */
+
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	ASSERT (s_ip4 != NULL,
+	        "wired-8021x-peap-mschapv2-verify-ip4", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
+	        "wired-8021x-peap-mschapv2-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_METHOD);
+
+	/* ===== 802.1x SETTING ===== */
+	s_8021x = NM_SETTING_802_1X (nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X));
+	ASSERT (s_8021x != NULL,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME);
+
+	/* EAP methods */
+	ASSERT (nm_setting_802_1x_get_num_eap_methods (s_8021x) == 1,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_EAP);
+	tmp = nm_setting_802_1x_get_eap_method (s_8021x, 0);
+	ASSERT (tmp != NULL,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s / %s eap method",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_EAP);
+	ASSERT (strcmp (tmp, "peap") == 0,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_EAP);
+
+	/* Identity */
+	tmp = nm_setting_802_1x_get_identity (s_8021x);
+	ASSERT (tmp != NULL,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_IDENTITY);
+	ASSERT (strcmp (tmp, expected_identity) == 0,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_IDENTITY);
+
+	/* Password */
+	tmp = nm_setting_802_1x_get_password (s_8021x);
+	ASSERT (tmp != NULL,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PASSWORD);
+	ASSERT (strcmp (tmp, expected_password) == 0,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PASSWORD);
+
+	/* PEAP version */
+	tmp = nm_setting_802_1x_get_phase1_peapver (s_8021x);
+	ASSERT (tmp != NULL,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PHASE1_PEAPVER);
+	ASSERT (strcmp (tmp, "1") == 0,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PHASE1_PEAPVER);
+
+	/* PEAP Label */
+	tmp = nm_setting_802_1x_get_phase1_peaplabel (s_8021x);
+	ASSERT (tmp != NULL,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PHASE1_PEAPLABEL);
+	ASSERT (strcmp (tmp, "1") == 0,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PHASE1_PEAPLABEL);
+
+	/* CA Cert */
+	tmp_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
+	ASSERT (tmp_8021x != NULL,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: could not create temp 802.1x setting",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_CA_CERT);
+
+	success = nm_setting_802_1x_set_ca_cert_from_file (tmp_8021x,
+	                                                   TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2_CA_CERT,
+	                                                   NULL,
+	                                                   &error);
+	ASSERT (success == TRUE,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: could not load CA certificate",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_CA_CERT);
+	expected_ca_cert = nm_setting_802_1x_get_ca_cert (tmp_8021x);
+	ASSERT (expected_ca_cert != NULL,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: failed to get CA certificate",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_CA_CERT);
+
+	read_ca_cert = nm_setting_802_1x_get_ca_cert (s_8021x);
+	ASSERT (read_ca_cert != NULL,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_CA_CERT);
+
+	ASSERT (read_ca_cert->len == expected_ca_cert->len,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s certificate length",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_CA_CERT);
+
+	ASSERT (memcmp (read_ca_cert->data, expected_ca_cert->data, read_ca_cert->len) == 0,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: %s / %s key certificate mismatch",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_CA_CERT);
+
+	g_object_unref (tmp_8021x);
 
 	g_object_unref (connection);
 }
@@ -2249,6 +2437,7 @@ int main (int argc, char **argv)
 	test_read_wired_global_gateway ();
 	test_read_wired_never_default ();
 	test_read_onboot_no ();
+	test_read_wired_8021x_peap_mschapv2 ();
 	test_read_wifi_unencrypted ();
 	test_read_wifi_wep ();
 	test_read_wifi_wep_adhoc ();
