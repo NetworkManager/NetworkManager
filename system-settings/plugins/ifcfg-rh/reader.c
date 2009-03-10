@@ -1556,10 +1556,14 @@ wireless_connection_from_ifcfg (const char *file,
 }
 
 static NMSetting *
-make_wired_setting (shvarFile *ifcfg, gboolean unmanaged, GError **error)
+make_wired_setting (shvarFile *ifcfg,
+                    const char *file,
+                    gboolean unmanaged,
+                    NMSetting8021x **s_8021x,
+                    GError **error)
 {
 	NMSettingWired *s_wired;
-	char *value;
+	char *value = NULL;
 	int mtu;
 	GByteArray *mac = NULL;
 
@@ -1585,7 +1589,26 @@ make_wired_setting (shvarFile *ifcfg, gboolean unmanaged, GError **error)
 		s_wired = NULL;
 	}
 
+	value = svGetValue (ifcfg, "KEY_MGMT", FALSE);
+	if (value) {
+		if (!strcmp (value, "IEEE8021X")) {
+			*s_8021x = fill_8021x (ifcfg, file, value, TRUE, error);
+			if (!*s_8021x)
+				goto error;
+		} else {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Unknown wired KEY_MGMT type '%s'", value);
+			goto error;
+		}
+		g_free (value);
+	}
+
 	return (NMSetting *) s_wired;
+
+error:
+	g_free (value);
+	g_object_unref (s_wired);
+	return NULL;
 }
 
 static NMConnection *
@@ -1597,6 +1620,7 @@ wired_connection_from_ifcfg (const char *file,
 	NMConnection *connection = NULL;
 	NMSetting *con_setting = NULL;
 	NMSetting *wired_setting = NULL;
+	NMSetting8021x *s_8021x = NULL;
 
 	g_return_val_if_fail (file != NULL, NULL);
 	g_return_val_if_fail (ifcfg != NULL, NULL);
@@ -1617,12 +1641,15 @@ wired_connection_from_ifcfg (const char *file,
 	}
 	nm_connection_add_setting (connection, con_setting);
 
-	wired_setting = make_wired_setting (ifcfg, unmanaged, error);
+	wired_setting = make_wired_setting (ifcfg, file, unmanaged, &s_8021x, error);
 	if (!wired_setting) {
 		g_object_unref (connection);
 		return NULL;
 	}
 	nm_connection_add_setting (connection, wired_setting);
+
+	if (s_8021x)
+		nm_connection_add_setting (connection, NM_SETTING (s_8021x));
 
 	if (!nm_connection_verify (connection, error)) {
 		g_object_unref (connection);
