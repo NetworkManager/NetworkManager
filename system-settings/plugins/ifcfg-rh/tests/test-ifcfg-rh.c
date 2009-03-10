@@ -106,7 +106,7 @@ test_read_minimal (void)
 	        NM_SETTING_CONNECTION_TIMESTAMP);
 
 	/* Autoconnect */
-	ASSERT (nm_setting_connection_get_autoconnect (s_con) == FALSE,
+	ASSERT (nm_setting_connection_get_autoconnect (s_con) == TRUE,
 	        "minimal-wired-verify-connection", "failed to verify %s: unexpected %s /%s key value",
 	        TEST_IFCFG_MINIMAL,
 	        NM_SETTING_CONNECTION_SETTING_NAME,
@@ -847,6 +847,52 @@ test_read_wired_never_default (void)
 	        TEST_IFCFG_WIRED_NEVER_DEFAULT,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_DNS);
+
+	g_object_unref (connection);
+}
+
+#define TEST_IFCFG_ONBOOT_NO TEST_DIR"/network-scripts/ifcfg-test-onboot-no"
+
+static void
+test_read_onboot_no (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+
+	connection = connection_from_file (TEST_IFCFG_ONBOOT_NO,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "onboot-no-read", "failed to read %s: %s", TEST_IFCFG_ONBOOT_NO, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "onboot-no-verify", "failed to verify %s: %s", TEST_IFCFG_ONBOOT_NO, error->message);
+
+	ASSERT (unmanaged == FALSE,
+	        "onboot-no-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_DHCP);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "onboot-no-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_ONBOOT_NO,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* Autoconnect */
+	ASSERT (nm_setting_connection_get_autoconnect (s_con) == FALSE,
+	        "wired-dhcp-verify-connection", "failed to verify %s: unexpected %s /%s key value",
+	        TEST_IFCFG_ONBOOT_NO,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_AUTOCONNECT);
 
 	g_object_unref (connection);
 }
@@ -2202,6 +2248,7 @@ int main (int argc, char **argv)
 	test_read_wired_dhcp ();
 	test_read_wired_global_gateway ();
 	test_read_wired_never_default ();
+	test_read_onboot_no ();
 	test_read_wifi_unencrypted ();
 	test_read_wifi_wep ();
 	test_read_wifi_wep_adhoc ();
