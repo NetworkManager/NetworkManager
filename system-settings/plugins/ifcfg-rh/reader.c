@@ -1065,9 +1065,9 @@ eap_peap_reader (const char *eap_method,
 		if (!nm_setting_802_1x_set_ca_cert_from_file (s_8021x, ca_cert, NULL, error))
 			goto done;
 	} else {
-		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: missing %s for EAP"
-		             " method '%s'; this is insecure!",
-	                     phase2 ? "IEEE_8021X_INNER_CA_CERT" : "IEEE_8021X_CA_CERT",
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: missing "
+		             "IEEE_8021X_CA_CERT for EAP method '%s'; this is"
+		             " insecure!",
 		             eap_method);
 	}
 
@@ -1107,7 +1107,13 @@ eap_peap_reader (const char *eap_method,
 		} else if (!strcmp (*iter, "TLS")) {
 			if (!eap_tls_reader (*iter, ifcfg, keys, s_8021x, TRUE, error))
 				goto done;
+		} else {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Unknown IEEE_8021X_INNER_AUTH_METHOD '%s'.",
+			             *iter);
+			goto done;
 		}
+
 		// FIXME: OTP & GTC too
 		g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTH, *iter, NULL);
 		break;
@@ -1132,7 +1138,73 @@ eap_ttls_reader (const char *eap_method,
                  gboolean phase2,
                  GError **error)
 {
-	return TRUE;
+	gboolean success = FALSE;
+	char *anon_ident = NULL;
+	char *ca_cert = NULL;
+	char *inner_auth = NULL;
+	char **list = NULL, **iter;
+
+	ca_cert = svGetValue (ifcfg, "IEEE_8021X_CA_CERT", FALSE);
+	if (ca_cert) {
+		if (!nm_setting_802_1x_set_ca_cert_from_file (s_8021x, ca_cert, NULL, error))
+			goto done;
+	} else {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: missing "
+		             "IEEE_8021X_CA_CERT for EAP method '%s'; this is"
+		             " insecure!",
+		             eap_method);
+	}
+
+	anon_ident = svGetValue (ifcfg, "IEEE_8021X_ANON_IDENTITY", FALSE);
+	if (anon_ident && strlen (anon_ident))
+		g_object_set (s_8021x, NM_SETTING_802_1X_ANONYMOUS_IDENTITY, anon_ident, NULL);
+
+	inner_auth = svGetValue (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS", FALSE);
+	if (!inner_auth) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Missing IEEE_8021X_INNER_AUTH_METHODS.");
+		goto done;
+	}
+
+	/* Handle options for the inner auth method */
+	list = g_strsplit (inner_auth, " ", 0);
+	for (iter = list; iter && *iter; iter++) {
+		if (!strlen (*iter))
+			continue;
+
+		if (   !strcmp (*iter, "MSCHAPV2")
+		    || !strcmp (*iter, "MSCHAP")
+		    || !strcmp (*iter, "PAP")
+		    || !strcmp (*iter, "CHAP")) {
+			if (!eap_simple_reader (*iter, ifcfg, keys, s_8021x, TRUE, error))
+				goto done;
+			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTH, *iter, NULL);
+		} else if (!strcmp (*iter, "EAP-TLS")) {
+			if (!eap_tls_reader (*iter, ifcfg, keys, s_8021x, TRUE, error))
+				goto done;
+			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTHEAP, "TLS", NULL);
+		} else if (!strcmp (*iter, "EAP-MSCHAPV2") || !strcmp (*iter, "EAP-MD5")) {
+			if (!eap_simple_reader (*iter, ifcfg, keys, s_8021x, TRUE, error))
+				goto done;
+			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTHEAP, (*iter + strlen ("EAP-")), NULL);
+		} else {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Unknown IEEE_8021X_INNER_AUTH_METHOD '%s'.",
+			             *iter);
+			goto done;
+		}
+		break;
+	}
+
+	success = TRUE;
+
+done:
+	if (list)
+		g_strfreev (list);
+	g_free (inner_auth);
+	g_free (ca_cert);
+	g_free (anon_ident);
+	return success;
 }
 
 static NMSetting8021x *
