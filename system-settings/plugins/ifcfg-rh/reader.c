@@ -962,7 +962,7 @@ eap_tls_reader (const char *eap_method,
                 GError **error)
 {
 	char *ca_cert = NULL;
-	char *real_cert_path = NULL;
+	char *real_path = NULL;
 	char *client_cert = NULL;
 	char *privkey = NULL;
 	char *privkey_password = NULL;
@@ -973,12 +973,12 @@ eap_tls_reader (const char *eap_method,
 	                      phase2 ? "IEEE_8021X_INNER_CA_CERT" : "IEEE_8021X_CA_CERT",
 	                      FALSE);
 	if (ca_cert) {
-		real_cert_path = get_cert_file (ifcfg->fileName, ca_cert);
+		real_path = get_cert_file (ifcfg->fileName, ca_cert);
 		if (phase2) {
-			if (!nm_setting_802_1x_set_phase2_ca_cert_from_file (s_8021x, real_cert_path, NULL, error))
+			if (!nm_setting_802_1x_set_phase2_ca_cert_from_file (s_8021x, real_path, NULL, error))
 				goto done;
 		} else {
-			if (!nm_setting_802_1x_set_ca_cert_from_file (s_8021x, real_cert_path, NULL, error))
+			if (!nm_setting_802_1x_set_ca_cert_from_file (s_8021x, real_path, NULL, error))
 				goto done;
 		}
 	} else {
@@ -988,6 +988,7 @@ eap_tls_reader (const char *eap_method,
 		             eap_method);
 	}
 
+	/* Private key password */
 	privkey_password = svGetValue (ifcfg,
 	                               phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD": "IEEE_8021X_PRIVATE_KEY_PASSWORD",
 	                               FALSE);
@@ -1006,6 +1007,7 @@ eap_tls_reader (const char *eap_method,
 		goto done;
 	}
 
+	/* The private key itself */
 	privkey = svGetValue (ifcfg,
 	                      phase2 ? "IEEE_8021X_INNER_PRIVATE_KEY" : "IEEE_8021X_PRIVATE_KEY",
 	                      FALSE);
@@ -1017,11 +1019,13 @@ eap_tls_reader (const char *eap_method,
 		goto done;
 	}
 
+	g_free (real_path);
+	real_path = get_cert_file (ifcfg->fileName, privkey);
 	if (phase2) {
-		if (!nm_setting_802_1x_set_phase2_private_key_from_file (s_8021x, privkey, privkey_password, &privkey_type, error))
+		if (!nm_setting_802_1x_set_phase2_private_key_from_file (s_8021x, real_path, privkey_password, &privkey_type, error))
 			goto done;
 	} else {
-		if (!nm_setting_802_1x_set_private_key_from_file (s_8021x, privkey, privkey_password, &privkey_type, error))
+		if (!nm_setting_802_1x_set_private_key_from_file (s_8021x, real_path, privkey_password, &privkey_type, error))
 			goto done;
 	}
 
@@ -1030,13 +1034,19 @@ eap_tls_reader (const char *eap_method,
 	 */
 	if (privkey_type == NM_SETTING_802_1X_CK_TYPE_PKCS12) {
 		if (phase2) {
-			if (!nm_setting_802_1x_set_phase2_client_cert_from_file (s_8021x, privkey, NULL, error))
+			if (!nm_setting_802_1x_set_phase2_client_cert_from_file (s_8021x, real_path, NULL, error))
 				goto done;
 		} else {
-			if (!nm_setting_802_1x_set_client_cert_from_file (s_8021x, privkey, NULL, error))
+			if (!nm_setting_802_1x_set_client_cert_from_file (s_8021x, real_path, NULL, error))
 				goto done;
 		}
 	} else {
+		/* Set the private key password if not PKCS#12 */
+		if (phase2)
+			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD, privkey_password, NULL);
+		else
+			g_object_set (s_8021x, NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD, privkey_password, NULL);
+
 		/* Otherwise, private key is "traditional" OpenSSL format, so
 		 * client certificate will be a separate file.
 		 */
@@ -1051,11 +1061,13 @@ eap_tls_reader (const char *eap_method,
 			goto done;
 		}
 
+		g_free (real_path);
+		real_path = get_cert_file (ifcfg->fileName, client_cert);
 		if (phase2) {
-			if (!nm_setting_802_1x_set_phase2_client_cert_from_file (s_8021x, client_cert, NULL, error))
+			if (!nm_setting_802_1x_set_phase2_client_cert_from_file (s_8021x, real_path, NULL, error))
 				goto done;
 		} else {
-			if (!nm_setting_802_1x_set_client_cert_from_file (s_8021x, client_cert, NULL, error))
+			if (!nm_setting_802_1x_set_client_cert_from_file (s_8021x, real_path, NULL, error))
 				goto done;
 		}
 	}
@@ -1063,7 +1075,7 @@ eap_tls_reader (const char *eap_method,
 	success = TRUE;
 
 done:
-	g_free (real_cert_path);
+	g_free (real_path);
 	g_free (ca_cert);
 	g_free (client_cert);
 	g_free (privkey);
@@ -1344,7 +1356,7 @@ make_wpa_setting (shvarFile *ifcfg,
                   GError **error)
 {
 	NMSettingWirelessSecurity *wsec;
-	char *value, *psk;
+	char *value, *psk, *lower;
 
 	wsec = NM_SETTING_WIRELESS_SECURITY (nm_setting_wireless_security_new ());
 
@@ -1389,6 +1401,10 @@ make_wpa_setting (shvarFile *ifcfg,
 		*s_8021x = fill_8021x (ifcfg, file, value, TRUE, error);
 		if (!*s_8021x)
 			goto error;
+
+		lower = g_ascii_strdown (value, -1);
+		g_object_set (wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, lower, NULL);
+		g_free (lower);
 	} else {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Unknown wireless KEY_MGMT type '%s'", value);
