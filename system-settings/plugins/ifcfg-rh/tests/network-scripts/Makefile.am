@@ -21,6 +21,8 @@ EXTRA_DIST = \
 	keys-test-wifi-wpa-psk-adhoc \
 	ifcfg-test-wifi-wpa-psk-hex \
 	keys-test-wifi-wpa-psk-hex \
+	ifcfg-test-wifi-wpa-eap-tls \
+	keys-test-wifi-wpa-eap-tls \
 	test_ca_cert.pem \
 	test1_key_and_cert.pem
 
