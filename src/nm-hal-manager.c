@@ -130,6 +130,30 @@ nm_get_device_driver_name (LibHalContext *ctx, const char *origdev_udi)
 	return driver_name;
 }
 
+/* Returns the parent if the device is a Sony Ericsson 'mbm'-style device */
+static char *
+is_mbm (LibHalContext *ctx, const char *udi)
+{
+	guint32 vendor_id = 0, product_id = 0;
+	char *parent;
+
+	parent = libhal_device_get_property_string (ctx, udi, "info.parent", NULL);
+	if (!parent)
+		return NULL;
+
+	vendor_id = libhal_device_get_property_int (ctx, parent, "usb.vendor_id", NULL);
+	product_id = libhal_device_get_property_int (ctx, parent, "usb.product_id", NULL);
+
+	if (   (vendor_id == 0x0bdb && product_id == 0x1900)  /* SE F3507g */
+	    || (vendor_id == 0x0bdb && product_id == 0x1902)  /* SE F3507g */
+	    || (vendor_id == 0x0fce && product_id == 0xd0cf)  /* SE MD300 */
+	    || (vendor_id == 0x413c && product_id == 0x8147)) /* Dell 5530 HSDPA */
+		return parent;
+
+	libhal_free_string (parent);
+	return NULL;
+}
+
 /* Wired device creator */
 
 static gboolean
@@ -159,9 +183,9 @@ wired_device_creator (NMHalManager *self,
                       gboolean managed)
 {
 	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
-	GObject *device;
-	char *iface;
-	char *driver;
+	GObject *device = NULL;
+	char *iface, *driver, *parent;
+	gboolean mbm = FALSE;
 
 	iface = libhal_device_get_property_string (priv->hal_ctx, udi, "net.interface", NULL);
 	if (!iface) {
@@ -170,11 +194,21 @@ wired_device_creator (NMHalManager *self,
 	}
 
 	driver = nm_get_device_driver_name (priv->hal_ctx, origdev_udi);
-	device = (GObject *) nm_device_ethernet_new (udi, iface, driver, managed);
+
+	/* Special handling of Ericsson F3507g 'mbm' devices; ignore the
+	 * cdc-ether device that it provides since we don't use it yet.
+	 */
+	if (!strcmp (driver, "cdc_ether")) {
+		parent = is_mbm (priv->hal_ctx, udi);
+		mbm = !!parent;
+		libhal_free_string (parent);
+	}
+
+	if (!mbm)
+		device = (GObject *) nm_device_ethernet_new (udi, iface, driver, managed);
 
 	libhal_free_string (iface);
 	g_free (driver);
-
 	return device;
 }
 
@@ -614,7 +648,25 @@ modem_device_creator (NMHalManager *self,
 				goto out;
 			}
 		}
-		g_free (parent);
+		libhal_free_string (parent);
+	}
+
+	/* Special handling of Ericsson F3507g 'mbm' devices; already handled by
+	 * ModemManager more correctly in HEAD.
+	 */
+	if (type_gsm && !strcmp (driver, "cdc_acm")) {
+		char *parent;
+		guint32 usb_interface;
+
+		parent = is_mbm (priv->hal_ctx, udi);
+		if (parent) {
+			usb_interface = libhal_device_get_property_int (priv->hal_ctx, parent, "usb.interface.number", NULL);
+			if (usb_interface != 1) {
+				libhal_free_string (parent);
+				goto out;
+			}
+			libhal_free_string (parent);
+		}
 	}
 
 	if (type_gsm) {

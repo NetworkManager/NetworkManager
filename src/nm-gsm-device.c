@@ -50,6 +50,8 @@ typedef struct {
 
 	guint reg_tries;
 	guint init_tries;
+	gboolean init_ok;
+	guint pin_tries;
 
 	gboolean needs_cgreg;
 	gboolean checked_cgmm;
@@ -84,7 +86,9 @@ const gchar *modem_init_sequences[] = {
 static void enter_pin (NMGsmDevice *device, NMGsmSecret secret_type, gboolean retry);
 static void manual_registration (NMGsmDevice *device);
 static void automatic_registration (NMGsmDevice *device);
+static void init_modem_full (NMGsmDevice *device);
 static void init_modem (NMSerialDevice *device);
+static void check_pin (NMGsmDevice *self);
 
 NMGsmDevice *
 nm_gsm_device_new (const char *udi,
@@ -381,6 +385,7 @@ automatic_registration_response (NMSerialDevice *device,
 	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
 
 	switch (reply_index) {
+	case 4:
 	case 0:
 		/* Try autoregistration a few times here because the card is actually
 		 * responding to the query and thus we aren't waiting as long for
@@ -412,7 +417,7 @@ automatic_registration_response (NMSerialDevice *device,
 		                         NM_DEVICE_STATE_FAILED,
 		                         NM_DEVICE_STATE_REASON_GSM_REGISTRATION_DENIED);
 		break;
-	case 4:
+	case 5:
 		nm_info ("Registered on Roaming network");
 		automatic_registration_get_network (NM_GSM_DEVICE (device));
 		break;
@@ -444,8 +449,8 @@ static void
 automatic_registration (NMGsmDevice *device)
 {
 	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
-	const char *creg_responses[] = { "+CREG: 0,0", "+CREG: 0,1", "+CREG: 0,2", "+CREG: 0,3", "+CREG: 0,5", NULL };
-	const char *cgreg_responses[] = { "+CGREG: 0,0", "+CGREG: 0,1", "+CGREG: 0,2", "+CGREG: 0,3", "+CGREG: 0,5", NULL };
+	const char *creg_responses[] = { "+CREG: 0,0", "+CREG: 0,1", "+CREG: 0,2", "+CREG: 0,3", "+CREG: 0,4", "+CREG: 0,5", NULL };
+	const char *cgreg_responses[] = { "+CGREG: 0,0", "+CGREG: 0,1", "+CGREG: 0,2", "+CGREG: 0,3", "+CGREG: 0,4", "+CGREG: 0,5", NULL };
 	const char *terminators[] = { "OK", "ERROR", "ERR", NULL };
 
 	if (priv->needs_cgreg)
@@ -480,7 +485,8 @@ get_model_done (NMSerialDevice *device,
 	priv->checked_cgmm = TRUE;
 
 	switch (reply_index) {
-	case 0:
+	case 0: /* Huawei E160G */
+	case 1: /* Ericsson F3507g */
 		priv->needs_cgreg = TRUE;
 		break;
 	default:
@@ -498,7 +504,7 @@ power_up_response (NMSerialDevice *device,
 {
 	NMGsmDevice *self = NM_GSM_DEVICE (device);
 	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (self);
-	const char *responses[] = { "E160G", NULL };
+	const char *responses[] = { "E160G", "F3507g", "D5530", NULL };
 	const char *terminators[] = { "OK", "ERROR", "ERR", NULL };
 
 	/* Get the model the first time */
@@ -523,8 +529,12 @@ init_full_done (NMSerialDevice *device,
                 const char *reply,
                 gpointer user_data)
 {
+	NMGsmDevice *self = NM_GSM_DEVICE (device);
+	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (self);
+
 	switch (reply_index) {
 	case 0:
+		priv->init_ok = TRUE;
 		power_up (NM_GSM_DEVICE (device));
 		break;
 	case -1:
@@ -534,10 +544,29 @@ init_full_done (NMSerialDevice *device,
 		                         NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
 		break;
 	default:
-		nm_warning ("Modem second stage initialization failed");
-		nm_device_state_changed (NM_DEVICE (device),
-		                         NM_DEVICE_STATE_FAILED,
-		                         NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
+		if (priv->init_ok) {
+			/* If the successful init string from before PIN checking failed for
+			 * some reason, try all the init strings again.
+			 */
+			priv->init_ok = FALSE;
+
+			/* But don't try the first init string twice if it was previously
+			 * successful, but has now failed for some reason.
+			 */
+			priv->init_tries = (priv->init_tries > 0) ? 0 : 1;
+		} else
+			priv->init_tries++;
+
+		if (modem_init_sequences[priv->init_tries] != NULL) {
+			nm_warning ("Trying alternate modem initialization (%d)",
+			            priv->init_tries);
+			init_modem_full (self);
+		} else {
+			nm_warning ("Modem second stage initialization failed");
+			nm_device_state_changed (NM_DEVICE (device),
+			                         NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_MODEM_INIT_FAILED);
+		}
 		return;
 	}
 }
@@ -548,9 +577,9 @@ init_modem_full (NMGsmDevice *device)
 	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
 	const char *responses[] = { "OK", "ERROR", "ERR", NULL };
 
-	/* Send E0 too because some devices turn echo back on after CPIN which
-	 * just breaks stuff since echo-ed commands are interpreted as replies.
-	 * rh #456770
+	/* Make sure that E0 gets sent here again, because some devices turn echo
+	 * back on after CPIN which just breaks stuff since echo-ed commands are
+	 * interpreted as replies. (rh #456770)
 	 */
 	modem_wait_for_reply (device, modem_init_sequences[priv->init_tries], 10, responses, responses, init_full_done, NULL);
 }
@@ -647,21 +676,57 @@ enter_pin (NMGsmDevice *device, NMGsmSecret secret_type, gboolean retry)
 	}
 }
 
+static gboolean
+check_pin_again (gpointer data)
+{
+	check_pin (NM_GSM_DEVICE (data));
+	return FALSE;
+}
+
+static void
+schedule_check_pin_again (NMGsmDevice *self)
+{
+	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->pending_id)
+		g_source_remove (priv->pending_id);
+
+	priv->pending_id = g_timeout_add_seconds (1, check_pin_again, self);
+}
+
 static void
 check_pin_done (NMSerialDevice *device,
                 int reply_index,
                 const char *reply,
                 gpointer user_data)
 {
+	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
+
 	switch (reply_index) {
 	case 0:
+		priv->pin_tries = 0;
 		init_modem_full (NM_GSM_DEVICE (device));
 		break;
 	case 1:
+		priv->pin_tries = 0;
 		enter_pin (NM_GSM_DEVICE (device), NM_GSM_SECRET_PIN, FALSE);
 		break;
 	case 2:
+		priv->pin_tries = 0;
 		enter_pin (NM_GSM_DEVICE (device), NM_GSM_SECRET_PUK, FALSE);
+		break;
+	case 3:
+	case 4:
+		/* Try the pin a few times; sometimes the error is transient */
+		if (priv->pin_tries++ < 4) {
+			schedule_check_pin_again (NM_GSM_DEVICE (device));
+		} else {
+			priv->pin_tries = 0;
+			nm_warning ("PIN checking failed to many times");
+			nm_device_state_changed (NM_DEVICE (device),
+			                         NM_DEVICE_STATE_FAILED,
+			                         NM_DEVICE_STATE_REASON_GSM_PIN_CHECK_FAILED);
+		}
 		break;
 	case -1:
 		nm_warning ("PIN checking timed out");
@@ -697,6 +762,7 @@ init_done (NMSerialDevice *device,
 
 	switch (reply_index) {
 	case 0:
+		priv->init_ok = TRUE;
 		check_pin (NM_GSM_DEVICE (device));
 		break;
 	case -1:
@@ -746,6 +812,9 @@ real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	}
 
 	NM_GSM_DEVICE_GET_PRIVATE (device)->init_tries = 0;
+	NM_GSM_DEVICE_GET_PRIVATE (device)->init_ok = FALSE;
+	NM_GSM_DEVICE_GET_PRIVATE (device)->pin_tries = 0;
+	NM_GSM_DEVICE_GET_PRIVATE (device)->reg_tries = 0;
 
 	id = nm_serial_device_flash (serial_device, 100, (NMSerialFlashFn) init_modem, NULL);
 	if (!id)
