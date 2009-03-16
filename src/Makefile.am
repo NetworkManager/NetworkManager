@@ -30,6 +30,7 @@ noinst_LTLIBRARIES = libtest-dhcp.la
 
 libtest_dhcp_la_SOURCES = \
 	nm-ip4-config.c \
+	nm-hostname-provider.c \
 	nm-dbus-manager.c
 
 libtest_dhcp_la_CPPFLAGS = \
@@ -68,6 +69,8 @@ NetworkManager_SOURCES =				\
 		nm-dbus-manager.c			\
 		nm-hal-manager.c			\
 		nm-hal-manager.h			\
+		nm-hostname-provider.c			\
+		nm-hostname-provider.h			\
 		nm-ip4-config.c			\
 		nm-ip4-config.h			\
 		nm-active-connection.h \

@@ -42,6 +42,7 @@
 #include "nm-marshal.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-hal-manager.h"
+#include "nm-hostname-provider.h"
 
 #define NM_AUTOIP_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
 #define NM_AUTOIP_DBUS_IFACE   "org.freedesktop.nm_avahi_autoipd"
@@ -102,6 +103,8 @@ static void system_settings_properties_changed_cb (DBusGProxy *proxy,
 static void add_device (NMManager *self, NMDevice *device);
 static void remove_one_device (NMManager *manager, NMDevice *device);
 
+static void hostname_provider_init (NMHostnameProvider *provider_class);
+
 #define SSD_POKE_INTERVAL 120
 #define ORIGDEV_TAG "originating-device"
 
@@ -152,7 +155,9 @@ typedef struct {
 
 #define NM_MANAGER_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_MANAGER, NMManagerPrivate))
 
-G_DEFINE_TYPE (NMManager, nm_manager, G_TYPE_OBJECT)
+G_DEFINE_TYPE_EXTENDED (NMManager, nm_manager, G_TYPE_OBJECT, 0,
+						G_IMPLEMENT_INTERFACE (NM_TYPE_HOSTNAME_PROVIDER,
+											   hostname_provider_init))
 
 enum {
 	DEVICE_ADDED,
@@ -319,6 +324,18 @@ aipd_handle_event (DBusGProxy *proxy,
 
 	if (!handled)
 		nm_warning ("Unhandled avahi-autoipd event for '%s'", iface);
+}
+
+static const char *
+hostname_provider_get_hostname (NMHostnameProvider *provider)
+{
+	return NM_MANAGER_GET_PRIVATE (provider)->hostname;
+}
+
+static void
+hostname_provider_init (NMHostnameProvider *provider_class)
+{
+	provider_class->get_hostname = hostname_provider_get_hostname;
 }
 
 static void

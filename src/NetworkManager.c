@@ -48,6 +48,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-supplicant-manager.h"
 #include "nm-dhcp-manager.h"
+#include "nm-hostname-provider.h"
 #include "nm-netlink-monitor.h"
 #include "nm-vpn-manager.h"
 #include "nm-logging.h"
@@ -377,6 +378,8 @@ main (int argc, char *argv[])
 		nm_warning ("Failed to start the DHCP manager.");
 		goto done;
 	}
+
+	nm_dhcp_manager_set_hostname_provider (dhcp_mgr, NM_HOSTNAME_PROVIDER (manager));
 
 	/* Start our DBus service */
 	if (!nm_dbus_manager_start_service (dbus_mgr)) {

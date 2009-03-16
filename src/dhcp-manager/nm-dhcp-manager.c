@@ -40,6 +40,7 @@
 #include "nm-marshal.h"
 #include "nm-utils.h"
 #include "nm-dbus-manager.h"
+#include "nm-hostname-provider.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-glib-compat.h"
 
@@ -52,6 +53,7 @@ typedef struct {
 	NMDBusManager * dbus_mgr;
 	GHashTable *	devices;
 	DBusGProxy *	proxy;
+	NMHostnameProvider *hostname_provider;
 } NMDHCPManagerPrivate;
 
 
@@ -70,6 +72,8 @@ static guint signals[LAST_SIGNAL] = { 0 };
 static NMDHCPManager *nm_dhcp_manager_new (void);
 
 static void nm_dhcp_manager_cancel_transaction_real (NMDHCPDevice *device);
+
+static void hostname_provider_destroyed (gpointer data, GObject *destroyed_object);
 
 NMDHCPManager *
 nm_dhcp_manager_get (void)
@@ -94,6 +98,11 @@ static void
 finalize (GObject *object)
 {
 	NMDHCPManagerPrivate *priv = NM_DHCP_MANAGER_GET_PRIVATE (object);
+
+	if (priv->hostname_provider) {
+		g_object_weak_unref (G_OBJECT (priv->hostname_provider), hostname_provider_destroyed, object);
+		priv->hostname_provider = NULL;
+	}
 
 	g_hash_table_destroy (priv->devices);
 	g_object_unref (priv->proxy);
@@ -582,6 +591,7 @@ nm_dhcp_manager_begin_transaction (NMDHCPManager *manager,
 {
 	NMDHCPManagerPrivate *priv;
 	NMDHCPDevice *device;
+	NMSettingIP4Config *setting;
 
 	g_return_val_if_fail (NM_IS_DHCP_MANAGER (manager), FALSE);
 	g_return_val_if_fail (iface != NULL, FALSE);
@@ -597,9 +607,29 @@ nm_dhcp_manager_begin_transaction (NMDHCPManager *manager,
 		nm_dhcp_manager_cancel_transaction_real (device);
 	}
 
-	nm_info ("Activation (%s) Beginning DHCP transaction.", iface);
+	if (s_ip4 && 
+		nm_setting_ip4_config_get_dhcp_send_hostname (s_ip4) &&
+		nm_setting_ip4_config_get_dhcp_hostname (s_ip4) == NULL &&
+		priv->hostname_provider != NULL) {
+		/* We're asked to send the hostname to DHCP server,
+		   the hostname isn't specified,
+		   and a hostname provider is registered: use that */
 
-	device->pid = nm_dhcp_client_start (device, s_ip4);
+		setting = NM_SETTING_IP4_CONFIG (nm_setting_duplicate (NM_SETTING (s_ip4)));
+		g_object_set (G_OBJECT (setting),
+					  NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME,
+					  nm_hostname_provider_get_hostname (priv->hostname_provider),
+					  NULL);
+	} else {
+		setting = s_ip4 ? g_object_ref (s_ip4) : NULL;
+	}
+
+	nm_info ("Activation (%s) Beginning DHCP transaction.", iface);
+	device->pid = nm_dhcp_client_start (device, setting);
+
+	if (setting)
+		g_object_unref (setting);
+
 	if (device->pid == 0)
 		return FALSE;
 
@@ -1033,3 +1063,29 @@ nm_dhcp_manager_foreach_dhcp4_option (NMDHCPManager *self,
 	return TRUE;
 }
 
+static void
+hostname_provider_destroyed (gpointer data, GObject *destroyed_object)
+{
+	NM_DHCP_MANAGER_GET_PRIVATE (data)->hostname_provider = NULL;
+}
+
+void
+nm_dhcp_manager_set_hostname_provider (NMDHCPManager *manager,
+									   NMHostnameProvider *provider)
+{
+	NMDHCPManagerPrivate *priv;
+
+	g_return_if_fail (NM_IS_DHCP_MANAGER (manager));
+
+	priv = NM_DHCP_MANAGER_GET_PRIVATE (manager);
+
+	if (priv->hostname_provider) {
+		g_object_weak_unref (G_OBJECT (priv->hostname_provider), hostname_provider_destroyed, manager);
+		priv->hostname_provider = NULL;
+	}
+
+	if (provider) {
+		priv->hostname_provider = provider;
+		g_object_weak_ref (G_OBJECT (provider), hostname_provider_destroyed, manager);
+	}
+}

@@ -80,6 +80,7 @@ typedef struct {
 	gboolean ignore_auto_routes;
 	gboolean ignore_auto_dns;
 	char *dhcp_client_id;
+	gboolean dhcp_send_hostname;
 	char *dhcp_hostname;
 	gboolean never_default;
 } NMSettingIP4ConfigPrivate;
@@ -94,6 +95,7 @@ enum {
 	PROP_IGNORE_AUTO_ROUTES,
 	PROP_IGNORE_AUTO_DNS,
 	PROP_DHCP_CLIENT_ID,
+	PROP_DHCP_SEND_HOSTNAME,
 	PROP_DHCP_HOSTNAME,
 	PROP_NEVER_DEFAULT,
 
@@ -412,6 +414,14 @@ nm_setting_ip4_config_get_dhcp_client_id (NMSettingIP4Config *setting)
 	return NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->dhcp_client_id;
 }
 
+gboolean
+nm_setting_ip4_config_get_dhcp_send_hostname (NMSettingIP4Config *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_IP4_CONFIG (setting), FALSE);
+
+	return NM_SETTING_IP4_CONFIG_GET_PRIVATE (setting)->dhcp_send_hostname;
+}
+
 const char *
 nm_setting_ip4_config_get_dhcp_hostname (NMSettingIP4Config *setting)
 {
@@ -617,9 +627,15 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->dhcp_client_id);
 		priv->dhcp_client_id = g_value_dup_string (value);
 		break;
+	case PROP_DHCP_SEND_HOSTNAME:
+		priv->dhcp_send_hostname = g_value_get_boolean (value);
+		break;
 	case PROP_DHCP_HOSTNAME:
 		g_free (priv->dhcp_hostname);
 		priv->dhcp_hostname = g_value_dup_string (value);
+		/* FIXME: Is this a good idea? */
+		if (priv->dhcp_hostname)
+			priv->dhcp_send_hostname = TRUE;
 		break;
 	case PROP_NEVER_DEFAULT:
 		priv->never_default = g_value_get_boolean (value);
@@ -661,6 +677,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_DHCP_CLIENT_ID:
 		g_value_set_string (value, nm_setting_ip4_config_get_dhcp_client_id (setting));
+		break;
+	case PROP_DHCP_SEND_HOSTNAME:
+		g_value_set_boolean (value, nm_setting_ip4_config_get_dhcp_send_hostname (setting));
 		break;
 	case PROP_DHCP_HOSTNAME:
 		g_value_set_string (value, nm_setting_ip4_config_get_dhcp_hostname (setting));
@@ -752,6 +771,14 @@ nm_setting_ip4_config_class_init (NMSettingIP4ConfigClass *setting_class)
 						   "DHCP Client ID",
 						   NULL,
 						   G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
+
+	g_object_class_install_property
+		(object_class, PROP_DHCP_SEND_HOSTNAME,
+		 g_param_spec_boolean (NM_SETTING_IP4_CONFIG_DHCP_SEND_HOSTNAME,
+						   "Send DHCP hostname",
+						   "Send the hostname to DHCP server",
+						   FALSE,
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 
 	g_object_class_install_property
 		(object_class, PROP_DHCP_HOSTNAME,

@@ -29,6 +29,7 @@
 
 #include "nm-ip4-config.h"
 #include "nm-dhcp4-config.h"
+#include "nm-hostname-provider.h"
 
 #define NM_DHCP_MANAGER_RUN_DIR		LOCALSTATEDIR "/run"
 
@@ -87,6 +88,9 @@ typedef struct {
 GType nm_dhcp_manager_get_type (void);
 
 NMDHCPManager *nm_dhcp_manager_get                  (void);
+void           nm_dhcp_manager_set_hostname_provider(NMDHCPManager *manager,
+													 NMHostnameProvider *provider);
+
 gboolean       nm_dhcp_manager_begin_transaction    (NMDHCPManager *manager,
                                                      const char *iface,
                                                      NMSettingIP4Config *s_ip4,
