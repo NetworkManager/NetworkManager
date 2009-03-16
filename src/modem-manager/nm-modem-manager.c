@@ -9,7 +9,7 @@
 #include "nm-utils.h"
 #include "nm-modem-types.h"
 
-#define MODEM_POKE_INTERVAL 120000
+#define MODEM_POKE_INTERVAL 120
 
 G_DEFINE_TYPE (NMModemManager, nm_modem_manager, G_TYPE_OBJECT)
 
@@ -208,7 +208,6 @@ poke_modem_cb (gpointer user_data)
 									   MM_DBUS_PATH,
 									   MM_DBUS_INTERFACE);
 
-	nm_info ("Trying to start the modem-manager...");
 	dbus_g_proxy_call_no_reply (proxy, "EnumerateDevices", G_TYPE_INVALID);
 	g_object_unref (proxy);
 
@@ -251,6 +250,8 @@ modem_manager_appeared (NMModemManager *self, gboolean enumerate_devices)
 		priv->poke_id = 0;
 	}
 
+	nm_info ("modem-manager is now available");
+
 	priv->proxy = dbus_g_proxy_new_for_name (nm_dbus_manager_get_connection (priv->dbus_mgr),
 											 MM_DBUS_SERVICE, MM_DBUS_PATH, MM_DBUS_INTERFACE);
 
@@ -289,8 +290,9 @@ modem_manager_disappeared (NMModemManager *self)
 	}
 
 	/* Try to activate the modem-manager */
+	nm_info ("Trying to start the modem-manager...");
 	poke_modem_cb (self);
-	priv->poke_id = g_timeout_add (MODEM_POKE_INTERVAL, poke_modem_cb, self);
+	priv->poke_id = g_timeout_add_seconds (MODEM_POKE_INTERVAL, poke_modem_cb, self);
 }
 
 static void
@@ -311,7 +313,6 @@ nm_modem_manager_name_owner_changed (NMDBusManager *dbus_mgr,
 	new_owner_good = (new_owner && strlen (new_owner));
 
 	if (!old_owner_good && new_owner_good) {
-		nm_info ("modem manager appeared");
 		modem_manager_appeared (NM_MODEM_MANAGER (user_data), FALSE);
 	} else if (old_owner_good && !new_owner_good) {
 		nm_info ("modem manager disappeared");
