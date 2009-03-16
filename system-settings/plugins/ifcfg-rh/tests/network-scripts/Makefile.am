@@ -15,6 +15,8 @@ EXTRA_DIST = \
 	keys-test-wifi-wep \
 	ifcfg-test-wifi-wep-adhoc \
 	keys-test-wifi-wep-adhoc \
+	ifcfg-test-wifi-wep-eap-ttls-chap \
+	keys-test-wifi-wep-eap-ttls-chap \
 	ifcfg-test-wifi-wpa-psk \
 	keys-test-wifi-wpa-psk \
 	ifcfg-test-wifi-wpa-psk-adhoc \
