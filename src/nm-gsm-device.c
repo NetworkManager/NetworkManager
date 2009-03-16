@@ -504,7 +504,7 @@ power_up_response (NMSerialDevice *device,
 {
 	NMGsmDevice *self = NM_GSM_DEVICE (device);
 	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (self);
-	const char *responses[] = { "E160G", "F3507g", "D5530", NULL };
+	const char *responses[] = { "E160G", "F3507g", "D5530", "MD300", NULL };
 	const char *terminators[] = { "OK", "ERROR", "ERR", NULL };
 
 	/* Get the model the first time */
