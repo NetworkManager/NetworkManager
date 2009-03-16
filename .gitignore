@@ -20,6 +20,17 @@ stamp-*
 .libs
 autom4te.cache
 intltool-*
+gtk-doc.make
+TAGS
+docs/libnm-glib/html/
+docs/libnm-glib/tmpl/
+docs/libnm-glib/xml/
+docs/libnm-glib/libnm-glib-*.txt
+docs/libnm-util/html/
+docs/libnm-util/tmpl/
+docs/libnm-util/xml/
+docs/libnm-util/libnm-util-*.txt
+docs/libnm-util/libnm-util-docs.sgml
 COPYING
 INSTALL
 *.pc
@@ -27,6 +38,9 @@ man/*.[18]
 po/*.gmo
 
 callouts/nm-dhcp-client.action
+callouts/nm-avahi-autoipd.action
+callouts/nm-dispatcher.action
+callouts/org.freedesktop.nm_dispatcher.service
 dispatcher-daemon/NetworkManagerDispatcher
 initscript/*/NetworkManagerDispatcher
 initscript/*/networkmanager-dispatcher
@@ -41,7 +55,13 @@ libnm-glib/libnm-glib-test
 src/NetworkManager
 src/nm-crash-logger
 system-settings/src/nm-system-settings
+system-settings/src/org.freedesktop.NetworkManagerSystemSettings.service
 test/libnm_glib_test
 test/nm-online
 test/nm-tool
 test/nmtestdevices
+libnm-util/test-crypto
+libnm-util/tests/test-crypto
+libnm-util/tests/test-settings-defaults
+src/tests/test-dhcp-options
+system-settings/plugins/keyfile/tests/test-keyfile
