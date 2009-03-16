@@ -1192,6 +1192,7 @@ eap_ttls_reader (const char *eap_method,
 	char *ca_cert = NULL;
 	char *real_cert_path = NULL;
 	char *inner_auth = NULL;
+	char *tmp;
 	char **list = NULL, **iter;
 
 	ca_cert = svGetValue (ifcfg, "IEEE_8021X_CA_CERT", FALSE);
@@ -1210,12 +1211,15 @@ eap_ttls_reader (const char *eap_method,
 	if (anon_ident && strlen (anon_ident))
 		g_object_set (s_8021x, NM_SETTING_802_1X_ANONYMOUS_IDENTITY, anon_ident, NULL);
 
-	inner_auth = svGetValue (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS", FALSE);
-	if (!inner_auth) {
+	tmp = svGetValue (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS", FALSE);
+	if (!tmp) {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Missing IEEE_8021X_INNER_AUTH_METHODS.");
 		goto done;
 	}
+
+	inner_auth = g_ascii_strdown (tmp, -1);
+	g_free (tmp);
 
 	/* Handle options for the inner auth method */
 	list = g_strsplit (inner_auth, " ", 0);
@@ -1223,21 +1227,21 @@ eap_ttls_reader (const char *eap_method,
 		if (!strlen (*iter))
 			continue;
 
-		if (   !strcmp (*iter, "MSCHAPV2")
-		    || !strcmp (*iter, "MSCHAP")
-		    || !strcmp (*iter, "PAP")
-		    || !strcmp (*iter, "CHAP")) {
+		if (   !strcmp (*iter, "mschapv2")
+		    || !strcmp (*iter, "mschap")
+		    || !strcmp (*iter, "pap")
+		    || !strcmp (*iter, "chap")) {
 			if (!eap_simple_reader (*iter, ifcfg, keys, s_8021x, TRUE, error))
 				goto done;
 			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTH, *iter, NULL);
-		} else if (!strcmp (*iter, "EAP-TLS")) {
+		} else if (!strcmp (*iter, "eap-tls")) {
 			if (!eap_tls_reader (*iter, ifcfg, keys, s_8021x, TRUE, error))
 				goto done;
-			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTHEAP, "TLS", NULL);
-		} else if (!strcmp (*iter, "EAP-MSCHAPV2") || !strcmp (*iter, "EAP-MD5")) {
+			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTHEAP, "tls", NULL);
+		} else if (!strcmp (*iter, "eap-mschapv2") || !strcmp (*iter, "eap-md5")) {
 			if (!eap_simple_reader (*iter, ifcfg, keys, s_8021x, TRUE, error))
 				goto done;
-			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTHEAP, (*iter + strlen ("EAP-")), NULL);
+			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTHEAP, (*iter + strlen ("eap-")), NULL);
 		} else {
 			g_set_error (error, ifcfg_plugin_error_quark (), 0,
 			             "Unknown IEEE_8021X_INNER_AUTH_METHOD '%s'.",
