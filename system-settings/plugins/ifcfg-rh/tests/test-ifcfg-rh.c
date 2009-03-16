@@ -2667,7 +2667,7 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 
 	connection = connection_from_file (TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
 	                                   NULL,
-	                                   TYPE_ETHERNET,
+	                                   TYPE_WIRELESS,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &error,
@@ -2711,24 +2711,6 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: missing %s setting",
 	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
 	        NM_SETTING_802_1X_SETTING_NAME);
-
-	/* EAP methods */
-	ASSERT (nm_setting_802_1x_get_num_eap_methods (s_8021x) == 1,
-	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_EAP);
-	tmp = nm_setting_802_1x_get_eap_method (s_8021x, 0);
-	ASSERT (tmp != NULL,
-	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: missing %s / %s eap method",
-	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_EAP);
-	ASSERT (strcmp (tmp, "ttls") == 0,
-	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
-	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_EAP);
 
 	/* EAP methods */
 	ASSERT (nm_setting_802_1x_get_num_eap_methods (s_8021x) == 1,
@@ -2813,6 +2795,162 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	g_object_unref (connection);
 }
 
+#define TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP TEST_DIR"/network-scripts/ifcfg-test-wifi-wep-eap-ttls-chap"
+#define TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP_CA_CERT TEST_DIR"/network-scripts/test_ca_cert.pem"
+
+static void
+test_read_wifi_wep_eap_ttls_chap (void)
+{
+	NMConnection *connection;
+	NMSettingWireless *s_wireless;
+	NMSettingWirelessSecurity *s_wsec;
+	NMSettingIP4Config *s_ip4;
+	NMSetting8021x *s_8021x;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const char *expected_password = "foobar baz";
+	const char *expected_identity = "David Smith";
+	const char *expected_key_mgmt = "ieee8021x";
+
+	connection = connection_from_file (TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	                                   NULL,
+	                                   TYPE_WIRELESS,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "wifi-wep-eap-ttls-chap-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wifi-wep-eap-ttls-chap-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP, error->message);
+
+	ASSERT (unmanaged == FALSE,
+	        "wifi-wep-eap-ttls-chap-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP);
+
+	/* ===== WIRELESS SETTING ===== */
+
+	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	ASSERT (s_wireless != NULL,
+	        "wifi-wep-eap-ttls-chap-verify-wireless", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+
+	/* ===== IPv4 SETTING ===== */
+
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	ASSERT (s_ip4 != NULL,
+	        "wifi-wep-eap-ttls-chap-verify-ip4", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
+	        "wifi-wep-eap-ttls-chap-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_METHOD);
+
+	/* ===== 802.1x SETTING ===== */
+	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY));
+	ASSERT (s_wsec != NULL,
+	        "wifi-wep-eap-ttls-chap-verify-wireless-security", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_802_1X_SETTING_NAME);
+
+	/* Key management */
+	tmp = nm_setting_wireless_security_get_key_mgmt (s_wsec);
+	ASSERT (tmp != NULL,
+	        "wifi-wep-eap-ttls-chap-verify-wireless-security", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WPA_PSK,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+	ASSERT (strcmp (tmp, expected_key_mgmt) == 0,
+	        "wifi-wep-eap-ttls-chap-verify-wireless-security", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WPA_PSK,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+
+	/* ===== 802.1x SETTING ===== */
+	s_8021x = NM_SETTING_802_1X (nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X));
+	ASSERT (s_8021x != NULL,
+	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_802_1X_SETTING_NAME);
+
+	/* EAP methods */
+	ASSERT (nm_setting_802_1x_get_num_eap_methods (s_8021x) == 1,
+	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_EAP);
+	tmp = nm_setting_802_1x_get_eap_method (s_8021x, 0);
+	ASSERT (tmp != NULL,
+	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: missing %s / %s eap method",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_EAP);
+	ASSERT (strcmp (tmp, "ttls") == 0,
+	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_EAP);
+
+	/* CA Cert */
+	verify_cert_or_key (CK_CA_CERT,
+	                    s_8021x,
+	                    TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP_CA_CERT,
+	                    NULL,
+	                    TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	                    "wifi-wep-eap-ttls-chap-verify-8021x",
+	                    NM_SETTING_802_1X_CA_CERT);
+
+	/* Inner auth method */
+	tmp = nm_setting_802_1x_get_phase2_auth (s_8021x);
+	ASSERT (tmp != NULL,
+	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: missing %s / %s eap method",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PHASE2_AUTH);
+	ASSERT (strcmp (tmp, "chap") == 0,
+	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PHASE2_AUTH);
+
+	/* Password */
+	tmp = nm_setting_802_1x_get_identity (s_8021x);
+	ASSERT (tmp != NULL,
+	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_IDENTITY);
+	ASSERT (strcmp (tmp, expected_identity) == 0,
+	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_IDENTITY);
+
+	/* Password */
+	tmp = nm_setting_802_1x_get_password (s_8021x);
+	ASSERT (tmp != NULL,
+	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PASSWORD);
+	ASSERT (strcmp (tmp, expected_password) == 0,
+	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PASSWORD);
+
+	g_object_unref (connection);
+}
+
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
@@ -2842,6 +2980,7 @@ int main (int argc, char **argv)
 	test_read_wifi_wpa_psk_hex ();
 	test_read_wifi_wpa_eap_tls ();
 	test_read_wifi_wpa_eap_ttls_tls ();
+	test_read_wifi_wep_eap_ttls_chap ();
 
 	basename = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", basename);
