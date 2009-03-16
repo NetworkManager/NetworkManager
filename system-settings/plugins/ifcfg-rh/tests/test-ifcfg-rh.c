@@ -60,6 +60,10 @@ verify_cert_or_key (CertKeyType ck_type,
 	GError *error = NULL;
 	gboolean success = FALSE;
 	const GByteArray *expected = NULL, *setting = NULL;
+	gboolean phase2 = FALSE;
+
+	if (strstr (setting_key, "phase2"))
+		phase2 = TRUE;
 
 	/* CA Cert */
 	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
@@ -67,32 +71,62 @@ verify_cert_or_key (CertKeyType ck_type,
 	        test_name, "failed to verify %s: could not create temp 802.1x setting",
 	        ifcfg);
 
-	if (ck_type == CK_CA_CERT)
-		success = nm_setting_802_1x_set_ca_cert_from_file (s_8021x, file, NULL, &error);
-	else if (ck_type == CK_CLIENT_CERT)
-		success = nm_setting_802_1x_set_client_cert_from_file (s_8021x, file, NULL, &error);
-	else if (ck_type == CK_PRIV_KEY)
-		success = nm_setting_802_1x_set_private_key_from_file (s_8021x, file, privkey_password, NULL, &error);
+	if (ck_type == CK_CA_CERT) {
+		if (phase2)
+			success = nm_setting_802_1x_set_phase2_ca_cert_from_file (s_8021x, file, NULL, &error);
+		else
+			success = nm_setting_802_1x_set_ca_cert_from_file (s_8021x, file, NULL, &error);
+	} else if (ck_type == CK_CLIENT_CERT) {
+		if (phase2)
+			success = nm_setting_802_1x_set_phase2_client_cert_from_file (s_8021x, file, NULL, &error);
+		else
+			success = nm_setting_802_1x_set_client_cert_from_file (s_8021x, file, NULL, &error);
+	} else if (ck_type == CK_PRIV_KEY) {
+		if (phase2)
+			success = nm_setting_802_1x_set_phase2_private_key_from_file (s_8021x, file, privkey_password, NULL, &error);
+		else
+			success = nm_setting_802_1x_set_private_key_from_file (s_8021x, file, privkey_password, NULL, &error);
+	}
 	ASSERT (success == TRUE,
 	        test_name, "failed to verify %s: could not load item for %s / %s: %s",
 	        ifcfg, NM_SETTING_802_1X_SETTING_NAME, setting_key, error->message);
 
-	if (ck_type == CK_CA_CERT)
-		expected = nm_setting_802_1x_get_ca_cert (s_8021x);
-	else if (ck_type == CK_CLIENT_CERT)
-		expected = nm_setting_802_1x_get_client_cert (s_8021x);
-	else if (ck_type == CK_PRIV_KEY)
-		expected = nm_setting_802_1x_get_private_key (s_8021x);
+	if (ck_type == CK_CA_CERT) {
+		if (phase2)
+			expected = nm_setting_802_1x_get_phase2_ca_cert (s_8021x);
+		else
+			expected = nm_setting_802_1x_get_ca_cert (s_8021x);
+	} else if (ck_type == CK_CLIENT_CERT) {
+		if (phase2)
+			expected = nm_setting_802_1x_get_phase2_client_cert (s_8021x);
+		else
+			expected = nm_setting_802_1x_get_client_cert (s_8021x);
+	} else if (ck_type == CK_PRIV_KEY) {
+		if (phase2)
+			expected = nm_setting_802_1x_get_phase2_private_key (s_8021x);
+		else
+			expected = nm_setting_802_1x_get_private_key (s_8021x);
+	}
 	ASSERT (expected != NULL,
 	        test_name, "failed to verify %s: failed to get read item for %s / %s",
 	        ifcfg, NM_SETTING_802_1X_SETTING_NAME, setting_key);
 
-	if (ck_type == CK_CA_CERT)
-		setting = nm_setting_802_1x_get_ca_cert (s_compare);
-	else if (ck_type == CK_CLIENT_CERT)
-		setting = nm_setting_802_1x_get_client_cert (s_compare);
-	else if (ck_type == CK_PRIV_KEY)
-		setting = nm_setting_802_1x_get_private_key (s_compare);
+	if (ck_type == CK_CA_CERT) {
+		if (phase2)
+			setting = nm_setting_802_1x_get_phase2_ca_cert (s_compare);
+		else
+			setting = nm_setting_802_1x_get_ca_cert (s_compare);
+	} else if (ck_type == CK_CLIENT_CERT) {
+		if (phase2)
+			setting = nm_setting_802_1x_get_phase2_client_cert (s_compare);
+		else
+			setting = nm_setting_802_1x_get_client_cert (s_compare);
+	} else if (ck_type == CK_PRIV_KEY) {
+		if (phase2)
+			setting = nm_setting_802_1x_get_phase2_private_key (s_compare);
+		else
+			setting = nm_setting_802_1x_get_private_key (s_compare);
+	}
 	ASSERT (setting != NULL,
 	        test_name, "failed to verify %s: missing %s / %s key",
 	        ifcfg, NM_SETTING_802_1X_SETTING_NAME, setting_key);
@@ -2613,6 +2647,172 @@ test_read_wifi_wpa_eap_tls (void)
 	g_object_unref (connection);
 }
 
+#define TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS TEST_DIR"/network-scripts/ifcfg-test-wifi-wpa-eap-ttls-tls"
+#define TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS_CA_CERT TEST_DIR"/network-scripts/test_ca_cert.pem"
+/* Also use TLS defines from the previous test */
+
+static void
+test_read_wifi_wpa_eap_ttls_tls (void)
+{
+	NMConnection *connection;
+	NMSettingWireless *s_wireless;
+	NMSettingIP4Config *s_ip4;
+	NMSetting8021x *s_8021x;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp, *privkey_password;
+	const char *expected_private_key_password = "test1";
+
+	connection = connection_from_file (TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "wifi-wpa-eap-ttls-tls-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wifi-wpa-eap-ttls-tls-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS, error->message);
+
+	ASSERT (unmanaged == FALSE,
+	        "wifi-wpa-eap-ttls-tls-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS);
+
+	/* ===== WIRELESS SETTING ===== */
+
+	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	ASSERT (s_wireless != NULL,
+	        "wifi-wpa-eap-ttls-tls-verify-wireless", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+
+	/* ===== IPv4 SETTING ===== */
+
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	ASSERT (s_ip4 != NULL,
+	        "wifi-wpa-eap-ttls-tls-verify-ip4", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
+	        "wifi-wpa-eap-ttls-tls-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_METHOD);
+
+	/* ===== 802.1x SETTING ===== */
+	s_8021x = NM_SETTING_802_1X (nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X));
+	ASSERT (s_8021x != NULL,
+	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME);
+
+	/* EAP methods */
+	ASSERT (nm_setting_802_1x_get_num_eap_methods (s_8021x) == 1,
+	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_EAP);
+	tmp = nm_setting_802_1x_get_eap_method (s_8021x, 0);
+	ASSERT (tmp != NULL,
+	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: missing %s / %s eap method",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_EAP);
+	ASSERT (strcmp (tmp, "ttls") == 0,
+	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_EAP);
+
+	/* EAP methods */
+	ASSERT (nm_setting_802_1x_get_num_eap_methods (s_8021x) == 1,
+	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_EAP);
+	tmp = nm_setting_802_1x_get_eap_method (s_8021x, 0);
+	ASSERT (tmp != NULL,
+	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: missing %s / %s eap method",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_EAP);
+	ASSERT (strcmp (tmp, "ttls") == 0,
+	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_EAP);
+
+	/* CA Cert */
+	verify_cert_or_key (CK_CA_CERT,
+	                    s_8021x,
+	                    TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS_CA_CERT,
+	                    NULL,
+	                    TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	                    "wifi-wpa-eap-ttls-tls-verify-8021x",
+	                    NM_SETTING_802_1X_CA_CERT);
+
+	/* Inner auth method */
+	tmp = nm_setting_802_1x_get_phase2_autheap (s_8021x);
+	ASSERT (tmp != NULL,
+	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: missing %s / %s eap method",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PHASE2_AUTHEAP);
+	ASSERT (strcmp (tmp, "tls") == 0,
+	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PHASE2_AUTHEAP);
+
+	/* Inner CA Cert */
+	verify_cert_or_key (CK_CA_CERT,
+	                    s_8021x,
+	                    TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT,
+	                    NULL,
+	                    TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	                    "wifi-wpa-eap-ttls-tls-verify-8021x",
+	                    NM_SETTING_802_1X_PHASE2_CA_CERT);
+
+	/* Inner Client Cert */
+	verify_cert_or_key (CK_CLIENT_CERT,
+	                    s_8021x,
+	                    TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT,
+	                    NULL,
+	                    TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	                    "wifi-wpa-eap-ttls-tls-verify-8021x",
+	                    NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
+
+	/* Inner Private Key Password */
+	privkey_password = nm_setting_802_1x_get_phase2_private_key_password (s_8021x);
+	ASSERT (privkey_password != NULL,
+	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD);
+	ASSERT (strcmp (privkey_password, expected_private_key_password) == 0,
+	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD);
+
+	/* Inner private key */
+	verify_cert_or_key (CK_PRIV_KEY,
+	                    s_8021x,
+	                    TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY,
+	                    privkey_password,
+	                    TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	                    "wifi-wpa-eap-ttls-tls-verify-8021x",
+	                    NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
+
+	g_object_unref (connection);
+}
+
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
@@ -2641,6 +2841,7 @@ int main (int argc, char **argv)
 	test_read_wifi_wpa_psk_adhoc ();
 	test_read_wifi_wpa_psk_hex ();
 	test_read_wifi_wpa_eap_tls ();
+	test_read_wifi_wpa_eap_ttls_tls ();
 
 	basename = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", basename);
