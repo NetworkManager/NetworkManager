@@ -16,7 +16,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2009 Red Hat, Inc.
  */
 
 #include "config.h"
@@ -51,10 +51,24 @@
 #define HAL_DBUS_SERVICE "org.freedesktop.Hal"
 
 typedef struct {
+	GType device_type;
+	char *capability_str;
+	char *category;
+	gboolean (*is_device_fn) (NMHalManager *self, const char *udi);
+	NMDeviceCreatorFn creator_fn;
+} DeviceCreator;
+
+static void emit_udi_added (NMHalManager *self, const char *udi, DeviceCreator *creator);
+
+typedef struct {
 	LibHalContext *hal_ctx;
 	NMDBusManager *dbus_mgr;
 	GSList *device_creators;
 	gboolean rfkilled;  /* Authoritative rfkill state */
+
+	GSList *deferred_modems;
+	guint deferred_modem_id;
+	DeviceCreator *modem_creator;
 
 	/* Killswitch handling */
 	GSList *killswitch_list;
@@ -86,14 +100,6 @@ static guint signals[LAST_SIGNAL] = { 0 };
 static gboolean poll_killswitches (gpointer user_data);
 
 /* Device creators */
-
-typedef struct {
-	GType device_type;
-	char *capability_str;
-	char *category;
-	gboolean (*is_device_fn) (NMHalManager *self, const char *udi);
-	NMDeviceCreatorFn creator_fn;
-} DeviceCreator;
 
 static DeviceCreator *
 get_creator (NMHalManager *self, const char *udi)
@@ -498,7 +504,7 @@ error:
 }
 #endif
 
-static gboolean
+static void
 hal_get_modem_capabilities (LibHalContext *ctx,
                             const char *udi,
                             gboolean *gsm,
@@ -506,16 +512,16 @@ hal_get_modem_capabilities (LibHalContext *ctx,
 {
 	char **capabilities, **iter;
 
-	g_return_val_if_fail (ctx != NULL, FALSE);
-	g_return_val_if_fail (udi != NULL, FALSE);
-	g_return_val_if_fail (gsm != NULL, FALSE);
-	g_return_val_if_fail (*gsm == FALSE, FALSE);
-	g_return_val_if_fail (cdma != NULL, FALSE);
-	g_return_val_if_fail (*cdma == FALSE, FALSE);
+	g_return_if_fail (ctx != NULL);
+	g_return_if_fail (udi != NULL);
+	g_return_if_fail (gsm != NULL);
+	g_return_if_fail (*gsm == FALSE);
+	g_return_if_fail (cdma != NULL);
+	g_return_if_fail (*cdma == FALSE);
 
 	/* Make sure it has the 'modem' capability first */
 	if (!libhal_device_query_capability (ctx, udi, "modem", NULL))
-		return TRUE;
+		return;
 
 	capabilities = libhal_device_get_property_strlist (ctx, udi, "modem.command_sets", NULL);
 	/* 'capabilites' may be NULL */
@@ -531,81 +537,207 @@ hal_get_modem_capabilities (LibHalContext *ctx,
 	}
 	if (capabilities)
 		g_strfreev (capabilities);
+}
 
-	/* Compatiblity with the pre-specification bits */
-	if (!*gsm && !*cdma) {
-		capabilities = libhal_device_get_property_strlist (ctx, udi, "info.capabilities", NULL);
-		for (iter = capabilities; iter && *iter; iter++) {
-			if (!strcmp (*iter, "gsm")) {
-				*gsm = TRUE;
-				break;
-			}
-			if (!strcmp (*iter, "cdma")) {
-				*cdma = TRUE;
-				break;
-			}
-		}
-		if (capabilities)
-			g_strfreev (capabilities);
+typedef struct {
+	guint32 refcount;
+	char *udi;
+	char *origdev_udi;
+	gboolean gsm;
+	gboolean cdma;
+	guint32 usb_interface_number;
+	guint32 serial_port;
+} DeferredModem;
+
+#if 0
+static void
+deferred_modem_ref (DeferredModem *modem)
+{
+	g_return_if_fail (modem != NULL);
+	g_return_if_fail (modem->refcount > 0);
+	modem->refcount++;
+}
+#endif
+
+static void
+deferred_modem_unref (DeferredModem *modem)
+{
+	g_return_if_fail (modem != NULL);
+	g_return_if_fail (modem->refcount > 0);
+
+	modem->refcount--;
+	if (modem->refcount == 0) {
+		g_free (modem->udi);
+		g_free (modem->origdev_udi);
+		memset (modem, 0, sizeof (DeferredModem));
+		g_free (modem);
+	}
+}
+
+static DeferredModem *
+deferred_modem_new (const char *udi,
+                    const char *origdev_udi,
+                    gboolean gsm,
+                    gboolean cdma,
+                    LibHalContext *ctx)
+{
+	DeferredModem *modem;
+	char *parent;
+	dbus_int32_t serial_port = -1, usb_interface = -1;
+	DBusError error;
+
+	parent = libhal_device_get_property_string (ctx, udi, "info.parent", NULL);
+	if (!parent) {
+		g_warning ("couldn't get parent for '%s'", udi);
+		return NULL;
 	}
 
-	return TRUE;
+	modem = g_new0 (DeferredModem, 1);
+	modem->refcount = 1;
+	modem->udi = g_strdup (udi);
+	modem->origdev_udi = g_strdup (origdev_udi);
+	modem->gsm = gsm;
+	modem->cdma = cdma;
+
+	dbus_error_init (&error);
+	usb_interface = libhal_device_get_property_int (ctx, parent, "usb.interface.number", &error);
+	if (dbus_error_is_set (&error)) {
+		dbus_error_free (&error);
+		usb_interface = -1;
+	}
+
+	dbus_error_init (&error);
+	serial_port = libhal_device_get_property_int (ctx, udi, "serial.port", &error);
+	if (dbus_error_is_set (&error)) {
+		dbus_error_free (&error);
+		serial_port = -1;
+	}
+
+	if (usb_interface == -1 && serial_port == -1) {
+		g_warning ("couldn't get usb.interface.number and serial.port for '%s'", udi);
+		deferred_modem_unref (modem);
+		modem = NULL;
+	} else {
+		modem->usb_interface_number = usb_interface;
+		modem->serial_port = serial_port;
+	}
+
+	libhal_free_string (parent);
+	return modem;
+}
+
+static gint
+deferred_modem_sort_func (const DeferredModem *a, const DeferredModem *b)
+{
+	gint ret;
+
+	/* Sort is: origdev_udi, usb_interface, serial_port */
+
+	ret = strcmp (a->origdev_udi, b->origdev_udi);
+	if (ret)
+		return ret;
+
+	if (a->usb_interface_number < b->usb_interface_number)
+		return -1;
+	else if (a->usb_interface_number > b->usb_interface_number)
+		return 1;
+
+	if (a->serial_port < b->serial_port)
+		return -1;
+	else if (a->serial_port > b->serial_port)
+		return 1;
+
+	return 0;
+}
+
+static DeferredModem *
+deferred_modem_find (NMHalManager *self, const char *udi)
+{
+	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+
+	for (iter = priv->deferred_modems; iter; iter = g_slist_next (iter)) {
+		DeferredModem *candidate = iter->data;
+
+		if (!strcmp (candidate->udi, udi))
+			return candidate;
+	}
+	return NULL;
+}
+
+static DeferredModem *
+deferred_modem_find_by_origdev (NMHalManager *self, const char *origdev_udi)
+{
+	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+
+	for (iter = priv->deferred_modems; iter; iter = g_slist_next (iter)) {
+		DeferredModem *candidate = iter->data;
+
+		if (!strcmp (candidate->origdev_udi, origdev_udi))
+			return candidate;
+	}
+	return NULL;
+}
+
+static void
+deferred_modem_remove (NMHalManager *self, DeferredModem *modem)
+{
+	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
+	GSList *iter, *new = NULL;
+
+	g_return_if_fail (modem != NULL);
+
+	for (iter = priv->deferred_modems; iter; iter = g_slist_next (iter)) {
+		if (iter->data != modem)
+			new = g_slist_insert_sorted (new, iter->data, (GCompareFunc) deferred_modem_sort_func);
+	}
+	g_slist_free (priv->deferred_modems);
+	priv->deferred_modems = new;
+}
+
+static gboolean
+deferred_modem_timeout (gpointer data)
+{
+	NMHalManager *self = data;
+	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+
+	nm_info ("Re-checking deferred serial ports");
+	for (iter = priv->deferred_modems; iter; iter = g_slist_next (iter)) {
+		DeferredModem *modem = iter->data;
+
+		/* re-emit udi-added for each UDI that was deferred */
+		emit_udi_added (self, modem->udi, priv->modem_creator);
+	}
+
+	g_slist_foreach (priv->deferred_modems, (GFunc) deferred_modem_unref, NULL);
+	g_slist_free (priv->deferred_modems);
+	priv->deferred_modems = NULL;
+	priv->deferred_modem_id = 0;
+	return FALSE;
 }
 
 static GObject *
-modem_device_creator (NMHalManager *self,
-                      const char *udi,
-                      const char *origdev_udi,
-                      gboolean managed)
+new_modem_device (const char *udi,
+                  gboolean gsm,
+                  gboolean cdma,
+                  const char *ttyname,
+                  const char *driver,
+                  gboolean managed,
+                  LibHalContext *ctx)
 {
-	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
-	char *serial_device;
-	const char *ttyname;
-	char *sysfs_path;
-	char *driver = NULL;
 	GObject *device = NULL;
-	gboolean type_gsm = FALSE;
-	gboolean type_cdma = FALSE;
 	char *netdev = NULL;
-	gboolean udev = TRUE;
 
-	serial_device = libhal_device_get_property_string (priv->hal_ctx, udi, "serial.device", NULL);
-	driver = nm_get_device_driver_name (priv->hal_ctx, origdev_udi);
-	if (!serial_device || !driver)
-		goto out;
-
-	/* Try udev first */
-	sysfs_path = libhal_device_get_property_string (priv->hal_ctx, udi, "linux.sysfs_path", NULL);
-	if (!sysfs_path) {
-		nm_warning ("could not determine sysfs path for '%s'", serial_device);
-		goto out;
-	}
-
-	ttyname = serial_device + strlen ("/dev/");
-
-#if HAVE_LIBUDEV
-	libudev_get_modem_capabilities (sysfs_path, &type_gsm, &type_cdma);
-#else
-	udevadm_get_modem_capabilities (sysfs_path, &type_gsm, &type_cdma);
-#endif
-	libhal_free_string (sysfs_path);
-
-	/* If udev didn't know anything, try deprecated HAL modem capabilities */
-	if (!type_gsm && !type_cdma) {
-		hal_get_modem_capabilities (priv->hal_ctx, udi, &type_gsm, &type_cdma);
-		udev = FALSE;
-	}
-
-	if (!type_gsm && !type_cdma)
-		goto out;
-
-	nm_info ("(%s): detected %s modem via %s capabilities",
-	         ttyname,
-	         type_gsm ? "GSM" : "CDMA",
-	         udev ? "udev" : "HAL");
+	g_return_val_if_fail (udi != NULL, NULL);
+	g_return_val_if_fail (gsm || cdma, NULL);
+	g_return_val_if_fail (ttyname != NULL, NULL);
+	g_return_val_if_fail (driver != NULL, NULL);
+	g_return_val_if_fail (ctx != NULL, NULL);
 
 	/* Special handling of 'hso' cards (until punted to ModemManager) */
-	if (type_gsm && !strcmp (driver, "hso")) {
+	if (gsm && !strcmp (driver, "hso")) {
 		char *hsotype_path;
 		char *contents = NULL;
 		gboolean success;
@@ -621,31 +753,31 @@ modem_device_creator (NMHalManager *self,
 			if (   !strstr (contents, "Control")
 			    && !strstr (contents, "control")) {
 				g_free (contents);
-				goto out;
+				return NULL;
 			}
 			g_free (contents);
 		}
 
-		netdev = get_hso_netdev (priv->hal_ctx, udi);
+		netdev = get_hso_netdev (ctx, udi);
 	}
 
 	/* Special handling of Option cards (until punted to ModemManager).  Only
 	 * the first USB interface can be used for control and PPP.
 	 */
-	if (type_gsm && !strcmp (driver, "option")) {
+	if (gsm && !strcmp (driver, "option")) {
 		char *parent;
 		guint32 vendor_id = 0, usb_interface = 0;
 
-		parent = libhal_device_get_property_string (priv->hal_ctx, udi, "info.parent", NULL);
+		parent = libhal_device_get_property_string (ctx, udi, "info.parent", NULL);
 		if (!parent)
-			goto out;
+			return NULL;
 
-		vendor_id = libhal_device_get_property_int (priv->hal_ctx, parent, "usb.vendor_id", NULL);
+		vendor_id = libhal_device_get_property_int (ctx, parent, "usb.vendor_id", NULL);
 		if (vendor_id == 0x0AF0) {
-			usb_interface = libhal_device_get_property_int (priv->hal_ctx, parent, "usb.interface.number", NULL);
+			usb_interface = libhal_device_get_property_int (ctx, parent, "usb.interface.number", NULL);
 			if (usb_interface > 0) {
-				g_free (parent);
-				goto out;
+				libhal_free_string (parent);
+				return NULL;
 			}
 		}
 		libhal_free_string (parent);
@@ -654,33 +786,176 @@ modem_device_creator (NMHalManager *self,
 	/* Special handling of Ericsson F3507g 'mbm' devices; already handled by
 	 * ModemManager more correctly in HEAD.
 	 */
-	if (type_gsm && !strcmp (driver, "cdc_acm")) {
+	if (gsm && !strcmp (driver, "cdc_acm")) {
 		char *parent;
 		guint32 usb_interface;
 
-		parent = is_mbm (priv->hal_ctx, udi);
+		parent = is_mbm (ctx, udi);
 		if (parent) {
-			usb_interface = libhal_device_get_property_int (priv->hal_ctx, parent, "usb.interface.number", NULL);
-			if (usb_interface != 1) {
-				libhal_free_string (parent);
-				goto out;
-			}
+			usb_interface = libhal_device_get_property_int (ctx, parent, "usb.interface.number", NULL);
 			libhal_free_string (parent);
+			if (usb_interface != 1)
+				return NULL;
 		}
 	}
 
-	if (type_gsm) {
-		if (netdev)
-			device = (GObject *) nm_hso_gsm_device_new (udi, ttyname, NULL, netdev, driver, managed);
-		else
-			device = (GObject *) nm_gsm_device_new (udi, ttyname, NULL, driver, managed);
-	} else if (type_cdma)
+	if (gsm && netdev)
+		device = (GObject *) nm_hso_gsm_device_new (udi, ttyname, NULL, netdev, driver, managed);
+	else if (gsm)
+		device = (GObject *) nm_gsm_device_new (udi, ttyname, NULL, driver, managed);
+	else if (cdma)
 		device = (GObject *) nm_cdma_device_new (udi, ttyname, NULL, driver, managed);
+	else
+		g_assert_not_reached ();
+
+	return device;
+}
+
+static char *
+nm_get_modem_device_driver_name (LibHalContext *ctx, const char *udi)
+{
+	char *driver_name = NULL;
+	char *origdev_udi;
+
+	origdev_udi = libhal_device_get_property_string (ctx, udi, "serial.originating_device", NULL);
+	/* Older HAL uses "physical_device" */
+	if (!origdev_udi)
+		origdev_udi = libhal_device_get_property_string (ctx, udi, "serial.physical_device", NULL);
+
+	if (origdev_udi && libhal_device_property_exists (ctx, origdev_udi, "info.linux.driver", NULL)) {
+		char *drv = libhal_device_get_property_string (ctx, origdev_udi, "info.linux.driver", NULL);
+		driver_name = g_strdup (drv);
+		libhal_free_string (drv);
+	}
+	libhal_free_string (origdev_udi);
+	return driver_name;
+}
+
+static GObject *
+modem_device_creator (NMHalManager *self,
+                      const char *udi,
+                      const char *origdev_udi,
+                      gboolean managed)
+{
+	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
+	char *serial_device;
+	const char *ttyname;
+	char *sysfs_path;
+	char *driver = NULL;
+	GObject *device = NULL;
+	gboolean udev_gsm = FALSE;
+	gboolean udev_cdma = FALSE;
+	gboolean hal_gsm = FALSE;
+	gboolean hal_cdma = FALSE;
+	gboolean later = FALSE;
+	gboolean udev_success = FALSE;
+	DeferredModem *deferred = NULL;
+
+	serial_device = libhal_device_get_property_string (priv->hal_ctx, udi, "serial.device", NULL);
+	/* For serial devices, 'origdev_udi' will be the actual USB or platform device,
+	 * not HAL's 'serial.originating_device'.
+	 */
+	driver = nm_get_modem_device_driver_name (priv->hal_ctx, udi);
+	if (!serial_device || !driver)
+		goto out;
+
+	ttyname = serial_device + strlen ("/dev/");
+
+	/* If the UDI was deferred from earlier, just make the device with the
+	 * cached capabilities.
+	 */
+	deferred = deferred_modem_find (self, udi);
+	if (deferred) {
+		udev_gsm = deferred->gsm;
+		udev_cdma = deferred->cdma;
+		device = new_modem_device (udi, deferred->gsm, deferred->cdma, ttyname, driver, managed, priv->hal_ctx);
+		goto out;
+	}
+
+	/* Get udev probed capabilities */
+	sysfs_path = libhal_device_get_property_string (priv->hal_ctx, udi, "linux.sysfs_path", NULL);
+	if (!sysfs_path) {
+		nm_warning ("(%s): could not determine sysfs path", ttyname);
+		goto out;
+	}
+
+#if HAVE_LIBUDEV
+	udev_success = libudev_get_modem_capabilities (sysfs_path, &udev_gsm, &udev_cdma);
+#else
+	udev_success = udevadm_get_modem_capabilities (sysfs_path, &udev_gsm, &udev_cdma);
+#endif
+	libhal_free_string (sysfs_path);
+
+	/* Get HAL capabilities too */
+	hal_get_modem_capabilities (priv->hal_ctx, udi, &hal_gsm, &hal_cdma);
+
+	/* If for some reason running the udev prober failed fall back to HAL */
+	if (!udev_success) {
+		nm_warning ("(%s): udev probing failed; using only HAL modem capabilities.", ttyname);
+		udev_gsm = hal_gsm;
+		udev_cdma = hal_cdma;
+	}
+
+	/* If it's not known to either udev or HAL as a modem, nothing to do */
+	if (!udev_gsm && !udev_cdma && !hal_gsm && !hal_cdma) {
+		nm_info ("(%s): ignoring due to lack of mobile broadband capabilties", ttyname);
+		goto out;
+	}
+
+	nm_info ("(%s): found serial port (udev:%s%s%s  hal:%s%s%s)",
+	         ttyname,
+	         udev_gsm ? "GSM" : "", udev_gsm && udev_cdma ? "/" : "", udev_cdma ? "CDMA" : "",
+	         hal_gsm ? "GSM" : "", hal_gsm && hal_cdma ? "/" : "", hal_cdma ? "CDMA" : "");
+
+	/* If other ports owned by this port's originating device are already
+	 * deferred, defer this port as well.
+	 */
+	later = !!deferred_modem_find_by_origdev (self, origdev_udi);
+
+	/* The logic goes like this:
+	 *
+	 * a) if both udev and HAL agree on the port command sets, use it
+	 * b) if HAL thinks its a modem, but the command set disagrees with udev,
+	 *      assume udev probing is correct
+	 * c) if HAL thinks it's a modem but udev does not, don't use it
+	 * d) if HAL doesn't think it's a modem but udev does, schedule a timer
+	 *      to check back later after HAL is done sending ttys.
+	 */
+	if (udev_gsm == hal_gsm && udev_cdma == hal_cdma) {
+		/* Case (a): HAL and udev agree. */
+		if (!later)
+			device = new_modem_device (udi, udev_gsm, udev_cdma, ttyname, driver, managed, priv->hal_ctx);
+	} else if ((hal_gsm || hal_cdma) && (udev_gsm || udev_cdma)) {
+		/* Case (b): HAL and udev think it's a modem, but they don't
+		 * agree on the command set the modem supports.  Trust udev.
+		 */
+		if (!later)
+			device = new_modem_device (udi, udev_gsm, udev_cdma, ttyname, driver, managed, priv->hal_ctx);
+	} else if ((hal_gsm || hal_cdma) && !udev_gsm && !udev_cdma) {
+		/* Case (c): HAL thinks it's a modem, but udev doesn't */
+		nm_info ("(%s): ignoring due to lack of probed mobile broadband capabilties", ttyname);
+		later = FALSE;
+	} else {
+		/* Case (d): HAL doesn't think its a modem, but udev does */
+		later = TRUE;
+	}
+
+	if (!device && later) {
+		deferred = deferred_modem_new (udi, origdev_udi, udev_gsm, udev_cdma, priv->hal_ctx);
+		priv->deferred_modems = g_slist_insert_sorted (priv->deferred_modems,
+		                                               deferred,
+		                                               (GCompareFunc) deferred_modem_sort_func);
+
+		if (priv->deferred_modem_id)
+			g_source_remove (priv->deferred_modem_id);
+		priv->deferred_modem_id = g_timeout_add_seconds (4, deferred_modem_timeout, self);
+
+		nm_info ("(%s): deferring until all ports found", ttyname);
+	}
 
 out:
 	libhal_free_string (serial_device);
 	g_free (driver);
-
 	return device;
 }
 
@@ -716,21 +991,62 @@ register_built_in_creators (NMHalManager *self)
 	creator->is_device_fn = is_modem_device;
 	creator->creator_fn = modem_device_creator;
 	priv->device_creators = g_slist_append (priv->device_creators, creator);
+	priv->modem_creator = creator;
 }
 
 static void
 emit_udi_added (NMHalManager *self, const char *udi, DeviceCreator *creator)
 {
 	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
-	char *od, *tmp;
+	char *od = NULL, *tmp, *parent, *bus = NULL;
 
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (udi != NULL);
 	g_return_if_fail (creator != NULL);
 
-	tmp = g_strdup_printf ("%s.originating_device", creator->category);
-	od = libhal_device_get_property_string (priv->hal_ctx, udi, tmp, NULL);
-	g_free (tmp);
+	/* For USB serial devices, originating device should really be the "USB Device"
+	 * object, which is the grandparent of the tty device.  Only this grandparent
+	 * is really common among all ttys of the device; HAL's "serial.originating_device"
+	 * points to the "USB Interface" parent of the tty, but this interface only
+	 * sometimes has multiple child ttys.  More commonly, the "USB Device"
+	 * object provides several "USB Interface" objects, which each provide one tty.
+	 * Thus, to ensure that NM only uses the correct tty for the deivce,
+	 * we need to filter on the "USB Device" instead of the "USB Interface".
+	 */
+	parent = libhal_device_get_property_string (priv->hal_ctx, udi, "info.parent", NULL);
+	if (parent)
+		bus = libhal_device_get_property_string (priv->hal_ctx, parent, "info.bus", NULL);
+	if (bus && !strcmp (bus, "usb")) {
+		char *usb_intf_udi;
+
+		usb_intf_udi = libhal_device_get_property_string (priv->hal_ctx, udi, "info.parent", NULL);
+		if (usb_intf_udi) {
+			od = libhal_device_get_property_string (priv->hal_ctx, usb_intf_udi, "info.parent", NULL);
+
+			/* Ensure the grandparent really is the "USB Device" */
+			if (od) {
+				tmp = libhal_device_get_property_string (priv->hal_ctx, od, "info.bus", NULL);
+				if (!tmp || strcmp (tmp, "usb_device")) {
+					libhal_free_string (od);
+					od = NULL;
+				}
+				if (tmp)
+					libhal_free_string (tmp);
+			}
+			libhal_free_string (usb_intf_udi);
+		}
+	}
+	libhal_free_string (bus);
+	libhal_free_string (parent);
+
+	/* For non-USB devices, and ss a fallback, just use the originating device
+	 * of the tty; though this might result in more than one modem being detected by NM.
+	 */
+	if (!od) {
+		tmp = g_strdup_printf ("%s.originating_device", creator->category);
+		od = libhal_device_get_property_string (priv->hal_ctx, udi, tmp, NULL);
+		g_free (tmp);
+	}
 
 	if (!od) {
 		/* Older HAL uses 'physical_device' */
@@ -767,6 +1083,13 @@ static void
 device_removed (LibHalContext *ctx, const char *udi)
 {
 	NMHalManager *self = NM_HAL_MANAGER (libhal_ctx_get_user_data (ctx));
+	DeferredModem *modem;
+
+	modem = deferred_modem_find (self, udi);
+	if (modem) {
+		deferred_modem_remove (self, modem);
+		deferred_modem_unref (modem);
+	}
 
 	g_signal_emit (self, signals[UDI_REMOVED], 0, udi);
 }
@@ -1209,6 +1532,12 @@ dispose (GObject *object)
 
 	g_slist_foreach (priv->device_creators, destroy_creator, NULL);
 	g_slist_free (priv->device_creators);
+
+	g_slist_foreach (priv->deferred_modems, (GFunc) deferred_modem_unref, NULL);
+	g_slist_free (priv->deferred_modems);
+
+	if (priv->deferred_modem_id)
+		g_source_remove (priv->deferred_modem_id);
 
 	hal_deinit (self);
 
