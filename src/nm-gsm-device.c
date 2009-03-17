@@ -752,6 +752,24 @@ check_pin (NMGsmDevice *self)
 	modem_wait_for_reply (self, "AT+CPIN?", 3, responses, terminators, check_pin_done, NULL);
 }
 
+static gboolean
+init_modem_again (gpointer data)
+{
+	init_modem (NM_SERIAL_DEVICE (data));
+	return FALSE;
+}
+
+static void
+schedule_init_modem_again (NMGsmDevice *self)
+{
+	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->pending_id)
+		g_source_remove (priv->pending_id);
+
+	priv->pending_id = g_timeout_add_seconds (1, init_modem_again, self);
+}
+
 static void
 init_done (NMSerialDevice *device,
            int reply_index,
@@ -765,6 +783,10 @@ init_done (NMSerialDevice *device,
 		priv->init_ok = TRUE;
 		check_pin (NM_GSM_DEVICE (device));
 		break;
+	case 1:
+		/* Ignore a NO CARRIER message from previous connection termination */
+		schedule_init_modem_again (NM_GSM_DEVICE (device));
+		break;
 	case -1:
 		nm_warning ("Modem initialization timed out");
 		nm_device_state_changed (NM_DEVICE (device),
@@ -776,7 +798,7 @@ init_done (NMSerialDevice *device,
 		if (modem_init_sequences[priv->init_tries] != NULL) {
 			nm_warning ("Trying alternate modem initialization (%d)",
 			            priv->init_tries);
-			init_modem (device);
+			schedule_init_modem_again (NM_GSM_DEVICE (device));
 		} else {
 			nm_warning ("Modem initialization failed");
 			nm_device_state_changed (NM_DEVICE (device),
@@ -791,7 +813,7 @@ static void
 init_modem (NMSerialDevice *device)
 {
 	NMGsmDevicePrivate *priv = NM_GSM_DEVICE_GET_PRIVATE (device);
-	const char *responses[] = { "OK", "ERROR", "ERR", NULL };
+	const char *responses[] = { "OK", "NO CARRIER", "ERROR", "ERR", NULL };
 	const char *init_string = modem_init_sequences[priv->init_tries];
 
 	modem_wait_for_reply (NM_GSM_DEVICE (device), init_string, 10, responses, responses, init_done, NULL);
