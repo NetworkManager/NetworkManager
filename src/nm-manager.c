@@ -1174,6 +1174,14 @@ nm_manager_get_device_by_originating_device (NMManager *manager, const char *od)
 	return NULL;
 }
 
+static const char *
+nm_manager_get_originating_device (NMDevice *device)
+{
+	g_return_val_if_fail (device != NULL, NULL);
+
+	return (const char *) g_object_get_data (G_OBJECT (device), ORIGDEV_TAG);
+}
+
 static void
 nm_manager_set_originating_device (NMDevice *device, const char *originating_device)
 {
@@ -1749,19 +1757,35 @@ hal_manager_udi_removed_cb (NMHalManager *manager,
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *iter;
+	GSList *keep = NULL, *gone = NULL, *iter;
 
 	g_return_if_fail (udi != NULL);
 
+	/* Unfortunately, udev >= 139 sometimes sends remove events that don't
+	 * match up with the add event for a device, which means HAL doesn't
+	 * emit the remove event for the same device (fdo #20703).  But it's a
+	 * good bet that if an NMDevice's originating device got removed, then
+	 * the NMDevice itself got removed as well.
+	 */
 	for (iter = priv->devices; iter; iter = iter->next) {
 		NMDevice *device = NM_DEVICE (iter->data);
+		const char *origdev = nm_manager_get_originating_device (device);
 
-		if (!strcmp (nm_device_get_udi (device), udi)) {
-			priv->devices = g_slist_delete_link (priv->devices, iter);
-			remove_one_device (self, device);
-			break;
-		}
+		if (   !strcmp (nm_device_get_udi (device), udi)
+		    || (origdev && !strcmp (udi, origdev)))
+			gone = g_slist_prepend (gone, device);
+		else
+			keep = g_slist_append (keep, device);
 	}
+	g_slist_free (priv->devices);
+	priv->devices = keep;
+
+	/* Kill devices to be removed; have to call remove_one_device() *after*
+	 * the device is no longer a member of the device list.
+	 */
+	for (iter = gone; iter; iter = g_slist_next (iter))
+		remove_one_device (self, NM_DEVICE (iter->data));
+	g_slist_free (gone);
 }
 
 static void
