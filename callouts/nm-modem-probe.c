@@ -328,6 +328,7 @@ static int modem_probe_caps(int fd, glong timeout_ms)
 
 	while (timeout_ms > 0) {
 		GTimeVal diff;
+		gulong sleep_time = 100000;
 
 		g_get_current_time (&start);
 
@@ -335,31 +336,33 @@ static int modem_probe_caps(int fd, glong timeout_ms)
 		send_success = modem_send_command (fd, "AT+GCAP\r\n");
 		if (send_success)
 			idx = modem_wait_reply (fd, 2, gcap_responses, terminators, &term_idx, &reply);
+		else
+			sleep_time = 300000;
 
 		g_get_current_time (&end);
 		g_timeval_subtract (&diff, &end, &start);
 		timeout_ms -= (diff.tv_sec * 1000) + (diff.tv_usec / 1000);
 
-		if (!send_success)
-			continue;
+		if (send_success) {
+			if (0 == term_idx && 0 == idx) {
+				/* Success */
+				verbose ("GCAP response: %s", reply);
+				ret = parse_gcap (reply);
+				break;
+			} else if (0 == term_idx && -1 == idx) {
+				/* Just returned "OK" but no GCAP (Sierra) */
+				try_ati = TRUE;
+				break;
+			} else if (1 == term_idx || 2 == term_idx) {
+				try_ati = TRUE;
+			} else
+				verbose ("timed out waiting for GCAP reply (idx %d, term_idx %d)", idx, term_idx);
+			g_free (reply);
+			reply = NULL;
+		}
 
-		if (0 == term_idx && 0 == idx) {
-			/* Success */
-			verbose ("GCAP response: %s", reply);
-			ret = parse_gcap (reply);
-			break;
-		} else if (0 == term_idx && -1 == idx) {
-			/* Just returned "OK" but no GCAP (Sierra) */
-			try_ati = TRUE;
-			break;
-		} else if (1 == term_idx || 2 == term_idx) {
-			try_ati = TRUE;
-		} else
-			verbose ("timed out waiting for GCAP reply (idx %d, term_idx %d)", idx, term_idx);
-		g_free (reply);
-		reply = NULL;
-		g_usleep (100000);
-		timeout_ms -= 100;
+		g_usleep (sleep_time);
+		timeout_ms -= sleep_time / 1000;
 	}
 
 	if (!ret && try_ati) {
