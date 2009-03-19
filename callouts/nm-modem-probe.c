@@ -54,6 +54,7 @@ static struct modem_caps modem_caps[] = {
 	{"+CGSM",     MODEM_CAP_GSM},
 	{"+CIS707-A", MODEM_CAP_IS707_A},
 	{"+CIS707",   MODEM_CAP_IS707_A},
+	{"CIS707",    MODEM_CAP_IS707_A}, /* Qualcomm Gobi */
 	{"+CIS707P",  MODEM_CAP_IS707_P},
 	{"CIS-856",   MODEM_CAP_IS856},
 	{"CIS-856-A", MODEM_CAP_IS856_A},
