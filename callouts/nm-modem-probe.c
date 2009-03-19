@@ -416,13 +416,6 @@ print_usage (void)
 	    " --help\n\n");
 }
 
-static void
-do_exit (int val)
-{
-	if (logfile) fclose (logfile);
-	exit (val);
-}
-
 int
 main(int argc, char *argv[])
 {
@@ -441,7 +434,7 @@ main(int argc, char *argv[])
 	const char *delay_str = NULL;
 	gboolean export = 0;
 	struct termios orig, attrs;
-	int fd, caps;
+	int fd = -1, caps, ret = 0;
 	guint32 delay_ms = 0;
 
 	while (1) {
@@ -493,7 +486,8 @@ main(int argc, char *argv[])
 	device = argv[optind];
 	if (device == NULL) {
 		g_printerr ("no node specified\n");
-		do_exit (3);
+		ret = 3;
+		goto exit;
 	}
 
 	verbose ("probing %s", device);
@@ -504,7 +498,8 @@ main(int argc, char *argv[])
 		tmp = strtoul (delay_str, NULL, 10);
 		if (tmp < 1 || tmp > 3000) {
 			g_printerr ("Invalid delay: %s\n", delay_str);
-			do_exit (3);
+			ret = 3;
+			goto exit;
 		}
 		delay_ms = (guint32) tmp;
 	}
@@ -512,12 +507,14 @@ main(int argc, char *argv[])
 	fd = open (device, O_RDWR | O_EXCL | O_NONBLOCK);
 	if (fd < 0) {
 		g_printerr ("open(%s) failed: %d\n", device, errno);
-		do_exit (4);
+		ret = 4;
+		goto exit;
 	}
 
 	if (tcgetattr (fd, &orig)) {
 		g_printerr ("tcgetattr(%s): failed %d\n", device, errno);
-		do_exit (5);
+		ret = 5;
+		goto exit;
 	}
 
 	memcpy (&attrs, &orig, sizeof (attrs));
@@ -539,7 +536,7 @@ main(int argc, char *argv[])
 	if (caps < 0) {
 		g_printerr ("%s: couldn't get modem capabilities\n", device);
 		printf ("ID_NM_MODEM_PROBED=1\n");
-		do_exit (0);
+		goto exit;
 	}
 
 	if (export) {
@@ -562,7 +559,11 @@ main(int argc, char *argv[])
 	         caps & MODEM_CAP_IS856   ? " EVDOr0" : "",
 	         caps & MODEM_CAP_IS856_A ? " EVDOrA" : "");
 
-	do_exit (0);
-	return 0;
+exit:
+	if (fd >= 0)
+		close (fd);
+	if (logfile)
+		fclose (logfile);
+	return ret;
 }
 
