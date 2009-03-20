@@ -30,6 +30,9 @@
 
 #include <glib.h>
 
+#define HUAWEI_VENDOR_ID   0x12D1
+#define SIERRA_VENDOR_ID   0x1199
+
 #define MODEM_CAP_GSM         0x0001 /* GSM */
 #define MODEM_CAP_IS707_A     0x0002 /* CDMA Circuit Switched Data */
 #define MODEM_CAP_IS707_P     0x0004 /* CDMA Packet Switched Data */
@@ -311,7 +314,7 @@ g_timeval_subtract (GTimeVal *result, GTimeVal *x, GTimeVal *y)
 static int modem_probe_caps(int fd, glong timeout_ms)
 {
 	const char *gcap_responses[] = { GCAP_TAG, NULL };
-	const char *terminators[] = { "OK", "ERROR", "ERR", NULL };
+	const char *terminators[] = { "OK", "ERROR", "ERR", "+CME ERROR", NULL };
 	char *reply = NULL;
 	int idx = -1, term_idx = -1, ret = 0;
 	gboolean try_ati = FALSE;
@@ -352,6 +355,10 @@ static int modem_probe_caps(int fd, glong timeout_ms)
 				break;
 			} else if (0 == term_idx && -1 == idx) {
 				/* Just returned "OK" but no GCAP (Sierra) */
+				try_ati = TRUE;
+				break;
+			} else if (3 == term_idx && -1 == idx) {
+				/* No SIM (Huawei) */
 				try_ati = TRUE;
 				break;
 			} else if (1 == term_idx || 2 == term_idx) {
@@ -410,10 +417,15 @@ static void
 print_usage (void)
 {
 	printf("Usage: probe-modem [options] <device>\n"
-	    " --export        export key/value pairs\n"
-	    " --delay <ms>    delay before probing (1 to 3000 ms inclusive)\n"
-	    " --verbose       print verbose debugging output\n"
-	    " --log <file>    log all output\n"
+	    " --export               export key/value pairs\n"
+	    " --delay <ms>           delay before probing (1 to 3000 ms inclusive)\n"
+	    " --verbose              print verbose debugging output\n"
+	    " --quiet                suppress logging to stdout (does not affect logfile output)\n"
+	    " --log <file>           log all output\n"
+	    " --vid <vid>            USB Vendor ID (optional)\n"
+	    " --pid <pid>            USB Product ID (optional)\n"
+	    " --usb-interface <num>  USB device interface number (optional)\n"
+	    " --driver <name>        Linux kernel device driver (optional)\n"
 	    " --help\n\n");
 }
 
@@ -426,17 +438,23 @@ main(int argc, char *argv[])
 		{ "verbose", 0, NULL, 'v' },
 		{ "quiet", 0, NULL, 'q' },
 		{ "log", required_argument, NULL, 'l' },
+		{ "vid", required_argument, NULL, 'e' },
+		{ "pid", required_argument, NULL, 'p' },
+		{ "usb-interface", required_argument, NULL, 'i' },
+		{ "driver", required_argument, NULL, 'd' },
 		{ "help", 0, NULL, 'h' },
 		{}
 	};
 
 	const char *device = NULL;
 	const char *logpath = NULL;
-	const char *delay_str = NULL;
+	const char *driver = NULL;
 	gboolean export = 0;
 	struct termios orig, attrs;
 	int fd = -1, caps, ret = 0;
 	guint32 delay_ms = 0;
+	unsigned int vid = 0, pid = 0, usbif = 0;
+	unsigned long int tmp;
 
 	while (1) {
 		int option;
@@ -450,13 +468,42 @@ main(int argc, char *argv[])
 			export = TRUE;
 			break;
 		case 'a':
-			delay_str = optarg;
+			tmp = strtoul (optarg, NULL, 10);
+			if (tmp < 1 || tmp > 3000) {
+				fprintf (stderr, "Invalid delay: %s\n", optarg);
+				return 1;
+			}
+			delay_ms = (guint32) tmp;
 			break;
 		case 'v':
 			verbose = TRUE;
 			break;
 		case 'l':
 			logpath = optarg;
+			break;
+		case 'e':
+			vid = strtoul (optarg, NULL, 0);
+			if (vid == 0) {
+				fprintf (stderr, "Could not parse USB Vendor ID '%s'", optarg);
+				return 1;
+			}
+			break;
+		case 'p':
+			pid = strtoul (optarg, NULL, 0);
+			if (pid > G_MAXUINT32) {
+				fprintf (stderr, "Could not parse USB Product ID '%s'", optarg);
+				return 1;
+			}
+			break;
+		case 'i':
+			usbif = strtoul (optarg, NULL, 0);
+			if (usbif > 50) {
+				fprintf (stderr, "Could not parse USB interface number '%s'", optarg);
+				return 1;
+			}
+			break;
+		case 'd':
+			driver = optarg;
 			break;
 		case 'q':
 			quiet = TRUE;
@@ -491,19 +538,18 @@ main(int argc, char *argv[])
 		goto exit;
 	}
 
-	verbose ("probing %s", device);
+	verbose ("(%s): usb-vid 0x%04x  usb-pid 0x%04x  usb-intf %d  driver '%s'",
+	         device, vid, pid, usbif, driver);
 
-	if (delay_str) {
-		unsigned long int tmp;
-
-		tmp = strtoul (delay_str, NULL, 10);
-		if (tmp < 1 || tmp > 3000) {
-			g_printerr ("Invalid delay: %s\n", delay_str);
-			ret = 3;
-			goto exit;
-		}
-		delay_ms = (guint32) tmp;
+	/* Some devices just shouldn't be touched */
+	if (vid == HUAWEI_VENDOR_ID && usbif != 0) {
+		verbose ("(%s) ignoring Huawei USB interface #1", device);
+		if (export)
+			printf ("ID_NM_MODEM_PROBED=1\n");
+		goto exit;
 	}
+
+	verbose ("probing %s", device);
 
 	fd = open (device, O_RDWR | O_EXCL | O_NONBLOCK);
 	if (fd < 0) {
@@ -536,7 +582,8 @@ main(int argc, char *argv[])
 
 	if (caps < 0) {
 		g_printerr ("%s: couldn't get modem capabilities\n", device);
-		printf ("ID_NM_MODEM_PROBED=1\n");
+		if (export)
+			printf ("ID_NM_MODEM_PROBED=1\n");
 		goto exit;
 	}
 
