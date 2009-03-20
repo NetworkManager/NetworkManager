@@ -717,6 +717,7 @@ check_pin_done (NMSerialDevice *device,
 		break;
 	case 3:
 	case 4:
+	case -1: /* timeout */
 		/* Try the pin a few times; sometimes the error is transient */
 		if (priv->pin_tries++ < 4) {
 			schedule_check_pin_again (NM_GSM_DEVICE (device));
@@ -727,12 +728,6 @@ check_pin_done (NMSerialDevice *device,
 			                         NM_DEVICE_STATE_FAILED,
 			                         NM_DEVICE_STATE_REASON_GSM_PIN_CHECK_FAILED);
 		}
-		break;
-	case -1:
-		nm_warning ("PIN checking timed out");
-		nm_device_state_changed (NM_DEVICE (device),
-		                         NM_DEVICE_STATE_FAILED,
-		                         NM_DEVICE_STATE_REASON_GSM_PIN_CHECK_FAILED);
 		break;
 	default:
 		nm_warning ("PIN checking failed");
