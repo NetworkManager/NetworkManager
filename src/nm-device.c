@@ -2262,10 +2262,13 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_uint (value, priv->ip4_address);
 		break;
 	case NM_DEVICE_INTERFACE_PROP_IP4_CONFIG:
-		if ((state == NM_DEVICE_STATE_ACTIVATED) || (state == NM_DEVICE_STATE_IP_CONFIG))
-			g_value_set_boxed (value, nm_ip4_config_get_dbus_path (priv->ip4_config));
-		else
-			g_value_set_boxed (value, "/");
+		if ((state == NM_DEVICE_STATE_ACTIVATED) || (state == NM_DEVICE_STATE_IP_CONFIG)) {
+			if (priv->ip4_config) {
+				g_value_set_boxed (value, nm_ip4_config_get_dbus_path (priv->ip4_config));
+				break;
+			}
+		}
+		g_value_set_boxed (value, "/");
 		break;
 	case NM_DEVICE_INTERFACE_PROP_DHCP4_CONFIG:
 		if (   ((state == NM_DEVICE_STATE_ACTIVATED) || (state == NM_DEVICE_STATE_IP_CONFIG))
