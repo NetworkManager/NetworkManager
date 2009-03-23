@@ -470,7 +470,7 @@ nm_serial_device_send_command (NMSerialDevice *device, GByteArray *command)
 	if (setting)
 		send_delay = nm_setting_serial_get_send_delay (setting);
 	if (send_delay == 0)
-		send_delay = G_USEC_PER_SEC / 1000;
+		send_delay = G_USEC_PER_SEC / 500;
 
 	nm_serial_debug ("Sending:", (char *) command->data, command->len);
 
