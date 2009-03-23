@@ -479,6 +479,7 @@ plugin_get_hostname (SCPluginIfcfg *plugin)
 {
 	shvarFile *network;
 	char *hostname;
+	gboolean ignore_localhost;
 
 	network = svNewFile (SC_NETWORK_FILE);
 	if (!network) {
@@ -487,16 +488,18 @@ plugin_get_hostname (SCPluginIfcfg *plugin)
 	}
 
 	hostname = svGetValue (network, "HOSTNAME", FALSE);
-	svCloseFile (network);
-
-	/* Ignore a hostname of 'localhost' or 'localhost.localdomain' to preserve
-	 * 'network' service behavior.
-	 */
-	if (hostname && (!strcmp (hostname, "localhost") || !strcmp (hostname, "localhost.localdomain"))) {
-		g_free (hostname);
-		hostname = NULL;
+	ignore_localhost = svTrueValue (network, "NM_IGNORE_HOSTNAME_LOCALHOST", FALSE);
+	if (ignore_localhost) {
+		/* Ignore a hostname of 'localhost' or 'localhost.localdomain' to preserve
+		 * 'network' service behavior.
+		 */
+		if (hostname && (!strcmp (hostname, "localhost") || !strcmp (hostname, "localhost.localdomain"))) {
+			g_free (hostname);
+			hostname = NULL;
+		}
 	}
 
+	svCloseFile (network);
 	return hostname;
 }
 
