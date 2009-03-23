@@ -84,6 +84,7 @@ struct _NMDevicePrivate
 
 	NMActRequest *		act_request;
 	guint           act_source_id;
+	gpointer	act_source_func;
 	gulong          secrets_updated_id;
 	gulong          secrets_failed_id;
 
@@ -137,21 +138,9 @@ static void
 nm_device_init (NMDevice * self)
 {
 	self->priv = NM_DEVICE_GET_PRIVATE (self);
-	self->priv->dispose_has_run = FALSE;
-	self->priv->initialized = FALSE;
-	self->priv->udi = NULL;
-	self->priv->iface = NULL;
 	self->priv->type = NM_DEVICE_TYPE_UNKNOWN;
 	self->priv->capabilities = NM_DEVICE_CAP_NONE;
-	self->priv->driver = NULL;
-
-	self->priv->ip4_address = 0;
 	memset (&self->priv->ip6_address, 0, sizeof (struct in6_addr));
-
-	self->priv->act_source_id = 0;
-
-	self->priv->ip4_config = NULL;
-
 	self->priv->state = NM_DEVICE_STATE_UNMANAGED;
 }
 
@@ -404,6 +393,39 @@ dnsmasq_state_changed_cb (NMDnsMasqManager *manager, guint32 status, gpointer us
 	}
 }
 
+static void
+activation_source_clear (NMDevice *self, gboolean remove_source)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->act_source_id) {
+		if (remove_source)
+			g_source_remove (priv->act_source_id);
+		priv->act_source_id = 0;
+		priv->act_source_func = NULL;
+	}
+}
+
+static void
+activation_source_schedule (NMDevice *self, GSourceFunc func)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	if (priv->act_source_id)
+		nm_warning ("activation stage already scheduled");
+
+	/* Don't bother rescheduling the same function that's about to
+	 * run anyway.  Fixes issues with crappy wireless drivers sending
+	 * streams of associate events before NM has had a chance to process
+	 * the first one.
+	 */
+	if (!priv->act_source_id || (priv->act_source_func != func)) {
+		activation_source_clear (self, TRUE);
+		priv->act_source_id = g_idle_add (func, self);
+		priv->act_source_func = func;
+	}
+}
+
 /*
  * nm_device_activate_stage1_device_prepare
  *
@@ -419,8 +441,7 @@ nm_device_activate_stage1_device_prepare (gpointer user_data)
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
 	/* Clear the activation source ID now that this stage has run */
-	if (self->priv->act_source_id > 0)
-		self->priv->act_source_id = 0;
+	activation_source_clear (self, FALSE);
 
 	iface = nm_device_get_iface (self);
 	nm_info ("Activation (%s) Stage 1 of 5 (Device Prepare) started...", iface);
@@ -459,7 +480,7 @@ nm_device_activate_schedule_stage1_device_prepare (NMDevice *self)
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	g_return_if_fail (priv->act_request);
 
-	priv->act_source_id = g_idle_add (nm_device_activate_stage1_device_prepare, self);
+	activation_source_schedule (self, nm_device_activate_stage1_device_prepare);
 
 	nm_info ("Activation (%s) Stage 1 of 5 (Device Prepare) scheduled...",
 	         nm_device_get_iface (self));
@@ -496,8 +517,7 @@ nm_device_activate_stage2_device_config (gpointer user_data)
 	gboolean no_firmware = FALSE;
 
 	/* Clear the activation source ID now that this stage has run */
-	if (self->priv->act_source_id > 0)
-		self->priv->act_source_id = 0;
+	activation_source_clear (self, FALSE);
 
 	iface = nm_device_get_iface (self);
 	nm_info ("Activation (%s) Stage 2 of 5 (Device Configure) starting...", iface);
@@ -547,7 +567,7 @@ nm_device_activate_schedule_stage2_device_config (NMDevice *self)
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	g_return_if_fail (priv->act_request);
 
-	priv->act_source_id = g_idle_add (nm_device_activate_stage2_device_config, self);
+	activation_source_schedule (self, nm_device_activate_stage2_device_config);
 
 	nm_info ("Activation (%s) Stage 2 of 5 (Device Configure) scheduled...",
 	         nm_device_get_iface (self));
@@ -917,8 +937,7 @@ nm_device_activate_stage3_ip_config_start (gpointer user_data)
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
 	/* Clear the activation source ID now that this stage has run */
-	if (self->priv->act_source_id > 0)
-		self->priv->act_source_id = 0;
+	activation_source_clear (self, FALSE);
 
 	iface = nm_device_get_iface (self);
 	nm_info ("Activation (%s) Stage 3 of 5 (IP Configure Start) started...", iface);
@@ -957,7 +976,7 @@ nm_device_activate_schedule_stage3_ip_config_start (NMDevice *self)
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	g_return_if_fail (priv->act_request);
 
-	self->priv->act_source_id = g_idle_add (nm_device_activate_stage3_ip_config_start, self);
+	activation_source_schedule (self, nm_device_activate_stage3_ip_config_start);
 
 	nm_info ("Activation (%s) Stage 3 of 5 (IP Configure Start) scheduled.",
 	         nm_device_get_iface (self));
@@ -1115,8 +1134,7 @@ nm_device_activate_stage4_ip_config_get (gpointer user_data)
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
 	/* Clear the activation source ID now that this stage has run */
-	if (self->priv->act_source_id > 0)
-		self->priv->act_source_id = 0;
+	activation_source_clear (self, FALSE);
 
 	iface = nm_device_get_iface (self);
 	nm_info ("Activation (%s) Stage 4 of 5 (IP Configure Get) started...", iface);
@@ -1158,7 +1176,7 @@ nm_device_activate_schedule_stage4_ip_config_get (NMDevice *self)
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	g_return_if_fail (priv->act_request);
 
-	priv->act_source_id = g_idle_add (nm_device_activate_stage4_ip_config_get, self);
+	activation_source_schedule (self, nm_device_activate_stage4_ip_config_get);
 
 	nm_info ("Activation (%s) Stage 4 of 5 (IP Configure Get) scheduled...",
 	         nm_device_get_iface (self));
@@ -1198,8 +1216,7 @@ nm_device_activate_stage4_ip_config_timeout (gpointer user_data)
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 
 	/* Clear the activation source ID now that this stage has run */
-	if (self->priv->act_source_id > 0)
-		self->priv->act_source_id = 0;
+	activation_source_clear (self, FALSE);
 
 	iface = nm_device_get_iface (self);
 	nm_info ("Activation (%s) Stage 4 of 5 (IP Configure Timeout) started...", iface);
@@ -1241,7 +1258,7 @@ nm_device_activate_schedule_stage4_ip_config_timeout (NMDevice *self)
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	g_return_if_fail (priv->act_request);
 
-	priv->act_source_id = g_idle_add (nm_device_activate_stage4_ip_config_timeout, self);
+	activation_source_schedule (self, nm_device_activate_stage4_ip_config_timeout);
 
 	nm_info ("Activation (%s) Stage 4 of 5 (IP Configure Timeout) scheduled...",
 	         nm_device_get_iface (self));
@@ -1391,7 +1408,6 @@ static gboolean
 nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
-	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMIP4Config *ip4_config = NULL;
 	const char *iface, *method = NULL;
 	NMConnection *connection;
@@ -1403,8 +1419,7 @@ nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 	g_assert (ip4_config);
 
 	/* Clear the activation source ID now that this stage has run */
-	if (priv->act_source_id > 0)
-		priv->act_source_id = 0;
+	activation_source_clear (self, FALSE);
 
 	iface = nm_device_get_iface (self);
 	nm_info ("Activation (%s) Stage 5 of 5 (IP Configure Commit) started...",
@@ -1456,7 +1471,7 @@ nm_device_activate_schedule_stage5_ip_config_commit (NMDevice *self)
 	priv = NM_DEVICE_GET_PRIVATE (self);
 	g_return_if_fail (priv->act_request);
 
-	priv->act_source_id = g_idle_add (nm_device_activate_stage5_ip_config_commit, self);
+	activation_source_schedule (self, nm_device_activate_stage5_ip_config_commit);
 
 	nm_info ("Activation (%s) Stage 5 of 5 (IP Configure Commit) scheduled...",
 	         nm_device_get_iface (self));
@@ -1511,10 +1526,7 @@ nm_device_deactivate_quickly (NMDevice *self)
 	priv = NM_DEVICE_GET_PRIVATE (self);
 
 	/* Break the activation chain */
-	if (priv->act_source_id) {
-		g_source_remove (priv->act_source_id);
-		priv->act_source_id = 0;
-	}
+	activation_source_clear (self, TRUE);
 
 	if (priv->failed_to_disconnected_id) {
 		g_source_remove (priv->failed_to_disconnected_id);
@@ -2166,10 +2178,7 @@ nm_device_dispose (GObject *object)
 
 	clear_act_request (self);
 
-	if (self->priv->act_source_id) {
-		g_source_remove (self->priv->act_source_id);
-		self->priv->act_source_id = 0;
-	}
+	activation_source_clear (self, TRUE);
 
 	nm_device_set_use_dhcp (self, FALSE);
 
