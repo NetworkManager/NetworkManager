@@ -5,7 +5,10 @@ SUBSYSTEM!="tty", GOTO="nm_modem_probe_end"
 KERNEL!="tty*", GOTO="nm_modem_probe_end"
 
 DRIVERS=="serial_cs", IMPORT{program}="nm-modem-probe --delay 3000 --export $tempnode", GOTO="nm_modem_probe_end"
-DRIVERS=="option|sierra|hso|cdc_acm", IMPORT{program}="nm-modem-probe --vid 0x$attr{idVendor} --pid 0x$attr{idProduct} --usb-interface $attr{bInterfaceNumber} --driver $attr{driver} --delay 3000 --export $tempnode", GOTO="nm_modem_probe_end"
+
+SUBSYSTEM=="tty", SUBSYSTEMS=="usb", DRIVERS=="?*", ENV{NM_MODEM_DRIVER}="$attr{driver}"
+SUBSYSTEM=="tty", SUBSYSTEMS=="usb", ATTRS{bInterfaceNumber}=="?*", ENV{NM_MODEM_USB_INTERFACE_NUMBER}="$attr{bInterfaceNumber}"
+SUBSYSTEM=="tty", SUBSYSTEMS=="usb", ATTRS{idVendor}=="?*", ATTRS{idProduct}=="?*", IMPORT{program}="nm-modem-probe --vid 0x$attr{idVendor} --pid 0x$attr{idProduct} --usb-interface $env{NM_MODEM_USB_INTERFACE_NUMBER} --driver $env{NM_MODEM_DRIVER} --delay 3000 --export $tempnode", GOTO="nm_modem_probe_end"
 
 LABEL="nm_modem_probe_end"
 
