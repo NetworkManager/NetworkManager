@@ -1,5 +1,5 @@
 /* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
-/* NetworkManager system settings service
+/* NetworkManager system settings service - keyfile plugin
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,26 +15,20 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 Red Hat, Inc.
+ * Copyright (C) 2009 Red Hat, Inc.
  */
 
-#ifndef __READER_H__
-#define __READER_H__
+#ifndef _WRITER_H_
+#define _WRITER_H_
 
+#include <sys/types.h>
 #include <glib.h>
 #include <nm-connection.h>
 
-#define TYPE_ETHERNET "Ethernet"
-#define TYPE_WIRELESS "Wireless"
+gboolean write_connection (NMConnection *connection,
+                           const char *ifcfg_dir,
+                           const char *filename,
+                           const char *keyfile,
+                           GError **error);
 
-NMConnection *connection_from_file (const char *filename,
-                                    const char *network_file,
-                                    const char *test_type,
-                                    gboolean *ignored,
-                                    char **keyfile,
-                                    GError **error,
-                                    gboolean *ignore_error);
-
-const char *reader_get_prefix (void);
-
-#endif  /* __READER_H__ */
+#endif /* _WRITER_H_ */

@@ -9,6 +9,8 @@ libifcfg_rh_io_la_SOURCES = \
 	shvar.h \
 	reader.c \
 	reader.h \
+	writer.c \
+	writer.h \
 	sha1.c \
 	sha1.h \
 	errors.c \

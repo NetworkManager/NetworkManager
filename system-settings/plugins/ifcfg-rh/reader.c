@@ -39,6 +39,7 @@
 #undef __user
 
 #include <glib.h>
+#include <glib/gi18n.h>
 #include <nm-connection.h>
 #include <NetworkManager.h>
 #include <nm-setting-connection.h>
@@ -125,6 +126,7 @@ make_connection_setting (const char *file,
 	NMSettingConnection *s_con;
 	char *ifcfg_name = NULL;
 	char *new_id = NULL, *uuid = NULL, *value;
+	char *ifcfg_id;
 
 	ifcfg_name = get_ifcfg_name (file);
 	if (!ifcfg_name)
@@ -132,22 +134,32 @@ make_connection_setting (const char *file,
 
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
 
- 	if (suggested) {
-		/* For cosmetic reasons, if the suggested name is the same as
-		 * the ifcfg files name, don't use it.
-		 */
-		if (strcmp (ifcfg_name, suggested)) {
-			new_id = g_strdup_printf ("System %s (%s)", suggested, ifcfg_name);
+	/* Try the ifcfg file's internally defined name if available */
+	ifcfg_id = svGetValue (ifcfg, "NAME", FALSE);
+	if (ifcfg_id && strlen (ifcfg_id))
+		g_object_set (s_con, NM_SETTING_CONNECTION_ID, ifcfg_id, NULL);
+
+	if (!nm_setting_connection_get_id (s_con)) {
+		if (suggested) {
+			/* For cosmetic reasons, if the suggested name is the same as
+			 * the ifcfg files name, don't use it.  Mainly for wifi so that
+			 * the SSID is shown in the connection ID instead of just "wlan0".
+			 */
+			if (strcmp (ifcfg_name, suggested)) {
+				new_id = g_strdup_printf ("%s %s (%s)", reader_get_prefix (), suggested, ifcfg_name);
+				g_object_set (s_con, NM_SETTING_CONNECTION_ID, new_id, NULL);
+			}
+		}
+
+		/* Use the ifcfg file's name as a last resort */
+		if (!nm_setting_connection_get_id (s_con)) {
+			new_id = g_strdup_printf ("%s %s", reader_get_prefix (), ifcfg_name);
 			g_object_set (s_con, NM_SETTING_CONNECTION_ID, new_id, NULL);
 		}
 	}
 
-	if (!nm_setting_connection_get_id (s_con)) {
-		new_id = g_strdup_printf ("System %s", ifcfg_name);
-		g_object_set (s_con, NM_SETTING_CONNECTION_ID, new_id, NULL);
-	}
-
 	g_free (new_id);
+	g_free (ifcfg_id);
 
 	/* Try for a UUID key before falling back to hashing the file name */
 	uuid = svGetValue (ifcfg, "UUID", FALSE);
@@ -1896,4 +1908,9 @@ done:
 	return connection;
 }
 
+const char *
+reader_get_prefix (void)
+{
+	return _("System");
+}
 
