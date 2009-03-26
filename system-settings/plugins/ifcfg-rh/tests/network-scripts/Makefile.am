@@ -11,12 +11,19 @@ EXTRA_DIST = \
 	keys-test-wired-8021x-peap-mschapv2 \
 	ifcfg-test-onboot-no \
 	ifcfg-test-wifi-open \
+	ifcfg-test-wifi-open-ssid-quoted \
+	ifcfg-test-wifi-open-ssid-long-quoted \
+	ifcfg-test-wifi-open-ssid-hex \
+	ifcfg-test-wifi-open-ssid-long-hex \
+	ifcfg-test-wifi-open-ssid-bad-hex \
 	ifcfg-test-wifi-wep \
 	keys-test-wifi-wep \
 	ifcfg-test-wifi-wep-adhoc \
 	keys-test-wifi-wep-adhoc \
 	ifcfg-test-wifi-wep-eap-ttls-chap \
 	keys-test-wifi-wep-eap-ttls-chap \
+	ifcfg-test-wifi-leap \
+	keys-test-wifi-leap \
 	ifcfg-test-wifi-wpa-psk \
 	keys-test-wifi-wpa-psk \
 	ifcfg-test-wifi-wpa-psk-adhoc \

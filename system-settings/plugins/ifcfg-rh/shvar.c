@@ -112,8 +112,8 @@ svCreateFile(const char *name)
 }
 
 /* remove escaped characters in place */
-static void
-unescape(char *s) {
+void
+svUnescape(char *s) {
     int len, i;
 
     len = strlen(s);
@@ -142,8 +142,8 @@ unescape(char *s) {
  */
 static const char escapees[] = "\"'\\$~`";		/* must be escaped */
 static const char spaces[] = " \t|&;()<>";		/* only require "" */
-static char *
-escape(const char *s) {
+char *
+svEscape(const char *s) {
     char *new;
     int i, j, mangle = 0, space = 0;
     int newlen, slen;
@@ -202,7 +202,7 @@ svGetValue(shvarFile *s, const char *key, gboolean verbatim)
 	if (!strncmp(keyString, line, len)) {
 	    value = g_strdup(line + len);
 	    if (!verbatim)
-	      unescape(value);
+	      svUnescape(value);
 	    break;
 	}
     }
@@ -272,7 +272,7 @@ svTrueValue(shvarFile *s, const char *key, int def)
  *
  */
 void
-svSetValue(shvarFile *s, const char *key, const char *value)
+svSetValue(shvarFile *s, const char *key, const char *value, gboolean verbatim)
 {
     char *newval = NULL, *val1 = NULL, *val2 = NULL;
     char *keyValue;
@@ -281,7 +281,8 @@ svSetValue(shvarFile *s, const char *key, const char *value)
     g_assert(key);
     /* value may be NULL */
 
-    if (value) newval = escape(value);
+    if (value)
+        newval = verbatim ? g_strdup(value) : svEscape(value);
     keyValue = g_strdup_printf("%s=%s", key, newval ? newval : "");
 
     val1 = svGetValue(s, key, FALSE);
