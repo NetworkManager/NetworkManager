@@ -77,7 +77,7 @@ svTrueValue(shvarFile *s, const char *key, int def);
  * to the top of the file.
  */
 void
-svSetValue(shvarFile *s, const char *key, const char *value);
+svSetValue(shvarFile *s, const char *key, const char *value, gboolean verbatim);
 
 
 /* Write the current contents iff modified.  Returns -1 on error
@@ -94,6 +94,14 @@ svWriteFile(shvarFile *s, int mode);
  */
 int
 svCloseFile(shvarFile *s);
+
+/* Return a new escaped string */
+char *
+svEscape(const char *s);
+
+/* Unescape a string in-place */
+void
+svUnescape(char *s);
 
 #ifdef __cplusplus
 }

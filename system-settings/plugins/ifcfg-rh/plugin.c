@@ -519,7 +519,7 @@ plugin_set_hostname (SCPluginIfcfg *plugin, const char *hostname)
 		return FALSE;
 	}
 
-	svSetValue (network, "HOSTNAME", hostname);
+	svSetValue (network, "HOSTNAME", hostname, FALSE);
 	svWriteFile (network, 0644);
 	svCloseFile (network);
 
@@ -637,7 +637,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, IFCFG_PLUGIN_INFO);
 		break;
 	case NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES:
-		g_value_set_uint (value, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME);
+		g_value_set_uint (value, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS | NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME);
 		break;
 	case NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME:
 		g_value_set_string (value, priv->hostname);

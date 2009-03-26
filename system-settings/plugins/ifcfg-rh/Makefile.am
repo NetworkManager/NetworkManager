@@ -14,7 +14,9 @@ libifcfg_rh_io_la_SOURCES = \
 	sha1.c \
 	sha1.h \
 	errors.c \
-	common.h
+	common.h \
+	utils.c \
+	utils.h
 
 libifcfg_rh_io_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
