@@ -803,8 +803,7 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case PROP_LEAP_USERNAME:
 		g_free (priv->leap_username);
-		str = g_value_get_string (value);
-		priv->leap_username = str ? g_ascii_strdown (str, -1) : NULL;
+		priv->leap_username = g_value_dup_string (value);
 		break;
 	case PROP_WEP_KEY0:
 		nm_setting_wireless_security_set_wep_key (setting, 0, g_value_get_string (value));
