@@ -129,9 +129,13 @@ nm_get_device_driver_name (LibHalContext *ctx, const char *origdev_udi)
 	char *driver_name = NULL;
 
 	if (origdev_udi && libhal_device_property_exists (ctx, origdev_udi, "info.linux.driver", NULL)) {
-		char *drv = libhal_device_get_property_string (ctx, origdev_udi, "info.linux.driver", NULL);
-		driver_name = g_strdup (drv);
-		libhal_free_string (drv);
+		char *drv;
+
+		drv = libhal_device_get_property_string (ctx, origdev_udi, "info.linux.driver", NULL);
+		if (drv) {
+			driver_name = g_strdup (drv);
+			libhal_free_string (drv);
+		}
 	}
 	return driver_name;
 }
@@ -204,7 +208,7 @@ wired_device_creator (NMHalManager *self,
 	/* Special handling of Ericsson F3507g 'mbm' devices; ignore the
 	 * cdc-ether device that it provides since we don't use it yet.
 	 */
-	if (!strcmp (driver, "cdc_ether")) {
+	if (driver && !strcmp (driver, "cdc_ether")) {
 		parent = is_mbm (priv->hal_ctx, udi);
 		mbm = !!parent;
 		libhal_free_string (parent);
@@ -823,9 +827,13 @@ nm_get_modem_device_driver_name (LibHalContext *ctx, const char *udi)
 		origdev_udi = libhal_device_get_property_string (ctx, udi, "serial.physical_device", NULL);
 
 	if (origdev_udi && libhal_device_property_exists (ctx, origdev_udi, "info.linux.driver", NULL)) {
-		char *drv = libhal_device_get_property_string (ctx, origdev_udi, "info.linux.driver", NULL);
-		driver_name = g_strdup (drv);
-		libhal_free_string (drv);
+		char *drv;
+
+		drv = libhal_device_get_property_string (ctx, origdev_udi, "info.linux.driver", NULL);
+		if (drv) {
+			driver_name = g_strdup (drv);
+			libhal_free_string (drv);
+		}
 	}
 	libhal_free_string (origdev_udi);
 	return driver_name;
