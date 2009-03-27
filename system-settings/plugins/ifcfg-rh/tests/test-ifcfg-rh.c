@@ -26,6 +26,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include <dbus/dbus-glib.h>
 
@@ -3300,7 +3302,7 @@ test_write_wired_static (void)
 
 	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
-	              NM_SETTING_CONNECTION_ID, "Work Ethernet",
+	              NM_SETTING_CONNECTION_ID, "Test Write Wired Static",
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
@@ -3424,7 +3426,7 @@ test_write_wired_dhcp (void)
 
 	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
-	              NM_SETTING_CONNECTION_ID, "Auto Ethernet",
+	              NM_SETTING_CONNECTION_ID, "Test Write Wired DHCP",
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
@@ -3529,7 +3531,7 @@ test_write_wifi_open (void)
 
 	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
-	              NM_SETTING_CONNECTION_ID, "blahblah",
+	              NM_SETTING_CONNECTION_ID, "Test Write Wifi Open",
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
@@ -3644,7 +3646,7 @@ test_write_wifi_open_hex_ssid (void)
 
 	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
-	              NM_SETTING_CONNECTION_ID, "blahblah",
+	              NM_SETTING_CONNECTION_ID, "Test Write Wifi Open Hex SSID",
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
@@ -3717,6 +3719,142 @@ test_write_wifi_open_hex_ssid (void)
 	g_object_unref (reread);
 }
 
+static void
+test_write_wifi_wep (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	NMSettingIP4Config *s_ip4;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GByteArray *ssid;
+	const unsigned char ssid_data[] = "blahblah";
+	struct stat statbuf;
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "wifi-wep-write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "wifi-wep-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wifi WEP",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wifi setting */
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	ASSERT (s_wifi != NULL,
+	        "wifi-wep-write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	ssid = g_byte_array_sized_new (sizeof (ssid_data));
+	g_byte_array_append (ssid, ssid_data, sizeof (ssid_data));
+
+	g_object_set (s_wifi,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRELESS_MODE, "infrastructure",
+	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	              NULL);
+
+	g_byte_array_free (ssid, TRUE);
+
+	/* Wireless security setting */
+	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+	ASSERT (s_wsec != NULL,
+			"wifi-wep-write", "failed to allocate new %s setting",
+			NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+
+	g_object_set (s_wsec,
+	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none",
+	              NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, 2,
+	              NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "shared",
+	              NULL);
+	nm_setting_wireless_security_set_wep_key (s_wsec, 0, "0123456789abcdef0123456789");
+	nm_setting_wireless_security_set_wep_key (s_wsec, 1, "11111111111111111111111111");
+	nm_setting_wireless_security_set_wep_key (s_wsec, 2, "aaaaaaaaaaaaaaaaaaaaaaaaaa");
+	nm_setting_wireless_security_set_wep_key (s_wsec, 3, "BBBBBBBBBBBBBBBBBBBBBBBBBB");
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			"wifi-wep-write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "wifi-wep-write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        "wifi-wep-write", "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        "wifi-wep-write", "didn't get ifcfg file path back after writing connection");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_WIRELESS,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	ASSERT (keyfile != NULL,
+	        "wifi-open-write-reread", "expected keyfile for '%s'", testfile);
+
+	ASSERT (stat (keyfile, &statbuf) == 0,
+	        "wifi-open-write-reread", "couldn't stat() '%s'", keyfile);
+	ASSERT (S_ISREG (statbuf.st_mode),
+	        "wifi-open-write-reread", "keyfile '%s' wasn't a normal file", keyfile);
+	ASSERT ((statbuf.st_mode & 0077) == 0,
+	        "wifi-open-write-reread", "keyfile '%s' wasn't readable only by its owner", keyfile);
+
+	unlink (keyfile);
+
+	ASSERT (reread != NULL,
+	        "wifi-wep-write-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        "wifi-wep-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+	        "wifi-wep-write", "written and re-read connection weren't the same.");
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
 #define TEST_IFCFG_WIFI_OPEN_SSID_BAD_HEX TEST_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-bad-hex"
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED TEST_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-quoted"
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_HEX TEST_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-hex"
@@ -3762,6 +3900,7 @@ int main (int argc, char **argv)
 	test_write_wired_dhcp ();
 	test_write_wifi_open ();
 	test_write_wifi_open_hex_ssid ();
+	test_write_wifi_wep ();
 
 	basename = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", basename);
