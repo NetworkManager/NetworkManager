@@ -997,7 +997,7 @@ test_read_onboot_no (void)
 
 	/* Autoconnect */
 	ASSERT (nm_setting_connection_get_autoconnect (s_con) == FALSE,
-	        "wired-dhcp-verify-connection", "failed to verify %s: unexpected %s /%s key value",
+	        "onboot-no-verify-connection", "failed to verify %s: unexpected %s /%s key value",
 	        TEST_IFCFG_ONBOOT_NO,
 	        NM_SETTING_CONNECTION_SETTING_NAME,
 	        NM_SETTING_CONNECTION_AUTOCONNECT);
@@ -3496,6 +3496,124 @@ test_write_wired_dhcp (void)
 }
 
 static void
+test_write_wired_dhcp_8021x_peap_mschapv2 (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	NMSetting8021x *s_8021x;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "wired-dhcp-8021x-peap-mschapv2write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "wired-dhcp-8021x-peap-mschapv2write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wired DHCP 802.1x PEAP MSCHAPv2",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	ASSERT (s_wired != NULL,
+	        "wired-dhcp-8021x-peap-mschapv2write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRED_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			"wired-dhcp-8021x-peap-mschapv2write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+
+	/* 802.1x setting */
+	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
+	ASSERT (s_8021x != NULL,
+			"wired-dhcp-8021x-peap-mschapv2write", "failed to allocate new %s setting",
+			NM_SETTING_802_1X_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_8021x));
+
+	g_object_set (s_8021x,
+	              NM_SETTING_802_1X_IDENTITY, "Bob Saget",
+	              NM_SETTING_802_1X_PASSWORD, "Kids, it was back in October 2008...",
+	              NM_SETTING_802_1X_PHASE1_PEAPVER, "1",
+	              NM_SETTING_802_1X_PHASE1_PEAPLABEL, "1",
+	              NM_SETTING_802_1X_PHASE2_AUTH, "mschapv2",
+	              NULL);
+
+	nm_setting_802_1x_add_eap_method (s_8021x, "peap");
+
+	success = nm_setting_802_1x_set_ca_cert_from_file (s_8021x, 
+	                                                   TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2_CA_CERT,
+	                                                   NULL,
+	                                                   &error);
+	ASSERT (success == TRUE,
+	        "wired-dhcp-8021x-peap-mschapv2write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "wired-dhcp-8021x-peap-mschapv2write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        "wired-dhcp-8021x-peap-mschapv2write", "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        "wired-dhcp-8021x-peap-mschapv2write", "didn't get ifcfg file path back after writing connection");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_ETHERNET,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	ASSERT (reread != NULL,
+	        "wired-dhcp-8021x-peap-mschapv2write-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        "wired-dhcp-8021x-peap-mschapv2write-reread-verify", "failed to verify %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+	        "wired-dhcp-8021x-peap-mschapv2write", "written and re-read connection weren't the same.");
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
 test_write_wifi_open (void)
 {
 	NMConnection *connection;
@@ -4148,6 +4266,7 @@ int main (int argc, char **argv)
 
 	test_write_wired_static ();
 	test_write_wired_dhcp ();
+	test_write_wired_dhcp_8021x_peap_mschapv2 ();
 	test_write_wifi_open ();
 	test_write_wifi_open_hex_ssid ();
 	test_write_wifi_wep ();
