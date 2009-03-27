@@ -3701,7 +3701,7 @@ test_write_wifi_open_hex_ssid (void)
 	                               &keyfile,
 	                               &error,
 	                               &ignore_error);
-//	unlink (testfile);
+	unlink (testfile);
 
 	ASSERT (reread != NULL,
 	        "wifi-open-hex-ssid-write-reread", "failed to read %s: %s", testfile, error->message);
