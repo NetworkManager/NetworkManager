@@ -23,6 +23,11 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <stdio.h>
 
 #include <nm-setting-connection.h>
 #include <nm-setting-wired.h>
@@ -67,6 +72,74 @@ set_secret (shvarFile *ifcfg, const char *key, const char *value)
 error:
 	/* Try setting the secret in the actual ifcfg */
 	svSetValue (ifcfg, key, value, FALSE);
+}
+
+static gboolean
+write_secret_file (const char *path,
+                   const char *data,
+                   gsize len,
+                   GError **error)
+{
+	char *tmppath;
+	int fd = -1, written;
+	gboolean success = FALSE;
+
+	tmppath = g_malloc0 (strlen (path) + 10);
+	if (!tmppath) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Could not allocate memory for temporary file for '%s'",
+		             path);
+		return FALSE;
+	}
+
+	memcpy (tmppath, path, strlen (path));
+	strcat (tmppath, ".XXXXXX");
+
+	errno = 0;
+	fd = mkstemp (tmppath);
+	if (fd < 0) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Could not create temporary file for '%s': %d",
+		             path, errno);
+		goto out;
+	}
+
+	/* Only readable by root */
+	errno = 0;
+	if (fchmod (fd, S_IRUSR | S_IWUSR)) {
+		close (fd);
+		unlink (tmppath);
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Could not set permissions for temporary file '%s': %d",
+		             path, errno);
+		goto out;
+	}
+
+	errno = 0;
+	written = write (fd, data, len);
+	if (written != len) {
+		close (fd);
+		unlink (tmppath);
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Could not write temporary file for '%s': %d",
+		             path, errno);
+		goto out;
+	}
+	close (fd);
+
+	/* Try to rename */
+	errno = 0;
+	if (rename (tmppath, path)) {
+		unlink (tmppath);
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Could not rename temporary file to '%s': %d",
+		             path, errno);
+		goto out;
+	}
+	success = TRUE;
+
+out:
+	return success;
 }
 
 static gboolean
@@ -118,7 +191,7 @@ write_cert (NMSetting8021x *s_8021x,
 			goto out;
 		}
 
-		if (!g_file_set_contents (new_file, (const char *) cert->data, cert->len, &write_error)) {
+		if (!write_secret_file (new_file, (const char *) cert->data, cert->len, &write_error)) {
 			g_set_error (error, ifcfg_plugin_error_quark (), 0,
 			             "Could not write certificate for %s / %s: %s",
 			             NM_SETTING_802_1X_SETTING_NAME, setting_key,
