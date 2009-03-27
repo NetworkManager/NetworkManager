@@ -377,6 +377,7 @@ write_wireless_setting (NMConnection *connection,
 		return FALSE;
 	}
 
+	svSetValue (ifcfg, "HWADDR", NULL, FALSE);
 	mac = nm_setting_wireless_get_mac_address (s_wireless);
 	if (mac) {
 		tmp = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
@@ -386,6 +387,7 @@ write_wireless_setting (NMConnection *connection,
 		g_free (tmp);
 	}
 
+	svSetValue (ifcfg, "MTU", NULL, FALSE);
 	mtu = nm_setting_wireless_get_mtu (s_wireless);
 	if (mtu) {
 		tmp = g_strdup_printf ("%u", mtu);
@@ -449,13 +451,15 @@ write_wireless_setting (NMConnection *connection,
 		return FALSE;
 	}
 
+	svSetValue (ifcfg, "CHANNEL", NULL, FALSE);
 	chan = nm_setting_wireless_get_channel (s_wireless);
 	if (chan) {
-		tmp = g_strdup_printf ("%d", chan);
+		tmp = g_strdup_printf ("%u", chan);
 		svSetValue (ifcfg, "CHANNEL", tmp, FALSE);
 		g_free (tmp);
 	}
 
+	svSetValue (ifcfg, "BSSID", NULL, FALSE);
 	bssid = nm_setting_wireless_get_bssid (s_wireless);
 	if (bssid) {
 		tmp = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
@@ -464,7 +468,6 @@ write_wireless_setting (NMConnection *connection,
 		svSetValue (ifcfg, "BSSID", tmp, FALSE);
 		g_free (tmp);
 	}
-	// FIXME: channel/freq, other L2 parameters like RTS
 
 	if (nm_setting_wireless_get_security (s_wireless)) {
 		if (!write_wireless_security_setting (connection, ifcfg, adhoc, no_8021x, error))

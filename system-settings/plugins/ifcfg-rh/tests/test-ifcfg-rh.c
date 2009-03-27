@@ -1210,7 +1210,7 @@ test_read_wifi_open (void)
 	guint64 expected_timestamp = 0;
 	const char *expected_ssid = "blahblah";
 	const char *expected_mode = "infrastructure";
-	const guint32 expected_channel = 0;
+	const guint32 expected_channel = 1;
 
 	connection = connection_from_file (TEST_IFCFG_WIFI_OPEN,
 	                                   NULL,
@@ -1558,7 +1558,7 @@ test_read_wifi_wep (void)
 	guint64 expected_timestamp = 0;
 	const char *expected_ssid = "blahblah";
 	const char *expected_mode = "infrastructure";
-	const guint32 expected_channel = 0;
+	const guint32 expected_channel = 1;
 	const char *expected_wep_key0 = "0123456789abcdef0123456789";
 
 	connection = connection_from_file (TEST_IFCFG_WIFI_WEP,
@@ -1913,8 +1913,8 @@ test_read_wifi_wep_adhoc (void)
 	        NM_SETTING_WIRELESS_SETTING_NAME,
 	        NM_SETTING_WIRELESS_MODE);
 
-	/* Channel (doesn't work yet) */
-	ASSERT (nm_setting_wireless_get_channel (s_wireless) == 0,
+	/* Channel */
+	ASSERT (nm_setting_wireless_get_channel (s_wireless) == 11,
 	        "wifi-wep-adhoc-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIFI_WEP_ADHOC,
 	        NM_SETTING_WIRELESS_SETTING_NAME,
@@ -2208,7 +2208,7 @@ test_read_wifi_wpa_psk (void)
 	guint64 expected_timestamp = 0;
 	const char *expected_ssid = "blahblah";
 	const char *expected_mode = "infrastructure";
-	const guint32 expected_channel = 0;
+	const guint32 expected_channel = 1;
 	const char *expected_key_mgmt = "wpa-psk";
 	const char *expected_psk = "1da190379817bc360dda52e85c388c439a21ea5c7bf819c64e9da051807deae6";
 	guint32 n, i;
@@ -3310,7 +3310,7 @@ test_write_wired_static (void)
 
 	/* Wired setting */
 	s_wired = (NMSettingWired *) nm_setting_wired_new ();
-	ASSERT (s_con != NULL,
+	ASSERT (s_wired != NULL,
 	        "wired-static-write", "failed to allocate new %s setting",
 	        NM_SETTING_WIRED_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
@@ -3433,7 +3433,7 @@ test_write_wired_dhcp (void)
 
 	/* Wired setting */
 	s_wired = (NMSettingWired *) nm_setting_wired_new ();
-	ASSERT (s_con != NULL,
+	ASSERT (s_wired != NULL,
 	        "wired-dhcp-write", "failed to allocate new %s setting",
 	        NM_SETTING_WIRED_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_wired));
@@ -3493,6 +3493,126 @@ test_write_wired_dhcp (void)
 	g_object_unref (reread);
 }
 
+static void
+test_write_wifi_open (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingIP4Config *s_ip4;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GByteArray *ssid;
+	const unsigned char ssid_data[] = { 0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44 };
+	GByteArray *bssid;
+	const unsigned char bssid_data[] = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66 };
+	guint32 channel = 9, mtu = 1345;
+	GByteArray *mac;
+	const unsigned char mac_data[] = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "wifi-open-write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "wifi-open-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "blahblah",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wifi setting */
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	ASSERT (s_wifi != NULL,
+	        "wifi-open-write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	ssid = g_byte_array_sized_new (sizeof (ssid_data));
+	g_byte_array_append (ssid, ssid_data, sizeof (ssid_data));
+	bssid = g_byte_array_sized_new (sizeof (bssid_data));
+	g_byte_array_append (bssid, bssid_data, sizeof (bssid_data));
+	mac = g_byte_array_sized_new (sizeof (mac_data));
+	g_byte_array_append (mac, mac_data, sizeof (mac_data));
+
+	g_object_set (s_wifi,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRELESS_BSSID, bssid,
+	              NM_SETTING_WIRELESS_MAC_ADDRESS, mac,
+	              NM_SETTING_WIRELESS_MODE, "infrastructure",
+	              NM_SETTING_WIRELESS_BAND, "bg",
+	              NM_SETTING_WIRELESS_CHANNEL, channel,
+	              NM_SETTING_WIRELESS_MTU, mtu,
+	              NULL);
+
+	g_byte_array_free (ssid, TRUE);
+	g_byte_array_free (bssid, TRUE);
+	g_byte_array_free (mac, TRUE);
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			"wifi-open-write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "wifi-open-write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        "wifi-open-write", "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        "wifi-open-write", "didn't get ifcfg file path back after writing connection");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_ETHERNET,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	ASSERT (reread != NULL,
+	        "wifi-open-write-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        "wifi-open-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+	        "wifi-open-write", "written and re-read connection weren't the same.");
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
 #define TEST_IFCFG_WIFI_OPEN_SSID_BAD_HEX TEST_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-bad-hex"
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED TEST_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-quoted"
 #define TEST_IFCFG_WIFI_OPEN_SSID_LONG_HEX TEST_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-hex"
@@ -3536,6 +3656,7 @@ int main (int argc, char **argv)
 
 	test_write_wired_static ();
 	test_write_wired_dhcp ();
+	test_write_wifi_open ();
 
 	basename = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", basename);

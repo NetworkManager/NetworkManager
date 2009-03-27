@@ -96,8 +96,9 @@ get_int (const char *str, int *value)
 {
 	char *e;
 
+	errno = 0;
 	*value = strtol (str, &e, 0);
-	if (*e != '\0')
+	if (errno || *e != '\0')
 		return FALSE;
 
 	return TRUE;
@@ -1706,7 +1707,40 @@ make_wireless_setting (shvarFile *ifcfg,
 		g_object_set (s_wireless, NM_SETTING_WIRELESS_BSSID, bssid, NULL);
 		g_byte_array_free (bssid, TRUE);
 	}
-	// FIXME: channel/freq, other L2 parameters like RTS
+
+	value = svGetValue (ifcfg, "CHANNEL", FALSE);
+	if (value) {
+		long int chan;
+
+		errno = 0;
+		chan = strtol (value, NULL, 10);
+		if (errno || chan <= 0 || chan > 196) {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Invalid wireless channel '%s'", value);
+			g_free (value);
+			goto error;
+		}
+		g_object_set (s_wireless, NM_SETTING_WIRELESS_CHANNEL, (guint32) chan, NULL);
+		if (chan > 14)
+			g_object_set (s_wireless, NM_SETTING_WIRELESS_BAND, "a", NULL);
+		else
+			g_object_set (s_wireless, NM_SETTING_WIRELESS_BAND, "bg", NULL);
+	}
+
+	value = svGetValue (ifcfg, "MTU", FALSE);
+	if (value) {
+		long int mtu;
+
+		errno = 0;
+		mtu = strtol (value, NULL, 10);
+		if (errno || mtu < 0 || mtu > 50000) {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Invalid wireless MTU '%s'", value);
+			g_free (value);
+			goto error;
+		}
+		g_object_set (s_wireless, NM_SETTING_WIRELESS_MTU, (guint32) mtu, NULL);
+	}
 
 done:
 	return NM_SETTING (s_wireless);
