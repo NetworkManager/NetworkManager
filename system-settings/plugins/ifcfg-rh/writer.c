@@ -55,10 +55,10 @@ set_secret (shvarFile *ifcfg, const char *key, const char *value)
 	svSetValue (ifcfg, key, NULL, FALSE);
 
 	svSetValue (keyfile, key, value, FALSE);
-	if (!svWriteFile (keyfile, 0600)) {
-		svCloseFile (keyfile);
+	if (svWriteFile (keyfile, 0600)) {
 		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: could not update key file '%s'",
 		             keyfile->fileName);
+		svCloseFile (keyfile);
 		goto error;
 	}
 	svCloseFile (keyfile);
