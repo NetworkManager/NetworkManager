@@ -523,7 +523,7 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	            nm_setting_connection_get_autoconnect (s_con) ? "yes" : "no",
 	            FALSE);
 	tmp = g_strdup_printf ("%llu", nm_setting_connection_get_timestamp (s_con));
-	svSetValue (ifcfg, "LAST_CONNECTION", tmp, FALSE);
+	svSetValue (ifcfg, "LAST_CONNECT", tmp, FALSE);
 	g_free (tmp);
 }
 
@@ -534,6 +534,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	const char *value;
 	char *addr_key, *prefix_key, *gw_key, *tmp;
 	guint32 i, num;
+	GString *searches;
 
 	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
 	if (!s_ip4) {
@@ -564,9 +565,9 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 			prefix_key = g_strdup ("PREFIX");
 			gw_key = g_strdup ("GATEWAY");
 		} else {
-			addr_key = g_strdup_printf ("IPADDR%d", i);
-			prefix_key = g_strdup_printf ("PREFIX%d", i);
-			gw_key = g_strdup_printf ("GATEWAY%d", i);
+			addr_key = g_strdup_printf ("IPADDR%d", i + 1);
+			prefix_key = g_strdup_printf ("PREFIX%d", i + 1);
+			gw_key = g_strdup_printf ("GATEWAY%d", i + 1);
 		}
 
 		if (i >= num) {
@@ -604,7 +605,7 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		char buf[INET_ADDRSTRLEN + 1];
 		guint32 ip;
 
-		addr_key = g_strdup_printf ("DNS%d", i);
+		addr_key = g_strdup_printf ("DNS%d", i + 1);
 
 		if (i >= num)
 			svSetValue (ifcfg, addr_key, NULL, FALSE);
@@ -617,6 +618,42 @@ write_ip4_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 		}
 		g_free (addr_key);
 	}
+
+	num = nm_setting_ip4_config_get_num_dns_searches (s_ip4);
+	if (num > 0) {
+		searches = g_string_new (NULL);
+		for (i = 0; i < num; i++) {
+			if (i > 0)
+				g_string_append_c (searches, ' ');
+			g_string_append (searches, nm_setting_ip4_config_get_dns_search (s_ip4, i));
+		}
+		svSetValue (ifcfg, "DOMAIN", searches->str, FALSE);
+		g_string_free (searches, TRUE);
+	} else
+		svSetValue (ifcfg, "DOMAIN", NULL, FALSE);
+
+	svSetValue (ifcfg, "PEERDNS", NULL, FALSE);
+	svSetValue (ifcfg, "PEERROUTES", NULL, FALSE);
+	svSetValue (ifcfg, "DHCP_HOSTNAME", NULL, FALSE);
+	svSetValue (ifcfg, "DHCP_CLIENT_ID", NULL, FALSE);
+	if (!strcmp (value, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
+		svSetValue (ifcfg, "PEERDNS",
+		            nm_setting_ip4_config_get_ignore_auto_dns (s_ip4) ? "no" : "yes",
+		            FALSE);
+
+		svSetValue (ifcfg, "PEERROUTES",
+		            nm_setting_ip4_config_get_ignore_auto_routes (s_ip4) ? "no" : "yes",
+		            FALSE);
+
+		value = nm_setting_ip4_config_get_dhcp_hostname (s_ip4);
+		if (value)
+			svSetValue (ifcfg, "DHCP_HOSTNAME", value, FALSE);
+
+		value = nm_setting_ip4_config_get_dhcp_client_id (s_ip4);
+		if (value)
+			svSetValue (ifcfg, "DHCP_CLIENT_ID", value, FALSE);
+	}
+
 
 	return TRUE;
 }
@@ -641,11 +678,12 @@ escape_id (const char *id)
 	return escaped;
 }
 
-gboolean
+static gboolean
 write_connection (NMConnection *connection,
                   const char *ifcfg_dir,
                   const char *filename,
                   const char *keyfile,
+                  char **out_filename,
                   GError **error)
 {
 	NMSettingConnection *s_con;
@@ -670,7 +708,7 @@ write_connection (NMConnection *connection,
 		char *escaped;
 
 		escaped = escape_id (nm_setting_connection_get_id (s_con));
-		ifcfg_name = g_strdup_printf (IFCFG_DIR "/ifcfg-%s", escaped);
+		ifcfg_name = g_strdup_printf ("%s/ifcfg-%s", ifcfg_dir, escaped);
 		ifcfg = svCreateFile (ifcfg_name);
 		g_free (escaped);
 	}
@@ -717,10 +755,34 @@ write_connection (NMConnection *connection,
 	}
 
 	svCloseFile (ifcfg);
+
+	/* Only return the filename if this was a newly written ifcfg */
+	if (out_filename && !filename)
+		*out_filename = g_strdup (ifcfg_name);
+
 	success = TRUE;
 
 out:
 	g_free (ifcfg_name);
 	return success;
+}
+
+gboolean
+writer_new_connection (NMConnection *connection,
+                       const char *ifcfg_dir,
+                       char **out_filename,
+                       GError **error)
+{
+	return write_connection (connection, ifcfg_dir, NULL, NULL, out_filename, error);
+}
+
+gboolean
+writer_update_connection (NMConnection *connection,
+                          const char *ifcfg_dir,
+                          const char *filename,
+                          const char *keyfile,
+                          GError **error)
+{
+	return write_connection (connection, ifcfg_dir, filename, keyfile, NULL, error);
 }
 
