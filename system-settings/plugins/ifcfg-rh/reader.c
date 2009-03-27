@@ -1590,8 +1590,10 @@ make_wireless_setting (shvarFile *ifcfg,
 	s_wireless = NM_SETTING_WIRELESS (nm_setting_wireless_new ());
 
 	if (read_mac_address (ifcfg, &array, error)) {
-		g_object_set (s_wireless, NM_SETTING_WIRELESS_MAC_ADDRESS, array, NULL);
-		g_byte_array_free (array, TRUE);
+		if (array) {
+			g_object_set (s_wireless, NM_SETTING_WIRELESS_MAC_ADDRESS, array, NULL);
+			g_byte_array_free (array, TRUE);
+		}
 	} else {
 		g_object_unref (s_wireless);
 		return NULL;
