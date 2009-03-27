@@ -1439,10 +1439,26 @@ make_wpa_setting (shvarFile *ifcfg,
 		/* Ad-Hoc mode only supports WPA proto for now */
 		nm_setting_wireless_security_add_proto (wsec, "wpa");
 	} else {
-		if (svTrueValue (ifcfg, "WPA_ALLOW_WPA", TRUE))
+		char *allow_wpa, *allow_rsn;
+
+		allow_wpa = svGetValue (ifcfg, "WPA_ALLOW_WPA", FALSE);
+		allow_rsn = svGetValue (ifcfg, "WPA_ALLOW_WPA2", FALSE);
+
+		if (allow_wpa && svTrueValue (ifcfg, "WPA_ALLOW_WPA", TRUE))
 			nm_setting_wireless_security_add_proto (wsec, "wpa");
-		if (svTrueValue (ifcfg, "WPA_ALLOW_WPA2", TRUE))
+		if (allow_rsn && svTrueValue (ifcfg, "WPA_ALLOW_WPA2", TRUE))
 			nm_setting_wireless_security_add_proto (wsec, "rsn");
+
+		/* If neither WPA_ALLOW_WPA or WPA_ALLOW_WPA2 were present, default
+		 * to both WPA and RSN allowed.
+		 */
+		if (!allow_wpa && !allow_rsn) {
+			nm_setting_wireless_security_add_proto (wsec, "wpa");
+			nm_setting_wireless_security_add_proto (wsec, "rsn");
+		}
+
+		g_free (allow_wpa);
+		g_free (allow_rsn);
 	}
 
 	if (!strcmp (value, "WPA-PSK")) {
