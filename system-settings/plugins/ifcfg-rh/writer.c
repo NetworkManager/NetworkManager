@@ -147,16 +147,28 @@ out:
 }
 
 static gboolean
-write_8021x_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
+write_8021x_setting (NMConnection *connection,
+                     shvarFile *ifcfg,
+                     gboolean wired,
+                     GError **error)
 {
 	NMSetting8021x *s_8021x;
 	const char *value;
 	char *tmp;
 	gboolean success = FALSE, is_pkcs12 = FALSE, wrote;
+	GString *phase2_auth;
 
 	s_8021x = (NMSetting8021x *) nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
-	if (!s_8021x)
+	if (!s_8021x) {
+		/* If wired, clear KEY_MGMT */
+		if (wired)
+			svSetValue (ifcfg, "KEY_MGMT", NULL, FALSE);
 		return TRUE;
+	}
+
+	/* If wired, write KEY_MGMT */
+	if (wired)
+		svSetValue (ifcfg, "KEY_MGMT", "IEEE8021X", FALSE);
 
 	/* EAP method */
 	if (nm_setting_802_1x_get_num_eap_methods (s_8021x)) {
@@ -176,6 +188,43 @@ write_8021x_setting (NMConnection *connection, shvarFile *ifcfg, GError **error)
 	            FALSE);
 
 	set_secret (ifcfg, "IEEE_8021X_PASSWORD", nm_setting_802_1x_get_password (s_8021x));
+
+	/* PEAP version */
+	value = nm_setting_802_1x_get_phase1_peapver (s_8021x);
+	svSetValue (ifcfg, "IEEE_8021X_PEAP_VERSION", NULL, FALSE);
+	if (value && (!strcmp (value, "0") || !strcmp (value, "1")))
+		svSetValue (ifcfg, "IEEE_8021X_PEAP_VERSION", value, FALSE);
+
+	/* Force new PEAP label */
+	value = nm_setting_802_1x_get_phase1_peaplabel (s_8021x);
+	svSetValue (ifcfg, "IEEE_8021X_PEAP_FORCE_NEW_LABEL", NULL, FALSE);
+	if (value && !strcmp (value, "1"))
+		svSetValue (ifcfg, "IEEE_8021X_PEAP_FORCE_NEW_LABEL", "yes", FALSE);
+
+	/* Phase2 auth methods */
+	svSetValue (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS", NULL, FALSE);
+	phase2_auth = g_string_new (NULL);
+
+	value = nm_setting_802_1x_get_phase2_auth (s_8021x);
+	if (value) {
+		tmp = g_ascii_strup (value, -1);
+		g_string_append (phase2_auth, tmp);
+		g_free (tmp);
+	}
+
+	value = nm_setting_802_1x_get_phase2_autheap (s_8021x);
+	if (value) {
+		if (phase2_auth->len)
+			g_string_append_c (phase2_auth, ' ');
+
+		tmp = g_ascii_strup (value, -1);
+		g_string_append_printf (phase2_auth, "EAP-%s", tmp);
+		g_free (tmp);
+	}
+
+	if (phase2_auth->len)
+		svSetValue (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS", phase2_auth->str, FALSE);
+	g_string_free (phase2_auth, TRUE);
 	            
 	/* CA certificate */
 	if (!write_cert (s_8021x, ifcfg,
@@ -699,6 +748,7 @@ write_connection (NMConnection *connection,
 	char *ifcfg_name = NULL;
 	const char *type;
 	gboolean no_8021x = FALSE;
+	gboolean wired = FALSE;
 
 	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
 	if (!s_con) {
@@ -736,6 +786,7 @@ write_connection (NMConnection *connection,
 	if (!strcmp (type, NM_SETTING_WIRED_SETTING_NAME)) {
 		if (!write_wired_setting (connection, ifcfg, error))
 			goto out;
+		wired = TRUE;
 	} else if (!strcmp (type, NM_SETTING_WIRELESS_SETTING_NAME)) {
 		if (!write_wireless_setting (connection, ifcfg, &no_8021x, error))
 			goto out;
@@ -746,7 +797,7 @@ write_connection (NMConnection *connection,
 	}
 
 	if (!no_8021x) {
-		if (!write_8021x_setting (connection, ifcfg, error))
+		if (!write_8021x_setting (connection, ifcfg, wired, error))
 			goto out;
 	}
 
