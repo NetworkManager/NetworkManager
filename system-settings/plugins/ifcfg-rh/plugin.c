@@ -476,7 +476,7 @@ add_connection (NMSystemConfigInterface *config,
                 NMConnection *connection,
                 GError **error)
 {
-	return write_connection (connection, IFCFG_DIR, NULL, NULL, error);
+	return writer_new_connection (connection, IFCFG_DIR, NULL, error);
 }
 
 #define SC_NETWORK_FILE SYSCONFDIR"/sysconfig/network"

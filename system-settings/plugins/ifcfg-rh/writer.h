@@ -25,10 +25,15 @@
 #include <glib.h>
 #include <nm-connection.h>
 
-gboolean write_connection (NMConnection *connection,
-                           const char *ifcfg_dir,
-                           const char *filename,
-                           const char *keyfile,
-                           GError **error);
+gboolean writer_new_connection (NMConnection *connection,
+                                const char *ifcfg_dir,
+                                char **out_filename,
+                                GError **error);
+
+gboolean writer_update_connection (NMConnection *connection,
+                                   const char *ifcfg_dir,
+                                   const char *filename,
+                                   const char *keyfile,
+                                   GError **error);
 
 #endif /* _WRITER_H_ */

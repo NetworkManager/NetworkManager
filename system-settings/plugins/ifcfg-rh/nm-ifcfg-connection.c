@@ -329,11 +329,11 @@ update (NMExportedConnection *exported, GHashTable *new_settings, GError **error
 		connection = nm_exported_connection_get_connection (exported);
 		success = nm_connection_replace_settings (connection, new_settings, error);
 		if (success) {
-			success = write_connection (connection,
-			                            IFCFG_DIR,
-			                            priv->filename,
-			                            priv->keyfile,
-			                            error);
+			success = writer_update_connection (connection,
+			                                    IFCFG_DIR,
+			                                    priv->filename,
+			                                    priv->keyfile,
+			                                    error);
 		}
 	}
 

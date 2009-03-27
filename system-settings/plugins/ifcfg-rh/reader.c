@@ -167,12 +167,14 @@ make_connection_setting (const char *file,
 	value = svGetValue (ifcfg, "LAST_CONNECT", FALSE);
 	if (value) {
 		unsigned long int tmp;
+		guint64 timestamp;
 
 		errno = 0;
 		tmp = strtoul (value, NULL, 10);
-		if (errno == 0)
-			g_object_set (s_con, NM_SETTING_CONNECTION_TIMESTAMP, tmp, NULL);
-		else
+		if (errno == 0) {
+			timestamp = (guint64) tmp;
+			g_object_set (s_con, NM_SETTING_CONNECTION_TIMESTAMP, timestamp, NULL);
+		} else
 			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: invalid LAST_CONNECT time");
 		g_free (value);
 	}
@@ -181,58 +183,163 @@ make_connection_setting (const char *file,
 	return NM_SETTING (s_con);
 }
 
-static void
-get_one_ip4_addr (shvarFile *ifcfg,
+static gboolean
+read_ip4_address (shvarFile *ifcfg,
                   const char *tag,
                   guint32 *out_addr,
                   GError **error)
 {
 	char *value = NULL;
 	struct in_addr ip4_addr;
+	gboolean success = FALSE;
 
-	g_return_if_fail (ifcfg != NULL);
-	g_return_if_fail (tag != NULL);
-	g_return_if_fail (out_addr != NULL);
-	g_return_if_fail (*out_addr == 0);
-	g_return_if_fail (error != NULL);
-	g_return_if_fail (*error == NULL);
+	g_return_val_if_fail (ifcfg != NULL, FALSE);
+	g_return_val_if_fail (tag != NULL, FALSE);
+	g_return_val_if_fail (out_addr != NULL, FALSE);
+	g_return_val_if_fail (error != NULL, FALSE);
+	g_return_val_if_fail (*error == NULL, FALSE);
+
+	*out_addr = 0;
 
 	value = svGetValue (ifcfg, tag, FALSE);
 	if (!value)
-		return;
+		return TRUE;
 
-	if (inet_pton (AF_INET, value, &ip4_addr) > 0)
+	if (inet_pton (AF_INET, value, &ip4_addr) > 0) {
 		*out_addr = ip4_addr.s_addr;
-	else {
+		success = TRUE;
+	} else {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Invalid %s IP4 address '%s'", tag, value);
 	}
 	g_free (value);
+	return success;
 }
 
-#define GET_ONE_DNS(tag) \
-	{ \
-		guint32 dns = 0; \
-		get_one_ip4_addr (ifcfg, tag, &dns, error); \
-		if (*error) \
-			goto error; \
-		if (dns) { \
-			if (!nm_setting_ip4_config_add_dns (s_ip4, dns)) \
-				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate DNS server %s", tag); \
-		} \
+static NMIP4Address *
+read_full_ip4_address (shvarFile *ifcfg,
+                       const char *network_file,
+                       guint32 which,
+                       GError **error)
+{
+	NMIP4Address *addr;
+	char *ip_tag, *prefix_tag, *netmask_tag, *gw_tag;
+	guint32 tmp;
+	gboolean success = FALSE;
+	shvarFile *network_ifcfg;
+	char *value;
+
+	g_return_val_if_fail (which > 0, NULL);
+	g_return_val_if_fail (ifcfg != NULL, NULL);
+	g_return_val_if_fail (network_file != NULL, NULL);
+
+	addr = nm_ip4_address_new ();
+	if (which == 1) {
+		ip_tag = g_strdup ("IPADDR");
+		prefix_tag = g_strdup ("PREFIX");
+		netmask_tag = g_strdup ("NETMASK");
+		gw_tag = g_strdup ("GATEWAY");
+	} else {
+		ip_tag = g_strdup_printf ("IPADDR%u", which);
+		prefix_tag = g_strdup_printf ("PREFIX%u", which);
+		netmask_tag = g_strdup_printf ("NETMASK%u", which);
+		gw_tag = g_strdup_printf ("GATEWAY%u", which);
 	}
-		
+
+	/* IP address */
+	if (!read_ip4_address (ifcfg, ip_tag, &tmp, error))
+		goto error;
+	if (!tmp) {
+		nm_ip4_address_unref (addr);
+		addr = NULL;
+		success = TRUE;  /* done */
+		goto error;
+	}
+	nm_ip4_address_set_address (addr, tmp);
+
+	/* Gateway */
+	if (!read_ip4_address (ifcfg, gw_tag, &tmp, error))
+		goto error;
+	if (tmp)
+		nm_ip4_address_set_gateway (addr, tmp);
+	else {
+		gboolean read_success;
+
+		/* If no gateway in the ifcfg, try /etc/sysconfig/network instead */
+		network_ifcfg = svNewFile (network_file);
+		if (network_ifcfg) {
+			read_success = read_ip4_address (network_ifcfg, "GATEWAY", &tmp, error);
+			svCloseFile (network_ifcfg);
+			if (!read_success)
+				goto error;
+			nm_ip4_address_set_gateway (addr, tmp);
+		}
+	}
+
+	/* Prefix */
+	value = svGetValue (ifcfg, prefix_tag, FALSE);
+	if (value) {
+		long int prefix;
+
+		errno = 0;
+		prefix = strtol (value, NULL, 10);
+		if (errno || prefix <= 0 || prefix > 32) {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Invalid IP4 prefix '%s'", value);
+			g_free (value);
+			goto error;
+		}
+		nm_ip4_address_set_prefix (addr, (guint32) prefix);
+		g_free (value);
+	}
+
+	/* Fall back to NETMASK if no PREFIX was specified */
+	if (!nm_ip4_address_get_prefix (addr)) {
+		if (!read_ip4_address (ifcfg, netmask_tag, &tmp, error))
+			goto error;
+		nm_ip4_address_set_prefix (addr, nm_utils_ip4_netmask_to_prefix (tmp));
+	}
+
+	/* Validate the prefix */
+	if (  !nm_ip4_address_get_prefix (addr)
+	    || nm_ip4_address_get_prefix (addr) > 32) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Missing or invalid IP4 prefix '%d'",
+		             nm_ip4_address_get_prefix (addr));
+		goto error;
+	}
+
+	success = TRUE;
+
+error:
+	if (!success) {
+		nm_ip4_address_unref (addr);
+		addr = NULL;
+	}
+
+	g_free (ip_tag);
+	g_free (prefix_tag);
+	g_free (netmask_tag);
+	g_free (gw_tag);
+	return addr;
+}
 
 static NMSetting *
 make_ip4_setting (shvarFile *ifcfg, const char *network_file, GError **error)
 {
 	NMSettingIP4Config *s_ip4 = NULL;
 	char *value = NULL;
-	NMIP4Address *addr = NULL;
 	char *method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
-	guint32 netmask = 0, tmp = 0;
+	guint32 i;
 	shvarFile *network_ifcfg;
-	gboolean never_default = FALSE;
+	gboolean never_default = FALSE, tmp_success;
+
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	if (!s_ip4) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Could not allocate IP4 setting");
+		return NULL;
+	}
 
 	network_ifcfg = svNewFile (network_file);
 	if (network_ifcfg) {
@@ -259,7 +366,6 @@ make_ip4_setting (shvarFile *ifcfg, const char *network_file, GError **error)
 			method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
 		else if (!g_ascii_strcasecmp (value, "autoip")) {
 			g_free (value);
-			s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
 			g_object_set (s_ip4,
 			              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
 			              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default,
@@ -267,7 +373,6 @@ make_ip4_setting (shvarFile *ifcfg, const char *network_file, GError **error)
 			return NM_SETTING (s_ip4);
 		} else if (!g_ascii_strcasecmp (value, "shared")) {
 			g_free (value);
-			s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
 			g_object_set (s_ip4,
 			              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_SHARED,
 			              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default,
@@ -295,94 +400,56 @@ make_ip4_setting (shvarFile *ifcfg, const char *network_file, GError **error)
 		g_free (tmp_netmask);
 	}
 
-	/* Handle manual settings */
-	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
-		addr = nm_ip4_address_new ();
-
-		tmp = 0;
-		get_one_ip4_addr (ifcfg, "IPADDR", &tmp, error);
-		if (*error)
-			goto error;
-		nm_ip4_address_set_address (addr, tmp);
-
-		tmp = 0;
-		get_one_ip4_addr (ifcfg, "GATEWAY", &tmp, error);
-		if (*error)
-			goto error;
-		nm_ip4_address_set_gateway (addr, tmp);
-
-		/* If no gateway in the ifcfg, try /etc/sysconfig/network instead */
-		if (!nm_ip4_address_get_gateway (addr)) {
-			network_ifcfg = svNewFile (network_file);
-			if (network_ifcfg) {
-				tmp = 0;
-				get_one_ip4_addr (network_ifcfg, "GATEWAY", &tmp, error);
-				svCloseFile (network_ifcfg);
-				if (*error)
-					goto error;
-				nm_ip4_address_set_gateway (addr, tmp);
-			}
-		}
-
-		value = svGetValue (ifcfg, "PREFIX", FALSE);
-		if (value) {
-			long int prefix;
-
-			errno = 0;
-			prefix = strtol (value, NULL, 10);
-			if (errno || prefix <= 0 || prefix > 32) {
-				g_set_error (error, ifcfg_plugin_error_quark (), 0,
-				             "Invalid IP4 prefix '%s'", value);
-				g_free (value);
-				goto error;
-			}
-			nm_ip4_address_set_prefix (addr, (guint32) prefix);
-			g_free (value);
-		}
-
-		/* Fall back to NETMASK if no PREFIX was specified */
-		if (!nm_ip4_address_get_prefix (addr)) {
-			netmask = 0;
-			get_one_ip4_addr (ifcfg, "NETMASK", &netmask, error);
-			if (*error)
-				goto error;
-			nm_ip4_address_set_prefix (addr, nm_utils_ip4_netmask_to_prefix (netmask));
-		}
-
-		/* Validate the prefix */
-		if (  !nm_ip4_address_get_prefix (addr)
-		    || nm_ip4_address_get_prefix (addr) > 32) {
-			g_set_error (error, ifcfg_plugin_error_quark (), 0,
-			             "Missing or invalid IP4 prefix '%d'",
-			             nm_ip4_address_get_prefix (addr));
-			goto error;
-		}
-	}
-
-	/* Yay, let's make an IP4 config */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
 	g_object_set (s_ip4,
 	              NM_SETTING_IP4_CONFIG_METHOD, method,
-	              NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS, !svTrueValue (ifcfg, "PEERDNS", 1),
+	              NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS, !svTrueValue (ifcfg, "PEERDNS", TRUE),
+	              NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES, !svTrueValue (ifcfg, "PEERROUTES", TRUE),
 	              NM_SETTING_IP4_CONFIG_NEVER_DEFAULT, never_default,
 	              NULL);
 
-	/* DHCP hostname for 'send host-name' option */
-	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
+	/* Handle manual settings */
+	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
+		NMIP4Address *addr;
+
+		for (i = 1; i < 256; i++) {
+			addr = read_full_ip4_address (ifcfg, network_file, i, error);
+			if (error && *error)
+				goto error;
+			if (!addr)
+				break;
+
+			if (!nm_setting_ip4_config_add_address (s_ip4, addr))
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate IP4 address");
+			nm_ip4_address_unref (addr);
+		}
+	} else if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
 		value = svGetValue (ifcfg, "DHCP_HOSTNAME", FALSE);
 		if (value && strlen (value))
 			g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, value, NULL);
 		g_free (value);
+
+		value = svGetValue (ifcfg, "DHCP_CLIENT_IDENTIFIER", FALSE);
+		if (value && strlen (value))
+			g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID, value, NULL);
+		g_free (value);
 	}
 
-	if (addr) {
-		if (!nm_setting_ip4_config_add_address (s_ip4, addr))
-			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate IP4 address");
-	}
+	/* DNS servers */
+	for (i = 1, tmp_success = TRUE; i <= 10 && tmp_success; i++) {
+		char *tag;
+		guint32 dns;
 
-	GET_ONE_DNS("DNS1");
-	GET_ONE_DNS("DNS2");
-	GET_ONE_DNS("DNS3");
+		tag = g_strdup_printf ("DNS%u", i);
+		tmp_success = read_ip4_address (ifcfg, tag, &dns, error);
+		if (!tmp_success) {
+			g_free (tag);
+			goto error;
+		}
+
+		if (dns && !nm_setting_ip4_config_add_dns (s_ip4, dns))
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    warning: duplicate DNS server %s", tag);
+		g_free (tag);
+	}
 
 	/* DNS searches */
 	value = svGetValue (ifcfg, "DOMAIN", FALSE);
@@ -424,16 +491,10 @@ make_ip4_setting (shvarFile *ifcfg, const char *network_file, GError **error)
 		}
 	}
 
-	if (addr)
-		nm_ip4_address_unref (addr);
-
 	return NM_SETTING (s_ip4);
 
 error:
-	if (addr)
-		nm_ip4_address_unref (addr);
-	if (s_ip4)
-		g_object_unref (s_ip4);
+	g_object_unref (s_ip4);
 	return NULL;
 }
 
