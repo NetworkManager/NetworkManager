@@ -566,7 +566,7 @@ nm_utils_convert_strv_to_slist (const GValue *src_value, GValue *dest_value)
 
 	str = (char **) g_value_get_boxed (src_value);
 
-	while (str[i])
+	while (str && str[i])
 		list = g_slist_prepend (list, g_strdup (str[i++]));
 
 	g_value_take_boxed (dest_value, g_slist_reverse (list));
@@ -642,7 +642,7 @@ nm_utils_convert_ip4_addr_struct_array_to_string (const GValue *src_value, GValu
 	ptr_array = (GPtrArray *) g_value_get_boxed (src_value);
 
 	printable = g_string_new ("[");
-	while (i < ptr_array->len) {
+	while (ptr_array && (i < ptr_array->len)) {
 		GArray *array;
 		char buf[INET_ADDRSTRLEN + 1];
 		struct in_addr addr;
@@ -755,14 +755,16 @@ nm_utils_convert_byte_array_to_string (const GValue *src_value, GValue *dest_val
 	array = (GArray *) g_value_get_boxed (src_value);
 
 	printable = g_string_new ("[");
-	while (array && (i < MIN (array->len, 35))) {
-		if (i > 0)
-			g_string_append_c (printable, ' ');
-		g_string_append_printf (printable, "0x%02X",
-		                        g_array_index (array, unsigned char, i++));
+	if (array) {
+		while (i < MIN (array->len, 35)) {
+			if (i > 0)
+				g_string_append_c (printable, ' ');
+			g_string_append_printf (printable, "0x%02X",
+			                        g_array_index (array, unsigned char, i++));
+		}
+		if (i < array->len)
+			g_string_append (printable, " ... ");
 	}
-	if (i < array->len)
-		g_string_append (printable, " ... ");
 	g_string_append_c (printable, ']');
 
 	g_value_take_string (dest_value, printable->str);
