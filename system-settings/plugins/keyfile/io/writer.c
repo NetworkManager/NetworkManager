@@ -443,7 +443,7 @@ write_connection (NMConnection *connection,
 		unlink (path);
 	} else {
 		err = chmod (path, S_IRUSR | S_IWUSR);
-		if (err > 0) {
+		if (err) {
 			g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INTERNAL_ERROR,
 			             "%s.%d: error setting permissions on '%s': %d", __FILE__,
 			             __LINE__, path, errno);
