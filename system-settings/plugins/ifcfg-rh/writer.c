@@ -525,9 +525,13 @@ write_connection_setting (NMSettingConnection *s_con, shvarFile *ifcfg)
 	svSetValue (ifcfg, "ONBOOT",
 	            nm_setting_connection_get_autoconnect (s_con) ? "yes" : "no",
 	            FALSE);
-	tmp = g_strdup_printf ("%llu", nm_setting_connection_get_timestamp (s_con));
-	svSetValue (ifcfg, "LAST_CONNECT", tmp, FALSE);
-	g_free (tmp);
+
+	svSetValue (ifcfg, "LAST_CONNECT", NULL, FALSE);
+	if (nm_setting_connection_get_timestamp (s_con)) {
+		tmp = g_strdup_printf ("%llu", nm_setting_connection_get_timestamp (s_con));
+		svSetValue (ifcfg, "LAST_CONNECT", tmp, FALSE);
+		g_free (tmp);
+	}
 }
 
 static gboolean
