@@ -428,7 +428,7 @@ make_ip4_setting (shvarFile *ifcfg, const char *network_file, GError **error)
 			g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, value, NULL);
 		g_free (value);
 
-		value = svGetValue (ifcfg, "DHCP_CLIENT_IDENTIFIER", FALSE);
+		value = svGetValue (ifcfg, "DHCP_CLIENT_ID", FALSE);
 		if (value && strlen (value))
 			g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID, value, NULL);
 		g_free (value);
