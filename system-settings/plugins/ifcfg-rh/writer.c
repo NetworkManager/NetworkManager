@@ -227,7 +227,7 @@ write_8021x_setting (NMConnection *connection,
 {
 	NMSetting8021x *s_8021x;
 	const char *value;
-	char *tmp;
+	char *tmp = NULL;
 	gboolean success = FALSE, is_pkcs12 = FALSE, wrote;
 	GString *phase2_auth;
 
@@ -361,7 +361,7 @@ write_wireless_security_setting (NMConnection *connection,
 {
 	NMSettingWirelessSecurity *s_wsec;
 	const char *key_mgmt, *auth_alg, *key, *proto, *cipher, *psk;
-	gboolean wep = FALSE, wpa = FALSE, first;
+	gboolean wep = FALSE, wpa = FALSE;
 	char *tmp;
 	guint32 i, num;
 	GString *str;
@@ -443,8 +443,8 @@ write_wireless_security_setting (NMConnection *connection,
 	svSetValue (ifcfg, "CIPHER_PAIRWISE", NULL, FALSE);
 	str = g_string_new (NULL);
 	num = nm_setting_wireless_security_get_num_pairwise (s_wsec);
-	for (i = 0, first = TRUE; i < num; i++) {
-		if (!first)
+	for (i = 0; i < num; i++) {
+		if (i > 0)
 			g_string_append_c (str, ' ');
 		cipher = nm_setting_wireless_security_get_pairwise (s_wsec, i);
 		tmp = g_ascii_strup (cipher, -1);
@@ -459,8 +459,8 @@ write_wireless_security_setting (NMConnection *connection,
 	svSetValue (ifcfg, "CIPHER_GROUP", NULL, FALSE);
 	str = g_string_new (NULL);
 	num = nm_setting_wireless_security_get_num_groups (s_wsec);
-	for (i = 0, first = TRUE; i < num; i++) {
-		if (!first)
+	for (i = 0; i < num; i++) {
+		if (i > 0)
 			g_string_append_c (str, ' ');
 		cipher = nm_setting_wireless_security_get_group (s_wsec, i);
 		tmp = g_ascii_strup (cipher, -1);

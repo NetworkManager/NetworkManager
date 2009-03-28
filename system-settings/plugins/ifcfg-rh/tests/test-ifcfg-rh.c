@@ -3974,7 +3974,11 @@ test_write_wifi_wep (void)
 }
 
 static void
-test_write_wifi_wpa_psk (void)
+test_write_wifi_wpa_psk (const char *name,
+                         const char *test_name,
+                         gboolean wep_group,
+                         gboolean wpa,
+                         gboolean wpa2)
 {
 	NMConnection *connection;
 	NMConnection *reread;
@@ -3982,7 +3986,7 @@ test_write_wifi_wpa_psk (void)
 	NMSettingWireless *s_wifi;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIP4Config *s_ip4;
-	char *uuid;
+	char *uuid, *tmp;
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
@@ -3994,18 +3998,18 @@ test_write_wifi_wpa_psk (void)
 
 	connection = nm_connection_new ();
 	ASSERT (connection != NULL,
-	        "wifi-wpa-psk-write", "failed to allocate new connection");
+	        test_name, "failed to allocate new connection");
 
 	/* Connection setting */
 	s_con = (NMSettingConnection *) nm_setting_connection_new ();
 	ASSERT (s_con != NULL,
-	        "wifi-wpa-psk-write", "failed to allocate new %s setting",
+	        test_name, "failed to allocate new %s setting",
 	        NM_SETTING_CONNECTION_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_con));
 
 	uuid = nm_utils_uuid_generate ();
 	g_object_set (s_con,
-	              NM_SETTING_CONNECTION_ID, "Test Write Wifi WPA PSK",
+	              NM_SETTING_CONNECTION_ID, name,
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
 	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
@@ -4015,7 +4019,7 @@ test_write_wifi_wpa_psk (void)
 	/* Wifi setting */
 	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
 	ASSERT (s_wifi != NULL,
-	        "wifi-wpa-psk-write", "failed to allocate new %s setting",
+	        test_name, "failed to allocate new %s setting",
 	        NM_SETTING_WIRELESS_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
 
@@ -4033,7 +4037,7 @@ test_write_wifi_wpa_psk (void)
 	/* Wireless security setting */
 	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
 	ASSERT (s_wsec != NULL,
-			"wifi-wpa-psk-write", "failed to allocate new %s setting",
+			test_name, "failed to allocate new %s setting",
 			NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
 
@@ -4041,21 +4045,33 @@ test_write_wifi_wpa_psk (void)
 	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk",
 	              NM_SETTING_WIRELESS_SECURITY_PSK, "7d308b11df1b4243b0f78e5f3fc68cdbb9a264ed0edf4c188edf329ff5b467f0",
 	              NULL);
-	nm_setting_wireless_security_add_proto (s_wsec, "wpa");
-	nm_setting_wireless_security_add_pairwise (s_wsec, "tkip");
-	nm_setting_wireless_security_add_group (s_wsec, "tkip");
+
+	if (wep_group) {
+		nm_setting_wireless_security_add_group (s_wsec, "wep40");
+		nm_setting_wireless_security_add_group (s_wsec, "wep104");
+	}
+	if (wpa) {
+		nm_setting_wireless_security_add_proto (s_wsec, "wpa");
+		nm_setting_wireless_security_add_pairwise (s_wsec, "tkip");
+		nm_setting_wireless_security_add_group (s_wsec, "tkip");
+	}
+	if (wpa2) {
+		nm_setting_wireless_security_add_proto (s_wsec, "rsn");
+		nm_setting_wireless_security_add_pairwise (s_wsec, "ccmp");
+		nm_setting_wireless_security_add_group (s_wsec, "ccmp");
+	}
 
 	/* IP4 setting */
 	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
 	ASSERT (s_ip4 != NULL,
-			"wifi-wpa-psk-write", "failed to allocate new %s setting",
+			test_name, "failed to allocate new %s setting",
 			NM_SETTING_IP4_CONFIG_SETTING_NAME);
 	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
 
 	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
 
 	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "wifi-wpa-psk-write", "failed to verify connection: %s",
+	        test_name, "failed to verify connection: %s",
 	        (error && error->message) ? error->message : "(unknown)");
 
 	/* Save the ifcfg */
@@ -4064,11 +4080,11 @@ test_write_wifi_wpa_psk (void)
 	                                 &testfile,
 	                                 &error);
 	ASSERT (success == TRUE,
-	        "wifi-wpa-psk-write", "failed to write connection to disk: %s",
+	        test_name, "failed to write connection to disk: %s",
 	        (error && error->message) ? error->message : "(unknown)");
 
 	ASSERT (testfile != NULL,
-	        "wifi-wpa-psk-write", "didn't get ifcfg file path back after writing connection");
+	        test_name, "didn't get ifcfg file path back after writing connection");
 
 	/* re-read the connection for comparison */
 	reread = connection_from_file (testfile,
@@ -4080,143 +4096,20 @@ test_write_wifi_wpa_psk (void)
 	                               &ignore_error);
 	unlink (testfile);
 
+	tmp = g_strdup_printf ("%s-reread", test_name);
 	ASSERT (keyfile != NULL,
-	        "wifi-open-write-reread", "expected keyfile for '%s'", testfile);
+	        tmp, "expected keyfile for '%s'", testfile);
 	unlink (keyfile);
 
 	ASSERT (reread != NULL,
-	        "wifi-wpa-psk-write-reread", "failed to read %s: %s", testfile, error->message);
+	        tmp, "failed to read %s: %s", testfile, error->message);
 
 	ASSERT (nm_connection_verify (reread, &error),
-	        "wifi-wpa-psk-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
+	        tmp, "failed to verify %s: %s", testfile, error->message);
+	g_free (tmp);
 
 	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "wifi-wpa-psk-write", "written and re-read connection weren't the same.");
-
-	g_free (testfile);
-	g_object_unref (connection);
-	g_object_unref (reread);
-}
-
-static void
-test_write_wifi_wpa2_psk (void)
-{
-	NMConnection *connection;
-	NMConnection *reread;
-	NMSettingConnection *s_con;
-	NMSettingWireless *s_wifi;
-	NMSettingWirelessSecurity *s_wsec;
-	NMSettingIP4Config *s_ip4;
-	char *uuid;
-	gboolean success;
-	GError *error = NULL;
-	char *testfile = NULL;
-	gboolean unmanaged = FALSE;
-	char *keyfile = NULL;
-	gboolean ignore_error = FALSE;
-	GByteArray *ssid;
-	const unsigned char ssid_data[] = "blahblah";
-
-	connection = nm_connection_new ();
-	ASSERT (connection != NULL,
-	        "wifi-wpa2-psk-write", "failed to allocate new connection");
-
-	/* Connection setting */
-	s_con = (NMSettingConnection *) nm_setting_connection_new ();
-	ASSERT (s_con != NULL,
-	        "wifi-wpa2-psk-write", "failed to allocate new %s setting",
-	        NM_SETTING_CONNECTION_SETTING_NAME);
-	nm_connection_add_setting (connection, NM_SETTING (s_con));
-
-	uuid = nm_utils_uuid_generate ();
-	g_object_set (s_con,
-	              NM_SETTING_CONNECTION_ID, "Test Write Wifi WPA2 PSK",
-	              NM_SETTING_CONNECTION_UUID, uuid,
-	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
-	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
-	              NULL);
-	g_free (uuid);
-
-	/* Wifi setting */
-	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
-	ASSERT (s_wifi != NULL,
-	        "wifi-wpa2-psk-write", "failed to allocate new %s setting",
-	        NM_SETTING_WIRELESS_SETTING_NAME);
-	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
-
-	ssid = g_byte_array_sized_new (sizeof (ssid_data));
-	g_byte_array_append (ssid, ssid_data, sizeof (ssid_data));
-
-	g_object_set (s_wifi,
-	              NM_SETTING_WIRELESS_SSID, ssid,
-	              NM_SETTING_WIRELESS_MODE, "infrastructure",
-	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
-	              NULL);
-
-	g_byte_array_free (ssid, TRUE);
-
-	/* Wireless security setting */
-	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
-	ASSERT (s_wsec != NULL,
-			"wifi-wpa2-psk-write", "failed to allocate new %s setting",
-			NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
-	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
-
-	g_object_set (s_wsec,
-	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk",
-	              NM_SETTING_WIRELESS_SECURITY_PSK, "7d308b11df1b4243b0f78e5f3fc68cdbb9a264ed0edf4c188edf329ff5b467f0",
-	              NULL);
-	nm_setting_wireless_security_add_proto (s_wsec, "rsn");
-	nm_setting_wireless_security_add_pairwise (s_wsec, "ccmp");
-	nm_setting_wireless_security_add_group (s_wsec, "ccmp");
-
-	/* IP4 setting */
-	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
-	ASSERT (s_ip4 != NULL,
-			"wifi-wpa2-psk-write", "failed to allocate new %s setting",
-			NM_SETTING_IP4_CONFIG_SETTING_NAME);
-	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
-
-	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
-
-	ASSERT (nm_connection_verify (connection, &error) == TRUE,
-	        "wifi-wpa2-psk-write", "failed to verify connection: %s",
-	        (error && error->message) ? error->message : "(unknown)");
-
-	/* Save the ifcfg */
-	success = writer_new_connection (connection,
-	                                 TEST_DIR "/network-scripts/",
-	                                 &testfile,
-	                                 &error);
-	ASSERT (success == TRUE,
-	        "wifi-wpa2-psk-write", "failed to write connection to disk: %s",
-	        (error && error->message) ? error->message : "(unknown)");
-
-	ASSERT (testfile != NULL,
-	        "wifi-wpa2-psk-write", "didn't get ifcfg file path back after writing connection");
-
-	/* re-read the connection for comparison */
-	reread = connection_from_file (testfile,
-	                               NULL,
-	                               TYPE_WIRELESS,
-	                               &unmanaged,
-	                               &keyfile,
-	                               &error,
-	                               &ignore_error);
-	unlink (testfile);
-
-	ASSERT (keyfile != NULL,
-	        "wifi-open-write-reread", "expected keyfile for '%s'", testfile);
-	unlink (keyfile);
-
-	ASSERT (reread != NULL,
-	        "wifi-wpa2-psk-write-reread", "failed to read %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_verify (reread, &error),
-	        "wifi-wpa2-psk-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
-
-	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
-	        "wifi-wpa2-psk-write", "written and re-read connection weren't the same.");
+	        test_name, "written and re-read connection weren't the same.");
 
 	g_free (testfile);
 	g_object_unref (connection);
@@ -4270,8 +4163,10 @@ int main (int argc, char **argv)
 	test_write_wifi_open ();
 	test_write_wifi_open_hex_ssid ();
 	test_write_wifi_wep ();
-	test_write_wifi_wpa_psk ();
-	test_write_wifi_wpa2_psk ();
+	test_write_wifi_wpa_psk ("Test Write Wifi WPA PSK", "wifi-wpa-psk-write", FALSE, TRUE, FALSE);
+	test_write_wifi_wpa_psk ("Test Write Wifi WPA2 PSK", "wifi-wpa2-psk-write", FALSE, FALSE, TRUE);
+	test_write_wifi_wpa_psk ("Test Write Wifi WPA WPA2 PSK", "wifi-wpa-wpa2-psk-write", FALSE, TRUE, TRUE);
+	test_write_wifi_wpa_psk ("Test Write Wifi WEP WPA WPA2 PSK", "wifi-wep-wpa-wpa2-psk-write", TRUE, TRUE, TRUE);
 
 	basename = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", basename);
