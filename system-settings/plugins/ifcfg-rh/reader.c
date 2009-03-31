@@ -973,6 +973,7 @@ eap_tls_reader (const char *eap_method,
                 gboolean phase2,
                 GError **error)
 {
+	char *value;
 	char *ca_cert = NULL;
 	char *real_path = NULL;
 	char *client_cert = NULL;
@@ -980,6 +981,16 @@ eap_tls_reader (const char *eap_method,
 	char *privkey_password = NULL;
 	gboolean success = FALSE;
 	NMSetting8021xCKType privkey_type = NM_SETTING_802_1X_CK_TYPE_UNKNOWN;
+
+	value = svGetValue (ifcfg, "IEEE_8021X_IDENTITY", FALSE);
+	if (!value) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Missing IEEE_8021X_IDENTITY for EAP method '%s'.",
+		             eap_method);
+		return FALSE;
+	}
+	g_object_set (s_8021x, NM_SETTING_802_1X_IDENTITY, value, NULL);
+	g_free (value);
 
 	ca_cert = svGetValue (ifcfg,
 	                      phase2 ? "IEEE_8021X_INNER_CA_CERT" : "IEEE_8021X_CA_CERT",
@@ -1065,6 +1076,14 @@ eap_tls_reader (const char *eap_method,
 	 * same data as the private key, since pkcs12 files contain both.
 	 */
 	if (privkey_type == NM_SETTING_802_1X_CK_TYPE_PKCS12) {
+		/* Set the private key password if PKCS#12, because PKCS#12 doesn't get
+		 * decrypted when being stored in the Setting.
+		 */
+		if (phase2)
+			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD, privkey_password, NULL);
+		else
+			g_object_set (s_8021x, NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD, privkey_password, NULL);
+
 		if (phase2) {
 			if (!nm_setting_802_1x_set_phase2_client_cert_from_file (s_8021x, real_path, NULL, error))
 				goto done;
@@ -1083,12 +1102,6 @@ eap_tls_reader (const char *eap_method,
 			               NM_SETTING_802_1X_CLIENT_CERT);
 		}
 	} else {
-		/* Set the private key password if not PKCS#12 */
-		if (phase2)
-			g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD, privkey_password, NULL);
-		else
-			g_object_set (s_8021x, NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD, privkey_password, NULL);
-
 		/* Otherwise, private key is "traditional" OpenSSL format, so
 		 * client certificate will be a separate file.
 		 */

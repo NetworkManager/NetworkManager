@@ -40,6 +40,7 @@
 #include "reader.h"
 #include "writer.h"
 #include "utils.h"
+#include "crypto.h"
 
 #define PLUGIN_WARN(pname, fmt, args...) \
 	{ g_warning ("   " pname ": " fmt, ##args); }
@@ -142,74 +143,112 @@ out:
 	return success;
 }
 
+typedef struct ObjectType {
+	const char *setting_key;
+	const char *ifcfg_key;
+	const char *path_tag;
+	const char *hash_tag;
+	const char *suffix;
+} ObjectType;
+
+static const ObjectType ca_type = {
+	NM_SETTING_802_1X_CA_CERT,
+	"IEEE_8021X_CA_CERT",
+	TAG_CA_CERT_PATH,
+	TAG_CA_CERT_HASH,
+	"ca-cert.der"
+};
+
+static const ObjectType client_type = {
+	NM_SETTING_802_1X_CLIENT_CERT,
+	"IEEE_8021X_CLIENT_CERT",
+	TAG_CLIENT_CERT_PATH,
+	TAG_CLIENT_CERT_HASH,
+	"client-cert.der"
+};
+
+static const ObjectType pk_type = {
+	NM_SETTING_802_1X_PRIVATE_KEY,
+	"IEEE_8021X_PRIVATE_KEY",
+	TAG_PRIVATE_KEY_PATH,
+	TAG_PRIVATE_KEY_HASH,
+	"private-key.pem"
+};
+
+static const ObjectType p12_type = {
+	NM_SETTING_802_1X_PRIVATE_KEY,
+	"IEEE_8021X_PRIVATE_KEY",
+	TAG_PRIVATE_KEY_PATH,
+	TAG_PRIVATE_KEY_HASH,
+	"private-key.p12"
+};
+
 static gboolean
-write_cert (NMSetting8021x *s_8021x,
-            shvarFile *ifcfg,
-            const char *setting_key,
-            const char *ifcfg_key,
-            const char *path_tag,
-            const char *hash_tag,
-            const char *prefix,
-            gboolean is_pkcs12,
-            gboolean *wrote,
-            GError **error)
+write_object (NMSetting8021x *s_8021x,
+              shvarFile *ifcfg,
+              const GByteArray *object,
+              const ObjectType *objtype,
+              gboolean *wrote,
+              GError **error)
 {
 	const char *orig_hash, *orig_file;
 	char *new_hash = NULL, *new_file = NULL;
-	const GByteArray *cert = NULL;
 	gboolean success = FALSE;
 	GError *write_error = NULL;
 
+	g_return_val_if_fail (objtype != NULL, FALSE);
+	g_return_val_if_fail (ifcfg != NULL, FALSE);
+	g_return_val_if_fail (wrote != NULL, FALSE);
+
 	*wrote = FALSE;
 
-	g_object_get (G_OBJECT (s_8021x), setting_key, &cert, NULL);
-	if (!cert) {
-		svSetValue (ifcfg, ifcfg_key, NULL, FALSE);
+	if (!object) {
+		svSetValue (ifcfg, objtype->ifcfg_key, NULL, FALSE);
 		return TRUE;
 	}
 
-	new_hash = utils_hash_byte_array (cert);
+	new_hash = utils_hash_byte_array (object);
 	if (!new_hash) {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
-		             "Could not hash certificate data for %s / %s",
-		             NM_SETTING_802_1X_SETTING_NAME, setting_key);
+		             "Could not hash certificate/key data for %s / %s",
+		             NM_SETTING_802_1X_SETTING_NAME, objtype->setting_key);
 		return FALSE;
 	}
 
-	orig_hash = g_object_get_data (G_OBJECT (s_8021x), TAG_CA_CERT_HASH);
-	orig_file = g_object_get_data (G_OBJECT (s_8021x), TAG_CA_CERT_PATH);
+	orig_hash = g_object_get_data (G_OBJECT (s_8021x), objtype->hash_tag);
+	orig_file = g_object_get_data (G_OBJECT (s_8021x), objtype->path_tag);
 
 	if (!orig_hash || !orig_file || strcmp (new_hash, orig_hash)) {
 		/* if the cert data has changed, or there wasn't a cert
 		 * originally, write data out to the standard file.
 		 */
-		new_file = utils_cert_path (ifcfg->fileName, prefix, is_pkcs12 ? "p12" : "der");
+		new_file = utils_cert_path (ifcfg->fileName, objtype->suffix);
 		if (!new_file) {
 			g_set_error (error, ifcfg_plugin_error_quark (), 0,
 			             "Could not create file path for %s / %s",
-			             NM_SETTING_802_1X_SETTING_NAME, setting_key);
+			             NM_SETTING_802_1X_SETTING_NAME, objtype->setting_key);
 			goto out;
 		}
 
-		if (!write_secret_file (new_file, (const char *) cert->data, cert->len, &write_error)) {
+		if (!write_secret_file (new_file, (const char *) object->data, object->len, &write_error)) {
 			g_set_error (error, ifcfg_plugin_error_quark (), 0,
-			             "Could not write certificate for %s / %s: %s",
-			             NM_SETTING_802_1X_SETTING_NAME, setting_key,
+			             "Could not write certificate/key for %s / %s: %s",
+			             NM_SETTING_802_1X_SETTING_NAME, objtype->setting_key,
 			             (write_error && write_error->message) ? write_error->message : "(unknown)");
 			g_clear_error (&write_error);
 			goto out;
 		}
 		*wrote = TRUE;
 
-		svSetValue (ifcfg, ifcfg_key, new_file, FALSE);
-		g_object_set_data_full (G_OBJECT (s_8021x), path_tag, new_file, g_free);
+		svSetValue (ifcfg, objtype->ifcfg_key, new_file, FALSE);
+		g_object_set_data_full (G_OBJECT (s_8021x), objtype->path_tag, new_file, g_free);
 		new_file = NULL; /* g_object_set_data_full() took ownership */
 
-		g_object_set_data_full (G_OBJECT (s_8021x), hash_tag, new_hash, g_free);
+		g_object_set_data_full (G_OBJECT (s_8021x), objtype->hash_tag, new_hash, g_free);
 		new_hash = NULL; /* g_object_set_data_full() took ownership */
 	} else {
 		/* cert data hasn't changed */
-		svSetValue (ifcfg, ifcfg_key, orig_file, FALSE);
+		svSetValue (ifcfg, objtype->ifcfg_key, orig_file, FALSE);
 	}
 	success = TRUE;
 
@@ -230,6 +269,10 @@ write_8021x_setting (NMConnection *connection,
 	char *tmp = NULL;
 	gboolean success = FALSE, is_pkcs12 = FALSE, wrote;
 	GString *phase2_auth;
+	const GByteArray *data;
+	GByteArray *enc_key = NULL;
+	const char *password = NULL;
+	char *generated_pw = NULL;
 
 	s_8021x = (NMSetting8021x *) nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
 	if (!s_8021x) {
@@ -295,19 +338,16 @@ write_8021x_setting (NMConnection *connection,
 		g_free (tmp);
 	}
 
-	if (phase2_auth->len)
-		svSetValue (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS", phase2_auth->str, FALSE);
+	svSetValue (ifcfg, "IEEE_8021X_INNER_AUTH_METHODS",
+	            phase2_auth->len ? phase2_auth->str : NULL,
+	            FALSE);
+
 	g_string_free (phase2_auth, TRUE);
-	            
+
 	/* CA certificate */
-	if (!write_cert (s_8021x, ifcfg,
-	                 NM_SETTING_802_1X_CA_CERT,
-	                 "IEEE_8021X_CA_CERT",
-	                 TAG_CA_CERT_PATH,
-	                 TAG_CA_CERT_HASH,
-	                 "ca-cert",
-	                 FALSE, &wrote,
-	                 error))
+	data = NULL;
+	g_object_get (G_OBJECT (s_8021x), NM_SETTING_802_1X_CA_CERT, &data, NULL);
+	if (!write_object (s_8021x, ifcfg, data, &ca_type, &wrote, error))
 		goto out;
 
 	/* Private key */
@@ -315,40 +355,64 @@ write_8021x_setting (NMConnection *connection,
 		if (nm_setting_802_1x_get_private_key_type (s_8021x) == NM_SETTING_802_1X_CK_TYPE_PKCS12)
 			is_pkcs12 = TRUE;
 	}
-	if (!write_cert (s_8021x, ifcfg,
-	                 NM_SETTING_802_1X_PRIVATE_KEY,
-	                 "IEEE_8021X_PRIVATE_KEY",
-	                 TAG_PRIVATE_KEY_PATH,
-	                 TAG_PRIVATE_KEY_HASH,
-	                 "private-key",
-	                 is_pkcs12, &wrote,
-	                 error))
+
+	data = NULL;
+	g_object_get (G_OBJECT (s_8021x), NM_SETTING_802_1X_PRIVATE_KEY, &data, NULL);
+
+	password = nm_setting_802_1x_get_private_key_password (s_8021x);
+	if (data && !is_pkcs12) {
+		GByteArray *array;
+
+		if (!password) {
+			/* Create a random private key */
+			array = crypto_random (32, error);
+			if (!array)
+				goto out;
+
+			password = generated_pw = utils_bin2hexstr ((const char *) array->data, array->len, -1);
+			memset (array->data, 0, array->len);
+			g_byte_array_free (array, TRUE);
+		}
+
+		/* Re-encrypt the private key if it's not PKCS#12 (which never decrypted by NM) */
+		enc_key = crypto_key_to_pem (data, password, error);
+		if (!enc_key)
+			goto out;
+	}
+
+	if (!write_object (s_8021x,
+	                   ifcfg,
+	                   enc_key ? enc_key : data,
+	                   is_pkcs12 ? &p12_type : &pk_type,
+	                   &wrote,
+	                   error))
 		goto out;
 
-	if (is_pkcs12) {
-		svSetValue (ifcfg, "IEEE_8021X_PRIVATE_KEY_PASSWORD",
-		            nm_setting_802_1x_get_private_key_password (s_8021x), FALSE);
-	} else {
-		/* Clear the private key password for non-pkcs12 private keys that
-		 * we just wrote out, since it will be unencrypted.
-		 */
-		if (wrote)
-			svSetValue (ifcfg, "IEEE_8021X_PRIVATE_KEY_PASSWORD", NULL, FALSE);
+	/* Private key password */
+	set_secret (ifcfg, "IEEE_8021X_PRIVATE_KEY_PASSWORD", password);
 
-		/* Client certificate */
-		if (!write_cert (s_8021x, ifcfg,
-		                 NM_SETTING_802_1X_CA_CERT,
-		                 "IEEE_8021X_CA_CERT",
-		                 TAG_CA_CERT_PATH,
-		                 TAG_CA_CERT_HASH,
-		                 "ca-cert",
-		                 FALSE, &wrote,
-		                 error))
+	if (enc_key) {
+		memset (enc_key->data, 0, enc_key->len);
+		g_byte_array_free (enc_key, TRUE);
+	}
+
+	/* Client certificate */
+	if (is_pkcs12)
+		svSetValue (ifcfg, "IEEE_8021X_CLIENT_CERT", NULL, FALSE);
+	else {
+		data = NULL;
+		g_object_get (G_OBJECT (s_8021x), NM_SETTING_802_1X_CLIENT_CERT, &data, NULL);
+		if (!write_object (s_8021x, ifcfg, data, &client_type, &wrote, error))
 			goto out;
 	}
 	success = TRUE;
 
 out:
+	if (generated_pw) {
+		memset (generated_pw, 0, strlen (generated_pw));
+		g_free (generated_pw);
+	}
+
 	return success;
 }
 

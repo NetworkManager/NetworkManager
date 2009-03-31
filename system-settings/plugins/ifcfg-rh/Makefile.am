@@ -16,17 +16,20 @@ libifcfg_rh_io_la_SOURCES = \
 	errors.c \
 	common.h \
 	utils.c \
-	utils.h
+	utils.h \
+	crypto.c \
+	crypto.h
 
 libifcfg_rh_io_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
+	$(NSS_CFLAGS) \
 	-DG_DISABLE_DEPRECATED \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/libnm-util \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
 
-libifcfg_rh_io_la_LIBADD = $(GLIB_LIBS)
+libifcfg_rh_io_la_LIBADD = $(GLIB_LIBS) $(NSS_LIBS)
 
 libnm_settings_plugin_ifcfg_rh_la_SOURCES = \
 	plugin.c \
