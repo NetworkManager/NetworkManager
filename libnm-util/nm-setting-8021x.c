@@ -555,18 +555,18 @@ nm_setting_802_1x_set_private_key_from_file (NMSetting8021x *self,
 			priv->private_key_password = g_strdup (password);
 			if (out_ck_type)
 				*out_ck_type = NM_SETTING_802_1X_CK_TYPE_PKCS12;
+
+			/* As required by NM, set the client-cert property to the same PKCS#12 data */
+			if (priv->client_cert)
+				g_byte_array_free (priv->client_cert, TRUE);
+
+			priv->client_cert = g_byte_array_sized_new (priv->private_key->len);
+			g_byte_array_append (priv->client_cert, priv->private_key->data, priv->private_key->len);
 			break;
 		default:
 			g_assert_not_reached ();
 			break;
 		} 
-
-		/* As required by NM, set the client-cert property to the same PKCS#12 data */
-		if (priv->client_cert)
-			g_byte_array_free (priv->client_cert, TRUE);
-
-		priv->client_cert = g_byte_array_sized_new (priv->private_key->len);
-		g_byte_array_append (priv->client_cert, priv->private_key->data, priv->private_key->len);
 	} else {
 		/* As a special case for private keys, even if the decrypt fails,
 		 * return the key's file type.
@@ -649,18 +649,18 @@ nm_setting_802_1x_set_phase2_private_key_from_file (NMSetting8021x *self,
 			priv->phase2_private_key_password = g_strdup (password);
 			if (out_ck_type)
 				*out_ck_type = NM_SETTING_802_1X_CK_TYPE_PKCS12;
+
+			/* As required by NM, set the client-cert property to the same PKCS#12 data */
+			if (priv->phase2_client_cert)
+				g_byte_array_free (priv->phase2_client_cert, TRUE);
+
+			priv->phase2_client_cert = g_byte_array_sized_new (priv->phase2_private_key->len);
+			g_byte_array_append (priv->phase2_client_cert, priv->phase2_private_key->data, priv->phase2_private_key->len);
 			break;
 		default:
 			g_assert_not_reached ();
 			break;
 		} 
-
-		/* As required by NM, set the client-cert property to the same PKCS#12 data */
-		if (priv->phase2_client_cert)
-			g_byte_array_free (priv->phase2_client_cert, TRUE);
-
-		priv->phase2_client_cert = g_byte_array_sized_new (priv->phase2_private_key->len);
-		g_byte_array_append (priv->phase2_client_cert, priv->phase2_private_key->data, priv->phase2_private_key->len);
 	} else {
 		/* As a special case for private keys, even if the decrypt fails,
 		 * return the key's file type.
