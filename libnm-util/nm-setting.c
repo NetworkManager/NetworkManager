@@ -556,6 +556,7 @@ gboolean
 nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets, GError **error)
 {
 	UpdateSecretsInfo *info;
+	gboolean success;
 
 	g_return_val_if_fail (setting != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_SETTING (setting), FALSE);
@@ -567,9 +568,10 @@ nm_setting_update_secrets (NMSetting *setting, GHashTable *secrets, GError **err
 	info->setting = setting;
 	info->error = error;
 	g_hash_table_foreach (secrets, update_one_cb, info);
+	success = *(info->error) ? FALSE : TRUE;
 	g_free (info);
 
-	return *(info->error) ? FALSE : TRUE;
+	return success;
 }
 
 /**
