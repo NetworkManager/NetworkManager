@@ -1457,8 +1457,7 @@ static void
 sync_devices (NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *devices = NULL;
-	GSList *iter;
+	GSList *keep = NULL, *gone = NULL, *iter;
 
 	/* Keep devices still known to HAL; get rid of ones HAL no longer knows about */
 	for (iter = priv->devices; iter; iter = iter->next) {
@@ -1470,12 +1469,17 @@ sync_devices (NMManager *self)
 				nm_device_set_managed (device, TRUE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
 			else
 				nm_device_set_managed (device, FALSE, NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
-			devices = g_slist_prepend (devices, device);
+			keep = g_slist_append (keep, device);
 		} else
-			remove_one_device (self, device);
+			gone = g_slist_append (gone, device);
 	}
 	g_slist_free (priv->devices);
-	priv->devices = devices;
+	priv->devices = keep;
+
+	/* Dispose of devices no longer present */
+	for (iter = gone; iter; iter = g_slist_next (iter))
+		remove_one_device (self, NM_DEVICE (iter->data));
+	g_slist_free (gone);
 
 	/* Ask HAL for new devices */
 	nm_hal_manager_query_devices (priv->hal_mgr);
