@@ -37,15 +37,18 @@
 char *
 utils_bin2hexstr (const char *bytes, int len, int final_len)
 {
-	static char	hex_digits[] = "0123456789abcdef";
-	char *		result;
-	int			i;
+	static char hex_digits[] = "0123456789abcdef";
+	char *result;
+	int i;
+	gsize buflen = (len * 2) + 1;
 
 	g_return_val_if_fail (bytes != NULL, NULL);
 	g_return_val_if_fail (len > 0, NULL);
-	g_return_val_if_fail (len < 256, NULL);	/* Arbitrary limit */
+	g_return_val_if_fail (len < 4096, NULL);   /* Arbitrary limit */
+	if (final_len > -1)
+		g_return_val_if_fail (final_len < buflen, NULL);
 
-	result = g_malloc0 (len * 2 + 1);
+	result = g_malloc0 (buflen);
 	for (i = 0; i < len; i++)
 	{
 		result[2*i] = hex_digits[(bytes[i] >> 4) & 0xf];
@@ -54,6 +57,8 @@ utils_bin2hexstr (const char *bytes, int len, int final_len)
 	/* Cut converted key off at the correct length for this cipher type */
 	if (final_len > -1)
 		result[final_len] = '\0';
+	else
+		result[buflen - 1] = '\0';
 
 	return result;
 }
@@ -123,13 +128,13 @@ utils_hash_byte_array (const GByteArray *data)
 }
 
 char *
-utils_cert_path (const char *parent, const char *prefix, const char *suffix)
+utils_cert_path (const char *parent, const char *suffix)
 {
 	char *name, *dir, *path;
 
 	name = utils_get_ifcfg_name (parent);
 	dir = g_path_get_dirname (parent);
-	path = g_strdup_printf ("%s/%s-%s.%s", dir, prefix, name, suffix);
+	path = g_strdup_printf ("%s/%s-%s", dir, name, suffix);
 	g_free (dir);
 	g_free (name);
 	return path;
