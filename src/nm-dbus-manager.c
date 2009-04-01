@@ -221,8 +221,9 @@ nm_dbus_manager_name_has_owner (NMDBusManager *self,
 					    G_TYPE_INVALID,
 					    G_TYPE_BOOLEAN, &has_owner,
 					    G_TYPE_INVALID)) {
-		nm_warning ("Error on NameHasOwner DBUS call: %s", err->message);
-		g_error_free (err);
+		nm_warning ("NameHasOwner request failed: %s",
+		            (err && err->message) ? err->message : "(unknown)");
+		g_clear_error (&err);
 	}
 
 	return has_owner;
