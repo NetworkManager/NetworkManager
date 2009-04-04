@@ -375,103 +375,6 @@ impl_exported_connection_delete (NMExportedConnection *connection,
 	return success;
 }
 
-static GValue *
-string_to_gvalue (const char *str)
-{
-	GValue *val;
-
-	val = g_slice_new0 (GValue);
-	g_value_init (val, G_TYPE_STRING);
-	g_value_set_string (val, str);
-
-	return val;
-}
-
-static void
-copy_one_secret (gpointer key, gpointer value, gpointer user_data)
-{
-	const char *value_str = (const char *) value;
-
-	if (value_str) {
-		g_hash_table_insert ((GHashTable *) user_data,
-		                     g_strdup ((char *) key),
-		                     string_to_gvalue (value_str));
-	}
-}
-
-static void
-add_secrets (NMSetting *setting,
-             const char *key,
-             const GValue *value,
-             GParamFlags flags,
-             gpointer user_data)
-{
-	GHashTable *secrets = user_data;
-
-	if (!(flags & NM_SETTING_PARAM_SECRET))
-		return;
-
-	if (G_VALUE_HOLDS_STRING (value)) {
-		const char *tmp;
-
-		tmp = g_value_get_string (value);
-		if (tmp)
-			g_hash_table_insert (secrets, g_strdup (key), string_to_gvalue (tmp));
-	} else if (G_VALUE_HOLDS (value, DBUS_TYPE_G_MAP_OF_STRING)) {
-		/* Flatten the string hash by pulling its keys/values out */
-		g_hash_table_foreach (g_value_get_boxed (value), copy_one_secret, secrets);
-	}
-}
-
-static void
-destroy_gvalue (gpointer data)
-{
-	GValue *value = (GValue *) data;
-
-	g_value_unset (value);
-	g_slice_free (GValue, value);
-}
-
-static void
-real_get_secrets (NMExportedConnection *exported,
-                  const gchar *setting_name,
-                  const gchar **hints,
-                  gboolean request_new,
-                  DBusGMethodInvocation *context)
-{
-	NMConnection *connection;
-	GError *error = NULL;
-	GHashTable *settings = NULL;
-	GHashTable *secrets = NULL;
-	NMSetting *setting;
-
-	connection = nm_exported_connection_get_connection (exported);
-	setting = nm_connection_get_setting_by_name (connection, setting_name);
-	if (!setting) {
-		g_set_error (&error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "%s.%d - Connection didn't have requested setting '%s'.",
-		             __FILE__, __LINE__, setting_name);
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-		return;
-	}
-
-	/* Returned secrets are a{sa{sv}}; this is the outer a{s...} hash that
-	 * will contain all the individual settings hashes.
-	 */
-	settings = g_hash_table_new_full (g_str_hash, g_str_equal,
-	                                  g_free, (GDestroyNotify) g_hash_table_destroy);
-
-	/* Add the secrets from this setting to the inner secrets hash for this setting */
-	secrets = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, destroy_gvalue);
-	nm_setting_enumerate_values (setting, add_secrets, secrets);
-
-	g_hash_table_insert (settings, g_strdup (setting_name), secrets);
-
-	dbus_g_method_return (context, settings);
-	g_hash_table_destroy (settings);
-}
-
 static void
 impl_exported_connection_get_secrets (NMExportedConnection *connection,
                                       const gchar *setting_name,
@@ -490,10 +393,16 @@ impl_exported_connection_get_secrets (NMExportedConnection *connection,
 		return;
 	}
 
-	if (!EXPORTED_CONNECTION_CLASS (connection)->service_get_secrets)
-		real_get_secrets (connection, setting_name, hints, request_new, context);
-	else
-		EXPORTED_CONNECTION_CLASS (connection)->service_get_secrets (connection, setting_name, hints, request_new, context);
+	if (!EXPORTED_CONNECTION_CLASS (connection)->service_get_secrets) {
+		g_set_error (&error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_SECRETS_UNAVAILABLE,
+		             "%s.%d - Missing implementation for ConnectionSettings::GetSecrets.",
+		             __FILE__, __LINE__);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	EXPORTED_CONNECTION_CLASS (connection)->service_get_secrets (connection, setting_name, hints, request_new, context);
 }
 
 static void
@@ -567,7 +476,6 @@ nm_exported_connection_class_init (NMExportedConnectionClass *exported_connectio
 	object_class->dispose = nm_exported_connection_dispose;
 
 	exported_connection_class->get_settings = real_get_settings;
-	exported_connection_class->service_get_secrets = real_get_secrets;
 
 	/* Properties */
 	g_object_class_install_property

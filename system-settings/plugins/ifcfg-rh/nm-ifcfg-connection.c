@@ -40,7 +40,7 @@
 #include "reader.h"
 #include "nm-inotify-helper.h"
 
-G_DEFINE_TYPE (NMIfcfgConnection, nm_ifcfg_connection, NM_TYPE_EXPORTED_CONNECTION)
+G_DEFINE_TYPE (NMIfcfgConnection, nm_ifcfg_connection, NM_TYPE_SYSCONFIG_CONNECTION)
 
 #define NM_IFCFG_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IFCFG_CONNECTION, NMIfcfgConnectionPrivate))
 
