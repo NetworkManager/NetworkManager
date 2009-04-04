@@ -26,6 +26,7 @@
 #include <NetworkManager.h>
 #include <nm-utils.h>
 #include <nm-setting-wireless-security.h>
+#include <nm-sysconfig-connection.h>
 #include <nm-system-config-interface.h>
 #include <nm-system-config-error.h>
 #include <nm-settings.h>
@@ -33,8 +34,8 @@
 #include "parser.h"
 
 G_DEFINE_TYPE (NMIfupdownConnection,
-			nm_ifupdown_connection,
-			NM_TYPE_EXPORTED_CONNECTION)
+               nm_ifupdown_connection,
+               NM_TYPE_SYSCONFIG_CONNECTION)
 
 #define NM_IFUPDOWN_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IFUPDOWN_CONNECTION, NMIfupdownConnectionPrivate))
 
@@ -47,14 +48,6 @@ enum {
 	PROP_IFBLOCK,
 	_PROP_END,
 };
-
-
-static void
-service_get_secrets (NMExportedConnection *exported,
-                     const gchar *setting_name,
-                     const gchar **hints,
-                     gboolean request_new,
-                     DBusGMethodInvocation *context);
 
 
 NMIfupdownConnection*
@@ -85,6 +78,33 @@ do_delete (NMExportedConnection *exported, GError **err)
 			   NM_SYSCONFIG_SETTINGS_ERROR_DELETE_NOT_SUPPORTED,
 			   "%s", "ifupdown - connection delete not supported (read-only).");
 	return FALSE;
+}
+
+static void
+service_get_secrets (NMExportedConnection *exported,
+                     const gchar *setting_name,
+                     const gchar **hints,
+                     gboolean request_new,
+                     DBusGMethodInvocation *context)
+{
+	GError *error = NULL;
+
+	PLUGIN_PRINT ("SCPlugin-Ifupdown", "get_secrets for setting_name:'%s')", setting_name);
+
+	/* FIXME: Only wifi secrets are supported for now */
+	if (strcmp (setting_name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME)) {
+		g_set_error (&error,
+		             NM_SYSCONFIG_SETTINGS_ERROR,
+		             NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
+		             "%s.%d - security setting name not supported '%s'.",
+		             __FILE__, __LINE__, setting_name);
+		PLUGIN_PRINT ("SCPlugin-Ifupdown", "%s", error->message);
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	NM_EXPORTED_CONNECTION_CLASS (nm_ifupdown_connection_parent_class)->service_get_secrets (exported, setting_name, hints, request_new, context);
 }
 
 /* GObject */
@@ -190,29 +210,5 @@ nm_ifupdown_connection_class_init (NMIfupdownConnectionClass *ifupdown_connectio
 						   "ifblock",
 						   "",
 						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-}
-
-static void
-service_get_secrets (NMExportedConnection *exported,
-                     const gchar *setting_name,
-                     const gchar **hints,
-                     gboolean request_new,
-                     DBusGMethodInvocation *context)
-{
-	GError *error = NULL;
-
-	PLUGIN_PRINT ("SCPlugin-Ifupdown", "get_secrets for setting_name:'%s')", setting_name);
-
-	/* FIXME: Only wifi secrets are supported for now */
-	if (!strcmp (setting_name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME))
-		NM_EXPORTED_CONNECTION_CLASS (nm_ifupdown_connection_parent_class)->service_get_secrets (exported, setting_name, hints, request_new, context);
-	else {
-		g_set_error (&error, NM_SETTING_WIRELESS_SECURITY_ERROR, 1,
-				   "%s.%d - security setting name not supported '%s'.",
-				   __FILE__, __LINE__, setting_name);
-		PLUGIN_PRINT ("SCPlugin-Ifupdown", "%s", error->message);
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-	}
 }
 
