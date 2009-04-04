@@ -4,10 +4,10 @@ ACTION!="add|change", GOTO="nm_modem_probe_end"
 SUBSYSTEM!="tty", GOTO="nm_modem_probe_end"
 KERNEL!="tty*", GOTO="nm_modem_probe_end"
 
-DRIVERS=="serial_cs", IMPORT{program}="nm-modem-probe --delay 3000 --export $tempnode", GOTO="nm_modem_probe_end"
+DRIVERS=="serial_cs|nozomi", IMPORT{program}="nm-modem-probe --delay 3000 --export $tempnode", GOTO="nm_modem_probe_end"
 
 # Only probe known mobile broadband drivers
-DRIVERS=="option|sierra|hso|cdc_acm|nozomi|qcserial", GOTO="probe"
+DRIVERS=="option|sierra|hso|cdc_acm|qcserial", GOTO="probe"
 
 GOTO="nm_modem_probe_end"
 
