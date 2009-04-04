@@ -355,11 +355,17 @@ nm_sysconfig_settings_init (NMSysconfigSettings *self)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 	char hostname[HOST_NAME_MAX + 2];
+	GError *error = NULL;
 
 	priv->connections = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
 	priv->unmanaged_devices = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
-	priv->pol_ctx = create_polkit_context ();
+	priv->pol_ctx = create_polkit_context (&error);
+	if (!priv->pol_ctx) {
+		g_warning ("%s: failed to create PolicyKit context: %s",
+		           __func__,
+		           (error && error->message) ? error->message : "(unknown)");
+	}
 
 	/* Grab hostname on startup and use that if no plugins provide one */
 	memset (hostname, 0, sizeof (hostname));

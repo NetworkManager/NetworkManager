@@ -28,7 +28,7 @@
 
 #define NM_SYSCONFIG_POLICY_ACTION "org.freedesktop.network-manager-settings.system.modify"
 
-PolKitContext *create_polkit_context   (void);
+PolKitContext *create_polkit_context   (GError **error);
 gboolean       check_polkit_privileges (DBusGConnection *dbus_connection,
 								PolKitContext *pol_ctx,
 								DBusGMethodInvocation *context,

@@ -23,7 +23,8 @@
 
 G_BEGIN_DECLS
 
-#include <nm-settings.h>
+#include <NetworkManager.h>
+#include <nm-sysconfig-connection.h>
 #include "nm-system-config-hal-manager.h"
 
 #define NM_TYPE_IFCFG_CONNECTION            (nm_ifcfg_connection_get_type ())
@@ -38,11 +39,11 @@ G_BEGIN_DECLS
 #define NM_IFCFG_CONNECTION_UDI       "udi"
 
 typedef struct {
-	NMExportedConnection parent;
+	NMSysconfigConnection parent;
 } NMIfcfgConnection;
 
 typedef struct {
-	NMExportedConnectionClass parent;
+	NMSysconfigConnectionClass parent;
 } NMIfcfgConnectionClass;
 
 GType nm_ifcfg_connection_get_type (void);
