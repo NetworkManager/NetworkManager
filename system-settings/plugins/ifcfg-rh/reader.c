@@ -1337,8 +1337,8 @@ connection_from_file (const char *filename,
 	/* We don't write connections yet */
 	if (connection) {
 		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
-//		if (s_con)
-//			g_object_set (s_con, NM_SETTING_CONNECTION_READ_ONLY, TRUE, NULL);
+		if (s_con)
+			g_object_set (s_con, NM_SETTING_CONNECTION_READ_ONLY, TRUE, NULL);
 	}
 
 	/* Don't bother reading the connection fully if it's unmanaged */
