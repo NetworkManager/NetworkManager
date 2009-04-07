@@ -2,7 +2,6 @@
 
 ACTION!="add|change", GOTO="nm_modem_probe_end"
 SUBSYSTEM!="tty", GOTO="nm_modem_probe_end"
-KERNEL!="tty*", GOTO="nm_modem_probe_end"
 
 DRIVERS=="serial_cs|nozomi", IMPORT{program}="nm-modem-probe --delay 3000 --export $tempnode", GOTO="nm_modem_probe_end"
 
