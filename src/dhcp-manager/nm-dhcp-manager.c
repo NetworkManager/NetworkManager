@@ -947,7 +947,7 @@ nm_dhcp_manager_options_to_ip4_config (const char *iface, GHashTable *options)
 		if ((errno == EINVAL) || (errno == ERANGE))
 			goto error;
 
-		if (int_mtu)
+		if (int_mtu > 576)
 			nm_ip4_config_set_mtu (ip4_config, int_mtu);
 	}
 
