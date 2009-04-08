@@ -1160,18 +1160,18 @@ nm_manager_get_device_by_udi (NMManager *manager, const char *udi)
 	return NULL;
 }
 
-static NMDevice *
-nm_manager_get_device_by_originating_device (NMManager *manager, const char *od)
+static GSList *
+nm_manager_get_devices_by_originating_device (NMManager *manager, const char *od)
 {
-	GSList *iter;
+	GSList *iter, *devs = NULL;
 
 	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
 		const char *candidate_od = g_object_get_data (G_OBJECT (iter->data), ORIGDEV_TAG);
 
 		if (candidate_od && !strcmp (candidate_od, od))
-			return NM_DEVICE (iter->data);
+			devs = g_slist_append (devs, G_OBJECT (iter->data));
 	}
-	return NULL;
+	return devs;
 }
 
 static const char *
@@ -1704,8 +1704,18 @@ hal_manager_udi_added_cb (NMHalManager *hal_mgr,
 
 	/* Ignore multiple ports for serial devices */
 	if (general_type == NM_TYPE_SERIAL_DEVICE) {
-		if (nm_manager_get_device_by_originating_device (self, originating_device))
-			return;
+		GSList *devices, *iter;
+
+		devices = nm_manager_get_devices_by_originating_device (self, originating_device);
+		for (iter = devices; iter; iter = g_slist_next (iter)) {
+			NMDevice *candidate = NM_DEVICE (iter->data);
+
+			if (candidate && NM_IS_SERIAL_DEVICE (candidate)) {
+				g_slist_free (devices);
+				return;
+			}
+		}
+		g_slist_free (devices);
 	}
 
 	device = creator_fn (hal_mgr, udi, originating_device, nm_manager_udi_is_managed (self, udi));
