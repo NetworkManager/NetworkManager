@@ -453,7 +453,7 @@ main(int argc, char *argv[])
 	struct termios orig, attrs;
 	int fd = -1, caps, ret = 0;
 	guint32 delay_ms = 0;
-	unsigned int vid = 0, pid = 0, usbif = 0;
+	unsigned int vid = 0, pid = 0, usbif = 0, last_err = 0;
 	unsigned long int tmp;
 
 	while (1) {
@@ -551,9 +551,21 @@ main(int argc, char *argv[])
 
 	verbose ("probing %s", device);
 
-	fd = open (device, O_RDWR | O_EXCL | O_NONBLOCK);
+	/* If a delay was specified, retry opening the serial port for that
+	 * amount of time.  Some devices (nozomi) aren't ready to be opened
+	 * even though their device node is created by udev already.
+	 */
+	do {
+		fd = open (device, O_RDWR | O_EXCL | O_NONBLOCK);
+		if (fd < 0) {
+			last_err = errno;
+			g_usleep (500000);
+			delay_ms -= 500;
+		}
+	} while (fd < 0 && delay_ms > 0);
+
 	if (fd < 0) {
-		g_printerr ("open(%s) failed: %d\n", device, errno);
+		g_printerr ("open(%s) failed: %d\n", device, last_err);
 		ret = 4;
 		goto exit;
 	}
