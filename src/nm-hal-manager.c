@@ -294,43 +294,71 @@ is_modem_device (NMHalManager *self, const char *udi)
 static char *
 get_hso_netdev (LibHalContext *ctx, const char *udi)
 {
-	char *serial_parent, *netdev = NULL;
-	char **netdevs;
+	char *serial_od = NULL, *serial_od_parent = NULL, *netdev = NULL, *bus;
+	char **netdevs = NULL;
 	int num, i;
 
 	/* Get the serial interface's originating device UDI, used to find the
 	 * originating device's netdev.
 	 */
-	serial_parent = libhal_device_get_property_string (ctx, udi, "serial.originating_device", NULL);
-	if (!serial_parent)
-		serial_parent = libhal_device_get_property_string (ctx, udi, "info.parent", NULL);
-	if (!serial_parent)
-		return NULL;
+	serial_od = libhal_device_get_property_string (ctx, udi, "serial.originating_device", NULL);
+	if (!serial_od)
+		serial_od = libhal_device_get_property_string (ctx, udi, "serial.physical_device", NULL);
+	if (!serial_od)
+		goto out;
+
+	serial_od_parent = libhal_device_get_property_string (ctx, serial_od, "info.parent", NULL);
+	if (!serial_od_parent)
+		goto out;
+
+	/* Check to ensure we've got the actual "USB Device" */
+	bus = libhal_device_get_property_string (ctx, serial_od_parent, "info.bus", NULL);
+	if (!bus || strcmp (bus, "usb_device")) {
+		libhal_free_string (bus);
+		goto out;
+	}
+	libhal_free_string (bus);
 
 	/* Look for the originating device's netdev */
 	netdevs = libhal_find_device_by_capability (ctx, "net", &num, NULL);
 	for (i = 0; netdevs && !netdev && (i < num); i++) {
-		char *netdev_parent, *tmp;
+		char *net_od = NULL, *net_od_parent = NULL, *tmp;
 
-		netdev_parent = libhal_device_get_property_string (ctx, netdevs[i], "net.originating_device", NULL);
-		if (!netdev_parent)
-			netdev_parent = libhal_device_get_property_string (ctx, netdevs[i], "net.physical_device", NULL);
-		if (!netdev_parent)
-			continue;
+		net_od = libhal_device_get_property_string (ctx, netdevs[i], "net.originating_device", NULL);
+		if (!net_od)
+			net_od = libhal_device_get_property_string (ctx, netdevs[i], "net.physical_device", NULL);
+		if (!net_od)
+			goto next;
 
-		if (!strcmp (netdev_parent, serial_parent)) {
+		net_od_parent = libhal_device_get_property_string (ctx, net_od, "info.parent", NULL);
+		if (!net_od_parent)
+			goto next;
+
+		/* Check to ensure we've got the actual "USB Device" */
+		bus = libhal_device_get_property_string (ctx, net_od_parent, "info.bus", NULL);
+		if (!bus || strcmp (bus, "usb_device")) {
+			libhal_free_string (bus);
+			goto next;
+		}
+		libhal_free_string (bus);
+
+		if (!strcmp (net_od_parent, serial_od_parent)) {
 			/* We found it */
 			tmp = libhal_device_get_property_string (ctx, netdevs[i], "net.interface", NULL);
-			if (tmp) {
+			if (tmp)
 				netdev = g_strdup (tmp);
-				libhal_free_string (tmp);
-			}
+			libhal_free_string (tmp);
 		}
 
-		libhal_free_string (netdev_parent);
+	next:
+		libhal_free_string (net_od_parent);
+		libhal_free_string (net_od);
 	}
+
+out:
 	libhal_free_string_array (netdevs);
-	libhal_free_string (serial_parent);
+	libhal_free_string (serial_od);
+	libhal_free_string (serial_od_parent);
 
 	return netdev;
 }
@@ -763,6 +791,10 @@ new_modem_device (const char *udi,
 		}
 
 		netdev = get_hso_netdev (ctx, udi);
+		if (!netdev) {
+			nm_warning ("couldn't find HSO modem network device.");
+			return NULL;
+		}
 	}
 
 	/* Special handling of Option cards (until punted to ModemManager).  Only
@@ -803,9 +835,10 @@ new_modem_device (const char *udi,
 		}
 	}
 
-	if (gsm && netdev)
+	if (gsm && netdev) {
 		device = (GObject *) nm_hso_gsm_device_new (udi, ttyname, NULL, netdev, driver, managed);
-	else if (gsm)
+		g_free (netdev);
+	} else if (gsm)
 		device = (GObject *) nm_gsm_device_new (udi, ttyname, NULL, driver, managed);
 	else if (cdma)
 		device = (GObject *) nm_cdma_device_new (udi, ttyname, NULL, driver, managed);
