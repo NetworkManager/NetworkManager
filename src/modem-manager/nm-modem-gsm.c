@@ -13,6 +13,20 @@
 
 #include "nm-device-gsm-glue.h"
 
+// FIXME: use MM headers when MM exports this stuff
+typedef enum {
+    MM_MODEM_GSM_NETWORK_MODE_ANY       = 0,
+    MM_MODEM_GSM_NETWORK_MODE_GPRS      = 1,
+    MM_MODEM_GSM_NETWORK_MODE_EDGE      = 2,
+    MM_MODEM_GSM_NETWORK_MODE_3G        = 3,
+    MM_MODEM_GSM_NETWORK_MODE_HSDPA     = 4,
+    MM_MODEM_GSM_NETWORK_MODE_PREFER_2G = 5,
+    MM_MODEM_GSM_NETWORK_MODE_PREFER_3G = 6,
+
+    MM_MODEM_GSM_NETWORK_MODE_LAST = MM_MODEM_GSM_NETWORK_MODE_PREFER_3G
+} MMModemGsmNetworkMode;
+
+
 #define GSM_SECRETS_TRIES "gsm-secrets-tries"
 
 G_DEFINE_TYPE (NMModemGsm, nm_modem_gsm, NM_TYPE_MODEM)
@@ -162,8 +176,25 @@ create_connect_properties (NMConnection *connection)
 	if (str)
 		value_hash_add_str (properties, "password", str);
 
-	/* FIXME: network_type, band */
+	switch (nm_setting_gsm_get_network_type (setting)) {
+	case NM_GSM_NETWORK_UMTS_HSPA:
+		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_MODE_HSDPA);
+		break;
+	case NM_GSM_NETWORK_GPRS_EDGE:
+		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_MODE_EDGE);
+		break;
+	case NM_GSM_NETWORK_PREFER_UMTS_HSPA:
+		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_MODE_PREFER_3G);
+		break;
+	case NM_GSM_NETWORK_PREFER_GPRS_EDGE:
+		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_MODE_PREFER_2G);
+		break;
+	default:
+		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_MODE_ANY);
+		break;
+	}
 
+	/* FIXME: band */
 	return properties;
 }
 
