@@ -771,6 +771,45 @@ out:
 	g_strfreev (searches);
 }
 
+static void
+process_domain_search (NMIP4Config *ip4_config, const char *str)
+{
+	char **searches, **s;
+	char *unescaped, *p;
+	int i;
+
+	g_return_if_fail (str != NULL);
+	g_return_if_fail (ip4_config != NULL);
+
+	p = unescaped = g_strdup (str);
+	do {
+		p = strstr (p, "\\032");
+		if (!p)
+			break;
+
+		/* Clear the escaped space with real spaces */
+		for (i = 0; i < 4; i++)
+			*p++ = ' ';
+	} while (*p++);
+
+	if (strchr (unescaped, '\\')) {
+		nm_info ("  invalid domain search: '%s'", unescaped);
+		goto out;
+	}
+
+	searches = g_strsplit (unescaped, " ", 0);
+	for (s = searches; *s; s++) {
+		if (strlen (*s)) {
+			nm_info ("  domain search '%s'", *s);
+			nm_ip4_config_add_search (ip4_config, *s);
+		}
+	}
+	g_strfreev (searches);
+
+out:
+	g_free (unescaped);
+}
+
 /* Given a table of DHCP options from the client, convert into an IP4Config */
 NMIP4Config *
 nm_dhcp_manager_options_to_ip4_config (const char *iface, GHashTable *options)
@@ -882,16 +921,8 @@ nm_dhcp_manager_options_to_ip4_config (const char *iface, GHashTable *options)
 	}
 
 	str = g_hash_table_lookup (options, "new_domain_search");
-	if (str) {
-		char **searches = g_strsplit (str, " ", 0);
-		char **s;
-
-		for (s = searches; *s; s++) {
-			nm_info ("  domain search '%s'", *s);
-			nm_ip4_config_add_search (ip4_config, *s);
-		}
-		g_strfreev (searches);
-	}
+	if (str)
+		process_domain_search (ip4_config, str);
 
 	str = g_hash_table_lookup (options, "new_netbios_name_servers");
 	if (str) {

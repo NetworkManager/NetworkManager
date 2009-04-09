@@ -520,6 +520,65 @@ test_gateway_in_classless_routes (void)
 	g_hash_table_destroy (options);
 }
 
+static Option escaped_searches_options[] = {
+	{ "new_domain_search", "host1\\032host2\\032host3" },
+	{ NULL, NULL }
+};
+
+static void
+test_escaped_domain_searches (void)
+{
+	GHashTable *options;
+	NMIP4Config *ip4_config;
+	const char *expected_search0 = "host1";
+	const char *expected_search1 = "host2";
+	const char *expected_search2 = "host3";
+
+	options = fill_table (generic_options, NULL);
+	options = fill_table (escaped_searches_options, options);
+
+	ip4_config = nm_dhcp_manager_options_to_ip4_config ("eth0", options);
+	ASSERT (ip4_config != NULL,
+	        "dhcp-escaped-domain-searches", "failed to parse DHCP4 options");
+
+	/* domain searches */
+	ASSERT (nm_ip4_config_get_num_searches (ip4_config) == 3,
+	        "dhcp-escaped-domain-searches", "unexpected number of searches");
+	ASSERT (!strcmp (nm_ip4_config_get_search (ip4_config, 0), expected_search0),
+	        "dhcp-escaped-domain-searches", "unexpected domain search #1");
+	ASSERT (!strcmp (nm_ip4_config_get_search (ip4_config, 1), expected_search1),
+	        "dhcp-escaped-domain-searches", "unexpected domain search #1");
+	ASSERT (!strcmp (nm_ip4_config_get_search (ip4_config, 2), expected_search2),
+	        "dhcp-escaped-domain-searches", "unexpected domain search #1");
+
+	g_hash_table_destroy (options);
+}
+
+static Option invalid_escaped_searches_options[] = {
+	{ "new_domain_search", "host1\\aahost2\\032host3" },
+	{ NULL, NULL }
+};
+
+static void
+test_invalid_escaped_domain_searches (void)
+{
+	GHashTable *options;
+	NMIP4Config *ip4_config;
+
+	options = fill_table (generic_options, NULL);
+	options = fill_table (invalid_escaped_searches_options, options);
+
+	ip4_config = nm_dhcp_manager_options_to_ip4_config ("eth0", options);
+	ASSERT (ip4_config != NULL,
+	        "dhcp-invalid-escaped-domain-searches", "failed to parse DHCP4 options");
+
+	/* domain searches */
+	ASSERT (nm_ip4_config_get_num_searches (ip4_config) == 0,
+	        "dhcp-invalid-escaped-domain-searches", "unexpected domain searches");
+
+	g_hash_table_destroy (options);
+}
+
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
@@ -540,6 +599,8 @@ int main (int argc, char **argv)
 	test_invalid_classless_routes2 ();
 	test_invalid_classless_routes3 ();
 	test_gateway_in_classless_routes ();
+	test_escaped_domain_searches ();
+	test_invalid_escaped_domain_searches ();
 
 	basename = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", basename);
