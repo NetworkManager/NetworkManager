@@ -150,7 +150,10 @@ device_start (gpointer user_data)
 	NMDevice *self = NM_DEVICE (user_data);
 
 	self->priv->start_timer = 0;
-	nm_device_state_changed (self, NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
+	if (self->priv->managed)
+		nm_device_state_changed (self, NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
+	else
+		nm_info ("(%s): now unmanaged", nm_device_get_iface (self));
 	return FALSE;
 }
 
