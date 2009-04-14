@@ -1681,7 +1681,7 @@ make_wireless_setting (shvarFile *ifcfg,
 			goto error;
 		}
 
-		array = g_byte_array_sized_new (strlen (p));
+		array = g_byte_array_sized_new (ssid_len);
 		g_byte_array_append (array, (const guint8 *) p, ssid_len);
 		g_object_set (s_wireless, NM_SETTING_WIRELESS_SSID, array, NULL);
 		g_byte_array_free (array, TRUE);
