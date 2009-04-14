@@ -34,6 +34,7 @@
 #include <nm-setting-wireless.h>
 #include <nm-setting-8021x.h>
 #include <nm-setting-ip4-config.h>
+#include <nm-setting-pppoe.h>
 
 #include "common.h"
 #include "shvar.h"
@@ -159,12 +160,28 @@ static const ObjectType ca_type = {
 	"ca-cert.der"
 };
 
+static const ObjectType phase2_ca_type = {
+	NM_SETTING_802_1X_PHASE2_CA_CERT,
+	"IEEE_8021X_INNER_CA_CERT",
+	TAG_PHASE2_CA_CERT_PATH,
+	TAG_PHASE2_CA_CERT_HASH,
+	"inner-ca-cert.der"
+};
+
 static const ObjectType client_type = {
 	NM_SETTING_802_1X_CLIENT_CERT,
 	"IEEE_8021X_CLIENT_CERT",
 	TAG_CLIENT_CERT_PATH,
 	TAG_CLIENT_CERT_HASH,
 	"client-cert.der"
+};
+
+static const ObjectType phase2_client_type = {
+	NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
+	"IEEE_8021X_INNER_CLIENT_CERT",
+	TAG_PHASE2_CLIENT_CERT_PATH,
+	TAG_PHASE2_CLIENT_CERT_HASH,
+	"inner-client-cert.der"
 };
 
 static const ObjectType pk_type = {
@@ -175,12 +192,28 @@ static const ObjectType pk_type = {
 	"private-key.pem"
 };
 
+static const ObjectType phase2_pk_type = {
+	NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
+	"IEEE_8021X_INNER_PRIVATE_KEY",
+	TAG_PHASE2_PRIVATE_KEY_PATH,
+	TAG_PHASE2_PRIVATE_KEY_HASH,
+	"inner-private-key.pem"
+};
+
 static const ObjectType p12_type = {
 	NM_SETTING_802_1X_PRIVATE_KEY,
 	"IEEE_8021X_PRIVATE_KEY",
 	TAG_PRIVATE_KEY_PATH,
 	TAG_PRIVATE_KEY_HASH,
 	"private-key.p12"
+};
+
+static const ObjectType phase2_p12_type = {
+	NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
+	"IEEE_8021X_INNER_PRIVATE_KEY",
+	TAG_PHASE2_PRIVATE_KEY_PATH,
+	TAG_PHASE2_PRIVATE_KEY_HASH,
+	"inner-private-key.p12"
 };
 
 static gboolean
@@ -259,6 +292,120 @@ out:
 }
 
 static gboolean
+write_8021x_certs (NMSetting8021x *s_8021x,
+                   gboolean phase2,
+                   shvarFile *ifcfg,
+                   GError **error)
+{
+	const GByteArray *data;
+	GByteArray *enc_key = NULL;
+	const char *password = NULL;
+	char *generated_pw = NULL;
+	gboolean success = FALSE, is_pkcs12 = FALSE, wrote;
+	const ObjectType *otype = NULL;
+	const char *prop;
+
+	/* CA certificate */
+	data = NULL;
+	if (phase2) {
+		prop = NM_SETTING_802_1X_PHASE2_CA_CERT;
+		otype = &phase2_ca_type;
+	} else {
+		prop = NM_SETTING_802_1X_CA_CERT;
+		otype = &ca_type;
+	}
+	g_object_get (G_OBJECT (s_8021x), prop, &data, NULL);
+	if (!write_object (s_8021x, ifcfg, data, otype, &wrote, error))
+		return FALSE;
+
+	/* Private key */
+	if (phase2) {
+		if (nm_setting_802_1x_get_phase2_private_key (s_8021x)) {
+			if (nm_setting_802_1x_get_phase2_private_key_type (s_8021x) == NM_SETTING_802_1X_CK_TYPE_PKCS12)
+				is_pkcs12 = TRUE;
+		}
+		prop = NM_SETTING_802_1X_PHASE2_PRIVATE_KEY;
+		password = nm_setting_802_1x_get_phase2_private_key_password (s_8021x);
+	} else {
+		if (nm_setting_802_1x_get_private_key (s_8021x)) {
+			if (nm_setting_802_1x_get_private_key_type (s_8021x) == NM_SETTING_802_1X_CK_TYPE_PKCS12)
+				is_pkcs12 = TRUE;
+		}
+		prop = NM_SETTING_802_1X_PRIVATE_KEY;
+		password = nm_setting_802_1x_get_private_key_password (s_8021x);
+	}
+
+	if (is_pkcs12)
+		otype = phase2 ? &phase2_p12_type : &p12_type;
+	else
+		otype = phase2 ? &phase2_pk_type : &pk_type;
+
+	data = NULL;
+	g_object_get (G_OBJECT (s_8021x), prop, &data, NULL);
+	if (data && !is_pkcs12) {
+		GByteArray *array;
+
+		if (!password) {
+			/* Create a random private key */
+			array = crypto_random (32, error);
+			if (!array)
+				goto out;
+
+			password = generated_pw = utils_bin2hexstr ((const char *) array->data, array->len, -1);
+			memset (array->data, 0, array->len);
+			g_byte_array_free (array, TRUE);
+		}
+
+		/* Re-encrypt the private key if it's not PKCS#12 (which never decrypted by NM) */
+		enc_key = crypto_key_to_pem (data, password, error);
+		if (!enc_key)
+			goto out;
+	}
+
+	if (!write_object (s_8021x, ifcfg, enc_key ? enc_key : data, otype, &wrote, error))
+		goto out;
+
+	/* Private key password */
+	if (phase2)
+		set_secret (ifcfg, "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD", password);
+	else
+		set_secret (ifcfg, "IEEE_8021X_PRIVATE_KEY_PASSWORD", password);
+
+	if (enc_key) {
+		memset (enc_key->data, 0, enc_key->len);
+		g_byte_array_free (enc_key, TRUE);
+	}
+
+	/* Client certificate */
+	if (is_pkcs12) {
+		svSetValue (ifcfg,
+		            phase2 ? "IEEE_8021X_INNER_CLIENT_CERT" : "IEEE_8021X_CLIENT_CERT",
+		            NULL, FALSE);
+	} else {
+		if (phase2) {
+			prop = NM_SETTING_802_1X_PHASE2_CLIENT_CERT;
+			otype = &phase2_client_type;
+		} else {
+			prop = NM_SETTING_802_1X_CLIENT_CERT;
+			otype = &client_type;
+		}
+		data = NULL;
+		g_object_get (G_OBJECT (s_8021x), prop, &data, NULL);
+		if (!write_object (s_8021x, ifcfg, data, otype, &wrote, error))
+			goto out;
+	}
+
+	success = TRUE;
+
+out:
+	if (generated_pw) {
+		memset (generated_pw, 0, strlen (generated_pw));
+		g_free (generated_pw);
+	}
+	return success;
+}
+
+static gboolean
 write_8021x_setting (NMConnection *connection,
                      shvarFile *ifcfg,
                      gboolean wired,
@@ -267,12 +414,8 @@ write_8021x_setting (NMConnection *connection,
 	NMSetting8021x *s_8021x;
 	const char *value;
 	char *tmp = NULL;
-	gboolean success = FALSE, is_pkcs12 = FALSE, wrote;
+	gboolean success = FALSE;
 	GString *phase2_auth;
-	const GByteArray *data;
-	GByteArray *enc_key = NULL;
-	const char *password = NULL;
-	char *generated_pw = NULL;
 
 	s_8021x = (NMSetting8021x *) nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
 	if (!s_8021x) {
@@ -344,73 +487,10 @@ write_8021x_setting (NMConnection *connection,
 
 	g_string_free (phase2_auth, TRUE);
 
-	/* CA certificate */
-	data = NULL;
-	g_object_get (G_OBJECT (s_8021x), NM_SETTING_802_1X_CA_CERT, &data, NULL);
-	if (!write_object (s_8021x, ifcfg, data, &ca_type, &wrote, error))
-		goto out;
-
-	/* Private key */
-	if (nm_setting_802_1x_get_private_key (s_8021x)) {
-		if (nm_setting_802_1x_get_private_key_type (s_8021x) == NM_SETTING_802_1X_CK_TYPE_PKCS12)
-			is_pkcs12 = TRUE;
-	}
-
-	data = NULL;
-	g_object_get (G_OBJECT (s_8021x), NM_SETTING_802_1X_PRIVATE_KEY, &data, NULL);
-
-	password = nm_setting_802_1x_get_private_key_password (s_8021x);
-	if (data && !is_pkcs12) {
-		GByteArray *array;
-
-		if (!password) {
-			/* Create a random private key */
-			array = crypto_random (32, error);
-			if (!array)
-				goto out;
-
-			password = generated_pw = utils_bin2hexstr ((const char *) array->data, array->len, -1);
-			memset (array->data, 0, array->len);
-			g_byte_array_free (array, TRUE);
-		}
-
-		/* Re-encrypt the private key if it's not PKCS#12 (which never decrypted by NM) */
-		enc_key = crypto_key_to_pem (data, password, error);
-		if (!enc_key)
-			goto out;
-	}
-
-	if (!write_object (s_8021x,
-	                   ifcfg,
-	                   enc_key ? enc_key : data,
-	                   is_pkcs12 ? &p12_type : &pk_type,
-	                   &wrote,
-	                   error))
-		goto out;
-
-	/* Private key password */
-	set_secret (ifcfg, "IEEE_8021X_PRIVATE_KEY_PASSWORD", password);
-
-	if (enc_key) {
-		memset (enc_key->data, 0, enc_key->len);
-		g_byte_array_free (enc_key, TRUE);
-	}
-
-	/* Client certificate */
-	if (is_pkcs12)
-		svSetValue (ifcfg, "IEEE_8021X_CLIENT_CERT", NULL, FALSE);
-	else {
-		data = NULL;
-		g_object_get (G_OBJECT (s_8021x), NM_SETTING_802_1X_CLIENT_CERT, &data, NULL);
-		if (!write_object (s_8021x, ifcfg, data, &client_type, &wrote, error))
-			goto out;
-	}
-	success = TRUE;
-
-out:
-	if (generated_pw) {
-		memset (generated_pw, 0, strlen (generated_pw));
-		g_free (generated_pw);
+	success = write_8021x_certs (s_8021x, FALSE, ifcfg, error);
+	if (success) {
+		/* phase2/inner certs */
+		success = write_8021x_certs (s_8021x, TRUE, ifcfg, error);
 	}
 
 	return success;
@@ -921,6 +1001,14 @@ write_connection (NMConnection *connection,
 	}
 
 	if (!strcmp (type, NM_SETTING_WIRED_SETTING_NAME)) {
+		// FIXME: can't write PPPoE at this time
+		if (nm_connection_get_setting (connection, NM_TYPE_SETTING_PPPOE)) {
+			g_set_error (error, ifcfg_plugin_error_quark (), 0,
+			             "Can't write connection type '%s'",
+			             NM_SETTING_PPPOE_SETTING_NAME);
+			goto out;
+		}
+
 		if (!write_wired_setting (connection, ifcfg, error))
 			goto out;
 		wired = TRUE;
@@ -949,8 +1037,6 @@ write_connection (NMConnection *connection,
 		goto out;
 	}
 
-	svCloseFile (ifcfg);
-
 	/* Only return the filename if this was a newly written ifcfg */
 	if (out_filename && !filename)
 		*out_filename = g_strdup (ifcfg_name);
@@ -958,6 +1044,8 @@ write_connection (NMConnection *connection,
 	success = TRUE;
 
 out:
+	if (ifcfg)
+		svCloseFile (ifcfg);
 	g_free (ifcfg_name);
 	return success;
 }
