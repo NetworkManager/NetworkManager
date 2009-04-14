@@ -154,7 +154,7 @@ verify_cert_or_key (CertKeyType ck_type,
 }
 
 
-#define TEST_IFCFG_MINIMAL TEST_DIR"/network-scripts/ifcfg-test-minimal"
+#define TEST_IFCFG_MINIMAL TEST_IFCFG_DIR"/network-scripts/ifcfg-test-minimal"
 
 static void
 test_read_minimal (void)
@@ -277,7 +277,7 @@ test_read_minimal (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_UNMANAGED TEST_DIR"/network-scripts/ifcfg-test-nm-controlled"
+#define TEST_IFCFG_UNMANAGED TEST_IFCFG_DIR"/network-scripts/ifcfg-test-nm-controlled"
 
 static void
 test_read_unmanaged (void)
@@ -387,7 +387,7 @@ test_read_unmanaged (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIRED_STATIC TEST_DIR"/network-scripts/ifcfg-test-wired-static"
+#define TEST_IFCFG_WIRED_STATIC TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-static"
 
 static void
 test_read_wired_static (void)
@@ -584,7 +584,7 @@ test_read_wired_static (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIRED_DHCP TEST_DIR"/network-scripts/ifcfg-test-wired-dhcp"
+#define TEST_IFCFG_WIRED_DHCP TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-dhcp"
 
 static void
 test_read_wired_dhcp (void)
@@ -750,8 +750,8 @@ test_read_wired_dhcp (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIRED_GLOBAL_GATEWAY TEST_DIR"/network-scripts/ifcfg-test-wired-global-gateway"
-#define TEST_NETWORK_WIRED_GLOBAL_GATEWAY TEST_DIR"/network-scripts/network-test-wired-global-gateway"
+#define TEST_IFCFG_WIRED_GLOBAL_GATEWAY TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-global-gateway"
+#define TEST_NETWORK_WIRED_GLOBAL_GATEWAY TEST_IFCFG_DIR"/network-scripts/network-test-wired-global-gateway"
 
 static void
 test_read_wired_global_gateway (void)
@@ -871,8 +871,8 @@ test_read_wired_global_gateway (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIRED_NEVER_DEFAULT TEST_DIR"/network-scripts/ifcfg-test-wired-never-default"
-#define TEST_NETWORK_WIRED_NEVER_DEFAULT TEST_DIR"/network-scripts/network-test-wired-never-default"
+#define TEST_IFCFG_WIRED_NEVER_DEFAULT TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-never-default"
+#define TEST_NETWORK_WIRED_NEVER_DEFAULT TEST_IFCFG_DIR"/network-scripts/network-test-wired-never-default"
 
 static void
 test_read_wired_never_default (void)
@@ -965,7 +965,7 @@ test_read_wired_never_default (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_ONBOOT_NO TEST_DIR"/network-scripts/ifcfg-test-onboot-no"
+#define TEST_IFCFG_ONBOOT_NO TEST_IFCFG_DIR"/network-scripts/ifcfg-test-onboot-no"
 
 static void
 test_read_onboot_no (void)
@@ -1011,8 +1011,8 @@ test_read_onboot_no (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2 TEST_DIR"/network-scripts/ifcfg-test-wired-8021x-peap-mschapv2"
-#define TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2_CA_CERT TEST_DIR"/network-scripts/test_ca_cert.pem"
+#define TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2 TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wired-8021x-peap-mschapv2"
+#define TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2_CA_CERT TEST_IFCFG_DIR"/network-scripts/test_ca_cert.pem"
 
 static void
 test_read_wired_8021x_peap_mschapv2 (void)
@@ -1198,7 +1198,7 @@ test_read_wired_8021x_peap_mschapv2 (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIFI_OPEN TEST_DIR"/network-scripts/ifcfg-test-wifi-open"
+#define TEST_IFCFG_WIFI_OPEN TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open"
 
 static void
 test_read_wifi_open (void)
@@ -1371,7 +1371,7 @@ test_read_wifi_open (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIFI_OPEN_SSID_HEX TEST_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-hex"
+#define TEST_IFCFG_WIFI_OPEN_SSID_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-hex"
 
 static void
 test_read_wifi_open_ssid_hex (void)
@@ -1465,7 +1465,7 @@ test_read_wifi_open_ssid_bad (const char *file, const char *test)
 	g_clear_error (&error);
 }
 
-#define TEST_IFCFG_WIFI_OPEN_SSID_QUOTED TEST_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-quoted"
+#define TEST_IFCFG_WIFI_OPEN_SSID_QUOTED TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-quoted"
 
 static void
 test_read_wifi_open_ssid_quoted (void)
@@ -1545,7 +1545,7 @@ test_read_wifi_open_ssid_quoted (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIFI_WEP TEST_DIR"/network-scripts/ifcfg-test-wifi-wep"
+#define TEST_IFCFG_WIFI_WEP TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wep"
 
 static void
 test_read_wifi_wep (void)
@@ -1805,7 +1805,7 @@ test_read_wifi_wep (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIFI_WEP_ADHOC TEST_DIR"/network-scripts/ifcfg-test-wifi-wep-adhoc"
+#define TEST_IFCFG_WIFI_WEP_ADHOC TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wep-adhoc"
 
 static void
 test_read_wifi_wep_adhoc (void)
@@ -2064,7 +2064,7 @@ test_read_wifi_wep_adhoc (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIFI_LEAP TEST_DIR"/network-scripts/ifcfg-test-wifi-leap"
+#define TEST_IFCFG_WIFI_LEAP TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-leap"
 
 static void
 test_read_wifi_leap (void)
@@ -2195,7 +2195,7 @@ test_read_wifi_leap (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIFI_WPA_PSK TEST_DIR"/network-scripts/ifcfg-test-wifi-wpa-psk"
+#define TEST_IFCFG_WIFI_WPA_PSK TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wpa-psk"
 
 static void
 test_read_wifi_wpa_psk (void)
@@ -2505,7 +2505,7 @@ test_read_wifi_wpa_psk (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIFI_WPA_PSK_ADHOC TEST_DIR"/network-scripts/ifcfg-test-wifi-wpa-psk-adhoc"
+#define TEST_IFCFG_WIFI_WPA_PSK_ADHOC TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wpa-psk-adhoc"
 
 static void
 test_read_wifi_wpa_psk_adhoc (void)
@@ -2688,7 +2688,7 @@ test_read_wifi_wpa_psk_adhoc (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIFI_WPA_PSK_HEX TEST_DIR"/network-scripts/ifcfg-test-wifi-wpa-psk-hex"
+#define TEST_IFCFG_WIFI_WPA_PSK_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wpa-psk-hex"
 
 static void
 test_read_wifi_wpa_psk_hex (void)
@@ -2835,10 +2835,10 @@ test_read_wifi_wpa_psk_hex (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIFI_WPA_EAP_TLS TEST_DIR"/network-scripts/ifcfg-test-wifi-wpa-eap-tls"
-#define TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT TEST_DIR"/network-scripts/test_ca_cert.pem"
-#define TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT TEST_DIR"/network-scripts/test1_key_and_cert.pem"
-#define TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY TEST_DIR"/network-scripts/test1_key_and_cert.pem"
+#define TEST_IFCFG_WIFI_WPA_EAP_TLS TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wpa-eap-tls"
+#define TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT TEST_IFCFG_DIR"/network-scripts/test_ca_cert.pem"
+#define TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT TEST_IFCFG_DIR"/network-scripts/test1_key_and_cert.pem"
+#define TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY TEST_IFCFG_DIR"/network-scripts/test1_key_and_cert.pem"
 
 static void
 test_read_wifi_wpa_eap_tls (void)
@@ -2970,8 +2970,8 @@ test_read_wifi_wpa_eap_tls (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS TEST_DIR"/network-scripts/ifcfg-test-wifi-wpa-eap-ttls-tls"
-#define TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS_CA_CERT TEST_DIR"/network-scripts/test_ca_cert.pem"
+#define TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wpa-eap-ttls-tls"
+#define TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS_CA_CERT TEST_IFCFG_DIR"/network-scripts/test_ca_cert.pem"
 /* Also use TLS defines from the previous test */
 
 static void
@@ -3126,8 +3126,8 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP TEST_DIR"/network-scripts/ifcfg-test-wifi-wep-eap-ttls-chap"
-#define TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP_CA_CERT TEST_DIR"/network-scripts/test_ca_cert.pem"
+#define TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-wep-eap-ttls-chap"
+#define TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP_CA_CERT TEST_IFCFG_DIR"/network-scripts/test_ca_cert.pem"
 
 static void
 test_read_wifi_wep_eap_ttls_chap (void)
@@ -3385,7 +3385,7 @@ test_write_wired_static (void)
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,
-	                                 TEST_DIR "/network-scripts/",
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
 	                                 &testfile,
 	                                 &error);
 	ASSERT (success == TRUE,
@@ -3483,7 +3483,7 @@ test_write_wired_dhcp (void)
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,
-	                                 TEST_DIR "/network-scripts/",
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
 	                                 &testfile,
 	                                 &error);
 	ASSERT (success == TRUE,
@@ -3601,7 +3601,7 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,
-	                                 TEST_DIR "/network-scripts/",
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
 	                                 &testfile,
 	                                 &error);
 	ASSERT (success == TRUE,
@@ -3623,6 +3623,10 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 
 	ASSERT (reread != NULL,
 	        "wired-dhcp-8021x-peap-mschapv2write-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (keyfile != NULL,
+	        "wired-dhcp-8021x-peap-mschapv2write-reread", "expected keyfile for '%s'", testfile);
+	unlink (keyfile);
 
 	ASSERT (nm_connection_verify (reread, &error),
 	        "wired-dhcp-8021x-peap-mschapv2write-reread-verify", "failed to verify %s: %s", testfile, error->message);
@@ -3721,7 +3725,7 @@ test_write_wifi_open (void)
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,
-	                                 TEST_DIR "/network-scripts/",
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
 	                                 &testfile,
 	                                 &error);
 	ASSERT (success == TRUE,
@@ -3825,7 +3829,7 @@ test_write_wifi_open_hex_ssid (void)
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,
-	                                 TEST_DIR "/network-scripts/",
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
 	                                 &testfile,
 	                                 &error);
 	ASSERT (success == TRUE,
@@ -3949,7 +3953,7 @@ test_write_wifi_wep (void)
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,
-	                                 TEST_DIR "/network-scripts/",
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
 	                                 &testfile,
 	                                 &error);
 	ASSERT (success == TRUE,
@@ -4093,7 +4097,7 @@ test_write_wifi_wep_adhoc (void)
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,
-	                                 TEST_DIR "/network-scripts/",
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
 	                                 &testfile,
 	                                 &error);
 	ASSERT (success == TRUE,
@@ -4242,7 +4246,7 @@ test_write_wifi_wpa_psk (const char *name,
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,
-	                                 TEST_DIR "/network-scripts/",
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
 	                                 &testfile,
 	                                 &error);
 	ASSERT (success == TRUE,
@@ -4386,7 +4390,7 @@ test_write_wifi_wpa_psk_adhoc (void)
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,
-	                                 TEST_DIR "/network-scripts/",
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
 	                                 &testfile,
 	                                 &error);
 	ASSERT (success == TRUE,
@@ -4545,7 +4549,7 @@ test_write_wifi_wpa_eap_tls (void)
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,
-	                                 TEST_DIR "/network-scripts/",
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
 	                                 &testfile,
 	                                 &error);
 	ASSERT (success == TRUE,
@@ -4721,7 +4725,7 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,
-	                                 TEST_DIR "/network-scripts/",
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
 	                                 &testfile,
 	                                 &error);
 	ASSERT (success == TRUE,
@@ -4872,7 +4876,7 @@ test_write_wifi_wpa_eap_ttls_mschapv2 (void)
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,
-	                                 TEST_DIR "/network-scripts/",
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
 	                                 &testfile,
 	                                 &error);
 	ASSERT (success == TRUE,
@@ -4988,7 +4992,7 @@ test_write_wired_pppoe (void)
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,
-	                                 TEST_DIR "/network-scripts/",
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
 	                                 &testfile,
 	                                 &error);
 	ASSERT (success == FALSE,
@@ -5061,7 +5065,7 @@ test_write_vpn (void)
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,
-	                                 TEST_DIR "/network-scripts/",
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
 	                                 &testfile,
 	                                 &error);
 	ASSERT (success == FALSE,
@@ -5163,7 +5167,7 @@ test_write_mobile_broadband (gboolean gsm)
 
 	/* Save the ifcfg */
 	success = writer_new_connection (connection,
-	                                 TEST_DIR "/network-scripts/",
+	                                 TEST_SCRATCH_DIR "/network-scripts/",
 	                                 &testfile,
 	                                 &error);
 	ASSERT (success == FALSE,
@@ -5172,9 +5176,9 @@ test_write_mobile_broadband (gboolean gsm)
 	g_object_unref (connection);
 }
 
-#define TEST_IFCFG_WIFI_OPEN_SSID_BAD_HEX TEST_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-bad-hex"
-#define TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED TEST_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-quoted"
-#define TEST_IFCFG_WIFI_OPEN_SSID_LONG_HEX TEST_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-hex"
+#define TEST_IFCFG_WIFI_OPEN_SSID_BAD_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-bad-hex"
+#define TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-quoted"
+#define TEST_IFCFG_WIFI_OPEN_SSID_LONG_HEX TEST_IFCFG_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-hex"
 
 int main (int argc, char **argv)
 {

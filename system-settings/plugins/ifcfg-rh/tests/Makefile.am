@@ -14,7 +14,8 @@ test_ifcfg_rh_SOURCES = \
 test_ifcfg_rh_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
-	-DTEST_DIR=\"$(abs_srcdir)/\"
+	-DTEST_IFCFG_DIR=\"$(abs_srcdir)\" \
+	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/\"
 
 test_ifcfg_rh_LDADD = \
 	$(DBUS_LIBS) \
