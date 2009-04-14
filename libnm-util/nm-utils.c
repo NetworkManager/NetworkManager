@@ -1398,8 +1398,8 @@ nm_utils_uuid_generate_from_string (const char *s)
 		return NULL;
 	}
 
-	uuid = g_malloc0 (sizeof (uuid));
-	if (!crypto_md5_hash (NULL, 0, s, strlen (s), (char *) uuid, sizeof (uuid), &error)) {
+	uuid = g_malloc0 (sizeof (*uuid));
+	if (!crypto_md5_hash (NULL, 0, s, strlen (s), (char *) uuid, sizeof (*uuid), &error)) {
 		nm_warning ("error generating UUID: (%d) %s",
 		            error ? error->code : 0,
 		            error ? error->message : "unknown");
