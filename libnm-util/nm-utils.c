@@ -566,7 +566,7 @@ nm_utils_convert_strv_to_slist (const GValue *src_value, GValue *dest_value)
 
 	str = (char **) g_value_get_boxed (src_value);
 
-	while (str[i])
+	while (str && str[i])
 		list = g_slist_prepend (list, g_strdup (str[i++]));
 
 	g_value_take_boxed (dest_value, g_slist_reverse (list));
@@ -642,7 +642,7 @@ nm_utils_convert_ip4_addr_struct_array_to_string (const GValue *src_value, GValu
 	ptr_array = (GPtrArray *) g_value_get_boxed (src_value);
 
 	printable = g_string_new ("[");
-	while (i < ptr_array->len) {
+	while (ptr_array && (i < ptr_array->len)) {
 		GArray *array;
 		char buf[INET_ADDRSTRLEN + 1];
 		struct in_addr addr;
@@ -666,11 +666,8 @@ nm_utils_convert_ip4_addr_struct_array_to_string (const GValue *src_value, GValu
 		g_string_append (printable, ", ");
 
 		memset (buf, 0, sizeof (buf));
-		addr.s_addr = g_array_index (array, guint32, 1);
-		if (!inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN))
-			nm_warning ("%s: error converting IP4 address 0x%X",
-			            __func__, ntohl (addr.s_addr));
-		g_string_append_printf (printable, "mask = %s", buf);
+		g_string_append_printf (printable, "px = %u",
+		                        g_array_index (array, guint32, 1));
 
 		if (array->len > 2) {
 			g_string_append (printable, ", ");
@@ -746,6 +743,34 @@ nm_utils_convert_string_hash_to_string (const GValue *src_value, GValue *dest_va
 	g_string_free (printable, FALSE);
 }
 
+static void
+nm_utils_convert_byte_array_to_string (const GValue *src_value, GValue *dest_value)
+{
+	GArray *array;
+	GString *printable;
+	guint i = 0;
+
+	g_return_if_fail (g_type_is_a (G_VALUE_TYPE (src_value), DBUS_TYPE_G_UCHAR_ARRAY));
+
+	array = (GArray *) g_value_get_boxed (src_value);
+
+	printable = g_string_new ("[");
+	if (array) {
+		while (i < MIN (array->len, 35)) {
+			if (i > 0)
+				g_string_append_c (printable, ' ');
+			g_string_append_printf (printable, "0x%02X",
+			                        g_array_index (array, unsigned char, i++));
+		}
+		if (i < array->len)
+			g_string_append (printable, " ... ");
+	}
+	g_string_append_c (printable, ']');
+
+	g_value_take_string (dest_value, printable->str);
+	g_string_free (printable, FALSE);
+}
+
 void
 _nm_utils_register_value_transformations (void)
 {
@@ -770,6 +795,9 @@ _nm_utils_register_value_transformations (void)
 		g_value_register_transform_func (DBUS_TYPE_G_MAP_OF_STRING,
 		                                 G_TYPE_STRING, 
 		                                 nm_utils_convert_string_hash_to_string);
+		g_value_register_transform_func (DBUS_TYPE_G_UCHAR_ARRAY,
+		                                 G_TYPE_STRING,
+		                                 nm_utils_convert_byte_array_to_string);
 		registered = TRUE;
 	}
 }
@@ -1370,8 +1398,8 @@ nm_utils_uuid_generate_from_string (const char *s)
 		return NULL;
 	}
 
-	uuid = g_malloc0 (sizeof (uuid));
-	if (!crypto_md5_hash (NULL, 0, s, strlen (s), (char *) uuid, sizeof (uuid), &error)) {
+	uuid = g_malloc0 (sizeof (*uuid));
+	if (!crypto_md5_hash (NULL, 0, s, strlen (s), (char *) uuid, sizeof (*uuid), &error)) {
 		nm_warning ("error generating UUID: (%d) %s",
 		            error ? error->code : 0,
 		            error ? error->message : "unknown");

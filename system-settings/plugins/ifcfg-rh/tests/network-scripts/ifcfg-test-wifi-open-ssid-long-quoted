@@ -1,0 +1,13 @@
+TYPE=Wireless
+DEVICE=eth2
+HWADDR=00:16:41:11:22:33
+NM_CONTROLLED=yes
+BOOTPROTO=dhcp
+ESSID="foo\"bar\\foo\"bar\\foo\"bar\\foo\"bar\\1"
+CHANNEL=1
+MODE=Managed
+RATE=auto
+ONBOOT=yes
+USERCTL=yes
+PEERDNS=yes
+IPV6INIT=no

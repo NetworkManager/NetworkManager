@@ -26,6 +26,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include <dbus/dbus-glib.h>
 
@@ -35,10 +37,122 @@
 #include <nm-setting-wireless.h>
 #include <nm-setting-wireless-security.h>
 #include <nm-setting-ip4-config.h>
+#include <nm-setting-8021x.h>
+#include <nm-setting-pppoe.h>
+#include <nm-setting-ppp.h>
+#include <nm-setting-vpn.h>
+#include <nm-setting-gsm.h>
+#include <nm-setting-cdma.h>
+#include <nm-setting-serial.h>
 
 #include "nm-test-helpers.h"
 
+#include "common.h"
 #include "reader.h"
+#include "writer.h"
+
+typedef enum {
+	CK_CA_CERT = 0,
+	CK_CLIENT_CERT = 1,
+	CK_PRIV_KEY = 2
+} CertKeyType;
+
+static gboolean
+verify_cert_or_key (CertKeyType ck_type,
+                    NMSetting8021x *s_compare,
+                    const char *file,
+                    const char *privkey_password,
+                    const char *ifcfg,
+                    const char *test_name,
+                    const char *setting_key)
+{
+	NMSetting8021x *s_8021x;
+	GError *error = NULL;
+	gboolean success = FALSE;
+	const GByteArray *expected = NULL, *setting = NULL;
+	gboolean phase2 = FALSE;
+
+	if (strstr (setting_key, "phase2"))
+		phase2 = TRUE;
+
+	/* CA Cert */
+	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
+	ASSERT (s_8021x != NULL,
+	        test_name, "failed to verify %s: could not create temp 802.1x setting",
+	        ifcfg);
+
+	if (ck_type == CK_CA_CERT) {
+		if (phase2)
+			success = nm_setting_802_1x_set_phase2_ca_cert_from_file (s_8021x, file, NULL, &error);
+		else
+			success = nm_setting_802_1x_set_ca_cert_from_file (s_8021x, file, NULL, &error);
+	} else if (ck_type == CK_CLIENT_CERT) {
+		if (phase2)
+			success = nm_setting_802_1x_set_phase2_client_cert_from_file (s_8021x, file, NULL, &error);
+		else
+			success = nm_setting_802_1x_set_client_cert_from_file (s_8021x, file, NULL, &error);
+	} else if (ck_type == CK_PRIV_KEY) {
+		if (phase2)
+			success = nm_setting_802_1x_set_phase2_private_key_from_file (s_8021x, file, privkey_password, NULL, &error);
+		else
+			success = nm_setting_802_1x_set_private_key_from_file (s_8021x, file, privkey_password, NULL, &error);
+	}
+	ASSERT (success == TRUE,
+	        test_name, "failed to verify %s: could not load item for %s / %s: %s",
+	        ifcfg, NM_SETTING_802_1X_SETTING_NAME, setting_key, error->message);
+
+	if (ck_type == CK_CA_CERT) {
+		if (phase2)
+			expected = nm_setting_802_1x_get_phase2_ca_cert (s_8021x);
+		else
+			expected = nm_setting_802_1x_get_ca_cert (s_8021x);
+	} else if (ck_type == CK_CLIENT_CERT) {
+		if (phase2)
+			expected = nm_setting_802_1x_get_phase2_client_cert (s_8021x);
+		else
+			expected = nm_setting_802_1x_get_client_cert (s_8021x);
+	} else if (ck_type == CK_PRIV_KEY) {
+		if (phase2)
+			expected = nm_setting_802_1x_get_phase2_private_key (s_8021x);
+		else
+			expected = nm_setting_802_1x_get_private_key (s_8021x);
+	}
+	ASSERT (expected != NULL,
+	        test_name, "failed to verify %s: failed to get read item for %s / %s",
+	        ifcfg, NM_SETTING_802_1X_SETTING_NAME, setting_key);
+
+	if (ck_type == CK_CA_CERT) {
+		if (phase2)
+			setting = nm_setting_802_1x_get_phase2_ca_cert (s_compare);
+		else
+			setting = nm_setting_802_1x_get_ca_cert (s_compare);
+	} else if (ck_type == CK_CLIENT_CERT) {
+		if (phase2)
+			setting = nm_setting_802_1x_get_phase2_client_cert (s_compare);
+		else
+			setting = nm_setting_802_1x_get_client_cert (s_compare);
+	} else if (ck_type == CK_PRIV_KEY) {
+		if (phase2)
+			setting = nm_setting_802_1x_get_phase2_private_key (s_compare);
+		else
+			setting = nm_setting_802_1x_get_private_key (s_compare);
+	}
+	ASSERT (setting != NULL,
+	        test_name, "failed to verify %s: missing %s / %s key",
+	        ifcfg, NM_SETTING_802_1X_SETTING_NAME, setting_key);
+
+	ASSERT (setting->len == expected->len,
+	        test_name, "failed to verify %s: unexpected %s / %s certificate length",
+	        test_name, NM_SETTING_802_1X_SETTING_NAME, setting_key);
+
+	ASSERT (memcmp (setting->data, expected->data, setting->len) == 0,
+	        test_name, "failed to verify %s: %s / %s key certificate mismatch",
+	        ifcfg, NM_SETTING_802_1X_SETTING_NAME, setting_key);
+
+	g_object_unref (s_8021x);
+	return TRUE;
+}
+
 
 #define TEST_IFCFG_MINIMAL TEST_DIR"/network-scripts/ifcfg-test-minimal"
 
@@ -877,7 +991,7 @@ test_read_onboot_no (void)
 	        "onboot-no-verify", "failed to verify %s: %s", TEST_IFCFG_ONBOOT_NO, error->message);
 
 	ASSERT (unmanaged == FALSE,
-	        "onboot-no-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_DHCP);
+	        "onboot-no-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_ONBOOT_NO);
 
 	/* ===== CONNECTION SETTING ===== */
 
@@ -889,7 +1003,7 @@ test_read_onboot_no (void)
 
 	/* Autoconnect */
 	ASSERT (nm_setting_connection_get_autoconnect (s_con) == FALSE,
-	        "wired-dhcp-verify-connection", "failed to verify %s: unexpected %s /%s key value",
+	        "onboot-no-verify-connection", "failed to verify %s: unexpected %s /%s key value",
 	        TEST_IFCFG_ONBOOT_NO,
 	        NM_SETTING_CONNECTION_SETTING_NAME,
 	        NM_SETTING_CONNECTION_AUTOCONNECT);
@@ -897,10 +1011,197 @@ test_read_onboot_no (void)
 	g_object_unref (connection);
 }
 
+#define TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2 TEST_DIR"/network-scripts/ifcfg-test-wired-8021x-peap-mschapv2"
+#define TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2_CA_CERT TEST_DIR"/network-scripts/test_ca_cert.pem"
+
+static void
+test_read_wired_8021x_peap_mschapv2 (void)
+{
+	NMConnection *connection;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	NMSetting8021x *s_8021x;
+	NMSetting8021x *tmp_8021x;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const char *expected_identity = "David Smith";
+	const char *expected_password = "foobar baz";
+	gboolean success = FALSE;
+	const GByteArray *expected_ca_cert;
+	const GByteArray *read_ca_cert;
+
+	connection = connection_from_file (TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "wired-8021x-peap-mschapv2-read", "failed to read %s: %s", TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wired-8021x-peap-mschapv2-verify", "failed to verify %s: %s", TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2, error->message);
+
+	ASSERT (unmanaged == FALSE,
+	        "wired-8021x-peap-mschapv2-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2);
+
+	/* ===== WIRED SETTING ===== */
+
+	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	ASSERT (s_wired != NULL,
+	        "wired-8021x-peap-mschapv2-verify-wired", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_WIRED_SETTING_NAME);
+
+	/* ===== IPv4 SETTING ===== */
+
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	ASSERT (s_ip4 != NULL,
+	        "wired-8021x-peap-mschapv2-verify-ip4", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
+	        "wired-8021x-peap-mschapv2-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_METHOD);
+
+	/* ===== 802.1x SETTING ===== */
+	s_8021x = NM_SETTING_802_1X (nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X));
+	ASSERT (s_8021x != NULL,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME);
+
+	/* EAP methods */
+	ASSERT (nm_setting_802_1x_get_num_eap_methods (s_8021x) == 1,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_EAP);
+	tmp = nm_setting_802_1x_get_eap_method (s_8021x, 0);
+	ASSERT (tmp != NULL,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s / %s eap method",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_EAP);
+	ASSERT (strcmp (tmp, "peap") == 0,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_EAP);
+
+	/* Identity */
+	tmp = nm_setting_802_1x_get_identity (s_8021x);
+	ASSERT (tmp != NULL,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_IDENTITY);
+	ASSERT (strcmp (tmp, expected_identity) == 0,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_IDENTITY);
+
+	/* Password */
+	tmp = nm_setting_802_1x_get_password (s_8021x);
+	ASSERT (tmp != NULL,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PASSWORD);
+	ASSERT (strcmp (tmp, expected_password) == 0,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PASSWORD);
+
+	/* PEAP version */
+	tmp = nm_setting_802_1x_get_phase1_peapver (s_8021x);
+	ASSERT (tmp != NULL,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PHASE1_PEAPVER);
+	ASSERT (strcmp (tmp, "1") == 0,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PHASE1_PEAPVER);
+
+	/* PEAP Label */
+	tmp = nm_setting_802_1x_get_phase1_peaplabel (s_8021x);
+	ASSERT (tmp != NULL,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PHASE1_PEAPLABEL);
+	ASSERT (strcmp (tmp, "1") == 0,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PHASE1_PEAPLABEL);
+
+	/* CA Cert */
+	tmp_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
+	ASSERT (tmp_8021x != NULL,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: could not create temp 802.1x setting",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_CA_CERT);
+
+	success = nm_setting_802_1x_set_ca_cert_from_file (tmp_8021x,
+	                                                   TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2_CA_CERT,
+	                                                   NULL,
+	                                                   &error);
+	ASSERT (success == TRUE,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: could not load CA certificate",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_CA_CERT);
+	expected_ca_cert = nm_setting_802_1x_get_ca_cert (tmp_8021x);
+	ASSERT (expected_ca_cert != NULL,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: failed to get CA certificate",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_CA_CERT);
+
+	read_ca_cert = nm_setting_802_1x_get_ca_cert (s_8021x);
+	ASSERT (read_ca_cert != NULL,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_CA_CERT);
+
+	ASSERT (read_ca_cert->len == expected_ca_cert->len,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s certificate length",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_CA_CERT);
+
+	ASSERT (memcmp (read_ca_cert->data, expected_ca_cert->data, read_ca_cert->len) == 0,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: %s / %s key certificate mismatch",
+	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_CA_CERT);
+
+	g_object_unref (tmp_8021x);
+
+	g_object_unref (connection);
+}
+
 #define TEST_IFCFG_WIFI_OPEN TEST_DIR"/network-scripts/ifcfg-test-wifi-open"
 
 static void
-test_read_wifi_unencrypted (void)
+test_read_wifi_open (void)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
@@ -917,7 +1218,7 @@ test_read_wifi_unencrypted (void)
 	guint64 expected_timestamp = 0;
 	const char *expected_ssid = "blahblah";
 	const char *expected_mode = "infrastructure";
-	const guint32 expected_channel = 0;
+	const guint32 expected_channel = 1;
 
 	connection = connection_from_file (TEST_IFCFG_WIFI_OPEN,
 	                                   NULL,
@@ -1070,6 +1371,180 @@ test_read_wifi_unencrypted (void)
 	g_object_unref (connection);
 }
 
+#define TEST_IFCFG_WIFI_OPEN_SSID_HEX TEST_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-hex"
+
+static void
+test_read_wifi_open_ssid_hex (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wireless;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const GByteArray *array;
+	const char *expected_id = "System blahblah (test-wifi-open-ssid-hex)";
+	const char *expected_ssid = "blahblah";
+
+	connection = connection_from_file (TEST_IFCFG_WIFI_OPEN_SSID_HEX,
+	                                   NULL,
+	                                   TYPE_WIRELESS,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "wifi-open-ssid-hex-read", "failed to read %s: %s", TEST_IFCFG_WIFI_OPEN_SSID_HEX, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wifi-open-ssid-hex-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_OPEN_SSID_HEX, error->message);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "wifi-open-ssid-hex-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_OPEN_SSID_HEX,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "wifi-open-ssid-hex-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_OPEN_SSID_HEX,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "wifi-open-ssid-hex-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_OPEN_SSID_HEX,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	/* ===== WIRELESS SETTING ===== */
+
+	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	ASSERT (s_wireless != NULL,
+	        "wifi-open-ssid-hex-verify-wireless", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_OPEN_SSID_HEX,
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+
+	/* SSID */
+	array = nm_setting_wireless_get_ssid (s_wireless);
+	ASSERT (array != NULL,
+	        "wifi-open-ssid-hex-verify-wireless", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_OPEN_SSID_HEX,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SSID);
+	ASSERT (array->len == strlen (expected_ssid),
+	        "wifi-open-ssid-hex-verify-wireless", "failed to verify %s: unexpected %s / %s key value length",
+	        TEST_IFCFG_WIFI_OPEN_SSID_HEX,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SSID);
+	ASSERT (memcmp (array->data, expected_ssid, strlen (expected_ssid)) == 0,
+	        "wifi-open-ssid-hex-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_OPEN_SSID_HEX,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SSID);
+	
+	g_object_unref (connection);
+}
+
+static void
+test_read_wifi_open_ssid_bad (const char *file, const char *test)
+{
+	NMConnection *connection;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+
+	connection = connection_from_file (file, NULL, TYPE_WIRELESS, &unmanaged, &keyfile, &error, &ignore_error);
+	ASSERT (connection == NULL, test, "unexpected success reading %s", file);
+	g_clear_error (&error);
+}
+
+#define TEST_IFCFG_WIFI_OPEN_SSID_QUOTED TEST_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-quoted"
+
+static void
+test_read_wifi_open_ssid_quoted (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wireless;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const GByteArray *array;
+	const char *expected_id = "System foo\"bar\\ (test-wifi-open-ssid-quoted)";
+	const char *expected_ssid = "foo\"bar\\";
+
+	connection = connection_from_file (TEST_IFCFG_WIFI_OPEN_SSID_QUOTED,
+	                                   NULL,
+	                                   TYPE_WIRELESS,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "wifi-open-ssid-quoted-read", "failed to read %s: %s", TEST_IFCFG_WIFI_OPEN_SSID_QUOTED, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wifi-open-ssid-quoted-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_OPEN_SSID_QUOTED, error->message);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "wifi-open-ssid-quoted-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_OPEN_SSID_QUOTED,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "wifi-open-ssid-quoted-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_OPEN_SSID_QUOTED,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "wifi-open-ssid-quoted-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_OPEN_SSID_QUOTED,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	/* ===== WIRELESS SETTING ===== */
+
+	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	ASSERT (s_wireless != NULL,
+	        "wifi-open-ssid-quoted-verify-wireless", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_OPEN_SSID_QUOTED,
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+
+	/* SSID */
+	array = nm_setting_wireless_get_ssid (s_wireless);
+	ASSERT (array != NULL,
+	        "wifi-open-ssid-quoted-verify-wireless", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_OPEN_SSID_QUOTED,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SSID);
+	ASSERT (array->len == strlen (expected_ssid),
+	        "wifi-open-ssid-quoted-verify-wireless", "failed to verify %s: unexpected %s / %s key value length",
+	        TEST_IFCFG_WIFI_OPEN_SSID_QUOTED,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SSID);
+	ASSERT (memcmp (array->data, expected_ssid, strlen (expected_ssid)) == 0,
+	        "wifi-open-ssid-quoted-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_OPEN_SSID_QUOTED,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SSID);
+	
+	g_object_unref (connection);
+}
+
 #define TEST_IFCFG_WIFI_WEP TEST_DIR"/network-scripts/ifcfg-test-wifi-wep"
 
 static void
@@ -1091,7 +1566,7 @@ test_read_wifi_wep (void)
 	guint64 expected_timestamp = 0;
 	const char *expected_ssid = "blahblah";
 	const char *expected_mode = "infrastructure";
-	const guint32 expected_channel = 0;
+	const guint32 expected_channel = 1;
 	const char *expected_wep_key0 = "0123456789abcdef0123456789";
 
 	connection = connection_from_file (TEST_IFCFG_WIFI_WEP,
@@ -1446,8 +1921,8 @@ test_read_wifi_wep_adhoc (void)
 	        NM_SETTING_WIRELESS_SETTING_NAME,
 	        NM_SETTING_WIRELESS_MODE);
 
-	/* Channel (doesn't work yet) */
-	ASSERT (nm_setting_wireless_get_channel (s_wireless) == 0,
+	/* Channel */
+	ASSERT (nm_setting_wireless_get_channel (s_wireless) == 11,
 	        "wifi-wep-adhoc-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
 	        TEST_IFCFG_WIFI_WEP_ADHOC,
 	        NM_SETTING_WIRELESS_SETTING_NAME,
@@ -1589,6 +2064,137 @@ test_read_wifi_wep_adhoc (void)
 	g_object_unref (connection);
 }
 
+#define TEST_IFCFG_WIFI_LEAP TEST_DIR"/network-scripts/ifcfg-test-wifi-leap"
+
+static void
+test_read_wifi_leap (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wireless;
+	NMSettingWirelessSecurity *s_wsec;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const char *expected_id = "System blahblah (test-wifi-leap)";
+	const char *expected_identity = "Bill Smith";
+	const char *expected_password = "foobarblah";
+
+	connection = connection_from_file (TEST_IFCFG_WIFI_LEAP,
+	                                   NULL,
+	                                   TYPE_WIRELESS,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "wifi-leap-read", "failed to read %s: %s", TEST_IFCFG_WIFI_LEAP, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wifi-leap-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_LEAP, error->message);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "wifi-leap-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_LEAP,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "wifi-leap-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_LEAP,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "wifi-leap-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_LEAP,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	/* ===== WIRELESS SETTING ===== */
+
+	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	ASSERT (s_wireless != NULL,
+	        "wifi-leap-verify-wireless", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_LEAP,
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+
+	/* Security */
+	tmp = nm_setting_wireless_get_security (s_wireless);
+	ASSERT (tmp != NULL,
+	        "wifi-leap-verify-wireless", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_LEAP,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SEC);
+	ASSERT (strcmp (tmp, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME) == 0,
+	        "wifi-leap-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_LEAP,
+	        NM_SETTING_WIRELESS_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SEC);
+
+
+	/* ===== WIRELESS SECURITY SETTING ===== */
+
+	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY));
+	ASSERT (s_wsec != NULL,
+	        "wifi-leap-verify-wireless", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_LEAP,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+
+	/* Key management */
+	ASSERT (strcmp (nm_setting_wireless_security_get_key_mgmt (s_wsec), "ieee8021x") == 0,
+	        "wifi-leap-verify-wireless", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_LEAP,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+
+	/* WEP Authentication mode */
+	tmp = nm_setting_wireless_security_get_auth_alg (s_wsec);
+	ASSERT (tmp != NULL,
+	        "wifi-leap-verify-wireless", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_LEAP,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_AUTH_ALG);
+	ASSERT (strcmp (tmp, "leap") == 0,
+	        "wifi-leap-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_LEAP,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_AUTH_ALG);
+
+	/* LEAP Username */
+	tmp = nm_setting_wireless_security_get_leap_username (s_wsec);
+	ASSERT (tmp != NULL,
+	        "wifi-leap-verify-wireless", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_LEAP,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
+	ASSERT (strcmp (tmp, expected_identity) == 0,
+	        "wifi-leap-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_LEAP,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_LEAP_USERNAME);
+
+	/* LEAP Password */
+	tmp = nm_setting_wireless_security_get_leap_password (s_wsec);
+	ASSERT (tmp != NULL,
+	        "wifi-leap-verify-wireless", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_LEAP,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD);
+	ASSERT (strcmp (tmp, expected_password) == 0,
+	        "wifi-leap-verify-wireless", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_LEAP,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD);
+
+	g_object_unref (connection);
+}
+
 #define TEST_IFCFG_WIFI_WPA_PSK TEST_DIR"/network-scripts/ifcfg-test-wifi-wpa-psk"
 
 static void
@@ -1610,7 +2216,7 @@ test_read_wifi_wpa_psk (void)
 	guint64 expected_timestamp = 0;
 	const char *expected_ssid = "blahblah";
 	const char *expected_mode = "infrastructure";
-	const guint32 expected_channel = 0;
+	const guint32 expected_channel = 1;
 	const char *expected_key_mgmt = "wpa-psk";
 	const char *expected_psk = "1da190379817bc360dda52e85c388c439a21ea5c7bf819c64e9da051807deae6";
 	guint32 n, i;
@@ -2229,6 +2835,2347 @@ test_read_wifi_wpa_psk_hex (void)
 	g_object_unref (connection);
 }
 
+#define TEST_IFCFG_WIFI_WPA_EAP_TLS TEST_DIR"/network-scripts/ifcfg-test-wifi-wpa-eap-tls"
+#define TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT TEST_DIR"/network-scripts/test_ca_cert.pem"
+#define TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT TEST_DIR"/network-scripts/test1_key_and_cert.pem"
+#define TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY TEST_DIR"/network-scripts/test1_key_and_cert.pem"
+
+static void
+test_read_wifi_wpa_eap_tls (void)
+{
+	NMConnection *connection;
+	NMSettingWireless *s_wireless;
+	NMSettingIP4Config *s_ip4;
+	NMSetting8021x *s_8021x;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const char *expected_identity = "Bill Smith";
+	const char *expected_privkey_password = "test1";
+
+	connection = connection_from_file (TEST_IFCFG_WIFI_WPA_EAP_TLS,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "wifi-wpa-eap-tls-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WPA_EAP_TLS, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wifi-wpa-eap-tls-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WPA_EAP_TLS, error->message);
+
+	ASSERT (unmanaged == FALSE,
+	        "wifi-wpa-eap-tls-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIFI_WPA_EAP_TLS);
+
+	/* ===== WIRELESS SETTING ===== */
+
+	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	ASSERT (s_wireless != NULL,
+	        "wifi-wpa-eap-tls-verify-wireless", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+
+	/* ===== IPv4 SETTING ===== */
+
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	ASSERT (s_ip4 != NULL,
+	        "wifi-wpa-eap-tls-verify-ip4", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
+	        "wifi-wpa-eap-tls-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_METHOD);
+
+	/* ===== 802.1x SETTING ===== */
+	s_8021x = NM_SETTING_802_1X (nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X));
+	ASSERT (s_8021x != NULL,
+	        "wifi-wpa-eap-tls-verify-8021x", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME);
+
+	/* EAP methods */
+	ASSERT (nm_setting_802_1x_get_num_eap_methods (s_8021x) == 1,
+	        "wifi-wpa-eap-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_EAP);
+	tmp = nm_setting_802_1x_get_eap_method (s_8021x, 0);
+	ASSERT (tmp != NULL,
+	        "wifi-wpa-eap-tls-verify-8021x", "failed to verify %s: missing %s / %s eap method",
+	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_EAP);
+	ASSERT (strcmp (tmp, "tls") == 0,
+	        "wifi-wpa-eap-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_EAP);
+
+	/* Identity */
+	tmp = nm_setting_802_1x_get_identity (s_8021x);
+	ASSERT (tmp != NULL,
+	        "wifi-wpa-eap-tls-verify-8021x", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_IDENTITY);
+	ASSERT (strcmp (tmp, expected_identity) == 0,
+	        "wifi-wpa-eap-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_IDENTITY);
+
+	/* CA Cert */
+	verify_cert_or_key (CK_CA_CERT,
+	                    s_8021x,
+	                    TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT,
+	                    NULL,
+	                    TEST_IFCFG_WIFI_WPA_EAP_TLS,
+	                    "wifi-wpa-eap-tls-verify-8021x",
+	                    NM_SETTING_802_1X_CA_CERT);
+
+	/* Client Cert */
+	verify_cert_or_key (CK_CLIENT_CERT,
+	                    s_8021x,
+	                    TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT,
+	                    NULL,
+	                    TEST_IFCFG_WIFI_WPA_EAP_TLS,
+	                    "wifi-wpa-eap-tls-verify-8021x",
+	                    NM_SETTING_802_1X_CLIENT_CERT);
+
+	/* Private Key Password */
+	ASSERT (nm_setting_802_1x_get_private_key_password (s_8021x) == NULL,
+	        "wifi-wpa-eap-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key",
+	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
+
+	/* Private key */
+	verify_cert_or_key (CK_PRIV_KEY,
+	                    s_8021x,
+	                    TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY,
+	                    expected_privkey_password,
+	                    TEST_IFCFG_WIFI_WPA_EAP_TLS,
+	                    "wifi-wpa-eap-tls-verify-8021x",
+	                    NM_SETTING_802_1X_PRIVATE_KEY);
+
+	g_object_unref (connection);
+}
+
+#define TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS TEST_DIR"/network-scripts/ifcfg-test-wifi-wpa-eap-ttls-tls"
+#define TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS_CA_CERT TEST_DIR"/network-scripts/test_ca_cert.pem"
+/* Also use TLS defines from the previous test */
+
+static void
+test_read_wifi_wpa_eap_ttls_tls (void)
+{
+	NMConnection *connection;
+	NMSettingWireless *s_wireless;
+	NMSettingIP4Config *s_ip4;
+	NMSetting8021x *s_8021x;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const char *expected_identity = "Chuck Shumer";
+	const char *expected_privkey_password = "test1";
+
+	connection = connection_from_file (TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	                                   NULL,
+	                                   TYPE_WIRELESS,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "wifi-wpa-eap-ttls-tls-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wifi-wpa-eap-ttls-tls-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS, error->message);
+
+	ASSERT (unmanaged == FALSE,
+	        "wifi-wpa-eap-ttls-tls-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS);
+
+	/* ===== WIRELESS SETTING ===== */
+
+	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	ASSERT (s_wireless != NULL,
+	        "wifi-wpa-eap-ttls-tls-verify-wireless", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+
+	/* ===== IPv4 SETTING ===== */
+
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	ASSERT (s_ip4 != NULL,
+	        "wifi-wpa-eap-ttls-tls-verify-ip4", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
+	        "wifi-wpa-eap-ttls-tls-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_METHOD);
+
+	/* ===== 802.1x SETTING ===== */
+	s_8021x = NM_SETTING_802_1X (nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X));
+	ASSERT (s_8021x != NULL,
+	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME);
+
+	/* EAP methods */
+	ASSERT (nm_setting_802_1x_get_num_eap_methods (s_8021x) == 1,
+	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_EAP);
+	tmp = nm_setting_802_1x_get_eap_method (s_8021x, 0);
+	ASSERT (tmp != NULL,
+	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: missing %s / %s eap method",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_EAP);
+	ASSERT (strcmp (tmp, "ttls") == 0,
+	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_EAP);
+
+	/* CA Cert */
+	verify_cert_or_key (CK_CA_CERT,
+	                    s_8021x,
+	                    TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS_CA_CERT,
+	                    NULL,
+	                    TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	                    "wifi-wpa-eap-ttls-tls-verify-8021x",
+	                    NM_SETTING_802_1X_CA_CERT);
+
+	/* Inner auth method */
+	tmp = nm_setting_802_1x_get_phase2_autheap (s_8021x);
+	ASSERT (tmp != NULL,
+	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: missing %s / %s eap method",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PHASE2_AUTHEAP);
+	ASSERT (strcmp (tmp, "tls") == 0,
+	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PHASE2_AUTHEAP);
+
+	/* Inner CA Cert */
+	verify_cert_or_key (CK_CA_CERT,
+	                    s_8021x,
+	                    TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT,
+	                    NULL,
+	                    TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	                    "wifi-wpa-eap-ttls-tls-verify-8021x",
+	                    NM_SETTING_802_1X_PHASE2_CA_CERT);
+
+	/* Inner Client Cert */
+	verify_cert_or_key (CK_CLIENT_CERT,
+	                    s_8021x,
+	                    TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT,
+	                    NULL,
+	                    TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	                    "wifi-wpa-eap-ttls-tls-verify-8021x",
+	                    NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
+
+	/* Inner Private Key Password */
+	ASSERT (nm_setting_802_1x_get_phase2_private_key_password (s_8021x) == NULL,
+	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD);
+
+	/* Inner private key */
+	verify_cert_or_key (CK_PRIV_KEY,
+	                    s_8021x,
+	                    TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY,
+	                    expected_privkey_password,
+	                    TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	                    "wifi-wpa-eap-ttls-tls-verify-8021x",
+	                    NM_SETTING_802_1X_PHASE2_PRIVATE_KEY);
+
+	/* Identity */
+	tmp = nm_setting_802_1x_get_identity (s_8021x);
+	ASSERT (tmp != NULL,
+	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_IDENTITY);
+	ASSERT (strcmp (tmp, expected_identity) == 0,
+	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_IDENTITY);
+
+	g_object_unref (connection);
+}
+
+#define TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP TEST_DIR"/network-scripts/ifcfg-test-wifi-wep-eap-ttls-chap"
+#define TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP_CA_CERT TEST_DIR"/network-scripts/test_ca_cert.pem"
+
+static void
+test_read_wifi_wep_eap_ttls_chap (void)
+{
+	NMConnection *connection;
+	NMSettingWireless *s_wireless;
+	NMSettingWirelessSecurity *s_wsec;
+	NMSettingIP4Config *s_ip4;
+	NMSetting8021x *s_8021x;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const char *expected_password = "foobar baz";
+	const char *expected_identity = "David Smith";
+	const char *expected_key_mgmt = "ieee8021x";
+
+	connection = connection_from_file (TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	                                   NULL,
+	                                   TYPE_WIRELESS,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "wifi-wep-eap-ttls-chap-read", "failed to read %s: %s", TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "wifi-wep-eap-ttls-chap-verify", "failed to verify %s: %s", TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP, error->message);
+
+	ASSERT (unmanaged == FALSE,
+	        "wifi-wep-eap-ttls-chap-verify", "failed to verify %s: unexpected unmanaged value", TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP);
+
+	/* ===== WIRELESS SETTING ===== */
+
+	s_wireless = NM_SETTING_WIRELESS (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS));
+	ASSERT (s_wireless != NULL,
+	        "wifi-wep-eap-ttls-chap-verify-wireless", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+
+	/* ===== IPv4 SETTING ===== */
+
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	ASSERT (s_ip4 != NULL,
+	        "wifi-wep-eap-ttls-chap-verify-ip4", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
+	        "wifi-wep-eap-ttls-chap-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_METHOD);
+
+	/* ===== 802.1x SETTING ===== */
+	s_wsec = NM_SETTING_WIRELESS_SECURITY (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY));
+	ASSERT (s_wsec != NULL,
+	        "wifi-wep-eap-ttls-chap-verify-wireless-security", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_802_1X_SETTING_NAME);
+
+	/* Key management */
+	tmp = nm_setting_wireless_security_get_key_mgmt (s_wsec);
+	ASSERT (tmp != NULL,
+	        "wifi-wep-eap-ttls-chap-verify-wireless-security", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WPA_PSK,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+	ASSERT (strcmp (tmp, expected_key_mgmt) == 0,
+	        "wifi-wep-eap-ttls-chap-verify-wireless-security", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WPA_PSK,
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	        NM_SETTING_WIRELESS_SECURITY_KEY_MGMT);
+
+	/* ===== 802.1x SETTING ===== */
+	s_8021x = NM_SETTING_802_1X (nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X));
+	ASSERT (s_8021x != NULL,
+	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_802_1X_SETTING_NAME);
+
+	/* EAP methods */
+	ASSERT (nm_setting_802_1x_get_num_eap_methods (s_8021x) == 1,
+	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_EAP);
+	tmp = nm_setting_802_1x_get_eap_method (s_8021x, 0);
+	ASSERT (tmp != NULL,
+	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: missing %s / %s eap method",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_EAP);
+	ASSERT (strcmp (tmp, "ttls") == 0,
+	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_EAP);
+
+	/* CA Cert */
+	verify_cert_or_key (CK_CA_CERT,
+	                    s_8021x,
+	                    TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP_CA_CERT,
+	                    NULL,
+	                    TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	                    "wifi-wep-eap-ttls-chap-verify-8021x",
+	                    NM_SETTING_802_1X_CA_CERT);
+
+	/* Inner auth method */
+	tmp = nm_setting_802_1x_get_phase2_auth (s_8021x);
+	ASSERT (tmp != NULL,
+	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: missing %s / %s eap method",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PHASE2_AUTH);
+	ASSERT (strcmp (tmp, "chap") == 0,
+	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PHASE2_AUTH);
+
+	/* Password */
+	tmp = nm_setting_802_1x_get_identity (s_8021x);
+	ASSERT (tmp != NULL,
+	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_IDENTITY);
+	ASSERT (strcmp (tmp, expected_identity) == 0,
+	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_IDENTITY);
+
+	/* Password */
+	tmp = nm_setting_802_1x_get_password (s_8021x);
+	ASSERT (tmp != NULL,
+	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PASSWORD);
+	ASSERT (strcmp (tmp, expected_password) == 0,
+	        "wifi-wep-eap-ttls-chap-verify-8021x", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PASSWORD);
+
+	g_object_unref (connection);
+}
+
+static void
+test_write_wired_static (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	static unsigned char tmpmac[] = { 0x31, 0x33, 0x33, 0x37, 0xbe, 0xcd };
+	GByteArray *mac;
+	guint32 mtu = 1492;
+	char *uuid;
+	guint64 timestamp = 0x12344433L;
+	const guint32 ip1 = htonl (0x01010103);
+	const guint32 ip2 = htonl (0x01010105);
+	const guint32 gw = htonl (0x01010101);
+	const guint32 dns1 = htonl (0x04020201);
+	const guint32 dns2 = htonl (0x04020202);
+	const guint32 prefix = 24;
+	const char *dns_search1 = "foobar.com";
+	const char *dns_search2 = "lab.foobar.com";
+	NMIP4Address *addr;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "wired-static-write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "wired-static-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wired Static",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NM_SETTING_CONNECTION_TIMESTAMP, timestamp,
+	              NULL);
+	g_free (uuid);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	ASSERT (s_wired != NULL,
+	        "wired-static-write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRED_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	mac = g_byte_array_sized_new (sizeof (tmpmac));
+	g_byte_array_append (mac, &tmpmac[0], sizeof (tmpmac));
+
+	g_object_set (s_wired,
+	              NM_SETTING_WIRED_MAC_ADDRESS, mac,
+	              NM_SETTING_WIRED_MTU, mtu,
+	              NULL);
+	g_byte_array_free (mac, TRUE);
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			"wired-static-write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4,
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL,
+	              NULL);
+
+	addr = nm_ip4_address_new ();
+	nm_ip4_address_set_address (addr, ip1);
+	nm_ip4_address_set_prefix (addr, prefix);
+	nm_ip4_address_set_gateway (addr, gw);
+	nm_setting_ip4_config_add_address (s_ip4, addr);
+	nm_ip4_address_unref (addr);
+
+	addr = nm_ip4_address_new ();
+	nm_ip4_address_set_address (addr, ip2);
+	nm_ip4_address_set_prefix (addr, prefix);
+	nm_ip4_address_set_gateway (addr, gw);
+	nm_setting_ip4_config_add_address (s_ip4, addr);
+	nm_ip4_address_unref (addr);
+
+	nm_setting_ip4_config_add_dns (s_ip4, dns1);
+	nm_setting_ip4_config_add_dns (s_ip4, dns2);
+
+	nm_setting_ip4_config_add_dns_search (s_ip4, dns_search1);
+	nm_setting_ip4_config_add_dns_search (s_ip4, dns_search2);
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "wired-static-write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        "wired-static-write", "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        "wired-static-write", "didn't get ifcfg file path back after writing connection");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_ETHERNET,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	ASSERT (reread != NULL,
+	        "wired-static-write-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        "wired-static-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+	        "wired-static-write", "written and re-read connection weren't the same.");
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
+test_write_wired_dhcp (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "wired-dhcp-write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "wired-dhcp-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wired DHCP",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	ASSERT (s_wired != NULL,
+	        "wired-dhcp-write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRED_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			"wired-dhcp-write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4,
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NM_SETTING_IP4_CONFIG_DHCP_CLIENT_ID, "random-client-id-00:22:33",
+	              NM_SETTING_IP4_CONFIG_DHCP_HOSTNAME, "awesome-hostname",
+	              NM_SETTING_IP4_CONFIG_IGNORE_AUTO_ROUTES, TRUE,
+	              NM_SETTING_IP4_CONFIG_IGNORE_AUTO_DNS, TRUE,
+	              NULL);
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "wired-dhcp-write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        "wired-dhcp-write", "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        "wired-dhcp-write", "didn't get ifcfg file path back after writing connection");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_ETHERNET,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	ASSERT (reread != NULL,
+	        "wired-dhcp-write-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        "wired-dhcp-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+	        "wired-dhcp-write", "written and re-read connection weren't the same.");
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
+test_write_wired_dhcp_8021x_peap_mschapv2 (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	NMSetting8021x *s_8021x;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "wired-dhcp-8021x-peap-mschapv2write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "wired-dhcp-8021x-peap-mschapv2write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wired DHCP 802.1x PEAP MSCHAPv2",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	ASSERT (s_wired != NULL,
+	        "wired-dhcp-8021x-peap-mschapv2write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRED_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			"wired-dhcp-8021x-peap-mschapv2write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+
+	/* 802.1x setting */
+	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
+	ASSERT (s_8021x != NULL,
+			"wired-dhcp-8021x-peap-mschapv2write", "failed to allocate new %s setting",
+			NM_SETTING_802_1X_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_8021x));
+
+	g_object_set (s_8021x,
+	              NM_SETTING_802_1X_IDENTITY, "Bob Saget",
+	              NM_SETTING_802_1X_PASSWORD, "Kids, it was back in October 2008...",
+	              NM_SETTING_802_1X_PHASE1_PEAPVER, "1",
+	              NM_SETTING_802_1X_PHASE1_PEAPLABEL, "1",
+	              NM_SETTING_802_1X_PHASE2_AUTH, "mschapv2",
+	              NULL);
+
+	nm_setting_802_1x_add_eap_method (s_8021x, "peap");
+
+	success = nm_setting_802_1x_set_ca_cert_from_file (s_8021x, 
+	                                                   TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2_CA_CERT,
+	                                                   NULL,
+	                                                   &error);
+	ASSERT (success == TRUE,
+	        "wired-dhcp-8021x-peap-mschapv2write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "wired-dhcp-8021x-peap-mschapv2write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        "wired-dhcp-8021x-peap-mschapv2write", "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        "wired-dhcp-8021x-peap-mschapv2write", "didn't get ifcfg file path back after writing connection");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_ETHERNET,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	ASSERT (reread != NULL,
+	        "wired-dhcp-8021x-peap-mschapv2write-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        "wired-dhcp-8021x-peap-mschapv2write-reread-verify", "failed to verify %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+	        "wired-dhcp-8021x-peap-mschapv2write", "written and re-read connection weren't the same.");
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
+test_write_wifi_open (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingIP4Config *s_ip4;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GByteArray *ssid;
+	const unsigned char ssid_data[] = { 0x54, 0x65, 0x73, 0x74, 0x20, 0x53, 0x53, 0x49, 0x44 };
+	GByteArray *bssid;
+	const unsigned char bssid_data[] = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66 };
+	guint32 channel = 9, mtu = 1345;
+	GByteArray *mac;
+	const unsigned char mac_data[] = { 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff };
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "wifi-open-write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "wifi-open-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wifi Open",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wifi setting */
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	ASSERT (s_wifi != NULL,
+	        "wifi-open-write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	ssid = g_byte_array_sized_new (sizeof (ssid_data));
+	g_byte_array_append (ssid, ssid_data, sizeof (ssid_data));
+	bssid = g_byte_array_sized_new (sizeof (bssid_data));
+	g_byte_array_append (bssid, bssid_data, sizeof (bssid_data));
+	mac = g_byte_array_sized_new (sizeof (mac_data));
+	g_byte_array_append (mac, mac_data, sizeof (mac_data));
+
+	g_object_set (s_wifi,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRELESS_BSSID, bssid,
+	              NM_SETTING_WIRELESS_MAC_ADDRESS, mac,
+	              NM_SETTING_WIRELESS_MODE, "infrastructure",
+	              NM_SETTING_WIRELESS_BAND, "bg",
+	              NM_SETTING_WIRELESS_CHANNEL, channel,
+	              NM_SETTING_WIRELESS_MTU, mtu,
+	              NULL);
+
+	g_byte_array_free (ssid, TRUE);
+	g_byte_array_free (bssid, TRUE);
+	g_byte_array_free (mac, TRUE);
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			"wifi-open-write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "wifi-open-write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        "wifi-open-write", "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        "wifi-open-write", "didn't get ifcfg file path back after writing connection");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_WIRELESS,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	ASSERT (reread != NULL,
+	        "wifi-open-write-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        "wifi-open-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+	        "wifi-open-write", "written and re-read connection weren't the same.");
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
+test_write_wifi_open_hex_ssid (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingIP4Config *s_ip4;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GByteArray *ssid;
+	const unsigned char ssid_data[] = { 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd };
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "wifi-open-hex-ssid-write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "wifi-open-hex-ssid-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wifi Open Hex SSID",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wifi setting */
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	ASSERT (s_wifi != NULL,
+	        "wifi-open-hex-ssid-write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	ssid = g_byte_array_sized_new (sizeof (ssid_data));
+	g_byte_array_append (ssid, ssid_data, sizeof (ssid_data));
+
+	g_object_set (s_wifi,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRELESS_MODE, "infrastructure",
+	              NULL);
+
+	g_byte_array_free (ssid, TRUE);
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			"wifi-open-hex-ssid-write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "wifi-open-hex-ssid-write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        "wifi-open-hex-ssid-write", "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        "wifi-open-hex-ssid-write", "didn't get ifcfg file path back after writing connection");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_WIRELESS,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	ASSERT (reread != NULL,
+	        "wifi-open-hex-ssid-write-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        "wifi-open-hex-ssid-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+	        "wifi-open-hex-ssid-write", "written and re-read connection weren't the same.");
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
+test_write_wifi_wep (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	NMSettingIP4Config *s_ip4;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GByteArray *ssid;
+	const unsigned char ssid_data[] = "blahblah";
+	struct stat statbuf;
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "wifi-wep-write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "wifi-wep-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wifi WEP",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wifi setting */
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	ASSERT (s_wifi != NULL,
+	        "wifi-wep-write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	ssid = g_byte_array_sized_new (sizeof (ssid_data));
+	g_byte_array_append (ssid, ssid_data, sizeof (ssid_data));
+
+	g_object_set (s_wifi,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRELESS_MODE, "infrastructure",
+	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	              NULL);
+
+	g_byte_array_free (ssid, TRUE);
+
+	/* Wireless security setting */
+	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+	ASSERT (s_wsec != NULL,
+			"wifi-wep-write", "failed to allocate new %s setting",
+			NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+
+	g_object_set (s_wsec,
+	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none",
+	              NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX, 2,
+	              NM_SETTING_WIRELESS_SECURITY_AUTH_ALG, "shared",
+	              NULL);
+	nm_setting_wireless_security_set_wep_key (s_wsec, 0, "0123456789abcdef0123456789");
+	nm_setting_wireless_security_set_wep_key (s_wsec, 1, "11111111111111111111111111");
+	nm_setting_wireless_security_set_wep_key (s_wsec, 2, "aaaaaaaaaaaaaaaaaaaaaaaaaa");
+	nm_setting_wireless_security_set_wep_key (s_wsec, 3, "BBBBBBBBBBBBBBBBBBBBBBBBBB");
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			"wifi-wep-write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "wifi-wep-write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        "wifi-wep-write", "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        "wifi-wep-write", "didn't get ifcfg file path back after writing connection");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_WIRELESS,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	ASSERT (keyfile != NULL,
+	        "wifi-wep-write-reread", "expected keyfile for '%s'", testfile);
+
+	ASSERT (stat (keyfile, &statbuf) == 0,
+	        "wifi-wep-write-reread", "couldn't stat() '%s'", keyfile);
+	ASSERT (S_ISREG (statbuf.st_mode),
+	        "wifi-wep-write-reread", "keyfile '%s' wasn't a normal file", keyfile);
+	ASSERT ((statbuf.st_mode & 0077) == 0,
+	        "wifi-wep-write-reread", "keyfile '%s' wasn't readable only by its owner", keyfile);
+
+	unlink (keyfile);
+
+	ASSERT (reread != NULL,
+	        "wifi-wep-write-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        "wifi-wep-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+	        "wifi-wep-write", "written and re-read connection weren't the same.");
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
+test_write_wifi_wep_adhoc (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	NMSettingIP4Config *s_ip4;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GByteArray *ssid;
+	const unsigned char ssid_data[] = "blahblah";
+	struct stat statbuf;
+	NMIP4Address *addr;
+	const guint32 ip1 = htonl (0x01010103);
+	const guint32 gw = htonl (0x01010101);
+	const guint32 dns1 = htonl (0x04020201);
+	const guint32 prefix = 24;
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "wifi-wep-adhoc-write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "wifi-wep-adhoc-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wifi WEP AdHoc",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wifi setting */
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	ASSERT (s_wifi != NULL,
+	        "wifi-wep-adhoc-write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	ssid = g_byte_array_sized_new (sizeof (ssid_data));
+	g_byte_array_append (ssid, ssid_data, sizeof (ssid_data));
+
+	g_object_set (s_wifi,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRELESS_MODE, "adhoc",
+	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	              NULL);
+
+	g_byte_array_free (ssid, TRUE);
+
+	/* Wireless security setting */
+	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+	ASSERT (s_wsec != NULL,
+			"wifi-wep-adhoc-write", "failed to allocate new %s setting",
+			NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+
+	g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "none", NULL);
+	nm_setting_wireless_security_set_wep_key (s_wsec, 0, "0123456789abcdef0123456789");
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			"wifi-wep-adhoc-write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NULL);
+
+	/* IP Address */
+	addr = nm_ip4_address_new ();
+	nm_ip4_address_set_address (addr, ip1);
+	nm_ip4_address_set_prefix (addr, prefix);
+	nm_ip4_address_set_gateway (addr, gw);
+	nm_setting_ip4_config_add_address (s_ip4, addr);
+	nm_ip4_address_unref (addr);
+
+	nm_setting_ip4_config_add_dns (s_ip4, dns1);
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "wifi-wep-adhoc-write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        "wifi-wep-adhoc-write", "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        "wifi-wep-adhoc-write", "didn't get ifcfg file path back after writing connection");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_WIRELESS,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	ASSERT (keyfile != NULL,
+	        "wifi-wep-adhoc-write-reread", "expected keyfile for '%s'", testfile);
+
+	ASSERT (stat (keyfile, &statbuf) == 0,
+	        "wifi-wep-adhoc-write-reread", "couldn't stat() '%s'", keyfile);
+	ASSERT (S_ISREG (statbuf.st_mode),
+	        "wifi-wep-adhoc-write-reread", "keyfile '%s' wasn't a normal file", keyfile);
+	ASSERT ((statbuf.st_mode & 0077) == 0,
+	        "wifi-wep-adhoc-write-reread", "keyfile '%s' wasn't readable only by its owner", keyfile);
+
+	unlink (keyfile);
+
+	ASSERT (reread != NULL,
+	        "wifi-wep-adhoc-write-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        "wifi-wep-adhoc-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+	        "wifi-wep-adhoc-write", "written and re-read connection weren't the same.");
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
+test_write_wifi_wpa_psk (const char *name,
+                         const char *test_name,
+                         gboolean wep_group,
+                         gboolean wpa,
+                         gboolean wpa2)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	NMSettingIP4Config *s_ip4;
+	char *uuid, *tmp;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GByteArray *ssid;
+	const unsigned char ssid_data[] = "blahblah";
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        test_name, "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        test_name, "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, name,
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wifi setting */
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	ASSERT (s_wifi != NULL,
+	        test_name, "failed to allocate new %s setting",
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	ssid = g_byte_array_sized_new (sizeof (ssid_data));
+	g_byte_array_append (ssid, ssid_data, sizeof (ssid_data));
+
+	g_object_set (s_wifi,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRELESS_MODE, "infrastructure",
+	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	              NULL);
+
+	g_byte_array_free (ssid, TRUE);
+
+	/* Wireless security setting */
+	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+	ASSERT (s_wsec != NULL,
+			test_name, "failed to allocate new %s setting",
+			NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+
+	g_object_set (s_wsec,
+	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-psk",
+	              NM_SETTING_WIRELESS_SECURITY_PSK, "7d308b11df1b4243b0f78e5f3fc68cdbb9a264ed0edf4c188edf329ff5b467f0",
+	              NULL);
+
+	if (wep_group) {
+		nm_setting_wireless_security_add_group (s_wsec, "wep40");
+		nm_setting_wireless_security_add_group (s_wsec, "wep104");
+	}
+	if (wpa) {
+		nm_setting_wireless_security_add_proto (s_wsec, "wpa");
+		nm_setting_wireless_security_add_pairwise (s_wsec, "tkip");
+		nm_setting_wireless_security_add_group (s_wsec, "tkip");
+	}
+	if (wpa2) {
+		nm_setting_wireless_security_add_proto (s_wsec, "rsn");
+		nm_setting_wireless_security_add_pairwise (s_wsec, "ccmp");
+		nm_setting_wireless_security_add_group (s_wsec, "ccmp");
+	}
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			test_name, "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        test_name, "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        test_name, "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        test_name, "didn't get ifcfg file path back after writing connection");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_WIRELESS,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	tmp = g_strdup_printf ("%s-reread", test_name);
+	ASSERT (keyfile != NULL,
+	        tmp, "expected keyfile for '%s'", testfile);
+	unlink (keyfile);
+
+	ASSERT (reread != NULL,
+	        tmp, "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        tmp, "failed to verify %s: %s", testfile, error->message);
+	g_free (tmp);
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+	        test_name, "written and re-read connection weren't the same.");
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
+test_write_wifi_wpa_psk_adhoc (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	NMSettingIP4Config *s_ip4;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GByteArray *ssid;
+	const unsigned char ssid_data[] = "blahblah";
+	NMIP4Address *addr;
+	const guint32 ip1 = htonl (0x01010103);
+	const guint32 gw = htonl (0x01010101);
+	const guint32 dns1 = htonl (0x04020201);
+	const guint32 prefix = 24;
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "wifi-wpa-psk-adhoc-write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "wifi-wpa-psk-adhoc-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wifi WPA PSK",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wifi setting */
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	ASSERT (s_wifi != NULL,
+	        "wifi-wpa-psk-adhoc-write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	ssid = g_byte_array_sized_new (sizeof (ssid_data));
+	g_byte_array_append (ssid, ssid_data, sizeof (ssid_data));
+
+	g_object_set (s_wifi,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRELESS_MODE, "adhoc",
+	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	              NM_SETTING_WIRELESS_CHANNEL, 11,
+	              NM_SETTING_WIRELESS_BAND, "bg",
+	              NULL);
+
+	g_byte_array_free (ssid, TRUE);
+
+	/* Wireless security setting */
+	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+	ASSERT (s_wsec != NULL,
+			"wifi-wpa-psk-adhoc-write", "failed to allocate new %s setting",
+			NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+
+	g_object_set (s_wsec,
+	              NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-none",
+	              NM_SETTING_WIRELESS_SECURITY_PSK, "7d308b11df1b4243b0f78e5f3fc68cdbb9a264ed0edf4c188edf329ff5b467f0",
+	              NULL);
+
+	nm_setting_wireless_security_add_proto (s_wsec, "wpa");
+	nm_setting_wireless_security_add_group (s_wsec, "tkip");
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			"wifi-wpa-psk-adhoc-write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_MANUAL, NULL);
+
+	/* IP Address */
+	addr = nm_ip4_address_new ();
+	nm_ip4_address_set_address (addr, ip1);
+	nm_ip4_address_set_prefix (addr, prefix);
+	nm_ip4_address_set_gateway (addr, gw);
+	nm_setting_ip4_config_add_address (s_ip4, addr);
+	nm_ip4_address_unref (addr);
+
+	nm_setting_ip4_config_add_dns (s_ip4, dns1);
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "wifi-wpa-psk-adhoc-write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        "wifi-wpa-psk-adhoc-write", "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        "wifi-wpa-psk-adhoc-write", "didn't get ifcfg file path back after writing connection");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_WIRELESS,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	ASSERT (keyfile != NULL,
+	        "wifi-wpa-psk-adhoc-write-reread", "expected keyfile for '%s'", testfile);
+	unlink (keyfile);
+
+	ASSERT (reread != NULL,
+	        "wifi-wpa-psk-adhoc-write-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        "wifi-wpa-psk-adhoc-write-reread", "failed to verify %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+	        "wifi-wpa-psk-adhoc-write", "written and re-read connection weren't the same.");
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
+test_write_wifi_wpa_eap_tls (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	NMSetting8021x *s_8021x;
+	NMSettingIP4Config *s_ip4;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GByteArray *ssid;
+	const char *ssid_data = "blahblah";
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "wifi-wpa-eap-tls-write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "wifi-wpa-eap-tls-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wifi WPA EAP-TLS",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wifi setting */
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	ASSERT (s_wifi != NULL,
+	        "wifi-wpa-eap-tls-write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	ssid = g_byte_array_sized_new (strlen (ssid_data));
+	g_byte_array_append (ssid, (const unsigned char *) ssid_data, strlen (ssid_data));
+
+	g_object_set (s_wifi,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRELESS_MODE, "infrastructure",
+	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	              NULL);
+
+	g_byte_array_free (ssid, TRUE);
+
+	/* Wireless security setting */
+	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+	ASSERT (s_wsec != NULL,
+	        "wifi-wpa-eap-tls-write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+
+	g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-eap", NULL);
+	nm_setting_wireless_security_add_proto (s_wsec, "wpa");
+	nm_setting_wireless_security_add_pairwise (s_wsec, "tkip");
+	nm_setting_wireless_security_add_group (s_wsec, "tkip");
+
+	/* Wireless security setting */
+	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
+	ASSERT (s_8021x != NULL,
+	        "wifi-wpa-eap-tls-write", "failed to allocate new %s setting",
+	        NM_SETTING_802_1X_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_8021x));
+
+	g_object_set (s_8021x, NM_SETTING_802_1X_IDENTITY, "Bill Smith", NULL);
+
+	nm_setting_802_1x_add_eap_method (s_8021x, "tls");
+
+	success = nm_setting_802_1x_set_ca_cert_from_file (s_8021x,
+	                                                   TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT,
+	                                                   NULL,
+	                                                   &error);
+	ASSERT (success == TRUE,
+	        "wifi-wpa-eap-tls-write", "failed to set CA certificate '%s': %s",
+	        TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT, error->message);
+
+	success = nm_setting_802_1x_set_client_cert_from_file (s_8021x,
+	                                                       TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT,
+	                                                       NULL,
+	                                                       &error);
+	ASSERT (success == TRUE,
+	        "wifi-wpa-eap-tls-write", "failed to set client certificate '%s': %s",
+	        TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT, error->message);
+
+	success = nm_setting_802_1x_set_private_key_from_file (s_8021x,
+	                                                       TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY,
+	                                                       "test1",
+	                                                       NULL,
+	                                                       &error);
+	ASSERT (success == TRUE,
+	        "wifi-wpa-eap-tls-write", "failed to set private key '%s': %s",
+	        TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY, error->message);
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			"wifi-wpa-eap-tls-write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "wifi-wpa-eap-tls-write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        "wifi-wpa-eap-tls-write", "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        "wifi-wpa-eap-tls-write", "didn't get ifcfg file path back after writing connection");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_WIRELESS,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	ASSERT (keyfile != NULL,
+	        "wifi-wpa-eap-tls-write-reread", "expected keyfile for '%s'", testfile);
+	unlink (keyfile);
+
+	ASSERT (reread != NULL,
+	        "wifi-wpa-eap-tls-write-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        "wifi-wpa-eap-tls-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+	        "wifi-wpa-eap-tls-write", "written and re-read connection weren't the same.");
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
+test_write_wifi_wpa_eap_ttls_tls (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	NMSetting8021x *s_8021x;
+	NMSettingIP4Config *s_ip4;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GByteArray *ssid;
+	const char *ssid_data = "blahblah";
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "wifi-wpa-eap-ttls-tls-write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "wifi-wpa-eap-ttls-tls-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wifi WPA EAP-TTLS (TLS)",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wifi setting */
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	ASSERT (s_wifi != NULL,
+	        "wifi-wpa-eap-ttls-tls-write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	ssid = g_byte_array_sized_new (strlen (ssid_data));
+	g_byte_array_append (ssid, (const unsigned char *) ssid_data, strlen (ssid_data));
+
+	g_object_set (s_wifi,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRELESS_MODE, "infrastructure",
+	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	              NULL);
+
+	g_byte_array_free (ssid, TRUE);
+
+	/* Wireless security setting */
+	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+	ASSERT (s_wsec != NULL,
+	        "wifi-wpa-eap-ttls-tls-write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+
+	g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-eap", NULL);
+	nm_setting_wireless_security_add_proto (s_wsec, "rsn");
+	nm_setting_wireless_security_add_pairwise (s_wsec, "ccmp");
+	nm_setting_wireless_security_add_group (s_wsec, "ccmp");
+
+	/* Wireless security setting */
+	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
+	ASSERT (s_8021x != NULL,
+	        "wifi-wpa-eap-ttls-tls-write", "failed to allocate new %s setting",
+	        NM_SETTING_802_1X_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_8021x));
+
+	nm_setting_802_1x_add_eap_method (s_8021x, "ttls");
+
+	g_object_set (s_8021x,
+	              NM_SETTING_802_1X_IDENTITY, "Bill Smith",
+	              NM_SETTING_802_1X_ANONYMOUS_IDENTITY, "foobar22",
+	              NM_SETTING_802_1X_PHASE2_AUTHEAP, "tls",
+	              NULL);
+
+	success = nm_setting_802_1x_set_ca_cert_from_file (s_8021x,
+	                                                   TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT,
+	                                                   NULL,
+	                                                   &error);
+	ASSERT (success == TRUE,
+	        "wifi-wpa-eap-ttls-tls-write", "failed to set CA certificate '%s': %s",
+	        TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT, error->message);
+
+	/* Phase 2 TLS stuff */
+
+	/* phase2 CA cert */
+	success = nm_setting_802_1x_set_phase2_ca_cert_from_file (s_8021x,
+	                                                          TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT,
+	                                                          NULL,
+	                                                          &error);
+	ASSERT (success == TRUE,
+	        "wifi-wpa-eap-ttls-tls-write", "failed to set inner CA certificate '%s': %s",
+	        TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT, error->message);
+
+	/* phase2 client cert */
+	success = nm_setting_802_1x_set_phase2_client_cert_from_file (s_8021x,
+	                                                              TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT,
+	                                                               NULL,
+	                                                               &error);
+	ASSERT (success == TRUE,
+	        "wifi-wpa-eap-ttls-tls-write", "failed to set inner client certificate '%s': %s",
+	        TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT, error->message);
+
+	/* phase2 private key */
+	success = nm_setting_802_1x_set_phase2_private_key_from_file (s_8021x,
+	                                                              TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY,
+	                                                              "test1",
+	                                                              NULL,
+	                                                              &error);
+	ASSERT (success == TRUE,
+	        "wifi-wpa-eap-ttls-tls-write", "failed to set private key '%s': %s",
+	        TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY, error->message);
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			"wifi-wpa-eap-ttls-tls-write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "wifi-wpa-eap-ttls-tls-write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        "wifi-wpa-eap-ttls-tls-write", "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        "wifi-wpa-eap-ttls-tls-write", "didn't get ifcfg file path back after writing connection");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_WIRELESS,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	ASSERT (reread != NULL,
+	        "wifi-wpa-eap-ttls-tls-write-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (keyfile != NULL,
+	        "wifi-wpa-eap-ttls-tls-write-reread", "expected keyfile for '%s'", testfile);
+	unlink (keyfile);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        "wifi-wpa-eap-ttls-tls-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+	        "wifi-wpa-eap-ttls-tls-write", "written and re-read connection weren't the same.");
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
+test_write_wifi_wpa_eap_ttls_mschapv2 (void)
+{
+	NMConnection *connection;
+	NMConnection *reread;
+	NMSettingConnection *s_con;
+	NMSettingWireless *s_wifi;
+	NMSettingWirelessSecurity *s_wsec;
+	NMSetting8021x *s_8021x;
+	NMSettingIP4Config *s_ip4;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+	gboolean unmanaged = FALSE;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GByteArray *ssid;
+	const char *ssid_data = "blahblah";
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "wifi-wpa-eap-ttls-mschapv2-write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "wifi-wpa-eap-ttls-mschapv2-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wifi WPA EAP-TTLS (MSCHAPv2)",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRELESS_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wifi setting */
+	s_wifi = (NMSettingWireless *) nm_setting_wireless_new ();
+	ASSERT (s_wifi != NULL,
+	        "wifi-wpa-eap-ttls-mschapv2-write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRELESS_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wifi));
+
+	ssid = g_byte_array_sized_new (strlen (ssid_data));
+	g_byte_array_append (ssid, (const unsigned char *) ssid_data, strlen (ssid_data));
+
+	g_object_set (s_wifi,
+	              NM_SETTING_WIRELESS_SSID, ssid,
+	              NM_SETTING_WIRELESS_MODE, "infrastructure",
+	              NM_SETTING_WIRELESS_SEC, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
+	              NULL);
+
+	g_byte_array_free (ssid, TRUE);
+
+	/* Wireless security setting */
+	s_wsec = (NMSettingWirelessSecurity *) nm_setting_wireless_security_new ();
+	ASSERT (s_wsec != NULL,
+	        "wifi-wpa-eap-ttls-mschapv2-write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRELESS_SECURITY_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wsec));
+
+	g_object_set (s_wsec, NM_SETTING_WIRELESS_SECURITY_KEY_MGMT, "wpa-eap", NULL);
+	nm_setting_wireless_security_add_proto (s_wsec, "wpa");
+	nm_setting_wireless_security_add_proto (s_wsec, "rsn");
+	nm_setting_wireless_security_add_pairwise (s_wsec, "tkip");
+	nm_setting_wireless_security_add_pairwise (s_wsec, "ccmp");
+	nm_setting_wireless_security_add_group (s_wsec, "tkip");
+	nm_setting_wireless_security_add_group (s_wsec, "ccmp");
+
+	/* Wireless security setting */
+	s_8021x = (NMSetting8021x *) nm_setting_802_1x_new ();
+	ASSERT (s_8021x != NULL,
+	        "wifi-wpa-eap-ttls-mschapv2-write", "failed to allocate new %s setting",
+	        NM_SETTING_802_1X_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_8021x));
+
+	nm_setting_802_1x_add_eap_method (s_8021x, "ttls");
+
+	g_object_set (s_8021x,
+	              NM_SETTING_802_1X_IDENTITY, "Bill Smith",
+	              NM_SETTING_802_1X_PASSWORD, ";alkdfja;dslkfjsad;lkfjsadf",
+	              NM_SETTING_802_1X_ANONYMOUS_IDENTITY, "foobar22",
+	              NM_SETTING_802_1X_PHASE2_AUTHEAP, "mschapv2",
+	              NULL);
+
+	success = nm_setting_802_1x_set_ca_cert_from_file (s_8021x,
+	                                                   TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT,
+	                                                   NULL,
+	                                                   &error);
+	ASSERT (success == TRUE,
+	        "wifi-wpa-eap-ttls-mschapv2-write", "failed to set CA certificate '%s': %s",
+	        TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT, error->message);
+
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			"wifi-wpa-eap-ttls-mschapv2-write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO, NULL);
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "wifi-wpa-eap-ttls-mschapv2-write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == TRUE,
+	        "wifi-wpa-eap-ttls-mschapv2-write", "failed to write connection to disk: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	ASSERT (testfile != NULL,
+	        "wifi-wpa-eap-ttls-mschapv2-write", "didn't get ifcfg file path back after writing connection");
+
+	/* re-read the connection for comparison */
+	reread = connection_from_file (testfile,
+	                               NULL,
+	                               TYPE_WIRELESS,
+	                               &unmanaged,
+	                               &keyfile,
+	                               &error,
+	                               &ignore_error);
+	unlink (testfile);
+
+	ASSERT (reread != NULL,
+	        "wifi-wpa-eap-ttls-mschapv2-write-reread", "failed to read %s: %s", testfile, error->message);
+
+	ASSERT (keyfile != NULL,
+	        "wifi-wpa-eap-ttls-mschapv2-write-reread", "expected keyfile for '%s'", testfile);
+	unlink (keyfile);
+
+	ASSERT (nm_connection_verify (reread, &error),
+	        "wifi-wpa-eap-ttls-mschapv2-write-reread-verify", "failed to verify %s: %s", testfile, error->message);
+
+	ASSERT (nm_connection_compare (connection, reread, NM_SETTING_COMPARE_FLAG_EXACT) == TRUE,
+	        "wifi-wpa-eap-ttls-mschapv2-write", "written and re-read connection weren't the same.");
+
+	g_free (testfile);
+	g_object_unref (connection);
+	g_object_unref (reread);
+}
+
+static void
+test_write_wired_pppoe (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	NMSettingPPPOE *s_pppoe;
+	NMSettingPPP *s_ppp;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "wired-pppoe-write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "wired-pppoe-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write Wired PPPoE",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_WIRED_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* Wired setting */
+	s_wired = (NMSettingWired *) nm_setting_wired_new ();
+	ASSERT (s_wired != NULL,
+	        "wired-pppoe-write", "failed to allocate new %s setting",
+	        NM_SETTING_WIRED_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_wired));
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			"wired-pppoe-write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4,
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NULL);
+
+	/* PPPoE setting */
+	s_pppoe = (NMSettingPPPOE *) nm_setting_pppoe_new ();
+	ASSERT (s_pppoe != NULL,
+			"wired-pppoe-write", "failed to allocate new %s setting",
+			NM_SETTING_PPPOE_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_pppoe));
+
+	g_object_set (G_OBJECT (s_pppoe),
+	              NM_SETTING_PPPOE_SERVICE, "stupid-service",
+	              NM_SETTING_PPPOE_USERNAME, "Bill Smith",
+	              NM_SETTING_PPPOE_PASSWORD, "test1",
+	              NULL);
+
+	/* PPP setting */
+	s_ppp = (NMSettingPPP *) nm_setting_ppp_new ();
+	ASSERT (s_ppp != NULL,
+			"wired-pppoe-write", "failed to allocate new %s setting",
+			NM_SETTING_PPP_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ppp));
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "wired-pppoe-write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == FALSE,
+	        "wired-pppoe-write", "unexpected success writing connection to disk");
+
+	g_object_unref (connection);
+}
+
+static void
+test_write_vpn (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingIP4Config *s_ip4;
+	NMSettingVPN *s_vpn;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "vpn-write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "vpn-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, "Test Write VPN",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, NM_SETTING_VPN_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	/* VPN setting */
+	s_vpn = (NMSettingVPN *) nm_setting_vpn_new ();
+	ASSERT (s_vpn != NULL,
+	        "vpn-write", "failed to allocate new %s setting",
+	        NM_SETTING_VPN_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_vpn));
+
+	g_object_set (s_vpn,
+	              NM_SETTING_VPN_SERVICE_TYPE, "awesomevpn",
+	              NM_SETTING_VPN_USER_NAME, "Bill Smith",
+	              NULL);
+
+	nm_setting_vpn_add_data_item (s_vpn, "server", "vpn.somewhere.com");
+	nm_setting_vpn_add_secret (s_vpn, "password", "sup3rs3cr3t");
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			"vpn-write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4,
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NULL);
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "vpn-write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == FALSE,
+	        "vpn-write", "unexpected success writing connection to disk");
+
+	g_object_unref (connection);
+}
+
+static void
+test_write_mobile_broadband (gboolean gsm)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingIP4Config *s_ip4;
+	NMSettingGsm *s_gsm;
+	NMSettingCdma *s_cdma;
+	NMSettingPPP *s_ppp;
+	NMSettingSerial *s_serial;
+	char *uuid;
+	gboolean success;
+	GError *error = NULL;
+	char *testfile = NULL;
+
+	connection = nm_connection_new ();
+	ASSERT (connection != NULL,
+	        "mobile-broadband-write", "failed to allocate new connection");
+
+	/* Connection setting */
+	s_con = (NMSettingConnection *) nm_setting_connection_new ();
+	ASSERT (s_con != NULL,
+	        "mobile-broadband-write", "failed to allocate new %s setting",
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_con));
+
+	uuid = nm_utils_uuid_generate ();
+	g_object_set (s_con,
+	              NM_SETTING_CONNECTION_ID, gsm ? "Test Write GSM" : "Test Write CDMA",
+	              NM_SETTING_CONNECTION_UUID, uuid,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, TRUE,
+	              NM_SETTING_CONNECTION_TYPE, gsm ? NM_SETTING_GSM_SETTING_NAME : NM_SETTING_CDMA_SETTING_NAME,
+	              NULL);
+	g_free (uuid);
+
+	if (gsm) {
+		/* GSM setting */
+		s_gsm = (NMSettingGsm *) nm_setting_gsm_new ();
+		ASSERT (s_gsm != NULL,
+		        "mobile-broadband-write", "failed to allocate new %s setting",
+		        NM_SETTING_GSM_SETTING_NAME);
+		nm_connection_add_setting (connection, NM_SETTING (s_gsm));
+
+		g_object_set (s_gsm, NM_SETTING_GSM_NUMBER, "*99#", NULL);
+	} else {
+		/* CDMA setting */
+		s_cdma = (NMSettingCdma *) nm_setting_cdma_new ();
+		ASSERT (s_cdma != NULL,
+		        "mobile-broadband-write", "failed to allocate new %s setting",
+		        NM_SETTING_CDMA_SETTING_NAME);
+		nm_connection_add_setting (connection, NM_SETTING (s_cdma));
+
+		g_object_set (s_cdma, NM_SETTING_CDMA_NUMBER, "#777", NULL);
+	}
+
+	/* Serial setting */
+	s_serial = (NMSettingSerial *) nm_setting_serial_new ();
+	ASSERT (s_serial != NULL,
+	        "mobile-broadband-write", "failed to allocate new %s setting",
+	        NM_SETTING_SERIAL_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_serial));
+
+	g_object_set (s_serial,
+	              NM_SETTING_SERIAL_BAUD, 115200,
+	              NM_SETTING_SERIAL_BITS, 8,
+	              NM_SETTING_SERIAL_PARITY, 'n',
+	              NM_SETTING_SERIAL_STOPBITS, 1,
+	              NULL);
+
+	/* IP4 setting */
+	s_ip4 = (NMSettingIP4Config *) nm_setting_ip4_config_new ();
+	ASSERT (s_ip4 != NULL,
+			"mobile-broadband-write", "failed to allocate new %s setting",
+			NM_SETTING_IP4_CONFIG_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ip4));
+
+	g_object_set (s_ip4,
+	              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_AUTO,
+	              NULL);
+
+	/* PPP setting */
+	s_ppp = (NMSettingPPP *) nm_setting_ppp_new ();
+	ASSERT (s_ppp != NULL,
+			"mobile-broadband-write", "failed to allocate new %s setting",
+			NM_SETTING_PPP_SETTING_NAME);
+	nm_connection_add_setting (connection, NM_SETTING (s_ppp));
+
+	ASSERT (nm_connection_verify (connection, &error) == TRUE,
+	        "mobile-broadband-write", "failed to verify connection: %s",
+	        (error && error->message) ? error->message : "(unknown)");
+
+	/* Save the ifcfg */
+	success = writer_new_connection (connection,
+	                                 TEST_DIR "/network-scripts/",
+	                                 &testfile,
+	                                 &error);
+	ASSERT (success == FALSE,
+	        "mobile-broadband-write", "unexpected success writing connection to disk");
+
+	g_object_unref (connection);
+}
+
+#define TEST_IFCFG_WIFI_OPEN_SSID_BAD_HEX TEST_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-bad-hex"
+#define TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED TEST_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-quoted"
+#define TEST_IFCFG_WIFI_OPEN_SSID_LONG_HEX TEST_DIR"/network-scripts/ifcfg-test-wifi-open-ssid-long-hex"
+
 int main (int argc, char **argv)
 {
 	GError *error = NULL;
@@ -2249,12 +5196,44 @@ int main (int argc, char **argv)
 	test_read_wired_global_gateway ();
 	test_read_wired_never_default ();
 	test_read_onboot_no ();
-	test_read_wifi_unencrypted ();
+	test_read_wired_8021x_peap_mschapv2 ();
+	test_read_wifi_open ();
+	test_read_wifi_open_ssid_hex ();
+	test_read_wifi_open_ssid_bad (TEST_IFCFG_WIFI_OPEN_SSID_BAD_HEX, "wifi-open-ssid-bad-hex-read");
+	test_read_wifi_open_ssid_bad (TEST_IFCFG_WIFI_OPEN_SSID_LONG_HEX, "wifi-open-ssid-long-hex-read");
+	test_read_wifi_open_ssid_bad (TEST_IFCFG_WIFI_OPEN_SSID_LONG_QUOTED, "wifi-open-ssid-long-quoted-read");
+	test_read_wifi_open_ssid_quoted ();
 	test_read_wifi_wep ();
 	test_read_wifi_wep_adhoc ();
+	test_read_wifi_leap ();
 	test_read_wifi_wpa_psk ();
 	test_read_wifi_wpa_psk_adhoc ();
 	test_read_wifi_wpa_psk_hex ();
+	test_read_wifi_wpa_eap_tls ();
+	test_read_wifi_wpa_eap_ttls_tls ();
+	test_read_wifi_wep_eap_ttls_chap ();
+
+	test_write_wired_static ();
+	test_write_wired_dhcp ();
+	test_write_wired_dhcp_8021x_peap_mschapv2 ();
+	test_write_wifi_open ();
+	test_write_wifi_open_hex_ssid ();
+	test_write_wifi_wep ();
+	test_write_wifi_wep_adhoc ();
+	test_write_wifi_wpa_psk ("Test Write Wifi WPA PSK", "wifi-wpa-psk-write", FALSE, TRUE, FALSE);
+	test_write_wifi_wpa_psk ("Test Write Wifi WPA2 PSK", "wifi-wpa2-psk-write", FALSE, FALSE, TRUE);
+	test_write_wifi_wpa_psk ("Test Write Wifi WPA WPA2 PSK", "wifi-wpa-wpa2-psk-write", FALSE, TRUE, TRUE);
+	test_write_wifi_wpa_psk ("Test Write Wifi WEP WPA WPA2 PSK", "wifi-wep-wpa-wpa2-psk-write", TRUE, TRUE, TRUE);
+	test_write_wifi_wpa_psk_adhoc ();
+	test_write_wifi_wpa_eap_tls ();
+	test_write_wifi_wpa_eap_ttls_tls ();
+	test_write_wifi_wpa_eap_ttls_mschapv2 ();
+
+	/* Stuff we expect to fail for now */
+	test_write_wired_pppoe ();
+	test_write_vpn ();
+	test_write_mobile_broadband (TRUE);
+	test_write_mobile_broadband (FALSE);
 
 	basename = g_path_get_basename (argv[0]);
 	fprintf (stdout, "%s: SUCCESS\n", basename);

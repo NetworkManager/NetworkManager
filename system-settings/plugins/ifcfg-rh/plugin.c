@@ -48,8 +48,7 @@
 #include "nm-ifcfg-connection.h"
 #include "nm-inotify-helper.h"
 #include "shvar.h"
-
-#define IFCFG_DIR SYSCONFDIR"/sysconfig/network-scripts/"
+#include "writer.h"
 
 static void system_config_interface_init (NMSystemConfigInterface *system_config_interface_class);
 
@@ -435,7 +434,7 @@ setup_ifcfg_monitoring (SCPluginIfcfg *plugin)
 
 	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, NULL, g_object_unref);
 
-	file = g_file_new_for_path (IFCFG_DIR);
+	file = g_file_new_for_path (IFCFG_DIR "/");
 	monitor = g_file_monitor_directory (file, G_FILE_MONITOR_NONE, NULL, NULL);
 	g_object_unref (file);
 
@@ -470,6 +469,14 @@ get_connections (NMSystemConfigInterface *config)
 	g_hash_table_foreach (priv->connections, hash_to_slist, &list);
 
 	return list;
+}
+
+static gboolean
+add_connection (NMSystemConfigInterface *config,
+                NMConnection *connection,
+                GError **error)
+{
+	return writer_new_connection (connection, IFCFG_DIR, NULL, error);
 }
 
 #define SC_NETWORK_FILE SYSCONFDIR"/sysconfig/network"
@@ -515,7 +522,7 @@ plugin_set_hostname (SCPluginIfcfg *plugin, const char *hostname)
 		return FALSE;
 	}
 
-	svSetValue (network, "HOSTNAME", hostname);
+	svSetValue (network, "HOSTNAME", hostname, FALSE);
 	svWriteFile (network, 0644);
 	svCloseFile (network);
 
@@ -633,7 +640,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, IFCFG_PLUGIN_INFO);
 		break;
 	case NM_SYSTEM_CONFIG_INTERFACE_PROP_CAPABILITIES:
-		g_value_set_uint (value, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME);
+		g_value_set_uint (value, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS | NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME);
 		break;
 	case NM_SYSTEM_CONFIG_INTERFACE_PROP_HOSTNAME:
 		g_value_set_string (value, priv->hostname);
@@ -697,6 +704,7 @@ system_config_interface_init (NMSystemConfigInterface *system_config_interface_c
 {
 	/* interface implementation */
 	system_config_interface_class->get_connections = get_connections;
+	system_config_interface_class->add_connection = add_connection;
 	system_config_interface_class->get_unmanaged_devices = get_unmanaged_devices;
 	system_config_interface_class->init = init;
 }

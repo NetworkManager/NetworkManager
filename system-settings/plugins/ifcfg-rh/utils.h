@@ -15,25 +15,29 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2008 Red Hat, Inc.
+ * (C) Copyright 2008 - 2009 Red Hat, Inc.
  */
 
-#ifndef __READER_H__
-#define __READER_H__
+#ifndef _UTILS_H_
+#define _UTILS_H_
 
 #include <glib.h>
-#include <nm-connection.h>
-
 #include "shvar.h"
+#include "common.h"
 
-NMConnection *connection_from_file (const char *filename,
-                                    const char *network_file,
-                                    const char *test_type,
-                                    gboolean *ignored,
-                                    char **keyfile,
-                                    GError **error,
-                                    gboolean *ignore_error);
+char *utils_bin2hexstr (const char *bytes, int len, int final_len);
 
-const char *reader_get_prefix (void);
+char *utils_hexstr2bin (const char *hex, size_t len);
 
-#endif  /* __READER_H__ */
+char *utils_hash_byte_array (const GByteArray *data);
+
+char *utils_cert_path (const char *parent, const char *suffix);
+
+char *utils_get_ifcfg_name (const char *file);
+
+char *utils_get_keys_path (const char *parent);
+
+shvarFile *utils_get_keys_ifcfg (const char *parent, gboolean should_create);
+
+#endif  /* _UTILS_H_ */
+
