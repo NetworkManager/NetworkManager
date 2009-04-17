@@ -60,6 +60,10 @@ const char *nm_ifcfg_connection_get_udi (NMIfcfgConnection *self);
 
 gboolean nm_ifcfg_connection_get_unmanaged (NMIfcfgConnection *self);
 
+gboolean nm_ifcfg_connection_update (NMIfcfgConnection *self,
+                                     GHashTable *new_settings,
+                                     GError **error);
+
 G_END_DECLS
 
 #endif /* NM_IFCFG_CONNECTION_H */
