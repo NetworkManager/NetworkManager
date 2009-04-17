@@ -21,13 +21,12 @@
 
 #define _GNU_SOURCE  /* for strcasestr() */
 
-#include <termio.h>
+#include <termios.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
-#include <sys/ioctl.h>
 #include <string.h>
 #include <stdlib.h>
 #include <glib.h>
@@ -346,7 +345,7 @@ static gboolean
 config_fd (NMSerialDevice *device, NMSettingSerial *setting)
 {
 	NMSerialDevicePrivate *priv = NM_SERIAL_DEVICE_GET_PRIVATE (device);
-	struct termio stbuf;
+	struct termios stbuf;
 	int speed;
 	int bits;
 	int parity;
@@ -357,7 +356,7 @@ config_fd (NMSerialDevice *device, NMSettingSerial *setting)
 	parity = parse_parity (nm_setting_serial_get_parity (setting));
 	stopbits = parse_stopbits (nm_setting_serial_get_stopbits (setting));
 
-	ioctl (priv->fd, TCGETA, &stbuf);
+	tcgetattr (priv->fd, &stbuf);
 
 	stbuf.c_iflag &= ~(IGNCR | ICRNL | IUCLC | INPCK | IXON | IXANY | IGNPAR );
 	stbuf.c_oflag &= ~(OPOST | OLCUC | OCRNL | ONLCR | ONLRET);
@@ -370,7 +369,7 @@ config_fd (NMSerialDevice *device, NMSettingSerial *setting)
 	stbuf.c_cflag &= ~(CBAUD | CSIZE | CSTOPB | CLOCAL | PARENB);
 	stbuf.c_cflag |= (speed | bits | CREAD | 0 | parity | stopbits);
 
-	if (ioctl (priv->fd, TCSETA, &stbuf) < 0) {
+	if (tcgetattr (priv->fd, &stbuf) < 0) {
 		nm_warning ("(%s) cannot control device (errno %d)",
 		            nm_device_get_iface (NM_DEVICE (device)), errno);
 		return FALSE;
@@ -404,7 +403,7 @@ nm_serial_device_open (NMSerialDevice *device,
 		return FALSE;
 	}
 
-	if (ioctl (priv->fd, TCGETA, &priv->old_t) < 0) {
+	if (tcgetattr (priv->fd, &priv->old_t) < 0) {
 		nm_warning ("(%s) cannot control device (errno %d)", iface, errno);
 		close (priv->fd);
 		return FALSE;
@@ -447,7 +446,7 @@ nm_serial_device_close (NMSerialDevice *device)
 			priv->channel = NULL;
 		}
 
-		ioctl (priv->fd, TCSETA, &priv->old_t);
+		tcsetattr (priv->fd, TCSANOW, &priv->old_t);
 		close (priv->fd);
 		priv->fd = 0;
 	}
