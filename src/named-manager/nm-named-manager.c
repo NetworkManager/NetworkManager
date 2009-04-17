@@ -332,18 +332,27 @@ update_resolv_conf (const char *domain,
 	const char *tmp_resolv_conf = RESOLV_CONF ".tmp";
 	char tmp_resolv_conf_realpath [PATH_MAX];
 	FILE *f;
+	int do_rename = 1;
+	int old_errno = 0;
 
-	if (!realpath(tmp_resolv_conf, tmp_resolv_conf_realpath))
-		strcpy(tmp_resolv_conf_realpath, tmp_resolv_conf);
+	if (!realpath (tmp_resolv_conf, tmp_resolv_conf_realpath))
+		strcpy (tmp_resolv_conf_realpath, tmp_resolv_conf);
 
 	if ((f = fopen (tmp_resolv_conf_realpath, "w")) == NULL) {
-		g_set_error (error,
-				   NM_NAMED_MANAGER_ERROR,
-				   NM_NAMED_MANAGER_ERROR_SYSTEM,
-				   "Could not open %s: %s\n",
-				   tmp_resolv_conf_realpath,
-				   g_strerror (errno));
-		return FALSE;
+		do_rename = 0;
+		old_errno = errno;
+		if ((f = fopen (RESOLV_CONF, "w")) == NULL) {
+			g_set_error (error,
+			             NM_NAMED_MANAGER_ERROR,
+			             NM_NAMED_MANAGER_ERROR_SYSTEM,
+			             "Could not open %s: %s\nCould not open %s: %s\n",
+			             tmp_resolv_conf_realpath,
+			             g_strerror (old_errno),
+			             RESOLV_CONF,
+			             g_strerror (errno));
+			return FALSE;
+		}
+		strcpy (tmp_resolv_conf_realpath, RESOLV_CONF);
 	}
 
 	write_resolv_conf (f, domain, searches, nameservers, error);
@@ -359,7 +368,7 @@ update_resolv_conf (const char *domain,
 		}
 	}
 
-	if (*error == NULL) {
+	if (*error == NULL && do_rename) {
 		if (rename (tmp_resolv_conf, RESOLV_CONF) < 0) {
 			g_set_error (error,
 					   NM_NAMED_MANAGER_ERROR,
