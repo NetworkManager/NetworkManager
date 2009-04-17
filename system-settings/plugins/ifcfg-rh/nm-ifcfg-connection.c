@@ -317,27 +317,27 @@ nm_ifcfg_connection_get_unmanaged (NMIfcfgConnection *self)
 	return NM_IFCFG_CONNECTION_GET_PRIVATE (self)->unmanaged;
 }
 
+gboolean
+nm_ifcfg_connection_update (NMIfcfgConnection *self, GHashTable *new_settings, GError **error)
+{
+	NMExportedConnection *exported = NM_EXPORTED_CONNECTION (self);
+	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (exported);
+	NMConnection *connection;
+
+	connection = nm_exported_connection_get_connection (exported);
+	if (!nm_connection_replace_settings (connection, new_settings, error))
+		return FALSE;
+
+	return writer_update_connection (connection, IFCFG_DIR, priv->filename, priv->keyfile, error);
+}
+
 static gboolean
 update (NMExportedConnection *exported, GHashTable *new_settings, GError **error)
 {
-	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (exported);
-	gboolean success;
-	NMConnection *connection;
+	if (!NM_EXPORTED_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->update (exported, new_settings, error))
+		return FALSE;
 
-	success = NM_EXPORTED_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->update (exported, new_settings, error);
-	if (success) {
-		connection = nm_exported_connection_get_connection (exported);
-		success = nm_connection_replace_settings (connection, new_settings, error);
-		if (success) {
-			success = writer_update_connection (connection,
-			                                    IFCFG_DIR,
-			                                    priv->filename,
-			                                    priv->keyfile,
-			                                    error);
-		}
-	}
-
-	return success;
+	return nm_ifcfg_connection_update (NM_IFCFG_CONNECTION (exported), new_settings, error);
 }
 
 static gboolean

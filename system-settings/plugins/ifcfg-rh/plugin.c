@@ -293,9 +293,9 @@ connection_changed_handler (SCPluginIfcfg *plugin,
 		/* errors reading connection; remove it */
 		if (!ignore_error) {
 			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error: %s",
-			             error->message ? error->message : "(unknown)");
+			             (error && error->message) ? error->message : "(unknown)");
 		}
-		g_error_free (error);
+		g_clear_error (&error);
 
 		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "removed %s.", path);
 		*do_remove = TRUE;
@@ -336,7 +336,11 @@ connection_changed_handler (SCPluginIfcfg *plugin,
 		/* Only update if different */
 		if (!nm_connection_compare (new_wrapped, old_wrapped, NM_SETTING_COMPARE_FLAG_EXACT)) {
 			settings = nm_connection_to_hash (new_wrapped);
-			nm_exported_connection_update (NM_EXPORTED_CONNECTION (connection), settings, NULL);
+			if (!nm_ifcfg_connection_update (connection, settings, &error)) {
+				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error updating: %s",
+				             (error && error->message) ? error->message : "(unknown)");
+				g_clear_error (&error);
+			}
 			g_hash_table_destroy (settings);
 		}
 
