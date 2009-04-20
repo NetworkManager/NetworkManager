@@ -8,7 +8,6 @@ AM_CPPFLAGS =						\
 	$(DBUS_CFLAGS)					\
 	$(GLIB_CFLAGS)				\
 	$(HAL_CFLAGS)					\
-	-DDBUS_API_SUBJECT_TO_CHANGE		\
 	-DBINDIR=\"$(bindir)\"			\
 	-DNM_RUN_DIR=\"$(rundir)\" \
 	-DDATADIR=\"$(datadir)\"

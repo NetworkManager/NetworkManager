@@ -35,7 +35,6 @@ nm_system_settings_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(GMODULE_CFLAGS) \
 	$(POLKIT_CFLAGS) \
-	-DDBUS_API_SUBJECT_TO_CHANGE \
 	-DG_DISABLE_DEPRECATED	\
 	-DBINDIR=\"$(bindir)\" \
 	-DSBINDIR=\"$(sbindir)\" \
