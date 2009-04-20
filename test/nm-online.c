@@ -30,7 +30,6 @@
  * Robert Love <rml@novell.com>
  */
 
-#define DBUS_API_SUBJECT_TO_CHANGE 1
 #define PROGRESS_STEPS 15
 
 #include <ctype.h>

@@ -155,7 +155,6 @@ NetworkManager_CPPFLAGS = \
 	$(OPENSSL_CFLAGS) \
 	$(LIBNL_CFLAGS) \
 	$(LIBUDEV_CFLAGS) \
-	-DDBUS_API_SUBJECT_TO_CHANGE \
 	-DG_DISABLE_DEPRECATED \
 	-DBINDIR=\"$(bindir)\" \
 	-DSBINDIR=\"$(sbindir)\" \

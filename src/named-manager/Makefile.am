@@ -8,7 +8,6 @@ libnamed_manager_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	-DNM_PKGDATADIR=\"$(pkgdatadir)\" \
-	-DNM_LOCALSTATEDIR=\"$(localstatedir)\" \
-	-DDBUS_API_SUBJECT_TO_CHANGE
+	-DNM_LOCALSTATEDIR=\"$(localstatedir)\"
 
 libnamed_manager_la_LIBADD = $(DBUS_LIBS) $(GLIB_LIBS)

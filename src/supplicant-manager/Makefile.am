@@ -23,8 +23,7 @@ libsupplicant_manager_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(HAL_CFLAGS) \
 	-DNM_PKGDATADIR=\"$(pkgdatadir)\" \
-	-DNM_LOCALSTATEDIR=\"$(localstatedir)\" \
-	-DDBUS_API_SUBJECT_TO_CHANGE
+	-DNM_LOCALSTATEDIR=\"$(localstatedir)\"
 
 libsupplicant_manager_la_LIBADD = \
 	$(DBUS_LIBS) \
