@@ -62,7 +62,7 @@ AM_GLIB_GNU_GETTEXT
 dnl
 dnl Documentation
 dnl
-AC_ARG_WITH(docs, AC_HELP_STRING([--with-docs], [Build NetworkManager documentation]))
+AC_ARG_WITH(docs, AS_HELP_STRING([--with-docs], [Build NetworkManager documentation]))
 AM_CONDITIONAL(WITH_DOCS, test "x$with_docs" = "xyes")
 case $with_docs in
     yes)
@@ -243,7 +243,7 @@ AC_SUBST(POLKIT_CFLAGS)
 
 AC_PATH_PROG([POLKIT_POLICY_FILE_VALIDATE], [polkit-policy-file-validate], [false])
 
-AC_ARG_WITH(crypto, AC_HELP_STRING([--with-crypto=nss | gnutls], [Cryptography library to use for certificate and key operations]),ac_crypto=$withval, ac_crypto=nss)
+AC_ARG_WITH(crypto, AS_HELP_STRING([--with-crypto=nss | gnutls], [Cryptography library to use for certificate and key operations]),ac_crypto=$withval, ac_crypto=nss)
 
 with_nss=no
 with_gnutls=no
@@ -442,7 +442,7 @@ GTK_DOC_CHECK(1.0)
 dnl
 dnl Tests
 dnl
-AC_ARG_WITH(tests, AC_HELP_STRING([--with-tests], [Build NetworkManager tests]))
+AC_ARG_WITH(tests, AS_HELP_STRING([--with-tests], [Build NetworkManager tests]))
 AM_CONDITIONAL(WITH_TESTS, test "x$with_tests" = "xyes")
 case $with_tests in
     yes)
