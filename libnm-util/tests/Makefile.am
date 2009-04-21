@@ -22,8 +22,7 @@ test_crypto_SOURCES = \
 	test-crypto.c
 
 test_crypto_CPPFLAGS = \
-	$(GLIB_CFLAGS) \
-	-D_GNU_SOURCE
+	$(GLIB_CFLAGS)
 
 test_crypto_LDADD = \
 	$(GLIB_LIBS) \
