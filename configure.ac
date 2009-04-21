@@ -8,6 +8,9 @@ AC_CONFIG_MACRO_DIR([m4])
 
 AC_CONFIG_HEADERS([config.h])
 
+dnl Define _GNU_SOURCE for various things like strcasestr()
+AC_GNU_SOURCE
+
 dnl
 dnl Require programs
 dnl
@@ -460,9 +463,6 @@ if test "$GCC" = "yes" -a "$set_more_warnings" != "no"; then
 else
 	AC_MSG_RESULT(no)
 fi
-
-# Define _GNU_SOURCE for various things like strcasestr()
-CFLAGS="$CFLAGS -D_GNU_SOURCE"
 
 GTK_DOC_CHECK(1.0)
 
