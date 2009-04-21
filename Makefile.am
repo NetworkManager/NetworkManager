@@ -34,3 +34,4 @@ DISTCLEANFILES = intltool-extract intltool-merge intltool-update
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = NetworkManager.pc
 
+ACLOCAL_AMFLAGS = -I m4

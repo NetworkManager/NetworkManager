@@ -4,7 +4,9 @@ AC_INIT(NetworkManager, 0.7.1, dcbw@redhat.com, NetworkManager)
 AM_INIT_AUTOMAKE([1.9 subdir-objects tar-ustar no-dist-gzip dist-bzip2])
 AM_MAINTAINER_MODE
 
-AC_CONFIG_HEADERS(config.h)
+AC_CONFIG_MACRO_DIR([m4])
+
+AC_CONFIG_HEADERS([config.h])
 
 dnl
 dnl Require programs
