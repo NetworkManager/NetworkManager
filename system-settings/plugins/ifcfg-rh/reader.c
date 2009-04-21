@@ -931,7 +931,7 @@ eap_simple_reader (const char *eap_method,
 static char *
 get_cert_file (const char *ifcfg_path, const char *cert_path)
 {
-	const char *basename = cert_path;
+	const char *base = cert_path;
 	char *p, *ret, *dirname;
 
 	g_return_val_if_fail (ifcfg_path != NULL, NULL);
@@ -942,10 +942,10 @@ get_cert_file (const char *ifcfg_path, const char *cert_path)
 
 	p = strrchr (cert_path, '/');
 	if (p)
-		basename = p + 1;
+		base = p + 1;
 
 	dirname = g_path_get_dirname (ifcfg_path);
-	ret = g_build_path ("/", dirname, basename, NULL);
+	ret = g_build_path ("/", dirname, base, NULL);
 	g_free (dirname);
 	return ret;
 }

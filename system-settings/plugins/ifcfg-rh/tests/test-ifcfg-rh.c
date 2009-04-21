@@ -5184,7 +5184,7 @@ int main (int argc, char **argv)
 {
 	GError *error = NULL;
 	DBusGConnection *bus;
-	char *basename;
+	char *base;
 
 	g_type_init ();
 	bus = dbus_g_bus_get (DBUS_BUS_SESSION, NULL);
@@ -5239,9 +5239,9 @@ int main (int argc, char **argv)
 	test_write_mobile_broadband (TRUE);
 	test_write_mobile_broadband (FALSE);
 
-	basename = g_path_get_basename (argv[0]);
-	fprintf (stdout, "%s: SUCCESS\n", basename);
-	g_free (basename);
+	base = g_path_get_basename (argv[0]);
+	fprintf (stdout, "%s: SUCCESS\n", base);
+	g_free (base);
 	return 0;
 }
 
