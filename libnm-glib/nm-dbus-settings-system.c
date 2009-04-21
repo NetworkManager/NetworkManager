@@ -290,21 +290,19 @@ constructor (GType type,
 			    NULL);
 
 	priv->settings_proxy = dbus_g_proxy_new_for_name (dbus_connection,
-											NM_DBUS_SERVICE_SYSTEM_SETTINGS,
-											NM_DBUS_PATH_SETTINGS,
-											NM_DBUS_IFACE_SETTINGS_SYSTEM);
+	                                                  NM_DBUS_SERVICE_SYSTEM_SETTINGS,
+	                                                  NM_DBUS_PATH_SETTINGS,
+	                                                  NM_DBUS_IFACE_SETTINGS_SYSTEM);
+	dbus_g_proxy_add_signal (priv->settings_proxy, "PropertiesChanged",
+	                         DBUS_TYPE_G_MAP_OF_VARIANT, G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->settings_proxy, "PropertiesChanged",
+	                             G_CALLBACK (proxy_properties_changed),
+	                             object, NULL);
 
 	priv->props_proxy = dbus_g_proxy_new_for_name (dbus_connection,
 										  NM_DBUS_SERVICE_SYSTEM_SETTINGS,
 										  NM_DBUS_PATH_SETTINGS,
 										  "org.freedesktop.DBus.Properties");
-
-	dbus_g_proxy_add_signal (priv->props_proxy, "PropertiesChanged",
-						DBUS_TYPE_G_MAP_OF_VARIANT,
-						G_TYPE_INVALID);
-	dbus_g_proxy_connect_signal (priv->props_proxy, "PropertiesChanged",
-						    G_CALLBACK (proxy_properties_changed),
-						    object, NULL);
 
 	return object;
 }
