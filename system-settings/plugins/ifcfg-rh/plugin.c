@@ -198,16 +198,16 @@ read_one_connection (SCPluginIfcfg *plugin, const char *filename)
 }
 
 static gboolean
-check_suffix (const char *basename, const char *tag)
+check_suffix (const char *base, const char *tag)
 {
 	int len, tag_len;
 
-	g_return_val_if_fail (basename != NULL, TRUE);
+	g_return_val_if_fail (base != NULL, TRUE);
 	g_return_val_if_fail (tag != NULL, TRUE);
 
-	len = strlen (basename);
+	len = strlen (base);
 	tag_len = strlen (tag);
-	if ((len > tag_len) && !strcasecmp (basename + len - tag_len, tag))
+	if ((len > tag_len) && !strcasecmp (base + len - tag_len, tag))
 		return TRUE;
 	return FALSE;
 }
@@ -215,22 +215,22 @@ check_suffix (const char *basename, const char *tag)
 static gboolean
 should_ignore_file (const char *filename)
 {
-	char *basename;
+	char *base;
 	gboolean ignore = TRUE;
 
 	g_return_val_if_fail (filename != NULL, TRUE);
 
-	basename = g_path_get_basename (filename);
-	g_return_val_if_fail (basename != NULL, TRUE);
+	base = g_path_get_basename (filename);
+	g_return_val_if_fail (base != NULL, TRUE);
 
-	if (   !strncmp (basename, IFCFG_TAG, strlen (IFCFG_TAG))
-		&& !check_suffix (basename, BAK_TAG)
-		&& !check_suffix (basename, TILDE_TAG)
-		&& !check_suffix (basename, ORIG_TAG)
-		&& !check_suffix (basename, REJ_TAG))
+	if (   !strncmp (base, IFCFG_TAG, strlen (IFCFG_TAG))
+		&& !check_suffix (base, BAK_TAG)
+		&& !check_suffix (base, TILDE_TAG)
+		&& !check_suffix (base, ORIG_TAG)
+		&& !check_suffix (base, REJ_TAG))
 		ignore = FALSE;
 
-	g_free (basename);
+	g_free (base);
 	return ignore;
 }
 

@@ -144,14 +144,14 @@ char *
 utils_get_ifcfg_name (const char *file)
 {
 	char *ifcfg_name;
-	char *basename;
+	char *base;
 
-	basename = g_path_get_basename (file);
-	if (!basename)
+	base = g_path_get_basename (file);
+	if (!base)
 		return NULL;
 
-	ifcfg_name = g_strdup (basename + strlen (IFCFG_TAG));
-	g_free (basename);
+	ifcfg_name = g_strdup (base + strlen (IFCFG_TAG));
+	g_free (base);
 	return ifcfg_name;
 }
 
