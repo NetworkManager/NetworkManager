@@ -157,7 +157,8 @@ is_mbm (LibHalContext *ctx, const char *udi)
 	if (   (vendor_id == 0x0bdb && product_id == 0x1900)  /* SE F3507g */
 	    || (vendor_id == 0x0bdb && product_id == 0x1902)  /* SE F3507g */
 	    || (vendor_id == 0x0fce && product_id == 0xd0cf)  /* SE MD300 */
-	    || (vendor_id == 0x413c && product_id == 0x8147)) /* Dell 5530 HSDPA */
+	    || (vendor_id == 0x413c && product_id == 0x8147) /* Dell 5530 HSDPA */
+	    || (vendor_id == 0x0930 && product_id == 0x130b)) /* Toshiba */
 		return parent;
 
 	libhal_free_string (parent);
