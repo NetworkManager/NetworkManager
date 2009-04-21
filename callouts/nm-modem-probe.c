@@ -14,10 +14,6 @@
  * GNU General Public License for more details:
  */
 
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE 1
-#endif
-
 #include <termios.h>
 #include <unistd.h>
 #include <fcntl.h>

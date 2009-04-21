@@ -19,8 +19,6 @@
  * Copyright (C) 2007 - 2008 Red Hat, Inc.
  */
 
-#define _GNU_SOURCE  /* for strcasestr() */
-
 #include <termios.h>
 #include <unistd.h>
 #include <sys/types.h>
