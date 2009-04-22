@@ -231,13 +231,17 @@ modem_wait_reply (int fd,
 
 #define GCAP_TAG "+GCAP:"
 #define GMM_TAG "+GMM:"
+#define HUAWEI_EC121_TAG "+CIS707-A"
 
 static int
-parse_gcap (const char *buf)
+parse_gcap (const char *tag, gboolean strip_tag, const char *buf)
 {
-	const char *p = buf + strlen (GCAP_TAG);
+	const char *p = buf;
 	char **caps, **iter;
 	int ret = 0;
+
+	if (strip_tag)
+		p += strlen (tag);
 
 	caps = g_strsplit_set (p, " ,\t", 0);
 	if (!caps)
@@ -309,7 +313,7 @@ g_timeval_subtract (GTimeVal *result, GTimeVal *x, GTimeVal *y)
 
 static int modem_probe_caps(int fd, glong timeout_ms)
 {
-	const char *gcap_responses[] = { GCAP_TAG, NULL };
+	const char *gcap_responses[] = { GCAP_TAG, HUAWEI_EC121_TAG, NULL };
 	const char *terminators[] = { "OK", "ERROR", "ERR", "+CME ERROR", NULL };
 	char *reply = NULL;
 	int idx = -1, term_idx = -1, ret = 0;
@@ -347,7 +351,12 @@ static int modem_probe_caps(int fd, glong timeout_ms)
 			if (0 == term_idx && 0 == idx) {
 				/* Success */
 				verbose ("GCAP response: %s", reply);
-				ret = parse_gcap (reply);
+				ret = parse_gcap (gcap_responses[idx], TRUE, reply);
+				break;
+			} else if (0 == term_idx && 1 == idx) {
+				/* Stupid Huawei EC121 that doesn't prefix response with +GCAP: */
+				verbose ("GCAP response: %s", reply);
+				ret = parse_gcap (gcap_responses[idx], FALSE, reply);
 				break;
 			} else if (0 == term_idx && -1 == idx) {
 				/* Just returned "OK" but no GCAP (Sierra) */
@@ -370,7 +379,7 @@ static int modem_probe_caps(int fd, glong timeout_ms)
 	}
 
 	if (!ret && try_ati) {
-		const char *ati_responses[] = { GCAP_TAG, NULL };
+		const char *ati_responses[] = { GCAP_TAG, HUAWEI_EC121_TAG, NULL };
 
 		/* Many cards (ex Sierra 860 & 875) won't accept AT+GCAP but
 		 * accept ATI when the SIM is missing.  Often the GCAP info is
@@ -384,7 +393,10 @@ static int modem_probe_caps(int fd, glong timeout_ms)
 			idx = modem_wait_reply (fd, 3, ati_responses, terminators, &term_idx, &reply);
 			if (0 == term_idx && 0 == idx) {
 				verbose ("ATI response: %s", reply);
-				ret = parse_gcap (reply);
+				ret = parse_gcap (ati_responses[idx], TRUE, reply);
+			} else if (0 == term_idx && 1 == idx) {
+				verbose ("ATI response: %s", reply);
+				ret = parse_gcap (ati_responses[idx], FALSE, reply);
 			}
 		}
 	}
