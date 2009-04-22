@@ -170,7 +170,7 @@ power_up_response (NMSerialDevice *device,
 static void
 power_up (NMSerialDevice *device)
 {
-	const char *responses[] = { "OK", "ERROR", "ERR", NULL };
+	const char *responses[] = { "OK", "ERROR", "ERR", "COMMAND NOT SUPPORT", NULL };
 	guint id = 0;
 
 	/* Only works on Sierra cards */
