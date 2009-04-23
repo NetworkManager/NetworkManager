@@ -167,6 +167,8 @@ create_dhclient_config (NMDHCPDevice *device, NMSettingIP4Config *s_ip4)
 	orig = g_strdup (SYSCONFDIR "/dhclient.conf");
 #elif defined(TARGET_DEBIAN)
 	orig = g_strdup (SYSCONFDIR "/dhcp3/dhclient.conf");
+#elif defined(TARGET_GENTOO)
+	orig = g_strdup (SYSCONFDIR "/dhcp/dhclient.conf");
 #else
 	orig = g_strdup_printf (SYSCONFDIR "/dhclient-%s.conf", device->iface);
 #endif
