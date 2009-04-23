@@ -293,18 +293,47 @@ is_modem_device (NMHalManager *self, const char *udi)
 }
 
 static char *
+hal_get_subsystem (LibHalContext *ctx, const char *udi)
+{
+	char *subsys;
+
+	subsys = libhal_device_get_property_string (ctx, udi, "info.subsystem", NULL);
+	if (!subsys) {
+		/* info.bus is deprecated */
+		subsys = libhal_device_get_property_string (ctx, udi, "info.bus", NULL);
+	}
+	return subsys;
+}
+
+static char *
+hal_get_originating_device (LibHalContext *ctx, const char *udi, const char *prefix)
+{
+	char *od_key = g_strdup_printf ("%s.originating_device", prefix);
+	char *pd_key = g_strdup_printf ("%s.physical_device", prefix);
+	char *od;
+
+	od = libhal_device_get_property_string (ctx, udi, od_key, NULL);
+	if (!od) {
+		/* info.bus is deprecated */
+		od = libhal_device_get_property_string (ctx, udi, pd_key, NULL);
+	}
+
+	g_free (od_key);
+	g_free (pd_key);
+	return od;
+}
+
+static char *
 get_hso_netdev (LibHalContext *ctx, const char *udi)
 {
-	char *serial_od = NULL, *serial_od_parent = NULL, *netdev = NULL, *bus;
+	char *serial_od = NULL, *serial_od_parent = NULL, *netdev = NULL, *subsys;
 	char **netdevs = NULL;
 	int num, i;
 
 	/* Get the serial interface's originating device UDI, used to find the
 	 * originating device's netdev.
 	 */
-	serial_od = libhal_device_get_property_string (ctx, udi, "serial.originating_device", NULL);
-	if (!serial_od)
-		serial_od = libhal_device_get_property_string (ctx, udi, "serial.physical_device", NULL);
+	serial_od = hal_get_originating_device (ctx, udi, "serial");
 	if (!serial_od)
 		goto out;
 
@@ -313,21 +342,19 @@ get_hso_netdev (LibHalContext *ctx, const char *udi)
 		goto out;
 
 	/* Check to ensure we've got the actual "USB Device" */
-	bus = libhal_device_get_property_string (ctx, serial_od_parent, "info.bus", NULL);
-	if (!bus || strcmp (bus, "usb_device")) {
-		libhal_free_string (bus);
+	subsys = hal_get_subsystem (ctx, serial_od_parent);
+	if (!subsys || strcmp (subsys, "usb_device")) {
+		libhal_free_string (subsys);
 		goto out;
 	}
-	libhal_free_string (bus);
+	libhal_free_string (subsys);
 
 	/* Look for the originating device's netdev */
 	netdevs = libhal_find_device_by_capability (ctx, "net", &num, NULL);
 	for (i = 0; netdevs && !netdev && (i < num); i++) {
 		char *net_od = NULL, *net_od_parent = NULL, *tmp;
 
-		net_od = libhal_device_get_property_string (ctx, netdevs[i], "net.originating_device", NULL);
-		if (!net_od)
-			net_od = libhal_device_get_property_string (ctx, netdevs[i], "net.physical_device", NULL);
+		net_od = hal_get_originating_device (ctx, netdevs[i], "net");
 		if (!net_od)
 			goto next;
 
@@ -336,12 +363,12 @@ get_hso_netdev (LibHalContext *ctx, const char *udi)
 			goto next;
 
 		/* Check to ensure we've got the actual "USB Device" */
-		bus = libhal_device_get_property_string (ctx, net_od_parent, "info.bus", NULL);
-		if (!bus || strcmp (bus, "usb_device")) {
-			libhal_free_string (bus);
+		subsys = hal_get_subsystem (ctx, net_od_parent);
+		if (!subsys || strcmp (subsys, "usb_device")) {
+			libhal_free_string (subsys);
 			goto next;
 		}
-		libhal_free_string (bus);
+		libhal_free_string (subsys);
 
 		if (!strcmp (net_od_parent, serial_od_parent)) {
 			/* We found it */
@@ -852,22 +879,16 @@ new_modem_device (const char *udi,
 static char *
 nm_get_modem_device_driver_name (LibHalContext *ctx, const char *udi)
 {
-	char *driver_name = NULL;
-	char *origdev_udi;
+	char *driver_name = NULL, *origdev_udi, *driver;
 
-	origdev_udi = libhal_device_get_property_string (ctx, udi, "serial.originating_device", NULL);
-	/* Older HAL uses "physical_device" */
+	origdev_udi = hal_get_originating_device (ctx, udi, "serial");
 	if (!origdev_udi)
-		origdev_udi = libhal_device_get_property_string (ctx, udi, "serial.physical_device", NULL);
+		return NULL;
 
-	if (origdev_udi && libhal_device_property_exists (ctx, origdev_udi, "info.linux.driver", NULL)) {
-		char *drv;
-
-		drv = libhal_device_get_property_string (ctx, origdev_udi, "info.linux.driver", NULL);
-		if (drv) {
-			driver_name = g_strdup (drv);
-			libhal_free_string (drv);
-		}
+	driver = libhal_device_get_property_string (ctx, origdev_udi, "info.linux.driver", NULL);
+	if (driver) {
+		driver_name = g_strdup (driver);
+		libhal_free_string (driver);
 	}
 	libhal_free_string (origdev_udi);
 	return driver_name;
@@ -1040,7 +1061,7 @@ static void
 emit_udi_added (NMHalManager *self, const char *udi, DeviceCreator *creator)
 {
 	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
-	char *od = NULL, *tmp, *parent, *bus = NULL;
+	char *od = NULL, *tmp, *parent, *subsys = NULL;
 
 	g_return_if_fail (self != NULL);
 	g_return_if_fail (udi != NULL);
@@ -1057,8 +1078,8 @@ emit_udi_added (NMHalManager *self, const char *udi, DeviceCreator *creator)
 	 */
 	parent = libhal_device_get_property_string (priv->hal_ctx, udi, "info.parent", NULL);
 	if (parent)
-		bus = libhal_device_get_property_string (priv->hal_ctx, parent, "info.bus", NULL);
-	if (bus && !strcmp (bus, "usb")) {
+		subsys = hal_get_subsystem (priv->hal_ctx, parent);
+	if (subsys && !strcmp (subsys, "usb")) {
 		char *usb_intf_udi;
 
 		usb_intf_udi = libhal_device_get_property_string (priv->hal_ctx, udi, "info.parent", NULL);
@@ -1067,7 +1088,7 @@ emit_udi_added (NMHalManager *self, const char *udi, DeviceCreator *creator)
 
 			/* Ensure the grandparent really is the "USB Device" */
 			if (od) {
-				tmp = libhal_device_get_property_string (priv->hal_ctx, od, "info.bus", NULL);
+				tmp = hal_get_subsystem (priv->hal_ctx, od);
 				if (!tmp || strcmp (tmp, "usb_device")) {
 					libhal_free_string (od);
 					od = NULL;
@@ -1078,24 +1099,14 @@ emit_udi_added (NMHalManager *self, const char *udi, DeviceCreator *creator)
 			libhal_free_string (usb_intf_udi);
 		}
 	}
-	libhal_free_string (bus);
+	libhal_free_string (subsys);
 	libhal_free_string (parent);
 
 	/* For non-USB devices, and ss a fallback, just use the originating device
 	 * of the tty; though this might result in more than one modem being detected by NM.
 	 */
-	if (!od) {
-		tmp = g_strdup_printf ("%s.originating_device", creator->category);
-		od = libhal_device_get_property_string (priv->hal_ctx, udi, tmp, NULL);
-		g_free (tmp);
-	}
-
-	if (!od) {
-		/* Older HAL uses 'physical_device' */
-		tmp = g_strdup_printf ("%s.physical_device", creator->category);
-		od = libhal_device_get_property_string (priv->hal_ctx, udi, tmp, NULL);
-		g_free (tmp);
-	}
+	if (!od)
+		od = hal_get_originating_device (priv->hal_ctx, udi, creator->category);
 
 	g_signal_emit (self, signals[UDI_ADDED], 0,
 	               udi,
