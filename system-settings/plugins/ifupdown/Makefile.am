@@ -1,7 +1,6 @@
 
 INCLUDES = \
-	-I${top_srcdir}/src \
-	$(NULL)
+	-I${top_srcdir}/src
 
 pkglib_LTLIBRARIES = libnm-settings-plugin-ifupdown.la
 
@@ -9,8 +8,7 @@ libnm_settings_plugin_ifupdown_la_SOURCES = \
 	interface_parser.c interface_parser.h \
 	nm-ifupdown-connection.c nm-ifupdown-connection.h \
 	parser.c parser.h \
-	plugin.c plugin.h \
-	$(NULL)
+	plugin.c plugin.h
 
 libnm_settings_plugin_ifupdown_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
