@@ -95,9 +95,6 @@ void				nm_ap_set_freq			(NMAccessPoint *ap, guint32 freq);
 guint32			nm_ap_get_max_bitrate			(NMAccessPoint *ap);
 void				nm_ap_set_max_bitrate		(NMAccessPoint *ap, guint32 bitrate);
 
-gboolean			nm_ap_get_invalid		(const NMAccessPoint *ap);
-void				nm_ap_set_invalid		(NMAccessPoint *ap, gboolean invalid);
-
 gboolean			nm_ap_get_fake	(const NMAccessPoint *ap);
 void				nm_ap_set_fake	(NMAccessPoint *ap, gboolean fake);
 
