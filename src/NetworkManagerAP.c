@@ -53,7 +53,6 @@ typedef struct
 	guint32			rsn_flags;	/* RSN (WPA2) -related flags */
 
 	/* Non-scanned attributes */
-	gboolean			invalid;
 	gboolean			fake;	/* Whether or not the AP is from a scan */
 	gboolean			broadcast;	/* Whether or not the AP is broadcasting (hidden) */
 	gboolean			user_created;	/* Whether or not the AP was created
@@ -702,8 +701,7 @@ nm_ap_print_self (NMAccessPoint *ap,
 	priv = NM_AP_GET_PRIVATE (ap);
 
 	nm_info ("%s'%s' (%p) stamp=%ld flags=0x%X wpa-flags=0x%X rsn-flags=0x%x "
-	         "bssid=" MAC_FMT " strength=%d freq=%d rate=%d inval=%d "
-	         "mode=%d seen=%ld",
+	         "bssid=" MAC_FMT " strength=%d freq=%d rate=%d mode=%d seen=%ld",
 	         prefix,
 	         priv->ssid ? nm_utils_escape_ssid (priv->ssid->data, priv->ssid->len) : "(none)",
 	         ap,
@@ -715,7 +713,6 @@ nm_ap_print_self (NMAccessPoint *ap,
 	         priv->strength,
 	         priv->freq,
 	         priv->max_bitrate,
-	         priv->invalid,
 	         priv->mode,
 	         priv->last_seen);
 }
@@ -1039,28 +1036,6 @@ nm_ap_set_max_bitrate (NMAccessPoint *ap, guint32 bitrate)
 		g_object_notify (G_OBJECT (ap), NM_AP_MAX_BITRATE);
 	}
 }
-
-
-/*
- * Get/set functions for "invalid" access points, ie ones
- * for which a user explicitly does not wish to connect to
- * (by cancelling requests for WEP key, for example)
- *
- */
-gboolean nm_ap_get_invalid (const NMAccessPoint *ap)
-{
-	g_return_val_if_fail (NM_IS_AP (ap), TRUE);
-
-	return NM_AP_GET_PRIVATE (ap)->invalid;
-}
-
-void nm_ap_set_invalid (NMAccessPoint *ap, gboolean invalid)
-{
-	g_return_if_fail (NM_IS_AP (ap));
-
-	NM_AP_GET_PRIVATE (ap)->invalid = invalid;
-}
-
 
 /*
  * Get/Set functions to indicate that an access point is 'fake', ie whether

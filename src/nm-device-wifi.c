@@ -2584,11 +2584,8 @@ handle_auth_or_fail (NMDeviceWifi *self,
 	g_assert (ap);
 
 	tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES));
-	if (tries > 3) {
-		/* Make the user try again explicitly */
-		nm_ap_set_invalid (ap, TRUE);
+	if (tries > 3)
 		return NM_ACT_STAGE_RETURN_FAILURE;
-	}
 
 	nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
 
@@ -3239,9 +3236,6 @@ activation_failure_handler (NMDevice *dev)
 			access_point_removed (self, ap);
 			priv->ap_list = g_slist_remove (priv->ap_list, ap);
 			g_object_unref (ap);
-		} else {
-			/* Add the AP to the invalid list */
-			nm_ap_set_invalid (ap, TRUE);
 		}
 	}
 
