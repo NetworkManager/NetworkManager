@@ -74,42 +74,40 @@ enum {
 #define NM_IS_SUPPLICANT_INTERFACE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_SUPPLICANT_INTERFACE))
 #define NM_SUPPLICANT_INTERFACE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SUPPLICANT_INTERFACE, NMSupplicantInterfaceClass))
 
-struct _NMSupplicantInterface
-{
+struct _NMSupplicantInterface {
 	GObject parent;
 };
 
-typedef struct
-{
+typedef struct {
 	GObjectClass parent;
 
 	/* class members */
-	void (* state)            (NMSupplicantInterface * iface,
-	                           guint32 new_state,
-	                           guint32 old_state);
+	void (*state)            (NMSupplicantInterface * iface,
+	                          guint32 new_state,
+	                          guint32 old_state);
 
-	void (* removed)          (NMSupplicantInterface * iface);
+	void (*removed)          (NMSupplicantInterface * iface);
 
-	void (* scanned_ap)       (NMSupplicantInterface * iface,
-	                           DBusMessage * message);
+	void (*scanned_ap)       (NMSupplicantInterface * iface,
+	                          DBusMessage * message);
 
-	void (* scan_result)      (NMSupplicantInterface * iface, gboolean result);
+	void (*scan_result)      (NMSupplicantInterface * iface, gboolean result);
 
-	void (* connection_state) (NMSupplicantInterface * iface,
-	                           guint32 new_state,
-	                           guint32 old_state);
+	void (*connection_state) (NMSupplicantInterface * iface,
+	                          guint32 new_state,
+	                          guint32 old_state);
 
-	void (* connection_error) (NMSupplicantInterface * iface,
-	                           const char * name,
-	                           const char * message);
+	void (*connection_error) (NMSupplicantInterface * iface,
+	                          const char * name,
+	                          const char * message);
 } NMSupplicantInterfaceClass;
 
 
 GType nm_supplicant_interface_get_type (void);
 
 NMSupplicantInterface * nm_supplicant_interface_new (NMSupplicantManager * smgr,
-													 const char *ifname,
-													 gboolean is_wireless);
+                                                     const char *ifname,
+                                                     gboolean is_wireless);
 
 gboolean nm_supplicant_interface_set_config (NMSupplicantInterface * iface,
                                              NMSupplicantConfig * cfg);
