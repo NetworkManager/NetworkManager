@@ -81,22 +81,34 @@ struct _NMSupplicantInterface {
 typedef struct {
 	GObjectClass parent;
 
-	/* class members */
+	/* Signals */
+
+	/* change in the interface's state */
 	void (*state)            (NMSupplicantInterface * iface,
 	                          guint32 new_state,
 	                          guint32 old_state);
 
+	/* interface was removed by the supplicant */
 	void (*removed)          (NMSupplicantInterface * iface);
 
+	/* interface saw a new access point from a scan */
 	void (*scanned_ap)       (NMSupplicantInterface * iface,
 	                          DBusMessage * message);
 
-	void (*scan_result)      (NMSupplicantInterface * iface, gboolean result);
+	/* result of a wireless scan request */
+	void (*scan_req_result)  (NMSupplicantInterface * iface,
+	                          gboolean success);
 
+	/* scan results returned from supplicant */
+	void (*scan_results)     (NMSupplicantInterface * iface,
+	                          guint num_bssids);
+
+	/* link state of the device's connection */
 	void (*connection_state) (NMSupplicantInterface * iface,
 	                          guint32 new_state,
 	                          guint32 old_state);
 
+	/* an error occurred during a connection request */
 	void (*connection_error) (NMSupplicantInterface * iface,
 	                          const char * name,
 	                          const char * message);

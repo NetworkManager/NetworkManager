@@ -114,15 +114,16 @@ typedef struct SupplicantStateTask {
 } SupplicantStateTask;
 
 typedef struct Supplicant {
-	NMSupplicantManager *   mgr;
-	NMSupplicantInterface * iface;
+	NMSupplicantManager *mgr;
+	NMSupplicantInterface *iface;
 
 	/* signal handler ids */
 	guint mgr_state_id;
 	guint iface_error_id;
 	guint iface_state_id;
 	guint iface_scanned_ap_id;
-	guint iface_scan_result_id;
+	guint iface_scan_request_result_id;
+	guint iface_scan_results_id;
 	guint iface_con_state_id;
 
 	/* Timeouts and idles */
@@ -206,9 +207,13 @@ static void supplicant_iface_scanned_ap_cb (NMSupplicantInterface * iface,
                                             GHashTable *properties,
                                             NMDeviceWifi * self);
 
-static void supplicant_iface_scan_result_cb (NMSupplicantInterface * iface,
-                                             gboolean result,
-                                             NMDeviceWifi * self);
+static void supplicant_iface_scan_request_result_cb (NMSupplicantInterface * iface,
+                                                     gboolean success,
+                                                     NMDeviceWifi * self);
+
+static void supplicant_iface_scan_results_cb (NMSupplicantInterface * iface,
+                                              guint32 num_bssids,
+                                              NMDeviceWifi * self);
 
 static void supplicant_mgr_state_cb (NMSupplicantInterface * iface,
                                      guint32 new_state,
@@ -217,6 +222,7 @@ static void supplicant_mgr_state_cb (NMSupplicantInterface * iface,
 
 static guint32 nm_device_wifi_get_bitrate (NMDeviceWifi *self);
 
+static void cull_scan_list (NMDeviceWifi *self);
 
 static GQuark
 nm_wifi_error_quark (void)
@@ -608,10 +614,16 @@ supplicant_interface_acquire (NMDeviceWifi *self)
 	priv->supplicant.iface_scanned_ap_id = id;
 
 	id = g_signal_connect (priv->supplicant.iface,
-	                       "scan-result",
-	                       G_CALLBACK (supplicant_iface_scan_result_cb),
+	                       "scan-req-result",
+	                       G_CALLBACK (supplicant_iface_scan_request_result_cb),
 	                       self);
-	priv->supplicant.iface_scan_result_id = id;
+	priv->supplicant.iface_scan_request_result_id = id;
+
+	id = g_signal_connect (priv->supplicant.iface,
+	                       "scan-results",
+	                       G_CALLBACK (supplicant_iface_scan_results_cb),
+	                       self);
+	priv->supplicant.iface_scan_results_id = id;
 
 	id = g_signal_connect (priv->supplicant.iface,
 	                       "connection-state",
@@ -695,9 +707,14 @@ supplicant_interface_release (NMDeviceWifi *self)
 		priv->supplicant.iface_scanned_ap_id = 0;
 	}
 
-	if (priv->supplicant.iface_scan_result_id > 0) {
-		g_signal_handler_disconnect (priv->supplicant.iface, priv->supplicant.iface_scan_result_id);
-		priv->supplicant.iface_scan_result_id = 0;
+	if (priv->supplicant.iface_scan_request_result_id > 0) {
+		g_signal_handler_disconnect (priv->supplicant.iface, priv->supplicant.iface_scan_request_result_id);
+		priv->supplicant.iface_scan_request_result_id = 0;
+	}
+
+	if (priv->supplicant.iface_scan_results_id > 0) {
+		g_signal_handler_disconnect (priv->supplicant.iface, priv->supplicant.iface_scan_results_id);
+		priv->supplicant.iface_scan_results_id = 0;
 	}
 
 	if (priv->supplicant.iface_con_state_id > 0) {
@@ -1847,12 +1864,25 @@ cancel_pending_scan (NMDeviceWifi *self)
 
 
 static void
-supplicant_iface_scan_result_cb (NMSupplicantInterface * iface,
-                                 gboolean result,
-                                 NMDeviceWifi * self)
+supplicant_iface_scan_request_result_cb (NMSupplicantInterface *iface,
+                                         gboolean success,
+                                         NMDeviceWifi *self)
 {
 	if (can_scan (self))
 		schedule_scan (self, TRUE);
+}
+
+static void
+supplicant_iface_scan_results_cb (NMSupplicantInterface *iface,
+                                  guint32 num_results,
+                                  NMDeviceWifi *self)
+{
+	if (num_results == 0) {
+		/* ensure that old APs get culled, which otherwise only
+		 * happens when there are actual scan results to process.
+		 */
+		cull_scan_list (self);
+	}
 }
 
 static gboolean
