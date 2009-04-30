@@ -76,7 +76,8 @@ enum {
 	STATE,             /* change in the interface's state */
 	REMOVED,           /* interface was removed by the supplicant */
 	SCANNED_AP,        /* interface saw a new access point from a scan */
-	SCAN_RESULT,       /* result of a wireless scan request */
+	SCAN_REQ_RESULT,   /* result of a wireless scan request */
+	SCAN_RESULTS,      /* scan results returned from supplicant */
 	CONNECTION_STATE,  /* link state of the device's connection */
 	CONNECTION_ERROR,  /* an error occurred during a connection request */
 	LAST_SIGNAL
@@ -422,14 +423,23 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 		              g_cclosure_marshal_VOID__POINTER,
 		              G_TYPE_NONE, 1, G_TYPE_POINTER);
 
-	nm_supplicant_interface_signals[SCAN_RESULT] =
-		g_signal_new ("scan-result",
+	nm_supplicant_interface_signals[SCAN_REQ_RESULT] =
+		g_signal_new ("scan-req-result",
 		              G_OBJECT_CLASS_TYPE (object_class),
 		              G_SIGNAL_RUN_LAST,
-		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, scan_result),
+		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, scan_req_result),
 		              NULL, NULL,
 		              g_cclosure_marshal_VOID__BOOLEAN,
 		              G_TYPE_NONE, 1, G_TYPE_BOOLEAN);
+
+	nm_supplicant_interface_signals[SCAN_RESULTS] =
+		g_signal_new ("scan-results",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_LAST,
+		              G_STRUCT_OFFSET (NMSupplicantInterfaceClass, scan_results),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__UINT,
+		              G_TYPE_NONE, 1, G_TYPE_UINT);
 
 	nm_supplicant_interface_signals[CONNECTION_STATE] =
 		g_signal_new ("connection-state",
@@ -529,9 +539,9 @@ scan_results_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 
 		/* Notify listeners of the result of the scan */
 		g_signal_emit (info->interface,
-		               nm_supplicant_interface_signals[SCAN_RESULT],
+		               nm_supplicant_interface_signals[SCAN_RESULTS],
 		               0,
-		               TRUE);
+		               array->len);
 
 		/* Fire off a "properties" call for each returned BSSID */
 		for (i = 0; i < array->len; i++) {
@@ -1213,7 +1223,7 @@ scan_request_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 
 	/* Notify listeners of the result of the scan */
 	g_signal_emit (info->interface,
-	               nm_supplicant_interface_signals[SCAN_RESULT],
+	               nm_supplicant_interface_signals[SCAN_REQ_RESULT],
 	               0,
 	               success ? TRUE : FALSE);
 }
