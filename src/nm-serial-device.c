@@ -19,6 +19,7 @@
  * Copyright (C) 2007 - 2008 Red Hat, Inc.
  */
 
+#include "config.h"
 #include <termios.h>
 #include <unistd.h>
 #include <sys/types.h>
