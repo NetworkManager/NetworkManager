@@ -93,6 +93,7 @@ void           nm_dhcp_manager_set_hostname_provider(NMDHCPManager *manager,
 
 gboolean       nm_dhcp_manager_begin_transaction    (NMDHCPManager *manager,
                                                      const char *iface,
+                                                     const char *uuid,
                                                      NMSettingIP4Config *s_ip4,
                                                      guint32 timeout);
 void           nm_dhcp_manager_cancel_transaction   (NMDHCPManager *manager,
@@ -106,7 +107,9 @@ gboolean       nm_dhcp_manager_foreach_dhcp4_option (NMDHCPManager *self,
                                                      gpointer user_data);
 
 /* The following are implemented by the DHCP client backends */
-GPid           nm_dhcp_client_start                 (NMDHCPDevice *device, NMSettingIP4Config *s_ip4);
+GPid           nm_dhcp_client_start                 (NMDHCPDevice *device,
+                                                     const char *uuid,
+                                                     NMSettingIP4Config *s_ip4);
 void           nm_dhcp_client_stop                  (NMDHCPDevice *device, pid_t pid);
 
 gboolean       nm_dhcp_client_process_classless_routes (GHashTable *options,
