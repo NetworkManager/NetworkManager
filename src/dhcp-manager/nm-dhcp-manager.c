@@ -577,6 +577,7 @@ static void dhcp_watch_cb (GPid pid, gint status, gpointer user_data)
 gboolean
 nm_dhcp_manager_begin_transaction (NMDHCPManager *manager,
                                    const char *iface,
+                                   const char *uuid,
                                    NMSettingIP4Config *s_ip4,
                                    guint32 timeout)
 {
@@ -599,7 +600,7 @@ nm_dhcp_manager_begin_transaction (NMDHCPManager *manager,
 
 	nm_info ("Activation (%s) Beginning DHCP transaction.", iface);
 
-	device->pid = nm_dhcp_client_start (device, s_ip4);
+	device->pid = nm_dhcp_client_start (device, uuid, s_ip4);
 	if (device->pid == 0)
 		return FALSE;
 
@@ -681,9 +682,8 @@ nm_dhcp_manager_cancel_transaction_real (NMDHCPDevice *device)
 		device->pid_file = NULL;
 	}
 
-	/* Clean up the leasefile if it got left around */
+	/* Free leasefile (but don't delete) */
 	if (device->lease_file) {
-		remove (device->lease_file);
 		g_free (device->lease_file);
 		device->lease_file = NULL;
 	}

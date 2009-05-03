@@ -61,11 +61,12 @@ get_pidfile_for_iface (const char * iface)
 
 
 static char *
-get_leasefile_for_iface (const char * iface)
+get_leasefile_for_iface (const char * iface, const char *uuid)
 {
-	return g_strdup_printf ("%s/%s-%s.%s",
+	return g_strdup_printf ("%s/%s-%s-%s.%s",
 	                        NM_DHCP_MANAGER_LEASE_DIR,
 	                        NM_DHCP_MANAGER_LEASE_FILENAME,
+	                        uuid,
 	                        iface,
 	                        NM_DHCP_MANAGER_LEASE_FILE_EXT);
 }
@@ -218,7 +219,9 @@ dhclient_child_setup (gpointer user_data G_GNUC_UNUSED)
 
 
 GPid
-nm_dhcp_client_start (NMDHCPDevice *device, NMSettingIP4Config *s_ip4)
+nm_dhcp_client_start (NMDHCPDevice *device,
+                      const char *uuid,
+                      NMSettingIP4Config *s_ip4)
 {
 	GPtrArray *dhclient_argv = NULL;
 	GPid pid = 0;
@@ -236,7 +239,7 @@ nm_dhcp_client_start (NMDHCPDevice *device, NMSettingIP4Config *s_ip4)
 		goto out;
 	}
 
-	device->lease_file = get_leasefile_for_iface (device->iface);
+	device->lease_file = get_leasefile_for_iface (device->iface, uuid);
 	if (!device->lease_file) {
 		nm_warning ("%s: not enough memory for dhclient options.", device->iface);
 		goto out;

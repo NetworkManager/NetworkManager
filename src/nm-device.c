@@ -862,10 +862,12 @@ aipd_exec (NMDevice *self, GError **error)
 static NMActStageReturn
 real_act_stage3_ip_config_start (NMDevice *self, NMDeviceStateReason *reason)
 {
+	NMConnection *connection;
+	NMSettingConnection *s_con;
 	NMSettingIP4Config *s_ip4;
 	NMActRequest *req;
 	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
-	const char *ip_iface, *method = NULL;
+	const char *ip_iface, *method = NULL, *uuid;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
@@ -873,8 +875,12 @@ real_act_stage3_ip_config_start (NMDevice *self, NMDeviceStateReason *reason)
 	ip_iface = nm_device_get_ip_iface (self);
 
 	req = nm_device_get_act_request (self);
-	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (nm_act_request_get_connection (req),
-	                                                          NM_TYPE_SETTING_IP4_CONFIG);
+	connection = nm_act_request_get_connection (req);
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	g_assert (s_con);
+	uuid = nm_setting_connection_get_uuid (s_con);
+
+	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
 
 	/* If we did not receive IP4 configuration information, default to DHCP */
 	if (s_ip4)
@@ -890,7 +896,7 @@ real_act_stage3_ip_config_start (NMDevice *self, NMDeviceStateReason *reason)
 		/* DHCP manager will cancel any transaction already in progress and we do not
 		   want to cancel this activation if we get "down" state from that. */
 		g_signal_handler_block (priv->dhcp_manager, priv->dhcp_state_sigid);
-		success = nm_dhcp_manager_begin_transaction (priv->dhcp_manager, ip_iface, s_ip4, 45);
+		success = nm_dhcp_manager_begin_transaction (priv->dhcp_manager, ip_iface, uuid, s_ip4, 45);
 		g_signal_handler_unblock (priv->dhcp_manager, priv->dhcp_state_sigid);
 
 		if (success) {

@@ -60,7 +60,9 @@ dhcpcd_child_setup (gpointer user_data G_GNUC_UNUSED)
 
 
 GPid
-nm_dhcp_client_start (NMDHCPDevice *device, NMSettingIP4Config *s_ip4)
+nm_dhcp_client_start (NMDHCPDevice *device,
+                      const char *uuid,
+                      NMSettingIP4Config *s_ip4)
 {
 	GPtrArray *argv = NULL;
 	GPid pid = 0;
