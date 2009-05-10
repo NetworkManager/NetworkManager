@@ -2803,10 +2803,8 @@ build_supplicant_config (NMDeviceWifi *self,
 			goto error;
 		}
 	} else {
-		/* Unencrypted, wpa_supplicant needs key_mgmt=NONE here */
-		if (!nm_supplicant_config_add_option (config, "key_mgmt", "NONE", -1, FALSE)) {
-			nm_warning ("Couldn't add 802-11-wireless (no security) setting to"
-			            " supplicant config.");
+		if (!nm_supplicant_config_add_no_security (config)) {
+			nm_warning ("Couldn't add unsecured option to supplicant config.");
 			goto error;
 		}
 	}

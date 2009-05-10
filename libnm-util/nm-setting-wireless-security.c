@@ -93,6 +93,7 @@ typedef struct {
 	char *wep_key3;
 	char *psk;
 	char *leap_password;
+	NMWepKeyType wep_key_type;
 } NMSettingWirelessSecurityPrivate;
 
 enum {
@@ -110,6 +111,7 @@ enum {
 	PROP_WEP_KEY3,
 	PROP_PSK,
 	PROP_LEAP_PASSWORD,
+	PROP_WEP_KEY_TYPE,
 
 	LAST_PROP
 };
@@ -425,8 +427,16 @@ nm_setting_wireless_security_get_auth_alg (NMSettingWirelessSecurity *setting)
 	return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->auth_alg;
 }
 
+NMWepKeyType
+nm_setting_wireless_security_get_wep_key_type (NMSettingWirelessSecurity *setting)
+{
+	g_return_val_if_fail (NM_IS_SETTING_WIRELESS_SECURITY (setting), 0);
+
+	return NM_SETTING_WIRELESS_SECURITY_GET_PRIVATE (setting)->wep_key_type;
+}
+
 static gboolean
-verify_wep_key (const char *key)
+verify_wep_key (const char *key, NMWepKeyType wep_type)
 {
 	int keylen, i;
 
@@ -434,11 +444,24 @@ verify_wep_key (const char *key)
 		return FALSE;
 
 	keylen = strlen (key);
-	if (keylen != 10 && keylen != 26)
-		return FALSE;
+	if (wep_type == NM_WEP_KEY_TYPE_KEY || NM_WEP_KEY_TYPE_UNKNOWN) {
+		if (keylen == 10 || keylen == 26) {
+			/* Hex key */
+			for (i = 0; i < keylen; i++) {
+				if (!isxdigit (key[i]))
+					return FALSE;
+			}
+		} else if (keylen == 5 || keylen == 13) {
+			/* ASCII key */
+			for (i = 0; i < keylen; i++) {
+				if (!isascii (key[i]))
+					return FALSE;
+			}
+		} else
+			return FALSE;
 
-	for (i = 0; i < keylen; i++) {
-		if (!isxdigit (key[i]))
+	} else if (wep_type == NM_WEP_KEY_TYPE_PASSPHRASE) {
+		if (!keylen || keylen > 64)
 			return FALSE;
 	}
 
@@ -454,12 +477,15 @@ verify_wpa_psk (const char *psk)
 		return FALSE;
 
 	psklen = strlen (psk);
-	if (psklen != 64)
+	if (psklen < 8 || psklen > 64)
 		return FALSE;
 
-	for (i = 0; i < psklen; i++) {
-		if (!isxdigit (psk[i]))
-			return FALSE;
+	if (psklen == 64) {
+		/* Hex PSK */
+		for (i = 0; i < psklen; i++) {
+			if (!isxdigit (psk[i]))
+				return FALSE;
+		}
 	}
 
 	return TRUE;
@@ -483,19 +509,19 @@ need_secrets (NMSetting *setting)
 
 	/* Static WEP */
 	if (strcmp (priv->key_mgmt, "none") == 0) {
-		if ((priv->wep_tx_keyidx == 0) && !verify_wep_key (priv->wep_key0)) {
+		if ((priv->wep_tx_keyidx == 0) && !verify_wep_key (priv->wep_key0, priv->wep_key_type)) {
 			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
 			return secrets;
 		}
-		if ((priv->wep_tx_keyidx == 1) && !verify_wep_key (priv->wep_key1)) {
+		if ((priv->wep_tx_keyidx == 1) && !verify_wep_key (priv->wep_key1, priv->wep_key_type)) {
 			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY1);
 			return secrets;
 		}
-		if ((priv->wep_tx_keyidx == 2) && !verify_wep_key (priv->wep_key2)) {
+		if ((priv->wep_tx_keyidx == 2) && !verify_wep_key (priv->wep_key2, priv->wep_key_type)) {
 			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY2);
 			return secrets;
 		}
-		if ((priv->wep_tx_keyidx == 3) && !verify_wep_key (priv->wep_key3)) {
+		if ((priv->wep_tx_keyidx == 3) && !verify_wep_key (priv->wep_key3, priv->wep_key_type)) {
 			g_ptr_array_add (secrets, NM_SETTING_WIRELESS_SECURITY_WEP_KEY3);
 			return secrets;
 		}
@@ -627,28 +653,36 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->wep_key0 && !strlen (priv->wep_key0)) {
+	if (priv->wep_key_type > NM_WEP_KEY_TYPE_LAST) {
+		g_set_error (error,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR,
+		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
+		             NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE);
+		return FALSE;
+	}
+
+	if (priv->wep_key0 && !verify_wep_key (priv->wep_key0, priv->wep_key_type)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
 		             NM_SETTING_WIRELESS_SECURITY_WEP_KEY0);
 		return FALSE;
 	}
-	if (priv->wep_key1 && !strlen (priv->wep_key1)) {
+	if (priv->wep_key1 && !verify_wep_key (priv->wep_key1, priv->wep_key_type)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
 		             NM_SETTING_WIRELESS_SECURITY_WEP_KEY1);
 		return FALSE;
 	}
-	if (priv->wep_key2 && !strlen (priv->wep_key2)) {
+	if (priv->wep_key2 && !verify_wep_key (priv->wep_key2, priv->wep_key_type)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
 		             NM_SETTING_WIRELESS_SECURITY_WEP_KEY2);
 		return FALSE;
 	}
-	if (priv->wep_key3 && !strlen (priv->wep_key3)) {
+	if (priv->wep_key3 && !verify_wep_key (priv->wep_key3, priv->wep_key_type)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
@@ -664,7 +698,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		return FALSE;
 	}
 
-	if (priv->psk && !strlen (priv->psk)) {
+	if (priv->psk && !verify_wpa_psk (priv->psk)) {
 		g_set_error (error,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR,
 		             NM_SETTING_WIRELESS_SECURITY_ERROR_INVALID_PROPERTY,
@@ -825,6 +859,9 @@ set_property (GObject *object, guint prop_id,
 		g_free (priv->leap_password);
 		priv->leap_password = g_value_dup_string (value);
 		break;
+	case PROP_WEP_KEY_TYPE:
+		priv->wep_key_type = g_value_get_uint (value);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -877,6 +914,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_LEAP_PASSWORD:
 		g_value_set_string (value, priv->leap_password);
+		break;
+	case PROP_WEP_KEY_TYPE:
+		g_value_set_uint (value, priv->wep_key_type);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -1004,4 +1044,14 @@ nm_setting_wireless_security_class_init (NMSettingWirelessSecurityClass *setting
 						  "LEAP Password",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE | NM_SETTING_PARAM_SECRET));
+
+	g_object_class_install_property
+		(object_class, PROP_WEP_KEY_TYPE,
+		 g_param_spec_uint (NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE,
+						"WEP Key Type",
+						"WEP Key Type",
+						NM_WEP_KEY_TYPE_UNKNOWN,
+						NM_WEP_KEY_TYPE_LAST,
+						NM_WEP_KEY_TYPE_UNKNOWN,
+						G_PARAM_READWRITE | G_PARAM_CONSTRUCT | NM_SETTING_PARAM_SERIALIZE));
 }

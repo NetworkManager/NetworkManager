@@ -50,25 +50,19 @@ typedef struct
 
 GType nm_supplicant_config_get_type (void);
 
-NMSupplicantConfig * nm_supplicant_config_new (void);
+NMSupplicantConfig *nm_supplicant_config_new (void);
 
-guint32 nm_supplicant_config_get_ap_scan (NMSupplicantConfig * self);
+guint32 nm_supplicant_config_get_ap_scan (NMSupplicantConfig *self);
 
-void nm_supplicant_config_set_ap_scan (NMSupplicantConfig * self,
+void nm_supplicant_config_set_ap_scan (NMSupplicantConfig *self,
                                        guint32 ap_scan);
 
-gboolean nm_supplicant_config_add_option (NMSupplicantConfig *self,
-                                          const char * key,
-                                          const char * value,
-                                          gint32 len,
-                                          gboolean secret);
+GHashTable *nm_supplicant_config_get_hash (NMSupplicantConfig *self);
 
-GHashTable *nm_supplicant_config_get_hash (NMSupplicantConfig * self);
+GHashTable *nm_supplicant_config_get_blobs (NMSupplicantConfig *self);
 
-GHashTable *nm_supplicant_config_get_blobs (NMSupplicantConfig * self);
-
-gboolean nm_supplicant_config_add_setting_wireless (NMSupplicantConfig * self,
-                                                    NMSettingWireless * setting,
+gboolean nm_supplicant_config_add_setting_wireless (NMSupplicantConfig *self,
+                                                    NMSettingWireless *setting,
                                                     gboolean is_broadcast,
                                                     guint32 adhoc_freq,
                                                     gboolean has_scan_capa_ssid);
@@ -77,6 +71,8 @@ gboolean nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig 
                                                              NMSettingWirelessSecurity *setting,
                                                              NMSetting8021x *setting_8021x,
                                                              const char *connection_uid);
+
+gboolean nm_supplicant_config_add_no_security (NMSupplicantConfig *self);
 
 gboolean nm_supplicant_config_add_setting_8021x (NMSupplicantConfig *self,
                                                  NMSetting8021x *setting,

@@ -56,6 +56,14 @@ GType nm_setting_wireless_security_error_get_type (void);
 #define NM_SETTING_WIRELESS_SECURITY_ERROR nm_setting_wireless_security_error_quark ()
 GQuark nm_setting_wireless_security_error_quark (void);
 
+typedef enum {
+	NM_WEP_KEY_TYPE_UNKNOWN = 0,
+	NM_WEP_KEY_TYPE_KEY = 1,          /* Hex or ASCII */
+	NM_WEP_KEY_TYPE_PASSPHRASE = 2,   /* 104/128-bit Passphrase */
+
+	NM_WEP_KEY_TYPE_LAST = NM_WEP_KEY_TYPE_PASSPHRASE
+} NMWepKeyType;
+
 #define NM_SETTING_WIRELESS_SECURITY_KEY_MGMT "key-mgmt"
 #define NM_SETTING_WIRELESS_SECURITY_WEP_TX_KEYIDX "wep-tx-keyidx"
 #define NM_SETTING_WIRELESS_SECURITY_AUTH_ALG "auth-alg"
@@ -69,6 +77,7 @@ GQuark nm_setting_wireless_security_error_quark (void);
 #define NM_SETTING_WIRELESS_SECURITY_WEP_KEY3 "wep-key3"
 #define NM_SETTING_WIRELESS_SECURITY_PSK "psk"
 #define NM_SETTING_WIRELESS_SECURITY_LEAP_PASSWORD "leap-password"
+#define NM_SETTING_WIRELESS_SECURITY_WEP_KEY_TYPE "wep-key-type"
 
 typedef struct {
 	NMSetting parent;
@@ -111,6 +120,7 @@ const char *nm_setting_wireless_security_get_wep_key       (NMSettingWirelessSec
 void        nm_setting_wireless_security_set_wep_key       (NMSettingWirelessSecurity *setting, guint32 idx, const char *key);
 guint32     nm_setting_wireless_security_get_wep_tx_keyidx (NMSettingWirelessSecurity *setting);
 const char *nm_setting_wireless_security_get_auth_alg      (NMSettingWirelessSecurity *setting);
+NMWepKeyType nm_setting_wireless_security_get_wep_key_type (NMSettingWirelessSecurity *setting);
 
 G_END_DECLS
 
