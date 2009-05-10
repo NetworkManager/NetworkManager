@@ -28,14 +28,14 @@
 static void
 FAIL(const char *test_name, const char *fmt, ...)
 {
-    va_list args;
-    char buf[500];
+	va_list args;
+	char buf[500];
 
 	snprintf (buf, 500, "FAIL: (%s) %s\n", test_name, fmt);
 
-    va_start (args, fmt);
+	va_start (args, fmt);
 	vfprintf (stderr, buf, args);
-    va_end (args);
+	va_end (args);
 	_exit (1);
 }
 
