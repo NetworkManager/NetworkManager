@@ -25,7 +25,8 @@ typedef enum OptType {
 	TYPE_INVALID = 0,
 	TYPE_INT,
 	TYPE_BYTES,
-	TYPE_KEYWORD
+	TYPE_KEYWORD,
+	TYPE_STRING
 } OptType;
 
 OptType nm_supplicant_settings_verify_setting (const char * key,

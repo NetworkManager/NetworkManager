@@ -1,3 +1,5 @@
+SUBDIRS=. tests
+
 INCLUDES = \
 	-I${top_srcdir}/src \
 	-I${top_srcdir}/include \
@@ -16,7 +18,9 @@ libsupplicant_manager_la_SOURCES = \
 	nm-supplicant-interface.c \
 	nm-supplicant-interface.h \
 	nm-supplicant-settings-verify.h \
-	nm-supplicant-settings-verify.c
+	nm-supplicant-settings-verify.c \
+	gnome-keyring-md5.h \
+	gnome-keyring-md5.c
 
 libsupplicant_manager_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \

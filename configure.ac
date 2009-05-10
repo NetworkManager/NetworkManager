@@ -464,6 +464,7 @@ src/named-manager/Makefile
 src/vpn-manager/Makefile
 src/dhcp-manager/Makefile
 src/supplicant-manager/Makefile
+src/supplicant-manager/tests/Makefile
 src/ppp-manager/Makefile
 src/dnsmasq-manager/Makefile
 src/backends/Makefile
