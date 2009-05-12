@@ -2404,7 +2404,9 @@ nm_device_state_changed (NMDevice *device,
 
 	old_state = priv->state;
 	priv->state = state;
-nm_info ("(%s): device state change: %d -> %d", nm_device_get_iface (device), old_state, state);
+
+	nm_info ("(%s): device state change: %d -> %d (reason %d)",
+	         nm_device_get_iface (device), old_state, state, reason);
 
 	if (priv->failed_to_disconnected_id) {
 		g_source_remove (priv->failed_to_disconnected_id);
@@ -2438,7 +2440,7 @@ nm_info ("(%s): device state change: %d -> %d", nm_device_get_iface (device), ol
 	}
 
 	g_object_notify (G_OBJECT (device), NM_DEVICE_INTERFACE_STATE);
-	g_signal_emit_by_name (device, "state-changed", state, old_state, 0);
+	g_signal_emit_by_name (device, "state-changed", state, old_state, reason);
 
 	/* Post-process the event after internal notification */
 
