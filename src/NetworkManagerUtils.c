@@ -204,6 +204,7 @@ nm_utils_merge_ip4_config (NMIP4Config *ip4_config, NMSettingIP4Config *setting)
 
 	if (nm_setting_ip4_config_get_ignore_auto_dns (setting)) {
 		nm_ip4_config_reset_nameservers (ip4_config);
+		nm_ip4_config_reset_domains (ip4_config);
 		nm_ip4_config_reset_searches (ip4_config);
 	}
 
