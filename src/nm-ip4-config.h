@@ -83,6 +83,7 @@ void          nm_ip4_config_reset_routes        (NMIP4Config *config);
 void          nm_ip4_config_add_domain          (NMIP4Config *config, const char *domain);
 const char *  nm_ip4_config_get_domain          (NMIP4Config *config, guint i);
 guint32       nm_ip4_config_get_num_domains     (NMIP4Config *config);
+void          nm_ip4_config_reset_domains       (NMIP4Config *config);
 
 void          nm_ip4_config_add_search          (NMIP4Config *config, const char *search);
 const char *  nm_ip4_config_get_search          (NMIP4Config *config, guint i);

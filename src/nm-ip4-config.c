@@ -352,14 +352,21 @@ void nm_ip4_config_reset_routes (NMIP4Config *config)
 
 void nm_ip4_config_add_domain (NMIP4Config *config, const char *domain)
 {
+	NMIP4ConfigPrivate *priv;
+	int i;
+
 	g_return_if_fail (NM_IS_IP4_CONFIG (config));
 	g_return_if_fail (domain != NULL);
 	g_return_if_fail (strlen (domain) > 0);
 
-	if (!strlen (domain))
-		return;
+	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 
-	g_ptr_array_add (NM_IP4_CONFIG_GET_PRIVATE (config)->domains, g_strdup (domain));
+	for (i = 0; i < priv->domains->len; i++) {
+		if (!strcmp (g_ptr_array_index (priv->domains, i), domain))
+			return;
+	}
+
+	g_ptr_array_add (priv->domains, g_strdup (domain));
 }
 
 const char *nm_ip4_config_get_domain (NMIP4Config *config, guint i)
@@ -376,13 +383,37 @@ guint32 nm_ip4_config_get_num_domains (NMIP4Config *config)
 	return NM_IP4_CONFIG_GET_PRIVATE (config)->domains->len;
 }
 
+void nm_ip4_config_reset_domains (NMIP4Config *config)
+{
+	NMIP4ConfigPrivate *priv;
+	int i;
+
+	g_return_if_fail (NM_IS_IP4_CONFIG (config));
+
+	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+	for (i = 0; i < priv->domains->len; i++)
+		g_free (g_ptr_array_index (priv->domains, i));
+	g_ptr_array_free (priv->domains, TRUE);
+	priv->domains = g_ptr_array_sized_new (3);
+}
+
 void nm_ip4_config_add_search (NMIP4Config *config, const char *search)
 {
+	NMIP4ConfigPrivate *priv;
+	int i;
+
 	g_return_if_fail (config != NULL);
 	g_return_if_fail (search != NULL);
 	g_return_if_fail (strlen (search) > 0);
 
-	g_ptr_array_add (NM_IP4_CONFIG_GET_PRIVATE (config)->searches, g_strdup (search));
+	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
+
+	for (i = 0; i < priv->searches->len; i++) {
+		if (!strcmp (g_ptr_array_index (priv->searches, i), search))
+			return;
+	}
+
+	g_ptr_array_add (priv->searches, g_strdup (search));
 }
 
 const char *nm_ip4_config_get_search (NMIP4Config *config, guint i)
@@ -402,12 +433,15 @@ guint32 nm_ip4_config_get_num_searches (NMIP4Config *config)
 void nm_ip4_config_reset_searches (NMIP4Config *config)
 {
 	NMIP4ConfigPrivate *priv;
+	int i;
 
 	g_return_if_fail (NM_IS_IP4_CONFIG (config));
 
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
-	if (priv->searches->len)
-		g_ptr_array_remove_range (priv->searches, 0, priv->searches->len);
+	for (i = 0; i < priv->searches->len; i++)
+		g_free (g_ptr_array_index (priv->searches, i));
+	g_ptr_array_free (priv->searches, TRUE);
+	priv->searches = g_ptr_array_sized_new (3);
 }
 
 guint32 nm_ip4_config_get_mtu (NMIP4Config *config)
@@ -696,8 +730,8 @@ nm_ip4_config_init (NMIP4Config *config)
 
 	priv->nameservers = g_array_new (FALSE, TRUE, sizeof (guint32));
 	priv->wins = g_array_new (FALSE, TRUE, sizeof (guint32));
-	priv->domains = g_ptr_array_new ();
-	priv->searches = g_ptr_array_new ();
+	priv->domains = g_ptr_array_sized_new (3);
+	priv->searches = g_ptr_array_sized_new (3);
 }
 
 static void

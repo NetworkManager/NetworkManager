@@ -107,16 +107,15 @@ merge_one_ip4_config (NMIP4Config *dst, NMIP4Config *src)
 		nm_ip4_config_add_domain (dst, nm_ip4_config_get_domain (src, i));
 
 	num = nm_ip4_config_get_num_searches (src);
-	if (num > 0) {
-		for (i = 0; i < num; i++)
-			nm_ip4_config_add_search (dst, nm_ip4_config_get_search (src, i));
-	} else {
-		/* If no search domains were specified, add the 'domain' list to
-		 * search domains.
-		 */
-		for (i = 0; i < num_domains; i++)
-			nm_ip4_config_add_search (dst, nm_ip4_config_get_domain (src, i));
-	}
+	for (i = 0; i < num; i++)
+		nm_ip4_config_add_search (dst, nm_ip4_config_get_search (src, i));
+
+	/* Add the 'domain' list to searches as well since overloading the
+	 * 'domain_name' DHCP field used to be the way you got searches
+	 * into resolv.conf.
+	 */
+	for (i = 0; i < num_domains; i++)
+		nm_ip4_config_add_search (dst, nm_ip4_config_get_domain (src, i));
 }
 
 
@@ -169,10 +168,10 @@ write_to_netconfig (gint fd, const char *key, const char *value)
 
 static gboolean
 dispatch_netconfig (const char *domain,
-				char **searches,
-				char **nameservers,
-				const char *iface,
-				GError **error)
+                    char **searches,
+                    char **nameservers,
+                    const char *iface,
+                    GError **error)
 {
 	gint fd;
 	char *str;
@@ -213,9 +212,9 @@ dispatch_netconfig (const char *domain,
 
 static gboolean
 write_resolv_conf (FILE *f, const char *domain,
-		   char **searches,
-		   char **nameservers,
-		   GError **error)
+                   char **searches,
+                   char **nameservers,
+                   GError **error)
 {
 	char *domain_str = NULL;
 	char *searches_str = NULL;
@@ -283,10 +282,10 @@ write_resolv_conf (FILE *f, const char *domain,
 #ifdef RESOLVCONF_PATH
 static gboolean
 dispatch_resolvconf (const char *domain,
-		     char **searches,
-		     char **nameservers,
-		     const char *iface,
-		     GError **error)
+                     char **searches,
+                     char **nameservers,
+                     const char *iface,
+                     GError **error)
 {
 	char *cmd;
 	FILE *f;
@@ -324,10 +323,10 @@ dispatch_resolvconf (const char *domain,
 
 static gboolean
 update_resolv_conf (const char *domain,
-		    		char **searches,
-				char **nameservers,
-				const char *iface,
-				GError **error)
+                    char **searches,
+                    char **nameservers,
+                    const char *iface,
+                    GError **error)
 {
 	const char *tmp_resolv_conf = RESOLV_CONF ".tmp";
 	char tmp_resolv_conf_realpath [PATH_MAX];
@@ -381,6 +380,35 @@ update_resolv_conf (const char *domain,
 	return *error ? FALSE : TRUE;
 }
 
+static char **
+compute_searches (guint32 num, NMIP4Config *config, gboolean searches)
+{
+	GPtrArray *array;
+	size_t len, elem_len;
+	const char *elem;
+	int i;
+
+	/* Search list is limited to 6 domains total per 'man resolv.conf' */
+	if (num > 6)
+		num = 6;
+
+	array = g_ptr_array_sized_new (num + 1);
+	for (i = 0, len = 0; i < num; i++) {
+		elem = searches ? nm_ip4_config_get_search (config, i)
+			        : nm_ip4_config_get_domain (config, i);
+		elem_len = strlen (elem);
+
+		/* The search list is limited to 256 characters per 'man resolv.conf' */
+		if (len + elem_len > 255)
+			break;
+
+		g_ptr_array_add (array, g_strdup (elem));
+		len += elem_len + 1;  /* +1 for spaces */
+	}
+
+	g_ptr_array_add (array, NULL);
+	return (char **) g_ptr_array_free (array, FALSE);
+}
 
 static gboolean
 rewrite_resolv_conf (NMNamedManager *mgr, const char *iface, GError **error)
@@ -433,21 +461,10 @@ rewrite_resolv_conf (NMNamedManager *mgr, const char *iface, GError **error)
 		domain = nm_ip4_config_get_domain (composite, 0);
 
 	/* Searches */
-	if (num_searches > 0) {
-		array = g_ptr_array_sized_new (num_searches + 1);
-		for (i = 0; i < num_searches; i++)
-			g_ptr_array_add (array, g_strdup (nm_ip4_config_get_search (composite, i)));
-
-		g_ptr_array_add (array, NULL);
-		searches = (char **) g_ptr_array_free (array, FALSE);
-	} else if (num_domains > 0) {
-		array = g_ptr_array_sized_new (num_domains + 1);
-		for (i = 0; i < num_domains; i++)
-			g_ptr_array_add (array, g_strdup (nm_ip4_config_get_domain (composite, i)));
-
-		g_ptr_array_add (array, NULL);
-		searches = (char **) g_ptr_array_free (array, FALSE);
-	}
+	if (num_searches > 0)
+		searches = compute_searches (num_searches, composite, TRUE);
+	else if (num_domains > 0)
+		searches = compute_searches (num_searches, composite, FALSE);
 
 	/* Name servers */
 	num_nameservers = nm_ip4_config_get_num_nameservers (composite);
@@ -472,6 +489,8 @@ rewrite_resolv_conf (NMNamedManager *mgr, const char *iface, GError **error)
 		g_ptr_array_add (array, NULL);
 		nameservers = (char **) g_ptr_array_free (array, FALSE);
 	}
+
+	g_object_unref (composite);
 
 #ifdef RESOLVCONF_PATH
 	success = dispatch_resolvconf (domain, searches, nameservers, iface, error);
