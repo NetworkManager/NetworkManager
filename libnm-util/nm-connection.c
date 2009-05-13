@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2009 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -31,6 +31,7 @@
 #include "nm-utils-private.h"
 
 #include "nm-setting-8021x.h"
+#include "nm-setting-bluetooth.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-ip4-config.h"
 #include "nm-setting-ip6-config.h"
@@ -139,7 +140,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 static GHashTable *registered_settings = NULL;
 
-#define DEFAULT_MAP_SIZE 13
+#define DEFAULT_MAP_SIZE 14
 
 static struct SettingInfo {
 	const char *name;
@@ -224,6 +225,11 @@ register_default_settings (void)
 	                      NM_TYPE_SETTING_CDMA,
 	                      NM_SETTING_CDMA_ERROR,
 	                      1);
+
+	register_one_setting (NM_SETTING_BLUETOOTH_SETTING_NAME,
+			      NM_TYPE_SETTING_BLUETOOTH,
+			      NM_SETTING_BLUETOOTH_ERROR,
+			      1);
 
 	register_one_setting (NM_SETTING_WIRELESS_SECURITY_SETTING_NAME,
 	                      NM_TYPE_SETTING_WIRELESS_SECURITY,

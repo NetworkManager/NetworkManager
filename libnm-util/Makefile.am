@@ -14,6 +14,7 @@ libnm_util_include_HEADERS = 		\
 	nm-connection.h			\
 	nm-setting.h			\
 	nm-setting-8021x.h		\
+	nm-setting-bluetooth.h		\
 	nm-setting-connection.h		\
 	nm-setting-ip4-config.h		\
 	nm-setting-ppp.h		\
@@ -35,6 +36,7 @@ libnm_util_la_SOURCES=			\
 	nm-param-spec-specialized.h \
 	nm-setting.c			\
 	nm-setting-8021x.c		\
+	nm-setting-bluetooth.c		\
 	nm-setting-connection.c		\
 	nm-setting-ip4-config.c		\
 	nm-setting-ip6-config.c		\

@@ -64,6 +64,12 @@ global:
 	nm_setting_802_1x_get_type;
 	nm_setting_802_1x_new;
 	nm_setting_802_1x_remove_eap_method;
+	nm_setting_bluetooth_error_get_type;
+	nm_setting_bluetooth_error_quark;
+	nm_setting_bluetooth_get_type;
+	nm_setting_bluetooth_new;
+	nm_setting_bluetooth_get_bdaddr;
+	nm_setting_bluetooth_get_connection_type;
 	nm_setting_cdma_error_get_type;
 	nm_setting_cdma_error_quark;
 	nm_setting_cdma_get_type;
