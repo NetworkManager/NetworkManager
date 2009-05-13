@@ -92,6 +92,7 @@ enum {
 	PROP_DEVICE,
 	PROP_STATE,
 	PROP_CONNECTION_STATE,
+	PROP_SCANNING,
 	LAST_PROP
 };
 
@@ -110,6 +111,7 @@ typedef struct
 	NMCallStore *         other_pcalls;
 
 	guint32               con_state;
+	gboolean              scanning;
 
 	DBusGProxy *          iface_proxy;
 	DBusGProxy *          net_proxy;
@@ -243,12 +245,6 @@ nm_supplicant_interface_set_property (GObject *      object,
 			/* Construct-only */
 			priv->dev = g_strdup (g_value_get_string (value));
 			break;
-		case PROP_STATE:
-			/* warn on setting read-only property */
-			break;
-		case PROP_CONNECTION_STATE:
-			/* warn on setting read-only property */
-			break;
 		default:
 			G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 			break;
@@ -275,6 +271,9 @@ nm_supplicant_interface_get_property (GObject *     object,
 			break;
 		case PROP_CONNECTION_STATE:
 			g_value_set_uint (value, priv->con_state);
+			break;
+		case PROP_SCANNING:
+			g_value_set_boolean (value, priv->scanning);
 			break;
 		default:
 			G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -393,6 +392,14 @@ nm_supplicant_interface_class_init (NMSupplicantInterfaceClass *klass)
 	                                                    NM_SUPPLICANT_INTERFACE_STATE_INIT,
 	                                                    NM_SUPPLICANT_INTERFACE_STATE_LAST - 1,
 	                                                    NM_SUPPLICANT_INTERFACE_STATE_INIT,
+	                                                    G_PARAM_READABLE));
+
+	g_object_class_install_property (object_class,
+	                                 PROP_SCANNING,
+	                                 g_param_spec_boolean ("scanning",
+	                                                    "Scanning",
+	                                                    "Scanning",
+	                                                    FALSE,
 	                                                    G_PARAM_READABLE));
 
 	/* Signals */
@@ -601,23 +608,22 @@ wpas_state_string_to_enum (const char * str_state)
 {
 	guint32 enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED;
 
-	if (!strcmp (str_state, "DISCONNECTED")) {
+	if (!strcmp (str_state, "DISCONNECTED"))
 		enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_DISCONNECTED;
-	} else if (!strcmp (str_state, "INACTIVE")) {
+	else if (!strcmp (str_state, "INACTIVE"))
 		enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_INACTIVE;
-	} else if (!strcmp (str_state, "SCANNING")) {
+	else if (!strcmp (str_state, "SCANNING"))
 		enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_SCANNING;
-	} else if (!strcmp (str_state, "ASSOCIATING")) {
+	else if (!strcmp (str_state, "ASSOCIATING"))
 		enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_ASSOCIATING;
-	} else if (!strcmp (str_state, "ASSOCIATED")) {
+	else if (!strcmp (str_state, "ASSOCIATED"))
 		enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_ASSOCIATED;
-	} else if (!strcmp (str_state, "4WAY_HANDSHAKE")) {
+	else if (!strcmp (str_state, "4WAY_HANDSHAKE"))
 		enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_4WAY_HANDSHAKE;
-	} else if (!strcmp (str_state, "GROUP_HANDSHAKE")) {
+	else if (!strcmp (str_state, "GROUP_HANDSHAKE"))
 		enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_GROUP_HANDSHAKE;
-	} else if (!strcmp (str_state, "COMPLETED")) {
+	else if (!strcmp (str_state, "COMPLETED"))
 		enum_state = NM_SUPPLICANT_INTERFACE_CON_STATE_COMPLETED;
-	}
 
 	return enum_state;
 }
@@ -682,6 +688,68 @@ wpas_iface_get_state (NMSupplicantInterface *self)
 }
 
 static void
+iface_scanning_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
+{
+	NMSupplicantInfo *info = (NMSupplicantInfo *) user_data;
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (info->interface);
+	gboolean scanning = FALSE;
+
+	if (dbus_g_proxy_end_call (proxy, call_id, NULL,
+	                            G_TYPE_BOOLEAN, &scanning,
+	                            G_TYPE_INVALID)) {
+		if (scanning != priv->scanning) {
+			priv->scanning = scanning;
+			g_object_notify (G_OBJECT (info->interface), "scanning");
+		}
+	}
+}
+
+static void
+wpas_iface_get_scanning (NMSupplicantInterface *self)
+{
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	NMSupplicantInfo *info;
+	DBusGProxyCall *call;
+
+	info = nm_supplicant_info_new (self, priv->iface_proxy, priv->other_pcalls);
+	call = dbus_g_proxy_begin_call (priv->iface_proxy, "scanning",
+	                                iface_scanning_cb,
+	                                info,
+	                                nm_supplicant_info_destroy,
+	                                G_TYPE_INVALID);
+	nm_supplicant_info_set_call (info, call);
+}
+
+static void
+wpas_iface_handle_scanning (DBusGProxy *proxy,
+                            gboolean scanning,
+                            gpointer user_data)
+{
+	NMSupplicantInterface *self = NM_SUPPLICANT_INTERFACE (user_data);
+	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+
+	if (scanning != priv->scanning) {
+		priv->scanning = scanning;
+		g_object_notify (G_OBJECT (self), "scanning");
+	}
+}
+
+gboolean
+nm_supplicant_interface_get_scanning (NMSupplicantInterface *self)
+{
+	NMSupplicantInterfacePrivate *priv;
+
+	g_return_val_if_fail (self != NULL, FALSE);
+
+	priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (self);
+	if (priv->scanning)
+		return TRUE;
+	if (priv->con_state == NM_SUPPLICANT_INTERFACE_CON_STATE_SCANNING)
+		return TRUE;
+	return FALSE;
+}
+
+static void
 nm_supplicant_interface_add_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_data)
 {
 	NMSupplicantInfo *info = (NMSupplicantInfo *) user_data;
@@ -732,8 +800,16 @@ nm_supplicant_interface_add_cb (DBusGProxy *proxy, DBusGProxyCall *call_id, gpoi
 		                             info->interface,
 		                             NULL);
 
+		dbus_g_proxy_add_signal (priv->iface_proxy, "Scanning", G_TYPE_BOOLEAN, G_TYPE_INVALID);
+
+		dbus_g_proxy_connect_signal (priv->iface_proxy, "Scanning",
+		                             G_CALLBACK (wpas_iface_handle_scanning),
+		                             info->interface,
+		                             NULL);
+
 		/* Interface added to the supplicant; get its initial state. */
 		wpas_iface_get_state (info->interface);
+		wpas_iface_get_scanning (info->interface);
 	}
 }
 
