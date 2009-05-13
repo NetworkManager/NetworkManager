@@ -621,7 +621,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 			}
 		} else {
 			/* Invalid PSK */
-			nm_warning ("Invalid PSK length %d: not between 8 and 63 characters inclusive.", psk_len);
+			nm_warning ("Invalid PSK length %u: not between 8 and 63 characters inclusive.", (guint32) psk_len);
 			return FALSE;
 		}
 	}
