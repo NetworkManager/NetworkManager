@@ -138,6 +138,8 @@ const char *nm_supplicant_interface_state_to_string (guint32 state);
 
 const char *nm_supplicant_interface_connection_state_to_string (guint32 state);
 
+gboolean nm_supplicant_interface_get_scanning (NMSupplicantInterface *self);
+
 G_END_DECLS
 
 #endif	/* NM_SUPPLICANT_INTERFACE_H */

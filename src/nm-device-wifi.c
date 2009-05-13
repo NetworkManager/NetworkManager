@@ -152,7 +152,6 @@ struct _NMDeviceWifiPrivate {
 	gboolean          enabled; /* rfkilled or not */
 	guint             state_to_disconnected_id;
 	
-	gboolean          scanning;
 	glong             scheduled_scan_time;
 	guint8            scan_interval; /* seconds */
 	guint             pending_scan_id;
@@ -461,7 +460,6 @@ nm_device_wifi_init (NMDeviceWifi * self)
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
 	priv->dispose_has_run = FALSE;
-	priv->scanning = FALSE;
 	priv->ap_list = NULL;
 	priv->we_version = 0;
 
@@ -966,7 +964,7 @@ nm_device_wifi_periodic_update (gpointer data)
 	if (state != NM_DEVICE_STATE_ACTIVATED)
 		goto out;
 
-	if (priv->scanning)
+	if (nm_supplicant_interface_get_scanning (priv->supplicant.iface))
 		goto out;
 
 	periodic_update (self);
@@ -2362,6 +2360,7 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 	NMDeviceWifi *self = task->self;
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	NMDevice *dev = NM_DEVICE (self);
+	gboolean scanning;
 
 	if (!nm_device_get_act_request (dev)) {
 		/* The device is not activating or already activated; do nothing. */
@@ -2373,7 +2372,7 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 	         nm_supplicant_interface_connection_state_to_string (task->old_state),
 	         nm_supplicant_interface_connection_state_to_string (task->new_state));
 
-	priv->scanning = (task->new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_SCANNING);
+	scanning = nm_supplicant_interface_get_scanning (priv->supplicant.iface);
 
 	if (task->new_state == NM_SUPPLICANT_INTERFACE_CON_STATE_COMPLETED) {
 		remove_supplicant_interface_error_handler (self);
@@ -2399,7 +2398,7 @@ supplicant_iface_connection_state_cb_handler (gpointer user_data)
 			 * while to scan.
 			 */
 			if (!priv->link_timeout_id) {
-				priv->link_timeout_id = g_timeout_add_seconds (priv->scanning ? 30 : 15,
+				priv->link_timeout_id = g_timeout_add_seconds (scanning ? 30 : 15,
 				                                               link_timeout_cb, self);
 			}
 		}
