@@ -110,7 +110,7 @@ get_connection_bt_type (NMConnection *connection)
 
 	if (!strcmp (bt_type, NM_SETTING_BLUETOOTH_TYPE_DUN))
 		return NM_BT_CAPABILITY_DUN;
-	else if (!strcmp (bt_type, NM_SETTING_BLUETOOTH_TYPE_NAP))
+	else if (!strcmp (bt_type, NM_SETTING_BLUETOOTH_TYPE_PANU))
 		return NM_BT_CAPABILITY_NAP;
 
 	return NM_BT_CAPABILITY_NONE;

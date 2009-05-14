@@ -141,7 +141,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             NM_SETTING_BLUETOOTH_TYPE);
 		return FALSE;
 	} else if (!g_str_equal (priv->type, NM_SETTING_BLUETOOTH_TYPE_DUN) &&
-		   !g_str_equal (priv->type, NM_SETTING_BLUETOOTH_TYPE_NAP)) {
+		   !g_str_equal (priv->type, NM_SETTING_BLUETOOTH_TYPE_PANU)) {
 		g_set_error (error,
 		             NM_SETTING_BLUETOOTH_ERROR,
 		             NM_SETTING_BLUETOOTH_ERROR_INVALID_PROPERTY,
@@ -260,7 +260,7 @@ nm_setting_bluetooth_class_init (NMSettingBluetoothClass *setting_class)
 		(object_class, PROP_TYPE,
 		 g_param_spec_string (NM_SETTING_BLUETOOTH_TYPE,
 						  "Connection type",
-						  "Either 'dun', 'panu' or 'pan-nap'",
+						  "Either '" NM_SETTING_BLUETOOTH_TYPE_DUN "' or '" NM_SETTING_BLUETOOTH_TYPE_PANU "'",
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 }
