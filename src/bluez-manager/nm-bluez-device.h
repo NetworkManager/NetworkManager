@@ -31,12 +31,12 @@
 #define NM_IS_BLUEZ_DEVICE_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_BLUEZ_DEVICE))
 #define NM_BLUEZ_DEVICE_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_BLUEZ_DEVICE, NMBluezDeviceClass))
 
-#define NM_BLUEZ_DEVICE_PATH    "path"
-#define NM_BLUEZ_DEVICE_ADDRESS "address"
-#define NM_BLUEZ_DEVICE_NAME    "name"
-#define NM_BLUEZ_DEVICE_UUIDS   "uuids"
-#define NM_BLUEZ_DEVICE_RSSI    "rssi"
-#define NM_BLUEZ_DEVICE_USABLE  "usable"
+#define NM_BLUEZ_DEVICE_PATH         "path"
+#define NM_BLUEZ_DEVICE_ADDRESS      "address"
+#define NM_BLUEZ_DEVICE_NAME         "name"
+#define NM_BLUEZ_DEVICE_CAPABILITIES "capabilities"
+#define NM_BLUEZ_DEVICE_RSSI         "rssi"
+#define NM_BLUEZ_DEVICE_USABLE       "usable"
 
 typedef struct {
 	GObject parent;
@@ -67,7 +67,7 @@ const char *nm_bluez_device_get_name (NMBluezDevice *self);
 
 guint32 nm_bluez_device_get_class (NMBluezDevice *self);
 
-guint32 nm_bluez_device_get_uuids (NMBluezDevice *self);
+guint32 nm_bluez_device_get_capabilities (NMBluezDevice *self);
 
 gint nm_bluez_device_get_rssi (NMBluezDevice *self);
 

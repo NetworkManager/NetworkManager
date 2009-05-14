@@ -30,12 +30,14 @@
 #include "nm-dbus-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-modem-manager.h"
+#include "nm-device-bt.h"
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
 #include "NetworkManagerSystem.h"
 #include "nm-properties-changed-signal.h"
+#include "nm-setting-bluetooth.h"
 #include "nm-setting-connection.h"
 #include "nm-setting-wireless.h"
 #include "nm-setting-vpn.h"
@@ -100,11 +102,14 @@ static void hal_manager_hal_reappeared_cb (NMHalManager *hal_mgr,
 
 static void bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
 					   const char *bdaddr,
-					   guint type,
-					   gpointer user_data);
+					   const char *name,
+					   const char *object_path,
+					   guint32 uuids,
+					   NMManager *manager);
 
 static void bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
 					     const char *bdaddr,
+					     const char *object_path,
 					     gpointer user_data);
 
 static void system_settings_properties_changed_cb (DBusGProxy *proxy,
@@ -1796,14 +1801,70 @@ add_device (NMManager *self, NMDevice *device)
 	g_signal_emit (self, signals[DEVICE_ADDED], 0, device);
 }
 
+static gboolean
+bluez_manager_bdaddr_has_connection (NMManager *manager,
+				     const char *bdaddr,
+				     guint32 uuids,
+				     NMConnectionScope scope)
+{
+	GSList *connections, *l;
+	gboolean found = FALSE;
+
+	connections = nm_manager_get_connections (manager, scope);
+	for (l = connections; l != NULL; l = l->next) {
+		NMConnection *connection = NM_CONNECTION (l->data);
+		NMSettingConnection *s_con;
+		NMSettingBluetooth *s_bt;
+		const char *con_type;
+		const char *bt_type;
+
+		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+		g_assert (s_con);
+		con_type = nm_setting_connection_get_connection_type (s_con);
+		g_assert (con_type);
+		if (!g_str_equal (con_type, NM_SETTING_BLUETOOTH_SETTING_NAME))
+			continue;
+
+		s_bt = (NMSettingBluetooth *) nm_connection_get_setting (connection, NM_TYPE_SETTING_BLUETOOTH);
+		if (!s_bt)
+			continue;
+
+		if (g_str_equal (nm_setting_bluetooth_get_bdaddr (s_bt), bdaddr) == FALSE)
+			continue;
+
+		bt_type = nm_setting_bluetooth_get_connection_type (s_bt);
+		if (   g_str_equal (bt_type, NM_SETTING_BLUETOOTH_TYPE_DUN)
+		    && !(uuids & NM_BT_CAPABILITY_DUN))
+		    	continue;
+		if (   g_str_equal (bt_type, NM_SETTING_BLUETOOTH_TYPE_PANU)
+		    && !(uuids & NM_BT_CAPABILITY_NAP))
+		    	continue;
+
+		found = TRUE;
+		break;
+	}
+
+	g_slist_free (connections);
+
+	return found;
+}
+
 static void
 bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
 			       const char *bdaddr,
-			       guint32 uuids,
-			       gpointer user_data)
+			       const char *name,
+			       const char *object_path,
+			       guint32 capabilities,
+			       NMManager *manager)
 {
-	gboolean has_dun = (uuids & NM_BT_CAPABILITY_DUN);
-	gboolean has_nap = (uuids & NM_BT_CAPABILITY_NAP);
+	NMDeviceBt *device;
+	gboolean has_dun = (capabilities & NM_BT_CAPABILITY_DUN);
+	gboolean has_nap = (capabilities & NM_BT_CAPABILITY_NAP);
+
+	g_return_if_fail (bdaddr != NULL);
+	g_return_if_fail (name != NULL);
+	g_return_if_fail (object_path != NULL);
+	g_return_if_fail (capabilities != NM_BT_CAPABILITY_NONE);
 
 	g_message ("%s: BT device %s added (%s%s%s)",
 	           __func__,
@@ -1811,14 +1872,49 @@ bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
 	           has_dun ? "DUN" : "",
 	           has_dun && has_nap ? " " : "",
 	           has_nap ? "NAP" : "");
+
+	/* Make sure the device is not already in the device list */
+	if (nm_manager_get_device_by_udi (manager, object_path))
+		return;
+
+	if (has_dun == FALSE && has_nap == FALSE)
+		return;
+
+	if (   !bluez_manager_bdaddr_has_connection (manager, bdaddr, capabilities, NM_CONNECTION_SCOPE_SYSTEM)
+	    && !bluez_manager_bdaddr_has_connection (manager, bdaddr, capabilities, NM_CONNECTION_SCOPE_USER))
+		return;
+
+	device = nm_device_bt_new (object_path, bdaddr, name, capabilities, TRUE);
+	if (!device)
+		return;
+
+	add_device (manager, NM_DEVICE (device));
 }
 
 static void
 bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
-				 const char *bdaddr,
+                                 const char *bdaddr,
+				 const char *object_path,
 				 gpointer user_data)
 {
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+
+	g_return_if_fail (bdaddr != NULL);
+	g_return_if_fail (object_path != NULL);
+
 	g_message ("%s: BT device %s removed", __func__, bdaddr);
+
+	for (iter = priv->devices; iter; iter = iter->next) {
+		NMDevice *device = NM_DEVICE (iter->data);
+
+		if (!strcmp (nm_device_get_udi (device), object_path)) {
+			priv->devices = g_slist_delete_link (priv->devices, iter);
+			remove_one_device (self, device);
+			break;
+		}
+	}
 }
 
 static void

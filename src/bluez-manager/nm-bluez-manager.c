@@ -55,6 +55,17 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
+static void
+
+emit_bdaddr_added (NMBluezManager *self, NMBluezDevice *device)
+{
+	g_signal_emit (self, signals[BDADDR_ADDED], 0,
+	               nm_bluez_device_get_address (device),
+	               nm_bluez_device_get_name (device),
+	               nm_bluez_device_get_path (device),
+	               nm_bluez_device_get_capabilities (device));
+}
+
 void
 nm_bluez_manager_query_devices (NMBluezManager *self)
 {
@@ -65,24 +76,15 @@ nm_bluez_manager_query_devices (NMBluezManager *self)
 		return;
 
 	devices = nm_bluez_adapter_get_devices (priv->adapter);
-	for (iter = devices; iter; iter = g_slist_next (iter)) {
-		NMBluezDevice *device = NM_BLUEZ_DEVICE (iter->data);
-
-		g_signal_emit (self, signals[BDADDR_ADDED], 0,
-		               nm_bluez_device_get_address (device),
-		               nm_bluez_device_get_uuids (device));
-	}
+	for (iter = devices; iter; iter = g_slist_next (iter))
+		emit_bdaddr_added (self, NM_BLUEZ_DEVICE (iter->data));
 	g_slist_free (devices);
 }
 
 static void
 device_added (NMBluezAdapter *adapter, NMBluezDevice *device, gpointer user_data)
 {
-	NMBluezManager *self = NM_BLUEZ_MANAGER (user_data);
-
-	g_signal_emit (self, signals[BDADDR_ADDED], 0,
-	               nm_bluez_device_get_address (device),
-	               nm_bluez_device_get_uuids (device));
+	emit_bdaddr_added (NM_BLUEZ_MANAGER (user_data), device);
 }
 
 static void
@@ -91,7 +93,8 @@ device_removed (NMBluezAdapter *adapter, NMBluezDevice *device, gpointer user_da
 	NMBluezManager *self = NM_BLUEZ_MANAGER (user_data);
 
 	g_signal_emit (self, signals[BDADDR_REMOVED], 0,
-	               nm_bluez_device_get_address (device));
+	               nm_bluez_device_get_address (device),
+	               nm_bluez_device_get_path (device));
 }
 
 static void
@@ -104,13 +107,8 @@ adapter_initialized (NMBluezAdapter *adapter, gboolean success, gpointer user_da
 		GSList *devices, *iter;
 
 		devices = nm_bluez_adapter_get_devices (adapter);
-		for (iter = devices; iter; iter = g_slist_next (iter)) {
-			NMBluezDevice *device = NM_BLUEZ_DEVICE (iter->data);
-
-			g_signal_emit (self, signals[BDADDR_ADDED], 0,
-			               nm_bluez_device_get_address (device),
-			               nm_bluez_device_get_uuids (device));
-		}
+		for (iter = devices; iter; iter = g_slist_next (iter))
+			emit_bdaddr_added (self, NM_BLUEZ_DEVICE (iter->data));
 		g_slist_free (devices);
 
 		g_signal_connect (adapter, "device-added", G_CALLBACK (device_added), self);
@@ -135,7 +133,8 @@ adapter_removed (DBusGProxy *proxy, const char *path, NMBluezManager *self)
 				NMBluezDevice *device = NM_BLUEZ_DEVICE (iter->data);
 
 				g_signal_emit (self, signals[BDADDR_REMOVED], 0,
-				               nm_bluez_device_get_address (device));
+				               nm_bluez_device_get_address (device),
+				               nm_bluez_device_get_path (device));
 			}
 			g_slist_free (devices);
 		}
@@ -355,8 +354,8 @@ nm_bluez_manager_class_init (NMBluezManagerClass *klass)
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMBluezManagerClass, bdaddr_added),
 		              NULL, NULL,
-		              _nm_marshal_VOID__STRING_UINT,
-		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_UINT);
+		              _nm_marshal_VOID__STRING_STRING_STRING_UINT,
+		              G_TYPE_NONE, 4, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING, G_TYPE_UINT);
 
 	signals[BDADDR_REMOVED] =
 		g_signal_new ("bdaddr-removed",
@@ -364,7 +363,7 @@ nm_bluez_manager_class_init (NMBluezManagerClass *klass)
 		              G_SIGNAL_RUN_FIRST,
 		              G_STRUCT_OFFSET (NMBluezManagerClass, bdaddr_removed),
 		              NULL, NULL,
-		              g_cclosure_marshal_VOID__STRING,
-		              G_TYPE_NONE, 1, G_TYPE_STRING);
+		              _nm_marshal_VOID__STRING_STRING,
+		              G_TYPE_NONE, 2, G_TYPE_STRING, G_TYPE_STRING);
 }
 

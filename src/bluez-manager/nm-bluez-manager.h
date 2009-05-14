@@ -42,9 +42,15 @@ typedef struct {
 	GObjectClass parent;
 
 	/* Virtual functions */
-	void (*bdaddr_added) (NMBluezManager *manager, const char *bdaddr, guint uuids);
+	void (*bdaddr_added) (NMBluezManager *manager,
+	                      const char *bdaddr,
+	                      const char *name,
+	                      const char *object_path,
+	                      guint uuids);
 
-	void (*bdaddr_removed) (NMBluezManager *manager, const char *bdaddr);
+	void (*bdaddr_removed) (NMBluezManager *manager,
+	                        const char *bdaddr,
+	                        const char *object_path);
 } NMBluezManagerClass;
 
 GType nm_bluez_manager_get_type (void);

@@ -42,7 +42,7 @@ typedef struct {
 
 	char *address;
 	char *name;
-	guint32 uuids;
+	guint32 capabilities;
 	gint rssi;
 } NMBluezDevicePrivate;
 
@@ -52,7 +52,7 @@ enum {
 	PROP_PATH,
 	PROP_ADDRESS,
 	PROP_NAME,
-	PROP_UUIDS,
+	PROP_CAPABILITIES,
 	PROP_RSSI,
 	PROP_USABLE,
 
@@ -107,11 +107,11 @@ nm_bluez_device_get_name (NMBluezDevice *self)
 }
 
 guint32
-nm_bluez_device_get_uuids (NMBluezDevice *self)
+nm_bluez_device_get_capabilities (NMBluezDevice *self)
 {
 	g_return_val_if_fail (NM_IS_BLUEZ_DEVICE (self), 0);
 
-	return NM_BLUEZ_DEVICE_GET_PRIVATE (self)->uuids;
+	return NM_BLUEZ_DEVICE_GET_PRIVATE (self)->capabilities;
 }
 
 gint
@@ -123,10 +123,10 @@ nm_bluez_device_get_rssi (NMBluezDevice *self)
 }
 
 static guint32
-convert_uuids (const char **strings)
+convert_uuids_to_capabilities (const char **strings)
 {
 	const char **iter;
-	guint32 uuids = 0;
+	guint32 capabilities = 0;
 
 	for (iter = strings; iter && *iter; iter++) {
 		char **parts;
@@ -143,17 +143,17 @@ convert_uuids (const char **strings)
 
 		switch (uuid16) {
 		case 0x1103:
-			uuids |= NM_BT_CAPABILITY_DUN;
+			capabilities |= NM_BT_CAPABILITY_DUN;
 			break;
 		case 0x1116:
-			uuids |= NM_BT_CAPABILITY_NAP;
+			capabilities |= NM_BT_CAPABILITY_NAP;
 			break;
 		default:
 			break;
 		}
 	}
 
-	return uuids;
+	return capabilities;
 }
 
 static void
@@ -162,7 +162,7 @@ check_emit_usable (NMBluezDevice *self)
 	NMBluezDevicePrivate *priv = NM_BLUEZ_DEVICE_GET_PRIVATE (self);
 
 	if (   priv->initialized
-	    && priv->uuids
+	    && priv->capabilities
 	    && priv->name
 	    && priv->address) {
 		if (!priv->usable) {
@@ -205,10 +205,10 @@ property_changed (DBusGProxy *proxy,
 			g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_RSSI);
 		}
 	} else if (!strcmp (property, "UUIDs")) {
-		uint_val = convert_uuids ((const char **) g_value_get_boxed (value));
-		if (priv->uuids != uint_val) {
-			priv->uuids = uint_val;
-			g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_UUIDS);
+		uint_val = convert_uuids_to_capabilities ((const char **) g_value_get_boxed (value));
+		if (priv->capabilities != uint_val) {
+			priv->capabilities = uint_val;
+			g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_CAPABILITIES);
 		}
 	}
 
@@ -223,6 +223,7 @@ get_properties_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	GHashTable *properties = NULL;
 	GError *err = NULL;
 	GValue *value;
+	const char **uuids;
 
 	if (!dbus_g_proxy_end_call (proxy, call, &err,
 	                            DBUS_TYPE_G_MAP_OF_VARIANT, &properties,
@@ -244,7 +245,11 @@ get_properties_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	priv->rssi = value ? g_value_get_int (value) : 0;
 
 	value = g_hash_table_lookup (properties, "UUIDs");
-	priv->uuids = value ? convert_uuids ((const char **) g_value_get_boxed (value)) : 0;
+	if (value) {
+		uuids = (const char **) g_value_get_boxed (value);
+		priv->capabilities = convert_uuids_to_capabilities (uuids);
+	} else
+		priv->capabilities = NM_BT_CAPABILITY_NONE;
 
 	g_hash_table_unref (properties);
 
@@ -342,8 +347,8 @@ get_property (GObject *object, guint prop_id,
 	case PROP_NAME:
 		g_value_set_string (value, priv->name);
 		break;
-	case PROP_UUIDS:
-		g_value_set_uint (value, priv->uuids);
+	case PROP_CAPABILITIES:
+		g_value_set_uint (value, priv->capabilities);
 		break;
 	case PROP_RSSI:
 		g_value_set_int (value, priv->rssi);
@@ -412,10 +417,10 @@ nm_bluez_device_class_init (NMBluezDeviceClass *config_class)
 		                      G_PARAM_READABLE));
 
 	g_object_class_install_property
-		(object_class, PROP_UUIDS,
-		 g_param_spec_uint (NM_BLUEZ_DEVICE_UUIDS,
-		                      "UUIDs",
-		                      "UUIDs",
+		(object_class, PROP_CAPABILITIES,
+		 g_param_spec_uint (NM_BLUEZ_DEVICE_CAPABILITIES,
+		                      "Capabilities",
+		                      "Capabilities",
 		                      0, G_MAXUINT, 0,
 		                      G_PARAM_READABLE));
 
