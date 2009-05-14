@@ -40,8 +40,6 @@ typedef struct {
 	gboolean initialized;
 	gboolean usable;
 
-	guint32 class;
-
 	char *address;
 	char *name;
 	guint32 uuids;
@@ -124,25 +122,6 @@ nm_bluez_device_get_rssi (NMBluezDevice *self)
 	return NM_BLUEZ_DEVICE_GET_PRIVATE (self)->rssi;
 }
 
-static gboolean is_phone_or_modem (guint32 class)
-{
-	switch ((class & 0x1f00) >> 8) {
-	case 0x02:
-		switch ((class & 0xfc) >> 2) {
-		case 0x01:
-		case 0x02:
-		case 0x03:
-		case 0x05:
-		case 0x04:
-			return TRUE;
-		}
-		break;
-	default:
-		break;
-	}
-	return FALSE;
-}
-
 static guint32
 convert_uuids (const char **strings)
 {
@@ -184,7 +163,6 @@ check_emit_usable (NMBluezDevice *self)
 
 	if (   priv->initialized
 	    && priv->uuids
-	    && is_phone_or_modem (priv->class)
 	    && priv->name
 	    && priv->address) {
 		if (!priv->usable) {
@@ -220,10 +198,6 @@ property_changed (DBusGProxy *proxy,
 			priv->name = str ? g_strdup (str) : NULL;
 			g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_NAME);
 		}
-	} else if (!strcmp (property, "Class")) {
-		uint_val = g_value_get_uint (value);
-		if (priv->class != uint_val)
-			priv->class = uint_val;
 	} else if (!strcmp (property, "RSSI")) {
 		int_val = g_value_get_int (value);
 		if (priv->rssi != int_val) {
@@ -265,9 +239,6 @@ get_properties_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 
 	value = g_hash_table_lookup (properties, "Name");
 	priv->name = value ? g_value_dup_string (value) : NULL;
-
-	value = g_hash_table_lookup (properties, "Class");
-	priv->class = value ? g_value_get_uint (value) : 0;
 
 	value = g_hash_table_lookup (properties, "RSSI");
 	priv->rssi = value ? g_value_get_int (value) : 0;
