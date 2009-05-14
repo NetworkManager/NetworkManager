@@ -53,50 +53,52 @@ libtest_dhcp_la_LIBADD = \
 
 sbin_PROGRAMS = NetworkManager
 
-NetworkManager_SOURCES =				\
-		nm-call-store.c				\
-		nm-call-store.h				\
-		nm-device.c				\
-		nm-device.h				\
-		nm-device-interface.c			\
-		nm-device-interface.h			\
-		nm-device-private.h			\
-		nm-device-ethernet.c	\
-		nm-device-ethernet.h	\
-		nm-device-wifi.c	\
-		nm-device-wifi.h	\
-		NetworkManagerAP.c			\
-		NetworkManagerAP.h			\
-		nm-dbus-manager.h			\
-		nm-dbus-manager.c			\
-		nm-hal-manager.c			\
-		nm-hal-manager.h			\
-		nm-hostname-provider.c			\
-		nm-hostname-provider.h			\
-		nm-ip4-config.c			\
-		nm-ip4-config.h			\
+NetworkManager_SOURCES = \
+		nm-call-store.c \
+		nm-call-store.h \
+		nm-device.c \
+		nm-device.h \
+		nm-device-interface.c \
+		nm-device-interface.h \
+		nm-device-private.h \
+		nm-device-ethernet.c \
+		nm-device-ethernet.h \
+		nm-device-wifi.c \
+		nm-device-wifi.h \
+		nm-device-bt.c \
+		nm-device-bt.h \
+		NetworkManagerAP.c \
+		NetworkManagerAP.h \
+		nm-dbus-manager.h \
+		nm-dbus-manager.c \
+		nm-hal-manager.c \
+		nm-hal-manager.h \
+		nm-hostname-provider.c \
+		nm-hostname-provider.h \
+		nm-ip4-config.c \
+		nm-ip4-config.h \
 		nm-active-connection.h \
 		nm-active-connection.c \
-		NetworkManager.c			\
-		NetworkManagerPolicy.c		\
-		NetworkManagerPolicy.h		\
-		NetworkManagerUtils.c		\
-		NetworkManagerUtils.h		\
-		NetworkManagerSystem.c		\
-		NetworkManagerSystem.h		\
-		nm-logging.c				\
-		nm-logging.h				\
-		nm-manager.c				\
-		nm-manager.h				\
-		nm-netlink-monitor.c		\
-		nm-netlink-monitor.h		\
-		nm-activation-request.c		\
-		nm-activation-request.h		\
-		nm-properties-changed-signal.c	\
-		nm-properties-changed-signal.h	\
-		wpa.c				\
-		wpa.h				\
-		nm-netlink.c			\
+		NetworkManager.c \
+		NetworkManagerPolicy.c \
+		NetworkManagerPolicy.h \
+		NetworkManagerUtils.c \
+		NetworkManagerUtils.h \
+		NetworkManagerSystem.c \
+		NetworkManagerSystem.h \
+		nm-logging.c \
+		nm-logging.h \
+		nm-manager.c \
+		nm-manager.h \
+		nm-netlink-monitor.c \
+		nm-netlink-monitor.h \
+		nm-activation-request.c \
+		nm-activation-request.h \
+		nm-properties-changed-signal.c \
+		nm-properties-changed-signal.h \
+		wpa.c \
+		wpa.h \
+		nm-netlink.c \
 		nm-netlink.h \
 		nm-dhcp4-config.c \
 		nm-dhcp4-config.h
@@ -116,6 +118,9 @@ nm-device-ethernet-glue.h: $(top_srcdir)/introspection/nm-device-ethernet.xml
 nm-device-wifi-glue.h: $(top_srcdir)/introspection/nm-device-wifi.xml
 	dbus-binding-tool --prefix=nm_device_wifi --mode=glib-server --output=$@ $<
 
+nm-device-bt-glue.h: $(top_srcdir)/introspection/nm-device-bt.xml
+	dbus-binding-tool --prefix=nm_device_bt --mode=glib-server --output=$@ $<
+
 nm-ip4-config-glue.h: $(top_srcdir)/introspection/nm-ip4-config.xml
 	dbus-binding-tool --prefix=nm_ip4_config --mode=glib-server --output=$@ $<
 
@@ -131,6 +136,7 @@ BUILT_SOURCES = \
 	nm-device-interface-glue.h \
 	nm-device-ethernet-glue.h \
 	nm-device-wifi-glue.h \
+	nm-device-bt-glue.h \
 	nm-ip4-config-glue.h \
 	nm-active-connection-glue.h \
 	nm-dhcp4-config-glue.h

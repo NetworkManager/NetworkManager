@@ -21,11 +21,6 @@
 #ifndef NM_BLUEZ_COMMON_H
 #define NM_BLUEZ_COMMON_H
 
-enum {
-	NM_BLUEZ_TYPE_DUN = 1 << 1,
-	NM_BLUEZ_TYPE_NAP = 1 << 2,
-};
-
 #define BLUEZ_SERVICE	"org.bluez"
 
 #define BLUEZ_MANAGER_PATH	"/"

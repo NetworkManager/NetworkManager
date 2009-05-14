@@ -54,11 +54,11 @@ GType nm_setting_bluetooth_error_get_type (void);
 #define NM_SETTING_BLUETOOTH_ERROR nm_setting_bluetooth_error_quark ()
 GQuark nm_setting_bluetooth_error_quark (void);
 
-#define NM_SETTING_BLUETOOTH_BDADDR      "bdaddr"
-#define NM_SETTING_BLUETOOTH_TYPE        "type"
+#define NM_SETTING_BLUETOOTH_BDADDR   "bdaddr"
+#define NM_SETTING_BLUETOOTH_TYPE     "type"
 
-#define NM_SETTING_BLUETOOTH_TYPE_DUN    "dun"
-#define NM_SETTING_BLUETOOTH_TYPE_PANU   "panu"
+#define NM_SETTING_BLUETOOTH_TYPE_DUN "dun"
+#define NM_SETTING_BLUETOOTH_TYPE_NAP "nap"
 
 typedef struct {
 	NMSetting parent;

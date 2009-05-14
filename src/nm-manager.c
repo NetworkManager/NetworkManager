@@ -1802,8 +1802,8 @@ bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
 			       guint32 uuids,
 			       gpointer user_data)
 {
-	gboolean has_dun = (uuids & NM_BLUEZ_TYPE_DUN);
-	gboolean has_nap = (uuids & NM_BLUEZ_TYPE_NAP);
+	gboolean has_dun = (uuids & NM_BT_CAPABILITY_DUN);
+	gboolean has_nap = (uuids & NM_BT_CAPABILITY_NAP);
 
 	g_message ("%s: BT device %s added (%s%s%s)",
 	           __func__,

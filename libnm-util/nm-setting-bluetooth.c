@@ -141,7 +141,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 		             NM_SETTING_BLUETOOTH_TYPE);
 		return FALSE;
 	} else if (!g_str_equal (priv->type, NM_SETTING_BLUETOOTH_TYPE_DUN) &&
-		   !g_str_equal (priv->type, NM_SETTING_BLUETOOTH_TYPE_PANU)) {
+		   !g_str_equal (priv->type, NM_SETTING_BLUETOOTH_TYPE_NAP)) {
 		g_set_error (error,
 		             NM_SETTING_BLUETOOTH_ERROR,
 		             NM_SETTING_BLUETOOTH_ERROR_INVALID_PROPERTY,

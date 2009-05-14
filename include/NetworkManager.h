@@ -25,11 +25,11 @@
 /*
  * dbus services details
  */
-#define	NM_DBUS_SERVICE			"org.freedesktop.NetworkManager"
+#define	NM_DBUS_SERVICE                     "org.freedesktop.NetworkManager"
 
-#define	NM_DBUS_PATH				        "/org/freedesktop/NetworkManager"
-#define	NM_DBUS_INTERFACE			        "org.freedesktop.NetworkManager"
-#define	NM_DBUS_INTERFACE_DEVICE	        NM_DBUS_INTERFACE ".Device"
+#define	NM_DBUS_PATH                        "/org/freedesktop/NetworkManager"
+#define	NM_DBUS_INTERFACE                   "org.freedesktop.NetworkManager"
+#define	NM_DBUS_INTERFACE_DEVICE            NM_DBUS_INTERFACE ".Device"
 #define NM_DBUS_INTERFACE_DEVICE_WIRED      NM_DBUS_INTERFACE_DEVICE ".Wired"
 #define NM_DBUS_INTERFACE_DEVICE_WIRELESS   NM_DBUS_INTERFACE_DEVICE ".Wireless"
 #define NM_DBUS_PATH_ACCESS_POINT           NM_DBUS_PATH "/AccessPoint"
@@ -75,7 +75,8 @@ typedef enum NMDeviceType
 	NM_DEVICE_TYPE_ETHERNET,
 	NM_DEVICE_TYPE_WIFI,
 	NM_DEVICE_TYPE_GSM,
-	NM_DEVICE_TYPE_CDMA
+	NM_DEVICE_TYPE_CDMA,
+	NM_DEVICE_TYPE_BT  /* Bluetooth */
 } NMDeviceType;
 
 /* DEPRECATED TYPE NAMES */
@@ -90,27 +91,27 @@ typedef enum NMDeviceType
  * General device capability bits
  *
  */
-#define NM_DEVICE_CAP_NONE			0x00000000
-#define NM_DEVICE_CAP_NM_SUPPORTED		0x00000001
-#define NM_DEVICE_CAP_CARRIER_DETECT	0x00000002
+#define NM_DEVICE_CAP_NONE               0x00000000
+#define NM_DEVICE_CAP_NM_SUPPORTED       0x00000001
+#define NM_DEVICE_CAP_CARRIER_DETECT     0x00000002
 
 
 /* 802.11 wireless device-specific capabilities */
-#define NM_WIFI_DEVICE_CAP_NONE			0x00000000
-#define NM_WIFI_DEVICE_CAP_CIPHER_WEP40	0x00000001
-#define NM_WIFI_DEVICE_CAP_CIPHER_WEP104	0x00000002
-#define NM_WIFI_DEVICE_CAP_CIPHER_TKIP	0x00000004
-#define NM_WIFI_DEVICE_CAP_CIPHER_CCMP	0x00000008
-#define NM_WIFI_DEVICE_CAP_WPA			0x00000010
-#define NM_WIFI_DEVICE_CAP_RSN			0x00000020
+#define NM_WIFI_DEVICE_CAP_NONE          0x00000000
+#define NM_WIFI_DEVICE_CAP_CIPHER_WEP40  0x00000001
+#define NM_WIFI_DEVICE_CAP_CIPHER_WEP104 0x00000002
+#define NM_WIFI_DEVICE_CAP_CIPHER_TKIP   0x00000004
+#define NM_WIFI_DEVICE_CAP_CIPHER_CCMP   0x00000008
+#define NM_WIFI_DEVICE_CAP_WPA           0x00000010
+#define NM_WIFI_DEVICE_CAP_RSN           0x00000020
 
 
 /*
  * 802.11 Access Point flags
  *
  */
-#define NM_802_11_AP_FLAGS_NONE				0x00000000
-#define NM_802_11_AP_FLAGS_PRIVACY			0x00000001
+#define NM_802_11_AP_FLAGS_NONE          0x00000000
+#define NM_802_11_AP_FLAGS_PRIVACY       0x00000001
 
 /*
  * 802.11 Access Point security flags
@@ -119,17 +120,17 @@ typedef enum NMDeviceType
  * from various pieces of beacon information, like beacon flags and various
  * information elements.
  */
-#define NM_802_11_AP_SEC_NONE				0x00000000
-#define NM_802_11_AP_SEC_PAIR_WEP40			0x00000001
-#define NM_802_11_AP_SEC_PAIR_WEP104		0x00000002
-#define NM_802_11_AP_SEC_PAIR_TKIP			0x00000004
-#define NM_802_11_AP_SEC_PAIR_CCMP			0x00000008
-#define NM_802_11_AP_SEC_GROUP_WEP40		0x00000010
-#define NM_802_11_AP_SEC_GROUP_WEP104		0x00000020
-#define NM_802_11_AP_SEC_GROUP_TKIP			0x00000040
-#define NM_802_11_AP_SEC_GROUP_CCMP			0x00000080
-#define NM_802_11_AP_SEC_KEY_MGMT_PSK		0x00000100
-#define NM_802_11_AP_SEC_KEY_MGMT_802_1X	0x00000200
+#define NM_802_11_AP_SEC_NONE            0x00000000
+#define NM_802_11_AP_SEC_PAIR_WEP40      0x00000001
+#define NM_802_11_AP_SEC_PAIR_WEP104     0x00000002
+#define NM_802_11_AP_SEC_PAIR_TKIP       0x00000004
+#define NM_802_11_AP_SEC_PAIR_CCMP       0x00000008
+#define NM_802_11_AP_SEC_GROUP_WEP40     0x00000010
+#define NM_802_11_AP_SEC_GROUP_WEP104    0x00000020
+#define NM_802_11_AP_SEC_GROUP_TKIP      0x00000040
+#define NM_802_11_AP_SEC_GROUP_CCMP      0x00000080
+#define NM_802_11_AP_SEC_KEY_MGMT_PSK    0x00000100
+#define NM_802_11_AP_SEC_KEY_MGMT_802_1X 0x00000200
 
 /*
  * 802.11 AP and Station modes
@@ -140,6 +141,16 @@ typedef enum {
 	NM_802_11_MODE_ADHOC,
 	NM_802_11_MODE_INFRA
 } NM80211Mode;
+
+/*
+ * Bluetooth device capabilities
+ *
+ */
+enum {
+	NM_BT_CAPABILITY_NONE = 0x00000000,
+	NM_BT_CAPABILITY_DUN  = 0x00000001,
+	NM_BT_CAPABILITY_NAP  = 0x00000002,
+};
 
 
 /*

@@ -1,0 +1,61 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+/* NetworkManager -- Network link manager
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along
+ * with this program; if not, write to the Free Software Foundation, Inc.,
+ * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Copyright (C) 2009 Red Hat, Inc.
+ */
+
+#ifndef NM_DEVICE_BT_H
+#define NM_DEVICE_BT_H
+
+#include <nm-device.h>
+
+G_BEGIN_DECLS
+
+#define NM_TYPE_DEVICE_BT		(nm_device_bt_get_type ())
+#define NM_DEVICE_BT(obj)		(G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_DEVICE_BT, NMDeviceBt))
+#define NM_DEVICE_BT_CLASS(klass)	(G_TYPE_CHECK_CLASS_CAST ((klass),  NM_TYPE_DEVICE_BT, NMDeviceBtClass))
+#define NM_IS_DEVICE_BT(obj)		(G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_DEVICE_BT))
+#define NM_IS_DEVICE_BT_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_DEVICE_BT))
+#define NM_DEVICE_BT_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DEVICE_BT, NMDeviceBtClass))
+
+#define NM_DEVICE_BT_HW_ADDRESS   "hw-address"
+#define NM_DEVICE_BT_NAME         "name"
+#define NM_DEVICE_BT_CAPABILITIES "capabilities"
+
+typedef struct {
+	NMDevice parent;
+} NMDeviceBt;
+
+typedef struct {
+	NMDeviceClass parent;
+
+	/* Signals */
+	void (*ppp_stats) (NMDeviceBt *device, guint32 in_bytes, guint32 out_bytes);
+	void (*properties_changed) (NMDeviceBt *device, GHashTable *properties);
+} NMDeviceBtClass;
+
+GType nm_device_bt_get_type (void);
+
+NMDeviceBt *nm_device_bt_new (const char *udi,
+                              const char *bdaddr,
+                              const char *name,
+                              guint32 capabilities,
+                              gboolean managed);
+
+G_END_DECLS
+
+#endif /* NM_GSM_DEVICE_H */

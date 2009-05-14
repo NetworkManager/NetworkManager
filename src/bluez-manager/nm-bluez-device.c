@@ -164,10 +164,10 @@ convert_uuids (const char **strings)
 
 		switch (uuid16) {
 		case 0x1103:
-			uuids |= NM_BLUEZ_TYPE_DUN;
+			uuids |= NM_BT_CAPABILITY_DUN;
 			break;
 		case 0x1116:
-			uuids |= NM_BLUEZ_TYPE_NAP;
+			uuids |= NM_BT_CAPABILITY_NAP;
 			break;
 		default:
 			break;
