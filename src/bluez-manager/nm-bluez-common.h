@@ -22,8 +22,8 @@
 #define NM_BLUEZ_COMMON_H
 
 enum {
-	NM_BLUEZ_TYPE_DUN  = 1 << 1,
-	NM_BLUEZ_TYPE_PANU = 1 << 2,
+	NM_BLUEZ_TYPE_DUN = 1 << 1,
+	NM_BLUEZ_TYPE_NAP = 1 << 2,
 };
 
 #define BLUEZ_SERVICE	"org.bluez"

@@ -40,7 +40,6 @@ typedef struct {
 	gboolean initialized;
 	gboolean usable;
 
-	gboolean paired;
 	guint32 class;
 
 	char *address;
@@ -57,7 +56,6 @@ enum {
 	PROP_NAME,
 	PROP_UUIDS,
 	PROP_RSSI,
-	PROP_PAIRED,
 	PROP_USABLE,
 
 	LAST_PROP
@@ -152,10 +150,28 @@ convert_uuids (const char **strings)
 	guint32 uuids = 0;
 
 	for (iter = strings; iter && *iter; iter++) {
-		if (!strcmp (*iter, "DialupNetworking"))
+		char **parts;
+		guint uuid16;
+
+		parts = g_strsplit (*iter, "-", -1);
+		if (parts == NULL || parts[0] == NULL) {
+			g_strfreev (parts);
+			continue;
+		}
+
+		uuid16 = g_ascii_strtoull (parts[0], NULL, 16);
+		g_strfreev (parts);
+
+		switch (uuid16) {
+		case 0x1103:
 			uuids |= NM_BLUEZ_TYPE_DUN;
-		else if (!strcmp (*iter, "PANU"))
-			uuids |= NM_BLUEZ_TYPE_PANU;
+			break;
+		case 0x1116:
+			uuids |= NM_BLUEZ_TYPE_NAP;
+			break;
+		default:
+			break;
+		}
 	}
 
 	return uuids;
@@ -169,7 +185,6 @@ check_emit_usable (NMBluezDevice *self)
 	if (   priv->initialized
 	    && priv->uuids
 	    && is_phone_or_modem (priv->class)
-	    && priv->paired
 	    && priv->name
 	    && priv->address) {
 		if (!priv->usable) {
@@ -195,7 +210,6 @@ property_changed (DBusGProxy *proxy,
 	const char *str;
 	guint32 uint_val;
 	gint int_val;
-	gboolean bool_val;
 
 	if (!strcmp (property, "Name")) {
 		str = g_value_get_string (value);
@@ -205,14 +219,11 @@ property_changed (DBusGProxy *proxy,
 			g_free (priv->name);
 			priv->name = str ? g_strdup (str) : NULL;
 			g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_NAME);
-			check_emit_usable (self);
 		}
 	} else if (!strcmp (property, "Class")) {
 		uint_val = g_value_get_uint (value);
-		if (priv->class != uint_val) {
+		if (priv->class != uint_val)
 			priv->class = uint_val;
-			check_emit_usable (self);
-		}
 	} else if (!strcmp (property, "RSSI")) {
 		int_val = g_value_get_int (value);
 		if (priv->rssi != int_val) {
@@ -224,15 +235,10 @@ property_changed (DBusGProxy *proxy,
 		if (priv->uuids != uint_val) {
 			priv->uuids = uint_val;
 			g_object_notify (G_OBJECT (self), NM_BLUEZ_DEVICE_UUIDS);
-			check_emit_usable (self);
-		}
-	} else if (!strcmp (property, "Paired")) {
-		bool_val = g_value_get_boolean (value);
-		if (priv->paired != bool_val) {
-			priv->paired = bool_val;
-			check_emit_usable (self);
 		}
 	}
+
+	check_emit_usable (self);
 }
 
 static void
@@ -247,7 +253,7 @@ get_properties_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 	if (!dbus_g_proxy_end_call (proxy, call, &err,
 	                            DBUS_TYPE_G_MAP_OF_VARIANT, &properties,
 	                            G_TYPE_INVALID)) {
-		nm_warning ("bluez error getting adapter properties: %s",
+		nm_warning ("bluez error getting device properties: %s",
 		            err && err->message ? err->message : "(unknown)");
 		g_error_free (err);
 		g_signal_emit (self, signals[INITIALIZED], 0, FALSE);
@@ -370,9 +376,6 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_RSSI:
 		g_value_set_int (value, priv->rssi);
-		break;
-	case PROP_PAIRED:
-		g_value_set_boolean (value, priv->paired);
 		break;
 	case PROP_USABLE:
 		g_value_set_boolean (value, priv->usable);

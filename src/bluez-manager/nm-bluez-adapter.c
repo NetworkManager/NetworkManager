@@ -129,8 +129,6 @@ device_initialized (NMBluezDevice *device, gboolean success, gpointer user_data)
 
 	if (!success)
 		g_hash_table_remove (priv->devices, nm_bluez_device_get_path (device));
-	else
-		device_usable (device, NULL, self);
 }
 
 static void

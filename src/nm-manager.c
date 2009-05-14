@@ -1803,14 +1803,14 @@ bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
 			       gpointer user_data)
 {
 	gboolean has_dun = (uuids & NM_BLUEZ_TYPE_DUN);
-	gboolean has_pan = (uuids & NM_BLUEZ_TYPE_PANU);
+	gboolean has_nap = (uuids & NM_BLUEZ_TYPE_NAP);
 
 	g_message ("%s: BT device %s added (%s%s%s)",
 	           __func__,
 	           bdaddr,
 	           has_dun ? "DUN" : "",
-	           has_dun ? " " : "",
-	           has_pan ? "PANU" : "");
+	           has_dun && has_nap ? " " : "",
+	           has_nap ? "NAP" : "");
 }
 
 static void
