@@ -21,6 +21,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "nm-glib-compat.h"
+#include "nm-bluez-common.h"
+#include "nm-dbus-manager.h"
 #include "nm-device-bt.h"
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
@@ -34,6 +36,9 @@
 #include "nm-setting-gsm.h"
 #include "nm-device-bt-glue.h"
 
+#define BLUETOOTH_DUN_UUID "00001103-0000-1000-8000-00805f9b34fb"
+#define BLUETOOTH_PANU_UUID "00001115-0000-1000-8000-00805f9b34fb"
+
 G_DEFINE_TYPE (NMDeviceBt, nm_device_bt, NM_TYPE_DEVICE)
 
 #define NM_DEVICE_BT_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE_BT, NMDeviceBtPrivate))
@@ -43,8 +48,9 @@ typedef struct {
 	char *name;
 	guint32 capabilities;
 
-	guint pending_id;
 	guint state_to_disconnected_id;
+	DBusGProxy *device_proxy;
+	DBusGProxy *type_proxy;
 
 	NMPPPManager *ppp_manager;
 	char *rfcomm_iface;
@@ -340,29 +346,55 @@ ppp_stage4 (NMDevice *device, NMIP4Config **config, NMDeviceStateReason *reason)
 
 /*****************************************************************************/
 
-static gboolean
-bluez_set_shit_up (gpointer user_data)
+static void
+nm_device_bt_connect_cb (DBusGProxy       *proxy,
+                         DBusGProxyCall   *call_id,
+                         void             *user_data)
 {
 	NMDeviceBt *self = NM_DEVICE_BT (user_data);
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
+	GError *error = NULL;
+	char *device;
 
-	// FIXME: use the network interface we got from bluez
+	if (dbus_g_proxy_end_call (proxy, call_id, &error,
+				   G_TYPE_STRING, &device,
+				   G_TYPE_INVALID) == FALSE) {
+		nm_warning ("Error connecting with bluez: %s",
+		            error && error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+
+		// FIXME: get a better reason code
+		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NONE);
+		return;
+	}
+
+	if (!device || !strlen (device)) {
+		nm_warning ("Invalid network device returned by bluez");
+
+		// FIXME: get a better reason code
+		nm_device_state_changed (NM_DEVICE (self), NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_NONE);
+	}
+
 	if (priv->bt_type == NM_BT_CAPABILITY_DUN) {
 		g_free (priv->rfcomm_iface);
-		priv->rfcomm_iface = g_strdup ("rfcomm0");
-	} else if (priv->bt_type == NM_BT_CAPABILITY_NAP)
-		nm_device_set_ip_iface (NM_DEVICE (self), "pan0");
-	
+		priv->rfcomm_iface = device;
+	} else if (priv->bt_type == NM_BT_CAPABILITY_NAP) {
+		nm_device_set_ip_iface (NM_DEVICE (self), device);
+		g_free (device);
+	}
+
 	nm_device_activate_schedule_stage3_ip_config_start (NM_DEVICE (self));
-	return FALSE; 
 }
 
 static NMActStageReturn
 real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 {
-	NMDeviceBt *self = NM_DEVICE_BT (device);
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
 	NMActRequest *req;
+	NMDBusManager *dbus_mgr;
+	DBusGConnection *g_connection;
+
+	g_return_val_if_fail (priv->device_proxy == NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
 	req = nm_device_get_act_request (device);
 	g_assert (req);
@@ -373,12 +405,51 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
+	dbus_mgr = nm_dbus_manager_get ();
+	g_connection = nm_dbus_manager_get_connection (dbus_mgr);
+	priv->device_proxy = dbus_g_proxy_new_for_name (g_connection,
+	                                                BLUEZ_SERVICE,
+	                                                BLUEZ_DEVICE_INTERFACE,
+	                                                nm_device_get_udi (device));
+	g_object_unref (dbus_mgr);
+
+	if (!priv->device_proxy) {
+		// FIXME: set a reason code
+		return NM_ACT_STAGE_RETURN_FAILURE;
+	}
+
 	if (priv->bt_type == NM_BT_CAPABILITY_DUN) {
-		// FIXME: tell bluez to set up the rfcomm port
-		priv->pending_id = g_idle_add (bluez_set_shit_up, self);
+		priv->type_proxy = dbus_g_proxy_new_from_proxy (priv->device_proxy,
+		                                                BLUEZ_SERIAL_INTERFACE,
+		                                                NULL);
+		if (!priv->type_proxy) {
+			// FIXME: set a reason code
+			return NM_ACT_STAGE_RETURN_FAILURE;
+		}
+
+		dbus_g_proxy_begin_call_with_timeout (priv->type_proxy, "Connect",
+		                                      nm_device_bt_connect_cb,
+		                                      device,
+		                                      NULL,
+		                                      20000,
+		                                      G_TYPE_STRING, BLUETOOTH_DUN_UUID,
+		                                      G_TYPE_INVALID);
 	} else if (priv->bt_type == NM_BT_CAPABILITY_NAP) {
-		// FIXME: tell bluez to set up the PAN connection to the phone
-		priv->pending_id = g_idle_add (bluez_set_shit_up, self);
+		priv->type_proxy = dbus_g_proxy_new_from_proxy (priv->device_proxy,
+		                                                BLUEZ_NETWORK_INTERFACE,
+		                                                NULL);
+		if (!priv->type_proxy) {
+			// FIXME: set a reason code
+			return NM_ACT_STAGE_RETURN_FAILURE;
+		}
+
+		dbus_g_proxy_begin_call_with_timeout (priv->type_proxy, "Connect",
+		                                      nm_device_bt_connect_cb,
+		                                      device,
+		                                      NULL,
+		                                      20000,
+		                                      G_TYPE_STRING, BLUETOOTH_PANU_UUID,
+		                                      G_TYPE_INVALID);
 	}
 
 	return NM_ACT_STAGE_RETURN_POSTPONE;
@@ -425,23 +496,44 @@ real_deactivate_quickly (NMDevice *device)
 	}
 
 	priv->in_bytes = priv->out_bytes = 0;
-	g_free (priv->rfcomm_iface);
-	priv->rfcomm_iface = NULL;
 
+	g_assert (priv->bt_type);
 	if (priv->bt_type == NM_BT_CAPABILITY_DUN) {
 		if (priv->ppp_manager) {
 			g_object_unref (priv->ppp_manager);
 			priv->ppp_manager = NULL;
 		}
+
+		if (priv->type_proxy) {
+			/* Don't ever pass NULL through dbus; rfcomm_iface
+			 * might happen to be NULL for some reason.
+			 */
+			if (priv->rfcomm_iface) {
+				dbus_g_proxy_call_no_reply (priv->type_proxy, "Disconnect",
+				                            G_TYPE_STRING, priv->rfcomm_iface,
+				                            G_TYPE_INVALID);
+			}
+			g_object_unref (priv->type_proxy);
+			priv->type_proxy = NULL;
+		}
+	} else if (priv->bt_type == NM_BT_CAPABILITY_NAP) {
+		if (priv->type_proxy) {
+			dbus_g_proxy_call_no_reply (priv->type_proxy, "Disconnect",
+			                            G_TYPE_INVALID);
+			g_object_unref (priv->type_proxy);
+			priv->type_proxy = NULL;
+		}
 	}
+
+	if (priv->device_proxy) {
+		g_object_unref (priv->device_proxy);
+		priv->device_proxy = NULL;
+	}
+
 	priv->bt_type = NM_BT_CAPABILITY_NONE;
 
-	if (priv->pending_id) {
-		g_source_remove (priv->pending_id);
-		priv->pending_id = 0;
-	}
-
-	// FIXME: tell bluez to shut the connection down
+	g_free (priv->rfcomm_iface);
+	priv->rfcomm_iface = NULL;
 
 	if (NM_DEVICE_CLASS (nm_device_bt_parent_class)->deactivate_quickly)
 		NM_DEVICE_CLASS (nm_device_bt_parent_class)->deactivate_quickly (device);
@@ -553,6 +645,11 @@ static void
 finalize (GObject *object)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (object);
+
+	if (priv->type_proxy)
+		g_object_unref (priv->type_proxy);
+	if (priv->device_proxy)
+		g_object_unref (priv->device_proxy);
 
 	g_free (priv->bdaddr);
 	g_free (priv->name);

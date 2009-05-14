@@ -21,12 +21,14 @@
 #ifndef NM_BLUEZ_COMMON_H
 #define NM_BLUEZ_COMMON_H
 
-#define BLUEZ_SERVICE	"org.bluez"
+#define BLUEZ_SERVICE           "org.bluez"
 
-#define BLUEZ_MANAGER_PATH	"/"
-#define BLUEZ_MANAGER_INTERFACE	"org.bluez.Manager"
-#define BLUEZ_ADAPTER_INTERFACE	"org.bluez.Adapter"
-#define BLUEZ_DEVICE_INTERFACE	"org.bluez.Device"
+#define BLUEZ_MANAGER_PATH      "/"
+#define BLUEZ_MANAGER_INTERFACE "org.bluez.Manager"
+#define BLUEZ_ADAPTER_INTERFACE "org.bluez.Adapter"
+#define BLUEZ_DEVICE_INTERFACE  "org.bluez.Device"
+#define BLUEZ_SERIAL_INTERFACE  "org.bluez.Serial"
+#define BLUEZ_NETWORK_INTERFACE "org.bluez.Network"
 
 #endif  /* NM_BLUEZ_COMMON_H */
 
