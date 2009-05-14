@@ -43,6 +43,8 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-hal-manager.h"
 #include "nm-hostname-provider.h"
+#include "nm-bluez-manager.h"
+#include "nm-bluez-common.h"
 
 #define NM_AUTOIP_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
 #define NM_AUTOIP_DBUS_IFACE   "org.freedesktop.nm_avahi_autoipd"
@@ -96,6 +98,15 @@ static void hal_manager_rfkill_changed_cb (NMHalManager *hal_mgr,
 static void hal_manager_hal_reappeared_cb (NMHalManager *hal_mgr,
                                            gpointer user_data);
 
+static void bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
+					   const char *bdaddr,
+					   guint type,
+					   gpointer user_data);
+
+static void bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
+					     const char *bdaddr,
+					     gpointer user_data);
+
 static void system_settings_properties_changed_cb (DBusGProxy *proxy,
                                                    GHashTable *properties,
                                                    gpointer user_data);
@@ -123,6 +134,7 @@ typedef struct {
 
 	NMDBusManager *dbus_mgr;
 	NMHalManager *hal_mgr;
+	NMBluezManager *bluez_mgr;
 
 	GHashTable *user_connections;
 	DBusGProxy *user_proxy;
@@ -579,6 +591,7 @@ dispose (GObject *object)
 
 	g_object_unref (priv->dbus_mgr);
 	g_object_unref (priv->hal_mgr);
+	g_object_unref (priv->bluez_mgr);
 
 	G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
 }
@@ -1522,6 +1535,9 @@ sync_devices (NMManager *self)
 
 	/* Ask HAL for new devices */
 	nm_hal_manager_query_devices (priv->hal_mgr);
+
+	/* Ask for new bluetooth devices */
+	nm_bluez_manager_query_devices (priv->bluez_mgr);
 }
 
 static gboolean
@@ -1583,6 +1599,18 @@ nm_manager_get (void)
 	                  "hal-reappeared",
 	                  G_CALLBACK (hal_manager_hal_reappeared_cb),
 	                  singleton);
+
+	priv->bluez_mgr = nm_bluez_manager_get ();
+
+	g_signal_connect (priv->bluez_mgr,
+			  "bdaddr-added",
+			  G_CALLBACK (bluez_manager_bdaddr_added_cb),
+			  singleton);
+
+	g_signal_connect (priv->bluez_mgr,
+			  "bdaddr-removed",
+			  G_CALLBACK (bluez_manager_bdaddr_removed_cb),
+			  singleton);
 
 	return singleton;
 }
@@ -1766,6 +1794,31 @@ add_device (NMManager *self, NMDevice *device)
 	nm_info ("(%s): exported as %s", iface, nm_device_get_udi (device));
 
 	g_signal_emit (self, signals[DEVICE_ADDED], 0, device);
+}
+
+static void
+bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
+			       const char *bdaddr,
+			       guint32 uuids,
+			       gpointer user_data)
+{
+	gboolean has_dun = (uuids & NM_BLUEZ_TYPE_DUN);
+	gboolean has_pan = (uuids & NM_BLUEZ_TYPE_PANU);
+
+	g_message ("%s: BT device %s added (%s%s%s)",
+	           __func__,
+	           bdaddr,
+	           has_dun ? "DUN" : "",
+	           has_dun ? " " : "",
+	           has_pan ? "PANU" : "");
+}
+
+static void
+bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
+				 const char *bdaddr,
+				 gpointer user_data)
+{
+	g_message ("%s: BT device %s removed", __func__, bdaddr);
 }
 
 static void

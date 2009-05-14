@@ -442,6 +442,7 @@ src/supplicant-manager/tests/Makefile
 src/ppp-manager/Makefile
 src/dnsmasq-manager/Makefile
 src/modem-manager/Makefile
+src/bluez-manager/Makefile
 src/backends/Makefile
 libnm-util/libnm-util.pc
 libnm-util/Makefile

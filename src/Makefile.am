@@ -7,6 +7,7 @@ SUBDIRS= \
 	backends \
 	dnsmasq-manager \
 	modem-manager \
+	bluez-manager \
 	. \
 	tests
 
@@ -19,6 +20,7 @@ INCLUDES = -I${top_srcdir}                   \
            -I${top_srcdir}/src/supplicant-manager  \
            -I${top_srcdir}/src/dnsmasq-manager  \
            -I${top_srcdir}/src/modem-manager  \
+           -I$(top_srcdir)/src/bluez-manager \
            -I${top_srcdir}/libnm-util \
            -I${top_srcdir}/callouts
 
@@ -123,47 +125,48 @@ nm-active-connection-glue.h: $(top_srcdir)/introspection/nm-active-connection.xm
 nm-dhcp4-config-glue.h: $(top_srcdir)/introspection/nm-dhcp4-config.xml
 	dbus-binding-tool --prefix=nm_dhcp4_config --mode=glib-server --output=$@ $<
 
-BUILT_SOURCES = 					\
-	nm-access-point-glue.h				\
-	nm-manager-glue.h				\
-	nm-device-interface-glue.h			\
-	nm-device-ethernet-glue.h			\
-	nm-device-wifi-glue.h		\
-	nm-ip4-config-glue.h				\
+BUILT_SOURCES = \
+	nm-access-point-glue.h \
+	nm-manager-glue.h \
+	nm-device-interface-glue.h \
+	nm-device-ethernet-glue.h \
+	nm-device-wifi-glue.h \
+	nm-ip4-config-glue.h \
 	nm-active-connection-glue.h \
 	nm-dhcp4-config-glue.h
 
-NetworkManager_CPPFLAGS = 							\
-	$(DBUS_CFLAGS)									\
-	$(GLIB_CFLAGS)								\
-	$(HAL_CFLAGS)									\
-	$(OPENSSL_CFLAGS)								\
-	$(LIBNL_CFLAGS)								\
-	-DG_DISABLE_DEPRECATED							\
-	-DBINDIR=\"$(bindir)\"							\
-	-DSBINDIR=\"$(sbindir)\"							\
-	-DLIBEXECDIR=\"$(libexecdir)\"					\
-	-DDATADIR=\"$(datadir)\"							\
-	-DSYSCONFDIR=\"$(sysconfdir)\"					\
-	-DLOCALSTATEDIR=\"$(localstatedir)\"				\
-	-DNM_RUN_DIR=\"$(rundir)\"						\
-	-DNMLOCALEDIR=\"$(datadir)/locale\"				\
+NetworkManager_CPPFLAGS = \
+	$(DBUS_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(HAL_CFLAGS) \
+	$(OPENSSL_CFLAGS) \
+	$(LIBNL_CFLAGS) \
+	-DG_DISABLE_DEPRECATED \
+	-DBINDIR=\"$(bindir)\" \
+	-DSBINDIR=\"$(sbindir)\" \
+	-DLIBEXECDIR=\"$(libexecdir)\" \
+	-DDATADIR=\"$(datadir)\" \
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
+	-DLOCALSTATEDIR=\"$(localstatedir)\" \
+	-DNM_RUN_DIR=\"$(rundir)\" \
+	-DNMLOCALEDIR=\"$(datadir)/locale\" \
 	-DARP_DEBUG
 
-NetworkManager_LDADD = 							\
-	$(DBUS_LIBS)						\
-	$(GLIB_LIBS)					\
-	$(HAL_LIBS)						\
-	$(LIBNL_LIBS)						\
-	$(top_builddir)/marshallers/libmarshallers.la	\
-	./named-manager/libnamed-manager.la	\
-	./vpn-manager/libvpn-manager.la		\
-	./dhcp-manager/libdhcp-manager.la		\
-	./supplicant-manager/libsupplicant-manager.la		\
-	./dnsmasq-manager/libdnsmasq-manager.la		\
-	./ppp-manager/libppp-manager.la		\
-	./modem-manager/libmodem-manager.la		\
-	./backends/libnmbackend.la			\
+NetworkManager_LDADD = \
+	$(DBUS_LIBS) \
+	$(GLIB_LIBS) \
+	$(HAL_LIBS) \
+	$(LIBNL_LIBS) \
+	$(top_builddir)/marshallers/libmarshallers.la \
+	./named-manager/libnamed-manager.la \
+	./vpn-manager/libvpn-manager.la \
+	./dhcp-manager/libdhcp-manager.la \
+	./supplicant-manager/libsupplicant-manager.la \
+	./dnsmasq-manager/libdnsmasq-manager.la \
+	./ppp-manager/libppp-manager.la \
+	./modem-manager/libmodem-manager.la \
+	./bluez-manager/libbluez-manager.la \
+	./backends/libnmbackend.la \
 	$(top_builddir)/libnm-util/libnm-util.la
 
 NetworkManager_LDFLAGS = -rdynamic
@@ -171,12 +174,12 @@ NetworkManager_LDFLAGS = -rdynamic
 libexec_PROGRAMS = nm-crash-logger
 nm_crash_logger_SOURCES = nm-crash-logger.c
 nm_crash_logger_CPPFLAGS = \
-	$(GLIB_CFLAGS)								\
-	-DG_DISABLE_DEPRECATED							\
-	-DBINDIR=\"$(bindir)\"							\
-	-DSBINDIR=\"$(sbindir)\"							\
-	-DDATADIR=\"$(datadir)\"							\
-	-DSYSCONFDIR=\"$(sysconfdir)\"					\
+	$(GLIB_CFLAGS) \
+	-DG_DISABLE_DEPRECATED \
+	-DBINDIR=\"$(bindir)\" \
+	-DSBINDIR=\"$(sbindir)\" \
+	-DDATADIR=\"$(datadir)\" \
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DLOCALSTATEDIR=\"$(localstatedir)\"
 nm_crash_logger_LDADD = $(GLIB_LIBS)
 
