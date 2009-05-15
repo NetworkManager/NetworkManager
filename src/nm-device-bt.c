@@ -36,8 +36,8 @@
 #include "nm-setting-gsm.h"
 #include "nm-device-bt-glue.h"
 
-#define BLUETOOTH_DUN_UUID "00001103-0000-1000-8000-00805f9b34fb"
-#define BLUETOOTH_PANU_UUID "00001115-0000-1000-8000-00805f9b34fb"
+#define BLUETOOTH_DUN_UUID "dun"
+#define BLUETOOTH_PANU_UUID "panu"
 
 G_DEFINE_TYPE (NMDeviceBt, nm_device_bt, NM_TYPE_DEVICE)
 
@@ -630,7 +630,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->bdaddr);
 		break;
 	case PROP_BT_NAME:
-		g_value_set_string (value, priv->bdaddr);
+		g_value_set_string (value, priv->name);
 		break;
 	case PROP_BT_CAPABILITIES:
 		g_value_set_uint (value, priv->capabilities);
