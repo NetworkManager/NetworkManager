@@ -178,7 +178,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 static void
 nm_setting_bluetooth_init (NMSettingBluetooth *setting)
 {
-	g_object_set (setting, NM_SETTING_NAME, NM_SETTING_BLUETOOTH_NAME, NULL);
+	g_object_set (setting, NM_SETTING_NAME, NM_SETTING_BLUETOOTH_SETTING_NAME, NULL);
 }
 
 static void
