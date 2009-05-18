@@ -12,4 +12,5 @@ system-settings/plugins/ifcfg-rh/crypto.c
 system-settings/plugins/ifcfg-rh/reader.c
 system-settings/src/main.c
 system-settings/src/nm-default-wired-connection.c
+policy/org.freedesktop.network-manager-settings.system.policy.in
 
