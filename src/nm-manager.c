@@ -860,9 +860,13 @@ free_get_settings_info (gpointer data)
 	if (info->calls) {
 		*(info->calls) = g_slist_remove (*(info->calls), info->call);
 		if (g_slist_length (*(info->calls)) == 0) {
+			NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (info->manager);
+
 			g_slist_free (*(info->calls));
 			g_slice_free (GSList, (gpointer) info->calls);
 			g_signal_emit (info->manager, signals[CONNECTIONS_ADDED], 0, info->scope);
+			/* Update the Bluetooth connections for all the new connections */
+			nm_bluez_manager_query_devices (priv->bluez_mgr);
 		}
 	}
 
@@ -970,8 +974,11 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 		 * emit the single connection-added here.  Also, don't emit the signal
 		 * if the connection wasn't actually added to the system or user hashes.
 		 */
-		if (!info->calls && !existing)
+		if (!info->calls && !existing) {
 			g_signal_emit (manager, signals[CONNECTION_ADDED], 0, connection, scope);
+			/* Update the Bluetooth connections for that single new connection */
+			nm_bluez_manager_query_devices (priv->bluez_mgr);
+		}
 	} else {
 		// FIXME: merge settings? or just replace?
 		nm_warning ("%s (#%d): implement merge settings", __func__, __LINE__);
@@ -1790,6 +1797,8 @@ add_device (NMManager *self, NMDevice *device)
 		nm_info ("(%s): new GSM device (driver: '%s')", iface, driver);
 	else if (nm_device_get_device_type (device) == NM_DEVICE_TYPE_CDMA)
 		nm_info ("(%s): new CDMA device (driver: '%s')", iface, driver);
+	else if (nm_device_get_device_type (device) == NM_DEVICE_TYPE_BT)
+		nm_info ("(%s): new Bluetooth device", iface);
 	else
 		g_assert_not_reached ();
 
@@ -1802,15 +1811,42 @@ add_device (NMManager *self, NMDevice *device)
 }
 
 static gboolean
+bdaddr_matches_connection (NMSettingBluetooth *s_bt, const char *bdaddr)
+{
+	const GByteArray *arr;
+	gboolean ret = FALSE;
+
+	arr = nm_setting_bluetooth_get_bdaddr (s_bt);
+
+	if (   arr != NULL 
+	       && arr->len == ETH_ALEN) {
+		char *str;
+
+		str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
+				       arr->data[0],
+				       arr->data[1],
+				       arr->data[2],
+				       arr->data[3],
+				       arr->data[4],
+				       arr->data[5]);
+		ret = g_str_equal (str, bdaddr);
+		g_free (str);
+	}
+
+	return ret;
+}
+
+static gboolean
 bluez_manager_bdaddr_has_connection (NMManager *manager,
 				     const char *bdaddr,
-				     guint32 uuids,
-				     NMConnectionScope scope)
+				     guint32 uuids)
 {
 	GSList *connections, *l;
 	gboolean found = FALSE;
 
-	connections = nm_manager_get_connections (manager, scope);
+	connections = nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
+	connections = g_slist_concat (connections,  nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_USER));
+
 	for (l = connections; l != NULL; l = l->next) {
 		NMConnection *connection = NM_CONNECTION (l->data);
 		NMSettingConnection *s_con;
@@ -1829,7 +1865,7 @@ bluez_manager_bdaddr_has_connection (NMManager *manager,
 		if (!s_bt)
 			continue;
 
-		if (g_str_equal (nm_setting_bluetooth_get_bdaddr (s_bt), bdaddr) == FALSE)
+		if (!bdaddr_matches_connection (s_bt, bdaddr))
 			continue;
 
 		bt_type = nm_setting_bluetooth_get_connection_type (s_bt);
@@ -1880,8 +1916,7 @@ bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
 	if (has_dun == FALSE && has_nap == FALSE)
 		return;
 
-	if (   !bluez_manager_bdaddr_has_connection (manager, bdaddr, capabilities, NM_CONNECTION_SCOPE_SYSTEM)
-	    && !bluez_manager_bdaddr_has_connection (manager, bdaddr, capabilities, NM_CONNECTION_SCOPE_USER))
+	if (!bluez_manager_bdaddr_has_connection (manager, bdaddr, capabilities))
 		return;
 
 	device = nm_device_bt_new (object_path, bdaddr, name, capabilities, TRUE);
