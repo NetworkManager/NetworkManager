@@ -87,7 +87,7 @@ nm_device_bt_new (const char *udi,
 	g_return_val_if_fail (udi != NULL, NULL);
 	g_return_val_if_fail (bdaddr != NULL, NULL);
 	g_return_val_if_fail (name != NULL, NULL);
-	g_return_val_if_fail (capabilities != 0, NULL);
+	g_return_val_if_fail (capabilities != NM_BT_CAPABILITY_NONE, NULL);
 
 	return (NMDeviceBt *) g_object_new (NM_TYPE_DEVICE_BT,
 	                                    NM_DEVICE_INTERFACE_UDI, udi,
@@ -397,7 +397,7 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	g_assert (req);
 
 	priv->bt_type = get_connection_bt_type (nm_act_request_get_connection (req));
-	if (!priv->bt_type) {
+	if (priv->bt_type == NM_BT_CAPABILITY_NONE) {
 		// FIXME: set a reason code
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
@@ -487,7 +487,6 @@ real_deactivate_quickly (NMDevice *device)
 
 	priv->in_bytes = priv->out_bytes = 0;
 
-	g_assert (priv->bt_type);
 	if (priv->bt_type == NM_BT_CAPABILITY_DUN) {
 		if (priv->ppp_manager) {
 			g_object_unref (priv->ppp_manager);
@@ -684,7 +683,7 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property
-		(object_class, PROP_BT_NAME,
+		(object_class, PROP_BT_CAPABILITIES,
 		 g_param_spec_uint (NM_DEVICE_BT_CAPABILITIES,
 		                    "Bluetooth device capabilities",
 		                    "Bluetooth device capabilities",
