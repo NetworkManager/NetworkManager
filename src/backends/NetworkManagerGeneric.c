@@ -25,6 +25,7 @@
 #include <config.h>
 #endif
 
+#include <errno.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <signal.h>
@@ -91,8 +92,10 @@ void nm_generic_enable_loopback (void)
 	rtnl_addr_set_scope (addr, RT_SCOPE_HOST);
 	rtnl_addr_set_label (addr, "lo");
 
-	if ((err = rtnl_addr_add (nlh, addr, 0)) < 0)
-		nm_warning ("error %d returned from rtnl_addr_add():\n%s", err, nl_geterror());
+	if ((err = rtnl_addr_add (nlh, addr, 0)) < 0) {
+		if (err != -EEXIST)
+			nm_warning ("error %d returned from rtnl_addr_add():\n%s", err, nl_geterror());
+	}
 out:
 	if (addr)
 		rtnl_addr_put (addr);
