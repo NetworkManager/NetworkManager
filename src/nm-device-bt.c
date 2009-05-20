@@ -425,8 +425,8 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	if (priv->bt_type == NM_BT_CAPABILITY_DUN) {
 		priv->type_proxy = dbus_g_proxy_new_for_name (g_connection,
 							      BLUEZ_SERVICE,
-							      BLUEZ_SERIAL_INTERFACE,
-							      nm_device_get_udi (device));
+							      nm_device_get_udi (device),
+							      BLUEZ_SERIAL_INTERFACE);
 		if (!priv->type_proxy) {
 			// FIXME: set a reason code
 			return NM_ACT_STAGE_RETURN_FAILURE;
@@ -442,8 +442,8 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 	} else if (priv->bt_type == NM_BT_CAPABILITY_NAP) {
 		priv->type_proxy = dbus_g_proxy_new_for_name (g_connection,
 							      BLUEZ_SERVICE,
-							      BLUEZ_NETWORK_INTERFACE,
-							      nm_device_get_udi (device));
+							      nm_device_get_udi (device),
+							      BLUEZ_NETWORK_INTERFACE);
 		if (!priv->type_proxy) {
 			// FIXME: set a reason code
 			return NM_ACT_STAGE_RETURN_FAILURE;
