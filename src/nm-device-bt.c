@@ -398,7 +398,57 @@ nm_device_bt_connect_cb (DBusGProxy       *proxy,
 		g_free (device);
 	}
 
-	nm_device_activate_schedule_stage3_ip_config_start (NM_DEVICE (self));
+	/* Stage 3 gets scheduled when Bluez says we're connected */
+}
+
+static void
+bluez_property_changed (DBusGProxy *proxy,
+                        const char *property,
+                        GValue *value,
+                        gpointer user_data)
+{
+	NMDevice *device = NM_DEVICE (user_data);
+	NMDeviceBt *self = NM_DEVICE_BT (user_data);
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (self);
+	gboolean connected;
+	NMDeviceState state;
+
+	if (strcmp (property, "Connected"))
+		return;
+
+	state = nm_device_get_state (device);
+	connected = g_value_get_boolean (value);
+	if (connected) {
+		/* Bluez says we're connected now.  Start IP config. */
+
+		if (state == NM_DEVICE_STATE_CONFIG) {
+			gboolean pan = (priv->bt_type == NM_BT_CAPABILITY_NAP);
+			gboolean dun = (priv->bt_type == NM_BT_CAPABILITY_DUN);
+
+			nm_info ("Activation (%s/bluetooth) Stage 2 of 5 (Device Configure) "
+			         "successful.  Connected via %s.",
+			         nm_device_get_iface (device),
+			         dun ? "DUN" : (pan ? "PAN" : "unknown"));
+
+			nm_device_activate_schedule_stage3_ip_config_start (device);
+		}
+	} else {
+		gboolean fail = FALSE;
+
+		/* Bluez says we're disconnected from the device.  Suck. */
+
+		if (nm_device_is_activating (device)) {
+			nm_info ("Activation (%s/bluetooth): bluetooth link disconnected.",
+			         nm_device_get_iface (device));
+			fail = TRUE;
+		} else if (state == NM_DEVICE_STATE_ACTIVATED) {
+			nm_info ("%s: bluetooth link disconnected.", nm_device_get_iface (device));
+			fail = TRUE;
+		}
+
+		if (fail)
+			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_CARRIER);
+	}
 }
 
 static NMActStageReturn
@@ -456,7 +506,18 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 		                                      20000,
 		                                      G_TYPE_STRING, BLUETOOTH_NAP_UUID,
 		                                      G_TYPE_INVALID);
-	}
+	} else
+		g_assert_not_reached ();
+
+	/* Watch for BT device property changes */
+	dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_BOXED,
+	                                   G_TYPE_NONE,
+	                                   G_TYPE_STRING, G_TYPE_VALUE,
+	                                   G_TYPE_INVALID);
+	dbus_g_proxy_add_signal (priv->type_proxy, "PropertyChanged",
+	                         G_TYPE_STRING, G_TYPE_VALUE, G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->type_proxy, "PropertyChanged",
+	                             G_CALLBACK (bluez_property_changed), device, NULL);
 
 	return NM_ACT_STAGE_RETURN_POSTPONE;
 }
