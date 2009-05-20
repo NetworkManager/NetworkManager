@@ -240,7 +240,7 @@ real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	nm_act_request_request_connection_secrets (req,
 											   setting_name,
 											   tries ? TRUE : FALSE,
-											   SECRETS_CALLER_HSO_GSM,
+											   SECRETS_CALLER_GSM,
 											   hint1,
 											   hint2);
 	g_object_set_data (G_OBJECT (connection), GSM_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
