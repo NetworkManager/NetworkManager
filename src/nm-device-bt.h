@@ -56,6 +56,10 @@ NMDeviceBt *nm_device_bt_new (const char *udi,
                               guint32 capabilities,
                               gboolean managed);
 
+guint32 nm_device_bt_get_capabilities (NMDeviceBt *device);
+
+const char *nm_device_bt_get_hw_address (NMDeviceBt *device);
+
 G_END_DECLS
 
 #endif /* NM_GSM_DEVICE_H */

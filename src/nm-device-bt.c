@@ -100,6 +100,22 @@ nm_device_bt_new (const char *udi,
 	                                    NULL);
 }
 
+guint32 nm_device_bt_get_capabilities (NMDeviceBt *self)
+{
+	g_return_val_if_fail (self != NULL, NM_BT_CAPABILITY_NONE);
+	g_return_val_if_fail (NM_IS_DEVICE_BT (self), NM_BT_CAPABILITY_NONE);
+
+	return NM_DEVICE_BT_GET_PRIVATE (self)->capabilities;
+}
+
+const char *nm_device_bt_get_hw_address (NMDeviceBt *self)
+{
+	g_return_val_if_fail (self != NULL, NULL);
+	g_return_val_if_fail (NM_IS_DEVICE_BT (self), NULL);
+
+	return NM_DEVICE_BT_GET_PRIVATE (self)->bdaddr;
+}
+
 static guint32
 get_connection_bt_type (NMConnection *connection)
 {

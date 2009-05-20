@@ -15,8 +15,8 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * Copyright (C) 2007 - 2008 Novell, Inc.
- * Copyright (C) 2007 - 2008 Red Hat, Inc.
+ * Copyright (C) 2007 - 2009 Novell, Inc.
+ * Copyright (C) 2007 - 2009 Red Hat, Inc.
  */
 
 #include <netinet/ether.h>
@@ -112,12 +112,13 @@ static void bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
 					     const char *object_path,
 					     gpointer user_data);
 
+static void bluez_manager_resync_devices (NMManager *self);
+
 static void system_settings_properties_changed_cb (DBusGProxy *proxy,
                                                    GHashTable *properties,
                                                    gpointer user_data);
 
 static void add_device (NMManager *self, NMDevice *device);
-static void remove_one_device (NMManager *manager, NMDevice *device);
 
 static void hostname_provider_init (NMHostnameProvider *provider_class);
 
@@ -294,14 +295,91 @@ modem_added (NMModemManager *modem_manager,
 }
 
 static void
+nm_manager_update_state (NMManager *manager)
+{
+	NMManagerPrivate *priv;
+	NMState new_state = NM_STATE_DISCONNECTED;
+
+	g_return_if_fail (NM_IS_MANAGER (manager));
+
+	priv = NM_MANAGER_GET_PRIVATE (manager);
+
+	if (priv->sleeping) {
+		new_state = NM_STATE_ASLEEP;
+	} else {
+		GSList *iter;
+
+		for (iter = priv->devices; iter; iter = iter->next) {
+			NMDevice *dev = NM_DEVICE (iter->data);
+
+			if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED) {
+				new_state = NM_STATE_CONNECTED;
+				break;
+			} else if (nm_device_is_activating (dev)) {
+				new_state = NM_STATE_CONNECTING;
+			}
+		}
+	}
+
+	if (priv->state != new_state) {
+		priv->state = new_state;
+		g_object_notify (G_OBJECT (manager), NM_MANAGER_STATE);
+
+		g_signal_emit (manager, signals[STATE_CHANGED], 0, priv->state);
+
+		/* Emit StateChange too for backwards compatibility */
+		g_signal_emit (manager, signals[STATE_CHANGE], 0, priv->state);
+	}
+}
+
+static void
+manager_device_state_changed (NMDevice *device,
+                              NMDeviceState new_state,
+                              NMDeviceState old_state,
+                              NMDeviceStateReason reason,
+                              gpointer user_data)
+{
+	NMManager *manager = NM_MANAGER (user_data);
+
+	switch (new_state) {
+	case NM_DEVICE_STATE_UNMANAGED:
+	case NM_DEVICE_STATE_UNAVAILABLE:
+	case NM_DEVICE_STATE_DISCONNECTED:
+	case NM_DEVICE_STATE_PREPARE:
+	case NM_DEVICE_STATE_FAILED:
+		g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
+		break;
+	default:
+		break;
+	}
+
+	nm_manager_update_state (manager);
+}
+
+/* Removes a device from a device list; returns the start of the new device list */
+static GSList *
+remove_one_device (NMManager *manager, GSList *list, NMDevice *device)
+{
+	if (nm_device_get_managed (device))
+		nm_device_set_managed (device, FALSE, NM_DEVICE_STATE_REASON_REMOVED);
+
+	g_signal_handlers_disconnect_by_func (device, manager_device_state_changed, manager);
+
+	g_signal_emit (manager, signals[DEVICE_REMOVED], 0, device);
+	g_object_unref (device);
+
+	return g_slist_remove (list, device);
+}
+
+static void
 modem_removed (NMModemManager *modem_manager,
 			   NMDevice *modem,
 			   gpointer user_data)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (user_data);
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
-	remove_one_device (NM_MANAGER (user_data), modem);
-	priv->devices = g_slist_remove (priv->devices, modem);
+	priv->devices = remove_one_device (self, priv->devices, modem);
 }
 
 static void
@@ -442,44 +520,6 @@ nm_manager_get_state (NMManager *manager)
 }
 
 static void
-nm_manager_update_state (NMManager *manager)
-{
-	NMManagerPrivate *priv;
-	NMState new_state = NM_STATE_DISCONNECTED;
-
-	g_return_if_fail (NM_IS_MANAGER (manager));
-
-	priv = NM_MANAGER_GET_PRIVATE (manager);
-
-	if (priv->sleeping) {
-		new_state = NM_STATE_ASLEEP;
-	} else {
-		GSList *iter;
-
-		for (iter = priv->devices; iter; iter = iter->next) {
-			NMDevice *dev = NM_DEVICE (iter->data);
-
-			if (nm_device_get_state (dev) == NM_DEVICE_STATE_ACTIVATED) {
-				new_state = NM_STATE_CONNECTED;
-				break;
-			} else if (nm_device_is_activating (dev)) {
-				new_state = NM_STATE_CONNECTING;
-			}
-		}
-	}
-
-	if (priv->state != new_state) {
-		priv->state = new_state;
-		g_object_notify (G_OBJECT (manager), NM_MANAGER_STATE);
-
-		g_signal_emit (manager, signals[STATE_CHANGED], 0, priv->state);
-
-		/* Emit StateChange too for backwards compatibility */
-		g_signal_emit (manager, signals[STATE_CHANGE], 0, priv->state);
-	}
-}
-
-static void
 pending_connection_info_destroy (PendingConnectionInfo *info)
 {
 	if (!info)
@@ -493,42 +533,6 @@ pending_connection_info_destroy (PendingConnectionInfo *info)
 	g_free (info->device_path);
 
 	g_slice_free (PendingConnectionInfo, info);
-}
-
-static void
-manager_device_state_changed (NMDevice *device,
-                              NMDeviceState new_state,
-                              NMDeviceState old_state,
-                              NMDeviceStateReason reason,
-                              gpointer user_data)
-{
-	NMManager *manager = NM_MANAGER (user_data);
-
-	switch (new_state) {
-	case NM_DEVICE_STATE_UNMANAGED:
-	case NM_DEVICE_STATE_UNAVAILABLE:
-	case NM_DEVICE_STATE_DISCONNECTED:
-	case NM_DEVICE_STATE_PREPARE:
-	case NM_DEVICE_STATE_FAILED:
-		g_object_notify (G_OBJECT (manager), NM_MANAGER_ACTIVE_CONNECTIONS);
-		break;
-	default:
-		break;
-	}
-
-	nm_manager_update_state (manager);
-}
-
-static void
-remove_one_device (NMManager *manager, NMDevice *device)
-{
-	if (nm_device_get_managed (device))
-		nm_device_set_managed (device, FALSE, NM_DEVICE_STATE_REASON_REMOVED);
-
-	g_signal_handlers_disconnect_by_func (device, manager_device_state_changed, manager);
-
-	g_signal_emit (manager, signals[DEVICE_REMOVED], 0, device);
-	g_object_unref (device);
 }
 
 static void
@@ -552,8 +556,9 @@ dispose (GObject *object)
 	}
 
 	while (g_slist_length (priv->devices)) {
-		remove_one_device (manager, NM_DEVICE (priv->devices->data));
-		priv->devices = g_slist_remove_link (priv->devices, priv->devices);
+		NMDevice *device = NM_DEVICE (priv->devices->data);
+
+		priv->devices = remove_one_device (manager, priv->devices, device);
 	}
 
 	nm_manager_connections_destroy (manager, NM_CONNECTION_SCOPE_USER);
@@ -860,13 +865,12 @@ free_get_settings_info (gpointer data)
 	if (info->calls) {
 		*(info->calls) = g_slist_remove (*(info->calls), info->call);
 		if (g_slist_length (*(info->calls)) == 0) {
-			NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (info->manager);
-
 			g_slist_free (*(info->calls));
 			g_slice_free (GSList, (gpointer) info->calls);
 			g_signal_emit (info->manager, signals[CONNECTIONS_ADDED], 0, info->scope);
+
 			/* Update the Bluetooth connections for all the new connections */
-			nm_bluez_manager_query_devices (priv->bluez_mgr);
+			bluez_manager_resync_devices (info->manager);
 		}
 	}
 
@@ -977,7 +981,7 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 		if (!info->calls && !existing) {
 			g_signal_emit (manager, signals[CONNECTION_ADDED], 0, connection, scope);
 			/* Update the Bluetooth connections for that single new connection */
-			nm_bluez_manager_query_devices (priv->bluez_mgr);
+			bluez_manager_resync_devices (manager);
 		}
 	} else {
 		// FIXME: merge settings? or just replace?
@@ -1032,6 +1036,8 @@ remove_connection (NMManager *manager,
 	               connection,
 	               nm_connection_get_scope (connection));
 	g_object_unref (connection);
+
+	bluez_manager_resync_devices (manager);
 }
 
 static void
@@ -1077,6 +1083,8 @@ connection_updated_cb (DBusGProxy *proxy, GHashTable *settings, gpointer user_da
 		g_signal_emit (manager, signals[CONNECTION_UPDATED], 0,
 		               old_connection,
 		               nm_connection_get_scope (old_connection));
+
+		bluez_manager_resync_devices (manager);
 	} else {
 		remove_connection (manager, old_connection, hash);
 	}
@@ -1433,6 +1441,7 @@ nm_manager_name_owner_changed (NMDBusManager *mgr,
 		} else {
 			/* User Settings service disappeared, throw them away (?) */
 			nm_manager_connections_destroy (manager, NM_CONNECTION_SCOPE_USER);
+			bluez_manager_resync_devices (manager);
 		}
 	} else if (strcmp (name, NM_DBUS_SERVICE_SYSTEM_SETTINGS) == 0) {
 		if (!old_owner_good && new_owner_good) {
@@ -1448,6 +1457,7 @@ nm_manager_name_owner_changed (NMDBusManager *mgr,
 		} else {
 			/* System Settings service disappeared, throw them away (?) */
 			nm_manager_connections_destroy (manager, NM_CONNECTION_SCOPE_SYSTEM);
+			bluez_manager_resync_devices (manager);
 
 			if (priv->system_props_proxy) {
 				g_object_unref (priv->system_props_proxy);
@@ -1541,15 +1551,14 @@ sync_devices (NMManager *self)
 	priv->devices = keep;
 
 	/* Dispose of devices no longer present */
-	for (iter = gone; iter; iter = g_slist_next (iter))
-		remove_one_device (self, NM_DEVICE (iter->data));
-	g_slist_free (gone);
+	while (g_slist_length (gone))
+		gone = remove_one_device (self, gone, NM_DEVICE (gone->data));
 
 	/* Ask HAL for new devices */
 	nm_hal_manager_query_devices (priv->hal_mgr);
 
 	/* Ask for new bluetooth devices */
-	nm_bluez_manager_query_devices (priv->bluez_mgr);
+	bluez_manager_resync_devices (self);
 }
 
 static gboolean
@@ -1836,32 +1845,32 @@ bdaddr_matches_connection (NMSettingBluetooth *s_bt, const char *bdaddr)
 	return ret;
 }
 
-static gboolean
-bluez_manager_bdaddr_has_connection (NMManager *manager,
-				     const char *bdaddr,
-				     guint32 uuids)
+static NMConnection *
+bluez_manager_find_connection (NMManager *manager,
+                               const char *bdaddr,
+                               guint32 capabilities)
 {
+	NMConnection *found = NULL;
 	GSList *connections, *l;
-	gboolean found = FALSE;
 
 	connections = nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
-	connections = g_slist_concat (connections,  nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_USER));
+	connections = g_slist_concat (connections, nm_manager_get_connections (manager, NM_CONNECTION_SCOPE_USER));
 
 	for (l = connections; l != NULL; l = l->next) {
-		NMConnection *connection = NM_CONNECTION (l->data);
+		NMConnection *candidate = NM_CONNECTION (l->data);
 		NMSettingConnection *s_con;
 		NMSettingBluetooth *s_bt;
 		const char *con_type;
 		const char *bt_type;
 
-		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (candidate, NM_TYPE_SETTING_CONNECTION));
 		g_assert (s_con);
 		con_type = nm_setting_connection_get_connection_type (s_con);
 		g_assert (con_type);
 		if (!g_str_equal (con_type, NM_SETTING_BLUETOOTH_SETTING_NAME))
 			continue;
 
-		s_bt = (NMSettingBluetooth *) nm_connection_get_setting (connection, NM_TYPE_SETTING_BLUETOOTH);
+		s_bt = (NMSettingBluetooth *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_BLUETOOTH);
 		if (!s_bt)
 			continue;
 
@@ -1870,19 +1879,51 @@ bluez_manager_bdaddr_has_connection (NMManager *manager,
 
 		bt_type = nm_setting_bluetooth_get_connection_type (s_bt);
 		if (   g_str_equal (bt_type, NM_SETTING_BLUETOOTH_TYPE_DUN)
-		    && !(uuids & NM_BT_CAPABILITY_DUN))
+		    && !(capabilities & NM_BT_CAPABILITY_DUN))
 		    	continue;
 		if (   g_str_equal (bt_type, NM_SETTING_BLUETOOTH_TYPE_PANU)
-		    && !(uuids & NM_BT_CAPABILITY_NAP))
+		    && !(capabilities & NM_BT_CAPABILITY_NAP))
 		    	continue;
 
-		found = TRUE;
+		found = candidate;
 		break;
 	}
 
 	g_slist_free (connections);
-
 	return found;
+}
+
+static void
+bluez_manager_resync_devices (NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *iter, *gone = NULL, *keep = NULL;;
+
+	/* Remove devices from the device list that don't have a corresponding connection */
+	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *candidate = NM_DEVICE (iter->data);
+		guint32 uuids;
+		const char *bdaddr;
+
+		if (NM_IS_DEVICE_BT (candidate)) {
+			uuids = nm_device_bt_get_capabilities (NM_DEVICE_BT (candidate));
+			bdaddr = nm_device_bt_get_hw_address (NM_DEVICE_BT (candidate));
+
+			if (bluez_manager_find_connection (self, bdaddr, uuids))
+				keep = g_slist_prepend (keep, candidate);
+			else
+				gone = g_slist_prepend (gone, candidate);
+		} else
+			keep = g_slist_prepend (keep, candidate);
+	}
+	g_slist_free (priv->devices);
+	priv->devices = keep;
+
+	while (g_slist_length (gone))
+		gone = remove_one_device (self, gone, NM_DEVICE (gone->data));
+
+	/* Now look for devices without connections */
+	nm_bluez_manager_query_devices (priv->bluez_mgr);
 }
 
 static void
@@ -1902,13 +1943,6 @@ bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
 	g_return_if_fail (object_path != NULL);
 	g_return_if_fail (capabilities != NM_BT_CAPABILITY_NONE);
 
-	g_message ("%s: BT device %s added (%s%s%s)",
-	           __func__,
-	           bdaddr,
-	           has_dun ? "DUN" : "",
-	           has_dun && has_nap ? " " : "",
-	           has_nap ? "NAP" : "");
-
 	/* Make sure the device is not already in the device list */
 	if (nm_manager_get_device_by_udi (manager, object_path))
 		return;
@@ -1916,12 +1950,19 @@ bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
 	if (has_dun == FALSE && has_nap == FALSE)
 		return;
 
-	if (!bluez_manager_bdaddr_has_connection (manager, bdaddr, capabilities))
+	if (!bluez_manager_find_connection (manager, bdaddr, capabilities))
 		return;
 
 	device = nm_device_bt_new (object_path, bdaddr, name, capabilities, TRUE);
 	if (!device)
 		return;
+
+	g_message ("%s: BT device %s added (%s%s%s)",
+	           __func__,
+	           bdaddr,
+	           has_dun ? "DUN" : "",
+	           has_dun && has_nap ? " " : "",
+	           has_nap ? "NAP" : "");
 
 	add_device (manager, NM_DEVICE (device));
 }
@@ -1929,8 +1970,8 @@ bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
 static void
 bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
                                  const char *bdaddr,
-				 const char *object_path,
-				 gpointer user_data)
+                                 const char *object_path,
+                                 gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
@@ -1945,8 +1986,7 @@ bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
 		NMDevice *device = NM_DEVICE (iter->data);
 
 		if (!strcmp (nm_device_get_udi (device), object_path)) {
-			priv->devices = g_slist_delete_link (priv->devices, iter);
-			remove_one_device (self, device);
+			priv->devices = remove_one_device (self, priv->devices, device);
 			break;
 		}
 	}
@@ -1993,8 +2033,7 @@ hal_manager_udi_removed_cb (NMHalManager *manager,
 		NMDevice *device = NM_DEVICE (iter->data);
 
 		if (!strcmp (nm_device_get_udi (device), udi)) {
-			priv->devices = g_slist_delete_link (priv->devices, iter);
-			remove_one_device (self, device);
+			priv->devices = remove_one_device (self, priv->devices, device);
 			break;
 		}
 	}
