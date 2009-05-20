@@ -252,6 +252,7 @@ main (int argc, char *argv[])
 {
 	GOptionContext *opt_ctx = NULL;
 	gboolean		become_daemon = FALSE;
+	gboolean		g_fatal_warnings = FALSE;
 	char *		pidfile = NULL;
 	char *		user_pidfile = NULL;
 	gboolean success;
@@ -264,6 +265,7 @@ main (int argc, char *argv[])
 
 	GOptionEntry options[] = {
 		{"no-daemon", 0, 0, G_OPTION_ARG_NONE, &become_daemon, "Don't become a daemon", NULL},
+		{ "g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &g_fatal_warnings, "Make all warnings fatal", NULL },
 		{"pid-file", 0, 0, G_OPTION_ARG_FILENAME, &user_pidfile, "Specify the location of a PID file", "filename"},
 		{NULL}
 	};
@@ -312,6 +314,14 @@ main (int argc, char *argv[])
 			exit (1);
 		}
 		write_pidfile (pidfile);
+	}
+
+	if (g_fatal_warnings) {
+		GLogLevelFlags fatal_mask;
+
+		fatal_mask = g_log_set_always_fatal (G_LOG_FATAL_MASK);
+		fatal_mask |= G_LOG_LEVEL_WARNING | G_LOG_LEVEL_CRITICAL;
+		g_log_set_always_fatal (fatal_mask);
 	}
 
 	/*
