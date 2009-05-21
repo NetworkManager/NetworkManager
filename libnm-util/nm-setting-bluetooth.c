@@ -166,6 +166,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			             NM_SETTING_BLUETOOTH_ERROR,
 			             NM_SETTING_BLUETOOTH_ERROR_TYPE_SETTING_NOT_FOUND,
 			             NM_SETTING_BLUETOOTH_TYPE);
+			return FALSE;
 		}
 	}
 	/* PANU doesn't need a 'type' setting since no further configuration
