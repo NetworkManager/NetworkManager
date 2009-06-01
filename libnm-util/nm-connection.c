@@ -296,6 +296,11 @@ nm_connection_lookup_setting_type (const char *name)
 	char *type_name;
 	GType type;
 
+	g_return_val_if_fail (name != NULL, G_TYPE_NONE);
+
+	if (!registered_settings)
+		register_default_settings ();
+
 	type_name = (char *) g_hash_table_lookup (registered_settings, name);
 	if (type_name) {
 		type = g_type_from_name (type_name);
