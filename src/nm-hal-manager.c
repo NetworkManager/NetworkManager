@@ -129,15 +129,40 @@ get_creator (NMHalManager *self, const char *udi)
 /* Common helpers for built-in device creators */
 
 static char *
+hal_get_subsystem (LibHalContext *ctx, const char *udi)
+{
+	char *subsys;
+
+	subsys = libhal_device_get_property_string (ctx, udi, "info.subsystem", NULL);
+	if (!subsys) {
+		/* info.bus is deprecated */
+		subsys = libhal_device_get_property_string (ctx, udi, "info.bus", NULL);
+	}
+	return subsys;
+}
+
+static char *
 nm_get_device_driver_name (LibHalContext *ctx, const char *origdev_udi)
 {
-	char *driver_name = NULL;
+	char *driver_name = NULL, *subsystem, *drv, *od_parent = NULL;
 
-	if (origdev_udi && libhal_device_property_exists (ctx, origdev_udi, "info.linux.driver", NULL)) {
-		char *drv = libhal_device_get_property_string (ctx, origdev_udi, "info.linux.driver", NULL);
-		driver_name = g_strdup (drv);
-		libhal_free_string (drv);
+	if (!origdev_udi)
+		return NULL;
+
+	/* s390 driver name is on the grandparent of the net device */
+	subsystem = hal_get_subsystem (ctx, origdev_udi);
+	if (subsystem && !strcmp (subsystem, "ibmebus")) {
+		od_parent = libhal_device_get_property_string (ctx, origdev_udi, "info.parent", NULL);
+		origdev_udi = (const char *) od_parent;
 	}
+
+	drv = libhal_device_get_property_string (ctx, origdev_udi, "info.linux.driver", NULL);
+	if (drv)
+		driver_name = g_strdup (drv);
+
+	libhal_free_string (drv);
+	libhal_free_string (od_parent);
+	libhal_free_string (subsystem);
 	return driver_name;
 }
 
