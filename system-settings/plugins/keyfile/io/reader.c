@@ -643,7 +643,7 @@ connection_from_file (const char *filename)
 	bad_permissions = statbuf.st_mode & 0077;
 
 	if (bad_owner || bad_permissions) {
-		g_warning ("Ignorning insecure configuration file '%s'", filename);
+		g_warning ("Ignoring insecure configuration file '%s'", filename);
 		return NULL;
 	}
 

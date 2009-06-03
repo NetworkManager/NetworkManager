@@ -176,7 +176,7 @@ one_property_cb (gpointer key, gpointer val, gpointer user_data)
 	param_spec = g_object_class_find_property (info->class, prop_name);
 	if (!param_spec || !(param_spec->flags & NM_SETTING_PARAM_SERIALIZE)) {
 		/* Oh, we're so nice and only warn, maybe it should be a fatal error? */
-		nm_warning ("Ignorning invalid property '%s'", prop_name);
+		nm_warning ("Ignoring invalid property '%s'", prop_name);
 		return;
 	}
 
