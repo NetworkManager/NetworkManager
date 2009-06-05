@@ -161,12 +161,14 @@ nm_dbus_manager_reconnect (gpointer user_data)
 			nm_info ("reconnected to the system bus.");
 			g_signal_emit (self, signals[DBUS_CONNECTION_CHANGED],
 			               0, priv->connection);
-			return TRUE;
+			priv->reconnect_id = 0;
+			return FALSE;
 		}
 	}
 
+	/* Try again */
 	nm_dbus_manager_cleanup (self, FALSE);
-	return FALSE;
+	return TRUE;
 }
 
 static void
