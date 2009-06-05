@@ -189,6 +189,10 @@ PKG_CHECK_MODULES(GMODULE, gmodule-2.0)
 AC_SUBST(GMODULE_CFLAGS)
 AC_SUBST(GMODULE_LIBS)
 
+PKG_CHECK_MODULES(GUDEV, gudev-1.0)
+AC_SUBST(GUDEV_CFLAGS)
+AC_SUBST(GUDEV_LIBS)
+
 PKG_CHECK_EXISTS(gio-2.0,[have_gio=yes],[have_gio=no])
 if test x"$have_gio" = "xno"; then
 	AC_DEFINE([NO_GIO],[1],[Define if you don't have GIO])

@@ -73,6 +73,8 @@ NetworkManager_SOURCES = \
 		nm-dbus-manager.c \
 		nm-hal-manager.c \
 		nm-hal-manager.h \
+		nm-udev-manager.c \
+		nm-udev-manager.h \
 		nm-hostname-provider.c \
 		nm-hostname-provider.h \
 		nm-ip4-config.c \
@@ -145,6 +147,7 @@ NetworkManager_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(HAL_CFLAGS) \
+	$(GUDEV_CFLAGS) \
 	$(OPENSSL_CFLAGS) \
 	$(LIBNL_CFLAGS) \
 	-DG_DISABLE_DEPRECATED \
@@ -162,6 +165,7 @@ NetworkManager_LDADD = \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
 	$(HAL_LIBS) \
+	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS) \
 	$(top_builddir)/marshallers/libmarshallers.la \
 	./named-manager/libnamed-manager.la \

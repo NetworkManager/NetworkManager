@@ -44,6 +44,7 @@
 #include "nm-marshal.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-hal-manager.h"
+#include "nm-udev-manager.h"
 #include "nm-hostname-provider.h"
 #include "nm-bluez-manager.h"
 #include "nm-bluez-common.h"
@@ -93,9 +94,9 @@ static void hal_manager_udi_removed_cb (NMHalManager *hal_mgr,
                                         const char *udi,
                                         gpointer user_data);
 
-static void hal_manager_rfkill_changed_cb (NMHalManager *hal_mgr,
-                                           RfKillState state,
-                                           gpointer user_data);
+static void udev_manager_rfkill_changed_cb (NMHalManager *hal_mgr,
+                                            RfKillState state,
+                                            gpointer user_data);
 
 static void hal_manager_hal_reappeared_cb (NMHalManager *hal_mgr,
                                            gpointer user_data);
@@ -140,6 +141,7 @@ typedef struct {
 
 	NMDBusManager *dbus_mgr;
 	NMHalManager *hal_mgr;
+	NMUdevManager *udev_mgr;
 	NMBluezManager *bluez_mgr;
 
 	GHashTable *user_connections;
@@ -1578,6 +1580,7 @@ nm_manager_get (void)
 {
 	static NMManager *singleton = NULL;
 	NMManagerPrivate *priv;
+	gboolean enabled;
 
 	if (singleton)
 		return g_object_ref (singleton);
@@ -1612,14 +1615,36 @@ nm_manager_get (void)
 	                  singleton);
 
 	g_signal_connect (priv->hal_mgr,
-	                  "rfkill-changed",
-	                  G_CALLBACK (hal_manager_rfkill_changed_cb),
-	                  singleton);
-
-	g_signal_connect (priv->hal_mgr,
 	                  "hal-reappeared",
 	                  G_CALLBACK (hal_manager_hal_reappeared_cb),
 	                  singleton);
+
+	priv->udev_mgr = nm_udev_manager_new ();
+	g_signal_connect (priv->udev_mgr,
+	                  "rfkill-changed",
+	                  G_CALLBACK (udev_manager_rfkill_changed_cb),
+	                  singleton);
+
+	switch (nm_udev_manager_get_rfkill_state (priv->udev_mgr)) {
+	case RFKILL_UNBLOCKED:
+		priv->wireless_enabled = TRUE;
+		priv->wireless_hw_enabled = TRUE;
+		break;
+	case RFKILL_SOFT_BLOCKED:
+		priv->wireless_enabled = FALSE;
+		priv->wireless_hw_enabled = TRUE;
+		break;
+	case RFKILL_HARD_BLOCKED:
+		priv->wireless_enabled = FALSE;
+		priv->wireless_hw_enabled = FALSE;
+		break;
+	default:
+		break;
+	}	
+
+	enabled = (priv->wireless_enabled && priv->wireless_hw_enabled);
+	nm_info ("Wireless now %s by radio killswitch", enabled ? "enabled" : "disabled");
+	manager_set_wireless_enabled (singleton, enabled);
 
 	priv->bluez_mgr = nm_bluez_manager_get ();
 
@@ -2040,21 +2065,38 @@ hal_manager_udi_removed_cb (NMHalManager *manager,
 }
 
 static void
-hal_manager_rfkill_changed_cb (NMHalManager *hal_mgr,
-                               RfKillState state,
-                               gpointer user_data)
+udev_manager_rfkill_changed_cb (NMHalManager *hal_mgr,
+                                RfKillState state,
+                                gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	gboolean enabled = (state == RFKILL_UNBLOCKED);
+	gboolean new_we = TRUE, new_whe = TRUE;
 
-	if (priv->wireless_hw_enabled != enabled) {
-		nm_info ("Wireless now %s by radio killswitch", enabled ? "enabled" : "disabled");
-		priv->wireless_hw_enabled = enabled;
+	switch (state) {
+	case RFKILL_UNBLOCKED:
+		new_we = TRUE;
+		new_whe = TRUE;
+		break;
+	case RFKILL_SOFT_BLOCKED:
+		new_we = FALSE;
+		new_whe = TRUE;
+		break;
+	case RFKILL_HARD_BLOCKED:
+		new_we = FALSE;
+		new_whe = FALSE;
+		break;
+	default:
+		break;
+	}	
+
+	nm_info ("Wireless now %s by radio killswitch",
+	         (new_we && new_whe) ? "enabled" : "disabled");
+	if (new_whe != priv->wireless_hw_enabled) {
+		priv->wireless_hw_enabled = new_whe;
 		g_object_notify (G_OBJECT (self), NM_MANAGER_WIRELESS_HARDWARE_ENABLED);
-
-		manager_set_wireless_enabled (self, enabled);
 	}
+	manager_set_wireless_enabled (self, new_we);
 }
 
 static void

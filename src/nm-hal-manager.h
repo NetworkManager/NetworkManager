@@ -25,12 +25,6 @@
 #include <glib.h>
 #include <glib-object.h>
 
-typedef enum {
-	RFKILL_UNBLOCKED = 0,
-	RFKILL_SOFT_BLOCKED = 1,
-	RFKILL_HARD_BLOCKED = 2
-} RfKillState;
-
 G_BEGIN_DECLS
 
 #define NM_TYPE_HAL_MANAGER            (nm_hal_manager_get_type ())
@@ -61,15 +55,12 @@ typedef struct {
 
 	void (*udi_removed) (NMHalManager *manager, const char *udi);
 
-	void (*rfkill_changed) (NMHalManager *manager, RfKillState state);
-
 	void (*hal_reappeared) (NMHalManager *manager);
 } NMHalManagerClass;
 
 GType nm_hal_manager_get_type (void);
 
 NMHalManager *nm_hal_manager_new (void);
-gboolean nm_hal_manager_get_rfkilled (NMHalManager *manager);
 void nm_hal_manager_query_devices (NMHalManager *manager);
 gboolean nm_hal_manager_udi_exists (NMHalManager *manager, const char *udi);
 
