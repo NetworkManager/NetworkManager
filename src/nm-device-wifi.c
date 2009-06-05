@@ -170,8 +170,6 @@ struct _NMDeviceWifiPrivate {
 
 static guint32 nm_device_wifi_get_frequency (NMDeviceWifi *self);
 
-static void nm_device_wifi_set_ssid (NMDeviceWifi *self, const GByteArray *ssid);
-
 #if DEBUG
 static void nm_device_wifi_ap_list_print (NMDeviceWifi *self);
 #endif
@@ -189,8 +187,6 @@ static void cleanup_association_attempt (NMDeviceWifi * self,
                                          gboolean disconnect);
 
 static void remove_supplicant_timeouts (NMDeviceWifi *self);
-
-static void nm_device_wifi_disable_encryption (NMDeviceWifi *self);
 
 static void supplicant_iface_state_cb (NMSupplicantInterface * iface,
                                        guint32 new_state,
@@ -1071,10 +1067,6 @@ real_deactivate_quickly (NMDevice *dev)
 		priv->ap_list = g_slist_remove (priv->ap_list, orig_ap);
 		g_object_unref (orig_ap);
 	}
-
-	/* Clean up stuff, don't leave the card associated */
-	nm_device_wifi_set_ssid (self, NULL);
-	nm_device_wifi_disable_encryption (self);
 }
 
 static void
@@ -1566,77 +1558,6 @@ out:
 
 
 /*
- * nm_device_wifi_set_ssid
- *
- */
-static void
-nm_device_wifi_set_ssid (NMDeviceWifi *self,
-                                    const GByteArray * ssid)
-{
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	int sk;
-	struct iwreq wrq;
-	const char * iface;
-	const char * driver;
-	guint32 len = 0;
-	char buf[IW_ESSID_MAX_SIZE + 1];
-
-	g_return_if_fail (self != NULL);
-
-	sk = socket (AF_INET, SOCK_DGRAM, 0);
-	if (!sk) {
-		nm_error ("Couldn't create socket: %d.", errno);
-		return;
-	}
-
-	iface = nm_device_get_iface (NM_DEVICE (self));
-
-	memset (buf, 0, sizeof (buf));
-	if (ssid) {
-		len = ssid->len;
-		memcpy (buf, ssid->data, MIN (sizeof (buf) - 1, len));
-	}
- 	wrq.u.essid.pointer = (caddr_t) buf;
-
-	if (priv->we_version < 21) {
-		/* For historic reasons, set SSID length to include one extra
-		 * character, C string nul termination, even though SSID is
-		 * really an octet string that should not be presented as a C
-		 * string. Some Linux drivers decrement the length by one and
-		 * can thus end up missing the last octet of the SSID if the
-		 * length is not incremented here. WE-21 changes this to
-		 * explicitly require the length _not_ to include nul
-		 * termination. */
-		if (len)
-			len++;
-	}
-	wrq.u.essid.length = len;
-	wrq.u.essid.flags = (len > 0) ? 1 : 0; /* 1=enable SSID, 0=disable/any */
-
-	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
-
-	if (ioctl (sk, SIOCSIWESSID, &wrq) < 0) {
-		if (errno != ENODEV) {
-			nm_warning ("error setting SSID to '%s' for device %s: %s",
-			            ssid ? nm_utils_escape_ssid (ssid->data, ssid->len) : "(null)",
-			            iface, strerror (errno));
-		}
-    }
-
-	/* Orinoco cards seem to need extra time here to not screw
-	 * up the firmware, which reboots when you set the SSID.
-	 * Unfortunately, there's no way to know when the card is back up
-	 * again.  Sigh...
-	 */
-	driver = nm_device_get_driver (NM_DEVICE (self));
-	if (!driver || !strcmp (driver, "orinoco"))
-		sleep (2);
-
-	close (sk);
-}
-
-
-/*
  * nm_device_wifi_get_bitrate
  *
  * For wireless devices, get the bitrate to broadcast/receive at.
@@ -1695,44 +1616,6 @@ nm_device_wifi_get_bssid (NMDeviceWifi *self,
 	close (fd);
 }
 
-
-/*
- * nm_device_wifi_disable_encryption
- *
- * Clear any encryption keys the device may have set.
- *
- */
-static void
-nm_device_wifi_disable_encryption (NMDeviceWifi *self)
-{
-	int fd;
-	const char *iface;
-	struct iwreq wrq = {
-		.u.data.pointer = (caddr_t) NULL,
-		.u.data.length = 0,
-		.u.data.flags = IW_ENCODE_DISABLED
-	};
-
-	g_return_if_fail (self != NULL);
-
-	fd = socket (PF_INET, SOCK_DGRAM, 0);
-	if (fd < 0) {
-		nm_warning ("could not open control socket.");
-		return;
-	}
-
-	iface = nm_device_get_iface (NM_DEVICE (self));
-	strncpy (wrq.ifr_name, iface, IFNAMSIZ);
-
-	if (ioctl (fd, SIOCSIWENCODE, &wrq) < 0) {
-		if (errno != ENODEV) {
-			nm_warning ("error setting key for device %s: %s",
-			            iface, strerror (errno));
-		}
-	}
-
-	close (fd);
-}
 
 static gboolean
 can_scan (NMDeviceWifi *self)
