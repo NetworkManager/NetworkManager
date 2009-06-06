@@ -44,7 +44,6 @@
 #include "shvar.h"
 #include "parser.h"
 #include "plugin.h"
-#include "sha1.h"
 
 #define WPA_PMK_LEN 32
 
@@ -362,39 +361,6 @@ error:
 	}
 }
 
-/*
- * utils_bin2hexstr
- *
- * Convert a byte-array into a hexadecimal string.
- *
- * Code originally by Alex Larsson <alexl@redhat.com> and
- *  copyright Red Hat, Inc. under terms of the LGPL.
- *
- */
-static char *
-utils_bin2hexstr (const char *bytes, int len, int final_len)
-{
-	static char	hex_digits[] = "0123456789abcdef";
-	char *		result;
-	int			i;
-
-	g_return_val_if_fail (bytes != NULL, NULL);
-	g_return_val_if_fail (len > 0, NULL);
-	g_return_val_if_fail (len < 256, NULL);	/* Arbitrary limit */
-
-	result = g_malloc0 (len * 2 + 1);
-	for (i = 0; i < len; i++)
-	{
-		result[2*i] = hex_digits[(bytes[i] >> 4) & 0xf];
-		result[2*i+1] = hex_digits[bytes[i] & 0xf];
-	}
-	/* Cut converted key off at the correct length for this cipher type */
-	if (final_len > -1)
-		result[final_len] = '\0';
-
-	return result;
-}
-
 static void
 read_wpa_psk_settings (shvarFile *ifcfg,
 				   NMSettingWirelessSecurity *security,
@@ -404,21 +370,10 @@ read_wpa_psk_settings (shvarFile *ifcfg,
 
 	value = svGetValue (ifcfg, "WIRELESS_WPA_PSK");
 	if (value) {
-		if (strlen (value) == 64) {
-			/* Hex PSK */
+		if (strlen (value) > 64 || strlen (value) < 8)
+			g_warning ("Error loading WIRELESS_WPA_PSK: not between 8 and 64 characters inclusive");
+		else
 			g_object_set (security, NM_SETTING_WIRELESS_SECURITY_PSK, value, NULL);
-		} else {
-			/* passphrase */
-			const GByteArray *ssid = nm_setting_wireless_get_mac_address (s_wireless);
-			unsigned char *buf = g_malloc0 (WPA_PMK_LEN * 2);
-			char *tmp;
-
-			pbkdf2_sha1 (value, (char *) ssid->data, ssid->len, 4096, buf, WPA_PMK_LEN);
-			tmp = utils_bin2hexstr ((const char *) buf, WPA_PMK_LEN, WPA_PMK_LEN * 2);
-			g_object_set (security, NM_SETTING_WIRELESS_SECURITY_PSK, tmp, NULL);
-			g_free (tmp);
-			g_free (buf);
-		}
 		g_free (value);
 	} else
 		g_warning ("Missing WPA-PSK key");

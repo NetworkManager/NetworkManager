@@ -26,9 +26,7 @@ nm_system_settings_SOURCES = \
 	nm-sysconfig-connection.c \
 	nm-sysconfig-connection.h \
 	nm-default-wired-connection.c \
-	nm-default-wired-connection.h \
-	sha1.c \
-	sha1.h
+	nm-default-wired-connection.h
 
 nm_system_settings_CPPFLAGS = \
 	$(DBUS_CFLAGS) \

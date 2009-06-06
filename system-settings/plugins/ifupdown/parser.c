@@ -39,7 +39,6 @@
 
 #include "parser.h"
 #include "plugin.h"
-#include "sha1.h"
 
 
 #define WPA_PMK_LEN 32
@@ -72,39 +71,6 @@ _ifupdownplugin_guess_connection_type (if_block *block)
 			   block->name, ret_type);
 	return ret_type;
 }
-
-/* 
- * utils_bin2hexstr 
- * 
- * Convert a byte-array into a hexadecimal string. 
- * 
- * Code originally by Alex Larsson <alexl@redhat.com> and 
- *  copyright Red Hat, Inc. under terms of the LGPL. 
- * 
- */ 
-static char * 
-utils_bin2hexstr (const char *bytes, int len, int final_len) 
-{ 
-	static char     hex_digits[] = "0123456789abcdef"; 
-	char *          result; 
-	int                     i; 
- 
-	g_return_val_if_fail (bytes != NULL, NULL); 
-	g_return_val_if_fail (len > 0, NULL); 
-	g_return_val_if_fail (len < 256, NULL); /* Arbitrary limit */ 
- 
-	result = g_malloc0 (len * 2 + 1); 
-	for (i = 0; i < len; i++) 
-	{ 
-		result[2*i] = hex_digits[(bytes[i] >> 4) & 0xf]; 
-		result[2*i+1] = hex_digits[bytes[i] & 0xf]; 
-	} 
-	/* Cut converted key off at the correct length for this cipher type */ 
-	if (final_len > -1) 
-		result[final_len] = '\0'; 
- 
-	return result; 
-} 
 
 
 struct _Mapping {
@@ -232,24 +198,11 @@ normalize_tolower (gpointer value, gpointer data) {
 	return g_ascii_strdown(value, -1);
 }
 
-static char *normalize_psk (gpointer value, gpointer data) {
-	NMConnection *connection = data;
-	NMSettingWireless *s_wireless =
-		NM_SETTING_WIRELESS(nm_connection_get_setting(connection, NM_TYPE_SETTING_WIRELESS));
-	gchar *normalized;
-	if (strlen (value) == 64) {
-		normalized = g_strdup (value);
-	} else {
-		/* passphrase */
-		const GByteArray *ssid;
-		unsigned char *buf = g_malloc0 (WPA_PMK_LEN * 2);
-
-		ssid = nm_setting_wireless_get_ssid (s_wireless);
-		pbkdf2_sha1 (value, (char *) ssid->data, ssid->len, 4096, buf, WPA_PMK_LEN);
-		normalized = utils_bin2hexstr ((const char *) buf, WPA_PMK_LEN, WPA_PMK_LEN * 2);
-		g_free (buf);
-	}
-	return normalized;
+static char *normalize_psk (gpointer value, gpointer data)
+{
+	if (strlen (value) >= 8 && strlen (value) <= 64)
+		return g_strdup (value);
+	return NULL;
 }
 
 static gpointer
