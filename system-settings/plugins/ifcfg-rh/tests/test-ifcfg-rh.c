@@ -2218,7 +2218,7 @@ test_read_wifi_wpa_psk (void)
 	const char *expected_mode = "infrastructure";
 	const guint32 expected_channel = 1;
 	const char *expected_key_mgmt = "wpa-psk";
-	const char *expected_psk = "1da190379817bc360dda52e85c388c439a21ea5c7bf819c64e9da051807deae6";
+	const char *expected_psk = "I wonder what the king is doing tonight?";
 	guint32 n, i;
 	gboolean found_pair_tkip = FALSE;
 	gboolean found_pair_ccmp = FALSE;
@@ -2523,7 +2523,7 @@ test_read_wifi_wpa_psk_adhoc (void)
 	const char *expected_id = "System blahblah (test-wifi-wpa-psk-adhoc)";
 	const char *expected_mode = "adhoc";
 	const char *expected_key_mgmt = "wpa-none";
-	const char *expected_psk = "1da190379817bc360dda52e85c388c439a21ea5c7bf819c64e9da051807deae6";
+	const char *expected_psk = "I wonder what the king is doing tonight?";
 	const char *expected_group = "ccmp";
 	const char *expected_proto = "wpa";
 

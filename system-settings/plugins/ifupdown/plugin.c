@@ -47,7 +47,6 @@
 #include "nm-inotify-helper.h"
 
 #include <nm-utils.h>
-#include <sha1.h>
 
 #include <arpa/inet.h>
 

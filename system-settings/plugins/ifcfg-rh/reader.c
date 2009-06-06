@@ -51,7 +51,6 @@
 
 #include "common.h"
 #include "shvar.h"
-#include "sha1.h"
 #include "utils.h"
 
 #include "reader.h"
@@ -832,8 +831,6 @@ parse_wpa_psk (shvarFile *ifcfg,
 
 	p = psk;
 	if (p[0] == '"' && psk[strlen (psk) - 1] == '"') {
-		unsigned char *buf;
-
 		/* Get rid of the quotes */
 		p++;
 		p[strlen (p) - 1] = '\0';
@@ -846,11 +843,7 @@ parse_wpa_psk (shvarFile *ifcfg,
 			goto out;
 		}
 
-		/* hash the passphrase to a hex key */
-		buf = g_malloc0 (WPA_PMK_LEN * 2);
-		pbkdf2_sha1 (p, (char *) ssid->data, ssid->len, 4096, buf, WPA_PMK_LEN);
-		hashed = utils_bin2hexstr ((const char *) buf, WPA_PMK_LEN, WPA_PMK_LEN * 2);
-		g_free (buf);
+		hashed = g_strdup (p);
 	} else if (strlen (psk) == 64) {
 		/* Verify the hex PSK; 64 digits */
 		while (*p) {
