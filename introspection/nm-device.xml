@@ -2,9 +2,9 @@
 
 <node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
   <interface name="org.freedesktop.NetworkManager.Device">
-    <property name="Path" type="s" access="read">
+    <property name="Udi" type="s" access="read">
       <tp:docstring>
-        Udev path of the device in sysfs.
+        Unique Device Identifier.
       </tp:docstring>
     </property>
     <property name="Interface" type="s" access="read">
