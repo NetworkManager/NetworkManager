@@ -508,7 +508,7 @@ nm_dhcp_manager_handle_timeout (gpointer user_data)
 {
 	NMDHCPDevice *device = (NMDHCPDevice *) user_data;
 
-	nm_info ("Device '%s' DHCP transaction took too long (>%ds), stopping it.",
+	nm_info ("(%s): DHCP transaction took too long (>%ds), stopping it.",
 			 device->iface, NM_DHCP_TIMEOUT);
 
 	nm_dhcp_manager_cancel_transaction (device->manager, device->iface);
@@ -698,7 +698,7 @@ nm_dhcp_manager_cancel_transaction_real (NMDHCPDevice *device)
 
 	nm_dhcp_client_stop (device, device->pid);
 
-	nm_info ("%s: canceled DHCP transaction, dhcp client pid %d",
+	nm_info ("(%s): canceled DHCP transaction, dhcp client pid %d",
 	         device->iface,
 	         device->pid);
 
