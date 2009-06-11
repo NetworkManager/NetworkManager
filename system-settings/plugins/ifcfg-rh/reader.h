@@ -29,7 +29,7 @@
 NMConnection *connection_from_file (const char *filename,
                                     const char *network_file,
                                     const char *test_type,
-                                    gboolean *ignored,
+                                    char **unmanaged,
                                     char **keyfile,
                                     GError **error,
                                     gboolean *ignore_error);

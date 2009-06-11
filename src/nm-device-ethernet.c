@@ -104,6 +104,7 @@ typedef struct {
 
 	struct ether_addr	hw_addr;
 	gboolean			carrier;
+	guint32				ifindex;
 	guint				state_to_disconnected_id;
 
 	char *			carrier_file_path;
@@ -131,6 +132,7 @@ enum {
 	PROP_HW_ADDRESS,
 	PROP_SPEED,
 	PROP_CARRIER,
+	PROP_IFINDEX,
 
 	LAST_PROP
 };
@@ -386,7 +388,7 @@ NMDeviceEthernet *
 nm_device_ethernet_new (const char *udi,
 						const char *iface,
 						const char *driver,
-						gboolean managed)
+						guint32 ifindex)
 {
 	g_return_val_if_fail (udi != NULL, NULL);
 	g_return_val_if_fail (iface != NULL, NULL);
@@ -396,7 +398,7 @@ nm_device_ethernet_new (const char *udi,
 										 NM_DEVICE_INTERFACE_UDI, udi,
 										 NM_DEVICE_INTERFACE_IFACE, iface,
 										 NM_DEVICE_INTERFACE_DRIVER, driver,
-										 NM_DEVICE_INTERFACE_MANAGED, managed,
+										 NM_DEVICE_ETHERNET_IFINDEX, ifindex,
 										 NULL);
 }
 
@@ -425,6 +427,14 @@ nm_device_ethernet_get_carrier (NMDeviceEthernet *self)
 	g_return_val_if_fail (self != NULL, FALSE);
 
 	return NM_DEVICE_ETHERNET_GET_PRIVATE (self)->carrier;
+}
+
+guint32
+nm_device_ethernet_get_ifindex (NMDeviceEthernet *self)
+{
+	g_return_val_if_fail (self != NULL, FALSE);
+
+	return NM_DEVICE_ETHERNET_GET_PRIVATE (self)->ifindex;
 }
 
 /* Returns speed in Mb/s */
@@ -801,8 +811,12 @@ link_timeout_cb (gpointer user_data)
 	supplicant_interface_release (self);
 
 	nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
-	nm_act_request_request_connection_secrets (req, setting_name, TRUE,
-	                                           SECRETS_CALLER_ETHERNET, NULL, NULL);
+	nm_act_request_get_secrets (req,
+	                            setting_name,
+	                            TRUE,
+	                            SECRETS_CALLER_ETHERNET,
+	                            NULL,
+	                            NULL);
 
 	return FALSE;
 
@@ -1078,8 +1092,12 @@ handle_auth_or_fail (NMDeviceEthernet *self,
 		 * only ask for new secrets after the first failure.
 		 */
 		get_new = new_secrets ? TRUE : (tries ? TRUE : FALSE);
-		nm_act_request_request_connection_secrets (req, setting_name, get_new,
-		                                           SECRETS_CALLER_ETHERNET, NULL, NULL);
+		nm_act_request_get_secrets (req,
+		                            setting_name,
+		                            get_new,
+		                            SECRETS_CALLER_ETHERNET,
+		                            NULL,
+		                            NULL);
 
 		g_object_set_data (G_OBJECT (connection), WIRED_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
 	} else
@@ -1445,6 +1463,21 @@ real_check_connection_compatible (NMDevice *device,
 	return TRUE;
 }
 
+static gboolean
+spec_match_list (NMDevice *device, const GSList *specs)
+{
+	struct ether_addr ether;
+	char *hwaddr;
+	gboolean matched;
+
+	nm_device_ethernet_get_address (NM_DEVICE_ETHERNET (device), &ether);
+	hwaddr = nm_ether_ntop (&ether);
+	matched = nm_match_spec_hwaddr (specs, hwaddr);
+	g_free (hwaddr);
+
+	return matched;
+}
+
 static void
 nm_device_ethernet_dispose (GObject *object)
 {
@@ -1512,12 +1545,31 @@ get_property (GObject *object, guint prop_id,
 	case PROP_CARRIER:
 		g_value_set_boolean (value, nm_device_ethernet_get_carrier (device));
 		break;
+	case PROP_IFINDEX:
+		g_value_set_uint (value, nm_device_ethernet_get_ifindex (device));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
 	}
 }
 
+static void
+set_property (GObject *object, guint prop_id,
+			  const GValue *value, GParamSpec *pspec)
+{
+	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_IFINDEX:
+		/* construct-only */
+		priv->ifindex = g_value_get_uint (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
 
 static void
 nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
@@ -1531,6 +1583,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	object_class->constructor = constructor;
 	object_class->dispose = nm_device_ethernet_dispose;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->finalize = nm_device_ethernet_finalize;
 
 	parent_class->get_generic_capabilities = real_get_generic_capabilities;
@@ -1550,6 +1603,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->act_stage2_config = real_act_stage2_config;
 	parent_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 	parent_class->deactivate_quickly = real_deactivate_quickly;
+	parent_class->spec_match_list = spec_match_list;
 
 	/* properties */
 	g_object_class_install_property
@@ -1575,6 +1629,14 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 							   "Carrier",
 							   FALSE,
 							   G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_IFINDEX,
+		 g_param_spec_uint (NM_DEVICE_ETHERNET_IFINDEX,
+						   "Ifindex",
+						   "Interface index",
+						   0, G_MAXUINT32, 0,
+						   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	/* Signals */
 	signals[PROPERTIES_CHANGED] = 

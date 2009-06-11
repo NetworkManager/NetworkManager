@@ -25,7 +25,6 @@ G_BEGIN_DECLS
 
 #include <NetworkManager.h>
 #include <nm-sysconfig-connection.h>
-#include "nm-system-config-hal-manager.h"
 
 #define NM_TYPE_IFCFG_CONNECTION            (nm_ifcfg_connection_get_type ())
 #define NM_IFCFG_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_IFCFG_CONNECTION, NMIfcfgConnection))
@@ -49,16 +48,12 @@ typedef struct {
 GType nm_ifcfg_connection_get_type (void);
 
 NMIfcfgConnection *nm_ifcfg_connection_new (const char *filename,
-                                            DBusGConnection *g_connection,
-                                            NMSystemConfigHalManager *hal_mgr,
                                             GError **error,
                                             gboolean *ignore_error);
 
 const char *nm_ifcfg_connection_get_filename (NMIfcfgConnection *self);
 
-const char *nm_ifcfg_connection_get_udi (NMIfcfgConnection *self);
-
-gboolean nm_ifcfg_connection_get_unmanaged (NMIfcfgConnection *self);
+const char *nm_ifcfg_connection_get_unmanaged_spec (NMIfcfgConnection *self);
 
 gboolean nm_ifcfg_connection_update (NMIfcfgConnection *self,
                                      GHashTable *new_settings,

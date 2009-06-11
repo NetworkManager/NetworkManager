@@ -2,17 +2,17 @@ INCLUDES = -I${top_srcdir} \
            -I${top_srcdir}/include \
            -I${top_srcdir}/libnm-util \
            -I${top_srcdir}/libnm-glib \
+           -I${top_srcdir}/src \
            -I${top_builddir}/marshallers
 
-sbin_PROGRAMS = nm-system-settings
+noinst_LTLIBRARIES = libsystem-settings.la
 
 BUILT_SOURCES = \
 	nm-settings-system-glue.h
 
-nm_system_settings_SOURCES = \
-	dbus-settings.c \
-	dbus-settings.h \
-	main.c \
+libsystem_settings_la_SOURCES = \
+	nm-sysconfig-settings.c \
+	nm-sysconfig-settings.h \
 	nm-inotify-helper.c \
 	nm-inotify-helper.h \
 	nm-polkit-helpers.c \
@@ -21,14 +21,12 @@ nm_system_settings_SOURCES = \
 	nm-system-config-error.h \
 	nm-system-config-interface.c \
 	nm-system-config-interface.h \
-	nm-system-config-hal-manager.c \
-	nm-system-config-hal-manager.h \
 	nm-sysconfig-connection.c \
 	nm-sysconfig-connection.h \
 	nm-default-wired-connection.c \
 	nm-default-wired-connection.h
 
-nm_system_settings_CPPFLAGS = \
+libsystem_settings_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
 	$(GMODULE_CFLAGS) \
@@ -43,7 +41,7 @@ nm_system_settings_CPPFLAGS = \
 	-DGNOMELOCALEDIR=\"$(datadir)/locale\" \
 	-DPLUGINDIR=\"$(pkglibdir)\"
 
-nm_system_settings_LDADD = \
+libsystem_settings_la_LIBADD = \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
 	$(GMODULE_LIBS) \
@@ -52,33 +50,11 @@ nm_system_settings_LDADD = \
 	$(top_builddir)/libnm-glib/libnm_glib.la \
 	$(top_builddir)/marshallers/libmarshallers.la
 
-nm_system_settings_LDFLAGS = -rdynamic
+libsystem_settings_la_LDFLAGS = -rdynamic
 
 nm-settings-system-glue.h: $(top_srcdir)/introspection/nm-settings-system.xml
 	dbus-binding-tool --prefix=nm_settings_system --mode=glib-server --output=$@ $<
 
-
-dbusservicedir = $(DBUS_SYS_DIR)
-dbusservice_DATA = nm-system-settings.conf
-
-dbusactivationdir = $(datadir)/dbus-1/system-services
-dbusactivation_in_files = org.freedesktop.NetworkManagerSystemSettings.service.in
-dbusactivation_DATA = $(dbusactivation_in_files:.service.in=.service)
-
-%service: %service.in
-	$(edit) $< >$@
-
-edit = @sed \
-	-e 's|@sbindir[@]|$(sbindir)|g' \
-	-e 's|@sysconfdir[@]|$(sysconfdir)|g' \
-	-e 's|@localstatedir[@]|$(localstatedir)|g' \
-	-e 's|@libexecdir[@]|$(libexecdir)|g'
-
-EXTRA_DIST = \
-	$(dbusservice_DATA) \
-	$(dbusactivation_in_files)
-
 CLEANFILES = \
-	$(BUILT_SOURCES) \
-	$(dbusactivation_DATA)
+	$(BUILT_SOURCES)
 

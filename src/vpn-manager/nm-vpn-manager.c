@@ -160,7 +160,7 @@ connection_vpn_state_changed (NMVPNConnection *connection,
 	}
 }
 
-const char *
+NMVPNConnection *
 nm_vpn_manager_activate_connection (NMVPNManager *manager,
                                     NMConnection *connection,
                                     NMActRequest *act_request,
@@ -169,8 +169,7 @@ nm_vpn_manager_activate_connection (NMVPNManager *manager,
 {
 	NMSettingVPN *vpn_setting;
 	NMVPNService *service;
-	char *path = NULL;
-	NMVPNConnection *vpn;
+	NMVPNConnection *vpn = NULL;
 	const char *service_type;
 
 	g_return_val_if_fail (NM_IS_VPN_MANAGER (manager), NULL);
@@ -212,7 +211,6 @@ nm_vpn_manager_activate_connection (NMVPNManager *manager,
 	if (service) {
 		vpn = nm_vpn_service_activate (service, connection, act_request, device, error);
 		if (vpn) {
-			path = (char *) nm_vpn_connection_get_active_connection_path (vpn);
 			g_signal_connect (vpn, "vpn-state-changed",
 			                  G_CALLBACK (connection_vpn_state_changed),
 			                  manager);
@@ -223,7 +221,7 @@ nm_vpn_manager_activate_connection (NMVPNManager *manager,
 		             "%s", "The VPN service was invalid.");
 	}
 
-	return path;
+	return vpn;
 }
 
 gboolean

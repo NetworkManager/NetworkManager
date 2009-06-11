@@ -36,7 +36,6 @@
 
 #include "common.h"
 #include "nm-ifcfg-connection.h"
-#include "nm-system-config-hal-manager.h"
 #include "reader.h"
 #include "writer.h"
 #include "nm-inotify-helper.h"
@@ -55,11 +54,7 @@ typedef struct {
 	int keyfile_wd;
 
 	char *udi;
-	gboolean unmanaged;
-
-	NMSystemConfigHalManager *hal_mgr;
-	DBusGConnection *g_connection;
-	gulong daid;
+	char *unmanaged;
 } NMIfcfgConnectionPrivate;
 
 enum {
@@ -79,150 +74,6 @@ enum {
 
 static guint signals[LAST_SIGNAL] = { 0 };
 
-static char *
-get_ether_device_udi (DBusGConnection *g_connection, const GByteArray *mac, GSList *devices)
-{
-	GError *error = NULL;
-	GSList *iter;
-	char *udi = NULL;
-
-	if (!g_connection || !mac)
-		return NULL;
-
-	for (iter = devices; !udi && iter; iter = g_slist_next (iter)) {
-		DBusGProxy *dev_proxy;
-		char *address = NULL;
-
-		dev_proxy = dbus_g_proxy_new_for_name (g_connection,
-		                                       "org.freedesktop.Hal",
-		                                       iter->data,
-		                                       "org.freedesktop.Hal.Device");
-		if (!dev_proxy)
-			continue;
-
-		if (dbus_g_proxy_call_with_timeout (dev_proxy,
-		                                    "GetPropertyString", 10000, &error,
-		                                    G_TYPE_STRING, "net.address", G_TYPE_INVALID,
-		                                    G_TYPE_STRING, &address, G_TYPE_INVALID)) {		
-			struct ether_addr *dev_mac;
-
-			if (address && strlen (address)) {
-				dev_mac = ether_aton (address);
-				if (!memcmp (dev_mac->ether_addr_octet, mac->data, ETH_ALEN))
-					udi = g_strdup (iter->data);
-			}
-		} else {
-			g_error_free (error);
-			error = NULL;
-		}
-		g_free (address);
-		g_object_unref (dev_proxy);
-	}
-
-	return udi;
-}
-
-static NMDeviceType
-get_device_type_for_connection (NMConnection *connection)
-{
-	NMDeviceType devtype = NM_DEVICE_TYPE_UNKNOWN;
-	NMSettingConnection *s_con;
-	const char *ctype;
-
-	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
-	if (!s_con)
-		return NM_DEVICE_TYPE_UNKNOWN;
-
-	ctype = nm_setting_connection_get_connection_type (s_con);
-
-	if (   !strcmp (ctype, NM_SETTING_WIRED_SETTING_NAME)
-	    || !strcmp (ctype, NM_SETTING_PPPOE_SETTING_NAME)) {
-		if (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED))
-			devtype = NM_DEVICE_TYPE_ETHERNET;
-	} else if (!strcmp (ctype, NM_SETTING_WIRELESS_SETTING_NAME)) {
-		if (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS))
-			devtype = NM_DEVICE_TYPE_WIFI;
-	} else if (!strcmp (ctype, NM_SETTING_GSM_SETTING_NAME)) {
-		if (nm_connection_get_setting (connection, NM_TYPE_SETTING_GSM))
-			devtype = NM_DEVICE_TYPE_GSM;
-	} else if (!strcmp (ctype, NM_SETTING_CDMA_SETTING_NAME)) {
-		if (nm_connection_get_setting (connection, NM_TYPE_SETTING_CDMA))
-			devtype = NM_DEVICE_TYPE_CDMA;
-	}
-
-	return devtype;
-}
-
-static char *
-get_udi_for_connection (NMConnection *connection,
-                        DBusGConnection *g_connection,
-                        NMSystemConfigHalManager *hal_mgr,
-                        NMDeviceType devtype)
-{
-	NMSettingWired *s_wired;
-	NMSettingWireless *s_wireless;
-	char *udi = NULL;
-	GSList *devices = NULL;
-
-	if (devtype == NM_DEVICE_TYPE_UNKNOWN)
-		devtype = get_device_type_for_connection (connection);
-
-	switch (devtype) {
-	case NM_DEVICE_TYPE_ETHERNET:
-		s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
-		if (s_wired) {
-			devices = nm_system_config_hal_manager_get_devices_of_type (hal_mgr, NM_DEVICE_TYPE_ETHERNET);
-			udi = get_ether_device_udi (g_connection, nm_setting_wired_get_mac_address (s_wired), devices);
-		}
-		break;
-
-	case NM_DEVICE_TYPE_WIFI:
-		s_wireless = (NMSettingWireless *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS);
-		if (s_wireless) {
-			devices = nm_system_config_hal_manager_get_devices_of_type (hal_mgr, NM_DEVICE_TYPE_WIFI);
-			udi = get_ether_device_udi (g_connection, nm_setting_wireless_get_mac_address (s_wireless), devices);
-		}
-		break;
-
-	default:
-		break;
-	}
-
-	g_slist_foreach (devices, (GFunc) g_free, NULL);
-	g_slist_free (devices);
-
-	return udi;
-}
-
-static void
-device_added_cb (NMSystemConfigHalManager *hal_mgr,
-                 const char *udi,
-                 NMDeviceType devtype,
-                 gpointer user_data)
-{
-	NMIfcfgConnection *connection = NM_IFCFG_CONNECTION (user_data);
-	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (connection);
-	NMConnection *wrapped;
-
-	/* Should only be called when udi is NULL */
-	g_return_if_fail (priv->udi == NULL);
-
-	wrapped = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (connection));
-	if (devtype != get_device_type_for_connection (wrapped))
-		return;
-
-	priv->udi = get_udi_for_connection (wrapped, priv->g_connection, priv->hal_mgr, devtype);
-	if (!priv->udi)
-		return;
-
-	/* If the connection is unmanaged we have to tell the plugin */
-	if (priv->unmanaged)
-		g_object_notify (G_OBJECT (connection), NM_IFCFG_CONNECTION_UNMANAGED);
-
-	g_signal_handler_disconnect (G_OBJECT (hal_mgr), priv->daid);
-	priv->daid = 0;
-}
-
 static void
 files_changed_cb (NMInotifyHelper *ih,
                   struct inotify_event *evt,
@@ -241,16 +92,13 @@ files_changed_cb (NMInotifyHelper *ih,
 
 NMIfcfgConnection *
 nm_ifcfg_connection_new (const char *filename,
-                         DBusGConnection *g_connection,
-                         NMSystemConfigHalManager *hal_mgr,
                          GError **error,
                          gboolean *ignore_error)
 {
 	GObject *object;
 	NMIfcfgConnectionPrivate *priv;
 	NMConnection *wrapped;
-	gboolean unmanaged = FALSE;
-	char *udi;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	NMInotifyHelper *ih;
 
@@ -260,24 +108,15 @@ nm_ifcfg_connection_new (const char *filename,
 	if (!wrapped)
 		return NULL;
 
-	udi = get_udi_for_connection (wrapped, g_connection, hal_mgr, NM_DEVICE_TYPE_UNKNOWN);
-
 	object = (GObject *) g_object_new (NM_TYPE_IFCFG_CONNECTION,
 	                                   NM_IFCFG_CONNECTION_FILENAME, filename,
 	                                   NM_IFCFG_CONNECTION_UNMANAGED, unmanaged,
-	                                   NM_IFCFG_CONNECTION_UDI, udi,
 	                                   NM_EXPORTED_CONNECTION_CONNECTION, wrapped,
 	                                   NULL);
 	if (!object)
 		goto out;
 
 	priv = NM_IFCFG_CONNECTION_GET_PRIVATE (object);
-
-	if (!udi) {
-		priv->hal_mgr = g_object_ref (hal_mgr);
-		priv->g_connection = dbus_g_connection_ref (g_connection);
-		priv->daid = g_signal_connect (priv->hal_mgr, "device-added", G_CALLBACK (device_added_cb), object);
-	}
 
 	ih = nm_inotify_helper_get ();
 	priv->ih_event_id = g_signal_connect (ih, "event", G_CALLBACK (files_changed_cb), object);
@@ -289,7 +128,6 @@ nm_ifcfg_connection_new (const char *filename,
 
 out:
 	g_object_unref (wrapped);
-	g_free (udi);
 	return (NMIfcfgConnection *) object;
 }
 
@@ -302,15 +140,7 @@ nm_ifcfg_connection_get_filename (NMIfcfgConnection *self)
 }
 
 const char *
-nm_ifcfg_connection_get_udi (NMIfcfgConnection *self)
-{
-	g_return_val_if_fail (NM_IS_IFCFG_CONNECTION (self), NULL);
-
-	return NM_IFCFG_CONNECTION_GET_PRIVATE (self)->udi;
-}
-
-gboolean
-nm_ifcfg_connection_get_unmanaged (NMIfcfgConnection *self)
+nm_ifcfg_connection_get_unmanaged_spec (NMIfcfgConnection *self)
 {
 	g_return_val_if_fail (NM_IS_IFCFG_CONNECTION (self), FALSE);
 
@@ -384,16 +214,6 @@ finalize (GObject *object)
 	if (priv->keyfile_wd >= 0)
 		nm_inotify_helper_remove_watch (ih, priv->keyfile_wd);
 
-	if (priv->hal_mgr) {
-		if (priv->daid)
-			g_signal_handler_disconnect (G_OBJECT (priv->hal_mgr), priv->daid);
-
-		g_object_unref (priv->hal_mgr);
-	}
-
-	if (priv->g_connection)
-		dbus_g_connection_unref (priv->g_connection);
-
 	G_OBJECT_CLASS (nm_ifcfg_connection_parent_class)->finalize (object);
 }
 
@@ -409,7 +229,7 @@ set_property (GObject *object, guint prop_id,
 		priv->filename = g_value_dup_string (value);
 		break;
 	case PROP_UNMANAGED:
-		priv->unmanaged = g_value_get_boolean (value);
+		priv->unmanaged = g_value_dup_string (value);
 		break;
 	case PROP_UDI:
 		/* Construct only */
@@ -432,7 +252,7 @@ get_property (GObject *object, guint prop_id,
 		g_value_set_string (value, priv->filename);
 		break;
 	case PROP_UNMANAGED:
-		g_value_set_boolean (value, priv->unmanaged);
+		g_value_set_string (value, priv->unmanaged);
 		break;
 	case PROP_UDI:
 		g_value_set_string (value, priv->udi);
@@ -470,10 +290,10 @@ nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 
 	g_object_class_install_property
 		(object_class, PROP_UNMANAGED,
-		 g_param_spec_boolean (NM_IFCFG_CONNECTION_UNMANAGED,
+		 g_param_spec_string (NM_IFCFG_CONNECTION_UNMANAGED,
 						  "Unmanaged",
 						  "Unmanaged",
-						  FALSE,
+						  NULL,
 						  G_PARAM_READWRITE));
 
 	g_object_class_install_property

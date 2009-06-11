@@ -44,12 +44,6 @@
       </tp:docstring>
     </property>
 
-    <property name="UnmanagedDevices" type="ao" access="read">
-      <tp:docstring>
-        The list of HAL UDIs of devices that should not be managed by NetworkManager.
-      </tp:docstring>
-    </property>
-
     <signal name="PropertiesChanged">
         <arg name="properties" type="a{sv}" tp:type="String_Variant_Map">
             <tp:docstring>

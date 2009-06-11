@@ -18,7 +18,8 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 Red Hat, Inc.
+ * (C) Copyright 2007 - 2009 Red Hat, Inc.
+ * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
 #include <config.h>
@@ -28,6 +29,9 @@
 #include <string.h>
 #include <sys/inotify.h>
 #include <unistd.h>
+#include <stdio.h>
+#include <sys/ioctl.h>
+#include <sys/stat.h>
 
 #ifndef NO_GIO
 #include <gio/gio.h>
@@ -38,10 +42,14 @@
 #include <nm-setting-connection.h>
 #include <nm-setting-ip4-config.h>
 
+#define G_UDEV_API_IS_SUBJECT_TO_CHANGE
+#include <gudev/gudev.h>
+
 #include "plugin.h"
 #include "parser.h"
 #include "nm-suse-connection.h"
 #include "nm-system-config-interface.h"
+#include "wireless-helper.h"
 
 #define IFCFG_PLUGIN_NAME "ifcfg-suse"
 #define IFCFG_PLUGIN_INFO "(C) 2008 Novell, Inc.  To report bugs please use the NetworkManager mailing list."
@@ -50,8 +58,8 @@
 static void system_config_interface_init (NMSystemConfigInterface *system_config_interface_class);
 
 G_DEFINE_TYPE_EXTENDED (SCPluginIfcfg, sc_plugin_ifcfg, G_TYPE_OBJECT, 0,
-				    G_IMPLEMENT_INTERFACE (NM_TYPE_SYSTEM_CONFIG_INTERFACE,
-									  system_config_interface_init))
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_SYSTEM_CONFIG_INTERFACE,
+                                               system_config_interface_init))
 
 #define SC_PLUGIN_IFCFG_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), SC_TYPE_PLUGIN_IFCFG, SCPluginIfcfgPrivate))
 
@@ -59,12 +67,11 @@ G_DEFINE_TYPE_EXTENDED (SCPluginIfcfg, sc_plugin_ifcfg, G_TYPE_OBJECT, 0,
 #define IFCFG_FILE_PATH_TAG "ifcfg-file-path"
 
 typedef struct {
-	DBusGConnection *dbus_connection;
-	NMSystemConfigHalManager *hal_manager;
+	GUdevClient *client;
 
 	gboolean initialized;
 	GHashTable *connections;
-	GHashTable *unmanaged_devices;
+	GHashTable *unmanaged_specs;
 
 	guint32 default_gw;
 	GFileMonitor *default_gw_monitor;
@@ -163,114 +170,140 @@ monitor_routes (SCPluginIfcfg *self, const char *filename)
 	}
 }
 
-static char *
-get_iface_by_udi (SCPluginIfcfg *self, const char *udi)
-{
-	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
-	DBusGProxy *proxy;
-	char *iface = NULL;
-
-	proxy = dbus_g_proxy_new_for_name (priv->dbus_connection,
-								"org.freedesktop.Hal",
-								udi,
-								"org.freedesktop.Hal.Device");
-
-	dbus_g_proxy_call_with_timeout (proxy, "GetPropertyString", 10000, NULL,
-							  G_TYPE_STRING, "net.interface", G_TYPE_INVALID,
-							  G_TYPE_STRING, &iface, G_TYPE_INVALID);
-	g_object_unref (proxy);
-
-	return iface;
-}
-
 static void
-read_connection (SCPluginIfcfg *self, const char *udi, NMDeviceType dev_type)
+read_connection (SCPluginIfcfg *self, GUdevDevice *device, NMDeviceType dev_type)
 {
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
-	char *iface;
+	const char *iface, *address;
+	guint32 ifindex;
 
-	iface = get_iface_by_udi (self, udi);
-	if (iface) {
-		if (parser_ignore_device (iface)) {
-			g_hash_table_insert (priv->unmanaged_devices, g_strdup (udi), GINT_TO_POINTER (1));
+	iface = g_udev_device_get_name (device);
+	if (!iface)
+		return;
+
+	ifindex = (guint32) g_udev_device_get_property_as_uint64 (device, "IFINDEX");
+
+	if (parser_ignore_device (iface)) {
+		char *spec;
+
+		address = g_udev_device_get_sysfs_attr (device, "address");
+		if (address && (strlen (address) == 17)) {
+			spec = g_strdup_printf ("mac:%s", address);
+			g_hash_table_insert (priv->unmanaged_specs, GUINT_TO_POINTER (ifindex), spec);
 			g_signal_emit_by_name (self, "unmanaged-devices-changed");
-		} else {
-			NMSuseConnection *connection;
+		} else
+			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    (%s) error getting hardware address", iface);
+	} else {
+		NMSuseConnection *connection;
 
-			connection = nm_suse_connection_new (iface, dev_type);
-			if (connection) {
-				g_hash_table_insert (priv->connections, g_strdup (udi), connection);
-				g_signal_emit_by_name (self, "connection-added", connection);
-			}
+		connection = nm_suse_connection_new (iface, dev_type);
+		if (connection) {
+			g_hash_table_insert (priv->connections,
+			                     GUINT_TO_POINTER (ifindex),
+			                     connection);
+			g_signal_emit_by_name (self, "connection-added", connection);
 		}
 	}
-
-	g_free (iface);
 }
 
 static void
 read_connections_by_type (SCPluginIfcfg *self, NMDeviceType dev_type)
 {
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
-	GSList *list;
-	GSList *iter;
+	GList *devices, *iter;
 
-	list = nm_system_config_hal_manager_get_devices_of_type (priv->hal_manager, dev_type);
-	for (iter = list; iter; iter = iter->next) {
-		read_connection (self, (char *) iter->data, dev_type);
-		g_free (iter->data);
-	}
-
-	g_slist_free (list);
-}
-
-static void
-device_added_cb (NMSystemConfigHalManager *hal_mgr,
-                 const char *udi,
-                 NMDeviceType dev_type,
-                 gpointer user_data)
-{
-	SCPluginIfcfg *self = SC_PLUGIN_IFCFG (user_data);
-
-	if (dev_type != NM_DEVICE_TYPE_ETHERNET && dev_type != NM_DEVICE_TYPE_WIFI)
+	if (   (dev_type != NM_DEVICE_TYPE_ETHERNET)
+	    && (dev_type != NM_DEVICE_TYPE_WIFI))
 		return;
 
-	read_connection (self, udi, dev_type);
+	devices = g_udev_client_query_by_subsystem (priv->client, "net");
+	for (iter = devices; iter; iter = g_list_next (iter)) {
+		read_connection (self, G_UDEV_DEVICE (iter->data), dev_type);
+		g_object_unref (G_UDEV_DEVICE (iter->data));
+	}
+	g_list_free (devices);
+}
+
+static gboolean
+is_wireless (GUdevDevice *device)
+{
+	char phy80211_path[255];
+	struct stat s;
+	int fd;
+	struct iwreq iwr;
+	const char *ifname, *path;
+	gboolean is_wifi = FALSE;
+
+	ifname = g_udev_device_get_name (device);
+	g_assert (ifname);
+
+	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	strncpy (iwr.ifr_ifrn.ifrn_name, ifname, IFNAMSIZ);
+
+	path = g_udev_device_get_sysfs_path (device);
+	snprintf (phy80211_path, sizeof (phy80211_path), "%s/phy80211", path);
+
+	if (   (ioctl (fd, SIOCGIWNAME, &iwr) == 0)
+	    || (stat (phy80211_path, &s) == 0 && (s.st_mode & S_IFDIR)))
+		is_wifi = TRUE;
+
+	close (fd);
+	return is_wifi;
 }
 
 static void
-device_removed_cb (NMSystemConfigHalManager *hal_mgr,
-                   const char *udi,
-                   NMDeviceType dev_type,
-                   gpointer user_data)
+handle_uevent (GUdevClient *client,
+               const char *action,
+               GUdevDevice *device,
+               gpointer user_data)
 {
 	SCPluginIfcfg *self = SC_PLUGIN_IFCFG (user_data);
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
-	NMExportedConnection *exported;
+	const char *subsys;
+	gboolean wifi;
 
-	if (dev_type != NM_DEVICE_TYPE_ETHERNET && dev_type != NM_DEVICE_TYPE_WIFI)
-		return;
+	g_return_if_fail (action != NULL);
 
-	if (g_hash_table_remove (priv->unmanaged_devices, udi))
-		g_signal_emit_by_name (self, "unmanaged-devices-changed");
+	/* A bit paranoid */
+	subsys = g_udev_device_get_subsystem (device);
+	g_return_if_fail (subsys != NULL);
+	g_return_if_fail (strcmp (subsys, "net") == 0);
 
-	exported = (NMExportedConnection *) g_hash_table_lookup (priv->connections, udi);
-	if (exported) {
-		nm_exported_connection_signal_removed (exported);
-		g_hash_table_remove (priv->connections, udi);
+	wifi = is_wireless (device);
+
+	if (!strcmp (action, "add")) {
+		read_connection (self,
+		                 device,
+		                 wifi ? NM_DEVICE_TYPE_WIFI : NM_DEVICE_TYPE_ETHERNET);
+	} else if (!strcmp (action, "remove")) {
+		NMExportedConnection *exported;
+		guint32 ifindex;
+
+		ifindex = (guint32) g_udev_device_get_property_as_uint64 (device, "IFINDEX");
+		if (g_hash_table_remove (priv->unmanaged_specs, GUINT_TO_POINTER (ifindex)))
+			g_signal_emit_by_name (self, "unmanaged-devices-changed");
+
+		exported = (NMExportedConnection *) g_hash_table_lookup (priv->connections,
+		                                                         GUINT_TO_POINTER (ifindex));
+		if (exported) {
+			nm_exported_connection_signal_removed (exported);
+			g_hash_table_remove (priv->connections, GUINT_TO_POINTER (ifindex));
+		}
 	}
 }
 
 static void
-init (NMSystemConfigInterface *config, NMSystemConfigHalManager *hal_manager)
+init (NMSystemConfigInterface *config)
 {
 	SCPluginIfcfg *self = SC_PLUGIN_IFCFG (config);
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
+	const char *subsys[2] = { "net", NULL };
 
-	priv->hal_manager = g_object_ref (hal_manager);
-
-	g_signal_connect (priv->hal_manager, "device-added", G_CALLBACK (device_added_cb), self);
-	g_signal_connect (priv->hal_manager, "device-removed", G_CALLBACK (device_removed_cb), self);
+	priv->client = g_udev_client_new (subsys);
+	if (!priv->client) {
+		PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error initializing libgudev");
+	} else
+		g_signal_connect (priv->client, "uevent", G_CALLBACK (handle_uevent), self);
 }
 
 static void
@@ -309,21 +342,21 @@ get_connections (NMSystemConfigInterface *config)
 }
 
 static void
-get_unamanged_devices_cb (gpointer key, gpointer val, gpointer user_data)
+add_one_unmanaged_spec (gpointer key, gpointer val, gpointer user_data)
 {
 	GSList **list = (GSList **) key;
 
-	*list = g_slist_prepend (*list, g_strdup ((char *) key));
+	*list = g_slist_prepend (*list, g_strdup ((const char *) val));
 }
 
 static GSList *
-get_unmanaged_devices (NMSystemConfigInterface *config)
+get_unmanaged_specs (NMSystemConfigInterface *config)
 {
+	SCPluginIfcfg *self = SC_PLUGIN_IFCFG (config);
+	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
 	GSList *list = NULL;
 
-	g_hash_table_foreach (SC_PLUGIN_IFCFG_GET_PRIVATE (config)->unmanaged_devices,
-					  get_unamanged_devices_cb, &list);
-
+	g_hash_table_foreach (priv->unmanaged_specs, add_one_unmanaged_spec, &list);
 	return list;
 }
 
@@ -331,17 +364,9 @@ static void
 sc_plugin_ifcfg_init (SCPluginIfcfg *self)
 {
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
-	GError *err = NULL;
 
-	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
-	priv->unmanaged_devices = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
-
-	priv->dbus_connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &err);
-	if (!priv->dbus_connection) {
-		PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "    dbus-glib error: %s",
-		              err->message ? err->message : "(unknown)");
-		g_error_free (err);
-	}
+	priv->connections = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_object_unref);
+	priv->unmanaged_specs = g_hash_table_new_full (g_direct_hash, g_direct_equal, NULL, g_free);
 }
 
 static void
@@ -350,7 +375,7 @@ dispose (GObject *object)
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (object);
 
 	g_hash_table_destroy (priv->connections);
-	g_hash_table_destroy (priv->unmanaged_devices);
+	g_hash_table_destroy (priv->unmanaged_specs);
 
 	if (priv->default_gw_monitor) {
 		if (priv->default_gw_monitor_id)
@@ -360,10 +385,8 @@ dispose (GObject *object)
 		g_object_unref (priv->default_gw_monitor);
 	}
 
-	if (priv->hal_manager)
-		g_object_unref (priv->hal_manager);
-
-	dbus_g_connection_unref (priv->dbus_connection);
+	if (priv->client)
+		g_object_unref (priv->client);
 
 	G_OBJECT_CLASS (sc_plugin_ifcfg_parent_class)->dispose (object);
 }
@@ -423,7 +446,7 @@ system_config_interface_init (NMSystemConfigInterface *system_config_interface_c
 {
 	/* interface implementation */
 	system_config_interface_class->get_connections = get_connections;
-	system_config_interface_class->get_unmanaged_devices = get_unmanaged_devices;
+	system_config_interface_class->get_unmanaged_specs = get_unmanaged_specs;
 	system_config_interface_class->init = init;
 }
 

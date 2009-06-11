@@ -163,7 +163,7 @@ test_read_minimal (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
@@ -286,7 +286,7 @@ test_read_unmanaged (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
@@ -309,7 +309,10 @@ test_read_unmanaged (void)
 	ASSERT (nm_connection_verify (connection, &error),
 	        "unmanaged-verify", "failed to verify %s: %s", TEST_IFCFG_UNMANAGED, error->message);
 
-	ASSERT (unmanaged == TRUE,
+	ASSERT (unmanaged != NULL,
+	        "unmanaged-verify", "failed to verify %s: expected unmanaged", TEST_IFCFG_UNMANAGED);
+
+	ASSERT (strcmp (unmanaged, "mac:00:11:22:33:f8:9f") == 0,
 	        "unmanaged-verify", "failed to verify %s: expected unmanaged", TEST_IFCFG_UNMANAGED);
 
 	/* ===== CONNECTION SETTING ===== */
@@ -396,7 +399,7 @@ test_read_wired_static (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = FALSE;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
@@ -593,7 +596,7 @@ test_read_wired_dhcp (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
@@ -760,7 +763,7 @@ test_read_wired_global_gateway (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
@@ -881,7 +884,7 @@ test_read_wired_never_default (void)
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	NMSettingIP4Config *s_ip4;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
@@ -972,7 +975,7 @@ test_read_onboot_no (void)
 {
 	NMConnection *connection;
 	NMSettingConnection *s_con;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
@@ -1022,7 +1025,7 @@ test_read_wired_8021x_peap_mschapv2 (void)
 	NMSettingIP4Config *s_ip4;
 	NMSetting8021x *s_8021x;
 	NMSetting8021x *tmp_8021x;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
@@ -1207,7 +1210,7 @@ test_read_wifi_open (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingIP4Config *s_ip4;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
@@ -1379,7 +1382,7 @@ test_read_wifi_open_ssid_hex (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
@@ -1455,7 +1458,7 @@ static void
 test_read_wifi_open_ssid_bad (const char *file, const char *test)
 {
 	NMConnection *connection;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
@@ -1473,7 +1476,7 @@ test_read_wifi_open_ssid_quoted (void)
 	NMConnection *connection;
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
@@ -1555,7 +1558,7 @@ test_read_wifi_wep (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIP4Config *s_ip4;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
@@ -1815,7 +1818,7 @@ test_read_wifi_wep_adhoc (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIP4Config *s_ip4;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
@@ -2073,7 +2076,7 @@ test_read_wifi_leap (void)
 	NMSettingConnection *s_con;
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
@@ -2205,7 +2208,7 @@ test_read_wifi_wpa_psk (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIP4Config *s_ip4;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
@@ -2515,7 +2518,7 @@ test_read_wifi_wpa_psk_adhoc (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIP4Config *s_ip4;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
@@ -2698,7 +2701,7 @@ test_read_wifi_wpa_psk_hex (void)
 	NMSettingWireless *s_wireless;
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIP4Config *s_ip4;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
@@ -2847,7 +2850,7 @@ test_read_wifi_wpa_eap_tls (void)
 	NMSettingWireless *s_wireless;
 	NMSettingIP4Config *s_ip4;
 	NMSetting8021x *s_8021x;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
@@ -2981,7 +2984,7 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	NMSettingWireless *s_wireless;
 	NMSettingIP4Config *s_ip4;
 	NMSetting8021x *s_8021x;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
@@ -3137,7 +3140,7 @@ test_read_wifi_wep_eap_ttls_chap (void)
 	NMSettingWirelessSecurity *s_wsec;
 	NMSettingIP4Config *s_ip4;
 	NMSetting8021x *s_8021x;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
@@ -3307,7 +3310,7 @@ test_write_wired_static (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 
@@ -3431,7 +3434,7 @@ test_write_wired_dhcp (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 
@@ -3530,7 +3533,7 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 
@@ -3651,7 +3654,7 @@ test_write_wifi_open (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
@@ -3771,7 +3774,7 @@ test_write_wifi_open_hex_ssid (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
@@ -3876,7 +3879,7 @@ test_write_wifi_wep (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
@@ -4012,7 +4015,7 @@ test_write_wifi_wep_adhoc (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
@@ -4160,7 +4163,7 @@ test_write_wifi_wpa_psk (const char *name,
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
@@ -4299,7 +4302,7 @@ test_write_wifi_wpa_psk_adhoc (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
@@ -4442,7 +4445,7 @@ test_write_wifi_wpa_eap_tls (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
@@ -4601,7 +4604,7 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;
@@ -4777,7 +4780,7 @@ test_write_wifi_wpa_eap_ttls_mschapv2 (void)
 	gboolean success;
 	GError *error = NULL;
 	char *testfile = NULL;
-	gboolean unmanaged = FALSE;
+	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GByteArray *ssid;

@@ -25,6 +25,7 @@
 
 #include <unistd.h>
 #include <string.h>
+#include <gmodule.h>
 
 #include <NetworkManager.h>
 #include <nm-connection.h>
@@ -32,10 +33,26 @@
 #include <nm-setting-connection.h>
 
 #include "nm-dbus-glib-types.h"
-#include "dbus-settings.h"
+#include "nm-sysconfig-settings.h"
+#include "nm-sysconfig-connection.h"
+#include "nm-dbus-manager.h"
 #include "nm-polkit-helpers.h"
 #include "nm-system-config-error.h"
 #include "nm-utils.h"
+
+
+/* LINKER CRACKROCK */
+#define EXPORT(sym) void * __export_##sym = &sym;
+
+#include "nm-inotify-helper.h"
+EXPORT(nm_inotify_helper_get_type)
+EXPORT(nm_inotify_helper_get)
+EXPORT(nm_inotify_helper_add_watch)
+EXPORT(nm_inotify_helper_remove_watch)
+
+EXPORT(nm_sysconfig_connection_get_type)
+/* END LINKER CRACKROCK */
+
 
 static gboolean
 impl_settings_add_connection (NMSysconfigSettings *self, GHashTable *hash, DBusGMethodInvocation *context);
@@ -48,14 +65,13 @@ impl_settings_save_hostname (NMSysconfigSettings *self, const char *hostname, DB
 static void unmanaged_devices_changed (NMSystemConfigInterface *config, gpointer user_data);
 
 typedef struct {
-	DBusGConnection *g_connection;
+	NMDBusManager *dbus_mgr;
 	PolKitContext *pol_ctx;
-	NMSystemConfigHalManager *hal_mgr;
 
 	GSList *plugins;
 	gboolean connections_loaded;
 	GHashTable *connections;
-	GHashTable *unmanaged_devices;
+	GSList *unmanaged_specs;
 	char *orig_hostname;
 } NMSysconfigSettingsPrivate;
 
@@ -73,7 +89,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 enum {
 	PROP_0,
-	PROP_UNMANAGED_DEVICES,
+	PROP_UNMANAGED_SPECS,
 	PROP_HOSTNAME,
 	PROP_CAN_MODIFY,
 
@@ -120,10 +136,9 @@ hash_keys_to_slist (gpointer key, gpointer val, gpointer user_data)
 	*list = g_slist_prepend (*list, key);
 }
 
-static GSList *
-list_connections (NMSettings *settings)
+GSList *
+nm_sysconfig_settings_list_connections (NMSysconfigSettings *self)
 {
-	NMSysconfigSettings *self = NM_SYSCONFIG_SETTINGS (settings);
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 	GSList *list = NULL;
 
@@ -134,14 +149,68 @@ list_connections (NMSettings *settings)
 	return list;
 }
 
+static GSList *
+list_connections (NMSettings *settings)
+{
+	return nm_sysconfig_settings_list_connections (NM_SYSCONFIG_SETTINGS (settings));
+}
+
+typedef struct {
+	const char *path;
+	NMSysconfigConnection *found;
+} FindConnectionInfo;
+
 static void
-settings_finalize (GObject *object)
+find_by_path (gpointer key, gpointer data, gpointer user_data)
+{
+	FindConnectionInfo *info = user_data;
+	NMSysconfigConnection *exported = NM_SYSCONFIG_CONNECTION (data);
+	const char *path;
+
+	if (!info->found) {
+		NMConnection *connection;
+
+		connection = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (exported));
+		g_assert (connection);
+		path = nm_connection_get_path (connection);
+		g_assert (path);
+		if (!strcmp (path, info->path))
+			info->found = exported;
+	}
+}
+
+NMSysconfigConnection *
+nm_sysconfig_settings_get_connection_by_path (NMSysconfigSettings *self,
+                                              const char *path)
+{
+	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+	FindConnectionInfo info;
+
+	info.path = path;
+	info.found = NULL;
+	g_hash_table_foreach (priv->connections, find_by_path, &info);
+	return info.found;
+}
+
+static void
+clear_unmanaged_specs (NMSysconfigSettings *self)
+{
+	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+
+	g_slist_foreach (priv->unmanaged_specs, (GFunc) g_free, NULL);
+	g_slist_free (priv->unmanaged_specs);
+	priv->unmanaged_specs = NULL;
+}
+
+static void
+finalize (GObject *object)
 {
 	NMSysconfigSettings *self = NM_SYSCONFIG_SETTINGS (object);
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 
 	g_hash_table_destroy (priv->connections);
-	g_hash_table_destroy (priv->unmanaged_devices);
+
+	clear_unmanaged_specs (self);
 
 	g_slist_foreach (priv->plugins, (GFunc) g_object_unref, NULL);
 	g_slist_free (priv->plugins);
@@ -149,20 +218,11 @@ settings_finalize (GObject *object)
 	if (priv->pol_ctx)
 		polkit_context_unref (priv->pol_ctx);
 
-	g_object_unref (priv->hal_mgr);
-	dbus_g_connection_unref (priv->g_connection);
+	g_object_unref (priv->dbus_mgr);
 
 	g_free (priv->orig_hostname);
 
 	G_OBJECT_CLASS (nm_sysconfig_settings_parent_class)->finalize (object);
-}
-
-static void
-add_one_unmanaged_device (gpointer key, gpointer data, gpointer user_data)
-{
-	GPtrArray *devices = (GPtrArray *) user_data;
-
-	g_ptr_array_add (devices, g_strdup (key));	
 }
 
 static char*
@@ -210,17 +270,13 @@ notify (GObject *object, GParamSpec *pspec)
 	g_slice_free (GValue, value);
 }
 
-static GPtrArray *
-get_unmanaged_devices (NMSysconfigSettings *self)
+const GSList *
+nm_sysconfig_settings_get_unmanaged_specs (NMSysconfigSettings *self)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
-	GPtrArray *devices;
 
 	load_connections (self);
-
- 	devices = g_ptr_array_sized_new (3);
-	g_hash_table_foreach (priv->unmanaged_devices, (GHFunc) add_one_unmanaged_device, devices);
-	return devices;
+	return priv->unmanaged_specs;
 }
 
 NMSystemConfigInterface *
@@ -244,41 +300,52 @@ nm_sysconfig_settings_get_plugin (NMSysconfigSettings *self,
 	return NULL;
 }
 
+char *
+nm_sysconfig_settings_get_hostname (NMSysconfigSettings *self)
+{
+	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+	GSList *iter;
+	char *hostname = NULL;
+
+	/* Hostname returned is the hostname returned from the first plugin
+	 * that provides one.
+	 */
+	for (iter = priv->plugins; iter; iter = iter->next) {
+		NMSystemConfigInterfaceCapabilities caps = NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE;
+
+		g_object_get (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES, &caps, NULL);
+		if (caps & NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME) {
+			g_object_get (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME, &hostname, NULL);
+			if (hostname && strlen (hostname))
+				return hostname;
+			g_free (hostname);
+		}
+	}
+
+	/* If no plugin provided a hostname, try the original hostname of the machine */
+	if (priv->orig_hostname)
+		hostname = g_strdup (priv->orig_hostname);
+
+	return hostname;
+}
+
 static void
 get_property (GObject *object, guint prop_id,
 			  GValue *value, GParamSpec *pspec)
 {
 	NMSysconfigSettings *self = NM_SYSCONFIG_SETTINGS (object);
-	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
-	GSList *iter;
-
+	const GSList *specs, *iter;
+	GSList *copy = NULL;
 
 	switch (prop_id) {
-	case PROP_UNMANAGED_DEVICES:
-		g_value_take_boxed (value, get_unmanaged_devices (self));
+	case PROP_UNMANAGED_SPECS:
+		specs = nm_sysconfig_settings_get_unmanaged_specs (self);
+		for (iter = specs; iter; iter = g_slist_next (iter))
+			copy = g_slist_append (copy, g_strdup (iter->data));
+		g_value_take_boxed (value, copy);
 		break;
 	case PROP_HOSTNAME:
-		/* Hostname returned is the hostname returned from the first plugin
-		 * that provides one.
-		 */
-		for (iter = priv->plugins; iter; iter = iter->next) {
-			NMSystemConfigInterfaceCapabilities caps = NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE;
-
-			g_object_get (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES, &caps, NULL);
-			if (caps & NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME) {
-				char *hostname = NULL;
-
-				g_object_get (G_OBJECT (iter->data), NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME, &hostname, NULL);
-				if (hostname && strlen (hostname)) {
-					g_value_take_string (value, hostname);
-					break;
-				}
-			}
-		}
-
-		/* If no plugin provided a hostname, try the original hostname of the machine */
-		if (!g_value_get_string (value) && priv->orig_hostname)
-			g_value_set_string (value, priv->orig_hostname);
+		g_value_take_string (value, nm_sysconfig_settings_get_hostname (self));
 
 		/* Don't ever pass NULL through D-Bus */
 		if (!g_value_get_string (value))
@@ -304,16 +371,16 @@ nm_sysconfig_settings_class_init (NMSysconfigSettingsClass *class)
 	/* virtual methods */
 	object_class->notify = notify;
 	object_class->get_property = get_property;
-	object_class->finalize = settings_finalize;
+	object_class->finalize = finalize;
 	settings_class->list_connections = list_connections;
 
 	/* properties */
 	g_object_class_install_property
-		(object_class, PROP_UNMANAGED_DEVICES,
-		 g_param_spec_boxed (NM_SYSCONFIG_SETTINGS_UNMANAGED_DEVICES,
-							 "Unamanged devices",
-							 "Unmanaged devices",
-							 DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
+		(object_class, PROP_UNMANAGED_SPECS,
+		 g_param_spec_boxed (NM_SYSCONFIG_SETTINGS_UNMANAGED_SPECS,
+							 "Unamanged device specs",
+							 "Unmanaged device specs",
+							 DBUS_TYPE_G_LIST_OF_STRING,
 							 G_PARAM_READABLE));
 
 	g_object_class_install_property
@@ -358,7 +425,6 @@ nm_sysconfig_settings_init (NMSysconfigSettings *self)
 	GError *error = NULL;
 
 	priv->connections = g_hash_table_new_full (g_direct_hash, g_direct_equal, g_object_unref, NULL);
-	priv->unmanaged_devices = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, NULL);
 
 	priv->pol_ctx = create_polkit_context (&error);
 	if (!priv->pol_ctx) {
@@ -376,25 +442,6 @@ nm_sysconfig_settings_init (NMSysconfigSettings *self)
 	}
 }
 
-NMSysconfigSettings *
-nm_sysconfig_settings_new (DBusGConnection *g_conn, NMSystemConfigHalManager *hal_mgr)
-{
-	NMSysconfigSettings *settings;
-	NMSysconfigSettingsPrivate *priv;
-
-	g_return_val_if_fail (g_conn != NULL, NULL);
-	g_return_val_if_fail (hal_mgr != NULL, NULL);
-
-	settings = g_object_new (NM_TYPE_SYSCONFIG_SETTINGS, NULL);
-	dbus_g_connection_register_g_object (g_conn, NM_DBUS_PATH_SETTINGS, G_OBJECT (settings));
-
-	priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (settings);
-	priv->g_connection = dbus_g_connection_ref (g_conn);
-	priv->hal_mgr = g_object_ref (hal_mgr);
-
-	return settings;
-}
-
 static void
 plugin_connection_added (NMSystemConfigInterface *config,
                          NMExportedConnection *connection,
@@ -403,34 +450,45 @@ plugin_connection_added (NMSystemConfigInterface *config,
 	nm_sysconfig_settings_add_connection (NM_SYSCONFIG_SETTINGS (user_data), connection, TRUE);
 }
 
+static gboolean
+find_unmanaged_device (NMSysconfigSettings *self, const char *needle)
+{
+	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+	GSList *iter;
+
+	for (iter = priv->unmanaged_specs; iter; iter = g_slist_next (iter)) {
+		if (!strcmp ((const char *) iter->data, needle))
+			return TRUE;
+	}
+	return FALSE;
+}
+
 static void
 unmanaged_devices_changed (NMSystemConfigInterface *config,
-					  gpointer user_data)
+                           gpointer user_data)
 {
 	NMSysconfigSettings *self = NM_SYSCONFIG_SETTINGS (user_data);
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 	GSList *iter;
 
-	g_hash_table_remove_all (priv->unmanaged_devices);
+	clear_unmanaged_specs (self);
 
 	/* Ask all the plugins for their unmanaged devices */
 	for (iter = priv->plugins; iter; iter = g_slist_next (iter)) {
-		GSList *udis = nm_system_config_interface_get_unmanaged_devices (NM_SYSTEM_CONFIG_INTERFACE (iter->data));
-		GSList *udi_iter;
+		GSList *specs, *specs_iter;
 
-		for (udi_iter = udis; udi_iter; udi_iter = udi_iter->next) {
-			if (!g_hash_table_lookup (priv->unmanaged_devices, udi_iter->data)) {
-				g_hash_table_insert (priv->unmanaged_devices,
-								 udi_iter->data,
-								 GUINT_TO_POINTER (1));
+		specs = nm_system_config_interface_get_unmanaged_specs (NM_SYSTEM_CONFIG_INTERFACE (iter->data));
+		for (specs_iter = specs; specs_iter; specs_iter = specs_iter->next) {
+			if (!find_unmanaged_device (self, (const char *) specs_iter->data)) {
+				priv->unmanaged_specs = g_slist_prepend (priv->unmanaged_specs, specs_iter->data);
 			} else
-				g_free (udi_iter->data);
+				g_free (specs_iter->data);
 		}
 
-		g_slist_free (udis);
+		g_slist_free (specs);
 	}
 
-	g_object_notify (G_OBJECT (self), NM_SYSCONFIG_SETTINGS_UNMANAGED_DEVICES);
+	g_object_notify (G_OBJECT (self), NM_SYSCONFIG_SETTINGS_UNMANAGED_SPECS);
 }
 
 static void
@@ -441,9 +499,8 @@ hostname_changed (NMSystemConfigInterface *config,
 	g_object_notify (G_OBJECT (user_data), NM_SYSCONFIG_SETTINGS_HOSTNAME);
 }
 
-void
-nm_sysconfig_settings_add_plugin (NMSysconfigSettings *self,
-						    NMSystemConfigInterface *plugin)
+static void
+add_plugin (NMSysconfigSettings *self, NMSystemConfigInterface *plugin)
 {
 	NMSysconfigSettingsPrivate *priv;
 	char *pname = NULL;
@@ -460,7 +517,7 @@ nm_sysconfig_settings_add_plugin (NMSysconfigSettings *self,
 	g_signal_connect (plugin, "unmanaged-devices-changed", G_CALLBACK (unmanaged_devices_changed), self);
 	g_signal_connect (plugin, "notify::hostname", G_CALLBACK (hostname_changed), self);
 
-	nm_system_config_interface_init (plugin, priv->hal_mgr);
+	nm_system_config_interface_init (plugin, NULL);
 
 	g_object_get (G_OBJECT (plugin),
 	              NM_SYSTEM_CONFIG_INTERFACE_NAME, &pname,
@@ -470,6 +527,106 @@ nm_sysconfig_settings_add_plugin (NMSysconfigSettings *self,
 	g_message ("Loaded plugin %s: %s", pname, pinfo);
 	g_free (pname);
 	g_free (pinfo);
+}
+
+static GObject *
+find_plugin (GSList *list, const char *pname)
+{
+	GSList *iter;
+	GObject *obj = NULL;
+
+	g_return_val_if_fail (pname != NULL, FALSE);
+
+	for (iter = list; iter && !obj; iter = g_slist_next (iter)) {
+		NMSystemConfigInterface *plugin = NM_SYSTEM_CONFIG_INTERFACE (iter->data);
+		char *list_pname = NULL;
+
+		g_object_get (G_OBJECT (plugin),
+		              NM_SYSTEM_CONFIG_INTERFACE_NAME,
+		              &list_pname,
+		              NULL);
+		if (list_pname && !strcmp (pname, list_pname))
+			obj = G_OBJECT (plugin);
+
+		g_free (list_pname);
+	}
+
+	return obj;
+}
+
+static gboolean
+load_plugins (NMSysconfigSettings *self, const char *plugins, GError **error)
+{
+	GSList *list = NULL;
+	char **plist;
+	char **iter;
+	gboolean success = TRUE;
+
+	plist = g_strsplit (plugins, ",", 0);
+	if (!plist)
+		return FALSE;
+
+	for (iter = plist; *iter; iter++) {
+		GModule *plugin;
+		char *full_name, *path;
+		const char *pname = *iter;
+		GObject *obj;
+		GObject * (*factory_func) (void);
+
+		/* ifcfg-fedora was renamed ifcfg-rh; handle old configs here */
+		if (!strcmp (pname, "ifcfg-fedora"))
+			pname = "ifcfg-rh";
+
+		obj = find_plugin (list, pname);
+		if (obj)
+			continue;
+
+		full_name = g_strdup_printf ("nm-settings-plugin-%s", pname);
+		path = g_module_build_path (PLUGINDIR, full_name);
+
+		plugin = g_module_open (path, G_MODULE_BIND_LOCAL);
+		if (!plugin) {
+			g_set_error (error, 0, 0,
+			             "Could not load plugin '%s': %s",
+			             pname, g_module_error ());
+			g_free (full_name);
+			g_free (path);
+			success = FALSE;
+			break;
+		}
+
+		g_free (full_name);
+		g_free (path);
+
+		if (!g_module_symbol (plugin, "nm_system_config_factory", (gpointer) (&factory_func))) {
+			g_set_error (error, 0, 0,
+			             "Could not find plugin '%s' factory function.",
+			             pname);
+			success = FALSE;
+			break;
+		}
+
+		obj = (*factory_func) ();
+		if (!obj || !NM_IS_SYSTEM_CONFIG_INTERFACE (obj)) {
+			g_set_error (error, 0, 0,
+			             "Plugin '%s' returned invalid system config object.",
+			             pname);
+			success = FALSE;
+			break;
+		}
+
+		g_module_make_resident (plugin);
+		g_object_weak_ref (obj, (GWeakNotify) g_module_close, plugin);
+		add_plugin (self, NM_SYSTEM_CONFIG_INTERFACE (obj));
+		list = g_slist_append (list, obj);
+	}
+
+	g_strfreev (plist);
+
+	g_slist_foreach (list, (GFunc) g_object_unref, NULL);
+	g_slist_free (list);
+
+	return success;
 }
 
 static void
@@ -499,7 +656,10 @@ nm_sysconfig_settings_add_connection (NMSysconfigSettings *self,
 	g_signal_connect (connection, "removed", G_CALLBACK (connection_removed), self);
 
 	if (do_export) {
-		nm_exported_connection_register_object (connection, NM_CONNECTION_SCOPE_SYSTEM, priv->g_connection);
+		DBusGConnection *g_connection;
+
+		g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
+		nm_exported_connection_register_object (connection, NM_CONNECTION_SCOPE_SYSTEM, g_connection);
 		nm_settings_signal_new_connection (NM_SETTINGS (self), connection);
 	}
 }
@@ -518,23 +678,6 @@ nm_sysconfig_settings_remove_connection (NMSysconfigSettings *self,
 		nm_exported_connection_signal_removed (connection);
 		g_hash_table_remove (priv->connections, connection);
 	}
-}
-
-gboolean
-nm_sysconfig_settings_is_device_managed (NMSysconfigSettings *self,
-                                         const char *udi)
-{
-	NMSysconfigSettingsPrivate *priv;
-
-	g_return_val_if_fail (NM_IS_SYSCONFIG_SETTINGS (self), FALSE);
-
-	priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
-
-	load_connections (self);
-
-	if (g_hash_table_lookup (priv->unmanaged_devices, udi))
-		return FALSE;
-	return TRUE;
 }
 
 gboolean
@@ -594,6 +737,7 @@ impl_settings_add_connection (NMSysconfigSettings *self,
                               DBusGMethodInvocation *context)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+	DBusGConnection *g_connection;
 	GError *err = NULL;
 
 	/* Do any of the plugins support adding? */
@@ -604,7 +748,8 @@ impl_settings_add_connection (NMSysconfigSettings *self,
 		goto out;
 	}
 
-	if (!check_polkit_privileges (priv->g_connection, priv->pol_ctx, context, &err))
+	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
+	if (!check_polkit_privileges (g_connection, priv->pol_ctx, context, &err))
 		goto out;
 
 	nm_sysconfig_settings_add_new_connection (self, hash, &err);
@@ -629,6 +774,7 @@ impl_settings_save_hostname (NMSysconfigSettings *self,
 	GError *err = NULL;
 	GSList *iter;
 	gboolean success = FALSE;
+	DBusGConnection *g_connection;
 
 	/* Do any of the plugins support setting the hostname? */
 	if (!nm_sysconfig_settings_get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_HOSTNAME)) {
@@ -638,7 +784,8 @@ impl_settings_save_hostname (NMSysconfigSettings *self,
 		goto out;
 	}
 
-	if (!check_polkit_privileges (priv->g_connection, priv->pol_ctx, context, &err))
+	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
+	if (!check_polkit_privileges (g_connection, priv->pol_ctx, context, &err))
 		goto out;
 
 	/* Set the hostname in all plugins */
@@ -667,5 +814,35 @@ impl_settings_save_hostname (NMSysconfigSettings *self,
 		dbus_g_method_return (context);
 		return TRUE;
 	}
+}
+
+NMSysconfigSettings *
+nm_sysconfig_settings_new (const char *plugins, GError **error)
+{
+	NMSysconfigSettings *self;
+	NMSysconfigSettingsPrivate *priv;
+	DBusGConnection *g_connection;
+
+	self = g_object_new (NM_TYPE_SYSCONFIG_SETTINGS, NULL);
+	if (!self)
+		return NULL;
+
+	priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+
+	priv->dbus_mgr = nm_dbus_manager_get ();
+	g_assert (priv->dbus_mgr);
+
+	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
+	dbus_g_connection_register_g_object (g_connection, NM_DBUS_PATH_SETTINGS, G_OBJECT (self));
+
+	if (plugins) {
+		/* Load the plugins; fail if a plugin is not found. */
+		if (!load_plugins (self, plugins, error)) {
+			g_object_unref (self);
+			return NULL;
+		}
+	}
+
+	return self;
 }
 

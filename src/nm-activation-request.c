@@ -36,9 +36,12 @@
 #include "nm-active-connection.h"
 #include "nm-dbus-glib-types.h"
 
-#include "nm-manager.h" /* FIXME! */
 
-G_DEFINE_TYPE (NMActRequest, nm_act_request, G_TYPE_OBJECT)
+static void secrets_provider_interface_init (NMSecretsProviderInterface *sp_interface_class);
+
+G_DEFINE_TYPE_EXTENDED (NMActRequest, nm_act_request, G_TYPE_OBJECT, 0,
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_SECRETS_PROVIDER_INTERFACE,
+                                               secrets_provider_interface_init))
 
 #define NM_ACT_REQUEST_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_ACT_REQUEST, NMActRequestPrivate))
 
@@ -61,7 +64,7 @@ typedef struct {
 	gboolean disposed;
 
 	NMConnection *connection;
-	DBusGProxyCall *secrets_call;
+	guint32 secrets_call_id;
 
 	char *specific_object;
 	NMDevice *device;
@@ -178,24 +181,6 @@ nm_act_request_init (NMActRequest *req)
 }
 
 static void
-cleanup_secrets_dbus_call (NMActRequest *self)
-{
-	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
-	DBusGProxy *proxy;
-
-	g_return_if_fail (priv->connection != NULL);
-	g_return_if_fail (NM_IS_CONNECTION (priv->connection));
-
-	proxy = g_object_get_data (G_OBJECT (priv->connection), NM_MANAGER_CONNECTION_SECRETS_PROXY_TAG);
-	g_assert (proxy);
-
-	if (priv->secrets_call) {
-		dbus_g_proxy_cancel_call (proxy, priv->secrets_call);
-		priv->secrets_call = NULL;
-	}
-}
-
-static void
 dispose (GObject *object)
 {
 	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (object);
@@ -211,8 +196,6 @@ dispose (GObject *object)
 	g_signal_handlers_disconnect_by_func (G_OBJECT (priv->device),
 	                                      G_CALLBACK (device_state_changed),
 	                                      NM_ACT_REQUEST (object));
-
-	cleanup_secrets_dbus_call (NM_ACT_REQUEST (object));
 
 	/* Clear any share rules */
 	nm_act_request_set_shared (NM_ACT_REQUEST (object), FALSE);
@@ -275,7 +258,7 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case PROP_DEVICES:
 		devices = g_ptr_array_sized_new (1);
-		g_ptr_array_add (devices, g_strdup (nm_device_get_udi (priv->device)));
+		g_ptr_array_add (devices, g_strdup (nm_device_get_path (priv->device)));
 		g_value_take_boxed (value, devices);
 		break;
 	case PROP_STATE:
@@ -363,7 +346,7 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 		g_signal_new ("connection-secrets-updated",
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMActRequestClass, connection_secrets_updated),
+					  G_STRUCT_OFFSET (NMActRequestClass, secrets_updated),
 					  NULL, NULL,
 					  _nm_marshal_VOID__OBJECT_POINTER_UINT,
 					  G_TYPE_NONE, 3,
@@ -373,7 +356,7 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 		g_signal_new ("connection-secrets-failed",
 					  G_OBJECT_CLASS_TYPE (object_class),
 					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMActRequestClass, connection_secrets_failed),
+					  G_STRUCT_OFFSET (NMActRequestClass, secrets_failed),
 					  NULL, NULL,
 					  _nm_marshal_VOID__OBJECT_STRING_UINT,
 					  G_TYPE_NONE, 3,
@@ -386,30 +369,17 @@ nm_act_request_class_init (NMActRequestClass *req_class)
 	nm_active_connection_install_type_info (object_class);
 }
 
-typedef struct GetSecretsInfo {
-	NMActRequest *req;
-	char *setting_name;
-	RequestSecretsCaller caller;
-} GetSecretsInfo;
-
-static void
-free_get_secrets_info (gpointer data)
+static gboolean
+secrets_update_setting (NMSecretsProviderInterface *interface,
+                        const char *setting_name,
+                        GHashTable *new)
 {
-	GetSecretsInfo *info = (GetSecretsInfo *) data;
-
-	g_free (info->setting_name);
-	g_free (info);
-}
-
-static void
-update_one_setting (const char* setting_name,
-                    GHashTable *setting_hash,
-                    NMConnection *connection,
-                    GSList **updated)
-{
-	GType type;
+	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (interface);
 	NMSetting *setting = NULL;
 	GError *error = NULL;
+	GType type;
+
+	g_return_val_if_fail (priv->connection != NULL, FALSE);
 
 	/* Check whether a complete & valid NMSetting object was returned.  If
 	 * yes, replace the setting object in the connection.  If not, just try
@@ -417,9 +387,9 @@ update_one_setting (const char* setting_name,
 	 */
 	type = nm_connection_lookup_setting_type (setting_name);
 	if (type == 0)
-		return;
+		return FALSE;
 
-	setting = nm_setting_new_from_hash (type, setting_hash);
+	setting = nm_setting_new_from_hash (type, new);
 	if (setting) {
 		NMSetting *s_8021x = NULL;
 		GSList *all_settings = NULL;
@@ -427,7 +397,7 @@ update_one_setting (const char* setting_name,
 		/* The wireless-security setting might need the 802.1x setting in
 		 * the all_settings argument of the verify function. Ugh.
 		 */
-		s_8021x = nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
+		s_8021x = nm_connection_get_setting (priv->connection, NM_TYPE_SETTING_802_1X);
 		if (s_8021x)
 			all_settings = g_slist_append (all_settings, s_8021x);
 
@@ -441,9 +411,9 @@ update_one_setting (const char* setting_name,
 	}
 
 	if (setting)
-		nm_connection_add_setting (connection, setting);
+		nm_connection_add_setting (priv->connection, setting);
 	else {
-		if (!nm_connection_update_secrets (connection, setting_name, setting_hash, &error)) {
+		if (!nm_connection_update_secrets (priv->connection, setting_name, new, &error)) {
 			nm_warning ("Failed to update connection secrets: %d %s",
 			            error ? error->code : -1,
 			            error && error->message ? error->message : "(none)");
@@ -451,166 +421,56 @@ update_one_setting (const char* setting_name,
 		}
 	}
 
-	*updated = g_slist_append (*updated, (gpointer) setting_name);
+	return TRUE;
 }
 
 static void
-add_one_key_to_list (gpointer key, gpointer data, gpointer user_data)
+secrets_result (NMSecretsProviderInterface *interface,
+	            const char *setting_name,
+	            RequestSecretsCaller caller,
+	            const GSList *updated,
+	            GError *error)
 {
-	GSList **list = (GSList **) user_data;
+	NMActRequest *self = NM_ACT_REQUEST (interface);
+	NMActRequestPrivate *priv = NM_ACT_REQUEST_GET_PRIVATE (self);
 
-	*list = g_slist_append (*list, key);
-}
+	g_return_if_fail (priv->connection != NULL);
 
-static gint
-settings_order_func (gconstpointer a, gconstpointer b)
-{
-	/* Just ensure the 802.1x setting gets processed _before_ the
-	 * wireless-security one.
-	 */
-
-	if (   !strcmp (a, NM_SETTING_802_1X_SETTING_NAME)
-	    && !strcmp (b, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME))
-		return -1;
-
-	if (   !strcmp (a, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME)
-	    && !strcmp (b, NM_SETTING_802_1X_SETTING_NAME))
-		return 1;
-
-	return 0;
-}
-
-static void
-get_secrets_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
-{
-	GetSecretsInfo *info = (GetSecretsInfo *) user_data;
-	GError *err = NULL;
-	GHashTable *settings = NULL;
-	NMActRequestPrivate *priv = NULL;
-	GSList *keys = NULL, *iter;
-	GSList *updated = NULL;
-
-	g_return_if_fail (info != NULL);
-	g_return_if_fail (info->req);
-	g_return_if_fail (info->setting_name);
-
-	priv = NM_ACT_REQUEST_GET_PRIVATE (info->req);
-
-	g_return_if_fail (call == priv->secrets_call);
-	priv->secrets_call = NULL;
-
-	if (!dbus_g_proxy_end_call (proxy, call, &err,
-								DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, &settings,
-								G_TYPE_INVALID)) {
-		nm_warning ("Couldn't get connection secrets: %s.", err->message);
-		g_error_free (err);
-		g_signal_emit (info->req,
-		               signals[CONNECTION_SECRETS_FAILED],
-		               0,
-		               priv->connection,
-		               info->setting_name,
-		               info->caller);
-		return;
-	}
-
-	if (g_hash_table_size (settings) == 0) {
-		// FIXME: some better way to handle invalid message?
-		nm_warning ("GetSecrets call returned but no secrets were found.");
-		goto out;
-	}
-
-	g_hash_table_foreach (settings, add_one_key_to_list, &keys);
-	keys = g_slist_sort (keys, settings_order_func);
-	for (iter = keys; iter; iter = g_slist_next (iter)) {
-		GHashTable *setting_hash;
-
-		setting_hash = g_hash_table_lookup (settings, iter->data);
-		if (setting_hash) {
-			update_one_setting ((const char *) iter->data,
-			                    setting_hash,
-			                    priv->connection,
-			                    &updated);
-		} else
-			nm_warning ("Couldn't get setting secrets for '%s'", (const char *) iter->data);
-	}
-	g_slist_free (keys);
-
-	if (g_slist_length (updated)) {
-		g_signal_emit (info->req,
-		               signals[CONNECTION_SECRETS_UPDATED],
-		               0,
-		               priv->connection,
-		               updated,
-		               info->caller);
+	if (error) {
+		g_signal_emit (self, signals[CONNECTION_SECRETS_FAILED], 0,
+		               priv->connection, setting_name, caller);
 	} else {
-		nm_warning ("No secrets updated because not valid settings were received!");
+		g_signal_emit (self, signals[CONNECTION_SECRETS_UPDATED], 0,
+		               priv->connection, updated, caller);
 	}
+}
 
-out:
-	g_slist_free (updated);
-	g_hash_table_destroy (settings);
+static void
+secrets_provider_interface_init (NMSecretsProviderInterface *sp_interface_class)
+{
+	/* interface implementation */
+	sp_interface_class->update_setting = secrets_update_setting;
+	sp_interface_class->result = secrets_result;
 }
 
 gboolean
-nm_act_request_request_connection_secrets (NMActRequest *self,
-                                           const char *setting_name,
-                                           gboolean request_new,
-                                           RequestSecretsCaller caller,
-                                           const char *hint1,
-                                           const char *hint2)
+nm_act_request_get_secrets (NMActRequest *self,
+                            const char *setting_name,
+                            gboolean request_new,
+                            RequestSecretsCaller caller,
+                            const char *hint1,
+                            const char *hint2)
 {
-	DBusGProxy *secrets_proxy;
-	GetSecretsInfo *info = NULL;
-	NMActRequestPrivate *priv = NULL;
-	GPtrArray *hints = NULL;
-
+	g_return_val_if_fail (self, FALSE);
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (self), FALSE);
-	g_return_val_if_fail (setting_name != NULL, FALSE);
 
-	priv = NM_ACT_REQUEST_GET_PRIVATE (self);
-
-	cleanup_secrets_dbus_call (self);
-
-	info = g_malloc0 (sizeof (GetSecretsInfo));
-	g_return_val_if_fail (info != NULL, FALSE);
-
-	info->req = self;
-	info->caller = caller;
-	info->setting_name = g_strdup (setting_name);
-
-	/* Empty for now */
-	hints = g_ptr_array_sized_new (2);
-
-	if (hint1)
-		g_ptr_array_add (hints, g_strdup (hint1));
-	if (hint2)
-		g_ptr_array_add (hints, g_strdup (hint2));
-
-	secrets_proxy = g_object_get_data (G_OBJECT (priv->connection), NM_MANAGER_CONNECTION_SECRETS_PROXY_TAG);
-	g_assert (secrets_proxy);
-
-	priv->secrets_call = dbus_g_proxy_begin_call_with_timeout (secrets_proxy, "GetSecrets",
-	                                                           get_secrets_cb,
-	                                                           info,
-	                                                           free_get_secrets_info,
-	                                                           G_MAXINT32,
-	                                                           G_TYPE_STRING, setting_name,
-	                                                           DBUS_TYPE_G_ARRAY_OF_STRING, hints,
-	                                                           G_TYPE_BOOLEAN, request_new,
-	                                                           G_TYPE_INVALID);
-	g_ptr_array_free (hints, TRUE);
-	if (!priv->secrets_call) {
-		nm_warning ("Could not call get secrets");
-		goto error;
-	}
-
-	return TRUE;
-
-error:
-	if (info)
-		free_get_secrets_info (info);
-	cleanup_secrets_dbus_call (self);
-	return FALSE;
+	return nm_secrets_provider_interface_get_secrets (NM_SECRETS_PROVIDER_INTERFACE (self),
+	                                                  nm_act_request_get_connection (self),
+	                                                  setting_name,
+	                                                  request_new,
+	                                                  caller,
+	                                                  hint1,
+	                                                  hint2);
 }
 
 NMConnection *

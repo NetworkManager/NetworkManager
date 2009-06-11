@@ -43,9 +43,6 @@
 /* Not exported */
 #define NM_MANAGER_HOSTNAME "hostname"
 
-#define NM_MANAGER_CONNECTION_PROXY_TAG "dbus-proxy"
-#define NM_MANAGER_CONNECTION_SECRETS_PROXY_TAG "dbus-secrets-proxy"
-
 typedef struct {
 	GObject parent;
 } NMManager;
@@ -76,7 +73,9 @@ typedef struct {
 
 GType nm_manager_get_type (void);
 
-NMManager *nm_manager_get (void);
+NMManager *nm_manager_get (const char *plugins, GError **error);
+
+void nm_manager_start (NMManager *manager);
 
 /* Device handling */
 

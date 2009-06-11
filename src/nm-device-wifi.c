@@ -81,6 +81,7 @@ enum {
 	PROP_BITRATE,
 	PROP_ACTIVE_ACCESS_POINT,
 	PROP_CAPABILITIES,
+	PROP_IFINDEX,
 
 	LAST_PROP
 };
@@ -138,6 +139,7 @@ struct _NMDeviceWifiPrivate {
 	gboolean          dispose_has_run;
 
 	struct ether_addr hw_addr;
+	guint32           ifindex;
 
 	GByteArray *      ssid;
 	gint8             invalid_strength_counter;
@@ -2136,8 +2138,12 @@ link_timeout_cb (gpointer user_data)
 		         " asking for new key.", nm_device_get_iface (dev));
 		cleanup_association_attempt (self, TRUE);
 		nm_device_state_changed (dev, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT);
-		nm_act_request_request_connection_secrets (req, setting_name, TRUE,
-		                                           SECRETS_CALLER_WIFI, NULL, NULL);
+		nm_act_request_get_secrets (req,
+		                            setting_name,
+		                            TRUE,
+		                            SECRETS_CALLER_WIFI,
+		                            NULL,
+		                            NULL);
 
 		return FALSE;
 	}
@@ -2495,8 +2501,12 @@ handle_auth_or_fail (NMDeviceWifi *self,
 		 * only ask for new secrets after the first failure.
 		 */
 		get_new = new_secrets ? TRUE : (tries ? TRUE : FALSE);
-		nm_act_request_request_connection_secrets (req, setting_name, get_new,
-		                                           SECRETS_CALLER_WIFI, NULL, NULL);
+		nm_act_request_get_secrets (req,
+		                            setting_name,
+		                            get_new,
+		                            SECRETS_CALLER_WIFI,
+		                            NULL,
+		                            NULL);
 
 		g_object_set_data (G_OBJECT (connection), WIRELESS_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
 	} else {
@@ -2671,10 +2681,10 @@ build_supplicant_config (NMDeviceWifi *self,
 
 	s_wireless_sec = (NMSettingWirelessSecurity *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRELESS_SECURITY);
 	if (s_wireless_sec) {
-		DBusGProxy *proxy = g_object_get_data (G_OBJECT (connection), NM_MANAGER_CONNECTION_PROXY_TAG);
-		const char *con_path = dbus_g_proxy_get_path (proxy);
 		NMSetting8021x *s_8021x;
+		const char *con_path = nm_connection_get_path (connection);
 
+		g_assert (con_path);
 		s_8021x = (NMSetting8021x *) nm_connection_get_setting (connection, NM_TYPE_SETTING_802_1X);
 		if (!nm_supplicant_config_add_setting_wireless_security (config,
 		                                                         s_wireless_sec,
@@ -3209,6 +3219,21 @@ nm_device_wifi_dispose (GObject *object)
 	G_OBJECT_CLASS (nm_device_wifi_parent_class)->dispose (object);
 }
 
+static gboolean
+spec_match_list (NMDevice *device, const GSList *specs)
+{
+	struct ether_addr ether;
+	char *hwaddr;
+	gboolean matched;
+
+	nm_device_wifi_get_address (NM_DEVICE_WIFI (device), &ether);
+	hwaddr = nm_ether_ntop (&ether);
+	matched = nm_match_spec_hwaddr (specs, hwaddr);
+	g_free (hwaddr);
+
+	return matched;
+}
+
 static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
@@ -3237,11 +3262,32 @@ get_property (GObject *object, guint prop_id,
 		else
 			g_value_set_boxed (value, "/");
 		break;
+	case PROP_IFINDEX:
+		g_value_set_uint (value, nm_device_wifi_get_ifindex (device));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
 	}
 }
+
+static void
+set_property (GObject *object, guint prop_id,
+			  const GValue *value, GParamSpec *pspec)
+{
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_IFINDEX:
+		/* construct-only */
+		priv->ifindex = g_value_get_uint (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
 
 static void
 nm_device_wifi_class_init (NMDeviceWifiClass *klass)
@@ -3253,6 +3299,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 
 	object_class->constructor = constructor;
 	object_class->get_property = get_property;
+	object_class->set_property = set_property;
 	object_class->dispose = nm_device_wifi_dispose;
 
 	parent_class->get_type_capabilities = real_get_type_capabilities;
@@ -3276,6 +3323,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->deactivate = real_deactivate;
 	parent_class->deactivate_quickly = real_deactivate_quickly;
 	parent_class->can_interrupt_activation = real_can_interrupt_activation;
+	parent_class->spec_match_list = spec_match_list;
 
 	/* Properties */
 	g_object_class_install_property (object_class, PROP_HW_ADDRESS,
@@ -3314,6 +3362,13 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		                   "Wireless Capabilities",
 		                   0, G_MAXUINT32, NM_WIFI_DEVICE_CAP_NONE,
 		                   G_PARAM_READABLE));
+
+	g_object_class_install_property (object_class, PROP_IFINDEX,
+		g_param_spec_uint (NM_DEVICE_WIFI_IFINDEX,
+		                   "Ifindex",
+		                   "Interface index",
+		                   0, G_MAXUINT32, 0,
+		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	/* Signals */
 	signals[ACCESS_POINT_ADDED] =
@@ -3435,7 +3490,7 @@ NMDeviceWifi *
 nm_device_wifi_new (const char *udi,
                     const char *iface,
                     const char *driver,
-                    gboolean managed)
+                    guint32 ifindex)
 {
 	GObject *obj;
 
@@ -3447,7 +3502,7 @@ nm_device_wifi_new (const char *udi,
 	                    NM_DEVICE_INTERFACE_UDI, udi,
 	                    NM_DEVICE_INTERFACE_IFACE, iface,
 	                    NM_DEVICE_INTERFACE_DRIVER, driver,
-	                    NM_DEVICE_INTERFACE_MANAGED, managed,
+	                    NM_DEVICE_WIFI_IFINDEX, ifindex,
 	                    NULL);
 	if (obj == NULL)
 		return NULL;
@@ -3455,6 +3510,14 @@ nm_device_wifi_new (const char *udi,
 	g_signal_connect (obj, "state-changed", G_CALLBACK (device_state_changed), NULL);
 
 	return NM_DEVICE_WIFI (obj);
+}
+
+guint32
+nm_device_wifi_get_ifindex (NMDeviceWifi *self)
+{
+	g_return_val_if_fail (self != NULL, FALSE);
+
+	return NM_DEVICE_WIFI_GET_PRIVATE (self)->ifindex;
 }
 
 NMAccessPoint *

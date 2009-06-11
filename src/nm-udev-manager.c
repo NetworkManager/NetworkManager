@@ -21,6 +21,12 @@
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
+
+#include "wireless-helper.h"
 
 #define G_UDEV_API_IS_SUBJECT_TO_CHANGE
 #include <gudev/gudev.h>
@@ -28,12 +34,14 @@
 #include "nm-udev-manager.h"
 #include "nm-marshal.h"
 #include "nm-utils.h"
+#include "NetworkManagerUtils.h"
+#include "nm-device-wifi.h"
+#include "nm-device-ethernet.h"
 
 typedef struct {
 	GUdevClient *client;
 
-	/* Authoritative rfkill state (RFKILL_* enum)
-	 */
+	/* Authoritative rfkill state (RFKILL_* enum) */
 	RfKillState rfkill_state;
 	GSList *killswitches;
 
@@ -45,6 +53,8 @@ typedef struct {
 G_DEFINE_TYPE (NMUdevManager, nm_udev_manager, G_TYPE_OBJECT)
 
 enum {
+	DEVICE_ADDED,
+	DEVICE_REMOVED,
 	RFKILL_CHANGED,
 
 	LAST_SIGNAL
@@ -198,44 +208,188 @@ add_one_killswitch (NMUdevManager *self, GUdevDevice *device)
 }
 
 static void
+rfkill_add (NMUdevManager *self, GUdevDevice *device)
+{
+	const char *name;
+
+	g_return_if_fail (device != NULL);
+	name = g_udev_device_get_name (device);
+	g_return_if_fail (name != NULL);
+
+	if (!killswitch_find_by_name (self, name))
+		add_one_killswitch (self, device);
+}
+
+static void
+rfkill_remove (NMUdevManager *self,
+               GUdevDevice *device)
+{
+	NMUdevManagerPrivate *priv = NM_UDEV_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+	const char *name;
+
+	g_return_if_fail (device != NULL);
+	name = g_udev_device_get_name (device);
+	g_return_if_fail (name != NULL);
+
+	for (iter = priv->killswitches; iter; iter = g_slist_next (iter)) {
+		Killswitch *ks = iter->data;
+
+		if (!strcmp (ks->name, name)) {
+			nm_info ("Radio killswitch %s disappeared", ks->path);
+			priv->killswitches = g_slist_remove (priv->killswitches, iter);
+			killswitch_destroy (iter->data);
+			g_slist_free (iter);
+			break;
+		}
+	}
+}
+
+static gboolean
+is_wireless (GUdevDevice *device)
+{
+	char phy80211_path[255];
+	struct stat s;
+	int fd;
+	struct iwreq iwr;
+	const char *ifname, *path;
+	gboolean is_wifi = FALSE;
+
+	ifname = g_udev_device_get_name (device);
+	g_assert (ifname);
+
+	fd = socket (PF_INET, SOCK_DGRAM, 0);
+	strncpy (iwr.ifr_ifrn.ifrn_name, ifname, IFNAMSIZ);
+
+	path = g_udev_device_get_sysfs_path (device);
+	snprintf (phy80211_path, sizeof (phy80211_path), "%s/phy80211", path);
+
+	if (   (ioctl (fd, SIOCGIWNAME, &iwr) == 0)
+	    || (stat (phy80211_path, &s) == 0 && (s.st_mode & S_IFDIR)))
+		is_wifi = TRUE;
+
+	close (fd);
+	return is_wifi;
+}
+
+static GObject *
+device_creator (NMUdevManager *manager,
+                GUdevDevice *udev_device,
+                gboolean sleeping)
+{
+	GObject *device = NULL;
+	const char *ifname, *driver, *path;
+	GUdevDevice *parent;
+	gint ifindex;
+
+	ifname = g_udev_device_get_name (udev_device);
+	g_assert (ifname);
+
+	path = g_udev_device_get_sysfs_path (udev_device);
+	if (!path) {
+		nm_warning ("couldn't determine device path; ignoring...");
+		return NULL;
+	}
+
+	driver = g_udev_device_get_driver (udev_device);
+	if (!driver) {
+		/* Try the parent */
+		parent = g_udev_device_get_parent (udev_device);
+		if (parent) {
+			driver = g_udev_device_get_driver (parent);
+			g_object_unref (parent);
+		}
+	}
+
+	if (!driver) {
+		nm_warning ("%s: couldn't determine device driver; ignoring...", path);
+		return NULL;
+	}
+
+	ifindex = g_udev_device_get_sysfs_attr_as_int (udev_device, "ifindex");
+	if (ifindex <= 0) {
+		nm_warning ("%s: device had invalid ifindex %d; ignoring...", path, (guint32) ifindex);
+		return NULL;
+	}
+
+	if (is_wireless (udev_device))
+		device = (GObject *) nm_device_wifi_new (path, ifname, driver, ifindex);
+	else
+		device = (GObject *) nm_device_ethernet_new (path, ifname, driver, ifindex);
+
+	return device;
+}
+
+static void
+net_add (NMUdevManager *self, GUdevDevice *device)
+{
+	gint devtype;
+	const char *iface;
+
+	g_return_if_fail (device != NULL);
+
+	devtype = g_udev_device_get_sysfs_attr_as_int (device, "type");
+	if (devtype != 1)
+		return; /* Not using ethernet encapsulation, don't care */
+
+	iface = g_udev_device_get_name (device);
+	if (!iface)
+		return;
+
+	g_signal_emit (self, signals[DEVICE_ADDED], 0, device, device_creator);
+}
+
+static void
+net_remove (NMUdevManager *self, GUdevDevice *device)
+{
+	g_signal_emit (self, signals[DEVICE_REMOVED], 0, device);
+}
+
+void
+nm_udev_manager_query_devices (NMUdevManager *self)
+{
+	NMUdevManagerPrivate *priv = NM_UDEV_MANAGER_GET_PRIVATE (self);
+	GList *devices, *iter;
+
+	g_return_if_fail (self != NULL);
+	g_return_if_fail (NM_IS_UDEV_MANAGER (self));
+
+	devices = g_udev_client_query_by_subsystem (priv->client, "net");
+	for (iter = devices; iter; iter = g_list_next (iter)) {
+		net_add (self, G_UDEV_DEVICE (iter->data));
+		g_object_unref (G_UDEV_DEVICE (iter->data));
+	}
+	g_list_free (devices);
+}
+
+static void
 handle_uevent (GUdevClient *client,
                const char *action,
                GUdevDevice *device,
                gpointer user_data)
 {
 	NMUdevManager *self = NM_UDEV_MANAGER (user_data);
-	NMUdevManagerPrivate *priv = NM_UDEV_MANAGER_GET_PRIVATE (self);
-	const char *name, *subsys;
+	const char *subsys;
 
 	g_return_if_fail (action != NULL);
 
-	name = g_udev_device_get_name (device);
-	g_return_if_fail (name != NULL);
-
 	/* A bit paranoid */
 	subsys = g_udev_device_get_subsystem (device);
-	g_return_if_fail (subsys && !strcmp (subsys, "rfkill"));
+	g_return_if_fail (subsys != NULL);
+
+	g_return_if_fail (!strcmp (subsys, "rfkill") || !strcmp (subsys, "net"));
 
 	if (!strcmp (action, "add")) {
-		if (!killswitch_find_by_name (self, name))
-			add_one_killswitch (self, device);
+		if (!strcmp (subsys, "rfkill"))
+			rfkill_add (self, device);
+		else if (!strcmp (subsys, "net"))
+			net_add (self, device);
 	} else if (!strcmp (action, "remove")) {
-		GSList *iter;
-
-		for (iter = priv->killswitches; iter; iter = g_slist_next (iter)) {
-			Killswitch *ks = iter->data;
-
-			if (!strcmp (ks->name, name)) {
-				nm_info ("Radio killswitch %s disappeared", ks->path);
-				priv->killswitches = g_slist_remove (priv->killswitches, iter);
-				killswitch_destroy (iter->data);
-				g_slist_free (iter);
-				break;
-			}
-		}
+		if (!strcmp (subsys, "rfkill"))
+			rfkill_remove (self, device);
+		else if (!strcmp (subsys, "net"))
+			net_remove (self, device);
 	}
-
-	// FIXME: check sequence #s to ensure events don't arrive out of order
 
 	recheck_killswitches (self);
 }
@@ -244,7 +398,7 @@ static void
 nm_udev_manager_init (NMUdevManager *self)
 {
 	NMUdevManagerPrivate *priv = NM_UDEV_MANAGER_GET_PRIVATE (self);
-	const char *subsys[2] = { "rfkill", NULL };
+	const char *subsys[3] = { "rfkill", "net", NULL };
 	GList *switches, *iter;
 
 	priv->rfkill_state = RFKILL_UNBLOCKED;
@@ -292,6 +446,24 @@ nm_udev_manager_class_init (NMUdevManagerClass *klass)
 	object_class->dispose = dispose;
 
 	/* Signals */
+	signals[DEVICE_ADDED] =
+		g_signal_new ("device-added",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMUdevManagerClass, device_added),
+					  NULL, NULL,
+					  _nm_marshal_VOID__POINTER_POINTER,
+					  G_TYPE_NONE, 2, G_TYPE_POINTER, G_TYPE_POINTER);
+
+	signals[DEVICE_REMOVED] =
+		g_signal_new ("device-removed",
+					  G_OBJECT_CLASS_TYPE (object_class),
+					  G_SIGNAL_RUN_FIRST,
+					  G_STRUCT_OFFSET (NMUdevManagerClass, device_removed),
+					  NULL, NULL,
+					  g_cclosure_marshal_VOID__POINTER,
+					  G_TYPE_NONE, 1, G_TYPE_POINTER);
+
 	signals[RFKILL_CHANGED] =
 		g_signal_new ("rfkill-changed",
 					  G_OBJECT_CLASS_TYPE (object_class),

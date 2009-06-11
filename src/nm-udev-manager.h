@@ -25,6 +25,9 @@
 #include <glib.h>
 #include <glib-object.h>
 
+#define G_UDEV_API_IS_SUBJECT_TO_CHANGE
+#include <gudev/gudev.h>
+
 typedef enum {
 	RFKILL_UNBLOCKED = 0,
 	RFKILL_SOFT_BLOCKED = 1,
@@ -44,16 +47,30 @@ typedef struct {
 	GObject parent;
 } NMUdevManager;
 
+typedef GObject *(*NMDeviceCreatorFn) (NMUdevManager *manager,
+                                       GUdevDevice *device,
+                                       gboolean sleeping);
+
 typedef struct {
 	GObjectClass parent;
 
 	/* Virtual functions */
+	void (*device_added) (NMUdevManager *manager,
+	                      GUdevDevice *device,
+	                      NMDeviceCreatorFn creator_fn);
+
+	void (*device_removed) (NMUdevManager *manager, GUdevDevice *device);
+
 	void (*rfkill_changed) (NMUdevManager *manager, RfKillState state);
 } NMUdevManagerClass;
 
 GType nm_udev_manager_get_type (void);
 
 NMUdevManager *nm_udev_manager_new (void);
+
+void nm_udev_manager_query_devices (NMUdevManager *manager);
+
 RfKillState nm_udev_manager_get_rfkill_state (NMUdevManager *manager);
 
 #endif /* NM_UDEV_MANAGER_H */
+

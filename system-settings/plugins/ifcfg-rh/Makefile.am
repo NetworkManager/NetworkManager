@@ -20,13 +20,18 @@ libifcfg_rh_io_la_SOURCES = \
 	crypto.c \
 	crypto.h
 
+INCLUDES = \
+	-I$(top_srcdir)/src/system-settings \
+	-I$(top_srcdir)/include \
+	-I$(top_srcdir)/libnm-glib \
+	-I$(top_srcdir)/libnm-util \
+	-I$(top_builddir)/marshallers
+
 libifcfg_rh_io_la_CPPFLAGS = \
 	$(GLIB_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	$(NSS_CFLAGS) \
 	-DG_DISABLE_DEPRECATED \
-	-I$(top_srcdir)/include \
-	-I$(top_srcdir)/libnm-util \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
 
 libifcfg_rh_io_la_LIBADD = $(GLIB_LIBS) $(NSS_LIBS)
@@ -42,11 +47,6 @@ libnm_settings_plugin_ifcfg_rh_la_CPPFLAGS = \
 	$(GMODULE_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	-DG_DISABLE_DEPRECATED \
-	-I$(top_srcdir)/system-settings/src \
-	-I$(top_srcdir)/include \
-	-I$(top_srcdir)/libnm-glib \
-	-I$(top_srcdir)/libnm-util \
-	-I$(top_builddir)/marshallers \
 	-DSYSCONFDIR=\"$(sysconfdir)\"
 
 libnm_settings_plugin_ifcfg_rh_la_LDFLAGS = -module -avoid-version

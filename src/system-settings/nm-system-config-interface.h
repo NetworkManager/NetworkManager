@@ -27,8 +27,6 @@
 #include <nm-connection.h>
 #include <nm-settings.h>
 
-#include "nm-system-config-hal-manager.h"
-
 G_BEGIN_DECLS
 
 #define PLUGIN_PRINT(pname, fmt, args...) \
@@ -87,7 +85,7 @@ struct _NMSystemConfigInterface {
 	GTypeInterface g_iface;
 
 	/* Called when the plugin is loaded to initialize it */
-	void     (*init) (NMSystemConfigInterface *config, NMSystemConfigHalManager *hal_manager);
+	void     (*init) (NMSystemConfigInterface *config);
 
 	/* Returns the plugins currently known list of connections.  The returned
 	 * list is freed by the system settings service.
@@ -95,11 +93,18 @@ struct _NMSystemConfigInterface {
 	GSList * (*get_connections) (NMSystemConfigInterface *config);
 
 	/*
-	 * Return a list of HAL UDIs of devices which NetworkManager should not
-	 * manage.  Returned list will be freed by the system settings service, and
-	 * each element must be allocated using g_malloc() or its variants.
+	 * Return a string list of specifications of devices which NetworkManager
+	 * should not manage.  Returned list will be freed by the system settings
+	 * service, and each element must be allocated using g_malloc() or its
+	 * variants (g_strdup, g_strdup_printf, etc).
+	 *
+	 * Each string in the list must follow the format <method>:<data>, where
+	 * the method and data are one of the following:
+	 *
+	 * Method: mac    Data: device MAC address formatted with leading zeros and
+	 *                      lowercase letters, like 00:0a:0b:0c:0d:0e
 	 */
-	GSList * (*get_unmanaged_devices) (NMSystemConfigInterface *config);
+	GSList * (*get_unmanaged_specs) (NMSystemConfigInterface *config);
 
 	/*
 	 * Add a new connection.
@@ -118,11 +123,11 @@ struct _NMSystemConfigInterface {
 GType nm_system_config_interface_get_type (void);
 
 void nm_system_config_interface_init (NMSystemConfigInterface *config,
-                                      NMSystemConfigHalManager *hal_manager);
+                                      gpointer unused);
 
 GSList *nm_system_config_interface_get_connections (NMSystemConfigInterface *config);
 
-GSList *nm_system_config_interface_get_unmanaged_devices (NMSystemConfigInterface *config);
+GSList *nm_system_config_interface_get_unmanaged_specs (NMSystemConfigInterface *config);
 
 gboolean nm_system_config_interface_add_connection (NMSystemConfigInterface *config,
                                                     NMConnection *connection,

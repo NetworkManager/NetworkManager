@@ -27,6 +27,7 @@
 #include "NetworkManagerVPN.h"
 #include "nm-device.h"
 #include "nm-activation-request.h"
+#include "nm-secrets-provider-interface.h"
 
 #define NM_TYPE_VPN_CONNECTION            (nm_vpn_connection_get_type ())
 #define NM_VPN_CONNECTION(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_VPN_CONNECTION, NMVPNConnection))
@@ -72,6 +73,6 @@ void                 nm_vpn_connection_disconnect      (NMVPNConnection *connect
 NMIP4Config *        nm_vpn_connection_get_ip4_config  (NMVPNConnection *connection);
 const char *         nm_vpn_connection_get_ip_iface    (NMVPNConnection *connection);
 NMDevice *           nm_vpn_connection_get_parent_device (NMVPNConnection *connection);
-guint32        nm_vpn_connection_get_ip4_internal_gateway (NMVPNConnection *connection);
+guint32              nm_vpn_connection_get_ip4_internal_gateway (NMVPNConnection *connection);
 
 #endif /* NM_VPN_CONNECTION_H */

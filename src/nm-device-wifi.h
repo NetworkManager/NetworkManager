@@ -42,11 +42,12 @@ G_BEGIN_DECLS
 #define NM_DEVICE_WIFI_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DEVICE_WIFI, NMDeviceWifiClass))
 
 
-#define NM_DEVICE_WIFI_HW_ADDRESS "hw-address"
-#define NM_DEVICE_WIFI_MODE "mode"
-#define NM_DEVICE_WIFI_BITRATE "bitrate"
+#define NM_DEVICE_WIFI_HW_ADDRESS          "hw-address"
+#define NM_DEVICE_WIFI_MODE                "mode"
+#define NM_DEVICE_WIFI_BITRATE             "bitrate"
 #define NM_DEVICE_WIFI_ACTIVE_ACCESS_POINT "active-access-point"
-#define NM_DEVICE_WIFI_CAPABILITIES "wireless-capabilities"
+#define NM_DEVICE_WIFI_CAPABILITIES        "wireless-capabilities"
+#define NM_DEVICE_WIFI_IFINDEX             "ifindex"
 
 #ifndef NM_DEVICE_WIFI_DEFINED
 #define NM_DEVICE_WIFI_DEFINED
@@ -79,9 +80,9 @@ struct _NMDeviceWifiClass
 GType nm_device_wifi_get_type (void);
 
 NMDeviceWifi *nm_device_wifi_new (const char *udi,
-										    const char *iface,
-										    const char *driver,
-										    gboolean managed);
+                                  const char *iface,
+                                  const char *driver,
+                                  guint32 ifindex);
 
 void nm_device_wifi_get_address (NMDeviceWifi *dev,
 								   struct ether_addr *addr);
@@ -99,6 +100,8 @@ NM80211Mode	nm_device_wifi_get_mode (NMDeviceWifi *self);
 NMAccessPoint * nm_device_wifi_get_activation_ap (NMDeviceWifi *self);
 
 void nm_device_wifi_set_enabled (NMDeviceWifi *self, gboolean enabled);
+
+guint32 nm_device_wifi_get_ifindex (NMDeviceWifi *self);
 
 G_END_DECLS
 

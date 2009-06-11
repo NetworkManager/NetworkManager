@@ -70,8 +70,8 @@ nm_device_interface_init (gpointer g_iface)
 	g_object_interface_install_property
 		(g_iface,
 		 g_param_spec_string (NM_DEVICE_INTERFACE_UDI,
-							  "Udi",
-							  "HAL Udi",
+							  "UDI",
+							  "Unique Device Identifier",
 							  NULL,
 							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
@@ -143,7 +143,7 @@ nm_device_interface_init (gpointer g_iface)
 		(g_iface, g_param_spec_boolean (NM_DEVICE_INTERFACE_MANAGED,
 	                                   "Managed",
 	                                   "Managed",
-	                                   TRUE,
+	                                   FALSE,
 	                                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	/* Signals */
@@ -268,5 +268,14 @@ nm_device_interface_get_state (NMDeviceInterface *device)
 
 	g_object_get (G_OBJECT (device), "state", &state, NULL);
 	return state;
+}
+
+gboolean
+nm_device_interface_spec_match_list (NMDeviceInterface *device,
+                                     const GSList *specs)
+{
+	if (NM_DEVICE_INTERFACE_GET_INTERFACE (device)->spec_match_list)
+		return NM_DEVICE_INTERFACE_GET_INTERFACE (device)->spec_match_list (device, specs);
+	return FALSE;
 }
 

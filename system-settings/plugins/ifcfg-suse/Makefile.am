@@ -16,8 +16,9 @@ libnm_settings_plugin_ifcfg_suse_la_CPPFLAGS = \
 	$(GMODULE_CFLAGS) \
 	$(DBUS_CFLAGS) \
 	$(POLKIT_CFLAGS) \
+	$(GUDEV_CFLAGS) \
 	-DG_DISABLE_DEPRECATED \
-	-I${top_srcdir}/system-settings/src \
+	-I${top_srcdir}/src/system-settings \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_srcdir)/libnm-glib \
@@ -28,6 +29,7 @@ libnm_settings_plugin_ifcfg_suse_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(GMODULE_LIBS) \
 	$(POLKIT_LIBS) \
+	$(GUDEV_LIBS) \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(top_builddir)/libnm-glib/libnm_glib.la
 

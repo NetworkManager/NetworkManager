@@ -113,10 +113,15 @@ struct _NMDeviceClass
 	void			(* deactivate_quickly)	(NMDevice *self);
 
 	gboolean		(* can_interrupt_activation)		(NMDevice *self);
+
+	gboolean        (* spec_match_list)     (NMDevice *self, const GSList *specs);
 };
 
 
 GType nm_device_get_type (void);
+
+const char *    nm_device_get_path (NMDevice *dev);
+void            nm_device_set_path (NMDevice *dev, const char *path);
 
 const char *	nm_device_get_udi		(NMDevice *dev);
 const char *	nm_device_get_iface		(NMDevice *dev);

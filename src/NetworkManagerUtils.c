@@ -366,7 +366,7 @@ nm_utils_call_dispatcher (const char *action,
 
 		/* state */
 		value_hash_add_uint (device_props, NMD_DEVICE_PROPS_STATE, nm_device_get_state (device));
-		value_hash_add_object_path (device_props, NMD_DEVICE_PROPS_PATH, nm_device_get_udi (device));
+		value_hash_add_object_path (device_props, NMD_DEVICE_PROPS_PATH, nm_device_get_path (device));
 	}
 
 	dbus_g_proxy_call_no_reply (proxy, "Action",
@@ -381,6 +381,32 @@ nm_utils_call_dispatcher (const char *action,
 	g_hash_table_destroy (connection_props);
 	g_hash_table_destroy (device_props);
 	g_object_unref (dbus_mgr);
+}
+
+gboolean
+nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr)
+{
+	const GSList *iter;
+	char *hwaddr_match, *p;
+
+	g_return_val_if_fail (hwaddr != NULL, FALSE);
+
+	p = hwaddr_match = g_strdup_printf ("mac:%s", hwaddr);
+
+	while (*p) {
+		*p = g_ascii_tolower (*p);
+		p++;
+	}
+
+	for (iter = specs; iter; iter = g_slist_next (iter)) {
+		if (!strcmp ((const char *) iter->data, hwaddr_match)) {
+			g_free (hwaddr_match);
+			return TRUE;
+		}
+	}
+
+	g_free (hwaddr_match);
+	return FALSE;
 }
 
 /*********************************/
@@ -449,3 +475,4 @@ value_hash_add_uint (GHashTable *hash,
 
 	value_hash_add (hash, key, value);
 }
+

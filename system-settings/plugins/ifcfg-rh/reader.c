@@ -1366,7 +1366,7 @@ fill_8021x (shvarFile *ifcfg,
 		char *lower = NULL;
 
 		lower = g_ascii_strdown (*iter, -1);
-		while (*eap->method && !found) {
+		while (eap->method && !found) {
 			if (strcmp (eap->method, lower))
 				goto next;
 
@@ -1602,7 +1602,8 @@ make_wireless_security_setting (shvarFile *ifcfg,
 
 static NMSetting *
 make_wireless_setting (shvarFile *ifcfg,
-                       gboolean unmanaged,
+                       gboolean nm_controlled,
+                       char **unmanaged,
                        GError **error)
 {
 	NMSettingWireless *s_wireless;
@@ -1614,6 +1615,14 @@ make_wireless_setting (shvarFile *ifcfg,
 	if (read_mac_address (ifcfg, &array, error)) {
 		if (array) {
 			g_object_set (s_wireless, NM_SETTING_WIRELESS_MAC_ADDRESS, array, NULL);
+
+			/* A connection can only be unmanaged if we know the MAC address */
+			if (!nm_controlled) {
+				*unmanaged = g_strdup_printf ("mac:%02x:%02x:%02x:%02x:%02x:%02x",
+				                              array->data[0], array->data[1], array->data[2],
+				                              array->data[3], array->data[4], array->data[5]);
+			}
+
 			g_byte_array_free (array, TRUE);
 		}
 	} else {
@@ -1681,13 +1690,13 @@ make_wireless_setting (shvarFile *ifcfg,
 		g_free (value);
 	} else {
 		/* Only fail on lack of SSID if device is managed */
-		if (!unmanaged) {
+		if (nm_controlled) {
 			g_set_error (error, ifcfg_plugin_error_quark (), 0, "Missing SSID");
 			goto error;
 		}
 	}
 
-	if (unmanaged)
+	if (!nm_controlled)
 		goto done;
 
 	value = svGetValue (ifcfg, "MODE", FALSE);
@@ -1778,7 +1787,8 @@ error:
 static NMConnection *
 wireless_connection_from_ifcfg (const char *file,
                                 shvarFile *ifcfg,
-                                gboolean unmanaged,
+                                gboolean nm_controlled,
+                                char **unmanaged,
                                 GError **error)
 {
 	NMConnection *connection = NULL;
@@ -1804,7 +1814,7 @@ wireless_connection_from_ifcfg (const char *file,
 	}
 
 	/* Wireless */
-	wireless_setting = make_wireless_setting (ifcfg, unmanaged, error);
+	wireless_setting = make_wireless_setting (ifcfg, nm_controlled, unmanaged, error);
 	if (!wireless_setting) {
 		g_object_unref (connection);
 		return NULL;
@@ -1817,7 +1827,7 @@ wireless_connection_from_ifcfg (const char *file,
 	else
 		printable_ssid = g_strdup_printf ("unmanaged");
 
-	if (!unmanaged) {
+	if (nm_controlled) {
 		mode = nm_setting_wireless_get_mode (NM_SETTING_WIRELESS (wireless_setting));
 		if (mode && !strcmp (mode, "adhoc"))
 			adhoc = TRUE;
@@ -1852,7 +1862,7 @@ wireless_connection_from_ifcfg (const char *file,
 	nm_connection_add_setting (connection, con_setting);
 
 	/* Don't verify if unmanaged since we may not have an SSID or whatever */
-	if (!unmanaged) {
+	if (nm_controlled) {
 		if (!nm_connection_verify (connection, error)) {
 			g_object_unref (connection);
 			return NULL;
@@ -1865,7 +1875,8 @@ wireless_connection_from_ifcfg (const char *file,
 static NMSetting *
 make_wired_setting (shvarFile *ifcfg,
                     const char *file,
-                    gboolean unmanaged,
+                    gboolean nm_controlled,
+                    char **unmanaged,
                     NMSetting8021x **s_8021x,
                     GError **error)
 {
@@ -1891,6 +1902,14 @@ make_wired_setting (shvarFile *ifcfg,
 	if (read_mac_address (ifcfg, &mac, error)) {
 		if (mac) {
 			g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, mac, NULL);
+
+			/* A connection can only be unmanaged if we know the MAC address */
+			if (!nm_controlled) {
+				*unmanaged = g_strdup_printf ("mac:%02x:%02x:%02x:%02x:%02x:%02x",
+				                              mac->data[0], mac->data[1], mac->data[2],
+				                              mac->data[3], mac->data[4], mac->data[5]);
+			}
+
 			g_byte_array_free (mac, TRUE);
 		}
 	} else {
@@ -1923,7 +1942,8 @@ error:
 static NMConnection *
 wired_connection_from_ifcfg (const char *file,
                              shvarFile *ifcfg,
-                             gboolean unmanaged,
+                             gboolean nm_controlled,
+                             char **unmanaged,
                              GError **error)
 {
 	NMConnection *connection = NULL;
@@ -1950,7 +1970,7 @@ wired_connection_from_ifcfg (const char *file,
 	}
 	nm_connection_add_setting (connection, con_setting);
 
-	wired_setting = make_wired_setting (ifcfg, file, unmanaged, &s_8021x, error);
+	wired_setting = make_wired_setting (ifcfg, file, nm_controlled, unmanaged, &s_8021x, error);
 	if (!wired_setting) {
 		g_object_unref (connection);
 		return NULL;
@@ -2013,20 +2033,21 @@ NMConnection *
 connection_from_file (const char *filename,
                       const char *network_file,
                       const char *test_type,  /* for unit tests only */
-                      gboolean *ignored,
+                      char **unmanaged,
                       char **keyfile,
                       GError **error,
                       gboolean *ignore_error)
 {
 	NMConnection *connection = NULL;
 	shvarFile *parsed;
-	char *type;
-	char *nmc = NULL;
+	char *type, *nmc = NULL;
 	NMSetting *s_ip4;
 	char *ifcfg_name = NULL;
+	gboolean nm_controlled = TRUE;
 
 	g_return_val_if_fail (filename != NULL, NULL);
-	g_return_val_if_fail (ignored != NULL, NULL);
+	g_return_val_if_fail (unmanaged != NULL, NULL);
+	g_return_val_if_fail (*unmanaged == NULL, NULL);
 	g_return_val_if_fail (keyfile != NULL, NULL);
 	g_return_val_if_fail (*keyfile == NULL, NULL);
 
@@ -2096,23 +2117,28 @@ connection_from_file (const char *filename,
 		g_free (nmc);
 
 		if (!strcmp (lower, "no") || !strcmp (lower, "n") || !strcmp (lower, "false"))
-			*ignored = TRUE;
+			nm_controlled = FALSE;
 		g_free (lower);
 	}
 
 	if (!strcasecmp (type, TYPE_ETHERNET))
-		connection = wired_connection_from_ifcfg (filename, parsed, *ignored, error);
+		connection = wired_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, error);
 	else if (!strcasecmp (type, TYPE_WIRELESS))
-		connection = wireless_connection_from_ifcfg (filename, parsed, *ignored, error);
+		connection = wireless_connection_from_ifcfg (filename, parsed, nm_controlled, unmanaged, error);
 	else {
 		g_set_error (error, ifcfg_plugin_error_quark (), 0,
 		             "Unknown connection type '%s'", type);
 	}
 
+	if (nm_controlled) {
+		g_free (*unmanaged);
+		*unmanaged = NULL;
+	}
+
 	g_free (type);
 
 	/* Don't bother reading the connection fully if it's unmanaged */
-	if (!connection || *ignored)
+	if (!connection || *unmanaged)
 		goto done;
 
 	s_ip4 = make_ip4_setting (parsed, network_file, error);

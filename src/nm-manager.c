@@ -43,11 +43,12 @@
 #include "nm-setting-vpn.h"
 #include "nm-marshal.h"
 #include "nm-dbus-glib-types.h"
-#include "nm-hal-manager.h"
 #include "nm-udev-manager.h"
 #include "nm-hostname-provider.h"
 #include "nm-bluez-manager.h"
 #include "nm-bluez-common.h"
+#include "nm-sysconfig-settings.h"
+#include "nm-secrets-provider-interface.h"
 
 #define NM_AUTOIP_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
 #define NM_AUTOIP_DBUS_IFACE   "org.freedesktop.nm_avahi_autoipd"
@@ -66,8 +67,6 @@ static gboolean impl_manager_deactivate_connection (NMManager *manager,
 
 static gboolean impl_manager_sleep (NMManager *manager, gboolean sleep, GError **err);
 
-static gboolean poke_system_settings_daemon_cb (gpointer user_data);
-
 /* Legacy 0.6 compatibility interface */
 
 static gboolean impl_manager_legacy_sleep (NMManager *manager, GError **err);
@@ -76,30 +75,25 @@ static gboolean impl_manager_legacy_state (NMManager *manager, guint32 *state, G
 
 #include "nm-manager-glue.h"
 
-static void nm_manager_connections_destroy (NMManager *manager, NMConnectionScope scope);
+static void user_destroy_connections (NMManager *manager);
 static void manager_set_wireless_enabled (NMManager *manager, gboolean enabled);
 
 static void connection_added_default_handler (NMManager *manager,
 									 NMConnection *connection,
 									 NMConnectionScope scope);
 
-static void hal_manager_udi_added_cb (NMHalManager *hal_mgr,
-                                      const char *udi,
-                                      const char *originating_device,
-                                      gpointer general_type_ptr,
-                                      NMDeviceCreatorFn creator_fn,
-                                      gpointer user_data);
+static void udev_device_added_cb (NMUdevManager *udev_mgr,
+                                  GUdevDevice *device,
+                                  NMDeviceCreatorFn creator_fn,
+                                  gpointer user_data);
 
-static void hal_manager_udi_removed_cb (NMHalManager *hal_mgr,
-                                        const char *udi,
-                                        gpointer user_data);
+static void udev_device_removed_cb (NMUdevManager *udev_mgr,
+                                    GUdevDevice *device,
+                                    gpointer user_data);
 
-static void udev_manager_rfkill_changed_cb (NMHalManager *hal_mgr,
+static void udev_manager_rfkill_changed_cb (NMUdevManager *udev_mgr,
                                             RfKillState state,
                                             gpointer user_data);
-
-static void hal_manager_hal_reappeared_cb (NMHalManager *hal_mgr,
-                                           gpointer user_data);
 
 static void bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
 					   const char *bdaddr,
@@ -114,10 +108,6 @@ static void bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
 					     gpointer user_data);
 
 static void bluez_manager_resync_devices (NMManager *self);
-
-static void system_settings_properties_changed_cb (DBusGProxy *proxy,
-                                                   GHashTable *properties,
-                                                   gpointer user_data);
 
 static void add_device (NMManager *self, NMDevice *device);
 
@@ -140,7 +130,6 @@ typedef struct {
 	NMState state;
 
 	NMDBusManager *dbus_mgr;
-	NMHalManager *hal_mgr;
 	NMUdevManager *udev_mgr;
 	NMBluezManager *bluez_mgr;
 
@@ -148,18 +137,15 @@ typedef struct {
 	DBusGProxy *user_proxy;
 
 	GHashTable *system_connections;
-	DBusGProxy *system_proxy;
-	DBusGProxy *system_props_proxy;
-	GSList *unmanaged_udis;
+	NMSysconfigSettings *sys_settings;
 	char *hostname;
+
+	GSList *secrets_calls;
 
 	PendingConnectionInfo *pending_connection_info;
 	gboolean wireless_enabled;
 	gboolean wireless_hw_enabled;
 	gboolean sleeping;
-
-	guint poke_id;
-	guint sync_devices_id;
 
 	NMVPNManager *vpn_manager;
 	guint vpn_manager_id;
@@ -435,90 +421,23 @@ hostname_provider_init (NMHostnameProvider *provider_class)
 	provider_class->get_hostname = hostname_provider_get_hostname;
 }
 
-static void
-nm_manager_init (NMManager *manager)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	DBusGConnection *g_connection;
-	guint id;
-
-	priv->wireless_enabled = TRUE;
-	priv->wireless_hw_enabled = TRUE;
-	priv->sleeping = FALSE;
-	priv->state = NM_STATE_DISCONNECTED;
-
-	priv->dbus_mgr = nm_dbus_manager_get ();
-
-	priv->user_connections = g_hash_table_new_full (g_str_hash,
-	                                                g_str_equal,
-	                                                g_free,
-	                                                g_object_unref);
-
-	priv->system_connections = g_hash_table_new_full (g_str_hash,
-	                                                g_str_equal,
-	                                                g_free,
-	                                                g_object_unref);
-
-	priv->modem_manager = nm_modem_manager_get ();
-	priv->modem_added_id = g_signal_connect (priv->modem_manager, "device-added",
-									 G_CALLBACK (modem_added), manager);
-	priv->modem_removed_id = g_signal_connect (priv->modem_manager, "device-removed",
-									   G_CALLBACK (modem_removed), manager);
-
-	priv->vpn_manager = nm_vpn_manager_get ();
-	id = g_signal_connect (G_OBJECT (priv->vpn_manager), "connection-deactivated",
-	                       G_CALLBACK (vpn_manager_connection_deactivated_cb), manager);
-	priv->vpn_manager_id = id;
-
-	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
-
-	/* avahi-autoipd stuff */
-	priv->aipd_proxy = dbus_g_proxy_new_for_name (g_connection,
-	                                              NM_AUTOIP_DBUS_SERVICE,
-	                                              "/",
-	                                              NM_AUTOIP_DBUS_IFACE);
-	if (priv->aipd_proxy) {
-		dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_STRING_STRING,
-										   G_TYPE_NONE,
-										   G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
-										   G_TYPE_INVALID);
-
-		dbus_g_proxy_add_signal (priv->aipd_proxy,
-		                         "Event",
-		                         G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
-		                         G_TYPE_INVALID);
-
-		dbus_g_proxy_connect_signal (priv->aipd_proxy, "Event",
-									 G_CALLBACK (aipd_handle_event),
-									 manager,
-									 NULL);
-	} else
-		nm_warning ("%s: could not initialize avahi-autoipd D-Bus proxy", __func__);
-
-	/* System settings stuff */
-	priv->system_props_proxy = dbus_g_proxy_new_for_name (g_connection,
-	                                                      NM_DBUS_SERVICE_SYSTEM_SETTINGS,
-	                                                      NM_DBUS_PATH_SETTINGS,
-	                                                      "org.freedesktop.NetworkManagerSettings.System");
-	if (priv->system_props_proxy) {
-		dbus_g_object_register_marshaller (g_cclosure_marshal_VOID__BOXED,
-									G_TYPE_NONE, G_TYPE_VALUE, G_TYPE_INVALID);
-		dbus_g_proxy_add_signal (priv->system_props_proxy, "PropertiesChanged",
-		                         DBUS_TYPE_G_MAP_OF_VARIANT, G_TYPE_INVALID);
-		dbus_g_proxy_connect_signal (priv->system_props_proxy, "PropertiesChanged",
-		                             G_CALLBACK (system_settings_properties_changed_cb),
-		                             manager,
-		                             NULL);
-	} else
-		nm_warning ("%s: could not initialize system settings properties D-Bus proxy", __func__);
-}
-
 NMState
 nm_manager_get_state (NMManager *manager)
 {
 	g_return_val_if_fail (NM_IS_MANAGER (manager), NM_STATE_UNKNOWN);
 
 	return NM_MANAGER_GET_PRIVATE (manager)->state;
+}
+
+static void
+emit_removed (gpointer key, gpointer value, gpointer user_data)
+{
+	NMManager *manager = NM_MANAGER (user_data);
+	NMConnection *connection = NM_CONNECTION (value);
+
+	g_signal_emit (manager, signals[CONNECTION_REMOVED], 0,
+	               connection,
+	               nm_connection_get_scope (connection));
 }
 
 static void
@@ -535,91 +454,6 @@ pending_connection_info_destroy (PendingConnectionInfo *info)
 	g_free (info->device_path);
 
 	g_slice_free (PendingConnectionInfo, info);
-}
-
-static void
-dispose (GObject *object)
-{
-	NMManager *manager = NM_MANAGER (object);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-
-	if (priv->disposed) {
-		G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
-		return;
-	}
-	priv->disposed = TRUE;
-
-	pending_connection_info_destroy (priv->pending_connection_info);
-	priv->pending_connection_info = NULL;
-
-	if (priv->sync_devices_id) {
-		g_source_remove (priv->sync_devices_id);
-		priv->sync_devices_id = 0;
-	}
-
-	while (g_slist_length (priv->devices)) {
-		NMDevice *device = NM_DEVICE (priv->devices->data);
-
-		priv->devices = remove_one_device (manager, priv->devices, device);
-	}
-
-	nm_manager_connections_destroy (manager, NM_CONNECTION_SCOPE_USER);
-	g_hash_table_destroy (priv->user_connections);
-	priv->user_connections = NULL;
-
-	nm_manager_connections_destroy (manager, NM_CONNECTION_SCOPE_SYSTEM);
-	g_hash_table_destroy (priv->system_connections);
-	priv->system_connections = NULL;
-
-	g_free (priv->hostname);
-
-	if (priv->system_props_proxy) {
-		g_object_unref (priv->system_props_proxy);
-		priv->system_props_proxy = NULL;
-	}
-	g_slist_foreach (priv->unmanaged_udis, (GFunc) g_free, NULL);
-	g_slist_free (priv->unmanaged_udis);
-
-	if (priv->poke_id) {
-		g_source_remove (priv->poke_id);
-		priv->poke_id = 0;
-	}
-
-	if (priv->vpn_manager_id) {
-		g_source_remove (priv->vpn_manager_id);
-		priv->vpn_manager_id = 0;
-	}
-	g_object_unref (priv->vpn_manager);
-
-	if (priv->modem_added_id) {
-		g_source_remove (priv->modem_added_id);
-		priv->modem_added_id = 0;
-	}
-	if (priv->modem_removed_id) {
-		g_source_remove (priv->modem_removed_id);
-		priv->modem_removed_id = 0;
-	}
-	g_object_unref (priv->modem_manager);
-
-	g_object_unref (priv->dbus_mgr);
-	g_object_unref (priv->hal_mgr);
-	g_object_unref (priv->bluez_mgr);
-
-	G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
-}
-
-static void
-set_property (GObject *object, guint prop_id,
-			  const GValue *value, GParamSpec *pspec)
-{
-	switch (prop_id) {
-	case PROP_WIRELESS_ENABLED:
-		manager_set_wireless_enabled (NM_MANAGER (object), g_value_get_boolean (value));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
 }
 
 static GPtrArray *
@@ -656,194 +490,42 @@ get_active_connections (NMManager *manager, NMConnection *filter)
 }
 
 static void
-get_property (GObject *object, guint prop_id,
-			  GValue *value, GParamSpec *pspec)
+remove_connection (NMManager *manager,
+                   NMConnection *connection,
+                   GHashTable *hash)
 {
-	NMManager *self = NM_MANAGER (object);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	/* Destroys the connection, then associated DBusGProxy due to the
+	 * weak reference notify function placed on the connection when it
+	 * was created.
+	 */
+	g_object_ref (connection);
+	g_hash_table_remove (hash, nm_connection_get_path (connection));
+	g_signal_emit (manager, signals[CONNECTION_REMOVED], 0,
+	               connection,
+	               nm_connection_get_scope (connection));
+	g_object_unref (connection);
 
-	switch (prop_id) {
-	case PROP_STATE:
-		nm_manager_update_state (self);
-		g_value_set_uint (value, priv->state);
-		break;
-	case PROP_WIRELESS_ENABLED:
-		g_value_set_boolean (value, priv->wireless_enabled);
-		break;
-	case PROP_WIRELESS_HARDWARE_ENABLED:
-		g_value_set_boolean (value, priv->wireless_hw_enabled);
-		break;
-	case PROP_ACTIVE_CONNECTIONS:
-		g_value_take_boxed (value, get_active_connections (self, NULL));
-		break;
-	case PROP_HOSTNAME:
-		g_value_set_string (value, priv->hostname);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
+	bluez_manager_resync_devices (manager);
 }
+
+/*******************************************************************/
+/* User settings stuff via D-Bus                                   */
+/*******************************************************************/
 
 static void
-nm_manager_class_init (NMManagerClass *manager_class)
+user_destroy_connections (NMManager *manager)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (manager_class);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
-	g_type_class_add_private (manager_class, sizeof (NMManagerPrivate));
+	if (priv->user_connections) {
+		g_hash_table_foreach (priv->user_connections, emit_removed, manager);
+		g_hash_table_remove_all (priv->user_connections);
+	}
 
-	/* virtual methods */
-	manager_class->connection_added = connection_added_default_handler;
-
-	object_class->set_property = set_property;
-	object_class->get_property = get_property;
-	object_class->dispose = dispose;
-
-	/* properties */
-	g_object_class_install_property
-		(object_class, PROP_STATE,
-		 g_param_spec_uint (NM_MANAGER_STATE,
-							"State",
-							"Current state",
-							0, 5, 0, /* FIXME */
-							G_PARAM_READABLE));
-
-	g_object_class_install_property
-		(object_class, PROP_WIRELESS_ENABLED,
-		 g_param_spec_boolean (NM_MANAGER_WIRELESS_ENABLED,
-							   "WirelessEnabled",
-							   "Is wireless enabled",
-							   TRUE,
-							   G_PARAM_READWRITE));
-
-	g_object_class_install_property
-		(object_class, PROP_WIRELESS_HARDWARE_ENABLED,
-		 g_param_spec_boolean (NM_MANAGER_WIRELESS_HARDWARE_ENABLED,
-						   "WirelessHardwareEnabled",
-						   "RF kill state",
-						   TRUE,
-						   G_PARAM_READABLE));
-
-	g_object_class_install_property
-		(object_class, PROP_ACTIVE_CONNECTIONS,
-		 g_param_spec_boxed (NM_MANAGER_ACTIVE_CONNECTIONS,
-							  "Active connections",
-							  "Active connections",
-							  DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
-							  G_PARAM_READABLE));
-
-	/* Hostname is not exported over D-Bus */
-	g_object_class_install_property
-		(object_class, PROP_HOSTNAME,
-		 g_param_spec_string (NM_MANAGER_HOSTNAME,
-							  "Hostname",
-							  "Hostname",
-							  NULL,
-							  G_PARAM_READABLE | NM_PROPERTY_PARAM_NO_EXPORT));
-
-	/* signals */
-	signals[DEVICE_ADDED] =
-		g_signal_new ("device-added",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMManagerClass, device_added),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__OBJECT,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_OBJECT);
-
-	signals[DEVICE_REMOVED] =
-		g_signal_new ("device-removed",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMManagerClass, device_removed),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__OBJECT,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_OBJECT);
-
-	signals[STATE_CHANGED] =
-		g_signal_new ("state-changed",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMManagerClass, state_changed),
-					  NULL, NULL,
-					  g_cclosure_marshal_VOID__UINT,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_UINT);
-
-	signals[PROPERTIES_CHANGED] = 
-		nm_properties_changed_signal_new (object_class,
-								    G_STRUCT_OFFSET (NMManagerClass, properties_changed));
-
-	signals[CONNECTIONS_ADDED] =
-		g_signal_new ("connections-added",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMManagerClass, connections_added),
-					  NULL, NULL,
-		              g_cclosure_marshal_VOID__UINT,
-					  G_TYPE_NONE, 1,
-		              G_TYPE_UINT);
-
-	signals[CONNECTION_ADDED] =
-		g_signal_new ("connection-added",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMManagerClass, connection_added),
-					  NULL, NULL,
-				    _nm_marshal_VOID__OBJECT_UINT,
-					  G_TYPE_NONE, 2,
-				    G_TYPE_OBJECT, G_TYPE_UINT);
-
-	signals[CONNECTION_UPDATED] =
-		g_signal_new ("connection-updated",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMManagerClass, connection_updated),
-					  NULL, NULL,
-				      _nm_marshal_VOID__OBJECT_UINT,
-					  G_TYPE_NONE, 2,
-				      G_TYPE_OBJECT, G_TYPE_UINT);
-
-	signals[CONNECTION_REMOVED] =
-		g_signal_new ("connection-removed",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  G_STRUCT_OFFSET (NMManagerClass, connection_removed),
-					  NULL, NULL,
-				    _nm_marshal_VOID__OBJECT_UINT,
-					  G_TYPE_NONE, 2,
-				    G_TYPE_OBJECT, G_TYPE_UINT);
-
-	/* StateChange is DEPRECATED */
-	signals[STATE_CHANGE] =
-		g_signal_new ("state-change",
-					  G_OBJECT_CLASS_TYPE (object_class),
-					  G_SIGNAL_RUN_FIRST,
-					  0, NULL, NULL,
-					  g_cclosure_marshal_VOID__UINT,
-					  G_TYPE_NONE, 1,
-					  G_TYPE_UINT);
-
-
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (manager_class),
-									 &dbus_glib_nm_manager_object_info);
-
-	dbus_g_error_domain_register (NM_MANAGER_ERROR, NULL, NM_TYPE_MANAGER_ERROR);
-}
-
-static NMConnectionScope
-get_scope_for_proxy (DBusGProxy *proxy)
-{
-	const char *bus_name = dbus_g_proxy_get_bus_name (proxy);
-
-	if (strcmp (bus_name, NM_DBUS_SERVICE_USER_SETTINGS) == 0)
-		return NM_CONNECTION_SCOPE_USER;
-	else if (strcmp (bus_name, NM_DBUS_SERVICE_SYSTEM_SETTINGS) == 0)
-		return NM_CONNECTION_SCOPE_SYSTEM;
-
-	return NM_CONNECTION_SCOPE_UNKNOWN;
+	if (priv->user_proxy) {
+		g_object_unref (priv->user_proxy);
+		priv->user_proxy = NULL;
+	}
 }
 
 typedef struct GetSettingsInfo {
@@ -851,9 +533,7 @@ typedef struct GetSettingsInfo {
 	NMConnection *connection;
 	DBusGProxy *proxy;
 	DBusGProxyCall *call;
-	DBusGProxy *secrets_proxy;
 	GSList **calls;
-	NMConnectionScope scope;
 } GetSettingsInfo;
 
 static void
@@ -869,7 +549,7 @@ free_get_settings_info (gpointer data)
 		if (g_slist_length (*(info->calls)) == 0) {
 			g_slist_free (*(info->calls));
 			g_slice_free (GSList, (gpointer) info->calls);
-			g_signal_emit (info->manager, signals[CONNECTIONS_ADDED], 0, info->scope);
+			g_signal_emit (info->manager, signals[CONNECTIONS_ADDED], 0, NM_CONNECTION_SCOPE_USER);
 
 			/* Update the Bluetooth connections for all the new connections */
 			bluez_manager_resync_devices (info->manager);
@@ -884,20 +564,23 @@ free_get_settings_info (gpointer data)
 		g_object_unref (info->connection);
 		info->connection = NULL;
 	}
+	if (info->proxy) {
+		g_object_unref (info->proxy);
+		info->proxy = NULL;
+	}
 
 	g_slice_free (GetSettingsInfo, data);	
 }
 
 static void
-connection_get_settings_cb  (DBusGProxy *proxy,
-                             DBusGProxyCall *call_id,
-                             gpointer user_data)
+user_connection_get_settings_cb  (DBusGProxy *proxy,
+                                  DBusGProxyCall *call_id,
+                                  gpointer user_data)
 {
 	GetSettingsInfo *info = (GetSettingsInfo *) user_data;
 	GError *err = NULL;
 	GHashTable *settings = NULL;
 	NMConnection *connection;
-	NMConnectionScope scope;
 	NMManager *manager;
 
 	g_return_if_fail (info != NULL);
@@ -928,60 +611,29 @@ connection_get_settings_cb  (DBusGProxy *proxy,
 			goto out;
 		}
 
-		scope = get_scope_for_proxy (proxy);
-
 		nm_connection_set_path (connection, path);
-		nm_connection_set_scope (connection, scope);
-
-		g_object_set_data_full (G_OBJECT (connection),
-		                        NM_MANAGER_CONNECTION_PROXY_TAG,
-		                        proxy,
-		                        (GDestroyNotify) g_object_unref);
-
-		g_object_set_data_full (G_OBJECT (connection),
-		                        NM_MANAGER_CONNECTION_SECRETS_PROXY_TAG,
-		                        info->secrets_proxy,
-		                        (GDestroyNotify) g_object_unref);
+		nm_connection_set_scope (connection, NM_CONNECTION_SCOPE_USER);
 
 		/* Add the new connection to the internal hashes only if the same
 		 * connection isn't already there.
 		 */
 		priv = NM_MANAGER_GET_PRIVATE (manager);
-		switch (scope) {
-			case NM_CONNECTION_SCOPE_USER:
-				existing = g_hash_table_lookup (priv->user_connections, path);
-				if (!existing || !nm_connection_compare (existing, connection, NM_SETTING_COMPARE_FLAG_EXACT)) {
-					g_hash_table_insert (priv->user_connections,
-					                     g_strdup (path),
-					                     connection);
-					existing = NULL;
-				} else {
-					g_object_unref (connection);
-				}
-				break;
-			case NM_CONNECTION_SCOPE_SYSTEM:
-				existing = g_hash_table_lookup (priv->system_connections, path);
-				if (!existing || !nm_connection_compare (existing, connection, NM_SETTING_COMPARE_FLAG_EXACT)) {
-					g_hash_table_insert (priv->system_connections,
-					                     g_strdup (path),
-					                     connection);
-					existing = NULL;
-				} else {
-					g_object_unref (connection);
-				}
-				break;
-			default:
-				nm_warning ("Connection wasn't a user connection or a system connection.");
-				g_assert_not_reached ();
-				break;
-		}
+
+		existing = g_hash_table_lookup (priv->user_connections, path);
+		if (!existing || !nm_connection_compare (existing, connection, NM_SETTING_COMPARE_FLAG_EXACT)) {
+			g_hash_table_insert (priv->user_connections,
+			                     g_strdup (path),
+			                     connection);
+			existing = NULL;
+		} else
+			g_object_unref (connection);
 
 		/* If the connection-added signal is supposed to be batched, don't
 		 * emit the single connection-added here.  Also, don't emit the signal
 		 * if the connection wasn't actually added to the system or user hashes.
 		 */
 		if (!info->calls && !existing) {
-			g_signal_emit (manager, signals[CONNECTION_ADDED], 0, connection, scope);
+			g_signal_emit (manager, signals[CONNECTION_ADDED], 0, connection, NM_CONNECTION_SCOPE_USER);
 			/* Update the Bluetooth connections for that single new connection */
 			bluez_manager_resync_devices (manager);
 		}
@@ -997,74 +649,39 @@ out:
 	return;
 }
 
-static NMConnection *
-get_connection_for_proxy (NMManager *manager,
-                          DBusGProxy *proxy,
-                          GHashTable **out_hash)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	NMConnection *connection = NULL;
-	const char *path = dbus_g_proxy_get_path (proxy);
-
-	switch (get_scope_for_proxy (proxy)) {
-		case NM_CONNECTION_SCOPE_USER:
-			*out_hash = priv->user_connections;
-			connection = g_hash_table_lookup (priv->user_connections, path);
-			break;
-		case NM_CONNECTION_SCOPE_SYSTEM:
-			*out_hash = priv->system_connections;
-			connection = g_hash_table_lookup (priv->system_connections, path);
-			break;
-		default:
-			nm_warning ("Connection wasn't a user connection or a system connection.");
-			g_assert_not_reached ();
-			break;
-	}
-	return connection;
-}
-
 static void
-remove_connection (NMManager *manager,
-                   NMConnection *connection,
-                   GHashTable *hash)
-{
-	/* Destroys the connection, then associated DBusGProxy due to the
-	 * weak reference notify function placed on the connection when it
-	 * was created.
-	 */
-	g_object_ref (connection);
-	g_hash_table_remove (hash, nm_connection_get_path (connection));
-	g_signal_emit (manager, signals[CONNECTION_REMOVED], 0,
-	               connection,
-	               nm_connection_get_scope (connection));
-	g_object_unref (connection);
-
-	bluez_manager_resync_devices (manager);
-}
-
-static void
-connection_removed_cb (DBusGProxy *proxy, gpointer user_data)
-{
-	NMManager * manager = NM_MANAGER (user_data);
-	NMConnection *connection = NULL;
-	GHashTable *hash = NULL;
-
-	connection = get_connection_for_proxy (manager, proxy, &hash);
-	if (connection)
-		remove_connection (manager, connection, hash);
-}
-
-static void
-connection_updated_cb (DBusGProxy *proxy, GHashTable *settings, gpointer user_data)
+user_connection_removed_cb (DBusGProxy *proxy, gpointer user_data)
 {
 	NMManager *manager = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	NMConnection *connection = NULL;
+	const char *path;
+
+	path = dbus_g_proxy_get_path (proxy);
+	if (path) {
+		connection = g_hash_table_lookup (priv->user_connections, path);
+		if (connection)
+			remove_connection (manager, connection, priv->user_connections);
+	}
+}
+
+static void
+user_connection_updated_cb (DBusGProxy *proxy,
+                            GHashTable *settings,
+                            gpointer user_data)
+{
+	NMManager *manager = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	NMConnection *new_connection;
-	NMConnection *old_connection;
-	GHashTable *hash;
+	NMConnection *old_connection = NULL;
 	gboolean valid = FALSE;
 	GError *error = NULL;
+	const char *path;
 
-	old_connection = get_connection_for_proxy (manager, proxy, &hash);
+	path = dbus_g_proxy_get_path (proxy);
+	if (path)
+		old_connection = g_hash_table_lookup (priv->user_connections, path);
+
 	g_return_if_fail (old_connection != NULL);
 
 	new_connection = nm_connection_new_from_hash (settings, &error);
@@ -1075,7 +692,7 @@ connection_updated_cb (DBusGProxy *proxy, GHashTable *settings, gpointer user_da
 		            g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)),
 		            error->message, error->code);
 		g_error_free (error);
-		remove_connection (manager, old_connection, hash);
+		remove_connection (manager, old_connection, priv->user_connections);
 		return;
 	}
 	g_object_unref (new_connection);
@@ -1088,21 +705,20 @@ connection_updated_cb (DBusGProxy *proxy, GHashTable *settings, gpointer user_da
 
 		bluez_manager_resync_devices (manager);
 	} else {
-		remove_connection (manager, old_connection, hash);
+		remove_connection (manager, old_connection, priv->user_connections);
 	}
 }
 
 static void
-internal_new_connection_cb (DBusGProxy *proxy,
-                            const char *path,
-                            NMManager *manager,
-                            GSList **calls)
+user_internal_new_connection_cb (DBusGProxy *proxy,
+                                 const char *path,
+                                 NMManager *manager,
+                                 GSList **calls)
 {
 	struct GetSettingsInfo *info;
 	DBusGProxy *con_proxy;
-	DBusGConnection * g_connection;
+	DBusGConnection *g_connection;
 	DBusGProxyCall *call;
-	DBusGProxy *secrets_proxy;
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
 	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
@@ -1115,50 +731,38 @@ internal_new_connection_cb (DBusGProxy *proxy,
 		return;
 	}
 
-	secrets_proxy = dbus_g_proxy_new_for_name (g_connection,
-	                                           dbus_g_proxy_get_bus_name (proxy),
-	                                           path,
-	                                           NM_DBUS_IFACE_SETTINGS_CONNECTION_SECRETS);
-	if (!secrets_proxy) {
-		nm_warning ("Error: could not init user connection secrets proxy");
-		g_object_unref (con_proxy);
-		return;
-	}
-
 	dbus_g_proxy_add_signal (con_proxy, "Updated",
 	                         DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT,
 	                         G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (con_proxy, "Updated",
-	                             G_CALLBACK (connection_updated_cb),
+	                             G_CALLBACK (user_connection_updated_cb),
 	                             manager,
 	                             NULL);
 
 	dbus_g_proxy_add_signal (con_proxy, "Removed", G_TYPE_INVALID, G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (con_proxy, "Removed",
-	                             G_CALLBACK (connection_removed_cb),
+	                             G_CALLBACK (user_connection_removed_cb),
 	                             manager,
 	                             NULL);
 
 	info = g_slice_new0 (GetSettingsInfo);
 	info->manager = g_object_ref (manager);
 	info->calls = calls;
-	info->scope = get_scope_for_proxy (con_proxy);
 	call = dbus_g_proxy_begin_call (con_proxy, "GetSettings",
-	                                connection_get_settings_cb,
+	                                user_connection_get_settings_cb,
 	                                info,
 	                                free_get_settings_info,
 	                                G_TYPE_INVALID);
 	info->call = call;
 	info->proxy = con_proxy;
-	info->secrets_proxy = secrets_proxy;
 	if (info->calls)
 		*(info->calls) = g_slist_prepend (*(info->calls), call);
 }
 
 static void
-list_connections_cb  (DBusGProxy *proxy,
-                      DBusGProxyCall *call_id,
-                      gpointer user_data)
+user_list_connections_cb  (DBusGProxy *proxy,
+                           DBusGProxyCall *call_id,
+                           gpointer user_data)
 {
 	NMManager *manager = NM_MANAGER (user_data);
 	GError *err = NULL;
@@ -1182,7 +786,7 @@ list_connections_cb  (DBusGProxy *proxy,
 	for (i = 0; i < ops->len; i++) {
 		char *op = g_ptr_array_index (ops, i);
 
-		internal_new_connection_cb (proxy, op, manager, calls);
+		user_internal_new_connection_cb (proxy, op, manager, calls);
 		g_free (op);
 	}
 
@@ -1193,65 +797,200 @@ out:
 }
 
 static void
-new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
+user_new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
 {
-	internal_new_connection_cb (proxy, path, NM_MANAGER (user_data), NULL);
+	user_internal_new_connection_cb (proxy, path, NM_MANAGER (user_data), NULL);
 }
 
 static void
-query_connections (NMManager *manager,
-                   NMConnectionScope scope)
+user_query_connections (NMManager *manager)
 {
 	NMManagerPrivate *priv;
 	DBusGProxyCall *call;
-	DBusGProxy ** proxy;
-	const char * service;
+	DBusGConnection *g_connection;
 
 	g_return_if_fail (NM_IS_MANAGER (manager));
 
 	priv = NM_MANAGER_GET_PRIVATE (manager);
-	if (scope == NM_CONNECTION_SCOPE_USER) {
-		proxy = &priv->user_proxy;
-		service = NM_DBUS_SERVICE_USER_SETTINGS;
-	} else if (scope == NM_CONNECTION_SCOPE_SYSTEM) {
-		proxy = &priv->system_proxy;
-		service = NM_DBUS_SERVICE_SYSTEM_SETTINGS;
-	} else {
-		nm_warning ("Unknown NMConnectionScope %d", scope);
-		return;
-	}
-
-	if (!*proxy) {
-		DBusGConnection * g_connection;
-
+	if (!priv->user_proxy) {
 		g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
-		*proxy = dbus_g_proxy_new_for_name (g_connection,
-		                                    service,
-		                                    NM_DBUS_PATH_SETTINGS,
-		                                    NM_DBUS_IFACE_SETTINGS);
-		if (!*proxy) {
+		priv->user_proxy = dbus_g_proxy_new_for_name (g_connection,
+		                                              NM_DBUS_SERVICE_USER_SETTINGS,
+		                                              NM_DBUS_PATH_SETTINGS,
+		                                              NM_DBUS_IFACE_SETTINGS);
+		if (!priv->user_proxy) {
 			nm_warning ("Error: could not init settings proxy");
 			return;
 		}
 
-		dbus_g_proxy_add_signal (*proxy,
+		dbus_g_proxy_add_signal (priv->user_proxy,
 		                         "NewConnection",
 		                         DBUS_TYPE_G_OBJECT_PATH,
 		                         G_TYPE_INVALID);
 
-		dbus_g_proxy_connect_signal (*proxy, "NewConnection",
-		                             G_CALLBACK (new_connection_cb),
+		dbus_g_proxy_connect_signal (priv->user_proxy, "NewConnection",
+		                             G_CALLBACK (user_new_connection_cb),
 		                             manager,
 		                             NULL);
 	}
 
 	/* grab connections */
-	call = dbus_g_proxy_begin_call (*proxy, "ListConnections",
-	                                list_connections_cb,
+	call = dbus_g_proxy_begin_call (priv->user_proxy, "ListConnections",
+	                                user_list_connections_cb,
 	                                manager,
 	                                NULL,
 	                                G_TYPE_INVALID);
 }
+
+/*******************************************************************/
+/* System settings stuff via NMSysconfigSettings                   */
+/*******************************************************************/
+
+static void
+system_connection_updated_cb (NMExportedConnection *exported,
+                              gpointer unused,
+                              NMManager *manager)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	const char *path;
+	NMConnection *existing;
+	NMConnection *connection;
+	GError *error = NULL;
+
+	connection = nm_exported_connection_get_connection (exported);
+	path = nm_connection_get_path (connection);
+
+	existing = g_hash_table_lookup (priv->system_connections, path);
+	if (!existing)
+		return;
+	if (existing != connection) {
+		g_warning ("%s: existing connection didn't matched updated.", __func__);
+		return;
+	}
+
+	if (!nm_connection_verify (existing, &error)) {
+		/* Updated connection invalid, remove existing connection */
+		nm_warning ("%s: Invalid connection: '%s' / '%s' invalid: %d",
+		            __func__,
+		            g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)),
+		            error->message, error->code);
+		g_error_free (error);
+		remove_connection (manager, existing, priv->system_connections);
+		return;
+	}
+
+	g_signal_emit (manager, signals[CONNECTION_UPDATED], 0,
+	               existing, NM_CONNECTION_SCOPE_SYSTEM);
+
+	bluez_manager_resync_devices (manager);
+}
+
+static void
+system_connection_removed_cb (NMExportedConnection *exported,
+                              NMManager *manager)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	const char *path;
+	NMConnection *connection;
+
+	connection = nm_exported_connection_get_connection (exported);
+	path = nm_connection_get_path (connection);
+
+	connection = g_hash_table_lookup (priv->system_connections, path);
+	if (connection)
+		remove_connection (manager, connection, priv->system_connections);
+}
+
+static void
+system_internal_new_connection (NMManager *manager,
+                                NMExportedConnection *exported)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	NMConnection *connection;
+	const char *path;
+
+	g_return_if_fail (exported != NULL);
+
+	g_signal_connect (exported, "updated",
+	                  G_CALLBACK (system_connection_updated_cb), manager);
+	g_signal_connect (exported, "removed",
+	                  G_CALLBACK (system_connection_removed_cb), manager);
+
+	connection = nm_exported_connection_get_connection (exported);
+	path = nm_connection_get_path (NM_CONNECTION (connection));
+	g_hash_table_insert (priv->system_connections, g_strdup (path),
+	                     g_object_ref (connection));
+}
+
+static void
+system_new_connection_cb (NMSysconfigSettings *settings,
+                          NMExportedConnection *exported,
+                          NMManager *manager)
+{
+	system_internal_new_connection (manager, exported);
+}
+
+static void
+system_query_connections (NMManager *manager)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	GSList *system_connections, *iter;
+
+	system_connections = nm_sysconfig_settings_list_connections (priv->sys_settings);
+	for (iter = system_connections; iter; iter = g_slist_next (iter))
+		system_internal_new_connection (manager, NM_EXPORTED_CONNECTION (iter->data));
+	g_slist_free (system_connections);
+}
+
+static void
+system_unmanaged_devices_changed_cb (NMSysconfigSettings *sys_settings,
+                                     GParamSpec *pspec,
+                                     gpointer user_data)
+{
+	NMManager *manager = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	const GSList *unmanaged_specs, *iter;
+
+	unmanaged_specs = nm_sysconfig_settings_get_unmanaged_specs (sys_settings);
+	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *device = NM_DEVICE (iter->data);
+		gboolean managed;
+
+		managed = !nm_device_interface_spec_match_list (NM_DEVICE_INTERFACE (device), unmanaged_specs);
+		nm_device_set_managed (device,
+		                       managed,
+		                       managed ? NM_DEVICE_STATE_REASON_NOW_MANAGED :
+		                                   NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
+	}
+}
+
+static void
+system_hostname_changed_cb (NMSysconfigSettings *sys_settings,
+                            GParamSpec *pspec,
+                            gpointer user_data)
+{
+	NMManager *manager = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	char *hostname;
+
+	hostname = nm_sysconfig_settings_get_hostname (sys_settings);
+
+	if (!hostname && !priv->hostname)
+		return;
+
+	if (hostname && priv->hostname && !strcmp (hostname, priv->hostname))
+		return;
+
+	g_free (priv->hostname);
+	priv->hostname = (hostname && strlen (hostname)) ? g_strdup (hostname) : NULL;
+	g_object_notify (G_OBJECT (manager), NM_MANAGER_HOSTNAME);
+
+	g_free (hostname);
+}
+
+/*******************************************************************/
+/* General NMManager stuff                                         */
+/*******************************************************************/
 
 static NMDevice *
 nm_manager_get_device_by_udi (NMManager *manager, const char *udi)
@@ -1265,163 +1004,16 @@ nm_manager_get_device_by_udi (NMManager *manager, const char *udi)
 	return NULL;
 }
 
-static gboolean
-nm_manager_udi_is_managed (NMManager *self, const char *udi)
+static NMDevice *
+nm_manager_get_device_by_path (NMManager *manager, const char *path)
 {
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GSList *iter;
 
-	for (iter = priv->unmanaged_udis; iter; iter = iter->next) {
-		if (!strcmp (udi, iter->data))
-			return FALSE;
+	for (iter = NM_MANAGER_GET_PRIVATE (manager)->devices; iter; iter = iter->next) {
+		if (!strcmp (nm_device_get_path (NM_DEVICE (iter->data)), path))
+			return NM_DEVICE (iter->data);
 	}
-
-	return TRUE;
-}
-
-static void
-handle_unmanaged_devices (NMManager *manager, GPtrArray *ops)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	int i;
-	GSList *unmanaged = NULL, *iter;
-
-	g_slist_foreach (priv->unmanaged_udis, (GFunc) g_free, NULL);
-	g_slist_free (priv->unmanaged_udis);
-	priv->unmanaged_udis = NULL;
-
-	/* Mark unmanaged devices */
-	for (i = 0; ops && (i < ops->len); i++) {
-		NMDevice *device;
-		const char *udi = g_ptr_array_index (ops, i);
-
-		priv->unmanaged_udis = g_slist_prepend (priv->unmanaged_udis, g_strdup (udi));
-
-		device = nm_manager_get_device_by_udi (manager, udi);
-		if (device) {
-			unmanaged = g_slist_prepend (unmanaged, device);
-			nm_device_set_managed (device, FALSE, NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
-		}
-	}
-
-	/* Mark managed devices */
-	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
-		NMDevice *device = NM_DEVICE (iter->data);
-
-		if (!g_slist_find (unmanaged, device))
-			nm_device_set_managed (device, TRUE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
-	}
-
-	g_slist_free (unmanaged);
-}
-
-static void
-handle_hostname (NMManager *manager, const char *hostname)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-
-	if (!hostname && !priv->hostname)
-		return;
-
-	if (hostname && priv->hostname && !strcmp (hostname, priv->hostname))
-		return;
-
-	g_free (priv->hostname);
-	priv->hostname = (hostname && strlen (hostname)) ? g_strdup (hostname) : NULL;
-	g_object_notify (G_OBJECT (manager), NM_MANAGER_HOSTNAME);
-}
-
-static void
-system_settings_properties_changed_cb (DBusGProxy *proxy,
-                                       GHashTable *properties,
-                                       gpointer user_data)
-{
-	NMManager *manager = NM_MANAGER (user_data);
-	GValue *value;
-
-	value = g_hash_table_lookup (properties, "UnmanagedDevices");
-	if (value && G_VALUE_HOLDS (value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH))
-		handle_unmanaged_devices (manager, g_value_get_boxed (value));
-
-	value = g_hash_table_lookup (properties, "Hostname");
-	if (value && G_VALUE_HOLDS (value, G_TYPE_STRING))
-		handle_hostname (manager, g_value_get_string (value));
-}
-
-static void
-system_settings_get_unmanaged_devices_cb (DBusGProxy *proxy,
-                                          DBusGProxyCall *call_id,
-                                          gpointer user_data)
-{
-	NMManager *manager = NM_MANAGER (user_data);
-	GError *error = NULL;
-	GValue value = { 0, };
-
-	if (!dbus_g_proxy_end_call (proxy, call_id, &error,
-	                            G_TYPE_VALUE, &value,
-	                            G_TYPE_INVALID)) {
-		nm_warning ("%s: Error getting unmanaged devices from the system "
-		            "settings service: (%d) %s",
-		            __func__, error->code, error->message);
-		g_error_free (error);
-		g_object_unref (proxy);
-		return;
-	}
-
-	if (G_VALUE_HOLDS (&value, DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH))
-		handle_unmanaged_devices (manager, g_value_get_boxed (&value));
-
-	g_value_unset (&value);
-	g_object_unref (proxy);
-}
-
-static void
-system_settings_get_hostname_cb (DBusGProxy *proxy,
-                                 DBusGProxyCall *call_id,
-                                 gpointer user_data)
-{
-	NMManager *manager = NM_MANAGER (user_data);
-	GError *error = NULL;
-	GValue value = { 0, };
-
-	if (!dbus_g_proxy_end_call (proxy, call_id, &error,
-	                            G_TYPE_VALUE, &value,
-	                            G_TYPE_INVALID)) {
-		nm_warning ("%s: Error getting hostname from the system settings service: (%d) %s",
-		            __func__, error->code, error->message);
-		g_error_free (error);
-		g_object_unref (proxy);
-		return;
-	}
-
-	if (G_VALUE_HOLDS (&value, G_TYPE_STRING))
-		handle_hostname (manager, g_value_get_string (&value));
-
-	g_value_unset (&value);
-	g_object_unref (proxy);
-}
-
-static void
-query_system_settings_property (NMManager *manager,
-                                const char *property,
-                                DBusGProxyCallNotify callback)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	DBusGConnection *g_connection;
-	DBusGProxy *get_proxy;
-
-	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
-
-	/* Get unmanaged devices */
-	get_proxy = dbus_g_proxy_new_for_name (g_connection,
-		                                   NM_DBUS_SERVICE_SYSTEM_SETTINGS,
-		                                   NM_DBUS_PATH_SETTINGS,
-		                                   "org.freedesktop.DBus.Properties");
-
-	dbus_g_proxy_begin_call (get_proxy, "Get", callback, manager, NULL,
-	                         G_TYPE_STRING, NM_DBUS_IFACE_SETTINGS_SYSTEM,
-	                         G_TYPE_STRING, property,
-	                         G_TYPE_INVALID);
+	return NULL;
 }
 
 static void
@@ -1432,274 +1024,18 @@ nm_manager_name_owner_changed (NMDBusManager *mgr,
                                gpointer user_data)
 {
 	NMManager *manager = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	gboolean old_owner_good = (old && (strlen (old) > 0));
 	gboolean new_owner_good = (new && (strlen (new) > 0));
 
 	if (strcmp (name, NM_DBUS_SERVICE_USER_SETTINGS) == 0) {
 		if (!old_owner_good && new_owner_good) {
 			/* User Settings service appeared, update stuff */
-			query_connections (manager, NM_CONNECTION_SCOPE_USER);
+			user_query_connections (manager);
 		} else {
 			/* User Settings service disappeared, throw them away (?) */
-			nm_manager_connections_destroy (manager, NM_CONNECTION_SCOPE_USER);
+			user_destroy_connections (manager);
 			bluez_manager_resync_devices (manager);
 		}
-	} else if (strcmp (name, NM_DBUS_SERVICE_SYSTEM_SETTINGS) == 0) {
-		if (!old_owner_good && new_owner_good) {
-			if (priv->poke_id) {
-				g_source_remove (priv->poke_id);
-				priv->poke_id = 0;
-			}
-
-			/* System Settings service appeared, update stuff */
-			query_system_settings_property (manager, "UnmanagedDevices", system_settings_get_unmanaged_devices_cb);
-			query_system_settings_property (manager, "Hostname", system_settings_get_hostname_cb);
-			query_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
-		} else {
-			/* System Settings service disappeared, throw them away (?) */
-			nm_manager_connections_destroy (manager, NM_CONNECTION_SCOPE_SYSTEM);
-			bluez_manager_resync_devices (manager);
-
-			if (priv->system_props_proxy) {
-				g_object_unref (priv->system_props_proxy);
-				priv->system_props_proxy = NULL;
-			}
-
-			if (priv->poke_id)
-				g_source_remove (priv->poke_id);
-
-			/* Poke the system settings daemon so that it gets activated by dbus
-			 * system bus activation.
-			 */
-			priv->poke_id = g_idle_add (poke_system_settings_daemon_cb, (gpointer) manager);
-		}
-	}
-}
-
-static gboolean
-poke_system_settings_daemon_cb (gpointer user_data)
-{
-	NMManager *manager = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	DBusGConnection *g_connection;
-	DBusGProxy *proxy;
-
-	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
-	proxy = dbus_g_proxy_new_for_name (g_connection,
-	                                   NM_DBUS_SERVICE_SYSTEM_SETTINGS,
-	                                   NM_DBUS_PATH_SETTINGS,
-	                                   NM_DBUS_IFACE_SETTINGS);
-	if (!proxy) {
-		nm_warning ("Error: could not init system settings daemon proxy");
-		goto out;
-	}
-
-	nm_info ("Trying to start the system settings daemon...");
-	dbus_g_proxy_call_no_reply (proxy, "ListConnections", G_TYPE_INVALID);
-	g_object_unref (proxy);
-
-out:
-	/* Reschedule the poke */
-	priv->poke_id = g_timeout_add_seconds (SSD_POKE_INTERVAL, poke_system_settings_daemon_cb, (gpointer) manager);
-
-	return FALSE;
-}
-
-static gboolean
-initial_get_connections (gpointer user_data)
-{
-	NMManager *manager = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-
-	if (nm_dbus_manager_name_has_owner (priv->dbus_mgr,
-	                                    NM_DBUS_SERVICE_SYSTEM_SETTINGS)) {
-		query_system_settings_property (manager, "UnmanagedDevices", system_settings_get_unmanaged_devices_cb);
-		query_system_settings_property (manager, "Hostname", system_settings_get_hostname_cb);
-		query_connections (manager, NM_CONNECTION_SCOPE_SYSTEM);
-	} else {
-		/* Try to activate the system settings daemon */
-		priv->poke_id = g_idle_add (poke_system_settings_daemon_cb, (gpointer) manager);
-	}
-
-	if (nm_dbus_manager_name_has_owner (priv->dbus_mgr,
-	                                    NM_DBUS_SERVICE_USER_SETTINGS))
-		query_connections (manager, NM_CONNECTION_SCOPE_USER);
-
-	return FALSE;
-}
-
-static void
-sync_devices (NMManager *self)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *keep = NULL, *gone = NULL, *iter;
-
-	/* Keep devices still known to HAL; get rid of ones HAL no longer knows about */
-	for (iter = priv->devices; iter; iter = iter->next) {
-		NMDevice *device = NM_DEVICE (iter->data);
-		const char *udi = nm_device_get_udi (device);
-
-		if (nm_hal_manager_udi_exists (priv->hal_mgr, udi)) {
-			if (nm_manager_udi_is_managed (self, udi))
-				nm_device_set_managed (device, TRUE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
-			else
-				nm_device_set_managed (device, FALSE, NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
-			keep = g_slist_append (keep, device);
-		} else
-			gone = g_slist_append (gone, device);
-	}
-	g_slist_free (priv->devices);
-	priv->devices = keep;
-
-	/* Dispose of devices no longer present */
-	while (g_slist_length (gone))
-		gone = remove_one_device (self, gone, NM_DEVICE (gone->data));
-
-	/* Ask HAL for new devices */
-	nm_hal_manager_query_devices (priv->hal_mgr);
-
-	/* Ask for new bluetooth devices */
-	bluez_manager_resync_devices (self);
-}
-
-static gboolean
-deferred_sync_devices (gpointer user_data)
-{
-	NMManager *self = NM_MANAGER (user_data);
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-
-	priv->sync_devices_id = 0;
-	sync_devices (self);
-
-	return FALSE;
-}
-
-NMManager *
-nm_manager_get (void)
-{
-	static NMManager *singleton = NULL;
-	NMManagerPrivate *priv;
-	gboolean enabled;
-
-	if (singleton)
-		return g_object_ref (singleton);
-
-	singleton = (NMManager *) g_object_new (NM_TYPE_MANAGER, NULL);
-	g_assert (singleton);
-
-	priv = NM_MANAGER_GET_PRIVATE (singleton);
-
-	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (priv->dbus_mgr),
-	                                     NM_DBUS_PATH,
-	                                     G_OBJECT (singleton));
-
-	g_signal_connect (priv->dbus_mgr,
-	                  "name-owner-changed",
-	                  G_CALLBACK (nm_manager_name_owner_changed),
-	                  singleton);
-
-	g_idle_add ((GSourceFunc) initial_get_connections, singleton);
-
-	priv->hal_mgr = nm_hal_manager_new ();
-	priv->sync_devices_id = g_idle_add (deferred_sync_devices, singleton);
-
-	g_signal_connect (priv->hal_mgr,
-	                  "udi-added",
-	                  G_CALLBACK (hal_manager_udi_added_cb),
-	                  singleton);
-
-	g_signal_connect (priv->hal_mgr,
-	                  "udi-removed",
-	                  G_CALLBACK (hal_manager_udi_removed_cb),
-	                  singleton);
-
-	g_signal_connect (priv->hal_mgr,
-	                  "hal-reappeared",
-	                  G_CALLBACK (hal_manager_hal_reappeared_cb),
-	                  singleton);
-
-	priv->udev_mgr = nm_udev_manager_new ();
-	g_signal_connect (priv->udev_mgr,
-	                  "rfkill-changed",
-	                  G_CALLBACK (udev_manager_rfkill_changed_cb),
-	                  singleton);
-
-	switch (nm_udev_manager_get_rfkill_state (priv->udev_mgr)) {
-	case RFKILL_UNBLOCKED:
-		priv->wireless_enabled = TRUE;
-		priv->wireless_hw_enabled = TRUE;
-		break;
-	case RFKILL_SOFT_BLOCKED:
-		priv->wireless_enabled = FALSE;
-		priv->wireless_hw_enabled = TRUE;
-		break;
-	case RFKILL_HARD_BLOCKED:
-		priv->wireless_enabled = FALSE;
-		priv->wireless_hw_enabled = FALSE;
-		break;
-	default:
-		break;
-	}	
-
-	enabled = (priv->wireless_enabled && priv->wireless_hw_enabled);
-	nm_info ("Wireless now %s by radio killswitch", enabled ? "enabled" : "disabled");
-	manager_set_wireless_enabled (singleton, enabled);
-
-	priv->bluez_mgr = nm_bluez_manager_get ();
-
-	g_signal_connect (priv->bluez_mgr,
-			  "bdaddr-added",
-			  G_CALLBACK (bluez_manager_bdaddr_added_cb),
-			  singleton);
-
-	g_signal_connect (priv->bluez_mgr,
-			  "bdaddr-removed",
-			  G_CALLBACK (bluez_manager_bdaddr_removed_cb),
-			  singleton);
-
-	return singleton;
-}
-
-static void
-emit_removed (gpointer key, gpointer value, gpointer user_data)
-{
-	NMManager *manager = NM_MANAGER (user_data);
-	NMConnection *connection = NM_CONNECTION (value);
-
-	g_signal_emit (manager, signals[CONNECTION_REMOVED], 0,
-	               connection,
-	               nm_connection_get_scope (connection));
-}
-
-static void
-nm_manager_connections_destroy (NMManager *manager,
-                                NMConnectionScope scope)
-{
-	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-
-	if (scope == NM_CONNECTION_SCOPE_USER) {
-		if (priv->user_connections) {
-			g_hash_table_foreach (priv->user_connections, emit_removed, manager);
-			g_hash_table_remove_all (priv->user_connections);
-		}
-
-		if (priv->user_proxy) {
-			g_object_unref (priv->user_proxy);
-			priv->user_proxy = NULL;
-		}
-	} else if (scope == NM_CONNECTION_SCOPE_SYSTEM) {
-		if (priv->system_connections) {
-			g_hash_table_foreach (priv->system_connections, emit_removed, manager);
-			g_hash_table_remove_all (priv->system_connections);
-		}
-
-		if (priv->system_proxy) {
-			g_object_unref (priv->system_proxy);
-			priv->system_proxy = NULL;
-		}
-	} else {
-		nm_warning ("Unknown NMConnectionScope %d", scope);
 	}
 }
 
@@ -1799,6 +1135,9 @@ add_device (NMManager *self, NMDevice *device)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	const char *iface, *driver;
+	char *path;
+	static guint32 devcount = 0;
+	const GSList *unmanaged_specs;
 
 	priv->devices = g_slist_append (priv->devices, device);
 
@@ -1836,10 +1175,18 @@ add_device (NMManager *self, NMDevice *device)
 	else
 		g_assert_not_reached ();
 
+	path = g_strdup_printf ("/org/freedesktop/NetworkManager/Devices/%d", devcount++);
+	nm_device_set_path (device, path);
 	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (priv->dbus_mgr),
-								  nm_device_get_udi (NM_DEVICE (device)),
-								  G_OBJECT (device));
-	nm_info ("(%s): exported as %s", iface, nm_device_get_udi (device));
+	                                     path,
+	                                     G_OBJECT (device));
+	nm_info ("(%s): exported as %s", iface, path);
+	g_free (path);
+
+	/* Start the device if it's supposed to be managed */
+	unmanaged_specs = nm_sysconfig_settings_get_unmanaged_specs (priv->sys_settings);
+	if (!priv->sleeping && !nm_device_interface_spec_match_list (NM_DEVICE_INTERFACE (device), unmanaged_specs))
+		nm_device_set_managed (device, TRUE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
 
 	g_signal_emit (self, signals[DEVICE_ADDED], 0, device);
 }
@@ -1953,11 +1300,11 @@ bluez_manager_resync_devices (NMManager *self)
 
 static void
 bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
-			       const char *bdaddr,
-			       const char *name,
-			       const char *object_path,
-			       guint32 capabilities,
-			       NMManager *manager)
+                               const char *bdaddr,
+                               const char *name,
+                               const char *object_path,
+                               guint32 capabilities,
+                               NMManager *manager)
 {
 	NMDeviceBt *device;
 	gboolean has_dun = (capabilities & NM_BT_CAPABILITY_DUN);
@@ -2017,55 +1364,67 @@ bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
 	}
 }
 
+static NMDevice *
+find_device_by_ifindex (NMManager *self, guint32 ifindex)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+
+	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *device = NM_DEVICE (iter->data);
+		gint candidate_idx = 0;
+
+		if (NM_IS_DEVICE_ETHERNET (device))
+			candidate_idx = nm_device_ethernet_get_ifindex (NM_DEVICE_ETHERNET (device));
+		else if (NM_IS_DEVICE_WIFI (device))
+			candidate_idx = nm_device_wifi_get_ifindex (NM_DEVICE_WIFI (device));
+
+		if (candidate_idx == ifindex)
+			return device;
+	}
+
+	return NULL;
+}
+
 static void
-hal_manager_udi_added_cb (NMHalManager *hal_mgr,
-                          const char *udi,
-                          const char *originating_device,
-                          gpointer general_type_ptr,
-                          NMDeviceCreatorFn creator_fn,
-                          gpointer user_data)
+udev_device_added_cb (NMUdevManager *udev_mgr,
+                      GUdevDevice *udev_device,
+                      NMDeviceCreatorFn creator_fn,
+                      gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 	GObject *device;
+	guint32 ifindex;
 
-	if (priv->sleeping)
+	ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
+	if (find_device_by_ifindex (self, ifindex))
 		return;
 
-	/* Make sure the device is not already in the device list */
-	if (nm_manager_get_device_by_udi (self, udi))
-		return;
-
-	device = creator_fn (hal_mgr, udi, originating_device, nm_manager_udi_is_managed (self, udi));
-	if (!device)
-		return;
-
-	add_device (self, NM_DEVICE (device));
+	device = creator_fn (udev_mgr, udev_device, priv->sleeping);
+	if (device)
+		add_device (self, NM_DEVICE (device));
 }
 
 static void
-hal_manager_udi_removed_cb (NMHalManager *manager,
-                            const char *udi,
-                            gpointer user_data)
+udev_device_removed_cb (NMUdevManager *manager,
+                        GUdevDevice *udev_device,
+                        gpointer user_data)
 {
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *iter;
+	NMDevice *device;
+	guint32 ifindex;
 
-	g_return_if_fail (udi != NULL);
+	ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
+	device = find_device_by_ifindex (self, ifindex);
+	if (device)
+		priv->devices = remove_one_device (self, priv->devices, device);
 
-	for (iter = priv->devices; iter; iter = iter->next) {
-		NMDevice *device = NM_DEVICE (iter->data);
-
-		if (!strcmp (nm_device_get_udi (device), udi)) {
-			priv->devices = remove_one_device (self, priv->devices, device);
-			break;
-		}
-	}
 }
 
 static void
-udev_manager_rfkill_changed_cb (NMHalManager *hal_mgr,
+udev_manager_rfkill_changed_cb (NMUdevManager *udev_mgr,
                                 RfKillState state,
                                 gpointer user_data)
 {
@@ -2099,13 +1458,6 @@ udev_manager_rfkill_changed_cb (NMHalManager *hal_mgr,
 	manager_set_wireless_enabled (self, new_we);
 }
 
-static void
-hal_manager_hal_reappeared_cb (NMHalManager *hal_mgr,
-                               gpointer user_data)
-{
-	sync_devices (NM_MANAGER (user_data));
-}
-
 GSList *
 nm_manager_get_devices (NMManager *manager)
 {
@@ -2123,7 +1475,7 @@ impl_manager_get_devices (NMManager *manager, GPtrArray **devices, GError **err)
 	*devices = g_ptr_array_sized_new (g_slist_length (priv->devices));
 
 	for (iter = priv->devices; iter; iter = iter->next)
-		g_ptr_array_add (*devices, g_strdup (nm_device_get_udi (NM_DEVICE (iter->data))));
+		g_ptr_array_add (*devices, g_strdup (nm_device_get_path (NM_DEVICE (iter->data))));
 
 	return TRUE;
 }
@@ -2159,6 +1511,276 @@ nm_manager_get_act_request_by_path (NMManager *manager,
 	return NULL;
 }
 
+typedef struct GetSecretsInfo {
+	NMManager *manager;
+	NMSecretsProviderInterface *provider;
+
+	char *setting_name;
+	RequestSecretsCaller caller;
+	gboolean request_new;
+
+	/* User connection bits */
+	DBusGProxy *proxy;
+	DBusGProxyCall *call;
+
+	/* System connection bits */
+	guint32 idle_id;
+	char *hint1;
+	char *hint2;
+	char *connection_path;
+} GetSecretsInfo;
+
+static void
+free_get_secrets_info (gpointer data)
+{
+	GetSecretsInfo *info = data;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (info->manager);
+
+	g_object_weak_unref (G_OBJECT (info->provider), (GWeakNotify) free_get_secrets_info, info);
+
+	priv->secrets_calls = g_slist_remove (priv->secrets_calls, info);
+
+	if (info->proxy) {
+		if (info->call)
+			dbus_g_proxy_cancel_call (info->proxy, info->call);
+		g_object_unref (info->proxy);
+	}
+
+	if (info->idle_id)
+		g_source_remove (info->idle_id);
+
+	g_free (info->hint1);
+	g_free (info->hint2);
+	g_free (info->setting_name);
+	g_free (info->connection_path);
+	memset (info, 0, sizeof (GetSecretsInfo));
+	g_free (info);
+}
+
+static void
+provider_cancel_secrets (NMSecretsProviderInterface *provider, gpointer user_data)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (user_data);
+	GSList *iter;
+
+	for (iter = priv->secrets_calls; iter; iter = g_slist_next (iter)) {
+		GetSecretsInfo *candidate = iter->data;
+
+		if (candidate->provider == provider) {
+			free_get_secrets_info (candidate);
+			break;
+		}
+	}
+}
+
+static void
+user_get_secrets_cb (DBusGProxy *proxy,
+                     DBusGProxyCall *call,
+                     gpointer user_data)
+{
+	GetSecretsInfo *info = (GetSecretsInfo *) user_data;
+	NMManagerPrivate *priv;
+	GHashTable *settings = NULL;
+	GError *error = NULL;
+
+	g_return_if_fail (info != NULL);
+	g_return_if_fail (info->provider);
+	g_return_if_fail (info->setting_name);
+
+	priv = NM_MANAGER_GET_PRIVATE (info->manager);
+
+	if (dbus_g_proxy_end_call (proxy, call, &error,
+	                           DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, &settings,
+	                           G_TYPE_INVALID)) {
+		nm_secrets_provider_interface_get_secrets_result (info->provider,
+		                                                  info->setting_name,
+		                                                  info->caller,
+		                                                  settings,
+		                                                  NULL);
+		g_hash_table_destroy (settings);
+	} else {
+		nm_secrets_provider_interface_get_secrets_result (info->provider,
+		                                                  info->setting_name,
+		                                                  info->caller,
+		                                                  NULL,
+		                                                  error);
+		g_clear_error (&error);
+	}
+
+	info->call = NULL;
+	free_get_secrets_info (info);
+}
+
+static GetSecretsInfo *
+user_get_secrets (NMManager *self,
+                  NMSecretsProviderInterface *provider,
+                  NMConnection *connection,
+                  const char *setting_name,
+                  gboolean request_new,
+                  RequestSecretsCaller caller_id,
+                  const char *hint1,
+                  const char *hint2)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	DBusGConnection *g_connection;
+	GetSecretsInfo *info = NULL;
+	GPtrArray *hints = NULL;
+
+	info = g_malloc0 (sizeof (GetSecretsInfo));
+
+	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
+	info->proxy = dbus_g_proxy_new_for_name (g_connection,
+	                                         NM_DBUS_SERVICE_USER_SETTINGS,
+	                                         nm_connection_get_path (connection),
+	                                         NM_DBUS_IFACE_SETTINGS_CONNECTION_SECRETS);
+	if (!info->proxy) {
+		nm_warning ("%s: could not create user connection secrets proxy", __func__);
+		g_free (info);
+		return NULL;
+	}
+
+	info->manager = self;
+	info->provider = provider;
+	info->caller = caller_id;
+	info->setting_name = g_strdup (setting_name);
+
+	g_object_weak_ref (G_OBJECT (provider), (GWeakNotify) free_get_secrets_info, info);
+
+	hints = g_ptr_array_sized_new (2);
+	if (hint1)
+		g_ptr_array_add (hints, (char *) hint1);
+	if (hint2)
+		g_ptr_array_add (hints, (char *) hint2);
+
+	info->call = dbus_g_proxy_begin_call_with_timeout (info->proxy, "GetSecrets",
+	                                                   user_get_secrets_cb,
+	                                                   info,
+	                                                   NULL,
+	                                                   G_MAXINT32,
+	                                                   G_TYPE_STRING, setting_name,
+	                                                   DBUS_TYPE_G_ARRAY_OF_STRING, hints,
+	                                                   G_TYPE_BOOLEAN, request_new,
+	                                                   G_TYPE_INVALID);
+	g_ptr_array_free (hints, TRUE);
+	return info;
+}
+
+static gboolean
+system_get_secrets_cb (gpointer user_data)
+{
+	GetSecretsInfo *info = user_data;
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (info->manager);
+	GHashTable *settings;
+	NMSysconfigConnection *exported;
+	GError *error = NULL;
+	const char *hints[3] = { NULL, NULL, NULL };
+
+	exported = nm_sysconfig_settings_get_connection_by_path (priv->sys_settings, 
+	                                                         info->connection_path);
+	if (!exported) {
+		g_set_error (&error, 0, 0, "%s", "unknown connection (not exported by "
+		             "system settings)");
+		nm_secrets_provider_interface_get_secrets_result (info->provider,
+		                                                  info->setting_name,
+		                                                  info->caller,
+		                                                  NULL,
+		                                                  error);
+		g_clear_error (&error);
+		return FALSE;
+	}
+
+	hints[0] = info->hint1;
+	hints[1] = info->hint2;
+	settings = nm_sysconfig_connection_get_secrets (exported,
+	                                                info->setting_name,
+	                                                hints,
+	                                                info->request_new,
+	                                                &error);
+	nm_secrets_provider_interface_get_secrets_result (info->provider,
+	                                                  info->setting_name,
+	                                                  info->caller,
+	                                                  settings,
+	                                                  NULL);
+	g_hash_table_destroy (settings);
+	return FALSE;
+}
+
+static GetSecretsInfo *
+system_get_secrets (NMManager *self,
+                    NMSecretsProviderInterface *provider,
+                    NMConnection *connection,
+                    const char *setting_name,
+                    gboolean request_new,
+                    RequestSecretsCaller caller_id,
+                    const char *hint1,
+                    const char *hint2)
+{
+	GetSecretsInfo *info;
+
+	info = g_malloc0 (sizeof (GetSecretsInfo));
+	info->manager = self;
+	info->provider = provider;
+	info->caller = caller_id;
+	info->setting_name = g_strdup (setting_name);
+	info->hint1 = hint1 ? g_strdup (hint1) : NULL;
+	info->hint2 = hint2 ? g_strdup (hint2) : NULL;
+	info->connection_path = g_strdup (nm_connection_get_path (connection));
+	info->request_new = request_new;
+
+	g_object_weak_ref (G_OBJECT (provider), (GWeakNotify) free_get_secrets_info, info);
+
+	info->idle_id = g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
+	                                 system_get_secrets_cb,
+	                                 info,
+	                                 free_get_secrets_info);
+	return info;
+}
+
+static gboolean
+provider_get_secrets (NMSecretsProviderInterface *provider,
+                      NMConnection *connection,
+                      const char *setting_name,
+                      gboolean request_new,
+                      RequestSecretsCaller caller_id,
+                      const char *hint1,
+                      const char *hint2,
+                      gpointer user_data)
+{
+	NMManager *self = NM_MANAGER (user_data);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GetSecretsInfo *info = NULL;
+	NMConnectionScope scope;
+	GSList *iter;
+
+	g_return_val_if_fail (connection != NULL, FALSE);
+	g_return_val_if_fail (setting_name != NULL, FALSE);
+
+	/* Tear down any pending secrets requests for this secrets provider */
+	for (iter = priv->secrets_calls; iter; iter = g_slist_next (iter)) {
+		GetSecretsInfo *candidate = iter->data;
+
+		if (provider == candidate->provider) {
+			free_get_secrets_info (candidate);
+			break;
+		}
+	}
+
+	/* Build up the new secrets request */
+	scope = nm_connection_get_scope (connection);
+	if (scope == NM_CONNECTION_SCOPE_SYSTEM) {
+		info = system_get_secrets (self, provider, connection, setting_name,
+		                           request_new, caller_id, hint1, hint2);
+	} else if (scope == NM_CONNECTION_SCOPE_USER) {
+		info = user_get_secrets (self, provider, connection, setting_name,
+		                         request_new, caller_id, hint1, hint2);
+	}
+
+	if (info)
+		priv->secrets_calls = g_slist_append (priv->secrets_calls, info);
+
+	return !!info;
+}
+
 static const char *
 internal_activate_device (NMManager *manager,
                           NMDevice *device,
@@ -2189,6 +1811,8 @@ internal_activate_device (NMManager *manager,
 	}
 
 	req = nm_act_request_new (connection, specific_object, user_requested, (gpointer) device);
+	g_signal_connect (req, "manager-get-secrets", G_CALLBACK (provider_get_secrets), manager);
+	g_signal_connect (req, "manager-cancel-secrets", G_CALLBACK (provider_cancel_secrets), manager);
 	success = nm_device_interface_activate (dev_iface, req, error);
 	g_object_unref (req);
 
@@ -2229,8 +1853,9 @@ nm_manager_activate_connection (NMManager *manager,
                                 GError **error)
 {
 	NMDevice *device = NULL;
-	char *path = NULL;
 	NMSettingConnection *s_con;
+	NMVPNConnection *vpn_connection;
+	const char *path;
 
 	g_return_val_if_fail (manager != NULL, NULL);
 	g_return_val_if_fail (connection != NULL, NULL);
@@ -2261,17 +1886,22 @@ nm_manager_activate_connection (NMManager *manager,
 		}
 
 		vpn_manager = nm_vpn_manager_get ();
-		path = (char *) nm_vpn_manager_activate_connection (vpn_manager,
-		                                                    connection,
-		                                                    req,
-		                                                    device,
-		                                                    error);
+		vpn_connection = nm_vpn_manager_activate_connection (vpn_manager,
+		                                                     connection,
+		                                                     req,
+		                                                     device,
+		                                                     error);
+		g_signal_connect (vpn_connection, "manager-get-secrets",
+		                  G_CALLBACK (provider_get_secrets), manager);
+		g_signal_connect (vpn_connection, "manager-cancel-secrets",
+		                  G_CALLBACK (provider_cancel_secrets), manager);
+		path = nm_vpn_connection_get_active_connection_path (vpn_connection);
 		g_object_unref (vpn_manager);
 	} else {
 		NMDeviceState state;
 
 		/* Device-based connection */
-		device = nm_manager_get_device_by_udi (manager, device_path);
+		device = nm_manager_get_device_by_path (manager, device_path);
 		if (!device) {
 			g_set_error (error,
 			             NM_MANAGER_ERROR, NM_MANAGER_ERROR_UNKNOWN_DEVICE,
@@ -2287,12 +1917,12 @@ nm_manager_activate_connection (NMManager *manager,
 			return NULL;
 		}
 
-		path = (char *) internal_activate_device (manager,
-		                                          device,
-		                                          connection,
-		                                          specific_object,
-		                                          user_requested,
-		                                          error);
+		path = internal_activate_device (manager,
+		                                 device,
+		                                 connection,
+		                                 specific_object,
+		                                 user_requested,
+		                                 error);
 	}
 
 	return path;
@@ -2583,13 +2213,14 @@ impl_manager_deactivate_connection (NMManager *manager,
 }
 
 static gboolean
-impl_manager_sleep (NMManager *manager, gboolean sleep, GError **error)
+impl_manager_sleep (NMManager *self, gboolean sleep, GError **error)
 {
 	NMManagerPrivate *priv;
+	GSList *iter;
 
-	g_return_val_if_fail (NM_IS_MANAGER (manager), FALSE);
+	g_return_val_if_fail (NM_IS_MANAGER (self), FALSE);
 
-	priv = NM_MANAGER_GET_PRIVATE (manager);
+	priv = NM_MANAGER_GET_PRIVATE (self);
 
 	if (priv->sleeping == sleep) {
 		g_set_error (error,
@@ -2601,8 +2232,6 @@ impl_manager_sleep (NMManager *manager, gboolean sleep, GError **error)
 	priv->sleeping = sleep;
 
 	if (sleep) {
-		GSList *iter;
-
 		nm_info ("Sleeping...");
 
 		/* Just deactivate and down all devices from the device list,
@@ -2611,16 +2240,27 @@ impl_manager_sleep (NMManager *manager, gboolean sleep, GError **error)
 		for (iter = priv->devices; iter; iter = iter->next)
 			nm_device_set_managed (NM_DEVICE (iter->data), FALSE, NM_DEVICE_STATE_REASON_SLEEPING);
 	} else {
+		const GSList *unmanaged_specs;
+
 		nm_info  ("Waking up...");
 
-		sync_devices (manager);
-		if (priv->sync_devices_id) {
-			g_source_remove (priv->sync_devices_id);
-			priv->sync_devices_id = 0;
+		unmanaged_specs = nm_sysconfig_settings_get_unmanaged_specs (priv->sys_settings);
+
+		/* Re-manage managed devices */
+		for (iter = priv->devices; iter; iter = iter->next) {
+			NMDevice *device = NM_DEVICE (iter->data);
+
+			if (nm_device_interface_spec_match_list (NM_DEVICE_INTERFACE (device), unmanaged_specs))
+				nm_device_set_managed (device, FALSE, NM_DEVICE_STATE_REASON_NOW_UNMANAGED);
+			else
+				nm_device_set_managed (device, TRUE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
 		}
+
+		/* Ask for new bluetooth devices */
+		bluez_manager_resync_devices (self);
 	}
 
-	nm_manager_update_state (manager);
+	nm_manager_update_state (self);
 	return TRUE;
 }
 
@@ -2733,5 +2373,422 @@ nm_manager_get_active_connections_by_connection (NMManager *manager,
                                                  NMConnection *connection)
 {
 	return get_active_connections (manager, connection);
+}
+
+void
+nm_manager_start (NMManager *self)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	gboolean enabled;
+
+	switch (nm_udev_manager_get_rfkill_state (priv->udev_mgr)) {
+	case RFKILL_UNBLOCKED:
+		priv->wireless_enabled = TRUE;
+		priv->wireless_hw_enabled = TRUE;
+		break;
+	case RFKILL_SOFT_BLOCKED:
+		priv->wireless_enabled = FALSE;
+		priv->wireless_hw_enabled = TRUE;
+		break;
+	case RFKILL_HARD_BLOCKED:
+		priv->wireless_enabled = FALSE;
+		priv->wireless_hw_enabled = FALSE;
+		break;
+	default:
+		break;
+	}
+
+	enabled = (priv->wireless_enabled && priv->wireless_hw_enabled);
+	nm_info ("Wireless now %s by radio killswitch", enabled ? "enabled" : "disabled");
+	manager_set_wireless_enabled (self, enabled);
+
+	system_unmanaged_devices_changed_cb (priv->sys_settings, NULL, self);
+	system_hostname_changed_cb (priv->sys_settings, NULL, self);
+	system_query_connections (self);
+
+	/* Get user connections if the user settings service is around, otherwise
+	 * they will be queried when the user settings service shows up on the
+	 * bus in nm_manager_name_owner_changed().
+	 */
+	if (nm_dbus_manager_name_has_owner (priv->dbus_mgr, NM_DBUS_SERVICE_USER_SETTINGS))
+		user_query_connections (self);
+
+	nm_udev_manager_query_devices (priv->udev_mgr);
+	bluez_manager_resync_devices (self);
+}
+
+NMManager *
+nm_manager_get (const char *plugins, GError **error)
+{
+	static NMManager *singleton = NULL;
+	NMManagerPrivate *priv;
+
+	if (singleton)
+		return g_object_ref (singleton);
+
+	singleton = (NMManager *) g_object_new (NM_TYPE_MANAGER, NULL);
+	g_assert (singleton);
+
+	priv = NM_MANAGER_GET_PRIVATE (singleton);
+
+	priv->sys_settings = nm_sysconfig_settings_new (plugins, error);
+	if (!priv->sys_settings) {
+		g_object_unref (singleton);
+		return NULL;
+	}
+
+	g_signal_connect (priv->sys_settings, "notify::" NM_SYSCONFIG_SETTINGS_UNMANAGED_SPECS,
+	                  G_CALLBACK (system_unmanaged_devices_changed_cb), singleton);
+	g_signal_connect (priv->sys_settings, "notify::" NM_SYSCONFIG_SETTINGS_HOSTNAME,
+	                  G_CALLBACK (system_hostname_changed_cb), singleton);
+	g_signal_connect (priv->sys_settings, "new-connection",
+	                  G_CALLBACK (system_new_connection_cb), singleton);
+
+	dbus_g_connection_register_g_object (nm_dbus_manager_get_connection (priv->dbus_mgr),
+	                                     NM_DBUS_PATH,
+	                                     G_OBJECT (singleton));
+
+	g_signal_connect (priv->dbus_mgr,
+	                  "name-owner-changed",
+	                  G_CALLBACK (nm_manager_name_owner_changed),
+	                  singleton);
+
+	priv->udev_mgr = nm_udev_manager_new ();
+	g_signal_connect (priv->udev_mgr,
+	                  "device-added",
+	                  G_CALLBACK (udev_device_added_cb),
+	                  singleton);
+	g_signal_connect (priv->udev_mgr,
+	                  "device-removed",
+	                  G_CALLBACK (udev_device_removed_cb),
+	                  singleton);
+	g_signal_connect (priv->udev_mgr,
+	                  "rfkill-changed",
+	                  G_CALLBACK (udev_manager_rfkill_changed_cb),
+	                  singleton);
+
+	priv->bluez_mgr = nm_bluez_manager_get ();
+
+	g_signal_connect (priv->bluez_mgr,
+			  "bdaddr-added",
+			  G_CALLBACK (bluez_manager_bdaddr_added_cb),
+			  singleton);
+
+	g_signal_connect (priv->bluez_mgr,
+			  "bdaddr-removed",
+			  G_CALLBACK (bluez_manager_bdaddr_removed_cb),
+			  singleton);
+
+	return singleton;
+}
+
+static void
+dispose (GObject *object)
+{
+	NMManager *manager = NM_MANAGER (object);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+
+	if (priv->disposed) {
+		G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
+		return;
+	}
+	priv->disposed = TRUE;
+
+	pending_connection_info_destroy (priv->pending_connection_info);
+	priv->pending_connection_info = NULL;
+
+	while (g_slist_length (priv->secrets_calls)) {
+		GetSecretsInfo *info = priv->secrets_calls->data;
+
+		free_get_secrets_info (info);
+	}
+
+	while (g_slist_length (priv->devices)) {
+		NMDevice *device = NM_DEVICE (priv->devices->data);
+
+		priv->devices = remove_one_device (manager, priv->devices, device);
+	}
+
+	user_destroy_connections (manager);
+	g_hash_table_destroy (priv->user_connections);
+	priv->user_connections = NULL;
+
+	g_hash_table_foreach (priv->system_connections, emit_removed, manager);
+	g_hash_table_remove_all (priv->system_connections);
+	g_hash_table_destroy (priv->system_connections);
+	priv->system_connections = NULL;
+
+	g_free (priv->hostname);
+
+	if (priv->sys_settings) {
+		g_object_unref (priv->sys_settings);
+		priv->sys_settings = NULL;
+	}
+
+	if (priv->vpn_manager_id) {
+		g_source_remove (priv->vpn_manager_id);
+		priv->vpn_manager_id = 0;
+	}
+	g_object_unref (priv->vpn_manager);
+
+	if (priv->modem_added_id) {
+		g_source_remove (priv->modem_added_id);
+		priv->modem_added_id = 0;
+	}
+	if (priv->modem_removed_id) {
+		g_source_remove (priv->modem_removed_id);
+		priv->modem_removed_id = 0;
+	}
+	g_object_unref (priv->modem_manager);
+
+	g_object_unref (priv->dbus_mgr);
+	if (priv->bluez_mgr)
+		g_object_unref (priv->bluez_mgr);
+
+	G_OBJECT_CLASS (nm_manager_parent_class)->dispose (object);
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+			  const GValue *value, GParamSpec *pspec)
+{
+	switch (prop_id) {
+	case PROP_WIRELESS_ENABLED:
+		manager_set_wireless_enabled (NM_MANAGER (object), g_value_get_boolean (value));
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+get_property (GObject *object, guint prop_id,
+			  GValue *value, GParamSpec *pspec)
+{
+	NMManager *self = NM_MANAGER (object);
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+
+	switch (prop_id) {
+	case PROP_STATE:
+		nm_manager_update_state (self);
+		g_value_set_uint (value, priv->state);
+		break;
+	case PROP_WIRELESS_ENABLED:
+		g_value_set_boolean (value, priv->wireless_enabled);
+		break;
+	case PROP_WIRELESS_HARDWARE_ENABLED:
+		g_value_set_boolean (value, priv->wireless_hw_enabled);
+		break;
+	case PROP_ACTIVE_CONNECTIONS:
+		g_value_take_boxed (value, get_active_connections (self, NULL));
+		break;
+	case PROP_HOSTNAME:
+		g_value_set_string (value, priv->hostname);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+nm_manager_init (NMManager *manager)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+	DBusGConnection *g_connection;
+	guint id;
+
+	priv->wireless_enabled = TRUE;
+	priv->wireless_hw_enabled = TRUE;
+	priv->sleeping = FALSE;
+	priv->state = NM_STATE_DISCONNECTED;
+
+	priv->dbus_mgr = nm_dbus_manager_get ();
+
+	priv->user_connections = g_hash_table_new_full (g_str_hash,
+	                                                g_str_equal,
+	                                                g_free,
+	                                                g_object_unref);
+
+	priv->system_connections = g_hash_table_new_full (g_str_hash,
+	                                                  g_str_equal,
+	                                                  g_free,
+	                                                  g_object_unref);
+
+	priv->modem_manager = nm_modem_manager_get ();
+	priv->modem_added_id = g_signal_connect (priv->modem_manager, "device-added",
+	                                         G_CALLBACK (modem_added), manager);
+	priv->modem_removed_id = g_signal_connect (priv->modem_manager, "device-removed",
+	                                           G_CALLBACK (modem_removed), manager);
+
+	priv->vpn_manager = nm_vpn_manager_get ();
+	id = g_signal_connect (G_OBJECT (priv->vpn_manager), "connection-deactivated",
+	                       G_CALLBACK (vpn_manager_connection_deactivated_cb), manager);
+	priv->vpn_manager_id = id;
+
+	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
+
+	/* avahi-autoipd stuff */
+	priv->aipd_proxy = dbus_g_proxy_new_for_name (g_connection,
+	                                              NM_AUTOIP_DBUS_SERVICE,
+	                                              "/",
+	                                              NM_AUTOIP_DBUS_IFACE);
+	if (priv->aipd_proxy) {
+		dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_STRING_STRING,
+		                                   G_TYPE_NONE,
+		                                   G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+		                                   G_TYPE_INVALID);
+
+		dbus_g_proxy_add_signal (priv->aipd_proxy,
+		                         "Event",
+		                         G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+		                         G_TYPE_INVALID);
+
+		dbus_g_proxy_connect_signal (priv->aipd_proxy, "Event",
+		                             G_CALLBACK (aipd_handle_event),
+		                             manager,
+		                             NULL);
+	} else
+		nm_warning ("%s: could not initialize avahi-autoipd D-Bus proxy", __func__);
+}
+
+static void
+nm_manager_class_init (NMManagerClass *manager_class)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (manager_class);
+
+	g_type_class_add_private (manager_class, sizeof (NMManagerPrivate));
+
+	/* virtual methods */
+	manager_class->connection_added = connection_added_default_handler;
+
+	object_class->set_property = set_property;
+	object_class->get_property = get_property;
+	object_class->dispose = dispose;
+
+	/* properties */
+	g_object_class_install_property
+		(object_class, PROP_STATE,
+		 g_param_spec_uint (NM_MANAGER_STATE,
+		                    "State",
+		                    "Current state",
+		                    0, NM_STATE_DISCONNECTED, 0,
+		                    G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_WIRELESS_ENABLED,
+		 g_param_spec_boolean (NM_MANAGER_WIRELESS_ENABLED,
+		                       "WirelessEnabled",
+		                       "Is wireless enabled",
+		                       TRUE,
+		                       G_PARAM_READWRITE));
+
+	g_object_class_install_property
+		(object_class, PROP_WIRELESS_HARDWARE_ENABLED,
+		 g_param_spec_boolean (NM_MANAGER_WIRELESS_HARDWARE_ENABLED,
+		                       "WirelessHardwareEnabled",
+		                       "RF kill state",
+		                       TRUE,
+		                       G_PARAM_READABLE));
+
+	g_object_class_install_property
+		(object_class, PROP_ACTIVE_CONNECTIONS,
+		 g_param_spec_boxed (NM_MANAGER_ACTIVE_CONNECTIONS,
+		                     "Active connections",
+		                     "Active connections",
+		                     DBUS_TYPE_G_ARRAY_OF_OBJECT_PATH,
+		                     G_PARAM_READABLE));
+
+	/* Hostname is not exported over D-Bus */
+	g_object_class_install_property
+		(object_class, PROP_HOSTNAME,
+		 g_param_spec_string (NM_MANAGER_HOSTNAME,
+		                      "Hostname",
+		                      "Hostname",
+		                      NULL,
+		                      G_PARAM_READABLE | NM_PROPERTY_PARAM_NO_EXPORT));
+
+	/* signals */
+	signals[DEVICE_ADDED] =
+		g_signal_new ("device-added",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMManagerClass, device_added),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__OBJECT,
+		              G_TYPE_NONE, 1, G_TYPE_OBJECT);
+
+	signals[DEVICE_REMOVED] =
+		g_signal_new ("device-removed",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMManagerClass, device_removed),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__OBJECT,
+		              G_TYPE_NONE, 1, G_TYPE_OBJECT);
+
+	signals[STATE_CHANGED] =
+		g_signal_new ("state-changed",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMManagerClass, state_changed),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__UINT,
+		              G_TYPE_NONE, 1, G_TYPE_UINT);
+
+	signals[PROPERTIES_CHANGED] =
+		nm_properties_changed_signal_new (object_class,
+		                                  G_STRUCT_OFFSET (NMManagerClass, properties_changed));
+
+	signals[CONNECTIONS_ADDED] =
+		g_signal_new ("connections-added",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMManagerClass, connections_added),
+		              NULL, NULL,
+		              g_cclosure_marshal_VOID__UINT,
+		              G_TYPE_NONE, 1, G_TYPE_UINT);
+
+	signals[CONNECTION_ADDED] =
+		g_signal_new ("connection-added",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMManagerClass, connection_added),
+		              NULL, NULL,
+		              _nm_marshal_VOID__OBJECT_UINT,
+		              G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_UINT);
+
+	signals[CONNECTION_UPDATED] =
+		g_signal_new ("connection-updated",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMManagerClass, connection_updated),
+		              NULL, NULL,
+		              _nm_marshal_VOID__OBJECT_UINT,
+		              G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_UINT);
+
+	signals[CONNECTION_REMOVED] =
+		g_signal_new ("connection-removed",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              G_STRUCT_OFFSET (NMManagerClass, connection_removed),
+		              NULL, NULL,
+		              _nm_marshal_VOID__OBJECT_UINT,
+		              G_TYPE_NONE, 2, G_TYPE_OBJECT, G_TYPE_UINT);
+
+	/* StateChange is DEPRECATED */
+	signals[STATE_CHANGE] =
+		g_signal_new ("state-change",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_FIRST,
+		              0, NULL, NULL,
+		              g_cclosure_marshal_VOID__UINT,
+		              G_TYPE_NONE, 1, G_TYPE_UINT);
+
+	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (manager_class),
+	                                 &dbus_glib_nm_manager_object_info);
+
+	dbus_g_error_domain_register (NM_MANAGER_ERROR, NULL, NM_TYPE_MANAGER_ERROR);
 }
 

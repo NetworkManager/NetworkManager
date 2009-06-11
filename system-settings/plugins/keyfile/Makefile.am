@@ -1,7 +1,7 @@
 SUBDIRS=io tests
 
 INCLUDES = \
-	-I$(top_srcdir)/system-settings/src \
+	-I$(top_srcdir)/src/system-settings \
 	-I$(top_srcdir)/include \
 	-I$(top_srcdir)/libnm-util \
 	-I$(top_srcdir)/libnm-glib \

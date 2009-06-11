@@ -204,10 +204,6 @@ else
 fi
 AM_CONDITIONAL(NO_GIO, test x"$have_gio" == "xno")
 
-PKG_CHECK_MODULES(HAL, hal >= 0.5.0)
-AC_SUBST(HAL_CFLAGS)
-AC_SUBST(HAL_LIBS)
-
 PKG_CHECK_MODULES(LIBNL, libnl-1 >= 1.0-pre8)
 AC_SUBST(LIBNL_CFLAGS)
 AC_SUBST(LIBNL_LIBS)
@@ -447,6 +443,7 @@ src/ppp-manager/Makefile
 src/dnsmasq-manager/Makefile
 src/modem-manager/Makefile
 src/bluez-manager/Makefile
+src/system-settings/Makefile
 src/backends/Makefile
 libnm-util/libnm-util.pc
 libnm-util/Makefile
@@ -459,7 +456,6 @@ gfilemonitor/Makefile
 callouts/Makefile
 tools/Makefile
 system-settings/Makefile
-system-settings/src/Makefile
 system-settings/plugins/Makefile
 system-settings/plugins/ifupdown/Makefile
 system-settings/plugins/ifcfg-rh/Makefile

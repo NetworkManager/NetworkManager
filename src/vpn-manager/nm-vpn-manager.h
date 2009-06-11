@@ -67,11 +67,11 @@ GType nm_vpn_manager_get_type (void);
 
 NMVPNManager *nm_vpn_manager_get (void);
 
-const char *nm_vpn_manager_activate_connection (NMVPNManager *manager,
-                                                NMConnection *connection,
-                                                NMActRequest *act_request,
-                                                NMDevice *device,
-                                                GError **error);
+NMVPNConnection *nm_vpn_manager_activate_connection (NMVPNManager *manager,
+                                                     NMConnection *connection,
+                                                     NMActRequest *act_request,
+                                                     NMDevice *device,
+                                                     GError **error);
 
 gboolean nm_vpn_manager_deactivate_connection (NMVPNManager *manager,
                                                const char *path,

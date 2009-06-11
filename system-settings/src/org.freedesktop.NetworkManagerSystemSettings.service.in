@@ -1,5 +1,0 @@
-[D-BUS Service]
-Name=org.freedesktop.NetworkManagerSystemSettings
-Exec=@sbindir@/nm-system-settings --config /etc/NetworkManager/nm-system-settings.conf
-User=root
-

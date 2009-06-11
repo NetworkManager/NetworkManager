@@ -408,12 +408,12 @@ impl_ppp_manager_need_secrets (NMPPPManager *manager,
 	 * servers (T-Mobile USA) appear to ask a few times when they actually don't
 	 * even care what you pass back.
 	 */
-	nm_act_request_request_connection_secrets (priv->act_req,
-	                                           setting_name,
-	                                           tries > 1 ? TRUE : FALSE,
-	                                           SECRETS_CALLER_PPP,
-	                                           hint1,
-	                                           hint2);
+	nm_act_request_get_secrets (priv->act_req,
+	                            setting_name,
+	                            tries > 1 ? TRUE : FALSE,
+	                            SECRETS_CALLER_PPP,
+	                            hint1,
+	                            hint2);
 	g_object_set_data (G_OBJECT (connection), PPP_MANAGER_SECRET_TRIES, GUINT_TO_POINTER (++tries));
 	priv->pending_secrets_context = context;
 

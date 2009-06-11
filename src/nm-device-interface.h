@@ -41,16 +41,16 @@ typedef enum
 #define NM_DEVICE_INTERFACE_ERROR (nm_device_interface_error_quark ())
 #define NM_TYPE_DEVICE_INTERFACE_ERROR (nm_device_interface_error_get_type ()) 
 
-#define NM_DEVICE_INTERFACE_UDI "udi"
-#define NM_DEVICE_INTERFACE_IFACE "interface"
-#define NM_DEVICE_INTERFACE_DRIVER "driver"
+#define NM_DEVICE_INTERFACE_UDI          "udi"
+#define NM_DEVICE_INTERFACE_IFACE        "interface"
+#define NM_DEVICE_INTERFACE_DRIVER       "driver"
 #define NM_DEVICE_INTERFACE_CAPABILITIES "capabilities"
-#define NM_DEVICE_INTERFACE_IP4_ADDRESS "ip4-address"
-#define NM_DEVICE_INTERFACE_IP4_CONFIG "ip4-config"
+#define NM_DEVICE_INTERFACE_IP4_ADDRESS  "ip4-address"
+#define NM_DEVICE_INTERFACE_IP4_CONFIG   "ip4-config"
 #define NM_DEVICE_INTERFACE_DHCP4_CONFIG "dhcp4-config"
-#define NM_DEVICE_INTERFACE_STATE "state"
-#define NM_DEVICE_INTERFACE_DEVICE_TYPE "device-type" /* ugh */
-#define NM_DEVICE_INTERFACE_MANAGED "managed"
+#define NM_DEVICE_INTERFACE_STATE        "state"
+#define NM_DEVICE_INTERFACE_DEVICE_TYPE  "device-type" /* ugh */
+#define NM_DEVICE_INTERFACE_MANAGED      "managed"
 
 typedef enum {
 	NM_DEVICE_INTERFACE_PROP_FIRST = 0x1000,
@@ -84,6 +84,8 @@ struct _NMDeviceInterface {
 
 	void (*deactivate) (NMDeviceInterface *device, NMDeviceStateReason reason);
 
+	gboolean (*spec_match_list) (NMDeviceInterface *device, const GSList *specs);
+
 	/* Signals */
 	void (*state_changed) (NMDeviceInterface *device,
 	                       NMDeviceState new_state,
@@ -107,5 +109,8 @@ gboolean nm_device_interface_activate (NMDeviceInterface *device,
 void nm_device_interface_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason);
 
 NMDeviceState nm_device_interface_get_state (NMDeviceInterface *device);
+
+gboolean nm_device_interface_spec_match_list (NMDeviceInterface *device,
+                                              const GSList *specs);
 
 #endif /* NM_DEVICE_INTERFACE_H */

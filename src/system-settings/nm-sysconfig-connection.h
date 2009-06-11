@@ -42,6 +42,13 @@ typedef struct {
 
 GType nm_sysconfig_connection_get_type (void);
 
+/* Only for internal NM usage */
+GHashTable *nm_sysconfig_connection_get_secrets (NMSysconfigConnection *self,
+                                                 const gchar *setting_name,
+                                                 const gchar **hints,
+                                                 gboolean request_new,
+                                                 GError **error);
+
 G_END_DECLS
 
 #endif /* NM_SYSCONFIG_CONNECTION_H */

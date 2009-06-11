@@ -648,7 +648,7 @@ auto_activate_device (gpointer user_data)
 		GError *error = NULL;
 		const char *device_path;
 
-		device_path = nm_device_get_udi (data->device);
+		device_path = nm_device_get_path (data->device);
 		if (!nm_manager_activate_connection (policy->manager,
 		                                     best_connection,
 		                                     specific_object,

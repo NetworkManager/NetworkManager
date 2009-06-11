@@ -118,12 +118,12 @@ nm_system_config_interface_get_type (void)
 
 void
 nm_system_config_interface_init (NMSystemConfigInterface *config,
-                                 NMSystemConfigHalManager *hal_manager)
+                                 gpointer unused)
 {
 	g_return_if_fail (config != NULL);
 
 	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->init)
-		NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->init (config, hal_manager);
+		NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->init (config);
 }
 
 GSList *
@@ -137,12 +137,12 @@ nm_system_config_interface_get_connections (NMSystemConfigInterface *config)
 }
 
 GSList *
-nm_system_config_interface_get_unmanaged_devices (NMSystemConfigInterface *config)
+nm_system_config_interface_get_unmanaged_specs (NMSystemConfigInterface *config)
 {
 	g_return_val_if_fail (config != NULL, NULL);
 
-	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->get_unmanaged_devices)
-		return NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->get_unmanaged_devices (config);
+	if (NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->get_unmanaged_specs)
+		return NM_SYSTEM_CONFIG_INTERFACE_GET_INTERFACE (config)->get_unmanaged_specs (config);
 	return NULL;
 }
 

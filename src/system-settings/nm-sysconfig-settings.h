@@ -19,18 +19,18 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2009 Red Hat, Inc.
  * (C) Copyright 2008 Novell, Inc.
  */
 
-#ifndef __DBUS_SETTINGS_H__
-#define __DBUS_SETTINGS_H__
+#ifndef __NM_SYSCONFIG_SETTINGS_H__
+#define __NM_SYSCONFIG_SETTINGS_H__
 
 #include <nm-connection.h>
 #include <nm-settings.h>
 
+#include "nm-sysconfig-connection.h"
 #include "nm-system-config-interface.h"
-#include "nm-system-config-hal-manager.h"
 
 typedef struct _NMSysconfigSettings NMSysconfigSettings;
 typedef struct _NMSysconfigSettingsClass NMSysconfigSettingsClass;
@@ -42,7 +42,7 @@ typedef struct _NMSysconfigSettingsClass NMSysconfigSettingsClass;
 #define NM_IS_SYSCONFIG_SETTINGS_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_SYSCONFIG_SETTINGS))
 #define NM_SYSCONFIG_SETTINGS_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_SYSCONFIG_SETTINGS, NMSysconfigSettingsClass))
 
-#define NM_SYSCONFIG_SETTINGS_UNMANAGED_DEVICES "unmanaged-devices"
+#define NM_SYSCONFIG_SETTINGS_UNMANAGED_SPECS "unmanaged-specs"
 #define NM_SYSCONFIG_SETTINGS_HOSTNAME "hostname"
 #define NM_SYSCONFIG_SETTINGS_CAN_MODIFY "can-modify"
 
@@ -61,11 +61,7 @@ struct _NMSysconfigSettingsClass
 
 GType nm_sysconfig_settings_get_type (void);
 
-NMSysconfigSettings *nm_sysconfig_settings_new (DBusGConnection *g_conn,
-						NMSystemConfigHalManager *hal_mgr);
-
-void nm_sysconfig_settings_add_plugin     (NMSysconfigSettings *settings,
-					   NMSystemConfigInterface *plugin);
+NMSysconfigSettings *nm_sysconfig_settings_new (const char *plugins, GError **error);
 
 /* Registers an exising connection with the settings service */
 void nm_sysconfig_settings_add_connection (NMSysconfigSettings *settings,
@@ -75,12 +71,6 @@ void nm_sysconfig_settings_add_connection (NMSysconfigSettings *settings,
 void nm_sysconfig_settings_remove_connection (NMSysconfigSettings *settings,
                                               NMExportedConnection *connection,
                                               gboolean do_signal);
-
-void nm_sysconfig_settings_update_unamanged_devices (NMSysconfigSettings *settings,
-                                                     GSList *new_list);
-
-gboolean nm_sysconfig_settings_is_device_managed (NMSysconfigSettings *settings,
-                                                  const char *udi);
 
 NMSystemConfigInterface *nm_sysconfig_settings_get_plugin (NMSysconfigSettings *self,
                                                            guint32 capability);
@@ -92,4 +82,13 @@ gboolean nm_sysconfig_settings_add_new_connection (NMSysconfigSettings *self,
                                                    GHashTable *hash,
                                                    GError **error);
 
-#endif  /* __DBUS_SETTINGS_H__ */
+const GSList *nm_sysconfig_settings_get_unmanaged_specs (NMSysconfigSettings *self);
+
+char *nm_sysconfig_settings_get_hostname (NMSysconfigSettings *self);
+
+GSList *nm_sysconfig_settings_list_connections (NMSysconfigSettings *self);
+
+NMSysconfigConnection *nm_sysconfig_settings_get_connection_by_path (NMSysconfigSettings *self,
+                                                                     const char *path);
+
+#endif  /* __NM_SYSCONFIG_SETTINGS_H__ */

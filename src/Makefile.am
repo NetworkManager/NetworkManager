@@ -8,6 +8,7 @@ SUBDIRS= \
 	dnsmasq-manager \
 	modem-manager \
 	bluez-manager \
+	system-settings \
 	. \
 	tests
 
@@ -21,7 +22,9 @@ INCLUDES = -I${top_srcdir}                   \
            -I${top_srcdir}/src/dnsmasq-manager  \
            -I${top_srcdir}/src/modem-manager  \
            -I$(top_srcdir)/src/bluez-manager \
+           -I$(top_srcdir)/src/system-settings \
            -I${top_srcdir}/libnm-util \
+           -I${top_srcdir}/libnm-glib \
            -I${top_srcdir}/callouts
 
 ###########################################
@@ -71,14 +74,14 @@ NetworkManager_SOURCES = \
 		NetworkManagerAP.h \
 		nm-dbus-manager.h \
 		nm-dbus-manager.c \
-		nm-hal-manager.c \
-		nm-hal-manager.h \
 		nm-udev-manager.c \
 		nm-udev-manager.h \
 		nm-hostname-provider.c \
 		nm-hostname-provider.h \
 		nm-ip4-config.c \
 		nm-ip4-config.h \
+		nm-secrets-provider-interface.c \
+		nm-secrets-provider-interface.h \
 		nm-active-connection.h \
 		nm-active-connection.c \
 		NetworkManager.c \
@@ -150,6 +153,7 @@ NetworkManager_CPPFLAGS = \
 	$(GUDEV_CFLAGS) \
 	$(OPENSSL_CFLAGS) \
 	$(LIBNL_CFLAGS) \
+	$(GMODULE_CFLAGS) \
 	-DG_DISABLE_DEPRECATED \
 	-DBINDIR=\"$(bindir)\" \
 	-DSBINDIR=\"$(sbindir)\" \
@@ -167,6 +171,7 @@ NetworkManager_LDADD = \
 	$(HAL_LIBS) \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS) \
+	$(GMODULE_LIBS) \
 	$(top_builddir)/marshallers/libmarshallers.la \
 	./named-manager/libnamed-manager.la \
 	./vpn-manager/libvpn-manager.la \
@@ -176,6 +181,7 @@ NetworkManager_LDADD = \
 	./ppp-manager/libppp-manager.la \
 	./modem-manager/libmodem-manager.la \
 	./bluez-manager/libbluez-manager.la \
+	./system-settings/libsystem-settings.la \
 	./backends/libnmbackend.la \
 	$(top_builddir)/libnm-util/libnm-util.la
 

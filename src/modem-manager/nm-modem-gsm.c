@@ -129,12 +129,12 @@ stage1_prepare_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_d
 
 		if (required_secret) {
 			nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
-			nm_act_request_request_connection_secrets (nm_device_get_act_request (device),
-													   NM_SETTING_GSM_SETTING_NAME,
-													   retry_secret,
-													   SECRETS_CALLER_GSM,
-													   required_secret,
-													   NULL);
+			nm_act_request_get_secrets (nm_device_get_act_request (device),
+			                            NM_SETTING_GSM_SETTING_NAME,
+			                            retry_secret,
+			                            SECRETS_CALLER_GSM,
+			                            required_secret,
+			                            NULL);
 		} else
 			nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, translate_mm_error (error));
 
@@ -237,12 +237,12 @@ real_act_stage1_prepare (NMDevice *device, NMDeviceStateReason *reason)
 	nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
 
 	tries = GPOINTER_TO_UINT (g_object_get_data (G_OBJECT (connection), GSM_SECRETS_TRIES));
-	nm_act_request_request_connection_secrets (req,
-											   setting_name,
-											   tries ? TRUE : FALSE,
-											   SECRETS_CALLER_GSM,
-											   hint1,
-											   hint2);
+	nm_act_request_get_secrets (req,
+	                            setting_name,
+	                            tries ? TRUE : FALSE,
+	                            SECRETS_CALLER_GSM,
+	                            hint1,
+	                            hint2);
 	g_object_set_data (G_OBJECT (connection), GSM_SECRETS_TRIES, GUINT_TO_POINTER (++tries));
 
 	if (hints)

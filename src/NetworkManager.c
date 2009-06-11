@@ -36,6 +36,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <glib/gi18n.h>
+#include <gmodule.h>
 #include <string.h>
 
 #include "NetworkManager.h"
@@ -243,6 +244,30 @@ write_pidfile (const char *pidfile)
 		nm_warning ("Closing %s failed: %s", pidfile, strerror (errno));
 }
 
+static gboolean
+parse_config_file (const char *filename, char **plugins, GError **error)
+{
+	GKeyFile *config;
+
+	config = g_key_file_new ();
+	if (!config) {
+		g_set_error (error, 0, 0,
+		             "Not enough memory to load config file.");
+		return FALSE;
+	}
+
+	g_key_file_set_list_separator (config, ',');
+	if (!g_key_file_load_from_file (config, filename, G_KEY_FILE_NONE, error))
+		return FALSE;
+
+	*plugins = g_key_file_get_value (config, "main", "plugins", error);
+	if (*error)
+		return FALSE;
+
+	g_key_file_free (config);
+	return TRUE;
+}
+
 /*
  * main
  *
@@ -251,10 +276,10 @@ int
 main (int argc, char *argv[])
 {
 	GOptionContext *opt_ctx = NULL;
-	gboolean		become_daemon = FALSE;
-	gboolean		g_fatal_warnings = FALSE;
-	char *		pidfile = NULL;
-	char *		user_pidfile = NULL;
+	gboolean become_daemon = FALSE;
+	gboolean g_fatal_warnings = FALSE;
+	char *pidfile = NULL, *user_pidfile = NULL;
+	char *config = NULL, *plugins = NULL;
 	gboolean success;
 	NMPolicy *policy = NULL;
 	NMVPNManager *vpn_manager = NULL;
@@ -262,16 +287,24 @@ main (int argc, char *argv[])
 	NMDBusManager *dbus_mgr = NULL;
 	NMSupplicantManager *sup_mgr = NULL;
 	NMDHCPManager *dhcp_mgr = NULL;
+	GError *error = NULL;
 
 	GOptionEntry options[] = {
-		{"no-daemon", 0, 0, G_OPTION_ARG_NONE, &become_daemon, "Don't become a daemon", NULL},
+		{ "no-daemon", 0, 0, G_OPTION_ARG_NONE, &become_daemon, "Don't become a daemon", NULL },
 		{ "g-fatal-warnings", 0, 0, G_OPTION_ARG_NONE, &g_fatal_warnings, "Make all warnings fatal", NULL },
-		{"pid-file", 0, 0, G_OPTION_ARG_FILENAME, &user_pidfile, "Specify the location of a PID file", "filename"},
+		{ "pid-file", 0, 0, G_OPTION_ARG_FILENAME, &user_pidfile, "Specify the location of a PID file", "filename" },
+		{ "config", 0, 0, G_OPTION_ARG_FILENAME, &config, "Config file location", "/path/to/config.file" },
+		{ "plugins", 0, 0, G_OPTION_ARG_STRING, &plugins, "List of plugins separated by ,", "plugin1,plugin2" },
 		{NULL}
 	};
 
 	if (getuid () != 0) {
 		g_printerr ("You must be root to run NetworkManager!\n");
+		exit (1);
+	}
+
+	if (!g_module_supported ()) {
+		g_printerr ("GModules are not supported on your platform!");
 		exit (1);
 	}
 
@@ -295,6 +328,14 @@ main (int argc, char *argv[])
 	if (!success) {
 		fprintf (stderr, _("Invalid option.  Please use --help to see a list of valid options.\n"));
 		exit (1);
+	}
+
+	/* Parse the config file */
+	if (config) {
+		if (!parse_config_file (config, &plugins, &error)) {
+			g_warning ("Config file %s invalid: %s.", config, error->message);
+			exit (1);
+		}
 	}
 
 	pidfile = g_strdup (user_pidfile ? user_pidfile : NM_DEFAULT_PID_FILE);
@@ -358,9 +399,16 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	manager = nm_manager_get ();
+	named_mgr = nm_named_manager_get ();
+	if (!named_mgr) {
+		nm_warning ("Failed to start the named manager.");
+		goto done;
+	}
+
+	manager = nm_manager_get (plugins, &error);
 	if (manager == NULL) {
-		nm_error ("Failed to initialize the network manager.");
+		nm_error ("Failed to initialize the network manager: %s",
+		          error && error->message ? error->message : "(unknown)");
 		goto done;
 	}
 
@@ -377,12 +425,6 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	named_mgr = nm_named_manager_get ();
-	if (!named_mgr) {
-		nm_warning ("Failed to start the named manager.");
-		goto done;
-	}
-
 	dhcp_mgr = nm_dhcp_manager_get ();
 	if (!dhcp_mgr) {
 		nm_warning ("Failed to start the DHCP manager.");
@@ -396,6 +438,8 @@ main (int argc, char *argv[])
 		nm_warning ("Failed to start the dbus service.");
 		goto done;
 	}
+
+	nm_manager_start (manager);
 
 	/* Bring up the loopback interface. */
 	nm_system_enable_loopback ();

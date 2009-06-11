@@ -354,10 +354,10 @@ add_connection (NMSystemConfigInterface *config,
 }
 
 static GSList *
-get_unmanaged_devices (NMSystemConfigInterface *config)
+get_unmanaged_specs (NMSystemConfigInterface *config)
 {
 	GKeyFile *key_file;
-	GSList *unmanaged_devices = NULL;
+	GSList *specs = NULL;
 	GError *error = NULL;
 
 	key_file = g_key_file_new ();
@@ -373,7 +373,7 @@ get_unmanaged_devices (NMSystemConfigInterface *config)
 			g_free (str);
 
 			for (i = 0; udis[i] != NULL; i++)
-				unmanaged_devices = g_slist_append (unmanaged_devices, udis[i]);
+				specs = g_slist_append (specs, udis[i]);
 
 			g_free (udis); /* Yes, g_free, not g_strfreev because we need the strings in the list */
 		}
@@ -384,7 +384,7 @@ get_unmanaged_devices (NMSystemConfigInterface *config)
 
 	g_key_file_free (key_file);
 
-	return unmanaged_devices;
+	return specs;
 }
 
 static char *
@@ -567,7 +567,7 @@ system_config_interface_init (NMSystemConfigInterface *system_config_interface_c
 	/* interface implementation */
 	system_config_interface_class->get_connections = get_connections;
 	system_config_interface_class->add_connection = add_connection;
-	system_config_interface_class->get_unmanaged_devices = get_unmanaged_devices;
+	system_config_interface_class->get_unmanaged_specs = get_unmanaged_specs;
 }
 
 G_MODULE_EXPORT GObject *

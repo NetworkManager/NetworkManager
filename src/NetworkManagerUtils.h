@@ -46,6 +46,8 @@ void nm_utils_call_dispatcher (const char *action,
                                NMDevice *device,
                                const char *vpn_iface);
 
+gboolean nm_match_spec_hwaddr (const GSList *specs, const char *hwaddr);
+
 
 GHashTable *value_hash_create          (void);
 void        value_hash_add             (GHashTable *hash,

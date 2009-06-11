@@ -26,7 +26,9 @@
 
 G_DEFINE_ABSTRACT_TYPE (NMSysconfigConnection, nm_sysconfig_connection, NM_TYPE_EXPORTED_CONNECTION)
 
-#define NM_SYSCONFIG_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_SYSCONFIG_CONNECTION, NMSysconfigConnectionPrivate))
+#define NM_SYSCONFIG_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
+                                                NM_TYPE_SYSCONFIG_CONNECTION, \
+                                                NMSysconfigConnectionPrivate))
 
 typedef struct {
 	DBusGConnection *dbus_connection;
@@ -116,12 +118,12 @@ destroy_gvalue (gpointer data)
 	g_slice_free (GValue, value);
 }
 
-static GHashTable *
-real_get_secrets (NMSysconfigConnection *self,
-                  const gchar *setting_name,
-                  const gchar **hints,
-                  gboolean request_new,
-                  GError **error)
+GHashTable *
+nm_sysconfig_connection_get_secrets (NMSysconfigConnection *self,
+                                     const gchar *setting_name,
+                                     const gchar **hints,
+                                     gboolean request_new,
+                                     GError **error)
 {
 	NMConnection *connection;
 	GHashTable *settings = NULL;
@@ -208,7 +210,7 @@ get_unix_user_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
 			goto error;
 	}
 
-	secrets = real_get_secrets (self, info->setting_name, NULL, FALSE, &error);
+	secrets = nm_sysconfig_connection_get_secrets (self, info->setting_name, NULL, FALSE, &error);
 	if (secrets) {
 		/* success; return secrets to caller */
 		dbus_g_method_return (info->context, secrets);
