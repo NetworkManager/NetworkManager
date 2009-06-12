@@ -282,10 +282,13 @@ nm_supplicant_interface_get_property (GObject *     object,
 }
 
 static void
-try_remove_iface (DBusGConnection * g_connection,
-                  const char * path)
+try_remove_iface (DBusGConnection *g_connection,
+                  const char *path)
 {
-	DBusGProxy * proxy;
+	DBusGProxy *proxy;
+
+	g_return_if_fail (g_connection != NULL);
+	g_return_if_fail (path != NULL);
 
 	proxy = dbus_g_proxy_new_for_name (g_connection,
 	                                   WPAS_DBUS_SERVICE,
@@ -316,8 +319,10 @@ nm_supplicant_interface_dispose (GObject *object)
 	/* Ask wpa_supplicant to remove this interface */
 	sm_state = nm_supplicant_manager_get_state (priv->smgr);
 	if (sm_state == NM_SUPPLICANT_MANAGER_STATE_IDLE) {
-		try_remove_iface (nm_dbus_manager_get_connection (priv->dbus_mgr),
-		                  priv->object_path);
+		if (priv->object_path) {
+			try_remove_iface (nm_dbus_manager_get_connection (priv->dbus_mgr),
+			                  priv->object_path);
+		}
 	}
 
 	if (priv->iface_proxy)
