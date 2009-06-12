@@ -23,6 +23,9 @@
 
 #include <string.h>
 
+#define G_UDEV_API_IS_SUBJECT_TO_CHANGE
+#include <gudev/gudev.h>
+
 #include "NetworkManager.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
@@ -54,6 +57,8 @@ typedef struct {
 	NMDHCP4Config *dhcp4_config;
 	gboolean null_dhcp4_config;
 	NMDeviceState state;
+
+	GUdevClient *client;
 	char *product;
 	char *vendor;
 } NMDevicePrivate;
@@ -89,7 +94,6 @@ nm_device_init (NMDevice *device)
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 
 	priv->state = NM_DEVICE_STATE_UNKNOWN;
-	priv->disposed = FALSE;
 }
 
 static gboolean
@@ -267,6 +271,8 @@ dispose (GObject *object)
 		g_object_unref (priv->ip4_config);
 	if (priv->dhcp4_config)
 		g_object_unref (priv->dhcp4_config);
+	if (priv->client)
+		g_object_unref (priv->client);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->dispose (object);
 }
@@ -361,13 +367,13 @@ nm_device_class_init (NMDeviceClass *device_class)
 	/**
 	 * NMDevice:udi:
 	 *
-	 * The HAL UDI of the device.
+	 * The Unique Device Identifier of the device.
 	 **/
 	g_object_class_install_property
 		(object_class, PROP_UDI,
 		 g_param_spec_string (NM_DEVICE_UDI,
 						  "UDI",
-						  "HAL UDI",
+						  "Unique Device Identifier",
 						  NULL,
 						  G_PARAM_READABLE));
 
@@ -596,10 +602,11 @@ nm_device_get_iface (NMDevice *device)
  * nm_device_get_udi:
  * @device: a #NMDevice
  *
- * Gets the HAL UDI of the #NMDevice.
+ * Gets the Unique Device Identifier of the #NMDevice.
  *
- * Returns: the HAL UDI of the device. This is the internal string used by the
- * device, and must not be modified.
+ * Returns: the Unique Device Identifier of the device.  This identifier may be
+ * used to gather more information about the device from various operating
+ * system services like udev or sysfs.
  **/
 const char *
 nm_device_get_udi (NMDevice *device)
@@ -788,179 +795,127 @@ nm_device_get_state (NMDevice *device)
 	return priv->state;
 }
 
-static char *
-get_ancestor_device (NMDevice *device,
-                     DBusGConnection *connection,
-                     const char *udi,
-                     gboolean want_origdev)
+/* From hostap, Copyright (c) 2002-2005, Jouni Malinen <jkmaline@cc.hut.fi> */
+
+static int hex2num (char c)
 {
-	DBusGProxy *proxy;
-	GError *err = NULL;
-	char *parent = NULL;
+	if (c >= '0' && c <= '9')
+		return c - '0';
+	if (c >= 'a' && c <= 'f')
+		return c - 'a' + 10;
+	if (c >= 'A' && c <= 'F')
+		return c - 'A' + 10;
+	return -1;
+}
 
-	g_return_val_if_fail (connection != NULL, NULL);
-	g_return_val_if_fail (udi != NULL, NULL);
+static int hex2byte (const char *hex)
+{
+	int a, b;
+	a = hex2num(*hex++);
+	if (a < 0)
+		return -1;
+	b = hex2num(*hex++);
+	if (b < 0)
+		return -1;
+	return (a << 4) | b;
+}
 
-	proxy = dbus_g_proxy_new_for_name (connection, "org.freedesktop.Hal", udi, "org.freedesktop.Hal.Device");
-	if (!proxy)
+/* End from hostap */
+
+static char *
+get_decoded_property (GUdevDevice *device, const char *property)
+{
+	const char *orig, *p;
+	char *unescaped, *n;
+	guint len;
+
+	p = orig = g_udev_device_get_property (device, property);
+	if (!orig)
 		return NULL;
 
-	if (want_origdev) {
-		gboolean serial = FALSE;
-
-		if (NM_IS_GSM_DEVICE (device) || NM_IS_CDMA_DEVICE (device))
-			serial = TRUE;
-
-		dbus_g_proxy_call (proxy, "GetPropertyString", NULL,
-		                   G_TYPE_STRING, serial ? "serial.originating_device" : "net.originating_device",
-		                   G_TYPE_INVALID,
-		                   G_TYPE_STRING, &parent,
-		                   G_TYPE_INVALID);
-
-		if (!parent) {
-			/* Older HAL uses 'physical_device' */
-			dbus_g_proxy_call (proxy, "GetPropertyString", &err,
-			                   G_TYPE_STRING, serial ? "serial.physical_device" : "net.physical_device",
-			                   G_TYPE_INVALID,
-			                   G_TYPE_STRING, &parent,
-			                   G_TYPE_INVALID);
+	len = strlen (orig);
+	n = unescaped = g_malloc0 (len + 1);
+	while (*p) {
+		if ((len >= 4) && (*p == '\\') && (*(p+1) == 'x')) {
+			*n++ = (char) hex2byte (p + 2);
+			p += 4;
+			len -= 4;
+		} else {
+			*n++ = *p++;
+			len--;
 		}
-
-		if (err || !parent) {
-			g_warning ("Error getting originating device info from HAL: %s",
-			           err ? err->message : "unknown error");
-			if (err)
-				g_error_free (err);
-		}
-	} else {
-		if (!dbus_g_proxy_call (proxy, "GetPropertyString", &err,
-								G_TYPE_STRING, "info.parent",
-								G_TYPE_INVALID,
-								G_TYPE_STRING, &parent,
-								G_TYPE_INVALID)) {
-			g_warning ("Error getting parent device info from HAL: %s", err->message);
-			g_error_free (err);
-	    }
 	}
 
-	g_object_unref (proxy);
-	return parent;
-}
-
-static char *
-proxy_get_string (DBusGProxy *proxy,
-                  const char *property,
-                  gboolean warn)
-{
-	GError *error = NULL;
-	char *result = NULL;
-
-	g_return_val_if_fail (proxy != NULL, NULL);
-	g_return_val_if_fail (property != NULL, NULL);
-
-	if (dbus_g_proxy_call (proxy, "GetPropertyString", &error,
-	                       G_TYPE_STRING, property, G_TYPE_INVALID,
-	                       G_TYPE_STRING, &result, G_TYPE_INVALID))
-		return result;
-
-	if (warn) {
-		g_warning ("Error getting HAL property '%s' from device '%s': %s",
-		           property, dbus_g_proxy_get_path (proxy),
-		           error ? error->message : "unknown");
-	}
-	g_error_free (error);
-	return NULL;
-}
-
-static gboolean
-get_product_and_vendor (DBusGConnection *connection,
-                        const char *udi,
-                        char **product,
-                        char **vendor)
-{
-	DBusGProxy *proxy;
-	char *tmp_product = NULL;
-	char *tmp_vendor = NULL;
-	char *subsys = NULL;
-	gboolean product_fallback = TRUE, vendor_fallback = TRUE;
-	gboolean warn = FALSE;
-
-	g_return_val_if_fail (connection != NULL, FALSE);
-	g_return_val_if_fail (udi != NULL, FALSE);
-
-	g_return_val_if_fail (product != NULL, FALSE);
-	g_return_val_if_fail (*product == NULL, FALSE);
-
-	g_return_val_if_fail (vendor != NULL, FALSE);
-	g_return_val_if_fail (*vendor == NULL, FALSE);
-
-	proxy = dbus_g_proxy_new_for_name (connection, "org.freedesktop.Hal", udi, "org.freedesktop.Hal.Device");
-	if (!proxy)
-		return FALSE;
-
-	subsys = proxy_get_string (proxy, "info.subsystem", warn);
-	if (subsys && !strcmp (subsys, "pci")) {
-		tmp_product = proxy_get_string (proxy, "pci.subsys_product", warn);
-		if (tmp_product)
-			product_fallback = FALSE;
-
-		tmp_vendor = proxy_get_string (proxy, "pci.subsys_vendor", warn);
-		if (tmp_vendor)
-			vendor_fallback = FALSE;
-	}
-	g_free (subsys);
-
-	if (product_fallback)
-		tmp_product = proxy_get_string (proxy, "info.product", warn);
-	if (vendor_fallback)
-		tmp_vendor = proxy_get_string (proxy, "info.vendor", warn);
-
-	if (tmp_product && tmp_vendor) {
-		*product = tmp_product;
-		*vendor = tmp_vendor;
-	} else {
-		g_free (tmp_product);
-		g_free (tmp_vendor);
-	}
-	g_object_unref (proxy);
-
-	return (*product && *vendor) ? TRUE : FALSE;
+	return unescaped;
 }
 
 static void
 nm_device_update_description (NMDevice *device)
 {
 	NMDevicePrivate *priv;
-	DBusGConnection *connection;
-	const char *udi;
-	char *orig_dev_udi = NULL;
-	char *parent_udi = NULL;
+	const char *subsys[3] = { "net", "tty", NULL };
+	GUdevDevice *udev_device = NULL, *tmpdev;
+	const char *ifname;
+	guint32 count = 0;
+	const char *vendor, *model;
 
 	g_return_if_fail (NM_IS_DEVICE (device));
 	priv = NM_DEVICE_GET_PRIVATE (device);
+
+	if (!priv->client) {
+		priv->client = g_udev_client_new (subsys);
+		if (!priv->client)
+			return;
+	}
+
+	ifname = nm_device_get_iface (device);
+	if (!ifname)
+		return;
+
+	if (NM_IS_DEVICE_ETHERNET (device) || NM_IS_DEVICE_WIFI (device))
+		udev_device = g_udev_client_query_by_subsystem_and_name (priv->client, "net", ifname);
+	else if (NM_IS_GSM_DEVICE (device) || NM_IS_CDMA_DEVICE (device))
+		udev_device = g_udev_client_query_by_subsystem_and_name (priv->client, "tty", ifname);
+	if (!udev_device)
+		return;
 
 	g_free (priv->product);
 	priv->product = NULL;
 	g_free (priv->vendor);
 	priv->vendor = NULL;
 
-	connection = nm_object_get_connection (NM_OBJECT (device));
-	g_return_if_fail (connection != NULL);
+	/* Walk up the chain of the device and its parents a few steps to grab
+	 * vendor and device ID information off it.
+	 */
+	tmpdev = udev_device;
+	while ((count++ < 3) && tmpdev && (!priv->vendor || !priv->product)) {
+		if (!priv->vendor)
+			priv->vendor = get_decoded_property (tmpdev, "ID_VENDOR_ENC");
 
-	/* First, get the udi of the originating device */
-	udi = nm_device_get_udi (device);
-	orig_dev_udi = get_ancestor_device (device, connection, udi, TRUE);
+		if (!priv->product)
+			priv->product = get_decoded_property (tmpdev, "ID_MODEL_ENC");
 
-	/* Get product and vendor off the originating device if possible */
-	if (!get_product_and_vendor (connection, orig_dev_udi, &priv->product, &priv->vendor)) {
-		 /* Try the parent of the originating device */
-		parent_udi = get_ancestor_device (device, connection, orig_dev_udi, FALSE);
-		if (parent_udi)
-			get_product_and_vendor (connection, parent_udi, &priv->product, &priv->vendor);
-		g_free (parent_udi);
+		tmpdev = g_udev_device_get_parent (tmpdev);
 	}
 
-	g_free (orig_dev_udi);
+	/* If we didn't get strings directly from the device, try database strings */
+	tmpdev = udev_device;
+	count = 0;
+	while ((count++ < 3) && tmpdev && (!priv->vendor || !priv->product)) {
+		if (!priv->vendor) {
+			vendor = g_udev_device_get_property (tmpdev, "ID_VENDOR_FROM_DATABASE");
+			if (vendor)
+				priv->vendor = g_strdup (vendor);
+		}
+
+		if (!priv->product) {
+			model = g_udev_device_get_property (tmpdev, "ID_MODEL_FROM_DATABASE");
+			if (model)
+				priv->product = g_strdup (model);
+		}
+
+		tmpdev = g_udev_device_get_parent (tmpdev);
+	}
 
 	_nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_VENDOR);
 	_nm_object_queue_notify (NM_OBJECT (device), NM_DEVICE_PRODUCT);

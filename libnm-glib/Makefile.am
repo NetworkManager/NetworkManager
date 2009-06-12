@@ -22,19 +22,19 @@ BUILT_SOURCES = \
 
 lib_LTLIBRARIES = libnm_glib.la libnm_glib_vpn.la
 
-libnm_glib_la_CFLAGS = 		\
-	$(GLIB_CFLAGS)		\
-	$(DBUS_CFLAGS)		\
-	$(GCONF_CFLAGS)		\
-	$(GNOME_KEYRING_CFLAGS)
+libnm_glib_la_CFLAGS = \
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS) \
+	$(GCONF_CFLAGS) \
+	$(GUDEV_CFLAGS)
 
 libnmincludedir = $(includedir)/libnm-glib
 
 libnminclude_HEADERS = \
-	libnm_glib.h		\
-	nm-object.h		\
-	nm-client.h		\
-	nm-device.h		\
+	libnm_glib.h \
+	nm-object.h \
+	nm-client.h \
+	nm-device.h \
 	nm-device-ethernet.h \
 	nm-device-wifi.h \
 	nm-access-point.h \
@@ -54,23 +54,23 @@ libnminclude_HEADERS = \
 	nm-dhcp4-config.h
 
 libnm_glib_la_SOURCES = \
-	libnm_glib.c		\
-	nm-object.c		\
+	libnm_glib.c \
+	nm-object.c \
 	nm-object-private.h \
-	nm-client.c		\
-	nm-dbus-utils.c		\
-	nm-dbus-utils.h		\
-	nm-device.c		\
-	nm-device-private.h	\
+	nm-client.c \
+	nm-dbus-utils.c \
+	nm-dbus-utils.h \
+	nm-device.c \
+	nm-device-private.h \
 	nm-device-ethernet.c \
 	nm-device-wifi.c \
-	nm-access-point.c	\
-	nm-ip4-config.c		\
-	nm-settings.c		\
-	nm-gsm-device.c	\
-	nm-cdma-device.c	\
+	nm-access-point.c \
+	nm-ip4-config.c \
+	nm-settings.c \
+	nm-gsm-device.c \
+	nm-cdma-device.c \
 	nm-serial-device.c \
-	nm-vpn-connection.c	\
+	nm-vpn-connection.c \
 	nm-types.c \
 	nm-types-private.h \
 	nm-object-cache.c \
@@ -82,12 +82,12 @@ libnm_glib_la_SOURCES = \
 	nm-dhcp4-config.c
 
 libnm_glib_la_LIBADD = \
-	$(top_builddir)/libnm-util/libnm-util.la	\
-	$(top_builddir)/marshallers/libmarshallers.la	\
-	$(GLIB_LIBS)					\
-	$(DBUS_LIBS)					\
-	$(GCONF_LIBS)					\
-	$(GNOME_KEYRING_LIBS)
+	$(top_builddir)/libnm-util/libnm-util.la \
+	$(top_builddir)/marshallers/libmarshallers.la \
+	$(GLIB_LIBS) \
+	$(DBUS_LIBS) \
+	$(GCONF_LIBS) \
+	$(GUDEV_LIBS)
 
 libnm_glib_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm_glib.ver \
 	-version-info "1:0:1"
