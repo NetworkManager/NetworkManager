@@ -237,9 +237,8 @@ rfkill_remove (NMUdevManager *self,
 
 		if (!strcmp (ks->name, name)) {
 			nm_info ("Radio killswitch %s disappeared", ks->path);
-			priv->killswitches = g_slist_remove (priv->killswitches, iter);
-			killswitch_destroy (iter->data);
-			g_slist_free (iter);
+			priv->killswitches = g_slist_remove (priv->killswitches, ks);
+			killswitch_destroy (ks);
 			break;
 		}
 	}
