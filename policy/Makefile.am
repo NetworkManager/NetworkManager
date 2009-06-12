@@ -22,3 +22,4 @@ check:
 clean-local :
 	rm -f *~
 
+EXTRA_DIST = $(dist_polkit_policy_in_files)
