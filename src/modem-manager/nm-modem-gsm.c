@@ -15,15 +15,19 @@
 
 // FIXME: use MM headers when MM exports this stuff
 typedef enum {
-    MM_MODEM_GSM_NETWORK_MODE_ANY       = 0,
-    MM_MODEM_GSM_NETWORK_MODE_GPRS      = 1,
-    MM_MODEM_GSM_NETWORK_MODE_EDGE      = 2,
-    MM_MODEM_GSM_NETWORK_MODE_3G        = 3,
-    MM_MODEM_GSM_NETWORK_MODE_HSDPA     = 4,
-    MM_MODEM_GSM_NETWORK_MODE_PREFER_2G = 5,
-    MM_MODEM_GSM_NETWORK_MODE_PREFER_3G = 6,
+    MM_MODEM_GSM_NETWORK_MODE_ANY          = 0,
+    MM_MODEM_GSM_NETWORK_MODE_GPRS         = 1,
+    MM_MODEM_GSM_NETWORK_MODE_EDGE         = 2,
+    MM_MODEM_GSM_NETWORK_MODE_UMTS         = 3,
+    MM_MODEM_GSM_NETWORK_MODE_HSDPA        = 4,
+    MM_MODEM_GSM_NETWORK_MODE_2G_PREFERRED = 5,
+    MM_MODEM_GSM_NETWORK_MODE_3G_PREFERRED = 6,
+    MM_MODEM_GSM_NETWORK_MODE_2G_ONLY      = 7,
+    MM_MODEM_GSM_NETWORK_MODE_3G_ONLY      = 8,
+    MM_MODEM_GSM_NETWORK_MODE_HSUPA        = 9,
+    MM_MODEM_GSM_NETWORK_MODE_HSPA         = 10,
 
-    MM_MODEM_GSM_NETWORK_MODE_LAST = MM_MODEM_GSM_NETWORK_MODE_PREFER_3G
+    MM_MODEM_GSM_NETWORK_MODE_LAST = MM_MODEM_GSM_NETWORK_MODE_HSPA
 } MMModemGsmNetworkMode;
 
 
@@ -184,10 +188,10 @@ create_connect_properties (NMConnection *connection)
 		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_MODE_EDGE);
 		break;
 	case NM_GSM_NETWORK_PREFER_UMTS_HSPA:
-		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_MODE_PREFER_3G);
+		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_MODE_3G_PREFERRED);
 		break;
 	case NM_GSM_NETWORK_PREFER_GPRS_EDGE:
-		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_MODE_PREFER_2G);
+		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_MODE_2G_PREFERRED);
 		break;
 	default:
 		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_MODE_ANY);
