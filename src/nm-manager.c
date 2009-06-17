@@ -2379,28 +2379,28 @@ void
 nm_manager_start (NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	gboolean enabled;
+	gboolean we = FALSE;
 
 	switch (nm_udev_manager_get_rfkill_state (priv->udev_mgr)) {
 	case RFKILL_UNBLOCKED:
-		priv->wireless_enabled = TRUE;
+		we = TRUE;
 		priv->wireless_hw_enabled = TRUE;
 		break;
 	case RFKILL_SOFT_BLOCKED:
-		priv->wireless_enabled = FALSE;
+		we = FALSE;
 		priv->wireless_hw_enabled = TRUE;
 		break;
 	case RFKILL_HARD_BLOCKED:
-		priv->wireless_enabled = FALSE;
+		we = FALSE;
 		priv->wireless_hw_enabled = FALSE;
 		break;
 	default:
 		break;
 	}
 
-	enabled = (priv->wireless_enabled && priv->wireless_hw_enabled);
-	nm_info ("Wireless now %s by radio killswitch", enabled ? "enabled" : "disabled");
-	manager_set_wireless_enabled (self, enabled);
+	nm_info ("Wireless now %s by radio killswitch",
+	         (priv->wireless_hw_enabled && we) ? "enabled" : "disabled");
+	manager_set_wireless_enabled (self, we);
 
 	system_unmanaged_devices_changed_cb (priv->sys_settings, NULL, self);
 	system_hostname_changed_cb (priv->sys_settings, NULL, self);

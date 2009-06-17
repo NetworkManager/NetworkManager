@@ -129,11 +129,11 @@ sysfs_state_to_nm_state (gint sysfs_state)
 {
 	switch (sysfs_state) {
 	case 0:
-		return RFKILL_HARD_BLOCKED;
+		return RFKILL_SOFT_BLOCKED;
 	case 1:
 		return RFKILL_UNBLOCKED;
 	case 2:
-		return RFKILL_SOFT_BLOCKED;
+		return RFKILL_HARD_BLOCKED;
 	default:
 		g_warning ("%s: Unhandled rfkill state %d", __func__, sysfs_state);
 		break;
