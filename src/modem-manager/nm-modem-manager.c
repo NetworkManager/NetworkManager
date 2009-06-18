@@ -50,6 +50,7 @@ nm_modem_manager_get (void)
 static gboolean
 get_modem_properties (DBusGConnection *connection,
 					  const char *path,
+					  char **device,
 					  char **data_device,
 					  char **driver,
 					  guint32 *type,
@@ -65,15 +66,28 @@ get_modem_properties (DBusGConnection *connection,
 									   "org.freedesktop.DBus.Properties");
 
 	if (dbus_g_proxy_call_with_timeout (proxy, "Get", 15000, &err,
-										G_TYPE_STRING, MM_DBUS_INTERFACE_MODEM,
-										G_TYPE_STRING, "Type",
-										G_TYPE_INVALID,
-										G_TYPE_VALUE, &value,
-										G_TYPE_INVALID)) {
+	                                    G_TYPE_STRING, MM_DBUS_INTERFACE_MODEM,
+	                                    G_TYPE_STRING, "Type",
+	                                    G_TYPE_INVALID,
+	                                    G_TYPE_VALUE, &value,
+	                                    G_TYPE_INVALID)) {
 		*type = g_value_get_uint (&value);
 		g_value_unset (&value);
 	} else {
 		g_warning ("Could not get device type: %s", err->message);
+		goto out;
+	}
+
+	if (dbus_g_proxy_call_with_timeout (proxy, "Get", 15000, &err,
+	                                    G_TYPE_STRING, MM_DBUS_INTERFACE_MODEM,
+	                                    G_TYPE_STRING, "MasterDevice",
+	                                    G_TYPE_INVALID,
+	                                    G_TYPE_VALUE, &value,
+	                                    G_TYPE_INVALID)) {
+		*device = g_value_dup_string (&value);
+		g_value_unset (&value);
+	} else {
+		g_warning ("Could not get device: %s", err->message);
 		goto out;
 	}
 
@@ -130,8 +144,7 @@ create_modem (NMModemManager *manager, const char *path)
 {
 	NMModemManagerPrivate *priv = NM_MODEM_MANAGER_GET_PRIVATE (manager);
 	NMDevice *device;
-	char *data_device = NULL;
-	char *driver = NULL;
+	char *data_device = NULL, *driver = NULL, *master_device = NULL;
 	uint modem_type = MM_MODEM_TYPE_UNKNOWN;
 	uint ip_method = MM_MODEM_IP_METHOD_PPP;
 
@@ -140,12 +153,18 @@ create_modem (NMModemManager *manager, const char *path)
 		return;
 	}
 
-	if (!get_modem_properties (nm_dbus_manager_get_connection (priv->dbus_mgr), path,
-							   &data_device, &driver, &modem_type, &ip_method))
+	if (!get_modem_properties (nm_dbus_manager_get_connection (priv->dbus_mgr),
+	                           path, &master_device, &data_device, &driver,
+	                           &modem_type, &ip_method))
 		return;
 
 	if (modem_type == MM_MODEM_TYPE_UNKNOWN) {
 		nm_warning ("Modem with path %s has unknown type, ignoring", path);
+		return;
+	}
+
+	if (!master_device || !strlen (master_device)) {
+		nm_warning ("Modem with path %s has unknown device, ignoring", path);
 		return;
 	}
 
@@ -160,9 +179,9 @@ create_modem (NMModemManager *manager, const char *path)
 	}
 
 	if (modem_type == MM_MODEM_TYPE_GSM)
-		device = nm_modem_gsm_new (path, data_device, driver, ip_method);
+		device = nm_modem_gsm_new (path, master_device, data_device, driver, ip_method);
 	else if (modem_type == MM_MODEM_TYPE_CDMA)
-		device = nm_modem_cdma_new (path, data_device, driver);
+		device = nm_modem_cdma_new (path, master_device, data_device, driver);
 	else
 		g_error ("Invalid modem type");
 

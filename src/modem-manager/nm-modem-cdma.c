@@ -62,10 +62,12 @@ nm_cdma_error_get_type (void)
 
 NMDevice *
 nm_modem_cdma_new (const char *path,
-				   const char *data_device,
-				   const char *driver)
+                   const char *device,
+                   const char *data_device,
+                   const char *driver)
 {
 	g_return_val_if_fail (path != NULL, NULL);
+	g_return_val_if_fail (device != NULL, NULL);
 	g_return_val_if_fail (data_device != NULL, NULL);
 	g_return_val_if_fail (driver != NULL, NULL);
 
@@ -75,6 +77,7 @@ nm_modem_cdma_new (const char *path,
 									  NM_DEVICE_INTERFACE_DRIVER, driver,
 									  NM_DEVICE_INTERFACE_MANAGED, TRUE,
 									  NM_MODEM_PATH, path,
+									  NM_MODEM_DEVICE, device,
 									  NULL);
 }
 

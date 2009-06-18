@@ -80,11 +80,13 @@ nm_gsm_error_get_type (void)
 
 NMDevice *
 nm_modem_gsm_new (const char *path,
-				  const char *data_device,
-				  const char *driver,
-				  guint32 ip_method)
+                  const char *device,
+                  const char *data_device,
+                  const char *driver,
+                  guint32 ip_method)
 {
 	g_return_val_if_fail (path != NULL, NULL);
+	g_return_val_if_fail (device != NULL, NULL);
 	g_return_val_if_fail (data_device != NULL, NULL);
 	g_return_val_if_fail (driver != NULL, NULL);
 
@@ -95,6 +97,7 @@ nm_modem_gsm_new (const char *path,
 									  NM_DEVICE_INTERFACE_MANAGED, TRUE,
 									  NM_MODEM_PATH, path,
 									  NM_MODEM_IP_METHOD, ip_method,
+									  NM_MODEM_DEVICE, device,
 									  NULL);
 }
 

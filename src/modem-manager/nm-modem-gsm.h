@@ -28,9 +28,10 @@ typedef struct {
 GType nm_modem_gsm_get_type (void);
 
 NMDevice *nm_modem_gsm_new (const char *path,
-							const char *data_device,
-							const char *driver,
-							guint32 ip_method);
+                            const char *device,
+                            const char *data_device,
+                            const char *driver,
+                            guint32 ip_method);
 
 G_END_DECLS
 

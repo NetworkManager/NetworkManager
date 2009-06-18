@@ -28,8 +28,9 @@ typedef struct {
 GType nm_modem_cdma_get_type (void);
 
 NMDevice *nm_modem_cdma_new (const char *path,
-							 const char *data_device,
-							 const char *driver);
+                             const char *device,
+                             const char *data_device,
+                             const char *driver);
 
 G_END_DECLS
 
