@@ -20,6 +20,8 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <net/ethernet.h>
+
 #include "nm-glib-compat.h"
 #include "nm-bluez-common.h"
 #include "nm-dbus-manager.h"
@@ -76,6 +78,49 @@ enum {
 	LAST_SIGNAL
 };
 static guint signals[LAST_SIGNAL] = { 0 };
+
+
+typedef enum {
+	NM_BT_ERROR_CONNECTION_NOT_BT = 0,
+	NM_BT_ERROR_CONNECTION_INVALID,
+	NM_BT_ERROR_CONNECTION_INCOMPATIBLE,
+} NMBtError;
+
+#define NM_BT_ERROR (nm_bt_error_quark ())
+#define NM_TYPE_BT_ERROR (nm_bt_error_get_type ())
+
+static GQuark
+nm_bt_error_quark (void)
+{
+	static GQuark quark = 0;
+	if (!quark)
+		quark = g_quark_from_static_string ("nm-bt-error");
+	return quark;
+}
+
+/* This should really be standard. */
+#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
+
+static GType
+nm_bt_error_get_type (void)
+{
+	static GType etype = 0;
+
+	if (etype == 0) {
+		static const GEnumValue values[] = {
+			/* Connection was not a BT connection. */
+			ENUM_ENTRY (NM_BT_ERROR_CONNECTION_NOT_BT, "ConnectionNotBt"),
+			/* Connection was not a valid BT connection. */
+			ENUM_ENTRY (NM_BT_ERROR_CONNECTION_INVALID, "ConnectionInvalid"),
+			/* Connection does not apply to this device. */
+			ENUM_ENTRY (NM_BT_ERROR_CONNECTION_INCOMPATIBLE, "ConnectionIncompatible"),
+			{ 0, 0, 0 }
+		};
+		etype = g_enum_register_static ("NMBtError", values);
+	}
+	return etype;
+}
+
 
 NMDeviceBt *
 nm_device_bt_new (const char *udi,
@@ -166,6 +211,62 @@ real_get_best_auto_connection (NMDevice *device,
 		return connection;
 	}
 	return NULL;
+}
+
+static gboolean
+real_check_connection_compatible (NMDevice *device,
+                                  NMConnection *connection,
+                                  GError **error)
+{
+	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
+	NMSettingConnection *s_con;
+	NMSettingBluetooth *s_bt;
+	const GByteArray *array;
+	char *str;
+	int addr_match = FALSE;
+	guint32 bt_type;
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	g_assert (s_con);
+
+	if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_BLUETOOTH_SETTING_NAME)) {
+		g_set_error (error,
+		             NM_BT_ERROR, NM_BT_ERROR_CONNECTION_NOT_BT,
+		             "The connection was not a Bluetooth connection.");
+		return FALSE;
+	}
+
+	s_bt = NM_SETTING_BLUETOOTH (nm_connection_get_setting (connection, NM_TYPE_SETTING_BLUETOOTH));
+	if (!s_bt) {
+		g_set_error (error,
+		             NM_BT_ERROR, NM_BT_ERROR_CONNECTION_INVALID,
+		             "The connection was not a valid Bluetooth connection.");
+		return FALSE;
+	}
+
+	array = nm_setting_bluetooth_get_bdaddr (s_bt);
+	if (!array || (array->len != ETH_ALEN)) {
+		g_set_error (error,
+		             NM_BT_ERROR, NM_BT_ERROR_CONNECTION_INVALID,
+		             "The connection did not contain a valid Bluetooth address.");
+		return FALSE;
+	}
+
+	bt_type = get_connection_bt_type (connection);
+	if (!(bt_type & priv->capabilities)) {
+		g_set_error (error,
+		             NM_BT_ERROR, NM_BT_ERROR_CONNECTION_INCOMPATIBLE,
+		             "The connection was not compatible with the device's capabilities.");
+		return FALSE;
+	}
+
+	str = g_strdup_printf ("%02X:%02X:%02X:%02X:%02X:%02X",
+	                       array->data[0], array->data[1], array->data[2],
+	                       array->data[3], array->data[4], array->data[5]);
+	addr_match = !strcmp (priv->bdaddr, str);
+	g_free (str);
+
+	return addr_match;
 }
 
 static guint32
@@ -664,7 +765,7 @@ set_property (GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_HW_ADDRESS:
 		/* Construct only */
-		priv->bdaddr = g_value_dup_string (value);
+		priv->bdaddr = g_ascii_strup (g_value_get_string (value), -1);
 		break;
 	case PROP_BT_NAME:
 		/* Construct only */
@@ -741,6 +842,7 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 	device_class->act_stage2_config = real_act_stage2_config;
 	device_class->act_stage3_ip_config_start = real_act_stage3_ip_config_start;
 	device_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
+	device_class->check_connection_compatible = real_check_connection_compatible;
 
 	/* Properties */
 	g_object_class_install_property
@@ -784,4 +886,6 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
 	                                 &dbus_glib_nm_device_bt_object_info);
+
+	dbus_g_error_domain_register (NM_BT_ERROR, NULL, NM_TYPE_BT_ERROR);
 }
