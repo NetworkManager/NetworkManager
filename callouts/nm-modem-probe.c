@@ -232,7 +232,7 @@ modem_wait_reply (int fd,
 }
 
 #define GCAP_TAG "+GCAP:"
-#define GMM_TAG "+GMM:"
+#define CGMM_TAG "+CGMM:"
 #define HUAWEI_EC121_TAG "+CIS707-A"
 
 static int
@@ -266,24 +266,24 @@ parse_gcap (const char *tag, gboolean strip_tag, const char *buf)
 }
 
 static int
-parse_gmm (const char *buf)
+parse_cgmm (const char *buf)
 {
-	const char *p = buf + strlen (GMM_TAG);
-	char **gmm, **iter;
+	const char *p = buf + strlen (CGMM_TAG);
+	char **cgmm, **iter;
 	gboolean gsm = FALSE;
 
-	gmm = g_strsplit_set (p, " ,\t", 0);
-	if (!gmm)
+	cgmm = g_strsplit_set (p, " ,\t", 0);
+	if (!cgmm)
 		return 0;
 
-	/* BUSlink SCWi275u USB GPRS modem */
-	for (iter = gmm; *iter && !gsm; iter++) {
+	/* BUSlink SCWi275u USB GPRS modem and some Motorola phones */
+	for (iter = cgmm; *iter && !gsm; iter++) {
 		if (strstr (*iter, "GSM900") || strstr (*iter, "GSM1800") ||
 		    strstr (*iter, "GSM1900") || strstr (*iter, "GSM850"))
 			gsm = TRUE;
 	}
 
-	g_strfreev (gmm);
+	g_strfreev (cgmm);
 	return gsm ? MODEM_CAP_GSM : 0;
 }
 
@@ -408,13 +408,13 @@ static int modem_probe_caps(int fd, glong timeout_ms)
 
 	/* Try an alternate method on some hardware (ex BUSlink SCWi275u) */
 	if ((idx != -2) && !(ret & MODEM_CAP_GSM) && !(ret & MODEM_CAP_IS707_A)) {
-		const char *gmm_responses[] = { GMM_TAG, NULL };
+		const char *cgmm_responses[] = { CGMM_TAG, NULL };
 
-		if (modem_send_command (fd, "AT+GMM\r\n")) {
-			idx = modem_wait_reply (fd, 5, gmm_responses, terminators, &term_idx, &reply);
+		if (modem_send_command (fd, "AT+CGMM\r\n")) {
+			idx = modem_wait_reply (fd, 5, cgmm_responses, terminators, &term_idx, &reply);
 			if (0 == term_idx && 0 == idx) {
-				verbose ("GMM response: %s", reply);
-				ret |= parse_gmm (reply);
+				verbose ("CGMM response: %s", reply);
+				ret |= parse_cgmm (reply);
 			}
 			g_free (reply);
 		}
