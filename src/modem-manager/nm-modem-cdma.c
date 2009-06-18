@@ -17,6 +17,49 @@
 
 G_DEFINE_TYPE (NMModemCdma, nm_modem_cdma, NM_TYPE_MODEM)
 
+
+typedef enum {
+	NM_CDMA_ERROR_CONNECTION_NOT_CDMA = 0,
+	NM_CDMA_ERROR_CONNECTION_INVALID,
+	NM_CDMA_ERROR_CONNECTION_INCOMPATIBLE,
+} NMCdmaError;
+
+#define NM_CDMA_ERROR (nm_cdma_error_quark ())
+#define NM_TYPE_CDMA_ERROR (nm_cdma_error_get_type ())
+
+static GQuark
+nm_cdma_error_quark (void)
+{
+	static GQuark quark = 0;
+	if (!quark)
+		quark = g_quark_from_static_string ("nm-cdma-error");
+	return quark;
+}
+
+/* This should really be standard. */
+#define ENUM_ENTRY(NAME, DESC) { NAME, "" #NAME "", DESC }
+
+static GType
+nm_cdma_error_get_type (void)
+{
+	static GType etype = 0;
+
+	if (etype == 0) {
+		static const GEnumValue values[] = {
+			/* Connection was not a CDMA connection. */
+			ENUM_ENTRY (NM_CDMA_ERROR_CONNECTION_NOT_CDMA, "ConnectionNotCdma"),
+			/* Connection was not a valid CDMA connection. */
+			ENUM_ENTRY (NM_CDMA_ERROR_CONNECTION_INVALID, "ConnectionInvalid"),
+			/* Connection does not apply to this device. */
+			ENUM_ENTRY (NM_CDMA_ERROR_CONNECTION_INCOMPATIBLE, "ConnectionIncompatible"),
+			{ 0, 0, 0 }
+		};
+		etype = g_enum_register_static ("NMCdmaError", values);
+	}
+	return etype;
+}
+
+
 NMDevice *
 nm_modem_cdma_new (const char *path,
 				   const char *data_device,
@@ -173,6 +216,35 @@ real_connection_secrets_updated (NMDevice *dev,
 	nm_device_activate_schedule_stage1_device_prepare (dev);
 }
 
+static gboolean
+real_check_connection_compatible (NMDevice *device,
+                                  NMConnection *connection,
+                                  GError **error)
+{
+	NMSettingConnection *s_con;
+	NMSettingCdma *s_cdma;
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	g_assert (s_con);
+
+	if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_CDMA_SETTING_NAME)) {
+		g_set_error (error,
+		             NM_CDMA_ERROR, NM_CDMA_ERROR_CONNECTION_NOT_CDMA,
+		             "The connection was not a CDMA connection.");
+		return FALSE;
+	}
+
+	s_cdma = NM_SETTING_CDMA (nm_connection_get_setting (connection, NM_TYPE_SETTING_CDMA));
+	if (!s_cdma) {
+		g_set_error (error,
+		             NM_CDMA_ERROR, NM_CDMA_ERROR_CONNECTION_INVALID,
+		             "The connection was not a valid CDMA connection.");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 static const char *
 real_get_ppp_name (NMModem *device, NMConnection *connection)
 {
@@ -202,8 +274,12 @@ nm_modem_cdma_class_init (NMModemCdmaClass *klass)
 	device_class->get_best_auto_connection = real_get_best_auto_connection;
 	device_class->connection_secrets_updated = real_connection_secrets_updated;
 	device_class->act_stage1_prepare = real_act_stage1_prepare;
+	device_class->check_connection_compatible = real_check_connection_compatible;
+
 	modem_class->get_ppp_name = real_get_ppp_name;
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass),
-									 &dbus_glib_nm_device_cdma_object_info);
+	                                 &dbus_glib_nm_device_cdma_object_info);
+
+	dbus_g_error_domain_register (NM_CDMA_ERROR, NULL, NM_TYPE_CDMA_ERROR);
 }
