@@ -21,6 +21,7 @@ G_DEFINE_TYPE (NMModem, nm_modem, NM_TYPE_DEVICE)
 
 enum {
 	PROP_0,
+	PROP_DEVICE,
 	PROP_PATH,
 	PROP_IP_METHOD,
 
@@ -34,6 +35,7 @@ typedef struct {
 	NMPPPManager *ppp_manager;
 	NMIP4Config	 *pending_ip4_config;
 	guint32 ip_method;
+	char *device;
 
 	guint state_to_disconnected_id;
 
@@ -503,6 +505,11 @@ constructor (GType type,
 
 	priv = NM_MODEM_GET_PRIVATE (object);
 
+	if (!priv->device) {
+		g_warning ("Modem device not provided");
+		goto err;
+	}
+
 	if (!priv->path) {
 		g_warning ("DBus path not provided");
 		goto err;
@@ -530,6 +537,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_PATH:
 		g_value_set_string (value, priv->path);
 		break;
+	case PROP_DEVICE:
+		g_value_set_string (value, priv->device);
+		break;
 	case PROP_IP_METHOD:
 		g_value_set_uint (value, priv->ip_method);
 		break;
@@ -550,6 +560,10 @@ set_property (GObject *object, guint prop_id,
 	case PROP_PATH:
 		/* Construct only */
 		priv->path = g_value_dup_string (value);
+		break;
+	case PROP_DEVICE:
+		/* Construct only */
+		priv->device = g_value_dup_string (value);
 		break;
 	case PROP_IP_METHOD:
 		priv->ip_method = g_value_get_uint (value);
@@ -574,6 +588,9 @@ finalize (GObject *object)
 		g_object_unref (priv->proxy);
 
 	g_object_unref (priv->dbus_mgr);
+
+	g_free (priv->path);
+	g_free (priv->device);
 
 	G_OBJECT_CLASS (nm_modem_parent_class)->finalize (object);
 }
@@ -608,6 +625,14 @@ nm_modem_class_init (NMModemClass *klass)
 							  "DBus path",
 							  NULL,
 							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
+		(object_class, PROP_DEVICE,
+		 g_param_spec_string (NM_MODEM_DEVICE,
+		                      "Device",
+		                      "Master modem parent device",
+		                      NULL,
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property
 		(object_class, PROP_IP_METHOD,
