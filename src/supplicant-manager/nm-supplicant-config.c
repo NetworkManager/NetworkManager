@@ -609,7 +609,7 @@ nm_supplicant_config_add_setting_wireless_security (NMSupplicantConfig *self,
 				nm_warning ("Error adding 'psk' to supplicant config.");
 				return FALSE;
 			}
-		} else if (psk_len >= 8 && psk_len < 63) {
+		} else if (psk_len >= 8 && psk_len <= 63) {
 			/* Use TYPE_STRING here so that it gets pushed to the
 			 * supplicant as a string, and therefore gets quoted,
 			 * and therefore the supplicant will interpret it as a
