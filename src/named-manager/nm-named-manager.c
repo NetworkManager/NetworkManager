@@ -30,6 +30,7 @@
 #include <errno.h>
 #include <arpa/inet.h>
 #include <sys/types.h>
+#include <sys/wait.h> 
 #include <unistd.h>
 #include <glib.h>
 
@@ -130,12 +131,12 @@ netconfig_child_setup (gpointer user_data G_GNUC_UNUSED)
 	setpgid (pid, pid);
 }
 
-static gint
-run_netconfig (GError **error)
+static GPid
+run_netconfig (GError **error, gint *stdin_fd)
 {
 	char *argv[5];
 	char *tmp;
-	gint stdin_fd;
+	GPid pid = -1;
 
 	argv[0] = "/sbin/netconfig";
 	argv[1] = "modify";
@@ -148,10 +149,10 @@ run_netconfig (GError **error)
 	g_free (tmp);
 
 	if (!g_spawn_async_with_pipes (NULL, argv, NULL, 0, netconfig_child_setup,
-	                               NULL, NULL, &stdin_fd, NULL, NULL, error))
+	                               NULL, &pid, &stdin_fd, NULL, NULL, error))
 		return -1;
 
-	return stdin_fd;
+	return pid;
 }
 
 static void
@@ -173,11 +174,13 @@ dispatch_netconfig (const char *domain,
                     const char *iface,
                     GError **error)
 {
-	gint fd;
 	char *str;
+	GPid pid;
+	gint fd;
+	int ret;
 
-	fd = run_netconfig (error);
-	if (fd < 0)
+	pid = run_netconfig (error, &fd);
+	if (pid < 0)
 		return FALSE;
 
 	write_to_netconfig (fd, "INTERFACE", iface);
@@ -205,7 +208,15 @@ dispatch_netconfig (const char *domain,
 
 	close (fd);
 
-	return TRUE;
+	/* Wait until the process exits */
+
+ again:
+
+	ret = waitpid (pid, NULL, 0);
+	if (ret < 0 && errno == EINTR)
+		goto again;
+
+	return ret > 0;
 }
 #endif
 
