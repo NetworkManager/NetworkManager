@@ -368,7 +368,7 @@ config_fd (NMSerialDevice *device, NMSettingSerial *setting)
 	stbuf.c_cflag &= ~(CBAUD | CSIZE | CSTOPB | CLOCAL | PARENB);
 	stbuf.c_cflag |= (speed | bits | CREAD | 0 | parity | stopbits);
 
-	if (tcgetattr (priv->fd, &stbuf) < 0) {
+	if (tcsetattr (priv->fd, TCSANOW, &stbuf) < 0) {
 		nm_warning ("(%s) cannot control device (errno %d)",
 		            nm_device_get_iface (NM_DEVICE (device)), errno);
 		return FALSE;
