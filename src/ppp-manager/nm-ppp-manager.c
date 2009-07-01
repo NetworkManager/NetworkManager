@@ -66,7 +66,7 @@ static gboolean impl_ppp_manager_set_ip4_config (NMPPPManager *manager,
 #include "nm-ppp-manager-glue.h"
 
 #define NM_PPPD_PLUGIN PLUGINDIR "/nm-pppd-plugin.so"
-#define NM_PPP_WAIT_PPPD 15 /* 15 seconds */
+#define NM_PPP_WAIT_PPPD 20 /* seconds */
 #define PPP_MANAGER_SECRET_TRIES "ppp-manager-secret-tries"
 
 typedef struct {
