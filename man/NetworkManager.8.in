@@ -58,5 +58,18 @@ The following options are supported:
 .I "--no-daemon"
 Do not daemonize.  This is useful for debugging, and directs log output to the
 controlling terminal in addition to syslog.
+.SH DEBUGGING
+The following environment variables are supported to help debugging.  When used
+in conjunction with the "--no-daemon" option (thus echoing PPP and DHCP helper
+output to stdout) these can quickly help pinpoint the source of connection
+issues.
+.TP
+.I "NM_SERIAL_DEBUG"
+When set to anything, causes NetworkManager to log all serial communication to
+and from serial devices like mobile broadband 3G modems.
+.TP
+.I "NM_PPP_DEBUG"
+When set to anything, causes NetworkManager to turn on PPP debugging in pppd,
+which logs all PPP and PPTP frames and client/server exchanges.
 .SH SEE ALSO
 .BR nm-tool (1)
