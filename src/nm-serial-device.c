@@ -391,6 +391,12 @@ nm_serial_device_open (NMSerialDevice *device,
 	priv = NM_SERIAL_DEVICE_GET_PRIVATE (device);
 	iface = nm_device_get_iface (NM_DEVICE (device));
 
+	if (priv->fd >= 0) {
+		nm_debug ("(%s) bug: device already open", iface);
+		nm_serial_device_close (device);
+		priv->fd = -1;
+	}
+
 	nm_debug ("(%s) opening device...", iface);
 
 	path = g_build_filename ("/dev", iface, NULL);
@@ -399,24 +405,26 @@ nm_serial_device_open (NMSerialDevice *device,
 
 	if (priv->fd < 0) {
 		nm_warning ("(%s) cannot open device (errno %d)", iface, errno);
-		return FALSE;
+		goto error;
 	}
 
 	if (tcgetattr (priv->fd, &priv->old_t) < 0) {
 		nm_warning ("(%s) cannot control device (errno %d)", iface, errno);
-		close (priv->fd);
-		return FALSE;
+		goto error;
 	}
 
-	if (!config_fd (device, setting)) {
-		close (priv->fd);
-		return FALSE;
-	}
+	if (!config_fd (device, setting))
+		goto error;
 
 	priv->channel = g_io_channel_unix_new (priv->fd);
 	g_io_channel_set_encoding (priv->channel, NULL, NULL);
-
 	return TRUE;
+
+error:
+	if (priv->fd >= 0)
+		close (priv->fd);
+	priv->fd = -1;
+	return FALSE;
 }
 
 void
@@ -437,7 +445,7 @@ nm_serial_device_close (NMSerialDevice *device)
 		priv->ppp_manager = NULL;
 	}
 
-	if (priv->fd) {
+	if (priv->fd >= 0) {
 		nm_debug ("Closing device '%s'", nm_device_get_iface (NM_DEVICE (device)));
 
 		if (priv->channel) {
@@ -447,7 +455,7 @@ nm_serial_device_close (NMSerialDevice *device)
 
 		tcsetattr (priv->fd, TCSANOW, &priv->old_t);
 		close (priv->fd);
-		priv->fd = 0;
+		priv->fd = -1;
 	}
 }
 
@@ -1133,6 +1141,8 @@ nm_serial_device_init (NMSerialDevice *self)
 {
 	if (getenv ("NM_SERIAL_DEBUG"))
 		serial_debug = TRUE;
+
+	NM_SERIAL_DEVICE_GET_PRIVATE (self)->fd = -1;
 }
 
 static void
