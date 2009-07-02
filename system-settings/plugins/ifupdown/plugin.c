@@ -455,16 +455,16 @@ static GSList*
 SCPluginIfupdown_get_unmanaged_specs (NMSystemConfigInterface *config)
 {
 	SCPluginIfupdownPrivate *priv = SC_PLUGIN_IFUPDOWN_GET_PRIVATE (config);
-	GList *keys, *iter;
+	GList *devs, *iter;
 	GSList *specs = NULL;
 
 	if (!ALWAYS_UNMANAGE && !priv->unmanage_well_known)
 		return NULL;
 
-	keys = g_hash_table_get_keys (priv->well_known_ifaces);
-	PLUGIN_PRINT("Ifupdown", "get unmanaged devices count: %d", g_list_length (keys));
+	devs = g_hash_table_get_values (priv->well_known_ifaces);
+	PLUGIN_PRINT("Ifupdown", "get unmanaged devices count: %d", g_list_length (devs));
 
-	for (iter = keys; iter; iter = g_list_next (iter)) {
+	for (iter = devs; iter; iter = g_list_next (iter)) {
 		GUdevDevice *device = G_UDEV_DEVICE (iter->data);
 		const char *address;
 		char *spec;
@@ -476,7 +476,7 @@ SCPluginIfupdown_get_unmanaged_specs (NMSystemConfigInterface *config)
 		spec = g_strdup_printf ("mac:%s", address);
 		specs = g_slist_append (specs, spec);
 	}
-	g_list_free (keys);
+	g_list_free (devs);
 	return specs;
 }
 
