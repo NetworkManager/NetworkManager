@@ -161,29 +161,78 @@ nm_get_device_driver_name (LibHalContext *ctx, const char *origdev_udi)
 	return driver_name;
 }
 
-/* Returns the parent if the device is a Sony Ericsson 'mbm'-style device */
-static char *
-is_mbm (LibHalContext *ctx, const char *udi)
+static gboolean
+get_vid_pid (LibHalContext *ctx,
+             const char *udi,
+             guint16 *out_vid,
+             guint16 *out_pid,
+             char **out_parent)
 {
-	guint32 vendor_id = 0, product_id = 0;
+	int tmp;
 	char *parent;
+	DBusError error;
+	gboolean success = FALSE;
+
+	g_return_val_if_fail (ctx != NULL, FALSE);
+	g_return_val_if_fail (udi != NULL, FALSE);
 
 	parent = libhal_device_get_property_string (ctx, udi, "info.parent", NULL);
 	if (!parent)
-		return NULL;
+		return FALSE;
 
-	vendor_id = libhal_device_get_property_int (ctx, parent, "usb.vendor_id", NULL);
-	product_id = libhal_device_get_property_int (ctx, parent, "usb.product_id", NULL);
+	dbus_error_init (&error);
+	tmp = libhal_device_get_property_int (ctx, parent, "usb.vendor_id", &error);
+	if (dbus_error_is_set (&error)) {
+		dbus_error_free (&error);
+		goto out;
+	}
+	if (tmp < 0 || tmp > G_MAXUINT16)
+		goto out;
+	if (out_vid)
+		*out_vid = (guint16) tmp;
 
-	if (   (vendor_id == 0x0bdb && product_id == 0x1900)  /* SE F3507g */
-	    || (vendor_id == 0x0bdb && product_id == 0x1902)  /* SE F3507g */
-	    || (vendor_id == 0x0fce && product_id == 0xd0cf)  /* SE MD300 */
-	    || (vendor_id == 0x413c && product_id == 0x8147) /* Dell 5530 HSDPA */
-	    || (vendor_id == 0x0930 && product_id == 0x130b)) /* Toshiba */
-		return parent;
+	dbus_error_init (&error);
+	tmp = libhal_device_get_property_int (ctx, parent, "usb.product_id", &error);
+	if (dbus_error_is_set (&error)) {
+		dbus_error_free (&error);
+		goto out;
+	}
+	if (tmp < 0 || tmp > G_MAXUINT16)
+		goto out;
+	if (out_pid)
+		*out_pid = (guint16) tmp;
 
+	if (out_parent)
+		*out_parent = g_strdup (parent);
+	success = TRUE;
+
+out:
 	libhal_free_string (parent);
-	return NULL;
+	return success;
+}
+
+/* Returns the parent if the device is a Sony Ericsson 'mbm'-style device */
+static gboolean
+is_mbm (LibHalContext *ctx, const char *udi, char **out_parent)
+{
+	guint16 vendor_id = 0, product_id = 0;
+	char *parent = NULL;
+
+	if (!get_vid_pid (ctx, udi, &vendor_id, &product_id, &parent))
+		return FALSE;
+
+	if (   (vendor_id == 0x0bdb && product_id == 0x1900)    /* SE F3507g */
+	    || (vendor_id == 0x0bdb && product_id == 0x1902)    /* SE F3507g */
+	    || (vendor_id == 0x0fce && product_id == 0xd0cf)    /* SE MD300 */
+	    || (vendor_id == 0x413c && product_id == 0x8147)    /* Dell 5530 HSDPA */
+	    || (vendor_id == 0x0930 && product_id == 0x130b)) { /* Toshiba */
+		if (out_parent)
+			*out_parent = parent;
+		return TRUE;
+	}
+
+	g_free (parent);
+	return FALSE;
 }
 
 /* Wired device creator */
@@ -216,7 +265,7 @@ wired_device_creator (NMHalManager *self,
 {
 	NMHalManagerPrivate *priv = NM_HAL_MANAGER_GET_PRIVATE (self);
 	GObject *device = NULL;
-	char *iface, *driver, *parent;
+	char *iface, *driver;
 	gboolean mbm = FALSE;
 
 	iface = libhal_device_get_property_string (priv->hal_ctx, udi, "net.interface", NULL);
@@ -230,11 +279,8 @@ wired_device_creator (NMHalManager *self,
 	/* Special handling of Ericsson F3507g 'mbm' devices; ignore the
 	 * cdc-ether device that it provides since we don't use it yet.
 	 */
-	if (driver && !strcmp (driver, "cdc_ether")) {
-		parent = is_mbm (priv->hal_ctx, udi);
-		mbm = !!parent;
-		libhal_free_string (parent);
-	}
+	if (driver && !strcmp (driver, "cdc_ether"))
+		mbm = is_mbm (priv->hal_ctx, udi, NULL);
 
 	if (!mbm)
 		device = (GObject *) nm_device_ethernet_new (udi, iface, driver, managed);
@@ -399,16 +445,20 @@ out:
 	return netdev;
 }
 
-#define PROP_GSM   "ID_NM_MODEM_GSM"
-#define PROP_CDMA  "ID_NM_MODEM_IS707_A"
-#define PROP_EVDO1 "ID_NM_MODEM_IS856"
-#define PROP_EVDOA "ID_NM_MODEM_IS856_A"
+#define PROP_GSM      "ID_NM_MODEM_GSM"
+#define PROP_CDMA     "ID_NM_MODEM_IS707_A"
+#define PROP_EVDO1    "ID_NM_MODEM_IS856"
+#define PROP_EVDOA    "ID_NM_MODEM_IS856_A"
+#define PROP_ZTE_MAIN "ID_NM_ZTE_PORT_TYPE_MODEM"
+#define PROP_ZTE_SET  "ID_NM_ZTE_PORT_TYPE_SET"
 
 #if HAVE_LIBUDEV
 
 typedef struct {
 	gboolean gsm;
 	gboolean cdma;
+	gboolean zte_main;
+	gboolean zte_set;
 } UdevIterData;
 
 #if UDEV_VERSION >= 129
@@ -441,6 +491,13 @@ static int udev_device_prop_iter(struct udev_device *udev_device,
 	if (!strcmp (key, PROP_EVDOA) && !strcmp (value, "1"))
 		types->cdma = TRUE;
 
+	if (types->cdma || types->gsm) {
+	    if (!strcmp (key, PROP_ZTE_MAIN) && !strcmp (value, "1"))
+			types->zte_main = TRUE;
+	    if (!strcmp (key, PROP_ZTE_SET) && !strcmp (value, "1"))
+			types->zte_set = TRUE;
+	}
+
 	/* Return 0 to continue looking */
 	return types->gsm && types->cdma;
 }
@@ -449,7 +506,9 @@ static int udev_device_prop_iter(struct udev_device *udev_device,
 static gboolean
 libudev_get_modem_capabilities (const char *sysfs_path,
                                 gboolean *gsm,
-                                gboolean *cdma)
+                                gboolean *cdma,
+                                gboolean *zte_main,
+                                gboolean *zte_set)
 {
 	struct udev *udev;
 	struct udev_device *device;
@@ -459,6 +518,10 @@ libudev_get_modem_capabilities (const char *sysfs_path,
 	g_return_val_if_fail (*gsm == FALSE, FALSE);
 	g_return_val_if_fail (cdma != NULL, FALSE);
 	g_return_val_if_fail (*cdma == FALSE, FALSE);
+	g_return_val_if_fail (zte_main != NULL, FALSE);
+	g_return_val_if_fail (*zte_main == FALSE, FALSE);
+	g_return_val_if_fail (zte_set != NULL, FALSE);
+	g_return_val_if_fail (*zte_set == FALSE, FALSE);
 
 	udev = udev_new ();
 	if (!udev)
@@ -486,6 +549,8 @@ libudev_get_modem_capabilities (const char *sysfs_path,
 		const char *cdma_val = get_udev_property (device, PROP_CDMA);
 		const char *evdo1_val = get_udev_property (device, PROP_EVDO1);
 		const char *evdoa_val = get_udev_property (device, PROP_EVDOA);
+		const char *zte_main_val = get_udev_property (device, PROP_ZTE_MAIN);
+		const char *zte_set_val = get_udev_property (device, PROP_ZTE_SET);
 
 		if (gsm_val && !strcmp (gsm_val, "1"))
 			*gsm = TRUE;
@@ -495,6 +560,13 @@ libudev_get_modem_capabilities (const char *sysfs_path,
 			*cdma = TRUE;
 		if (evdoa_val && !strcmp (evdoa_val, "1"))
 			*cdma = TRUE;
+
+		if (*gsm || *cdma) {
+		    if (zte_main_val && !strcmp (zte_main_val, "1"))
+				*zte_main = TRUE;
+		    if (zte_set_val && !strcmp (zte_set_val, "1"))
+				*zte_set = TRUE;
+		}
 	}
 #else
 	{
@@ -503,6 +575,10 @@ libudev_get_modem_capabilities (const char *sysfs_path,
 		udev_device_get_properties (device, udev_device_prop_iter, &iterdata);
 		*gsm = iterdata.gsm;
 		*cdma = iterdata.cdma;
+		if (*gsm || *cdma) {
+			*zte_main = iterdata.zte_main;
+			*zte_set = iterdata.zte_set;
+		}
 	}
 #endif
 
@@ -514,7 +590,9 @@ libudev_get_modem_capabilities (const char *sysfs_path,
 static gboolean
 udevadm_get_modem_capabilities (const char *sysfs_path,
                                 gboolean *gsm,
-                                gboolean *cdma)
+                                gboolean *cdma,
+                                gboolean *zte_main,
+                                gboolean *zte_set)
 {
 	char *udevadm_argv[] = { "/sbin/udevadm", "info", "--query=env", NULL, NULL };
 	char *syspath_arg = NULL;
@@ -522,13 +600,17 @@ udevadm_get_modem_capabilities (const char *sysfs_path,
 	int exitcode;
 	GError *error = NULL;
 	char **lines = NULL, **iter;
-	gboolean success = FALSE;
+	gboolean success = FALSE, is_zte_main = FALSE, is_zte_set = FALSE;
 
 	g_return_val_if_fail (sysfs_path != NULL, FALSE);
 	g_return_val_if_fail (gsm != NULL, FALSE);
 	g_return_val_if_fail (*gsm == FALSE, FALSE);
 	g_return_val_if_fail (cdma != NULL, FALSE);
 	g_return_val_if_fail (*cdma == FALSE, FALSE);
+	g_return_val_if_fail (zte_main != NULL, FALSE);
+	g_return_val_if_fail (*zte_main == FALSE, FALSE);
+	g_return_val_if_fail (zte_set != NULL, FALSE);
+	g_return_val_if_fail (*zte_set == FALSE, FALSE);
 
 	udevadm_argv[3] = syspath_arg = g_strdup_printf ("--path=%s", sysfs_path);
 	if (g_spawn_sync ("/", udevadm_argv, NULL, 0, NULL, NULL,
@@ -553,14 +635,21 @@ udevadm_get_modem_capabilities (const char *sysfs_path,
 	for (iter = lines; *iter; iter++) {
 		if (!strcmp (*iter, PROP_GSM "=1")) {
 			*gsm = TRUE;
-			break;
 		} else if (   !strcmp (*iter, PROP_CDMA "=1")
 		           || !strcmp (*iter, PROP_EVDO1 "=1")
 		           || !strcmp (*iter, PROP_EVDOA "=1")) {
 			*cdma = TRUE;
-			break;
-		}
+		} else if (!strcmp (*iter, PROP_ZTE_MAIN "=1"))
+			is_zte_main = TRUE;
+		else if (!strcmp (*iter, PROP_ZTE_SET "=1"))
+			is_zte_set = TRUE;
 	}
+
+	if (*gsm || *cdma) {
+		*zte_main = is_zte_main;
+		*zte_set = is_zte_set;
+	}
+
 	success = TRUE;
 
 error:
@@ -859,13 +948,12 @@ new_modem_device (const char *udi,
 	 * ModemManager more correctly in HEAD.
 	 */
 	if (gsm && !strcmp (driver, "cdc_acm")) {
-		char *parent;
+		char *parent = NULL;
 		guint32 usb_interface;
 
-		parent = is_mbm (ctx, udi);
-		if (parent) {
+		if (is_mbm (ctx, udi, &parent)) {
 			usb_interface = libhal_device_get_property_int (ctx, parent, "usb.interface.number", NULL);
-			libhal_free_string (parent);
+			g_free (parent);
 			if (usb_interface != 1)
 				return NULL;
 		}
@@ -920,7 +1008,10 @@ modem_device_creator (NMHalManager *self,
 	gboolean hal_cdma = FALSE;
 	gboolean later = FALSE;
 	gboolean udev_success = FALSE;
+	gboolean zte_main = FALSE;
+	gboolean zte_set = FALSE;
 	DeferredModem *deferred = NULL;
+	guint16 vid = 0;
 
 	serial_device = libhal_device_get_property_string (priv->hal_ctx, udi, "serial.device", NULL);
 	/* For serial devices, 'origdev_udi' will be the actual USB or platform device,
@@ -951,9 +1042,9 @@ modem_device_creator (NMHalManager *self,
 	}
 
 #if HAVE_LIBUDEV
-	udev_success = libudev_get_modem_capabilities (sysfs_path, &udev_gsm, &udev_cdma);
+	udev_success = libudev_get_modem_capabilities (sysfs_path, &udev_gsm, &udev_cdma, &zte_main, &zte_set);
 #else
-	udev_success = udevadm_get_modem_capabilities (sysfs_path, &udev_gsm, &udev_cdma);
+	udev_success = udevadm_get_modem_capabilities (sysfs_path, &udev_gsm, &udev_cdma, &zte_main, &zte_set);
 #endif
 	libhal_free_string (sysfs_path);
 
@@ -965,6 +1056,17 @@ modem_device_creator (NMHalManager *self,
 		nm_warning ("(%s): udev probing failed; using only HAL modem capabilities.", ttyname);
 		udev_gsm = hal_gsm;
 		udev_cdma = hal_cdma;
+	}
+
+	/* ZTE modem ports get tagged by udev rules, so if the modem was known to
+	 * the rules (in which case ID_NM_ZTE_PORT_TYPE_SET will be set), and the
+	 * port isn't a "main" port, we should ignore it.
+	 */
+	if (get_vid_pid (priv->hal_ctx, udi, &vid, NULL, NULL) && (vid == 0x19d2)) {
+		if (zte_set && !zte_main) {
+			udev_gsm = FALSE;
+			udev_cdma = FALSE;
+		}
 	}
 
 	/* If it's not known to either udev or HAL as a modem, nothing to do */

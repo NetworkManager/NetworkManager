@@ -70,7 +70,9 @@ nm_modem_probe_CPPFLAGS = $(GLIB_CFLAGS)
 nm_modem_probe_LDADD = $(GLIB_LIBS)
 
 udevrulesdir = $(UDEV_BASE_DIR)/rules.d
-udevrules_DATA = 77-nm-probe-modem-capabilities.rules
+udevrules_DATA = \
+	77-nm-probe-modem-capabilities.rules \
+	77-nm-zte-port-types.rules
 
 dbusactivationdir = $(datadir)/dbus-1/system-services
 dbusactivation_in_files = org.freedesktop.nm_dispatcher.service.in
