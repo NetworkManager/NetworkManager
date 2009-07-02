@@ -98,14 +98,50 @@ check_polkit_privileges (DBusGConnection *dbus_connection,
 					DBusGMethodInvocation *context,
 					GError **err)
 {
+	DBusConnection *tmp;
 	DBusError dbus_error;
 	char *sender;
+	gulong sender_uid = G_MAXULONG;
 	PolKitCaller *pk_caller;
 	PolKitAction *pk_action;
 	PolKitResult pk_result;
 
-	dbus_error_init (&dbus_error);
+	/* Always allow uid 0 */
+	tmp = dbus_g_connection_get_connection (dbus_connection);
+	if (!tmp) {
+		g_set_error (err,
+		             NM_SYSCONFIG_SETTINGS_ERROR,
+		             NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
+		             "Could not get D-Bus connection.");
+		return FALSE;
+	}
+
 	sender = dbus_g_method_get_sender (context);
+
+	dbus_error_init (&dbus_error);
+	/* FIXME: do this async */
+	sender_uid = dbus_bus_get_unix_user (tmp, sender, &dbus_error);
+	if (dbus_error_is_set (&dbus_error)) {
+		g_set_error (err,
+		             NM_SYSCONFIG_SETTINGS_ERROR,
+		             NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
+		             "Could not determine the Unix user ID of the requestor: %s: %s",
+		             dbus_error.name, dbus_error.message);
+		dbus_error_free (&dbus_error);
+		return FALSE;
+	}
+
+	/* PolicyKit < 1.0 is not compatible with root processes spawned outside
+	 * the session manager, and when asking ConsoleKit for the session of the
+	 * process, ConsoleKit won't be able to get XDG_SESSION_COOKIE because it
+	 * doesn't exist in the caller's environment for non-session-managed
+	 * processes.  So, for PK < 1.0, ignore PolicyKit for uid 0.
+	 */
+	if (0 == sender_uid)
+		return TRUE;
+
+	/* Non-root users need to auth via PolicyKit */
+	dbus_error_init (&dbus_error);
 	pk_caller = polkit_caller_new_from_dbus_name (dbus_g_connection_get_connection (dbus_connection),
 										 sender,
 										 &dbus_error);
