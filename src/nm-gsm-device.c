@@ -664,6 +664,13 @@ enter_pin (NMGsmDevice *device, NMGsmSecret secret_type, gboolean retry)
 		g_free (command);
 	} else {
 		nm_info ("(%s): GSM %s secret required", nm_device_get_iface (NM_DEVICE (device)), secret_name);
+
+		/* Close the serial device as we don't know how long it will take for
+		 * secrets to return, and the port gets re-opened by stage1 when they
+		 * do.
+		 */
+		nm_serial_device_close (NM_SERIAL_DEVICE (device));
+
 		nm_device_state_changed (NM_DEVICE (device),
 		                         NM_DEVICE_STATE_NEED_AUTH,
 		                         NM_DEVICE_STATE_REASON_NONE);
@@ -1076,7 +1083,6 @@ device_state_changed (NMDeviceInterface *device,
 	case NM_DEVICE_STATE_UNAVAILABLE:
 	case NM_DEVICE_STATE_FAILED:
 	case NM_DEVICE_STATE_DISCONNECTED:
-	case NM_DEVICE_STATE_NEED_AUTH:
 		nm_serial_device_close (NM_SERIAL_DEVICE (self));
 		break;
 	default:

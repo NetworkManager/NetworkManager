@@ -465,7 +465,6 @@ device_state_changed (NMDeviceInterface *device,
 	case NM_DEVICE_STATE_UNAVAILABLE:
 	case NM_DEVICE_STATE_FAILED:
 	case NM_DEVICE_STATE_DISCONNECTED:
-	case NM_DEVICE_STATE_NEED_AUTH:
 		nm_serial_device_close (NM_SERIAL_DEVICE (self));
 		break;
 	default:
