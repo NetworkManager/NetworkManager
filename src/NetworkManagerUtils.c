@@ -96,38 +96,6 @@ nm_spawn_process (const char *args)
 	return status;
 }
 
-void
-nm_print_device_capabilities (NMDevice *dev)
-{
-	gboolean full_support = TRUE;
-	guint32 caps;
-	const char *driver, *iface;
-
-	g_return_if_fail (dev != NULL);
-
-	caps = nm_device_get_capabilities (dev);
-	iface = nm_device_get_iface (dev);
-	driver = nm_device_get_driver (dev);
-	if (!driver)
-		driver = "<unknown>";
-
-	if (caps == NM_DEVICE_CAP_NONE || !(NM_DEVICE_CAP_NM_SUPPORTED)) {
-		nm_info ("(%s): driver '%s' is unsupported", iface, driver);
-		return;
-	}
-
-	if (NM_IS_DEVICE_ETHERNET (dev)) {
-		if (!(caps & NM_DEVICE_CAP_CARRIER_DETECT)) {
-			nm_info ("(%s): driver '%s' does not support carrier detection.\n"
-					"\tYou must switch to it manually.",
-					iface, driver);
-			full_support = FALSE;
-		}
-	} else if (NM_IS_DEVICE_WIFI (dev)) {
-		/* Print out WPA support */
-	}
-}
-
 /*
  * nm_utils_ip4_netmask_to_prefix
  *

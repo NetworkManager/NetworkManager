@@ -181,8 +181,6 @@ constructor (GType type,
 	if (NM_DEVICE_GET_CLASS (dev)->update_hw_address)
 		NM_DEVICE_GET_CLASS (dev)->update_hw_address (dev);
 
-	nm_print_device_capabilities (dev);
-
 	priv->initialized = TRUE;
 	return object;
 

@@ -313,6 +313,10 @@ constructor (GType type,
 
 		g_object_unref (monitor);
 	} else {
+		nm_info ("(%s): driver '%s' does not support carrier detection.",
+				nm_device_get_iface (NM_DEVICE (object)),
+				nm_device_get_driver (NM_DEVICE (object)));
+
 		priv->link_connected_id = 0;
 		priv->link_disconnected_id = 0;
 		priv->carrier = TRUE;
