@@ -79,10 +79,10 @@ struct _NMDeviceWifiClass
 
 GType nm_device_wifi_get_type (void);
 
-NMDeviceWifi *nm_device_wifi_new (const char *udi,
-                                  const char *iface,
-                                  const char *driver,
-                                  guint32 ifindex);
+NMDevice *nm_device_wifi_new (const char *udi,
+                              const char *iface,
+                              const char *driver,
+                              guint32 ifindex);
 
 void nm_device_wifi_get_address (NMDeviceWifi *dev,
 								   struct ether_addr *addr);

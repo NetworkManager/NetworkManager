@@ -294,16 +294,6 @@ nm_device_get_device_type (NMDevice *self)
 }
 
 
-void
-nm_device_set_device_type (NMDevice *dev, NMDeviceType type)
-{
-	g_return_if_fail (NM_IS_DEVICE (dev));
-	g_return_if_fail (NM_DEVICE_GET_PRIVATE (dev)->type == NM_DEVICE_TYPE_UNKNOWN);
-
-	NM_DEVICE_GET_PRIVATE (dev)->type = type;
-}
-
-
 int
 nm_device_get_priority (NMDevice *dev)
 {

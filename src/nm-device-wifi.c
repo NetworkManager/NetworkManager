@@ -136,7 +136,7 @@ typedef struct Supplicant {
 } Supplicant;
 
 struct _NMDeviceWifiPrivate {
-	gboolean          dispose_has_run;
+	gboolean          disposed;
 
 	struct ether_addr hw_addr;
 	guint32           ifindex;
@@ -451,20 +451,6 @@ get_wireless_capabilities (NMDeviceWifi *self,
 	return caps;
 }
 
-
-static void
-nm_device_wifi_init (NMDeviceWifi * self)
-{
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-
-	priv->dispose_has_run = FALSE;
-	priv->ap_list = NULL;
-	priv->we_version = 0;
-
-	memset (&(priv->hw_addr), 0, sizeof (struct ether_addr));
-
-	nm_device_set_device_type (NM_DEVICE (self), NM_DEVICE_TYPE_WIFI);
-}
 
 static guint32 iw_freq_to_uint32 (struct iw_freq *freq)
 {
@@ -3166,18 +3152,223 @@ real_get_type_capabilities (NMDevice *dev)
 }
 
 
+static gboolean
+spec_match_list (NMDevice *device, const GSList *specs)
+{
+	struct ether_addr ether;
+	char *hwaddr;
+	gboolean matched;
+
+	nm_device_wifi_get_address (NM_DEVICE_WIFI (device), &ether);
+	hwaddr = nm_ether_ntop (&ether);
+	matched = nm_match_spec_hwaddr (specs, hwaddr);
+	g_free (hwaddr);
+
+	return matched;
+}
+
+static gboolean
+unavailable_to_disconnected (gpointer user_data)
+{
+	nm_device_state_changed (NM_DEVICE (user_data),
+	                         NM_DEVICE_STATE_DISCONNECTED,
+	                         NM_DEVICE_STATE_REASON_NONE);
+	return FALSE;
+}
+
 static void
-nm_device_wifi_dispose (GObject *object)
+device_state_changed (NMDevice *device,
+                      NMDeviceState new_state,
+                      NMDeviceState old_state,
+                      NMDeviceStateReason reason,
+                      gpointer user_data)
+{
+	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
+	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	gboolean clear_aps = FALSE;
+
+	/* Remove any previous delayed transition to disconnected */
+	if (priv->state_to_disconnected_id) {
+		g_source_remove (priv->state_to_disconnected_id);
+		priv->state_to_disconnected_id = 0;
+	}
+
+	if (new_state <= NM_DEVICE_STATE_UNAVAILABLE) {
+		/* Clean up the supplicant interface because in these states the
+		 * device cannot be used.
+		 */
+		if (priv->supplicant.iface)
+			supplicant_interface_release (self);
+	}
+
+	switch (new_state) {
+	case NM_DEVICE_STATE_UNMANAGED:
+		clear_aps = TRUE;
+		break;
+	case NM_DEVICE_STATE_UNAVAILABLE:
+		/* If the device is enabled and the supplicant manager is ready,
+		 * acquire a supplicant interface and transition to DISCONNECTED because
+		 * the device is now ready to use.
+		 */
+		if (priv->enabled) {
+			gboolean success;
+			struct iw_range range;
+
+			/* Wait for some drivers like ipw3945 to come back to life */
+			success = wireless_get_range (self, &range, NULL);
+
+			if (!priv->supplicant.iface)
+				supplicant_interface_acquire (self);
+
+			if (priv->supplicant.iface)
+				priv->state_to_disconnected_id = g_idle_add (unavailable_to_disconnected, self);
+		}
+		clear_aps = TRUE;
+		break;
+	case NM_DEVICE_STATE_ACTIVATED:
+		activation_success_handler (device);
+		break;
+	case NM_DEVICE_STATE_FAILED:
+		activation_failure_handler (device);
+		break;
+	case NM_DEVICE_STATE_DISCONNECTED:
+		// FIXME: ensure that the activation request is destroyed
+		break;
+	default:
+		break;
+	}
+
+	if (clear_aps)
+		remove_all_aps (self);
+}
+
+guint32
+nm_device_wifi_get_ifindex (NMDeviceWifi *self)
+{
+	g_return_val_if_fail (self != NULL, FALSE);
+
+	return NM_DEVICE_WIFI_GET_PRIVATE (self)->ifindex;
+}
+
+NMAccessPoint *
+nm_device_wifi_get_activation_ap (NMDeviceWifi *self)
+{
+	NMDeviceWifiPrivate *priv;
+	NMActRequest *req;
+	const char *ap_path;
+	GSList * elt;
+
+	g_return_val_if_fail (NM_IS_DEVICE_WIFI (self), NULL);
+
+	req = nm_device_get_act_request (NM_DEVICE (self));
+	if (!req)
+		return NULL;
+
+	ap_path = nm_act_request_get_specific_object (req);
+	if (!ap_path)
+		return NULL;
+
+	/* Find the AP by it's object path */
+	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	for (elt = priv->ap_list; elt; elt = g_slist_next (elt)) {
+		NMAccessPoint *ap = NM_AP (elt->data);
+
+		if (!strcmp (ap_path, nm_ap_get_dbus_path (ap)))
+			return ap;
+	}
+	return NULL;
+}
+
+void
+nm_device_wifi_set_enabled (NMDeviceWifi *self, gboolean enabled)
+{
+	NMDeviceWifiPrivate *priv;
+	NMDeviceState state;
+
+	g_return_if_fail (NM_IS_DEVICE_WIFI (self));
+
+	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
+	if (priv->enabled == enabled)
+		return;
+
+	priv->enabled = enabled;
+
+	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
+	if (state < NM_DEVICE_STATE_UNAVAILABLE)
+		return;
+
+	if (enabled) {
+		gboolean no_firmware = FALSE, success;
+		struct iw_range range;
+
+		if (state != NM_DEVICE_STATE_UNAVAILABLE)
+			nm_warning ("not in expected unavailable state!");
+
+		if (!nm_device_hw_bring_up (NM_DEVICE (self), TRUE, &no_firmware)) {
+			/* The device sucks, or HAL was lying to us about the killswitch state */
+			priv->enabled = FALSE;
+			return;
+		}
+
+		/* Wait for some drivers like ipw3945 to come back to life */
+		success = wireless_get_range (self, &range, NULL);
+
+		if (!priv->supplicant.iface)
+			supplicant_interface_acquire (self);
+
+		if (priv->supplicant.iface) {
+			nm_device_state_changed (NM_DEVICE (self),
+			                         NM_DEVICE_STATE_DISCONNECTED,
+			                         NM_DEVICE_STATE_REASON_NONE);
+		}
+	} else {
+		nm_device_state_changed (NM_DEVICE (self),
+		                         NM_DEVICE_STATE_UNAVAILABLE,
+		                         NM_DEVICE_STATE_REASON_NONE);
+		nm_device_hw_take_down (NM_DEVICE (self), TRUE);
+	}
+}
+
+/********************************************************************/
+
+NMDevice *
+nm_device_wifi_new (const char *udi,
+                    const char *iface,
+                    const char *driver,
+                    guint32 ifindex)
+{
+	g_return_val_if_fail (udi != NULL, NULL);
+	g_return_val_if_fail (iface != NULL, NULL);
+	g_return_val_if_fail (driver != NULL, NULL);
+
+	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_WIFI,
+	                                  NM_DEVICE_INTERFACE_UDI, udi,
+	                                  NM_DEVICE_INTERFACE_IFACE, iface,
+	                                  NM_DEVICE_INTERFACE_DRIVER, driver,
+	                                  NM_DEVICE_WIFI_IFINDEX, ifindex,
+	                                  NM_DEVICE_INTERFACE_TYPE_DESC, "802.11 WiFi",
+	                                  NM_DEVICE_INTERFACE_DEVICE_TYPE, NM_DEVICE_TYPE_WIFI,
+	                                  NULL);
+}
+
+static void
+nm_device_wifi_init (NMDeviceWifi * self)
+{
+	g_signal_connect (self, "state-changed", G_CALLBACK (device_state_changed), NULL);
+}
+
+static void
+dispose (GObject *object)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (object);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 
-	if (priv->dispose_has_run) {
+	if (priv->disposed) {
 		G_OBJECT_CLASS (nm_device_wifi_parent_class)->dispose (object);
 		return;
 	}
 
-	priv->dispose_has_run = TRUE;
+	priv->disposed = TRUE;
 
 	if (priv->periodic_source_id) {
 		g_source_remove (priv->periodic_source_id);
@@ -3217,21 +3408,6 @@ nm_device_wifi_dispose (GObject *object)
 	}
 
 	G_OBJECT_CLASS (nm_device_wifi_parent_class)->dispose (object);
-}
-
-static gboolean
-spec_match_list (NMDevice *device, const GSList *specs)
-{
-	struct ether_addr ether;
-	char *hwaddr;
-	gboolean matched;
-
-	nm_device_wifi_get_address (NM_DEVICE_WIFI (device), &ether);
-	hwaddr = nm_ether_ntop (&ether);
-	matched = nm_match_spec_hwaddr (specs, hwaddr);
-	g_free (hwaddr);
-
-	return matched;
 }
 
 static void
@@ -3300,7 +3476,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	object_class->constructor = constructor;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
-	object_class->dispose = nm_device_wifi_dispose;
+	object_class->dispose = dispose;
 
 	parent_class->get_type_capabilities = real_get_type_capabilities;
 	parent_class->get_generic_capabilities = real_get_generic_capabilities;
@@ -3410,193 +3586,4 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	dbus_g_error_domain_register (NM_WIFI_ERROR, NULL, NM_TYPE_WIFI_ERROR);
 }
 
-static gboolean
-unavailable_to_disconnected (gpointer user_data)
-{
-	nm_device_state_changed (NM_DEVICE (user_data),
-	                         NM_DEVICE_STATE_DISCONNECTED,
-	                         NM_DEVICE_STATE_REASON_NONE);
-	return FALSE;
-}
-
-static void
-device_state_changed (NMDevice *device,
-                      NMDeviceState new_state,
-                      NMDeviceState old_state,
-                      NMDeviceStateReason reason,
-                      gpointer user_data)
-{
-	NMDeviceWifi *self = NM_DEVICE_WIFI (device);
-	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	gboolean clear_aps = FALSE;
-
-	/* Remove any previous delayed transition to disconnected */
-	if (priv->state_to_disconnected_id) {
-		g_source_remove (priv->state_to_disconnected_id);
-		priv->state_to_disconnected_id = 0;
-	}
-
-	if (new_state <= NM_DEVICE_STATE_UNAVAILABLE) {
-		/* Clean up the supplicant interface because in these states the
-		 * device cannot be used.
-		 */
-		if (priv->supplicant.iface)
-			supplicant_interface_release (self);
-	}
-
-	switch (new_state) {
-	case NM_DEVICE_STATE_UNMANAGED:
-		clear_aps = TRUE;
-		break;
-	case NM_DEVICE_STATE_UNAVAILABLE:
-		/* If the device is enabled and the supplicant manager is ready,
-		 * acquire a supplicant interface and transition to DISCONNECTED because
-		 * the device is now ready to use.
-		 */
-		if (priv->enabled) {
-			gboolean success;
-			struct iw_range range;
-
-			/* Wait for some drivers like ipw3945 to come back to life */
-			success = wireless_get_range (self, &range, NULL);
-
-			if (!priv->supplicant.iface)
-				supplicant_interface_acquire (self);
-
-			if (priv->supplicant.iface)
-				priv->state_to_disconnected_id = g_idle_add (unavailable_to_disconnected, self);
-		}
-		clear_aps = TRUE;
-		break;
-	case NM_DEVICE_STATE_ACTIVATED:
-		activation_success_handler (device);
-		break;
-	case NM_DEVICE_STATE_FAILED:
-		activation_failure_handler (device);
-		break;
-	case NM_DEVICE_STATE_DISCONNECTED:
-		// FIXME: ensure that the activation request is destroyed
-		break;
-	default:
-		break;
-	}
-
-	if (clear_aps)
-		remove_all_aps (self);
-}
-
-
-NMDeviceWifi *
-nm_device_wifi_new (const char *udi,
-                    const char *iface,
-                    const char *driver,
-                    guint32 ifindex)
-{
-	GObject *obj;
-
-	g_return_val_if_fail (udi != NULL, NULL);
-	g_return_val_if_fail (iface != NULL, NULL);
-	g_return_val_if_fail (driver != NULL, NULL);
-
-	obj = g_object_new (NM_TYPE_DEVICE_WIFI,
-	                    NM_DEVICE_INTERFACE_UDI, udi,
-	                    NM_DEVICE_INTERFACE_IFACE, iface,
-	                    NM_DEVICE_INTERFACE_DRIVER, driver,
-	                    NM_DEVICE_WIFI_IFINDEX, ifindex,
-	                    NM_DEVICE_INTERFACE_TYPE_DESC, "802.11 WiFi",
-	                    NULL);
-	if (obj == NULL)
-		return NULL;
-
-	g_signal_connect (obj, "state-changed", G_CALLBACK (device_state_changed), NULL);
-
-	return NM_DEVICE_WIFI (obj);
-}
-
-guint32
-nm_device_wifi_get_ifindex (NMDeviceWifi *self)
-{
-	g_return_val_if_fail (self != NULL, FALSE);
-
-	return NM_DEVICE_WIFI_GET_PRIVATE (self)->ifindex;
-}
-
-NMAccessPoint *
-nm_device_wifi_get_activation_ap (NMDeviceWifi *self)
-{
-	NMDeviceWifiPrivate *priv;
-	NMActRequest *req;
-	const char *ap_path;
-	GSList * elt;
-
-	g_return_val_if_fail (NM_IS_DEVICE_WIFI (self), NULL);
-
-	req = nm_device_get_act_request (NM_DEVICE (self));
-	if (!req)
-		return NULL;
-
-	ap_path = nm_act_request_get_specific_object (req);
-	if (!ap_path)
-		return NULL;
-
-	/* Find the AP by it's object path */
-	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	for (elt = priv->ap_list; elt; elt = g_slist_next (elt)) {
-		NMAccessPoint *ap = NM_AP (elt->data);
-
-		if (!strcmp (ap_path, nm_ap_get_dbus_path (ap)))
-			return ap;
-	}
-	return NULL;
-}
-
-void
-nm_device_wifi_set_enabled (NMDeviceWifi *self, gboolean enabled)
-{
-	NMDeviceWifiPrivate *priv;
-	NMDeviceState state;
-
-	g_return_if_fail (NM_IS_DEVICE_WIFI (self));
-
-	priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
-	if (priv->enabled == enabled)
-		return;
-
-	priv->enabled = enabled;
-
-	state = nm_device_interface_get_state (NM_DEVICE_INTERFACE (self));
-	if (state < NM_DEVICE_STATE_UNAVAILABLE)
-		return;
-
-	if (enabled) {
-		gboolean no_firmware = FALSE, success;
-		struct iw_range range;
-
-		if (state != NM_DEVICE_STATE_UNAVAILABLE)
-			nm_warning ("not in expected unavailable state!");
-
-		if (!nm_device_hw_bring_up (NM_DEVICE (self), TRUE, &no_firmware)) {
-			/* The device sucks, or HAL was lying to us about the killswitch state */
-			priv->enabled = FALSE;
-			return;
-		}
-
-		/* Wait for some drivers like ipw3945 to come back to life */
-		success = wireless_get_range (self, &range, NULL);
-
-		if (!priv->supplicant.iface)
-			supplicant_interface_acquire (self);
-
-		if (priv->supplicant.iface) {
-			nm_device_state_changed (NM_DEVICE (self),
-			                         NM_DEVICE_STATE_DISCONNECTED,
-			                         NM_DEVICE_STATE_REASON_NONE);
-		}
-	} else {
-		nm_device_state_changed (NM_DEVICE (self),
-		                         NM_DEVICE_STATE_UNAVAILABLE,
-		                         NM_DEVICE_STATE_REASON_NONE);
-		nm_device_hw_take_down (NM_DEVICE (self), TRUE);
-	}
-}
 

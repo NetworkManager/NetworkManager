@@ -50,11 +50,11 @@ typedef struct {
 
 GType nm_device_bt_get_type (void);
 
-NMDeviceBt *nm_device_bt_new (const char *udi,
-                              const char *bdaddr,
-                              const char *name,
-                              guint32 capabilities,
-                              gboolean managed);
+NMDevice *nm_device_bt_new (const char *udi,
+                            const char *bdaddr,
+                            const char *name,
+                            guint32 capabilities,
+                            gboolean managed);
 
 guint32 nm_device_bt_get_capabilities (NMDeviceBt *device);
 

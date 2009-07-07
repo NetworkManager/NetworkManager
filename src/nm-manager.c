@@ -1297,7 +1297,7 @@ bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
                                guint32 capabilities,
                                NMManager *manager)
 {
-	NMDeviceBt *device;
+	NMDevice *device;
 	gboolean has_dun = (capabilities & NM_BT_CAPABILITY_DUN);
 	gboolean has_nap = (capabilities & NM_BT_CAPABILITY_NAP);
 
@@ -1317,17 +1317,16 @@ bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
 		return;
 
 	device = nm_device_bt_new (object_path, bdaddr, name, capabilities, TRUE);
-	if (!device)
-		return;
+	if (device) {
+		g_message ("%s: BT device %s added (%s%s%s)",
+		           __func__,
+		           bdaddr,
+		           has_dun ? "DUN" : "",
+		           has_dun && has_nap ? " " : "",
+		           has_nap ? "NAP" : "");
 
-	g_message ("%s: BT device %s added (%s%s%s)",
-	           __func__,
-	           bdaddr,
-	           has_dun ? "DUN" : "",
-	           has_dun && has_nap ? " " : "",
-	           has_nap ? "NAP" : "");
-
-	add_device (manager, NM_DEVICE (device));
+		add_device (manager, device);
+	}
 }
 
 static void

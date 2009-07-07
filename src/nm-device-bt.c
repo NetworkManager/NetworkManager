@@ -122,7 +122,7 @@ nm_bt_error_get_type (void)
 }
 
 
-NMDeviceBt *
+NMDevice *
 nm_device_bt_new (const char *udi,
                   const char *bdaddr,
                   const char *name,
@@ -134,16 +134,17 @@ nm_device_bt_new (const char *udi,
 	g_return_val_if_fail (name != NULL, NULL);
 	g_return_val_if_fail (capabilities != NM_BT_CAPABILITY_NONE, NULL);
 
-	return (NMDeviceBt *) g_object_new (NM_TYPE_DEVICE_BT,
-	                                    NM_DEVICE_INTERFACE_UDI, udi,
-	                                    NM_DEVICE_INTERFACE_IFACE, bdaddr,
-	                                    NM_DEVICE_INTERFACE_DRIVER, "bluez",
-	                                    NM_DEVICE_BT_HW_ADDRESS, bdaddr,
-	                                    NM_DEVICE_BT_NAME, name,
-	                                    NM_DEVICE_BT_CAPABILITIES, capabilities,
-	                                    NM_DEVICE_INTERFACE_MANAGED, managed,
-	                                    NM_DEVICE_INTERFACE_TYPE_DESC, "Bluetooth",
-	                                    NULL);
+	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_BT,
+	                                  NM_DEVICE_INTERFACE_UDI, udi,
+	                                  NM_DEVICE_INTERFACE_IFACE, bdaddr,
+	                                  NM_DEVICE_INTERFACE_DRIVER, "bluez",
+	                                  NM_DEVICE_BT_HW_ADDRESS, bdaddr,
+	                                  NM_DEVICE_BT_NAME, name,
+	                                  NM_DEVICE_BT_CAPABILITIES, capabilities,
+	                                  NM_DEVICE_INTERFACE_MANAGED, managed,
+	                                  NM_DEVICE_INTERFACE_TYPE_DESC, "Bluetooth",
+	                                  NM_DEVICE_INTERFACE_DEVICE_TYPE, NM_DEVICE_TYPE_BT,
+	                                  NULL);
 }
 
 guint32 nm_device_bt_get_capabilities (NMDeviceBt *self)
@@ -705,7 +706,6 @@ real_deactivate_quickly (NMDevice *device)
 static void
 nm_device_bt_init (NMDeviceBt *self)
 {
-	nm_device_set_device_type (NM_DEVICE (self), NM_DEVICE_TYPE_BT);
 }
 
 static gboolean

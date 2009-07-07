@@ -72,13 +72,14 @@ nm_modem_cdma_new (const char *path,
 	g_return_val_if_fail (driver != NULL, NULL);
 
 	return (NMDevice *) g_object_new (NM_TYPE_MODEM_CDMA,
-									  NM_DEVICE_INTERFACE_UDI, path,
-									  NM_DEVICE_INTERFACE_IFACE, data_device,
-									  NM_DEVICE_INTERFACE_DRIVER, driver,
-									  NM_MODEM_PATH, path,
-									  NM_MODEM_DEVICE, device,
+	                                  NM_DEVICE_INTERFACE_UDI, path,
+	                                  NM_DEVICE_INTERFACE_IFACE, data_device,
+	                                  NM_DEVICE_INTERFACE_DRIVER, driver,
+	                                  NM_MODEM_PATH, path,
+	                                  NM_MODEM_DEVICE, device,
 	                                  NM_DEVICE_INTERFACE_TYPE_DESC, "CDMA",
-									  NULL);
+	                                  NM_DEVICE_INTERFACE_DEVICE_TYPE, NM_DEVICE_TYPE_CDMA,
+	                                  NULL);
 }
 
 static void
@@ -264,7 +265,6 @@ real_get_ppp_name (NMModem *device, NMConnection *connection)
 static void
 nm_modem_cdma_init (NMModemCdma *self)
 {
-	nm_device_set_device_type (NM_DEVICE (self), NM_DEVICE_TYPE_CDMA);
 }
 
 static void

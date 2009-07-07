@@ -56,13 +56,13 @@ typedef struct {
 GType nm_device_ethernet_get_type (void);
 
 
-NMDeviceEthernet *nm_device_ethernet_new (const char *udi,
-                                          const char *iface,
-                                          const char *driver,
-                                          guint32 ifindex);
+NMDevice *nm_device_ethernet_new (const char *udi,
+                                  const char *iface,
+                                  const char *driver,
+                                  guint32 ifindex);
 
 void nm_device_ethernet_get_address (NMDeviceEthernet *dev,
-								   struct ether_addr *addr);
+                                     struct ether_addr *addr);
 
 gboolean nm_device_ethernet_get_carrier (NMDeviceEthernet *dev);
 

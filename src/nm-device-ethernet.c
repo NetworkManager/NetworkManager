@@ -326,14 +326,6 @@ constructor (GType type,
 static void
 nm_device_ethernet_init (NMDeviceEthernet * self)
 {
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
-
-	priv->disposed = FALSE;
-
-	memset (&(priv->hw_addr), 0, sizeof (struct ether_addr));
-	priv->carrier = FALSE;
-
-	nm_device_set_device_type (NM_DEVICE (self), NM_DEVICE_TYPE_ETHERNET);
 }
 
 static gboolean
@@ -384,7 +376,7 @@ real_hw_take_down (NMDevice *dev)
 	nm_system_device_set_up_down (dev, FALSE, NULL);
 }
 
-NMDeviceEthernet *
+NMDevice *
 nm_device_ethernet_new (const char *udi,
 						const char *iface,
 						const char *driver,
@@ -394,13 +386,14 @@ nm_device_ethernet_new (const char *udi,
 	g_return_val_if_fail (iface != NULL, NULL);
 	g_return_val_if_fail (driver != NULL, NULL);
 
-	return (NMDeviceEthernet *) g_object_new (NM_TYPE_DEVICE_ETHERNET,
-										 NM_DEVICE_INTERFACE_UDI, udi,
-										 NM_DEVICE_INTERFACE_IFACE, iface,
-										 NM_DEVICE_INTERFACE_DRIVER, driver,
-										 NM_DEVICE_ETHERNET_IFINDEX, ifindex,
-										 NM_DEVICE_INTERFACE_TYPE_DESC, "Ethernet",
-										 NULL);
+	return (NMDevice *) g_object_new (NM_TYPE_DEVICE_ETHERNET,
+	                                  NM_DEVICE_INTERFACE_UDI, udi,
+	                                  NM_DEVICE_INTERFACE_IFACE, iface,
+	                                  NM_DEVICE_INTERFACE_DRIVER, driver,
+	                                  NM_DEVICE_ETHERNET_IFINDEX, ifindex,
+	                                  NM_DEVICE_INTERFACE_TYPE_DESC, "Ethernet",
+	                                  NM_DEVICE_INTERFACE_DEVICE_TYPE, NM_DEVICE_TYPE_ETHERNET,
+	                                  NULL);
 }
 
 
