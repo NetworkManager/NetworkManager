@@ -3503,6 +3503,7 @@ nm_device_wifi_new (const char *udi,
 	                    NM_DEVICE_INTERFACE_IFACE, iface,
 	                    NM_DEVICE_INTERFACE_DRIVER, driver,
 	                    NM_DEVICE_WIFI_IFINDEX, ifindex,
+	                    NM_DEVICE_INTERFACE_TYPE_DESC, "802.11 WiFi",
 	                    NULL);
 	if (obj == NULL)
 		return NULL;

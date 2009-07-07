@@ -146,6 +146,14 @@ nm_device_interface_init (gpointer g_iface)
 	                                   FALSE,
 	                                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
+	g_object_interface_install_property
+		(g_iface,
+		 g_param_spec_string (NM_DEVICE_INTERFACE_TYPE_DESC,
+							  "Type Description",
+							  "Device type description",
+							  NULL,
+							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
 	/* Signals */
 	g_signal_new ("state-changed",
 				  iface_type,

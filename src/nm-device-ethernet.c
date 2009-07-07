@@ -399,6 +399,7 @@ nm_device_ethernet_new (const char *udi,
 										 NM_DEVICE_INTERFACE_IFACE, iface,
 										 NM_DEVICE_INTERFACE_DRIVER, driver,
 										 NM_DEVICE_ETHERNET_IFINDEX, ifindex,
+										 NM_DEVICE_INTERFACE_TYPE_DESC, "Ethernet",
 										 NULL);
 }
 

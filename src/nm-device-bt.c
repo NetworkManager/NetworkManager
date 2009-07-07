@@ -142,6 +142,7 @@ nm_device_bt_new (const char *udi,
 	                                    NM_DEVICE_BT_NAME, name,
 	                                    NM_DEVICE_BT_CAPABILITIES, capabilities,
 	                                    NM_DEVICE_INTERFACE_MANAGED, managed,
+	                                    NM_DEVICE_INTERFACE_TYPE_DESC, "Bluetooth",
 	                                    NULL);
 }
 

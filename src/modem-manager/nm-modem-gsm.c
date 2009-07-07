@@ -97,6 +97,7 @@ nm_modem_gsm_new (const char *path,
 									  NM_MODEM_PATH, path,
 									  NM_MODEM_IP_METHOD, ip_method,
 									  NM_MODEM_DEVICE, device,
+	                                  NM_DEVICE_INTERFACE_TYPE_DESC, "GSM",
 									  NULL);
 }
 

@@ -70,14 +70,15 @@ struct _NMDevicePrivate
 	NMDeviceState state;
 	guint         failed_to_disconnected_id;
 
-	char *			udi;
+	char *          udi;
 	char *          path;
-	char *			iface;   /* may change, could be renamed by user */
-	char *			ip_iface;
-	NMDeviceType		type;
-	guint32			capabilities;
-	char *			driver;
-	gboolean		managed; /* whether managed by NM or not */
+	char *          iface;   /* may change, could be renamed by user */
+	char *          ip_iface;
+	NMDeviceType    type;
+	char *          type_desc;
+	guint32         capabilities;
+	char *          driver;
+	gboolean        managed; /* whether managed by NM or not */
 
 	guint32			ip4_address;
 	struct in6_addr	ip6_address;
@@ -337,6 +338,14 @@ real_get_type_capabilities (NMDevice *self)
 	return NM_DEVICE_CAP_NONE;
 }
 
+
+const char *
+nm_device_get_type_desc (NMDevice *self)
+{
+	g_return_val_if_fail (self != NULL, NULL);
+
+	return self->priv->type_desc;
+}
 
 /*
  * nm_device_get_act_request
@@ -2211,6 +2220,7 @@ nm_device_finalize (GObject *object)
 	g_free (self->priv->iface);
 	g_free (self->priv->ip_iface);
 	g_free (self->priv->driver);
+	g_free (self->priv->type_desc);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->finalize (object);
 }
@@ -2242,6 +2252,10 @@ set_property (GObject *object, guint prop_id,
 		break;
 	case NM_DEVICE_INTERFACE_PROP_MANAGED:
 		priv->managed = g_value_get_boolean (value);
+		break;
+	case NM_DEVICE_INTERFACE_PROP_TYPE_DESC:
+		g_free (priv->type_desc);
+		priv->type_desc = g_value_dup_string (value);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -2299,6 +2313,9 @@ get_property (GObject *object, guint prop_id,
 		break;
 	case NM_DEVICE_INTERFACE_PROP_MANAGED:
 		g_value_set_boolean (value, priv->managed);
+		break;
+	case NM_DEVICE_INTERFACE_PROP_TYPE_DESC:
+		g_value_set_string (value, priv->type_desc);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -2370,6 +2387,10 @@ nm_device_class_init (NMDeviceClass *klass)
 	g_object_class_override_property (object_class,
 									  NM_DEVICE_INTERFACE_PROP_MANAGED,
 									  NM_DEVICE_INTERFACE_MANAGED);
+
+	g_object_class_override_property (object_class,
+									  NM_DEVICE_INTERFACE_PROP_TYPE_DESC,
+									  NM_DEVICE_INTERFACE_TYPE_DESC);
 }
 
 static gboolean

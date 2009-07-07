@@ -77,6 +77,7 @@ nm_modem_cdma_new (const char *path,
 									  NM_DEVICE_INTERFACE_DRIVER, driver,
 									  NM_MODEM_PATH, path,
 									  NM_MODEM_DEVICE, device,
+	                                  NM_DEVICE_INTERFACE_TYPE_DESC, "CDMA",
 									  NULL);
 }
 

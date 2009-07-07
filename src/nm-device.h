@@ -127,6 +127,7 @@ const char *	nm_device_get_udi		(NMDevice *dev);
 const char *	nm_device_get_iface		(NMDevice *dev);
 const char *	nm_device_get_ip_iface	(NMDevice *dev);
 const char *	nm_device_get_driver	(NMDevice *dev);
+const char *	nm_device_get_type_desc (NMDevice *dev);
 
 NMDeviceType	nm_device_get_device_type	(NMDevice *dev);
 guint32		nm_device_get_capabilities	(NMDevice *dev);

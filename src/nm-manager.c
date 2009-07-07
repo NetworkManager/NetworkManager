@@ -1134,7 +1134,7 @@ static void
 add_device (NMManager *self, NMDevice *device)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	const char *iface, *driver;
+	const char *iface, *driver, *type_desc;
 	char *path;
 	static guint32 devcount = 0;
 	const GSList *unmanaged_specs;
@@ -1157,23 +1157,14 @@ add_device (NMManager *self, NMDevice *device)
 		nm_device_wifi_set_enabled (NM_DEVICE_WIFI (device), priv->wireless_enabled);
 	}
 
+	type_desc = nm_device_get_type_desc (device);
+	g_assert (type_desc);
 	iface = nm_device_get_iface (device);
-	driver = nm_device_get_driver (NM_DEVICE (device));
+	g_assert (iface);
+	driver = nm_device_get_driver (device);
 	if (!driver)
 		driver = "unknown";
-
-	if (NM_IS_DEVICE_ETHERNET (device))
-		nm_info ("(%s): new Ethernet device (driver: '%s')", iface, driver);
-	else if (NM_IS_DEVICE_WIFI (device))
-		nm_info ("(%s): new 802.11 WiFi device (driver: '%s')", iface, driver);
-	else if (nm_device_get_device_type (device) == NM_DEVICE_TYPE_GSM)
-		nm_info ("(%s): new GSM device (driver: '%s')", iface, driver);
-	else if (nm_device_get_device_type (device) == NM_DEVICE_TYPE_CDMA)
-		nm_info ("(%s): new CDMA device (driver: '%s')", iface, driver);
-	else if (nm_device_get_device_type (device) == NM_DEVICE_TYPE_BT)
-		nm_info ("(%s): new Bluetooth device", iface);
-	else
-		g_assert_not_reached ();
+	nm_info ("(%s): new %s device (driver: '%s')", iface, type_desc, driver);
 
 	path = g_strdup_printf ("/org/freedesktop/NetworkManager/Devices/%d", devcount++);
 	nm_device_set_path (device, path);

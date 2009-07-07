@@ -51,6 +51,7 @@ typedef enum
 #define NM_DEVICE_INTERFACE_STATE        "state"
 #define NM_DEVICE_INTERFACE_DEVICE_TYPE  "device-type" /* ugh */
 #define NM_DEVICE_INTERFACE_MANAGED      "managed"
+#define NM_DEVICE_INTERFACE_TYPE_DESC    "type-desc"  /* Internal only */
 
 typedef enum {
 	NM_DEVICE_INTERFACE_PROP_FIRST = 0x1000,
@@ -65,6 +66,7 @@ typedef enum {
 	NM_DEVICE_INTERFACE_PROP_STATE,
 	NM_DEVICE_INTERFACE_PROP_DEVICE_TYPE,
 	NM_DEVICE_INTERFACE_PROP_MANAGED,
+	NM_DEVICE_INTERFACE_PROP_TYPE_DESC
 } NMDeviceInterfaceProp;
 
 
