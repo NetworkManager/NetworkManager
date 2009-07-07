@@ -28,6 +28,7 @@
 
 #define HUAWEI_VENDOR_ID   0x12D1
 #define SIERRA_VENDOR_ID   0x1199
+#define ZTE_VENDOR_ID      0x19D2
 
 #define MODEM_CAP_GSM         0x0001 /* GSM */
 #define MODEM_CAP_IS707_A     0x0002 /* CDMA Circuit Switched Data */
@@ -313,7 +314,7 @@ g_timeval_subtract (GTimeVal *result, GTimeVal *x, GTimeVal *y)
 	return x->tv_sec < y->tv_sec;
 }
 
-static int modem_probe_caps(int fd, glong timeout_ms)
+static int modem_probe_caps(int fd, glong timeout_ms, unsigned int vid)
 {
 	const char *gcap_responses[] = { GCAP_TAG, HUAWEI_EC121_TAG, NULL };
 	const char *terminators[] = { "OK", "ERROR", "ERR", "+CME ERROR", NULL };
@@ -331,6 +332,17 @@ static int modem_probe_caps(int fd, glong timeout_ms)
 
 	/* Standard response timeout case */
 	timeout_ms += 3000;
+
+	/* ZTE devices need to be told to shut up before probing */
+	if (vid == ZTE_VENDOR_ID) {
+		if (modem_send_command (fd, "AT+CPMS\r\n")) {
+				const char *null_responses[] = { NULL };
+
+				modem_wait_reply (fd, 2, null_responses, terminators, &term_idx, &reply);
+				g_free (reply);
+				reply = NULL;
+		}
+	}
 
 	while (timeout_ms > 0) {
 		GTimeVal diff;
@@ -599,7 +611,7 @@ main(int argc, char *argv[])
 	attrs.c_cflag |= (B9600 | CS8 | CREAD | PARENB);
 	
 	tcsetattr (fd, TCSANOW, &attrs);
-	caps = modem_probe_caps (fd, delay_ms);
+	caps = modem_probe_caps (fd, delay_ms, vid);
 	tcsetattr (fd, TCSANOW, &orig);
 
 	if (caps < 0) {
