@@ -55,57 +55,54 @@
 
 static void device_interface_init (NMDeviceInterface *device_interface_class);
 
-G_DEFINE_TYPE_EXTENDED (NMDevice, nm_device, G_TYPE_OBJECT,
-						G_TYPE_FLAG_ABSTRACT,
-						G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_INTERFACE,
-											   device_interface_init))
+G_DEFINE_TYPE_EXTENDED (NMDevice, nm_device, G_TYPE_OBJECT, G_TYPE_FLAG_ABSTRACT,
+						G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_INTERFACE, device_interface_init))
 
 #define NM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE, NMDevicePrivate))
 
-struct _NMDevicePrivate
-{
-	gboolean	dispose_has_run;
-	gboolean	initialized;
+typedef struct {
+	gboolean disposed;
+	gboolean initialized;
 
 	NMDeviceState state;
 	guint         failed_to_disconnected_id;
 
-	char *          udi;
-	char *          path;
-	char *          iface;   /* may change, could be renamed by user */
-	char *          ip_iface;
-	NMDeviceType    type;
-	char *          type_desc;
-	guint32         capabilities;
-	char *          driver;
-	gboolean        managed; /* whether managed by NM or not */
+	char *        udi;
+	char *        path;
+	char *        iface;   /* may change, could be renamed by user */
+	char *        ip_iface;
+	NMDeviceType  type;
+	char *        type_desc;
+	guint32       capabilities;
+	char *        driver;
+	gboolean      managed; /* whether managed by NM or not */
 
-	guint32			ip4_address;
-	struct in6_addr	ip6_address;
+	guint32         ip4_address;
+	struct in6_addr ip6_address;
 
-	NMActRequest *		act_request;
+	NMActRequest *  act_request;
 	guint           act_source_id;
-	gpointer	act_source_func;
+	gpointer        act_source_func;
 	gulong          secrets_updated_id;
 	gulong          secrets_failed_id;
 
 	/* IP configuration info */
-	NMIP4Config *		ip4_config;			/* Config from DHCP, PPP, or system config files */
-	NMDHCPManager *     dhcp_manager;
-	gulong              dhcp_state_sigid;
-	gulong              dhcp_timeout_sigid;
-	NMDHCP4Config *     dhcp4_config;
+	NMIP4Config *   ip4_config;			/* Config from DHCP, PPP, or system config files */
+	NMDHCPManager * dhcp_manager;
+	gulong          dhcp_state_sigid;
+	gulong          dhcp_timeout_sigid;
+	NMDHCP4Config * dhcp4_config;
 
 	/* dnsmasq stuff for shared connections */
-	NMDnsMasqManager *  dnsmasq_manager;
-	gulong              dnsmasq_state_id;
+	NMDnsMasqManager *dnsmasq_manager;
+	gulong            dnsmasq_state_id;
 
 	/* avahi-autoipd stuff */
-	GPid		aipd_pid;
-	guint		aipd_watch;
-	guint		aipd_timeout;
-	guint32     aipd_addr;
-};
+	GPid    aipd_pid;
+	guint   aipd_watch;
+	guint   aipd_timeout;
+	guint32 aipd_addr;
+} NMDevicePrivate;
 
 static gboolean check_connection_compatible (NMDeviceInterface *device,
                                              NMConnection *connection,
@@ -116,7 +113,7 @@ static gboolean nm_device_activate (NMDeviceInterface *device,
 static void nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason);
 static gboolean nm_device_spec_match_list (NMDeviceInterface *device, const GSList *specs);
 
-static void	nm_device_activate_schedule_stage5_ip_config_commit (NMDevice *self);
+static void nm_device_activate_schedule_stage5_ip_config_commit (NMDevice *self);
 
 static void nm_device_take_down (NMDevice *dev, gboolean wait, NMDeviceStateReason reason);
 
@@ -137,13 +134,14 @@ device_interface_init (NMDeviceInterface *device_interface_class)
 
 
 static void
-nm_device_init (NMDevice * self)
+nm_device_init (NMDevice *self)
 {
-	self->priv = NM_DEVICE_GET_PRIVATE (self);
-	self->priv->type = NM_DEVICE_TYPE_UNKNOWN;
-	self->priv->capabilities = NM_DEVICE_CAP_NONE;
-	memset (&self->priv->ip6_address, 0, sizeof (struct in6_addr));
-	self->priv->state = NM_DEVICE_STATE_UNMANAGED;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+
+	priv->type = NM_DEVICE_TYPE_UNKNOWN;
+	priv->capabilities = NM_DEVICE_CAP_NONE;
+	memset (&priv->ip6_address, 0, sizeof (struct in6_addr));
+	priv->state = NM_DEVICE_STATE_UNMANAGED;
 }
 
 static GObject*
@@ -213,10 +211,14 @@ real_get_generic_capabilities (NMDevice *dev)
 void
 nm_device_set_path (NMDevice *self, const char *path)
 {
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (self->priv->path == NULL);
+	NMDevicePrivate *priv;
 
-	self->priv->path = g_strdup (path);
+	g_return_if_fail (self != NULL);
+
+	priv = NM_DEVICE_GET_PRIVATE (self);
+	g_return_if_fail (priv->path == NULL);
+
+	priv->path = g_strdup (path);
 }
 
 const char *
@@ -224,7 +226,7 @@ nm_device_get_path (NMDevice *self)
 {
 	g_return_val_if_fail (self != NULL, NULL);
 
-	return self->priv->path;
+	return NM_DEVICE_GET_PRIVATE (self)->path;
 }
 
 const char *
@@ -232,7 +234,7 @@ nm_device_get_udi (NMDevice *self)
 {
 	g_return_val_if_fail (self != NULL, NULL);
 
-	return self->priv->udi;
+	return NM_DEVICE_GET_PRIVATE (self)->udi;
 }
 
 /*
@@ -243,17 +245,20 @@ nm_device_get_iface (NMDevice *self)
 {
 	g_return_val_if_fail (self != NULL, NULL);
 
-	return self->priv->iface;
+	return NM_DEVICE_GET_PRIVATE (self)->iface;
 }
 
 
 const char *
 nm_device_get_ip_iface (NMDevice *self)
 {
+	NMDevicePrivate *priv;
+
 	g_return_val_if_fail (self != NULL, NULL);
 
+	priv = NM_DEVICE_GET_PRIVATE (self);
 	/* If it's not set, default to iface */
-	return self->priv->ip_iface ? self->priv->ip_iface : self->priv->iface;
+	return priv->ip_iface ? priv->ip_iface : priv->iface;
 }
 
 
@@ -262,8 +267,8 @@ nm_device_set_ip_iface (NMDevice *self, const char *iface)
 {
 	g_return_if_fail (NM_IS_DEVICE (self));
 
-	g_free (self->priv->ip_iface);
-	self->priv->ip_iface = iface ? g_strdup (iface) : NULL;
+	g_free (NM_DEVICE_GET_PRIVATE (self)->ip_iface);
+	NM_DEVICE_GET_PRIVATE (self)->ip_iface = iface ? g_strdup (iface) : NULL;
 }
 
 
@@ -275,7 +280,7 @@ nm_device_get_driver (NMDevice *self)
 {
 	g_return_val_if_fail (self != NULL, NULL);
 
-	return self->priv->driver;
+	return NM_DEVICE_GET_PRIVATE (self)->driver;
 }
 
 
@@ -287,7 +292,7 @@ nm_device_get_device_type (NMDevice *self)
 {
 	g_return_val_if_fail (NM_IS_DEVICE (self), NM_DEVICE_TYPE_UNKNOWN);
 
-	return self->priv->type;
+	return NM_DEVICE_GET_PRIVATE (self)->type;
 }
 
 
@@ -318,7 +323,7 @@ nm_device_get_capabilities (NMDevice *self)
 {
 	g_return_val_if_fail (self != NULL, NM_DEVICE_CAP_NONE);
 
-	return self->priv->capabilities;
+	return NM_DEVICE_GET_PRIVATE (self)->capabilities;
 }
 
 /*
@@ -344,7 +349,7 @@ nm_device_get_type_desc (NMDevice *self)
 {
 	g_return_val_if_fail (self != NULL, NULL);
 
-	return self->priv->type_desc;
+	return NM_DEVICE_GET_PRIVATE (self)->type_desc;
 }
 
 /*
@@ -358,7 +363,7 @@ nm_device_get_act_request (NMDevice *self)
 {
 	g_return_val_if_fail (self != NULL, NULL);
 
-	return self->priv->act_request;
+	return NM_DEVICE_GET_PRIVATE (self)->act_request;
 }
 
 
@@ -2025,7 +2030,7 @@ nm_device_get_ip4_address (NMDevice *self)
 {
 	g_return_val_if_fail (self != NULL, 0);
 
-	return self->priv->ip4_address;
+	return NM_DEVICE_GET_PRIVATE (self)->ip4_address;
 }
 
 
@@ -2049,7 +2054,7 @@ nm_device_update_ip4_address (NMDevice *self)
 	if (ioctl (fd, SIOCGIFADDR, &req) == 0) {
 		new_address = ((struct sockaddr_in *)(&req.ifr_addr))->sin_addr.s_addr;
 		if (new_address != nm_device_get_ip4_address (self))
-			self->priv->ip4_address = new_address;
+			NM_DEVICE_GET_PRIVATE (self)->ip4_address = new_address;
 	}
 	close (fd);
 }
@@ -2162,18 +2167,19 @@ nm_device_take_down (NMDevice *self, gboolean block, NMDeviceStateReason reason)
 }
 
 static void
-nm_device_dispose (GObject *object)
+dispose (GObject *object)
 {
 	NMDevice *self = NM_DEVICE (object);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	if (self->priv->dispose_has_run || !self->priv->initialized)
+	if (priv->disposed || !priv->initialized)
 		goto out;
 
-	self->priv->dispose_has_run = TRUE;
+	priv->disposed = TRUE;
 
-	if (self->priv->failed_to_disconnected_id) {
-		g_source_remove (self->priv->failed_to_disconnected_id);
-		self->priv->failed_to_disconnected_id = 0;
+	if (priv->failed_to_disconnected_id) {
+		g_source_remove (priv->failed_to_disconnected_id);
+		priv->failed_to_disconnected_id = 0;
 	}
 
 	/* 
@@ -2183,7 +2189,7 @@ nm_device_dispose (GObject *object)
 	 * reference.
 	 */
 
-	if (self->priv->managed) {
+	if (priv->managed) {
 		NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
 
 		nm_device_take_down (self, FALSE, NM_DEVICE_STATE_REASON_REMOVED);
@@ -2196,15 +2202,15 @@ nm_device_dispose (GObject *object)
 
 	nm_device_set_use_dhcp (self, FALSE);
 
-	if (self->priv->dnsmasq_manager) {
-		if (self->priv->dnsmasq_state_id) {
-			g_signal_handler_disconnect (self->priv->dnsmasq_manager, self->priv->dnsmasq_state_id);
-			self->priv->dnsmasq_state_id = 0;
+	if (priv->dnsmasq_manager) {
+		if (priv->dnsmasq_state_id) {
+			g_signal_handler_disconnect (priv->dnsmasq_manager, priv->dnsmasq_state_id);
+			priv->dnsmasq_state_id = 0;
 		}
 
-		nm_dnsmasq_manager_stop (self->priv->dnsmasq_manager);
-		g_object_unref (self->priv->dnsmasq_manager);
-		self->priv->dnsmasq_manager = NULL;
+		nm_dnsmasq_manager_stop (priv->dnsmasq_manager);
+		g_object_unref (priv->dnsmasq_manager);
+		priv->dnsmasq_manager = NULL;
 	}
 
 out:
@@ -2212,15 +2218,16 @@ out:
 }
 
 static void
-nm_device_finalize (GObject *object)
+finalize (GObject *object)
 {
 	NMDevice *self = NM_DEVICE (object);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	g_free (self->priv->udi);
-	g_free (self->priv->iface);
-	g_free (self->priv->ip_iface);
-	g_free (self->priv->driver);
-	g_free (self->priv->type_desc);
+	g_free (priv->udi);
+	g_free (priv->iface);
+	g_free (priv->ip_iface);
+	g_free (priv->driver);
+	g_free (priv->type_desc);
 
 	G_OBJECT_CLASS (nm_device_parent_class)->finalize (object);
 }
@@ -2332,8 +2339,8 @@ nm_device_class_init (NMDeviceClass *klass)
 	g_type_class_add_private (object_class, sizeof (NMDevicePrivate));
 
 	/* Virtual methods */
-	object_class->dispose = nm_device_dispose;
-	object_class->finalize = nm_device_finalize;
+	object_class->dispose = dispose;
+	object_class->finalize = finalize;
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->constructor = constructor;
@@ -2396,10 +2403,11 @@ nm_device_class_init (NMDeviceClass *klass)
 static gboolean
 failed_to_disconnected (gpointer user_data)
 {
-	NMDevice *device = NM_DEVICE (user_data);
+	NMDevice *self = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 
-	device->priv->failed_to_disconnected_id = 0;
-	nm_device_state_changed (device, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
+	priv->failed_to_disconnected_id = 0;
+	nm_device_state_changed (self, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_REASON_NONE);
 	return FALSE;
 }
 
@@ -2408,13 +2416,12 @@ nm_device_state_changed (NMDevice *device,
                          NMDeviceState state,
                          NMDeviceStateReason reason)
 {
-	NMDevicePrivate *priv;
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (device);
 	NMDeviceState old_state;
 	NMActRequest *req;
 	gboolean no_firmware = FALSE;
 
 	g_return_if_fail (NM_IS_DEVICE (device));
-	priv = device->priv;
 
 	if (priv->state == state)
 		return;

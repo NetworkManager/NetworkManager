@@ -49,20 +49,11 @@ G_BEGIN_DECLS
 #define NM_IS_DEVICE_CLASS(klass)	(G_TYPE_CHECK_CLASS_TYPE ((klass),  NM_TYPE_DEVICE))
 #define NM_DEVICE_GET_CLASS(obj)	(G_TYPE_INSTANCE_GET_CLASS ((obj),  NM_TYPE_DEVICE, NMDeviceClass))
 
-typedef struct _NMDevice NMDevice;
-typedef struct _NMDeviceClass NMDeviceClass;
-typedef struct _NMDevicePrivate NMDevicePrivate;
-
-struct _NMDevice
-{
+typedef struct {
 	GObject parent;
+} NMDevice;
 
-	/*< private >*/
-	NMDevicePrivate *priv;
-};
-
-struct _NMDeviceClass
-{
+typedef struct {
 	GObjectClass parent;
 
 	/* Hardware state, ie IFF_UP */
@@ -115,7 +106,7 @@ struct _NMDeviceClass
 	gboolean		(* can_interrupt_activation)		(NMDevice *self);
 
 	gboolean        (* spec_match_list)     (NMDevice *self, const GSList *specs);
-};
+} NMDeviceClass;
 
 
 GType nm_device_get_type (void);
