@@ -149,7 +149,7 @@ run_netconfig (GError **error, gint *stdin_fd)
 	g_free (tmp);
 
 	if (!g_spawn_async_with_pipes (NULL, argv, NULL, 0, netconfig_child_setup,
-	                               NULL, &pid, &stdin_fd, NULL, NULL, error))
+	                               NULL, &pid, stdin_fd, NULL, NULL, error))
 		return -1;
 
 	return pid;
