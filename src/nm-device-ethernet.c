@@ -100,14 +100,13 @@ typedef struct Supplicant {
 } Supplicant;
 
 typedef struct {
-	gboolean	dispose_has_run;
+	gboolean	disposed;
 
 	struct ether_addr	hw_addr;
 	gboolean			carrier;
 	guint32				ifindex;
 	guint				state_to_disconnected_id;
 
-	char *			carrier_file_path;
 	gulong			link_connected_id;
 	gulong			link_disconnected_id;
 
@@ -289,9 +288,6 @@ constructor (GType type,
 	dev = NM_DEVICE (object);
 	priv = NM_DEVICE_ETHERNET_GET_PRIVATE (dev);
 
-	priv->carrier_file_path = g_strdup_printf ("/sys/class/net/%s/carrier",
-	                                           nm_device_get_iface (dev));
-
 	caps = nm_device_get_capabilities (dev);
 	if (caps & NM_DEVICE_CAP_CARRIER_DETECT) {
 		GError *error = NULL;
@@ -332,7 +328,7 @@ nm_device_ethernet_init (NMDeviceEthernet * self)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 
-	priv->dispose_has_run = FALSE;
+	priv->disposed = FALSE;
 
 	memset (&(priv->hw_addr), 0, sizeof (struct ether_addr));
 	priv->carrier = FALSE;
@@ -1484,18 +1480,18 @@ spec_match_list (NMDevice *device, const GSList *specs)
 }
 
 static void
-nm_device_ethernet_dispose (GObject *object)
+dispose (GObject *object)
 {
 	NMDeviceEthernet *self = NM_DEVICE_ETHERNET (object);
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMNetlinkMonitor *monitor;
 
-	if (priv->dispose_has_run) {
+	if (priv->disposed) {
 		G_OBJECT_CLASS (nm_device_ethernet_parent_class)->dispose (object);
 		return;
 	}
 
-	priv->dispose_has_run = TRUE;
+	priv->disposed = TRUE;
 
 	/* Clean up all pending supplicant tasks */
 	while (priv->supplicant.iface_tasks)
@@ -1520,16 +1516,6 @@ nm_device_ethernet_dispose (GObject *object)
 	}
 
 	G_OBJECT_CLASS (nm_device_ethernet_parent_class)->dispose (object);
-}
-
-static void
-nm_device_ethernet_finalize (GObject *object)
-{
-	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (object);
-
-	g_free (priv->carrier_file_path);
-
-	G_OBJECT_CLASS (nm_device_ethernet_parent_class)->finalize (object);
 }
 
 static void
@@ -1586,10 +1572,9 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 
 	/* virtual methods */
 	object_class->constructor = constructor;
-	object_class->dispose = nm_device_ethernet_dispose;
+	object_class->dispose = dispose;
 	object_class->get_property = get_property;
 	object_class->set_property = set_property;
-	object_class->finalize = nm_device_ethernet_finalize;
 
 	parent_class->get_generic_capabilities = real_get_generic_capabilities;
 	parent_class->hw_is_up = real_hw_is_up;
