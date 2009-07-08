@@ -137,7 +137,7 @@ nm_device_interface_init (gpointer g_iface)
 							"DeviceType",
 							"DeviceType",
 							0, G_MAXUINT32, NM_DEVICE_TYPE_UNKNOWN,
-							G_PARAM_READABLE));
+							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_interface_install_property
 		(g_iface, g_param_spec_boolean (NM_DEVICE_INTERFACE_MANAGED,

@@ -2248,6 +2248,10 @@ set_property (GObject *object, guint prop_id,
 	case NM_DEVICE_INTERFACE_PROP_MANAGED:
 		priv->managed = g_value_get_boolean (value);
 		break;
+	case NM_DEVICE_INTERFACE_PROP_DEVICE_TYPE:
+		g_return_if_fail (priv->type == NM_DEVICE_TYPE_UNKNOWN);
+		priv->type = g_value_get_uint (value);
+		break;
 	case NM_DEVICE_INTERFACE_PROP_TYPE_DESC:
 		g_free (priv->type_desc);
 		priv->type_desc = g_value_dup_string (value);
