@@ -597,15 +597,23 @@ static void
 wpas_iface_query_scan_results (DBusGProxy *proxy, gpointer user_data)
 {
 	NMSupplicantInterfacePrivate *priv = NM_SUPPLICANT_INTERFACE_GET_PRIVATE (user_data);
+	GTimeVal cur_time;
 
 	/* Only query scan results if a query is not queued */
 	if (priv->scan_results_timeout)
 		return;
 
+	g_get_current_time (&cur_time);
+
 	/* Only fetch scan results every 4s max, but initially do it right away */
-	priv->scan_results_timeout = g_timeout_add_seconds (priv->last_scan ? 4 : 0,
-	                                                    request_scan_results,
-	                                                    user_data);
+	if (priv->last_scan + 4 < cur_time.tv_sec) {
+		priv->scan_results_timeout = g_idle_add (request_scan_results,
+		                                         user_data);
+	} else {
+		priv->scan_results_timeout =
+			g_timeout_add_seconds ((4 - (cur_time.tv_sec - priv->last_scan)),
+			               request_scan_results, user_data);
+	}
 }
 
 static guint32
