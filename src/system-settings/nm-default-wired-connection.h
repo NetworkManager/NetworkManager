@@ -24,6 +24,7 @@
 
 #include <nm-settings.h>
 #include "nm-sysconfig-connection.h"
+#include "nm-device.h"
 
 G_BEGIN_DECLS
 
@@ -35,7 +36,7 @@ G_BEGIN_DECLS
 #define NM_DEFAULT_WIRED_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_DEFAULT_WIRED_CONNECTION, NMDefaultWiredConnectionClass))
 
 #define NM_DEFAULT_WIRED_CONNECTION_MAC   "mac"
-#define NM_DEFAULT_WIRED_CONNECTION_IFACE "iface"
+#define NM_DEFAULT_WIRED_CONNECTION_DEVICE "device"
 #define NM_DEFAULT_WIRED_CONNECTION_READ_ONLY "read-only"
 
 typedef struct {
@@ -49,8 +50,10 @@ typedef struct {
 GType nm_default_wired_connection_get_type (void);
 
 NMDefaultWiredConnection *nm_default_wired_connection_new (const GByteArray *mac,
-                                                           const char *iface,
+                                                           NMDevice *device,
                                                            gboolean read_only);
+
+NMDevice *nm_default_wired_connection_get_device (NMDefaultWiredConnection *wired);
 
 G_END_DECLS
 

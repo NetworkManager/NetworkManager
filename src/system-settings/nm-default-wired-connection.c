@@ -38,7 +38,7 @@ G_DEFINE_TYPE (NMDefaultWiredConnection, nm_default_wired_connection, NM_TYPE_SY
 #define NM_DEFAULT_WIRED_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEFAULT_WIRED_CONNECTION, NMDefaultWiredConnectionPrivate))
 
 typedef struct {
-	char *iface;
+	NMDevice *device;
 	GByteArray *mac;
 	gboolean read_only;
 } NMDefaultWiredConnectionPrivate;
@@ -46,7 +46,7 @@ typedef struct {
 enum {
 	PROP_0,
 	PROP_MAC,
-	PROP_IFACE,
+	PROP_DEVICE,
 	PROP_READ_ONLY,
 	LAST_PROP
 };
@@ -62,19 +62,27 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 NMDefaultWiredConnection *
 nm_default_wired_connection_new (const GByteArray *mac,
-                                 const char *iface,
+                                 NMDevice *device,
                                  gboolean read_only)
 {
 
 	g_return_val_if_fail (mac != NULL, NULL);
 	g_return_val_if_fail (mac->len == ETH_ALEN, NULL);
-	g_return_val_if_fail (iface != NULL, NULL);
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
 
 	return g_object_new (NM_TYPE_DEFAULT_WIRED_CONNECTION,
 	                     NM_DEFAULT_WIRED_CONNECTION_MAC, mac,
-	                     NM_DEFAULT_WIRED_CONNECTION_IFACE, iface,
+	                     NM_DEFAULT_WIRED_CONNECTION_DEVICE, device,
 	                     NM_DEFAULT_WIRED_CONNECTION_READ_ONLY, read_only,
 	                     NULL);
+}
+
+NMDevice *
+nm_default_wired_connection_get_device (NMDefaultWiredConnection *wired)
+{
+	g_return_val_if_fail (NM_IS_DEFAULT_WIRED_CONNECTION (wired), NULL);
+
+	return NM_DEFAULT_WIRED_CONNECTION_GET_PRIVATE (wired)->device;
 }
 
 static GByteArray *
@@ -179,7 +187,7 @@ constructor (GType type,
 
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
 
-	id = g_strdup_printf (_("Auto %s"), priv->iface);
+	id = g_strdup_printf (_("Auto %s"), nm_device_get_iface (priv->device));
 	uuid = nm_utils_uuid_generate ();
 
 	g_object_set (s_con,
@@ -211,7 +219,7 @@ finalize (GObject *object)
 {
 	NMDefaultWiredConnectionPrivate *priv = NM_DEFAULT_WIRED_CONNECTION_GET_PRIVATE (object);
 
-	g_free (priv->iface);
+	g_object_unref (priv->device);
 	g_byte_array_free (priv->mac, TRUE);
 
 	G_OBJECT_CLASS (nm_default_wired_connection_parent_class)->finalize (object);
@@ -227,8 +235,8 @@ get_property (GObject *object, guint prop_id,
 	case PROP_MAC:
 		g_value_set_pointer (value, priv->mac);
 		break;
-	case PROP_IFACE:
-		g_value_set_string (value, priv->iface);
+	case PROP_DEVICE:
+		g_value_set_object (value, priv->device);
 		break;
 	case PROP_READ_ONLY:
 		g_value_set_boolean (value, priv->read_only);
@@ -260,9 +268,10 @@ set_property (GObject *object, guint prop_id,
 			g_byte_array_append (priv->mac, array->data, ETH_ALEN);
 		}
 		break;
-	case PROP_IFACE:
-		g_free (priv->iface);
-		priv->iface = g_value_dup_string (value);
+	case PROP_DEVICE:
+		if (priv->device)
+			g_object_unref (priv->device);
+		priv->device = g_value_dup_object (value);
 		break;
 	case PROP_READ_ONLY:
 		priv->read_only = g_value_get_boolean (value);
@@ -313,11 +322,11 @@ nm_default_wired_connection_class_init (NMDefaultWiredConnectionClass *klass)
 		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property
-		(object_class, PROP_IFACE,
-		 g_param_spec_string (NM_DEFAULT_WIRED_CONNECTION_IFACE,
-		                       "Iface",
-		                       "Interface",
-		                       NULL,
+		(object_class, PROP_DEVICE,
+		 g_param_spec_object (NM_DEFAULT_WIRED_CONNECTION_DEVICE,
+		                       "Device",
+		                       "Device",
+		                       NM_TYPE_DEVICE,
 		                       G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	g_object_class_install_property

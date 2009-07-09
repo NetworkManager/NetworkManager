@@ -31,6 +31,7 @@
 
 #include "nm-sysconfig-connection.h"
 #include "nm-system-config-interface.h"
+#include "nm-device.h"
 
 typedef struct _NMSysconfigSettings NMSysconfigSettings;
 typedef struct _NMSysconfigSettingsClass NMSysconfigSettingsClass;
@@ -61,7 +62,9 @@ struct _NMSysconfigSettingsClass
 
 GType nm_sysconfig_settings_get_type (void);
 
-NMSysconfigSettings *nm_sysconfig_settings_new (const char *plugins, GError **error);
+NMSysconfigSettings *nm_sysconfig_settings_new (const char *config_file,
+                                                const char *plugins,
+                                                GError **error);
 
 /* Registers an exising connection with the settings service */
 void nm_sysconfig_settings_add_connection (NMSysconfigSettings *settings,
@@ -90,5 +93,9 @@ GSList *nm_sysconfig_settings_list_connections (NMSysconfigSettings *self);
 
 NMSysconfigConnection *nm_sysconfig_settings_get_connection_by_path (NMSysconfigSettings *self,
                                                                      const char *path);
+
+void nm_sysconfig_settings_device_added (NMSysconfigSettings *self, NMDevice *device);
+
+void nm_sysconfig_settings_device_removed (NMSysconfigSettings *self, NMDevice *device);
 
 #endif  /* __NM_SYSCONFIG_SETTINGS_H__ */

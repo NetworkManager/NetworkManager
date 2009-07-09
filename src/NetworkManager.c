@@ -405,7 +405,7 @@ main (int argc, char *argv[])
 		goto done;
 	}
 
-	manager = nm_manager_get (plugins, &error);
+	manager = nm_manager_get (config, plugins, &error);
 	if (manager == NULL) {
 		nm_error ("Failed to initialize the network manager: %s",
 		          error && error->message ? error->message : "(unknown)");

@@ -73,7 +73,7 @@ typedef struct {
 
 GType nm_manager_get_type (void);
 
-NMManager *nm_manager_get (const char *plugins, GError **error);
+NMManager *nm_manager_get (const char *config_file, const char *plugins, GError **error);
 
 void nm_manager_start (NMManager *manager);
 

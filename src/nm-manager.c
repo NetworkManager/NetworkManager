@@ -126,6 +126,8 @@ typedef struct {
 } PendingConnectionInfo;
 
 typedef struct {
+	char *config_file;
+
 	GSList *devices;
 	NMState state;
 
@@ -348,11 +350,14 @@ manager_device_state_changed (NMDevice *device,
 static GSList *
 remove_one_device (NMManager *manager, GSList *list, NMDevice *device)
 {
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
+
 	if (nm_device_get_managed (device))
 		nm_device_set_managed (device, FALSE, NM_DEVICE_STATE_REASON_REMOVED);
 
 	g_signal_handlers_disconnect_by_func (device, manager_device_state_changed, manager);
 
+	nm_sysconfig_settings_device_removed (priv->sys_settings, device);
 	g_signal_emit (manager, signals[DEVICE_REMOVED], 0, device);
 	g_object_unref (device);
 
@@ -1179,6 +1184,7 @@ add_device (NMManager *self, NMDevice *device)
 	if (!priv->sleeping && !nm_device_interface_spec_match_list (NM_DEVICE_INTERFACE (device), unmanaged_specs))
 		nm_device_set_managed (device, TRUE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
 
+	nm_sysconfig_settings_device_added (priv->sys_settings, device);
 	g_signal_emit (self, signals[DEVICE_ADDED], 0, device);
 }
 
@@ -1260,7 +1266,7 @@ static void
 bluez_manager_resync_devices (NMManager *self)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
-	GSList *iter, *gone = NULL, *keep = NULL;;
+	GSList *iter, *gone = NULL, *keep = NULL;
 
 	/* Remove devices from the device list that don't have a corresponding connection */
 	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
@@ -1279,11 +1285,18 @@ bluez_manager_resync_devices (NMManager *self)
 		} else
 			keep = g_slist_prepend (keep, candidate);
 	}
-	g_slist_free (priv->devices);
-	priv->devices = keep;
 
-	while (g_slist_length (gone))
-		gone = remove_one_device (self, gone, NM_DEVICE (gone->data));
+	/* Only touch the device list if anything actually changed */
+	if (g_slist_length (gone)) {
+		g_slist_free (priv->devices);
+		priv->devices = keep;
+
+		while (g_slist_length (gone))
+			gone = remove_one_device (self, gone, NM_DEVICE (gone->data));
+	} else {
+		g_slist_free (keep);
+		g_slist_free (gone);
+	}
 
 	/* Now look for devices without connections */
 	nm_bluez_manager_query_devices (priv->bluez_mgr);
@@ -2408,7 +2421,7 @@ nm_manager_start (NMManager *self)
 }
 
 NMManager *
-nm_manager_get (const char *plugins, GError **error)
+nm_manager_get (const char *config_file, const char *plugins, GError **error)
 {
 	static NMManager *singleton = NULL;
 	NMManagerPrivate *priv;
@@ -2421,11 +2434,13 @@ nm_manager_get (const char *plugins, GError **error)
 
 	priv = NM_MANAGER_GET_PRIVATE (singleton);
 
-	priv->sys_settings = nm_sysconfig_settings_new (plugins, error);
+	priv->sys_settings = nm_sysconfig_settings_new (config_file, plugins, error);
 	if (!priv->sys_settings) {
 		g_object_unref (singleton);
 		return NULL;
 	}
+
+	priv->config_file = g_strdup (config_file);
 
 	g_signal_connect (priv->sys_settings, "notify::" NM_SYSCONFIG_SETTINGS_UNMANAGED_SPECS,
 	                  G_CALLBACK (system_unmanaged_devices_changed_cb), singleton);
@@ -2493,9 +2508,11 @@ dispose (GObject *object)
 		free_get_secrets_info (info);
 	}
 
+g_message ("%s: priv->devices %p (length %d)", __func__, priv->devices, g_slist_length (priv->devices));
 	while (g_slist_length (priv->devices)) {
 		NMDevice *device = NM_DEVICE (priv->devices->data);
 
+g_message ("%s: candidate %p", __func__, device);
 		priv->devices = remove_one_device (manager, priv->devices, device);
 	}
 
@@ -2509,6 +2526,7 @@ dispose (GObject *object)
 	priv->system_connections = NULL;
 
 	g_free (priv->hostname);
+	g_free (priv->config_file);
 
 	if (priv->sys_settings) {
 		g_object_unref (priv->sys_settings);
