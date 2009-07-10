@@ -31,6 +31,7 @@
 #include "nm-device-wifi.h"
 #include "nm-gsm-device.h"
 #include "nm-cdma-device.h"
+#include "nm-device-bt.h"
 #include "nm-device.h"
 #include "nm-device-private.h"
 #include "nm-object-private.h"
@@ -554,6 +555,9 @@ nm_device_new (DBusGConnection *connection, const char *path)
 		break;
 	case NM_DEVICE_TYPE_CDMA:
 		dtype = NM_TYPE_CDMA_DEVICE;
+		break;
+	case NM_DEVICE_TYPE_BT:
+		dtype = NM_TYPE_DEVICE_BT;
 		break;
 	default:
 		g_warning ("Unknown device type %d", g_value_get_uint (&value));

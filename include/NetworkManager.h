@@ -32,6 +32,7 @@
 #define	NM_DBUS_INTERFACE_DEVICE            NM_DBUS_INTERFACE ".Device"
 #define NM_DBUS_INTERFACE_DEVICE_WIRED      NM_DBUS_INTERFACE_DEVICE ".Wired"
 #define NM_DBUS_INTERFACE_DEVICE_WIRELESS   NM_DBUS_INTERFACE_DEVICE ".Wireless"
+#define NM_DBUS_INTERFACE_DEVICE_BLUETOOTH  NM_DBUS_INTERFACE_DEVICE ".Bluetooth"
 #define NM_DBUS_PATH_ACCESS_POINT           NM_DBUS_PATH "/AccessPoint"
 #define NM_DBUS_INTERFACE_ACCESS_POINT      NM_DBUS_INTERFACE ".AccessPoint"
 #define NM_DBUS_INTERFACE_SERIAL_DEVICE     NM_DBUS_INTERFACE_DEVICE ".Serial"
@@ -142,15 +143,20 @@ typedef enum {
 	NM_802_11_MODE_INFRA
 } NM80211Mode;
 
-/*
- * Bluetooth device capabilities
+/**
+ * NMBluetoothCapabilities:
+ * @NM_BT_CAPABILITY_NONE: device has no usable capabilities
+ * @NM_BT_CAPABILITY_DUN: device provides Dial-Up Networking capability
+ * @NM_BT_CAPABILITY_PAN: device provides Personal Area Networking capability
  *
+ * #NMBluetoothCapabilities values indicate the usable capabilities of a
+ * Bluetooth device.
  */
-enum {
+typedef enum {
 	NM_BT_CAPABILITY_NONE = 0x00000000,
 	NM_BT_CAPABILITY_DUN  = 0x00000001,
 	NM_BT_CAPABILITY_NAP  = 0x00000002,
-};
+} NMBluetoothCapabilities;
 
 
 /*

@@ -50,6 +50,11 @@ global:
 	nm_dbus_settings_system_get_type;
 	nm_dbus_settings_system_get_unmanaged_devices;
 	nm_dbus_settings_system_new;
+	nm_device_bt_new;
+	nm_device_bt_get_capabilities;
+	nm_device_bt_get_hw_address;
+	nm_device_bt_get_name;
+	nm_device_bt_get_type;
 	nm_device_ethernet_get_carrier;
 	nm_device_ethernet_get_hw_address;
 	nm_device_ethernet_get_speed;

@@ -37,6 +37,7 @@
 #include <nm-device-wifi.h>
 #include <nm-gsm-device.h>
 #include <nm-cdma-device.h>
+#include <nm-device-bt.h>
 #include <nm-utils.h>
 #include <nm-setting-ip4-config.h>
 #include <nm-vpn-connection.h>
@@ -307,6 +308,8 @@ detail_device (gpointer data, gpointer user_data)
 		print_string ("Type", "Mobile Broadband (GSM)");
 	else if (NM_IS_CDMA_DEVICE (device))
 		print_string ("Type", "Mobile Broadband (CDMA)");
+	else if (NM_IS_DEVICE_BT (device))
+		print_string ("Type", "Bluetooth");
 
 	print_string ("Driver", nm_device_get_driver (device) ? nm_device_get_driver (device) : "(unknown)");
 

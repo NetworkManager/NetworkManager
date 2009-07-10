@@ -15,7 +15,7 @@
       </tp:docstring>
     </property>
 
-    <property name="BtCapabilities" type="u" access="read">
+    <property name="BtCapabilities" type="u" access="read" tp:type="NM_BT_CAPABILITIES">
       <tp:docstring>
         Bluetooth capabilities of the device (either DUN or NAP).
       </tp:docstring>
@@ -28,6 +28,21 @@
             </tp:docstring>
         </arg>
     </signal>
+
+    <tp:flags name="NM_BT_CAPABILITIES" value-prefix="NM_BT_CAPABILITY" type="u">
+      <tp:docstring>
+        Flags describing the capabilities of a Bluetooth device.
+      </tp:docstring>
+      <tp:flag suffix="NONE" value="0x0">
+        <tp:docstring>The device has no recognized capabilities.</tp:docstring>
+      </tp:flag>
+      <tp:flag suffix="DUN" value="0x1">
+        <tp:docstring>The device supports Bluetooth Dial-Up Networking.</tp:docstring>
+      </tp:flag>
+      <tp:flag suffix="PAN" value="0x2">
+        <tp:docstring>The device supports Bluetooth Personal Area Networking.</tp:docstring>
+      </tp:flag>
+    </tp:flags>
 
   </interface>
 </node>

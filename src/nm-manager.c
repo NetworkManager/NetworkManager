@@ -1329,10 +1329,11 @@ bluez_manager_bdaddr_added_cb (NMBluezManager *bluez_mgr,
 	if (!bluez_manager_find_connection (manager, bdaddr, capabilities))
 		return;
 
-	device = nm_device_bt_new (object_path, bdaddr, name, capabilities, TRUE);
+	device = nm_device_bt_new (object_path, bdaddr, name, capabilities, FALSE);
 	if (device) {
-		g_message ("%s: BT device %s added (%s%s%s)",
+		g_message ("%s: BT device %s (%s) added (%s%s%s)",
 		           __func__,
+		           name,
 		           bdaddr,
 		           has_dun ? "DUN" : "",
 		           has_dun && has_nap ? " " : "",
@@ -2508,11 +2509,9 @@ dispose (GObject *object)
 		free_get_secrets_info (info);
 	}
 
-g_message ("%s: priv->devices %p (length %d)", __func__, priv->devices, g_slist_length (priv->devices));
 	while (g_slist_length (priv->devices)) {
 		NMDevice *device = NM_DEVICE (priv->devices->data);
 
-g_message ("%s: candidate %p", __func__, device);
 		priv->devices = remove_one_device (manager, priv->devices, device);
 	}
 

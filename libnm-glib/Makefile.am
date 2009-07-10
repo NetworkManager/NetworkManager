@@ -9,6 +9,7 @@ BUILT_SOURCES = \
 	nm-device-bindings.h \
 	nm-device-ethernet-bindings.h \
 	nm-device-wifi-bindings.h \
+	nm-device-bt-bindings.h \
 	nm-exported-connection-glue.h \
 	nm-exported-connection-bindings.h \
 	nm-settings-glue.h \
@@ -37,6 +38,7 @@ libnminclude_HEADERS = \
 	nm-device.h \
 	nm-device-ethernet.h \
 	nm-device-wifi.h \
+	nm-device-bt.h \
 	nm-access-point.h \
 	nm-ip4-config.h \
 	nm-settings.h \
@@ -64,6 +66,7 @@ libnm_glib_la_SOURCES = \
 	nm-device-private.h \
 	nm-device-ethernet.c \
 	nm-device-wifi.c \
+	nm-device-bt.c \
 	nm-access-point.c \
 	nm-ip4-config.c \
 	nm-settings.c \
@@ -117,6 +120,9 @@ nm-device-ethernet-bindings.h: $(top_srcdir)/introspection/nm-device-ethernet.xm
 
 nm-device-wifi-bindings.h: $(top_srcdir)/introspection/nm-device-wifi.xml
 	dbus-binding-tool --prefix=nm_device_wifi --mode=glib-client --output=$@ $<
+
+nm-device-bt-bindings.h: $(top_srcdir)/introspection/nm-device-bt.xml
+	dbus-binding-tool --prefix=nm_device_bt --mode=glib-client --output=$@ $<
 
 nm-access-point-bindings.h: $(top_srcdir)/introspection/nm-access-point.xml
 	dbus-binding-tool --prefix=nm_access_point --mode=glib-client --output=$@ $<

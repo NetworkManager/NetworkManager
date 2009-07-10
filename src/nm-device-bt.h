@@ -34,7 +34,7 @@ G_BEGIN_DECLS
 
 #define NM_DEVICE_BT_HW_ADDRESS   "hw-address"
 #define NM_DEVICE_BT_NAME         "name"
-#define NM_DEVICE_BT_CAPABILITIES "capabilities"
+#define NM_DEVICE_BT_CAPABILITIES "bt-capabilities"
 
 typedef struct {
 	NMDevice parent;
