@@ -55,6 +55,7 @@
 #include "nm-logging.h"
 
 #define NM_DEFAULT_PID_FILE	LOCALSTATEDIR"/run/NetworkManager.pid"
+#define NM_DEFAULT_SYSTEM_CONF_FILE	SYSCONFDIR"/NetworkManager/nm-system-settings.conf"
 
 /*
  * Globals
@@ -333,8 +334,21 @@ main (int argc, char *argv[])
 	/* Parse the config file */
 	if (config) {
 		if (!parse_config_file (config, &plugins, &error)) {
-			g_warning ("Config file %s invalid: %s.", config, error->message);
+			g_warning ("Config file %s invalid: (%d) %s.",
+			           config,
+			           error ? error->code : -1,
+			           (error && error->message) ? error->message : "unknown");
 			exit (1);
+		}
+	} else {
+		config = NM_DEFAULT_SYSTEM_CONF_FILE;
+		if (!parse_config_file (config, &plugins, &error)) {
+			g_warning ("Default config file %s invalid: (%d) %s.",
+			           config,
+			           error ? error->code : -1,
+			           (error && error->message) ? error->message : "unknown");
+			config = NULL;
+			/* Not a hard failure */
 		}
 	}
 
