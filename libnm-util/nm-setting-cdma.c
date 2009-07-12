@@ -26,6 +26,23 @@
 #include "nm-setting-serial.h"
 #include "nm-utils.h"
 
+/**
+ * SECTION:nm-setting-cdma
+ * @short_description: Describes CDMA-based mobile broadband properties
+ * @include: nm-setting-cdma.h
+ *
+ * The #NMSettingCdma object is a #NMSetting subclass that describes
+ * properties that allow connections to IS-95-based mobile broadband
+ * networks, including those using CDMA2000/EVDO technology.
+ */
+
+/**
+ * nm_setting_cdma_error_quark:
+ *
+ * Registers an error quark for #NMSettingCdma if necessary.
+ *
+ * Returns: the error quark used for #NMSettingCdma errors.
+ **/
 GQuark
 nm_setting_cdma_error_quark (void)
 {
@@ -81,12 +98,25 @@ enum {
 	LAST_PROP
 };
 
+/**
+ * nm_setting_cdma_new:
+ *
+ * Creates a new #NMSettingCdma object with default values.
+ *
+ * Returns: the new empty #NMSettingCdma object
+ **/
 NMSetting *
 nm_setting_cdma_new (void)
 {
 	return (NMSetting *) g_object_new (NM_TYPE_SETTING_CDMA, NULL);
 }
 
+/**
+ * nm_setting_cdma_get_number:
+ * @setting: the #NMSettingCdma
+ *
+ * Returns: the #NMSettingCdma:number property of the setting
+ **/
 const char *
 nm_setting_cdma_get_number (NMSettingCdma *setting)
 {
@@ -95,6 +125,12 @@ nm_setting_cdma_get_number (NMSettingCdma *setting)
 	return NM_SETTING_CDMA_GET_PRIVATE (setting)->number;
 }
 
+/**
+ * nm_setting_cdma_get_username:
+ * @setting: the #NMSettingCdma
+ *
+ * Returns: the #NMSettingCdma:username property of the setting
+ **/
 const char *
 nm_setting_cdma_get_username (NMSettingCdma *setting)
 {
@@ -103,6 +139,12 @@ nm_setting_cdma_get_username (NMSettingCdma *setting)
 	return NM_SETTING_CDMA_GET_PRIVATE (setting)->username;
 }
 
+/**
+ * nm_setting_cdma_get_password:
+ * @setting: the #NMSettingCdma
+ *
+ * Returns: the #NMSettingCdma:password property of the setting
+ **/
 const char *
 nm_setting_cdma_get_password (NMSettingCdma *setting)
 {
@@ -266,6 +308,14 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *setting_class)
 	parent_class->need_secrets = need_secrets;
 
 	/* Properties */
+
+	/**
+	 * NMSettingCdma:number:
+	 *
+	 * The number to dial to establish the connection to the CDMA-based mobile
+	 * broadband network, if any.  If not specified, the default number (#777)
+	 * is used when required.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_NUMBER,
 		 g_param_spec_string (NM_SETTING_CDMA_NUMBER,
@@ -274,6 +324,13 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *setting_class)
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
+	/**
+	 * NMSettingCdma:username:
+	 *
+	 * The username used to authenticate with the network, if required.  Many
+	 * providers do not require a username, or accept any username.  But if a
+	 * username is required, it is specified here.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_USERNAME,
 		 g_param_spec_string (NM_SETTING_CDMA_USERNAME,
@@ -282,6 +339,13 @@ nm_setting_cdma_class_init (NMSettingCdmaClass *setting_class)
 						  NULL,
 						  G_PARAM_READWRITE | NM_SETTING_PARAM_SERIALIZE));
 
+	/**
+	 * NMSettingCdma:password:
+	 *
+	 * The password used to authenticate with the network, if required.  Many
+	 * providers do not require a password, or accept any password.  But if a
+	 * password is required, it is specified here.
+	 **/
 	g_object_class_install_property
 		(object_class, PROP_PASSWORD,
 		 g_param_spec_string (NM_SETTING_CDMA_PASSWORD,
