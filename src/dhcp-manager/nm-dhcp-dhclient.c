@@ -28,6 +28,7 @@
 #include <stdio.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <ctype.h>
 
 #include <config.h>
 
@@ -75,6 +76,7 @@ get_leasefile_for_iface (const char * iface, const char *uuid)
 
 #define DHCP_CLIENT_ID_TAG "send dhcp-client-identifier"
 #define DHCP_CLIENT_ID_FORMAT DHCP_CLIENT_ID_TAG " \"%s\"; # added by NetworkManager"
+#define DHCP_CLIENT_ID_FORMAT_OCTETS DHCP_CLIENT_ID_TAG " %s; # added by NetworkManager"
 
 #define DHCP_HOSTNAME_TAG "send host-name"
 #define DHCP_HOSTNAME_FORMAT DHCP_HOSTNAME_TAG " \"%s\"; # added by NetworkManager"
@@ -133,8 +135,27 @@ merge_dhclient_config (NMDHCPDevice *device,
 		const char *tmp;
 
 		tmp = nm_setting_ip4_config_get_dhcp_client_id (s_ip4);
-		if (tmp)
-			g_string_append_printf (new_contents, DHCP_CLIENT_ID_FORMAT "\n", tmp);
+		if (tmp) {
+			gboolean is_octets = TRUE;
+			const char *p = tmp;
+
+			while (*p) {
+				if (!isxdigit (*p) && (*p != ':')) {
+					is_octets = FALSE;
+					break;
+				}
+				p++;
+			}
+
+			/* If the client ID is just hex digits and : then don't use quotes,
+			 * becuase dhclient expects either a quoted ASCII string, or a byte
+			 * array formated as hex octets separated by :
+			 */
+			if (is_octets)
+				g_string_append_printf (new_contents, DHCP_CLIENT_ID_FORMAT_OCTETS "\n", tmp);
+			else
+				g_string_append_printf (new_contents, DHCP_CLIENT_ID_FORMAT "\n", tmp);
+		}
 
 		tmp = nm_setting_ip4_config_get_dhcp_hostname (s_ip4);
 		if (tmp)
