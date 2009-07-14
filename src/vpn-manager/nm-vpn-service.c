@@ -323,7 +323,6 @@ nm_vpn_service_activate (NMVPNService *service,
 
 	priv = NM_VPN_SERVICE_GET_PRIVATE (service);
 
-g_message ("%s: new VPNConnection for %s", __func__, nm_connection_get_path (connection));
 	vpn = nm_vpn_connection_new (connection, act_request, device);
 	g_signal_connect (vpn, "vpn-state-changed",
 				   G_CALLBACK (connection_vpn_state_changed),
