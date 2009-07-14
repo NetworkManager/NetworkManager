@@ -630,6 +630,16 @@ user_connection_get_settings_cb  (DBusGProxy *proxy,
 			                     g_strdup (path),
 			                     connection);
 			existing = NULL;
+
+			/* Attach the D-Bus proxy representing the remote NMConnection
+			 * to the local NMConnection object to ensure it stays alive to
+			 * continue delivering signals.  It'll be destroyed once the
+			 * NMConnection is destroyed.
+			 */
+			g_object_set_data_full (G_OBJECT (connection),
+			                        "proxy",
+			                        info->proxy,
+			                        g_object_ref (info->proxy));
 		} else
 			g_object_unref (connection);
 
