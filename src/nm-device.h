@@ -162,6 +162,8 @@ void nm_device_set_managed (NMDevice *device,
                             gboolean managed,
                             NMDeviceStateReason reason);
 
+void nm_device_set_dhcp_timeout (NMDevice *device, guint32 timeout);
+
 G_END_DECLS
 
 #endif	/* NM_DEVICE_H */

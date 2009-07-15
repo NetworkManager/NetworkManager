@@ -89,6 +89,7 @@ typedef struct {
 	/* IP configuration info */
 	NMIP4Config *   ip4_config;			/* Config from DHCP, PPP, or system config files */
 	NMDHCPManager * dhcp_manager;
+	guint32         dhcp_timeout;
 	gulong          dhcp_state_sigid;
 	gulong          dhcp_timeout_sigid;
 	NMDHCP4Config * dhcp4_config;
@@ -142,6 +143,7 @@ nm_device_init (NMDevice *self)
 	priv->capabilities = NM_DEVICE_CAP_NONE;
 	memset (&priv->ip6_address, 0, sizeof (struct in6_addr));
 	priv->state = NM_DEVICE_STATE_UNMANAGED;
+	priv->dhcp_timeout = 0;
 }
 
 static GObject*
@@ -899,7 +901,7 @@ real_act_stage3_ip_config_start (NMDevice *self, NMDeviceStateReason *reason)
 		/* DHCP manager will cancel any transaction already in progress and we do not
 		   want to cancel this activation if we get "down" state from that. */
 		g_signal_handler_block (priv->dhcp_manager, priv->dhcp_state_sigid);
-		success = nm_dhcp_manager_begin_transaction (priv->dhcp_manager, ip_iface, uuid, s_ip4, 45);
+		success = nm_dhcp_manager_begin_transaction (priv->dhcp_manager, ip_iface, uuid, s_ip4, priv->dhcp_timeout);
 		g_signal_handler_unblock (priv->dhcp_manager, priv->dhcp_state_sigid);
 
 		if (success) {
@@ -2534,5 +2536,14 @@ nm_device_spec_match_list (NMDeviceInterface *device, const GSList *specs)
 		return NM_DEVICE_GET_CLASS (self)->spec_match_list (self, specs);
 
 	return FALSE;
+}
+
+void
+nm_device_set_dhcp_timeout (NMDevice *device,
+                            guint32 timeout)
+{
+	g_return_if_fail (NM_IS_DEVICE (device));
+
+	NM_DEVICE_GET_PRIVATE (device)->dhcp_timeout = timeout;
 }
 
