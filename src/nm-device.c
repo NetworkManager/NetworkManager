@@ -50,6 +50,7 @@
 #include "nm-setting-connection.h"
 #include "nm-dnsmasq-manager.h"
 #include "nm-dhcp4-config.h"
+#include "nm-marshal.h"
 
 #define NM_ACT_REQUEST_IP4_CONFIG "nm-act-request-ip4-config"
 
@@ -57,6 +58,13 @@ static void device_interface_init (NMDeviceInterface *device_interface_class);
 
 G_DEFINE_TYPE_EXTENDED (NMDevice, nm_device, G_TYPE_OBJECT, G_TYPE_FLAG_ABSTRACT,
 						G_IMPLEMENT_INTERFACE (NM_TYPE_DEVICE_INTERFACE, device_interface_init))
+
+enum {
+	AUTOCONNECT_ALLOWED,
+	LAST_SIGNAL,
+};
+
+static guint signals[LAST_SIGNAL] = { 0 };
 
 #define NM_DEVICE_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEVICE, NMDevicePrivate))
 
@@ -364,6 +372,34 @@ nm_device_can_activate (NMDevice *self)
 	if (NM_DEVICE_GET_CLASS (self)->can_activate)
 		return NM_DEVICE_GET_CLASS (self)->can_activate (self);
 	return TRUE;
+}
+
+static gboolean
+autoconnect_allowed_accumulator (GSignalInvocationHint *ihint,
+                                 GValue *return_accu,
+                                 const GValue *handler_return, gpointer data)
+{
+	if (!g_value_get_boolean (handler_return))
+		g_value_set_boolean (return_accu, FALSE);
+	return TRUE;
+}
+
+gboolean
+nm_device_autoconnect_allowed (NMDevice *self)
+{
+	GValue instance = { 0, };
+	GValue retval = { 0, };
+
+	g_value_init (&instance, G_TYPE_OBJECT);
+	g_value_take_object (&instance, self);
+
+	g_value_init (&retval, G_TYPE_BOOLEAN);
+	g_value_set_boolean (&retval, TRUE);
+
+	/* Use g_signal_emitv() rather than g_signal_emit() to avoid the return
+	 * value being changed if no handlers are connected */
+	g_signal_emitv (&instance, signals[AUTOCONNECT_ALLOWED], 0, &retval);
+	return g_value_get_boolean (&retval);
 }
 
 NMConnection *
@@ -2399,6 +2435,15 @@ nm_device_class_init (NMDeviceClass *klass)
 	g_object_class_override_property (object_class,
 									  NM_DEVICE_INTERFACE_PROP_TYPE_DESC,
 									  NM_DEVICE_INTERFACE_TYPE_DESC);
+
+	signals[AUTOCONNECT_ALLOWED] =
+		g_signal_new ("autoconnect-allowed",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_LAST,
+		              0,
+		              autoconnect_allowed_accumulator, NULL,
+		              _nm_marshal_BOOLEAN__VOID,
+		              G_TYPE_BOOLEAN, 0);
 }
 
 static gboolean

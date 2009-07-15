@@ -154,6 +154,7 @@ void			nm_device_activate_schedule_stage4_ip_config_timeout	(NMDevice *device);
 gboolean		nm_device_deactivate_quickly	(NMDevice *dev);
 gboolean		nm_device_is_activating		(NMDevice *dev);
 gboolean		nm_device_can_interrupt_activation		(NMDevice *self);
+gboolean		nm_device_autoconnect_allowed	(NMDevice *self);
 
 NMDeviceState nm_device_get_state (NMDevice *device);
 

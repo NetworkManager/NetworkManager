@@ -723,7 +723,7 @@ schedule_activate_check (NMPolicy *policy, NMDevice *device)
 	if (state < NM_DEVICE_STATE_DISCONNECTED)
 		return;
 
-	if (!nm_device_can_activate (device))
+	if (!nm_device_can_activate (device) || !nm_device_autoconnect_allowed (device))
 		return;
 
 	for (iter = policy->pending_activation_checks; iter; iter = g_slist_next (iter)) {
