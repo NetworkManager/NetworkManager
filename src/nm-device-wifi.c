@@ -37,6 +37,7 @@
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
 #include "nm-utils.h"
+#include "nm-marshal.h"
 #include "NetworkManagerUtils.h"
 #include "NetworkManagerPolicy.h"
 #include "nm-activation-request.h"
@@ -92,6 +93,7 @@ enum {
 	ACCESS_POINT_REMOVED,
 	HIDDEN_AP_FOUND,
 	PROPERTIES_CHANGED,
+	SCANNING_ALLOWED,
 
 	LAST_SIGNAL
 };
@@ -1670,13 +1672,43 @@ can_scan (NMDeviceWifi *self)
 }
 
 static gboolean
+scan_allowed_accumulator (GSignalInvocationHint *ihint,
+                          GValue *return_accu,
+                          const GValue *handler_return,
+                          gpointer data)
+{
+	if (!g_value_get_boolean (handler_return))
+		g_value_set_boolean (return_accu, FALSE);
+	return TRUE;
+}
+
+static gboolean
+scan_allowed (NMDeviceWifi *self)
+{
+	GValue instance = { 0, };
+	GValue retval = { 0, };
+
+	g_value_init (&instance, G_TYPE_OBJECT);
+	g_value_take_object (&instance, self);
+
+	g_value_init (&retval, G_TYPE_BOOLEAN);
+	g_value_set_boolean (&retval, TRUE);
+
+	/* Use g_signal_emitv() rather than g_signal_emit() to avoid the return
+	 * value being changed if no handlers are connected */
+	g_signal_emitv (&instance, signals[SCANNING_ALLOWED], 0, &retval);
+
+	return g_value_get_boolean (&retval);
+}
+
+static gboolean
 request_wireless_scan (gpointer user_data)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (user_data);
 	NMDeviceWifiPrivate *priv = NM_DEVICE_WIFI_GET_PRIVATE (self);
 	gboolean backoff = FALSE;
 
-	if (can_scan (self)) {
+	if (can_scan (self) && scan_allowed (self)) {
 		if (nm_supplicant_interface_request_scan (priv->supplicant.iface)) {
 			/* success */
 			backoff = TRUE;
@@ -3614,6 +3646,15 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	signals[PROPERTIES_CHANGED] =
 		nm_properties_changed_signal_new (object_class,
 		                                  G_STRUCT_OFFSET (NMDeviceWifiClass, properties_changed));
+
+	signals[SCANNING_ALLOWED] =
+		g_signal_new ("scanning-allowed",
+		              G_OBJECT_CLASS_TYPE (object_class),
+		              G_SIGNAL_RUN_LAST,
+		              0,
+		              scan_allowed_accumulator, NULL,
+		              _nm_marshal_BOOLEAN__VOID,
+		              G_TYPE_BOOLEAN, 0);
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (klass), &dbus_glib_nm_device_wifi_object_info);
 
