@@ -82,6 +82,7 @@ enum {
 	PROP_ACTIVE_ACCESS_POINT,
 	PROP_CAPABILITIES,
 	PROP_IFINDEX,
+	PROP_SCANNING,
 
 	LAST_PROP
 };
@@ -126,6 +127,7 @@ typedef struct Supplicant {
 	guint iface_scan_request_result_id;
 	guint iface_scan_results_id;
 	guint iface_con_state_id;
+	guint iface_notify_scanning_id;
 
 	/* Timeouts and idles */
 	guint iface_con_error_cb_id;
@@ -216,6 +218,10 @@ static void supplicant_mgr_state_cb (NMSupplicantInterface * iface,
                                      guint32 new_state,
                                      guint32 old_state,
                                      NMDeviceWifi *self);
+
+static void supplicant_iface_notify_scanning_cb (NMSupplicantInterface * iface,
+                                                 GParamSpec * pspec,
+                                                 NMDeviceWifi * self);
 
 static guint32 nm_device_wifi_get_bitrate (NMDeviceWifi *self);
 
@@ -613,6 +619,12 @@ supplicant_interface_acquire (NMDeviceWifi *self)
 	                       self);
 	priv->supplicant.iface_con_state_id = id;
 
+	id = g_signal_connect (priv->supplicant.iface,
+	                       "notify::scanning",
+	                       G_CALLBACK (supplicant_iface_notify_scanning_cb),
+	                       self);
+	priv->supplicant.iface_notify_scanning_id = id;
+
 	return TRUE;
 }
 
@@ -702,6 +714,11 @@ supplicant_interface_release (NMDeviceWifi *self)
 	if (priv->supplicant.iface_con_state_id > 0) {
 		g_signal_handler_disconnect (priv->supplicant.iface, priv->supplicant.iface_con_state_id);
 		priv->supplicant.iface_con_state_id = 0;
+	}
+
+	if (priv->supplicant.iface_notify_scanning_id > 0) {
+		g_signal_handler_disconnect (priv->supplicant.iface, priv->supplicant.iface_notify_scanning_id);
+		priv->supplicant.iface_notify_scanning_id = 0;
 	}
 
 	if (priv->supplicant.iface) {
@@ -2439,6 +2456,14 @@ supplicant_iface_connection_error_cb (NMSupplicantInterface * iface,
 }
 
 static void
+supplicant_iface_notify_scanning_cb (NMSupplicantInterface * iface,
+                                     GParamSpec * pspec,
+                                     NMDeviceWifi * self)
+{
+	g_object_notify (G_OBJECT (self), "scanning");
+}
+
+static void
 remove_supplicant_connection_timeout (NMDeviceWifi *self)
 {
 	NMDeviceWifiPrivate *priv;
@@ -3441,6 +3466,9 @@ get_property (GObject *object, guint prop_id,
 	case PROP_IFINDEX:
 		g_value_set_uint (value, nm_device_wifi_get_ifindex (device));
 		break;
+	case PROP_SCANNING:
+		g_value_set_boolean (value, nm_supplicant_interface_get_scanning (priv->supplicant.iface));
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
 		break;
@@ -3545,6 +3573,12 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		                   "Interface index",
 		                   0, G_MAXUINT32, 0,
 		                   G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property (object_class, PROP_SCANNING,
+		g_param_spec_boolean (NM_DEVICE_WIFI_SCANNING,
+		                   "Scanning",
+		                   "Scanning",
+		                   0, G_PARAM_READABLE));
 
 	/* Signals */
 	signals[ACCESS_POINT_ADDED] =
