@@ -86,6 +86,7 @@ get_leasefile_for_iface (const char * iface, const char *uuid)
 static gboolean
 merge_dhclient_config (NMDHCPDevice *device,
                        NMSettingIP4Config *s_ip4,
+                       guint8 *anycast_addr,
                        const char *contents,
                        const char *orig,
                        GError **error)
@@ -164,6 +165,17 @@ merge_dhclient_config (NMDHCPDevice *device,
 			g_string_append_printf (new_contents, DHCP_HOSTNAME_FORMAT "\n", tmp);
 	}
 
+	if (anycast_addr) {
+		g_string_append_printf (new_contents, "interface \"%s\" {\n"
+		                        " initial-interval 1; \n"
+		                        " anycast-mac ethernet %02x:%02x:%02x:%02x:%02x:%02x;\n"
+		                        "}\n",
+		                        device->iface,
+		                        anycast_addr[0], anycast_addr[1],
+		                        anycast_addr[2], anycast_addr[3],
+		                        anycast_addr[4], anycast_addr[5]);
+	}
+
 	if (g_file_set_contents (device->conf_file, new_contents->str, -1, error))
 		success = TRUE;
 
@@ -178,7 +190,9 @@ merge_dhclient_config (NMDHCPDevice *device,
  * config file along with the NM options.
  */
 static gboolean
-create_dhclient_config (NMDHCPDevice *device, NMSettingIP4Config *s_ip4)
+create_dhclient_config (NMDHCPDevice *device,
+                        NMSettingIP4Config *s_ip4,
+                        guint8 *dhcp_anycast_addr)
 {
 	char *orig = NULL, *contents = NULL;
 	GError *error = NULL;
@@ -218,7 +232,7 @@ create_dhclient_config (NMDHCPDevice *device, NMSettingIP4Config *s_ip4)
 
 out:
 	error = NULL;
-	if (merge_dhclient_config (device, s_ip4, contents, orig, &error))
+	if (merge_dhclient_config (device, s_ip4, dhcp_anycast_addr, contents, orig, &error))
 		success = TRUE;
 	else {
 		nm_warning ("%s: error creating dhclient configuration: %s",
@@ -244,7 +258,8 @@ dhclient_child_setup (gpointer user_data G_GNUC_UNUSED)
 GPid
 nm_dhcp_client_start (NMDHCPDevice *device,
                       const char *uuid,
-                      NMSettingIP4Config *s_ip4)
+                      NMSettingIP4Config *s_ip4,
+                      guint8 *dhcp_anycast_addr)
 {
 	GPtrArray *dhclient_argv = NULL;
 	GPid pid = 0;
@@ -268,7 +283,7 @@ nm_dhcp_client_start (NMDHCPDevice *device,
 		goto out;
 	}
 
-	if (!create_dhclient_config (device, s_ip4))
+	if (!create_dhclient_config (device, s_ip4, dhcp_anycast_addr))
 		goto out;
 
 	/* Kill any existing dhclient bound to this interface */

@@ -587,7 +587,8 @@ nm_dhcp_manager_begin_transaction (NMDHCPManager *manager,
                                    const char *iface,
                                    const char *uuid,
                                    NMSettingIP4Config *s_ip4,
-                                   guint32 timeout)
+                                   guint32 timeout,
+                                   guint8 *dhcp_anycast_addr)
 {
 	NMDHCPManagerPrivate *priv;
 	NMDHCPDevice *device;
@@ -629,7 +630,7 @@ nm_dhcp_manager_begin_transaction (NMDHCPManager *manager,
 
 	nm_info ("Activation (%s) Beginning DHCP transaction (timeout in %d seconds)",
 	         iface, timeout);
-	device->pid = nm_dhcp_client_start (device, uuid, setting);
+	device->pid = nm_dhcp_client_start (device, uuid, setting, dhcp_anycast_addr);
 
 	if (setting)
 		g_object_unref (setting);

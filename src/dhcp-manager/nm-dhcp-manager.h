@@ -95,7 +95,8 @@ gboolean       nm_dhcp_manager_begin_transaction    (NMDHCPManager *manager,
                                                      const char *iface,
                                                      const char *uuid,
                                                      NMSettingIP4Config *s_ip4,
-                                                     guint32 timeout);
+                                                     guint32 timeout,
+                                                     guint8 *dhcp_anycast_addr);
 void           nm_dhcp_manager_cancel_transaction   (NMDHCPManager *manager,
                                                      const char *iface);
 NMIP4Config *  nm_dhcp_manager_get_ip4_config       (NMDHCPManager *manager, const char *iface);
@@ -109,7 +110,8 @@ gboolean       nm_dhcp_manager_foreach_dhcp4_option (NMDHCPManager *self,
 /* The following are implemented by the DHCP client backends */
 GPid           nm_dhcp_client_start                 (NMDHCPDevice *device,
                                                      const char *uuid,
-                                                     NMSettingIP4Config *s_ip4);
+                                                     NMSettingIP4Config *s_ip4,
+                                                     guint8 *anycast_addr);
 void           nm_dhcp_client_stop                  (NMDHCPDevice *device, pid_t pid);
 
 gboolean       nm_dhcp_client_process_classless_routes (GHashTable *options,
