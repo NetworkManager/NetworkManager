@@ -63,8 +63,6 @@ struct NMNamedManagerPrivate {
 	NMIP4Config *   vpn_config;
 	NMIP4Config *   device_config;
 	GSList *        configs;
-
-	gboolean disposed;
 };
 
 
@@ -94,29 +92,71 @@ nm_named_manager_error_quark (void)
 	return quark;
 }
 
+typedef struct {
+	GPtrArray *nameservers;
+	const char *domain;
+	GPtrArray *searches;
+} NMResolvConfData;
+
 static void
-merge_one_ip4_config (NMIP4Config *dst, NMIP4Config *src)
+merge_one_ip4_config (NMResolvConfData *rc, NMIP4Config *src)
 {
-	guint32 num, num_domains, i;
+	guint32 num, i;
 
 	num = nm_ip4_config_get_num_nameservers (src);
-	for (i = 0; i < num; i++)
-		nm_ip4_config_add_nameserver (dst, nm_ip4_config_get_nameserver (src, i));
+	for (i = 0; i < num; i++) {
+		struct in_addr addr;
+		char buf[INET_ADDRSTRLEN];
 
-	num_domains = nm_ip4_config_get_num_domains (src);
-	for (i = 0; i < num_domains; i++)
-		nm_ip4_config_add_domain (dst, nm_ip4_config_get_domain (src, i));
+		addr.s_addr = nm_ip4_config_get_nameserver (src, i);
+		if (inet_ntop (AF_INET, &addr, buf, INET_ADDRSTRLEN) > 0)
+			g_ptr_array_add (rc->nameservers, g_strdup (buf));
+	}
+
+	num = nm_ip4_config_get_num_domains (src);
+	for (i = 0; i < num; i++) {
+		if (!rc->domain)
+			rc->domain = nm_ip4_config_get_domain (src, i);
+		g_ptr_array_add (rc->searches, g_strdup (nm_ip4_config_get_domain (src, i)));
+	}
 
 	num = nm_ip4_config_get_num_searches (src);
 	for (i = 0; i < num; i++)
-		nm_ip4_config_add_search (dst, nm_ip4_config_get_search (src, i));
+		g_ptr_array_add (rc->searches, g_strdup (nm_ip4_config_get_search (src, i)));
+}
 
-	/* Add the 'domain' list to searches as well since overloading the
-	 * 'domain_name' DHCP field used to be the way you got searches
-	 * into resolv.conf.
-	 */
-	for (i = 0; i < num_domains; i++)
-		nm_ip4_config_add_search (dst, nm_ip4_config_get_domain (src, i));
+static void
+merge_one_ip6_config (NMResolvConfData *rc, NMIP6Config *src)
+{
+	guint32 num, i;
+
+	num = nm_ip6_config_get_num_nameservers (src);
+	for (i = 0; i < num; i++) {
+		const struct in6_addr *addr;
+		char buf[INET6_ADDRSTRLEN];
+
+		addr = nm_ip6_config_get_nameserver (src, i);
+
+		/* inet_ntop is probably supposed to do this for us, but it doesn't */
+		if (IN6_IS_ADDR_V4MAPPED (addr)) {
+			if (inet_ntop (AF_INET, &(addr->s6_addr32[3]), buf, INET_ADDRSTRLEN) > 0)
+				g_ptr_array_add (rc->nameservers, g_strdup (buf));
+		} else {
+			if (inet_ntop (AF_INET6, addr, buf, INET6_ADDRSTRLEN) > 0)
+				g_ptr_array_add (rc->nameservers, g_strdup (buf));
+		}
+	}
+
+	num = nm_ip6_config_get_num_domains (src);
+	for (i = 0; i < num; i++) {
+		if (!rc->domain)
+			rc->domain = nm_ip6_config_get_domain (src, i);
+		g_ptr_array_add (rc->searches, g_strdup (nm_ip6_config_get_domain (src, i)));
+	}
+
+	num = nm_ip6_config_get_num_searches (src);
+	for (i = 0; i < num; i++)
+		g_ptr_array_add (rc->searches, g_strdup (nm_ip6_config_get_search (src, i)));
 }
 
 
@@ -183,6 +223,15 @@ dispatch_netconfig (const char *domain,
 	if (pid < 0)
 		return FALSE;
 
+	// FIXME: this is wrong. We are not writing out the iface-specific
+	// resolv.conf data, we are writing out an already-fully-merged
+	// resolv.conf. Assuming netconfig works in the obvious way, then
+	// there are various failure modes, such as, eg, bringing up a VPN on
+	// eth0, then bringing up wlan0, then bringing down the VPN. Because
+	// NMNamedManager would have claimed that the VPN DNS server was also
+	// part of the wlan0 config, it will remain in resolv.conf after the
+	// VPN goes down, even though it is presumably no longer reachable
+	// at that point.
 	write_to_netconfig (fd, "INTERFACE", iface);
 
 	if (searches) {
@@ -391,50 +440,16 @@ update_resolv_conf (const char *domain,
 	return *error ? FALSE : TRUE;
 }
 
-static char **
-compute_searches (guint32 num, NMIP4Config *config, gboolean searches)
-{
-	GPtrArray *array;
-	size_t len, elem_len;
-	const char *elem;
-	int i;
-
-	/* Search list is limited to 6 domains total per 'man resolv.conf' */
-	if (num > 6)
-		num = 6;
-
-	array = g_ptr_array_sized_new (num + 1);
-	for (i = 0, len = 0; i < num; i++) {
-		elem = searches ? nm_ip4_config_get_search (config, i)
-			        : nm_ip4_config_get_domain (config, i);
-		elem_len = strlen (elem);
-
-		/* The search list is limited to 256 characters per 'man resolv.conf' */
-		if (len + elem_len > 255)
-			break;
-
-		g_ptr_array_add (array, g_strdup (elem));
-		len += elem_len + 1;  /* +1 for spaces */
-	}
-
-	g_ptr_array_add (array, NULL);
-	return (char **) g_ptr_array_free (array, FALSE);
-}
-
 static gboolean
 rewrite_resolv_conf (NMNamedManager *mgr, const char *iface, GError **error)
 {
 	NMNamedManagerPrivate *priv;
-	NMIP4Config *composite;
+	NMResolvConfData rc;
 	GSList *iter;
-	GPtrArray *array;
 	const char *domain = NULL;
 	char **searches = NULL;
 	char **nameservers = NULL;
-	int num_domains;
-	int num_searches;
-	int num_nameservers;
-	int i;
+	int num, i, len;
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (error != NULL, FALSE);
@@ -442,66 +457,54 @@ rewrite_resolv_conf (NMNamedManager *mgr, const char *iface, GError **error)
 
 	priv = NM_NAMED_MANAGER_GET_PRIVATE (mgr);
 
-	/* Construct the composite config from all the currently active IP4Configs */
-	composite = nm_ip4_config_new ();
+	rc.nameservers = g_ptr_array_new ();
+	rc.domain = NULL;
+	rc.searches = g_ptr_array_new ();
 
 	if (priv->vpn_config)
-		merge_one_ip4_config (composite, priv->vpn_config);
+		merge_one_ip4_config (&rc, priv->vpn_config);
 
 	if (priv->device_config)
-		merge_one_ip4_config (composite, priv->device_config);
+		merge_one_ip4_config (&rc, priv->device_config);
 
 	for (iter = priv->configs; iter; iter = g_slist_next (iter)) {
-		NMIP4Config *config = NM_IP4_CONFIG (iter->data);
+		if (NM_IS_IP4_CONFIG (iter->data)) {
+			NMIP4Config *config = NM_IP4_CONFIG (iter->data);
 
-		if ((config == priv->vpn_config) || (config == priv->device_config))
-			continue;
-
-		merge_one_ip4_config (composite, config);
-	}
-
-	/* Some DHCP servers like to put multiple search paths into the domain
-	 * option as the domain-search option wasn't around in the first RFC.
-	 * We should try and support these old servers as best we can. */
-
-	num_domains = nm_ip4_config_get_num_domains (composite);
-	num_searches = nm_ip4_config_get_num_searches (composite);
-
-	/* Domain */
-	if (num_domains > 0)
-		domain = nm_ip4_config_get_domain (composite, 0);
-
-	/* Searches */
-	if (num_searches > 0)
-		searches = compute_searches (num_searches, composite, TRUE);
-	else if (num_domains > 0)
-		searches = compute_searches (num_searches, composite, FALSE);
-
-	/* Name servers */
-	num_nameservers = nm_ip4_config_get_num_nameservers (composite);
-	if (num_nameservers > 0) {
-		array = g_ptr_array_sized_new (num_nameservers + 1);
-		for (i = 0; i < num_nameservers; i++) {
-			struct in_addr addr;
-			char *buf;
-
-			addr.s_addr = nm_ip4_config_get_nameserver (composite, i);
-			buf = g_malloc0 (ADDR_BUF_LEN);
-			if (!buf)
+			if ((config == priv->vpn_config) || (config == priv->device_config))
 				continue;
 
-			if (inet_ntop (AF_INET, &addr, buf, ADDR_BUF_LEN))
-				g_ptr_array_add (array, buf);
-			else
-				nm_warning ("%s: error converting IP4 address 0x%X",
-						  __func__, ntohl (addr.s_addr));
-		}
+			merge_one_ip4_config (&rc, config);
+		} else {
+			NMIP6Config *config = NM_IP6_CONFIG (iter->data);
 
-		g_ptr_array_add (array, NULL);
-		nameservers = (char **) g_ptr_array_free (array, FALSE);
+			merge_one_ip6_config (&rc, config);
+		}
 	}
 
-	g_object_unref (composite);
+	domain = rc.domain;
+
+	/* Per 'man resolv.conf', the search list is limited to 6 domains
+	 * totalling 256 characters.
+	 */
+	num = MIN (rc.searches->len, 6);
+	for (i = 0, len = 0; i < num; i++) {
+		len += strlen (rc.searches->pdata[i]) + 1; /* +1 for spaces */
+		if (len > 256)
+			break;
+	}
+	g_ptr_array_set_size (rc.searches, i);
+	if (rc.searches->len) {
+		g_ptr_array_add (rc.searches, NULL);
+		searches = (char **) g_ptr_array_free (rc.searches, FALSE);
+	} else
+		g_ptr_array_free (rc.searches, TRUE);
+
+	if (rc.nameservers->len) {
+		g_ptr_array_add (rc.nameservers, NULL);
+		nameservers = (char **) g_ptr_array_free (rc.nameservers, FALSE);
+	} else
+		g_ptr_array_free (rc.nameservers, TRUE);
 
 #ifdef RESOLVCONF_PATH
 	success = dispatch_resolvconf (domain, searches, nameservers, iface, error);
@@ -518,17 +521,19 @@ rewrite_resolv_conf (NMNamedManager *mgr, const char *iface, GError **error)
 	if (success)
 		nm_system_update_dns ();
 
-	g_strfreev (searches);
-	g_strfreev (nameservers);
+	if (searches)
+		g_strfreev (searches);
+	if (nameservers)
+		g_strfreev (nameservers);
 
 	return success;
 }
 
 gboolean
 nm_named_manager_add_ip4_config (NMNamedManager *mgr,
-						   const char *iface,
-                                 NMIP4Config *config,
-                                 NMNamedIPConfigType cfg_type)
+								 const char *iface,
+								 NMIP4Config *config,
+								 NMNamedIPConfigType cfg_type)
 {
 	NMNamedManagerPrivate *priv;
 	GError *error = NULL;
@@ -564,8 +569,8 @@ nm_named_manager_add_ip4_config (NMNamedManager *mgr,
 
 gboolean
 nm_named_manager_remove_ip4_config (NMNamedManager *mgr,
-							 const char *iface,
-							 NMIP4Config *config)
+									const char *iface,
+									NMIP4Config *config)
 {
 	NMNamedManagerPrivate *priv;
 	GError *error = NULL;
@@ -587,6 +592,66 @@ nm_named_manager_remove_ip4_config (NMNamedManager *mgr,
 
 	if (config == priv->device_config)
 		priv->device_config = NULL;
+
+	g_object_unref (config);
+
+	if (!rewrite_resolv_conf (mgr, iface, &error)) {
+		nm_warning ("Could not commit DNS changes.  Error: '%s'", error ? error->message : "(none)");
+		if (error)
+			g_error_free (error);
+	}
+
+	return TRUE;
+}
+
+gboolean
+nm_named_manager_add_ip6_config (NMNamedManager *mgr,
+								 const char *iface,
+								 NMIP6Config *config,
+								 NMNamedIPConfigType cfg_type)
+{
+	NMNamedManagerPrivate *priv;
+	GError *error = NULL;
+
+	g_return_val_if_fail (mgr != NULL, FALSE);
+	g_return_val_if_fail (iface != NULL, FALSE);
+	g_return_val_if_fail (config != NULL, FALSE);
+
+	g_return_val_if_fail (cfg_type == NM_NAMED_IP_CONFIG_TYPE_DEFAULT, FALSE);
+
+	priv = NM_NAMED_MANAGER_GET_PRIVATE (mgr);
+
+	/* Don't allow the same zone added twice */
+	if (!g_slist_find (priv->configs, config))
+		priv->configs = g_slist_append (priv->configs, g_object_ref (config));
+
+	if (!rewrite_resolv_conf (mgr, iface, &error)) {
+		nm_warning ("Could not commit DNS changes.  Error: '%s'", error ? error->message : "(none)");
+		g_error_free (error);
+	}
+
+	return TRUE;
+}
+
+gboolean
+nm_named_manager_remove_ip6_config (NMNamedManager *mgr,
+									const char *iface,
+									NMIP6Config *config)
+{
+	NMNamedManagerPrivate *priv;
+	GError *error = NULL;
+
+	g_return_val_if_fail (mgr != NULL, FALSE);
+	g_return_val_if_fail (iface != NULL, FALSE);
+	g_return_val_if_fail (config != NULL, FALSE);
+
+	priv = NM_NAMED_MANAGER_GET_PRIVATE (mgr);
+
+	/* Can't remove it if it wasn't in the list to begin with */
+	if (!g_slist_find (priv->configs, config))
+		return FALSE;
+
+	priv->configs = g_slist_remove (priv->configs, config);
 
 	g_object_unref (config);	
 
