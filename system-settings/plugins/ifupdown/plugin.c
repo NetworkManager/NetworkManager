@@ -255,7 +255,7 @@ udev_device_added (SCPluginIfupdown *self, GUdevDevice *device)
 	g_hash_table_insert (priv->well_known_ifaces, g_strdup (iface), g_object_ref (device));
 
 	if (ALWAYS_UNMANAGE || priv->unmanage_well_known)
-		g_signal_emit_by_name (G_OBJECT (self), "unmanaged-devices-changed");
+		g_signal_emit_by_name (G_OBJECT (self), NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
 	else
 		bind_device_to_connection (self, device, exported);
 }
@@ -278,7 +278,7 @@ udev_device_removed (SCPluginIfupdown *self, GUdevDevice *device)
 		return;
 
 	if (ALWAYS_UNMANAGE || priv->unmanage_well_known)
-		g_signal_emit_by_name (G_OBJECT (self), "unmanaged-devices-changed");
+		g_signal_emit_by_name (G_OBJECT (self), NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
 }
 
 static void

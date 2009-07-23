@@ -112,15 +112,13 @@ find_by_uuid (gpointer key, gpointer data, gpointer user_data)
 {
 	NMKeyfileConnection *keyfile = NM_KEYFILE_CONNECTION (data);
 	FindByUUIDInfo *info = user_data;
-	NMConnection *connection;
 	NMSettingConnection *s_con;
 	const char *uuid;
 
 	if (info->found)
 		return;
 
-	connection = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (keyfile));
-	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (keyfile), NM_TYPE_SETTING_CONNECTION);
 
 	uuid = s_con ? nm_setting_connection_get_uuid (s_con) : NULL;
 	if (uuid && !strcmp (info->uuid, uuid))
@@ -128,17 +126,15 @@ find_by_uuid (gpointer key, gpointer data, gpointer user_data)
 }
 
 static void
-update_connection_settings (NMExportedConnection *orig,
-                            NMExportedConnection *new)
+update_connection_settings (NMConnection *orig,
+                            NMConnection *new)
 {
-	NMConnection *wrapped;
 	GHashTable *new_settings;
 	GError *error = NULL;
 
-	new_settings = nm_connection_to_hash (nm_exported_connection_get_connection (new));
-	wrapped = nm_exported_connection_get_connection (orig);
-	if (nm_connection_replace_settings (wrapped, new_settings, &error))
-		nm_exported_connection_signal_updated (orig, new_settings);
+	new_settings = nm_connection_to_hash (new);
+	if (nm_connection_replace_settings (orig, new_settings, &error))
+		nm_settings_connection_interface_emit_updated (NM_SETTINGS_CONNECTION_INTERFACE (orig));
 	else {
 		g_warning ("%s: '%s' / '%s' invalid: %d",
 		           __func__,
@@ -146,7 +142,7 @@ update_connection_settings (NMExportedConnection *orig,
 		           (error && error->message) ? error->message : "(none)",
 		           error ? error->code : -1);
 		g_clear_error (&error);
-		nm_exported_connection_signal_removed (orig);
+		g_signal_emit_by_name (orig, "removed");
 	}
 
 	g_hash_table_destroy (new_settings);
@@ -175,7 +171,7 @@ dir_changed (GFileMonitor *monitor,
 			/* Removing from the hash table should drop the last reference */
 			g_object_ref (connection);
 			g_hash_table_remove (priv->hash, name);
-			nm_exported_connection_signal_removed (NM_EXPORTED_CONNECTION (connection));
+			g_signal_emit_by_name (connection, "removed");
 			g_object_unref (connection);
 		}
 		break;
@@ -183,18 +179,17 @@ dir_changed (GFileMonitor *monitor,
 	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
 		if (connection) {
 			/* Update */
-			NMExportedConnection *tmp;
+			NMKeyfileConnection *tmp;
 
-			tmp = (NMExportedConnection *) nm_keyfile_connection_new (name);
+			tmp = (NMKeyfileConnection *) nm_keyfile_connection_new (name);
 			if (tmp) {
-				update_connection_settings (NM_EXPORTED_CONNECTION (connection), tmp);
+				update_connection_settings (NM_CONNECTION (connection), NM_CONNECTION (tmp));
 				g_object_unref (tmp);
 			}
 		} else {
 			/* New */
 			connection = nm_keyfile_connection_new (name);
 			if (connection) {
-				NMConnection *tmp;
 				NMSettingConnection *s_con;
 				const char *connection_uuid;
 				NMKeyfileConnection *found = NULL;
@@ -202,8 +197,7 @@ dir_changed (GFileMonitor *monitor,
 				/* Connection renames will show up as different files but with
 				 * the same UUID.  Try to find the original connection.
 				 */
-				tmp = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (connection));
-				s_con = (NMSettingConnection *) nm_connection_get_setting (tmp, NM_TYPE_SETTING_CONNECTION);
+				s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (connection), NM_TYPE_SETTING_CONNECTION);
 				connection_uuid = s_con ? nm_setting_connection_get_uuid (s_con) : NULL;
 
 				if (connection_uuid) {
@@ -228,8 +222,8 @@ dir_changed (GFileMonitor *monitor,
 					/* Updating settings should update the NMKeyfileConnection's
 					 * filename property too.
 					 */
-					update_connection_settings (NM_EXPORTED_CONNECTION (found),
-					                            NM_EXPORTED_CONNECTION (connection));
+					update_connection_settings (NM_CONNECTION (found),
+					                            NM_CONNECTION (connection));
 
 					/* Re-insert the connection back into the hash with the new filename */
 					g_hash_table_insert (priv->hash,
@@ -242,7 +236,7 @@ dir_changed (GFileMonitor *monitor,
 					g_hash_table_insert (priv->hash,
 					                     (gpointer) nm_keyfile_connection_get_filename (connection),
 					                     connection);
-					g_signal_emit_by_name (config, "connection-added", connection);
+					g_signal_emit_by_name (config, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, connection);
 				}
 			}
 		}
@@ -269,7 +263,7 @@ conf_file_changed (GFileMonitor *monitor,
 	case G_FILE_MONITOR_EVENT_DELETED:
 	case G_FILE_MONITOR_EVENT_CREATED:
 	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
-		g_signal_emit_by_name (self, "unmanaged-devices-changed");
+		g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
 
 		/* hostname */
 		tmp = plugin_get_hostname (self);

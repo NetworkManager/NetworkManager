@@ -16,51 +16,55 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  * (C) Copyright 2008 Novell, Inc.
+ * (C) Copyright 2008 - 2009 Red Hat, Inc.
  */
 
 #include <NetworkManager.h>
+#include <dbus/dbus-glib-lowlevel.h>
+
 #include "nm-sysconfig-connection.h"
 #include "nm-system-config-error.h"
-#include "nm-polkit-helpers.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-settings-connection-interface.h"
+#include "nm-settings-interface.h"
+#include "nm-polkit-helpers.h"
 
-G_DEFINE_ABSTRACT_TYPE (NMSysconfigConnection, nm_sysconfig_connection, NM_TYPE_EXPORTED_CONNECTION)
+
+static void settings_connection_interface_init (NMSettingsConnectionInterface *klass);
+
+G_DEFINE_TYPE_EXTENDED (NMSysconfigConnection, nm_sysconfig_connection, NM_TYPE_EXPORTED_CONNECTION, 0,
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_CONNECTION_INTERFACE,
+                                               settings_connection_interface_init))
 
 #define NM_SYSCONFIG_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
                                                 NM_TYPE_SYSCONFIG_CONNECTION, \
                                                 NMSysconfigConnectionPrivate))
 
 typedef struct {
-	DBusGConnection *dbus_connection;
-	PolKitContext *pol_ctx;
-
-	DBusGProxy *proxy;
+	DBusGConnection *bus;
+	PolkitAuthority *authority;
 } NMSysconfigConnectionPrivate;
 
+/**************************************************************/
+
 static gboolean
-update (NMExportedConnection *exported,
-	   GHashTable *new_settings,
-	   GError **err)
+update (NMSettingsConnectionInterface *connection,
+	    NMSettingsConnectionInterfaceUpdateFunc callback,
+	    gpointer user_data)
 {
-	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (exported);
-	DBusGMethodInvocation *context;
-
-	context = g_object_get_data (G_OBJECT (exported), NM_EXPORTED_CONNECTION_DBUS_METHOD_INVOCATION);
-	g_return_val_if_fail (context != NULL, FALSE);
-
-	return check_polkit_privileges (priv->dbus_connection, priv->pol_ctx, context, err);
+	/* Default handler for subclasses */
+	callback (connection, NULL, user_data);
+	return TRUE;
 }
 
 static gboolean
-do_delete (NMExportedConnection *exported, GError **err)
+do_delete (NMSettingsConnectionInterface *connection,
+	       NMSettingsConnectionInterfaceDeleteFunc callback,
+	       gpointer user_data)
 {
-	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (exported);
-	DBusGMethodInvocation *context;
-
-	context = g_object_get_data (G_OBJECT (exported), NM_EXPORTED_CONNECTION_DBUS_METHOD_INVOCATION);
-	g_return_val_if_fail (context != NULL, FALSE);
-
-	return check_polkit_privileges (priv->dbus_connection, priv->pol_ctx, context, err);
+	/* Default handler for subclasses */
+	callback (connection, NULL, user_data);
+	return TRUE;
 }
 
 static GValue *
@@ -118,25 +122,28 @@ destroy_gvalue (gpointer data)
 	g_slice_free (GValue, value);
 }
 
-GHashTable *
-nm_sysconfig_connection_get_secrets (NMSysconfigConnection *self,
-                                     const gchar *setting_name,
-                                     const gchar **hints,
-                                     gboolean request_new,
-                                     GError **error)
+static gboolean
+get_secrets (NMSettingsConnectionInterface *connection,
+	         const char *setting_name,
+             const char **hints,
+             gboolean request_new,
+             NMSettingsConnectionInterfaceGetSecretsFunc callback,
+             gpointer user_data)
 {
-	NMConnection *connection;
 	GHashTable *settings = NULL;
 	GHashTable *secrets = NULL;
 	NMSetting *setting;
+	GError *error = NULL;
 
-	connection = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (self));
-	setting = nm_connection_get_setting_by_name (connection, setting_name);
+	setting = nm_connection_get_setting_by_name (NM_CONNECTION (connection), setting_name);
 	if (!setting) {
-		g_set_error (error, NM_SETTINGS_ERROR, NM_SETTINGS_ERROR_INVALID_CONNECTION,
-		             "%s.%d - Connection didn't have requested setting '%s'.",
-		             __FILE__, __LINE__, setting_name);
-		return NULL;
+		error = g_error_new (NM_SETTINGS_INTERFACE_ERROR,
+		                     NM_SETTINGS_INTERFACE_ERROR_INVALID_CONNECTION,
+		                     "%s.%d - Connection didn't have requested setting '%s'.",
+		                     __FILE__, __LINE__, setting_name);
+		(*callback) (connection, NULL, error, user_data);
+		g_error_free (error);
+		return TRUE;
 	}
 
 	/* Returned secrets are a{sa{sv}}; this is the outer a{s...} hash that
@@ -150,166 +157,349 @@ nm_sysconfig_connection_get_secrets (NMSysconfigConnection *self,
 	nm_setting_enumerate_values (setting, add_secrets, secrets);
 
 	g_hash_table_insert (settings, g_strdup (setting_name), secrets);
-	return settings;
+	callback (connection, settings, NULL, user_data);
+	g_hash_table_destroy (settings);
+	return TRUE;
 }
+
+/**************************************************************/
 
 typedef struct {
 	NMSysconfigConnection *self;
-	char *setting_name;
 	DBusGMethodInvocation *context;
-} GetUnixUserInfo;
+	PolkitSubject *subject;
+	GCancellable *cancellable;
 
-static GetUnixUserInfo *
-get_unix_user_info_new (NMSysconfigConnection *self,
-                        const char *setting_name,
-                        DBusGMethodInvocation *context)
+	/* Update */
+	NMConnection *connection;
+
+	/* Secrets */
+	char *setting_name;
+	char **hints;
+	gboolean request_new;
+} PolkitCall;
+
+static PolkitCall *
+polkit_call_new (NMSysconfigConnection *self,
+                 DBusGMethodInvocation *context,
+                 NMConnection *connection,
+                 const char *setting_name,
+                 const char **hints,
+                 gboolean request_new)
 {
-	GetUnixUserInfo *info;
+	PolkitCall *call;
+	char *sender;
 
 	g_return_val_if_fail (self != NULL, NULL);
-	g_return_val_if_fail (setting_name != NULL, NULL);
 	g_return_val_if_fail (context != NULL, NULL);
 
-	info = g_malloc0 (sizeof (GetUnixUserInfo));
-	info->self = self;
-	info->setting_name = g_strdup (setting_name);
-	info->context = context;
-	return info;
+	call = g_malloc0 (sizeof (PolkitCall));
+	call->self = self;
+	call->context = context;
+	call->cancellable = g_cancellable_new ();
+	call->connection = connection;
+	call->setting_name = g_strdup (setting_name);
+	if (hints)
+		call->hints = g_strdupv ((char **) hints);
+	call->request_new = request_new;
+
+ 	sender = dbus_g_method_get_sender (context);
+	call->subject = polkit_system_bus_name_new (sender);
+	g_free (sender);
+
+	return call;
 }
 
 static void
-get_unix_user_info_free (gpointer user_data)
+polkit_call_free (PolkitCall *call)
 {
-	GetUnixUserInfo *info = user_data;
+	if (call->connection)
+		g_object_unref (call->connection);
+	g_free (call->setting_name);
+	if (call->hints)
+		g_strfreev (call->hints);
 
-	g_free (info->setting_name);
-	g_free (info);
+	g_object_unref (call->subject);
+	g_object_unref (call->cancellable);
+	g_free (call);
 }
 
 static void
-get_unix_user_cb (DBusGProxy *proxy, DBusGProxyCall *call, gpointer user_data)
+con_update_cb (NMSettingsConnectionInterface *connection,
+               GError *error,
+               gpointer user_data)
 {
-	GetUnixUserInfo *info = user_data;
-	NMSysconfigConnection *self;
-	NMSysconfigConnectionPrivate *priv;
+	PolkitCall *call = user_data;
+
+	if (error)
+		dbus_g_method_return_error (call->context, error);
+	else
+		dbus_g_method_return (call->context);
+
+	polkit_call_free (call);
+}
+
+static void
+pk_update_cb (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	PolkitCall *call = user_data;
+	NMSysconfigConnection *self = call->self;
+	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
+	PolkitAuthorizationResult *pk_result;
 	GError *error = NULL;
-	guint32 requestor_uid = G_MAXUINT32;
-	GHashTable *secrets;
+	GHashTable *settings;
 
-	g_return_if_fail (info != NULL);
-
-	self = info->self;
-	priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
-
-	if (!dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_UINT, &requestor_uid, G_TYPE_INVALID))
-		goto error;
-
-	/* Non-root users need PolicyKit authorization */
-	if (requestor_uid != 0) {
-		if (!check_polkit_privileges (priv->dbus_connection, priv->pol_ctx, info->context, &error))
-			goto error;
-	}
-
-	secrets = nm_sysconfig_connection_get_secrets (self, info->setting_name, NULL, FALSE, &error);
-	if (secrets) {
-		/* success; return secrets to caller */
-		dbus_g_method_return (info->context, secrets);
-		g_hash_table_destroy (secrets);
+	pk_result = polkit_authority_check_authorization_finish (priv->authority,
+	                                                         result,
+	                                                         &error);
+	/* Some random error happened */
+	if (error) {
+		dbus_g_method_return_error (call->context, error);
+		g_error_free (error);
+		polkit_call_free (call);
 		return;
 	}
 
-	if (!error) {
-		/* Shouldn't happen, but... */
-		g_set_error (&error, NM_SYSCONFIG_SETTINGS_ERROR,
-		             NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
-		             "%s", "Could not get secrets from connection (unknown error ocurred)");
+	/* Caller didn't successfully authenticate */
+	if (!polkit_authorization_result_get_is_authorized (pk_result)) {
+		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
+		                             NM_SYSCONFIG_SETTINGS_ERROR_NOT_PRIVILEGED,
+		                             "Insufficient privileges.");
+		dbus_g_method_return_error (call->context, error);
+		g_error_free (error);
+		polkit_call_free (call);
+		goto out;
 	}
 
-error:
-	dbus_g_method_return_error (info->context, error);
-	g_clear_error (&error);
+	/* Update our settings internally so the update() call will save the new
+	 * ones.
+	 */
+	settings = nm_connection_to_hash (call->connection);
+	if (!nm_connection_replace_settings (NM_CONNECTION (self), settings, &error)) {
+		/* Shouldn't really happen since we've already validated the settings */
+		dbus_g_method_return_error (call->context, error);
+		g_error_free (error);
+		polkit_call_free (call);
+		goto out;
+	}
+	g_hash_table_destroy (settings);
+
+	/* Caller is authenticated, now we can finally try to update */
+	nm_settings_connection_interface_update (NM_SETTINGS_CONNECTION_INTERFACE (self),
+	                                         con_update_cb,
+	                                         call);
+
+out:
+	g_object_unref (pk_result);
 }
 
 static void
-service_get_secrets (NMExportedConnection *exported,
-                     const gchar *setting_name,
-                     const gchar **hints,
-                     gboolean request_new,
-                     DBusGMethodInvocation *context)
+dbus_update (NMExportedConnection *exported,
+             GHashTable *new_settings,
+             DBusGMethodInvocation *context)
 {
 	NMSysconfigConnection *self = NM_SYSCONFIG_CONNECTION (exported);
 	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
-	GetUnixUserInfo *info;
+	PolkitCall *call;
+	NMConnection *tmp;
 	GError *error = NULL;
-	char *sender = NULL;
 
-	sender = dbus_g_method_get_sender (context);
-	if (!sender) {
-		g_set_error (&error, NM_SYSCONFIG_SETTINGS_ERROR,
-		             NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
-		             "%s", "Could not determine D-Bus requestor to authorize GetSecrets request");
-		goto out;
-	}
-
-	if (priv->proxy)
-		g_object_unref (priv->proxy);
-
-	priv->proxy = dbus_g_proxy_new_for_name (priv->dbus_connection,
-	                                         DBUS_SERVICE_DBUS,
-	                                         DBUS_PATH_DBUS,
-	                                         DBUS_INTERFACE_DBUS);
-	if (!priv->proxy) {
-		g_set_error (&error, NM_SYSCONFIG_SETTINGS_ERROR,
-		             NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
-		             "%s", "Could not connect to D-Bus to authorize GetSecrets request");
-		goto out;
-	}
-
-	info = get_unix_user_info_new (self, setting_name, context);
-	if (!info) {
-		g_set_error (&error, NM_SYSCONFIG_SETTINGS_ERROR,
-		             NM_SYSCONFIG_SETTINGS_ERROR_GENERAL,
-		             "%s", "Not enough memory to authorize GetSecrets request");
-		goto out;
-	}
-
-	dbus_g_proxy_begin_call_with_timeout (priv->proxy, "GetConnectionUnixUser",
-	                                      get_unix_user_cb,
-	                                      info,
-	                                      get_unix_user_info_free,
-	                                      5000,
-	                                      G_TYPE_STRING, sender,
-	                                      G_TYPE_INVALID);
-
-out:
-	if (error) {
+	/* Check if the settings are valid first */
+	tmp = nm_connection_new_from_hash (new_settings, &error);
+	if (!tmp) {
+		g_assert (error);
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
+		return;
 	}
+
+	call = polkit_call_new (self, context, tmp, NULL, NULL, FALSE);
+	g_assert (call);
+	polkit_authority_check_authorization (priv->authority,
+	                                      call->subject,
+	                                      NM_SYSCONFIG_POLICY_ACTION,
+	                                      NULL,
+	                                      POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION,
+	                                      call->cancellable,
+	                                      pk_update_cb,
+	                                      call);
 }
 
-/* GObject */
+static void
+con_delete_cb (NMSettingsConnectionInterface *connection,
+               GError *error,
+               gpointer user_data)
+{
+	PolkitCall *call = user_data;
+
+	if (error)
+		dbus_g_method_return_error (call->context, error);
+	else
+		dbus_g_method_return (call->context);
+
+	polkit_call_free (call);
+}
+
+static void
+pk_delete_cb (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	PolkitCall *call = user_data;
+	NMSysconfigConnection *self = call->self;
+	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
+	PolkitAuthorizationResult *pk_result;
+	GError *error = NULL;
+
+	pk_result = polkit_authority_check_authorization_finish (priv->authority,
+	                                                         result,
+	                                                         &error);
+	/* Some random error happened */
+	if (error) {
+		dbus_g_method_return_error (call->context, error);
+		g_error_free (error);
+		polkit_call_free (call);
+		return;
+	}
+
+	/* Caller didn't successfully authenticate */
+	if (!polkit_authorization_result_get_is_authorized (pk_result)) {
+		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
+		                             NM_SYSCONFIG_SETTINGS_ERROR_NOT_PRIVILEGED,
+		                             "Insufficient privileges.");
+		dbus_g_method_return_error (call->context, error);
+		g_error_free (error);
+		polkit_call_free (call);
+		goto out;
+	}
+
+	/* Caller is authenticated, now we can finally try to delete */
+	nm_settings_connection_interface_delete (NM_SETTINGS_CONNECTION_INTERFACE (self),
+	                                         con_delete_cb,
+	                                         call);
+
+out:
+	g_object_unref (pk_result);
+}
+
+static void
+dbus_delete (NMExportedConnection *exported,
+             DBusGMethodInvocation *context)
+{
+	NMSysconfigConnection *self = NM_SYSCONFIG_CONNECTION (exported);
+	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
+	PolkitCall *call;
+
+	call = polkit_call_new (self, context, NULL, NULL, NULL, FALSE);
+	g_assert (call);
+	polkit_authority_check_authorization (priv->authority,
+	                                      call->subject,
+	                                      NM_SYSCONFIG_POLICY_ACTION,
+	                                      NULL,
+	                                      POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION,
+	                                      call->cancellable,
+	                                      pk_delete_cb,
+	                                      call);
+}
+
+static void
+con_secrets_cb (NMSettingsConnectionInterface *connection,
+                GHashTable *secrets,
+                GError *error,
+                gpointer user_data)
+{
+	PolkitCall *call = user_data;
+
+	if (error)
+		dbus_g_method_return_error (call->context, error);
+	else
+		dbus_g_method_return (call->context, secrets);
+
+	polkit_call_free (call);
+}
+
+static void
+pk_secrets_cb (GObject *object, GAsyncResult *result, gpointer user_data)
+{
+	PolkitCall *call = user_data;
+	NMSysconfigConnection *self = call->self;
+	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
+	PolkitAuthorizationResult *pk_result;
+	GError *error = NULL;
+
+	pk_result = polkit_authority_check_authorization_finish (priv->authority,
+	                                                         result,
+	                                                         &error);
+	/* Some random error happened */
+	if (error) {
+		dbus_g_method_return_error (call->context, error);
+		g_error_free (error);
+		polkit_call_free (call);
+		return;
+	}
+
+	/* Caller didn't successfully authenticate */
+	if (!polkit_authorization_result_get_is_authorized (pk_result)) {
+		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
+		                             NM_SYSCONFIG_SETTINGS_ERROR_NOT_PRIVILEGED,
+		                             "Insufficient privileges.");
+		dbus_g_method_return_error (call->context, error);
+		g_error_free (error);
+		polkit_call_free (call);
+		goto out;
+	}
+
+	/* Caller is authenticated, now we can finally try to update */
+	nm_settings_connection_interface_get_secrets (NM_SETTINGS_CONNECTION_INTERFACE (self),
+	                                              call->setting_name,
+	                                              (const char **) call->hints,
+	                                              call->request_new,
+	                                              con_secrets_cb,
+	                                              call);
+
+out:
+	g_object_unref (pk_result);
+}
+
+static void
+dbus_get_secrets (NMExportedConnection *exported,
+                  const gchar *setting_name,
+                  const gchar **hints,
+                  gboolean request_new,
+                  DBusGMethodInvocation *context)
+{
+	NMSysconfigConnection *self = NM_SYSCONFIG_CONNECTION (exported);
+	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
+	PolkitCall *call;
+
+	call = polkit_call_new (self, context, NULL, setting_name, hints, request_new);
+	g_assert (call);
+	polkit_authority_check_authorization (priv->authority,
+	                                      call->subject,
+	                                      NM_SYSCONFIG_POLICY_ACTION,
+	                                      NULL,
+	                                      POLKIT_CHECK_AUTHORIZATION_FLAGS_ALLOW_USER_INTERACTION,
+	                                      call->cancellable,
+	                                      pk_secrets_cb,
+	                                      call);
+}
+
+/**************************************************************/
+
+static void
+settings_connection_interface_init (NMSettingsConnectionInterface *iface)
+{
+	iface->update = update;
+	iface->delete = do_delete;
+	iface->get_secrets = get_secrets;
+}
 
 static void
 nm_sysconfig_connection_init (NMSysconfigConnection *self)
 {
 	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (self);
-	GError *err = NULL;
 
-	priv->dbus_connection = dbus_g_bus_get (DBUS_BUS_SYSTEM, &err);
-	if (err) {
-		g_warning ("%s: error getting D-Bus connection: %s",
-		           __func__,
-		           (err && err->message) ? err->message : "(unknown)");
-		g_error_free (err);
-	}
-
-	priv->pol_ctx = create_polkit_context (&err);
-	if (!priv->pol_ctx) {
-		g_warning ("%s: error creating PolicyKit context: %s",
-		           __func__,
-		           (err && err->message) ? err->message : "(unknown)");
-	}
+	priv->authority = polkit_authority_get ();
+	if (!priv->authority)
+		g_warning ("%s: error creating PolicyKit authority", __func__);
 }
 
 static void
@@ -317,30 +507,23 @@ dispose (GObject *object)
 {
 	NMSysconfigConnectionPrivate *priv = NM_SYSCONFIG_CONNECTION_GET_PRIVATE (object);
 
-	if (priv->proxy)
-		g_object_unref (priv->proxy);
-
-	if (priv->pol_ctx)
-		polkit_context_unref (priv->pol_ctx);
-
-	if (priv->dbus_connection)
-		dbus_g_connection_unref (priv->dbus_connection);
+	if (priv->authority)
+		g_object_unref (priv->authority);
 
 	G_OBJECT_CLASS (nm_sysconfig_connection_parent_class)->dispose (object);
 }
 
 static void
-nm_sysconfig_connection_class_init (NMSysconfigConnectionClass *sysconfig_connection_class)
+nm_sysconfig_connection_class_init (NMSysconfigConnectionClass *class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (sysconfig_connection_class);
-	NMExportedConnectionClass *connection_class = NM_EXPORTED_CONNECTION_CLASS (sysconfig_connection_class);
+	GObjectClass *object_class = G_OBJECT_CLASS (class);
+	NMExportedConnectionClass *ec_class = NM_EXPORTED_CONNECTION_CLASS (class);
 
-	g_type_class_add_private (sysconfig_connection_class, sizeof (NMSysconfigConnectionPrivate));
+	g_type_class_add_private (class, sizeof (NMSysconfigConnectionPrivate));
 
 	/* Virtual methods */
 	object_class->dispose = dispose;
-
-	connection_class->update = update;
-	connection_class->do_delete = do_delete;
-	connection_class->service_get_secrets = service_get_secrets;
+	ec_class->update = dbus_update;
+	ec_class->delete = dbus_delete;
+	ec_class->get_secrets = dbus_get_secrets;
 }

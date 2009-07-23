@@ -49,6 +49,8 @@
 #include "nm-bluez-common.h"
 #include "nm-sysconfig-settings.h"
 #include "nm-secrets-provider-interface.h"
+#include "nm-settings-interface.h"
+#include "nm-settings-system-interface.h"
 
 #define NM_AUTOIP_DBUS_SERVICE "org.freedesktop.nm_avahi_autoipd"
 #define NM_AUTOIP_DBUS_IFACE   "org.freedesktop.nm_avahi_autoipd"
@@ -862,18 +864,16 @@ user_query_connections (NMManager *manager)
 /*******************************************************************/
 
 static void
-system_connection_updated_cb (NMExportedConnection *exported,
+system_connection_updated_cb (NMSettingsConnectionInterface *connection,
                               gpointer unused,
                               NMManager *manager)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	const char *path;
-	NMConnection *existing;
-	NMConnection *connection;
+	NMSettingsConnectionInterface *existing;
 	GError *error = NULL;
 
-	connection = nm_exported_connection_get_connection (exported);
-	path = nm_connection_get_path (connection);
+	path = nm_connection_get_path (NM_CONNECTION (connection));
 
 	existing = g_hash_table_lookup (priv->system_connections, path);
 	if (!existing)
@@ -883,14 +883,14 @@ system_connection_updated_cb (NMExportedConnection *exported,
 		return;
 	}
 
-	if (!nm_connection_verify (existing, &error)) {
+	if (!nm_connection_verify (NM_CONNECTION (existing), &error)) {
 		/* Updated connection invalid, remove existing connection */
 		nm_warning ("%s: Invalid connection: '%s' / '%s' invalid: %d",
 		            __func__,
 		            g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)),
 		            error->message, error->code);
 		g_error_free (error);
-		remove_connection (manager, existing, priv->system_connections);
+		remove_connection (manager, NM_CONNECTION (existing), priv->system_connections);
 		return;
 	}
 
@@ -901,37 +901,33 @@ system_connection_updated_cb (NMExportedConnection *exported,
 }
 
 static void
-system_connection_removed_cb (NMExportedConnection *exported,
+system_connection_removed_cb (NMSettingsConnectionInterface *connection,
                               NMManager *manager)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	const char *path;
-	NMConnection *connection;
 
-	connection = nm_exported_connection_get_connection (exported);
-	path = nm_connection_get_path (connection);
+	path = nm_connection_get_path (NM_CONNECTION (connection));
 
 	connection = g_hash_table_lookup (priv->system_connections, path);
 	if (connection)
-		remove_connection (manager, connection, priv->system_connections);
+		remove_connection (manager, NM_CONNECTION (connection), priv->system_connections);
 }
 
 static void
 system_internal_new_connection (NMManager *manager,
-                                NMExportedConnection *exported)
+                                NMSettingsConnectionInterface *connection)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
-	NMConnection *connection;
 	const char *path;
 
-	g_return_if_fail (exported != NULL);
+	g_return_if_fail (connection != NULL);
 
-	g_signal_connect (exported, "updated",
+	g_signal_connect (connection, "updated",
 	                  G_CALLBACK (system_connection_updated_cb), manager);
-	g_signal_connect (exported, "removed",
+	g_signal_connect (connection, "removed",
 	                  G_CALLBACK (system_connection_removed_cb), manager);
 
-	connection = nm_exported_connection_get_connection (exported);
 	path = nm_connection_get_path (NM_CONNECTION (connection));
 	g_hash_table_insert (priv->system_connections, g_strdup (path),
 	                     g_object_ref (connection));
@@ -939,10 +935,10 @@ system_internal_new_connection (NMManager *manager,
 
 static void
 system_new_connection_cb (NMSysconfigSettings *settings,
-                          NMExportedConnection *exported,
+                          NMSettingsConnectionInterface *connection,
                           NMManager *manager)
 {
-	system_internal_new_connection (manager, exported);
+	system_internal_new_connection (manager, connection);
 }
 
 static void
@@ -951,9 +947,9 @@ system_query_connections (NMManager *manager)
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 	GSList *system_connections, *iter;
 
-	system_connections = nm_sysconfig_settings_list_connections (priv->sys_settings);
+	system_connections = nm_settings_interface_list_connections (NM_SETTINGS_INTERFACE (priv->sys_settings));
 	for (iter = system_connections; iter; iter = g_slist_next (iter))
-		system_internal_new_connection (manager, NM_EXPORTED_CONNECTION (iter->data));
+		system_internal_new_connection (manager, NM_SETTINGS_CONNECTION_INTERFACE (iter->data));
 	g_slist_free (system_connections);
 }
 
@@ -1679,43 +1675,55 @@ user_get_secrets (NMManager *self,
 	return info;
 }
 
+static void
+system_get_secrets_reply_cb (NMSettingsConnectionInterface *connection,
+                             GHashTable *secrets,
+                             GError *error,
+                             gpointer user_data)
+{
+	GetSecretsInfo *info = user_data;
+
+	nm_secrets_provider_interface_get_secrets_result (info->provider,
+	                                                  info->setting_name,
+	                                                  info->caller,
+	                                                  error ? NULL : secrets,
+	                                                  error);
+	free_get_secrets_info (info);
+}
+
 static gboolean
-system_get_secrets_cb (gpointer user_data)
+system_get_secrets_idle_cb (gpointer user_data)
 {
 	GetSecretsInfo *info = user_data;
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (info->manager);
-	GHashTable *settings;
-	NMSysconfigConnection *exported;
+	NMSettingsConnectionInterface *connection;
 	GError *error = NULL;
 	const char *hints[3] = { NULL, NULL, NULL };
 
-	exported = nm_sysconfig_settings_get_connection_by_path (priv->sys_settings, 
-	                                                         info->connection_path);
-	if (!exported) {
-		g_set_error (&error, 0, 0, "%s", "unknown connection (not exported by "
-		             "system settings)");
+	info->idle_id = 0;
+
+	connection = nm_settings_interface_get_connection_by_path (NM_SETTINGS_INTERFACE (priv->sys_settings), 
+	                                                           info->connection_path);
+	if (!connection) {
+		error = g_error_new_literal (0, 0, "unknown connection (not exported by system settings)");
 		nm_secrets_provider_interface_get_secrets_result (info->provider,
 		                                                  info->setting_name,
 		                                                  info->caller,
 		                                                  NULL,
 		                                                  error);
-		g_clear_error (&error);
+		g_error_free (error);
+		free_get_secrets_info (info);
 		return FALSE;
 	}
 
 	hints[0] = info->hint1;
 	hints[1] = info->hint2;
-	settings = nm_sysconfig_connection_get_secrets (exported,
-	                                                info->setting_name,
-	                                                hints,
-	                                                info->request_new,
-	                                                &error);
-	nm_secrets_provider_interface_get_secrets_result (info->provider,
-	                                                  info->setting_name,
-	                                                  info->caller,
-	                                                  settings,
-	                                                  NULL);
-	g_hash_table_destroy (settings);
+	nm_settings_connection_interface_get_secrets (connection,
+	                                              info->setting_name,
+	                                              hints,
+	                                              info->request_new,
+	                                              system_get_secrets_reply_cb,
+	                                              info);
 	return FALSE;
 }
 
@@ -1744,9 +1752,9 @@ system_get_secrets (NMManager *self,
 	g_object_weak_ref (G_OBJECT (provider), (GWeakNotify) free_get_secrets_info, info);
 
 	info->idle_id = g_idle_add_full (G_PRIORITY_DEFAULT_IDLE,
-	                                 system_get_secrets_cb,
+	                                 system_get_secrets_idle_cb,
 	                                 info,
-	                                 free_get_secrets_info);
+	                                 NULL);
 	return info;
 }
 
@@ -2455,7 +2463,7 @@ nm_manager_get (const char *config_file, const char *plugins, GError **error)
 
 	g_signal_connect (priv->sys_settings, "notify::" NM_SYSCONFIG_SETTINGS_UNMANAGED_SPECS,
 	                  G_CALLBACK (system_unmanaged_devices_changed_cb), singleton);
-	g_signal_connect (priv->sys_settings, "notify::" NM_SYSCONFIG_SETTINGS_HOSTNAME,
+	g_signal_connect (priv->sys_settings, "notify::" NM_SETTINGS_SYSTEM_INTERFACE_HOSTNAME,
 	                  G_CALLBACK (system_hostname_changed_cb), singleton);
 	g_signal_connect (priv->sys_settings, "new-connection",
 	                  G_CALLBACK (system_new_connection_cb), singleton);

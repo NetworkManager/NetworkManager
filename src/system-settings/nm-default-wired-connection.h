@@ -22,7 +22,6 @@
 #ifndef NM_DEFAULT_WIRED_CONNECTION_H
 #define NM_DEFAULT_WIRED_CONNECTION_H
 
-#include <nm-settings.h>
 #include "nm-sysconfig-connection.h"
 #include "nm-device.h"
 

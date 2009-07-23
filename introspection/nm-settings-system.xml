@@ -8,7 +8,7 @@
 
     <method name="AddConnection">
       <tp:docstring>
-        Add new connection.
+        DEPRECATED.  Adds new connection.
       </tp:docstring>
       <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_add_connection"/>
       <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>

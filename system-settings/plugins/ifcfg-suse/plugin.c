@@ -190,7 +190,7 @@ read_connection (SCPluginIfcfg *self, GUdevDevice *device, NMDeviceType dev_type
 		if (address && (strlen (address) == 17)) {
 			spec = g_strdup_printf ("mac:%s", address);
 			g_hash_table_insert (priv->unmanaged_specs, GUINT_TO_POINTER (ifindex), spec);
-			g_signal_emit_by_name (self, "unmanaged-devices-changed");
+			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
 		} else
 			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    (%s) error getting hardware address", iface);
 	} else {
@@ -201,7 +201,7 @@ read_connection (SCPluginIfcfg *self, GUdevDevice *device, NMDeviceType dev_type
 			g_hash_table_insert (priv->connections,
 			                     GUINT_TO_POINTER (ifindex),
 			                     connection);
-			g_signal_emit_by_name (self, "connection-added", connection);
+			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, connection);
 		}
 	}
 }
@@ -281,7 +281,7 @@ handle_uevent (GUdevClient *client,
 
 		ifindex = (guint32) g_udev_device_get_property_as_uint64 (device, "IFINDEX");
 		if (g_hash_table_remove (priv->unmanaged_specs, GUINT_TO_POINTER (ifindex)))
-			g_signal_emit_by_name (self, "unmanaged-devices-changed");
+			g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
 
 		exported = (NMExportedConnection *) g_hash_table_lookup (priv->connections,
 		                                                         GUINT_TO_POINTER (ifindex));

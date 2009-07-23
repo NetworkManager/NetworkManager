@@ -1,0 +1,425 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
+/*
+ * libnm_glib -- Access network status & information from glib applications
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the
+ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
+ * Boston, MA 02110-1301 USA.
+ *
+ * Copyright (C) 2008 Novell, Inc.
+ * Copyright (C) 2009 Red Hat, Inc.
+ */
+
+#include <string.h>
+#include <NetworkManager.h>
+#include <nm-connection.h>
+
+#include "nm-marshal.h"
+#include "nm-remote-settings.h"
+#include "nm-settings-bindings.h"
+#include "nm-settings-interface.h"
+
+static void settings_interface_init (NMSettingsInterface *class);
+
+G_DEFINE_TYPE_EXTENDED (NMRemoteSettings, nm_remote_settings, G_TYPE_OBJECT, 0,
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_INTERFACE, settings_interface_init))
+
+#define NM_REMOTE_SETTINGS_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_REMOTE_SETTINGS, NMRemoteSettingsPrivate))
+
+typedef struct {
+	DBusGConnection *bus;
+	NMConnectionScope scope;
+
+	DBusGProxy *proxy;
+	GHashTable *connections;
+
+	DBusGProxy *dbus_proxy;
+
+	guint fetch_id;
+
+	gboolean disposed;
+} NMRemoteSettingsPrivate;
+
+enum {
+	PROP_0,
+	PROP_BUS,
+	PROP_SCOPE,
+
+	LAST_PROP
+};
+
+static NMSettingsConnectionInterface *
+get_connection_by_path (NMSettingsInterface *settings, const char *path)
+{
+	return g_hash_table_lookup (NM_REMOTE_SETTINGS_GET_PRIVATE (settings)->connections, path);
+}
+
+static void
+connection_removed_cb (NMRemoteConnection *remote, gpointer user_data)
+{
+	g_hash_table_remove (NM_REMOTE_SETTINGS_GET_PRIVATE (user_data)->connections,
+	                     nm_connection_get_path (NM_CONNECTION (remote)));
+}
+
+static void
+new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
+{
+	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
+	NMRemoteConnection *connection;
+
+	connection = nm_remote_connection_new (priv->bus, priv->scope, path);
+	if (connection) {
+		g_signal_connect (connection, "removed",
+		                  G_CALLBACK (connection_removed_cb),
+		                  self);
+
+		g_hash_table_insert (priv->connections, g_strdup (path), connection);
+		g_signal_emit_by_name (self, "new-connection", connection);
+	}
+}
+
+static void
+fetch_connections_done (DBusGProxy *proxy,
+                        GPtrArray *connections,
+                        GError *error,
+                        gpointer user_data)
+{
+	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);	
+	int i;
+
+	if (error) {
+		g_warning ("%s: error fetching %s connections: (%d) %s.",
+		           __func__,
+		           priv->scope == NM_CONNECTION_SCOPE_USER ? "user" : "system",
+		           error->code,
+		           error->message ? error->message : "(unknown)");
+		g_clear_error (&error);
+		return;
+	}
+
+	for (i = 0; connections && (i < connections->len); i++) {
+		char *path = g_ptr_array_index (connections, i);
+
+		new_connection_cb (proxy, path, user_data);
+		g_free (path);
+	}
+	g_ptr_array_free (connections, TRUE);
+}
+
+static gboolean
+fetch_connections (gpointer user_data)
+{
+	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
+
+	priv->fetch_id = 0;
+
+	org_freedesktop_NetworkManagerSettings_list_connections_async (priv->proxy,
+	                                                               fetch_connections_done,
+	                                                               self);
+	return FALSE;
+}
+
+static GSList *
+list_connections (NMSettingsInterface *settings)
+{
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (settings);
+	GSList *list = NULL;
+	GHashTableIter iter;
+	gpointer value;
+
+	g_hash_table_iter_init (&iter, priv->connections);
+	while (g_hash_table_iter_next (&iter, NULL, &value))
+		list = g_slist_prepend (list, NM_REMOTE_CONNECTION (value));
+
+	return list;
+}
+
+typedef struct {
+	NMSettingsInterface *self;
+	NMSettingsAddConnectionFunc callback;
+	gpointer callback_data;
+} AddConnectionInfo;
+
+static void
+add_connection_done (DBusGProxy *proxy,
+                     GError *error,
+                     gpointer user_data)
+{
+	AddConnectionInfo *info = user_data;
+
+	info->callback (info->self, error, info->callback_data);
+	g_free (info);
+}
+
+static gboolean
+add_connection (NMSettingsInterface *settings,
+	            NMSettingsConnectionInterface *connection,
+	            NMSettingsAddConnectionFunc callback,
+	            gpointer user_data)
+{
+	NMRemoteSettings *self = NM_REMOTE_SETTINGS (settings);
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
+	AddConnectionInfo *info;
+	GHashTable *new_settings;
+
+	info = g_malloc0 (sizeof (AddConnectionInfo));
+	info->self = settings;
+	info->callback = callback;
+	info->callback_data = user_data;
+
+	new_settings = nm_connection_to_hash (NM_CONNECTION (connection));
+	org_freedesktop_NetworkManagerSettings_add_connection_async (priv->proxy,
+	                                                             new_settings,
+	                                                             add_connection_done,
+	                                                             info);
+	g_hash_table_destroy (new_settings);
+	return TRUE;
+}
+
+static gboolean
+remove_connections (gpointer user_data)
+{
+	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
+	GHashTableIter iter;
+	gpointer value;
+
+	g_hash_table_iter_init (&iter, priv->connections);
+	while (g_hash_table_iter_next (&iter, NULL, &value))
+		g_signal_emit_by_name (NM_REMOTE_CONNECTION (value), "removed");
+
+	g_hash_table_remove_all (priv->connections);
+	return FALSE;
+}
+
+static void
+name_owner_changed (DBusGProxy *proxy,
+                    const char *name,
+                    const char *old_owner,
+                    const char *new_owner,
+                    gpointer user_data)
+{
+	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
+	const char *sname = NM_DBUS_SERVICE_USER_SETTINGS;
+
+	if (priv->scope == NM_CONNECTION_SCOPE_SYSTEM)
+		sname = NM_DBUS_SERVICE_SYSTEM_SETTINGS;
+
+	if (!strcmp (name, sname)) {
+		if (priv->fetch_id)
+			g_source_remove (priv->fetch_id);
+
+		if (new_owner && strlen (new_owner) > 0)
+			priv->fetch_id = g_idle_add (fetch_connections, self);
+		else
+			priv->fetch_id = g_idle_add (remove_connections, self);
+	}
+}
+
+/****************************************************************/
+
+static void
+settings_interface_init (NMSettingsInterface *iface)
+{
+	/* interface implementation */
+	iface->list_connections = list_connections;
+	iface->get_connection_by_path = get_connection_by_path;
+	iface->add_connection = add_connection;
+}
+
+/**
+ * nm_remote_settings_new:
+ * @bus: a valid and connected D-Bus connection
+ * @scope: the settings service scope (either user or system)
+ *
+ * Creates a new object representing the remote settings service.
+ *
+ * Returns: the new remote settings object on success, or %NULL on failure
+ **/
+NMRemoteSettings *
+nm_remote_settings_new (DBusGConnection *bus, NMConnectionScope scope)
+{
+	g_return_val_if_fail (bus != NULL, NULL);
+	g_return_val_if_fail (scope != NM_CONNECTION_SCOPE_UNKNOWN, NULL);
+
+	return (NMRemoteSettings *) g_object_new (NM_TYPE_REMOTE_SETTINGS,
+	                                          NM_REMOTE_SETTINGS_BUS, bus,
+	                                          NM_REMOTE_SETTINGS_SCOPE, scope,
+	                                          NULL);
+}
+
+static void
+nm_remote_settings_init (NMRemoteSettings *self)
+{
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
+
+	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
+}
+
+static GObject *
+constructor (GType type,
+             guint n_construct_params,
+             GObjectConstructParam *construct_params)
+{
+	GObject *object;
+	NMRemoteSettingsPrivate *priv;
+	const char *service = NM_DBUS_SERVICE_USER_SETTINGS;
+
+	object = G_OBJECT_CLASS (nm_remote_settings_parent_class)->constructor (type, n_construct_params, construct_params);
+	if (!object)
+		return NULL;
+
+	priv = NM_REMOTE_SETTINGS_GET_PRIVATE (object);
+
+	/* D-Bus proxy for clearing connections on NameOwnerChanged */
+	priv->dbus_proxy = dbus_g_proxy_new_for_name (priv->bus,
+	                                              "org.freedesktop.DBus",
+	                                              "/org/freedesktop/DBus",
+	                                              "org.freedesktop.DBus");
+	g_assert (priv->dbus_proxy);
+
+	dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_STRING_STRING,
+	                                   G_TYPE_NONE,
+	                                   G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+	                                   G_TYPE_INVALID);
+	dbus_g_proxy_add_signal (priv->dbus_proxy, "NameOwnerChanged",
+	                         G_TYPE_STRING, G_TYPE_STRING, G_TYPE_STRING,
+	                         G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->dbus_proxy,
+	                             "NameOwnerChanged",
+	                             G_CALLBACK (name_owner_changed),
+	                             object, NULL);
+
+	/* Settings service proxy */
+	if (priv->scope == NM_CONNECTION_SCOPE_SYSTEM)
+		service = NM_DBUS_SERVICE_SYSTEM_SETTINGS;
+
+	priv->proxy = dbus_g_proxy_new_for_name (priv->bus,
+	                                         service,
+	                                         NM_DBUS_PATH_SETTINGS,
+	                                         NM_DBUS_IFACE_SETTINGS);
+	g_assert (priv->proxy);
+
+	dbus_g_proxy_add_signal (priv->proxy, "NewConnection",
+	                         DBUS_TYPE_G_OBJECT_PATH,
+	                         G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->proxy, "NewConnection",
+	                             G_CALLBACK (new_connection_cb),
+	                             object,
+	                             NULL);
+
+	priv->fetch_id = g_idle_add (fetch_connections, object);
+
+	return object;
+}
+
+static void
+dispose (GObject *object)
+{
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (object);
+
+	if (priv->disposed)
+		return;
+
+	priv->disposed = TRUE;
+
+	if (priv->fetch_id)
+		g_source_remove (priv->fetch_id);
+
+	if (priv->connections)
+		g_hash_table_destroy (priv->connections);
+
+	g_object_unref (priv->dbus_proxy);
+	g_object_unref (priv->proxy);
+	dbus_g_connection_unref (priv->bus);
+
+	G_OBJECT_CLASS (nm_remote_settings_parent_class)->dispose (object);
+}
+
+static void
+set_property (GObject *object, guint prop_id,
+              const GValue *value, GParamSpec *pspec)
+{
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_BUS:
+		/* Construct only */
+		priv->bus = dbus_g_connection_ref ((DBusGConnection *) g_value_get_boxed (value));
+		break;
+	case PROP_SCOPE:
+		priv->scope = (NMConnectionScope) g_value_get_uint (value);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+get_property (GObject *object, guint prop_id,
+              GValue *value, GParamSpec *pspec)
+{
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (object);
+
+	switch (prop_id) {
+	case PROP_BUS:
+		g_value_set_boxed (value, priv->bus);
+		break;
+	case PROP_SCOPE:
+		g_value_set_uint (value, priv->scope);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
+		break;
+	}
+}
+
+static void
+nm_remote_settings_class_init (NMRemoteSettingsClass *class)
+{
+	GObjectClass *object_class = G_OBJECT_CLASS (class);
+
+	g_type_class_add_private (class, sizeof (NMRemoteSettingsPrivate));
+
+	/* Virtual methods */
+	object_class->constructor = constructor;
+	object_class->set_property = set_property;
+	object_class->get_property = get_property;
+	object_class->dispose = dispose;
+
+	/* Properties */
+	g_object_class_install_property
+		(object_class, PROP_BUS,
+		 g_param_spec_boxed (NM_REMOTE_SETTINGS_BUS,
+		                     "DBusGConnection",
+		                     "DBusGConnection",
+		                     DBUS_TYPE_G_CONNECTION,
+		                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
+		(object_class, PROP_SCOPE,
+		 g_param_spec_uint (NM_REMOTE_SETTINGS_SCOPE,
+		                    "Scope",
+		                    "NMConnection scope",
+		                    NM_CONNECTION_SCOPE_UNKNOWN,
+		                    NM_CONNECTION_SCOPE_USER,
+		                    NM_CONNECTION_SCOPE_USER,
+		                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+}
+

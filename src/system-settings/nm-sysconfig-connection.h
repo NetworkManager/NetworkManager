@@ -21,7 +21,8 @@
 #ifndef NM_SYSCONFIG_CONNECTION_H
 #define NM_SYSCONFIG_CONNECTION_H
 
-#include <nm-settings.h>
+#include <nm-connection.h>
+#include <nm-exported-connection.h>
 
 G_BEGIN_DECLS
 
@@ -41,13 +42,6 @@ typedef struct {
 } NMSysconfigConnectionClass;
 
 GType nm_sysconfig_connection_get_type (void);
-
-/* Only for internal NM usage */
-GHashTable *nm_sysconfig_connection_get_secrets (NMSysconfigConnection *self,
-                                                 const gchar *setting_name,
-                                                 const gchar **hints,
-                                                 gboolean request_new,
-                                                 GError **error);
 
 G_END_DECLS
 

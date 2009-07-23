@@ -25,7 +25,7 @@
 #include <glib.h>
 #include <glib-object.h>
 #include <nm-connection.h>
-#include <nm-settings.h>
+#include <nm-settings-connection-interface.h>
 
 G_BEGIN_DECLS
 
@@ -61,6 +61,9 @@ GObject * nm_system_config_factory (void);
 #define NM_SYSTEM_CONFIG_INTERFACE_CAPABILITIES "capabilities"
 #define NM_SYSTEM_CONFIG_INTERFACE_HOSTNAME "hostname"
 
+#define NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED "unmanaged-specs-changed"
+#define NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED "connection-added"
+
 typedef enum {
 	NM_SYSTEM_CONFIG_INTERFACE_CAP_NONE = 0x00000000,
 	NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS = 0x00000001,
@@ -87,8 +90,9 @@ struct _NMSystemConfigInterface {
 	/* Called when the plugin is loaded to initialize it */
 	void     (*init) (NMSystemConfigInterface *config);
 
-	/* Returns the plugins currently known list of connections.  The returned
-	 * list is freed by the system settings service.
+	/* Returns a GSList of objects that implement NMSettingsConnectionInterface
+	 * that represent connections the plugin knows about.  The returned list
+	 * is freed by the system settings service.
 	 */
 	GSList * (*get_connections) (NMSystemConfigInterface *config);
 
@@ -109,15 +113,18 @@ struct _NMSystemConfigInterface {
 	/*
 	 * Add a new connection.
 	 */
-	gboolean (*add_connection) (NMSystemConfigInterface *config, NMConnection *connection, GError **error);
+	gboolean (*add_connection) (NMSystemConfigInterface *config,
+	                            NMConnection *connection,
+	                            GError **error);
 
 	/* Signals */
 
 	/* Emitted when a new connection has been found by the plugin */
-	void (*connection_added)   (NMSystemConfigInterface *config, NMExportedConnection *connection);
+	void (*connection_added)   (NMSystemConfigInterface *config,
+	                            NMSettingsConnectionInterface *connection);
 
-	/* Emitted when the list of unmanaged devices changes */
-	void (*unmanaged_devices_changed) (NMSystemConfigInterface *config);
+	/* Emitted when the list of unmanaged device specifications changes */
+	void (*unmanaged_specs_changed) (NMSystemConfigInterface *config);
 };
 
 GType nm_system_config_interface_get_type (void);

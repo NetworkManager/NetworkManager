@@ -24,7 +24,6 @@
 #include <glib/gi18n.h>
 
 #include <NetworkManager.h>
-#include <nm-settings.h>
 #include <nm-setting-connection.h>
 #include <nm-setting-wired.h>
 #include <nm-utils.h>
@@ -32,8 +31,15 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-marshal.h"
 #include "nm-default-wired-connection.h"
+#include "nm-settings-connection-interface.h"
 
-G_DEFINE_TYPE (NMDefaultWiredConnection, nm_default_wired_connection, NM_TYPE_SYSCONFIG_CONNECTION)
+static NMSettingsConnectionInterface *parent_settings_connection_iface;
+
+static void settings_connection_interface_init (NMSettingsConnectionInterface *iface);
+
+G_DEFINE_TYPE_EXTENDED (NMDefaultWiredConnection, nm_default_wired_connection, NM_TYPE_SYSCONFIG_CONNECTION, 0,
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_CONNECTION_INTERFACE,
+                                               settings_connection_interface_init))
 
 #define NM_DEFAULT_WIRED_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_DEFAULT_WIRED_CONNECTION, NMDefaultWiredConnectionPrivate))
 
@@ -86,18 +92,13 @@ nm_default_wired_connection_get_device (NMDefaultWiredConnection *wired)
 }
 
 static GByteArray *
-dup_wired_mac (NMExportedConnection *exported)
+dup_wired_mac (NMConnection *connection)
 {
-	NMConnection *wrapped;
 	NMSettingWired *s_wired;
 	const GByteArray *mac;
 	GByteArray *dup;
 
-	wrapped = nm_exported_connection_get_connection (exported);
-	if (!wrapped)
-		return NULL;
-
-	s_wired = (NMSettingWired *) nm_connection_get_setting (wrapped, NM_TYPE_SETTING_WIRED);
+	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
 	if (!s_wired)
 		return NULL;
 
@@ -111,53 +112,59 @@ dup_wired_mac (NMExportedConnection *exported)
 }
 
 static gboolean
-update (NMExportedConnection *exported,
-        GHashTable *new_settings,
-        GError **error)
+update (NMSettingsConnectionInterface *connection,
+	    NMSettingsConnectionInterfaceUpdateFunc callback,
+	    gpointer user_data)
 {
-	NMDefaultWiredConnection *connection = NM_DEFAULT_WIRED_CONNECTION (exported);
-	gboolean success;
+	NMDefaultWiredConnection *self = NM_DEFAULT_WIRED_CONNECTION (connection);
 	GByteArray *mac;
+	gboolean failed = FALSE;
 
 	/* Ensure object stays alive across signal emission */
-	g_object_ref (exported);
+	g_object_ref (self);
 
 	/* Save a copy of the current MAC address just in case the user
 	 * changed it when updating the connection.
 	 */
-	mac = dup_wired_mac (exported);
+	mac = dup_wired_mac (NM_CONNECTION (self));
 
-	/* Let NMSysconfigConnection check permissions */
-	success = NM_EXPORTED_CONNECTION_CLASS (nm_default_wired_connection_parent_class)->update (exported, new_settings, error);
-	if (success) {
-		g_signal_emit_by_name (connection, "try-update", new_settings, error);
-		success = *error ? FALSE : TRUE;
-
-		if (success)
-			g_signal_emit (connection, signals[DELETED], 0, mac);
-	}
+	g_signal_emit (self, signals[TRY_UPDATE], 0, &failed);
+	if (!failed)
+		g_signal_emit (connection, signals[DELETED], 0, mac);
 
 	g_byte_array_free (mac, TRUE);
-	g_object_unref (exported);
-	return success;
+	g_object_unref (self);
+
+	return parent_settings_connection_iface->update (connection, callback, user_data);
 }
 
-static gboolean
-do_delete (NMExportedConnection *exported, GError **error)
+static gboolean 
+do_delete (NMSettingsConnectionInterface *connection,
+	       NMSettingsConnectionInterfaceDeleteFunc callback,
+	       gpointer user_data)
 {
-	gboolean success;
+	NMDefaultWiredConnection *self = NM_DEFAULT_WIRED_CONNECTION (connection);
 	GByteArray *mac;
 
-	g_object_ref (exported);
-	mac = dup_wired_mac (exported);
+	g_object_ref (self);
+	mac = dup_wired_mac (NM_CONNECTION (self));
 
-	success = NM_EXPORTED_CONNECTION_CLASS (nm_default_wired_connection_parent_class)->do_delete (exported, error);
-	if (success)
-		g_signal_emit (exported, signals[DELETED], 0, mac);
+	g_signal_emit (self, signals[DELETED], 0, mac);
 	
 	g_byte_array_free (mac, TRUE);
-	g_object_unref (exported);
-	return success;
+	g_object_unref (self);
+
+	return parent_settings_connection_iface->delete (connection, callback, user_data);
+}
+
+/****************************************************************/
+
+static void
+settings_connection_interface_init (NMSettingsConnectionInterface *iface)
+{
+	parent_settings_connection_iface = g_type_interface_peek_parent (iface);
+	iface->update = update;
+	iface->delete = do_delete;
 }
 
 static void
@@ -172,7 +179,6 @@ constructor (GType type,
 {
 	GObject *object;
 	NMDefaultWiredConnectionPrivate *priv;
-	NMConnection *wrapped;
 	NMSettingConnection *s_con;
 	NMSettingWired *s_wired;
 	char *id, *uuid;
@@ -182,8 +188,6 @@ constructor (GType type,
 		return NULL;
 
 	priv = NM_DEFAULT_WIRED_CONNECTION_GET_PRIVATE (object);
-
-	wrapped = nm_connection_new ();
 
 	s_con = NM_SETTING_CONNECTION (nm_setting_connection_new ());
 
@@ -201,15 +205,12 @@ constructor (GType type,
 	g_free (id);
 	g_free (uuid);
 
-	nm_connection_add_setting (wrapped, NM_SETTING (s_con));
+	nm_connection_add_setting (NM_CONNECTION (object), NM_SETTING (s_con));
 
 	/* Lock the connection to the specific device */
 	s_wired = NM_SETTING_WIRED (nm_setting_wired_new ());
 	g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, priv->mac, NULL);
-	nm_connection_add_setting (wrapped, NM_SETTING (s_wired));
-
-	g_object_set (object, NM_EXPORTED_CONNECTION_CONNECTION, wrapped, NULL);
-	g_object_unref (wrapped);
+	nm_connection_add_setting (NM_CONNECTION (object), NM_SETTING (s_wired));
 
 	return object;
 }
@@ -288,19 +289,20 @@ try_update_signal_accumulator (GSignalInvocationHint *ihint,
                                const GValue *handler_return,
                                gpointer data)
 {
-	gpointer new_ptr = g_value_get_pointer (handler_return);
+	if (g_value_get_boolean (handler_return)) {
+		g_value_set_boolean (return_accu, TRUE);
+		/* Stop */
+		return FALSE;
+	}
 
-	g_value_set_pointer (return_accu, new_ptr);
-
-	/* Continue if no error was returned from the handler */
-	return new_ptr ? FALSE : TRUE;
+	/* Continue if handler didn't fail */
+	return TRUE;
 }
 
 static void
 nm_default_wired_connection_class_init (NMDefaultWiredConnectionClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
-	NMExportedConnectionClass *exported_class = NM_EXPORTED_CONNECTION_CLASS (klass);
 
 	g_type_class_add_private (klass, sizeof (NMDefaultWiredConnectionPrivate));
 
@@ -309,9 +311,6 @@ nm_default_wired_connection_class_init (NMDefaultWiredConnectionClass *klass)
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize = finalize;
-
-	exported_class->update = update;
-	exported_class->do_delete = do_delete;
 
 	/* Properties */
 	g_object_class_install_property
@@ -343,16 +342,14 @@ nm_default_wired_connection_class_init (NMDefaultWiredConnectionClass *klass)
 			      G_OBJECT_CLASS_TYPE (object_class),
 			      G_SIGNAL_RUN_LAST,
 			      0, try_update_signal_accumulator, NULL,
-			      _nm_marshal_POINTER__POINTER,
-			      G_TYPE_POINTER, 1,
-			      DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT);
+			      _nm_marshal_BOOLEAN__VOID,
+			      G_TYPE_BOOLEAN, 0);
 
 	/* The 'deleted' signal is used to signal intentional deletions (like
 	 * updating or user-requested deletion) rather than using the
-	 * NMExportedConnection superclass' 'removed' signal, since that signal
-	 * doesn't have the semantics we want; it gets emitted as a side-effect
-	 * of various operations and is meant more for D-Bus clients instead
-	 * of in-service uses.
+	 * superclass' 'removed' signal, since that signal doesn't have the
+	 * semantics we want; it gets emitted as a side-effect of various operations
+	 * and is meant more for D-Bus clients instead of in-service uses.
 	 */
 	signals[DELETED] =
 		g_signal_new ("deleted",
