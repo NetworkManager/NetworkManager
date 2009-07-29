@@ -1211,7 +1211,9 @@ eap_peap_reader (const char *eap_method,
 		if (!strlen (*iter))
 			continue;
 
-		if (!strcmp (*iter, "MSCHAPV2") || !strcmp (*iter, "MD5")) {
+		if (   !strcmp (*iter, "MSCHAPV2")
+		    || !strcmp (*iter, "MD5")
+		    || !strcmp (*iter, "GTC")) {
 			if (!eap_simple_reader (*iter, ifcfg, keys, s_8021x, TRUE, error))
 				goto done;
 		} else if (!strcmp (*iter, "TLS")) {
@@ -1224,7 +1226,6 @@ eap_peap_reader (const char *eap_method,
 			goto done;
 		}
 
-		// FIXME: OTP & GTC too
 		lower = g_ascii_strdown (*iter, -1);
 		g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTH, lower, NULL);
 		g_free (lower);
