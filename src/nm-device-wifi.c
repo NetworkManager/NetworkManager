@@ -3022,9 +3022,9 @@ real_act_stage4_get_ip4_config (NMDevice *dev,
 
 
 static NMActStageReturn
-real_act_stage4_ip_config_timeout (NMDevice *dev,
-                                   NMIP4Config **config,
-                                   NMDeviceStateReason *reason)
+real_act_stage4_ip4_config_timeout (NMDevice *dev,
+									NMIP4Config **config,
+									NMDeviceStateReason *reason)
 {
 	NMDeviceWifi *self = NM_DEVICE_WIFI (dev);
 	NMAccessPoint *ap = nm_device_wifi_get_activation_ap (self);
@@ -3070,7 +3070,7 @@ real_act_stage4_ip_config_timeout (NMDevice *dev,
 		/* For Ad-Hoc networks, chain up to parent to get a Zeroconf IP */
 		klass = NM_DEVICE_WIFI_GET_CLASS (self);
 		parent_class = NM_DEVICE_CLASS (g_type_class_peek_parent (klass));
-		ret = parent_class->act_stage4_ip_config_timeout (dev, &real_config, reason);
+		ret = parent_class->act_stage4_ip4_config_timeout (dev, &real_config, reason);
 	} else {
 		/* Non-encrypted network or authentication is enforced by some
 		 * entity (AP, RADIUS server, etc), but IP configure failed.  Alert
@@ -3555,7 +3555,7 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 	parent_class->act_stage1_prepare = real_act_stage1_prepare;
 	parent_class->act_stage2_config = real_act_stage2_config;
 	parent_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
-	parent_class->act_stage4_ip_config_timeout = real_act_stage4_ip_config_timeout;
+	parent_class->act_stage4_ip4_config_timeout = real_act_stage4_ip4_config_timeout;
 	parent_class->deactivate = real_deactivate;
 	parent_class->deactivate_quickly = real_deactivate_quickly;
 	parent_class->can_interrupt_activation = real_can_interrupt_activation;

@@ -29,6 +29,7 @@
 #include "NetworkManager.h"
 #include "nm-activation-request.h"
 #include "nm-ip4-config.h"
+#include "nm-ip6-config.h"
 #include "nm-dhcp4-config.h"
 #include "nm-connection.h"
 
@@ -92,13 +93,21 @@ typedef struct {
 	                                             NMDeviceStateReason *reason);
 	NMActStageReturn	(* act_stage2_config)	(NMDevice *self,
 	                                             NMDeviceStateReason *reason);
-	NMActStageReturn	(* act_stage3_ip_config_start) (NMDevice *self,
-	                                                    NMDeviceStateReason *reason);
+	NMActStageReturn	(* act_stage3_ip4_config_start) (NMDevice *self,
+														 NMDeviceStateReason *reason);
+	NMActStageReturn	(* act_stage3_ip6_config_start) (NMDevice *self,
+														 NMDeviceStateReason *reason);
 	NMActStageReturn	(* act_stage4_get_ip4_config)	(NMDevice *self,
 														 NMIP4Config **config,
 	                                                     NMDeviceStateReason *reason);
-	NMActStageReturn	(* act_stage4_ip_config_timeout)	(NMDevice *self,
+	NMActStageReturn	(* act_stage4_get_ip6_config)	(NMDevice *self,
+														 NMIP6Config **config,
+	                                                     NMDeviceStateReason *reason);
+	NMActStageReturn	(* act_stage4_ip4_config_timeout)	(NMDevice *self,
 	                                                         NMIP4Config **config,
+	                                                         NMDeviceStateReason *reason);
+	NMActStageReturn	(* act_stage4_ip6_config_timeout)	(NMDevice *self,
+	                                                         NMIP6Config **config,
 	                                                         NMDeviceStateReason *reason);
 	void			(* deactivate)			(NMDevice *self);
 	void			(* deactivate_quickly)	(NMDevice *self);
@@ -128,7 +137,6 @@ int			nm_device_get_priority (NMDevice *dev);
 
 guint32			nm_device_get_ip4_address	(NMDevice *dev);
 void				nm_device_update_ip4_address	(NMDevice *dev);
-struct in6_addr *	nm_device_get_ip6_address	(NMDevice *dev);
 
 gboolean		nm_device_get_use_dhcp	(NMDevice *dev);
 void			nm_device_set_use_dhcp	(NMDevice *dev,
@@ -136,6 +144,7 @@ void			nm_device_set_use_dhcp	(NMDevice *dev,
 NMDHCP4Config * nm_device_get_dhcp4_config (NMDevice *dev);
 
 NMIP4Config *	nm_device_get_ip4_config	(NMDevice *dev);
+NMIP6Config *	nm_device_get_ip6_config	(NMDevice *dev);
 
 void *		nm_device_get_system_config_data	(NMDevice *dev);
 
@@ -149,8 +158,10 @@ NMConnection * nm_device_get_best_auto_connection (NMDevice *dev,
 
 void			nm_device_activate_schedule_stage1_device_prepare		(NMDevice *device);
 void			nm_device_activate_schedule_stage2_device_config		(NMDevice *device);
-void			nm_device_activate_schedule_stage4_ip_config_get		(NMDevice *device);
-void			nm_device_activate_schedule_stage4_ip_config_timeout	(NMDevice *device);
+void			nm_device_activate_schedule_stage4_ip4_config_get		(NMDevice *device);
+void			nm_device_activate_schedule_stage4_ip4_config_timeout	(NMDevice *device);
+void			nm_device_activate_schedule_stage4_ip6_config_get		(NMDevice *device);
+void			nm_device_activate_schedule_stage4_ip6_config_timeout	(NMDevice *device);
 gboolean		nm_device_deactivate_quickly	(NMDevice *dev);
 gboolean		nm_device_is_activating		(NMDevice *dev);
 gboolean		nm_device_can_interrupt_activation		(NMDevice *self);

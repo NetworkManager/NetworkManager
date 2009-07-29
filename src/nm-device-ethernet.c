@@ -1255,7 +1255,7 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 
 	nm_device_set_ip_iface (device, iface);
 	NM_DEVICE_ETHERNET_GET_PRIVATE (device)->pending_ip4_config = g_object_ref (config);
-	nm_device_activate_schedule_stage4_ip_config_get (device);
+	nm_device_activate_schedule_stage4_ip4_config_get (device);
 }
 
 static NMActStageReturn
