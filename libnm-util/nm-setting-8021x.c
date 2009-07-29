@@ -947,7 +947,7 @@ static EAPMethodsTable eap_methods_table[] = {
 	{ "peap", need_secrets_phase2, verify_ttls },
 	{ "ttls", need_secrets_phase2, verify_ttls },
 	{ "sim", need_secrets_sim, NULL },
-	{ "gtc", NULL, NULL },  // FIXME: implement
+	{ "gtc", need_secrets_password, verify_identity },
 	{ "otp", NULL, NULL },  // FIXME: implement
 	{ NULL, NULL, NULL }
 };
