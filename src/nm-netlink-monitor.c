@@ -227,6 +227,11 @@ out:
 static int
 netlink_event_input (struct nl_msg *msg, void *arg)
 {
+	struct nlmsghdr *hdr = nlmsg_hdr (msg);
+
+	if (hdr->nlmsg_pid != 0)
+		return NL_STOP;
+
 	nl_msg_parse (msg, &netlink_object_message_handler, arg);
 
 	/* Stop processing messages */

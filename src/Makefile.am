@@ -2,6 +2,7 @@ SUBDIRS= \
 	named-manager \
 	vpn-manager \
 	dhcp-manager \
+	ip6-manager \
 	supplicant-manager \
 	ppp-manager \
 	backends \
@@ -18,6 +19,7 @@ INCLUDES = -I${top_srcdir}                   \
            -I${top_srcdir}/src/named-manager \
            -I${top_srcdir}/src/vpn-manager   \
            -I${top_srcdir}/src/dhcp-manager  \
+           -I${top_srcdir}/src/ip6-manager  \
            -I${top_srcdir}/src/supplicant-manager  \
            -I${top_srcdir}/src/dnsmasq-manager  \
            -I${top_srcdir}/src/modem-manager  \
@@ -182,6 +184,7 @@ NetworkManager_LDADD = \
 	./named-manager/libnamed-manager.la \
 	./vpn-manager/libvpn-manager.la \
 	./dhcp-manager/libdhcp-manager.la \
+	./ip6-manager/libip6-manager.la \
 	./supplicant-manager/libsupplicant-manager.la \
 	./dnsmasq-manager/libdnsmasq-manager.la \
 	./ppp-manager/libppp-manager.la \
