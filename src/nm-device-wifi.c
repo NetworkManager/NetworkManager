@@ -3610,7 +3610,8 @@ nm_device_wifi_class_init (NMDeviceWifiClass *klass)
 		g_param_spec_boolean (NM_DEVICE_WIFI_SCANNING,
 		                   "Scanning",
 		                   "Scanning",
-		                   0, G_PARAM_READABLE));
+		                   FALSE,
+		                   G_PARAM_READABLE | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	/* Signals */
 	signals[ACCESS_POINT_ADDED] =

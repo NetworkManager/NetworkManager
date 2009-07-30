@@ -23,6 +23,7 @@
 #include "nm-setting-connection.h"
 #include "nm-device-interface.h"
 #include "nm-utils.h"
+#include "nm-properties-changed-signal.h"
 
 #include "nm-device-interface-glue.h"
 
@@ -152,7 +153,7 @@ nm_device_interface_init (gpointer g_iface)
 							  "Type Description",
 							  "Device type description",
 							  NULL,
-							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	/* Signals */
 	g_signal_new ("state-changed",
