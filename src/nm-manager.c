@@ -348,12 +348,24 @@ manager_device_state_changed (NMDevice *device,
 
 /* Removes a device from a device list; returns the start of the new device list */
 static GSList *
-remove_one_device (NMManager *manager, GSList *list, NMDevice *device)
+remove_one_device (NMManager *manager,
+                   GSList *list,
+                   NMDevice *device,
+                   gboolean quitting)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
-	if (nm_device_get_managed (device))
-		nm_device_set_managed (device, FALSE, NM_DEVICE_STATE_REASON_REMOVED);
+	if (nm_device_get_managed (device)) {
+		gboolean unmanage = !quitting;
+
+		/* Don't unmanage active assume-connection-capable devices at shutdown */
+		if (   nm_device_interface_can_assume_connection (NM_DEVICE_INTERFACE (device))
+		    && nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED)
+			unmanage = FALSE;
+
+		if (unmanage)
+			nm_device_set_managed (device, FALSE, NM_DEVICE_STATE_REASON_REMOVED);
+	}
 
 	g_signal_handlers_disconnect_by_func (device, manager_device_state_changed, manager);
 
@@ -372,7 +384,7 @@ modem_removed (NMModemManager *modem_manager,
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
-	priv->devices = remove_one_device (self, priv->devices, modem);
+	priv->devices = remove_one_device (self, priv->devices, modem, FALSE);
 }
 
 static void
@@ -1153,6 +1165,10 @@ add_device (NMManager *self, NMDevice *device)
 	char *path;
 	static guint32 devcount = 0;
 	const GSList *unmanaged_specs;
+	GSList *connections = NULL;
+	NMConnection *existing;
+	GHashTableIter iter;
+	gpointer value;
 
 	priv->devices = g_slist_append (priv->devices, device);
 
@@ -1188,6 +1204,16 @@ add_device (NMManager *self, NMDevice *device)
 	                                     G_OBJECT (device));
 	nm_info ("(%s): exported as %s", iface, path);
 	g_free (path);
+
+	/* Check if we should assume the device's active connection by matching its
+	 * config with an existing system connection.
+	 */
+	g_hash_table_iter_init (&iter, priv->system_connections);
+	while (g_hash_table_iter_next (&iter, NULL, &value))
+		connections = g_slist_append (connections, value);
+	existing = nm_device_interface_connection_match_config (NM_DEVICE_INTERFACE (device),
+	                                                        (const GSList *) connections);
+	g_slist_free (connections);
 
 	/* Start the device if it's supposed to be managed */
 	unmanaged_specs = nm_sysconfig_settings_get_unmanaged_specs (priv->sys_settings);
@@ -1302,7 +1328,7 @@ bluez_manager_resync_devices (NMManager *self)
 		priv->devices = keep;
 
 		while (g_slist_length (gone))
-			gone = remove_one_device (self, gone, NM_DEVICE (gone->data));
+			gone = remove_one_device (self, gone, NM_DEVICE (gone->data), FALSE);
 	} else {
 		g_slist_free (keep);
 		g_slist_free (gone);
@@ -1372,7 +1398,7 @@ bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
 		NMDevice *device = NM_DEVICE (iter->data);
 
 		if (!strcmp (nm_device_get_udi (device), object_path)) {
-			priv->devices = remove_one_device (self, priv->devices, device);
+			priv->devices = remove_one_device (self, priv->devices, device, FALSE);
 			break;
 		}
 	}
@@ -1433,8 +1459,7 @@ udev_device_removed_cb (NMUdevManager *manager,
 	ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
 	device = find_device_by_ifindex (self, ifindex);
 	if (device)
-		priv->devices = remove_one_device (self, priv->devices, device);
-
+		priv->devices = remove_one_device (self, priv->devices, device, FALSE);
 }
 
 static void
@@ -2522,7 +2547,7 @@ dispose (GObject *object)
 	while (g_slist_length (priv->devices)) {
 		NMDevice *device = NM_DEVICE (priv->devices->data);
 
-		priv->devices = remove_one_device (manager, priv->devices, device);
+		priv->devices = remove_one_device (manager, priv->devices, device, TRUE);
 	}
 
 	user_destroy_connections (manager);

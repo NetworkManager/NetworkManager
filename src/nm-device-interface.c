@@ -282,8 +282,29 @@ gboolean
 nm_device_interface_spec_match_list (NMDeviceInterface *device,
                                      const GSList *specs)
 {
+	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), FALSE);
+
 	if (NM_DEVICE_INTERFACE_GET_INTERFACE (device)->spec_match_list)
 		return NM_DEVICE_INTERFACE_GET_INTERFACE (device)->spec_match_list (device, specs);
 	return FALSE;
+}
+
+NMConnection *
+nm_device_interface_connection_match_config (NMDeviceInterface *device,
+                                             const GSList *connections)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), NULL);
+
+	if (NM_DEVICE_INTERFACE_GET_INTERFACE (device)->connection_match_config)
+		return NM_DEVICE_INTERFACE_GET_INTERFACE (device)->connection_match_config (device, connections);
+	return NULL;
+}
+
+gboolean
+nm_device_interface_can_assume_connection (NMDeviceInterface *device)
+{
+	g_return_val_if_fail (NM_IS_DEVICE_INTERFACE (device), FALSE);
+
+	return !!NM_DEVICE_INTERFACE_GET_INTERFACE (device)->connection_match_config;
 }
 

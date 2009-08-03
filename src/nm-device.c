@@ -121,7 +121,8 @@ static gboolean nm_device_activate (NMDeviceInterface *device,
                                     NMActRequest *req,
                                     GError **error);
 static void nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason);
-static gboolean nm_device_spec_match_list (NMDeviceInterface *device, const GSList *specs);
+static gboolean spec_match_list (NMDeviceInterface *device, const GSList *specs);
+static NMConnection *connection_match_config (NMDeviceInterface *device, const GSList *connections);
 
 static void nm_device_activate_schedule_stage5_ip_config_commit (NMDevice *self);
 
@@ -139,7 +140,8 @@ device_interface_init (NMDeviceInterface *device_interface_class)
 	device_interface_class->check_connection_compatible = check_connection_compatible;
 	device_interface_class->activate = nm_device_activate;
 	device_interface_class->deactivate = nm_device_deactivate;
-	device_interface_class->spec_match_list = nm_device_spec_match_list;
+	device_interface_class->spec_match_list = spec_match_list;
+	device_interface_class->connection_match_config = connection_match_config;
 }
 
 
@@ -2202,25 +2204,45 @@ dispose (GObject *object)
 {
 	NMDevice *self = NM_DEVICE (object);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gboolean take_down = TRUE;
 
 	if (priv->disposed || !priv->initialized)
 		goto out;
 
 	priv->disposed = TRUE;
 
+	/* Don't down can-assume-connection capable devices that are activated with
+	 * a connection that can be assumed.
+	 */
+	if (nm_device_interface_can_assume_connection (NM_DEVICE_INTERFACE (self))
+		&& (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED)) {
+		NMConnection *connection;
+	    NMSettingIP4Config *s_ip4;
+		const char *method = NULL;
+
+		/* Only system connections can be left up */
+		connection = nm_act_request_get_connection (priv->act_request);
+		if (   connection
+		    && (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_SYSTEM)) {
+
+			/* Only static or DHCP connections can be left up */
+			s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+			g_assert (s_ip4);
+
+			method = nm_setting_ip4_config_get_method (s_ip4);
+			if (   !method
+			    || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)
+			    || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL))
+				take_down = FALSE;
+		}
+	}
+
 	if (priv->failed_to_disconnected_id) {
 		g_source_remove (priv->failed_to_disconnected_id);
 		priv->failed_to_disconnected_id = 0;
 	}
 
-	/* 
-	 * In dispose, you are supposed to free all types referenced from this
-	 * object which might themselves hold a reference to self. Generally,
-	 * the most simple solution is to unref all members on which you own a 
-	 * reference.
-	 */
-
-	if (priv->managed) {
+	if (priv->managed && take_down) {
 		NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
 
 		nm_device_take_down (self, FALSE, NM_DEVICE_STATE_REASON_REMOVED);
@@ -2231,7 +2253,8 @@ dispose (GObject *object)
 
 	activation_source_clear (self, TRUE);
 
-	nm_device_set_use_dhcp (self, FALSE);
+	if (!take_down)
+		nm_device_set_use_dhcp (self, FALSE);
 
 	if (priv->dnsmasq_manager) {
 		if (priv->dnsmasq_state_id) {
@@ -2577,7 +2600,7 @@ nm_device_set_managed (NMDevice *device,
 }
 
 static gboolean
-nm_device_spec_match_list (NMDeviceInterface *device, const GSList *specs)
+spec_match_list (NMDeviceInterface *device, const GSList *specs)
 {
 	NMDevice *self;
 
@@ -2588,6 +2611,16 @@ nm_device_spec_match_list (NMDeviceInterface *device, const GSList *specs)
 		return NM_DEVICE_GET_CLASS (self)->spec_match_list (self, specs);
 
 	return FALSE;
+}
+
+static NMConnection *
+connection_match_config (NMDeviceInterface *device, const GSList *connections)
+{
+	g_return_val_if_fail (device != NULL, FALSE);
+
+	if (NM_DEVICE_GET_CLASS (device)->connection_match_config)
+		return NM_DEVICE_GET_CLASS (device)->connection_match_config (NM_DEVICE (device), connections);
+	return NULL;
 }
 
 void
