@@ -639,7 +639,7 @@ user_connection_get_settings_cb  (DBusGProxy *proxy,
 			g_object_set_data_full (G_OBJECT (connection),
 			                        "proxy",
 			                        g_object_ref (info->proxy),
-			                        g_object_unref);
+									g_object_unref);
 		} else
 			g_object_unref (connection);
 

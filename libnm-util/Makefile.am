@@ -17,6 +17,7 @@ libnm_util_include_HEADERS = 		\
 	nm-setting-bluetooth.h		\
 	nm-setting-connection.h		\
 	nm-setting-ip4-config.h		\
+	nm-setting-ip6-config.h		\
 	nm-setting-ppp.h		\
 	nm-setting-pppoe.h		\
 	nm-setting-serial.h		\
@@ -106,5 +107,5 @@ pkgconfig_DATA = libnm-util.pc
 
 DISTCLEANFILES = libnm-util.pc
 
-EXTRA_DIST = libnm-util.pc.in libnm-util.ver nm-setting-ip6-config.h
+EXTRA_DIST = libnm-util.pc.in libnm-util.ver
 

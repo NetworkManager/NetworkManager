@@ -33,8 +33,8 @@
  * implemented in the backend files in backends/ directory
  */
 
-void			nm_system_device_flush_ip4_routes				(NMDevice *dev);
-void			nm_system_device_flush_ip4_routes_with_iface	(const char *iface);
+void			nm_system_device_flush_routes				(NMDevice *dev);
+void			nm_system_device_flush_routes_with_iface	(const char *iface);
 
 gboolean		nm_system_replace_default_ip4_route   (const char *iface,
                                                        guint32 gw,
@@ -50,8 +50,8 @@ gboolean		nm_system_replace_default_ip4_route_vpn (const char *iface,
 struct rtnl_route *nm_system_add_ip4_vpn_gateway_route (NMDevice *parent_device, NMIP4Config *vpn_config);
 
 
-void			nm_system_device_flush_ip4_addresses			(NMDevice *dev);
-void			nm_system_device_flush_ip4_addresses_with_iface	(const char *iface);
+void			nm_system_device_flush_addresses			(NMDevice *dev);
+void			nm_system_device_flush_addresses_with_iface	(const char *iface);
 
 void			nm_system_enable_loopback				(void);
 void			nm_system_update_dns					(void);
@@ -60,6 +60,11 @@ gboolean		nm_system_apply_ip4_config              (const char *iface,
                                                          NMIP4Config *config,
                                                          int priority,
                                                          NMIP4ConfigCompareFlags flags);
+
+gboolean		nm_system_apply_ip6_config              (const char *iface,
+                                                         NMIP6Config *config,
+                                                         int priority,
+                                                         NMIP6ConfigCompareFlags flags);
 
 gboolean		nm_system_device_set_up_down				(NMDevice *dev,
                                                              gboolean up,

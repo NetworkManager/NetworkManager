@@ -131,7 +131,7 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 
 	nm_device_set_ip_iface (device, iface);
 	NM_MODEM_GET_PRIVATE (device)->pending_ip4_config = g_object_ref (config);
-	nm_device_activate_schedule_stage4_ip_config_get (device);
+	nm_device_activate_schedule_stage4_ip4_config_get (device);
 }
 
 static void
@@ -235,7 +235,7 @@ static_stage3_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_da
 										  g_value_get_uint (g_value_array_get_nth (ret_array, i)));
 
 		g_value_array_free (ret_array);
-		nm_device_activate_schedule_stage4_ip_config_get (device);
+		nm_device_activate_schedule_stage4_ip4_config_get (device);
 	} else {
 		nm_warning ("Retrieving IP4 configuration failed: %s", error->message);
 		g_error_free (error);
@@ -303,7 +303,7 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 }
 
 static NMActStageReturn
-real_act_stage3_ip_config_start (NMDevice *device, NMDeviceStateReason *reason)
+real_act_stage3_ip4_config_start (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMActStageReturn ret;
 
@@ -315,7 +315,7 @@ real_act_stage3_ip_config_start (NMDevice *device, NMDeviceStateReason *reason)
 		ret = static_stage3_config (device, reason);
 		break;
 	case MM_MODEM_IP_METHOD_DHCP:
-		ret = NM_DEVICE_CLASS (nm_modem_parent_class)->act_stage3_ip_config_start (device, reason);
+		ret = NM_DEVICE_CLASS (nm_modem_parent_class)->act_stage3_ip4_config_start (device, reason);
 		break;
 	default:
 		g_warning ("Invalid IP method");
@@ -376,8 +376,8 @@ real_deactivate_quickly (NMDevice *device)
 	case MM_MODEM_IP_METHOD_DHCP:
 		iface = nm_device_get_iface (device);
 
-		nm_system_device_flush_ip4_routes_with_iface (iface);
-		nm_system_device_flush_ip4_addresses_with_iface (iface);
+		nm_system_device_flush_routes_with_iface (iface);
+		nm_system_device_flush_addresses_with_iface (iface);
 		nm_system_device_set_up_down_with_iface (iface, FALSE, NULL);
 		break;
 	default:
@@ -611,7 +611,7 @@ nm_modem_class_init (NMModemClass *klass)
 
 	device_class->get_generic_capabilities = real_get_generic_capabilities;
 	device_class->act_stage2_config = real_act_stage2_config;
-	device_class->act_stage3_ip_config_start = real_act_stage3_ip_config_start;
+	device_class->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;
 	device_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 	device_class->deactivate_quickly = real_deactivate_quickly;
 	device_class->hw_is_up = real_hw_is_up;

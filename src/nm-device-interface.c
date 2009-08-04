@@ -126,6 +126,14 @@ nm_device_interface_init (gpointer g_iface)
 
 	g_object_interface_install_property
 		(g_iface,
+		 g_param_spec_boxed (NM_DEVICE_INTERFACE_IP6_CONFIG,
+							  "IP6 Config",
+							  "IP6 Config",
+							  DBUS_TYPE_G_OBJECT_PATH,
+							  G_PARAM_READWRITE));
+
+	g_object_interface_install_property
+		(g_iface,
 		 g_param_spec_uint (NM_DEVICE_INTERFACE_STATE,
 							"State",
 							"State",
