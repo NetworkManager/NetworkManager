@@ -68,6 +68,8 @@ NetworkManager_SOURCES = \
 		nm-device-ethernet.h \
 		nm-device-wifi.c \
 		nm-device-wifi.h \
+		nm-device-olpc-mesh.c	\
+		nm-device-olpc-mesh.h	\
 		nm-device-bt.c \
 		nm-device-bt.h \
 		NetworkManagerAP.c \
@@ -128,6 +130,9 @@ nm-device-wifi-glue.h: $(top_srcdir)/introspection/nm-device-wifi.xml
 nm-device-bt-glue.h: $(top_srcdir)/introspection/nm-device-bt.xml
 	dbus-binding-tool --prefix=nm_device_bt --mode=glib-server --output=$@ $<
 
+nm-device-olpc-mesh-glue.h: $(top_srcdir)/introspection/nm-device-olpc-mesh.xml
+	dbus-binding-tool --prefix=nm_device_olpc_mesh --mode=glib-server --output=$@ $<
+
 nm-ip4-config-glue.h: $(top_srcdir)/introspection/nm-ip4-config.xml
 	dbus-binding-tool --prefix=nm_ip4_config --mode=glib-server --output=$@ $<
 
@@ -146,6 +151,7 @@ BUILT_SOURCES = \
 	nm-device-interface-glue.h \
 	nm-device-ethernet-glue.h \
 	nm-device-wifi-glue.h \
+	nm-device-olpc-mesh-glue.h \
 	nm-device-bt-glue.h \
 	nm-ip4-config-glue.h \
 	nm-ip6-config-glue.h \

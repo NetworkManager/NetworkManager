@@ -77,7 +77,8 @@ typedef enum NMDeviceType
 	NM_DEVICE_TYPE_WIFI,
 	NM_DEVICE_TYPE_GSM,
 	NM_DEVICE_TYPE_CDMA,
-	NM_DEVICE_TYPE_BT  /* Bluetooth */
+	NM_DEVICE_TYPE_BT,  /* Bluetooth */
+	NM_DEVICE_TYPE_OLPC_MESH
 } NMDeviceType;
 
 /* DEPRECATED TYPE NAMES */

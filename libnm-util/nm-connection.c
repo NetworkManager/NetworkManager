@@ -41,6 +41,7 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-vpn.h"
+#include "nm-setting-olpc-mesh.h"
 
 #include "nm-setting-serial.h"
 #include "nm-setting-gsm.h"
@@ -214,6 +215,11 @@ register_default_settings (void)
 	register_one_setting (NM_SETTING_WIRELESS_SETTING_NAME,
 	                      NM_TYPE_SETTING_WIRELESS,
 	                      NM_SETTING_WIRELESS_ERROR,
+	                      1);
+
+	register_one_setting (NM_SETTING_OLPC_MESH_SETTING_NAME,
+	                      NM_TYPE_SETTING_OLPC_MESH,
+	                      NM_SETTING_OLPC_MESH_ERROR,
 	                      1);
 
 	register_one_setting (NM_SETTING_GSM_SETTING_NAME,

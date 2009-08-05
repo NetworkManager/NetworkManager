@@ -35,6 +35,7 @@
 #include "nm-device-private.h"
 #include "nm-device-ethernet.h"
 #include "nm-device-wifi.h"
+#include "nm-device-olpc-mesh.h"
 #include "NetworkManagerSystem.h"
 #include "nm-properties-changed-signal.h"
 #include "nm-setting-bluetooth.h"
@@ -1392,6 +1393,8 @@ find_device_by_ifindex (NMManager *self, guint32 ifindex)
 			candidate_idx = nm_device_ethernet_get_ifindex (NM_DEVICE_ETHERNET (device));
 		else if (NM_IS_DEVICE_WIFI (device))
 			candidate_idx = nm_device_wifi_get_ifindex (NM_DEVICE_WIFI (device));
+		else if (NM_IS_DEVICE_OLPC_MESH (device))
+			candidate_idx = nm_device_olpc_mesh_get_ifindex (NM_DEVICE_OLPC_MESH (device));
 
 		if (candidate_idx == ifindex)
 			return device;

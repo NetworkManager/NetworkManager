@@ -303,6 +303,10 @@ global:
 	nm_setting_wireless_security_remove_pairwise;
 	nm_setting_wireless_security_remove_proto;
 	nm_setting_wireless_security_set_wep_key;
+	nm_setting_olpc_mesh_get_type;
+	nm_setting_olpc_mesh_get_ssid;
+	nm_setting_olpc_mesh_get_channel;
+	nm_setting_olpc_mesh_get_dhcp_anycast_address;
 	nm_utils_deinit;
 	nm_utils_escape_ssid;
 	nm_utils_gvalue_hash_dup;
