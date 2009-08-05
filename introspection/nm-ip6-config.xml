@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<node name="/" xmlns:tp="http://telepathy.freedesktop.org/wiki/DbusSpec#extensions-v0">
+  <interface name="org.freedesktop.NetworkManager.IP6Config">
+    <property name="Addresses" type="a(ayu)" access="read">
+      <tp:docstring>Tuples of IPv6 address/prefix.</tp:docstring>
+    </property>
+    <property name="Nameservers" type="aay" access="read">
+      <tp:docstring>The nameservers in use.</tp:docstring>
+    </property>
+    <property name="Domains" type="as" access="read">
+      <tp:docstring>A list of domains this address belongs to.</tp:docstring>
+    </property>
+    <property name="Routes" type="a(ayuayu)" access="read">
+      <tp:docstring>Tuples of IPv6 route/prefix/next-hop/metric.</tp:docstring>
+    </property>
+  </interface>
+</node>
+

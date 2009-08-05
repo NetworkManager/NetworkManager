@@ -23,6 +23,7 @@
 #include "nm-setting-connection.h"
 #include "nm-device-interface.h"
 #include "nm-utils.h"
+#include "nm-properties-changed-signal.h"
 
 #include "nm-device-interface-glue.h"
 
@@ -125,6 +126,14 @@ nm_device_interface_init (gpointer g_iface)
 
 	g_object_interface_install_property
 		(g_iface,
+		 g_param_spec_boxed (NM_DEVICE_INTERFACE_IP6_CONFIG,
+							  "IP6 Config",
+							  "IP6 Config",
+							  DBUS_TYPE_G_OBJECT_PATH,
+							  G_PARAM_READWRITE));
+
+	g_object_interface_install_property
+		(g_iface,
 		 g_param_spec_uint (NM_DEVICE_INTERFACE_STATE,
 							"State",
 							"State",
@@ -152,7 +161,7 @@ nm_device_interface_init (gpointer g_iface)
 							  "Type Description",
 							  "Device type description",
 							  NULL,
-							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	/* Signals */
 	g_signal_new ("state-changed",

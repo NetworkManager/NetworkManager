@@ -20,8 +20,11 @@
  */
 
 #include <glib.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "NetworkManagerUtils.h"
 #include "nm-utils.h"
@@ -259,6 +262,112 @@ nm_utils_merge_ip4_config (NMIP4Config *ip4_config, NMSettingIP4Config *setting)
 		nm_ip4_config_set_never_default (ip4_config, TRUE);
 }
 
+static inline gboolean
+ip6_addresses_equal (const struct in6_addr *a, const struct in6_addr *b)
+{
+	return memcmp (a, b, sizeof (struct in6_addr)) == 0;
+}
+
+/* This is exactly identical to nm_utils_merge_ip4_config, with s/4/6/,
+ * except that we can't compare addresses with ==.
+ */
+void
+nm_utils_merge_ip6_config (NMIP6Config *ip6_config, NMSettingIP6Config *setting)
+{
+	int i, j;
+
+	if (!setting)
+		return; /* Defaults are just fine */
+
+	if (nm_setting_ip6_config_get_ignore_auto_dns (setting)) {
+		nm_ip6_config_reset_nameservers (ip6_config);
+		nm_ip6_config_reset_domains (ip6_config);
+		nm_ip6_config_reset_searches (ip6_config);
+	}
+
+	if (nm_setting_ip6_config_get_ignore_auto_routes (setting))
+		nm_ip6_config_reset_routes (ip6_config);
+
+	for (i = 0; i < nm_setting_ip6_config_get_num_dns (setting); i++) {
+		const struct in6_addr *ns;
+		gboolean found = FALSE;
+
+		/* Avoid dupes */
+		ns = nm_setting_ip6_config_get_dns (setting, i);
+		for (j = 0; j < nm_ip6_config_get_num_nameservers (ip6_config); j++) {
+			if (ip6_addresses_equal (nm_ip6_config_get_nameserver (ip6_config, j), ns)) {
+				found = TRUE;
+				break;
+			}
+		}
+
+		if (!found)
+			nm_ip6_config_add_nameserver (ip6_config, ns);
+	}
+
+	/* DNS search domains */
+	for (i = 0; i < nm_setting_ip6_config_get_num_dns_searches (setting); i++) {
+		const char *search = nm_setting_ip6_config_get_dns_search (setting, i);
+		gboolean found = FALSE;
+
+		/* Avoid dupes */
+		for (j = 0; j < nm_ip6_config_get_num_searches (ip6_config); j++) {
+			if (!strcmp (search, nm_ip6_config_get_search (ip6_config, j))) {
+				found = TRUE;
+				break;
+			}
+		}
+
+		if (!found)
+			nm_ip6_config_add_search (ip6_config, search);
+	}
+
+	/* IPv6 addresses */
+	for (i = 0; i < nm_setting_ip6_config_get_num_addresses (setting); i++) {
+		NMIP6Address *setting_addr = nm_setting_ip6_config_get_address (setting, i);
+		guint32 num;
+
+		num = nm_ip6_config_get_num_addresses (ip6_config);
+		for (j = 0; j < num; j++) {
+			NMIP6Address *cfg_addr = nm_ip6_config_get_address (ip6_config, j);
+
+			/* Dupe, override with user-specified address */
+			if (ip6_addresses_equal (nm_ip6_address_get_address (cfg_addr), nm_ip6_address_get_address (setting_addr))) {
+				nm_ip6_config_replace_address (ip6_config, j, setting_addr);
+				break;
+			}
+		}
+
+		if (j == num)
+			nm_ip6_config_add_address (ip6_config, setting_addr);
+	}
+
+	/* IPv6 routes */
+	for (i = 0; i < nm_setting_ip6_config_get_num_routes (setting); i++) {
+		NMIP6Route *setting_route = nm_setting_ip6_config_get_route (setting, i);
+		guint32 num;
+
+		num = nm_ip6_config_get_num_routes (ip6_config);
+		for (j = 0; j < num; j++) {
+			NMIP6Route *cfg_route = nm_ip6_config_get_route (ip6_config, j);
+
+			/* Dupe, override with user-specified route */
+			if (   ip6_addresses_equal (nm_ip6_route_get_dest (cfg_route), nm_ip6_route_get_dest (setting_route))
+			    && (nm_ip6_route_get_prefix (cfg_route) == nm_ip6_route_get_prefix (setting_route))
+				&& ip6_addresses_equal (nm_ip6_route_get_next_hop (cfg_route), nm_ip6_route_get_next_hop (setting_route))) {
+				nm_ip6_config_replace_route (ip6_config, j, setting_route);
+				break;
+			}
+		}
+
+		if (j == num)
+			nm_ip6_config_add_route (ip6_config, setting_route);
+	}
+
+	if (nm_setting_ip6_config_get_never_default (setting))
+		nm_ip6_config_set_never_default (ip6_config, TRUE);
+}
+
 void
 nm_utils_call_dispatcher (const char *action,
                           NMConnection *connection,
@@ -442,5 +551,31 @@ value_hash_add_uint (GHashTable *hash,
 	g_value_set_uint (value, val);
 
 	value_hash_add (hash, key, value);
+}
+
+gboolean
+nm_utils_do_sysctl (const char *path, const char *value)
+{
+	int fd, len, nwrote, total;
+
+	fd = open (path, O_WRONLY | O_TRUNC);
+	if (fd == -1)
+		return FALSE;
+
+	len = strlen (value);
+	total = 0;
+	do {
+		nwrote = write (fd, value + total, len - total);
+		if (nwrote == -1) {
+			if (errno == EINTR)
+				continue;
+			close (fd);
+			return FALSE;
+		}
+		total += nwrote;
+	} while (total < len);
+
+	close (fd);
+	return TRUE;
 }
 

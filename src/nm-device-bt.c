@@ -313,7 +313,7 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 
 	nm_device_set_ip_iface (device, iface);
 	NM_DEVICE_BT_GET_PRIVATE (device)->pending_ip4_config = g_object_ref (config);
-	nm_device_activate_schedule_stage4_ip_config_get (device);
+	nm_device_activate_schedule_stage4_ip4_config_get (device);
 }
 
 static void
@@ -626,7 +626,7 @@ real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 }
 
 static NMActStageReturn
-real_act_stage3_ip_config_start (NMDevice *device, NMDeviceStateReason *reason)
+real_act_stage3_ip4_config_start (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
 	NMActStageReturn ret;
@@ -634,7 +634,7 @@ real_act_stage3_ip_config_start (NMDevice *device, NMDeviceStateReason *reason)
 	if (priv->bt_type == NM_BT_CAPABILITY_DUN)
 		ret = ppp_stage3_start (device, reason);
 	else
-		ret = NM_DEVICE_CLASS (nm_device_bt_parent_class)->act_stage3_ip_config_start (device, reason);
+		ret = NM_DEVICE_CLASS (nm_device_bt_parent_class)->act_stage3_ip4_config_start (device, reason);
 
 	return ret;
 }
@@ -841,7 +841,7 @@ nm_device_bt_class_init (NMDeviceBtClass *klass)
 	device_class->connection_secrets_updated = real_connection_secrets_updated;
 	device_class->deactivate_quickly = real_deactivate_quickly;
 	device_class->act_stage2_config = real_act_stage2_config;
-	device_class->act_stage3_ip_config_start = real_act_stage3_ip_config_start;
+	device_class->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;
 	device_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 	device_class->check_connection_compatible = real_check_connection_compatible;
 

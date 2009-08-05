@@ -266,6 +266,11 @@ register_default_settings (void)
 	                      NM_SETTING_IP4_CONFIG_ERROR,
 	                      6);
 
+	register_one_setting (NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	                      NM_TYPE_SETTING_IP6_CONFIG,
+	                      NM_SETTING_IP6_CONFIG_ERROR,
+	                      6);
+
 	/* Be sure to update DEFAULT_MAP_SIZE if you add another setting!! */
 }
 

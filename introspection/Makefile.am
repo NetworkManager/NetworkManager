@@ -4,6 +4,7 @@ EXTRA_DIST = \
 	errors.xml \
 	vpn-errors.xml \
 	nm-access-point.xml \
+	nm-device-bt.xml \
 	nm-device-wifi.xml \
 	nm-device-ethernet.xml \
 	nm-device-cdma.xml \
@@ -11,6 +12,7 @@ EXTRA_DIST = \
 	nm-device-serial.xml \
 	nm-device.xml \
 	nm-ip4-config.xml \
+	nm-ip6-config.xml \
 	nm-manager.xml \
 	nm-manager-client.xml \
 	nm-settings.xml \

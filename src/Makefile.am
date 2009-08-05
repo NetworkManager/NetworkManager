@@ -80,6 +80,8 @@ NetworkManager_SOURCES = \
 		nm-hostname-provider.h \
 		nm-ip4-config.c \
 		nm-ip4-config.h \
+		nm-ip6-config.c \
+		nm-ip6-config.h \
 		nm-secrets-provider-interface.c \
 		nm-secrets-provider-interface.h \
 		nm-active-connection.h \
@@ -129,6 +131,9 @@ nm-device-bt-glue.h: $(top_srcdir)/introspection/nm-device-bt.xml
 nm-ip4-config-glue.h: $(top_srcdir)/introspection/nm-ip4-config.xml
 	dbus-binding-tool --prefix=nm_ip4_config --mode=glib-server --output=$@ $<
 
+nm-ip6-config-glue.h: $(top_srcdir)/introspection/nm-ip6-config.xml
+	dbus-binding-tool --prefix=nm_ip6_config --mode=glib-server --output=$@ $<
+
 nm-active-connection-glue.h: $(top_srcdir)/introspection/nm-active-connection.xml
 	dbus-binding-tool --prefix=nm_active_connection --mode=glib-server --output=$@ $<
 
@@ -143,6 +148,7 @@ BUILT_SOURCES = \
 	nm-device-wifi-glue.h \
 	nm-device-bt-glue.h \
 	nm-ip4-config-glue.h \
+	nm-ip6-config-glue.h \
 	nm-active-connection-glue.h \
 	nm-dhcp4-config-glue.h
 
