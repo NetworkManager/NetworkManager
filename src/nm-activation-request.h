@@ -59,6 +59,7 @@ GType nm_act_request_get_type (void);
 NMActRequest *nm_act_request_new          (NMConnection *connection,
                                            const char *specific_object,
                                            gboolean user_requested,
+                                           gboolean assumed,
                                            gpointer *device);  /* An NMDevice */
 
 NMConnection *nm_act_request_get_connection     (NMActRequest *req);
@@ -84,6 +85,8 @@ void          nm_act_request_add_share_rule (NMActRequest *req,
                                              const char *rule);
 
 GObject *     nm_act_request_get_device (NMActRequest *req);
+
+gboolean      nm_act_request_get_assumed (NMActRequest *req);
 
 gboolean nm_act_request_get_secrets    (NMActRequest *req,
                                         const char *setting_name,

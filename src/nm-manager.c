@@ -113,6 +113,14 @@ static void add_device (NMManager *self, NMDevice *device);
 
 static void hostname_provider_init (NMHostnameProvider *provider_class);
 
+static const char *internal_activate_device (NMManager *manager,
+                                             NMDevice *device,
+                                             NMConnection *connection,
+                                             const char *specific_object,
+                                             gboolean user_requested,
+                                             gboolean assumed,
+                                             GError **error);
+
 #define SSD_POKE_INTERVAL 120
 #define ORIGDEV_TAG "originating-device"
 
@@ -1165,7 +1173,6 @@ add_device (NMManager *self, NMDevice *device)
 	char *path;
 	static guint32 devcount = 0;
 	const GSList *unmanaged_specs;
-	GSList *connections = NULL;
 	NMConnection *existing;
 	GHashTableIter iter;
 	gpointer value;
@@ -1208,20 +1215,47 @@ add_device (NMManager *self, NMDevice *device)
 	/* Check if we should assume the device's active connection by matching its
 	 * config with an existing system connection.
 	 */
-	g_hash_table_iter_init (&iter, priv->system_connections);
-	while (g_hash_table_iter_next (&iter, NULL, &value))
-		connections = g_slist_append (connections, value);
-	existing = nm_device_interface_connection_match_config (NM_DEVICE_INTERFACE (device),
-	                                                        (const GSList *) connections);
-	g_slist_free (connections);
+	if (nm_device_interface_can_assume_connection (NM_DEVICE_INTERFACE (device))) {
+		GSList *connections = NULL;
+
+		g_hash_table_iter_init (&iter, priv->system_connections);
+		while (g_hash_table_iter_next (&iter, NULL, &value))
+			connections = g_slist_append (connections, value);
+		existing = nm_device_interface_connection_match_config (NM_DEVICE_INTERFACE (device),
+		                                                        (const GSList *) connections);
+		g_slist_free (connections);
+	}
 
 	/* Start the device if it's supposed to be managed */
 	unmanaged_specs = nm_sysconfig_settings_get_unmanaged_specs (priv->sys_settings);
-	if (!priv->sleeping && !nm_device_interface_spec_match_list (NM_DEVICE_INTERFACE (device), unmanaged_specs))
-		nm_device_set_managed (device, TRUE, NM_DEVICE_STATE_REASON_NOW_MANAGED);
+	if (   !priv->sleeping
+	    && !nm_device_interface_spec_match_list (NM_DEVICE_INTERFACE (device), unmanaged_specs)) {
+		nm_device_set_managed (device,
+		                       TRUE,
+		                       existing ? NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED :
+		                                  NM_DEVICE_STATE_REASON_NOW_MANAGED);
+	}
 
 	nm_sysconfig_settings_device_added (priv->sys_settings, device);
 	g_signal_emit (self, signals[DEVICE_ADDED], 0, device);
+
+	/* If the device has a connection it can assume, do that now */
+	if (existing) {
+		const char *ac_path;
+		GError *error = NULL;
+
+		ac_path = internal_activate_device (self, device, existing, NULL, FALSE, TRUE, &error);
+		if (ac_path)
+			g_object_notify (G_OBJECT (self), NM_MANAGER_ACTIVE_CONNECTIONS);
+		else {
+			nm_warning ("Assumed connection (%d) %s failed to activate: (%d) %s",
+			            nm_connection_get_scope (existing),
+			            nm_connection_get_path (existing),
+			            error ? error->code : -1,
+			            error && error->message ? error->message : "(unknown)");
+			g_error_free (error);
+		}
+	}
 }
 
 static gboolean
@@ -1826,6 +1860,7 @@ internal_activate_device (NMManager *manager,
                           NMConnection *connection,
                           const char *specific_object,
                           gboolean user_requested,
+                          gboolean assumed,
                           GError **error)
 {
 	NMActRequest *req;
@@ -1849,7 +1884,7 @@ internal_activate_device (NMManager *manager,
 		                         NM_DEVICE_STATE_REASON_NONE);
 	}
 
-	req = nm_act_request_new (connection, specific_object, user_requested, (gpointer) device);
+	req = nm_act_request_new (connection, specific_object, user_requested, assumed, (gpointer) device);
 	g_signal_connect (req, "manager-get-secrets", G_CALLBACK (provider_get_secrets), manager);
 	g_signal_connect (req, "manager-cancel-secrets", G_CALLBACK (provider_cancel_secrets), manager);
 	success = nm_device_interface_activate (dev_iface, req, error);
@@ -1961,6 +1996,7 @@ nm_manager_activate_connection (NMManager *manager,
 		                                 connection,
 		                                 specific_object,
 		                                 user_requested,
+		                                 FALSE,
 		                                 error);
 	}
 
