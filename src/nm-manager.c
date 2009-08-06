@@ -1173,7 +1173,7 @@ add_device (NMManager *self, NMDevice *device)
 	char *path;
 	static guint32 devcount = 0;
 	const GSList *unmanaged_specs;
-	NMConnection *existing;
+	NMConnection *existing = NULL;
 	GHashTableIter iter;
 	gpointer value;
 
