@@ -30,3 +30,12 @@ check-local: test-ifcfg-rh
 
 endif
 
+EXTRA_DIST = \
+	iscsiadm-test-dhcp \
+	iscsiadm-test-static \
+	iscsiadm-test-malformed \
+	iscsiadm-test-bad-ipaddr \
+	iscsiadm-test-bad-gateway \
+	iscsiadm-test-bad-dns1 \
+	iscsiadm-test-bad-dns2
+
