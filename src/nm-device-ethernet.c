@@ -53,6 +53,7 @@
 #include "ppp-manager/nm-ppp-manager.h"
 #include "nm-utils.h"
 #include "nm-properties-changed-signal.h"
+#include "nm-dhcp-manager.h"
 
 #include "nm-device-ethernet-glue.h"
 
@@ -280,8 +281,8 @@ constructor (GType type,
 	guint32 caps;
 
 	object = G_OBJECT_CLASS (nm_device_ethernet_parent_class)->constructor (type,
-																   n_construct_params,
-																   construct_params);
+	                                                                        n_construct_params,
+	                                                                        construct_params);
 	if (!object)
 		return NULL;
 
@@ -1472,6 +1473,196 @@ spec_match_list (NMDevice *device, const GSList *specs)
 	return matched;
 }
 
+static gboolean
+wired_match_config (NMDevice *self, NMConnection *connection)
+{
+	NMSettingWired *s_wired;
+	struct ether_addr ether;
+	const GByteArray *s_ether;
+
+	s_wired = (NMSettingWired *) nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED);
+	if (!s_wired)
+		return FALSE;
+
+	/* MAC address check */
+	s_ether = nm_setting_wired_get_mac_address (s_wired);
+	if (s_ether) {
+		nm_device_ethernet_get_address (NM_DEVICE_ETHERNET (self), &ether);
+
+		if (memcmp (s_ether->data, ether.ether_addr_octet, ETH_ALEN))
+			return FALSE;
+	}
+
+	return TRUE;
+}
+
+typedef struct {
+	int ifindex;
+	NMIP4Address *addr;
+	gboolean found;
+} AddrData;
+
+static void
+check_one_address (struct nl_object *object, void *user_data)
+{
+	AddrData *data = user_data;
+	struct rtnl_addr *addr = (struct rtnl_addr *) object;
+	struct nl_addr *local;
+	struct in_addr tmp;
+
+	if (rtnl_addr_get_ifindex (addr) != data->ifindex)
+		return;
+	if (rtnl_addr_get_family (addr) != AF_INET)
+		return;
+
+	if (nm_ip4_address_get_prefix (data->addr) != rtnl_addr_get_prefixlen (addr))
+		return;
+
+	local = rtnl_addr_get_local (addr);
+	if (nl_addr_get_family (local) != AF_INET)
+		return;
+	if (nl_addr_get_len (local) != sizeof (struct in_addr))
+		return;
+	if (!nl_addr_get_binary_addr (local))
+		return;
+
+	memcpy (&tmp, nl_addr_get_binary_addr (local), nl_addr_get_len (local));
+	if (tmp.s_addr != nm_ip4_address_get_address (data->addr))
+		return;
+
+	/* Yay, found it */
+	data->found = TRUE;
+}
+
+static gboolean
+ip4_match_config (NMDevice *self, NMConnection *connection)
+{
+	NMSettingIP4Config *s_ip4;
+	NMSettingConnection *s_con;
+	struct nl_handle *nlh = NULL;
+	struct nl_cache *addr_cache = NULL;
+	int i, num;
+	GSList *leases, *iter;
+	NMDHCPManager *dhcp_mgr;
+	const char *method;
+	int ifindex;
+	AddrData check_data;
+
+	ifindex = nm_device_ethernet_get_ifindex (NM_DEVICE_ETHERNET (self));
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	g_assert (s_con);
+	g_assert (nm_setting_connection_get_uuid (s_con));
+
+	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	if (!s_ip4)
+		return FALSE;
+
+	/* Read all the device's IP addresses */
+	nlh = nm_netlink_get_default_handle ();
+	if (!nlh)
+		return FALSE;
+
+	addr_cache = rtnl_addr_alloc_cache (nlh);
+	if (!addr_cache)
+		return FALSE;
+	nl_cache_mngt_provide (addr_cache);
+
+	/* Get any saved leases that apply to this connection */
+	dhcp_mgr = nm_dhcp_manager_get ();
+	leases = nm_dhcp_manager_get_lease_ip4_config (dhcp_mgr,
+	                                               nm_device_get_iface (self),
+	                                               nm_setting_connection_get_uuid (s_con));
+	g_object_unref (dhcp_mgr);
+
+	method = nm_setting_ip4_config_get_method (s_ip4);
+	if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)) {
+		gboolean found = FALSE;
+
+		/* Find at least one lease's address on the device */
+		for (iter = leases; iter; iter = g_slist_next (iter)) {
+			NMIP4Config *addr = iter->data;
+
+			memset (&check_data, 0, sizeof (check_data));
+			check_data.ifindex = ifindex;
+			check_data.found = FALSE;
+			check_data.addr = nm_ip4_config_get_address (addr, 0);
+
+			nl_cache_foreach (addr_cache, check_one_address, &check_data);
+			if (check_data.found) {
+				found = TRUE; /* Yay, device has same address as a lease */
+				break;
+			}
+		}
+		g_slist_foreach (leases, (GFunc) g_object_unref, NULL);
+		g_slist_free (leases);
+		return found;
+	} else {
+		/* Maybe the connection used to be DHCP and there are stale leases; ignore them */
+		g_slist_foreach (leases, (GFunc) g_object_unref, NULL);
+		g_slist_free (leases);
+	}
+
+	/* 'shared' and 'link-local' aren't supported methods because 'shared'
+	 * requires too much iptables and dnsmasq state to be reclaimed, and
+	 * avahi-autoipd isn't smart enough to allow the link-local address to be
+	 * determined at any point other than when it was first assigned.
+	 */
+	if (strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL))
+		return FALSE;
+
+	/* Everything below for static addressing */
+
+	/* Find all IP4 addresses of this connection in the device's address list */
+	num = nm_setting_ip4_config_get_num_addresses (s_ip4);
+	for (i = 0; i < num; i++) {
+		memset (&check_data, 0, sizeof (check_data));
+		check_data.ifindex = ifindex;
+		check_data.found = FALSE;
+		check_data.addr = nm_setting_ip4_config_get_address (s_ip4, i);
+
+		nl_cache_foreach (addr_cache, check_one_address, &check_data);
+		if (!check_data.found)
+			return FALSE;
+	}
+
+	/* Success; all the connection's static IP addresses are assigned to the device */
+	return TRUE;
+}
+
+static NMConnection *
+connection_match_config (NMDevice *self, const GSList *connections)
+{
+	GSList *iter;
+	NMSettingConnection *s_con;
+
+	for (iter = (GSList *) connections; iter; iter = g_slist_next (iter)) {
+		NMConnection *candidate = NM_CONNECTION (iter->data);
+
+		s_con = (NMSettingConnection *) nm_connection_get_setting (candidate, NM_TYPE_SETTING_CONNECTION);
+		g_assert (s_con);
+		if (strcmp (nm_setting_connection_get_connection_type (s_con), NM_SETTING_WIRED_SETTING_NAME))
+			continue;
+
+		/* Can't assume 802.1x or PPPoE connections; they have too much state
+		 * that's impossible to get on-the-fly from PPPoE or the supplicant.
+		 */
+		if (   nm_connection_get_setting (candidate, NM_TYPE_SETTING_802_1X)
+		    || nm_connection_get_setting (candidate, NM_TYPE_SETTING_PPPOE))
+			continue;
+
+		if (!wired_match_config (self, candidate))
+			continue;
+
+		if (!ip4_match_config (self, candidate))
+			continue;
+
+		return candidate;
+	}
+
+	return NULL;
+}
+
 static void
 dispose (GObject *object)
 {
@@ -1587,6 +1778,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 	parent_class->deactivate_quickly = real_deactivate_quickly;
 	parent_class->spec_match_list = spec_match_list;
+	parent_class->connection_match_config = connection_match_config;
 
 	/* properties */
 	g_object_class_install_property

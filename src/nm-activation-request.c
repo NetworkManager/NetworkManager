@@ -76,6 +76,8 @@ typedef struct {
 	GSList *share_rules;
 
 	char *ac_path;
+
+	gboolean assumed;
 } NMActRequestPrivate;
 
 enum {
@@ -136,6 +138,7 @@ NMActRequest *
 nm_act_request_new (NMConnection *connection,
                     const char *specific_object,
                     gboolean user_requested,
+                    gboolean assumed,
                     gpointer *device)
 {
 	GObject *object;
@@ -160,6 +163,7 @@ nm_act_request_new (NMConnection *connection,
 	                  NM_ACT_REQUEST (object));
 
 	priv->user_requested = user_requested;
+	priv->assumed = assumed;
 
 	return NM_ACT_REQUEST (object);
 }
@@ -641,5 +645,13 @@ nm_act_request_get_device (NMActRequest *req)
 	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
 
 	return G_OBJECT (NM_ACT_REQUEST_GET_PRIVATE (req)->device);
+}
+
+gboolean
+nm_act_request_get_assumed (NMActRequest *req)
+{
+	g_return_val_if_fail (NM_IS_ACT_REQUEST (req), FALSE);
+
+	return NM_ACT_REQUEST_GET_PRIVATE (req)->assumed;
 }
 

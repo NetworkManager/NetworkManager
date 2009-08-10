@@ -130,7 +130,8 @@ static gboolean nm_device_activate (NMDeviceInterface *device,
                                     NMActRequest *req,
                                     GError **error);
 static void nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason);
-static gboolean nm_device_spec_match_list (NMDeviceInterface *device, const GSList *specs);
+static gboolean spec_match_list (NMDeviceInterface *device, const GSList *specs);
+static NMConnection *connection_match_config (NMDeviceInterface *device, const GSList *connections);
 
 static void nm_device_activate_schedule_stage5_ip_config_commit (NMDevice *self, int family);
 
@@ -139,8 +140,14 @@ static void nm_device_take_down (NMDevice *dev, gboolean wait, NMDeviceStateReas
 static gboolean nm_device_bring_up (NMDevice *self, gboolean block, gboolean *no_firmware);
 static gboolean nm_device_is_up (NMDevice *self);
 
-static gboolean nm_device_set_ip4_config (NMDevice *dev, NMIP4Config *config, NMDeviceStateReason *reason);
-static gboolean nm_device_set_ip6_config (NMDevice *dev, NMIP6Config *config, NMDeviceStateReason *reason);
+static gboolean nm_device_set_ip4_config (NMDevice *dev,
+                                          NMIP4Config *config,
+                                          gboolean assumed,
+                                          NMDeviceStateReason *reason);
+static gboolean nm_device_set_ip6_config (NMDevice *dev,
+                                          NMIP6Config *config,
+                                          gboolean assumed,
+                                          NMDeviceStateReason *reason);
 
 static void
 device_interface_init (NMDeviceInterface *device_interface_class)
@@ -149,7 +156,8 @@ device_interface_init (NMDeviceInterface *device_interface_class)
 	device_interface_class->check_connection_compatible = check_connection_compatible;
 	device_interface_class->activate = nm_device_activate;
 	device_interface_class->deactivate = nm_device_deactivate;
-	device_interface_class->spec_match_list = nm_device_spec_match_list;
+	device_interface_class->spec_match_list = spec_match_list;
+	device_interface_class->connection_match_config = connection_match_config;
 }
 
 
@@ -772,7 +780,7 @@ handle_autoip_change (NMDevice *self, NMDeviceStateReason *reason)
 
 	g_object_set_data (G_OBJECT (req), NM_ACT_REQUEST_IP4_CONFIG, config);
 
-	if (!nm_device_set_ip4_config (self, config, reason)) {
+	if (!nm_device_set_ip4_config (self, config, FALSE, reason)) {
 		nm_warning ("(%s): failed to update IP4 config in response to autoip event.",
 		            nm_device_get_iface (self));
 		return FALSE;
@@ -1722,19 +1730,20 @@ static gboolean
 nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 {
 	NMDevice *self = NM_DEVICE (user_data);
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
 	NMIP4Config *ip4_config = NULL;
 	NMIP6Config *ip6_config = NULL;
 	const char *iface, *method = NULL;
 	NMConnection *connection;
 	NMSettingIP4Config *s_ip4;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
+	gboolean assumed;
 
 	ip4_config = g_object_get_data (G_OBJECT (nm_device_get_act_request (self)),
 									NM_ACT_REQUEST_IP4_CONFIG);
 	g_assert (ip4_config);
 	ip6_config = g_object_get_data (G_OBJECT (nm_device_get_act_request (self)),
 									NM_ACT_REQUEST_IP6_CONFIG);
-	/* FIXME g_assert (ip6_config); */
 
 	/* Clear the activation source ID now that this stage has run */
 	activation_source_clear (self, FALSE, 0);
@@ -1743,12 +1752,14 @@ nm_device_activate_stage5_ip_config_commit (gpointer user_data)
 	nm_info ("Activation (%s) Stage 5 of 5 (IP Configure Commit) started...",
 	         iface);
 
-	if (!nm_device_set_ip4_config (self, ip4_config, &reason)) {
+	assumed = nm_act_request_get_assumed (priv->act_request);
+
+	if (!nm_device_set_ip4_config (self, ip4_config, assumed, &reason)) {
 		nm_device_state_changed (self, NM_DEVICE_STATE_FAILED, reason);
 		goto out;
 	}
 
-	if (!nm_device_set_ip6_config (self, ip6_config, &reason)) {
+	if (ip6_config && !nm_device_set_ip6_config (self, ip6_config, assumed, &reason)) {
 		nm_info ("Activation (%s) Stage 5 of 5 (IP Configure Commit) IPv6 failed",
 				 iface);
 	}
@@ -1774,7 +1785,8 @@ out:
 
 	/* Balance IP config creation; device takes ownership in set_ip*_config() */
 	g_object_unref (ip4_config);
-	g_object_unref (ip6_config);
+	if (ip6_config)
+		g_object_unref (ip6_config);
 
 	return FALSE;
 }
@@ -1918,8 +1930,8 @@ nm_device_deactivate (NMDeviceInterface *device, NMDeviceStateReason reason)
 	nm_device_deactivate_quickly (self);
 
 	/* Clean up nameservers and addresses */
-	nm_device_set_ip4_config (self, NULL, &ignored);
-	nm_device_set_ip6_config (self, NULL, &ignored);
+	nm_device_set_ip4_config (self, NULL, FALSE, &ignored);
+	nm_device_set_ip6_config (self, NULL, FALSE, &ignored);
 
 	/* Take out any entries in the routing table and any IP address the device had. */
 	nm_system_device_flush_routes (self);
@@ -2020,13 +2032,22 @@ nm_device_activate (NMDeviceInterface *device,
 									    G_CALLBACK (connection_secrets_failed_cb),
 									    device);
 
-	/* HACK: update the state a bit early to avoid a race between the 
-	 * scheduled stage1 handler and nm_policy_device_change_check() thinking
-	 * that the activation request isn't deferred because the deferred bit
-	 * gets cleared a bit too early, when the connection becomes valid.
-	 */
-	nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_REASON_NONE);
-	nm_device_activate_schedule_stage1_device_prepare (self);
+	if (!nm_act_request_get_assumed (req)) {
+		/* HACK: update the state a bit early to avoid a race between the 
+		 * scheduled stage1 handler and nm_policy_device_change_check() thinking
+		 * that the activation request isn't deferred because the deferred bit
+		 * gets cleared a bit too early, when the connection becomes valid.
+		 */
+		nm_device_state_changed (self, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_REASON_NONE);
+		nm_device_activate_schedule_stage1_device_prepare (self);
+	} else {
+		/* If it's an assumed connection, let the device subclass short-circuit
+		 * the normal connection process and just copy its IP configs from the
+		 * interface.
+		 */
+		nm_device_state_changed (self, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
+		nm_device_activate_schedule_stage3_ip_config_start (self);
+	}
 
 	return TRUE;
 }
@@ -2091,6 +2112,7 @@ handle_dhcp_lease_change (NMDevice *device)
 	NMActRequest *req;
 	NMDeviceStateReason reason = NM_DEVICE_STATE_REASON_NONE;
 	const char *ip_iface;
+	gboolean assumed;
 
 	if (!nm_device_get_use_dhcp (device)) {
 		nm_warning ("got DHCP rebind for device that wasn't using DHCP.");
@@ -2116,7 +2138,8 @@ handle_dhcp_lease_change (NMDevice *device)
 
 	g_object_set_data (G_OBJECT (req), NM_ACT_REQUEST_IP4_CONFIG, config);
 
-	if (nm_device_set_ip4_config (device, config, &reason)) {
+	assumed = nm_act_request_get_assumed (req);
+	if (nm_device_set_ip4_config (device, config, assumed, &reason)) {
 		nm_dhcp4_config_reset (priv->dhcp4_config);
 		nm_dhcp_manager_foreach_dhcp4_option (priv->dhcp_manager,
 		                                      ip_iface,
@@ -2274,6 +2297,7 @@ nm_device_get_ip4_config (NMDevice *self)
 static gboolean
 nm_device_set_ip4_config (NMDevice *self,
                           NMIP4Config *new_config,
+                          gboolean assumed,
                           NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv;
@@ -2309,8 +2333,13 @@ nm_device_set_ip4_config (NMDevice *self,
 	if (new_config) {
 		priv->ip4_config = g_object_ref (new_config);
 
-		success = nm_system_apply_ip4_config (ip_iface, new_config, nm_device_get_priority (self), diff);
-		if (success) {
+		/* Don't touch the device's actual IP config if the connection is
+		 * assumed when NM starts.
+		 */
+		if (!assumed)
+			success = nm_system_apply_ip4_config (ip_iface, new_config, nm_device_get_priority (self), diff);
+
+		if (success || assumed) {
 			/* Export over D-Bus */
 			if (!nm_ip4_config_get_dbus_path (new_config))
 				nm_ip4_config_export (new_config);
@@ -2371,6 +2400,7 @@ nm_device_update_ip4_address (NMDevice *self)
 static gboolean
 nm_device_set_ip6_config (NMDevice *self,
                           NMIP6Config *new_config,
+                          gboolean assumed,
                           NMDeviceStateReason *reason)
 {
 	NMDevicePrivate *priv;
@@ -2406,8 +2436,13 @@ nm_device_set_ip6_config (NMDevice *self,
 	if (new_config) {
 		priv->ip6_config = g_object_ref (new_config);
 
-		success = nm_system_apply_ip6_config (ip_iface, new_config, nm_device_get_priority (self), diff);
-		if (success) {
+		/* Don't touch the device's actual IP config if the connection is
+		 * assumed when NM starts.
+		 */
+		if (!assumed)
+			success = nm_system_apply_ip6_config (ip_iface, new_config, nm_device_get_priority (self), diff);
+
+		if (success || assumed) {
 			/* Export over D-Bus */
 			if (!nm_ip6_config_get_dbus_path (new_config))
 				nm_ip6_config_export (new_config);
@@ -2543,29 +2578,49 @@ dispose (GObject *object)
 {
 	NMDevice *self = NM_DEVICE (object);
 	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (self);
+	gboolean take_down = TRUE;
 
 	if (priv->disposed || !priv->initialized)
 		goto out;
 
 	priv->disposed = TRUE;
 
+	/* Don't down can-assume-connection capable devices that are activated with
+	 * a connection that can be assumed.
+	 */
+	if (nm_device_interface_can_assume_connection (NM_DEVICE_INTERFACE (self))
+		&& (nm_device_get_state (self) == NM_DEVICE_STATE_ACTIVATED)) {
+		NMConnection *connection;
+	    NMSettingIP4Config *s_ip4;
+		const char *method = NULL;
+
+		/* Only system connections can be left up */
+		connection = nm_act_request_get_connection (priv->act_request);
+		if (   connection
+		    && (nm_connection_get_scope (connection) == NM_CONNECTION_SCOPE_SYSTEM)) {
+
+			/* Only static or DHCP connections can be left up */
+			s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+			g_assert (s_ip4);
+
+			method = nm_setting_ip4_config_get_method (s_ip4);
+			if (   !method
+			    || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_AUTO)
+			    || !strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL))
+				take_down = FALSE;
+		}
+	}
+
 	if (priv->failed_to_disconnected_id) {
 		g_source_remove (priv->failed_to_disconnected_id);
 		priv->failed_to_disconnected_id = 0;
 	}
 
-	/* 
-	 * In dispose, you are supposed to free all types referenced from this
-	 * object which might themselves hold a reference to self. Generally,
-	 * the most simple solution is to unref all members on which you own a 
-	 * reference.
-	 */
-
-	if (priv->managed) {
+	if (priv->managed && take_down) {
 		NMDeviceStateReason ignored = NM_DEVICE_STATE_REASON_NONE;
 
 		nm_device_take_down (self, FALSE, NM_DEVICE_STATE_REASON_REMOVED);
-		nm_device_set_ip4_config (self, NULL, &ignored);
+		nm_device_set_ip4_config (self, NULL, FALSE, &ignored);
 	}
 
 	clear_act_request (self);
@@ -2573,7 +2628,8 @@ dispose (GObject *object)
 	activation_source_clear (self, TRUE, AF_INET);
 	activation_source_clear (self, TRUE, AF_INET6);
 
-	nm_device_set_use_dhcp (self, FALSE);
+	if (!take_down)
+		nm_device_set_use_dhcp (self, FALSE);
 
 	if (priv->dnsmasq_manager) {
 		if (priv->dnsmasq_state_id) {
@@ -2857,8 +2913,14 @@ nm_device_state_changed (NMDevice *device,
 			if (!nm_device_bring_up (device, TRUE, &no_firmware) && no_firmware)
 				nm_warning ("%s: firmware may be missing.", nm_device_get_iface (device));
 		}
-		/* Fall through, so when the device needs to be deactivated due to
-		 * eg carrier changes we actually deactivate it */
+		/* Ensure the device gets deactivated in response to stuff like
+		 * carrier changes or rfkill.  But don't deactivate devices that are
+		 * about to assume a connection since that defeats the purpose of
+		 * assuming the device's existing connection.
+		 */
+		if (reason != NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED)
+			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device), reason);
+		break;
 	case NM_DEVICE_STATE_DISCONNECTED:
 		if (old_state != NM_DEVICE_STATE_UNAVAILABLE)
 			nm_device_interface_deactivate (NM_DEVICE_INTERFACE (device), reason);
@@ -2935,7 +2997,7 @@ nm_device_set_managed (NMDevice *device,
 }
 
 static gboolean
-nm_device_spec_match_list (NMDeviceInterface *device, const GSList *specs)
+spec_match_list (NMDeviceInterface *device, const GSList *specs)
 {
 	NMDevice *self;
 
@@ -2946,6 +3008,16 @@ nm_device_spec_match_list (NMDeviceInterface *device, const GSList *specs)
 		return NM_DEVICE_GET_CLASS (self)->spec_match_list (self, specs);
 
 	return FALSE;
+}
+
+static NMConnection *
+connection_match_config (NMDeviceInterface *device, const GSList *connections)
+{
+	g_return_val_if_fail (device != NULL, FALSE);
+
+	if (NM_DEVICE_GET_CLASS (device)->connection_match_config)
+		return NM_DEVICE_GET_CLASS (device)->connection_match_config (NM_DEVICE (device), connections);
+	return NULL;
 }
 
 void

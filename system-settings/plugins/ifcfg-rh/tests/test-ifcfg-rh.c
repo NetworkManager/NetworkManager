@@ -176,6 +176,7 @@ test_read_minimal (void)
 	connection = connection_from_file (TEST_IFCFG_MINIMAL,
 	                                   NULL,
 	                                   TYPE_ETHERNET,
+	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &error,
@@ -299,6 +300,7 @@ test_read_unmanaged (void)
 	connection = connection_from_file (TEST_IFCFG_UNMANAGED,
 	                                   NULL,
 	                                   TYPE_ETHERNET,
+	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &error,
@@ -417,6 +419,7 @@ test_read_wired_static (void)
 	connection = connection_from_file (TEST_IFCFG_WIRED_STATIC,
 	                                   NULL,
 	                                   TYPE_ETHERNET,
+	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &error,
@@ -557,7 +560,7 @@ test_read_wired_static (void)
 	        NM_SETTING_IP4_CONFIG_ADDRESSES);
 
 	ASSERT (nm_ip4_address_get_prefix (ip4_addr) == 24,
-	        "wired-static-verify-ip4", "failed to verify %s: unexpected IP4 address #1 gateway",
+	        "wired-static-verify-ip4", "failed to verify %s: unexpected IP4 address #1 prefix",
 	        TEST_IFCFG_WIRED_STATIC,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_ADDRESSES);
@@ -612,6 +615,7 @@ test_read_wired_dhcp (void)
 	connection = connection_from_file (TEST_IFCFG_WIRED_DHCP,
 	                                   NULL,
 	                                   TYPE_ETHERNET,
+	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &error,
@@ -777,6 +781,7 @@ test_read_wired_global_gateway (void)
 	connection = connection_from_file (TEST_IFCFG_WIRED_GLOBAL_GATEWAY,
 	                                   TEST_NETWORK_WIRED_GLOBAL_GATEWAY,
 	                                   TYPE_ETHERNET,
+	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &error,
@@ -844,7 +849,7 @@ test_read_wired_global_gateway (void)
 	        NM_SETTING_IP4_CONFIG_ADDRESSES);
 
 	ASSERT (nm_ip4_address_get_prefix (ip4_addr) == 24,
-	        "wired-global-gateway-verify-ip4", "failed to verify %s: unexpected IP4 address #1 gateway",
+	        "wired-global-gateway-verify-ip4", "failed to verify %s: unexpected IP4 address #1 prefix",
 	        TEST_IFCFG_WIRED_GLOBAL_GATEWAY,
 	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	        NM_SETTING_IP4_CONFIG_ADDRESSES);
@@ -894,6 +899,7 @@ test_read_wired_never_default (void)
 	connection = connection_from_file (TEST_IFCFG_WIRED_NEVER_DEFAULT,
 	                                   TEST_NETWORK_WIRED_NEVER_DEFAULT,
 	                                   TYPE_ETHERNET,
+	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &error,
@@ -983,6 +989,7 @@ test_read_onboot_no (void)
 	connection = connection_from_file (TEST_IFCFG_ONBOOT_NO,
 	                                   NULL,
 	                                   TYPE_ETHERNET,
+	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &error,
@@ -1039,6 +1046,7 @@ test_read_wired_8021x_peap_mschapv2 (void)
 	connection = connection_from_file (TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
 	                                   NULL,
 	                                   TYPE_ETHERNET,
+	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &error,
@@ -1226,6 +1234,7 @@ test_read_wifi_open (void)
 	connection = connection_from_file (TEST_IFCFG_WIFI_OPEN,
 	                                   NULL,
 	                                   TYPE_WIRELESS,
+	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &error,
@@ -1394,6 +1403,7 @@ test_read_wifi_open_ssid_hex (void)
 	connection = connection_from_file (TEST_IFCFG_WIFI_OPEN_SSID_HEX,
 	                                   NULL,
 	                                   TYPE_WIRELESS,
+	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &error,
@@ -1463,7 +1473,14 @@ test_read_wifi_open_ssid_bad (const char *file, const char *test)
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
 
-	connection = connection_from_file (file, NULL, TYPE_WIRELESS, &unmanaged, &keyfile, &error, &ignore_error);
+	connection = connection_from_file (file,
+	                                   NULL,
+	                                   TYPE_WIRELESS,
+	                                   NULL,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &error,
+	                                   &ignore_error);
 	ASSERT (connection == NULL, test, "unexpected success reading %s", file);
 	g_clear_error (&error);
 }
@@ -1488,6 +1505,7 @@ test_read_wifi_open_ssid_quoted (void)
 	connection = connection_from_file (TEST_IFCFG_WIFI_OPEN_SSID_QUOTED,
 	                                   NULL,
 	                                   TYPE_WIRELESS,
+	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &error,
@@ -1575,6 +1593,7 @@ test_read_wifi_wep (void)
 	connection = connection_from_file (TEST_IFCFG_WIFI_WEP,
 	                                   NULL,
 	                                   TYPE_WIRELESS,
+	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &error,
@@ -1835,6 +1854,7 @@ test_read_wifi_wep_adhoc (void)
 	connection = connection_from_file (TEST_IFCFG_WIFI_WEP_ADHOC,
 	                                   NULL,
 	                                   TYPE_WIRELESS,
+	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &error,
@@ -2088,6 +2108,7 @@ test_read_wifi_leap (void)
 	connection = connection_from_file (TEST_IFCFG_WIFI_LEAP,
 	                                   NULL,
 	                                   TYPE_WIRELESS,
+	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &error,
@@ -2235,6 +2256,7 @@ test_read_wifi_wpa_psk (void)
 	connection = connection_from_file (TEST_IFCFG_WIFI_WPA_PSK,
 	                                   NULL,
 	                                   TYPE_WIRELESS,
+	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &error,
@@ -2533,6 +2555,7 @@ test_read_wifi_wpa_psk_adhoc (void)
 	connection = connection_from_file (TEST_IFCFG_WIFI_WPA_PSK_ADHOC,
 	                                   NULL,
 	                                   TYPE_WIRELESS,
+	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &error,
@@ -2715,6 +2738,7 @@ test_read_wifi_wpa_psk_hex (void)
 	connection = connection_from_file (TEST_IFCFG_WIFI_WPA_PSK_HEX,
 	                                   NULL,
 	                                   TYPE_WIRELESS,
+	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &error,
@@ -2861,6 +2885,7 @@ test_read_wifi_wpa_eap_tls (void)
 	connection = connection_from_file (TEST_IFCFG_WIFI_WPA_EAP_TLS,
 	                                   NULL,
 	                                   TYPE_ETHERNET,
+	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &error,
@@ -2995,6 +3020,7 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	connection = connection_from_file (TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
 	                                   NULL,
 	                                   TYPE_WIRELESS,
+	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &error,
@@ -3152,6 +3178,7 @@ test_read_wifi_wep_eap_ttls_chap (void)
 	connection = connection_from_file (TEST_IFCFG_WIFI_WEP_EAP_TTLS_CHAP,
 	                                   NULL,
 	                                   TYPE_WIRELESS,
+	                                   NULL,
 	                                   &unmanaged,
 	                                   &keyfile,
 	                                   &error,
@@ -3402,6 +3429,7 @@ test_write_wired_static (void)
 	reread = connection_from_file (testfile,
 	                               NULL,
 	                               TYPE_ETHERNET,
+	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
 	                               &error,
@@ -3500,6 +3528,7 @@ test_write_wired_dhcp (void)
 	reread = connection_from_file (testfile,
 	                               NULL,
 	                               TYPE_ETHERNET,
+	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
 	                               &error,
@@ -3618,6 +3647,7 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 	reread = connection_from_file (testfile,
 	                               NULL,
 	                               TYPE_ETHERNET,
+	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
 	                               &error,
@@ -3742,6 +3772,7 @@ test_write_wifi_open (void)
 	reread = connection_from_file (testfile,
 	                               NULL,
 	                               TYPE_WIRELESS,
+	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
 	                               &error,
@@ -3846,6 +3877,7 @@ test_write_wifi_open_hex_ssid (void)
 	reread = connection_from_file (testfile,
 	                               NULL,
 	                               TYPE_WIRELESS,
+	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
 	                               &error,
@@ -3970,6 +4002,7 @@ test_write_wifi_wep (void)
 	reread = connection_from_file (testfile,
 	                               NULL,
 	                               TYPE_WIRELESS,
+	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
 	                               &error,
@@ -4114,6 +4147,7 @@ test_write_wifi_wep_adhoc (void)
 	reread = connection_from_file (testfile,
 	                               NULL,
 	                               TYPE_WIRELESS,
+	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
 	                               &error,
@@ -4263,6 +4297,7 @@ test_write_wifi_wpa_psk (const char *name,
 	reread = connection_from_file (testfile,
 	                               NULL,
 	                               TYPE_WIRELESS,
+	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
 	                               &error,
@@ -4407,6 +4442,7 @@ test_write_wifi_wpa_psk_adhoc (void)
 	reread = connection_from_file (testfile,
 	                               NULL,
 	                               TYPE_WIRELESS,
+	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
 	                               &error,
@@ -4566,6 +4602,7 @@ test_write_wifi_wpa_eap_tls (void)
 	reread = connection_from_file (testfile,
 	                               NULL,
 	                               TYPE_WIRELESS,
+	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
 	                               &error,
@@ -4742,6 +4779,7 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 	reread = connection_from_file (testfile,
 	                               NULL,
 	                               TYPE_WIRELESS,
+	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
 	                               &error,
@@ -4893,6 +4931,7 @@ test_write_wifi_wpa_eap_ttls_mschapv2 (void)
 	reread = connection_from_file (testfile,
 	                               NULL,
 	                               TYPE_WIRELESS,
+	                               NULL,
 	                               &unmanaged,
 	                               &keyfile,
 	                               &error,
@@ -4915,6 +4954,366 @@ test_write_wifi_wpa_eap_ttls_mschapv2 (void)
 	g_free (testfile);
 	g_object_unref (connection);
 	g_object_unref (reread);
+}
+
+#define TEST_IFCFG_IBFT_DHCP TEST_IFCFG_DIR"/network-scripts/ifcfg-test-ibft-dhcp"
+
+static void
+test_read_ibft_dhcp (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const GByteArray *array;
+	char expected_mac_address[ETH_ALEN] = { 0x00, 0x33, 0x21, 0x98, 0xb9, 0xf1 };
+	const char *expected_id = "System test-ibft-dhcp";
+	guint64 expected_timestamp = 0;
+
+	connection = connection_from_file (TEST_IFCFG_IBFT_DHCP,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   TEST_IFCFG_DIR "/iscsiadm-test-dhcp",
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "ibft-dhcp-read", "failed to read %s: %s", TEST_IFCFG_IBFT_DHCP, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "ibft-dhcp-verify", "failed to verify %s: %s", TEST_IFCFG_IBFT_DHCP, error->message);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "ibft-dhcp-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_IBFT_DHCP,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "ibft-dhcp-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_IBFT_DHCP,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "ibft-dhcp-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_IBFT_DHCP,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	/* UUID can't be tested if the ifcfg does not contain the UUID key, because
+	 * the UUID is generated on the full path of the ifcfg file, which can change
+	 * depending on where the tests are run.
+	 */
+
+	/* Timestamp */
+	ASSERT (nm_setting_connection_get_timestamp (s_con) == expected_timestamp,
+	        "ibft-dhcp-verify-connection", "failed to verify %s: unexpected %s /%s key value",
+	        TEST_IFCFG_IBFT_DHCP,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_TIMESTAMP);
+
+	/* Autoconnect */
+	ASSERT (nm_setting_connection_get_autoconnect (s_con) == TRUE,
+	        "ibft-dhcp-verify-connection", "failed to verify %s: unexpected %s /%s key value",
+	        TEST_IFCFG_IBFT_DHCP,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_AUTOCONNECT);
+
+	/* Read-only */
+	ASSERT (nm_setting_connection_get_read_only (s_con) == TRUE,
+	        "ibft-dhcp-verify-connection", "failed to verify %s: unexpected %s /%s key value",
+	        TEST_IFCFG_IBFT_DHCP,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_READ_ONLY);
+
+	/* ===== WIRED SETTING ===== */
+
+	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	ASSERT (s_wired != NULL,
+	        "ibft-dhcp-verify-wired", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_IBFT_DHCP,
+	        NM_SETTING_WIRED_SETTING_NAME);
+
+	/* MAC address */
+	array = nm_setting_wired_get_mac_address (s_wired);
+	ASSERT (array != NULL,
+	        "ibft-dhcp-verify-wired", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_IBFT_DHCP,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_MAC_ADDRESS);
+	ASSERT (array->len == ETH_ALEN,
+	        "ibft-dhcp-verify-wired", "failed to verify %s: unexpected %s / %s key value length",
+	        TEST_IFCFG_IBFT_DHCP,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_MAC_ADDRESS);
+	ASSERT (memcmp (array->data, &expected_mac_address[0], sizeof (expected_mac_address)) == 0,
+	        "ibft-dhcp-verify-wired", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_IBFT_DHCP,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_MAC_ADDRESS);
+
+	ASSERT (nm_setting_wired_get_mtu (s_wired) == 0,
+	        "ibft-dhcp-verify-wired", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_IBFT_DHCP,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_MTU);
+
+	/* ===== IPv4 SETTING ===== */
+
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	ASSERT (s_ip4 != NULL,
+	        "ibft-dhcp-verify-ip4", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_IBFT_DHCP,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_AUTO) == 0,
+	        "ibft-dhcp-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_IBFT_DHCP,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_METHOD);
+
+	g_object_unref (connection);
+}
+
+#define TEST_IFCFG_IBFT_STATIC TEST_IFCFG_DIR"/network-scripts/ifcfg-test-ibft-static"
+
+static void
+test_read_ibft_static (void)
+{
+	NMConnection *connection;
+	NMSettingConnection *s_con;
+	NMSettingWired *s_wired;
+	NMSettingIP4Config *s_ip4;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+	const char *tmp;
+	const GByteArray *array;
+	char expected_mac_address[ETH_ALEN] = { 0x00, 0x33, 0x21, 0x98, 0xb9, 0xf0 };
+	const char *expected_id = "System test-ibft-static";
+	guint64 expected_timestamp = 0;
+	const char *expected_dns1 = "10.16.255.2";
+	const char *expected_dns2 = "10.16.255.3";
+	struct in_addr addr;
+	const char *expected_address1 = "192.168.32.72";
+	const char *expected_address1_gw = "192.168.35.254";
+	NMIP4Address *ip4_addr;
+
+	connection = connection_from_file (TEST_IFCFG_IBFT_STATIC,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   TEST_IFCFG_DIR "/iscsiadm-test-static",
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection != NULL,
+	        "ibft-static-read", "failed to read %s: %s", TEST_IFCFG_IBFT_STATIC, error->message);
+
+	ASSERT (nm_connection_verify (connection, &error),
+	        "ibft-static-verify", "failed to verify %s: %s", TEST_IFCFG_IBFT_STATIC, error->message);
+
+	/* ===== CONNECTION SETTING ===== */
+
+	s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION));
+	ASSERT (s_con != NULL,
+	        "ibft-static-verify-connection", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_CONNECTION_SETTING_NAME);
+
+	/* ID */
+	tmp = nm_setting_connection_get_id (s_con);
+	ASSERT (tmp != NULL,
+	        "ibft-static-verify-connection", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+	ASSERT (strcmp (tmp, expected_id) == 0,
+	        "ibft-static-verify-connection", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_ID);
+
+	/* UUID can't be tested if the ifcfg does not contain the UUID key, because
+	 * the UUID is generated on the full path of the ifcfg file, which can change
+	 * depending on where the tests are run.
+	 */
+
+	/* Timestamp */
+	ASSERT (nm_setting_connection_get_timestamp (s_con) == expected_timestamp,
+	        "ibft-static-verify-connection", "failed to verify %s: unexpected %s /%s key value",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_TIMESTAMP);
+
+	/* Autoconnect */
+	ASSERT (nm_setting_connection_get_autoconnect (s_con) == TRUE,
+	        "ibft-static-verify-connection", "failed to verify %s: unexpected %s /%s key value",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_AUTOCONNECT);
+
+	/* Read-only */
+	ASSERT (nm_setting_connection_get_read_only (s_con) == TRUE,
+	        "ibft-static-verify-connection", "failed to verify %s: unexpected %s /%s key value",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_CONNECTION_SETTING_NAME,
+	        NM_SETTING_CONNECTION_READ_ONLY);
+
+	/* ===== WIRED SETTING ===== */
+
+	s_wired = NM_SETTING_WIRED (nm_connection_get_setting (connection, NM_TYPE_SETTING_WIRED));
+	ASSERT (s_wired != NULL,
+	        "ibft-static-verify-wired", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_WIRED_SETTING_NAME);
+
+	/* MAC address */
+	array = nm_setting_wired_get_mac_address (s_wired);
+	ASSERT (array != NULL,
+	        "ibft-static-verify-wired", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_MAC_ADDRESS);
+	ASSERT (array->len == ETH_ALEN,
+	        "ibft-static-verify-wired", "failed to verify %s: unexpected %s / %s key value length",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_MAC_ADDRESS);
+	ASSERT (memcmp (array->data, &expected_mac_address[0], sizeof (expected_mac_address)) == 0,
+	        "ibft-static-verify-wired", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_MAC_ADDRESS);
+
+	ASSERT (nm_setting_wired_get_mtu (s_wired) == 0,
+	        "ibft-static-verify-wired", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_WIRED_SETTING_NAME,
+	        NM_SETTING_WIRED_MTU);
+
+	/* ===== IPv4 SETTING ===== */
+
+	s_ip4 = NM_SETTING_IP4_CONFIG (nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG));
+	ASSERT (s_ip4 != NULL,
+	        "ibft-static-verify-ip4", "failed to verify %s: missing %s setting",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME);
+
+	/* Method */
+	tmp = nm_setting_ip4_config_get_method (s_ip4);
+	ASSERT (strcmp (tmp, NM_SETTING_IP4_CONFIG_METHOD_MANUAL) == 0,
+	        "ibft-static-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_METHOD);
+
+	/* DNS Addresses */
+	ASSERT (nm_setting_ip4_config_get_num_dns (s_ip4) == 2,
+	        "ibft-static-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_DNS);
+
+	ASSERT (inet_pton (AF_INET, expected_dns1, &addr) > 0,
+	        "ibft-static-verify-ip4", "failed to verify %s: couldn't convert DNS IP address #1",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_DNS);
+	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 0) == addr.s_addr,
+	        "ibft-static-verify-ip4", "failed to verify %s: unexpected %s / %s key value #1",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_DNS);
+
+	ASSERT (inet_pton (AF_INET, expected_dns2, &addr) > 0,
+	        "ibft-static-verify-ip4", "failed to verify %s: couldn't convert DNS IP address #2",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_DNS);
+	ASSERT (nm_setting_ip4_config_get_dns (s_ip4, 1) == addr.s_addr,
+	        "ibft-static-verify-ip4", "failed to verify %s: unexpected %s / %s key value #2",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_DNS);
+
+	ASSERT (nm_setting_ip4_config_get_num_addresses (s_ip4) == 1,
+	        "ibft-static-verify-ip4", "failed to verify %s: unexpected %s / %s key value",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_DNS);
+
+	/* Address #1 */
+	ip4_addr = nm_setting_ip4_config_get_address (s_ip4, 0);
+	ASSERT (ip4_addr,
+	        "ibft-static-verify-ip4", "failed to verify %s: missing IP4 address #1",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_ADDRESSES);
+
+	ASSERT (nm_ip4_address_get_prefix (ip4_addr) == 22,
+	        "ibft-static-verify-ip4", "failed to verify %s: unexpected IP4 address #1 prefix",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_ADDRESSES);
+
+	ASSERT (inet_pton (AF_INET, expected_address1, &addr) > 0,
+	        "ibft-static-verify-ip4", "failed to verify %s: couldn't convert IP address #1",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_DNS);
+	ASSERT (nm_ip4_address_get_address (ip4_addr) == addr.s_addr,
+	        "ibft-static-verify-ip4", "failed to verify %s: unexpected IP4 address #1",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_ADDRESSES);
+
+	ASSERT (inet_pton (AF_INET, expected_address1_gw, &addr) > 0,
+	        "ibft-static-verify-ip4", "failed to verify %s: couldn't convert IP address #1 gateway",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_ADDRESSES);
+	ASSERT (nm_ip4_address_get_gateway (ip4_addr) == addr.s_addr,
+	        "ibft-static-verify-ip4", "failed to verify %s: unexpected IP4 address #1 gateway",
+	        TEST_IFCFG_IBFT_STATIC,
+	        NM_SETTING_IP4_CONFIG_SETTING_NAME,
+	        NM_SETTING_IP4_CONFIG_ADDRESSES);
+
+	g_object_unref (connection);
+}
+
+static void
+test_read_ibft_malformed (const char *name, const char *iscsiadm_path)
+{
+	NMConnection *connection;
+	char *unmanaged = NULL;
+	char *keyfile = NULL;
+	gboolean ignore_error = FALSE;
+	GError *error = NULL;
+
+	connection = connection_from_file (TEST_IFCFG_IBFT_STATIC,
+	                                   NULL,
+	                                   TYPE_ETHERNET,
+	                                   iscsiadm_path,
+	                                   &unmanaged,
+	                                   &keyfile,
+	                                   &error,
+	                                   &ignore_error);
+	ASSERT (connection == NULL,
+	        name, "unexpectedly able to read %s", TEST_IFCFG_IBFT_STATIC);
 }
 
 static void
@@ -5235,6 +5634,16 @@ int main (int argc, char **argv)
 	test_write_wifi_wpa_eap_tls ();
 	test_write_wifi_wpa_eap_ttls_tls ();
 	test_write_wifi_wpa_eap_ttls_mschapv2 ();
+
+	/* iSCSI / ibft */
+	test_read_ibft_dhcp ();
+	test_read_ibft_static ();
+	test_read_ibft_malformed ("ibft-bad-record-read", TEST_IFCFG_DIR "/iscsiadm-test-bad-record");
+	test_read_ibft_malformed ("ibft-bad-entry-read", TEST_IFCFG_DIR "/iscsiadm-test-bad-entry");
+	test_read_ibft_malformed ("ibft-bad-ipaddr-read", TEST_IFCFG_DIR "/iscsiadm-test-bad-ipaddr");
+	test_read_ibft_malformed ("ibft-bad-gateway-read", TEST_IFCFG_DIR "/iscsiadm-test-bad-gateway");
+	test_read_ibft_malformed ("ibft-bad-dns1-read", TEST_IFCFG_DIR "/iscsiadm-test-bad-dns1");
+	test_read_ibft_malformed ("ibft-bad-dns2-read", TEST_IFCFG_DIR "/iscsiadm-test-bad-dns2");
 
 	/* Stuff we expect to fail for now */
 	test_write_wired_pppoe ();

@@ -32,7 +32,8 @@ libifcfg_rh_io_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(NSS_CFLAGS) \
 	-DG_DISABLE_DEPRECATED \
-	-DSYSCONFDIR=\"$(sysconfdir)\"
+	-DSYSCONFDIR=\"$(sysconfdir)\" \
+	-DSBINDIR=\"$(sbindir)\"
 
 libifcfg_rh_io_la_LIBADD = $(GLIB_LIBS) $(NSS_LIBS)
 

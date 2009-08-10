@@ -49,6 +49,11 @@ get_pidfile_for_iface (const char * iface)
 	                        NM_DHCP_MANAGER_PID_FILE_EXT);
 }
 
+GSList *
+nm_dhcp_client_get_lease_ip4_config (const char *iface, const char *uuid)
+{
+	return NULL;
+}
 
 static void
 dhcpcd_child_setup (gpointer user_data G_GNUC_UNUSED)

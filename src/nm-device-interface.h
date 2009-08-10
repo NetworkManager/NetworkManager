@@ -90,6 +90,8 @@ struct _NMDeviceInterface {
 
 	gboolean (*spec_match_list) (NMDeviceInterface *device, const GSList *specs);
 
+	NMConnection * (*connection_match_config) (NMDeviceInterface *device, const GSList *specs);
+
 	/* Signals */
 	void (*state_changed) (NMDeviceInterface *device,
 	                       NMDeviceState new_state,
@@ -116,5 +118,10 @@ NMDeviceState nm_device_interface_get_state (NMDeviceInterface *device);
 
 gboolean nm_device_interface_spec_match_list (NMDeviceInterface *device,
                                               const GSList *specs);
+
+NMConnection * nm_device_interface_connection_match_config (NMDeviceInterface *device,
+                                                            const GSList *connections);
+
+gboolean nm_device_interface_can_assume_connection (NMDeviceInterface *device);
 
 #endif /* NM_DEVICE_INTERFACE_H */

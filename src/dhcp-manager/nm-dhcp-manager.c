@@ -1121,3 +1121,16 @@ nm_dhcp_manager_set_hostname_provider (NMDHCPManager *manager,
 		g_object_weak_ref (G_OBJECT (provider), hostname_provider_destroyed, manager);
 	}
 }
+
+GSList *
+nm_dhcp_manager_get_lease_ip4_config (NMDHCPManager *self,
+                                      const char *iface,
+                                      const char *uuid)
+{
+	g_return_val_if_fail (NM_IS_DHCP_MANAGER (self), NULL);
+	g_return_val_if_fail (iface != NULL, NULL);
+	g_return_val_if_fail (uuid != NULL, NULL);
+
+	return nm_dhcp_client_get_lease_ip4_config (iface, uuid);
+}
+

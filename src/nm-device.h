@@ -115,6 +115,8 @@ typedef struct {
 	gboolean		(* can_interrupt_activation)		(NMDevice *self);
 
 	gboolean        (* spec_match_list)     (NMDevice *self, const GSList *specs);
+
+	NMConnection *  (* connection_match_config) (NMDevice *self, const GSList *connections);
 } NMDeviceClass;
 
 
