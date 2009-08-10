@@ -371,6 +371,11 @@
           The device's carrier/link changed.
         </tp:docstring>
       </tp:enumvalue>
+      <tp:enumvalue suffix="CONNECTION_ASSUMED" value="41">
+        <tp:docstring>
+          The device's existing connection was assumed.
+        </tp:docstring>
+      </tp:enumvalue>
 	</tp:enum>
 
   </interface>

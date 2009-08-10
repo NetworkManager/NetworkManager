@@ -23,6 +23,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+#include <sys/wait.h>
 #include <ctype.h>
 #include <sys/inotify.h>
 #include <errno.h>
@@ -184,6 +185,284 @@ make_connection_setting (const char *file,
 }
 
 static gboolean
+read_mac_address (shvarFile *ifcfg, GByteArray **array, GError **error)
+{
+	char *value = NULL;
+	struct ether_addr *mac;
+
+	g_return_val_if_fail (ifcfg != NULL, FALSE);
+	g_return_val_if_fail (array != NULL, FALSE);
+	g_return_val_if_fail (*array == NULL, FALSE);
+	g_return_val_if_fail (error != NULL, FALSE);
+	g_return_val_if_fail (*error == NULL, FALSE);
+
+	value = svGetValue (ifcfg, "HWADDR", FALSE);
+	if (!value || !strlen (value)) {
+		g_free (value);
+		return TRUE;
+	}
+
+	mac = ether_aton (value);
+	if (!mac) {
+		g_free (value);
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "The MAC address '%s' was invalid.", value);
+		return FALSE;
+	}
+
+	g_free (value);
+	*array = g_byte_array_sized_new (ETH_ALEN);
+	g_byte_array_append (*array, (guint8 *) mac->ether_addr_octet, ETH_ALEN);
+	return TRUE;
+}
+
+static void
+iscsiadm_child_setup (gpointer user_data G_GNUC_UNUSED)
+{
+	/* We are in the child process here; set a different process group to
+	 * ensure signal isolation between child and parent.
+	 */
+	pid_t pid = getpid ();
+	setpgid (pid, pid);
+}
+
+static char *
+match_iscsiadm_tag (const char *line, const char *tag, gboolean *skip)
+{
+	char *p;
+
+	if (g_ascii_strncasecmp (line, tag, strlen (tag)))
+		return NULL;
+
+	p = strchr (line, '=');
+	if (!p) {
+		g_warning ("%s: malformed iscsiadm record: no = in '%s'.",
+		           __func__, line);
+		*skip = TRUE;
+		return NULL;
+	}
+
+	p++; /* advance past = */
+	return g_strstrip (p);
+}
+
+#define ISCSI_HWADDR_TAG    "iface.hwaddress"
+#define ISCSI_BOOTPROTO_TAG "iface.bootproto"
+#define ISCSI_IPADDR_TAG    "iface.ipaddress"
+#define ISCSI_SUBNET_TAG    "iface.subnet_mask"
+#define ISCSI_GATEWAY_TAG   "iface.gateway"
+#define ISCSI_DNS1_TAG      "iface.primary_dns"
+#define ISCSI_DNS2_TAG      "iface.secondary_dns"
+
+static gboolean
+fill_ip4_setting_from_ibft (shvarFile *ifcfg,
+                            NMSettingIP4Config *s_ip4,
+                            const char *iscsiadm_path,
+                            GError **error)
+{
+	const char *argv[4] = { iscsiadm_path, "-m", "fw", NULL };
+	const char *envp[1] = { NULL };
+	gboolean success = FALSE, in_record = FALSE, hwaddr_matched = FALSE, skip = FALSE;
+	char *out = NULL, *err = NULL;
+	gint status = 0;
+	GByteArray *ifcfg_mac = NULL;
+	char **lines = NULL, **iter;
+	const char *method = NULL;
+	struct in_addr ipaddr;
+	struct in_addr gateway;
+	struct in_addr dns1;
+	struct in_addr dns2;
+	guint32 prefix = 0;
+
+	g_return_val_if_fail (s_ip4 != NULL, FALSE);
+	g_return_val_if_fail (iscsiadm_path != NULL, FALSE);
+
+	if (!g_spawn_sync ("/", (char **) argv, (char **) envp, 0,
+	                   iscsiadm_child_setup, NULL, &out, &err, &status, error))
+		return FALSE;
+
+	if (!WIFEXITED (status)) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "%s exited abnormally.", iscsiadm_path);
+		goto done;
+	}
+
+	if (WEXITSTATUS (status) != 0) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "%s exited with error %d.  Message: '%s'",
+		             iscsiadm_path, WEXITSTATUS (status), err ? err : "(none)");
+		goto done;
+	}
+
+	if (!read_mac_address (ifcfg, &ifcfg_mac, error))
+		goto done;
+	/* Ensure we got a MAC */
+	if (!ifcfg_mac) {
+		g_set_error (error, ifcfg_plugin_error_quark (), 0,
+		             "Missing device MAC address (no HWADDR tag present).");
+		goto done;
+	}
+
+	memset (&ipaddr, 0, sizeof (ipaddr));
+	memset (&gateway, 0, sizeof (gateway));
+	memset (&dns1, 0, sizeof (dns1));
+	memset (&dns2, 0, sizeof (dns2));
+
+	/* Success, lets parse the output */
+	lines = g_strsplit_set (out, "\n\r", -1);
+	for (iter = lines; iter && *iter; iter++) {
+		char *p;
+
+		if (!g_ascii_strcasecmp (*iter, "# BEGIN RECORD")) {
+			if (in_record) {
+				g_warning ("%s: malformed iscsiadm record: already parsing record.", __func__);
+				skip = TRUE;
+			}
+		} else if (!g_ascii_strcasecmp (*iter, "# END RECORD")) {
+			if (!skip && hwaddr_matched) {
+				/* Record is good; fill IP4 config with its info */
+				if (!method) {
+					g_warning ("%s: malformed iscsiadm record: missing BOOTPROTO.", __func__);
+					return FALSE;
+				}
+
+				g_object_set (s_ip4, NM_SETTING_IP4_CONFIG_METHOD, method, NULL);
+
+				if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
+					NMIP4Address *addr;
+
+				    if (!ipaddr.s_addr || !prefix) {
+						g_warning ("%s: malformed iscsiadm record: BOOTPROTO=static "
+						           "but missing IP address or prefix.", __func__);
+						return FALSE;
+					}
+
+					addr = nm_ip4_address_new ();
+					nm_ip4_address_set_address (addr, ipaddr.s_addr);
+					nm_ip4_address_set_prefix (addr, prefix);
+					nm_ip4_address_set_gateway (addr, gateway.s_addr);
+					nm_setting_ip4_config_add_address (s_ip4, addr);
+					nm_ip4_address_unref (addr);
+
+					if (dns1.s_addr)
+						nm_setting_ip4_config_add_dns (s_ip4, dns1.s_addr);
+					if (dns2.s_addr)
+						nm_setting_ip4_config_add_dns (s_ip4, dns2.s_addr);
+
+					// FIXME: DNS search domains?
+				}
+				return TRUE;
+			}
+			skip = FALSE;
+			hwaddr_matched = FALSE;
+			memset (&ipaddr, 0, sizeof (ipaddr));
+			memset (&gateway, 0, sizeof (gateway));
+			memset (&dns1, 0, sizeof (dns1));
+			memset (&dns2, 0, sizeof (dns2));
+			prefix = 0;
+			method = NULL;
+		}
+
+		if (skip)
+			continue;
+
+		/* HWADDR */
+		if (!skip && (p = match_iscsiadm_tag (*iter, ISCSI_HWADDR_TAG, &skip))) {
+			struct ether_addr *ibft_mac;
+
+			ibft_mac = ether_aton (p);
+			if (!ibft_mac) {
+				g_warning ("%s: malformed iscsiadm record: invalid hwaddress.", __func__);
+				skip = TRUE;
+				continue;
+			}
+
+			if (memcmp (ifcfg_mac->data, (guint8 *) ibft_mac->ether_addr_octet, ETH_ALEN)) {
+				/* This record isn't for the current device, ignore it */
+				skip = TRUE;
+				continue;
+			}
+
+			/* Success, this record is for this device */
+			hwaddr_matched = TRUE;
+		}
+
+		/* BOOTPROTO */
+		if (!skip && (p = match_iscsiadm_tag (*iter, ISCSI_BOOTPROTO_TAG, &skip))) {
+			if (!g_ascii_strcasecmp (p, "dhcp"))
+				method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
+			else if (!g_ascii_strcasecmp (p, "static"))
+				method = NM_SETTING_IP4_CONFIG_METHOD_MANUAL;
+			else {
+				g_warning ("%s: malformed iscsiadm record: unknown BOOTPROTO '%s'.",
+				           __func__, p);
+				skip = TRUE;
+				continue;
+			}
+		}
+
+		if (!skip && (p = match_iscsiadm_tag (*iter, ISCSI_IPADDR_TAG, &skip))) {
+			if (inet_pton (AF_INET, p, &ipaddr) < 1) {
+				g_warning ("%s: malformed iscsiadm record: invalid IP address '%s'.",
+				           __func__, p);
+				skip = TRUE;
+				continue;
+			}
+		}
+
+		if (!skip && (p = match_iscsiadm_tag (*iter, ISCSI_SUBNET_TAG, &skip))) {
+			struct in_addr mask;
+
+			if (inet_pton (AF_INET, p, &mask) < 1) {
+				g_warning ("%s: malformed iscsiadm record: invalid subnet mask '%s'.",
+				           __func__, p);
+				skip = TRUE;
+				continue;
+			}
+
+			prefix = nm_utils_ip4_netmask_to_prefix (mask.s_addr);
+		}
+
+		if (!skip && (p = match_iscsiadm_tag (*iter, ISCSI_GATEWAY_TAG, &skip))) {
+			if (inet_pton (AF_INET, p, &gateway) < 1) {
+				g_warning ("%s: malformed iscsiadm record: invalid IP gateway '%s'.",
+				           __func__, p);
+				skip = TRUE;
+				continue;
+			}
+		}
+
+		if (!skip && (p = match_iscsiadm_tag (*iter, ISCSI_DNS1_TAG, &skip))) {
+			if (inet_pton (AF_INET, p, &dns1) < 1) {
+				g_warning ("%s: malformed iscsiadm record: invalid DNS1 address '%s'.",
+				           __func__, p);
+				skip = TRUE;
+				continue;
+			}
+		}
+
+		if (!skip && (p = match_iscsiadm_tag (*iter, ISCSI_DNS2_TAG, &skip))) {
+			if (inet_pton (AF_INET, p, &dns2) < 1) {
+				g_warning ("%s: malformed iscsiadm record: invalid DNS2 address '%s'.",
+				           __func__, p);
+				skip = TRUE;
+				continue;
+			}
+		}
+	}
+
+	success = TRUE;
+
+done:
+	if (ifcfg_mac)
+		g_byte_array_free (ifcfg_mac, TRUE);
+	g_strfreev (lines);
+	g_free (out);
+	g_free (err);
+	return success;
+}
+
+static gboolean
 read_ip4_address (shvarFile *ifcfg,
                   const char *tag,
                   guint32 *out_addr,
@@ -325,7 +604,10 @@ error:
 }
 
 static NMSetting *
-make_ip4_setting (shvarFile *ifcfg, const char *network_file, GError **error)
+make_ip4_setting (shvarFile *ifcfg,
+                  const char *network_file,
+                  const char *iscsiadm_path,
+                  GError **error)
 {
 	NMSettingIP4Config *s_ip4 = NULL;
 	char *value = NULL;
@@ -364,7 +646,15 @@ make_ip4_setting (shvarFile *ifcfg, const char *network_file, GError **error)
 	if (value) {
 		if (!g_ascii_strcasecmp (value, "bootp") || !g_ascii_strcasecmp (value, "dhcp"))
 			method = NM_SETTING_IP4_CONFIG_METHOD_AUTO;
-		else if (!g_ascii_strcasecmp (value, "autoip")) {
+		else if (!g_ascii_strcasecmp (value, "ibft")) {
+			/* iSCSI Boot Firmware Table: need to read values from the iSCSI 
+			 * firmware for this device and create the IP4 setting using those.
+			 */
+			if (fill_ip4_setting_from_ibft (ifcfg, s_ip4, iscsiadm_path, error))
+				return NM_SETTING (s_ip4);
+			g_object_unref (s_ip4);
+			return NULL;
+		} else if (!g_ascii_strcasecmp (value, "autoip")) {
 			g_free (value);
 			g_object_set (s_ip4,
 			              NM_SETTING_IP4_CONFIG_METHOD, NM_SETTING_IP4_CONFIG_METHOD_LINK_LOCAL,
@@ -496,38 +786,6 @@ make_ip4_setting (shvarFile *ifcfg, const char *network_file, GError **error)
 error:
 	g_object_unref (s_ip4);
 	return NULL;
-}
-
-static gboolean
-read_mac_address (shvarFile *ifcfg, GByteArray **array, GError **error)
-{
-	char *value = NULL;
-	struct ether_addr *mac;
-
-	g_return_val_if_fail (ifcfg != NULL, FALSE);
-	g_return_val_if_fail (array != NULL, FALSE);
-	g_return_val_if_fail (*array == NULL, FALSE);
-	g_return_val_if_fail (error != NULL, FALSE);
-	g_return_val_if_fail (*error == NULL, FALSE);
-
-	value = svGetValue (ifcfg, "HWADDR", FALSE);
-	if (!value || !strlen (value)) {
-		g_free (value);
-		return TRUE;
-	}
-
-	mac = ether_aton (value);
-	if (!mac) {
-		g_free (value);
-		g_set_error (error, ifcfg_plugin_error_quark (), 0,
-		             "The MAC address '%s' was invalid.", value);
-		return FALSE;
-	}
-
-	g_free (value);
-	*array = g_byte_array_sized_new (ETH_ALEN);
-	g_byte_array_append (*array, (guint8 *) mac->ether_addr_octet, ETH_ALEN);
-	return TRUE;
 }
 
 static gboolean
@@ -1204,7 +1462,9 @@ eap_peap_reader (const char *eap_method,
 		if (!strlen (*iter))
 			continue;
 
-		if (!strcmp (*iter, "MSCHAPV2") || !strcmp (*iter, "MD5")) {
+		if (   !strcmp (*iter, "MSCHAPV2")
+		    || !strcmp (*iter, "MD5")
+		    || !strcmp (*iter, "GTC")) {
 			if (!eap_simple_reader (*iter, ifcfg, keys, s_8021x, TRUE, error))
 				goto done;
 		} else if (!strcmp (*iter, "TLS")) {
@@ -1217,7 +1477,6 @@ eap_peap_reader (const char *eap_method,
 			goto done;
 		}
 
-		// FIXME: OTP & GTC too
 		lower = g_ascii_strdown (*iter, -1);
 		g_object_set (s_8021x, NM_SETTING_802_1X_PHASE2_AUTH, lower, NULL);
 		g_free (lower);
@@ -2031,8 +2290,9 @@ is_wireless_device (const char *iface)
 
 NMConnection *
 connection_from_file (const char *filename,
-                      const char *network_file,
-                      const char *test_type,  /* for unit tests only */
+                      const char *network_file,  /* for unit tests only */
+                      const char *test_type,     /* for unit tests only */
+                      const char *iscsiadm_path, /* for unit tests only */
                       char **unmanaged,
                       char **keyfile,
                       GError **error,
@@ -2040,7 +2300,7 @@ connection_from_file (const char *filename,
 {
 	NMConnection *connection = NULL;
 	shvarFile *parsed;
-	char *type, *nmc = NULL;
+	char *type, *nmc = NULL, *bootproto;
 	NMSetting *s_ip4;
 	char *ifcfg_name = NULL;
 	gboolean nm_controlled = TRUE;
@@ -2054,6 +2314,9 @@ connection_from_file (const char *filename,
 	/* Non-NULL only for unit tests; normally use /etc/sysconfig/network */
 	if (!network_file)
 		network_file = SYSCONFDIR "/sysconfig/network";
+
+	if (!iscsiadm_path)
+		iscsiadm_path = SBINDIR "/iscsiadm";
 
 	ifcfg_name = utils_get_ifcfg_name (filename);
 	if (!ifcfg_name) {
@@ -2141,13 +2404,28 @@ connection_from_file (const char *filename,
 	if (!connection || *unmanaged)
 		goto done;
 
-	s_ip4 = make_ip4_setting (parsed, network_file, error);
+	s_ip4 = make_ip4_setting (parsed, network_file, iscsiadm_path, error);
 	if (*error) {
 		g_object_unref (connection);
 		connection = NULL;
 		goto done;
 	} else if (s_ip4) {
 		nm_connection_add_setting (connection, s_ip4);
+	}
+
+	/* iSCSI / ibft connections are read-only since their settings are
+	 * stored in NVRAM and can only be changed in BIOS.
+	 */
+	bootproto = svGetValue (parsed, "BOOTPROTO", FALSE);
+	if (   bootproto
+	    && connection
+	    && !g_ascii_strcasecmp (bootproto, "ibft")) {
+		NMSettingConnection *s_con;
+
+		s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+		g_assert (s_con);
+
+		g_object_set (G_OBJECT (s_con), NM_SETTING_CONNECTION_READ_ONLY, TRUE, NULL);
 	}
 
 	if (!nm_connection_verify (connection, error)) {

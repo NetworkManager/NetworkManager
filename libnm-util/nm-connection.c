@@ -41,6 +41,7 @@
 #include "nm-setting-wireless.h"
 #include "nm-setting-wireless-security.h"
 #include "nm-setting-vpn.h"
+#include "nm-setting-olpc-mesh.h"
 
 #include "nm-setting-serial.h"
 #include "nm-setting-gsm.h"
@@ -140,7 +141,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 static GHashTable *registered_settings = NULL;
 
-#define DEFAULT_MAP_SIZE 14
+#define DEFAULT_MAP_SIZE 15
 
 static struct SettingInfo {
 	const char *name;
@@ -216,6 +217,11 @@ register_default_settings (void)
 	                      NM_SETTING_WIRELESS_ERROR,
 	                      1);
 
+	register_one_setting (NM_SETTING_OLPC_MESH_SETTING_NAME,
+	                      NM_TYPE_SETTING_OLPC_MESH,
+	                      NM_SETTING_OLPC_MESH_ERROR,
+	                      1);
+
 	register_one_setting (NM_SETTING_GSM_SETTING_NAME,
 	                      NM_TYPE_SETTING_GSM,
 	                      NM_SETTING_GSM_ERROR,
@@ -264,6 +270,11 @@ register_default_settings (void)
 	register_one_setting (NM_SETTING_IP4_CONFIG_SETTING_NAME,
 	                      NM_TYPE_SETTING_IP4_CONFIG,
 	                      NM_SETTING_IP4_CONFIG_ERROR,
+	                      6);
+
+	register_one_setting (NM_SETTING_IP6_CONFIG_SETTING_NAME,
+	                      NM_TYPE_SETTING_IP6_CONFIG,
+	                      NM_SETTING_IP6_CONFIG_ERROR,
 	                      6);
 
 	/* Be sure to update DEFAULT_MAP_SIZE if you add another setting!! */

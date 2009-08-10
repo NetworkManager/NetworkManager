@@ -112,7 +112,7 @@ nm_ifcfg_connection_new (const char *filename,
 
 	g_return_val_if_fail (filename != NULL, NULL);
 
-	tmp = connection_from_file (filename, NULL, NULL, &unmanaged, &keyfile, error, ignore_error);
+	tmp = connection_from_file (filename, NULL, NULL, NULL, &unmanaged, &keyfile, error, ignore_error);
 	if (!tmp)
 		return NULL;
 

@@ -36,6 +36,7 @@
 #include "nm-utils.h"
 #include "NetworkManagerUtils.h"
 #include "nm-device-wifi.h"
+#include "nm-device-olpc-mesh.h"
 #include "nm-device-ethernet.h"
 
 typedef struct {
@@ -271,6 +272,13 @@ is_wireless (GUdevDevice *device)
 	return is_wifi;
 }
 
+static gboolean
+is_olpc_mesh (GUdevDevice *device)
+{
+	const gchar *prop = g_udev_device_get_property (device, "ID_NM_OLPC_MESH");
+	return (prop != NULL);
+}
+
 static GObject *
 device_creator (NMUdevManager *manager,
                 GUdevDevice *udev_device,
@@ -311,7 +319,9 @@ device_creator (NMUdevManager *manager,
 		return NULL;
 	}
 
-	if (is_wireless (udev_device))
+	if (is_olpc_mesh (udev_device)) /* must be before is_wireless */
+		device = (GObject *) nm_device_olpc_mesh_new (path, ifname, driver, ifindex);
+	else if (is_wireless (udev_device))
 		device = (GObject *) nm_device_wifi_new (path, ifname, driver, ifindex);
 	else
 		device = (GObject *) nm_device_ethernet_new (path, ifname, driver, ifindex);

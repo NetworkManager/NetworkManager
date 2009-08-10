@@ -28,6 +28,7 @@
 #include <glib-object.h>
 #include <dbus/dbus.h>
 #include "nm-ip4-config.h"
+#include "nm-ip6-config.h"
 
 typedef enum {
 	NM_NAMED_MANAGER_ERROR_SYSTEM,
@@ -69,13 +70,22 @@ GType nm_named_manager_get_type (void);
 NMNamedManager * nm_named_manager_get (void);
 
 gboolean nm_named_manager_add_ip4_config (NMNamedManager *mgr,
-					  const char *iface,
+										  const char *iface,
                                           NMIP4Config *config,
                                           NMNamedIPConfigType cfg_type);
 
 gboolean nm_named_manager_remove_ip4_config (NMNamedManager *mgr,
-					     const char *iface,
-					     NMIP4Config *config);
+											 const char *iface,
+											 NMIP4Config *config);
+
+gboolean nm_named_manager_add_ip6_config (NMNamedManager *mgr,
+										  const char *iface,
+                                          NMIP6Config *config,
+                                          NMNamedIPConfigType cfg_type);
+
+gboolean nm_named_manager_remove_ip6_config (NMNamedManager *mgr,
+											 const char *iface,
+											 NMIP6Config *config);
 
 G_END_DECLS
 

@@ -18,6 +18,10 @@
  * Copyright (C) 2005 - 2008 Red Hat, Inc.
  */
 
+#define _XOPEN_SOURCE
+#include <time.h>
+#undef _XOPEN_SOURCE
+
 #include <glib.h>
 #include <glib/gi18n.h>
 #include <dbus/dbus.h>
@@ -74,6 +78,206 @@ get_leasefile_for_iface (const char * iface, const char *uuid)
 	                        NM_DHCP_MANAGER_LEASE_FILE_EXT);
 }
 
+static void
+add_lease_option (GHashTable *hash, char *line)
+{
+	char *spc;
+
+	spc = strchr (line, ' ');
+	if (!spc) {
+		g_warning ("%s: line '%s' did not contain a space", __func__, line);
+		return;
+	}
+
+	/* If it's an 'option' line, split at second space */
+	if (g_str_has_prefix (line, "option ")) {
+		spc = strchr (spc + 1, ' ');
+		if (!spc) {
+			g_warning ("%s: option line '%s' did not contain a second space",
+			           __func__, line);
+			return;
+		}
+	}
+
+	/* Split the line at the space */
+	*spc = '\0';
+	spc++;
+
+	/* Kill the ';' at the end of the line, if any */
+	if (*(spc + strlen (spc) - 1) == ';')
+		*(spc + strlen (spc) - 1) = '\0';
+
+	/* Treat 'interface' specially */
+	if (g_str_has_prefix (line, "interface")) {
+		if (*(spc) == '"')
+			spc++; /* Jump past the " */
+		if (*(spc + strlen (spc) - 1) == '"')
+			*(spc + strlen (spc) - 1) = '\0';  /* Kill trailing " */
+	}
+
+	g_hash_table_insert (hash, g_strdup (line), g_strdup (spc));
+}
+
+GSList *
+nm_dhcp_client_get_lease_ip4_config (const char *iface, const char *uuid)
+{
+	GSList *parsed = NULL, *iter, *leases = NULL;
+	char *contents = NULL;
+	char *leasefile;
+	char **line, **split = NULL;
+	GHashTable *hash = NULL;
+
+	leasefile = get_leasefile_for_iface (iface, uuid);
+	if (!leasefile)
+		return NULL;
+
+	if (!g_file_test (leasefile, G_FILE_TEST_EXISTS))
+		goto out;
+
+	if (!g_file_get_contents (leasefile, &contents, NULL, NULL))
+		goto out;
+
+	split = g_strsplit_set (contents, "\n\r", -1);
+	g_free (contents);
+	if (!split)
+		goto out;
+
+	for (line = split; line && *line; line++) {
+		*line = g_strstrip (*line);
+
+		if (!strcmp (*line, "}")) {
+			/* Lease ends */
+			parsed = g_slist_append (parsed, hash);
+			hash = NULL;
+		} else if (!strcmp (*line, "lease {")) {
+			/* Beginning of a new lease */
+			if (hash) {
+				g_warning ("%s: lease file %s malformed; new lease started "
+				           "without ending previous lease",
+				           __func__, leasefile);
+				g_hash_table_destroy (hash);
+			}
+
+			hash = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_free);
+		} else if (strlen (*line))
+			add_lease_option (hash, *line);
+	}
+	g_strfreev (split);
+
+	/* Check if the last lease in the file was properly ended */
+	if (hash) {
+		g_warning ("%s: lease file %s malformed; new lease started "
+		           "without ending previous lease",
+		           __func__, leasefile);
+		g_hash_table_destroy (hash);
+		hash = NULL;
+	}
+
+	for (iter = parsed; iter; iter = g_slist_next (iter)) {
+		NMIP4Config *ip4;
+		NMIP4Address *addr;
+		const char *data;
+		struct in_addr tmp;
+		guint32 prefix;
+		struct tm expire;
+
+		hash = iter->data;
+
+		/* Make sure this lease is for the interface we want */
+		data = g_hash_table_lookup (hash, "interface");
+		if (!data || strcmp (data, iface))
+			continue;
+
+		data = g_hash_table_lookup (hash, "expire");
+		if (data) {
+			time_t now_tt;
+			struct tm *now;
+
+			/* Read lease expiration (in UTC) */
+			if (!strptime (data, "%w %Y/%m/%d %H:%M:%S", &expire)) {
+				g_warning ("%s: couldn't parse expire time '%s'",
+				           __func__, data);
+				continue;
+			}
+
+			now_tt = time (NULL);
+			now = gmtime(&now_tt);
+
+			/* Ignore this lease if it's already expired */
+			if (expire.tm_year < now->tm_year)
+				continue;
+			else if (expire.tm_year == now->tm_year) {
+				if (expire.tm_mon < now->tm_mon)
+					continue;
+				else if (expire.tm_mon == now->tm_mon) {
+					if (expire.tm_mday < now->tm_mday)
+						continue;
+					else if (expire.tm_mday == now->tm_mday) {
+						if (expire.tm_hour < now->tm_hour)
+							continue;
+						else if (expire.tm_hour == now->tm_hour) {
+							if (expire.tm_min < now->tm_min)
+								continue;
+							else if (expire.tm_min == now->tm_min) {
+								if (expire.tm_sec <= now->tm_sec)
+									continue;
+							}
+						}
+					}
+				}
+			}
+			/* If we get this far, the lease hasn't expired */
+		}
+
+		data = g_hash_table_lookup (hash, "fixed-address");
+		if (!data)
+			continue;
+
+		ip4 = nm_ip4_config_new ();
+		addr = nm_ip4_address_new ();
+
+		/* IP4 address */
+		if (!inet_pton (AF_INET, data, &tmp)) {
+			g_warning ("%s: couldn't parse IP4 address '%s'", __func__, data);
+			goto error;
+		}
+		nm_ip4_address_set_address (addr, tmp.s_addr);
+
+		/* Netmask */
+		data = g_hash_table_lookup (hash, "option subnet-mask");
+		if (!data)
+			data = "255.255.255.0"; /* FIXME: assume class C? */
+		if (!inet_pton (AF_INET, data, &tmp)) {
+			g_warning ("%s: couldn't parse IP4 subnet mask '%s'", __func__, data);
+			goto error;
+		}
+		prefix = nm_utils_ip4_netmask_to_prefix (tmp.s_addr);
+		nm_ip4_address_set_prefix (addr, prefix);
+
+		/* Gateway */
+		data = g_hash_table_lookup (hash, "option routers");
+		if (data) {
+			if (!inet_pton (AF_INET, data, &tmp)) {
+				g_warning ("%s: couldn't parse IP4 gateway '%s'", __func__, data);
+				goto error;
+			}
+			nm_ip4_address_set_gateway (addr, tmp.s_addr);
+		}
+
+		nm_ip4_config_take_address (ip4, addr);
+		leases = g_slist_append (leases, ip4);
+		continue;
+
+	error:
+		nm_ip4_address_unref (addr);
+		g_object_unref (ip4);
+	}
+
+out:
+	g_slist_foreach (parsed, (GFunc) g_hash_table_destroy, NULL);
+	g_free (leasefile);
+	return leases;
+}
 
 
 #define DHCP_CLIENT_ID_TAG "send dhcp-client-identifier"

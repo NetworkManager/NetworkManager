@@ -107,6 +107,10 @@ gboolean       nm_dhcp_manager_foreach_dhcp4_option (NMDHCPManager *self,
                                                      GHFunc func,
                                                      gpointer user_data);
 
+GSList *       nm_dhcp_manager_get_lease_ip4_config (NMDHCPManager *self,
+                                                     const char *iface,
+                                                     const char *uuid);
+
 /* The following are implemented by the DHCP client backends */
 GPid           nm_dhcp_client_start                 (NMDHCPDevice *device,
                                                      const char *uuid,
@@ -117,6 +121,9 @@ void           nm_dhcp_client_stop                  (NMDHCPDevice *device, pid_t
 gboolean       nm_dhcp_client_process_classless_routes (GHashTable *options,
                                                         NMIP4Config *ip4_config,
                                                         guint32 *gwaddr);
+
+GSList *       nm_dhcp_client_get_lease_ip4_config  (const char *iface,
+                                                     const char *uuid);
 
 /* Test functions */
 NMIP4Config *nm_dhcp_manager_options_to_ip4_config (const char *iface,

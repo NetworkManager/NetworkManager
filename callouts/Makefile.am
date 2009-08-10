@@ -62,6 +62,9 @@ nm_dispatcher_action_LDADD = \
 nm-dispatcher-glue.h: nm-dispatcher.xml
 	dbus-binding-tool --prefix=nm_dispatcher --mode=glib-server --output=$@ $<
 
+udevrulesdir = $(UDEV_BASE_DIR)/rules.d
+udevrules_DATA = 77-nm-olpc-mesh.rules
+
 dbusactivationdir = $(datadir)/dbus-1/system-services
 dbusactivation_in_files = org.freedesktop.nm_dispatcher.service.in
 dbusactivation_DATA = $(dbusactivation_in_files:.service.in=.service)
@@ -85,6 +88,7 @@ CLEANFILES = $(BUILT_SOURCES) $(dbusactivation_DATA)
 
 EXTRA_DIST = \
 	$(dbusservice_DATA) \
+	$(udevrules_DATA) \
 	$(dbusactivation_in_files) \
 	nm-dispatcher.xml
 

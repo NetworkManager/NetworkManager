@@ -1,0 +1,35 @@
+#!/bin/bash
+
+cat << EOF
+# BEGIN RECORD
+iface.initiatorname = iqn.pjones6
+iface.hwaddress = 00:33:21:98:b9:f0
+iface.bootproto = STATIC
+iface.ipaddress 192.168.32.72
+iface.subnet_mask = 255.255.252.0
+iface.gateway = 192.168.35.254
+iface.primary_dns = 10.16.255.2
+iface.secondary_dns = 10.16.255.3
+iface.vlan = 0
+iface.net_ifacename = eth0
+node.name = iqn.0.2008-11.com.blahblah:iscsi0
+node.conn[0].address = 10.16.52.16
+node.conn[0].port = 3260
+node.boot_lun = 00000000
+# END RECORD
+# BEGIN RECORD
+iface.initiatorname = iqn.pjones6
+iface.hwaddress = 00:33:21:98:b9:f1
+iface.bootproto = DHCP
+iface.gateway = 10.16.52.254
+iface.primary_dns = 10.16.255.2
+iface.secondary_dns = 10.16.255.3
+iface.vlan = 0
+iface.net_ifacename = eth1
+node.name = iqn.1.2008-11.com.blahblah:iscsi1
+node.conn[0].address = 10.16.52.16
+node.conn[0].port = 3260
+node.boot_lun = 00000000
+# END RECORD
+EOF
+

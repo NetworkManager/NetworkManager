@@ -1,0 +1,4 @@
+# Intel Corporation 82540EP Gigabit Ethernet Controller (Mobile)
+DEVICE=eth0
+HWADDR=00:33:21:98:b9:f1
+BOOTPROTO=ibft

@@ -77,7 +77,8 @@ typedef enum NMDeviceType
 	NM_DEVICE_TYPE_WIFI,
 	NM_DEVICE_TYPE_GSM,
 	NM_DEVICE_TYPE_CDMA,
-	NM_DEVICE_TYPE_BT  /* Bluetooth */
+	NM_DEVICE_TYPE_BT,  /* Bluetooth */
+	NM_DEVICE_TYPE_OLPC_MESH
 } NMDeviceType;
 
 /* DEPRECATED TYPE NAMES */
@@ -356,6 +357,9 @@ typedef enum {
 
 	/* Carrier/link changed */
 	NM_DEVICE_STATE_REASON_CARRIER,
+
+	/* The device's existing connection was assumed */
+	NM_DEVICE_STATE_REASON_CONNECTION_ASSUMED,
 
 	/* Unused */
 	NM_DEVICE_STATE_REASON_LAST = 0xFFFF

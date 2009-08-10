@@ -193,6 +193,14 @@ PKG_CHECK_MODULES(GUDEV, gudev-1.0)
 AC_SUBST(GUDEV_CFLAGS)
 AC_SUBST(GUDEV_LIBS)
 
+AC_ARG_WITH(udev-dir, AS_HELP_STRING([--with-udev-dir=DIR], [where the udev base directory is]))
+if test -n "$with_udev_dir" ; then
+	UDEV_BASE_DIR="$with_udev_dir"
+else
+	UDEV_BASE_DIR="/lib/udev"
+fi
+AC_SUBST(UDEV_BASE_DIR)
+
 PKG_CHECK_EXISTS(gio-2.0,[have_gio=yes],[have_gio=no])
 if test x"$have_gio" = "xno"; then
 	AC_DEFINE([NO_GIO],[1],[Define if you don't have GIO])

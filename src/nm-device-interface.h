@@ -48,6 +48,7 @@ typedef enum
 #define NM_DEVICE_INTERFACE_IP4_ADDRESS  "ip4-address"
 #define NM_DEVICE_INTERFACE_IP4_CONFIG   "ip4-config"
 #define NM_DEVICE_INTERFACE_DHCP4_CONFIG "dhcp4-config"
+#define NM_DEVICE_INTERFACE_IP6_CONFIG   "ip6-config"
 #define NM_DEVICE_INTERFACE_STATE        "state"
 #define NM_DEVICE_INTERFACE_DEVICE_TYPE  "device-type" /* ugh */
 #define NM_DEVICE_INTERFACE_MANAGED      "managed"
@@ -63,6 +64,7 @@ typedef enum {
 	NM_DEVICE_INTERFACE_PROP_IP4_ADDRESS,
 	NM_DEVICE_INTERFACE_PROP_IP4_CONFIG,
 	NM_DEVICE_INTERFACE_PROP_DHCP4_CONFIG,
+	NM_DEVICE_INTERFACE_PROP_IP6_CONFIG,
 	NM_DEVICE_INTERFACE_PROP_STATE,
 	NM_DEVICE_INTERFACE_PROP_DEVICE_TYPE,
 	NM_DEVICE_INTERFACE_PROP_MANAGED,
@@ -87,6 +89,8 @@ struct _NMDeviceInterface {
 	void (*deactivate) (NMDeviceInterface *device, NMDeviceStateReason reason);
 
 	gboolean (*spec_match_list) (NMDeviceInterface *device, const GSList *specs);
+
+	NMConnection * (*connection_match_config) (NMDeviceInterface *device, const GSList *specs);
 
 	/* Signals */
 	void (*state_changed) (NMDeviceInterface *device,
@@ -114,5 +118,10 @@ NMDeviceState nm_device_interface_get_state (NMDeviceInterface *device);
 
 gboolean nm_device_interface_spec_match_list (NMDeviceInterface *device,
                                               const GSList *specs);
+
+NMConnection * nm_device_interface_connection_match_config (NMDeviceInterface *device,
+                                                            const GSList *connections);
+
+gboolean nm_device_interface_can_assume_connection (NMDeviceInterface *device);
 
 #endif /* NM_DEVICE_INTERFACE_H */

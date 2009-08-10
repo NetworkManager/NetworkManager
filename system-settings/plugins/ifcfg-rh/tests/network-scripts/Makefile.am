@@ -35,7 +35,9 @@ EXTRA_DIST = \
 	ifcfg-test-wifi-wpa-eap-ttls-tls \
 	keys-test-wifi-wpa-eap-ttls-tls \
 	test_ca_cert.pem \
-	test1_key_and_cert.pem
+	test1_key_and_cert.pem \
+	ifcfg-test-ibft-dhcp \
+	ifcfg-test-ibft-static
 
 check-local:
 	@for f in $(EXTRA_DIST); do \
