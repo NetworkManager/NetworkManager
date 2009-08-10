@@ -34,7 +34,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.</
 <xi:include href="nm-device-gsm.xml"/>
 <xi:include href="nm-device-serial.xml"/>
 <xi:include href="nm-device-bt.xml"/>
+<xi:include href="nm-device-olpc-mesh.xml"/>
 <xi:include href="nm-ip4-config.xml"/>
+<xi:include href="nm-ip6-config.xml"/>
 <xi:include href="nm-dhcp4-config.xml"/>
 <xi:include href="nm-settings.xml"/>
 <xi:include href="nm-exported-connection.xml"/>
