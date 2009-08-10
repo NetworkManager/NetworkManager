@@ -141,7 +141,7 @@ static guint signals[LAST_SIGNAL] = { 0 };
 
 static GHashTable *registered_settings = NULL;
 
-#define DEFAULT_MAP_SIZE 14
+#define DEFAULT_MAP_SIZE 15
 
 static struct SettingInfo {
 	const char *name;
