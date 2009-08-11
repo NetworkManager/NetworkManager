@@ -41,7 +41,6 @@ G_DEFINE_TYPE_EXTENDED (NMSysconfigConnection, nm_sysconfig_connection, NM_TYPE_
                                                 NMSysconfigConnectionPrivate))
 
 typedef struct {
-	DBusGConnection *bus;
 	PolkitAuthority *authority;
 } NMSysconfigConnectionPrivate;
 

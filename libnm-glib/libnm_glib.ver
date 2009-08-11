@@ -120,6 +120,7 @@ global:
 	nm_settings_interface_get_type;
 	nm_settings_interface_list_connections;
 	nm_settings_service_export;
+	nm_settings_service_export_connection;
 	nm_settings_service_get_connection_by_path;
 	nm_settings_service_get_type;
 	nm_settings_system_interface_get_type;

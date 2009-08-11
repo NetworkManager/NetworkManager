@@ -19,6 +19,7 @@
  * (C) Copyright 2008 - 2009 Red Hat, Inc.
  */
 
+#include <string.h>
 #include <NetworkManager.h>
 #include <dbus/dbus-glib-lowlevel.h>
 
@@ -115,11 +116,18 @@ impl_settings_list_connections (NMSettingsService *self,
 static NMSettingsConnectionInterface *
 get_connection_by_path (NMSettingsInterface *settings, const char *path)
 {
-	NMExportedConnection *connection;
+	NMExportedConnection *connection = NULL;
+	GSList *list = NULL, *iter;
 
-	/* Must always be implemented */
-	g_assert (NM_SETTINGS_SERVICE_GET_CLASS (settings)->get_connection_by_path);
-	connection = NM_SETTINGS_SERVICE_GET_CLASS (settings)->get_connection_by_path (NM_SETTINGS_SERVICE (settings), path);
+	list = list_connections (settings);
+	for (iter = list; iter; iter = g_slist_next (iter)) {
+		if (!strcmp (nm_connection_get_path (NM_CONNECTION (iter->data)), path)) {
+			connection = NM_EXPORTED_CONNECTION (iter->data);
+			break;
+		}
+	}
+	g_slist_free (list);
+
 	return (NMSettingsConnectionInterface *) connection;
 }
 
@@ -131,6 +139,48 @@ nm_settings_service_get_connection_by_path (NMSettingsService *self,
 	g_return_val_if_fail (NM_IS_SETTINGS_SERVICE (self), NULL);
 
 	return (NMExportedConnection *) get_connection_by_path (NM_SETTINGS_INTERFACE (self), path);
+}
+
+static gboolean
+add_connection (NMSettingsInterface *settings,
+                NMSettingsConnectionInterface *connection,
+                NMSettingsAddConnectionFunc callback,
+                gpointer user_data)
+{
+	NMSettingsService *self = NM_SETTINGS_SERVICE (settings);
+	GError *error = NULL;
+	gboolean success = FALSE;
+
+	if (NM_SETTINGS_SERVICE_GET_CLASS (self)->add_connection) {
+		NM_SETTINGS_SERVICE_GET_CLASS (self)->add_connection (NM_SETTINGS_SERVICE (self),
+		                                                      connection,
+		                                                      NULL,
+		                                                      callback,
+		                                                      user_data);
+		success = TRUE;
+	} else {
+		error = g_error_new (NM_SETTINGS_INTERFACE_ERROR,
+		                     NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+		                     "%s: %s:%d add_connection() not implemented",
+		                     __func__, __FILE__, __LINE__);
+		callback (settings, error, user_data);
+		g_error_free (error);
+	}
+
+	return success;
+}
+
+static void
+dbus_add_connection_cb (NMSettingsInterface *settings,
+                        GError *error,
+                        gpointer user_data)
+{
+	DBusGMethodInvocation *context = user_data;
+
+	if (error)
+		dbus_g_method_return_error (context, error);
+	else
+		dbus_g_method_return (context);
 }
 
 static void
@@ -149,11 +199,14 @@ impl_settings_add_connection (NMSettingsService *self,
 		g_error_free (error);
 		return;
 	}
-	g_object_unref (tmp);
 
-	if (NM_SETTINGS_SERVICE_GET_CLASS (self)->add_connection)
-		NM_SETTINGS_SERVICE_GET_CLASS (self)->add_connection (self, settings, context);
-	else {
+	if (NM_SETTINGS_SERVICE_GET_CLASS (self)->add_connection) {
+		NM_SETTINGS_SERVICE_GET_CLASS (self)->add_connection (NM_SETTINGS_SERVICE (self),
+		                                                      NM_SETTINGS_CONNECTION_INTERFACE (tmp),
+		                                                      context,
+		                                                      dbus_add_connection_cb,
+		                                                      context);
+	} else {
 		error = g_error_new (NM_SETTINGS_INTERFACE_ERROR,
 		                     NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
 		                     "%s: %s:%d add_connection() not implemented",
@@ -161,6 +214,30 @@ impl_settings_add_connection (NMSettingsService *self,
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
 	}
+
+	g_object_unref (tmp);
+}
+
+void
+nm_settings_service_export_connection (NMSettingsService *self,
+                                       NMSettingsConnectionInterface *connection)
+{
+	NMSettingsServicePrivate *priv = NM_SETTINGS_SERVICE_GET_PRIVATE (self);
+	static guint32 ec_counter = 0;
+	char *path;
+
+	g_return_if_fail (connection != NULL);
+	g_return_if_fail (NM_IS_SETTINGS_CONNECTION_INTERFACE (connection));
+
+	/* Don't allow exporting twice */
+	g_return_if_fail (nm_connection_get_path (NM_CONNECTION (connection)) == NULL);
+
+	path = g_strdup_printf ("%s/%u", NM_DBUS_PATH_SETTINGS, ec_counter++);
+	nm_connection_set_path (NM_CONNECTION (connection), path);
+	nm_connection_set_scope (NM_CONNECTION (connection), priv->scope);
+
+	dbus_g_connection_register_g_object (priv->bus, path, G_OBJECT (connection));
+	g_free (path);
 }
 
 /**************************************************************/
@@ -171,6 +248,10 @@ settings_interface_init (NMSettingsInterface *iface)
 	/* interface implementation */
 	iface->list_connections = list_connections;
 	iface->get_connection_by_path = get_connection_by_path;
+	iface->add_connection = add_connection;
+
+	dbus_g_object_type_install_info (G_TYPE_FROM_INTERFACE (iface),
+	                                 &dbus_glib_nm_settings_object_info);
 }
 
 static GObject *
@@ -181,8 +262,10 @@ constructor (GType type,
 	GObject *object;
 
 	object = G_OBJECT_CLASS (nm_settings_service_parent_class)->constructor (type, n_construct_params, construct_params);
-	if (object)
+	if (object) {
 		g_assert (NM_SETTINGS_SERVICE_GET_PRIVATE (object)->scope != NM_CONNECTION_SCOPE_UNKNOWN);
+		g_assert (NM_SETTINGS_SERVICE_GET_PRIVATE (object)->bus != NULL);
+	}
 	return object;
 }
 
@@ -196,11 +279,14 @@ set_property (GObject *object, guint prop_id,
               const GValue *value, GParamSpec *pspec)
 {
 	NMSettingsServicePrivate *priv = NM_SETTINGS_SERVICE_GET_PRIVATE (object);
+	DBusGConnection *bus;
 
 	switch (prop_id) {
 	case PROP_BUS:
 		/* Construct only */
-		priv->bus = dbus_g_connection_ref ((DBusGConnection *) g_value_get_boxed (value));
+		bus = g_value_get_boxed (value);
+		if (bus)
+			priv->bus = dbus_g_connection_ref (bus);
 		break;
 	case PROP_SCOPE:
 		/* Construct only */
@@ -277,8 +363,8 @@ nm_settings_service_class_init (NMSettingsServiceClass *class)
 	                                 g_param_spec_uint (NM_SETTINGS_SERVICE_SCOPE,
 	                                                    "Scope",
 	                                                    "Scope",
-	                                                    NM_CONNECTION_SCOPE_USER,
 	                                                    NM_CONNECTION_SCOPE_SYSTEM,
+	                                                    NM_CONNECTION_SCOPE_USER,
 	                                                    NM_CONNECTION_SCOPE_USER,
 	                                                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 

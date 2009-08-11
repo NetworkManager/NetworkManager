@@ -43,7 +43,6 @@
 #include "nm-dbus-glib-types.h"
 #include "nm-sysconfig-settings.h"
 #include "nm-sysconfig-connection.h"
-#include "nm-dbus-manager.h"
 #include "nm-polkit-helpers.h"
 #include "nm-system-config-error.h"
 #include "nm-utils.h"
@@ -67,25 +66,15 @@ static void claim_connection (NMSysconfigSettings *self,
                               NMSettingsConnectionInterface *connection,
                               gboolean do_export);
 
-static gboolean impl_settings_list_connections (NMSysconfigSettings *self,
-                                                GPtrArray **connections,
-                                                GError **error);
-
-static void impl_settings_add_connection (NMSysconfigSettings *self,
-                                          GHashTable *settings,
-                                          DBusGMethodInvocation *context);
-
 static void impl_settings_save_hostname (NMSysconfigSettings *self,
                                          const char *hostname,
                                          DBusGMethodInvocation *context);
 
-#include "nm-settings-glue.h"
 #include "nm-settings-system-glue.h"
 
 static void unmanaged_specs_changed (NMSystemConfigInterface *config, gpointer user_data);
 
 typedef struct {
-	NMDBusManager *dbus_mgr;
 	PolkitAuthority *authority;
 	char *config_file;
 
@@ -96,13 +85,9 @@ typedef struct {
 	char *orig_hostname;
 } NMSysconfigSettingsPrivate;
 
-static void settings_interface_init (NMSettingsInterface *klass);
-
 static void settings_system_interface_init (NMSettingsSystemInterface *klass);
 
-G_DEFINE_TYPE_WITH_CODE (NMSysconfigSettings, nm_sysconfig_settings, G_TYPE_OBJECT,
-                         G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_INTERFACE,
-                                                settings_interface_init)
+G_DEFINE_TYPE_WITH_CODE (NMSysconfigSettings, nm_sysconfig_settings, NM_TYPE_SETTINGS_SERVICE,
                          G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_SYSTEM_INTERFACE,
                                                 settings_system_interface_init))
 
@@ -157,50 +142,20 @@ load_connections (NMSysconfigSettings *self)
 	unmanaged_specs_changed (NULL, self);
 }
 
-static gboolean
-impl_settings_list_connections (NMSysconfigSettings *self,
-                                GPtrArray **connections,
-                                GError **error)
+static GSList *
+list_connections (NMSettingsService *settings)
 {
-	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
+	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (settings);
 	GHashTableIter iter;
 	gpointer key;
+	GSList *list = NULL;
 
-	load_connections (self);
-
-	*connections = g_ptr_array_sized_new (g_hash_table_size (priv->connections));
-
-	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, &key, NULL)) {
-		NMSettingsConnectionInterface *connection = key;
-		char *path = NULL;
-
-		g_object_get (G_OBJECT (connection), NM_SETTINGS_CONNECTION_INTERFACE_PATH, &path, NULL);
-		g_assert (path);
-		g_ptr_array_add (*connections, path);
-	}
-	return TRUE;
-}
-
-static NMSettingsConnectionInterface *
-get_connection_by_path (NMSettingsInterface *self,
-                        const char *path)
-{
-	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
-	GHashTableIter iter;
-	gpointer key;
+	load_connections (NM_SYSCONFIG_SETTINGS (settings));
 
 	g_hash_table_iter_init (&iter, priv->connections);
-	while (g_hash_table_iter_next (&iter, &key, NULL)) {
-		NMConnection *candidate = NM_CONNECTION (key);
-		const char *candidate_path;
-
-		candidate_path = nm_connection_get_path (candidate);
-		g_assert (candidate_path);
-		if (!strcmp (path, candidate_path))
-			return NM_SETTINGS_CONNECTION_INTERFACE (candidate);
-	}
-	return NULL;
+	while (g_hash_table_iter_next (&iter, &key, NULL))
+		list = g_slist_prepend (list, NM_EXPORTED_CONNECTION (key));
+	return g_slist_reverse (list);
 }
 
 static void
@@ -515,28 +470,6 @@ connection_removed (NMSettingsConnectionInterface *connection,
 }
 
 static void
-export_connection (NMSysconfigSettings *self,
-                   NMSettingsConnectionInterface *connection)
-{
-	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
-	static guint32 ec_counter = 0;
-	char *path;
-	DBusGConnection *bus;
-
-	g_return_if_fail (connection != NULL);
-	g_return_if_fail (NM_IS_SETTINGS_CONNECTION_INTERFACE (connection));
-
-	path = g_strdup_printf ("%s/%u", NM_DBUS_PATH_SETTINGS, ec_counter++);
-	nm_connection_set_path (NM_CONNECTION (connection), path);
-	nm_connection_set_scope (NM_CONNECTION (connection), NM_CONNECTION_SCOPE_SYSTEM);
-
-	bus = nm_dbus_manager_get_connection (priv->dbus_mgr);
-	dbus_g_connection_register_g_object (bus, path, G_OBJECT (connection));
-
-	g_free (path);
-}
-
-static void
 claim_connection (NMSysconfigSettings *self,
                   NMSettingsConnectionInterface *connection,
                   gboolean do_export)
@@ -554,7 +487,7 @@ claim_connection (NMSysconfigSettings *self,
 	g_signal_connect (connection, "removed", G_CALLBACK (connection_removed), self);
 
 	if (do_export) {
-		export_connection (self, connection);
+		nm_settings_service_export_connection (NM_SETTINGS_SERVICE (self), connection);
 		g_signal_emit_by_name (self, "new-connection", connection);
 	}
 }
@@ -582,6 +515,9 @@ typedef struct {
 	GCancellable *cancellable;
 
 	NMConnection *connection;
+	NMSettingsAddConnectionFunc callback;
+	gpointer callback_data;
+
 	char *hostname;
 } PolkitCall;
 
@@ -589,6 +525,8 @@ static PolkitCall *
 polkit_call_new (NMSysconfigSettings *self,
                  DBusGMethodInvocation *context,
                  NMConnection *connection,
+                 NMSettingsAddConnectionFunc callback,
+                 gpointer callback_data,
                  const char *hostname)
 {
 	PolkitCall *call;
@@ -600,7 +538,12 @@ polkit_call_new (NMSysconfigSettings *self,
 	call = g_malloc0 (sizeof (PolkitCall));
 	call->self = self;
 	call->context = context;
-	call->connection = connection;
+	if (connection)
+		call->connection = g_object_ref (connection);
+	if (callback) {
+		call->callback = callback;
+		call->callback_data = callback_data;
+	}
 	if (hostname)
 		call->hostname = g_strdup (hostname);
 	call->cancellable = g_cancellable_new ();
@@ -668,7 +611,7 @@ pk_add_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 	                                                         &error);
 	/* Some random error happened */
 	if (error) {
-		dbus_g_method_return_error (call->context, error);
+		call->callback (NM_SETTINGS_INTERFACE (self), error, call->callback_data);
 		goto out;
 	}
 
@@ -677,20 +620,20 @@ pk_add_cb (GObject *object, GAsyncResult *result, gpointer user_data)
 		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
 		                             NM_SYSCONFIG_SETTINGS_ERROR_NOT_PRIVILEGED,
 		                             "Insufficient privileges.");
-		dbus_g_method_return_error (call->context, error);
+		call->callback (NM_SETTINGS_INTERFACE (self), error, call->callback_data);
 		goto out;
 	}
 
-	if (add_new_connection (self, call->connection, &add_error)) {
-		dbus_g_method_return (call->context);
-	} else {
+	if (add_new_connection (self, call->connection, &add_error))
+		call->callback (NM_SETTINGS_INTERFACE (self), NULL, call->callback_data);
+	else {
 		error = g_error_new (NM_SYSCONFIG_SETTINGS_ERROR,
 		                     NM_SYSCONFIG_SETTINGS_ERROR_ADD_FAILED,
 		                     "Saving connection failed: (%d) %s",
 		                     add_error ? add_error->code : -1,
 		                     (add_error && add_error->message) ? add_error->message : "(unknown)");
 		g_error_free (add_error);
-		dbus_g_method_return_error (call->context, error);
+		call->callback (NM_SETTINGS_INTERFACE (self), error, call->callback_data);
 	}
 
 out:
@@ -701,13 +644,15 @@ out:
 }
 
 static void
-impl_settings_add_connection (NMSysconfigSettings *self,
-                              GHashTable *settings,
-                              DBusGMethodInvocation *context)
+add_connection (NMSettingsService *service,
+	            NMSettingsConnectionInterface *connection,
+	            DBusGMethodInvocation *context, /* Only present for D-Bus calls */
+	            NMSettingsAddConnectionFunc callback,
+	            gpointer user_data)
 {
+	NMSysconfigSettings *self = NM_SYSCONFIG_SETTINGS (service);
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 	PolkitCall *call;
-	NMConnection *tmp;
 	GError *error = NULL;
 
 	/* Do any of the plugins support adding? */
@@ -715,21 +660,12 @@ impl_settings_add_connection (NMSysconfigSettings *self,
 		error = g_error_new_literal (NM_SYSCONFIG_SETTINGS_ERROR,
 		                             NM_SYSCONFIG_SETTINGS_ERROR_ADD_NOT_SUPPORTED,
 		                             "None of the registered plugins support add.");
-		dbus_g_method_return_error (context, error);
+		callback (NM_SETTINGS_INTERFACE (service), error, user_data);
 		g_error_free (error);
 		return;
 	}
 
-	/* Check if the settings are valid first */
-	tmp = nm_connection_new_from_hash (settings, &error);
-	if (!tmp) {
-		g_assert (error);
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-		return;
-	}
-
-	call = polkit_call_new (self, context, tmp, NULL);
+	call = polkit_call_new (self, context, NM_CONNECTION (connection), callback, user_data, NULL);
 	g_assert (call);
 	polkit_authority_check_authorization (priv->authority,
 	                                      call->subject,
@@ -816,7 +752,7 @@ impl_settings_save_hostname (NMSysconfigSettings *self,
 		return;
 	}
 
-	call = polkit_call_new (self, context, NULL, hostname);
+	call = polkit_call_new (self, context, NULL, NULL, NULL, hostname);
 	g_assert (call);
 	polkit_authority_check_authorization (priv->authority,
 	                                      call->subject,
@@ -1123,25 +1059,22 @@ nm_sysconfig_settings_device_removed (NMSysconfigSettings *self, NMDevice *devic
 NMSysconfigSettings *
 nm_sysconfig_settings_new (const char *config_file,
                            const char *plugins,
+                           DBusGConnection *bus,
                            GError **error)
 {
 	NMSysconfigSettings *self;
 	NMSysconfigSettingsPrivate *priv;
-	DBusGConnection *g_connection;
 
-	self = g_object_new (NM_TYPE_SYSCONFIG_SETTINGS, NULL);
+	self = g_object_new (NM_TYPE_SYSCONFIG_SETTINGS,
+	                     NM_SETTINGS_SERVICE_BUS, bus,
+	                     NM_SETTINGS_SERVICE_SCOPE, NM_CONNECTION_SCOPE_SYSTEM,
+	                     NULL);
 	if (!self)
 		return NULL;
 
 	priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 
 	priv->config_file = g_strdup (config_file);
-
-	priv->dbus_mgr = nm_dbus_manager_get ();
-	g_assert (priv->dbus_mgr);
-
-	g_connection = nm_dbus_manager_get_connection (priv->dbus_mgr);
-	dbus_g_connection_register_g_object (g_connection, NM_DBUS_PATH_SETTINGS, G_OBJECT (self));
 
 	if (plugins) {
 		/* Load the plugins; fail if a plugin is not found. */
@@ -1172,21 +1105,10 @@ finalize (GObject *object)
 	if (priv->authority)
 		g_object_unref (priv->authority);
 
-	g_object_unref (priv->dbus_mgr);
-
 	g_free (priv->orig_hostname);
 	g_free (priv->config_file);
 
 	G_OBJECT_CLASS (nm_sysconfig_settings_parent_class)->finalize (object);
-}
-
-static void
-settings_interface_init (NMSettingsInterface *iface)
-{
-	iface->get_connection_by_path = get_connection_by_path;
-
-	dbus_g_object_type_install_info (G_TYPE_FROM_INTERFACE (iface),
-	                                 &dbus_glib_nm_settings_object_info);
 }
 
 static void
@@ -1231,6 +1153,7 @@ static void
 nm_sysconfig_settings_class_init (NMSysconfigSettingsClass *class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (class);
+	NMSettingsServiceClass *ss_class = NM_SETTINGS_SERVICE_CLASS (class);
 	
 	g_type_class_add_private (class, sizeof (NMSysconfigSettingsPrivate));
 
@@ -1238,6 +1161,8 @@ nm_sysconfig_settings_class_init (NMSysconfigSettingsClass *class)
 	object_class->notify = notify;
 	object_class->get_property = get_property;
 	object_class->finalize = finalize;
+	ss_class->list_connections = list_connections;
+	ss_class->add_connection = add_connection;
 
 	/* properties */
 	g_object_class_install_property
@@ -1265,9 +1190,6 @@ nm_sysconfig_settings_class_init (NMSysconfigSettingsClass *class)
 	                              NULL, NULL,
 	                              g_cclosure_marshal_VOID__BOXED,
 	                              G_TYPE_NONE, 1, DBUS_TYPE_G_MAP_OF_VARIANT);
-
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (class),
-	                                 &dbus_glib_nm_settings_object_info);
 
 	dbus_g_error_domain_register (NM_SYSCONFIG_SETTINGS_ERROR,
 	                              NM_DBUS_IFACE_SETTINGS_SYSTEM,

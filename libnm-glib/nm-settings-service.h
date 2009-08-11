@@ -51,12 +51,11 @@ typedef struct {
 	 */
 	GSList * (*list_connections) (NMSettingsService *self);
 
-	NMExportedConnection * (*get_connection_by_path) (NMSettingsService *self,
-	                                                  const char *path);
-
 	void (*add_connection) (NMSettingsService *self,
-	                        GHashTable *settings,
-	                        DBusGMethodInvocation *context);
+	                        NMSettingsConnectionInterface *connection,
+	                        DBusGMethodInvocation *context, /* Only present for D-Bus calls */
+	                        NMSettingsAddConnectionFunc callback,
+	                        gpointer user_data);
 } NMSettingsServiceClass;
 
 GType nm_settings_service_get_type (void);
@@ -65,6 +64,9 @@ NMExportedConnection *nm_settings_service_get_connection_by_path (NMSettingsServ
                                                                   const char *path);
 
 void nm_settings_service_export (NMSettingsService *self);
+
+void nm_settings_service_export_connection (NMSettingsService *self,
+                                            NMSettingsConnectionInterface *exported);
 
 G_END_DECLS
 

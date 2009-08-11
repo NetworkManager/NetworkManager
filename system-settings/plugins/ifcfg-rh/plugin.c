@@ -31,8 +31,6 @@
 #include <net/ethernet.h>
 #include <netinet/ether.h>
 
-#include <dbus/dbus-glib.h>
-
 #include <nm-setting-connection.h>
 
 #ifndef NO_GIO

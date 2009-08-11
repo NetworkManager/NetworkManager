@@ -51,40 +51,11 @@ G_DEFINE_TYPE (NMExportedConnection, nm_exported_connection, NM_TYPE_CONNECTION)
                                                NMExportedConnectionPrivate))
 
 typedef struct {
-	DBusGConnection *bus;
-	gboolean disposed;
+	gboolean foo;
 } NMExportedConnectionPrivate;
-
-enum {
-	PROP_0,
-	PROP_BUS,
-
-	LAST_PROP
-};
 
 
 /**************************************************************/
-
-void
-nm_exported_connection_export (NMExportedConnection *self)
-{
-	NMExportedConnectionPrivate *priv;
-	static guint32 ec_counter = 0;
-	char *path;
-
-	g_return_if_fail (self != NULL);
-	g_return_if_fail (NM_IS_EXPORTED_CONNECTION (self));
-
-	priv = NM_EXPORTED_CONNECTION_GET_PRIVATE (self);
-
-	/* Don't allow exporting twice */
-	g_return_if_fail (nm_connection_get_path (NM_CONNECTION (self)) == NULL);
-
-	path = g_strdup_printf ("%s/%u", NM_DBUS_PATH_SETTINGS, ec_counter++);
-	nm_connection_set_path (NM_CONNECTION (self), path);
-	dbus_g_connection_register_g_object (priv->bus, path, G_OBJECT (self));
-	g_free (path);
-}
 
 static GHashTable *
 real_get_settings (NMExportedConnection *self, GError **error)
@@ -183,44 +154,20 @@ impl_exported_connection_get_secrets (NMExportedConnection *self,
 
 /**
  * nm_exported_connection_new:
- * @bus: a valid and connected D-Bus connection
  * @scope: the Connection scope (either user or system)
- * @path: the D-Bus path of the connection as exported by the settings service
- *  indicated by @scope
  *
  * Creates a new object representing the remote connection.
  *
  * Returns: the new exported connection object on success, or %NULL on failure
  **/
 NMExportedConnection *
-nm_exported_connection_new (DBusGConnection *bus,
-                            NMConnectionScope scope)
+nm_exported_connection_new (NMConnectionScope scope)
 {
-	g_return_val_if_fail (bus != NULL, NULL);
 	g_return_val_if_fail (scope != NM_CONNECTION_SCOPE_UNKNOWN, NULL);
 
 	return (NMExportedConnection *) g_object_new (NM_TYPE_EXPORTED_CONNECTION,
-	                                              NM_EXPORTED_CONNECTION_BUS, bus,
 	                                              NM_CONNECTION_SCOPE, scope,
 	                                              NULL);
-}
-
-static GObject *
-constructor (GType type,
-             guint n_construct_params,
-             GObjectConstructParam *construct_params)
-{
-	GObject *object;
-	NMExportedConnectionPrivate *priv;
-
-	object = G_OBJECT_CLASS (nm_exported_connection_parent_class)->constructor (type, n_construct_params, construct_params);
-	if (!object)
-		return NULL;
-
-	priv = NM_EXPORTED_CONNECTION_GET_PRIVATE (object);
-	g_assert (priv->bus);
-
-	return object;
 }
 
 static void
@@ -229,77 +176,12 @@ nm_exported_connection_init (NMExportedConnection *self)
 }
 
 static void
-set_property (GObject *object, guint prop_id,
-              const GValue *value, GParamSpec *pspec)
-{
-	NMExportedConnectionPrivate *priv = NM_EXPORTED_CONNECTION_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_BUS:
-		/* Construct only */
-		priv->bus = dbus_g_connection_ref ((DBusGConnection *) g_value_get_boxed (value));
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-get_property (GObject *object, guint prop_id,
-              GValue *value, GParamSpec *pspec)
-{
-	NMExportedConnectionPrivate *priv = NM_EXPORTED_CONNECTION_GET_PRIVATE (object);
-
-	switch (prop_id) {
-	case PROP_BUS:
-		g_value_set_boxed (value, priv->bus);
-		break;
-	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
-		break;
-	}
-}
-
-static void
-dispose (GObject *object)
-{
-	NMExportedConnectionPrivate *priv = NM_EXPORTED_CONNECTION_GET_PRIVATE (object);
-
-	if (!priv->disposed) {
-		priv->disposed = TRUE;
-		dbus_g_connection_unref (priv->bus);
-	}
-
-	G_OBJECT_CLASS (nm_exported_connection_parent_class)->dispose (object);
-}
-
-static void
 nm_exported_connection_class_init (NMExportedConnectionClass *class)
 {
-	GObjectClass *object_class = G_OBJECT_CLASS (class);
-
 	g_type_class_add_private (class, sizeof (NMExportedConnectionPrivate));
 
 	/* Virtual methods */
-	object_class->dispose = dispose;
-	object_class->constructor = constructor;
-	object_class->get_property = get_property;
-	object_class->set_property = set_property;
-
 	class->get_settings = real_get_settings;
-
-	/**
-	 * NMExportedConnection:bus:
-	 *
-	 * The %DBusGConnection which this object is exported on
-	 **/
-	g_object_class_install_property (object_class, PROP_BUS,
-	                                 g_param_spec_boxed (NM_EXPORTED_CONNECTION_BUS,
-	                                                     "Bus",
-	                                                     "Bus",
-	                                                     DBUS_TYPE_G_CONNECTION,
-	                                                     G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
 
 	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (class),
 	                                 &dbus_glib_nm_exported_connection_object_info);

@@ -33,8 +33,6 @@ G_BEGIN_DECLS
 #define NM_IS_EXPORTED_CONNECTION_CLASS(klass) (G_TYPE_CHECK_CLASS_TYPE ((obj), NM_TYPE_EXPORTED_CONNECTION))
 #define NM_EXPORTED_CONNECTION_GET_CLASS(obj)  (G_TYPE_INSTANCE_GET_CLASS ((obj), NM_TYPE_EXPORTED_CONNECTION, NMExportedConnectionClass))
 
-#define NM_EXPORTED_CONNECTION_BUS "bus"
-
 typedef struct {
 	NMConnection parent;
 } NMExportedConnection;
@@ -61,10 +59,7 @@ typedef struct {
 
 GType nm_exported_connection_get_type (void);
 
-NMExportedConnection *nm_exported_connection_new (DBusGConnection *bus,
-                                                  NMConnectionScope scope);
-
-void nm_exported_connection_export (NMExportedConnection *self);
+NMExportedConnection *nm_exported_connection_new (NMConnectionScope scope);
 
 G_END_DECLS
 
