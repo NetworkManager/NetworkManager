@@ -228,6 +228,7 @@ nm_settings_service_export_connection (NMSettingsService *self,
 
 	g_return_if_fail (connection != NULL);
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION_INTERFACE (connection));
+	g_return_if_fail (priv->bus != NULL);
 
 	/* Don't allow exporting twice */
 	g_return_if_fail (nm_connection_get_path (NM_CONNECTION (connection)) == NULL);
@@ -264,7 +265,6 @@ constructor (GType type,
 	object = G_OBJECT_CLASS (nm_settings_service_parent_class)->constructor (type, n_construct_params, construct_params);
 	if (object) {
 		g_assert (NM_SETTINGS_SERVICE_GET_PRIVATE (object)->scope != NM_CONNECTION_SCOPE_UNKNOWN);
-		g_assert (NM_SETTINGS_SERVICE_GET_PRIVATE (object)->bus != NULL);
 	}
 	return object;
 }
@@ -324,7 +324,8 @@ dispose (GObject *object)
 
 	if (!priv->disposed) {
 		priv->disposed = TRUE;
-		dbus_g_connection_unref (priv->bus);
+		if (priv->bus)
+			dbus_g_connection_unref (priv->bus);
 	}
 
 	G_OBJECT_CLASS (nm_settings_service_parent_class)->dispose (object);
