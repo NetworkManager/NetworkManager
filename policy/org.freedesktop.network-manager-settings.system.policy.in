@@ -14,7 +14,7 @@
     <_message>System policy prevents modification of system settings</_message>
     <defaults>
       <allow_inactive>no</allow_inactive>
-      <allow_active>auth_admin_keep_always</allow_active>
+      <allow_active>auth_admin_keep</allow_active>
     </defaults>
   </action>
 
