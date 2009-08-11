@@ -143,7 +143,7 @@ nm_settings_service_get_connection_by_path (NMSettingsService *self,
 
 static gboolean
 add_connection (NMSettingsInterface *settings,
-                NMSettingsConnectionInterface *connection,
+                NMConnection *connection,
                 NMSettingsAddConnectionFunc callback,
                 gpointer user_data)
 {
@@ -202,7 +202,7 @@ impl_settings_add_connection (NMSettingsService *self,
 
 	if (NM_SETTINGS_SERVICE_GET_CLASS (self)->add_connection) {
 		NM_SETTINGS_SERVICE_GET_CLASS (self)->add_connection (NM_SETTINGS_SERVICE (self),
-		                                                      NM_SETTINGS_CONNECTION_INTERFACE (tmp),
+		                                                      tmp,
 		                                                      context,
 		                                                      dbus_add_connection_cb,
 		                                                      context);

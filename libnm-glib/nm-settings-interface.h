@@ -67,7 +67,7 @@ struct _NMSettingsInterface {
 	                                                           const char *path);
 
 	gboolean (*add_connection) (NMSettingsInterface *settings,
-	                            NMSettingsConnectionInterface *connection,
+	                            NMConnection *connection,
 	                            NMSettingsAddConnectionFunc callback,
 	                            gpointer user_data);
 
@@ -85,7 +85,7 @@ NMSettingsConnectionInterface *nm_settings_interface_get_connection_by_path (NMS
                                                                              const char *path); 
 
 gboolean nm_settings_interface_add_connection (NMSettingsInterface *settings,
-                                               NMSettingsConnectionInterface *connection,
+                                               NMConnection *connection,
                                                NMSettingsAddConnectionFunc callback,
                                                gpointer user_data);
 

@@ -52,7 +52,7 @@ typedef struct {
 	GSList * (*list_connections) (NMSettingsService *self);
 
 	void (*add_connection) (NMSettingsService *self,
-	                        NMSettingsConnectionInterface *connection,
+	                        NMConnection *connection,
 	                        DBusGMethodInvocation *context, /* Only present for D-Bus calls */
 	                        NMSettingsAddConnectionFunc callback,
 	                        gpointer user_data);

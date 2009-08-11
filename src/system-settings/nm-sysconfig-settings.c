@@ -643,7 +643,7 @@ out:
 
 static void
 add_connection (NMSettingsService *service,
-	            NMSettingsConnectionInterface *connection,
+	            NMConnection *connection,
 	            DBusGMethodInvocation *context, /* Only present for D-Bus calls */
 	            NMSettingsAddConnectionFunc callback,
 	            gpointer user_data)
@@ -663,7 +663,7 @@ add_connection (NMSettingsService *service,
 		return;
 	}
 
-	call = polkit_call_new (self, context, NM_CONNECTION (connection), callback, user_data, NULL);
+	call = polkit_call_new (self, context, connection, callback, user_data, NULL);
 	g_assert (call);
 	polkit_authority_check_authorization (priv->authority,
 	                                      call->subject,

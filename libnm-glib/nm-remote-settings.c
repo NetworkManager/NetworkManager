@@ -226,7 +226,7 @@ add_connection_done (DBusGProxy *proxy,
 
 static gboolean
 add_connection (NMSettingsInterface *settings,
-	            NMSettingsConnectionInterface *connection,
+	            NMConnection *connection,
 	            NMSettingsAddConnectionFunc callback,
 	            gpointer user_data)
 {
@@ -240,7 +240,7 @@ add_connection (NMSettingsInterface *settings,
 	info->callback = callback;
 	info->callback_data = user_data;
 
-	new_settings = nm_connection_to_hash (NM_CONNECTION (connection));
+	new_settings = nm_connection_to_hash (connection);
 	org_freedesktop_NetworkManagerSettings_add_connection_async (priv->proxy,
 	                                                             new_settings,
 	                                                             add_connection_done,

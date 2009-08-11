@@ -112,7 +112,7 @@ nm_settings_interface_get_connection_by_path (NMSettingsInterface *settings,
 /**
  * nm_settings_interface_add_connection:
  * @settings: a object implementing %NMSettingsInterface
- * @connection: the settings to add; note that this objects settings will be
+ * @connection: the settings to add; note that this object's settings will be
  *  added, not the object itself
  * @callback: callback to be called when the add operation completes
  * @user_data: caller-specific data passed to @callback
@@ -123,14 +123,14 @@ nm_settings_interface_get_connection_by_path (NMSettingsInterface *settings,
  **/
 gboolean
 nm_settings_interface_add_connection (NMSettingsInterface *settings,
-                                      NMSettingsConnectionInterface *connection,
+                                      NMConnection *connection,
                                       NMSettingsAddConnectionFunc callback,
                                       gpointer user_data)
 {
 	g_return_val_if_fail (settings != NULL, FALSE);
 	g_return_val_if_fail (NM_IS_SETTINGS_INTERFACE (settings), FALSE);
 	g_return_val_if_fail (connection != NULL, FALSE);
-	g_return_val_if_fail (NM_IS_SETTINGS_CONNECTION_INTERFACE (connection), FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
 	g_return_val_if_fail (callback != NULL, FALSE);
 
 	if (NM_SETTINGS_INTERFACE_GET_INTERFACE (settings)->add_connection) {
