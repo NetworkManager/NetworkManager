@@ -141,25 +141,6 @@ nm_settings_connection_interface_init (gpointer g_iface)
 	if (initialized)
 		return;
 
-	/* Properties */
-	g_object_interface_install_property
-		(g_iface,
-		 g_param_spec_string (NM_SETTINGS_CONNECTION_INTERFACE_PATH,
-							  "Path",
-							  "D-Bus path",
-							  NULL,
-							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-
-	g_object_interface_install_property
-		(g_iface,
-		 g_param_spec_uint (NM_SETTINGS_CONNECTION_INTERFACE_SCOPE,
-							  "Scope",
-							  "Connection scope (user, system)",
-							  NM_CONNECTION_SCOPE_UNKNOWN,
-							  NM_CONNECTION_SCOPE_USER,
-							  NM_CONNECTION_SCOPE_USER,
-							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-
 	/* Signals */
 	g_signal_new ("updated",
 				  iface_type,
