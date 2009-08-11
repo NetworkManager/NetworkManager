@@ -27,6 +27,7 @@
 #include <nm-utils.h>
 #include <nm-setting-connection.h>
 #include "nm-remote-connection.h"
+#include "nm-remote-connection-private.h"
 #include "nm-dbus-glib-types.h"
 #include "nm-exported-connection-bindings.h"
 #include "nm-settings-connection-interface.h"
@@ -41,6 +42,7 @@ G_DEFINE_TYPE_EXTENDED (NMRemoteConnection, nm_remote_connection, NM_TYPE_CONNEC
 enum {
 	PROP_0,
 	PROP_BUS,
+	PROP_INIT_RESULT,
 
 	LAST_PROP
 };
@@ -60,6 +62,7 @@ typedef struct {
 	DBusGProxy *secrets_proxy;
 	GSList *calls;
 
+	NMRemoteConnectionInitResult init_result;
 	gboolean disposed;
 } NMRemoteConnectionPrivate;
 
@@ -227,6 +230,7 @@ get_settings_cb (DBusGProxy *proxy,
                  gpointer user_data)
 {
 	NMRemoteConnection *self = user_data;
+	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
 
 	if (error) {
 		g_warning ("%s: error getting %s connection %s settings: (%d) %s",
@@ -236,9 +240,13 @@ get_settings_cb (DBusGProxy *proxy,
 		           error ? error->code : -1,
 		           (error && error->message) ? error->message : "(unknown)");
 		g_error_free (error);
+		priv->init_result = NM_REMOTE_CONNECTION_INIT_RESULT_ERROR;
+		g_object_notify (G_OBJECT (self), NM_REMOTE_CONNECTION_INIT_RESULT);
 	} else {
 		replace_settings (self, new_settings);
 		g_hash_table_destroy (new_settings);
+		priv->init_result = NM_REMOTE_CONNECTION_INIT_RESULT_SUCCESS;
+		g_object_notify (G_OBJECT (self), NM_REMOTE_CONNECTION_INIT_RESULT);
 	}
 }
 
@@ -365,8 +373,8 @@ get_property (GObject *object, guint prop_id,
 	NMRemoteConnectionPrivate *priv = NM_REMOTE_CONNECTION_GET_PRIVATE (self);
 
 	switch (prop_id) {
-	case PROP_BUS:
-		g_value_set_boxed (value, priv->bus);
+	case PROP_INIT_RESULT:
+		g_value_set_uint (value, priv->init_result);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
@@ -414,6 +422,16 @@ nm_remote_connection_class_init (NMRemoteConnectionClass *remote_class)
 						 "DBusGConnection",
 						 "DBusGConnection",
 						 DBUS_TYPE_G_CONNECTION,
-						 G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+						 G_PARAM_WRITABLE | G_PARAM_CONSTRUCT_ONLY));
+
+	g_object_class_install_property
+		(object_class, PROP_INIT_RESULT,
+		 g_param_spec_uint (NM_REMOTE_CONNECTION_INIT_RESULT,
+		                    "Initialization result (PRIVATE)",
+		                    "Initialization result (PRIVATE)",
+		                    NM_REMOTE_CONNECTION_INIT_RESULT_UNKNOWN,
+		                    NM_REMOTE_CONNECTION_INIT_RESULT_ERROR,
+		                    NM_REMOTE_CONNECTION_INIT_RESULT_UNKNOWN,
+		                    G_PARAM_READABLE));
 }
 

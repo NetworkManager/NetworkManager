@@ -84,6 +84,7 @@ libnm_glib_la_SOURCES = \
 	nm-active-connection.c \
 	nm-dhcp4-config.c \
 	nm-remote-connection.c \
+	nm-remote-connection-private.h \
 	nm-settings-interface.c \
 	nm-settings-system-interface.c \
 	nm-remote-settings.c \

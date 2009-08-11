@@ -29,6 +29,7 @@
 #include "nm-remote-settings.h"
 #include "nm-settings-bindings.h"
 #include "nm-settings-interface.h"
+#include "nm-remote-connection-private.h"
 
 static void settings_interface_init (NMSettingsInterface *class);
 
@@ -43,6 +44,7 @@ typedef struct {
 
 	DBusGProxy *proxy;
 	GHashTable *connections;
+	GHashTable *pending;  /* Connections we don't have settings for yet */
 
 	DBusGProxy *dbus_proxy;
 
@@ -68,8 +70,58 @@ get_connection_by_path (NMSettingsInterface *settings, const char *path)
 static void
 connection_removed_cb (NMRemoteConnection *remote, gpointer user_data)
 {
-	g_hash_table_remove (NM_REMOTE_SETTINGS_GET_PRIVATE (user_data)->connections,
-	                     nm_connection_get_path (NM_CONNECTION (remote)));
+	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
+	const char *path;
+
+	path = nm_connection_get_path (NM_CONNECTION (remote));
+	g_hash_table_remove (priv->connections, path);
+	g_hash_table_remove (priv->pending, path);
+}
+
+static void
+connection_init_result_cb (NMRemoteConnection *remote,
+                           GParamSpec *pspec,
+                           gpointer user_data)
+{
+	NMRemoteSettings *self = NM_REMOTE_SETTINGS (user_data);
+	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
+	guint32 init_result = NM_REMOTE_CONNECTION_INIT_RESULT_UNKNOWN;
+	const char *path;
+
+	/* Disconnect from the init-result signal just to be safe */
+	g_signal_handlers_disconnect_matched (remote,
+	                                      G_SIGNAL_MATCH_FUNC | G_SIGNAL_MATCH_DATA,
+	                                      0,
+	                                      0,
+	                                      NULL,
+	                                      G_CALLBACK (connection_init_result_cb),
+	                                      self);
+
+	path = nm_connection_get_path (NM_CONNECTION (remote));
+
+	g_object_get (G_OBJECT (remote),
+	              NM_REMOTE_CONNECTION_INIT_RESULT, &init_result,
+	              NULL);
+
+	switch (init_result) {
+	case NM_REMOTE_CONNECTION_INIT_RESULT_SUCCESS:
+		/* ref it when adding to ->connections, since removing it from ->pending
+		 * will unref it.
+		 */
+		g_hash_table_insert (priv->connections, g_strdup (path), g_object_ref (remote));
+
+		/* Finally, let users know of the new connection now that it has all
+		 * its settings and is valid.
+		 */
+		g_signal_emit_by_name (self, "new-connection", remote);
+		break;
+	case NM_REMOTE_CONNECTION_INIT_RESULT_ERROR:
+	default:
+		break;
+	}
+
+	g_hash_table_remove (priv->pending, path);
 }
 
 static void
@@ -85,8 +137,15 @@ new_connection_cb (DBusGProxy *proxy, const char *path, gpointer user_data)
 		                  G_CALLBACK (connection_removed_cb),
 		                  self);
 
-		g_hash_table_insert (priv->connections, g_strdup (path), connection);
-		g_signal_emit_by_name (self, "new-connection", connection);
+		g_signal_connect (connection, "notify::" NM_REMOTE_CONNECTION_INIT_RESULT,
+		                  G_CALLBACK (connection_init_result_cb),
+		                  self);
+
+		/* Add the connection to the pending table to wait for it to retrieve
+		 * it's settings asynchronously over D-Bus.  The connection isn't
+		 * really valid until it has all its settings, so hide it until it does.
+		 */
+		g_hash_table_insert (priv->pending, g_strdup (path), connection);
 	}
 }
 
@@ -269,6 +328,7 @@ nm_remote_settings_init (NMRemoteSettings *self)
 	NMRemoteSettingsPrivate *priv = NM_REMOTE_SETTINGS_GET_PRIVATE (self);
 
 	priv->connections = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
+	priv->pending = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
 }
 
 static GObject *
@@ -343,6 +403,9 @@ dispose (GObject *object)
 
 	if (priv->connections)
 		g_hash_table_destroy (priv->connections);
+
+	if (priv->pending)
+		g_hash_table_destroy (priv->pending);
 
 	g_object_unref (priv->dbus_proxy);
 	g_object_unref (priv->proxy);
