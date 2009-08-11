@@ -173,7 +173,7 @@ constructor (GType type,
 	                                         NM_DBUS_IFACE_SETTINGS_SYSTEM);
 	g_assert (priv->proxy);
 
-	dbus_g_object_register_marshaller (_nm_marshal_VOID__STRING_BOXED,
+	dbus_g_object_register_marshaller (g_cclosure_marshal_VOID__BOXED,
 	                                   G_TYPE_NONE,
 	                                   DBUS_TYPE_G_MAP_OF_VARIANT,
 	                                   G_TYPE_INVALID);
