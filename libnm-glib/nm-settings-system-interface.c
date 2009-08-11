@@ -75,11 +75,11 @@ nm_settings_system_interface_init (gpointer g_iface)
 
 	g_object_interface_install_property
 		(g_iface,
-		 g_param_spec_string (NM_SETTINGS_SYSTEM_INTERFACE_CAN_MODIFY,
-							  "CanModify",
-							  "Can modify anything (hostname, connections, etc)",
-							  NULL,
-							  G_PARAM_READABLE));
+		 g_param_spec_boolean (NM_SETTINGS_SYSTEM_INTERFACE_CAN_MODIFY,
+		                       "CanModify",
+		                       "Can modify anything (hostname, connections, etc)",
+		                       FALSE,
+		                       G_PARAM_READABLE));
 
 	initialized = TRUE;
 }

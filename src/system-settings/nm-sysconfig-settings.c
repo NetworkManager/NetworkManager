@@ -104,8 +104,6 @@ static guint signals[LAST_SIGNAL] = { 0 };
 enum {
 	PROP_0,
 	PROP_UNMANAGED_SPECS,
-	PROP_HOSTNAME,
-	PROP_CAN_MODIFY,
 
 	LAST_PROP
 };
@@ -1133,14 +1131,14 @@ get_property (GObject *object, guint prop_id,
 			copy = g_slist_append (copy, g_strdup (iter->data));
 		g_value_take_boxed (value, copy);
 		break;
-	case PROP_HOSTNAME:
+	case NM_SETTINGS_SYSTEM_INTERFACE_PROP_HOSTNAME:
 		g_value_take_string (value, nm_sysconfig_settings_get_hostname (self));
 
 		/* Don't ever pass NULL through D-Bus */
 		if (!g_value_get_string (value))
 			g_value_set_static_string (value, "");
 		break;
-	case PROP_CAN_MODIFY:
+	case NM_SETTINGS_SYSTEM_INTERFACE_PROP_CAN_MODIFY:
 		g_value_set_boolean (value, !!get_plugin (self, NM_SYSTEM_CONFIG_INTERFACE_CAP_MODIFY_CONNECTIONS));
 		break;
 	default:
