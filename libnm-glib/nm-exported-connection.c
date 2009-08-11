@@ -135,6 +135,7 @@ do_delete (NMSettingsConnectionInterface *connection,
 	       NMSettingsConnectionInterfaceDeleteFunc callback,
 	       gpointer user_data)
 {
+	g_signal_emit_by_name (connection, "removed");
 	callback (connection, NULL, user_data);
 	return TRUE;
 }
