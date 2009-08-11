@@ -44,7 +44,11 @@ static void impl_exported_connection_get_secrets (NMExportedConnection *connecti
 
 #include "nm-exported-connection-glue.h"
 
-G_DEFINE_TYPE (NMExportedConnection, nm_exported_connection, NM_TYPE_CONNECTION)
+static void settings_connection_interface_init (NMSettingsConnectionInterface *class);
+
+G_DEFINE_TYPE_EXTENDED (NMExportedConnection, nm_exported_connection, NM_TYPE_CONNECTION, 0,
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_CONNECTION_INTERFACE,
+                                               settings_connection_interface_init))
 
 #define NM_EXPORTED_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), \
                                                NM_TYPE_EXPORTED_CONNECTION, \
@@ -90,6 +94,15 @@ impl_exported_connection_get_settings (NMExportedConnection *self,
 	return *settings ? TRUE : FALSE;
 }
 
+static gboolean
+update (NMSettingsConnectionInterface *connection,
+	    NMSettingsConnectionInterfaceUpdateFunc callback,
+	    gpointer user_data)
+{
+	callback (connection, NULL, user_data);
+	return TRUE;
+}
+
 static void
 impl_exported_connection_update (NMExportedConnection *self,
                                  GHashTable *new_settings,
@@ -115,6 +128,15 @@ impl_exported_connection_update (NMExportedConnection *self,
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
 	}
+}
+
+static gboolean
+do_delete (NMSettingsConnectionInterface *connection,
+	       NMSettingsConnectionInterfaceDeleteFunc callback,
+	       gpointer user_data)
+{
+	callback (connection, NULL, user_data);
+	return TRUE;
 }
 
 static void
@@ -151,6 +173,13 @@ impl_exported_connection_get_secrets (NMExportedConnection *self,
 }
 
 /**************************************************************/
+
+static void
+settings_connection_interface_init (NMSettingsConnectionInterface *iface)
+{
+	iface->update = update;
+	iface->delete = do_delete;
+}
 
 /**
  * nm_exported_connection_new:
