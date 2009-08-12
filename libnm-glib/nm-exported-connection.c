@@ -21,8 +21,10 @@
 
 #include <NetworkManager.h>
 #include <dbus/dbus-glib-lowlevel.h>
+#include <nm-setting-connection.h>
 
 #include "nm-exported-connection.h"
+#include "nm-settings-interface.h"
 #include "nm-settings-connection-interface.h"
 
 static gboolean impl_exported_connection_get_settings (NMExportedConnection *connection,
@@ -99,6 +101,7 @@ update (NMSettingsConnectionInterface *connection,
 	    NMSettingsConnectionInterfaceUpdateFunc callback,
 	    gpointer user_data)
 {
+	nm_settings_connection_interface_emit_updated (connection);
 	callback (connection, NULL, user_data);
 	return TRUE;
 }
@@ -110,6 +113,31 @@ impl_exported_connection_update (NMExportedConnection *self,
 {
 	NMConnection *tmp;
 	GError *error = NULL;
+	NMSettingConnection *s_con;
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (self),
+	                                                           NM_TYPE_SETTING_CONNECTION);
+	if (!s_con) {
+		error = g_error_new_literal (NM_SETTINGS_INTERFACE_ERROR,
+		                             NM_SETTINGS_INTERFACE_ERROR_INVALID_CONNECTION,
+		                             "Connection did not have required 'connection' setting");
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	/* If the connection is read-only, that has to be changed at the source of
+	 * the problem (ex a system settings plugin that can't write connections out)
+	 * instead of over D-Bus.
+	 */
+	if (nm_setting_connection_get_read_only (s_con)) {
+		error = g_error_new_literal (NM_SETTINGS_INTERFACE_ERROR,
+		                             NM_SETTINGS_INTERFACE_ERROR_READ_ONLY_CONNECTION,
+		                             "Connection is read-only");
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
 
 	/* Check if the settings are valid first */
 	tmp = nm_connection_new_from_hash (new_settings, &error);
@@ -124,7 +152,9 @@ impl_exported_connection_update (NMExportedConnection *self,
 	if (NM_EXPORTED_CONNECTION_GET_CLASS (self)->update)
 		NM_EXPORTED_CONNECTION_GET_CLASS (self)->update (self, new_settings, context);
 	else {
-		error = g_error_new (0, 0, "%s: %s:%d update() unimplemented", __func__, __FILE__, __LINE__);
+		error = g_error_new (NM_SETTINGS_INTERFACE_ERROR,
+		                     NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+		                     "%s: %s:%d update() unimplemented", __func__, __FILE__, __LINE__);
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
 	}
@@ -145,11 +175,34 @@ impl_exported_connection_delete (NMExportedConnection *self,
                                  DBusGMethodInvocation *context)
 {
 	GError *error = NULL;
+	NMSettingConnection *s_con;
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (self),
+	                                                           NM_TYPE_SETTING_CONNECTION);
+	if (!s_con) {
+		error = g_error_new_literal (NM_SETTINGS_INTERFACE_ERROR,
+		                             NM_SETTINGS_INTERFACE_ERROR_INVALID_CONNECTION,
+		                             "Connection did not have required 'connection' setting");
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
+
+	if (nm_setting_connection_get_read_only (s_con)) {
+		error = g_error_new_literal (NM_SETTINGS_INTERFACE_ERROR,
+		                             NM_SETTINGS_INTERFACE_ERROR_READ_ONLY_CONNECTION,
+		                             "Connection is read-only");
+		dbus_g_method_return_error (context, error);
+		g_error_free (error);
+		return;
+	}
 
 	if (NM_EXPORTED_CONNECTION_GET_CLASS (self)->delete)
 		NM_EXPORTED_CONNECTION_GET_CLASS (self)->delete (self, context);
 	else {
-		error = g_error_new (0, 0, "%s: %s:%d delete() unimplemented", __func__, __FILE__, __LINE__);
+		error = g_error_new (NM_SETTINGS_INTERFACE_ERROR,
+		                     NM_SETTINGS_INTERFACE_ERROR_INTERNAL_ERROR,
+		                     "%s: %s:%d delete() unimplemented", __func__, __FILE__, __LINE__);
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
 	}
