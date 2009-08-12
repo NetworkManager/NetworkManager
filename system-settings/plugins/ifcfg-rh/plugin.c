@@ -410,29 +410,27 @@ setup_ifcfg_monitoring (SCPluginIfcfg *plugin)
 	}
 }
 
-static void
-hash_to_slist (gpointer key, gpointer value, gpointer user_data)
-{
-	NMIfcfgConnection *exported = NM_IFCFG_CONNECTION (value);
-	GSList **list = (GSList **) user_data;
-
-	if (!nm_ifcfg_connection_get_unmanaged_spec (exported))
-		*list = g_slist_prepend (*list, value);
-}
-
 static GSList *
 get_connections (NMSystemConfigInterface *config)
 {
 	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (config);
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
 	GSList *list = NULL;
+	GHashTableIter iter;
+	gpointer value;
 
 	if (!priv->connections) {
 		setup_ifcfg_monitoring (plugin);
 		read_connections (plugin);
 	}
 
-	g_hash_table_foreach (priv->connections, hash_to_slist, &list);
+	g_hash_table_iter_init (&iter, priv->connections);
+	while (g_hash_table_iter_next (&iter, NULL, &value)) {
+		NMIfcfgConnection *exported = NM_IFCFG_CONNECTION (value);
+
+		if (!nm_ifcfg_connection_get_unmanaged_spec (exported))
+			list = g_slist_prepend (list, value);
+	}
 
 	return list;
 }
