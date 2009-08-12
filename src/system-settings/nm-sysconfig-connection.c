@@ -46,26 +46,6 @@ typedef struct {
 
 /**************************************************************/
 
-static gboolean
-update (NMSettingsConnectionInterface *connection,
-	    NMSettingsConnectionInterfaceUpdateFunc callback,
-	    gpointer user_data)
-{
-	/* Default handler for subclasses */
-	callback (connection, NULL, user_data);
-	return TRUE;
-}
-
-static gboolean
-do_delete (NMSettingsConnectionInterface *connection,
-	       NMSettingsConnectionInterfaceDeleteFunc callback,
-	       gpointer user_data)
-{
-	/* Default handler for subclasses */
-	callback (connection, NULL, user_data);
-	return TRUE;
-}
-
 static GValue *
 string_to_gvalue (const char *str)
 {
@@ -486,8 +466,6 @@ dbus_get_secrets (NMExportedConnection *exported,
 static void
 settings_connection_interface_init (NMSettingsConnectionInterface *iface)
 {
-	iface->update = update;
-	iface->delete = do_delete;
 	iface->get_secrets = get_secrets;
 }
 
