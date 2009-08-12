@@ -172,7 +172,7 @@ static void
 find_by_path (gpointer key, gpointer data, gpointer user_data)
 {
 	FindConnectionInfo *info = user_data;
-	NMSysconfigConnection *exported = NM_SYSCONFIG_CONNECTION (data);
+	NMSysconfigConnection *exported = NM_SYSCONFIG_CONNECTION (key);
 	const char *path;
 
 	if (!info->found) {
