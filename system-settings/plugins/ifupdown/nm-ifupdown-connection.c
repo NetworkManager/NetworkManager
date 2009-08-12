@@ -29,13 +29,10 @@
 #include <nm-sysconfig-connection.h>
 #include <nm-system-config-interface.h>
 #include <nm-system-config-error.h>
-#include <nm-settings.h>
 #include "nm-ifupdown-connection.h"
 #include "parser.h"
 
-G_DEFINE_TYPE (NMIfupdownConnection,
-               nm_ifupdown_connection,
-               NM_TYPE_SYSCONFIG_CONNECTION)
+G_DEFINE_TYPE (NMIfupdownConnection, nm_ifupdown_connection, NM_TYPE_SYSCONFIG_CONNECTION)
 
 #define NM_IFUPDOWN_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IFUPDOWN_CONNECTION, NMIfupdownConnectionPrivate))
 
@@ -60,36 +57,16 @@ nm_ifupdown_connection_new (if_block *block)
 										 NULL);
 }
 
-static gboolean
-update (NMExportedConnection *exported,
-	   GHashTable *new_settings,
-	   GError **err)
-{
-	g_set_error (err, NM_SYSCONFIG_SETTINGS_ERROR,
-			   NM_SYSCONFIG_SETTINGS_ERROR_UPDATE_NOT_SUPPORTED,
-			   "%s.%d - %s", __FILE__, __LINE__, "connection update not supported (read-only).");
-	return FALSE;
-}
-
-static gboolean
-do_delete (NMExportedConnection *exported, GError **err)
-{
-	g_set_error (err, NM_SYSCONFIG_SETTINGS_ERROR,
-			   NM_SYSCONFIG_SETTINGS_ERROR_DELETE_NOT_SUPPORTED,
-			   "%s", "ifupdown - connection delete not supported (read-only).");
-	return FALSE;
-}
-
 static void
-service_get_secrets (NMExportedConnection *exported,
-                     const gchar *setting_name,
-                     const gchar **hints,
-                     gboolean request_new,
-                     DBusGMethodInvocation *context)
+get_secrets (NMExportedConnection *exported,
+             const gchar *setting_name,
+             const gchar **hints,
+             gboolean request_new,
+             DBusGMethodInvocation *context)
 {
 	GError *error = NULL;
 
-	PLUGIN_PRINT ("SCPlugin-Ifupdown", "get_secrets for setting_name:'%s')", setting_name);
+	PLUGIN_PRINT ("SCPlugin-Ifupdown", "get_secrets() for setting_name:'%s'", setting_name);
 
 	/* FIXME: Only wifi secrets are supported for now */
 	if (strcmp (setting_name, NM_SETTING_WIRELESS_SECURITY_SETTING_NAME)) {
@@ -104,10 +81,9 @@ service_get_secrets (NMExportedConnection *exported,
 		return;
 	}
 
-	NM_EXPORTED_CONNECTION_CLASS (nm_ifupdown_connection_parent_class)->service_get_secrets (exported, setting_name, hints, request_new, context);
+	NM_EXPORTED_CONNECTION_CLASS (nm_ifupdown_connection_parent_class)->get_secrets (exported, setting_name, hints, request_new, context);
 }
 
-/* GObject */
 static void
 nm_ifupdown_connection_init (NMIfupdownConnection *connection)
 {
@@ -120,35 +96,35 @@ constructor (GType type,
 {
 	GObject *object;
 	NMIfupdownConnectionPrivate *priv;
-	NMConnection *wrapped = nm_connection_new();
+	GError *error = NULL;
 
 	object = G_OBJECT_CLASS (nm_ifupdown_connection_parent_class)->constructor (type, n_construct_params, construct_params);
 	g_return_val_if_fail (object, NULL);
 
 	priv = NM_IFUPDOWN_CONNECTION_GET_PRIVATE (object);
 	if (!priv) {
-		nm_warning ("%s.%d - no private instance.", __FILE__, __LINE__);
+		g_warning ("%s.%d - no private instance.", __FILE__, __LINE__);
 		goto err;
 	}
 	if (!priv->ifblock) {
-		nm_warning ("(ifupdown) ifblock not provided to constructor.");
+		g_warning ("(ifupdown) ifblock not provided to constructor.");
 		goto err;
 	}
 
-	g_object_set (object, NM_EXPORTED_CONNECTION_CONNECTION, wrapped, NULL);
-	g_object_unref (wrapped);
+	if (!ifupdown_update_connection_from_if_block (NM_CONNECTION (object), priv->ifblock, &error)) {
+		g_warning ("%s.%d - invalid connection read from /etc/network/interfaces: (%d) %s",
+		           __FILE__,
+		           __LINE__,
+		           error ? error->code : -1,
+		           error && error->message ? error->message : "(unknown)");
+		goto err;
+	}
 
 	return object;
 
  err:
 	g_object_unref (object);
 	return NULL;
-}
-
-static void
-finalize (GObject *object)
-{
-	G_OBJECT_CLASS (nm_ifupdown_connection_parent_class)->finalize (object);
 }
 
 static void
@@ -197,11 +173,8 @@ nm_ifupdown_connection_class_init (NMIfupdownConnectionClass *ifupdown_connectio
 	object_class->constructor  = constructor;
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
-	object_class->finalize     = finalize;
 
-	connection_class->update       = update;
-	connection_class->do_delete    = do_delete;
-	connection_class->service_get_secrets = service_get_secrets;
+	connection_class->get_secrets = get_secrets;
 
 	/* Properties */
 	g_object_class_install_property
