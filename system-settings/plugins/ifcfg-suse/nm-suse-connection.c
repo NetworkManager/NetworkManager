@@ -22,6 +22,8 @@
 #include <glib/gstdio.h>
 #include <gio/gio.h>
 #include <NetworkManager.h>
+#include <nm-settings-connection-interface.h>
+#include <nm-setting-connection.h>
 #include "nm-suse-connection.h"
 #include "parser.h"
 #include "nm-system-config-error.h"
@@ -40,43 +42,53 @@ typedef struct {
 } NMSuseConnectionPrivate;
 
 static void
-file_changed (GFileMonitor *monitor,
-		    GFile *file,
-		    GFile *other_file,
-		    GFileMonitorEvent event_type,
-		    gpointer user_data)
+ignore_cb (NMSettingsConnectionInterface *connection,
+           GError *error,
+           gpointer user_data)
 {
-	NMExportedConnection *exported = NM_EXPORTED_CONNECTION (user_data);
-	NMSuseConnectionPrivate *priv = NM_SUSE_CONNECTION_GET_PRIVATE (exported);
-	NMConnection *new_connection;
-	GHashTable *new_settings;
+}
+
+static void
+file_changed (GFileMonitor *monitor,
+              GFile *file,
+              GFile *other_file,
+              GFileMonitorEvent event_type,
+              gpointer user_data)
+{
+	NMSuseConnection *self = NM_SUSE_CONNECTION (user_data);
+	NMSuseConnectionPrivate *priv = NM_SUSE_CONNECTION_GET_PRIVATE (self);
+	NMConnection *new;
 
 	switch (event_type) {
 	case G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT:
-		new_connection = parse_ifcfg (priv->iface, priv->dev_type);
-		if (new_connection) {
+		new = parse_ifcfg (priv->iface, priv->dev_type);
+		if (new) {
 			GError *error = NULL;
+			GHashTable *settings;
 
-			new_settings = nm_connection_to_hash (new_connection);
-			if (nm_connection_replace_settings (nm_exported_connection_get_connection (exported), new_settings, &error))
-				nm_exported_connection_signal_updated (exported, new_settings);
-			else {
-				g_warning ("%s: '%s' / '%s' invalid: %d",
-				           __func__,
-				           error ? g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)) : "(none)",
-				           (error && error->message) ? error->message : "(none)",
-				           error ? error->code : -1);
-				g_clear_error (&error);
-				nm_exported_connection_signal_removed (exported);
+			if (!nm_connection_compare (new,
+			                            NM_CONNECTION (self),
+			                            NM_SETTING_COMPARE_FLAG_EXACT)) {
+				settings = nm_connection_to_hash (new);
+				if (!nm_connection_replace_settings (NM_CONNECTION (self), settings, &error)) {
+					g_warning ("%s: '%s' / '%s' invalid: %d",
+					           __func__,
+					           error ? g_type_name (nm_connection_lookup_setting_type_by_quark (error->domain)) : "(none)",
+					           (error && error->message) ? error->message : "(none)",
+					           error ? error->code : -1);
+					g_clear_error (&error);
+				}
+				g_hash_table_destroy (settings);
+				nm_settings_connection_interface_update (NM_SETTINGS_CONNECTION_INTERFACE (self),
+				                                         ignore_cb,
+				                                         NULL);
 			}
-
-			g_hash_table_destroy (new_settings);
-			g_object_unref (new_connection);
+			g_object_unref (new);
 		} else
-			nm_exported_connection_signal_removed (exported);
+			g_signal_emit_by_name (self, "removed");
 		break;
 	case G_FILE_MONITOR_EVENT_DELETED:
-		nm_exported_connection_signal_removed (exported);
+		g_signal_emit_by_name (self, "removed");
 		break;
 	default:
 		break;
@@ -86,24 +98,40 @@ file_changed (GFileMonitor *monitor,
 NMSuseConnection *
 nm_suse_connection_new (const char *iface, NMDeviceType dev_type)
 {
-	NMConnection *connection;
+	NMConnection *tmp;
 	GFile *file;
 	GFileMonitor *monitor;
 	NMSuseConnection *exported;
 	NMSuseConnectionPrivate *priv;
+	GHashTable *settings;
+	NMSettingConnection *s_con;
 
 	g_return_val_if_fail (iface != NULL, NULL);
 
-	connection = parse_ifcfg (iface, dev_type);
-	if (!connection)
+	tmp = parse_ifcfg (iface, dev_type);
+	if (!tmp)
 		return NULL;
 
-	exported = (NMSuseConnection *) g_object_new (NM_TYPE_SUSE_CONNECTION,
-										 NM_EXPORTED_CONNECTION_CONNECTION, connection,
-										 NULL);
-	g_object_unref (connection);
-	if (!exported)
+	/* Ensure the read connection is read-only since we don't have write capability yet */
+	s_con = (NMSettingConnection *) nm_connection_get_setting (tmp, NM_TYPE_SETTING_CONNECTION);
+	g_assert (s_con);
+	if (!nm_setting_connection_get_read_only (s_con)) {
+		g_warning ("%s: expected read-only connection!", __func__);
+		g_object_unref (tmp);
 		return NULL;
+	}
+
+	exported = (NMSuseConnection *) g_object_new (NM_TYPE_SUSE_CONNECTION, NULL);
+	if (!exported) {
+		g_object_unref (tmp);
+		return NULL;
+	}
+
+	/* Update our settings with what was read from the file */
+	settings = nm_connection_to_hash (tmp);
+	nm_connection_replace_settings (NM_CONNECTION (exported), settings, NULL);
+	g_hash_table_destroy (settings);
+	g_object_unref (tmp);
 
 	priv = NM_SUSE_CONNECTION_GET_PRIVATE (exported);
 
@@ -121,28 +149,6 @@ nm_suse_connection_new (const char *iface, NMDeviceType dev_type)
 	}
 
 	return exported;
-}
-
-static gboolean
-update (NMExportedConnection *exported,
-	   GHashTable *new_settings,
-	   GError **err)
-{	
-	g_set_error (err, NM_SYSCONFIG_SETTINGS_ERROR,
-			   NM_SYSCONFIG_SETTINGS_ERROR_UPDATE_NOT_SUPPORTED,
-			   "%s", "Please use YaST to change this connection.");
-
-	return FALSE;
-}
-
-static gboolean
-do_delete (NMExportedConnection *exported, GError **err)
-{
-	g_set_error (err, NM_SYSCONFIG_SETTINGS_ERROR,
-			   NM_SYSCONFIG_SETTINGS_ERROR_DELETE_NOT_SUPPORTED,
-			   "%s", "Please use YaST to remove this connection.");
-
-	return FALSE;
 }
 
 /* GObject */
@@ -165,6 +171,7 @@ finalize (GObject *object)
 		g_object_unref (priv->monitor);
 	}
 
+	nm_connection_clear_secrets (NM_CONNECTION (object));
 	g_free (priv->filename);
 
 	G_OBJECT_CLASS (nm_suse_connection_parent_class)->finalize (object);
@@ -174,13 +181,9 @@ static void
 nm_suse_connection_class_init (NMSuseConnectionClass *suse_connection_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (suse_connection_class);
-	NMExportedConnectionClass *connection_class = NM_EXPORTED_CONNECTION_CLASS (suse_connection_class);
 
 	g_type_class_add_private (suse_connection_class, sizeof (NMSuseConnectionPrivate));
 
 	/* Virtual methods */
 	object_class->finalize = finalize;
-
-	connection_class->update       = update;
-	connection_class->do_delete    = do_delete;
 }

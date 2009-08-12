@@ -90,38 +90,41 @@ ifcfg_plugin_error_quark (void)
 }
 
 static void
-update_one_connection (gpointer key, gpointer val, gpointer user_data)
+ignore_cb (NMSettingsConnectionInterface *connection,
+           GError *error,
+           gpointer user_data)
 {
-	NMExportedConnection *exported = NM_EXPORTED_CONNECTION (val);
-	NMConnection *connection;
-	NMSettingIP4Config *ip4_config;
-
-	connection = nm_exported_connection_get_connection (exported);
-	ip4_config = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
-	if (!ip4_config)
-		return;
-
-	if (nm_setting_ip4_config_get_num_addresses (ip4_config)) {
-		/* suse only has one address per device */
-		NMIP4Address *ip4_address = nm_setting_ip4_config_get_address (ip4_config, 0);
-		SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (user_data);
-		GHashTable *settings;
-
-		if (nm_ip4_address_get_gateway (ip4_address) != priv->default_gw) {
-			nm_ip4_address_set_gateway (ip4_address, priv->default_gw);
-			settings = nm_connection_to_hash (connection);
-			nm_exported_connection_signal_updated (exported, settings);
-			g_hash_table_destroy (settings);
-		}
-	}
 }
 
 static void
 update_connections (SCPluginIfcfg *self)
 {
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
+	GHashTableIter iter;
+	gpointer value;
 
-	g_hash_table_foreach (priv->connections, update_one_connection, self);
+	g_hash_table_iter_init (&iter, priv->connections);
+	while (g_hash_table_iter_next (&iter, NULL, &value)) {
+		NMSuseConnection *exported = NM_SUSE_CONNECTION (value);
+		NMSettingIP4Config *ip4_config;
+
+		ip4_config = (NMSettingIP4Config *) nm_connection_get_setting (NM_CONNECTION (exported), NM_TYPE_SETTING_IP4_CONFIG);
+		if (!ip4_config)
+			continue;
+
+		if (nm_setting_ip4_config_get_num_addresses (ip4_config)) {
+			/* suse only has one address per device */
+			NMIP4Address *ip4_address;
+
+			ip4_address = nm_setting_ip4_config_get_address (ip4_config, 0);
+			if (nm_ip4_address_get_gateway (ip4_address) != priv->default_gw) {
+				nm_ip4_address_set_gateway (ip4_address, priv->default_gw);
+				nm_settings_connection_interface_update (NM_SETTINGS_CONNECTION_INTERFACE (exported),
+				                                         ignore_cb,
+				                                         NULL);
+			}
+		}
+	}
 }
 
 static void
@@ -286,7 +289,9 @@ handle_uevent (GUdevClient *client,
 		exported = (NMExportedConnection *) g_hash_table_lookup (priv->connections,
 		                                                         GUINT_TO_POINTER (ifindex));
 		if (exported) {
-			nm_exported_connection_signal_removed (exported);
+			nm_settings_connection_interface_delete (NM_SETTINGS_CONNECTION_INTERFACE (exported),
+			                                         ignore_cb,
+			                                         NULL);
 			g_hash_table_remove (priv->connections, GUINT_TO_POINTER (ifindex));
 		}
 	}
@@ -306,20 +311,14 @@ init (NMSystemConfigInterface *config)
 		g_signal_connect (priv->client, "uevent", G_CALLBACK (handle_uevent), self);
 }
 
-static void
-get_connections_cb (gpointer key, gpointer val, gpointer user_data)
-{
-	GSList **list = (GSList **) user_data;
-
-	*list = g_slist_prepend (*list, val);
-}
-
 static GSList *
 get_connections (NMSystemConfigInterface *config)
 {
 	SCPluginIfcfg *self = SC_PLUGIN_IFCFG (config);
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (self);
 	GSList *list = NULL;
+	GHashTableIter iter;
+	gpointer value;
 
 	if (!priv->initialized) {
 		const char *filename;
@@ -336,7 +335,9 @@ get_connections (NMSystemConfigInterface *config)
 		priv->initialized = TRUE;
 	}
 
-	g_hash_table_foreach (priv->connections, get_connections_cb, &list);
+	g_hash_table_iter_init (&iter, priv->connections);
+	while (g_hash_table_iter_next (&iter, NULL, &value))
+		list = g_slist_prepend (list, value);
 
 	return list;
 }
