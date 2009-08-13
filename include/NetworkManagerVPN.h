@@ -118,11 +118,11 @@ typedef enum {
 #define NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY "gateway"
 
 /* uint32: IP address of the internal gateway of the subnet the VPN interface is
- *         on (network byte order)
+ *         on, if the VPN uses subnet configuration (network byte order)
  */
 #define NM_VPN_PLUGIN_IP4_CONFIG_INT_GATEWAY "internal-gateway"
 
-/* uint32: IP address of the VPN interface (network byte order) */
+/* uint32: internal IP address of the local VPN interface (network byte order) */
 #define NM_VPN_PLUGIN_IP4_CONFIG_ADDRESS     "address"
 
 /* uint32: IP address of the other side of Point-to-Point connection if the VPN
