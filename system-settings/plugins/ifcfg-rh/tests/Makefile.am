@@ -33,7 +33,6 @@ endif
 EXTRA_DIST = \
 	iscsiadm-test-dhcp \
 	iscsiadm-test-static \
-	iscsiadm-test-malformed \
 	iscsiadm-test-bad-ipaddr \
 	iscsiadm-test-bad-gateway \
 	iscsiadm-test-bad-dns1 \
