@@ -114,18 +114,53 @@ typedef enum {
 } NMVPNPluginFailure;
 
 
+/* uint32: IP address of the public external VPN gateway (network byte order) */
 #define NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY "gateway"
+
+/* uint32: IP address of the internal gateway of the subnet the VPN interface is
+ *         on (network byte order)
+ */
 #define NM_VPN_PLUGIN_IP4_CONFIG_INT_GATEWAY "internal-gateway"
+
+/* uint32: IP address of the VPN interface (network byte order) */
 #define NM_VPN_PLUGIN_IP4_CONFIG_ADDRESS     "address"
+
+/* uint32: IP address of the other side of Point-to-Point connection if the VPN
+ *         uses Point-to-Point configuration. (network byte order)
+ */
 #define NM_VPN_PLUGIN_IP4_CONFIG_PTP         "ptp"
+
+/* uint32: IP prefix of the VPN interface; 1 - 32 inclusive */
 #define NM_VPN_PLUGIN_IP4_CONFIG_PREFIX      "prefix"
+
+/* array of uint32: IP addresses of DNS servers for the VPN (network byte order) */
 #define NM_VPN_PLUGIN_IP4_CONFIG_DNS         "dns"
+
+/* array of uint32: IP addresses of NBNS/WINS servers for the VPN (network byte order) */
 #define NM_VPN_PLUGIN_IP4_CONFIG_NBNS        "nbns"
+
+/* uint32: Message Segment Size that the VPN interface should use */
 #define NM_VPN_PLUGIN_IP4_CONFIG_MSS         "mss"
+
+/* uint32: Maximum Transfer Unit that the VPN interface should use */
 #define NM_VPN_PLUGIN_IP4_CONFIG_MTU         "mtu"
+
+/* string: VPN interface name (tun0, tap0, etc) */
 #define NM_VPN_PLUGIN_IP4_CONFIG_TUNDEV      "tundev"
+
+/* string: DNS domain name */
 #define NM_VPN_PLUGIN_IP4_CONFIG_DOMAIN      "domain"
+
+/* string: Login message */
 #define NM_VPN_PLUGIN_IP4_CONFIG_BANNER      "banner"
+
+/* array of (uint32, uint32, uint32, uint32): custom routes the client should
+ *         apply.  In the order of:
+ *              1: destination IP address (network byte order)
+ *              2: destination prefix (1 - 32 inclusive)
+ *              3: IP address of next hop (network byte order)
+ *              4: route metric
+ */
 #define NM_VPN_PLUGIN_IP4_CONFIG_ROUTES      "routes"
 
 /* Deprecated */
