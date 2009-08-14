@@ -146,9 +146,14 @@ nm_get_device_driver_name (LibHalContext *ctx, const char *origdev_udi)
 
 	/* s390 driver name is on the grandparent of the net device */
 	subsystem = hal_get_subsystem (ctx, origdev_udi);
-	if (subsystem && !strcmp (subsystem, "ibmebus")) {
-		od_parent = libhal_device_get_property_string (ctx, origdev_udi, "info.parent", NULL);
-		origdev_udi = (const char *) od_parent;
+	if (subsystem) {
+		if (!strcmp (subsystem, "ibmebus")) {
+			od_parent = libhal_device_get_property_string (ctx, origdev_udi, "info.parent", NULL);
+			origdev_udi = (const char *) od_parent;
+		} else if (!strcmp (subsystem, "ssb")) {
+			od_parent = libhal_device_get_property_string (ctx, origdev_udi, "info.parent", NULL);
+			origdev_udi = (const char *) od_parent;
+		}
 	}
 
 	drv = libhal_device_get_property_string (ctx, origdev_udi, "info.linux.driver", NULL);
@@ -1214,8 +1219,9 @@ emit_udi_added (NMHalManager *self, const char *udi, DeviceCreator *creator)
 	libhal_free_string (subsys);
 	libhal_free_string (parent);
 
-	/* For non-USB devices, and ss a fallback, just use the originating device
-	 * of the tty; though this might result in more than one modem being detected by NM.
+	/* For non-USB devices, and as a fallback, just use the originating device
+	 * of the tty; though this might result in more than one modem being
+	 * detected by NM.
 	 */
 	if (!od)
 		od = hal_get_originating_device (priv->hal_ctx, udi, creator->category);
