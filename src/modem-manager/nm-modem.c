@@ -152,7 +152,7 @@ ppp_stats (NMPPPManager *ppp_manager,
 }
 
 static NMActStageReturn
-ppp_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
+ppp_stage3_ip4_config_start (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (device);
 	NMActRequest *req;
@@ -246,7 +246,7 @@ static_stage3_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_da
 }
 
 static NMActStageReturn
-static_stage3_config (NMDevice *device, NMDeviceStateReason *reason)
+static_stage3_ip4_config_start (NMDevice *device, NMDeviceStateReason *reason)
 {
 	dbus_g_proxy_begin_call (nm_modem_get_proxy (NM_MODEM (device), MM_DBUS_INTERFACE_MODEM),
 							 "GetIP4Config", static_stage3_done,
@@ -279,40 +279,16 @@ static_stage4 (NMDevice *device, NMIP4Config **config, NMDeviceStateReason *reas
 /*****************************************************************************/
 
 static NMActStageReturn
-real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
-{
-	NMActStageReturn ret;
-
-	switch (NM_MODEM_GET_PRIVATE (device)->ip_method) {
-	case MM_MODEM_IP_METHOD_PPP:
-		ret = ppp_stage2_config (device, reason);
-		break;
-	case MM_MODEM_IP_METHOD_STATIC:
-		ret = NM_ACT_STAGE_RETURN_SUCCESS;
-		break;
-	case MM_MODEM_IP_METHOD_DHCP:
-		ret = NM_ACT_STAGE_RETURN_SUCCESS;
-		break;
-	default:
-		g_warning ("Invalid IP method");
-		ret = NM_ACT_STAGE_RETURN_FAILURE;
-		break;
-	}
-
-	return ret;
-}
-
-static NMActStageReturn
 real_act_stage3_ip4_config_start (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMActStageReturn ret;
 
 	switch (NM_MODEM_GET_PRIVATE (device)->ip_method) {
 	case MM_MODEM_IP_METHOD_PPP:
-		ret = NM_ACT_STAGE_RETURN_SUCCESS;
+		ret = ppp_stage3_ip4_config_start (device, reason);
 		break;
 	case MM_MODEM_IP_METHOD_STATIC:
-		ret = static_stage3_config (device, reason);
+		ret = static_stage3_ip4_config_start (device, reason);
 		break;
 	case MM_MODEM_IP_METHOD_DHCP:
 		ret = NM_DEVICE_CLASS (nm_modem_parent_class)->act_stage3_ip4_config_start (device, reason);
@@ -610,7 +586,6 @@ nm_modem_class_init (NMModemClass *klass)
 	object_class->finalize = finalize;
 
 	device_class->get_generic_capabilities = real_get_generic_capabilities;
-	device_class->act_stage2_config = real_act_stage2_config;
 	device_class->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;
 	device_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 	device_class->deactivate_quickly = real_deactivate_quickly;
