@@ -388,6 +388,46 @@ real_connection_secrets_updated (NMDevice *dev,
 	nm_device_activate_schedule_stage1_device_prepare (dev);
 }
 
+static NMActStageReturn
+real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
+{
+	NMActRequest *req;
+	NMConnection *connection;
+
+	req = nm_device_get_act_request (device);
+	g_assert (req);
+
+	/* Clear secrets tries counter since secrets were successfully used
+	 * already if we get here.
+	 */
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+	g_object_set_data (G_OBJECT (connection), GSM_SECRETS_TRIES, NULL);
+
+	if (NM_DEVICE_CLASS (nm_modem_gsm_parent_class)->act_stage2_config)
+		return NM_DEVICE_CLASS (nm_modem_gsm_parent_class)->act_stage2_config (device, reason);
+
+	return NM_ACT_STAGE_RETURN_SUCCESS;
+}
+
+static void
+real_deactivate_quickly (NMDevice *device)
+{
+	NMActRequest *req;
+	NMConnection *connection;
+
+	req = nm_device_get_act_request (device);
+	if (req) {
+		/* Clear the secrets attempts counter */
+		connection = nm_act_request_get_connection (req);
+		g_assert (connection);
+		g_object_set_data (G_OBJECT (connection), GSM_SECRETS_TRIES, NULL);
+	}
+
+	if (NM_DEVICE_CLASS (nm_modem_gsm_parent_class)->deactivate_quickly)
+		NM_DEVICE_CLASS (nm_modem_gsm_parent_class)->deactivate_quickly (device);
+}
+
 static gboolean
 real_check_connection_compatible (NMDevice *device,
                                   NMConnection *connection,
@@ -445,6 +485,8 @@ nm_modem_gsm_class_init (NMModemGsmClass *klass)
 	device_class->get_best_auto_connection = real_get_best_auto_connection;
 	device_class->connection_secrets_updated = real_connection_secrets_updated;
 	device_class->act_stage1_prepare = real_act_stage1_prepare;
+	device_class->act_stage2_config = real_act_stage2_config;
+	device_class->deactivate_quickly = real_deactivate_quickly;
 	device_class->check_connection_compatible = real_check_connection_compatible;
 
 	modem_class->get_ppp_name = real_get_ppp_name;
