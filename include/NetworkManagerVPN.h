@@ -154,8 +154,11 @@ typedef enum {
 /* string: Login message */
 #define NM_VPN_PLUGIN_IP4_CONFIG_BANNER      "banner"
 
-/* array of (uint32, uint32, uint32, uint32): custom routes the client should
- *         apply.  In the order of:
+/* array of array of uint32: custom routes the client should apply.  NOTE: NM
+ *     expects the D-Bus argument signature "aau" here.  i.e., an array of
+ *     routes, where each route is a 4-element array of uint32 values.
+ *
+ *     Each route consists of the following 4 uint32 values, in this order:
  *              1: destination IP address (network byte order)
  *              2: destination prefix (1 - 32 inclusive)
  *              3: IP address of next hop (network byte order)
