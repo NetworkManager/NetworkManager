@@ -1384,14 +1384,16 @@ real_act_stage4_get_ip4_config (NMDevice *device,
 		NMConnection *connection;
 		NMSettingIP4Config *s_ip4;
 
-		connection = nm_act_request_get_connection (nm_device_get_act_request (device));
-		g_assert (connection);
-		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
-
 		/* PPPoE */
 		*config = priv->pending_ip4_config;
 		priv->pending_ip4_config = NULL;
+
+		/* Merge user-defined overrides into the IP4Config to be applied */
+		connection = nm_act_request_get_connection (nm_device_get_act_request (device));
+		g_assert (connection);
+		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
 		nm_utils_merge_ip4_config (*config, s_ip4);
+
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	}
 
