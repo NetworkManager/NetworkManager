@@ -607,7 +607,7 @@ nm_modem_class_init (NMModemClass *klass)
 							  "DBus path",
 							  "DBus path",
 							  NULL,
-							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	g_object_class_install_property
 		(object_class, PROP_DEVICE,
@@ -615,7 +615,7 @@ nm_modem_class_init (NMModemClass *klass)
 		                      "Device",
 		                      "Master modem parent device",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	g_object_class_install_property
 		(object_class, PROP_IP_METHOD,
@@ -625,7 +625,7 @@ nm_modem_class_init (NMModemClass *klass)
 							MM_MODEM_IP_METHOD_PPP,
 							MM_MODEM_IP_METHOD_DHCP,
 							MM_MODEM_IP_METHOD_PPP,
-							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	/* Signals */
 	signals[PPP_STATS] =
