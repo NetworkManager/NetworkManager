@@ -129,6 +129,44 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 				gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
+	guint32 i, num;
+	guint32 bad_dns1 = htonl (0x0A0B0C0D);
+	guint32 good_dns1 = htonl (0x04020201);  /* GTE nameserver */
+	guint32 bad_dns2 = htonl (0x0A0B0C0E);
+	guint32 good_dns2 = htonl (0x04020202);  /* GTE nameserver */
+
+	/* Work around a PPP bug (#1732) which causes many mobile broadband
+	 * providers to return 10.11.12.13 and 10.11.12.14 for the DNS servers.
+	 * Apparently fixed in ppp-2.4.5 but we've had some reports that this is
+	 * not the case.
+	 *
+	 * http://git.ozlabs.org/?p=ppp.git;a=commitdiff_plain;h=2e09ef6886bbf00bc5a9a641110f801e372ffde6
+	 * http://git.ozlabs.org/?p=ppp.git;a=commitdiff_plain;h=f8191bf07df374f119a07910a79217c7618f113e
+	 */
+
+	num = nm_ip4_config_get_num_nameservers (config);
+	if (num == 2) {
+		gboolean found1 = FALSE, found2 = FALSE;
+
+		for (i = 0; i < num; i++) {
+			guint32 ns = nm_ip4_config_get_nameserver (config, i);
+
+			if (ns == bad_dns1)
+				found1 = TRUE;
+			else if (ns == bad_dns2)
+				found2 = TRUE;
+		}
+
+		/* Be somewhat conservative about substitutions; the "bad" nameservers
+		 * could actually be valid in some cases, so only substitute if ppp
+		 * returns *only* the two bad nameservers.
+		 */
+		if (found1 && found2) {
+			nm_ip4_config_reset_nameservers (config);
+			nm_ip4_config_add_nameserver (config, good_dns1);
+			nm_ip4_config_add_nameserver (config, good_dns2);
+		}
+	}
 
 	nm_device_set_ip_iface (device, iface);
 	NM_MODEM_GET_PRIVATE (device)->pending_ip4_config = g_object_ref (config);
