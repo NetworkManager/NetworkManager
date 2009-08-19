@@ -3,7 +3,7 @@
 ACTION!="add|change", GOTO="nm_modem_probe_end"
 SUBSYSTEM!="tty", GOTO="nm_modem_probe_end"
 
-DRIVERS=="serial_cs|nozomi", IMPORT{program}="nm-modem-probe --delay 3000 --export $tempnode", GOTO="nm_modem_probe_end"
+DRIVERS=="serial_cs|nozomi", IMPORT{program}="nm-modem-probe --delay 1000 --timeout 5000 --export $tempnode", GOTO="nm_modem_probe_end"
 
 # Only probe known mobile broadband drivers
 DRIVERS=="option|sierra|hso|cdc_acm|qcserial|moto-modem", GOTO="probe"
@@ -17,7 +17,9 @@ SUBSYSTEMS=="usb", ATTRS{idVendor}=="0525", GOTO="nm_modem_probe_end"
 
 SUBSYSTEM=="tty", SUBSYSTEMS=="usb", DRIVERS=="?*", ENV{NM_MODEM_DRIVER}="$attr{driver}"
 SUBSYSTEM=="tty", SUBSYSTEMS=="usb", ATTRS{bInterfaceNumber}=="?*", ENV{NM_MODEM_USB_INTERFACE_NUMBER}="$attr{bInterfaceNumber}"
-SUBSYSTEM=="tty", SUBSYSTEMS=="usb", ATTRS{idVendor}=="?*", ATTRS{idProduct}=="?*", IMPORT{program}="nm-modem-probe --vid 0x$attr{idVendor} --pid 0x$attr{idProduct} --usb-interface $env{NM_MODEM_USB_INTERFACE_NUMBER} --driver $env{NM_MODEM_DRIVER} --delay 3000 --export $tempnode", GOTO="nm_modem_probe_end"
+
+SUBSYSTEM=="tty", SUBSYSTEMS=="usb", ATTRS{idVendor}=="19d2", ATTRS{idProduct}=="?*", IMPORT{program}="nm-modem-probe --vid 0x$attr{idVendor} --pid 0x$attr{idProduct} --usb-interface $env{NM_MODEM_USB_INTERFACE_NUMBER} --driver $env{NM_MODEM_DRIVER} --delay 5000 --timeout 8000 --export $tempnode", GOTO="nm_modem_probe_end"
+SUBSYSTEM=="tty", SUBSYSTEMS=="usb", ATTRS{idVendor}=="?*", ATTRS{idProduct}=="?*", IMPORT{program}="nm-modem-probe --vid 0x$attr{idVendor} --pid 0x$attr{idProduct} --usb-interface $env{NM_MODEM_USB_INTERFACE_NUMBER} --driver $env{NM_MODEM_DRIVER} --delay 1000 --timeout 5000 --export $tempnode", GOTO="nm_modem_probe_end"
 
 LABEL="nm_modem_probe_end"
 

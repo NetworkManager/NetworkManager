@@ -1128,7 +1128,7 @@ modem_device_creator (NMHalManager *self,
 
 		if (priv->deferred_modem_id)
 			g_source_remove (priv->deferred_modem_id);
-		priv->deferred_modem_id = g_timeout_add_seconds (4, deferred_modem_timeout, self);
+		priv->deferred_modem_id = g_timeout_add_seconds (8, deferred_modem_timeout, self);
 
 		nm_info ("(%s): deferring until all ports found", ttyname);
 	}

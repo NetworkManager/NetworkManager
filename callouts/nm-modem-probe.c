@@ -1,3 +1,4 @@
+/* -*- Mode: C; tab-width: 4; indent-tabs-mode: t; c-basic-offset: 4 -*- */
 /*
  * modem_caps - probe Hayes-compatible modem capabilities
  *
@@ -23,6 +24,7 @@
 #include <stdlib.h>
 #include <getopt.h>
 #include <time.h>
+#include <sys/time.h>
 
 #include <glib.h>
 
@@ -37,12 +39,12 @@
 #define MODEM_CAP_ES          0x0010 /* Error control selection (v.42) */
 #define MODEM_CAP_FCLASS      0x0020 /* Group III Fax */
 #define MODEM_CAP_MS          0x0040 /* Modulation selection */
-#define MODEM_CAP_W           0x0080 /* Wireless commands */      
+#define MODEM_CAP_W           0x0080 /* Wireless commands */
 #define MODEM_CAP_IS856       0x0100 /* CDMA 3G EVDO rev 0 */
 #define MODEM_CAP_IS856_A     0x0200 /* CDMA 3G EVDO rev A */
 
 static gboolean verbose = FALSE;
-static gboolean quiet = FALSE;
+static gboolean nostdout = FALSE;
 static FILE *logfile = NULL;
 
 struct modem_caps {
@@ -71,19 +73,25 @@ static struct modem_caps modem_caps[] = {
 static void
 printerr_handler (const char *string)
 {
+	struct timeval tv;
+
+	gettimeofday (&tv, NULL);
 	if (logfile)
-		fprintf (logfile, "E: %s", string);
-	if (!quiet)
-		fprintf (stderr, "E: %s", string);
+		fprintf (logfile, "E: (%lu.%lu) %s", tv.tv_sec, tv.tv_usec, string);
+	if (!nostdout)
+		fprintf (stderr, "E: (%lu.%lu) %s", tv.tv_sec, tv.tv_usec, string);
 }
 
 static void
 print_handler (const char *string)
 {
+	struct timeval tv;
+
+	gettimeofday (&tv, NULL);
 	if (logfile)
-		fprintf (logfile, "L: %s", string);
-	if (!quiet)
-		fprintf (stdout, "L: %s", string);
+		fprintf (logfile, "L: (%lu.%lu) %s", tv.tv_sec, tv.tv_usec, string);
+	if (!nostdout)
+		fprintf (stdout, "L: (%lu.%lu) %s", tv.tv_sec, tv.tv_usec, string);
 }
 
 #define verbose(fmt, args...) \
@@ -318,29 +326,60 @@ static int modem_probe_caps(int fd, glong timeout_ms, unsigned int vid)
 {
 	const char *gcap_responses[] = { GCAP_TAG, HUAWEI_EC121_TAG, NULL };
 	const char *terminators[] = { "OK", "ERROR", "ERR", "+CME ERROR", NULL };
+	const char *cpms_responses[] = { "+CPMS:", NULL };
 	char *reply = NULL;
 	int idx = -1, term_idx = -1, ret = 0;
 	gboolean try_ati = FALSE;
 	GTimeVal start, end;
 	gboolean send_success;
 
-	/* If a delay was specified, start a bit later */
+	/* If a timeout was specified, delay just a bit */
 	if (timeout_ms > 500) {
 		g_usleep (500000);
 		timeout_ms -= 500;
 	}
 
-	/* Standard response timeout case */
-	timeout_ms += 3000;
-
 	/* ZTE devices need to be told to shut up before probing */
 	if (vid == ZTE_VENDOR_ID) {
-		if (modem_send_command (fd, "AT+CPMS\r\n")) {
-				const char *null_responses[] = { NULL };
+		gboolean success = FALSE, got_response = FALSE;
 
-				modem_wait_reply (fd, 2, null_responses, terminators, &term_idx, &reply);
+		verbose ("Sending ZTE init string...");
+		while (timeout_ms > 0 && !success) {
+			GTimeVal diff;
+
+			g_get_current_time (&start);
+
+			if (modem_send_command (fd, "ATE0+CPMS?\r")) {
+				idx = modem_wait_reply (fd, 2, cpms_responses, terminators, &term_idx, &reply);
+				if (idx == 0)
+					success = TRUE;
+
+				/* Keep track of whether we get any response at all */
+				if ((reply && strlen (reply)) || (term_idx >= 0))
+					got_response = TRUE;
 				g_free (reply);
 				reply = NULL;
+			}
+
+			if (!success)
+				g_usleep (500000);
+
+			g_get_current_time (&end);
+			g_timeval_subtract (&diff, &end, &start);
+			timeout_ms -= (diff.tv_sec * 1000) + (diff.tv_usec / 1000);
+		}
+		verbose ("%s sending ZTE init string", success ? "Success" : "Error");
+
+		/* +CPMS will return error when the card is booting up, and also when
+		 * there isn't a SIM.  We can't really distinguish between these two
+		 * cases, so we should run AT+GCAP after attempting the ZTE init string
+		 * even if the timeout has been reached.  But if the port never returned
+		 * a response (even ERROR) to the init string, it's probably not an AT
+		 * port so don't take up more time probing it.
+		 */
+		if (!success && got_response) {
+			if (timeout_ms < 1000)
+				timeout_ms = 5000;
 		}
 	}
 
@@ -351,7 +390,7 @@ static int modem_probe_caps(int fd, glong timeout_ms, unsigned int vid)
 		g_get_current_time (&start);
 
 		idx = term_idx = 0;
-		send_success = modem_send_command (fd, "AT+GCAP\r\n");
+		send_success = modem_send_command (fd, "AT+GCAP\r");
 		if (send_success)
 			idx = modem_wait_reply (fd, 2, gcap_responses, terminators, &term_idx, &reply);
 		else
@@ -380,6 +419,10 @@ static int modem_probe_caps(int fd, glong timeout_ms, unsigned int vid)
 				/* No SIM (Huawei) */
 				try_ati = TRUE;
 				break;
+			} else if (1 == term_idx && -1 == idx) {
+				/* No SIM (ZTE) */
+				try_ati = TRUE;
+				break;
 			} else if (1 == term_idx || 2 == term_idx) {
 				try_ati = TRUE;
 			} else
@@ -403,7 +446,7 @@ static int modem_probe_caps(int fd, glong timeout_ms, unsigned int vid)
 		reply = NULL;
 
 		verbose ("GCAP failed, trying ATI...");
-		if (modem_send_command (fd, "ATI\r\n")) {
+		if (modem_send_command (fd, "ATI\r")) {
 			idx = modem_wait_reply (fd, 3, ati_responses, terminators, &term_idx, &reply);
 			if (0 == term_idx && 0 == idx) {
 				verbose ("ATI response: %s", reply);
@@ -422,7 +465,7 @@ static int modem_probe_caps(int fd, glong timeout_ms, unsigned int vid)
 	if ((idx != -2) && !(ret & MODEM_CAP_GSM) && !(ret & MODEM_CAP_IS707_A)) {
 		const char *cgmm_responses[] = { CGMM_TAG, NULL };
 
-		if (modem_send_command (fd, "AT+CGMM\r\n")) {
+		if (modem_send_command (fd, "AT+CGMM\r")) {
 			idx = modem_wait_reply (fd, 5, cgmm_responses, terminators, &term_idx, &reply);
 			if (0 == term_idx && 0 == idx) {
 				verbose ("CGMM response: %s", reply);
@@ -436,19 +479,21 @@ static int modem_probe_caps(int fd, glong timeout_ms, unsigned int vid)
 }
 
 static void
-print_usage (void)
+print_usage (const char *name)
 {
-	printf("Usage: probe-modem [options] <device>\n"
+	printf("Usage: %s [options] <device>\n"
 	    " --export               export key/value pairs\n"
-	    " --delay <ms>           delay before probing (1 to 3000 ms inclusive)\n"
+	    " --timeout <ms>         probing timeout (1 to 8000 ms inclusive)\n"
+	    " --delay <ms>           delay before probing (1 to 5000 ms inclusive)\n"
 	    " --verbose              print verbose debugging output\n"
-	    " --quiet                suppress logging to stdout (does not affect logfile output)\n"
+	    " --no-stdout            suppress logging to stdout (does not affect logfile output)\n"
 	    " --log <file>           log all output\n"
 	    " --vid <vid>            USB Vendor ID (optional)\n"
 	    " --pid <pid>            USB Product ID (optional)\n"
 	    " --usb-interface <num>  USB device interface number (optional)\n"
 	    " --driver <name>        Linux kernel device driver (optional)\n"
-	    " --help\n\n");
+	    " --help\n\n",
+	    name);
 }
 
 int
@@ -456,9 +501,10 @@ main(int argc, char *argv[])
 {
 	static const struct option options[] = {
 		{ "export", 0, NULL, 'x' },
+		{ "timeout", required_argument, NULL, 't' },
 		{ "delay", required_argument, NULL, 'a' },
 		{ "verbose", 0, NULL, 'v' },
-		{ "quiet", 0, NULL, 'q' },
+		{ "no-stdout", 0, NULL, 'q' },
 		{ "log", required_argument, NULL, 'l' },
 		{ "vid", required_argument, NULL, 'e' },
 		{ "pid", required_argument, NULL, 'p' },
@@ -474,9 +520,10 @@ main(int argc, char *argv[])
 	gboolean export = 0;
 	struct termios orig, attrs;
 	int fd = -1, caps, ret = 0;
-	guint32 delay_ms = 0;
+	guint32 timeout_ms = 0, delay_ms = 0;
 	unsigned int vid = 0, pid = 0, usbif = 0, last_err = 0;
 	unsigned long int tmp;
+	GTimeVal diff, start, end;
 
 	while (1) {
 		int option;
@@ -489,9 +536,17 @@ main(int argc, char *argv[])
 		case 'x':
 			export = TRUE;
 			break;
+		case 't':
+			tmp = strtoul (optarg, NULL, 10);
+			if (tmp < 1 || tmp > 8000) {
+				fprintf (stderr, "Invalid timeout: %s\n", optarg);
+				return 1;
+			}
+			timeout_ms = (guint32) tmp;
+			break;
 		case 'a':
 			tmp = strtoul (optarg, NULL, 10);
-			if (tmp < 1 || tmp > 3000) {
+			if (tmp < 1 || tmp > 5000) {
 				fprintf (stderr, "Invalid delay: %s\n", optarg);
 				return 1;
 			}
@@ -528,12 +583,13 @@ main(int argc, char *argv[])
 			driver = optarg;
 			break;
 		case 'q':
-			quiet = TRUE;
+			nostdout = TRUE;
 			break;
 		case 'h':
-			print_usage ();
+			print_usage (argv[0]);
 			return 0;
 		default:
+			print_usage (argv[0]);
 			return 1;
 		}
 	}
@@ -565,15 +621,22 @@ main(int argc, char *argv[])
 
 	/* Some devices just shouldn't be touched */
 	if (vid == HUAWEI_VENDOR_ID && usbif != 0) {
-		verbose ("(%s) ignoring Huawei USB interface #1", device);
+		verbose ("(%s) ignoring Huawei USB interface #%d", device, usbif);
 		if (export)
 			printf ("ID_NM_MODEM_PROBED=1\n");
 		goto exit;
 	}
 
+	if (delay_ms) {
+		verbose ("waiting %u ms before probing", delay_ms);
+		g_usleep (delay_ms * 1000);
+	}
+
 	verbose ("probing %s", device);
 
-	/* If a delay was specified, retry opening the serial port for that
+	g_get_current_time (&start);
+
+	/* If a timeout was specified, retry opening the serial port for that
 	 * amount of time.  Some devices (nozomi) aren't ready to be opened
 	 * even though their device node is created by udev already.
 	 */
@@ -581,10 +644,10 @@ main(int argc, char *argv[])
 		fd = open (device, O_RDWR | O_EXCL | O_NONBLOCK);
 		if (fd < 0) {
 			last_err = errno;
-			g_usleep (500000);
-			delay_ms -= 500;
+			g_usleep (300000);
+			timeout_ms -= 300;
 		}
-	} while (fd < 0 && delay_ms > 0);
+	} while (fd < 0 && timeout_ms > 0);
 
 	if (fd < 0) {
 		g_printerr ("open(%s) failed: %d\n", device, last_err);
@@ -602,7 +665,6 @@ main(int argc, char *argv[])
 	attrs.c_iflag &= ~(IGNCR | ICRNL | IUCLC | INPCK | IXON | IXANY | IGNPAR);
 	attrs.c_oflag &= ~(OPOST | OLCUC | OCRNL | ONLCR | ONLRET);
 	attrs.c_lflag &= ~(ICANON | XCASE | ECHO | ECHOE | ECHONL);
-	attrs.c_lflag &= ~(ECHO | ECHOE);
 	attrs.c_cc[VMIN] = 1;
 	attrs.c_cc[VTIME] = 0;
 	attrs.c_cc[VEOF] = 1;
@@ -611,8 +673,10 @@ main(int argc, char *argv[])
 	attrs.c_cflag |= (B9600 | CS8 | CREAD | PARENB);
 	
 	tcsetattr (fd, TCSANOW, &attrs);
-	caps = modem_probe_caps (fd, delay_ms, vid);
+	caps = modem_probe_caps (fd, timeout_ms, vid);
 	tcsetattr (fd, TCSANOW, &orig);
+
+	g_get_current_time (&end);
 
 	if (caps < 0) {
 		g_printerr ("%s: couldn't get modem capabilities\n", device);
@@ -635,11 +699,13 @@ main(int argc, char *argv[])
 		printf ("ID_NM_MODEM_PROBED=1\n");
 	}
 
-	verbose ("%s: caps (0x%X)%s%s%s%s\n", device, caps,
+	g_timeval_subtract (&diff, &end, &start);
+	verbose ("%s: caps (0x%X)%s%s%s%s   time: %lums\n", device, caps,
 	         caps & MODEM_CAP_GSM     ? " GSM" : "",
 	         caps & (MODEM_CAP_IS707_A | MODEM_CAP_IS707_P) ? " CDMA-1x" : "",
 	         caps & MODEM_CAP_IS856   ? " EVDOr0" : "",
-	         caps & MODEM_CAP_IS856_A ? " EVDOrA" : "");
+	         caps & MODEM_CAP_IS856_A ? " EVDOrA" : "",
+	         (diff.tv_sec * 1000) + (diff.tv_usec / 1000));
 
 exit:
 	if (fd >= 0)
