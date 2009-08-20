@@ -181,7 +181,7 @@ PKG_CHECK_MODULES(DBUS, dbus-1 >= 1.1 dbus-glib-1 >= 0.75)
 AC_SUBST(DBUS_CFLAGS)
 AC_SUBST(DBUS_LIBS)
 
-PKG_CHECK_MODULES(GLIB, gthread-2.0 glib-2.0 >= 2.10 gobject-2.0)
+PKG_CHECK_MODULES(GLIB, gthread-2.0 glib-2.0 >= 2.16 gobject-2.0)
 AC_SUBST(GLIB_CFLAGS)
 AC_SUBST(GLIB_LIBS)
 
@@ -193,6 +193,10 @@ PKG_CHECK_MODULES(GUDEV, gudev-1.0)
 AC_SUBST(GUDEV_CFLAGS)
 AC_SUBST(GUDEV_LIBS)
 
+PKG_CHECK_MODULES(GIO, gio-2.0)
+AC_SUBST(GIO_CFLAGS)
+AC_SUBST(GIO_LIBS)
+
 AC_ARG_WITH(udev-dir, AS_HELP_STRING([--with-udev-dir=DIR], [where the udev base directory is]))
 if test -n "$with_udev_dir" ; then
 	UDEV_BASE_DIR="$with_udev_dir"
@@ -200,17 +204,6 @@ else
 	UDEV_BASE_DIR="/lib/udev"
 fi
 AC_SUBST(UDEV_BASE_DIR)
-
-PKG_CHECK_EXISTS(gio-2.0,[have_gio=yes],[have_gio=no])
-if test x"$have_gio" = "xno"; then
-	AC_DEFINE([NO_GIO],[1],[Define if you don't have GIO])
-	echo "GIO not found; using private GFileMonitor library"
-else
-	PKG_CHECK_MODULES(GIO, gio-2.0)
-	AC_SUBST(GIO_CFLAGS)
-	AC_SUBST(GIO_LIBS)
-fi
-AM_CONDITIONAL(NO_GIO, test x"$have_gio" == "xno")
 
 PKG_CHECK_MODULES(LIBNL, libnl-1 >= 1.0-pre8)
 AC_SUBST(LIBNL_CFLAGS)
@@ -460,7 +453,6 @@ libnm-util/tests/certs/Makefile
 libnm-glib/libnm_glib.pc
 libnm-glib/libnm_glib_vpn.pc
 libnm-glib/Makefile
-gfilemonitor/Makefile
 callouts/Makefile
 tools/Makefile
 system-settings/Makefile

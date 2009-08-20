@@ -24,18 +24,15 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <string.h>
+
 #include <gmodule.h>
 #include <glib.h>
 #include <glib/gstdio.h>
+#include <gio/gio.h>
+
 #include <nm-connection.h>
 #include <nm-setting.h>
 #include <nm-setting-connection.h>
-
-#ifndef NO_GIO
-#include <gio/gio.h>
-#else
-#include <gfilemonitor/gfilemonitor.h>
-#endif
 
 #include "plugin.h"
 #include "nm-system-config-interface.h"

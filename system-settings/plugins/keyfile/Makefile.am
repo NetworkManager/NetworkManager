@@ -32,15 +32,8 @@ libnm_settings_plugin_keyfile_la_LIBADD = \
 	$(top_builddir)/system-settings/plugins/keyfile/io/libkeyfile-io.la \
 	$(GLIB_LIBS) \
 	$(GMODULE_LIBS) \
-	$(DBUS_LIBS)
-
-if NO_GIO
-libnm_settings_plugin_keyfile_la_LIBADD += \
-	$(top_builddir)/gfilemonitor/libgfilemonitor.la
-else
-libnm_settings_plugin_keyfile_la_LIBADD += \
+	$(DBUS_LIBS) \
 	$(GIO_LIBS)
-endif
 
 install-data-hook:
 	$(mkinstalldirs) -m 0755 $(DESTDIR)$(keyfiledir)

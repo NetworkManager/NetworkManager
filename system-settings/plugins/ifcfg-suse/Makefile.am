@@ -31,13 +31,6 @@ libnm_settings_plugin_ifcfg_suse_la_LIBADD = \
 	$(GLIB_LIBS) \
 	$(GMODULE_LIBS) \
 	$(POLKIT_LIBS) \
-	$(GUDEV_LIBS)
-
-if NO_GIO
-libnm_settings_plugin_ifcfg_suse_la_LIBADD += \
-	$(top_builddir)/gfilemonitor/libgfilemonitor.la
-else
-libnm_settings_plugin_ifcfg_suse_la_LIBADD += \
+	$(GUDEV_LIBS) \
 	$(GIO_LIBS)
-endif
 

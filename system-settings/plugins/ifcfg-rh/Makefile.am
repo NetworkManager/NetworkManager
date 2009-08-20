@@ -57,13 +57,6 @@ libnm_settings_plugin_ifcfg_rh_la_LIBADD = \
 	$(top_builddir)/marshallers/libmarshallers.la \
 	libifcfg-rh-io.la \
 	$(GLIB_LIBS) \
-	$(GMODULE_LIBS)
-
-if NO_GIO
-libnm_settings_plugin_ifcfg_rh_la_LIBADD += \
-	$(top_builddir)/gfilemonitor/libgfilemonitor.la
-else
-libnm_settings_plugin_ifcfg_rh_la_LIBADD += \
+	$(GMODULE_LIBS) \
 	$(GIO_LIBS)
-endif
 
