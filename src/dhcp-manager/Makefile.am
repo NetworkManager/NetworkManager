@@ -16,7 +16,6 @@ libdhcp_manager_la_SOURCES = \
 libdhcp_manager_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
-	$(HAL_CFLAGS) \
 	-DG_DISABLE_DEPRECATED \
 	-DBINDIR=\"$(bindir)\" \
 	-DDATADIR=\"$(datadir)\" \

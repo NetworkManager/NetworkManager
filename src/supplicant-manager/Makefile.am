@@ -25,7 +25,6 @@ libsupplicant_manager_la_SOURCES = \
 libsupplicant_manager_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
 	$(GLIB_CFLAGS) \
-	$(HAL_CFLAGS) \
 	-DNM_PKGDATADIR=\"$(pkgdatadir)\" \
 	-DNM_LOCALSTATEDIR=\"$(localstatedir)\"
 

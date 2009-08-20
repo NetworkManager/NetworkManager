@@ -192,7 +192,6 @@ NetworkManager_LDADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
-	$(HAL_LIBS) \
 	$(GUDEV_LIBS) \
 	$(LIBNL_LIBS) \
 	$(GMODULE_LIBS)

@@ -50,11 +50,11 @@ libnmbackend_la_SOURCES += NetworkManagerMandriva.c
 endif
 
 libnmbackend_la_LIBADD += $(DBUS_LIBS) $(GLIB_LIBS)
-libnmbackend_la_CPPFLAGS =	$(DBUS_CFLAGS)				\
-					$(GLIB_CFLAGS)				\
-					$(HAL_CFLAGS)					\
-					-DG_DISABLE_DEPRECATED			\
-					-DBINDIR=\"$(bindir)\"			\
-					-DDATADIR=\"$(datadir)\"			\
-					-DSYSCONFDIR=\"$(sysconfdir)\"
+libnmbackend_la_CPPFLAGS = \
+	$(DBUS_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	-DG_DISABLE_DEPRECATED \
+	-DBINDIR=\"$(bindir)\" \
+	-DDATADIR=\"$(datadir)\" \
+	-DSYSCONFDIR=\"$(sysconfdir)\"
 

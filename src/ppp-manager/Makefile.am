@@ -21,7 +21,6 @@ $(libppp_manager_la_OBJECTS): $(built_sources)
 
 libppp_manager_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
-	$(HAL_CFLAGS) \
 	-DG_DISABLE_DEPRECATED \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DLIBDIR=\"$(libdir)\" \
