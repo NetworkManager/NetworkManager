@@ -996,6 +996,10 @@ real_act_stage3_ip4_config_start (NMDevice *self, NMDeviceStateReason *reason)
 	/* Use the IP interface (not the control interface) for IP stuff */
 	ip_iface = nm_device_get_ip_iface (self);
 
+	/* Make sure the interface is up before trying to do anything with it */
+	if (!nm_system_device_is_up_with_iface (ip_iface))
+		nm_system_device_set_up_down_with_iface (ip_iface, TRUE, NULL);
+
 	req = nm_device_get_act_request (self);
 	connection = nm_act_request_get_connection (req);
 	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
