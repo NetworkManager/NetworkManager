@@ -28,6 +28,7 @@
 #include "nm-object-private.h"
 #include "nm-object-cache.h"
 #include "nm-dbus-glib-types.h"
+#include "nm-setting-ip6-config.h"
 
 static gpointer
 nm_ssid_copy (GByteArray *src)
@@ -273,5 +274,150 @@ _nm_object_array_demarshal (GValue *value,
 	*dest = temp;
 
 	return TRUE;
+}
+
+/*****************************/
+
+static gpointer
+nm_ip6_address_object_array_copy (GPtrArray *src)
+{
+	GPtrArray *dest;
+	int i;
+
+	dest = g_ptr_array_sized_new (src->len);
+	for (i = 0; i < src->len; i++)
+		g_ptr_array_add (dest, nm_ip6_address_dup (g_ptr_array_index (src, i)));
+	return dest;
+}
+
+static void
+nm_ip6_address_object_array_free (GPtrArray *array)
+{
+	int i;
+
+	for (i = 0; i < array->len; i++)
+		nm_ip6_address_unref (g_ptr_array_index (array, i));
+	g_ptr_array_free (array, TRUE);
+}
+
+GType
+nm_ip6_address_object_array_get_type (void)
+{
+	static GType our_type = 0;
+
+	if (our_type == 0)
+		our_type = g_boxed_type_register_static (g_intern_static_string ("nm-ip6-address-object-array"),
+		                                         (GBoxedCopyFunc) nm_ip6_address_object_array_copy,
+		                                         (GBoxedFreeFunc) nm_ip6_address_object_array_free);
+	return our_type;
+}
+
+/*****************************/
+
+static gpointer
+nm_ip6_address_array_copy (GPtrArray *src)
+{
+	GPtrArray *dest;
+	int i;
+
+	dest = g_ptr_array_sized_new (src->len);
+	for (i = 0; i < src->len; i++) {
+		struct in6_addr *addr = g_ptr_array_index (src, i);
+		struct in6_addr *dup;
+
+		dup = g_malloc0 (sizeof (struct in6_addr));
+		memcpy (dup, addr, sizeof (struct in6_addr));
+		g_ptr_array_add (dest, dup);
+	}
+	return dest;
+}
+
+static void
+nm_ip6_address_array_free (GPtrArray *array)
+{
+	int i;
+
+	for (i = 0; i < array->len; i++)
+		g_free (g_ptr_array_index (array, i));
+	g_ptr_array_free (array, TRUE);
+}
+
+GType
+nm_ip6_address_array_get_type (void)
+{
+	static GType our_type = 0;
+
+	if (our_type == 0)
+		our_type = g_boxed_type_register_static (g_intern_static_string ("nm-ip6-address-array"),
+		                                         (GBoxedCopyFunc) nm_ip6_address_array_copy,
+		                                         (GBoxedFreeFunc) nm_ip6_address_array_free);
+	return our_type;
+}
+
+gboolean
+_nm_ip6_address_array_demarshal (GValue *value, GSList **dest)
+{
+	GPtrArray *array;
+
+	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_UINT_ARRAY))
+		return FALSE;
+
+	if (*dest) {
+		g_slist_foreach (*dest, (GFunc) g_free, NULL);
+		g_slist_free (*dest);
+		*dest = NULL;
+	}
+
+	array = (GPtrArray *) g_value_get_boxed (value);
+	if (array && array->len) {
+		int i;
+
+		for (i = 0; i < array->len; i++) {
+			struct in6_addr *addr = g_ptr_array_index (array, i);
+			struct in6_addr *dup;
+
+			dup = g_malloc0 (sizeof (struct in6_addr));
+			memcpy (dup, addr, sizeof (struct in6_addr));
+			*dest = g_slist_append (*dest, dup);
+		}
+	}
+
+	return TRUE;
+}
+
+/*****************************/
+
+static gpointer
+nm_ip6_route_object_array_copy (GPtrArray *src)
+{
+	GPtrArray *dest;
+	int i;
+
+	dest = g_ptr_array_sized_new (src->len);
+	for (i = 0; i < src->len; i++)
+		g_ptr_array_add (dest, nm_ip6_route_dup (g_ptr_array_index (src, i)));
+	return dest;
+}
+
+static void
+nm_ip6_route_object_array_free (GPtrArray *array)
+{
+	int i;
+
+	for (i = 0; i < array->len; i++)
+		nm_ip6_route_unref (g_ptr_array_index (array, i));
+	g_ptr_array_free (array, TRUE);
+}
+
+GType
+nm_ip6_route_object_array_get_type (void)
+{
+	static GType our_type = 0;
+
+	if (our_type == 0)
+		our_type = g_boxed_type_register_static (g_intern_static_string ("nm-ip6-route-object-array"),
+		                                         (GBoxedCopyFunc) nm_ip6_route_object_array_copy,
+		                                         (GBoxedFreeFunc) nm_ip6_route_object_array_free);
+	return our_type;
 }
 

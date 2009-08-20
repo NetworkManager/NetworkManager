@@ -49,7 +49,8 @@ IGNORE_HFILES= \
 	nm-vpn-plugin-glue.h \
 	nm-active-connection-bindings.h \
 	nm-ip4-config-bindings.h \
-	nm-dhcp4-config-bindings.h
+	nm-dhcp4-config-bindings.h \
+	nm-ip4-config-bindings.h
 
 # Images to copy into HTML directory.
 HTML_IMAGES = 

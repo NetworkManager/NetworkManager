@@ -6,6 +6,7 @@
 #include <nm-serial-device.h>
 #include <nm-access-point.h>
 #include <nm-ip4-config.h>
+#include <nm-ip6-config.h>
 #include <nm-active-connection.h>
 #include <nm-dhcp4-config.h>
 
@@ -21,3 +22,4 @@ nm_access_point_get_type
 nm_ip4_config_get_type
 nm_active_connection_get_type
 nm_dhcp4_config_get_type
+nm_ip6_config_get_type

@@ -353,9 +353,9 @@ nm_ip4_config_get_addresses (NMIP4Config *config)
 		return priv->addresses;
 
 	if (!_nm_object_get_property (NM_OBJECT (config),
-	                             "org.freedesktop.DBus.Properties",
-	                             "Addresses",
-	                             &value)) {
+	                              NM_DBUS_INTERFACE_IP4_CONFIG,
+	                              "Addresses",
+	                              &value)) {
 		return NULL;
 	}
 
@@ -400,9 +400,9 @@ nm_ip4_config_get_nameservers (NMIP4Config *config)
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 	if (!priv->nameservers) {
 		if (_nm_object_get_property (NM_OBJECT (config),
-		                            NM_DBUS_INTERFACE_IP4_CONFIG,
-		                            "Nameservers",
-		                            &value)) {
+		                             NM_DBUS_INTERFACE_IP4_CONFIG,
+		                             "Nameservers",
+		                             &value)) {
 			array = (GArray *) g_value_get_boxed (&value);
 			if (array && array->len) {
 				priv->nameservers = g_array_sized_new (FALSE, TRUE, sizeof (guint32), array->len);
@@ -437,9 +437,9 @@ nm_ip4_config_get_domains (NMIP4Config *config)
 		return handle_ptr_array_return (priv->domains);
 
 	if (_nm_object_get_property (NM_OBJECT (config),
-								NM_DBUS_INTERFACE_IP4_CONFIG,
-								"Domains",
-								&value)) {
+	                             NM_DBUS_INTERFACE_IP4_CONFIG,
+	                             "Domains",
+	                             &value)) {
 		char **array = NULL, **p;
 
 		array = (char **) g_value_get_boxed (&value);
@@ -475,9 +475,9 @@ nm_ip4_config_get_wins_servers (NMIP4Config *config)
 	priv = NM_IP4_CONFIG_GET_PRIVATE (config);
 	if (!priv->nameservers) {
 		if (_nm_object_get_property (NM_OBJECT (config),
-		                            NM_DBUS_INTERFACE_IP4_CONFIG,
-		                            "Nameservers",
-		                            &value)) {
+		                             NM_DBUS_INTERFACE_IP4_CONFIG,
+		                             "Nameservers",
+		                             &value)) {
 			array = (GArray *) g_value_get_boxed (&value);
 			if (array && array->len) {
 				priv->nameservers = g_array_sized_new (FALSE, TRUE, sizeof (guint32), array->len);
@@ -512,9 +512,9 @@ nm_ip4_config_get_routes (NMIP4Config *config)
 		return priv->routes;
 
 	if (!_nm_object_get_property (NM_OBJECT (config),
-	                             "org.freedesktop.DBus.Properties",
-	                             "Routes",
-	                             &value)) {
+	                              NM_DBUS_INTERFACE_IP4_CONFIG,
+	                              "Routes",
+	                              &value)) {
 		return NULL;
 	}
 
