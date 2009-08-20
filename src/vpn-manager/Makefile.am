@@ -23,11 +23,11 @@ libvpn_manager_la_CPPFLAGS =	\
 	$(GLIB_CFLAGS)		\
 	-DG_DISABLE_DEPRECATED
 
-libvpn_manager_la_LIBADD =	\
-	$(DBUS_LIBS)		\
-	$(GLIB_LIBS)		\
+libvpn_manager_la_LIBADD = \
 	$(top_builddir)/marshallers/libmarshallers.la \
-	$(top_builddir)/libnm-util/libnm-util.la
+	$(top_builddir)/libnm-util/libnm-util.la \
+	$(DBUS_LIBS) \
+	$(GLIB_LIBS)
 
 nm-vpn-connection-glue.h: $(top_srcdir)/introspection/nm-vpn-connection.xml
 	dbus-binding-tool --prefix=nm_vpn_connection --mode=glib-server --output=$@ $<

@@ -14,9 +14,9 @@ test_supplicant_config_CPPFLAGS = \
 	$(DBUS_CFLAGS)
 
 test_supplicant_config_LDADD = \
-	$(DBUS_LIBS) \
 	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/src/supplicant-manager/libsupplicant-manager.la
+	$(top_builddir)/src/supplicant-manager/libsupplicant-manager.la \
+	$(DBUS_LIBS)
 
 if WITH_TESTS
 

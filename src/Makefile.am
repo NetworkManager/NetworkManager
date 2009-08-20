@@ -44,10 +44,10 @@ libtest_dhcp_la_CPPFLAGS = \
 	$(LIBNL_CFLAGS)
 
 libtest_dhcp_la_LIBADD = \
+	$(top_builddir)/libnm-util/libnm-util.la \
 	$(GLIB_LIBS) \
 	$(DBUS_LIBS) \
-	$(LIBNL_LIBS) \
-	$(top_builddir)/libnm-util/libnm-util.la
+	$(LIBNL_LIBS)
 
 
 ###########################################
@@ -178,12 +178,6 @@ NetworkManager_CPPFLAGS = \
 	-DARP_DEBUG
 
 NetworkManager_LDADD = \
-	$(DBUS_LIBS) \
-	$(GLIB_LIBS) \
-	$(HAL_LIBS) \
-	$(GUDEV_LIBS) \
-	$(LIBNL_LIBS) \
-	$(GMODULE_LIBS) \
 	$(top_builddir)/marshallers/libmarshallers.la \
 	./named-manager/libnamed-manager.la \
 	./vpn-manager/libvpn-manager.la \
@@ -195,7 +189,13 @@ NetworkManager_LDADD = \
 	./bluez-manager/libbluez-manager.la \
 	./system-settings/libsystem-settings.la \
 	./backends/libnmbackend.la \
-	$(top_builddir)/libnm-util/libnm-util.la
+	$(top_builddir)/libnm-util/libnm-util.la \
+	$(DBUS_LIBS) \
+	$(GLIB_LIBS) \
+	$(HAL_LIBS) \
+	$(GUDEV_LIBS) \
+	$(LIBNL_LIBS) \
+	$(GMODULE_LIBS)
 
 NetworkManager_LDFLAGS = -rdynamic
 

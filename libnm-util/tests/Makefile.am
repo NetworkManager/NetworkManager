@@ -14,9 +14,9 @@ test_settings_defaults_CPPFLAGS = \
 	$(DBUS_CFLAGS)
 
 test_settings_defaults_LDADD = \
+	$(top_builddir)/libnm-util/libnm-util.la \
 	$(GLIB_LIBS) \
-	$(DBUS_LIBS) \
-	$(top_builddir)/libnm-util/libnm-util.la
+	$(DBUS_LIBS)
 
 test_crypto_SOURCES = \
 	test-crypto.c
@@ -25,8 +25,8 @@ test_crypto_CPPFLAGS = \
 	$(GLIB_CFLAGS)
 
 test_crypto_LDADD = \
-	$(GLIB_LIBS) \
-	$(top_builddir)/libnm-util/libtest-crypto.la
+	$(top_builddir)/libnm-util/libtest-crypto.la \
+	$(GLIB_LIBS)
 
 
 if WITH_TESTS

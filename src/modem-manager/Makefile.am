@@ -21,8 +21,8 @@ libmodem_manager_la_CPPFLAGS = \
 	$(DBUS_CFLAGS)
 
 libmodem_manager_la_LIBADD = \
-	$(DBUS_LIBS) \
-	$(top_builddir)/marshallers/libmarshallers.la
+	$(top_builddir)/marshallers/libmarshallers.la \
+	$(DBUS_LIBS)
 
 nm-device-cdma-glue.h: $(top_srcdir)/introspection/nm-device-cdma.xml
 	dbus-binding-tool --prefix=nm_device_cdma --mode=glib-server --output=$@ $<

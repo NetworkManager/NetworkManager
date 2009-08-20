@@ -30,7 +30,7 @@ libsupplicant_manager_la_CPPFLAGS = \
 	-DNM_LOCALSTATEDIR=\"$(localstatedir)\"
 
 libsupplicant_manager_la_LIBADD = \
+	$(top_builddir)/marshallers/libmarshallers.la \
 	$(DBUS_LIBS) \
-	$(GLIB_LIBS) \
-	$(top_builddir)/marshallers/libmarshallers.la
+	$(GLIB_LIBS)
 
