@@ -21,16 +21,15 @@ $(libppp_manager_la_OBJECTS): $(built_sources)
 
 libppp_manager_la_CPPFLAGS = \
 	$(DBUS_CFLAGS) \
-	$(HAL_CFLAGS) \
 	-DG_DISABLE_DEPRECATED \
 	-DSYSCONFDIR=\"$(sysconfdir)\" \
 	-DLIBDIR=\"$(libdir)\" \
 	-DPLUGINDIR=\"$(PPPD_PLUGIN_DIR)\"
 
 libppp_manager_la_LIBADD = \
+	$(top_builddir)/marshallers/libmarshallers.la \
 	$(DBUS_LIBS) \
-	$(GLIB_LIBS) \
-	$(top_builddir)/marshallers/libmarshallers.la
+	$(GLIB_LIBS)
 
 pppd_plugindir = $(PPPD_PLUGIN_DIR)
 pppd_plugin_LTLIBRARIES = nm-pppd-plugin.la
@@ -47,9 +46,9 @@ nm_pppd_plugin_la_CPPFLAGS = \
 nm_pppd_plugin_la_LDFLAGS = -module -avoid-version
 
 nm_pppd_plugin_la_LIBADD = \
+	$(top_builddir)/libnm-util/libnm-util.la \
 	$(DBUS_LIBS) \
-	$(GLIB_LIBS) \
-	$(top_builddir)/libnm-util/libnm-util.la
+	$(GLIB_LIBS)
 
 BUILT_SOURCES = nm-ppp-manager-glue.h
 

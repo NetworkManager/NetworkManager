@@ -23,9 +23,6 @@
  */
 
 #include <config.h>
-#include <gmodule.h>
-#include <glib-object.h>
-#include <glib/gi18n.h>
 #include <string.h>
 #include <sys/inotify.h>
 #include <unistd.h>
@@ -33,11 +30,10 @@
 #include <sys/ioctl.h>
 #include <sys/stat.h>
 
-#ifndef NO_GIO
+#include <gmodule.h>
+#include <glib-object.h>
+#include <glib/gi18n.h>
 #include <gio/gio.h>
-#else
-#include <gfilemonitor/gfilemonitor.h>
-#endif
 
 #include <nm-setting-connection.h>
 #include <nm-setting-ip4-config.h>

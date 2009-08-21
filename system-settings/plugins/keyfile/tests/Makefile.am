@@ -18,10 +18,10 @@ test_keyfile_CPPFLAGS = \
 	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/keyfiles\"
 
 test_keyfile_LDADD = \
-	$(DBUS_LIBS) \
 	$(top_builddir)/system-settings/plugins/keyfile/io/libkeyfile-io.la \
 	$(top_builddir)/libnm-glib/libnm_glib.la \
-	$(top_builddir)/libnm-util/libnm-util.la
+	$(top_builddir)/libnm-util/libnm-util.la \
+	$(DBUS_LIBS)
 
 if WITH_TESTS
 

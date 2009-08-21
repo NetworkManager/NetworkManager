@@ -13,22 +13,22 @@
 
 #include "nm-device-gsm-glue.h"
 
-// FIXME: use MM headers when MM exports this stuff
 typedef enum {
-    MM_MODEM_GSM_NETWORK_MODE_ANY          = 0,
-    MM_MODEM_GSM_NETWORK_MODE_GPRS         = 1,
-    MM_MODEM_GSM_NETWORK_MODE_EDGE         = 2,
-    MM_MODEM_GSM_NETWORK_MODE_UMTS         = 3,
-    MM_MODEM_GSM_NETWORK_MODE_HSDPA        = 4,
-    MM_MODEM_GSM_NETWORK_MODE_2G_PREFERRED = 5,
-    MM_MODEM_GSM_NETWORK_MODE_3G_PREFERRED = 6,
-    MM_MODEM_GSM_NETWORK_MODE_2G_ONLY      = 7,
-    MM_MODEM_GSM_NETWORK_MODE_3G_ONLY      = 8,
-    MM_MODEM_GSM_NETWORK_MODE_HSUPA        = 9,
-    MM_MODEM_GSM_NETWORK_MODE_HSPA         = 10,
+    MM_MODEM_GSM_MODE_UNKNOWN      = 0x00000000,
+    MM_MODEM_GSM_MODE_ANY          = 0x00000001,
+    MM_MODEM_GSM_MODE_GPRS         = 0x00000002,
+    MM_MODEM_GSM_MODE_EDGE         = 0x00000004,
+    MM_MODEM_GSM_MODE_UMTS         = 0x00000008,
+    MM_MODEM_GSM_MODE_HSDPA        = 0x00000010,
+    MM_MODEM_GSM_MODE_2G_PREFERRED = 0x00000020,
+    MM_MODEM_GSM_MODE_3G_PREFERRED = 0x00000040,
+    MM_MODEM_GSM_MODE_2G_ONLY      = 0x00000080,
+    MM_MODEM_GSM_MODE_3G_ONLY      = 0x00000100,
+    MM_MODEM_GSM_MODE_HSUPA        = 0x00000200,
+    MM_MODEM_GSM_MODE_HSPA         = 0x00000400,
 
-    MM_MODEM_GSM_NETWORK_MODE_LAST = MM_MODEM_GSM_NETWORK_MODE_HSPA
-} MMModemGsmNetworkMode;
+    MM_MODEM_GSM_MODE_LAST = MM_MODEM_GSM_MODE_HSPA
+} MMModemGsmMode;
 
 
 #define GSM_SECRETS_TRIES "gsm-secrets-tries"
@@ -229,19 +229,19 @@ create_connect_properties (NMConnection *connection)
 
 	switch (nm_setting_gsm_get_network_type (setting)) {
 	case NM_GSM_NETWORK_UMTS_HSPA:
-		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_MODE_HSDPA);
+		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_MODE_3G_ONLY);
 		break;
 	case NM_GSM_NETWORK_GPRS_EDGE:
-		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_MODE_EDGE);
+		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_MODE_2G_ONLY);
 		break;
 	case NM_GSM_NETWORK_PREFER_UMTS_HSPA:
-		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_MODE_3G_PREFERRED);
+		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_MODE_3G_PREFERRED);
 		break;
 	case NM_GSM_NETWORK_PREFER_GPRS_EDGE:
-		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_MODE_2G_PREFERRED);
+		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_MODE_2G_PREFERRED);
 		break;
 	default:
-		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_NETWORK_MODE_ANY);
+		value_hash_add_uint (properties, "network_mode", MM_MODEM_GSM_MODE_ANY);
 		break;
 	}
 
@@ -388,6 +388,46 @@ real_connection_secrets_updated (NMDevice *dev,
 	nm_device_activate_schedule_stage1_device_prepare (dev);
 }
 
+static NMActStageReturn
+real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
+{
+	NMActRequest *req;
+	NMConnection *connection;
+
+	req = nm_device_get_act_request (device);
+	g_assert (req);
+
+	/* Clear secrets tries counter since secrets were successfully used
+	 * already if we get here.
+	 */
+	connection = nm_act_request_get_connection (req);
+	g_assert (connection);
+	g_object_set_data (G_OBJECT (connection), GSM_SECRETS_TRIES, NULL);
+
+	if (NM_DEVICE_CLASS (nm_modem_gsm_parent_class)->act_stage2_config)
+		return NM_DEVICE_CLASS (nm_modem_gsm_parent_class)->act_stage2_config (device, reason);
+
+	return NM_ACT_STAGE_RETURN_SUCCESS;
+}
+
+static void
+real_deactivate_quickly (NMDevice *device)
+{
+	NMActRequest *req;
+	NMConnection *connection;
+
+	req = nm_device_get_act_request (device);
+	if (req) {
+		/* Clear the secrets attempts counter */
+		connection = nm_act_request_get_connection (req);
+		g_assert (connection);
+		g_object_set_data (G_OBJECT (connection), GSM_SECRETS_TRIES, NULL);
+	}
+
+	if (NM_DEVICE_CLASS (nm_modem_gsm_parent_class)->deactivate_quickly)
+		NM_DEVICE_CLASS (nm_modem_gsm_parent_class)->deactivate_quickly (device);
+}
+
 static gboolean
 real_check_connection_compatible (NMDevice *device,
                                   NMConnection *connection,
@@ -445,6 +485,8 @@ nm_modem_gsm_class_init (NMModemGsmClass *klass)
 	device_class->get_best_auto_connection = real_get_best_auto_connection;
 	device_class->connection_secrets_updated = real_connection_secrets_updated;
 	device_class->act_stage1_prepare = real_act_stage1_prepare;
+	device_class->act_stage2_config = real_act_stage2_config;
+	device_class->deactivate_quickly = real_deactivate_quickly;
 	device_class->check_connection_compatible = real_check_connection_compatible;
 
 	modem_class->get_ppp_name = real_get_ppp_name;

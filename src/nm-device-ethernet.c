@@ -1260,7 +1260,7 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 }
 
 static NMActStageReturn
-pppoe_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
+pppoe_stage3_ip4_config_start (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 {
 	NMDeviceEthernetPrivate *priv = NM_DEVICE_ETHERNET_GET_PRIVATE (self);
 	NMConnection *connection;
@@ -1304,33 +1304,46 @@ pppoe_stage2_config (NMDeviceEthernet *self, NMDeviceStateReason *reason)
 static NMActStageReturn
 real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 {
-	NMSettingConnection *s_connection;
+	NMSettingConnection *s_con;
 	const char *connection_type;
-	NMActStageReturn ret;
+	NMActStageReturn ret = NM_ACT_STAGE_RETURN_SUCCESS;
 
 	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
 
-	s_connection = NM_SETTING_CONNECTION (device_get_setting (device, NM_TYPE_SETTING_CONNECTION));
-	g_assert (s_connection);
+	s_con = NM_SETTING_CONNECTION (device_get_setting (device, NM_TYPE_SETTING_CONNECTION));
+	g_assert (s_con);
 
-	connection_type = nm_setting_connection_get_connection_type (s_connection);
+	/* 802.1x has to run before any IP configuration since the 802.1x auth
+	 * process opens the port up for normal traffic.
+	 */
+	connection_type = nm_setting_connection_get_connection_type (s_con);
 	if (!strcmp (connection_type, NM_SETTING_WIRED_SETTING_NAME)) {
 		NMSetting8021x *security;
 
 		security = (NMSetting8021x *) device_get_setting (device, NM_TYPE_SETTING_802_1X);
 		if (security)
 			ret = nm_8021x_stage2_config (NM_DEVICE_ETHERNET (device), reason);
-		else
-			ret = NM_ACT_STAGE_RETURN_SUCCESS;
-	} else if (!strcmp (connection_type, NM_SETTING_PPPOE_SETTING_NAME))
-		ret = pppoe_stage2_config (NM_DEVICE_ETHERNET (device), reason);
-	else {
-		nm_warning ("Invalid connection type '%s' for ethernet device", connection_type);
-		*reason = NM_DEVICE_STATE_REASON_CONFIG_FAILED;
-		ret = NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
 	return ret;
+}
+
+static NMActStageReturn
+real_act_stage3_ip4_config_start (NMDevice *device, NMDeviceStateReason *reason)
+{
+	NMSettingConnection *s_con;
+	const char *connection_type;
+
+	g_return_val_if_fail (reason != NULL, NM_ACT_STAGE_RETURN_FAILURE);
+
+	s_con = NM_SETTING_CONNECTION (device_get_setting (device, NM_TYPE_SETTING_CONNECTION));
+	g_assert (s_con);
+
+	connection_type = nm_setting_connection_get_connection_type (s_con);
+	if (!strcmp (connection_type, NM_SETTING_PPPOE_SETTING_NAME))
+		return pppoe_stage3_ip4_config_start (NM_DEVICE_ETHERNET (device), reason);
+
+	return NM_DEVICE_CLASS (nm_device_ethernet_parent_class)->act_stage3_ip4_config_start (device, reason);
 }
 
 static NMActStageReturn
@@ -1371,14 +1384,16 @@ real_act_stage4_get_ip4_config (NMDevice *device,
 		NMConnection *connection;
 		NMSettingIP4Config *s_ip4;
 
-		connection = nm_act_request_get_connection (nm_device_get_act_request (device));
-		g_assert (connection);
-		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
-
 		/* PPPoE */
 		*config = priv->pending_ip4_config;
 		priv->pending_ip4_config = NULL;
+
+		/* Merge user-defined overrides into the IP4Config to be applied */
+		connection = nm_act_request_get_connection (nm_device_get_act_request (device));
+		g_assert (connection);
+		s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
 		nm_utils_merge_ip4_config (*config, s_ip4);
+
 		ret = NM_ACT_STAGE_RETURN_SUCCESS;
 	}
 
@@ -1775,6 +1790,7 @@ nm_device_ethernet_class_init (NMDeviceEthernetClass *klass)
 	parent_class->check_connection_compatible = real_check_connection_compatible;
 
 	parent_class->act_stage2_config = real_act_stage2_config;
+	parent_class->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;
 	parent_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 	parent_class->deactivate_quickly = real_deactivate_quickly;
 	parent_class->spec_match_list = spec_match_list;

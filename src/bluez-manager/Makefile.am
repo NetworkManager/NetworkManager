@@ -29,8 +29,8 @@ libbluez_manager_la_CPPFLAGS = \
 	-DLOCALSTATEDIR=\"$(localstatedir)\"
 
 libbluez_manager_la_LIBADD = \
+	$(top_builddir)/marshallers/libmarshallers.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
-	$(BLUEZ_LIBS) \
-	$(top_builddir)/marshallers/libmarshallers.la
+	$(BLUEZ_LIBS)
 

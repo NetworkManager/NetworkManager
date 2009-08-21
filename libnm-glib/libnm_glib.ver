@@ -63,6 +63,7 @@ global:
 	nm_device_get_driver;
 	nm_device_get_iface;
 	nm_device_get_ip4_config;
+	nm_device_get_ip6_config;
 	nm_device_get_managed;
 	nm_device_get_product;
 	nm_device_get_state;
@@ -96,6 +97,15 @@ global:
 	nm_ip4_config_get_routes;
 	nm_ip4_config_get_type;
 	nm_ip4_config_new;
+	nm_ip6_address_array_get_type;
+	nm_ip6_address_object_array_get_type;
+	nm_ip6_config_get_addresses;
+	nm_ip6_config_get_domains;
+	nm_ip6_config_get_nameservers;
+	nm_ip6_config_get_routes;
+	nm_ip6_config_get_type;
+	nm_ip6_config_new;
+	nm_ip6_route_object_array_get_type;
 	nm_object_array_get_type;
 	nm_object_get_connection;
 	nm_object_get_path;

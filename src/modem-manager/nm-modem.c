@@ -14,6 +14,7 @@
 #include "nm-modem-types.h"
 #include "nm-utils.h"
 #include "nm-serial-device-glue.h"
+#include "NetworkManagerUtils.h"
 
 G_DEFINE_TYPE (NMModem, nm_modem, NM_TYPE_DEVICE)
 
@@ -128,6 +129,44 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 				gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
+	guint32 i, num;
+	guint32 bad_dns1 = htonl (0x0A0B0C0D);
+	guint32 good_dns1 = htonl (0x04020201);  /* GTE nameserver */
+	guint32 bad_dns2 = htonl (0x0A0B0C0E);
+	guint32 good_dns2 = htonl (0x04020202);  /* GTE nameserver */
+
+	/* Work around a PPP bug (#1732) which causes many mobile broadband
+	 * providers to return 10.11.12.13 and 10.11.12.14 for the DNS servers.
+	 * Apparently fixed in ppp-2.4.5 but we've had some reports that this is
+	 * not the case.
+	 *
+	 * http://git.ozlabs.org/?p=ppp.git;a=commitdiff_plain;h=2e09ef6886bbf00bc5a9a641110f801e372ffde6
+	 * http://git.ozlabs.org/?p=ppp.git;a=commitdiff_plain;h=f8191bf07df374f119a07910a79217c7618f113e
+	 */
+
+	num = nm_ip4_config_get_num_nameservers (config);
+	if (num == 2) {
+		gboolean found1 = FALSE, found2 = FALSE;
+
+		for (i = 0; i < num; i++) {
+			guint32 ns = nm_ip4_config_get_nameserver (config, i);
+
+			if (ns == bad_dns1)
+				found1 = TRUE;
+			else if (ns == bad_dns2)
+				found2 = TRUE;
+		}
+
+		/* Be somewhat conservative about substitutions; the "bad" nameservers
+		 * could actually be valid in some cases, so only substitute if ppp
+		 * returns *only* the two bad nameservers.
+		 */
+		if (found1 && found2) {
+			nm_ip4_config_reset_nameservers (config);
+			nm_ip4_config_add_nameserver (config, good_dns1);
+			nm_ip4_config_add_nameserver (config, good_dns2);
+		}
+	}
 
 	nm_device_set_ip_iface (device, iface);
 	NM_MODEM_GET_PRIVATE (device)->pending_ip4_config = g_object_ref (config);
@@ -152,7 +191,7 @@ ppp_stats (NMPPPManager *ppp_manager,
 }
 
 static NMActStageReturn
-ppp_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
+ppp_stage3_ip4_config_start (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (device);
 	NMActRequest *req;
@@ -196,11 +235,18 @@ ppp_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
 static NMActStageReturn
 ppp_stage4 (NMDevice *device, NMIP4Config **config, NMDeviceStateReason *reason)
 {
-
 	NMModemPrivate *priv = NM_MODEM_GET_PRIVATE (device);
+	NMConnection *connection;
+	NMSettingIP4Config *s_ip4;
 
 	*config = priv->pending_ip4_config;
 	priv->pending_ip4_config = NULL;
+
+	/* Merge user-defined overrides into the IP4Config to be applied */
+	connection = nm_act_request_get_connection (nm_device_get_act_request (device));
+	g_assert (connection);
+	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	nm_utils_merge_ip4_config (*config, s_ip4);
 
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
@@ -246,7 +292,7 @@ static_stage3_done (DBusGProxy *proxy, DBusGProxyCall *call_id, gpointer user_da
 }
 
 static NMActStageReturn
-static_stage3_config (NMDevice *device, NMDeviceStateReason *reason)
+static_stage3_ip4_config_start (NMDevice *device, NMDeviceStateReason *reason)
 {
 	dbus_g_proxy_begin_call (nm_modem_get_proxy (NM_MODEM (device), MM_DBUS_INTERFACE_MODEM),
 							 "GetIP4Config", static_stage3_done,
@@ -279,40 +325,16 @@ static_stage4 (NMDevice *device, NMIP4Config **config, NMDeviceStateReason *reas
 /*****************************************************************************/
 
 static NMActStageReturn
-real_act_stage2_config (NMDevice *device, NMDeviceStateReason *reason)
-{
-	NMActStageReturn ret;
-
-	switch (NM_MODEM_GET_PRIVATE (device)->ip_method) {
-	case MM_MODEM_IP_METHOD_PPP:
-		ret = ppp_stage2_config (device, reason);
-		break;
-	case MM_MODEM_IP_METHOD_STATIC:
-		ret = NM_ACT_STAGE_RETURN_SUCCESS;
-		break;
-	case MM_MODEM_IP_METHOD_DHCP:
-		ret = NM_ACT_STAGE_RETURN_SUCCESS;
-		break;
-	default:
-		g_warning ("Invalid IP method");
-		ret = NM_ACT_STAGE_RETURN_FAILURE;
-		break;
-	}
-
-	return ret;
-}
-
-static NMActStageReturn
 real_act_stage3_ip4_config_start (NMDevice *device, NMDeviceStateReason *reason)
 {
 	NMActStageReturn ret;
 
 	switch (NM_MODEM_GET_PRIVATE (device)->ip_method) {
 	case MM_MODEM_IP_METHOD_PPP:
-		ret = NM_ACT_STAGE_RETURN_SUCCESS;
+		ret = ppp_stage3_ip4_config_start (device, reason);
 		break;
 	case MM_MODEM_IP_METHOD_STATIC:
-		ret = static_stage3_config (device, reason);
+		ret = static_stage3_ip4_config_start (device, reason);
 		break;
 	case MM_MODEM_IP_METHOD_DHCP:
 		ret = NM_DEVICE_CLASS (nm_modem_parent_class)->act_stage3_ip4_config_start (device, reason);
@@ -610,7 +632,6 @@ nm_modem_class_init (NMModemClass *klass)
 	object_class->finalize = finalize;
 
 	device_class->get_generic_capabilities = real_get_generic_capabilities;
-	device_class->act_stage2_config = real_act_stage2_config;
 	device_class->act_stage3_ip4_config_start = real_act_stage3_ip4_config_start;
 	device_class->act_stage4_get_ip4_config = real_act_stage4_get_ip4_config;
 	device_class->deactivate_quickly = real_deactivate_quickly;
@@ -624,7 +645,7 @@ nm_modem_class_init (NMModemClass *klass)
 							  "DBus path",
 							  "DBus path",
 							  NULL,
-							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+							  G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	g_object_class_install_property
 		(object_class, PROP_DEVICE,
@@ -632,7 +653,7 @@ nm_modem_class_init (NMModemClass *klass)
 		                      "Device",
 		                      "Master modem parent device",
 		                      NULL,
-		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+		                      G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	g_object_class_install_property
 		(object_class, PROP_IP_METHOD,
@@ -642,7 +663,7 @@ nm_modem_class_init (NMModemClass *klass)
 							MM_MODEM_IP_METHOD_PPP,
 							MM_MODEM_IP_METHOD_DHCP,
 							MM_MODEM_IP_METHOD_PPP,
-							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
+							G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY | NM_PROPERTY_PARAM_NO_EXPORT));
 
 	/* Signals */
 	signals[PPP_STATS] =

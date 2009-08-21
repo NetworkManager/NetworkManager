@@ -22,22 +22,20 @@
  */
 
 #include <config.h>
-#include <gmodule.h>
-#include <glib-object.h>
-#include <glib/gi18n.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
 #include <net/ethernet.h>
 #include <netinet/ether.h>
 
-#include <nm-setting-connection.h>
-
-#ifndef NO_GIO
+#include <gmodule.h>
+#include <glib-object.h>
+#include <glib/gi18n.h>
 #include <gio/gio.h>
-#else
-#include <gfilemonitor/gfilemonitor.h>
-#endif
+
+#include <dbus/dbus-glib.h>
+
+#include <nm-setting-connection.h>
 
 #include "common.h"
 #include "nm-dbus-glib-types.h"

@@ -109,6 +109,7 @@ static const struct Opt opt_table[] = {
 	{ "phase1",             TYPE_KEYWORD, 0, 0, TRUE, phase1_allowed },
 	{ "phase2",             TYPE_KEYWORD, 0, 0, TRUE, phase2_allowed },
 	{ "anonymous_identity", TYPE_BYTES,   0, 0, FALSE,  NULL },
+	{ "ca_path2",           TYPE_BYTES,   0, 0, FALSE,  NULL },
 	{ "ca_cert2",           TYPE_BYTES,   0, 65536, FALSE,  NULL },
 	{ "client_cert2",       TYPE_BYTES,   0, 65536, FALSE,  NULL },
 	{ "private_key2",       TYPE_BYTES,   0, 65536, FALSE,  NULL },

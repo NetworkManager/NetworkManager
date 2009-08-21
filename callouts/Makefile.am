@@ -54,10 +54,10 @@ nm_dispatcher_action_CPPFLAGS = \
 	-DLIBEXECDIR=\"$(libexecdir)\"
 
 nm_dispatcher_action_LDADD = \
-	$(DBUS_LIBS) \
-	$(GLIB_LIBS) \
 	$(top_builddir)/libnm-glib/libnm_glib.la \
-	$(top_builddir)/libnm-util/libnm-util.la
+	$(top_builddir)/libnm-util/libnm-util.la \
+	$(DBUS_LIBS) \
+	$(GLIB_LIBS)
 
 nm-dispatcher-glue.h: nm-dispatcher.xml
 	dbus-binding-tool --prefix=nm_dispatcher --mode=glib-server --output=$@ $<

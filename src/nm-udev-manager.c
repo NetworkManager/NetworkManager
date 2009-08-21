@@ -285,8 +285,8 @@ device_creator (NMUdevManager *manager,
                 gboolean sleeping)
 {
 	GObject *device = NULL;
-	const char *ifname, *driver, *path;
-	GUdevDevice *parent;
+	const char *ifname, *driver, *path, *subsys;
+	GUdevDevice *parent = NULL, *grandparent = NULL;
 	gint ifindex;
 
 	ifname = g_udev_device_get_name (udev_device);
@@ -304,19 +304,27 @@ device_creator (NMUdevManager *manager,
 		parent = g_udev_device_get_parent (udev_device);
 		if (parent) {
 			driver = g_udev_device_get_driver (parent);
-			g_object_unref (parent);
+			if (!driver) {
+				/* try the grandparent only if it's an ibmebus device */
+				subsys = g_udev_device_get_subsystem (parent);
+				if (subsys && !strcmp (subsys, "ibmebus")) {
+					grandparent = g_udev_device_get_parent (parent);
+					if (grandparent)
+						driver = g_udev_device_get_driver (grandparent);
+				}
+			}
 		}
 	}
 
 	if (!driver) {
 		nm_warning ("%s: couldn't determine device driver; ignoring...", path);
-		return NULL;
+		goto out;
 	}
 
 	ifindex = g_udev_device_get_sysfs_attr_as_int (udev_device, "ifindex");
 	if (ifindex <= 0) {
 		nm_warning ("%s: device had invalid ifindex %d; ignoring...", path, (guint32) ifindex);
-		return NULL;
+		goto out;
 	}
 
 	if (is_olpc_mesh (udev_device)) /* must be before is_wireless */
@@ -326,6 +334,11 @@ device_creator (NMUdevManager *manager,
 	else
 		device = (GObject *) nm_device_ethernet_new (path, ifname, driver, ifindex);
 
+out:
+	if (grandparent)
+		g_object_unref (grandparent);
+	if (parent)
+		g_object_unref (parent);
 	return device;
 }
 

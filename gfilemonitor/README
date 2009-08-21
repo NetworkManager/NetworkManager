@@ -1,4 +1,0 @@
-A local copy of the Linux glib-2.14 GFileMonitor functionality, with a
-re-implementation of GFile that doesn't depend on GIO.  Allows NM source code to
-use the same GFileMonitor APIs regardless of glib version.
-

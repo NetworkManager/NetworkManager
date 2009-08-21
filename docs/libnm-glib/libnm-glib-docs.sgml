@@ -19,6 +19,7 @@
     <xi:include href="xml/nm-gsm-device.xml"/>
     <xi:include href="xml/nm-device.xml"/>
     <xi:include href="xml/nm-ip4-config.xml"/>
+    <xi:include href="xml/nm-ip6-config.xml"/>
     <xi:include href="xml/nm-object.xml"/>
     <xi:include href="xml/nm-settings.xml"/>
     <xi:include href="xml/nm-vpn-connection.xml"/>

@@ -204,7 +204,7 @@ void nm_ip6_config_add_nameserver (NMIP6Config *config, const struct in6_addr *n
 	/* No dupes */
 	nameservers = (struct in6_addr *)priv->nameservers->data;
 	for (i = 0; i < priv->nameservers->len; i++) {
-		g_return_if_fail (memcmp (nameserver, &nameservers[i], sizeof (struct in6_addr)) == 0);
+		g_return_if_fail (memcmp (nameserver, &nameservers[i], sizeof (struct in6_addr)) != 0);
 	}
 
 	g_array_append_val (priv->nameservers, *nameserver);

@@ -436,6 +436,7 @@ verify (NMSetting *setting, GSList *all_settings, GError **error)
 			return FALSE;
 		}
 	} else if (   !strcmp (priv->method, NM_SETTING_IP6_CONFIG_METHOD_AUTO)
+	           || !strcmp (priv->method, NM_SETTING_IP6_CONFIG_METHOD_IGNORE)
 	           || !strcmp (priv->method, NM_SETTING_IP6_CONFIG_METHOD_LINK_LOCAL)
 	           || !strcmp (priv->method, NM_SETTING_IP6_CONFIG_METHOD_SHARED)) {
 		if (!priv->ignore_auto_dns) {

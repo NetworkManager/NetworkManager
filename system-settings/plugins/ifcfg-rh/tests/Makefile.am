@@ -18,10 +18,10 @@ test_ifcfg_rh_CPPFLAGS = \
 	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/\"
 
 test_ifcfg_rh_LDADD = \
-	$(DBUS_LIBS) \
 	$(top_builddir)/libnm-glib/libnm_glib.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/system-settings/plugins/ifcfg-rh/libifcfg-rh-io.la
+	$(top_builddir)/system-settings/plugins/ifcfg-rh/libifcfg-rh-io.la \
+	$(DBUS_LIBS)
 
 if WITH_TESTS
 
@@ -33,7 +33,6 @@ endif
 EXTRA_DIST = \
 	iscsiadm-test-dhcp \
 	iscsiadm-test-static \
-	iscsiadm-test-malformed \
 	iscsiadm-test-bad-ipaddr \
 	iscsiadm-test-bad-gateway \
 	iscsiadm-test-bad-dns1 \

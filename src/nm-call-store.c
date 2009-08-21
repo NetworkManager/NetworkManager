@@ -68,12 +68,12 @@ nm_call_store_remove (NMCallStore *store,
 
 	call_ids_hash = g_hash_table_lookup (store, object);
 	if (!call_ids_hash) {
-		nm_warning ("Trying to move a non-existant call id.");
+		nm_warning ("Trying to remove a non-existant call id.");
 		return;
 	}
 
 	if (!g_hash_table_remove (call_ids_hash, call_id))
-		nm_warning ("Trying to move a non-existant call id.");
+		nm_warning ("Trying to remove a non-existant call id.");
 
 	if (g_hash_table_size (call_ids_hash) == 0) {
 		g_hash_table_remove (store, object);

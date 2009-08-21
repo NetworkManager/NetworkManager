@@ -57,6 +57,8 @@ typedef struct {
 	gboolean null_ip4_config;
 	NMDHCP4Config *dhcp4_config;
 	gboolean null_dhcp4_config;
+	NMIP6Config *ip6_config;
+	gboolean null_ip6_config;
 	NMDeviceState state;
 
 	GUdevClient *client;
@@ -73,6 +75,7 @@ enum {
 	PROP_MANAGED,
 	PROP_IP4_CONFIG,
 	PROP_DHCP4_CONFIG,
+	PROP_IP6_CONFIG,
 	PROP_STATE,
 	PROP_PRODUCT,
 	PROP_VENDOR,
@@ -177,6 +180,46 @@ demarshal_dhcp4_config (NMObject *object, GParamSpec *pspec, GValue *value, gpoi
 	return TRUE;
 }
 
+static gboolean
+demarshal_ip6_config (NMObject *object, GParamSpec *pspec, GValue *value, gpointer field)
+{
+	NMDevicePrivate *priv = NM_DEVICE_GET_PRIVATE (object);
+	const char *path;
+	NMIP6Config *config = NULL;
+	DBusGConnection *connection;
+
+	if (!G_VALUE_HOLDS (value, DBUS_TYPE_G_OBJECT_PATH))
+		return FALSE;
+
+	priv->null_ip6_config = FALSE;
+
+	path = g_value_get_boxed (value);
+	if (path) {
+		if (!strcmp (path, "/"))
+			priv->null_ip6_config = TRUE;
+		else {
+			config = NM_IP6_CONFIG (_nm_object_cache_get (path));
+			if (config)
+				config = g_object_ref (config);
+			else {
+				connection = nm_object_get_connection (object);
+				config = NM_IP6_CONFIG (nm_ip6_config_new (connection, path));
+			}
+		}
+	}
+
+	if (priv->ip6_config) {
+		g_object_unref (priv->ip6_config);
+		priv->ip6_config = NULL;
+	}
+
+	if (config)
+		priv->ip6_config = config;
+
+	_nm_object_queue_notify (object, NM_DEVICE_IP6_CONFIG);
+	return TRUE;
+}
+
 static void
 register_for_property_changed (NMDevice *device)
 {
@@ -189,6 +232,7 @@ register_for_property_changed (NMDevice *device)
 		{ NM_DEVICE_MANAGED,      _nm_object_demarshal_generic, &priv->managed },
 		{ NM_DEVICE_IP4_CONFIG,   demarshal_ip4_config,        &priv->ip4_config },
 		{ NM_DEVICE_DHCP4_CONFIG, demarshal_dhcp4_config,      &priv->dhcp4_config },
+		{ NM_DEVICE_IP6_CONFIG,   demarshal_ip6_config,        &priv->ip6_config },
 		{ NULL },
 	};
 
@@ -272,6 +316,8 @@ dispose (GObject *object)
 		g_object_unref (priv->ip4_config);
 	if (priv->dhcp4_config)
 		g_object_unref (priv->dhcp4_config);
+	if (priv->ip6_config)
+		g_object_unref (priv->ip6_config);
 	if (priv->client)
 		g_object_unref (priv->client);
 
@@ -321,6 +367,9 @@ get_property (GObject *object,
 		break;
 	case PROP_DHCP4_CONFIG:
 		g_value_set_object (value, nm_device_get_dhcp4_config (device));
+		break;
+	case PROP_IP6_CONFIG:
+		g_value_set_object (value, nm_device_get_ip6_config (device));
 		break;
 	case PROP_STATE:
 		g_value_set_uint (value, nm_device_get_state (device));
@@ -442,6 +491,19 @@ nm_device_class_init (NMDeviceClass *device_class)
 						  "DHCP4 Config",
 						  NM_TYPE_DHCP4_CONFIG,
 						  G_PARAM_READABLE));
+
+	/**
+	 * NMDevice:ip6-config:
+	 *
+	 * The #NMIP6Config of the device.
+	 **/
+	g_object_class_install_property
+		(object_class, PROP_IP6_CONFIG,
+		 g_param_spec_object (NM_DEVICE_IP6_CONFIG,
+		                      "IP6 Config",
+		                      "IP6 Config",
+		                      NM_TYPE_IP6_CONFIG,
+		                      G_PARAM_READABLE));
 
 	/**
 	 * NMDevice:state:
@@ -772,6 +834,40 @@ nm_device_get_dhcp4_config (NMDevice *device)
 	}
 
 	return priv->dhcp4_config;
+}
+
+/**
+ * nm_device_get_ip6_config:
+ * @device: a #NMDevice
+ *
+ * Gets the current #NMIP6Config associated with the #NMDevice.
+ *
+ * Returns: the #NMIP6Config or %NULL if the device is not activated.
+ **/
+NMIP6Config *
+nm_device_get_ip6_config (NMDevice *device)
+{
+	NMDevicePrivate *priv;
+	char *path;
+	GValue value = { 0, };
+
+	g_return_val_if_fail (NM_IS_DEVICE (device), NULL);
+
+	priv = NM_DEVICE_GET_PRIVATE (device);
+	if (priv->ip6_config)
+		return priv->ip6_config;
+	if (priv->null_ip6_config)
+		return NULL;
+
+	path = _nm_object_get_object_path_property (NM_OBJECT (device), NM_DBUS_INTERFACE_DEVICE, "Ip6Config");
+	if (path) {
+		g_value_init (&value, DBUS_TYPE_G_OBJECT_PATH);
+		g_value_take_boxed (&value, path);
+		demarshal_ip6_config (NM_OBJECT (device), NULL, &value, &priv->ip6_config);
+		g_value_unset (&value);
+	}
+
+	return priv->ip6_config;
 }
 
 /**

@@ -31,6 +31,7 @@
 #include "NetworkManager.h"
 #include "nm-ip4-config.h"
 #include "nm-dhcp4-config.h"
+#include "nm-ip6-config.h"
 #include "nm-connection.h"
 
 G_BEGIN_DECLS
@@ -49,6 +50,7 @@ G_BEGIN_DECLS
 #define NM_DEVICE_MANAGED "managed"
 #define NM_DEVICE_IP4_CONFIG "ip4-config"
 #define NM_DEVICE_DHCP4_CONFIG "dhcp4-config"
+#define NM_DEVICE_IP6_CONFIG "ip6-config"
 #define NM_DEVICE_STATE "state"
 #define NM_DEVICE_VENDOR "vendor"
 #define NM_DEVICE_PRODUCT "product"
@@ -78,6 +80,7 @@ guint32       nm_device_get_capabilities   (NMDevice *device);
 gboolean      nm_device_get_managed        (NMDevice *device);
 NMIP4Config * nm_device_get_ip4_config     (NMDevice *device);
 NMDHCP4Config * nm_device_get_dhcp4_config (NMDevice *device);
+NMIP6Config * nm_device_get_ip6_config     (NMDevice *device);
 NMDeviceState nm_device_get_state          (NMDevice *device);
 const char *  nm_device_get_product        (NMDevice *device);
 const char *  nm_device_get_vendor         (NMDevice *device);

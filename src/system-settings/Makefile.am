@@ -41,13 +41,13 @@ libsystem_settings_la_CPPFLAGS = \
 	-DPLUGINDIR=\"$(pkglibdir)\"
 
 libsystem_settings_la_LIBADD = \
+	$(top_builddir)/libnm-util/libnm-util.la \
+	$(top_builddir)/libnm-glib/libnm_glib.la \
+	$(top_builddir)/marshallers/libmarshallers.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \
 	$(GMODULE_LIBS) \
-	$(POLKIT_LIBS) \
-	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/libnm-glib/libnm_glib.la \
-	$(top_builddir)/marshallers/libmarshallers.la
+	$(POLKIT_LIBS)
 
 libsystem_settings_la_LDFLAGS = -rdynamic
 

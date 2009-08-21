@@ -27,8 +27,8 @@ libnm_settings_plugin_ifupdown_la_CPPFLAGS = \
 
 libnm_settings_plugin_ifupdown_la_LDFLAGS = -module -avoid-version
 libnm_settings_plugin_ifupdown_la_LIBADD = \
+	$(top_builddir)/libnm-util/libnm-util.la \
 	$(GLIB_LIBS) \
 	$(GMODULE_LIBS) \
-	$(GUDEV_LIBS) \
-	$(top_builddir)/libnm-util/libnm-util.la
+	$(GUDEV_LIBS)
 

@@ -996,6 +996,10 @@ real_act_stage3_ip4_config_start (NMDevice *self, NMDeviceStateReason *reason)
 	/* Use the IP interface (not the control interface) for IP stuff */
 	ip_iface = nm_device_get_ip_iface (self);
 
+	/* Make sure the interface is up before trying to do anything with it */
+	if (!nm_system_device_is_up_with_iface (ip_iface))
+		nm_system_device_set_up_down_with_iface (ip_iface, TRUE, NULL);
+
 	req = nm_device_get_act_request (self);
 	connection = nm_act_request_get_connection (req);
 	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
@@ -1223,6 +1227,7 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 	if (nm_device_get_use_dhcp (self)) {
 		*config = nm_dhcp_manager_get_ip4_config (priv->dhcp_manager, ip_iface);
 		if (*config) {
+			/* Merge user-defined overrides into the IP4Config to be applied */
 			nm_utils_merge_ip4_config (*config, s_ip4);
 
 			nm_dhcp4_config_reset (priv->dhcp4_config);
@@ -1247,9 +1252,10 @@ real_act_stage4_get_ip4_config (NMDevice *self,
 			*config = aipd_get_ip4_config (self, reason);
 		} else if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_MANUAL)) {
 			*config = nm_ip4_config_new ();
-			if (*config)
+			if (*config) {
+				/* Merge user-defined overrides into the IP4Config to be applied */
 				nm_utils_merge_ip4_config (*config, s_ip4);
-			else
+			} else
 				*reason = NM_DEVICE_STATE_REASON_IP_CONFIG_UNAVAILABLE;
 		} else if (!strcmp (method, NM_SETTING_IP4_CONFIG_METHOD_SHARED)) {
 			*config = nm_device_new_ip4_shared_config (self, reason);
@@ -1448,6 +1454,7 @@ real_act_stage4_get_ip6_config (NMDevice *self,
 		return NM_ACT_STAGE_RETURN_FAILURE;
 	}
 
+	/* Merge user-defined overrides into the IP6Config to be applied */
 	if (!strcmp (method, NM_SETTING_IP6_CONFIG_METHOD_MANUAL))
 		nm_utils_merge_ip6_config (*config, s_ip6);
 

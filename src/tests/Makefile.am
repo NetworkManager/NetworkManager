@@ -16,11 +16,11 @@ test_dhcp_options_CPPFLAGS = \
 	$(DBUS_CFLAGS)
 
 test_dhcp_options_LDADD = \
-	$(GLIB_LIBS) \
-	$(DBUS_LIBS) \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(top_builddir)/src/dhcp-manager/libdhcp-manager.la \
-	$(top_builddir)/src/libtest-dhcp.la
+	$(top_builddir)/src/libtest-dhcp.la \
+	$(GLIB_LIBS) \
+	$(DBUS_LIBS)
 
 if WITH_TESTS
 

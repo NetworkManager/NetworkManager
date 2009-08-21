@@ -19,7 +19,8 @@ BUILT_SOURCES = \
 	nm-vpn-plugin-glue.h \
 	nm-active-connection-bindings.h \
 	nm-ip4-config-bindings.h \
-	nm-dhcp4-config-bindings.h
+	nm-dhcp4-config-bindings.h \
+	nm-ip6-config-bindings.h
 
 lib_LTLIBRARIES = libnm_glib.la libnm_glib_vpn.la
 
@@ -50,6 +51,7 @@ libnminclude_HEADERS = \
 	nm-types.h \
 	nm-active-connection.h \
 	nm-dhcp4-config.h \
+	nm-ip6-config.h \
 	nm-remote-connection.h \
 	nm-settings-interface.h \
 	nm-settings-system-interface.h \
@@ -83,6 +85,7 @@ libnm_glib_la_SOURCES = \
 	nm-object-cache.h \
 	nm-active-connection.c \
 	nm-dhcp4-config.c \
+	nm-ip6-config.c \
 	nm-remote-connection.c \
 	nm-remote-connection-private.h \
 	nm-settings-interface.c \
@@ -165,6 +168,9 @@ nm-ip4-config-bindings.h: $(top_srcdir)/introspection/nm-ip4-config.xml
 
 nm-dhcp4-config-bindings.h: $(top_srcdir)/introspection/nm-dhcp4-config.xml
 	dbus-binding-tool --prefix=nm_dhcp4_config --mode=glib-client --output=$@ $<
+
+nm-ip6-config-bindings.h: $(top_srcdir)/introspection/nm-ip6-config.xml
+	dbus-binding-tool --prefix=nm_ip6_config --mode=glib-client --output=$@ $<
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = libnm_glib.pc libnm_glib_vpn.pc

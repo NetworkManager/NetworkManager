@@ -37,6 +37,7 @@
 #include "nm-setting-cdma.h"
 #include "nm-setting-gsm.h"
 #include "nm-device-bt-glue.h"
+#include "NetworkManagerUtils.h"
 
 #define BLUETOOTH_DUN_UUID "dun"
 #define BLUETOOTH_NAP_UUID "nap"
@@ -455,9 +456,17 @@ static NMActStageReturn
 ppp_stage4 (NMDevice *device, NMIP4Config **config, NMDeviceStateReason *reason)
 {
 	NMDeviceBtPrivate *priv = NM_DEVICE_BT_GET_PRIVATE (device);
+	NMConnection *connection;
+	NMSettingIP4Config *s_ip4;
 
 	*config = priv->pending_ip4_config;
 	priv->pending_ip4_config = NULL;
+
+	/* Merge user-defined overrides into the IP4Config to be applied */
+	connection = nm_act_request_get_connection (nm_device_get_act_request (device));
+	g_assert (connection);
+	s_ip4 = (NMSettingIP4Config *) nm_connection_get_setting (connection, NM_TYPE_SETTING_IP4_CONFIG);
+	nm_utils_merge_ip4_config (*config, s_ip4);
 
 	return NM_ACT_STAGE_RETURN_SUCCESS;
 }
