@@ -19,6 +19,8 @@
  * Copyright (C) 2006 - 2008 Novell, Inc.
  */
 
+#define _GNU_SOURCE
+#include <dlfcn.h>
 #include <syslog.h>
 #include <execinfo.h>
 #include <stdio.h>
@@ -27,6 +29,7 @@
 #include <errno.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
+#include <execinfo.h>
 
 #include "nm-logging.h"
 #include "nm-utils.h"
@@ -34,25 +37,33 @@
 static void
 fallback_get_backtrace (void)
 {
-	void *	frames[64];
-	size_t	size;
-	char **	strings;
-	size_t	i;
+	void *frames[64];
+	Dl_info info;
+	size_t size;
+	guint32 i;
+	const char *name;
 
 	size = backtrace (frames, G_N_ELEMENTS (frames));
-	if ((strings = backtrace_symbols (frames, size)))
-	{
-		syslog (LOG_CRIT, "******************* START **********************************");
-		for (i = 0; i < size; i++)
-			syslog (LOG_CRIT, "Frame %zd: %s", i, strings[i]);
-		free (strings);
-		syslog (LOG_CRIT, "******************* END **********************************");
+
+	syslog (LOG_CRIT, "******************* START **********************************");
+	for (i = 0; i < size; i++) {
+		dladdr (frames[i], &info);
+		name = (info.dli_fname && *info.dli_fname) ? info.dli_fname : "(vdso)";
+		if (info.dli_saddr) {
+			syslog (LOG_CRIT, "Frame %d: %s (%s+0x%lx) [%p]",
+			        i, name,
+			        info.dli_sname,
+			        frames[i] - info.dli_saddr,
+			        frames[i]);
+		} else {
+			syslog (LOG_CRIT, "Frame %d: %s (%p+0x%lx) [%p]",
+			        i, name,
+			        info.dli_fbase,
+			        frames[i] - info.dli_saddr,
+			        frames[i]);
+		}
 	}
-	else
-	{
-		nm_warning ("NetworkManager crashed, but symbols "
-					"couldn't be retrieved.");
-	}
+	syslog (LOG_CRIT, "******************* END **********************************");
 }
 
 
