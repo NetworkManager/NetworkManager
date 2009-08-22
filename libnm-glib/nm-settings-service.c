@@ -368,7 +368,4 @@ nm_settings_service_class_init (NMSettingsServiceClass *class)
 	                                                    NM_CONNECTION_SCOPE_USER,
 	                                                    NM_CONNECTION_SCOPE_USER,
 	                                                    G_PARAM_READWRITE | G_PARAM_CONSTRUCT_ONLY));
-
-	dbus_g_object_type_install_info (G_TYPE_FROM_CLASS (class),
-	                                 &dbus_glib_nm_settings_object_info);
 }
