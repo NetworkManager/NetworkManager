@@ -86,6 +86,39 @@ real_get_settings (NMExportedConnection *self, GError **error)
 /**************************************************************/
 
 static gboolean
+check_writable (NMConnection *connection, GError **error)
+{
+	NMSettingConnection *s_con;
+
+	g_return_val_if_fail (connection != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_CONNECTION (connection), FALSE);
+
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection,
+	                                                           NM_TYPE_SETTING_CONNECTION);
+	if (!s_con) {
+		g_set_error_literal (error,
+		                     NM_SETTINGS_INTERFACE_ERROR,
+		                     NM_SETTINGS_INTERFACE_ERROR_INVALID_CONNECTION,
+		                     "Connection did not have required 'connection' setting");
+		return FALSE;
+	}
+
+	/* If the connection is read-only, that has to be changed at the source of
+	 * the problem (ex a system settings plugin that can't write connections out)
+	 * instead of over D-Bus.
+	 */
+	if (nm_setting_connection_get_read_only (s_con)) {
+		g_set_error_literal (error,
+		                     NM_SETTINGS_INTERFACE_ERROR,
+		                     NM_SETTINGS_INTERFACE_ERROR_READ_ONLY_CONNECTION,
+		                     "Connection is read-only");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static gboolean
 impl_exported_connection_get_settings (NMExportedConnection *self,
                                        GHashTable **settings,
                                        GError **error)
@@ -113,27 +146,12 @@ impl_exported_connection_update (NMExportedConnection *self,
 {
 	NMConnection *tmp;
 	GError *error = NULL;
-	NMSettingConnection *s_con;
-
-	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (self),
-	                                                           NM_TYPE_SETTING_CONNECTION);
-	if (!s_con) {
-		error = g_error_new_literal (NM_SETTINGS_INTERFACE_ERROR,
-		                             NM_SETTINGS_INTERFACE_ERROR_INVALID_CONNECTION,
-		                             "Connection did not have required 'connection' setting");
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-		return;
-	}
 
 	/* If the connection is read-only, that has to be changed at the source of
 	 * the problem (ex a system settings plugin that can't write connections out)
 	 * instead of over D-Bus.
 	 */
-	if (nm_setting_connection_get_read_only (s_con)) {
-		error = g_error_new_literal (NM_SETTINGS_INTERFACE_ERROR,
-		                             NM_SETTINGS_INTERFACE_ERROR_READ_ONLY_CONNECTION,
-		                             "Connection is read-only");
+	if (!check_writable (NM_CONNECTION (self), &error)) {
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
 		return;
@@ -175,23 +193,8 @@ impl_exported_connection_delete (NMExportedConnection *self,
                                  DBusGMethodInvocation *context)
 {
 	GError *error = NULL;
-	NMSettingConnection *s_con;
 
-	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (self),
-	                                                           NM_TYPE_SETTING_CONNECTION);
-	if (!s_con) {
-		error = g_error_new_literal (NM_SETTINGS_INTERFACE_ERROR,
-		                             NM_SETTINGS_INTERFACE_ERROR_INVALID_CONNECTION,
-		                             "Connection did not have required 'connection' setting");
-		dbus_g_method_return_error (context, error);
-		g_error_free (error);
-		return;
-	}
-
-	if (nm_setting_connection_get_read_only (s_con)) {
-		error = g_error_new_literal (NM_SETTINGS_INTERFACE_ERROR,
-		                             NM_SETTINGS_INTERFACE_ERROR_READ_ONLY_CONNECTION,
-		                             "Connection is read-only");
+	if (!check_writable (NM_CONNECTION (self), &error)) {
 		dbus_g_method_return_error (context, error);
 		g_error_free (error);
 		return;
