@@ -44,7 +44,9 @@ typedef struct {
 
 	char *hostname;
 	gboolean can_modify;
+
 	NMSettingsSystemPermissions permissions;
+	gboolean have_permissions;
 
 	gboolean disposed;
 } NMRemoteSettingsSystemPrivate;
@@ -122,12 +124,16 @@ get_permissions_cb  (DBusGProxy *proxy,
                      gpointer user_data)
 {
 	GetPermissionsInfo *info = user_data;
+	NMRemoteSettingsSystem *self = NM_REMOTE_SETTINGS_SYSTEM (info->settings);
+	NMRemoteSettingsSystemPrivate *priv = NM_REMOTE_SETTINGS_SYSTEM_GET_PRIVATE (self);
 	NMSettingsSystemPermissions permissions = NM_SETTINGS_SYSTEM_PERMISSION_NONE;
 	GError *error = NULL;
 
 	dbus_g_proxy_end_call (proxy, call, &error,
 	                       G_TYPE_UINT, &permissions,
 	                       G_TYPE_INVALID);
+	priv->permissions = permissions;
+	priv->have_permissions = !error;
 	info->callback (info->settings, permissions, error, info->callback_data);
 	g_clear_error (&error);
 }
@@ -140,6 +146,13 @@ get_permissions (NMSettingsSystemInterface *settings,
 	NMRemoteSettingsSystemPrivate *priv = NM_REMOTE_SETTINGS_SYSTEM_GET_PRIVATE (settings);
 	GetPermissionsInfo *info;
 
+	/* Skip D-Bus if we already have permissions */
+	if (priv->have_permissions) {
+		callback (settings, priv->permissions, NULL, user_data);
+		return TRUE;
+	}
+
+	/* Otherwise fetch them from NM */
 	info = g_malloc0 (sizeof (GetPermissionsInfo));
 	info->settings = settings;
 	info->callback = callback;
@@ -151,6 +164,16 @@ get_permissions (NMSettingsSystemInterface *settings,
 	                         g_free,
 	                         G_TYPE_INVALID);
 	return TRUE;
+}
+
+static void
+check_permissions_cb (NMRemoteSettingsSystem *self)
+{
+	NMRemoteSettingsSystemPrivate *priv = NM_REMOTE_SETTINGS_SYSTEM_GET_PRIVATE (self);
+
+	/* Permissions need to be re-fetched */
+	priv->have_permissions = FALSE;
+	g_signal_emit_by_name (self, NM_SETTINGS_SYSTEM_INTERFACE_CHECK_PERMISSIONS);
 }
 
 /****************************************************************/
@@ -228,6 +251,13 @@ constructor (GType type,
 	                         G_TYPE_INVALID);
 	dbus_g_proxy_connect_signal (priv->proxy, "PropertiesChanged",
 	                             G_CALLBACK (properties_changed_cb),
+	                             object,
+	                             NULL);
+
+	/* Monitor for permissions changes */
+	dbus_g_proxy_add_signal (priv->proxy, "CheckPermissions", G_TYPE_INVALID);
+	dbus_g_proxy_connect_signal (priv->proxy, "CheckPermissions",
+	                             G_CALLBACK (check_permissions_cb),
 	                             object,
 	                             NULL);
 
