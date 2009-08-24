@@ -127,7 +127,7 @@ nm_settings_connection_interface_emit_updated (NMSettingsConnectionInterface *co
 		settings = nm_connection_to_hash (tmp);
 		g_object_unref (tmp);
 
-		g_signal_emit_by_name (connection, "updated", settings);
+		g_signal_emit_by_name (connection, NM_SETTINGS_CONNECTION_INTERFACE_UPDATED, settings);
 		g_hash_table_destroy (settings);
 	}
 }
@@ -142,7 +142,7 @@ nm_settings_connection_interface_init (gpointer g_iface)
 		return;
 
 	/* Signals */
-	g_signal_new ("updated",
+	g_signal_new (NM_SETTINGS_CONNECTION_INTERFACE_UPDATED,
 				  iface_type,
 				  G_SIGNAL_RUN_FIRST,
 				  G_STRUCT_OFFSET (NMSettingsConnectionInterface, updated),
@@ -150,7 +150,7 @@ nm_settings_connection_interface_init (gpointer g_iface)
 				  g_cclosure_marshal_VOID__BOXED,
 				  G_TYPE_NONE, 1, DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT);
 
-	g_signal_new ("removed",
+	g_signal_new (NM_SETTINGS_CONNECTION_INTERFACE_REMOVED,
 				  iface_type,
 				  G_SIGNAL_RUN_FIRST,
 				  G_STRUCT_OFFSET (NMSettingsConnectionInterface, removed),
