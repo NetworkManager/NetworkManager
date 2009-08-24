@@ -944,9 +944,9 @@ system_internal_new_connection (NMManager *manager,
 
 	g_return_if_fail (connection != NULL);
 
-	g_signal_connect (connection, "updated",
+	g_signal_connect (connection, NM_SETTINGS_CONNECTION_INTERFACE_UPDATED,
 	                  G_CALLBACK (system_connection_updated_cb), manager);
-	g_signal_connect (connection, "removed",
+	g_signal_connect (connection, NM_SETTINGS_CONNECTION_INTERFACE_REMOVED,
 	                  G_CALLBACK (system_connection_removed_cb), manager);
 
 	path = nm_connection_get_path (NM_CONNECTION (connection));

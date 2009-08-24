@@ -482,11 +482,14 @@ claim_connection (NMSysconfigSettings *self,
 		return;
 
 	g_hash_table_insert (priv->connections, g_object_ref (connection), GINT_TO_POINTER (1));
-	g_signal_connect (connection, "removed", G_CALLBACK (connection_removed), self);
+	g_signal_connect (connection,
+	                  NM_SETTINGS_CONNECTION_INTERFACE_REMOVED,
+	                  G_CALLBACK (connection_removed),
+	                  self);
 
 	if (do_export) {
 		nm_settings_service_export_connection (NM_SETTINGS_SERVICE (self), connection);
-		g_signal_emit_by_name (self, "new-connection", connection);
+		g_signal_emit_by_name (self, NM_SETTINGS_INTERFACE_NEW_CONNECTION, connection);
 	}
 }
 
@@ -501,7 +504,7 @@ remove_connection (NMSysconfigSettings *self,
 	g_return_if_fail (NM_IS_SETTINGS_CONNECTION_INTERFACE (connection));
 
 	if (g_hash_table_lookup (priv->connections, connection)) {
-		g_signal_emit_by_name (G_OBJECT (connection), "removed");
+		g_signal_emit_by_name (G_OBJECT (connection), NM_SETTINGS_CONNECTION_INTERFACE_REMOVED);
 		g_hash_table_remove (priv->connections, connection);
 	}
 }
