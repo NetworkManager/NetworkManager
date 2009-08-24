@@ -44,6 +44,7 @@ typedef struct {
 
 	char *hostname;
 	gboolean can_modify;
+	NMSettingsSystemPermissions permissions;
 
 	gboolean disposed;
 } NMRemoteSettingsSystemPrivate;
@@ -121,7 +122,7 @@ get_permissions_cb  (DBusGProxy *proxy,
                      gpointer user_data)
 {
 	GetPermissionsInfo *info = user_data;
-	NMSettingsSystemPermission permissions = NM_SETTINGS_SYSTEM_PERMISSION_NONE;
+	NMSettingsSystemPermissions permissions = NM_SETTINGS_SYSTEM_PERMISSION_NONE;
 	GError *error = NULL;
 
 	dbus_g_proxy_end_call (proxy, call, &error,

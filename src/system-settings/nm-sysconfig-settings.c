@@ -523,7 +523,7 @@ typedef struct {
 
 	char *hostname;
 
-	NMSettingsSystemPermission permissions;
+	NMSettingsSystemPermissions permissions;
 	guint32 permissions_calls;
 } PolkitCall;
 
@@ -781,7 +781,7 @@ pk_authority_changed_cb (GObject *object, gpointer user_data)
 typedef struct {
 	PolkitCall *pk_call;
 	const char *pk_action;
-	NMSettingsSystemPermission permission;
+	NMSettingsSystemPermissions permission;
 } PermissionsCall;
 
 static void
@@ -835,7 +835,7 @@ static void
 start_permission_check (NMSysconfigSettings *self,
                         PolkitCall *pk_call,
                         const char *pk_action,
-                        NMSettingsSystemPermission permission)
+                        NMSettingsSystemPermissions permission)
 {
 	NMSysconfigSettingsPrivate *priv = NM_SYSCONFIG_SETTINGS_GET_PRIVATE (self);
 	PermissionsCall *call;
@@ -901,7 +901,7 @@ get_permissions (NMSettingsSystemInterface *settings,
                  gpointer user_data)
 {
 	NMSysconfigSettings *self = NM_SYSCONFIG_SETTINGS (settings);
-	NMSettingsSystemPermission permissions = NM_SETTINGS_SYSTEM_PERMISSION_NONE;
+	NMSettingsSystemPermissions permissions = NM_SETTINGS_SYSTEM_PERMISSION_NONE;
 
 	/* Local caller (ie, NM) gets full permissions by default because it doesn't
 	 * need authorization.  However, permissions are still subject to plugin's

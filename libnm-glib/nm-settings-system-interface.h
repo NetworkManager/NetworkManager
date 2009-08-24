@@ -32,7 +32,7 @@ typedef enum {
 	NM_SETTINGS_SYSTEM_PERMISSION_WIFI_SHARE_PROTECTED = 0x2,
 	NM_SETTINGS_SYSTEM_PERMISSION_WIFI_SHARE_OPEN = 0x4,
 	NM_SETTINGS_SYSTEM_PERMISSION_HOSTNAME_MODIFY = 0x8
-} NMSettingsSystemPermission;
+} NMSettingsSystemPermissions;
 
 #define NM_TYPE_SETTINGS_SYSTEM_INTERFACE               (nm_settings_system_interface_get_type ())
 #define NM_SETTINGS_SYSTEM_INTERFACE(obj)               (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTINGS_SYSTEM_INTERFACE, NMSettingsSystemInterface))
@@ -60,7 +60,7 @@ typedef void (*NMSettingsSystemSaveHostnameFunc) (NMSettingsSystemInterface *set
                                                   gpointer user_data);
 
 typedef void (*NMSettingsSystemGetPermissionsFunc) (NMSettingsSystemInterface *settings,
-                                                    NMSettingsSystemPermission permissions,
+                                                    NMSettingsSystemPermissions permissions,
                                                     GError *error,
                                                     gpointer user_data);
 
