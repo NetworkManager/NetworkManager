@@ -102,14 +102,47 @@ get_all_cb  (DBusGProxy *proxy,
 	g_hash_table_destroy (props);
 }
 
+typedef struct {
+	NMSettingsSystemInterface *settings;
+	NMSettingsSystemSaveHostnameFunc callback;
+	gpointer callback_data;
+} SaveHostnameInfo;
+
+static void
+save_hostname_cb (DBusGProxy *proxy,
+                  DBusGProxyCall *call,
+                  gpointer user_data)
+{
+	SaveHostnameInfo *info = user_data;
+	GError *error = NULL;
+
+	dbus_g_proxy_end_call (proxy, call, &error, G_TYPE_INVALID);
+	info->callback (info->settings, error, info->callback_data);
+	g_clear_error (&error);
+}
+
 static gboolean
 save_hostname (NMSettingsSystemInterface *settings,
 	           const char *hostname,
 	           NMSettingsSystemSaveHostnameFunc callback,
 	           gpointer user_data)
 {
-	// FIXME: implement using get_permissions as a template
-	return FALSE;
+	NMRemoteSettingsSystem *self = NM_REMOTE_SETTINGS_SYSTEM (settings);
+	NMRemoteSettingsSystemPrivate *priv = NM_REMOTE_SETTINGS_SYSTEM_GET_PRIVATE (self);
+	SaveHostnameInfo *info;
+
+	info = g_malloc0 (sizeof (SaveHostnameInfo));
+	info->settings = settings;
+	info->callback = callback;
+	info->callback_data = user_data;
+
+	dbus_g_proxy_begin_call (priv->proxy, "SaveHostname",
+	                         save_hostname_cb,
+	                         info,
+	                         g_free,
+	                         G_TYPE_STRING, hostname ? hostname : "",
+	                         G_TYPE_INVALID);
+	return TRUE;
 }
 
 typedef struct {
