@@ -53,7 +53,7 @@
 
         <signal name="Removed">
             <tp:docstring>
-                Emitted when this settings object was removed. FIXME: Is this emitted after it was removed or when it is about to be removed?  If after removed, then different semantics to Device removed.  if prior to removal, should be called AboutToBeRemoved.
+                Emitted when this connection has been deleted/removed.  After receipt of this signal, the object no longer exists.
             </tp:docstring>
         </signal>
 
