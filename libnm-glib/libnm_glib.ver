@@ -135,6 +135,7 @@ global:
 	nm_settings_service_get_type;
 	nm_settings_system_interface_get_type;
 	nm_settings_system_interface_add_connection;
+	nm_settings_system_interface_get_permissions;
 	nm_settings_system_interface_save_hostname;
 	nm_settings_error_quark;
 	nm_settings_get_type;

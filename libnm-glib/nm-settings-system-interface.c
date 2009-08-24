@@ -56,9 +56,33 @@ nm_settings_system_interface_save_hostname (NMSettingsSystemInterface *settings,
 	return FALSE;
 }
 
+/**
+ * nm_settings_system_interface_get_permissions:
+ * @settings: a object implementing %NMSettingsSystemInterface
+ * @callback: callback to be called when the permissions operation completes
+ * @user_data: caller-specific data passed to @callback
+ *
+ * Requests an indication of the operations the caller is permitted to perform
+ * including those that may require authorization.
+ **/
+gboolean
+nm_settings_system_interface_get_permissions (NMSettingsSystemInterface *settings,
+                                              NMSettingsSystemGetPermissionsFunc callback,
+                                              gpointer user_data)
+{
+	g_return_val_if_fail (settings != NULL, FALSE);
+	g_return_val_if_fail (NM_IS_SETTINGS_SYSTEM_INTERFACE (settings), FALSE);
+	g_return_val_if_fail (callback != NULL, FALSE);
+
+	if (NM_SETTINGS_SYSTEM_INTERFACE_GET_INTERFACE (settings)->get_permissions)
+		return NM_SETTINGS_SYSTEM_INTERFACE_GET_INTERFACE (settings)->get_permissions (settings, callback, user_data);
+	return FALSE;
+}
+
 static void
 nm_settings_system_interface_init (gpointer g_iface)
 {
+	GType iface_type = G_TYPE_FROM_INTERFACE (g_iface);
 	static gboolean initialized = FALSE;
 
 	if (initialized)
@@ -80,6 +104,15 @@ nm_settings_system_interface_init (gpointer g_iface)
 		                       "Can modify anything (hostname, connections, etc)",
 		                       FALSE,
 		                       G_PARAM_READABLE));
+
+	/* Signals */
+	g_signal_new (NM_SETTINGS_SYSTEM_INTERFACE_CHECK_PERMISSIONS,
+				  iface_type,
+				  G_SIGNAL_RUN_FIRST,
+				  G_STRUCT_OFFSET (NMSettingsSystemInterface, check_permissions),
+				  NULL, NULL,
+				  g_cclosure_marshal_VOID__VOID,
+				  G_TYPE_NONE, 0);
 
 	initialized = TRUE;
 }

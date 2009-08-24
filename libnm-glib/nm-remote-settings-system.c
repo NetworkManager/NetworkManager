@@ -105,7 +105,51 @@ save_hostname (NMSettingsSystemInterface *settings,
 	           NMSettingsSystemSaveHostnameFunc callback,
 	           gpointer user_data)
 {
+	// FIXME: implement using get_permissions as a template
 	return FALSE;
+}
+
+typedef struct {
+	NMSettingsSystemInterface *settings;
+	NMSettingsSystemGetPermissionsFunc callback;
+	gpointer callback_data;
+} GetPermissionsInfo;
+
+static void
+get_permissions_cb  (DBusGProxy *proxy,
+                     DBusGProxyCall *call,
+                     gpointer user_data)
+{
+	GetPermissionsInfo *info = user_data;
+	NMSettingsSystemPermission permissions = NM_SETTINGS_SYSTEM_PERMISSION_NONE;
+	GError *error = NULL;
+
+	dbus_g_proxy_end_call (proxy, call, &error,
+	                       G_TYPE_UINT, &permissions,
+	                       G_TYPE_INVALID);
+	info->callback (info->settings, permissions, error, info->callback_data);
+	g_clear_error (&error);
+}
+
+static gboolean
+get_permissions (NMSettingsSystemInterface *settings,
+                 NMSettingsSystemGetPermissionsFunc callback,
+                 gpointer user_data)
+{
+	NMRemoteSettingsSystemPrivate *priv = NM_REMOTE_SETTINGS_SYSTEM_GET_PRIVATE (settings);
+	GetPermissionsInfo *info;
+
+	info = g_malloc0 (sizeof (GetPermissionsInfo));
+	info->settings = settings;
+	info->callback = callback;
+	info->callback_data = user_data;
+
+	dbus_g_proxy_begin_call (priv->proxy, "GetPermissions",
+	                         get_permissions_cb,
+	                         info,
+	                         g_free,
+	                         G_TYPE_INVALID);
+	return TRUE;
 }
 
 /****************************************************************/
@@ -115,6 +159,7 @@ settings_system_interface_init (NMSettingsSystemInterface *klass)
 {
 	/* interface implementation */
 	klass->save_hostname = save_hostname;
+	klass->get_permissions = get_permissions;
 }
 
 /**

@@ -26,6 +26,14 @@
 
 #include "NetworkManager.h"
 
+typedef enum {
+	NM_SETTINGS_SYSTEM_PERMISSION_NONE = 0x0,
+	NM_SETTINGS_SYSTEM_PERMISSION_CONNECTION_MODIFY = 0x1,
+	NM_SETTINGS_SYSTEM_PERMISSION_WIFI_SHARE_PROTECTED = 0x2,
+	NM_SETTINGS_SYSTEM_PERMISSION_WIFI_SHARE_OPEN = 0x4,
+	NM_SETTINGS_SYSTEM_PERMISSION_HOSTNAME_MODIFY = 0x8
+} NMSettingsSystemPermission;
+
 #define NM_TYPE_SETTINGS_SYSTEM_INTERFACE               (nm_settings_system_interface_get_type ())
 #define NM_SETTINGS_SYSTEM_INTERFACE(obj)               (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTINGS_SYSTEM_INTERFACE, NMSettingsSystemInterface))
 #define NM_IS_SETTINGS_SYSTEM_INTERFACE(obj)            (G_TYPE_CHECK_INSTANCE_TYPE ((obj), NM_TYPE_SETTINGS_SYSTEM_INTERFACE))
@@ -33,6 +41,8 @@
 
 #define NM_SETTINGS_SYSTEM_INTERFACE_HOSTNAME          "hostname"
 #define NM_SETTINGS_SYSTEM_INTERFACE_CAN_MODIFY        "can-modify"
+
+#define NM_SETTINGS_SYSTEM_INTERFACE_CHECK_PERMISSIONS "check-permissions"
 
 typedef enum {
 	NM_SETTINGS_SYSTEM_INTERFACE_PROP_FIRST = 0x1000,
@@ -49,6 +59,11 @@ typedef void (*NMSettingsSystemSaveHostnameFunc) (NMSettingsSystemInterface *set
                                                   GError *error,
                                                   gpointer user_data);
 
+typedef void (*NMSettingsSystemGetPermissionsFunc) (NMSettingsSystemInterface *settings,
+                                                    NMSettingsSystemPermission permissions,
+                                                    GError *error,
+                                                    gpointer user_data);
+
 struct _NMSettingsSystemInterface {
 	GTypeInterface g_iface;
 
@@ -57,6 +72,13 @@ struct _NMSettingsSystemInterface {
 	                           const char *hostname,
 	                           NMSettingsSystemSaveHostnameFunc callback,
 	                           gpointer user_data);
+
+	gboolean (*get_permissions) (NMSettingsSystemInterface *settings,
+	                             NMSettingsSystemGetPermissionsFunc callback,
+	                             gpointer user_data);
+
+	/* Signals */
+	void (*check_permissions) (NMSettingsSystemInterface *settings);
 };
 
 GType nm_settings_system_interface_get_type (void);
@@ -65,5 +87,9 @@ gboolean nm_settings_system_interface_save_hostname (NMSettingsSystemInterface *
                                                      const char *hostname,
                                                      NMSettingsSystemSaveHostnameFunc callback,
                                                      gpointer user_data);
+
+gboolean nm_settings_system_interface_get_permissions (NMSettingsSystemInterface *settings,
+                                                       NMSettingsSystemGetPermissionsFunc callback,
+                                                       gpointer user_data);
 
 #endif /* NM_SETTINGS_SYSTEM_INTERFACE_H */
