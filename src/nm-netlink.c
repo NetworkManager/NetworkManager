@@ -18,6 +18,8 @@
  * Copyright (C) 2007 - 2008 Red Hat, Inc.
  */
 
+#include "config.h"
+
 #include "nm-netlink.h"
 #include "nm-utils.h"
 
@@ -25,6 +27,7 @@
 #include <signal.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <netlink/object-api.h>
 
 static struct nl_cache * link_cache = NULL;
 static struct nl_handle * def_nl_handle = NULL;
@@ -58,6 +61,9 @@ struct nl_handle *
 nm_netlink_get_default_handle (void)
 {
 	struct nl_cb *cb;
+#ifdef LIBNL_NEEDS_ADDR_CACHING_WORKAROUND
+	struct nl_cache *addr_cache;
+#endif
 
 	if (def_nl_handle)
 		return def_nl_handle;
@@ -73,6 +79,18 @@ nm_netlink_get_default_handle (void)
 		nm_error ("couldn't connect to netlink: %s", nl_geterror ());
 		return NULL;
 	}
+
+#ifdef LIBNL_NEEDS_ADDR_CACHING_WORKAROUND
+	/* Work around apparent libnl bug; rtnl_addr requires that all
+	 * addresses have the "peer" attribute set in order to be compared
+	 * for equality, but this attribute is not normally set. As a
+	 * result, most addresses will not compare as equal even to
+	 * themselves, busting caching.
+	 */
+	addr_cache = rtnl_addr_alloc_cache (def_nl_handle);
+	nl_cache_get_ops (addr_cache)->co_obj_ops->oo_id_attrs &= ~0x80;
+	nl_cache_free (addr_cache);
+#endif
 
 	return def_nl_handle;
 }
