@@ -200,8 +200,9 @@ get_permissions (NMSettingsSystemInterface *settings,
 }
 
 static void
-check_permissions_cb (NMRemoteSettingsSystem *self)
+check_permissions_cb (DBusGProxy *proxy, gpointer user_data)
 {
+	NMRemoteSettingsSystem *self = NM_REMOTE_SETTINGS_SYSTEM (user_data);
 	NMRemoteSettingsSystemPrivate *priv = NM_REMOTE_SETTINGS_SYSTEM_GET_PRIVATE (self);
 
 	/* Permissions need to be re-fetched */
