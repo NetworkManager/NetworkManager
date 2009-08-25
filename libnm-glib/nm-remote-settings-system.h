@@ -28,6 +28,7 @@
 #include <dbus/dbus-glib.h>
 
 #include "nm-remote-settings.h"
+#include "nm-settings-system-interface.h"
 
 G_BEGIN_DECLS
 
