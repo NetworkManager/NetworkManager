@@ -33,6 +33,7 @@
 #include <nm-setting-pppoe.h>
 #include <nm-setting-wireless-security.h>
 #include <nm-setting-8021x.h>
+#include <nm-settings-connection-interface.h>
 
 #include "common.h"
 #include "nm-ifcfg-connection.h"
@@ -40,7 +41,13 @@
 #include "writer.h"
 #include "nm-inotify-helper.h"
 
-G_DEFINE_TYPE (NMIfcfgConnection, nm_ifcfg_connection, NM_TYPE_SYSCONFIG_CONNECTION)
+static NMSettingsConnectionInterface *parent_settings_connection_iface;
+
+static void settings_connection_interface_init (NMSettingsConnectionInterface *klass);
+
+G_DEFINE_TYPE_EXTENDED (NMIfcfgConnection, nm_ifcfg_connection, NM_TYPE_SYSCONFIG_CONNECTION, 0,
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_CONNECTION_INTERFACE,
+                                               settings_connection_interface_init))
 
 #define NM_IFCFG_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_IFCFG_CONNECTION, NMIfcfgConnectionPrivate))
 
@@ -97,24 +104,32 @@ nm_ifcfg_connection_new (const char *filename,
 {
 	GObject *object;
 	NMIfcfgConnectionPrivate *priv;
-	NMConnection *wrapped;
+	NMConnection *tmp;
 	char *unmanaged = NULL;
 	char *keyfile = NULL;
 	NMInotifyHelper *ih;
+	GHashTable *settings;
 
 	g_return_val_if_fail (filename != NULL, NULL);
 
-	wrapped = connection_from_file (filename, NULL, NULL, NULL, &unmanaged, &keyfile, error, ignore_error);
-	if (!wrapped)
+	tmp = connection_from_file (filename, NULL, NULL, NULL, &unmanaged, &keyfile, error, ignore_error);
+	if (!tmp)
 		return NULL;
 
 	object = (GObject *) g_object_new (NM_TYPE_IFCFG_CONNECTION,
 	                                   NM_IFCFG_CONNECTION_FILENAME, filename,
 	                                   NM_IFCFG_CONNECTION_UNMANAGED, unmanaged,
-	                                   NM_EXPORTED_CONNECTION_CONNECTION, wrapped,
 	                                   NULL);
-	if (!object)
-		goto out;
+	if (!object) {
+		g_object_unref (tmp);
+		return NULL;
+	}
+
+	/* Update our settings with what was read from the file */
+	settings = nm_connection_to_hash (tmp);
+	nm_connection_replace_settings (NM_CONNECTION (object), settings, NULL);
+	g_hash_table_destroy (settings);
+	g_object_unref (tmp);
 
 	priv = NM_IFCFG_CONNECTION_GET_PRIVATE (object);
 
@@ -126,9 +141,7 @@ nm_ifcfg_connection_new (const char *filename,
 	priv->keyfile = keyfile;
 	priv->keyfile_wd = nm_inotify_helper_add_watch (ih, keyfile);
 
-out:
-	g_object_unref (wrapped);
-	return (NMIfcfgConnection *) object;
+	return NM_IFCFG_CONNECTION (object);
 }
 
 const char *
@@ -147,42 +160,50 @@ nm_ifcfg_connection_get_unmanaged_spec (NMIfcfgConnection *self)
 	return NM_IFCFG_CONNECTION_GET_PRIVATE (self)->unmanaged;
 }
 
-gboolean
-nm_ifcfg_connection_update (NMIfcfgConnection *self, GHashTable *new_settings, GError **error)
+static gboolean
+update (NMSettingsConnectionInterface *connection,
+	    NMSettingsConnectionInterfaceUpdateFunc callback,
+	    gpointer user_data)
 {
-	NMExportedConnection *exported = NM_EXPORTED_CONNECTION (self);
-	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (exported);
-	NMConnection *connection;
+	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (connection);
+	GError *error = NULL;
 
-	connection = nm_exported_connection_get_connection (exported);
-	if (!nm_connection_replace_settings (connection, new_settings, error))
+	if (!writer_update_connection (NM_CONNECTION (connection),
+	                               IFCFG_DIR,
+	                               priv->filename,
+	                               priv->keyfile,
+	                               &error)) {
+		callback (connection, error, user_data);
+		g_error_free (error);
 		return FALSE;
+	}
 
-	return writer_update_connection (connection, IFCFG_DIR, priv->filename, priv->keyfile, error);
+	return parent_settings_connection_iface->update (connection, callback, user_data);
 }
 
-static gboolean
-update (NMExportedConnection *exported, GHashTable *new_settings, GError **error)
+static gboolean 
+do_delete (NMSettingsConnectionInterface *connection,
+	       NMSettingsConnectionInterfaceDeleteFunc callback,
+	       gpointer user_data)
 {
-	if (!NM_EXPORTED_CONNECTION_CLASS (nm_ifcfg_connection_parent_class)->update (exported, new_settings, error))
-		return FALSE;
-
-	return nm_ifcfg_connection_update (NM_IFCFG_CONNECTION (exported), new_settings, error);
-}
-
-static gboolean
-do_delete (NMExportedConnection *exported, GError **error)
-{
-	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (exported);
+	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (connection);
 
 	g_unlink (priv->filename);
 	if (priv->keyfile)
 		g_unlink (priv->keyfile);
 
-	return TRUE;
+	return parent_settings_connection_iface->delete (connection, callback, user_data);
 }
 
 /* GObject */
+
+static void
+settings_connection_interface_init (NMSettingsConnectionInterface *iface)
+{
+	parent_settings_connection_iface = g_type_interface_peek_parent (iface);
+	iface->update = update;
+	iface->delete = do_delete;
+}
 
 static void
 nm_ifcfg_connection_init (NMIfcfgConnection *connection)
@@ -193,14 +214,11 @@ static void
 finalize (GObject *object)
 {
 	NMIfcfgConnectionPrivate *priv = NM_IFCFG_CONNECTION_GET_PRIVATE (object);
-	NMConnection *wrapped;
 	NMInotifyHelper *ih;
 
 	g_free (priv->udi);
 
-	wrapped = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (object));
-	if (wrapped)
-		nm_connection_clear_secrets (wrapped);
+	nm_connection_clear_secrets (NM_CONNECTION (object));
 
 	ih = nm_inotify_helper_get ();
 
@@ -267,7 +285,6 @@ static void
 nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (ifcfg_connection_class);
-	NMExportedConnectionClass *connection_class = NM_EXPORTED_CONNECTION_CLASS (ifcfg_connection_class);
 
 	g_type_class_add_private (ifcfg_connection_class, sizeof (NMIfcfgConnectionPrivate));
 
@@ -275,9 +292,6 @@ nm_ifcfg_connection_class_init (NMIfcfgConnectionClass *ifcfg_connection_class)
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-
-	connection_class->update       = update;
-	connection_class->do_delete    = do_delete;
 
 	/* Properties */
 	g_object_class_install_property

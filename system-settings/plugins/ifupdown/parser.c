@@ -525,58 +525,53 @@ update_ip4_setting_from_if_block(NMConnection *connection,
 	nm_connection_add_setting(connection, NM_SETTING(ip4_setting));
 }
 
-void
-ifupdown_update_connection_from_if_block(NMConnection *connection,
-								 if_block *block)
+gboolean
+ifupdown_update_connection_from_if_block (NMConnection *connection,
+                                          if_block *block,
+                                          GError **error)
 {
 	const char *type = NULL;
 	char *idstr = NULL;
 	char *uuid_base = NULL;
-	GError *verify_error = NULL;
 	char *uuid = NULL;
+	NMSettingConnection *s_con;
+	gboolean success = FALSE;
 
-	NMSettingConnection *connection_setting =
-		NM_SETTING_CONNECTION(nm_connection_get_setting
-						  (connection, NM_TYPE_SETTING_CONNECTION));
-
-	if(!connection_setting) {
-		connection_setting = NM_SETTING_CONNECTION(nm_setting_connection_new());
-		nm_connection_add_setting(connection, NM_SETTING(connection_setting));
+	s_con = (NMSettingConnection *) nm_connection_get_setting (connection, NM_TYPE_SETTING_CONNECTION);
+	if(!s_con) {
+		s_con = NM_SETTING_CONNECTION (nm_setting_connection_new());
+		g_assert (s_con);
+		nm_connection_add_setting (connection, NM_SETTING (s_con));
 	}
 
 	type = _ifupdownplugin_guess_connection_type (block);
-	idstr = g_strconcat("Ifupdown (", block->name,")", NULL);
+	idstr = g_strconcat ("Ifupdown (", block->name, ")", NULL);
 	uuid_base = idstr;
 
-	uuid = nm_utils_uuid_generate_from_string(uuid_base);
-	g_object_set (connection_setting,
+	uuid = nm_utils_uuid_generate_from_string (uuid_base);
+	g_object_set (s_con,
 	              NM_SETTING_CONNECTION_TYPE, type,
 	              NM_SETTING_CONNECTION_ID, idstr,
 	              NM_SETTING_CONNECTION_UUID, uuid,
 	              NM_SETTING_CONNECTION_READ_ONLY, TRUE,
+	              NM_SETTING_CONNECTION_AUTOCONNECT, FALSE,
 	              NULL);
 	g_free (uuid);
 
-	PLUGIN_PRINT("SCPlugin-Ifupdown", "update_connection_setting_from_if_block: name:%s, type:%s, autoconnect:%d, id:%s, uuid: %s",
-			   block->name, type,
-			   ((gboolean) strcmp("dhcp", type) == 0),
-			   idstr,
-			   nm_setting_connection_get_uuid (connection_setting));
+	PLUGIN_PRINT("SCPlugin-Ifupdown", "update_connection_setting_from_if_block: name:%s, type:%s, id:%s, uuid: %s",
+			   block->name, type, idstr, nm_setting_connection_get_uuid (s_con));
 
-	if(!strcmp (NM_SETTING_WIRED_SETTING_NAME, type)) {
+	if (!strcmp (NM_SETTING_WIRED_SETTING_NAME, type))
 		update_wired_setting_from_if_block (connection, block);	
-	}
-	else if(!strcmp (NM_SETTING_WIRELESS_SETTING_NAME, type)) {
+	else if (!strcmp (NM_SETTING_WIRELESS_SETTING_NAME, type)) {
 		update_wireless_setting_from_if_block (connection, block);
 		update_wireless_security_setting_from_if_block (connection, block);
 	}
 
-	update_ip4_setting_from_if_block(connection, block);
+	update_ip4_setting_from_if_block (connection, block);
 
-	if(!nm_connection_verify(connection, &verify_error)) {
-		nm_warning("connection broken: %s (%d)",
-				 verify_error->message, verify_error->code);
-	}
+	success = nm_connection_verify (connection, error);
 
-	g_free(idstr);
+	g_free (idstr);
+	return success;
 }

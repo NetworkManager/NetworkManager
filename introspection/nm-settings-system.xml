@@ -6,19 +6,6 @@
       Implemented by the system settings service to provide additional settings to NetworkManager.
     </tp:docstring>
 
-    <method name="AddConnection">
-      <tp:docstring>
-        Add new connection.
-      </tp:docstring>
-      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_add_connection"/>
-      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
-      <arg name="connection" type="a{sa{sv}}" direction="in">
-        <tp:docstring>
-          Connection properties.
-        </tp:docstring>
-      </arg>
-    </method>
-
     <method name="SaveHostname">
       <tp:docstring>
         Save the hostname to persistent configuration.
@@ -51,6 +38,43 @@
             </tp:docstring>
         </arg>
     </signal>
+
+    <signal name="CheckPermissions">
+      <tp:docstring>
+        Emitted when system authorization details change, indicating that clients may wish to recheck permissions with GetPermissions.
+      </tp:docstring>
+    </signal>
+
+    <method name="GetPermissions">
+      <tp:docstring>
+        Returns a bitfield indicating certain operations the caller is permitted to perform.  Some of these operations may require authorization by the user.
+      </tp:docstring>
+      <annotation name="org.freedesktop.DBus.GLib.CSymbol" value="impl_settings_get_permissions"/>
+      <annotation name="org.freedesktop.DBus.GLib.Async" value=""/>
+      <arg name="permissions" type="u" direction="out" tp:type="NM_SETTINGS_SYSTEM_PERMISSIONS">
+        <tp:docstring>
+          A bitfield of permitted operations.  Some of these operations may require the user to authorize via password entry or other means.
+        </tp:docstring>
+      </arg>
+    </method>
+
+    <tp:flags name="NM_SETTINGS_SYSTEM_PERMISSIONS" value-prefix="NM_SETTINGS_SYSTEM_PERMISSION" type="u">
+      <tp:flag suffix="NONE" value="0x0">
+        <tp:docstring>No permissions.</tp:docstring>
+      </tp:flag>
+      <tp:flag suffix="CONNECTION_MODIFY" value="0x1">
+        <tp:docstring>Can modify/add/delete connections.</tp:docstring>
+      </tp:flag>
+      <tp:flag suffix="WIFI_SHARING_PROTECTED" value="0x2">
+        <tp:docstring>Can share connections via a encrypted user-created WiFi network.</tp:docstring>
+      </tp:flag>
+      <tp:flag suffix="WIFI_SHARING_OPEN" value="0x4">
+        <tp:docstring>Can share connections via a open/unencrypted user-created WiFi network.</tp:docstring>
+      </tp:flag>
+      <tp:flag suffix="HOSTNAME_MODIFY" value="0x8">
+        <tp:docstring>Can modify the persistent system hostname.</tp:docstring>
+      </tp:flag>
+    </tp:flags>
 
   </interface>
 </node>

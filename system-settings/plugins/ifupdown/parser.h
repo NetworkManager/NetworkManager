@@ -26,8 +26,9 @@
 
 G_BEGIN_DECLS
 
-void
-ifupdown_update_connection_from_if_block(NMConnection *connection,
-					 if_block *block);
+gboolean
+ifupdown_update_connection_from_if_block (NMConnection *connection,
+                                          if_block *block,
+                                          GError **error);
 
 G_END_DECLS

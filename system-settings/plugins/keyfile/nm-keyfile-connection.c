@@ -22,16 +22,22 @@
 #include <string.h>
 #include <glib/gstdio.h>
 #include <NetworkManager.h>
-#include <nm-settings.h>
 #include <nm-setting-connection.h>
 #include <nm-utils.h>
+#include <nm-settings-connection-interface.h>
 
 #include "nm-dbus-glib-types.h"
 #include "nm-keyfile-connection.h"
 #include "reader.h"
 #include "writer.h"
 
-G_DEFINE_TYPE (NMKeyfileConnection, nm_keyfile_connection, NM_TYPE_SYSCONFIG_CONNECTION)
+static NMSettingsConnectionInterface *parent_settings_connection_iface;
+
+static void settings_connection_interface_init (NMSettingsConnectionInterface *klass);
+
+G_DEFINE_TYPE_EXTENDED (NMKeyfileConnection, nm_keyfile_connection, NM_TYPE_SYSCONFIG_CONNECTION, 0,
+                        G_IMPLEMENT_INTERFACE (NM_TYPE_SETTINGS_CONNECTION_INTERFACE,
+                                               settings_connection_interface_init))
 
 #define NM_KEYFILE_CONNECTION_GET_PRIVATE(o) (G_TYPE_INSTANCE_GET_PRIVATE ((o), NM_TYPE_KEYFILE_CONNECTION, NMKeyfileConnectionPrivate))
 
@@ -65,49 +71,51 @@ nm_keyfile_connection_get_filename (NMKeyfileConnection *self)
 }
 
 static gboolean
-update (NMExportedConnection *exported,
-        GHashTable *new_settings,
-        GError **error)
+update (NMSettingsConnectionInterface *connection,
+	    NMSettingsConnectionInterfaceUpdateFunc callback,
+	    gpointer user_data)
 {
-	NMKeyfileConnectionPrivate *priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (exported);
+	NMKeyfileConnectionPrivate *priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (connection);
+	char *filename = NULL;
+	GError *error = NULL;
 	gboolean success;
 
-	success = NM_EXPORTED_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->update (exported, new_settings, error);
-	if (success) {
-		NMConnection *connection;
-		char *filename = NULL;
-
-		connection = nm_exported_connection_get_connection (exported);
-		success = nm_connection_replace_settings (connection, new_settings, error);
-		if (success) {
-			success = write_connection (connection, KEYFILE_DIR, 0, 0, &filename, error);
-			if (success && filename && strcmp (priv->filename, filename)) {
-				/* Update the filename if it changed */
-				g_free (priv->filename);
-				priv->filename = filename;
-			} else
-				g_free (filename);
-		}
+	success = write_connection (NM_CONNECTION (connection), KEYFILE_DIR, 0, 0, &filename, &error);
+	if (success && filename && strcmp (priv->filename, filename)) {
+		/* Update the filename if it changed */
+		g_free (priv->filename);
+		priv->filename = filename;
+		success = parent_settings_connection_iface->update (connection, callback, user_data);
+	} else {
+		callback (connection, error, user_data);
+		g_error_free (error);
+		g_free (filename);
 	}
 
 	return success;
 }
 
-static gboolean
-do_delete (NMExportedConnection *exported, GError **err)
+static gboolean 
+do_delete (NMSettingsConnectionInterface *connection,
+	       NMSettingsConnectionInterfaceDeleteFunc callback,
+	       gpointer user_data)
 {
-	NMKeyfileConnectionPrivate *priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (exported);
-	gboolean success;
+	NMKeyfileConnectionPrivate *priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (connection);
 
-	success = NM_EXPORTED_CONNECTION_CLASS (nm_keyfile_connection_parent_class)->do_delete (exported, err);
+	g_unlink (priv->filename);
 
-	if (success)
-		g_unlink (priv->filename);
-
-	return success;
+	return parent_settings_connection_iface->delete (connection, callback, user_data);
 }
 
 /* GObject */
+
+static void
+settings_connection_interface_init (NMSettingsConnectionInterface *iface)
+{
+	parent_settings_connection_iface = g_type_interface_peek_parent (iface);
+	iface->update = update;
+	iface->delete = do_delete;
+}
 
 static void
 nm_keyfile_connection_init (NMKeyfileConnection *connection)
@@ -121,8 +129,9 @@ constructor (GType type,
 {
 	GObject *object;
 	NMKeyfileConnectionPrivate *priv;
-	NMConnection *wrapped;
 	NMSettingConnection *s_con;
+	NMConnection *tmp;
+	GHashTable *settings;
 
 	object = G_OBJECT_CLASS (nm_keyfile_connection_parent_class)->constructor (type, n_construct_params, construct_params);
 
@@ -131,17 +140,21 @@ constructor (GType type,
 
 	priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (object);
 
-	if (!priv->filename) {
-		g_warning ("Keyfile file name not provided.");
-		goto err;
-	}
+	g_assert (priv->filename);
 
-	wrapped = connection_from_file (priv->filename);
-	if (!wrapped)
-		goto err;
+	tmp = connection_from_file (priv->filename);
+	if (!tmp) {
+		g_object_unref (object);
+		return NULL;
+	}
+	
+	settings = nm_connection_to_hash (tmp);
+	nm_connection_replace_settings (NM_CONNECTION (object), settings, NULL);
+	g_hash_table_destroy (settings);
+	g_object_unref (tmp);
 
 	/* if for some reason the connection didn't have a UUID, add one */
-	s_con = (NMSettingConnection *) nm_connection_get_setting (wrapped, NM_TYPE_SETTING_CONNECTION);
+	s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (object), NM_TYPE_SETTING_CONNECTION);
 	if (s_con && !nm_setting_connection_get_uuid (s_con)) {
 		GError *error = NULL;
 		char *uuid;
@@ -150,29 +163,24 @@ constructor (GType type,
 		g_object_set (s_con, NM_SETTING_CONNECTION_UUID, uuid, NULL);
 		g_free (uuid);
 
-		if (!write_connection (wrapped, KEYFILE_DIR, 0, 0, NULL, &error)) {
+		if (!write_connection (NM_CONNECTION (object), KEYFILE_DIR, 0, 0, NULL, &error)) {
 			g_warning ("Couldn't update connection %s with a UUID: (%d) %s",
-			           nm_setting_connection_get_id (s_con), error ? error->code : 0,
-			           error ? error->message : "unknown");
+			           nm_setting_connection_get_id (s_con),
+			           error ? error->code : 0,
+			           (error && error->message) ? error->message : "unknown");
 			g_error_free (error);
 		}
 	}
 
-	g_object_set (object, NM_EXPORTED_CONNECTION_CONNECTION, wrapped, NULL);
-	g_object_unref (wrapped);
-
 	return object;
-
- err:
-	g_object_unref (object);
-
-	return NULL;
 }
 
 static void
 finalize (GObject *object)
 {
 	NMKeyfileConnectionPrivate *priv = NM_KEYFILE_CONNECTION_GET_PRIVATE (object);
+
+	nm_connection_clear_secrets (NM_CONNECTION (object));
 
 	g_free (priv->filename);
 
@@ -216,7 +224,6 @@ static void
 nm_keyfile_connection_class_init (NMKeyfileConnectionClass *keyfile_connection_class)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (keyfile_connection_class);
-	NMExportedConnectionClass *connection_class = NM_EXPORTED_CONNECTION_CLASS (keyfile_connection_class);
 
 	g_type_class_add_private (keyfile_connection_class, sizeof (NMKeyfileConnectionPrivate));
 
@@ -225,9 +232,6 @@ nm_keyfile_connection_class_init (NMKeyfileConnectionClass *keyfile_connection_c
 	object_class->set_property = set_property;
 	object_class->get_property = get_property;
 	object_class->finalize     = finalize;
-
-	connection_class->update       = update;
-	connection_class->do_delete    = do_delete;
 
 	/* Properties */
 	g_object_class_install_property

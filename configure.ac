@@ -213,41 +213,9 @@ PKG_CHECK_MODULES(UUID, uuid)
 AC_SUBST(UUID_CFLAGS)
 AC_SUBST(UUID_LIBS)
 
-PKG_CHECK_MODULES(POLKIT, polkit-dbus)
+PKG_CHECK_MODULES(POLKIT, polkit-gobject-1)
 
-##### Find out the version of PolicyKit we're using
-polkit_version=`pkg-config --modversion polkit`
-POLKIT_VERSION_MAJOR=`echo $polkit_version | awk -F. '{print $1}'`
-POLKIT_VERSION_MINOR=`echo $polkit_version | awk -F. '{print $2}'`
-POLKIT_VERSION_MICRO=`echo $polkit_version | awk -F. '{print $3}'`
-if test "z$POLKIT_VERSION_MAJOR" = "z"; then
-	POLKIT_VERSION_MAJOR="0"
-fi
-if test "z$POLKIT_VERSION_MINOR" = "z"; then
-	POLKIT_VERSION_MINOR="0"
-fi
-if test "z$POLKIT_VERSION_MICRO" = "z"; then
-	POLKIT_VERSION_MICRO="0"
-fi
-
-if test "z$POLKIT_VERSION_MAJOR" = "z0" -a "z$POLKIT_VERSION_MINOR" = "z0" -a "z$POLKIT_VERSION_MICRO" = "z0"; then
-	echo "Error: Couldn't determine the version of your PolicyKit package."
-	echo "  This is probably an error in this script, please report it"
-	echo "  along with the following information:"
-	echo "      Base PolicyKit version ='$polkit_version'"
-	echo "      POLKIT_VERSION_MAJOR='$POLKIT_VERSION_MAJOR'"
-	echo "      POLKIT_VERSION_MINOR='$POLKIT_VERSION_MINOR'"
-	echo "      POLKIT_VERSION_MICRO='$POLKIT_VERSION_MICRO'"
-	exit 1
-else
-	echo "Your PolicyKit version is $POLKIT_VERSION_MAJOR,$POLKIT_VERSION_MINOR,$POLKIT_VERSION_MICRO."
-	POLKIT_CFLAGS="$POLKIT_CFLAGS -DPOLKIT_VERSION_MAJOR=$POLKIT_VERSION_MAJOR"
-	POLKIT_CFLAGS="$POLKIT_CFLAGS -DPOLKIT_VERSION_MINOR=$POLKIT_VERSION_MINOR"
-	POLKIT_CFLAGS="$POLKIT_CFLAGS -DPOLKIT_VERSION_MICRO=$POLKIT_VERSION_MICRO"
-fi
 AC_SUBST(POLKIT_CFLAGS)
-
-AC_PATH_PROG([POLKIT_POLICY_FILE_VALIDATE], [polkit-policy-file-validate], [false])
 
 AC_ARG_WITH(crypto, AS_HELP_STRING([--with-crypto=nss | gnutls], [Cryptography library to use for certificate and key operations]),ac_crypto=$withval, ac_crypto=nss)
 

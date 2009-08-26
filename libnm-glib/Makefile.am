@@ -42,7 +42,6 @@ libnminclude_HEADERS = \
 	nm-device-bt.h \
 	nm-access-point.h \
 	nm-ip4-config.h \
-	nm-settings.h \
 	nm-gsm-device.h \
 	nm-cdma-device.h \
 	nm-serial-device.h \
@@ -51,11 +50,16 @@ libnminclude_HEADERS = \
 	nm-vpn-plugin-ui-interface.h \
 	nm-types.h \
 	nm-active-connection.h \
-	nm-dbus-connection.h \
-	nm-dbus-settings.h \
-	nm-dbus-settings-system.h \
 	nm-dhcp4-config.h \
-	nm-ip6-config.h
+	nm-ip6-config.h \
+	nm-remote-connection.h \
+	nm-settings-interface.h \
+	nm-settings-system-interface.h \
+	nm-remote-settings.h \
+	nm-remote-settings-system.h \
+	nm-settings-connection-interface.h \
+	nm-exported-connection.h \
+	nm-settings-service.h
 
 libnm_glib_la_SOURCES = \
 	libnm_glib.c \
@@ -71,7 +75,6 @@ libnm_glib_la_SOURCES = \
 	nm-device-bt.c \
 	nm-access-point.c \
 	nm-ip4-config.c \
-	nm-settings.c \
 	nm-gsm-device.c \
 	nm-cdma-device.c \
 	nm-serial-device.c \
@@ -81,11 +84,17 @@ libnm_glib_la_SOURCES = \
 	nm-object-cache.c \
 	nm-object-cache.h \
 	nm-active-connection.c \
-	nm-dbus-connection.c \
-	nm-dbus-settings.c \
-	nm-dbus-settings-system.c \
 	nm-dhcp4-config.c \
-	nm-ip6-config.c
+	nm-ip6-config.c \
+	nm-remote-connection.c \
+	nm-remote-connection-private.h \
+	nm-settings-interface.c \
+	nm-settings-system-interface.c \
+	nm-remote-settings.c \
+	nm-remote-settings-system.c \
+	nm-settings-connection-interface.c \
+	nm-exported-connection.c \
+	nm-settings-service.c
 
 libnm_glib_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \

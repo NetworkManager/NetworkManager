@@ -1172,7 +1172,7 @@ nm_connection_class_init (NMConnectionClass *klass)
 						    NM_CONNECTION_SCOPE_UNKNOWN,
 						    NM_CONNECTION_SCOPE_USER,
 						    NM_CONNECTION_SCOPE_UNKNOWN,
-						    G_PARAM_READWRITE));
+						    G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/**
 	 * NMConnection:path:
@@ -1186,7 +1186,7 @@ nm_connection_class_init (NMConnectionClass *klass)
 						  "Path",
 						  "Path",
 						  NULL,
-						  G_PARAM_READWRITE));
+						  G_PARAM_READWRITE | G_PARAM_CONSTRUCT));
 
 	/* Signals */
 

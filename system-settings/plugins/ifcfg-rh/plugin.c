@@ -84,7 +84,7 @@ connection_unmanaged_changed (NMIfcfgConnection *connection,
                               GParamSpec *pspec,
                               gpointer user_data)
 {
-	g_signal_emit_by_name (SC_PLUGIN_IFCFG (user_data), "unmanaged-devices-changed");
+	g_signal_emit_by_name (SC_PLUGIN_IFCFG (user_data), NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
 }
 
 static void
@@ -113,13 +113,10 @@ read_one_connection (SCPluginIfcfg *plugin, const char *filename)
 
 	connection = nm_ifcfg_connection_new (filename, &error, &ignore_error);
 	if (connection) {
-		NMConnection *wrapped;
 		NMSettingConnection *s_con;
 		const char *cid;
 
-		wrapped = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (connection));
-		g_assert (wrapped);
-		s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (wrapped, NM_TYPE_SETTING_CONNECTION));
+		s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (connection), NM_TYPE_SETTING_CONNECTION);
 		g_assert (s_con);
 
 		cid = nm_setting_connection_get_id (s_con);
@@ -133,7 +130,7 @@ read_one_connection (SCPluginIfcfg *plugin, const char *filename)
 		if (nm_ifcfg_connection_get_unmanaged_spec (connection)) {
 			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Ignoring connection '%s' and its "
 			              "device because NM_CONTROLLED was false.", cid);
-			g_signal_emit_by_name (plugin, "unmanaged-devices-changed");
+			g_signal_emit_by_name (plugin, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
 		} else {
 			/* Wait for the connection to become unmanaged once it knows the
 			 * UDI of it's device, if/when the device gets plugged in.
@@ -224,13 +221,20 @@ read_connections (SCPluginIfcfg *plugin)
 /* Monitoring */
 
 static void
+ignore_cb (NMSettingsConnectionInterface *connection,
+           GError *error,
+           gpointer user_data)
+{
+}
+
+static void
 connection_changed_handler (SCPluginIfcfg *plugin,
                             const char *path,
                             NMIfcfgConnection *connection,
                             gboolean *do_remove,
                             gboolean *do_new)
 {
-	NMIfcfgConnection *tmp;
+	NMIfcfgConnection *new;
 	GError *error = NULL;
 	GHashTable *settings;
 	gboolean ignore_error = FALSE;
@@ -244,8 +248,8 @@ connection_changed_handler (SCPluginIfcfg *plugin,
 
 	PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "updating %s", path);
 
-	tmp = (NMIfcfgConnection *) nm_ifcfg_connection_new (path, &error, &ignore_error);
-	if (!tmp) {
+	new = (NMIfcfgConnection *) nm_ifcfg_connection_new (path, &error, &ignore_error);
+	if (!new) {
 		/* errors reading connection; remove it */
 		if (!ignore_error) {
 			PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error: %s",
@@ -261,7 +265,7 @@ connection_changed_handler (SCPluginIfcfg *plugin,
 	/* Successfully read connection changes */
 
 	old_unmanaged = nm_ifcfg_connection_get_unmanaged_spec (NM_IFCFG_CONNECTION (connection));
-	new_unmanaged = nm_ifcfg_connection_get_unmanaged_spec (NM_IFCFG_CONNECTION (tmp));
+	new_unmanaged = nm_ifcfg_connection_get_unmanaged_spec (NM_IFCFG_CONNECTION (new));
 
 	if (new_unmanaged) {
 		if (!old_unmanaged) {
@@ -269,16 +273,11 @@ connection_changed_handler (SCPluginIfcfg *plugin,
 			*do_remove = *do_new = TRUE;
 		}
 	} else {
-		NMConnection *old_wrapped, *new_wrapped;
-
-		new_wrapped = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (tmp));
-		old_wrapped = nm_exported_connection_get_connection (NM_EXPORTED_CONNECTION (connection));
-
 		if (old_unmanaged) {  /* now managed */
 			NMSettingConnection *s_con;
 			const char *cid;
 
-			s_con = NM_SETTING_CONNECTION (nm_connection_get_setting (new_wrapped, NM_TYPE_SETTING_CONNECTION));
+			s_con = (NMSettingConnection *) nm_connection_get_setting (NM_CONNECTION (new), NM_TYPE_SETTING_CONNECTION);
 			g_assert (s_con);
 
 			cid = nm_setting_connection_get_id (s_con);
@@ -286,25 +285,30 @@ connection_changed_handler (SCPluginIfcfg *plugin,
 
 			PLUGIN_PRINT (IFCFG_PLUGIN_NAME, "Managing connection '%s' and its "
 			              "device because NM_CONTROLLED was true.", cid);
-			g_signal_emit_by_name (plugin, "connection-added", connection);
+			g_signal_emit_by_name (plugin, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, connection);
 		}
 
 		/* Only update if different */
-		if (!nm_connection_compare (new_wrapped, old_wrapped, NM_SETTING_COMPARE_FLAG_EXACT)) {
-			settings = nm_connection_to_hash (new_wrapped);
-			if (!nm_ifcfg_connection_update (connection, settings, &error)) {
+		if (!nm_connection_compare (NM_CONNECTION (new),
+		                            NM_CONNECTION (connection),
+		                            NM_SETTING_COMPARE_FLAG_EXACT)) {
+			settings = nm_connection_to_hash (NM_CONNECTION (new));
+			if (!nm_connection_replace_settings (NM_CONNECTION (connection), settings, &error)) {
 				PLUGIN_WARN (IFCFG_PLUGIN_NAME, "    error updating: %s",
 				             (error && error->message) ? error->message : "(unknown)");
 				g_clear_error (&error);
 			}
 			g_hash_table_destroy (settings);
+			nm_settings_connection_interface_update (NM_SETTINGS_CONNECTION_INTERFACE (connection),
+			                                         ignore_cb,
+			                                         NULL);
 		}
 
 		/* Update unmanaged status */
 		g_object_set (connection, "unmanaged", new_unmanaged, NULL);
-		g_signal_emit_by_name (plugin, "unmanaged-devices-changed");
+		g_signal_emit_by_name (plugin, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
 	}
-	g_object_unref (tmp);
+	g_object_unref (new);
 }
 
 static void
@@ -326,18 +330,18 @@ handle_connection_remove_or_new (SCPluginIfcfg *plugin,
 
 		unmanaged = nm_ifcfg_connection_get_unmanaged_spec (connection);
 		g_hash_table_remove (priv->connections, path);
-		nm_exported_connection_signal_removed (NM_EXPORTED_CONNECTION (connection));
+		g_signal_emit_by_name (connection, "removed");
 
 		/* Emit unmanaged changes _after_ removing the connection */
 		if (unmanaged)
-			g_signal_emit_by_name (plugin, "unmanaged-devices-changed");
+			g_signal_emit_by_name (plugin, NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
 	}
 
 	if (do_new) {
 		connection = read_one_connection (plugin, path);
 		if (connection) {
-			if (!nm_ifcfg_connection_get_unmanaged_spec (NM_IFCFG_CONNECTION (connection)))
-				g_signal_emit_by_name (plugin, "connection-added", connection);
+			if (!nm_ifcfg_connection_get_unmanaged_spec (connection))
+				g_signal_emit_by_name (plugin, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, connection);
 		}
 	}
 }
@@ -404,29 +408,27 @@ setup_ifcfg_monitoring (SCPluginIfcfg *plugin)
 	}
 }
 
-static void
-hash_to_slist (gpointer key, gpointer value, gpointer user_data)
-{
-	NMIfcfgConnection *exported = NM_IFCFG_CONNECTION (value);
-	GSList **list = (GSList **) user_data;
-
-	if (!nm_ifcfg_connection_get_unmanaged_spec (exported))
-		*list = g_slist_prepend (*list, value);
-}
-
 static GSList *
 get_connections (NMSystemConfigInterface *config)
 {
 	SCPluginIfcfg *plugin = SC_PLUGIN_IFCFG (config);
 	SCPluginIfcfgPrivate *priv = SC_PLUGIN_IFCFG_GET_PRIVATE (plugin);
 	GSList *list = NULL;
+	GHashTableIter iter;
+	gpointer value;
 
 	if (!priv->connections) {
 		setup_ifcfg_monitoring (plugin);
 		read_connections (plugin);
 	}
 
-	g_hash_table_foreach (priv->connections, hash_to_slist, &list);
+	g_hash_table_iter_init (&iter, priv->connections);
+	while (g_hash_table_iter_next (&iter, NULL, &value)) {
+		NMIfcfgConnection *exported = NM_IFCFG_CONNECTION (value);
+
+		if (!nm_ifcfg_connection_get_unmanaged_spec (exported))
+			list = g_slist_prepend (list, value);
+	}
 
 	return list;
 }

@@ -66,19 +66,19 @@ interface_init (gpointer g_iface)
 							  G_PARAM_READWRITE));
 
 	/* Signals */
-	g_signal_new ("connection-added",
+	g_signal_new (NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED,
 				  iface_type,
 				  G_SIGNAL_RUN_FIRST,
 				  G_STRUCT_OFFSET (NMSystemConfigInterface, connection_added),
 				  NULL, NULL,
 				  g_cclosure_marshal_VOID__OBJECT,
 				  G_TYPE_NONE, 1,
-				  NM_TYPE_EXPORTED_CONNECTION);
+				  NM_TYPE_SETTINGS_CONNECTION_INTERFACE);
 
-	g_signal_new ("unmanaged-devices-changed",
+	g_signal_new (NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED,
 				  iface_type,
 				  G_SIGNAL_RUN_FIRST,
-				  G_STRUCT_OFFSET (NMSystemConfigInterface, unmanaged_devices_changed),
+				  G_STRUCT_OFFSET (NMSystemConfigInterface, unmanaged_specs_changed),
 				  NULL, NULL,
 				  g_cclosure_marshal_VOID__VOID,
 				  G_TYPE_NONE, 0);
