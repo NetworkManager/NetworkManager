@@ -53,13 +53,13 @@ fallback_get_backtrace (void)
 			syslog (LOG_CRIT, "Frame %d: %s (%s+0x%lx) [%p]",
 			        i, name,
 			        info.dli_sname,
-			        frames[i] - info.dli_saddr,
+			        (gulong)(frames[i] - info.dli_saddr),
 			        frames[i]);
 		} else {
 			syslog (LOG_CRIT, "Frame %d: %s (%p+0x%lx) [%p]",
 			        i, name,
 			        info.dli_fbase,
-			        frames[i] - info.dli_saddr,
+			        (gulong)(frames[i] - info.dli_saddr),
 			        frames[i]);
 		}
 	}
