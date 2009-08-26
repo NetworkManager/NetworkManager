@@ -72,7 +72,7 @@ GTKDOC_CFLAGS =				\
 	$(GLIB_CFLAGS)			\
 	$(DBUS_CFLAGS)
 
-GTKDOC_LIBS = $(top_builddir)/libnm-glib/libnm_glib.la
+GTKDOC_LIBS = $(top_builddir)/libnm-glib/libnm-glib.la
 
 
 # include common portion ...

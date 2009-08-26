@@ -1,7 +1,6 @@
 INCLUDES = -I${top_srcdir}                    \
            -I${top_srcdir}/libnm-util         \
            -I${top_srcdir}/libnm-glib         \
-           -I${top_srcdir}/gnome/libnm_glib   \
            -I${top_srcdir}/include
 
 AM_CPPFLAGS = \
@@ -13,11 +12,11 @@ AM_CPPFLAGS = \
 
 bin_PROGRAMS = nm-tool
 
-noinst_PROGRAMS = nm-online libnm_glib_test
+noinst_PROGRAMS = nm-online libnm-glib-test
 
 nm_tool_SOURCES = nm-tool.c
 nm_tool_LDADD = \
-	$(top_builddir)/libnm-glib/libnm_glib.la \
+	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)
@@ -28,9 +27,9 @@ nm_online_LDADD = \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)
 
-libnm_glib_test_SOURCES = libnm_glib_test.c
+libnm_glib_test_SOURCES = libnm-glib-test.c
 libnm_glib_test_LDADD = \
-	$(top_builddir)/libnm-glib/libnm_glib.la \
+	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)

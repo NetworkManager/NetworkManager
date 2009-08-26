@@ -53,7 +53,7 @@ libnm_settings_plugin_ifcfg_rh_la_CPPFLAGS = \
 libnm_settings_plugin_ifcfg_rh_la_LDFLAGS = -module -avoid-version
 libnm_settings_plugin_ifcfg_rh_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/libnm-glib/libnm_glib.la \
+	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(top_builddir)/marshallers/libmarshallers.la \
 	libifcfg-rh-io.la \
 	$(GLIB_LIBS) \

@@ -22,7 +22,7 @@ BUILT_SOURCES = \
 	nm-dhcp4-config-bindings.h \
 	nm-ip6-config-bindings.h
 
-lib_LTLIBRARIES = libnm_glib.la libnm_glib_vpn.la
+lib_LTLIBRARIES = libnm-glib.la libnm-glib-vpn.la
 
 libnm_glib_la_CFLAGS = \
 	$(GLIB_CFLAGS) \
@@ -104,20 +104,20 @@ libnm_glib_la_LIBADD = \
 	$(GCONF_LIBS) \
 	$(GUDEV_LIBS)
 
-libnm_glib_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm_glib.ver \
+libnm_glib_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm-glib.ver \
 	-version-info "2:0:0"
 
 noinst_PROGRAMS = libnm-glib-test
 
 libnm_glib_test_SOURCES = libnm-glib-test.c
 libnm_glib_test_CFLAGS = $(GLIB_CFLAGS) $(DBUS_CFLAGS)
-libnm_glib_test_LDADD = libnm_glib.la $(top_builddir)/libnm-util/libnm-util.la $(GLIB_LIBS) $(DBUS_LIBS)
+libnm_glib_test_LDADD = libnm-glib.la $(top_builddir)/libnm-util/libnm-util.la $(GLIB_LIBS) $(DBUS_LIBS)
 
 
 libnm_glib_vpn_la_SOURCES = nm-vpn-plugin.c nm-vpn-plugin-ui-interface.c
 libnm_glib_vpn_la_CFLAGS = $(GLIB_CFLAGS) $(DBUS_CFLAGS)
 libnm_glib_vpn_la_LIBADD = $(top_builddir)/libnm-util/libnm-util.la $(GLIB_LIBS) $(DBUS_LIBS)
-libnm_glib_vpn_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm_glib_vpn.ver \
+libnm_glib_vpn_la_LDFLAGS = -Wl,--version-script=$(srcdir)/libnm-glib-vpn.ver \
 	-version-info "0:0:0"
 
 
@@ -173,11 +173,11 @@ nm-ip6-config-bindings.h: $(top_srcdir)/introspection/nm-ip6-config.xml
 	dbus-binding-tool --prefix=nm_ip6_config --mode=glib-client --output=$@ $<
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = libnm_glib.pc libnm_glib_vpn.pc
+pkgconfig_DATA = libnm-glib.pc libnm-glib-vpn.pc
 
-DISTCLEANFILES = libnm_glib.pc libnm_glib.pc
+DISTCLEANFILES = libnm-glib.pc libnm-glib.pc
 
-EXTRA_DIST = libnm_glib.pc.in libnm_glib_vpn.pc.in libnm_glib.ver libnm_glib_vpn.ver
+EXTRA_DIST = libnm-glib.pc.in libnm-glib-vpn.pc.in libnm-glib.ver libnm-glib-vpn.ver
 
 CLEANFILES = \
 	$(BUILT_SOURCES)

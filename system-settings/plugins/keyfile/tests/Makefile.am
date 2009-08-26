@@ -19,7 +19,7 @@ test_keyfile_CPPFLAGS = \
 
 test_keyfile_LDADD = \
 	$(top_builddir)/system-settings/plugins/keyfile/io/libkeyfile-io.la \
-	$(top_builddir)/libnm-glib/libnm_glib.la \
+	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(DBUS_LIBS)
 

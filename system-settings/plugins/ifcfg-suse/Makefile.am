@@ -27,7 +27,7 @@ libnm_settings_plugin_ifcfg_suse_la_CPPFLAGS = \
 libnm_settings_plugin_ifcfg_suse_la_LDFLAGS = -module -avoid-version
 libnm_settings_plugin_ifcfg_suse_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/libnm-glib/libnm_glib.la \
+	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(GLIB_LIBS) \
 	$(GMODULE_LIBS) \
 	$(POLKIT_LIBS) \

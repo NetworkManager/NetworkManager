@@ -54,7 +54,7 @@ nm_dispatcher_action_CPPFLAGS = \
 	-DLIBEXECDIR=\"$(libexecdir)\"
 
 nm_dispatcher_action_LDADD = \
-	$(top_builddir)/libnm-glib/libnm_glib.la \
+	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS)

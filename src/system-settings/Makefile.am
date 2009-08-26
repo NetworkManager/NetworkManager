@@ -42,7 +42,7 @@ libsystem_settings_la_CPPFLAGS = \
 
 libsystem_settings_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/libnm-glib/libnm_glib.la \
+	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(top_builddir)/marshallers/libmarshallers.la \
 	$(DBUS_LIBS) \
 	$(GLIB_LIBS) \

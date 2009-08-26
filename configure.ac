@@ -418,8 +418,8 @@ libnm-util/libnm-util.pc
 libnm-util/Makefile
 libnm-util/tests/Makefile
 libnm-util/tests/certs/Makefile
-libnm-glib/libnm_glib.pc
-libnm-glib/libnm_glib_vpn.pc
+libnm-glib/libnm-glib.pc
+libnm-glib/libnm-glib-vpn.pc
 libnm-glib/Makefile
 callouts/Makefile
 tools/Makefile

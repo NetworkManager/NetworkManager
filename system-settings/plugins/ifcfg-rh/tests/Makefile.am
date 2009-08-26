@@ -18,7 +18,7 @@ test_ifcfg_rh_CPPFLAGS = \
 	-DTEST_SCRATCH_DIR=\"$(abs_builddir)/\"
 
 test_ifcfg_rh_LDADD = \
-	$(top_builddir)/libnm-glib/libnm_glib.la \
+	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(top_builddir)/libnm-util/libnm-util.la \
 	$(top_builddir)/system-settings/plugins/ifcfg-rh/libifcfg-rh-io.la \
 	$(DBUS_LIBS)

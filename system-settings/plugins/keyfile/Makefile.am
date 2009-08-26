@@ -28,7 +28,7 @@ libnm_settings_plugin_keyfile_la_CPPFLAGS = \
 libnm_settings_plugin_keyfile_la_LDFLAGS = -module -avoid-version
 libnm_settings_plugin_keyfile_la_LIBADD = \
 	$(top_builddir)/libnm-util/libnm-util.la \
-	$(top_builddir)/libnm-glib/libnm_glib.la \
+	$(top_builddir)/libnm-glib/libnm-glib.la \
 	$(top_builddir)/system-settings/plugins/keyfile/io/libkeyfile-io.la \
 	$(GLIB_LIBS) \
 	$(GMODULE_LIBS) \
