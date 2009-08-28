@@ -393,6 +393,7 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 	NMIP4Config *config;
 	GValue *val;
 	int i;
+	guint32 vpn_ext_gw = 0;
 
 	nm_info ("VPN connection '%s' (IP Config Get) reply received.",
 		    nm_vpn_connection_get_name (connection));
@@ -420,8 +421,10 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 
 	/* External world-visible address of the VPN server */
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_EXT_GATEWAY);
-	if (val)
+	if (val) {
 		nm_ip4_address_set_gateway (addr, g_value_get_uint (val));
+		vpn_ext_gw = g_value_get_uint (val);
+	}
 
 	val = (GValue *) g_hash_table_lookup (config_hash, NM_VPN_PLUGIN_IP4_CONFIG_ADDRESS);
 	if (val)
@@ -484,8 +487,22 @@ nm_vpn_connection_ip4_config_get (DBusGProxy *proxy,
 		GSList *iter;
 
 		routes = nm_utils_ip4_routes_from_gvalue (val);
-		for (iter = routes; iter; iter = iter->next)
-			nm_ip4_config_take_route (config, (NMIP4Route *) iter->data);
+		for (iter = routes; iter; iter = iter->next) {
+			NMIP4Route *route = iter->data;
+
+			/* Ignore host routes to the VPN gateway since NM adds one itself
+			 * below.  Since NM knows more about the routing situation than
+			 * the VPN server, we want to use the NM created route instead of
+			 * whatever the server provides.
+			 */
+			if (   vpn_ext_gw
+			    && nm_ip4_route_get_dest (route) == vpn_ext_gw
+			    && nm_ip4_route_get_prefix (route) == 32)
+				continue;
+
+			/* Otherwise accept the VPN-provided route */
+			nm_ip4_config_take_route (config, route);
+		}
 
 		g_slist_free (routes);
 	}
