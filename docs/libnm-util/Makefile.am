@@ -31,7 +31,6 @@ CFILE_GLOB=
 # Header files to ignore when scanning.
 IGNORE_HFILES= \
 	crypto.h \
-	nm-setting-ip6-config.h \
 	nm-setting-template.h \
 	nm-utils-private.h \
 	nm-param-spec-specialized.h
@@ -61,3 +60,4 @@ GTKDOC_LIBS = $(top_builddir)/libnm-util/libnm-util.la
 # include common portion ...
 include $(top_srcdir)/gtk-doc.make
 
+CLEANFILES += $(DOC_MAIN_SGML_FILE)
