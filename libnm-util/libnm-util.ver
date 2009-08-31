@@ -304,6 +304,7 @@ global:
 	nm_setting_wireless_security_remove_proto;
 	nm_setting_wireless_security_set_wep_key;
 	nm_setting_olpc_mesh_error_quark;
+	nm_setting_olpc_mesh_error_get_type;
 	nm_setting_olpc_mesh_get_type;
 	nm_setting_olpc_mesh_get_ssid;
 	nm_setting_olpc_mesh_get_channel;

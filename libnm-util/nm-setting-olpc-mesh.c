@@ -43,7 +43,7 @@ nm_setting_olpc_mesh_error_quark (void)
 	static GQuark quark;
 
 	if (G_UNLIKELY (!quark))
-		quark = g_quark_from_static_string ("nm-setting-wireless-mesh-error-quark");
+		quark = g_quark_from_static_string ("nm-setting-olpc-mesh-error-quark");
 	return quark;
 }
 
@@ -65,7 +65,7 @@ nm_setting_olpc_mesh_error_get_type (void)
 			ENUM_ENTRY (NM_SETTING_OLPC_MESH_ERROR_MISSING_PROPERTY, "MissingProperty"),
 			{ 0, 0, 0 }
 		};
-		etype = g_enum_register_static ("NMSettingWirelessError", values);
+		etype = g_enum_register_static ("NMSettingOlpcMeshError", values);
 	}
 	return etype;
 }
