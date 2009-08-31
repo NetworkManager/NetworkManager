@@ -1023,6 +1023,7 @@ nm_connection_new (void)
 /**
  * nm_connection_new_from_hash:
  * @hash: the #GHashTable describing the connection
+ * @error: on unsuccessful return, an error
  *
  * Creates a new #NMConnection from a hash table describing the connection.  See
  * nm_connection_to_hash() for a description of the expected hash table.

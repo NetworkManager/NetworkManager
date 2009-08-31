@@ -36,7 +36,7 @@
  * properties that apply to all #NMConnection objects, regardless of what type
  * of network connection they describe.  Each #NMConnection object must contain
  * a #NMSettingConnection setting.
- */
+ **/
 
 /**
  * nm_setting_connection_error_quark:
@@ -147,7 +147,7 @@ nm_setting_connection_get_uuid (NMSettingConnection *setting)
 }
 
 /**
- * nm_setting_connection_get_type:
+ * nm_setting_connection_get_connection_type:
  * @setting: the #NMSettingConnection
  *
  * Returns the #NMSettingConnection:type property of the connection.
