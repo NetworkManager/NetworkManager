@@ -461,6 +461,11 @@ SCPluginIfupdown_get_connections (NMSystemConfigInterface *config)
 
 	PLUGIN_PRINT("SCPlugin-Ifupdown", "(%d) ... get_connections.", GPOINTER_TO_UINT(config));
 
+	if(priv->unmanage_well_known) {
+		PLUGIN_PRINT("SCPlugin-Ifupdown", "(%d) ... get_connections (managed=false): return empty list.", GPOINTER_TO_UINT(config));
+		return NULL;
+	}
+
 	g_hash_table_iter_init (&iter, priv->iface_connections);
 	while (g_hash_table_iter_next (&iter, NULL, &value))
 		connections = g_slist_prepend (connections, value);
