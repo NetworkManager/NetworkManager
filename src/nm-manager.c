@@ -30,6 +30,7 @@
 #include "nm-dbus-manager.h"
 #include "nm-vpn-manager.h"
 #include "nm-modem-manager.h"
+#include "nm-modem.h"
 #include "nm-device-bt.h"
 #include "nm-device-interface.h"
 #include "nm-device-private.h"
@@ -123,6 +124,15 @@ static const char *internal_activate_device (NMManager *manager,
                                              gboolean user_requested,
                                              gboolean assumed,
                                              GError **error);
+
+static NMDevice *
+find_device_by_iface (NMManager *self, const gchar *iface);
+
+static GSList *
+remove_one_device (NMManager *manager,
+                   GSList *list,
+                   NMDevice *device,
+                   gboolean quitting);
 
 #define SSD_POKE_INTERVAL 120
 #define ORIGDEV_TAG "originating-device"
@@ -281,8 +291,13 @@ modem_added (NMModemManager *modem_manager,
 			 NMDevice *modem,
 			 gpointer user_data)
 {
+	NMManagerPrivate *priv;
 	NMDeviceType type;
+	NMDevice *replace_device;
 	const char *type_name;
+	const char *ip_iface;
+
+	priv = NM_MANAGER_GET_PRIVATE (user_data);
 
 	type = nm_device_get_device_type (NM_DEVICE (modem));
 	if (type == NM_DEVICE_TYPE_GSM)
@@ -291,6 +306,13 @@ modem_added (NMModemManager *modem_manager,
 		type_name = "CDMA modem";
 	else
 		type_name = "Unknown modem";
+
+	ip_iface = nm_device_get_ip_iface (modem);
+
+	replace_device = find_device_by_iface (NM_MANAGER (user_data), ip_iface);
+	if (replace_device) {
+		priv->devices = remove_one_device (NM_MANAGER (user_data), priv->devices, replace_device, FALSE);
+	}
 
 	add_device (NM_MANAGER (user_data), NM_DEVICE (g_object_ref (modem)));
 }
@@ -1176,6 +1198,14 @@ add_device (NMManager *self, NMDevice *device)
 
 	priv->devices = g_slist_append (priv->devices, device);
 
+	iface = nm_device_get_ip_iface (device);
+	g_assert (iface);
+
+	if (!NM_IS_MODEM(device) && nm_modem_manager_has_modem_for_iface (priv->modem_manager, iface)) {
+		g_object_unref (device);
+		return;
+	}
+
 	g_signal_connect (device, "state-changed",
 					  G_CALLBACK (manager_device_state_changed),
 					  self);
@@ -1194,8 +1224,6 @@ add_device (NMManager *self, NMDevice *device)
 
 	type_desc = nm_device_get_type_desc (device);
 	g_assert (type_desc);
-	iface = nm_device_get_iface (device);
-	g_assert (iface);
 	driver = nm_device_get_driver (device);
 	if (!driver)
 		driver = "unknown";
@@ -1433,6 +1461,20 @@ bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
 			break;
 		}
 	}
+}
+
+static NMDevice *
+find_device_by_iface (NMManager *self, const gchar *iface)
+{
+	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
+	GSList *iter;
+	for (iter = priv->devices; iter; iter = g_slist_next (iter)) {
+		NMDevice *device = NM_DEVICE (iter->data);
+		const gchar *d_iface = nm_device_get_ip_iface (device);
+		if (!strcmp (d_iface, iface))
+			return device;
+	}
+	return NULL;
 }
 
 static NMDevice *
