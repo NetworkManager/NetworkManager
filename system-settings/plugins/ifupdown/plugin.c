@@ -75,6 +75,7 @@ typedef struct {
 	GHashTable *iface_connections;
 	gchar* hostname;
 
+	GHashTable *well_known_interfaces;
 	GHashTable *well_known_ifaces;
 	gboolean unmanage_well_known;
 
@@ -247,7 +248,13 @@ udev_device_added (SCPluginIfupdown *self, GUdevDevice *device)
 	 * we want to either unmanage the device or lock it
 	 */
 	exported = (NMIfupdownConnection *) g_hash_table_lookup (priv->iface_connections, iface);
-	if (!exported)
+	if (!exported) {
+		PLUGIN_PRINT("SCPlugin-Ifupdown",
+			"device added (path: %s, iface: %s): no exported connection", path, iface);
+		return;
+	}
+
+	if (!g_hash_table_lookup (priv->well_known_interfaces, iface))
 		return;
 
 	g_hash_table_insert (priv->well_known_ifaces, g_strdup (iface), g_object_ref (device));
@@ -322,6 +329,9 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 	if(!priv->well_known_ifaces)
 		priv->well_known_ifaces = g_hash_table_new_full (g_str_hash, g_str_equal, g_free, g_object_unref);
 
+	if(!priv->well_known_interfaces)
+		priv->well_known_interfaces = g_hash_table_new (g_str_hash, g_str_equal);
+
 	PLUGIN_PRINT("SCPlugin-Ifupdown", "init!");
 
 	priv->client = g_udev_client_new (subsys);
@@ -365,8 +375,11 @@ SCPluginIfupdown_init (NMSystemConfigInterface *config)
 			exported = nm_ifupdown_connection_new (block);
 			if (exported) {
 				g_hash_table_insert (priv->iface_connections, block->name, exported);
+				g_hash_table_insert (priv->well_known_interfaces, block->name, "known");
 				g_signal_emit_by_name (self, NM_SYSTEM_CONFIG_INTERFACE_CONNECTION_ADDED, exported);
 			}
+		} else if (!strcmp ("mapping", block->type)) {
+			g_hash_table_insert (priv->well_known_interfaces, block->name, "known");
 		}
 		block = block->next;
 	}
@@ -619,6 +632,9 @@ GObject__dispose (GObject *object)
 
 	if (priv->well_known_ifaces)
 		g_hash_table_destroy(priv->well_known_ifaces);
+
+	if (priv->well_known_interfaces)
+		g_hash_table_destroy(priv->well_known_interfaces);
 
 	if (priv->client)
 		g_object_unref (priv->client);
