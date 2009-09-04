@@ -214,7 +214,7 @@ bind_device_to_connection (SCPluginIfupdown *self,
 
 	s_wired = nm_connection_get_setting (NM_CONNECTION (exported), NM_TYPE_SETTING_WIRED);
 	s_wifi = nm_connection_get_setting (NM_CONNECTION (exported), NM_TYPE_SETTING_WIRELESS);
-	if (s_wifi) {
+	if (s_wired) {
 		PLUGIN_PRINT ("SCPluginIfupdown", "locking wired connection setting");
 		g_object_set (s_wired, NM_SETTING_WIRED_MAC_ADDRESS, mac_address, NULL);
 	} else if (s_wifi) {
@@ -252,10 +252,10 @@ udev_device_added (SCPluginIfupdown *self, GUdevDevice *device)
 
 	g_hash_table_insert (priv->well_known_ifaces, g_strdup (iface), g_object_ref (device));
 
+	bind_device_to_connection (self, device, exported);
+
 	if (ALWAYS_UNMANAGE || priv->unmanage_well_known)
 		g_signal_emit_by_name (G_OBJECT (self), NM_SYSTEM_CONFIG_INTERFACE_UNMANAGED_SPECS_CHANGED);
-	else
-		bind_device_to_connection (self, device, exported);
 }
 
 static void
