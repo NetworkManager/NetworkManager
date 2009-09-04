@@ -19,7 +19,7 @@
  * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
  * Boston, MA 02110-1301 USA.
  *
- * (C) Copyright 2007 - 2008 Red Hat, Inc.
+ * (C) Copyright 2007 - 2009 Red Hat, Inc.
  * (C) Copyright 2007 - 2008 Novell, Inc.
  */
 
@@ -31,11 +31,17 @@
 G_BEGIN_DECLS
 
 typedef enum {
-	NM_SETTING_802_1X_CK_TYPE_UNKNOWN = 0,
-	NM_SETTING_802_1X_CK_TYPE_X509,
-	NM_SETTING_802_1X_CK_TYPE_RAW_KEY,
-	NM_SETTING_802_1X_CK_TYPE_PKCS12
-} NMSetting8021xCKType;
+	NM_SETTING_802_1X_CK_FORMAT_UNKNOWN = 0,
+	NM_SETTING_802_1X_CK_FORMAT_X509,
+	NM_SETTING_802_1X_CK_FORMAT_RAW_KEY,
+	NM_SETTING_802_1X_CK_FORMAT_PKCS12
+} NMSetting8021xCKFormat;
+
+typedef enum {
+	NM_SETTING_802_1X_CK_SCHEME_UNKNOWN = 0,
+	NM_SETTING_802_1X_CK_SCHEME_BLOB,
+	NM_SETTING_802_1X_CK_SCHEME_PATH
+} NMSetting8021xCKScheme;
 
 #define NM_TYPE_SETTING_802_1X            (nm_setting_802_1x_get_type ())
 #define NM_SETTING_802_1X(obj)            (G_TYPE_CHECK_INSTANCE_CAST ((obj), NM_TYPE_SETTING_802_1X, NMSetting8021x))
@@ -83,6 +89,30 @@ GQuark nm_setting_802_1x_error_quark (void);
 #define NM_SETTING_802_1X_PSK "psk"
 #define NM_SETTING_802_1X_SYSTEM_CA_CERTS "system-ca-certs"
 
+/* PRIVATE KEY NOTE: when setting PKCS#12 private keys directly via properties
+ * using the "blob" scheme, the data must be passed in PKCS#12 format.  In this
+ * case, the private key password must also be passed to NetworkManager, and the
+ * appropriate "client-cert" (or "phase2-client-cert") property of the
+ * NMSetting8021x object must also contain the exact same PKCS#12 data that the
+ * private key will when NetworkManager requests secrets.  This is because the
+ * PKCS#12 file contains both the private key and client certificate, so both
+ * properties need to be set to the same thing.  When using the "path" scheme,
+ * just set both the private-key and client-cert properties to the same path,
+ * and set the private-key password correctly.
+ *
+ * When setting OpenSSL-derived "traditional" format (ie S/MIME style, not
+ * PKCS#8) RSA and DSA keys directly via properties with the "blob" scheme, they
+ * must passed to NetworkManager completely decrypted because the OpenSSL
+ * "traditional" format is non-standard and is not complete enough for all
+ * crypto libraries to use.  Thus, for OpenSSL "traditional" format keys, the
+ * private key password is not passed to NetworkManager (because the data is
+ * already decrypted by the client), and the appropriate "client-cert" (or
+ * "phase2-client-cert") property of the NMSetting8021x object must be a valid
+ * client certificate.  When using the "path" scheme, just set the private-key
+ * and client-cert properties to the paths to their respective objects, and
+ * set the private-key password correctly.
+ */
+
 typedef struct {
 	NMSetting parent;
 } NMSetting8021x;
@@ -105,18 +135,27 @@ const char *      nm_setting_802_1x_get_identity                     (NMSetting8
 
 const char *      nm_setting_802_1x_get_anonymous_identity           (NMSetting8021x *setting);
 
-const GByteArray *nm_setting_802_1x_get_ca_cert                      (NMSetting8021x *setting);
+gboolean          nm_setting_802_1x_get_system_ca_certs              (NMSetting8021x *setting);
 const char *      nm_setting_802_1x_get_ca_path                      (NMSetting8021x *setting);
-gboolean          nm_setting_802_1x_set_ca_cert_from_file            (NMSetting8021x *setting,
-                                                                      const char *filename,
-                                                                      NMSetting8021xCKType *out_ck_type,
-                                                                      GError **err);
+const char *      nm_setting_802_1x_get_phase2_ca_path               (NMSetting8021x *setting);
 
-const GByteArray *nm_setting_802_1x_get_client_cert                  (NMSetting8021x *setting);
-gboolean          nm_setting_802_1x_set_client_cert_from_file        (NMSetting8021x *setting,
+NMSetting8021xCKScheme nm_setting_802_1x_get_ca_cert_scheme          (NMSetting8021x *setting);
+const GByteArray *     nm_setting_802_1x_get_ca_cert_blob            (NMSetting8021x *setting);
+const char *           nm_setting_802_1x_get_ca_cert_path            (NMSetting8021x *setting);
+gboolean               nm_setting_802_1x_set_ca_cert                 (NMSetting8021x *setting,
                                                                       const char *filename,
-                                                                      NMSetting8021xCKType *out_ck_type,
-                                                                      GError **err);
+                                                                      NMSetting8021xCKScheme scheme,
+                                                                      NMSetting8021xCKFormat *out_format,
+                                                                      GError **error);
+
+NMSetting8021xCKScheme nm_setting_802_1x_get_client_cert_scheme      (NMSetting8021x *setting);
+const GByteArray *     nm_setting_802_1x_get_client_cert_blob        (NMSetting8021x *setting);
+const char *           nm_setting_802_1x_get_client_cert_path        (NMSetting8021x *setting);
+gboolean               nm_setting_802_1x_set_client_cert             (NMSetting8021x *setting,
+                                                                      const char *filename,
+                                                                      NMSetting8021xCKScheme scheme,
+                                                                      NMSetting8021xCKFormat *out_format,
+                                                                      GError **error);
 
 const char *      nm_setting_802_1x_get_phase1_peapver               (NMSetting8021x *setting);
 
@@ -128,19 +167,23 @@ const char *      nm_setting_802_1x_get_phase2_auth                  (NMSetting8
 
 const char *      nm_setting_802_1x_get_phase2_autheap               (NMSetting8021x *setting);
 
-const GByteArray *nm_setting_802_1x_get_phase2_ca_cert               (NMSetting8021x *setting);
-const char *      nm_setting_802_1x_get_phase2_ca_path               (NMSetting8021x *setting);
-gboolean          nm_setting_802_1x_set_phase2_ca_cert_from_file     (NMSetting8021x *setting,
+NMSetting8021xCKScheme nm_setting_802_1x_get_phase2_ca_cert_scheme   (NMSetting8021x *setting);
+const GByteArray *     nm_setting_802_1x_get_phase2_ca_cert_blob     (NMSetting8021x *setting);
+const char *           nm_setting_802_1x_get_phase2_ca_cert_path     (NMSetting8021x *setting);
+gboolean               nm_setting_802_1x_set_phase2_ca_cert          (NMSetting8021x *setting,
                                                                       const char *filename,
-                                                                      NMSetting8021xCKType *out_ck_type,
-                                                                      GError **err);
-gboolean          nm_setting_802_1x_get_system_ca_certs              (NMSetting8021x *setting);
+                                                                      NMSetting8021xCKScheme scheme,
+                                                                      NMSetting8021xCKFormat *out_format,
+                                                                      GError **error);
 
-const GByteArray *nm_setting_802_1x_get_phase2_client_cert           (NMSetting8021x *setting);
-gboolean          nm_setting_802_1x_set_phase2_client_cert_from_file (NMSetting8021x *setting,
-                                                                      const char *filename,
-                                                                      NMSetting8021xCKType *out_ck_type,
-                                                                      GError **err);
+NMSetting8021xCKScheme nm_setting_802_1x_get_phase2_client_cert_scheme   (NMSetting8021x *setting);
+const GByteArray *     nm_setting_802_1x_get_phase2_client_cert_blob     (NMSetting8021x *setting);
+const char *           nm_setting_802_1x_get_phase2_client_cert_path     (NMSetting8021x *setting);
+gboolean               nm_setting_802_1x_set_phase2_client_cert          (NMSetting8021x *setting,
+                                                                          const char *filename,
+                                                                          NMSetting8021xCKScheme scheme,
+                                                                          NMSetting8021xCKFormat *out_format,
+                                                                          GError **error);
 
 const char *      nm_setting_802_1x_get_password                     (NMSetting8021x *setting);
 
@@ -148,39 +191,31 @@ const char *      nm_setting_802_1x_get_pin                          (NMSetting8
 
 const char *      nm_setting_802_1x_get_psk                          (NMSetting8021x *setting);
 
-/* PRIVATE KEY NOTE: when PKCS#12 private keys are used, the PKCS#12 data must
- * be passed to NetworkManager as PKCS#12 (ie, shrouded).  In this case, the
- * private key password must also be passed to NetworkManager, and the
- * appropriate "client-cert" (or "phase2-client-cert") property of the
- * NMSetting8021x object must also contain the exact same PKCS#12 data that the
- * private key will when NetworkManager requests secrets.
- *
- * When OpenSSL-derived "traditional" format (ie S/MIME style, not PKCS#8) RSA
- * and DSA keys are used, they must passed to NetworkManager completely
- * decrypted because the OpenSSL "traditional" format is non-standard and is not
- * complete enough for all crypto libraries to use.  Thus, for OpenSSL
- * "traditional" format keys, the private key password is not passed to
- * NetworkManager, and the appropriate "client-cert" (or "phase2-client-cert")
- * property of the NMSetting8021x object must be a valid client certificate.
- */
+NMSetting8021xCKScheme nm_setting_802_1x_get_private_key_scheme          (NMSetting8021x *setting);
+const GByteArray *     nm_setting_802_1x_get_private_key_blob            (NMSetting8021x *setting);
+const char *           nm_setting_802_1x_get_private_key_path            (NMSetting8021x *setting);
+gboolean               nm_setting_802_1x_set_private_key                 (NMSetting8021x *setting,
+                                                                          const char *filename,
+                                                                          const char *password,
+                                                                          NMSetting8021xCKScheme scheme,
+                                                                          NMSetting8021xCKFormat *out_format,
+                                                                          GError **error);
+const char *           nm_setting_802_1x_get_private_key_password        (NMSetting8021x *setting);
 
-const GByteArray *nm_setting_802_1x_get_private_key                  (NMSetting8021x *setting);
-const char *      nm_setting_802_1x_get_private_key_password         (NMSetting8021x *setting);
-gboolean          nm_setting_802_1x_set_private_key_from_file        (NMSetting8021x *setting,
-                                                                      const char *filename,
-                                                                      const char *password,
-                                                                      NMSetting8021xCKType *out_ck_type,
-                                                                      GError **err);
-NMSetting8021xCKType nm_setting_802_1x_get_private_key_type          (NMSetting8021x *setting);
+NMSetting8021xCKFormat nm_setting_802_1x_get_private_key_format          (NMSetting8021x *setting);
 
-const GByteArray *nm_setting_802_1x_get_phase2_private_key           (NMSetting8021x *setting);
-const char *      nm_setting_802_1x_get_phase2_private_key_password  (NMSetting8021x *setting);
-gboolean          nm_setting_802_1x_set_phase2_private_key_from_file (NMSetting8021x *setting,
-                                                                      const char *filename,
-                                                                      const char *password,
-                                                                      NMSetting8021xCKType *out_ck_type,
-                                                                      GError **err);
-NMSetting8021xCKType nm_setting_802_1x_get_phase2_private_key_type   (NMSetting8021x *setting);
+NMSetting8021xCKScheme nm_setting_802_1x_get_phase2_private_key_scheme   (NMSetting8021x *setting);
+const GByteArray *     nm_setting_802_1x_get_phase2_private_key_blob     (NMSetting8021x *setting);
+const char *           nm_setting_802_1x_get_phase2_private_key_path     (NMSetting8021x *setting);
+gboolean               nm_setting_802_1x_set_phase2_private_key          (NMSetting8021x *setting,
+                                                                          const char *filename,
+                                                                          const char *password,
+                                                                          NMSetting8021xCKScheme scheme,
+                                                                          NMSetting8021xCKFormat *out_format,
+                                                                          GError **error);
+const char *           nm_setting_802_1x_get_phase2_private_key_password (NMSetting8021x *setting);
+
+NMSetting8021xCKFormat nm_setting_802_1x_get_phase2_private_key_format   (NMSetting8021x *setting);
 
 G_END_DECLS
 

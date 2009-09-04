@@ -69,8 +69,9 @@ verify_cert_or_key (CertKeyType ck_type,
 	NMSetting8021x *s_8021x;
 	GError *error = NULL;
 	gboolean success = FALSE;
-	const GByteArray *expected = NULL, *setting = NULL;
+	const char *expected = NULL, *setting = NULL;
 	gboolean phase2 = FALSE;
+	NMSetting8021xCKScheme scheme = NM_SETTING_802_1X_CK_SCHEME_UNKNOWN;
 
 	if (strstr (setting_key, "phase2"))
 		phase2 = TRUE;
@@ -83,19 +84,19 @@ verify_cert_or_key (CertKeyType ck_type,
 
 	if (ck_type == CK_CA_CERT) {
 		if (phase2)
-			success = nm_setting_802_1x_set_phase2_ca_cert_from_file (s_8021x, file, NULL, &error);
+			success = nm_setting_802_1x_set_phase2_ca_cert (s_8021x, file, NM_SETTING_802_1X_CK_SCHEME_PATH, NULL, &error);
 		else
-			success = nm_setting_802_1x_set_ca_cert_from_file (s_8021x, file, NULL, &error);
+			success = nm_setting_802_1x_set_ca_cert (s_8021x, file, NM_SETTING_802_1X_CK_SCHEME_PATH, NULL, &error);
 	} else if (ck_type == CK_CLIENT_CERT) {
 		if (phase2)
-			success = nm_setting_802_1x_set_phase2_client_cert_from_file (s_8021x, file, NULL, &error);
+			success = nm_setting_802_1x_set_phase2_client_cert (s_8021x, file, NM_SETTING_802_1X_CK_SCHEME_PATH, NULL, &error);
 		else
-			success = nm_setting_802_1x_set_client_cert_from_file (s_8021x, file, NULL, &error);
+			success = nm_setting_802_1x_set_client_cert (s_8021x, file, NM_SETTING_802_1X_CK_SCHEME_PATH, NULL, &error);
 	} else if (ck_type == CK_PRIV_KEY) {
 		if (phase2)
-			success = nm_setting_802_1x_set_phase2_private_key_from_file (s_8021x, file, privkey_password, NULL, &error);
+			success = nm_setting_802_1x_set_phase2_private_key (s_8021x, file, privkey_password, NM_SETTING_802_1X_CK_SCHEME_PATH, NULL, &error);
 		else
-			success = nm_setting_802_1x_set_private_key_from_file (s_8021x, file, privkey_password, NULL, &error);
+			success = nm_setting_802_1x_set_private_key (s_8021x, file, privkey_password, NM_SETTING_802_1X_CK_SCHEME_PATH, NULL, &error);
 	}
 	ASSERT (success == TRUE,
 	        test_name, "failed to verify %s: could not load item for %s / %s: %s",
@@ -103,19 +104,39 @@ verify_cert_or_key (CertKeyType ck_type,
 
 	if (ck_type == CK_CA_CERT) {
 		if (phase2)
-			expected = nm_setting_802_1x_get_phase2_ca_cert (s_8021x);
+			scheme = nm_setting_802_1x_get_phase2_ca_cert_scheme (s_8021x);
 		else
-			expected = nm_setting_802_1x_get_ca_cert (s_8021x);
+			scheme = nm_setting_802_1x_get_ca_cert_scheme (s_8021x);
 	} else if (ck_type == CK_CLIENT_CERT) {
 		if (phase2)
-			expected = nm_setting_802_1x_get_phase2_client_cert (s_8021x);
+			scheme = nm_setting_802_1x_get_phase2_client_cert_scheme (s_8021x);
 		else
-			expected = nm_setting_802_1x_get_client_cert (s_8021x);
+			scheme = nm_setting_802_1x_get_client_cert_scheme (s_8021x);
 	} else if (ck_type == CK_PRIV_KEY) {
 		if (phase2)
-			expected = nm_setting_802_1x_get_phase2_private_key (s_8021x);
+			scheme = nm_setting_802_1x_get_phase2_private_key_scheme (s_8021x);
 		else
-			expected = nm_setting_802_1x_get_private_key (s_8021x);
+			scheme = nm_setting_802_1x_get_private_key_scheme (s_8021x);
+	}
+	ASSERT (scheme == NM_SETTING_802_1X_CK_SCHEME_PATH,
+	        test_name, "failed to verify %s: unexpected cert/key scheme for %s / %s",
+	        ifcfg, NM_SETTING_802_1X_SETTING_NAME, setting_key);
+
+	if (ck_type == CK_CA_CERT) {
+		if (phase2)
+			expected = nm_setting_802_1x_get_phase2_ca_cert_path (s_8021x);
+		else
+			expected = nm_setting_802_1x_get_ca_cert_path (s_8021x);
+	} else if (ck_type == CK_CLIENT_CERT) {
+		if (phase2)
+			expected = nm_setting_802_1x_get_phase2_client_cert_path (s_8021x);
+		else
+			expected = nm_setting_802_1x_get_client_cert_path (s_8021x);
+	} else if (ck_type == CK_PRIV_KEY) {
+		if (phase2)
+			expected = nm_setting_802_1x_get_phase2_private_key_path (s_8021x);
+		else
+			expected = nm_setting_802_1x_get_private_key_path (s_8021x);
 	}
 	ASSERT (expected != NULL,
 	        test_name, "failed to verify %s: failed to get read item for %s / %s",
@@ -123,29 +144,29 @@ verify_cert_or_key (CertKeyType ck_type,
 
 	if (ck_type == CK_CA_CERT) {
 		if (phase2)
-			setting = nm_setting_802_1x_get_phase2_ca_cert (s_compare);
+			setting = nm_setting_802_1x_get_phase2_ca_cert_path (s_compare);
 		else
-			setting = nm_setting_802_1x_get_ca_cert (s_compare);
+			setting = nm_setting_802_1x_get_ca_cert_path (s_compare);
 	} else if (ck_type == CK_CLIENT_CERT) {
 		if (phase2)
-			setting = nm_setting_802_1x_get_phase2_client_cert (s_compare);
+			setting = nm_setting_802_1x_get_phase2_client_cert_path (s_compare);
 		else
-			setting = nm_setting_802_1x_get_client_cert (s_compare);
+			setting = nm_setting_802_1x_get_client_cert_path (s_compare);
 	} else if (ck_type == CK_PRIV_KEY) {
 		if (phase2)
-			setting = nm_setting_802_1x_get_phase2_private_key (s_compare);
+			setting = nm_setting_802_1x_get_phase2_private_key_path (s_compare);
 		else
-			setting = nm_setting_802_1x_get_private_key (s_compare);
+			setting = nm_setting_802_1x_get_private_key_path (s_compare);
 	}
 	ASSERT (setting != NULL,
 	        test_name, "failed to verify %s: missing %s / %s key",
 	        ifcfg, NM_SETTING_802_1X_SETTING_NAME, setting_key);
 
-	ASSERT (setting->len == expected->len,
+	ASSERT (strlen (setting) == strlen (expected),
 	        test_name, "failed to verify %s: unexpected %s / %s certificate length",
 	        test_name, NM_SETTING_802_1X_SETTING_NAME, setting_key);
 
-	ASSERT (memcmp (setting->data, expected->data, setting->len) == 0,
+	ASSERT (strcmp (setting, expected) == 0,
 	        test_name, "failed to verify %s: %s / %s key certificate mismatch",
 	        ifcfg, NM_SETTING_802_1X_SETTING_NAME, setting_key);
 
@@ -1040,8 +1061,8 @@ test_read_wired_8021x_peap_mschapv2 (void)
 	const char *expected_identity = "David Smith";
 	const char *expected_password = "foobar baz";
 	gboolean success = FALSE;
-	const GByteArray *expected_ca_cert;
-	const GByteArray *read_ca_cert;
+	const char *expected_ca_cert_path;
+	const char *read_ca_cert_path;
 
 	connection = connection_from_file (TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
 	                                   NULL,
@@ -1166,40 +1187,34 @@ test_read_wired_8021x_peap_mschapv2 (void)
 	ASSERT (tmp_8021x != NULL,
 	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: could not create temp 802.1x setting",
 	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_CA_CERT);
+	        NM_SETTING_802_1X_SETTING_NAME);
 
-	success = nm_setting_802_1x_set_ca_cert_from_file (tmp_8021x,
-	                                                   TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2_CA_CERT,
-	                                                   NULL,
-	                                                   &error);
+	success = nm_setting_802_1x_set_ca_cert (tmp_8021x,
+	                                         TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2_CA_CERT,
+	                                         NM_SETTING_802_1X_CK_SCHEME_PATH,
+	                                         NULL,
+	                                         &error);
 	ASSERT (success == TRUE,
 	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: could not load CA certificate",
 	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
 	        NM_SETTING_802_1X_SETTING_NAME,
 	        NM_SETTING_802_1X_CA_CERT);
-	expected_ca_cert = nm_setting_802_1x_get_ca_cert (tmp_8021x);
-	ASSERT (expected_ca_cert != NULL,
+	expected_ca_cert_path = nm_setting_802_1x_get_ca_cert_path (tmp_8021x);
+	ASSERT (expected_ca_cert_path != NULL,
 	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: failed to get CA certificate",
 	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
 	        NM_SETTING_802_1X_SETTING_NAME,
 	        NM_SETTING_802_1X_CA_CERT);
 
-	read_ca_cert = nm_setting_802_1x_get_ca_cert (s_8021x);
-	ASSERT (read_ca_cert != NULL,
+	read_ca_cert_path = nm_setting_802_1x_get_ca_cert_path (s_8021x);
+	ASSERT (read_ca_cert_path != NULL,
 	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: missing %s / %s key",
 	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
 	        NM_SETTING_802_1X_SETTING_NAME,
 	        NM_SETTING_802_1X_CA_CERT);
 
-	ASSERT (read_ca_cert->len == expected_ca_cert->len,
-	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s certificate length",
-	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
-	        NM_SETTING_802_1X_SETTING_NAME,
-	        NM_SETTING_802_1X_CA_CERT);
-
-	ASSERT (memcmp (read_ca_cert->data, expected_ca_cert->data, read_ca_cert->len) == 0,
-	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: %s / %s key certificate mismatch",
+	ASSERT (strcmp (read_ca_cert_path, expected_ca_cert_path) == 0,
+	        "wired-8021x-peap-mschapv2-verify-8021x", "failed to verify %s: unexpected %s / %s certificate path",
 	        TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2,
 	        NM_SETTING_802_1X_SETTING_NAME,
 	        NM_SETTING_802_1X_CA_CERT);
@@ -2878,7 +2893,7 @@ test_read_wifi_wpa_eap_tls (void)
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
-	const char *tmp;
+	const char *tmp, *password;
 	const char *expected_identity = "Bill Smith";
 	const char *expected_privkey_password = "test1";
 
@@ -2980,7 +2995,14 @@ test_read_wifi_wpa_eap_tls (void)
 	                    NM_SETTING_802_1X_CLIENT_CERT);
 
 	/* Private Key Password */
-	ASSERT (nm_setting_802_1x_get_private_key_password (s_8021x) == NULL,
+	password = nm_setting_802_1x_get_private_key_password (s_8021x);
+	ASSERT (password != NULL,
+	        "wifi-wpa-eap-tls-verify-8021x", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PRIVATE_KEY_PASSWORD);
+
+	ASSERT (strcmp (password, expected_privkey_password) == 0,
 	        "wifi-wpa-eap-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key",
 	        TEST_IFCFG_WIFI_WPA_EAP_TLS,
 	        NM_SETTING_802_1X_SETTING_NAME,
@@ -3013,7 +3035,7 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	char *keyfile = NULL;
 	gboolean ignore_error = FALSE;
 	GError *error = NULL;
-	const char *tmp;
+	const char *tmp, *password;
 	const char *expected_identity = "Chuck Shumer";
 	const char *expected_privkey_password = "test1";
 
@@ -3124,7 +3146,14 @@ test_read_wifi_wpa_eap_ttls_tls (void)
 	                    NM_SETTING_802_1X_PHASE2_CLIENT_CERT);
 
 	/* Inner Private Key Password */
-	ASSERT (nm_setting_802_1x_get_phase2_private_key_password (s_8021x) == NULL,
+	password = nm_setting_802_1x_get_phase2_private_key_password (s_8021x);
+	ASSERT (password != NULL,
+	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: missing %s / %s key",
+	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
+	        NM_SETTING_802_1X_SETTING_NAME,
+	        NM_SETTING_802_1X_PHASE2_PRIVATE_KEY_PASSWORD);
+
+	ASSERT (strcmp (password, expected_privkey_password) == 0,
 	        "wifi-wpa-eap-ttls-tls-verify-8021x", "failed to verify %s: unexpected %s / %s key",
 	        TEST_IFCFG_WIFI_WPA_EAP_TTLS_TLS,
 	        NM_SETTING_802_1X_SETTING_NAME,
@@ -3619,10 +3648,11 @@ test_write_wired_dhcp_8021x_peap_mschapv2 (void)
 
 	nm_setting_802_1x_add_eap_method (s_8021x, "peap");
 
-	success = nm_setting_802_1x_set_ca_cert_from_file (s_8021x, 
-	                                                   TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2_CA_CERT,
-	                                                   NULL,
-	                                                   &error);
+	success = nm_setting_802_1x_set_ca_cert (s_8021x, 
+	                                         TEST_IFCFG_WIRED_8021x_PEAP_MSCHAPV2_CA_CERT,
+	                                         NM_SETTING_802_1X_CK_SCHEME_PATH,
+	                                         NULL,
+	                                         &error);
 	ASSERT (success == TRUE,
 	        "wired-dhcp-8021x-peap-mschapv2write", "failed to verify connection: %s",
 	        (error && error->message) ? error->message : "(unknown)");
@@ -4548,27 +4578,30 @@ test_write_wifi_wpa_eap_tls (void)
 
 	nm_setting_802_1x_add_eap_method (s_8021x, "tls");
 
-	success = nm_setting_802_1x_set_ca_cert_from_file (s_8021x,
-	                                                   TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT,
-	                                                   NULL,
-	                                                   &error);
+	success = nm_setting_802_1x_set_ca_cert (s_8021x,
+	                                         TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT,
+	                                         NM_SETTING_802_1X_CK_SCHEME_PATH,
+	                                         NULL,
+	                                         &error);
 	ASSERT (success == TRUE,
 	        "wifi-wpa-eap-tls-write", "failed to set CA certificate '%s': %s",
 	        TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT, error->message);
 
-	success = nm_setting_802_1x_set_client_cert_from_file (s_8021x,
-	                                                       TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT,
-	                                                       NULL,
-	                                                       &error);
+	success = nm_setting_802_1x_set_client_cert (s_8021x,
+	                                             TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT,
+	                                             NM_SETTING_802_1X_CK_SCHEME_PATH,
+	                                             NULL,
+	                                             &error);
 	ASSERT (success == TRUE,
 	        "wifi-wpa-eap-tls-write", "failed to set client certificate '%s': %s",
 	        TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT, error->message);
 
-	success = nm_setting_802_1x_set_private_key_from_file (s_8021x,
-	                                                       TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY,
-	                                                       "test1",
-	                                                       NULL,
-	                                                       &error);
+	success = nm_setting_802_1x_set_private_key (s_8021x,
+	                                             TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY,
+	                                             "test1",
+	                                             NM_SETTING_802_1X_CK_SCHEME_PATH,
+	                                             NULL,
+	                                             &error);
 	ASSERT (success == TRUE,
 	        "wifi-wpa-eap-tls-write", "failed to set private key '%s': %s",
 	        TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY, error->message);
@@ -4712,10 +4745,11 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 	              NM_SETTING_802_1X_PHASE2_AUTHEAP, "tls",
 	              NULL);
 
-	success = nm_setting_802_1x_set_ca_cert_from_file (s_8021x,
-	                                                   TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT,
-	                                                   NULL,
-	                                                   &error);
+	success = nm_setting_802_1x_set_ca_cert (s_8021x,
+	                                         TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT,
+	                                         NM_SETTING_802_1X_CK_SCHEME_PATH,
+	                                         NULL,
+	                                         &error);
 	ASSERT (success == TRUE,
 	        "wifi-wpa-eap-ttls-tls-write", "failed to set CA certificate '%s': %s",
 	        TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT, error->message);
@@ -4723,29 +4757,32 @@ test_write_wifi_wpa_eap_ttls_tls (void)
 	/* Phase 2 TLS stuff */
 
 	/* phase2 CA cert */
-	success = nm_setting_802_1x_set_phase2_ca_cert_from_file (s_8021x,
-	                                                          TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT,
-	                                                          NULL,
-	                                                          &error);
+	success = nm_setting_802_1x_set_phase2_ca_cert (s_8021x,
+	                                                TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT,
+	                                                NM_SETTING_802_1X_CK_SCHEME_PATH,
+	                                                NULL,
+	                                                &error);
 	ASSERT (success == TRUE,
 	        "wifi-wpa-eap-ttls-tls-write", "failed to set inner CA certificate '%s': %s",
 	        TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT, error->message);
 
 	/* phase2 client cert */
-	success = nm_setting_802_1x_set_phase2_client_cert_from_file (s_8021x,
-	                                                              TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT,
-	                                                               NULL,
-	                                                               &error);
+	success = nm_setting_802_1x_set_phase2_client_cert (s_8021x,
+	                                                    TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT,
+	                                                    NM_SETTING_802_1X_CK_SCHEME_PATH,
+	                                                    NULL,
+	                                                    &error);
 	ASSERT (success == TRUE,
 	        "wifi-wpa-eap-ttls-tls-write", "failed to set inner client certificate '%s': %s",
 	        TEST_IFCFG_WIFI_WPA_EAP_TLS_CLIENT_CERT, error->message);
 
 	/* phase2 private key */
-	success = nm_setting_802_1x_set_phase2_private_key_from_file (s_8021x,
-	                                                              TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY,
-	                                                              "test1",
-	                                                              NULL,
-	                                                              &error);
+	success = nm_setting_802_1x_set_phase2_private_key (s_8021x,
+	                                                    TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY,
+	                                                    "test1",
+	                                                    NM_SETTING_802_1X_CK_SCHEME_PATH,
+	                                                    NULL,
+	                                                    &error);
 	ASSERT (success == TRUE,
 	        "wifi-wpa-eap-ttls-tls-write", "failed to set private key '%s': %s",
 	        TEST_IFCFG_WIFI_WPA_EAP_TLS_PRIVATE_KEY, error->message);
@@ -4893,10 +4930,11 @@ test_write_wifi_wpa_eap_ttls_mschapv2 (void)
 	              NM_SETTING_802_1X_PHASE2_AUTHEAP, "mschapv2",
 	              NULL);
 
-	success = nm_setting_802_1x_set_ca_cert_from_file (s_8021x,
-	                                                   TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT,
-	                                                   NULL,
-	                                                   &error);
+	success = nm_setting_802_1x_set_ca_cert (s_8021x,
+	                                         TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT,
+	                                         NM_SETTING_802_1X_CK_SCHEME_PATH,
+	                                         NULL,
+	                                         &error);
 	ASSERT (success == TRUE,
 	        "wifi-wpa-eap-ttls-mschapv2-write", "failed to set CA certificate '%s': %s",
 	        TEST_IFCFG_WIFI_WPA_EAP_TLS_CA_CERT, error->message);

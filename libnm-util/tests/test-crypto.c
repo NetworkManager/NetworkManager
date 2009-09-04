@@ -205,7 +205,7 @@ test_is_pkcs12 (const char *path, gboolean expect_fail, const char *desc)
 {
 	gboolean is_pkcs12;
 
-	is_pkcs12 = crypto_is_pkcs12_file (path);
+	is_pkcs12 = crypto_is_pkcs12_file (path, NULL);
 	if (expect_fail) {
 		ASSERT (is_pkcs12 == FALSE, desc,
 		        "unexpected success reading non-PKCS#12 file '%s'",

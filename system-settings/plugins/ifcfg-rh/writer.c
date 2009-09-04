@@ -144,151 +144,187 @@ out:
 	return success;
 }
 
+typedef NMSetting8021xCKScheme (*SchemeFunc)(NMSetting8021x *setting);
+typedef const char *           (*PathFunc)  (NMSetting8021x *setting);
+typedef const GByteArray *     (*BlobFunc)  (NMSetting8021x *setting);
+
 typedef struct ObjectType {
 	const char *setting_key;
+	SchemeFunc scheme_func;
+	PathFunc path_func;
+	BlobFunc blob_func;
 	const char *ifcfg_key;
-	const char *path_tag;
-	const char *hash_tag;
 	const char *suffix;
 } ObjectType;
 
 static const ObjectType ca_type = {
 	NM_SETTING_802_1X_CA_CERT,
+	nm_setting_802_1x_get_ca_cert_scheme,
+	nm_setting_802_1x_get_ca_cert_path,
+	nm_setting_802_1x_get_ca_cert_blob,
 	"IEEE_8021X_CA_CERT",
-	TAG_CA_CERT_PATH,
-	TAG_CA_CERT_HASH,
 	"ca-cert.der"
 };
 
 static const ObjectType phase2_ca_type = {
 	NM_SETTING_802_1X_PHASE2_CA_CERT,
+	nm_setting_802_1x_get_phase2_ca_cert_scheme,
+	nm_setting_802_1x_get_phase2_ca_cert_path,
+	nm_setting_802_1x_get_phase2_ca_cert_blob,
 	"IEEE_8021X_INNER_CA_CERT",
-	TAG_PHASE2_CA_CERT_PATH,
-	TAG_PHASE2_CA_CERT_HASH,
 	"inner-ca-cert.der"
 };
 
 static const ObjectType client_type = {
 	NM_SETTING_802_1X_CLIENT_CERT,
+	nm_setting_802_1x_get_client_cert_scheme,
+	nm_setting_802_1x_get_client_cert_path,
+	nm_setting_802_1x_get_client_cert_blob,
 	"IEEE_8021X_CLIENT_CERT",
-	TAG_CLIENT_CERT_PATH,
-	TAG_CLIENT_CERT_HASH,
 	"client-cert.der"
 };
 
 static const ObjectType phase2_client_type = {
 	NM_SETTING_802_1X_PHASE2_CLIENT_CERT,
+	nm_setting_802_1x_get_phase2_client_cert_scheme,
+	nm_setting_802_1x_get_phase2_client_cert_path,
+	nm_setting_802_1x_get_phase2_client_cert_blob,
 	"IEEE_8021X_INNER_CLIENT_CERT",
-	TAG_PHASE2_CLIENT_CERT_PATH,
-	TAG_PHASE2_CLIENT_CERT_HASH,
 	"inner-client-cert.der"
 };
 
 static const ObjectType pk_type = {
 	NM_SETTING_802_1X_PRIVATE_KEY,
+	nm_setting_802_1x_get_private_key_scheme,
+	nm_setting_802_1x_get_private_key_path,
+	nm_setting_802_1x_get_private_key_blob,
 	"IEEE_8021X_PRIVATE_KEY",
-	TAG_PRIVATE_KEY_PATH,
-	TAG_PRIVATE_KEY_HASH,
 	"private-key.pem"
 };
 
 static const ObjectType phase2_pk_type = {
 	NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
+	nm_setting_802_1x_get_phase2_private_key_scheme,
+	nm_setting_802_1x_get_phase2_private_key_path,
+	nm_setting_802_1x_get_phase2_private_key_blob,
 	"IEEE_8021X_INNER_PRIVATE_KEY",
-	TAG_PHASE2_PRIVATE_KEY_PATH,
-	TAG_PHASE2_PRIVATE_KEY_HASH,
 	"inner-private-key.pem"
 };
 
 static const ObjectType p12_type = {
 	NM_SETTING_802_1X_PRIVATE_KEY,
+	nm_setting_802_1x_get_private_key_scheme,
+	nm_setting_802_1x_get_private_key_path,
+	nm_setting_802_1x_get_private_key_blob,
 	"IEEE_8021X_PRIVATE_KEY",
-	TAG_PRIVATE_KEY_PATH,
-	TAG_PRIVATE_KEY_HASH,
 	"private-key.p12"
 };
 
 static const ObjectType phase2_p12_type = {
 	NM_SETTING_802_1X_PHASE2_PRIVATE_KEY,
+	nm_setting_802_1x_get_phase2_private_key_scheme,
+	nm_setting_802_1x_get_phase2_private_key_path,
+	nm_setting_802_1x_get_phase2_private_key_blob,
 	"IEEE_8021X_INNER_PRIVATE_KEY",
-	TAG_PHASE2_PRIVATE_KEY_PATH,
-	TAG_PHASE2_PRIVATE_KEY_HASH,
 	"inner-private-key.p12"
 };
 
 static gboolean
 write_object (NMSetting8021x *s_8021x,
               shvarFile *ifcfg,
-              const GByteArray *object,
+              const GByteArray *override_data,
               const ObjectType *objtype,
-              gboolean *wrote,
               GError **error)
 {
-	const char *orig_hash, *orig_file;
-	char *new_hash = NULL, *new_file = NULL;
-	gboolean success = FALSE;
-	GError *write_error = NULL;
+	NMSetting8021xCKScheme scheme;
+	const char *path = NULL;
+	const GByteArray *blob = NULL;
 
-	g_return_val_if_fail (objtype != NULL, FALSE);
 	g_return_val_if_fail (ifcfg != NULL, FALSE);
-	g_return_val_if_fail (wrote != NULL, FALSE);
+	g_return_val_if_fail (objtype != NULL, FALSE);
 
-	*wrote = FALSE;
+	if (override_data) {
+		/* if given explicit data to save, always use that instead of asking
+		 * the setting what to do.
+		 */
+		blob = override_data;
+	} else {
+		scheme = (*(objtype->scheme_func))(s_8021x);
+		switch (scheme) {
+		case NM_SETTING_802_1X_CK_SCHEME_BLOB:
+			blob = (*(objtype->blob_func))(s_8021x);
+			break;
+		case NM_SETTING_802_1X_CK_SCHEME_PATH:
+			path = (*(objtype->path_func))(s_8021x);
+			break;
+		default:
+			break;
+		}
+	}
 
-	if (!object) {
+	/* If certificate/private key was sent, the connection may no longer be
+	 * 802.1x and thus we clear out the paths and certs.
+	 */
+	if (!path && !blob) {
+		char *standard_file;
+		int ignored;
+
+		/* Since no cert/private key is now being used, delete any standard file
+		 * that was created for this connection, but leave other files alone.
+		 * Thus, for example,
+		 * /etc/sysconfig/network-scripts/ca-cert-Test_Write_Wifi_WPA_EAP-TLS.der
+		 * will be deleted, but /etc/pki/tls/cert.pem will not.
+		 */
+		standard_file = utils_cert_path (ifcfg->fileName, objtype->suffix);
+		if (g_file_test (standard_file, G_FILE_TEST_EXISTS))
+			ignored = unlink (standard_file);
+		g_free (standard_file);
+
 		svSetValue (ifcfg, objtype->ifcfg_key, NULL, FALSE);
 		return TRUE;
 	}
 
-	new_hash = utils_hash_byte_array (object);
-	if (!new_hash) {
-		g_set_error (error, ifcfg_plugin_error_quark (), 0,
-		             "Could not hash certificate/key data for %s / %s",
-		             NM_SETTING_802_1X_SETTING_NAME, objtype->setting_key);
-		return FALSE;
+	/* If the object path was specified, prefer that over any raw cert data that
+	 * may have been sent.
+	 */
+	if (path) {
+		svSetValue (ifcfg, objtype->ifcfg_key, path, FALSE);
+		return TRUE;
 	}
 
-	orig_hash = g_object_get_data (G_OBJECT (s_8021x), objtype->hash_tag);
-	orig_file = g_object_get_data (G_OBJECT (s_8021x), objtype->path_tag);
+	/* If it's raw certificate data, write the cert data out to the standard file */
+	if (blob) {
+		gboolean success;
+		char *new_file;
+		GError *write_error = NULL;
 
-	if (!orig_hash || !orig_file || strcmp (new_hash, orig_hash)) {
-		/* if the cert data has changed, or there wasn't a cert
-		 * originally, write data out to the standard file.
-		 */
 		new_file = utils_cert_path (ifcfg->fileName, objtype->suffix);
 		if (!new_file) {
 			g_set_error (error, ifcfg_plugin_error_quark (), 0,
 			             "Could not create file path for %s / %s",
 			             NM_SETTING_802_1X_SETTING_NAME, objtype->setting_key);
-			goto out;
+			return FALSE;
 		}
 
-		if (!write_secret_file (new_file, (const char *) object->data, object->len, &write_error)) {
+		/* Write the raw certificate data out to the standard file so that we
+		 * can use paths from now on instead of pushing around the certificate
+		 * data itself.
+		 */
+		success = write_secret_file (new_file, (const char *) blob->data, blob->len, &write_error);
+		if (success) {
+			svSetValue (ifcfg, objtype->ifcfg_key, new_file, FALSE);
+			return TRUE;
+		} else {
 			g_set_error (error, ifcfg_plugin_error_quark (), 0,
 			             "Could not write certificate/key for %s / %s: %s",
 			             NM_SETTING_802_1X_SETTING_NAME, objtype->setting_key,
 			             (write_error && write_error->message) ? write_error->message : "(unknown)");
 			g_clear_error (&write_error);
-			goto out;
 		}
-		*wrote = TRUE;
-
-		svSetValue (ifcfg, objtype->ifcfg_key, new_file, FALSE);
-		g_object_set_data_full (G_OBJECT (s_8021x), objtype->path_tag, new_file, g_free);
-		new_file = NULL; /* g_object_set_data_full() took ownership */
-
-		g_object_set_data_full (G_OBJECT (s_8021x), objtype->hash_tag, new_hash, g_free);
-		new_hash = NULL; /* g_object_set_data_full() took ownership */
-	} else {
-		/* cert data hasn't changed */
-		svSetValue (ifcfg, objtype->ifcfg_key, orig_file, FALSE);
+		g_free (new_file);
 	}
-	success = TRUE;
 
-out:
-	g_free (new_hash);
-	g_free (new_file);
-	return success;
+	return FALSE;
 }
 
 static gboolean
@@ -297,16 +333,15 @@ write_8021x_certs (NMSetting8021x *s_8021x,
                    shvarFile *ifcfg,
                    GError **error)
 {
-	const GByteArray *data;
 	GByteArray *enc_key = NULL;
 	const char *password = NULL;
 	char *generated_pw = NULL;
-	gboolean success = FALSE, is_pkcs12 = FALSE, wrote;
+	gboolean success = FALSE, is_pkcs12 = FALSE;
 	const ObjectType *otype = NULL;
 	const char *prop;
+	const GByteArray *blob = NULL;
 
 	/* CA certificate */
-	data = NULL;
 	if (phase2) {
 		prop = NM_SETTING_802_1X_PHASE2_CA_CERT;
 		otype = &phase2_ca_type;
@@ -314,24 +349,22 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 		prop = NM_SETTING_802_1X_CA_CERT;
 		otype = &ca_type;
 	}
-	g_object_get (G_OBJECT (s_8021x), prop, &data, NULL);
-	if (!write_object (s_8021x, ifcfg, data, otype, &wrote, error))
+
+	if (!write_object (s_8021x, ifcfg, NULL, otype, error))
 		return FALSE;
 
 	/* Private key */
 	if (phase2) {
-		if (nm_setting_802_1x_get_phase2_private_key (s_8021x)) {
-			if (nm_setting_802_1x_get_phase2_private_key_type (s_8021x) == NM_SETTING_802_1X_CK_TYPE_PKCS12)
+		if (nm_setting_802_1x_get_phase2_private_key_scheme (s_8021x) != NM_SETTING_802_1X_CK_SCHEME_UNKNOWN) {
+			if (nm_setting_802_1x_get_phase2_private_key_format (s_8021x) == NM_SETTING_802_1X_CK_FORMAT_PKCS12)
 				is_pkcs12 = TRUE;
 		}
-		prop = NM_SETTING_802_1X_PHASE2_PRIVATE_KEY;
 		password = nm_setting_802_1x_get_phase2_private_key_password (s_8021x);
 	} else {
-		if (nm_setting_802_1x_get_private_key (s_8021x)) {
-			if (nm_setting_802_1x_get_private_key_type (s_8021x) == NM_SETTING_802_1X_CK_TYPE_PKCS12)
+		if (nm_setting_802_1x_get_private_key_scheme (s_8021x) != NM_SETTING_802_1X_CK_SCHEME_UNKNOWN) {
+			if (nm_setting_802_1x_get_private_key_format (s_8021x) == NM_SETTING_802_1X_CK_FORMAT_PKCS12)
 				is_pkcs12 = TRUE;
 		}
-		prop = NM_SETTING_802_1X_PRIVATE_KEY;
 		password = nm_setting_802_1x_get_private_key_password (s_8021x);
 	}
 
@@ -340,11 +373,19 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 	else
 		otype = phase2 ? &phase2_pk_type : &pk_type;
 
-	data = NULL;
-	g_object_get (G_OBJECT (s_8021x), prop, &data, NULL);
-	if (data && !is_pkcs12) {
+	if ((*(otype->scheme_func))(s_8021x) == NM_SETTING_802_1X_CK_SCHEME_BLOB)
+		blob = (*(otype->blob_func))(s_8021x);
+
+	/* Only do the private key re-encrypt dance if we got the raw key data, which
+	 * by definition will be unencrypted.  If we're given a direct path to the
+	 * private key file, it'll be encrypted, so we don't need to re-encrypt.
+	 */
+	if (blob && !is_pkcs12) {
 		GByteArray *array;
 
+		/* If the private key is an unencrypted blob, re-encrypt it with a
+		 * random password since we don't store unencrypted private keys on disk.
+		 */
 		if (!password) {
 			/* Create a random private key */
 			array = crypto_random (32, error);
@@ -356,13 +397,14 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 			g_byte_array_free (array, TRUE);
 		}
 
-		/* Re-encrypt the private key if it's not PKCS#12 (which never decrypted by NM) */
-		enc_key = crypto_key_to_pem (data, password, error);
+		/* Encrypt the unencrypted private key with the fake password */
+		enc_key = crypto_key_to_pem (blob, password, error);
 		if (!enc_key)
 			goto out;
 	}
 
-	if (!write_object (s_8021x, ifcfg, enc_key ? enc_key : data, otype, &wrote, error))
+	/* Save the private key */
+	if (!write_object (s_8021x, ifcfg, enc_key, otype, error))
 		goto out;
 
 	/* Private key password */
@@ -370,11 +412,6 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 		set_secret (ifcfg, "IEEE_8021X_INNER_PRIVATE_KEY_PASSWORD", password);
 	else
 		set_secret (ifcfg, "IEEE_8021X_PRIVATE_KEY_PASSWORD", password);
-
-	if (enc_key) {
-		memset (enc_key->data, 0, enc_key->len);
-		g_byte_array_free (enc_key, TRUE);
-	}
 
 	/* Client certificate */
 	if (is_pkcs12) {
@@ -389,9 +426,9 @@ write_8021x_certs (NMSetting8021x *s_8021x,
 			prop = NM_SETTING_802_1X_CLIENT_CERT;
 			otype = &client_type;
 		}
-		data = NULL;
-		g_object_get (G_OBJECT (s_8021x), prop, &data, NULL);
-		if (!write_object (s_8021x, ifcfg, data, otype, &wrote, error))
+
+		/* Save the client certificate */
+		if (!write_object (s_8021x, ifcfg, NULL, otype, error))
 			goto out;
 	}
 
@@ -401,6 +438,10 @@ out:
 	if (generated_pw) {
 		memset (generated_pw, 0, strlen (generated_pw));
 		g_free (generated_pw);
+	}
+	if (enc_key) {
+		memset (enc_key->data, 0, enc_key->len);
+		g_byte_array_free (enc_key, TRUE);
 	}
 	return success;
 }

@@ -117,17 +117,6 @@ utils_hexstr2bin (const char *hex, size_t len)
 /* End from hostap */
 
 char *
-utils_hash_byte_array (const GByteArray *data)
-{
-	unsigned char buf[SHA1_MAC_LEN];
-	static const char *key = "0123456789abcdefghijklmnopqrstuvwxyz";
-
-	memset (buf, 0, sizeof (buf));
-	sha1_mac ((const unsigned char *) key, strlen (key), (const u_int8_t *) data->data, data->len, &buf[0]);
-	return utils_bin2hexstr ((const char *) &buf[0], SHA1_MAC_LEN, SHA1_MAC_LEN * 2);
-}
-
-char *
 utils_cert_path (const char *parent, const char *suffix)
 {
 	char *name, *dir, *path;

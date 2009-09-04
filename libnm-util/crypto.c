@@ -619,14 +619,14 @@ crypto_is_pkcs12_data (const GByteArray *data)
 }
 
 gboolean
-crypto_is_pkcs12_file (const char *file)
+crypto_is_pkcs12_file (const char *file, GError **error)
 {
 	GByteArray *contents;
 	gboolean success = FALSE;
 
 	g_return_val_if_fail (file != NULL, FALSE);
 
-	contents = file_to_g_byte_array (file, TRUE, NULL);
+	contents = file_to_g_byte_array (file, TRUE, error);
 	if (contents) {
 		success = crypto_is_pkcs12_data (contents);
 		g_byte_array_free (contents, TRUE);

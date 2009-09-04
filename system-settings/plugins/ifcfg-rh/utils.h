@@ -29,8 +29,6 @@ char *utils_bin2hexstr (const char *bytes, int len, int final_len);
 
 char *utils_hexstr2bin (const char *hex, size_t len);
 
-char *utils_hash_byte_array (const GByteArray *data);
-
 char *utils_cert_path (const char *parent, const char *suffix);
 
 char *utils_get_ifcfg_name (const char *file);
