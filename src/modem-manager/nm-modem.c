@@ -460,7 +460,9 @@ device_state_changed (NMDeviceInterface *device,
 	case NM_DEVICE_STATE_FAILED:
 	case NM_DEVICE_STATE_DISCONNECTED:
 		dbus_g_proxy_call_no_reply (nm_modem_get_proxy (self, NULL),
-									"Disconnect", G_TYPE_INVALID);
+		                            "Enable",
+		                            G_TYPE_BOOLEAN, FALSE,
+		                            G_TYPE_INVALID);
 		break;
 	default:
 		break;
