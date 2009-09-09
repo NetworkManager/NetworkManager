@@ -1229,17 +1229,11 @@ ppp_state_changed (NMPPPManager *ppp_manager, NMPPPStatus status, gpointer user_
 	NMDevice *device = NM_DEVICE (user_data);
 
 	switch (status) {
-	case NM_PPP_STATUS_NETWORK:
-		nm_device_state_changed (device, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_REASON_NONE);
-		break;
 	case NM_PPP_STATUS_DISCONNECT:
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_PPP_DISCONNECT);
 		break;
 	case NM_PPP_STATUS_DEAD:
 		nm_device_state_changed (device, NM_DEVICE_STATE_FAILED, NM_DEVICE_STATE_REASON_PPP_FAILED);
-		break;
-	case NM_PPP_STATUS_AUTHENTICATE:
-		nm_device_state_changed (device, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_REASON_NONE);
 		break;
 	default:
 		break;
@@ -1253,6 +1247,10 @@ ppp_ip4_config (NMPPPManager *ppp_manager,
 			 gpointer user_data)
 {
 	NMDevice *device = NM_DEVICE (user_data);
+
+	/* Ignore PPP IP4 events that come in after initial configuration */
+	if (nm_device_get_state (device) != NM_DEVICE_STATE_IP_CONFIG)
+		return;
 
 	nm_device_set_ip_iface (device, iface);
 	NM_DEVICE_ETHERNET_GET_PRIVATE (device)->pending_ip4_config = g_object_ref (config);
