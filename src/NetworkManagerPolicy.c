@@ -765,8 +765,12 @@ device_state_changed (NMDevice *device,
 
 	switch (new_state) {
 	case NM_DEVICE_STATE_FAILED:
-		/* Mark the connection invalid so it doesn't get automatically chosen */
-		if (connection) {
+		/* Mark the connection invalid if it failed during activation so that
+		 * it doesn't get automatically chosen over and over and over again.
+		 */
+		if (   connection
+		    && (old_state > NM_DEVICE_STATE_DISCONNECTED)
+		    && (old_state < NM_DEVICE_STATE_ACTIVATED)) {
 			g_object_set_data (G_OBJECT (connection), INVALID_TAG, GUINT_TO_POINTER (TRUE));
 			nm_info ("Marking connection '%s' invalid.", get_connection_id (connection));
 			nm_connection_clear_secrets (connection);
