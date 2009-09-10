@@ -1696,12 +1696,15 @@ user_get_secrets_cb (DBusGProxy *proxy,
 	NMManagerPrivate *priv;
 	GHashTable *settings = NULL;
 	GError *error = NULL;
+	GObject *provider;
 
 	g_return_if_fail (info != NULL);
 	g_return_if_fail (info->provider);
 	g_return_if_fail (info->setting_name);
 
 	priv = NM_MANAGER_GET_PRIVATE (info->manager);
+
+	provider = g_object_ref (info->provider);
 
 	if (dbus_g_proxy_end_call (proxy, call, &error,
 	                           DBUS_TYPE_G_MAP_OF_MAP_OF_VARIANT, &settings,
@@ -1723,6 +1726,8 @@ user_get_secrets_cb (DBusGProxy *proxy,
 
 	info->call = NULL;
 	free_get_secrets_info (info);
+
+	g_object_ref (provider);
 }
 
 static GetSecretsInfo *
@@ -1786,6 +1791,9 @@ system_get_secrets_reply_cb (NMSettingsConnectionInterface *connection,
                              gpointer user_data)
 {
 	GetSecretsInfo *info = user_data;
+	GObject *provider;
+
+	provider = g_object_ref (info->provider);
 
 	nm_secrets_provider_interface_get_secrets_result (info->provider,
 	                                                  info->setting_name,
@@ -1793,6 +1801,7 @@ system_get_secrets_reply_cb (NMSettingsConnectionInterface *connection,
 	                                                  error ? NULL : secrets,
 	                                                  error);
 	free_get_secrets_info (info);
+	g_object_unref (provider);
 }
 
 static gboolean
@@ -2632,11 +2641,8 @@ dispose (GObject *object)
 	pending_connection_info_destroy (priv->pending_connection_info);
 	priv->pending_connection_info = NULL;
 
-	while (g_slist_length (priv->secrets_calls)) {
-		GetSecretsInfo *info = priv->secrets_calls->data;
-
-		free_get_secrets_info (info);
-	}
+	while (g_slist_length (priv->secrets_calls))
+		free_get_secrets_info ((GetSecretsInfo *) priv->secrets_calls->data);
 
 	while (g_slist_length (priv->devices)) {
 		NMDevice *device = NM_DEVICE (priv->devices->data);
