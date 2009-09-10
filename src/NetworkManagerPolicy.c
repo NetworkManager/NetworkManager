@@ -42,6 +42,8 @@
 #include "nm-vpn-manager.h"
 #include "nm-modem.h"
 
+#define STATE_IN_ACTIVATION_PHASE(state) ((state > NM_DEVICE_STATE_DISCONNECTED) && (state < NM_DEVICE_STATE_ACTIVATED))
+
 typedef struct LookupThread LookupThread;
 
 typedef void (*LookupCallback) (LookupThread *thread, gpointer user_data);
@@ -710,7 +712,7 @@ hostname_changed (NMManager *manager, GParamSpec *pspec, gpointer user_data)
 }
 
 static void
-schedule_activate_check (NMPolicy *policy, NMDevice *device)
+schedule_activate_check (NMPolicy *policy, NMDevice *device, guint delay_seconds)
 {
 	ActivateData *data;
 	GSList *iter;
@@ -737,7 +739,7 @@ schedule_activate_check (NMPolicy *policy, NMDevice *device)
 
 	data->policy = policy;
 	data->device = g_object_ref (device);
-	data->id = g_idle_add (auto_activate_device, data);
+	data->id = delay_seconds ? g_timeout_add_seconds (delay_seconds, auto_activate_device, data) : g_idle_add (auto_activate_device, data);
 	policy->pending_activation_checks = g_slist_append (policy->pending_activation_checks, data);
 }
 
@@ -768,14 +770,12 @@ device_state_changed (NMDevice *device,
 		/* Mark the connection invalid if it failed during activation so that
 		 * it doesn't get automatically chosen over and over and over again.
 		 */
-		if (   connection
-		    && (old_state > NM_DEVICE_STATE_DISCONNECTED)
-		    && (old_state < NM_DEVICE_STATE_ACTIVATED)) {
+		if (connection && STATE_IN_ACTIVATION_PHASE (old_state)) {
 			g_object_set_data (G_OBJECT (connection), INVALID_TAG, GUINT_TO_POINTER (TRUE));
 			nm_info ("Marking connection '%s' invalid.", get_connection_id (connection));
 			nm_connection_clear_secrets (connection);
 		}
-		schedule_activate_check (policy, device);
+		schedule_activate_check (policy, device, 3);
 		break;
 	case NM_DEVICE_STATE_ACTIVATED:
 		/* Clear the invalid tag on the connection */
@@ -788,7 +788,7 @@ device_state_changed (NMDevice *device,
 	case NM_DEVICE_STATE_UNAVAILABLE:
 	case NM_DEVICE_STATE_DISCONNECTED:
 		update_routing_and_dns (policy, FALSE);
-		schedule_activate_check (policy, device);
+		schedule_activate_check (policy, device, 0);
 		break;
 	default:
 		break;
@@ -806,7 +806,7 @@ device_ip4_config_changed (NMDevice *device,
 static void
 wireless_networks_changed (NMDeviceWifi *device, NMAccessPoint *ap, gpointer user_data)
 {
-	schedule_activate_check ((NMPolicy *) user_data, NM_DEVICE (device));
+	schedule_activate_check ((NMPolicy *) user_data, NM_DEVICE (device), 0);
 }
 
 typedef struct {
@@ -902,7 +902,7 @@ schedule_activate_all (NMPolicy *policy)
 
 	devices = nm_manager_get_devices (policy->manager);
 	for (iter = devices; iter; iter = g_slist_next (iter))
-		schedule_activate_check (policy, NM_DEVICE (iter->data));
+		schedule_activate_check (policy, NM_DEVICE (iter->data), 0);
 }
 
 static void
