@@ -1,190 +1,334 @@
-# translation of NetworkManager.HEAD.po to Gujarati
+# translation of NetworkManager.master.gu.po to Gujarati
 # This file is distributed under the same license as the PACKAGE package.
 # Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER.
-# Ankit Patel <ankit@redhat.com>, 2004.
 #
+# Ankit Patel <ankit@redhat.com>, 2004.
+# Sweta Kothari <swkothar@redhat.com>, 2009.
 msgid ""
 msgstr ""
-"Project-Id-Version: NetworkManager.HEAD\n"
-"Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2004-10-19 13:38-0400\n"
-"PO-Revision-Date: 2004-09-09 14:24+0530\n"
-"Last-Translator: Ankit Patel <ankit@redhat.com>\n"
+"Project-Id-Version: NetworkManager.master.gu\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?product=NetworkManager&component=general\n"
+"POT-Creation-Date: 2009-05-19 03:24+0000\n"
+"PO-Revision-Date: 2009-06-08 11:07+0530\n"
+"Last-Translator: Sweta Kothari <swkothar@redhat.com>\n"
 "Language-Team: Gujarati\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: KBabel 1.3.1\n"
-"Plural-Forms: Plural-Forms: nplurals=2; plural=(n!=1);\n"
+"X-Generator: KBabel 1.11.4\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
 "\n"
 
-#: info-daemon/networks.glade:11
-msgid "Modify Wireless Networks"
-msgstr "વાયરલેસ નેટવર્કો સુધારો"
+#: ../libnm-util/crypto.c:120
+#, c-format
+msgid "PEM key file had no end tag '%s'."
+msgstr "PEM કી ફાઇલ પાસે છેલ્લો ટેગ '%s' ન હતો."
 
-#: info-daemon/networks.glade:92
-msgid "<span weight=\"bold\">Wireless Networks:</span>"
-msgstr "<span weight=\"bold\">વાયરલેસ નેટવર્કો:</span>"
+#: ../libnm-util/crypto.c:130
+#, c-format
+msgid "Doesn't look like a PEM private key file."
+msgstr "PEM ખાનગી કી ફાઇલ જેવી દેખાતી નથી."
 
-#: info-daemon/passphrase.glade:9
-msgid "Wireless Network Key Required"
-msgstr "વાયરલેસ નેટવર્ક કી જરુરી છે"
+#: ../libnm-util/crypto.c:138
+#, c-format
+msgid "Not enough memory to store PEM file data."
+msgstr "PEM ફાઇલ માહિતી ને સંગ્રહ કરવા માટે મેમરી પૂરતી નથી."
 
-#: info-daemon/passphrase.glade:52
-msgid "_Login to Network"
-msgstr "નેટવર્કમાં પ્રવેશો (_L)"
+#: ../libnm-util/crypto.c:154
+#, c-format
+msgid "Malformed PEM file: Proc-Type was not first tag."
+msgstr "મેલફોર્મ થયેલ PEM ફાઇલ: Proc-Type એ પહેલો ટેગ ન હતો."
 
-#: info-daemon/passphrase.glade:100
-#, fuzzy
+#: ../libnm-util/crypto.c:162
+#, c-format
+msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
+msgstr "મેલફોર્મ થયેલ PEM ફાઇલ: અજ્ઞાત Proc-Type ટેગ '%s'."
+
+#: ../libnm-util/crypto.c:172
+#, c-format
+msgid "Malformed PEM file: DEK-Info was not the second tag."
+msgstr "મેલફોર્મ થયેલ PEM ફાઇલ: DEK-Info એ બીજો ટેગ હતો નહિં."
+
+#: ../libnm-util/crypto.c:183
+#, c-format
+msgid "Malformed PEM file: no IV found in DEK-Info tag."
+msgstr "મેલફોર્મ થયેલ PEM ફાઇલ: IV એ DEK-Info ટેગમાં શોધાયુ નહિં."
+
+#: ../libnm-util/crypto.c:190
+#, c-format
+msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
+msgstr "મેલફોર્મ થયેલ PEM ફાઇલ: DEK-Info ટેગમાં IV નું અયોગ્ય બંધારણ."
+
+#: ../libnm-util/crypto.c:203
+#, c-format
+msgid "Malformed PEM file: unknown private key cipher '%s'."
+msgstr "મેલફોર્મ થયેલ PEM ફાઇલ: અજ્ઞાત ખાનગી કી સાઇફર '%s'."
+
+#: ../libnm-util/crypto.c:222
+#, c-format
+msgid "Could not decode private key."
+msgstr "ખાનગી કીને ડિકોડ કરી શકાયુ નહિં."
+
+#: ../libnm-util/crypto.c:267
+#, c-format
+msgid "PEM certificate '%s' had no end tag '%s'."
+msgstr "PEM પ્રમાણપત્ર '%s' પાસે અંત ટેગ '%s' ન હતો."
+
+#: ../libnm-util/crypto.c:277
+#, c-format
+msgid "Failed to decode certificate."
+msgstr "પ્રમાણપત્રને ડિકોડ કરવાનું નિષ્ફળ."
+
+#: ../libnm-util/crypto.c:286
+#, c-format
+msgid "Not enough memory to store certificate data."
+msgstr "પ્રમાણપત્ર માહિતીને સંગ્રહ કરવા માટે મેમરી પૂરતી નથી."
+
+#: ../libnm-util/crypto.c:294
+#, c-format
+msgid "Not enough memory to store file data."
+msgstr "ફાઇલ માહિતીને સંગ્રહ કરવા માટે મેમરી પૂરતી નથી."
+
+#: ../libnm-util/crypto.c:324
+#, c-format
+msgid "IV must be an even number of bytes in length."
+msgstr "IV એ લંબાઇમાં બાઇટોનું બેકી નંબર જ હોવુ જ જોઇએ."
+
+#: ../libnm-util/crypto.c:333
+#, c-format
+msgid "Not enough memory to store the IV."
+msgstr "IV ને સંગ્રહ કરવા માટે પૂરતી મેમરી નથી."
+
+#: ../libnm-util/crypto.c:344
+#, c-format
+msgid "IV contains non-hexadecimal digits."
+msgstr "IV એ બિન-હેક્ઝાડેસિમલ આંકડાઓને સમાવે છે."
+
+#: ../libnm-util/crypto.c:382 ../libnm-util/crypto_gnutls.c:143
+#: ../libnm-util/crypto_nss.c:169
+#, c-format
+msgid "Private key cipher '%s' was unknown."
+msgstr "ખાનગી કી સાઇફર '%s' એ અજ્ઞાત હતુ."
+
+#: ../libnm-util/crypto.c:391
+#, c-format
+msgid "Not enough memory to decrypt private key."
+msgstr "ખાનગી કીને ડિક્રિપ્ટ કરવા માટે મેમરી પૂરતી નથી."
+
+#: ../libnm-util/crypto.c:511
+#, c-format
+msgid "Unable to determine private key type."
+msgstr "ખાનગી કી પ્રકાર ને નક્કી કરવાનું નિષ્ફળ."
+
+#: ../libnm-util/crypto.c:530
+#, c-format
+msgid "Not enough memory to store decrypted private key."
+msgstr "ડિક્રિપ્ટ થયેલ ખાનગી કીને સંગ્રહ કરવા માટે મેમરી પૂરતી નથી."
+
+#: ../libnm-util/crypto_gnutls.c:46
+msgid "Failed to initialize the crypto engine."
+msgstr "ક્રિપ્ટો એંજિન ને પ્રારંભ કરવાનું નિષ્ફળ."
+
+#: ../libnm-util/crypto_gnutls.c:90
+#, c-format
+msgid "Failed to initialize the MD5 engine: %s / %s."
+msgstr "MD5 એંજિનને પ્રારંભ કરવાનું નિષ્ફળ: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:152 ../libnm-util/crypto_nss.c:178
+#, c-format
+msgid "Not enough memory for decrypted key buffer."
+msgstr "ડિક્રિપ્ટ થયેલ કી બફર માટે પૂરતી મેમરી નથી."
+
+#: ../libnm-util/crypto_gnutls.c:160
+#, c-format
+msgid "Failed to initialize the decryption cipher context: %s / %s."
+msgstr "ડિક્રિપ્શન સાઇફર સંદર્ભને પ્રારંભ કરવાનું નિષ્ફળ: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:169
+#, c-format
+msgid "Failed to set symmetric key for decryption: %s / %s."
+msgstr "ડિક્રિપ્શન માટે સમપ્રમાણ કીને સુયોજિત કરવામાં નિષ્ફળ: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:178
+#, c-format
+msgid "Failed to set IV for decryption: %s / %s."
+msgstr "ડિક્રિપ્શન માટે IV ને સુયોજિત કરવાનું નિષ્ફળ: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:187
+#, c-format
+msgid "Failed to decrypt the private key: %s / %s."
+msgstr "ખાનગી કીને ડિક્રિપ્ટ કરવાનું નિષ્ફળ: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:200
+#, c-format
+msgid "Failed to decrypt the private key."
+msgstr "ખાનગી કીને ડિક્રિપ્ટ કરવાનું નિષ્ફળ."
+
+#: ../libnm-util/crypto_gnutls.c:235
+#, c-format
+msgid "Error initializing certificate data: %s"
+msgstr "પ્રમાણપત્ર માહિતીને પ્રારંભ કરતી વખતે ભૂલ: %s"
+
+#: ../libnm-util/crypto_gnutls.c:257
+#, c-format
+msgid "Couldn't decode certificate: %s"
+msgstr "પ્રમાણપત્રને ડિકોડ કરી શકાયુ નહિં: %s"
+
+#: ../libnm-util/crypto_gnutls.c:281
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %s"
+msgstr "PKCS#12 ડિકોડરને પ્રારંભ કરી શકાયુ નહિં: %s "
+
+#: ../libnm-util/crypto_gnutls.c:294
+#, c-format
+msgid "Couldn't decode PKCS#12 file: %s"
+msgstr "PKCS#12 ફાઇલને ડિકોડ કરી શકાયુ નહિં: %s"
+
+#: ../libnm-util/crypto_gnutls.c:306
+#, c-format
+msgid "Couldn't verify PKCS#12 file: %s"
+msgstr "PKCS#12 ફાઇલને ચકાસી શકાયુ નહિં: %s"
+
+#: ../libnm-util/crypto_nss.c:57
+#: ../system-settings/plugins/ifcfg-rh/crypto.c:52
+#, c-format
+msgid "Failed to initialize the crypto engine: %d."
+msgstr "ક્રિપ્ટો એંજિનને પ્રારંભ કરવાનું નિષ્ફળ: %d."
+
+#: ../libnm-util/crypto_nss.c:111
+#, c-format
+msgid "Failed to initialize the MD5 context: %d."
+msgstr "MD5 સંદર્ભને પ્રારંભ કરવાનું નિષ્ફળ: %d."
+
+#: ../libnm-util/crypto_nss.c:186
+#, c-format
+msgid "Failed to initialize the decryption cipher slot."
+msgstr "ડિક્રિપ્શન સાઇફર સ્લોટને પ્રારંભ કરવાનું નિષ્ફળ."
+
+#: ../libnm-util/crypto_nss.c:196
+#, c-format
+msgid "Failed to set symmetric key for decryption."
+msgstr "ડિક્રિપ્શન માટે સમપ્રમાણ કીને સુયોજિત કરવામાં નિષ્ફળ."
+
+#: ../libnm-util/crypto_nss.c:206
+#, c-format
+msgid "Failed to set IV for decryption."
+msgstr "ડિક્રિપ્શન માટે IV ને સુયોજિત કરવામાં નિષ્ફળ."
+
+#: ../libnm-util/crypto_nss.c:214
+#, c-format
+msgid "Failed to initialize the decryption context."
+msgstr "ડિક્રિપ્શન સંદર્ભને આખરી રૂપ આપવામાં નિષ્ફળ."
+
+#: ../libnm-util/crypto_nss.c:227
+#, c-format
+msgid "Failed to decrypt the private key: %d."
+msgstr "ખાનગી કી ને ડિક્રિપ્ટ કરવાનું નિષ્ફળ: %d."
+
+#: ../libnm-util/crypto_nss.c:239
+#, c-format
+msgid "Failed to finalize decryption of the private key: %d."
+msgstr "ખાનગી કીનાં ડિક્રિપ્શનનને આખરી રૂપ આપવાનું નિષ્ફળ: %d."
+
+#: ../libnm-util/crypto_nss.c:284
+#, c-format
+msgid "Couldn't decode certificate: %d"
+msgstr "પ્રમાણપત્રને ડિકોડ કરી શકાયુ નહિં: %d"
+
+#: ../libnm-util/crypto_nss.c:319
+#, c-format
+msgid "Couldn't convert password to UCS2: %d"
+msgstr "UCS2 માં પાસવર્ડને રૂપાંતરિત કરી શકાયુ નહિં: %d"
+
+#: ../libnm-util/crypto_nss.c:347
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %d"
+msgstr "PKCS#12 ડિકોડરને પ્રારંભ કરી શકાયુ નહિં: %d"
+
+#: ../libnm-util/crypto_nss.c:356
+#, c-format
+msgid "Couldn't decode PKCS#12 file: %d"
+msgstr "PKCS#12 ફાઇલને ડિકોડ કરી શકાયુ નહિં: %d"
+
+#: ../libnm-util/crypto_nss.c:365
+#, c-format
+msgid "Couldn't verify PKCS#12 file: %d"
+msgstr "PKCS#12 ફાઇલને ચકાસી શકાયુ નહિં: %d"
+
+#: ../src/nm-netlink-monitor.c:194 ../src/nm-netlink-monitor.c:458
+#, c-format
+msgid "error processing netlink message: %s"
+msgstr "નેટલિંક સંદેશ ને પ્રક્રિયા કરવામાં ભૂલ: %s"
+
+#: ../src/nm-netlink-monitor.c:255
+#, c-format
+msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgstr "કડી સ્થિતિને મોનિટર કરવા માટે નેટલિંકને સંભાળવાનું ફાળવવામાં અસમર્થ: %s"
+
+#: ../src/nm-netlink-monitor.c:265
+#, c-format
+msgid "unable to connect to netlink for monitoring link status: %s"
+msgstr "કડી સ્થિતિને મોનિટર કરવા માટે નેટલિંકને જોડવામાં અસમર્થ: %s"
+
+#: ../src/nm-netlink-monitor.c:273
+#, c-format
+msgid "unable to join netlink group for monitoring link status: %s"
+msgstr "કડી પરિસ્થિતિને મોનિટર કરવા માટે નેટલીંક જૂથ ને જોડાવવાનું અસમર્થ: %s"
+
+#: ../src/nm-netlink-monitor.c:281
+#, c-format
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
+msgstr "કડી સ્થિતિને મોનિટર કરવા માટે નેટલિંક કડી કેશને ફાળવવામાં અસમર્થ: %s"
+
+#: ../src/nm-netlink-monitor.c:422
+#, c-format
+msgid "error updating link cache: %s"
+msgstr "કડી કેશને સુધારો કરતી વખતે ભૂલ: %s"
+
+#: ../src/nm-netlink-monitor.c:488
+msgid "error occurred while waiting for data on socket"
+msgstr "ભૂલ ઉદ્ભવી જ્યારે સોકેટ પર માહિતી માટે રાહ જોઇ રહ્યા હોય"
+
+#: ../src/NetworkManager.c:294
+#, c-format
+msgid "Invalid option.  Please use --help to see a list of valid options.\n"
+msgstr "અયોગ્ય વિકલ્પ.  મહેરબાની કરીને યોગ્ય વિકલ્પોની યાદી ને જોવા માટે --help ને વાપરો.\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:97
+msgid "# Created by NetworkManager\n"
+msgstr "# ને NetworkManager દ્દારા બનાવેલ છે\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:103
+#, c-format
 msgid ""
-"<span weight=\"bold\" size=\"larger\">Passphrase Required by Wireless "
-"Network</span>\n"
+"# Merged from %s\n"
 "\n"
-"A passphrase or encryption key is required to access the wireless network '%"
-"s'."
 msgstr ""
-"<span weight=\"bold\" size=\"larger\">વાયરલેસ નેટવર્ક દ્વારા પાસફ્રેઝ જરુરી છે</"
-"span>\n"
+"# ને %s માંથી ભેગુ કરેલ છે\n"
 "\n"
-"પાસફ્રેઝ અથવા WEP કી એ વાયરલેસ નેટવર્ક '%s' ને ચલાવવા માટે જરુરી છે."
 
-#: info-daemon/passphrase.glade:129
-msgid "Key Type:"
-msgstr ""
+#: ../src/named-manager/nm-named-manager.c:255
+msgid "NOTE: the libc resolver may not support more than 3 nameservers."
+msgstr "નોંધ: libc સુધારનાર એ ૩ નામ સર્વરો કરતા વધારે આધારને સમાવી શકતુ નથી."
 
-#: info-daemon/passphrase.glade:150
-msgid ""
-"128-bit Passphrase\n"
-"128-bit Raw Hex Key"
-msgstr ""
+#: ../src/named-manager/nm-named-manager.c:257
+msgid "The nameservers listed below may not be recognized."
+msgstr "નીચે યાદી થયેલ નામસર્વરો એ ઓળખી શકાતા નથી."
 
-#: info-daemon/passphrase.glade:180
-#: info-daemon/NetworkManagerInfoPassphraseDialog.c:101
-msgid "Passphrase:"
-msgstr "પાસફ્રેઝ:"
+#: ../system-settings/plugins/ifcfg-rh/reader.c:2149
+msgid "System"
+msgstr "સિસ્ટમ"
 
-#: info-daemon/passphrase.glade:208 panel-applet/essid.glade:162
-msgid "*"
-msgstr "*"
+#: ../system-settings/src/nm-default-wired-connection.c:182
+#, c-format
+msgid "Auto %s"
+msgstr "%s સ્વયં કરો"
 
-#: info-daemon/NetworkManagerInfoPassphraseDialog.c:104
-msgid "Key:"
-msgstr ""
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:1
+msgid "Modify system connections"
+msgstr "સિસ્ટમ જોડાણોને બદલો"
 
-#. Reuse the above string to make the translators less angry.
-#: panel-applet/NMWirelessApplet.c:691 panel-applet/NMWirelessApplet.c:701
-msgid ""
-"The NetworkManager Applet could not find some required resources (the glade "
-"file was not found)."
-msgstr "નેટવર્ક વ્યવસ્થાપક એપ્લેટ અમુક જરુરી સ્રોતો શોધી શકી નહિં (glade ફાઈલ મળી નથી)."
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:2
+msgid "System policy prevents modification of system settings"
+msgstr "સિસ્ટમ પોલિસી એ સિસ્ટમ સુયોજનોનાં બદલાવને અટકાવે છે"
 
-#: panel-applet/NMWirelessApplet.c:716
-#, fuzzy
-msgid "Custom wireless network"
-msgstr "વાયરલેસ નેટવર્કો"
-
-#: panel-applet/NMWirelessApplet.c:717
-msgid "Enter the ESSID of the wireless network to which you wish to connect."
-msgstr ""
-
-#: panel-applet/NMWirelessApplet.c:800
-#, fuzzy
-msgid "Other Wireless Networks..."
-msgstr "વાયરલેસ નેટવર્કો"
-
-#: panel-applet/NMWirelessApplet.c:911
-msgid "No network devices have been found"
-msgstr ""
-
-#: panel-applet/NMWirelessApplet.c:1028
-msgid "NetworkManager is not running..."
-msgstr "નેટવર્ક વ્યવસ્થાપક ચાલતું નથી..."
-
-#: panel-applet/essid.glade:52
-msgid "C_onnect"
-msgstr ""
-
-#: panel-applet/essid.glade:131
-#, fuzzy
-msgid "Wireless _Network:"
-msgstr "વાયરલેસ નેટવર્કો"
-
-#: panel-applet/essid.glade:177
-#, fuzzy
-msgid "Wireless _adapter:"
-msgstr "વાયરલેસ નેટવર્કો"
-
-#: panel-applet/menu-info.c:101
-#, fuzzy, c-format
-msgid "Wired Network (%s)"
-msgstr "વાયરલેસ નેટવર્કો"
-
-#: panel-applet/menu-info.c:103
-#, fuzzy
-msgid "Wired Network"
-msgstr "વાયરલેસ નેટવર્કો"
-
-#: panel-applet/menu-info.c:168
-#, fuzzy, c-format
-msgid "Wireless Network (%s)"
-msgid_plural "Wireless Networks (%s)"
-msgstr[0] "વાયરલેસ નેટવર્કો"
-msgstr[1] "વાયરલેસ નેટવર્કો"
-
-#: panel-applet/menu-info.c:170
-#, fuzzy
-msgid "Wireless Network"
-msgid_plural "Wireless Networks"
-msgstr[0] "વાયરલેસ નેટવર્કો"
-msgstr[1] "વાયરલેસ નેટવર્કો"
-
-#: panel-applet/menu-info.c:307
-msgid " (invalid Unicode)"
-msgstr ""
-
-#: examples/python/systray/eggtrayicon.c:111
-msgid "Orientation"
-msgstr ""
-
-#: examples/python/systray/eggtrayicon.c:112
-msgid "The orientation of the tray."
-msgstr ""
-
-#~ msgid "There are no network devices..."
-#~ msgstr "ત્યાં કોઈ નેટવર્ક ઉપકરણો નથી..."
-
-#~ msgid "There are no wireless networks..."
-#~ msgstr "ત્યાં કોઈ વાયરલેસ નેટવર્ક નથી..."
-
-#~ msgid "Network Connections"
-#~ msgstr "નેટવર્ક જોડાણો"
-
-#~ msgid "No network connection is currently active..."
-#~ msgstr "કોઈ નેટવર્ક જોડાણો વર્તમાનમાં સક્રિય નથી..."
-
-#~ msgid "A wired network connection is currently active..."
-#~ msgstr "વાયરવાળું નેટવર્ક જોડાણ વર્તમાનમાં સક્રિય છે..."
-
-#~ msgid "_About..."
-#~ msgstr "વિશે (_A)..."
-
-#~ msgid " "
-#~ msgstr " "
-
-#~ msgid ""
-#~ "<span weight=\"bold\" size=\"larger\">Wireless Network Login "
-#~ "Confirmation</span>\n"
-#~ "\n"
-#~ "You have chosen log in to the wireless network '%s'.  If you are sure "
-#~ "this wireless network is secure, click the checkbox below and "
-#~ "NetworkManager will no longer pester you with stupid questions when you "
-#~ "connect to it."
-#~ msgstr ""
-#~ "<span weight=\"bold\" size=\"larger\">વાયરલેસ નેટવર્ક પ્રવેશ ખાતરી</span>\n"
-#~ "\n"
-#~ "તમે વાયરલેસ નેટવર્ક '%s' માં પ્રવેશવાનું પસંદ કરેલ છે.  જો તમે ચોક્કસ હોયકે આ વાયરલેસ "
-#~ "નેટવર્ક સુરક્ષિત છે, તો નીચેના ચકાસણીબોક્સમાં ક્લિક કરો અને નેટવર્ક વ્યવસ્થાપક તમને લાંબા "
-#~ "સમય સુધી નકામા પ્રશ્નો પૂછવા માટે સમર્થ નહિં હોય તેની સાથે જોડાવા માટે."
-
-#~ msgid "Always Trust this Wireless Network"
-#~ msgstr "હંમેશા આ વાયરલેસ નેટવર્કનો વિશ્વાસ કરો"
