@@ -1,0 +1,332 @@
+# translation of NetworkManager.master.po to marathi
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+#
+# Sandeep Shedmake <sandeep.shedmake@gmail.com>, 2009.
+msgid ""
+msgstr ""
+"Project-Id-Version: NetworkManager.master\n"
+"Report-Msgid-Bugs-To: http://bugzilla.gnome.org/enter_bug.cgi?product=NetworkManager&component=general\n"
+"POT-Creation-Date: 2009-06-08 03:24+0000\n"
+"PO-Revision-Date: 2009-06-08 13:08+0530\n"
+"Last-Translator: Sandeep Shedmake <sandeep.shedmake@gmail.com>\n"
+"Language-Team: marathi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: KBabel 1.11.4\n"
+"Plural-Forms: nplurals=2; plural=(n!=1);\n"
+
+#: ../libnm-util/crypto.c:120
+#, c-format
+msgid "PEM key file had no end tag '%s'."
+msgstr "PEM कि फाइल अंतर्गत समाप्त टॅघ '%s' आढळले नाही."
+
+#: ../libnm-util/crypto.c:130
+#, c-format
+msgid "Doesn't look like a PEM private key file."
+msgstr "PEM वैयक्तिक कि फाइल नुरूप आढळले नाही."
+
+#: ../libnm-util/crypto.c:138
+#, c-format
+msgid "Not enough memory to store PEM file data."
+msgstr "PEM फाइल माहिती साठवण्याकरीता स्मृती शिल्लक नाही."
+
+#: ../libnm-util/crypto.c:154
+#, c-format
+msgid "Malformed PEM file: Proc-Type was not first tag."
+msgstr "सदोषीत PEM फाइल: Proc-Type प्रथम टॅग नव्हते."
+
+#: ../libnm-util/crypto.c:162
+#, c-format
+msgid "Malformed PEM file: unknown Proc-Type tag '%s'."
+msgstr "सदोषीत PEM फाइल: अपरिचीत Proc-Type टॅग '%s'."
+
+#: ../libnm-util/crypto.c:172
+#, c-format
+msgid "Malformed PEM file: DEK-Info was not the second tag."
+msgstr "सदोषीत PEM फाइल: DEK-Info दूसरे टॅग नव्हते."
+
+#: ../libnm-util/crypto.c:183
+#, c-format
+msgid "Malformed PEM file: no IV found in DEK-Info tag."
+msgstr "सदोषीत PEM फाइल: DEK-Info टॅग अंतर्गत IV आढळले नाही."
+
+#: ../libnm-util/crypto.c:190
+#, c-format
+msgid "Malformed PEM file: invalid format of IV in DEK-Info tag."
+msgstr "सदोषीत PEM फाइल:DEK-Info टॅग अंतर्गत IV चे अवैध स्वरूप आढळे."
+
+#: ../libnm-util/crypto.c:203
+#, c-format
+msgid "Malformed PEM file: unknown private key cipher '%s'."
+msgstr "सदोषीत PEM फाइल: अपरिचीत वैयक्तिक सीफर कि '%s'."
+
+#: ../libnm-util/crypto.c:222
+#, c-format
+msgid "Could not decode private key."
+msgstr "वैयक्तिक कि डिकोड करू शकले नाही."
+
+#: ../libnm-util/crypto.c:267
+#, c-format
+msgid "PEM certificate '%s' had no end tag '%s'."
+msgstr "PEM प्रमाणपत्र '%s' had no end tag '%s'."
+
+#: ../libnm-util/crypto.c:277
+#, c-format
+msgid "Failed to decode certificate."
+msgstr "प्रमाणपत्र डिकोड करण्यास अपयशी."
+
+#: ../libnm-util/crypto.c:286
+#, c-format
+msgid "Not enough memory to store certificate data."
+msgstr "प्रमाणपत्र माहिती साठवण्याकरीता स्मृती शिल्लक नाही."
+
+#: ../libnm-util/crypto.c:294
+#, c-format
+msgid "Not enough memory to store file data."
+msgstr "फाइल माहिती साठवण्याकरीता स्मृती शिल्लक नाही."
+
+#: ../libnm-util/crypto.c:324
+#, c-format
+msgid "IV must be an even number of bytes in length."
+msgstr "IV ची लांबी सम बाईटस् ची संख्या असायला हवी."
+
+#: ../libnm-util/crypto.c:333
+#, c-format
+msgid "Not enough memory to store the IV."
+msgstr "IV साठवण्याकरीता स्मृती शिल्ल्क नाही."
+
+#: ../libnm-util/crypto.c:344
+#, c-format
+msgid "IV contains non-hexadecimal digits."
+msgstr "IV अंतर्गत non-hexadecimal अंक."
+
+#: ../libnm-util/crypto.c:382 ../libnm-util/crypto_gnutls.c:143
+#: ../libnm-util/crypto_nss.c:169
+#, c-format
+msgid "Private key cipher '%s' was unknown."
+msgstr "वैयक्तिक कि सिफर '%s' अपरिचीत नुरूप आढळले."
+
+#: ../libnm-util/crypto.c:391
+#, c-format
+msgid "Not enough memory to decrypt private key."
+msgstr "फाइल माहिती साठवण्याकरीता स्मृती शिल्लक नाही."
+
+#: ../libnm-util/crypto.c:511
+#, c-format
+msgid "Unable to determine private key type."
+msgstr "वैयक्तिक कि प्रकार ओळखणे अशक्य."
+
+#: ../libnm-util/crypto.c:530
+#, c-format
+msgid "Not enough memory to store decrypted private key."
+msgstr "जुणी वैयक्तिक कि साठवण्याकरीता स्मृती शिल्ल्क नाही."
+
+#: ../libnm-util/crypto_gnutls.c:46
+msgid "Failed to initialize the crypto engine."
+msgstr "क्रिप्टो इंजीन प्रारंभ करण्यास अपयशी."
+
+#: ../libnm-util/crypto_gnutls.c:90
+#, c-format
+msgid "Failed to initialize the MD5 engine: %s / %s."
+msgstr "MD5 इंजीन प्रारंभ करण्यास अपयशी: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:152 ../libnm-util/crypto_nss.c:178
+#, c-format
+msgid "Not enough memory for decrypted key buffer."
+msgstr "जुणे कि बफर करीता स्मृती शिल्लक नाही."
+
+#: ../libnm-util/crypto_gnutls.c:160
+#, c-format
+msgid "Failed to initialize the decryption cipher context: %s / %s."
+msgstr "डिक्रीपशन सिफर संदर्भ प्रारंभ करण्यास अपयशी: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:169
+#, c-format
+msgid "Failed to set symmetric key for decryption: %s / %s."
+msgstr "डिक्रीपशन करीता सम कि निश्चित करण्यास अपयशी: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:178
+#, c-format
+msgid "Failed to set IV for decryption: %s / %s."
+msgstr "डिक्रीपशन करीता IV निश्चित करण्यास अपयशी: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:187
+#, c-format
+msgid "Failed to decrypt the private key: %s / %s."
+msgstr "वैयक्तिक कि डिक्रीप्ट करण्यास अपयशी: %s / %s."
+
+#: ../libnm-util/crypto_gnutls.c:200
+#, c-format
+msgid "Failed to decrypt the private key."
+msgstr "वैयक्तिक कि डिक्रीप्ट करण्यास अपयशी."
+
+#: ../libnm-util/crypto_gnutls.c:235
+#, c-format
+msgid "Error initializing certificate data: %s"
+msgstr "प्रमाण माहिती प्रारंभ करण्यास त्रुटी: %s"
+
+#: ../libnm-util/crypto_gnutls.c:257
+#, c-format
+msgid "Couldn't decode certificate: %s"
+msgstr "प्रमाणपत्र डिकोड करण्यास अशक्य: %s"
+
+#: ../libnm-util/crypto_gnutls.c:281
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %s"
+msgstr "PKCS#12 डिकोडर प्रारंभ करण्यास अशक्य: %s"
+
+#: ../libnm-util/crypto_gnutls.c:294
+#, c-format
+msgid "Couldn't decode PKCS#12 file: %s"
+msgstr "PKCS#12 फाइल डिकोड करण्यास अपयशी: %s"
+
+#: ../libnm-util/crypto_gnutls.c:306
+#, c-format
+msgid "Couldn't verify PKCS#12 file: %s"
+msgstr "PKCS#12 फाइल तपासण्यास अशक्य: %s"
+
+#: ../libnm-util/crypto_nss.c:57
+#: ../system-settings/plugins/ifcfg-rh/crypto.c:52
+#, c-format
+msgid "Failed to initialize the crypto engine: %d."
+msgstr "क्रिप्टो इंजीन प्रारंभ करण्यास अपयशी: %d."
+
+#: ../libnm-util/crypto_nss.c:111
+#, c-format
+msgid "Failed to initialize the MD5 context: %d."
+msgstr "MD5 संदर्भ प्रारंभ करण्यास अपयशी: %d."
+
+#: ../libnm-util/crypto_nss.c:186
+#, c-format
+msgid "Failed to initialize the decryption cipher slot."
+msgstr "डिक्रीपशन सिफर क्षेत्र प्रारंभ करण्यास अपयशी."
+
+#: ../libnm-util/crypto_nss.c:196
+#, c-format
+msgid "Failed to set symmetric key for decryption."
+msgstr "डिक्रीपशन करीता सम कि निश्चित करण्यास अपयशी."
+
+#: ../libnm-util/crypto_nss.c:206
+#, c-format
+msgid "Failed to set IV for decryption."
+msgstr "डिक्रीपशन करीता IV निश्चित करण्यास अपयशी."
+
+#: ../libnm-util/crypto_nss.c:214
+#, c-format
+msgid "Failed to initialize the decryption context."
+msgstr "डिक्रीपशन संदर्भ प्रारंभ करण्यास अपयशी."
+
+#: ../libnm-util/crypto_nss.c:227
+#, c-format
+msgid "Failed to decrypt the private key: %d."
+msgstr "वैयक्तिक कि डिक्रीप्ट करण्यास अपयशी: %d."
+
+#: ../libnm-util/crypto_nss.c:239
+#, c-format
+msgid "Failed to finalize decryption of the private key: %d."
+msgstr "वैयक्तिक किचे डिक्रीपशन ठरविण्यास अपयशी: %d."
+
+#: ../libnm-util/crypto_nss.c:284
+#, c-format
+msgid "Couldn't decode certificate: %d"
+msgstr "प्रमाणपत्र डिकोड करणे अशक्य: %d"
+
+#: ../libnm-util/crypto_nss.c:319
+#, c-format
+msgid "Couldn't convert password to UCS2: %d"
+msgstr "परवलीचा शब्द UCS2 नुरूप रूपांतरन अशक्य: %d"
+
+#: ../libnm-util/crypto_nss.c:347
+#, c-format
+msgid "Couldn't initialize PKCS#12 decoder: %d"
+msgstr "PKCS#12 डिकोडर प्रारंभ करण्यास अशक्य: %d"
+
+#: ../libnm-util/crypto_nss.c:356
+#, c-format
+msgid "Couldn't decode PKCS#12 file: %d"
+msgstr "PKCS#12 फाइल डिकोड करण्यास अशक्य: %d"
+
+#: ../libnm-util/crypto_nss.c:365
+#, c-format
+msgid "Couldn't verify PKCS#12 file: %d"
+msgstr "PKCS#12 फाइल तपास करण्यास अशक्य: %d"
+
+#: ../src/nm-netlink-monitor.c:194 ../src/nm-netlink-monitor.c:458
+#, c-format
+msgid "error processing netlink message: %s"
+msgstr "netlink संदेश विश्लेषीत करतेवेळी त्रुटी: %s"
+
+#: ../src/nm-netlink-monitor.c:255
+#, c-format
+msgid "unable to allocate netlink handle for monitoring link status: %s"
+msgstr "दुवा स्थिती नियंत्रीत करण्याकरीता netlink handle चे वाटप अशक्य: %s"
+
+#: ../src/nm-netlink-monitor.c:265
+#, c-format
+msgid "unable to connect to netlink for monitoring link status: %s"
+msgstr "दुवा स्थिती नियंत्रीत करण्याकरीता netlink शी जुळवणी स्थापीत करणे अशक्य: %s"
+
+#: ../src/nm-netlink-monitor.c:273
+#, c-format
+msgid "unable to join netlink group for monitoring link status: %s"
+msgstr "दुवा स्थिती नियंत्रीत करण्याकरीता netlink गट शी जुळवणी स्थापीत करणे अशक्य: %s"
+
+#: ../src/nm-netlink-monitor.c:281
+#, c-format
+msgid "unable to allocate netlink link cache for monitoring link status: %s"
+msgstr "दुवा स्थिती नियंत्रीत करण्याकरीता netlink दुवा कॅशे वाटप करणे अशक्य: %s"
+
+#: ../src/nm-netlink-monitor.c:422
+#, c-format
+msgid "error updating link cache: %s"
+msgstr "दुवा कॅशे अद्ययावत करतेवेळी त्रुटी: %s"
+
+#: ../src/nm-netlink-monitor.c:488
+msgid "error occurred while waiting for data on socket"
+msgstr "सॉकेट वरील माहिती करीता प्रतिक्षा करतेवेळी त्रुटी आढळली"
+
+#: ../src/NetworkManager.c:296
+#, c-format
+msgid "Invalid option.  Please use --help to see a list of valid options.\n"
+msgstr "अवैध पर्याय.  वैध पर्यायची यादी पहाण्याकरीता कृपया --help वापरा.\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:97
+msgid "# Created by NetworkManager\n"
+msgstr "# NetworkManager द्वारे निर्मीत\n"
+
+#: ../src/dhcp-manager/nm-dhcp-dhclient.c:103
+#, c-format
+msgid ""
+"# Merged from %s\n"
+"\n"
+msgstr ""
+"# %s पासून एकत्रीत केले\n"
+"\n"
+
+#: ../src/named-manager/nm-named-manager.c:255
+msgid "NOTE: the libc resolver may not support more than 3 nameservers."
+msgstr "NOTE: libc resolver 3 पेक्षा जास्त nameservers करीता समर्थन पुरवू शकणार नाही."
+
+#: ../src/named-manager/nm-named-manager.c:257
+msgid "The nameservers listed below may not be recognized."
+msgstr "खालिल यादीतील nameservers अनोळखी राहतील."
+
+#: ../system-settings/plugins/ifcfg-rh/reader.c:2142
+msgid "System"
+msgstr "प्रणाली"
+
+#: ../system-settings/src/nm-default-wired-connection.c:182
+#, c-format
+msgid "Auto %s"
+msgstr "स्वयं %s"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:1
+msgid "Modify system connections"
+msgstr "प्रणाली जुळवणी संपादीत करा"
+
+#: ../policy/org.freedesktop.network-manager-settings.system.policy.in.h:2
+msgid "System policy prevents modification of system settings"
+msgstr "प्रणाली करार, प्रणाली संयोजना संपादीत करण्यापासून रोखतो"
+
