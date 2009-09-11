@@ -209,7 +209,8 @@ device_ip4_config_changed (NMDevice *device,
 	NMVPNConnection *vpn = NM_VPN_CONNECTION (user_data);
 	NMVPNConnectionPrivate *priv = NM_VPN_CONNECTION_GET_PRIVATE (vpn);
 
-	if (priv->vpn_state != NM_VPN_CONNECTION_STATE_ACTIVATED)
+	if (   (priv->vpn_state != NM_VPN_CONNECTION_STATE_ACTIVATED)
+	    || !nm_device_get_ip4_config (device))
 		return;
 
 	if (priv->gw_route)
