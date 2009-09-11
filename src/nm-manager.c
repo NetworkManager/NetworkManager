@@ -132,7 +132,8 @@ static GSList *
 remove_one_device (NMManager *manager,
                    GSList *list,
                    NMDevice *device,
-                   gboolean quitting);
+                   gboolean quitting,
+                   gboolean force_unmanage);
 
 #define SSD_POKE_INTERVAL 120
 #define ORIGDEV_TAG "originating-device"
@@ -311,7 +312,11 @@ modem_added (NMModemManager *modem_manager,
 
 	replace_device = find_device_by_iface (NM_MANAGER (user_data), ip_iface);
 	if (replace_device) {
-		priv->devices = remove_one_device (NM_MANAGER (user_data), priv->devices, replace_device, FALSE);
+		priv->devices = remove_one_device (NM_MANAGER (user_data),
+		                                   priv->devices,
+		                                   replace_device,
+		                                   FALSE,
+		                                   TRUE);
 	}
 
 	add_device (NM_MANAGER (user_data), NM_DEVICE (g_object_ref (modem)));
@@ -384,7 +389,8 @@ static GSList *
 remove_one_device (NMManager *manager,
                    GSList *list,
                    NMDevice *device,
-                   gboolean quitting)
+                   gboolean quitting,
+                   gboolean force_unmanage)
 {
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (manager);
 
@@ -396,7 +402,7 @@ remove_one_device (NMManager *manager,
 		    && nm_device_get_state (device) == NM_DEVICE_STATE_ACTIVATED)
 			unmanage = FALSE;
 
-		if (unmanage)
+		if (unmanage || force_unmanage)
 			nm_device_set_managed (device, FALSE, NM_DEVICE_STATE_REASON_REMOVED);
 	}
 
@@ -417,7 +423,7 @@ modem_removed (NMModemManager *modem_manager,
 	NMManager *self = NM_MANAGER (user_data);
 	NMManagerPrivate *priv = NM_MANAGER_GET_PRIVATE (self);
 
-	priv->devices = remove_one_device (self, priv->devices, modem, FALSE);
+	priv->devices = remove_one_device (self, priv->devices, modem, FALSE, TRUE);
 }
 
 static void
@@ -1387,7 +1393,7 @@ bluez_manager_resync_devices (NMManager *self)
 		priv->devices = keep;
 
 		while (g_slist_length (gone))
-			gone = remove_one_device (self, gone, NM_DEVICE (gone->data), FALSE);
+			gone = remove_one_device (self, gone, NM_DEVICE (gone->data), FALSE, TRUE);
 	} else {
 		g_slist_free (keep);
 		g_slist_free (gone);
@@ -1457,7 +1463,7 @@ bluez_manager_bdaddr_removed_cb (NMBluezManager *bluez_mgr,
 		NMDevice *device = NM_DEVICE (iter->data);
 
 		if (!strcmp (nm_device_get_udi (device), object_path)) {
-			priv->devices = remove_one_device (self, priv->devices, device, FALSE);
+			priv->devices = remove_one_device (self, priv->devices, device, FALSE, TRUE);
 			break;
 		}
 	}
@@ -1534,7 +1540,7 @@ udev_device_removed_cb (NMUdevManager *manager,
 	ifindex = g_udev_device_get_property_as_int (udev_device, "IFINDEX");
 	device = find_device_by_ifindex (self, ifindex);
 	if (device)
-		priv->devices = remove_one_device (self, priv->devices, device, FALSE);
+		priv->devices = remove_one_device (self, priv->devices, device, FALSE, TRUE);
 }
 
 static void
@@ -2645,9 +2651,11 @@ dispose (GObject *object)
 		free_get_secrets_info ((GetSecretsInfo *) priv->secrets_calls->data);
 
 	while (g_slist_length (priv->devices)) {
-		NMDevice *device = NM_DEVICE (priv->devices->data);
-
-		priv->devices = remove_one_device (manager, priv->devices, device, TRUE);
+		priv->devices = remove_one_device (manager,
+		                                   priv->devices,
+		                                   NM_DEVICE (priv->devices->data),
+		                                   TRUE,
+		                                   FALSE);
 	}
 
 	user_destroy_connections (manager);
